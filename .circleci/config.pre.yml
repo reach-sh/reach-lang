@@ -174,10 +174,6 @@ jobs:
     steps:
     - checkout
     - srd_yes
-    - persist_to_workspace:
-        root: /tmp/workspace/
-        paths:
-          - docker-devnet
     - run: |
         mkdir -p /tmp/workspace/docker-devnet
         for IMG in devnet-algo devnet-eth devnet-cfx; do
@@ -185,6 +181,10 @@ jobs:
           echo "docker save reachsh/${IMG}:latest..."
           docker save reachsh/${IMG}:latest | gzip > /tmp/workspace/docker-devnet/${IMG}.tar.gz
         done
+    - persist_to_workspace:
+        root: /tmp/workspace/
+        paths:
+          - docker-devnet
     - slack_fail
   "build":
     executor:
