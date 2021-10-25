@@ -587,6 +587,8 @@ withCompose DockerMeta {..} wrapped = do
                  image: $appImageTag
                  networks:
                    - reach-devnet
+                 extra_hosts:
+                   - "host.docker.internal:host-gateway"
                  labels:
                    - "sh.reach.dir-tmp=$e_dirTmpHost'"
                    - "sh.reach.dir-project=$projDirHost'"
