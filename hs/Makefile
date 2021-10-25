@@ -57,6 +57,7 @@ build-haskell:
 	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS):latest \
 	  --add-host host.docker.internal:172.17.0.1 \
 	  -f Dockerfile.haskell-build-artifacts .
+	docker container rm -f repo
 
 .PHONY: build-reach-cli
 build-reach-cli:
@@ -64,9 +65,7 @@ build-reach-cli:
 	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \
 	  --tag=$(IMG_REACH_CLI):latest \
 	  -f Dockerfile.reach-cli .
-	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
-	docker container rm -f repo
 
 .PHONY: build-reachc
 build-reachc:
@@ -78,10 +77,12 @@ build-reachc:
 	  --build-arg SOLC_VERSION=${SOLC_VERSION} \
 	  --tag=$(IMG_REACHC):latest \
 	  -f Dockerfile.reachc .
+	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
+	docker container rm -f repo
 
 
 .PHONY: build
-build: build-haskell build-reachcli build-reachc
+build: build-haskell build-reach-cli build-reachc
 
 .PHONY: build-m1
 build-m1:

@@ -42,6 +42,7 @@ for CONN in ETH ALGO CFX ; do
         rank: "${RANK}"
         images: "${IMAGES}"
         requires:
+          - "build-devnet-algo"
           - "build-runner"
           - "build-rpc-server"
           - "build-reach"
