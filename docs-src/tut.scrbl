@@ -6,7 +6,7 @@
 This tutorial walks through the creation of a simple decentralized application.
 It contains everything you need to know to build and test this application and assumes no prior experience with @|DApp|/blockchain development of any kind.
 If you want a broad overview before diving in it, we recommend reading @seclink["overview"]{the overview} first.
-On the other hand, if this is too simple, then you may want to start @seclink["workshop"]{the workshop} for larger and less contrained projects or @seclink["ref"]{the reference manual} for the minute details of Reach.
+On the other hand, if this is too simple, then you may want to start @seclink["workshop"]{the workshop} for larger and less constrained projects or @seclink["ref"]{the reference manual} for the minute details of Reach.
 
 If you're ready, click through to the @seclink["tut-1"]{first step}!
 
@@ -80,7 +80,7 @@ You can always click on these links to see the entire file in our @link["https:/
 @margin-note{Did you notice the attractive clipboard icon on the top the right of that box?
 You can click on it and the content of the code box will be copied onto your clipboard.}
 
-@margin-note{Did your text editor recognize @exec{index.rsh} as a Reach program and give you proper syntax hightlighting?
+@margin-note{Did your text editor recognize @exec{index.rsh} as a Reach program and give you proper syntax highlighting?
 If not, check if there's a plugin available for your editor by visiting @secref["guide-editor-support"] or manually
 configure it to treat Reach (@exec{.rsh}) files as JavaScript and things will be mostly correct.}
 
@@ -333,7 +333,7 @@ Let's change our program so that Alice can offer a wager to Bob and whoever wins
 
 This time, let's start with changes to the JavaScript @tech{frontend} and then we'll go back into the Reach code and connect the new methods up.
 
-Since we're going to be having funds get transfered, we'll record the balances of each participant before the game starts, so we can more clearly show what they won at the end.
+Since we're going to be having funds get transferred, we'll record the balances of each participant before the game starts, so we can more clearly show what they won at the end.
 We'll add this code in between account creation and contract deployment.
 
 @reachex[#:mode js
@@ -681,7 +681,7 @@ These kinds of @seclink["guide-assert"]{automatic verifications} are helpful for
 However, now let's add an @tech{assert}ion to the program that will ensure that every version of the program that allows Bob to know Alice's hand before he chooses his own will be rejected.
 
 We'll go back to the version of @reachexlink["tut-4/index.rsh"] from the last section, which has an @tech{honest} version of Bob.
-(Click on the preceeding link if you need to see what it contained.)
+(Click on the preceding link if you need to see what it contained.)
 
 We'll add a single line to the program after Alice publishes, but before Bob takes a @tech{local step}:
 
@@ -1199,7 +1199,7 @@ It's now time to begin the repeatable section of the application, where each par
 In normal programming languages, such a circumstance would be implemented with a @jsin{while} loop, which is exactly what we'll do in Reach.
 However, @reachin{while} loops in Reach require extra care, as discussed in @seclink["guide-loop-invs"]{the guide on loops in Reach}, so we'll take it slow.
 
-In the rest of a Reach program, all identifier bindings are static and unchangable, but if this were the case throughout all of Reach, then @reachin{while} loops would either never start or never terminate, because the loop condition would never change.
+In the rest of a Reach program, all identifier bindings are static and unchangeable, but if this were the case throughout all of Reach, then @reachin{while} loops would either never start or never terminate, because the loop condition would never change.
 So, a @reachin{while} loop in Reach can introduce a variable binding.
 
 Next, because of Reach's @seclink["guide-assert"]{automatic verification} engine, we must be able to make a statement about what properties of the program are invariant before and after a @reachin{while} loop body's execution, a so-called @seclink["guide-loop-invs"]{"loop invariant"}.
@@ -1267,7 +1267,7 @@ The rest of the program could be exactly the same as it was before, except now i
 
 @itemlist[
 
-@item{Line 93 asserts that the outcome is never draw, which is trivially true because otherwise the @reachin{while} loop would not have exitted.}
+@item{Line 93 asserts that the outcome is never draw, which is trivially true because otherwise the @reachin{while} loop would not have exited.}
 
 @item{Line 104 transfers the funds to the winner.}
 
@@ -1563,7 +1563,7 @@ On lines 1 thru 6, we import our view code and CSS.
 On line 7, we import the compiled @reachin{backend}.
 On lines 8 and 9, we load the @reachin{stdlib} as @reachin{reach}.
 
-React compiles the Reach standard libray in such a way that
+React compiles the Reach standard library in such a way that
 it does not have direct access to the environment variables
 which are used to select the desired standard library.
 This is why you need to pass @jsin{process.env} as an argument
@@ -1739,7 +1739,7 @@ and define some button handlers in order to attach to the deployed contract.
   and wait for a @jsin{Promise} which can be resolved via user interaction.}
  @item{On lines 89 thru 92, we define what happens when the user clicks the @litchar{Accept Terms and Pay Wager} button:
   the @jsin{Promise} from line 90 is resolved, and we set the component state to display @exviewref["tut-9" "WaitingForTurn"].}
- @item{On line 93, we render the approprite view from @reachexlink{tut-9/views/AttacherViews.js}}
+ @item{On line 93, we render the appropriate view from @reachexlink{tut-9/views/AttacherViews.js}}
 ]
 
 @exviewfigs["tut-9" "AttacherViews"
