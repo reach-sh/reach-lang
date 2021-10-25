@@ -70,6 +70,7 @@ build-reach-cli:
 
 .PHONY: build-reachc
 build-reachc:
+	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
 	docker build \
 	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
 	  --build-arg ALPINE_VERSION=$(ALPINE_VERSION) \
