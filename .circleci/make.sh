@@ -21,12 +21,12 @@ for CONN in ETH ALGO CFX ; do
     CFX)
       PER=8
       DEP="build-devnet-cfx"
-      IMAGES="runner rpc-server reach reach-cli devnet-algo devnet-eth"
+      IMAGES="runner rpc-server reach reach-cli devnet-algo devnet-cfx"
       ;;
     ETH)
       PER=16
       DEP="build-devnet-eth"
-      IMAGES="runner rpc-server reach reach-cli devnet-algo devnet-cfx"
+      IMAGES="runner rpc-server reach reach-cli devnet-algo devnet-eth"
       ;;
   esac
   SIZE=$(((TOTAL + (PER - 1)) / PER))
