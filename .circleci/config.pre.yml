@@ -423,12 +423,16 @@ jobs:
       rank:
         description: "parallel rank"
         type: string
+      images:
+        description: "which images to use"
+        type: string
     executor: real
     steps:
     - checkout
     - attach_workspace:
         at: /tmp/workspace/
-    - and_restore_docker
+    - and_restore_docker:
+        images: <<parameters.images>>
     - run: |
         mkdir -p /tmp/workspace/artifacts /tmp/workspace/record /tmp/artifacts
     - run:

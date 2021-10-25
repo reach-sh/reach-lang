@@ -16,14 +16,17 @@ for CONN in ETH ALGO CFX ; do
     ALGO) 
       PER=8
       DEP="build-devnet-algo"
+      IMAGES="runner rpc-server reach reach-cli devnet-algo"
       ;;
     CFX)
       PER=8
       DEP="build-devnet-cfx"
+      IMAGES="runner rpc-server reach reach-cli devnet-algo"
       ;;
     ETH)
       PER=16
       DEP="build-devnet-eth"
+      IMAGES="runner rpc-server reach reach-cli devnet-algo"
       ;;
   esac
   SIZE=$(((TOTAL + (PER - 1)) / PER))
@@ -37,6 +40,7 @@ for CONN in ETH ALGO CFX ; do
         connector: "${CONN}"
         size: "${SIZE}"
         rank: "${RANK}"
+        images: "${IMAGES}"
         requires:
           - "build-reach"
           - "build-reach-cli"
