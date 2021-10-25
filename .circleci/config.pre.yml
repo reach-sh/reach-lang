@@ -70,8 +70,14 @@ commands:
       - run: |
           source ./VERSION
 
-          for IMG in haskell-build-artifacts runner rpc-server reach reach-cli devnet-algo devnet-eth devnet-cfx; do
+          for IMG in haskell-build-artifacts runner rpc-server reach reach-cli; do
             zcat /tmp/workspace/docker/${IMG}.tar.gz | docker load
+            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
+            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}.${MINOR}
+            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
+          done
+          for IMG in devnet-algo devnet-eth devnet-cfx; do
+            zcat /tmp/workspace/docker-devnet/${IMG}.tar.gz | docker load
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}.${MINOR}
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
@@ -171,13 +177,13 @@ jobs:
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
-          - bin
-          - docker
+          - docker-devnet
     - run: |
+        mkdir -p /tmp/workspace/docker-devnet
         for IMG in devnet-algo devnet-eth devnet-cfx; do
-          (cd ${IMG} && make build)
+          (cd scripts/${IMG} && make build)
           echo "docker save reachsh/${IMG}:latest..."
-          docker save reachsh/${IMG}:latest | gzip > /tmp/workspace/docker/${IMG}.tar.gz
+          docker save reachsh/${IMG}:latest | gzip > /tmp/workspace/docker-devnet/${IMG}.tar.gz
         done
     - slack_fail
   "build":
