@@ -504,6 +504,7 @@ workflows:
           tags:
             only: /[0-9]*\.[0-9]*\.[0-9]*/
     - "build-reach":
+        images: "haskell-build-artifacts"
         requires:
           - "build-haskell"
         filters:
