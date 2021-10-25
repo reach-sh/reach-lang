@@ -58,8 +58,8 @@ build-haskell:
 	  --add-host host.docker.internal:172.17.0.1 \
 	  -f Dockerfile.haskell-build-artifacts .
 
-.PHONY: build-reachcli
-build-reachcli:
+.PHONY: build-reach-cli
+build-reach-cli:
 	docker build \
 	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \
 	  --tag=$(IMG_REACH_CLI):latest \

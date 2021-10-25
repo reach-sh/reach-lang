@@ -169,7 +169,7 @@ jobs:
   "build-devnet-cfx":
     executor:
       name: fake
-      class: "medium"
+      class: "medium+"
     steps:
     - checkout
     - srd_yes
