@@ -20,7 +20,21 @@ type Balance = Integer
 
 type Token = Integer
 
-type Ledger = M.Map Account (M.Map Token Balance)
+data Ledger = Ledger
+  { nw_ledger :: M.Map Account (M.Map Token Balance)
+  , nw_next_acc :: Integer
+  , nw_next_token :: Integer
+  }
+  deriving (Eq)
+
+ledgerNewToken :: Integer -> App DLVal -> App DLVal
+ledgerNewToken supply f  = do
+  -- TODO QUESTION: which account? 0 is placeholder
+  ledger <- asks e_ledger
+  let token_id = nw_next_token ledger
+  let new_nw_ledger = M.insert 0 (M.singleton token_id supply) (nw_ledger ledger)
+  let new_ledger = ledger { nw_ledger = new_nw_ledger, nw_next_token = token_id + 1 }
+  local (\e -> e {e_ledger = new_ledger}) f
 
 type Frontend = ( Account, SLPart, M.Map DLVar DLVal, [ DLTail ] )
 
@@ -28,13 +42,6 @@ type Frontends = [ Frontend ]
 
 type NewPartActions = M.Map SLPart [ DLTail ]
 
--- data ConsensusNetworkState = ConsensusNetworkState
---   { nw_ledger :: Ledger
---   , nw_next_acc :: Integer
---   , nw_next_token :: Integer
---   }
---   deriving (Eq)
---
 -- type State = (ConsensusNetworkState, ConsensusEnv, Frontends, NewPartActions, DAppCode)
 
 data DAppCode
@@ -55,12 +62,13 @@ data Action
 
 type Account = Integer
 
-type LinearState = M.Map Account DLVal
+type LinearState = M.Map DLMVar (M.Map Account DLVal)
 
 data DLVal
   = V_Null
   | V_Bool Bool
   | V_UInt Integer
+  | V_Token Int
   | V_Bytes String
   | V_Digest DLVal
   | V_Address Account
@@ -81,8 +89,6 @@ type App = ReaderT Env IO
 data Env = Env
   {  e_store :: Store
    , e_ledger :: Ledger
-   , e_next_acc :: Integer
-   , e_next_token :: Integer
    , e_linstate :: LinearState
   }
 
@@ -117,7 +123,7 @@ interpPrim = \case
     return $ if cond then cond_val else alt
   (DIGEST_EQ,  [V_Digest lhs,V_Digest rhs]) -> return $ V_Bool $ (==) lhs rhs
   (ADDRESS_EQ,  [V_Address lhs,V_Address rhs]) -> return $ V_Bool $ (==) lhs rhs
-  (TOKEN_EQ, [V_UInt lhs,V_UInt rhs]) -> return $ V_Bool $ (==) lhs rhs
+  (TOKEN_EQ, [V_Token lhs,V_Token rhs]) -> return $ V_Bool $ (==) lhs rhs
   -- TODO QUESTION
   (SELF_ADDRESS, _) -> undefined
   (LSH, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ shiftL lhs (fromIntegral rhs)
@@ -219,8 +225,7 @@ instance Interp DLExpr where
         -- TODO: needs ledger\account state
         (V_UInt _n, V_Address _acc) -> undefined
         _ -> impossible "expression interpreter"
-    -- QUESTION: how is this different from DLE_TokenNew?
-    DLE_TokenInit _at _dlarg -> undefined
+    DLE_TokenInit _at _dlarg -> return V_Null
     -- QUESTION: checkCommitment?
     DLE_CheckPay _at _slcxtframes _dlarg _maybe_dlarg -> undefined
     -- TODO requires Time state
@@ -230,60 +235,74 @@ instance Interp DLExpr where
       Right _dlarg -> do
         return $ V_Null
     DLE_PartSet _at _slpart dlarg -> interp dlarg
-    DLE_MapRef _at (DLMVar n) _dlarg -> do
-      linstate <- asks e_linstate
-      return $ (M.!) linstate (fromIntegral n)
-    DLE_MapSet _at (DLMVar n) dlarg _maybe_dlarg -> do
+    DLE_MapRef _at dlmvar dlarg -> do
       linstate <- asks e_linstate
       ev <- interp dlarg
-      let new_linstate = M.insert (fromIntegral n) ev linstate
-      local (\e -> e {e_linstate = new_linstate}) $ return V_Null
-    -- QUESTION: what do the DlArgs and string here represent?
+      case ev of
+        V_Address acc -> do
+          return $ flip (M.!) acc $ (M.!) linstate dlmvar
+    DLE_MapSet _at dlmvar dlarg maybe_dlarg -> do
+      linst <- asks e_linstate
+      ev <- interp dlarg
+      case ev of
+        V_Address acc -> case maybe_dlarg of
+          Nothing -> do
+            let m = M.delete acc ((M.!) linst dlmvar)
+            local (\e -> e {e_linstate = M.insert dlmvar m linst}) $ return V_Null
+          Just dlarg' -> do
+            ev' <- interp dlarg'
+            let m = M.insert acc ev' ((M.!) linst dlmvar)
+            local (\e -> e {e_linstate = M.insert dlmvar m linst}) $ return V_Null
+    -- TODO QUESTION
     DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill -> undefined
     DLE_TokenNew _at dltokennew -> do
-      token_id <- asks e_next_token
-      ledger <- asks e_ledger
       supply <- interp $ dtn_supply dltokennew
       case supply of
         V_UInt supply' -> do
-        -- TODO: which account? 0 is placeholder
-        let new_ledger = M.insert 0 (M.singleton token_id supply') ledger
-        local (\e -> e {e_next_token = token_id + 1, e_ledger = new_ledger}) $ return V_Null
+          ledgerNewToken supply' $ return V_Null
+        _ -> impossible "expression interpreter"
     DLE_TokenBurn _at dlarg1 dlarg2 -> do
       ev1 <- interp dlarg1
       ev2 <- interp dlarg2
       case (ev1,ev2) of
         (V_UInt tok, V_UInt burn_amt) -> do
           ledger <- asks e_ledger
-          -- TODO lookup safety
-          let prev_amt = flip (M.!) tok $ (M.!) ledger 0
+          let map_ledger = nw_ledger ledger
+          let prev_amt = flip (M.!) tok $ (M.!) map_ledger 0
           let new_amt = prev_amt - burn_amt
-          let new_ledger = M.insert 0 (M.insert tok new_amt ((M.!) ledger 0)) ledger
-          local (\e -> e {e_ledger = new_ledger}) $ return V_Null
+          let new_nw_ledger = M.insert 0 (M.insert tok new_amt ((M.!) map_ledger 0)) map_ledger
+          local (\e -> e {e_ledger = ledger { nw_ledger = new_nw_ledger }}) $ return V_Null
         _ -> impossible "expression interpreter"
     DLE_TokenDestroy _at dlarg -> do
       ev <- interp dlarg
       case ev of
         V_UInt tok -> do
           ledger <- asks e_ledger
-          let new_ledger = M.insert 0 (M.delete tok ((M.!) ledger 0)) ledger
-          local (\e -> e {e_ledger = new_ledger}) $ return V_Null
+          let map_ledger = nw_ledger ledger
+          let new_nw_ledger = M.insert 0 (M.delete tok ((M.!) map_ledger 0)) map_ledger
+          local (\e -> e {e_ledger = ledger { nw_ledger = new_nw_ledger }}) $ return V_Null
         _ -> impossible "expression interpreter"
 
 instance Interp DLStmt where
   interp = \case
     DL_Nop _at -> return V_Null
-    -- QUESTION what are DLV_Eff and DLVarCat?
-    DL_Let _at _let_var _expr -> undefined
-    -- QUESTION: assuming "block" is the function
-    -- but what are the "vars" for?
-    -- shouldn't this be a DLLargeArg instead of DLArg?
-    DL_ArrayMap _at _var1 _arg _var2 _block -> undefined
-    DL_ArrayReduce _at _var1 _arg1 _arg2 _var2 _var3 _block -> undefined
-    DL_Var _at var -> do
+    DL_Let _at let_var expr -> case let_var of
+      DLV_Eff -> undefined
+      DLV_Let _ var -> do
+        st <- asks e_store
+        ev <- interp expr
+        local (\e -> e {e_store = M.insert var ev st}) $ return V_Null
+    DL_ArrayMap _at var1 arg var2 block -> do
       st <- asks e_store
-      -- QUESTION: should this actually return a value?
-      return $ st M.! var
+      let f var x = local (\e -> e {e_store = M.insert var x st}) $ interp block
+      arr <- interp arg
+      case arr of
+        V_Array arr' -> do
+          res <- V_Array <$> mapM (\x -> f var2 x) arr'
+          local (\e -> e {e_store = M.insert var2 res st}) $ return V_Null
+        _ -> impossible "statement interpreter"
+    DL_ArrayReduce _at _var1 _arg1 _arg2 _var2 _var3 _block -> undefined
+    DL_Var _at _var -> return $ V_Null
     DL_Set _at var arg -> do
       st <- asks e_store
       ev <- interp arg
@@ -295,9 +314,18 @@ instance Interp DLStmt where
         V_Bool True -> interp tail1
         V_Bool False -> interp tail2
         _ -> impossible "statement interpreter"
-    -- QUESTION: what is this structure? which case is evaluated?
-    DL_LocalSwitch _at _var _switch_cases -> undefined
-    DL_Only _at _either_part _tail -> undefined
+    DL_LocalSwitch _at var switch_cases -> do
+      st <- asks e_store
+      ev <- interp $ DLA_Var var
+      case ev of
+        V_Data v -> do
+          let switch_key = flip (!!) 0 $ M.keys v
+          let (switch_binding, dltail) = (M.!) switch_cases switch_key
+          case switch_binding of
+            Nothing -> interp dltail
+            Just ident -> local (\e -> e {e_store = M.insert ident ev st}) $ interp dltail
+    -- QUESTION: what does this Either represent?
+    DL_Only _at _either_part dltail -> interp dltail
     DL_MapReduce _at _int _var1 _dlm_var _arg _var2 _var3 _block -> undefined
 
 instance Interp DLTail where
@@ -309,8 +337,9 @@ instance Interp DLTail where
 
 instance Interp DLBlock where
   interp = \case
-    -- QUESTION: what is the DLArg here?
-    DLBlock _at _frame dltail _dlarg -> interp dltail
+    DLBlock _at _frame dltail dlarg -> do
+      interp dltail
+      interp dlarg
 
 interpCons :: LLConsensus -> App ()
 interpCons = \case
