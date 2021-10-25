@@ -1323,8 +1323,8 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
     outputsp <- getm ctxt_outputs
     tlfunsp <- getm ctxt_tlfuns
     let defp = vsep $
-          [ "receive () external payable { assert(false); }"
-          , "fallback () external payable { assert(false); }" ]
+          [ "receive () external payable {}"
+          , "fallback () external payable {}" ]
     let ctcbody = vsep $ [state_defn, typefsp, outputsp, tlfunsp, hs', defp]
     let ctcp = solContract "ReachContract is Stdlib" $ ctcbody
     let cinfo =
