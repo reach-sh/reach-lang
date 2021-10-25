@@ -30,7 +30,9 @@ for CONN in ETH ALGO CFX ; do
         rank: "${RANK}"
         requires:
           - "build"
-          - "build-devnet"
+          - "build-devnet-algo"
+          - "build-devnet-cfx"
+          - "build-devnet-eth"
 END
     cat >>"${END}" <<END
           - "examples.${CONN}.${RANK}"
