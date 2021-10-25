@@ -11,13 +11,28 @@ b:
 	(cd runner && $(MAKE) build)
 	(cd rpc-server && $(MAKE) build)
 
-.PHONY: build
-build:
+.PHONY: build-js-deps
+build-js-deps:
 	(cd js-deps && $(MAKE) build)
+
+.PHONY: build-stdlib
+build-stdlib:
 	(cd stdlib && $(MAKE) build)
+
+.PHONY: build-runner
+build-runner:
 	(cd runner && $(MAKE) build)
+
+.PHONY: build-rpc-server
+build-rpc-server:
 	(cd rpc-server && $(MAKE) build)
+
+.PHONY: build-react-runner
+build-react-runner:
 	(cd react-runner && $(MAKE) build)
+
+.PHONY: build
+build: build-js-deps build-stdlib build-runner build-rpc-server build-react-runner
 
 .PHONY: test
 test: build

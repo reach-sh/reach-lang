@@ -45,9 +45,8 @@ stack: package.yaml src/Reach/Version.hs sol/stdlib.sol
 clean: hs-clean
 	rm -f package.yaml
 
-.PHONY: build
-build:
-
+.PHONY: build-haskell
+build-haskell:
 	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
 	docker build \
 	  --build-arg VERSION=${VERSION} \
@@ -58,13 +57,9 @@ build:
 	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS):latest \
 	  --add-host host.docker.internal:172.17.0.1 \
 	  -f Dockerfile.haskell-build-artifacts .
-	docker build \
-	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
-	  --build-arg ALPINE_VERSION=$(ALPINE_VERSION) \
-	  --add-host host.docker.internal:172.17.0.1 \
-	  --build-arg SOLC_VERSION=${SOLC_VERSION} \
-	  --tag=$(IMG_REACHC):latest \
-	  -f Dockerfile.reachc .
+
+.PHONY: build-reachcli
+build-reachcli:
 	docker build \
 	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \
 	  --tag=$(IMG_REACH_CLI):latest \
@@ -72,6 +67,20 @@ build:
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
 	docker container rm -f repo
+
+.PHONY: build-reachc
+build-reachc:
+	docker build \
+	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
+	  --build-arg ALPINE_VERSION=$(ALPINE_VERSION) \
+	  --add-host host.docker.internal:172.17.0.1 \
+	  --build-arg SOLC_VERSION=${SOLC_VERSION} \
+	  --tag=$(IMG_REACHC):latest \
+	  -f Dockerfile.reachc .
+
+
+.PHONY: build
+build: build-haskell build-reachcli build-reachc
 
 .PHONY: build-m1
 build-m1:
