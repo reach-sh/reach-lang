@@ -289,6 +289,7 @@ export const T_Data = (
 }
 
 export const addressEq = mkAddressEq(T_Address);
+export const digestEq = shared_backend.bytesEq;
 
 const T_Token = T_UInt;
 
@@ -325,6 +326,7 @@ export const stdlib: Stdlib_Backend_Base<ALGO_Ty<any>> = {
   ...arith,
   ...typeDefs,
   addressEq,
+  digestEq,
   tokenEq,
   digest,
   UInt_max,

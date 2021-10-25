@@ -65,8 +65,6 @@ export const bytesConcat = (x: string, y: string): string => {
   return x.concat(y);
 };
 
-export const digestEq = bytesEq;
-
 export const eq = (a: num, b: num): boolean => bigNumberify(a).eq(bigNumberify(b));
 export const ge = (a: num, b: num): boolean => bigNumberify(a).gte(bigNumberify(b));
 export const gt = (a: num, b: num): boolean => bigNumberify(a).gt(bigNumberify(b));

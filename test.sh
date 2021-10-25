@@ -114,15 +114,9 @@ tealcount () {
 #exit 0
 
 jb
-ci CFX mint-basic
-exit 0
-ci CFX cache-events
-ci CFX raffle
-
-# jb
-r examples/api-full
-exit 0
-ci ETH api-full
+#ci ETH whl-fail
+#ci ALGO whl-fail
+ci ALGO workshop-hash-lock
 exit 0
 
 #ci ETH tut-7

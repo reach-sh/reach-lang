@@ -434,6 +434,7 @@ export const makeDigest = (mode: DigestMode, prep: any) => (t:any, v:any) => {
   // debug('digest(', args, ') => internal(', hexlify(kekCat), ')');
   const f = mode === 'keccak256' ? ethers.utils.keccak256 : ethers.utils.sha256;
   const r = f(kekCat);
+  debug('digest', {mode, prep, t, v, kekCat, f, r});
   // debug('keccak(', args, ') => internal(', hexlify(kekCat), ') => ', r);
   return r;
 };

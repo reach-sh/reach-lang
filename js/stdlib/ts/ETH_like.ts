@@ -610,6 +610,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
         debug(...dhead, 'ARGS', args);
         const arg = sendRecv_prepArg(lct, args, tys, evt_cnt);
+        debug(...dhead, 'START', arg);
 
         if ( funcNum == 0 ) {
           debug(...dhead, "deploying");
@@ -640,7 +641,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         // https://github.com/reach-sh/reach-lang/issues/134
         await getC();
 
-        debug(...dhead, 'START', arg);
         while ( true ) {
           debug(dhead, 'TIMECHECK', { timeoutAt });
           if ( await checkTimeout(getTimeSecs, timeoutAt, await getNetworkTimeNumber() + 1) ) {
