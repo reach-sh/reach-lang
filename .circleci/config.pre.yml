@@ -172,7 +172,10 @@ jobs:
         mkdir -p /tmp/workspace/docker
         (cd hs && make build)
         (cd js && make build)
-        for IMG in runner rpc-server reach reach-cli haskell-build-artifacts; do
+        for IMG in devnet-algo devnet-eth devnet-cfx; do
+          (cd ${IMG} && make build)
+        done
+        for IMG in runner rpc-server reach reach-cli haskell-build-artifacts devnet-algo devnet-eth devnet-cfx; do
           echo "docker save reachsh/${IMG}:latest..."
           docker save reachsh/${IMG}:latest | gzip > /tmp/workspace/docker/${IMG}.tar.gz
         done
