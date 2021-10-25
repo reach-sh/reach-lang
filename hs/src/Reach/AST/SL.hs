@@ -470,7 +470,7 @@ data ParallelReduceMode
   deriving (Eq, Generic, Show)
 
 data ApiCallMode
-  = AC_PaySpec
+  = AC_Pay
   | AC_ThrowTimeout
   | AC_Assume
   deriving (Eq, Generic, Show)
