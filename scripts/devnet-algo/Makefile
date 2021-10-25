@@ -1,4 +1,4 @@
-IMAGE="reachsh/devnet-algo"
+IMAGE=reachsh/devnet-algo
 
 ROOT=../..
 
@@ -8,7 +8,7 @@ build:
 		echo 'Please run `make generate-network` first' ; \
 		exit 1 ; \
 	fi
-	docker build --build-arg REACH_GIT_HASH="$$(../git-hash.sh)" --tag=$(IMAGE):latest .
+	docker build --build-arg REACH_GIT_HASH=$$(../git-hash.sh) --tag=$(IMAGE):latest .
 	TAG_ONLY=1 ../../scripts/docker-push.sh $(IMAGE)
 
 .PHONY: push
