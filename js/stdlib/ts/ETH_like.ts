@@ -724,7 +724,8 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
         debug(dhead, `OKAY`, data);
         const theBlockBN = bigNumberify(theBlock);
-        const { from } = ok_r;
+        const { from: rawFrom } = ok_r;
+        const from = T_Address.canonicalize(rawFrom);
         const theSecsBN = await getTimeSecs(theBlockBN);
         const getOutput = async (o_mode:string, o_lab:string, l_ctc:any, o_val:any): Promise<any> => {
           void(o_mode);
