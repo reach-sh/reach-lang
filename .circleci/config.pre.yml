@@ -232,10 +232,6 @@ jobs:
           - docker-haskell-build-artifacts
     - slack_fail
   "build-reach":
-    parameters:
-      images:
-        description: "which connector"
-        type: string
     executor:
       name: fake
       class: "medium"
@@ -245,7 +241,7 @@ jobs:
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
-      images: <<parameters.images>>
+        images: "haskell-build-artifacts"
     - run: |
         mkdir -p /tmp/workspace/docker-reach
         (cd hs && make build-reachc)
@@ -267,7 +263,7 @@ jobs:
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
-      images: "haskell-build-artifacts"
+        images: "haskell-build-artifacts"
     - run: |
         mkdir -p /tmp/workspace/docker-reach-cli
         (cd hs && make build-reach-cli)
@@ -307,7 +303,7 @@ jobs:
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
-      images: "haskell-build-artifacts js-deps"
+        images: "haskell-build-artifacts js-deps"
     - run: |
         mkdir -p /tmp/workspace/docker-stdlib
         (cd js && make build-stdlib)
@@ -329,7 +325,7 @@ jobs:
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
-      images: "stdlib"
+        images: "stdlib"
     - run: |
         mkdir -p /tmp/workspace/docker-runner
         (cd js && make build-runner)
@@ -351,7 +347,7 @@ jobs:
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
-      images: "runner"
+        images: "runner"
     - run: |
         mkdir -p /tmp/workspace/docker-rpc-server
         (cd js && make build-rpc-server)
@@ -373,7 +369,7 @@ jobs:
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
-      images: "js-deps stdlib"
+        images: "js-deps stdlib"
     - run: |
         mkdir -p /tmp/workspace/docker-react-runner
         (cd js && make build-react-runner)
@@ -508,7 +504,6 @@ workflows:
           tags:
             only: /[0-9]*\.[0-9]*\.[0-9]*/
     - "build-reach":
-        images: "haskell-build-artifacts"
         requires:
           - "build-haskell"
         filters:
