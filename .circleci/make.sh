@@ -13,9 +13,18 @@ END
 
 for CONN in ETH ALGO CFX ; do
   case "${CONN}" in
-    ALGO) PER=8 ;;
-    CFX) PER=8 ;;
-    ETH) PER=16 ;;
+    ALGO) 
+      PER=8
+      DEP="build-devnet-algo"
+      ;;
+    CFX)
+      PER=8
+      DEP="build-devnet-cfx"
+      ;;
+    ETH)
+      PER=16
+      DEP="build-devnet-eth"
+      ;;
   esac
   SIZE=$(((TOTAL + (PER - 1)) / PER))
   for RANK in $(seq 0 $((SIZE - 1))) ; do
@@ -30,9 +39,7 @@ for CONN in ETH ALGO CFX ; do
         rank: "${RANK}"
         requires:
           - "build"
-          - "build-devnet-algo"
-          - "build-devnet-cfx"
-          - "build-devnet-eth"
+          - "${DEP}"
 END
     cat >>"${END}" <<END
           - "examples.${CONN}.${RANK}"
