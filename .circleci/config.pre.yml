@@ -232,6 +232,10 @@ jobs:
           - docker-haskell-build-artifacts
     - slack_fail
   "build-reach":
+    parameters:
+      images:
+        description: "which connector"
+        type: string
     executor:
       name: fake
       class: "medium"
@@ -241,7 +245,7 @@ jobs:
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
-      images: "haskell-build-artifacts"
+      images: <<parameters.images>>
     - run: |
         mkdir -p /tmp/workspace/docker-reach
         (cd hs && make build-reachc)
