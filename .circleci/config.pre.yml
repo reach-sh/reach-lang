@@ -77,7 +77,7 @@ commands:
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
           done
           for IMG in devnet-algo devnet-eth devnet-cfx; do
-            zcat /tmp/workspace/docker-devnet/${IMG}.tar.gz | docker load
+            zcat /tmp/workspace/docker-${i}/${IMG}.tar.gz | docker load
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}.${MINOR}
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
@@ -167,7 +167,7 @@ jobs:
     - run: |
         make sh-lint
     - slack_fail
-  "build-devnet":
+  "build-devnet-cfx":
     executor:
       name: fake
       class: "medium"
@@ -175,16 +175,46 @@ jobs:
     - checkout
     - srd_yes
     - run: |
-        mkdir -p /tmp/workspace/docker-devnet
-        for IMG in devnet-algo devnet-eth devnet-cfx; do
-          (cd scripts/${IMG} && make build)
-          echo "docker save reachsh/${IMG}:latest..."
-          docker save reachsh/${IMG}:latest | gzip > /tmp/workspace/docker-devnet/${IMG}.tar.gz
-        done
+        mkdir -p /tmp/workspace/docker-devnet-cfx
+        (cd scripts/devnet-cfx && make build)
+        echo "docker save reachsh/devnet-cfx:latest..."
+        docker save reachsh/devnet-cfx:latest | gzip > /tmp/workspace/docker-devnet-cfx/devnet-cfx.tar.gz
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
-          - docker-devnet
+          - docker-devnet-cfx
+  "build-devnet-algo":
+    executor:
+      name: fake
+      class: "medium"
+    steps:
+    - checkout
+    - srd_yes
+    - run: |
+        mkdir -p /tmp/workspace/docker-devnet-algo
+        (cd scripts/devnet-algo && make build)
+        echo "docker save reachsh/devnet-algo:latest..."
+        docker save reachsh/devnet-algo:latest | gzip > /tmp/workspace/docker-devnet-algo/devnet-algo.tar.gz
+    - persist_to_workspace:
+        root: /tmp/workspace/
+        paths:
+          - docker-devnet-algo
+  "build-devnet-eth":
+    executor:
+      name: fake
+      class: "medium"
+    steps:
+    - checkout
+    - srd_yes
+    - run: |
+        mkdir -p /tmp/workspace/docker-devnet-eth
+        (cd scripts/devnet-eth && make build)
+        echo "docker save reachsh/devnet-eth:latest..."
+        docker save reachsh/devnet-eth:latest | gzip > /tmp/workspace/docker-devnet-eth/devnet-eth.tar.gz
+    - persist_to_workspace:
+        root: /tmp/workspace/
+        paths:
+          - docker-devnet-eth
     - slack_fail
   "build":
     executor:
@@ -313,7 +343,15 @@ workflows:
             only: /[0-9]*\.[0-9]*\.[0-9]*/
   build:
     jobs:
-    - "build-devnet":
+    - "build-devnet-algo":
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
+    - "build-devnet-eth":
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
+    - "build-devnet-cfx":
         filters:
           tags:
             only: /[0-9]*\.[0-9]*\.[0-9]*/
@@ -324,14 +362,18 @@ workflows:
     - "hs-test":
         requires:
           - "build"
-          - "build-devnet"
+          - "build-devnet-algo"
+          - "build-devnet-eth"
+          - "build-devnet-cfx"
         filters:
           tags:
             only: /[0-9]*\.[0-9]*\.[0-9]*/
     - "hs-check":
         requires:
           - "build"
-          - "build-devnet"
+          - "build-devnet-algo"
+          - "build-devnet-eth"
+          - "build-devnet-cfx"
         filters:
           tags:
             only: /[0-9]*\.[0-9]*\.[0-9]*/
