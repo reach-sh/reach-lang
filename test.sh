@@ -83,7 +83,7 @@ r () {
   #REACH_CONNECTOR_MODE=CFX ${REACH} run
 
   # Ganache
-  REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:8545 REACH_ISOLATED_NETWORK=1 ${REACH} run
+  REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
 
 )
 }
@@ -114,9 +114,9 @@ tealcount () {
 #exit 0
 
 # jb
-#ci ETH api-full
-ci ETH remote
-#r examples/remote
+r examples/api-full
+exit 0
+ci ETH api-full
 exit 0
 
 #ci ETH tut-7

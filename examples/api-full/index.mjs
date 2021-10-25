@@ -73,6 +73,8 @@ export class Signal {
   const showAdminBal = showBal('Admin', accAdmin);
   await showAdminBal('start');
   await Promise.all([
+    thread(await user('Alice')),
+    thread(await user('Bob')),
     backend.Admin(ctcAdmin, {
       log: ((...args) => {
         console.log(...args);
@@ -81,8 +83,6 @@ export class Signal {
       tok: gil.id,
       amt: amt_,
     }),
-    thread(await user('Alice')),
-    thread(await user('Bob')),
   ]);
   await showAdminBal('end');
 })();
