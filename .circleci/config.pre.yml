@@ -161,6 +161,25 @@ jobs:
     - run: |
         make sh-lint
     - slack_fail
+  "build-devnet":
+    executor:
+      name: fake
+      class: "medium"
+    steps:
+    - checkout
+    - srd_yes
+    - persist_to_workspace:
+        root: /tmp/workspace/
+        paths:
+          - bin
+          - docker
+    - run: |
+        for IMG in devnet-algo devnet-eth devnet-cfx; do
+          (cd ${IMG} && make build)
+          echo "docker save reachsh/${IMG}:latest..."
+          docker save reachsh/${IMG}:latest | gzip > /tmp/workspace/docker/${IMG}.tar.gz
+        done
+    - slack_fail
   "build":
     executor:
       name: fake
@@ -172,10 +191,7 @@ jobs:
         mkdir -p /tmp/workspace/docker
         (cd hs && make build)
         (cd js && make build)
-        for IMG in devnet-algo devnet-eth devnet-cfx; do
-          (cd ${IMG} && make build)
-        done
-        for IMG in runner rpc-server reach reach-cli haskell-build-artifacts devnet-algo devnet-eth devnet-cfx; do
+        for IMG in runner rpc-server reach reach-cli haskell-build-artifacts; do
           echo "docker save reachsh/${IMG}:latest..."
           docker save reachsh/${IMG}:latest | gzip > /tmp/workspace/docker/${IMG}.tar.gz
         done
@@ -291,6 +307,10 @@ workflows:
             only: /[0-9]*\.[0-9]*\.[0-9]*/
   build:
     jobs:
+    - "build-devnet":
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
     - "build":
         filters:
           tags:
@@ -298,12 +318,14 @@ workflows:
     - "hs-test":
         requires:
           - "build"
+          - "build-devnet"
         filters:
           tags:
             only: /[0-9]*\.[0-9]*\.[0-9]*/
     - "hs-check":
         requires:
           - "build"
+          - "build-devnet"
         filters:
           tags:
             only: /[0-9]*\.[0-9]*\.[0-9]*/
