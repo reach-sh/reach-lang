@@ -38,7 +38,8 @@ for CONN in ETH ALGO CFX ; do
         size: "${SIZE}"
         rank: "${RANK}"
         requires:
-          - "build"
+          - "build-reach"
+          - "build-reach-cli"
           - "${DEP}"
 END
     cat >>"${END}" <<END
