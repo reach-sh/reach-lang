@@ -114,13 +114,10 @@ tealcount () {
 #exit 0
 
 jb
-ci CFX view-steps
+ci CFX mint-basic
 exit 0
 ci CFX cache-events
-ci CFX mint-basic
 ci CFX raffle
-ci CFX view-bytes
-ci CFX view-map
 
 # jb
 r examples/api-full
