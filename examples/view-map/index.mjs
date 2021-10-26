@@ -13,12 +13,14 @@ import * as backend from './build/index.main.mjs';
     stdlib.newTestAccount(startingBalance),
     stdlib.newTestAccount(startingBalance),
   ]);
+  accAlice.setDebugLabel('Alice');
+  accBob.setDebugLabel('Bob');
   const ctcAlice = accAlice.deploy(backend);
   const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 
-  const checkView = async (x, expected) => {
-    console.log('checkView', stdlib.formatAddress(x), expected);
-    assertEq(expected, await ctcAlice.v.Main.f(x)) };
+  const checkView = async (x, who, expected) => {
+    console.log('checkView', x, who, stdlib.formatAddress(who), expected);
+    assertEq(expected, await ctcAlice.v.Main.f(who)) };
 
   await Promise.all([
     backend.Alice(ctcAlice, { checkView }),
