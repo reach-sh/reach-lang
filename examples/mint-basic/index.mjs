@@ -15,8 +15,8 @@ import * as backend from './build/index.main.mjs';
   ]);
   accAlice.setDebugLabel('Alice');
   accBob.setDebugLabel('Bob');
-  if ( stdlib.connector == 'ETH' ) {
-    const myGasLimit = 5000000;
+  const myGasLimit = 5000000;
+  if ( stdlib.connector === 'ETH' || stdlib.connector === 'CFX' ) {
     accAlice.setGasLimit(myGasLimit);
     accBob.setGasLimit(myGasLimit);
   }
