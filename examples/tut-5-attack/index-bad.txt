@@ -11,7 +11,7 @@ Verification failed:
 
   const v71 = "Alice".interact.wager;
   //    ^ could = 1
-  //      from: ./index-bad.rsh:9:28:application
+  //      from: ./index-bad.rsh:11:10:property binding
   const v74 = protect<UInt>("Alice".interact.getHand());
   //    ^ could = 0
   //      from: ./index-bad.rsh:21:50:application

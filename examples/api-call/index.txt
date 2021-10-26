@@ -1,0 +1,10 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Alice" is honest
+  Verifying when ONLY "Bob_checkEq" is honest
+  Verifying when ONLY "Bob_noop" is honest
+  Verifying when ONLY "Bob_payMe" is honest
+Checked 55 theorems; No failures!
+WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./index.rsh:38:5:application

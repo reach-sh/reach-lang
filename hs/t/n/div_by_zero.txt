@@ -12,7 +12,7 @@ Verification failed:
 
   const v25 = "A".interact.x;
   //    ^ could = 0
-  //      from: ./div_by_zero.rsh:6:17:application
+  //      from: ./div_by_zero.rsh:6:26:property binding
 
   // Theorem Formalization
 

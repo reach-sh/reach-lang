@@ -11,8 +11,7 @@ module Reach.Version
   ) where
 
 import Data.Version (Version (..), makeVersion, showVersion)
-import System.Environment
-import System.IO.Unsafe
+import Reach.UnsafeUtil
 
 major :: Int
 major = 0
@@ -30,12 +29,7 @@ versionStr :: String
 versionStr = showVersion version
 
 versionHashStr :: String
-versionHashStr = unsafePerformIO $ do
-  let ret = return . (versionStr <>)
-  let try e fk = lookupEnv e >>= \case
-        Just hash -> ret $ " (" <> hash <> ")"
-        Nothing -> fk
-  try "REACHC_HASH" (try "REACH_GIT_HASH" $ ret "")
+versionHashStr = versionStr <> unsafeHashStr
 
 compatibleVersion :: Version
 compatibleVersion = Version (take 2 br) []

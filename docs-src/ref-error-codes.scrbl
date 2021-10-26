@@ -2114,6 +2114,26 @@ Additionally, you can create a new @reachin{Participant} to specifically perform
   // ...
 }
 
+@error{RE0121}
+
+This error indicates that one of an API's interface members is not a function.
+For example:
+
+@reach{
+  const A = API('api', {
+    tastiness: UInt,
+  });
+}
+
+@error{RE0122}
+
+This error indicates that the left-hand side of a @reach{call} assignment is not a pair of the domain and a function to return a result to the function.
+For example:
+
+@reach{
+  const x = call(Voter.vote);
+}
+
 @error{REP0000}
 
 This error indicates that the body of a @reachin{while} loop does not make a publication before the @reachin{continue}

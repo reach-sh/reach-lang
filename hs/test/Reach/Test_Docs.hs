@@ -36,7 +36,7 @@ allErrorCodes =
 
 getCodes :: String -> Int -> [T.Text]
 getCodes pre num =
-  map (go . makeErrCode pre) [0 .. num - 1]
+  map (go . makeErrCode pre) [0 .. (num-1)]
   where
     go x = "@error{" <> T.pack x <> "}"
 

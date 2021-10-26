@@ -113,10 +113,7 @@ tealcount () {
 
 #exit 0
 
-jb
-#ci ETH whl-fail
-#ci ALGO whl-fail
-#ci ALGO workshop-hash-lock
+fc hs/t/n/Err_ApiCallAssign.rsh
 exit 0
 
 #ci ETH tut-7
