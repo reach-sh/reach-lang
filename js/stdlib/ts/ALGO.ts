@@ -5,7 +5,12 @@ import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
 import type { Transaction } from 'algosdk'; // =>
-import type { ARC11_Wallet, WalletTransaction } from './ALGO_ARC11'; // =>
+import type {
+  ARC11_Wallet,
+  WalletTransaction,
+  EnableNetworkResult,
+  EnableAccountsResult,
+} from './ALGO_ARC11'; // =>
 
 const {Buffer} = buffer;
 
@@ -625,17 +630,40 @@ const indexer_statusAfterBlock = async (round: number): Promise<BigNumber> => {
 interface Provider {
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
-  getDefaultAddress: () => Address,
+  getDefaultAddress: () => Promise<Address>,
   isIsolatedNetwork: boolean,
   signAndPostTxns: (txns:WalletTransaction[], opts?: any) => Promise<any>,
 };
 
 const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
   debug(`making provider with wallet`);
-  const enabled = await wallet.enable({'network': process.env['ALGO_NETWORK']});
+  const walletOpts = {'network': process.env['ALGO_NETWORK']};
+  let enabledNetwork: EnableNetworkResult|undefined;
+  let enabledAccounts: EnableAccountsResult|undefined;
+  if ( wallet.enableNetwork === undefined && wallet.enableAccounts === undefined ) {
+    const enabled = await wallet.enable(walletOpts);
+    enabledNetwork = enabled;
+    enabledAccounts = enabled;
+  } else if ( wallet.enableNetwork === undefined || wallet.enableAccounts === undefined ) {
+    throw new Error('must have enableNetwork AND enableAccounts OR neither');
+  } else {
+    enabledNetwork = await wallet.enableNetwork(walletOpts);
+  }
+  void enabledNetwork;
   const algodClient = await wallet.getAlgodv2();
   const indexer = await wallet.getIndexer();
-  const getDefaultAddress = (): Address => enabled.accounts[0];
+  const getDefaultAddress = async (): Promise<Address> => {
+    if ( enabledAccounts === undefined ) {
+      if ( wallet.enableAccounts === undefined ) {
+        throw new Error('impossible: no wallet.enableAccounts');
+      }
+      enabledAccounts = await wallet.enableAccounts(walletOpts);
+      if ( enabledAccounts === undefined ) {
+        throw new Error('Could not enable accounts');
+      }
+    }
+    return enabledAccounts.accounts[0];
+  };
   const signAndPostTxns = wallet.signAndPostTxns;
   const isIsolatedNetwork = truthyEnv(process.env['REACH_ISOLATED_NETWORK']);
   return { algodClient, indexer, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
@@ -801,7 +829,7 @@ async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<Provider> {
   const indexer = await waitIndexerFromEnv(fullEnv);
   const isIsolatedNetwork = truthyEnv(fullEnv.REACH_ISOLATED_NETWORK);
   const lab = `Providers created by environment`;
-  const getDefaultAddress = () => {
+  const getDefaultAddress = async (): Promise<Address> => {
     throw new Error(`${lab} do not have default addresses`);
   };
   const signAndPostTxns = async (txns:WalletTransaction[], opts?:any) => {
@@ -1750,7 +1778,7 @@ export function formatCurrency(amt: any, decimals: number = 6): string {
 }
 
 export async function getDefaultAccount(): Promise<Account> {
-  const addr = (await getProvider()).getDefaultAddress();
+  const addr = await (await getProvider()).getDefaultAddress();
   return await connectAccount({ addr });
 }
 

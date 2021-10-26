@@ -574,7 +574,7 @@ On Algorand, @jsin{provider} is an object:
 interface Provider {
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
-  getDefaultAddress: () => Address,
+  getDefaultAddress: () => Promise<Address>,
   isIsolatedNetwork: boolean,
   signAndPostTxns: (txns:WalletTransaction[], opts?: any) => Promise<any>,
 };

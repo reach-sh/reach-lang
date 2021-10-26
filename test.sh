@@ -30,8 +30,8 @@ jb () {
   # (cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
-  # (cd "$ROOT"/js/rpc-server && make build)
-  # (cd "$ROOT"/js/react-runner && make build)
+  #(cd "$ROOT"/js/rpc-server && make build)
+  (cd "$ROOT"/js/react-runner && make build)
   # (cd "$ROOT"/js && make build)
 }
 
@@ -113,12 +113,7 @@ tealcount () {
 
 #exit 0
 
-${REACH} version
-${REACH} numeric-version
-${REACH} hashes
-c examples/overview/index.rsh
-
-#jb
+jb
 #ci ETH whl-fail
 #ci ALGO whl-fail
 #ci ALGO workshop-hash-lock
