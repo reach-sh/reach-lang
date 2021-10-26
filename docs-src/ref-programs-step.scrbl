@@ -430,3 +430,40 @@ It accepts an optional bytes argument, which is included in any reported violati
 @index{closeTo} Has @tech{participant} @reachin{Who} make a @tech{publication}, then @tech{transfer} the @reachin{balance()} and the non-network @tech{pay amount} to @reachin{Who} and end the @|DApp| after executing the function @reachin{after} in a @tech{step}.
 The @reachin{nonNetPayAmt} parameter should be a @tech{pay amount}. For example, when closing a program that uses a @reachin{Token} @reachin{token}, the argument would be @reachin{[ [balance(tok), tok] ]}.
 The @reachin{after} and @reachin{nonNetPayAmt} arguments are optional.
+
+@subsection{@tt{call}}
+
+@(mint-define! '("call"))
+@reach{
+  const A = ParticipantAPI ('A', {
+    isGt: Fun([UInt, UInt], Bool);
+  });
+  // ...
+  const [ dom, k ] =
+    call(A.isGt).assume((x, y) => x != y)
+                .pay((x, y) => x);
+  const [x, y] = dom;
+  k(x > y);
+  commit();
+}
+
+A @deftech{call} is written:
+
+@reach{
+  const [ DOMAIN, RET_FUN ] =
+    call(API_EXPR)
+      .pay(API_PAY_EXPR)
+      .assume(API_ASSUME_EXPR)
+      .throwTimeout(DELAY_EXPR, THROW_EXPR)
+}
+
+where:
+@itemlist[
+  @item{@tt{DOMAIN} is the the domain of the @tech{API member function}}
+  @item{@tt{RET_FUN} is a function that returns a value to the @tech{API} call. This function must be called.}
+  @item{@tt{API_EXPR}, @tt{API_PAY_EXPR}, @tt{API_ASSUME_EXPR}, and @reachin{throwTimeout} are like the corresponding parts in a @reachin{fork} statement.}
+]
+
+@index{call} @reachin{call} will call the given @tech{API member function}, returning a pair, @reachin{[DOMAIN, RET_FUN]}.
+@reachin{call} will publish the domain of the @tech{API member function}, transferring the program from
+a @tech{step} to @tech{consensus step}.
