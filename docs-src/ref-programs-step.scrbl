@@ -459,9 +459,11 @@ A @deftech{call} is written:
 
 where:
 @itemlist[
-  @item{@tt{DOMAIN} is the the domain of the @tech{API member function}}
+  @item{@tt{DOMAIN} is the the domain of the @tech{API member function}.}
   @item{@tt{RET_FUN} is a function that returns a value to the @tech{API} call. This function must be called.}
-  @item{@tt{API_EXPR}, @tt{API_PAY_EXPR}, @tt{API_ASSUME_EXPR}, and @reachin{throwTimeout} are like the corresponding parts in a @reachin{fork} statement.}
+  @item{@tt{API_EXPR} is an expression that evaluates to an @tech{API member function}.}
+  @item{@tt{API_PAY_EXPR}, @tt{API_ASSUME_EXPR}, and @reachin{throwTimeout} are like the corresponding parts in a @reachin{fork} statement.
+  They are optional.}
 ]
 
 @index{call} @reachin{call} will call the given @tech{API member function}, returning a pair, @reachin{[DOMAIN, RET_FUN]}.
