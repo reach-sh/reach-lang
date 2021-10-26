@@ -1,12 +1,11 @@
 #!/bin/sh -e
 
+R="$(echo "$REACH_CONNECTOR_MODE" | cut -f 1 -d '-')"
 export REACH_DEBUG=0
 export REACH_CONNECTOR_MODE="$R"
 
 make build || exit 1
 
-R="$(echo "$REACH_CONNECTOR_MODE" | cut -f 1 -d '-')"
-R="${R:-ETH}"
 REACH="../../reach"
 
 rm -f Alice.in Alice.out Bob.in Bob.out
