@@ -113,10 +113,15 @@ tealcount () {
 
 #exit 0
 
-jb
+${REACH} version
+${REACH} numeric-version
+${REACH} hashes
+c examples/overview/index.rsh
+
+#jb
 #ci ETH whl-fail
 #ci ALGO whl-fail
-ci ALGO workshop-hash-lock
+#ci ALGO workshop-hash-lock
 exit 0
 
 #ci ETH tut-7

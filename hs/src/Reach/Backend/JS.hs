@@ -946,10 +946,11 @@ jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _)) = do
   let DLInit {..} = dli
   let preamble =
         vsep
-          [ pretty $ "// Automatically generated with Reach " ++ versionStr
+          [ pretty $ "// Automatically generated with Reach " ++ versionHashStr
           , "/* eslint-disable */"
           -- XXX make these a `_metadata` object (cleaner on TS side)
           , "export const _version =" <+> jsString versionStr <> semi
+          , "export const _versionHash =" <+> jsString versionHashStr <> semi
           , "export const _backendVersion =" <+> pretty reachBackendVersion <> semi
           ]
   partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList epps_m

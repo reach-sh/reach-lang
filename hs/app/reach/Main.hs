@@ -1173,11 +1173,11 @@ dockerReset = command "docker-reset" $ info f d where
 version' :: Subcommand
 version' = command "version" $ info (pure f) d where
   d = progDesc "Display version"
-  f = putStrLnPacked versionHeader
+  f = putStrLnPacked $ "reach " <> versionStr
 
 numericVersion :: Subcommand
 numericVersion = command "numeric-version" $ info (pure f) fullDesc where
-  f = putStrLnPacked compatibleVersionStr
+  f = putStrLnPacked versionStr
 
 help' :: Subcommand
 help' = command "help" $ info f d where
@@ -1216,10 +1216,7 @@ main :: IO ()
 main = do
   eff <- newIORef InProcess
   env <- mkEnv eff Nothing
-  hashStr <- lookupEnv "REACH_GIT_HASH" >>= \case
-    Just hash -> return $ " (" <> hash <> ")"
-    Nothing -> return $ ""
-  let header' = "reach " <> versionStr <> hashStr <> " - Reach command-line tool"
+  let header' = "reach " <> versionHashStr <> " - Reach command-line tool"
   let cli = Cli
         <$> env
         <*> (hsubparser cs <|> hsubparser hs <**> helper)

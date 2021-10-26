@@ -1,4 +1,4 @@
-// Automatically generated with Reach 0.1.6
+// Automatically generated with Reach 0.1.6 (9085a407*)
 pragma abicoder v2;
 
 pragma solidity ^0.8.9;
@@ -591,7 +591,7 @@ contract ReachContract is Stdlib {
     }
   
   
-  receive () external payable { assert(false); }
-  fallback () external payable { assert(false); }
+  receive () external payable {}
+  fallback () external payable {}
   
   }

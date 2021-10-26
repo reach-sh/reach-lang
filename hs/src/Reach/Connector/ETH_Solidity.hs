@@ -1333,7 +1333,7 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
             ]
     let preamble =
           vsep
-            [ "// Automatically generated with Reach" <+> (pretty versionStr)
+            [ "// Automatically generated with Reach" <+> (pretty versionHashStr)
             , "pragma abicoder v2" <> semi
             ]
     return $ (cinfo, vsep $ [preamble, solVersion, solStdLib, typedsp, intsp, ctcp])
