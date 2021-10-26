@@ -435,7 +435,7 @@ The @reachin{after} and @reachin{nonNetPayAmt} arguments are optional.
 
 @(mint-define! '("call"))
 @reach{
-  const A = API ('A', {
+  const A = API('A', {
     isGt: Fun([UInt, UInt], Bool);
   });
   // ...
