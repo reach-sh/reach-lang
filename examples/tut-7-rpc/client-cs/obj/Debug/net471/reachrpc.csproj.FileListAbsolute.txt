@@ -1,0 +1,11 @@
+/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/bin/Debug/net471/reachrpc.exe.config
+/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/bin/Debug/net471/reachrpc.exe
+/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/bin/Debug/net471/reachrpc.pdb
+/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/bin/Debug/net471/System.Net.Http.dll
+/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/obj/Debug/net471/reachrpc.csproj.AssemblyReference.cache
+/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/obj/Debug/net471/reachrpc.GeneratedMSBuildEditorConfig.editorconfig
+/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/obj/Debug/net471/reachrpc.AssemblyInfoInputs.cache
+/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/obj/Debug/net471/reachrpc.AssemblyInfo.cs
+/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/obj/Debug/net471/reachrpc.csproj.CoreCompileInputs.cache
+/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/obj/Debug/net471/reachrpc.exe
+/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/obj/Debug/net471/reachrpc.pdb

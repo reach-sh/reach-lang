@@ -1,0 +1,58 @@
+{
+  "format": 1,
+  "restore": {
+    "/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/reachrpc.csproj": {}
+  },
+  "projects": {
+    "/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/reachrpc.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/reachrpc.csproj",
+        "projectName": "reachrpc",
+        "projectPath": "/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/reachrpc.csproj",
+        "packagesPath": "/root/.nuget/packages/",
+        "outputPath": "/home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/obj/",
+        "projectStyle": "PackageReference",
+        "crossTargeting": true,
+        "configFilePaths": [
+          "/root/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net471"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net471": {
+            "targetAlias": "net471",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net471": {
+          "targetAlias": "net471",
+          "dependencies": {
+            "Microsoft.NETFramework.ReferenceAssemblies": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[1.0.0, )",
+              "autoReferenced": true
+            },
+            "System.Net.Http": {
+              "target": "Package",
+              "version": "[4.3.4, )"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/5.0.402/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

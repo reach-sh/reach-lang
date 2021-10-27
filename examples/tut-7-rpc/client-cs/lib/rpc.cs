@@ -207,7 +207,7 @@ private int GetIndexOfFunction(string fnName, RPCCallback[] list)
          {
                  logger.Error(e.Message);
          }
-        await Task.Yield();
+    //    await Task.Yield();
         return postData;
     }
  public async Task Callbacks(string path, string contract, RPCValue[] values, RPCCallback[] callbacks)

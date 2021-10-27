@@ -1,0 +1,3 @@
+is_global = true
+build_property.RootNamespace = reachrpc
+build_property.ProjectDir = /home/mohammed/work/reach-lang/examples/tut-7-rpc/client-cs/
