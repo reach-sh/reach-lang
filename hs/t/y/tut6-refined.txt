@@ -5,7 +5,35 @@ Verifying for generic connector
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
 Checked 101 theorems; No failures!
-WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./tut6-refined.rsh:79:19:application
-WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./tut6-refined.rsh:72:19:application
-WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./tut6-refined.rsh:65:19:application
-WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./tut6-refined.rsh:53:17:application
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+
+  ./tut6-refined.rsh:79:19:application
+
+  79|           .timeout(DEADLINE, () => closeTo(B, informTimeout));
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+
+  ./tut6-refined.rsh:72:19:application
+
+  72|           .timeout(DEADLINE, () => closeTo(A, informTimeout));
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+
+  ./tut6-refined.rsh:65:19:application
+
+  65|           .timeout(DEADLINE, () => closeTo(B, informTimeout));
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+
+  ./tut6-refined.rsh:53:17:application
+
+  53|         .timeout(DEADLINE, () => closeTo(A, informTimeout));
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+

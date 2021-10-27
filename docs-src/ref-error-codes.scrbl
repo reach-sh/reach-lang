@@ -2445,3 +2445,32 @@ The error means that you use an @tech{API} in two places in your program, which 
 @error{RAPI0003}
 
 This error means that you did not return a result from an @tech{API} call.
+
+@error{RW0000}
+
+This warning means the syntax or function you are trying to use is deprecated. It is still supported
+by the Reach compiler, but future versions of Reach may stop supporting it.
+
+You can fix this warning by using the new syntax or function the message suggests.
+
+@error{RW0001}
+
+This warning indicates there is an issue with the Solidity compiler. The message provided can
+be reported to Solidity.
+
+@error{RW0002}
+
+This warning indicates that your program either uses a feature that is not yet supported on Algorand
+or surpasses Algorand's limit on resources.
+
+@error{RW0003}
+
+This warning indicates your program will not run on Algorand for the listed reasons. These
+reasons include runtime limits on op codes.
+
+@error{RW0004}
+
+This warning indicates that your program does not contain any publications.
+
+You can fix this issue by making sure at least one @reachin{Participant} performs a @reachin{publish}.
+

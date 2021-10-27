@@ -5,7 +5,7 @@ Verification failed:
   when ALL participants are honest
   of theorem: assert
   msg: "balance zero at application exit"
-  at ./index-bad.rsh:compileDApp
+  at ./index-bad.rsh:8:30:compileDApp
 
   // Violation Witness
 

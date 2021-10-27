@@ -10,3 +10,19 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
 Checked 3 theorems; No failures!
+warning[RW0004]: There are no publications in the application.
+
+  ./multiple_app.rsh:4:12:application
+
+  4|   Reach.App({}, [Participant('Alice', { f: Fun([UInt], Null) })], (A) => f(A));
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0004.html
+
+warning[RW0004]: There are no publications in the application.
+
+  ./multiple_app.rsh:4:12:application
+
+  4|   Reach.App({}, [Participant('Alice', { f: Fun([UInt], Null) })], (A) => f(A));
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0004.html
+

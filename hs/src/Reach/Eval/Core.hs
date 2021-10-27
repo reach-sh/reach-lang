@@ -493,7 +493,7 @@ env_lookup ctx x env =
       case sv of
         SLSSVal {sss_val = SLV_Deprecated d v} -> do
           at <- withAt id
-          liftIO $ emitWarning $ W_Deprecated at d
+          liftIO $ emitWarning (Just at) $ W_Deprecated d
           return $ sv {sss_val = v}
         v -> return $ v
     Nothing ->
@@ -1464,7 +1464,7 @@ compileTimeArg = \case
   v -> do
     f <- lookStdlib "relativeTime"
     at <- withAt id
-    liftIO $ emitWarning $ W_Deprecated at D_UntypedTimeArg
+    liftIO $ emitWarning (Just at) $ W_Deprecated D_UntypedTimeArg
     compileTimeArg =<< ensure_public =<< evalApplyVals' f [public v]
   where
     correctData = (==) (dataTypeMap $ eitherT T_UInt T_UInt)
@@ -3071,7 +3071,7 @@ evalPrim p sargs =
       tat <- withAt id
       tvs <- mustBeTuple =<< one_arg
       let adapt_tuple at p' who int = do
-            liftIO $ emitWarning $ W_Deprecated at $ D_ParticipantTuples
+            liftIO $ emitWarning (Just at) $ W_Deprecated $ D_ParticipantTuples
             snd <$> evalPrim p' (map public $ [who, int])
       let go = \case
             SLV_Tuple at [who, int] ->

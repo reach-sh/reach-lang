@@ -10,3 +10,11 @@ Verification failed:
 
   Verifying when NO participants are honest
 Checked 6 theorems; 4 failures (and 3 omitted repeats) :'(
+warning[RW0004]: There are no publications in the application.
+
+  ./possible_false.rsh:3:30:application
+
+  3| export const main = Reach.App(
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0004.html
+

@@ -1401,7 +1401,7 @@ compile_sol cinfo solf = do
           len = T.length csrCode
   let try = try_compile_sol solf
   let merr = \case
-        Left e -> emitWarning $ W_SolidityOptimizeFailure e
+        Left e -> emitWarning Nothing $ W_SolidityOptimizeFailure e
         Right _ -> return ()
   let desperate = \case
         Right x -> \_ _ -> return $ x
