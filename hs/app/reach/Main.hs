@@ -224,13 +224,16 @@ dieConnectorModeNotSpecified = connectorMode <$> asks e_var >>= \case
   Just cm -> pure cm
   Nothing -> liftIO . die . unpack . intercalate "\n"
     $ "Missing `REACH_CONNECTOR_MODE` environment variable - must be one of:"
-    : [ " * " <> packs c <> "-" <> packs m
-      | c <- [ minBound .. maxBound :: Connector ]
-      , m <- [ minBound .. maxBound :: Mode ]
-      ]
+    : L.sort s
    <> [ "Reach recommends adding this variable to your shell's profile settings by running `reach config`. See:"
       , " - TODO `reach config` docs"
       , " - https://docs.reach.sh/ref-usage.html#%28env._.R.E.A.C.H_.C.O.N.N.E.C.T.O.R_.M.O.D.E%29"
+      ]
+ where
+  s = [ " * " <> packs c | c <- [ minBound .. maxBound :: Connector ]]
+   <> [ " * " <> packs c <> "-" <> packs m
+      | c <- [ minBound .. maxBound :: Connector ]
+      , m <- [ minBound .. maxBound :: Mode ]
       ]
 
 diePathContainsParentDir :: FilePath -> IO ()
