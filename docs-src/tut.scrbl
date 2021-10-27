@@ -50,6 +50,14 @@ You'll know that everything is in order if you can run
 
 @cmd{./reach compile --help}
 
+Having synchronized Reach's Docker images and confirmed they work correctly, it's recommended (although optional) to set up your environment with
+
+@cmd{./reach config}
+
+This will make subsequent uses of the @exec{reach} script more convenient by tuning its runtime behavior to your specific needs.
+
+@exec{reach config} sets overridable defaults for @italic{all} Reach projects on your development machine and not just the current one, so feel free to skip this step if you'd prefer not to make your choices global.
+
 @(hrule)
 
 @margin-note{Get language support for Reach in your editor by visiting @secref["guide-editor-support"].}
