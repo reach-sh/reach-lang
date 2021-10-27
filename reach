@@ -25,7 +25,7 @@ run_d () {
       --dir-config-host="$CNF" \
       "$@"
   else
-    docker run -it --rm \
+    docker run -i --rm \
       -e "REACH_EX=$0" \
       -e "REACH_CONNECTOR_MODE" \
       -e "REACH_DEBUG" \
