@@ -11,6 +11,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 Version 0.1.6 is the current Reach release candidate version.
 
 @itemlist[
+@item{2021/10/28: Added @seclink["ref-usage-config"]{@exec{reach config} subcommand}.}
 @item{2021/10/28: The backend interface to deployed contracts was updated, so old contracts will not work with this version.}
 @item{2021/10/28: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.}
 @item{2021/10/20: Added @reachin{decimals} field for @tech{token minting}.}
