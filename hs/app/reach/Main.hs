@@ -1404,7 +1404,7 @@ config = command "config" $ info f d where
         to make this configuration permanent. Please consult your shell's
         documentation in order to complete configuration manually.
 
-        If you believe this is a bug or would like to request support for
+        If you believe this is a mistake or would like to request support for
         a new shell, please file an issue at:
 
         https://github.com/reach-sh/reach-lang/issues
