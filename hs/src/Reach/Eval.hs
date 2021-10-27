@@ -19,9 +19,10 @@ import Reach.Eval.Types
 import Reach.JSUtil
 import Reach.Parser
 import Reach.Util
+import Reach.Warning
 
 compileDApp :: DLStmts -> DLSExports -> SLVal -> App DLProg
-compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_strict))) = locAt (srcloc_at "compileDApp" Nothing at) $ do
+compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_strict))) = locAt (srcloc_lab "compileDApp" at) $ do
   let (JSBlock _ top_ss _) = jsStmtToBlock top_s
   setSt $
     SLState
@@ -64,6 +65,9 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
           readDlo id
   fin_toks <- readSt st_toks
   fin_droppedAsserts <- liftIO $ readCounter e_droppedAsserts'
+  didPublish <- readSt st_after_first
+  unless (didPublish || null top_ss) $
+    liftIO . emitWarning (Just at) $ W_NoPublish
   let final = shared_lifts <> these_lifts
   let final_dlo' = final_dlo
         { dlo_bals = 1 + length fin_toks

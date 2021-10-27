@@ -6,6 +6,27 @@ Verifying for generic connector
   Verifying when ONLY "Bob" is honest
   Verifying when ONLY "CoolPeople" is honest
 Checked 14 theorems; No failures!
-WARNING: Declaring Participants with a tuple is now deprecated. Please use `Participant(name, interface)` or `ParticipantClass(name, interface)` at ./adapt_tuple.rsh:6:7:tuple
-WARNING: Declaring Participants with a tuple is now deprecated. Please use `Participant(name, interface)` or `ParticipantClass(name, interface)` at ./adapt_tuple.rsh:7:7:tuple
-WARNING: Declaring Participants with a tuple is now deprecated. Please use `Participant(name, interface)` or `ParticipantClass(name, interface)` at ./adapt_tuple.rsh:8:7:tuple
+warning[RW0000]: Declaring Participants with a tuple is now deprecated. Please use `Participant(name, interface)` or `ParticipantClass(name, interface)`
+
+  ./adapt_tuple.rsh:6:7:tuple
+
+  6|     [ ['Alice', {} ],
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+
+warning[RW0000]: Declaring Participants with a tuple is now deprecated. Please use `Participant(name, interface)` or `ParticipantClass(name, interface)`
+
+  ./adapt_tuple.rsh:7:7:tuple
+
+  7|       ['Bob', {} ],
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+
+warning[RW0000]: Declaring Participants with a tuple is now deprecated. Please use `Participant(name, interface)` or `ParticipantClass(name, interface)`
+
+  ./adapt_tuple.rsh:8:7:tuple
+
+  8|       ['class', 'CoolPeople', {} ],
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+

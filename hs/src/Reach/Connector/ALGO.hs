@@ -391,7 +391,7 @@ checkCost alwaysShow ts = do
         <> csCost
         <> csLogLen
   unless (null cs) $
-    emitWarning $ W_ALGOConservative cs
+    emitWarning Nothing $ W_ALGOConservative cs
   let exceeds = exceedsCost || exceedsLogLen
   when (alwaysShow && not exceeds) $ do
     putStrLn $ "Conservative analysis on Algorand found:"
@@ -2005,7 +2005,7 @@ compile_algo env disp pl = do
       aarray $
         S.toList $ S.map (Aeson.String . LT.toStrict) sFailures
   unless (null sFailures) $ do
-    emitWarning $ W_ALGOUnsupported $ S.toList $ S.map LT.unpack sFailures
+    emitWarning Nothing $ W_ALGOUnsupported $ S.toList $ S.map LT.unpack sFailures
   modifyIORef resr $
     M.insert "version" $
       Aeson.Number $ fromIntegral $ reachAlgoBackendVersion

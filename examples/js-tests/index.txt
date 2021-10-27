@@ -3,3 +3,11 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 2 theorems; No failures!
+warning[RW0004]: There are no publications in the application.
+
+  ./index.rsh:3:30:application
+
+  3| export const main = Reach.App({}, [], () => {});
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0004.html
+

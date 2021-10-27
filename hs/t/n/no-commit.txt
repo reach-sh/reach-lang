@@ -1,8 +1,8 @@
 reachc: error[RE0031]: Invalid operation. `exit` cannot be used in context: consensus step, must be in step or app init. You must `commit` first.
 
-  ./no-commit.rsh:compileDApp
+  ./no-commit.rsh:2:30:compileDApp
 
-  
+  2| export const main = Reach.App({}, [Participant('A', {})], (A) => {
 
 For further explanation of this error, see: https://docs.reach.sh/RE0031.html
 
