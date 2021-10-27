@@ -101,6 +101,12 @@ type Id = Integer
 -- free-form & untyped parameters for the action
 type Params = String -- JSON.Value
 
+add_to_store :: DLVar -> DLVal -> App a -> App a
+add_to_store x v app = do
+  st <- asks e_store
+  local (\e -> e {e_store = M.insert x v st}) $ app
+
+
 
 -- ## INTERPRETER ## --
 
@@ -226,7 +232,6 @@ instance Interp DLExpr where
         (V_UInt _n, V_Address _acc) -> undefined
         _ -> impossible "expression interpreter"
     DLE_TokenInit _at _dlarg -> return V_Null
-    -- QUESTION: checkCommitment?
     DLE_CheckPay _at _slcxtframes _dlarg _maybe_dlarg -> undefined
     -- TODO requires Time state
     DLE_Wait _at dltimearg -> case dltimearg of
@@ -287,35 +292,33 @@ instance Interp DLStmt where
   interp = \case
     DL_Nop _at -> return V_Null
     DL_Let _at let_var expr -> case let_var of
-      DLV_Eff -> undefined
+      DLV_Eff -> do
+        interp expr
+        return V_Null
       DLV_Let _ var -> do
-        st <- asks e_store
         ev <- interp expr
-        local (\e -> e {e_store = M.insert var ev st}) $ return V_Null
+        add_to_store var ev $ return V_Null
     DL_ArrayMap _at var1 arg var2 block -> do
-      st <- asks e_store
-      let f var x = local (\e -> e {e_store = M.insert var x st}) $ interp block
       arr <- interp arg
+      let f x val = add_to_store x val $ interp block
       case arr of
         V_Array arr' -> do
-          res <- V_Array <$> mapM (\x -> f var2 x) arr'
-          local (\e -> e {e_store = M.insert var1 res st}) $ return V_Null
+          res <- V_Array <$> mapM (\val -> f var2 val) arr'
+          add_to_store var1 res $ return V_Null
         _ -> impossible "statement interpreter"
     DL_ArrayReduce _at var1 arg1 arg2 var2 var3 block -> do
-      st <- asks e_store
-      let f a x b y = local (\e -> e {e_store =  M.insert b y $ M.insert a x st}) $ interp block
       acc <- interp arg1
       arr <- interp arg2
+      let f a x b y = add_to_store a x $ add_to_store b y $ interp block
       case arr of
         V_Array arr' -> do
           res <- foldM (\x y -> f var2 x var3 y) acc arr'
-          local (\e -> e {e_store = M.insert var1 res st}) $ return V_Null
+          add_to_store var1 res $ return V_Null
         _ -> impossible "statement interpreter"
     DL_Var _at _var -> return $ V_Null
     DL_Set _at var arg -> do
-      st <- asks e_store
       ev <- interp arg
-      local (\e -> e {e_store = M.insert var ev st}) $ return V_Null
+      add_to_store var ev $ return V_Null
     DL_LocalDo _at dltail -> interp dltail
     DL_LocalIf _at arg tail1 tail2 -> do
       ev <- interp arg
@@ -324,24 +327,22 @@ instance Interp DLStmt where
         V_Bool False -> interp tail2
         _ -> impossible "statement interpreter"
     DL_LocalSwitch _at var switch_cases -> do
-      st <- asks e_store
       ev <- interp $ DLA_Var var
       case ev of
         V_Data v -> do
           let switch_key = flip (!!) 0 $ M.keys v
+          let switch_val = flip (!!) 0 $ M.elems v
           let (switch_binding, dltail) = (M.!) switch_cases switch_key
           case switch_binding of
             Nothing -> interp dltail
-            Just ident -> local (\e -> e {e_store = M.insert ident ev st}) $ interp dltail
+            Just ident -> add_to_store ident switch_val $ interp dltail
     DL_Only _at _either_part dltail -> interp dltail
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
-      st <- asks e_store
-      linst <- asks e_linstate
-      let f a x b y = local (\e -> e {e_store = M.insert b y $ M.insert a x st}) $ interp block
       accu <- interp arg
+      linst <- asks e_linstate
+      let f a x b y = add_to_store a x $ add_to_store b y $ interp block
       res <- foldM (\x y -> f var2 x var3 y) accu $ (M.!) linst dlmvar
-      local (\e -> e {e_store = M.insert var1 res st}) $ return V_Null
-
+      add_to_store var1 res $ return V_Null
 
 instance Interp DLTail where
   interp = \case
