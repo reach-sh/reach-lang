@@ -226,7 +226,7 @@ dieConnectorModeNotSpecified = connectorMode <$> asks e_var >>= \case
     $ "Missing `REACH_CONNECTOR_MODE` environment variable - must be one of:"
     : L.sort s
    <> [ "Reach recommends adding this variable to your shell's profile settings by running `reach config`. See:"
-      , " - TODO `reach config` docs"
+      , " - https://docs.reach.sh/ref-usage.html#(part._ref-usage-config)"
       , " - https://docs.reach.sh/ref-usage.html#%28env._.R.E.A.C.H_.C.O.N.N.E.C.T.O.R_.M.O.D.E%29"
       ]
  where
