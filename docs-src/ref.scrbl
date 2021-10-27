@@ -343,6 +343,19 @@ You can see which exact versions of Reach Docker images you are using by running
 This is more precise, but less readable, than @exec{reach version},
 in that each hash refers to the git commit used to build the image.
 
+@subsection[#:tag "ref-usage-config"]{@tt{reach config}}
+
+Reach recommends tuning your default workflow settings by executing
+
+@cmd{reach config}
+
+Using @exec{reach config} is advisable when running Reach for the first time since it will set the @envref{REACH_CONNECTOR_MODE} environment variable, which is required when executing some other sub-commands (e.g. @exec{reach run}).
+
+@exec{reach config} presents users with a guided menu which automatically creates an @exec{env} file and suggests subsequent steps to activate and make it permanent.
+This @exec{env} file exports environment variable settings and is intended to be @exec{source}d by users' shells.
+
+If an @exec{env} file already exists, @exec{reach config} will offer to back it up before proceeding.
+
 
 @include-section["ref-model.scrbl"]
 @include-section["ref-programs.scrbl"]
