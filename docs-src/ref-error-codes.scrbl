@@ -2466,7 +2466,7 @@ or surpasses Algorand's limit on resources.
 @error{RW0003}
 
 This warning indicates your program will not run on Algorand for the listed reasons. These
-reasons include runtime limits on op codes.
+reasons include a limit on the total computation cost.
 
 @error{RW0004}
 
