@@ -674,7 +674,7 @@ export const setWalletFallback = (wf:() => any) => {
 };
 const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
   let p: Provider|undefined = undefined;
-  const enable = async (eopts?:any) => {
+  const enableNetwork = async (eopts?:any) => {
     void(eopts);
     const base = opts['providerEnv'];
     let baseEnv: Env = process.env;
@@ -687,8 +687,16 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
       }
     }
     p = await makeProviderByEnv(baseEnv);
+    return {};
+  };
+  const enableAccounts = async (eopts?:any) => {
+    void(eopts);
     const addr = await getAddr();
     return { accounts: [ addr ] };
+  };
+  const enable = async (eopts?:any) => {
+    await enableNetwork(eopts);
+    return await enableAccounts(eopts);
   };
   const getAlgodv2 = async () => {
     if ( !p ) { throw new Error(`must call enable`) };
@@ -722,7 +730,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     await p.algodClient.sendRawTransaction(bs).do();
     return {};
   };
-  return { enable, getAlgodv2, getIndexer, signAndPostTxns };
+  return { enable, enableNetwork, enableAccounts, getAlgodv2, getIndexer, signAndPostTxns };
 };
 const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
   debug(`using mnemonic wallet fallback`);
