@@ -25,17 +25,17 @@ RUN echo 'http://host.docker.internal:30000/' >> /etc/apk/repositories
 RUN apk update --allow-untrusted && apk add libgmpxx ca-certificates git
 RUN apk add --allow-untrusted --repository="http://host.docker.internal:30000/" z3=4.8.12-r0 z3-dev=4.8.12-r0
 
-ENV OPENZEP=4.1.0
-ENV OPENZEP_URL=https://github.com/OpenZeppelin/openzeppelin-contracts/archive/refs/tags/v$OPENZEP.tar.gz
-RUN	cd sol && wget $OPENZEP_URL
-
-ENV ERC20="sol/openzeppelin-contracts-${OPENZEP}/contracts/token/ERC20"
-RUN cd sol && tar xzvf v$OPENZEP.tar.gz
-RUN touch $ERC20/ERC20.sol
-
-RUN ERC20=$ERC20 sol/stdlib_openzep.sol.sh > sol/stdlib_openzep.sol
-
-RUN cat sol/stdlib_openzep.sol sol/stdlib_reach.sol > sol/stdlib.sol
+#ENV OPENZEP=4.1.0
+#ENV OPENZEP_URL=https://github.com/OpenZeppelin/openzeppelin-contracts/archive/refs/tags/v$OPENZEP.tar.gz
+#RUN	cd sol && wget $OPENZEP_URL
+#
+#ENV ERC20="sol/openzeppelin-contracts-${OPENZEP}/contracts/token/ERC20"
+#RUN cd sol && tar xzvf v$OPENZEP.tar.gz
+#RUN touch $ERC20/ERC20.sol
+#
+#RUN ERC20=$ERC20 sol/stdlib_openzep.sol.sh > sol/stdlib_openzep.sol
+#
+#RUN cat sol/stdlib_openzep.sol sol/stdlib_reach.sol > sol/stdlib.sol
 
 COPY stack.yaml stack.yaml.lock ./
 RUN stack build --dependencies-only
