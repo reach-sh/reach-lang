@@ -119,6 +119,7 @@ export class Contract implements IContract {
   // }
   constructor(address: string|null|undefined, abi: string|any[], wallet: IWallet, receiptP?: Promise<any>, hash?: string) {
     this.address = address || undefined;
+    const blacklist = Object.keys(this).filter((s) => s[0] === '_');
     this._abi = (typeof abi === 'string') ? JSON.parse(abi) : abi;
     this._wallet = wallet;
     this._receiptP = receiptP;
@@ -151,7 +152,7 @@ export class Contract implements IContract {
     this.interface = new ethers.utils.Interface(this._abi);
     for (const item of this._abi) {
       if (item.type === 'function') {
-        if (item.name[0] !== '_' && item.name !== 'address' && item.name !== 'deployTransaction' && item.name !== 'interface') {
+        if (!blacklist.includes(item.name) && item.name !== 'address' && item.name !== 'deployTransaction' && item.name !== 'interface') {
           this[item.name] = this._makeHandler(item);
         }
       }
@@ -443,17 +444,17 @@ export class Wallet implements IWallet {
     let newGasCost = format.big(estimate.gasUsed).times(gasRatio).toFixed(0);
     //@ts-ignore
     let newStorageCost = format.big(estimate.storageCollateralized).times(storageRatio).toFixed(0);
-    
+
     // Note: balace needs to cover value +  (gas + storageLimit)
     let gasXstorage = format.big(newGasCost).plus(newStorageCost).toFixed(0);
     let finalCost = format.big(txn.value).plus(gasXstorage).toFixed(0);
     const final = BigInt(finalCost);
-    
+
     debug(`SendTxn attempt, Final Cost of Tx is , ${final},  Balance of sender ${from} is ${balance}`);
     if ( final > balance ) {
       debug(`Checking: Account balanace of  ${from} is ${balance} and gasFee is, ${newGasCost}: Total TxValue is ${final}`)
       throw Error(` INSUFFICIENT FUNDS GAS COST IS ${newGasCost},  TXN VALUE IS  ${final}, ACCOUNT ${from} ONLY HAS A BALANCE OF ${balance}`);
-  } 
+  }
    // This is weird but whatever
    if (txn.to instanceof Promise) {
        txn.to = await txn.to;
