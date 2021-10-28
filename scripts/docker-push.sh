@@ -15,7 +15,7 @@ tagpush() {
     fi
 }
 
-tagpush "latest" Commented to not overwrite the latest version
+tagpush "latest"
 tagpush "${MAJOR}.${MINOR}.${PATCH}"
 tagpush "${MAJOR}.${MINOR}"
 tagpush "${MAJOR}"
