@@ -5,4 +5,4 @@ Verifying for generic connector
   Verifying when ONLY "Arbitrator" is honest
   Verifying when ONLY "Contractor" is honest
   Verifying when ONLY "Primary" is honest
-Checked 145 theorems; No failures!
+Checked 160 theorems; No failures!

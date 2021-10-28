@@ -108,6 +108,7 @@ data JSMode
 
 data JSCtxt = JSCtxt
   { ctxt_who :: SLPart
+  , ctxt_isAPI :: Bool
   , ctxt_txn :: Int
   , ctxt_mode :: JSMode
   , ctxt_while :: JSCtxtWhile
@@ -413,8 +414,21 @@ jsExpr = \case
       JM_Backend ->
         return $ jsMapVar mpv <> brackets fa' <+> "=" <+> na'
       JM_View -> impossible "view mapset"
-  DLE_Remote {} -> impossible "remote"
-  DLE_TokenNew {} -> impossible "tokennew"
+  DLE_Remote {} -> do
+    return "undefined"
+  DLE_TokenNew _ tns -> do
+    (ctxt_mode <$> ask) >>= \case
+      JM_Backend -> return "undefined"
+      JM_View -> impossible "view output"
+      JM_Simulate -> do
+        let DLTokenNew {..} = tns
+        n' <- jsArg dtn_name
+        s' <- jsArg dtn_sym
+        u' <- jsArg dtn_url
+        m' <- jsArg dtn_metadata
+        p' <- jsArg dtn_supply
+        d' <- maybe (return "undefined") jsArg dtn_decimals
+        return $ jsApply "stdlib.simTokenNew" [ "sim_r", n', s', u', m', p', d' ]
   DLE_TokenBurn _ ta aa ->
     (ctxt_mode <$> ask) >>= \case
       JM_Simulate -> do
@@ -438,6 +452,11 @@ jsExpr = \case
         | isInitial -> return $ jsApply "stdlib.emptyContractInfo" []
       _ -> return $ "await" <+> jsApply "ctc.getInfo" []
   DLE_GetAddress {} -> return $ "await" <+> jsApply "ctc.getContractAddress" []
+  DLE_EmitLog _at mode dv -> do
+    dv' <- jsVar dv
+    txn' <- jsTxn
+    dvt' <- jsContract $ varType dv
+    return $ "await" <+> txn' <> "." <> jsApply "getOutput" [squotes (pretty mode), squotes dv', dvt', dv']
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
@@ -451,43 +470,13 @@ jsEmitSwitch iter _at ov csm = do
   csm' <- mapM cm1 $ M.toAscList csm
   return $ "switch" <+> parens (ov' <> "[0]") <+> jsBraces (vsep csm')
 
-doGetOutput :: String -> AppT DLVar
-doGetOutput mode dv = do
-  dv' <- jsVar dv
-  txn' <- jsTxn
-  dvt' <- jsContract $ varType dv
-  jsConstDefn dv $ "await" <+> txn' <> "." <> jsApply "getOutput" [squotes (pretty mode), squotes dv', dvt']
-
-jsConstDefn :: DLVar -> Doc -> App Doc
-jsConstDefn dv rhs = do
-  dv' <- jsVar dv
-  return $ "const" <+> dv' <+> "=" <+> rhs <> semi
-
 jsCom :: AppT DLStmt
 jsCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ DLV_Eff (DLE_Remote {}) -> mempty
-  DL_Let _ (DLV_Let _ dv) (DLE_Remote at fs _av _f _pa _as _ba) ->
-    (ctxt_mode <$> ask) >>= \case
-      JM_Backend -> doGetOutput "remote" dv
-      JM_View -> impossible "view remote"
-      JM_Simulate -> do
-        jsConstDefn dv =<< jsExpr (DLE_Claim at fs CT_Require (DLA_Literal $ DLL_Bool False) (Just $ "cannot simulate remote objects"))
-  DL_Let _ DLV_Eff (DLE_TokenNew {}) -> mempty
-  DL_Let _ (DLV_Let _ dv) (DLE_TokenNew _ tns) -> do
-    (ctxt_mode <$> ask) >>= \case
-      JM_Backend -> doGetOutput "tokenNew" dv
-      JM_View -> impossible "view output"
-      JM_Simulate -> do
-        let DLTokenNew {..} = tns
-        n' <- jsArg dtn_name
-        s' <- jsArg dtn_sym
-        u' <- jsArg dtn_url
-        m' <- jsArg dtn_metadata
-        p' <- jsArg dtn_supply
-        jsConstDefn dv $ jsApply "stdlib.simTokenNew" [ "sim_r", n', s', u', m', p' ]
   DL_Let _ (DLV_Let _ dv) de -> do
-    jsConstDefn dv =<< jsExpr de
+    dv' <- jsVar dv
+    rhs <- jsExpr de
+    return $ "const" <+> dv' <+> "=" <+> rhs <> semi
   DL_Let _ DLV_Eff de -> do
     de' <- jsExpr de
     return $ de' <> semi
@@ -611,9 +600,24 @@ jsETail = \case
       _ -> return $ "return" <> semi
   ET_If _ c t f -> jsIf <$> jsArg c <*> jsETail t <*> jsETail f
   ET_Switch at ov csm -> jsEmitSwitch jsETail at ov csm
-  ET_FromConsensus _at _which msvs k ->
+  ET_FromConsensus _at which msvs k ->
     (ctxt_mode <$> ask) >>= \case
-      JM_Backend -> jsETail k
+      JM_Backend -> do
+        more <-
+          (ctxt_isAPI <$> ask) >>= \case
+            False -> return []
+            True ->
+              case msvs of
+                FI_Halt _ -> return []
+                FI_Continue svs -> do
+                  let vs = map fst svs
+                  vs' <- mapM jsVar vs
+                  ctcs <- jsArray <$> (mapM jsContract $ map varType vs)
+                  w' <- jsCon $ DLL_Int sb $ fromIntegral which
+                  let getState = jsApply ("await ctc.getState") [ w', ctcs ]
+                  return [ "const" <+> jsArray vs' <+> "=" <+> getState <> semi ]
+        k' <- local (\e -> e { ctxt_isAPI = False }) $ jsETail k
+        return $ vsep $ more <> [ k' ]
       JM_View -> impossible "view from"
       JM_Simulate -> do
         let common extra isHalt' =
@@ -696,7 +700,9 @@ jsETail = \case
                     , "return sim_r;"
                     ]
             vs <- jsArray <$> ((++) <$> mapM jsVar svs <*> mapM jsArg args)
-            lct_v' <- jsArg lct_v
+            lct_v' <- case lct_v of
+                        Just x -> jsArg x
+                        Nothing -> jsCon $ DLL_Int sb 0
             whena' <- jsArg whena
             soloSend' <- jsCon (DLL_Bool soloSend)
             msgts <- mapM (jsContract . argTypeOf) $ svs_as ++ args
@@ -777,7 +783,7 @@ jsError :: Doc -> Doc
 jsError err = "new Error(" <> err <> ")"
 
 jsPart :: DLInit -> SLPart -> EPProg -> App Doc
-jsPart dli p (EPProg _ _ et) = do
+jsPart dli p (EPProg _ ctxt_isAPI _ et) = do
   jsc@(JSContracts {..}) <- newJsContract
   let ctxt_ctcs = Just jsc
   let ctxt_who = p
@@ -933,17 +939,18 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 4
+reachBackendVersion = 5
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _)) = do
   let DLInit {..} = dli
   let preamble =
         vsep
-          [ pretty $ "// Automatically generated with Reach " ++ versionStr
+          [ pretty $ "// Automatically generated with Reach " ++ versionHashStr
           , "/* eslint-disable */"
           -- XXX make these a `_metadata` object (cleaner on TS side)
           , "export const _version =" <+> jsString versionStr <> semi
+          , "export const _versionHash =" <+> jsString versionHashStr <> semi
           , "export const _backendVersion =" <+> pretty reachBackendVersion <> semi
           ]
   partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList epps_m
@@ -962,6 +969,7 @@ backend_js :: Backend
 backend_js outn crs pl = do
   let jsf = outn "mjs"
   let ctxt_who = "Module"
+  let ctxt_isAPI = False
   let ctxt_txn = 0
   let ctxt_mode = JM_Backend
   let ctxt_while = JWhile_None

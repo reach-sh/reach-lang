@@ -3,15 +3,15 @@ module Reach.FixedPoint
   , fixedPoint_
   ) where
 
-fixedPoint_ :: forall a. Eq a => a -> (a -> a) -> a
+fixedPoint_ :: forall a. Eq a => a -> (a -> IO a) -> IO a
 fixedPoint_ x0 f = h x0
   where
-    h :: a -> a
-    h x =
-      let x' = f x
-       in case x == x' of
-            True -> x
-            False -> h x'
+    h :: a -> IO a
+    h x = do
+      x' <- f x
+      case x == x' of
+        True -> return x
+        False -> h x'
 
-fixedPoint :: (Eq a, Monoid a) => (a -> a) -> a
+fixedPoint :: (Eq a, Monoid a) => (a -> IO a) -> IO a
 fixedPoint = fixedPoint_ mempty

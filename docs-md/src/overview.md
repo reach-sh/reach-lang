@@ -92,7 +92,7 @@ The only thing left is for Bob's backend to deliver the information to his front
 
 ${code("/examples/overview/index.rsh", 31, 33)}
 
-+ Line 31 and 32 do this.
++ Line 31 and 32 use an interaction expression to transfer the information to the frontend.
 + Line 33 exits the program.
 
 

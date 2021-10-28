@@ -1,16 +1,34 @@
+export type EnableNetworkFunction = (
+  opts?: EnableNetworkOpts
+) => Promise<EnableNetworkResult>;
+
+export interface EnableNetworkOpts {
+  network?: string,    // NetworkIdentifier
+};
+
+export interface EnableNetworkResult {
+  network?: string,   // NetworkIdentifier
+};
+
+export type EnableAccountsFunction = (
+  opts?: EnableOpts
+) => Promise<EnableAccountsResult>;
+
+export interface EnableAccountsOpts {
+  accounts?: string[], // AlgorandAddress[]
+};
+
+export interface EnableAccountsResult {
+  accounts: string[], // AlgorandAddress[]
+};
+
 export type EnableFunction = (
   opts?: EnableOpts
 ) => Promise<EnableResult>;
 
-export interface EnableOpts {
-  network?: string,    // NetworkIdentifier
-  accounts?: string[], // AlgorandAddress[]
-};
+export type EnableOpts = EnableNetworkOpts & EnableAccountsOpts;
 
-export interface EnableResult {
-  network?: string,   // NetworkIdentifier
-  accounts: string[], // AlgorandAddress[]
-};
+export type EnableResult = EnableNetworkResult & EnableAccountsResult;
 
 export interface WalletTransaction {
    txn: string,
@@ -45,6 +63,8 @@ type GetIndexerFunction = () => Promise<Indexer>;
 
 export interface WindowAlgorand {
   enable: EnableFunction;
+  enableNetwork?: EnableNetworkFunction;
+  enableAccounts?: EnableAccountsFunction;
   signAndPostTxns: SignAndPostTxnsFunction;
   getAlgodv2: GetAlgodv2Function;
   getIndexer: GetIndexerFunction;

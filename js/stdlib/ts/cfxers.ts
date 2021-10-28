@@ -119,6 +119,7 @@ export class Contract implements IContract {
   // }
   constructor(address: string|null|undefined, abi: string|any[], wallet: IWallet, receiptP?: Promise<any>, hash?: string) {
     this.address = address || undefined;
+    const blacklist = Object.keys(this).filter((s) => s[0] === '_');
     this._abi = (typeof abi === 'string') ? JSON.parse(abi) : abi;
     this._wallet = wallet;
     this._receiptP = receiptP;
@@ -136,10 +137,11 @@ export class Contract implements IContract {
         }
         const receipt = await self._receiptP;
         debug(`cfxers:Contract.wait`, `got receipt`, receipt);
-        if (self.address && self.address !== receipt.contractCreated) {
-          throw Error(`Impossible: ctc addresses don't match: ${self.address} vs ${receipt.contractCreated}`);
+        const rcc = address_cfxStandardize(receipt.contractCreated);
+        if (self.address && self.address !== rcc) {
+          throw Error(`Impossible: ctc addresses don't match: ${self.address} vs ${rcc}`);
         }
-        self.address = self.address || receipt.contractCreated;
+        self.address = self.address || rcc;
         if (self.deployTransaction.hash && self.deployTransaction.hash !== receipt.transactionHash) {
           throw Error(`Impossible: txn hashes don't match: ${self.deployTransaction.hash} vs ${receipt.transactionHash}`);
         }
@@ -150,7 +152,7 @@ export class Contract implements IContract {
     this.interface = new ethers.utils.Interface(this._abi);
     for (const item of this._abi) {
       if (item.type === 'function') {
-        if (item.name[0] !== '_' && item.name !== 'address' && item.name !== 'deployTransaction' && item.name !== 'interface') {
+        if (!blacklist.includes(item.name) && item.name !== 'address' && item.name !== 'deployTransaction' && item.name !== 'interface') {
           this[item.name] = this._makeHandler(item);
         }
       }
@@ -442,17 +444,17 @@ export class Wallet implements IWallet {
     let newGasCost = format.big(estimate.gasUsed).times(gasRatio).toFixed(0);
     //@ts-ignore
     let newStorageCost = format.big(estimate.storageCollateralized).times(storageRatio).toFixed(0);
-    
+
     // Note: balace needs to cover value +  (gas + storageLimit)
     let gasXstorage = format.big(newGasCost).plus(newStorageCost).toFixed(0);
     let finalCost = format.big(txn.value).plus(gasXstorage).toFixed(0);
     const final = BigInt(finalCost);
-    
+
     debug(`SendTxn attempt, Final Cost of Tx is , ${final},  Balance of sender ${from} is ${balance}`);
     if ( final > balance ) {
       debug(`Checking: Account balanace of  ${from} is ${balance} and gasFee is, ${newGasCost}: Total TxValue is ${final}`)
       throw Error(` INSUFFICIENT FUNDS GAS COST IS ${newGasCost},  TXN VALUE IS  ${final}, ACCOUNT ${from} ONLY HAS A BALANCE OF ${balance}`);
-  } 
+  }
    // This is weird but whatever
    if (txn.to instanceof Promise) {
        txn.to = await txn.to;
@@ -543,7 +545,7 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
           // see: https://github.com/Conflux-Chain/js-conflux-sdk/blob/master/docs/how_to_send_tx.md#transactions-stage
           try {
             // @ts-ignore
-            const r = await transactionHashP.executed(1000, 60 * 1000);
+            const r = await transactionHashP.confirmed({ delta: 1000, timeout: 60 * 1000});
             debug(`_retryingSendTxn receipt good`, r);
             return { transactionHash };
           } catch (e) {

@@ -17,6 +17,7 @@ export const main = Reach.App(() => {
     writeN: Fun([UInt], State),
     writeT: Fun([UInt], State),
     writeB: Fun([UInt], State),
+    writeX: Fun([UInt], State),
     end: Fun([], State),
   });
   deploy();
@@ -26,6 +27,7 @@ export const main = Reach.App(() => {
     const [ tok, amt ] = declassify([ interact.tok, interact.amt ]);
   });
   A.publish(tok, amt).pay([[amt, tok]]);
+  A.interact.log("Ready!");
 
   const [ done, x, an, at ] =
     parallelReduce([ false, 0, 0, amt ])
@@ -40,12 +42,18 @@ export const main = Reach.App(() => {
         k(stp);
         return stp;
     }))
+    .api(U.writeX, ((i) => [ i, [ 0, tok ] ]), ((i, k) => {
+        const stp = [ done, x + i, an + i, at ];
+        k(stp);
+        return stp;
+    }))
     .api(U.writeN, ((_) => [ amt, [ 0, tok ] ]), ((i, k) => {
         const stp = [ done, x + i, an + amt, at ];
         k(stp);
         return stp;
     }))
-    .api(U.writeT, ((_) => [ 0, [ amt, tok ] ]), ((i, k) => {
+    .api(U.writeT, ((i) => { assume(i > x); }), ((_) => [ 0, [ amt, tok ] ]), ((i, k) => {
+        require(i > x);
         const stp = [ done, x + i, an, at + amt ];
         k(stp);
         return stp;
@@ -55,7 +63,7 @@ export const main = Reach.App(() => {
         k(stp);
         return stp;
     }))
-    .api(U.end, ((_) => [ 0, [ 0, tok ] ]), ((k) => {
+    .api(U.end, (() => [ 0, [ 0, tok ] ]), ((k) => {
         const stp = [ true, x, an, at ];
         k(stp);
         return stp;

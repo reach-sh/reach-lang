@@ -10,7 +10,7 @@ Verification failed:
 
   const v34 = "A".interact.amt;
   //    ^ could = Some(0 )
-  //      from: ./switch_verification.rsh:4:24:application
+  //      from: ./switch_verification.rsh:4:36:property binding
   const x/44 = <switch case binding for Some(0 )>;
   //    ^ could = 0
   //      from: ./switch_verification.rsh:11:3:switch

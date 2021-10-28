@@ -9,6 +9,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
 import qualified Filesystem.Path.CurrentOS as FP
 import Reach.AST.DL
+import Reach.APICut
 import Reach.Backend.JS
 import Reach.BigOpt
 import Reach.CommandLine
@@ -76,7 +77,9 @@ compile env (CompilerOpts {..}) = do
         eol <- bigopt (showp, "eol") el
         pil <- epp eol
         showp "pil" pil
-        pl <- bigopt (showp, "pl") pil
+        apc <- apicut pil
+        showp "apc" apc
+        pl <- bigopt (showp, "pl") apc
         let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
         crs <- HM.fromList <$> mapM runConnector connectors
         backend_js woutn crs pl

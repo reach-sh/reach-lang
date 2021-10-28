@@ -1,4 +1,4 @@
-// Automatically generated with Reach 0.1.5
+// Automatically generated with Reach 0.1.6 (9085a407*)
 pragma abicoder v2;
 
 pragma solidity ^0.8.9;
@@ -361,23 +361,28 @@ contract ReachToken is ERC20 {
   address private _creator;
   string private _url;
   string private _metadata;
+  uint8 private _decimals;
 
   constructor (
     string memory name_,
     string memory symbol_,
     string memory url_,
     string memory metadata_,
-    uint256 supply_
+    uint256 supply_,
+    uint256 decimals_
   ) ERC20(name_, symbol_) {
     _creator = _msgSender();
     _mint(_creator, supply_);
     _url = url_;
     _metadata = metadata_;
+    _decimals = uint8(decimals_);
   }
 
   function url() public view returns (string memory) { return _url; }
 
   function metadata() public view returns (string memory) { return _metadata; }
+
+  function decimals() public view override returns (uint8) { return _decimals; }
 
   function burn(uint256 amount) public virtual returns (bool) {
     require(_msgSender() == _creator, "must be creator");
@@ -460,7 +465,7 @@ contract Stdlib {
   function safeReachTokenBurn(address payable token, uint256 amt) internal {
     require(reachTokenBurn(token, amt));
   }
-  
+
   function reachTokenDestroy(address payable token) internal returns (bool res) {
     (bool ok, bytes memory ret) = token.call{value: uint256(0)}(abi.encodeWithSelector(ReachToken.destroy.selector));
     checkFunReturn(ok, ret, 4 /*'token.destroy'*/);
@@ -521,6 +526,7 @@ contract ReachContract is Stdlib {
   uint256 current_time;
     bytes current_svbs;
   function _reachCurrentTime() external view returns (uint256) { return current_time; }
+  function _reachCurrentState() external view returns (uint256, bytes memory) { return (current_step, current_svbs); }
   
   
   
@@ -532,7 +538,7 @@ contract ReachContract is Stdlib {
     
     
     emit e0(_a);
-    reachRequire((msg.value == uint256(0)), uint256(7) /*'(./index.rsh:17:5:dot,[],"verify network token pay amount")'*/);
+    reachRequire((msg.value == uint256(0)), uint256(7) /*'(./examples/overview/index.rsh:17:5:dot,[],"verify network token pay amount")'*/);
     T0 memory nsvs;
     nsvs.v60 = payable(msg.sender);
     nsvs.v61 = _a.msg.v61;
@@ -546,14 +552,14 @@ contract ReachContract is Stdlib {
   event e1(T4 _a);
   
   function m1(T4 calldata _a) external payable {
-    reachRequire((current_step == uint256(1)), uint256(9) /*'state step check at ./index.rsh:22:5:dot'*/);
-    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(10) /*'state time check at ./index.rsh:22:5:dot'*/);
+    reachRequire((current_step == uint256(1)), uint256(9) /*'state step check at ./examples/overview/index.rsh:22:5:dot'*/);
+    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(10) /*'state time check at ./examples/overview/index.rsh:22:5:dot'*/);
     current_step = 0x0;
     (T0 memory _svs) = abi.decode(current_svbs, (T0));
     
     
     emit e1(_a);
-    reachRequire((msg.value == _svs.v61), uint256(8) /*'(./index.rsh:22:5:dot,[],"verify network token pay amount")'*/);
+    reachRequire((msg.value == _svs.v61), uint256(8) /*'(./examples/overview/index.rsh:22:5:dot,[],"verify network token pay amount")'*/);
     T0 memory nsvs;
     nsvs.v60 = _svs.v60;
     nsvs.v61 = _svs.v61;
@@ -567,24 +573,25 @@ contract ReachContract is Stdlib {
   event e2(T6 _a);
   
   function m2(T6 calldata _a) external payable {
-    reachRequire((current_step == uint256(2)), uint256(13) /*'state step check at ./index.rsh:27:5:dot'*/);
-    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(14) /*'state time check at ./index.rsh:27:5:dot'*/);
+    reachRequire((current_step == uint256(2)), uint256(13) /*'state step check at ./examples/overview/index.rsh:27:5:dot'*/);
+    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(14) /*'state time check at ./examples/overview/index.rsh:27:5:dot'*/);
     current_step = 0x0;
     (T0 memory _svs) = abi.decode(current_svbs, (T0));
     
     
     emit e2(_a);
-    reachRequire((msg.value == uint256(0)), uint256(11) /*'(./index.rsh:27:5:dot,[],"verify network token pay amount")'*/);
-    reachRequire(((_svs.v60 == payable(msg.sender))), uint256(12) /*'(./index.rsh:27:5:dot,[],Just "sender correct")'*/);
+    reachRequire((msg.value == uint256(0)), uint256(11) /*'(./examples/overview/index.rsh:27:5:dot,[],"verify network token pay amount")'*/);
+    reachRequire(((_svs.v60 == payable(msg.sender))), uint256(12) /*'(./examples/overview/index.rsh:27:5:dot,[],Just "sender correct")'*/);
     _svs.v60.transfer(_svs.v61);
     current_step = 0x0;
     current_time = 0x0;
     delete current_svbs;
-    selfdestruct(payable(msg.sender));
     
     
     }
   
   
   receive () external payable {}
+  fallback () external payable {}
+  
   }

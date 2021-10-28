@@ -3,7 +3,7 @@ pragma abicoder v2;
 pragma solidity ^0.8.0;
 
 struct T6 {
-  uint256 v82;
+  uint256 v84;
   }
 struct T7 {
   uint256 time;
@@ -18,7 +18,7 @@ contract LogAttack2  {
   function m2() external payable {
     T7 memory a;
     a.time = 0;
-    a.msg.v82 = 1337;
+    a.msg.v84 = 1337;
     emit e2(a);
   }
 }

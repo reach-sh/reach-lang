@@ -6,7 +6,7 @@ const names = ["Creator", "Alice", "Bob", "Carla"];
 
 (async () => {
   const stdlib = await loadStdlib(process.env);
-  const startingBalance = stdlib.parseCurrency(10);
+  const startingBalance = stdlib.parseCurrency(100);
   const [ accCreator, ...accBidders ] =
     await stdlib.newTestAccounts(1+N, startingBalance);
   // We're including this for automation, but it would be better if the NFT is

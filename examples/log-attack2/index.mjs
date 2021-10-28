@@ -29,7 +29,7 @@ import * as fs from 'fs';
   const which = 'e2';
   assertEq(getEvt(which, JSON.parse(backend._Connectors.ETH.ABI)), getEvt(which, remoteABI));
   
-  const startingBalance = stdlib.parseCurrency(10);
+  const startingBalance = stdlib.parseCurrency(100);
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
 

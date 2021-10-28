@@ -5,23 +5,28 @@ contract ReachToken is ERC20 {
   address private _creator;
   string private _url;
   string private _metadata;
+  uint8 private _decimals;
 
   constructor (
     string memory name_,
     string memory symbol_,
     string memory url_,
     string memory metadata_,
-    uint256 supply_
+    uint256 supply_,
+    uint256 decimals_
   ) ERC20(name_, symbol_) {
     _creator = _msgSender();
     _mint(_creator, supply_);
     _url = url_;
     _metadata = metadata_;
+    _decimals = uint8(decimals_);
   }
 
   function url() public view returns (string memory) { return _url; }
 
   function metadata() public view returns (string memory) { return _metadata; }
+
+  function decimals() public view override returns (uint8) { return _decimals; }
 
   function burn(uint256 amount) public virtual returns (bool) {
     require(_msgSender() == _creator, "must be creator");
@@ -104,7 +109,7 @@ contract Stdlib {
   function safeReachTokenBurn(address payable token, uint256 amt) internal {
     require(reachTokenBurn(token, amt));
   }
-  
+
   function reachTokenDestroy(address payable token) internal returns (bool res) {
     (bool ok, bytes memory ret) = token.call{value: uint256(0)}(abi.encodeWithSelector(ReachToken.destroy.selector));
     checkFunReturn(ok, ret, 4 /*'token.destroy'*/);

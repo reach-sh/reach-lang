@@ -4,7 +4,7 @@ import * as backend from './build/index.main.mjs';
 (async () => {
   const stdlib = await loadStdlib();
   const timeoutK = stdlib.connector === 'ALGO' ? 1 : 3;
-  const startingBalance = stdlib.parseCurrency(10);
+  const startingBalance = stdlib.parseCurrency(100);
   const fmt = (x) => stdlib.formatCurrency(x, 4);
   const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
 

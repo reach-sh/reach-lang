@@ -9,6 +9,7 @@ module Reach.UnsafeUtil
   , unsafeIsErrorFormatJson
   , unsafeTermSupportsColor
   , unsafeReadFile
+  , unsafeHashStr
   ) where
 
 import Data.Text (Text)
@@ -16,6 +17,7 @@ import qualified Data.Text as T
 import Reach.CommandLine (CompilerToolArgs (cta_errorFormatJson), getCompilerArgs)
 import Reach.Util
 import System.Directory
+import System.Environment
 import System.IO.Unsafe
 import System.Console.Pretty (supportsPretty)
 
@@ -42,3 +44,11 @@ unsafeTermSupportsColor = unsafePerformIO supportsPretty
 unsafeReadFile :: FilePath -> [String]
 unsafeReadFile s = lines . unsafePerformIO $ readFile s
 {-# NOINLINE unsafeReadFile #-}
+
+unsafeHashStr :: String
+unsafeHashStr = unsafePerformIO $ do
+  let try e fk = lookupEnv e >>= \case
+        Just hash -> return $ " (" <> hash <> ")"
+        Nothing -> fk
+  try "REACHC_HASH" (try "REACH_GIT_HASH" $ return "")
+{-# NOINLINE unsafeHashStr #-}

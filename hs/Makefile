@@ -2,6 +2,7 @@ IMG_HASKELL_BUILD_ARTIFACTS="reachsh/haskell-build-artifacts"
 IMG_REACHC="reachsh/reach"
 IMG_REACH_CLI="reachsh/reach-cli"
 ALPINE_VERSION="3.14.2"
+ROOT=..
 
 include ../DEPS
 include ../VERSION
@@ -16,11 +17,11 @@ install-mo:
 mo:
 	@which mo 1>/dev/null || (echo 'FAILURE: Please call `make install-mo` first' && exit 1)
 
-package.yaml: package.mo.yaml ../VERSION
-	(. ../VERSION && export VERSION && mo $< > $@)
+package.yaml: package.mo.yaml $(ROOT)/VERSION
+	(. $(ROOT)/VERSION && export VERSION && mo $< > $@)
 
-src/Reach/Version.hs: src/Reach/Version.mo.hs ../VERSION
-	(. ../VERSION && export MAJOR MINOR PATCH && mo $< > $@)
+src/Reach/Version.hs: src/Reach/Version.mo.hs $(ROOT)/VERSION $(ROOT)/DEPS
+	(. $(ROOT)/VERSION && export MAJOR MINOR PATCH && . $(ROOT)/DEPS && export SOLC_VERSION && mo $< > $@)
 
 OPENZEP=4.1.0
 OPENZEP_URL=https://github.com/OpenZeppelin/openzeppelin-contracts/archive/refs/tags/v$(OPENZEP).tar.gz
@@ -46,7 +47,7 @@ clean: hs-clean
 	rm -f package.yaml
 
 .PHONY: build-haskell
-build-haskell:
+build-haskell: stack
 	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
 	docker build \
 	  --build-arg VERSION=${VERSION} \
@@ -60,7 +61,7 @@ build-haskell:
 	docker container rm -f repo
 
 .PHONY: build-reach-cli
-build-reach-cli:
+build-reach-cli: stack
 	docker build \
 	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \
 	  --tag=$(IMG_REACH_CLI):latest \
@@ -68,7 +69,7 @@ build-reach-cli:
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
 
 .PHONY: build-reachc
-build-reachc:
+build-reachc: stack
 	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
 	docker build \
 	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
@@ -79,7 +80,6 @@ build-reachc:
 	  -f Dockerfile.reachc .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
 	docker container rm -f repo
-
 
 .PHONY: build
 build: build-haskell build-reach-cli build-reachc

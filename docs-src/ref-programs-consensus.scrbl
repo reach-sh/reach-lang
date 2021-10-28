@@ -183,6 +183,10 @@ const LHS =
     PUBLISH_EXPR,
     PAY_EXPR,
     CONSENSUS_EXPR)
+  .api(API_EXPR,
+    ASSUME_EXPR,
+    PAY_EXPR,
+    CONSENSUS_EXPR)
   .timeout(DELAY_EXPR, () =>
     TIMEOUT_BLOCK);
 }
@@ -190,9 +194,9 @@ const LHS =
 The @reachin{LHS} and @reachin{INIT_EXPR} are like the initialization component of a @reachin{while} loop; and,
 the @reachin{.invariant} and @reachin{.while} components are like the invariant and condition of a @reachin{while} loop;
 the @reachin{DEFINE_BLOCK} is like the @reachin{DEFINE_BLOCK} of a @reachin{while} loop;
-while the @reachin{.case}, @reachin{.timeout}, and @reachin{.paySpec} components are like the corresponding components of a @reachin{fork} statement.
+while the @reachin{.case}, @reachin{.api}, @reachin{.timeout}, and @reachin{.paySpec} components are like the corresponding components of a @reachin{fork} statement.
 
-The @reachin{.case} component may be repeated many times, provided the @reachin{PART_EXPR}s each evaluate to a unique @tech{participant}, just like in a @reachin{fork} statement.
+The @reachin{.case} component may be repeated many times, just like in a @reachin{fork} statement.
 
 The @reachin{.define} component may define bindings that reference the @reachin{LHS} values. These bindings are accessible
 from every component of the @reachin{parallelReduce} statement, except for the @reachin{INIT_EXPR}.
@@ -249,7 +253,8 @@ The idea is that there are some values (the @reachin{LHS}) which after intializa
 
 @reach{
 var LHS = INIT_EXPR;
-invariant(INVARIANT_EXPR)
+DEFINE_BLOCK;
+invariant(INVARIANT_EXPR);
 while(COND_EXPR) {
   fork()
   .case(PART_EXPR,
@@ -317,7 +322,7 @@ This is used in a @tech{consensus step} after @reachin{makeCommitment} was used 
 @(mint-define! '("burn") '("destroy") '("supply") '("destroyed"))
 @reach{
   require(supply >= 2 * amt);
-  const tok = new Token({name, symbol, url, metadata, supply});
+  const tok = new Token({ name, symbol, url, metadata, supply, decimals });
   transfer(amt, tok).to(who);
   tok.burn(amt);
   assert(tok.supply() == supply - amt);
@@ -339,6 +344,7 @@ It is written with the expression @reachin{new Token(PARAMS)}, where @reachin{PA
 @item{@litchar{metadata}: A value of type @reachin{Bytes(32)}; defaults to empty.
 This value is intended to be a @tech{digest} of a larger metadata document.}
 @item{@litchar{supply}: A value of type @reachin{UInt}; defaults to @reachin{UInt.max}.}
+@item{@litchar{decimals}: A value of type @reachin{UInt}; defaults to @reachin{6} on Algorand, and @reachin{18} on Ethereum and Conflux.}
 ]
 
 This returns a @reachin{Token} value and deposits a @reachin{supply} amount of the new @tech{non-network tokens} into the @tech{contract} account associated with the @|DApp|.

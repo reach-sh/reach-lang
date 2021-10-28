@@ -42,6 +42,10 @@ build:
 push:
 	$(ROOT)/scripts/docker-push.sh $(IMAGE)
 
+.PHONY: push
+push:
+	$(ROOT)/scripts/docker-push.sh $(IMAGE)
+
 .PHONY: format
 format: package.json
 	npm run beautify

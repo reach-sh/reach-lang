@@ -78,7 +78,7 @@ class ReachLexer(RegexLexer):
             (r'(for|in|while|do|break|return|continue|match|switch|case|default|if|else|'
              r'throw|try|catch|finally|new|delete|typeof|instanceof|void|yield|'
              # Reach ones
-             r'interact|commit|exit|only|each|race|fork|paySpec|define|parallelReduce|when|timeout|timeRemaining|throwTimeout|publish|pay|declassify|transfer|'
+             r'interact|commit|exit|only|each|race|fork|paySpec|define|parallelReduce|when|timeout|timeRemaining|api|throwTimeout|publish|pay|declassify|transfer|call|'
              r'invariant|assert|require|assume|possible|unknowable|forall|'
              r'this|of)\b', Keyword, 'slashstartsregex'),
             (r'(var|let|with|function|'
@@ -95,7 +95,7 @@ class ReachLexer(RegexLexer):
              r'decodeURIComponent|encodeURI|encodeURIComponent|'
              r'Error|eval|isFinite|isNaN|isSafeInteger|parseFloat|parseInt|'
              # The reach ones
-             r'UInt|Int|FixedPoint|Interval|IntervalType|Reach|App|Fun|Null|Bool|Bytes|Address|Contract|Token|Tuple|Struct|Participant|ParticipantClass|View|Data|Digest|Map|Set|Refine|Anybody|deployMode|verifyArithmetic|verifyPerConnector|connectors|ETH|ALGO|'
+             r'UInt|Int|FixedPoint|Interval|IntervalType|Reach|App|Fun|Null|Bool|Bytes|Address|Contract|Token|Tuple|Struct|Participant|ParticipantClass|View|Data|Digest|Map|Set|Refine|Anybody|API|verifyArithmetic|verifyPerConnector|connectors|ETH|ALGO|CFX|'
              r'deploy|balance|digest|implies|ensure|hasRandom|makeCommitment|checkCommitment|closeTo|lastConsensusTime|remote|'
              r'and|or|add|sub|mul|div|mod|lt|le|gt|ge|lsh|rsh|band|bior|bxor|eq|neq|'
              r'polyEq|polyNeq|typeEq|intEq|ite|typeOf|isType|is|'

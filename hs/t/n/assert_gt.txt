@@ -9,7 +9,7 @@ Verification failed:
 
   // Violation Witness
 
-  const v26 = "A".interact.getX();
+  const v26 = protect<UInt>("A".interact.getX());
   //    ^ could = 0
   //      from: ./assert_gt.rsh:6:31:application
 
@@ -22,3 +22,11 @@ Verification failed:
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
 Checked 5 theorems; 2 failures (and 1 omitted repeats) :'(
+warning[RW0004]: There are no publications in the application.
+
+  ./assert_gt.rsh:3:30:application
+
+  3| export const main = Reach.App(
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0004.html
+

@@ -94,6 +94,19 @@ Each @reachin{participantName} must be unique.
 
 @reachin{participantInteractInterface} is a @deftech{participant interact interface}, an object where each field indicates the type of a function or value which must be provided to the @tech{backend} by the @tech{frontend} for @tech{interact}ing with the @tech{participant}.
 
+@subsection[#:tag "ref-programs-appinit-api"]{API Definition}
+
+@(mint-define! '("API"))
+@reach{
+  API('Voter', { vote: Fun([Address], UInt) })
+}
+
+A @tech{API} is defined with @reachin{API(apiName, apiInterface)}, where @reachin{apiName} is a string that labels the @tech{API} and @reachin{apiInterface} is an object where each field indicates the type of a function provided by the @tech{contract} as an @tech{API}.
+These @tech{API}s are available in @tech{frontends} via the @jsin{ctc.apis} object.
+The value returned by this function is an object where the fields are the members of @reachin{apiInterface} are may be used in @reachin{.api} components of @reachin{fork} and @reachin{parallelReduce} to specify the behavior of the corresponding call.
+These are called @deftech{API member function}s.
+Each function must occur exactly once in the entire program.
+
 @subsection[#:tag "ref-programs-appinit-view"]{View Definition}
 
 @margin-note{This section is about defining @tech{views} during in application initialization. Views are @seclink["ref-programs-consensus-view"]{set in consensus steps}, in your Reach program. But, they are @seclink["ref-frontends-js-ctc"]{accessed by frontends} by using the Reach standard library of the frontend language, such as JavaScript.}
@@ -104,6 +117,6 @@ Each @reachin{participantName} must be unique.
 }
 
 A @tech{view} is defined with @reachin{View(viewName, viewInterface)}, where @reachin{viewName} is a string that labels the @tech{view} and @reachin{viewInterface} is an object where each field indicates the type of a function or value provided by the @tech{contract} associated with the specified @|DApp|.
-These @tech{views} are available in @tech{frontends} via the @jsin{ctc.getViews} function.
+These @tech{views} are available in @tech{frontends} via the @jsin{ctc.views} object.
 In the @|DApp|, the result of this application argument is referred to as a @tech{view object}.
 

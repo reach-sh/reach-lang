@@ -191,6 +191,9 @@ get_srcloc_src (SrcLoc _ _ Nothing) = ReachSourceFile "src" -- FIXME
 srcloc_at :: String -> (Maybe TokenPosn) -> SrcLoc -> SrcLoc
 srcloc_at lab mp (SrcLoc _ _ rs) = SrcLoc (Just lab) mp rs
 
+srcloc_lab :: String -> SrcLoc -> SrcLoc
+srcloc_lab lab (SrcLoc _ tp rs) = SrcLoc (Just lab) tp rs
+
 srcloc_file :: SrcLoc -> Maybe FilePath
 srcloc_file = \case
   SrcLoc _ _ (Just (ReachSourceFile f)) -> Just f

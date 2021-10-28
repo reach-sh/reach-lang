@@ -420,11 +420,11 @@ isLiteralArray :: SLVal -> Bool
 isLiteralArray (SLV_Array {}) = True
 isLiteralArray _ = False
 
-newtype SLInterface = SLInterface (M.Map SLVar SLType)
+newtype SLInterface = SLInterface (M.Map SLVar (SrcLoc, SLType))
   deriving (Eq, Generic)
 
 instance Pretty SLInterface where
-  pretty (SLInterface m) = render_obj m
+  pretty (SLInterface m) = render_obj $ M.map snd m
 
 data SLViewInfo
   = SLViewInfo SrcLoc SLPart SLInterface
@@ -467,6 +467,12 @@ data ParallelReduceMode
   | PRM_ThrowTimeout
   | PRM_PaySpec
   | PRM_Def
+  deriving (Eq, Generic, Show)
+
+data ApiCallMode
+  = AC_Pay
+  | AC_ThrowTimeout
+  | AC_Assume
   deriving (Eq, Generic, Show)
 
 data ToConsensusRec = ToConsensusRec
@@ -515,6 +521,16 @@ data ParallelReduceRec = ParallelReduceRec
   }
   deriving (Eq, Generic)
 
+data ApiCallRec = ApiCallRec
+  { slac_at :: SrcLoc
+  , slac_who :: JSExpression
+  , slac_mode :: Maybe ApiCallMode
+  , slac_mpay :: Maybe JSExpression
+  , slac_massume :: Maybe JSExpression
+  , slac_mtime :: Maybe (JSExpression, JSExpression)
+  }
+  deriving (Eq, Generic)
+
 data SLForm
   = SLForm_App
   | SLForm_each
@@ -527,6 +543,8 @@ data SLForm
   | SLForm_fork_partial ForkRec
   | SLForm_parallel_reduce
   | SLForm_parallel_reduce_partial ParallelReduceRec
+  | SLForm_apiCall
+  | SLForm_apiCall_partial ApiCallRec
   | SLForm_wait
   deriving (Eq, Generic)
 
@@ -691,6 +709,7 @@ data SLPrimitive
   | SLPrim_polyNeq
   | SLPrim_getContract
   | SLPrim_getAddress
+  | SLPrim_EmitLog
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

@@ -460,7 +460,8 @@ data DLTokenNew = DLTokenNew
   , dtn_sym :: DLArg
   , dtn_url :: DLArg
   , dtn_metadata :: DLArg
-  , dtn_supply :: DLArg }
+  , dtn_supply :: DLArg
+  , dtn_decimals :: Maybe DLArg }
   deriving (Eq, Ord, Show)
 
 defaultTokenNew :: DLTokenNew
@@ -471,6 +472,8 @@ defaultTokenNew = DLTokenNew {..}
     dtn_url = b tokenURLLen
     dtn_metadata = b tokenMetadataLen
     dtn_supply = DLA_Constant $ DLC_UInt_max
+    -- Nothing gets compiled to connector default
+    dtn_decimals = Nothing
     b = DLA_Literal . bytesZeroLit
 
 instance PrettySubst DLTokenNew where
@@ -480,7 +483,8 @@ instance PrettySubst DLTokenNew where
       , ("sym", dtn_sym)
       , ("url", dtn_url)
       , ("metadata", dtn_metadata)
-      , ("supply", dtn_supply) ]
+      , ("supply", dtn_supply)
+      , ("decimals", fromMaybe (DLA_Literal DLL_Null) dtn_decimals) ]
 
 type DLTimeArg = Either DLArg DLArg
 
@@ -512,6 +516,11 @@ data DLExpr
   | DLE_TimeOrder SrcLoc [(Maybe DLArg, DLVar)]
   | DLE_GetContract SrcLoc
   | DLE_GetAddress SrcLoc
+  -- | DLE_EmitLog SrcLoc (Either Int String) DLType DLArg
+  -- * the either is whether it is a generated one or a prescribed one
+  -- * the type is the type
+  -- * the dlarg is the value being logged
+  | DLE_EmitLog SrcLoc String DLVar
   deriving (Eq, Ord, Generic)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
@@ -573,9 +582,9 @@ instance PrettySubst DLExpr where
     DLE_ObjectRef _ a f -> do
       a' <- prettySubst a
       return $ a' <> "." <> pretty f
-    DLE_Interact _ _ who m _ as -> do
+    DLE_Interact _ _ who m t as -> do
       as' <- render_dasM as
-      return $ pretty who <> ".interact." <> pretty m <> parens as'
+      return $ "protect" <> angles (pretty t) <> parens (pretty who <> ".interact." <> pretty m <> parens as')
     DLE_Digest _ as -> do
       as' <- render_dasM as
       return $ "digest" <> parens as'
@@ -628,7 +637,9 @@ instance PrettySubst DLExpr where
       return $ "timeOrder" <> parens tos'
     DLE_GetContract {} -> return $ "getContract()"
     DLE_GetAddress {} -> return $ "getAddress()"
-
+    DLE_EmitLog _ m v -> do
+      a' <- prettySubst $ DLA_Var v
+      return $ "emitLog" <> parens (pretty m) <> parens a'
 
 pretty_subst :: PrettySubst a => PrettySubstEnv -> a -> Doc
 pretty_subst e x =
@@ -667,6 +678,7 @@ instance IsPure DLExpr where
     DLE_TokenBurn {} -> False
     DLE_TokenDestroy {} -> False
     DLE_TimeOrder {} -> False
+    DLE_EmitLog {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -697,6 +709,7 @@ instance IsLocal DLExpr where
     DLE_TimeOrder {} -> True
     DLE_GetContract {} -> True
     DLE_GetAddress {} -> True
+    DLE_EmitLog {} -> False
 
 instance CanDupe DLExpr where
   canDupe e =
@@ -710,6 +723,7 @@ instance CanDupe DLExpr where
           DLE_TokenBurn {} -> False
           DLE_TokenDestroy {} -> False
           DLE_TimeOrder {} -> False
+          DLE_EmitLog {} -> False
           _ -> True
 
 newtype DLAssignment
@@ -927,7 +941,7 @@ instance Pretty FluidVar where
     FV_thisConsensusSecs -> "thisConsensusSecs"
     FV_lastConsensusSecs -> "lastConsensusSecs"
     FV_baseWaitSecs -> "baseWaitSecs"
-    FV_didSend -> "didSend"
+    FV_didSend -> "didPublish"
 
 fluidVarType :: FluidVar -> DLType
 fluidVarType = \case

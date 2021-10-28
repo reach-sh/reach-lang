@@ -56,6 +56,7 @@ data AppEnv = AppEnv
   { ae_ios :: M.Map SLPart SLSSVal
   , ae_dlo :: DLOpts
   , ae_classes :: S.Set SLPart
+  , ae_apis :: S.Set SLPart
   }
 
 data AppRes = AppRes
@@ -492,7 +493,7 @@ env_lookup ctx x env =
       case sv of
         SLSSVal {sss_val = SLV_Deprecated d v} -> do
           at <- withAt id
-          liftIO $ emitWarning $ W_Deprecated at d
+          liftIO $ emitWarning (Just at) $ W_Deprecated d
           return $ sv {sss_val = v}
         v -> return $ v
     Nothing ->
@@ -572,6 +573,8 @@ base_env =
     , ("unstrict", SLV_Prim $ SLPrim_unstrict)
     , ("getContract", SLV_Prim $ SLPrim_getContract)
     , ("getAddress", SLV_Prim $ SLPrim_getAddress)
+    , (".emitLog", SLV_Prim $ SLPrim_EmitLog)
+    , ("call", SLV_Form$ SLForm_apiCall)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -735,6 +738,9 @@ typeCheck_s st val = do
 is_class :: SLPart -> App Bool
 is_class who = S.member who <$> (ae_classes <$> aisd)
 
+is_api :: SLPart -> App Bool
+is_api who = S.member who <$> (ae_apis <$> aisd)
+
 ctxt_alloc :: App Int
 ctxt_alloc = do
   Env {..} <- ask
@@ -803,6 +809,15 @@ compileTypeOfs vs = unzip <$> mapM compileTypeOf vs
 
 compileCheckType :: DLType -> SLVal -> App DLArg
 compileCheckType et v = compileArgExpr =<< typeCheck_d et v
+
+compileToVar :: SLVal -> App DLVar
+compileToVar v = do
+  (t, a) <- compileTypeOf v
+  case a of
+    DLA_Var dv -> return dv
+    _ -> do
+      at <- withAt id
+      ctxt_lift_expr (DLVar at Nothing t) (DLE_Arg at a)
 
 -- Modes
 
@@ -1122,6 +1137,19 @@ evalAsEnv obj = case obj of
         Just _ -> []
       go key mode =
         [(key, retV $ public $ SLV_Form $ SLForm_Part_ToConsensus $ p { slptc_mode = Just mode })]
+  SLV_Form (SLForm_apiCall_partial p@(ApiCallRec {..})) | slac_mode == Nothing ->
+    return $
+      M.fromList $
+        gom "throwTimeout" AC_ThrowTimeout  slac_mtime
+        <> gom "pay" AC_Pay  slac_mpay
+        <> gom "assume" AC_Assume  slac_massume
+    where
+      gom key mode me =
+        case me of
+          Nothing -> go key mode
+          Just _ -> []
+      go key mode =
+        [(key, retV $ public $ SLV_Form $ SLForm_apiCall_partial $ p { slac_mode = Just mode })]
   SLV_Form (SLForm_fork_partial p@(ForkRec {..})) | slf_mode == Nothing ->
     return $
       M.fromList $
@@ -1373,25 +1401,26 @@ makeInteract :: SLPart -> SLInterface -> App (SLSSVal, InteractEnv)
 makeInteract who (SLInterface spec) = do
   at <- withAt id
   let lab = Just $ (bunpack who) <> "'s interaction interface"
-  let wrap_ty :: SLVar -> SLType -> App (SLSSVal, IType)
-      wrap_ty k = \case
+  let wrap_ty :: SLVar -> (SrcLoc, SLType) -> App (SLSSVal, IType)
+      wrap_ty k (i_at, ty )=
+        case ty of
         ST_Fun stf@(SLTypeFun {..}) -> do
           dom' <- mapM st2dte stf_dom
           rng' <- st2dte stf_rng
           return $
-            ( (sls_sss at $ secret $ SLV_Prim $ SLPrim_localf at who k $ Left stf)
+            ( (sls_sss i_at $ secret $ SLV_Prim $ SLPrim_localf i_at who k $ Left stf)
             , IT_Fun dom' rng'
             )
         ST_UDFun rng -> do
           rng' <- st2dte rng
           return $
-            ( (sls_sss at $ secret $ SLV_Prim $ SLPrim_localf at who k $ Right rng)
+            ( (sls_sss i_at $ secret $ SLV_Prim $ SLPrim_localf i_at who k $ Right rng)
             , IT_UDFun rng'
             )
         t -> do
           t' <- st2dte t
-          isv <- secret <$> compileInteractResult (CT_Assume False) "interact" t (\dt -> DLE_Arg at $ DLA_Interact who k dt)
-          return $ (sls_sss at isv, IT_Val t')
+          isv <- secret <$> compileInteractResult (CT_Assume False) "interact" t (\dt -> DLE_Arg i_at $ DLA_Interact who k dt)
+          return $ (sls_sss i_at isv, IT_Val t')
   (lifts, spec') <- captureLifts $ mapWithKeyM wrap_ty spec
   let io = SLSSVal at Secret $ SLV_Object at lab $ M.map fst spec'
   let ienv = InteractEnv $ M.map (\(_, y) -> y) spec'
@@ -1403,7 +1432,7 @@ convertTernaryReachApp at a opte top_formals partse top_s = top_s'
   where
     pis = parseJSArrowFormals at top_formals
     sp = JSSemi a
-    lhs = JSArrayLiteral a (map JSArrayElement pis) a
+    lhs = jsArrayLiteral a pis
     rhs = jsCall a (JSIdentifier a ".adaptReachAppTupleArgs") [partse]
     top_ss =
       [ JSExpressionStatement (JSCallExpression (JSIdentifier a "setOptions") a (JSLOne opte) a) sp
@@ -1435,7 +1464,7 @@ compileTimeArg = \case
   v -> do
     f <- lookStdlib "relativeTime"
     at <- withAt id
-    liftIO $ emitWarning $ W_Deprecated at D_UntypedTimeArg
+    liftIO $ emitWarning (Just at) $ W_Deprecated D_UntypedTimeArg
     compileTimeArg =<< ensure_public =<< evalApplyVals' f [public v]
   where
     correctData = (==) (dataTypeMap $ eitherT T_UInt T_UInt)
@@ -1591,11 +1620,7 @@ evalForm f args = do
         Just TCM_ThrowTimeout -> do
           at <- withAt id
           let ta = srcloc2annot at
-          (de, x) <-
-            case args of
-              [de] -> return (de, JSLiteral ta "null")
-              [de, e] -> return (de, e)
-              _ -> illegal_args 2
+          (de, x) <- one_two_args ta
           let throwS = JSThrow ta x JSSemiAuto
           go $ p { slptc_timeout = Just (at, de, Just (jsStmtToBlock throwS)) }
         Nothing ->
@@ -1660,6 +1685,39 @@ evalForm f args = do
       at <- withAt id
       ctxt_lift_eff $ DLE_Wait at amt_ta
       return $ public $ SLV_Null at "wait"
+    SLForm_apiCall -> do
+      ensure_mode SLM_Step "call"
+      slac_who <- one_arg
+      who <- evalExpr slac_who
+      case snd who of
+        SLV_Participant _ ns _ _ ->
+              is_api ns >>= \case
+                True -> return ()
+                False -> impossible "Must be API Participant"
+        _ -> impossible "Must be API Participant"
+      slac_at <- withAt id
+      let slac_mode = Nothing
+      let slac_mtime = Nothing
+      let slac_mpay = Nothing
+      let slac_massume = Nothing
+      retV $ public $ SLV_Form $ SLForm_apiCall_partial $ ApiCallRec {..}
+    SLForm_apiCall_partial p@(ApiCallRec {..}) ->
+       case slac_mode of
+        Just AC_Pay -> do
+          x <- one_arg
+          go $ p { slac_mpay = Just x }
+        Just AC_ThrowTimeout -> do
+          at <- withAt id
+          let ta = srcloc2annot at
+          (de, x) <- one_two_args ta
+          go $ p { slac_mtime = Just (de, x) }
+        Just AC_Assume -> do
+          x <- one_arg
+          go $ p { slac_massume = Just x }
+        Nothing ->
+          expect_t rator $ Err_Eval_NotApplicable
+      where
+        go p' = retV $ public $ SLV_Form $ SLForm_apiCall_partial $ p' { slac_mode = Nothing }
   where
     illegal_args n = expect_ $ Err_Form_InvalidArgs f n args
     rator = SLV_Form f
@@ -1676,6 +1734,11 @@ evalForm f args = do
     _three_args = case args of
       [x, y, z] -> return $ (x, y, z)
       _ -> illegal_args 3
+    one_two_args ta = case args of
+      [de] -> return (de, JSLiteral ta "null")
+      [de, e] -> return (de, e)
+      _ -> illegal_args 2
+
 
 evalPolyEq :: SecurityLevel -> SLVal -> SLVal -> App SLSVal
 evalPolyEq lvl x y =
@@ -1959,7 +2022,7 @@ doFluidRef_dv fv = do
   at <- withAt id
   ensure_modes (all_slm_modes \\ [SLM_Module, SLM_Export]) "fluid ref"
   let fvt = fluidVarType fv
-  dv <- ctxt_mkvar (DLVar at Nothing fvt)
+  dv <- ctxt_mkvar (DLVar at (Just (at, show $ pretty fv)) fvt)
   saveLift $ DLS_FluidRef at dv fv
   return dv
 
@@ -2168,6 +2231,9 @@ evalPrim p sargs =
             "symbol" -> bytes (\x -> tns { dtn_sym = x}) tokenSymLen
             "url" -> bytes (\x -> tns { dtn_url = x}) tokenURLLen
             "metadata" -> bytes (\x -> tns { dtn_metadata = x}) tokenMetadataLen
+            "decimals" -> do
+              a <- compileCheckType T_UInt v
+              return $ tns { dtn_decimals = Just a }
             "supply" -> do
               a <- compileCheckType T_UInt v
               return $ tns { dtn_supply = a }
@@ -2177,8 +2243,9 @@ evalPrim p sargs =
       tns <- foldM go defaultTokenNew (M.toAscList metam')
       let supplya = dtn_supply tns
       ensure_mode SLM_ConsensusStep "new Token"
-      tokdv <- ctxt_lift_expr (DLVar at Nothing T_Token) $
+      tokdv_ <- ctxt_lift_expr (DLVar at Nothing T_Token) $
         DLE_TokenNew at tns
+      tokdv <- doEmitLog_ "tokenNew" tokdv_
       st <- readSt id
       setSt $ st
         { st_toks = st_toks st <> [ tokdv ]
@@ -2446,8 +2513,8 @@ evalPrim p sargs =
                   case idxi' < length arrvs of
                     True -> do
                       at <- withAt id
-                      let valv_checked = typeCheck_d elem_ty valv `seq` valv
-                      let arrvs' = (take idxi' arrvs) ++ [valv_checked] ++ (drop (idxi' + 1) arrvs)
+                      void $ typeCheck_d elem_ty valv
+                      let arrvs' = (take idxi' arrvs) ++ [valv] ++ (drop (idxi' + 1) arrvs)
                       let arrv' = SLV_Array at elem_ty arrvs'
                       retV $ (lvl, arrv')
                     False ->
@@ -2729,13 +2796,13 @@ evalPrim p sargs =
     SLPrim_ParticipantClass -> makeParticipant False True
     SLPrim_API -> do
       ensure_mode SLM_AppInit "API"
-      at <- withAt id
       (nv, intv) <- two_args
       n <- mustBeBytes nv
       SLInterface im <- mustBeInterface intv
       let ns = bunpack n
       verifyName "API" ns
-      ix <- flip mapWithKeyM im $ \k -> \case
+      ix <- flip mapWithKeyM im $ \k -> \ (at, ty) ->
+        case ty of
         ST_Fun (SLTypeFun {..}) -> do
           let nk = ns <> "_" <> k
           let nkb = bpack nk
@@ -2757,10 +2824,10 @@ evalPrim p sargs =
       let io = M.map snd ix
       aisiPut aisi_res $ \ar ->
         ar {ar_apis = M.insert n i' $ ar_apis ar}
+      at <- withAt id
       retV $ (lvl, SLV_Object at (Just $ ns <> " API") io)
     SLPrim_View -> do
       ensure_mode SLM_AppInit "View"
-      at <- withAt id
       (nv, intv) <- two_args
       n <- mustBeBytes nv
       SLInterface im <- mustBeInterface intv
@@ -2769,7 +2836,7 @@ evalPrim p sargs =
         expect_ $ Err_View_DuplicateView n
       let ns = bunpack n
       verifyName "View" ns
-      let go k t = do
+      let go k (at, t) = do
             let vv = SLV_Prim $ SLPrim_viewis at n k t
             let vom = M.singleton "set" $ SLSSVal at Public vv
             let vo = SLV_Object at (Just $ ns <> " View, " <> k) vom
@@ -2787,6 +2854,7 @@ evalPrim p sargs =
       let io = M.map snd ix
       aisiPut aisi_res $ \ar ->
         ar {ar_views = M.insert n i' $ ar_views ar}
+      at <- withAt id
       retV $ (lvl, SLV_Object at (Just $ ns <> " View") io)
     SLPrim_Map -> illegal_args
     SLPrim_Map_new -> do
@@ -2922,7 +2990,7 @@ evalPrim p sargs =
       allTokens <- fmap DLA_Var <$> readSt st_toks
       let nnToksNotBilled = allTokens \\ nnToksBilledRecv
       let withBill = DLWithBill (if shouldRetNNToks then nnToksBilledRecv else []) nnToksNotBilled
-      res' <-
+      res'' <-
         doInteractiveCall
           sargs
           rat
@@ -2931,6 +2999,7 @@ evalPrim p sargs =
           "remote"
           (CT_Assume True)
           (\_ fs _ dargs -> DLE_Remote at fs aa m payAmt dargs withBill)
+      res' <- doEmitLog "remote" res''
       let getRemoteResults = do
             apdvv <- doArrRef_ res' zero
             case shouldRetNNToks of
@@ -3002,7 +3071,7 @@ evalPrim p sargs =
       tat <- withAt id
       tvs <- mustBeTuple =<< one_arg
       let adapt_tuple at p' who int = do
-            liftIO $ emitWarning $ W_Deprecated at $ D_ParticipantTuples
+            liftIO $ emitWarning (Just at) $ W_Deprecated $ D_ParticipantTuples
             snd <$> evalPrim p' (map public $ [who, int])
       let go = \case
             SLV_Tuple at [who, int] ->
@@ -3030,6 +3099,9 @@ evalPrim p sargs =
       evalApplyVals' notFn [eqFn]
     SLPrim_getContract -> getContractInfo T_Contract
     SLPrim_getAddress -> getContractInfo T_Address
+    SLPrim_EmitLog -> do
+      x <- one_arg
+      public <$> doEmitLog "api" x
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -3076,7 +3148,7 @@ evalPrim p sargs =
     mustBeInterface intv = do
       objEnv <- mustBeObject intv
       let checkint = \case
-            SLSSVal _ _ (SLV_Type t) -> return $ t
+            SLSSVal t_at _ (SLV_Type t) -> return $ (t_at, t)
             SLSSVal idAt _ idV -> locAt idAt $ expect_t idV $ Err_App_InvalidInteract
       SLInterface <$> mapM checkint objEnv
     makeParticipant :: Bool -> Bool -> App SLSVal
@@ -3102,6 +3174,8 @@ evalPrim p sargs =
       when isAPI $ do
         aisiPut aisi_res $ \ar ->
           ar { ar_isAPI = S.insert n $ ar_isAPI ar }
+        aisiPut aisi_env $ \ae ->
+          ae { ae_apis = S.insert n $ ae_apis ae }
       when isClass $ do
         aisiPut aisi_env $ \ae ->
           ae { ae_classes = S.insert n $ ae_classes ae }
@@ -3140,6 +3214,16 @@ doInteractiveCall sargs iat estf mode lab ct mkexpr = do
     mkexpr at fs drng dargs
   check_post rng_v
   return rng_v
+
+doEmitLog :: String -> SLVal -> App SLVal
+doEmitLog m v = SLV_DLVar <$> (doEmitLog_ m =<< compileToVar v)
+
+doEmitLog_ :: String -> DLVar -> App DLVar
+doEmitLog_ m dv = do
+  ensure_mode SLM_ConsensusStep "emitLog"
+  at <- withAt id
+  let t = varType dv
+  ctxt_lift_expr (DLVar at Nothing t) (DLE_EmitLog at m dv)
 
 assertRefinedArgs :: ClaimType -> [SLSVal] -> SrcLoc -> SLTypeFun -> App (SLVal, [DLArgExpr])
 assertRefinedArgs ct sargs iat (SLTypeFun {..}) = do
@@ -4060,7 +4144,7 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
                 [whoc_v, public $ SLV_Bytes at $ "sender correct"]
           return ()
         let go fv = do
-              v <- ctxt_mkvar $ DLVar at Nothing $ fluidVarType fv
+              v <- ctxt_mkvar $ DLVar at (Just (at, show $ pretty fv)) $ fluidVarType fv
               doFluidSet fv $ public $ SLV_DLVar v
               return v
         dr_time <- go FV_thisConsensusTime
@@ -4144,15 +4228,14 @@ typeToExpr = \case
   T_Struct ts -> call "Struct" $ [arr $ map sg ts]
   where
     str x = JSStringLiteral a x
-    arr l = JSArrayLiteral a (map JSArrayElement l) a
+    arr = jsArrayLiteral a
     sg (k, t) = arr [(str k), r t]
-    call f es = JSCallExpression (var f) a (toJSCL es) a
+    call f = jsCall a (var f)
     var = JSIdentifier a
     r = typeToExpr
     a = JSNoAnnot
     ie = JSDecimal a . show
-    rm m = JSObjectLiteral a (JSCTLNone $ toJSCL $ map rm1 $ M.toList m) a
-    rm1 (k, t) = JSPropertyNameandValue (JSPropertyIdent a k) a [r t]
+    rm = jsObjectLiteral a . M.map r
 
 data CompiledForkCase = CompiledForkCase
   { cfc_part_e :: JSExpression
@@ -4165,20 +4248,105 @@ data CompiledForkCase = CompiledForkCase
 forkCaseSameParticipant :: ForkCase -> ForkCase -> Bool
 forkCaseSameParticipant l r = fc_who l == fc_who r
 
+mkDot :: JSAnnot -> [JSExpression] -> JSExpression
+mkDot a = \case
+  [] -> impossible "mkDot: empty list"
+  h:t -> foldl' (flip JSMemberDot a) h t
+
+mkIdDot :: JSAnnot -> [String] -> JSExpression
+mkIdDot a = mkDot a . map (JSIdentifier a)
+
+doApiCall :: JSExpression -> ApiCallRec -> App [JSStatement]
+doApiCall lhs (ApiCallRec{..}) = do
+  at <- withAt id
+  let a = at2a at
+  let sa = JSSemiAuto
+  let es = flip JSExpressionStatement sa
+  let jid = JSIdentifier a
+  let spread = JSSpreadExpression a
+  idx <- ctxt_alloc
+  let jidg xi = jid $ ".api" <> show idx <> "." <> xi
+  let whoOnly = mkDot a [slac_who, jid "only"]
+  let callOnly s = es $ jsCall a whoOnly s
+  -- Deconstruct args
+  (dom, ret) <- sepLHS a lhs
+  -- Construct `only`
+  let interactIn = jsCall a (jid "declassify") [jsCall a (mkIdDot a ["interact", "in"]) [] ]
+  let assumeStmts = case slac_massume of
+                      Nothing -> []
+                      Just as -> [ es $ jsCall a as [spread dom] ]
+  let onlyThunk = jsThunkStmts a $ jsConst a dom interactIn : assumeStmts
+  -- Construct publish
+  let domVars = jsFlattenLHS dom
+  let pub1 = jsCall a (mkDot a [slac_who, jid "publish"]) domVars
+  let pub2 =
+        case slac_mpay of
+          Nothing -> pub1
+          Just pe -> jsCall a (mkDot a [pub1, jid "pay"]) [jsCall a pe [spread dom]]
+  let pub3 =
+        case slac_mtime of
+          Nothing -> pub2
+          Just (to, e) -> jsCall a (mkDot a [pub2, jid "throwTimeout"]) [to, e]
+  -- Construct `k = interact.out()`
+  let returnVal = jidg "rng"
+  let returnLVal = jidg "rngl"
+  let interactOut = jsCall a (mkIdDot a ["interact", "out"]) [dom, returnLVal]
+  let doLog = jsCall a (jid ".emitLog") [ jidg "rng" ]
+  let apiReturn = jsArrowStmts a [returnVal]
+                    [ jsConst a returnLVal doLog, callOnly [ jsThunkStmts a [es interactOut] ] ]
+  --
+  let assignRet = jsConst a ret apiReturn
+  let ss = [callOnly [onlyThunk], es pub3, assignRet]
+  return ss
+  where
+    sepLHS a = \case
+      JSArrayLiteral _ xs _ ->
+        case jsa_flatten xs of
+          [JSIdentifier _ "_", k] -> return (mt, k)
+          [d, k] -> return (d, k)
+          [k] -> return (mt, k)
+          _ -> expect_ Err_ApiCallAssign
+      _ -> expect_ Err_ApiCallAssign
+      where
+        mt = JSArrayLiteral a [] a
+
 doForkAPI2Case :: [JSExpression] -> App [JSExpression]
 doForkAPI2Case args = do
   at <- withAt id
   let a = at2a at
-  let x = readJsExpr "() => ({ msg: declassify(interact.in()) })"
   let jid = JSIdentifier a
   idx <- ctxt_alloc
   let jidg xi = jid $ ".api" <> show idx <> "." <> xi
   let dom = jidg "dom"
   let dotdom = JSSpreadExpression a dom
-  let mkz w z = jsArrowExpr a [ dom ] $ jsCall a z [ dotdom, jsArrowExpr a [jidg "rng"] $ jsCall a (JSMemberDot w a (jid "only")) [ jsThunkStmts a [ JSIf a a (jsCall a (jid "didPublish") []) a $ JSExpressionStatement (jsCall a (JSMemberDot (jid "interact") a (jid "out")) [ dom, jidg "rng" ]) (a2sp a) ] ] ]
+  let dom2 = jidg "dom2"
+  let dotdom2 = JSSpreadExpression a $ dom2
+  let sp = a2sp a
+  let e2s = flip JSExpressionStatement sp
+  let mkx xp = jsThunkStmts a [ jsConst a dom (readJsExpr "declassify(interact.in())"), e2s (jsCall a xp [ dotdom ]), JSReturn a (Just $ jsObjectLiteral a $ M.fromList [ ("msg", dom) ] ) sp ]
+  let x = mkx $ jsArrowStmts a [ dotdom2 ] [ e2s $ JSUnaryExpression (JSUnaryOpVoid a) dom2 ]
+  let mky y = jsArrowExpr a [ dom ] $ jsCall a y [ dotdom ]
+  let doLog = jsCall a (jid ".emitLog") [ jidg "rng" ]
+  let mkzOnly w = jsCall a (JSMemberDot w a (jid "only")) [ jsThunkStmts a [ JSIf a a (jsCall a (jid "didPublish") []) a $ JSExpressionStatement (jsCall a (JSMemberDot (jid "interact") a (jid "out")) [ dom, jidg "rngl" ]) sp ] ]
+  let jsInlineCall _a f fargs =
+        case f of
+          JSExpressionParen _ e _ -> jsInlineCall a e fargs
+          JSArrowExpression aargs a' s -> do
+            let pargs = parseJSArrowFormals at aargs
+            let JSBlock _ ss _ = jsArrowStmtToBlock s
+            let ss' = [ jsConst a' (jsArrayLiteral a' pargs) (jsArrayLiteral a fargs) ]
+            return $ ss' <> ss
+          _ -> expect_ $ Err_Fork_ConsensusBadArrow f
+  let mkz w z = do
+        z' <- jsInlineCall a z [ dotdom, jsArrowStmts a [jidg "rng"] [ jsConst a (jidg "rngl") doLog, e2s $ mkzOnly w ] ]
+        return $ jsArrowStmts a [ dom ] z'
+  let mkz' w l z = do
+        z' <- mkz w z
+        return $ [w] <> l <> [ z' ]
   case args of
-    [w, y, z] -> return [w, x, y, mkz w z]
-    [w, z] -> return [w, x, mkz w z]
+    [w, xp, y, z] -> mkz' w [mkx xp, mky y] z
+    [w, y, z] -> mkz' w [x, mky y] z
+    [w, z] -> mkz' w [x] z
     --- Delay error to next level
     ow -> return ow
 
@@ -4199,7 +4367,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   let tv = jid $ ".t" <> show idx
   let mkobj l = JSObjectLiteral a (JSCTLNone $ toJSCL l) a
   let makeOnly who_e only_body = JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne $ jsThunkStmts a only_body) a sp
-  let defcon l r = JSConstant a (JSLOne $ JSVarInitExpression l $ JSVarInit a r) sp
+  let defcon = jsConst a
   let indexed = zip [0 ..] :: [a] -> [(Int, a)]
   let forkOnlyHelp who_e e_at before_e msg_id when_id = locAt e_at $ do
         let only_before_call_e = JSCallExpression (JSMemberDot who_e a (jid "only")) a (JSLOne before_e) a
@@ -4227,7 +4395,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         case after_e of
           JSArrowExpression args _ s -> do
             let JSBlock _ ss _ = jsArrowStmtToBlock s
-            let awrap x = JSArrayLiteral a [JSArrayElement x] a
+            let awrap x = jsArrayLiteral a [x]
             mdefmsg <-
               case parseJSArrowFormals a_at args of
                 [] -> return []
@@ -4523,6 +4691,18 @@ jsCallThunk a e = jsCall a e []
 jsCall :: JSAnnot -> JSExpression -> [JSExpression] -> JSExpression
 jsCall a f as = JSCallExpression f a (toJSCL as) a
 
+jsConst :: JSAnnot -> JSExpression -> JSExpression -> JSStatement
+jsConst a l r = JSConstant a (JSLOne $ JSVarInitExpression l $ JSVarInit a r) (a2sp a)
+
+jsObjectLiteral :: JSAnnot -> M.Map String JSExpression -> JSExpression
+jsObjectLiteral a m =
+  JSObjectLiteral a (JSCTLNone $ toJSCL $ map rm1 $ M.toAscList m) a
+  where
+    rm1 (k, t) = JSPropertyNameandValue (JSPropertyIdent a k) a [t]
+
+jsArrayLiteral :: JSAnnot -> [JSExpression] -> JSExpression
+jsArrayLiteral a es = JSArrayLiteral a (map JSArrayElement es) a
+
 evalStmtTrampoline :: JSSemi -> [JSStatement] -> SLVal -> App SLStmtRes
 evalStmtTrampoline sp ks ev =
   case findStmtTrampoline ev of
@@ -4738,6 +4918,9 @@ evalStmt = \case
         SLV_Form (SLForm_parallel_reduce_partial prr) -> do
           pr_ss <- doParallelReduce lhs prr
           evalStmt (pr_ss <> ks)
+        SLV_Form (SLForm_apiCall_partial acr) -> do
+          ac_ss <- doApiCall lhs acr
+          evalStmt (ac_ss <> ks)
         _ -> do
           addl_env <- evalDeclLHS True Nothing rhs_lvl mempty rhs_v lhs
           sco' <- sco_update addl_env
@@ -4746,7 +4929,7 @@ evalStmt = \case
     evalStmt $ assign : cont : cont_ks
     where
       assign = JSAssignStatement lhs op rhs sp
-      lhs = JSArrayLiteral a [] a
+      lhs = jsArrayLiteral a []
       op = JSAssign a
       rhs = lhs
   --- FIXME We could desugar all these to certain while patterns

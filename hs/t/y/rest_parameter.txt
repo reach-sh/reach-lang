@@ -4,3 +4,11 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
 Checked 5 theorems; No failures!
+warning[RW0004]: There are no publications in the application.
+
+  ./rest_parameter.rsh:8:12:application
+
+  8|   Reach.App(
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0004.html
+

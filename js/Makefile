@@ -2,14 +2,7 @@
 
 ROOT=..
 include $(ROOT)/js/JS_IMAGES
-
-# faster build for local tests; ignores react-runner
-.PHONY: b
-b:
-	(cd js-deps && $(MAKE) build)
-	(cd stdlib && $(MAKE) build)
-	(cd runner && $(MAKE) build)
-	(cd rpc-server && $(MAKE) build)
+include $(ROOT)/DEPS
 
 .PHONY: build-js-deps
 build-js-deps:
@@ -33,6 +26,10 @@ build-react-runner:
 
 .PHONY: build
 build: build-js-deps build-stdlib build-runner build-rpc-server build-react-runner
+
+# faster build for local tests; ignores react-runner
+.PHONY: b
+b: build-js-deps build-stdlib build-runner build-rpc-server
 
 .PHONY: test
 test: build

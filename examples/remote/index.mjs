@@ -10,13 +10,13 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
   if ( stdlib.connector === 'ALGO' ) { return; }
   const ethers = stdlib.connector === 'CFX' ? cfxers : real_ethers;
 
-  const startingBalance = stdlib.parseCurrency(10);
+  const startingBalance = stdlib.parseCurrency(100);
   const [ accAlice, accBob, accCreator ] = await stdlib.newTestAccounts(3, startingBalance);
 
   const myGasLimit = 5000000;
-  accAlice.setGasLimit(myGasLimit);
-  accBob.setGasLimit(myGasLimit);
-  accCreator.setGasLimit(myGasLimit);
+  accAlice.setDebugLabel('Alice').setGasLimit(myGasLimit);
+  accBob.setDebugLabel('Bob').setGasLimit(myGasLimit);
+  accCreator.setDebugLabel('Creator').setGasLimit(myGasLimit);
 
   const gil = await launchToken(stdlib, accCreator, "gil", "GIL");
   await gil.mint(accAlice, startingBalance);

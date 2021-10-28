@@ -14,3 +14,11 @@ Verification failed:
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
 Checked 5 theorems; 2 failures (and 1 omitted repeats) :'(
+warning[RW0004]: There are no publications in the application.
+
+  ./fxsqrt.rsh:5:12:application
+
+  5|   Reach.App(
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0004.html
+

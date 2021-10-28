@@ -389,6 +389,20 @@ An object where the keys are the participant names and the values are function t
 
 @jsin{acc.contract(backend).p.Alice(io)} is equivalent to @jsin{backend.Alice(acc.contract(backend), io)}, but does not require duplication of the @jsin{backend} component.
 
+@js{
+ ctc.apis // {[name: string]: {[fun:string]: (...args) => Promise<res>}}
+ ctc.apis // {[name: string]: (...args) => Promise<result>}
+ ctc.a
+
+ ctc.a.Voter.cast("Pedro")
+}
+
+@index{ctc.apis}
+@index{ctc.a}
+An object that mirrors the @tech{API} hierarchy, so if @litchar{X.Y} is an @tech{API}, then @jsin{ctc.apis.X.Y} is an @deftech{API function}.
+An @tech{API function} accepts the arguments of the @tech{API} and returns a @jsin{Promise} that results in the value of the @tech{API}.
+This function may throw an error if the @tech{API} is not available.
+
 @margin-note{@tech{Views} are @seclink["ref-programs-appinit-view"]{defined in application initialization} and then they are @seclink["ref-programs-consensus-view"]{set in consensus steps}. Both of these steps are in Reach. This section is about accessing them in JavaScript frontends.}
 
 @js{
@@ -560,7 +574,7 @@ On Algorand, @jsin{provider} is an object:
 interface Provider {
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
-  getDefaultAddress: () => Address,
+  getDefaultAddress: () => Promise<Address>,
   isIsolatedNetwork: boolean,
   signAndPostTxns: (txns:WalletTransaction[], opts?: any) => Promise<any>,
 };

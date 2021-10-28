@@ -1,4 +1,11 @@
-WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./Err_Eval_IncompatibleStates.rsh:6:15:application
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+
+  ./Err_Eval_IncompatibleStates.rsh:6:15:application
+
+  6|       .timeout(1, () => {});
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+
 reachc: error[RE0027]: Cannot inspect consensus time until after first publication
 
   reach standard library:586:31:application

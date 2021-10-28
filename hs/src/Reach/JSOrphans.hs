@@ -6,6 +6,7 @@ module Reach.JSOrphans () where
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.Lexer
 import Reach.Texty
+import qualified Data.Text.Lazy as T
 
 instance Ord TokenPosn where
   compare (TokenPn x_a x_l x_c) (TokenPn y_a y_l y_c) =
@@ -15,7 +16,7 @@ instance Ord TokenPosn where
 deriving instance Read Token
 
 viaJS :: (JSAnnot -> JSAST) -> Doc
-viaJS mk = DText $ renderToText $ mk JSNoAnnot
+viaJS mk = DText $ T.pack $ unwords . words $ T.unpack $ renderToText $ mk JSNoAnnot
 
 instance Pretty JSExpression where
   pretty = viaJS . JSAstExpression

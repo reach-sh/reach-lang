@@ -64,6 +64,7 @@ instance Subst DLTokenNew where
     <*> subst dtn_url
     <*> subst dtn_metadata
     <*> subst dtn_supply
+    <*> subst dtn_decimals
 
 instance Subst DLWithBill where
   subst (DLWithBill y z) =
@@ -98,6 +99,7 @@ instance Subst DLExpr where
     DLE_TimeOrder at tos -> DLE_TimeOrder at <$> subst tos
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
+    DLE_EmitLog at m x -> DLE_EmitLog at m <$> subst x
 
 instance Subst DLStmt where
   subst = \case

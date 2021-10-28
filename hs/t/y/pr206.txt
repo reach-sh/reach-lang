@@ -7,4 +7,11 @@ Verifying for generic connector
   Verifying when ONLY "Merchant" is honest
   Verifying when ONLY "PotentialBuyer" is honest
 Checked 156 theorems; No failures!
-WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./pr206.rsh:170:31:application
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+
+  ./pr206.rsh:170:31:application
+
+  170|                 parallelReduce([ false, false, false ])
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+

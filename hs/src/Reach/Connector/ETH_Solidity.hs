@@ -100,7 +100,7 @@ solContract :: String -> Doc -> Doc
 solContract s body = "contract" <+> pretty s <+> solBraces body
 
 solVersion :: Doc
-solVersion = "pragma solidity ^0.8.9;"
+solVersion = "pragma solidity ^" <> pretty solcVersionStr <> ";"
 
 solStdLib :: Doc
 solStdLib = pretty $ B.unpack stdlib_sol
@@ -311,16 +311,6 @@ readDepth v = do
   mvars <- readCtxtIO ctxt_depths
   return $ fromMaybe 0 $ M.lookup v mvars
 
-addOutputEvent :: DLVar -> Doc -> App ()
-addOutputEvent v d = modifyCtxtIO ctxt_outputs $ M.insert v d
-
-doOutputEvent :: DLVar -> App [Doc]
-doOutputEvent dv = do
-  dv_ty' <- solType $ varType dv
-  let go sv l = solApply (solOutput_evt dv) [l <+> sv dv] <> semi
-  addOutputEvent dv $ "event" <+> go solRawVar dv_ty'
-  return $ ["emit" <+> go solMemVar ""]
-
 addUint8ArrayToString :: Integer -> App Doc
 addUint8ArrayToString len = do
   let f = "uint8ArrayToString_" <> show len
@@ -406,6 +396,7 @@ instance DepthOf DLExpr where
     DLE_TimeOrder {} -> impossible "timeorder"
     DLE_GetContract {} -> return 1
     DLE_GetAddress {} -> return 1
+    DLE_EmitLog _ _ a -> add1 $ depthOf a
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])
@@ -631,7 +622,17 @@ solExpr sp = \case
     fa' <- solArg fa
     return $ "delete" <+> solArrayRef (solMapVar mpv) fa' <> sp
   DLE_Remote {} -> impossible "remote"
-  DLE_TokenNew {} -> impossible "tokennew"
+  DLE_TokenNew _ (DLTokenNew {..}) -> do
+    let go a = do
+          a' <- solArg a
+          uint8ArrayToString (bytesTypeLen $ argTypeOf a) a'
+    n' <- go dtn_name
+    s' <- go dtn_sym
+    u' <- go dtn_url
+    m' <- go dtn_metadata
+    p' <- solArg dtn_supply
+    d' <- maybe (return $ solLit $ DLL_Int srcloc_builtin 18) solArg dtn_decimals
+    return $ solApply "payable" [ solApply "address" [ "new" <+> solApply "ReachToken" [ n', s', u', m', p', d' ] ] ]
   DLE_TokenBurn _ ta aa -> do
     ta' <- solArg ta
     aa' <- solArg aa
@@ -642,6 +643,7 @@ solExpr sp = \case
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract {} -> return $ "payable(address(this))"
   DLE_GetAddress {} -> return $ "payable(address(this))"
+  DLE_EmitLog {} -> impossible "emitLog"
   where
     spa m = (<> sp) <$> m
 
@@ -746,6 +748,7 @@ solCom :: AppT DLStmt
 solCom = \case
   DL_Nop _ -> mempty
   DL_Let _ pv (DLE_Remote at fs av f (DLPayAmt net ks) as (DLWithBill nonNetTokRecv nnTokRecvZero)) -> do
+    -- XXX make this not rely on pv
     av' <- solArg av
     as' <- mapM solArg as
     dom'mem <- mapM (solType_withArgLoc . argTypeOf) as
@@ -824,7 +827,6 @@ solCom = \case
     sub' <- solPrimApply SUB [meBalance, v_before]
     let sub'l = [solSet (solMemVar dv <> ".elem0") sub']
     -- Non-network tokens received from remote call
-    logl <- doOutputEvent dv
     let pv' =
           case rng_ty of
             T_Null -> []
@@ -851,21 +853,19 @@ solCom = \case
           <> checkNonNetTokAllowances
           <> sub'l
           <> pv'
-          <> logl
-  DL_Let _ DLV_Eff (DLE_TokenNew {}) -> mempty
-  DL_Let _ (DLV_Let _ dv) (DLE_TokenNew _ (DLTokenNew {..})) -> do
-    let go a = do
-          a' <- solArg a
-          uint8ArrayToString (bytesTypeLen $ argTypeOf a) a'
-    n' <- go dtn_name
-    s' <- go dtn_sym
-    u' <- go dtn_url
-    m' <- go dtn_metadata
-    p' <- solArg dtn_supply
-    let rhs = solApply "payable" [ solApply "address" [ "new" <+> solApply "ReachToken" [ n', s', u', m', p' ] ] ]
-    addMemVar dv
-    logl <- doOutputEvent dv
-    return $ vsep $ [ solSet (solMemVar dv) rhs ] <> logl
+  DL_Let _ pv (DLE_EmitLog _ _ lv) -> do
+    lv' <- solVar lv
+    lv_ty' <- solType $ varType lv
+    let go sv l = solApply (solOutput_evt lv) [l <+> sv lv] <> semi
+    let ed = "event" <+> go solRawVar lv_ty'
+    modifyCtxtIO ctxt_outputs $ M.insert lv ed
+    let emitl = "emit" <+> go (const lv') ""
+    case pv of
+      DLV_Eff -> do
+        return emitl
+      DLV_Let _ dv -> do
+        addMemVar dv
+        return $ vsep [ solSet (solMemVar dv) lv', emitl ]
   DL_Let _ (DLV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv
     solLargeArg dv la
@@ -997,12 +997,21 @@ solCTail = \case
   CT_From _ which (FI_Continue svs) -> do
     vsep <$> solStateSet which svs
   CT_From _ _ (FI_Halt _toks) -> do
-    -- XXX we could "selfdestruct" our token holdings, based on _toks
     return $ vsep $
         [ solSet "current_step" "0x0"
         , solSet "current_time" "0x0"
         , "delete current_svbs;"
-        , solApply "selfdestruct" ["payable(msg.sender)"] <> semi
+        -- We could "selfdestruct" our token holdings, based on _toks
+        --
+        -- , solApply "selfdestruct" ["payable(msg.sender)"] <> semi
+        --
+        -- However, we don't do either of these, because selfdestruct-ing is
+        -- dangerous, because although the contract is gone, that means the
+        -- messages sent to it are like no-ops, so they can take funds from
+        -- clients that think they are calling real contracts. Ideally, we'd be
+        -- able to get back our funds (e.g. on Conflux where there are storage
+        -- costs), we would rather not get those, than have users lose funds to
+        -- dead contracts.
         ]
 
 solFrame :: Int -> S.Set DLVar -> App (Doc, Doc)
@@ -1059,15 +1068,16 @@ solHandler which h = freshVarMap $
       (frameDefn, frameDecl, ctp) <- solCTail_top which solSVSVar svs msg (Just msg) ct
       evtDefn <- solEvent which msg
       let ret = "payable"
-      (hc_reqs, svs_init, am, sfl) <-
+      (hc_reqs, svs_init, c_inits, am, sfl) <-
         case which == 0 of
           True -> do
-            return (mempty, mempty, AM_Memory, SFL_Constructor)
+            let inits = [solSet "creation_time" solBlockTime]
+            return (mempty, mempty, inits, AM_Memory, SFL_Constructor)
           False -> do
             csv <- solStateCheck prev
             svs_ty' <- solAsnType svs
             let csvs = [solSet (parens $ solDecl "_svs" (mayMemSol svs_ty')) $ solApply "abi.decode" ["current_svbs", parens svs_ty']]
-            return (csv, csvs, AM_Call, SFL_Function True (solMsg_fun which))
+            return (csv, csvs, mempty, AM_Call, SFL_Function True (solMsg_fun which))
       let hc_go lab chk =
             (<> semi) <$> solRequire (checkMsg $ "state " <> lab) chk
       hashCheck <- mapM (uncurry hc_go) hc_reqs
@@ -1089,7 +1099,7 @@ solHandler which h = freshVarMap $
             Just x -> (\y->[y]) <$> checkTime1 op x
       let CBetween ifrom ito = interval
       timeoutCheck <- vsep <$> ((<>) <$> checkTime PGE ifrom <*> checkTime PLT ito)
-      let body = vsep $ hashCheck <> lock <> svs_init <> [ frameDecl, timeoutCheck, ctp]
+      let body = vsep $ hashCheck <> lock <> svs_init <> [ frameDecl, timeoutCheck, ctp] <> c_inits
       let funDefn = solFunctionLike sfl [argDefn] ret body
       return $ vsep [evtDefn, frameDefn, funDefn]
     C_Loop _at svs lcmsg ct -> do
@@ -1303,7 +1313,10 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
             [ "uint256 current_step;"
             , "uint256 current_time;"
             , "  bytes current_svbs;"
+            , "uint256 creation_time;"
+            , "function _reachCreationTime() external view returns (uint256) { return creation_time; }"
             , "function _reachCurrentTime() external view returns (uint256) { return current_time; }"
+            , "function _reachCurrentState() external view returns (uint256, bytes memory) { return (current_step, current_svbs); }"
             ] <> map_defns <> view_defns
     hs' <- solHandlers hs
     let getm ctxt_f = (vsep . map snd . M.toAscList) <$> (liftIO $ readIORef ctxt_f)
@@ -1312,8 +1325,9 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
     intsp <- getm ctxt_ints
     outputsp <- getm ctxt_outputs
     tlfunsp <- getm ctxt_tlfuns
-    -- XXX expose this to Reach? only include if bills?
-    let defp = "receive () external payable {}"
+    let defp = vsep $
+          [ "receive () external payable {}"
+          , "fallback () external payable {}" ]
     let ctcbody = vsep $ [state_defn, typefsp, outputsp, tlfunsp, hs', defp]
     let ctcp = solContract "ReachContract is Stdlib" $ ctcbody
     let cinfo =
@@ -1322,7 +1336,7 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
             ]
     let preamble =
           vsep
-            [ "// Automatically generated with Reach" <+> (pretty versionStr)
+            [ "// Automatically generated with Reach" <+> (pretty versionHashStr)
             , "pragma abicoder v2" <> semi
             ]
     return $ (cinfo, vsep $ [preamble, solVersion, solStdLib, typedsp, intsp, ctcp])
@@ -1378,7 +1392,7 @@ try_compile_sol solf opt = do
         Right x -> return $ Right (me, x)
 
 reachEthBackendVersion :: Int
-reachEthBackendVersion = 3
+reachEthBackendVersion = 5
 
 compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorInfo
 compile_sol cinfo solf = do
@@ -1390,7 +1404,7 @@ compile_sol cinfo solf = do
           len = T.length csrCode
   let try = try_compile_sol solf
   let merr = \case
-        Left e -> emitWarning $ W_SolidityOptimizeFailure e
+        Left e -> emitWarning Nothing $ W_SolidityOptimizeFailure e
         Right _ -> return ()
   let desperate = \case
         Right x -> \_ _ -> return $ x

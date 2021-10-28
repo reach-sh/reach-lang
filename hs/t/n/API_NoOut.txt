@@ -5,3 +5,11 @@ Verifying for generic connector
   Verifying when ONLY "Admin" is honest
   Verifying when ONLY "Writer_f" is honest
 Checked 18 theorems; No failures!
+reachc: error[RAPI0003]: API "Writer_f" does not return result
+
+  ./API_NoOut.rsh:13:19:application
+
+  13|     parallelReduce(0)
+
+For further explanation of this error, see: https://docs.reach.sh/RAPI0003.html
+

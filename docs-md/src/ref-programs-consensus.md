@@ -30,7 +30,7 @@ ${seclink("ref-programs-only-step")} are allowed in consensus steps and are exec
 
 ::: note
 Views are [defined in application initialization](##ref-programs-appinit-view) in Reach.
-They are [accessed by frontends](##ref-frontends-js-view) by using the Reach standard library of the frontend language, such as JavaScript.
+They are [accessed by frontends](##ref-frontends-js-ctc) by using the Reach standard library of the frontend language, such as JavaScript.
 This section is about defining the value of a view in your Reach program.
 :::
 
@@ -207,6 +207,10 @@ const LHS =
     PUBLISH_EXPR,
     PAY_EXPR,
     CONSENSUS_EXPR)
+  .api(API_EXPR,
+    ASSUME_EXPR,
+    PAY_EXPR,
+    CONSENSUS_EXPR)
   .timeout(DELAY_EXPR, () =>
     TIMEOUT_BLOCK);
 ```
@@ -215,9 +219,9 @@ const LHS =
 The `LHS` and `INIT_EXPR` are like the initialization component of a `while` loop; and,
 the `.invariant` and `.while` components are like the invariant and condition of a `while` loop;
 the `DEFINE_BLOCK` is like the `DEFINE_BLOCK` of a `while` loop;
-while the `.case`, `.timeout`, and `.paySpec` components are like the corresponding components of a `fork` statement.
+while the `.case`, `.api`, `.timeout`, and `.paySpec` components are like the corresponding components of a `fork` statement.
 
-The `.case` component may be repeated many times, provided the `PART_EXPR`s each evaluate to a unique participant, just like in a `fork` statement.
+The `.case` component may be repeated many times, just like in a `fork` statement.
 
 The `.define` component may define bindings that reference the `LHS` values. These bindings are accessible
 from every component of the `parallelReduce` statement, except for the `INIT_EXPR`.
@@ -282,7 +286,8 @@ The idea is that there are some values (the `LHS`) which after intialization wil
 
 ```reach
 var LHS = INIT_EXPR;
-invariant(INVARIANT_EXPR)
+DEFINE_BLOCK;
+invariant(INVARIANT_EXPR);
 while(COND_EXPR) {
   fork()
   .case(PART_EXPR,
@@ -411,7 +416,7 @@ has been called on `tok` yet.
 ${ref((quote rsh), "remote")}
 ```reach
 const randomOracle =
-  remote( randomOracleAddr, {
+  remote( randomOracleCtcInfo, {
     getRandom: Fun([], UInt),
   });
 const randomVal = randomOracle.getRandom.pay(randomFee)();
@@ -425,16 +430,16 @@ ${seclink("ref-networks")} discusses how Reach supports remote objects on specif
 A ${defn("remote object")} represents a foreign contract in a Reach application.
 During a consensus step, a Reach computation may consensually communicate with such an object via a prescribed interface.
 
-A remote object is constructed by calling the `remote` function with an address and an interface---an object where each key is bound to a function type. For example:
+A remote object is constructed by calling the `remote` function with a `Contract` and an interface---an object where each key is bound to a function type. For example:
 ```reach
 const randomOracle =
-  remote( randomOracleAddr, {
+  remote( randomOracleCtcInfo, {
     getRandom: Fun([], UInt),
   });
 const token =
-  remote( tokenAddr, {
+  remote( tokenCtcInfo, {
     balanceOf: Fun([Address], UInt),
-    transferTo: Fun([UInt, Addres], Null),
+    transferTo: Fun([UInt, Address], Null),
   });
 ```
 

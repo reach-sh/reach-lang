@@ -6,9 +6,23 @@
 Below is a list of changes to Reach.
 Versions and changes-within-versions are listed in reverse-chronological order: newest things first.
 
-@section[#:style 'hidden-number]{0.1.5: 2021/09 - present}
+@section[#:style 'hidden-number]{0.1.6: 2021/10 - present}
 
-Version 0.1.5 is the current Reach release candidate version.
+Version 0.1.6 is the current Reach release candidate version.
+
+@itemlist[
+@item{2021/10/28: The backend interface to deployed contracts was updated, so old contracts will not work with this version.}
+@item{2021/10/28: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.}
+@item{2021/10/20: Added @reachin{decimals} field for @tech{token minting}.}
+@item{2021/10/18: Added @tech{API}s via the @reachin{API} form.}
+@item{2021/10/15: The backend interface to deployed contracts was updated, so old contracts will not work with this version.}
+@item{2021/10/15: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.}
+@item{2021/10/15: Algorand devnet updated to versions 3.0.1 and 2.6.4}
+]
+
+@section[#:style 'hidden-number]{0.1.5: 2021/09 - 2021/10}
+
+Version 0.1.5 is the current Reach release version.
 
 @itemlist[
 @item{2021/10/15: Added @jsin{setValidQueryWindow}.}
@@ -35,7 +49,7 @@ Instead, you probably want to select one of your existing participants and assig
 
 @section[#:style 'hidden-number]{0.1.4: 2021/09 - 2021/09}
 
-Version 0.1.4 is the current Reach release version.
+Version 0.1.4 is is an old Reach release version.
 
 @itemlist[
 @item{2021/09/15: @reachin{muldiv} added.}
@@ -98,7 +112,7 @@ It is the last version that supports Algorand using TEAL3; if you deployed a con
 
 @itemlist[
 @item{2021/07/09: @reachin{.define} component added to @reachin{parallelReduce}}
-@item{2021/07/08: @seclink["ref-error-codes"]{Error code referenec} created}
+@item{2021/07/08: @seclink["ref-error-codes"]{Error code reference} created}
 @item{2021/06/20: @tech{Token minting} introduced, with implementation on ETH.}
 @item{... many interesting things ...}
 @item{2020/09/01: version tagged}

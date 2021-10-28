@@ -1,0 +1,15 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Admin" is honest
+  Verifying when ONLY "Writer_f" is honest
+Checked 7 theorems; No failures!
+reachc: error[RAPI0000]: API "Writer_f" does not occur in program
+
+  ./API_NoIn.rsh:3:30:application
+
+  3| export const main = Reach.App(() => {
+
+For further explanation of this error, see: https://docs.reach.sh/RAPI0000.html
+

@@ -9,10 +9,10 @@ Verification failed:
 
   // Violation Witness
 
-  const v68 = "Alice".interact.get();
+  const v68 = protect<UInt>("Alice".interact.get());
   //    ^ could = 38
   //      from: ./map-dset.rsh:16:51:application
-  const v77 = "Bob".interact.get();
+  const v77 = protect<UInt>("Bob".interact.get());
   //    ^ could = 0
   //      from: ./map-dset.rsh:21:51:application
 

@@ -153,8 +153,11 @@ export const BT_Array = (ctc: BackendTy<CBR_Val> , size: number): BackendTy<CBR_
       if (size != args.length) {
         throw Error(`Expected array of length ${size}, but got ${args.length}`);
       }
-      const val = args.map((arg) => ctc.canonicalize(arg));
-      return val;
+      const parr = new Array(size);
+      for ( let i = 0; i < size; i++ ) {
+        parr[i] = ctc.canonicalize(args[i]);
+      }
+      return parr;
     },
   };
 };

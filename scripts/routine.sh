@@ -1,14 +1,15 @@
 #! /bin/sh
 set -ex
+MODE="$1"
 
-if [ "$1" = "build" ]; then
+if [ "$MODE" = "build" ]; then
   alias go='make build'
-elif [ "$1" = "push" ]; then
+elif [ "$MODE" = "push" ]; then
   alias go='make push'
-elif [ "$1" = "build-push" ]; then
+elif [ "$MODE" = "build-push" ]; then
   alias go='make build push'
 else
-  echo "I don't know how to '$1'"
+  echo "I don't know how to '$MODE'"
   exit 1
 fi
 
@@ -25,7 +26,7 @@ CFX=$!
 
 wait $HS $JS $ALGO $ETH $CFX
 
-if [ "$1" = "build-push" ]; then
+if [ "$MODE" = "build-push" ]; then
   set +x
   echo "============================"
   echo "Don't forget js-reach-stdlib"

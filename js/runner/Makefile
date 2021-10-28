@@ -1,5 +1,6 @@
 ROOT=../..
 include $(ROOT)/js/JS_IMAGES
+include $(ROOT)/DEPS
 
 IMAGE=$(RUNNER_IMAGE)
 
