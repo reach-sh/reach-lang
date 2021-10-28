@@ -978,6 +978,21 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
       throw Error(`verifyContract failed: ${msg}`);
     }
   };
+
+  // A Reach contract will have a view `_reachCreationTime`
+  // where we can see it's creation block. Use this information
+  // for querying the contract.
+  let creation_block = 0;
+  try {
+    const tmpAccount: Account = await newTestAccount(0);
+    const ctc = new ethers.Contract(address, ABI, tmpAccount.networkAccount);
+    const creation_time = await ctc["_reachCreationTime"]();
+    creation_block = bigNumberify(creation_time).toNumber();
+
+  } catch (e) {
+    chk(false, `The contract is not a Reach contract: ${e}`);
+  }
+
   const chkeq = (a: any, e:any, msg:string) => {
     const as = JSON.stringify(a);
     const es = JSON.stringify(e);
@@ -989,14 +1004,13 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
   const lookupLog = async (event:string): Promise<any> => {
     debug(dhead, 'lookupLog', {event, now});
     while ( eventCache.currentBlock <= now ) {
-      const res = await eventCache.queryContract(dhead, address, iface, 0, [ 'time', bigNumberify(now) ], event);
+      const res = await eventCache.queryContract(dhead, address, iface, creation_block, [ 'time', bigNumberify(now) ], event);
       if ( ! res.succ ) { continue; }
       return res.evt;
     }
     chk(false, `Contract was claimed to be deployed, but the current block is ${now} (cached @ ${eventCache.currentBlock}) and it hasn't been deployed yet.`);
   };
   const e0log = await lookupLog('e0');
-  const creation_block = e0log.blockNumber;
 
   debug(dhead, `checking code...`);
   const dt = await provider.getTransaction( e0log.transactionHash );

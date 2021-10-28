@@ -1068,15 +1068,16 @@ solHandler which h = freshVarMap $
       (frameDefn, frameDecl, ctp) <- solCTail_top which solSVSVar svs msg (Just msg) ct
       evtDefn <- solEvent which msg
       let ret = "payable"
-      (hc_reqs, svs_init, am, sfl) <-
+      (hc_reqs, svs_init, c_inits, am, sfl) <-
         case which == 0 of
           True -> do
-            return (mempty, mempty, AM_Memory, SFL_Constructor)
+            let inits = [solSet "creation_time" solBlockTime]
+            return (mempty, mempty, inits, AM_Memory, SFL_Constructor)
           False -> do
             csv <- solStateCheck prev
             svs_ty' <- solAsnType svs
             let csvs = [solSet (parens $ solDecl "_svs" (mayMemSol svs_ty')) $ solApply "abi.decode" ["current_svbs", parens svs_ty']]
-            return (csv, csvs, AM_Call, SFL_Function True (solMsg_fun which))
+            return (csv, csvs, mempty, AM_Call, SFL_Function True (solMsg_fun which))
       let hc_go lab chk =
             (<> semi) <$> solRequire (checkMsg $ "state " <> lab) chk
       hashCheck <- mapM (uncurry hc_go) hc_reqs
@@ -1098,7 +1099,7 @@ solHandler which h = freshVarMap $
             Just x -> (\y->[y]) <$> checkTime1 op x
       let CBetween ifrom ito = interval
       timeoutCheck <- vsep <$> ((<>) <$> checkTime PGE ifrom <*> checkTime PLT ito)
-      let body = vsep $ hashCheck <> lock <> svs_init <> [ frameDecl, timeoutCheck, ctp]
+      let body = vsep $ hashCheck <> lock <> svs_init <> [ frameDecl, timeoutCheck, ctp] <> c_inits
       let funDefn = solFunctionLike sfl [argDefn] ret body
       return $ vsep [evtDefn, frameDefn, funDefn]
     C_Loop _at svs lcmsg ct -> do
@@ -1312,6 +1313,8 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
             [ "uint256 current_step;"
             , "uint256 current_time;"
             , "  bytes current_svbs;"
+            , "uint256 creation_time;"
+            , "function _reachCreationTime() external view returns (uint256) { return creation_time; }"
             , "function _reachCurrentTime() external view returns (uint256) { return current_time; }"
             , "function _reachCurrentState() external view returns (uint256, bytes memory) { return (current_step, current_svbs); }"
             ] <> map_defns <> view_defns
