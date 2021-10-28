@@ -25,14 +25,6 @@ namespace Rpc
         this.port = port;
         this.key = key;
     }
-    public RPCOptions(string host, string port, string key, int timeout, string verify)
-    {
-        this.host = host;
-        this.port = port;
-        this.key = key;
-        this.timeout = timeout;
-        this.verify = verify;
-    }
 }
 
 public class RPCValue
@@ -69,6 +61,7 @@ public class CallbackResponse
     public string m;
     public string t;
     public string kid;
+    public dynamic[] args;
 }
 public interface ILogger //public added
     {
@@ -155,7 +148,7 @@ public class ReachRPC
 
         return data;
     }
-    static readonly HttpClient client = new HttpClient();
+static readonly HttpClient client = new HttpClient();
 private int GetIndexOfFunction(string fnName, RPCCallback[] list)
 {
     for (int i = 0; i < list.Length; i++)
@@ -176,8 +169,9 @@ private int GetIndexOfFunction(string fnName, RPCCallback[] list)
         logger.Info(" only be permitted under controlled conditions (such as\n");
         logger.Info(" during development)...\n\n");
         string url = "https://" + options.host + ":" + options.port + path;
-        string postData = args.Length > 0 ? StringifyArgs(args) : "";
+        string postData = StringifyArgs(args);
         var httpWebRequest = WebRequest.CreateHttp(url);
+        httpWebRequest.Method = "POST";
         httpWebRequest.ContentType = "application/json";
         httpWebRequest.Headers.Add("X-API-Key", options.key);
         httpWebRequest.Headers.Add("cache-control", "no-cache");
@@ -185,7 +179,7 @@ private int GetIndexOfFunction(string fnName, RPCCallback[] list)
         {
             byte[] bodyRaw = Encoding.UTF8.GetBytes(postData);
         }
-                Console.WriteLine("\nThe HttpHeaders are \n{0}",httpWebRequest.Headers);
+                Console.WriteLine("\nThe HttpHeaders are \n{0}", httpWebRequest.Headers);
 
                 httpWebRequest.Method = "POST";    
 
@@ -207,7 +201,6 @@ private int GetIndexOfFunction(string fnName, RPCCallback[] list)
          {
                  logger.Error(e.Message);
          }
-        await Task.Yield();
         return postData;
     }
  public async Task Callbacks(string path, string contract, RPCValue[] values, RPCCallback[] callbacks)

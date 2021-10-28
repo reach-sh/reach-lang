@@ -352,6 +352,7 @@ const T_Contract = {
 };
 
 const addressEq = mkAddressEq(T_Address);
+const digestEq = shared_backend.eq;
 
 const T_Token = T_Address;
 const tokenEq = addressEq;
@@ -381,6 +382,8 @@ const stdlib: Stdlib_Backend_Base<AnyETH_Ty> = {
   ...arith,
   ...typeDefs,
   addressEq,
+  // @ts-ignore
+  digestEq,
   tokenEq,
   digest,
   UInt_max,

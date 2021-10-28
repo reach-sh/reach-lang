@@ -5,5 +5,19 @@ Verifying for generic connector
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
 Checked 85 theorems; No failures!
-WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./fork_exp.rsh:70:19:application
-WARNING: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs at ./fork_exp.rsh:38:17:application
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+
+  ./fork_exp.rsh:70:19:application
+
+  70|           .timeout(deadline, () => {
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+
+  ./fork_exp.rsh:38:17:application
+
+  38|         .timeout(deadline, () => closeTo(Alice, showOutcome(TIMEOUT)));
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+

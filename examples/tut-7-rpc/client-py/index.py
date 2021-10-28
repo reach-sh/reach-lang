@@ -8,7 +8,7 @@ from reach_rpc import mk_rpc
 def main():
     rpc, rpc_callbacks = mk_rpc()
 
-    starting_balance = rpc('/stdlib/parseCurrency', 10)
+    starting_balance = rpc('/stdlib/parseCurrency', 100)
     acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)
     acc_bob          = rpc('/stdlib/newTestAccount', starting_balance)
 

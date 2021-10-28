@@ -2114,6 +2114,26 @@ Additionally, you can create a new @reachin{Participant} to specifically perform
   // ...
 }
 
+@error{RE0121}
+
+This error indicates that one of an API's interface members is not a function.
+For example:
+
+@reach{
+  const A = API('api', {
+    tastiness: UInt,
+  });
+}
+
+@error{RE0122}
+
+This error indicates that the left-hand side of a @reach{call} assignment is not a pair of the domain and a function to return a result to the function.
+For example:
+
+@reach{
+  const x = call(Voter.vote);
+}
+
 @error{REP0000}
 
 This error indicates that the body of a @reachin{while} loop does not make a publication before the @reachin{continue}
@@ -2144,6 +2164,83 @@ You can fix this code by making a publication within the @reachin{loop}:
 }
 
 Note that the body of a @reachin{while} starts in a @tech{consensus step} so you must first @reachin{commit} before making a publication.
+
+@error{REP0001}
+
+This error indicates that a @reachin{View} is set, but never @link["https://en.wikipedia.org/wiki/Dominator_(graph_theory)"]{dominates} any @reachin{commit}s.
+This means the value the @reachin{View} is set to will never be observable.
+
+For example, the code below attempts to set a loop variable as the value of a @reachin{View}:
+
+@reach{
+export const main = Reach.App(() => {
+  const A = Participant('Alice', {
+    observe: Fun([], Null)
+  });
+  const I = View('I', { i: UInt });
+  deploy();
+
+  A.publish();
+
+  var [ i ] = [0];
+  { }
+  invariant (balance() == 0);
+  while ( i < 5 ) {
+    commit();
+
+    A.interact.observe();
+    A.publish();
+
+    I.i.set(i);
+
+    i = i + 1;
+    continue;
+  }
+
+  commit();
+});
+}
+
+The effect of @reachin{I.i.set(i)} is only observable after the next @reachin{commit} in its scope.
+Since, there are no @reachin{commit}s between @reachin{I.i.set(i)} and @reachin{continue}, which is the end of the lexical scope, there is no
+way to observe the effect of setting @reachin{I.i}.
+
+You can generally fix this error by inserting a @reachin{commit} in the area where you'd like
+the effect of setting a @reachin{View} to be observable. In the case of a @reachin{while} loop, like the
+program above, it can be fixed the following way:
+
+@reach{
+export const main = Reach.App(() => {
+  const A = Participant('Alice', {
+    observe: Fun([], Null)
+  });
+  const I = View('I', { i: UInt });
+  deploy();
+
+  A.publish();
+
+  var [ i ] = [0];
+  {
+    I.i.set(i);
+  }
+  invariant (balance() == 0);
+  while ( i < 5 ) {
+    commit();
+
+    A.interact.observe();
+    A.publish();
+
+    i = i + 1;
+    continue;
+  }
+
+  commit();
+});
+}
+
+This change will ensure the @reachin{View} @reachin{I.i} is set to @reachin{i} on every iteration of the
+loop. Additionally, the continuation of the loop will have @reachin{I.i} set to the last value of
+the loop variable @reachin{i}.
 
 @error{RI0000}
 
@@ -2331,4 +2428,49 @@ at runtime. You can fix this code by verifying the claim via an @reachin{assert}
   const x = forall(UInt);
   assert(x >= 0);
 }
+
+@error{RAPI0000}
+
+This error means that you defined an @tech{API} but did not actually use it in your prorgam.
+
+@error{RAPI0001}
+
+This error means that you returned the result to an @tech{API} without calling it.
+This is generally not possible unless you directly use the internal representation of APIs.
+
+@error{RAPI0002}
+
+The error means that you use an @tech{API} in two places in your program, which is not allowed.
+
+@error{RAPI0003}
+
+This error means that you did not return a result from an @tech{API} call.
+
+@error{RW0000}
+
+This warning means the syntax or function you are trying to use is deprecated. It is still supported
+by the Reach compiler, but future versions of Reach may stop supporting it.
+
+You can fix this warning by using the new syntax or function the message suggests.
+
+@error{RW0001}
+
+This warning indicates there is an issue with the Solidity compiler. The message provided can
+be reported to Solidity.
+
+@error{RW0002}
+
+This warning indicates that your program either uses a feature that is not yet supported on Algorand
+or surpasses Algorand's limit on resources.
+
+@error{RW0003}
+
+This warning indicates your program will not run on Algorand for the listed reasons. These
+reasons include a limit on the total computation cost.
+
+@error{RW0004}
+
+This warning indicates that your program does not contain any publications.
+
+You can fix this issue by making sure at least one @reachin{Participant} performs a @reachin{publish}.
 

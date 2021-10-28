@@ -1,6 +1,7 @@
 module Reach.Version
   ( version
   , versionStr
+  , versionHashStr
   , compatibleVersion
   , compatibleVersionStr
   , versionHeader
@@ -10,6 +11,7 @@ module Reach.Version
   ) where
 
 import Data.Version (Version (..), makeVersion, showVersion)
+import Reach.UnsafeUtil
 
 major :: Int
 major = 0
@@ -18,13 +20,16 @@ minor :: Int
 minor = 1
 
 patch :: Int
-patch = 5
+patch = 6
 
 version :: Version
 version = makeVersion [major, minor, patch]
 
 versionStr :: String
 versionStr = showVersion version
+
+versionHashStr :: String
+versionHashStr = versionStr <> unsafeHashStr
 
 compatibleVersion :: Version
 compatibleVersion = Version (take 2 br) []
@@ -35,4 +40,4 @@ compatibleVersionStr :: String
 compatibleVersionStr = showVersion compatibleVersion
 
 versionHeader :: String
-versionHeader = "reach " ++ (showVersion compatibleVersion)
+versionHeader = "reach " ++ compatibleVersionStr

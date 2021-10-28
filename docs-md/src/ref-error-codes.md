@@ -2279,6 +2279,85 @@ while (true) {
 
 Note that the body of a `while` starts in a consensus step so you must first `commit` before making a publication.
 
+## {#REP0001} REP0001
+
+This error indicates that a `View` is set, but never [dominates](https://en.wikipedia.org/wiki/Dominator_(graph_theory)) any `commit`s.
+This means the value the `View` is set to will never be observable.
+
+For example, the code below attempts to set a loop variable as the value of a `View`:
+
+```reach
+export const main = Reach.App(() => {
+  const A = Participant('Alice', {
+    observe: Fun([], Null)
+  });
+  const I = View('I', { i: UInt });
+  deploy();
+
+  A.publish();
+
+  var [ i ] = [0];
+  { }
+  invariant (balance() == 0);
+  while ( i < 5 ) {
+    commit();
+
+    A.interact.observe();
+    A.publish();
+
+    I.i.set(i);
+
+    i = i + 1;
+    continue;
+  }
+
+  commit();
+});
+```
+
+
+The effect of `I.i.set(i)` is only observable after the next `commit` in its scope.
+Since, there are no `commit`s between `I.i.set(i)` and `continue`, which is the end of the lexical scope, there is no
+way to observe the effect of setting `I.i`.
+
+You can generally fix this error by inserting a `commit` in the area where you'd like
+the effect of setting a `View` to be observable. In the case of a `while` loop, like the
+program above, it can be fixed the following way:
+
+```reach
+export const main = Reach.App(() => {
+  const A = Participant('Alice', {
+    observe: Fun([], Null)
+  });
+  const I = View('I', { i: UInt });
+  deploy();
+
+  A.publish();
+
+  var [ i ] = [0];
+  {
+    I.i.set(i);
+  }
+  invariant (balance() == 0);
+  while ( i < 5 ) {
+    commit();
+
+    A.interact.observe();
+    A.publish();
+
+    i = i + 1;
+    continue;
+  }
+
+  commit();
+});
+```
+
+
+This change will ensure the `View` `I.i` is set to `i` on every iteration of the
+loop. Additionally, the continuation of the loop will have `I.i` set to the last value of
+the loop variable `i`.
+
 ## {#RI0000} RI0000
 
 This error indicates that `git clone` has failed when trying to download the dependencies
@@ -2474,3 +2553,19 @@ assert(x >= 0);
 ```
 
 
+## {#RAPI0000} RAPI0000
+
+This error means that you defined an API but did not actually use it in your prorgam.
+
+## {#RAPI0001} RAPI0001
+
+This error means that you returned the result to an API without calling it.
+This is generally not possible unless you directly use the internal representation of APIs.
+
+## {#RAPI0002} RAPI0002
+
+The error means that you use an API in two places in your program, which is not allowed.
+
+## {#RAPI0003} RAPI0003
+
+This error means that you did not return a result from an API call.

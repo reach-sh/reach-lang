@@ -136,10 +136,11 @@ export class Contract implements IContract {
         }
         const receipt = await self._receiptP;
         debug(`cfxers:Contract.wait`, `got receipt`, receipt);
-        if (self.address && self.address !== receipt.contractCreated) {
-          throw Error(`Impossible: ctc addresses don't match: ${self.address} vs ${receipt.contractCreated}`);
+        const rcc = address_cfxStandardize(receipt.contractCreated);
+        if (self.address && self.address !== rcc) {
+          throw Error(`Impossible: ctc addresses don't match: ${self.address} vs ${rcc}`);
         }
-        self.address = self.address || receipt.contractCreated;
+        self.address = self.address || rcc;
         if (self.deployTransaction.hash && self.deployTransaction.hash !== receipt.transactionHash) {
           throw Error(`Impossible: txn hashes don't match: ${self.deployTransaction.hash} vs ${receipt.transactionHash}`);
         }
@@ -543,7 +544,7 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
           // see: https://github.com/Conflux-Chain/js-conflux-sdk/blob/master/docs/how_to_send_tx.md#transactions-stage
           try {
             // @ts-ignore
-            const r = await transactionHashP.executed(1000, 60 * 1000);
+            const r = await transactionHashP.confirmed({ delta: 1000, timeout: 60 * 1000});
             debug(`_retryingSendTxn receipt good`, r);
             return { transactionHash };
           } catch (e) {

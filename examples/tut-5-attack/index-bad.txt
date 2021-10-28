@@ -5,17 +5,17 @@ Verification failed:
   when ALL participants are honest
   of theorem: assert
   msg: "balance zero at application exit"
-  at ./index-bad.rsh:compileDApp
+  at ./index-bad.rsh:8:30:compileDApp
 
   // Violation Witness
 
   const v71 = "Alice".interact.wager;
   //    ^ could = 1
-  //      from: ./index-bad.rsh:9:28:application
-  const v74 = "Alice".interact.getHand();
+  //      from: ./index-bad.rsh:11:10:property binding
+  const v74 = protect<UInt>("Alice".interact.getHand());
   //    ^ could = 0
   //      from: ./index-bad.rsh:21:50:application
-  const v84 = "Bob".interact.getHand();
+  const v84 = protect<UInt>("Bob".interact.getHand());
   //    ^ could = 2
   //      from: ./index-bad.rsh:29:48:application
 

@@ -57,6 +57,7 @@ ${defn("Contracts")} are accounts with three extra capacities: they persistently
 In addition to values, consensus state may contain a fixed number of ${defn("mappings")} between an address and a value.
 These mappings are referred to as "${defn("linear state")}" because their size is linear in the number of participants in the contract.
 Furthermore, a contract may provide ${defn("views")} of its consensus state, which are hierarchically organized labeled functions and values, such as `NFT.owner` or `Game.scoreOfPlayer`.
+These views are visible in sub-trees of the computation graph.
 The creation of a contract is called ${defn("deploy")}ment.
 
 A ${defn("participant")} is a logical actor which takes part in a DApp.
@@ -70,6 +71,10 @@ A ${defn("participant class")} is a category of participant that may occur many 
 Members of a participant class are referred to as ${defn("participant instances")} when their status as a member of a class is important, but just "participants" otherwise.
 Participant instances are independent participants like any other; for example, with their own local state, frontend, and so on.
 The main distinction is that when a member of a participant class joins an application, it is not fixed like other participants, because a participant instance does not exclusively represent the participant class.
+
+An ${defn("API")} is a source of publications that do not correspond to any participant and are therefore like asynchronous events that impinge on the computation.
+The contract returns a value to an API call.
+APIs are organized into a labeled hierarchy, like `Contest.vote` and `User.write`.
 
 Since DApps have an associated contract, they have an associated account. ::: note
 The contract account must be distinct from all participant accounts.

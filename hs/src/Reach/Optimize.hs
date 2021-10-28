@@ -35,6 +35,9 @@ data CommonEnv = CommonEnv
   , ceKnownLargeArgs :: M.Map DLVar DLLargeArg
   }
 
+instance Show CommonEnv where
+  show (CommonEnv {..}) = show ceNots
+
 instance Semigroup CommonEnv where
   x <> y =
     CommonEnv
@@ -102,7 +105,7 @@ optNotHuh = \case
 recordNotHuh :: DLLetVar -> DLArg -> App ()
 recordNotHuh = \case
   DLV_Eff -> const $ return ()
-  DLV_Let _ v -> \a ->
+  DLV_Let _ v -> \a -> do
     updateLookup
       (\cenv ->
          cenv
@@ -201,6 +204,9 @@ instance Optimize IType where
 instance Optimize DLVar where
   opt = opt_v2v
 
+instance Optimize Bool where
+  opt = return
+
 instance Optimize DLArg where
   opt = \case
     DLA_Var v -> opt_v2a v
@@ -225,6 +231,7 @@ instance Optimize DLTokenNew where
     <*> opt dtn_url
     <*> opt dtn_metadata
     <*> opt dtn_supply
+    <*> opt dtn_decimals
 
 instance Optimize DLWithBill where
   opt (DLWithBill y z) =
@@ -328,6 +335,7 @@ instance Optimize DLExpr where
     DLE_TimeOrder at tos -> DLE_TimeOrder at <$> opt tos
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
+    DLE_EmitLog at m a -> DLE_EmitLog at m <$> opt a
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
 
@@ -370,6 +378,23 @@ optSwitch mkDo mkLet mkSwitch at ov csm = do
       let cm1 k (v_v, vnu, n) = (,,) v_v vnu <$> (newScope $ recordKnownVariant ov' k (DLA_Var v_v) >> opt n)
       mkSwitch at ov' <$> mapWithKeyM cm1 csm
 
+optWhile :: Optimize a => (DLAssignment -> DLBlock -> a -> a -> a) -> DLAssignment -> DLBlock -> a -> a -> App a
+optWhile mk asn cond body k = do
+  asn' <- opt asn
+  cond'@(DLBlock _ _ _ ca) <- newScope $ opt cond
+  let mca b m = case ca of
+                  DLA_Var dv -> do
+                    rewrite dv (dv, Just (DLA_Literal $ DLL_Bool b))
+                    optNotHuh ca >>= \case
+                      Just (DLA_Var dv') -> do
+                        rewrite dv' (dv', Just (DLA_Literal $ DLL_Bool $ not b))
+                      _ -> return ()
+                    m
+                  _ -> m
+  body' <- newScope $ mca True $ opt body
+  k' <- newScope $ mca False $ opt k
+  return $ mk asn' cond' body' k'
+
 instance Optimize DLStmt where
   opt = \case
     DL_Nop at -> return $ DL_Nop at
@@ -396,7 +421,7 @@ instance Optimize DLStmt where
                 Nothing -> do
                   remember dv e''
                   case e' of
-                    DLE_PrimOp _ IF_THEN_ELSE [c, DLA_Literal (DLL_Bool False), DLA_Literal (DLL_Bool True)] ->
+                    DLE_PrimOp _ IF_THEN_ELSE [c, DLA_Literal (DLL_Bool False), DLA_Literal (DLL_Bool True)] -> do
                       recordNotHuh x c
                     _ ->
                       return ()
@@ -450,7 +475,8 @@ instance Optimize DLTail where
 
 instance Optimize DLBlock where
   opt (DLBlock at fs b a) =
-    newScope $ DLBlock at fs <$> opt b <*> opt a
+    -- newScope $
+    DLBlock at fs <$> opt b <*> opt a
 
 instance {-# OVERLAPPING #-} Optimize a => Optimize (DLinExportBlock a) where
   opt (DLinExportBlock at vs b) =
@@ -463,8 +489,9 @@ instance Optimize LLConsensus where
       opt_if id LLC_If at c t f
     LLC_Switch at ov csm ->
       optSwitch id LLC_Com LLC_Switch at ov csm
-    LLC_While at asn inv cond body k ->
-      LLC_While at <$> opt asn <*> opt inv <*> opt cond <*> (newScope $ opt body) <*> opt k
+    LLC_While at asn inv cond body k -> do
+      inv' <- newScope $ opt inv
+      optWhile (\asn' cond' body' k' -> LLC_While at asn' inv' cond' body' k') asn cond body k
     LLC_Continue at asn ->
       LLC_Continue at <$> opt asn
     LLC_FromConsensus at1 at2 s ->
@@ -541,6 +568,24 @@ instance Optimize FromInfo where
     FI_Continue svs -> FI_Continue <$> opt_svs svs
     FI_Halt toks -> FI_Halt <$> opt toks
 
+instance {-# OVERLAPPING #-} (Optimize a, Optimize b, Optimize c, Optimize d, Optimize e) => Optimize (a, b, c, d, e) where
+  opt (a, b, c, d, e) = (,,,,) <$> opt a <*> opt b <*> opt c <*> opt d <*> opt e
+
+instance Optimize ETail where
+  opt = \case
+    ET_Com m k -> mkCom ET_Com <$> opt m <*> opt k
+    ET_Stop at -> return $ ET_Stop at
+    ET_If at c t f ->
+      opt_if id ET_If at c t f
+    ET_Switch at ov csm ->
+      optSwitch id ET_Com ET_Switch at ov csm
+    ET_FromConsensus at vi fi k ->
+      ET_FromConsensus at vi fi <$> opt k
+    ET_ToConsensus {..} -> do
+      ET_ToConsensus et_tc_at et_tc_from et_tc_prev <$> opt et_tc_lct <*> pure et_tc_which <*> opt et_tc_from_me <*> pure et_tc_from_msg <*> pure et_tc_from_out <*> pure et_tc_from_timev <*> pure et_tc_from_secsv <*> pure et_tc_from_didSendv <*> opt et_tc_from_mtime <*> opt et_tc_cons
+    ET_While at asn cond body k -> optWhile (ET_While at) asn cond body k
+    ET_Continue at asn -> ET_Continue at <$> opt asn
+
 instance Optimize CTail where
   opt = \case
     CT_Com m k -> mkCom CT_Com <$> opt m <*> opt k
@@ -567,9 +612,15 @@ instance Optimize CPProg where
   opt (CPProg at vi (CHandlers hs)) =
     CPProg at <$> (newScope $ opt vi) <*> (CHandlers <$> mapM (newScope . opt) hs)
 
+instance Optimize EPProg where
+  opt (EPProg at x ie et) = newScope $ EPProg at x ie <$> opt et
+
+instance Optimize EPPs where
+  opt (EPPs {..}) = EPPs epps_apis <$> opt epps_m
+
 instance Optimize PLProg where
   opt (PLProg at plo dli dex epps cp) =
-    PLProg at plo dli <$> opt dex <*> pure epps <*> opt cp
+    PLProg at plo dli <$> opt dex <*> opt epps <*> opt cp
 
 optimize_ :: Optimize a => Counter -> a -> IO a
 optimize_ c t = do

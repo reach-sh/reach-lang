@@ -3,13 +3,12 @@
 export const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);
 export const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3);
 
-export const winner = (handA, handB) =>
-      ((handA + (4 - handB)) % 3);
+export const winner = (handAlice, handBob) =>
+      ((handAlice + (4 - handBob)) % 3);
 
-forall(UInt, handA =>
-  forall(UInt, handB =>
-    assert(isOutcome(winner(handA, handB)))));
-
+forall(UInt, handAlice =>
+  forall(UInt, handBob =>
+    assert(isOutcome(winner(handAlice, handBob)))));
 
 const winnerType = Fun([UInt, UInt], UInt);
 const preCond = ([l, r]) => isHand(l) && isHand(r);

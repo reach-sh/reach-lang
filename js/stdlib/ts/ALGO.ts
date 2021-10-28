@@ -5,7 +5,12 @@ import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
 import type { Transaction } from 'algosdk'; // =>
-import type { ARC11_Wallet, WalletTransaction } from './ALGO_ARC11'; // =>
+import type {
+  ARC11_Wallet,
+  WalletTransaction,
+  EnableNetworkResult,
+  EnableAccountsResult,
+} from './ALGO_ARC11'; // =>
 
 const {Buffer} = buffer;
 
@@ -63,6 +68,7 @@ export * from './shared_user';
 type BigNumber = ethers.BigNumber;
 
 type AnyALGO_Ty = ALGO_Ty<CBR_Val>;
+type ConnectorTy= AnyALGO_Ty;
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
@@ -82,9 +88,12 @@ type TxnParams = {
   genesisID: string,
   genesisHash: string,
 }
-type TxnInfo = {
+type RecvTxn = {
   'confirmed-round': number,
   'application-index'?: number,
+  'application-args': Array<string>,
+  'sender': Address,
+  'logs': Array<string>,
 };
 type TxId = string;
 type ApiCall<T> = {
@@ -101,8 +110,8 @@ type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 4;
-const reachAlgoBackendVersion = 4;
+const reachBackendVersion = 5;
+const reachAlgoBackendVersion = 5;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
   appApproval: string,
@@ -140,6 +149,9 @@ type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyALGO_Ty>;
 const cbr2algo_addr = (x:string): Address =>
   algosdk.encodeAddress(Buffer.from(x.slice(2), 'hex'));
 
+const txnFromAddress = (t:Transaction): Address =>
+  algosdk.encodeAddress(t.from.publicKey);
+
 function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
   if (!(a instanceof Uint8Array)) {
     console.log(a);
@@ -152,10 +164,36 @@ function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
 const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
 const rawDefaultItoken = 'reach-devnet';
 
-const waitForConfirmation = async (txId: TxId, untilRound?: number|undefined): Promise<TxnInfo> => {
-  const doOrDie = async (p: Promise<any>): Promise<any> => {
+type OrExn<X> = X | {exn:any};
+type IndexerTxn = any;
+type AlgodTxn = {
+  'application-index'?: number,
+  'confirmed-round'?: number,
+  'logs'?: Array<string>,
+  'txn': {
+    'sig': Uint8Array,
+    'txn': any,
+  },
+  'pool-error': string,
+};
+
+const indexerTxn2RecvTxn = (txn:any) => {
+  const ait = txn['application-transaction'] || {};
+  const aargs = ait['application-args'] || [];
+  const aidx = ait['application-id'];
+  return {
+    'confirmed-round': txn['confirmed-round'],
+    'sender': txn['sender'],
+    'logs': (txn['logs'] || []),
+    'application-args': aargs,
+    'application-index': aidx,
+  };
+};
+
+const waitForConfirmation = async (txId: TxId, untilRound?: number|undefined): Promise<RecvTxn> => {
+  const doOrDie = async <X>(p: Promise<X>): Promise<OrExn<X>> => {
     try { return await p; }
-    catch (e) { return { 'exn': e }; }
+    catch (e:any) { return { 'exn': e }; }
   };
   const checkTooLate = async (lastLastRound: number): Promise<number> => {
     const [ c, msg ] = lastLastRound > 0 ?
@@ -175,17 +213,28 @@ const waitForConfirmation = async (txId: TxId, untilRound?: number|undefined): P
   const dhead = [ 'waitForConfirmation', txId ];
   const client = await getAlgodClient();
 
-  const checkAlgod = async (lastLastRound:number): Promise<TxnInfo> => {
+  const checkAlgod = async (lastLastRound:number): Promise<RecvTxn> => {
     const lastRound = await checkTooLate(lastLastRound);
     const info =
-      await doOrDie(client.pendingTransactionInformation(txId).do());
+      (await doOrDie(client.pendingTransactionInformation(txId).do())) as OrExn<AlgodTxn>;
     debug(...dhead, 'info', info);
-    if ( info['exn'] ) {
+    if ( 'exn' in info ) {
       debug(...dhead, 'switching to indexer on error');
       return await checkIndexer(lastRound);
-    } else if ( info['confirmed-round'] > 0 ) {
+    }
+    const cr = info['confirmed-round'];
+    if ( cr !== undefined && cr > 0 ) {
+      const l = info['logs'] === undefined ? [] : info['logs'];
       debug(...dhead, 'confirmed');
-      return info;
+      const dtxn = algosdk.Transaction.from_obj_for_encoding(info['txn']['txn']);
+      debug(...dhead, 'confirmed', dtxn);
+      return {
+        'confirmed-round': cr,
+        'logs': l,
+        'application-index': info['application-index'],
+        'sender': txnFromAddress(dtxn),
+        'application-args': (dtxn.appArgs || []).map((x)=> uint8ArrayToStr(x, 'base64')),
+      };
     } else if ( info['pool-error'] === '' ) {
       debug(...dhead, 'still in pool, trying again');
       return await checkAlgod(lastRound);
@@ -194,17 +243,17 @@ const waitForConfirmation = async (txId: TxId, untilRound?: number|undefined): P
     }
   };
 
-  const checkIndexer = async (lastLastRound: number): Promise<TxnInfo> => {
+  const checkIndexer = async (lastLastRound: number): Promise<RecvTxn> => {
     const lastRound = await checkTooLate(lastLastRound);
     const indexer = await getIndexer();
     const q = indexer.lookupTransactionByID(txId);
-    const res = await doOrDie(doQuery_(JSON.stringify(dhead), q));
+    const res = (await doOrDie(doQuery_(JSON.stringify(dhead), q))) as OrExn<IndexerTxn>;
     debug(...dhead, 'indexer', res);
-    if ( res['exn'] ) {
+    if ( 'exn' in res ) {
       debug(...dhead, 'indexer failed, trying again');
       return await checkIndexer(lastRound);
     } else {
-      return res['transaction'];
+      return indexerTxn2RecvTxn(res['transaction']);
     }
   };
 
@@ -228,7 +277,7 @@ const doSignTxn = (ts:string, sk:SecretKey): string => {
 const signSendAndConfirm = async (
   acc: NetworkAccount,
   txns: Array<WalletTransaction>,
-): Promise<TxnInfo> => {
+): Promise<RecvTxn> => {
   if ( acc.sk !== undefined ) {
     txns.forEach((t:WalletTransaction): void => {
       // XXX this comparison is probably wrong, because the addresses are the
@@ -245,9 +294,10 @@ const signSendAndConfirm = async (
   } catch (e) {
     throw { type: 'signAndPost', e };
   }
-  const t0 = decodeB64Txn(txns[0].txn);
+  const N = txns.length - 1;
+  const tN = decodeB64Txn(txns[N].txn);
   try {
-    return await waitForConfirmation(t0.txID(), t0.lastRound);
+    return await waitForConfirmation(tN.txID(), tN.lastRound);
   } catch (e) {
     throw { type: 'waitForConfirmation', e };
   }
@@ -260,7 +310,7 @@ const encodeUnsignedTransaction = (t:Transaction): string => {
 const toWTxn = (t:Transaction): WalletTransaction => {
   return {
     txn: encodeUnsignedTransaction(t),
-    signers: [algosdk.encodeAddress(t.from.publicKey)],
+    signers: [ txnFromAddress(t) ],
   };
 };
 
@@ -305,7 +355,7 @@ const sign_and_send_sync = async (
   label: string,
   acc: NetworkAccount,
   txn: WalletTransaction,
-): Promise<TxnInfo> => {
+): Promise<RecvTxn> => {
   try {
     return await signSendAndConfirm(acc, [txn]);
   } catch (e) {
@@ -416,7 +466,7 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean
     }
   }
   if (!res) { throw Error(`impossible: query res is empty`); }
-  debug(dhead, '--- RESULT =', res);
+  debug(dhead, 'RESULT', res);
   return res;
 };
 
@@ -580,17 +630,40 @@ const indexer_statusAfterBlock = async (round: number): Promise<BigNumber> => {
 interface Provider {
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
-  getDefaultAddress: () => Address,
+  getDefaultAddress: () => Promise<Address>,
   isIsolatedNetwork: boolean,
   signAndPostTxns: (txns:WalletTransaction[], opts?: any) => Promise<any>,
 };
 
 const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
   debug(`making provider with wallet`);
-  const enabled = await wallet.enable({'network': process.env['ALGO_NETWORK']});
+  const walletOpts = {'network': process.env['ALGO_NETWORK']};
+  let enabledNetwork: EnableNetworkResult|undefined;
+  let enabledAccounts: EnableAccountsResult|undefined;
+  if ( wallet.enableNetwork === undefined && wallet.enableAccounts === undefined ) {
+    const enabled = await wallet.enable(walletOpts);
+    enabledNetwork = enabled;
+    enabledAccounts = enabled;
+  } else if ( wallet.enableNetwork === undefined || wallet.enableAccounts === undefined ) {
+    throw new Error('must have enableNetwork AND enableAccounts OR neither');
+  } else {
+    enabledNetwork = await wallet.enableNetwork(walletOpts);
+  }
+  void enabledNetwork;
   const algodClient = await wallet.getAlgodv2();
   const indexer = await wallet.getIndexer();
-  const getDefaultAddress = (): Address => enabled.accounts[0];
+  const getDefaultAddress = async (): Promise<Address> => {
+    if ( enabledAccounts === undefined ) {
+      if ( wallet.enableAccounts === undefined ) {
+        throw new Error('impossible: no wallet.enableAccounts');
+      }
+      enabledAccounts = await wallet.enableAccounts(walletOpts);
+      if ( enabledAccounts === undefined ) {
+        throw new Error('Could not enable accounts');
+      }
+    }
+    return enabledAccounts.accounts[0];
+  };
   const signAndPostTxns = wallet.signAndPostTxns;
   const isIsolatedNetwork = truthyEnv(process.env['REACH_ISOLATED_NETWORK']);
   return { algodClient, indexer, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
@@ -601,7 +674,7 @@ export const setWalletFallback = (wf:() => any) => {
 };
 const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
   let p: Provider|undefined = undefined;
-  const enable = async (eopts?:any) => {
+  const enableNetwork = async (eopts?:any) => {
     void(eopts);
     const base = opts['providerEnv'];
     let baseEnv: Env = process.env;
@@ -614,8 +687,16 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
       }
     }
     p = await makeProviderByEnv(baseEnv);
+    return {};
+  };
+  const enableAccounts = async (eopts?:any) => {
+    void(eopts);
     const addr = await getAddr();
     return { accounts: [ addr ] };
+  };
+  const enable = async (eopts?:any) => {
+    await enableNetwork(eopts);
+    return await enableAccounts(eopts);
   };
   const getAlgodv2 = async () => {
     if ( !p ) { throw new Error(`must call enable`) };
@@ -649,7 +730,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     await p.algodClient.sendRawTransaction(bs).do();
     return {};
   };
-  return { enable, getAlgodv2, getIndexer, signAndPostTxns };
+  return { enable, enableNetwork, enableAccounts, getAlgodv2, getIndexer, signAndPostTxns };
 };
 const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
   debug(`using mnemonic wallet fallback`);
@@ -659,7 +740,7 @@ const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
   const signTxns = async (txns: string[]): Promise<string[]> => {
     return txns.map((ts) => {
       const t = decodeB64Txn(ts);
-      const addr = algosdk.encodeAddress(t.from.publicKey);
+      const addr = txnFromAddress(t);
       const mn = window.prompt(`Please paste the mnemonic for the address, ${addr}. It will not be saved.`);
       const acc = algosdk.mnemonicToSecretKey(mn);
       return doSignTxnToB64(t, acc.sk);
@@ -756,7 +837,7 @@ async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<Provider> {
   const indexer = await waitIndexerFromEnv(fullEnv);
   const isIsolatedNetwork = truthyEnv(fullEnv.REACH_ISOLATED_NETWORK);
   const lab = `Providers created by environment`;
-  const getDefaultAddress = () => {
+  const getDefaultAddress = async (): Promise<Address> => {
     throw new Error(`${lab} do not have default addresses`);
   };
   const signAndPostTxns = async (txns:WalletTransaction[], opts?:any) => {
@@ -807,7 +888,7 @@ export function setProviderByName(providerName: string): void {
 }
 
 // eslint-disable-next-line max-len
-const rawFaucetDefaultMnemonic = 'around sleep system young lonely length mad decline argue army veteran knee truth sell hover any measure audit page mammal treat conduct marble above shell';
+const rawFaucetDefaultMnemonic = 'frown slush talent visual weather bounce evil teach tower view fossil trip sauce express moment sea garbage pave monkey exercise soap lawn army above dynamic';
 export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
   const FAUCET = algosdk.mnemonicToSecretKey(
     envDefault(process.env.ALGO_FAUCET_PASSPHRASE, rawFaucetDefaultMnemonic),
@@ -848,7 +929,7 @@ export const transfer = async (
   value: any,
   token: Token|undefined = undefined,
   tag: number|undefined = undefined,
-): Promise<TxnInfo> => {
+): Promise<RecvTxn> => {
   const sender = from.networkAccount;
   const receiver = to.networkAccount.addr;
   const valuebn = bigNumberify(value);
@@ -861,8 +942,14 @@ export const transfer = async (
     txn);
 };
 
-const makeIsMethod = (i:number) => (txn:any): boolean =>
-  txn['application-transaction']['application-args'][0] === base64ify([i]);
+// XXX need to make this a log
+const makeIsMethod = (i:number) => (txn:any): boolean => {
+  const act = txn['application-transaction']['application-args'][0];
+  const exp = base64ify([i]);
+  const r = act === exp;
+  //debug(`makeIsMethod`, {txn,i,act,exp,r});
+  return r;
+}
 
 /** @description base64->hex->arrayify */
 const reNetify = (x: string): NV => {
@@ -984,6 +1071,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           return gty.fromNet(gsbs);
         };
         const canIWin = async (lct:BigNumber): Promise<boolean> => {
+          if ( lct.eq(0) ) { return true; }
           const gs = await getGlobalState();
           const r = !gs || lct.eq(gs[1]);
           debug(`canIWin`, { lct, gs, r });
@@ -992,6 +1080,21 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         return (_theC = { ApplicationID, Deployer, escrowAddr, escrow_prog, getLastRound, setLastRound, getLocalState, getAppState, getGlobalState, ensureOptIn, canIWin });
       };
+    };
+
+    const getState_ = async (getC:any, lookup:((vibna:BigNumber) => AnyALGO_Ty[])): Promise<Array<any>> => {
+      const { getAppState, getGlobalState } = await getC();
+      const appSt = await getAppState();
+      if ( !appSt ) { throw Error(`getState: no appSt`); }
+      const gs = await getGlobalState(appSt);
+      if ( !gs ) { throw Error(`getState: no gs`); }
+      const vvn = recoverSplitBytes('v', stateSize, stateKeys, appSt);
+      if ( vvn === undefined ) { throw Error(`getState: no vvn`); }
+      const vi = gs[0];
+      const vtys = lookup(vi);
+      const vty = T_Tuple(vtys);
+      const vvs = vty.fromNet(vvn);
+      return vvs;
     };
 
     const _setup = (setupArgs: SetupArgs): SetupRes => {
@@ -1029,14 +1132,42 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         return T_Address.canonicalize(escrowAddr);
       };
 
+      const getState = async (vibne:BigNumber, vtys:AnyALGO_Ty[]): Promise<Array<any>> => {
+        return await getState_(getC, (vibna:BigNumber) => {
+          if ( vibne.eq(vibna) ) { return vtys; }
+          throw Error(`Expected state ${vibne}, got ${vibna}`);
+        });
+      };
+
       const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
         const { funcNum, evt_cnt, lct, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt, sim_p } = srargs;
         const isCtor = (funcNum === 0);
-        const doRecv = async (didSend:boolean, waitIfNotPresent: boolean): Promise<Recv> =>
-          await recv({funcNum, evt_cnt, out_tys, didSend, waitIfNotPresent, timeoutAt});
+        const doRecv = async (didSend: boolean, waitIfNotPresent: boolean): Promise<Recv> => {
+          if ( ! didSend && lct.eq(0) ) {
+            throw new Error(`API call failed`);
+          }
+          return await recv({funcNum, evt_cnt, out_tys, didSend, waitIfNotPresent, timeoutAt});
+        };
         if ( ! onlyIf ) {
           return await doRecv(false, true);
         }
+        const funcName = `m${funcNum}`;
+        const dhead = `${label}: sendrecv ${funcName} ${timeoutAt}`;
+
+        const trustedRecv = async (txn:RecvTxn): Promise<Recv> => {
+          const didSend = true;
+          if ( isCtor ) {
+            // If this is the constructor, then we are going to need to notify
+            // the ctorRan signal, but we can only do that once the constructor
+            // is visible on the indexer, thus we can't rely on a trusted
+            // receive. I originally thought we could do this in the
+            // background, but the ctorRan signal is representative of what
+            // could happen in a real non-test program, so we should really
+            // double check with the indexer in a real deployment too.
+            return await doRecv(didSend, false);
+          }
+          return await recvFrom({dhead, out_tys, didSend, funcNum, txn});
+        };
 
         if ( isCtor ) {
           debug(label, 'deploy');
@@ -1076,8 +1207,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const [ value, toks ] = pay;
         void(toks); // <-- rely on simulation because of ordering
 
-        const funcName = `m${funcNum}`;
-        const dhead = `${label}: ${label} sendrecv ${funcName} ${timeoutAt}`;
         debug(dhead, '--- START');
 
         const [ _svs, msg ] = argsSplit(args, evt_cnt);
@@ -1091,11 +1220,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           secs: bigNumberify(0), // This should not be read.
           value: value,
           from: pks,
-          getOutput: (async (o_mode:string, o_lab:string, o_ctc:any): Promise<any> => {
+          getOutput: (async (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
             void(o_mode);
             void(o_lab);
             void(o_ctc);
-            throw Error(`Algorand does not support remote calls, and Reach should not have generated a call to this function`);
+            return o_val;
           }),
         };
         const sim_r = await sim_p( fake_res );
@@ -1138,7 +1267,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(dhead, '--- TIMECHECK', { params, timeoutAt });
           if ( await checkTimeout(getTimeSecs, timeoutAt, params.firstRound + 1) ) {
             debug(dhead, '--- FAIL/TIMEOUT');
-            return {didTimeout: true};
+            return await doRecv(false, false);
           }
           if ( ! soloSend && ! await canIWin(lct) ) {
             debug(dhead, `CANNOT WIN`);
@@ -1166,8 +1295,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               const zaddr = undefined;
               const ap = bigNumberToBigInt(t.p);
               debug(`tokenNew`, t.p, ap);
+              const decimals = t.d !== undefined ? t.d.toNumber() : 6;
               txn = algosdk.makeAssetCreateTxnWithSuggestedParams(
-                escrowAddr, NOTE_Reach_tag(sim_i++), ap, 6,
+                escrowAddr, NOTE_Reach_tag(sim_i++), ap, decimals,
                 false, escrowAddr, zaddr, zaddr, zaddr,
                 t.s, t.n, t.u, t.m, params,
               );
@@ -1274,9 +1404,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           let res;
           try {
             res = await signSendAndConfirm( thisAcc, wtxns );
-
-            // XXX we should inspect res and if we failed because we didn't get picked out of the queue, then we shouldn't error, but should retry and let the timeout logic happen.
-            debug(dhead, '--- SUCCESS:', res);
           } catch (e:any) {
             if ( e.type === 'sendRawTransaction' ) {
               debug(dhead, '--- FAIL:', format_failed_request(e?.e));
@@ -1293,6 +1420,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
             if ( timeoutAt ) {
               // If there can be a timeout, then keep waiting for it
+              debug(dhead, `CONTINUE`);
               continue;
             } else {
               // Otherwise, something bad is happening
@@ -1300,13 +1428,85 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             }
           }
 
-          return await doRecv(true, false);
+          debug(dhead, 'SUCCESS', res);
+          return await trustedRecv(res);
         }
+      };
+
+      type RecvFromArgs = {
+        dhead: any,
+        out_tys: Array<ConnectorTy>,
+        didSend: boolean,
+        funcNum: number,
+        txn: RecvTxn,
+      };
+      const recvFrom = async (rfargs:RecvFromArgs): Promise<Recv> => {
+        const { dhead, out_tys, didSend, funcNum, txn } = rfargs;
+        const { escrowAddr, getLastRound, setLastRound } = await getC();
+        const isCtor = (funcNum == 0);
+        debug(dhead, '--- txn =', txn);
+        const theRound = txn['confirmed-round'];
+        // const theSecs = txn['round-time'];
+        // ^ The contract actually uses `global LatestTimestamp` which is the
+        // time of the PREVIOUS round.
+        const theSecs = await getTimeSecs(bigNumberify(theRound - 0));
+
+        // XXX need to move this to a log
+        const ctc_args_all = txn['application-args'];
+        debug(dhead, {ctc_args_all});
+        const argMsg = 2; // from ALGO.hs
+        const ctc_args_s: string = ctc_args_all[argMsg];
+
+        debug(dhead, 'out_tys', out_tys.map((x) => x.name));
+        if ( isCtor ) {
+          out_tys.unshift(T_Address);
+          debug(dhead, 'ctor, adding address', out_tys.map((x) => x.name));
+        }
+        const msgTy = T_Tuple(out_tys);
+        const ctc_args = msgTy.fromNet(reNetify(ctc_args_s));
+        debug(dhead, {ctc_args});
+        if ( isCtor ) {
+          const shouldBeEscrow = ctc_args.shift();
+          debug(dhead, `dropped escrow addr`, { shouldBeEscrow, escrowAddr, ctc_args});
+        }
+
+        const fromAddr = txn['sender'];
+        const from = T_Address.canonicalize({addr: fromAddr});
+        debug(dhead, { from, fromAddr });
+
+        const oldLastRound = getLastRound();
+        setLastRound(theRound);
+        debug(dhead, { oldLastRound, theRound });
+        const getOutput = async (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
+          debug(`getOutput`, {o_mode, o_lab, o_ctc, o_val});
+          const f_ctc = T_Tuple([T_UInt, o_ctc]);
+          for ( const l of txn['logs'] ) {
+            const lb = reNetify(l);
+            const ln = T_UInt.fromNet(lb);
+            const ls = `v${ln}`;
+            debug(`getOutput`, {l, lb, ln, ls});
+            if ( ls === o_lab ) {
+              const ld = f_ctc.fromNet(lb);
+              const o = ld[1];
+              debug(`getOutput`, {ld, o});
+              return o;
+            }
+          }
+          throw Error(`no log for ${o_lab}`);
+        };
+
+        return {
+          didSend,
+          didTimeout: false,
+          data: ctc_args,
+          time: bigNumberify(getLastRound()),
+          secs: bigNumberify(theSecs),
+          from, getOutput,
+        };
       };
 
       const recv = async (rargs:RecvArgs): Promise<Recv> => {
         const { funcNum, out_tys, didSend, waitIfNotPresent, timeoutAt } = rargs;
-        const indexer = await getIndexer();
         const isCtor = (funcNum == 0);
         const fromBlock_summand = isCtor ? 0 : 1;
 
@@ -1314,7 +1514,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const dhead = `${label}: ${label} recv ${funcName} ${timeoutAt}`;
         debug(dhead, '--- START');
 
-        const { ApplicationID, escrowAddr, getLastRound, setLastRound } = await getC();
+        const { ApplicationID, getLastRound } = await getC();
 
         while ( true ) {
           const correctStep = makeIsMethod(funcNum);
@@ -1322,8 +1522,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(`EventCache res: `, res);
           if ( ! res.succ ) {
             const currentRound = res.round;
-            if ( await checkTimeout(getTimeSecs, timeoutAt, currentRound) ) {
-              debug(dhead, '--- RECVD timeout', {timeoutAt, currentRound});
+            debug(dhead, 'TIMECHECK', {timeoutAt, currentRound});
+            if ( await checkTimeout(getTimeSecs, timeoutAt, currentRound + 1) ) {
+              debug(dhead, 'TIMEOUT');
               return { didTimeout: true };
             }
             if ( waitIfNotPresent ) {
@@ -1333,93 +1534,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             }
             continue;
           }
-          const txn = res.txn;
-          debug(dhead, '--- txn =', txn);
-          const theRound = txn['confirmed-round'];
-          // const theSecs = txn['round-time'];
-          // ^ The contract actually uses `global LatestTimestamp` which is the
-          // time of the PREVIOUS round.
-          const theSecs = await getTimeSecs(bigNumberify(theRound - 1));
-
-          let all_txns: Array<any>|undefined = undefined;
-          const get_all_txns = async () => {
-            if ( all_txns ) { return; }
-            const all_query = indexer.searchForTransactions()
-              .txType('acfg')
-              .assetID(0)
-              .round(theRound);
-            const all_res = await doQuery_(dhead, all_query);
-            // NOTE: Move this filter into the query when the indexer supports it
-            const same_group = ((x:any) => x.group === txn.group && x['asset-config-transaction']['asset-id'] === 0);
-            const all_txns_raw = all_res.transactions.filter(same_group);
-            const group_order = ((x:any, y:any) => x['intra-round-offset'] - y['intra-round-offset']);
-            all_txns = all_txns_raw.sort(group_order);
-            debug(dhead, 'all_txns', all_txns);
-          };
-
-          const ctc_args_all: Array<string> =
-            txn['application-transaction']['application-args'];
-          debug(dhead, {ctc_args_all});
-          const argMsg = 2; // from ALGO.hs
-          const ctc_args_s: string = ctc_args_all[argMsg];
-
-          debug(dhead, '--- out_tys =', out_tys);
-          if ( isCtor ) {
-            out_tys.unshift(T_Address);
-            debug(dhead, 'ctor, adding address', {out_tys});
-          }
-          const msgTy = T_Tuple(out_tys);
-          const ctc_args = msgTy.fromNet(reNetify(ctc_args_s));
-          debug(dhead, {ctc_args});
-          if ( isCtor ) {
-            const shouldBeEscrow = ctc_args.shift();
-            debug(dhead, `dropped escrow addr`, { shouldBeEscrow, escrowAddr, ctc_args});
-          }
-
-          const fromAddr = txn['sender'];
-          const from =
-            T_Address.canonicalize({addr: fromAddr});
-          debug(dhead, '--- from =', from, '=', fromAddr);
-
-          const oldLastRound = getLastRound();
-          setLastRound(theRound);
-          debug(dhead, '--- RECVD updating round from', oldLastRound, 'to', getLastRound());
-
-          let tokenNews = 0;
-          const getOutput = async (o_mode:string, o_lab:string, o_ctc:any): Promise<any> => {
-            if ( o_mode === 'tokenNew' ) {
-              await get_all_txns();
-              // NOTE: I'm making a dangerous assumption that the created tokens
-              // are viewed in the order they were created. It would be better to
-              // be able to have the JS simulator determine where they are
-              // exactly, but it is not available for receives. :'(
-              // @ts-ignore
-              const tn_txn = all_txns[tokenNews++];
-              debug(dhead, "tn_txn", tn_txn);
-              return tn_txn['created-asset-index'];
-            } else {
-              void(o_lab);
-              void(o_ctc);
-              throw Error(`Algorand does not support remote calls`);
-            }
-          };
-
           if ( isCtor ) {
             ctorRan.notify();
           }
-
-          return {
-            didSend,
-            didTimeout: false,
-            data: ctc_args,
-            time: bigNumberify(getLastRound()),
-            secs: bigNumberify(theSecs),
-            from, getOutput,
-          };
+          const txn = indexerTxn2RecvTxn(res.txn);
+          return await recvFrom({dhead, out_tys, didSend, funcNum, txn});
         }
       };
 
-      return { getContractAddress, sendrecv, recv };
+      return { getContractAddress, getState, sendrecv, recv };
     };
 
     const readStateBytes = (prefix:string, key:number[], src:any): any => {
@@ -1473,27 +1596,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         async (...args: any[]): Promise<any> => {
           debug('getView1', v, k, args);
           const { decode } = vim;
-          const { getAppState, getGlobalState } = await getC();
-          const appSt = await getAppState();
-          if ( !appSt ) { return ['None', null]; }
-          const gs = await getGlobalState(appSt);
-          if ( !gs ) { return ['None', null]; }
-          const vi = bigNumberToNumber(gs[0]);
-          debug({vi});
-          const vtys = vs[vi];
-          debug({vtys});
-          if ( ! vtys ) {
-            return ['None', null];
-          }
-          const vvn = recoverSplitBytes('v', stateSize, stateKeys, appSt);
-          if ( vvn === undefined ) {
-            return ['None', null];
-          }
-          const vty = T_Tuple(vtys);
-          debug({vty});
-          const vvs = vty.fromNet(vvn);
-          debug({vvs});
           try {
+            let vi = 0;
+            const vvs = await getState_(getC, (vibna:BigNumber) => {
+              vi = bigNumberToNumber(vibna);
+              const vtys = vs[vi];
+              if ( ! vtys ) { throw Error(`no views for state ${vibna}`); }
+              return vtys;
+            });
             const vres = await decode(vi, vvs, args);
             debug({vres});
             return ['Some', vres];
@@ -1534,7 +1644,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const url = p(96, tokenInfo['url-b64']);
     const metadata = p(32, tokenInfo['metadata-hash']);
     const supply = bigNumberify(tokenInfo['total']);
-    return { name, symbol, url, metadata, supply };
+    const decimals = bigNumberify(tokenInfo['decimals']);
+    return { name, symbol, url, metadata, supply, decimals };
   };
 
   return stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccept, tokenMetadata, contract });
@@ -1675,7 +1786,7 @@ export function formatCurrency(amt: any, decimals: number = 6): string {
 }
 
 export async function getDefaultAccount(): Promise<Account> {
-  const addr = (await getProvider()).getDefaultAddress();
+  const addr = await (await getProvider()).getDefaultAddress();
   return await connectAccount({ addr });
 }
 
@@ -1702,9 +1813,11 @@ export const getNetworkTime = async (): Promise<BigNumber> => {
 };
 const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
   const now = bigNumberToNumber(now_bn);
-  const indexer = await getIndexer();
-  const info = await indexer.lookupBlock(now).do();
-  return bigNumberify(info['timestamp']);
+  const client = await getAlgodClient();
+  const binfo = await client.block(now).do();
+  // XXX it is possible that this will not work because the block is old
+  debug(`getTimeSecs`, `block`, binfo);
+  return bigNumberify(binfo.block.ts);
 };
 export const getNetworkSecs = async (): Promise<BigNumber> =>
   await getTimeSecs(await getNetworkTime());
@@ -1740,13 +1853,6 @@ type VerifyResult = {
   startRound: number,
   Deployer: Address,
 };
-
-async function queryCtorTxn(dhead: string, ApplicationID: number, eventCache: EventCache) {
-  const isCtor = makeIsMethod(0);
-  const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, { minRound: 0 }, isCtor);
-  debug({icr});
-  return icr;
-}
 
 export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<VerifyResult> => {
   return verifyContract_('', info, bin, new EventCache());
@@ -1820,7 +1926,9 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
 
   // Next, we check that the constructor was called with the actual escrow
   // address and not something else
-  const icr = await queryCtorTxn(dhead, ApplicationID, eventCache);
+  const isCtor = makeIsMethod(0);
+  const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, { minRound: 0 }, isCtor);
+  debug({icr});
   // @ts-ignore
   const ict = icr.txn;
   chk(ict, `Cannot query for constructor transaction`);
@@ -1867,10 +1975,11 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
     return await algod.pendingTransactionInformation(r.txId).do();
   };
   const supply = (opts.supply && bigNumberify(opts.supply)) || bigNumberify(2).pow(64).sub(1);
+  const decimals = opts.decimals !== undefined ? opts.decimals : 6;
   const ctxn_p = await dotxn(
     (params:TxnParams) =>
     algosdk.makeAssetCreateTxnWithSuggestedParams(
-      caddr, undefined, bigNumberToBigInt(supply), 6,
+      caddr, undefined, bigNumberToBigInt(supply), decimals,
       false, zaddr, zaddr, zaddr, zaddr,
       sym, name, '', '', params,
     ));

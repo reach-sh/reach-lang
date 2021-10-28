@@ -68,8 +68,8 @@ const simultaneousLoop =
 
 const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3);
 const [ isRPSOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);
-const winner = (handA, handB) =>
-      ((handA + (4 - handB)) % 3);
+const winner = (handAlice, handBob) =>
+      ((handAlice + (4 - handBob)) % 3);
 
 export const rps =
   Reach.App(() => {

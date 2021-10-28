@@ -5,6 +5,7 @@ TMP=$(mktemp -d "/tmp/reach.$(date -u '+%Y-%m-%dT%H-%M-%SZ')-XXXX")
 export TMP
 
 run_d () {
+  REACH_HS="$(cd "$(dirname "$0")" && pwd)/hs"
   export REACH_DIR_EMBED="${REACH_DIR_EMBED:-"$(cd "$(dirname "$0")" && pwd)/hs/app/reach/embed"}"
   export REACH_STACK_YAML="${REACH_STACK_YAML:-"$(cd "$(dirname "$0")" && pwd)/hs/stack.yaml"}"
 
@@ -13,7 +14,7 @@ run_d () {
    && [ -f "$REACH_STACK_YAML" ] \
    && which stack >/dev/null 2>&1; then
     export STACK_YAML="$REACH_STACK_YAML"
-    REACH_EX="$0" $(stack build --fast 1>&2 && stack exec -- which reach 2>/dev/null) \
+    REACH_EX="$0" $(cd "${REACH_HS}" && make hs-build 1>&2 && stack exec -- which reach 2>/dev/null) \
       --dir-embed="$REACH_DIR_EMBED" \
       --dir-project-container="$(pwd)" \
       --dir-project-host="$(pwd)" \

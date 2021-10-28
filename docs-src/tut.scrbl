@@ -6,7 +6,7 @@
 This tutorial walks through the creation of a simple decentralized application.
 It contains everything you need to know to build and test this application and assumes no prior experience with @|DApp|/blockchain development of any kind.
 If you want a broad overview before diving in it, we recommend reading @seclink["overview"]{the overview} first.
-On the other hand, if this is too simple, then you may want to start @seclink["workshop"]{the workshop} for larger and less contrained projects or @seclink["ref"]{the reference manual} for the minute details of Reach.
+On the other hand, if this is too simple, then you may want to start @seclink["workshop"]{the workshop} for larger and less constrained projects or @seclink["ref"]{the reference manual} for the minute details of Reach.
 
 If you're ready, click through to the @seclink["tut-1"]{first step}!
 
@@ -80,7 +80,7 @@ You can always click on these links to see the entire file in our @link["https:/
 @margin-note{Did you notice the attractive clipboard icon on the top the right of that box?
 You can click on it and the content of the code box will be copied onto your clipboard.}
 
-@margin-note{Did your text editor recognize @exec{index.rsh} as a Reach program and give you proper syntax hightlighting?
+@margin-note{Did your text editor recognize @exec{index.rsh} as a Reach program and give you proper syntax highlighting?
 If not, check if there's a plugin available for your editor by visiting @secref["guide-editor-support"] or manually
 configure it to treat Reach (@exec{.rsh}) files as JavaScript and things will be mostly correct.}
 
@@ -234,7 +234,7 @@ First, the backend for Alice interacts with its frontend, gets Alice's hand, and
 
 @item{Line 17 states that this block of code is something that @emph{only} @reachin{Alice} performs.}
 
-@item{That means that the variable, @reachin{handA}, bound on line 13 is known only to Alice.}
+@item{That means that the variable, @reachin{handAlice}, bound on line 18 is known only to Alice.}
 
 @item{Line 18 binds that value to the result of interacting with Alice through the @reachin{getHand} method, which we wrote in JavaScript.}
 
@@ -257,9 +257,9 @@ The next step is similar, in that Bob publishes his hand; however, we don't imme
 @item{Lines 23 through 26 match Alice's similar @tech{local step} and @tech{join}ing of the application through a @tech{consensus transfer} @tech{publication}.}
 
 @item{But, line 28 computes the outcome of the game before committing.
-(@reachin{(handA + (4 - handB)) % 3} is a clever equation to compute the winner of a game of @|RPS| using modular arithmetic.
-Consider when @reachin{handA} is @reachin{0} (i.e., @litchar{Rock}) and @reachin{handB} is @reachin{2} (i.e., @litchar{Scissors}),
-then this equation is @reachin{((handA + (4 - handB)) % 3) = ((0 + (4 - 2)) % 3) = ((0 + 2) % 3) = (2 % 3) = 2},
+(@reachin{(handAlice + (4 - handBob)) % 3} is a clever equation to compute the winner of a game of @|RPS| using modular arithmetic.
+Consider when @reachin{handAlice} is @reachin{0} (i.e., @litchar{Rock}) and @reachin{handBob} is @reachin{2} (i.e., @litchar{Scissors}),
+then this equation is @reachin{((handAlice + (4 - handBob)) % 3) = ((0 + (4 - 2)) % 3) = ((0 + 2) % 3) = (2 % 3) = 2},
 which is the last outcome, that is @litchar{Alice wins}, as we expect it to be.)}
 
 ]
@@ -333,7 +333,7 @@ Let's change our program so that Alice can offer a wager to Bob and whoever wins
 
 This time, let's start with changes to the JavaScript @tech{frontend} and then we'll go back into the Reach code and connect the new methods up.
 
-Since we're going to be having funds get transfered, we'll record the balances of each participant before the game starts, so we can more clearly show what they won at the end.
+Since we're going to be having funds get transferred, we'll record the balances of each participant before the game starts, so we can more clearly show what they won at the end.
 We'll add this code in between account creation and contract deployment.
 
 @reachex[#:mode js
@@ -475,8 +475,8 @@ Bob accepts the wager of 5.
 Bob played Rock
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
-Alice went from 10 to 14.9999.
-Bob went from 10 to 4.9999.
+Alice went from 100 to 104.9999.
+Bob went from 100 to 94.9999.
 
 $ ./reach run
 Alice played Paper
@@ -484,8 +484,8 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Alice saw outcome Bob wins
 Bob saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 
 $ ./reach run
 Alice played Rock
@@ -493,26 +493,26 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
-Alice went from 10 to 14.9999.
-Bob went from 10 to 4.9999.
+Alice went from 100 to 104.9999.
+Bob went from 100 to 94.9999.
 }
 
-@margin-note{How come Alice and Bob's balances go back to @litchar{10} every time?
+@margin-note{How come Alice and Bob's balances go back to @litchar{100} every time?
 It's because each time we run @exec{./reach run}, it creates fresh accounts for both players.}
 
-@margin-note{How come the balances aren't exactly @litchar{10}, @litchar{15}, and @litchar{5}?
-It's because Ethereum transactions cost "gas" to run.
+@margin-note{How come the balances aren't exactly @litchar{100}, @litchar{105}, and @litchar{95}?
+It's because consensus network charge fees to run transactions.
 
 If we had shown all the decimals, they'd look like this:
 
 @(hrule)
 
 @verbatim{
-Alice went from 10 to 14.999999999999687163.
-Bob went from 10 to 4.999999999999978229.
+Alice went from 100 to 104.999999999999687163.
+Bob went from 100 to 94.999999999999978229.
 ...
-Alice went from 10 to 4.999999999999687163.
-Bob went from 10 to 14.999999999999978246.
+Alice went from 100 to 94.999999999999687163.
+Bob went from 100 to 104.999999999999978246.
 }
 
 @(hrule)
@@ -549,12 +549,12 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
-Alice went from 10 to 14.9999.
-Bob went from 10 to 4.9999.
+Alice went from 100 to 104.9999.
+Bob went from 100 to 94.9999.
 }
 
 The problem is that this version of the game only executed an @tech{honest} version of Bob, that is, one that followed the Reach program exactly, including in his private @tech{local steps}.
-It is possible for a deviant and dis@tech{honest} version of a Bob @tech{backend} to execute different code and always win by computing the appropriate guess based on what value Alice provided for @reachin{handA}.
+It is possible for a deviant and dis@tech{honest} version of a Bob @tech{backend} to execute different code and always win by computing the appropriate guess based on what value Alice provided for @reachin{handAlice}.
 
 If we change Bob's code to the following:
 
@@ -571,8 +571,8 @@ Alice played Scissors
 Bob accepts the wager of 5.
 Alice saw outcome Bob wins
 Bob saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 }
 
 In this version, unlike the @tech{honest} version, Bob never consults the @tech{frontend} and so it never prints out the message of what hand Bob played.
@@ -628,10 +628,27 @@ Reach includes some such assertions automatically in every program.
 That's why every version of @|RPS| has said that a number of theorems were checked.
 We can see what these theorems do by deliberately inserting an error into the program.
 
-Let's change the computation of the payout and make it so that if Alice wins, then she only gets her wager back, not Bob's.
+Let's start by undoing the changes we made earlier by changing
+
+@reachex["tut-5-attack/index.rsh"
+         'only 29 29 "      // ..."]
+
+back to
 
 @reachex["tut-5-attack/index-bad.rsh"
-         'only 34 41 "      // ..."]
+         'only 29 29 "      // ..."]
+
+and removing
+
+@reachex["tut-5-attack/index.rsh"
+         'only 35 36 "      // ..."]
+
+Let's change the computation of the payout and make it so that if Alice wins, then she only gets her wager back, not Bob's.
+
+We should now have something that looks like
+
+@reachex["tut-5-attack/index-bad.rsh"
+         'only 27 41 "      // ..."]
 
 @itemlist[
 
@@ -664,7 +681,7 @@ These kinds of @seclink["guide-assert"]{automatic verifications} are helpful for
 However, now let's add an @tech{assert}ion to the program that will ensure that every version of the program that allows Bob to know Alice's hand before he chooses his own will be rejected.
 
 We'll go back to the version of @reachexlink["tut-4/index.rsh"] from the last section, which has an @tech{honest} version of Bob.
-(Click on the preceeding link if you need to see what it contained.)
+(Click on the preceding link if you need to see what it contained.)
 
 We'll add a single line to the program after Alice publishes, but before Bob takes a @tech{local step}:
 
@@ -725,7 +742,7 @@ However, Reach allows us to write such test cases directly into the Reach progra
 ]
 
 But, Reach's @seclink["guide-assert"]{automatic verification} allows us to express even more powerful statements about our program's behavior.
-For example, we can state that no matter what values are provided for @reachin{handA} and @reachin{handB}, @reachin{winner} will always provide a valid outcome:
+For example, we can state that no matter what values are provided for @reachin{handAlice} and @reachin{handBob}, @reachin{winner} will always provide a valid outcome:
 
 @reachex["tut-5/index.rsh"
          'only 13 15 "// ..."]
@@ -736,7 +753,7 @@ And we can specify that whenever the same value is provided for both hands, no m
          'only 17 18 "// ..."]
 
 These examples both use @reachin{forall}, which allows Reach programmers to quantify over all possible values that might be provided to a part of their program.
-You might think that these theorems will take a very long time to prove, because they have to loop over all the billions and billions of possibilities (e.g., Ethereum uses 256-bits for its unsigned integers) for the bits of @reachin{handA} (twice!) and @reachin{handB}.
+You might think that these theorems will take a very long time to prove, because they have to loop over all the billions and billions of possibilities (e.g., Ethereum uses 256-bits for its unsigned integers) for the bits of @reachin{handAlice} (twice!) and @reachin{handBob}.
 In fact, on rudimentary laptops, it takes less than half a second.
 That's because Reach uses an advanced @seclink["guide-reach"]{symbolic execution engine} to reason about this theorem abstractly without considering individual values.
 
@@ -833,8 +850,8 @@ Bob accepts the wager of 5.
 Bob played Paper
 Bob saw outcome Alice wins
 Alice saw outcome Alice wins
-Alice went from 10 to 14.9999.
-Bob went from 10 to 4.9999.
+Alice went from 100 to 104.9999.
+Bob went from 100 to 94.9999.
 
 $ ./reach run
 Alice played Paper
@@ -842,8 +859,8 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 
 $ ./reach run
 Alice played Scissors
@@ -1024,8 +1041,8 @@ Bob accepts the wager of 5.
 Bob played Paper
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 
 $ ./reach run
 Alice played Scissors
@@ -1182,7 +1199,7 @@ It's now time to begin the repeatable section of the application, where each par
 In normal programming languages, such a circumstance would be implemented with a @jsin{while} loop, which is exactly what we'll do in Reach.
 However, @reachin{while} loops in Reach require extra care, as discussed in @seclink["guide-loop-invs"]{the guide on loops in Reach}, so we'll take it slow.
 
-In the rest of a Reach program, all identifier bindings are static and unchangable, but if this were the case throughout all of Reach, then @reachin{while} loops would either never start or never terminate, because the loop condition would never change.
+In the rest of a Reach program, all identifier bindings are static and unchangeable, but if this were the case throughout all of Reach, then @reachin{while} loops would either never start or never terminate, because the loop condition would never change.
 So, a @reachin{while} loop in Reach can introduce a variable binding.
 
 Next, because of Reach's @seclink["guide-assert"]{automatic verification} engine, we must be able to make a statement about what properties of the program are invariant before and after a @reachin{while} loop body's execution, a so-called @seclink["guide-loop-invs"]{"loop invariant"}.
@@ -1250,9 +1267,9 @@ The rest of the program could be exactly the same as it was before, except now i
 
 @itemlist[
 
-@item{Line 93 asserts that the outcome is never draw, which is trivially true because otherwise the @reachin{while} loop would not have exitted.}
+@item{Line 93 asserts that the outcome is never draw, which is trivially true because otherwise the @reachin{while} loop would not have exited.}
 
-@item{Line 94 transfers the funds to the winner.}
+@item{Line 104 transfers the funds to the winner.}
 
 ]
 
@@ -1267,8 +1284,8 @@ Alice played Paper
 Bob played Rock
 Bob saw outcome Alice wins
 Alice saw outcome Alice wins
-Alice went from 10 to 14.9999.
-Bob went from 10 to 4.9999.
+Alice went from 100 to 104.9999.
+Bob went from 100 to 94.9999.
 
 $ ./reach run
 Bob accepts the wager of 5.
@@ -1278,8 +1295,8 @@ Alice played Paper
 Bob played Scissors
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 
 $ ./reach run
 Bob accepts the wager of 5.
@@ -1287,8 +1304,8 @@ Alice played Scissors
 Bob played Rock
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 }
 
 As usual, your results may differ, but you should be able to see single round victories like this, as well as multi-round fights and timeouts from either party.
@@ -1546,7 +1563,7 @@ On lines 1 thru 6, we import our view code and CSS.
 On line 7, we import the compiled @reachin{backend}.
 On lines 8 and 9, we load the @reachin{stdlib} as @reachin{reach}.
 
-React compiles the Reach standard libray in such a way that
+React compiles the Reach standard library in such a way that
 it does not have direct access to the environment variables
 which are used to select the desired standard library.
 This is why you need to pass @jsin{process.env} as an argument
@@ -1722,7 +1739,7 @@ and define some button handlers in order to attach to the deployed contract.
   and wait for a @jsin{Promise} which can be resolved via user interaction.}
  @item{On lines 89 thru 92, we define what happens when the user clicks the @litchar{Accept Terms and Pay Wager} button:
   the @jsin{Promise} from line 90 is resolved, and we set the component state to display @exviewref["tut-9" "WaitingForTurn"].}
- @item{On line 93, we render the approprite view from @reachexlink{tut-9/views/AttacherViews.js}}
+ @item{On line 93, we render the appropriate view from @reachexlink{tut-9/views/AttacherViews.js}}
 ]
 
 @exviewfigs["tut-9" "AttacherViews"

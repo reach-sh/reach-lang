@@ -1,0 +1,7 @@
+contact_links:
+  - name: ❓ Questions and Support
+    url: https://discord.gg/AZsgcXu
+    about: You may get answers and support faster by joining our Discord server
+  - name: :open_book: Documentation
+    url: https://docs.reach.sh/
+    about: Check out the documentation!

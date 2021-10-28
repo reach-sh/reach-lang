@@ -33,17 +33,11 @@ index-status:
 	@curl --verbose -s \
 		-H "X-Indexer-API-Token: reach-devnet" \
 		localhost:8980/v2/transactions?min-round=0
-#		localhost:8980/health
 
-# Intentionally not specifying deps for this because we don't
-# want to get into loops.
 .PHONY: generate-network
 generate-network:
-	docker run \
-		--volume $$(pwd):/cwd \
-		--entrypoint /bin/bash \
-		$(IMAGE):latest \
-		/cwd/generate_algorand_network.sh
+	DOCKER_BUILDKIT=1 docker build --target generate-out -o out .
+	rsync -a --progress out/ algorand_network/
 
 .PHONY: clean-network
 clean-network:

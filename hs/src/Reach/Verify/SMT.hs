@@ -456,6 +456,10 @@ parseVal env t v = do
               elems' <- parseArray env ty (List vs)
               return $ SMV_Array ty $ reverse elems'
             _ -> impossible $ "parseVal: Array(" <> show v <> ")"
+        T_Tuple [] ->
+          case v of
+            Atom _ -> return $ SMV_Tuple []
+            _ -> impossible $ "parseVal: Tuple mt " <> show v
         T_Tuple ts ->
           case v of
             List (_:vs) -> do
@@ -1047,6 +1051,7 @@ smt_e at_dv mdv de = do
           go n =<< smtPrimOp at ADD [o, w] [o', w']
     DLE_GetContract at -> unbound at
     DLE_GetAddress at -> unbound at
+    DLE_EmitLog at _ v -> bound at =<< smt_v at v
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)
@@ -1261,11 +1266,10 @@ smt_s = \case
           Nothing -> mempty
           Just (_delay_a, delay_s) -> smt_s delay_s
     let bind_time = do
-          pathAddUnbound at (Just timev) Nothing
-          pathAddUnbound at (Just secsv) Nothing
+          let publishOrig = Just $ SMTModel O_Publish
           -- XXX technically, didSend is guaranteed to be true if send has one
           -- thing in it
-          pathAddUnbound at (Just didSendv) Nothing
+          void $ traverse (flip (pathAddUnbound at) publishOrig . Just) [timev, secsv, didSendv]
     let after = freshAddrs $ bind_time <> smt_n next_n
     let go (from, DLSend isClass msgas amta whena) = do
           should <- shouldSimulate from

@@ -146,7 +146,17 @@ Alice.publish(wagerAmount)
 If you're unsure of what kind of consensus transfer to use, you may want to read the [explanation of the differences](##guide-ctransfers) in the Guide.
 :::
 
-A consensus transfer is written `PART_EXPR.publish(ID_0, ..., ID_n).pay(PAY_EXPR).when(WHEN_EXPR).timeout(DELAY_EXPR, () => TIMEOUT_BLOCK)`,
+A consensus transfer is written
+```reach
+PART_EXPR.publish(ID_0, ..., ID_n)
+ .pay(PAY_EXPR)
+ .when(WHEN_EXPR)
+ .timeout(DELAY_EXPR, () =>
+   TIMEOUT_BLOCK)
+ // or
+ .throwTimeout(DELAY_EXPR, THROWN_EXPR)
+```
+
 where `PART_EXPR` is an expression that evaluates to a participant or race expression,
 `ID_0` through `ID_n` are identifiers for `PART`'s public local state,
 `PAY_EXPR` is a public expression evaluating to a pay amount,
@@ -272,18 +282,29 @@ fork()
   PUBLISH_EXPR,
   PAY_EXPR,
   CONSENSUS_EXPR)
+.api(API_EXPR,
+  API_ASSUME_EXPR,
+  API_PAY_EXPR,
+  API_CONSENSUS_EXPR)
 .timeout(DELAY_EXPR, () =>
   TIMEOUT_BLOCK);
+// or
+.throwTimeout(DELAY_EXPR, THROW_EXPR)
 ```
 
 
 where:
-`TOKENS_EXPR` is an expression that evaluates to a tuple of `Token`s.
-`PART_EXPR` is an expression that evaluates to a participant;
-`PUBLISH_EXPR` is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a `msg` field, which may be of any type, and a `when` field, which must be a boolean;
-`PAY_EXPR` is an expression that evaluates to a function parameterized over the `msg` value and returns a pay amount;
-`CONSENSUS_EXPR` is a syntactic arrow expression parameterized over the `msg` value which is evaluated in a consensus step; and,
-the `timeout` and `throwTimeout` parameter are as in an consensus transfer.
++ `TOKENS_EXPR` is an expression that evaluates to a tuple of `Token`s;
++ `PART_EXPR` is an expression that evaluates to a participant;
++ `PUBLISH_EXPR` is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a `msg` field, which may be of any type, and a `when` field, which must be a boolean;
++ (optional) `PAY_EXPR` is an expression that evaluates to a function parameterized over the `msg` value and returns a pay amount; if this component is left-out, it is synthesized to zero;
++ `CONSENSUS_EXPR` is a syntactic arrow expression parameterized over the `msg` value which is evaluated in a consensus step;
++ `API_EXPR` is an expression that evaluates to an API member function;
++ (optional) `API_ASSUME_EXPR` is a function parameterized over the input to the API member function which is evaluated for effect in a local step; thus it may be used to add `assume` constraints on the values given by the API; if this is absent, then it is synthesized to an empty function; if it is present, then `API_PAY_EXPR` must be included;
++ (optional) `API_PAY_EXPR` is a function parameterized over the input to the API member function which is evaluated to determine the pay amount, like `PAY_EXPR`;
++ `API_CONSENSUS_EXPR` is a function parameterized over the input to the API member function and a function that returns a value to the API call; this function must be called;
++ the `timeout` and `throwTimeout` parameter are as in an consensus transfer.
+
 
 If the `msg` field is absent from the object returned from `PUBLISH_EXPR`, then it is treated as if it were `null`.
 
@@ -293,9 +314,10 @@ If the `PAY_EXPR` is absent, then it is treated as if it were `(_) => 0`.
 
 The `TOKENS_EXPR` and `PAY_EXPR` have the same restrictions as the `.pay` component of a consensus transfer: i.e., they must be pure and can only refer to consensus state.
 
-The `.case` component may be repeated many times.
+The `.case` and `.api` components may be repeated many times.
 
-The same participant may specify multiple cases. In this situation, the order of the cases is significant.
+The same participant may specify multiple cases.
+In this situation, the order of the cases is significant.
 That is, a subsequent case will only be evaluated if the prior case's `when` field is `false`.
 
 If the participant specified by `PART_EXPR` is not already fixed (in the sense of `Participant.set`), then if it wins the `race`, it is fixed, provided it is not a participant class.

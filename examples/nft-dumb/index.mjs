@@ -3,7 +3,7 @@ import * as backend from './build/index.main.mjs';
 
 (async () => {
   const stdlib = await loader.loadStdlib();
-  const startingBalance = stdlib.parseCurrency(10);
+  const startingBalance = stdlib.parseCurrency(100);
 
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);

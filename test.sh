@@ -30,8 +30,8 @@ jb () {
   # (cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
-  # (cd "$ROOT"/js/rpc-server && make build)
-  # (cd "$ROOT"/js/react-runner && make build)
+  #(cd "$ROOT"/js/rpc-server && make build)
+  (cd "$ROOT"/js/react-runner && make build)
   # (cd "$ROOT"/js && make build)
 }
 
@@ -83,7 +83,7 @@ r () {
   #REACH_CONNECTOR_MODE=CFX ${REACH} run
 
   # Ganache
-  # REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
+  REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
 
 )
 }
@@ -111,11 +111,16 @@ tealcount () {
 
 #######
 
-jb
+#exit 0
 
-ci ETH overview
-# ci ETH api-full
-# ci ALGO api-full
+fc hs/t/n/Err_ApiCallAssign.rsh
+exit 0
+
+#ci ETH tut-7
+#ci CFX tut-7
+#ci ALGO tut-7
+#ci ALGO mint-basic
+
 exit 0
 
 # (cd hs && mk hs-test)

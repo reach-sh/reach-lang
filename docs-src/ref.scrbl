@@ -81,7 +81,7 @@ named @tt{default}.
   The default value is 2 minutes.}
 
   @item{
-    The environment variable @defenv{REACH_DEBUG}, if set to any non-empty value, enables debug messages from the Reach compiler, which will appear in the console.
+    The environment variable @envvar{REACH_DEBUG}, if set to any non-empty value, enables debug messages from the Reach compiler, which will appear in the console.
     This debug information includes: the estimated cost of the contract on Algorand.
   }]
 

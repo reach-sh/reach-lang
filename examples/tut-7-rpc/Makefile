@@ -59,7 +59,7 @@ build-go: server/build/index.main.mjs client-lib-go
 	cd client-go && docker build --tag=reachsh/reach-app-tut-7-rpc-client-go:latest .
 
 .PHONY: build-cs
-build-go: server/build/index.main.mjs client-lib-cs
+build-cs: server/build/index.main.mjs client-lib-cs
 	cd client-cs && docker build --tag=reachsh/reach-app-tut-7-rpc-client-cs:latest .
 
 .PHONY: build

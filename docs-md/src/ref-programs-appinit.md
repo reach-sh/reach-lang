@@ -90,10 +90,24 @@ Each `participantName` must be unique.
 
 `participantInteractInterface` is a ${defn("participant interact interface")}, an object where each field indicates the type of a function or value which must be provided to the backend by the frontend for interacting with the participant.
 
+### {#ref-programs-appinit-api} API Definition
+
+${ref((quote rsh), "API")}
+```reach
+API('Voter', { vote: Fun([Address], UInt) })
+```
+
+
+A API is defined with `API(apiName, apiInterface)`, where `apiName` is a string that labels the API and `apiInterface` is an object where each field indicates the type of a function provided by the contract as an API.
+These APIs are available in frontends via the `ctc.apis` object.
+The value returned by this function is an object where the fields are the members of `apiInterface` are may be used in `.api` components of `fork` and `parallelReduce` to specify the behavior of the corresponding call.
+These are called ${defn("API member function")}s.
+Each function must occur exactly once in the entire program.
+
 ### {#ref-programs-appinit-view} View Definition
 
 ::: note
-This section is about defining views during in application initialization. Views are [set in consensus steps](##ref-programs-consensus-view), in your Reach program. But, they are [accessed by frontends](##ref-frontends-js-view) by using the Reach standard library of the frontend language, such as JavaScript.
+This section is about defining views during in application initialization. Views are [set in consensus steps](##ref-programs-consensus-view), in your Reach program. But, they are [accessed by frontends](##ref-frontends-js-ctc) by using the Reach standard library of the frontend language, such as JavaScript.
 :::
 
 ${ref((quote rsh), "View")}
@@ -103,6 +117,6 @@ View('NFT', { owner: Address })
 
 
 A view is defined with `View(viewName, viewInterface)`, where `viewName` is a string that labels the view and `viewInterface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp.
-These views are available in frontends via the `ctc.getViews` function.
+These views are available in frontends via the `ctc.views` object.
 In the DApp, the result of this application argument is referred to as a view object.
 

@@ -8,9 +8,10 @@ where
 import Data.Char (toLower, toUpper)
 import Data.List (intercalate)
 import Data.List.Extra (splitOn)
-import Reach.AST.Base (SrcLoc)
+import Reach.AST.Base (SrcLoc, getErrorMessage, HasErrorCode(..))
 import System.IO (hPutStrLn)
 import System.IO.Extra (stderr)
+import GHC.Generics
 import Reach.UnsafeUtil (unsafeTermSupportsColor)
 import qualified System.Console.Pretty as TC
 
@@ -30,11 +31,21 @@ data Deprecation
   deriving (Eq)
 
 data Warning
-  = W_Deprecated SrcLoc Deprecation
+  = W_Deprecated Deprecation
   | W_SolidityOptimizeFailure String
   | W_ALGOUnsupported [String]
   | W_ALGOConservative [String]
-  deriving (Eq)
+  | W_NoPublish
+  deriving (Eq, Generic)
+
+instance HasErrorCode Warning where
+  errPrefix = const "RW"
+  errIndex = \case
+    W_Deprecated {} -> 0
+    W_SolidityOptimizeFailure {} -> 1
+    W_ALGOUnsupported {} -> 2
+    W_ALGOConservative {} -> 3
+    W_NoPublish {} -> 4
 
 instance Show Deprecation where
   show = \case
@@ -53,17 +64,23 @@ instance Show Deprecation where
 
 instance Show Warning where
   show = \case
-    W_Deprecated at d -> show d <> " at " <> show at
+    W_Deprecated d -> show d
     W_SolidityOptimizeFailure msg ->
       "The Solidity compiler, run with optimization, fails on this program, but succeeds without optimization. This indicates a problem with Solidity that Reach is not working around; typically, because it is not possible to do so. You could report this error to Solidity (or Reach). If you do so, this is the message from Solidity:\n" <> msg
     W_ALGOUnsupported rs ->
       "Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:\n" <> (intercalate "\n" $ map (" * " <>) rs)
     W_ALGOConservative rs ->
       "Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:\n" <> (intercalate "\n" $ map (" * " <>) rs)
+    W_NoPublish -> "There are no publications in the application."
 
-emitWarning :: Warning -> IO ()
-emitWarning d = do
-  let hasColor = unsafeTermSupportsColor
-  let style s = if hasColor then TC.style s else id
-  let color s = if hasColor then TC.color s else id
-  hPutStrLn stderr $ style TC.Bold (color TC.Yellow "WARNING") <> ": " <> show d
+emitWarning :: Maybe SrcLoc -> Warning -> IO ()
+emitWarning at d = do
+  let msg =
+        case at of
+          Just at' -> getErrorMessage [] at' True d
+          Nothing -> do
+            let hasColor = unsafeTermSupportsColor
+            let style s = if hasColor then TC.style s else id
+            let color s = if hasColor then TC.color s else id
+            style TC.Bold (color TC.Yellow "WARNING") <> ": " <> show d
+  hPutStrLn stderr msg

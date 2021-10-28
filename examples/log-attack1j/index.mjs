@@ -30,7 +30,7 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
   const which = 'e1';
   assertEq(getEvt(which, JSON.parse(backend._Connectors.ETH.ABI)), getEvt(which, remoteABI));
 
-  const startingBalance = stdlib.parseCurrency(10);
+  const startingBalance = stdlib.parseCurrency(100);
   const accAlice = await stdlib.newTestAccount(startingBalance);
 
   const myGasLimit = 5000000;
