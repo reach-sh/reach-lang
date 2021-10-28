@@ -54,7 +54,7 @@ build-haskell: stack
 	  --build-arg PATCH=${PATCH} \
 	  --build-arg MAJOR=${MAJOR} \
 	  --build-arg MINOR=${MINOR} \
-	  --build-arg SOLC_VERSION=${SOLC_VERSION} \
+	  --build-arg SOLC_IMAGE=${SOLC_IMAGE} \
 	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS):latest \
 	  --add-host host.docker.internal:172.17.0.1 \
 	  -f Dockerfile.haskell-build-artifacts .
