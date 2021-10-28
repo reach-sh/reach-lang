@@ -67,7 +67,7 @@ type Log = real_ethers.providers.Log;
 // node --unhandled-rejections=strict
 
 const reachBackendVersion = 5;
-const reachEthBackendVersion = 4;
+const reachEthBackendVersion = 5;
 type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
   ABI: string,
