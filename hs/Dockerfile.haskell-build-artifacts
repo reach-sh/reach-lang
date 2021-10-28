@@ -1,5 +1,5 @@
-ARG SOLC_VERSION
-FROM ethereum/solc:${SOLC_VERSION} AS solc
+ARG SOLC_IMAGE
+FROM ethereum/solc:${SOLC_IMAGE} AS solc
 
 FROM alpine:3.14.2 AS build
 ARG VERSION 
