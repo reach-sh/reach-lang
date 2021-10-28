@@ -1192,7 +1192,7 @@ hashes = command "hashes" $ info f d where
   f = pure $ do
     v <- versionMajMinPat . version'' <$> asks e_var
     script . forM_ reachImages $ \i -> write [N.text|
-      echo "$i:" "$(docker run --entrypoint /bin/sh "reachsh/$i:$v" -c 'echo $$REACH_GIT_HASH')"
+      echo "$i:" "$(docker run --rm --entrypoint /bin/sh "reachsh/$i:$v" -c 'echo $$REACH_GIT_HASH')"
     |]
 
 whoami' :: Text
