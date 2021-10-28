@@ -41,7 +41,7 @@ client-lib-go: clean-client-lib-go
 	cp -r ../../rpc-client/go ./client-go/lib
 
 .PHONY: client-lib-cs
-client-lib-go: clean-client-lib-cs
+client-lib-cs: clean-client-lib-cs
 	cp -r ../../rpc-client/cs ./client-cs/lib
 
 .PHONY: build-js

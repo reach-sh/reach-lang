@@ -14,10 +14,6 @@ public async Task<string> GetAcc()
         var startingBalance = await rpc.CallAsync("/stdlib/parseCurrency", 100);
         var accAlice        = await rpc.CallAsync("/stdlib/newTestAccount", startingBalance);
         var accBob          = await rpc.CallAsync("/stdlib/newTestAccount", startingBalance);
-        
-        var beforeAlice     = await rpc.CallAsync("/stdlib/getBalance", accAlice);
-        var beforeBob       = await rpc.CallAsync("/stdlib/getBalance", accBob);
-
         var ctcAlice        = rpc.CallAsync("/acc/deploy",  accAlice).ToString();
 
         string[] HAND;
