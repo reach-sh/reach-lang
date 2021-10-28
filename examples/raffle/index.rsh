@@ -77,6 +77,10 @@ export const main =
       };
 
       Sponsor.only(() => { interact.showReturning(howMany); });
+      if ( howMany == 0 ) {
+        commit();
+        exit();
+      }
 
       const ticketsM = new Map(UInt);
       const [ hwinner, howManyReturned ] =
@@ -102,9 +106,14 @@ export const main =
           })
         )
         .timeRemaining(returnTimeout());
-      commit();
 
       Sponsor.only(() => { interact.showReturned(howManyReturned); });
+      if ( howManyReturned == 0 ) {
+        transfer(balance()).to(Sponsor);
+        commit();
+        exit();
+      }
+      commit();
 
       // Here's an attack:
       // 1. Know that you are the last one to return
