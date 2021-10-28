@@ -1,0 +1,11 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Admin" is honest
+  Verifying when ONLY "User_pay" is honest
+  Verifying when ONLY "User_read" is honest
+  Verifying when ONLY "User_stop" is honest
+  Verifying when ONLY "User_write" is honest
+  Verifying when ONLY "User_writeC" is honest
+Checked 256 theorems; No failures!

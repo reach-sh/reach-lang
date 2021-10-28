@@ -113,8 +113,8 @@ tealcount () {
 
 #exit 0
 
-fc hs/t/n/Err_ApiCallAssign.rsh
-exit 0
+jb
+ci ALGO api-fail
 
 #ci ETH tut-7
 #ci CFX tut-7
