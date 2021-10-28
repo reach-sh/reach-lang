@@ -245,6 +245,8 @@ export const stdContract =
 
   const apis = objectMap(bin._APIs, ((an:string, am:any) => {
     return objectMap(am, ((afn:string, ab:any) => {
+      const bp = `${an}_${afn}`;
+      delete participants[bp];
       const bl = `${an}.${afn}`;
       return (...args:any[]) => {
         const terminal = { terminated: bl };
