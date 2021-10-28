@@ -56,7 +56,7 @@ ci () {
   ${REACH} clean
   ${REACH} compile --intermediate-files
   make build
-  REACH_DEBUG=1 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=0 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 
@@ -113,8 +113,12 @@ tealcount () {
 
 #exit 0
 
-jb
-ci ALGO api-fail
+#jb
+#ci ALGO simple-nft-auction
+
+one ALGO tut-7-rpc
+exit 0
+c examples/tut-4/index.rsh
 
 #ci ETH tut-7
 #ci CFX tut-7

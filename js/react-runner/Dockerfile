@@ -1,3 +1,5 @@
+ARG NODE_VERSION
+ARG NODE_IMAGE=node:$NODE_VERSION
 ARG REACH_VERSION
 ARG STDLIB_IMAGE=reachsh/stdlib:$REACH_VERSION
 ARG JS_DEPS_IMAGE=reachsh/js-deps:$REACH_VERSION
@@ -20,7 +22,7 @@ RUN npm install
 
 COPY public/ /app/public/
 
-FROM node:14.17.0-alpine3.13 
+FROM $NODE_IMAGE
 
 COPY --from=stdlib /stdlib /stdlib
 WORKDIR /stdlib

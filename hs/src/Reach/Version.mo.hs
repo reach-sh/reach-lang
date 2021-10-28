@@ -8,10 +8,14 @@ module Reach.Version
   , major
   , minor
   , patch
+  , solcVersionStr
   ) where
 
 import Data.Version (Version (..), makeVersion, showVersion)
 import Reach.UnsafeUtil
+
+solcVersionStr :: String
+solcVersionStr = "{{SOLC_VERSION}}"
 
 major :: Int
 major = {{MAJOR}}

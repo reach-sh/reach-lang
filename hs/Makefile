@@ -2,6 +2,7 @@ IMG_HASKELL_BUILD_ARTIFACTS="reachsh/haskell-build-artifacts"
 IMG_REACHC="reachsh/reach"
 IMG_REACH_CLI="reachsh/reach-cli"
 ALPINE_VERSION="3.14.2"
+ROOT=..
 
 .PHONY: install-mo
 install-mo:
@@ -13,11 +14,11 @@ install-mo:
 mo:
 	@which mo 1>/dev/null || (echo 'FAILURE: Please call `make install-mo` first' && exit 1)
 
-package.yaml: package.mo.yaml ../VERSION
-	(. ../VERSION && export VERSION && mo $< > $@)
+package.yaml: package.mo.yaml $(ROOT)/VERSION
+	(. $(ROOT)/VERSION && export VERSION && mo $< > $@)
 
-src/Reach/Version.hs: src/Reach/Version.mo.hs ../VERSION
-	(. ../VERSION && export MAJOR MINOR PATCH && mo $< > $@)
+src/Reach/Version.hs: src/Reach/Version.mo.hs $(ROOT)/VERSION $(ROOT)/DEPS
+	(. $(ROOT)/VERSION && export MAJOR MINOR PATCH && . $(ROOT)/DEPS && export SOLC_VERSION && mo $< > $@)
 
 OPENZEP=4.1.0
 OPENZEP_URL=https://github.com/OpenZeppelin/openzeppelin-contracts/archive/refs/tags/v$(OPENZEP).tar.gz
@@ -42,25 +43,36 @@ stack: package.yaml src/Reach/Version.hs sol/stdlib.sol
 clean: hs-clean
 	rm -f package.yaml
 
-.PHONY: build
-build: stack
+.PHONY: build-haskell
+build-haskell: stack
 	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
 	docker build \
 	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS):latest \
 	  -f Dockerfile.haskell-build-artifacts .
+	docker container rm -f repo
+
+.PHONY: build-reach-cli
+build-reach-cli: stack
+	docker build \
+	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \
+	  --tag=$(IMG_REACH_CLI):latest \
+	  -f Dockerfile.reach-cli .
+	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
+
+.PHONY: build-reachc
+build-reachc: stack
+	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
 	docker build \
 	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
 	  --build-arg ALPINE_VERSION=$(ALPINE_VERSION) \
 	  --add-host host.docker.internal:172.17.0.1 \
 	  --tag=$(IMG_REACHC):latest \
 	  -f Dockerfile.reachc .
-	docker build \
-	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \
-	  --tag=$(IMG_REACH_CLI):latest \
-	  -f Dockerfile.reach-cli .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
-	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
 	docker container rm -f repo
+
+.PHONY: build
+build: build-haskell build-reach-cli build-reachc
 
 .PHONY: build-m1
 build-m1:

@@ -2,6 +2,7 @@
 
 ROOT=../..
 include $(ROOT)/js/JS_IMAGES
+include $(ROOT)/DEPS
 
 IMAGE=$(RPC_SERVER_IMAGE)
 
