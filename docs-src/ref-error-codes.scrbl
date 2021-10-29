@@ -2134,6 +2134,28 @@ For example:
   const x = call(Voter.vote);
 }
 
+@error{RE0123}
+
+This error indicates that the name provided to a @reachin{Participant}, @reachin{ParticipantClass}, @reachin{API}, or @reachin{View} is already in use.
+There is a single namespace for all of these entities.
+
+For example, the code below erroneously uses the same name multiple times:
+
+@reach{
+  const A = Participant('Flower_girl', {});
+  const B = API('Flower', { girl: Fun([UInt], Null) });
+}
+
+@reachin{'Flower_girl'} is used multiple times because every method of an @reachin{API} will
+introduce a binding, of the format: @tt{<API name>_<method name>}, into the namespace.
+
+You can fix this error by using different names:
+
+@reach{
+  const A = Participant('Flower_girl', {});
+  const B = API('Flower', { girl2: Fun([UInt], Null) });
+}
+
 @error{REP0000}
 
 This error indicates that the body of a @reachin{while} loop does not make a publication before the @reachin{continue}
