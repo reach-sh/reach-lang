@@ -530,12 +530,14 @@ workflows:
             only: /[0-9]*\.[0-9]*\.[0-9]*/
     - "build-reach":
         requires:
+          - "install-mo"
           - "build-haskell"
         filters:
           tags:
             only: /[0-9]*\.[0-9]*\.[0-9]*/
     - "build-reach-cli":
         requires:
+          - "install-mo"
           - "build-haskell"
         filters:
           tags:
@@ -566,6 +568,7 @@ workflows:
             only: /[0-9]*\.[0-9]*\.[0-9]*/
     - "build-rpc-server":
         requires:
+          - "install-mo"
           - "build-runner"
         filters:
           tags:
