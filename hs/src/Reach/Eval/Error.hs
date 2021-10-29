@@ -151,7 +151,7 @@ data EvalError
   | Err_NotAfterFirst
   | Err_UniqueFirstPublish
   | Err_ApiCallAssign
-  | Err_DuplicateName String
+  | Err_DuplicateName String SrcLoc
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -715,7 +715,7 @@ instance Show EvalError where
       "A unique `Participant` must make the first publication"
     Err_ApiCallAssign ->
       "The left hand side of an API call must be a pair consisting of the domain and return function."
-    Err_DuplicateName s ->
-      "The name `" <> s <> "` has already been used by a Participant, View or API"
+    Err_DuplicateName s at ->
+      "The name `" <> s <> "` has already been used by a Participant, View or API at: " <> show at
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

@@ -1,4 +1,4 @@
-reachc: error[RE0123]: The name `NFT` has already been used by a Participant, View or API
+reachc: error[RE0123]: The name `NFT` has already been used by a Participant, View or API at: ./Err_View_DuplicateView.rsh:8:11:application
 
   ./Err_View_DuplicateView.rsh:9:11:application
 
