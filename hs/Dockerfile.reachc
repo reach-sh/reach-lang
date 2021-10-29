@@ -1,18 +1,16 @@
 ARG ALPINE_VERSION
 FROM reachsh/haskell-build-artifacts AS build
-FROM ethereum/solc:0.8.9         AS solc
 
 FROM alpine:$ALPINE_VERSION
 
 RUN echo 'http://host.docker.internal:30000/' >> /etc/apk/repositories
 RUN apk update --allow-untrusted && apk add libgmpxx ca-certificates git
 RUN apk add --allow-untrusted --repository="http://host.docker.internal:30000/" z3=4.8.12-r0 z3-dev=4.8.12-r0
-
-COPY --from=solc  /usr/bin/solc     /usr/bin/solc
-COPY --from=build /build/bin/reachc /usr/bin/reachc
-
-RUN chmod +x /usr/bin/solc
 RUN chmod +x /usr/bin/z3
+
+COPY --from=build /usr/bin/solc /usr/bin/solc
+COPY --from=build /build/bin/reachc /usr/bin/reachc
+RUN chmod +x /usr/bin/reachc
 
 WORKDIR /app
 ENTRYPOINT ["/usr/bin/reachc"]

@@ -375,8 +375,8 @@ const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigN
   }
 };
 
-const ReachToken_ABI = ETHstdlib["contracts"]["stdlib.sol:ReachToken"]["abi"];
-const ERC20_ABI = ETHstdlib["contracts"]["stdlib.sol:IERC20"]["abi"];
+const ReachToken_ABI = ETHstdlib["contracts"]["sol/stdlib.sol:ReachToken"]["abi"];
+const ERC20_ABI = ETHstdlib["contracts"]["sol/stdlib.sol:IERC20"]["abi"];
 
 const balanceOf_token = async (networkAccount: NetworkAccount, address: Address, tok: Token): Promise<BigNumber> => {
   // @ts-ignore
@@ -1088,7 +1088,7 @@ function formatAddress(acc: string|NetworkAccount|Account): string {
 async function launchToken (accCreator:Account, name:string, sym:string, opts:any = {}) {
   debug(`Launching token, ${name} (${sym})`);
   const addr = (acc:Account) => acc.networkAccount.address;
-  const remoteCtc = ETHstdlib["contracts"]["stdlib.sol:ReachToken"];
+  const remoteCtc = ETHstdlib["contracts"]["sol/stdlib.sol:ReachToken"];
   const remoteABI = remoteCtc["abi"];
   const remoteBytecode = remoteCtc["bin"];
   const factory = new ethers.ContractFactory(remoteABI, remoteBytecode, accCreator.networkAccount);
