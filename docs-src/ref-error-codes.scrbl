@@ -2134,6 +2134,25 @@ For example:
   const x = call(Voter.vote);
 }
 
+@error{RE0123}
+
+This error indicates that the name provided to a @reachin{Participant}, @reachin{ParticipantClass}, @reachin{API}, or @reachin{View} is already in use.
+There is a single namespace for all of these entities.
+
+For example, the code below erroneously uses the same name multiple times:
+
+@reach{
+  const A1 = Participant('A', {});
+  const A2 = API('A', {});
+}
+
+You can fix this error by using different names:
+
+@reach{
+  const A1 = Participant('A', {});
+  const A2 = API('A2', {});
+}
+
 @error{REP0000}
 
 This error indicates that the body of a @reachin{while} loop does not make a publication before the @reachin{continue}
