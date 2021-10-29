@@ -86,6 +86,7 @@ data CompilationError = CompilationError
   , ce_errorMessage :: String
   , ce_position :: [Int]
   , ce_offendingToken :: Maybe String
+  , ce_errorCode :: String
   }
   deriving (Show, Generic, ToJSON)
 
@@ -157,6 +158,7 @@ expect_throw mCtx src ce =
                       , ce_offendingToken = fst $ errorSuggestions ce
                       , ce_errorMessage = errorMessageForJson ce
                       , ce_position = srcloc_line_col src
+                      , ce_errorCode = makeErrCode (errPrefix ce) (errIndex ce)
                       })
     False -> error $ getErrorMessage mCtx src False ce
 

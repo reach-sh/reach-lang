@@ -380,6 +380,14 @@ ensure_level x y =
     True -> return ()
     False -> expect_ $ Err_ExpectedLevel x
 
+getUsedNames :: App (S.Set SLPart)
+getUsedNames = do
+  res <- aisiGet aisi_res
+  let keys f = M.keys . f $ res
+  return $ S.fromList $ concat
+    [ keys ar_apis, keys ar_views, keys ar_pie ]
+
+
 verifyName :: String -> String -> App ()
 verifyName ty ns = do
   when (isSpecialBackendIdent ns) $
@@ -387,6 +395,10 @@ verifyName ty ns = do
   regex <- nameRegex
   unless (matched $ ns ?=~ regex) $
     expect_ $ Err_InvalidNameRegex ty ns
+  usedNames <- getUsedNames
+  when (bpack ns `S.member` usedNames) $
+    expect_ $ Err_DuplicateName ns
+
 
 isSpecialBackendIdent :: [Char] -> Bool
 isSpecialBackendIdent = flip elem ["getExports"]
@@ -2801,6 +2813,9 @@ evalPrim p sargs =
       SLInterface im <- mustBeInterface intv
       let ns = bunpack n
       verifyName "API" ns
+      sv <- ar_apis <$> aisiGet aisi_res
+      when (M.member n sv) $
+        expect_ $ Err_View_DuplicateView n
       ix <- flip mapWithKeyM im $ \k -> \ (at, ty) ->
         case ty of
         ST_Fun (SLTypeFun {..}) -> do

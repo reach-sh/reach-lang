@@ -1,0 +1,8 @@
+reachc: error[RE0123]: The name `A` has already been used by a Participant, View or API
+
+  ./Err_DuplicateName.rsh:5:16:application
+
+  5|   const B = API('A', {});
+
+For further explanation of this error, see: https://docs.reach.sh/RE0123.html
+

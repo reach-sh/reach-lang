@@ -1,8 +1,8 @@
-reachc: error[RE0109]: Duplicated participant name: "Alice"
+reachc: error[RE0123]: The name `Alice` has already been used by a Participant, View or API
 
   ./Err_Part_DuplicatePart.rsh:6:25:application
 
   6|   const A2 = Participant('Alice', {});
 
-For further explanation of this error, see: https://docs.reach.sh/RE0109.html
+For further explanation of this error, see: https://docs.reach.sh/RE0123.html
 
