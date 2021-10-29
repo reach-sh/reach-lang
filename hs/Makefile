@@ -4,6 +4,9 @@ IMG_REACH_CLI="reachsh/reach-cli"
 ALPINE_VERSION="3.14.2"
 ROOT=..
 
+include $(ROOT)/VERSION
+include $(ROOT)/DEPS
+
 .PHONY: install-mo
 install-mo:
 	curl -sSL https://git.io/get-mo -o mo

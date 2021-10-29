@@ -23,6 +23,7 @@ package.json: package.mo.json $(ROOT)/VERSION mo
 build: package.json
 	docker build --tag=$(IMAGE):latest \
 	  --build-arg RUNNER_VERSION=$(RUNNER_IMAGE):$(REACH_VERSION) \
+	  --build-arg REACH_VERSION=$(VERSION) \
 	  .
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
