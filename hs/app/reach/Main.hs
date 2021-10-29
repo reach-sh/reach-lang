@@ -732,6 +732,12 @@ envFileContainer = (</> "env") <$> asks e_dirConfigContainer
 envFileHost :: AppT FilePath
 envFileHost = (</> "env") <$> asks e_dirConfigHost
 
+dirInitTemplates :: AppT FilePath
+dirInitTemplates = dirInitTemplates' <$> ask
+
+dirInitTemplates' :: Env -> FilePath
+dirInitTemplates' Env {..} = e_dirEmbed </> "init"
+
 forwardedCli :: Text -> AppT Text
 forwardedCli n = do
   Env {..} <- ask
@@ -877,16 +883,19 @@ compile = command "compile" $ info f d where
         fi
       |]
 
-init' :: Subcommand
-init' = command "init" . info f $ d <> foot where
+init' :: [String] -> Subcommand
+init' its = command "init" . info f $ d <> foot where
   d = progDesc "Set up source files for a simple app in the current directory"
   f = go <$> strArgument (metavar "TEMPLATE" <> value "_default" <> showDefault)
-  -- TODO list available templates?
-  foot = footerDoc . Just $ text "Aborts if index.rsh or index.mjs already exist"
+  foot = footerDoc . Just
+    $ text "Available templates:\n"
+   <> text (L.intercalate "\n" its)
+   <> text "\n\nAborts if index.rsh or index.mjs already exist"
   go template = do
     Env {..} <- ask
     Project {..} <- projectPwdIndex
-    let tmpl n = e_dirEmbed </> "init" </> n
+    ts <- dirInitTemplates
+    let tmpl n = ts </> n
     let app = "index" -- Used to be configurable via CLI; now we try to nudge default of "index"
     liftIO $ do
       tmpl' <- ifM (doesDirectoryExist $ tmpl template)
@@ -1446,11 +1455,44 @@ failNonAbsPaths Env {..} =
     , e_dirTmpHost
     ]
 
+initTemplates :: Env -> IO [String]
+initTemplates = fmap f . listDirectory . dirInitTemplates' where
+  f = (:) "  - default" . fmap ("  - " <>) . L.sort . filter (/= "_default")
+
 main :: IO ()
 main = do
   eff <- newIORef InProcess
   env <- mkEnv eff Nothing
+  arg <- getArgs
+  its <- case execParserPure defaultPrefs (flip info forwardOptions $ (,) <$> env <*> manyArgs "") arg of
+    Success (e, _) -> initTemplates e
+    _ -> pure []
   let header' = "reach " <> versionHashStr <> " - Reach command-line tool"
+  let cs = config
+        <> compile
+        <> clean
+        <> init' its
+        <> run'
+        <> down
+        <> scaffold
+        <> react
+        <> rpcServer
+        <> rpcRun
+        <> devnet
+        <> upgrade
+        <> update
+        <> dockerReset
+        <> version'
+        <> hashes
+        <> help'
+  let hs = internal
+        <> commandGroup "hidden subcommands"
+        <> numericVersion
+        <> reactDown
+        <> rpcServerAwait
+        <> rpcServerDown
+        <> unscaffold
+        <> whoami
   let cli = Cli
         <$> env
         <*> (hsubparser cs <|> hsubparser hs <**> helper)
@@ -1466,29 +1508,3 @@ main = do
         False -> do
           T.writeFile (e_dirTmpContainer c_env </> "out.sh") t
           exitWith $ ExitFailure 42
- where
-  cs = config
-    <> compile
-    <> clean
-    <> init'
-    <> run'
-    <> down
-    <> scaffold
-    <> react
-    <> rpcServer
-    <> rpcRun
-    <> devnet
-    <> upgrade
-    <> update
-    <> dockerReset
-    <> version'
-    <> hashes
-    <> help'
-  hs = internal
-    <> commandGroup "hidden subcommands"
-    <> numericVersion
-    <> reactDown
-    <> rpcServerAwait
-    <> rpcServerDown
-    <> unscaffold
-    <> whoami
