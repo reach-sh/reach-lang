@@ -2142,15 +2142,18 @@ There is a single namespace for all of these entities.
 For example, the code below erroneously uses the same name multiple times:
 
 @reach{
-  const A1 = Participant('A', {});
-  const A2 = API('A', {});
+  const A = Participant('Flower_girl', {});
+  const B = API('Flower', { girl: Fun([UInt], Null) });
 }
+
+@reachin{'Flower_girl'} is used multiple times because every method of an @reachin{API} will
+introduce a binding, of the format: @tt{<API name>_<method name>}, into the namespace.
 
 You can fix this error by using different names:
 
 @reach{
-  const A1 = Participant('A', {});
-  const A2 = API('A2', {});
+  const A = Participant('Flower_girl', {});
+  const B = API('Flower', { girl2: Fun([UInt], Null) });
 }
 
 @error{REP0000}
