@@ -2813,9 +2813,6 @@ evalPrim p sargs =
       SLInterface im <- mustBeInterface intv
       let ns = bunpack n
       verifyName "API" ns
-      sv <- ar_apis <$> aisiGet aisi_res
-      when (M.member n sv) $
-        expect_ $ Err_View_DuplicateView n
       ix <- flip mapWithKeyM im $ \k -> \ (at, ty) ->
         case ty of
         ST_Fun (SLTypeFun {..}) -> do
@@ -2846,9 +2843,6 @@ evalPrim p sargs =
       (nv, intv) <- two_args
       n <- mustBeBytes nv
       SLInterface im <- mustBeInterface intv
-      sv <- ar_views <$> aisiGet aisi_res
-      when (M.member n sv) $
-        expect_ $ Err_View_DuplicateView n
       let ns = bunpack n
       verifyName "View" ns
       let go k (at, t) = do
@@ -3177,9 +3171,6 @@ evalPrim p sargs =
       n <- mustBeBytes nv
       let ns = bunpack n
       verifyName "Participant" ns
-      ios <- ae_ios <$> aisiGet aisi_env
-      when (M.member n ios) $
-        expect_ $ Err_Part_DuplicatePart n
       int <- mustBeInterface intv
       (io, ienv) <- makeInteract n int
       aisiPut aisi_env $ \ae ->
