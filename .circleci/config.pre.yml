@@ -254,6 +254,7 @@ jobs:
     steps:
     - checkout
     - srd_yes
+    - restore_bin
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
@@ -275,6 +276,7 @@ jobs:
     steps:
     - checkout
     - srd_yes
+    - restore_bin
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
