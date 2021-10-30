@@ -11,6 +11,10 @@ executors:
         description: "resource class"
         default: "small"
         type: string
+      dlc:
+        description: "docker layer caching (ignored)"
+        default: false
+        type: boolean
     docker:
     - image: "cimg/base:stable"
       auth:
@@ -20,8 +24,14 @@ executors:
     environment:
       LC_ALL: "en_US.UTF-8"
   real:
+    parameters:
+      dlc:
+        description: "docker layer caching"
+        default: false
+        type: boolean
     machine:
       image: "ubuntu-2004:202107-02"
+      docker_layer_caching: << parameters.dlc >>
     resource_class: "medium"
     environment:
       LC_ALL: "en_US.UTF-8"
@@ -192,7 +202,9 @@ jobs:
       deps:
         description: "docker dependencies"
         type: string
-    executor: <<parameters.exec>>
+    executor:
+      name: <<parameters.exec>>
+      dlc: true
     steps:
     - checkout
     - when:

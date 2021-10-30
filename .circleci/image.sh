@@ -9,7 +9,7 @@ case "$WHICH" in
   "js-deps"|"stdlib"|"runner"|"react-runner"|"rpc-server")
     DIR="js"
     ;;
-  "devnet-*")
+  devnet-*)
     DIR="scripts/${WHICH}"
     ;;
   *)
