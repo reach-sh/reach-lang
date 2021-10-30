@@ -46,3 +46,5 @@ COPY --from=solc /usr/local/bin/solc /usr/bin/solc
 RUN chmod +x /usr/bin/solc
 COPY --from=solc /sol/stdlib.json .
 COPY --from=z3 /usr/bin/z3 /usr/bin/z3
+
+COPY .stan.toml ./

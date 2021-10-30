@@ -160,8 +160,7 @@ jobs:
     executor: real
     steps:
     - checkout
-    - attach_workspace:
-        at: /tmp/workspace
+    - workattach
     - and_restore_docker:
         deps: "haskell-build-artifacts"
     - run:
@@ -177,8 +176,7 @@ jobs:
     steps:
     - checkout
     - srd_no
-    - attach_workspace:
-        at: /tmp/workspace
+    - workattach
     - and_restore_docker:
         deps: "haskell-build-artifacts"
     - run: |
@@ -205,8 +203,7 @@ jobs:
           equal: [ fake, << parameters.exec >> ]
         steps:
           - srd_yes
-    - attach_workspace:
-        at: /tmp/workspace
+    - workattach
     - and_restore_docker:
         deps: <<parameters.deps>>
     - run: |
@@ -237,6 +234,7 @@ jobs:
     executor: real
     steps:
     - checkout
+    - workattach
     - and_restore_docker:
         deps: <<parameters.deps>>
     - run: |
