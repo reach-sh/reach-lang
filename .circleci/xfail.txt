@@ -1,2 +1,5 @@
 # These are allowed to fail and we still release
 
+# FIXME
+CFX.mint-basic
+CFX.view-steps
