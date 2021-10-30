@@ -15,8 +15,8 @@ expand: package.yaml src/Reach/Version.hs sol/stdlib.sol
 clean: hs-clean
 	rm -f package.yaml
 
-.PHONY: build-haskell
-build-haskell:
+.PHONY: build-haskell-build-artifacts
+build-haskell-build-artifacts:
 	mkdir -p .docker-root
 	cp -f $(ROOT)/VERSION $(ROOT)/DEPS .docker-root/
 	docker build \
@@ -32,8 +32,8 @@ build-reach-cli:
 	  -f Dockerfile.reach-cli .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
 
-.PHONY: build-reachc
-build-reachc:
+.PHONY: build-reach
+build-reach:
 	docker container rm -f repo || true
 	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
 	docker build \
@@ -46,7 +46,7 @@ build-reachc:
 	docker container rm -f repo
 
 .PHONY: build
-build: build-haskell build-reach-cli build-reachc
+build: build-haskell-build-artifacts build-reach-cli build-reach
 
 .PHONY: build-m1
 build-m1:
@@ -68,8 +68,7 @@ check: hs-check
 hs-check: expand
 	stack build --fast
 	stack test --fast --no-run-tests
-	stack build stan
-	stack exec stan report
+	$(MAKE) docker-check
 
 .PHONY: hs-clean
 hs-clean: expand
@@ -87,7 +86,7 @@ hs-test: hs-build
 .PHONY: hs-test-xml
 hs-test-xml: hs-build
 	mkdir -p test-reports
-	stack test --fast --test-arguments '--xml=test-reports/junit.xml'
+	$(MAKE) docker-test-xml
 
 .PHONY: hs-test-html
 hs-test-html: hs-build

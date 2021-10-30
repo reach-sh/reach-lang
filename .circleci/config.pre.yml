@@ -66,56 +66,20 @@ commands:
           ls ~/.local/bin/*
   and_restore_docker:
     description: "Restore the build Docker images"
+    parameters:
+      deps:
+        description: "which images"
+        type: string
     steps:
       - run: |
           source ./VERSION
 
-          for IMG in runner rpc-server reach reach-cli ; do
-            zcat /tmp/workspace/docker/${IMG}.tar.gz | docker load
+          for IMG in <<parameters.deps>> ; do
+            zcat /tmp/workspace/docker-${IMG}/${IMG}.tar.gz | docker load
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}.${MINOR}
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
           done
-  stack_deps:
-    description: "Install stack dependencies"
-    steps:
-      - run: |
-          # Install stack deps
-          sudo apt update && sudo apt install \
-            g++ \
-            gcc \
-            git \
-            gnupg \
-            libc6-dev \
-            libffi-dev \
-            libgmp-dev \
-            libtinfo-dev \
-            make \
-            netbase \
-            xz-utils \
-            zlib1g-dev
-          # Install stack
-          if ! [ -f ~/.local/bin/stack ] ; then
-            curl -sSL https://get.haskellstack.org/ | sh -s - -d ~/.local/bin
-          fi
-          # Reset locale
-          sudo sh -c 'echo "LC_ALL=en_US.UTF-8" >> /etc/environment \
-                   && echo "en_US.UTF-8 UTF-8"  >> /etc/locale.gen \
-                   && echo "LANG=en_US.UTF-8"    > /etc/locale.conf \
-                   && locale-gen en_US.UTF-8'
-          # Setup package
-          (cd hs && make package.yaml)
-      - restore_cache:
-         keys:
-          - "hs-5-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
-      - run: |
-          # Install deps
-          (cd hs && make hs-deps)
-      - save_cache:
-          key: "hs-5-{{ checksum \"hs/stack.yaml\" }}-{{ checksum \"hs/package.yaml\" }}"
-          paths:
-          - ~/.stack
-          - "hs/.stack-work"
 
 jobs:
   "docs-render":
@@ -190,59 +154,18 @@ jobs:
     - run: |
         make sh-lint
     - slack_fail
-  "build":
-    executor:
-      name: fake
-      class: "medium"
-    steps:
-    - checkout
-    - run: |
-        mkdir -p ~/.local /tmp/workspace/bin
-        ln -sf /tmp/workspace/bin ~/.local/bin
-        # Install mo
-        curl -sSLo ~/.local/bin/mo https://git.io/get-mo
-        # Install solc # XXX get version from hs/Dockerfile.reachc
-        curl -sSLo ~/.local/bin/solc \
-          https://github.com/ethereum/solidity/releases/download/v0.8.9/solc-static-linux
-        # Install Z3 # XXX get version from hs/Dockerfile.reachc
-        Z3_VER=4.8.12
-        Z3_SYS=x64-glibc-2.31
-        curl -sSLo /tmp/z3.zip \
-              https://github.com/Z3Prover/z3/releases/download/z3-${Z3_VER}/z3-${Z3_VER}-${Z3_SYS}.zip \
-          && unzip -p /tmp/z3.zip z3-${Z3_VER}-${Z3_SYS}/bin/z3 \
-            | cat > ~/.local/bin/z3
-        chmod +x ~/.local/bin/*
-    - stack_deps
-    - srd_yes
-    - run: |
-        (cd hs && make hs-clean)
-        (cd hs && make hs-build)
-        (cd hs && make build)
-        (cd hs && stack install)
-        (cd js && make build)
-        (cd js/stdlib && make check)
-        mkdir -p /tmp/workspace/docker
-
-        for IMG in runner rpc-server reach reach-cli ; do
-          echo "docker save reachsh/${IMG}:latest..."
-          docker save reachsh/${IMG}:latest | gzip > /tmp/workspace/docker/${IMG}.tar.gz
-        done
-    - persist_to_workspace:
-        root: /tmp/workspace/
-        paths:
-          - bin
-          - docker
-    - slack_fail
   "hs-test":
-    executor:
-      name: fake
-      class: "medium"
+    executor: real
     steps:
     - checkout
-    - restore_bin
-    - stack_deps
+    - attach_workspace:
+        at: /tmp/workspace
+    - and_restore_docker:
+        deps: "haskell-build-artifacts"
     - run:
-        command: (cd hs && make hs-test-xml)
+        command: |
+          mkdir -p hs/test-reports
+          docker run -v $(pwd)/examples:/examples/ -v $(pwd)/docs-src:/docs-src/ -v $(pwd)/hs/test-reports:/test-reports -ti reachsh/haskell-build-artifacts make docker-test-xml
         no_output_timeout: 30m
     - store_test_results:
         path: "hs/test-reports"
@@ -251,12 +174,46 @@ jobs:
     executor: fake
     steps:
     - checkout
-    - restore_bin
-    - stack_deps
+    - attach_workspace:
+        at: /tmp/workspace
+    - and_restore_docker:
+        deps: "haskell-build-artifacts"
     - run: |
-        (cd hs && make hs-check)
-    - store_artifacts:
-        path: hs/stan.html
+        docker run -ti reachsh/haskell-build-artifacts make docker-check
+    - slack_fail
+  "build-image":
+    parameters:
+      image:
+        description: "which image"
+        type: string
+      exec:
+        description: "which executor"
+        type: string
+      deps:
+        description: "docker dependencies"
+        type: string
+    executor: <<parameters.exec>>
+    steps:
+    - checkout
+    - when:
+        condition:
+          equal: [ fake, << parameters.exec >> ]
+        steps:
+          - srd_yes
+    - attach_workspace:
+        at: /tmp/workspace
+    - and_restore_docker:
+        deps: <<parameters.deps>>
+    - run: |
+        IMAGE="<<parameters.image>>"
+        mkdir -p "/tmp/workspace/docker-${IMAGE}"
+        cd .circleci && ./image.sh "${IMAGE}"
+        echo "docker save reachsh/${IMAGE}:latest..."
+        docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
+    - persist_to_workspace:
+        root: /tmp/workspace/
+        paths:
+          - docker-<<parameters.image>>
     - slack_fail
   "examples":
     parameters:
@@ -269,11 +226,15 @@ jobs:
       rank:
         description: "parallel rank"
         type: string
+      deps:
+        description: "docker dependencies"
+        type: string
     executor: real
     steps:
     - checkout
     - restore_bin
-    - and_restore_docker
+    - and_restore_docker:
+        deps: <<parameters.deps>>
     - run: |
         mkdir -p /tmp/workspace/artifacts /tmp/workspace/record /tmp/artifacts
     - run:
@@ -314,6 +275,11 @@ jobs:
                 "text": {
                   "type": "mrkdwn",
                   "text": "${RECORD_MESSAGE}" }}]}
+  "build-sink":
+    executor: fake
+    steps:
+    - run: |
+        echo Go team!
 
 workflows:
   docs:
@@ -330,11 +296,10 @@ workflows:
     - "sh-check"
   build:
     jobs:
-    - "build"
     - "hs-test":
         requires:
-          - "build"
+          - "build-haskell-build-artifacts"
     - "hs-check":
         requires:
-          - "build"
+          - "build-haskell-build-artifacts"
     # Sink and examples follow

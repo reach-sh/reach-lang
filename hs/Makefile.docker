@@ -29,3 +29,11 @@ package.yaml: package.mo.yaml $(ROOT)/VERSION
 src/Reach/Version.hs: src/Reach/Version.mo.hs $(ROOT)/VERSION $(ROOT)/DEPS
 	(. $(ROOT)/VERSION && export MAJOR MINOR PATCH && . $(ROOT)/DEPS && export SOLC_VERSION && mo $< > $@)
 
+.PHONY: docker-test-xml
+docker-test-xml:
+	stack test --fast --test-arguments '--xml=test-reports/junit.xml'
+
+.PHONY: docker-check
+docker-check:
+	stack build stan
+	stack exec stan report
