@@ -1,6 +1,7 @@
 #!/bin/sh
 WHICH="$1"
 ROOT=".."
+TARGET="build-${WHICH}"
 
 case "$WHICH" in
   "haskell-build-artifacts"|"reach"|"reach-cli")
@@ -11,6 +12,7 @@ case "$WHICH" in
     ;;
   devnet-*)
     DIR="scripts/${WHICH}"
+    TARGET="build"
     ;;
   *)
     echo "No image: ${WHICH}"
@@ -18,4 +20,4 @@ case "$WHICH" in
     ;;
 esac
 cd "${ROOT}/${DIR}" || exit 1
-exec make "build-${WHICH}"
+exec make "${TARGET}"

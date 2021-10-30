@@ -175,7 +175,7 @@ jobs:
     - run:
         command: |
           mkdir -p hs/test-reports
-          docker run -v $(pwd)/examples:/examples/ -v $(pwd)/docs-src:/docs-src/ -v $(pwd)/hs/test-reports:/test-reports -ti reachsh/haskell-build-artifacts make docker-test-xml
+          docker run -v $(pwd)/examples:/examples/ -v $(pwd)/docs-src:/docs-src/ -v $(pwd)/hs/t:/hs/t -v $(pwd)/hs/test-reports:/test-reports -ti reachsh/haskell-build-artifacts make docker-test-xml
         no_output_timeout: 30m
     - store_test_results:
         path: "hs/test-reports"
@@ -184,6 +184,7 @@ jobs:
     executor: fake
     steps:
     - checkout
+    - srd_no
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
