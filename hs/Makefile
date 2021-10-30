@@ -39,7 +39,7 @@ build-reachc:
 	docker build \
 	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
 	  --build-arg ALPINE_VERSION=$(ALPINE_VERSION) \
-	  --add-host host.docker.internal:host-gateway \
+	  --add-host host.docker.internal:172.17.0.1 \
 	  --tag=$(IMG_REACHC):latest \
 	  -f Dockerfile.reachc .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
