@@ -2,6 +2,7 @@ ARG ALPINE_VERSION
 FROM reachsh/haskell-build-artifacts AS build
 
 FROM alpine:$ALPINE_VERSION
+RUN apk add gmp
 
 COPY --from=build /usr/bin/solc /usr/bin/solc
 COPY --from=build /build/bin/reachc /usr/bin/reachc
