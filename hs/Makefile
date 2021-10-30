@@ -19,10 +19,14 @@ clean: hs-clean
 build-haskell-build-artifacts:
 	mkdir -p .docker-root
 	cp -f $(ROOT)/VERSION $(ROOT)/DEPS .docker-root/
+	docker container rm -f repo || true
+	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
 	docker build \
 	  --build-arg SOLC_VERSION=$(SOLC_VERSION) \
+	  --add-host host.docker.internal:172.17.0.1 \
 	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS):latest \
 	  -f Dockerfile.haskell-build-artifacts .
+	docker container rm -f repo
 
 .PHONY: build-reach-cli
 build-reach-cli:
@@ -34,16 +38,12 @@ build-reach-cli:
 
 .PHONY: build-reach
 build-reach:
-	docker container rm -f repo || true
-	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
 	docker build \
 	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
 	  --build-arg ALPINE_VERSION=$(ALPINE_VERSION) \
-	  --add-host host.docker.internal:172.17.0.1 \
 	  --tag=$(IMG_REACHC):latest \
 	  -f Dockerfile.reachc .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
-	docker container rm -f repo
 
 .PHONY: build
 build: build-haskell-build-artifacts build-reach-cli build-reach
@@ -86,7 +86,7 @@ hs-test: hs-build
 .PHONY: hs-test-xml
 hs-test-xml: hs-build
 	mkdir -p test-reports
-	$(MAKE) docker-test-xml
+	$(MAKE) MAYBE_FAST=--fast docker-test-xml
 
 .PHONY: hs-test-html
 hs-test-html: hs-build

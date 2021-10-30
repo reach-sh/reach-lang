@@ -66,14 +66,6 @@ commands:
       - setup_remote_docker:
           docker_layer_caching: false
           version: '20.10.6'
-  restore_bin:
-    description: "Restore the build binaries"
-    steps:
-      - workattach
-      - run: |
-          mkdir -p ~/.local
-          ln -sf /tmp/workspace/bin ~/.local/bin
-          ls ~/.local/bin/*
   and_restore_docker:
     description: "Restore the build Docker images"
     parameters:
@@ -175,7 +167,7 @@ jobs:
     - run:
         command: |
           mkdir -p hs/test-reports
-          docker run -v $(pwd)/examples:/examples/ -v $(pwd)/docs-src:/docs-src/ -v $(pwd)/hs/t:/hs/t -v $(pwd)/hs/test-reports:/test-reports -ti reachsh/haskell-build-artifacts make docker-test-xml
+          docker run --rm -v $(pwd)/examples:/examples/ -v $(pwd)/docs-src:/docs-src/ -v $(pwd)/hs/t:/build/t -v $(pwd)/hs/test-reports:/build/test-reports -ti reachsh/haskell-build-artifacts make docker-test-xml
         no_output_timeout: 30m
     - store_test_results:
         path: "hs/test-reports"
@@ -190,7 +182,7 @@ jobs:
     - and_restore_docker:
         deps: "haskell-build-artifacts"
     - run: |
-        docker run -ti reachsh/haskell-build-artifacts make docker-check
+        docker run --rm -ti reachsh/haskell-build-artifacts make docker-check
     - slack_fail
   "build-image":
     parameters:
@@ -245,7 +237,6 @@ jobs:
     executor: real
     steps:
     - checkout
-    - restore_bin
     - and_restore_docker:
         deps: <<parameters.deps>>
     - run: |
