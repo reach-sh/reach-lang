@@ -135,5 +135,5 @@ watch-reach-cli: expand
 	@REACH_EX=../reach ghcid --target=reach:exe:reach -T Main.main
 
 .PHONY: watch-reachc
-watch-reachc: stack
+watch-reachc: expand
 	@ghcid --target=reach:exe:reachc

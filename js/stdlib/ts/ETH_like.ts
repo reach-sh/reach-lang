@@ -986,10 +986,9 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
   try {
     const tmpAccount: Account = await newTestAccount(0);
     const ctc = new ethers.Contract(address, ABI, tmpAccount.networkAccount);
-    const creation_time = await ctc["_reachCreationTime"]();
-    debug(`verifyContract creation_time:`, creation_time, `:`, typeof creation_time, `(${creation_time?.constructor?.name})`);
-    creation_block = bigNumberify(creation_time.toString()).toNumber();
-
+    const creation_time_raw = await ctc["_reachCreationTime"]();
+    const creation_time = T_UInt.unmunge(creation_time_raw);
+    creation_block = bigNumberify(creation_time).toNumber();
   } catch (e) {
     chk(false, `The contract is not a Reach contract: ${e}`);
   }

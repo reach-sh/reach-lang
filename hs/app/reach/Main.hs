@@ -861,7 +861,7 @@ compile = command "compile" $ info f d where
           REACHC_HASH="$$("$${HS}/../scripts/git-hash.sh")"
           export REACHC_HASH
 
-          (cd "$$HS" && make stack)
+          (cd "$$HS" && make expand)
 
           if [ "$${REACHC_RELEASE}" = "Y" ]; then
             $reachc_release
