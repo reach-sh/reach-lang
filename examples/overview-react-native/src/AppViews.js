@@ -1,14 +1,16 @@
 import React from 'react';
+import { Button, Text, TextInput, View } from 'react-native';
+import styles from './Styles';
 
 export class Wrapper extends React.Component {
   render() {
-    const {app} = this.props;
+    const { app } = this.props;
     return (
-      <div className="App">
-        <header className="App-header" id="root">
+      <View style={styles.container}>
+        <Text style={styles.textNormal}>
           {app}
-        </header>
-      </div>
+        </Text>
+      </View>
     );
   }
 }
@@ -16,10 +18,12 @@ export class Wrapper extends React.Component {
 export class ConnectAccount extends React.Component {
   render() {
     return (
-      <div>
-        Please wait while we connect to your account.
-        If this takes more than a few seconds, there may be something wrong.
-      </div>
+      <View style={styles.container}>
+        <Text style={styles.textNormal}>
+          Please wait while we connect to your account.
+          If this takes more than a few seconds, there may be something wrong.
+        </Text>
+      </View>
     )
   }
 }
@@ -27,55 +31,49 @@ export class ConnectAccount extends React.Component {
 export class FundAccount extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {amt: props.defaultFundAmtStandard};
+    this.state = { amt: props.defaultFundAmtStandard };
   }
 
   render() {
-    const {addr, bal, standardUnit, defaultFundAmtStandard, parent} = this.props;
+    const { addr, bal, standardUnit, defaultFundAmtStandard, parent } = this.props;
     return (
-      <div>
-        <h1>Fund account</h1>
-        <br />
-        Address: {addr}
-        <br />
-        Balance: {bal} {standardUnit}
-        <hr />
-        Would you like to fund your account with additional {standardUnit}?
-        <br />
-        (This only works on certain devnets)
-        <br />
-        <input
-          type='number'
+      <View style={styles.container}>
+        <Text style={styles.boldText}>Fund account</Text>
+        <Text style={styles.textNormal}>Address: {addr}</Text>
+        <Text style={styles.textNormal}>Balance: {bal} {standardUnit}</Text>
+        <Text style={styles.textNormal}>Would you like to fund your account with additional {standardUnit}?</Text>
+        <Text style={styles.textNormal}>(This only works on certain devnets)</Text>
+        <TextInput
+          keyboardType="number-pad"
           placeholder={defaultFundAmtStandard}
-          onChange={(e) => this.setState({amt: e.currentTarget.value})}
+          onChangeText={(e) => this.setState({ amt: e })}
         />
-        <button onClick={() => parent.fundAccount(this.state.amt)}>Fund Account</button>
-        <button onClick={() => parent.skipFundAccount()}>Skip</button>
-      </div>
+        <Button
+          onPress={() => parent.fundAccount(this.state.amt)}
+          title="Fund Account" />
+        <Button
+          onPress={() => parent.skipFundAccount()}
+          title="Skip" />
+      </View>
     );
   }
 }
 
 export class SelectRole extends React.Component {
   render() {
-    const {parent} = this.props;
+    const { parent } = this.props;
     return (
-      <div>
-        Please select a role:
-        <br />
-        <p>
-          <button
-            onClick={() => parent.selectAlice()}
-          >Alice</button>
-          <br /> Requests payment from Bob in order to reveal a secret.
-        </p>
-        <p>
-          <button
-            onClick={() => parent.selectBob()}
-          >Bob</button>
-          <br /> Pays Alice in order for her to reveal a secret.
-        </p>
-      </div>
+      <View style={styles.container}>
+        <Text style={styles.boldText}>Please select a role:</Text>
+        <Button
+          onPress={() => parent.selectAlice()}
+          title="Alice" />
+        <Text style={styles.textNormal}>Requests payment from Bob in order to reveal a secret.</Text>
+        <Button
+          onPress={() => parent.selectBob()}
+          title="Bob" />
+        <Text style={styles.textNormal}>Pays Alice in order for her to reveal a secret.</Text>
+      </View>
     );
   }
 }

@@ -1,46 +1,49 @@
 import React from 'react';
+import { Button, Text, TextInput, View } from 'react-native';
+import styles from './Styles';
 
 export class RunBackend extends React.Component {
   render() {
-    const {parent} = this.props;
-    const {ctcInfoStr} = this.state || {};
+    const { parent } = this.props;
+    const { ctcInfoStr } = this.state || {};
     return (
-      <div>
-        Alice will deploy the contract.
-        <br />
-        Ask Alice for her contract info and paste it here:
-        <br />
-        <textarea
-          className='ContractInfo'
-          spellCheck='false'
-          onChange={(e) => this.setState({ctcInfoStr: e.currentTarget.value})}
-          placeholder='{}'
+      <View style={styles.container}>
+        <Text style={styles.textNormal}>Alice will deploy the contract.</Text>
+        <Text style={styles.textNormal}>Ask Alice for her contract info and paste it here:</Text>
+        <TextInput
+          onChangeText={e => this.setState({ ctcInfoStr: e })}
+          placeholder="{}"
+          spellCheck={false}
         />
-        <br />
-        <button
+        <TouchableOpacity
           disabled={!ctcInfoStr}
-          onClick={() => parent.runBackend(ctcInfoStr)}
-        >Connect</button>
-      </div>
+          onPress={() => parent.runBackend(ctcInfoStr)}>
+          <Text style={styles.textNormal}>Connect</Text>
+        </TouchableOpacity>
+      </View>
     );
   }
 }
 
 export class ApproveRequest extends React.Component {
   render() {
-    const {requestStandard} = this.props;
+    const { requestStandard } = this.props;
     if (!requestStandard) {
       return (
-        <p>
-          Once Alice has submitted her requested amount,
-          you will be prompted to pay it.
-        </p>
+        <View style={styles.container}>
+          <Text style={styles.textNormal}>
+            Once Alice has submitted her requested amount,
+            you will be prompted to pay it.
+          </Text>
+        </View>
       );
     } else {
       return (
-        <p>
-          You have received a prompt to pay Alice's requested amount.
-        </p>
+        <View style={styles.container}>
+          <Text style={styles.textNormal}>
+            You have received a prompt to pay Alice's requested amount.
+          </Text>
+        </View>
       );
     }
   }
@@ -48,23 +51,25 @@ export class ApproveRequest extends React.Component {
 
 export class DisplayInfo extends React.Component {
   render() {
-    const {info} = this.props;
+    const { info } = this.props;
     if (!info) {
       return (
-        <p>
-          Waiting for Alice to reveal her secret info...
-        </p>
+        <View style={styles.container}>
+          <Text style={styles.textNormal}>
+            Waiting for Alice to reveal her secret info...
+          </Text>
+        </View>
       );
     } else {
       return (
-        <div>
-          <p>
+        <View style={styles.container}>
+          <Text style={styles.textNormal}>
             Alice's secret info is: <strong>{info}</strong>
-          </p>
-          <p>
+          </Text>
+          <Text style={styles.textNormal}>
             Thank you, Bob. The contract has run to completion.
-          </p>
-        </div>
+          </Text>
+        </View>
       );
     }
   }
@@ -72,11 +77,13 @@ export class DisplayInfo extends React.Component {
 
 export class BobWrapper extends React.Component {
   render() {
-    const {bob} = this.props;
+    const { bob } = this.props;
     return (
-      <div className='Bob'>
-        {bob}
-      </div>
+      <View style={styles.container}>
+        <Text style={styles.textNormal}>
+          {bob}
+        </Text>
+      </View>
     );
   }
 }
