@@ -113,6 +113,8 @@ tealcount () {
 
 #exit 0
 
+exit 0
+
 jb
 ci ETH tut-7
 ci CFX tut-7
