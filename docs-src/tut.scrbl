@@ -41,6 +41,14 @@ You'll know that the download worked if you can run
 
 @cmd{./reach version}
 
+The recommended next step, although optional, is to set up your environment with
+
+@cmd{./reach config}
+
+This will make subsequent uses of the @exec{reach} script more convenient by tuning its runtime behavior to your specific needs and only downloading the dependencies you'll actually use.
+
+@exec{reach config} sets overridable defaults for @italic{all} Reach projects on your development machine and not just the current one, so feel free to skip this step if you'd prefer not to make your choices global.
+
 Since Reach is Dockerized, when you first use it, you'll need to download the images it uses.
 This will happen automatically when you first use it, but you can do it manually now by running
 
@@ -49,14 +57,6 @@ This will happen automatically when you first use it, but you can do it manually
 You'll know that everything is in order if you can run
 
 @cmd{./reach compile --help}
-
-Having synchronized Reach's Docker images and confirmed they work correctly, it's recommended (although optional) to set up your environment with
-
-@cmd{./reach config}
-
-This will make subsequent uses of the @exec{reach} script more convenient by tuning its runtime behavior to your specific needs.
-
-@exec{reach config} sets overridable defaults for @italic{all} Reach projects on your development machine and not just the current one, so feel free to skip this step if you'd prefer not to make your choices global.
 
 @(hrule)
 
