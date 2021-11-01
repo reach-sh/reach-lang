@@ -6,10 +6,11 @@ ROOT = ..
 include $(ROOT)/VERSION
 
 # the next line is so this Makefile can do arithmetic
+# See https://stackoverflow.com/a/15978322.
 SHELL=/bin/bash
 
 # double dollar sign to have the shell do the expansion
-# https://stackoverflow.com/a/15978322
+# See https://stackoverflow.com/a/15978322.
 VSCE_VER := $$(($$(($$(($(MAJOR)+1))*1000)) + $(MINOR))).$(PATCH).$(DRAFT)
 
 all:
