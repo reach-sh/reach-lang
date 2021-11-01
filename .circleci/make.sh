@@ -68,27 +68,9 @@ for CONN in ETH ALGO CFX ; do
   CONNlc=$(echo "${CONN}" | tr '[:upper:]' '[:lower:]')
   IMAGE="devnet-${CONNlc}"
   case "${CONN}" in
-<<<<<<< HEAD
-    ALGO) 
-      PER=8
-      DEP="build-devnet-algo"
-      IMAGES="runner rpc-server reach reach-cli devnet-algo"
-      ;;
-    CFX)
-      PER=8
-      DEP="build-devnet-cfx"
-      IMAGES="runner rpc-server reach reach-cli devnet-cfx"
-      ;;
-    ETH)
-      PER=16
-      DEP="build-devnet-eth"
-      IMAGES="runner rpc-server reach reach-cli devnet-eth"
-      ;;
-=======
     ALGO) PER=8 EXEC="fake";;
     CFX) PER=8 EXEC="real";;
     ETH) PER=16 EXEC="fake";;
->>>>>>> master
   esac
   image "${EXEC}" "${IMAGE}"
   SIZE=$(((TOTAL + (PER - 1)) / PER))
@@ -96,27 +78,10 @@ for CONN in ETH ALGO CFX ; do
     NAME="examples.${CONN}.${RANK}"
     cat >>"${MID}" <<END
     - "examples":
-<<<<<<< HEAD
-        name: "examples.${CONN}.${RANK}"
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-        connector: "${CONN}"
-        size: "${SIZE}"
-        rank: "${RANK}"
-        images: "${IMAGES}"
-        requires:
-          - "build-runner"
-          - "build-rpc-server"
-          - "build-reach"
-          - "build-reach-cli"
-          - "${DEP}"
-=======
         name: "${NAME}"
         connector: "${CONN}"
         size: "${SIZE}"
         rank: "${RANK}"
->>>>>>> master
 END
     deps "reach" "reach-cli" "runner" "rpc-server" "${IMAGE}"
     cat >>"${END}" <<END
