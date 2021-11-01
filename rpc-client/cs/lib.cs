@@ -71,20 +71,20 @@ namespace Reach.RPC {
 
   public class Value : Callback {
     public readonly string id;
-    public readonly string val;
-    public Value(string _id, string _val) {
+    public readonly JsonElement val;
+    public Value(string _id, JsonElement _val) {
       id = _id;
       val = _val;
     }
     override public string AsJson() {
-      return "\"" + id + "\"" + ":" + val;
+      return "\"" + id + "\"" + ":" + val.GetRawText();
     }
   }
 
   public class Method : Callback {
     public readonly string id;
-    public readonly Func<string[], Task<string>> impl;
-    public Method(string _id, Func<string[], Task<string>> _impl) {
+    public readonly Func<JsonElement[], Task<JsonElement>> impl;
+    public Method(string _id, Func<JsonElement[], Task<JsonElement>> _impl) {
       id = _id;
       impl = _impl;
     }
@@ -100,17 +100,17 @@ namespace Reach.RPC {
       _vs = new List<Value>();
       _ms = new List<Method>();
     }
-    public void Value(string id, string val) {
+    public void Value(string id, JsonElement val) {
       _vs.Add(new Value(id, val));
     }
-    public void Method(string id, Func<string[], Task<string>> impl) {
+    public void Method(string id, Func<JsonElement[], Task<JsonElement>> impl) {
       _ms.Add(new Method(id, impl));
     }
     public void Methods(string id) {
-      _vs.Add(new Value(id, "true"));
+      _vs.Add(new Value(id, Client.AsJson("true")));
     }
 
-    public async Task<string> Call(string target, string[] args) {
+    public async Task<JsonElement> Call(string target, JsonElement[] args) {
       foreach (Method m in _ms) {
         if (m.id == target) {
           return await m.impl(args);
@@ -119,10 +119,11 @@ namespace Reach.RPC {
       throw new InvalidOperationException($"Unknown method {target}");
     }
 
-    public string AsJson() {
-      var vs = "{" + string.Join(",", _vs.Select(x => x.AsJson())) + "}";
-      var ms = "{" + string.Join(",", _ms.Select(x => x.AsJson())) + "}";
-      return vs + "," + ms;
+    public JsonElement ValuesAsJson() {
+      return Client.AsJson("{" + string.Join(",", _vs.Select(x => x.AsJson())) + "}");
+    }
+    public JsonElement MethodsAsJson() {
+      return Client.AsJson("{" + string.Join(",", _ms.Select(x => x.AsJson())) + "}");
     }
   }
 
@@ -133,34 +134,22 @@ namespace Reach.RPC {
     public JsonElement[] args;
   }
 
-  public interface ILogger {
-    void Info(string message);
-    void Error(string message);
-  }
-  public class Logger : ILogger {
-    public void Error(string message) {
-      Console.WriteLine($"Error: {message}");
-    }
-    public void Info(string message) {
-      Console.WriteLine($"Info: {message}");
-    }
-  }
-
   public class Client {
+    static public JsonElement AsJson(string s) {
+      return JsonSerializer.Deserialize<JsonElement>(s);
+    }
+
     private readonly HttpClient client;
-    private readonly ILogger logger;
     private readonly TimeSpan timeout;
     private bool repliedOnce = false;
     public Client(Options opts) {
-      logger = new Logger();
-
       if ( opts.verify ) {
         client = new HttpClient();
       } else {
-        logger.Info("*** Warning! TLS verification disabled! ***");
-        logger.Info(" This is highly insecure in Real Life applications and must");
-        logger.Info(" only be permitted under controlled conditions (such as");
-        logger.Info(" during development)...");
+        Console.Error.WriteLine("*** Warning! TLS verification disabled! ***");
+        Console.Error.WriteLine(" This is highly insecure in Real Life applications and must");
+        Console.Error.WriteLine(" only be permitted under controlled conditions (such as");
+        Console.Error.WriteLine(" during development)...");
         var handler = new HttpClientHandler() {
           ServerCertificateCustomValidationCallback = delegate { return true; },
         };
@@ -172,8 +161,8 @@ namespace Reach.RPC {
       client.DefaultRequestHeaders.Add("X-API-Key", opts.key);
       client.DefaultRequestHeaders.Add("cache-control", "no-cache");
     }
-    public async Task<string> Call(string path, params string[] args) {
-      var data = "[" + string.Join(",", args) + "]";
+    public async Task<JsonElement> Call(string path, params JsonElement[] args) {
+      var data = "[" + string.Join(",", args.Select((x) => x.GetRawText())) + "]";
       var content = new StringContent(data, Encoding.UTF8, "application/json");
       var cts = new CancellationTokenSource();
       if ( ! repliedOnce ) {
@@ -183,22 +172,18 @@ namespace Reach.RPC {
       response.EnsureSuccessStatusCode();
       var rs = await response.Content.ReadAsStringAsync();
       repliedOnce = true;
-      return rs;
+      return Client.AsJson(rs);
     }
-    public async Task Callbacks(string path, string ctc, Callbacks cbs) {
-      var rs = await Call(path, ctc, cbs.AsJson());
+    public async Task Callbacks(string path, JsonElement ctc, Callbacks cbs) {
+      var rs = await Call(path, ctc, cbs.ValuesAsJson(), cbs.MethodsAsJson());
       var opts = new JsonSerializerOptions{
         IncludeFields = true,
       };
       while ( true ) {
-        logger.Info($"Callback: {rs}");
         var cbr = JsonSerializer.Deserialize<CallbackResponse>(rs, opts);
         if ( cbr.t == "Done" ) { return; }
-        logger.Info($"Callback: {rs} => {cbr.m}");
-        string[] args = cbr.args.Select(x => x.GetRawText()).ToArray();
-        var mrng = await cbs.Call(cbr.m, args);
-        logger.Info($"Callback: {rs} => {cbr.m} => {mrng}");
-        rs = await Call("/kont", cbr.kid.GetRawText(), mrng);
+        var mrng = await cbs.Call(cbr.m, cbr.args);
+        rs = await Call("/kont", cbr.kid, mrng);
       }
     }
   }

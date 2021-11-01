@@ -8,6 +8,7 @@ This section describes the libraries provided by Reach version @|reach-vers| to 
 @local-table-of-contents[#:style 'immediate-only]
 
 @include-section["ref-frontends-js.scrbl"]
+@include-section["ref-frontends-rpc-cs.scrbl"]
 @include-section["ref-frontends-rpc-js.scrbl"]
-@include-section["ref-frontends-rpc-py.scrbl"]
 @include-section["ref-frontends-rpc-go.scrbl"]
+@include-section["ref-frontends-rpc-py.scrbl"]

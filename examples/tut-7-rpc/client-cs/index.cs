@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Web;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Reach.RPC;
 
@@ -8,13 +9,13 @@ public class Program {
   public static async Task Main() {
     Options opts = new Options();
     Client rpc = new Client(opts);
-    var startingBalance = await rpc.Call("/stdlib/parseCurrency", "100");
+    var startingBalance = await rpc.Call("/stdlib/parseCurrency", Client.AsJson("100"));
     var accAlice = await rpc.Call("/stdlib/newTestAccount", startingBalance);
     var accBob = await rpc.Call("/stdlib/newTestAccount", startingBalance);
 
-    var fmt = async (string x) =>
-      await rpc.Call("/stdlib/formatCurrency", x, "4");
-    var getBalance = async (string who) =>
+    var fmt = async (JsonElement x) =>
+      await rpc.Call("/stdlib/formatCurrency", x, Client.AsJson("4"));
+    var getBalance = async (JsonElement who) =>
       await fmt(await rpc.Call("/stdlib/balanceOf", who));
     var beforeAlice = await getBalance(accAlice);
     var beforeBob = await getBalance(accBob);
@@ -31,25 +32,25 @@ public class Program {
       cbs.Method("getHand", async (args) => {
           var hand = rand.Next(HAND.Length);
           Console.WriteLine($"{who} played {HAND[hand]}");
-          return hand.ToString();
+          return Client.AsJson(hand.ToString());
       });
       cbs.Method("seeOutcome", async (args) => {
           var outcomeBN = args[0];
-          var outcomeS = await rpc.Call("/stdlib/bigNumbertoNumber", outcomeBN);
-          var outcome = Int32.Parse(outcomeS);
+          var outcomeJE = await rpc.Call("/stdlib/bigNumbertoNumber", outcomeBN);
+          var outcome = outcomeJE.GetInt64();
           Console.WriteLine($"{who} saw outcome {OUTCOME[outcome]}");
-          return "null";
+          return Client.AsJson("null");
       });
       cbs.Method("informTimeout", async (args) => {
           Console.WriteLine($"{who} observed a timeout");
-          return "null";
+          return Client.AsJson("null");
       });
       return cbs;
     };
 
     var aliceCbs = Player("Alice");
-    aliceCbs.Value("wager", await rpc.Call("/stdlib/parseCurrency", "5"));
-    aliceCbs.Value("deadline", "10");
+    aliceCbs.Value("wager", await rpc.Call("/stdlib/parseCurrency", Client.AsJson("5")));
+    aliceCbs.Value("deadline", Client.AsJson("10"));
     var alice = rpc.Callbacks("/backend/Alice", ctcAlice, aliceCbs);
 
     var bobCbs = Player("Bob");
@@ -57,7 +58,7 @@ public class Program {
         var amt = args[0];
         var famt = await fmt(amt);
         Console.WriteLine($"Bob accepts the wager of {famt}");
-        return "null";
+        return Client.AsJson("null");
     });
     var doBob = async () => {
         var info = await rpc.Call("/ctc/getInfo", ctcAlice);
