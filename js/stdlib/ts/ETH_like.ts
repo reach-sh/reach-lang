@@ -375,8 +375,8 @@ const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigN
   }
 };
 
-const ReachToken_ABI = ETHstdlib["contracts"]["stdlib.sol:ReachToken"]["abi"];
-const ERC20_ABI = ETHstdlib["contracts"]["stdlib.sol:IERC20"]["abi"];
+const ReachToken_ABI = ETHstdlib["contracts"]["sol/stdlib.sol:ReachToken"]["abi"];
+const ERC20_ABI = ETHstdlib["contracts"]["sol/stdlib.sol:IERC20"]["abi"];
 
 const balanceOf_token = async (networkAccount: NetworkAccount, address: Address, tok: Token): Promise<BigNumber> => {
   // @ts-ignore
@@ -986,9 +986,9 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
   try {
     const tmpAccount: Account = await newTestAccount(0);
     const ctc = new ethers.Contract(address, ABI, tmpAccount.networkAccount);
-    const creation_time = await ctc["_reachCreationTime"]();
+    const creation_time_raw = await ctc["_reachCreationTime"]();
+    const creation_time = T_UInt.unmunge(creation_time_raw);
     creation_block = bigNumberify(creation_time).toNumber();
-
   } catch (e) {
     chk(false, `The contract is not a Reach contract: ${e}`);
   }
@@ -1088,7 +1088,7 @@ function formatAddress(acc: string|NetworkAccount|Account): string {
 async function launchToken (accCreator:Account, name:string, sym:string, opts:any = {}) {
   debug(`Launching token, ${name} (${sym})`);
   const addr = (acc:Account) => acc.networkAccount.address;
-  const remoteCtc = ETHstdlib["contracts"]["stdlib.sol:ReachToken"];
+  const remoteCtc = ETHstdlib["contracts"]["sol/stdlib.sol:ReachToken"];
   const remoteABI = remoteCtc["abi"];
   const remoteBytecode = remoteCtc["bin"];
   const factory = new ethers.ContractFactory(remoteABI, remoteBytecode, accCreator.networkAccount);

@@ -11,6 +11,10 @@ executors:
         description: "resource class"
         default: "small"
         type: string
+      dlc:
+        description: "docker layer caching (ignored)"
+        default: false
+        type: boolean
     docker:
     - image: "cimg/base:stable"
       auth:
@@ -20,8 +24,14 @@ executors:
     environment:
       LC_ALL: "en_US.UTF-8"
   real:
+    parameters:
+      dlc:
+        description: "docker layer caching"
+        default: false
+        type: boolean
     machine:
       image: "ubuntu-2004:202107-02"
+      docker_layer_caching: << parameters.dlc >>
     resource_class: "medium"
     environment:
       LC_ALL: "en_US.UTF-8"
@@ -56,30 +66,25 @@ commands:
       - setup_remote_docker:
           docker_layer_caching: false
           version: '20.10.6'
-  restore_bin:
-    description: "Restore the build binaries"
-    steps:
-      - workattach
-      - run: |
-          mkdir -p ~/.local
-          ln -sf /tmp/workspace/bin ~/.local/bin
-          ls ~/.local/bin/*
   and_restore_docker:
+    description: "Restore the build Docker images"
     parameters:
       images:
         description: "which connector"
         type: string
-    description: "Restore the build Docker images"
+      deps:
+        description: "which images"
+        type: string
     steps:
       - run: |
           source ./VERSION
-
-          for IMG in <<parameters.images>>; do
+          for IMG in <<parameters.deps>> ; do
             zcat /tmp/workspace/docker-${IMG}/${IMG}.tar.gz | docker load
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}.${MINOR}
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
           done
+
 jobs:
   "deploy":
     executor: real
@@ -180,233 +185,18 @@ jobs:
     - run: |
         make sh-lint
     - slack_fail
-  "build-devnet-cfx":
-    executor:
-      name: fake
-      class: "medium+"
-    steps:
-    - checkout
-    - srd_yes
-    - run: |
-        mkdir -p /tmp/workspace/docker-devnet-cfx
-        (cd scripts/devnet-cfx && make build)
-        echo "docker save reachsh/devnet-cfx:latest..."
-        docker save reachsh/devnet-cfx:latest | gzip > /tmp/workspace/docker-devnet-cfx/devnet-cfx.tar.gz
-    - persist_to_workspace:
-        root: /tmp/workspace/
-        paths:
-          - docker-devnet-cfx
-  "build-devnet-algo":
-    executor:
-      name: fake
-      class: "medium"
-    steps:
-    - checkout
-    - srd_yes
-    - run: |
-        mkdir -p /tmp/workspace/docker-devnet-algo
-        (cd scripts/devnet-algo && make build)
-        echo "docker save reachsh/devnet-algo:latest..."
-        docker save reachsh/devnet-algo:latest | gzip > /tmp/workspace/docker-devnet-algo/devnet-algo.tar.gz
-    - persist_to_workspace:
-        root: /tmp/workspace/
-        paths:
-          - docker-devnet-algo
-  "build-devnet-eth":
-    executor:
-      name: fake
-      class: "medium"
-    steps:
-    - checkout
-    - srd_yes
-    - run: |
-        mkdir -p /tmp/workspace/docker-devnet-eth
-        (cd scripts/devnet-eth && make build)
-        echo "docker save reachsh/devnet-eth:latest..."
-        docker save reachsh/devnet-eth:latest | gzip > /tmp/workspace/docker-devnet-eth/devnet-eth.tar.gz
-    - persist_to_workspace:
-        root: /tmp/workspace/
-        paths:
-          - docker-devnet-eth
-  "build-haskell":
-    executor:
-      name: fake
-      class: "medium"
-    steps:
-    - checkout
-    - srd_yes
-    - restore_bin
-    - run: |
-        mkdir -p /tmp/workspace/docker-haskell-build-artifacts
-        make translate-mo-templates-haskell
-        (cd hs && make build-haskell)
-        echo "docker save reachsh/haskell-build-artifacts:latest..."
-        docker save reachsh/haskell-build-artifacts:latest | gzip > /tmp/workspace/docker-haskell-build-artifacts/haskell-build-artifacts.tar.gz
-    - persist_to_workspace:
-        root: /tmp/workspace/
-        paths:
-          - docker-haskell-build-artifacts
-    - slack_fail
-  "build-reach":
-    executor:
-      name: fake
-      class: "medium"
-    steps:
-    - checkout
-    - srd_yes
-    - restore_bin
-    - attach_workspace:
-        at: /tmp/workspace
-    - and_restore_docker:
-        images: "haskell-build-artifacts"
-    - run: |
-        mkdir -p /tmp/workspace/docker-reach
-        (cd hs && make build-reachc)
-        echo "docker save reachsh/reach:latest..."
-        docker save reachsh/reach:latest | gzip > /tmp/workspace/docker-reach/reach.tar.gz
-    - persist_to_workspace:
-        root: /tmp/workspace/
-        paths:
-          - docker-reach
-    - slack_fail   
-  "build-reach-cli":
-    executor:
-      name: fake
-      class: "medium"
-    steps:
-    - checkout
-    - srd_yes
-    - restore_bin
-    - attach_workspace:
-        at: /tmp/workspace
-    - and_restore_docker:
-        images: "haskell-build-artifacts"
-    - run: |
-        mkdir -p /tmp/workspace/docker-reach-cli
-        (cd hs && make build-reach-cli)
-        echo "docker save reachsh/reach-cli:latest..."
-        docker save reachsh/reach-cli:latest | gzip > /tmp/workspace/docker-reach-cli/reach-cli.tar.gz
-    - persist_to_workspace:
-        root: /tmp/workspace/
-        paths:
-          - docker-reach-cli
-    - slack_fail
-  "build-js-deps":
-    executor:
-      name: fake
-      class: "medium"
-    steps:
-    - checkout
-    - srd_yes
-    - run: |
-        mkdir -p /tmp/workspace/docker-js-deps
-        (cd js && make build-js-deps)
-        echo "docker save reachsh/js-deps:latest..."
-        docker save reachsh/js-deps:latest | gzip > /tmp/workspace/docker-js-deps/js-deps.tar.gz
-    - persist_to_workspace:
-        root: /tmp/workspace/
-        paths:
-          - docker-js-deps
-    - slack_fail
-  "build-stdlib":
-    executor:
-      name: fake
-      class: "medium"
-    steps:
-    - checkout
-    - restore_bin
-    - srd_yes
-    - attach_workspace:
-        at: /tmp/workspace
-    - and_restore_docker:
-        images: "haskell-build-artifacts js-deps"
-    - run: |
-        mkdir -p /tmp/workspace/docker-stdlib
-        make translate-mo-templates-stdlib
-        (cd js && make build-stdlib)
-        echo "docker save reachsh/stdlib:latest..."
-        docker save reachsh/stdlib:latest | gzip > /tmp/workspace/docker-stdlib/stdlib.tar.gz
-    - persist_to_workspace:
-        root: /tmp/workspace/
-        paths:
-          - docker-stdlib
-    - slack_fail
-  "build-runner":
-    executor:
-      name: fake
-      class: "medium"
-    steps:
-    - checkout
-    - srd_yes
-    - attach_workspace:
-        at: /tmp/workspace
-    - and_restore_docker:
-        images: "stdlib"
-    - run: |
-        mkdir -p /tmp/workspace/docker-runner
-        (cd js && make build-runner)
-        echo "docker save reachsh/runner:latest..."
-        docker save reachsh/runner:latest | gzip > /tmp/workspace/docker-runner/runner.tar.gz
-    - persist_to_workspace:
-        root: /tmp/workspace/
-        paths:
-          - docker-runner
-    - slack_fail
-  "build-rpc-server":
-    executor:
-      name: fake
-      class: "medium"
-    steps:
-    - checkout
-    - restore_bin
-    - srd_yes
-    - attach_workspace:
-        at: /tmp/workspace
-    - and_restore_docker:
-        images: "runner"
-    - run: |
-        mkdir -p /tmp/workspace/docker-rpc-server
-        make translate-mo-templates-rpc-server
-        (cd js && make build-rpc-server)
-        echo "docker save reachsh/rpc-server:latest..."
-        docker save reachsh/rpc-server:latest | gzip > /tmp/workspace/docker-rpc-server/rpc-server.tar.gz
-    - persist_to_workspace:
-        root: /tmp/workspace/
-        paths:
-          - docker-rpc-server
-    - slack_fail
-  "build-react-runner":
-    executor:
-      name: fake
-      class: "medium"
-    steps:
-    - checkout
-    - srd_yes
-    - attach_workspace:
-        at: /tmp/workspace
-    - and_restore_docker:
-        images: "js-deps stdlib"
-    - run: |
-        mkdir -p /tmp/workspace/docker-react-runner
-        (cd js && make build-react-runner)
-        echo "docker save reachsh/react-runner:latest..."
-        docker save reachsh/react-runner:latest | gzip > /tmp/workspace/docker-react-runner/react-runner.tar.gz
-    - persist_to_workspace:
-        root: /tmp/workspace/
-        paths:
-          - docker-react-runner
-    - slack_fail
   "hs-test":
     executor: real
     steps:
-    - attach_workspace:
-        at: /tmp/workspace/
     - checkout
+    - workattach
     - and_restore_docker:
-        images: "haskell-build-artifacts"
-    - run: |
-        mkdir -p hs/test-reports
-        docker run -v $(pwd)/examples:/examples/ -v $(pwd)/docs-src:/docs-src/ -v $(pwd)/hs/test-reports:/test-reports -ti reachsh/haskell-build-artifacts stack test --fast --test-arguments --xml=/test-reports/junit.xml
+        deps: "haskell-build-artifacts"
+    - run:
+        command: |
+          mkdir -p hs/test-reports
+          docker run --rm -v $(pwd)/examples:/examples/ -v $(pwd)/docs-src:/docs-src/ -v $(pwd)/hs/t:/build/t -v $(pwd)/hs/test-reports:/build/test-reports -ti reachsh/haskell-build-artifacts make docker-test-xml
+        no_output_timeout: 30m
     - store_test_results:
         path: "hs/test-reports"
     - slack_fail
@@ -416,15 +206,47 @@ jobs:
       class: "medium"
     steps:
     - checkout
-    - attach_workspace:
-        at: /tmp/workspace
-    - srd_yes
+    - srd_no
+    - workattach
     - and_restore_docker:
-        images: "haskell-build-artifacts"
+        deps: "haskell-build-artifacts"
     - run: |
-        docker run -ti reachsh/haskell-build-artifacts /bin/sh -c 'stack build stan ; stack exec stan report'
-    - store_artifacts:
-        path: hs/stan.html
+        docker run --rm -ti reachsh/haskell-build-artifacts make docker-check
+    - slack_fail
+  "build-image":
+    parameters:
+      image:
+        description: "which image"
+        type: string
+      exec:
+        description: "which executor"
+        type: string
+      deps:
+        description: "docker dependencies"
+        type: string
+    executor:
+      name: <<parameters.exec>>
+      dlc: true
+    steps:
+    - checkout
+    - when:
+        condition:
+          equal: [ fake, << parameters.exec >> ]
+        steps:
+          - srd_yes
+    - workattach
+    - and_restore_docker:
+        deps: <<parameters.deps>>
+    - run: |
+        IMAGE="<<parameters.image>>"
+        mkdir -p "/tmp/workspace/docker-${IMAGE}"
+        cd .circleci && ./image.sh "${IMAGE}"
+        echo "docker save reachsh/${IMAGE}:latest..."
+        docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
+    - persist_to_workspace:
+        root: /tmp/workspace/
+        paths:
+          - docker-<<parameters.image>>
     - slack_fail
   "examples":
     parameters:
@@ -437,16 +259,15 @@ jobs:
       rank:
         description: "parallel rank"
         type: string
-      images:
-        description: "which images to use"
+      deps:
+        description: "docker dependencies"
         type: string
     executor: real
     steps:
     - checkout
-    - attach_workspace:
-        at: /tmp/workspace/
+    - workattach
     - and_restore_docker:
-        images: <<parameters.images>>
+        deps: <<parameters.deps>>
     - run: |
         mkdir -p /tmp/workspace/artifacts /tmp/workspace/record /tmp/artifacts
     - run:
@@ -487,6 +308,11 @@ jobs:
                 "text": {
                   "type": "mrkdwn",
                   "text": "${RECORD_MESSAGE}" }}]}
+  "build-sink":
+    executor: fake
+    steps:
+    - run: |
+        echo Go team!
 workflows:
   docs:
     jobs:
@@ -508,114 +334,10 @@ workflows:
             only: /[0-9]*\.[0-9]*\.[0-9]*/
   build:
     jobs:
-    - "install-mo":
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-    - "build-devnet-algo":
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-    - "build-devnet-eth":
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-    - "build-devnet-cfx":
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-    - "build-haskell":
-        requires:
-          - "install-mo"
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-    - "build-reach":
-        requires:
-          - "install-mo"
-          - "build-haskell"
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-    - "build-reach-cli":
-        requires:
-          - "install-mo"
-          - "build-haskell"
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-    - "build-js-deps":
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-    - "build-stdlib":
-        requires:
-          - "build-haskell"
-          - "build-js-deps"
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-    - "build-runner":
-        requires:
-          - "build-stdlib"
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-    - "build-react-runner":
-        requires:
-          - "build-stdlib"
-          - "build-js-deps"
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-    - "build-rpc-server":
-        requires:
-          - "install-mo"
-          - "build-runner"
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
     - "hs-test":
         requires:
-          - "build-haskell"
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
+          - "build-haskell-build-artifacts"
     - "hs-check":
         requires:
-          - "build-haskell"
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-    - hold:
-        requires:
-          - "build-devnet-algo"
-          - "build-devnet-eth"
-          - "build-devnet-cfx"
-          - "build-haskell"
-          - "build-reach"
-          - "build-reach-cli"
-          - "build-js-deps"
-          - "build-stdlib"
-          - "build-runner"
-          - "build-react-runner"
-          - "build-rpc-server"
-          - "hs-test"
-          - "hs-check"
-        type: approval
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-          branches:
-            ignore: /.*/
-    - "deploy":
-        context:
-        - reachdevbot-on-dockerhub
-        requires:
-          - "hold"
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-          branches:
-            ignore: /.*/
+          - "build-haskell-build-artifacts"
     # Sink and examples follow

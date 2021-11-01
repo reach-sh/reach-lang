@@ -64,6 +64,8 @@ data AppRes = AppRes
   , ar_isAPI :: S.Set SLPart
   , ar_views :: DLViews
   , ar_apis :: DLAPIs
+  -- All the bound Participants, Views, APIs
+  , ar_entities :: M.Map String SrcLoc
   }
 
 data AppInitSt
@@ -380,13 +382,20 @@ ensure_level x y =
     True -> return ()
     False -> expect_ $ Err_ExpectedLevel x
 
-verifyName :: String -> String -> App ()
-verifyName ty ns = do
+verifyName :: SrcLoc -> String -> String -> App ()
+verifyName at ty ns = do
   when (isSpecialBackendIdent ns) $
     expect_ $ Err_InvalidNameExport ty ns
   regex <- nameRegex
   unless (matched $ ns ?=~ regex) $
     expect_ $ Err_InvalidNameRegex ty ns
+  usedNames <- ar_entities <$> aisiGet aisi_res
+  case M.lookup ns usedNames of
+    Nothing ->
+      aisiPut aisi_res $ \ar ->
+        ar { ar_entities = M.insert ns at (ar_entities ar) }
+    Just bat -> expect_ $ Err_DuplicateName ns bat
+
 
 isSpecialBackendIdent :: [Char] -> Bool
 isSpecialBackendIdent = flip elem ["getExports"]
@@ -2800,7 +2809,8 @@ evalPrim p sargs =
       n <- mustBeBytes nv
       SLInterface im <- mustBeInterface intv
       let ns = bunpack n
-      verifyName "API" ns
+      nAt <- withAt id
+      verifyName nAt "API" ns
       ix <- flip mapWithKeyM im $ \k -> \ (at, ty) ->
         case ty of
         ST_Fun (SLTypeFun {..}) -> do
@@ -2824,18 +2834,15 @@ evalPrim p sargs =
       let io = M.map snd ix
       aisiPut aisi_res $ \ar ->
         ar {ar_apis = M.insert n i' $ ar_apis ar}
-      at <- withAt id
-      retV $ (lvl, SLV_Object at (Just $ ns <> " API") io)
+      retV $ (lvl, SLV_Object nAt (Just $ ns <> " API") io)
     SLPrim_View -> do
       ensure_mode SLM_AppInit "View"
       (nv, intv) <- two_args
       n <- mustBeBytes nv
       SLInterface im <- mustBeInterface intv
-      sv <- ar_views <$> aisiGet aisi_res
-      when (M.member n sv) $
-        expect_ $ Err_View_DuplicateView n
       let ns = bunpack n
-      verifyName "View" ns
+      nAt <- withAt id
+      verifyName nAt "View" ns
       let go k (at, t) = do
             let vv = SLV_Prim $ SLPrim_viewis at n k t
             let vom = M.singleton "set" $ SLSSVal at Public vv
@@ -2854,8 +2861,7 @@ evalPrim p sargs =
       let io = M.map snd ix
       aisiPut aisi_res $ \ar ->
         ar {ar_views = M.insert n i' $ ar_views ar}
-      at <- withAt id
-      retV $ (lvl, SLV_Object at (Just $ ns <> " View") io)
+      retV $ (lvl, SLV_Object nAt (Just $ ns <> " View") io)
     SLPrim_Map -> illegal_args
     SLPrim_Map_new -> do
       t <- expect_ty "Map.new" =<< one_arg
@@ -3161,10 +3167,7 @@ evalPrim p sargs =
       at <- withAt id
       n <- mustBeBytes nv
       let ns = bunpack n
-      verifyName "Participant" ns
-      ios <- ae_ios <$> aisiGet aisi_env
-      when (M.member n ios) $
-        expect_ $ Err_Part_DuplicatePart n
+      verifyName at "Participant" ns
       int <- mustBeInterface intv
       (io, ienv) <- makeInteract n int
       aisiPut aisi_env $ \ae ->

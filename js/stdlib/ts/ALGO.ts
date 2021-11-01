@@ -1813,11 +1813,18 @@ export const getNetworkTime = async (): Promise<BigNumber> => {
 };
 const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
   const now = bigNumberToNumber(now_bn);
-  const client = await getAlgodClient();
-  const binfo = await client.block(now).do();
-  // XXX it is possible that this will not work because the block is old
-  debug(`getTimeSecs`, `block`, binfo);
-  return bigNumberify(binfo.block.ts);
+  try {
+    const client = await getAlgodClient();
+    const binfo = await client.block(now).do();
+    debug(`getTimeSecs`, `node`, binfo);
+    return bigNumberify(binfo.block.ts);
+  } catch (e:any) {
+    debug(`getTimeSecs`, `node failed`, e);
+    const indexer = await getIndexer();
+    const info = await indexer.lookupBlock(now).do();
+    debug(`getTimeSecs`, `indexer`, info);
+    return bigNumberify(info['timestamp']);
+  }
 };
 export const getNetworkSecs = async (): Promise<BigNumber> =>
   await getTimeSecs(await getNetworkTime());

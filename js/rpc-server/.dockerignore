@@ -3,3 +3,4 @@ build/
 .dockerignore
 Dockerfile
 Makefile
+package.json

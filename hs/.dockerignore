@@ -8,8 +8,13 @@
 /test-reports/
 /.dockerignore
 /Dockerfile
-/Dockerfile.circleci
 /docker-compose.yml
 /reach
 /Makefile
-/.package.mo.yaml
+/.package.yaml
+/src/Reach/Version.hs
+/sol/*gz
+/sol/openzeppelin*
+/sol/stdlib_openzep.sol
+/sol/stdlib.sol
+/sol/stdlib.json

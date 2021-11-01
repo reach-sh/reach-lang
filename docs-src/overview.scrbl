@@ -205,7 +205,6 @@ The program is just a few dozen lines long and the shell of it is quite simple:
 
 @item{Line 5 dynamically loads the appropriate network-specific Reach standard library,
 based on the @envref{REACH_CONNECTOR_MODE} environment variable.
-If unspecified, Reach's Ethereum standard library will be used by default.
 All of Reach's network-specific standard libraries adhere to a common interface allowing you to write programs that are network-agnostic.}
 
 @item{Lines 7 and 8 initialize new test accounts for Alice and Bob.}

@@ -1,0 +1,8 @@
+reachc: error[RE0123]: The name `Flower_girl` has already been used by a Participant, View or API at: ./Err_DuplicateName.rsh:4:24:application
+
+  ./Err_DuplicateName.rsh:5:16:application
+
+  5|   const B = API('Flower', { girl: Fun([UInt], Null) });
+
+For further explanation of this error, see: https://docs.reach.sh/RE0123.html
+

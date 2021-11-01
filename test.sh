@@ -113,10 +113,9 @@ tealcount () {
 
 #exit 0
 
-#jb
-#ci ALGO simple-nft-auction
-
-one ALGO tut-7-rpc
+jb
+ci ETH tut-7
+ci CFX tut-7
 exit 0
 c examples/tut-4/index.rsh
 

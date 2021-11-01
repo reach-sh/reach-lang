@@ -11,19 +11,7 @@ FROM ethereum/solc:${SOLC_IMAGE} as solc
 # hadolint ignore=DL3006
 FROM $JS_DEPS_IMAGE as js-deps
 
-FROM node:14.17.0 as sol
-ARG REACH_VERSION
-ENV REACH_VERSION=${REACH_VERSION}
-RUN curl -sSL https://git.io/get-mo -o mo
-RUN chmod +x mo
-RUN mv mo /usr/local/bin
-WORKDIR /stdlib
-COPY --from=solc /usr/local/bin/solc /stdlib/solc
-RUN chmod +x /stdlib/solc
-COPY ts /stdlib/ts
-COPY --from=haskell /build/sol /stdlib/sol/
-WORKDIR /stdlib/sol
-RUN echo $(echo "export default" ; /stdlib/solc --optimize --combined-json abi,bin stdlib.sol) > /stdlib/ts/stdlib_sol.ts
+FROM reachsh/haskell-build-artifacts AS hba
 
 # hadolint ignore=DL3006
 FROM $NODE_IMAGE AS prepare
@@ -31,14 +19,22 @@ ARG REACH_VERSION
 ENV REACH_VERSION=${REACH_VERSION}
 RUN apk update; apk add bash curl
 WORKDIR /stdlib
-COPY --from=js-deps /js-deps/node_modules /stdlib/node_modules
-COPY ./package.json .
-#COPY --from=sol /usr/local/bin/mo /usr/local/bin/mo
-#RUN mo package.mo.json > package.json
+COPY --from=js-deps /js-deps/node_modules ./node_modules
+RUN apk add make curl bash
+COPY Makefile.docker ./Makefile
+COPY package.mo.json .
+COPY .docker-root ./.docker-root
+RUN make ROOT=.docker-root install-mo package.json
+
+# The above should cover all `npm install` needs
+# RUN npm install
 
 RUN npm link
 
-COPY --from=sol /stdlib/ts /stdlib/ts
+COPY ts /stdlib/ts
+COPY --from=hba /build/stdlib.json ./stdlib_sol.json
+RUN make ROOT=.docker-root ts/version.ts ts/stdlib_sol.ts
+
 # uncomment if we ever need custom types again
 # COPY types /stdlib/types
 

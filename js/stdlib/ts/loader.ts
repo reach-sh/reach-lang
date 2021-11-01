@@ -27,7 +27,13 @@ function extractMode(x?: string | Env): string {
   }
   updateProcessEnv(x);
   const g = process.env['REACH_CONNECTOR_MODE'];
-  return g || 'ETH';
+  if ( ! g ) {
+    console.log(`WARNING: \`REACH_CONNECTOR_MODE\` defaulting behavior is deprecated as of`
+              + ` version 0.1.6; please update your code to set this value explicitly.`);
+    return 'ETH';
+  } else {
+    return g;
+  }
 };
 
 // The connectorMode arg is optional;

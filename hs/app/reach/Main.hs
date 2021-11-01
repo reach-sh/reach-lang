@@ -7,9 +7,11 @@ import Control.Monad.Extra
 import Control.Monad.Reader
 import Data.Bits
 import Data.Char
-import Data.Functor.Identity
+import Data.Either
 import Data.IORef
 import Data.Text (Text, intercalate, pack, unpack, stripEnd)
+import Data.Time.Clock
+import Data.Time.Format.ISO8601
 import Data.Tuple.Extra (first)
 import Options.Applicative
 import Options.Applicative.Help.Pretty ((<$$>), text)
@@ -18,8 +20,9 @@ import System.Directory.Extra
 import System.Environment
 import System.Exit
 import System.FilePath
+import System.IO
 import System.Posix.Files
-import Text.Parsec (ParsecT, runParserT, eof, try)
+import Text.Parsec (ParsecT, parse, runParserT, eof, try)
 import Text.Parsec.Char
 import Text.Parsec.Language
 import Text.ParserCombinators.Parsec.Token
@@ -41,13 +44,13 @@ data Connector
   = ALGO
   | CFX
   | ETH
-  deriving (Eq, Show)
+  deriving (Eq, Show, Enum, Bounded)
 
 data Mode
   = Devnet
   | Live
   | Browser
-  deriving (Eq)
+  deriving (Eq, Enum, Bounded)
 
 data ConnectorMode = ConnectorMode Connector Mode
   deriving (Eq)
@@ -82,8 +85,9 @@ data ReachVersion = ReachVersion
   , rv :: ReachVersionOf
   }
 
-mkReachVersion :: Maybe String -> IO ReachVersion
-mkReachVersion mt = do
+mkReachVersion :: IO ReachVersion
+mkReachVersion = do
+  mt <- lookupEnv "REACH_VERSION"
   let rvEnvRaw = pack <$> mt
   rv <- case mt of
     Nothing -> pure RVDefault
@@ -95,12 +99,12 @@ mkReachVersion mt = do
       let iv = const . die $ "Invalid `REACH_VERSION`: " <> m
       let ti = toInteger
 
-      rvEnvNumeric@RVEnvNumeric {..} <- either iv pure . runIdentity $ runParserT
+      rvEnvNumeric@RVEnvNumeric {..} <- either iv pure $ parse
         (RVEnvNumeric
           <$> (Just <$> (optional (string "v") *> decimal))
           <*> ((Just <$> (dot *> decimal)) <|> xx)
           <*> ((Just <$> (dot *> decimal <* eof)) <|> xx))
-        () "" m
+        "" m
 
       let rvMajor = maybe (ti major) id rvEnvNumericMajor
       let rvMinor = maybe (if rvMajor /= ti major then 0 else ti minor) id rvEnvNumericMinor
@@ -128,9 +132,30 @@ versionMaj ReachVersion {..} = case rv of
   RVStable -> packs major
   RVNumeric {..} -> packs rvMajor
 
+data Shell
+  = ShellUnknown
+  | Bash
+  | Zsh
+
+instance Show Shell where
+  show = \case
+    ShellUnknown -> "unknown"
+    Bash -> "bash"
+    Zsh -> "zsh"
+
+mkShell :: IO (Shell, Text)
+mkShell = lookupEnv "SHELL" >>= \case
+  Nothing -> pure (ShellUnknown, "")
+  Just "" -> pure (ShellUnknown, "")
+  Just s -> do
+    let p a b = try $ optional (string "/" *> many (try $ many alphaNum *> string "/"))
+             *> string a *> eof *> pure b
+    either (const $ pure (ShellUnknown, pack s)) (pure . (, pack s)) $ parse
+       (p "bash" Bash <|> p "zsh" Zsh) "" s
+
 data Var = Var
   { reachEx :: Text
-  , connectorMode :: ConnectorMode
+  , connectorMode :: Maybe ConnectorMode
   , debug :: Bool
   , rpcKey :: Text
   , rpcPort :: Text
@@ -141,6 +166,8 @@ data Var = Var
   , rpcTLSRejectUnverified :: Bool
   , version'' :: ReachVersion
   , ci :: Bool
+  , shell :: Shell
+  , shellRaw :: Text
   }
 
 data Env = Env
@@ -149,6 +176,8 @@ data Env = Env
   , e_dirPwdHost :: FilePath
   , e_dirTmpContainer :: FilePath
   , e_dirTmpHost :: FilePath
+  , e_dirConfigContainer :: FilePath
+  , e_dirConfigHost :: FilePath
   , e_emitRaw :: Bool
   , e_effect :: IORef Effect
   , e_var :: Var
@@ -185,10 +214,27 @@ warnDeprecatedFlagIsolate i = when i . liftIO . putStrLn
 
 dieConnectorModeBrowser :: App
 dieConnectorModeBrowser = connectorMode <$> asks e_var >>= \case
-  ConnectorMode _ Browser -> liftIO . die
+  Just (ConnectorMode _ Browser) -> liftIO . die
     $ "`REACH_CONNECTOR_MODE` cannot select the `browser` target; `browser`"
    <> " is only available via the Reach standard library."
   _ -> pure ()
+
+dieConnectorModeNotSpecified :: AppT ConnectorMode
+dieConnectorModeNotSpecified = connectorMode <$> asks e_var >>= \case
+  Just cm -> pure cm
+  Nothing -> liftIO . die . unpack . intercalate "\n"
+    $ "Missing `REACH_CONNECTOR_MODE` environment variable - must be one of:"
+    : L.sort s
+   <> [ "Reach recommends adding this variable to your shell's profile settings by running `reach config`. See:"
+      , " - https://docs.reach.sh/ref-usage.html#(part._ref-usage-config)"
+      , " - https://docs.reach.sh/ref-usage.html#%28env._.R.E.A.C.H_.C.O.N.N.E.C.T.O.R_.M.O.D.E%29"
+      ]
+ where
+  s = [ " * " <> packs c | c <- [ minBound .. maxBound :: Connector ]]
+   <> [ " * " <> packs c <> "-" <> packs m
+      | c <- [ minBound .. maxBound :: Connector ]
+      , m <- [ minBound .. maxBound :: Mode ]
+      ]
 
 diePathContainsParentDir :: FilePath -> IO ()
 diePathContainsParentDir x = when (any (== "..") $ splitDirectories x) . die
@@ -235,28 +281,30 @@ mkVar = do
   rpcTLSPassphrase <- q "REACH_RPC_TLS_PASSPHRASE" (pure defRPCTLSPassphrase)
   rpcTLSKey <- q "REACH_RPC_TLS_KEY" (pure "reach-server.key")
   rpcTLSCrt <- q "REACH_RPC_TLS_CRT" (pure "reach-server.crt")
-  version'' <- lookupEnv "REACH_VERSION" >>= mkReachVersion
+  version'' <- mkReachVersion
   debug <- truthyEnv <$> lookupEnv "REACH_DEBUG"
   rpcTLSRejectUnverified <- lookupEnv "REACH_RPC_TLS_REJECT_UNVERIFIED"
     >>= maybe (pure True) (pure . (/= "0"))
   reachEx <- lookupEnv "REACH_EX"
     >>= maybe (die "Unset `REACH_EX` environment variable") packed
   connectorMode <- do
-    rcm <- m "REACH_CONNECTOR_MODE" (pure "ETH-devnet") (pure . id)
-    runParserT ((ConnectorMode <$> pConnector <*> pMode) <* eof) () "" rcm
-      >>= either (const . die $ "Invalid `REACH_CONNECTOR_MODE`: " <> rcm) pure
+    let e = "REACH_CONNECTOR_MODE"
+    m e (pure Nothing) (pure . Just) >>= \case
+      Nothing -> pure Nothing
+      Just rcm -> runParserT ((ConnectorMode <$> pConnector <*> pMode) <* eof) () "" rcm
+        >>= either (const . die $ "Invalid `" <> e <> "`: " <> rcm) (pure . Just)
   ci <- truthyEnv <$> lookupEnv "CI"
+  (shell, shellRaw) <- mkShell
   pure $ Var {..}
 
-script :: App -> App
-script wrapped = do
+mkScript :: Text -> App -> App
+mkScript connectorMode' wrapped = do
   Var {..} <- asks e_var
   let debug' = if debug then "REACH_DEBUG=1\n" else ""
   let rpcTLSRejectUnverified' = case rpcTLSRejectUnverified of
         True -> ""
         False -> "REACH_RPC_TLS_REJECT_UNVERIFIED=0\n"
   let defOrBlank e d r = if d == r then [N.text| $e=$d |] <> "\n" else ""
-  let connectorMode' = packs connectorMode
 
   -- Recursive invocation of script should base version on what user specified
   -- (or didn't) via REACH_VERSION rather than what we've parsed/inferred;
@@ -298,6 +346,19 @@ script wrapped = do
     <> "\n\n")
   wrapped
 
+scriptWithConnectorMode :: App -> App
+scriptWithConnectorMode wrapped = do
+  rcm <- dieConnectorModeNotSpecified
+  mkScript (packs rcm) wrapped
+
+scriptWithConnectorModeOptional :: App -> App
+scriptWithConnectorModeOptional wrapped = do
+  rcm <- asks (connectorMode . e_var) >>= pure . maybe "" packs
+  mkScript rcm wrapped
+
+script :: App -> App
+script = mkScript ""
+
 write :: Text -> App
 write t = asks e_effect >>= liftIO . flip modifyIORef w where
   w = \case
@@ -319,17 +380,26 @@ swap a b src = T.replace ("${" <> a <> "}") b src
 packs :: Show a => a -> Text
 packs = pack . show
 
-reachImages :: [Text]
-reachImages =
-  [ "reach"
-  , "reach-cli"
-  , "react-runner"
-  , "rpc-server"
-  , "runner"
-  , "devnet-algo"
-  , "devnet-cfx"
-  , "devnet-eth"
+-- Left: 3rd party; Right: Reach
+type Image = Either Text Text
+
+imagesCommon :: [Image]
+imagesCommon =
+  [ Right "reach"
+  , Right "reach-cli"
+  , Right "react-runner"
+  , Right "rpc-server"
+  , Right "runner"
   ]
+
+imagesFor :: Connector -> [Image]
+imagesFor = \case
+  ALGO -> [ Right $ devnetFor ALGO, Left "postgres:11-alpine" ]
+  CFX -> [ Right $ devnetFor CFX ]
+  ETH -> [ Right $ devnetFor ETH ]
+
+imagesForAllConnectors :: [Image]
+imagesForAllConnectors = L.foldl' (<>) [] $ imagesFor <$> [ minBound .. maxBound ]
 
 serviceConnector :: Env -> ConnectorMode -> [Text] -> Text -> Text -> IO Text
 serviceConnector Env {..} (ConnectorMode c m) ports appService' v = do
@@ -487,8 +557,8 @@ readScaff p = do
 withCompose :: DockerMeta -> App -> App
 withCompose DockerMeta {..} wrapped = do
   env@Env {..} <- ask
+  cm@(ConnectorMode c m) <- dieConnectorModeNotSpecified
   let Var {..} = e_var
-  let cm@(ConnectorMode c m) = connectorMode
   let connPorts = case (compose, c, m) of
         (_, _, Live) -> []
         (WithProject Console _, ALGO, Devnet) -> [ "9392" ]
@@ -650,9 +720,23 @@ mkEnv eff mv = do
     <*> strOption (long "dir-project-host" <> internal)
     <*> strOption (long "dir-tmp-container" <> internal <> value "/app/tmp")
     <*> strOption (long "dir-tmp-host" <> internal)
+    <*> strOption (long "dir-config-container" <> internal <> value "/app/config")
+    <*> strOption (long "dir-config-host" <> internal)
     <*> switch (long "emit-raw" <> internal)
     <*> pure eff
     <*> pure var
+
+envFileContainer :: AppT FilePath
+envFileContainer = (</> "env") <$> asks e_dirConfigContainer
+
+envFileHost :: AppT FilePath
+envFileHost = (</> "env") <$> asks e_dirConfigHost
+
+dirInitTemplates :: AppT FilePath
+dirInitTemplates = dirInitTemplates' <$> ask
+
+dirInitTemplates' :: Env -> FilePath
+dirInitTemplates' Env {..} = e_dirEmbed </> "init"
 
 forwardedCli :: Text -> AppT Text
 forwardedCli n = do
@@ -754,7 +838,7 @@ compile = command "compile" $ info f d where
         stack build --profile --fast \
           && stack exec --profile -- reachc $args +RTS -p
       |]
-    script $ do
+    scriptWithConnectorModeOptional $ do
       realpath
       write [N.text|
         REACH="$$(realpath "$reachEx")"
@@ -777,7 +861,7 @@ compile = command "compile" $ info f d where
           REACHC_HASH="$$("$${HS}/../scripts/git-hash.sh")"
           export REACHC_HASH
 
-          (cd "$$HS" && make stack)
+          (cd "$$HS" && make expand)
 
           if [ "$${REACHC_RELEASE}" = "Y" ]; then
             $reachc_release
@@ -791,6 +875,7 @@ compile = command "compile" $ info f d where
             --rm \
             --volume "$$PWD:/app" \
             -u "$(id -ru):$(id -rg)" \
+            -e REACH_CONNECTOR_MODE \
             -e "REACHC_ID=$${ID}" \
             -e "CI=$ci'" \
             reachsh/reach:$v \
@@ -798,16 +883,19 @@ compile = command "compile" $ info f d where
         fi
       |]
 
-init' :: Subcommand
-init' = command "init" . info f $ d <> foot where
+init' :: [String] -> Subcommand
+init' its = command "init" . info f $ d <> foot where
   d = progDesc "Set up source files for a simple app in the current directory"
   f = go <$> strArgument (metavar "TEMPLATE" <> value "_default" <> showDefault)
-  -- TODO list available templates?
-  foot = footerDoc . Just $ text "Aborts if index.rsh or index.mjs already exist"
+  foot = footerDoc . Just
+    $ text "Available templates:\n"
+   <> text (L.intercalate "\n" its)
+   <> text "\n\nAborts if index.rsh or index.mjs already exist"
   go template = do
     Env {..} <- ask
     Project {..} <- projectPwdIndex
-    let tmpl n = e_dirEmbed </> "init" </> n
+    ts <- dirInitTemplates
+    let tmpl n = ts </> n
     let app = "index" -- Used to be configurable via CLI; now we try to nudge default of "index"
     liftIO $ do
       tmpl' <- ifM (doesDirectoryExist $ tmpl template)
@@ -829,7 +917,7 @@ init' = command "init" . info f $ d <> foot where
 -- Tell `docker-compose` to skip connector containers if they're already running
 devnetDeps :: AppT Text
 devnetDeps = do
-  ConnectorMode c' _ <- asks $ connectorMode . e_var
+  ConnectorMode c' _ <- dieConnectorModeNotSpecified
   let c = packs c'
   pure [N.text| $([ "$(docker ps -qf label=sh.reach.devnet-for=$c)x" = 'x' ] || echo '--no-deps') |]
 
@@ -894,7 +982,7 @@ run' = command "run" . info f $ d <> noIntersperse where
     let dockerfile' = pack hostDockerfile
     let projDirHost' = pack projDirHost
     let args'' = intercalate " " . map (<> "'") . map ("'" <>) $ projName : args'
-    withCompose dm . script $ do
+    withCompose dm . scriptWithConnectorMode $ do
       maybe (pure ()) write recompile
       write [N.text|
         cd $projDirHost'
@@ -975,12 +1063,13 @@ react = command "react" $ info f d where
   -- sub-shell
   go ued _ = do
     warnDeprecatedFlagUseExistingDevnet ued
-    v@Var { connectorMode = ConnectorMode c _, ..} <- asks e_var
-    local (\e -> e { e_var = v { connectorMode = ConnectorMode c Browser }}) $ do
+    ConnectorMode c _ <- dieConnectorModeNotSpecified
+    v@Var {..} <- asks e_var
+    local (\e -> e { e_var = v { connectorMode = Just (ConnectorMode c Browser) }}) $ do
       dm@DockerMeta {..} <- mkDockerMetaProj <$> ask <*> projectPwdIndex <*> pure React
       dd <- devnetDeps
       cargs <- forwardedCli "react"
-      withCompose dm . script $ write [N.text|
+      withCompose dm . scriptWithConnectorMode $ write [N.text|
         $reachEx compile $cargs
         docker-compose -f "$$TMP/docker-compose.yml" run \
           --name $appService $dd --service-ports --rm $appService
@@ -1007,7 +1096,7 @@ rpcServer = command "rpc-server" $ info f d where
     warnDefRPCKey
     warnScaffoldDefRPCTLSPair prj
     warnDeprecatedFlagUseExistingDevnet ued
-    withCompose dm . script $ rpcServer' appService >>= write
+    withCompose dm . scriptWithConnectorMode $ rpcServer' appService >>= write
 
 rpcServerAwait' :: Int -> AppT Text
 rpcServerAwait' t = do
@@ -1068,7 +1157,7 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
     warnScaffoldDefRPCTLSPair prj
     -- TODO detect if process is already listening on $REACH_RPC_PORT
     -- `lsof -i` cannot necessarily be used without `sudo`
-    withCompose dm . script $ write [N.text|
+    withCompose dm . scriptWithConnectorMode $ write [N.text|
       [ "x$$REACH_RPC_TLS_REJECT_UNVERIFIED" = "x" ] && REACH_RPC_TLS_REJECT_UNVERIFIED=0
       export REACH_RPC_TLS_REJECT_UNVERIFIED
 
@@ -1095,19 +1184,17 @@ devnet = command "devnet" $ info f d where
   d = progDesc "Run only the devnet"
   f = go <$> switch (long "await-background" <> help "Run in background and await availability")
   go abg = do
-    Env {..} <- ask
+    ConnectorMode c m <- dieConnectorModeNotSpecified
+    dieConnectorModeBrowser
     dd <- devnetDeps
-    let Var {..} = e_var
-    let ConnectorMode c m = connectorMode
     let c' = packs c
     let s = devnetFor c
     let n = "reach-" <> s
     let a = if abg then " >/dev/null 2>&1 &" else ""
     let max_wait_s = "120";
-    dieConnectorModeBrowser
     unless (m == Devnet) . liftIO
       $ die "`reach devnet` may only be used when `REACH_CONNECTOR_MODE` ends with \"-devnet\"."
-    withCompose mkDockerMetaStandaloneDevnet . script $ do
+    withCompose mkDockerMetaStandaloneDevnet . scriptWithConnectorMode $ do
       write [N.text|
         docker-compose -f "$$TMP/docker-compose.yml" run --name $n $dd --service-ports --rm $s$a
       |]
@@ -1134,11 +1221,26 @@ update = command "update" $ info (pure f) d where
   d = progDesc "Update Reach Docker images"
   f = do
     v <- asks (version'' . e_var)
-    script . forM_ reachImages $ \i -> do
-      write $ "docker pull reachsh/" <> i <> ":" <> "latest"
-      write $ "docker pull reachsh/" <> i <> ":" <> versionMaj v
-      write $ "docker pull reachsh/" <> i <> ":" <> versionMajMin v
-      write $ "docker pull reachsh/" <> i <> ":" <> versionMajMinPat v
+    let ts = [ "latest", versionMaj v, versionMajMin v, versionMajMinPat v ]
+    let ps = either (\i -> [ "docker pull " <> i ])
+                   $ \i -> [ "docker pull reachsh/" <> i <> ":" <> t | t <- ts ]
+    let w = write . intercalate "\n" . ps
+    scriptWithConnectorModeOptional $ do
+      mapM_ w imagesCommon
+      connectorMode <$> asks e_var >>= \case
+        Nothing -> mapM_ w imagesForAllConnectors
+        Just (ConnectorMode c _) -> do
+          let is = imagesFor c
+          let is' = filter ((==) Nothing . flip L.elemIndex is) imagesForAllConnectors
+          mapM_ w is
+          forM_ is' $ \i' -> do
+            let i = either id ("reachsh/" <>) i'
+            let ps' = intercalate "\n" $ ps i'
+            write [N.text|
+              if [ ! "$(docker image ls -q "$i")" = '' ]; then
+                $ps'
+              fi
+            |]
 
 dockerReset :: Subcommand
 dockerReset = command "docker-reset" $ info f d where
@@ -1191,9 +1293,150 @@ hashes = command "hashes" $ info f d where
   d = progDesc "Display git hashes used to build each Docker image"
   f = pure $ do
     v <- versionMajMinPat . version'' <$> asks e_var
-    script . forM_ reachImages $ \i -> write [N.text|
-      echo "$i:" "$(docker run --rm --entrypoint /bin/sh "reachsh/$i:$v" -c 'echo $$REACH_GIT_HASH')"
+    let is = rights $ imagesCommon <> imagesForAllConnectors
+    script . forM_ is $ \i -> write [N.text|
+      if [ ! "$(docker image ls -q "reachsh/$i:$v")" = '' ]; then
+        echo "$i:" "$(docker run --rm --entrypoint /bin/sh "reachsh/$i:$v" -c 'echo $$REACH_GIT_HASH')"
+      fi
     |]
+
+config :: Subcommand
+config = command "config" $ info f d where
+  d = progDesc "Configure default Reach settings"
+  f = go <$> switch (short 'v' <> long "verbose" <> help "Print additional config info to `stdout`")
+  nets = zip [0..] $ Nothing : (Just <$> [ ALGO, CFX, ETH ])
+  maxNet = length . show . maximum . fmap fst $ nets
+  lpad (i :: Int) = replicate (maxNet - (length $ show i)) ' ' <> show i
+  go v' = do
+    Var {..} <- asks e_var
+    efc <- envFileContainer
+    efh <- envFileHost
+    dcc <- asks e_dirConfigContainer
+    now <- pack . formatShow iso8601Format <$> liftIO getCurrentTime
+
+    let nope i = putStrLn $ show i <> " is not a valid selection."
+    let snet n = case connectorMode of
+          Nothing -> False
+          Just (ConnectorMode c _) -> c == n
+
+    let mkGetY n y p = do
+          putStr $ p <> " (Type 'y' if so): "
+          hFlush stdout >> getLine >>= \case
+            z | L.upper z /= "Y" -> n
+            _ -> y
+    let getY = mkGetY (exitWith ExitSuccess) (pure ())
+    let getY' = mkGetY (pure False) (pure True)
+
+    envExists <- (liftIO $ doesFileExist efc) >>= \case
+      True -> liftIO $ do
+        putStrLn $ "Reach detected an existing configuration file at " <> efh <> "."
+        getY' "Would you like to back it up before creating a new one?" >>= \case
+          False -> putStrLn "Skipped backup - use ctrl+c to abort overwriting!"
+          True -> do
+            let b = dcc </> "_backup"
+            let n = "env-" <> unpack now
+            createDirectoryIfMissing True b
+            copyFile efc (b </> n)
+            putStrLn $ "Backed up " <> efh <> " to " <> b </> n <> "."
+        pure True
+
+      False -> liftIO $ do
+        putStrLn $ "Reach didn't detect a configuration file at " <> efh <> "."
+        getY "Would you like to create one?"
+        pure False
+
+    dnet <- liftIO $ do
+      let promptNetSet = do
+            putStrLn "\nWould you like to set a default network?"
+            forM_ nets $ \case
+              (_, Nothing) -> putStrLn $ "  " <> lpad 0 <> ": No preference - I want them all!"
+              (i, Just n) -> putStrLn $ "  " <> lpad i <> ": " <> show n
+                <> if snet n then " (Currently selected with `REACH_CONNECTOR_MODE`)" else ""
+            putStr " Select from the numbers above: "
+            hFlush stdout
+      let netSet = getLine >>= \n -> maybe (nope n >> promptNetSet >> netSet) pure
+            $ L.find ((==) n . show . fst) nets
+      (_, net) <- promptNetSet >> netSet
+      pure $ maybe "" packs net
+
+    let e = [N.text|
+      # Automatically generated with `reach config` at $now
+      export REACH_CONNECTOR_MODE=$dnet
+    |]
+
+    liftIO $ do
+      createDirectoryIfMissing True dcc
+      putStrLn ""
+
+      when v' $ do
+        putStrLn $ "Writing " <> efh <> "..."
+        T.putStrLn e
+        putStrLn ""
+
+      T.writeFile efc e
+      putStrLn $ "Configuration has been saved in " <> efh <> ".\n"
+
+    let efh' = pack efh
+    let sourceMe = do
+          let shell' = packs shell
+          let s = case envExists of
+                True -> [N.text|
+                  echo "Run the following command to activate your new configuration:"
+                  echo
+                  echo " $ . $$P"
+                  echo
+                |]
+                False -> [N.text|
+                  echo "Run the following command to activate your new configuration and make it permanent:"
+                  echo
+                  printf ' $ printf '\''\\nif [ -f $efh' ]; then . $efh'; fi\\n'\'' >> %s && . %s\n\n' "$$P" "$$P"
+                |]
+          write [N.text|
+            if [ -f "$$P" ]; then
+              echo "You appear to be using the \`$shell'\` shell, with environment configuration stored in $$P."
+              $s
+            else
+              echo "Reach didn't detect a suitable $$P"
+              cat << 'EOF'
+            and cannot recommend steps to make this configuration permanent.
+            Please consult the `$shell'` documentation for tips on how to set
+            up your environment correctly or file an issue at:
+
+            https://github.com/reach-sh/reach-lang/issues
+            EOF
+            fi
+          |]
+
+    case shell of
+      ShellUnknown -> liftIO $ T.putStrLn [N.text|
+        Reach didn't recognize shell "$shellRaw" and cannot recommend steps
+        to make this configuration permanent. Please consult your shell's
+        documentation in order to complete configuration manually.
+
+        If you believe this is a mistake or would like to request support for
+        a new shell, please file an issue at:
+
+        https://github.com/reach-sh/reach-lang/issues
+      |]
+
+      Bash -> script $ do
+        write [N.text|
+          if [ -f ~/.bash_profile ]; then
+            P=~/.bash_profile
+          elif [ -f ~/.bash_login ]; then
+            P=~/.bash_login
+          else
+            P=~/.profile
+          fi
+        |]
+        sourceMe
+
+      Zsh -> script $ do
+        write [N.text|
+          P=${ZDOTDIR:-$${HOME}}/.zshenv
+          touch "$$P"
+        |]
+        sourceMe
 
 whoami' :: Text
 whoami' = "docker info --format '{{.ID}}' 2>/dev/null"
@@ -1212,11 +1455,44 @@ failNonAbsPaths Env {..} =
     , e_dirTmpHost
     ]
 
+initTemplates :: Env -> IO [String]
+initTemplates = fmap f . listDirectory . dirInitTemplates' where
+  f = (:) "  - default" . fmap ("  - " <>) . L.sort . filter (/= "_default")
+
 main :: IO ()
 main = do
   eff <- newIORef InProcess
   env <- mkEnv eff Nothing
+  arg <- getArgs
+  its <- case execParserPure defaultPrefs (flip info forwardOptions $ (,) <$> env <*> manyArgs "") arg of
+    Success (e, _) -> initTemplates e
+    _ -> pure []
   let header' = "reach " <> versionHashStr <> " - Reach command-line tool"
+  let cs = config
+        <> compile
+        <> clean
+        <> init' its
+        <> run'
+        <> down
+        <> scaffold
+        <> react
+        <> rpcServer
+        <> rpcRun
+        <> devnet
+        <> upgrade
+        <> update
+        <> dockerReset
+        <> version'
+        <> hashes
+        <> help'
+  let hs = internal
+        <> commandGroup "hidden subcommands"
+        <> numericVersion
+        <> reactDown
+        <> rpcServerAwait
+        <> rpcServerDown
+        <> unscaffold
+        <> whoami
   let cli = Cli
         <$> env
         <*> (hsubparser cs <|> hsubparser hs <**> helper)
@@ -1232,28 +1508,3 @@ main = do
         False -> do
           T.writeFile (e_dirTmpContainer c_env </> "out.sh") t
           exitWith $ ExitFailure 42
- where
-  cs = compile
-    <> clean
-    <> init'
-    <> run'
-    <> down
-    <> scaffold
-    <> react
-    <> rpcServer
-    <> rpcRun
-    <> devnet
-    <> upgrade
-    <> update
-    <> dockerReset
-    <> version'
-    <> hashes
-    <> help'
-  hs = internal
-    <> commandGroup "hidden subcommands"
-    <> numericVersion
-    <> reactDown
-    <> rpcServerAwait
-    <> rpcServerDown
-    <> unscaffold
-    <> whoami
