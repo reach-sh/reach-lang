@@ -12,7 +12,6 @@ SHELL=/bin/bash
 # https://stackoverflow.com/a/15978322
 VSCE_VER := $$(($$(($$(($(MAJOR)+1))*1000)) + $(MINOR))).$(PATCH).$(RC_VERSION)
 
-# @echo $(VSCE_VER) was very, very helpful for testing
 all:
 	@echo "Now attempting to publish version $(VSCE_VER)"
 	@echo "of Reach's Visual Studio Code extension."
