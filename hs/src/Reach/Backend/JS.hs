@@ -898,7 +898,7 @@ jsViews (cvs, vis) = do
                 return $ jsReturn $ parens eb'call
               Nothing -> return $ illegal
           return $ jsWhen c $ vsep [let', ret']
-    let enInfo' :: SLPart -> SLVar -> IType -> App Doc
+    let enInfo' :: Maybe SLPart -> SLVar -> IType -> App Doc
         enInfo' v k vt = do
           let (_, rng) = itype2arr vt
           rng' <- jsContract rng
@@ -911,8 +911,14 @@ jsViews (cvs, vis) = do
                 [ ("ty" :: String, rng')
                 , ("decode", decode')
                 ]
-    let enInfo v = toObj (enInfo' v)
-    infos <- toObj enInfo cvs
+    let enInfo k v = mapWithKeyM (enInfo' k) v
+    infos' <- mapWithKeyM enInfo cvs
+    -- Lift untagged views to same level as tagged views
+    let infos = jsObject $ M.foldrWithKey (\ mk ->
+          case mk of
+            Just k -> M.insert (bunpack k) . jsObject
+            Nothing -> M.union
+          ) mempty infos'
     maps_defn <- jsMapDefns False
     return $ vsep $
       [ maps_defn

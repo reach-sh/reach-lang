@@ -1262,9 +1262,9 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
               , ref_defn
               ]
     map_defns <- mapM map_defn (M.toList dli_maps)
-    let tgo :: SLPart -> (SLVar, IType) -> App ((T.Text, Aeson.Value), Doc)
+    let tgo :: Maybe SLPart -> (SLVar, IType) -> App ((T.Text, Aeson.Value), Doc)
         tgo v (k, t) = do
-          let vk_ = bunpack v <> "_" <> k
+          let vk_ = maybe k (\ v' -> bunpack v' <> "_" <> k) v
           let vk = pretty $ vk_
           let (dom, rng) = itype2arr t
           let mkarg domt = DLVar at Nothing domt <$> allocVarIdx
@@ -1306,8 +1306,13 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
               vsep $ defns <> [solFunction vk dom' ret body'']
     let vgo (v, tm) = do
           (o_ks, bs) <- unzip <$> (mapM (tgo v) $ M.toAscList tm)
-          return $ (,) (b2t v, Aeson.object o_ks) $ vsep bs
-    (view_json, view_defns) <- unzip <$> (mapM vgo $ M.toAscList vs)
+          -- Lift untagged views
+          let keys =  case v of
+                        Just v' -> [(b2t v', Aeson.object o_ks)]
+                        Nothing -> o_ks
+          return (keys, vsep bs)
+    (view_jsons, view_defns) <- unzip <$> (mapM vgo $ M.toAscList vs)
+    let view_json = concat view_jsons
     let state_defn =
           vsep $
             [ "uint256 current_step;"

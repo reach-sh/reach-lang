@@ -56,12 +56,21 @@ export type IBackendViewInfo<ConnectorTy extends AnyBackendTy> = {
   decode: (i:number, svs:Array<any>, args:Array<any>) => Promise<any>,
 };
 
+const isUntaggedView = (x: any) => {
+  return 'ty' in x && 'decode' in x;
+}
+
 export type IBackendViewsInfo<ConnectorTy extends AnyBackendTy> =
   {[viewi: number]: Array<ConnectorTy>};
+
+export type TaggedBackendView<ConnectorTy extends AnyBackendTy> =
+  {[keyn:string]: IBackendViewInfo<ConnectorTy>}
+
 export type IBackendViews<ConnectorTy extends AnyBackendTy> = {
   views: IBackendViewsInfo<ConnectorTy>,
-  infos: {[viewn: string]:
-    {[keyn: string]: IBackendViewInfo<ConnectorTy>}},
+  infos: {
+    [viewn: string]: TaggedBackendView<ConnectorTy> | IBackendViewInfo<ConnectorTy>,
+  },
 };
 
 export type IBackendMaps<ConnectorTy extends AnyBackendTy> = {
@@ -135,7 +144,7 @@ export type ParticipantVal = (io:any) => Promise<any>;
 export type ParticipantMap = {[key: string]: ParticipantVal};
 export type ViewVal = (...args:any) => Promise<any>;
 export type ViewFunMap = {[key: string]: ViewVal};
-export type ViewMap = {[key: string]: ViewFunMap};
+export type ViewMap = {[key: string]: ViewVal | ViewFunMap};
 export type APIMap = ViewMap;
 
 export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
@@ -181,7 +190,7 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
 
 export type ISetupView<ContractInfo, ConnectorTy extends AnyBackendTy> = (getInfo:(() => Promise<ContractInfo>)) => {
   viewLib: IViewLib,
-  getView1: ((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string, vi:IBackendViewInfo<ConnectorTy>) => ViewVal)
+  getView1: ((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string|undefined, vi:IBackendViewInfo<ConnectorTy>) => ViewVal)
 };
 
 export const stdContract =
@@ -232,9 +241,11 @@ export const stdContract =
   const { viewLib, getView1 } = setupView(getInfo);
   const views_bin = bin._getViews({reachStdlib: stdlib}, viewLib);
   const views =
-    objectMap(views_bin.infos, ((v:string, vm:{[keyn:string]: IBackendViewInfo<ConnectorTy>}) =>
-      objectMap(vm, ((k:string, vi:IBackendViewInfo<ConnectorTy>) =>
-        getView1(views_bin.views, v, k, vi)))));
+    objectMap(views_bin.infos, ((v:string, vm: TaggedBackendView<ConnectorTy> | IBackendViewInfo<ConnectorTy>) =>
+      isUntaggedView(vm)
+        ? getView1(views_bin.views, v, undefined, vm as IBackendViewInfo<ConnectorTy>)
+        : objectMap(vm as TaggedBackendView<ConnectorTy>, ((k:string, vi:IBackendViewInfo<ConnectorTy>) =>
+            getView1(views_bin.views, v, k, vi)))));
 
   const participants = objectMap(bin._Participants, ((pn:string, p:any) => {
       void(pn);

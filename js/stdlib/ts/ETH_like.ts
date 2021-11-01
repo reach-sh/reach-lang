@@ -72,7 +72,7 @@ type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
   ABI: string,
   Bytecode: string,
-  views: {[viewn: string]: {[keyn: string]: string}},
+  views: {[viewn: string]: string | {[keyn: string]: string}},
 }}};
 type BackendViewsInfo = IBackendViewsInfo<AnyETH_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyETH_Ty>;
@@ -797,12 +797,13 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           throw Error('viewMapRef not used by ETH backend'); },
       };
       const views_namesm = bin._Connectors.ETH.views;
-      const getView1 = (vs:BackendViewsInfo, v:string, k:string, vim: BackendViewInfo) =>
+      const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo) =>
         async (...args: any[]): Promise<any> => {
           void(vs);
           const { ty } = vim;
           const ethersC = await getC();
-          const vkn = views_namesm[v][k];
+          const vnv = views_namesm[v];
+          const vkn = (typeof vnv === 'string') ? vnv : vnv[k!];
           debug(label, 'getView1', v, k, 'args', args, vkn, ty);
           try {
             const val = await ethersC[vkn](...args);

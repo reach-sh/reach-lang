@@ -24,7 +24,7 @@ data LLConsensus
       , llc_w_k :: LLConsensus
       }
   | LLC_Continue SrcLoc DLAssignment
-  | LLC_ViewIs SrcLoc SLPart SLVar (Maybe DLExportBlock) LLConsensus
+  | LLC_ViewIs SrcLoc (Maybe SLPart) SLVar (Maybe DLExportBlock) LLConsensus
   deriving (Eq)
 
 instance Pretty LLConsensus where
