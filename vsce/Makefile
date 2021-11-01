@@ -10,7 +10,7 @@ SHELL=/bin/bash
 
 # double dollar sign to have the shell do the expansion
 # https://stackoverflow.com/a/15978322
-VSCE_VER := $$(($$(($$(($(MAJOR)+1))*1000)) + $(MINOR))).$(PATCH).$(RC_VERSION)
+VSCE_VER := $$(($$(($$(($(MAJOR)+1))*1000)) + $(MINOR))).$(PATCH).$(DRAFT)
 
 all:
 	@echo "Now attempting to publish version $(VSCE_VER)"
