@@ -73,6 +73,8 @@ export const BT_UInt = (max: BigNumber): BackendTy<CBR_UInt> => ({
   name: 'UInt',
   canonicalize: (uv: unknown): CBR_UInt => {
     try {
+      // @ts-ignore
+      if (uv && uv.toString) { uv = uv.toString(); }
       return checkedBigNumberify('stdlib:CBR:BT_UInt', max, uv);
     } catch (e) {
       if (typeof(uv) === 'string') {
