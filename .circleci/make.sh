@@ -2,6 +2,7 @@
 TOTALP1=$(find ../examples -maxdepth 1 -type d | wc -l)
 TOTAL=$((TOTALP1 - 1))
 
+
 PRE=config.pre.yml
 MID=config.mid.yml
 END=config.end.yml
