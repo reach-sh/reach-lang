@@ -1,7 +1,9 @@
+ROOT = ..
+
 # We can derive Reach's Visual Studio Code extension's
 # version using the VERSION file, which can be found
-# in the parent folder.
-include ../VERSION
+# in the root directory.
+include $(ROOT)/VERSION
 
 # the next line is so this Makefile can do arithmetic
 SHELL=/bin/bash
