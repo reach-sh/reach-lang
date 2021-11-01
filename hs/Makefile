@@ -81,6 +81,8 @@ hs-build: expand
 
 .PHONY: hs-test
 hs-test: hs-build
+	# these are gitignored, so just delete them
+	rm -f $(ROOT)/examples/init/index.{rsh,mjs,txt}
 	stack test --fast --test-arguments '+RTS -N -RTS'
 
 .PHONY: hs-test-xml
