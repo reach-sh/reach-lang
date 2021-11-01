@@ -10,12 +10,3 @@ index 2ce7c7dd..4b4be279 100644
  
  const handToInt = {'ROCK': 0, 'PAPER': 1, 'SCISSORS': 2};
  const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];
-@@ -19,6 +20,8 @@ class App extends React.Component {
-     this.state = {view: 'ConnectAccount', ...defaults};
-   }
-   async componentDidMount() {
-+    const now = await reach.getNetworkTime();
-+    reach.setQueryLowerBound(reach.sub(now, 2000));
-     const acc = await reach.getDefaultAccount();
-     const balAtomic = await reach.balanceOf(acc);
-     const bal = reach.formatCurrency(balAtomic, 4);
