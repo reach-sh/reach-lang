@@ -16,7 +16,9 @@
          (all-from-out scriblib/figure)
          mint-scope mint-define!)
 
-(define-runtime-path VERSION "../VERSION")
+(define-runtime-path ROOT "../..")
+
+(define VERSION (build-path ROOT "VERSION"))
 (define version-ht
   (for/fold ([ht (hasheq)]) ([l (in-list (file->lines VERSION))])
     (match (string-split l "=")
@@ -145,8 +147,8 @@ You should start off by initializing your Reach program:
 (define (cmd . args)
   (apply commandline @bold{@exec{$}} " " args))
 
-(define-runtime-path x "../examples/")
-(define-runtime-path rpc-client "../rpc-client/")
+(define x (build-path ROOT "examples"))
+(define rpc-client (build-path ROOT "rpc-client"))
 (define-runtime-path images "./images/")
 
 (define (eximage path)
@@ -159,7 +161,7 @@ You should start off by initializing your Reach program:
 ;; The following should be true:
 ;; * examples/${dir}/views/${src-file}.js exists
 ;; * ${view} is defined from ${src-from} to ${src-to} in that file
-;; * docs-src/${dir}/${view}.png exists
+;; * docs/scrbl/${dir}/${view}.png exists
 (define (exviewfig dir view src-file src-from src-to)
   (define link-file (format "~a.js" src-file))
   (define link

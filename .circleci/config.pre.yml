@@ -99,9 +99,9 @@ jobs:
               racket \
               python3-setuptools
         (cd pygments && sudo make install)
-        (cd docs-src && make render)
+        (cd docs/scrbl && make render)
         mkdir -p /tmp/workspace/
-        cp -fr docs /tmp/workspace/
+        cp -fr docs/build /tmp/workspace/docs
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
