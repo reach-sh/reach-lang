@@ -11,6 +11,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 Version 0.1.6 is the current Reach release candidate version.
 
 @itemlist[
+@item{2021/11/02: Allow @reachin{API}s and @reachin{View}s to be specified without names.}
 @item{2021/10/28: @envref{REACH_CONNECTOR_MODE} no longer defaults to @litchar{ETH} when unset.
 
 Users are instead encouraged to run @seclink["ref-usage-config"]{@exec{reach config}} to set a persistent default in their shell or supply @envref{REACH_CONNECTOR_MODE} explicitly at the command-line and in scripts.
