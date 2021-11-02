@@ -6,7 +6,7 @@
 This tutorial walks through the creation of a simple decentralized application.
 It contains everything you need to know to build and test this application and assumes no prior experience with DApp/blockchain development of any kind.
 If you want a broad overview before diving in it, we recommend reading [the overview](##overview) first.
-On the other hand, if this is too simple, then you may want to start [the workshop](##workshop) for larger and less contrained projects or [the reference manual](##ref) for the minute details of Reach.
+On the other hand, if this is too simple, then you may want to start [the workshop](##workshop) for larger and less constrained projects or [the reference manual](##ref) for the minute details of Reach.
 
 If you're ready, click through to the [first step](##tut-1)!
 
@@ -63,6 +63,17 @@ $ ./reach version
 ```
 
 
+The recommended next step, although optional, is to set up your environment with
+
+```
+$ ./reach config
+```
+
+
+This will make subsequent uses of the `reach` script more convenient by tuning its runtime behavior to your specific needs and only downloading the dependencies you'll actually use.
+
+`reach config` sets overridable defaults for _all_ Reach projects on your development machine and not just the current one, so feel free to skip this step if you'd prefer not to make your choices global.
+
 Since Reach is Dockerized, when you first use it, you'll need to download the images it uses.
 This will happen automatically when you first use it, but you can do it manually now by running
 
@@ -117,7 +128,7 @@ You can click on it and the content of the code box will be copied onto your cli
 :::
 
 ::: note
-Did your text editor recognize `index.rsh` as a Reach program and give you proper syntax hightlighting?
+Did your text editor recognize `index.rsh` as a Reach program and give you proper syntax highlighting?
 If not, check if there's a plugin available for your editor by visiting ${seclink("guide-editor-support")} or manually
 configure it to treat Reach (`.rsh`) files as JavaScript and things will be mostly correct.
 :::
@@ -347,7 +358,7 @@ Let's change our program so that Alice can offer a wager to Bob and whoever wins
 
 This time, let's start with changes to the JavaScript frontend and then we'll go back into the Reach code and connect the new methods up.
 
-Since we're going to be having funds get transfered, we'll record the balances of each participant before the game starts, so we can more clearly show what they won at the end.
+Since we're going to be having funds get transferred, we'll record the balances of each participant before the game starts, so we can more clearly show what they won at the end.
 We'll add this code in between account creation and contract deployment.
 
 ${code("/examples/tut-4/index.mjs", 6, 13)}
@@ -446,8 +457,8 @@ Bob accepts the wager of 5.
 Bob played Rock
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
-Alice went from 10 to 14.9999.
-Bob went from 10 to 4.9999.
+Alice went from 100 to 104.9999.
+Bob went from 100 to 94.9999.
 
 $ ./reach run
 Alice played Paper
@@ -455,8 +466,8 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Alice saw outcome Bob wins
 Bob saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 
 $ ./reach run
 Alice played Rock
@@ -464,30 +475,30 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
-Alice went from 10 to 14.9999.
-Bob went from 10 to 4.9999.
+Alice went from 100 to 104.9999.
+Bob went from 100 to 94.9999.
 ```
 
 
 ::: note
-How come Alice and Bob's balances go back to `10` every time?
+How come Alice and Bob's balances go back to `100` every time?
 It's because each time we run `./reach run`, it creates fresh accounts for both players.
 :::
 
 ::: note
-How come the balances aren't exactly `10`, `15`, and `5`?
-It's because Ethereum transactions cost "gas" to run.
+How come the balances aren't exactly `100`, `105`, and `95`?
+It's because consensus network charge fees to run transactions.
 
 If we had shown all the decimals, they'd look like this:
 
 ---
 
 ```
-Alice went from 10 to 14.999999999999687163.
-Bob went from 10 to 4.999999999999978229.
+Alice went from 100 to 104.999999999999687163.
+Bob went from 100 to 94.999999999999978229.
 ...
-Alice went from 10 to 4.999999999999687163.
-Bob went from 10 to 14.999999999999978246.
+Alice went from 100 to 94.999999999999687163.
+Bob went from 100 to 104.999999999999978246.
 ```
 
 
@@ -539,8 +550,8 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Alice saw outcome Alice wins
 Bob saw outcome Alice wins
-Alice went from 10 to 14.9999.
-Bob went from 10 to 4.9999.
+Alice went from 100 to 104.9999.
+Bob went from 100 to 94.9999.
 ```
 
 
@@ -561,8 +572,8 @@ Alice played Scissors
 Bob accepts the wager of 5.
 Alice saw outcome Bob wins
 Bob saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 ```
 
 
@@ -646,7 +657,7 @@ These kinds of [automatic verifications](##guide-assert) are helpful for Reach p
 However, now let's add an assertion to the program that will ensure that every version of the program that allows Bob to know Alice's hand before he chooses his own will be rejected.
 
 We'll go back to the version of [tut-4/index.rsh](${repo}}/examples/tut-4/index.rsh) from the last section, which has an honest version of Bob.
-(Click on the preceeding link if you need to see what it contained.)
+(Click on the preceding link if you need to see what it contained.)
 
 We'll add a single line to the program after Alice publishes, but before Bob takes a local step:
 
@@ -776,8 +787,8 @@ Bob accepts the wager of 5.
 Bob played Paper
 Bob saw outcome Alice wins
 Alice saw outcome Alice wins
-Alice went from 10 to 14.9999.
-Bob went from 10 to 4.9999.
+Alice went from 100 to 104.9999.
+Bob went from 100 to 94.9999.
 
 $ ./reach run
 Alice played Paper
@@ -785,8 +796,8 @@ Bob accepts the wager of 5.
 Bob played Scissors
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 
 $ ./reach run
 Alice played Scissors
@@ -949,8 +960,8 @@ Bob accepts the wager of 5.
 Bob played Paper
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 
 $ ./reach run
 Alice played Scissors
@@ -1078,7 +1089,7 @@ It's now time to begin the repeatable section of the application, where each par
 In normal programming languages, such a circumstance would be implemented with a `while` loop, which is exactly what we'll do in Reach.
 However, `while` loops in Reach require extra care, as discussed in [the guide on loops in Reach](##guide-loop-invs), so we'll take it slow.
 
-In the rest of a Reach program, all identifier bindings are static and unchangable, but if this were the case throughout all of Reach, then `while` loops would either never start or never terminate, because the loop condition would never change.
+In the rest of a Reach program, all identifier bindings are static and unchangeable, but if this were the case throughout all of Reach, then `while` loops would either never start or never terminate, because the loop condition would never change.
 So, a `while` loop in Reach can introduce a variable binding.
 
 Next, because of Reach's [automatic verification](##guide-assert) engine, we must be able to make a statement about what properties of the program are invariant before and after a `while` loop body's execution, a so-called ["loop invariant"](##guide-loop-invs).
@@ -1125,8 +1136,8 @@ The rest of the program could be exactly the same as it was before, except now i
 
 ${code("/examples/tut-7/index.rsh", 93, 95)}
 
-+ Line 93 asserts that the outcome is never draw, which is trivially true because otherwise the `while` loop would not have exitted.
-+ Line 94 transfers the funds to the winner.
++ Line 93 asserts that the outcome is never draw, which is trivially true because otherwise the `while` loop would not have exited.
++ Line 104 transfers the funds to the winner.
 
 
 ---
@@ -1140,8 +1151,8 @@ Alice played Paper
 Bob played Rock
 Bob saw outcome Alice wins
 Alice saw outcome Alice wins
-Alice went from 10 to 14.9999.
-Bob went from 10 to 4.9999.
+Alice went from 100 to 104.9999.
+Bob went from 100 to 94.9999.
 
 $ ./reach run
 Bob accepts the wager of 5.
@@ -1151,8 +1162,8 @@ Alice played Paper
 Bob played Scissors
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 
 $ ./reach run
 Bob accepts the wager of 5.
@@ -1160,8 +1171,8 @@ Alice played Scissors
 Bob played Rock
 Bob saw outcome Bob wins
 Alice saw outcome Bob wins
-Alice went from 10 to 4.9999.
-Bob went from 10 to 14.9999.
+Alice went from 100 to 94.9999.
+Bob went from 100 to 104.9999.
 ```
 
 
@@ -1414,7 +1425,7 @@ On lines 1 thru 6, we import our view code and CSS.
 On line 7, we import the compiled `backend`.
 On lines 8 and 9, we load the `stdlib` as `reach`.
 
-React compiles the Reach standard libray in such a way that
+React compiles the Reach standard library in such a way that
 it does not have direct access to the environment variables
 which are used to select the desired standard library.
 This is why you need to pass `process.env` as an argument
@@ -1557,7 +1568,7 @@ as the participant interact interface object.
 and wait for a `Promise` which can be resolved via user interaction.
 + On lines 89 thru 92, we define what happens when the user clicks the `Accept Terms and Pay Wager` button:
 the `Promise` from line 90 is resolved, and we set the component state to display XXX (exviewref "tut-9" "WaitingForTurn").
-+ On line 93, we render the approprite view from [tut-9/views/AttacherViews.js](${repo}}/examples/tut-9/views/AttacherViews.js)
++ On line 93, we render the appropriate view from [tut-9/views/AttacherViews.js](${repo}}/examples/tut-9/views/AttacherViews.js)
 
 
 XXX (exviewfigs

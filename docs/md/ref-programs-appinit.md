@@ -95,10 +95,12 @@ Each `participantName` must be unique.
 ${ref((quote rsh), "API")}
 ```reach
 API('Voter', { vote: Fun([Address], UInt) })
+// or
+API({ vote: Fun([Address], UInt) })
 ```
 
 
-A API is defined with `API(apiName, apiInterface)`, where `apiName` is a string that labels the API and `apiInterface` is an object where each field indicates the type of a function provided by the contract as an API.
+An API is defined with `API(apiName, apiInterface)` or `API(apiInterface)`, where `apiName` is a string that labels the API and `apiInterface` is an object where each field indicates the type of a function provided by the contract as an API.
 These APIs are available in frontends via the `ctc.apis` object.
 The value returned by this function is an object where the fields are the members of `apiInterface` are may be used in `.api` components of `fork` and `parallelReduce` to specify the behavior of the corresponding call.
 These are called ${defn("API member function")}s.
@@ -113,10 +115,12 @@ This section is about defining views during in application initialization. Views
 ${ref((quote rsh), "View")}
 ```reach
 View('NFT', { owner: Address })
+// or
+View({ owner: Address })
 ```
 
 
-A view is defined with `View(viewName, viewInterface)`, where `viewName` is a string that labels the view and `viewInterface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp.
+A view is defined with `View(viewName, viewInterface)` or `View(viewInterface)`, where `viewName` is a string that labels the view and `viewInterface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp.
 These views are available in frontends via the `ctc.views` object.
 In the DApp, the result of this application argument is referred to as a view object.
 

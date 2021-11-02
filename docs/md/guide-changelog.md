@@ -10,6 +10,16 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.6 is the current Reach release candidate version.
 
++ 2021/11/02: Allow `API`s and `View`s to be specified without names.
++ 2021/10/28: `REACH_CONNECTOR_MODE` no longer defaults to `ETH` when unset.
+
+Users are instead encouraged to run [(exec reach config)](##ref-usage-config) to set a persistent default in their shell or supply `REACH_CONNECTOR_MODE` explicitly at the command-line and in scripts.
+
+Attempting to `reach run|react|rpc-server|rpc-run|devnet` without setting `REACH_CONNECTOR_MODE` in one's terminal will result in an error message being shown and execution aborted.
++ 2021/10/28: Added XXX (seclink "ref-usage-config" (exec "reach config") " subcommand").
++ 2021/10/28: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
++ 2021/10/28: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
++ 2021/10/20: Added `decimals` field for token minting.
 + 2021/10/18: Added APIs via the `API` form.
 + 2021/10/15: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
 + 2021/10/15: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
@@ -102,7 +112,7 @@ Version 0.1.2 is an old Reach release version.
 It is the last version that supports Algorand using TEAL3; if you deployed a contract on Algorand using Reach version 0.1.2, you will need to continue accessing it via the 0.1.2 version of the Reach standard library.
 
 + 2021/07/09: `.define` component added to `parallelReduce`
-+ 2021/07/08: [Error code referenec](##ref-error-codes) created
++ 2021/07/08: [Error code reference](##ref-error-codes) created
 + 2021/06/20: Token minting introduced, with implementation on ETH.
 + ... many interesting things ...
 + 2020/09/01: version tagged
