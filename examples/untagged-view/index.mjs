@@ -18,10 +18,13 @@ const stdlib = loadStdlib(process.env);
         return lx;
       },
       view: async () => {
+        const assert = (v) => {
+          console.assert(v[1].toNumber() == lx - 1);
+        }
         const xv = await ctcAlice.v.xv();
-        console.log(`xv: `, xv);
+        assert(xv);
         const vxv = await ctcAlice.v.V.xv();
-        console.log(`V.xv: `, vxv);
+        assert(vxv);
       }
     }),
   ]);

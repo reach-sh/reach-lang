@@ -968,7 +968,12 @@ jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _)) = do
       jsViews vi
   mapsp <- jsMaps dli_maps
   let partMap = flip M.mapWithKey epps_m $ \p _ -> pretty $ bunpack p
-  let apiMap = flip M.map epps_apis $ jsObject . (M.map $ \(p,_) -> pretty $ bunpack p)
+  let apiMap = M.foldrWithKey (\ k ->
+          case k of
+            Just k' -> M.insert (bunpack k') . jsObject
+            Nothing -> M.union
+          . M.map (\(p,_) -> pretty $ bunpack p)
+        ) mempty epps_apis
   return $ vsep $ [ preamble, exportsp, viewsp, mapsp] <> partsp <> cnpsp <> [jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
 
 backend_js :: Backend

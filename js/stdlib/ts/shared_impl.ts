@@ -86,7 +86,7 @@ export type IBackend<ConnectorTy extends AnyBackendTy> = {
   _getViews: (stdlib:Object, viewlib:IViewLib) => IBackendViews<ConnectorTy>,
   _getMaps: (stdlib:Object) => IBackendMaps<ConnectorTy>,
   _Participants: {[n: string]: any},
-  _APIs: {[n: string]: {[n: string]: any}},
+  _APIs: {[n: string]: any | {[n: string]: any}},
 };
 
 export type OnProgress = (obj: {current: BigNumber, target: BigNumber}) => any;
@@ -255,10 +255,12 @@ export const stdContract =
   }));
 
   const apis = objectMap(bin._APIs, ((an:string, am:any) => {
-    return objectMap(am, ((afn:string, ab:any) => {
-      const bp = `${an}_${afn}`;
+    const f = (afn:string|undefined, ab:any) => {
+      const mk = (sep: string) =>
+        (afn === undefined) ? `${an}` : `${an}${sep}${afn}`;
+      const bp = mk(`_`);
       delete participants[bp];
-      const bl = `${an}.${afn}`;
+      const bl = mk(`.`);
       return (...args:any[]) => {
         const terminal = { terminated: bl };
         let theResolve: (x:any) => void;
@@ -288,7 +290,10 @@ export const stdContract =
         });
         return p;
       };
-    }));
+    };
+    return (typeof am === 'object')
+      ? objectMap(am, f)
+      : f(undefined, am);
   }));
 
   return {

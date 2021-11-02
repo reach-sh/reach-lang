@@ -977,4 +977,4 @@ class HasCounter a where
 
 type DLViews = M.Map (Maybe SLPart) (M.Map SLVar IType)
 
-type DLAPIs = M.Map SLPart (M.Map SLVar (SLPart, IType))
+type DLAPIs = M.Map (Maybe SLPart) (M.Map SLVar (SLPart, IType))

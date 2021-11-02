@@ -397,7 +397,7 @@ verifyName at ty keys ns = do
               ar { ar_entities = M.insert n at (ar_entities ar) }
           Just bat -> expect_ $ Err_DuplicateName n bat
   add ns
-  -- Add tagged view/api fields which can clash with untagged
+  -- Add tagged view fields which can clash with untagged
   mapM_ (add . (<>) (ns <> "_")) keys
 
 isSpecialBackendIdent :: [Char] -> Bool
@@ -2808,16 +2808,20 @@ evalPrim p sargs =
     SLPrim_ParticipantClass -> makeParticipant False True
     SLPrim_API -> do
       ensure_mode SLM_AppInit "API"
-      (nv, intv) <- two_args
-      n <- mustBeBytes nv
+      (nv, intv) <- case args of
+                      [x] -> return (Nothing, x)
+                      [x, y] -> return (Just x, y)
+                      _ -> illegal_args
+      n <- mapM mustBeBytes nv
       SLInterface im <- mustBeInterface intv
-      let ns = bunpack n
+      let mns = bunpack <$> n
       nAt <- withAt id
-      verifyName nAt "API" (M.keys im) ns
+      mapM_ (verifyName nAt "API" []) mns
+      let ns = fromMaybe "Untagged" mns
       ix <- flip mapWithKeyM im $ \k -> \ (at, ty) ->
         case ty of
         ST_Fun (SLTypeFun {..}) -> do
-          let nk = ns <> "_" <> k
+          let nk = maybe k (<> "_" <> k) mns
           let nkb = bpack nk
           let nv' = SLV_Bytes at nkb
           let stf_dom' = ST_Tuple stf_dom
@@ -2836,7 +2840,7 @@ evalPrim p sargs =
       let i' = M.map fst ix
       let io = M.map snd ix
       aisiPut aisi_res $ \ar ->
-        ar {ar_apis = M.insert n i' $ ar_apis ar}
+        ar {ar_apis = M.insertWith M.union n i' $ ar_apis ar}
       retV $ (lvl, SLV_Object nAt (Just $ ns <> " API") io)
     SLPrim_View -> do
       ensure_mode SLM_AppInit "View"
