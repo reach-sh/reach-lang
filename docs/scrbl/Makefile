@@ -1,11 +1,12 @@
 ROOT=../..
 TARGET=build
+SHELL=/bin/bash
 
 all: render check
 
 .PHONY: rebuild
 rebuild:
-	raco scribble --dest . --dest-name $(TARGET) --htmls reach.scrbl 2>&1 | tee scribble.log
+	set -o pipefail ; raco scribble --dest . --dest-name $(TARGET) --htmls reach.scrbl 2>&1 | tee scribble.log
 	[ -f $(TARGET)/index.html ]
 	./add-scripts.sh $(TARGET)
 

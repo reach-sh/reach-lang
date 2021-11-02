@@ -1,0 +1,6 @@
+build
+.gitignore
+/docs/.gitignore
+/docs/.dockerignore
+/docs/Makefile
+/docs/Dockerfile
