@@ -898,7 +898,7 @@ jsViews (cvs, vis) = do
                 return $ jsReturn $ parens eb'call
               Nothing -> return $ illegal
           return $ jsWhen c $ vsep [let', ret']
-    let enInfo' :: SLPart -> SLVar -> IType -> App Doc
+    let enInfo' :: Maybe SLPart -> SLVar -> IType -> App Doc
         enInfo' v k vt = do
           let (_, rng) = itype2arr vt
           rng' <- jsContract rng
@@ -911,8 +911,14 @@ jsViews (cvs, vis) = do
                 [ ("ty" :: String, rng')
                 , ("decode", decode')
                 ]
-    let enInfo v = toObj (enInfo' v)
-    infos <- toObj enInfo cvs
+    let enInfo k v = mapWithKeyM (enInfo' k) v
+    infos' <- mapWithKeyM enInfo cvs
+    -- Lift untagged views to same level as tagged views
+    let infos = jsObject $ M.foldrWithKey (\ mk ->
+          case mk of
+            Just k -> M.insert (bunpack k) . jsObject
+            Nothing -> M.union
+          ) mempty infos'
     maps_defn <- jsMapDefns False
     return $ vsep $
       [ maps_defn
@@ -962,7 +968,12 @@ jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _)) = do
       jsViews vi
   mapsp <- jsMaps dli_maps
   let partMap = flip M.mapWithKey epps_m $ \p _ -> pretty $ bunpack p
-  let apiMap = flip M.map epps_apis $ jsObject . (M.map $ \(p,_) -> pretty $ bunpack p)
+  let apiMap = M.foldrWithKey (\ k ->
+          case k of
+            Just k' -> M.insert (bunpack k') . jsObject
+            Nothing -> M.union
+          . M.map (\(p,_) -> pretty $ bunpack p)
+        ) mempty epps_apis
   return $ vsep $ [ preamble, exportsp, viewsp, mapsp] <> partsp <> cnpsp <> [jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
 
 backend_js :: Backend

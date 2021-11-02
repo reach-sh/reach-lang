@@ -61,7 +61,7 @@ data DKTail
       , dk_w_k :: DKTail
       }
   | DK_Continue SrcLoc DLAssignment
-  | DK_ViewIs SrcLoc SLPart SLVar (Maybe DKExportBlock) DKTail
+  | DK_ViewIs SrcLoc (Maybe SLPart) SLVar (Maybe DKExportBlock) DKTail
   | DK_Unreachable SrcLoc [SLCtxtFrame] String
   | DK_LiftBoundary SrcLoc DKTail
   deriving (Eq, Generic)

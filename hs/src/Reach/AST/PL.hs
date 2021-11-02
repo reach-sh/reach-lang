@@ -233,7 +233,7 @@ instance Pretty ColorGraphs where
                 $ M.toList g
          in braces $ hardline <> vsep rows
 
-type ViewsInfo = M.Map SLPart (M.Map SLVar DLExportBlock)
+type ViewsInfo = M.Map (Maybe SLPart) (M.Map SLVar DLExportBlock)
 
 data ViewInfo = ViewInfo [DLVar] ViewsInfo
   deriving (Eq)

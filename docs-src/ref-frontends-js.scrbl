@@ -374,6 +374,8 @@ It is safer to make an @reachin{interact} function that receives @reachin{getCon
 
 @(hrule)
 
+@subsection{@tt{ctc.participants}, @tt{ctc.p}}
+
 Contract handles provide access to the interface of the compiled backend, @jsin{bin}, that they were constructed with.
 
 @js{
@@ -389,6 +391,8 @@ An object where the keys are the participant names and the values are function t
 
 @jsin{acc.contract(backend).p.Alice(io)} is equivalent to @jsin{backend.Alice(acc.contract(backend), io)}, but does not require duplication of the @jsin{backend} component.
 
+@subsection{@tt{ctc.apis}, @tt{ctc.a}}
+
 @js{
  ctc.apis // {[name: string]: {[fun:string]: (...args) => Promise<res>}}
  ctc.apis // {[name: string]: (...args) => Promise<result>}
@@ -403,10 +407,19 @@ An object that mirrors the @tech{API} hierarchy, so if @litchar{X.Y} is an @tech
 An @tech{API function} accepts the arguments of the @tech{API} and returns a @jsin{Promise} that results in the value of the @tech{API}.
 This function may throw an error if the @tech{API} is not available.
 
+If an @tech{API} was specified without an @reachin{apiName}, for example @reachin{API({ cast: Fun([String], Null)})}, it may be accessed by its property name:
+
+@js{
+  ctc.a.cast("Pedro");
+}
+
+@subsection{@tt{ctc.views}, @tt{ctc.v}}
+
 @margin-note{@tech{Views} are @seclink["ref-programs-appinit-view"]{defined in application initialization} and then they are @seclink["ref-programs-consensus-view"]{set in consensus steps}. Both of these steps are in Reach. This section is about accessing them in JavaScript frontends.}
 
 @js{
  ctc.views // {[name: string]: {[fun:string]: (...args) => Promise<res>}}
+ ctc.views // {[name: string]: (...args) => Promise<res>}
  ctc.v
 
  ctc.v.NFT.owner()
@@ -417,6 +430,14 @@ This function may throw an error if the @tech{API} is not available.
 An object that mirrors the @tech{view} hierarchy, so if @litchar{X.Y} is a @tech{view}, then @jsin{ctc.views.X.Y} is a @deftech{view function}.
 A @tech{view function} accepts the arguments of the @tech{view} and returns a @jsin{Promise} that results in the value of the @tech{view} wrapped in a @reachin{Maybe} type (because the @tech{view} may not be bound.)
 For example, if @litchar{NFT.owner} is a @tech{view} with no arguments that represents the @reachin{Address} that owns an NFT, then @jsin{await ctc.v.NFT.owner()} is either @jsin{['Some', Owner]} or @jsin{['None', null]}.
+
+If a @tech{View} was specified without an @reachin{viewName}, for example @reachin{View({ owner: Address })}, it may be accessed by its property name:
+
+@js{
+  ctc.v.owner();
+}
+
+@(hrule)
 
 @(mint-define! '("getViews"))
 @js{

@@ -131,7 +131,7 @@ solve fi = do
 -- Build flow
 data EPPError
   = Err_ContinueDomination
-  | Err_ViewSetDomination SLPart SLVar
+  | Err_ViewSetDomination (Maybe SLPart) SLVar
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode EPPError where
@@ -149,7 +149,10 @@ instance Show EPPError where
     Err_ContinueDomination ->
       "`continue` must be dominated by communication"
     Err_ViewSetDomination v f ->
-      "Cannot set the view " <> show (pretty v) <> "." <> show (pretty f) <> " because it does not dominate any `commit`s"
+      let mvn = maybe "" (\v' -> show (pretty v') <> ".") v in
+      "Cannot set the view " <> mvn <> show (pretty f) <> " because it does not dominate any `commit`s"
+
+type ViewSet = M.Map (Maybe SLPart, SLVar) (Bool, SrcLoc)
 
 data BEnv = BEnv
   { be_prev :: Int
@@ -165,7 +168,7 @@ data BEnv = BEnv
   , be_toks :: [DLArg]
   , be_viewr :: IORef (M.Map Int ([DLVar] -> ViewInfo))
   , be_views :: ViewsInfo
-  , be_view_setsr :: IORef (M.Map (SLPart, SLVar) (Bool, SrcLoc))
+  , be_view_setsr :: IORef ViewSet
   , be_inConsensus :: Bool
   , be_counter :: Counter
   }
@@ -226,7 +229,7 @@ captureOutputVars m = do
   a <- liftIO $ readIORef vsr
   return (a, x)
 
-captureViewSets :: M.Map (SLPart, SLVar) (Bool, SrcLoc) -> BApp a -> BApp (M.Map (SLPart, SLVar) (Bool, SrcLoc), a)
+captureViewSets :: ViewSet -> BApp a -> BApp (ViewSet, a)
 captureViewSets extra m = do
   vsr <- asks be_view_setsr
   vs <- liftIO $ readIORef vsr
@@ -237,7 +240,7 @@ captureViewSets extra m = do
   a <- liftIO $ readIORef tmpr
   return (a, x)
 
-withViewSets :: M.Map (SLPart, SLVar) (Bool, SrcLoc) -> BApp b -> BApp b
+withViewSets :: ViewSet -> BApp b -> BApp b
 withViewSets extra m = do
   vsr <- asks be_view_setsr
   (tmp, x) <- captureViewSets extra m
@@ -449,7 +452,7 @@ be_bl (DLBlock at fs t a) = do
       (\t' ->
          return $ DLBlock at fs t' a)
 
-check_view_sets :: Monad m => M.Map (SLPart, SLVar) (Bool, SrcLoc) -> m ()
+check_view_sets :: Monad m => ViewSet -> m ()
 check_view_sets vs = do
   case find (not . fst . snd) (M.toList vs) of
     Nothing -> return ()

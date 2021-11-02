@@ -1592,7 +1592,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           return mr;
         },
       };
-      const getView1 = (vs:BackendViewsInfo, v:string, k:string, vim: BackendViewInfo) =>
+      const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo) =>
         async (...args: any[]): Promise<any> => {
           debug('getView1', v, k, args);
           const { decode } = vim;

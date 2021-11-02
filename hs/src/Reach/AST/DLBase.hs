@@ -975,6 +975,6 @@ allFluidVars bals =
 class HasCounter a where
   getCounter :: a -> Counter
 
-type DLViews = M.Map SLPart (M.Map SLVar IType)
+type DLViews = M.Map (Maybe SLPart) (M.Map SLVar IType)
 
-type DLAPIs = M.Map SLPart (M.Map SLVar (SLPart, IType))
+type DLAPIs = M.Map (Maybe SLPart) (M.Map SLVar (SLPart, IType))
