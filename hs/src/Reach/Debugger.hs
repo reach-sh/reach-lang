@@ -3,14 +3,15 @@
 module Reach.Debugger where
 
 import Control.Monad.Reader
--- import Data.IORef
 import qualified Data.Map.Strict as M
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.Util
--- import Data.Either
 import Data.Bits
+import Control.Monad.Cont
+-- import Data.IORef
+-- import Data.Either
 -- import Control.Concurrent
 
 type ConsensusEnv = M.Map DLVar DLVal
@@ -27,7 +28,7 @@ data Ledger = Ledger
   }
   deriving (Eq)
 
-ledgerNewToken :: Integer -> App DLVal -> App DLVal
+ledgerNewToken :: Integer -> ResCont -> ResCont
 ledgerNewToken supply f  = do
   -- TODO QUESTION: which account? 0 is placeholder
   ledger <- asks e_ledger
@@ -36,29 +37,31 @@ ledgerNewToken supply f  = do
   let new_ledger = ledger { nw_ledger = new_nw_ledger, nw_next_token = token_id + 1 }
   local (\e -> e {e_ledger = new_ledger}) f
 
-type Frontend = ( Account, SLPart, M.Map DLVar DLVal, [ DLTail ] )
+type Frontend = M.Map String ([DLVal] -> DLVal)
 
-type Frontends = [ Frontend ]
-
-type NewPartActions = M.Map SLPart [ DLTail ]
+-- type Frontend = ( Account, SLPart, M.Map DLVar DLVal, [ DLTail ] )
+--
+-- type Frontends = [ Frontend ]
+--
+-- type NewPartActions = M.Map SLPart [ DLTail ]
 
 -- type State = (ConsensusNetworkState, ConsensusEnv, Frontends, NewPartActions, DAppCode)
 
-data DAppCode
-  = DAppLLCons LLConsensus
-  | DAppLLStep LLStep
+-- data DAppCode
+--   = DAppLLCons LLConsensus
+--   | DAppLLStep LLStep
 
-data UIAction
-  = ContinueAction -- run until breakpoint or error
-  | NextAction Integer -- proceeds through the next N computation steps
-  | BTAction -- print the backtrace
-  | ShowAction String -- print the variable described by this string
+-- data UIAction
+--   = ContinueAction -- run until breakpoint or error
+--   | NextAction Integer -- proceeds through the next N computation steps
+--   | BTAction -- print the backtrace
+--   | ShowAction String -- print the variable described by this string
 
-data Action
-  = TieBreakAction
-  | NewAccAction
-  | NewPartAction
-  | ImitateFrontendAction
+-- data Action
+--   = TieBreakAction
+--   | NewAccAction
+--   | NewPartAction
+--   | ImitateFrontendAction
 
 type Account = Integer
 
@@ -75,7 +78,7 @@ data DLVal
   | V_Array [DLVal]
   | V_Tuple [DLVal]
   | V_Object (M.Map SLVar DLVal)
-  | V_Data (M.Map SLVar DLVal)
+  | V_Data SLVar DLVal
   | V_Struct [(SLVar, DLVal)]
   deriving (Eq, Ord, Show)
 
@@ -90,6 +93,7 @@ data Env = Env
   {  e_store :: Store
    , e_ledger :: Ledger
    , e_linstate :: LinearState
+   , e_frontend :: Frontend
   }
 
 -- Identify program states
@@ -101,19 +105,19 @@ type Id = Integer
 -- free-form & untyped parameters for the action
 type Params = String -- JSON.Value
 
-add_to_store :: DLVar -> DLVal -> App a -> App a
+add_to_store :: DLVar -> DLVal -> ResCont -> ResCont
 add_to_store x v app = do
   st <- asks e_store
   local (\e -> e {e_store = M.insert x v st}) $ app
 
-
-
 -- ## INTERPRETER ## --
 
-class Interp a where
-  interp :: a -> App DLVal
+type ResCont = ContT DLVal App DLVal
 
-interpPrim :: (PrimOp, [DLVal]) -> App DLVal
+class Interp a where
+  interp :: a -> ResCont
+
+interpPrim :: (PrimOp, [DLVal]) -> ResCont
 interpPrim = \case
   (ADD, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (+) lhs rhs
   (SUB, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (-) lhs rhs
@@ -164,7 +168,7 @@ instance Interp DLLargeArg where
     DLLA_Obj map_strs_to_dlargs -> V_Object <$> mapM interp map_strs_to_dlargs
     DLLA_Data _map_slvars_to_dltypes string dlarg -> do
       evd_arg <- interp $ dlarg
-      return $ V_Data $ M.singleton string evd_arg
+      return $ V_Data string evd_arg
     DLLA_Struct assoc_slvars_dlargs -> do
       evd_args <- mapM (\arg -> interp arg) $ M.fromList assoc_slvars_dlargs
       return $ V_Struct $ M.toList evd_args
@@ -215,9 +219,12 @@ instance Interp DLExpr where
       case ev of
         V_Object obj -> return $ obj M.! str
         _ -> impossible "expression interpreter"
-    DLE_Interact _at _slcxtframes _slpart _string _dltype _dlargs -> undefined
+    DLE_Interact _at _slcxtframes _slpart str _dltype dlargs -> do
+      args <- mapM interp dlargs
+      frontend <- asks e_frontend
+      let f = (M.!) frontend str
+      return $ f args
     DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
-    -- TODO
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
       CT_Assert -> undefined
       CT_Assume _bool -> undefined
@@ -258,7 +265,6 @@ instance Interp DLExpr where
             ev' <- interp dlarg'
             let m = M.insert acc ev' ((M.!) linst dlmvar)
             local (\e -> e {e_linstate = M.insert dlmvar m linst}) $ return V_Null
-    -- TODO QUESTION
     DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill -> undefined
     DLE_TokenNew _at dltokennew -> do
       supply <- interp $ dtn_supply dltokennew
@@ -329,13 +335,11 @@ instance Interp DLStmt where
     DL_LocalSwitch _at var switch_cases -> do
       ev <- interp $ DLA_Var var
       case ev of
-        V_Data v -> do
-          let switch_key = flip (!!) 0 $ M.keys v
-          let switch_val = flip (!!) 0 $ M.elems v
-          let (switch_binding, dltail) = (M.!) switch_cases switch_key
+        V_Data k v -> do
+          let (switch_binding, dltail) = (M.!) switch_cases k
           case switch_binding of
             Nothing -> interp dltail
-            Just ident -> add_to_store ident switch_val $ interp dltail
+            Just ident -> add_to_store ident v $ interp dltail
     DL_Only _at _either_part dltail -> interp dltail
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
       accu <- interp arg
@@ -357,7 +361,7 @@ instance Interp DLBlock where
       interp dltail
       interp dlarg
 
-interpCons :: LLConsensus -> App ()
+interpCons :: LLConsensus -> ResCont
 interpCons = \case
   LLC_Com _stmt _cons -> undefined
   LLC_If _at _arg _cons1 _cons2 -> undefined
@@ -367,16 +371,16 @@ interpCons = \case
   LLC_Continue _at _asn -> undefined
   LLC_ViewIs _at _part _var _export _cons -> undefined
 
-interpStep :: (LLStep -> LLProg) -> LLStep -> App ()
+interpStep :: (LLStep -> LLProg) -> LLStep -> ResCont
 interpStep pmeta = \case
   LLS_Com stmt step -> do
     _ <- interp stmt
     interpStep pmeta step
-  LLS_Stop _loc -> return ()
+  LLS_Stop _loc -> return V_Null
   LLS_ToConsensus _at _tc_send _tc_recv _tc_mtime -> undefined
 
 -- evaluate a linear Reach program
-interpProgram :: LLProg -> App ()
+interpProgram :: LLProg -> ResCont
 interpProgram (LLProg at llo ps dli dex dvs step) = interpStep (LLProg at llo ps dli dex dvs) step
 
 -- interpM :: Store -> LLProg -> App (Store)
@@ -396,16 +400,16 @@ init :: LLProg -> App Id
 init (LLProg _at _llo _ps _dli _dex _dvs _s) = return 0
 
 -- returns the set of possible reductions
-actions  :: Id -> App [ Action ]
-actions = undefined
+-- actions  :: Id -> App [ Action ]
+-- actions = undefined
 
 -- applies an action (with its parameters) and returns a new state. Memoizes
-apply :: Id -> Action -> Params -> App Id
-apply = undefined
+-- apply :: Id -> Action -> Params -> App Id
+-- apply = undefined
 
 -- returns the children and how they can be derived
-children :: Id -> App (M.Map Id [ (Action, Params) ])
-children = undefined
+-- children :: Id -> App (M.Map Id [ (Action, Params) ])
+-- children = undefined
 
 -- returns the parent
 parent :: Id -> App Id
