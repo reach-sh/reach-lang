@@ -8,5 +8,7 @@ export const main = Reach.App(() => {
     // Specify Bob's interact interface here
   });
   deploy();
+  A.publish(); // The first one to publish deploys the contract
+  commit();
   // write your program here
 });
