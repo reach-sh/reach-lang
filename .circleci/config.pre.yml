@@ -93,6 +93,11 @@ jobs:
         deps: "stdlib"
     - run: |
         echo "Deploying"
+        git clone https://github.com/reach-sh/js-reach-stdlib.git /tmp/workspace/stdlib
+        cd /tmp/workspace/stdlib
+        git checkout CORE-171
+        make refresh
+        make bump-version-and-publish
   "deploy-images":
     executor: real
     steps:
@@ -101,11 +106,12 @@ jobs:
         at: /tmp/workspace
     - and_restore_docker:
         deps: "runner rpc-server reach reach-cli devnet-eth devnet-cfx devnet-algo"
+#        docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
+#        for IMG in runner rpc-server reach reach-cli devnet-algo devnet-eth devnet-cfx; do
+#          ./scripts/docker-push.sh reachsh/${IMG}
+#        done 
     - run: |
-        docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
-        for IMG in runner rpc-server reach reach-cli devnet-algo devnet-eth devnet-cfx; do
-          ./scripts/docker-push.sh reachsh/${IMG}
-        done 
+        echo "Deploying"
   "docs-render":
     executor: fake
     steps:
@@ -356,6 +362,16 @@ workflows:
     - "deploy-images":
         context:
         - reachdevbot-on-dockerhub
+        requires:
+          - "hold"
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
+          branches:
+            ignore: /.*/
+    - "deploy-stdlib":
+        context:
+        - release-test
         requires:
           - "hold"
         filters:
