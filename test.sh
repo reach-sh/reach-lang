@@ -114,6 +114,7 @@ tealcount () {
 #exit 0
 
 jb
+ci ETH js-tests
 exit 0
 
 jb
