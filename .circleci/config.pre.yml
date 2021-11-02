@@ -90,7 +90,7 @@ jobs:
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
-        images: "runner rpc-server reach reach-cli devnet-eth devnet-cfx devnet-algo"
+        deps: "runner rpc-server reach reach-cli devnet-eth devnet-cfx devnet-algo"
     - run: |
         docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
         for IMG in runner rpc-server reach reach-cli devnet-algo devnet-eth devnet-cfx; do
