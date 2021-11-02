@@ -13,6 +13,9 @@ cat >"${IEND}" </dev/null
 
 cat >>"${IEND}" <<END
     - "build-sink":
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
         requires:
           - "hs-test"
 END
@@ -41,6 +44,9 @@ image () {
   NAME="build-${IMAGE}"
   cat >>"${MID}" <<END
     - "build-image":
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
         name: "${NAME}"
         image: "${IMAGE}"
         exec: "${EXEC}"
@@ -62,6 +68,9 @@ image "fake" "rpc-server" "runner"
 
 cat >>"${END}" <<END
     - "examples-sink":
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
         requires:
 END
 
@@ -79,6 +88,9 @@ for CONN in ETH ALGO CFX ; do
     NAME="examples.${CONN}.${RANK}"
     cat >>"${MID}" <<END
     - "examples":
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
         name: "${NAME}"
         connector: "${CONN}"
         size: "${SIZE}"

@@ -69,9 +69,6 @@ commands:
   and_restore_docker:
     description: "Restore the build Docker images"
     parameters:
-      images:
-        description: "which connector"
-        type: string
       deps:
         description: "which images"
         type: string
@@ -337,7 +334,13 @@ workflows:
     - "hs-test":
         requires:
           - "build-haskell-build-artifacts"
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
     - "hs-check":
         requires:
           - "build-haskell-build-artifacts"
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
     # Sink and examples follow
