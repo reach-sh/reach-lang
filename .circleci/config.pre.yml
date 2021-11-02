@@ -83,7 +83,17 @@ commands:
           done
 
 jobs:
-  "deploy":
+  "deploy-stdlib":
+    executor: real
+    steps:
+    - checkout
+    - attach_workspace:
+        at: /tmp/workspace
+    - and_restore_docker:
+        deps: "stdlib"
+    - run: |
+        echo "Deploying"
+  "deploy-images":
     executor: real
     steps:
     - checkout
@@ -343,18 +353,6 @@ workflows:
         filters:
           tags:
             only: /[0-9]*\.[0-9]*\.[0-9]*/
-    - hold:
-        requires:
-          - "build-image"
-          - "hs-test"
-          - "hs-check"
-          - "examples"
-        type: approval
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-          branches:
-            ignore: /.*/
     - "deploy":
         context:
         - reachdevbot-on-dockerhub
