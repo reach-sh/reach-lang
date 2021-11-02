@@ -7,7 +7,7 @@ ARG JS_DEPS_IMAGE=reachsh/js-deps:$REACH_VERSION
 # hadolint ignore=DL3006
 FROM $JS_DEPS_IMAGE as js-deps
 
-FROM reachsh/haskell-build-artifacts AS hba
+FROM reachsh/reach AS reach
 
 # hadolint ignore=DL3006
 FROM $NODE_IMAGE AS prepare
@@ -26,7 +26,7 @@ RUN make ROOT=.docker-root install-mo package.json
 RUN npm link
 
 COPY ts /stdlib/ts
-COPY --from=hba /build/stdlib.json ./stdlib_sol.json
+COPY --from=reach /stdlib_sol.json .
 RUN make ROOT=.docker-root ts/version.ts ts/stdlib_sol.ts
 
 # uncomment if we ever need custom types again

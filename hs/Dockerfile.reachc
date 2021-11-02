@@ -5,9 +5,10 @@ FROM alpine:$ALPINE_VERSION
 RUN apk add gmp libgmpxx git
 
 COPY --from=build /usr/bin/solc /usr/bin/solc
-COPY --from=build /build/bin/reachc /usr/bin/reachc
 COPY --from=build /usr/bin/z3 /usr/bin/z3
+COPY --from=build /build/bin/reachc /usr/bin/reachc
 RUN chmod +x /usr/bin/reachc
+COPY --from=build /build/stdlib.json ./stdlib_sol.json
 
 WORKDIR /app
 ENTRYPOINT ["/usr/bin/reachc"]
