@@ -361,27 +361,60 @@ instance Interp DLBlock where
       interp dltail
       interp dlarg
 
-interpCons :: LLConsensus -> ResCont
-interpCons = \case
-  LLC_Com _stmt _cons -> undefined
-  LLC_If _at _arg _cons1 _cons2 -> undefined
-  LLC_Switch _at _var _switch_cases -> undefined
-  LLC_FromConsensus _at1 _at2 _step -> undefined
-  LLC_While _at _asn _inv _cond _body _k -> undefined
-  LLC_Continue _at _asn -> undefined
-  LLC_ViewIs _at _part _var _export _cons -> undefined
+instance Interp LLConsensus where
+  interp = \case
+    LLC_Com stmt cons -> do
+      interp stmt
+      interp cons
+    LLC_If _at arg cons1 cons2 -> do
+      ev <- interp arg
+      case ev of
+        V_Bool True -> interp cons1
+        V_Bool False -> interp cons2
+        _ -> impossible "consensus interpreter"
+    LLC_Switch _at var switch_cases -> do
+      ev <- interp $ DLA_Var var
+      case ev of
+        V_Data k v -> do
+          let (switch_binding, cons) = (M.!) switch_cases k
+          case switch_binding of
+            Nothing -> interp cons
+            Just ident -> add_to_store ident v $ interp cons
+    LLC_FromConsensus _at1 _at2 step -> interp step
+    LLC_While at asn _inv cond body k -> do
+      case asn of
+        DLAssignment asn' -> do
+          mapM (\(k,v)-> interp $ DL_Set at k v) $ M.toList asn'
+          while cond body
+          interp k
+    LLC_Continue at asn -> do
+      case asn of
+        DLAssignment asn' -> do
+          mapM (\(k,v)-> interp $ DL_Set at k v) $ M.toList asn'
+          return V_Null
+    -- QUESTION
+    LLC_ViewIs _at _part _var _export cons -> interp cons
 
-interpStep :: (LLStep -> LLProg) -> LLStep -> ResCont
-interpStep pmeta = \case
-  LLS_Com stmt step -> do
-    _ <- interp stmt
-    interpStep pmeta step
-  LLS_Stop _loc -> return V_Null
-  LLS_ToConsensus _at _tc_send _tc_recv _tc_mtime -> undefined
+instance Interp LLStep where
+  interp = \case
+    LLS_Com stmt step -> do
+      _ <- interp stmt
+      interp step
+    LLS_Stop _at -> return V_Null
+    LLS_ToConsensus _at _tc_send _tc_recv _tc_mtime -> undefined
 
 -- evaluate a linear Reach program
-interpProgram :: LLProg -> ResCont
-interpProgram (LLProg at llo ps dli dex dvs step) = interpStep (LLProg at llo ps dli dex dvs) step
+instance Interp LLProg where
+  interp (LLProg _at _llo _ps _dli _dex _dvs step) = interp step
+
+while :: DLBlock -> LLConsensus -> ResCont
+while bl cons = do
+  bool <- interp bl
+  case bool of
+    V_Bool False -> return V_Null
+    V_Bool True -> do
+      interp cons
+      while bl cons
 
 -- interpM :: Store -> LLProg -> App (Store)
 -- interpM st mprog = do
