@@ -6,7 +6,7 @@
          racket/match
          lang-file/read-lang-file)
 
-(define-runtime-path scrbl "../docs-src")
+(define-runtime-path scrbl "../scrbl")
 
 (define d display)
 

@@ -1,4 +1,5 @@
 #!/bin/sh
+TARGET="$1"
 
 PREF="scripts-pre.html"
 POSTF="scripts-post.html"
@@ -21,7 +22,7 @@ PRE=$(cat "${PREF}")
 POST=$(cat "${POSTF}")
 SEARCH=$(cat "${SEARCHF}")
 
-find ../docs -name '*.html' |
+find "$TARGET" -name '*.html' |
     while read -r HTML ; do
         sed -i.bak \
           -e "s#<head>#<head>${PRE}#" \

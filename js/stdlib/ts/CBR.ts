@@ -75,8 +75,12 @@ export const BT_UInt = (max: BigNumber): BackendTy<CBR_UInt> => ({
     try {
       // Note: going through toString handles a lot of numeric representations
       // that BigNumber doesn't handle automatically.
-      // @ts-ignore
-      const uvs = typeof uv?.toString == 'function' ? uv.toString() : uv;
+      const uvs =
+        // @ts-ignore
+        uv?.type === 'BigNumber' ? uv :
+        // @ts-ignore
+        typeof uv?.toString === 'function' ? uv.toString() :
+        /* else */ uv;
       return checkedBigNumberify('stdlib:CBR:BT_UInt', max, uvs);
     } catch (e) {
       if (typeof(uv) === 'string') {

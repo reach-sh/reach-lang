@@ -174,7 +174,6 @@ ${code("/examples/overview/index.mjs")}
 + Lines 1 and 2 import the Reach standard library loader and the compiled app backend.
 + Line 5 dynamically loads the appropriate network-specific Reach standard library,
 based on the `REACH_CONNECTOR_MODE` environment variable.
-If unspecified, Reach's Ethereum standard library will be used by default.
 All of Reach's network-specific standard libraries adhere to a common interface allowing you to write programs that are network-agnostic.
 + Lines 7 and 8 initialize new test accounts for Alice and Bob.
 + Line 10 has Alice deploy the contract on the consensus network.

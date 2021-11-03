@@ -362,7 +362,7 @@ This is used in a consensus step after `makeCommitment` was used in a local step
 ${ref((quote rsh), "burn")}${ref((quote rsh), "destroy")}${ref((quote rsh), "supply")}${ref((quote rsh), "destroyed")}
 ```reach
 require(supply >= 2 * amt);
-const tok = new Token({name, symbol, url, metadata, supply});
+const tok = new Token({ name, symbol, url, metadata, supply, decimals });
 transfer(amt, tok).to(who);
 tok.burn(amt);
 assert(tok.supply() == supply - amt);
@@ -384,6 +384,7 @@ It is written with the expression `new Token(PARAMS)`, where `PARAMS` is an obje
 + `metadata`: A value of type `Bytes(32)`; defaults to empty.
 This value is intended to be a digest of a larger metadata document.
 + `supply`: A value of type `UInt`; defaults to `UInt.max`.
++ `decimals`: A value of type `UInt`; defaults to `6` on Algorand, and `18` on Ethereum and Conflux.
 
 
 This returns a `Token` value and deposits a `supply` amount of the new non-network tokens into the contract account associated with the DApp.

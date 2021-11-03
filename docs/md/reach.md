@@ -29,7 +29,7 @@ If you are looking for something specific, here are some places to look:
 
 
 ::: note
-The source of this site is available on [GitHub](https://github.com/reach-sh/reach-lang/tree/master/docs-src);
+The source of this site is available on [GitHub](https://github.com/reach-sh/reach-lang/tree/master/docs);
 we welcome [Pull Requests](https://github.com/reach-sh/reach-lang/pulls) for improvements and [Issues](https://github.com/reach-sh/reach-lang/issues) for problem reports!
 :::
 

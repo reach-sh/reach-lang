@@ -123,8 +123,7 @@ It then
 
 `reach run` supports the following options:
 
-+ The environment variable `REACH_CONNECTOR_MODE` specifies which context to run in.
-The default, if this variable is unset or empty, is `ETH-devnet`.
++ The mandatory environment variable `REACH_CONNECTOR_MODE` specifies which context to run in.
 The options are:
 
 + `ETH-live`, which uses a live Ethereum network node, specified by the environment variable `ETH_NODE_URI`.
@@ -186,7 +185,8 @@ It then
 
 `reach react` supports the following options:
 
-+ The environment variable `REACH_CONNECTOR_MODE` specifies which context to run in. The default, if this variable is unset or empty, is `ETH`. The options are:
++ The mandatory environment variable `REACH_CONNECTOR_MODE` specifies which context to run in.
+The options are:
 
 + `ETH`, which runs a Dockerized private Ethereum network which may be used. The app can use any Ethereum network.
 + `ALGO`, which runs a Dockerized private Algorand network which may be used. (Support for using any Algorand network is forthcoming with TEAL 3.)
@@ -222,7 +222,8 @@ $ reach devnet
 `reach devnet` supports the following options:
 
 + `--await-background` --- Run in background and await availability.
-+ The environment variable `REACH_CONNECTOR_MODE` specifies which devnet to run. The default, if this variable is unset or empty, is `ETH`. The options are:
++ The mandatory environment variable `REACH_CONNECTOR_MODE` specifies which devnet to run.
+The options are:
 
 + `ETH`, which runs an Ethereum devnet on `localhost:8545`
 + `ALGO`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
@@ -340,6 +341,22 @@ $ reach hashes
 
 This is more precise, but less readable, than `reach version`,
 in that each hash refers to the git commit used to build the image.
+
+### {#ref-usage-config} `reach config`
+
+Reach recommends tuning your default workflow settings by executing
+
+```
+$ reach config
+```
+
+
+Using `reach config` is advisable when running Reach for the first time since it will set the `REACH_CONNECTOR_MODE` environment variable, which is required when executing some other sub-commands (e.g. `reach run`).
+
+`reach config` presents users with a guided menu which automatically creates an `env` file and suggests subsequent steps to activate and make it permanent.
+This `env` file exports environment variable settings and is intended to be `source`d by users' shells.
+
+If an `env` file already exists, `reach config` will offer to back it up before proceeding.
 
 
 

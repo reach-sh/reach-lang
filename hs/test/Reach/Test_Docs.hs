@@ -16,7 +16,7 @@ import qualified Data.Text.IO as TIO
 import           Reach.Connector.ALGO         (AlgoError(..))
 
 docName :: String
-docName = "../docs-src/ref-error-codes.scrbl"
+docName = "../docs/scrbl/ref-error-codes.scrbl"
 
 -- For each type of Error:
 --  Get the error code prefix (use random constructor)

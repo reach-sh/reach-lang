@@ -116,20 +116,13 @@ jobs:
     executor: fake
     steps:
     - checkout
+    # We don't mind not caching, because it doesn't take that long and we don't
+    # want to steal a volume from the main build
+    - srd_no
     - run: |
-        sudo add-apt-repository -y ppa:plt/racket \
-            && sudo apt update \
-            && sudo apt install -y --no-install-recommends \
-              libcairo2 \
-              libfontconfig1 \
-              libjpeg62 \
-              libpangocairo-1.0-0 \
-              racket \
-              python3-setuptools
-        (cd pygments && sudo make install)
-        (cd docs-src && make render)
+        (cd docs && make build)
         mkdir -p /tmp/workspace/
-        cp -fr docs /tmp/workspace/
+        cp -fr docs/build /tmp/workspace/docs
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
@@ -208,7 +201,7 @@ jobs:
     - run:
         command: |
           mkdir -p hs/test-reports
-          docker run --rm -v $(pwd)/examples:/examples/ -v $(pwd)/docs-src:/docs-src/ -v $(pwd)/hs/t:/build/t -v $(pwd)/hs/test-reports:/build/test-reports -ti reachsh/haskell-build-artifacts make docker-test-xml
+          docker run --rm -v $(pwd)/examples:/examples/ -v $(pwd)/docs/scrbl:/docs/scrbl/ -v $(pwd)/hs/t:/build/t -v $(pwd)/hs/test-reports:/build/test-reports -ti reachsh/haskell-build-artifacts make docker-test-xml
         no_output_timeout: 30m
     - store_test_results:
         path: "hs/test-reports"

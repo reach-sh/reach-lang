@@ -382,20 +382,23 @@ ensure_level x y =
     True -> return ()
     False -> expect_ $ Err_ExpectedLevel x
 
-verifyName :: SrcLoc -> String -> String -> App ()
-verifyName at ty ns = do
+verifyName :: SrcLoc -> String -> [String] -> String -> App ()
+verifyName at ty keys ns = do
   when (isSpecialBackendIdent ns) $
     expect_ $ Err_InvalidNameExport ty ns
   regex <- nameRegex
   unless (matched $ ns ?=~ regex) $
     expect_ $ Err_InvalidNameRegex ty ns
   usedNames <- ar_entities <$> aisiGet aisi_res
-  case M.lookup ns usedNames of
-    Nothing ->
-      aisiPut aisi_res $ \ar ->
-        ar { ar_entities = M.insert ns at (ar_entities ar) }
-    Just bat -> expect_ $ Err_DuplicateName ns bat
-
+  let add n =
+        case M.lookup n usedNames of
+          Nothing ->
+            aisiPut aisi_res $ \ar ->
+              ar { ar_entities = M.insert n at (ar_entities ar) }
+          Just bat -> expect_ $ Err_DuplicateName n bat
+  add ns
+  -- Add tagged view fields which can clash with untagged
+  mapM_ (add . (<>) (ns <> "_")) keys
 
 isSpecialBackendIdent :: [Char] -> Bool
 isSpecialBackendIdent = flip elem ["getExports"]
@@ -2805,16 +2808,20 @@ evalPrim p sargs =
     SLPrim_ParticipantClass -> makeParticipant False True
     SLPrim_API -> do
       ensure_mode SLM_AppInit "API"
-      (nv, intv) <- two_args
-      n <- mustBeBytes nv
+      (nv, intv) <- case args of
+                      [x] -> return (Nothing, x)
+                      [x, y] -> return (Just x, y)
+                      _ -> illegal_args
+      n <- mapM mustBeBytes nv
       SLInterface im <- mustBeInterface intv
-      let ns = bunpack n
+      let mns = bunpack <$> n
       nAt <- withAt id
-      verifyName nAt "API" ns
+      mapM_ (verifyName nAt "API" []) mns
+      let ns = fromMaybe "Untagged" mns
       ix <- flip mapWithKeyM im $ \k -> \ (at, ty) ->
         case ty of
         ST_Fun (SLTypeFun {..}) -> do
-          let nk = ns <> "_" <> k
+          let nk = maybe k (<> "_" <> k) mns
           let nkb = bpack nk
           let nv' = SLV_Bytes at nkb
           let stf_dom' = ST_Tuple stf_dom
@@ -2833,17 +2840,23 @@ evalPrim p sargs =
       let i' = M.map fst ix
       let io = M.map snd ix
       aisiPut aisi_res $ \ar ->
-        ar {ar_apis = M.insert n i' $ ar_apis ar}
+        ar {ar_apis = M.insertWith M.union n i' $ ar_apis ar}
       retV $ (lvl, SLV_Object nAt (Just $ ns <> " API") io)
     SLPrim_View -> do
       ensure_mode SLM_AppInit "View"
-      (nv, intv) <- two_args
-      n <- mustBeBytes nv
+      (nv, intv) <- case args of
+                      [x] -> return (Nothing, x)
+                      [x, y] -> return (Just x, y)
+                      _ -> illegal_args
+      n <- mapM mustBeBytes nv
       SLInterface im <- mustBeInterface intv
-      let ns = bunpack n
+      let mns = bunpack <$> n
       nAt <- withAt id
-      verifyName nAt "View" ns
+      mapM_ (verifyName nAt "View" $ M.keys im) mns
+      let ns = fromMaybe "Untagged" mns
       let go k (at, t) = do
+            when (isNothing nv) $ do
+              verifyName at "View" [] k
             let vv = SLV_Prim $ SLPrim_viewis at n k t
             let vom = M.singleton "set" $ SLSSVal at Public vv
             let vo = SLV_Object at (Just $ ns <> " View, " <> k) vom
@@ -2859,8 +2872,9 @@ evalPrim p sargs =
       ix <- mapWithKeyM go im
       let i' = M.map fst ix
       let io = M.map snd ix
+      -- Merge untagged views which have `Nothing` key
       aisiPut aisi_res $ \ar ->
-        ar {ar_views = M.insert n i' $ ar_views ar}
+        ar {ar_views = M.insertWith M.union n i' $ ar_views ar}
       retV $ (lvl, SLV_Object nAt (Just $ ns <> " View") io)
     SLPrim_Map -> illegal_args
     SLPrim_Map_new -> do
@@ -3167,7 +3181,7 @@ evalPrim p sargs =
       at <- withAt id
       n <- mustBeBytes nv
       let ns = bunpack n
-      verifyName at "Participant" ns
+      verifyName at "Participant" [] ns
       int <- mustBeInterface intv
       (io, ienv) <- makeInteract n int
       aisiPut aisi_env $ \ae ->

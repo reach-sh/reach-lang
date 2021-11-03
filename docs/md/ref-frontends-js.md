@@ -429,6 +429,8 @@ ctc.getContractAddress() => Promise<Address>
 
 ---
 
+### `ctc.participants`, `ctc.p`
+
 Contract handles provide access to the interface of the compiled backend, `bin`, that they were constructed with.
 
 ```js
@@ -445,6 +447,8 @@ An object where the keys are the participant names and the values are function t
 
 `acc.contract(backend).p.Alice(io)` is equivalent to `backend.Alice(acc.contract(backend), io)`, but does not require duplication of the `backend` component.
 
+### `ctc.apis`, `ctc.a`
+
 ```js
 ctc.apis // {[name: string]: {[fun:string]: (...args) => Promise<res>}}
 ctc.apis // {[name: string]: (...args) => Promise<result>}
@@ -460,12 +464,22 @@ An object that mirrors the API hierarchy, so if `X.Y` is an API, then `ctc.apis.
 An API function accepts the arguments of the API and returns a `Promise` that results in the value of the API.
 This function may throw an error if the API is not available.
 
+If an API was specified without an `apiName`, for example `API({ cast: Fun([String], Null)})`, it may be accessed by its property name:
+
+```js
+ctc.a.cast("Pedro");
+```
+
+
+### `ctc.views`, `ctc.v`
+
 ::: note
 Views are [defined in application initialization](##ref-programs-appinit-view) and then they are [set in consensus steps](##ref-programs-consensus-view). Both of these steps are in Reach. This section is about accessing them in JavaScript frontends.
 :::
 
 ```js
 ctc.views // {[name: string]: {[fun:string]: (...args) => Promise<res>}}
+ctc.views // {[name: string]: (...args) => Promise<res>}
 ctc.v
 
 ctc.v.NFT.owner()
@@ -477,6 +491,15 @@ ctc.v.NFT.owner()
 An object that mirrors the view hierarchy, so if `X.Y` is a view, then `ctc.views.X.Y` is a ${defn("view function")}.
 A view function accepts the arguments of the view and returns a `Promise` that results in the value of the view wrapped in a `Maybe` type (because the view may not be bound.)
 For example, if `NFT.owner` is a view with no arguments that represents the `Address` that owns an NFT, then `await ctc.v.NFT.owner()` is either `['Some', Owner]` or `['None', null]`.
+
+If a View was specified without an `viewName`, for example `View({ owner: Address })`, it may be accessed by its property name:
+
+```js
+ctc.v.owner();
+```
+
+
+---
 
 ${ref((quote js), "getViews")}
 ```js
@@ -653,7 +676,7 @@ On Algorand, `provider` is an object:
 interface Provider {
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
-  getDefaultAddress: () => Address,
+  getDefaultAddress: () => Promise<Address>,
   isIsolatedNetwork: boolean,
   signAndPostTxns: (txns:WalletTransaction[], opts?: any) => Promise<any>,
 };

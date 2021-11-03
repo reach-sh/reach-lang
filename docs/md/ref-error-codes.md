@@ -2246,6 +2246,55 @@ commit();
 ```
 
 
+## {#RE0121} RE0121
+
+This error indicates that one of an API's interface members is not a function.
+For example:
+
+```reach
+const A = API('api', {
+  tastiness: UInt,
+});
+```
+
+
+## {#RE0122} RE0122
+
+This error indicates that the left-hand side of a ```reach
+call
+```
+ assignment is not a pair of the domain and a function to return a result to the function.
+For example:
+
+```reach
+const x = call(Voter.vote);
+```
+
+
+## {#RE0123} RE0123
+
+This error indicates that the name provided to a `Participant`, `ParticipantClass`, `API`, or `View` is already in use.
+There is a single namespace for all of these entities.
+
+For example, the code below erroneously uses the same name multiple times:
+
+```reach
+const A = Participant('Flower_girl', {});
+const B = API('Flower', { girl: Fun([UInt], Null) });
+```
+
+
+`'Flower_girl'` is used multiple times because every method of an `API` will
+introduce a binding, of the format: `<API name>_<method name>`, into the namespace.
+
+You can fix this error by using different names:
+
+```reach
+const A = Participant('Flower_girl', {});
+const B = API('Flower', { girl2: Fun([UInt], Null) });
+```
+
+
 ## {#REP0000} REP0000
 
 This error indicates that the body of a `while` loop does not make a publication before the `continue`
@@ -2569,3 +2618,32 @@ The error means that you use an API in two places in your program, which is not 
 ## {#RAPI0003} RAPI0003
 
 This error means that you did not return a result from an API call.
+
+## {#RW0000} RW0000
+
+This warning means the syntax or function you are trying to use is deprecated. It is still supported
+by the Reach compiler, but future versions of Reach may stop supporting it.
+
+You can fix this warning by using the new syntax or function the message suggests.
+
+## {#RW0001} RW0001
+
+This warning indicates there is an issue with the Solidity compiler. The message provided can
+be reported to Solidity.
+
+## {#RW0002} RW0002
+
+This warning indicates that your program either uses a feature that is not yet supported on Algorand
+or surpasses Algorand's limit on resources.
+
+## {#RW0003} RW0003
+
+This warning indicates your program will not run on Algorand for the listed reasons. These
+reasons include a limit on the total computation cost.
+
+## {#RW0004} RW0004
+
+This warning indicates that your program does not contain any publications.
+
+You can fix this issue by making sure at least one `Participant` performs a `publish`.
+

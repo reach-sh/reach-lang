@@ -114,7 +114,7 @@ data DLSStmt
   | DLS_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DLSBlock
   | DLS_Throw SrcLoc DLArg Bool
   | DLS_Try SrcLoc DLStmts DLVar DLStmts
-  | DLS_ViewIs SrcLoc SLPart SLVar (Maybe DLSExportBlock)
+  | DLS_ViewIs SrcLoc (Maybe SLPart) SLVar (Maybe DLSExportBlock)
   deriving (Eq, Generic)
 
 instance Pretty DLSStmt where

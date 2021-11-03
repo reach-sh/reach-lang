@@ -306,6 +306,9 @@ where:
 + the `timeout` and `throwTimeout` parameter are as in an consensus transfer.
 
 
+If the discussion of `.api` component, the phrase "parameterized over the input" means that if an API function has two arguments, such as `Fun([UInt, UInt], Null)`, then the corresponding expression must receive two arguments.
+For example, the `API_PAY_EXPR` component would be a function that accepts two arguments, while the `API_CONSENSUS_EXPR` would be a function that acccepts three arguments---the two for the API and the function used to return a value.
+
 If the `msg` field is absent from the object returned from `PUBLISH_EXPR`, then it is treated as if it were `null`.
 
 If the `when` field is absent from the object returned from `PUBLISH_EXPR`, then it is treated as if it were `true`.
@@ -460,3 +463,43 @@ closeTo( Who, after, nonNetPayAmt )
  Has participant `Who` make a publication, then transfer the `balance()` and the non-network pay amount to `Who` and end the DApp after executing the function `after` in a step.
 The `nonNetPayAmt` parameter should be a pay amount. For example, when closing a program that uses a `Token` `token`, the argument would be `[ [balance(tok), tok] ]`.
 The `after` and `nonNetPayAmt` arguments are optional.
+
+### `call`
+
+${ref((quote rsh), "call")}
+```reach
+const A = API('A', {
+  isGt: Fun([UInt, UInt], Bool);
+});
+// ...
+const [ dom, k ] =
+  call(A.isGt).assume((x, y) => x != y)
+              .pay((x, y) => x);
+const [x, y] = dom;
+k(x > y);
+commit();
+```
+
+
+A ${defn("call")} is written:
+
+```reach
+const [ DOMAIN, RET_FUN ] =
+  call(API_EXPR)
+    .pay(API_PAY_EXPR)
+    .assume(API_ASSUME_EXPR)
+    .throwTimeout(DELAY_EXPR, THROW_EXPR)
+```
+
+
+where:
++ `DOMAIN` is the the domain of the API member function.
++ `RET_FUN` is a function that returns a value to the API call. This function must be called.
++ `API_EXPR` is an expression that evaluates to an API member function.
++ `API_PAY_EXPR`, `API_ASSUME_EXPR`, and `throwTimeout` are like the corresponding parts in a `fork` statement.
+They are optional.
+
+
+ `call` will call the given API member function, returning a pair, `[DOMAIN, RET_FUN]`.
+`call` will publish the domain of the API member function, transferring the program from
+a step to consensus step.

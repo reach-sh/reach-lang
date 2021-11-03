@@ -649,4 +649,23 @@ const mkKont = async () =>
     , async () => describe(`The \`${l.connector}\` RPC server`, async () => mkCommon(rpc_stdlib, onlyRpc))
     , async () => describe('The `rpc_server` module',           async () => mkKont())
     ]);
+
+  await describe("T_UInt formats", async () => {
+    const { T_UInt, bigNumberify } = l;
+    for ( const e of [
+      0,
+      1,
+      "3",
+      5n,
+      bigNumberify(5),
+      bigNumberify(6).add(1),
+      { type: 'BigNumber', hex: '0x4c4b40' },
+      '0x4c4b40',
+      { toString: () => "5" },
+    ]) {
+      it(`${e}`, () => {
+        expect(() => T_UInt.canonicalize(e)).toNotRaise();
+      });
+    }
+  });
 })();
