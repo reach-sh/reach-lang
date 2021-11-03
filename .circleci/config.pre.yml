@@ -87,10 +87,10 @@ jobs:
     executor: real
     steps:
     - checkout
-    #- attach_workspace:
-    #    at: /tmp/workspace
-    #- and_restore_docker:
-    #    deps: "stdlib"
+    - attach_workspace:
+        at: /tmp/workspace
+    - and_restore_docker:
+        deps: "stdlib"
     - run: |
         echo "Deploying"
         git clone https://github.com/reach-sh/js-reach-stdlib.git /tmp/workspace/stdlib
