@@ -648,7 +648,7 @@ withCompose DockerMeta {..} wrapped = do
         $extraEnv
       $deps
     |]
-  let stdConnSvs = liftIO $ serviceConnector env cm connPorts appService $ versionBy majMinPat version''
+  let stdConnSvs = liftIO . serviceConnector env cm connPorts appService $ versionBy majMinPat version''
   connSvs <- case (m, compose) of
     (Live, _) -> pure ""
     (_, StandaloneDevnet) -> stdConnSvs
@@ -1232,14 +1232,18 @@ update :: Subcommand
 update = command "update" $ info (pure f) d where
   d = progDesc "Update Reach Docker images"
   f = do
-    ts <- rv <$> asks (version'' . e_var) >>= \case
-      RVWithMaj v -> pure $ [ "latest", maj v, majMin v, majMinPat v ]
-      RVHash v -> pure [ v ]
-      RVDate v -> pure [ packs v ]
+    ReachVersion {..} <- asks (version'' . e_var)
+    let ts = case rv of
+              RVWithMaj v -> [ "latest", maj v, majMin v, majMinPat v ]
+              RVHash v -> [ v ]
+              RVDate v -> [ packs v ]
     let ps = either (\i -> [ "docker pull " <> i ])
                    $ \i -> [ "docker pull reachsh/" <> i <> ":" <> t | t <- ts ]
     let w = write . intercalate "\n" . ps
     scriptWithConnectorModeOptional $ do
+      case rv of -- Always pull `reach-cli:latest` regardless of `REACH_VERSION`
+        RVWithMaj _ -> pure ()
+        _ -> write [N.text| docker pull reachsh/reach-cli:latest |]
       mapM_ w imagesCommon
       connectorMode <$> asks e_var >>= \case
         Nothing -> mapM_ w imagesForAllConnectors
