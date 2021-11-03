@@ -98,7 +98,7 @@ const copyFmToConfig = (configJson) => {
     visit(tree, 'yaml', (node, index, p) => {
       const fm = yaml.load(node.value, 'utf8');
       for ( const k in fm ) {
-        configJson[fm] = fm[k];
+        configJson[k] = fm[k];
       }
       p.children.splice(index, 1); // Remove yaml node.
       return [visit.SKIP, index];
@@ -110,13 +110,15 @@ const copyFmToConfig = (configJson) => {
 
 // This is a hack, really we need to have better synchronization across the
 // parallel jobs.
-const readJsonWait = async (f) => {
+const readJsonWait = async (who, f) => {
   while ( true ) {
     if ( await fs.exists(f) ) {
       try { return await fs.readJson(f); }
-      catch (e) { void(e); }
+      catch (e) {
+        console.log(`Failed to read ${f}:`, e);
+      }
     }
-    await setTimeout(100);
+    await setTimeout(1000);
   }
 };
 
@@ -382,7 +384,7 @@ const processFolder = async (baseDir, relDir) => {
       const bIdArray = pArray.slice(pArray.indexOf('books') - 1, pArray.indexOf('books') + 2);
       configJson.bookPath = bIdArray.join('/');
       const bookConfigJsonFile = `${bPath}/config.json`;
-      const bookConfigJson = await readJsonWait(bookConfigJsonFile);
+      const bookConfigJson = await readJsonWait(cfgPath, bookConfigJsonFile);
       configJson.bookTitle = bookConfigJson.bookTitle;
     }
   }
@@ -449,7 +451,7 @@ const processFolder = async (baseDir, relDir) => {
 const findAndProcessFolder = async (folder) => {
   const fileArr = await fs.readdir(folder);
   await Promise.all(fileArr.map(async (p) => {
-    if (p === 'index.md') {
+    if ( p === 'index.md' ) {
       const baseDir = normalizeDir(srcDir);
       let relDir = normalizeDir(folder.replace(baseDir, ''));
       relDir = relDir.startsWith('/') ? relDir.slice(1) : relDir;
