@@ -95,6 +95,7 @@ jobs:
         echo "Deploying"
         git clone https://github.com/reach-sh/js-reach-stdlib.git /tmp/workspace/stdlib
         cd /tmp/workspace/stdlib
+        git pull --tags
         git checkout CORE-171
         make refresh
         make bump-version-and-publish
