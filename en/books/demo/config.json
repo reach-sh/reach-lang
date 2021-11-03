@@ -1,0 +1,37 @@
+{
+  "author": null,
+  "background": "white",
+  "bookPath": "en/books/demo",
+  "bookTitle": "Demo Book",
+  "chapters": [
+    {
+      "Amphibians": "amphibians"
+    },
+    {
+      "Birds": "birds"
+    },
+    {
+      "Fish": "fish"
+    },
+    {
+      "Mammals": "mammals"
+    },
+    {
+      "Reptiles": "reptiles"
+    },
+    {
+      "Invertebrates": "invertebrates"
+    }
+  ],
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasEditBtn": true,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasRefreshBtn": true,
+  "menuItem": "mi-docs",
+  "pages": null,
+  "pathname": "/proj/docs/dev/en/books/demo",
+  "publishedDate": null,
+  "title": "Demo Book"
+}

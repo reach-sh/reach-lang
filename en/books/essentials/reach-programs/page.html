@@ -1,0 +1,76 @@
+<p>
+  This document describes the structure and content of Reach ${defn("programs")}, including
+  their syntactic forms,
+  the standard library,
+  and the standards of valid programs.
+</p>
+<p>
+  ::: note
+  Get language support for Reach in your editor by visiting ${seclink("guide-editor-support")}.
+  :::
+</p>
+<p>The rest of this section is structured according to the contexts of the different parts of a Reach program, as follows:</p>
+<ul>
+  <li>${seclink("ref-programs-valid")} describes what is meant by the term valid in Reach.</li>
+  <li>${seclink("ref-programs-module")} describes the top-level structure of a Reach module.</li>
+  <li>${seclink("ref-programs-appinit")} describes the structure of Reach application initialization.</li>
+  <li>${seclink("ref-programs-step")} describes the structure of Reach steps.</li>
+  <li>${seclink("ref-programs-local")} describes the structure of Reach local steps.</li>
+  <li>${seclink("ref-programs-consensus")} describes the structure of Reach consensus steps.</li>
+  <li>${seclink("ref-programs-compute")} describes the common structure of Reach computations shared by all contexts.</li>
+</ul>
+<p>XXX (Figure-ref "fig:app-steps") shows the relationship between the modes of a Reach application.</p>
+<p>
+  XXX (figure
+  "fig:app-steps"
+  (elem "The modes of a Reach application")
+  (image "images/reference/StepDiagram.png" #:style "fig"))
+</p>
+<h2 id="validity-and-other-concepts">Validity and other concepts</h2>
+<p>
+  Reach imposes further restrictions on syntactically well-formed programs.
+  These restrictions are described throughout this manual using the term ${defn("valid")} to refer to constructions that obey the restrictions,
+  and the term ${defn("invalid")} to refer to constructions that do not obey them.
+</p>
+<p>
+  It is always invalid to use a value with an operation for which it is undefined.
+  For example, <code>1 + true</code> is invalid.
+  In other words, Reach enforces a static type discipline.
+</p>
+<h3 id="security-levels-and-scope">Security levels and scope</h3>
+<p>
+  The text of a Reach program is public knowledge to all participants.
+  However, any value that comes from an interaction expression is a ${defn("secret")} which only that participant knows.
+  Furthermore, any values derived from secret values are also secret.
+  A value, X, is considered derived from another, Y, if the value of Y is provided to a primitive operation to arrive at X, or if Y is used as part of a conditional that influences the definition of X.
+  Secrets can only be made public by using the declassify primitive.
+</p>
+<p>
+  When secret values are bound to an identifier
+  within a local step,
+  the identifier name MUST be prefixed by an underscore (<code>_</code>).
+</p>
+<p>
+  When public values are bound to an identifier,
+  regardless of context,
+  the identifier name MUST NOT be prefixed by an underscore (<code>_</code>).
+</p>
+<p>
+  Consequently, identifiers which appear inside of a
+  function definition or arrow expression
+  MAY be prefixed by an underscore.
+  This will cause a compiler error if any value bound to that
+  identifier is public.
+</p>
+<h3 id="domination">Domination</h3>
+<p>
+  A term Y is said to be "${defn("dominated")}" by a term X if all paths in the control-flow graph of the application from the root to Y pass through X.
+  In most cases, this corresponds to "X appears above Y at the same or lower level of indentation" in the program source code.
+</p>
+<p>For example, in the following program:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">f</span><span style="color: #24292E">();</span></li><li value="2"><span style="color: #D73A49">if</span><span style="color: #24292E"> ( </span><span style="color: #6F42C1">p</span><span style="color: #24292E">() ) {</span></li><li value="3"><span style="color: #24292E"> </span><span style="color: #6F42C1">g</span><span style="color: #24292E">();</span></li><li value="4"><span style="color: #24292E">} </span><span style="color: #D73A49">else</span><span style="color: #24292E"> {</span></li><li value="5"><span style="color: #24292E"> </span><span style="color: #6F42C1">h</span><span style="color: #24292E">();</span></li><li value="6"><span style="color: #24292E">}</span></li><li value="7"><span style="color: #6F42C1">m</span><span style="color: #24292E">();</span></li></ol></pre>
+<p>
+  <code>f</code> dominates <code>p</code>, <code>g</code>, <code>h</code>, and <code>m</code>.
+  But no other term dominates any other term.
+  In particular, <code>g</code> does not dominate <code>m</code> because it is possible to reach <code>m</code> without going through <code>g</code>, such as when <code>p()</code> is false.
+</p>

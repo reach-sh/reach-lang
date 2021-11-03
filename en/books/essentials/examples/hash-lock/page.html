@@ -1,0 +1,247 @@
+<p>
+  In this workshop, we'll design an application that allows a payer to lock funds with a secret password, independent from their consensus network identity, which can be drawn by anyone possessing the secret password.
+  This is a useful way for a payer to show that they have funds and have committed to disbursing them, without deciding beforehand who they are paying.
+</p>
+<p>
+  ${workshopDeps()}
+  XXX (workshop-init "workshop-hash-lock")
+</p>
+<h2 id="problem-analysis">Problem Analysis</h2>
+<p>
+  The first step in any program design is to perform problem analysis and determine what information is relevant to the problem.
+  When writing decentralized applications in Reach, this information analysis includes an analysis of the set of participants involved in a computation.
+</p>
+<p>In this case, let's ask the questions:</p>
+<ul>
+  <li>Who is involved in this application?</li>
+  <li>What information do they know at the start of the program?</li>
+  <li>What information are they going to discover and use in the program?</li>
+  <li>What funds change ownership during the application and how?</li>
+</ul>
+<p>
+  You should write your answers in your Reach program (<code>index.rsh</code>) using a comment.
+  <code>/* Remember comments are written like this. */</code>
+</p>
+<p><strong>Write down the problem analysis of this program as a comment.</strong></p>
+<p>Let's see how your answers compare to our answers:</p>
+<ul>
+  <li>
+    This program involves two parties: the payer sending the funds and the receiver of those funds.
+    By tradition, we'll call the first 'Alice' and the second 'Bob'.
+    You might like to use other names, like 'Sender' and 'Receiver'.
+  </li>
+  <li>Alice starts off knowing the amount she wants to send and the secret password.</li>
+  <li>Bob starts off like Jon Snow and knows nothing.</li>
+  <li>Alice doesn't learn anything during the execution of the program, but Bob learns the password.</li>
+  <li>Alice transfers funds at the beginning of the program and Bob receives those funds at the end, after he learns the password.</li>
+</ul>
+<p>
+  It's okay if your answers are different than ours.
+  Problem analysis is a "loose" process that is more like creative artistry than it is like rote calculation.
+  But, that doesn't mean it is superfluous and unnecessary or unneeded.
+</p>
+<p>
+  Problem analysis is a crucial step that helps us understand what our application is supposed to be doing.
+  Remember, programming in general, and Reach in particular, does not solve problems for you; instead, programs encode automatic solutions to problems you've already solved.
+  Compared to normal languages, Reach does do a bit automatically for you: it automatically discovers problems you may not have realized your program had.
+  You still have to solve them yourself though!
+  But, at least you know about them because of Reach.
+</p>
+<h2 id="data-definition">Data Definition</h2>
+<p>
+  Humans and their social systems deal with information, but computers can only interact with data, which is merely a representation of information using particular structures, like numbers, arrays, and so on.
+  After problem analysis, we know what information our program will deal with, but next we need to decide how to translate that information into concrete data.
+</p>
+<p>So, for this program, we should decide:</p>
+<ul>
+  <li>What data type will represent the amount Alice transfers?</li>
+  <li>What data type will represent Alice's password?</li>
+</ul>
+<p>
+  ::: note
+  Refer to ${seclink("ref-programs-types")}for a reminder of what data types are available in Reach.
+  :::
+</p>
+<p>
+  After deciding those things, you should think about how the program will be provided these values.
+  In other words:
+</p>
+<ul>
+  <li>What participant interact interface will each participant use?</li>
+</ul>
+<p>
+  You should look back at your problem analysis to do this step.
+  Whenever a participant starts off knowing something, then it is a field in the <code>interact</code> object.
+  If they learn something, then it will be an argument to a function.
+  If they provide something later, then it will be the result of a function.
+</p>
+<p>You should write your answers in your Reach file (<code>index.rsh</code>) as the participant interact interface for each of the participants.</p>
+<p><strong>Write down the data definitions for this program as definitions.</strong></p>
+<p>Let's compare notes again.</p>
+<ul>
+  <li>We're going to represent the amount Alice transfers as an unsigned integer (<code>UInt</code>) named <code>amt</code>.</li>
+  <li>We will represent the password as another unsigned integer (<code>UInt</code>) named <code>pass</code>.</li>
+  <li>These two values are the only fields of Alice's interface, but Bob will have a function named <code>getPass</code> that will return the password that he knows.</li>
+</ul>
+<p>We wrote this in our program as:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">[</span><span style="color: #6F42C1">Participant</span><span style="color: #24292E">(</span><span style="color: #032F62">'Alice'</span><span style="color: #24292E">, { amt : UInt,</span></li><li value="2"><span style="color: #24292E">             pass: UInt }),</span></li><li value="3"><span style="color: #24292E"> </span><span style="color: #6F42C1">Participant</span><span style="color: #24292E">(</span><span style="color: #032F62">'Bob'</span><span style="color: #24292E">, { getPass: </span><span style="color: #6F42C1">Fun</span><span style="color: #24292E">([], UInt) }) ],</span></li></ol></pre>
+<p>
+  It would be very surprising if you choose the exact same names as us in your code, but did you choose the same types?
+  We expect that many of you might have chosen to represent the password by a string of bytes using the Reach type, <code>Bytes</code>.
+  There's nothing necessarily wrong with this option, but we did not choose it because it is hard to decide exactly how long to make it, but we are satisfied with an unsigned integer, because it has a minimum of 64 bits on typical consensus networks.
+</p>
+<p>
+  At this point, you can modify your JavaScript file (<code>index.mjs</code>) to contain definitions of these values, although you may want to use a placeholder like <code>42</code> or something for the actual value.
+  When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the participant interact interface.
+</p>
+<h2 id="communication-construction">Communication Construction</h2>
+<p>
+  A fundamental aspect of a decentralized application is the pattern of communication and transfer among the participants, including the consensus network.
+  For example, who initiates the application?
+  Who responds next?
+  Is there a repeated segment of the program that occurs over and over again?
+  We should explicitly write down this structure as comments in our program.
+  For example, for the <a href="##tut">tutorial</a> version of <em>Rock, Paper, Scissors!</em>, we might write:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6A737D">// Alice publishes the wager and pays it</span></li><li value="2"><span style="color: #6A737D">// Bob accepts the wager and pays it</span></li><li value="3"><span style="color: #6A737D">// While there's a draw</span></li><li value="4"><span style="color: #6A737D">//  Alice publishes her hand secretly</span></li><li value="5"><span style="color: #6A737D">//  Bob publishes his hand publicly</span></li><li value="6"><span style="color: #6A737D">//  Alice reveals her hand</span></li><li value="7"><span style="color: #6A737D">//  The consensus ensures it's the same hand as before</span></li><li value="8"><span style="color: #6A737D">// The consensus pays out the wager</span></li></ol></pre>
+<p>You should do this now, in your Reach program (<code>index.rsh</code>).</p>
+<p><strong>Write down the communication pattern for this program as comments.</strong></p>
+<p>
+  This is a simple application, so we should all share the same communication pattern.
+  Here's what we wrote:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6A737D">// Alice pays the amount</span></li><li value="2"><span style="color: #6A737D">// Bob publishes the password</span></li><li value="3"><span style="color: #6A737D">// The consensus ensures it's the right password and pays Bob</span></li></ol></pre>
+<p>
+  However, looking at this pattern reveals a subtlety in this application:
+  how can the consensus ensure that Bob publishes the correct password?
+  The only way is for Alice to publish something first that can be checked by the consensus.
+  For example, we could use the pattern:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6A737D">// Alice publishes the password and pays the amount</span></li><li value="2"><span style="color: #6A737D">// Bob publishes the password</span></li><li value="3"><span style="color: #6A737D">// The consensus ensures it's the right password and pays Bob</span></li></ol></pre>
+<p>
+  However, this is definitely wrong, because Alice doesn't want to share her password with the world across the network, she only wants to share it with Bob, potentially at some later moment.
+  So, she should not publish the password, but instead, publish a digest of the password, that can be checked against the actual password later.
+  In other words, we should use a pattern like:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6A737D">// Alice publishes a digest of the password and pays the amount</span></li><li value="2"><span style="color: #6A737D">// Bob publishes the password</span></li><li value="3"><span style="color: #6A737D">// The consensus ensures it's the right password and pays Bob</span></li></ol></pre>
+<p>It is cheaper to go through this iteration process in the human-centered design phase than in the code-centered programming phase, even when you're using a high-level language like Reach for programming.</p>
+<p>Next, we need to convert this pattern into actual program code using <code>publish</code>, <code>pay</code>, and <code>commit</code>.</p>
+<p><strong>Write down the communication pattern for this program as code.</strong></p>
+<p>The body of your application should look something like:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6A737D">// Alice publishes a digest of the password and pays the amount</span></li><li value="2"><span style="color: #24292E">Alice.</span><span style="color: #6F42C1">publish</span><span style="color: #24292E">(passDigest, amt)</span></li><li value="3"><span style="color: #24292E">     .</span><span style="color: #6F42C1">pay</span><span style="color: #24292E">(amt);</span></li><li value="4"><span style="color: #6F42C1">commit</span><span style="color: #24292E">();</span></li><li value="5"></li><li value="6"><span style="color: #6A737D">// Bob publishes the password</span></li><li value="7"><span style="color: #24292E">Bob.</span><span style="color: #6F42C1">publish</span><span style="color: #24292E">(pass);</span></li><li value="8"></li><li value="9"><span style="color: #6A737D">// The consensus ensures it's the right password and pays Bob</span></li><li value="10"><span style="color: #6F42C1">transfer</span><span style="color: #24292E">(amt).</span><span style="color: #6F42C1">to</span><span style="color: #24292E">(Bob);</span></li><li value="11"><span style="color: #6F42C1">commit</span><span style="color: #24292E">();</span></li></ol></pre>
+<p>We can now move on to the next part of designing a decentralized application: verification.</p>
+<h2 id="assertion-insertion">Assertion Insertion</h2>
+<p>
+  When we are programming, we hold a complex theory of the behavior of the program inside of our minds that helps us know what should happen next in the program based on what has happened before and what is true at every point in the program.
+  As programs become more complex, this theory becomes more and more difficult to grasp, so we might make mistakes.
+  Furthermore, when another programmer reads our code (such as a version of ourselves from the future trying to modify the program), it can be very difficult to understand this theory for ourselves.
+  Assertions are ways of encoding this theory directly into the text of the program in a way that will be checked by Reach and available to all future readers and editors of the code.
+</p>
+<p>Look at your application. What are the assumptions you have about the values in the program?</p>
+<p><strong>Write down the properties you know are true about the various values in the program.</strong></p>
+<p>There are three main assumptions we came up with for this program:</p>
+<ul>
+  <li>Before Bob publishes the password, it is unknowable by him and everyone else except Alice.</li>
+  <li>Bob assumes that the password digest published by Alice matches the digest of the password he's publishing.</li>
+  <li>The consensus requires that Alice's digest and the digest of Bob's password match.</li>
+</ul>
+<p>
+  We expect that the third of these is the least controversial and the most obvious property, but the others are important too.
+  The first property essentially guarantees that the erroneous version of the application we contemplated, where Alice directly sent her password over the network, is disallowed.
+  The second property encodes Bob's assumption of good will and integrity when he submits his value: an honest version of the Bob participant would not willingly send a password that wasn't the correct one.
+  Furthermore, it is possible for any participant to check, without going through consensus, if they know what the password is.
+</p>
+<p>
+  Now that we know what the properties are, we need to encode them into our program via calls to Reach functions like <code>unknowable</code>, <code>assume</code>, and <code>require</code>.
+  Let's do that now.
+</p>
+<p><strong>Insert assertions into the program corresponding to facts that should be true.</strong></p>
+<p>Here's what we did:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6A737D">// First</span></li><li value="2"><span style="color: #6F42C1">unknowable</span><span style="color: #24292E">(Bob, </span><span style="color: #6F42C1">Alice</span><span style="color: #24292E">(_pass));</span></li><li value="3"></li><li value="4"><span style="color: #24292E">Bob.</span><span style="color: #6F42C1">only</span><span style="color: #24292E">(() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="5"><span style="color: #24292E"> </span><span style="color: #6A737D">// Second</span></li><li value="6"><span style="color: #24292E"> </span><span style="color: #6F42C1">assume</span><span style="color: #24292E">( passDigest </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #6F42C1">digest</span><span style="color: #24292E">(pass) ); });</span></li><li value="7"><span style="color: #24292E">Bob.</span><span style="color: #6F42C1">publish</span><span style="color: #24292E">(pass);</span></li><li value="8"></li><li value="9"><span style="color: #6A737D">// Third</span></li><li value="10"><span style="color: #005CC5">require</span><span style="color: #24292E">( passDigest </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #6F42C1">digest</span><span style="color: #24292E">(pass) );</span></li><li value="11"><span style="color: #6F42C1">transfer</span><span style="color: #24292E">(amt).</span><span style="color: #6F42C1">to</span><span style="color: #24292E">(Bob);</span></li><li value="12"><span style="color: #6F42C1">commit</span><span style="color: #24292E">();</span></li></ol></pre>
+<ul>
+  <li>First, we assert that Bob can't know Alice's password, <em>based on what the Reach program does</em>.</li>
+  <li>Next, we assert that Bob believes his password is correct (and that an honest Bob will check it.)</li>
+  <li>Finally, we assert that the consensus can only continue if this is the case.</li>
+</ul>
+<p>
+  At this point, we are almost ready to complete our program and make it so that we can run it.
+  You've probably noticed that in our samples, the variables <code>pass</code>, <code>amt</code>, and <code>passDigest</code> are undefined.
+  We'll handle that next.
+</p>
+<h2 id="interaction-introduction">Interaction Introduction</h2>
+<p>
+  A key concept of Reach programs is that they are concerned solely with the communication and consensus portions of a decentralized application.
+  Frontends are responsible for all other aspects of the program.
+  Thus, eventually a Reach programmer needs to insert calls into their code to send data to and from the frontend via the participant interact interfaces that they defined during the <em>Data Definition</em> step.
+</p>
+<p>
+  In our program, that means defining <code>amt</code> and <code>passDigest</code> by Alice and <code>pass</code> by Bob.
+  Do that now.
+</p>
+<p><strong>Insert <code>interact</code> calls to the frontend into the program.</strong></p>
+<p>Here's what we did:</p>
+<p>${code("/examples/workshop-hash-lock/index.rsh")}</p>
+<ul>
+  <li>Lines 11-14 have Alice declassify some of her values.</li>
+  <li>Line 21 has Bob provide his password.</li>
+</ul>
+<p>
+  ::: note
+  Did you notice that we didn't mention what line 5 is for?
+  We'll discuss that in the next section; don't worry!
+  :::
+</p>
+<p>At this point, when we</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">$ ../reach compile</li></ol></pre>
+<p>
+  We'll get a happy message that all our theorems are true.
+  Great job!
+  But we still need to run our program!
+</p>
+<h2 id="deployment-decisions">Deployment Decisions</h2>
+<p>
+  At this point, we need to decide how we're going to deploy this program and really use it in the world.
+  We need to decide how to deploy the contract, as well as what kind of user interaction modality we'll implement inside of our frontend.
+</p>
+<p><strong>Decide how you will deploy and use this application.</strong></p>
+<p>
+  ::: note
+  Unfortunately, on many consensus networks, like Ethereum and Algorand, this application is dangerous to run.
+  The problem is that a malicious miner, like Eve, can intercept Bob's message that provides him the funds, refuse to forward it through to the consensus network, take the password from it, and submit it for her own account.
+  There is not a good general solution to this problem, meaning a theorem that we could insert into our program to make sure this attack isn't possible, because the whole point of this application is that Bob's identity is not known at the time that Alice sends the first message.
+  Ideally, such networks would support a kind of cryptographic operation where Bob could prove that he knows the password without revealing it.
+  There are some ideas on how to provide this sort of thing through zero-knowledge proofs and homomorphic encryption, but there is no widely accepted and available solution.
+</p>
+<p>
+  In short: Don't run this program.
+  If you want to do something <em>like this</em>, then continue to the <a href="##workshop-relay">next workshop </a>on relays.
+  If you want to do exactly this, then stay tuned for a more complex zero-knowledge version.
+  :::
+</p>
+<p>
+  Next, we'll settle for a simple testing program for now to show the application, and let the rest of our full stack team deal with actually building the interface.
+  Here's the JavaScript frontend we wrote:
+</p>
+<p>${code("/examples/workshop-hash-lock/index.mjs")}</p>
+<p>
+  In this case, Bob learns the password outside of the Reach program by directly sharing memory with Alice.
+  In a real deployment, she might give Bob the password through some other channel, like an encrypted email message, or a calligraphic scroll delivered by raven or intoned from Himalayan cliffs.
+</p>
+<p>With this testing frontend in place, we can run</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">$ ../reach run</li></ol></pre>
+<p>and see an example execution:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">$ ../reach run</li><li value="2">Bob asked to give the preimage.</li><li value="3">Returning: 40816662354916515903581596667174503941307255426903039386763272451578996162763</li><li value="4">Alice went from 100.0 to 74.999999999999823944.</li><li value="5">Bob went from 100.0 to 124.999999999999978599.</li></ol></pre>
+<h2 id="discussion">Discussion</h2>
+<p>You did it!</p>
+<p>You implemented a Reach program totally on your own, with only a little bit of prodding.</p>
+<p>
+  Unlike <a href="##tut">the tutorial</a>, this workshop uses a "top-down" perspective on Reach application design, where you derive the program from the requirements and slowly fill out the shell, while knowing that each step was correct before moving on.
+  In contrast, in <a href="##tut">the tutorial</a>, we demonstrated a "bottom-up" style where you start implementing the easy parts and realize the problems and their fixes as you go.
+  There's no right way to program and in our own Reach development, we use a combination of the two tactics.
+  Try both and keep them both in mind during your own development.
+</p>
+<p>If you found this workshop rewarding, please let us know on <a href="$%7Bdiscord%7D">the Discord community</a>!</p>
+<p>
+  If you want to know what to do next, a natural extension of the concepts in this workshop is a <a href="##workshop-relay">relay account</a>.
+  Why don't you check it out?
+</p>

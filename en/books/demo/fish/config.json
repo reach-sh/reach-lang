@@ -1,0 +1,28 @@
+{
+  "author": null,
+  "background": "white",
+  "bookPath": "en/books/demo",
+  "bookTitle": "Demo Book",
+  "chapters": null,
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasEditBtn": true,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasRefreshBtn": true,
+  "menuItem": "mi-docs",
+  "pages": [
+    {
+      "Bony Fish": "bony-fish"
+    },
+    {
+      "Cartilaginous Fish": "cartilaginous-fish"
+    },
+    {
+      "Jawless Fish": "jawless-fish"
+    }
+  ],
+  "pathname": "/proj/docs/dev/en/books/demo/fish",
+  "publishedDate": null,
+  "title": "Fish"
+}

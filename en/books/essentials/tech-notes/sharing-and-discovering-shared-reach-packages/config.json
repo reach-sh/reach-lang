@@ -1,0 +1,18 @@
+{
+  "author": "Matt Audesse",
+  "background": "white",
+  "bookPath": "en/books/essentials",
+  "bookTitle": "Reach Essentials",
+  "chapters": null,
+  "hasOtp": false,
+  "hasCustomBase": false,
+  "hasEditBtn": true,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasRefreshBtn": true,
+  "menuItem": "mi-articles",
+  "pages": null,
+  "pathname": "/proj/docs/dev/en/books/essentials/tech-notes/sharing-and-discovering-shared-reach-packages",
+  "publishedDate": "2021-06-04T14:00:00.000Z",
+  "title": "Sharing and discovering shared Reach packages"
+}

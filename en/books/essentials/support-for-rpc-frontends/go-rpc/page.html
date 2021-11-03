@@ -1,0 +1,43 @@
+<p>
+  ::: note
+  This frontend library relies on the <a href="##ref-backends-rpc">Reach RPC Server</a>.
+  :::
+</p>
+<p>
+  A <a href="https://golang.org">Go</a> client library for the
+  <a href="##ref-backends-rpc">Reach RPC protocol</a> may be installed by running:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">$ go get github.com/reach-sh/reach-lang/rpc-client/go</li></ol></pre>
+<p>
+  Once installed, add the following import line to your Go file which will connect
+  to the <a href="##ref-backends-rpc">RPC server</a>:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">import</span><span style="color: #24292E"> </span><span style="color: #005CC5">reachrpc</span><span style="color: #24292E"> </span><span style="color: #032F62">"</span><span style="color: #E36209">github.com/reach-sh/reach-lang/rpc-client/go</span><span style="color: #032F62">"</span></li></ol></pre>
+<p>The library provides the following bindings:</p>
+<hr>
+<p>${ref((quote go), "reachrpc.Mk")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">rpc, rpcCallbacks </span><span style="color: #D73A49">:=</span><span style="color: #24292E"> reachrpc.</span><span style="color: #005CC5">Mk</span><span style="color: #24292E">(opts)</span></li></ol></pre>
+<p>
+  <code>reachrpc.Mk</code> accepts the ${seclink("ref-backends-rpc-opts")} as a <code>map</code>
+  and returns two functions, traditionally called <code>rpc</code> and
+  <code>rpcCallbacks</code>.
+</p>
+<p>
+  ${ref((quote go), "rpc")}
+  <code>rpc</code> is a function that invokes a synchronous value RPC method.
+  It takes a string, naming the RPC method, and some JSON values to provide as arguments.
+  It returns a single JSON value as the result.
+</p>
+<p>For example,</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">rpc</span><span style="color: #24292E">(</span><span style="color: #032F62">"/stdlib/formatCurrency"</span><span style="color: #24292E">, i, </span><span style="color: #005CC5">4</span><span style="color: #24292E">).(</span><span style="color: #D73A49">string</span><span style="color: #24292E">)</span></li></ol></pre>
+<p>calls <code>formatCurrency</code> with some value <code>i</code> and <code>4</code> and returns the result as a string.</p>
+<p>
+  ${ref((quote go), "rpcCallbacks")}
+  <code>rpcCallbacks</code> is a function that invokes an interactive RPC method, such as for a backend.
+  It takes a string, naming the RPC method, a JSON value as an argument, and map from strings to JSON values or functions.
+  The functions will be provided as interactive RPC callbacks to the RPC method and should expect JSON values as arguments and return a JSON value as a result.
+  It returns <code>void</code>.
+</p>
+<p>For example,</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">showX </span><span style="color: #D73A49">:=</span><span style="color: #24292E"> </span><span style="color: #D73A49">func</span><span style="color: #24292E">(xo </span><span style="color: #D73A49">interface</span><span style="color: #24292E">{}) {</span></li><li value="2"><span style="color: #24292E">  x </span><span style="color: #D73A49">:=</span><span style="color: #24292E"> </span><span style="color: #005CC5">int</span><span style="color: #24292E">(</span><span style="color: #005CC5">rpc</span><span style="color: #24292E">(</span><span style="color: #032F62">"/stdlib/bigNumberToNumber"</span><span style="color: #24292E">, xo).(</span><span style="color: #D73A49">float64</span><span style="color: #24292E">))</span></li><li value="3"><span style="color: #24292E">  fmt.</span><span style="color: #005CC5">Printf</span><span style="color: #24292E">(</span><span style="color: #032F62">"Alice saw that X is </span><span style="color: #005CC5">%f\n</span><span style="color: #032F62">"</span><span style="color: #24292E">, x)</span></li><li value="4"><span style="color: #24292E">}</span></li><li value="5"><span style="color: #24292E">ms </span><span style="color: #D73A49">:=</span><span style="color: #24292E"> </span><span style="color: #D73A49">map</span><span style="color: #24292E">[</span><span style="color: #D73A49">string</span><span style="color: #24292E">]</span><span style="color: #D73A49">interface</span><span style="color: #24292E">{} {</span></li><li value="6"><span style="color: #24292E">  </span><span style="color: #032F62">"price"</span><span style="color: #24292E">: </span><span style="color: #005CC5">10</span><span style="color: #24292E">,</span></li><li value="7"><span style="color: #24292E">  </span><span style="color: #032F62">"showX"</span><span style="color: #24292E">: showX,</span></li><li value="8"><span style="color: #24292E">}</span></li><li value="9"><span style="color: #005CC5">rpcCallbacks</span><span style="color: #24292E">(</span><span style="color: #032F62">"/backend/Alice"</span><span style="color: #24292E">, ctc, ms)</span></li></ol></pre>
+<p>calls a backend named <code>Alice</code> with the contract <code>ctc</code> and a value named <code>price</code> and a method named <code>showX</code> that prints out a result from the Reach backend.</p>

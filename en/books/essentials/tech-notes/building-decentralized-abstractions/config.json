@@ -1,0 +1,18 @@
+{
+  "author": "Jay McCarthy",
+  "background": "white",
+  "bookPath": "en/books/essentials",
+  "bookTitle": "Reach Essentials",
+  "chapters": null,
+  "hasOtp": false,
+  "hasCustomBase": false,
+  "hasEditBtn": true,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasRefreshBtn": true,
+  "menuItem": "mi-docs",
+  "pages": null,
+  "pathname": "/proj/docs/dev/en/books/essentials/tech-notes/building-decentralized-abstractions",
+  "publishedDate": "2020-08-29T14:00:00.000Z",
+  "title": "Building decentralized abstractions"
+}

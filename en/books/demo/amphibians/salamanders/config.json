@@ -1,0 +1,18 @@
+{
+  "author": null,
+  "background": "white",
+  "bookPath": "en/books/demo",
+  "bookTitle": "Demo Book",
+  "chapters": null,
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasEditBtn": true,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasRefreshBtn": true,
+  "menuItem": "mi-docs",
+  "pages": null,
+  "pathname": "/proj/docs/dev/en/books/demo/amphibians/salamanders",
+  "publishedDate": null,
+  "title": "Salamanders"
+}

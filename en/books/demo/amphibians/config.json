@@ -1,0 +1,31 @@
+{
+  "author": null,
+  "background": "white",
+  "bookPath": "en/books/demo",
+  "bookTitle": "Demo Book",
+  "chapters": null,
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasEditBtn": true,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasRefreshBtn": true,
+  "menuItem": "mi-docs",
+  "pages": [
+    {
+      "Frogs": "frogs"
+    },
+    {
+      "Newts": "newts"
+    },
+    {
+      "Salamanders": "salamanders"
+    },
+    {
+      "Toads": "toads"
+    }
+  ],
+  "pathname": "/proj/docs/dev/en/books/demo/amphibians",
+  "publishedDate": null,
+  "title": "Amphibians"
+}

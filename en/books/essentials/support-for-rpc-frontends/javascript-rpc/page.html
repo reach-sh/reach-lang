@@ -1,0 +1,39 @@
+<p>
+  ::: note
+  This frontend library relies on the <a href="##ref-backends-rpc">Reach RPC Server</a>.
+  :::
+</p>
+<p>
+  A <a href="https://www.javascript.com">JavaScript</a> client library for the
+  <a href="##ref-backends-rpc">Reach RPC protocol</a> may be installed by running:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">$ npm install --save @reach-sh/rpc-client</li></ol></pre>
+<p>
+  Once installed, add the following import line to your JavaScript file which will
+  connect to the <a href="##ref-backends-rpc">RPC server</a>:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">import</span><span style="color: #24292E"> { mkRPC } </span><span style="color: #D73A49">from</span><span style="color: #24292E"> </span><span style="color: #032F62">'@reach-sh/rpc-client'</span><span style="color: #24292E">;</span></li></ol></pre>
+<p>The library provides the following bindings:</p>
+<hr>
+<p>${ref((quote js), "mkRPC")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> { </span><span style="color: #005CC5">rpc</span><span style="color: #24292E">, </span><span style="color: #005CC5">rpcCallbacks</span><span style="color: #24292E"> } </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #D73A49">await</span><span style="color: #24292E"> </span><span style="color: #6F42C1">mkRPC</span><span style="color: #24292E">(opts);</span></li></ol></pre>
+<p><code>mkRPC</code> accepts the ${seclink("ref-backends-rpc-opts")} as an object and returns a Promise of an object with two fields, <code>rpc</code> and <code>rpcCallbacks</code>.</p>
+<p>
+  ${ref((quote js), "rpc")}
+  <code>rpc</code> is a function that invokes a synchronous value RPC method.
+  It takes a string, naming the RPC method, and some JSON values to provide as arguments.
+  It returns a Promise of a single JSON value as the result.
+</p>
+<p>For example,</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">await</span><span style="color: #24292E"> </span><span style="color: #6F42C1">rpc</span><span style="color: #24292E">(</span><span style="color: #032F62">`/stdlib/formatCurrency`</span><span style="color: #24292E">, i, </span><span style="color: #005CC5">4</span><span style="color: #24292E">);</span></li></ol></pre>
+<p>calls <code>formatCurrency</code> with some value <code>i</code> and <code>4</code>.</p>
+<p>
+  ${ref((quote js), "rpcCallbacks")}
+  <code>rpcCallbacks</code> is a function that invokes an interactive RPC method, such as for a backend.
+  It takes a string, naming the RPC method, a JSON value as an argument, and dictionary from strings to JSON values or <code>async</code> functions.
+  The functions will be provided as interactive RPC callbacks to the RPC method and should expect JSON values as arguments and return a Promise of a JSON value as a result.
+  It returns a Promise that does not contain a value.
+</p>
+<p>For example,</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #6F42C1">showX</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #D73A49">async</span><span style="color: #24292E"> (</span><span style="color: #E36209">xo</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">x</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #D73A49">await</span><span style="color: #24292E"> </span><span style="color: #6F42C1">rpc</span><span style="color: #24292E">(</span><span style="color: #032F62">`/stdlib/bigNumberToNumber`</span><span style="color: #24292E">, xo);</span></li><li value="3"><span style="color: #24292E">  console.</span><span style="color: #6F42C1">log</span><span style="color: #24292E">(</span><span style="color: #032F62">`Alice saw that X is ${</span><span style="color: #24292E">x</span><span style="color: #032F62">}`</span><span style="color: #24292E">);</span></li><li value="4"><span style="color: #24292E">};</span></li><li value="5"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">ms</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> {</span></li><li value="6"><span style="color: #24292E">  </span><span style="color: #032F62">'price'</span><span style="color: #24292E">: </span><span style="color: #005CC5">10</span><span style="color: #24292E">,</span></li><li value="7"><span style="color: #24292E">  </span><span style="color: #032F62">'showX'</span><span style="color: #24292E">: showX,</span></li><li value="8"><span style="color: #24292E">};</span></li><li value="9"><span style="color: #D73A49">await</span><span style="color: #24292E"> </span><span style="color: #6F42C1">rpcCallbacks</span><span style="color: #24292E">(</span><span style="color: #032F62">`/backend/Alice`</span><span style="color: #24292E">, ctc, ms)</span></li></ol></pre>
+<p>calls a backend named <code>Alice</code> with the contract <code>ctc</code> and a value named <code>price</code> and a method named <code>showX</code> that prints out a result from the Reach backend.</p>

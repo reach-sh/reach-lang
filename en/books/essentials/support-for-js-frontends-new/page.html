@@ -1,0 +1,40 @@
+<p>The Reach JavaScript Standard Library, a <a href="https://www.npmjs.com/package/@reach-sh/stdlib">Node.js package</a>, provides a generic consensus-network interface for JavaScript frontends and backends that make up Reach DApps. It also provides a variety of utility methods. The <code>reach run</code> command installs the package automatically. You can also install it manually:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">$ npm install @reach-sh/stdlib</li></ol></pre>
+<p>The library consists of objects (e.g. stdlib, account, contract) composed of properties and methods dealing with accounts, arithmetic, big numbers, comparisons, consensus network providers, contracts, debugging, encryption, randomization, and time.</p>
+<h1 id="import">Import</h1>
+<p>Reach provides one implementation of the standard library for each supported consensus network. There are several ways to import the library into your JavaScript module:</p>
+<p>Import an Algorand instance:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import * as stdlib from '@reach-sh/stdlib/ALGO.mjs';</li><li value="2">(async () =&gt; {</li><li value="3">  console.log(stdlib);</li><li value="4">})();</li></ol></pre>
+<p>Import an Ethereum instance:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import * as stdlib from '@reach-sh/stdlib/ETH.mjs';</li><li value="2">(async () =&gt; {</li><li value="3">  console.log(stdlib);</li><li value="4">})();</li></ol></pre>
+<p>Import with implicit reference to process.env:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  console.log(stdlib);</li><li value="5">})();</li></ol></pre>
+<p>Import with explicit reference to process.env:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib(process.env);</li><li value="4">  console.log(stdlib);</li><li value="5">})();</li></ol></pre>
+<p>Import additional getter functions:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { getConnector, getConnectorMode, loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  console.log(getConnector());</li><li value="4">  console.log(getConnectorMode());</li><li value="5">  const stdlib = await loadStdlib();</li><li value="6">  console.log(stdlib);</li><li value="7">})();</li></ol></pre>
+<ul>
+  <li><code>getConnector</code> returns a string indicating the consensus network (e.g. ALGO, ETH).</li>
+  <li><code>getConnectorMode</code> returns a string indicating the consensus network mode (e.g. ETH-test-dockerized-geth).</li>
+</ul>
+<h1 id="inspect">Inspect</h1>
+<p>The following steps can help you inspect these objects:</p>
+<ol>
+  <li>
+    <p>Create a directory:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1">% mkdir test</li><li value="2">% cd test</li></ol></pre>
+  </li>
+  <li>
+    <p>Create a template Reach project which consists of two files: <code>index.mjs</code> and <code>index.rsh</code>.</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1">% reach init</li></ol></pre>
+  </li>
+  <li>
+    <p>Replace <code>index.mjs</code> with the following:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">import * as backend from './build/index.main.mjs';</li><li value="3">(async () =&gt; {</li><li value="4">  const stdlib = await loadStdlib();</li><li value="5">  const balance = stdlib.parseCurrency(10);</li><li value="6">  const account = await stdlib.newTestAccount(balance);</li><li value="7">  const contract = account.deploy(backend);</li><li value="8">  console.log(stdlib);</li><li value="9">  console.log(account);</li><li value="10">  console.log(contract);</li><li value="11">})();</li></ol></pre>
+  </li>
+  <li>
+    <p>Run the application with one or both of the following:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1">$ REACH_CONNECTOR_MODE=ALGO reach run</li><li value="2">$ REACH_CONNECTOR_MODE=ETH reach run</li></ol></pre>
+    <p>Output displays the properties and methods of the three objects which differ slightly depending on the target consensus network.</p>
+  </li>
+</ol>

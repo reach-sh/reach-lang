@@ -1,0 +1,390 @@
+<h1 id="properties">Properties</h1>
+<h2 id="atomicunit">atomicUnit</h2>
+<p>This string property represents the smallest indivisible unit of measure for the standard unit. For Algorand, the standard unit is ALGO and the atomic unit is μALGO. For Ethereum, the standard unit is ETH and the atomic unit is WEI.</p>
+<h3 id="example">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  console.log(stdlib.atomicUnit);</li><li value="5">})();</li></ol></pre>
+<h3 id="output">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">μALGO  # ALGO</li><li value="2">WEI    # ETH</li></ol></pre>
+<h2 id="connector">connector</h2>
+<p>This property contains a string representing the current consensus network.</p>
+<h3 id="example-1">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  console.log(stdlib.connector);</li><li value="5">})();</li></ol></pre>
+<h3 id="output-1">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">ALGO</li><li value="2">ETH</li></ol></pre>
+<h2 id="hasrandom">hasRandom</h2>
+<p>This property is the following object: {random: [Function: randomUInt]}.</p>
+<h3 id="example-2">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  for (let i = 0; i &lt; 5; i++) {</li><li value="5">    console.log(`Random #${i+1}: ${stdlib.hasRandom.random()}`);</li><li value="6">  }</li><li value="7">})();</li></ol></pre>
+<h3 id="output-2">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"># ALGO</li><li value="2">Random #1: 17830142387684920417</li><li value="3">Random #2: 17746974019939158498</li><li value="4">Random #3: 9160898625104005994</li><li value="5">Random #4: 3613411261652842147</li><li value="6">Random #5: 983361309112715662</li><li value="7"></li><li value="8"># ETH</li><li value="9">Random #1: 27607848804729973581014410502293711971761448598557376981283183717322704017433</li><li value="10">Random #2: 60037153247786503166971761128506669526562161409390884377433244834184239865070</li><li value="11">Random #3: 58769759163361652927045305807023328094637415231145708005951464780084755561144</li><li value="12">Random #4: 35785320426544831645097143845375516087094351111486972004275998413013072818256</li><li value="13">Random #5: 38153054402165990843880482716988449931280675794450268073745162749585985896245</li></ol></pre>
+<h2 id="minimumbalance">minimumBalance</h2>
+<p>This BigInteger property represents the minimum balance in atomic units for any account associated with the consensus network.</p>
+<h3 id="example-3">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  console.log(`Minimum balance is ${stdlib.minimumBalance}.`);</li><li value="5">})();</li></ol></pre>
+<h3 id="output-3">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">Minimum balance is 100000. # ALGO</li><li value="2">Minimum balance is 0.      # ETH</li></ol></pre>
+<h2 id="standardunit">standardUnit</h2>
+<p>This string property represents the network token unit most commonly associated with a network. For Algorand, the standard unit is ALGO. For Ethereum, the standard unit is ETH.</p>
+<h3 id="example-4">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  console.log(stdlib.standardUnit);</li><li value="5">})();</li></ol></pre>
+<h3 id="output-4">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">ALGO</li><li value="2">ETH</li></ol></pre>
+<h1 id="methods">Methods</h1>
+<h2 id="add">add</h2>
+<p>This method performs integer addition.</p>
+<h3 id="signature">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">add(x, y) =&gt; sum</li><li value="2">x must be an integer.</li><li value="3">y must be an integer.</li><li value="4">sum is a BigNumber.</li></ol></pre>
+<h3 id="example-5">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const x = 1</li><li value="5">  const y = 2</li><li value="6">  const sum = stdlib.add(x, y)</li><li value="7">  console.log(`${x} + ${y} = ${sum}`)</li><li value="8">})();</li></ol></pre>
+<h3 id="output-5">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">1 + 2 = 3</li></ol></pre>
+<h2 id="addresseq">addressEq</h2>
+<p>This method compares network addresses for equality.</p>
+<h3 id="signature-1">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">addressEq(address1, address2) =&gt; tf</li><li value="2">address1 is a string representing a network address.</li><li value="3">address2 is a string representing a network address.</li><li value="4">tf is a boolean.</li></ol></pre>
+<h3 id="example-6">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const balanceIn = stdlib.parseCurrency(10);</li><li value="5">  const account1 = await stdlib.newTestAccount(balanceIn);</li><li value="6">  const account2 = await stdlib.newTestAccount(balanceIn);</li><li value="7">  const address1 = account1.getAddress();</li><li value="8">  const address2 = account2.getAddress();</li><li value="9">  console.log(`Address 1: ${address1}`);</li><li value="10">  console.log(address1 == address2 ? '==' : '!=');</li><li value="11">  console.log(stdlib.addressEq(address1, address2) ? '==' : '!=');</li><li value="12">  console.log(`Address 2: ${address2}`);</li><li value="13">})();</li></ol></pre>
+<h3 id="output-6">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">Address 1: 0x4CCEa1a6782deB31Ee30C70F26F2c045bD7bc22e</li><li value="2">!=</li><li value="3">!=</li><li value="4">Address 2: 0x71e337b01b5b9479f2D7993A286c177728f7E3eb</li></ol></pre>
+<h2 id="argsslice">argsSlice</h2>
+<p>This method creates an array containing the last count elements of the original array.</p>
+<h3 id="signature-2">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">argsSlice(arr1, count) =&gt; arr2</li><li value="2">arr1 is an array.</li><li value="3">count is an integer between 0 and arr1.length inclusive.</li><li value="4">arr2 is a new array.</li></ol></pre>
+<h3 id="example-7">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const arr = [1,2,3,4,5]</li><li value="5">  console.log(stdlib.argsSlice(arr, 0))</li><li value="6">  console.log(stdlib.argsSlice(arr, 1))</li><li value="7">  console.log(stdlib.argsSlice(arr, 2))</li><li value="8">  console.log(stdlib.argsSlice(arr, 3))</li><li value="9">  console.log(stdlib.argsSlice(arr, 4))</li><li value="10">  console.log(stdlib.argsSlice(arr, 5))</li><li value="11">  console.log(stdlib.argsSlice(arr, 100))  // count &gt; arr.length</li><li value="12">  console.log(stdlib.argsSlice(arr, -100)) // count &lt; arr.length</li><li value="13">})();</li></ol></pre>
+<h3 id="output-7">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">[]</li><li value="2">[ 5 ]</li><li value="3">[ 4, 5 ]</li><li value="4">[ 3, 4, 5 ]</li><li value="5">[ 2, 3, 4, 5 ]</li><li value="6">[ 1, 2, 3, 4, 5 ]</li><li value="7">[ 1, 2, 3, 4, 5 ] # count &gt; arr.length</li><li value="8">[]                # count &lt; arr.length</li></ol></pre>
+<h2 id="argssplit">argsSplit</h2>
+<p>This method creates an array containing two new arrays containing the elements of the original array split at count.</p>
+<h3 id="signature-3">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">argsSplit(arr1, count) =&gt; arr2</li><li value="2">arr1 is an array.</li><li value="3">count is an integer between 0 and arr1.length inclusive.</li><li value="4">arr2 is a new array containing two new arrays.</li></ol></pre>
+<h3 id="example-8">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const arr = [1,2,3,4,5]</li><li value="5">  console.log(stdlib.argsSplit(arr, 0))</li><li value="6">  console.log(stdlib.argsSplit(arr, 1))</li><li value="7">  console.log(stdlib.argsSplit(arr, 2))</li><li value="8">  console.log(stdlib.argsSplit(arr, 3))</li><li value="9">  console.log(stdlib.argsSplit(arr, 4))</li><li value="10">  console.log(stdlib.argsSplit(arr, 5))</li><li value="11">  console.log(stdlib.argsSplit(arr, 100))  // count &gt; arr.length</li><li value="12">  console.log(stdlib.argsSplit(arr, -100)) // count &lt; arr.length</li><li value="13">})();</li></ol></pre>
+<h3 id="output-8">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">[ [ 1, 2, 3, 4, 5 ], [] ]</li><li value="2">[ [ 1, 2, 3, 4 ], [ 5 ] ]</li><li value="3">[ [ 1, 2, 3 ], [ 4, 5 ] ]</li><li value="4">[ [ 1, 2 ], [ 3, 4, 5 ] ]</li><li value="5">[ [ 1 ], [ 2, 3, 4, 5 ] ]</li><li value="6">[ [], [ 1, 2, 3, 4, 5 ] ]</li><li value="7">[ [], [ 1, 2, 3, 4, 5 ] ] # count &gt; arr.length</li><li value="8">[ [ 1, 2, 3, 4, 5 ], [] ] # count &lt; arr.length</li></ol></pre>
+<h2 id="array_set">Array_set</h2>
+<p>This method creates and returns a copy of an array, overwriting an original value with a new value at the specified position.</p>
+<h3 id="signature-4">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">Array_set(arr1, index, value) =&gt; Promise<arr2></arr2></li><li value="2">arr1 is the original array.</li><li value="3">index is the 0-based index.</li><li value="4">value is the replacement value.</li><li value="5">arr2 is the new array.</li></ol></pre>
+<h3 id="example-9">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const arr1 = [1,2,3,4,5]</li><li value="5">  const arr2 = stdlib.Array_set(arr1, 1, 9)</li><li value="6">  console.log(arr1)</li><li value="7">  console.log(arr2)</li><li value="8">})();</li></ol></pre>
+<h3 id="output-9">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">[ 1, 2, 3, 4, 5 ]</li><li value="2">[ 1, 9, 3, 4, 5 ]</li></ol></pre>
+<h2 id="array_zip">Array_zip</h2>
+<p>This method creates an array of two-element arrays by combining two same-length arrays where arr1[0] and arr2[0] form the first two-element array, arr1[1] and arr2[1] for the second, etc. The elements of the new array are the actual elements of the parameters. They are not copies.</p>
+<h3 id="signature-5">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">Array_zip(arr1, arr2) =&gt; arr3</li><li value="2">arr1 is an array.</li><li value="3">arr2 is an array.</li><li value="4">arr3 is an array.</li></ol></pre>
+<h3 id="example-10">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4"></li><li value="5">  console.log('\n', 'Example 1:');</li><li value="6">  const arr1 = ['one', 'two', 'three'];</li><li value="7">  const arr2 = [1, 2, 3];</li><li value="8">  const nums = stdlib.Array_zip(arr1, arr2)</li><li value="9">  console.log(nums);</li><li value="10"></li><li value="11">  console.log('\n', 'Example 2:');</li><li value="12">  const p1 = {fname: 'Jane', lname: 'Doe', age: 30};</li><li value="13">  const p2 = {fname: 'John', lname: 'Jie', age: 25};</li><li value="14">  const p = [p1, p2]</li><li value="15">  const a1 = {street: '123 Main Street', city: 'London'};</li><li value="16">  const a2 = {street: '456 Pine Street', city: 'Munich'};</li><li value="17">  const a = [a1, a2];</li><li value="18">  const pa = stdlib.Array_zip(p, a)</li><li value="19">  console.log(pa);</li><li value="20"></li><li value="21">  console.log('\n', 'Example 3:');</li><li value="22">  console.log(p1);</li><li value="23">  console.log(`is${p1 === pa[0][0] ? '' : ' NOT'} the same instance as`);</li><li value="24">  console.log(pa[0][0]);</li><li value="25">})();</li></ol></pre>
+<h3 id="output-10">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">Example 1:</li><li value="2">[ [ 'one', 1 ], [ 'two', 2 ], [ 'three', 3 ] ]</li><li value="3"></li><li value="4">Example 2:</li><li value="5">[</li><li value="6">  [</li><li value="7">    { fname: 'Jane', lname: 'Doe', age: 30 },</li><li value="8">    { street: '123 Main Street', city: 'London' }</li><li value="9">  ],</li><li value="10">  [</li><li value="11">    { fname: 'John', lname: 'Jie', age: 25 },</li><li value="12">    { street: '456 Pine Street', city: 'Munich' }</li><li value="13">  ]</li><li value="14">]</li><li value="15"></li><li value="16">Example 3:</li><li value="17">{ fname: 'Jane', lname: 'Doe', age: 30 }</li><li value="18">is the same instance as</li><li value="19">{ fname: 'Jane', lname: 'Doe', age: 30 }</li></ol></pre>
+<h2 id="assert">assert</h2>
+<h2 id="balanceof">balanceOf</h2>
+<p>This method returns the number of network tokens in atomic units held by the account.</p>
+<h3 id="signature-6">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">balanceOf(account) =&gt; Promise<amount></amount></li><li value="2">account is a Reach account object.</li><li value="3">amount is a BigNumber of tokens in atomic units.</li></ol></pre>
+<h3 id="example-11">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const balanceIn = stdlib.parseCurrency(10);</li><li value="5">  const account = await stdlib.newTestAccount(balanceIn);</li><li value="6">  const balanceOut = await stdlib.balanceOf(account);</li><li value="7">  console.log(`Balance: ${balanceOut} ${stdlib.atomicUnit}.`);</li><li value="8">})();</li></ol></pre>
+<h3 id="output-11">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">Balance: 10000000 μALGO.           # ALGO</li><li value="2">Balance: 10000000000000000000 WEI. # ETH</li></ol></pre>
+<h2 id="bignumberify">bigNumberify</h2>
+<p>This method converts a number into a BigNumber.</p>
+<h3 id="signature-7">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">bigNumberify(n) =&gt; bn</li><li value="2">n is a number.</li><li value="3">bn is a BigNumber.</li></ol></pre>
+<h3 id="example-12">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  [5, '5'].forEach(v =&gt; {</li><li value="5">    const bn = stdlib.bigNumberify(v);</li><li value="6">    console.log(`Converting the ${typeof v} ${v} to a ${bn.constructor.name} ${bn}.`);</li><li value="7">  });</li><li value="8">})();</li></ol></pre>
+<h3 id="output-12">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">Converting the number 5 to a BigNumber 5.</li><li value="2">Converting the string 5 to a BigNumber 5.</li></ol></pre>
+<h2 id="bignumbertohex">bigNumberToHex</h2>
+<p>This method converts a BigNumber into a hexadecimal string.</p>
+<h3 id="signature-8">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">bigNumberToHex(bn) =&gt; s</li><li value="2">bn is a BigNumber.</li><li value="3">s is a string.</li></ol></pre>
+<h3 id="example-13">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const bn = stdlib.bigNumberify(5);</li><li value="5">  const s = stdlib.bigNumberToHex(bn);</li><li value="6">  console.log(`Type:  ${typeof s}`);</li><li value="7">  console.log(`Value: 0x${s}`)</li><li value="8">})();</li></ol></pre>
+<h3 id="output-13">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">Type:  string</li><li value="2">Value: 0x0000000000000000000000000000000000000000000000000000000000000005</li></ol></pre>
+<h2 id="bignumbertonumber">bigNumberToNumber</h2>
+<p>This method converts a BigNumber into a number.</p>
+<h3 id="signature-9">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">bigNumberToNumber(bn) =&gt; n</li><li value="2">bn is a BigNumber.</li><li value="3">n is a number.</li></ol></pre>
+<h3 id="example-14">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const bn = stdlib.bigNumberify(12345);</li><li value="5">  const n = stdlib.bigNumberToNumber(bn);</li><li value="6">  console.log(`Type:  ${typeof n}`);</li><li value="7">  console.log(`Value: ${n}`)</li><li value="8">})();</li></ol></pre>
+<h3 id="output-14">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">Type:  number</li><li value="2">Value: 12345</li></ol></pre>
+<h2 id="byteseq">bytesEq</h2>
+<p>This method compares strings for equality.</p>
+<h3 id="signature-10">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">bytesEq(s1, s2) =&gt; tf</li><li value="2">s1 is a string.</li><li value="3">s2 is a string.</li><li value="4">tf is a boolean.</li></ol></pre>
+<h3 id="example-15">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const s1 = 'test1';</li><li value="5">  const s2 = 'test2';</li><li value="6">  console.log(`String 1: ${s1}`);</li><li value="7">  console.log(s1 == s2 ? '==' : '!=');</li><li value="8">  console.log(stdlib.bytesEq(s1, s2) ? '==' : '!=');</li><li value="9">  console.log(`String 2: ${s2}`);</li><li value="10">})();</li></ol></pre>
+<h3 id="output-15">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">String 1: test1</li><li value="2">!=</li><li value="3">!=</li><li value="4">String 2: test2</li></ol></pre>
+<h2 id="checkedbignumberify">checkedBigNumberify</h2>
+<h2 id="connectaccount">connectAccount</h2>
+<p>This method returns the Reach account object associated with the NetworkAccount object provided. The term connect in the method name does not refer to making a connection. Rather, it emphasizes that the returned Reach account object corresponds to the particular connected consensus network.</p>
+<h3 id="signature-11">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">connectAccount(networkAccount) =&gt; Promise<account></account></li><li value="2">networkAccount is consensus network account specification object.</li><li value="3">account is a Reach account object.</li></ol></pre>
+<h3 id="example-16">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">This example program is somewhat contrived. It gets networkAccount from account, and then it gets the same account from networkAccount.</li><li value="2"></li><li value="3">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="4">(async () =&gt; {</li><li value="5">  const stdlib = await loadStdlib();</li><li value="6">  const balance = stdlib.parseCurrency(10);</li><li value="7">  const account = await stdlib.newTestAccount(balance);</li><li value="8">  const networkAccount = account.networkAccount;</li><li value="9">  const sameAccount = await stdlib.connectAccount(networkAccount)</li><li value="10">  console.log(sameAccount);</li><li value="11">})();</li></ol></pre>
+<h2 id="createaccount">createAccount</h2>
+<p>This method creates and returns a Reach account object with a balance of zero network tokens.</p>
+<h3 id="signature-12">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">createAccount() =&gt; Promise<account></account></li><li value="2">account is a Reach account object.</li></ol></pre>
+<h3 id="example-17">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const account = await stdlib.createAccount();</li><li value="5">  console.log(account);</li><li value="6">})();</li></ol></pre>
+<h2 id="debug">debug</h2>
+<h2 id="digest">digest</h2>
+<h2 id="digesteq">digestEq</h2>
+<h2 id="div">div</h2>
+<p>This method performs integer division.</p>
+<h3 id="signature-13">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">div(x, y) =&gt; quot</li><li value="2">x must be an integer.</li><li value="3">y must be an integer.</li><li value="4">quot is a BigNumber with no remainder.</li></ol></pre>
+<h3 id="example-18">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const x = 20</li><li value="5">  const y = 7</li><li value="6">  const quot = stdlib.div(x, y)</li><li value="7">  console.log(`${x} / ${y} = ${quot}`)</li><li value="8">})();</li></ol></pre>
+<h3 id="output-16">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">20 / 7 = 2</li></ol></pre>
+<h2 id="envdefault">envDefault</h2>
+<p>I ran the following:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  console.log(stdlib.envDefault(process.env));</li><li value="5">  console.log(process.env);</li><li value="6">})();</li></ol></pre>
+<p>The only difference between the two is the following:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">&lt;   HOSTNAME: 'b43bddc766a8',</li><li value="2">---</li><li value="3">&gt;   HOSTNAME: 'faaf8df0dc92',</li></ol></pre>
+<h2 id="eq">eq</h2>
+<p>This method determines if one integer is equal to another integer.</p>
+<h3 id="signature-14">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">eq(x, y) =&gt; tf</li><li value="2">x is an integer.</li><li value="3">y is an integer.</li><li value="4">tf is a boolean.</li></ol></pre>
+<h3 id="example-19">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  let x = 4;</li><li value="5">  [-4, 4, 8].forEach((y) =&gt; {</li><li value="6">    console.log(`${x} == ${y} is ${stdlib.eq(x, y)} (${x == y})`)</li><li value="7">  });</li><li value="8">})();</li></ol></pre>
+<h3 id="output-17">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">4 == -4 is false (false)</li><li value="2">4 == 4 is true (true)</li><li value="3">4 == 8 is false (false)</li></ol></pre>
+<h2 id="formatcurrency">formatCurrency</h2>
+<p>This method converts a network token amount from an atomic unit number to a standard unit string.</p>
+<h3 id="signature-15">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">formatCurrency(auAmount, decimals) =&gt; suAmountStr</li><li value="2">auAmount is a number of tokens in atomic units.</li><li value="3">decimals is the number of decimal places to retain.</li><li value="4">suAmountStr is a string representing tokens in standard units.</li></ol></pre>
+<h3 id="example-20">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const suAmount = 100.5678;</li><li value="5">  const auAmount = stdlib.parseCurrency(suAmount);</li><li value="6">  const suAmountStr = stdlib.formatCurrency(auAmount, 2);</li><li value="7">  console.log(`Standard Unit Amt = ${suAmount} ${stdlib.standardUnit}`)</li><li value="8">  console.log(`Atomic Unit Amt   = ${auAmount} ${stdlib.atomicUnit}`)</li><li value="9">  console.log(`Standard Unit Amt Str = ${suAmountStr} ${stdlib.standardUnit}`)</li><li value="10">})();</li></ol></pre>
+<h3 id="output-18">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"># ALGO</li><li value="2">Standard Unit Amt = 100.5678 ALGO</li><li value="3">Atomic Unit Amt   = 100567800 μALGO</li><li value="4">Standard Unit Amt Str = 100.56 ALGO</li><li value="5"></li><li value="6"># ETH</li><li value="7">Standard Unit Amt = 100.5678 ETH</li><li value="8">Atomic Unit Amt   = 100567800000000000000 WEI</li><li value="9">Standard Unit Amt Str = 100.56 ETH</li></ol></pre>
+<h2 id="fundfromfaucet">fundFromFaucet</h2>
+<p>This method adds the given balance of network tokens in atomic units to an account.</p>
+<h3 id="signature-16">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">fundFromFaucet(account, balance) =&gt; Promise<void></void></li><li value="2">account is a Reach account object.</li><li value="3">balance is a number of tokens in atomic units with BigNumber applied.</li></ol></pre>
+<h3 id="example-21">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const balance = stdlib.parseCurrency(10);</li><li value="5">  const account = await stdlib.newTestAccount(balance);</li><li value="6">  await stdlib.fundFromFaucet(account, 10);</li><li value="7">  console.log(`Account balance: ${await stdlib.balanceOf(account)} ${stdlib.atomicUnit}.`);</li><li value="8">})();</li></ol></pre>
+<h3 id="output-19">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">Account balance: 10000010 μALGO.            # REACH_CONNECTOR_MODE=ALGO</li><li value="2">Account balance: 10000000000000000010 WEI.  # REACH_CONNECTOR_MODE=ETH</li></ol></pre>
+<h2 id="ge">ge</h2>
+<p>This method determines if one integer is greater than or equal to another integer.</p>
+<h3 id="signature-17">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">  ge(x, y) =&gt; tf</li><li value="2">  x is an integer.</li><li value="3">  y is an integer.</li><li value="4">  tf is a boolean.</li></ol></pre>
+<h3 id="example-22">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  let x = 4;</li><li value="5">  [-4, 4, 8].forEach((y) =&gt; {</li><li value="6">    console.log(`${x} &gt;= ${y} is ${stdlib.ge(x, y)} (${x &gt;= y})`)</li><li value="7">  });</li><li value="8">})();</li></ol></pre>
+<h3 id="output-20">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">4 &gt;= -4 is true (true)</li><li value="2">4 &gt;= 4 is true (true)</li><li value="3">4 &gt;= 8 is false (false)</li></ol></pre>
+<h2 id="getdebug">getDEBUG</h2>
+<p>This method returns true/false if the REACH_DEBUG environment variable is set to true/false.</p>
+<h3 id="signature-18">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">getDEBUG() =&gt; tf</li><li value="2">tf is a boolean.</li></ol></pre>
+<h3 id="example-23">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  console.log(stdlib.getDEBUG());</li><li value="5">})();</li><li value="6">Run this example with one of the following commands:</li><li value="7"></li><li value="8">$ REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=false reach run</li><li value="9">$ REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=true reach run</li><li value="10">$ REACH_CONNECTOR_MODE=ETH REACH_DEBUG=false reach run</li><li value="11">$ REACH_CONNECTOR_MODE=ETH REACH_DEBUG=true reach run</li></ol></pre>
+<h3 id="output-21">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">false or true</li></ol></pre>
+<h2 id="getdefaultaccount">getDefaultAccount</h2>
+<p>This method returns the Reach account object associated with the default consensus NetworkAccount. If your program is running in a browser, then the Reach account object is associated with a wallet (e.g. MetaMask or AlgoSignor). If running in a Node.js environment while connected to a Reach devnet, then the Reach account object is the faucet for the devnet. The method throws an exception if there is no default NetworkAccount defined.</p>
+<h3 id="signature-19">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">getDefaultAccount() =&gt; Promise<account></account></li><li value="2">account is a Reach account object.</li></ol></pre>
+<h3 id="example-24">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const account = await stdlib.getDefaultAccount();</li><li value="5">  const faucet = await stdlib.getFaucet();</li><li value="6">  console.log(`Balance: ${await stdlib.balanceOf(account)} ${stdlib.atomicUnit}.`);</li><li value="7">  console.log(`Balance:  ${await stdlib.balanceOf(faucet)} ${stdlib.atomicUnit}.`);</li><li value="8">})();</li></ol></pre>
+<h3 id="output-22">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"># REACH_CONNECTOR_MODE=ETH</li><li value="2">Balance: 115792089237316195423570985008687907853269984665640564038997584007913129821763 WEI.</li><li value="3">Balance: 115792089237316195423570985008687907853269984665640564038997584007913129821763 WEI.</li></ol></pre>
+<h2 id="getfaucet">getFaucet</h2>
+<p>This method returns the faucet for the devnet.</p>
+<h3 id="signature-20">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">getFaucet() =&gt; Promise<faucet></faucet></li><li value="2">faucet is a Reach account object.</li></ol></pre>
+<h3 id="example-25">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const account = await stdlib.getDefaultAccount();</li><li value="5">  const faucet = await stdlib.getFaucet();</li><li value="6">  console.log(`Account balance: ${await stdlib.balanceOf(account)} ${stdlib.atomicUnit}.`);</li><li value="7">  console.log(`Faucet balance:  ${await stdlib.balanceOf(faucet)} ${stdlib.atomicUnit}.`);</li><li value="8">})();</li></ol></pre>
+<h3 id="output-23">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"># REACH_CONNECTOR_MODE=ETH</li><li value="2">Account balance: 115792089237316195423570985008687907853269984665640564038997584007913129821763 WEI.</li><li value="3">Faucet balance:  115792089237316195423570985008687907853269984665640564038997584007913129821763 WEI.</li></ol></pre>
+<h2 id="getnetworktime">getNetworkTime</h2>
+<p>This method returns (for ALGO and ETH) the current block number.</p>
+<h3 id="signature-21">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">getNetworkTime() =&gt; Promise<time></time></li><li value="2">time is a BigNumber.</li></ol></pre>
+<h3 id="example-26">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  console.log(`Network time is ${await stdlib.getNetworkTime()}.`);</li><li value="5">})();</li></ol></pre>
+<h3 id="output-24">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"># ALGO</li><li value="2">Network time is 127573.</li><li value="3"></li><li value="4"># ETH</li><li value="5">Network time is 236.</li></ol></pre>
+<h2 id="getprovider">getProvider</h2>
+<p>This method returns the current Reach provider object.</p>
+<h3 id="signature-22">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">getProvider() =&gt; Promise<provider></provider></li><li value="2">provider is a network-specific Reach provider object.</li></ol></pre>
+<h3 id="example-27">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  console.log(await stdlib.getProvider());</li><li value="5">})();</li></ol></pre>
+<h2 id="gt">gt</h2>
+<p>This method determines if one integer is greater than another integer.</p>
+<h3 id="signature-23">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">gt(x, y) =&gt; tf</li><li value="2">x is an integer.</li><li value="3">y is an integer.</li><li value="4">tf is a boolean.</li></ol></pre>
+<h3 id="example-28">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  let x = 4;</li><li value="5">  [-4, 4, 8].forEach((y) =&gt; {</li><li value="6">    console.log(`${x} &gt; ${y} is ${stdlib.gt(x, y)} (${x &gt; y})`)</li><li value="7">  });</li><li value="8">})();</li></ol></pre>
+<h3 id="output-25">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">4 &gt; -4 is true (true)</li><li value="2">4 &gt; 4 is false (false)</li><li value="3">4 &gt; 8 is false (false)</li></ol></pre>
+<h2 id="hextobignumber">hexToBigNumber</h2>
+<p>This method converts hexadecimal string into a a BigNumber.</p>
+<h3 id="signature-24">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">hexToBigNumber(s) =&gt; bn</li><li value="2">s is a string representing a hexadecimal number. 0x is optional.</li><li value="3">bn is a BigNumber.</li></ol></pre>
+<h3 id="example-29">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const s1 = '123abc';</li><li value="5">  const bn1 = stdlib.hexToBigNumber(s1);</li><li value="6">  console.log(`${typeof s1}   ${s1} to ${bn1.constructor.name} ${bn1}`);</li><li value="7">  const s2 = '0x123abc';</li><li value="8">  const bn2 = stdlib.hexToBigNumber(s2);</li><li value="9">  console.log(`${typeof s2} ${s2} to ${bn2.constructor.name} ${bn2}`);</li><li value="10">})();</li></ol></pre>
+<h3 id="output-26">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">string   123abc to BigNumber 1194684</li><li value="2">string 0x123abc to BigNumber 1194684</li></ol></pre>
+<h2 id="hextostring">hexToString</h2>
+<p>This method converts an array of hexadecimal ascii values to a string.</p>
+<h3 id="signature-25">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">hexToString(h) =&gt; s</li><li value="2">h is a string representing s as an array of hex ascii values (e.g. "0x7265616368").</li><li value="3">s is a string (e.g. "reach").</li></ol></pre>
+<h3 id="example-30">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const h = '0x7265616368';</li><li value="5">  const s = stdlib.hexToString(h);</li><li value="6">  console.log(`${typeof h} "${h}" to ${typeof s} "${s}".`);</li><li value="7">})();</li></ol></pre>
+<h3 id="output-27">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">string "0x7265616368" to string "reach".</li></ol></pre>
+<h2 id="isbignumber">isBigNumber</h2>
+<p>This method determines whether a value is of type BigNumber.</p>
+<h3 id="signature-26">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">isBigNumber(v) =&gt; tf</li><li value="2">v is a value of some type.</li><li value="3">tf is a boolean.</li></ol></pre>
+<h3 id="example-31">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  [2, stdlib.bigNumberify(2), '2', 'two'].forEach(v =&gt; {</li><li value="5">    console.log(`${v} is ${stdlib.isBigNumber(v) ? '' : 'NOT '}a BigNumber.`);</li><li value="6">  });</li><li value="7">})();</li></ol></pre>
+<h3 id="output-28">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">2 is NOT a BigNumber.</li><li value="2">2 is a BigNumber.</li><li value="3">2 is NOT a BigNumber.</li><li value="4">two is NOT a BigNumber.</li></ol></pre>
+<h2 id="ishex">isHex</h2>
+<p>This method determines whether a string is a hexadecimal ascii array (e.g. "0x7265616368").</p>
+<h3 id="signature-27">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">isHex(s) =&gt; tf</li><li value="2">s is a string.</li><li value="3">tf is a boolean.</li></ol></pre>
+<h3 id="example-32">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  ['0x7265616368', '7265616368'].forEach(v =&gt; {</li><li value="5">    console.log(`"${v}" is ${stdlib.isHex(v) ? '' : 'NOT '}a hex ascii array.`);</li><li value="6">  });</li><li value="7">})();</li></ol></pre>
+<h3 id="output-29">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">"0x7265616368" is a hex ascii array.</li><li value="2">"7265616368" is NOT a hex ascii array.</li></ol></pre>
+<h2 id="le">le</h2>
+<p>This method determines if one integer is less than or equal to another integer.</p>
+<h3 id="signature-28">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">le(x, y) =&gt; tf</li><li value="2">x is an integer.</li><li value="3">y is an integer.</li><li value="4">tf is a boolean.</li></ol></pre>
+<h3 id="example-33">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  let x = 4;</li><li value="5">  [-4, 4, 8].forEach((y) =&gt; {</li><li value="6">    console.log(`${x} &lt;= ${y} is ${stdlib.le(x, y)} (${x &lt;= y})`)</li><li value="7">  });</li><li value="8">})();</li></ol></pre>
+<h3 id="output-30">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">4 &lt;= -4 is false (false)</li><li value="2">4 &lt;= 4 is true (true)</li><li value="3">4 &lt;= 8 is true (true)</li></ol></pre>
+<h2 id="lt">lt</h2>
+<p>This method determines if one integer is less than another integer.</p>
+<h3 id="signature-29">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">lt(x, y) =&gt; tf</li><li value="2">x is an integer.</li><li value="3">y is an integer.</li><li value="4">tf is a boolean.</li></ol></pre>
+<h3 id="example-34">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  let x = 4;</li><li value="5">  [-4, 4, 8].forEach((y) =&gt; {</li><li value="6">    console.log(`${x} &lt; ${y} is ${stdlib.lt(x, y)} (${x &lt; y})`)</li><li value="7">  });</li><li value="8">})();</li></ol></pre>
+<h3 id="output-31">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">4 &lt; -4 is false (false)</li><li value="2">4 &lt; 4 is false (false)</li><li value="3">4 &lt; 8 is true (true)</li></ol></pre>
+<h2 id="makedigest">makeDigest</h2>
+<h2 id="makerandom">makeRandom</h2>
+<h2 id="mapref">mapRef</h2>
+<h2 id="mkaddresseq">mkAddressEq</h2>
+<h2 id="mod">mod</h2>
+<p>This method performs integer modulus, returning the remainder of integer division.</p>
+<h3 id="signature-30">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">mod(x, y) =&gt; mod</li><li value="2">x must be an integer.</li><li value="3">y must be an integer.</li><li value="4">mod is a BigNumber.</li></ol></pre>
+<h3 id="example-35">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const x = 20</li><li value="5">  const y = 7</li><li value="6">  const mod = stdlib.mod(x, y)</li><li value="7">  console.log(`${x} % ${y} = ${mod}`)</li><li value="8">})();</li></ol></pre>
+<h3 id="output-32">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">20 % 7 = 6</li></ol></pre>
+<h2 id="mul">mul</h2>
+<p>This method performs integer multiplication.</p>
+<h3 id="signature-31">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">mul(x, y) =&gt; prod</li><li value="2">x must be an integer.</li><li value="3">y must be an integer.</li><li value="4">prod is a BigNumber.</li></ol></pre>
+<h3 id="example-36">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const x = 3</li><li value="5">  const y = 7</li><li value="6">  const prod = stdlib.mul(x, y)</li><li value="7">  console.log(`${x} x ${y} = ${prod}`)</li><li value="8">})();</li></ol></pre>
+<h3 id="output-33">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">3 x 7 = 21</li></ol></pre>
+<h2 id="newaccountfrommnemonic">newAccountFromMnemonic</h2>
+<p>This method, given a string representing a network-specific mnemonic phrase, creates and returns a Reach account object with a balance of zero network tokens.</p>
+<h3 id="signature-32">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">newAccountFromMnemonic(phrase) =&gt; Promise<account></account></li><li value="2">phrase is a string for a network-specific mnemonic phrase.</li><li value="3">account is a Reach account object.</li></ol></pre>
+<p>Here is an example Ethereum Mnemonic object, including the phrase property:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">{</li><li value="2">  phrase: 'museum pass catch idea van nice letter glove jaguar coast arch pipe',</li><li value="3">  path: "m/44'/60'/0'/0/0",</li><li value="4">  locale: 'en'</li><li value="5">}</li></ol></pre>
+<h3 id="example-37">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const balance = stdlib.parseCurrency(10);</li><li value="5">  const account = await stdlib.newTestAccount(balance);</li><li value="6">  const mnemonic = account.networkAccount._mnemonic();</li><li value="7">  console.log(mnemonic);</li><li value="8">  const account2 = await stdlib.newAccountFromMnemonic(mnemonic.phrase);</li><li value="9">  console.log(account2);</li><li value="10">})();</li></ol></pre>
+<h2 id="newaccountfromsecret">newAccountFromSecret</h2>
+<h2 id="newtestaccount">newTestAccount</h2>
+<p>This method creates and returns a Reach account object with the given balance in atomic units.</p>
+<h3 id="signature-33">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">newTestAccount(balance) =&gt; Promise<account></account></li><li value="2">balance is a BigNumber of tokens in atomic units.</li><li value="3">account is a Reach account object.</li></ol></pre>
+<h3 id="example-38">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const balance = stdlib.parseCurrency(10);</li><li value="5">  const account = await stdlib.newTestAccount(balance);</li><li value="6">  console.log(account);</li><li value="7">})();</li></ol></pre>
+<h2 id="objectmap">objectMap</h2>
+<h2 id="parsecurrency">parseCurrency</h2>
+<p>This method converts a network token amount from standard units to atomic units.</p>
+<h3 id="signature-34">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">parseCurrency(suAmount) =&gt; auAmount</li><li value="2">suAmount is a number of tokens in standard units</li><li value="3">auAmount is BigNumber of tokens in atomic units</li></ol></pre>
+<h3 id="example-39">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const suAmount = 100.5;</li><li value="5">  const auAmount = stdlib.parseCurrency(suAmount);</li><li value="6">  console.log(`Standard Unit Amt = ${suAmount} ${stdlib.standardUnit}`)</li><li value="7">  console.log(`Atomic Unit Amt   = ${auAmount} ${stdlib.atomicUnit}`)</li><li value="8">})();</li></ol></pre>
+<h3 id="output-34">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"># REACH_CONNECTOR_MODE=ALGO</li><li value="2">Standard Unit Amt = 100.5 ALGO</li><li value="3">Atomic Unit Amt   = 100500000 μALGO</li><li value="4"></li><li value="5"># REACH_CONNECTOR_MODE=ETH</li><li value="6">Standard Unit Amt = 100.5 ETH</li><li value="7">Atomic Unit Amt   = 100500000000000000000 WEI</li></ol></pre>
+<h2 id="parsefixedpoint">parseFixedPoint</h2>
+<h2 id="parseint">parseInt</h2>
+<h2 id="protect">protect</h2>
+<h2 id="providerenvbyname">providerEnvByName</h2>
+<h2 id="randomuint">randomUInt</h2>
+<p>This method generates a random BigNumber.</p>
+<h3 id="signature-35">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">randomUInt() =&gt; r</li><li value="2">r is a BigNumber representing a random number.</li></ol></pre>
+<h3 id="example-40">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  for (let i = 0; i &lt; 5; i++) {</li><li value="5">    console.log(`Random #${i+1}: ${stdlib.randomUInt()}`);</li><li value="6">  }</li><li value="7">})();</li></ol></pre>
+<h3 id="output-35">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"># ALGO</li><li value="2">Random #1: 17830142387684920417</li><li value="3">Random #2: 17746974019939158498</li><li value="4">Random #3: 9160898625104005994</li><li value="5">Random #4: 3613411261652842147</li><li value="6">Random #5: 983361309112715662</li><li value="7"></li><li value="8"># ETH</li><li value="9">Random #1: 27607848804729973581014410502293711971761448598557376981283183717322704017433</li><li value="10">Random #2: 60037153247786503166971761128506669526562161409390884377433244834184239865070</li><li value="11">Random #3: 58769759163361652927045305807023328094637415231145708005951464780084755561144</li><li value="12">Random #4: 35785320426544831645097143845375516087094351111486972004275998413013072818256</li><li value="13">Random #5: 38153054402165990843880482716988449931280675794450268073745162749585985896245</li></ol></pre>
+<h2 id="setdebug">setDEBUG</h2>
+<h2 id="setfaucet">setFaucet</h2>
+<h2 id="setprovider">setProvider</h2>
+<h2 id="setproviderbyenv">setProviderByEnv</h2>
+<h2 id="setproviderbyname">setProviderByName</h2>
+<h2 id="stringtohex">stringToHex</h2>
+<p>This method converts a string to an array of hexadecimal ascii values.</p>
+<h3 id="signature-36">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">stringToHex(s) =&gt; h</li><li value="2">s is a string (e.g. "reach").</li><li value="3">h is a string representing s as an array of hex ascii values (e.g. "0x7265616368").</li></ol></pre>
+<h3 id="example-41">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const s = 'reach';</li><li value="5">  const h = stdlib.stringToHex(s);</li><li value="6">  console.log(`${typeof s} "${s}" to ${typeof h} "${h}".`);</li><li value="7">})();</li></ol></pre>
+<h3 id="output-36">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">string "reach" to string "0x7265616368".</li></ol></pre>
+<h2 id="sub">sub</h2>
+<p>This method performs integer subtraction.</p>
+<h3 id="signature-37">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">sub(x, y) =&gt; diff</li><li value="2">x must be an integer.</li><li value="3">y must be an integer.</li><li value="4">diff is a BigNumber.</li></ol></pre>
+<h3 id="example-42">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const x = 3</li><li value="5">  const y = 7</li><li value="6">  const diff = stdlib.sub(x, y)</li><li value="7">  console.log(`${x} - ${y} = ${diff}`)</li><li value="8">})();</li></ol></pre>
+<h3 id="output-37">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">3 - 7 = -4</li></ol></pre>
+<h2 id="transfer">transfer</h2>
+<p>This method transfers network tokens in atomic units from one account to another. The source account pays any consensus network fees. If you do not provide a token parameter, then the transfer unit is network tokens. Otherwise, the transfer unit is the designated token type.</p>
+<h3 id="signature-38">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">transfer(srcAccount, dstAccount, amount[, token]) =&gt; Promise<void></void></li><li value="2">srcAccount is a Reach account object.</li><li value="3">dstAccount is a Reach account object.</li><li value="4">amount is an integer of tokens in atomic units.</li><li value="5">token is a string for type of token.</li></ol></pre>
+<h3 id="example-43">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const balance = stdlib.parseCurrency(20);</li><li value="5">  const srcAccount = await stdlib.newTestAccount(balance);</li><li value="6">  const dstAccount = await stdlib.newTestAccount(balance);</li><li value="7">  const iSrcBalance = await stdlib.balanceOf(srcAccount);</li><li value="8">  const iDstBalance = await stdlib.balanceOf(dstAccount);</li><li value="9">  const xferAmount = stdlib.parseCurrency(5);</li><li value="10">  await stdlib.transfer(srcAccount, dstAccount, xferAmount);</li><li value="11">  const fSrcBalance = await stdlib.balanceOf(srcAccount);</li><li value="12">  const fDstBalance = await stdlib.balanceOf(dstAccount);</li><li value="13">  console.log(`Src Account: ${iSrcBalance} - ${xferAmount} = ${fSrcBalance} ${stdlib.atomicUnit}.`);</li><li value="14">  console.log(`Dst Account: ${iDstBalance} + ${xferAmount} = ${fDstBalance} ${stdlib.atomicUnit}.`);</li><li value="15">})();</li></ol></pre>
+<h3 id="output-38">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"># ALGO</li><li value="2">Src Account: 20000000 - 5000000 = 14999000 μALGO.</li><li value="3">Dst Account: 20000000 + 5000000 = 25000000 μALGO.</li><li value="4"></li><li value="5"># ETH</li><li value="6">Src Account: 20000000000000000000 - 5000000000000000000 = 14999999999999979000 WEI.</li><li value="7">Dst Account: 20000000000000000000 + 5000000000000000000 = 25000000000000000000 WEI.</li></ol></pre>
+<h2 id="uinttobytes">uintToBytes</h2>
+<p>This method accepts a number or BigNumber, and returns a string representing the BigNumber form of the input.</p>
+<h3 id="signature-39">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">uintToBytes(input) =&gt; output</li><li value="2">input is a number or BigNumber.</li><li value="3">output is a string representing a BigNumber.</li></ol></pre>
+<h3 id="example-44">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  [5, stdlib.bigNumberify(5)].forEach(v =&gt; {</li><li value="5">    const output = stdlib.uintToBytes(v);</li><li value="6">    console.log(`${v.constructor.name} ${v} to ${typeof output} ${output}`);</li><li value="7">  });</li><li value="8">})();</li></ol></pre>
+<h3 id="output-39">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">Number 5 to string 0000000000000000000000000000000000000000000000000000000000000005</li><li value="2">BigNumber 5 to string 0000000000000000000000000000000000000000000000000000000000000005</li></ol></pre>
+<h2 id="verifycontract">verifyContract</h2>
+<h2 id="wait">wait</h2>
+<p>This method returns a promise that is resolved after the specified number of consensus network time units pass. A time unit for ALGO and ETH is one block. If you provide an optional onProgress callback, then waitUntilTime invokes the callback repeatedly during the wait time, passing an object with the BigNumber keys $jsin{currentTime} and targetTime.</p>
+<p>If you launch reach run in an isolated testing mode, this method will force network time to pass, usually by generating trivial transactions resulting in new block formation. You launch reach run in an isolated testing mode by setting REACH_ISOLATED_NETWORK=true, or by choosing a REACH_CONNECTOR_MODE that matches $NET-test-dockerized-$IMPL for all valid $NET and $IMPL. Here is an example:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">$ REACH_CONNECTOR_MODE=ALGO REACH_ISOLATED_NETWORK=true reach run</li><li value="2">$ REACH_CONNECTOR_MODE=ETH REACH_ISOLATED_NETWORK=true reach run</li></ol></pre>
+<h3 id="signature-40">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">wait(delta, onProgress) =&gt; Promise<time></time></li><li value="2">delta is a BigNumber representing time units to wait.</li><li value="3">onProgress is an optional callback function.</li><li value="4">time is a BigNumber representing current network time.</li></ol></pre>
+<h3 id="example-45">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const startTime = await stdlib.getNetworkTime();</li><li value="5">  console.log(`Start Time: ${startTime}`);</li><li value="6">  const delta = 3;</li><li value="7">  console.log(`Delta: ${delta}`);</li><li value="8">  const actualEndTime = await stdlib.wait(delta, (status) =&gt; {</li><li value="9">    console.log(`Current Time: ${status.currentTime}, Target Time: ${status.targetTime}`);</li><li value="10">  });</li><li value="11">  console.log(`Actual End Time: ${actualEndTime}`);</li><li value="12">})();</li></ol></pre>
+<h3 id="output-40">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"># ALGO</li><li value="2">Start Time: 140438</li><li value="3">Delta: 3</li><li value="4">Current Time: 140439, Target Time: 140441</li><li value="5">Current Time: 140440, Target Time: 140441</li><li value="6">Current Time: 140441, Target Time: 140441</li><li value="7">Actual End Time: 140441</li><li value="8"></li><li value="9"># ETH</li><li value="10">Start Time: 245</li><li value="11">Delta: 3</li><li value="12">Current Time: 245, Target Time: 248</li><li value="13">Current Time: 246, Target Time: 248</li><li value="14">Current Time: 247, Target Time: 248</li><li value="15">Current Time: 248, Target Time: 248</li><li value="16">Actual End Time: 248</li></ol></pre>
+<h2 id="waituntiltime">waitUntilTime</h2>
+<p>This method returns a promise that is resolved after the consensus network reaches the specified time which, for ALGO and ETH, is the current block number. If you provide an optional onProgress callback, then waitUntilTime invokes the callback repeatedly during the wait time, passing an object with the BigNumber keys $jsin{currentTime} and targetTime.</p>
+<p>If you launch reach run in an isolated testing mode, this method will force network time to pass, usually by generating trivial transactions resulting in new block formation. You launch reach run in an isolated testing mode by setting REACH_ISOLATED_NETWORK=true, or by choosing a REACH_CONNECTOR_MODE that matches $NET-test-dockerized-$IMPL for all valid $NET and $IMPL. Here is an example:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">$ REACH_CONNECTOR_MODE=ALGO REACH_ISOLATED_NETWORK=true reach run</li><li value="2">$ REACH_CONNECTOR_MODE=ETH REACH_ISOLATED_NETWORK=true reach run</li></ol></pre>
+<h3 id="signature-41">Signature</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">waitUntilTime(desiredEndTime, onProgress) =&gt; Promise<time></time></li><li value="2">desiredEndTime is a BigNumber.</li><li value="3">onProgress is an optional callback function.</li><li value="4">time is a BigNumber representing current network time.</li></ol></pre>
+<h3 id="example-46">Example</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">(async () =&gt; {</li><li value="3">  const stdlib = await loadStdlib();</li><li value="4">  const startTime = await stdlib.getNetworkTime();</li><li value="5">  console.log(`Start Time: ${startTime}`);</li><li value="6">  const delta = 3;</li><li value="7">  console.log(`Delta: ${delta}`);</li><li value="8">  const desiredEndTime = stdlib.add(startTime, delta);</li><li value="9">  console.log(`Desired End Time: ${desiredEndTime}`);</li><li value="10">  const actualEndTime = await stdlib.waitUntilTime(desiredEndTime, (status) =&gt; {</li><li value="11">    console.log(`Current Time: ${status.currentTime}, Target Time: ${status.targetTime}`);</li><li value="12">  });</li><li value="13">  console.log(`Actual End Time: ${actualEndTime}`);</li><li value="14">})();</li></ol></pre>
+<h3 id="output-41">Output</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"># ALGO</li><li value="2">Start Time: 140135</li><li value="3">Delta: 3</li><li value="4">Desired End Time: 140138</li><li value="5">Current Time: 140136, Target Time: 140138</li><li value="6">Current Time: 140137, Target Time: 140138</li><li value="7">Current Time: 140138, Target Time: 140138</li><li value="8">Actual End Time: 140138</li><li value="9"></li><li value="10"># ETH</li><li value="11">Start Time: 242</li><li value="12">Delta: 3</li><li value="13">Desired End Time: 245</li><li value="14">Current Time: 242, Target Time: 245</li><li value="15">Current Time: 243, Target Time: 245</li><li value="16">Current Time: 244, Target Time: 245</li><li value="17">Current Time: 245, Target Time: 245</li><li value="18">Actual End Time: 245</li></ol></pre>

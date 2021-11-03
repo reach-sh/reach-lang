@@ -1,0 +1,18 @@
+{
+  "author": "Jay McCarthy",
+  "background": "white",
+  "bookPath": "en/books/essentials",
+  "bookTitle": "Reach Essentials",
+  "chapters": null,
+  "hasOtp": false,
+  "hasCustomBase": false,
+  "hasEditBtn": true,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasRefreshBtn": true,
+  "menuItem": "mi-articles",
+  "pages": null,
+  "pathname": "/proj/docs/dev/en/books/essentials/tech-notes/racing-non-determinism-in-dapps",
+  "publishedDate": "2020-12-09T14:00:00.000Z",
+  "title": "Racing non-determinism in decentralized applications"
+}

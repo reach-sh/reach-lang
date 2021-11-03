@@ -1,0 +1,1165 @@
+<p>This section describes the common features available in all Reach contexts.</p>
+<h2 id="comments">Comments</h2>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6A737D">// single-line comment</span></li><li value="2"><span style="color: #6A737D">/* multi-line</span></li><li value="3"><span style="color: #6A737D"> * comment</span></li><li value="4"><span style="color: #6A737D"> */</span></li></ol></pre>
+<p>
+  Comments are text that is ignored by the compiler.
+  Text starting with <code>//</code> up until the end of the line forms a ${defn("single-line comment")}.
+  Text enclosed with <code>/*</code> and <code>*/</code> forms a ${defn("multi-line comment")}.
+  It is invalid to nest a multi-line comment within a multi-line comment.
+</p>
+<h2 id="blocks">Blocks</h2>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">{ </span><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #005CC5">42</span><span style="color: #24292E">; }</span></li><li value="2"><span style="color: #24292E">{ </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">x</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">31</span><span style="color: #24292E">;</span></li><li value="3"><span style="color: #24292E">  </span><span style="color: #D73A49">return</span><span style="color: #24292E"> x </span><span style="color: #D73A49">+</span><span style="color: #24292E"> </span><span style="color: #005CC5">11</span><span style="color: #24292E">; }</span></li><li value="4"><span style="color: #24292E">{ </span><span style="color: #D73A49">if</span><span style="color: #24292E"> ( x </span><span style="color: #D73A49">&lt;</span><span style="color: #24292E"> y ) {</span></li><li value="5"><span style="color: #24292E">    </span><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #032F62">"Why"</span><span style="color: #24292E">;</span></li><li value="6"><span style="color: #24292E">  } </span><span style="color: #D73A49">else</span><span style="color: #24292E"> {</span></li><li value="7"><span style="color: #24292E">    </span><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #032F62">"Ecks"</span><span style="color: #24292E">; } }</span></li></ol></pre>
+<p>A ${defn("block")} is a sequence of statements surrounded by braces, i.e. <code>{</code> and <code>}</code>.</p>
+<h2 id="statements">Statements</h2>
+<p>This section describes the ${defn("statements")} which are allowed in any Reach context.</p>
+<p>Each statement affects the meaning of the subsequent statements, which is called its ${defn("tail")}. For example, if <code>{X; Y; Z;}</code> is a block, then <code>X</code>'s tail is <code>{Y; Z;}</code> and <code>Y</code>'s tail is <code>{Z;}</code>.</p>
+<p>Distinct from tails are ${defn("continuations")} which include everything after the statement. For example, in <code>{ {X; Y;}; Z;}</code>, <code>X</code>'s tail is just <code>Y</code>, but its continuation is <code>{Y;}; Z;</code>.</p>
+<p>Tails are statically apparent from the structure of the program source code, while continuations are influenced by function calls.</p>
+<p>A sequence of statements that does not end in a ${defn("terminator statement")} (a statement with no tail), such as a return statement, continue statement, or exit statement is treated as if it ended with <code>return null;</code>.</p>
+<p>The remainder of this section enumerates each kind of statement.</p>
+<h3 id="const-and-function"><code>const</code> and <code>function</code></h3>
+<p>
+  An ${defn("identifier definition")} is either
+  a value definition
+  or a function definition.
+  Each of these introduces one or more ${defn("bound identifier")}s.
+</p>
+<hr>
+<p>${ref((quote rsh), "const")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">DELAY</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">10</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">Good</span><span style="color: #24292E">, </span><span style="color: #005CC5">Bad</span><span style="color: #24292E"> ] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">42</span><span style="color: #24292E">, </span><span style="color: #005CC5">43</span><span style="color: #24292E"> ];</span></li><li value="3"><span style="color: #D73A49">const</span><span style="color: #24292E"> { </span><span style="color: #005CC5">x</span><span style="color: #24292E">, </span><span style="color: #005CC5">y</span><span style="color: #24292E"> } </span><span style="color: #D73A49">=</span><span style="color: #24292E"> { x: </span><span style="color: #005CC5">1</span><span style="color: #24292E">, y: </span><span style="color: #005CC5">2</span><span style="color: #24292E"> };</span></li><li value="4"><span style="color: #D73A49">const</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">x</span><span style="color: #24292E">, [ </span><span style="color: #005CC5">y</span><span style="color: #24292E"> ] ] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">1</span><span style="color: #24292E">, [ </span><span style="color: #005CC5">2</span><span style="color: #24292E"> ] ];</span></li><li value="5"><span style="color: #D73A49">const</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">x</span><span style="color: #24292E">, { </span><span style="color: #005CC5">y</span><span style="color: #24292E"> } ] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">1</span><span style="color: #24292E">, { y: </span><span style="color: #005CC5">2</span><span style="color: #24292E"> } ];</span></li><li value="6"><span style="color: #D73A49">const</span><span style="color: #24292E"> { </span><span style="color: #E36209">x</span><span style="color: #24292E">: [ </span><span style="color: #005CC5">a</span><span style="color: #24292E">, </span><span style="color: #005CC5">b</span><span style="color: #24292E"> ] } </span><span style="color: #D73A49">=</span><span style="color: #24292E"> { x: [ </span><span style="color: #005CC5">1</span><span style="color: #24292E">, </span><span style="color: #005CC5">2</span><span style="color: #24292E"> ] };</span></li></ol></pre>
+<p>
+  ::: note
+  Valid ${defn("identifiers")} follow the same rules as JavaScript identifiers:
+  they may consist of Unicode alphanumeric characters,
+  or <code>_</code> or <code>$</code>,
+  but may not begin with a digit.
+  :::
+</p>
+<p>A ${defn("value definition")} is written <code>const LHS = RHS;</code>.</p>
+<p><code>LHS</code> must obey the grammar:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">LHS =</li><li value="2">  | id</li><li value="3">  | "[" LHS-tuple-seq "]"</li><li value="4">  | "{" LHS-obj-seq "}"</li><li value="5">LHS-tuple-seq =</li><li value="6">  |</li><li value="7">  | "..." LHS</li><li value="8">  | LHS</li><li value="9">  | LHS "," LHS-tuple-seq</li><li value="10">LHS-obj-seq =</li><li value="11">  |</li><li value="12">  | "..." LHS</li><li value="13">  | LHS-obj-elem</li><li value="14">  | LHS-obj-elem "," LHS-obj-seq</li><li value="15">LHS-obj-elem =</li><li value="16">  | id</li><li value="17">  | propertyName ":" LHS</li><li value="18">propertyName =</li><li value="19">  | id</li><li value="20">  | string</li><li value="21">  | number</li><li value="22">  | "[" expr "]"</li></ol></pre>
+<p>
+  <code>RHS</code> must be compatible with the given <code>LHS</code>.
+  That is, if a <code>LHS</code> is an <code>LHS-tuple-seq</code>, then the corresponding <code>RHS</code> must be a tuple with the correct number of elements.
+  If a <code>LHS</code> is an <code>LHS-obj-seq</code>, then the corresponding <code>RHS</code> must be an object with the correct fields.
+</p>
+<p>Those values are available as their corresponding bound identifiers in the statement's tail.</p>
+<hr>
+<p>${ref((quote rsh), "function")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">function</span><span style="color: #24292E"> </span><span style="color: #6F42C1">randomBool</span><span style="color: #24292E">() {</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #D73A49">return</span><span style="color: #24292E"> (interact.</span><span style="color: #6F42C1">random</span><span style="color: #24292E">() </span><span style="color: #D73A49">%</span><span style="color: #24292E"> </span><span style="color: #005CC5">2</span><span style="color: #24292E">) </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">0</span><span style="color: #24292E">; };</span></li></ol></pre>
+<p>A ${defn("function definition")}, written <code>function FUN(LHS_0, ..., LHS_n) BLOCK;</code>, defines <code>FUN</code> as a function which abstracts its ${defn("function body")}, the block <code>BLOCK</code>, over the left-hand sides <code>LHS_0</code> through <code>LHS_n</code>.</p>
+<p>
+  Function parameters may specify default arguments. The expressions used to instantiate these parameters
+  have access to any variables in the scope of which the function was defined. Additionally, these expressions
+  may reference previous arguments of the function definition.
+  Parameters with default arguments must come after all other parameters.
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">function</span><span style="color: #24292E"> </span><span style="color: #6F42C1">f</span><span style="color: #24292E">(</span><span style="color: #E36209">a</span><span style="color: #24292E">, </span><span style="color: #E36209">b</span><span style="color: #24292E">, </span><span style="color: #E36209">c</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> a </span><span style="color: #D73A49">+</span><span style="color: #24292E"> </span><span style="color: #005CC5">1</span><span style="color: #24292E">, </span><span style="color: #E36209">d</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> b </span><span style="color: #D73A49">+</span><span style="color: #24292E"> c) </span><span style="color: #D73A49">=&gt;</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #E36209">a</span><span style="color: #24292E"> + </span><span style="color: #E36209">b</span><span style="color: #24292E"> + </span><span style="color: #E36209">c</span><span style="color: #24292E"> + </span><span style="color: #E36209">d</span><span style="color: #24292E">;</span></li></ol></pre>
+<p>
+  The last parameter of a function may be a ${defn("rest parameter")}, which allows the function to be called
+  with an arbitrary number of arguments. A rest parameter is specified via <code>...IDENT</code>, where
+  <code>IDENT</code> is bound to a <code>Tuple</code> containing all the remaining arguments.
+</p>
+<hr>
+<p>
+  All identifiers in Reach programs must be ${defn("unbound")}
+  at the position of the program where they are bound,
+  i.e., it is invalid to shadow identifiers with new definitions.
+  For example,
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">x</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">3</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">x</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">4</span><span style="color: #24292E">;</span></li></ol></pre>
+<p>
+  is invalid.
+  This restriction is independent of whether a binding is
+  only known to a single participant. For example,
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Alice.</span><span style="color: #6F42C1">only</span><span style="color: #24292E">(() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">x</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">3</span><span style="color: #24292E">; });</span></li><li value="3"><span style="color: #24292E">Bob.</span><span style="color: #6F42C1">only</span><span style="color: #24292E">(() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="4"><span style="color: #24292E">  </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">x</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">3</span><span style="color: #24292E">; });</span></li></ol></pre>
+<p>is invalid.</p>
+<p>
+  The special identifier <code>_</code> is an exception to this rule.
+  The <code>_</code> binding is always considered to be unbound.
+  This means means that <code>_</code> is both
+  an identifier that can never be read,
+  as well as an identifier that may be bound many times.
+  This may be useful for ignoring unwanted values, for example:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> [</span><span style="color: #005CC5">_</span><span style="color: #24292E">, </span><span style="color: #005CC5">x</span><span style="color: #24292E">, </span><span style="color: #005CC5">_</span><span style="color: #24292E">] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> [</span><span style="color: #005CC5">1</span><span style="color: #24292E">, </span><span style="color: #005CC5">2</span><span style="color: #24292E">, </span><span style="color: #005CC5">3</span><span style="color: #24292E">];</span></li></ol></pre>
+<h3 id="return"><code>return</code></h3>
+<p>${ref((quote rsh), "return")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #005CC5">17</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #005CC5">3</span><span style="color: #24292E"> </span><span style="color: #D73A49">+</span><span style="color: #24292E"> </span><span style="color: #005CC5">4</span><span style="color: #24292E">;</span></li><li value="3"><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #6F42C1">f</span><span style="color: #24292E">(</span><span style="color: #005CC5">2</span><span style="color: #24292E">, </span><span style="color: #005CC5">false</span><span style="color: #24292E">);</span></li><li value="4"><span style="color: #D73A49">return</span><span style="color: #24292E">;</span></li></ol></pre>
+<p>
+  A ${defn("return statement")}, written <code>return EXPR;</code>, where <code>EXPR</code> is an expression, evaluates to the same value as <code>EXPR</code>.
+  As a special case, <code>return;</code> is interpreted the same as <code>return null;</code>.
+</p>
+<p>A return statement returns its value to the surrounding function application.</p>
+<p>
+  A return statement is a terminator statement, so it must have an empty tail.
+  For example,
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">{ </span><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #005CC5">1</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #005CC5">2</span><span style="color: #24292E">; }</span></li></ol></pre>
+<p>is invalid, because the first <code>return</code>'s tail is not empty.</p>
+<p>Furthermore, a <code>return</code> must have an empty continuation (i.e. it must be in ${defn("tail position")}.)</p>
+<h3 id="if"><code>if</code></h3>
+<p>${ref((quote rsh), "if")}${ref((quote rsh), "else")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">if</span><span style="color: #24292E"> ( </span><span style="color: #005CC5">1</span><span style="color: #24292E"> </span><span style="color: #D73A49">+</span><span style="color: #24292E"> </span><span style="color: #005CC5">2</span><span style="color: #24292E"> </span><span style="color: #D73A49">&lt;</span><span style="color: #24292E"> </span><span style="color: #005CC5">3</span><span style="color: #24292E"> ) {</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #032F62">"Yes!"</span><span style="color: #24292E">;</span></li><li value="3"><span style="color: #24292E">} </span><span style="color: #D73A49">else</span><span style="color: #24292E"> {</span></li><li value="4"><span style="color: #24292E">  </span><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #032F62">"No, waaah!"</span><span style="color: #24292E">; }</span></li></ol></pre>
+<p>
+  A ${defn("conditional statement")},
+  written <code>if (COND) NOT_FALSE else FALSE</code>,
+  where <code>COND</code> is an expression
+  and <code>NOT_FALSE</code> and <code>FALSE</code> as statements
+  (potentially block statements),
+  selects between the <code>NOT_FALSE</code> statement and <code>FALSE</code> statement based on whether <code>COND</code> evaluates to <code>false</code>.
+</p>
+<p>Both <code>NOT_FALSE</code> and <code>FALSE</code> have empty tails, i.e. the tail of the conditional statement is not propagated. For example,</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">if</span><span style="color: #24292E"> ( x </span><span style="color: #D73A49">&lt;</span><span style="color: #24292E"> y ) {</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">z</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">3</span><span style="color: #24292E">; }</span></li><li value="3"><span style="color: #D73A49">else</span><span style="color: #24292E"> {</span></li><li value="4"><span style="color: #24292E">  </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">z</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">4</span><span style="color: #24292E">; }</span></li><li value="5"><span style="color: #D73A49">return</span><span style="color: #24292E"> z;</span></li></ol></pre>
+<p>is erroneous, because the identifier <code>z</code> is not bound outside the conditional statement.</p>
+<p>A conditional statement may only include a consensus transfer in <code>NOT_FALSE</code> or <code>FALSE</code> if it is within a consensus step, because its statements are in the same context as the conditional statement itself.</p>
+<p>If one branch of a conditional contains a <code>return</code>, then both must.</p>
+<h3 id="switch"><code>switch</code></h3>
+<p>${ref((quote rsh), "switch")}${ref((quote rsh), "case")}${ref((quote rsh), "default")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">mi</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Maybe</span><span style="color: #24292E">(UInt).</span><span style="color: #6F42C1">Some</span><span style="color: #24292E">(</span><span style="color: #005CC5">42</span><span style="color: #24292E">);</span></li><li value="2"><span style="color: #D73A49">switch</span><span style="color: #24292E"> ( mi ) {</span></li><li value="3"><span style="color: #24292E"> </span><span style="color: #D73A49">case</span><span style="color: #24292E"> None: </span><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #005CC5">8</span><span style="color: #24292E">;</span></li><li value="4"><span style="color: #24292E"> </span><span style="color: #D73A49">case</span><span style="color: #24292E"> Some: </span><span style="color: #D73A49">return</span><span style="color: #24292E"> mi </span><span style="color: #D73A49">+</span><span style="color: #24292E"> </span><span style="color: #005CC5">10</span><span style="color: #24292E">; }</span></li><li value="5"><span style="color: #D73A49">switch</span><span style="color: #24292E"> ( mi ) {</span></li><li value="6"><span style="color: #24292E"> </span><span style="color: #D73A49">case</span><span style="color: #24292E"> None: </span><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #005CC5">8</span><span style="color: #24292E">;</span></li><li value="7"><span style="color: #24292E"> </span><span style="color: #D73A49">default</span><span style="color: #24292E">: </span><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #005CC5">41</span><span style="color: #24292E">; }</span></li></ol></pre>
+<p>
+  A ${defn("switch statement")},
+  written <code>switch (VAR) { CASE ... }</code>,
+  where <code>VAR</code> is a variable bound to a data instance
+  and <code>CASE</code> is either <code>case VARIANT: STMT ...</code>, where <code>VARIANT</code> is a variant, or <code>default: STMT ...</code>, and <code>STMT</code> is a sequence of statements,
+  selects the appropriate sequence of statements based on which variant <code>VAR</code> holds.
+  Within the body of a <code>switch</code> case, <code>VAR</code> has the type of variant; i.e. in a <code>Some</code> case of a <code>Maybe(UInt)</code> <code>switch</code>, the variable is bound to an integer.
+</p>
+<p>All cases have empty tails, i.e. the tail of the switch statement is not propagated.</p>
+<p>A switch statement may only include a consensus transfer in its cases if it is within a consensus step, because its statements are in the same context as the conditional statement itself.</p>
+<p>It is invalid for a case to appear multiple times, or be missing, or to be superfluous (i.e. for a variant that does not exist in the <code>Data</code> type of <code>VAR</code>).</p>
+<p>If one case of a <code>switch</code> contains a <code>return</code>, then all must.</p>
+<h3 id="block-statements">Block statements</h3>
+<p>A ${defn("block statement")} is when a block occurs in a statement position, then it establishes a local, separate scope for the definitions of identifiers within that block. In other words, the block is evaluated for effect, but the tail of the statements within the block are isolated from the surrounding tail. For example,</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">x</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">4</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #D73A49">return</span><span style="color: #24292E"> x;</span></li></ol></pre>
+<p>evaluates to <code>4</code>, but</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">{ </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">x</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">4</span><span style="color: #24292E">; }</span></li><li value="2"><span style="color: #D73A49">return</span><span style="color: #24292E"> x;</span></li></ol></pre>
+<p>is erroneous, because the identifier <code>x</code> is not bound outside the block statement.</p>
+<h3 id="trycatch--throw-statements">Try/Catch &amp; Throw Statements</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">try</span><span style="color: #24292E"> {</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #D73A49">throw</span><span style="color: #24292E"> </span><span style="color: #005CC5">10</span><span style="color: #24292E">;</span></li><li value="3"><span style="color: #24292E">} </span><span style="color: #D73A49">catch</span><span style="color: #24292E"> (v) {</span></li><li value="4"><span style="color: #24292E">  </span><span style="color: #6F42C1">transfer</span><span style="color: #24292E">(v).</span><span style="color: #6F42C1">to</span><span style="color: #24292E">(</span><span style="color: #005CC5">A</span><span style="color: #24292E">); }</span></li></ol></pre>
+<p>
+  A ${defn("try statement")}, written <code>try BLOCK catch (VAR) BLOCK</code>, allows a block
+  of code to execute with a specified handler should an exception be thrown.
+</p>
+<p>
+  A ${defn("throw statement")},
+  written <code>throw EXPR</code>, will transfer control flow to the exception handler, binding <code>EXPR</code>
+  to <code>VAR</code>.
+  Any value that is able to exist at runtime may be thrown.
+  For example, <code>Int</code>s
+  and <code>Array</code>s are valid values to throw, but a function is not.
+  A <code>throw</code> must have an empty tail.
+</p>
+<h3 id="expression-statements">Expression statements</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">4</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #6F42C1">f</span><span style="color: #24292E">(</span><span style="color: #005CC5">2</span><span style="color: #24292E">, </span><span style="color: #005CC5">true</span><span style="color: #24292E">);</span></li></ol></pre>
+<p>An expression, <code>E</code>, in a statement position is equivalent to the block statement <code>{ return E; }</code>.</p>
+<h2 id="expressions">Expressions</h2>
+<p>
+  This section describes the expressions which are allowed in any Reach context.
+  There are a large variety of different ${defn("expressions")} in Reach programs.
+</p>
+<p>The remainder of this section enumerates each kind of expression.</p>
+<h3 id="use-strict">'use strict'</h3>
+<p>${ref((quote rsh), "'use strict'")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #032F62">'use strict'</span><span style="color: #24292E">;</span></li></ol></pre>
+<p>
+  <code>'use strict'</code> enables unused variables checks for all subsequent
+  declarations within the current scope. If a variable is declared, but never used, there will
+  be an error emitted at compile time.
+</p>
+<p>
+  ${defn("strict mode")} will reject some code that is normally valid and limit how dynamic Reach's type system is.
+  For example, normally Reach will permit expressions like the following to be evaluated:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #6F42C1">foo</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> (</span><span style="color: #E36209">o</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span></li><li value="2"><span style="color: #24292E">  o </span><span style="color: #D73A49">?</span><span style="color: #24292E"> o.b </span><span style="color: #D73A49">:</span><span style="color: #24292E"> </span><span style="color: #005CC5">false</span><span style="color: #24292E">;</span></li><li value="3"></li><li value="4"><span style="color: #D73A49">void</span><span style="color: #24292E"> </span><span style="color: #6F42C1">foo</span><span style="color: #24292E">({ b: </span><span style="color: #005CC5">true</span><span style="color: #24292E"> });</span></li><li value="5"><span style="color: #D73A49">void</span><span style="color: #24292E"> </span><span style="color: #6F42C1">foo</span><span style="color: #24292E">(</span><span style="color: #005CC5">false</span><span style="color: #24292E">);</span></li></ol></pre>
+<p>
+  Reach allows <code>o</code> to be either an object with a <code>b</code> field or <code>false</code> because it
+  partially evaluates the program at compile time. So, without <code>'use strict'</code>, Reach will not evaluate
+  <code>o.b</code> when <code>o = false</code> and this code will compile successfully.
+</p>
+<p>
+  But, in strict mode, Reach will ensure that this program treats <code>o</code> as
+  having a single type and detect an error in the program as follows:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">reachc: error: Invalid field access. Expected object, got: Bool</li></ol></pre>
+<p>The correct way to write a program like this in strict mode is to use <code>Maybe</code>. Like this:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">MObj</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Maybe</span><span style="color: #24292E">(</span><span style="color: #005CC5">Object</span><span style="color: #24292E">({ b : Bool }));</span></li><li value="2"></li><li value="3"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #6F42C1">foo</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> (</span><span style="color: #E36209">mo</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span></li><li value="4"><span style="color: #24292E">  mo.</span><span style="color: #6F42C1">match</span><span style="color: #24292E">({</span></li><li value="5"><span style="color: #24292E">    None: (() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> </span><span style="color: #005CC5">false</span><span style="color: #24292E">),</span></li><li value="6"><span style="color: #24292E">    Some: ((</span><span style="color: #E36209">o</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> o.b)</span></li><li value="7"><span style="color: #24292E">  });</span></li><li value="8"></li><li value="9"><span style="color: #D73A49">void</span><span style="color: #24292E"> </span><span style="color: #6F42C1">foo</span><span style="color: #24292E">(MObj.</span><span style="color: #6F42C1">Some</span><span style="color: #24292E">({ b : </span><span style="color: #005CC5">true</span><span style="color: #24292E"> }));</span></li><li value="10"><span style="color: #D73A49">void</span><span style="color: #24292E"> </span><span style="color: #6F42C1">foo</span><span style="color: #24292E">(MObj.</span><span style="color: #6F42C1">None</span><span style="color: #24292E">());</span></li></ol></pre>
+<h3 id="unstrict"><code>unstrict</code></h3>
+<p>${ref((quote rsh), "unstrict")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">assert</span><span style="color: #24292E">(</span><span style="color: #6F42C1">unstrict</span><span style="color: #24292E">(() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #032F62">'use strict'</span><span style="color: #24292E">;</span></li><li value="3"><span style="color: #24292E">  </span><span style="color: #6A737D">// the following fails in strict mode due to a type mismatch</span></li><li value="4"><span style="color: #24292E">  </span><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #005CC5">1</span><span style="color: #24292E"> </span><span style="color: #D73A49">!=</span><span style="color: #24292E"> </span><span style="color: #005CC5">true</span><span style="color: #24292E">;</span></li><li value="5"><span style="color: #24292E">}));</span></li></ol></pre>
+<p>
+  <code>unstrict</code> applies a thunk, ignoring any usage of strict mode. This
+  can be useful when dealing with libraries that are written in strict mode.
+</p>
+<h3 id="identifier-reference">Identifier reference</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">X</span></li><li value="2"><span style="color: #005CC5">Y</span></li><li value="3"><span style="color: #005CC5">Z</span></li></ol></pre>
+<p>An identifier, written <code>ID</code>, is an expression that evaluates to the value of the bound identifier.</p>
+<p>
+  ${ref((quote rsh), "this")}
+  The identifier <code>this</code> has a special meaning inside of a local step (i.e. the body of an <code>only</code> or <code>each</code> expression), as well as in a consensus step (i.e. the tail of <code>publish</code> or <code>pay</code> statement and before a <code>commit</code> statement). For details, see ${seclink("ref-programs-local-this")} and ${seclink("ref-programs-consensus-this")}.
+</p>
+<h3 id="function-application">Function application</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">assert</span><span style="color: #24292E">( amount </span><span style="color: #D73A49">&lt;=</span><span style="color: #24292E"> heap1 )</span></li><li value="2"><span style="color: #6F42C1">step</span><span style="color: #24292E">( moveA )</span></li><li value="3"><span style="color: #6F42C1">digest</span><span style="color: #24292E">( coinFlip )</span></li><li value="4"><span style="color: #24292E">interact.</span><span style="color: #6F42C1">random</span><span style="color: #24292E">()</span></li><li value="5"><span style="color: #6F42C1">declassify</span><span style="color: #24292E">( _coinFlip )</span></li></ol></pre>
+<p>
+  A ${defn("function application")}, written <code>EXPR_rator(EXPR_rand_0, ..., EXPR_rand_n)</code>, is an expression where <code>EXPR_rator</code> and <code>EXPR_rand_0</code> through <code>EXPR_rand_n</code> are expressions that evaluate to one value.
+  <code>EXPR_rator</code> must evaluate to an abstraction over <code>n</code> values or a primitive of arity <code>n</code>.
+  A spread expression (<code>...expr</code>) may appear in the list of operands to a function application, in which case the elements of the expr are spliced in place.
+</p>
+<p>
+  ${ref((quote rsh), "new")}
+  <code>new f(a)</code> is equivalent to <code>f.new(a)</code> and is a convenient short-hand for writing class-oriented programs.
+</p>
+<h3 id="types">Types</h3>
+<p>Reach's ${defn("type")}s are represented in programs by the following identifiers and constructors:</p>
+<ul>
+  <li>${ref((quote rsh), "Null")} <code>Null</code>.</li>
+  <li>${ref((quote rsh), "Bool")} <code>Bool</code>, which denotes a boolean.</li>
+  <li>
+    ${ref((quote rsh), "UInt")} <code>UInt</code>, which denotes an unsigned integer.
+    <code>UInt.max</code> is the largest value that may be assigned to a <code>UInt</code>.
+  </li>
+  <li>
+    ${ref((quote rsh), "Bytes")} <code>Bytes(length)</code>, which denotes a string of bytes of length at most <code>length</code>.
+    Bytes of different lengths are not compatible; however the shorter bytes may be padded.
+  </li>
+  <li>${ref((quote rsh), "Digest")} <code>Digest</code>, which denotes a digest.</li>
+  <li>${ref((quote rsh), "Address")} <code>Address</code>, which denotes an account address.</li>
+  <li>
+    ::: note
+    Reach has different representations of contracts across connectors.
+    For example, on Algorand a <code>Contract</code> is an Application ID, but on Ethereum it is an Address.
+    :::
+    ${ref((quote rsh), "Contract")} <code>Contract</code>, which denotes the identifying information of a contract.
+  </li>
+  <li>${ref((quote rsh), "Token")} <code>Token</code>, which denotes a non-network token. ${seclink("ref-networks")} discusses how <code>Token</code>s are represented on specific networks.</li>
+  <li>
+    ${ref((quote rsh), "Fun")} <code>Fun([Domain_0, ..., Domain_N], Range)</code>, which denotes a ${defn("function type")}, when <code>Domain_i</code> and <code>Range</code> are types.
+    The domain of a function is negative position.
+    The range of a function is positive position.
+  </li>
+  <li>
+    <code>Fun(true, Range)</code>, which denotes an ${defn("unconstrained domain function type")}, when <code>Range</code> is a type.
+    These functions may only appear in participant interact interfaces.
+  </li>
+  <li>
+    ${ref((quote rsh), "Tuple")} <code>Tuple(Field_0, ..., FieldN)</code>, which denotes a tuple.
+    (Refer to ${seclink("ref-programs-tuples")} for constructing tuples.)
+  </li>
+  <li>
+    ${ref((quote rsh), "Object")} <code>Object({key_0: Type_0, ..., key_N: Type_N})</code>, which denotes an object.
+    (Refer to ${seclink("ref-programs-objects")} for constructing objects.)
+  </li>
+  <li>
+    ${ref((quote rsh), "Struct")} <code>Struct([[key_0, Type_0], ..., [key_N, Type_N]])</code>, which denotes a struct.
+    (Refer to ${seclink("ref-programs-structs")} for constructing structs.)
+  </li>
+  <li>
+    ${ref((quote rsh), "Array")} <code>Array(Type_0, size)</code>, which denotes a statically-sized array.
+    <code>Type_0</code> must be a type that can exist at runtime (i.e., not a function type.)
+    (Refer to ${seclink("ref-programs-arrays")} for constructing arrays.)
+  </li>
+  <li>
+    ${ref((quote rsh), "Data")} <code>Data({variant_0: Type_0, ..., variant_N: Type_N})</code>, which denotes a <a href="https://en.wikipedia.org/wiki/Tagged_union">tagged union</a> (or <em>sum type</em>).
+    (Refer to ${seclink("ref-programs-data")} for constructing data instances.)
+  </li>
+  <li>
+    ${ref((quote rsh), "Refine")} <code>Refine(Type_0, Predicate, ?Message)</code>, where <code>Predicate</code> is a unary function returning a boolean, which denotes a <a href="https://en.wikipedia.org/wiki/Refinement_type">refinement type</a>, that is instances of <code>Type_0</code> that satisfy <code>Predicate</code>.
+    When a refinement type appears in a ${defn("negative position")} (such as in an <code>is</code> or in the domain of a <code>Fun</code> of a participant interact interface), it introduces an <code>assert</code>;
+    while when it is in a ${defn("positive position")}, it introduces an <code>assume</code>.
+    <code>Message</code> is an optional string to display if the predicate fails verification.
+  </li>
+</ul>
+<p>
+  For example, if <code>f</code> had type ```js
+  Fun([Refine(UInt, (x =&gt; x &lt; 5))], Refine(UInt, (x =&gt; x &gt; 10)))
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"></li><li value="2"></li><li value="3">then `const z = f(y)` is equivalent to</li><li value="4"></li><li value="5">```js</li><li value="6">assert(y &lt; 5);</li><li value="7">const z = f(y);</li><li value="8">assume(z &gt; 10);</li></ol></pre>
+<ul>
+  <li>
+    <code>Refine(Type_0, PreCondition, PostCondition, ?Messages)</code>, where <code>Type_0</code> is a function type, <code>PreCondition</code> is a unary function that accepts a tuple of the domain and returns a boolean, and <code>PostCondition</code> is a binary function that accepts a tuple of the domain and the range and returns a boolean, denotes a function type with a <a href="https://en.wikipedia.org/wiki/Precondition">precondition</a> and <a href="https://en.wikipedia.org/wiki/Postcondition">postcondition</a>.
+    Preconditions are enforced with <code>assert</code> and postconditions are enforced with <code>assume</code>.
+    <code>Messages</code> is an optional two-tuple of <code>Bytes</code>.
+    The first message will be displayed when the precondition fails verification and the second when the postcondition fails verification.
+  </li>
+</ul>
+<p>For example, <code>Refine(Fun([UInt, UInt], UInt), ([x, y] =&gt; x &lt; y), (([x, y], z) =&gt; x + y &lt; z))</code> is a function that requires its second argument to be larger than its first and its result to be larger than its input.</p>
+<p><code>Object</code> and <code>Data</code> are commonly used to implemented <a href="https://en.wikipedia.org/wiki/Algebraic_data_type">algebraic data types</a> in Reach.</p>
+<p>${ref((quote rsh), "typeOf")}${ref((quote rsh), "isType")}${ref((quote rsh), "is")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">typeOf</span><span style="color: #24292E">(x) </span><span style="color: #6A737D">// type</span></li><li value="2"><span style="color: #6F42C1">isType</span><span style="color: #24292E">(t) </span><span style="color: #6A737D">// Bool</span></li><li value="3"><span style="color: #6F42C1">is</span><span style="color: #24292E">(x, t) </span><span style="color: #6A737D">// t</span></li></ol></pre>
+<p>
+  The <code>typeOf</code> primitive function is the same as <code>typeof</code>:
+  it returns the type of its argument.
+</p>
+<p>
+  The <code>isType</code> function returns <code>true</code> if its argument is a type.
+  Any expression satisfying <code>isType</code> is compiled away and does not exist at runtime.
+</p>
+<p>
+  The <code>is</code> function returns its first argument if it satisfies the type specified by the second argument.
+  If it is not, then the program is invalid.
+  For example, <code>is(5, UInt)</code> returns <code>5</code>, while <code>is(5, Bool)</code> is an invalid program.
+  The value returned by <code>is</code> may not be identical to the input, because in some cases, such as for functions, it will record the applied to type and enforce it on future invocations.
+  These applications are considered negative positions for <code>Refine</code>.
+</p>
+<h3 id="literal-values">Literal values</h3>
+<p>${ref((quote rsh), "true")}${ref((quote rsh), "false")}${ref((quote rsh), "null")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">10</span></li><li value="2"><span style="color: #005CC5">0xdeadbeef</span></li><li value="3"><span style="color: #005CC5">007</span></li><li value="4"><span style="color: #D73A49">-</span><span style="color: #005CC5">10</span></li><li value="5"><span style="color: #005CC5">34.5432</span></li><li value="6"><span style="color: #005CC5">true</span></li><li value="7"><span style="color: #005CC5">false</span></li><li value="8"><span style="color: #005CC5">null</span></li><li value="9"><span style="color: #032F62">"reality bytes"</span></li><li value="10"><span style="color: #032F62">'it just does'</span></li></ol></pre>
+<p>
+  A ${defn("literal value")},
+  written <code>VALUE</code>,
+  is an expression that evaluates to the given value.
+</p>
+<p>The ${defn("null literal")} may be written as <code>null</code>.</p>
+<p>
+  ${defn("Numeric literal")}s may be written in decimal, hexadecimal, or octal.
+  Numeric literals must obey the ${defn("bit width")} of <code>UInt</code> if they are used as <code>UInt</code> values at runtime, but if they only appear at compile-time, then they may be any positive number.
+  Reach provides abstractions for working with <code>Int</code>s and signed <code>FixedPoint</code> numbers.
+  <code>Int</code>s may be defined by applying the unary <code>+</code> and <code>-</code> operators to values of type <code>UInt</code>.
+  Reach provides syntactic sugar for defining signed <code>FixedPoint</code> numbers, in base 10, with decimal syntax.
+</p>
+<p>${defn("Boolean literal")}s may be written as <code>true</code> or <code>false</code>.</p>
+<p>
+  ${defn("String literal")}s (aka byte strings)
+  may be written between double or single quotes
+  (with no distinction between the different styles)
+  and use the same escaping rules as JavaScript.
+  Since <code>Bytes</code> types are specialized in their length, literals typically need to be padded to be useful.
+</p>
+<h3 id="operator-expression">Operator expression</h3>
+<p>
+  An ${defn("operator")} is a special identifier,
+  which is either a unary operator, or a binary operator.
+</p>
+<hr>
+<p>${ref((quote rsh), "!")}${ref((quote rsh), "-")}${ref((quote rsh), "+")}${ref((quote rsh), "typeof")}${ref((quote rsh), "not")}${ref((quote rsh), "minus")}${ref((quote rsh), "plus")}${ref((quote rsh), "void")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">!</span><span style="color: #24292E"> a  </span><span style="color: #6A737D">// not</span></li><li value="2"><span style="color: #D73A49">-</span><span style="color: #24292E"> a  </span><span style="color: #6A737D">// minus</span></li><li value="3"><span style="color: #D73A49">+</span><span style="color: #24292E"> a  </span><span style="color: #6A737D">// plus</span></li><li value="4"><span style="color: #D73A49">typeof</span><span style="color: #24292E"> a</span></li><li value="5"><span style="color: #D73A49">void</span><span style="color: #24292E"> a</span></li></ol></pre>
+<p>
+  A ${defn("unary expression")}, written <code>UNAOP EXPR_rhs</code>, where <code>EXPR_rhs</code> is an expression and <code>UNAOP</code> is one of the ${defn("unary operator")}s: <code>! - + typeof void</code>. All the unary operators, besides <code>typeof</code>, have a
+  corresponding named version in the standard library.
+</p>
+<p>It is invalid to use unary operations on the wrong types of values.</p>
+<p>
+  When applied to values of type <code>UInt</code>, unary <code>-</code> and <code>+</code> operators will cast
+  their arguments to type <code>Int</code>. The unary <code>-</code> and <code>+</code> operations are defined for
+  values of type: <code>Int</code>, and <code>FixedPoint</code>.
+</p>
+<p><code>void a</code> evaluates to <code>null</code> for all arguments.</p>
+<hr>
+<p>${ref((quote rsh), "&amp;&amp;")}${ref((quote rsh), "||")}${ref((quote rsh), "+")}${ref((quote rsh), "-")}${ref((quote rsh), "*")}${ref((quote rsh), "/")}${ref((quote rsh), "%")}${ref((quote rsh), "|")}${ref((quote rsh), "&amp;")}${ref((quote rsh), "^")}${ref((quote rsh), "&lt;&lt;")}${ref((quote rsh), "&gt;&gt;")}${ref((quote rsh), "==")}${ref((quote rsh), "!=")}${ref((quote rsh), "===")}${ref((quote rsh), "!==")}${ref((quote rsh), "&gt;")}${ref((quote rsh), "&gt;=")}${ref((quote rsh), "&lt;=")}${ref((quote rsh), "&lt;")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">a </span><span style="color: #D73A49">&amp;&amp;</span><span style="color: #24292E"> b</span></li><li value="2"><span style="color: #24292E">a </span><span style="color: #D73A49">||</span><span style="color: #24292E"> b</span></li><li value="3"><span style="color: #24292E">a </span><span style="color: #D73A49">+</span><span style="color: #24292E"> b</span></li><li value="4"><span style="color: #24292E">a </span><span style="color: #D73A49">-</span><span style="color: #24292E"> b</span></li><li value="5"><span style="color: #24292E">a </span><span style="color: #D73A49">*</span><span style="color: #24292E"> b</span></li><li value="6"><span style="color: #24292E">a </span><span style="color: #D73A49">/</span><span style="color: #24292E"> b</span></li><li value="7"><span style="color: #24292E">a </span><span style="color: #D73A49">%</span><span style="color: #24292E"> b</span></li><li value="8"><span style="color: #24292E">a </span><span style="color: #D73A49">|</span><span style="color: #24292E"> b</span></li><li value="9"><span style="color: #24292E">a </span><span style="color: #D73A49">&amp;</span><span style="color: #24292E"> b</span></li><li value="10"><span style="color: #24292E">a </span><span style="color: #D73A49">^</span><span style="color: #24292E"> b</span></li><li value="11"><span style="color: #24292E">a </span><span style="color: #D73A49">&lt;&lt;</span><span style="color: #24292E"> b</span></li><li value="12"><span style="color: #24292E">a </span><span style="color: #D73A49">&gt;&gt;</span><span style="color: #24292E"> b</span></li><li value="13"><span style="color: #24292E">a </span><span style="color: #D73A49">==</span><span style="color: #24292E"> b</span></li><li value="14"><span style="color: #24292E">a </span><span style="color: #D73A49">!=</span><span style="color: #24292E"> b</span></li><li value="15"><span style="color: #24292E">a </span><span style="color: #D73A49">===</span><span style="color: #24292E"> b</span></li><li value="16"><span style="color: #24292E">a </span><span style="color: #D73A49">!==</span><span style="color: #24292E"> b</span></li><li value="17"><span style="color: #24292E">a </span><span style="color: #D73A49">&gt;</span><span style="color: #24292E"> b</span></li><li value="18"><span style="color: #24292E">a </span><span style="color: #D73A49">&gt;=</span><span style="color: #24292E"> b</span></li><li value="19"><span style="color: #24292E">a </span><span style="color: #D73A49">&lt;=</span><span style="color: #24292E"> b</span></li><li value="20"><span style="color: #24292E">a </span><span style="color: #D73A49">&lt;</span><span style="color: #24292E"> b</span></li></ol></pre>
+<p>
+  ::: note
+  Bitwise operations are not supported by all consensus networks and greatly decrease the efficiency of verification.
+  :::
+</p>
+<p>
+  A ${defn("binary expression")} is written <code>EXPR_lhs BINOP EXPR_rhs</code>, where <code>EXPR_lhs</code> and <code>EXPR_rhs</code> are expressions and <code>BINOP</code> is one of the ${defn("binary operator")}s: <code>&amp;&amp; || + - * / % | &amp; ^ &lt;&lt; &gt;&gt; == != === !== &gt; &gt;= &lt;= &lt;</code>.
+  Numeric operations, like <code>+</code> and <code>&gt;</code>, only operate on numbers.
+  Since all numbers in Reach are integers, operations like <code>/</code> truncate their result.
+  Boolean operations, like <code>&amp;&amp;</code>, only operate on booleans.
+  It is invalid to use binary operations on the wrong types of values.
+</p>
+<p>${ref((quote rsh), "and")}${ref((quote rsh), "or")}${ref((quote rsh), "add")}${ref((quote rsh), "sub")}${ref((quote rsh), "mul")}${ref((quote rsh), "div")}${ref((quote rsh), "mod")}${ref((quote rsh), "lt")}${ref((quote rsh), "le")}${ref((quote rsh), "ge")}${ref((quote rsh), "gt")}${ref((quote rsh), "lsh")}${ref((quote rsh), "rsh")}${ref((quote rsh), "band")}${ref((quote rsh), "bior")}${ref((quote rsh), "band")}${ref((quote rsh), "bxor")}${ref((quote rsh), "polyEq")}${ref((quote rsh), "polyNeq")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">and</span><span style="color: #24292E">(a, b)     </span><span style="color: #6A737D">// &amp;&amp;</span></li><li value="2"><span style="color: #6F42C1">or</span><span style="color: #24292E">(a, b)      </span><span style="color: #6A737D">// ||</span></li><li value="3"><span style="color: #6F42C1">add</span><span style="color: #24292E">(a, b)     </span><span style="color: #6A737D">// +</span></li><li value="4"><span style="color: #6F42C1">sub</span><span style="color: #24292E">(a, b)     </span><span style="color: #6A737D">// -</span></li><li value="5"><span style="color: #6F42C1">mul</span><span style="color: #24292E">(a, b)     </span><span style="color: #6A737D">// *</span></li><li value="6"><span style="color: #6F42C1">div</span><span style="color: #24292E">(a, b)     </span><span style="color: #6A737D">// /</span></li><li value="7"><span style="color: #6F42C1">mod</span><span style="color: #24292E">(a, b)     </span><span style="color: #6A737D">// %</span></li><li value="8"><span style="color: #6F42C1">lt</span><span style="color: #24292E">(a, b)      </span><span style="color: #6A737D">// &lt;</span></li><li value="9"><span style="color: #6F42C1">le</span><span style="color: #24292E">(a, b)      </span><span style="color: #6A737D">// &lt;=</span></li><li value="10"><span style="color: #6F42C1">ge</span><span style="color: #24292E">(a, b)      </span><span style="color: #6A737D">// &gt;=</span></li><li value="11"><span style="color: #6F42C1">gt</span><span style="color: #24292E">(a, b)      </span><span style="color: #6A737D">// &gt;</span></li><li value="12"><span style="color: #6F42C1">lsh</span><span style="color: #24292E">(a, b)     </span><span style="color: #6A737D">// &lt;&lt;</span></li><li value="13"><span style="color: #6F42C1">rsh</span><span style="color: #24292E">(a, b)     </span><span style="color: #6A737D">// &gt;&gt;</span></li><li value="14"><span style="color: #6F42C1">band</span><span style="color: #24292E">(a, b)    </span><span style="color: #6A737D">// &amp;</span></li><li value="15"><span style="color: #6F42C1">bior</span><span style="color: #24292E">(a, b)    </span><span style="color: #6A737D">// |</span></li><li value="16"><span style="color: #6F42C1">bxor</span><span style="color: #24292E">(a, b)    </span><span style="color: #6A737D">// ^</span></li><li value="17"><span style="color: #6F42C1">polyEq</span><span style="color: #24292E">(a, b)  </span><span style="color: #6A737D">// ==, ===</span></li><li value="18"><span style="color: #6F42C1">polyNeq</span><span style="color: #24292E">(a, b) </span><span style="color: #6A737D">// !=, !==</span></li></ol></pre>
+<p>
+  All binary expression operators have a corresponding named function in the standard library.
+  While <code>&amp;&amp;</code> and <code>||</code> may not evaluate their second argument,
+  their corresponding named functions <code>and</code> and <code>or</code>, always do.
+</p>
+<p>${ref((quote rsh), "boolEq")}${ref((quote rsh), "typeEq")}${ref((quote rsh), "intEq")}${ref((quote rsh), "digestEq")}${ref((quote rsh), "addressEq")}${ref((quote rsh), "fxeq")}${ref((quote rsh), "ieq")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">polyEq</span><span style="color: #24292E">(a, b)    </span><span style="color: #6A737D">// eq on all types</span></li><li value="2"><span style="color: #6F42C1">boolEq</span><span style="color: #24292E">(a, b)    </span><span style="color: #6A737D">// eq on Bool</span></li><li value="3"><span style="color: #6F42C1">typeEq</span><span style="color: #24292E">(a, b)    </span><span style="color: #6A737D">// eq on types</span></li><li value="4"><span style="color: #6F42C1">intEq</span><span style="color: #24292E">(a, b)     </span><span style="color: #6A737D">// eq on UInt</span></li><li value="5"><span style="color: #6F42C1">digestEq</span><span style="color: #24292E">(a, b)  </span><span style="color: #6A737D">// eq on Digest</span></li><li value="6"><span style="color: #6F42C1">addressEq</span><span style="color: #24292E">(a, b) </span><span style="color: #6A737D">// eq on Addresses</span></li><li value="7"><span style="color: #6F42C1">fxeq</span><span style="color: #24292E">(a, b)      </span><span style="color: #6A737D">// eq on FixedPoint</span></li><li value="8"><span style="color: #6F42C1">ieq</span><span style="color: #24292E">(a, b)       </span><span style="color: #6A737D">// eq on Int</span></li></ol></pre>
+<p>
+  Equality functions, like <code>==</code>, <code>===</code>, <code>!=</code>, and <code>!==</code>, operate on all types.
+  However, values with different types are always not equal.
+  Both arguments must be of the same type.
+  Specialized functions exist for equality checking on each supported type.
+</p>
+<hr>
+<p>
+  If <code>verifyArithmetic</code> is <code>true</code>, then arithmetic operations automatically make a static assertion that their arguments would not overflow the bit width of the enabled consensus networks.
+  If it is <code>false</code>, then the connector will ensure this dynamically.
+</p>
+<h3 id="xor">xor</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">xor</span><span style="color: #24292E">(</span><span style="color: #005CC5">false</span><span style="color: #24292E">, </span><span style="color: #005CC5">false</span><span style="color: #24292E">); </span><span style="color: #6A737D">// false</span></li><li value="2"><span style="color: #6F42C1">xor</span><span style="color: #24292E">(</span><span style="color: #005CC5">false</span><span style="color: #24292E">, </span><span style="color: #005CC5">true</span><span style="color: #24292E">);  </span><span style="color: #6A737D">// true</span></li><li value="3"><span style="color: #6F42C1">xor</span><span style="color: #24292E">(</span><span style="color: #005CC5">true</span><span style="color: #24292E">, </span><span style="color: #005CC5">false</span><span style="color: #24292E">);  </span><span style="color: #6A737D">// true</span></li><li value="4"><span style="color: #6F42C1">xor</span><span style="color: #24292E">(</span><span style="color: #005CC5">true</span><span style="color: #24292E">, </span><span style="color: #005CC5">true</span><span style="color: #24292E">);   </span><span style="color: #6A737D">// false</span></li></ol></pre>
+<p><code>xor(Bool, Bool)</code> returns <code>true</code> only when the inputs differ in value.</p>
+<h3 id="padding">Padding</h3>
+<p>${ref((quote rsh), "pad")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">Bytes</span><span style="color: #24292E">(</span><span style="color: #005CC5">16</span><span style="color: #24292E">).</span><span style="color: #6F42C1">pad</span><span style="color: #24292E">(</span><span style="color: #032F62">'abc'</span><span style="color: #24292E">);</span></li></ol></pre>
+<p>
+  <code>Bytes</code> are like <code>Array</code>s in that they are fixed and exactly sized.
+  This means that two <code>Bytes</code> of different lengths are not interchangeable.
+</p>
+<p>
+  For example, <code>'You win!'</code> and <code>'You lose!'</code> cannot both be provided to an <code>interact</code> function, because the second is one character longer.
+  Most of the time this is good, because it is a signal that you should use a <code>Data</code> type instead, so that the formatting and display logic is entirely controlled by the frontend.
+</p>
+<p>
+  But, sometimes it is necessary and useful to extend one byte string into a larger size.
+  Each <code>Bytes</code> type has a <code>pad</code> field that is bound to a function that extends its argument to the needed size.
+  A byte string extended in this way is called ${defn("padded")}, because it is extended with additional <code>NUL</code> bytes.
+</p>
+<h3 id="parenthesized-expression">Parenthesized expression</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">(a </span><span style="color: #D73A49">+</span><span style="color: #24292E"> b) </span><span style="color: #D73A49">-</span><span style="color: #24292E"> c</span></li></ol></pre>
+<p>An expression may be parenthesized, as in <code>(EXPR)</code>.</p>
+<h3 id="tuples">Tuples</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">[ ]</span></li><li value="2"><span style="color: #24292E">[ </span><span style="color: #005CC5">1</span><span style="color: #24292E">, </span><span style="color: #005CC5">2</span><span style="color: #24292E"> </span><span style="color: #D73A49">+</span><span style="color: #24292E"> </span><span style="color: #005CC5">3</span><span style="color: #24292E">, </span><span style="color: #005CC5">4</span><span style="color: #24292E"> </span><span style="color: #D73A49">*</span><span style="color: #24292E"> </span><span style="color: #005CC5">5</span><span style="color: #24292E"> ]</span></li></ol></pre>
+<p>A ${defn("tuple")} literal, written <code>[ EXPR_0, ..., EXPR_n ]</code>, is an expression which evaluates to a tuple of <code>n</code> values, where <code>EXPR_0</code> through <code>EXPR_n</code> are expressions.</p>
+<p><code>...expr</code> may appear inside tuple expressions, in which case the spreaded expression must evaluate to a tuple or array, which is spliced in place.</p>
+<h3 id="array"><code>array</code></h3>
+<p>${ref((quote rsh), "array")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">x</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">array</span><span style="color: #24292E">(UInt, [</span><span style="color: #005CC5">1</span><span style="color: #24292E">, </span><span style="color: #005CC5">2</span><span style="color: #24292E">, </span><span style="color: #005CC5">3</span><span style="color: #24292E">]);</span></li></ol></pre>
+<p>Converts a tuple of homogeneous values of the specific type into an ${defn("array")}.</p>
+<h3 id="element-reference">Element reference</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">arr[</span><span style="color: #005CC5">3</span><span style="color: #24292E">]</span></li></ol></pre>
+<p>
+  A ${defn("reference")}, written <code>REF_EXPR[IDX_EXPR]</code>,
+  where <code>REF_EXPR</code> is an expression that evaluates to an array, a tuple, or a struct
+  and <code>IDX_EXPR</code> is an expression that evaluates to a natural number which is less than the size of the array,
+  selects the element at the given index of the array.
+  Indices start at zero.
+</p>
+<p>If <code>REF_EXPR</code> is a tuple, then <code>IDX_EXPR</code> must be a compile-time constant, because tuples do not support dynamic access, because each element may be a different type.</p>
+<p>If <code>REF_EXPR</code> is a mapping and <code>IDX_EXPR</code> evaluates to an address, then this reference evaluates to a value of type <code>Maybe(TYPE)</code>, where <code>TYPE</code> is the type of the mapping.</p>
+<h3 id="array--tuple-length-tuplelength-arraylength-and-length">Array &amp; tuple length: <code>Tuple.length</code>, <code>Array.length</code>, and <code>.length</code></h3>
+<p>${ref((quote rsh), "length")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Tuple.</span><span style="color: #6F42C1">length</span><span style="color: #24292E">(tup);</span></li><li value="2"><span style="color: #24292E">tup.</span><span style="color: #005CC5">length</span><span style="color: #24292E">;</span></li><li value="3"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">length</span><span style="color: #24292E">(arr);</span></li><li value="4"><span style="color: #24292E">arr.</span><span style="color: #005CC5">length</span><span style="color: #24292E">;</span></li></ol></pre>
+<p><code>Tuple.length</code> Returns the length of the given tuple.</p>
+<p><code>Array.length</code> Returns the length of the given array.</p>
+<p>Both may be abbreviated as <code>expr.length</code> where <code>expr</code> evaluates to a tuple or an array.</p>
+<h3 id="array--tuple-update-tupleset-arrayset-and-set">Array &amp; tuple update: <code>Tuple.set</code>, <code>Array.set</code>, and <code>.set</code></h3>
+<p>${ref((quote rsh), "set")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Tuple.</span><span style="color: #6F42C1">set</span><span style="color: #24292E">(tup, idx, val);</span></li><li value="2"><span style="color: #24292E">tup.</span><span style="color: #6F42C1">set</span><span style="color: #24292E">(idx, val);</span></li><li value="3"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">set</span><span style="color: #24292E">(arr, idx, val);</span></li><li value="4"><span style="color: #24292E">arr.</span><span style="color: #6F42C1">set</span><span style="color: #24292E">(idx, val);</span></li></ol></pre>
+<p>
+  <code>Tuple.set</code> Returns a new tuple identical to <code>tup</code>,
+  except that index <code>idx</code> is replaced with <code>val</code>.
+  The <code>idx</code> must be a compile-time constant, because tuples do not support dynamic access, because each element may be a different type.
+</p>
+<p><code>Array.set</code> Returns a new array identical to <code>arr</code>, except that index <code>idx</code> is replaced with <code>val</code>.</p>
+<p>Both may be abbreviated as <code>expr.set(idx, val)</code> where <code>expr</code> evaluates to a tuple or an array.</p>
+<h3 id="array-element-type-arrayelemtype-and-elemtype">Array element type: <code>Array.elemType</code> and <code>.elemType</code></h3>
+<p>${ref((quote rsh), "elemType")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">elemType</span><span style="color: #24292E">(arr)</span></li><li value="2"><span style="color: #24292E">arr.elemType</span></li></ol></pre>
+<p><code>Array.elemType</code> Returns the <code>Type</code> of elements that the array contains.</p>
+<h3 id="foldable-operations">Foldable operations</h3>
+<p>The following methods are available on any ${ref((quote rsh), "Foldable")}<code>Foldable</code> containers, such as: <code>Array</code>s and <code>Map</code>s.</p>
+<h4 id="foldableforeach--foreach"><code>Foldable.forEach</code> &amp;&amp; <code>.forEach</code></h4>
+<p>${ref((quote rsh), "forEach")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">c.</span><span style="color: #6F42C1">forEach</span><span style="color: #24292E">(f)</span></li><li value="2"><span style="color: #24292E">Foldable.</span><span style="color: #6F42C1">forEach</span><span style="color: #24292E">(c, f)</span></li><li value="3"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">forEach</span><span style="color: #24292E">(c, f)</span></li><li value="4"><span style="color: #005CC5">Map</span><span style="color: #24292E">.</span><span style="color: #6F42C1">forEach</span><span style="color: #24292E">(c, f)</span></li></ol></pre>
+<p>
+  <code>Foldable.forEach(c, f)</code> iterates the function <code>f</code> over the elements of a container <code>c</code>, discarding the result.
+  This may be abbreviated as <code>c.forEach(f)</code>.
+</p>
+<h4 id="foldableall--all"><code>Foldable.all</code> &amp;&amp; <code>.all</code></h4>
+<p>${ref((quote rsh), "all")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Foldable.</span><span style="color: #6F42C1">all</span><span style="color: #24292E">(c, f)</span></li><li value="2"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">all</span><span style="color: #24292E">(c, f)</span></li><li value="3"><span style="color: #005CC5">Map</span><span style="color: #24292E">.</span><span style="color: #6F42C1">all</span><span style="color: #24292E">(c, f)</span></li><li value="4"><span style="color: #24292E">c.</span><span style="color: #6F42C1">all</span><span style="color: #24292E">(f)</span></li></ol></pre>
+<p>
+  <code>Foldable.all(c, f)</code> determines whether the predicate, <code>f</code>, is satisfied
+  by every element of the container, <code>c</code>.
+</p>
+<h4 id="foldableany--any"><code>Foldable.any</code> &amp;&amp; <code>.any</code></h4>
+<p>${ref((quote rsh), "any")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Foldable.</span><span style="color: #6F42C1">any</span><span style="color: #24292E">(c, f)</span></li><li value="2"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">any</span><span style="color: #24292E">(c, f)</span></li><li value="3"><span style="color: #005CC5">Map</span><span style="color: #24292E">.</span><span style="color: #6F42C1">any</span><span style="color: #24292E">(c, f)</span></li><li value="4"><span style="color: #24292E">c.</span><span style="color: #6F42C1">any</span><span style="color: #24292E">(f)</span></li></ol></pre>
+<p>
+  <code>Foldable.any(c, f)</code> determines whether the predicate, <code>f</code>, is satisfied
+  by at least one element of the container, <code>c</code>.
+</p>
+<h4 id="foldableor--or"><code>Foldable.or</code> &amp;&amp; <code>.or</code></h4>
+<p>${ref((quote rsh), "or")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Foldable.</span><span style="color: #6F42C1">or</span><span style="color: #24292E">(c)</span></li><li value="2"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">or</span><span style="color: #24292E">(c)</span></li><li value="3"><span style="color: #005CC5">Map</span><span style="color: #24292E">.</span><span style="color: #6F42C1">or</span><span style="color: #24292E">(c)</span></li><li value="4"><span style="color: #24292E">c.</span><span style="color: #6F42C1">or</span><span style="color: #24292E">()</span></li></ol></pre>
+<p><code>Foldable.or(c)</code> returns the disjunction of a container of <code>Bool</code>s.</p>
+<h4 id="foldableand--and"><code>Foldable.and</code> &amp;&amp; <code>.and</code></h4>
+<p>${ref((quote rsh), "and")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Foldable.</span><span style="color: #6F42C1">and</span><span style="color: #24292E">(c)</span></li><li value="2"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">and</span><span style="color: #24292E">(c)</span></li><li value="3"><span style="color: #005CC5">Map</span><span style="color: #24292E">.</span><span style="color: #6F42C1">and</span><span style="color: #24292E">(c)</span></li><li value="4"><span style="color: #24292E">c.</span><span style="color: #6F42C1">and</span><span style="color: #24292E">()</span></li></ol></pre>
+<p><code>Foldable.and(c)</code> returns the conjunction of a container of <code>Bool</code>s.</p>
+<h4 id="foldableincludes--includes"><code>Foldable.includes</code> &amp;&amp; <code>.includes</code></h4>
+<p>${ref((quote rsh), "includes")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Foldable.</span><span style="color: #6F42C1">includes</span><span style="color: #24292E">(c, x)</span></li><li value="2"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">includes</span><span style="color: #24292E">(c, x)</span></li><li value="3"><span style="color: #005CC5">Map</span><span style="color: #24292E">.</span><span style="color: #6F42C1">includes</span><span style="color: #24292E">(c, x)</span></li><li value="4"><span style="color: #24292E">c.</span><span style="color: #6F42C1">includes</span><span style="color: #24292E">(x)</span></li></ol></pre>
+<p>
+  <code>Foldable.includes(c, x)</code> determines whether the container includes
+  the element, <code>x</code>.
+</p>
+<h4 id="foldablecount--count"><code>Foldable.count</code> &amp;&amp; <code>.count</code></h4>
+<p>${ref((quote rsh), "count")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Foldable.</span><span style="color: #6F42C1">count</span><span style="color: #24292E">(c, f)</span></li><li value="2"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">count</span><span style="color: #24292E">(c, f)</span></li><li value="3"><span style="color: #005CC5">Map</span><span style="color: #24292E">.</span><span style="color: #6F42C1">count</span><span style="color: #24292E">(c, f)</span></li><li value="4"><span style="color: #24292E">c.</span><span style="color: #6F42C1">count</span><span style="color: #24292E">(f)</span></li></ol></pre>
+<p>
+  <code>Foldable.count(c, f)</code> returns the number of elements in <code>c</code> that
+  satisfy the predicate, <code>f</code>.
+</p>
+<h4 id="foldablesize--size"><code>Foldable.size</code> &amp;&amp; <code>.size</code></h4>
+<p>${ref((quote rsh), "size")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Foldable.</span><span style="color: #6F42C1">size</span><span style="color: #24292E">(c)</span></li><li value="2"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">size</span><span style="color: #24292E">(c)</span></li><li value="3"><span style="color: #005CC5">Map</span><span style="color: #24292E">.</span><span style="color: #6F42C1">size</span><span style="color: #24292E">(c)</span></li><li value="4"><span style="color: #24292E">c.</span><span style="color: #6F42C1">size</span><span style="color: #24292E">()</span></li></ol></pre>
+<p><code>Foldable.size(c)</code> returns the number of elements in <code>c</code>.</p>
+<h4 id="foldablemin--min"><code>Foldable.min</code> &amp;&amp; <code>.min</code></h4>
+<p>${ref((quote rsh), "min")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Foldable.</span><span style="color: #6F42C1">min</span><span style="color: #24292E">(c)</span></li><li value="2"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">min</span><span style="color: #24292E">(c)</span></li><li value="3"><span style="color: #005CC5">Map</span><span style="color: #24292E">.</span><span style="color: #6F42C1">min</span><span style="color: #24292E">(c)</span></li><li value="4"><span style="color: #24292E">c.</span><span style="color: #6F42C1">min</span><span style="color: #24292E">()</span></li></ol></pre>
+<p><code>Foldable.min(c)</code> returns the lowest number in a container of <code>UInt</code>s.</p>
+<h4 id="foldablemax--max"><code>Foldable.max</code> &amp;&amp; <code>.max</code></h4>
+<p>${ref((quote rsh), "max")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Foldable.</span><span style="color: #6F42C1">max</span><span style="color: #24292E">(c)</span></li><li value="2"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">max</span><span style="color: #24292E">(c)</span></li><li value="3"><span style="color: #005CC5">Map</span><span style="color: #24292E">.</span><span style="color: #6F42C1">max</span><span style="color: #24292E">(c)</span></li><li value="4"><span style="color: #24292E">c.</span><span style="color: #6F42C1">max</span><span style="color: #24292E">()</span></li></ol></pre>
+<p><code>Foldable.max(c)</code> returns the largest number in a container of <code>UInt</code>s.</p>
+<h4 id="foldablesum--sum"><code>Foldable.sum</code> &amp;&amp; <code>.sum</code></h4>
+<p>${ref((quote rsh), "sum")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Foldable.</span><span style="color: #6F42C1">sum</span><span style="color: #24292E">(c)</span></li><li value="2"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">sum</span><span style="color: #24292E">(c)</span></li><li value="3"><span style="color: #005CC5">Map</span><span style="color: #24292E">.</span><span style="color: #6F42C1">sum</span><span style="color: #24292E">(c)</span></li><li value="4"><span style="color: #24292E">c.</span><span style="color: #6F42C1">sum</span><span style="color: #24292E">()</span></li></ol></pre>
+<p><code>Foldable.sum(c)</code> returns the sum of a container of <code>UInt</code>s.</p>
+<h4 id="foldableproduct--product"><code>Foldable.product</code> &amp;&amp; <code>.product</code></h4>
+<p>${ref((quote rsh), "product")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Foldable.</span><span style="color: #6F42C1">product</span><span style="color: #24292E">(c)</span></li><li value="2"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">product</span><span style="color: #24292E">(c)</span></li><li value="3"><span style="color: #005CC5">Map</span><span style="color: #24292E">.</span><span style="color: #6F42C1">product</span><span style="color: #24292E">(c)</span></li><li value="4"><span style="color: #24292E">c.</span><span style="color: #6F42C1">product</span><span style="color: #24292E">()</span></li></ol></pre>
+<p><code>Foldable.product(c)</code> returns the product of a container of <code>UInt</code>s.</p>
+<h4 id="foldableaverage--average"><code>Foldable.average</code> &amp;&amp; <code>.average</code></h4>
+<p>${ref((quote rsh), "average")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Foldable.</span><span style="color: #6F42C1">average</span><span style="color: #24292E">(c)</span></li><li value="2"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">average</span><span style="color: #24292E">(c)</span></li><li value="3"><span style="color: #005CC5">Map</span><span style="color: #24292E">.</span><span style="color: #6F42C1">average</span><span style="color: #24292E">(c)</span></li><li value="4"><span style="color: #24292E">c.</span><span style="color: #6F42C1">average</span><span style="color: #24292E">()</span></li></ol></pre>
+<p><code>Foldable.average(c)</code> returns the mean of a container of <code>UInt</code>s.</p>
+<h3 id="array-group-operations">Array group operations</h3>
+<p>
+  <code>Array</code> is a <code>Foldable</code> container. Along with the methods of <code>Foldable</code>, the
+  following methods may be used with <code>Array</code>s.
+</p>
+<h4 id="arrayiota"><code>Array.iota</code></h4>
+<p>${ref((quote rsh), "iota")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">iota</span><span style="color: #24292E">(</span><span style="color: #005CC5">5</span><span style="color: #24292E">)</span></li></ol></pre>
+<p>
+  <code>Array.iota(len)</code> returns an array of length <code>len</code>, where each element is the same as its index.
+  For example, <code>Array.iota(4)</code> returns <code>[0, 1, 2, 3]</code>.
+  The given <code>len</code> must evaluate to an integer at compile-time.
+</p>
+<h4 id="arrayreplicate--replicate"><code>Array.replicate</code> &amp;&amp; <code>.replicate</code></h4>
+<p>${ref((quote rsh), "Array_replicate")}${ref((quote rsh), "replicate")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">replicate</span><span style="color: #24292E">(</span><span style="color: #005CC5">5</span><span style="color: #24292E">, </span><span style="color: #032F62">"five"</span><span style="color: #24292E">)</span></li><li value="2"><span style="color: #6F42C1">Array_replicate</span><span style="color: #24292E">(</span><span style="color: #005CC5">5</span><span style="color: #24292E">, </span><span style="color: #032F62">"five"</span><span style="color: #24292E">)</span></li></ol></pre>
+<p>
+  <code>Array.replicate(len, val)</code> returns an array of length <code>len</code>, where each element is <code>val</code>.
+  For example, <code>Array.replicate(4, "four")</code> returns <code>["four", "four", "four", "four"]</code>.
+  The given <code>len</code> must evaluate to an integer at compile-time.
+</p>
+<h4 id="arrayconcat--concat"><code>Array.concat</code> &amp;&amp; <code>.concat</code></h4>
+<p>${ref((quote rsh), "concat")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">concat</span><span style="color: #24292E">(x, y)</span></li><li value="2"><span style="color: #24292E">x.</span><span style="color: #6F42C1">concat</span><span style="color: #24292E">(y)</span></li></ol></pre>
+<p>
+  <code>Array.concat(x, y)</code> concatenates the two arrays <code>x</code> and <code>y</code>.
+  This may be abbreviated as <code>x.concat(y)</code>.
+</p>
+<h4 id="arrayempty"><code>Array.empty</code></h4>
+<p>${ref((quote rsh), "Array_empty")}${ref((quote rsh), "empty")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Array_empty</span></li><li value="2"><span style="color: #005CC5">Array</span><span style="color: #24292E">.empty</span></li></ol></pre>
+<p>
+  <code>Array.empty</code> is an array with no elements.
+  It is the identity element of <code>Array.concat</code>.
+  It may also be written <code>Array_empty</code>.
+</p>
+<h4 id="arrayzip--zip"><code>Array.zip</code> &amp;&amp; <code>.zip</code></h4>
+<p>${ref((quote rsh), "zip")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">zip</span><span style="color: #24292E">(x, y)</span></li><li value="2"><span style="color: #24292E">x.</span><span style="color: #6F42C1">zip</span><span style="color: #24292E">(y)</span></li></ol></pre>
+<p>
+  <code>Array.zip(x, y)</code> returns a new array the same size as <code>x</code> and <code>y</code> (which must be the same size) whose elements are tuples of the elements of <code>x</code> and <code>y</code>.
+  This may be abbreviated as <code>x.zip(y)</code>.
+</p>
+<h4 id="arraymap--map"><code>Array.map</code> &amp;&amp; <code>.map</code></h4>
+<p>${ref((quote rsh), "map")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">map</span><span style="color: #24292E">(arr, f)</span></li><li value="2"><span style="color: #24292E">arr.</span><span style="color: #6F42C1">map</span><span style="color: #24292E">(f)</span></li></ol></pre>
+<p>
+  <code>Array.map(arr, f)</code> returns a new array, <code>arr_mapped</code>, the same size as <code>arr</code>, where <code>arr_mapped[i] = f(arr[i])</code> for all <code>i</code>.
+  For example, <code>Array.iota(4).map(x =&gt; x+1)</code> returns <code>[1, 2, 3, 4]</code>.
+  This may be abbreviated as <code>arr.map(f)</code>.
+</p>
+<p>
+  This function is generalized to an arbitrary number of arrays of the same size, which are provided before the <code>f</code> argument.
+  For example, <code>Array.iota(4).map(Array.iota(4), add)</code> returns <code>[0, 2, 4, 6]</code>.
+</p>
+<h4 id="arraymapwithindex--mapwithindex"><code>Array.mapWithIndex</code> &amp;&amp; <code>.mapWithIndex</code></h4>
+<p>${ref((quote rsh), "mapWithIndex")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">mapWithIndex</span><span style="color: #24292E">(arr, f)</span></li><li value="2"><span style="color: #24292E">arr.</span><span style="color: #6F42C1">mapWithIndex</span><span style="color: #24292E">(f)</span></li></ol></pre>
+<p>
+  <code>Array.mapWithIndex(arr, f)</code> is similar to <code>Array.map</code>, except it
+  provides <code>f</code> with an additional argument, which is the index of the current element in <code>arr</code>.
+  Unlike <code>Array.map</code>, this function is not generalized to an arbitrary number of arrays; it only accepts one array.
+</p>
+<h4 id="arrayreduce--reduce"><code>Array.reduce</code> &amp;&amp; <code>.reduce</code></h4>
+<p>${ref((quote rsh), "reduce")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">reduce</span><span style="color: #24292E">(arr, z, f)</span></li><li value="2"><span style="color: #24292E">arr.</span><span style="color: #6F42C1">reduce</span><span style="color: #24292E">(z, f)</span></li></ol></pre>
+<p>
+  <code>Array.reduce(arr, z, f)</code> returns the <a href="https://en.wikipedia.org/wiki/Fold_(higher-order_function)">left fold</a> of the function <code>f</code> over the given array with the initial value <code>z</code>.
+  For example, <code>Array.iota(4).reduce(0, add)</code> returns <code>((0 + 1) + 2) + 3 = 6</code>.
+  This may be abbreviated as <code>arr.reduce(z, f)</code>.
+</p>
+<p>
+  This function is generalized to an arbitrary number of arrays of the same size, which are provided before the <code>z</code> argument.
+  For example, <code>Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) =&gt; (z + x + y))</code> returns <code>((((0 + 0 + 0) + 1 + 1) + 2 + 2) + 3 + 3)</code>.
+</p>
+<h4 id="arrayreducewithindex--reducewithindex"><code>Array.reduceWithIndex</code> &amp;&amp; <code>.reduceWithIndex</code></h4>
+<p>${ref((quote rsh), "reduceWithIndex")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">reduceWithIndex</span><span style="color: #24292E">(arr, z, f)</span></li><li value="2"><span style="color: #24292E">arr.</span><span style="color: #6F42C1">reduceWithIndex</span><span style="color: #24292E">(z, f)</span></li></ol></pre>
+<p>
+  <code>Array.reduceWithIndex(arr, z, f)</code> is similar to <code>Array.reduce</code>, except it
+  provides <code>f</code> with an additional argument, which is the index of the current element in <code>arr</code>.
+  Unlike <code>Array.reduce</code>, this function is not generalized to an arbitrary number of arrays; it only accepts one array.
+</p>
+<h4 id="arrayindexof--indexof"><code>Array.indexOf</code> &amp;&amp; <code>.indexOf</code></h4>
+<p>${ref((quote rsh), "indexOf")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">indexOf</span><span style="color: #24292E">(arr, x)</span></li><li value="2"><span style="color: #24292E">arr.</span><span style="color: #6F42C1">indexOf</span><span style="color: #24292E">(x)</span></li></ol></pre>
+<p>
+  <code>Array.indexOf(arr, x)</code> returns the index of the first element
+  in the given array that is equal to <code>x</code>. The return value is of type <code>Maybe(UInt)</code>. If
+  the value is not present in the array, <code>None</code> is returned.
+</p>
+<h4 id="arrayfindindex--findindex"><code>Array.findIndex</code> &amp;&amp; <code>.findIndex</code></h4>
+<p>${ref((quote rsh), "findIndex")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">findIndex</span><span style="color: #24292E">(arr, f)</span></li><li value="2"><span style="color: #24292E">arr.</span><span style="color: #6F42C1">findIndex</span><span style="color: #24292E">(f)</span></li></ol></pre>
+<p>
+  <code>Array.findIndex(arr, f)</code> returns the index of the first element
+  in the given array that satisfies the predicate <code>f</code>. The return value is of type <code>Maybe(UInt)</code>. If
+  no value in the array satisfies the predicate, <code>None</code> is returned.
+</p>
+<h4 id="arrayfind--find"><code>Array.find</code> &amp;&amp; <code>.find</code></h4>
+<p>${ref((quote rsh), "find")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">find</span><span style="color: #24292E">(arr, f)</span></li><li value="2"><span style="color: #24292E">arr.</span><span style="color: #6F42C1">find</span><span style="color: #24292E">(f)</span></li></ol></pre>
+<p>
+  <code>Array.find(arr, f)</code> returns the first element in the array, <code>arr</code>,
+  that satisfies the predicate <code>f</code>. The return value is of type <code>Maybe</code>. If no value in the
+  array satisfies the predicate, <code>None</code> is returned.
+</p>
+<h4 id="arraywithindex--withindex"><code>Array.withIndex</code> &amp;&amp; <code>.withIndex</code></h4>
+<p>${ref((quote rsh), "withIndex")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">withIndex</span><span style="color: #24292E">(arr)</span></li><li value="2"><span style="color: #24292E">arr.</span><span style="color: #6F42C1">withIndex</span><span style="color: #24292E">()</span></li></ol></pre>
+<p>
+  <code>Array.withIndex(arr)</code> returns an array where every element of <code>arr</code>
+  is paired with its index. For example, <code>array(Bool, [false, true]).withIndex()</code> returns
+  <code>array(Tuple(Bool, UInt), [[false, 0], [true, 1]])</code>.
+</p>
+<h4 id="arrayslice--slice"><code>Array.slice</code> &amp;&amp; <code>.slice</code></h4>
+<p>${ref((quote rsh), "slice")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">slice</span><span style="color: #24292E">(arr, start, length)</span></li><li value="2"><span style="color: #24292E">arr.</span><span style="color: #6F42C1">slice</span><span style="color: #24292E">(start, length)</span></li></ol></pre>
+<p>
+  <code>Array.slice(arr, start, length)</code> returns a portion of <code>arr</code>, starting from
+  the <code>start</code> index, up to the <code>start + length</code> index.
+</p>
+<h3 id="mapping-group-operations">Mapping group operations</h3>
+<p>
+  <code>Map</code> is a <code>Foldable</code> container. Mappings may be aggregated with the following
+  operations and those of <code>Foldable</code> within the <code>invariant</code> of a <code>while</code> loop.
+</p>
+<h4 id="mapreduce--reduce"><code>Map.reduce</code> &amp;&amp; <code>.reduce</code></h4>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Map</span><span style="color: #24292E">.</span><span style="color: #6F42C1">reduce</span><span style="color: #24292E">(map, z, f)</span></li><li value="2"><span style="color: #24292E">map.</span><span style="color: #6F42C1">reduce</span><span style="color: #24292E">(z, f)</span></li></ol></pre>
+<p>
+  <code>Map.reduce(map, z, f)</code> returns the <a href="https://en.wikipedia.org/wiki/Fold_(higher-order_function)">left fold</a> of the function <code>f</code> over the given mapping with the initial value <code>z</code>.
+  For example, <code>m.reduce(0, add)</code> sums the elements of the mapping.
+  This may be abbreviated as <code>map.reduce(z, f)</code>.
+</p>
+<p>The function <code>f</code> must satisfy the property, for all <code>z</code>, <code>a</code>, <code>b</code>, <code>f(f(z, b), a) == f(f(z, a), b)</code>, because the order of evaluation is unpredictable.</p>
+<h3 id="objects">Objects</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">{ }</span></li><li value="2"><span style="color: #24292E">{ </span><span style="color: #E36209">x</span><span style="color: #24292E">: </span><span style="color: #005CC5">3</span><span style="color: #24292E">, </span><span style="color: #032F62">"yo-yo"</span><span style="color: #24292E">: </span><span style="color: #005CC5">4</span><span style="color: #24292E"> }</span></li><li value="3"><span style="color: #24292E">{ [</span><span style="color: #005CC5">1</span><span style="color: #24292E"> </span><span style="color: #D73A49">&lt;</span><span style="color: #24292E"> </span><span style="color: #005CC5">2</span><span style="color: #24292E"> </span><span style="color: #D73A49">?</span><span style="color: #24292E"> </span><span style="color: #032F62">"one"</span><span style="color: #24292E"> </span><span style="color: #D73A49">:</span><span style="color: #24292E"> </span><span style="color: #032F62">"two"</span><span style="color: #24292E">]: </span><span style="color: #005CC5">5</span><span style="color: #24292E"> }</span></li></ol></pre>
+<p>
+  An ${defn("object")},
+  typically written <code>{ KEY_0: EXPR_0, ..., KEY_n: EXPR_n }</code>,
+  where <code>KEY_0</code> through <code>KEY_n</code> are identifiers or string literals
+  and <code>EXPR_0</code> through <code>EXPR_n</code> are expressions,
+  is an expression which evaluates to an object
+  with fields <code>KEY_0</code> through <code>KEY_n</code>.
+</p>
+<p>Additional object literal syntax exists for convenience, such as:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">{ </span><span style="color: #D73A49">...</span><span style="color: #24292E">obj, </span><span style="color: #E36209">z</span><span style="color: #24292E">: </span><span style="color: #005CC5">5</span><span style="color: #24292E"> }</span></li></ol></pre>
+<p>
+  An ${defn("object splice")},
+  where all fields from <code>obj</code> are copied into the object;
+  these fields may be accompanied by additional fields specified afterwards.
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">{ x, </span><span style="color: #E36209">z</span><span style="color: #24292E">: </span><span style="color: #005CC5">5</span><span style="color: #24292E"> }</span></li></ol></pre>
+<p>Shorthand for <code>{ x: x, z: 5}</code>, where <code>x</code> is any bound identifier.</p>
+<h3 id="structs">Structs</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">Posn</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Struct</span><span style="color: #24292E">([[</span><span style="color: #032F62">"x"</span><span style="color: #24292E">, UInt], [</span><span style="color: #032F62">"y"</span><span style="color: #24292E">, UInt]]);</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">p1</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> Posn.</span><span style="color: #6F42C1">fromObject</span><span style="color: #24292E">({x: </span><span style="color: #005CC5">1</span><span style="color: #24292E">, y: </span><span style="color: #005CC5">2</span><span style="color: #24292E">});</span></li><li value="3"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">p2</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> Posn.</span><span style="color: #6F42C1">fromTuple</span><span style="color: #24292E">([</span><span style="color: #005CC5">1</span><span style="color: #24292E">, </span><span style="color: #005CC5">2</span><span style="color: #24292E">]);</span></li></ol></pre>
+<p>
+  A ${defn("struct")} is a combination of a tuple and an object.
+  It has named elements, like an object, but is ordered like a tuple, so its elements may be accessed by either name or position.
+  Structs exist for interfacing with non-Reach remote objects, where both parties must agree to the runtime representation of the values.
+</p>
+<p>A struct instance may be constructed by calling the <code>fromTuple</code> method of a struct type instance (like <code>Posn</code>) with a tuple of the appropriate length.</p>
+<p>A struct instance may be constructed by calling the <code>fromObject</code> method of a struct type instance (like <code>Posn</code>) with an object with the appropriate fields.</p>
+<p>Structs may be converted into a corresponding tuple or object via the <code>toTuple</code> and <code>toObject</code> methods on the <code>Struct</code> value (as well as struct type instances, like <code>Posn</code> in the example above):</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">assert</span><span style="color: #24292E">(Posn.</span><span style="color: #6F42C1">toTuple</span><span style="color: #24292E">(p1)[</span><span style="color: #005CC5">0</span><span style="color: #24292E">] </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">1</span><span style="color: #24292E">);</span></li><li value="2"><span style="color: #6F42C1">assert</span><span style="color: #24292E">(Struct.</span><span style="color: #6F42C1">toObject</span><span style="color: #24292E">(p2).y </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">2</span><span style="color: #24292E">);</span></li></ol></pre>
+<p>The names of elements may be restricted to avoid conflicting with reserved words of the specified connectors.</p>
+<h3 id="field-reference">Field reference</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">obj.x</span></li></ol></pre>
+<p>
+  An ${defn("object reference")},
+  written <code>OBJ.FIELD</code>,
+  where <code>OBJ</code> is an expression that evaluates to an object or a struct,
+  and <code>FIELD</code> is a valid identifier,
+  accesses the <code>FIELD</code> ${defn("field")} of object OBJ.
+</p>
+<h3 id="objectset"><code>Object.set</code></h3>
+<p>${ref((quote rsh), "Object_set")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Object</span><span style="color: #24292E">.</span><span style="color: #6F42C1">set</span><span style="color: #24292E">(obj, fld, val);</span></li><li value="2"><span style="color: #6F42C1">Object_set</span><span style="color: #24292E">(obj, fld, val);</span></li><li value="3"><span style="color: #24292E">{ </span><span style="color: #D73A49">...</span><span style="color: #24292E">obj, [fld]: val };</span></li></ol></pre>
+<p>
+  Returns a new object identical to <code>obj</code>,
+  except that field <code>fld</code> is replaced with <code>val</code>.
+</p>
+<h3 id="objectsetifunset"><code>Object.setIfUnset</code></h3>
+<p>${ref((quote rsh), "Object_setIfUnset")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Object</span><span style="color: #24292E">.</span><span style="color: #6F42C1">setIfUnset</span><span style="color: #24292E">(obj, fld, val);</span></li><li value="2"><span style="color: #6F42C1">Object_setIfUnset</span><span style="color: #24292E">(obj, fld, val);</span></li></ol></pre>
+<p>
+  Returns a new object identical to <code>obj</code>,
+  except that field <code>fld</code> is <code>val</code> if <code>fld</code> is not already present in <code>obj</code>.
+</p>
+<h3 id="objecthas"><code>Object.has</code></h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">Object</span><span style="color: #24292E">.</span><span style="color: #6F42C1">has</span><span style="color: #24292E">(obj, fld);</span></li></ol></pre>
+<p>
+  Returns a boolean indicating whether the object has the field <code>fld</code>.
+  This is statically known.
+</p>
+<h3 id="data">Data</h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">Taste</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Data</span><span style="color: #24292E">({Salty: Null,</span></li><li value="2"><span style="color: #24292E">                    Spicy: Null,</span></li><li value="3"><span style="color: #24292E">                    Sweet: Null,</span></li><li value="4"><span style="color: #24292E">                    Umami: Null});</span></li><li value="5"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">burger</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> Taste.</span><span style="color: #6F42C1">Umami</span><span style="color: #24292E">();</span></li><li value="6"></li><li value="7"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">Shape</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Data</span><span style="color: #24292E">({ Circle: </span><span style="color: #005CC5">Object</span><span style="color: #24292E">({r: UInt}),</span></li><li value="8"><span style="color: #24292E">                     Square: </span><span style="color: #005CC5">Object</span><span style="color: #24292E">({s: UInt}),</span></li><li value="9"><span style="color: #24292E">                     Rect: </span><span style="color: #005CC5">Object</span><span style="color: #24292E">({w: UInt, h: UInt}) });</span></li><li value="10"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">nice</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> Shape.</span><span style="color: #6F42C1">Circle</span><span style="color: #24292E">({r: </span><span style="color: #005CC5">5</span><span style="color: #24292E">});</span></li></ol></pre>
+<p>
+  A ${defn("data instance")} is written <code>DATA.VARIANT(VALUE)</code>, where <code>DATA</code> is <code>Data</code> type, <code>VARIANT</code> is the name of one of <code>DATA</code>'s variants, and <code>VALUE</code> is a value matching the type of the variant.
+  As a special case, when the type of a variant is <code>Null</code>, the <code>VALUE</code> may be omitted, as shown in the definition of <code>burger</code> in the same above.
+</p>
+<p>Data instances are consumed by <code>switch</code> statements and <code>match</code> expressions.</p>
+<h3 id="maybe"><code>Maybe</code></h3>
+<p>${ref((quote rsh), "Maybe")}${ref((quote rsh), "Some")}${ref((quote rsh), "None")}${ref((quote rsh), "fromMaybe")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">MayInt</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Maybe</span><span style="color: #24292E">(UInt);</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">bidA</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> MayInt.</span><span style="color: #6F42C1">Some</span><span style="color: #24292E">(</span><span style="color: #005CC5">42</span><span style="color: #24292E">);</span></li><li value="3"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">bidB</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> MayInt.</span><span style="color: #6F42C1">None</span><span style="color: #24292E">(</span><span style="color: #005CC5">null</span><span style="color: #24292E">);</span></li><li value="4"></li><li value="5"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #6F42C1">getBid</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> (</span><span style="color: #E36209">m</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> </span><span style="color: #6F42C1">fromMaybe</span><span style="color: #24292E">(m, (() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> </span><span style="color: #005CC5">0</span><span style="color: #24292E">), ((</span><span style="color: #E36209">x</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> x));</span></li><li value="6"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">bidSum</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">getBid</span><span style="color: #24292E">(bidA) </span><span style="color: #D73A49">+</span><span style="color: #24292E"> </span><span style="color: #6F42C1">getBid</span><span style="color: #24292E">(bidB);</span></li><li value="7"><span style="color: #6F42C1">assert</span><span style="color: #24292E">(bidSum </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">42</span><span style="color: #24292E">);</span></li></ol></pre>
+<p><a href="https://en.wikipedia.org/wiki/Option_type">Option types</a> are represented in Reach through the built-in <code>Data</code> type, <code>Maybe</code>, which has two variants: <code>Some</code> and <code>None</code>.</p>
+<p><code>Maybe</code> is defined by</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">export</span><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Maybe</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> (</span><span style="color: #E36209">A</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Data</span><span style="color: #24292E">({None: Null, Some: </span><span style="color: #005CC5">A</span><span style="color: #24292E">});</span></li></ol></pre>
+<p>This means it is a function that returns a <code>Data</code> type specialized to a particular type in the <code>Some</code> variant.</p>
+<p><code>Maybe</code> instances can be conveniently consumed by <code>fromMaybe(mValue, onNone, onSome)</code>, where <code>onNone</code> is a function of no arguments which is called when <code>mValue</code> is <code>None</code>, <code>onSome</code> is a function of one argument which is called with the value when <code>mValue</code> is <code>Some</code>, and <code>mValue</code> is a data instance of <code>Maybe</code>.</p>
+<p>${ref((quote rsh), "isNone")}${ref((quote rsh), "isSome")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">m</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Maybe</span><span style="color: #24292E">(UInt).</span><span style="color: #6F42C1">Some</span><span style="color: #24292E">(</span><span style="color: #005CC5">5</span><span style="color: #24292E">);</span></li><li value="2"><span style="color: #6F42C1">isNone</span><span style="color: #24292E">(m); </span><span style="color: #6A737D">// false</span></li><li value="3"><span style="color: #6F42C1">isSome</span><span style="color: #24292E">(m); </span><span style="color: #6A737D">// true</span></li></ol></pre>
+<p><code>isNone</code> is a convenience method that determines whether the variant is <code>None</code>.</p>
+<p><code>isSome</code> is a convenience method that determines whether the variant is <code>Some</code>.</p>
+<p>${ref((quote rsh), "fromSome")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">fromSome</span><span style="color: #24292E">(</span><span style="color: #6F42C1">Maybe</span><span style="color: #24292E">(UInt).</span><span style="color: #6F42C1">Some</span><span style="color: #24292E">(</span><span style="color: #005CC5">1</span><span style="color: #24292E">), </span><span style="color: #005CC5">0</span><span style="color: #24292E">); </span><span style="color: #6A737D">// 1</span></li><li value="2"><span style="color: #6F42C1">fromSome</span><span style="color: #24292E">(</span><span style="color: #6F42C1">Maybe</span><span style="color: #24292E">(UInt).</span><span style="color: #6F42C1">None</span><span style="color: #24292E">(), </span><span style="color: #005CC5">0</span><span style="color: #24292E">);  </span><span style="color: #6A737D">// 0</span></li></ol></pre>
+<p>
+  <code>fromSome</code> receives a <code>Maybe</code> value and a default value as arguments and will return the value inside
+  of the <code>Some</code> variant or the default value otherwise.
+</p>
+<p>${ref((quote rsh), "maybe")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #6F42C1">add1</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> (</span><span style="color: #E36209">x</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> x </span><span style="color: #D73A49">+</span><span style="color: #24292E"> </span><span style="color: #005CC5">1</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #6F42C1">maybe</span><span style="color: #24292E">(</span><span style="color: #6F42C1">Maybe</span><span style="color: #24292E">(UInt).</span><span style="color: #6F42C1">Some</span><span style="color: #24292E">(</span><span style="color: #005CC5">1</span><span style="color: #24292E">), </span><span style="color: #005CC5">0</span><span style="color: #24292E">, add1); </span><span style="color: #6A737D">// 2</span></li><li value="3"><span style="color: #6F42C1">maybe</span><span style="color: #24292E">(</span><span style="color: #6F42C1">Maybe</span><span style="color: #24292E">(UInt).</span><span style="color: #6F42C1">None</span><span style="color: #24292E">(), </span><span style="color: #005CC5">0</span><span style="color: #24292E">, add1);  </span><span style="color: #6A737D">// 0</span></li></ol></pre>
+<p>
+  <code>maybe(m, defaultVal, f)</code> receives a <code>Maybe</code> value, a default value, and a unary function as arguments. The function will
+  either return the application of the function, <code>f</code>, to the <code>Some</code> value or return the default value provided.
+</p>
+<h3 id="either"><code>Either</code></h3>
+<p><code>Either</code> is defined by</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">export</span><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Either</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> (</span><span style="color: #E36209">A</span><span style="color: #24292E">, </span><span style="color: #E36209">B</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Data</span><span style="color: #24292E">({Left: </span><span style="color: #005CC5">A</span><span style="color: #24292E">, Right: </span><span style="color: #005CC5">B</span><span style="color: #24292E">});</span></li></ol></pre>
+<p><code>Either</code> can be used to represent values with two possible types.</p>
+<p>
+  Similar to <code>Maybe</code>, <code>Either</code> may be used to represent values that are correct or erroneous.
+  A successful result is stored, by convention, in <code>Right</code>. Unlike <code>None</code>, <code>Left</code> may
+  carry additional information about the error.
+</p>
+<p>${ref((quote rsh), "either")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">either</span><span style="color: #24292E">(e, onLeft, onRight)</span></li></ol></pre>
+<p><code>either(e, onLeft, onRight)</code> will either apply the function <code>onLeft</code> or <code>onRight</code> depending on <code>e</code>.</p>
+<p>${ref((quote rsh), "isLeft")}${ref((quote rsh), "isRight")}${ref((quote rsh), "fromLeft")}${ref((quote rsh), "fromRight")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">e</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Either</span><span style="color: #24292E">(UInt, Bool);</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">l</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> e.</span><span style="color: #6F42C1">Left</span><span style="color: #24292E">(</span><span style="color: #005CC5">1</span><span style="color: #24292E">);</span></li><li value="3"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">r</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> e.</span><span style="color: #6F42C1">Right</span><span style="color: #24292E">(</span><span style="color: #005CC5">true</span><span style="color: #24292E">);</span></li><li value="4"><span style="color: #6F42C1">isLeft</span><span style="color: #24292E">(l);  </span><span style="color: #6A737D">// true</span></li><li value="5"><span style="color: #6F42C1">isRight</span><span style="color: #24292E">(l); </span><span style="color: #6A737D">// false</span></li><li value="6"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">x</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">fromLeft</span><span style="color: #24292E">(l, </span><span style="color: #005CC5">0</span><span style="color: #24292E">);      </span><span style="color: #6A737D">// x = 1</span></li><li value="7"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">y</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">fromRight</span><span style="color: #24292E">(l, </span><span style="color: #005CC5">false</span><span style="color: #24292E">); </span><span style="color: #6A737D">// y = false</span></li></ol></pre>
+<p><code>isLeft</code> is a convenience method that determines whether the variant is <code>Left</code>.</p>
+<p><code>isRight</code> is a convenience method that determines whether the variant is <code>Right</code>.</p>
+<p>
+  <code>fromLeft(e, default)</code> is a convenience method that returns the value in <code>Left</code>,
+  or <code>default</code> if the variant is <code>Right</code>.
+</p>
+<p>
+  <code>fromRight(e, default)</code> is a convenience method that returns the value in <code>Right</code>,
+  or <code>default</code> if the variant is <code>Left</code>.
+</p>
+<h3 id="match"><code>match</code></h3>
+<p>${ref((quote rsh), "match")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">Value</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Data</span><span style="color: #24292E">({</span></li><li value="2"><span style="color: #24292E">   EBool: Bool,</span></li><li value="3"><span style="color: #24292E">   EInt: UInt,</span></li><li value="4"><span style="color: #24292E">   ENull: Null,</span></li><li value="5"><span style="color: #24292E"> });</span></li><li value="6"><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">v1</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> Value.</span><span style="color: #6F42C1">EBool</span><span style="color: #24292E">(</span><span style="color: #005CC5">true</span><span style="color: #24292E">);</span></li><li value="7"><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">v2</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> Value.</span><span style="color: #6F42C1">EInt</span><span style="color: #24292E">(</span><span style="color: #005CC5">200</span><span style="color: #24292E">);</span></li><li value="8"><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #6F42C1">isTruthy</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> (</span><span style="color: #E36209">v</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span></li><li value="9"><span style="color: #24292E">   v.</span><span style="color: #6F42C1">match</span><span style="color: #24292E">({</span></li><li value="10"><span style="color: #24292E">     </span><span style="color: #6F42C1">EBool</span><span style="color: #24292E">: (</span><span style="color: #E36209">b</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> { </span><span style="color: #D73A49">return</span><span style="color: #24292E"> b },</span></li><li value="11"><span style="color: #24292E">     </span><span style="color: #6F42C1">EInt</span><span style="color: #24292E"> : (</span><span style="color: #E36209">i</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> { </span><span style="color: #D73A49">return</span><span style="color: #24292E"> i </span><span style="color: #D73A49">!=</span><span style="color: #24292E"> </span><span style="color: #005CC5">0</span><span style="color: #24292E"> },</span></li><li value="12"><span style="color: #24292E">     </span><span style="color: #6F42C1">ENull</span><span style="color: #24292E">: ()  </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> { </span><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #005CC5">false</span><span style="color: #24292E"> }</span></li><li value="13"><span style="color: #24292E">   });</span></li><li value="14"></li><li value="15"><span style="color: #24292E"> </span><span style="color: #6F42C1">assert</span><span style="color: #24292E">(</span><span style="color: #6F42C1">isTruthy</span><span style="color: #24292E">(v1));</span></li><li value="16"><span style="color: #24292E"> </span><span style="color: #6F42C1">assert</span><span style="color: #24292E">(</span><span style="color: #6F42C1">isTruthy</span><span style="color: #24292E">(v2));</span></li></ol></pre>
+<p>
+  A ${defn("match expression")}, written <code>VAR.match({ CASE ... })</code>, where <code>VAR</code> is a variable
+  bound to a data instance and <code>CASE</code> is <code>VARIANT: FUNCTION</code>, where <code>VARIANT</code> is a
+  variant or <code>default</code>, and <code>FUNCTION</code> is a function that takes the same arguments as the
+  variant constructor.
+  If the variant has a type of <code>Null</code>, then the function is allowed to take no arguments.
+  <code>default</code> functions must always take an argument, even if all defaulted variants have type <code>Null</code>.
+</p>
+<p>
+  <code>match</code> is similar to a switch statement, but since it is an expression, it
+  can be conveniently used in places like the right hand side of an assignment statement.
+</p>
+<p>
+  Similar to a switch statement, the cases are expected to be exhaustive and nonredundant,
+  all cases have empty tails, and it may only include a consensus transfer in
+  its cases if it is within a consensus step.
+</p>
+<h3 id="conditional-expression">Conditional expression</h3>
+<p>${ref((quote rsh), "?")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">choosesFirst </span><span style="color: #D73A49">?</span><span style="color: #24292E"> [ heap1 </span><span style="color: #D73A49">-</span><span style="color: #24292E"> amount, heap2 ] </span><span style="color: #D73A49">:</span><span style="color: #24292E"> [ heap1, heap2 </span><span style="color: #D73A49">-</span><span style="color: #24292E"> amount ]</span></li></ol></pre>
+<p>A ${defn("conditional expression")}, written <code>COND_E ? NOT_FALSE_E : FALSE_E</code>, where <code>COND_E</code>, <code>NOT_FALSE_E</code>, and <code>FALSE_E</code> are expressions, selects between the values which <code>NOT_FALSE_E</code> and <code>FALSE_E</code> evaluate to based on whether <code>COND_E</code> evaluates to <code>false</code>.</p>
+<p>${ref((quote rsh), "ite")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">ite</span><span style="color: #24292E">(choosesFirst, [heap1 </span><span style="color: #D73A49">-</span><span style="color: #24292E"> amount, heap2], [heap1, heap2 </span><span style="color: #D73A49">-</span><span style="color: #24292E"> amount])</span></li></ol></pre>
+<p>
+  Conditional expressions may also be written with the <code>ite</code> function,
+  however, note that this function always evaluates both of its branches,
+  while the regular conditional expression only evaluates one branch.
+</p>
+<h3 id="arrow-expression">Arrow expression</h3>
+<p>${ref((quote rsh), "=&gt;")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">(() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> </span><span style="color: #005CC5">4</span><span style="color: #24292E">)</span></li><li value="2"><span style="color: #24292E">((</span><span style="color: #E36209">x</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> x </span><span style="color: #D73A49">+</span><span style="color: #24292E"> </span><span style="color: #005CC5">1</span><span style="color: #24292E">)</span></li><li value="3"><span style="color: #24292E">((</span><span style="color: #E36209">x</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> { </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">y</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> x </span><span style="color: #D73A49">+</span><span style="color: #24292E"> </span><span style="color: #005CC5">1</span><span style="color: #24292E">;</span></li><li value="4"><span style="color: #24292E">          </span><span style="color: #D73A49">return</span><span style="color: #24292E"> y </span><span style="color: #D73A49">+</span><span style="color: #24292E"> </span><span style="color: #005CC5">1</span><span style="color: #24292E">; })</span></li><li value="5"><span style="color: #24292E">((</span><span style="color: #E36209">x</span><span style="color: #24292E">, </span><span style="color: #E36209">y</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> { </span><span style="color: #6F42C1">assert</span><span style="color: #24292E">(x </span><span style="color: #D73A49">+</span><span style="color: #24292E"> y </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">3</span><span style="color: #24292E">); })(</span><span style="color: #005CC5">1</span><span style="color: #24292E">, </span><span style="color: #005CC5">2</span><span style="color: #24292E">);</span></li><li value="6"><span style="color: #24292E">((</span><span style="color: #E36209">x</span><span style="color: #24292E">, </span><span style="color: #E36209">y</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> { </span><span style="color: #6F42C1">assert</span><span style="color: #24292E">(x </span><span style="color: #D73A49">+</span><span style="color: #24292E"> y </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">3</span><span style="color: #24292E">); })(</span><span style="color: #D73A49">...</span><span style="color: #24292E">[</span><span style="color: #005CC5">1</span><span style="color: #24292E">, </span><span style="color: #005CC5">2</span><span style="color: #24292E">]);</span></li><li value="7"><span style="color: #24292E">((</span><span style="color: #E36209">x</span><span style="color: #24292E">, </span><span style="color: #E36209">y</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">2</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> { </span><span style="color: #6F42C1">assert</span><span style="color: #24292E">(x </span><span style="color: #D73A49">+</span><span style="color: #24292E"> y </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">3</span><span style="color: #24292E">); })(</span><span style="color: #005CC5">1</span><span style="color: #24292E">);</span></li><li value="8"><span style="color: #24292E">((</span><span style="color: #E36209">x</span><span style="color: #24292E">, </span><span style="color: #E36209">y</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">2</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> { </span><span style="color: #6F42C1">assert</span><span style="color: #24292E">(x </span><span style="color: #D73A49">+</span><span style="color: #24292E"> y </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">2</span><span style="color: #24292E">); })(</span><span style="color: #005CC5">1</span><span style="color: #24292E">, </span><span style="color: #005CC5">1</span><span style="color: #24292E">);</span></li><li value="9"><span style="color: #24292E">(([</span><span style="color: #E36209">x</span><span style="color: #24292E">, </span><span style="color: #E36209">y</span><span style="color: #24292E">]) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> { </span><span style="color: #6F42C1">assert</span><span style="color: #24292E">(x </span><span style="color: #D73A49">+</span><span style="color: #24292E"> y </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">3</span><span style="color: #24292E">); })([</span><span style="color: #005CC5">1</span><span style="color: #24292E">, </span><span style="color: #005CC5">2</span><span style="color: #24292E">]);</span></li><li value="10"><span style="color: #24292E">(({</span><span style="color: #E36209">x</span><span style="color: #24292E">, </span><span style="color: #E36209">y</span><span style="color: #24292E">}) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> { </span><span style="color: #6F42C1">assert</span><span style="color: #24292E">(x </span><span style="color: #D73A49">+</span><span style="color: #24292E"> y </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">3</span><span style="color: #24292E">); })({x: </span><span style="color: #005CC5">1</span><span style="color: #24292E">, y: </span><span style="color: #005CC5">2</span><span style="color: #24292E">});</span></li><li value="11"><span style="color: #24292E">(([</span><span style="color: #E36209">x</span><span style="color: #24292E">, [</span><span style="color: #E36209">y</span><span style="color: #24292E">]]) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> { </span><span style="color: #6F42C1">assert</span><span style="color: #24292E">(x </span><span style="color: #D73A49">+</span><span style="color: #24292E"> y </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">3</span><span style="color: #24292E">); })([</span><span style="color: #005CC5">1</span><span style="color: #24292E">,[</span><span style="color: #005CC5">2</span><span style="color: #24292E">]]);</span></li><li value="12"><span style="color: #24292E">(([</span><span style="color: #E36209">x</span><span style="color: #24292E">, {</span><span style="color: #E36209">y</span><span style="color: #24292E">}]) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> { </span><span style="color: #6F42C1">assert</span><span style="color: #24292E">(x </span><span style="color: #D73A49">+</span><span style="color: #24292E"> y </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">3</span><span style="color: #24292E">); })([</span><span style="color: #005CC5">1</span><span style="color: #24292E">,{ y: </span><span style="color: #005CC5">2</span><span style="color: #24292E"> }]);</span></li><li value="13"><span style="color: #24292E">((</span><span style="color: #D73A49">...</span><span style="color: #E36209">xs</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> Foldable.</span><span style="color: #6F42C1">sum</span><span style="color: #24292E">(xs))(</span><span style="color: #005CC5">1</span><span style="color: #24292E">, </span><span style="color: #005CC5">2</span><span style="color: #24292E">, </span><span style="color: #005CC5">3</span><span style="color: #24292E">)</span></li></ol></pre>
+<p>
+  An ${defn("arrow expression")}, written <code>(LHS_0, ..., LHS_n) =&gt; EXPR</code>, where <code>LHS_0</code> through <code>LHS_n</code> are left-hand sides and <code>EXPR</code> is an expression, evaluates to a function which is an abstraction of <code>EXPR</code> over <code>n</code> values compatible with the respective left-hand side.
+  Like function definitions, arrow expressions may use default argument notation and rest parameters.
+</p>
+<h3 id="makeenum"><code>makeEnum</code></h3>
+<p>${ref((quote rsh), "makeEnum")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">isHand</span><span style="color: #24292E">, </span><span style="color: #005CC5">ROCK</span><span style="color: #24292E">, </span><span style="color: #005CC5">PAPER</span><span style="color: #24292E">, </span><span style="color: #005CC5">SCISSORS</span><span style="color: #24292E"> ] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">makeEnum</span><span style="color: #24292E">(</span><span style="color: #005CC5">3</span><span style="color: #24292E">);</span></li></ol></pre>
+<p>
+  An ${defn("enumeration")} (or ${defn("enum")}, for short),
+  can be created by calling the <code>makeEnum</code> function, as in <code>makeEnum(N)</code>,
+  where <code>N</code> is the number of distinct values in the enum.
+  This produces a tuple of <code>N+1</code> values,
+  where the first value is a <code>Fun([UInt], Bool)</code>
+  which tells you if its argument is one of the enum's values,
+  and the next N values are distinct <code>UInt</code>s.
+</p>
+<h3 id="assert"><code>assert</code></h3>
+<p>${ref((quote rsh), "assert")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">assert</span><span style="color: #24292E">( claim, [msg] )</span></li></ol></pre>
+<p>
+  A static assertion which is only valid if <code>claim</code> always evaluates to <code>true</code>.
+  ::: note
+  The Reach compiler will produce a counter-example (i.e. an assignment of the identifiers in the program to falsify the <code>claim</code>) when an invalid <code>claim</code> is provided.
+  It is possible to write a <code>claim</code> that actually always evaluates to <code>true</code>, but for which our current approach cannot prove always evaluates to <code>true</code>; if this is the case, Reach will fail to compile the program, reporting that its analysis is incomplete.
+  Reach will never produce an erroneous counter-example.
+  :::
+  It accepts an optional bytes argument, which is included in any reported violation.
+</p>
+<p>
+  ::: note
+  See <a href="##guide-assert">the guide section on verification</a> to better understand how and what to verify in your program.
+  :::
+</p>
+<h3 id="forall"><code>forall</code></h3>
+<p>${ref((quote rsh), "forall")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">forall</span><span style="color: #24292E">( Type )</span></li><li value="2"><span style="color: #6F42C1">forall</span><span style="color: #24292E">( Type, (</span><span style="color: #E36209">var</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> </span><span style="color: #005CC5">BLOCK</span><span style="color: #24292E"> )</span></li></ol></pre>
+<p>
+  The single argument version returns an abstract value of the given type.
+  It may only be referenced inside of assertions; any other reference is invalid.
+</p>
+<p>
+  The two argument version is an abbreviation of calling the second argument with the result of <code>forall(Type)</code>.
+  This is convenient for writing general claims about expressions, such as
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">forall</span><span style="color: #24292E">(UInt, (</span><span style="color: #E36209">x</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> </span><span style="color: #6F42C1">assert</span><span style="color: #24292E">(x </span><span style="color: #D73A49">==</span><span style="color: #24292E"> x));</span></li></ol></pre>
+<h3 id="possible"><code>possible</code></h3>
+<p>${ref((quote rsh), "possible")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">possible</span><span style="color: #24292E">( claim, [msg] )</span></li></ol></pre>
+<p>
+  A possibility assertion which is only valid if it is possible for <code>claim</code> to evaluate to <code>true</code> with honest frontends and participants.
+  It accepts an optional bytes argument, which is included in any reported violation.
+</p>
+<h3 id="digest"><code>digest</code></h3>
+<p>${ref((quote rsh), "digest")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">digest</span><span style="color: #24292E">( arg_0, </span><span style="color: #D73A49">...</span><span style="color: #24292E">, arg_n )</span></li></ol></pre>
+<p>
+  The digest primitive performs a <a href="https://en.wikipedia.org/wiki/Cryptographic_hash_function">cryptographic hash</a> of the binary encoding of the given arguments.
+  This returns a <code>Digest</code> value.
+  The exact algorithm used depends on the connector.
+</p>
+<h3 id="balance"><code>balance</code></h3>
+<p>${ref((quote rsh), "balance")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">balance</span><span style="color: #24292E">();</span></li><li value="2"><span style="color: #6F42C1">balance</span><span style="color: #24292E">(gil);</span></li></ol></pre>
+<p>
+  The ${defn("balance")} primitive returns the balance of the contract account for the DApp.
+  It takes an optional non-network token value, in which case it returns the balance of the given token.
+</p>
+<h3 id="getcontract"><code>getContract</code></h3>
+<p>${ref((quote rsh), "getContract")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">getContract</span><span style="color: #24292E">()</span></li></ol></pre>
+<p>
+  The ${defn("getContract")} primitive returns the <code>Contract</code> value for the deployed contract.
+  This function may not be called until after the first publication (which creates the contract).
+</p>
+<h3 id="getaddress"><code>getAddress</code></h3>
+<p>${ref((quote rsh), "getAddress")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">getAddress</span><span style="color: #24292E">()</span></li></ol></pre>
+<p>
+  The ${defn("getAddress")} primitive returns the <code>Address</code> value of the deployed contract's account.
+  This function may not be called until after the first publication (which creates the contract).
+</p>
+<h3 id="lastconsensustime-and-lastconsensussecs"><code>lastConsensusTime</code> and <code>lastConsensusSecs</code></h3>
+<p>${ref((quote rsh), "lastConsensusTime")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">lastConsensusTime</span><span style="color: #24292E">()</span></li></ol></pre>
+<p>
+  The ${defn("lastConsensusTime")} primitive returns the network time of the last publication of the DApp.
+  This may not be available if there was no such previous publication, such as at the beginning of an application before the first publication.
+</p>
+<p>
+  ::: note
+  Why is there no <code>thisConsensusTime</code>?
+  Some networks do not support observing the time of a consensus operation until after it has finalized.
+  This aides scalability, because it increases the number of times when an operation could be finalized.
+  :::
+</p>
+<hr>
+<p>${ref((quote rsh), "lastConsensusSecs")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">lastConsensusSecs</span><span style="color: #24292E">()</span></li></ol></pre>
+<p>${defn("lastConsensusSecs")} is like lastConsensusTime, except it returns the network seconds.</p>
+<h3 id="basewaittime-and-basewaitsecs"><code>baseWaitTime</code> and <code>baseWaitSecs</code></h3>
+<p>${ref((quote rsh), "baseWaitTime")}${ref((quote rsh), "baseWaitSecs")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">baseWaitTime</span><span style="color: #24292E">()</span></li><li value="2"><span style="color: #6F42C1">baseWaitSecs</span><span style="color: #24292E">()</span></li></ol></pre>
+<p>
+  These primitives return the network time (network seconds) that a relative time argument refers to.
+  This is either the same as <code>lastConsensusTime</code> (<code>lastConsensusSecs</code>) or the deadline of the previous <code>wait</code> or <code>.timeout</code>.
+</p>
+<h3 id="time-arguments---relativetime-absolutetime-relativesecs-absolutesecs">Time arguments - <code>relativeTime</code>, <code>absoluteTime</code>, <code>relativeSecs</code>, <code>absoluteSecs</code></h3>
+<p>${ref((quote rsh), "relativeTime")}${ref((quote rsh), "absoluteTime")}${ref((quote rsh), "relativeSecs")}${ref((quote rsh), "absoluteSecs")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">relativeTime</span><span style="color: #24292E">(amt)</span></li><li value="2"><span style="color: #6F42C1">absoluteTime</span><span style="color: #24292E">(time)</span></li><li value="3"><span style="color: #6F42C1">relativeSecs</span><span style="color: #24292E">(amt)</span></li><li value="4"><span style="color: #6F42C1">absoluteSecs</span><span style="color: #24292E">(secs)</span></li></ol></pre>
+<p>These functions return ${defn("time arguments")}, which are instances of the type <code>Either(UInt, UInt)</code>, where <code>Left</code> variants refer to absolute network time and <code>Right</code> variants refer to absolute network seconds.</p>
+<p>The <code>absoluteTime</code> and <code>absoluteSecs</code> are equivalent to <code>Left</code> and <code>Right</code> variant tags.</p>
+<p>The <code>relativeTime</code> and <code>relativeSecs</code> functions add <code>baseWaitTime</code> and <code>baseWaitSecs</code> to their arguments before tagging with the appropriate variant.</p>
+<p>If a time argument is required, an integer value is allowed and is interpreted as a <code>relativeTime</code>, but this behavior is deprecated and you will see a warning.</p>
+<h3 id="makedeadline"><code>makeDeadline</code></h3>
+<p>${ref((quote rsh), "makeDeadline")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">timeRemaining</span><span style="color: #24292E">, </span><span style="color: #005CC5">keepGoing</span><span style="color: #24292E"> ] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">makeDeadline</span><span style="color: #24292E">(</span><span style="color: #005CC5">10</span><span style="color: #24292E">);</span></li></ol></pre>
+<p>
+  <code>makeDeadline(deadline)</code> takes a <code>UInt</code> as an argument and returns a pair of functions
+  that can be used for dealing with absolute deadlines. It internally determines the end time based off of the deadline
+  and the last consensus time—at the time of calling <code>makeDeadline</code>. <code>timeRemaining</code> will calculate the difference
+  between the end time and the current last consensus time. <code>keepGoing</code> determines whether the current last consensus time
+  is less than the end time. It is typical to use the two fields for the <code>while</code> and <code>timeout</code> field of a <code>parallelReduce</code>
+  expression. For example:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">timeRemaining</span><span style="color: #24292E">, </span><span style="color: #005CC5">keepGoing</span><span style="color: #24292E"> ] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">makeDeadline</span><span style="color: #24292E">(</span><span style="color: #005CC5">10</span><span style="color: #24292E">);</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">_</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">parallelReduce</span><span style="color: #24292E">(</span><span style="color: #D73A49">...</span><span style="color: #24292E">)</span></li><li value="3"><span style="color: #24292E">  .</span><span style="color: #6F42C1">invariant</span><span style="color: #24292E">(</span><span style="color: #D73A49">...</span><span style="color: #24292E">)</span></li><li value="4"><span style="color: #24292E">  .</span><span style="color: #6F42C1">while</span><span style="color: #24292E">( </span><span style="color: #6F42C1">keepGoing</span><span style="color: #24292E">() )</span></li><li value="5"><span style="color: #24292E">  .</span><span style="color: #6F42C1">case</span><span style="color: #24292E">(</span><span style="color: #D73A49">...</span><span style="color: #24292E">)</span></li><li value="6"><span style="color: #24292E">  .</span><span style="color: #6F42C1">timeout</span><span style="color: #24292E">( </span><span style="color: #6F42C1">timeRemaining</span><span style="color: #24292E">(), () </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> { </span><span style="color: #D73A49">...</span><span style="color: #24292E"> })</span></li></ol></pre>
+<p>This pattern is so common that it can be abbreviated as <code>.timeRemaining</code>.</p>
+<h3 id="implies"><code>implies</code></h3>
+<p>${ref((quote rsh), "implies")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">implies</span><span style="color: #24292E">( x, y )</span></li></ol></pre>
+<p>Returns <code>true</code> if <code>x</code> is <code>false</code> or <code>y</code> is <code>true</code>.</p>
+<h3 id="ensure"><code>ensure</code></h3>
+<p>${ref((quote rsh), "ensure")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">ensure</span><span style="color: #24292E">( pred, x )</span></li></ol></pre>
+<p>Makes a static assertion that <code>pred(x)</code> is <code>true</code> and returns <code>x</code>.</p>
+<h3 id="hasrandom"><code>hasRandom</code></h3>
+<p>${ref((quote rsh), "hasRandom")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">hasRandom</span></li></ol></pre>
+<p>A participant interact interface which specifies <code>random</code> as a function that takes no arguments and returns an unsigned integer of bit width bits. Reach provides a default frontend implementation via hasRandom (Frontend).</p>
+<h3 id="hasconsolelogger"><code>hasConsoleLogger</code></h3>
+<p>${ref((quote rsh), "hasConsoleLogger")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">hasConsoleLogger</span></li></ol></pre>
+<p>A participant interact interface which specifies <code>log</code> with an unconstrained domain function type that returns <code>Null</code>. Reach provides a default frontend implementation via hasConsoleLogger (Frontend).</p>
+<h3 id="compose"><code>compose</code></h3>
+<p>${ref((quote rsh), "compose")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">compose</span><span style="color: #24292E">(f, g)</span></li></ol></pre>
+<p>
+  Creates a new function that applies its argument to <code>g</code>, then pipes the result to the function <code>f</code>.
+  The argument type of <code>f</code> must be the return type of <code>g</code>.
+</p>
+<h3 id="muldiv"><code>muldiv</code></h3>
+<p>
+  ::: note
+  Currently, wide arithmetic operations are only suported on Algorand.
+  :::
+</p>
+<p>${ref((quote rsh), "muldiv")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">muldiv</span><span style="color: #24292E">(a, b, c)</span></li></ol></pre>
+<p>
+  Multiplies <code>a</code> by <code>b</code>, then immediately divides the product by <code>c</code>.
+  The intermediate value may be larger than <code>UInt.max</code> if the connector supports wide arithmetic operations.
+  The resulting quotient must be less than <code>UInt.max</code>.
+</p>
+<h3 id="sqrt"><code>sqrt</code></h3>
+<p>${ref((quote rsh), "sqrt")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">sqrt</span><span style="color: #24292E">(</span><span style="color: #005CC5">81</span><span style="color: #24292E">, </span><span style="color: #005CC5">10</span><span style="color: #24292E">)</span></li></ol></pre>
+<p>
+  Calculates an approximate square root of the first argument. This method utilizes
+  the <a href="https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method">Babylonian Method</a> for computing
+  the square root. The second argument must be a <code>UInt</code> whose value is known at compile time, which represents the number
+  of iterations the algorithm should perform.
+</p>
+<p>
+  For reference, when performing <code>5</code> iterations, the algorithm can reliably calculate the square root
+  up to <code>32</code> squared, or <code>1,024</code>. When performing <code>10</code> iterations, the algorithm can reliably calculate the
+  square root up to <code>580</code> squared, or <code>336,400</code>.
+</p>
+<h3 id="pow"><code>pow</code></h3>
+<p>${ref((quote rsh), "pow")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">pow</span><span style="color: #24292E"> (</span><span style="color: #005CC5">2</span><span style="color: #24292E">, </span><span style="color: #005CC5">40</span><span style="color: #24292E">, </span><span style="color: #005CC5">10</span><span style="color: #24292E">) </span><span style="color: #6A737D">// =&gt; 1,099,511,627,776</span></li></ol></pre>
+<p>
+  <code>pow(base, power, precision)</code> calculates the approximate value of raising base to power.
+  The third argument must be a <code>UInt</code> whose value is known at compile time, which represents the number
+  of iterations the algorithm should perform. For reference, <code>6</code> iterations provides enough accuracy to calculate
+  up to <code>2^64 - 1</code>, so the largest power it can compute is <code>63</code>.
+</p>
+<h3 id="signed-integers">Signed Integers</h3>
+<p>
+  The standard library provides abstractions for dealing with signed integers. The following definitions
+  are used to represent <code>Int</code>s:
+</p>
+<p>
+  ::: note
+  <code>Int</code> is represented as an object, as opposed to a scalar value, because some platforms
+  that Reach targets do not provide native support for signed integers.
+  :::
+</p>
+<p>${ref((quote rsh), "Int")}${ref((quote rsh), "Pos")}${ref((quote rsh), "Neg")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">Int</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> { sign: Bool, i: UInt };</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">Pos</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">true</span><span style="color: #24292E">;</span></li><li value="3"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">Neg</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">false</span><span style="color: #24292E">;</span></li></ol></pre>
+<p>
+  <code>int(Bool, UInt)</code> is shorthand for defining an <code>Int</code> record. You may also
+  use the <code>+</code> and <code>-</code> unary operators to declare integers instead of <code>UInt</code>s.
+</p>
+<p>${ref((quote rsh), "int")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">int</span><span style="color: #24292E">(Pos, </span><span style="color: #005CC5">4</span><span style="color: #24292E">); </span><span style="color: #6A737D">// represents 4</span></li><li value="2"><span style="color: #6F42C1">int</span><span style="color: #24292E">(Neg, </span><span style="color: #005CC5">4</span><span style="color: #24292E">); </span><span style="color: #6A737D">// represents -4</span></li><li value="3"><span style="color: #D73A49">-</span><span style="color: #005CC5">4</span><span style="color: #24292E">;          </span><span style="color: #6A737D">// represents -4</span></li><li value="4"><span style="color: #D73A49">+</span><span style="color: #005CC5">4</span><span style="color: #24292E">;          </span><span style="color: #6A737D">// represents 4 : Int</span></li><li value="5"><span style="color: #24292E"> </span><span style="color: #005CC5">4</span><span style="color: #24292E">;          </span><span style="color: #6A737D">// represents 4 : UInt</span></li></ol></pre>
+<p><code>iadd(x, y)</code> adds the <code>Int</code> <code>x</code> and the <code>Int</code> <code>y</code>.</p>
+<p><code>isub(x, y)</code> subtracts the <code>Int</code> <code>y</code> from the <code>Int</code> <code>x</code>.</p>
+<p><code>imul(x, y)</code> multiplies the <code>Int</code> <code>x</code> and the <code>Int</code> <code>y</code>.</p>
+<p><code>idiv(x, y)</code> divides the <code>Int</code> <code>x</code> by the <code>Int</code> <code>y</code>.</p>
+<p><code>imod(x, y)</code> finds the remainder of dividing the <code>Int</code> <code>x</code> by the <code>Int</code> <code>y</code>.</p>
+<p><code>ilt(x, y)</code> determines whether <code>x</code> is less than <code>y</code>.</p>
+<p><code>ile(x, y)</code> determines whether <code>x</code> is less than or equal to <code>y</code>.</p>
+<p><code>igt(x, y)</code> determines whether <code>x</code> is greather than <code>y</code>.</p>
+<p><code>ige(x, y)</code> determines whether <code>x</code> is greater than or equal to <code>y</code>.</p>
+<p><code>ieq(x, y)</code> determines whether <code>x</code> is equal to <code>y</code>.</p>
+<p><code>ine(x, y)</code> determines whether <code>x</code> is not equal to <code>y</code>.</p>
+<p><code>imax(x, y)</code> returns the larger of two <code>Int</code>s.</p>
+<p><code>abs(i)</code> returns the absolute value of an <code>Int</code>. The return value is of type <code>UInt</code>.</p>
+<h3 id="fixed-point-numbers">Fixed-Point Numbers</h3>
+<p><code>FixedPoint</code> is defined by</p>
+<p>${ref((quote rsh), "FixedPoint")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">export</span><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">FixedPoint</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">Object</span><span style="color: #24292E">({ sign: bool, i: </span><span style="color: #005CC5">Object</span><span style="color: #24292E">({ scale: UInt, i: UInt }) });</span></li></ol></pre>
+<p>
+  <code>FixedPoint</code> can be used to represent numbers with a fixed number of digits after the decimal point.
+  They are handy for representing fractional values, especially in base 10. The value of a fixed point number is determined
+  by dividing the underlying integer value, <code>i</code>, by its scale factor, <code>scale</code>. For example, we could
+  represent the value <code>1.234</code> with <code>{ sign: Pos, i: { scale: 1000, i : 1234 } }</code> or <code>fx(1000)(Pos, 1234)</code>.
+  Alternatively, Reach provides syntactic sugar for defining <code>FixedPoint</code> numbers. One can simply write
+  <code>1.234</code>, which will assume the value is in base 10. A scale factor of <code>1000</code> correlates to 3 decimal
+  places of precision. Similarly, a scale factor of <code>100</code> would have 2 decimal places of precision.
+</p>
+<p>${ref((quote rsh), "fx")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">scale</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">10</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">i</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">56</span><span style="color: #24292E">;</span></li><li value="3"><span style="color: #6F42C1">fx</span><span style="color: #24292E">(scale)(Neg, i); </span><span style="color: #6A737D">// represents - 5.6</span></li></ol></pre>
+<p>
+  <code>fx(scale)(i)</code> will return a function that can be used to
+  instantiate fixed point numbers with a particular scale factor.
+</p>
+<p>${ref((quote rsh), "fxint")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">i</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">4</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #6F42C1">fxint</span><span style="color: #24292E">(</span><span style="color: #D73A49">-</span><span style="color: #24292E">i); </span><span style="color: #6A737D">// represents - 4.0</span></li></ol></pre>
+<p>
+  <code>fxint(Int)</code> will cast the <code>Int</code> arg as a <code>FixedPoint</code>
+  number with a <code>scale</code> of 1.
+</p>
+<p>${ref((quote rsh), "fxrescale")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">x</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">fx</span><span style="color: #24292E">(</span><span style="color: #005CC5">1000</span><span style="color: #24292E">)(Pos, </span><span style="color: #005CC5">1234</span><span style="color: #24292E">); </span><span style="color: #6A737D">// x = 1.234</span></li><li value="2"><span style="color: #6F42C1">fxrescale</span><span style="color: #24292E">(x, </span><span style="color: #005CC5">100</span><span style="color: #24292E">);    </span><span style="color: #6A737D">// =&gt; 1.23</span></li></ol></pre>
+<p>
+  <code>fxrescale(x, scale)</code> will convert a fixed point number from using
+  one scale to another. This operation can result in loss of precision, as demonstrated in the above example.
+</p>
+<p>${ref((quote rsh), "fxunify")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">x</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">fx</span><span style="color: #24292E">(</span><span style="color: #005CC5">1000</span><span style="color: #24292E">)(Pos, </span><span style="color: #005CC5">824345</span><span style="color: #24292E">); </span><span style="color: #6A737D">// x = 824.345</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">y</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">45.67</span><span style="color: #24292E">;</span></li><li value="3"><span style="color: #6F42C1">fxunify</span><span style="color: #24292E">(x, y);    </span><span style="color: #6A737D">// =&gt; [ 1000, 824.345, 45.670 ]</span></li></ol></pre>
+<p>
+  <code>fxunify(x, y)</code> will convert the fixed point numbers
+  to use the same scale. The larger scale of the two arguments will be chosen. The function will return a <code>3-tuple</code> consisting
+  of the common scale and the newly scaled values.
+</p>
+<p><code>fxadd(x, y)</code> adds two fixed point numbers.</p>
+<p><code>fxsub(x, y)</code> subtracts two fixed point numbers.</p>
+<p><code>fxmul(x, y)</code> multiplies two fixed point numbers.</p>
+<p>${ref((quote rsh), "fxdiv")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">fxdiv</span><span style="color: #24292E">(</span><span style="color: #005CC5">34.56</span><span style="color: #24292E">, </span><span style="color: #005CC5">1.234</span><span style="color: #24292E">, </span><span style="color: #005CC5">10</span><span style="color: #24292E">)     </span><span style="color: #6A737D">// =&gt; 28</span></li><li value="2"><span style="color: #6F42C1">fxdiv</span><span style="color: #24292E">(</span><span style="color: #005CC5">34.56</span><span style="color: #24292E">, </span><span style="color: #005CC5">1.234</span><span style="color: #24292E">, </span><span style="color: #005CC5">100000</span><span style="color: #24292E">) </span><span style="color: #6A737D">// =&gt; 28.0064</span></li></ol></pre>
+<p>
+  <code>fxdiv(x, y, scale_factor)</code> divides two fixed point numbers. The numerator, <code>x</code>,
+  will be multiplied by the scale factor to provide a more precise answer. For example,
+</p>
+<p><code>fxmod(x, y)</code> finds the remainder of dividing <code>x</code> by <code>y</code>.</p>
+<p><code>fxfloor(x)</code> returns the greatest integer not greater than <code>x</code>.</p>
+<p>
+  <code>fxsqrt(x, k)</code> approximates the sqrt of the fixed number, <code>x</code>, using
+  <code>k</code> iterations of the <code>sqrt</code> algorithm.
+</p>
+<p>
+  ${ref((quote rsh), "fxpow")}
+  <code>const base = 2.0; const power = 0.33; fxpow(base, power, 10, 1000); // 1.260 fxpow(base, power, 10, 10000); // 1.2599 fxpow(base, power, 10, 1000000); // 1.259921</code>
+</p>
+<p>
+  <code>fxpow(base, power, precision, scalePrecision)</code> approximates the power of the fixed number, <code>base</code>,
+  raised to the fixed point number, <code>power</code>. The third argument must be a <code>UInt</code> whose value is known
+  at compile time, which represents the number of iterations the algorithm should perform.
+  The <code>scalePrecision</code> argument must be a <code>UInt</code> and represents the scale of the return value. Choosing a larger
+  <code>scalePrecision</code> allows for more precision when approximating the power, as demonstrated in the example below:
+</p>
+<p>
+  <code>fxpowi(base, power, precision)</code> approximates the power of the fixed number, <code>base</code>,
+  raised to the <code>Int</code>, <code>power</code>. The third argument must be a <code>UInt</code> whose value is known
+  at compile time, which represents the number of iterations the algorithm should perform. For reference, <code>6</code> iterations
+  provides enough accuracy to calculate up to <code>2^64 - 1</code>, so the largest power it can compute is <code>63</code>.
+</p>
+<p>
+  ${ref((quote rsh), "fxpowui")}
+  <code>fxpowui(5.8, 3, 10); // 195.112</code>
+</p>
+<p>
+  <code>fxpowui(base, power, precision)</code> approximates the power of
+  the fixed number, <code>base</code>, raised to the <code>UInt</code>, <code>power</code>. The third
+  argument must be a <code>UInt</code> whose value is known at compile time.
+</p>
+<p>
+  <code>fxcmp(op, x, y)</code> applies the comparison
+  operator to the two fixed point numbers after unifying their scales.
+</p>
+<p>There are convenience methods defined for comparing fixed point numbers:</p>
+<p><code>fxlt(x, y)</code> tests whether <code>x</code> is less than <code>y</code>.</p>
+<p><code>fxle(x, y)</code> tests whether <code>x</code> is less than or equal to <code>y</code>.</p>
+<p><code>fxgt(x, y)</code> tests whether <code>x</code> is greater than <code>y</code>.</p>
+<p><code>fxge(x, y)</code> tests whether <code>x</code> is greater than or equal to <code>y</code>.</p>
+<p><code>fxeq(x, y)</code> tests whether <code>x</code> is equal to <code>y</code>.</p>
+<p><code>fxne(x, y)</code> tests whether <code>x</code> is not equal to <code>y</code>.</p>
+<h3 id="anybody">Anybody</h3>
+<p>${ref((quote rsh), "Anybody")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Anybody.</span><span style="color: #6F42C1">publish</span><span style="color: #24292E">(); </span><span style="color: #6A737D">// race(...Participants).publish()</span></li></ol></pre>
+<p>
+  Reach provides a shorthand, <code>Anybody</code>, which serves as a
+  <code>race</code> between all participants.
+  This shorthand can be useful for situations where
+  it does not matter who <code>publish</code>es, such as in a <code>timeout</code>.
+</p>
+<p>
+  <code>Anybody</code> is strictly an abbreviation of a <code>race</code> involving all of the named participants of the application.
+  In an application with a participant class, this means any principal at all, because there is no restriction on which principals (i.e. addresses) may serve as a member of that class.
+  In an application without any participant classes, <code>Anybody</code> instead would mean only the actual previously-bound participants.
+</p>
+<h3 id="intervals">Intervals</h3>
+<p>An <code>Interval</code> is defined by</p>
+<p>${ref((quote rsh), "Interval")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">export</span><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">Interval</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Tuple</span><span style="color: #24292E">(IntervalType, Int, Int, IntervalType);</span></li></ol></pre>
+<p>where <code>IntervalType</code> is defined by</p>
+<p>${ref((quote rsh), "IntervalType")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">export</span><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">isIntervalType</span><span style="color: #24292E">, </span><span style="color: #005CC5">Closed</span><span style="color: #24292E">, </span><span style="color: #005CC5">Open</span><span style="color: #24292E"> ] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">mkEnum</span><span style="color: #24292E">(</span><span style="color: #005CC5">2</span><span style="color: #24292E">);</span></li><li value="2"><span style="color: #D73A49">export</span><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">IntervalType</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Refine</span><span style="color: #24292E">(UInt, isIntervalType);</span></li></ol></pre>
+<h4 id="constructors">Constructors</h4>
+<p>An interval may be constructed with its tuple notation or by function:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6A737D">// Representing [-10, +10)</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">i1</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> [Closed, </span><span style="color: #D73A49">-</span><span style="color: #005CC5">10</span><span style="color: #24292E">, </span><span style="color: #D73A49">+</span><span style="color: #005CC5">10</span><span style="color: #24292E">, Open];</span></li><li value="3"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">i2</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">interval</span><span style="color: #24292E">(Closed, </span><span style="color: #D73A49">-</span><span style="color: #005CC5">10</span><span style="color: #24292E">, </span><span style="color: #D73A49">+</span><span style="color: #005CC5">10</span><span style="color: #24292E">, Open);</span></li><li value="4"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">i3</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">intervalCO</span><span style="color: #24292E">(</span><span style="color: #D73A49">-</span><span style="color: #005CC5">10</span><span style="color: #24292E">, </span><span style="color: #D73A49">+</span><span style="color: #005CC5">10</span><span style="color: #24292E">);</span></li></ol></pre>
+<p>For convenience, Reach provides a number of functions for constructing intervals:</p>
+<p>
+  <code>interval(IntervalType, Int, Int, IntervalType)</code> constructs an interval where the first and second argument
+  represent the left endpoint and whether it's open or closed; the third and fourth argument represent the right endpoint and whether it's open or closed.
+</p>
+<p><code>intervalCC(l, r)</code> constructs a closed interval from two endpoints of type <code>Int</code>.</p>
+<p><code>intervalCO(l, r)</code> constructs a half-open interval from two endpoints of type <code>Int</code> where the left endpoint is closed and the right endpoint is open.</p>
+<p><code>intervalOC(l, r)</code> constructs a half-open interval from two endpoints of type <code>Int</code> where the left endpoint is open and the right endpoint is closed.</p>
+<p><code>intervalOO(l, r)</code> constructs an open interval from two endpoints of type <code>Int</code>.</p>
+<h4 id="accessors">Accessors</h4>
+<p><code>leftEndpoint(i)</code> will return the <code>Int</code> that represents the left endpoint of an interval.</p>
+<p><code>rightEndpoint(i)</code> will return the <code>Int</code> that represents the right endpoint of an interval.</p>
+<h4 id="relational-operations">Relational Operations</h4>
+<p>Intervals may be compared with the following functions:</p>
+<p><code>intervalEq(l, r)</code> tests whether the intervals are equal.</p>
+<p><code>intervalNe(l, r)</code> tests whether the intervals are not equal.</p>
+<p><code>intervalLt(l, r)</code> tests whether the left interval is less than the right interval.</p>
+<p><code>intervalLte(l, r)</code> tests whether the left interval is less than or equal to the right interval.</p>
+<p><code>intervalGt(l, r)</code> tests whether the left interval is greater than the right interval.</p>
+<p><code>intervalGte(l, r)</code> tests whether the left interval is greater than or equal to the right interval.</p>
+<h4 id="arithmetic-operations">Arithmetic Operations</h4>
+<p><code>intervalAdd(l, r)</code> adds the two intervals.</p>
+<p><code>intervalSub(l, r)</code> subtracts the two intervals.</p>
+<p><code>intervalMul(l, r)</code> multiplies the two intervals.</p>
+<p><code>intervalDiv(l, r)</code> divides the two intervals.</p>
+<h4 id="other-operations">Other Operations</h4>
+<p>${ref((quote rsh), "intervalIntersection")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">i1</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">intervalOO</span><span style="color: #24292E">(</span><span style="color: #D73A49">+</span><span style="color: #005CC5">3</span><span style="color: #24292E">, </span><span style="color: #D73A49">+</span><span style="color: #005CC5">11</span><span style="color: #24292E">); </span><span style="color: #6A737D">// (+3, +11)</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">i2</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">intervalCC</span><span style="color: #24292E">(</span><span style="color: #D73A49">+</span><span style="color: #005CC5">7</span><span style="color: #24292E">, </span><span style="color: #D73A49">+</span><span style="color: #005CC5">9</span><span style="color: #24292E">);  </span><span style="color: #6A737D">// [+7, +9]</span></li><li value="3"><span style="color: #6F42C1">intervalIntersection</span><span style="color: #24292E">(i1, i2);   </span><span style="color: #6A737D">// [+7, +11)</span></li></ol></pre>
+<p><code>intervalIntersection(x, y)</code> returns the intersection of two intervals.</p>
+<p>${ref((quote rsh), "intervalUnion")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">i1</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">intervalOO</span><span style="color: #24292E">(</span><span style="color: #D73A49">+</span><span style="color: #005CC5">3</span><span style="color: #24292E">, </span><span style="color: #D73A49">+</span><span style="color: #005CC5">9</span><span style="color: #24292E">);  </span><span style="color: #6A737D">// (+3, +9)</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">i2</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">intervalCC</span><span style="color: #24292E">(</span><span style="color: #D73A49">+</span><span style="color: #005CC5">7</span><span style="color: #24292E">, </span><span style="color: #D73A49">+</span><span style="color: #005CC5">11</span><span style="color: #24292E">); </span><span style="color: #6A737D">// [+7, +11]</span></li><li value="3"><span style="color: #6F42C1">intervalUnion</span><span style="color: #24292E">(i1, i2);          </span><span style="color: #6A737D">// (+3, +11]</span></li></ol></pre>
+<p><code>intervalUnion(x, y)</code> returns the union of two intervals.</p>
+<p>${ref((quote rsh), "intervalWidth")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">intervalWidth</span><span style="color: #24292E">(</span><span style="color: #6F42C1">intervalCC</span><span style="color: #24292E">(</span><span style="color: #D73A49">+</span><span style="color: #005CC5">4</span><span style="color: #24292E">, </span><span style="color: #D73A49">+</span><span style="color: #005CC5">45</span><span style="color: #24292E">)); </span><span style="color: #6A737D">// +41</span></li></ol></pre>
+<p><code>intervalWidth(i)</code> returns the width of an interval.</p>
+<p>${ref((quote rsh), "intervalAbs")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">intervalAbs</span><span style="color: #24292E">(</span><span style="color: #6F42C1">intervalCC</span><span style="color: #24292E">(</span><span style="color: #D73A49">+</span><span style="color: #005CC5">1</span><span style="color: #24292E">, </span><span style="color: #D73A49">+</span><span style="color: #005CC5">10</span><span style="color: #24292E">)); </span><span style="color: #6A737D">// +10</span></li></ol></pre>
+<p><code>intervalAbs(i)</code> returns the absolute value of an interval.</p>

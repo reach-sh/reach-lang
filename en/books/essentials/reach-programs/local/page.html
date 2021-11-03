@@ -1,0 +1,50 @@
+<p>
+  A Reach local step occurs in the body of <code>only</code> or <code>each</code> statements.
+  It represents the actions taken by a single participant in an application.
+</p>
+<h2 id="statements">Statements</h2>
+<p>Any statements valid for a <a href="##ref-programs-compute-stmts">computation</a> are valid for a local step.</p>
+<h2 id="expressions">Expressions</h2>
+<p>
+  Any expressions valid for a <a href="##ref-programs-compute-exprs">computation</a> are valid for a local step.
+  However, some additional expressions are allowed.
+</p>
+<h3 id="this"><code>this</code></h3>
+<p>
+  Inside of a local step, <code>this</code> refers to the participant performing the step.
+  This is useful when the local step was initiated by an <code>each</code> expression.
+</p>
+<h3 id="interact"><code>interact</code></h3>
+<p>${ref((quote rsh), "interact")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">interact.amount</span></li><li value="2"><span style="color: #24292E">interact.</span><span style="color: #6F42C1">notify</span><span style="color: #24292E">(handA, handB)</span></li><li value="3"><span style="color: #24292E">interact.</span><span style="color: #6F42C1">chooseAmount</span><span style="color: #24292E">(heap1, heap2)</span></li></ol></pre>
+<p>An ${defn("interaction expression")}, written <code>interact.METHOD(EXPR_0, ..., EXPR_n)</code>, where <code>METHOD</code> is an identifier bound in the participant interact interface to a function type, and <code>EXPR_0</code> through <code>EXPR_n</code> are expressions that evaluate to the result of an interaction with a frontend that receives the evaluation of the <code>n</code> expressions and sends a value.</p>
+<p>An interaction expression may also be written <code>interact.KEY</code>, where <code>KEY</code> is bound in the participant interact interface to a non-function type.</p>
+<p>An interaction expression may only occur in a local step.</p>
+<h3 id="assume"><code>assume</code></h3>
+<p>${ref((quote rsh), "assume")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">assume</span><span style="color: #24292E">( claim, [msg] )</span></li></ol></pre>
+<p>
+  An assumption where <code>claim</code> evaluates to <code>true</code> with honest frontends.
+  This may only appear in a local step.
+  It accepts an optional bytes argument, which is included in any reported violation.
+</p>
+<h3 id="fail"><code>fail</code></h3>
+<p>${ref((quote rsh), "fail")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">fail</span><span style="color: #24292E">()</span></li></ol></pre>
+<p>is a convenience method equivalent to <code>assume(false)</code>. This may only appear in a local step.</p>
+<h3 id="declassify"><code>declassify</code></h3>
+<p>${ref((quote rsh), "declassify")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">declassify</span><span style="color: #24292E">( arg )</span></li></ol></pre>
+<p>The ${defn("declassify")} primitive performs a declassification of the given argument.</p>
+<h3 id="makecommitment"><code>makeCommitment</code></h3>
+<p>${ref((quote rsh), "makeCommitment")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">makeCommitment</span><span style="color: #24292E">( interact, x )</span></li></ol></pre>
+<p>
+  Returns two values, <code>[ commitment, salt ]</code>, where <code>salt</code> is the result of calling <code>interact.random()</code>, and
+  <code>commitment</code> is the digest of <code>salt</code> and <code>x</code>.
+  This is used in a local step before <code>checkCommitment</code> is used in a consensus step.
+</p>
+<h3 id="didpublish"><code>didPublish</code></h3>
+<p>${ref((quote rsh), "didPublish")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">didPublish</span><span style="color: #24292E">()</span></li></ol></pre>
+<p>Returns a boolean that indicates whether the last publication was made by this principal.</p>

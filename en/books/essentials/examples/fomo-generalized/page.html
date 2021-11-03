@@ -1,0 +1,129 @@
+<p>
+  In this workshop, we will extend our <a href="##workshop-fomo">Fear of Missing Out application</a>
+  with the ability to split the reward between the <code>N</code> most recent Buyers.
+</p>
+<p>
+  In this version, the Funder will have the advantage that, if there are less than
+  <code>N</code> Buyers, the Funder will earn the rewards for every absent Buyer. For example,
+  if the auction is set to have 5 winners, yet only 3 Buyers bid, the first three Buyers
+  will receive 1/5 of the funds each, and the Funder will receive the remaining 2/5 of the funds.
+</p>
+<p>
+  ${workshopDeps("workshop-fomo")}
+  XXX (workshop-init "workshop-fomo-generalized")
+</p>
+<h2 id="problem-analysis">Problem Analysis</h2>
+<p>
+  Our problem analysis is practically the same as the original Fear of Missing Out application,
+  except for one difference:
+</p>
+<ul>
+  <li>What funds change ownership during the application and how?</li>
+</ul>
+<p><strong>Write down the problem analysis of this program as a comment.</strong></p>
+<p>Let's compare answers for how funds should change ownership in this generalized version:</p>
+<ul>
+  <li>Buyers continually add funds to the balance during execution until the last <code>N</code> Buyers, and potentially the Funder, split the balance.</li>
+</ul>
+<h2 id="data-definition">Data Definition</h2>
+<p>
+  The data type representation of this program will basically be the same as the
+  regular Fear of Missing Out program. However, instead of tracking the latest Buyer as an
+  <code>Address</code>, we will track the last <code>N</code> Buyers as an <code>Array(Address, N)</code>.
+  ::: note
+  Refer to ${seclink("ref-programs-types")}for a reminder of what data types are available in Reach.
+  :::
+</p>
+<p>You should take the time now to fill out the interaction interface for the participants.</p>
+<p><strong>Write down the data definitions for this program as definitions.</strong></p>
+<p>Our participant interact interface, with the addition of some handy logging functions, looks like this so far:</p>
+<p>
+  ::: note
+  It is worth noting that Reach does not support arbitrarily sized arrays, so we
+  could not determine <code>NUM_OF_WINNERS</code> at runtime, e.g. from the interaction interface.
+  However, we can still write a program that is generic in the size of the array, then
+  specialize it when we compile.
+  :::
+</p>
+<p>${code("/examples/workshop-fomo-generalized/index.rsh", 5, 23)}</p>
+<p>
+  At this point, you can modify your JavaScript file (<code>index.mjs</code>) to contain definitions of these values, although you may want to use placeholders for the actual values.
+  When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the participant interact interface.
+</p>
+<h2 id="communication-construction">Communication Construction</h2>
+<p>
+  A fundamental aspect of a decentralized application is the pattern of communication
+  and transfer among the participants. We should write down this structure as comments
+  in our program to serve as an outline and guide us in implementation. In our original Fear of Missing Out implementation, we outlined the pattern of communication as follows:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6A737D">// 1. The Funder publishes the ticket price and deadline</span></li><li value="2"><span style="color: #6A737D">// 2. While the deadline has yet to be reached:</span></li><li value="3"><span style="color: #6A737D">//     2a. Allow a Buyer to purchase a ticket</span></li><li value="4"><span style="color: #6A737D">//     2b. Keep track of last Buyer</span></li><li value="5"><span style="color: #6A737D">// 3. Transfer the balance to the last person who bought a ticket</span></li></ol></pre>
+<p>This outline will need to be updated for our generalized version. You should do this now, in your Reach program (<code>index.rsh</code>).</p>
+<p><strong>Write down the communication pattern for this program as comments.</strong></p>
+<p>Here's what we wrote for our outline:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6A737D">// 1. The Funder publishes the ticket price and deadline</span></li><li value="2"><span style="color: #6A737D">// 2. While the deadline has yet to be reached:</span></li><li value="3"><span style="color: #6A737D">//     2a. Allow a Buyer to purchase a ticket</span></li><li value="4"><span style="color: #6A737D">//     2b. Keep track of the winners (last N Buyers)</span></li><li value="5"><span style="color: #6A737D">// 3. Divide the balance evenly amongst the winners.</span></li><li value="6"><span style="color: #6A737D">// 4. Transfer the reward to each winner.</span></li></ol></pre>
+<p>Now, this outline needs to be converted to a real program.</p>
+<p><strong>Write down the communication pattern for this program as code.</strong></p>
+<p>The body of your application should look something like this:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6A737D">// 1. The Funder publishes the ticket price and deadline</span></li><li value="2"><span style="color: #24292E">Funder.</span><span style="color: #6F42C1">publish</span><span style="color: #24292E">(ticketPrice, deadline);</span></li><li value="3"></li><li value="4"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">initialWinners</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">replicate</span><span style="color: #24292E">(</span><span style="color: #005CC5">NUM_OF_WINNERS</span><span style="color: #24292E">, Funder);</span></li><li value="5"></li><li value="6"><span style="color: #D73A49">const</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">keepGoing</span><span style="color: #24292E">, </span><span style="color: #005CC5">winners</span><span style="color: #24292E">, </span><span style="color: #005CC5">ticketsSold</span><span style="color: #24292E"> ] </span><span style="color: #D73A49">=</span></li><li value="7"><span style="color: #24292E">  </span><span style="color: #6A737D">// 2. While the deadline has yet to be reached:</span></li><li value="8"><span style="color: #24292E">  </span><span style="color: #6F42C1">parallelReduce</span><span style="color: #24292E">([ </span><span style="color: #005CC5">true</span><span style="color: #24292E">, initialWinners, </span><span style="color: #005CC5">0</span><span style="color: #24292E"> ])</span></li><li value="9"><span style="color: #24292E">    .</span><span style="color: #6F42C1">invariant</span><span style="color: #24292E">(</span><span style="color: #6F42C1">balance</span><span style="color: #24292E">() </span><span style="color: #D73A49">==</span><span style="color: #24292E"> ticketsSold </span><span style="color: #D73A49">*</span><span style="color: #24292E"> ticketPrice)</span></li><li value="10"><span style="color: #24292E">    .</span><span style="color: #6F42C1">while</span><span style="color: #24292E">(keepGoing)</span></li><li value="11"><span style="color: #24292E">    .</span><span style="color: #6F42C1">case</span><span style="color: #24292E">(</span></li><li value="12"><span style="color: #24292E">      Buyer,</span></li><li value="13"><span style="color: #24292E">      </span><span style="color: #6A737D">// 2a. Allow a Buyer to purchase a ticket</span></li><li value="14"><span style="color: #24292E">      (() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> ({</span></li><li value="15"><span style="color: #24292E">        when: </span><span style="color: #6F42C1">declassify</span><span style="color: #24292E">(interact.</span><span style="color: #6F42C1">shouldBuyTicket</span><span style="color: #24292E">(ticketPrice)) })),</span></li><li value="16"><span style="color: #24292E">      (() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> ticketPrice),</span></li><li value="17"><span style="color: #24292E">      () </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="18"><span style="color: #24292E">        </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">buyer</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">this</span><span style="color: #24292E">;</span></li><li value="19"><span style="color: #24292E">        </span><span style="color: #6A737D">// 2b. Keep track of the winners (last N Buyers)</span></li><li value="20"><span style="color: #24292E">        </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">idx</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> ticketsSold </span><span style="color: #D73A49">%</span><span style="color: #24292E"> </span><span style="color: #005CC5">NUM_OF_WINNERS</span><span style="color: #24292E">;</span></li><li value="21"><span style="color: #24292E">        </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">newWinners</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span></li><li value="22"><span style="color: #24292E">          </span><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">set</span><span style="color: #24292E">(winners, idx, buyer);</span></li><li value="23"><span style="color: #24292E">        </span><span style="color: #D73A49">return</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">true</span><span style="color: #24292E">, newWinners, ticketsSold </span><span style="color: #D73A49">+</span><span style="color: #24292E"> </span><span style="color: #005CC5">1</span><span style="color: #24292E"> ]; })</span></li><li value="24"><span style="color: #24292E">    .</span><span style="color: #6F42C1">timeout</span><span style="color: #24292E">(deadline, () </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="25"><span style="color: #24292E">      </span><span style="color: #6F42C1">race</span><span style="color: #24292E">(Buyer, Funder).</span><span style="color: #6F42C1">publish</span><span style="color: #24292E">();</span></li><li value="26"><span style="color: #24292E">      </span><span style="color: #D73A49">return</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">false</span><span style="color: #24292E">, winners, ticketsSold ]; });</span></li><li value="27"></li><li value="28"><span style="color: #6A737D">// 3. Divide the balance evenly amongst the winners.</span></li><li value="29"><span style="color: #6F42C1">transfer</span><span style="color: #24292E">(</span><span style="color: #6F42C1">balance</span><span style="color: #24292E">() </span><span style="color: #D73A49">%</span><span style="color: #24292E"> </span><span style="color: #005CC5">NUM_OF_WINNERS</span><span style="color: #24292E">).</span><span style="color: #6F42C1">to</span><span style="color: #24292E">(Funder);</span></li><li value="30"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">reward</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">balance</span><span style="color: #24292E">() </span><span style="color: #D73A49">/</span><span style="color: #24292E"> </span><span style="color: #005CC5">NUM_OF_WINNERS</span><span style="color: #24292E">;</span></li><li value="31"></li><li value="32"><span style="color: #6A737D">// 4. Transfer the reward to each winner.</span></li><li value="33"><span style="color: #24292E">winners.</span><span style="color: #6F42C1">forEach</span><span style="color: #24292E">(</span><span style="color: #E36209">winner</span><span style="color: #24292E"> </span><span style="color: #D73A49">=&gt;</span></li><li value="34"><span style="color: #24292E">  </span><span style="color: #6F42C1">transfer</span><span style="color: #24292E">(reward).</span><span style="color: #6F42C1">to</span><span style="color: #24292E">(winner));</span></li><li value="35"></li><li value="36"><span style="color: #6F42C1">commit</span><span style="color: #24292E">();</span></li></ol></pre>
+<p>
+  Extending this program to track an array of <code>Address</code>es, as opposed to a single
+  <code>Address</code> is fairly straightforward. We maintain an array of size <code>NUM_OF_WINNERS</code>
+  and implement a ring buffer to keep it up to date with the most recent <code>N</code> winners, as
+  demonstrated in step <code>2b</code>.
+</p>
+<p>
+  Another aspect of this code worth highlighting is step <code>3</code>.
+  We transfer <code>balance() % NUM_OF_WINNERS</code> to the winner because the total balance may not be evenly
+  divisible by the number of winners.
+</p>
+<p>
+  For example, if the ticket price is <code>4 ETH</code>
+  and there are 10 tickets purchased by Buyers, then the total balance will be <code>40 ETH</code>. However, if the
+  application is set to select 3 winners, then 40 cannot be evenly distributed to 3 participants. So, we
+  will transfer <code>1 ETH</code> to the Funder, and split the remaining <code>39 ETH</code> between the 3 Buyers.
+</p>
+<h2 id="assertion-insertion">Assertion Insertion</h2>
+<p>
+  This program doesn't have many interesting properties to prove
+  as assertions, beyond the token linearity property. The
+  only property of interest is the <code>parallelReduce</code> invariant
+  which states that the balance must be equal to the number of tickets
+  sold multiplied by the ticket price.
+</p>
+<h2 id="interaction-introduction">Interaction Introduction</h2>
+<p>
+  Next, we need to insert the appropriate calls to <code>interact</code>.
+  In this case, our program is very simple and we expect you'll do a great job without further discussion.
+</p>
+<p><strong>Insert <code>interact</code> calls to the frontend into the program.</strong></p>
+<p>Let's look at our whole program now:</p>
+<p>${code("/examples/workshop-fomo-generalized/index.rsh")}</p>
+<h2 id="deployment-decisions">Deployment Decisions</h2>
+<p>
+  Next, it is time to test our program. As usual, we'll present a completely
+  automated test deployment, rather than an interactive one.
+</p>
+<p>
+  The program is fairly straightfoward to test. We just create test accounts for
+  the Funder and any number of Buyers. The decision to purchase a ticket by
+  a Buyer will rely simply on generating a random boolean.
+</p>
+<p><strong>Decide how you will deploy and use this application.</strong></p>
+<p>Here's the JavaScript frontend we wrote:</p>
+<p>${code("/examples/workshop-fomo-generalized/index.mjs")}</p>
+<p>Let's see what it looks like when we run the program:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">$ ../reach run</li><li value="2">Buyer #6 bought a ticket.</li><li value="3">Buyer #3 bought a ticket.</li><li value="4">...</li><li value="5">Buyer #4 bought a ticket.</li><li value="6">Buyer #1 bought a ticket.</li><li value="7">Buyer #3 bought a ticket.</li><li value="8">Buyer #8 bought a ticket.</li><li value="9">Buyer #6 bought a ticket.</li><li value="10">Funder saw they lost</li><li value="11">Buyer #1 saw they lost</li><li value="12">Buyer #5 saw they lost</li><li value="13">Buyer #9 saw they lost</li><li value="14">Buyer #0 saw they lost</li><li value="15">Buyer #8 saw they won</li><li value="16">Buyer #7 saw they lost</li><li value="17">Buyer #2 saw they lost</li><li value="18">Buyer #6 saw they won</li><li value="19">Buyer #3 saw they won</li><li value="20">Buyer #4 saw they lost</li></ol></pre>
+<h2 id="discussion-and-next-steps">Discussion and Next Steps</h2>
+<p>Great job!</p>
+<p>
+  You've now implemented a generalized Fear of Missing Out game. You can try extending
+  this application with additional features such as:
+</p>
+<ul>
+  <li>Slightly increasing the ticket price with each purchase.</li>
+  <li>
+    Introducing a small payout system (dividends) to Buyers as the game progresses.
+    e.g. every time the ring buffer is filled.
+  </li>
+</ul>
+<p>If you found this workshop rewarding, please let us know on <a href="$%7Bdiscord%7D">the Discord community</a>!</p>

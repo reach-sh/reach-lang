@@ -1,0 +1,49 @@
+<p>
+  The Reach JavaScript backend produces a compilation output named <code>input.APP.mjs</code>.
+  This will normally be imported by writing:
+</p>
+<p>${ref((quote js), "backend")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">import</span><span style="color: #24292E"> </span><span style="color: #005CC5">*</span><span style="color: #24292E"> </span><span style="color: #D73A49">as</span><span style="color: #24292E"> backend </span><span style="color: #D73A49">from</span><span style="color: #24292E"> </span><span style="color: #032F62">'./build/index.main.mjs'</span><span style="color: #24292E">;</span></li></ol></pre>
+<p>
+  This module exports an asynchronous function for each participant.
+  For example, if a Reach program contains a participant named <code>'A'</code> in the <code>Reach.App</code>, then the JavaScript backend will include a function named <code>A</code> (i.e. <code>backend.A</code>).
+  The <code>Promise</code> returned by these functions is resolved when the Reach program terminates (i.e. reaches <code>exit();</code>).
+</p>
+<p>Each function accepts two arguments: <code>ctc</code> and <code>interact</code>. These functions should be called by the frontend.</p>
+<p>The <code>ctc</code> argument is the result of a call to the functions <code>acc.deploy</code> or <code>acc.attach</code> provided by the <a href="##ref-frontends-js">JavaScript frontend support library</a>.</p>
+<p>
+  The <code>interact</code> argument is an object matching the participant interact interface for the corresponding participant.
+  The types of values this object contains must match those specified
+  <a href="##ref-frontends-js-types">on this list</a>.
+  Each function may return a <code>Promise</code>, which the backend will <code>await</code>, if it needs to perform an asynchronous action.
+</p>
+<p>
+  The backend provides a value, <code>_version</code>, which is a string representation of the Reach version used to compile the program.
+  For example, the version of Reach used to produce this documentation would contain the string <code>'reach-vers'</code>.
+</p>
+<p>
+  The backend provides a function, ${ref((quote js), "getExports")} <code>getExports</code>, which exposes the exports of a Reach program.
+  This function receives the standard library as an argument and returns an object with all the exports.
+  For example, if a Reach program
+  exported a variable <code>x</code>, i.e. <code>export const x = 5</code>, the frontend could access the value in the following manner:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">stdlib</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #D73A49">await</span><span style="color: #24292E"> </span><span style="color: #6F42C1">loadStdlib</span><span style="color: #24292E">();</span></li><li value="2"><span style="color: #24292E">backend.</span><span style="color: #6F42C1">getExports</span><span style="color: #24292E">(stdlib).x; </span><span style="color: #6A737D">// 5</span></li></ol></pre>
+<p>Finally, the backend provides a value, <code>_Connectors</code>, which is an opaque object representing the connectors the app was compiled for.</p>
+<h2 id="guarantees">Guarantees</h2>
+<p>
+  This backend does not guarantee that values in a positive position in a participant interact interface, that are later passed to a negative position in a participant interact interface, will be identical, in the sense of JavaScript's <code>===</code> operator, to the original value.
+  In other words, this backend does not ensure that Reach programs are parametric over JavaScript values that they interact with.
+</p>
+<p>
+  Positive and negative are best understood by example with a function type: a positive position is supplied by the function, such as the result; while a negative position is supplied by the caller, such as the arguments.
+  These notions generalize, however, to higher (and lower) order contexts.
+  In the case of Reach, this means that non-function values in a participant interact interface are positive.
+</p>
+<p>For example, if the Reach program,</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Reach.</span><span style="color: #6F42C1">App</span><span style="color: #24292E">( {},</span></li><li value="2"><span style="color: #24292E"> [ </span><span style="color: #6F42C1">Participant</span><span style="color: #24292E">(</span><span style="color: #032F62">"A"</span><span style="color: #24292E">, {</span></li><li value="3"><span style="color: #24292E">     get: </span><span style="color: #6F42C1">Bytes</span><span style="color: #24292E">(</span><span style="color: #005CC5">32</span><span style="color: #24292E">),</span></li><li value="4"><span style="color: #24292E">     give: </span><span style="color: #6F42C1">Fun</span><span style="color: #24292E">([</span><span style="color: #6F42C1">Bytes</span><span style="color: #24292E">(</span><span style="color: #005CC5">32</span><span style="color: #24292E">)], Bool) } ) ],</span></li><li value="5"><span style="color: #24292E"> (</span><span style="color: #E36209">A</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="6"><span style="color: #24292E">  </span><span style="color: #005CC5">A</span><span style="color: #24292E">.</span><span style="color: #6F42C1">only</span><span style="color: #24292E">(() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="7"><span style="color: #24292E">   </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">x</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> interact.</span><span style="color: #6F42C1">give</span><span style="color: #24292E">(interact.get); });</span></li><li value="8"><span style="color: #24292E">  </span><span style="color: #005CC5">A</span><span style="color: #24292E">.</span><span style="color: #6F42C1">publish</span><span style="color: #24292E">(x);</span></li><li value="9"><span style="color: #24292E">  </span><span style="color: #6F42C1">commit</span><span style="color: #24292E">(); });</span></li></ol></pre>
+<p>is given the <code>interact</code> object,</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">x</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #032F62">"A string"</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #24292E">{ </span><span style="color: #E36209">get</span><span style="color: #24292E">: x,</span></li><li value="3"><span style="color: #24292E">  </span><span style="color: #E36209">give</span><span style="color: #24292E">: (</span><span style="color: #E36209">str</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> x </span><span style="color: #D73A49">===</span><span style="color: #24292E"> str }</span></li></ol></pre>
+<p>
+  then it is not guaranteed that <code>A</code> will publish <code>true</code>, because the <code>str</code> given to <code>give</code> may not be identical to <code>x</code>.
+  (However, they are <code>bytesEq</code>.)
+</p>

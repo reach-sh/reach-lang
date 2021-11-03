@@ -1,0 +1,19 @@
+{
+  "author": null,
+  "background": "white",
+  "bookPath": "en/books/essentials",
+  "bookTitle": "Reach Essentials",
+  "chapters": null,
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasEditBtn": true,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasRefreshBtn": true,
+  "menuItem": "mi-docs",
+  "pages": null,
+  "pathname": "/proj/docs/dev/en/books/essentials/examples/hash-lock",
+  "publishedDate": null,
+  "title": "Workshop: Hash Lock",
+  "src": "workshop-hash-lock.md"
+}

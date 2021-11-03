@@ -1,0 +1,94 @@
+{
+  "author": null,
+  "background": "white",
+  "bookPath": "en/books/demo",
+  "bookTitle": "Demo Book",
+  "chapters": null,
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasEditBtn": true,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasRefreshBtn": true,
+  "menuItem": "mi-docs",
+  "pages": [
+    {
+      "Auks": "auks"
+    },
+    {
+      "Blackbirds": "blackbirds"
+    },
+    {
+      "Chickadees": "chickadees"
+    },
+    {
+      "Crows and Jays": "crows-and-jays"
+    },
+    {
+      "Doves": "doves"
+    },
+    {
+      "Ducks": "ducks"
+    },
+    {
+      "Finches": "finches"
+    },
+    {
+      "Flycatchers": "flycatchers"
+    },
+    {
+      "Game Birds": "game-birds"
+    },
+    {
+      "Gulls and Terns": "gulls-and-terns"
+    },
+    {
+      "Hawks and Falcons": "hawks-and-falcons"
+    },
+    {
+      "Herons": "herons"
+    },
+    {
+      "Hummingbirds": "hummingbirds"
+    },
+    {
+      "Kingfishers": "kingfishers"
+    },
+    {
+      "Nuthatches": "nuthatches"
+    },
+    {
+      "Owls": "owls"
+    },
+    {
+      "Parrots": "parrots"
+    },
+    {
+      "Seabirds": "seabirds"
+    },
+    {
+      "Shorebirds": "shorebirds"
+    },
+    {
+      "Sparrows": "sparrows"
+    },
+    {
+      "Swallows and Swifts": "swallows-and-swifts"
+    },
+    {
+      "Thrushes": "thrushes"
+    },
+    {
+      "Warlbers": "warblers"
+    },
+    {
+      "Woodpeckers": "woodpeckers"
+    },
+    {
+      "Wrens": "wrens"
+    }
+  ],
+  "pathname": "/proj/docs/dev/en/books/demo/birds",
+  "publishedDate": null,
+  "title": "Birds"
+}

@@ -1,0 +1,19 @@
+{
+  "author": null,
+  "background": "white",
+  "bookPath": null,
+  "bookTitle": null,
+  "chapters": null,
+  "hasOtp": false,
+  "hasCustomBase": false,
+  "hasEditBtn": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasRefreshBtn": false,
+  "menuItem": null,
+  "pages": null,
+  "pathname": "/proj/docs/dev/en/pages/account",
+  "publishedDate": null,
+  "title": "Account",
+  "hasScrollbar": false
+}

@@ -1,0 +1,165 @@
+<p>
+  In this workshop, we'll revisit the problem of allowing a payer to transfer funds to another party before knowing their identity.
+  However, unlike in ${seclink("workshop-hash-lock")}, we will use a technique that is safe against malicious miners.
+  One deployment of a decentralized application like this is as a "gift card" where a funder provides a fixed amount of currency to another without knowing their identity.
+</p>
+<p>
+  ${workshopDeps("workshop-hash-lock")}
+  XXX (workshop-init "workshop-relay")
+</p>
+<h2 id="problem-analysis">Problem Analysis</h2>
+<p>For this workshop, we'll provide some constraints on your solution and problem analysis, since we'd like you to explore writing a Reach program with a specific design.</p>
+<p>The overall purpose of this application is so that:</p>
+<ul>
+  <li>Alice can decide an amount of funds to provide.</li>
+  <li>
+    Alice later decides who will have access to this by sharing a secret with them.
+    We call this person, Bob.
+  </li>
+  <li>Bob can transfer the funds to wherever he'd like.</li>
+</ul>
+<p>
+  In ${seclink("workshop-hash-lock")}, we designed the application so that the "secret" was a special number that the contract compared against a known digest to release the funds.
+  This approach was flawed, because when Bob used the secret to gain access, it was possible for anyone else to see the transaction and attempt to play it themselves.
+</p>
+<p>
+  In today's workshop, we'll use a crucial insight about decentralized applications: account ownership is fluid and account credentials are a form of secret knowledge that every consensus network builds in to their foundation.
+  With that in mind, let's use the following design:
+</p>
+<p><strong>Alice will represent her secret as an account that is authorized to withdraw the funds.</strong></p>
+<p>This is called a ${defn("relay account")}, because it exists temporarily to faciliate the relaying of funds from Alice to Bob.</p>
+<p>With this in mind, let's answer the questions:</p>
+<ul>
+  <li>Who are the principals of the application?</li>
+  <li>What are the participants of the program?</li>
+  <li>What information do they know at the start of the program?</li>
+  <li>What information are they going to discover and use in the program?</li>
+  <li>What funds change ownership during the application and how?</li>
+</ul>
+<p><strong>Write down the problem analysis of this program as a comment.</strong></p>
+<p>Let's see how your answers compare to our answers:</p>
+<ul>
+  <li>This application involves two principals: Alice, who sends funds, and Bob, who receives funds.</li>
+  <li>The program has two participants: Alice, who initiates the application, and the Relay, which transfers the funds to Bob.</li>
+  <li>Alice starts knowing the amount she wants to transfer.</li>
+  <li>Alice creates the Relay account, while the Relay account learns the address of Bob, who will receive the funds.</li>
+  <li>The funds start with Alice and then move to Bob under the instruction of the Relay.</li>
+</ul>
+<p>
+  The most surprising thing about this application is that Bob is not one of the participants in the application!
+  Of course, the Relay will actually run under the auspices of Bob, after Alice shares the account credentials with him, but there is a distinction in the program between Bob's identity and the Relay's.
+</p>
+<h2 id="data-definition">Data Definition</h2>
+<p>
+  The next step of designing our program is representing this information in our program and deciding the participant interact interface for each participant.
+  Which pieces of information go with which participants?
+  Which are functions and which are values?
+  Finally, how should the Relay account information and Bob's identity be represented?
+  (Hint: Reach has a type named <code>Address</code> that represents an account address!)
+  ::: note
+  Refer to ${seclink("ref-programs-types")}for a reminder of what data types are available in Reach.
+  :::
+</p>
+<p><strong>Write down the data definitions for this program as definitions.</strong></p>
+<p>
+  Let's compare notes again.
+  Here's what we wrote in our program:
+</p>
+<p>${code("/examples/workshop-relay/index.rsh", 6, 8)}</p>
+<p>
+  We chose to represent the amount as a <code>UInt</code> field, which should be unsurprising.
+  We then have two functions that take no arguments and return an <code>Address</code> which respectively return the Relay identity and the Bob identity.
+  The idea here is that Alice will create the Relay account in the midst of the program and Bob will provide his own identity when he's acting as Relay.
+</p>
+<h2 id="communication-construction">Communication Construction</h2>
+<p>
+  Now, we can write down the structure of communication and action in our application.
+  Try this on your own based on your experience with ${seclink("workshop-hash-lock")}.
+</p>
+<p><strong>Write down the communication pattern for this program as comments.</strong></p>
+<p>Here's what we wrote:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6A737D">// 1. Alice pays the amount and says who the Relay is.</span></li><li value="2"><span style="color: #6A737D">// 2. The consensus remembers who the Relay is.</span></li><li value="3"><span style="color: #6A737D">// 3. The Relay publishes who Bob is.</span></li><li value="4"><span style="color: #6A737D">// 4. The consensus pays Bob.</span></li></ol></pre>
+<p>
+  We assume that most of you found it natural to think of steps one, three, and four, but found step two to be a strange addition.
+  Perhaps you felt that step two is implied by step one, where Alice says who the Relay is.
+  But, it all depends upon what the meaning of the word "is" is.
+  Since that is unclear to some, we'll make it explicit by stating that the consensus will remember the Relay's identity.
+</p>
+<p>
+  The next step is to convert this pattern into actual program code using <code>publish</code>, <code>pay</code>, and <code>commit</code>.
+  However, we expect that you'll need a bit of help with step two.
+  Reach has a special operation, available only in consensus steps, for asserting the identity of a participant: <code>Participant.set</code>.
+  You can write <code>Relay.set(someAddr)</code> to assert that the address of the Relay is <code>someAddr</code>.
+  With that in mind...
+</p>
+<p><strong>Write down the communication pattern for this program as code.</strong></p>
+<p>The body of your application should look something like:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6A737D">// 1. Alice pays the amount and says who the Relay is.</span></li><li value="2"><span style="color: #24292E">Alice.</span><span style="color: #6F42C1">publish</span><span style="color: #24292E">(amt, relay)</span></li><li value="3"><span style="color: #24292E">  .</span><span style="color: #6F42C1">pay</span><span style="color: #24292E">(amt);</span></li><li value="4"></li><li value="5"><span style="color: #6A737D">// 2. The consensus remembers who the Relay is.</span></li><li value="6"><span style="color: #24292E">Relay.</span><span style="color: #6F42C1">set</span><span style="color: #24292E">(relay);</span></li><li value="7"><span style="color: #6F42C1">commit</span><span style="color: #24292E">();</span></li><li value="8"></li><li value="9"><span style="color: #6A737D">// 3. The Relay publishes who Bob is.</span></li><li value="10"><span style="color: #24292E">Relay.</span><span style="color: #6F42C1">publish</span><span style="color: #24292E">(bob);</span></li><li value="11"></li><li value="12"><span style="color: #6A737D">// 4. The consensus pays Bob.</span></li><li value="13"><span style="color: #6F42C1">transfer</span><span style="color: #24292E">(amt).</span><span style="color: #6F42C1">to</span><span style="color: #24292E">(bob);</span></li><li value="14"><span style="color: #6F42C1">commit</span><span style="color: #24292E">();</span></li></ol></pre>
+<p>
+  We expect that for most of you, the coding of step four is also a bit strange, because we've never seen an example where the destination of a transfer is not a participant.
+  You may have thought that the <code>to</code> position in a <code>transfer</code> must be a participant, but actually it can be any address.
+  Participants, however, can be used as addresses if they are bound.
+</p>
+<p>
+  ::: note
+  You might like to re-write this program to have a third participant, Bob, who takes no actions, and try to write <code>transfer(amt).to(Bob)</code>.
+  You'll find that Reach rejects this program because Bob is not bound.
+  You can correct this by adding <code>Bob.set(bob)</code> after the Relay publishes Bob's address.
+  There's nothing better about this version of the program, but it is unneccessary to have a participant like Bob that performs no part in the computation.
+  :::
+</p>
+<h2 id="assertion-insertion">Assertion Insertion</h2>
+<p>
+  As usual, we should consider what assertions we can add to our program.
+  In some ways this is what we just did with the <code>Relay.set(relay)</code> line above, but that is unlike a normal assertion in that it is added primarily to direct the runtime activities on the consensus contract, rather than as a statement about the logical properties of our program variables.
+</p>
+<p>
+  Sometimes it can be difficult to decide which things are <em>part of</em> the application, like this, and which things are <em>properties of</em> the application, like the assertions we've seen before.
+  This is a general problem in verification where the logical properties of the <em>desired</em> program are often mixed up with the logical properties of the <em>actual</em> program.
+  If you're interested in this topic, you might like to spend time reading about <a href="https://en.wikipedia.org/wiki/Formal_specification">formal specification on Wikipedia</a>.
+</p>
+<p>Now, if we were devious, we might send you on a SNARK hunt after some more assertions to add to our program, but we're not mean, so we'll just tell you that there's nothing else to assert about this program.</p>
+<h2 id="interaction-introduction">Interaction Introduction</h2>
+<p>
+  Next, we need to insert the appropriate calls to <code>interact</code>.
+  In this case, our program is very simple and we expect you'll do a great job without further discussion.
+</p>
+<p><strong>Insert <code>interact</code> calls to the frontend into the program.</strong></p>
+<p>Let's look at our whole program now:</p>
+<p>${code("/examples/workshop-relay/index.rsh")}</p>
+<h2 id="deployment-decisions">Deployment Decisions</h2>
+<p>
+  This program is a bit odd to test, because it relies on Alice creating a temporary account and then sharing its information with Bob.
+  We don't know of any beautiful way to derive this program from first principles, and instead must appeal to your JavaScript programming skills.
+  If you'd like a hint, remember that you can call <code>stdlib.newTestAccount</code> any number of times and that a backend's participant functions don't need to be called at the same time.
+</p>
+<p>If you're brave, then try it yourself; otherwise, scroll down to see our solution.</p>
+<p><strong>Decide how you will deploy and use this application.</strong></p>
+<p>Here's the JavaScript frontend we wrote:</p>
+<p>${code("/examples/workshop-relay/index.mjs")}</p>
+<p>We do a few sneaky things in this program:</p>
+<ul>
+  <li>Lines 18 through 21 create a JavaScript <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a> that will be filled in later by Alice.</li>
+  <li>Alice's <code>getRelay</code> function (lines 26 through 32) creates the new account and communicates it "outside of the network" through the aforementioned Promise.</li>
+  <li>Bob's thread (lines 34 through 48) waits for the Promise to resolve and then connects to the application with this new account.</li>
+  <li>The Relay's <code>getBob</code> function (lines 43 through 46) returns his own address to receive the funds.</li>
+</ul>
+<p>
+  If this program is scary for you, don't worry!
+  It uses some fairly esoteric JavaScript features to make a completely automated test of this program.
+  If instead you wrote it so that it ran interactively and had Bob paste in the information about the new Relay account, it might be easier for you to code with those two aspects totally separated.
+</p>
+<p>Let's see what it looks like when we run this program:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">$ ../reach run</li><li value="2">Alice creates a Relay account.</li><li value="3">Bob waits for Alice to give him the information about the Relay account.</li><li value="4">Alice shares it with Bob off chain.</li><li value="5">Bob deposits some funds into the Relay to use it</li><li value="6">Bob attaches to the contract as the Relay.</li><li value="7">Bob joins the application as the Relay.</li><li value="8">Bob, acting as the Relay, gives his information.</li><li value="9">Alice went from 100.0 to 74.999999999999804065.</li><li value="10">Bob went from 100.0 to 123.999999999999979.</li></ol></pre>
+<h2 id="discussion-and-next-steps">Discussion and Next Steps</h2>
+<p>
+  Great job!
+  You could use this application today and start minting gift cards of tokens for your friends on their birthdays!
+  Wouldn't that be fun?
+</p>
+<p>If you found this workshop rewarding, please let us know on <a href="$%7Bdiscord%7D">the Discord community</a>!</p>
+<p>If you'd like to make this application a little more interesting, maybe you'd like to have a secret password just like <a href="##workshop-hash-lock">the hash lock</a> as well, so Alice can separate the revealing of information to Bob.</p>
+<p>
+  If you want to know what to do next to advance your study of decentralized application design, a natural extension of the concepts in this workshop is a <a href="##workshop-trust-fund">trust fund</a>.
+  Why don't you check it out?
+</p>

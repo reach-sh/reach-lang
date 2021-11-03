@@ -1,0 +1,293 @@
+<p>
+  A Reach consensus step occurs in the continuation of a consensus transfer statement.
+  It represents the actions taken by the consensus network contract of an application.
+</p>
+<h2 id="statements">Statements</h2>
+<p>
+  Any statements valid for a <a href="##ref-programs-compute-stmts">computation</a> are valid for a consensus step.
+  However, some additional statements are allowed.
+</p>
+<h3 id="commit"><code>commit</code></h3>
+<p>${ref((quote rsh), "commit")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">commit</span><span style="color: #24292E">();</span></li></ol></pre>
+<p>A ${defn("commit statement")}, written <code>commit();</code>, commits to statement's continuation as the next step of the DApp computation. In other words, it ends the current consensus step and allows more local steps.</p>
+<h3 id="only-and-each"><code>only</code> and <code>each</code></h3>
+<p>${seclink("ref-programs-only-step")} are allowed in consensus steps and are executed by backends once they observe the completion of the consensus step (i.e., after the associated commit statement.)</p>
+<h3 id="view-objects">View Objects</h3>
+<p>
+  ::: note
+  Views are <a href="##ref-programs-appinit-view">defined in application initialization</a> in Reach.
+  They are <a href="##ref-frontends-js-ctc">accessed by frontends</a> by using the Reach standard library of the frontend language, such as JavaScript.
+  This section is about defining the value of a view in your Reach program.
+  :::
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">vNFT.owner.</span><span style="color: #6F42C1">set</span><span style="color: #24292E">(creator);</span></li></ol></pre>
+<p>
+  If <code>VIEW</code> is a ${defn("view object")}, then its fields are the elements of the associated view.
+  Each of these fields are bound to an object with a <code>set</code> method that accepts the function or value to be bound to that view at the current step, and all steps dominated by the current step (unless otherwise overridden).
+  If this function is not provided with an argument, then the corresponding view is unset.
+</p>
+<p>For example, consider the following program:</p>
+<p>${code("/examples/view-steps/index.rsh")}</p>
+<p>
+  In this program, the Reach backend calls the frontend <code>interact</code> function, <code>checkView</code> with the expected value of the views at each point in the program.
+  The frontend compares that value with what is returned by
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">[ </span><span style="color: #D73A49">await</span><span style="color: #24292E"> ctc.</span><span style="color: #6F42C1">getViews</span><span style="color: #24292E">().Main.</span><span style="color: #6F42C1">last</span><span style="color: #24292E">(),</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #D73A49">await</span><span style="color: #24292E"> ctc.</span><span style="color: #6F42C1">getViews</span><span style="color: #24292E">().Main.</span><span style="color: #6F42C1">i</span><span style="color: #24292E">() ]</span></li></ol></pre>
+<p>When a view is bound to a function, it may inspect any values in its scope, including linear state.</p>
+<h3 id="participantset-and-set"><code>Participant.set</code> and <code>.set</code></h3>
+<p>${ref((quote rsh), "Participant.set")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Participant.</span><span style="color: #6F42C1">set</span><span style="color: #24292E">(</span><span style="color: #005CC5">PART</span><span style="color: #24292E">, </span><span style="color: #005CC5">ADDR</span><span style="color: #24292E">);</span></li><li value="2"><span style="color: #005CC5">PART</span><span style="color: #24292E">.</span><span style="color: #6F42C1">set</span><span style="color: #24292E">(</span><span style="color: #005CC5">ADDR</span><span style="color: #24292E">);</span></li></ol></pre>
+<p>
+  After execution, the given participant is fixed to the given address.
+  It is invalid to attempt to <code>.set</code> a participant class.
+  If a backend is running for this participant and its address does not match the given address, then it will abort.
+  This may only occur within a consensus step.
+</p>
+<p>
+  ::: note
+  ${seclink("workshop-relay")} is a good introductory project that demonstrates how to use this feature of Reach.
+  :::
+</p>
+<h3 id="while"><code>while</code></h3>
+<p>${ref((quote rsh), "while")}${ref((quote rsh), "var")}${ref((quote rsh), "invariant")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">var</span><span style="color: #24292E"> [ heap1, heap2 ] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">21</span><span style="color: #24292E">, </span><span style="color: #005CC5">21</span><span style="color: #24292E"> ];</span></li><li value="2"><span style="color: #24292E">{ </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #6F42C1">sum</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> () </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> heap1 </span><span style="color: #D73A49">+</span><span style="color: #24292E"> heap2; }</span></li><li value="3"><span style="color: #6F42C1">invariant</span><span style="color: #24292E">(</span><span style="color: #6F42C1">balance</span><span style="color: #24292E">() </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">2</span><span style="color: #24292E"> </span><span style="color: #D73A49">*</span><span style="color: #24292E"> wagerAmount);</span></li><li value="4"><span style="color: #D73A49">while</span><span style="color: #24292E"> ( </span><span style="color: #6F42C1">sum</span><span style="color: #24292E">() </span><span style="color: #D73A49">&gt;</span><span style="color: #24292E"> </span><span style="color: #005CC5">0</span><span style="color: #24292E"> ) {</span></li><li value="5"><span style="color: #24292E">  </span><span style="color: #D73A49">...</span><span style="color: #24292E">.</span></li><li value="6"><span style="color: #24292E">  [ heap1, heap2 ] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> [ heap1 </span><span style="color: #D73A49">-</span><span style="color: #24292E"> </span><span style="color: #005CC5">1</span><span style="color: #24292E">, heap2 ];</span></li><li value="7"><span style="color: #24292E">  </span><span style="color: #D73A49">continue</span><span style="color: #24292E">; }</span></li></ol></pre>
+<p>A ${defn("while statement")} may occur within a consensus step and is written:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">var</span><span style="color: #24292E"> </span><span style="color: #005CC5">LHS</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">INIT_EXPR</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #005CC5">DEFINE_BLOCK</span><span style="color: #24292E">; </span><span style="color: #6A737D">// optional</span></li><li value="3"><span style="color: #6F42C1">invariant</span><span style="color: #24292E">(</span><span style="color: #005CC5">INVARIANT_EXPR</span><span style="color: #24292E">);</span></li><li value="4"><span style="color: #D73A49">while</span><span style="color: #24292E">( </span><span style="color: #005CC5">COND_EXPR</span><span style="color: #24292E"> ) </span><span style="color: #005CC5">BLOCK</span></li></ol></pre>
+<p>
+  where <code>LHS</code> is a valid left-hand side of an identifier definition where the expression <code>INIT_EXPR</code> is the right-hand side, and
+  <code>DEFINE_BLOCK</code> is an optional block that may define bindings that use the <code>LHS</code> values which are bound inside the rest of the <code>while</code> and its tail, and
+  <code>INVARIANT_EXPR</code> is an expression, called the ${defn("loop invariant")}, that must be true before and after every execution of the block <code>BLOCK</code>, and
+  if <code>COND_EXPR</code> is true, then the block executes,
+  and if not, then the loop terminates and control transfers to the continuation of the while statement.
+  The identifiers bound by <code>LHS</code> are bound within <code>DEFINE_BLOCK</code>, <code>INVARIANT_EXPR</code>, <code>COND_EXPR</code>, <code>BLOCK</code>, and the tail of the while statement.
+</p>
+<p>
+  ::: note
+  Read about finding <a href="##guide-loop-invs">loop invariants</a> in the Reach guide.
+  :::
+</p>
+<h3 id="continue"><code>continue</code></h3>
+<p>${ref((quote rsh), "continue")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">[ heap1, heap2 ] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> [ heap1 </span><span style="color: #D73A49">-</span><span style="color: #24292E"> </span><span style="color: #005CC5">1</span><span style="color: #24292E">, heap2 ];</span></li><li value="2"><span style="color: #D73A49">continue</span><span style="color: #24292E">;</span></li></ol></pre>
+<p>A ${defn("continue statement")} may occur within a while statement's block and is written:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">LHS</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">UPDATE_EXPR</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #D73A49">continue</span><span style="color: #24292E">;</span></li></ol></pre>
+<p>where the identifiers bound by <code>LHS</code> are a subset of the variables bound by the nearest enclosing while statement and <code>UPDATE_EXPR</code> is an expression which may be bound by <code>LHS</code>.</p>
+<p>A continue statement is a terminator statement, so it must have an empty tail.</p>
+<p>A continue statement may be written without the preceding identifier update, which is equivalent to writing</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">[] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> [];</span></li><li value="2"><span style="color: #D73A49">continue</span><span style="color: #24292E">;</span></li></ol></pre>
+<p>
+  A continue statement must be dominated by a consensus transfer, which means that the body of a while statement must always <code>commit();</code> before calling <code>continue;</code>.
+  This restriction may be lifted in future versions of Reach, which will perform termination checking.
+</p>
+<hr>
+<p>
+  As a special case, a continue statement may occur in a step, if the <code>UPDATE_EXPR</code> transitions to a consensus step.
+  In other words, this is a valid program:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #6F42C1">f</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> () </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="2"><span style="color: #24292E"> </span><span style="color: #6F42C1">commit</span><span style="color: #24292E">();</span></li><li value="3"><span style="color: #24292E"> </span><span style="color: #005CC5">A</span><span style="color: #24292E">.</span><span style="color: #6F42C1">publish</span><span style="color: #24292E">();</span></li><li value="4"><span style="color: #24292E"> </span><span style="color: #D73A49">return</span><span style="color: #24292E"> </span><span style="color: #005CC5">1</span><span style="color: #24292E">;</span></li><li value="5"><span style="color: #24292E">};</span></li><li value="6"></li><li value="7"><span style="color: #D73A49">var</span><span style="color: #24292E"> x </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">0</span><span style="color: #24292E">;</span></li><li value="8"><span style="color: #6F42C1">invariant</span><span style="color: #24292E">(</span><span style="color: #6F42C1">balance</span><span style="color: #24292E">() </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">0</span><span style="color: #24292E">);</span></li><li value="9"><span style="color: #D73A49">while</span><span style="color: #24292E"> ( x </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">0</span><span style="color: #24292E"> ) {</span></li><li value="10"><span style="color: #24292E"> x </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">f</span><span style="color: #24292E">();</span></li><li value="11"><span style="color: #24292E"> </span><span style="color: #D73A49">continue</span><span style="color: #24292E">;</span></li><li value="12"><span style="color: #24292E">}</span></li></ol></pre>
+<h3 id="parallelreduce"><code>parallelReduce</code></h3>
+<p>${ref((quote rsh), "parallelReduce")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">keepGoing</span><span style="color: #24292E">, </span><span style="color: #005CC5">as</span><span style="color: #24292E">, </span><span style="color: #005CC5">bs</span><span style="color: #24292E"> ] </span><span style="color: #D73A49">=</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #6F42C1">parallelReduce</span><span style="color: #24292E">([ </span><span style="color: #005CC5">true</span><span style="color: #24292E">, </span><span style="color: #005CC5">0</span><span style="color: #24292E">, </span><span style="color: #005CC5">0</span><span style="color: #24292E"> ])</span></li><li value="3"><span style="color: #24292E">  .</span><span style="color: #6F42C1">invariant</span><span style="color: #24292E">(</span><span style="color: #6F42C1">balance</span><span style="color: #24292E">() </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">2</span><span style="color: #24292E"> </span><span style="color: #D73A49">*</span><span style="color: #24292E"> wager)</span></li><li value="4"><span style="color: #24292E">  .</span><span style="color: #6F42C1">while</span><span style="color: #24292E">(keepGoing)</span></li><li value="5"><span style="color: #24292E">  .</span><span style="color: #6F42C1">case</span><span style="color: #24292E">(Alice, (() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> ({</span></li><li value="6"><span style="color: #24292E">    when: </span><span style="color: #6F42C1">declassify</span><span style="color: #24292E">(interact.</span><span style="color: #6F42C1">keepGoing</span><span style="color: #24292E">()) })),</span></li><li value="7"><span style="color: #24292E">    (</span><span style="color: #E36209">_</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="8"><span style="color: #24292E">      </span><span style="color: #6F42C1">each</span><span style="color: #24292E">([Alice, Bob], () </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="9"><span style="color: #24292E">        interact.</span><span style="color: #6F42C1">roundWinnerWas</span><span style="color: #24292E">(</span><span style="color: #005CC5">true</span><span style="color: #24292E">); });</span></li><li value="10"><span style="color: #24292E">      </span><span style="color: #D73A49">return</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">true</span><span style="color: #24292E">, </span><span style="color: #005CC5">1</span><span style="color: #24292E"> </span><span style="color: #D73A49">+</span><span style="color: #24292E"> as, bs ]; })</span></li><li value="11"><span style="color: #24292E">  .</span><span style="color: #6F42C1">case</span><span style="color: #24292E">(Bob, (() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> ({</span></li><li value="12"><span style="color: #24292E">    when: </span><span style="color: #6F42C1">declassify</span><span style="color: #24292E">(interact.</span><span style="color: #6F42C1">keepGoing</span><span style="color: #24292E">()) })),</span></li><li value="13"><span style="color: #24292E">    (</span><span style="color: #E36209">_</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="14"><span style="color: #24292E">      </span><span style="color: #6F42C1">each</span><span style="color: #24292E">([Alice, Bob], () </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="15"><span style="color: #24292E">        interact.</span><span style="color: #6F42C1">roundWinnerWas</span><span style="color: #24292E">(</span><span style="color: #005CC5">false</span><span style="color: #24292E">); });</span></li><li value="16"><span style="color: #24292E">      </span><span style="color: #D73A49">return</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">true</span><span style="color: #24292E">, as, </span><span style="color: #005CC5">1</span><span style="color: #24292E"> </span><span style="color: #D73A49">+</span><span style="color: #24292E"> bs ]; })</span></li><li value="17"><span style="color: #24292E">  .</span><span style="color: #6F42C1">timeout</span><span style="color: #24292E">(deadline, () </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="18"><span style="color: #24292E">    </span><span style="color: #6F42C1">showOutcome</span><span style="color: #24292E">(</span><span style="color: #005CC5">TIMEOUT</span><span style="color: #24292E">)();</span></li><li value="19"><span style="color: #24292E">    </span><span style="color: #6F42C1">race</span><span style="color: #24292E">(Alice, Bob).</span><span style="color: #6F42C1">publish</span><span style="color: #24292E">();</span></li><li value="20"><span style="color: #24292E">    </span><span style="color: #D73A49">return</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">false</span><span style="color: #24292E">, as, bs ]; });</span></li></ol></pre>
+<p>
+  ::: note
+  If you're unsure of what kind of consensus transfer to use, you may want to read the <a href="##guide-ctransfers">explanation of the differences</a> in the Guide.
+  :::
+</p>
+<p>A ${defn("parallel reduce statement")} is written:</p>
+<p>${ref((quote rsh), "paySpec")}${ref((quote rsh), "define")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">LHS</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #6F42C1">parallelReduce</span><span style="color: #24292E">(</span><span style="color: #005CC5">INIT_EXPR</span><span style="color: #24292E">)</span></li><li value="3"><span style="color: #24292E">  .</span><span style="color: #6F42C1">define</span><span style="color: #24292E">(() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> </span><span style="color: #005CC5">DEFINE_BLOCK</span><span style="color: #24292E">)</span></li><li value="4"><span style="color: #24292E">  .</span><span style="color: #6F42C1">invariant</span><span style="color: #24292E">(</span><span style="color: #005CC5">INVARIANT_EXPR</span><span style="color: #24292E">)</span></li><li value="5"><span style="color: #24292E">  .</span><span style="color: #6F42C1">while</span><span style="color: #24292E">(</span><span style="color: #005CC5">COND_EXPR</span><span style="color: #24292E">)</span></li><li value="6"><span style="color: #24292E">  .</span><span style="color: #6F42C1">paySpec</span><span style="color: #24292E">(</span><span style="color: #005CC5">TOKENS_EXPR</span><span style="color: #24292E">)</span></li><li value="7"><span style="color: #24292E">  .</span><span style="color: #6F42C1">case</span><span style="color: #24292E">(</span><span style="color: #005CC5">PART_EXPR</span><span style="color: #24292E">,</span></li><li value="8"><span style="color: #24292E">    </span><span style="color: #005CC5">PUBLISH_EXPR</span><span style="color: #24292E">,</span></li><li value="9"><span style="color: #24292E">    </span><span style="color: #005CC5">PAY_EXPR</span><span style="color: #24292E">,</span></li><li value="10"><span style="color: #24292E">    </span><span style="color: #005CC5">CONSENSUS_EXPR</span><span style="color: #24292E">)</span></li><li value="11"><span style="color: #24292E">  .</span><span style="color: #6F42C1">api</span><span style="color: #24292E">(</span><span style="color: #005CC5">API_EXPR</span><span style="color: #24292E">,</span></li><li value="12"><span style="color: #24292E">    </span><span style="color: #005CC5">ASSUME_EXPR</span><span style="color: #24292E">,</span></li><li value="13"><span style="color: #24292E">    </span><span style="color: #005CC5">PAY_EXPR</span><span style="color: #24292E">,</span></li><li value="14"><span style="color: #24292E">    </span><span style="color: #005CC5">CONSENSUS_EXPR</span><span style="color: #24292E">)</span></li><li value="15"><span style="color: #24292E">  .</span><span style="color: #6F42C1">timeout</span><span style="color: #24292E">(</span><span style="color: #005CC5">DELAY_EXPR</span><span style="color: #24292E">, () </span><span style="color: #D73A49">=&gt;</span></li><li value="16"><span style="color: #24292E">    </span><span style="color: #005CC5">TIMEOUT_BLOCK</span><span style="color: #24292E">);</span></li></ol></pre>
+<p>
+  The <code>LHS</code> and <code>INIT_EXPR</code> are like the initialization component of a <code>while</code> loop; and,
+  the <code>.invariant</code> and <code>.while</code> components are like the invariant and condition of a <code>while</code> loop;
+  the <code>DEFINE_BLOCK</code> is like the <code>DEFINE_BLOCK</code> of a <code>while</code> loop;
+  while the <code>.case</code>, <code>.api</code>, <code>.timeout</code>, and <code>.paySpec</code> components are like the corresponding components of a <code>fork</code> statement.
+</p>
+<p>The <code>.case</code> component may be repeated many times, just like in a <code>fork</code> statement.</p>
+<p>
+  The <code>.define</code> component may define bindings that reference the <code>LHS</code> values. These bindings are accessible
+  from every component of the <code>parallelReduce</code> statement, except for the <code>INIT_EXPR</code>.
+</p>
+<h4 id="timeremaining"><code>.timeRemaining</code></h4>
+<p>
+  When dealing with absolute deadlines in <code>parallelReduce</code>, there is a common pattern in the
+  <code>TIMEOUT_BLOCK</code> to have participants <code>race</code> to <code>publish</code> and return the accumulator.
+  There is a shorthand, <code>.timeRemaining</code>, available for this situation:
+</p>
+<p>${ref((quote rsh), "timeRemaining")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">timeRemaining</span><span style="color: #24292E">, </span><span style="color: #005CC5">keepGoing</span><span style="color: #24292E"> ] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">makeDeadline</span><span style="color: #24292E">(deadline);</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">x</span><span style="color: #24292E">, </span><span style="color: #005CC5">y</span><span style="color: #24292E">, </span><span style="color: #005CC5">z</span><span style="color: #24292E"> ] </span><span style="color: #D73A49">=</span></li><li value="3"><span style="color: #24292E">  </span><span style="color: #6F42C1">parallelReduce</span><span style="color: #24292E">([ </span><span style="color: #005CC5">1</span><span style="color: #24292E">, </span><span style="color: #005CC5">2</span><span style="color: #24292E">, </span><span style="color: #005CC5">3</span><span style="color: #24292E"> ])</span></li><li value="4"><span style="color: #24292E">    .</span><span style="color: #6F42C1">while</span><span style="color: #24292E">(</span><span style="color: #6F42C1">keepGoing</span><span style="color: #24292E">())</span></li><li value="5"><span style="color: #24292E">    </span><span style="color: #D73A49">...</span></li><li value="6"><span style="color: #24292E">    .</span><span style="color: #6F42C1">timeRemaining</span><span style="color: #24292E">(</span><span style="color: #6F42C1">timeRemaining</span><span style="color: #24292E">())</span></li></ol></pre>
+<p>which will expand to:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">.</span><span style="color: #6F42C1">timeout</span><span style="color: #24292E">(</span><span style="color: #6F42C1">timeRemaining</span><span style="color: #24292E">(), () </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #6F42C1">race</span><span style="color: #24292E">(</span><span style="color: #D73A49">...</span><span style="color: #24292E">Participants).</span><span style="color: #6F42C1">publish</span><span style="color: #24292E">();</span></li><li value="3"><span style="color: #24292E">  </span><span style="color: #D73A49">return</span><span style="color: #24292E"> [ x, y, z ]; })</span></li></ol></pre>
+<h4 id="throwtimeout"><code>.throwTimeout</code></h4>
+<p>
+  <code>.throwTimeout</code> is a shorthand that will throw the accumulator as an exception when a timeout occurs.
+  Therefore, a <code>parallelReduce</code> that uses this branch must be inside of a try statement. For example,
+</p>
+<p>${ref((quote rsh), "throwTimeout")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">try</span><span style="color: #24292E"> {</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #D73A49">const</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">x</span><span style="color: #24292E">, </span><span style="color: #005CC5">y</span><span style="color: #24292E">, </span><span style="color: #005CC5">z</span><span style="color: #24292E"> ] </span><span style="color: #D73A49">=</span></li><li value="3"><span style="color: #24292E">    </span><span style="color: #6F42C1">parallelReduce</span><span style="color: #24292E">([ </span><span style="color: #005CC5">1</span><span style="color: #24292E">, </span><span style="color: #005CC5">2</span><span style="color: #24292E">, </span><span style="color: #005CC5">3</span><span style="color: #24292E"> ])</span></li><li value="4"><span style="color: #24292E">    </span><span style="color: #D73A49">...</span></li><li value="5"><span style="color: #24292E">    .</span><span style="color: #6F42C1">throwTimeout</span><span style="color: #24292E">(deadline)</span></li><li value="6"><span style="color: #24292E">} </span><span style="color: #D73A49">catch</span><span style="color: #24292E"> (e) { </span><span style="color: #D73A49">...</span><span style="color: #24292E"> }</span></li></ol></pre>
+<p>will expand <code>throwTimeout</code> to:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">.</span><span style="color: #6F42C1">timeout</span><span style="color: #24292E">(deadline, () </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #D73A49">throw</span><span style="color: #24292E"> [ x, y, z ]; })</span></li></ol></pre>
+<h4 id="parallelreduce-intuition"><code>parallelReduce</code> intuition</h4>
+<p>
+  A parallel reduce statement is essentially an abbreviation of pattern of a <code>while</code> loop combined with a <code>fork</code> statement that you could write yourself.
+  This is an extremely common pattern in decentralized applications.
+</p>
+<p>The idea is that there are some values (the <code>LHS</code>) which after intialization will be repeatedly updated uniquely by each of the racing participants until the condition does not hold.</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">var</span><span style="color: #24292E"> </span><span style="color: #005CC5">LHS</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">INIT_EXPR</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #005CC5">DEFINE_BLOCK</span><span style="color: #24292E">;</span></li><li value="3"><span style="color: #6F42C1">invariant</span><span style="color: #24292E">(</span><span style="color: #005CC5">INVARIANT_EXPR</span><span style="color: #24292E">);</span></li><li value="4"><span style="color: #D73A49">while</span><span style="color: #24292E">(</span><span style="color: #005CC5">COND_EXPR</span><span style="color: #24292E">) {</span></li><li value="5"><span style="color: #24292E">  </span><span style="color: #6F42C1">fork</span><span style="color: #24292E">()</span></li><li value="6"><span style="color: #24292E">  .</span><span style="color: #6F42C1">case</span><span style="color: #24292E">(</span><span style="color: #005CC5">PART_EXPR</span><span style="color: #24292E">,</span></li><li value="7"><span style="color: #24292E">    </span><span style="color: #005CC5">PUBLISH_EXPR</span><span style="color: #24292E">,</span></li><li value="8"><span style="color: #24292E">    </span><span style="color: #005CC5">PAY_EXPR</span><span style="color: #24292E">,</span></li><li value="9"><span style="color: #24292E">    (</span><span style="color: #E36209">m</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="10"><span style="color: #24292E">      </span><span style="color: #005CC5">LHS</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">CONSENSUS_EXPR</span><span style="color: #24292E">(m);</span></li><li value="11"><span style="color: #24292E">      </span><span style="color: #D73A49">continue</span><span style="color: #24292E">; })</span></li><li value="12"><span style="color: #24292E">  .</span><span style="color: #6F42C1">timeout</span><span style="color: #24292E">(</span><span style="color: #005CC5">DELAY_EXPR</span><span style="color: #24292E">, () </span><span style="color: #D73A49">=&gt;</span></li><li value="13"><span style="color: #24292E">    </span><span style="color: #005CC5">TIMEOUT_BLOCK</span><span style="color: #24292E">);</span></li><li value="14"><span style="color: #24292E">}</span></li></ol></pre>
+<h2 id="expressions">Expressions</h2>
+<p>
+  Any expressions valid for a <a href="##ref-programs-compute-exprs">computation</a> are valid for a consensus step.
+  However, some additional expressions are allowed.
+</p>
+<h3 id="this"><code>this</code></h3>
+<p>
+  Inside of a consensus step, <code>this</code> refers to the address of the participant that performed the consensus transfer.
+  This is useful when the consensus transfer was initiated by a <code>race</code> expression.
+</p>
+<h3 id="transfer"><code>transfer</code></h3>
+<p>${ref((quote rsh), "transfer")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">transfer</span><span style="color: #24292E">(</span><span style="color: #005CC5">10</span><span style="color: #24292E">).</span><span style="color: #6F42C1">to</span><span style="color: #24292E">(Alice);</span></li><li value="2"><span style="color: #6F42C1">transfer</span><span style="color: #24292E">(</span><span style="color: #005CC5">2</span><span style="color: #24292E">, gil).</span><span style="color: #6F42C1">to</span><span style="color: #24292E">(Alice);</span></li></ol></pre>
+<p>
+  A ${defn("transfer expression")},
+  written <code>transfer(AMOUNT_EXPR).to(ADDR_EXPR)</code>,
+  where <code>AMOUNT_EXPR</code> is an expression that evaluates to an unsigned integer, and
+  <code>ADDR_EXPR</code> evaluates to an address,
+  performs a transfer of network tokens from the contract to the named participant.
+  <code>AMOUNT_EXPR</code> must evaluate to less than or equal to the balance of network tokens in the contract account.
+</p>
+<p>
+  A transfer expression may also be written <code>transfer(AMOUNT_EXPR, TOKEN_EXPR).to(ADDR_EXPR)</code>,
+  where <code>TOKEN_EXPR</code> is a <code>Token</code>,
+  which transfers non-network tokens of the specified type.
+</p>
+<p>A transfer expression may only occur within a consensus step.</p>
+<h3 id="require"><code>require</code></h3>
+<p>${ref((quote rsh), "require")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">require</span><span style="color: #24292E">( claim, [msg] )</span></li></ol></pre>
+<p>
+  A requirement where <code>claim</code> evaluates to <code>true</code> with honest participants.
+  This may only appear in a consensus step.
+  It accepts an optional bytes argument, which is included in any reported violation.
+</p>
+<h3 id="checkcommitment"><code>checkCommitment</code></h3>
+<p>${ref((quote rsh), "checkCommitment")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6F42C1">checkCommitment</span><span style="color: #24292E">( commitment, salt, x )</span></li></ol></pre>
+<p>
+  Makes a requirement that <code>commitment</code> is the digest of <code>salt</code> and <code>x</code>.
+  This is used in a consensus step after <code>makeCommitment</code> was used in a local step.
+</p>
+<h3 id="token-minting">Token minting</h3>
+<p>${ref((quote rsh), "burn")}${ref((quote rsh), "destroy")}${ref((quote rsh), "supply")}${ref((quote rsh), "destroyed")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #005CC5">require</span><span style="color: #24292E">(supply </span><span style="color: #D73A49">&gt;=</span><span style="color: #24292E"> </span><span style="color: #005CC5">2</span><span style="color: #24292E"> </span><span style="color: #D73A49">*</span><span style="color: #24292E"> amt);</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">tok</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #D73A49">new</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Token</span><span style="color: #24292E">({ name, symbol, url, metadata, supply, decimals });</span></li><li value="3"><span style="color: #6F42C1">transfer</span><span style="color: #24292E">(amt, tok).</span><span style="color: #6F42C1">to</span><span style="color: #24292E">(who);</span></li><li value="4"><span style="color: #24292E">tok.</span><span style="color: #6F42C1">burn</span><span style="color: #24292E">(amt);</span></li><li value="5"><span style="color: #6F42C1">assert</span><span style="color: #24292E">(tok.</span><span style="color: #6F42C1">supply</span><span style="color: #24292E">() </span><span style="color: #D73A49">==</span><span style="color: #24292E"> supply </span><span style="color: #D73A49">-</span><span style="color: #24292E"> amt);</span></li><li value="6"><span style="color: #24292E">tok.</span><span style="color: #6F42C1">burn</span><span style="color: #24292E">();</span></li><li value="7"><span style="color: #6F42C1">assert</span><span style="color: #24292E">(tok.</span><span style="color: #6F42C1">destroyed</span><span style="color: #24292E">() </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #005CC5">false</span><span style="color: #24292E">);</span></li><li value="8"><span style="color: #24292E">tok.</span><span style="color: #6F42C1">destroy</span><span style="color: #24292E">();</span></li></ol></pre>
+<p>
+  ::: note
+  ${seclink("ref-networks")} discusses how Reach supports token minting on specific consensus networks.
+  :::
+</p>
+<p>
+  We refer to creation of a new non-network token as ${defn("token minting")}.
+  It is written with the expression <code>new Token(PARAMS)</code>, where <code>PARAMS</code> is an object with the following keys:
+</p>
+<ul>
+  <li><code>name</code>: A value of type <code>Bytes(32)</code>; defaults to empty.</li>
+  <li><code>symbol</code>: A value of type <code>Bytes(8)</code>; defaults to empty.</li>
+  <li><code>url</code>: A value of type <code>Bytes(96)</code>; defaults to empty.</li>
+  <li>
+    <code>metadata</code>: A value of type <code>Bytes(32)</code>; defaults to empty.
+    This value is intended to be a digest of a larger metadata document.
+  </li>
+  <li><code>supply</code>: A value of type <code>UInt</code>; defaults to <code>UInt.max</code>.</li>
+  <li><code>decimals</code>: A value of type <code>UInt</code>; defaults to <code>6</code> on Algorand, and <code>18</code> on Ethereum and Conflux.</li>
+</ul>
+<p>
+  This returns a <code>Token</code> value and deposits a <code>supply</code> amount of the new non-network tokens into the contract account associated with the DApp.
+  These tokens must be destroyed by the end of the DApp.
+</p>
+<p>
+  ::: note
+  Reach assumes that network tokens and non-network tokens behavior identically, but often they do not; <a href="##guide-nntoks">this article</a> discusses the causes and consequences of this.
+  :::
+</p>
+<hr>
+<p><code>Token.burn(tok, amt)</code>, or <code>tok.burn(amt)</code>, where <code>tok</code> is a <code>Token</code> value and <code>amt</code> is a <code>UInt</code> value, may be used to ${defn("burn")} tokens in the contract account, meaning that they are utterly destroyed and can never be recovered.</p>
+<hr>
+<p>
+  <code>Token.destroy(tok)</code>, or <code>tok.destroy()</code>, where <code>tok</code> is a <code>Token</code> value, may be used to destroy the token so that it may never be used again by any users on the consensus network.
+  This must be called before the application exits.
+</p>
+<hr>
+<p>
+  <code>Token.destroyed(tok)</code>, or <code>tok.destroyed()</code>, where <code>tok</code> is a <code>Token</code> value, returns whether <code>destroy</code>
+  has been called on <code>tok</code> yet.
+</p>
+<hr>
+<p><code>Token.supply(tok)</code>, or <code>tok.supply()</code>, where <code>tok</code> is a <code>Token</code> value, may be used to query the current supply of tokens, i.e. the number of tokens which have not been burnt.</p>
+<h3 id="remote-objects">Remote objects</h3>
+<p>${ref((quote rsh), "remote")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">randomOracle</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #6F42C1">remote</span><span style="color: #24292E">( randomOracleCtcInfo, {</span></li><li value="3"><span style="color: #24292E">    getRandom: </span><span style="color: #6F42C1">Fun</span><span style="color: #24292E">([], UInt),</span></li><li value="4"><span style="color: #24292E">  });</span></li><li value="5"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">randomVal</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> randomOracle.getRandom.</span><span style="color: #6F42C1">pay</span><span style="color: #24292E">(randomFee)();</span></li></ol></pre>
+<p>
+  ::: note
+  ${seclink("ref-networks")} discusses how Reach supports remote objects on specific consensus networks.
+  :::
+</p>
+<p>
+  A ${defn("remote object")} represents a foreign contract in a Reach application.
+  During a consensus step, a Reach computation may consensually communicate with such an object via a prescribed interface.
+</p>
+<p>A remote object is constructed by calling the <code>remote</code> function with a <code>Contract</code> and an interface---an object where each key is bound to a function type. For example:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">randomOracle</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #6F42C1">remote</span><span style="color: #24292E">( randomOracleCtcInfo, {</span></li><li value="3"><span style="color: #24292E">    getRandom: </span><span style="color: #6F42C1">Fun</span><span style="color: #24292E">([], UInt),</span></li><li value="4"><span style="color: #24292E">  });</span></li><li value="5"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">token</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span></li><li value="6"><span style="color: #24292E">  </span><span style="color: #6F42C1">remote</span><span style="color: #24292E">( tokenCtcInfo, {</span></li><li value="7"><span style="color: #24292E">    balanceOf: </span><span style="color: #6F42C1">Fun</span><span style="color: #24292E">([Address], UInt),</span></li><li value="8"><span style="color: #24292E">    transferTo: </span><span style="color: #6F42C1">Fun</span><span style="color: #24292E">([UInt, Address], Null),</span></li><li value="9"><span style="color: #24292E">  });</span></li></ol></pre>
+<p>
+  Once constructed, the fields of a remote object represent those remote contract interactions, referred to as ${defn("remote functions")}.
+  For example, <code>randomOracle.getRandom</code>, <code>token.balanceOf</code>, and <code>token.transferTo</code> are remote functions in the example.
+</p>
+<p>
+  A remote function may be invoked by calling it with the appropriate arguments, whereupon it returns the specified output.
+  In addition, a remote function may be augmented with one of the following operations:
+</p>
+<ul>
+  <li><code>REMOTE_FUN.pay(AMT)</code> --- Returns a remote function that receives a pay amount, <code>AMT</code>, <em>from</em> the caller when it is called.</li>
+  <li>${ref((quote rsh), "bill")} <code>REMOTE_FUN.bill(AMT)</code> --- Returns a remote function that provides a pay amount, <code>AMT</code>, <em>to</em> the caller when it returns.</li>
+  <li>
+    ${ref((quote rsh), "withBill")} <code>REMOTE_FUN.withBill()</code> --- Returns a remote function that provides some number of network tokens and, possibly, non-network tokens <em>to</em> the caller when it returns.
+    The exact amount is returned from the invocation by wrapping the original result in a tuple.
+  </li>
+</ul>
+<p>If the remote contract is not expected to return non-network tokens then a pair is returned, where the amount of network tokens received is the first element, and the original result is the second element.</p>
+<p>
+  If the remote contract is expected to return non-network tokens then a triple is returned, where the amount of network tokens received
+  is the first element, a tuple of the non-network tokens received is the second element, and the original result is the third element.
+  If the caller expects to receive non-network tokens, they must provide a tuple of tokens as an argument to <code>withBill</code>. The ordering of
+  tokens in the argument is reserved when returning the amounts received.
+  For example,
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">returned</span><span style="color: #24292E">, [</span><span style="color: #005CC5">gilRecv</span><span style="color: #24292E">, </span><span style="color: #005CC5">zmdRecv</span><span style="color: #24292E">], </span><span style="color: #005CC5">randomValue</span><span style="color: #24292E"> ] </span><span style="color: #D73A49">=</span></li><li value="2"><span style="color: #24292E">  randomOracle.getRandom.</span><span style="color: #6F42C1">pay</span><span style="color: #24292E">(stipend).</span><span style="color: #6F42C1">withBill</span><span style="color: #24292E">([gil, zmd])();</span></li></ol></pre>
+<p>
+  might be the way to communicate with a random oracle that receives a conservative approximation of its actual cost and returns what it does not use, along with some amount of <code>GIL</code> and <code>ZMD</code>.
+  This operation may not be used with <code>REMOTE_FUN.bill</code>.
+</p>
+<h3 id="mappings-creation-and-modification">Mappings: creation and modification</h3>
+<p>${ref((quote rsh), "Map")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">bidsM</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #D73A49">new</span><span style="color: #24292E"> </span><span style="color: #005CC5">Map</span><span style="color: #24292E">(UInt);</span></li><li value="2"><span style="color: #24292E">bidsM[</span><span style="color: #005CC5">this</span><span style="color: #24292E">] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">17</span><span style="color: #24292E">;</span></li><li value="3"><span style="color: #D73A49">delete</span><span style="color: #24292E"> bidsM[</span><span style="color: #005CC5">this</span><span style="color: #24292E">];</span></li></ol></pre>
+<p>A new mapping of linear state may be constructed in a consensus step by writing <code>new Map(TYPE_EXPR)</code>, where <code>TYPE_EXPR</code> is some type.</p>
+<p>
+  This returns a value which may be used to dereference particular mappings via <code>map[ADDR_EXPR]</code>, where <code>ADDR_EXPR</code> is an address.
+  Such dereferences return a value of type <code>Maybe(TYPE_EXPR)</code>, because the mapping may not contain a value for <code>ADDR_EXPR</code>.
+</p>
+<p>
+  A mapping may be modified by writing <code>map[ADDR_EXPR] = VALUE_EXPR</code> to install <code>VALUE_EXPR</code> (of type <code>TYPE_EXPR</code>) at <code>ADDR_EXPR</code>, or by writing <code>delete map[ADDR_EXPR]</code> to remove the mapping entry.
+  Such modifications may only occur in a consensus step.
+</p>
+<h3 id="sets-creation-and-modification">Sets: creation and modification</h3>
+<p>${ref((quote rsh), "Set")}${ref((quote rsh), "insert")}${ref((quote rsh), "remove")}${ref((quote rsh), "member")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">bidders</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #D73A49">new</span><span style="color: #24292E"> </span><span style="color: #005CC5">Set</span><span style="color: #24292E">();</span></li><li value="2"><span style="color: #24292E">bidders.</span><span style="color: #6F42C1">insert</span><span style="color: #24292E">(Alice);</span></li><li value="3"><span style="color: #24292E">bidders.</span><span style="color: #6F42C1">remove</span><span style="color: #24292E">(Alice);</span></li><li value="4"><span style="color: #24292E">bidders.</span><span style="color: #6F42C1">member</span><span style="color: #24292E">(Alice); </span><span style="color: #6A737D">// false</span></li></ol></pre>
+<p>
+  A <code>Set</code> is another container for linear state. It is simply a type alias of <code>Map(Null)</code>;
+  it is only useful for tracking <code>Address</code>es. Because a <code>Set</code> is internally a <code>Map</code>, it may
+  only be constructed in a consensus step.
+</p>
+<p>
+  A <code>Set</code> may be modified by writing <code>s.insert(ADDRESS)</code> to install <code>ADDRESS</code> in the
+  set, <code>s</code>, or <code>s.remove(ADDRESS)</code> to remove the <code>ADDRESS</code> from the set.
+  Such modifications may only occur in a consensus step.
+</p>
+<p><code>s.member(ADDRESS)</code> will return a <code>Bool</code> representing whether the address is in the set.</p>

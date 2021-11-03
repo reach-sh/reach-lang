@@ -1,0 +1,183 @@
+<p>
+  A Reach ${defn("source file")} is a textual file which specifies a Reach module.
+  It is traditionally given the file extension <code>rsh</code>,
+  e.g. <code>dao.rsh</code>.
+</p>
+<p>
+  A ${defn("module")} starts with <code>'reach reach-short-vers';</code>
+  followed by a sequence of imports and identifier definitions.
+  ::: note
+  See <a href="##guide-versions">the guide section on versions</a> to understand how Reach uses version numbers like this.
+  :::
+</p>
+<h2 id="statements">Statements</h2>
+<p>
+  Any statements valid for a <a href="##ref-programs-compute-stmts">computation</a> are valid for a module.
+  However, some additional statements are allowed.
+</p>
+<h3 id="export"><code>export</code></h3>
+<p>
+  Module-level identifier definitions may be ${defn("export")}ed
+  by writing ${ref((quote rsh), "export")} <code>export</code> in front of them.
+  For example,
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">export</span><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">x</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">1</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #D73A49">export</span><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> [</span><span style="color: #005CC5">a</span><span style="color: #24292E">, </span><span style="color: #005CC5">b</span><span style="color: #24292E">, </span><span style="color: #D73A49">...</span><span style="color: #005CC5">more</span><span style="color: #24292E">] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> [ </span><span style="color: #005CC5">0</span><span style="color: #24292E">, </span><span style="color: #005CC5">1</span><span style="color: #24292E">, </span><span style="color: #005CC5">2</span><span style="color: #24292E">, </span><span style="color: #005CC5">3</span><span style="color: #24292E">, </span><span style="color: #005CC5">4</span><span style="color: #24292E"> ];</span></li><li value="3"><span style="color: #D73A49">export</span><span style="color: #24292E"> </span><span style="color: #D73A49">function</span><span style="color: #24292E"> </span><span style="color: #6F42C1">add1</span><span style="color: #24292E">(</span><span style="color: #E36209">x</span><span style="color: #24292E">) { </span><span style="color: #D73A49">return</span><span style="color: #24292E"> x </span><span style="color: #D73A49">+</span><span style="color: #24292E"> </span><span style="color: #005CC5">1</span><span style="color: #24292E">; };</span></li></ol></pre>
+<p>are valid exports.</p>
+<p>
+  Module-level identifiers may also be exported after the fact,
+  and may be renamed during export. For example:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">w</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">2</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">z</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">0</span><span style="color: #24292E">;</span></li><li value="3"><span style="color: #D73A49">export</span><span style="color: #24292E"> {w, z </span><span style="color: #D73A49">as</span><span style="color: #24292E"> zero};</span></li></ol></pre>
+<p>
+  Identifiers from other modules may be re-exported (and renamed),
+  even if they are not imported in the current module.
+  For example:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">export</span><span style="color: #24292E"> {u, x </span><span style="color: #D73A49">as</span><span style="color: #24292E"> other_x} </span><span style="color: #D73A49">from</span><span style="color: #24292E"> </span><span style="color: #032F62">'./other-module.rsh'</span><span style="color: #24292E">;</span></li></ol></pre>
+<p>An exported identifier in a given module may be imported by other modules.</p>
+<p>
+  Exports are also exposed to the frontend via <code>getExports</code>. Functions are only exposed
+  if they are typed, that is, if they are constructed with <code>is</code>.
+</p>
+<h3 id="import"><code>import</code></h3>
+<p>
+  ${ref((quote rsh), "import")}
+  Reach supports two types of module ${defn("imports")}: local imports,
+  which refer to modules that exist within your project, and
+  package imports, which refer to remote libraries that may be fetched
+  from external sources such as <a href="https://github.com">GitHub</a>.
+  ::: note
+  Read <a href="##guide-packages">the guide section on packages</a> for more details.
+  :::
+</p>
+<p>
+  Package imports are easily distinguished from local imports by a
+  mandatory <code>@</code> character at the beginning of the path string.
+</p>
+<h4 id="local-imports">Local imports</h4>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">import</span><span style="color: #24292E"> </span><span style="color: #032F62">'games-of-chance.rsh'</span><span style="color: #24292E">;</span></li></ol></pre>
+<p>
+  When a module, <code>X</code>, contains a ${defn("local import")},
+  written <code>import "LIB.rsh";</code>,
+  then the path <code>LIB.rsh</code> must resolve to another Reach source file.
+  The exports from the module defined by <code>LIB.rsh</code> are included in the set of bound identifiers in <code>X</code>.
+</p>
+<p>${ref((quote rsh), "from")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">import</span><span style="color: #24292E"> {flipCoin, rollDice </span><span style="color: #D73A49">as</span><span style="color: #24292E"> d6} </span><span style="color: #D73A49">from</span><span style="color: #24292E"> </span><span style="color: #032F62">'games-of-chance.rsh'</span><span style="color: #24292E">;</span></li></ol></pre>
+<p>Import statements may limit or rename the imported identifiers.</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">import</span><span style="color: #24292E"> </span><span style="color: #005CC5">*</span><span style="color: #24292E"> </span><span style="color: #D73A49">as</span><span style="color: #24292E"> gamesOfChance </span><span style="color: #D73A49">from</span><span style="color: #24292E"> </span><span style="color: #032F62">'games-of-chance.rsh'</span><span style="color: #24292E">;</span></li></ol></pre>
+<p>
+  Imports may instead bind the entire module to a single identifier,
+  which is an object with fields corresponding to that module's exports.
+</p>
+<p>Import cycles are invalid.</p>
+<p>The path given to an import may <strong>not</strong> include <code>..</code> to specify files outside the current directory <strong>nor</strong> may it be an absolute path.</p>
+<p>It <strong>must</strong> be a relative path, which is resolved relative to the parent directory of the source file in which they appear.</p>
+<h4 id="package-imports">Package imports</h4>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">import</span><span style="color: #24292E"> </span><span style="color: #005CC5">*</span><span style="color: #24292E"> </span><span style="color: #D73A49">as</span><span style="color: #24292E"> func </span><span style="color: #D73A49">from</span></li><li value="2"><span style="color: #24292E">  </span><span style="color: #032F62">'@reach-sh/reach-example-package'</span><span style="color: #24292E">;</span></li><li value="3"><span style="color: #D73A49">import</span><span style="color: #24292E"> </span><span style="color: #005CC5">*</span><span style="color: #24292E"> </span><span style="color: #D73A49">as</span><span style="color: #24292E"> func </span><span style="color: #D73A49">from</span></li><li value="4"><span style="color: #24292E">  </span><span style="color: #032F62">'@reach-sh/reach-example-package:src/func.rsh'</span><span style="color: #24292E">;</span></li><li value="5"><span style="color: #D73A49">import</span><span style="color: #24292E"> </span><span style="color: #005CC5">*</span><span style="color: #24292E"> </span><span style="color: #D73A49">as</span><span style="color: #24292E"> func </span><span style="color: #D73A49">from</span></li><li value="6"><span style="color: #24292E">  </span><span style="color: #032F62">'@github.com:reach-sh/reach-example-package#main:src/func.rsh'</span><span style="color: #24292E">;</span></li></ol></pre>
+<p>
+  ${defn("Package imports")} obey the same rules as local imports but
+  support an extended path syntax which allows Reach programmers to seamlessly
+  plug into third-party libraries hosted on the internet.
+</p>
+<p>All package imports begin with the <code>@</code> character.</p>
+<p>Package import paths are comprised of the following components:</p>
+<ul>
+  <li><strong>(Optional): The <code>git</code> server where the package is hosted.</strong></li>
+</ul>
+<p>This component must be followed by a <code>:</code> character.</p>
+<p>This component defaults to <a href="https://github.com">GitHub</a> (i.e. <code>github.com</code>) if no site is specified.</p>
+<p>Examples: <code>github.com:</code>, <code>bitbucket.org:</code>.</p>
+<ul>
+  <li><strong>The account registered with the host site.</strong></li>
+</ul>
+<p>This component must be followed by a <code>/</code> character.</p>
+<p>Examples: <code>reach-sh/</code>, <code>jeapostrophe/</code>.</p>
+<ul>
+  <li><strong>A repository associated with the account.</strong></li>
+</ul>
+<p>Examples: <code>reach-example-package</code>, <code>nfts</code>.</p>
+<ul>
+  <li><strong>(Optional): A <code>git ref</code> or <code>git commit</code> used to represent the
+package version.</strong></li>
+</ul>
+<p>
+  If no <code>ref</code> is specified, Reach first tries to find the requested module
+  on the repository's <code>master</code> branch, and if that fails then on the <code>main</code>
+  branch once more.
+  ::: note
+  <code>git refs</code> are discussed in further detail
+  <a href="https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefrefaref">here</a>.
+  :::
+</p>
+<p>
+  <strong>It is highly advisable that package authors use <code>git tags</code> to denote
+version "releases", e.g. <code>v0.2.1</code>, and that consuming code target the
+desired <code>git tag</code> rather than a branch name.</strong>
+  ::: note
+  Read
+  <a href="https://git-scm.com/book/en/v2/Git-Basics-Tagging">this guide</a>
+  to learn more about how <code>git tags</code> work.
+  :::
+</p>
+<p>This component must be preceded by a <code>#</code> character.</p>
+<p>Example: <code>#v3.0.6</code>.</p>
+<ul>
+  <li><strong>(Optional): The directory in which the module may be found.</strong></li>
+</ul>
+<p>
+  This component must be preceded by a <code>:</code> character and must end with
+  a <code>/</code>.
+</p>
+<p>Example: <code>:src/lib/</code>.</p>
+<ul>
+  <li><strong>(Optional): The filename of the requested module.</strong></li>
+</ul>
+<p>Defaults to <code>index.rsh</code>.</p>
+<p>
+  If the module exists within a subdirectory it must be preceded by a <code>/</code>
+  character.
+</p>
+<p>Example: <code>@reach-sh/example#v1.01:parent/child/pkg.rsh</code>.</p>
+<p>
+  However, if the module is stored in the root of the repository, it must instead
+  be preceded by a <code>:</code> character.
+</p>
+<p>Example: <code>@reach-sh/example#v1.02:pkg.rsh</code>.</p>
+<p>
+  The following forms are all syntactically valid package import
+  expressions:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"></li><li value="2">@account/repo</li><li value="3">@account/repo:</li><li value="4">@account/repo:a/b/file.rsh</li><li value="5">@account/repo:a/b/</li><li value="6">@account/repo:file.rsh</li><li value="7">@account/repo#</li><li value="8">@account/repo#:</li><li value="9">@account/repo#:a/b/file.rsh</li><li value="10">@account/repo#:a/b/</li><li value="11">@account/repo#:file.rsh</li><li value="12">@account/repo#ref</li><li value="13">@account/repo#ref:</li><li value="14">@account/repo#ref:a/b/file.rsh</li><li value="15">@account/repo#ref:a/b/</li><li value="16">@account/repo#ref:file.rsh</li><li value="17">@server:account/repo</li><li value="18">@server:account/repo:</li><li value="19">@server:account/repo:a/b/file.rsh</li><li value="20">@server:account/repo:a/b/</li><li value="21">@server:account/repo:file.rsh</li><li value="22">@server:account/repo#</li><li value="23">@server:account/repo#:</li><li value="24">@server:account/repo#:a/b/file.rsh</li><li value="25">@server:account/repo#:a/b/</li><li value="26">@server:account/repo#:file.rsh</li><li value="27">@server:account/repo#ref</li><li value="28">@server:account/repo#ref:</li><li value="29">@server:account/repo#ref:a/b/file.rsh</li><li value="30">@server:account/repo#ref:a/b/</li><li value="31">@server:account/repo#ref:file.rsh</li></ol></pre>
+<hr>
+<p>
+  Since <code>git</code> repositories evolve and change over time, Reach takes extra
+  steps in order to pin a given module import's version to the specific <code>SHA</code> hash of the specified revision at the time the package is first installed.
+  These pins are stored in a lockfile, which should be included in your source control system.
+</p>
+<h2 id="expressions">Expressions</h2>
+<p>
+  Any expressions valid for a <a href="##ref-programs-compute-exprs">computation</a> are valid for a module.
+  However, some additional expressions are allowed.
+</p>
+<h3 id="reachapp"><code>Reach.App</code></h3>
+<p>${ref((quote rsh), "Reach")}${ref((quote rsh), "App")}</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">export</span><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">main</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> Reach.</span><span style="color: #6F42C1">App</span><span style="color: #24292E">(() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="2"><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">A</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Participant</span><span style="color: #24292E">(</span><span style="color: #032F62">"A"</span><span style="color: #24292E">, {</span></li><li value="3"><span style="color: #24292E">  displayResult: </span><span style="color: #6F42C1">Fun</span><span style="color: #24292E">(Int, Null),</span></li><li value="4"><span style="color: #24292E"> });</span></li><li value="5"><span style="color: #24292E"> </span><span style="color: #6F42C1">deploy</span><span style="color: #24292E">();</span></li><li value="6"></li><li value="7"><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">result</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">0</span><span style="color: #24292E">;</span></li><li value="8"><span style="color: #24292E"> </span><span style="color: #005CC5">A</span><span style="color: #24292E">.</span><span style="color: #6F42C1">only</span><span style="color: #24292E">(() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> { interact.</span><span style="color: #6F42C1">displayResult</span><span style="color: #24292E">(result); });</span></li><li value="9"></li><li value="10"><span style="color: #24292E"> </span><span style="color: #6F42C1">exit</span><span style="color: #24292E">();</span></li><li value="11"><span style="color: #24292E">});</span></li></ol></pre>
+<p>
+  ${defn("Reach.App")} accepts a no-argument function that specifies a DApp.
+  This function is applied during compilation as an application initialization.
+  It specifies the entire DApp in its body.
+</p>
+<p>If the result of <code>Reach.App</code> is eventually bound to an identifier that is exported, then that identifier may be a target given to the compiler, as discussed in <a href="##ref-usage-compile">the section on usage</a>.</p>
+<h4 id="deprecated-long-form">Deprecated long-form</h4>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">export</span><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">main</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span></li><li value="2"><span style="color: #24292E">  Reach.</span><span style="color: #6F42C1">App</span><span style="color: #24292E">({}, [</span><span style="color: #6F42C1">Participant</span><span style="color: #24292E">(</span><span style="color: #032F62">"A"</span><span style="color: #24292E">, {displayResult: </span><span style="color: #6F42C1">Fun</span><span style="color: #24292E">(Int, Null)})], (</span><span style="color: #E36209">A</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="3"><span style="color: #24292E">    </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">result</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">0</span><span style="color: #24292E">;</span></li><li value="4"><span style="color: #24292E">    </span><span style="color: #005CC5">A</span><span style="color: #24292E">.</span><span style="color: #6F42C1">only</span><span style="color: #24292E">(() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> { interact.</span><span style="color: #6F42C1">displayResult</span><span style="color: #24292E">(result); })</span></li><li value="5"><span style="color: #24292E">    </span><span style="color: #6F42C1">exit</span><span style="color: #24292E">();</span></li><li value="6"><span style="color: #24292E">  });</span></li></ol></pre>
+<p>
+  Previous versions of Reach only allowed a form of Reach.App which accepted three arguments:
+  an <code>options</code> object,
+  an <code>applicationArgs</code> tuple,
+  and a <code>program</code> arrow of the form <code>(applicationIds) =&gt; body</code>.
+</p>
+<p>This form was equivalent to</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">Reach.</span><span style="color: #6F42C1">App</span><span style="color: #24292E">(() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="2"><span style="color: #24292E"> </span><span style="color: #6F42C1">setOptions</span><span style="color: #24292E">(options);</span></li><li value="3"><span style="color: #24292E"> [ applicationIds ] </span><span style="color: #D73A49">=</span><span style="color: #24292E"> applicationArgs;</span></li><li value="4"><span style="color: #24292E"> </span><span style="color: #6F42C1">deploy</span><span style="color: #24292E">();</span></li><li value="5"><span style="color: #24292E"> body</span></li><li value="6"><span style="color: #24292E">});</span></li></ol></pre>
+<p>The current version of Reach will automatically transform these "ternary" <code>Reach.App</code> instances into the above form.</p>
+<p>Future versions of Reach will deprecate this transform and such programs will be invalid.</p>
