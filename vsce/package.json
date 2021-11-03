@@ -305,6 +305,7 @@
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+		"reinstall": "rm -rf ./node_modules && rm -rf ./server/node_modules && rm -rf ./client/node_modules && npm install",
 		"test": "sh ./scripts/e2e.sh"
 	},
 	"devDependencies": {
