@@ -29,10 +29,10 @@ const normalizeDir = (s) => {
 }
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const cfg = fs.readJsonSync(`${__dirname}/generator.json`);
-const srcDir = normalizeDir(__dirname.replace('/tools', ''));
-const outDir = normalizeDir(`${srcDir}/build`);
+const rootDir = path.dirname(__filename);
+const cfg = fs.readJsonSync(`${rootDir}/generator.json`);
+const srcDir = normalizeDir(`${rootDir}/src`);
+const outDir = normalizeDir(`${rootDir}/build`);
 
 // Plugins
 
@@ -114,6 +114,12 @@ const copyFmToConfig = (configJson) => {
 
 // Tools
 
+const writeFileMkdir = async (p, c) => {
+  const dir = path.dirname(p);
+  await fs.mkdir(dir, {recursive: true});
+  await fs.writeFile(p, c);
+};
+
 // This is a hack, really we need to have better synchronization across the
 // parallel jobs.
 const readJsonWait = async (who, f) => {
@@ -130,7 +136,7 @@ const readJsonWait = async (who, f) => {
 
 const remoteGet_ = async (url) => {
   if ( url.startsWith(cfg.repoBase) ) {
-    const n = url.replace(cfg.repoBase, `${__dirname}/../../reach-lang/`);
+    const n = url.replace(cfg.repoBase, `${rootDir}/../../`);
     try { return await fs.readFile(n, 'utf8'); }
     catch (e) {
       void(e);
@@ -158,12 +164,12 @@ const shikiHighlight = async (code, lang) => {
 // Library
 const cleanCss = new CleanCss({level: 2});
 const processCss = async () => {
-  const iPath = `${srcDir}/assets.in/styles.css`;
+  const iPath = `${rootDir}/assets.in/styles.css`;
   const oPath = `${outDir}/assets/styles.min.css`;
   console.log(`Minifying ${iPath}`);
   const input = await fs.readFile(iPath, 'utf8');
   const output = cleanCss.minify(input);
-  await fs.writeFile(oPath, output.styles);
+  await writeFileMkdir(oPath, output.styles);
 };
 
 const processBaseHtml = async (lang) => {
@@ -171,17 +177,17 @@ const processBaseHtml = async (lang) => {
   const oPath = `${outDir}/${lang}/index.html`;
   console.log(`Minifying ${iPath}`);
   const output = await minify(iPath, { html: {} });
-  await fs.writeFile(oPath, output);
+  await writeFileMkdir(oPath, output);
 };
 
 const processJs = async () => {
-  const iPath = `${srcDir}/assets.in/scripts.js`;
+  const iPath = `${rootDir}/assets.in/scripts.js`;
   const oPath = `${outDir}/assets/scripts.min.js`;
   console.log(`Minifying ${iPath}`);
   const input = await fs.readFile(iPath, 'utf8');
   const output = new UglifyJS.minify(input, {});
   if (output.error) throw output.error;
-  await fs.writeFile(oPath, output.code);
+  await writeFileMkdir(oPath, output.code);
 }
 
 const evaluateCodeSnippet = (code) => {

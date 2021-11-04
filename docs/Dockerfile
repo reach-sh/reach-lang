@@ -43,7 +43,7 @@ WORKDIR /proj
 
 RUN apk add make
 ADD docs/dev ./docs/dev
-RUN (cd docs/dev/tools && make installed)
+RUN (cd docs/dev && make installed)
 RUN (cd docs/dev && make)
 WORKDIR /proj/docs/dev
 
