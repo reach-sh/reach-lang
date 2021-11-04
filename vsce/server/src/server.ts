@@ -354,7 +354,7 @@ type ReachCompilerErrorJSON {
 	ce_position: number[];
 	ce_suggestions: string[];
 	ce_errorMessage: string;
-	ce_offendingToken?: string;
+	ce_offendingToken: string | null;
 	ce_errorCode: string;
 }
 
