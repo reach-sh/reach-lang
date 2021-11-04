@@ -125,10 +125,7 @@ const writeFileMkdir = async (p, c) => {
 const remoteGet_ = async (url) => {
   if ( url.startsWith(repoBase) ) {
     const n = url.replace(repoBase, `${rootDir}/../../`);
-    try { return await fs.readFile(n, 'utf8'); }
-    catch (e) {
-      void(e);
-    }
+    return await fs.readFile(n, 'utf8');
   }
   console.log(`Downloading ${url}`);
   return (await axios.get(url)).data;
