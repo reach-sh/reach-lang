@@ -20,6 +20,7 @@ This repository contains the source files and site generator for the [Reach Deve
     ```
 
     Initially, this build will take 7-8 minutes.
+    Subsequent runs will take on the order of 30 seconds.
 
 1. Run a server:
 
@@ -49,13 +50,13 @@ This repository contains the source files and site generator for the [Reach Deve
 
     ```
     cd docs/dev
-    mkdir -p en/pages/colors-and-shapes
+    mkdir -p src/en/pages/colors-and-shapes
     ```
 
 1. Create an index.md file inside your page folder:
 
     ```
-    touch en/pages/colors-and-shapes/index.md
+    touch src/en/pages/colors-and-shapes/index.md
     ```
 
 1. Add content to the index.md file. For sample content, browse to the [Sample Page](https://docs.reach.sh/en/pages/sample/), click the Pencil icon, click the second Pencil icon, and copy & paste.
@@ -118,15 +119,15 @@ Below is a table of the current page configuration options:
 
 ## About source files
 
-Each webpage traces its source to a folder within the [books](https://github.com/reach-sh/reach-lang/tree/master/docs/dev/en/books) or [pages](https://github.com/reach-sh/reach-lang/tree/master/docs/dev/en/pages) directories.
+Each webpage traces its source to a folder within the [books](https://github.com/reach-sh/reach-lang/tree/master/docs/dev/src/en/books) or [pages](https://github.com/reach-sh/reach-lang/tree/master/docs/dev/src/en/pages) directories.
 
 <p><img src="./assets/folder-to-webpage.png" width=400></p>
 
-The [books](https://github.com/reach-sh/reach-lang/tree/master/docs/dev/en/books) directory contains book, chapter, and leaf folders which correspond to book, chapter, and leaf webpages:
+The [books](https://github.com/reach-sh/reach-lang/tree/master/docs/dev/src/en/books) directory contains book, chapter, and leaf folders which correspond to book, chapter, and leaf webpages:
 
 <p><img src="./assets/books.png" width=700></p>
 
-The [pages](https://github.com/reach-sh/reach-lang/tree/master/docs/dev/en/pages) directory contains standalone and dummy folders. Standalone folders correspond to webpages. Dummy folders do not correspond to webpages. Instead, they provide a user-determined organizational hierarchy for standalone folders.
+The [pages](https://github.com/reach-sh/reach-lang/tree/master/docs/dev/src/en/pages) directory contains standalone and dummy folders. Standalone folders correspond to webpages. Dummy folders do not correspond to webpages. Instead, they provide a user-determined organizational hierarchy for standalone folders.
 
 <p><img src="./assets/pages.png" width=700></p>
 
@@ -140,7 +141,7 @@ The index.md file conforms to [Github-flavored markdown](https://github.github.c
 # Demo Page
 ```
 
-It may contain headings, paragraphs, lists, code snippets, tables, html, etc. as demonstrated on the [Demo Page](https://github.com/reach-sh/reach-lang/blob/master/docs/dev/en/pages/demo/index.md). It may also contain links to supplemental files (e.g. images) that reside in the same folder, and links to external resources (e.g. videos):
+It may contain headings, paragraphs, lists, code snippets, tables, html, etc. as demonstrated on the [Demo Page](https://github.com/reach-sh/reach-lang/blob/master/docs/dev/src/en/pages/demo/index.md). It may also contain links to supplemental files (e.g. images) that reside in the same folder, and links to external resources (e.g. videos):
 
 <p><img src="./assets/supplemental-files.png" width=600></p>
 
@@ -176,45 +177,15 @@ The various screen widths (seen below) determine whether a user sees, on initial
 Reach colors are reddish (#F45747), light blueish (#6AC6E7), and inkish (#1A1C23).
 
 ```
-background: "url(/en/pages/home/stars2.jpeg), rgba(var(--bs-dark-rgb),var(--bs-bg-opacity))"
+background: "url(/src/en/pages/home/stars2.jpeg), rgba(var(--bs-dark-rgb),var(--bs-bg-opacity))"
 ```
 
 ## About the generator
 
-A Node.js command-line application, the site generator which, for the most part, transforms markdown files into html files, will continue to evolve over the next few months. Here is the current help menu:
+The site generator is implemented with Node.js and has no options.
+It builds the site all at once.
+It generally takes about 25 seconds to build.
 
 ```
-$ node tools/generator.js -h
-Options:
-  -h, --help      Show help.  [boolean]
-  -v, --version   Show version.  [boolean]
-  -d, --dir       Specify dirpath.  [string] [default: ""]
-  -e, --edit      Add edit button to page.  [boolean] [default: true]
-  -l, --language  Specify language (e.g. en, zh).  [string] [default: "en"]
-  -r, --refresh   Add refresh button to page.  [boolean] [default: true]
-  -t, --type      Specify file type.  [string] [required] [choices: "all", "base", "book", "css", "folder", "folders", "js"]
-
-Examples:
-  generator.js
-  generator.js -t all
-  generator.js -t book -d books/demo
-  generator.js -t css
-  generator.js -t base -l en
-  generator.js -t folder -d en/books/demo
-  generator.js -t folders -d en/books/demo
-  generator.js -t js
-```
-
-Below are some additional examples.
-
-If you modify an index.md file (e.g. `en/books/demo/amphibians/frogs`), you regenerate the corresponding webpage with the `folder` flag:
-
-```
-$ node tools/generator.js -t folder -d en/books/demo/amphibians/frogs
-```
-
-If you modify various index.md files within a hierarchy (e.g. `en/books/demo`), you regenerate all the corresponding webpages with the `folders` flag:
-
-```
-$ node tools/generator.js -t folders -d en/books/demo
+$ node generator.js
 ```
