@@ -402,7 +402,7 @@ CallStack (from HasCallStack):
 		if (REACH_ERROR_CODE === "RE0013") {
 			// If we have this error code, an offendingToken will exist,
 			// which is why we can assert to TypeScript that
-			// offendingToken is non-undefined with the "!" operator.
+			// offendingToken is non-null with the "!" operator.
 			// https://stackoverflow.com/questions/38874928/operator-in-typescript-after-object-method
 			start.character -= offendingToken!.length;
 			end.character   -= offendingToken!.length;
