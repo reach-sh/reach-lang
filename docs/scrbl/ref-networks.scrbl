@@ -158,6 +158,7 @@ Specifically, the @reachin{Token} type refers to the address of the ERC-20 contr
 
 @tech{Views} are compiled to @litchar{view} functions.
 A @tech{view} named @litchar{X.Y} will be named @litchar{X_Y}.
+A @tech{view} named @litchar{X} will be named @litchar{X}.
 @tech{Views} expand the on-chain state to include the free variables of all values bound to a @tech{view}.
 
 In Ethereum, @tech{network time} corresponds to block numbers and @tech{network seconds} correspond to the Unix timestamp of the block.

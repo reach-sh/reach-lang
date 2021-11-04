@@ -2197,6 +2197,14 @@ typeOfBytes v = do
     T_Bytes l -> return (l, ae)
     _ -> expect_t v $ Err_Expected "bytes"
 
+verifyNotReserved :: SrcLoc -> String -> App ()
+verifyNotReserved at s = do
+  connectors <- readDlo dlo_connectors
+  -- XXX extend `Connector` to convey this info we're checking
+  when ("ETH" `elem` connectors && s `elem` map show solReservedNames) $
+    expect_thrown at $ Err_Sol_Reserved s
+
+
 evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
   case p of
@@ -2582,10 +2590,7 @@ evalPrim p sargs =
       where
         verifyStructId r s = do
           at <- withAt id
-          connectors <- readDlo dlo_connectors
-          -- XXX extend `Connector` to convey this info we're checking
-          when ("ETH" `elem` connectors && s `elem` map show solReservedNames) $
-            expect_thrown at $ Err_Sol_Reserved s
+          verifyNotReserved at s
           bool (expect_ $ Err_Struct_Key_Invalid s) (return s) $ matched $ s ?=~ r
     SLPrim_Struct_fromTuple ts -> do
       tv <- one_arg
@@ -2857,6 +2862,7 @@ evalPrim p sargs =
       let go k (at, t) = do
             when (isNothing nv) $ do
               verifyName at "View" [] k
+              verifyNotReserved at k
             let vv = SLV_Prim $ SLPrim_viewis at n k t
             let vom = M.singleton "set" $ SLSSVal at Public vv
             let vo = SLV_Object at (Just $ ns <> " View, " <> k) vom
