@@ -31,8 +31,8 @@ cat >>"${DEND}" <<END
           branches:
             ignore: /.*/
         requires:
-          - "hs-test"
 END
+#          - "hs-test"
 
 deps () {
   DEPS="$*"
