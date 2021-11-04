@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/reach-programs/compute",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/reach-programs/compute",
   "publishedDate": null,
   "title": "Computations",
   "src": "ref-programs-compute.md"

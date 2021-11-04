@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/getting-started/wisdom-for-sale",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/getting-started/wisdom-for-sale",
   "publishedDate": null,
   "title": "Wisdom for Sale"
 }

@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/examples/trust-fund",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/examples/trust-fund",
   "publishedDate": null,
   "title": "Workshop: Trust Fund",
   "src": "workshop-trust-fund.md"

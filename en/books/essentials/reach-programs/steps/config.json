@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/reach-programs/steps",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/reach-programs/steps",
   "publishedDate": null,
   "title": "Steps",
   "src": "ref-programs-step.md"

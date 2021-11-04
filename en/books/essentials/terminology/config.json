@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/terminology",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/terminology",
   "publishedDate": null,
   "title": "Terminology"
 }

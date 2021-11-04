@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/getting-started/set-up-an-ide",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/getting-started/set-up-an-ide",
   "publishedDate": null,
   "title": "Set up an IDE"
 }

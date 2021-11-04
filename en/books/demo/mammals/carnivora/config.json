@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/demo/mammals/carnivora",
+  "pathname": "/proj/docs/dev/src/en/books/demo/mammals/carnivora",
   "publishedDate": null,
   "title": "Carnivora"
 }

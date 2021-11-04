@@ -1,6 +1,0 @@
----
-menuItem: mi-docs
----
-
-# Examples
-

@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/reach-programs/local",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/reach-programs/local",
   "publishedDate": null,
   "title": "Local Steps",
   "src": "ref-programs-local.md"

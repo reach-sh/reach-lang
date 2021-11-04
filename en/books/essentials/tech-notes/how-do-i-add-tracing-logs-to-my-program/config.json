@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/tech-notes/how-do-i-add-tracing-logs-to-my-program",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/tech-notes/how-do-i-add-tracing-logs-to-my-program",
   "publishedDate": "2021-05-22T14:00:00.000Z",
   "title": "How do I add tracing logs to my Reach program?"
 }

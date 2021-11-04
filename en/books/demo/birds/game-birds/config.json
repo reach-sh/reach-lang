@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/demo/birds/game-birds",
+  "pathname": "/proj/docs/dev/src/en/books/demo/birds/game-birds",
   "publishedDate": null,
   "title": "Game Birds"
 }

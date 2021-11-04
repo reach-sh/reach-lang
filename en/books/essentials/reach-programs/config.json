@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/reach-programs",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/reach-programs",
   "publishedDate": null,
   "title": "Programs",
   "src": "ref-programs.md"

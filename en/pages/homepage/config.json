@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-home",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/pages/homepage",
+  "pathname": "/proj/docs/dev/src/en/pages/homepage",
   "publishedDate": null,
   "title": "Homepage"
 }

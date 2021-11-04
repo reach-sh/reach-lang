@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/support-for-js-frontends-new/contract",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/support-for-js-frontends-new/contract",
   "publishedDate": null,
   "title": "Contract Object"
 }

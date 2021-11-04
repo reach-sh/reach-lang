@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/getting-started/run-a-dapp",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/getting-started/run-a-dapp",
   "publishedDate": null,
   "title": "Run a DApp"
 }

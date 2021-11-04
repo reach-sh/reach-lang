@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/development-environment",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/development-environment",
   "publishedDate": null,
   "title": "Set up your development environment"
 }

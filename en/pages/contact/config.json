@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-contact",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/pages/contact",
+  "pathname": "/proj/docs/dev/src/en/pages/contact",
   "publishedDate": null,
   "title": "Contact"
 }

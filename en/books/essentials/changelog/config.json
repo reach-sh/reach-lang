@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/changelog",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/changelog",
   "publishedDate": null,
   "title": "Reach's Changelog",
   "src": "guide-changelog.md"

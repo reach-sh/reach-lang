@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/support-for-js-frontends-new/account",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/support-for-js-frontends-new/account",
   "publishedDate": null,
   "title": "Account Object"
 }

@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/support-for-rpc-frontends/python-rpc",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/support-for-rpc-frontends/python-rpc",
   "publishedDate": null,
   "title": "Python (RPC)",
   "src": "ref-frontends-rpc-py.md"

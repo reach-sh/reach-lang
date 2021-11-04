@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/tech-notes/how-does-reach-use-version-numbers",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/tech-notes/how-does-reach-use-version-numbers",
   "publishedDate": "2021-08-29T14:00:00.000Z",
   "title": "How does Reach use version numbers?"
 }

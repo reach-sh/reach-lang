@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/books/essentials/tech-notes/how-do-network-and-non-network-tokens-differ",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/tech-notes/how-do-network-and-non-network-tokens-differ",
   "publishedDate": "2021-10-02T14:00:00.000Z",
   "title": "How do network and non-network tokens differ?"
 }

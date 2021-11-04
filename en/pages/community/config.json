@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-community",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/pages/community",
+  "pathname": "/proj/docs/dev/src/en/pages/community",
   "publishedDate": null,
   "title": "Community"
 }

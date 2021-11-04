@@ -12,7 +12,7 @@
   "hasRefreshBtn": true,
   "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/en/pages/artwork",
+  "pathname": "/proj/docs/dev/src/en/pages/artwork",
   "publishedDate": null,
   "title": "Artwork"
 }
