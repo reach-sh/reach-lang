@@ -388,7 +388,7 @@ CallStack (from HasCallStack):
 		const suggestions = errorJson.ce_suggestions;
 		const actualMessage = errorJson.ce_errorMessage;
 		const offendingToken = errorJson.ce_offendingToken;
-		const REACH_ERROR_CODE = errorJson.ce_errorCode;
+		const reachCompilerErrorCode = errorJson.ce_errorCode;
 
 		const start ={ line: linePos, character: charPos };
 		const end = offendingToken ?
@@ -399,7 +399,7 @@ CallStack (from HasCallStack):
 		// In other words, the highlighting for error "RE0013" is weird;
 		// it highlights a colon instead of a word, so we have special
 		// logic for this error code that we don't have for others.
-		if (REACH_ERROR_CODE === "RE0013") {
+		if (reachCompilerErrorCode === "RE0013") {
 			// If we have this error code, an offendingToken will exist,
 			// which is why we can assert to TypeScript that
 			// offendingToken is non-null with the "!" operator.
@@ -409,7 +409,7 @@ CallStack (from HasCallStack):
 		}
 
 		let location: ErrorLocation = {
-			code: REACH_ERROR_CODE,
+			code: reachCompilerErrorCode,
 			range: { start: start, end: end },
 			errorMessage: actualMessage,
 			suggestions: suggestions
