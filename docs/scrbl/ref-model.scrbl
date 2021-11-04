@@ -49,7 +49,7 @@ In particular, it does not only refer to so-called "layer-1" protocols, nor does
 @deftech{Contracts} are @tech{accounts} with three extra capacities: they persistently store @tech{values} (called the @deftech{consensus state}), they may receive @tech{publications}, and when they receive @tech{publications}, they systematically process them and may modify their @tech{consensus state}, make @tech{publications}, and may @tech{transfer} @tech{network tokens} and @tech{non-network tokens} in response to the reception.
 In addition to @tech{values}, @tech{consensus state} may contain a fixed number of @deftech{mappings} between an @tech{address} and a @tech{value}.
 These @tech{mappings} are referred to as "@deftech{linear state}" because their size is linear in the number of @tech{participants} in the @tech{contract}.
-Furthermore, a @tech{contract} may provide @deftech{views} of its @tech{consensus state}, which are hierarchically organized labeled functions and values, such as @litchar{NFT.owner} or @litchar{Game.scoreOfPlayer}.
+Furthermore, a @tech{contract} may provide @deftech{views} of its @tech{consensus state}, which are labeled functions and values which may be hierarchically organized, such as @litchar{NFT.owner} or @litchar{scoreOfPlayer}.
 These @tech{views} are visible in sub-trees of the computation graph.
 The creation of a @tech{contract} is called @deftech{deploy}ment.
 
