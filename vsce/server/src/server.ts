@@ -350,7 +350,7 @@ export interface ErrorLocation {
 
 // Based on
 // https://github.com/reach-sh/reach-lang/blob/master/hs/src/Reach/AST/Base.hs#L84
-type ReachCompilerErrorJSON {
+type ReachCompilerErrorJSON = {
 	ce_position: number[];
 	ce_suggestions: string[];
 	ce_errorMessage: string;
