@@ -5,7 +5,7 @@ const currentPage = {
   src: null
 };
 
-const github = 'https://github.com/reach-sh/reach-developer-portal/blob/master';
+const github = 'https://github.com/reach-sh/reach-lang/tree/master/docs/dev';
 
 const pathnameToId = (pathname) => { return pathname.replace(/^\/|\/$/g, '').replace(/\//g, '_'); }
 const idToPathName = (id) => { return id.replace(/_/g, '/'); }
