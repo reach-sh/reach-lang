@@ -310,7 +310,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	// Send the computed diagnostics to VSCode (before the above promise finishes, just to clear stuff).
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 
-	function addDiagnostic(element: ErrorLocation, message: string, details: string, severity: DiagnosticSeverity, code: string | undefined, suggestions: [string]) {
+	function addDiagnostic(element: ErrorLocation, message: string, details: string, severity: DiagnosticSeverity, code: string | undefined, suggestions: string[]) {
 		let diagnostic: Diagnostic = {
 			severity: severity,
 			range: element.range,
@@ -344,7 +344,7 @@ connection.onDidChangeWatchedFiles(_change => {
 export interface ErrorLocation {
 	range: Range;
 	errorMessage: string; // e.g. id ref: Invalid unbound identifier: declassify.
-	suggestions: [string]; // e.g. literally this whole thing: "declassify","array","assert","assume","closeTo"
+	suggestions: string[]; // e.g. literally this whole thing: "declassify","array","assert","assume","closeTo"
 }
 
 function findErrorLocations(compileErrors: string): ErrorLocation[] {

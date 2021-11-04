@@ -1,3 +1,5 @@
+ARG NODE_VERSION
+
 FROM ubuntu:latest AS racket
 
 RUN apt-get update
@@ -36,9 +38,20 @@ ADD docs/convert ./docs/convert
 RUN raco pkg install --no-setup lang-file lang-file-lib
 RUN (cd docs/convert && make)
 
+FROM node:17-alpine3.13 as dev
+WORKDIR /proj
+
+RUN apk add make
+ADD docs/dev ./docs/dev
+RUN (cd docs/dev && make)
+WORKDIR /proj/docs/dev
+RUN mkdir build
+RUN mv assets en build/
+
 FROM scratch
 
 COPY --from=render /proj/docs/scrbl/build/ ./build/
 COPY --from=render /proj/docs/scrbl/scribble.log ./
 COPY --from=convert /proj/docs/convert/src ./md/
 COPY --from=convert /proj/docs/convert/log ./convert.log
+COPY --from=dev /proj/docs/dev/build ./build/
