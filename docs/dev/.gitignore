@@ -1,12 +1,4 @@
-.DS_Store
-*.html
-!/index.html
-!base.html
-!book.html
-scripts.min.js
-styles.min.css
 node_modules/
-output.txt
 config.json
 /tools/installed
 /tools/proj.txt

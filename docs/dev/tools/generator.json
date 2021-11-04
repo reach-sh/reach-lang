@@ -1,10 +1,6 @@
 {
   "hasEditBtn": true,
   "hasRefreshBtn": true,
-  "iCssPath": "/assets/styles.css",
-  "oCssPath": "/assets/styles.min.css",
-  "iJsPath": "/assets/scripts.js",
-  "oJsPath": "/assets/scripts.min.js",
   "mdFile": "index.md",
   "cfgFile": "config.json",
   "pageFile": "page.html",

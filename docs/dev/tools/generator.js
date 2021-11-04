@@ -5,7 +5,6 @@ import minify from 'minify';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import UglifyJS from 'uglify-js';
-import yargs from 'yargs';
 import axios from 'axios';
 import shiki from 'shiki';
 import yaml from 'js-yaml';
@@ -23,10 +22,17 @@ import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { JSDOM } from 'jsdom';
 
+const INTERNAL = [ 'base.html', 'config.json', 'index.md' ];
+
+const normalizeDir = (s) => {
+  return s.endsWith('/') ? s.slice(0, -1) : s;
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const cfg = fs.readJsonSync(`${__dirname}/generator.json`);
-const srcDir = __dirname.replace('/tools', '');
+const srcDir = normalizeDir(__dirname.replace('/tools', ''));
+const outDir = normalizeDir(`${srcDir}/build`);
 
 // Plugins
 
@@ -150,32 +156,28 @@ const shikiHighlight = async (code, lang) => {
 };
 
 // Library
-const normalizeDir = (s) => {
-  return s.endsWith('/') ? s.slice(0, -1) : s;
-}
-
 const cleanCss = new CleanCss({level: 2});
 const processCss = async () => {
-  const iPath = `${srcDir}${cfg.iCssPath}`;
-  const oPath = `${srcDir}${cfg.oCssPath}`;
-  console.log(`Minifying ${cfg.iCssPath.slice(1)}`);
+  const iPath = `${srcDir}/assets.in/styles.css`;
+  const oPath = `${outDir}/assets/styles.min.css`;
+  console.log(`Minifying ${iPath}`);
   const input = await fs.readFile(iPath, 'utf8');
   const output = cleanCss.minify(input);
   await fs.writeFile(oPath, output.styles);
 };
 
-const processBase = async (lang) => {
+const processBaseHtml = async (lang) => {
   const iPath = `${srcDir}/${lang}/base.html`;
-  const oPath = `${srcDir}/${lang}/index.html`;
+  const oPath = `${outDir}/${lang}/index.html`;
   console.log(`Minifying ${iPath}`);
   const output = await minify(iPath, { html: {} });
   await fs.writeFile(oPath, output);
 };
 
 const processJs = async () => {
-  const iPath = `${srcDir}${cfg.iJsPath}`;
-  const oPath = `${srcDir}${cfg.oJsPath}`;
-  console.log(`Minifying ${cfg.iJsPath.slice(1)}`);
+  const iPath = `${srcDir}/assets.in/scripts.js`;
+  const oPath = `${outDir}/assets/scripts.min.js`;
+  console.log(`Minifying ${iPath}`);
   const input = await fs.readFile(iPath, 'utf8');
   const output = new UglifyJS.minify(input, {});
   if (output.error) throw output.error;
@@ -270,13 +272,12 @@ const transformReachDoc = (md) => {
   return md;
 }
 
-const processFolder = async (baseDir, relDir) => {
+const processFolder = async ({relDir, in_folder, out_folder}) => {
   const lang = relDir.split('/')[0];
-  const folder = `${baseDir}/${relDir}`;
-  const mdPath = `${folder}/${cfg.mdFile}`;
-  const cfgPath = `${folder}/${cfg.cfgFile}`;
-  const pagePath = `${folder}/${cfg.pageFile}`;
-  const otpPath = `${folder}/${cfg.otpFile}`;
+  const mdPath = `${in_folder}/${cfg.mdFile}`;
+  const cfgPath = `${out_folder}/${cfg.cfgFile}`;
+  const pagePath = `${out_folder}/${cfg.pageFile}`;
+  const otpPath = `${out_folder}/${cfg.otpFile}`;
 
   console.log(`Building page ${relDir}`);
 
@@ -371,13 +372,13 @@ const processFolder = async (baseDir, relDir) => {
   const title = doc.querySelector('h1').textContent;
   doc.querySelector('h1').remove();
   configJson.title = title;
-  configJson.pathname = folder;
+  configJson.pathname = in_folder;
 
   // Update config.json with book information.
   if (configJson.bookTitle) {
     configJson.bookPath = relDir;
   } else {
-    const pArray = folder.split('/');
+    const pArray = out_folder.split('/');
     if (pArray.includes('books')) {
       const bArray = pArray.slice(0, pArray.indexOf('books') + 2);
       const bPath = bArray.join('/');
@@ -430,91 +431,59 @@ const processFolder = async (baseDir, relDir) => {
 
   // Create soft link in this folder to index.html file at root.
   if(configJson.hasCustomBase == false) {
-    try { await fs.unlink(`${folder}/index.html`); } catch (e) { void(e); }
+    try { await fs.unlink(`${out_folder}/index.html`); } catch (e) { void(e); }
     const backstepCount = relDir.split('/').length - 1;
     let backstepUrl = '';
     for (let i=0; i < backstepCount; i++) {
       backstepUrl = backstepUrl + '../';
     }
     const target = `${backstepUrl}index.html`;
-    const symlink = `${folder}/index.html`;
+    const symlink = `${out_folder}/index.html`;
     await fs.symlink(target, symlink);
   }
 
   // Write files
   await Promise.all([
     fs.writeFile(cfgPath, JSON.stringify(configJson, null, 2)),
-    fs.writeFile(pagePath, doc.body.innerHTML.trim())
+    fs.writeFile(pagePath, doc.body.innerHTML.trim()),
   ]);
 };
 
 const findAndProcessFolder = async (folder) => {
+  let relDir = normalizeDir(folder.replace(srcDir, ''));
+  relDir = relDir.startsWith('/') ? relDir.slice(1) : relDir;
+  const in_folder = `${srcDir}/${relDir}`;
+  const out_folder = `${outDir}/${relDir}`;
+  await fs.mkdir(out_folder, { recursive: true })
   const fileArr = await fs.readdir(folder);
   await Promise.all(fileArr.map(async (p) => {
     if ( p === 'index.md' ) {
-      const baseDir = normalizeDir(srcDir);
-      let relDir = normalizeDir(folder.replace(baseDir, ''));
-      relDir = relDir.startsWith('/') ? relDir.slice(1) : relDir;
-      return await processFolder(baseDir, relDir);
+      return await processFolder({relDir, in_folder, out_folder});
     } else {
       const absolute = path.join(folder, p);
-      if ((await fs.stat(absolute)).isDirectory()) {
+      const s = await fs.stat(absolute);
+      if (s.isDirectory()) {
         return await findAndProcessFolder(absolute);
+      } else if ( ! INTERNAL.includes(p) ) {
+        return await fs.copyFile(path.join(in_folder, p), path.join(out_folder, p));
       }
     }
   }));
 };
 
+const processBase = async (lang) => {
+  await Promise.all([
+    processBaseHtml(lang),
+    findAndProcessFolder(`${srcDir}/${lang}`),
+  ]);
+};
+
 // Main
 
 (async () => {
-  const argv = yargs(process.argv.slice(2))
-    .option('dir', {
-      alias: 'd',
-      describe: 'Specify dirpath.',
-      type: 'string',
-      default: ''
-    })
-    .option('type', {
-      alias: 't',
-      describe: 'Specify file type.',
-      type: 'string',
-      choices: ['all', 'css', 'folder', 'folders', 'js'],
-      demandOption: true
-    })
-    .option('version', {
-      alias: 'v',
-      describe: 'Show version.',
-      type: 'boolean'
-    })
-    .wrap(null)
-    .example([
-      ['$0'],
-      ['$0 -t all'],
-      ['$0 -t css'],
-      ['$0 -t folder -d en/books/demo'],
-      ['$0 -t folders -d en/books/demo'],
-      ['$0 -t js']
-    ])
-    .argv;
-
-  const goals = [];
-  if ( argv.t === 'css' || argv.t === 'all' ) {
-    goals.push(processCss());
-  }
-  if ( argv.t === 'js' || argv.t === 'all' ) {
-    goals.push(processJs());
-  }
-  if ( argv.t === 'folder' ) {
-    goals.push(processFolder(normalizeDir(srcDir), normalizeDir(argv.d)));
-  }
-  if ( argv.t === 'folders' ) {
-    goals.push(findAndProcessFolder(`${normalizeDir(srcDir)}/${normalizeDir(argv.d)}`));
-  }
-  if ( argv.t === 'all' ) {
-    goals.push(processBase('en'));
-    // Need to add --ignore flag.
-    goals.push(findAndProcessFolder(`${normalizeDir(srcDir)}`));
-  }
-  await Promise.all(goals);
+  await Promise.all([
+    processCss(),
+    processJs(),
+    processBase('en'),
+  ]);
 })();

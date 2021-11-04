@@ -46,8 +46,6 @@ ADD docs/dev ./docs/dev
 RUN (cd docs/dev/tools && make installed)
 RUN (cd docs/dev && make)
 WORKDIR /proj/docs/dev
-RUN mkdir build
-RUN mv assets en build/
 
 FROM scratch
 
