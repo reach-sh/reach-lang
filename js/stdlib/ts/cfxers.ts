@@ -116,6 +116,11 @@ const addEstimates = async (cfx:any, txn:any): Promise<any> => {
   storage = h(storage, cfx.defaultStorageRatio);
   debug(`addEstimates`, { gas, storage });
 
+  if ( gas === '0' ) {
+    gas = undefined;
+  }
+  debug(`addEstimates`, { gas, storage });
+
   txn.gas = gas;
   txn.storageLimit = storage;
   return txn;
