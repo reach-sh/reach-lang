@@ -1,18 +1,12 @@
 {
-  "author": "Jay McCarthy",
-  "background": "white",
-  "bookPath": "en/books/essentials",
   "bookTitle": "Reach Essentials",
+  "bookPath": "en/books/essentials",
   "chapters": null,
-  "hasOtp": true,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/books/essentials/tech-notes/how-do-network-and-non-network-tokens-differ",
+  "author": "Jay McCarthy",
+  "hasOtp": true,
+  "menuItem": "mi-docs",
   "publishedDate": "2021-10-02T14:00:00.000Z",
-  "title": "How do network and non-network tokens differ?"
+  "title": "How do network and non-network tokens differ?",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/tech-notes/how-do-network-and-non-network-tokens-differ"
 }

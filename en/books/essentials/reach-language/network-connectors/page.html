@@ -85,15 +85,15 @@
   You can add the following JavaScript near the beginning of your index.js or index.mjs file
   in order to run on Conflux TestNet:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">reach.</span><span style="color: #6F42C1">setProviderByName</span><span style="color: #24292E">(</span><span style="color: #032F62">'TestNet'</span><span style="color: #24292E">);</span></li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292F">reach.</span><span style="color: #8250DF">setProviderByName</span><span style="color: #24292F">(</span><span style="color: #0A3069">'TestNet'</span><span style="color: #24292F">);</span></li></ol></pre>
 <p>Or this to run on Conflux MainNet:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292E">reach.</span><span style="color: #6F42C1">setProviderByName</span><span style="color: #24292E">(</span><span style="color: #032F62">'MainNet'</span><span style="color: #24292E">);</span></li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292F">reach.</span><span style="color: #8250DF">setProviderByName</span><span style="color: #24292F">(</span><span style="color: #0A3069">'MainNet'</span><span style="color: #24292F">);</span></li></ol></pre>
 <p>
   It is strongly recommended that you also use <code>setQueryLowerBound</code>
   to avoid waiting for unnecessary queries.
   For example, this code snippet sets the lower bound at 2000 blocks ago:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">now</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #D73A49">await</span><span style="color: #24292E"> reach.</span><span style="color: #6F42C1">getNetworkTime</span><span style="color: #24292E">();</span></li><li value="2"><span style="color: #24292E">reach.</span><span style="color: #6F42C1">setQueryLowerBound</span><span style="color: #24292E">(reach.</span><span style="color: #6F42C1">sub</span><span style="color: #24292E">(now, </span><span style="color: #005CC5">2000</span><span style="color: #24292E">));</span></li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">now</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> reach.</span><span style="color: #8250DF">getNetworkTime</span><span style="color: #24292F">();</span></li><li value="2"><span style="color: #24292F">reach.</span><span style="color: #8250DF">setQueryLowerBound</span><span style="color: #24292F">(reach.</span><span style="color: #8250DF">sub</span><span style="color: #24292F">(now, </span><span style="color: #0550AE">2000</span><span style="color: #24292F">));</span></li></ol></pre>
 <h4 id="why-is-dapp-startup-very-slow-why-do-i-need-to-use-setquerylowerbound">Why is DApp startup very slow? Why do I need to use <code>setQueryLowerBound</code>?</h4>
 <p>
   DApp startup doesn't have to be slow.

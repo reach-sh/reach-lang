@@ -1,18 +1,9 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": "en/books/demo",
   "bookTitle": "Demo Book",
+  "bookPath": "en/books/demo",
   "chapters": null,
-  "hasOtp": true,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/books/demo/reptiles/crocodilians",
-  "publishedDate": null,
-  "title": "Crocodilians"
+  "menuItem": "mi-docs",
+  "title": "Crocodilians",
+  "pathname": "/proj/docs/dev/src/en/books/demo/reptiles/crocodilians"
 }

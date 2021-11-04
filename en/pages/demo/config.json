@@ -1,18 +1,7 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": null,
-  "bookTitle": null,
   "chapters": null,
-  "hasOtp": true,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/pages/demo",
-  "publishedDate": null,
-  "title": "Demo Page"
+  "menuItem": "mi-docs",
+  "title": "Demo Page",
+  "pathname": "/proj/docs/dev/src/en/pages/demo"
 }

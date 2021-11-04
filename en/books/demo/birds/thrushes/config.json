@@ -1,18 +1,9 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": "en/books/demo",
   "bookTitle": "Demo Book",
+  "bookPath": "en/books/demo",
   "chapters": null,
-  "hasOtp": true,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/books/demo/birds/thrushes",
-  "publishedDate": null,
-  "title": "Thrushes"
+  "menuItem": "mi-docs",
+  "title": "Thrushes",
+  "pathname": "/proj/docs/dev/src/en/books/demo/birds/thrushes"
 }

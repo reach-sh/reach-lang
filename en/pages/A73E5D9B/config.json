@@ -1,18 +1,6 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": null,
-  "bookTitle": null,
   "chapters": null,
-  "hasOtp": true,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": null,
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/pages/A73E5D9B",
-  "publishedDate": null,
-  "title": "Candidate Discussion Outline"
+  "title": "Candidate Discussion Outline",
+  "pathname": "/proj/docs/dev/src/en/pages/A73E5D9B"
 }

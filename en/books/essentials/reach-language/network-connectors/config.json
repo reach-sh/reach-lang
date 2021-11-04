@@ -1,19 +1,10 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": "en/books/essentials",
   "bookTitle": "Reach Essentials",
+  "bookPath": "en/books/essentials",
   "chapters": null,
-  "hasOtp": true,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/books/essentials/reach-language/network-connectors",
-  "publishedDate": null,
+  "menuItem": "mi-docs",
+  "src": "ref-networks.md",
   "title": "Consensus Network Connectors",
-  "src": "ref-networks.md"
+  "pathname": "/proj/docs/dev/src/en/books/essentials/reach-language/network-connectors"
 }

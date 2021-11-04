@@ -1,18 +1,10 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": "en/books/essentials",
   "bookTitle": "Reach Essentials",
+  "bookPath": "en/books/essentials",
   "chapters": null,
-  "hasOtp": false,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/books/essentials/getting-started",
-  "publishedDate": null,
-  "title": "Getting Started"
+  "hasOtp": false,
+  "menuItem": "mi-docs",
+  "title": "Getting Started",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/getting-started"
 }

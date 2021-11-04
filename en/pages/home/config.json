@@ -1,18 +1,9 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": null,
-  "bookTitle": null,
   "chapters": null,
-  "hasOtp": false,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": false,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-home",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/pages/home",
-  "publishedDate": null,
-  "title": "Home"
+  "hasOtp": false,
+  "hasPageHeader": false,
+  "menuItem": "mi-home",
+  "title": "Home",
+  "pathname": "/proj/docs/dev/src/en/pages/home"
 }

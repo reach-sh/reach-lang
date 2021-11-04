@@ -1,18 +1,8 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": null,
-  "bookTitle": null,
   "chapters": null,
-  "hasOtp": false,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": false,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": null,
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/pages/search",
-  "publishedDate": null,
-  "title": "Search"
+  "hasOtp": false,
+  "hasPageHeader": false,
+  "title": "Search",
+  "pathname": "/proj/docs/dev/src/en/pages/search"
 }

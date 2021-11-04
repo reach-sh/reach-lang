@@ -1,16 +1,7 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": "en/books/demo",
   "bookTitle": "Demo Book",
+  "bookPath": "en/books/demo",
   "chapters": null,
-  "hasOtp": true,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": [
     {
       "Crocodilians": "crocodilians"
@@ -28,7 +19,7 @@
       "Turtles and Tortoises": "turtles-and-tortoises"
     }
   ],
-  "pathname": "/proj/docs/dev/src/en/books/demo/reptiles",
-  "publishedDate": null,
-  "title": "Reptiles"
+  "menuItem": "mi-docs",
+  "title": "Reptiles",
+  "pathname": "/proj/docs/dev/src/en/books/demo/reptiles"
 }

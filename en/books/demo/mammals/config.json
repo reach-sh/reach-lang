@@ -1,16 +1,7 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": "en/books/demo",
   "bookTitle": "Demo Book",
+  "bookPath": "en/books/demo",
   "chapters": null,
-  "hasOtp": true,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": [
     {
       "Afrosoricida": "afrosoricida"
@@ -76,7 +67,7 @@
       "Soricomorpha": "soricomorpha"
     }
   ],
-  "pathname": "/proj/docs/dev/src/en/books/demo/mammals",
-  "publishedDate": null,
-  "title": "Mammals"
+  "menuItem": "mi-docs",
+  "title": "Mammals",
+  "pathname": "/proj/docs/dev/src/en/books/demo/mammals"
 }

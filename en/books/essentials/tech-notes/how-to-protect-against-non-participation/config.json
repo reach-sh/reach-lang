@@ -1,18 +1,12 @@
 {
-  "author": "Jay McCarthy",
-  "background": "white",
-  "bookPath": "en/books/essentials",
   "bookTitle": "Reach Essentials",
+  "bookPath": "en/books/essentials",
   "chapters": null,
-  "hasOtp": true,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/books/essentials/tech-notes/how-to-protect-against-non-participation",
+  "author": "Jay McCarthy",
+  "hasOtp": true,
+  "menuItem": "mi-docs",
   "publishedDate": "2020-08-29T14:00:00.000Z",
-  "title": "How to protect against non-participation"
+  "title": "How to protect against non-participation",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/tech-notes/how-to-protect-against-non-participation"
 }

@@ -1,18 +1,8 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": null,
-  "bookTitle": null,
   "chapters": null,
-  "hasOtp": false,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-community",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/pages/community",
-  "publishedDate": null,
-  "title": "Community"
+  "hasOtp": false,
+  "menuItem": "mi-community",
+  "title": "Community",
+  "pathname": "/proj/docs/dev/src/en/pages/community"
 }

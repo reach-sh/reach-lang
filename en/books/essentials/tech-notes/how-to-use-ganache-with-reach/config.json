@@ -1,18 +1,12 @@
 {
-  "author": "Mohammed Abuelmaali",
-  "background": "white",
-  "bookPath": "en/books/essentials",
   "bookTitle": "Reach Essentials",
+  "bookPath": "en/books/essentials",
   "chapters": null,
-  "hasOtp": false,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/books/essentials/tech-notes/how-to-use-ganache-with-reach",
+  "author": "Mohammed Abuelmaali",
+  "hasOtp": false,
+  "menuItem": "mi-docs",
   "publishedDate": "2020-08-30T14:00:00.000Z",
-  "title": "How to use Ganache with Reach"
+  "title": "How to use Ganache with Reach",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/tech-notes/how-to-use-ganache-with-reach"
 }

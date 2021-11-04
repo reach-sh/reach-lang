@@ -1,16 +1,7 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": "en/books/demo",
   "bookTitle": "Demo Book",
+  "bookPath": "en/books/demo",
   "chapters": null,
-  "hasOtp": true,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": [
     {
       "Auks": "auks"
@@ -88,7 +79,7 @@
       "Wrens": "wrens"
     }
   ],
-  "pathname": "/proj/docs/dev/src/en/books/demo/birds",
-  "publishedDate": null,
-  "title": "Birds"
+  "menuItem": "mi-docs",
+  "title": "Birds",
+  "pathname": "/proj/docs/dev/src/en/books/demo/birds"
 }

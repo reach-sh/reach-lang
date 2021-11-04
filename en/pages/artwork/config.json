@@ -1,18 +1,8 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": null,
-  "bookTitle": null,
   "chapters": null,
-  "hasOtp": false,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/pages/artwork",
-  "publishedDate": null,
-  "title": "Artwork"
+  "hasOtp": false,
+  "menuItem": "mi-docs",
+  "title": "Artwork",
+  "pathname": "/proj/docs/dev/src/en/pages/artwork"
 }

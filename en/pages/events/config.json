@@ -1,18 +1,7 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": null,
-  "bookTitle": null,
   "chapters": null,
-  "hasOtp": false,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": null,
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/pages/events",
-  "publishedDate": null,
-  "title": "Events"
+  "hasOtp": false,
+  "title": "Events",
+  "pathname": "/proj/docs/dev/src/en/pages/events"
 }

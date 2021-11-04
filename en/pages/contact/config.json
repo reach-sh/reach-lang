@@ -1,18 +1,8 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": null,
-  "bookTitle": null,
   "chapters": null,
-  "hasOtp": false,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-contact",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/pages/contact",
-  "publishedDate": null,
-  "title": "Contact"
+  "hasOtp": false,
+  "menuItem": "mi-contact",
+  "title": "Contact",
+  "pathname": "/proj/docs/dev/src/en/pages/contact"
 }

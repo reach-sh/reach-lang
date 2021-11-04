@@ -1,18 +1,12 @@
 {
-  "author": "Jay McCarthy",
-  "background": "white",
-  "bookPath": "en/books/essentials",
   "bookTitle": "Reach Essentials",
+  "bookPath": "en/books/essentials",
   "chapters": null,
-  "hasOtp": true,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-articles",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/books/essentials/tech-notes/what-are-reach-limitations",
+  "author": "Jay McCarthy",
+  "hasOtp": true,
+  "menuItem": "mi-articles",
   "publishedDate": "2020-08-29T14:00:00.000Z",
-  "title": "What are Reach’s limitations?"
+  "title": "What are Reach’s limitations?",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/tech-notes/what-are-reach-limitations"
 }

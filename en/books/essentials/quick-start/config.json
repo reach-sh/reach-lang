@@ -1,18 +1,10 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": "en/books/essentials",
   "bookTitle": "Reach Essentials",
+  "bookPath": "en/books/essentials",
   "chapters": null,
-  "hasOtp": false,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/books/essentials/quick-start",
-  "publishedDate": null,
-  "title": "Quick Start"
+  "hasOtp": false,
+  "menuItem": "mi-docs",
+  "title": "Quick Start",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/quick-start"
 }

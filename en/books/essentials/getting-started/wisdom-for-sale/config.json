@@ -1,18 +1,9 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": "en/books/essentials",
   "bookTitle": "Reach Essentials",
+  "bookPath": "en/books/essentials",
   "chapters": null,
-  "hasOtp": true,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/books/essentials/getting-started/wisdom-for-sale",
-  "publishedDate": null,
-  "title": "Wisdom for Sale"
+  "menuItem": "mi-docs",
+  "title": "Wisdom for Sale",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/getting-started/wisdom-for-sale"
 }

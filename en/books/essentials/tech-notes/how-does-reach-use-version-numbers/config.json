@@ -1,18 +1,12 @@
 {
-  "author": "Jay McCarthy",
-  "background": "white",
-  "bookPath": "en/books/essentials",
   "bookTitle": "Reach Essentials",
+  "bookPath": "en/books/essentials",
   "chapters": null,
-  "hasOtp": false,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/books/essentials/tech-notes/how-does-reach-use-version-numbers",
+  "author": "Jay McCarthy",
+  "hasOtp": false,
+  "menuItem": "mi-docs",
   "publishedDate": "2021-08-29T14:00:00.000Z",
-  "title": "How does Reach use version numbers?"
+  "title": "How does Reach use version numbers?",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/tech-notes/how-does-reach-use-version-numbers"
 }

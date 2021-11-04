@@ -1,19 +1,10 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": "en/books/essentials",
   "bookTitle": "Reach Essentials",
+  "bookPath": "en/books/essentials",
   "chapters": null,
-  "hasOtp": true,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-docs",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/books/essentials/support-for-rpc-frontends/go-rpc",
-  "publishedDate": null,
+  "menuItem": "mi-docs",
+  "src": "ref-frontends-rpc-go.md",
   "title": "Go (RPC)",
-  "src": "ref-frontends-rpc-go.md"
+  "pathname": "/proj/docs/dev/src/en/books/essentials/support-for-rpc-frontends/go-rpc"
 }

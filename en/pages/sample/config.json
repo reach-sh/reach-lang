@@ -1,18 +1,7 @@
 {
-  "author": "Sarah Smiles",
-  "background": "white",
-  "bookPath": null,
-  "bookTitle": null,
   "chapters": null,
-  "hasOtp": true,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": null,
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/pages/sample",
-  "publishedDate": null,
-  "title": "Sample Page"
+  "author": "Sarah Smiles",
+  "title": "Sample Page",
+  "pathname": "/proj/docs/dev/src/en/pages/sample"
 }

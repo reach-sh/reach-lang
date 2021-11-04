@@ -1,18 +1,8 @@
 {
-  "author": null,
-  "background": "white",
-  "bookPath": null,
-  "bookTitle": null,
   "chapters": null,
-  "hasOtp": false,
-  "hasCustomBase": false,
-  "hasEditBtn": true,
-  "hasPageHeader": true,
-  "hasPageScrollbar": true,
-  "hasRefreshBtn": true,
-  "menuItem": "mi-careers",
   "pages": null,
-  "pathname": "/proj/docs/dev/src/en/pages/careers",
-  "publishedDate": null,
-  "title": "Careers"
+  "hasOtp": false,
+  "menuItem": "mi-careers",
+  "title": "Careers",
+  "pathname": "/proj/docs/dev/src/en/pages/careers"
 }
