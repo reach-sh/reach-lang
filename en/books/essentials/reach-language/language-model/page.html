@@ -58,7 +58,7 @@
   ${defn("Contracts")} are accounts with three extra capacities: they persistently store values (called the ${defn("consensus state")}), they may receive publications, and when they receive publications, they systematically process them and may modify their consensus state, make publications, and may transfer network tokens and non-network tokens in response to the reception.
   In addition to values, consensus state may contain a fixed number of ${defn("mappings")} between an address and a value.
   These mappings are referred to as "${defn("linear state")}" because their size is linear in the number of participants in the contract.
-  Furthermore, a contract may provide ${defn("views")} of its consensus state, which are hierarchically organized labeled functions and values, such as <code>NFT.owner</code> or <code>Game.scoreOfPlayer</code>.
+  Furthermore, a contract may provide ${defn("views")} of its consensus state, which are labeled functions and values which may be hierarchically organized, such as <code>NFT.owner</code> or <code>scoreOfPlayer</code>.
   These views are visible in sub-trees of the computation graph.
   The creation of a contract is called ${defn("deploy")}ment.
 </p>
