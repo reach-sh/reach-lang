@@ -1,13 +1,5 @@
 {
-  "name": "reach-developer-portal-preprocessor",
-  "version": "0.0.1",
-  "description": "This program inputs markdown (etc.) and outputs html (etc.).",
   "type": "module",
-  "main": "index.js",
-  "scripts": {},
-  "keywords": [],
-  "author": "",
-  "license": "UNLICENSED",
   "private": true,
   "dependencies": {
     "axios": "^0.21.4",

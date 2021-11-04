@@ -1,5 +1,4 @@
 ---
-bookTitle: Reach Essentials
 menuItem: mi-docs
 ---
 

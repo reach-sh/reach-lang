@@ -1,6 +1,5 @@
 ---
-bookTitle: Demo Book
-chapters: 
+chapters:
 - Amphibians: amphibians
 - Birds: birds
 - Fish: fish

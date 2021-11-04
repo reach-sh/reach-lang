@@ -30,7 +30,9 @@ const normalizeDir = (s) => {
 
 const __filename = fileURLToPath(import.meta.url);
 const rootDir = path.dirname(__filename);
-const cfg = fs.readJsonSync(`${rootDir}/generator.json`);
+const cfgFile = "config.json";
+const repoBase = "https://raw.githubusercontent.com/reach-sh/reach-lang/master";
+const repoSrcDir = "/docs/md/";
 const srcDir = normalizeDir(`${rootDir}/src`);
 const outDir = normalizeDir(`${rootDir}/build`);
 
@@ -120,23 +122,9 @@ const writeFileMkdir = async (p, c) => {
   await fs.writeFile(p, c);
 };
 
-// This is a hack, really we need to have better synchronization across the
-// parallel jobs.
-const readJsonWait = async (who, f) => {
-  while ( true ) {
-    if ( await fs.exists(f) ) {
-      try { return await fs.readJson(f); }
-      catch (e) {
-        console.log(`Failed to read ${f}:`, e);
-      }
-    }
-    await setTimeout(1000);
-  }
-};
-
 const remoteGet_ = async (url) => {
-  if ( url.startsWith(cfg.repoBase) ) {
-    const n = url.replace(cfg.repoBase, `${rootDir}/../../`);
+  if ( url.startsWith(repoBase) ) {
+    const n = url.replace(repoBase, `${rootDir}/../../`);
     try { return await fs.readFile(n, 'utf8'); }
     catch (e) {
       void(e);
@@ -215,7 +203,7 @@ const evaluateCodeSnippet = (code) => {
     if (line1.slice(0, 5) == 'load:') {
       const url = line1.slice(5);
       if (url.slice(0, 4) == 'http') { spec.url = url; }
-      else { spec.url = `${cfg.repoBase}${url}`; }
+      else { spec.url = `${repoBase}${url}`; }
       if (arr.length > 1) {
         const line2 = arr[1].replace(/\s+/g, '');
         if (line2.slice(0, 6) == 'range:') {
@@ -278,33 +266,20 @@ const transformReachDoc = (md) => {
   return md;
 }
 
-const processFolder = async ({relDir, in_folder, out_folder}) => {
+const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   const lang = relDir.split('/')[0];
-  const mdPath = `${in_folder}/${cfg.mdFile}`;
-  const cfgPath = `${out_folder}/${cfg.cfgFile}`;
-  const pagePath = `${out_folder}/${cfg.pageFile}`;
-  const otpPath = `${out_folder}/${cfg.otpFile}`;
+  const mdPath = `${in_folder}/index.md`;
+  const cfgPath = `${out_folder}/${cfgFile}`;
+  const pagePath = `${out_folder}/page.html`;
+  const otpPath = `${out_folder}/otp.html`;
 
   console.log(`Building page ${relDir}`);
 
   // Create fresh config file with default values.
   const configJson = {
-    author: null,
-    background: 'white',
-    bookPath: null,
-    bookTitle: null,
+    ...baseConfig,
     chapters: null,
-    hasOtp: true,
-    hasCustomBase: false,
-    hasEditBtn: cfg.hasEditBtn,
-    hasPageHeader: true,
-    hasPageScrollbar: true,
-    hasRefreshBtn: cfg.hasRefreshBtn,
-    menuItem: null,
     pages: null,
-    pathname: null,
-    publishedDate: null,
-    title: null,
   };
 
   /*
@@ -329,8 +304,8 @@ const processFolder = async ({relDir, in_folder, out_folder}) => {
     for (let i = 0; i < fmArr.length; i++) {
       const s = fmArr[i].replaceAll(' ', '').trim();
       if (s.substring(0, 4) === 'src:') {
-        const target = `${cfg.repoSrcDir}${s.substring(4)}`;
-        const url = `${cfg.repoBase}${target}`;
+        const target = `${repoSrcDir}${s.substring(4)}`;
+        const url = `${repoBase}${target}`;
         const content = (await remoteGet(url));
         md = fm[0] + '\n' + transformReachDoc(content);
         break;
@@ -379,22 +354,6 @@ const processFolder = async ({relDir, in_folder, out_folder}) => {
   doc.querySelector('h1').remove();
   configJson.title = title;
   configJson.pathname = in_folder;
-
-  // Update config.json with book information.
-  if (configJson.bookTitle) {
-    configJson.bookPath = relDir;
-  } else {
-    const pArray = out_folder.split('/');
-    if (pArray.includes('books')) {
-      const bArray = pArray.slice(0, pArray.indexOf('books') + 2);
-      const bPath = bArray.join('/');
-      const bIdArray = pArray.slice(pArray.indexOf('books') - 1, pArray.indexOf('books') + 2);
-      configJson.bookPath = bIdArray.join('/');
-      const bookConfigJsonFile = `${bPath}/config.json`;
-      const bookConfigJson = await readJsonWait(cfgPath, bookConfigJsonFile);
-      configJson.bookTitle = bookConfigJson.bookTitle;
-    }
-  }
 
   // Adjust image urls.
   doc.querySelectorAll('img').forEach(img => {
@@ -455,21 +414,34 @@ const processFolder = async ({relDir, in_folder, out_folder}) => {
   ]);
 };
 
-const findAndProcessFolder = async (folder) => {
+const findAndProcessFolder = async (inputBaseConfig, folder) => {
   let relDir = normalizeDir(folder.replace(srcDir, ''));
   relDir = relDir.startsWith('/') ? relDir.slice(1) : relDir;
   const in_folder = `${srcDir}/${relDir}`;
+
+  const thisConfigP = `${in_folder}/${cfgFile}`;
+  const thisConfig = (await fs.exists(thisConfigP)) ? (await fs.readJson(thisConfigP)) : {};
+  const baseConfig = {
+    ...inputBaseConfig,
+    ...thisConfig,
+  };
+
+  if ( thisConfig.bookTitle !== undefined ) {
+    console.log(`Found book ${relDir}`);
+    baseConfig.bookPath = relDir;
+  }
+
   const out_folder = `${outDir}/${relDir}`;
   await fs.mkdir(out_folder, { recursive: true })
   const fileArr = await fs.readdir(folder);
   await Promise.all(fileArr.map(async (p) => {
     if ( p === 'index.md' ) {
-      return await processFolder({relDir, in_folder, out_folder});
+      return await processFolder({baseConfig, relDir, in_folder, out_folder});
     } else {
       const absolute = path.join(folder, p);
       const s = await fs.stat(absolute);
       if (s.isDirectory()) {
-        return await findAndProcessFolder(absolute);
+        return await findAndProcessFolder(baseConfig, absolute);
       } else if ( ! INTERNAL.includes(p) ) {
         return await fs.copyFile(path.join(in_folder, p), path.join(out_folder, p));
       }
@@ -480,7 +452,7 @@ const findAndProcessFolder = async (folder) => {
 const processBase = async (lang) => {
   await Promise.all([
     processBaseHtml(lang),
-    findAndProcessFolder(`${srcDir}/${lang}`),
+    findAndProcessFolder({}, `${srcDir}/${lang}`),
   ]);
 };
 
@@ -490,6 +462,7 @@ const processBase = async (lang) => {
   await Promise.all([
     processCss(),
     processJs(),
+    findAndProcessFolder({}, `${srcDir}/assets`),
     processBase('en'),
   ]);
 })();
