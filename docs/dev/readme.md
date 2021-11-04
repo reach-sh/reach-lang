@@ -1,40 +1,54 @@
 # Reach Developer Portal
 
-This repository contains the source files and site generator for the [Reach Developer Portal](https://reach-sh.github.io).
+This repository contains the source files and site generator for the [Reach Developer Portal](https://docs.reach.sh/en/books/essentials/).
 
 ## Deploy the site locally
 
-1. Clone this repository to your computer:
+1. Fork the [reach-lang](https://github.com/reach-sh/reach-lang) repository to your Github account.
+
+1. Clone your fork to your computer. Here is an example:
 
     ```
-    git clone https://github.com/reach-sh/reach-developer-portal.git
+    git clone https://github.com/my-account/reach-lang.git
     ```
 
-1. Change directory:
+1. Change directory and convert source files to website files:
 
     ```
-    cd reach-developer-portal
-    ```
-
-1. Convert source files to website files.
-
-    ```
+    cd docs
     make build
     ```
 
-    (Node.js and npm are required. I use Node.js v16.3.0.)
+    Initially, this build will take 7-8 minutes.
 
-1. Run `make serve-up`
+1. Run a server:
+
+    ```
+    make serve-up
+    ```
 
    You can turn it off with `make serve-down`.
 
-1. Browse to http://127.0.0.1:8081 or http://localhost:8081.
+1. Browse to the site:
+
+    * http://localhost:8080 is the original docs site.
+    * http://localhost:8080/en/books/essentials is the new RDP site.
+
+1. Rebuild after making changes to one or more RDP source files:
+
+    ```
+    cd docs
+    make build
+    ```
+
+    This build will take about 40 seconds. You do not have to restart your server.
 
 ## Create a webpage
 
 1. Create a page folder (e.g. colors-and-shapes):
 
     ```
+    cd docs/dev
     mkdir -p en/pages/colors-and-shapes
     ```
 
@@ -44,15 +58,16 @@ This repository contains the source files and site generator for the [Reach Deve
     touch en/pages/colors-and-shapes/index.md
     ```
 
-1. Add content to the index.md file. For sample content, browse to the [Sample Page](https://reach-sh.github.io/en/pages/sample/), click the Pencil icon, click the second Pencil icon, and copy.
+1. Add content to the index.md file. For sample content, browse to the [Sample Page](https://docs.reach.sh/en/pages/sample/), click the Pencil icon, click the second Pencil icon, and copy & paste.
 
 1. Generate the webpage:
 
     ```
-    node tools/generator.js -t folder -d en/pages/colors-and-shapes
+    cd docs
+    make build
     ```
 
-1. Browse to http://localhost:8081/en/pages/colors-and-shapes.
+1. Browse to your new page.
 
 ## Configure the webpage
 
@@ -103,15 +118,15 @@ Below is a table of the current page configuration options:
 
 ## About source files
 
-Each webpage traces its source to a folder within the [books](https://github.com/reach-sh/reach-developer-portal/tree/master/en/books) or [pages](https://github.com/reach-sh/reach-developer-portal/tree/master/en/pages) directories.
+Each webpage traces its source to a folder within the [books](https://github.com/reach-sh/reach-lang/tree/master/docs/dev/en/books) or [pages](https://github.com/reach-sh/reach-lang/tree/master/docs/dev/en/pages) directories.
 
 <p><img src="./assets/folder-to-webpage.png" width=400></p>
 
-The [books](https://github.com/reach-sh/reach-developer-portal/tree/master/en/books) directory contains book, chapter, and leaf folders which correspond to book, chapter, and leaf webpages:
+The [books](https://github.com/reach-sh/reach-lang/tree/master/docs/dev/en/books) directory contains book, chapter, and leaf folders which correspond to book, chapter, and leaf webpages:
 
 <p><img src="./assets/books.png" width=700></p>
 
-The [pages](https://github.com/reach-sh/reach-developer-portal/tree/master/en/pages) directory contains standalone and dummy folders. Standalone folders correspond to webpages. Dummy folders do not correspond to webpages. Instead, they provide a user-determined organizational hierarchy for standalone folders.
+The [pages](https://github.com/reach-sh/reach-lang/tree/master/docs/dev/en/pages) directory contains standalone and dummy folders. Standalone folders correspond to webpages. Dummy folders do not correspond to webpages. Instead, they provide a user-determined organizational hierarchy for standalone folders.
 
 <p><img src="./assets/pages.png" width=700></p>
 
@@ -125,7 +140,7 @@ The index.md file conforms to [Github-flavored markdown](https://github.github.c
 # Demo Page
 ```
 
-It may contain headings, paragraphs, lists, code snippets, tables, html, etc. as demonstrated on the [Demo Page](https://github.com/reach-sh/reach-developer-portal/blob/master/en/pages/demo/index.md). It may also contain links to supplemental files (e.g. images) that reside in the same folder, and links to external resources (e.g. videos):
+It may contain headings, paragraphs, lists, code snippets, tables, html, etc. as demonstrated on the [Demo Page](https://github.com/reach-sh/reach-lang/blob/master/docs/dev/en/pages/demo/index.md). It may also contain links to supplemental files (e.g. images) that reside in the same folder, and links to external resources (e.g. videos):
 
 <p><img src="./assets/supplemental-files.png" width=600></p>
 
