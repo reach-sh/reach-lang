@@ -1,4 +1,4 @@
-module Reach.Report (Report, startReport) where
+module Reach.Report (Report, Initiator(..), startReport) where
 
 import Control.Concurrent
 import Control.Concurrent.Async
@@ -16,8 +16,21 @@ import Reach.Version
 --- TODO maybe have each part collect some information and report it back through a (Map String String)
 type Report = Either SomeException ()
 
-startReport :: Maybe String -> IO (Report -> IO ())
-startReport mwho = do
+data Initiator
+  = Compile
+  | DevnetCreate
+  | DevnetDaily
+  | Run
+
+instance Show Initiator where
+  show = \case
+    Compile -> "compile"
+    DevnetCreate -> "devnet (create)"
+    DevnetDaily -> "devnet (daily)"
+    Run -> "run"
+
+startReport :: Maybe String -> Initiator -> IO (Report -> IO ())
+startReport mwho i = do
   startTime <- getCurrentTime
   cm <- lookupEnv "REACH_CONNECTOR_MODE" >>= maybe (pure "") pure
   req <- parseRequest $ "https://log.reach.sh/submit"
@@ -37,6 +50,7 @@ startReport mwho = do
             , "elapsed" .= diffUTCTime endTime startTime
             , "result" .= show what
             , "connectorMode" .= cm
+            , "initiator" .= show i
             ]
     m <- send (setRequestBodyJSON rep $ setRequestMethod "POST" req)
     let block = waitCatch m
