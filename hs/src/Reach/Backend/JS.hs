@@ -523,6 +523,7 @@ jsCom = \case
       False -> mempty
   DL_Only {} -> impossible $ "left only after EPP"
   DL_LocalDo _ t -> jsPLTail t
+  DL_setApiDetails {} -> mempty
 
 jsPLTail :: AppT DLTail
 jsPLTail = \case

@@ -283,6 +283,7 @@ kgq_m ctxt = \case
       >> kgq_a_only ctxt ans r
       >> kgq_l ctxt f
   DL_LocalDo _ t -> kgq_l ctxt t
+  DL_setApiDetails {} -> mempty
 
 kgq_l :: KCtxt -> DLTail -> IO ()
 kgq_l ctxt = \case

@@ -1569,6 +1569,7 @@ cm km = \case
   DL_Only {} ->
     impossible $ "only in CP"
   DL_LocalDo _ t -> cp km t
+  DL_setApiDetails {} -> km
 
 cp :: App () -> DLTail -> App ()
 cp km = \case

@@ -794,6 +794,7 @@ data DLStmt
   | DL_LocalSwitch SrcLoc DLVar (SwitchCases DLTail)
   | DL_Only SrcLoc (Either SLPart Bool) DLTail
   | DL_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DLBlock
+  | DL_setApiDetails SrcLoc SLPart [DLType] (Maybe String)
   deriving (Eq)
 
 instance SrcLocOf DLStmt where
@@ -809,6 +810,7 @@ instance SrcLocOf DLStmt where
     DL_LocalSwitch a _ _ -> a
     DL_Only a _ _ -> a
     DL_MapReduce a _ _ _ _ _ _ _ -> a
+    DL_setApiDetails a _ _ _ -> a
 
 instance Pretty DLStmt where
   pretty = \case
@@ -824,6 +826,7 @@ instance Pretty DLStmt where
     DL_LocalSwitch _at ov csm -> "local" <+> prettySwitch ov csm
     DL_Only _at who b -> prettyOnly who b
     DL_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a f
+    DL_setApiDetails _ p tys mc -> "setApiDetails" <> parens (render_das [pretty p, pretty tys, pretty mc])
 
 mkCom :: (DLStmt -> k -> k) -> DLStmt -> k -> k
 mkCom mk m k =

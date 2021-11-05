@@ -99,6 +99,7 @@ instance Erase DLStmt where
         False -> skip at
         True -> DL_MapReduce at mri ans x <$> el z <*> pure b <*> pure a <*> el f
     DL_LocalDo at t -> DL_LocalDo at <$> el t
+    DL_setApiDetails at p tys mc -> return $ DL_setApiDetails at p tys mc
     where
       skip at = return $ DL_Nop at
 

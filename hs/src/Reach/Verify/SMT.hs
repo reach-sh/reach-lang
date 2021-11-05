@@ -1135,6 +1135,7 @@ smt_m = \case
   DL_Only _at (Left who) loc -> smt_lm who loc
   DL_Only {} -> impossible $ "right only before EPP"
   DL_LocalDo _ t -> smt_l t
+  DL_setApiDetails {} -> mempty
 
 smt_l :: DLTail -> App ()
 smt_l = \case

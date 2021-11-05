@@ -423,6 +423,11 @@ be_m = \case
     (t'c, t'l) <- be_t t
     let mk = DL_LocalDo at
     return $ (,) (mk <$> t'c) (mk <$> t'l)
+  DL_setApiDetails at p tys mc -> do
+    which <- asks be_which
+    api_info <- asks be_api_info
+    liftIO $ modifyIORef api_info $ M.insert p (tys, mc, which)
+    nop at
   where
     nop at = retb0 $ const $ return $ DL_Nop at
 
