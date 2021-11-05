@@ -342,9 +342,20 @@ connection.onDidChangeWatchedFiles(_change => {
 });
 
 export interface ErrorLocation {
+	code: string;
 	range: Range;
 	errorMessage: string; // e.g. id ref: Invalid unbound identifier: declassify.
 	suggestions: string[]; // e.g. literally this whole thing: "declassify","array","assert","assume","closeTo"
+}
+
+// Based on
+// https://github.com/reach-sh/reach-lang/blob/master/hs/src/Reach/AST/Base.hs#L84
+type ReachCompilerErrorJSON = {
+	ce_position: number[];
+	ce_suggestions: string[];
+	ce_errorMessage: string;
+	ce_offendingToken: string | null;
+	ce_errorCode: string;
 }
 
 function findErrorLocations(compileErrors: string): ErrorLocation[] {
@@ -369,7 +380,7 @@ CallStack (from HasCallStack):
 		connection.console.log(`Found pattern: ${m}`);
 
 		// ERROR MESSAGE m: error: <json>
-		const errorJson = JSON.parse(m[0].substring(7));
+		const errorJson: ReachCompilerErrorJSON = JSON.parse(m[0].substring(7));
 
 		//connection.console.log(`Tokens: ` + tokens);
 		const linePos = errorJson.ce_position[0] - 1;
@@ -377,6 +388,7 @@ CallStack (from HasCallStack):
 		const suggestions = errorJson.ce_suggestions;
 		const actualMessage = errorJson.ce_errorMessage;
 		const offendingToken = errorJson.ce_offendingToken;
+		const reachCompilerErrorCode = errorJson.ce_errorCode;
 
 		const start ={ line: linePos, character: charPos };
 		const end = offendingToken ?
@@ -384,12 +396,20 @@ CallStack (from HasCallStack):
 			:	{ line: linePos + 1, character: 0 };
 
 		// App options currently have error position at the `:` of a json field: `<k> : <v>`.
-		if (actualMessage.includes('not a valid app option')) {
-			start.character -= offendingToken.length;
-			end.character   -= offendingToken.length;
+		// In other words, the highlighting for error "RE0013" is weird;
+		// it highlights a colon instead of a word, so we have special
+		// logic for this error code that we don't have for others.
+		if (reachCompilerErrorCode === "RE0013") {
+			// If we have this error code, an offendingToken will exist,
+			// which is why we can assert to TypeScript that
+			// offendingToken is non-null with the "!" operator.
+			// https://stackoverflow.com/questions/38874928/operator-in-typescript-after-object-method
+			start.character -= offendingToken!.length;
+			end.character   -= offendingToken!.length;
 		}
 
 		let location: ErrorLocation = {
+			code: reachCompilerErrorCode,
 			range: { start: start, end: end },
 			errorMessage: actualMessage,
 			suggestions: suggestions
