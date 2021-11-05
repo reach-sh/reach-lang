@@ -22,18 +22,6 @@ cat >>"${IEND}" <<END
           - "hs-test"
 END
 
-cat >>"${DEND}" <<END
-    - "hold":
-        type: approval
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
-          branches:
-            ignore: /.*/
-        requires:
-END
-          - "hs-test"
-
 deps () {
   DEPS="$*"
   cat >>"${MID}" <<END
@@ -66,9 +54,6 @@ image () {
         exec: "${EXEC}"
 END
   deps "$@"
-  cat >>"${DEND}" <<END
-          - "${NAME}"
-END
   cat >>"${IEND}" <<END
           - "${NAME}"
 END
@@ -120,4 +105,4 @@ END
   done
 done
 
-cat "${PRE}" "${MID}" "${END}" "${DEND}" "${IEND}" > config.gen.yml
+cat "${PRE}" "${MID}" "${END}" "${IEND}" > config.gen.yml

@@ -355,4 +355,13 @@ workflows:
             only: /[0-9]*\.[0-9]*\.[0-9]*/
           branches:
             ignore: /.*/
+    - "hold":
+        type: approval
+        requires:
+          - "build-sink"
+        filters:
+          tags:
+            only: /[0-9]*\.[0-9]*\.[0-9]*/
+          branches:
+            ignore: /.*/
     # Sink and examples follow
