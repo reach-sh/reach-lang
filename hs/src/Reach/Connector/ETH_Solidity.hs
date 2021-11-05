@@ -1068,16 +1068,16 @@ solHandler which h = freshVarMap $
       (frameDefn, frameDecl, ctp) <- solCTail_top which solSVSVar svs msg (Just msg) ct
       evtDefn <- solEvent which msg
       let ret = "payable"
-      (hc_reqs, svs_init, c_inits, am, sfl) <-
+      (hc_reqs, svs_init, am, sfl) <-
         case which == 0 of
           True -> do
             let inits = [solSet "creation_time" solBlockTime]
-            return (mempty, mempty, inits, AM_Memory, SFL_Constructor)
+            return (mempty, inits, AM_Memory, SFL_Constructor)
           False -> do
             csv <- solStateCheck prev
             svs_ty' <- solAsnType svs
             let csvs = [solSet (parens $ solDecl "_svs" (mayMemSol svs_ty')) $ solApply "abi.decode" ["current_svbs", parens svs_ty']]
-            return (csv, csvs, mempty, AM_Call, SFL_Function True (solMsg_fun which))
+            return (csv, csvs, AM_Call, SFL_Function True (solMsg_fun which))
       let hc_go lab chk =
             (<> semi) <$> solRequire (checkMsg $ "state " <> lab) chk
       hashCheck <- mapM (uncurry hc_go) hc_reqs
@@ -1099,7 +1099,7 @@ solHandler which h = freshVarMap $
             Just x -> (\y->[y]) <$> checkTime1 op x
       let CBetween ifrom ito = interval
       timeoutCheck <- vsep <$> ((<>) <$> checkTime PGE ifrom <*> checkTime PLT ito)
-      let body = vsep $ hashCheck <> lock <> svs_init <> [ frameDecl, timeoutCheck, ctp] <> c_inits
+      let body = vsep $ hashCheck <> lock <> svs_init <> [ frameDecl, timeoutCheck, ctp]
       let funDefn = solFunctionLike sfl [argDefn] ret body
       return $ vsep [evtDefn, frameDefn, funDefn]
     C_Loop _at svs lcmsg ct -> do
@@ -1381,7 +1381,8 @@ try_compile_sol solf opt = do
             case mo of
               Nothing -> ("oD", o [])
               Just r -> ("o" <> show r, o ["--optimize-runs=" <> show r])
-  let args = oargs <> ["--combined-json", "abi,bin", solf]
+  let fmts = "abi,bin"
+  let args = oargs <> ["--combined-json", fmts, solf]
   -- putStrLn $ "solc " <> (show args)
   (ec, stdout, stderr) <- liftIO $ readProcessWithExitCode "solc" args []
   let show_output =
