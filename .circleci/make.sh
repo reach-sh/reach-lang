@@ -7,11 +7,9 @@ PRE=config.pre.yml
 MID=config.mid.yml
 END=config.end.yml
 IEND=config.iend.yml
-DEND=config.dend.yml
 cat >"${MID}" </dev/null
 cat >"${END}" </dev/null
 cat >"${IEND}" </dev/null
-cat >"${DEND}" </dev/null
 
 cat >>"${IEND}" <<END
     - "build-sink":
