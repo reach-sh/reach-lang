@@ -5,7 +5,7 @@ const currentPage = {
   src: null
 };
 
-const github = 'https://github.com/reach-sh/reach-lang/tree/master/docs/dev';
+const github = 'https://github.com/reach-sh/reach-lang/tree/master/docs/dev/src';
 
 const pathnameToId = (pathname) => { return pathname.replace(/^\/|\/$/g, '').replace(/\//g, '_'); }
 const idToPathName = (id) => { return id.replace(/_/g, '/'); }
@@ -180,7 +180,9 @@ const setOtpItemToActive = (id) => {
 ************************************************************************************************/
 
 const getWebpage = async (folder, hash, shallUpdateHistory) => {
-  console.log('getWebpage');
+  // console.log('getWebpage');
+
+  folder = folder.replace(/index\.html$/, '');
 
   folder = folder == '/' || folder == `/${lang}/` ? homepage : folder;
   const url = `${window.location.origin}${folder}`;
@@ -189,17 +191,16 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   const otpHtmlUrl = `${url}otp.html`;
   const folderId = pathnameToId(folder);
 
-  //console.log(`${folder}${hash}`);
-  //console.log(configJsonUrl);
-  //console.log(pageHtmlUrl);
-  //console.log(otpHtmlUrl);
-  //console.log(folderId);
+  console.log({ folder, hash, url, configJsonUrl, pageHtmlUrl, otpHtmlUrl, folderId });
 
   try {
+    let [ configJson, pageHtml, otpHtml ] =
+      (await Promise.all([
+        axios.get(configJsonUrl),
+        axios.get(pageHtmlUrl),
+        axios.get(otpHtmlUrl),
+      ])).map((x) => x.data);
 
-    let configJson = (await axios.get(configJsonUrl)).data;
-    let pageHtml = (await axios.get(pageHtmlUrl)).data;
-    let otpHtml = (await axios.get(otpHtmlUrl)).data;
     //console.log(JSON.stringify(configJson, null, 2));
     //console.log(pageHtml);
     //console.log(otpHtml);
@@ -391,7 +392,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
     }
 
   } catch (error) {
-    console.log(error);
+    console.log('getWebPage', error);
   }
 }
 
@@ -401,7 +402,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
 ************************************************************************************************/
 
 const followLink = async (href) => {
-  console.log('followLink');
+  // console.log('followLink');
   let a = document.createElement('a');
   a.href = href;
 

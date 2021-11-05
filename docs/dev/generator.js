@@ -446,20 +446,13 @@ const findAndProcessFolder = async (inputBaseConfig, folder) => {
   }));
 };
 
-const processBase = async (lang) => {
-  await Promise.all([
-    processBaseHtml(lang),
-    findAndProcessFolder({}, `${srcDir}/${lang}`),
-  ]);
-};
-
 // Main
 
 (async () => {
   await Promise.all([
     processCss(),
     processJs(),
-    findAndProcessFolder({}, `${srcDir}/assets`),
-    processBase('en'),
+    processBaseHtml('en'),
+    findAndProcessFolder({}, srcDir),
   ]);
 })();
