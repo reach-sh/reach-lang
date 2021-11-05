@@ -1333,19 +1333,6 @@ config = command "config" $ info f d where
     dch <- asks e_dirConfigHost
     now <- pack . formatShow iso8601Format <$> liftIO getCurrentTime
 
-    let nope i = putStrLn $ show i <> " is not a valid selection."
-    let snet n = case connectorMode of
-          Nothing -> False
-          Just (ConnectorMode c _) -> c == n
-
-    let mkGetY n y p = do
-          putStr $ p <> " (Type 'y' if so): "
-          hFlush stdout >> getLine >>= \case
-            z | L.upper z /= "Y" -> n
-            _ -> y
-    let getY = mkGetY (exitWith ExitSuccess) (pure ())
-    let getY' = mkGetY (pure False) (pure True)
-
     envExists <- (liftIO $ doesFileExist efc) >>= \case
       True -> liftIO $ do
         putStrLn $ "Reach detected an existing configuration file at " <> efh <> "."
@@ -1365,17 +1352,7 @@ config = command "config" $ info f d where
         pure False
 
     dnet <- liftIO $ do
-      let promptNetSet = do
-            putStrLn "\nWould you like to set a default network?"
-            forM_ nets $ \case
-              (_, Nothing) -> putStrLn $ "  " <> lpad 0 <> ": No preference - I want them all!"
-              (i, Just n) -> putStrLn $ "  " <> lpad i <> ": " <> show n
-                <> if snet n then " (Currently selected with `REACH_CONNECTOR_MODE`)" else ""
-            putStr " Select from the numbers above: "
-            hFlush stdout
-      let netSet = getLine >>= \n -> maybe (nope n >> promptNetSet >> netSet) pure
-            $ L.find ((==) n . show . fst) nets
-      (_, net) <- promptNetSet >> netSet
+      (_, net) <- promptNetSet connectorMode >> netSet connectorMode
       pure $ maybe "" packs net
 
     let e = [N.text|
@@ -1456,6 +1433,42 @@ config = command "config" $ info f d where
           touch "$$P"
         |]
         sourceMe
+   where
+    nope i = putStrLn $ show i <> " is not a valid selection."
+    snet n = \case
+      Nothing -> False
+      Just (ConnectorMode c _) -> c == n
+
+    mkGetY n y m p = do
+      putStr $ p <> m
+      hFlush stdout >> getLine >>= \case
+        z | L.upper z /= "Y" -> n
+        _ -> y
+    getY = mkGetY (exitWith ExitSuccess) (pure ()) " (Type 'y' if so): "
+    getY' = mkGetY (pure False) (pure True) " (Type 'y' if so): "
+
+    promptNetSet cm = do
+      putStrLn "\nWould you like to set a default network?"
+      forM_ nets $ \case
+        (_, Nothing) -> putStrLn $ "  " <> lpad 0 <> ": No preference - I want them all!"
+        (i, Just n) -> putStrLn $ "  " <> lpad i <> ": " <> show n
+          <> if snet n cm then " (Currently selected with `REACH_CONNECTOR_MODE`)" else ""
+      putStr " Select from the numbers above: "
+      hFlush stdout
+
+    netSet cm = getLine >>= \n -> maybe (nope n >> promptNetSet cm >> netSet cm) (confirmNodef cm)
+      $ L.find ((==) n . show . fst) nets
+
+    confirmNodef cm = \case
+      n@(0, _) -> do
+        T.putStrLn $ intercalate "\n"
+          [ "\nDeclining to set a default network means you'll need to explicitly supply"
+          , "`REACH_CONNECTOR_MODE` at the command-line or in your scripts. See:"
+          , "\nhttps://docs.reach.sh/ref-usage.html#%28env._.R.E.A.C.H_.C.O.N.N.E.C.T.O.R_.M.O.D.E%29"
+          , "\nIf this isn't what you want you may re-run `reach config` at any time to select one."
+          ]
+        mkGetY (promptNetSet cm >> netSet cm) (pure n) " (Type 'y'): " "Continue anyway?"
+      n -> pure n
 
 whoami' :: Text
 whoami' = "docker info --format '{{.ID}}' 2>/dev/null"
