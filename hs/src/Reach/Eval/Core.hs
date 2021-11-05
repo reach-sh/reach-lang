@@ -635,6 +635,7 @@ dlvToDL = \case
   DLV_Obj _ menv -> DLAE_Obj . M.fromList <$> all_just (map recAssoc $ M.toList menv)
   DLV_Struct _ menv -> DLAE_Struct <$> all_just (map recAssoc menv)
   DLV_Data _ t s mdv -> DLAE_Data t s <$> dlvToDL mdv
+  DLV_Bytes _ b -> return $ DLAE_Bytes b
   _ -> Nothing
   where
     recAssoc (k, v) = (,) k <$> dlvToDL v
@@ -664,7 +665,7 @@ slToDLV = \case
   SLV_Null at _ -> lit at DLL_Null
   SLV_Bool at b -> lit at $ DLL_Bool b
   SLV_Int at i -> lit at $ DLL_Int at i
-  SLV_Bytes at bs -> lit at $ DLL_Bytes bs
+  SLV_Bytes at bs -> return $ Just $ DLV_Bytes at bs
   SLV_DLC c -> arg srcloc_builtin $ DLA_Constant c
   SLV_DLVar dv -> arg (srclocOf dv) $ DLA_Var dv
   SLV_Array at dt vs -> do
@@ -792,6 +793,8 @@ compileArgExpr = \case
     let go (k, v) = (,) k <$> compileArgExpr v
     kvs' <- mapM go kvs
     mk $ DLLA_Struct kvs'
+  DLAE_Bytes b -> do
+    mk $ DLLA_Bytes b
   where
     mk la = do
       at <- withAt id
@@ -1928,7 +1931,7 @@ evalPrimOp p sargs = do
     BAND -> nn2n (.&.)
     BIOR -> nn2n (.|.)
     BXOR -> nn2n (xor)
-    SELF_ADDRESS -> impossible "self address"
+    SELF_ADDRESS {} -> impossible "self address"
     MUL_DIV -> case args of
         [SLV_Int _ 1, rhs, den] -> evalPrimOp DIV $ map (lvl,) [rhs, den]
         [lhs, SLV_Int _ 1, den] -> evalPrimOp DIV $ map (lvl,) [lhs, den]
@@ -2246,22 +2249,33 @@ evalPrim p sargs =
       at <- withAt id
       metam <- mustBeObject =<< one_arg
       metam' <- mapM (ensure_public . sss_sls) metam
-      let go tns (k, v) = case k of
-            "name" -> bytes (\x -> tns { dtn_name = x}) tokenNameLen
-            "symbol" -> bytes (\x -> tns { dtn_sym = x}) tokenSymLen
-            "url" -> bytes (\x -> tns { dtn_url = x}) tokenURLLen
-            "metadata" -> bytes (\x -> tns { dtn_metadata = x}) tokenMetadataLen
-            "decimals" -> do
-              a <- compileCheckType T_UInt v
-              return $ tns { dtn_decimals = Just a }
-            "supply" -> do
-              a <- compileCheckType T_UInt v
-              return $ tns { dtn_supply = a }
-            _ -> expect_ $ Err_TokenNew_InvalidKey k
+      let metal f k = k (M.lookup f metam')
+      let bytes f len = metal f $ \case
+            Just v -> compileCheckType (T_Bytes len) v
+            Nothing -> compileArgExpr $ largeArgToArgExpr $ bytesZeroLit len
+      dtn_name <- bytes "name" tokenNameLen
+      dtn_sym <- bytes "symbol" tokenSymLen
+      dtn_url <- bytes "url" tokenURLLen
+      dtn_metadata <- bytes "metadata" tokenMetadataLen
+      dtn_supply <- metal "supply" $ \case
+        Nothing -> return $ DLA_Constant $ DLC_UInt_max
+        Just v -> compileCheckType T_UInt v
+      dtn_decimals <- metal "decimals" $ \case
+        Nothing -> return $ Nothing
+        Just v -> Just <$> compileCheckType T_UInt v
+      let check = \case
+            "name" -> ok
+            "symbol" -> ok
+            "url" -> ok
+            "metadata" -> ok
+            "decimals" -> ok
+            "supply" -> ok
+            k -> expect_ $ Err_TokenNew_InvalidKey k
             where
-              bytes u len = u <$> compileCheckType (T_Bytes len) v
-      tns <- foldM go defaultTokenNew (M.toAscList metam')
-      let supplya = dtn_supply tns
+              ok = return ()
+      mapM_ check (M.keys metam')
+      let tns = DLTokenNew {..}
+      let supplya = dtn_supply
       ensure_mode SLM_ConsensusStep "new Token"
       tokdv_ <- ctxt_lift_expr (DLVar at Nothing T_Token) $
         DLE_TokenNew at tns
@@ -3270,7 +3284,6 @@ litToSV = \case
   DLL_Null -> withAt $ flip SLV_Null "litToSV"
   DLL_Bool b -> withAt $ flip SLV_Bool b
   DLL_Int a i -> return $ SLV_Int a i
-  DLL_Bytes bs -> withAt $ flip SLV_Bytes bs
 
 argToSV :: DLArg -> App SLVal
 argToSV = \case
@@ -3990,11 +4003,8 @@ doGetSelfAddress who = do
     (DLVar at Nothing T_Address)
     (DLE_PrimOp
        at
-       SELF_ADDRESS
-       [ DLA_Literal (DLL_Bytes who)
-       , DLA_Literal (DLL_Bool isClass)
-       , DLA_Literal (DLL_Int at $ fromIntegral nonce)
-       ])
+       (SELF_ADDRESS who isClass nonce)
+       [])
 
 all_just :: [Maybe a] -> Maybe [a]
 all_just = \case

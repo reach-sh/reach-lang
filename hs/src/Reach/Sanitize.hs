@@ -30,7 +30,6 @@ instance Sanitize DLLiteral where
       DLL_Null -> l
       DLL_Bool {} -> l
       DLL_Int _ i -> DLL_Int sb i
-      DLL_Bytes {} -> l
 
 instance Sanitize DLArg where
   sani a =
@@ -47,8 +46,9 @@ instance Sanitize DLLargeArg where
     DLLA_Obj m -> DLLA_Obj (sani m)
     DLLA_Data t v va -> DLLA_Data t v (sani va)
     DLLA_Struct kvs -> DLLA_Struct $ map go kvs
-      where
-        go (k, v) = (,) k (sani v)
+    DLLA_Bytes b -> DLLA_Bytes b
+    where
+      go (k, v) = (,) k (sani v)
 
 instance Sanitize DLTokenNew where
   sani (DLTokenNew {..}) = DLTokenNew (sani dtn_name) (sani dtn_sym) (sani dtn_url) (sani dtn_metadata) (sani dtn_supply) (sani dtn_decimals)

@@ -518,7 +518,7 @@ dont_concat_first :: [App ()]
 dont_concat_first = nop : repeat (op "concat")
 
 padding :: Integer -> App ()
-padding = cl . bytesZeroLit
+padding = cla . bytesZeroLit
 
 czaddr :: App ()
 czaddr = padding $ typeSizeOf T_Address
@@ -685,10 +685,9 @@ cint = cint_ sb
 
 cl :: DLLiteral -> App ()
 cl = \case
-  DLL_Null -> cl $ DLL_Bytes ""
+  DLL_Null -> cbs ""
   DLL_Bool b -> cint $ if b then 1 else 0
   DLL_Int at i -> cint_ at i
-  DLL_Bytes bs -> code "byte" [base64d bs]
 
 ca_boolb :: DLArg -> Maybe B.ByteString
 ca_boolb = \case
@@ -723,7 +722,7 @@ exprSmall = \case
 
 cprim :: PrimOp -> [DLArg] -> App ()
 cprim = \case
-  SELF_ADDRESS -> impossible "self address"
+  SELF_ADDRESS {} -> impossible "self address"
   ADD -> call "+"
   SUB -> call "-"
   MUL -> call "*"
@@ -1003,7 +1002,7 @@ cla = \case
       T_Bool ->
         case cas_boolbs as of
           Nothing -> normal
-          Just x -> cl $ DLL_Bytes x
+          Just x -> cbs x
       _ -> normal
     where
       normal = cconcatbs $ map (\a -> (t, ca a)) as
@@ -1014,7 +1013,7 @@ cla = \case
     let h ((k, v), i) = (k, (i, v))
     let tm' = M.fromList $ map h $ zip (M.toAscList tm) [0 ..]
     let (vi, vt) = fromMaybe (impossible $ "dla_data") $ M.lookup vn tm'
-    cl $ DLL_Bytes $ B.singleton $ BI.w2c vi
+    cbs $ B.singleton $ BI.w2c vi
     ca va
     ctobs vt
     let vlen = 1 + typeSizeOf (argTypeOf va)
@@ -1026,6 +1025,10 @@ cla = \case
     check_concat_len dlen
   DLLA_Struct kvs ->
     cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd kvs
+  DLLA_Bytes bs -> cbs bs
+
+cbs :: B.ByteString -> App ()
+cbs bs = code "byte" [base64d bs]
 
 cTupleRef :: SrcLoc -> DLType -> Integer -> App ()
 cTupleRef at tt idx = do
@@ -1070,7 +1073,7 @@ cMapLoad = do
       True -> code "dig" [ "1" ]
       False -> op "dup"
     -- [ Address, MapData_N?, Address ]
-    cl $ DLL_Bytes $ keyVary mi
+    cbs $ keyVary mi
     -- [ Address, MapData_N?, Address, Key ]
     op "app_local_get"
     -- [ Address, MapData_N?, NewPiece ]
@@ -1093,7 +1096,7 @@ cMapStore at = do
     -- [ Address, MapData' ]
     code "dig" ["1"]
     -- [ Address, MapData', Address ]
-    cl $ DLL_Bytes $ keyVary mi
+    cbs $ keyVary mi
     -- [ Address, MapData', Address, Key ]
     code "dig" ["2"]
     -- [ Address, MapData', Address, Key, MapData' ]
@@ -1129,7 +1132,7 @@ cSvsLoad size = do
       -- [ SvsData_0? ]
       forM_ (zip keysl $ False : repeat True) $ \(mi, doConcat) -> do
         -- [ SvsData_N? ]
-        cl $ DLL_Bytes $ keyVary mi
+        cbs $ keyVary mi
         -- [ SvsData_N?, Key ]
         op "app_global_get"
         -- [ SvsData_N?, NewPiece ]
@@ -1154,7 +1157,7 @@ cSvsSave at svs = do
   -- [ SvsData ]
   forM_ keysl $ \vi -> do
     -- [ SvsData ]
-    cl $ DLL_Bytes $ keyVary vi
+    cbs $ keyVary vi
     -- [ SvsData, Key ]
     code "dig" [ "1" ]
     -- [ SvsData, Key, SvsData ]
@@ -1210,7 +1213,7 @@ ce = \case
     let (_, xlen) = typeArray x
     check_concat_len $ xsz + ysz
     salloc_ $ \store_ans load_ans -> do
-      cl $ DLL_Bytes ""
+      cbs ""
       store_ans
       cfor xlen $ \load_idx -> do
         load_ans
@@ -1512,7 +1515,7 @@ cm km = \case
     let (_, xlen) = typeArray aa
     check_concat_len anssz
     salloc_ $ \store_ans load_ans -> do
-      cl $ DLL_Bytes ""
+      cbs ""
       store_ans
       cfor xlen $ \load_idx -> do
         load_ans
@@ -1908,7 +1911,7 @@ compile_algo env disp pl = do
     gvStore GV_txnCounter
     code "txn" ["ApplicationID"]
     code "bz" ["alloc"]
-    cl $ DLL_Bytes keyState
+    cbs keyState
     op "app_global_get"
     let nats = [0..]
     let shouldDups = reverse $ zipWith (\_ i -> i /= 0) keyState_gvs nats
@@ -1945,7 +1948,7 @@ compile_algo env disp pl = do
     forM_ (M.toAscList hm) $ \(hi, hh) ->
       cloop hi hh
     label "updateState"
-    cl $ DLL_Bytes keyState
+    cbs keyState
     forM_ keyState_gvs $ \gv -> do
       gvLoad gv
       ctobs $ gvType gv

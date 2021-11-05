@@ -48,8 +48,9 @@ instance Subst DLLargeArg where
     DLLA_Obj m -> DLLA_Obj <$> subst m
     DLLA_Data t v a -> DLLA_Data t v <$> subst a
     DLLA_Struct kvs -> DLLA_Struct <$> mapM go kvs
-      where
-        go (k, v) = (,) k <$> subst v
+    DLLA_Bytes b -> return $ DLLA_Bytes b
+    where
+      go (k, v) = (,) k <$> subst v
 
 instance Subst DLPayAmt where
   subst = \case

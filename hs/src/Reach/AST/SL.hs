@@ -241,7 +241,6 @@ instance Equiv DLLiteral where
     (DLL_Null, DLL_Null) -> True
     (DLL_Bool b1, DLL_Bool b2) -> equiv b1 b2
     (DLL_Int _ x, DLL_Int _ y) -> equiv x y
-    (DLL_Bytes b1, DLL_Bytes b2) -> equiv b1 b2
     _ -> False
 
 instance Equiv SLTypeFun where
@@ -601,7 +600,7 @@ allKeywords :: [SLKwd]
 allKeywords = enumFrom minBound
 
 primOpType :: PrimOp -> ([DLType], DLType)
-primOpType SELF_ADDRESS = impossible "self address"
+primOpType (SELF_ADDRESS {}) = impossible "self address"
 primOpType ADD = ([T_UInt, T_UInt], T_UInt)
 primOpType SUB = ([T_UInt, T_UInt], T_UInt)
 primOpType MUL = ([T_UInt, T_UInt], T_UInt)

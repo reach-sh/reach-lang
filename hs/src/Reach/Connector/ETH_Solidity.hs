@@ -357,6 +357,7 @@ instance DepthOf DLLargeArg where
     DLLA_Obj m -> depthOf m
     DLLA_Data _ _ x -> depthOf x
     DLLA_Struct kvs -> depthOf $ map snd kvs
+    DLLA_Bytes {} -> return 1
 
 instance DepthOf DLTokenNew where
   depthOf (DLTokenNew {..}) =
@@ -471,9 +472,6 @@ solLit = \case
   DLL_Bool True -> "true"
   DLL_Bool False -> "false"
   DLL_Int at i -> solNum $ checkIntLiteralC at conName' conCons' i
-  DLL_Bytes s -> brackets $ solCommas $ map h $ B.unpack s
-  where
-    h x = solApply "uint8" [pretty $ show $ BI.c2w x]
 
 solArg :: AppT DLArg
 solArg = \case
@@ -484,7 +482,7 @@ solArg = \case
 
 solPrimApply :: PrimOp -> [Doc] -> App Doc
 solPrimApply = \case
-  SELF_ADDRESS -> impossible "self address"
+  SELF_ADDRESS {} -> impossible "self address"
   ADD -> safeOp "unsafeAdd" "+"
   SUB -> safeOp "unsafeSub" "-"
   MUL -> safeOp "unsafeMul" "*"
@@ -545,6 +543,9 @@ solLargeArg' dv la =
     DLLA_Struct kvs -> c <$> (mapM go kvs)
       where
         go (k, a) = one ("." <> pretty k) <$> solArg a
+    DLLA_Bytes s -> return $ one "" $ brackets $ solCommas $ map h $ B.unpack s
+      where
+        h x = solApply "uint8" [pretty $ show $ BI.c2w x]
   where
     one :: Doc -> Doc -> Doc
     one f v = dv <> f <+> "=" <+> v <> semi

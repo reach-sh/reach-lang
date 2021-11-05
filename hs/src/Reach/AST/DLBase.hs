@@ -182,25 +182,19 @@ data DLLiteral
   = DLL_Null
   | DLL_Bool Bool
   | DLL_Int SrcLoc Integer
-  | DLL_Bytes B.ByteString
   deriving (Eq, Generic, Show, Ord)
-
-bytesZeroLit :: Integer -> DLLiteral
-bytesZeroLit k = DLL_Bytes $ B.replicate (fromIntegral k) '\0'
 
 instance Pretty DLLiteral where
   pretty = \case
     DLL_Null -> "null"
     DLL_Bool b -> if b then "true" else "false"
     DLL_Int _ i -> viaShow i
-    DLL_Bytes bs -> dquotes (viaShow bs)
 
 litTypeOf :: DLLiteral -> DLType
 litTypeOf = \case
   DLL_Null -> T_Null
   DLL_Bool _ -> T_Bool
   DLL_Int {} -> T_UInt
-  DLL_Bytes bs -> T_Bytes $ fromIntegral $ B.length bs
 
 data DLVar = DLVar SrcLoc (Maybe (SrcLoc, SLVar)) DLType Int
   deriving (Generic)
@@ -298,7 +292,11 @@ data DLLargeArg
   | DLLA_Obj (M.Map String DLArg)
   | DLLA_Data (M.Map SLVar DLType) String DLArg
   | DLLA_Struct [(SLVar, DLArg)]
+  | DLLA_Bytes B.ByteString
   deriving (Eq, Ord, Generic, Show)
+
+bytesZeroLit :: Integer -> DLLargeArg
+bytesZeroLit k = DLLA_Bytes $ B.replicate (fromIntegral k) '\0'
 
 instance CanDupe a => CanDupe [a] where
   canDupe = getAll . mconcatMap (All . canDupe)
@@ -310,6 +308,7 @@ instance CanDupe DLLargeArg where
     DLLA_Obj am -> canDupe $ M.elems am
     DLLA_Data _ _ x -> canDupe x
     DLLA_Struct m -> canDupe $ map snd m
+    DLLA_Bytes _ -> False
 
 render_dasM :: PrettySubst a => [a] -> PrettySubstApp Doc
 render_dasM as = do
@@ -347,6 +346,7 @@ instance PrettySubst DLLargeArg where
     DLLA_Struct kvs -> do
       kvs' <- render_dasM kvs
       return $ "struct" <> brackets kvs'
+    DLLA_Bytes bs -> return $ dquotes (pretty $ bunpack bs)
 
 mdaToMaybeLA :: DLType -> Maybe DLArg -> DLLargeArg
 mdaToMaybeLA t = \case
@@ -362,6 +362,7 @@ data DLArgExpr
   | DLAE_Obj (M.Map SLVar DLArgExpr)
   | DLAE_Data (M.Map SLVar DLType) String DLArgExpr
   | DLAE_Struct [(SLVar, DLArgExpr)]
+  | DLAE_Bytes B.ByteString
 
 argExprToArgs :: DLArgExpr -> [DLArg]
 argExprToArgs = \case
@@ -371,6 +372,7 @@ argExprToArgs = \case
   DLAE_Obj m -> many $ M.elems m
   DLAE_Data _ _ ae -> one ae
   DLAE_Struct aes -> many $ map snd aes
+  DLAE_Bytes _ -> []
   where
     one = argExprToArgs
     many = concatMap one
@@ -382,6 +384,7 @@ largeArgToArgExpr = \case
   DLLA_Obj m -> DLAE_Obj $ M.map DLAE_Arg m
   DLLA_Data m v a -> DLAE_Data m v $ DLAE_Arg a
   DLLA_Struct kvs -> DLAE_Struct $ map (\(k, v) -> (,) k $ DLAE_Arg v) kvs
+  DLLA_Bytes b -> DLAE_Bytes b
 
 largeArgTypeOf :: DLLargeArg -> DLType
 largeArgTypeOf = argExprTypeOf . largeArgToArgExpr
@@ -394,6 +397,7 @@ argExprTypeOf = \case
   DLAE_Obj senv -> T_Object $ M.map argExprTypeOf senv
   DLAE_Data t _ _ -> T_Data t
   DLAE_Struct kvs -> T_Struct $ map (\(k, v) -> (,) k $ argExprTypeOf v) kvs
+  DLAE_Bytes bs -> T_Bytes $ fromIntegral $ B.length bs
 
 data ClaimType
   = --- Verified on all paths
@@ -463,18 +467,6 @@ data DLTokenNew = DLTokenNew
   , dtn_supply :: DLArg
   , dtn_decimals :: Maybe DLArg }
   deriving (Eq, Ord, Show)
-
-defaultTokenNew :: DLTokenNew
-defaultTokenNew = DLTokenNew {..}
-  where
-    dtn_name = b tokenNameLen
-    dtn_sym = b tokenSymLen
-    dtn_url = b tokenURLLen
-    dtn_metadata = b tokenMetadataLen
-    dtn_supply = DLA_Constant $ DLC_UInt_max
-    -- Nothing gets compiled to connector default
-    dtn_decimals = Nothing
-    b = DLA_Literal . bytesZeroLit
 
 instance PrettySubst DLTokenNew where
   prettySubst (DLTokenNew {..}) =

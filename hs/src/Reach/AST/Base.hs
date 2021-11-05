@@ -16,6 +16,7 @@ import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
 import Reach.Texty
+import Reach.Pretty
 import Reach.UnsafeUtil
 import qualified System.Console.Pretty as TC
 import Safe (atMay)
@@ -261,7 +262,7 @@ data PrimOp
   | DIGEST_EQ
   | ADDRESS_EQ
   | TOKEN_EQ
-  | SELF_ADDRESS
+  | SELF_ADDRESS SLPart Bool Int
   | LSH
   | RSH
   | BAND
@@ -287,7 +288,7 @@ instance Pretty PrimOp where
     DIGEST_EQ -> "=="
     ADDRESS_EQ -> "=="
     TOKEN_EQ -> "=="
-    SELF_ADDRESS -> "selfAddress"
+    SELF_ADDRESS x y z -> "selfAddress" <> pbrackets [ pretty x, pretty y, pretty z ]
     LSH -> "<<"
     RSH -> ">>"
     BAND -> "&"

@@ -221,8 +221,9 @@ instance Optimize DLLargeArg where
     DLLA_Obj m -> DLLA_Obj <$> opt m
     DLLA_Data t vn vv -> DLLA_Data t vn <$> opt vv
     DLLA_Struct kvs -> DLLA_Struct <$> mapM go kvs
-      where
-        go (k, v) = (,) k <$> opt v
+    DLLA_Bytes b -> return $ DLLA_Bytes b
+    where
+      go (k, v) = (,) k <$> opt v
 
 instance Optimize DLTokenNew where
   opt (DLTokenNew {..}) = DLTokenNew

@@ -84,8 +84,9 @@ instance Freshen DLLargeArg where
     DLLA_Obj m -> DLLA_Obj <$> fu m
     DLLA_Data t v a -> DLLA_Data t v <$> fu a
     DLLA_Struct kvs -> DLLA_Struct <$> mapM go kvs
-      where
-        go (k, v) = (,) k <$> fu v
+    DLLA_Bytes b -> return $ DLLA_Bytes b
+    where
+      go (k, v) = (,) k <$> fu v
 
 instance Freshen DLTokenNew where
   fu (DLTokenNew {..}) = DLTokenNew
