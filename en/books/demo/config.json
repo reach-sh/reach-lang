@@ -1,4 +1,11 @@
 {
+  "background": "white",
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
   "bookTitle": "Demo Book",
   "bookPath": "en/books/demo",
   "chapters": [

@@ -1,4 +1,11 @@
 {
+  "background": "white",
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
   "chapters": null,
   "pages": null,
   "author": "Sarah Smiles",

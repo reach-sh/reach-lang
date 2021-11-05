@@ -1,8 +1,13 @@
 {
+  "background": "white",
+  "hasOtp": false,
+  "hasCustomBase": false,
+  "hasPageHeader": false,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
   "chapters": null,
   "pages": null,
-  "hasOtp": false,
-  "hasPageHeader": false,
   "menuItem": "mi-home",
   "title": "Homepage",
   "pathname": "/proj/docs/dev/src/en/pages/homepage"

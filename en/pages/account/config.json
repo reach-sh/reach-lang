@@ -1,9 +1,13 @@
 {
-  "chapters": null,
-  "pages": null,
+  "background": "white",
   "hasOtp": false,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
   "hasEditBtn": false,
   "hasRefreshBtn": false,
+  "chapters": null,
+  "pages": null,
   "hasScrollbar": false,
   "title": "Account",
   "pathname": "/proj/docs/dev/src/en/pages/account"

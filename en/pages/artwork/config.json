@@ -1,7 +1,13 @@
 {
+  "background": "white",
+  "hasOtp": false,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
   "chapters": null,
   "pages": null,
-  "hasOtp": false,
   "menuItem": "mi-docs",
   "title": "Artwork",
   "pathname": "/proj/docs/dev/src/en/pages/artwork"
