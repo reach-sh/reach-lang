@@ -1435,9 +1435,9 @@ config = command "config" $ info f d where
         sourceMe
    where
     nope i = putStrLn $ show i <> " is not a valid selection."
-    snet n = \case
+    snet c = \case
       Nothing -> False
-      Just (ConnectorMode c _) -> c == n
+      Just cm -> cm == ConnectorMode c Devnet
 
     mkGetY n y m p = do
       putStr $ p <> m
@@ -1448,7 +1448,7 @@ config = command "config" $ info f d where
     getY' = mkGetY (pure False) (pure True) " (Type 'y' if so): "
 
     promptNetSet cm = do
-      putStrLn "\nWould you like to set a default network?"
+      putStrLn "\nWould you like to set a default connector?"
       forM_ nets $ \case
         (_, Nothing) -> putStrLn $ "  " <> lpad 0 <> ": No preference - I want them all!"
         (i, Just n) -> putStrLn $ "  " <> lpad i <> ": " <> show n
@@ -1462,7 +1462,7 @@ config = command "config" $ info f d where
     confirmNodef cm = \case
       n@(0, _) -> do
         T.putStrLn $ intercalate "\n"
-          [ "\nDeclining to set a default network means you'll need to explicitly supply"
+          [ "\nDeclining to set a default connector means you'll need to explicitly supply"
           , "`REACH_CONNECTOR_MODE` at the command-line or in your scripts. See:"
           , "\nhttps://docs.reach.sh/ref-usage.html#%28env._.R.E.A.C.H_.C.O.N.N.E.C.T.O.R_.M.O.D.E%29"
           , "\nIf this isn't what you want you may re-run `reach config` at any time to select one."
