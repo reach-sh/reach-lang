@@ -1330,6 +1330,7 @@ config = command "config" $ info f d where
     efc <- envFileContainer
     efh <- envFileHost
     dcc <- asks e_dirConfigContainer
+    dch <- asks e_dirConfigHost
     now <- pack . formatShow iso8601Format <$> liftIO getCurrentTime
 
     let nope i = putStrLn $ show i <> " is not a valid selection."
@@ -1351,11 +1352,11 @@ config = command "config" $ info f d where
         getY' "Would you like to back it up before creating a new one?" >>= \case
           False -> putStrLn "Skipped backup - use ctrl+c to abort overwriting!"
           True -> do
-            let b = dcc </> "_backup"
+            let b = (</> "_backup")
             let n = "env-" <> unpack now
-            createDirectoryIfMissing True b
-            copyFile efc (b </> n)
-            putStrLn $ "Backed up " <> efh <> " to " <> b </> n <> "."
+            createDirectoryIfMissing True (b dcc)
+            copyFile efc (b dcc </> n)
+            putStrLn $ "Backed up " <> efh <> " to " <> b dch </> n <> "."
         pure True
 
       False -> liftIO $ do
