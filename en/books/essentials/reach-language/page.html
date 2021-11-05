@@ -27,8 +27,27 @@
 <p>Reach has a few sub-commands, each with their own options.</p>
 <p>However, all commands support the following options:</p>
 <ul>
-  <li>The environment variable <code>REACH_VERSION</code> signifies what <a href="##guide-versions">version of Reach</a> to use.</li>
+  <li>The environment variable <code>REACH_VERSION</code> signifies what version of Reach to use.</li>
 </ul>
+<p>Although normally expressed in a <a href="##guide-versions">semantic versioning</a>-friendly format, e.g. <code>v0.1</code> or <code>v0.1.6</code>, <code>REACH_VERSION</code> also supports:</p>
+<ul>
+  <li>Hashes such as <a href="https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore">639fa565</a>.</li>
+</ul>
+<p>Valid hashes may be obtained by running:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">$ reach hashes</li><li value="2">reach: 8150e7e4</li><li value="3">reach-cli: 8150e7e4</li><li value="4">react-runner: fb449c94</li><li value="5">rpc-server: fb449c94</li><li value="6">runner: fb449c94</li><li value="7">devnet-algo: fb449c94</li><li value="8">devnet-cfx fb449c94</li><li value="9">devnet-eth: fb449c94</li></ol></pre>
+<ul>
+  <li>Date-stamps such as <a href="https://hub.docker.com/layers/reachsh/reach/2021-11-04/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore">2021-11-04</a>.</li>
+</ul>
+<p>Valid date-stamps may be obtained by browsing Reach's public Docker image registry on <a href="https://hub.docker.com/r/reachsh/reach/tags">DockerHub</a>.</p>
+<p>Tip: try entering your desired year in the filter box to skip other tag types.</p>
+<ul>
+  <li>The identifer "<code>stable</code>".</li>
+</ul>
+<p>Reach will interpret this to mean the most recent stable <a href="##guide-versions">major</a> version.</p>
+<p>
+  When using the semantic versioning form of <code>REACH_VERSION</code> the preceding <code>v</code> character is optional.
+  In other words, <code>v0.1.6</code> is equivalent to <code>0.1.6</code>.
+</p>
 <h3 id="reach-compile"><code>reach compile</code></h3>
 <p>You compile your Reach code by executing</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1">$ reach compile SOURCE EXPORT ...</li></ol></pre>
