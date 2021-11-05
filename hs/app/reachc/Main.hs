@@ -38,7 +38,7 @@ main = do
   report <-
     case shouldReport args env of
       False -> return $ const $ return ()
-      True -> startReport (cte_REACHC_ID env)
+      True -> startReport (cte_REACHC_ID env) Compile
   (e :: Either SomeException ()) <-
     try $ compile env $ cta_co args
   report e
