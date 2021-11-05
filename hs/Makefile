@@ -48,9 +48,6 @@ build-reach:
 .PHONY: build
 build: build-haskell-build-artifacts build-reach-cli build-reach
 
-.PHONY: build
-build: build-haskell build-reach-cli build-reachc
-
 .PHONY: build-m1
 build-m1:
 	docker build \

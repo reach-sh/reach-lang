@@ -166,21 +166,6 @@ jobs:
               }
             }]
           }
-  "install-mo":
-    executor: fake
-    steps:
-    - checkout
-    - workattach
-    - run: |
-        mkdir -p /tmp/workspace/bin
-        curl -sSL https://git.io/get-mo -o mo
-        chmod +x mo
-        mv mo /tmp/workspace/bin/
-    - persist_to_workspace:
-        root: /tmp/workspace/
-        paths:
-          - bin
-    - slack_fail
   "sh-check":
     executor: fake
     steps:

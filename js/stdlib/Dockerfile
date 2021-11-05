@@ -1,12 +1,7 @@
 ARG NODE_VERSION
 ARG NODE_IMAGE=node:$NODE_VERSION
 ARG REACH_VERSION
-ARG SOLC_IMAGE
 ARG JS_DEPS_IMAGE=reachsh/js-deps:$REACH_VERSION
-
-FROM reachsh/haskell-build-artifacts as haskell
-
-FROM ethereum/solc:${SOLC_IMAGE} as solc
 
 # hadolint ignore=DL3006
 FROM $JS_DEPS_IMAGE as js-deps
