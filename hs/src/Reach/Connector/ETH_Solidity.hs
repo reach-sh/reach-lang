@@ -963,6 +963,7 @@ solCom = \case
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
   DL_LocalDo _ t -> solPLTail t
+  DL_setApiDetails {} -> mempty
 
 solCom_ :: AppT a -> DLStmt -> AppT a
 solCom_ iter m k = do
@@ -1216,7 +1217,7 @@ solEB args (DLinExportBlock _ mfargs (DLBlock _ _ t r)) = do
   return $ vsep [t', "return" <+> r' <> semi]
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
+solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) _ai hs)) = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   ctxt_varm <- newIORef mempty

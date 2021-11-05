@@ -546,6 +546,7 @@ data SLForm
   | SLForm_apiCall
   | SLForm_apiCall_partial ApiCallRec
   | SLForm_wait
+  | SLForm_setApiDetails
   deriving (Eq, Generic)
 
 data SLKwd

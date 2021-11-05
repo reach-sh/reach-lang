@@ -1563,6 +1563,7 @@ cm km = \case
   DL_Only {} ->
     impossible $ "only in CP"
   DL_LocalDo _ t -> cp km t
+  DL_setApiDetails {} -> km
 
 cp :: App () -> DLTail -> App ()
 cp km = \case
@@ -1851,7 +1852,7 @@ cStateSlice at size iw = do
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
   let PLProg _at plo dli _ _ cpp = pl
-  let CPProg at _ (CHandlers hm) = cpp
+  let CPProg at _ _ai (CHandlers hm) = cpp
   let sMaps = dli_maps dli
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty

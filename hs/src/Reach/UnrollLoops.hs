@@ -132,6 +132,7 @@ instance Unroll DLStmt where
       DL_MapReduce at mri ans x z b a <$> ul fb
     DL_Only at p l -> DL_Only at p <$> ul l
     DL_LocalDo at t -> DL_LocalDo at <$> ul t
+    DL_setApiDetails a p tys mc -> return $ DL_setApiDetails a p tys mc
 
 ul_m :: Unroll a => (DLStmt -> a -> a) -> DLStmt -> AppT a
 ul_m mkk m k = do
@@ -212,11 +213,11 @@ instance Unroll CHandlers where
   ul (CHandlers m) = CHandlers <$> ul m
 
 instance Unroll CPProg where
-  ul (CPProg at vi hs) =
+  ul (CPProg at vi ai hs) =
     -- Note: When views contain functions, if we had a network where we
     -- compiled the views to VM code, and had to unroll, then we'd need to
     -- unroll vi here.
-    CPProg at vi <$> ul hs
+    CPProg at vi ai <$> ul hs
 
 instance Unroll EPPs where
   ul (EPPs {..}) = EPPs <$> pure epps_apis <*> pure epps_m

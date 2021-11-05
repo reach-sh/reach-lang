@@ -23,6 +23,7 @@ data DKCommon
   | DKC_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DKBlock
   | DKC_FluidSet SrcLoc FluidVar DLArg
   | DKC_FluidRef SrcLoc DLVar FluidVar
+  | DKC_setApiDetails SrcLoc SLPart [DLType] (Maybe String)
   deriving (Eq, Generic)
 
 instance Pretty DKCommon where
@@ -39,6 +40,7 @@ instance Pretty DKCommon where
     DKC_FluidSet at fv a -> pretty (DLS_FluidSet at fv a)
     DKC_FluidRef at dv fv -> pretty (DLS_FluidRef at dv fv)
     DKC_Only _at who t -> prettyOnly who t
+    DKC_setApiDetails _ p tys mc -> "setApiDetails" <> parens (render_das [pretty p, pretty tys, pretty mc])
 
 data DKTail
   = DK_Com DKCommon DKTail

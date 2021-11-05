@@ -246,13 +246,16 @@ type ViewInfos = M.Map Int ViewInfo
 
 type CPViews = DLViews
 
+type ApiInfo = M.Map SLPart ([DLType], (Maybe String), Int)
+
 data CPProg
-  = CPProg SrcLoc (CPViews, ViewInfos) CHandlers
+  = CPProg SrcLoc (CPViews, ViewInfos) ApiInfo CHandlers
   deriving (Eq)
 
 instance Pretty CPProg where
-  pretty (CPProg _ vis chs) =
-    "views:" <+> pretty vis <> hardline
+  pretty (CPProg _ vis ai chs) =
+    "views:" <+> pretty vis <> hardline <>
+    "apiInfo:" <+> pretty ai <> hardline
     <> pretty chs
 
 data EPPs = EPPs

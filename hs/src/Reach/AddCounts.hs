@@ -117,6 +117,7 @@ instance AC DLStmt where
       ac_visit $ z
       return $ DL_MapReduce at mri ans x z b a f'
     DL_LocalDo at t -> DL_LocalDo at <$> ac t
+    DL_setApiDetails at p tys mc -> return $ DL_setApiDetails at p tys mc
     where
       skip at = return $ DL_Nop at
 
@@ -226,8 +227,8 @@ instance AC CHandlers where
   ac (CHandlers m) = CHandlers <$> ac m
 
 instance AC CPProg where
-  ac (CPProg at vs chs) =
-    CPProg at <$> ac vs <*> ac chs
+  ac (CPProg at vs ai chs) =
+    CPProg at <$> ac vs <*> pure ai <*> ac chs
 
 ac_vi :: AppT ViewsInfo
 ac_vi = mapM (mapM (fresh . ac))

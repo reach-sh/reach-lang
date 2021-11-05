@@ -520,6 +520,7 @@ jsCom = \case
       False -> mempty
   DL_Only {} -> impossible $ "left only after EPP"
   DL_LocalDo _ t -> jsPLTail t
+  DL_setApiDetails {} -> mempty
 
 jsPLTail :: AppT DLTail
 jsPLTail = \case
@@ -948,7 +949,7 @@ reachBackendVersion :: Int
 reachBackendVersion = 5
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
-jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _)) = do
+jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ _)) = do
   let DLInit {..} = dli
   let preamble =
         vsep

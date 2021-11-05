@@ -453,6 +453,7 @@ instance Optimize DLStmt where
       opt t >>= \case
         DT_Return _ -> return $ DL_Nop at
         t' -> return $ DL_LocalDo at t'
+    DL_setApiDetails a p tys mc -> return $ DL_setApiDetails a p tys mc
     where
       maybeUnroll :: DLStmt -> DLArg -> App DLStmt -> App DLStmt
       maybeUnroll s x def =
@@ -609,8 +610,8 @@ instance Optimize ViewInfo where
   opt (ViewInfo vs vi) = ViewInfo vs <$> (newScope $ opt vi)
 
 instance Optimize CPProg where
-  opt (CPProg at vi (CHandlers hs)) =
-    CPProg at <$> (newScope $ opt vi) <*> (CHandlers <$> mapM (newScope . opt) hs)
+  opt (CPProg at vi ai (CHandlers hs)) =
+    CPProg at <$> (newScope $ opt vi) <*> pure ai <*> (CHandlers <$> mapM (newScope . opt) hs)
 
 instance Optimize EPProg where
   opt (EPProg at x ie et) = newScope $ EPProg at x ie <$> opt et
