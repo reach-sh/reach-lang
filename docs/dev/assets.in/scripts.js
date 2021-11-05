@@ -191,7 +191,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   const otpHtmlUrl = `${url}otp.html`;
   const folderId = pathnameToId(folder);
 
-  console.log({ folder, hash, url, configJsonUrl, pageHtmlUrl, otpHtmlUrl, folderId });
+  // console.log({ folder, hash, url, configJsonUrl, pageHtmlUrl, otpHtmlUrl, folderId });
 
   try {
     let [ configJson, pageHtml, otpHtml ] =
