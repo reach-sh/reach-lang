@@ -113,8 +113,17 @@ tealcount () {
 
 #exit 0
 
-jb
-ci CFX tut-7
+# jb
+# ci CFX tut-7
+
+c examples/dan-storage/index.rsh
+ci ETH dan-storage
+exit 0
+r dan-storage
+exit 0
+
+c examples/atomic-swap-auction/index.rsh
+
 exit 0
 
 # (cd hs && mk hs-test)
