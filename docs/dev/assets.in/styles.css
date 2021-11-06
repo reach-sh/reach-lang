@@ -290,10 +290,27 @@ p.punch span {color:#F45747;}
 ************************************************/
 
 #page-col div.hh-viewer blockquote {
-  border: 2px solid var(--soft1);
-  /*border-left: 5px solid red;*/
+  background: #fff6e6;
+  border-left: 5px solid orange;
   margin: 20px 0;
-  padding: 0 12px;
+  padding: 3px 12px;
+}
+
+#page-col div.hh-viewer blockquote h1,
+#page-col div.hh-viewer blockquote h2,
+#page-col div.hh-viewer blockquote h3,
+#page-col div.hh-viewer blockquote h4,
+#page-col div.hh-viewer blockquote h5,
+#page-col div.hh-viewer blockquote h6 {
+  margin-top: 16px; 
+  margin-bottom: 16px;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+#page-col div.hh-viewer blockquote h1:after {
+  content: ' ';
+  display: none;
 }
 
 /************************************************
