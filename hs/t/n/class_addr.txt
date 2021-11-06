@@ -8,10 +8,18 @@ Verification failed:
 
   // Violation Witness
 
-  const v47 = selfAddress(""C"", true, 20 );
+  const v47 = selfAddress{
+  "C",
+  True,
+  20
+   }();
   //    ^ could = <abstract address 0>
   //      from: ./class_addr.rsh:12:13:application
-  const v54 = selfAddress(""C"", true, 29 );
+  const v54 = selfAddress{
+  "C",
+  True,
+  29
+   }();
   //    ^ could = <abstract address 1>
   //      from: ./class_addr.rsh:17:13:application
 

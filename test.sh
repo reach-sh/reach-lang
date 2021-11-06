@@ -31,7 +31,7 @@ jb () {
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
-  (cd "$ROOT"/js/react-runner && make build)
+  #(cd "$ROOT"/js/react-runner && make build)
   # (cd "$ROOT"/js && make build)
 }
 
@@ -116,7 +116,12 @@ tealcount () {
 # jb
 # ci CFX tut-7
 
-c examples/dan-storage/index.rsh
+jb
+#c examples/dan-storage/index.rsh
+ci ETH zbeq
+
+ci ETH mint-basic
+ci ETH token-decimals
 ci ETH dan-storage
 exit 0
 r dan-storage

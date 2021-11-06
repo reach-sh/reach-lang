@@ -9,7 +9,7 @@ const stdlib = loadStdlib(process.env);
 
   await ctcO.p.Oracle({
     ...stdlib.hasConsoleLogger,
-    i: 2,
+    i: 5,
     getWord: (dialog) => {
       console.log(`getWord`, dialog);
       return '';

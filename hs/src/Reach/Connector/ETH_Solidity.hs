@@ -10,7 +10,6 @@ import Data.Aeson as Aeson
 import Data.Aeson.Encode.Pretty
 import Data.Bifunctor (Bifunctor (first))
 import qualified Data.ByteString.Char8 as B
-import qualified Data.ByteString.Internal as BI
 import qualified Data.ByteString.Lazy.Char8 as LB
 import Data.Foldable
 import qualified Data.HashMap.Strict as HM
@@ -21,9 +20,8 @@ import Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 import Data.String (IsString)
 import qualified Data.Text as T
-import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.IO as LTIO
-import qualified NeatInterpolation as N
+import Text.Printf
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
@@ -311,25 +309,10 @@ readDepth v = do
   mvars <- readCtxtIO ctxt_depths
   return $ fromMaybe 0 $ M.lookup v mvars
 
-addUint8ArrayToString :: Integer -> App Doc
-addUint8ArrayToString len = do
-  let f = "uint8ArrayToString_" <> show len
-  let ft = T.pack f
-  let lent = T.pack $ show len
-  modifyCtxtIO ctxt_tlfuns $ M.insert f $ DText $ LT.fromStrict $ [N.text|
-    function $ft(uint8[$lent] memory in_arr) internal pure returns (string memory) {
-      bytes memory inter = new bytes($lent);
-      for (uint8 i = 0; i < $lent; i++) {
-          inter[i] = bytes1(in_arr[i]);
-      }
-      return string(inter);
-    }
-    |]
-  return $ pretty f
-
 uint8ArrayToString :: Integer -> Doc -> App Doc
-uint8ArrayToString len a =
-  flip solApply [ a ] <$> addUint8ArrayToString len
+uint8ArrayToString len x = do
+  let xs = solBytesSplit len $ \i _ -> x <> ".elem" <> pretty i
+  return $ solApply "string" [ solApply "bytes.concat" xs ]
 
 class DepthOf a where
   depthOf :: a -> App Int
@@ -543,9 +526,19 @@ solLargeArg' dv la =
     DLLA_Struct kvs -> c <$> (mapM go kvs)
       where
         go (k, a) = one ("." <> pretty k) <$> solArg a
-    DLLA_Bytes s -> return $ one "" $ brackets $ solCommas $ map h $ B.unpack s
-      where
-        h x = solApply "uint8" [pretty $ show $ BI.c2w x]
+    DLLA_Bytes s -> do
+      let chunks :: Int -> B.ByteString -> [B.ByteString]
+          chunks n xs =
+            case B.length xs > n of
+              False -> [xs]
+              True -> ys : chunks n zs
+                where (ys, zs) = B.splitAt n xs
+      let cs = chunks 32 s
+      let g3 :: Char -> String -> String
+          g3 a b = (printf "%02x" a) <> b
+      let g2 x = "hex" <> solString (B.foldr g3 "" x)
+      let go i x = one (".elem" <> pretty i) (g2 x)
+      return $ c $ zipWith go ([0 ..] :: [Int]) cs
   where
     one :: Doc -> Doc -> Doc
     one f v = dv <> f <+> "=" <+> v <> semi
@@ -1116,15 +1109,39 @@ solHandlers :: CHandlers -> App Doc
 solHandlers (CHandlers hs) =
   vsep <$> (mapM (uncurry solHandler) $ M.toList hs)
 
+divup :: Integer -> Integer -> Integer
+divup x y = ceiling $ (fromIntegral x :: Double) / (fromIntegral y)
+
+solBytesSplit :: Integer -> (Integer -> Integer -> a) -> [a]
+solBytesSplit sz f = map go [0 .. lastOne]
+  where
+    maxLen = 32
+    howMany = divup sz maxLen
+    lastOne = howMany - 1
+    szRem = sz `rem` maxLen
+    lastLen =
+      case szRem == 0 of
+        True -> maxLen
+        False -> szRem
+    go i = f i len
+      where
+        len = case i == lastOne of
+                True -> lastLen
+                False -> maxLen
+
 solDefineType :: DLType -> App ()
 solDefineType t = case t of
   T_Null -> base
   T_Bool -> base
   T_UInt -> base
   T_Bytes sz -> do
-    -- NOTE: This wastes a lot of space, but we can't make fixed bytes larger
-    -- than 32
-    addMap $ "uint8[" <> pretty sz <> "]"
+    -- NOTE: Get rid of this stupidity when
+    -- https://github.com/ethereum/solidity/issues/8772
+    let atsn = solBytesSplit sz $ \i n ->
+          ("elem" <> pretty i, "bytes" <> pretty n)
+    (name, i) <- addName
+    let x = fromMaybe (impossible "bytes") $ solStruct name atsn
+    addDef i x
   T_Digest -> base
   T_Address -> base
   T_Contract -> base
