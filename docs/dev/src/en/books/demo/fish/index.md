@@ -1,5 +1,4 @@
 ---
-menuItem: mi-docs
 pages:
 - Bony Fish: bony-fish
 - Cartilaginous Fish: cartilaginous-fish

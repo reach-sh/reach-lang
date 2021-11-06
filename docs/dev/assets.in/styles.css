@@ -269,14 +269,8 @@ i.fas:hover {cursor: pointer;}
 #page-col img.hh-halign-center {margin-left:auto;margin-right:auto;}
 #page-col img.hh-halign-right {margin-left:auto;margin-right:0;}
 
-#page-col.noscroll::-webkit-scrollbar {
-  display: none;
-}
-
-#page-col.noscroll {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
+.noscroll::-webkit-scrollbar { display: none; }
+.noscroll { -ms-overflow-style: none; scrollbar-width: none; }
 
 p.punch span {color:#F45747;}
 

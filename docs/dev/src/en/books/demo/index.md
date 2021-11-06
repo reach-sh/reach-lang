@@ -6,7 +6,6 @@ chapters:
 - Mammals: mammals
 - Reptiles: reptiles
 - Invertebrates: invertebrates
-menuItem: mi-docs
 ---
 
 # Demo Book

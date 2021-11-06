@@ -1,7 +1,3 @@
----
-menuItem: mi-docs
----
-
 # Auks
 
 ## Heading 2-A
