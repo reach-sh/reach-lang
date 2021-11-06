@@ -1,7 +1,7 @@
 ---
 author: Mohammed Abuelmaali
 hasOtp: false
-menuItem: mi-docs
+menuItem: mi-articles
 publishedDate: 2020-08-30T14:00:00
 ---
 

@@ -1,7 +1,7 @@
 ---
 author: Jay McCarthy
 hasOtp: true
-menuItem: mi-docs
+menuItem: mi-articles
 publishedDate: 2021-10-02T14:00:00
 ---
 
