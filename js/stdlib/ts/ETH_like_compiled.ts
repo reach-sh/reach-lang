@@ -148,7 +148,16 @@ const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, ETH_Bytes> => {
       // debug(me.name, nvs, nvss);
       return me.canonicalize(nvss);
     }),
-    paramType: `uint8[${len}]`,
+    paramType: (() => {
+      let n = len;
+      const fs = [];
+      while ( 0 < n ) {
+        const ell = Math.min(32, n);
+        fs.push(`bytes${ell}`);
+        n = n - ell;
+      }
+      return `tuple(${fs.join(',')})`;
+    })(),
   };
   return me;
 };

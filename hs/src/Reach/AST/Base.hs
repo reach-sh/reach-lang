@@ -268,7 +268,7 @@ data PrimOp
   | BAND
   | BIOR
   | BXOR
-  | BYTES_CONCAT
+  | BYTES_ZPAD Integer
   | MUL_DIV
   deriving (Eq, Generic, NFData, Ord, Show)
 
@@ -288,13 +288,13 @@ instance Pretty PrimOp where
     DIGEST_EQ -> "=="
     ADDRESS_EQ -> "=="
     TOKEN_EQ -> "=="
-    SELF_ADDRESS x y z -> "selfAddress" <> pbrackets [ pretty x, pretty y, pretty z ]
+    SELF_ADDRESS x y z -> "selfAddress" <> parens (render_das [ pretty x, pretty y, pretty z ])
     LSH -> "<<"
     RSH -> ">>"
     BAND -> "&"
     BIOR -> "|"
     BXOR -> "^"
-    BYTES_CONCAT -> "concat"
+    BYTES_ZPAD x -> "zpad" <> parens (pretty x)
     MUL_DIV -> "muldiv"
 
 data SLCtxtFrame

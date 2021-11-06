@@ -755,12 +755,12 @@ cprim = \case
   DIGEST_EQ -> call "=="
   ADDRESS_EQ -> call "=="
   TOKEN_EQ -> call "=="
-  BYTES_CONCAT -> \case
-    [x, y] -> do
+  BYTES_ZPAD xtra -> \case
+    [x] -> do
       ca x
-      ca y
+      padding xtra
       op "concat"
-    _ -> impossible $ "concat"
+    _ -> impossible $ "zpad"
   IF_THEN_ELSE -> \case
     [be, DLA_Literal (DLL_Bool True), DLA_Literal (DLL_Bool False)] -> do
       ca be

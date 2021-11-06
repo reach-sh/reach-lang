@@ -1867,18 +1867,16 @@ evalPrimOp p sargs = do
   at <- withAt id
   let zero = SLV_Int at 0
   case p of
-    BYTES_CONCAT ->
+    BYTES_ZPAD xtra ->
       case args of
-        [SLV_Bytes _ "", rhs] -> static rhs
-        [lhs, SLV_Bytes _ ""] -> static lhs
-        [SLV_Bytes _ lhs, SLV_Bytes _ rhs] -> do
+        [SLV_Bytes _ lhs] -> do
+          let rhs = bytesZero xtra
           static $ SLV_Bytes at $ lhs <> rhs
-        [lhs, rhs] -> do
+        [lhs] -> do
           (lhs_l, lhs_ae) <- typeOfBytes lhs
-          (rhs_l, rhs_ae) <- typeOfBytes rhs
-          let rng = T_Bytes $ lhs_l + rhs_l
-          make_var_ rng [lhs_ae, rhs_ae]
-        _ -> expect_ $ Err_Apply_ArgCount at 2 (length args)
+          let rng = T_Bytes $ lhs_l + xtra
+          make_var_ rng [lhs_ae]
+        _ -> expect_ $ Err_Apply_ArgCount at 1 (length args)
     ADD ->
       case args of
         [SLV_Int _ 0, rhs] -> static rhs
@@ -2290,12 +2288,10 @@ evalPrim p sargs =
       doBalanceInit_ FV_destroyed mtok_a (DLA_Literal $ DLL_Bool False)
       return $ public $ SLV_DLVar tokdv
     SLPrim_padTo len -> do
-      at <- withAt id
       v <- one_arg
       (vl, _) <- typeOfBytes v
       let xtra = fromIntegral $ len - vl
-      let z = public $ SLV_Bytes at $ B.replicate xtra 0
-      evalPrimOp BYTES_CONCAT [public v, z]
+      evalPrimOp (BYTES_ZPAD xtra) [public v]
     SLPrim_race -> do
       at <- withAt id
       ps <- mapM slvParticipant_part $ map snd sargs

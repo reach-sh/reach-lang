@@ -299,7 +299,9 @@ smtPrimOp at p dargs =
     DIGEST_EQ -> app "="
     ADDRESS_EQ -> app "="
     TOKEN_EQ -> app "="
-    BYTES_CONCAT -> app "bytesAppend"
+    (BYTES_ZPAD xtra) -> \args -> do
+      xtra' <- smt_la at $ bytesZeroLit xtra
+      return $ smtApply "bytesAppend" (args <> [ xtra' ])
     MUL_DIV ->
       \case
         [x, y, den] -> return $ smtApply "div" [ smtApply "*" [ x, y ], den ]

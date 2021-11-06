@@ -295,8 +295,11 @@ data DLLargeArg
   | DLLA_Bytes B.ByteString
   deriving (Eq, Ord, Generic, Show)
 
+bytesZero :: Integer -> B.ByteString
+bytesZero k = B.replicate (fromIntegral k) '\0'
+
 bytesZeroLit :: Integer -> DLLargeArg
-bytesZeroLit k = DLLA_Bytes $ B.replicate (fromIntegral k) '\0'
+bytesZeroLit = DLLA_Bytes . bytesZero
 
 instance CanDupe a => CanDupe [a] where
   canDupe = getAll . mconcatMap (All . canDupe)

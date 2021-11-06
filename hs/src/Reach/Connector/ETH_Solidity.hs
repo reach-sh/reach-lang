@@ -493,7 +493,7 @@ solPrimApply = \case
   DIGEST_EQ -> binOp "=="
   ADDRESS_EQ -> binOp "=="
   TOKEN_EQ -> binOp "=="
-  BYTES_CONCAT -> impossible "bytes concat"
+  BYTES_ZPAD {} -> impossible "bytes concat"
   where
     safeOp fun op args = do
       PLOpts {..} <- ctxt_plo <$> ask
@@ -863,8 +863,14 @@ solCom = \case
   DL_Let _ (DLV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv
     solLargeArg dv la
-  DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ BYTES_CONCAT [x, y]) -> do
-    doConcat dv x y
+  DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ (BYTES_ZPAD _) [x]) -> do
+    addMemVar dv
+    dv' <- solVar dv
+    x' <- solArg x
+    let x_sz = arraySize x
+    let go i _ = dv' <> ei <+> "=" <> x' <> ei <> semi
+          where ei = ".elem" <> pretty i
+    return $ vsep $ solBytesSplit x_sz go
   DL_Let _ (DLV_Let _ dv) (DLE_ArrayConcat _ x y) -> do
     doConcat dv x y
   DL_Let _ (DLV_Let _ dv@(DLVar _ _ t _)) (DLE_ArrayZip _ x y) -> do
