@@ -657,10 +657,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             ok_r = await callC(dhead, funcName, arg, pay);
           } catch (e:any) {
             debug(...dhead, `ERROR`, { stack: e.stack }, e);
-            ok_r = undefined;
-          }
-
-          if ( ! ok_r ) {
             if ( ! soloSend ) {
               debug(...dhead, `LOST`);
               return await doRecv(false, false);
@@ -672,7 +668,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               continue;
             } else {
               // Otherwise, something bad is happening
-              throw Error(`${dhead} --- ABORT`);
+              throw Error(`${label} failed to call ${funcName}: ${e}`);
             }
           }
 

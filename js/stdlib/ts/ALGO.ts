@@ -1424,7 +1424,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               continue;
             } else {
               // Otherwise, something bad is happening
-              throw Error(`${dhead} --- ABORT`);
+              throw Error(`${label} failed to call ${funcName}: ${e}`);
             }
           }
 

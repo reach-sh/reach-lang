@@ -526,7 +526,7 @@ instance Show EvalError where
     Err_Eval_RefNotInt slval ->
       "Invalid array index. Expected uint256, got: " <> show_sv slval
     Err_Eval_RefOutOfBounds maxi ix ->
-      "Invalid array index. Expected an index between 0 and " <> show maxi <> ", but got: " <> show ix
+      "Invalid array index. Expected an index greater than or equal to 0 and less than " <> show maxi <> ", but got: " <> show ix
     Err_Eval_UnboundId (LC_RefFrom ctxt) slvar slvars ->
       "Invalid unbound identifier in " <> ctxt <> ": " <> slvar <> didYouMean slvar slvars 5
     Err_Eval_UnboundId LC_CompilerRequired slvar _ ->
