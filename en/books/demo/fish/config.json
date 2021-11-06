@@ -20,7 +20,6 @@
       "Jawless Fish": "jawless-fish"
     }
   ],
-  "menuItem": "mi-docs",
   "title": "Fish",
   "pathname": "/proj/docs/dev/src/en/books/demo/fish"
 }

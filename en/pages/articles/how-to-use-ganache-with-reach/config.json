@@ -1,0 +1,16 @@
+{
+  "background": "white",
+  "hasOtp": false,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
+  "chapters": null,
+  "pages": null,
+  "author": "Mohammed Abuelmaali",
+  "menuItem": "mi-articles",
+  "publishedDate": "2020-08-30T14:00:00.000Z",
+  "title": "How to use Ganache with Reach",
+  "pathname": "/proj/docs/dev/src/en/pages/articles/how-to-use-ganache-with-reach"
+}

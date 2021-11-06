@@ -23,7 +23,6 @@
       "Toads": "toads"
     }
   ],
-  "menuItem": "mi-docs",
   "title": "Amphibians",
   "pathname": "/proj/docs/dev/src/en/books/demo/amphibians"
 }

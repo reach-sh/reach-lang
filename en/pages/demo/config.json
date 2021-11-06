@@ -8,7 +8,6 @@
   "hasRefreshBtn": true,
   "chapters": null,
   "pages": null,
-  "menuItem": "mi-docs",
   "title": "Demo Page",
   "pathname": "/proj/docs/dev/src/en/pages/demo"
 }

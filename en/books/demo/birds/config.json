@@ -86,7 +86,6 @@
       "Wrens": "wrens"
     }
   ],
-  "menuItem": "mi-docs",
   "title": "Birds",
   "pathname": "/proj/docs/dev/src/en/books/demo/birds"
 }

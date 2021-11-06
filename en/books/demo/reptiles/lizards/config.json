@@ -10,7 +10,6 @@
   "bookPath": "en/books/demo",
   "chapters": null,
   "pages": null,
-  "menuItem": "mi-docs",
   "title": "Lizards",
   "pathname": "/proj/docs/dev/src/en/books/demo/reptiles/lizards"
 }

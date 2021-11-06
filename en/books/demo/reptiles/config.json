@@ -26,7 +26,6 @@
       "Turtles and Tortoises": "turtles-and-tortoises"
     }
   ],
-  "menuItem": "mi-docs",
   "title": "Reptiles",
   "pathname": "/proj/docs/dev/src/en/books/demo/reptiles"
 }

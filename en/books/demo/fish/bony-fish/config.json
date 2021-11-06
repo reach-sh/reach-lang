@@ -10,7 +10,6 @@
   "bookPath": "en/books/demo",
   "chapters": null,
   "pages": null,
-  "menuItem": "mi-docs",
   "title": "Bony Fish",
   "pathname": "/proj/docs/dev/src/en/books/demo/fish/bony-fish"
 }

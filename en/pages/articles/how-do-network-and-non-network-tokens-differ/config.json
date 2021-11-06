@@ -1,0 +1,16 @@
+{
+  "background": "white",
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
+  "chapters": null,
+  "pages": null,
+  "author": "Jay McCarthy",
+  "menuItem": "mi-articles",
+  "publishedDate": "2021-10-02T14:00:00.000Z",
+  "title": "How do network and non-network tokens differ?",
+  "pathname": "/proj/docs/dev/src/en/pages/articles/how-do-network-and-non-network-tokens-differ"
+}

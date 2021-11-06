@@ -29,7 +29,6 @@
     }
   ],
   "pages": null,
-  "menuItem": "mi-docs",
   "title": "Demo Book",
   "pathname": "/proj/docs/dev/src/en/books/demo"
 }

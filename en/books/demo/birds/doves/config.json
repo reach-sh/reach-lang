@@ -10,7 +10,6 @@
   "bookPath": "en/books/demo",
   "chapters": null,
   "pages": null,
-  "menuItem": "mi-docs",
   "title": "Doves",
   "pathname": "/proj/docs/dev/src/en/books/demo/birds/doves"
 }

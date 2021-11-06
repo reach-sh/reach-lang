@@ -1,0 +1,16 @@
+{
+  "background": "white",
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
+  "chapters": null,
+  "pages": null,
+  "author": "Jay McCarthy",
+  "menuItem": "mi-articles",
+  "publishedDate": "2020-08-29T14:00:00.000Z",
+  "title": "How does Reach development compare to Solidity development?",
+  "pathname": "/proj/docs/dev/src/en/pages/articles/how-does-reach-development-compare-to-solidity-development"
+}
