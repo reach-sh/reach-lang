@@ -991,7 +991,7 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
     const creation_time = T_UInt.unmunge(creation_time_raw);
     creation_block = bigNumberify(creation_time).toNumber();
   } catch (e) {
-    chk(false, `The contract is not a Reach contract: ${e}`);
+    chk(false, `Failed to call the '_reachCreationTime' method on the contract ${address} during contract bytecode verification. This could mean that there is a general network fault, or it could mean that the given address is not a Reach contract and does not provide this function. The internal error we caught is: ${e}`);
   }
 
   const chkeq = (a: any, e:any, msg:string) => {

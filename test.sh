@@ -118,11 +118,7 @@ tealcount () {
 
 jb
 #c examples/dan-storage/index.rsh
-ci ETH zbeq
-ci ETH dan-storage
-ci ETH mint-basic
-ci ALGO dan-storage
-ci ALGO mint-basic
+ci ETH tut-7
 exit 0
 
 c examples/atomic-swap-auction/index.rsh
