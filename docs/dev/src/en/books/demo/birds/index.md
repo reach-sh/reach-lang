@@ -1,5 +1,4 @@
 ---
-menuItem: mi-docs
 pages:
 - Auks: auks
 - Blackbirds: blackbirds

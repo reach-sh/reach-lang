@@ -1,5 +1,4 @@
 ---
-menuItem: mi-docs
 pages:
 - Afrosoricida: afrosoricida
 - Artiodactyla: artiodactyla

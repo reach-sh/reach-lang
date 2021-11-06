@@ -1,5 +1,4 @@
 ---
-menuItem: mi-docs
 pages:
 - Frogs: frogs
 - Newts: newts

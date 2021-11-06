@@ -1,5 +1,4 @@
 ---
-menuItem: mi-docs
 pages:
 - Crocodilians: crocodilians
 - Lizards: lizards
