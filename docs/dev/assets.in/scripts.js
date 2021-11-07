@@ -1,3 +1,7 @@
+import algoliasearch from 'https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.esm.browser.js';
+const client = algoliasearch('WTEWG2I8PH', 'cdf7770e846ff4e95802411b91afbba6');
+const index = client.initIndex('rdp_en');
+
 const currentPage = {
   folder: null,
   bookPath: null,
@@ -194,7 +198,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   // console.log({ folder, hash, url, configJsonUrl, pageHtmlUrl, otpHtmlUrl, folderId });
 
   try {
-    let [ configJson, pageHtml, otpHtml ] =
+    let [configJson, pageHtml, otpHtml] =
       (await Promise.all([
         axios.get(configJsonUrl),
         axios.get(pageHtmlUrl),
@@ -288,6 +292,45 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
       document.getElementById('page-col').classList.remove('noscroll');
     } else {
       document.getElementById('page-col').classList.add('noscroll');
+    }
+
+    // If search page.
+    let searchBtn = document.getElementById('search-btn');
+    if (searchBtn) {
+      let searchInput = document.getElementById('search-input');
+
+      searchBtn.addEventListener('click', (event) => {
+        index.search(searchInput.value).then(({ hits }) => {
+          if(hits.length) {
+            let searchResultsList = document.getElementById('search-results-list');
+            searchResultsList.innerHTML = '';
+            hits.forEach((el, index) => {
+              console.log(JSON.stringify(el, null, 2));
+              let a = document.createElement('a');
+              a.href = el.url;
+              let anchorTextSpan = document.createElement('span');
+              anchorTextSpan.innerHTML = el._highlightResult.title.value;
+              a.append(anchorTextSpan);
+              let summarySpan = document.createElement('span');
+              summarySpan.innerHTML = ` - ${el._highlightResult.summary.value}`;
+              let li = document.createElement('li');
+              li.append(a);
+              li.append(summarySpan);
+              searchResultsList.append(li);
+            });
+          }
+        });
+      });
+
+      searchInput.addEventListener('keyup', function (event) {
+        console.log('keyup');
+        if (event.keyCode === 13) {
+          event.preventDefault();
+          searchBtn.click();
+        }
+      });
+
+      searchInput.focus();
     }
 
     // On click link on page.
