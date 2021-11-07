@@ -522,3 +522,16 @@ iframe.gray-scale {
 .angellist_jobs-title-link:active {font-weight: bold !important; }
 
 div.social-icons a i {color:#595959;}
+
+/************************************************
+ Search
+************************************************/
+
+#search-results-list li {
+  margin-top: 18px;
+}
+
+#search-results-list span em {
+  color: orange;
+  font-style: normal;
+}
