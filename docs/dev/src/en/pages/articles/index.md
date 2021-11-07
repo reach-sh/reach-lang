@@ -5,6 +5,12 @@ menuItem: mi-articles
 
 # Tech Notes
 
+# [How to sponsor a Reach contract on Conflux](/en/pages/articles/how-to-sponsor-a-reach-contract-on-conflux/)
+
+<small class="text-muted">By Ivan Lin on November 4, 2021</small>
+
+This article shows you how to pay the gas and storage fees on behalf of participants that visit a Reach smart contract deployed on the Conflux MainNet or TestNet.
+
 # [How to use Ganache with Reach](/en/pages/articles/how-to-use-ganache-with-reach/)
 
 <small class="text-muted">By Mohammed Abuelmaali on August 30, 2021</small>
