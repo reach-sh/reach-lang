@@ -93,10 +93,15 @@ jobs:
     - and_restore_docker:
         deps: "stdlib"
     - run: |
-        git clone https://github.com/reach-sh/js-reach-stdlib.git /tmp/workspace/stdlib
-        cd /tmp/workspace/stdlib
-        make refresh
-        make bump-version-and-publish
+        cd js/stdlib
+        make clone-js-stdlib
+        make refresh-js-stdlib
+        is_rc=$(echo ${CIRCLE_TAG} | grep rc > /dev/null ; echo $?)
+        if [ $is_rc -eq 0 ] ; then
+          make finalize-patch-js-stdlib
+        else
+          make bump-version-and-publish-js-stdlib 
+        fi  
   "deploy-images":
     executor: real
     steps:
