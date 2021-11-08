@@ -8,7 +8,9 @@
   "hasRefreshBtn": true,
   "chapters": null,
   "pages": null,
+  "author": "Jay McCarthy",
   "menuItem": "mi-articles",
-  "title": "Articles",
-  "pathname": "/proj/docs/dev/src/en/pages/articles"
+  "publishedDate": "2020-08-29T14:00:00.000Z",
+  "title": "How does Reach work?",
+  "pathname": "/proj/docs/dev/src/en/pages/articles/how-does-reach-work"
 }

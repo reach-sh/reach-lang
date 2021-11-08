@@ -11,6 +11,7 @@
   "chapters": null,
   "pages": null,
   "menuItem": "mi-docs",
-  "title": "Support for JS Frontends",
-  "pathname": "/proj/docs/dev/src/en/books/essentials/support-for-js-frontends-new"
+  "src": "ref-frontends-rpc-py.md",
+  "title": "Python (RPC)",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/rpc-frontends/python-rpc"
 }

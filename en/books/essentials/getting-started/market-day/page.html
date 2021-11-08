@@ -1,8 +1,8 @@
-<p>This tutorial builds upon <a href="/en/books/essentials/tutorials/wisdom-for-sale/">Wisdom for Sale</a> by demonstrating how to use a variety of data types (string, integer, boolean, object, and array) in interact objects. You should complete <a href="/en/books/essentials/tutorials/wisdom-for-sale/">Wisdom for Sale</a> before continuing.</p>
-<p>The tutorial shows you how to build <a href="https://github.com/hagenhaus/market-day">Market Day</a>, a command-line and web-based application that enables two participants, a seller and a buyer, to trade vegetables for tokens via a smart contract running on a private Algorand, Ethereum, or Conflux consensus network residing in a Docker container on your computer. Your DApp creates and funds two accounts (one for each participant), enables the seller and buyer to make a transaction, and exits.</p>
-<p>The contract in this tutorial supports a single transaction between a seller and a buyer. Other tutorials present contracts that support transactions between a seller and multiple buyers.</p>
+<p>This module builds upon <a href="/en/books/essentials/getting-started/wisdom-for-sale/">Wisdom for Sale</a> by demonstrating how to use a variety of data types (string, integer, boolean, object, and array) in interact objects. You should complete <a href="/en/books/essentials/getting-started/wisdom-for-sale/">Wisdom for Sale</a> before continuing.</p>
+<p>The module shows you how to build <a href="https://github.com/hagenhaus/market-day">Market Day</a>, a command-line and web-based application that enables two participants, a seller and a buyer, to trade vegetables for tokens via a smart contract running on a private Algorand, Ethereum, or Conflux consensus network residing in a Docker container on your computer. Your DApp creates and funds two accounts (one for each participant), enables the seller and buyer to make a transaction, and exits.</p>
+<p>The contract in this module supports a single transaction between a seller and a buyer. Other modules present contracts that support transactions between a seller and multiple buyers.</p>
 <h1 id="learning-objectives">Learning Objectives</h1>
-<p>The following learning objectives describe what you will be able to do as a result of completing this tutorial.</p>
+<p>The following learning objectives describe what you will be able to do as a result of completing this module.</p>
 <ol>
   <li>Visualize Reach command-line DApp design</li>
   <li>Implement strings, integers, booleans, objects, and arrays in interact object.</li>
@@ -14,7 +14,7 @@
 </div>
 <p>The contract automatically supplies a product list to the buyer who chooses a product type, chooses a quantity, and confirms the purchase. Once the buyer completes or cancels the purchase, the contract exits.</p>
 <h1 id="clone-and-run">Clone and run</h1>
-<p>This section shows you how to clone the tutorial repository.</p>
+<p>This section shows you how to clone the repository used in this module.</p>
 <ol>
   <li>
     <p>Clone the <a href="https://github.com/hagenhaus/market-day">market-day</a> repository:</p>
@@ -70,7 +70,7 @@
   </li>
 </ol>
 <h1 id="examine-dapp-design">Examine DApp design</h1>
-<p>The starter files for this tutorial may seem, at first glance, more complex than the starter files for the Wisdom for Sale tutorial. But, upon closer inspection, you will notice that they consist of boilerplate code useful for starting any Reach command-line DApp. Together, a Reach DApp frontend (index.mjs) and backend (index.rsh) reflect, roughly, the organization illustrated in the diagram below:</p>
+<p>The starter files for this module may seem, at first glance, more complex than the starter files for the Wisdom for Sale module. But, upon closer inspection, you will notice that they consist of boilerplate code useful for starting any Reach command-line DApp. Together, a Reach DApp frontend (index.mjs) and backend (index.rsh) reflect, roughly, the organization illustrated in the diagram below:</p>
 <div>
   <img src="/en/books/essentials/getting-started/market-day/design.png" class="img-fluid my-4 d-block" width="900" height="475" loading="lazy">
 </div>

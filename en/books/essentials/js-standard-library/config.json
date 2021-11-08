@@ -11,6 +11,7 @@
   "chapters": null,
   "pages": null,
   "menuItem": "mi-docs",
-  "title": "Account Object",
-  "pathname": "/proj/docs/dev/src/en/books/essentials/support-for-js-frontends-new/account"
+  "src": "ref-frontends-js.md",
+  "title": "JavaScript",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/js-standard-library"
 }

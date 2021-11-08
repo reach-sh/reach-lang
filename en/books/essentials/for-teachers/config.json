@@ -6,8 +6,11 @@
   "hasPageScrollbar": true,
   "hasEditBtn": true,
   "hasRefreshBtn": true,
+  "bookTitle": "Reach Essentials",
+  "bookPath": "en/books/essentials",
   "chapters": null,
   "pages": null,
-  "title": "Candidate Discussion Outline",
-  "pathname": "/proj/docs/dev/src/en/pages/A73E5D9B"
+  "menuItem": "mi-docs",
+  "title": "For Teachers",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/for-teachers"
 }

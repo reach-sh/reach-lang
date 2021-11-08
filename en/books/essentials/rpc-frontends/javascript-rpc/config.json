@@ -11,6 +11,7 @@
   "chapters": null,
   "pages": null,
   "menuItem": "mi-docs",
-  "title": "Stdlib Object",
-  "pathname": "/proj/docs/dev/src/en/books/essentials/support-for-js-frontends-new/stdlib"
+  "src": "ref-frontends-rpc-js.md",
+  "title": "JavaScript (RPC)",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/rpc-frontends/javascript-rpc"
 }

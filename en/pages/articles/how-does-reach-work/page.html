@@ -1,0 +1,22 @@
+<p>It is not necessary to understand how Reach works to use it effectively, but many users are curious about how it works. The Reach compiler uses the following strategy for analysis and compiling programs:</p>
+<ol>
+  <li>
+    <p>A partial evaluation of the source program that removes all function calls &amp; compile-time values.</p>
+  </li>
+  <li>
+    <p>A linearization of the residual program that removes the need for a runtime stack to track any consensus state.</p>
+  </li>
+  <li>
+    <p>A conservative (sound) analysis of the knowledge of each participant.</p>
+  </li>
+  <li>
+    <p>A reduction of the program to an instance of an SMT (<a href="http://en.wikipedia.org/wiki/Satisfiability_Modulo_Theories">satisfiability modulo theories</a>) theory of decentralized applications.</p>
+  </li>
+  <li>
+    <p>An end-point projection of the linearization to produce a perspective for each participant, as well as the consensus.</p>
+  </li>
+  <li>
+    <p>A single-pass top-down construction of backend and consensus programs.</p>
+  </li>
+</ol>
+<p>Reach is proud to be implemented in <a href="https://en.wikipedia.org/wiki/Haskell_(programming_language)">Haskell</a> using the <a href="https://en.wikipedia.org/wiki/Glasgow_Haskell_Compiler">Glasgow Haskell Compiler</a>; use the <a href="https://en.wikipedia.org/wiki/Z3_Theorem_Prover">Z3 theorem prover</a> for verification; and use <a href="https://www.docker.com/">Docker</a> for containerization.</p>

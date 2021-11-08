@@ -11,7 +11,6 @@
   "chapters": null,
   "pages": null,
   "menuItem": "mi-docs",
-  "src": "ref-frontends-rpc-go.md",
-  "title": "Go (RPC)",
-  "pathname": "/proj/docs/dev/src/en/books/essentials/support-for-rpc-frontends/go-rpc"
+  "title": "Install and Run",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/getting-started/install-and-run"
 }
