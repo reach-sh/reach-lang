@@ -86,6 +86,7 @@ instance Sanitize DLExpr where
     DLE_GetContract _ -> DLE_GetContract sb
     DLE_GetAddress _ -> DLE_GetAddress sb
     DLE_EmitLog _ m a -> DLE_EmitLog sb m (sani a)
+    DLE_setApiDetails _ w t c -> DLE_setApiDetails sb w t c
 
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m
@@ -106,7 +107,6 @@ instance Sanitize DLStmt where
     DL_MapReduce _ mri a b c d e f ->
       DL_MapReduce sb mri a b (sani c) d e (sani f)
     DL_LocalDo _ t -> DL_LocalDo sb (sani t)
-    DL_setApiDetails _ b tys mc -> DL_setApiDetails sb b tys mc
 
 instance Sanitize DLTail where
   sani = \case

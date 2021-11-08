@@ -100,6 +100,7 @@ instance Subst DLExpr where
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at m x -> DLE_EmitLog at m <$> subst x
+    DLE_setApiDetails at who ts ci -> return $ DLE_setApiDetails at who ts ci
 
 instance Subst DLStmt where
   subst = \case
@@ -117,8 +118,6 @@ instance Subst DLStmt where
     DL_MapReduce at mri x a b u v bl ->
       DL_MapReduce at mri x a <$> subst b <*> pure u <*> pure v <*> subst bl
     DL_LocalDo at t -> DL_LocalDo at <$> subst t
-    DL_setApiDetails at p tys mc ->
-      return $ DL_setApiDetails at p tys mc
 
 instance Subst DLTail where
   subst = \case

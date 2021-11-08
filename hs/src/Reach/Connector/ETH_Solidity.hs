@@ -397,6 +397,7 @@ instance DepthOf DLExpr where
     DLE_GetContract {} -> return 1
     DLE_GetAddress {} -> return 1
     DLE_EmitLog _ _ a -> add1 $ depthOf a
+    DLE_setApiDetails {} -> return 0
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])
@@ -644,6 +645,7 @@ solExpr sp = \case
   DLE_GetContract {} -> return $ "payable(address(this))"
   DLE_GetAddress {} -> return $ "payable(address(this))"
   DLE_EmitLog {} -> impossible "emitLog"
+  DLE_setApiDetails {} -> impossible "setApiDetails"
   where
     spa m = (<> sp) <$> m
 
@@ -911,6 +913,7 @@ solCom = \case
         addMemVar dv
         de' <- solExpr emptyDoc de
         return $ solSet (solMemVar dv) de'
+  DL_Let _ _ (DLE_setApiDetails {}) -> mempty
   DL_Let _ DLV_Eff de -> solExpr semi de
   DL_Var _ dv -> do
     addMemVar dv
@@ -963,7 +966,6 @@ solCom = \case
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
   DL_LocalDo _ t -> solPLTail t
-  DL_setApiDetails {} -> mempty
 
 solCom_ :: AppT a -> DLStmt -> AppT a
 solCom_ iter m k = do

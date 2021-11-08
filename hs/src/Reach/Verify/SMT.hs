@@ -1052,6 +1052,7 @@ smt_e at_dv mdv de = do
     DLE_GetContract at -> unbound at
     DLE_GetAddress at -> unbound at
     DLE_EmitLog at _ v -> bound at =<< smt_v at v
+    DLE_setApiDetails {} -> mempty
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)
@@ -1132,7 +1133,6 @@ smt_m = \case
   DL_Only _at (Left who) loc -> smt_lm who loc
   DL_Only {} -> impossible $ "right only before EPP"
   DL_LocalDo _ t -> smt_l t
-  DL_setApiDetails {} -> mempty
 
 smt_l :: DLTail -> App ()
 smt_l = \case

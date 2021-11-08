@@ -246,10 +246,10 @@ type ViewInfos = M.Map Int ViewInfo
 
 type CPViews = DLViews
 
-type ApiInfo = M.Map SLPart ([DLType], (Maybe String), Int)
+type ApiInfos = M.Map SLPart ApiInfo
 
 data CPProg
-  = CPProg SrcLoc (CPViews, ViewInfos) ApiInfo CHandlers
+  = CPProg SrcLoc (CPViews, ViewInfos) ApiInfos CHandlers
   deriving (Eq)
 
 instance Pretty CPProg where

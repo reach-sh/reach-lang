@@ -153,6 +153,7 @@ instance Countable DLExpr where
     DLE_GetContract _ -> mempty
     DLE_GetAddress _ -> mempty
     DLE_EmitLog _ _ a -> counts a
+    DLE_setApiDetails {} -> mempty
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m
@@ -212,4 +213,3 @@ instance CountableK DLStmt where
     DL_MapReduce _ _ ans _ z b a f ->
       count_rms [ans, b, a] (counts f <> kcs) <> counts z
     DL_LocalDo _ t -> countsk kcs t
-    DL_setApiDetails {} -> kcs

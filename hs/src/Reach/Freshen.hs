@@ -134,6 +134,7 @@ instance Freshen DLExpr where
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at m a -> DLE_EmitLog at m <$> fu a
+    DLE_setApiDetails at w t c -> return $ DLE_setApiDetails at w t c
 
 instance {-# OVERLAPS #-} Freshen k => Freshen (SwitchCases k) where
   fu = mapM (\(vn, vnu, k) -> (,,) <$> fu_v vn <*> pure vnu <*> fu k)
@@ -172,7 +173,6 @@ instance Freshen DLStmt where
       fb' <- fu fb
       return $ DL_MapReduce at mri ans' x z' b' a' fb'
     DL_LocalDo at t -> DL_LocalDo at <$> fu t
-    DL_setApiDetails at p tys mc -> return $ DL_setApiDetails at p tys mc
 
 instance Freshen DLPayAmt where
   fu = \case

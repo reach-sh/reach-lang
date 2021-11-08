@@ -127,6 +127,7 @@ instance CollectsTypes DLExpr where
     DLE_GetContract _ -> mempty
     DLE_GetAddress _ -> mempty
     DLE_EmitLog _ _ a -> cts a
+    DLE_setApiDetails {} -> mempty
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m
@@ -149,7 +150,6 @@ instance CollectsTypes DLStmt where
   cts (DL_Only _ _ b) = cts b
   cts (DL_MapReduce _ _ ans _ z b a f) = cts ans <> cts z <> cts b <> cts a <> cts f
   cts (DL_LocalDo _ t) = cts t
-  cts (DL_setApiDetails {}) = mempty
 
 instance CollectsTypes DLTail where
   cts (DT_Return _) = mempty

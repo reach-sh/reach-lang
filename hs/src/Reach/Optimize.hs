@@ -336,6 +336,7 @@ instance Optimize DLExpr where
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at m a -> DLE_EmitLog at m <$> opt a
+    DLE_setApiDetails at w t c -> return $ DLE_setApiDetails at w t c
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
 
@@ -453,7 +454,6 @@ instance Optimize DLStmt where
       opt t >>= \case
         DT_Return _ -> return $ DL_Nop at
         t' -> return $ DL_LocalDo at t'
-    DL_setApiDetails a p tys mc -> return $ DL_setApiDetails a p tys mc
     where
       maybeUnroll :: DLStmt -> DLArg -> App DLStmt -> App DLStmt
       maybeUnroll s x def =

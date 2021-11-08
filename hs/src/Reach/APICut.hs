@@ -98,7 +98,6 @@ instance Contains DLStmt where
     DL_Only _ (Right _) t -> has q t
     DL_Only {} -> False
     DL_MapReduce {} -> False
-    DL_setApiDetails {} -> False
 
 instance Contains DLTail where
   has q = \case

@@ -172,7 +172,7 @@ data BEnv = BEnv
   , be_inConsensus :: Bool
   , be_counter :: Counter
   , be_which :: Int
-  , be_api_info :: IORef (M.Map SLPart ([DLType], (Maybe String), Int))
+  , be_api_info :: IORef (M.Map SLPart ApiInfo)
   }
 
 type BApp = ReaderT BEnv IO
@@ -352,6 +352,10 @@ be_m = \case
     case de of
       DLE_Remote {} -> recordOutputVar mdv
       DLE_EmitLog {} -> fg_use de
+      DLE_setApiDetails _ p tys mc -> do
+        which <- asks be_which
+        api_info <- asks be_api_info
+        liftIO $ modifyIORef api_info $ M.insert p $ ApiInfo tys mc which
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
@@ -419,11 +423,6 @@ be_m = \case
     (t'c, t'l) <- be_t t
     let mk = DL_LocalDo at
     return $ (,) (mk <$> t'c) (mk <$> t'l)
-  DL_setApiDetails at p tys mc -> do
-    which <- asks be_which
-    api_info <- asks be_api_info
-    liftIO $ modifyIORef api_info $ M.insert p (tys, mc, which)
-    nop at
   where
     nop at = retb0 $ const $ return $ DL_Nop at
 

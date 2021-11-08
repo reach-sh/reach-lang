@@ -1755,7 +1755,7 @@ evalForm f args = do
                 e <- evalExpr msg
                 (dt, _) <- compileTypeOf $ snd e
                 return [dt]
-      saveLift $ DLS_setApiDetails at who tys mCaseId
+      ctxt_lift_eff $ DLE_setApiDetails at who tys mCaseId
       return $ public $ SLV_Null at "setApiDetails"
   where
     illegal_args n = expect_ $ Err_Form_InvalidArgs f n args

@@ -246,6 +246,7 @@ kgq_e ctxt mv = \case
   DLE_GetContract {} -> mempty
   DLE_GetAddress {} -> mempty
   DLE_EmitLog _ _ v -> kgq_a_onlym ctxt mv $ DLA_Var v
+  DLE_setApiDetails {} -> mempty
 
 kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case
@@ -281,7 +282,6 @@ kgq_m ctxt = \case
       >> kgq_a_only ctxt ans r
       >> kgq_l ctxt f
   DL_LocalDo _ t -> kgq_l ctxt t
-  DL_setApiDetails {} -> mempty
 
 kgq_l :: KCtxt -> DLTail -> IO ()
 kgq_l ctxt = \case

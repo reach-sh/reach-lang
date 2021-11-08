@@ -457,7 +457,7 @@ jsExpr = \case
     txn' <- jsTxn
     dvt' <- jsContract $ varType dv
     return $ "await" <+> txn' <> "." <> jsApply "getOutput" [squotes (pretty mode), squotes dv', dvt', dv']
-
+  DLE_setApiDetails {} -> return "undefined"
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
   ov' <- jsVar ov
@@ -520,7 +520,6 @@ jsCom = \case
       False -> mempty
   DL_Only {} -> impossible $ "left only after EPP"
   DL_LocalDo _ t -> jsPLTail t
-  DL_setApiDetails {} -> mempty
 
 jsPLTail :: AppT DLTail
 jsPLTail = \case
