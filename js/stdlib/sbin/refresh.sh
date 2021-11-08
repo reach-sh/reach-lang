@@ -5,7 +5,7 @@ git diff --exit-code || (printf '\n\n\nGit repo is not clean; please commit firs
 
 IMAGE=reachsh/stdlib:latest
 HASH="$(docker run --entrypoint /bin/sh "$IMAGE" -c 'echo $REACH_GIT_HASH')"
-if [ "$(echo "$HASH" | wc -c)" = "9" ]; then
+if [ $(echo "$HASH" | wc -c) -eq 9 ]; then
   :
 else
   set +x
