@@ -171,8 +171,6 @@ dk1 k s =
     DLS_ViewIs at vn vk mva -> do
       mva' <- maybe (return $ Nothing) (\eb -> Just <$> dk_eb eb) mva
       return $ DK_ViewIs at vn vk mva' k
-    DLS_setApiDetails at p tys mc ->
-      com $ DKC_setApiDetails at p tys mc
   where
     com :: DKCommon -> DKApp DKTail
     com = flip com'' k
@@ -399,7 +397,6 @@ df_com mkk back = \case
         DKC_Let a b c -> return $ DL_Let a b c
         DKC_ArrayMap a b c d x -> DL_ArrayMap a b c d <$> df_bl x
         DKC_ArrayReduce a b c d e f x -> DL_ArrayReduce a b c d e f <$> df_bl x
-        DKC_setApiDetails a p tys mc -> return $ DL_setApiDetails a p tys mc
         DKC_Var a b -> return $ DL_Var a b
         DKC_Set a b c -> return $ DL_Set a b c
         DKC_LocalDo a x -> DL_LocalDo a <$> df_t x

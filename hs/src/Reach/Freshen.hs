@@ -174,7 +174,6 @@ instance Freshen DLStmt where
       fb' <- fu fb
       return $ DL_MapReduce at mri ans' x z' b' a' fb'
     DL_LocalDo at t -> DL_LocalDo at <$> fu t
-    DL_setApiDetails at p tys mc -> return $ DL_setApiDetails at p tys mc
 
 instance Freshen DLPayAmt where
   fu = \case

@@ -455,7 +455,6 @@ instance Optimize DLStmt where
       opt t >>= \case
         DT_Return _ -> return $ DL_Nop at
         t' -> return $ DL_LocalDo at t'
-    DL_setApiDetails a p tys mc -> return $ DL_setApiDetails a p tys mc
     where
       maybeUnroll :: DLStmt -> DLArg -> App DLStmt -> App DLStmt
       maybeUnroll s x def =

@@ -966,7 +966,6 @@ solCom = \case
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
   DL_LocalDo _ t -> solPLTail t
-  DL_setApiDetails {} -> mempty
 
 solCom_ :: AppT a -> DLStmt -> AppT a
 solCom_ iter m k = do

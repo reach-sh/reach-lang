@@ -117,7 +117,6 @@ instance AC DLStmt where
       ac_visit $ z
       return $ DL_MapReduce at mri ans x z b a f'
     DL_LocalDo at t -> DL_LocalDo at <$> ac t
-    DL_setApiDetails at p tys mc -> return $ DL_setApiDetails at p tys mc
     where
       skip at = return $ DL_Nop at
 

@@ -115,7 +115,6 @@ data DLSStmt
   | DLS_Throw SrcLoc DLArg Bool
   | DLS_Try SrcLoc DLStmts DLVar DLStmts
   | DLS_ViewIs SrcLoc (Maybe SLPart) SLVar (Maybe DLSExportBlock)
-  | DLS_setApiDetails SrcLoc SLPart [DLType] (Maybe String)
   deriving (Eq, Generic)
 
 instance Pretty DLSStmt where
@@ -156,7 +155,6 @@ instance Pretty DLSStmt where
       DLS_Throw _ dv local -> if local then "local" else "nonlocal" <+> "throw" <+> pretty dv
       DLS_Try _ e hv hs -> "try" <+> ns e <+> "catch" <+> parens (pretty hv) <+> ns hs
       DLS_ViewIs _ v k a -> prettyViewIs v k a
-      DLS_setApiDetails _ p tys mc -> "setApiDetails" <> parens (render_das [pretty p, pretty tys, pretty mc])
     where
       ns x = render_nest $ render_dls x
 
@@ -185,7 +183,6 @@ instance SrcLocOf DLSStmt where
     DLS_Throw a _ _ -> a
     DLS_Try a _ _ _ -> a
     DLS_ViewIs a _ _ _ -> a
-    DLS_setApiDetails a _ _ _ -> a
 
 instance HasPurity DLSStmt where
   hasPurity = \case
@@ -209,7 +206,6 @@ instance HasPurity DLSStmt where
     DLS_Throw {} -> fb False
     DLS_Try _ b _ h -> hasPurity b <> hasPurity h
     DLS_ViewIs {} -> fb False
-    DLS_setApiDetails {} -> fb True
     where
       rm r = \case
         ImpureUnless rs -> impureUnless $ S.delete r rs
@@ -240,7 +236,6 @@ instance IsLocal DLSStmt where
     DLS_Throw _ _ local -> local
     DLS_Try _ b _ h -> isLocal b && isLocal h
     DLS_ViewIs {} -> False
-    DLS_setApiDetails {} -> False
 
 type DLStmts = Seq.Seq DLSStmt
 
