@@ -482,10 +482,10 @@ iframe.gray-scale {
 */
 
 /************************************************
- Tutorial Cards
+ Module Cards
 ************************************************/
 
-#page-col div.card {background: #f9ebd2; border-color: #f9ebd2;}
+#page-col div.card {background: #f0f8ff; border-color: #f0f8ff;}
 
 #page-col div.card a,
 #page-col div.card a:active,
@@ -495,10 +495,10 @@ iframe.gray-scale {
   color: var(--bs-body-color);
 }
 
-#page-col div.card small {color: #5a3f0c;}
+#page-col div.card small {color: #00294d;}
 
 #page-col div.card:hover,
-#page-col div.card:focus {background: wheat; border-color: wheat;}
+#page-col div.card:focus {background: #e6f3ff; border-color: #e6f3ff;}
 
 /************************************************
  banish

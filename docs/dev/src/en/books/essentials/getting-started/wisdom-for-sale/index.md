@@ -4,11 +4,11 @@ menuItem: mi-docs
 
 # Wisdom for Sale
 
-This tutorial shows you how to build [Wisdom for Sale](https://github.com/hagenhaus/wisdom-for-sale), a command-line and web-based application that enables two participants, a seller and a buyer, to trade wisdom for tokens via a smart contract running on a private Algorand, Ethereum, or Conflux consensus network residing in a Docker container on your computer. Your DApp creates and funds two accounts (one for each participant), enables the seller and buyer to make a transaction, and exits.
+This module shows you how to build [Wisdom for Sale](https://github.com/hagenhaus/wisdom-for-sale), a command-line and web-based application that enables two participants, a seller and a buyer, to trade wisdom for tokens via a smart contract running on a private Algorand, Ethereum, or Conflux consensus network residing in a Docker container on your computer. Your DApp creates and funds two accounts (one for each participant), enables the seller and buyer to make a transaction, and exits.
 
 # Learning Objectives
 
-The following learning objectives describe what you will be able to do as a result of completing this tutorial.
+The following learning objectives describe what you will be able to do as a result of completing this module.
 
 1. Define essential Reach terms.
 1. Build a simple Reach command-line DApp.
@@ -24,7 +24,7 @@ This particular transaction took place on an Algorand devnet. The Algorand crypt
 
 # Clone the repository
 
-This section shows you how to clone the tutorial repository.
+This section shows you how to clone the repository used in this module.
 
 1. Clone the [wisdom-for-sale](https://github.com/hagenhaus/wisdom-for-sale) repository:
 
@@ -121,7 +121,7 @@ Follow these steps to run the DApp:
 
 1. Repeat the first two steps for `CFX` and `ETH`.
 
-> For consistency, output in this tutorial reflects `REACH_CONNECTOR_MODE=ALGO-devnet`.
+> For consistency, output in this module reflects `REACH_CONNECTOR_MODE=ALGO-devnet`.
 
 Where does your DApp run? In your current environment, the Reach Compiler, the consensus network devnets, your application, and the smart contract run on your computer in Docker containers instantiated from Reach Docker images.
 
@@ -278,7 +278,7 @@ This section shows you how to tell your DApp whether to run as the seller or the
 
 This section shows you how to leverage the [yargs](https://www.npmjs.com/package/yargs) Node.js package to manage command-line arguments as an alternative to using the simple technique described above.  
 
-This section is **optional**. If you do **not** want to add a Node.js package to your DApp at this time, you can skip to the next section, continuing to use the following commands throughout the remainder of this tutorial:
+This section is **optional**. If you do **not** want to add a Node.js package to your DApp at this time, you can skip to the next section, continuing to use the following commands throughout the remainder of this module:
 
 ``` nonum
 $ reach run index seller
@@ -399,7 +399,7 @@ Adding a Node.js package to your Reach DApp is easy:
     Your role is buyer.
     ```
 
-For the remainder of the tutorial, remember to use the `-r` flag.
+For the remainder of the module, remember to use the `-r` flag.
 
 # Explore units and balances
 
@@ -510,7 +510,7 @@ This section shows you how to have the seller (1) deploy the contract and (2) re
 |Conflux|`"NET999:TYPE.CONTRACT:ACDWGDGH6DKDAJ528Y5CCWMX8NBVPHXU72S3FPF8CY"`|
 |Ethereum|`"0x403372276F841d7451E6417Cc7B17fDD159FE34C"`|
 
-In this tutorial, the seller outputs the contract information to the Seller Terminal, and the buyer copies & pastes the contract information from the Seller Terminal to the Buyer Terminal (including the quotation marks if persent). In real life, the seller would need to search for a contract name and its associated contract information in some repository. 
+In this module, the seller outputs the contract information to the Seller Terminal, and the buyer copies & pastes the contract information from the Seller Terminal to the Buyer Terminal (including the quotation marks if persent). In real life, the seller would need to search for a contract name and its associated contract information in some repository. 
 
 <button class="btn btn-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#fsci" aria-expanded="false">
   <i class="fas fa-info-circle me-2"></i><span>Storing and Finding Contract Information</span>
@@ -544,7 +544,7 @@ Follow these directions to have the seller deploy the contract and return the co
     };
     ```
 
-    You will add a `wisdom` property to the `sellerInteract` later in the tutorial.
+    You will add a `wisdom` property to the `sellerInteract` later in the module.
 
 1. In *index.rsh*, find the following line:
 
@@ -602,7 +602,7 @@ Follow these directions to have the seller deploy the contract and return the co
 
     The seller creates the contract, retrieves the contract information, and makes it available to the buyer who will (shortly) use the information to attach to the contract. Note that simply deploying the contract cost the seller gas.
 
-The interact objects introduced in this section facilitate communication between the frontend (e.g. `index.mjs`) and backend (e.g. `index.main.mjs`) of Reach applications, (remembering that `index.rsh` is the pre-compiled version of `index.main.mjs`). The [Market Day](/en/books/essentials/tutorials/market-day/) tutorial explores interact objects in more detail. 
+The interact objects introduced in this section facilitate communication between the frontend (e.g. `index.mjs`) and backend (e.g. `index.main.mjs`) of Reach applications, (remembering that `index.rsh` is the pre-compiled version of `index.main.mjs`). The [Market Day](/en/books/essentials/getting-started/market-day/) module explores interact objects in more detail. 
 
 # Attach to the contract (buyer)
 
@@ -722,7 +722,7 @@ The dark blue boxes in the diagram represent modes. The light blue boxes represe
 
 ### Init Mode
 
-Application Initialization defines participants and views (see [View the contract](#view-the-contract) later in the tutorial). It also, optionally, overrides default compile options. Lines 2 and 3 below occur in the *Init* mode:
+Application Initialization defines participants and views (see [View the contract](#view-the-contract) later in the module). It also, optionally, overrides default compile options. Lines 2 and 3 below occur in the *Init* mode:
 
 ``` js
 export const main = Reach.App(() => {
@@ -759,7 +759,7 @@ S.only(() => { const price = declassify(interact.price); });
 
 ### Consensus Step Mode
 
-A Consensus Step specifies actions taken by the contract itself. Later in this tutorial, the contract calls `transfer` to transfer funds from the contract to the seller.
+A Consensus Step specifies actions taken by the contract itself. Later in this module, the contract calls `transfer` to transfer funds from the contract to the seller.
 
 # Cancel a transaction
 

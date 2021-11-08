@@ -4,7 +4,7 @@ menuItem: mi-docs
 
 # Set up an IDE
 
-This tutorial shows you how to set up a Reach development environment for Mac, Linux, or Windows PC. You can develop Reach applications using any project directory structure and IDE. This page describes the project directory structure and IDE used in the examples throughout the site. Be sure to complete [Quick Start](/en/books/essentials/quick-start/) first.
+This page shows you how to set up a Reach development environment for Mac, Linux, or Windows PC. You can develop Reach applications using any project directory structure and IDE. This page describes the project directory structure and IDE used in the examples throughout the site.
 
 # Organize your projects
 
@@ -13,13 +13,9 @@ The examples throughout this site use the following project directory structure:
 ```
 ~/reach                      # Root directory.
 ~/reach/reach                # Reach script file.
-~/reach/hello-world          # Project directory. See Quick Start.
-~/reach/wisdom-for-sale      # Project directory. See Tutorials.
-~/reach/market-day           # Project directory. See Tutorials.
-~/reach/rock-paper-scissors  # Project directory. See Tutorials.
-~/reach/my-project-01        # Project directory. Your project. Rename.
-~/reach/my-project-02        # Project directory. Your project. Rename.
-~/reach/...
+~/reach/hello-world
+~/reach/my-project-01
+~/reach/my-project-02
 ```
 
 # Add reach to path
