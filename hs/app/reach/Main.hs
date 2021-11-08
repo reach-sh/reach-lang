@@ -29,6 +29,7 @@ import Text.ParserCombinators.Parsec.Combinator (count)
 import Text.ParserCombinators.Parsec.Token
 
 import Reach.CommandLine
+import Reach.Report
 import Reach.Util
 import Reach.Version
 
@@ -723,6 +724,11 @@ switchQuiet = switch
   $ long "quiet"
  <> help "Withhold progress messages"
 
+switchDisableReporting :: Parser Bool
+switchDisableReporting = switch
+  $ long "disable-reporting"
+ <> internal
+
 mkEnv :: IORef Effect -> Maybe Var -> IO (Parser Env)
 mkEnv eff mv = do
   var <- maybe mkVar pure mv
@@ -937,9 +943,10 @@ run' :: Subcommand
 run' = command "run" . info f $ d <> noIntersperse where
   d = progDesc "Run a simple app"
   f = go <$> switchIsolate
+         <*> switchDisableReporting
          <*> argAppOrDir
          <*> manyArgs "APP"
-  go i appOrDir args = do
+  go i nolog appOrDir args = do
     (appOrDir', args') <- liftIO $ do
       "run" : as <- dropWhile (/= "run") <$> getArgs
       pure $ case L.split (== "--") as of
@@ -996,6 +1003,7 @@ run' = command "run" . info f $ d <> noIntersperse where
     let args'' = intercalate " " . map (<> "'") . map ("'" <>) $ projName : args'
     withCompose dm . scriptWithConnectorMode $ do
       maybe (pure ()) write recompile
+      unless nolog $ log'' Run
       write [N.text|
         cd $projDirHost'
         CNAME="$appService-$$$$"
@@ -1477,6 +1485,22 @@ whoami :: Subcommand
 whoami = command "whoami" $ info f fullDesc where
   f = pure . script $ write whoami'
 
+log' :: Subcommand
+log' = command "log" $ info f fullDesc where
+  f = g <$> strOption (long "user-id")
+        <*> strOption (long "initiator")
+  g w i = liftIO $ startReport (Just w) (readMay i) >>= \r -> r $ Right ()
+
+log'' :: Initiator -> App
+log'' i' = do
+  Var {..} <- asks e_var
+  unless ci $ do
+    let i = packs i'
+    write [N.text|
+      log_$i () { $reachEx log --user-id=$$($whoami') --initiator=$i >/dev/null 2>&1; }
+      log_$i &
+    |]
+
 failNonAbsPaths :: Env -> IO ()
 failNonAbsPaths Env {..} =
   mapM_ (\p -> unless (isAbsolute p) . die $ p <> " is not an absolute path.")
@@ -1525,6 +1549,7 @@ main = do
         <> rpcServerDown
         <> unscaffold
         <> whoami
+        <> log'
   let cli = Cli
         <$> env
         <*> (hsubparser cs <|> hsubparser hs <**> helper)
