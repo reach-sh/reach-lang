@@ -1051,6 +1051,7 @@ smt_e at_dv mdv de = do
     DLE_GetContract at -> unbound at
     DLE_GetAddress at -> unbound at
     DLE_EmitLog at _ v -> bound at =<< smt_v at v
+    DLE_setApiDetails {} -> mempty
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)

@@ -1352,6 +1352,7 @@ ce = \case
       , DLA_Var v
       ]
     cv v
+  DLE_setApiDetails {} -> return ()
   where
     show_stack msg at fs = do
       comment $ texty msg
@@ -1854,7 +1855,7 @@ cStateSlice at size iw = do
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
   let PLProg _at plo dli _ _ cpp = pl
-  let CPProg at _ (CHandlers hm) = cpp
+  let CPProg at _ _ai (CHandlers hm) = cpp
   let sMaps = dli_maps dli
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty

@@ -483,6 +483,21 @@ instance PrettySubst DLTokenNew where
 
 type DLTimeArg = Either DLArg DLArg
 
+data ApiInfo = ApiInfo
+  { ai_msg_tys :: [DLType]
+  , ai_mcase_id :: Maybe String
+  , ai_which :: Int }
+  deriving (Eq)
+
+instance Pretty ApiInfo where
+  pretty = \case
+    ApiInfo mtys mci which ->
+      braces $ hardline <> vsep [
+        "msg_tys :" <+> pretty mtys
+      , "mcase_id:" <+> pretty mci
+      , "which:" <+> pretty which
+      ]
+
 data DLExpr
   = DLE_Arg SrcLoc DLArg
   | DLE_LArg SrcLoc DLLargeArg
@@ -516,6 +531,7 @@ data DLExpr
   -- * the type is the type
   -- * the dlarg is the value being logged
   | DLE_EmitLog SrcLoc String DLVar
+  | DLE_setApiDetails SrcLoc SLPart [DLType] (Maybe String)
   deriving (Eq, Ord, Generic)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
@@ -635,6 +651,8 @@ instance PrettySubst DLExpr where
     DLE_EmitLog _ m v -> do
       a' <- prettySubst $ DLA_Var v
       return $ "emitLog" <> parens (pretty m) <> parens a'
+    DLE_setApiDetails _ p tys mc ->
+      return $ "setApiDetails" <> parens (render_das [pretty p, pretty tys, pretty mc])
 
 pretty_subst :: PrettySubst a => PrettySubstEnv -> a -> Doc
 pretty_subst e x =
@@ -674,6 +692,7 @@ instance IsPure DLExpr where
     DLE_TokenDestroy {} -> False
     DLE_TimeOrder {} -> False
     DLE_EmitLog {} -> False
+    DLE_setApiDetails {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -705,6 +724,7 @@ instance IsLocal DLExpr where
     DLE_GetContract {} -> True
     DLE_GetAddress {} -> True
     DLE_EmitLog {} -> False
+    DLE_setApiDetails {} -> False
 
 instance CanDupe DLExpr where
   canDupe e =

@@ -133,6 +133,7 @@ instance CollectsTypes DLExpr where
     DLE_GetContract _ -> mempty
     DLE_GetAddress _ -> mempty
     DLE_EmitLog _ _ a -> cts a
+    DLE_setApiDetails {} -> mempty
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m

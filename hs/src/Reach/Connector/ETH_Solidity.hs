@@ -381,6 +381,7 @@ instance DepthOf DLExpr where
     DLE_GetContract {} -> return 1
     DLE_GetAddress {} -> return 1
     DLE_EmitLog _ _ a -> add1 $ depthOf a
+    DLE_setApiDetails {} -> return 0
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])
@@ -638,6 +639,7 @@ solExpr sp = \case
   DLE_GetContract {} -> return $ "payable(address(this))"
   DLE_GetAddress {} -> return $ "payable(address(this))"
   DLE_EmitLog {} -> impossible "emitLog"
+  DLE_setApiDetails {} -> impossible "setApiDetails"
   where
     spa m = (<> sp) <$> m
 
@@ -911,6 +913,7 @@ solCom = \case
         addMemVar dv
         de' <- solExpr emptyDoc de
         return $ solSet (solMemVar dv) de'
+  DL_Let _ _ (DLE_setApiDetails {}) -> mempty
   DL_Let _ DLV_Eff de -> solExpr semi de
   DL_Var _ dv -> do
     addMemVar dv
@@ -1240,7 +1243,7 @@ solEB args (DLinExportBlock _ mfargs (DLBlock _ _ t r)) = do
   return $ vsep [t', "return" <+> r' <> semi]
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
+solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) _ai hs)) = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   ctxt_varm <- newIORef mempty

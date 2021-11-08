@@ -337,6 +337,7 @@ instance Optimize DLExpr where
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at m a -> DLE_EmitLog at m <$> opt a
+    DLE_setApiDetails at w t c -> return $ DLE_setApiDetails at w t c
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
 
@@ -610,8 +611,8 @@ instance Optimize ViewInfo where
   opt (ViewInfo vs vi) = ViewInfo vs <$> (newScope $ opt vi)
 
 instance Optimize CPProg where
-  opt (CPProg at vi (CHandlers hs)) =
-    CPProg at <$> (newScope $ opt vi) <*> (CHandlers <$> mapM (newScope . opt) hs)
+  opt (CPProg at vi ai (CHandlers hs)) =
+    CPProg at <$> (newScope $ opt vi) <*> pure ai <*> (CHandlers <$> mapM (newScope . opt) hs)
 
 instance Optimize EPProg where
   opt (EPProg at x ie et) = newScope $ EPProg at x ie <$> opt et

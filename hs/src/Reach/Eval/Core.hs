@@ -586,7 +586,8 @@ base_env =
     , ("getContract", SLV_Prim $ SLPrim_getContract)
     , ("getAddress", SLV_Prim $ SLPrim_getAddress)
     , (".emitLog", SLV_Prim $ SLPrim_EmitLog)
-    , ("call", SLV_Form$ SLForm_apiCall)
+    , ("call", SLV_Form $ SLForm_apiCall)
+    , (".setApiDetails", SLV_Form $ SLForm_setApiDetails)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -1733,6 +1734,32 @@ evalForm f args = do
           expect_t rator $ Err_Eval_NotApplicable
       where
         go p' = retV $ public $ SLV_Form $ SLForm_apiCall_partial $ p' { slac_mode = Nothing }
+    SLForm_setApiDetails -> do
+      at <- withAt id
+      (who_e, is_fork, msg, mc_id) <- three_mfour_args
+      who <- evalExpr who_e >>= \case
+                (_, SLV_Participant _ part _ _) -> return part
+                _ -> impossible "setApiDetails: expected participant"
+      let mCaseId = maybe Nothing (Just . jse_expect_id at) mc_id
+      tys <- case (is_fork, mCaseId) of
+              -- API Call: spread domain
+              (JSLiteral _ "false", _) -> do
+                e <- evalExpr msg
+                compileTypeOf (snd e) >>= \case
+                  (T_Tuple ts, _) -> return ts
+                  _ -> impossible "API call domain is not a Tuple"
+              -- API Fork With Multiple Cases (msg is Data instance)
+              (_, Just _) -> do
+                evalExpr msg >>= \case
+                    (_, SLV_Type s) -> st2dte s <&> (:[])
+                    _ -> impossible "Expected data instance Type"
+              -- API Fork With One Case (not wrapped in Data)
+              (_, Nothing) -> do
+                e <- evalExpr msg
+                (dt, _) <- compileTypeOf $ snd e
+                return [dt]
+      ctxt_lift_eff $ DLE_setApiDetails at who tys mCaseId
+      return $ public $ SLV_Null at "setApiDetails"
   where
     illegal_args n = expect_ $ Err_Form_InvalidArgs f n args
     rator = SLV_Form f
@@ -1749,6 +1776,10 @@ evalForm f args = do
     _three_args = case args of
       [x, y, z] -> return $ (x, y, z)
       _ -> illegal_args 3
+    three_mfour_args = case args of
+      [w, x, y] -> return $ (w, x, y, Nothing)
+      [w, x, y, z] -> return $ (w, x, y, Just z)
+      _ -> illegal_args 2
     one_two_args ta = case args of
       [de] -> return (de, JSLiteral ta "null")
       [de, e] -> return (de, e)
@@ -4325,7 +4356,8 @@ doApiCall lhs (ApiCallRec{..}) = do
                     [ jsConst a returnLVal doLog, callOnly [ jsThunkStmts a [es interactOut] ] ]
   --
   let assignRet = jsConst a ret apiReturn
-  let ss = [callOnly [onlyThunk], es pub3, assignRet]
+  let setDetails = jsCall a (jid ".setApiDetails") [slac_who, JSLiteral a "false", dom]
+  let ss = [callOnly [onlyThunk], es pub3, es setDetails, assignRet]
   return ss
   where
     sepLHS a = \case
@@ -4420,7 +4452,8 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
             , defMsg
             ]
   let lookupMsgTy t = fromMaybe T_Null $ M.lookup "msg" t
-  let getAfter (a_at, after_e) = locAt a_at $
+  let mkPartCase who n = who <> show n
+  let getAfter who_e isApi who usesData (a_at, after_e, case_n) = locAt a_at $
         case after_e of
           JSArrowExpression args _ s -> do
             let JSBlock _ ss _ = jsArrowStmtToBlock s
@@ -4430,8 +4463,15 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
                 [] -> return []
                 [ae] -> return [defcon (awrap ae) (awrap msg_e)]
                 _ -> expect_ $ Err_Fork_ConsensusBadArrow after_e
-            return $ mdefmsg <> ss
-          JSExpressionParen _ e _ -> getAfter (a_at, e)
+            let sps = case isApi of
+                  False -> []
+                  True -> do
+                    let msg = if usesData then fd_e else msg_e
+                    let mce = if usesData then [jid $ mkPartCase who case_n] else []
+                    let e = jsCall a (jid ".setApiDetails") $ [who_e, JSLiteral a "true", msg] <> mce
+                    [JSExpressionStatement e sp]
+            return $ sps <> mdefmsg <> ss
+          JSExpressionParen _ e _ -> getAfter who_e isApi who usesData (a_at, e, case_n)
           _ -> expect_ $ Err_Fork_ConsensusBadArrow after_e
   let go pcases = do
         let (ats, whos, who_es, before_es, pay_es, after_es) =
@@ -4440,7 +4480,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let who_e = hdDie who_es
         let c_at = hdDie ats
         let cfc_part_e = who_e
-        let partCase n = who <> show n
+        let partCase = mkPartCase who
         -- Generate:
         -- const runAlice<N> = () => {
         --   const res = before<N>();
@@ -4502,7 +4542,8 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
                 (False, False) ->
                   [JSMethodCall (JSMemberDot who_e a (jid "set")) a (JSLOne (jid "this")) a sp]
                 (False, True) -> []
-        all_afters <- mapM getAfter $ zip ats after_es
+        isApi <- is_api $ bpack who
+        all_afters <- mapM (getAfter who_e isApi who True) $ zip3 ats after_es [0..length after_es]
         let cfc_switch_case =
               map
                 (\(i, as) ->
@@ -4517,7 +4558,8 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let tc_head_e = fc_who_e
         let before_tc_ss = [makeOnly fc_who_e only_body]
         let pay_e = JSCallExpression fc_pay a (JSLOne msg_e) a
-        after_tc_ss <- getAfter (fc_at, fc_after)
+        isApi <- is_api $ bpack fc_who
+        after_tc_ss <- getAfter fc_who_e isApi fc_who False (fc_at, fc_after, 0 :: Int)
         return $ (False, before_tc_ss, pay_e, tc_head_e, after_tc_ss)
       _ -> do
         casel <- mapM go $ groupBy forkCaseSameParticipant cases

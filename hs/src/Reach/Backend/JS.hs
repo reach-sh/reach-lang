@@ -460,7 +460,7 @@ jsExpr = \case
     txn' <- jsTxn
     dvt' <- jsContract $ varType dv
     return $ "await" <+> txn' <> "." <> jsApply "getOutput" [squotes (pretty mode), squotes dv', dvt', dv']
-
+  DLE_setApiDetails {} -> return "undefined"
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
   ov' <- jsVar ov
@@ -951,7 +951,7 @@ reachBackendVersion :: Int
 reachBackendVersion = 5
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
-jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _)) = do
+jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ _)) = do
   let DLInit {..} = dli
   let preamble =
         vsep
