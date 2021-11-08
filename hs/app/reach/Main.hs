@@ -1003,7 +1003,7 @@ run' = command "run" . info f $ d <> noIntersperse where
     let args'' = intercalate " " . map (<> "'") . map ("'" <>) $ projName : args'
     withCompose dm . scriptWithConnectorMode $ do
       maybe (pure ()) write recompile
-      unless nolog $ log'' Run
+      unless nolog $ log'' Nothing Run
       write [N.text|
         cd $projDirHost'
         CNAME="$appService-$$$$"
@@ -1203,7 +1203,8 @@ devnet :: Subcommand
 devnet = command "devnet" $ info f d where
   d = progDesc "Run only the devnet"
   f = go <$> switch (long "await-background" <> help "Run in background and await availability")
-  go abg = do
+         <*> switchDisableReporting
+  go abg nolog = do
     ConnectorMode c m <- dieConnectorModeNotSpecified
     dieConnectorModeBrowser
     dd <- devnetDeps
@@ -1215,6 +1216,7 @@ devnet = command "devnet" $ info f d where
     unless (m == Devnet) . liftIO
       $ die "`reach devnet` may only be used when `REACH_CONNECTOR_MODE` ends with \"-devnet\"."
     withCompose mkDockerMetaStandaloneDevnet . scriptWithConnectorMode $ do
+      unless nolog $ log'' (Just DevnetDaily) DevnetCreate
       write [N.text|
         docker-compose -f "$$TMP/docker-compose.yml" run --name $n $dd --service-ports --rm $s$a
       |]
@@ -1491,15 +1493,26 @@ log' = command "log" $ info f fullDesc where
         <*> strOption (long "initiator")
   g w i = liftIO $ startReport (Just w) (readMay i) >>= \r -> r $ Right ()
 
-log'' :: Initiator -> App
-log'' i' = do
+log'' :: Maybe Initiator -> Initiator -> App
+log'' daily i' = do
   Var {..} <- asks e_var
   unless ci $ do
+    let f' x = [N.text| $reachEx log --user-id=$$($whoami') --initiator=$x >/dev/null 2>&1 |]
     let i = packs i'
+    let f = f' i
     write [N.text|
-      log_$i () { $reachEx log --user-id=$$($whoami') --initiator=$i >/dev/null 2>&1; }
+      log_$i () { $f; }
       log_$i &
     |]
+    case daily of
+      Nothing -> pure ()
+      Just d' -> do
+        let d = packs d'
+        let g = f' d
+        write [N.text|
+          log_$d () { sleep 1d && $g && log_$d; }
+          log_$d &
+        |]
 
 failNonAbsPaths :: Env -> IO ()
 failNonAbsPaths Env {..} =
