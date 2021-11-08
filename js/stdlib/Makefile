@@ -51,8 +51,8 @@ js-mjs: expand
 
 .PHONY: clone-js-stdlib
 clone-js-stdlib:
-    git clone https://github.com/reach-sh/js-reach-stdlib.git
-    ln -s sbin js-reach-stdlib/sbin
+	git clone https://github.com/reach-sh/js-reach-stdlib.git
+	ln -s sbin js-reach-stdlib/sbin
 
 .PHONY: refresh-js-stdlib
 refresh-js-stdlib: clone-js-stdlib
