@@ -295,11 +295,10 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
     }
 
     // If search page.
-    let searchBtn = document.getElementById('search-btn');
-    if (searchBtn) {
-      let searchInput = document.getElementById('search-input');
-
-      searchBtn.addEventListener('click', (event) => {
+    let searchInput = document.getElementById('search-input');
+    if (searchInput) {
+      searchInput.focus();
+      searchInput.addEventListener('keyup', function (event) {
         index.search(searchInput.value).then(({ hits }) => {
           if(hits.length) {
             let searchResultsList = document.getElementById('search-results-list');
@@ -321,16 +320,6 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
           }
         });
       });
-
-      searchInput.addEventListener('keyup', function (event) {
-        console.log('keyup');
-        if (event.keyCode === 13) {
-          event.preventDefault();
-          searchBtn.click();
-        }
-      });
-
-      searchInput.focus();
     }
 
     // On click link on page.
