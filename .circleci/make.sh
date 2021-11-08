@@ -17,8 +17,8 @@ cat >>"${IEND}" <<END
           tags:
             only: /[0-9]*\.[0-9]*\.[0-9]*(-rc\.[0-9]*)?/
         requires:
-          - "hs-test"
 END
+#          - "hs-test"
 
 deps () {
   DEPS="$*"
