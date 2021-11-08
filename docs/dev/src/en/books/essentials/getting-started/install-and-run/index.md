@@ -2,9 +2,9 @@
 menuItem: mi-docs
 ---
 
-# Run a DApp
+# Install and Run
 
-This tutorial shows you how to run a Reach *Hello World* decentralized application (DApp) in a [POSIX](https://en.wikipedia.org/wiki/POSIX)-compliant shell. 
+This page shows you how to install Reach, and run a Reach *Hello World* decentralized application (DApp) in a [POSIX](https://en.wikipedia.org/wiki/POSIX)-compliant shell. 
 
 # Install Make and Docker
 
@@ -84,7 +84,7 @@ Reach assumes the presence of a [POSIX](https://en.wikipedia.org/wiki/POSIX)-com
     Done.
     ```
 
-    *index.mjs* is the JS frontend, and *index.rsh* is the Reach backend. We defer code analysis until the [Tutorials](/en/books/essentials/tutorials/).
+    *index.mjs* is the JS frontend, and *index.rsh* is the Reach backend.
 
 # Run the app
 

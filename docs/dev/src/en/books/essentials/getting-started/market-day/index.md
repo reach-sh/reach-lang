@@ -4,15 +4,15 @@ menuItem: mi-docs
 
 # Market Day
 
-This tutorial builds upon [Wisdom for Sale](/en/books/essentials/tutorials/wisdom-for-sale/) by demonstrating how to use a variety of data types (string, integer, boolean, object, and array) in interact objects. You should complete [Wisdom for Sale](/en/books/essentials/tutorials/wisdom-for-sale/) before continuing.
+This module builds upon [Wisdom for Sale](/en/books/essentials/getting-started/wisdom-for-sale/) by demonstrating how to use a variety of data types (string, integer, boolean, object, and array) in interact objects. You should complete [Wisdom for Sale](/en/books/essentials/getting-started/wisdom-for-sale/) before continuing.
 
-The tutorial shows you how to build [Market Day](https://github.com/hagenhaus/market-day), a command-line and web-based application that enables two participants, a seller and a buyer, to trade vegetables for tokens via a smart contract running on a private Algorand, Ethereum, or Conflux consensus network residing in a Docker container on your computer. Your DApp creates and funds two accounts (one for each participant), enables the seller and buyer to make a transaction, and exits. 
+The module shows you how to build [Market Day](https://github.com/hagenhaus/market-day), a command-line and web-based application that enables two participants, a seller and a buyer, to trade vegetables for tokens via a smart contract running on a private Algorand, Ethereum, or Conflux consensus network residing in a Docker container on your computer. Your DApp creates and funds two accounts (one for each participant), enables the seller and buyer to make a transaction, and exits. 
 
-The contract in this tutorial supports a single transaction between a seller and a buyer. Other tutorials present contracts that support transactions between a seller and multiple buyers.
+The contract in this module supports a single transaction between a seller and a buyer. Other modules present contracts that support transactions between a seller and multiple buyers.
 
 # Learning Objectives
 
-The following learning objectives describe what you will be able to do as a result of completing this tutorial.
+The following learning objectives describe what you will be able to do as a result of completing this module.
 
 1. Visualize Reach command-line DApp design
 1. Implement strings, integers, booleans, objects, and arrays in interact object.
@@ -27,7 +27,7 @@ The contract automatically supplies a product list to the buyer who chooses a pr
 
 # Clone and run
 
-This section shows you how to clone the tutorial repository.
+This section shows you how to clone the repository used in this module.
 
 1. Clone the [market-day](https://github.com/hagenhaus/market-day) repository:
 
@@ -106,7 +106,7 @@ This section shows you how to clone the tutorial repository.
 
 # Examine DApp design
 
-The starter files for this tutorial may seem, at first glance, more complex than the starter files for the Wisdom for Sale tutorial. But, upon closer inspection, you will notice that they consist of boilerplate code useful for starting any Reach command-line DApp. Together, a Reach DApp frontend (index.mjs) and backend (index.rsh) reflect, roughly, the organization illustrated in the diagram below:
+The starter files for this module may seem, at first glance, more complex than the starter files for the Wisdom for Sale module. But, upon closer inspection, you will notice that they consist of boilerplate code useful for starting any Reach command-line DApp. Together, a Reach DApp frontend (index.mjs) and backend (index.rsh) reflect, roughly, the organization illustrated in the diagram below:
 
 <div><img src="design.png" class="img-fluid my-4 d-block" width=900 height=475 loading="lazy"></div>
 

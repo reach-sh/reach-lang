@@ -100,3 +100,9 @@ This article discusses building abstrations with arrow functions and objects.
 <small class="text-muted">By Jay McCarthy on August 29, 2020</small>
 
 This article discusses Reach limitations in terms of connectors, backends, computation, verification, network integration, and communication.
+
+# [How does Reach work?](/en/pages/articles/how-does-reach-work/)
+
+<small class="text-muted">By Jay McCarthy on August 29, 2020</small>
+
+This article discusses the strategies used by the Reach compiler.
