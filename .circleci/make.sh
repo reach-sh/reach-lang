@@ -15,7 +15,7 @@ cat >>"${IEND}" <<END
     - "build-sink":
         filters:
           tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*(-rc\.[0-9]*)?/
         requires:
           - "hs-test"
 END
@@ -46,7 +46,7 @@ image () {
     - "build-image":
         filters:
           tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*(-rc\.[0-9]*)?/
         name: "${NAME}"
         image: "${IMAGE}"
         exec: "${EXEC}"
@@ -70,7 +70,7 @@ cat >>"${END}" <<END
     - "examples-sink":
         filters:
           tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*(-rc\.[0-9]*)?/
         requires:
 END
 
@@ -90,7 +90,7 @@ for CONN in ETH ALGO CFX ; do
     - "examples":
         filters:
           tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*(-rc\.[0-9]*)?/
         name: "${NAME}"
         connector: "${CONN}"
         size: "${SIZE}"

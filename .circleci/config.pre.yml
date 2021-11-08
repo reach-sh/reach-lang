@@ -313,7 +313,7 @@ workflows:
     - "docs-render":
         filters:
           tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*(-rc\.[0-9]*)?/
     - "docs-deploy":
        filters:
          branches:
@@ -325,7 +325,7 @@ workflows:
     - "sh-check":
         filters:
           tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*(-rc\.[0-9]*)?/
   build:
     jobs:
     - "hs-test":
@@ -333,13 +333,13 @@ workflows:
           - "build-haskell-build-artifacts"
         filters:
           tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*(-rc\.[0-9]*)?/
     - "hs-check":
         requires:
           - "build-haskell-build-artifacts"
         filters:
           tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*(-rc\.[0-9]*)?/
     - "deploy-images":
         context:
         - reachdevbot-on-dockerhub
@@ -347,7 +347,7 @@ workflows:
           - "hold"
         filters:
           tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*(-rc\.[0-9]*)?/
           branches:
             ignore: /.*/
     - "deploy-stdlib":
@@ -357,7 +357,7 @@ workflows:
           - "hold"
         filters:
           tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*(-rc\.[0-9]*)?/
           branches:
             ignore: /.*/
     - "hold":
@@ -366,7 +366,7 @@ workflows:
           - "build-sink"
         filters:
           tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*/
+            only: /[0-9]*\.[0-9]*\.[0-9]*(-rc\.[0-9]*)?/
           branches:
             ignore: /.*/
     # Sink and examples follow
