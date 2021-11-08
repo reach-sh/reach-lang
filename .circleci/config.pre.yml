@@ -98,9 +98,9 @@ jobs:
         make refresh-js-stdlib
         is_rc=$(echo ${CIRCLE_TAG} | grep rc > /dev/null ; echo $?)
         if [ $is_rc -eq 0 ] ; then
-          make finalize-patch-js-stdlib
-        else
           make bump-version-and-publish-js-stdlib 
+        else
+          make finalize-patch-js-stdlib
         fi  
   "deploy-images":
     executor: real

@@ -15,10 +15,15 @@ tagpush() {
     fi
 }
 
+
+
+is_rc=$(echo ${VERSION} | grep rc > /dev/null ; echo $?)
+
+if [ $is_rc -eq 1 ] ; then
+  echo "I WILL PUSH THE TAG latest"
+fi
 tagpush "latest"
 tagpush "${MAJOR}.${MINOR}.${PATCH}"
-tagpush "${MAJOR}.${MINOR}"
-tagpush "${MAJOR}"
 tagpush "${DATE}"
 if [ ${#REACH_GIT_HASH} = 8 ]; then
   tagpush "${REACH_GIT_HASH}"
