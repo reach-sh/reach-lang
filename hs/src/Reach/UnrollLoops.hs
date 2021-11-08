@@ -1,4 +1,4 @@
-module Reach.UnrollLoops (unrollLoops) where
+module Reach.UnrollLoops (UnrollWrapper(..), unrollLoops) where
 
 import Control.Monad.Reader
 import Data.Foldable
@@ -173,6 +173,9 @@ instance Unroll k => Unroll (a, k) where
 instance Unroll a => Unroll (M.Map k a) where
   ul = mapM ul
 
+instance {-# OVERLAPS #-} Unroll a => Unroll (SwitchCases a) where
+  ul = mapM (\(v, vnu, k) -> (,,) v vnu <$> ul k)
+
 instance Unroll a => Unroll (Maybe a) where
   ul = mapM ul
 
@@ -183,12 +186,12 @@ instance Unroll LLStep where
   ul = \case
     LLS_Com m k -> ul_m LLS_Com m k
     LLS_Stop at -> pure $ LLS_Stop at
-    LLS_ToConsensus at send recv mtime ->
-      LLS_ToConsensus at send <$> ul recv <*> ul mtime
+    LLS_ToConsensus at lct send recv mtime ->
+      LLS_ToConsensus at lct send <$> ul recv <*> ul mtime
 
 instance Unroll LLProg where
-  ul (LLProg at opts ps dli dex dvs s) =
-    LLProg at opts ps dli <$> ul dex <*> pure dvs <*> ul s
+  ul (LLProg at opts ps dli dex dvs das s) =
+    LLProg at opts ps dli <$> ul dex <*> pure dvs <*> pure das <*> ul s
 
 instance Unroll CTail where
   ul = \case
@@ -209,18 +212,27 @@ instance Unroll CHandlers where
   ul (CHandlers m) = CHandlers <$> ul m
 
 instance Unroll CPProg where
-  ul (CPProg at csvs vi hs) =
+  ul (CPProg at vi ai hs) =
     -- Note: When views contain functions, if we had a network where we
     -- compiled the views to VM code, and had to unroll, then we'd need to
     -- unroll vi here.
-    CPProg at csvs vi <$> ul hs
+    CPProg at vi ai <$> ul hs
 
 instance Unroll EPPs where
-  ul (EPPs m) = pure $ EPPs m
+  ul (EPPs {..}) = EPPs <$> pure epps_apis <*> pure epps_m
 
 instance Unroll PLProg where
   ul (PLProg at opts dli dex ep cp) =
     PLProg at opts dli <$> ul dex <*> ul ep <*> ul cp
+
+data UnrollWrapper a
+  = UnrollWrapper Counter a
+
+instance HasCounter (UnrollWrapper a) where
+  getCounter (UnrollWrapper c _) = c
+
+instance Unroll a => Unroll (UnrollWrapper a) where
+  ul (UnrollWrapper c s) = UnrollWrapper c <$> ul s
 
 unrollLoops :: (HasCounter a, Unroll a) => a -> IO a
 unrollLoops x = do

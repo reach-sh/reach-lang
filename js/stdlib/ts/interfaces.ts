@@ -10,6 +10,7 @@ export interface TypeDefs {
   T_UInt: Ty
   T_Bytes: Ty
   T_Address: Ty
+  T_Contract: Ty
   T_Digest: Ty
   T_Token: Ty
   T_Object: (tyMap: {[key: string]: Ty}) => Ty
@@ -29,7 +30,6 @@ export interface Stdlib_Backend_Shared_User {
   le: (n1: num, n2: num) => boolean
   lt: (n1: num, n2: num) => boolean
   bytesEq: (s1: string, s2: string) => boolean
-  digestEq: (d1: string, d2: string) => boolean
 }
 
 export interface Stdlib_Backend_Shared extends Stdlib_Backend_Shared_User {
@@ -57,8 +57,10 @@ export interface Arith {
 export interface Stdlib_Backend_Base<Ty> extends Stdlib_Backend_Shared, Arith, TypeDefs {
   UInt_max: BigNumber
   addressEq: (addr1: unknown, addr2: unknown) => boolean
+  digestEq: (x: unknown, y: unknown) => boolean
   tokenEq: (x: unknown, y: unknown) => boolean
   digest: (t: Ty, a: unknown) => string // TODO typing
+  emptyContractInfo: (number | string),
 };
 
 // XXX
@@ -83,8 +85,8 @@ export interface ProviderLib {
   setProviderByEnv: (env: ProviderEnv) => void
   setProviderByName: (providerName: ProviderName) => void
   providerEnvByName: (providerName: ProviderName) => ProviderEnv
-  getSignStrategy: () => string
-  setSignStrategy: (ss: string) => void
+  setWalletFallback: (wallet:any) => void
+  walletFallback: (opts:any) => any
 };
 
 type FixedPoint = { sign: boolean, i: { i: BigNumber, scale: BigNumber } }
@@ -121,6 +123,10 @@ type Backend = any
 
 // The real thing
 export interface Stdlib_User<Ty> extends Stdlib_User_Base, ProviderLib {
+  getValidQueryWindow: () => number|true
+  setValidQueryWindow: (n: number|true) => void
+  getQueryLowerBound: () => BigNumber
+  setQueryLowerBound: (n: number|BigNumber) => void
   connector: string
   randomUInt: () => BigNumber
   hasRandom: { random: () => BigNumber }
@@ -133,6 +139,7 @@ export interface Stdlib_User<Ty> extends Stdlib_User_Base, ProviderLib {
   getDefaultAccount: () => Promise<Acc>
   createAccount: () => Promise<Acc>
   getFaucet: () => Promise<Acc> // XXX
+  canFundFromFaucet: () => Promise<boolean>
   fundFromFaucet: (acc: Acc, balance: BigNumber) => Promise<void>
   newTestAccount: (balance: BigNumber) => Promise<Acc>
   newTestAccounts: (num: number, balance: BigNumber) => Promise<Array<Acc>>
@@ -150,5 +157,6 @@ export interface Stdlib_User<Ty> extends Stdlib_User_Base, ProviderLib {
   minimumBalance: BigNumber
   formatCurrency: (amt: BigNumber, decimals: number) => string
   formatAddress: (addr: string) => string
+  launchToken: (acc: Acc, name: string, sym: string, opts?:any) => any
   reachStdlib: Stdlib_Backend<Ty>
 }

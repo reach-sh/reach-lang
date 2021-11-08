@@ -8,13 +8,15 @@ import * as backend from './build/index.main.mjs';
     const acts = JSON.stringify(actual);
     console.log('assertEq', {expected, actual}, {exps, acts});
     stdlib.assert(exps === acts) };
-  const startingBalance = stdlib.parseCurrency(10);
+  const startingBalance = stdlib.parseCurrency(200);
   const [ accAlice, accBob ] = await Promise.all([
     stdlib.newTestAccount(startingBalance),
     stdlib.newTestAccount(startingBalance),
   ]);
-  if ( stdlib.connector == 'ETH' ) {
-    const myGasLimit = 5000000;
+  accAlice.setDebugLabel('Alice');
+  accBob.setDebugLabel('Bob');
+  const myGasLimit = 5000000;
+  if ( stdlib.connector === 'ETH' || stdlib.connector === 'CFX' ) {
     accAlice.setGasLimit(myGasLimit);
     accBob.setGasLimit(myGasLimit);
   }

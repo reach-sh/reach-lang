@@ -1,8 +1,8 @@
 reachc: error[RE0024]: Invalid array binding. Cannot unpack 1 variables from an array with 0 elements.
 
- ./Err_Decl_WrongArrayLength.rsh:3:7:array
+  ./Err_Decl_WrongArrayLength.rsh:3:7:array
 
- 3| const [ x ] = [];
+  3| const [ x ] = [];
 
 For further explanation of this error, see: https://docs.reach.sh/RE0024.html
 

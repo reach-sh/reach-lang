@@ -11,6 +11,7 @@ extra-source-files:
 - rsh/stdlib.rsh
 - sol/stdlib.sol
 - smt2/runtime.smt2
+- app/reach/embed/**/*
 
 dependencies:
 - aeson
@@ -53,7 +54,6 @@ dependencies:
 - safe
 - scientific
 - search-algorithms
-- shell-monad
 - silently
 - simple-smt
 - smallcheck
@@ -134,15 +134,20 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - reach
-#  gen-reach:
-#    main:                Main.hs
-#    source-dirs:         app/gen-reach
-#    ghc-options:
-#    - -threaded
-#    - -rtsopts
-#    - -with-rtsopts=-N
-#    dependencies:
-#    - reach
+  reach:
+    main:                Main.hs
+    source-dirs:         app/reach
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -optP-Wno-nonportable-include-path
+    dependencies:
+    - neat-interpolation
+    - parsec
+    - safe
+    - unix
+    - reach
 
 tests:
   reach-test:

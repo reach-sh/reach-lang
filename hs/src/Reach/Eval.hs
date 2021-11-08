@@ -19,9 +19,10 @@ import Reach.Eval.Types
 import Reach.JSUtil
 import Reach.Parser
 import Reach.Util
+import Reach.Warning
 
 compileDApp :: DLStmts -> DLSExports -> SLVal -> App DLProg
-compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_strict))) = locAt (srcloc_at "compileDApp" Nothing at) $ do
+compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_strict))) = locAt (srcloc_lab "compileDApp" at) $ do
   let (JSBlock _ top_ss _) = jsStmtToBlock top_s
   setSt $
     SLState
@@ -41,10 +42,11 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
           , sco_penvs = mempty
           , sco_cenv = top_env
           , sco_use_strict = top_use_strict
+          , sco_use_unstrict = False
           }
   init_dlo <- readDlo id
-  envr <- liftIO $ newIORef $ AppEnv mempty init_dlo mempty
-  resr <- liftIO $ newIORef $ AppRes mempty mempty Nothing
+  envr <- liftIO $ newIORef $ AppEnv mempty init_dlo mempty mempty
+  resr <- liftIO $ newIORef $ AppRes mempty mempty mempty mempty mempty
   appr <- liftIO $ newIORef $ AIS_Init envr resr
   mape <- liftIO $ makeMapEnv
   e_droppedAsserts' <- (liftIO . dupeCounter) =<< (e_droppedAsserts <$> ask)
@@ -63,6 +65,9 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
           readDlo id
   fin_toks <- readSt st_toks
   fin_droppedAsserts <- liftIO $ readCounter e_droppedAsserts'
+  didPublish <- readSt st_after_first
+  unless (didPublish || null top_ss) $
+    liftIO . emitWarning (Just at) $ W_NoPublish
   let final = shared_lifts <> these_lifts
   let final_dlo' = final_dlo
         { dlo_bals = 1 + length fin_toks
@@ -70,9 +75,11 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
         }
   AppRes {..} <- liftIO $ readIORef resr
   dli_maps <- liftIO $ readIORef $ me_ms mape
-  let dli_ctimem = ar_ctimem
   let dli = DLInit {..}
-  return $ DLProg at final_dlo' (SLParts ar_pie) dli exports ar_views final
+  let sps_ies = ar_pie
+  let sps_apis = ar_isAPI
+  let sps = SLParts {..}
+  return $ DLProg at final_dlo' sps dli exports ar_views ar_apis final
 compileDApp _ _ _ = impossible "compileDApp called without a Reach.App"
 
 mmapMaybeM :: Monad m => (a -> m (Maybe b)) -> M.Map k a -> m (M.Map k b)
@@ -111,6 +118,7 @@ makeEnv cns = do
             sco_penvs = mempty
           , sco_cenv = mempty
           , sco_use_strict = False
+          , sco_use_unstrict = False
           }
   let e_depth = recursionDepthLimit
   let e_while_invariant = False

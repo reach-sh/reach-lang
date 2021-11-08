@@ -3,16 +3,16 @@
 const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3);
 const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);
 
-const winner = (handA, handB) =>
-  ((handA + (4 - handB)) % 3);
+const winner = (handAlice, handBob) =>
+  ((handAlice + (4 - handBob)) % 3);
 
 assert(winner(ROCK, PAPER) == B_WINS);
 assert(winner(PAPER, ROCK) == A_WINS);
 assert(winner(ROCK, ROCK) == DRAW);
 
-forall(UInt, handA =>
-  forall(UInt, handB =>
-    assert(isOutcome(winner(handA, handB)))));
+forall(UInt, handAlice =>
+  forall(UInt, handBob =>
+    assert(isOutcome(winner(handAlice, handBob)))));
 
 forall(UInt, (hand) =>
   assert(winner(hand, hand) == DRAW));
@@ -54,7 +54,7 @@ export const main = Reach.App(() => {
     interact.acceptWager(wager);
   });
   Bob.pay(wager)
-    .timeout(deadline, () => closeTo(Alice, informTimeout));
+    .timeout(relativeTime(deadline), () => closeTo(Alice, informTimeout));
 
   var outcome = DRAW;
   invariant( balance() == 2 * wager && isOutcome(outcome) );
@@ -67,7 +67,7 @@ export const main = Reach.App(() => {
       const commitAlice = declassify(_commitAlice);
     });
     Alice.publish(commitAlice)
-      .timeout(deadline, () => closeTo(Bob, informTimeout));
+      .timeout(relativeTime(deadline), () => closeTo(Bob, informTimeout));
     commit();
 
     unknowable(Bob, Alice(_handAlice, _saltAlice));
@@ -75,7 +75,7 @@ export const main = Reach.App(() => {
       const handBob = declassify(interact.getHand());
     });
     Bob.publish(handBob)
-      .timeout(deadline, () => closeTo(Alice, informTimeout));
+      .timeout(relativeTime(deadline), () => closeTo(Alice, informTimeout));
     commit();
 
     Alice.only(() => {
@@ -83,7 +83,7 @@ export const main = Reach.App(() => {
       const handAlice = declassify(_handAlice);
     });
     Alice.publish(saltAlice, handAlice)
-      .timeout(deadline, () => closeTo(Bob, informTimeout));
+      .timeout(relativeTime(deadline), () => closeTo(Bob, informTimeout));
     checkCommitment(commitAlice, saltAlice, handAlice);
 
     outcome = winner(handAlice, handBob);

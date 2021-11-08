@@ -32,6 +32,7 @@ data BindingOrigin
   | O_ReduceVar
   | O_ExportArg
   | O_SwitchCase DLArg
+  | O_Publish
   deriving (Eq)
 
 instance PrettySubst BindingOrigin where
@@ -47,6 +48,7 @@ instance PrettySubst BindingOrigin where
     O_SwitchCase c -> do
       c' <- prettySubst c
       return $ "switch case binding for " <> c'
+    O_Publish -> return $ "a publication"
 
 instance IsPure BindingOrigin where
   isPure = \case
@@ -59,11 +61,12 @@ instance IsPure BindingOrigin where
     O_BuiltIn -> False
     O_Var -> False
     O_Assignment -> False
+    O_Publish -> False
 
 data TheoremKind
   = TClaim ClaimType
   | TInvariant Bool
-  | TWhenNotUnknown
+  | TWhen
   deriving (Eq, Show)
 
 instance Pretty TheoremKind where
@@ -71,7 +74,7 @@ instance Pretty TheoremKind where
     TClaim c -> pretty c
     TInvariant False -> "while invariant before loop"
     TInvariant True -> "while invariant after loop"
-    TWhenNotUnknown -> "when is not unknown"
+    TWhen -> "when is analyzable"
 
 data SMTCat
   = Witness
@@ -225,10 +228,14 @@ instance PrettySubst SMTTrace where
     let env' = foldr M.delete env witnessVars
     let c_lets' = prettySubstWith env' c_lets
     return $
-      "  // Violation Witness" <> hardline <> hardline <> w_lets' <> hardline <> hardline <>
+      "  // Violation Witness" <> hardline <> hardline <> w_lets' <> hardline <>
       "  // Theorem Formalization" <> hardline <> hardline <> c_lets' <>
-      "  " <> pretty tk <> parens (pretty dv) <> ";" <> hardline
+      "  " <> tk' <> parens (viaShow dv) <> ";" <> hardline
     where
+      tk' = case tk of
+              TClaim c -> pretty c
+              TInvariant _ -> "assert"
+              TWhen -> "analyze"
       isWitness = \case
         SMTLet _ _ _ Witness _ -> True
         SMTCon {} -> True
@@ -249,6 +256,7 @@ data SMTVal
   | SMV_Object (M.Map String SMTVal)
   | SMV_Data String [SMTVal]
   | SMV_Token String
+  | SMV_Contract String
   | SMV_Map
   deriving (Eq, Show)
 
@@ -257,6 +265,7 @@ instance Pretty SMTVal where
     SMV_Bool b -> pretty $ DLL_Bool b
     SMV_Int i -> pretty i
     SMV_Address p -> "<abstract address" <+> pretty p <> ">"
+    SMV_Contract p -> pretty p
     SMV_Digest p -> pretty p
     SMV_Token p -> pretty p
     SMV_Null -> "null"

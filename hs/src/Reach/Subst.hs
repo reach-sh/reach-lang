@@ -26,6 +26,11 @@ instance (Traversable f, Subst a) => Subst (f a) where
 instance {-# OVERLAPS #-} (Subst a, Subst b) => Subst (a, b) where
   subst (x, y) = (,) <$> subst x <*> subst y
 
+instance {-# OVERLAPS #-} Subst a => Subst (SwitchCases a) where
+  subst csm = mapM go csm
+    where
+      go (a, b, c) = (,,) a b <$> subst c
+
 instance Subst DLVar where
   subst v = do
     m <- ask
@@ -43,8 +48,9 @@ instance Subst DLLargeArg where
     DLLA_Obj m -> DLLA_Obj <$> subst m
     DLLA_Data t v a -> DLLA_Data t v <$> subst a
     DLLA_Struct kvs -> DLLA_Struct <$> mapM go kvs
-      where
-        go (k, v) = (,) k <$> subst v
+    DLLA_Bytes b -> return $ DLLA_Bytes b
+    where
+      go (k, v) = (,) k <$> subst v
 
 instance Subst DLPayAmt where
   subst = \case
@@ -59,6 +65,11 @@ instance Subst DLTokenNew where
     <*> subst dtn_url
     <*> subst dtn_metadata
     <*> subst dtn_supply
+    <*> subst dtn_decimals
+
+instance Subst DLWithBill where
+  subst (DLWithBill y z) =
+    DLWithBill <$> subst y <*> subst z
 
 instance Subst DLExpr where
   subst = \case
@@ -82,10 +93,15 @@ instance Subst DLExpr where
     DLE_PartSet at x y -> DLE_PartSet at x <$> subst y
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> subst fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> subst fa <*> subst na
-    DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> subst av <*> pure m <*> subst pamt <*> subst as <*> pure wbill
+    DLE_Remote at fs av m pamt as wbill -> DLE_Remote at fs <$> subst av <*> pure m <*> subst pamt <*> subst as <*> subst wbill
     DLE_TokenNew at tns -> DLE_TokenNew at <$> subst tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> subst tok <*> subst amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> subst tok
+    DLE_TimeOrder at tos -> DLE_TimeOrder at <$> subst tos
+    DLE_GetContract at -> return $ DLE_GetContract at
+    DLE_GetAddress at -> return $ DLE_GetAddress at
+    DLE_EmitLog at m x -> DLE_EmitLog at m <$> subst x
+    DLE_setApiDetails at who ts ci -> return $ DLE_setApiDetails at who ts ci
 
 instance Subst DLStmt where
   subst = \case
@@ -117,12 +133,8 @@ instance Subst DLAssignment where
 
 instance Subst FromInfo where
   subst = \case
-    FI_Continue vis svs -> FI_Continue <$> subst vis <*> subst svs
+    FI_Continue svs -> FI_Continue <$> subst svs
     FI_Halt toks -> FI_Halt <$> subst toks
-
-instance Subst ViewSave where
-  subst = \case
-    ViewSave i svs -> ViewSave i <$> subst svs
 
 instance Subst CTail where
   subst = \case

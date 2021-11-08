@@ -2,9 +2,12 @@
 ROOT=$(pwd)
 REACH=${ROOT}/reach
 
+export REACH_DOCKER=0
+${REACH} -h
+
 c () {
-  echo "c $1"
-  ${REACH} compile "$1"
+  echo c "$@"
+  ${REACH} compile --intermediate-files "$@"
 }
 
 fc () {
@@ -27,7 +30,34 @@ jb () {
   # (cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
-  # (cd "$ROOT"/js && make run)
+  #(cd "$ROOT"/js/rpc-server && make build)
+  #(cd "$ROOT"/js/react-runner && make build)
+  # (cd "$ROOT"/js && make build)
+}
+
+one () {
+  MODE="$1"
+  WHICH="$2"
+  printf "\nONE %s %s\n" "$MODE" "$WHICH"
+  (cd "examples"
+
+  ./one.sh clean "${WHICH}"
+  ./one.sh build "${WHICH}"
+  REACH_DEBUG=1 REACH_CONNECTOR_MODE="${MODE}" ./one.sh run "${WHICH}"
+)
+}
+
+ci () {
+  MODE="$1"
+  WHICH="$2"
+  printf "\nCI %s %s\n" "$MODE" "$WHICH"
+  (cd "examples/$WHICH"
+
+  ${REACH} clean
+  ${REACH} compile --intermediate-files
+  make build
+  REACH_DEBUG=1 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+)
 }
 
 r () {
@@ -37,7 +67,7 @@ r () {
   ${REACH} clean
   rm -f build/*.teal*
   ${REACH} compile --install-pkgs
-  ${REACH} compile
+  ${REACH} compile --intermediate-files
 
   # tealcount1 .
 
@@ -49,11 +79,11 @@ r () {
   export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
   # REACH_CONNECTOR_MODE=ETH ${REACH} run
-  REACH_CONNECTOR_MODE=CFX ${REACH} run
   # REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  #REACH_CONNECTOR_MODE=CFX ${REACH} run
 
   # Ganache
-  # REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
+  REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
 
 )
 }
@@ -81,131 +111,18 @@ tealcount () {
 
 #######
 
-jb
-
-# c hs/t/n/Err_IllegalEffPosition.rsh
-# c hs/t/n/Err_TimeMustBeSimple.rsh
-# c hs/t/y/timeout_calc.rsh
-# c hs/t/y/tut6-refined.rsh
-# c hs/t/n/Err_Apply_ArgCount.rsh
-# c hs/t/n/Err_Eval_IncompatibleStates.rsh
-# c hs/t/n/Err_Eval_NotObject.rsh
-# c hs/t/y/data.rsh
-# c hs/t/y/fork.rsh
-# c examples/workshop-trust-fund/index.rsh
-# c examples/overview/index-error.rsh
-# c examples/popularity-contest/index.rsh
-# c examples/ttt/index.rsh
-# c hs/t/y/array_groups.rsh
-# c examples/tut-5/index.rsh
-# c examples/nim/index-abstract.rsh
-# c examples/timeoutception/index.rsh
-# c examples/workshop-trust-fund/index.rsh
-# c examples/t/penny.rsh
-# c examples/popularity-contest/index.rsh
-# c hs/t/y/fork_exp.rsh
-# c hs/t/y/pr1011.rsh
-# c hs/t/y/lct_in_only.rsh
-# c hs/t/y/tut6-refined.rsh
-# c hs/t/y/pr20210303.rsh
-# c hs/t/y/default_fn_arguments_dependent.rsh
-# c hs/t/y/empty_svs.rsh
-# c examples/pokechain/index.rsh
-# c ../users/reach--tic-tac-toe/V3-megalaser/index.rsh
-# c hs/t/y/data.rsh
-# c hs/t/y/fork.rsh
-# c hs/t/n/Err_NoImpureCondInStep.rsh
-# c hs/t/y/array_length.rsh
-# c hs/t/y/lhs_array_spread.rsh
-# c hs/t/y/pr20210311.rsh
-# c hs/t/n/class_addr.rsh
-
-# c hs/t/y/big-d8cff.rsh
-# tealcount1 hs/t/y big-d8cff
-
-# err Err_Token_NotCreated
-# err Err_TimeArg_NotStatic
-
-# c hs/t/y/announcer.rsh
-# c hs/t/y/fork.rsh
-
-# r examples/pkg
-# r examples/zbeq
-# r examples/nim
-# c examples/nim/index-abstract.rsh
-# r examples/secured-loan
-# r examples/overview # XXX test debigger
-# r examples/log
-# r examples/argz
-# r examples/atomic-swap-auction
-# r examples/chicken-fork
-# r examples/chicken-parallel
-# r examples/chicken-race
-# r examples/exports
-# r examples/many-args
-# r examples/ttt
-# r examples/map-sender
-# r examples/map-any
-# r examples/map-vary
-# r examples/map-rwrw
-# r examples/map-multi
-# r examples/map-big
-# r examples/maybe-send
-# r examples/multiple-pr-case
-# r examples/multisig
-# r examples/nft-auction
-# r examples/nft-dumb
-# r examples/workshop-fomo
-# r examples/workshop-trust-fund
-# r examples/object-digest
-# r examples/view-map
-# r examples/nim
-r examples/overview
-# r examples/popularity-contest
-# r examples/pr202105-zet
-# r examples/race
-# r examples/remote
-# c examples/remote/index.rsh
-# r examples/secured-loan
-# r examples/timeoutception
-# r examples/tut-3
-# r examples/tut-4
-# r examples/tut-5
-# r examples/tut-6
-# r examples/tut-5-attack
-r examples/tut-7 # XXX test debigger
-# r examples/tut-8
-# r examples/tut-7-array
-# r examples/variable-transfers
-# r examples/view-bytes
-# r examples/view-fun
-# r examples/view-maybe
-# r examples/view-map
-# r examples/view-steps
-# r examples/weird-swap
-# r examples/workshop-fomo
-# r examples/workshop-fomo-generalized
-# r examples/workshop-hash-lock
-# r examples/workshop-relay
-# r examples/workshop-trust-fund
-# r users/kwame20210311
-# r examples/raffle
-# r examples/rent-seeking
-# r examples/pr-1cc66
+#exit 0
 
 # jb
-# r examples/realtime
-# exit 0
+# ci CFX tut-7
 
-# r users/ff
-# r users/7639df8
-# r users/eb68c3d
-# r users/220
-# exit 0
+jb
+#c examples/dan-storage/index.rsh
+ci ETH tut-7
+exit 0
 
-# r examples/mint-basic
-# r examples/atomic-swap
+c examples/atomic-swap-auction/index.rsh
 
-# (cd examples/abstract-simul && make build)
+exit 0
 
 # (cd hs && mk hs-test)

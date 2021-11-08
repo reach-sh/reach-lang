@@ -32,11 +32,11 @@ export const main =
             .while(keepGoing ())
             .case(A,
               (() => ({ when : declassify(interact.shouldGo()) })),
-              (() => { return [ this ]; })
+              ((_) => { return [ this ]; })
             )
             .case(B,
               (() => ({ when : declassify(interact.shouldGo()) })),
-              (() => { return [ this ]; })
+              ((_) => { return [ this ]; })
             )
             .timeRemaining(timeRemaining());
 

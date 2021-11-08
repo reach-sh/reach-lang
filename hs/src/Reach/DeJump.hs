@@ -42,17 +42,16 @@ djs_asnLike = mapM $ \(v, a) -> (,) v <$> djs a
 djs_fi :: AppT FromInfo
 djs_fi = \case
   FI_Halt toks -> FI_Halt <$> mapM djs toks
-  FI_Continue vs svs -> FI_Continue <$> djs_vs vs <*> djs_asnLike svs
-
-djs_vs :: AppT ViewSave
-djs_vs = \case
-  ViewSave i svs -> ViewSave i <$> djs_asnLike svs
+  FI_Continue svs -> FI_Continue <$> djs_asnLike svs
 
 class DeJump a where
   dj :: AppT a
 
 instance (Subst b, DeJump a) => DeJump (M.Map k (b, a)) where
   dj = mapM (\(x, y) -> (,) <$> djs x <*> dj y)
+
+instance (DeJump a) => DeJump (SwitchCases a) where
+  dj = mapM (\(v, vnu, k) -> (,,) v vnu <$> dj k)
 
 instance DeJump CTail where
   dj = \case
@@ -86,7 +85,7 @@ instance DeJump CHandler where
 dejump :: PLProg -> IO PLProg
 dejump (PLProg at plo dli dex epps cp) = do
   let PLOpts {..} = plo
-  let CPProg cat csvs vi (CHandlers hs) = cp
+  let CPProg cat vi ai (CHandlers hs) = cp
   let go h@(C_Loop {}) =
         -- XXX: We leave these unchanged because the ALGO backend uses an
         -- array rather than a map. It would be good to change that.
@@ -97,5 +96,5 @@ dejump (PLProg at plo dli dex epps cp) = do
         let e_idx = plo_counter
         flip runReaderT (Env {..}) $ dj h
   hs' <- mapM go hs
-  let cp' = CPProg cat csvs vi (CHandlers hs')
+  let cp' = CPProg cat vi ai (CHandlers hs')
   return $ PLProg at plo dli dex epps cp'

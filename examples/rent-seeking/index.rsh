@@ -18,6 +18,8 @@ export const main =
       });
     deploy();
 
+    Sponsor.publish();
+    commit();
     Sponsor.only(() => {
       const { prize, deadline } =
         declassify(interact.getParams());
@@ -70,7 +72,7 @@ export const main =
     Bidder.only(() => {
       const itsame = winner == this; });
     Bidder.publish().when(itsame)
-      .timeout(deadline, () => closeTo(Sponsor, () => {}));
+      .timeout(relativeTime(deadline), () => closeTo(Sponsor, () => {}));
     transfer(prize).to(winner);
     transfer(balance()).to(Sponsor);
     commit();

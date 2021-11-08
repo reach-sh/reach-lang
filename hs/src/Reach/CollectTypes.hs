@@ -1,7 +1,9 @@
 module Reach.CollectTypes (cts) where
 
+import qualified Data.ByteString.Char8 as B
 import qualified Data.Map as M
 import qualified Data.Set as S
+import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
@@ -10,6 +12,9 @@ class CollectsTypes a where
   cts :: a -> S.Set DLType
 
 instance CollectsTypes Bool where
+  cts _ = mempty
+
+instance CollectsTypes B.ByteString where
   cts _ = mempty
 
 instance CollectsTypes a => CollectsTypes [a] where
@@ -53,6 +58,7 @@ instance CollectsTypes DLType where
         T_Bytes _ -> mempty
         T_Digest -> mempty
         T_Address -> mempty
+        T_Contract -> mempty
         T_Token -> mempty
         T_Array e _ -> cts e
         T_Tuple elems -> cts elems
@@ -70,7 +76,7 @@ instance CollectsTypes InteractEnv where
   cts (InteractEnv m) = cts m
 
 instance CollectsTypes SLParts where
-  cts (SLParts m) = cts m
+  cts (SLParts {..}) = cts sps_ies
 
 instance CollectsTypes DLVar where
   cts (DLVar _ _ t _) = cts t
@@ -89,12 +95,20 @@ instance CollectsTypes DLTokenNew where
     <> cts dtn_metadata
     <> cts dtn_supply
 
+instance CollectsTypes DLWithBill where
+  cts (DLWithBill y z) = cts y <> cts z
+
+instance CollectsTypes PrimOp where
+  cts = \case
+    BYTES_ZPAD l -> S.singleton $ T_Bytes l
+    _ -> mempty
+
 instance CollectsTypes DLExpr where
   cts = \case
     DLE_Arg _ a -> cts a
     DLE_LArg _ la -> cts $ largeArgTypeOf la
-    DLE_Impossible _ _ -> mempty
-    DLE_PrimOp _ _ as -> cts as
+    DLE_Impossible {} -> mempty
+    DLE_PrimOp _ p as -> cts p <> cts as
     DLE_ArrayRef _ a i -> cts a <> cts i
     DLE_ArraySet _ a i v -> cts a <> cts i <> cts v
     DLE_ArrayConcat _ x y -> cts x <> cts y
@@ -111,10 +125,15 @@ instance CollectsTypes DLExpr where
     DLE_PartSet _ _ a -> cts a
     DLE_MapRef _ _ fa -> cts fa
     DLE_MapSet _ _ fa na -> cts fa <> cts na
-    DLE_Remote _ _ av _ pamt as _ -> cts (av : as) <> cts pamt
+    DLE_Remote _ _ av _ pamt as y -> cts (av : as) <> cts pamt <> cts y
     DLE_TokenNew _ tns -> cts tns
     DLE_TokenBurn _ a b -> cts [ a, b ]
     DLE_TokenDestroy _ a -> cts a
+    DLE_TimeOrder _ tos -> cts tos
+    DLE_GetContract _ -> mempty
+    DLE_GetAddress _ -> mempty
+    DLE_EmitLog _ _ a -> cts a
+    DLE_setApiDetails {} -> mempty
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m
@@ -123,7 +142,7 @@ instance CollectsTypes DLMapInfo where
   cts = cts . dlmi_tym
 
 instance CollectsTypes DLInit where
-  cts (DLInit {..}) = cts dli_ctimem <> cts dli_maps
+  cts (DLInit {..}) = cts dli_maps
 
 instance CollectsTypes DLStmt where
   cts (DL_Nop _) = mempty
@@ -166,14 +185,14 @@ instance CollectsTypes a => CollectsTypes (DLRecv a) where
 instance CollectsTypes LLStep where
   cts (LLS_Com m k) = cts m <> cts k
   cts (LLS_Stop _) = mempty
-  cts (LLS_ToConsensus _ send recv mtime) = cts send <> cts recv <> cts mtime
+  cts (LLS_ToConsensus _ lct send recv mtime) = cts lct <> cts send <> cts recv <> cts mtime
 
 instance CollectsTypes a => CollectsTypes (DLinExportBlock a) where
   cts (DLinExportBlock _ vs r) = cts vs <> cts r
 
 instance CollectsTypes LLProg where
-  cts (LLProg _ _ ps dli dex dvs s) =
-    cts ps <> cts dli <> cts dex <> cts dvs <> cts s
+  cts (LLProg _ _ ps dli dex dvs das s) =
+    cts ps <> cts dli <> cts dex <> cts dvs <> cts das <> cts s
 
 instance CollectsTypes DLLetVar where
   cts (DLV_Eff) = mempty
@@ -181,12 +200,8 @@ instance CollectsTypes DLLetVar where
 
 instance CollectsTypes FromInfo where
   cts = \case
-    FI_Continue vis svs -> cts vis <> cts svs
+    FI_Continue svs -> cts svs
     FI_Halt toks -> cts toks
-
-instance CollectsTypes ViewSave where
-  cts = \case
-    ViewSave _ svs -> cts svs
 
 instance CollectsTypes CTail where
   cts (CT_Com m k) = cts m <> cts k

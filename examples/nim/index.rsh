@@ -39,13 +39,13 @@ export const main =
         const coinFlipB = declassify(interact.random()); });
       B.publish(coinFlipB)
         .pay(wagerAmount)
-        .timeout(DELAY, () => closeTo(A, sendOutcome(B_TIMEOUT)));
+        .timeout(relativeTime(DELAY), () => closeTo(A, sendOutcome(B_TIMEOUT)));
       commit();
 
       A.only(() => {
         const coinFlipA = declassify(_coinFlipA); });
       A.publish(coinFlipA)
-        .timeout(DELAY, () => {
+        .timeout(relativeTime(DELAY), () => {
           closeTo(B, sendOutcome(A_TIMEOUT));
         });
       require(commitA == digest(coinFlipA));
@@ -70,7 +70,7 @@ export const main =
             const [ choose1, amount ] = declassify(_move);
             assume(amount <= (choose1 ? heap1 : heap2)); });
           A.publish(choose1, amount)
-            .timeout(DELAY, () => closeTo(B, sendOutcome(A_TIMEOUT)));
+            .timeout(relativeTime(DELAY), () => closeTo(B, sendOutcome(A_TIMEOUT)));
 
           [ AsTurn, heap1, heap2 ] = applyMove(choose1, amount);
           continue;
@@ -82,7 +82,7 @@ export const main =
             const [ choose1, amount ] = declassify(_move);
             assume(amount <= (choose1 ? heap1 : heap2)); });
           B.publish(choose1, amount)
-            .timeout(DELAY, () => closeTo(A, sendOutcome(B_TIMEOUT)));
+            .timeout(relativeTime(DELAY), () => closeTo(A, sendOutcome(B_TIMEOUT)));
 
           [ AsTurn, heap1, heap2 ] = applyMove(choose1, amount);
           continue; } }

@@ -7,15 +7,24 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
 (async () => {
   const stdlib = await stdlib_loader.loadStdlib();
+  if ( stdlib.connector === 'ALGO' ) { return; }
   const ethers = stdlib.connector === 'CFX' ? cfxers : real_ethers;
 
-  const startingBalance = stdlib.parseCurrency(10);
-  const accAlice = await stdlib.newTestAccount(startingBalance);
-  const accBob = await stdlib.newTestAccount(startingBalance);
+  const startingBalance = stdlib.parseCurrency(100);
+  const [ accAlice, accBob, accCreator ] = await stdlib.newTestAccounts(3, startingBalance);
 
   const myGasLimit = 5000000;
-  accAlice.setGasLimit(myGasLimit);
-  accBob.setGasLimit(myGasLimit);
+  accAlice.setDebugLabel('Alice').setGasLimit(myGasLimit);
+  accBob.setDebugLabel('Bob').setGasLimit(myGasLimit);
+  accCreator.setDebugLabel('Creator').setGasLimit(myGasLimit);
+
+  const gil = await launchToken(stdlib, accCreator, "gil", "GIL");
+  await gil.mint(accAlice, startingBalance);
+  await gil.mint(accAlice, startingBalance);
+
+  const zorkmid = await launchToken(stdlib, accCreator, "zorkmid", "ZMD");
+  await zorkmid.mint(accAlice, startingBalance);
+  await zorkmid.mint(accAlice, startingBalance);
 
   console.log(`Alice remote: make factory`);
   const compiled = JSON.parse(await fs.readFileSync('./build/index.sol.json'));
@@ -37,20 +46,12 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
   console.log(`Bob attaches to the Reach DApp.`);
   const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 
-  const gil = await launchToken("gil", "GIL");
-  await gil.mint(accAlice, startingBalance);
-  await gil.mint(accAlice, startingBalance);
-
-  const zorkmid = await launchToken("zorkmid", "ZMD");
-  await zorkmid.mint(accAlice, startingBalance);
-  await zorkmid.mint(accAlice, startingBalance);
-
   const amt = stdlib.parseCurrency(0.1);
 
   await Promise.all([
     backend.Alice(ctcAlice, {
-      getAddr: (() => remoteAddr),
-      getCT: (() => [ amt, remoteAddr ]),
+      getCTX: (() => remoteAddr),
+      getCTY: (() => [ amt, remoteAddr ]),
       getGIL: (() => gil.id),
       getZMD: (() => zorkmid.id),
     }),

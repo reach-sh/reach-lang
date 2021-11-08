@@ -77,41 +77,41 @@ export const T_UInt: ALGO_Ty<CBR_UInt> = {
     }
   },
   fromNet: (nv: NV): CBR_UInt => {
-    // debug(`fromNet: UInt`);
+    // debug(`fromNet: UInt`, nv);
     // if (getDEBUG()) console.log(nv);
-    return ethers.BigNumber.from(nv);
+    return ethers.BigNumber.from(nv.slice(0, 8));
   },
 }
 
 /** @description For arbitrary utf8 strings */
-const stringyNet = {
+const stringyNet = (len:number) => ({
   toNet: (bv: CBR_Bytes): NV => (
     ethers.utils.toUtf8Bytes(bv)
   ),
   fromNet: (nv: NV): CBR_Bytes => (
-    ethers.utils.toUtf8String(nv)
+    ethers.utils.toUtf8String(nv.slice(0, len))
   ),
-};
+});
 
 /** @description For hex strings representing bytes */
-const bytestringyNet = {
-  toNet: (bv: string): NV => (
-    ethers.utils.arrayify(bv)
-  ),
-  fromNet: (nv: NV): string => (
-    ethers.utils.hexlify(nv)
-  )
-};
+const bytestringyNet = (len:number) => ({
+  toNet: (bv: string): NV => {
+    return ethers.utils.arrayify(bv);
+  },
+  fromNet: (nv: NV): string => {
+    return ethers.utils.hexlify(nv.slice(0, len));
+  }
+});
 
 export const T_Bytes = (len:number): ALGO_Ty<CBR_Bytes> => ({
   ...CBR.BT_Bytes(len),
-  ...stringyNet,
+  ...stringyNet(len),
   netSize: bigNumberToNumber(len),
 });
 
 export const T_Digest: ALGO_Ty<CBR_Digest> = {
   ...CBR.BT_Digest,
-  ...bytestringyNet,
+  ...bytestringyNet(32),
   netSize: 32,
 };
 
@@ -134,7 +134,7 @@ function addressUnwrapper(x: any): string {
 
 export const T_Address: ALGO_Ty<CBR_Address> = {
   ...CBR.BT_Address,
-  ...bytestringyNet,
+  ...bytestringyNet(32),
   netSize: 32,
   canonicalize: (uv: unknown): CBR_Address => {
     const val = addressUnwrapper(uv);
@@ -142,6 +142,11 @@ export const T_Address: ALGO_Ty<CBR_Address> = {
     // We are filling up with zeros if the address is less than 32 bytes
     return hs.padEnd(32*2+2, '0');
   }
+};
+
+export const T_Contract: ALGO_Ty<Contract> = {
+  ...T_UInt,
+  name: 'Contract',
 };
 
 export const T_Array = (
@@ -180,6 +185,7 @@ export const T_Tuple = (
   },
   // TODO: share more code w/ T_Array.fromNet
   fromNet: (nv: NV): CBR_Tuple => {
+    //debug(`Tuple.fromNet`, cos.map((x) => x.name), nv);
     const chunks: Array<CBR_Val> = new Array(cos.length).fill(null);
     let rest = nv;
     for (const i in cos) {
@@ -283,9 +289,14 @@ export const T_Data = (
 }
 
 export const addressEq = mkAddressEq(T_Address);
+export const digestEq = shared_backend.bytesEq;
 
 const T_Token = T_UInt;
+
 export type Token = CBR_UInt;
+
+export type Contract = CBR_UInt;
+
 export const tokenEq = (x: unknown, y: unknown): boolean =>
   T_Token.canonicalize(x).eq(T_Token.canonicalize(y));
 export type PayAmt = MkPayAmt<Token>;
@@ -296,14 +307,17 @@ export const typeDefs = {
   T_UInt,
   T_Bytes,
   T_Address,
+  T_Contract,
   T_Digest,
   T_Token,
   T_Object,
   T_Data,
   T_Array,
   T_Tuple,
-  T_Struct
+  T_Struct,
 };
+
+export const emptyContractInfo = 0;
 
 const arith = makeArith(UInt_max);
 
@@ -312,7 +326,9 @@ export const stdlib: Stdlib_Backend_Base<ALGO_Ty<any>> = {
   ...arith,
   ...typeDefs,
   addressEq,
+  digestEq,
   tokenEq,
   digest,
   UInt_max,
+  emptyContractInfo,
 };

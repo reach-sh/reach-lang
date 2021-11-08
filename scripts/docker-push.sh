@@ -10,7 +10,7 @@ DATE="$(date '+%Y-%m-%d')"
 
 tagpush() {
     docker tag "${LATEST_TAG}" "${IMAGE}:$1"
-    if ! [ "x${TAG_ONLY}" = "x1" ] ; then
+    if ! [ "${TAG_ONLY}" = "1" ] ; then
       docker push "${IMAGE}:$1"
     fi
 }

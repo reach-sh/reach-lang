@@ -1,7 +1,7 @@
 import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-const numOfPlayers = 5;
+const numOfPlayers = 2;
 
 (async () => {
   const stdlib = await loadStdlib();
@@ -23,7 +23,7 @@ const numOfPlayers = 5;
       ...stdlib.hasRandom,
       getParams: (() => ({
         ticketPrice: stdlib.parseCurrency(5),
-        deadline: 50 })),
+        deadline: numOfPlayers * 75 })),
       showOpen: (() =>
         console.log(`Sponsor saw ticket sales open`)),
       showReturning: ((howMany) =>
@@ -54,21 +54,14 @@ const numOfPlayers = 5;
           console.log(`Player ${i} trying to buy a ticket for ${fmt(ticketPrice)}`);
           return true;
         }),
-        buyerWas: (async (addr) => {
-          const bought_n = bought || stdlib.addressEq(addr, accPlayer);
-          if ( bought == false && bought_n == true ) {
-            console.log(`Player ${i} bought a ticket`);
-          }
-          bought = bought_n;
+        didBuy: (async () => {
+          console.log(`Player ${i} bought a ticket`);
+          bought = true;
         }),
-        returnerWas: (async (addr, ticket) => {
-          void(addr);
-          if ( stdlib.addressEq(addr, accPlayer) ) {
-            console.log(`Player ${i} returned and revealed ticket #${ticket}`);
-          }
+        didReturn: (async (ticket) => {
+          console.log(`Player ${i} returned and revealed ticket #${ticket}`);
         }),
       });
     })
     )));
-
 })();

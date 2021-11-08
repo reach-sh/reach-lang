@@ -1,7 +1,7 @@
-// Automatically generated with Reach 0.1.3
+// Automatically generated with Reach 0.1.5
 pragma abicoder v2;
 
-pragma solidity ^0.8.5;
+pragma solidity ^0.8.7;
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
  */
@@ -492,153 +492,153 @@ contract Stdlib {
   }
 }
 
+struct T0 {
+  address payable v267;
+  uint256 v268;
+  uint256 v269;
+  uint256 v275;
+  }
 struct T1 {
-  address payable v67;
-  uint256 v68;
-  uint256 v69;
-  uint256 v238;
+  uint256 v268;
+  uint256 v269;
   }
 struct T2 {
-  uint256 v68;
-  uint256 v69;
+  uint256 time;
+  T1 msg;
   }
 struct T3 {
-  bool svs;
-  T2 msg;
+  address payable v267;
+  uint256 v268;
+  uint256 v269;
+  address payable v279;
   }
 struct T4 {
-  address payable v67;
-  uint256 v68;
-  uint256 v69;
-  address payable v77;
+  uint256 v284;
+  uint256 v285;
+  uint256 v292;
   }
 struct T5 {
-  uint256 v82;
-  uint256 v262;
-  uint256 v268;
-  }
-struct T6 {
-  T4 svs;
-  T5 msg;
+  T3 svs;
+  T4 msg;
   }
 struct T7 {
-  T1 svs;
+  uint256 time;
   bool msg;
   }
 struct T8 {
-  address payable v67;
-  uint256 v68;
-  uint256 v69;
-  address payable v77;
-  uint256 v196;
+  address payable v267;
   uint256 v268;
+  uint256 v269;
+  address payable v279;
+  uint256 v292;
+  uint256 v302;
   }
 struct T9 {
-  address payable v67;
-  uint256 v68;
-  address payable v77;
-  uint256 v82;
+  address payable v267;
+  uint256 v268;
+  address payable v279;
+  uint256 v284;
   }
 struct T10 {
   T9 svs;
   bool msg;
   }
 struct T11 {
-  address payable v67;
-  uint256 v68;
-  uint256 v69;
-  address payable v77;
-  uint256 v106;
-  uint256 v170;
+  address payable v267;
   uint256 v268;
+  uint256 v269;
+  address payable v279;
+  uint256 v292;
+  uint256 v311;
+  uint256 v317;
   }
 struct T12 {
-  uint256 v106;
+  uint256 v311;
   }
 struct T13 {
-  T8 svs;
+  uint256 time;
   T12 msg;
   }
 struct T14 {
-  T8 svs;
-  bool msg;
+  address payable v267;
+  uint256 v268;
+  uint256 v269;
+  address payable v279;
+  uint256 v292;
+  uint256 v311;
+  uint256 v323;
+  uint256 v329;
   }
 struct T15 {
-  address payable v67;
-  uint256 v68;
-  uint256 v69;
-  address payable v77;
-  uint256 v106;
-  uint256 v116;
-  uint256 v144;
-  uint256 v268;
+  uint256 v323;
   }
 struct T16 {
-  uint256 v116;
+  uint256 time;
+  T15 msg;
   }
 struct T17 {
-  T11 svs;
-  T16 msg;
+  uint256 v334;
+  uint256 v335;
   }
 struct T18 {
-  T11 svs;
-  bool msg;
-  }
-struct T19 {
-  uint256 v125;
-  uint256 v126;
-  }
-struct T20 {
-  T15 svs;
-  T19 msg;
-  }
-struct T21 {
-  T15 svs;
-  bool msg;
+  uint256 time;
+  T17 msg;
   }
 
 
 contract ReachContract is Stdlib {
-  uint256 current_state;
+  uint256 current_step;
+  uint256 current_time;
+    bytes current_svbs;
+  function _reachCurrentTime() external view returns (uint256) { return current_time; }
   
-  event e0();
+  
+  
+  
+  event e0(T2 _a);
   struct _F0 {
-    uint256 v62;
-    uint256 v63;
+    uint256 v275;
     }
-  constructor() payable {
-    emit e0();
+  constructor(T2 memory _a) payable {
+    current_step = 0x0;
     _F0 memory _f;
-    _f.v62 = uint256(block.number);
-    _f.v63 = uint256(block.timestamp);
     
-    bool nsvs;
-    current_state = uint256(keccak256(abi.encode(uint256(0), nsvs)));
+    emit e0(_a);
+    reachRequire((msg.value == _a.msg.v268), uint256(7) /*'(./index.rsh:49:9:dot,[],"verify network token pay amount")'*/);
+    _f.v275 = uint256(block.number) + _a.msg.v269;
+    T0 memory nsvs;
+    nsvs.v267 = payable(msg.sender);
+    nsvs.v268 = _a.msg.v268;
+    nsvs.v269 = _a.msg.v269;
+    nsvs.v275 = _f.v275;
+    current_step = uint256(1);
+    current_time = uint256(block.number);
+    current_svbs = abi.encode(nsvs);
+    
     
     }
   
+  event e1(T7 _a);
   
-  
-  
-  event e1(T3 _a);
-  struct _F1 {
-    uint256 v238;
-    }
-  function m1(T3 calldata _a) external payable {
-    reachRequire(current_state == uint256(keccak256(abi.encode(uint256(0), _a.svs))), uint256(8) /*'state check at ./index.rsh:49:9:dot'*/);
-    current_state = 0x0;
+  function m1(T7 calldata _a) external payable {
+    reachRequire((current_step == uint256(1)), uint256(9) /*'state step check at ./index.rsh:56:7:dot'*/);
+    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(10) /*'state time check at ./index.rsh:56:7:dot'*/);
+    current_step = 0x0;
+    (T0 memory _svs) = abi.decode(current_svbs, (T0));
     
-    _F1 memory _f;
+    reachRequire((uint256(block.number) < _svs.v275), uint256(11) /*'timeout check at ./index.rsh:56:7:dot'*/);
     
     emit e1(_a);
-    reachRequire(msg.value == _a.msg.v68, uint256(7) /*'(./index.rsh:49:9:dot,[],"verify network token pay amount")'*/);
-    _f.v238 = uint256(block.number) + _a.msg.v69;
-    T1 memory nsvs;
-    nsvs.v67 = payable(msg.sender);
-    nsvs.v68 = _a.msg.v68;
-    nsvs.v69 = _a.msg.v69;
-    nsvs.v238 = _f.v238;
-    current_state = uint256(keccak256(abi.encode(uint256(1), nsvs)));
+    reachRequire((msg.value == _svs.v268), uint256(8) /*'(./index.rsh:56:7:dot,[],"verify network token pay amount")'*/);
+    T5 memory la;
+    la.svs.v267 = _svs.v267;
+    la.svs.v268 = _svs.v268;
+    la.svs.v269 = _svs.v269;
+    la.svs.v279 = payable(msg.sender);
+    la.msg.v284 = uint256(1);
+    la.msg.v285 = uint256(block.number);
+    la.msg.v292 = (_svs.v268 + _svs.v268);
+    l3(la);
     
     
     }
@@ -646,157 +646,171 @@ contract ReachContract is Stdlib {
   event e2(T7 _a);
   
   function m2(T7 calldata _a) external payable {
-    reachRequire(current_state == uint256(keccak256(abi.encode(uint256(1), _a.svs))), uint256(10) /*'state check at ./index.rsh:56:7:dot'*/);
-    current_state = 0x0;
+    reachRequire((current_step == uint256(1)), uint256(14) /*'state step check at reach standard library:209:7:dot'*/);
+    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(15) /*'state time check at reach standard library:209:7:dot'*/);
+    current_step = 0x0;
+    (T0 memory _svs) = abi.decode(current_svbs, (T0));
     
-    
-    reachRequire(uint256(block.number) < _a.svs.v238, uint256(11) /*'timeout check at ./index.rsh:56:7:dot'*/);
+    reachRequire((uint256(block.number) >= _svs.v275), uint256(16) /*'timeout check at reach standard library:209:7:dot'*/);
     
     emit e2(_a);
-    reachRequire(msg.value == _a.svs.v68, uint256(9) /*'(./index.rsh:56:7:dot,[],"verify network token pay amount")'*/);
-    T6 memory la;
-    la.svs.v67 = _a.svs.v67;
-    la.svs.v68 = _a.svs.v68;
-    la.svs.v69 = _a.svs.v69;
-    la.svs.v77 = payable(msg.sender);
-    la.msg.v82 = uint256(1);
-    la.msg.v262 = uint256(block.number);
-    la.msg.v268 = (_a.svs.v68 + _a.svs.v68);
-    l4(la);
-    
-    
-    }
-  
-  event e3(T7 _a);
-  
-  function m3(T7 calldata _a) external payable {
-    reachRequire(current_state == uint256(keccak256(abi.encode(uint256(1), _a.svs))), uint256(14) /*'state check at reach standard library:209:7:dot'*/);
-    current_state = 0x0;
-    
-    
-    reachRequire(uint256(block.number) >= _a.svs.v238, uint256(15) /*'timeout check at reach standard library:209:7:dot'*/);
-    
-    emit e3(_a);
-    reachRequire(msg.value == uint256(0), uint256(12) /*'(reach standard library:209:7:dot,[at ./index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],"verify network token pay amount")'*/);
-    reachRequire((_a.svs.v67 == payable(msg.sender)), uint256(13) /*'(reach standard library:209:7:dot,[at ./index.rsh:57:37:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],Just "sender correct")'*/);
-    _a.svs.v67.transfer(_a.svs.v68);
-    current_state = 0x0;
+    reachRequire((msg.value == uint256(0)), uint256(12) /*'(reach standard library:209:7:dot,[at ./index.rsh:57:51:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],"verify network token pay amount")'*/);
+    reachRequire(((_svs.v267 == payable(msg.sender))), uint256(13) /*'(reach standard library:209:7:dot,[at ./index.rsh:57:51:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],Just "sender correct")'*/);
+    _svs.v267.transfer(_svs.v268);
+    current_step = 0x0;
+    current_time = 0x0;
+    delete current_svbs;
     selfdestruct(payable(msg.sender));
     
     
     }
   
-  struct _F4 {
-    uint256 v196;
+  struct _F3 {
+    uint256 v302;
     }
-  function l4(T6 memory _a)  internal {
-    _F4 memory _f;
+  function l3(T5 memory _a)  internal {
+    _F3 memory _f;
     
-    if ((_a.msg.v82 == uint256(1))) {
-      _f.v196 = _a.msg.v262 + _a.svs.v69;
+    if ((_a.msg.v284 == uint256(1))) {
+      _f.v302 = _a.msg.v285 + _a.svs.v269;
       T8 memory nsvs;
-      nsvs.v67 = _a.svs.v67;
-      nsvs.v68 = _a.svs.v68;
-      nsvs.v69 = _a.svs.v69;
-      nsvs.v77 = _a.svs.v77;
-      nsvs.v196 = _f.v196;
-      nsvs.v268 = _a.msg.v268;
-      current_state = uint256(keccak256(abi.encode(uint256(6), nsvs)));
+      nsvs.v267 = _a.svs.v267;
+      nsvs.v268 = _a.svs.v268;
+      nsvs.v269 = _a.svs.v269;
+      nsvs.v279 = _a.svs.v279;
+      nsvs.v292 = _a.msg.v292;
+      nsvs.v302 = _f.v302;
+      current_step = uint256(6);
+      current_time = uint256(block.number);
+      current_svbs = abi.encode(nsvs);
       }
     else {
       T10 memory la;
-      la.svs.v67 = _a.svs.v67;
-      la.svs.v68 = _a.svs.v68;
-      la.svs.v77 = _a.svs.v77;
-      la.svs.v82 = _a.msg.v82;
-      l5(la);
+      la.svs.v267 = _a.svs.v267;
+      la.svs.v268 = _a.svs.v268;
+      la.svs.v279 = _a.svs.v279;
+      la.svs.v284 = _a.msg.v284;
+      l4(la);
       }
     
     }
   
   
-  function l5(T10 memory _a)  internal {
+  function l4(T10 memory _a)  internal {
     
     
-    ((_a.svs.v82 == uint256(2)) ? _a.svs.v67 : _a.svs.v77).transfer((uint256(2) * _a.svs.v68));
-    current_state = 0x0;
+    ((_a.svs.v284 == uint256(2)) ? _a.svs.v267 : _a.svs.v279).transfer((uint256(2) * _a.svs.v268));
+    current_step = 0x0;
+    current_time = 0x0;
+    delete current_svbs;
     selfdestruct(payable(msg.sender));
     
     
     }
   
-  event e6(T13 _a);
-  struct _F6 {
-    uint256 v170;
+  event e5(T13 _a);
+  struct _F5 {
+    uint256 v317;
     }
-  function m6(T13 calldata _a) external payable {
-    reachRequire(current_state == uint256(keccak256(abi.encode(uint256(6), _a.svs))), uint256(18) /*'state check at ./index.rsh:69:11:dot'*/);
-    current_state = 0x0;
+  function m5(T13 calldata _a) external payable {
+    reachRequire((current_step == uint256(6)), uint256(19) /*'state step check at ./index.rsh:69:11:dot'*/);
+    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(20) /*'state time check at ./index.rsh:69:11:dot'*/);
+    current_step = 0x0;
+    (T8 memory _svs) = abi.decode(current_svbs, (T8));
+    _F5 memory _f;
+    reachRequire((uint256(block.number) < _svs.v302), uint256(21) /*'timeout check at ./index.rsh:69:11:dot'*/);
     
-    _F6 memory _f;
-    reachRequire(uint256(block.number) < _a.svs.v196, uint256(19) /*'timeout check at ./index.rsh:69:11:dot'*/);
+    emit e5(_a);
+    reachRequire((msg.value == uint256(0)), uint256(17) /*'(./index.rsh:69:11:dot,[],"verify network token pay amount")'*/);
+    reachRequire(((_svs.v267 == payable(msg.sender))), uint256(18) /*'(./index.rsh:69:11:dot,[],Just "sender correct")'*/);
+    _f.v317 = uint256(block.number) + _svs.v269;
+    T11 memory nsvs;
+    nsvs.v267 = _svs.v267;
+    nsvs.v268 = _svs.v268;
+    nsvs.v269 = _svs.v269;
+    nsvs.v279 = _svs.v279;
+    nsvs.v292 = _svs.v292;
+    nsvs.v311 = _a.msg.v311;
+    nsvs.v317 = _f.v317;
+    current_step = uint256(8);
+    current_time = uint256(block.number);
+    current_svbs = abi.encode(nsvs);
+    
+    
+    }
+  
+  event e6(T7 _a);
+  
+  function m6(T7 calldata _a) external payable {
+    reachRequire((current_step == uint256(6)), uint256(24) /*'state step check at reach standard library:209:7:dot'*/);
+    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(25) /*'state time check at reach standard library:209:7:dot'*/);
+    current_step = 0x0;
+    (T8 memory _svs) = abi.decode(current_svbs, (T8));
+    
+    reachRequire((uint256(block.number) >= _svs.v302), uint256(26) /*'timeout check at reach standard library:209:7:dot'*/);
     
     emit e6(_a);
-    reachRequire(msg.value == uint256(0), uint256(16) /*'(./index.rsh:69:11:dot,[],"verify network token pay amount")'*/);
-    reachRequire((_a.svs.v67 == payable(msg.sender)), uint256(17) /*'(./index.rsh:69:11:dot,[],Just "sender correct")'*/);
-    _f.v170 = uint256(block.number) + _a.svs.v69;
-    T11 memory nsvs;
-    nsvs.v67 = _a.svs.v67;
-    nsvs.v68 = _a.svs.v68;
-    nsvs.v69 = _a.svs.v69;
-    nsvs.v77 = _a.svs.v77;
-    nsvs.v106 = _a.msg.v106;
-    nsvs.v170 = _f.v170;
-    nsvs.v268 = _a.svs.v268;
-    current_state = uint256(keccak256(abi.encode(uint256(8), nsvs)));
-    
-    
-    }
-  
-  event e7(T14 _a);
-  
-  function m7(T14 calldata _a) external payable {
-    reachRequire(current_state == uint256(keccak256(abi.encode(uint256(6), _a.svs))), uint256(22) /*'state check at reach standard library:209:7:dot'*/);
-    current_state = 0x0;
-    
-    
-    reachRequire(uint256(block.number) >= _a.svs.v196, uint256(23) /*'timeout check at reach standard library:209:7:dot'*/);
-    
-    emit e7(_a);
-    reachRequire(msg.value == uint256(0), uint256(20) /*'(reach standard library:209:7:dot,[at ./index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],"verify network token pay amount")'*/);
-    reachRequire((_a.svs.v77 == payable(msg.sender)), uint256(21) /*'(reach standard library:209:7:dot,[at ./index.rsh:70:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],Just "sender correct")'*/);
-    _a.svs.v77.transfer(_a.svs.v268);
-    current_state = 0x0;
+    reachRequire((msg.value == uint256(0)), uint256(22) /*'(reach standard library:209:7:dot,[at ./index.rsh:70:53:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],"verify network token pay amount")'*/);
+    reachRequire(((_svs.v279 == payable(msg.sender))), uint256(23) /*'(reach standard library:209:7:dot,[at ./index.rsh:70:53:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],Just "sender correct")'*/);
+    _svs.v279.transfer(_svs.v292);
+    current_step = 0x0;
+    current_time = 0x0;
+    delete current_svbs;
     selfdestruct(payable(msg.sender));
     
     
     }
   
-  event e8(T17 _a);
-  struct _F8 {
-    uint256 v144;
+  event e7(T16 _a);
+  struct _F7 {
+    uint256 v329;
     }
-  function m8(T17 calldata _a) external payable {
-    reachRequire(current_state == uint256(keccak256(abi.encode(uint256(8), _a.svs))), uint256(26) /*'state check at ./index.rsh:77:9:dot'*/);
-    current_state = 0x0;
+  function m7(T16 calldata _a) external payable {
+    reachRequire((current_step == uint256(8)), uint256(29) /*'state step check at ./index.rsh:77:9:dot'*/);
+    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(30) /*'state time check at ./index.rsh:77:9:dot'*/);
+    current_step = 0x0;
+    (T11 memory _svs) = abi.decode(current_svbs, (T11));
+    _F7 memory _f;
+    reachRequire((uint256(block.number) < _svs.v317), uint256(31) /*'timeout check at ./index.rsh:77:9:dot'*/);
     
-    _F8 memory _f;
-    reachRequire(uint256(block.number) < _a.svs.v170, uint256(27) /*'timeout check at ./index.rsh:77:9:dot'*/);
+    emit e7(_a);
+    reachRequire((msg.value == uint256(0)), uint256(27) /*'(./index.rsh:77:9:dot,[],"verify network token pay amount")'*/);
+    reachRequire(((_svs.v279 == payable(msg.sender))), uint256(28) /*'(./index.rsh:77:9:dot,[],Just "sender correct")'*/);
+    _f.v329 = uint256(block.number) + _svs.v269;
+    T14 memory nsvs;
+    nsvs.v267 = _svs.v267;
+    nsvs.v268 = _svs.v268;
+    nsvs.v269 = _svs.v269;
+    nsvs.v279 = _svs.v279;
+    nsvs.v292 = _svs.v292;
+    nsvs.v311 = _svs.v311;
+    nsvs.v323 = _a.msg.v323;
+    nsvs.v329 = _f.v329;
+    current_step = uint256(10);
+    current_time = uint256(block.number);
+    current_svbs = abi.encode(nsvs);
+    
+    
+    }
+  
+  event e8(T7 _a);
+  
+  function m8(T7 calldata _a) external payable {
+    reachRequire((current_step == uint256(8)), uint256(34) /*'state step check at reach standard library:209:7:dot'*/);
+    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(35) /*'state time check at reach standard library:209:7:dot'*/);
+    current_step = 0x0;
+    (T11 memory _svs) = abi.decode(current_svbs, (T11));
+    
+    reachRequire((uint256(block.number) >= _svs.v317), uint256(36) /*'timeout check at reach standard library:209:7:dot'*/);
     
     emit e8(_a);
-    reachRequire(msg.value == uint256(0), uint256(24) /*'(./index.rsh:77:9:dot,[],"verify network token pay amount")'*/);
-    reachRequire((_a.svs.v77 == payable(msg.sender)), uint256(25) /*'(./index.rsh:77:9:dot,[],Just "sender correct")'*/);
-    _f.v144 = uint256(block.number) + _a.svs.v69;
-    T15 memory nsvs;
-    nsvs.v67 = _a.svs.v67;
-    nsvs.v68 = _a.svs.v68;
-    nsvs.v69 = _a.svs.v69;
-    nsvs.v77 = _a.svs.v77;
-    nsvs.v106 = _a.svs.v106;
-    nsvs.v116 = _a.msg.v116;
-    nsvs.v144 = _f.v144;
-    nsvs.v268 = _a.svs.v268;
-    current_state = uint256(keccak256(abi.encode(uint256(10), nsvs)));
+    reachRequire((msg.value == uint256(0)), uint256(32) /*'(reach standard library:209:7:dot,[at ./index.rsh:78:53:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],"verify network token pay amount")'*/);
+    reachRequire(((_svs.v267 == payable(msg.sender))), uint256(33) /*'(reach standard library:209:7:dot,[at ./index.rsh:78:53:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],Just "sender correct")'*/);
+    _svs.v267.transfer(_svs.v292);
+    current_step = 0x0;
+    current_time = 0x0;
+    delete current_svbs;
+    selfdestruct(payable(msg.sender));
     
     
     }
@@ -804,62 +818,47 @@ contract ReachContract is Stdlib {
   event e9(T18 _a);
   
   function m9(T18 calldata _a) external payable {
-    reachRequire(current_state == uint256(keccak256(abi.encode(uint256(8), _a.svs))), uint256(30) /*'state check at reach standard library:209:7:dot'*/);
-    current_state = 0x0;
+    reachRequire((current_step == uint256(10)), uint256(40) /*'state step check at ./index.rsh:85:11:dot'*/);
+    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(41) /*'state time check at ./index.rsh:85:11:dot'*/);
+    current_step = 0x0;
+    (T14 memory _svs) = abi.decode(current_svbs, (T14));
     
-    
-    reachRequire(uint256(block.number) >= _a.svs.v170, uint256(31) /*'timeout check at reach standard library:209:7:dot'*/);
+    reachRequire((uint256(block.number) < _svs.v329), uint256(42) /*'timeout check at ./index.rsh:85:11:dot'*/);
     
     emit e9(_a);
-    reachRequire(msg.value == uint256(0), uint256(28) /*'(reach standard library:209:7:dot,[at ./index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],"verify network token pay amount")'*/);
-    reachRequire((_a.svs.v67 == payable(msg.sender)), uint256(29) /*'(reach standard library:209:7:dot,[at ./index.rsh:78:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],Just "sender correct")'*/);
-    _a.svs.v67.transfer(_a.svs.v268);
-    current_state = 0x0;
-    selfdestruct(payable(msg.sender));
+    reachRequire((msg.value == uint256(0)), uint256(37) /*'(./index.rsh:85:11:dot,[],"verify network token pay amount")'*/);
+    reachRequire(((_svs.v267 == payable(msg.sender))), uint256(38) /*'(./index.rsh:85:11:dot,[],Just "sender correct")'*/);
+    reachRequire(((_svs.v311 == (uint256(keccak256(abi.encode(_a.msg.v334, _a.msg.v335)))))), uint256(39) /*'(reach standard library:65:17:application,[at ./index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:64:8:function exp)],Nothing)'*/);
+    T5 memory la;
+    la.svs.v267 = _svs.v267;
+    la.svs.v268 = _svs.v268;
+    la.svs.v269 = _svs.v269;
+    la.svs.v279 = _svs.v279;
+    la.msg.v284 = ((_a.msg.v335 + (uint256(4) - _svs.v323)) % uint256(3));
+    la.msg.v285 = uint256(block.number);
+    la.msg.v292 = _svs.v292;
+    l3(la);
     
     
     }
   
-  event e10(T20 _a);
+  event e10(T7 _a);
   
-  function m10(T20 calldata _a) external payable {
-    reachRequire(current_state == uint256(keccak256(abi.encode(uint256(10), _a.svs))), uint256(35) /*'state check at ./index.rsh:85:11:dot'*/);
-    current_state = 0x0;
+  function m10(T7 calldata _a) external payable {
+    reachRequire((current_step == uint256(10)), uint256(45) /*'state step check at reach standard library:209:7:dot'*/);
+    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(46) /*'state time check at reach standard library:209:7:dot'*/);
+    current_step = 0x0;
+    (T14 memory _svs) = abi.decode(current_svbs, (T14));
     
-    
-    reachRequire(uint256(block.number) < _a.svs.v144, uint256(36) /*'timeout check at ./index.rsh:85:11:dot'*/);
+    reachRequire((uint256(block.number) >= _svs.v329), uint256(47) /*'timeout check at reach standard library:209:7:dot'*/);
     
     emit e10(_a);
-    reachRequire(msg.value == uint256(0), uint256(32) /*'(./index.rsh:85:11:dot,[],"verify network token pay amount")'*/);
-    reachRequire((_a.svs.v67 == payable(msg.sender)), uint256(33) /*'(./index.rsh:85:11:dot,[],Just "sender correct")'*/);
-    reachRequire((_a.svs.v106 == (uint256(keccak256(abi.encode(_a.msg.v125, _a.msg.v126))))), uint256(34) /*'(reach standard library:65:17:application,[at ./index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:64:8:function exp)],Nothing)'*/);
-    T6 memory la;
-    la.svs.v67 = _a.svs.v67;
-    la.svs.v68 = _a.svs.v68;
-    la.svs.v69 = _a.svs.v69;
-    la.svs.v77 = _a.svs.v77;
-    la.msg.v82 = ((_a.msg.v126 + (uint256(4) - _a.svs.v116)) % uint256(3));
-    la.msg.v262 = uint256(block.number);
-    la.msg.v268 = _a.svs.v268;
-    l4(la);
-    
-    
-    }
-  
-  event e11(T21 _a);
-  
-  function m11(T21 calldata _a) external payable {
-    reachRequire(current_state == uint256(keccak256(abi.encode(uint256(10), _a.svs))), uint256(39) /*'state check at reach standard library:209:7:dot'*/);
-    current_state = 0x0;
-    
-    
-    reachRequire(uint256(block.number) >= _a.svs.v144, uint256(40) /*'timeout check at reach standard library:209:7:dot'*/);
-    
-    emit e11(_a);
-    reachRequire(msg.value == uint256(0), uint256(37) /*'(reach standard library:209:7:dot,[at ./index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],"verify network token pay amount")'*/);
-    reachRequire((_a.svs.v77 == payable(msg.sender)), uint256(38) /*'(reach standard library:209:7:dot,[at ./index.rsh:86:39:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],Just "sender correct")'*/);
-    _a.svs.v77.transfer(_a.svs.v268);
-    current_state = 0x0;
+    reachRequire((msg.value == uint256(0)), uint256(43) /*'(reach standard library:209:7:dot,[at ./index.rsh:86:53:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],"verify network token pay amount")'*/);
+    reachRequire(((_svs.v279 == payable(msg.sender))), uint256(44) /*'(reach standard library:209:7:dot,[at ./index.rsh:86:53:application call to "closeTo" (defined at: reach standard library:207:8:function exp)],Just "sender correct")'*/);
+    _svs.v279.transfer(_svs.v292);
+    current_step = 0x0;
+    current_time = 0x0;
+    delete current_svbs;
     selfdestruct(payable(msg.sender));
     
     

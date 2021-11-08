@@ -1,14 +1,42 @@
 module Reach.Test_Eval
   ( spec_examples_cover_EvalError
   , spec_examples_cover_ParserError
+  , spec_examples_cover_APICutError
   )
 where
 
+import Data.List ((\\))
 import Data.Proxy
+import Generics.Deriving
 import Reach.Eval.Error
 import Reach.Parser
-import Reach.Test.Util
+import Reach.APICut
+import System.Directory
+import System.FilePath
 import Test.Hspec
+import Test.Tasty.Golden
+
+mkSpecExamplesCoverStrs :: [String] -> String -> FilePath -> Spec
+mkSpecExamplesCoverStrs strs ext subdir = describe subdir $
+  it "covers all specified examples" $ do
+    curDir <- getCurrentDirectory
+    let dir = curDir </> "t" </> subdir
+    doesDirectoryExist dir `shouldReturn` True
+    sources <- findByExtension [ext] dir
+    let missing = strs \\ map takeBaseName sources
+    missing `shouldBe` []
+
+mkSpecExamplesCoverCtors
+  :: forall err proxy.
+  (Generic err, ConNames (Rep err))
+  => proxy err
+  -> [String]
+  -> String
+  -> FilePath
+  -> Spec
+mkSpecExamplesCoverCtors _ exceptions = mkSpecExamplesCoverStrs strs
+  where
+    strs = conNames (error "unused" :: err) \\ exceptions
 
 spec_examples_cover_EvalError :: Spec
 spec_examples_cover_EvalError =
@@ -28,7 +56,6 @@ spec_examples_cover_EvalError =
       , "Err_Only_NotOneClosure"
       , "Err_Import_IllegalJS"
       , "Err_Obj_IllegalFieldValues" -- not possible with Grammar7?
-      , "Err_ToConsensus_Double" -- prevented by earlier parsing?
       , "Err_TopFun_NoName" -- hiding behind Err_Type_None
       , "Err_While_IllegalInvariant"
       , "Err_Type_Mismatch"
@@ -50,3 +77,10 @@ spec_examples_cover_ParserError =
       , "Err_Parse_NotModule"
       , "Err_Parse_JSIdentNone"
       ]
+
+spec_examples_cover_APICutError :: Spec
+spec_examples_cover_APICutError =
+  mkSpecExamplesCoverCtors p exceptions ".rsh" "n"
+  where
+    p = Proxy @APICutError
+    exceptions = []

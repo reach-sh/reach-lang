@@ -6,39 +6,40 @@ import {
   canonicalizeConnectorMode,
   getConnector
 } from './ConnectorMode';
+import type { Env } from './shim'; // =>
 import {
   process,
-  window
+  window,
+  updateProcessEnv,
 } from './shim';
-import {
-  rEnv,
-  setDEBUG,
-  truthyEnv,
-} from './shared_impl';
-import type { Stdlib_User } from './interfaces';
+import type { Stdlib_User } from './interfaces'; // =>
 import { doStdlibLoad } from './registry';
 
 export { unsafeAllowMultipleStdlibs } from './registry';
 export { getConnectorMode, getConnector };
 
+function extractMode(x?: string | Env): string {
+  if ( ! x ) {
+    return extractMode(process.env);
+  }
+  if ( typeof x === 'string' ) {
+    return extractMode({REACH_CONNECTOR_MODE: x});
+  }
+  updateProcessEnv(x);
+  const g = process.env['REACH_CONNECTOR_MODE'];
+  if ( ! g ) {
+    console.log(`WARNING: \`REACH_CONNECTOR_MODE\` defaulting behavior is deprecated as of`
+              + ` version 0.1.6; please update your code to set this value explicitly.`);
+    return 'ETH';
+  } else {
+    return g;
+  }
+};
+
 // The connectorMode arg is optional;
 // It will use REACH_CONNECTOR_MODE if 0 args.
 export function loadStdlib(connectorModeOrEnv?: string | {[key: string]: string}): Stdlib_User<any> {
-  if (!connectorModeOrEnv) {
-    // @ts-ignore // XXX why doesn't TS understand that Env satisfies {[key: string}: string} ?
-    return loadStdlib(process.env);
-  }
-  let connectorModeStr: string;
-  if (typeof connectorModeOrEnv === 'string') {
-    connectorModeStr = connectorModeOrEnv;
-  } else if (connectorModeOrEnv['REACH_CONNECTOR_MODE']) {
-    connectorModeStr = connectorModeOrEnv['REACH_CONNECTOR_MODE'];
-  } else if (connectorModeOrEnv['REACT_APP_REACH_CONNECTOR_MODE']) {
-    connectorModeStr = connectorModeOrEnv['REACT_APP_REACH_CONNECTOR_MODE'];
-  } else {
-    // TODO: also check {REACT_APP_,}REACH_DEFAULT_NETWORK
-    connectorModeStr = 'ETH'; // If absolutely none specified/found, just default to 'ETH'
-  }
+  const connectorModeStr = extractMode(connectorModeOrEnv);
   const connectorMode = canonicalizeConnectorMode(connectorModeStr);
   const connector = getConnector(connectorMode);
 
@@ -51,10 +52,6 @@ export function loadStdlib(connectorModeOrEnv?: string | {[key: string]: string}
     case 'ALGO': stdlib = stdlib_ALGO; break;
     case 'CFX': stdlib = stdlib_CFX; break;
     default: throw Error(`impossible: unknown connector ${connector}`);
-  }
-  if (connectorModeOrEnv && typeof connectorModeOrEnv !== 'string') {
-    let debug: boolean = truthyEnv(rEnv(connectorModeOrEnv, 'REACH_DEBUG'));
-    setDEBUG(debug);
   }
   // also just inject ourselves into the window for ease of use
   window.reach = stdlib;

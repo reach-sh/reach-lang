@@ -183,6 +183,7 @@ kgq_la ctxt mv = \case
   DLLA_Obj m -> moreas $ M.elems m
   DLLA_Data _ _ a -> onea a
   DLLA_Struct kvs -> moreas $ map snd kvs
+  DLLA_Bytes _ -> mempty
   where
     moreas = mconcatMap onea
     onea = kgq_a_onlym ctxt mv
@@ -242,6 +243,11 @@ kgq_e ctxt mv = \case
     kgq_a_all ctxt [t, a]
   DLE_TokenDestroy _ t ->
     kgq_a_all ctxt t
+  DLE_TimeOrder {} -> mempty
+  DLE_GetContract {} -> mempty
+  DLE_GetAddress {} -> mempty
+  DLE_EmitLog _ _ v -> kgq_a_onlym ctxt mv $ DLA_Var v
+  DLE_setApiDetails {} -> mempty
 
 kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case
@@ -265,8 +271,8 @@ kgq_m ctxt = \case
     where
       oa = DLA_Var ov
       ctxt' = ctxt_add_back ctxt oa
-      cm1 (mov', l) =
-        kgq_a_onlym ctxt mov' oa
+      cm1 (ov', _, l) =
+        kgq_a_only ctxt ov' oa
           >> kgq_l ctxt' l
   DL_Only _at (Left who) loc ->
     kgq_l (ctxt_restrict ctxt who) loc
@@ -302,9 +308,9 @@ kgq_n ctxt = \case
     where
       oa = DLA_Var ov
       ctxt' = ctxt_add_back ctxt oa
-      cm1 (mov', n) =
+      cm1 (ov', _, n) =
         ctxtNewScope ctxt' $
-          kgq_a_onlym ctxt' mov' oa
+          kgq_a_only ctxt' ov' oa
             >> kgq_n ctxt' n
   LLC_FromConsensus _ _ k ->
     kgq_s ctxt k
@@ -331,15 +337,17 @@ kgq_s :: KCtxt -> LLStep -> IO ()
 kgq_s ctxt = \case
   LLS_Com m k -> kgq_m ctxt m >> kgq_s ctxt k
   LLS_Stop {} -> mempty
-  LLS_ToConsensus _ send recv mtime ->
+  LLS_ToConsensus _ _ send recv mtime ->
     ctxtNewScope ctxt (maybe mempty (kgq_s ctxt . snd) mtime)
-      >> mapM_ (ctxtNewScope ctxt . go) (M.toList send)
+      >> mapM_ (ctxtNewScope ctxt . go) sends
     where
-      DLRecv whov msgvs timev secsv next_n = recv
+      DLRecv whov msgvs timev secsv didSendv next_n = recv
+      sends = M.toList send
       common =
         kgq_a_all ctxt (DLA_Var whov)
           >> kgq_a_all ctxt (DLA_Var timev)
           >> kgq_a_all ctxt (DLA_Var secsv)
+          >> kgq_a_all ctxt (DLA_Var didSendv)
           >> mapM (kgq_a_all ctxt) (map DLA_Var msgvs)
           >> kgq_n ctxt next_n
       go (_, DLSend _ msgas amta whena) = do
@@ -360,9 +368,9 @@ kgq_pie ctxt who (InteractEnv m) =
     >> (mapM_ (kgq_pie1 ctxt who) $ M.keys m)
 
 kgq_lp :: Maybe Handle -> VerifySt -> LLProg -> IO ()
-kgq_lp mh vst (LLProg _ (LLOpts {}) (SLParts psm) _dli _ _ s) = do
+kgq_lp mh vst (LLProg _ (LLOpts {}) (SLParts {..}) _dli _ _ _ s) = do
   putStrLn $ "Verifying knowledge assertions"
-  let ps = M.keys psm
+  let ps = M.keys sps_ies
   llr <- newIORefRef 0
   kgr <- newIORefRef mempty
   let ctxt =
@@ -374,13 +382,14 @@ kgq_lp mh vst (LLProg _ (LLOpts {}) (SLParts psm) _dli _ _ s) = do
           , ctxt_back_ptrs = mempty
           , ctxt_kg = kgr
           }
-  mapM_ (uncurry (kgq_pie ctxt)) $ M.toList psm
+  mapM_ (uncurry (kgq_pie ctxt)) $ M.toList sps_ies
   kgq_s ctxt s
 
-verify_knowledge :: Maybe FilePath -> VerifySt -> LLProg -> IO ()
-verify_knowledge mout vst lp =
+verify_knowledge :: VerifySt -> LLProg -> IO ()
+verify_knowledge vst lp =
   case mout of
     Nothing -> go Nothing
     Just p -> withFile p WriteMode (go . Just)
   where
     go mh = kgq_lp mh vst lp
+    mout = ($ "know") <$> (vo_out $ vst_vo vst)

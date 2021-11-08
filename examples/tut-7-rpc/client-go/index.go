@@ -27,7 +27,7 @@ func main() {
     return fmtc(rpc("/stdlib/balanceOf", w).(jsono))
   }
 
-  startingBalance := rpc("/stdlib/parseCurrency", 10).(jsono)
+  startingBalance := rpc("/stdlib/parseCurrency", 100).(jsono)
   accAlice        := rpc("/stdlib/newTestAccount", startingBalance).(string)
   accBob          := rpc("/stdlib/newTestAccount", startingBalance).(string)
 
@@ -35,8 +35,6 @@ func main() {
   beforeBob       := getBalance(accBob)
 
   ctcAlice        := rpc("/acc/deploy",  accAlice).(string)
-  aliceInfo       := rpc("/ctc/getInfo", ctcAlice).(interface{})
-  ctcBob          := rpc("/acc/attach",  accBob, aliceInfo).(string)
 
   HAND            := [3]string{"Rock", "Paper", "Scissors"}
   OUTCOME         := [3]string{"Bob wins", "Draw", "Alice wins"}
@@ -88,7 +86,10 @@ func main() {
       fmt.Printf("Bob accepts the wager of %s\n", fmtc(amt))
     }
 
+    aliceInfo := rpc("/ctc/getInfo", ctcAlice).(interface{})
+    ctcBob := rpc("/acc/attach",  accBob, aliceInfo).(string)
     rpcCallbacks("/backend/Bob", ctcBob, d)
+    rpc("/forget/ctc", ctcBob)
   }
 
   go playAlice()
@@ -102,5 +103,5 @@ func main() {
   fmt.Printf("  Bob went from %s to %s\n", beforeBob,   afterBob)
 
   rpc("/forget/acc", accAlice, accBob)
-  rpc("/forget/ctc", ctcAlice, ctcBob)
+  rpc("/forget/ctc", ctcAlice)
 }

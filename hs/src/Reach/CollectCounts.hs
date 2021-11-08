@@ -75,14 +75,18 @@ instance (Countable x, Countable y, Countable z, Countable a, Countable b) => Co
   counts (a, b, c, d, e) = counts a <> counts b <> counts c <> counts d <> counts e
 
 instance Countable v => Countable (Maybe v) where
-  counts Nothing = mempty
-  counts (Just x) = counts x
+  counts = \case
+    Nothing -> mempty
+    Just x -> counts x
 
 instance Countable v => Countable [v] where
   counts l = mconcat $ map counts l
 
 instance Countable v => Countable (M.Map k v) where
   counts m = counts $ M.elems m
+
+instance {-# OVERLAPS #-} Countable k => Countable (SwitchCases k) where
+  counts = counts . map (\(_, _, k) -> k) . M.elems
 
 instance Countable DLVar where
   counts dv = Counts $ M.singleton dv DVC_Once
@@ -106,6 +110,7 @@ instance Countable DLLargeArg where
     DLLA_Obj as -> counts as
     DLLA_Data _ _ v -> counts v
     DLLA_Struct kvs -> counts $ map snd kvs
+    DLLA_Bytes _ -> mempty
 
 instance Countable DLTokenNew where
   counts (DLTokenNew {..}) =
@@ -115,11 +120,15 @@ instance Countable DLTokenNew where
     <> counts dtn_metadata
     <> counts dtn_supply
 
+instance Countable DLWithBill where
+  counts (DLWithBill y z) =
+    counts y <> counts z
+
 instance Countable DLExpr where
   counts = \case
     DLE_Arg _ a -> counts a
     DLE_LArg _ a -> counts a
-    DLE_Impossible _ _ -> mempty
+    DLE_Impossible {} -> mempty
     DLE_PrimOp _ _ as -> counts as
     DLE_ArrayRef _ aa ea -> counts [aa, ea]
     DLE_ArraySet _ aa ia va -> counts [aa, ia, va]
@@ -137,10 +146,15 @@ instance Countable DLExpr where
     DLE_PartSet _ _ a -> counts a
     DLE_MapRef _ _ fa -> counts fa
     DLE_MapSet _ _ fa na -> counts fa <> counts na
-    DLE_Remote _ _ av _ pamt as _ -> counts (av : as) <> counts pamt
+    DLE_Remote _ _ av _ pamt as y -> counts (av : as) <> counts pamt <> counts y
     DLE_TokenNew _ tns -> counts tns
     DLE_TokenBurn _ tok amt -> counts [ tok, amt ]
     DLE_TokenDestroy _ tok -> counts tok
+    DLE_TimeOrder _ tos -> counts tos
+    DLE_GetContract _ -> mempty
+    DLE_GetAddress _ -> mempty
+    DLE_EmitLog _ _ a -> counts a
+    DLE_setApiDetails {} -> mempty
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m
@@ -156,12 +170,8 @@ instance Countable DLSend where
 
 instance Countable FromInfo where
   counts = \case
-    FI_Continue vis svs -> counts vis <> counts svs
+    FI_Continue svs -> counts svs
     FI_Halt toks -> counts toks
-
-instance Countable ViewSave where
-  counts = \case
-    ViewSave _ svs -> counts svs
 
 instance {-# OVERLAPS #-} Countable a => Countable (DLinExportBlock a) where
   counts = \case

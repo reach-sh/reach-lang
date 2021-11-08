@@ -33,6 +33,7 @@ export const checkedBigNumberify = ( at:string, m:BigNumber, x:any ): BigNumber 
 
 // .canonicalize turns stuff into the "canonical backend representation"
 export function protect (ctc: AnyBackendTy, v: unknown, ai: unknown = null) {
+  debug(`protect`, ctc.name, v);
   try {
     return ctc.canonicalize(v);
   } catch (e) {
@@ -63,8 +64,6 @@ export const bytesConcat = (x: string, y: string): string => {
   // forceHex(x).concat(forceHex(y).slice(2));
   return x.concat(y);
 };
-
-export const digestEq = bytesEq;
 
 export const eq = (a: num, b: num): boolean => bigNumberify(a).eq(bigNumberify(b));
 export const ge = (a: num, b: num): boolean => bigNumberify(a).gte(bigNumberify(b));
@@ -109,11 +108,11 @@ export const simMapSet = (sim_r:any, mapi:number, f: any, nv: any): void => {
   sim_r.mapsNext[mapi][f] = nv;
 };
 
-export const simTokenNew = (sim_r:any, n:any, s:any, u:any, m:any, p:any): any => {
-  sim_r.txns.push({kind: 'tokenNew', n, s, u, m, p});
+export const simTokenNew = (sim_r:any, n:any, s:any, u:any, m:any, p:any, d:any): any => {
+  sim_r.txns.push({kind: 'tokenNew', n, s, u, m, p, d });
   // XXX This 0 is a hack... on Algorand we can't know at simulation time what
   // this is going to be... so this will cause a runtime exception from
-  // something if it gets looked at (i.e. if you try to create an immediately
+  // something if it gets looked at (i.e. if you try to create and immediately
   // use it)
   return 0;
 };

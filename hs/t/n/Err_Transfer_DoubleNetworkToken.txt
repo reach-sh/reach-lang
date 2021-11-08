@@ -1,8 +1,8 @@
 reachc: error[RE0009]: Pay amount contains multiple network token amounts, but only one is allowed
 
- ./Err_Transfer_DoubleNetworkToken.rsh:15:14:tuple
+  ./Err_Transfer_DoubleNetworkToken.rsh:15:14:tuple
 
- 15|         .pay([amt, amt, [amt, tok]]);
+  15|         .pay([amt, amt, [amt, tok]]);
 
 For further explanation of this error, see: https://docs.reach.sh/RE0009.html
 

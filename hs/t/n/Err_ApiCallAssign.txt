@@ -1,0 +1,8 @@
+reachc: error[RE0122]: The left hand side of an API call must be a pair consisting of the domain and return function.
+
+  ./Err_ApiCallAssign.rsh:15:3:const
+
+  15|   const k1 =
+
+For further explanation of this error, see: https://docs.reach.sh/RE0122.html
+

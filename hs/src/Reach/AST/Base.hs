@@ -16,6 +16,7 @@ import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
 import Reach.Texty
+import Reach.Pretty
 import Reach.UnsafeUtil
 import qualified System.Console.Pretty as TC
 import Safe (atMay)
@@ -61,7 +62,7 @@ instance Pretty SrcLoc where
   pretty = viaShow
 
 data ImpossibleError
-  = Err_Impossible_InspectForall Int
+  = Err_Impossible_InspectForall
   deriving (Eq, Ord, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode ImpossibleError where
@@ -71,12 +72,12 @@ instance HasErrorCode ImpossibleError where
   -- If you delete a constructor, do NOT re-allocate the number.
   -- Add new error codes at the end.
   errIndex = \case
-    Err_Impossible_InspectForall {} -> 0
+    Err_Impossible_InspectForall -> 0
 
 instance Show ImpossibleError where
   show = \case
-    Err_Impossible_InspectForall tag ->
-      "Cannot inspect value from `forall`: " <> show tag
+    Err_Impossible_InspectForall ->
+      "Cannot inspect value from `forall`"
 
 instance Pretty ImpossibleError where
   pretty = viaShow
@@ -86,6 +87,7 @@ data CompilationError = CompilationError
   , ce_errorMessage :: String
   , ce_position :: [Int]
   , ce_offendingToken :: Maybe String
+  , ce_errorCode :: String
   }
   deriving (Show, Generic, ToJSON)
 
@@ -109,6 +111,40 @@ errorCodeDocUrl :: HasErrorCode a => a -> String
 errorCodeDocUrl e =
   "https://docs.reach.sh/" <> errCode e <> ".html"
 
+
+getErrorMessage :: (HasErrorCode a, Show a, Foldable t) => t [SLCtxtFrame] -> SrcLoc -> Bool -> a -> String
+getErrorMessage mCtx src isWarning ce = do
+  let hasColor = unsafeTermSupportsColor
+  let color :: TC.Color -> [Char] -> [Char]
+      color c = if hasColor then TC.color c else id
+  let style :: TC.Style -> [Char] -> [Char]
+      style s = if hasColor then TC.style s else id
+  let fileLines = srcloc_file src >>= Just . unsafeReadFile
+  let rowNum = case srcloc_line_col src of
+                [l, _] -> Just l
+                _ -> Nothing
+  let rowNumStr = pretty $ maybe "" (style TC.Bold . color TC.Cyan . show) rowNum
+  let fileLine = maybe "" (\ l -> rowNumStr <> "|" <+> (pretty $ style TC.Faint l))
+                    $ getSrcLine rowNum (fromMaybe [] fileLines)
+  let errType  = if isWarning then "warning" else "error"
+  let errColor = if isWarning then color TC.Yellow else color TC.Red
+  let errDesc = pretty (style TC.Bold $ errColor errType) <> brackets (pretty $ style TC.Bold $ errCode ce) <> ":" <+> (pretty $ take 512 $ show ce)
+  let srcCodeAt = nest $ hardline <> pretty (style TC.Bold (show src))
+  let srcCodeLine = nest $ hardline <> pretty fileLine
+  let stackTrace =
+        case concat mCtx of
+          [] -> ""
+          ctx -> hardline <> (pretty $ style TC.Bold "Trace") <> ":" <> hardline <>
+                  concatWith (surround hardline) (map pretty $ topOfStackTrace ctx) <> hardline
+  let docsUrl = "For further explanation of this " <> pretty errType <> ", see: " <> pretty (style TC.Underline $ errorCodeDocUrl ce) <> hardline
+  T.unpack . unsafeRedactAbs . T.pack . show $
+    errDesc <> hardline <>
+    srcCodeAt <> hardline <>
+    srcCodeLine <> hardline <>
+    stackTrace <> hardline <>
+    docsUrl
+
+
 expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =
   case unsafeIsErrorFormatJson of
@@ -123,26 +159,9 @@ expect_throw mCtx src ce =
                       , ce_offendingToken = fst $ errorSuggestions ce
                       , ce_errorMessage = errorMessageForJson ce
                       , ce_position = srcloc_line_col src
+                      , ce_errorCode = makeErrCode (errPrefix ce) (errIndex ce)
                       })
-    False -> do
-      let hasColor = unsafeTermSupportsColor
-      let color c = if hasColor then TC.color c else id
-      let style s = if hasColor then TC.style s else id
-      let fileLines = srcloc_file src >>= Just . unsafeReadFile
-      let rowNum = case srcloc_line_col src of
-                  [l, _] -> Just l
-                  _ -> Nothing
-      let rowNumStr = maybe "" (style TC.Bold . color TC.Cyan . show) rowNum
-      let fileLine = maybe "" (\ l -> " " <> rowNumStr <> "| " <> style TC.Faint l <> "\n")
-                      $ getSrcLine rowNum (fromMaybe [] fileLines)
-      error . T.unpack . unsafeRedactAbs . T.pack $
-        style TC.Bold (color TC.Red "error") <> "[" <> style TC.Bold (errCode ce) <> "]: " <> (take 512 $ show ce) <> "\n\n" <>
-          " " <> style TC.Bold (show src) ++ "\n\n"
-          <> fileLine
-          <> case concat mCtx of
-            [] -> ""
-            ctx -> "\n" <> style TC.Bold "Trace" <> ":\n" <> List.intercalate "\n" (topOfStackTrace ctx) <> "\n"
-          <> "\nFor further explanation of this error, see: " <> style TC.Underline (errorCodeDocUrl ce) <> "\n"
+    False -> error $ getErrorMessage mCtx src False ce
 
 expect_thrown :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => SrcLoc -> a -> b
 expect_thrown = expect_throw Nothing
@@ -174,6 +193,9 @@ get_srcloc_src (SrcLoc _ _ Nothing) = ReachSourceFile "src" -- FIXME
 
 srcloc_at :: String -> (Maybe TokenPosn) -> SrcLoc -> SrcLoc
 srcloc_at lab mp (SrcLoc _ _ rs) = SrcLoc (Just lab) mp rs
+
+srcloc_lab :: String -> SrcLoc -> SrcLoc
+srcloc_lab lab (SrcLoc _ tp rs) = SrcLoc (Just lab) tp rs
 
 srcloc_file :: SrcLoc -> Maybe FilePath
 srcloc_file = \case
@@ -240,13 +262,14 @@ data PrimOp
   | DIGEST_EQ
   | ADDRESS_EQ
   | TOKEN_EQ
-  | SELF_ADDRESS
+  | SELF_ADDRESS SLPart Bool Int
   | LSH
   | RSH
   | BAND
   | BIOR
   | BXOR
-  | BYTES_CONCAT
+  | BYTES_ZPAD Integer
+  | MUL_DIV
   deriving (Eq, Generic, NFData, Ord, Show)
 
 instance Pretty PrimOp where
@@ -265,13 +288,14 @@ instance Pretty PrimOp where
     DIGEST_EQ -> "=="
     ADDRESS_EQ -> "=="
     TOKEN_EQ -> "=="
-    SELF_ADDRESS -> "selfAddress"
+    SELF_ADDRESS x y z -> "selfAddress" <> parens (render_das [ pretty x, pretty y, pretty z ])
     LSH -> "<<"
     RSH -> ">>"
     BAND -> "&"
     BIOR -> "|"
     BXOR -> "^"
-    BYTES_CONCAT -> "concat"
+    BYTES_ZPAD x -> "zpad" <> parens (pretty x)
+    MUL_DIV -> "muldiv"
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)

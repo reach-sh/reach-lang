@@ -15,6 +15,7 @@
     "@types/await-timeout": "^0.3.1",
     "@types/express": "^4.17.1",
     "@types/node": "^14.14.34",
+    "@types/node-fetch": "^2.5.12",
     "babel-eslint": "^10.0.3",
     "buffer": "^6.0.3",
     "concurrently": "^6.0.0",
@@ -32,12 +33,17 @@
   },
   "dependencies": {
     "@msgpack/msgpack": "^2.5.1",
-    "algosdk": "^1.10.0",
+    "algosdk": "^1.12.0",
+    "@randlabs/myalgo-connect": "^1.1.1",
+    "@walletconnect/client": "^1.6.5",
+    "algorand-walletconnect-qrcode-modal": "^1.6.1",
     "await-timeout": "^0.6.0",
-    "ethers": "^5.0.32",
+    "ethers": "^5.4.7",
     "express": "^4.17.1",
     "hi-base32": "^0.5.0",
-    "js-conflux-sdk": "^1.5.15",
+    "js-conflux-sdk": "git+https://github.com/reach-sh/js-conflux-sdk#v1_6_0_blockNumber",
+    "jsbi": "^3.1.6",
+    "node-fetch": "^2.6.1",
     "wait-port": "^0.2.9"
   },
   "repository": {

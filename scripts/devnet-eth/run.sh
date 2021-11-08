@@ -25,7 +25,7 @@ geth --allow-insecure-unlock \
      --nat "any" &
 PROC=$!
 
-if [ "x${MINIT}" = "xinit" ] ; then
+if [ "${MINIT}" = "init" ] ; then
     sleep 2
     exit 0
 else

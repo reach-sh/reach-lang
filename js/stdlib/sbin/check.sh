@@ -16,5 +16,5 @@ else
 	echo 'The diff line count looks off'
 	set -ex
 	diff ../js-deps/package.json ./package.json | wc -l
-	diff ../js-deps/package.json ./package.json
+	diff -u ../js-deps/package.json ./package.json
 fi

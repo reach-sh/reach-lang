@@ -17,6 +17,8 @@ export const main =
             })
         ],
         (Admin, Nominee, Voter) => {
+            Admin.publish();
+            commit();
             Admin.only(() => {
                 const dummyAddress = this;
             });

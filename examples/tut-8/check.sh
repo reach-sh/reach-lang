@@ -1,20 +1,19 @@
 #!/bin/sh -e
 
+R="$(echo "$REACH_CONNECTOR_MODE" | cut -f 1 -d '-')"
+export REACH_DEBUG=0
+export REACH_CONNECTOR_MODE="$R"
+
 make build || exit 1
 
-REACH_CONNECTOR="$(echo "$REACH_CONNECTOR_MODE" | cut -f 1 -d '-')"
-DOCKER_COMPOSE_YML_DEFAULT="docker-compose.${REACH_CONNECTOR}.yml"
-DOCKER_COMPOSE_YML="${1:-"${DOCKER_COMPOSE_YML_DEFAULT}"}"
-
-docker-compose -f "$DOCKER_COMPOSE_YML" up -d alice bob || exit 1
+REACH="../../reach"
 
 rm -f Alice.in Alice.out Bob.in Bob.out
 mkfifo Alice.in Alice.out Bob.in Bob.out || exit 1
 
-docker attach tut-8_alice_1 < Alice.in > Alice.out &
-APID=$!
-docker attach tut-8_bob_1 < Bob.in > Bob.out &
-BPID=$!
+"${REACH}" devnet --await-background
+"${REACH}" run index alice < Alice.in > Alice.out &
+"${REACH}" run index bob   < Bob.in   > Bob.out   &
 
 exec 3> Alice.in
 exec 4< Alice.out
@@ -54,10 +53,11 @@ to_Alice y
 get_Alice
 to_Alice y
 get_Alice
-INFO=$(echo "$REPLY" | awk -F= '{print $2}')
-get_Alice
+get_Alice # deprecated
 get_Alice
 to_Alice 10
+get_Alice
+INFO=$(echo "$REPLY" | awk -F= '{print $2}')
 
 while [ "x$REPLY" != "xAre you Alice?" ] ; do
   get_Bob
@@ -71,6 +71,7 @@ to_Bob n
 get_Bob
 to_Bob "$INFO"
 get_Bob
+get_Bob # deprecated
 get_Bob
 to_Bob y
 
@@ -99,6 +100,3 @@ get_Alice
 get_Bob
 get_Alice
 get_Bob
-
-kill "${APID}" "${BPID}"
-kill -9 "${APID}" "${BPID}"

@@ -89,8 +89,8 @@ data DLSStmt
   | DLS_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLSBlock
   | DLS_If SrcLoc DLArg StmtAnnot DLStmts DLStmts
   | DLS_Switch SrcLoc DLVar StmtAnnot (SwitchCases DLStmts)
-  | DLS_Return SrcLoc Int (Either Int DLArg)
-  | DLS_Prompt SrcLoc (Either Int (DLVar, M.Map Int (DLStmts, DLArg))) DLStmts
+  | DLS_Return SrcLoc Int DLArg
+  | DLS_Prompt SrcLoc DLVar StmtAnnot DLStmts
   | DLS_Stop SrcLoc
   | DLS_Unreachable SrcLoc [SLCtxtFrame] String
   | DLS_Only SrcLoc SLPart DLStmts
@@ -114,7 +114,7 @@ data DLSStmt
   | DLS_MapReduce SrcLoc Int DLVar DLMVar DLArg DLVar DLVar DLSBlock
   | DLS_Throw SrcLoc DLArg Bool
   | DLS_Try SrcLoc DLStmts DLVar DLStmts
-  | DLS_ViewIs SrcLoc SLPart SLVar (Maybe DLSExportBlock)
+  | DLS_ViewIs SrcLoc (Maybe SLPart) SLVar (Maybe DLSExportBlock)
   deriving (Eq, Generic)
 
 instance Pretty DLSStmt where
@@ -129,16 +129,10 @@ instance Pretty DLSStmt where
         prettyIf (pretty ca <+> braces (pretty sa)) (render_dls ts) (render_dls fs)
       DLS_Switch _ ov sa csm ->
         prettySwitch (pretty ov <+> braces (pretty sa)) csm
-      DLS_Return _ ret sv ->
-        "throw" <> parens (pretty sv) <> ".to" <> parens (viaShow ret) <> semi
-      DLS_Prompt _ ret bodys ->
-        "prompt" <> parens pret <+> ns bodys <> semi
-        where
-          pret =
-            case ret of
-              Left dv -> "const" <+> pretty dv
-              Right (dv, retm) ->
-                "let" <+> pretty dv <+> "with" <+> render_obj retm
+      DLS_Return _ ret rv ->
+        "throw" <> parens (pretty rv) <> ".to" <> parens (viaShow ret) <> semi
+      DLS_Prompt _ ret sa bodys ->
+        "prompt" <> parens (pretty ret <+> braces (pretty sa)) <+> ns bodys <> semi
       DLS_Stop _ ->
         prettyStop
       DLS_Unreachable {} ->
@@ -146,7 +140,7 @@ instance Pretty DLSStmt where
       DLS_Only _ who onlys ->
         prettyOnly who (ns onlys)
       DLS_ToConsensus {..} ->
-        prettyToConsensus__ dls_tc_send dls_tc_recv dls_tc_mtime
+        prettyToConsensus__ ("?"::String) dls_tc_send dls_tc_recv dls_tc_mtime
       DLS_FromConsensus _ more ->
         prettyCommit <> hardline <> render_dls more
       DLS_While _ asn inv cond body ->
@@ -175,7 +169,7 @@ instance SrcLocOf DLSStmt where
     DLS_If a _ _ _ _ -> a
     DLS_Switch a _ _ _ -> a
     DLS_Return a _ _ -> a
-    DLS_Prompt a _ _ -> a
+    DLS_Prompt a _ _ _ -> a
     DLS_Stop a -> a
     DLS_Unreachable a _ _ -> a
     DLS_Only a _ _ -> a
@@ -198,7 +192,7 @@ instance HasPurity DLSStmt where
     DLS_If _ _ a _ _ -> hasPurity a
     DLS_Switch _ _ a _ -> hasPurity a
     DLS_Return _ ret _ -> ImpureUnless $ S.singleton ret
-    DLS_Prompt _ ret ss -> rme ret $ hasPurity ss
+    DLS_Prompt _ (DLVar _ _ _ ret) a _ -> rm ret $ hasPurity a
     DLS_Stop {} -> fb False
     DLS_Unreachable {} -> fb True
     DLS_Only _ _ ss -> hasPurity ss
@@ -213,9 +207,6 @@ instance HasPurity DLSStmt where
     DLS_Try _ b _ h -> hasPurity b <> hasPurity h
     DLS_ViewIs {} -> fb False
     where
-      rme = \case
-        Left r -> rm r
-        Right (DLVar _ _ _ r,_) -> rm r
       rm r = \case
         ImpureUnless rs -> impureUnless $ S.delete r rs
         x -> x
@@ -231,7 +222,7 @@ instance IsLocal DLSStmt where
     DLS_If _ _ a _ _ -> isLocal a
     DLS_Switch _ _ a _ -> isLocal a
     DLS_Return {} -> True
-    DLS_Prompt _ _ ss -> isLocal ss
+    DLS_Prompt _ _ a _ -> isLocal a
     DLS_Stop {} -> False
     DLS_Unreachable {} -> True
     DLS_Only {} -> True
@@ -259,8 +250,7 @@ instance Pretty DLSBlock where
   pretty (DLSBlock _at _ ss da) = prettyBlock (render_dls ss) da
 
 data DLOpts = DLOpts
-  { dlo_deployMode :: DeployMode
-  , dlo_verifyArithmetic :: Bool
+  { dlo_verifyArithmetic :: Bool
   , dlo_verifyPerConnector :: Bool
   , dlo_connectors :: [T.Text]
   , dlo_counter :: Counter
@@ -274,8 +264,7 @@ instance Pretty DLOpts where
     DLOpts {..} ->
       braces $
         vsep
-          [ "deployMode: " <> viaShow dlo_deployMode
-          , "verifyArithmetic: " <> viaShow dlo_verifyArithmetic
+          [ "verifyArithmetic: " <> viaShow dlo_verifyArithmetic
           , "verifyPerConnector: " <> viaShow dlo_verifyPerConnector
           , "connectors: " <> viaShow dlo_connectors
           ]
@@ -288,14 +277,14 @@ type DLSExportBlock = DLinExportBlock DLSBlock
 type DLSExports = M.Map SLVar DLSExportBlock
 
 data DLProg
-  = DLProg SrcLoc DLOpts SLParts DLInit DLSExports DLViews DLStmts
+  = DLProg SrcLoc DLOpts SLParts DLInit DLSExports DLViews DLAPIs DLStmts
   deriving (Generic)
 
 instance HasCounter DLProg where
-  getCounter (DLProg _ dlo _ _ _ _ _) = getCounter dlo
+  getCounter (DLProg _ dlo _ _ _ _ _ _) = getCounter dlo
 
 instance Pretty DLProg where
-  pretty (DLProg _at _ sps dli dex dvs ds) =
+  pretty (DLProg _at _ sps dli dex dvs dapis ds) =
     "#lang dl" <> hardline
       <> pretty sps
       <> hardline
@@ -305,5 +294,7 @@ instance Pretty DLProg where
       <> pretty dex
       <> hardline
       <> pretty dvs
+      <> hardline
+      <> pretty dapis
       <> hardline
       <> render_dls ds

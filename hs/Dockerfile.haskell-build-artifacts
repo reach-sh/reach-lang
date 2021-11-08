@@ -1,0 +1,50 @@
+ARG SOLC_VERSION
+FROM ethereum/solc:${SOLC_VERSION}-alpine AS solc
+RUN apk add make curl bash
+COPY Makefile.docker ./Makefile
+COPY sol/stdlib_reach.sol sol/stdlib_openzep.sol.sh ./sol/
+RUN make sol/stdlib.json
+
+FROM alpine as z3
+RUN echo 'http://host.docker.internal:30000/' >> /etc/apk/repositories
+RUN apk update --allow-untrusted && apk add libgmpxx ca-certificates git
+RUN apk add --allow-untrusted --repository="http://host.docker.internal:30000/" z3=4.8.12-r0 z3-dev=4.8.12-r0
+RUN chmod +x /usr/bin/z3
+
+FROM alpine AS build
+RUN apk update
+RUN apk add ncurses ncurses-dev libc6-compat zlib-dev gcc g++ git gmp-dev
+RUN ln -s /lib64/ld-linux-x86-64.so.2 /lib/ld-linux-x86-64.so.2
+RUN ln -s /usr/lib/libncursesw.so.6 /usr/lib/libtinfo.so.6
+RUN ln -s /usr/lib/libtinfo.so.6 /usr/lib/libtinfo.so
+RUN wget -qO- https://get.haskellstack.org/ | sh
+
+WORKDIR /build
+
+RUN apk add make curl bash
+COPY .docker-root ./.docker-root
+COPY Makefile.docker ./Makefile
+COPY package.mo.yaml ./
+RUN make ROOT=.docker-root install-mo package.yaml
+
+COPY stack.yaml stack.yaml.lock ./
+RUN stack build --dependencies-only
+COPY hie.yaml Setup.hs ./
+ADD app ./app/
+ADD rsh ./rsh/
+ADD smt2 ./smt2/
+COPY --from=solc /sol/stdlib.sol ./sol/
+ADD src ./src/
+ADD test ./test/
+
+RUN make ROOT=.docker-root src/Reach/Version.hs
+
+RUN set -o pipefail ; stack build 2>&1 | tee build-log.txt
+RUN mv "$(stack path --local-install-root)/bin" /build/bin/
+
+COPY --from=solc /usr/local/bin/solc /usr/bin/solc
+RUN chmod +x /usr/bin/solc
+COPY --from=solc /sol/stdlib.json .
+COPY --from=z3 /usr/bin/z3 /usr/bin/z3
+
+COPY .stan.toml ./

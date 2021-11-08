@@ -1,8 +1,9 @@
+{-# LANGUAGE StandaloneDeriving #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Reach.Verify.SMT (verify_smt) where
 
 import qualified Control.Exception as Exn
 import Control.Monad
-import Control.Monad.Extra
 import Control.Monad.Reader
 import qualified Data.ByteString.Char8 as B
 import Data.Digest.CRC32
@@ -11,6 +12,7 @@ import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Set as S
+import qualified Data.Sequence as Seq
 import qualified Data.Text as T
 import Reach.AST.Base
 import Reach.AST.DLBase
@@ -26,8 +28,8 @@ import Reach.UnrollLoops
 import Reach.Util
 import Reach.Verify.SMTParser
 import Reach.Verify.Shared
-import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver)
 import qualified SimpleSMT as SMT
+import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver(..))
 import System.Directory
 import System.Exit
 import System.IO
@@ -172,7 +174,6 @@ data SMTCtxt = SMTCtxt
   , ctxt_path_constraint :: [SExpr]
   , ctxt_while_invariant :: Maybe DLBlock
   , ctxt_displayed :: IORef (S.Set SExpr)
-  , ctxt_vars_defdr :: IORef (S.Set String)
   , ctxt_maps :: M.Map DLMVar SMTMapInfo
   , ctxt_addrs :: M.Map SLPart DLVar
   , ctxt_v_to_dv :: IORef (M.Map String [DLVar])
@@ -199,7 +200,6 @@ ctxtNewScope :: App a -> App a
 ctxtNewScope m = do
   SMTCtxt {..} <- ask
   ctxt_smt_trace' <- liftIO $ dupeIORef ctxt_smt_trace
-  ctxt_vars_defdr' <- liftIO $ dupeIORef ctxt_vars_defdr
   let dupeMapInfo (SMTMapInfo {..}) = do
         sm_c' <- liftIO $ dupeCounter sm_c
         sm_rs' <- lift $ dupeIORef sm_rs
@@ -216,8 +216,7 @@ ctxtNewScope m = do
     local
       (\e ->
          e
-           { ctxt_vars_defdr = ctxt_vars_defdr'
-           , ctxt_maps = ctxt_maps'
+           { ctxt_maps = ctxt_maps'
            , ctxt_smt_trace = ctxt_smt_trace'
            })
       $ m
@@ -278,16 +277,6 @@ smtDeclare_v v t l = do
   smtDeclare smt v (Atom s) l
   smtTypeInv t $ Atom v
 
-smtDeclare_v_memo :: String -> DLType -> Maybe SMTLet -> App ()
-smtDeclare_v_memo v t ml = do
-  vds <- ctxt_vars_defdr <$> ask
-  vars_defd <- liftIO $ readIORef vds
-  case S.member v vars_defd of
-    True -> return ()
-    False -> do
-      liftIO $ modifyIORef vds $ S.insert v
-      smtDeclare_v v t ml
-
 smtPrimOp :: SrcLoc -> PrimOp -> [DLArg] -> [SExpr] -> App SExpr
 smtPrimOp at p dargs =
   case p of
@@ -310,13 +299,16 @@ smtPrimOp at p dargs =
     DIGEST_EQ -> app "="
     ADDRESS_EQ -> app "="
     TOKEN_EQ -> app "="
-    BYTES_CONCAT -> app "bytesAppend"
-    SELF_ADDRESS ->
+    (BYTES_ZPAD xtra) -> \args -> do
+      xtra' <- smt_la at $ bytesZeroLit xtra
+      return $ smtApply "bytesAppend" (args <> [ xtra' ])
+    MUL_DIV ->
+      \case
+        [x, y, den] -> return $ smtApply "div" [ smtApply "*" [ x, y ], den ]
+        _ -> impossible "smtPrimOp: MUL_DIV args"
+    SELF_ADDRESS pn isClass _ ->
       case dargs of
-        [ DLA_Literal (DLL_Bytes pn)
-          , DLA_Literal (DLL_Bool isClass)
-          , _
-          ] -> \_ ->
+        [] -> \_ ->
             case isClass of
               False ->
                 return $ Atom $ smtAddress pn
@@ -328,7 +320,7 @@ smtPrimOp at p dargs =
                     ai <- smt_alloc_id
                     let av = "classAddr" <> show ai
                     let dv = DLVar at Nothing T_Address ai
-                    let smlet = SMTLet at dv (DLV_Let DVC_Once dv) Witness (SMTProgram $ DLE_PrimOp at SELF_ADDRESS dargs)
+                    let smlet = SMTLet at dv (DLV_Let DVC_Once dv) Witness (SMTProgram $ DLE_PrimOp at p dargs)
                     smtDeclare_v av T_Address $ Just smlet
                     return $ Atom av
         se -> impossible $ "self address " <> show se
@@ -363,9 +355,10 @@ smtDigestCombine at args =
 
 --- Verifier
 data ResultDesc
-  = RD_UnsatCore [String]
-  | RD_Model SExpr
-
+  -- = RD_UnsatCore [String]
+  = RD_Model SExpr
+  deriving (Show, Read)
+type SResult = (SMT.Result, Maybe ResultDesc)
 
 -- A computation is first stored into an unamed var, then `const`
 -- assigned to a variable. So, choose the second variable inserted
@@ -431,7 +424,11 @@ parseVal env t v = do
         T_Token -> do
           case v of
             Atom i -> return $ SMV_Token i
-            _ -> impossible $ "parseVal: Digest: " <> show v
+            _ -> impossible $ "parseVal: Token: " <> show v
+        T_Contract -> do
+          case v of
+            Atom i -> return $ SMV_Contract i
+            _ -> impossible $ "parseVal: Contract: " <> show v
         T_Address -> do
           let err = impossible $ "parseVal: Address: " <> show v
           case v of
@@ -458,6 +455,10 @@ parseVal env t v = do
               elems' <- parseArray env ty (List vs)
               return $ SMV_Array ty $ reverse elems'
             _ -> impossible $ "parseVal: Array(" <> show v <> ")"
+        T_Tuple [] ->
+          case v of
+            Atom _ -> return $ SMV_Tuple []
+            _ -> impossible $ "parseVal: Tuple mt " <> show v
         T_Tuple ts ->
           case v of
             List (_:vs) -> do
@@ -524,14 +525,19 @@ recoverBindingInfo = \case
       _ -> return ow
   ow -> return ow
 
-display_fail :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> Maybe B.ByteString -> Bool -> Maybe ResultDesc -> Maybe DLVar -> App ()
-display_fail tat f tk mmsg repeated mrd mdv = do
+display_fail :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> Maybe B.ByteString -> Maybe ResultDesc -> Maybe DLVar -> Bool -> App ()
+display_fail tat f tk mmsg mrd mdv timeout = do
   let iputStrLn = liftIO . putStrLn
   cwd <- liftIO $ getCurrentDirectory
   let hasColor = unsafeTermSupportsColor
   let color c = if hasColor then TC.color c else id
   let style s = if hasColor then TC.style s else id
-  iputStrLn $ color TC.Red $ style TC.Bold "Verification failed:"
+  VerifyOpts {..} <- (vst_vo . ctxt_vst) <$> ask
+  let lab =
+        case timeout of
+          True -> "timed out after " <> show vo_timeout <> " ms"
+          False -> "failed"
+  iputStrLn $ color TC.Red $ style TC.Bold $ "Verification " <> lab <> ":"
   mode <- ctxt_mode
   iputStrLn $ "  when " ++ (show $ pretty mode)
   iputStrLn $ "  of theorem: " ++ (show $ pretty tk)
@@ -542,34 +548,25 @@ display_fail tat f tk mmsg repeated mrd mdv = do
   iputStrLn $ redactAbsStr cwd $ "  at " ++ show tat
   mapM_ (iputStrLn . ("  " ++) . show) f
   iputStrLn $ ""
-  case repeated of
-    True -> do
-      --- FIXME have an option to force these to display
-      iputStrLn $ "  (details omitted on repeat)"
-    False -> do
-      --- FIXME Another way to think about this is to take `tse` and fully
-      --- substitute everything that came from the program (the "context"
-      --- below) and then just show the remaining variables found by the
-      --- model.
-      case mdv of
-        Nothing -> do
-          iputStrLn $ show $ "  " <> pretty tk <> parens "false" <> ";" <> hardline
-        Just dv -> do
-          let pm = case mrd of
-                Nothing -> mempty
-                --- FIXME Do something useful here
-                Just (RD_UnsatCore _uc) -> mempty
-                Just (RD_Model m) -> parseModel m
-          pm_str_val <- parseModel2 pm
-          lets <- (liftIO . readIORef) =<< asks ctxt_smt_trace
-          lets' <- reverse . nubOrd . dropConstants pm_str_val <$> mapM recoverBindingInfo lets
-          smtTrace <- liftIO $ add_counts $ SMTTrace lets' tk dv
-          pm_dv_val <- M.fromList <$> foldM (\ acc (k, v) -> do
-                sv2dv k <&> \case
-                  Just dv'' -> (dv'', v) : acc
-                  Nothing -> acc
-                ) [] (M.toList pm_str_val)
-          iputStrLn $ show $ showTrace pm_dv_val smtTrace
+  case mdv of
+    Nothing -> do
+      iputStrLn $ show $ "  " <> pretty tk <> parens "false" <> ";" <> hardline
+    Just dv -> do
+      let pm = case mrd of
+            Nothing -> mempty
+            --- XXX Gather these and use them
+            -- Just (RD_UnsatCore _uc) -> mempty
+            Just (RD_Model m) -> parseModel m
+      pm_str_val <- parseModel2 pm
+      lets <- (liftIO . readIORef) =<< asks ctxt_smt_trace
+      lets' <- reverse . nubOrd . dropConstants pm_str_val <$> mapM recoverBindingInfo lets
+      smtTrace <- liftIO $ add_counts $ SMTTrace lets' tk dv
+      pm_dv_val <- M.fromList <$> foldM (\ acc (k, v) -> do
+            sv2dv k <&> \case
+              Just dv'' -> (dv'', v) : acc
+              Nothing -> acc
+            ) [] (M.toList pm_str_val)
+      iputStrLn $ show $ showTrace pm_dv_val smtTrace
 
 dropConstants :: M.Map String SMTVal -> [SMTLet] -> [SMTLet]
 dropConstants pm = \case
@@ -609,64 +606,70 @@ smtAssert se = do
       \(e :: Exn.SomeException) ->
         impossible $ safeInit $ drop 12 $ show e
 
-checkUsing :: App SMT.Result
-checkUsing = do
+fromSExpr :: Read a => SExpr -> a
+fromSExpr = \case
+  Atom s ->
+    case readMaybe s of
+      Just x -> x
+      Nothing -> impossible $ "fromSExpr: " <> show s
+  List _ -> impossible "fromSExpr"
+
+toSExpr :: Show a => a -> SExpr
+toSExpr = Atom . show
+
+deriving instance Read Result
+deriving instance Read SExpr
+
+checkUsing :: TheoremKind -> App SResult
+checkUsing tk = do
   smt <- ctxt_smt <$> ask
-  let our_tactic = List [Atom "then", Atom "simplify", Atom "auflia"]
-  res <- liftIO $ SMT.command smt (List [Atom "check-sat-using", our_tactic])
-  case res of
-    Atom "unsat" -> return Unsat
-    Atom "unknown" -> return Unknown
-    Atom "sat" -> return Sat
-    _ ->
-      impossible $
-        unlines
-          [ "Unexpected result from the SMT solver:"
-          , "  Expected: unsat, unknown, or sat"
-          , "  Result: " ++ SMT.showsSExpr res ""
-          ]
+  fromSExpr <$> (liftIO $ SMT.command smt $ List [ Atom "reachCheckUsing", toSExpr $ isPossible tk ])
 
 verify1 :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> App ()
 verify1 at mf tk se mmsg = smtNewScope $ do
   flip forM_ smtAssert =<< (ctxt_path_constraint <$> ask)
-  smtAssert $ if isPossible then se else smtNot se
-  r <- checkUsing
-  smt <- ctxt_smt <$> ask
-  case isPossible of
+  smtAssert $ if isPossible tk then se else smtNot se
+  r <- checkUsing tk
+  verify1r at mf tk se mmsg r
+
+verify1r :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> SResult -> App ()
+verify1r at mf tk se mmsg r = do
+  case isPossible tk of
     True ->
       case r of
-        Unknown -> bad $ return Nothing
-        Unsat ->
-          bad $
-            liftM (Just . RD_UnsatCore) $
-              liftIO $ SMT.getUnsatCore smt
-        Sat -> good
+        (Unknown, _) -> bady Nothing
+        (Unsat, mrd) -> badn mrd
+        (Sat, _) -> good
     False ->
       case r of
-        Unknown -> bad $ return Nothing
-        Unsat -> good
-        Sat ->
-          bad $
-            liftM (Just . RD_Model) $
-              liftIO $ SMT.command smt $ List [Atom "get-model"]
+        (Unknown, _) -> bady Nothing
+        (Unsat, _) -> good
+        (Sat, mrd) -> badn mrd
   where
     good = void $ (liftIO . incCounter . vst_res_succ) =<< (ctxt_vst <$> ask)
-    bad mgetm = do
-      mm <- mgetm
+    badn = bad_ False
+    bady = bad_ True
+    bad_ timeout mm = do
       dr <- ctxt_displayed <$> ask
       dspd <- liftIO $ readIORef dr
-      let sv = case se of
-                Atom id' -> id'
-                _ -> impossible "verify1: expected atom"
-      mdv <- sv2dv sv
-      display_fail at mf tk mmsg (elem se dspd) mm mdv
+      mdv <-
+        case se of
+          Atom id' -> sv2dv id'
+          _ -> return Nothing
+      let repeated = elem se dspd
+      case repeated of
+        True ->
+          void $ (liftIO . incCounter . vst_res_reps) =<< (ctxt_vst <$> ask)
+        False ->
+          display_fail at mf tk mmsg mm mdv timeout
       liftIO $ modifyIORef dr $ S.insert se
-      void $ (liftIO . incCounter . vst_res_fail) =<< (ctxt_vst <$> ask)
-    isPossible =
-      case tk of
-        TClaim CT_Possible -> True
-        _ -> False
+      let which = if timeout then vst_res_time else vst_res_fail
+      void $ (liftIO . incCounter . which) =<< (ctxt_vst <$> ask)
 
+isPossible :: TheoremKind -> Bool
+isPossible = \case
+  TClaim CT_Possible -> True
+  _ -> False
 
 pathAddUnbound_v :: String -> DLType -> Maybe SMTLet -> App ()
 pathAddUnbound_v v t ml = do
@@ -917,8 +920,6 @@ smt_lt _at_de dc =
             , Atom (show i)
             ]
         False -> Atom $ show i
-    DLL_Bytes bs ->
-      smtApply "bytes" [Atom (show $ crc32 bs)]
 
 smt_v :: SrcLoc -> DLVar -> App SExpr
 smt_v _at_de dv = Atom <$> smtVar dv
@@ -947,6 +948,8 @@ smt_la at_de dla = do
       vv' <- smt_a at_de vv
       return $ smtApply (s ++ "_" ++ vn) [vv']
     DLLA_Struct kvs -> cons $ map snd kvs
+    DLLA_Bytes bs -> do
+      return $ smtApply "bytes" [Atom (show $ crc32 bs)]
 
 smt_e :: SrcLoc -> Maybe DLVar -> DLExpr -> App ()
 smt_e at_dv mdv de = do
@@ -954,11 +957,10 @@ smt_e at_dv mdv de = do
     DLE_Arg at (DLA_Interact _ _ _) -> unbound at
     DLE_Arg at da -> bound at =<< smt_a at da
     DLE_LArg at dla -> bound at =<< smt_la at dla
-    DLE_Impossible _ _ ->
-      unbound at_dv
+    DLE_Impossible {} -> unbound at_dv
     DLE_PrimOp at cp args -> do
       let f = case cp of
-                SELF_ADDRESS -> \ se -> pathAddBound at mdv (Just $ SMTProgram de) se Witness
+                SELF_ADDRESS {} -> \ se -> pathAddBound at mdv (Just $ SMTProgram de) se Witness
                 _ -> bound at
       args' <- mapM (smt_a at) args
       f =<< smtPrimOp at cp args args'
@@ -1035,6 +1037,21 @@ smt_e at_dv mdv de = do
     DLE_TokenNew at _ -> unbound at
     DLE_TokenBurn at _ _ -> unbound at
     DLE_TokenDestroy at _ -> unbound at
+    DLE_TimeOrder at ps -> do
+      let go n se = do
+            n' <- smt_v at n
+            smtAssert $ smtEq n' se
+      forM_ ps $ \case
+        (Nothing, n) -> go n $ smt_lt at $ DLL_Int at 0
+        (Just o, n) -> do
+          o' <- smt_a at o
+          let w = DLA_Literal $ DLL_Int at 1
+          w' <- smt_a at w
+          go n =<< smtPrimOp at ADD [o, w] [o', w']
+    DLE_GetContract at -> unbound at
+    DLE_GetAddress at -> unbound at
+    DLE_EmitLog at _ v -> bound at =<< smt_v at v
+    DLE_setApiDetails {} -> mempty
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)
@@ -1042,11 +1059,11 @@ smt_e at_dv mdv de = do
       let check_m = verify1 at f (TClaim ct) ca' mmsg
       let assert_m = smtAssertCtxt ca'
       case ct of
-        CT_Assert -> check_m
+        CT_Assert -> check_m >> assert_m
         CT_Assume _ -> assert_m
         CT_Require ->
           ctxt_mode >>= \case
-            VM_Honest -> check_m
+            VM_Honest -> check_m >> assert_m
             VM_Dishonest {} -> assert_m
         CT_Possible -> check_m
         CT_Unknowable {} -> mempty
@@ -1063,27 +1080,11 @@ smtSwitch sm at ov csm iter = do
         T_Data m -> m
         _ -> impossible "switch"
   ovp <- smt_a at ova
-  let cm1 (vn, (mov', l)) = do
-        ov_s <- smtVar ov
+  let cm1 (vn, (ov', _, l)) = do
         let smte = SMTModel $ O_SwitchCase $ DLA_Var ov
-        let vnv = ov_s <> "_vn_" <> vn
-        let vt = ovtm M.! vn
-        let (ov'p_m, get_ov'p) =
-              case mov' of
-                Just ov' ->
-                  ( mempty
-                  , smt_la at $ DLLA_Data ovtm vn $ DLA_Var ov'
-                  )
-                -- Note It would be nice to ensure that this is always a Just
-                -- and then make it so that EPP can remove them if they aren't
-                -- actually used
-                Nothing ->
-                  ( smtDeclare_v_memo vnv vt Nothing
-                  , smtTypeSort ovt >>= \s -> (return $ smtApply (s <> "_" <> vn) [Atom vnv])
-                  )
-        ov'p <- get_ov'p
+        ov'p <- smt_la at $ DLLA_Data ovtm vn $ DLA_Var ov'
         let eqc = smtEq ovp ov'p
-        let udef_m = ov'p_m <> pathAddUnbound at mov' (Just smte)
+        let udef_m = pathAddUnbound at (Just ov') (Just smte)
         let with_pc = smtNewPathConstraint eqc
         let branch_m =
               case sm of
@@ -1259,14 +1260,16 @@ smt_s :: LLStep -> App ()
 smt_s = \case
   LLS_Com m k -> smt_m m <> smt_s k
   LLS_Stop _at -> mempty
-  LLS_ToConsensus at send recv mtime -> do
-    let DLRecv whov msgvs timev secsv next_n = recv
+  LLS_ToConsensus at _ send recv mtime -> do
+    let DLRecv whov msgvs timev secsv didSendv next_n = recv
     let timeout = case mtime of
           Nothing -> mempty
           Just (_delay_a, delay_s) -> smt_s delay_s
     let bind_time = do
-          pathAddUnbound at (Just timev) Nothing
-          pathAddUnbound at (Just secsv) Nothing
+          let publishOrig = Just $ SMTModel O_Publish
+          -- XXX technically, didSend is guaranteed to be true if send has one
+          -- thing in it
+          void $ traverse (flip (pathAddUnbound at) publishOrig . Just) [timev, secsv, didSendv]
     let after = freshAddrs $ bind_time <> smt_n next_n
     let go (from, DLSend isClass msgas amta whena) = do
           should <- shouldSimulate from
@@ -1316,9 +1319,14 @@ smt_s = \case
           when' <- smt_a at whena
           case should of
             True -> do
-              smtAssert $ when'
-              r <- checkUsing
-              case r of
+              r <-
+                case when' of
+                  -- It is possible that this is bad, because maybe there's
+                  -- something wrong with the whole context
+                  Atom "true" -> return (Sat, Nothing)
+                  Atom "false" -> return (Unsat, Nothing)
+                  _ -> smtAssert when' >> (checkUsing TWhen)
+              case fst r of
                 -- If this context is satisfiable, then whena can be true, so
                 -- we need to evaluate it
                 Sat -> this_case
@@ -1326,8 +1334,7 @@ smt_s = \case
                 -- be true, so if we go try to evaluate it, then we will fail
                 -- all subsequent theorems
                 Unsat -> return ()
-                Unknown ->
-                  verify1 at [] TWhenNotUnknown (Atom $ "false") Nothing
+                Unknown -> verify1r at [] TWhen when' Nothing r
             False -> this_case
     mapM_ ctxtNewScope $ timeout : map go (M.toList send)
 
@@ -1367,6 +1374,7 @@ _smtDefineTypes smt ts = do
          , (T_UInt, ("UInt", uint256_inv))
          , (T_Digest, ("Digest", none))
          , (T_Address, ("Address", none))
+         , (T_Contract, ("Contract", none))
          , (T_Token, ("Token", none))
          ])
   let base = impossible "default"
@@ -1379,12 +1387,13 @@ _smtDefineTypes smt ts = do
           T_Bytes {} -> base
           T_Digest -> base
           T_Address -> base
+          T_Contract -> base
           T_Token -> base
           T_Array et sz -> do
             tni <- type_name et
             let tn = fst tni
             let tinv = snd tni
-            void $ SMT.command smt $ smtApply "define-sort" [Atom n, List [], smtApply "Array" [uint256_sort, Atom tn]]
+            SMT.ackCommand smt $ smtApply "define-sort" [Atom n, List [], smtApply "Array" [uint256_sort, Atom tn]]
             let z = "z_" ++ n
             void $ SMT.declare smt z $ Atom n
             let idxs = [0 .. (sz -1)]
@@ -1481,7 +1490,6 @@ _verify_smt mc ctxt_vst smt lp = do
         Just c -> conName c <> " connector"
   putStrLn $ "Verifying for " <> T.unpack mcs
   ctxt_displayed <- newIORef mempty
-  ctxt_vars_defdr <- newIORef mempty
   ctxt_v_to_dv <- newIORef mempty
   ctxt_typem <- _smtDefineTypes smt (cts lp)
   let ctxt_smt_typem = M.fromList $ map (\ (k, (v, _)) -> (v, k)) $ M.toList ctxt_typem
@@ -1489,7 +1497,8 @@ _verify_smt mc ctxt_vst smt lp = do
         case mc of
           Just c -> smt_lt at_de $ conCons c cn
           Nothing -> Atom $ smtConstant cn
-  let LLProg at (LLOpts {..}) (SLParts pies_m) (DLInit {..}) dex _dvs s = lp
+  let LLProg at (LLOpts {..}) (SLParts {..}) (DLInit {..}) dex _dvs _das s = lp
+  let pies_m = sps_ies
   let initMapInfo mi = do
         sm_c <- liftIO $ newCounter 0
         let sm_t = dlmi_tym mi
@@ -1497,7 +1506,7 @@ _verify_smt mc ctxt_vst smt lp = do
         sm_us <- liftIO $ newIORef SMR_New
         return $ SMTMapInfo {..}
   ctxt_maps <- mapM initMapInfo dli_maps
-  let ctxt_addrs = M.mapWithKey (\p _ -> DLVar at (Just (at, bunpack p)) T_Address 0) pies_m
+  let ctxt_addrs = M.fromSet (\p -> DLVar at (Just (at, bunpack p)) T_Address 0) $ M.keysSet pies_m
   let ctxt_while_invariant = Nothing
   let ctxt_inv_mode = B_None
   let ctxt_path_constraint = []
@@ -1516,12 +1525,6 @@ _verify_smt mc ctxt_vst smt lp = do
           let se = List [smtApply "as" [Atom "const", t], na']
           smtAssert $ smtEq (Atom mv) se
     mapM_ defineMap $ M.toList ctxt_maps
-    case dli_ctimem of
-      Nothing -> mempty
-      Just (ctimev, csecsv) -> do
-        let go v = pathAddUnbound at (Just v) (Just $ SMTProgram $ DLE_Arg at $ DLA_Var v)
-        go ctimev
-        go csecsv
     case mc of
       Just _ -> mempty
       Nothing -> do
@@ -1555,7 +1558,6 @@ hPutStrLn' h s = do
 
 newFileLogger :: FilePath -> IO (IO (), Logger)
 newFileLogger p = do
-  logh_xio <- openFile (p <> ".xio.smt") WriteMode
   logh <- openFile p WriteMode
   tabr <- newIORef 0
   let logLevel = return 0
@@ -1564,55 +1566,121 @@ newFileLogger p = do
       logUntab = modifyIORef tabr $ \x -> x - 1
       printTab = do
         tab <- readIORef tabr
-        mapM_ (\_ -> hPutStr logh " ") $ take tab $ repeat ()
-      send_tag = "[send->]"
-      recv_tag = "[<-recv]"
+        mapM_ (\_ -> hPutStr logh "  ") $ take tab $ repeat ()
+      send_tag = "[send->] "
+      -- recv_tag = "[<-recv]"
       logMessage m' = do
-        hPutStrLn' logh_xio m'
         let (which, m) = splitAt (length send_tag) m'
-        let short_which = if which == send_tag then "+" else "-"
-        if (which == recv_tag && m == " success")
-          then return ()
-          else
-            if (m == " (push 1 )")
-              then do
-                printTab
-                hPutStrLn' logh $ "(push"
-                logTab
-              else
-                if (m == " (pop 1 )")
-                  then do
-                    logUntab
-                    printTab
-                    hPutStrLn' logh $ ")"
-                  else do
-                    printTab
-                    hPutStrLn' logh $ "(" ++ short_which ++ m ++ ")"
+        let isSend = which == send_tag
+        let isRecv = not isSend
+        unless (isRecv && m == "success") $ do
+          printTab
+          when isRecv $ do
+            hPutStr logh ";; "
+          hPutStr logh $ m
+          let f = hPutStrLn' logh
+          case m of
+            "(push 1 )" -> do
+              logTab
+              f " ;; {"
+            "(pop 1 )" -> do
+              logUntab
+              f " ;; }"
+            _ -> f ""
       close = do
         hClose logh
-        hClose logh_xio
   return (close, Logger {..})
 
-verify_smt :: Maybe FilePath -> Maybe [Connector] -> VerifySt -> LLProg -> String -> [String] -> IO ExitCode
-verify_smt logpMay mvcs vst lp prog args = do
+ribPush :: a -> Seq.Seq (Seq.Seq a) -> Seq.Seq (Seq.Seq a)
+ribPush v = \case
+  (Seq.:|>) l r -> (Seq.|>) l $ seqPush v r
+  _ -> impossible $ "empty rib"
+
+seqPush :: a -> Seq.Seq a -> Seq.Seq a
+seqPush v = flip (Seq.|>) v
+
+seqPop :: Seq.Seq a -> Seq.Seq a
+seqPop = \case
+  (Seq.:|>) x _ -> x
+  _ -> impossible $ "empty seq"
+
+newSolverSet :: Integer -> String -> [String] -> (String -> IO (IO (), Maybe Logger)) -> IO Solver
+newSolverSet long_i p a mkl = do
+  let short_a = Atom $ "10"
+  let long_a = Atom $ show $ long_i
+  let t_bin o x y = List [ Atom o, x, y ]
+  let t_timeout = t_bin "try-for"
+  let our_tactic = t_timeout (Atom "default")
+  let reachCheckUsing t = List [Atom "check-sat-using", our_tactic t]
+  subc <- newCounter 0
+  rib <- newIORef (return mempty :: Seq.Seq (Seq.Seq SExpr))
+  let doClose :: IO () -> IO a -> IO a
+      doClose l e = do
+       x <- e
+       l
+       return x
+  (tlc, tl) <- mkl ""
+  Solver tc te <- SMT.newSolver p a tl
+  let c = \case
+        List [ Atom "reachCheckUsing", iptks ] -> do
+          let iptk :: Bool = fromSExpr iptks
+          let after ac rs = do
+                let r =
+                      case rs of
+                        Atom "sat" -> Sat
+                        Atom "unsat" -> Unsat
+                        Atom "unknown" -> Unknown
+                        _ -> impossible $ "reachCheckUsing " <> show rs
+                let f x y = (Just . x) <$> (ac $ List [ Atom y ])
+                mrd <-
+                  case (iptk, r) of
+                    -- (True, Unsat) -> f RD_UnsatCore "get-unsat-core"
+                    (False, Sat) -> f RD_Model "get-model"
+                    _ -> return Nothing
+                return $ toSExpr (r, mrd)
+          tc (reachCheckUsing short_a) >>= \case
+            Atom "unknown" -> do
+              sn <- incCounter subc
+              (slc, sl) <- mkl $ show sn
+              Solver sc se <- SMT.newSolver p a sl
+              readIORef rib >>= traverse_ (traverse_ sc)
+              r <- sc (reachCheckUsing long_a)
+              x <- after sc r
+              void $ doClose slc se
+              return x
+            r -> after tc r
+        s@(List [ Atom "push", Atom "1" ]) -> do
+          modifyIORef rib $ seqPush mempty
+          tc s
+        s@(List [ Atom "pop", Atom "1" ]) -> do
+          modifyIORef rib $ seqPop
+          tc s
+        s -> do
+          modifyIORef rib $ ribPush s
+          tc s
+  let e = doClose tlc te
+  return $ Solver c e
+
+verify_smt :: VerifySt -> LLProg -> String -> [String] -> IO ExitCode
+verify_smt vst lp prog args = do
+  let VerifyOpts {..} = vst_vo vst
+  let logpMay = ($ "smt") <$> vo_out
   ulp <- unrollLoops lp
   case logpMay of
     Nothing -> return ()
     Just x -> writeFile (x <> ".ulp") (show $ pretty ulp)
-  let mkLogger = case logpMay of
+  let mkLogger t = case fmap (<> t) logpMay of
         Just logp -> do
           (close, logpl) <- newFileLogger logp
           return (close, Just logpl)
         Nothing -> return (return (), Nothing)
-  (close, logplMay) <- mkLogger
-  smt <- SMT.newSolver prog args logplMay
-  unlessM (SMT.produceUnsatCores smt) $
-    impossible "Prover doesn't support possible?"
+  smt <- newSolverSet vo_timeout prog args mkLogger
+  --unlessM (SMT.produceUnsatCores smt) $
+  --  impossible "Prover doesn't support possible?"
   SMT.loadString smt smtStdLib
   let go mc = SMT.inNewScope smt $ _verify_smt mc vst smt ulp
-  case mvcs of
+  case vo_mvcs of
     Nothing -> go Nothing
     Just cs -> mapM_ (go . Just) cs
   zec <- SMT.stop smt
-  close
   return $ zec

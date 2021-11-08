@@ -1,4 +1,5 @@
 import cfxsdk from 'js-conflux-sdk';
+const { format } = cfxsdk;
 import { ethers } from 'ethers';
 import * as providers from './cfxers_providers';
 import { ParamType } from '@ethersproject/abi';
@@ -7,12 +8,12 @@ export { BigNumber, utils, providers }
 import { address_cfxStandardize } from './CFX_util';
 import Timeout from 'await-timeout';
 import { debug } from './shared_impl';
-import { window } from './shim';
 
 // XXX Convenience export, may want to rethink
 export { cfxsdk };
 
 // This file immitates the ethers.js API
+const waitMs = 25;
 
 // Recursively stringify BigNumbers
 function unbn(arg: any): any {
@@ -63,6 +64,68 @@ function conform(args: any[], tys: ParamType[]): any[] {
   return args;
 }
 
+function prepForConfluxPortal(txnOrig: any): any {
+  const hexStringify = (n: any) => '0x' + BigInt(n || '0').toString(16);
+  const txn = {...txnOrig};
+
+  // value should always be present
+  txn.value = hexStringify(txnOrig.value);
+
+  // These fields are transformed if present
+  // TODO: is it safe just to turn all number fields into hex strings?
+  // Where is the "real" Conflux Portal source code to check this?
+  for (const field of ['storageLimit', 'gas']) {
+    if (txn[field] !== undefined) txn[field] = hexStringify(txnOrig[field]);
+  }
+
+  return txn;
+}
+
+const addEstimates = async (cfx:any, txn:any): Promise<any> => {
+  debug(`addEstimates`, txn);
+  const f = (xf:string) => {
+    const x = txn[xf];
+    delete txn[xf];
+    return (x === undefined ? 0 : x);
+  };
+  let gas = f("gas");
+  let storage = f("storageLimit");
+  debug(`addEstimates`, { gas, storage });
+
+  let est = undefined;
+  let est_err = undefined;
+  try {
+    est = await cfx.estimateGasAndCollateral(txn);
+  } catch (e) {
+    est_err = e;
+  }
+  debug(`addEstimates`, { est, est_err });
+  if ( est ) {
+    const g = (x:any, y:any) => ((y > x) ? y : x);
+    gas = g(gas, est.gasUsed);
+    storage = g(storage, est.storageCollateralized);
+  }
+  debug(`addEstimates`, { gas, storage });
+  if ( storage === undefined || storage === 0 ) {
+    storage = 2048;
+  }
+  debug(`addEstimates`, { gas, storage });
+
+  const h = (x:any, y:any) => format.big(x).times(y).toFixed(0);
+  gas = h(gas, cfx.defaultGasRatio);
+  storage = h(storage, cfx.defaultStorageRatio);
+  debug(`addEstimates`, { gas, storage });
+
+  if ( gas === '0' ) {
+    gas = undefined;
+  }
+  debug(`addEstimates`, { gas, storage });
+
+  txn.gas = gas;
+  txn.storageLimit = storage;
+  return txn;
+};
+
 export class Signer {
   static isSigner(x: any) {
     // XXX
@@ -78,7 +141,7 @@ interface IContract {
 export class Contract implements IContract {
   [k: string]: any
   _abi: any[]
-  _wallet: Wallet
+  _wallet: IWallet
   _receiptP?: Promise<any>
   _contract: cfxsdk.Contract
   address?: string
@@ -99,9 +162,9 @@ export class Contract implements IContract {
   //   getEvent: (name: string) => {inputs: {name: string}[]},
   //   parseLog: (log: Log) => {args: {[k: string]: any}},
   // }
-
-  constructor(address: string|null|undefined, abi: string|any[], wallet: Wallet, receiptP?: Promise<any>, hash?: string) {
+  constructor(address: string|null|undefined, abi: string|any[], wallet: IWallet, receiptP?: Promise<any>, hash?: string) {
     this.address = address || undefined;
+    const blacklist = Object.keys(this).filter((s) => s[0] === '_');
     this._abi = (typeof abi === 'string') ? JSON.parse(abi) : abi;
     this._wallet = wallet;
     this._receiptP = receiptP;
@@ -119,10 +182,11 @@ export class Contract implements IContract {
         }
         const receipt = await self._receiptP;
         debug(`cfxers:Contract.wait`, `got receipt`, receipt);
-        if (self.address && self.address !== receipt.contractCreated) {
-          throw Error(`Impossible: ctc addresses don't match: ${self.address} vs ${receipt.contractCreated}`);
+        const rcc = address_cfxStandardize(receipt.contractCreated);
+        if (self.address && self.address !== rcc) {
+          throw Error(`Impossible: ctc addresses don't match: ${self.address} vs ${rcc}`);
         }
-        self.address = self.address || receipt.contractCreated;
+        self.address = self.address || rcc;
         if (self.deployTransaction.hash && self.deployTransaction.hash !== receipt.transactionHash) {
           throw Error(`Impossible: txn hashes don't match: ${self.deployTransaction.hash} vs ${receipt.transactionHash}`);
         }
@@ -133,7 +197,7 @@ export class Contract implements IContract {
     this.interface = new ethers.utils.Interface(this._abi);
     for (const item of this._abi) {
       if (item.type === 'function') {
-        if (item.name[0] !== '_' && item.name !== 'address' && item.name !== 'deployTransaction' && item.name !== 'interface') {
+        if (!blacklist.includes(item.name) && item.name !== 'address' && item.name !== 'deployTransaction' && item.name !== 'interface') {
           this[item.name] = this._makeHandler(item);
         }
       }
@@ -151,28 +215,34 @@ export class Contract implements IContract {
     const inputs = iface.fragments.filter((x) => x.name == fname)[0].inputs;
     return async (...args: any) => {
       debug(`cfxers:handler`, fname, 'call', {args});
-      let txn: {from?: string, value?: string} = {from, value: '0'};
+      let txn: any = {from, value: '0'};
       if (args.length === inputs.length + 1) {
         txn = unbn(args.pop());
         txn = {from, ...txn, value: (txn.value || '0').toString()};
       }
       args = unbn(args);
+      if ( txn.gasLimit !== undefined ) {
+        txn.gas = txn.gasLimit;
+      }
+      delete txn.gasLimit;
+      debug(`cfxers:handler`, fname, 'txn', { txn, args});
       const argsConformed = conform(args, inputs);
       debug(`cfxers:handler`, fname, 'conform', argsConformed);
 
       if (mut !== 'view' && mut !== 'pure') {
-        debug(`cfsers:handler`, fname, `waitable`);
+        debug(`cfxers:handler`, fname, `waitable`);
         // Note: this usage of `.call` here is because javascript is insane.
         // XXX 2021-06-14 Dan: This works for the cjs compilation target, but does it work for the other targets?
         // @ts-ignore
         const cfc = self._contract[fname].call(...argsConformed);
         debug(`cfxers:handler`, fname, `cfc`, cfc);
+        // @ts-ignore
+        txn = await addEstimates(this._wallet.provider.conflux, txn);
         const {to, data} = cfc; // ('to' is just ctc address)
         const txnDat = {...txn, to, data};
         debug(`cfxers:handler`, fname, `txnDat`, txnDat);
         const res = await _wallet.sendTransaction({...txnDat});
         const {transactionHash} = await res.wait();
-
         // debug(`cfxers:handler`, fname, 'receipt');
         // debug(transactionReceipt);
         // const { transactionHash } = transactionReceipt;
@@ -319,9 +389,8 @@ export class BrowserWallet implements IWallet {
     this._requireConnected();
     const {provider, address: from} = this;
     if (!provider) throw Error(`Impossible: provider is undefined`);
-    // @ts-ignore // leaning on window.BigInt for the num -> hexnum conversion
-    const value: string = '0x' + window.BigInt(txnOrig.value || '0').toString(16);
-    const txn = {...txnOrig, value, from};
+    const txn = prepForConfluxPortal({...txnOrig, from});
+    const {value} = txn;
     return await new Promise((resolve, reject) => {
       this.cp.sendAsync({
         method: 'cfx_sendTransaction',
@@ -395,13 +464,13 @@ export class Wallet implements IWallet {
     if (!this.provider) throw Error(`Impossible: provider is undefined`);
     const from = this.getAddress();
     txn = {from, ...txn, value: (txn.value || '0').toString()};
+    txn = await addEstimates(this.provider.conflux, txn);
     // This is weird but whatever
     if (txn.to instanceof Promise) {
-      txn.to = await txn.to;
+       txn.to = await txn.to;
     }
     return _retryingSendTxn(this.provider, txn);
   }
-
   static createRandom(): Wallet {
     return new Wallet();
   }
@@ -447,12 +516,12 @@ function updateSentAt(addr: string, epoch: number) {
 const waitUntilSendableEpoch = async (provider: providers.Provider, addr: string): Promise<void> => {
   while (!tryGetLock(epochWaitLock, addr)) {
     // XXX fail after waiting too long?
-    await Timeout.set(50);
+    await Timeout.set(waitMs);
   }
   let current: number;
   // XXX fail after waiting too long?
   while ((current = await provider.getBlockNumber()) <= getLastSentAt(addr)) {
-    await Timeout.set(50); // XXX revisit how long to wait?
+    await Timeout.set(waitMs);
   }
   updateSentAt(addr, current);
   releaseLock(epochWaitLock, addr);
@@ -470,31 +539,43 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
     await waitUntilSendableEpoch(provider, addr);
     if (err) {
       // XXX is this still needed?
-      await Timeout.set(1000); // XXX shorten this?
+      await Timeout.set(waitMs);
     }
     try {
       // Note: {...txn} because conflux is going to mutate it >=[
       txnMut = {...txnOrig};
+      debug(`_retryingSendTxn attempt`, txnOrig);
       const transactionHashP = provider.conflux.sendTransaction(txnMut);
       const transactionHash = await transactionHashP;
-      // debug(`_retryingSendTxn success`, {txnOrig, txnMut, transactionHash});
+      debug(`_retryingSendTxn sent`, {txnOrig, txnMut, transactionHash});
       updateSentAt(addr, txnMut.epochHeight);
       return {
         transactionHash,
         wait: async () => {
           // see: https://github.com/Conflux-Chain/js-conflux-sdk/blob/master/docs/how_to_send_tx.md#transactions-stage
-          // @ts-ignore
-          await transactionHashP.executed();
-          return {transactionHash};
+          try {
+            // @ts-ignore
+            const r = await transactionHashP.confirmed({ delta: 1000, timeout: 60 * 1000});
+            debug(`_retryingSendTxn receipt good`, r);
+            return { transactionHash };
+          } catch (e) {
+            const r: any = await provider.conflux.getTransactionReceipt(transactionHash);
+            debug(`_retryingSendTxn receipt bad`, r);
+            throw e;
+          }
         },
       }
-    } catch (e) {
+    } catch (e:any) {
       err = e;
-      // debug({
-      //   message: `retrying sendTxn attempt failed`,
-      //   txnOrig, txnMut,
-      //   e, tries, max_tries
-      // });
+      const es = JSON.stringify(e);
+      if ( es.includes("stale nonce") || es.includes("same nonce") ) {
+        debug(`_retryingSendTxn: nonce error, giving more tries`);
+        tries--;
+      }
+      debug(`_retryingSendTxn fail`, {
+        txnOrig, txnMut,
+        e, tries, max_tries
+      });
       continue;
     }
   }
@@ -505,10 +586,9 @@ async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): 
 async function waitReceipt(provider: providers.Provider, txnHash: string): Promise<object> {
   // XXX is 20s enough time on testnet/mainnet?
   // js-conflux-sdk is willing to wait up to 5 mins before timing out, which seems a bit ridiculous
-  const maxTries = 400;
-  const waitMs = 50;
+  const maxTries = 800; // * 25ms = 20s
   for (let tries = 1; tries <= maxTries; tries++) {
-    const r: any = await provider.conflux.getTransactionReceipt(txnHash);
+    const r: any = await provider.getTransactionReceipt(txnHash);
     if (r) {
       if (r.outcomeStatus !== 0) {
         throw Error(`Transaction failed, outcomeStatus: ${r.outcomeStatus}`);

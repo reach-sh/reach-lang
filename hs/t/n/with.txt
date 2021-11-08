@@ -1,8 +1,8 @@
 reachc: error[RE0002]: Invalid statement
 
- ./with.rsh:10:7:with
+  ./with.rsh:10:7:with
 
- 10|       with (o) {
+  10|       with (o) {
 
 Trace:
   in [unknown function] from (./with.rsh:8:15:function exp) at (./with.rsh:8:11:application)

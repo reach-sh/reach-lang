@@ -1,33 +1,23 @@
 ROOT=../..
 include $(ROOT)/js/JS_IMAGES
+include $(ROOT)/DEPS
+include Makefile.docker
 
 IMAGE=$(STDLIB_IMAGE)
 
-.PHONY: clean
-clean:
-	rm -f package.json
+$(ROOT)/hs/sol/stdlib.json:
+	cd $(ROOT)/hs && $(MAKE) sol/stdlib.json
 
-.PHONY: install-mo
-install-mo:
-	curl -sSL https://git.io/get-mo -o mo
-	chmod +x mo
-	sudo mv mo /usr/local/bin
+stdlib_sol.json: $(ROOT)/hs/sol/stdlib.json
+	cp -f $< $@
 
-.PHONY: mo
-mo:
-	@which mo 1>/dev/null || (echo 'FAILURE: Please call `make install-mo` first' && exit 1)
-
-package.json: package.mo.json $(ROOT)/VERSION
-	REACH_VERSION=$(REACH_VERSION) mo $< > $@
-
-ts/version.ts: ts/version.mo.ts $(ROOT)/VERSION
-	REACH_VERSION=$(REACH_VERSION) mo $< > $@
-
-ts/stdlib_sol.ts: $(ROOT)/hs/sol/stdlib.sol
-	(echo "export default" ; cd $(ROOT)/hs/sol ; solc --optimize --combined-json abi,bin stdlib.sol) > $@
+.PHONY: expand
+expand: package.json ts/version.ts ts/stdlib_sol.ts
 
 .PHONY: build
-build: package.json ts/version.ts ts/stdlib_sol.ts
+build:
+	mkdir -p .docker-root
+	cp -f $(ROOT)/VERSION .docker-root/
 	docker build --tag=$(IMAGE) \
 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
 	  --build-arg REACH_VERSION=$(VERSION) \
@@ -35,21 +25,25 @@ build: package.json ts/version.ts ts/stdlib_sol.ts
 	  .
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
+.PHONY: push
+push:
+	$(ROOT)/scripts/docker-push.sh $(IMAGE)
+
 .PHONY: format
-format: package.json
+format: expand
 	npm run beautify
 	npm run format
 
 .PHONY: check
-check: package.json
+check: expand
 	sbin/check.sh
 
 .PHONY: js-build
-js-build: package.json
+js-build: expand
 	npm run build
 
 # XXX should be preceded by js-build
 # but don't want to re-force it
 .PHONY: js-mjs
-js-mjs: package.json
+js-mjs: expand
 	sbin/fix.sh

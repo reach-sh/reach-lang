@@ -1,8 +1,8 @@
-reachc: error[RE0039]: Invalid array index. Expected uint256, got: Bytes(5)
+reachc: error[RE0025]: hello is not a field of Tuple(UInt, UInt, UInt). Did you mean: ["set","length"]
 
- ./Err_Eval_RefNotInt.rsh:6:15:array ref
+  ./Err_Eval_RefNotInt.rsh:6:15:array ref
 
- 6|     return arr["hello"];
+  6|     return arr["hello"];
 
-For further explanation of this error, see: https://docs.reach.sh/RE0039.html
+For further explanation of this error, see: https://docs.reach.sh/RE0025.html
 

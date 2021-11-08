@@ -1,27 +1,29 @@
-// Automatically generated with Reach 0.1.3
+// Automatically generated with Reach 0.1.6
 /* eslint-disable */
-export const _version = '0.1.3';
-export const _backendVersion = 1;
-
+export const _version = '0.1.6';
+export const _versionHash = '0.1.6';
+export const _backendVersion = 5;
 
 export function getExports(s) {
   const stdlib = s.reachStdlib;
   return {
     };
   };
-
 export function _getViews(s, viewlib) {
   const stdlib = s.reachStdlib;
+  const ctc0 = stdlib.T_Address;
+  const ctc1 = stdlib.T_UInt;
   
   return {
     infos: {
       },
     views: {
+      1: [ctc0, ctc1],
+      2: [ctc0, ctc1]
       }
     };
   
   };
-
 export function _getMaps(s) {
   const stdlib = s.reachStdlib;
   const ctc0 = stdlib.T_Tuple([]);
@@ -29,38 +31,33 @@ export function _getMaps(s) {
     mapDataTy: ctc0
     };
   };
-
-export async function Alice(ctc, interact) {
-  if (ctc.sendrecv === undefined) {
+export async function Alice(ctcTop, interact) {
+  if (typeof(ctcTop) !== 'object' || ctcTop._initialize === undefined) {
     return Promise.reject(new Error(`The backend for Alice expects to receive a contract as its first argument.`));}
   if (typeof(interact) !== 'object') {
     return Promise.reject(new Error(`The backend for Alice expects to receive an interact object as its second argument.`));}
+  const ctc = ctcTop._initialize();
   const stdlib = ctc.stdlib;
   const ctc0 = stdlib.T_Bytes(stdlib.checkedBigNumberify('<builtin>', stdlib.UInt_max, 128));
   const ctc1 = stdlib.T_UInt;
   const ctc2 = stdlib.T_Address;
   
   
-  const v28 = await ctc.creationTime();
-  const v29 = await ctc.creationSecs();
-  
-  const v26 = stdlib.protect(ctc0, interact.info, 'for Alice\'s interact field info');
-  const v27 = stdlib.protect(ctc1, interact.request, 'for Alice\'s interact field request');
+  const v56 = stdlib.protect(ctc0, interact.info, 'for Alice\'s interact field info');
+  const v57 = stdlib.protect(ctc1, interact.request, 'for Alice\'s interact field request');
   
   const txn1 = await (ctc.sendrecv({
-    args: [v27],
+    args: [v57],
     evt_cnt: 1,
-    funcNum: 1,
+    funcNum: 0,
+    lct: stdlib.checkedBigNumberify('./index.rsh:17:5:dot', stdlib.UInt_max, 0),
     onlyIf: true,
     out_tys: [ctc1],
     pay: [stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), []],
     sim_p: (async (txn1) => {
       const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
       
-      const [v34] = txn1.data;
-      const v36 = txn1.time;
-      const v37 = txn1.secs;
-      const v33 = txn1.from;
+      const {data: [v61], secs: v63, time: v62, didSend: v25, from: v60 } = txn1;
       
       sim_r.txns.push({
         amt: stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0),
@@ -76,54 +73,47 @@ export async function Alice(ctc, interact) {
     tys: [ctc1],
     waitIfNotPresent: false
     }));
-  const [v34] = txn1.data;
-  const v36 = txn1.time;
-  const v37 = txn1.secs;
-  const v33 = txn1.from;
+  const {data: [v61], secs: v63, time: v62, didSend: v25, from: v60 } = txn1;
   ;
   const txn2 = await (ctc.recv({
+    didSend: false,
     evt_cnt: 0,
-    funcNum: 2,
+    funcNum: 1,
     out_tys: [],
     timeoutAt: undefined,
     waitIfNotPresent: false
     }));
-  const [] = txn2.data;
-  const v44 = txn2.time;
-  const v45 = txn2.secs;
-  const v41 = txn2.from;
+  const {data: [], secs: v69, time: v68, didSend: v34, from: v67 } = txn2;
   ;
   const txn3 = await (ctc.sendrecv({
-    args: [v33, v34, v26],
+    args: [v60, v61, v56],
     evt_cnt: 1,
-    funcNum: 3,
+    funcNum: 2,
+    lct: v68,
     onlyIf: true,
     out_tys: [ctc0],
     pay: [stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0), []],
     sim_p: (async (txn3) => {
       const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
       
-      const [v50] = txn3.data;
-      const v53 = txn3.time;
-      const v54 = txn3.secs;
-      const v49 = txn3.from;
+      const {data: [v75], secs: v77, time: v76, didSend: v44, from: v74 } = txn3;
       
       sim_r.txns.push({
         amt: stdlib.checkedBigNumberify('./index.rsh:decimal', stdlib.UInt_max, 0),
         kind: 'to',
         tok: undefined
         });
-      const v52 = stdlib.addressEq(v33, v49);
-      stdlib.assert(v52, {
+      const v79 = stdlib.addressEq(v60, v74);
+      stdlib.assert(v79, {
         at: './index.rsh:27:5:dot',
         fs: [],
         msg: 'sender correct',
         who: 'Alice'
         });
       sim_r.txns.push({
-        amt: v34,
+        amt: v61,
         kind: 'from',
-        to: v33,
+        to: v60,
         tok: undefined
         });
       sim_r.txns.push({
@@ -139,13 +129,10 @@ export async function Alice(ctc, interact) {
     tys: [ctc2, ctc1, ctc0],
     waitIfNotPresent: false
     }));
-  const [v50] = txn3.data;
-  const v53 = txn3.time;
-  const v54 = txn3.secs;
-  const v49 = txn3.from;
+  const {data: [v75], secs: v77, time: v76, didSend: v44, from: v74 } = txn3;
   ;
-  const v52 = stdlib.addressEq(v33, v49);
-  stdlib.assert(v52, {
+  const v79 = stdlib.addressEq(v60, v74);
+  stdlib.assert(v79, {
     at: './index.rsh:27:5:dot',
     fs: [],
     msg: 'sender correct',
@@ -156,12 +143,16 @@ export async function Alice(ctc, interact) {
   
   
   
+  
+  
+  
   };
-export async function Bob(ctc, interact) {
-  if (ctc.sendrecv === undefined) {
+export async function Bob(ctcTop, interact) {
+  if (typeof(ctcTop) !== 'object' || ctcTop._initialize === undefined) {
     return Promise.reject(new Error(`The backend for Bob expects to receive a contract as its first argument.`));}
   if (typeof(interact) !== 'object') {
     return Promise.reject(new Error(`The backend for Bob expects to receive an interact object as its second argument.`));}
+  const ctc = ctcTop._initialize();
   const stdlib = ctc.stdlib;
   const ctc0 = stdlib.T_UInt;
   const ctc1 = stdlib.T_Null;
@@ -169,22 +160,17 @@ export async function Bob(ctc, interact) {
   const ctc3 = stdlib.T_Address;
   
   
-  const v28 = await ctc.creationTime();
-  const v29 = await ctc.creationSecs();
-  
   const txn1 = await (ctc.recv({
+    didSend: false,
     evt_cnt: 1,
-    funcNum: 1,
+    funcNum: 0,
     out_tys: [ctc0],
     timeoutAt: undefined,
     waitIfNotPresent: false
     }));
-  const [v34] = txn1.data;
-  const v36 = txn1.time;
-  const v37 = txn1.secs;
-  const v33 = txn1.from;
+  const {data: [v61], secs: v63, time: v62, didSend: v25, from: v60 } = txn1;
   ;
-  stdlib.protect(ctc1, await interact.want(v34), {
+  stdlib.protect(ctc1, await interact.want(v61), {
     at: './index.rsh:21:18:application',
     fs: ['at ./index.rsh:20:9:application call to [unknown function] (defined at: ./index.rsh:20:13:function exp)'],
     msg: 'want',
@@ -192,22 +178,20 @@ export async function Bob(ctc, interact) {
     });
   
   const txn2 = await (ctc.sendrecv({
-    args: [v33, v34],
+    args: [v60, v61],
     evt_cnt: 0,
-    funcNum: 2,
+    funcNum: 1,
+    lct: v62,
     onlyIf: true,
     out_tys: [],
-    pay: [v34, []],
+    pay: [v61, []],
     sim_p: (async (txn2) => {
       const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };
       
-      const [] = txn2.data;
-      const v44 = txn2.time;
-      const v45 = txn2.secs;
-      const v41 = txn2.from;
+      const {data: [], secs: v69, time: v68, didSend: v34, from: v67 } = txn2;
       
       sim_r.txns.push({
-        amt: v34,
+        amt: v61,
         kind: 'to',
         tok: undefined
         });
@@ -220,32 +204,27 @@ export async function Bob(ctc, interact) {
     tys: [ctc3, ctc0],
     waitIfNotPresent: false
     }));
-  const [] = txn2.data;
-  const v44 = txn2.time;
-  const v45 = txn2.secs;
-  const v41 = txn2.from;
+  const {data: [], secs: v69, time: v68, didSend: v34, from: v67 } = txn2;
   ;
   const txn3 = await (ctc.recv({
+    didSend: false,
     evt_cnt: 1,
-    funcNum: 3,
+    funcNum: 2,
     out_tys: [ctc2],
     timeoutAt: undefined,
     waitIfNotPresent: false
     }));
-  const [v50] = txn3.data;
-  const v53 = txn3.time;
-  const v54 = txn3.secs;
-  const v49 = txn3.from;
+  const {data: [v75], secs: v77, time: v76, didSend: v44, from: v74 } = txn3;
   ;
-  const v52 = stdlib.addressEq(v33, v49);
-  stdlib.assert(v52, {
+  const v79 = stdlib.addressEq(v60, v74);
+  stdlib.assert(v79, {
     at: './index.rsh:27:5:dot',
     fs: [],
     msg: 'sender correct',
     who: 'Bob'
     });
   ;
-  stdlib.protect(ctc1, await interact.got(v50), {
+  stdlib.protect(ctc1, await interact.got(v75), {
     at: './index.rsh:32:17:application',
     fs: ['at ./index.rsh:31:9:application call to [unknown function] (defined at: ./index.rsh:31:13:function exp)'],
     msg: 'got',
@@ -256,10 +235,12 @@ export async function Bob(ctc, interact) {
   
   
   
+  
+  
+  
   };
-
 const _ALGO = {
-  appApproval: `#pragma version 4
+  appApproval: `#pragma version 5
 txn RekeyTo
 global ZeroAddress
 ==
@@ -275,110 +256,72 @@ bz alloc
 byte base64()
 app_global_get
 dup
-substring 0 32
+int 0
+extract_uint64
 store 1
-substring 32 64
+dup
+int 8
+extract_uint64
 store 2
+extract 16 32
+store 3
 txn NumAppArgs
 int 3
 ==
 assert
 txna ApplicationArgs 0
 btoi
+preamble:
+// Handler 0
 dup
-bz ctor
-// Handler 1
-dup
-int 1
-==
-bz l0
-pop
-txna ApplicationArgs 1
-dup
-len
 int 0
 ==
-assert
+bz l0_afterHandler0
 pop
-txna ApplicationArgs 2
-dup
-len
-int 8
-==
-assert
-dup
-btoi
-store 255
-pop
-// compute state in HM_Check 0
-int 8
-bzero
-sha256
+// check step
+int 0
 load 1
 ==
 assert
-// "CheckPay"
-// "./index.rsh:17:5:dot"
-// "[]"
-// compute state in HM_Set 1
-byte base64(AAAAAAAAAAE=)
-txn Sender
-concat
-load 255
-itob
-concat
-sha256
-store 1
-txn OnCompletion
-int NoOp
-==
-assert
-b updateState
-l0:
-// Handler 2
-dup
-int 2
-==
-bz l1
-pop
+// check time
 txna ApplicationArgs 1
+btoi
+dup
+int 0
+==
+swap
+load 2
+==
+||
+assert
+byte base64()
+pop
+txna ApplicationArgs 2
 dup
 len
 int 40
 ==
 assert
 dup
-substring 0 32
+extract 0 32
 store 255
 dup
-substring 32 40
-btoi
+int 32
+extract_uint64
 store 254
 pop
-txna ApplicationArgs 2
-dup
-len
-int 0
+txn Sender
+global CreatorAddress
 ==
 assert
-pop
-// compute state in HM_Check 1
-byte base64(AAAAAAAAAAE=)
 load 255
-concat
-load 254
-itob
-concat
-sha256
-load 1
-==
-assert
+store 3
 // "CheckPay"
-// "./index.rsh:22:5:dot"
+// "./index.rsh:17:5:dot"
 // "[]"
-load 254
+int 100000
 dup
-bz l2
+bz l1_checkTxnK
 load 0
 dup
 int 1
@@ -409,46 +352,170 @@ dig 1
 gtxns RekeyTo
 ==
 assert
-load 2
+load 3
 dig 1
 gtxns Receiver
 ==
 assert
-l2:
+l1_checkTxnK:
 pop
-// compute state in HM_Set 2
-byte base64(AAAAAAAAAAI=)
-load 255
-concat
+// "CheckPay"
+// "./index.rsh:17:5:dot"
+// "[]"
+txn Sender
 load 254
 itob
 concat
-sha256
+int 1
+bzero
+dig 1
+extract 0 40
+app_global_put
+pop
+int 1
 store 1
+global Round
+store 2
 txn OnCompletion
 int NoOp
 ==
 assert
 b updateState
-l1:
-// Handler 3
+l0_afterHandler0:
+// Handler 1
 dup
-int 3
+int 1
 ==
-bz l3
+bz l2_afterHandler1
 pop
-txna ApplicationArgs 1
-dup
-len
-int 40
+// check step
+int 1
+load 1
 ==
 assert
+// check time
+txna ApplicationArgs 1
+btoi
 dup
-substring 0 32
+int 0
+==
+swap
+load 2
+==
+||
+assert
+int 1
+bzero
+app_global_get
+dup
+extract 0 32
 store 255
 dup
-substring 32 40
+int 32
+extract_uint64
+store 254
+pop
+txna ApplicationArgs 2
+dup
+len
+int 0
+==
+assert
+pop
+// "CheckPay"
+// "./index.rsh:22:5:dot"
+// "[]"
+load 254
+dup
+bz l3_checkTxnK
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 3
+dig 1
+gtxns Receiver
+==
+assert
+l3_checkTxnK:
+pop
+load 255
+load 254
+itob
+concat
+int 1
+bzero
+dig 1
+extract 0 40
+app_global_put
+pop
+int 2
+store 1
+global Round
+store 2
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState
+l2_afterHandler1:
+// Handler 2
+dup
+int 2
+==
+bz l4_afterHandler2
+pop
+// check step
+int 2
+load 1
+==
+assert
+// check time
+txna ApplicationArgs 1
 btoi
+dup
+int 0
+==
+swap
+load 2
+==
+||
+assert
+int 1
+bzero
+app_global_get
+dup
+extract 0 32
+store 255
+dup
+int 32
+extract_uint64
 store 254
 pop
 txna ApplicationArgs 2
@@ -460,17 +527,6 @@ assert
 dup
 store 253
 pop
-// compute state in HM_Check 2
-byte base64(AAAAAAAAAAI=)
-load 255
-concat
-load 254
-itob
-concat
-sha256
-load 1
-==
-assert
 // "CheckPay"
 // "./index.rsh:27:5:dot"
 // "[]"
@@ -483,7 +539,7 @@ txn Sender
 assert
 load 254
 dup
-bz l4
+bz l5_checkTxnK
 load 0
 dup
 int 1
@@ -514,7 +570,7 @@ dig 1
 gtxns RekeyTo
 ==
 assert
-load 2
+load 3
 dig 1
 gtxns Sender
 ==
@@ -524,7 +580,7 @@ dig 1
 gtxns Receiver
 ==
 assert
-l4:
+l5_checkTxnK:
 pop
 int 0
 load 0
@@ -557,7 +613,7 @@ dig 1
 gtxns RekeyTo
 ==
 assert
-load 2
+load 3
 dig 1
 gtxns Sender
 ==
@@ -567,22 +623,24 @@ dig 1
 gtxns CloseRemainderTo
 ==
 assert
-l5:
+l6_checkTxnK:
 pop
-global ZeroAddress
-store 1
 txn OnCompletion
 int DeleteApplication
 ==
 assert
 b updateState
-l3:
+l4_afterHandler2:
 int 0
 assert
 updateState:
 byte base64()
 load 1
+itob
 load 2
+itob
+load 3
+concat
 concat
 app_global_put
 checkSize:
@@ -610,33 +668,18 @@ txn OnCompletion
 int NoOp
 ==
 assert
-byte base64()
-int 64
-bzero
-app_global_put
-b checkSize
-ctor:
-txn Sender
-global CreatorAddress
-==
-assert
-txna ApplicationArgs 1
-store 2
-// compute state in HM_Set 0
-int 8
-bzero
-sha256
+int 0
 store 1
-txn OnCompletion
-int NoOp
-==
-assert
+int 0
+store 2
+global ZeroAddress
+store 3
 b updateState
 `,
-  appClear: `#pragma version 4
+  appClear: `#pragma version 5
 int 0
 `,
-  escrow: `#pragma version 4
+  escrow: `#pragma version 5
 global GroupSize
 int 1
 -
@@ -654,15 +697,40 @@ int 1
 `,
   mapDataKeys: 0,
   mapDataSize: 0,
+  stateKeys: 1,
+  stateSize: 40,
   unsupported: [],
-  version: 2,
-  viewKeys: 0,
-  viewSize: 0
+  version: 5
   };
 const _ETH = {
   ABI: `[
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "time",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "v61",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct T1",
+            "name": "msg",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct T2",
+        "name": "_a",
+        "type": "tuple"
+      }
+    ],
     "stateMutability": "payable",
     "type": "constructor"
   },
@@ -679,7 +747,33 @@ const _ETH = {
   },
   {
     "anonymous": false,
-    "inputs": [],
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "time",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "v61",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct T1",
+            "name": "msg",
+            "type": "tuple"
+          }
+        ],
+        "indexed": false,
+        "internalType": "struct T2",
+        "name": "_a",
+        "type": "tuple"
+      }
+    ],
     "name": "e0",
     "type": "event"
   },
@@ -689,53 +783,9 @@ const _ETH = {
       {
         "components": [
           {
-            "internalType": "bool",
-            "name": "svs",
-            "type": "bool"
-          },
-          {
-            "components": [
-              {
-                "internalType": "uint256",
-                "name": "v34",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct T2",
-            "name": "msg",
-            "type": "tuple"
-          }
-        ],
-        "indexed": false,
-        "internalType": "struct T3",
-        "name": "_a",
-        "type": "tuple"
-      }
-    ],
-    "name": "e1",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "components": [
-          {
-            "components": [
-              {
-                "internalType": "address payable",
-                "name": "v33",
-                "type": "address"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v34",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct T1",
-            "name": "svs",
-            "type": "tuple"
+            "internalType": "uint256",
+            "name": "time",
+            "type": "uint256"
           },
           {
             "internalType": "bool",
@@ -749,7 +799,7 @@ const _ETH = {
         "type": "tuple"
       }
     ],
-    "name": "e2",
+    "name": "e1",
     "type": "event"
   },
   {
@@ -758,27 +808,15 @@ const _ETH = {
       {
         "components": [
           {
-            "components": [
-              {
-                "internalType": "address payable",
-                "name": "v33",
-                "type": "address"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v34",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct T1",
-            "name": "svs",
-            "type": "tuple"
+            "internalType": "uint256",
+            "name": "time",
+            "type": "uint256"
           },
           {
             "components": [
               {
                 "internalType": "uint8[128]",
-                "name": "v50",
+                "name": "v75",
                 "type": "uint8[128]"
               }
             ],
@@ -793,32 +831,60 @@ const _ETH = {
         "type": "tuple"
       }
     ],
-    "name": "e3",
+    "name": "e2",
     "type": "event"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "fallback"
+  },
+  {
+    "inputs": [],
+    "name": "_reachCurrentState",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "_reachCurrentTime",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
     "inputs": [
       {
         "components": [
           {
-            "internalType": "bool",
-            "name": "svs",
-            "type": "bool"
+            "internalType": "uint256",
+            "name": "time",
+            "type": "uint256"
           },
           {
-            "components": [
-              {
-                "internalType": "uint256",
-                "name": "v34",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct T2",
+            "internalType": "bool",
             "name": "msg",
-            "type": "tuple"
+            "type": "bool"
           }
         ],
-        "internalType": "struct T3",
+        "internalType": "struct T4",
         "name": "_a",
         "type": "tuple"
       }
@@ -833,64 +899,15 @@ const _ETH = {
       {
         "components": [
           {
-            "components": [
-              {
-                "internalType": "address payable",
-                "name": "v33",
-                "type": "address"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v34",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct T1",
-            "name": "svs",
-            "type": "tuple"
-          },
-          {
-            "internalType": "bool",
-            "name": "msg",
-            "type": "bool"
-          }
-        ],
-        "internalType": "struct T4",
-        "name": "_a",
-        "type": "tuple"
-      }
-    ],
-    "name": "m2",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "components": [
-          {
-            "components": [
-              {
-                "internalType": "address payable",
-                "name": "v33",
-                "type": "address"
-              },
-              {
-                "internalType": "uint256",
-                "name": "v34",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct T1",
-            "name": "svs",
-            "type": "tuple"
+            "internalType": "uint256",
+            "name": "time",
+            "type": "uint256"
           },
           {
             "components": [
               {
                 "internalType": "uint8[128]",
-                "name": "v50",
+                "name": "v75",
                 "type": "uint8[128]"
               }
             ],
@@ -904,7 +921,7 @@ const _ETH = {
         "type": "tuple"
       }
     ],
-    "name": "m3",
+    "name": "m2",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"
@@ -914,17 +931,20 @@ const _ETH = {
     "type": "receive"
   }
 ]`,
-  Bytecode: `0x608060408190527f49ff028a829527a47ec6839c7147b484eccf5a2a94853eddac09cef44d9d4e9e90600090a16040805180820182524381524260209182015281516000818301819052818401819052835180830385018152606090920190935280519101209055610534806100766000396000f3fe6080604052600436106100385760003560e01c80631dc091ad1461004457806329c0fdf314610059578063cc5fe27f1461006c57600080fd5b3661003f57005b600080fd5b6100576100523660046103f1565b61007f565b005b610057610067366004610409565b610179565b61005761007a36600461041b565b610269565b6100d1600061009160208401846103d6565b6040516020016100ad9291909182521515602082015260400190565b6040516020818303038152906040528051906020012060001c60005414600861035f565b600080556040517f120854c39fdbc847613c8c1a66d23aa6d099c4db8f64d852475191e60a6298d99061010590839061044d565b60405180910390a16101193415600761035f565b604080518082018252338152602083810135818301908152835160019281019290925282516001600160a01b03169382019390935291516060830152906080015b60408051601f1981840301815291905280516020909101206000555050565b6040516101b5906101919060019084906020016104ea565b6040516020818303038152906040528051906020012060001c60005414600a61035f565b600080556040517fba9848ba573d919b437f603568b07882c6af6fc804c046ac1cd11132ef3ba165906101e990839061046e565b60405180910390a161020234602083013514600961035f565b604080518082019091526000808252602082015261022360208301836103b4565b6001600160a01b031681526020808301358183015260405161015a9160029184910191825280516001600160a01b03166020808401919091520151604082015260600190565b6040516102a5906102819060029084906020016104ea565b6040516020818303038152906040528051906020012060001c60005414600d61035f565b600080556040517f1744c2be3b3814193b70ec591ef6860fe14b411a9b67c63641dc62b583c4193b906102d9908390610495565b60405180910390a16102ed3415600b61035f565b61030f336102fe60208401846103b4565b6001600160a01b031614600c61035f565b61031c60208201826103b4565b6040516001600160a01b039190911690602083013580156108fc02916000818181858888f19350505050158015610357573d6000803e3d6000fd5b506000805533ff5b816103845760405163100960cb60e01b81526004810182905260240160405180910390fd5b5050565b80356001600160a01b038116811461039f57600080fd5b919050565b8035801515811461039f57600080fd5b6000602082840312156103c657600080fd5b6103cf82610388565b9392505050565b6000602082840312156103e857600080fd5b6103cf826103a4565b60006040828403121561040357600080fd5b50919050565b60006060828403121561040357600080fd5b6000611040828403121561040357600080fd5b6001600160a01b0361043f82610388565b168252602090810135910152565b6040810161045a836103a4565b151582526020830135602083015292915050565b6060810161047c828461042e565b610488604084016103a4565b1515604083015292915050565b61104081016104a4828461042e565b60408201604084016000805b60808110156104e057823560ff81168082146104ca578384fd5b85525060209384019392909201916001016104b0565b5050505092915050565b828152606081016103cf602083018461042e56fea26469706673582212206c447d9f37c3a21b34d3c3aa695489ae38ce5a7b9195d1aad82ba4c2e749919264736f6c63430008060033`,
-  BytecodeLen: 1450,
+  Bytecode: `0x60806040526040516109a93803806109a983398101604081905261002291610195565b60008055604080518251815260208084015151908201527fcbe8b01c100825cba852556e4d2f014b5e636208419a4c3d83f7ef63111ab885910160405180910390a1610070341560076100d3565b6040805180820182526000602080830182815233808552868301515182526001938490554390935584518083019390935251828501528351808303850181526060909201909352805191926100cb92600292909101906100fc565b50505061026e565b816100f85760405163100960cb60e01b81526004810182905260240160405180910390fd5b5050565b82805461010890610233565b90600052602060002090601f01602090048101928261012a5760008555610170565b82601f1061014357805160ff1916838001178555610170565b82800160010185558215610170579182015b82811115610170578251825591602001919060010190610155565b5061017c929150610180565b5090565b5b8082111561017c5760008155600101610181565b60008183036040808212156101a957600080fd5b80518082016001600160401b0380821183831017156101d857634e487b7160e01b600052604160045260246000fd5b818452865183526020601f19860112156101f157600080fd5b83519450602085019150848210818311171561021d57634e487b7160e01b600052604160045260246000fd5b5090915260209384015182529283015250919050565b600181811c9082168061024757607f821691505b6020821081141561026857634e487b7160e01b600052602260045260246000fd5b50919050565b61072c8061027d6000396000f3fe6080604052600436106100405760003560e01c80633029bd57146100495780637963168e1461005c578063832307571461006f578063ab53f2c61461009257005b3661004757005b005b610047610057366004610550565b6100b5565b61004761006a366004610569565b610237565b34801561007b57600080fd5b506001546040519081526020015b60405180910390f35b34801561009e57600080fd5b506100a76103b8565b60405161008992919061057b565b6100c5600260005414600d610455565b6100df813515806100d857506001548235145b600e610455565b6000808055600280546100f1906105d8565b80601f016020809104026020016040519081016040528092919081815260200182805461011d906105d8565b801561016a5780601f1061013f5761010080835404028352916020019161016a565b820191906000526020600020905b81548152906001019060200180831161014d57829003601f168201915b5050505050806020019051810190610182919061060d565b90507f6684f814e2616a68bb64e11e05af1bab6e72e48d2a71fad84c56974257f0d420826040516101b3919061067f565b60405180910390a16101c73415600b610455565b80516101df906001600160a01b03163314600c610455565b805160208201516040516001600160a01b039092169181156108fc0291906000818181858888f1935050505015801561021c573d6000803e3d6000fd5b50600080805560018190556102339060029061047a565b5050565b6102476001600054146009610455565b6102618135158061025a57506001548235145b600a610455565b600080805560028054610273906105d8565b80601f016020809104026020016040519081016040528092919081815260200182805461029f906105d8565b80156102ec5780601f106102c1576101008083540402835291602001916102ec565b820191906000526020600020905b8154815290600101906020018083116102cf57829003601f168201915b5050505050806020019051810190610304919061060d565b90507f9f41c6cf17ede288cbb2cfbbafdd05b2b2025dea3b047cdb79dbc892d7a9286d8260405161033591906106cc565b60405180910390a161034e816020015134146008610455565b6040805180820182526000808252602080830182815285516001600160a01b0316808552868301518252600293849055436001558551808401919091529051818601528451808203860181526060909101909452835192936103b2939101906104b7565b50505050565b6000606060005460028080546103cd906105d8565b80601f01602080910402602001604051908101604052809291908181526020018280546103f9906105d8565b80156104465780601f1061041b57610100808354040283529160200191610446565b820191906000526020600020905b81548152906001019060200180831161042957829003601f168201915b50505050509050915091509091565b816102335760405163100960cb60e01b81526004810182905260240160405180910390fd5b508054610486906105d8565b6000825580601f10610496575050565b601f0160209004906000526020600020908101906104b4919061053b565b50565b8280546104c3906105d8565b90600052602060002090601f0160209004810192826104e5576000855561052b565b82601f106104fe57805160ff191683800117855561052b565b8280016001018555821561052b579182015b8281111561052b578251825591602001919060010190610510565b5061053792915061053b565b5090565b5b80821115610537576000815560010161053c565b6000611020828403121561056357600080fd5b50919050565b60006040828403121561056357600080fd5b82815260006020604081840152835180604085015260005b818110156105af57858101830151858201606001528201610593565b818111156105c1576000606083870101525b50601f01601f191692909201606001949350505050565b600181811c908216806105ec57607f821691505b6020821081141561056357634e487b7160e01b600052602260045260246000fd5b60006040828403121561061f57600080fd5b6040516040810181811067ffffffffffffffff8211171561065057634e487b7160e01b600052604160045260246000fd5b60405282516001600160a01b038116811461066a57600080fd5b81526020928301519281019290925250919050565b81358152611020810160208083018185016000805b60808110156106c157823560ff81168082146106ae578384fd5b8552509284019291840191600101610694565b505050505092915050565b813581526040810160208301358015158082146106e857600080fd5b80602085015250509291505056fea264697066735822122094837295f148d38c662f0675e220783226dc8a349148b66a82e00b499cdcda6e64736f6c63430008090033`,
+  BytecodeLen: 2473,
   Which: `oD`,
-  deployMode: `DM_constructor`,
-  version: 1,
+  version: 4,
   views: {
     }
   };
-
 export const _Connectors = {
   ALGO: _ALGO,
   ETH: _ETH
   };
-
+export const _Participants = {
+  "Alice": Alice,
+  "Bob": Bob
+  };
+export const _APIs = {
+  };

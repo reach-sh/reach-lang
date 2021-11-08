@@ -3,6 +3,7 @@ import { EthLikeCompiled } from './ETH_like_interfaces';
 import * as cfxCompiledImpl from './CFX_compiled_impl';
 
 const cfxCompiled: EthLikeCompiled = makeEthLikeCompiled(cfxCompiledImpl);
+export const { getNetworkId, setNetworkId } = cfxCompiledImpl;
 // The following should be identical to ETH_compiled.ts
 export const {
   stdlib,
@@ -23,6 +24,7 @@ export const {
   T_UInt,
   T_Bytes,
   T_Address,
+  T_Contract,
   T_Digest,
   T_Token,
   T_Object,

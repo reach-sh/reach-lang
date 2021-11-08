@@ -49,7 +49,7 @@ updateInterferenceGraph g k vs =
 getWrittenVars :: CTail -> [DLVar]
 getWrittenVars = \case
   CT_From _ _ fi -> case fi of
-    FI_Continue _ vs -> map fst vs
+    FI_Continue vs -> map fst vs
     _ -> []
   CT_Com _ t -> getWrittenVars t
   CT_If _ _ t f -> concatMap getWrittenVars [t, f]
@@ -57,7 +57,7 @@ getWrittenVars = \case
   CT_Jump {} -> []
   where
     getSwitchWrittenVars sc =
-      concatMap (getWrittenVars . snd . snd) $ M.toList sc
+      concatMap (\(_,(_,_,k)) -> getWrittenVars k) $ M.toList sc
 
 buildInterference :: S.Set DLVar -> [CHandler] -> App ()
 buildInterference liveAfter = \case

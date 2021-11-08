@@ -12,7 +12,7 @@ for NAME in stdlib runner devnet-eth ; do
   # if you build it locally, it doesn't have .RepoDigests
   LOCAL_SHA="$(docker inspect --format='{{.Id}}' "$IMAGE")"
   HUB_SHA="$(curl -s "https://hub.docker.com/v2/repositories/reachsh/$NAME/tags/$VERSION" | jq -r '.images[0].digest')"
-  if ! [ "x$LOCAL_SHA" = "x$HUB_SHA" ] ; then
+  if ! [ "$LOCAL_SHA" = "$HUB_SHA" ] ; then
     echo "
 $IMAGE
 LOCAL: $LOCAL_SHA

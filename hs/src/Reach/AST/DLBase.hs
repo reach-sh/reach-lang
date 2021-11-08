@@ -6,8 +6,11 @@ module Reach.AST.DLBase where
 
 import qualified Data.ByteString.Char8 as B
 import qualified Data.List as List
+import Data.List.Extra
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Monoid
+import qualified Data.Set as S
 import qualified Data.Sequence as Seq
 import GHC.Generics
 import Reach.AST.Base
@@ -35,11 +38,6 @@ instance (PrettySubst a, PrettySubst b) => PrettySubst (Either a b) where
     Right x -> f "Right" x
     where f l x = (l <+>) <$> prettySubst x
 
-data DeployMode
-  = DM_constructor
-  | DM_firstMsg
-  deriving (Eq, Generic, Show)
-
 -- DL types only describe data, and explicitly do not describe functions
 data DLType
   = T_Null
@@ -48,6 +46,7 @@ data DLType
   | T_Bytes Integer
   | T_Digest
   | T_Address
+  | T_Contract
   | T_Token
   | T_Array DLType Integer
   | T_Tuple [DLType]
@@ -95,18 +94,20 @@ showTyList = List.intercalate ", " . map showPair
     showPair (name, ty) = "['" <> show name <> "', " <> show ty <> "]"
 
 instance Show DLType where
-  show T_Null = "Null"
-  show T_Bool = "Bool"
-  show T_UInt = "UInt"
-  show (T_Bytes sz) = "Bytes(" <> show sz <> ")"
-  show T_Digest = "Digest"
-  show T_Address = "Address"
-  show T_Token = "Token"
-  show (T_Array ty i) = "Array(" <> show ty <> ", " <> show i <> ")"
-  show (T_Tuple tys) = "Tuple(" <> showTys tys <> ")"
-  show (T_Object tyMap) = "Object({" <> showTyMap tyMap <> "})"
-  show (T_Data tyMap) = "Data({" <> showTyMap tyMap <> "})"
-  show (T_Struct tys) = "Struct([" <> showTyList tys <> "])"
+  show = \case
+    T_Null -> "Null"
+    T_Bool -> "Bool"
+    T_UInt -> "UInt"
+    (T_Bytes sz) -> "Bytes(" <> show sz <> ")"
+    T_Digest -> "Digest"
+    T_Address -> "Address"
+    T_Contract -> "Contract"
+    T_Token -> "Token"
+    (T_Array ty i) -> "Array(" <> show ty <> ", " <> show i <> ")"
+    (T_Tuple tys) -> "Tuple(" <> showTys tys <> ")"
+    (T_Object tyMap) -> "Object({" <> showTyMap tyMap <> "})"
+    (T_Data tyMap) -> "Data({" <> showTyMap tyMap <> "})"
+    (T_Struct tys) -> "Struct([" <> showTyList tys <> "])"
 
 instance Pretty DLType where
   pretty = viaShow
@@ -135,19 +136,25 @@ newtype InteractEnv
 instance Pretty InteractEnv where
   pretty (InteractEnv m) = "interact" <+> render_obj m
 
-newtype SLParts
-  = SLParts (M.Map SLPart InteractEnv)
+data SLParts = SLParts
+  { sps_ies :: M.Map SLPart InteractEnv
+  , sps_apis :: S.Set SLPart
+  }
   deriving (Eq, Generic, Show)
-  deriving newtype (Monoid, Semigroup)
+
+instance Semigroup SLParts where
+  (SLParts xi xa) <> (SLParts yi ya) = SLParts (xi <> yi) (xa <> ya)
+
+instance Monoid SLParts where
+  mempty = SLParts mempty mempty
 
 instance Pretty SLParts where
-  pretty (SLParts m) = "parts" <+> render_obj m <> semi
+  pretty (SLParts {..}) = "parts" <+> render_obj sps_ies <> semi
 
 type DLMapInfos = M.Map DLMVar DLMapInfo
 
 data DLInit = DLInit
-  { dli_ctimem :: Maybe (DLVar, DLVar)
-  , dli_maps :: DLMapInfos
+  { dli_maps :: DLMapInfos
   }
   deriving (Eq, Generic)
 
@@ -158,14 +165,6 @@ instance Pretty DLInit where
       <> hardline
       <> "// initialization"
       <> hardline
-      <> ctimem'
-    where
-      ctimem' = case dli_ctimem of
-        Nothing -> "// no ctime" <> hardline
-        Just (t, s) -> mconcat $
-          [ "const" <+> pretty t <+> "=" <+> "creationTime();" <> hardline
-          , "const" <+> pretty s <+> "=" <+> "creationSecs();" <> hardline
-          ]
 
 data DLConstant
   = DLC_UInt_max
@@ -183,25 +182,19 @@ data DLLiteral
   = DLL_Null
   | DLL_Bool Bool
   | DLL_Int SrcLoc Integer
-  | DLL_Bytes B.ByteString
   deriving (Eq, Generic, Show, Ord)
-
-bytesZeroLit :: Integer -> DLLiteral
-bytesZeroLit k = DLL_Bytes $ B.replicate (fromIntegral k) '\0'
 
 instance Pretty DLLiteral where
   pretty = \case
     DLL_Null -> "null"
     DLL_Bool b -> if b then "true" else "false"
     DLL_Int _ i -> viaShow i
-    DLL_Bytes bs -> dquotes (viaShow bs)
 
 litTypeOf :: DLLiteral -> DLType
 litTypeOf = \case
   DLL_Null -> T_Null
   DLL_Bool _ -> T_Bool
   DLL_Int {} -> T_UInt
-  DLL_Bytes bs -> T_Bytes $ fromIntegral $ B.length bs
 
 data DLVar = DLVar SrcLoc (Maybe (SrcLoc, SLVar)) DLType Int
   deriving (Generic)
@@ -264,14 +257,14 @@ data DLArg
   deriving (Eq, Ord, Generic, Show)
 
 instance PrettySubst DLArg where
-  prettySubst a = do
-    env <- ask
-    case a of
-      DLA_Var v -> return $ fromMaybe (viaShow v) (M.lookup v env)
-      DLA_Constant c -> return $ pretty c
-      DLA_Literal c -> return $ pretty c
-      DLA_Interact who m _ ->
-        return $ pretty who <> ".interact." <> pretty m
+  prettySubst = \case
+    DLA_Var v -> do
+      env <- ask
+      return $ fromMaybe (viaShow v) (M.lookup v env)
+    DLA_Interact who m _ ->
+      return $ pretty who <> ".interact." <> pretty m
+    DLA_Constant x -> return $ pretty x
+    DLA_Literal x -> return $ pretty x
 
 asnLike :: [DLVar] -> [(DLVar, DLArg)]
 asnLike = map (\x -> (x, DLA_Var x))
@@ -299,13 +292,31 @@ data DLLargeArg
   | DLLA_Obj (M.Map String DLArg)
   | DLLA_Data (M.Map SLVar DLType) String DLArg
   | DLLA_Struct [(SLVar, DLArg)]
+  | DLLA_Bytes B.ByteString
   deriving (Eq, Ord, Generic, Show)
+
+bytesZero :: Integer -> B.ByteString
+bytesZero k = B.replicate (fromIntegral k) '\0'
+
+bytesZeroLit :: Integer -> DLLargeArg
+bytesZeroLit = DLLA_Bytes . bytesZero
+
+instance CanDupe a => CanDupe [a] where
+  canDupe = getAll . mconcatMap (All . canDupe)
+
+instance CanDupe DLLargeArg where
+  canDupe = \case
+    DLLA_Array _ as -> canDupe as
+    DLLA_Tuple as -> canDupe as
+    DLLA_Obj am -> canDupe $ M.elems am
+    DLLA_Data _ _ x -> canDupe x
+    DLLA_Struct m -> canDupe $ map snd m
+    DLLA_Bytes _ -> False
 
 render_dasM :: PrettySubst a => [a] -> PrettySubstApp Doc
 render_dasM as = do
   as' <- mapM prettySubst as
   return $ hsep $ punctuate comma as'
-
 
 render_objM :: Pretty k => PrettySubst v => M.Map k v -> PrettySubstApp Doc
 render_objM env = do
@@ -325,7 +336,6 @@ instance (PrettySubst a, PrettySubst b) => PrettySubst (a, b) where
     y' <- prettySubst y
     return $ parens $ hsep $ punctuate comma [x', y']
 
-
 instance PrettySubst DLLargeArg where
   prettySubst = \case
     DLLA_Array t as -> do
@@ -339,6 +349,7 @@ instance PrettySubst DLLargeArg where
     DLLA_Struct kvs -> do
       kvs' <- render_dasM kvs
       return $ "struct" <> brackets kvs'
+    DLLA_Bytes bs -> return $ dquotes (pretty $ bunpack bs)
 
 mdaToMaybeLA :: DLType -> Maybe DLArg -> DLLargeArg
 mdaToMaybeLA t = \case
@@ -354,6 +365,7 @@ data DLArgExpr
   | DLAE_Obj (M.Map SLVar DLArgExpr)
   | DLAE_Data (M.Map SLVar DLType) String DLArgExpr
   | DLAE_Struct [(SLVar, DLArgExpr)]
+  | DLAE_Bytes B.ByteString
 
 argExprToArgs :: DLArgExpr -> [DLArg]
 argExprToArgs = \case
@@ -363,6 +375,7 @@ argExprToArgs = \case
   DLAE_Obj m -> many $ M.elems m
   DLAE_Data _ _ ae -> one ae
   DLAE_Struct aes -> many $ map snd aes
+  DLAE_Bytes _ -> []
   where
     one = argExprToArgs
     many = concatMap one
@@ -374,6 +387,7 @@ largeArgToArgExpr = \case
   DLLA_Obj m -> DLAE_Obj $ M.map DLAE_Arg m
   DLLA_Data m v a -> DLAE_Data m v $ DLAE_Arg a
   DLLA_Struct kvs -> DLAE_Struct $ map (\(k, v) -> (,) k $ DLAE_Arg v) kvs
+  DLLA_Bytes b -> DLAE_Bytes b
 
 largeArgTypeOf :: DLLargeArg -> DLType
 largeArgTypeOf = argExprTypeOf . largeArgToArgExpr
@@ -386,6 +400,7 @@ argExprTypeOf = \case
   DLAE_Obj senv -> T_Object $ M.map argExprTypeOf senv
   DLAE_Data t _ _ -> T_Data t
   DLAE_Struct kvs -> T_Struct $ map (\(k, v) -> (,) k $ argExprTypeOf v) kvs
+  DLAE_Bytes bs -> T_Bytes $ fromIntegral $ B.length bs
 
 data ClaimType
   = --- Verified on all paths
@@ -423,11 +438,20 @@ instance IsLocal a => IsLocal (Seq.Seq a) where
   isLocal = all isLocal
 
 data DLWithBill = DLWithBill
-  { dwb_amts_recv :: DLVar
-  , dwb_tok_billed :: [DLArg]
+  { dwb_tok_billed :: [DLArg]
   , dwb_tok_not_billed :: [DLArg]
   }
   deriving (Eq, Ord, Show)
+
+instance PrettySubst DLWithBill where
+  prettySubst (DLWithBill y z) = do
+    y' <- render_dasM y
+    z' <- render_dasM z
+    return $ render_obj $
+      M.fromList $
+        [ ("billed"::String, parens y')
+        , ("notBilled", parens z')
+        ]
 
 tokenNameLen :: Integer
 tokenNameLen = 32
@@ -443,18 +467,9 @@ data DLTokenNew = DLTokenNew
   , dtn_sym :: DLArg
   , dtn_url :: DLArg
   , dtn_metadata :: DLArg
-  , dtn_supply :: DLArg }
+  , dtn_supply :: DLArg
+  , dtn_decimals :: Maybe DLArg }
   deriving (Eq, Ord, Show)
-
-defaultTokenNew :: DLTokenNew
-defaultTokenNew = DLTokenNew {..}
-  where
-    dtn_name = b tokenNameLen
-    dtn_sym = b tokenSymLen
-    dtn_url = b tokenURLLen
-    dtn_metadata = b tokenMetadataLen
-    dtn_supply = DLA_Constant $ DLC_UInt_max
-    b = DLA_Literal . bytesZeroLit
 
 instance PrettySubst DLTokenNew where
   prettySubst (DLTokenNew {..}) =
@@ -463,14 +478,30 @@ instance PrettySubst DLTokenNew where
       , ("sym", dtn_sym)
       , ("url", dtn_url)
       , ("metadata", dtn_metadata)
-      , ("supply", dtn_supply) ]
+      , ("supply", dtn_supply)
+      , ("decimals", fromMaybe (DLA_Literal DLL_Null) dtn_decimals) ]
 
 type DLTimeArg = Either DLArg DLArg
+
+data ApiInfo = ApiInfo
+  { ai_msg_tys :: [DLType]
+  , ai_mcase_id :: Maybe String
+  , ai_which :: Int }
+  deriving (Eq)
+
+instance Pretty ApiInfo where
+  pretty = \case
+    ApiInfo mtys mci which ->
+      braces $ hardline <> vsep [
+        "msg_tys :" <+> pretty mtys
+      , "mcase_id:" <+> pretty mci
+      , "which:" <+> pretty which
+      ]
 
 data DLExpr
   = DLE_Arg SrcLoc DLArg
   | DLE_LArg SrcLoc DLLargeArg
-  | DLE_Impossible SrcLoc ImpossibleError
+  | DLE_Impossible SrcLoc Int ImpossibleError
   | DLE_PrimOp SrcLoc PrimOp [DLArg]
   | DLE_ArrayRef SrcLoc DLArg DLArg
   | DLE_ArraySet SrcLoc DLArg DLArg DLArg
@@ -492,6 +523,15 @@ data DLExpr
   | DLE_TokenNew SrcLoc DLTokenNew
   | DLE_TokenBurn SrcLoc DLArg DLArg
   | DLE_TokenDestroy SrcLoc DLArg
+  | DLE_TimeOrder SrcLoc [(Maybe DLArg, DLVar)]
+  | DLE_GetContract SrcLoc
+  | DLE_GetAddress SrcLoc
+  -- | DLE_EmitLog SrcLoc (Either Int String) DLType DLArg
+  -- * the either is whether it is a generated one or a prescribed one
+  -- * the type is the type
+  -- * the dlarg is the value being logged
+  | DLE_EmitLog SrcLoc String DLVar
+  | DLE_setApiDetails SrcLoc SLPart [DLType] (Maybe String)
   deriving (Eq, Ord, Generic)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
@@ -518,7 +558,7 @@ instance PrettySubst DLExpr where
   prettySubst = \case
     DLE_Arg _ a -> prettySubst a
     DLE_LArg _ a -> prettySubst a
-    DLE_Impossible _ err -> return $ "impossible" <> parens (pretty err)
+    DLE_Impossible _ _ err -> return $ "impossible" <> parens (pretty err)
     DLE_PrimOp _ IF_THEN_ELSE [c, t, el] -> do
       c' <- prettySubst c
       t' <- prettySubst t
@@ -553,9 +593,9 @@ instance PrettySubst DLExpr where
     DLE_ObjectRef _ a f -> do
       a' <- prettySubst a
       return $ a' <> "." <> pretty f
-    DLE_Interact _ _ who m _ as -> do
+    DLE_Interact _ _ who m t as -> do
       as' <- render_dasM as
-      return $ pretty who <> ".interact." <> pretty m <> parens as'
+      return $ "protect" <> angles (pretty t) <> parens (pretty who <> ".interact." <> pretty m <> parens as')
     DLE_Digest _ as -> do
       as' <- render_dasM as
       return $ "digest" <> parens as'
@@ -584,15 +624,15 @@ instance PrettySubst DLExpr where
     DLE_MapSet _ mv i Nothing -> do
       i' <- prettySubst i
       return $ "delete" <+> pretty mv <> brackets i'
-    DLE_Remote _ _ av m amta as (DLWithBill _ nonNetTokRecv _) -> do
+    DLE_Remote _ _ av m amta as wb -> do
       av' <- prettySubst av
       amta' <- prettySubst amta
       as' <- render_dasM as
-      nn' <- render_dasM nonNetTokRecv
+      wb' <- prettySubst wb
       return $ "remote(" <> av' <> ")." <> viaShow m <> ".pay" <> parens amta'
         <> parens as'
         <> ".withBill"
-        <> parens nn'
+        <> parens wb'
     DLE_TokenNew _ tns -> do
       tns' <- prettySubst tns
       return $ "new Token" <> parens tns'
@@ -603,6 +643,16 @@ instance PrettySubst DLExpr where
     DLE_TokenDestroy _ tok -> do
       tok' <- prettySubst tok
       return $ "Token(" <> tok' <> ").destroy()"
+    DLE_TimeOrder _ tos -> do
+      tos' <- render_dasM $ map (\(x, y) -> (x, DLA_Var y)) tos
+      return $ "timeOrder" <> parens tos'
+    DLE_GetContract {} -> return $ "getContract()"
+    DLE_GetAddress {} -> return $ "getAddress()"
+    DLE_EmitLog _ m v -> do
+      a' <- prettySubst $ DLA_Var v
+      return $ "emitLog" <> parens (pretty m) <> parens a'
+    DLE_setApiDetails _ p tys mc ->
+      return $ "setApiDetails" <> parens (render_das [pretty p, pretty tys, pretty mc])
 
 pretty_subst :: PrettySubst a => PrettySubstEnv -> a -> Doc
 pretty_subst e x =
@@ -622,6 +672,8 @@ instance IsPure DLExpr where
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> False
     DLE_Digest {} -> True
+    DLE_GetContract {} -> True
+    DLE_GetAddress {} -> True
     DLE_Claim {} ->
       -- These are all false, because we use purity to determine if we can
       -- reorder things and an assert can not be ordered outside of an IF to
@@ -638,6 +690,9 @@ instance IsPure DLExpr where
     DLE_TokenNew {} -> False
     DLE_TokenBurn {} -> False
     DLE_TokenDestroy {} -> False
+    DLE_TimeOrder {} -> False
+    DLE_EmitLog {} -> False
+    DLE_setApiDetails {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -665,6 +720,11 @@ instance IsLocal DLExpr where
     DLE_TokenNew {} -> False
     DLE_TokenBurn {} -> False
     DLE_TokenDestroy {} -> False
+    DLE_TimeOrder {} -> True
+    DLE_GetContract {} -> True
+    DLE_GetAddress {} -> True
+    DLE_EmitLog {} -> False
+    DLE_setApiDetails {} -> False
 
 instance CanDupe DLExpr where
   canDupe e =
@@ -677,6 +737,8 @@ instance CanDupe DLExpr where
           DLE_TokenNew {} -> False
           DLE_TokenBurn {} -> False
           DLE_TokenDestroy {} -> False
+          DLE_TimeOrder {} -> False
+          DLE_EmitLog {} -> False
           _ -> True
 
 newtype DLAssignment
@@ -718,9 +780,7 @@ lv2mdv = \case
   DLV_Eff -> Nothing
   DLV_Let _ v -> Just v
 
-type SwitchCases a =
-  --- FIXME at the SrcLoc of the case
-  M.Map SLVar (Maybe DLVar, a)
+type SwitchCases a = M.Map SLVar (DLVar, Bool, a)
 
 data DLStmt
   = DL_Nop SrcLoc
@@ -760,8 +820,8 @@ instance Pretty DLStmt where
     DL_Var _at dv -> "let" <+> pretty dv <> semi
     DL_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
     DL_LocalDo _at k -> "do" <+> braces (pretty k) <> semi
-    DL_LocalIf _at ca t f -> prettyIfp ca t f
-    DL_LocalSwitch _at ov csm -> prettySwitch ov csm
+    DL_LocalIf _at ca t f -> "local" <+> prettyIfp ca t f
+    DL_LocalSwitch _at ov csm -> "local" <+> prettySwitch ov csm
     DL_Only _at who b -> prettyOnly who b
     DL_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a f
 
@@ -822,7 +882,6 @@ data DLPayAmt = DLPayAmt
   }
   deriving (Eq, Generic, Ord)
 
-
 instance PrettySubst DLPayAmt where
   prettySubst (DLPayAmt {..}) = do
     pa_net' <- prettySubst pa_net
@@ -854,6 +913,7 @@ data DLRecv a = DLRecv
   , dr_msg :: [DLVar]
   , dr_time :: DLVar
   , dr_secs :: DLVar
+  , dr_didSend :: DLVar
   , dr_k :: a
   }
   deriving (Eq, Generic)
@@ -868,6 +928,7 @@ instance Pretty a => Pretty (DLRecv a) where
              , ("msg", pretty dr_msg)
              , ("time", pretty dr_time)
              , ("secs", pretty dr_secs)
+             , ("didSend", pretty dr_didSend)
              ])
       <> render_nest (pretty dr_k)
 
@@ -881,6 +942,7 @@ data FluidVar
   | FV_thisConsensusSecs
   | FV_lastConsensusSecs
   | FV_baseWaitSecs
+  | FV_didSend
   deriving (Eq, Generic, Ord, Show)
 
 instance Pretty FluidVar where
@@ -894,6 +956,7 @@ instance Pretty FluidVar where
     FV_thisConsensusSecs -> "thisConsensusSecs"
     FV_lastConsensusSecs -> "lastConsensusSecs"
     FV_baseWaitSecs -> "baseWaitSecs"
+    FV_didSend -> "didPublish"
 
 fluidVarType :: FluidVar -> DLType
 fluidVarType = \case
@@ -906,6 +969,7 @@ fluidVarType = \case
   FV_thisConsensusSecs -> T_UInt
   FV_lastConsensusSecs -> T_UInt
   FV_baseWaitSecs -> T_UInt
+  FV_didSend -> T_Bool
 
 allFluidVars :: Int -> [FluidVar]
 allFluidVars bals =
@@ -915,6 +979,7 @@ allFluidVars bals =
   , FV_thisConsensusSecs
   , FV_lastConsensusSecs
   , FV_baseWaitSecs
+  , FV_didSend
   ]
     <> map FV_balance all_toks
     <> map FV_supply all_toks
@@ -925,4 +990,6 @@ allFluidVars bals =
 class HasCounter a where
   getCounter :: a -> Counter
 
-type DLViews = M.Map SLPart (M.Map SLVar IType)
+type DLViews = M.Map (Maybe SLPart) (M.Map SLVar IType)
+
+type DLAPIs = M.Map (Maybe SLPart) (M.Map SLVar (SLPart, IType))

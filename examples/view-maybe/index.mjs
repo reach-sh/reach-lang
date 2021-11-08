@@ -8,13 +8,13 @@ import * as backend from './build/index.main.mjs';
     const acts = JSON.stringify(actual);
     console.log('assertEq', {expected, actual}, {exps, acts});
     stdlib.assert(exps === acts) };
-  const startingBalance = stdlib.parseCurrency(10);
+  const startingBalance = stdlib.parseCurrency(100);
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const ctcAlice = accAlice.deploy(backend);
 
   const checkView = async (expected) => {
     console.log('checkView', expected);
-    assertEq(expected, await ctcAlice.getViews().Main.i()) };
+    assertEq(expected, await ctcAlice.v.Main.i()) };
 
   console.log(`It's starting`);
 

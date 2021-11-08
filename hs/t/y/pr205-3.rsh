@@ -20,7 +20,6 @@ export const main = Reach.App(
           A,
           (() => ({ when: true })),
           ((_) => {
-
             const keepGoingB =
               parallelReduce(true)
                 .invariant(balance() == 1)
@@ -28,7 +27,7 @@ export const main = Reach.App(
                 .case(
                   A,
                   (() => ({ when: declassify(interact.doCase(1)) })),
-                  () => { return true; })
+                  (_) => { return true; })
                 .timeout(1000, () => {
                   Anybody.publish();
                   return false;

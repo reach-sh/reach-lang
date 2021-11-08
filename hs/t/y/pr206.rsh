@@ -174,7 +174,7 @@ export const main = Reach.App(
                   .case(
                     Merchant,
                     (() => ({ when: declassify(interact.wantsToApproveOrder())})),
-                    () => { return [ false, false, true ]; }
+                    (_) => { return [ false, false, true ]; }
                   )                  
                   // Commented out until fix is released: https://github.com/reach-sh/reach-lang/issues/205#issuecomment-873118085
                   // .case(

@@ -1,5 +1,7 @@
 FROM reachsh/runner:0.1
 
+RUN apk --no-cache add make
+
 COPY Makefile package.json /app/
 
 RUN make js-install

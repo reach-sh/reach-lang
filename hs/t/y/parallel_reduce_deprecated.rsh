@@ -14,7 +14,7 @@ export const main =
           .case(A,
             (() => ({
               when: true })),
-            (() => {
+            ((_) => {
               return [x + 1];}))
           .timeout(1, () => {
             Anybody.publish();

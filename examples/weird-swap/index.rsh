@@ -14,8 +14,9 @@ export const main = Reach.App(
   (A, B) => {
     A.only(() => {
       const [ tokenA, amtA, time ] = declassify(interact.getSwap()); });
-    A.publish(tokenA, amtA, time)
-     .pay([ [amtA, tokenA] ]);
+    A.publish(tokenA, amtA, time);
+    commit();
+    A.pay([ [amtA, tokenA] ]);
     commit();
 
     B.only(() => {
@@ -23,7 +24,7 @@ export const main = Reach.App(
       assume(tokenA != tokenB); });
     B.publish(tokenB, amtB)
      .pay([ [amtB, tokenB] ])
-     .timeout(time, () => {
+     .timeout(relativeTime(time), () => {
        // closeToks(A, [tokenA])
        A.publish();
        transfer(balance(tokenA), tokenA).to(A);
@@ -35,7 +36,7 @@ export const main = Reach.App(
     A.only(() => {
       const ok = declassify(interact.confirm(tokenB, amtB)); });
     A.publish(ok)
-     .timeout(time, () => {
+     .timeout(relativeTime(time), () => {
        // closeToks(B, [tokenA, tokenB])
        B.publish();
        transfer(balance(tokenA), tokenA).to(B);

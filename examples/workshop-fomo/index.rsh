@@ -58,7 +58,7 @@ export const main = Reach.App(
             return [ true, buyer, ticketsSold + 1 ];
           })
         )
-        .timeout(deadline, () => {
+        .timeout(relativeTime(deadline), () => {
           Anybody.publish();
           return [ false, winner, ticketsSold ]; });
 

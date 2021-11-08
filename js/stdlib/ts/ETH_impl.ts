@@ -5,10 +5,10 @@ import { canonicalizeConnectorMode } from './ConnectorMode';
 import * as ethLikeCompiled from './ETH_compiled';
 import {
   debug,
-  envDefault,
+  envDefaultNoEmpty,
   getDEBUG,
   truthyEnv,
-  replaceableThunk
+  replaceableThunk,
 } from './shared_impl';
 import { process, window } from './shim';
 import waitPort from './waitPort';
@@ -30,7 +30,6 @@ export type WhichNetExternal
   = 'homestead'
   | 'ropsten'
 
-// TODO: more providers 'by name'
 export type ProviderName
   = WhichNetExternal
   | 'MainNet'
@@ -48,10 +47,8 @@ export interface ProviderByURI {
 
 export type ProviderEnv = ProviderByURI | ProviderByName
 
-
 export {ethLikeCompiled};
 
-// TODO: types on these
 export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
   debug(`_getDefaultAccount`);
   const provider = await getProvider();
@@ -60,23 +57,25 @@ export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
   return signer;
 }
 
-// TODO: types on these
 export async function _getDefaultFaucetNetworkAccount(): Promise<NetworkAccount> {
-  if (isIsolatedNetwork()) {
-    if (isWindowProvider()) {
-      // XXX only localhost:8545 is supported
-      const p = new ethers.providers.JsonRpcProvider('http://localhost:8545');
-      return p.getSigner();
-    }
-    // XXX this may break if users call setProvider?
-    // On isolated networks, the default account is assumed to be the faucet.
-    // Furthermore, it is assumed that the faucet Signer is "unlocked",
-    // so no further secrets need be provided in order to access its funds.
-    // This is true of reach-provided devnets.
-    // TODO: allow the user to set the faucet via mnemnonic.
-    return await _getDefaultNetworkAccount();
+  if (isWindowProvider()) {
+    const p = new ethers.providers.JsonRpcProvider('http://localhost:8545');
+    return p.getSigner();
   }
-  throw Error(`getFaucet not supported in this context.`)
+  // XXX this may break if users call setProvider?
+  // On isolated networks, the default account is assumed to be the faucet.
+  // Furthermore, it is assumed that the faucet Signer is "unlocked",
+  // so no further secrets need be provided in order to access its funds.
+  // This is true of reach-provided devnets.
+  // TODO: allow the user to set the faucet via mnemnonic.
+  return await _getDefaultNetworkAccount();
+}
+
+export async function canFundFromFaucet(): Promise<boolean> {
+  const provider = await getProvider();
+  debug('ETH:canFundFromFaucet');
+  // @ts-ignore
+  return provider._network && provider._network.chainId === 1337;
 }
 
 // Not an async fn because it throws some errors synchronously, rather than in the Promise thread
@@ -192,10 +191,14 @@ export function isWindowProvider(): boolean {
   return 'ETH_NET' in env && env.ETH_NET === 'window' && !!window.ethereum;
 }
 
+export function canGetDefaultAccount(): boolean {
+  return isWindowProvider() || isIsolatedNetwork();
+}
+
 function windowLooksIsolated() {
   if (!window.ethereum) return false;
   // XXX this is a hacky way of checking if we're on a devnet
-  // @ts-ignore // 0x539 = 1337
+  // 0x539 = 1337
   return (window.ethereum.chainId === '0xNaN' || window.ethereum.chainId == '0x539');
 }
 
@@ -218,28 +221,23 @@ function guessConnectorMode(env: Partial<ProviderByName & ProviderByURI>): strin
 
 function envDefaultsETH(env: Partial<ProviderByName & ProviderByURI>): ProviderEnv {
   const { ETH_NET, ETH_NODE_URI } = env;
-  const cm = envDefault(env.REACH_CONNECTOR_MODE, guessConnectorMode(env));
-  const REACH_CONNECTOR_MODE = envDefault(cm, canonicalizeConnectorMode(env.REACH_CONNECTOR_MODE || 'ETH'));
+  const cm = envDefaultNoEmpty(env.REACH_CONNECTOR_MODE, guessConnectorMode(env));
+  const REACH_CONNECTOR_MODE = envDefaultNoEmpty(cm, canonicalizeConnectorMode(env.REACH_CONNECTOR_MODE || 'ETH'));
   const isolatedDefault
     = ETH_NET && ETH_NET !== 'window' ? 'no'
     : ETH_NET === 'window' || window.ethereum ? (windowLooksIsolated() ? 'yes' : 'no')
     : connectorModeIsolatedNetwork(REACH_CONNECTOR_MODE);
-  const REACH_ISOLATED_NETWORK = envDefault(env.REACH_ISOLATED_NETWORK, isolatedDefault);
+  const REACH_ISOLATED_NETWORK = envDefaultNoEmpty(env.REACH_ISOLATED_NETWORK, isolatedDefault);
   if (truthyEnv(ETH_NET)) {
     return { ETH_NET, REACH_CONNECTOR_MODE, REACH_ISOLATED_NETWORK };
   } else if (truthyEnv(ETH_NODE_URI)) {
-    const REACH_DO_WAIT_PORT = envDefault(env.REACH_DO_WAIT_PORT, 'no');
+    const REACH_DO_WAIT_PORT = envDefaultNoEmpty(env.REACH_DO_WAIT_PORT, 'yes');
     return { ETH_NODE_URI, REACH_CONNECTOR_MODE, REACH_DO_WAIT_PORT, REACH_ISOLATED_NETWORK };
   } else {
     if (window.ethereum) {
       return windowProviderEnv(REACH_ISOLATED_NETWORK);
     } else {
-      const { REACH_DO_WAIT_PORT } = env;
-      if (truthyEnv(REACH_DO_WAIT_PORT)) {
-        return {...localhostProviderEnv, REACH_DO_WAIT_PORT};
-      } else {
-        return localhostProviderEnv;
-      }
+      return localhostProviderEnv;
     }
   }
 }
@@ -262,6 +260,14 @@ export function setProvider(provider: Provider|Promise<Provider>): void {
       REACH_ISOLATED_NETWORK: 'no',
     });
   }
+};
+
+const setWalletFallback = (wf:() => any) => {
+  if ( ! window.ethereum ) { window.ethereum = wf(); }
+};
+const walletFallback = (opts:any) => () => {
+  void(opts);
+  throw new Error(`There is no wallet fallback for Ethereum`);
 };
 
 // XXX: doesn't even retry, just returns the first attempt
@@ -310,23 +316,16 @@ const doHealthcheck = async (theUrl: string): Promise<void> => {
   });
 };
 
-function getSignStrategy(): string {
-  throw Error(`getSignStrategy not yet implemented on ETH`);
-}
-function setSignStrategy(ss: string) {
-  void(ss);
-  throw Error(`setSignStrategy not yet implemented on ETH`);
-}
-
 export { ethers };
 export const providerLib = {
   getProvider,
   setProvider,
   setProviderByName,
   setProviderByEnv,
-  setSignStrategy,
-  getSignStrategy,
   providerEnvByName,
+  setWalletFallback,
+  walletFallback,
 }
 export const standardUnit = 'ETH';
 export const atomicUnit = 'WEI';
+export const validQueryWindow = true;

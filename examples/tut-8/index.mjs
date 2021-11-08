@@ -34,8 +34,8 @@ const stdlib = loadStdlib(process.env);
   );
   if (deployCtc) {
     ctc = acc.deploy(backend);
-    const info = await ctc.getInfo();
-    console.log(`The contract is deployed as = ${JSON.stringify(info)}`);
+    ctc.getInfo().then((info) => {
+      console.log(`The contract is deployed as = ${JSON.stringify(info)}`); });
   } else {
     const info = await ask(
       `Please paste the contract information:`,
@@ -63,7 +63,7 @@ const stdlib = loadStdlib(process.env);
       stdlib.parseCurrency
     );
     interact.wager = amt;
-    interact.deadline = 10;
+    interact.deadline = { ETH: 100, ALGO: 100, CFX: 1000 }[stdlib.connector];
   } else {
     interact.acceptWager = async (amt) => {
       const accepted = await ask(

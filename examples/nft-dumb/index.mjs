@@ -3,7 +3,7 @@ import * as backend from './build/index.main.mjs';
 
 (async () => {
   const stdlib = await loader.loadStdlib();
-  const startingBalance = stdlib.parseCurrency(10);
+  const startingBalance = stdlib.parseCurrency(100);
 
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
@@ -15,7 +15,7 @@ import * as backend from './build/index.main.mjs';
   const ctcEve = accEve.attach(backend, ctcAlice.getInfo());
   const externalViewer = async () => {
     console.log(`Eve sees who the owner is...`);
-    const owner = await ctcEve.getViews().NFT.owner();
+    const owner = await ctcEve.v.NFT.owner();
     console.log(`...it is ${stdlib.formatAddress(owner[1])}`);
   };
 

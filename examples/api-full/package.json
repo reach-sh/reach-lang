@@ -1,0 +1,13 @@
+{
+  "name": "@reach-sh/api-basic",
+  "type": "module",
+  "dependencies": {
+    "await-timeout": "^0.6.0"
+  },
+  "author": "reach.sh",
+  "license": "Apache-2.0",
+  "scripts": {
+    "lint": "eslint --ignore-path .gitignore --ext .mjs .",
+    "index": "node --experimental-modules --unhandled-rejections=strict index.mjs"
+  }
+}

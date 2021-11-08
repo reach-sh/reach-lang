@@ -19,13 +19,16 @@ const shouldFail = async (fp) => {
 (async () => {
   const stdlib = await loadStdlib();
 
-  const startingBalance = stdlib.parseCurrency(10);
-  const zorkmid = await launchToken("zorkmid", "ZMD");
-  const gil = await launchToken("gil", "GIL");
+  const time = stdlib.connector === 'CFX' ? 50 : 10;
+
+  const startingBalance = stdlib.parseCurrency(100);
+  const accCreator = await stdlib.newTestAccount(startingBalance);
+  const zorkmid = await launchToken(stdlib, accCreator, "zorkmid", "ZMD");
+  const gil = await launchToken(stdlib, accCreator, "gil", "GIL");
 
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
-  if ( stdlib.connector == 'ETH' ) {
+  if ( stdlib.connector === 'ETH' || stdlib.connector === 'CFX' ) {
     const myGasLimit = 5000000;
     accAlice.setGasLimit(myGasLimit);
     accBob.setGasLimit(myGasLimit);
@@ -80,18 +83,32 @@ const shouldFail = async (fp) => {
       console.log(`Bob attaches to the Reach DApp.`);
       const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 
+      let succ = undefined;
+      const Common = (who) => ({
+        seeTimeout: () => {
+          succ = false;
+          console.log(`${who} saw a timeout`); },
+        seeTransfer: () => {
+          succ = true;
+          console.log(`${who} saw the transfer happened`); },
+      });
+
       await Promise.all([
         backend.Alice(ctcAlice, {
+          ...Common(`Alice`),
           getSwap: () => {
             console.log(`Alice proposes swap`);
-            return [ tokenA.id, amtA, tokenB.id, amtB, 10 ]; },
+            return [ tokenA.id, amtA, tokenB.id, amtB, time ]; },
         }),
         backend.Bob(ctcBob, {
+          ...Common(`Bob`),
           accSwap: (...v) => {
-            console.log(`Bob accepts swap of ${JSON.stringify(v)}`);
+            console.log(`Bob accepts swap of`, v);
             return true; },
         }),
       ]);
+
+      return succ;
     }
 
     const afterAlice = await getBalances(accAlice);
@@ -103,7 +120,7 @@ const shouldFail = async (fp) => {
   const amtA = stdlib.parseCurrency(1);
   const amtB = stdlib.parseCurrency(2);
 
-  await doSwap(zorkmid, amtA, gil, amtB, false);
-  await doSwap(gil, amtB, zorkmid, amtA, false);
+  if ( ! await doSwap(zorkmid, amtA, gil, amtB, false) ) { return; }
+  if ( ! await doSwap(gil, amtB, zorkmid, amtA, false) ) { return; }
   await doSwap(zorkmid, amtA, gil, amtB, true);
 })();

@@ -1,62 +1,66 @@
 #!/bin/bash
-WHICH="$1"
+CONN="$1"
+SIZE="$2"
+RANK="$3"
+KIDS=0
 
-banner () {
-  echo
-  echo "############"
-  echo "$*"
-  echo "############"
-  echo
-}
+echo Running w/ "${CONN}:"
 
-echo > /tmp/status
-STATUS="pass"
+export REACH_CONNECTOR_MODE="${CONN}"
+export REACH_DEBUG=1
+case "${CONN}" in
+  ALGO) TIMEOUT=$((10 * 60)) ;;
+  CFX) TIMEOUT=$((10 * 60)) ;;
+  ETH) TIMEOUT=$((10 * 60)) ;;
+esac
 
-BUILD_STATUS="fail"
-banner Cleaning
-./one.sh clean "${WHICH}"
-banner Building
-if ./one.sh build "${WHICH}" ; then
-  BUILD_STATUS="pass"
-fi
-if [ "x${BUILD_STATUS}" = "xfail" ] ; then
+../reach devnet --await-background
+
+cd ../examples || exit 1
+go() {
+  WHICH="$1"
+  echo "$2 ${WHICH}..."
+  THIS="${CONN}.${WHICH}"
+  THIS_ART="/tmp/artifacts/${THIS}"
+  touch "${THIS_ART}"
+  ./one.sh clean "${WHICH}" >>"${THIS_ART}"
   STATUS="fail"
-fi
-
-# It might be possible to run these all in parallel
-for CONN in ETH ALGO CFX ; do
-  THIS_STATUS="fail"
-  if [ "x${BUILD_STATUS}" = "xpass" ] ; then
-    export REACH_CONNECTOR_MODE="${CONN}"
-    export REACH_DEBUG=1
-    banner Running w/ "${CONN}"
+  if ./one.sh build "${WHICH}" >>"${THIS_ART}" 2>&1 ; then
     # We are using foreground to get around the lack of TTY allocation that
     # inhibits docker-compose run. I am worried that this will be ineffective
     # at stopping the containers
     # ^ XXX it actually doesn't enforce things properly for tut-7-rpc
-    case "${CONN}" in
-      ALGO) TIMEOUT=$((10 * 60)) ;;
-      CFX) TIMEOUT=$((10 * 60)) ;;
-      ETH) TIMEOUT=$((10 * 60)) ;;
-    esac
-    timeout --foreground "${TIMEOUT}" ./one.sh run "${WHICH}"
+    timeout --foreground "${TIMEOUT}" ./one.sh run "${WHICH}" >>"${THIS_ART}" 2>&1
     EXIT=$?
     if [ $EXIT -eq 124 ] ; then
-      echo Timeout
-      THIS_STATUS="fail-time"
+      echo "$WHICH timed out!"
+      STATUS="fail-time"
     elif [ $EXIT -eq 0 ] ; then
-      THIS_STATUS="pass"
+      echo "$WHICH passed."
+      STATUS="pass"
+    else
+      echo "$WHICH failed."
     fi
-    banner Bringing down "${CONN}"
-    ./one.sh down "${WHICH}"
+  else
+    echo "$WHICH failed to build."
   fi
-  if ! [ "x${THIS_STATUS}" = "xpass" ] ; then
-    STATUS="fail"
-  fi
-  echo "export ${CONN}_STATUS=\"${THIS_STATUS}\"" >> /tmp/status
+  gzip "${THIS_ART}"
+  rm -f "${THIS_ART}"
+  echo "[ \"${STATUS}\", \"${CONN}.${RANK}\" ]" >/tmp/workspace/record/"${THIS}"
+}
+
+EXS="$(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | tail -n +2 | awk "NR % ${SIZE} == ${RANK}")"
+
+for WHICH in $EXS; do
+  KIDS=$((KIDS + 1))
+  go "${WHICH}" 'Forking' &
 done
 
-echo "export STATUS=\"${STATUS}\"" >> /tmp/status
-echo "export EXAMPLE_URL=\"${CIRCLE_BUILD_URL}\"" >> /tmp/status
-# XXX output results in the JUnit test format so we can go to
-# ${EXAMPLE_URL}/tests/ETH on a failure?
+while true; do
+  wait -n || true
+  KIDS=$((KIDS - 1))
+  if [ $KIDS -eq 0 ]; then break; fi
+done
+
+# ../reach down
+wait

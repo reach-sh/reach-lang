@@ -8,3 +8,11 @@ Verifying for ETH connector
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
 Checked 6 theorems; No failures!
+warning[RW0004]: There are no publications in the application.
+
+  ./pr1011.rsh:8:30:application
+
+  8| export const main = Reach.App(
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0004.html
+

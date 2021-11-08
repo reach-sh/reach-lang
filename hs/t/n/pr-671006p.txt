@@ -8,42 +8,31 @@ Verification failed:
 
   // Violation Witness
 
-  const sum/42 = <loop variable>;
+  const sum/169 = <loop variable>;
   //    ^ could = 0
   //      from: ./pr-671006p.rsh:31:37:while
-  const balance(0)/190 = <loop variable>;
+  const balance(0)/173 = <loop variable>;
   //    ^ could = 0
   //      from: ./pr-671006p.rsh:31:37:while
-  const v133 = <map reduction>;
+  const v218 = <map reduction>;
   //    ^ could = 1
-  //      from: reach standard library:146:18:application
-
+  //      from: reach standard library:143:18:application
 
   // Theorem Formalization
 
-  const v138 = (balance(0)/190 == bal/42) ? (bal/42 == v133) : false;
+  const v226 = (balance(0)/173 == sum/169) ? (sum/169 == v218) : false;
   //    ^ would be false
-  while invariant before loop(v138);
+  assert(v226);
 
   Verifying when NO participants are honest
-Verification failed:
-  when NO participants are honest
-  of theorem: while invariant before loop
-  at ./pr-671006p.rsh:52:5:invariant
-
-  (details omitted on repeat)
   Verifying when ONLY "Contributor" is honest
-Verification failed:
-  when ONLY "Contributor" is honest
-  of theorem: while invariant before loop
-  at ./pr-671006p.rsh:52:5:invariant
-
-  (details omitted on repeat)
   Verifying when ONLY "Fundraiser" is honest
-Verification failed:
-  when ONLY "Fundraiser" is honest
-  of theorem: while invariant before loop
-  at ./pr-671006p.rsh:52:5:invariant
+Checked 53 theorems; 4 failures (and 3 omitted repeats) :'(
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
 
-  (details omitted on repeat)
-Checked 53 theorems; 4 failures. :'(
+  ./pr-671006p.rsh:31:37:application
+
+  31|   const [sum, stop] = parallelReduce([0, false])
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+

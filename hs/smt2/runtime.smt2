@@ -1,8 +1,9 @@
 ;; These options just make it easier to use the file independently
 ;; in a way that is consistent with how it is used via Haskell
-(set-option :print-success true)
-(set-option :produce-models true)
-(set-option :produce-unsat-cores true)
+
+;(set-option :print-success true)
+;(set-option :produce-models true)
+;(set-option :produce-unsat-cores true)
 
 (set-logic ALL)
 
@@ -68,3 +69,6 @@
 ;;  (forall ((x Token) (y Token))
 ;;          (=> (not (= x y))
 ;;              (not (= (Token_toBytes x) (Token_toBytes y))))))
+
+(declare-sort Contract 0)
+(declare-fun Contract_toBytes (Contract) Bytes)

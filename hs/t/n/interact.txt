@@ -1,8 +1,8 @@
 reachc: error[RE0056]: Invalid name shadowing. Identifier 'interact' is already bound at ./interact.rsh:6:17:application. It cannot be bound again at ./interact.rsh:9:15:id
 
- ./interact.rsh:9:9:const
+  ./interact.rsh:9:9:const
 
- 9|         const interact = 5;
+  9|         const interact = 5;
 
 Trace:
   in [unknown function] from (./interact.rsh:8:17:function exp) at (./interact.rsh:8:13:application)

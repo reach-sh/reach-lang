@@ -8,23 +8,13 @@ Verification failed:
 
   possible(false);
 
-Verification failed:
-  when ALL participants are honest
-  of theorem: possible
-  at ./possible_false.rsh:6:13:application
-
-  (details omitted on repeat)
   Verifying when NO participants are honest
-Verification failed:
-  when NO participants are honest
-  of theorem: possible
-  at ./possible_false.rsh:5:13:application
+Checked 6 theorems; 4 failures (and 3 omitted repeats) :'(
+warning[RW0004]: There are no publications in the application.
 
-  (details omitted on repeat)
-Verification failed:
-  when NO participants are honest
-  of theorem: possible
-  at ./possible_false.rsh:6:13:application
+  ./possible_false.rsh:3:30:application
 
-  (details omitted on repeat)
-Checked 6 theorems; 4 failures. :'(
+  3| export const main = Reach.App(
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0004.html
+

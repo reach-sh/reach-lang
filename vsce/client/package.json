@@ -1,0 +1,22 @@
+{
+	"name": "reach-ide-client",
+	"description": "Reach IDE",
+	"author": "Reach Platform, Inc.",
+	"license": "EPL-2.0",
+	"version": "0.0.1",
+	"publisher": "reachsh",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/reach-sh/reach-lang"
+	},
+	"engines": {
+		"vscode": "^1.43.0"
+	},
+	"dependencies": {
+		"vscode-languageclient": "^6.1.3"
+	},
+	"devDependencies": {
+		"@types/vscode": "1.43.0",
+		"vscode-test": "^1.3.0"
+	}
+}

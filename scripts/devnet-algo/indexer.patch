@@ -1,6 +1,0 @@
---- a/types/types.go
-+++ b/types/types.go
-@@ -397,2 +397,3 @@
-		// Arbitrary genesis comment string - will be excluded from file if empty
-		Comment string `codec:"comment"`
-+		DevMode bool `codec:"devmode"`

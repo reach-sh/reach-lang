@@ -20,7 +20,7 @@ export const main = Reach.App(() => {
       .paySpec([tokA, tokB])
       .case(A,
         (() => ({ when: true })),
-        (() => { return [ i + 1 ]; })
+        ((_) => { return [ i + 1 ]; })
       )
       .timeout(1024, () => {
         A.publish();

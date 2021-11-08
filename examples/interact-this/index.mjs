@@ -24,7 +24,7 @@ import assert from 'assert';
     backend.Bob(ctcBob, {
       show: (a) => {
         console.log(`Bob sees Alice's address`, a);
-        assert(a == addrs['Alice'], "Did not receive Alice's address");
+        assert(stdlib.addressEq(a, addrs['Alice']), "Did not receive Alice's address");
       },
     }),
   ]);

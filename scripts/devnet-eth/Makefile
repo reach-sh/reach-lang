@@ -1,13 +1,15 @@
-IMAGE="reachsh/devnet-eth"
+IMAGE=reachsh/devnet-eth
+ROOT=../..
+include $(ROOT)/DEPS
 
 .PHONY: build
 build:
 	docker build --build-arg REACH_GIT_HASH="$$(../git-hash.sh)" --tag=$(IMAGE):latest .
-	TAG_ONLY=1 ../docker-push.sh $(IMAGE)
+	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: push
-push: build
-	../docker-push.sh $(IMAGE)
+push:
+	$(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: run
 run: build

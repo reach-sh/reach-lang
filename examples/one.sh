@@ -12,11 +12,12 @@ has_target() {
   [ $RESULT_T -eq 0 ]
 }
 
-echo "$e"
+echo "$MODE $e"
+echo
 (
   cd "$e" || exit 1
   if [ -f Makefile ] && has_target ; then
-    make "$MODE"
+    make REACH=../../reach "$MODE"
   else
     case "$MODE" in
       build)

@@ -9,7 +9,7 @@ const Common = {
 
 export const main =
   Reach.App(
-    { 'deployMode': 'firstMsg' },
+    {},
     [Participant('Alice',
       { ...Common,
         getParams: Fun([], Object({ wager: UInt,
@@ -34,14 +34,14 @@ export const main =
       Bob.only(() => {
         interact.confirmWager(wager); });
       Bob.pay(wager)
-        .timeout(deadline, () => closeTo(Alice, showOutcome(TIMEOUT)));
+        .timeout(relativeTime(deadline), () => closeTo(Alice, showOutcome(TIMEOUT)));
       commit();
 
       // This wait is so that Bob doesn't have an advantage. Otherwise he'd be
       // able to include the last publish and the next one at the same time;
       // but with this protocol, now Alice can ensure that the race doesn't
       // start until she has enough time to know that Bob has accepted.
-      wait(deadline);
+      wait(relativeTime(deadline));
 
       Alice.only(() => {
         const outcome = ALICE_WINS; });

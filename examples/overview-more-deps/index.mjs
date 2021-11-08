@@ -5,8 +5,8 @@ import rightpad from 'rightpad';
 (async () => {
   const stdlib = await loadStdlib();
 
-  const accAlice = await stdlib.newTestAccount(stdlib.parseCurrency(5));
-  const accBob = await stdlib.newTestAccount(stdlib.parseCurrency(10));
+  const accAlice = await stdlib.newTestAccount(stdlib.parseCurrency(100));
+  const accBob = await stdlib.newTestAccount(stdlib.parseCurrency(100));
 
   const ctcAlice = accAlice.deploy(backend);
   const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
@@ -25,4 +25,4 @@ import rightpad from 'rightpad';
   // Note: rightpad is not in the default set of node deps.
   // This is just a trivial example of using more node deps.
   console.log(rightpad('123', 6) + '!')
-})(); 
+})();

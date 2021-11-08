@@ -1,0 +1,9 @@
+depends_on:
+  - devnet-algo
+environment:
+  - REACH_DEBUG
+  - REACH_CONNECTOR_MODE=ALGO-devnet
+  - ALGO_SERVER=http://reach-devnet-algo
+  - ALGO_PORT=4180
+  - ALGO_INDEXER_SERVER=http://reach-devnet-algo
+  - ALGO_INDEXER_PORT=8980

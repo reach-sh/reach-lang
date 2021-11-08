@@ -63,3 +63,8 @@ file = "src/Reach/Connector/ALGO.hs"
 type = "Exclude"
 category = "Partial"
 file = "src/Reach/Connector/ALGO.hs"
+
+[[check]]
+type = "Exclude"
+id = "STAN-0013"
+file = "app/reach/Main.hs"

@@ -5,10 +5,11 @@
 
 # Operating-system-generated files
 .DS_Store
-
+.vscode
 .ethereum
 /todo.html
-/docs
 build
 /users
 /non-examples/dev
+*.index
+/exp

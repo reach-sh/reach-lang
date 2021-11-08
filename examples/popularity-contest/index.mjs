@@ -6,7 +6,7 @@ import * as backend from './build/index.main.mjs';
   const [ N, timeoutFactor ] =
     stdlib.connector === 'ALGO' ? [ 2, 2 ] : [ 5, 2 ];
 
-  const startingBalance = stdlib.parseCurrency(10);
+  const startingBalance = stdlib.parseCurrency(100);
   const accPollster = await stdlib.newTestAccount(startingBalance);
   const accVoter_arr = await Promise.all( Array.from({length: N}, () => stdlib.newTestAccount(startingBalance)) );
   const accAlice = await stdlib.newTestAccount(startingBalance);

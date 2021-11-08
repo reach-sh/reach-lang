@@ -8,40 +8,62 @@ def env(k):
     return os.environ[k]
 
 conns = [ 'ETH', 'ALGO', 'CFX' ]
-
+total = 0
 cfails = {}
 for c in conns:
     cfails[c] = []  # the list of examplename that have failed for CONN c
 time = set() # the set of CONN.examplename that timed out
 fail = set() # the set of CONN.examplename that exited nonzero (and not via timeout)
-
-DIR = "/tmp/workspace/record"
-recs = sorted(Path(DIR).iterdir())
 urls = {}
-for rp in recs:
-    with open(rp) as rf:
-        o = rf.read()
-        # Convert `export K=V\n...` into `{ "K":V, ... }
-        m = o.replace("=", "\":").replace("export ", "\"").replace("\"\n", "\",")
-        p = json.loads("{" + m + " \"okay\": true}")
-        me = str(rp).replace(f"{DIR}/examples.", "")
-        urls[me] = p['EXAMPLE_URL']
-        for c in conns:
-            cme = f"{c}.{me}"
-            k = f'{c}_STATUS'
-            if p[k] == "fail-time":
-                time.add(cme)
-            if p[k] == "fail":
-                fail.add(cme)
-            if p[k].startswith("fail"):
-                cfails[c].append(me)
 
-source_dir = Path(__file__).resolve().parent
+proj_dir = Path("/home/circleci/project")
+ex_dir = proj_dir / 'examples'
+rec_dir = Path("/tmp/workspace/record")
+art_dir = Path("/tmp/workspace/artifacts")
+
+arts = {}
+for ap in sorted(art_dir.iterdir()):
+    if not ap.is_file():
+        continue
+    o = { "items": [] }
+    with open(ap) as af:
+        o = json.load(af)
+    me = str(ap).replace(f"{art_dir}/", "")
+    m = {}
+    for r in o["items"]:
+        m[r["path"]] = r["url"]
+    arts[me] = m
+
+for ep in sorted(ex_dir.iterdir()):
+    if not ep.is_dir():
+        continue
+    me = str(ep).replace(f"{ex_dir}/", "")
+    for c in conns:
+        total += 1
+        cme = f"{c}.{me}"
+        o = [ "fail", False ]
+        rp = rec_dir / cme
+        if rp.is_file():
+            with open(rp) as rf:
+                o = json.load(rf)
+        u = o[1]
+        if u: u = arts.get(u)
+        if u: u = u.get(f"tmp/artifacts/{cme}.gz")
+        urls[cme] = u
+        stat = o[0]
+        if stat == "fail-time":
+            time.add(cme)
+        if stat == "fail":
+            fail.add(cme)
+        if stat.startswith("fail"):
+            cfails[c].append(me)
+
 def no_blank(x): return not x or x.startswith("#") or x.isspace()
 def read_to_set(fp):
     with open(fp, 'r') as f:
         return set(filterfalse(no_blank, f.read().splitlines()))
 
+source_dir = proj_dir / '.circleci'
 # x = expected
 xfail = read_to_set(source_dir / 'xfail.txt')
 xtime = read_to_set(source_dir / 'xtime.txt')
@@ -54,7 +76,6 @@ nxftc = len(nxft)
 
 ftc = len(fail.union(time))
 xftc = ftc - nxftc
-total = len(recs) * len(conns)
 
 SYM = "OKAY"
 PRE = f"{total} passed!"
@@ -68,15 +89,17 @@ if ftc > 0:
 
 for c in conns:
     def fmte(e):
-        x = f"<{urls[e]}|{e}>"
         ce = f"{c}.{e}"
+        x = e
+        u = urls[ce]
+        if u: x = f"<{u}|{x}>"
         if ce in nxft: x = f"*{x}*"
         if ce in time: x = f"{x} (t)"
         return x
     tfails = cfails[c]
     tfailc = len(tfails)
     if tfailc > 0:
-        upto = 20
+        upto = 10
         msg = ' '.join(map(fmte, tfails[:upto]))
         if tfailc > upto:
             msg += ' (+ ' + str(tfailc - upto) + ' more not shown)'

@@ -21,7 +21,7 @@ import * as backend from './build/index.main.mjs';
     stdlib.assert(rcmp, "R");
   };
   const check = async (expected) => {
-    assertEq(['Some', expected], await ctcAlice.getViews().Debug.vals());
+    assertEq(['Some', expected], await ctcAlice.v.Debug.vals());
   };
   await Promise.all([
     backend.Alice(ctcAlice, {

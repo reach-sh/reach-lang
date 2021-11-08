@@ -1,0 +1,1569 @@
+#pragma version 4
+txn RekeyTo
+global ZeroAddress
+==
+assert
+txn Lease
+global ZeroAddress
+==
+assert
+int 0
+store 0
+txn ApplicationID
+bz alloc
+byte base64()
+app_global_get
+dup
+substring 0 8
+btoi
+store 1
+dup
+substring 8 16
+btoi
+store 2
+substring 16 48
+store 3
+txn NumAppArgs
+int 3
+==
+assert
+txna ApplicationArgs 0
+btoi
+// Handler 0
+dup
+int 0
+==
+bz l0
+pop
+// check step
+int 0
+load 1
+==
+assert
+// check time
+txna ApplicationArgs 1
+btoi
+dup
+int 0
+==
+swap
+load 2
+==
+||
+assert
+byte base64()
+pop
+txna ApplicationArgs 2
+dup
+len
+int 48
+==
+assert
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+pop
+txn Sender
+global CreatorAddress
+==
+assert
+load 255
+store 3
+// "CheckPay"
+// "./index.rsh:49:9:dot"
+// "[]"
+int 100000
+dup
+bz l1
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 3
+dig 1
+gtxns Receiver
+==
+assert
+l1:
+pop
+// "CheckPay"
+// "./index.rsh:49:9:dot"
+// "[]"
+load 254
+dup
+bz l2
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 3
+dig 1
+gtxns Receiver
+==
+assert
+l2:
+pop
+global Round
+load 253
++
+store 252
+txn Sender
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+itob
+concat
+int 1
+bzero
+dig 1
+substring 0 56
+app_global_put
+pop
+int 1
+store 1
+global Round
+store 2
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState
+l0:
+// Handler 1
+dup
+int 1
+==
+bz l3
+pop
+// check step
+int 1
+load 1
+==
+assert
+// check time
+txna ApplicationArgs 1
+btoi
+dup
+int 0
+==
+swap
+load 2
+==
+||
+assert
+int 1
+bzero
+app_global_get
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 56
+btoi
+store 252
+pop
+txna ApplicationArgs 2
+dup
+len
+int 0
+==
+assert
+pop
+global Round
+load 252
+<
+assert
+// "CheckPay"
+// "./index.rsh:56:7:dot"
+// "[]"
+load 254
+dup
+bz l4
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 3
+dig 1
+gtxns Receiver
+==
+assert
+l4:
+pop
+load 255
+load 254
+itob
+concat
+load 253
+itob
+concat
+txn Sender
+concat
+byte base64(AAAAAAAAAAE=)
+global Round
+itob
+concat
+load 254
+dup
++
+itob
+concat
+b loop3
+l3:
+// Handler 2
+dup
+int 2
+==
+bz l5
+pop
+// check step
+int 1
+load 1
+==
+assert
+// check time
+txna ApplicationArgs 1
+btoi
+dup
+int 0
+==
+swap
+load 2
+==
+||
+assert
+int 1
+bzero
+app_global_get
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 56
+btoi
+store 252
+pop
+txna ApplicationArgs 2
+dup
+len
+int 0
+==
+assert
+pop
+global Round
+load 252
+>=
+assert
+// "CheckPay"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:57:51:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// Just "sender correct"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:57:51:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+load 255
+txn Sender
+==
+assert
+load 254
+dup
+bz l6
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 3
+dig 1
+gtxns Sender
+==
+assert
+load 255
+dig 1
+gtxns Receiver
+==
+assert
+l6:
+pop
+int 0
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 3
+dig 1
+gtxns Sender
+==
+assert
+global CreatorAddress
+dig 1
+gtxns CloseRemainderTo
+==
+assert
+l7:
+pop
+txn OnCompletion
+int DeleteApplication
+==
+assert
+b updateState
+l5:
+l8:
+l9:
+// Handler 5
+dup
+int 5
+==
+bz l10
+pop
+// check step
+int 6
+load 1
+==
+assert
+// check time
+txna ApplicationArgs 1
+btoi
+dup
+int 0
+==
+swap
+load 2
+==
+||
+assert
+int 1
+bzero
+app_global_get
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 80
+store 252
+dup
+substring 80 88
+btoi
+store 251
+dup
+substring 88 96
+btoi
+store 250
+pop
+txna ApplicationArgs 2
+dup
+len
+int 32
+==
+assert
+dup
+store 249
+pop
+global Round
+load 250
+<
+assert
+// "CheckPay"
+// "./index.rsh:69:11:dot"
+// "[]"
+// Just "sender correct"
+// "./index.rsh:69:11:dot"
+// "[]"
+load 255
+txn Sender
+==
+assert
+global Round
+load 253
++
+store 248
+load 255
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 251
+itob
+concat
+load 249
+concat
+load 248
+itob
+concat
+int 1
+bzero
+dig 1
+substring 0 127
+app_global_put
+byte base64(AQ==)
+dig 1
+substring 127 128
+app_global_put
+pop
+int 8
+store 1
+global Round
+store 2
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState
+l10:
+// Handler 6
+dup
+int 6
+==
+bz l11
+pop
+// check step
+int 6
+load 1
+==
+assert
+// check time
+txna ApplicationArgs 1
+btoi
+dup
+int 0
+==
+swap
+load 2
+==
+||
+assert
+int 1
+bzero
+app_global_get
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 80
+store 252
+dup
+substring 80 88
+btoi
+store 251
+dup
+substring 88 96
+btoi
+store 250
+pop
+txna ApplicationArgs 2
+dup
+len
+int 0
+==
+assert
+pop
+global Round
+load 250
+>=
+assert
+// "CheckPay"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:70:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// Just "sender correct"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:70:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+load 252
+txn Sender
+==
+assert
+load 251
+dup
+bz l12
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 3
+dig 1
+gtxns Sender
+==
+assert
+load 252
+dig 1
+gtxns Receiver
+==
+assert
+l12:
+pop
+int 0
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 3
+dig 1
+gtxns Sender
+==
+assert
+global CreatorAddress
+dig 1
+gtxns CloseRemainderTo
+==
+assert
+l13:
+pop
+txn OnCompletion
+int DeleteApplication
+==
+assert
+b updateState
+l11:
+// Handler 7
+dup
+int 7
+==
+bz l14
+pop
+// check step
+int 8
+load 1
+==
+assert
+// check time
+txna ApplicationArgs 1
+btoi
+dup
+int 0
+==
+swap
+load 2
+==
+||
+assert
+int 1
+bzero
+app_global_get
+byte base64(AQ==)
+app_global_get
+concat
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 80
+store 252
+dup
+substring 80 88
+btoi
+store 251
+dup
+substring 88 120
+store 250
+dup
+substring 120 128
+btoi
+store 249
+pop
+txna ApplicationArgs 2
+dup
+len
+int 8
+==
+assert
+dup
+btoi
+store 248
+pop
+global Round
+load 249
+<
+assert
+// "CheckPay"
+// "./index.rsh:77:9:dot"
+// "[]"
+// Just "sender correct"
+// "./index.rsh:77:9:dot"
+// "[]"
+load 252
+txn Sender
+==
+assert
+global Round
+load 253
++
+store 247
+load 255
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 251
+itob
+concat
+load 250
+concat
+load 248
+itob
+concat
+load 247
+itob
+concat
+int 1
+bzero
+dig 1
+substring 0 127
+app_global_put
+byte base64(AQ==)
+dig 1
+substring 127 136
+app_global_put
+pop
+int 10
+store 1
+global Round
+store 2
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState
+l14:
+// Handler 8
+dup
+int 8
+==
+bz l15
+pop
+// check step
+int 8
+load 1
+==
+assert
+// check time
+txna ApplicationArgs 1
+btoi
+dup
+int 0
+==
+swap
+load 2
+==
+||
+assert
+int 1
+bzero
+app_global_get
+byte base64(AQ==)
+app_global_get
+concat
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 80
+store 252
+dup
+substring 80 88
+btoi
+store 251
+dup
+substring 88 120
+store 250
+dup
+substring 120 128
+btoi
+store 249
+pop
+txna ApplicationArgs 2
+dup
+len
+int 0
+==
+assert
+pop
+global Round
+load 249
+>=
+assert
+// "CheckPay"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:78:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// Just "sender correct"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:78:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+load 255
+txn Sender
+==
+assert
+load 251
+dup
+bz l16
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 3
+dig 1
+gtxns Sender
+==
+assert
+load 255
+dig 1
+gtxns Receiver
+==
+assert
+l16:
+pop
+int 0
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 3
+dig 1
+gtxns Sender
+==
+assert
+global CreatorAddress
+dig 1
+gtxns CloseRemainderTo
+==
+assert
+l17:
+pop
+txn OnCompletion
+int DeleteApplication
+==
+assert
+b updateState
+l15:
+// Handler 9
+dup
+int 9
+==
+bz l18
+pop
+// check step
+int 10
+load 1
+==
+assert
+// check time
+txna ApplicationArgs 1
+btoi
+dup
+int 0
+==
+swap
+load 2
+==
+||
+assert
+int 1
+bzero
+app_global_get
+byte base64(AQ==)
+app_global_get
+concat
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 80
+store 252
+dup
+substring 80 88
+btoi
+store 251
+dup
+substring 88 120
+store 250
+dup
+substring 120 128
+btoi
+store 249
+dup
+substring 128 136
+btoi
+store 248
+pop
+txna ApplicationArgs 2
+dup
+len
+int 16
+==
+assert
+dup
+substring 0 8
+btoi
+store 247
+dup
+substring 8 16
+btoi
+store 246
+pop
+global Round
+load 248
+<
+assert
+// "CheckPay"
+// "./index.rsh:85:11:dot"
+// "[]"
+// Just "sender correct"
+// "./index.rsh:85:11:dot"
+// "[]"
+load 255
+txn Sender
+==
+assert
+// Nothing
+// "reach standard library:65:17:application"
+// "[at ./index.rsh:87:20:application call to \"checkCommitment\" (defined at: reach standard library:64:8:function exp)]"
+load 250
+load 247
+itob
+load 246
+itob
+concat
+sha256
+==
+assert
+load 255
+load 254
+itob
+concat
+load 253
+itob
+concat
+load 252
+concat
+load 246
+int 4
+load 249
+-
++
+int 3
+%
+itob
+global Round
+itob
+concat
+load 251
+itob
+concat
+b loop3
+l18:
+// Handler 10
+dup
+int 10
+==
+bz l19
+pop
+// check step
+int 10
+load 1
+==
+assert
+// check time
+txna ApplicationArgs 1
+btoi
+dup
+int 0
+==
+swap
+load 2
+==
+||
+assert
+int 1
+bzero
+app_global_get
+byte base64(AQ==)
+app_global_get
+concat
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 48
+btoi
+store 253
+dup
+substring 48 80
+store 252
+dup
+substring 80 88
+btoi
+store 251
+dup
+substring 88 120
+store 250
+dup
+substring 120 128
+btoi
+store 249
+dup
+substring 128 136
+btoi
+store 248
+pop
+txna ApplicationArgs 2
+dup
+len
+int 0
+==
+assert
+pop
+global Round
+load 248
+>=
+assert
+// "CheckPay"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:86:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// Just "sender correct"
+// "reach standard library:209:7:dot"
+// "[at ./index.rsh:86:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+load 252
+txn Sender
+==
+assert
+load 251
+dup
+bz l20
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 3
+dig 1
+gtxns Sender
+==
+assert
+load 252
+dig 1
+gtxns Receiver
+==
+assert
+l20:
+pop
+int 0
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 3
+dig 1
+gtxns Sender
+==
+assert
+global CreatorAddress
+dig 1
+gtxns CloseRemainderTo
+==
+assert
+l21:
+pop
+txn OnCompletion
+int DeleteApplication
+==
+assert
+b updateState
+l19:
+int 0
+assert
+loop3:
+dup
+substring 0 8
+btoi
+store 255
+dup
+substring 8 16
+btoi
+store 254
+dup
+substring 16 24
+btoi
+store 253
+pop
+dup
+substring 0 32
+store 252
+dup
+substring 32 40
+btoi
+store 251
+dup
+substring 40 48
+btoi
+store 250
+dup
+substring 48 80
+store 249
+pop
+load 255
+int 1
+==
+bz l22
+load 254
+load 250
++
+store 248
+load 252
+load 251
+itob
+concat
+load 250
+itob
+concat
+load 249
+concat
+load 253
+itob
+concat
+load 248
+itob
+concat
+int 1
+bzero
+dig 1
+substring 0 96
+app_global_put
+pop
+int 6
+store 1
+global Round
+store 2
+txn OnCompletion
+int NoOp
+==
+assert
+b updateState
+l22:
+load 252
+load 251
+itob
+concat
+load 249
+concat
+load 255
+itob
+concat
+byte base64()
+loop4:
+pop
+dup
+substring 0 32
+store 255
+dup
+substring 32 40
+btoi
+store 254
+dup
+substring 40 72
+store 253
+dup
+substring 72 80
+btoi
+store 252
+pop
+int 2
+load 254
+*
+dup
+bz l23
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 3
+dig 1
+gtxns Sender
+==
+assert
+load 253
+load 255
+load 252
+int 2
+==
+select
+dig 1
+gtxns Receiver
+==
+assert
+l23:
+pop
+int 0
+load 0
+dup
+int 1
++
+store 0
+swap
+dig 1
+gtxns Amount
+==
+assert
+int pay
+dig 1
+gtxns TypeEnum
+==
+assert
+int 0
+dig 1
+gtxns Fee
+==
+assert
+global ZeroAddress
+dig 1
+gtxns Lease
+==
+assert
+global ZeroAddress
+dig 1
+gtxns RekeyTo
+==
+assert
+load 3
+dig 1
+gtxns Sender
+==
+assert
+global CreatorAddress
+dig 1
+gtxns CloseRemainderTo
+==
+assert
+l24:
+pop
+txn OnCompletion
+int DeleteApplication
+==
+assert
+updateState:
+byte base64()
+load 1
+itob
+load 2
+itob
+load 3
+concat
+concat
+app_global_put
+checkSize:
+load 0
+dup
+dup
+int 1
++
+global GroupSize
+==
+assert
+txn GroupIndex
+==
+assert
+int 1000
+*
+txn Fee
+<=
+assert
+done:
+int 1
+return
+alloc:
+txn OnCompletion
+int NoOp
+==
+assert
+int 0
+store 1
+int 0
+store 2
+global ZeroAddress
+store 3
+b updateState

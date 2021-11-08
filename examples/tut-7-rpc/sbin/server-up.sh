@@ -4,14 +4,23 @@
 set -e
 
 # from examples/tut-7-rpc
-ROOT="$(realpath ../..)"
+ROOT="$(cd ../.. && pwd)"
 
 REACH_RPC_KEY=$(cat REACH_RPC_KEY.txt)
 export REACH_RPC_KEY
 
 echo
-echo 'starting server...'
-(cd server && "${ROOT}/reach" rpc-server &)
+echo 'Starting server...'
+cd server
+"${ROOT}/reach" rpc-server &
+pid=$!
+cd ..
+
 sleep 10
-echo 'started...'
-echo
+
+if pgrep -P "$pid" >/dev/null; then
+  echo 'Server started...'
+  echo
+else
+  exit 1
+fi

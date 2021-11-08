@@ -4,4 +4,12 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
-Checked 86 theorems; No failures!
+Checked 89 theorems; No failures!
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+
+  ./fork.rsh:26:11:application
+
+  26|       fork()
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+

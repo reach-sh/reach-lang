@@ -1,17 +1,16 @@
 export const connector = 'ALGO';
 
-// XXX: use @types/algosdk when we can
 import algosdk from 'algosdk';
 import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
-import * as msgpack from '@msgpack/msgpack';
-
-import type { Transaction } from 'algosdk';
-
-// DEBUG: uncomment this for debugging in browser
-// @ts-ignore
-// import algosdk__src__transaction from 'algosdk/src/transaction';
+import type { Transaction } from 'algosdk'; // =>
+import type {
+  ARC11_Wallet,
+  WalletTransaction,
+  EnableNetworkResult,
+  EnableAccountsResult,
+} from './ALGO_ARC11'; // =>
 
 const {Buffer} = buffer;
 
@@ -20,15 +19,17 @@ import {
 } from './version';
 import {
   CurrencyAmount, OnProgress,
-  IViewLib, IBackend, IBackendViewInfo, IBackendViewsInfo, getViewsHelper,
+  IViewLib, IBackend, IBackendViewInfo, IBackendViewsInfo,
   IRecvArgs, ISendRecvArgs,
   IAccount, IContract, IRecv,
+  ISetupArgs, ISetupRes,
   // ISimRes,
   TimeArg,
   ISimTxn,
-  deferContract,
+  stdContract,
+  stdAccount,
   debug, envDefault,
-  argsSlice, argsSplit,
+  argsSplit,
   makeRandom,
   replaceableThunk,
   ensureConnectorAvailable,
@@ -38,6 +39,8 @@ import {
   make_newTestAccounts,
   make_waitUntilX,
   checkTimeout,
+  truthyEnv,
+  Signal,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -53,11 +56,11 @@ import {
   ALGO_Ty,
   NV,
   addressFromHex,
-  stdlib as compiledStdlib,
+  stdlib,
   typeDefs,
 } from './ALGO_compiled';
-import { process, window } from './shim';
-export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = compiledStdlib;
+import { window, process, Env } from './shim';
+export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = stdlib;
 export * from './shared_user';
 
 // Type Definitions
@@ -65,6 +68,7 @@ export * from './shared_user';
 type BigNumber = ethers.BigNumber;
 
 type AnyALGO_Ty = ALGO_Ty<CBR_Val>;
+type ConnectorTy= AnyALGO_Ty;
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
@@ -74,26 +78,8 @@ type AnyALGO_Ty = ALGO_Ty<CBR_Val>;
 // The unused ones are commented out
 type Address = string
 // type RawAddress = Uint8Array;
-type SecretKey = Uint8Array // length 64
-type AlgoSigner = {
-  sign: (txn: Transaction) => Promise<{blob: string /* base64 */, txID: string}>,
-  accounts: (args: {ledger: string}) => Promise<Array<{address: string}>>,
-}
+type SecretKey = Uint8Array; // length 64
 
-// algosdk.Account = {addr, sk}
-// This is slightly different:
-// Must have sk w/ optional AlgoSigner
-// or AlgoSigner w/ optional sk
-type Wallet = {
-  addr: Address,
-  sk: SecretKey,
-  AlgoSigner?: AlgoSigner,
-} | {
-  addr: Address,
-  sk?: SecretKey,
-  AlgoSigner: AlgoSigner,
-};
-type SignedTxn = Uint8Array;
 type TxnParams = {
   flatFee?: boolean,
   fee: number,
@@ -102,9 +88,12 @@ type TxnParams = {
   genesisID: string,
   genesisHash: string,
 }
-type TxnInfo = {
+type RecvTxn = {
   'confirmed-round': number,
   'application-index'?: number,
+  'application-args': Array<string>,
+  'sender': Address,
+  'logs': Array<string>,
 };
 type TxId = string;
 type ApiCall<T> = {
@@ -116,17 +105,20 @@ type CompileResultBytes = {
   hash: Address
 };
 
-type NetworkAccount = Wallet;
+type NetworkAccount = {
+  addr: Address,
+  sk?: SecretKey
+};
 
-const reachBackendVersion = 1;
-const reachAlgoBackendVersion = 2;
+const reachBackendVersion = 5;
+const reachAlgoBackendVersion = 5;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
   appApproval: string,
   appClear: string,
   escrow: string,
-  viewSize: number,
-  viewKeys: number,
+  stateSize: number,
+  stateKeys: number,
   mapDataSize: number,
   mapDataKeys: number,
   unsupported: Array<string>,
@@ -148,12 +140,17 @@ type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Address, Token, AnyALGO_Ty>;
 type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
 type SimTxn = ISimTxn<Token>
+type SetupArgs = ISetupArgs<ContractInfo>;
+type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyALGO_Ty>;
 
 // Helpers
 
 // Parse CBR into Public Key
 const cbr2algo_addr = (x:string): Address =>
   algosdk.encodeAddress(Buffer.from(x.slice(2), 'hex'));
+
+const txnFromAddress = (t:Transaction): Address =>
+  algosdk.encodeAddress(t.from.publicKey);
 
 function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
   if (!(a instanceof Uint8Array)) {
@@ -163,43 +160,40 @@ function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
   return Buffer.from(a).toString(enc);
 }
 
-const [getWaitPort, setWaitPort] = replaceableThunk(() => true);
-export { setWaitPort };
-async function wait1port(server: string, port: string | number) {
-  if (!getWaitPort()) return;
-  return await waitPort(server, port);
-};
-
-// type SignStrategy = 'mnemonic' | 'AlgoSigner' | 'MyAlgo';
-
-const [getSignStrategy, setSignStrategy] = replaceableThunk<string>(() => 'mnemonic');
-export { getSignStrategy, setSignStrategy };
-
-const [getAlgoSigner, setAlgoSigner] = replaceableThunk<Promise<AlgoSigner>>(async () => {
-  if (window.AlgoSigner) {
-    const AlgoSigner = window.AlgoSigner;
-    await AlgoSigner.connect();
-    return AlgoSigner;
-  } else {
-    // TODO: wait for a few seconds and try again before giving up
-    throw Error(`Can't find AlgoSigner. Please refresh the page and try again.`);
-  }
-});
-export { setAlgoSigner };
-
-if (process.env.REACH_CONNECTOR_MODE == 'ALGO-browser'
-  // Yes, this is dumb. TODO something better
-  || process.env.REACH_CONNECTOR_MODE === 'ETH-browser') {
-  setWaitPort(false);
-}
-
+// TODO: read token from scripts/devnet-algo/algorand_data/algod.token
 const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
 const rawDefaultItoken = 'reach-devnet';
 
-export const waitForConfirmation = async (txId: TxId, untilRound: number|undefined): Promise<TxnInfo> => {
-  const doOrDie = async (p: Promise<any>): Promise<any> => {
+type OrExn<X> = X | {exn:any};
+type IndexerTxn = any;
+type AlgodTxn = {
+  'application-index'?: number,
+  'confirmed-round'?: number,
+  'logs'?: Array<string>,
+  'txn': {
+    'sig': Uint8Array,
+    'txn': any,
+  },
+  'pool-error': string,
+};
+
+const indexerTxn2RecvTxn = (txn:any) => {
+  const ait = txn['application-transaction'] || {};
+  const aargs = ait['application-args'] || [];
+  const aidx = ait['application-id'];
+  return {
+    'confirmed-round': txn['confirmed-round'],
+    'sender': txn['sender'],
+    'logs': (txn['logs'] || []),
+    'application-args': aargs,
+    'application-index': aidx,
+  };
+};
+
+const waitForConfirmation = async (txId: TxId, untilRound?: number|undefined): Promise<RecvTxn> => {
+  const doOrDie = async <X>(p: Promise<X>): Promise<OrExn<X>> => {
     try { return await p; }
-    catch (e) { return { 'exn': e }; }
+    catch (e:any) { return { 'exn': e }; }
   };
   const checkTooLate = async (lastLastRound: number): Promise<number> => {
     const [ c, msg ] = lastLastRound > 0 ?
@@ -219,17 +213,28 @@ export const waitForConfirmation = async (txId: TxId, untilRound: number|undefin
   const dhead = [ 'waitForConfirmation', txId ];
   const client = await getAlgodClient();
 
-  const checkAlgod = async (lastLastRound:number): Promise<TxnInfo> => {
+  const checkAlgod = async (lastLastRound:number): Promise<RecvTxn> => {
     const lastRound = await checkTooLate(lastLastRound);
     const info =
-      await doOrDie(client.pendingTransactionInformation(txId).do());
+      (await doOrDie(client.pendingTransactionInformation(txId).do())) as OrExn<AlgodTxn>;
     debug(...dhead, 'info', info);
-    if ( info['exn'] ) {
+    if ( 'exn' in info ) {
       debug(...dhead, 'switching to indexer on error');
       return await checkIndexer(lastRound);
-    } else if ( info['confirmed-round'] > 0 ) {
+    }
+    const cr = info['confirmed-round'];
+    if ( cr !== undefined && cr > 0 ) {
+      const l = info['logs'] === undefined ? [] : info['logs'];
       debug(...dhead, 'confirmed');
-      return info;
+      const dtxn = algosdk.Transaction.from_obj_for_encoding(info['txn']['txn']);
+      debug(...dhead, 'confirmed', dtxn);
+      return {
+        'confirmed-round': cr,
+        'logs': l,
+        'application-index': info['application-index'],
+        'sender': txnFromAddress(dtxn),
+        'application-args': (dtxn.appArgs || []).map((x)=> uint8ArrayToStr(x, 'base64')),
+      };
     } else if ( info['pool-error'] === '' ) {
       debug(...dhead, 'still in pool, trying again');
       return await checkAlgod(lastRound);
@@ -238,50 +243,76 @@ export const waitForConfirmation = async (txId: TxId, untilRound: number|undefin
     }
   };
 
-  const checkIndexer = async (lastLastRound: number): Promise<TxnInfo> => {
+  const checkIndexer = async (lastLastRound: number): Promise<RecvTxn> => {
     const lastRound = await checkTooLate(lastLastRound);
     const indexer = await getIndexer();
     const q = indexer.lookupTransactionByID(txId);
-    const res = await doOrDie(doQuery_(JSON.stringify(dhead), q));
+    const res = (await doOrDie(doQuery_(JSON.stringify(dhead), q))) as OrExn<IndexerTxn>;
     debug(...dhead, 'indexer', res);
-    if ( res['exn'] ) {
+    if ( 'exn' in res ) {
       debug(...dhead, 'indexer failed, trying again');
       return await checkIndexer(lastRound);
     } else {
-      return res['transaction'];
+      return indexerTxn2RecvTxn(res['transaction']);
     }
   };
 
   return await checkAlgod(0);
 };
 
-type STX = {
-  lastRound: number,
-  txID: string,
-  tx: SignedTxn, // Uint8Array
+const decodeB64Txn = (ts:string): Transaction => {
+  const tb = Buffer.from(ts, 'base64');
+  return algosdk.decodeUnsignedTransaction(tb);
 };
 
-const sendAndConfirm = async (
-  stxs: Array<STX>,
-): Promise<TxnInfo> => {
-  const { lastRound, txID } = stxs[0];
-  const sendme = stxs.map((stx) => stx.tx);
-  try {
-    const client = await getAlgodClient();
-    const req = client.sendRawTransaction(sendme);
-    // @ts-ignore
-    debug('sendAndConfirm:', base64ify(req.txnBytesToPost));
-    await req.do();
-  } catch (e) {
-    throw { type: 'sendRawTransaction', e };
+const doSignTxnToB64 = (t:Transaction, sk:SecretKey): string => {
+  const sb = Buffer.from(t.signTxn(sk));
+  return sb.toString('base64');
+};
+
+const doSignTxn = (ts:string, sk:SecretKey): string => {
+  return doSignTxnToB64(decodeB64Txn(ts), sk);
+};
+
+const signSendAndConfirm = async (
+  acc: NetworkAccount,
+  txns: Array<WalletTransaction>,
+): Promise<RecvTxn> => {
+  if ( acc.sk !== undefined ) {
+    txns.forEach((t:WalletTransaction): void => {
+      // XXX this comparison is probably wrong, because the addresses are the
+      // wrong type
+      if ( acc.sk !== undefined && ! t.stxn && t.signers !== undefined && t.signers.length === 1 && t.signers[0] === acc.addr ) {
+        debug('signSendAndConfirm', 'signing one');
+        t.stxn = doSignTxn(t.txn, acc.sk);
+      }
+    });
   }
+  const p = await getProvider();
   try {
-    return await waitForConfirmation(txID, lastRound);
+    await p.signAndPostTxns(txns);
+  } catch (e) {
+    throw { type: 'signAndPost', e };
+  }
+  const N = txns.length - 1;
+  const tN = decodeB64Txn(txns[N].txn);
+  try {
+    return await waitForConfirmation(tN.txID(), tN.lastRound);
   } catch (e) {
     throw { type: 'waitForConfirmation', e };
   }
 };
 
+const encodeUnsignedTransaction = (t:Transaction): string => {
+  return Buffer.from(algosdk.encodeUnsignedTransaction(t)).toString('base64');
+};
+
+const toWTxn = (t:Transaction): WalletTransaction => {
+  return {
+    txn: encodeUnsignedTransaction(t),
+    signers: [ txnFromAddress(t) ],
+  };
+};
 
 // Backend
 const compileTEAL = async (label: string, code: string): Promise<CompileResultBytes> => {
@@ -290,8 +321,8 @@ const compileTEAL = async (label: string, code: string): Promise<CompileResultBy
   try {
     r = await (await getAlgodClient()).compile(code).do();
     s = 200;
-  } catch (e) {
-    s = typeof e === 'object' ? e.statusCode : 'not object';
+  } catch (e:any) {
+    s = (e && typeof e === 'object') ? e.statusCode : 'not object';
     r = e;
   }
 
@@ -306,7 +337,7 @@ const compileTEAL = async (label: string, code: string): Promise<CompileResultBy
   }
 };
 
-export const getTxnParams = async (): Promise<TxnParams> => {
+const getTxnParams = async (): Promise<TxnParams> => {
   debug(`fillTxn: getting params`);
   const client = await getAlgodClient();
   while (true) {
@@ -320,157 +351,13 @@ export const getTxnParams = async (): Promise<TxnParams> => {
   }
 };
 
-function regroup(thisAcc: NetworkAccount, txns: Array<Transaction>): Array<Transaction> {
-  // Sorry this is so dumb.
-  // Basically, if these go thru AlgoSigner,
-  // it will mangle them,
-  //  so we need to recalculate the group hash.
-  if (thisAcc.AlgoSigner) {
-    const roundtrip_txns = txns
-      .map(x => clean_for_AlgoSigner(x))
-      .map(x => unclean_for_AlgoSigner(x));
-
-    // console.log(`deployP: group`);
-    // console.log(txns[0].group);
-    // console.log(Buffer.from(txns[0].group, 'base64').toString('base64'));
-    // console.log({...txns[0]});
-
-    algosdk.assignGroupID(roundtrip_txns);
-
-    // console.log(`deploy: roundtrip group`);
-    // console.log(Buffer.from(roundtrip_txns[0].group, 'base64').toString('base64'));
-
-    const group = roundtrip_txns[0].group;
-    // The same thing, but more paranoid:
-    // const group = Buffer.from(roundtrip_txns[0].group, 'base64').toString('base64');
-    for (const txn of txns) {
-      txn.group = group;
-    }
-    // console.log({...txns[0]});
-
-    return roundtrip_txns;
-  } else {
-    return txns;
-  }
-}
-
-// A copy/paste of some logic from AlgoSigner
-// packages/extension/src/background/messaging/task.ts
-function unclean_for_AlgoSigner(txnOrig: any) {
-  const txn = {...txnOrig};
-  Object.keys({...txnOrig}).forEach(key => {
-    if (txn[key] === undefined || txn[key] === null){
-        delete txn[key];
-    }
-  });
-
-  // Modify base64 encoded fields
-  if ('note' in txn && txn.note !== undefined) {
-      txn.note = new Uint8Array(Buffer.from(txn.note));
-  }
-  // Application transactions only
-  if (txn && txn.type === 'appl'){
-    if ('appApprovalProgram' in txn){
-      txn.appApprovalProgram = base64ToUI8A(txn.appApprovalProgram);
-    }
-    if ('appClearProgram' in txn){
-      txn.appClearProgram = base64ToUI8A(txn.appClearProgram);
-    }
-    if ('appArgs' in txn){
-      var tempArgs: Array<Uint8Array> = [];
-      txn.appArgs.forEach((element: string) => {
-          tempArgs.push(base64ToUI8A(element));
-      });
-      txn.appArgs = tempArgs;
-    }
-  }
-
-  // Note: this part is not copy/pasted from AlgoSigner,
-  // and isn't even strictly necessary,
-  // but it is nice for getting the same signatures from algosdk & AlgoSigner
-  if ('group' in txn) {
-    txn.group = base64ToUI8A(txn.group);
-  }
-  return txn;
-}
-
-const clean_for_AlgoSigner = (txnOrig: any) => {
-  // Make a copy with just the properties, because reasons
-  const txn = {...txnOrig};
-
-  // AlgoSigner does weird things with fees if you don't specify flatFee
-  txn.flatFee = true;
-
-  // "Creation of PaymentTx has extra or invalid fields: name,tag,appArgs."
-  delete txn.name;
-  delete txn.tag;
-
-  // uncaught (in promise) lease must be a Uint8Array.
-  // it is... but how about we just delete it instead
-  // This is presumed safe when lease is empty
-  if (txn.lease instanceof Uint8Array && txn.lease.length === 0) {
-    delete txn.lease;
-  } else {
-    console.log(txn.lease);
-    throw Error(`Impossible: non-empty lease`);
-  }
-
-  // Creation of ApplTx has extra or invalid fields: nonParticipation
-  if (!txn.nonParticipation) {
-    delete txn.nonParticipation;
-  } else {
-    throw Error(`Impossible: expected falsy nonParticipation, got: ${txn.nonParticipation}`);
-  }
-
-  // "Creation of ApplTx has extra or invalid fields: name,tag."
-  if (txn.type !== 'appl') {
-    delete txn.appArgs;
-  } else {
-    if (txn.appArgs) {
-      if (txn.appArgs.length === 0) {
-        txn.appArgs = [];
-      } else {
-        txn.appArgs = txn.appArgs.map((arg: Uint8Array) => uint8ArrayToStr(arg, 'base64'));
-      }
-    }
-  }
-
-  // Validation failed for transaction because of invalid properties [from,to]
-  // closeRemainderTo can cause an error w/ js-algorand-sdk addr parsing
-  for (const field of ['from', 'to', 'closeRemainderTo']) {
-    if (txn[field] && txn[field].publicKey) {
-      txn[field] = algosdk.encodeAddress(txn[field].publicKey);
-    }
-  }
-
-  // Weirdly, AlgoSigner *requires* the note to be a string
-  // note is the only field that needs to be utf8-encoded, so far...
-  for (const field of ['note']) {
-    if (txn[field] && typeof txn[field] !== 'string') {
-      txn[field] = uint8ArrayToStr(txn[field], 'utf8');
-    }
-  }
-
-  // Uncaught (in promise) First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.
-  // No idea what it's talking about, but probably GenesisHash?
-  // And some more uint8Array BS
-  for (const field of ['genesisHash', 'appApprovalProgram', 'appClearProgram', 'group']) {
-    if (txn[field] && typeof txn[field] !== 'string') {
-      txn[field] = uint8ArrayToStr(txn[field], 'base64');
-    }
-  }
-
-  return txn;
-};
-
 const sign_and_send_sync = async (
   label: string,
-  networkAccount: NetworkAccount,
-  txn: Transaction,
-): Promise<TxnInfo> => {
-  const txn_s = await signTxn(networkAccount, txn);
+  acc: NetworkAccount,
+  txn: WalletTransaction,
+): Promise<RecvTxn> => {
   try {
-    return await sendAndConfirm([txn_s]);
+    return await signSendAndConfirm(acc, [txn]);
   } catch (e) {
     console.log(e);
     throw Error(`${label} txn failed:\n${JSON.stringify(txn)}\nwith:\n${JSON.stringify(e)}`);
@@ -504,12 +391,10 @@ const MaxAppTxnAccounts = 4;
 const MaxExtraAppProgramPages = 3;
 
 async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBackend> {
-  if ( ! Number.isInteger(info) ) {
-    throw Error(`This Reach standard library cannot communicate with this contract, because it was deployed with an earlier version of Reach.`); }
-  const ApplicationID = info;
+  debug(`compileFor`, info, typeof(info), Number.isInteger(info));
+  const ApplicationID = bigNumberToNumber(T_Contract.canonicalize(info));
   must_be_supported(bin);
-  const algob = bin._Connectors.ALGO;
-  const { appApproval, appClear, escrow } = algob;
+  const { appApproval, appClear, escrow } = bin._Connectors.ALGO;
 
   const subst_appid = (x: string) =>
     replaceAll(x, '{{ApplicationID}}', `${ApplicationID}`);
@@ -568,7 +453,7 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean
     try {
       res = await query.do();
       break;
-    } catch (e) {
+    } catch (e:any) {
       if ( e?.errno === -111 || e?.code === "ECONNRESET") {
         debug(dhead, 'NO CONNECTION');
       } else if ( looksLikeAccountingNotInitialized(e) ) {
@@ -581,7 +466,7 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean
     }
   }
   if (!res) { throw Error(`impossible: query res is empty`); }
-  debug(dhead, '--- RESULT =', res);
+  debug(dhead, 'RESULT', res);
   return res;
 };
 
@@ -605,13 +490,38 @@ type RoundInfo = {
   specRound?: number,
 }
 
+const [_getQueryLowerBound, _setQueryLowerBound] = replaceableThunk<number>(() => 0);
+const [getValidQueryWindow, _setValidQueryWindow] = replaceableThunk<number|true>(() => true);
+
+export {getValidQueryWindow};
+export function setValidQueryWindow(n: number|true): void {
+  if (typeof n === 'number') {
+    // TODO?
+    throw Error(`Only setValidQueryWindow(true) is supported on Algorand`);
+  }
+  _setValidQueryWindow(n);
+}
+
+export function getQueryLowerBound(): BigNumber {
+  return bigNumberify(_getQueryLowerBound());
+}
+
+export function setQueryLowerBound(networkTime: BigNumber|number): void {
+  networkTime = typeof networkTime === 'number' ? networkTime
+    : networkTime._isBigNumber ? networkTime.toNumber()
+    : networkTime;
+  if (!(typeof networkTime === 'number')) { throw Error(`Expected number or BigNumber, but got ${networkTime} : ${typeof networkTime}`);}
+  _setQueryLowerBound(networkTime);
+}
+
 class EventCache {
 
   cache: any[] = [];
 
-  currentRound = 0;
+  currentRound: number;
 
   constructor() {
+    this.currentRound = _getQueryLowerBound();
     this.cache = [];
   }
 
@@ -685,42 +595,23 @@ class EventCache {
 // Common Interface Exports
 // ****************************************************************************
 
-export const { addressEq, tokenEq, digest } = compiledStdlib;
+export const { addressEq, tokenEq, digest } = stdlib;
 
-export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Object, T_Data, T_Bytes, T_Address, T_Digest, T_Struct, T_Token } = typeDefs;
+export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Contract, T_Object, T_Data, T_Bytes, T_Address, T_Digest, T_Struct, T_Token } = typeDefs;
 
 export const { randomUInt, hasRandom } = makeRandom(8);
 
-export const [getLedger, setLedger] = replaceableThunk<string|undefined>(() => DEFAULT_ALGO_LEDGER);
-function getLedgerFromAlgoSigner(AlgoSigner: AlgoSigner) {
-  // XXX: get AlgoSigner to tell us what Ledger is "currently selected"
-  // since that ability doesn't actually exist, we operate based off of setLedger()
-  void(AlgoSigner);
-  return getLedger();
-}
-
 async function waitIndexerFromEnv(env: ProviderEnv): Promise<algosdk.Indexer> {
   const { ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT, ALGO_INDEXER_TOKEN } = env;
-  await wait1port(ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
+  await waitPort(ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
   return new algosdk.Indexer(ALGO_INDEXER_TOKEN, ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
 }
 
 async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<algosdk.Algodv2> {
   const { ALGO_SERVER, ALGO_PORT, ALGO_TOKEN } = env;
-  await wait1port(ALGO_SERVER, ALGO_PORT);
+  await waitPort(ALGO_SERVER, ALGO_PORT);
   return new algosdk.Algodv2(ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
 }
-
-// TODO: read token from scripts/devnet-algo/algorand_data/algod.token
-export const [getAlgodClient, setAlgodClient] = replaceableThunk(async () => {
-  debug(`Setting algod client to default`);
-  return await waitAlgodClientFromEnv(envDefaultsALGO(process.env));
-});
-
-export const [getIndexer, setIndexer] = replaceableThunk(async () => {
-  debug(`setting indexer to default`);
-  return await waitIndexerFromEnv(envDefaultsALGO(process.env));
-});
 
 // This function should be provided by the indexer, but it isn't so we simulate
 // something decent. This function is allowed to "fail" by not really waiting
@@ -736,158 +627,250 @@ const indexer_statusAfterBlock = async (round: number): Promise<BigNumber> => {
   return now;
 };
 
-interface ALGO_Provider {
+interface Provider {
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
-  ledger?: string
-}
+  getDefaultAddress: () => Promise<Address>,
+  isIsolatedNetwork: boolean,
+  signAndPostTxns: (txns:WalletTransaction[], opts?: any) => Promise<any>,
+};
 
-export async function getProvider(): Promise<ALGO_Provider> {
-  return {
-    algodClient: await getAlgodClient(),
-    indexer: await getIndexer(),
-    ledger: getLedger(),
+const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
+  debug(`making provider with wallet`);
+  const walletOpts = {'network': process.env['ALGO_NETWORK']};
+  let enabledNetwork: EnableNetworkResult|undefined;
+  let enabledAccounts: EnableAccountsResult|undefined;
+  if ( wallet.enableNetwork === undefined && wallet.enableAccounts === undefined ) {
+    const enabled = await wallet.enable(walletOpts);
+    enabledNetwork = enabled;
+    enabledAccounts = enabled;
+  } else if ( wallet.enableNetwork === undefined || wallet.enableAccounts === undefined ) {
+    throw new Error('must have enableNetwork AND enableAccounts OR neither');
+  } else {
+    enabledNetwork = await wallet.enableNetwork(walletOpts);
   }
-}
-export async function setProvider(provider: ALGO_Provider|Promise<ALGO_Provider>): Promise<void> {
-  provider = await provider;
-  // XXX doesn't waitPort these, because these are opaque to us.
-  // should we do something similar where we wait for /health to give us a 200 response?
-  setAlgodClient((async () => provider.algodClient)());
-  setIndexer((async () => provider.indexer)());
-  setLedger(provider.ledger);
-}
+  void enabledNetwork;
+  const algodClient = await wallet.getAlgodv2();
+  const indexer = await wallet.getIndexer();
+  const getDefaultAddress = async (): Promise<Address> => {
+    if ( enabledAccounts === undefined ) {
+      if ( wallet.enableAccounts === undefined ) {
+        throw new Error('impossible: no wallet.enableAccounts');
+      }
+      enabledAccounts = await wallet.enableAccounts(walletOpts);
+      if ( enabledAccounts === undefined ) {
+        throw new Error('Could not enable accounts');
+      }
+    }
+    return enabledAccounts.accounts[0];
+  };
+  const signAndPostTxns = wallet.signAndPostTxns;
+  const isIsolatedNetwork = truthyEnv(process.env['REACH_ISOLATED_NETWORK']);
+  return { algodClient, indexer, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
+};
+
+export const setWalletFallback = (wf:() => any) => {
+  if ( ! window.algorand ) { window.algorand = wf(); }
+};
+const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
+  let p: Provider|undefined = undefined;
+  const enableNetwork = async (eopts?:any) => {
+    void(eopts);
+    const base = opts['providerEnv'];
+    let baseEnv: Env = process.env;
+    if ( base ) {
+      if ( typeof base === 'string' ) {
+        // @ts-ignore
+        baseEnv = await providerEnvByName(base);
+      } else {
+        baseEnv = base;
+      }
+    }
+    p = await makeProviderByEnv(baseEnv);
+    return {};
+  };
+  const enableAccounts = async (eopts?:any) => {
+    void(eopts);
+    const addr = await getAddr();
+    return { accounts: [ addr ] };
+  };
+  const enable = async (eopts?:any) => {
+    await enableNetwork(eopts);
+    return await enableAccounts(eopts);
+  };
+  const getAlgodv2 = async () => {
+    if ( !p ) { throw new Error(`must call enable`) };
+    return p.algodClient;
+  };
+  const getIndexer = async () => {
+    if ( !p ) { throw new Error(`must call enable`) };
+    return p.indexer;
+  };
+  const signAndPostTxns = async (txns:WalletTransaction[], sopts?:any) => {
+    if ( !p ) { throw new Error(`must call enable`) };
+    void(sopts);
+    debug(`fallBack: signAndPostTxns`, {txns});
+    const to_sign: string[] = [];
+    txns.forEach((txn) => {
+      if ( ! txn.stxn ) {
+        to_sign.push(txn.txn);
+      }
+    });
+    debug(`fallBack: signAndPostTxns`, {to_sign});
+    const signed: string[] = to_sign.length == 0 ? [] : await signTxns(to_sign);
+    debug(`fallBack: signAndPostTxns`, {signed});
+    const stxns: string[] = txns.map((txn) => {
+      if ( txn.stxn ) { return txn.stxn; }
+      const s = signed.shift();
+      if ( ! s ) { throw new Error(`txn not signed`); }
+      return s;
+    });
+    const bs = stxns.map((stxn) => Buffer.from(stxn, 'base64'));
+    debug(`fallBack: signAndPostTxns`, bs);
+    await p.algodClient.sendRawTransaction(bs).do();
+    return {};
+  };
+  return { enable, enableNetwork, enableAccounts, getAlgodv2, getIndexer, signAndPostTxns };
+};
+const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
+  debug(`using mnemonic wallet fallback`);
+  const getAddr = async (): Promise<string> => {
+    return window.prompt(`Please paste the address of your account:`);
+  };
+  const signTxns = async (txns: string[]): Promise<string[]> => {
+    return txns.map((ts) => {
+      const t = decodeB64Txn(ts);
+      const addr = txnFromAddress(t);
+      const mn = window.prompt(`Please paste the mnemonic for the address, ${addr}. It will not be saved.`);
+      const acc = algosdk.mnemonicToSecretKey(mn);
+      return doSignTxnToB64(t, acc.sk);
+    });
+  };
+  return doWalletFallback_signOnly(opts, getAddr, signTxns);
+};
+const walletFallback_MyAlgoWallet = (MyAlgoConnect:any, opts:any) => (): ARC11_Wallet => {
+  debug(`using MyAlgoWallet wallet fallback`);
+  // @ts-ignore
+  const mac = new MyAlgoConnect();
+  const getAddr = async (): Promise<string> => {
+    const accts =
+      await mac.connect({shouldSelectOneAccount: true});
+    return accts[0].address;
+  };
+  const signTxns = async (txns: string[]): Promise<string[]> => {
+    debug(`MAW signTransaction ->`, txns);
+    const stxns: Array<{blob: Uint8Array}> = await mac.signTransaction(txns);
+    debug(`MAW signTransaction <-`, stxns);
+    return stxns.map((sts) => Buffer.from(sts.blob).toString('base64'));
+  };
+  return doWalletFallback_signOnly(opts, getAddr, signTxns);
+};
+const walletFallback_WalletConnect = (WalletConnect:any, opts:any) => (): ARC11_Wallet => {
+  debug(`using WalletConnect wallet fallback`);
+  const wc = new WalletConnect();
+  return doWalletFallback_signOnly(opts, (() => wc.getAddr()), ((ts) => wc.signTxns(ts)));
+};
+export const walletFallback = (opts:any) => {
+  debug(`using wallet fallback with`, opts);
+  const mac = opts.MyAlgoConnect;
+  if ( mac ) {
+    return walletFallback_MyAlgoWallet(mac, opts);
+  }
+  const wc = opts.WalletConnect;
+  if ( wc ) {
+    return walletFallback_WalletConnect(wc, opts);
+  }
+  // This could be implemented with walletFallback_signOnly and the residue
+  // from the old version.
+  //  return walletFallback_AlgoSigner(opts);
+  return walletFallback_mnemonic(opts);
+};
+
+export const [getProvider, setProvider] = replaceableThunk(async () => {
+  if ( window.algorand ) {
+    // @ts-ignore
+    return await makeProviderByWallet(window.algorand);
+  } else {
+    debug(`making default provider based on process.env`);
+    return await makeProviderByEnv(process.env);
+  }
+});
+const getAlgodClient = async () => (await getProvider()).algodClient;
+const getIndexer = async () => (await getProvider()).indexer;
 
 export interface ProviderEnv {
-  // ALGO_LEDGER may be undefined under some circumstances,
-  // but AlgoSigner codepaths will error if it is undefined.
-  ALGO_LEDGER: string|undefined
   ALGO_SERVER: string
   ALGO_PORT: string
   ALGO_TOKEN: string
   ALGO_INDEXER_SERVER: string
   ALGO_INDEXER_PORT: string
   ALGO_INDEXER_TOKEN: string
+  REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
 }
 
 const localhostProviderEnv: ProviderEnv = {
-  ALGO_LEDGER: 'Reach Devnet',
   ALGO_SERVER: 'http://localhost',
   ALGO_PORT: '4180',
   ALGO_TOKEN: rawDefaultToken,
   ALGO_INDEXER_SERVER: 'http://localhost',
   ALGO_INDEXER_PORT: '8980',
   ALGO_INDEXER_TOKEN: rawDefaultItoken,
-}
-
-const DEFAULT_ALGO_LEDGER = localhostProviderEnv.ALGO_LEDGER;
-const DEFAULT_ALGO_SERVER = localhostProviderEnv.ALGO_SERVER;
-const DEFAULT_ALGO_PORT = localhostProviderEnv.ALGO_PORT;
-const DEFAULT_ALGO_TOKEN = localhostProviderEnv.ALGO_TOKEN;
-const DEFAULT_ALGO_INDEXER_SERVER = localhostProviderEnv.ALGO_INDEXER_SERVER;
-const DEFAULT_ALGO_INDEXER_PORT = localhostProviderEnv.ALGO_INDEXER_PORT;
-const DEFAULT_ALGO_INDEXER_TOKEN = localhostProviderEnv.ALGO_INDEXER_TOKEN;
-
-function serverLooksLikeRandlabs(server: string): boolean {
-  return server.toLowerCase().includes('algoexplorerapi.io');
-}
-
-function envDefaultALGOPort(port: string|undefined, defaultPort: string, server: string): string {
-  // Some simple guessing
-  return port !== undefined ? port
-    : serverLooksLikeRandlabs(server) ? ''
-    : defaultPort;
-}
-
-function envDefaultALGOToken(token: string|undefined, defaultToken: string, server: string, port: string): string {
-  // Some simple guessing
-  // port is not currently used for this guessing, but could be in the future
-  void(port);
-  return token !== undefined ? token
-    : serverLooksLikeRandlabs(server) ? ''
-    : defaultToken;
-}
-
-function guessRandlabsLedger(server?: string): string|undefined {
-  if (server === undefined) return undefined;
-  server = server.toLowerCase();
-  if (server.startsWith('https://algoexplorerapi.io')) {
-    return 'MainNet';
-  } else if (server.startsWith('https://testnet.algoexplorerapi.io')) {
-    return 'TestNet';
-  } else if (server.startsWith('https://betanet.algoexplorerapi.io')) {
-    return 'BetaNet';
-  }
-  return undefined;
-}
-
-function envDefaultALGOLedger(ledger: string|undefined, defaultLedger: string|undefined, server: string, port: string): string|undefined {
-  // Some simple guessing
-  // port is not currently used for this guessing, but could be in the future
-  void(port);
-  return ledger !== undefined ? ledger
-    : serverLooksLikeRandlabs(server) ? guessRandlabsLedger(ledger)
-    : defaultLedger;
+  REACH_ISOLATED_NETWORK: 'yes',
 }
 
 function envDefaultsALGO(env: Partial<ProviderEnv>): ProviderEnv {
-  const ALGO_SERVER = envDefault(env.ALGO_SERVER, DEFAULT_ALGO_SERVER);
-  const ALGO_PORT = envDefaultALGOPort(env.ALGO_PORT, DEFAULT_ALGO_PORT, ALGO_SERVER);
-  const ALGO_TOKEN = envDefaultALGOToken(env.ALGO_TOKEN, DEFAULT_ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
-  const ALGO_LEDGER = envDefaultALGOLedger(env.ALGO_LEDGER, DEFAULT_ALGO_LEDGER, ALGO_SERVER, ALGO_PORT);
-
-  const ALGO_INDEXER_SERVER = envDefault(env.ALGO_INDEXER_SERVER, DEFAULT_ALGO_INDEXER_SERVER);
-  const ALGO_INDEXER_PORT = envDefaultALGOPort(env.ALGO_INDEXER_PORT, DEFAULT_ALGO_INDEXER_PORT, ALGO_INDEXER_SERVER);
-  const ALGO_INDEXER_TOKEN = envDefaultALGOToken(env.ALGO_INDEXER_TOKEN, DEFAULT_ALGO_INDEXER_TOKEN, ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
-
-  return {
-    ALGO_LEDGER,
-    ALGO_SERVER,
-    ALGO_PORT,
-    ALGO_TOKEN,
-    ALGO_INDEXER_SERVER,
-    ALGO_INDEXER_PORT,
-    ALGO_INDEXER_TOKEN,
+  const denv = localhostProviderEnv;
+  // @ts-ignore
+  const ret: ProviderEnv = {};
+  for ( const f of ['ALGO_SERVER', 'ALGO_PORT', 'ALGO_TOKEN', 'ALGO_INDEXER_SERVER', 'ALGO_INDEXER_PORT', 'ALGO_INDEXER_TOKEN', 'REACH_ISOLATED_NETWORK'] ) {
+    // @ts-ignore
+    ret[f] = envDefault(env[f], denv[f]);
   }
-}
+  return ret;
+};
 
-export function setProviderByEnv(env: Partial<ProviderEnv>): void {
-  // Note: This doesn't just immediately call setProviderByEnv,
-  // because here we can actually take the opportunity to wait1port.
+async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<Provider> {
+  debug(`makeProviderByEnv`, env);
   const fullEnv = envDefaultsALGO(env);
+  debug(`makeProviderByEnv defaulted`, fullEnv);
+  const algodClient = await waitAlgodClientFromEnv(fullEnv);
+  const indexer = await waitIndexerFromEnv(fullEnv);
+  const isIsolatedNetwork = truthyEnv(fullEnv.REACH_ISOLATED_NETWORK);
+  const lab = `Providers created by environment`;
+  const getDefaultAddress = async (): Promise<Address> => {
+    throw new Error(`${lab} do not have default addresses`);
+  };
+  const signAndPostTxns = async (txns:WalletTransaction[], opts?:any) => {
+    void(opts);
+    const stxns = txns.map((txn) => {
+      if ( txn.stxn ) { return txn.stxn; }
+      throw new Error(`${lab} cannot interactively sign`);
+    });
+    const bs = stxns.map((stxn) => Buffer.from(stxn, 'base64'));
+    debug(`signAndPostTxns`, bs);
+    await algodClient.sendRawTransaction(bs).do();
+  };
+  return { algodClient, indexer, isIsolatedNetwork, getDefaultAddress, signAndPostTxns };
+};
+export function setProviderByEnv(env: Partial<ProviderEnv>): void {
+  setProvider(makeProviderByEnv(env));
+};
 
-  setAlgodClient(waitAlgodClientFromEnv(fullEnv));
-  setIndexer(waitIndexerFromEnv(fullEnv));
-  setLedger(fullEnv.ALGO_LEDGER);
-}
-
-type WhichNetExternal
-  = 'MainNet'
-  | 'TestNet'
-  | 'BetaNet'
-
-export type ProviderName
-  = WhichNetExternal
-  | 'LocalHost'
-  | 'randlabs/MainNet'
-  | 'randlabs/TestNet'
-  | 'randlabs/BetaNet'
-
-function randlabsProviderEnv(ALGO_LEDGER: WhichNetExternal): ProviderEnv {
-  const prefix = ALGO_LEDGER === 'MainNet' ? '' : `${ALGO_LEDGER.toLowerCase()}.`;
+function randlabsProviderEnv(net: string): ProviderEnv {
+  const prefix = net === 'MainNet' ? '' : `${net.toLowerCase()}.`;
   const RANDLABS_BASE = `https://${prefix}algoexplorerapi.io`;
   return {
-    ALGO_LEDGER,
     ALGO_SERVER: RANDLABS_BASE,
     ALGO_PORT: '',
     ALGO_TOKEN: '',
     ALGO_INDEXER_SERVER: `${RANDLABS_BASE}/idx2`,
     ALGO_INDEXER_PORT: '',
     ALGO_INDEXER_TOKEN: '',
+    REACH_ISOLATED_NETWORK: 'no',
   }
 }
 
-export function providerEnvByName(providerName: ProviderName): ProviderEnv {
+export function providerEnvByName(providerName: string): ProviderEnv {
   switch (providerName) {
     case 'MainNet': return randlabsProviderEnv('MainNet');
     case 'TestNet': return randlabsProviderEnv('TestNet');
@@ -900,29 +883,18 @@ export function providerEnvByName(providerName: ProviderName): ProviderEnv {
   }
 }
 
-export function setProviderByName(providerName: ProviderName): void {
+export function setProviderByName(providerName: string): void {
   return setProviderByEnv(providerEnvByName(providerName));
 }
 
 // eslint-disable-next-line max-len
-const rawFaucetDefaultMnemonic = 'around sleep system young lonely length mad decline argue army veteran knee truth sell hover any measure audit page mammal treat conduct marble above shell';
-const [getFaucet, setFaucet_] = replaceableThunk(async (): Promise<Account> => {
-  if ( ! isIsolatedNetwork() ) {
-    throw Error(`Cannot automatically use faucet for non-isolated network; if you want to use a custom faucet, use setFaucet`);
-  }
+const rawFaucetDefaultMnemonic = 'frown slush talent visual weather bounce evil teach tower view fossil trip sauce express moment sea garbage pave monkey exercise soap lawn army above dynamic';
+export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
   const FAUCET = algosdk.mnemonicToSecretKey(
     envDefault(process.env.ALGO_FAUCET_PASSPHRASE, rawFaucetDefaultMnemonic),
   );
   return await connectAccount(FAUCET);
 });
-let settedFaucet = false;
-const setFaucet = (x:Promise<Account>) => {
-  settedFaucet = true;
-  setFaucet_(x);
-};
-const isIsolatedNetwork = (): boolean =>
-  (settedFaucet || getLedger() === localhostProviderEnv.ALGO_LEDGER);
-export {getFaucet, setFaucet};
 
 const str2note = (x:string) => new Uint8Array(Buffer.from(x));
 const NOTE_Reach_str = `Reach ${VERSION}`;
@@ -957,12 +929,12 @@ export const transfer = async (
   value: any,
   token: Token|undefined = undefined,
   tag: number|undefined = undefined,
-): Promise<TxnInfo> => {
+): Promise<RecvTxn> => {
   const sender = from.networkAccount;
   const receiver = to.networkAccount.addr;
   const valuebn = bigNumberify(value);
   const ps = await getTxnParams();
-  const txn = makeTransferTxn(sender.addr, receiver, valuebn, token, ps, undefined, tag);
+  const txn = toWTxn(makeTransferTxn(sender.addr, receiver, valuebn, token, ps, undefined, tag));
 
   return await sign_and_send_sync(
     `transfer ${JSON.stringify(from)} ${JSON.stringify(to)} ${valuebn}`,
@@ -970,62 +942,14 @@ export const transfer = async (
     txn);
 };
 
-async function signTxn(networkAccount: NetworkAccount, txnOrig: Transaction): Promise<STX> {
-  const {sk, AlgoSigner} = networkAccount;
-  if (sk && !AlgoSigner) {
-    const tx = txnOrig.signTxn(sk);
-    const ret = {
-      tx,
-      txID: txnOrig.txID().toString(),
-      lastRound: txnOrig.lastRound,
-    };
-    debug('signed sk_ret');
-    debug({txID: ret.txID});
-    debug(msgpack.decode(ret.tx));
-    return ret;
-  } else if (AlgoSigner) {
-    // TODO: clean up txn before signing
-    const txn = clean_for_AlgoSigner(txnOrig);
-
-    // Note: don't delete the following,
-    // it is extremely useful for debugging when stuff changes wrt AlgoSigner/algosdk clashes
-
-    // if (sk) {
-    //   const re_tx = txnOrig.signTxn ? txnOrig : new algosdk__src__transaction.Transaction(txnOrig);
-    //   re_tx.group = txnOrig.group;
-
-    //   const sk_tx = re_tx.signTxn(sk);
-    //   const sk_ret = {
-    //     tx: sk_tx,
-    //     txID: re_tx.txID().toString(),
-    //     lastRound: txnOrig.lastRound,
-    //   };
-    //   console.log('signed sk_ret');
-    //   console.log({txID: sk_ret.txID});
-    //   console.log(msgpack.decode(sk_ret.tx));
-    // }
-
-    debug('AlgoSigner.sign ...');
-    const stx_obj = await AlgoSigner.sign(txn);
-    debug('...signed');
-    debug({stx_obj});
-    const ret = {
-      tx: Buffer.from(stx_obj.blob, 'base64'),
-      txID: stx_obj.txID,
-      lastRound: txnOrig.lastRound,
-    };
-
-    debug('signed AlgoSigner');
-    debug({txID: ret.txID});
-    debug(msgpack.decode(ret.tx));
-    return ret;
-  } else {
-    throw Error(`networkAccount has neither sk nor AlgoSigner: ${JSON.stringify(networkAccount)}`);
-  }
+// XXX need to make this a log
+const makeIsMethod = (i:number) => (txn:any): boolean => {
+  const act = txn['application-transaction']['application-args'][0];
+  const exp = base64ify([i]);
+  const r = act === exp;
+  //debug(`makeIsMethod`, {txn,i,act,exp,r});
+  return r;
 }
-
-const makeIsMethod = (i:number) => (txn:any): boolean =>
-  txn['application-transaction']['application-args'][0] === base64ify([i]);
 
 /** @description base64->hex->arrayify */
 const reNetify = (x: string): NV => {
@@ -1035,10 +959,9 @@ const reNetify = (x: string): NV => {
 
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   const thisAcc = networkAccount;
-  const shad = thisAcc.addr.substring(2, 6);
-  let label = shad;
+  let label = thisAcc.addr.substring(2, 6);
   const pks = T_Address.canonicalize(thisAcc);
-  debug(shad, ': connectAccount');
+  debug(label, 'connectAccount');
 
   const selfAddress = (): CBR_Address => {
     return pks;
@@ -1052,20 +975,16 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     }
   };
 
-  const attachP = async (bin: Backend, ctcInfoP: Promise<ContractInfo>, eventCache = new EventCache()): Promise<Contract> => {
-    const ctcInfo = await ctcInfoP;
-    const getInfo = async () => ctcInfo;
-    const { compiled, ApplicationID, allocRound, ctorRound, Deployer } =
-      await verifyContract_(ctcInfo, bin, eventCache);
-    debug(shad, 'attach', {ApplicationID, allocRound, ctorRound} );
-    let realLastRound = ctorRound;
+  const contract = (
+    bin: Backend,
+    givenInfoP?: Promise<ContractInfo>,
+  ): Contract => {
+    ensureConnectorAvailable(bin, 'ALGO', reachBackendVersion, reachAlgoBackendVersion);
+    must_be_supported(bin);
 
-    const escrowAddr = compiled.escrow.hash;
-    const escrow_prog = algosdk.makeLogicSig(compiled.escrow.result, []);
-
-    const { viewSize, viewKeys, mapDataKeys, mapDataSize } = bin._Connectors.ALGO;
+    const { stateSize, stateKeys, mapDataKeys, mapDataSize } = bin._Connectors.ALGO;
     const hasMaps = mapDataKeys > 0;
-    const { mapDataTy } = bin._getMaps({reachStdlib: compiledStdlib});
+    const { mapDataTy } = bin._getMaps({reachStdlib: stdlib});
     const emptyMapDataTy = T_Bytes(mapDataTy.netSize);
     const emptyMapData =
       // This is a bunch of Nones
@@ -1073,386 +992,578 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         emptyMapDataTy.toNet(emptyMapDataTy.canonicalize('')));
     debug({ emptyMapData });
 
-    // Read map data
-    const getLocalState = async (a:Address): Promise<any> => {
-      const client = await getAlgodClient();
-      const ai = await client.accountInformation(a).do();
-      debug(`getLocalState`, ai);
-      const als = ai['apps-local-state'].find((x:any) => (x.id === ApplicationID));
-      debug(`getLocalState`, als);
-      return als ? als['key-value'] : undefined;
-    };
+    // XXX
+    type ContractHandler = any;
 
-    // Application Local State Opt-in
-    const didOptIn = async (): Promise<boolean> =>
-      ((await getLocalState(thisAcc.addr)) !== undefined);
-    const doOptIn = async (): Promise<void> => {
-      await sign_and_send_sync(
-        'ApplicationOptIn',
-        thisAcc,
-        algosdk.makeApplicationOptInTxn(
-          thisAcc.addr, await getTxnParams(),
-          ApplicationID,
-          undefined, undefined, undefined, undefined,
-          NOTE_Reach));
-      assert(await didOptIn(), `didOptIn after doOptIn`);
-    };
-    let ensuredOptIn: boolean = false;
-    const ensureOptIn = async (): Promise<void> => {
-      if ( ! ensuredOptIn ) {
-        if ( ! await didOptIn() ) {
-          await doOptIn();
-        }
-        ensuredOptIn = true;
-      }
-    };
+    const makeGetC = (fake_getInfo:(() => Promise<ContractInfo>), eventCache: EventCache, getTrustedVerifyResult: (() => VerifyResult|undefined)) => {
+      let _theC: ContractHandler|undefined = undefined;
+      return async (): Promise<ContractHandler> => {
+        if ( _theC ) { return _theC; }
+        const ctcInfo = await fake_getInfo();
+        const { compiled, ApplicationID, startRound, Deployer } =
+          getTrustedVerifyResult() || (await verifyContract_(label, ctcInfo, bin, eventCache));
+        debug(label, 'getC', {ApplicationID, startRound} );
+        let realLastRound = startRound;
+        const getLastRound = () => realLastRound;
+        const setLastRound = (x:number) => (realLastRound = x);
 
-    const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
-      const { funcNum, evt_cnt, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt, sim_p } = srargs;
-      const doRecv = async (waitIfNotPresent: boolean): Promise<Recv> =>
-        await recv({funcNum, evt_cnt, out_tys, waitIfNotPresent, timeoutAt});
-      if ( ! onlyIf ) {
-        return await doRecv(true);
-      }
+        const escrowAddr = compiled.escrow.hash;
+        const escrow_prog = algosdk.makeLogicSig(compiled.escrow.result, []);
 
-      const [ value, toks ] = pay;
-      void(toks); // <-- rely on simulation because of ordering
-
-      const funcName = `m${funcNum}`;
-      const dhead = `${shad}: ${label} sendrecv ${funcName} ${timeoutAt}`;
-      debug(dhead, '--- START');
-
-      const [ svs, msg ] = argsSplit(args, evt_cnt);
-      const [ svs_tys, msg_tys ] = argsSplit(tys, evt_cnt);
-      const fake_res = {
-        didTimeout: false,
-        data: msg,
-        time: bigNumberify(0), // This should not be read.
-        secs: bigNumberify(0), // This should not be read.
-        value: value,
-        from: pks,
-        getOutput: (async (o_mode:string, o_lab:string, o_ctc:any): Promise<any> => {
-          void(o_mode);
-          void(o_lab);
-          void(o_ctc);
-          throw Error(`Algorand does not support remote calls, and Reach should not have generated a call to this function`);
-        }),
-      };
-      const sim_r = await sim_p( fake_res );
-      debug(dhead , '--- SIMULATE', sim_r);
-      const { isHalt } = sim_r;
-
-      // Maps
-      const { mapRefs } = sim_r;
-      const mapAccts: Array<Address> = [ ];
-      mapRefs.forEach((caddr:Address) => {
-        const addr = cbr2algo_addr(caddr);
-        if ( addressEq(thisAcc.addr, addr) ) { return; }
-        const addrIdx =
-          mapAccts.findIndex((other:Address) => addressEq(other, addr));
-        const present = addrIdx !== -1;
-        if ( present ) { return; }
-        mapAccts.push(addr);
-      });
-      if ( mapAccts.length > MaxAppTxnAccounts ) {
-        throw Error(`Application references too many local state cells in one step. Reach should catch this problem statically.`);
-      }
-      debug(dhead, 'MAP', { mapAccts });
-      if ( hasMaps ) { await ensureOptIn(); }
-      const mapAcctsReal = (mapAccts.length === 0) ? undefined : mapAccts;
-
-      const sign_escrow = async (txn: Transaction): Promise<STX> => {
-        const tx_obj = algosdk.signLogicSigTransactionObject(txn, escrow_prog);
-        return {
-          tx: tx_obj.blob,
-          txID: tx_obj.txID,
-          lastRound: txn.lastRound,
+        // Read map data
+        const getLocalState = async (a:Address): Promise<any> => {
+          const client = await getAlgodClient();
+          const ai = await client.accountInformation(a).do();
+          debug(`getLocalState`, ai);
+          const als = ai['apps-local-state'].find((x:any) => (x.id === ApplicationID));
+          debug(`getLocalState`, als);
+          return als ? als['key-value'] : undefined;
         };
+
+        // Application Local State Opt-in
+        const didOptIn = async (): Promise<boolean> =>
+          ((await getLocalState(thisAcc.addr)) !== undefined);
+        const doOptIn = async (): Promise<void> => {
+          debug(`doOptIn`);
+          await sign_and_send_sync(
+            'ApplicationOptIn',
+            thisAcc,
+            toWTxn(algosdk.makeApplicationOptInTxn(
+              thisAcc.addr, await getTxnParams(),
+              ApplicationID,
+              undefined, undefined, undefined, undefined,
+              NOTE_Reach)));
+          assert(await didOptIn(), `didOptIn after doOptIn`);
+        };
+        let ensuredOptIn: boolean = false;
+        const ensureOptIn = async (): Promise<void> => {
+          if ( ! ensuredOptIn ) {
+            if ( ! await didOptIn() ) {
+              await doOptIn();
+            }
+            ensuredOptIn = true;
+          }
+        };
+
+        const getAppState = async (): Promise<any> => {
+          const lab = `getAppState`;
+          const client = await getAlgodClient();
+          let appInfo;
+          try {
+            appInfo = await client.getApplicationByID(ApplicationID).do();
+          } catch (e) {
+            debug(lab, {e});
+            return undefined;
+          }
+          const appSt = appInfo['params']['global-state'];
+          debug(lab, {appSt});
+          return appSt;
+        };
+        type GlobalState = [BigNumber, BigNumber, Address];
+        const getGlobalState = async (appSt_g?:any): Promise<GlobalState|undefined> => {
+          const appSt = appSt_g || await getAppState();
+          if ( !appSt ) { return undefined; }
+          const gsbs = readStateBytes('', [], appSt);
+          if ( !gsbs ) { return undefined; }
+          // `map gvType keyState_gvs` in Haskell
+          const gty = T_Tuple([T_UInt, T_UInt, T_Address]);
+          // @ts-ignore
+          return gty.fromNet(gsbs);
+        };
+        const canIWin = async (lct:BigNumber): Promise<boolean> => {
+          if ( lct.eq(0) ) { return true; }
+          const gs = await getGlobalState();
+          const r = !gs || lct.eq(gs[1]);
+          debug(`canIWin`, { lct, gs, r });
+          return r;
+        };
+
+        return (_theC = { ApplicationID, Deployer, escrowAddr, escrow_prog, getLastRound, setLastRound, getLocalState, getAppState, getGlobalState, ensureOptIn, canIWin });
       };
-      const sign_me =
-        async (x: Transaction): Promise<STX> => await signTxn(thisAcc, x);
+    };
 
-      while ( true ) {
-        const params = await getTxnParams();
-        // We add one, because the firstRound field is actually the current
-        // round, which we couldn't possibly be in, because it already
-        // happened.
-        debug(dhead, '--- TIMECHECK', { params, timeoutAt });
-        if ( await checkTimeout(getTimeSecs, timeoutAt, params.firstRound + 1) ) {
-          debug(dhead, '--- FAIL/TIMEOUT');
-          return {didTimeout: true};
+    const getState_ = async (getC:any, lookup:((vibna:BigNumber) => AnyALGO_Ty[])): Promise<Array<any>> => {
+      const { getAppState, getGlobalState } = await getC();
+      const appSt = await getAppState();
+      if ( !appSt ) { throw Error(`getState: no appSt`); }
+      const gs = await getGlobalState(appSt);
+      if ( !gs ) { throw Error(`getState: no gs`); }
+      const vvn = recoverSplitBytes('v', stateSize, stateKeys, appSt);
+      if ( vvn === undefined ) { throw Error(`getState: no vvn`); }
+      const vi = gs[0];
+      const vtys = lookup(vi);
+      const vty = T_Tuple(vtys);
+      const vvs = vty.fromNet(vvn);
+      return vvs;
+    };
+
+    const _setup = (setupArgs: SetupArgs): SetupRes => {
+      const { setInfo, getInfo } = setupArgs;
+
+      const didSet = new Signal();
+      let fake_info: ContractInfo|undefined = undefined;
+      const fake_setInfo = (x:ContractInfo) => {
+        fake_info = x;
+        didSet.notify();
+      };
+      const ctorRan = new Signal();
+      ctorRan.wait().then(() => {
+        if ( fake_info !== undefined ) {
+          setInfo(fake_info);
         }
+      });
+      const fake_getInfo = async (): Promise<ContractInfo> => {
+        if ( givenInfoP ) {
+          return await getInfo();
+        } else {
+          await didSet.wait();
+          if ( fake_info === undefined ) { throw Error(`impossible fake_info`); }
+          return fake_info;
+        }
+      };
 
-        debug(dhead, '--- ASSEMBLE w/', params);
+      const eventCache = new EventCache();
+      let trustedVerifyResult: VerifyResult|undefined = undefined;
+      const getC = makeGetC(fake_getInfo, eventCache, (() => trustedVerifyResult));
 
-        let extraFees: number = 0;
-        type Signer = (x: Transaction) => Promise<STX>;
-        const txnExtraTxns: Array<Transaction> = [];
-        const txnExtraTxns_signers: Array<Signer> = [];
-        let sim_i = 0;
-        const processSimTxn = (t: SimTxn) => {
-          let signer: Signer = sign_escrow;
-          let txn;
-          if ( t.kind === 'tokenNew' ) {
-            processSimTxn({
-              kind: 'to',
-              amt: minimumBalance,
-              tok: undefined,
-            });
-            const zaddr = undefined;
-            const ap = bigNumberToBigInt(t.p);
-            debug(`tokenNew`, t.p, ap);
-            txn = algosdk.makeAssetCreateTxnWithSuggestedParams(
-              escrowAddr, NOTE_Reach_tag(sim_i++), ap, 6,
-              false, escrowAddr, zaddr, zaddr, zaddr,
-              t.s, t.n, t.u, t.m, params,
-            );
-          } else if ( t.kind === 'tokenBurn' ) {
-            // There's no burning on Algorand
-            return;
-          } else if ( t.kind === 'tokenDestroy' ) {
-            txn = algosdk.makeAssetDestroyTxnWithSuggestedParams(
-              escrowAddr, NOTE_Reach_tag(sim_i++),
-              bigNumberToNumber(t.tok), params,
-            );
-            // XXX We could get the minimum balance back after
-          } else {
-            const { tok } = t;
-            let always: boolean = false;
-            let amt: BigNumber = bigNumberify(0);
-            let from: Address = escrowAddr;
-            let to: Address = escrowAddr;
-            let closeTo: Address|undefined = undefined;
-            if ( t.kind === 'from' ) {
-              from = escrowAddr;
-              // @ts-ignore
-              to = cbr2algo_addr(t.to);
-              amt = t.amt;
-            } else if ( t.kind === 'init' ) {
+      // Returns address of a Reach contract
+      const getContractAddress = async () => {
+        const { escrowAddr } = await getC();
+        return T_Address.canonicalize(escrowAddr);
+      };
+
+      const getState = async (vibne:BigNumber, vtys:AnyALGO_Ty[]): Promise<Array<any>> => {
+        return await getState_(getC, (vibna:BigNumber) => {
+          if ( vibne.eq(vibna) ) { return vtys; }
+          throw Error(`Expected state ${vibne}, got ${vibna}`);
+        });
+      };
+
+      const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
+        const { funcNum, evt_cnt, lct, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt, sim_p } = srargs;
+        const isCtor = (funcNum === 0);
+        const doRecv = async (didSend: boolean, waitIfNotPresent: boolean): Promise<Recv> => {
+          if ( ! didSend && lct.eq(0) ) {
+            throw new Error(`API call failed`);
+          }
+          return await recv({funcNum, evt_cnt, out_tys, didSend, waitIfNotPresent, timeoutAt});
+        };
+        if ( ! onlyIf ) {
+          return await doRecv(false, true);
+        }
+        const funcName = `m${funcNum}`;
+        const dhead = `${label}: sendrecv ${funcName} ${timeoutAt}`;
+
+        const trustedRecv = async (txn:RecvTxn): Promise<Recv> => {
+          const didSend = true;
+          if ( isCtor ) {
+            // If this is the constructor, then we are going to need to notify
+            // the ctorRan signal, but we can only do that once the constructor
+            // is visible on the indexer, thus we can't rely on a trusted
+            // receive. I originally thought we could do this in the
+            // background, but the ctorRan signal is representative of what
+            // could happen in a real non-test program, so we should really
+            // double check with the indexer in a real deployment too.
+            return await doRecv(didSend, false);
+          }
+          return await recvFrom({dhead, out_tys, didSend, funcNum, txn});
+        };
+
+        if ( isCtor ) {
+          debug(label, 'deploy');
+          const { appApproval, appClear } = await compileFor(bin, 0);
+          const extraPages =
+            Math.ceil((appClear.result.length + appApproval.result.length) / MaxAppProgramLen) - 1;
+
+          debug(`deploy`, {extraPages});
+          const Deployer = thisAcc.addr;
+          const createRes =
+            await sign_and_send_sync(
+              'ApplicationCreate',
+              thisAcc,
+              toWTxn(algosdk.makeApplicationCreateTxn(
+                Deployer, await getTxnParams(),
+                algosdk.OnApplicationComplete.NoOpOC,
+                appApproval.result,
+                appClear.result,
+                appLocalStateNumUInt, appLocalStateNumBytes + mapDataKeys,
+                appGlobalStateNumUInt, appGlobalStateNumBytes + stateKeys,
+                undefined, undefined, undefined, undefined,
+                NOTE_Reach, undefined, undefined, extraPages)));
+
+          const allocRound = createRes['confirmed-round'];
+          const ApplicationID = createRes['application-index'];
+          if ( ! ApplicationID ) {
+            throw Error(`No application-index in ${JSON.stringify(createRes)}`);
+          }
+          debug(`created`, {ApplicationID});
+          const ctcInfo = ApplicationID;
+          const compiled = await compileFor(bin, ctcInfo);
+          trustedVerifyResult = { compiled, ApplicationID, startRound: allocRound, Deployer };
+          fake_setInfo(ctcInfo);
+        }
+        const { ApplicationID, Deployer, escrowAddr, escrow_prog, ensureOptIn, canIWin } = await getC();
+
+        const [ value, toks ] = pay;
+        void(toks); // <-- rely on simulation because of ordering
+
+        debug(dhead, '--- START');
+
+        const [ _svs, msg ] = argsSplit(args, evt_cnt);
+        const [ _svs_tys, msg_tys ] = argsSplit(tys, evt_cnt);
+        void(_svs); void(_svs_tys);
+        const fake_res = {
+          didSend: true,
+          didTimeout: false,
+          data: msg,
+          time: bigNumberify(0), // This should not be read.
+          secs: bigNumberify(0), // This should not be read.
+          value: value,
+          from: pks,
+          getOutput: (async (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
+            void(o_mode);
+            void(o_lab);
+            void(o_ctc);
+            return o_val;
+          }),
+        };
+        const sim_r = await sim_p( fake_res );
+        debug(dhead , '--- SIMULATE', sim_r);
+        if ( isCtor ) {
+          msg.unshift( T_Address.canonicalize(escrowAddr) );
+          msg_tys.unshift( T_Address );
+          sim_r.txns.unshift({
+            kind: 'to',
+            amt: minimumBalance,
+            tok: undefined,
+          });
+        }
+        const { isHalt } = sim_r;
+
+        // Maps
+        const { mapRefs } = sim_r;
+        const mapAccts: Array<Address> = [ ];
+        mapRefs.forEach((caddr:Address) => {
+          const addr = cbr2algo_addr(caddr);
+          if ( addressEq(thisAcc.addr, addr) ) { return; }
+          const addrIdx =
+            mapAccts.findIndex((other:Address) => addressEq(other, addr));
+          const present = addrIdx !== -1;
+          if ( present ) { return; }
+          mapAccts.push(addr);
+        });
+        if ( mapAccts.length > MaxAppTxnAccounts ) {
+          throw Error(`Application references too many local state cells in one step. Reach should catch this problem statically.`);
+        }
+        debug(dhead, 'MAP', { mapAccts });
+        if ( hasMaps ) { await ensureOptIn(); }
+        const mapAcctsReal = (mapAccts.length === 0) ? undefined : mapAccts;
+
+        while ( true ) {
+          const params = await getTxnParams();
+          // We add one, because the firstRound field is actually the current
+          // round, which we couldn't possibly be in, because it already
+          // happened.
+          debug(dhead, '--- TIMECHECK', { params, timeoutAt });
+          if ( await checkTimeout(getTimeSecs, timeoutAt, params.firstRound + 1) ) {
+            debug(dhead, '--- FAIL/TIMEOUT');
+            return await doRecv(false, false);
+          }
+          if ( ! soloSend && ! await canIWin(lct) ) {
+            debug(dhead, `CANNOT WIN`);
+            return await doRecv(false, false);
+          }
+
+          debug(dhead, '--- ASSEMBLE w/', params);
+
+          let extraFees: number = 0;
+          type PreWalletTransaction = {
+            txn: Transaction,
+            escrow: boolean,
+          };
+          const txnExtraTxns: Array<PreWalletTransaction> = [];
+          let sim_i = 0;
+          const processSimTxn = (t: SimTxn) => {
+            let escrow = true;
+            let txn;
+            if ( t.kind === 'tokenNew' ) {
               processSimTxn({
                 kind: 'to',
                 amt: minimumBalance,
                 tok: undefined,
               });
-              from = escrowAddr;
-              to = escrowAddr;
-              always = true;
-              amt = t.amt;
-            } else if ( t.kind === 'halt' ) {
-              from = escrowAddr;
-              to = Deployer;
-              closeTo = Deployer;
-              always = true;
-            } else if ( t.kind === 'to' ) {
-              from = thisAcc.addr;
-              to = escrowAddr;
-              amt = t.amt;
-              signer = sign_me;
+              const zaddr = undefined;
+              const ap = bigNumberToBigInt(t.p);
+              debug(`tokenNew`, t.p, ap);
+              const decimals = t.d !== undefined ? t.d.toNumber() : 6;
+              txn = algosdk.makeAssetCreateTxnWithSuggestedParams(
+                escrowAddr, NOTE_Reach_tag(sim_i++), ap, decimals,
+                false, escrowAddr, zaddr, zaddr, zaddr,
+                t.s, t.n, t.u, t.m, params,
+              );
+            } else if ( t.kind === 'tokenBurn' ) {
+              // There's no burning on Algorand
+              return;
+            } else if ( t.kind === 'tokenDestroy' ) {
+              txn = algosdk.makeAssetDestroyTxnWithSuggestedParams(
+                escrowAddr, NOTE_Reach_tag(sim_i++),
+                bigNumberToNumber(t.tok), params,
+              );
+              // XXX We could get the minimum balance back after
             } else {
-              assert(false, 'sim txn kind');
+              const { tok } = t;
+              let always: boolean = false;
+              let amt: BigNumber = bigNumberify(0);
+              let from: Address = escrowAddr;
+              let to: Address = escrowAddr;
+              let closeTo: Address|undefined = undefined;
+              if ( t.kind === 'from' ) {
+                from = escrowAddr;
+                to = cbr2algo_addr(t.to);
+                amt = t.amt;
+              } else if ( t.kind === 'init' ) {
+                processSimTxn({
+                  kind: 'to',
+                  amt: minimumBalance,
+                  tok: undefined,
+                });
+                from = escrowAddr;
+                to = escrowAddr;
+                always = true;
+                amt = t.amt;
+              } else if ( t.kind === 'halt' ) {
+                from = escrowAddr;
+                to = Deployer;
+                closeTo = Deployer;
+                always = true;
+              } else if ( t.kind === 'to' ) {
+                from = thisAcc.addr;
+                to = escrowAddr;
+                amt = t.amt;
+                escrow = false;
+              } else {
+                assert(false, 'sim txn kind');
+              }
+              if ( ! always && amt.eq(0) ) { return; }
+              txn = makeTransferTxn(from, to, amt, tok, params, closeTo, sim_i++);
             }
-            if ( ! always && amt.eq(0) ) { return; }
-            txn = makeTransferTxn(from, to, amt, tok, params, closeTo, sim_i++);
+            extraFees += txn.fee;
+            txn.fee = 0;
+            txnExtraTxns.push({txn, escrow});
+          };
+          sim_r.txns.forEach(processSimTxn);
+          debug(dhead, 'txnExtraTxns', txnExtraTxns);
+          debug(dhead, '--- extraFee =', extraFees);
+
+          const actual_args = [ lct, msg ];
+          const actual_tys = [ T_UInt, T_Tuple(msg_tys) ];
+          debug(dhead, '--- ARGS =', actual_args);
+
+          const safe_args: Array<NV> = actual_args.map(
+            // @ts-ignore
+            (m, i) => actual_tys[i].toNet(m));
+          safe_args.unshift(new Uint8Array([funcNum]));
+          safe_args.forEach((x) => {
+            if (! ( x instanceof Uint8Array ) ) {
+              // The types say this is impossible now,
+              // but we'll leave it in for a while just in case...
+              throw Error(`expect safe program argument, got ${JSON.stringify(x)}`);
+            }
+          });
+          debug(dhead, '--- PREPARE:', safe_args.map(ui8h));
+
+          const whichAppl =
+            isHalt ?
+            // We are treating it like any party can delete the application, but the docs say it may only be possible for the creator. The code appears to not care: https://github.com/algorand/go-algorand/blob/0e9cc6b0c2ddc43c3cfa751d61c1321d8707c0da/ledger/apply/application.go#L589
+            algosdk.makeApplicationDeleteTxn :
+            algosdk.makeApplicationNoOpTxn;
+          const txnAppl =
+            whichAppl(
+              thisAcc.addr, params, ApplicationID, safe_args,
+              mapAcctsReal, undefined, undefined, NOTE_Reach);
+          txnAppl.fee += extraFees;
+          const rtxns = [ ...txnExtraTxns, { txn: txnAppl, escrow: false } ];
+          debug(dhead, `assigning`, { rtxns });
+          algosdk.assignGroupID(rtxns.map((x:any) => x.txn));
+
+          const wtxns = rtxns.map((pwt:PreWalletTransaction): WalletTransaction => {
+            const { txn, escrow } = pwt;
+            if ( escrow ) {
+              const stxn = algosdk.signLogicSigTransactionObject(txn, escrow_prog);
+              return {
+                txn: encodeUnsignedTransaction(txn),
+                signers: [],
+                stxn: Buffer.from(stxn.blob).toString('base64'),
+              };
+            } else {
+              return toWTxn(txn);
+            }
+          });
+
+          debug(dhead, 'signing', { wtxns });
+          let res;
+          try {
+            res = await signSendAndConfirm( thisAcc, wtxns );
+          } catch (e:any) {
+            if ( e.type === 'sendRawTransaction' ) {
+              debug(dhead, '--- FAIL:', format_failed_request(e?.e));
+            } else {
+              debug(dhead, '--- FAIL:', e);
+            }
+
+            if ( ! soloSend ) {
+              // If there is no soloSend, then someone else "won", so let's
+              // listen for their message
+              debug(dhead, 'LOST');
+              return await doRecv(false, false);
+            }
+
+            if ( timeoutAt ) {
+              // If there can be a timeout, then keep waiting for it
+              debug(dhead, `CONTINUE`);
+              continue;
+            } else {
+              // Otherwise, something bad is happening
+              throw Error(`${label} failed to call ${funcName}: ${e}`);
+            }
           }
-          extraFees += txn.fee;
-          txn.fee = 0;
-          txnExtraTxns.push(txn);
-          txnExtraTxns_signers.push(signer);
-        };
-        sim_r.txns.forEach(processSimTxn);
-        debug(dhead, 'txnExtraTxns', txnExtraTxns);
-        debug(dhead, '--- extraFee =', extraFees);
 
-      const actual_args = [ svs, msg ];
-      const actual_tys = [ T_Tuple(svs_tys), T_Tuple(msg_tys) ];
-      debug(dhead, '--- ARGS =', actual_args);
-
-      const safe_args: Array<NV> = actual_args.map(
-        // @ts-ignore
-        (m, i) => actual_tys[i].toNet(m));
-      safe_args.unshift(new Uint8Array([funcNum]));
-      safe_args.forEach((x) => {
-        if (! ( x instanceof Uint8Array ) ) {
-          // The types say this is impossible now,
-          // but we'll leave it in for a while just in case...
-          throw Error(`expect safe program argument, got ${JSON.stringify(x)}`);
+          debug(dhead, 'SUCCESS', res);
+          return await trustedRecv(res);
         }
-      });
-      debug(dhead, '--- PREPARE:', safe_args.map(ui8h));
+      };
 
-        const whichAppl =
-          isHalt ?
-          // We are treating it like any party can delete the application, but the docs say it may only be possible for the creator. The code appears to not care: https://github.com/algorand/go-algorand/blob/0e9cc6b0c2ddc43c3cfa751d61c1321d8707c0da/ledger/apply/application.go#L589
-          algosdk.makeApplicationDeleteTxn :
-          algosdk.makeApplicationNoOpTxn;
-        const txnAppl =
-          whichAppl(
-            thisAcc.addr, params, ApplicationID, safe_args,
-            mapAcctsReal, undefined, undefined, NOTE_Reach);
-        txnAppl.fee += extraFees;
-        const txns = [ ...txnExtraTxns, txnAppl ];
-        algosdk.assignGroupID(txns);
-        regroup(thisAcc, txns);
-
-        const txnAppl_s = await sign_me(txnAppl);
-        const txnExtraTxns_s =
-          await Promise.all(
-            txnExtraTxns.map(
-              async (t: Transaction, i:number): Promise<STX> =>
-                await txnExtraTxns_signers[i](t)
-        ));
-
-        const txns_s = [ ...txnExtraTxns_s, txnAppl_s ];
-        debug(dhead, '--- SEND:', txns_s.length);
-        let res;
-        try {
-          res = await sendAndConfirm( txns_s );
-
-          // XXX we should inspect res and if we failed because we didn't get picked out of the queue, then we shouldn't error, but should retry and let the timeout logic happen.
-          debug(dhead, '--- SUCCESS:', res);
-        } catch (e) {
-          if ( e.type == 'sendRawTransaction' ) {
-            debug(dhead, '--- FAIL:', format_failed_request(e.e));
-          } else {
-            debug(dhead, '--- FAIL:', e);
-          }
-
-          if ( ! soloSend ) {
-            // If there is no soloSend, then someone else "won", so let's
-            // listen for their message
-            return await doRecv(false);
-          }
-
-          if ( timeoutAt ) {
-            // If there can be a timeout, then keep waiting for it
-            continue;
-          } else {
-            // Otherwise, something bad is happening
-            throw Error(`${dhead} --- ABORT`);
-          }
-        }
-
-        return await doRecv(false);
-      }
-    };
-
-    const recv = async (rargs:RecvArgs): Promise<Recv> => {
-      const { funcNum, evt_cnt, out_tys, waitIfNotPresent, timeoutAt } = rargs;
-      const indexer = await getIndexer();
-
-      const funcName = `m${funcNum}`;
-      const dhead = `${shad}: ${label} recv ${funcName} ${timeoutAt}`;
-      debug(dhead, '--- START');
-
-      while ( true ) {
-        const correctStep = makeIsMethod(funcNum);
-        const res = await eventCache.query(dhead, ApplicationID, { minRound: realLastRound + 1, timeoutAt }, correctStep);
-        debug(`EventCache res: `, res);
-        if ( ! res.succ ) {
-          const currentRound = res.round;
-          if ( await checkTimeout(getTimeSecs, timeoutAt, currentRound) ) {
-            debug(dhead, '--- RECVD timeout', {timeoutAt, currentRound});
-            return { didTimeout: true };
-          }
-          if ( waitIfNotPresent ) {
-            await waitUntilTime(bigNumberify(currentRound + 1));
-          } else {
-            await indexer_statusAfterBlock(currentRound + 1);
-          }
-          continue;
-        }
-        const txn = res.txn;
+      type RecvFromArgs = {
+        dhead: any,
+        out_tys: Array<ConnectorTy>,
+        didSend: boolean,
+        funcNum: number,
+        txn: RecvTxn,
+      };
+      const recvFrom = async (rfargs:RecvFromArgs): Promise<Recv> => {
+        const { dhead, out_tys, didSend, funcNum, txn } = rfargs;
+        const { escrowAddr, getLastRound, setLastRound } = await getC();
+        const isCtor = (funcNum == 0);
         debug(dhead, '--- txn =', txn);
         const theRound = txn['confirmed-round'];
         // const theSecs = txn['round-time'];
         // ^ The contract actually uses `global LatestTimestamp` which is the
         // time of the PREVIOUS round.
-        const theSecs = await getTimeSecs(bigNumberify(theRound - 1));
+        const theSecs = await getTimeSecs(bigNumberify(theRound - 0));
 
-        let all_txns: Array<any>|undefined = undefined;
-        const get_all_txns = async () => {
-          if ( all_txns ) { return; }
-          const all_query = indexer.searchForTransactions()
-            .txType('acfg')
-            .assetID(0)
-            .round(theRound);
-          const all_res = await doQuery_(dhead, all_query);
-          // NOTE: Move this filter into the query when the indexer supports it
-          const same_group = ((x:any) => x.group === txn.group && x['asset-config-transaction']['asset-id'] === 0);
-          const all_txns_raw = all_res.transactions.filter(same_group);
-          const group_order = ((x:any, y:any) => x['intra-round-offset'] - y['intra-round-offset']);
-          all_txns = all_txns_raw.sort(group_order);
-          debug(dhead, 'all_txns', all_txns);
-        };
-
-        const ctc_args_all: Array<string> =
-          txn['application-transaction']['application-args'];
+        // XXX need to move this to a log
+        const ctc_args_all = txn['application-args'];
         debug(dhead, {ctc_args_all});
         const argMsg = 2; // from ALGO.hs
         const ctc_args_s: string = ctc_args_all[argMsg];
 
-        debug(dhead, '--- out_tys =', out_tys);
+        debug(dhead, 'out_tys', out_tys.map((x) => x.name));
+        if ( isCtor ) {
+          out_tys.unshift(T_Address);
+          debug(dhead, 'ctor, adding address', out_tys.map((x) => x.name));
+        }
         const msgTy = T_Tuple(out_tys);
         const ctc_args = msgTy.fromNet(reNetify(ctc_args_s));
         debug(dhead, {ctc_args});
-
-        const args_un = argsSlice(ctc_args, evt_cnt);
-        debug(dhead, '--- args_un =', args_un);
+        if ( isCtor ) {
+          const shouldBeEscrow = ctc_args.shift();
+          debug(dhead, `dropped escrow addr`, { shouldBeEscrow, escrowAddr, ctc_args});
+        }
 
         const fromAddr = txn['sender'];
-        const from =
-          T_Address.canonicalize({addr: fromAddr});
-        debug(dhead, '--- from =', from, '=', fromAddr);
+        const from = T_Address.canonicalize({addr: fromAddr});
+        debug(dhead, { from, fromAddr });
 
-        const oldLastRound = realLastRound;
-        realLastRound = theRound;
-        debug(dhead, '--- RECVD updating round from', oldLastRound, 'to', realLastRound);
-
-        let tokenNews = 0;
-        const getOutput = async (o_mode:string, o_lab:string, o_ctc:any): Promise<any> => {
-          if ( o_mode === 'tokenNew' ) {
-            await get_all_txns();
-            // NOTE: I'm making a dangerous assumption that the created tokens
-            // are viewed in the order they were created. It would be better to
-            // be able to have the JS simulator determine where they are
-            // exactly, but it is not available for receives. :'(
-            // @ts-ignore
-            const tn_txn = all_txns[tokenNews++];
-            debug(dhead, "tn_txn", tn_txn);
-            return tn_txn['created-asset-index'];
-          } else {
-            void(o_lab);
-            void(o_ctc);
-            throw Error(`Algorand does not support remote calls`);
+        const oldLastRound = getLastRound();
+        setLastRound(theRound);
+        debug(dhead, { oldLastRound, theRound });
+        const getOutput = async (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
+          debug(`getOutput`, {o_mode, o_lab, o_ctc, o_val});
+          const f_ctc = T_Tuple([T_UInt, o_ctc]);
+          for ( const l of txn['logs'] ) {
+            const lb = reNetify(l);
+            const ln = T_UInt.fromNet(lb);
+            const ls = `v${ln}`;
+            debug(`getOutput`, {l, lb, ln, ls});
+            if ( ls === o_lab ) {
+              const ld = f_ctc.fromNet(lb);
+              const o = ld[1];
+              debug(`getOutput`, {ld, o});
+              return o;
+            }
           }
+          throw Error(`no log for ${o_lab}`);
         };
 
         return {
+          didSend,
           didTimeout: false,
-          data: args_un,
-          time: bigNumberify(realLastRound),
+          data: ctc_args,
+          time: bigNumberify(getLastRound()),
           secs: bigNumberify(theSecs),
           from, getOutput,
         };
-      }
+      };
+
+      const recv = async (rargs:RecvArgs): Promise<Recv> => {
+        const { funcNum, out_tys, didSend, waitIfNotPresent, timeoutAt } = rargs;
+        const isCtor = (funcNum == 0);
+        const fromBlock_summand = isCtor ? 0 : 1;
+
+        const funcName = `m${funcNum}`;
+        const dhead = `${label}: ${label} recv ${funcName} ${timeoutAt}`;
+        debug(dhead, '--- START');
+
+        const { ApplicationID, getLastRound } = await getC();
+
+        while ( true ) {
+          const correctStep = makeIsMethod(funcNum);
+          const res = await eventCache.query(dhead, ApplicationID, { minRound: getLastRound() + fromBlock_summand, timeoutAt }, correctStep);
+          debug(`EventCache res: `, res);
+          if ( ! res.succ ) {
+            const currentRound = res.round;
+            debug(dhead, 'TIMECHECK', {timeoutAt, currentRound});
+            if ( await checkTimeout(getTimeSecs, timeoutAt, currentRound + 1) ) {
+              debug(dhead, 'TIMEOUT');
+              return { didTimeout: true };
+            }
+            if ( waitIfNotPresent ) {
+              await waitUntilTime(bigNumberify(currentRound + 1));
+            } else {
+              await indexer_statusAfterBlock(currentRound + 1);
+            }
+            continue;
+          }
+          if ( isCtor ) {
+            ctorRan.notify();
+          }
+          const txn = indexerTxn2RecvTxn(res.txn);
+          return await recvFrom({dhead, out_tys, didSend, funcNum, txn});
+        }
+      };
+
+      return { getContractAddress, getState, sendrecv, recv };
     };
 
-    const creationTime = async () =>
-      bigNumberify(ctorRound);
-    const creationSecs = async () =>
-      await getTimeSecs(await creationTime());
-
+    const readStateBytes = (prefix:string, key:number[], src:any): any => {
+      debug({prefix, key});
+      const ik = base64ify(new Uint8Array(key));
+      debug({ik});
+      const ste = src.find((x:any) => x.key === ik);
+      debug({ste});
+      if ( ste === undefined ) { return []; };
+      const st = ste.value;
+      debug({st});
+      if ( st.bytes === undefined ) { return []; };
+      const bsi = base64ToUI8A(st.bytes);
+      debug({bsi});
+      return bsi;
+    };
     const recoverSplitBytes = (prefix:string, size:number, howMany:number, src:any): any => {
       const bs = new Uint8Array(size);
       let offset = 0;
       for ( let i = 0; i < howMany; i++ ) {
-        debug({prefix, i});
-        const ik = base64ify(new Uint8Array([i]));
-        debug({ik});
-        const st = (src.find((x:any) => x.key === ik)).value;
-        debug({st});
-        const bsi = base64ToUI8A(st.bytes);
-        debug({bsi});
+        const bsi = readStateBytes(prefix, [i], src);
         if ( bsi.length == 0 ) {
           return undefined;
         }
@@ -1461,135 +1572,50 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       }
       return bs;
     };
-    const viewlib: IViewLib = {
-      viewMapRef: async (mapi: number, a:any): Promise<any> => {
-        debug('viewMapRef', { mapi, a });
-        const ls = await getLocalState(cbr2algo_addr(a));
-        assert(ls !== undefined, 'viewMapRef ls undefined');
-        const mbs = recoverSplitBytes('m', mapDataSize, mapDataKeys, ls);
-        debug('viewMapRef', { mbs });
-        const md = mapDataTy.fromNet(mbs);
-        debug('viewMapRef', { md });
-        // @ts-ignore
-        const mr = md[mapi];
-        assert(mr !== undefined, 'viewMapRef mr undefined');
-        return mr;
-      },
-    };
-    const views_bin = bin._getViews({reachStdlib: compiledStdlib}, viewlib);
-    const getView1 = (vs:BackendViewsInfo, v:string, k:string, vim: BackendViewInfo) =>
-      async (...args: any[]): Promise<any> => {
-        debug('getView1', v, k, args);
-        const { decode } = vim;
-        const client = await getAlgodClient();
-        let appInfo;
-        try {
-          appInfo = await client.getApplicationByID(ApplicationID).do();
-        } catch (e) {
-          debug('getApplicationById', e);
-          return ['None', null];
-        }
-        const appSt = appInfo['params']['global-state'];
-        const vvn = recoverSplitBytes('v', viewSize, viewKeys, appSt);
-        if ( vvn === undefined ) {
+    const setupView = (getInfo:(() => Promise<ContractInfo>)) => {
+      const eventCache = new EventCache();
+      const getC = makeGetC(getInfo, eventCache, (() => undefined));
+      const viewLib: IViewLib = {
+        viewMapRef: async (mapi: number, a:any): Promise<any> => {
+          const { getLocalState } = await getC();
+          debug('viewMapRef', { mapi, a });
+          const ls = await getLocalState(cbr2algo_addr(a));
+          assert(ls !== undefined, 'viewMapRef ls undefined');
+          debug('viewMapRef', { ls });
+          const mbs = recoverSplitBytes('m', mapDataSize, mapDataKeys, ls);
+          debug('viewMapRef', { mbs });
+          const md = mapDataTy.fromNet(mbs);
+          debug('viewMapRef', { md });
+          // @ts-ignore
+          const mr = md[mapi];
+          assert(mr !== undefined, 'viewMapRef mr undefined');
+          return mr;
+        },
+      };
+      const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo) =>
+        async (...args: any[]): Promise<any> => {
+          debug('getView1', v, k, args);
+          const { decode } = vim;
+          try {
+            let vi = 0;
+            const vvs = await getState_(getC, (vibna:BigNumber) => {
+              vi = bigNumberToNumber(vibna);
+              const vtys = vs[vi];
+              if ( ! vtys ) { throw Error(`no views for state ${vibna}`); }
+              return vtys;
+            });
+            const vres = await decode(vi, vvs, args);
+            debug({vres});
+            return ['Some', vres];
+          } catch (e) {
+            debug(`getView1`, v, k, 'error', e);
             return ['None', null];
-        }
-        const vin = T_UInt.fromNet(vvn.slice(0, T_UInt.netSize));
-        const vi = bigNumberToNumber(vin);
-        debug({vi});
-        const vtys = vs[vi];
-        debug({vtys});
-        if ( ! vtys ) {
-          return ['None', null]; }
-        const vty = T_Tuple([T_UInt, ...vtys]);
-        debug({vty});
-        const vvs = vty.fromNet(vvn);
-        debug({vvs});
-        try {
-          const vres = await decode(vi, vvs.slice(1), args);
-          debug({vres});
-          return ['Some', vres];
-        } catch (e) {
-          debug(`getView1`, v, k, 'error', e);
-          return ['None', null];
-        }
+          }
+      };
+      return { getView1, viewLib };
     };
-    const getViews = getViewsHelper(views_bin, getView1);
 
-    return { getInfo, creationTime, creationSecs, sendrecv, recv, waitTime: waitUntilTime, waitSecs: waitUntilSecs, iam, selfAddress, getViews, stdlib: compiledStdlib };
-  };
-
-  const deployP = async (bin: Backend): Promise<Contract> => {
-    must_be_supported(bin);
-    debug(shad, 'deploy');
-    const algob = bin._Connectors.ALGO;
-    const { viewKeys, mapDataKeys } = algob;
-    const { appApproval, appClear } = await compileFor(bin, 0);
-    const extraPages =
-      Math.ceil((appClear.result.length + appApproval.result.length) / MaxAppProgramLen) - 1;
-
-    debug(`deploy`, {extraPages});
-    const createRes =
-      await sign_and_send_sync(
-        'ApplicationCreate',
-        thisAcc,
-        algosdk.makeApplicationCreateTxn(
-          thisAcc.addr, await getTxnParams(),
-          algosdk.OnApplicationComplete.NoOpOC,
-          appApproval.result,
-          appClear.result,
-          appLocalStateNumUInt, appLocalStateNumBytes + mapDataKeys,
-          appGlobalStateNumUInt, appGlobalStateNumBytes + viewKeys,
-          undefined, undefined, undefined, undefined,
-          NOTE_Reach, undefined, undefined, extraPages));
-
-    const ApplicationID = createRes['application-index'];
-    if ( ! ApplicationID ) {
-      throw Error(`No application-index in ${JSON.stringify(createRes)}`);
-    }
-    debug(`created`, {ApplicationID});
-    const ctcInfo = ApplicationID;
-    const { escrow } = await compileFor(bin, ctcInfo);
-    const escrowAddr = escrow.hash;
-
-    debug(`funding escrow`);
-    // @ts-ignore
-    await transfer({ networkAccount: thisAcc }, { networkAccount: { addr: escrow.hash } }, minimumBalance );
-    debug(`call ctor`);
-    const params = await getTxnParams();
-    const ctor_args =
-      [ new Uint8Array([0]),
-        T_Address.toNet( T_Address.canonicalize(escrowAddr) ),
-        T_Tuple([]).toNet([]) ];
-    debug({ctor_args});
-    const txnCtor =
-      algosdk.makeApplicationNoOpTxn(
-        thisAcc.addr, params, ApplicationID, ctor_args,
-        undefined, undefined, undefined, NOTE_Reach);
-    debug({txnCtor});
-    const txnCtor_s = await signTxn(thisAcc, txnCtor);
-    try {
-      await sendAndConfirm( [ txnCtor_s ] );
-    } catch (e) {
-      throw Error(`deploy: ${JSON.stringify(e)}`);
-    }
-    const getInfo = async (): Promise<ContractInfo> => ctcInfo;
-    const eventCache = new EventCache();
-    await waitCtorTxn(shad, ctcInfo, eventCache);
-    debug(shad, 'application created');
-    return await attachP(bin, getInfo(), eventCache);
-  };
-
-  const implNow = { stdlib: compiledStdlib };
-
-  const attach = (bin: Backend, ctcInfoP: Promise<ContractInfo>): Contract => {
-    ensureConnectorAvailable(bin, 'ALGO', reachBackendVersion, reachAlgoBackendVersion);
-    return deferContract(false, attachP(bin, ctcInfoP), implNow);
-  };
-
-  const deploy = (bin: Backend): Contract => {
-    ensureConnectorAvailable(bin, 'ALGO', reachBackendVersion, reachAlgoBackendVersion);
-    return deferContract(false, deployP(bin), implNow);
+    return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, _setup, givenInfoP });
   };
 
   function setDebugLabel(newLabel: string): Account {
@@ -1610,16 +1636,19 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     debug({tokenRes});
     const tokenInfo = tokenRes['params'];
     debug({tokenInfo});
-    const name = tokenInfo['name'];
-    const symbol = tokenInfo['unit-name'];
-    const url = tokenInfo['url'];
-    const mhr = tokenInfo['metadata-hash'];
-    const metadata = mhr ? T_Bytes(32).fromNet(reNetify(mhr)) : undefined;
+    const p = (n:number, x:string): any =>
+      x ? T_Bytes(n).fromNet(reNetify(x)) : undefined;
+    // XXX share these numbers with hs and ethlike(?)
+    const name = p(32, tokenInfo['name-b64']);
+    const symbol = p(8, tokenInfo['unit-name-b64']);
+    const url = p(96, tokenInfo['url-b64']);
+    const metadata = p(32, tokenInfo['metadata-hash']);
     const supply = bigNumberify(tokenInfo['total']);
-    return { name, symbol, url, metadata, supply };
+    const decimals = bigNumberify(tokenInfo['decimals']);
+    return { name, symbol, url, metadata, supply, decimals };
   };
 
-  return { deploy, attach, networkAccount, getAddress: selfAddress, stdlib: compiledStdlib, setDebugLabel, tokenAccept, tokenMetadata };
+  return stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccept, tokenMetadata, contract });
 };
 
 export const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
@@ -1645,6 +1674,23 @@ export const balanceOf = async (acc: Account, token: Token|false = false): Promi
 export const createAccount = async (): Promise<Account> => {
   const networkAccount = algosdk.generateAccount();
   return await connectAccount(networkAccount);
+};
+
+export const canFundFromFaucet = async (): Promise<boolean> => {
+  const faucet = await getFaucet();
+  const algodClient = await getAlgodClient();
+  debug('ALGO:canFundFromFaucet: check genesis');
+  const txnParams = await algodClient.getTransactionParams().do();
+  const act = txnParams.genesisID;
+  const exp = 'devnet-v1';
+  if (act !== exp) {
+    debug(`ALGO:canFundFromFaucet: expected '${exp}' !== actual '${act}'`);
+    return false;
+  }
+  debug('ALGO:canFundFromFaucet: check balance');
+  const fbal = await balanceOf(faucet);
+  debug(`ALGO:canFundFromFaucet: faucet balance = ${formatCurrency(fbal, 4)} ${standardUnit}`);
+  return gt(fbal, 0);
 };
 
 export const fundFromFaucet = async (account: Account, value: any) => {
@@ -1716,7 +1762,7 @@ function ldrop(str: string, char: string) {
  * @description  Format currency by network
  * @param amt  the amount in the {@link atomicUnit} of the network.
  * @param decimals  up to how many decimal places to display in the {@link standardUnit}.
- *   Trailing zeroes will be omitted. Excess decimal places will be truncated. (not rounded)
+ *   Trailing zeros will be omitted. Excess decimal places will be truncated (not rounded).
  *   This argument defaults to maximum precision.
  * @returns  a string representation of that amount in the {@link standardUnit} for that network.
  * @example  formatCurrency(bigNumberify('100000000')); // => '100'
@@ -1726,7 +1772,7 @@ export function formatCurrency(amt: any, decimals: number = 6): string {
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
-  const amtStr = amt.toString();
+  const amtStr = bigNumberify(amt).toString();
   const splitAt = Math.max(amtStr.length - 6, 0);
   const lPredropped = amtStr.slice(0, splitAt);
   const l = ldrop(lPredropped, '0') || '0';
@@ -1739,34 +1785,9 @@ export function formatCurrency(amt: any, decimals: number = 6): string {
   return r ? `${l}.${r}` : l;
 }
 
-// XXX The getDefaultAccount pattern doesn't really work w/ AlgoSigner
-// AlgoSigner does not expose a "currently-selected account"
 export async function getDefaultAccount(): Promise<Account> {
-  if (!window.prompt) {
-    throw Error(`Cannot prompt the user for default account with window.prompt`);
-  }
-  const signStrategy = getSignStrategy();
-  if (signStrategy === 'mnemonic') {
-    const mnemonic = window.prompt(`Please paste the mnemonic for your account, or cancel to generate a new one`);
-    if (mnemonic) {
-      debug(`Creating account from user-provided mnemonic`);
-      return await newAccountFromMnemonic(mnemonic);
-    } else {
-      debug(`No mnemonic provided. Randomly generating a new account secret instead.`);
-      return await createAccount();
-    }
-  } else if (signStrategy === 'AlgoSigner') {
-    const AlgoSigner = await getAlgoSigner();
-    const ledger = getLedgerFromAlgoSigner(AlgoSigner);
-    if (ledger === undefined) throw Error(`Ledger is undefined; this is required by AlgoSigner`);
-    const addr = window.prompt(`Please paste your account's address. (This account must be listed in AlgoSigner.)`);
-    if (!addr) { throw Error(`No address provided`); }
-    return await newAccountFromAlgoSigner(addr, AlgoSigner, ledger);
-  } else if (signStrategy === 'MyAlgo') {
-    throw Error(`MyAlgo wallet support is not yet implemented`);
-  } else {
-    throw Error(`signStrategy '${signStrategy}' not recognized. Valid options are 'mnemonic', 'AlgoSigner', and 'MyAlgo'.`);
-  }
+  const addr = await (await getProvider()).getDefaultAddress();
+  return await connectAccount({ addr });
 }
 
 /**
@@ -1779,25 +1800,10 @@ export const newAccountFromMnemonic = async (mnemonic: string): Promise<Account>
 /**
  * @param secret a Uint8Array, or its hex string representation
  */
-export const newAccountFromSecret = async (secret: string | Uint8Array): Promise<Account> => {
+export const newAccountFromSecret = async (secret: string | SecretKey): Promise<Account> => {
   const sk = ethers.utils.arrayify(secret);
   const mnemonic = algosdk.secretKeyToMnemonic(sk);
   return await newAccountFromMnemonic(mnemonic);
-};
-
-export const newAccountFromAlgoSigner = async (addr: string, AlgoSigner: AlgoSigner, ledger: string) => {
-  if (!AlgoSigner) {
-    throw Error(`AlgoSigner is falsy`);
-  }
-  const accts = await AlgoSigner.accounts({ledger});
-  if (!Array.isArray(accts)) {
-    throw Error(`AlgoSigner.accounts('${ledger}') is not an array: ${accts}`);
-  }
-  if (!accts.map(x => x.address).includes(addr)) {
-    throw Error(`Address ${addr} not found in AlgoSigner accounts`);
-  }
-  let networkAccount = {addr, AlgoSigner};
-  return await connectAccount(networkAccount);
 };
 
 export const getNetworkTime = async (): Promise<BigNumber> => {
@@ -1807,15 +1813,24 @@ export const getNetworkTime = async (): Promise<BigNumber> => {
 };
 const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
   const now = bigNumberToNumber(now_bn);
-  const indexer = await getIndexer();
-  const info = await indexer.lookupBlock(now).do();
-  return bigNumberify(info['timestamp']);
+  try {
+    const client = await getAlgodClient();
+    const binfo = await client.block(now).do();
+    debug(`getTimeSecs`, `node`, binfo);
+    return bigNumberify(binfo.block.ts);
+  } catch (e:any) {
+    debug(`getTimeSecs`, `node failed`, e);
+    const indexer = await getIndexer();
+    const info = await indexer.lookupBlock(now).do();
+    debug(`getTimeSecs`, `indexer`, info);
+    return bigNumberify(info['timestamp']);
+  }
 };
 export const getNetworkSecs = async (): Promise<BigNumber> =>
   await getTimeSecs(await getNetworkTime());
 
 const stepTime = async (target: BigNumber): Promise<BigNumber> => {
-  if ( isIsolatedNetwork() ) {
+  if ( (await getProvider()).isIsolatedNetwork ) {
     await fundFromFaucet(await getFaucet(), 0);
   }
   return await indexer_statusAfterBlock(bigNumberToNumber(target));
@@ -1842,50 +1857,24 @@ const appGlobalStateNumBytes = 1;
 type VerifyResult = {
   compiled: CompiledBackend,
   ApplicationID: number,
-  allocRound: number,
-  ctorRound: number,
+  startRound: number,
   Deployer: Address,
 };
 
-async function queryCtorTxn(dhead: string, ApplicationID: number, eventCache: EventCache) {
-  const isCtor = makeIsMethod(0);
-  const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, { minRound: 0 }, isCtor);
-  debug({icr});
-  return icr;
-}
-
-async function waitCtorTxn(shad: string, ApplicationID: number, eventCache: EventCache): Promise<void> {
-  // Note(Dan): Yes, doQuery_ offers retrying, but doQuery has the filtering,
-  // and finding the right design point for refactoring is hard,
-  // so, I'm just doing some more retrying here.
-  // Let's try exponential backoff for a change.
-  const maxTries = 14; // SUM(2^n)[1 <= n <= 14] = wait up to 32766 ms
-  let icr: any = null;
-  for (let tries = 1; tries <= maxTries; tries++) {
-    const waitMs = 2 ** tries;
-    debug(shad, 'waitCtorTxn waiting (ms)', waitMs);
-    await Timeout.set(waitMs);
-    debug(shad, 'waitCtorTxn trying attempt #', tries, 'of', maxTries);
-    icr = await queryCtorTxn(`${shad} deploy`, ApplicationID, eventCache);
-    if (icr && icr.txn) return;
-  }
-  throw Error(`Indexer could not find application ${ApplicationID}.`);
-}
-
 export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<VerifyResult> => {
-  return verifyContract_(info, bin, new EventCache());
+  return verifyContract_('', info, bin, new EventCache());
 }
 
-const verifyContract_ = async (info: ContractInfo, bin: Backend, eventCache: EventCache): Promise<VerifyResult> => {
+const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, eventCache: EventCache): Promise<VerifyResult> => {
   const compiled = await compileFor(bin, info);
   const { ApplicationID, appApproval, appClear } = compiled;
-  const { mapDataKeys, viewKeys } = bin._Connectors.ALGO;
+  const { mapDataKeys, stateKeys } = bin._Connectors.ALGO;
 
-  let dhead = `verifyContract`;
+  let dhead = `${label}: verifyContract`;
 
   const chk = (p: boolean, msg: string) => {
     if ( !p ) {
-      throw Error(`verifyContract failed: ${msg}`);
+      throw Error(`${dhead} failed: ${msg}`);
     }
   };
   const chkeq = (a: any, e:any, msg:string) => {
@@ -1895,26 +1884,16 @@ const verifyContract_ = async (info: ContractInfo, bin: Backend, eventCache: Eve
   };
   const fmtp = (x: CompileResultBytes) => uint8ArrayToStr(x.result, 'base64');
 
-  // XXX it should be okay to wait in this function
-  /*
-  while ( ! ctxn ) {
-    const cres = await doQuery(dhead, cquery);
-    if ( ! cres.succ ) {
-      if ( cres.round < creationRound ) {
-        debug(dhead, `-- waiting for`, {creationRound});
-        await indexer_statusAfterBlock(creationRound);
-        continue;
-      } else {
-        chk(false, `Not created in stated round: ${creationRound}`);
-      }
-    } else {
-      ctxn = cres.txn;
-    }
-  }
-  */
-
   const client = await getAlgodClient();
-  const appInfo = await client.getApplicationByID(ApplicationID).do();
+  let appInfo; let err;
+  try {
+    appInfo = await client.getApplicationByID(ApplicationID).do();
+  } catch (e) {
+    err = e;
+  }
+  if ( appInfo === undefined ) {
+    throw Error(`${dhead} failed: failed to lookup application (${ApplicationID}): ${JSON.stringify(err)}`);
+  }
   const appInfo_p = appInfo['params'];
   debug(dhead, {appInfo_p});
   chk(appInfo_p, `Cannot lookup ApplicationId`);
@@ -1927,7 +1906,7 @@ const verifyContract_ = async (info: ContractInfo, bin: Backend, eventCache: Eve
   chkeq(appInfo_LocalState['num-uint'], appLocalStateNumUInt, `Num of uints in local state schema does not match Reach backend`);
 
   const appInfo_GlobalState = appInfo_p['global-state-schema'];
-  chkeq(appInfo_GlobalState['num-byte-slice'], appGlobalStateNumBytes + viewKeys, `Num of byte-slices in global state schema does not match Reach backend`);
+  chkeq(appInfo_GlobalState['num-byte-slice'], appGlobalStateNumBytes + stateKeys, `Num of byte-slices in global state schema does not match Reach backend`);
   chkeq(appInfo_GlobalState['num-uint'], appGlobalStateNumUInt, `Num of uints in global state schema does not match Reach backend`);
 
   const indexer = await getIndexer();
@@ -1954,7 +1933,9 @@ const verifyContract_ = async (info: ContractInfo, bin: Backend, eventCache: Eve
 
   // Next, we check that the constructor was called with the actual escrow
   // address and not something else
-  const icr = await queryCtorTxn(dhead, ApplicationID, eventCache);
+  const isCtor = makeIsMethod(0);
+  const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, { minRound: 0 }, isCtor);
+  debug({icr});
   // @ts-ignore
   const ict = icr.txn;
   chk(ict, `Cannot query for constructor transaction`);
@@ -1962,17 +1943,14 @@ const verifyContract_ = async (info: ContractInfo, bin: Backend, eventCache: Eve
   const ctorRound = ict['confirmed-round']
   const ictat = ict['application-transaction'];
   debug({ictat});
-  const aescrow_b64 = ictat['application-args'][1];
+  const aescrow_b64 = ictat['application-args'][2];
   const aescrow_ui8 = reNetify(aescrow_b64);
-  const aescrow_cbr = T_Address.fromNet(aescrow_ui8);
-  const aescrow_algo = cbr2algo_addr(aescrow_cbr);
+  const aescrow_cbr = T_Tuple([T_Address]).fromNet(aescrow_ui8);
+  // @ts-ignore
+  const aescrow_algo = cbr2algo_addr(aescrow_cbr[0]);
   chkeq( aescrow_algo, compiled.escrow.hash, `Must be constructed with proper escrow account address` );
 
-  // Note: (after deployMode:firstMsg is implemented)
-  // 1. (above) attach initial args to ContractInfo
-  // 2. verify contract storage matches expectations based on initial args
-
-  return { compiled, ApplicationID, allocRound, ctorRound, Deployer };
+  return { compiled, ApplicationID, startRound: ctorRound, Deployer };
 };
 
 /**
@@ -1984,4 +1962,50 @@ export function formatAddress(acc: string|NetworkAccount|Account): string {
   return addressFromHex(T_Address.canonicalize(acc));
 }
 
-export const reachStdlib = compiledStdlib;
+export async function launchToken (accCreator:Account, name:string, sym:string, opts:any = {}) {
+  debug(`Launching token, ${name} (${sym})`);
+  const addr = (acc:Account) => acc.networkAccount.addr;
+  const caddr = addr(accCreator);
+  const zaddr = caddr;
+  // ^ XXX should be nothing; docs say can be "", but doesn't actually work
+  const algod = await getAlgodClient();
+  const dotxn = async (mktxn:(params:TxnParams) => Transaction, acc:Account = accCreator) => {
+    const sk = acc.networkAccount.sk;
+    if ( ! sk ) {
+      throw new Error(`can only launchToken with account with secret key`);
+    }
+    const params = await getTxnParams();
+    const t = mktxn(params);
+    const s = t.signTxn(sk);
+    const r = (await algod.sendRawTransaction(s).do());
+    await waitForConfirmation(r.txId);
+    return await algod.pendingTransactionInformation(r.txId).do();
+  };
+  const supply = (opts.supply && bigNumberify(opts.supply)) || bigNumberify(2).pow(64).sub(1);
+  const decimals = opts.decimals !== undefined ? opts.decimals : 6;
+  const ctxn_p = await dotxn(
+    (params:TxnParams) =>
+    algosdk.makeAssetCreateTxnWithSuggestedParams(
+      caddr, undefined, bigNumberToBigInt(supply), decimals,
+      false, zaddr, zaddr, zaddr, zaddr,
+      sym, name, '', '', params,
+    ));
+  const id = ctxn_p["asset-index"];
+  debug(`${sym}: asset is ${id}`);
+
+  const mint = async (accTo:Account, amt:any) => {
+    debug(`${sym}: transferring ${amt} ${sym} for ${addr(accTo)}`);
+    await transfer(accCreator, accTo, amt, id);
+  };
+  const optOut = async (accFrom:Account, accTo:Account = accCreator) => {
+    await dotxn(
+      (params) =>
+      algosdk.makeAssetTransferTxnWithSuggestedParams(
+        addr(accFrom), addr(accTo), addr(accTo), undefined,
+        0, undefined, id, params
+      ), accFrom);
+  };
+  return { name, sym, id, mint, optOut };
+};
+
+export const reachStdlib = stdlib;

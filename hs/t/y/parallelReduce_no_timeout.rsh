@@ -1,10 +1,14 @@
 'reach 0.1';
 
 export const main = Reach.App(() => {
+  const C = Participant('Constructor', { });
   const A = ParticipantClass('A', {
     go: Fun([], Bool),
     ok: Fun([], Null) });
   deploy();
+
+  C.publish();
+  commit();
 
   A.publish();
 
@@ -13,7 +17,7 @@ export const main = Reach.App(() => {
     .invariant(balance() == 0)
     .case(A,
       (() => ({ when: declassify(interact.go()) })),
-      (() => {
+      ((_) => {
         A.interact.ok();
         return x + 1;
       }))

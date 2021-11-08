@@ -5,7 +5,7 @@ import { checkedBigNumberify } from './shared_backend';
 type BigNumber = ethers.BigNumber;
 const BigNumber = ethers.BigNumber;
 export const bigNumberify = (x: any): BigNumber => {
-  const xp = typeof x === 'number' ? BigInt(x) : x;
+  const xp = typeof x === 'number' ? x.toString() : x;
   return BigNumber.from(xp);
 };
 export const bigNumberToNumber = (x: any) =>
@@ -73,7 +73,15 @@ export const BT_UInt = (max: BigNumber): BackendTy<CBR_UInt> => ({
   name: 'UInt',
   canonicalize: (uv: unknown): CBR_UInt => {
     try {
-      return checkedBigNumberify('stdlib:CBR:BT_UInt', max, uv);
+      // Note: going through toString handles a lot of numeric representations
+      // that BigNumber doesn't handle automatically.
+      const uvs =
+        // @ts-ignore
+        uv?.type === 'BigNumber' ? uv :
+        // @ts-ignore
+        typeof uv?.toString === 'function' ? uv.toString() :
+        /* else */ uv;
+      return checkedBigNumberify('stdlib:CBR:BT_UInt', max, uvs);
     } catch (e) {
       if (typeof(uv) === 'string') {
         throw Error(`String does not represent a BigNumber. ${JSON.stringify(uv)}`);
@@ -153,8 +161,11 @@ export const BT_Array = (ctc: BackendTy<CBR_Val> , size: number): BackendTy<CBR_
       if (size != args.length) {
         throw Error(`Expected array of length ${size}, but got ${args.length}`);
       }
-      const val = args.map((arg) => ctc.canonicalize(arg));
-      return val;
+      const parr = new Array(size);
+      for ( let i = 0; i < size; i++ ) {
+        parr[i] = ctc.canonicalize(args[i]);
+      }
+      return parr;
     },
   };
 };

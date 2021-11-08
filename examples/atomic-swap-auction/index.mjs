@@ -22,9 +22,12 @@ const bidderNames = ["Alice", "Bob", "Camus"];
 (async () => {
   const stdlib = await loadStdlib();
 
-  const startingBalance = stdlib.parseCurrency(10);
-  const zorkmid = await launchToken("zorkmid", "ZMD");
-  const gil = await launchToken("gil", "GIL");
+  const timeout = stdlib.connector === 'CFX' ? 25 : N * 3;
+
+  const startingBalance = stdlib.parseCurrency(100);
+  const accCreator = await stdlib.newTestAccount(startingBalance);
+  const zorkmid = await launchToken(stdlib, accCreator, "zorkmid", "ZMD");
+  const gil = await launchToken(stdlib, accCreator, "gil", "GIL");
 
   const accAuctioneer = (await stdlib.newTestAccount(startingBalance)).setDebugLabel("Auctioneer");
   const accBidders = await Promise.all(
@@ -32,7 +35,7 @@ const bidderNames = ["Alice", "Bob", "Camus"];
   );
   accBidders.forEach((accBidder, i) => accBidder.setDebugLabel(bidderNames[i]));
 
-  if ( stdlib.connector === 'ETH' ) {
+  if ( stdlib.connector === 'ETH' || stdlib.connector === 'CFX' ) {
     const myGasLimit = 5000000;
     accAuctioneer.setGasLimit(myGasLimit);
     accBidders.forEach(accBidder => accBidder.setGasLimit(myGasLimit));
@@ -110,7 +113,7 @@ const bidderNames = ["Alice", "Bob", "Camus"];
       ...common('Auctioneer'),
       getSwap: () => {
         console.log(`Auctioneer proposes swap`);
-        return [ zorkmid.id, amtA, gil.id, reservePrice, 3 * 3 ]; },
+        return [ zorkmid.id, amtA, gil.id, reservePrice, timeout ]; },
       showAuctionStart: () => console.log(`Auction starts`)
     });
 

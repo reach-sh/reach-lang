@@ -5,9 +5,7 @@ const IAdministrator = {
     getNewEntry: Fun([],Address),
 }
 
-export const main = Reach.App({
-    deployMode: "constructor" 
-    },
+export const main = Reach.App({},
     [ Participant('Administrator', IAdministrator) ],
      (Admin) => {
         Admin.publish();

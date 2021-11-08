@@ -6,8 +6,9 @@ function winner (countA, countB) {
     return 2;
   } else if ( countB > countA ) {
     return 1;
+  } else {
+    return 0;
   }
-  return 0;
 };
 
 assert(winner(1, 0) == 2);

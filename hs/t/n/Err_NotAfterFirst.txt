@@ -1,0 +1,11 @@
+reachc: error[RE0119]: Cannot inspect publication details until after first publication
+
+  ./Err_NotAfterFirst.rsh:7:28:application
+
+  7|     interact.log(didPublish());
+
+Trace:
+  in [unknown function] from (./Err_NotAfterFirst.rsh:6:13:function exp) at (./Err_NotAfterFirst.rsh:6:9:application)
+
+For further explanation of this error, see: https://docs.reach.sh/RE0119.html
+

@@ -13,13 +13,13 @@ import Reach.Texty
 -- NOTE switch to Maybe DLAssignment and make sure we have a consistent order,
 -- like with M.toAscList
 data FromInfo
-  = FI_Continue ViewSave [(DLVar, DLArg)]
+  = FI_Continue [(DLVar, DLArg)]
   | FI_Halt [DLArg]
   deriving (Eq)
 
 instance Pretty FromInfo where
   pretty = \case
-    FI_Continue vis svs -> pform "continue" (pretty vis <> "," <+> pretty svs)
+    FI_Continue svs -> pform "continue" (pretty svs)
     FI_Halt toks -> pform "halt" (pretty toks)
 
 data ETail
@@ -32,6 +32,7 @@ data ETail
       { et_tc_at :: SrcLoc
       , et_tc_from :: DLVar
       , et_tc_prev :: Int
+      , et_tc_lct :: Maybe DLArg
       , et_tc_which :: Int
       , et_tc_from_me
         :: ( ---     args     amt   when   saved_vs just-me
@@ -41,6 +42,7 @@ data ETail
       , et_tc_from_out :: [DLVar]
       , et_tc_from_timev :: DLVar
       , et_tc_from_secsv :: DLVar
+      , et_tc_from_didSendv :: DLVar
       , et_tc_from_mtime :: (Maybe (Maybe DLTimeArg, ETail))
       , et_tc_cons :: ETail
       }
@@ -53,6 +55,17 @@ data ETail
       }
   | ET_Continue SrcLoc DLAssignment
   deriving (Eq)
+
+instance SrcLocOf ETail where
+  srclocOf = \case
+    ET_Com c _ -> srclocOf c
+    ET_Stop at -> at
+    ET_If at _ _ _ -> at
+    ET_Switch at _ _ -> at
+    ET_FromConsensus at _ _ _ -> at
+    ET_ToConsensus {..} -> et_tc_at
+    ET_While {..} -> et_w_at
+    ET_Continue at _ -> at
 
 instance Pretty ETail where
   pretty e =
@@ -67,7 +80,7 @@ instance Pretty ETail where
           <> pretty k
         where
           whichp = viaShow which
-      ET_ToConsensus _ fs prev which msend msg out timev secsv mtime k ->
+      ET_ToConsensus _ fs prev lct which msend msg out timev secsv didSendv mtime k ->
         msendp <> recvp <> mtimep <> kp
         where
           recvp =
@@ -77,11 +90,13 @@ instance Pretty ETail where
                    M.fromList $
                      [ ("from" :: String, pretty fs)
                      , ("prev", pretty prev)
+                     , ("lct", pretty lct)
                      , ("which", pretty which)
                      , ("msg", (cm $ map pretty msg))
                      , ("out", (cm $ map pretty out))
                      , ("timev", pretty timev)
                      , ("secsv", pretty secsv)
+                     , ("didSendv", pretty didSendv)
                      ])
               <> hardline
           kp = ns $ pretty k
@@ -114,20 +129,12 @@ instance Pretty ETail where
       cm l = parens (hsep $ punctuate comma $ l)
 
 data EPProg
-  = EPProg SrcLoc InteractEnv ETail
+  = EPProg SrcLoc Bool InteractEnv ETail
   deriving (Eq)
 
 instance Pretty EPProg where
-  pretty (EPProg _ ie et) =
+  pretty (EPProg _ _ ie et) =
     pretty ie <> semi <> hardline <> pretty et
-
-data ViewSave
-  = ViewSave Int [(DLVar, DLArg)]
-  deriving (Eq)
-
-instance Pretty ViewSave where
-  pretty (ViewSave vi svs) =
-    pform "viewsave" (pretty vi <> "," <+> pretty svs)
 
 data CTail
   = CT_Com DLStmt CTail
@@ -226,7 +233,7 @@ instance Pretty ColorGraphs where
                 $ M.toList g
          in braces $ hardline <> vsep rows
 
-type ViewsInfo = M.Map SLPart (M.Map SLVar DLExportBlock)
+type ViewsInfo = M.Map (Maybe SLPart) (M.Map SLVar DLExportBlock)
 
 data ViewInfo = ViewInfo [DLVar] ViewsInfo
   deriving (Eq)
@@ -239,26 +246,40 @@ type ViewInfos = M.Map Int ViewInfo
 
 type CPViews = DLViews
 
+type ApiInfos = M.Map SLPart ApiInfo
+
 data CPProg
-  = CPProg SrcLoc [DLVar] (Maybe (CPViews, ViewInfos)) CHandlers
+  = CPProg SrcLoc (CPViews, ViewInfos) ApiInfos CHandlers
   deriving (Eq)
 
 instance Pretty CPProg where
-  pretty (CPProg _ csvs vis chs) =
-    "csvs:" <+> pretty csvs <> hardline
-    <> "views:" <+> pretty vis <> hardline
+  pretty (CPProg _ vis ai chs) =
+    "views:" <+> pretty vis <> hardline <>
+    "apiInfo:" <+> pretty ai <> hardline
     <> pretty chs
 
-newtype EPPs = EPPs (M.Map SLPart EPProg)
+data EPPs = EPPs
+  { epps_apis :: DLAPIs
+  , epps_m :: M.Map SLPart EPProg
+  }
   deriving (Eq)
-  deriving newtype (Monoid, Semigroup)
+
+instance Monoid EPPs where
+  mempty = EPPs mempty mempty
+
+instance Semigroup EPPs where
+  (EPPs x0 x1) <> (EPPs y0 y1) = EPPs (x0 <> y0) (x1 <> y1)
 
 instance Pretty EPPs where
-  pretty (EPPs m) = render_obj m
+  pretty (EPPs {..}) =
+    "APIs:"
+    <> pretty epps_apis
+    <> hardline
+    <> render_obj epps_m
+    <> hardline
 
 data PLOpts = PLOpts
-  { plo_deployMode :: DeployMode
-  , plo_verifyArithmetic :: Bool
+  { plo_verifyArithmetic :: Bool
   , plo_counter :: Counter
   }
   deriving (Generic, Eq)

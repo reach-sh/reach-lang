@@ -3,16 +3,16 @@
 const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3);
 const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);
 
-const winner = (handA, handB) =>
-      ((handA + (4 - handB)) % 3);
+const winner = (handAlice, handBob) =>
+      ((handAlice + (4 - handBob)) % 3);
 
 assert(winner(ROCK, PAPER) == B_WINS);
 assert(winner(PAPER, ROCK) == A_WINS);
 assert(winner(ROCK, ROCK) == DRAW);
 
-forall(UInt, handA =>
-  forall(UInt, handB =>
-    assert(isOutcome(winner(handA, handB)))));
+forall(UInt, handAlice =>
+  forall(UInt, handBob =>
+    assert(isOutcome(winner(handAlice, handBob)))));
 
 forall(UInt, (hand) =>
   assert(winner(hand, hand) == DRAW));
@@ -73,7 +73,7 @@ export const main =
       B.only(() => {
         interact.acceptWager(wager); });
       B.pay(wager)
-        .timeout(DEADLINE, () => closeTo(A, informTimeout));
+        .timeout(relativeTime(DEADLINE), () => closeTo(A, informTimeout));
 
       var outcome = DRAW;
       invariant(balance() == 2 * wager && isOutcome(outcome) );
@@ -85,20 +85,20 @@ export const main =
           const [_commitA, _saltA] = makeCommitment(interact, _handsA);
           const commitA = declassify(_commitA); });
         A.publish(commitA)
-          .timeout(DEADLINE, () => closeTo(B, informTimeout));
+          .timeout(relativeTime(DEADLINE), () => closeTo(B, informTimeout));
         commit();
 
         unknowable(B, A(_handsA, _saltA));
         B.only(() => {
           const handsB = declassify(getBatch(interact.getHand)); });
         B.publish(handsB)
-          .timeout(DEADLINE, () => closeTo(A, informTimeout));
+          .timeout(relativeTime(DEADLINE), () => closeTo(A, informTimeout));
         commit();
 
         A.only(() => {
           const [saltA, handsA] = declassify([_saltA, _handsA]); });
         A.publish(saltA, handsA)
-          .timeout(DEADLINE, () => closeTo(B, informTimeout));
+          .timeout(relativeTime(DEADLINE), () => closeTo(B, informTimeout));
         checkCommitment(commitA, saltA, handsA);
 
         outcome = batchWinner(handsA, handsB);

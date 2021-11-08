@@ -1,8 +1,8 @@
 reachc: error[RE0022]: Invalid Reach declaration; expected exactly one declaration
 
- ./Err_Decls_IllegalJS.rsh:3:1:const
+  ./Err_Decls_IllegalJS.rsh:3:1:const
 
- 3| const x = 1, y = 2;
+  3| const x = 1, y = 2;
 
 For further explanation of this error, see: https://docs.reach.sh/RE0022.html
 

@@ -8,29 +8,24 @@ Verification failed:
 
   // Violation Witness
 
-  const v28 = <function return>;
+  const v21 = <function return>;
   //    ^ could = 1
   //      from: ./pr175.rsh:5:22:block
 
-
   // Theorem Formalization
 
-  const v31 = v28 == 0;
+  const v22 = v21 == 0;
   //    ^ would be false
-  assert(v31);
+  assert(v22);
 
   Verifying when NO participants are honest
-Verification failed:
-  when NO participants are honest
-  of theorem: assert
-  at ./pr175.rsh:9:9:application
-
-  (details omitted on repeat)
   Verifying when ONLY "Alice" is honest
-Verification failed:
-  when ONLY "Alice" is honest
-  of theorem: assert
-  at ./pr175.rsh:9:9:application
+Checked 6 theorems; 3 failures (and 2 omitted repeats) :'(
+warning[RW0004]: There are no publications in the application.
 
-  (details omitted on repeat)
-Checked 6 theorems; 3 failures. :'(
+  ./pr175.rsh:2:30:application
+
+  2| export const main = Reach.App(() => {
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0004.html
+

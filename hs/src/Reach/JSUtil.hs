@@ -17,9 +17,13 @@ module Reach.JSUtil
   , mkCommaTrailingList
   , jsa
   , a2sp
+  , toJSArray
+  , jsBlockToStmts
+  , jsFlattenLHS
   )
 where
 
+import Data.Foldable (foldl')
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.AST
 import Reach.AST.Base
@@ -30,32 +34,53 @@ jso_flatten = \case
   JSCTLNone jscl -> jscl_flatten jscl
 
 jscl_flatten :: JSCommaList a -> [a]
-jscl_flatten (JSLCons a _ b) = (jscl_flatten a) ++ [b]
-jscl_flatten (JSLOne a) = [a]
-jscl_flatten (JSLNil) = []
+jscl_flatten = \case
+  JSLNil -> []
+  JSLOne a -> [a]
+  JSLCons a _ b -> (jscl_flatten a) ++ [b]
 
 toJSCL :: [a] -> JSCommaList a
-toJSCL l = helper l' JSLNil
-  where
-    -- XXX This makes no sense to me
-    sanity = False
-    l' =
-      case sanity of
-        True -> reverse l
-        False -> l
-    helper [] acc = acc
-    helper (x : ys) acc =
-      helper ys (JSLCons acc JSNoAnnot x)
+toJSCL = \case
+  [] -> JSLNil
+  [a] -> JSLOne a
+  x : ys -> foldl' (flip JSLCons JSNoAnnot) (JSLOne x) ys
 
 jsctl_flatten :: JSCommaTrailingList a -> [a]
-jsctl_flatten (JSCTLComma a _) = jscl_flatten a
-jsctl_flatten (JSCTLNone a) = jscl_flatten a
+jsctl_flatten = \case
+  JSCTLComma a _ -> jscl_flatten a
+  JSCTLNone a -> jscl_flatten a
 
 jsa_flatten :: [JSArrayElement] -> [JSExpression]
 jsa_flatten a = concatMap f a
   where
     f (JSArrayComma _) = []
     f (JSArrayElement e) = [e]
+
+jsFlattenLHS :: JSExpression -> [JSExpression]
+jsFlattenLHS e =
+  case e of
+    JSIdentifier _ "_" -> []
+    JSIdentifier {} -> [e]
+    JSArrayLiteral _ as _ -> concatMap jsFlattenLHS $ jsa_flatten as
+    JSAssignExpression lhs _ _ -> [lhs]
+    JSObjectLiteral _ ps _ ->
+      concatMap (\case
+      JSPropertyNameandValue jpn _ _ ->
+        case jpn of
+          JSPropertyIdent ja s -> [JSIdentifier ja s]
+          _ -> []
+      JSPropertyIdentRef ja s -> [JSIdentifier ja s]
+      JSObjectMethod _ -> []
+      JSObjectSpread _ je -> jsFlattenLHS je
+      ) $ jso_flatten ps
+    _ -> []
+
+
+toJSArray :: [JSExpression] -> [JSArrayElement]
+toJSArray a = concatMap f a
+  where
+    f e = [JSArrayElement e, JSArrayComma JSNoAnnot]
+
 
 jsArrowStmtToBlock :: JSStatement -> JSBlock
 jsArrowStmtToBlock = \case
@@ -67,6 +92,10 @@ jsStmtToBlock :: JSStatement -> JSBlock
 jsStmtToBlock = \case
   JSStatementBlock ba bodyss aa _ -> JSBlock ba bodyss aa
   bodys -> JSBlock JSNoAnnot [bodys] JSNoAnnot
+
+
+jsBlockToStmts :: JSBlock -> [JSStatement]
+jsBlockToStmts (JSBlock _ s _) = s
 
 dropEmptyJSStmts :: [JSStatement] -> [JSStatement]
 dropEmptyJSStmts [] = []

@@ -26,24 +26,24 @@ export const main =
         .case(
           A,
           (() => ({ when: declassify(interact.doCase(1)) })),
-          (() => payment),
-          () => { return [ keepGoing ]; })
+          ((_) => payment),
+          (_) => { return [ keepGoing ]; })
         .case(
           A,
           (() => ({ when: declassify(interact.doCase(2)) })),
-          (() => payment * 2),
-          () => { return [ keepGoing ]; })
+          ((_) => payment * 2),
+          (_) => { return [ keepGoing ]; })
         .case(
           A,
           (() => ({ when: declassify(interact.doCase(3)) })),
-          (() => payment * 3),
-          () => { return [ keepGoing ]; })
+          ((_) => payment * 3),
+          (_) => { return [ keepGoing ]; })
         .case(
           B,
           (() => ({ when: declassify(interact.doCase(4)) })),
-          (() => payment * 4),
-          () => { return [ keepGoing ]; })
-        .timeout(timeout, () => {
+          ((_) => payment * 4),
+          (_) => { return [ keepGoing ]; })
+        .timeout(relativeTime(timeout), () => {
           Anybody.publish();
           return [ false ];
         });

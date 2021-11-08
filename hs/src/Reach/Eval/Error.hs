@@ -56,7 +56,7 @@ data EvalError
   | Err_Decl_WrongArrayLength Int Int
   | Err_Dot_InvalidField SLValTy [String] String
   | Err_Eval_ContinueNotInWhile
-  | Err_Eval_IllegalWait DeployMode
+  | Err_Eval_IllegalWait
   | Err_Eval_ContinueNotLoopVariable SLVar
   | Err_Eval_PartSet_Class SLPart
   | Err_Eval_PartSet_Bound SLPart
@@ -87,7 +87,6 @@ data EvalError
   | Err_Prim_InvalidArgs SLPrimitive [SLValTy]
   | Err_Shadowed SLVar SLSSVal SLSSVal -- var, alreadyBound, new (invalid)
   | Err_TailNotEmpty [JSStatement]
-  | Err_ToConsensus_Double ToConsensusMode
   | Err_TopFun_NoName
   | Err_While_IllegalInvariant [JSExpression]
   | Err_Only_NotOneClosure SLValTy
@@ -125,6 +124,7 @@ data EvalError
   | Err_IllegalEffPosition SLValTy
   | Err_Unused_Variables [(SrcLoc, SLVar)]
   | Err_Remote_NotFun SLVar SLType
+  | Err_API_NotFun SLVar SLType
   | Err_Struct_Key_Invalid String
   | Err_Struct_Key_Not_Unique [String] String
   | Err_InvalidNameExport String String
@@ -145,6 +145,13 @@ data EvalError
   | Err_ParallelReduce_DefineBlock
   | Err_Expected_Type String SLVal
   | Err_TimeArg_NotStatic
+  | Err_Return_MustBeTail
+  | Err_Return_BothSidesMust
+  | Err_Switch_UnreachableCase SrcLoc SLVar SrcLoc
+  | Err_NotAfterFirst
+  | Err_UniqueFirstPublish
+  | Err_ApiCallAssign
+  | Err_DuplicateName String SrcLoc
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -212,7 +219,7 @@ instance HasErrorCode EvalError where
     Err_Prim_InvalidArgs {} -> 55
     Err_Shadowed {} -> 56
     Err_TailNotEmpty {} -> 57
-    Err_ToConsensus_Double {} -> 58
+    -- Err_ToConsensus_Double {} -> 58
     Err_TopFun_NoName {} -> 59
     Err_While_IllegalInvariant {} -> 60
     Err_Only_NotOneClosure {} -> 61
@@ -270,6 +277,14 @@ instance HasErrorCode EvalError where
     Err_ParallelReduce_DefineBlock {} -> 113
     Err_Expected_Type {} -> 114
     Err_TimeArg_NotStatic {} -> 115
+    Err_Return_MustBeTail -> 116
+    Err_Return_BothSidesMust -> 117
+    Err_Switch_UnreachableCase {} -> 118
+    Err_NotAfterFirst -> 119
+    Err_UniqueFirstPublish -> 120
+    Err_API_NotFun {} -> 121
+    Err_ApiCallAssign {} -> 122
+    Err_DuplicateName {} -> 123
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -384,7 +399,7 @@ getIllegalModeSuggestion _ [] = impossible "getIllegalModeSuggestion: No expecte
 getIllegalModeSuggestion mode (m : _) = get (mode, m)
   where
     get = \case
-      (SLM_Module, _) -> Just "create a `React.App`"
+      (SLM_Module, _) -> Just "create a `Reach.App`"
       (SLM_AppInit, _) -> Just "`deploy`"
       (_, SLM_AppInit) -> Nothing
       (s, SLM_Step)
@@ -465,8 +480,8 @@ instance Show EvalError where
       bunpack who <> " is a class and cannot be bound"
     Err_Eval_PartSet_Bound who ->
       bunpack who <> " is bound and cannot be rebound"
-    Err_Eval_IllegalWait dm ->
-      "Cannot wait or timeout until after first message in deployMode " <> show dm
+    Err_Eval_IllegalWait ->
+      "Cannot inspect consensus time until after first publication"
     Err_Decls_IllegalJS _ ->
       "Invalid Reach declaration; expected exactly one declaration"
     Err_Decl_IllegalJS e ->
@@ -511,7 +526,7 @@ instance Show EvalError where
     Err_Eval_RefNotInt slval ->
       "Invalid array index. Expected uint256, got: " <> show_sv slval
     Err_Eval_RefOutOfBounds maxi ix ->
-      "Invalid array index. Expected an index between 0 and " <> show maxi <> ", but got: " <> show ix
+      "Invalid array index. Expected an index greater than or equal to 0 and less than " <> show maxi <> ", but got: " <> show ix
     Err_Eval_UnboundId (LC_RefFrom ctxt) slvar slvars ->
       "Invalid unbound identifier in " <> ctxt <> ": " <> slvar <> didYouMean slvar slvars 5
     Err_Eval_UnboundId LC_CompilerRequired slvar _ ->
@@ -567,9 +582,6 @@ instance Show EvalError where
       "Invalid statement block. Expected empty tail, but found " <> found
       where
         found = show (length stmts) <> " more statements"
-    Err_ToConsensus_Double mode -> case mode of
-      TCM_Publish -> "Invalid double publish."
-      _ -> "Invalid double toConsensus."
     Err_TopFun_NoName ->
       "Invalid function declaration. Top-level functions must be named."
     Err_While_IllegalInvariant exprs ->
@@ -620,14 +632,15 @@ instance Show EvalError where
         False -> "Cannot optionally transition to consensus or have an empty race without timeout."
     Err_Fork_ResultNotObject t ->
       "Fork local result must be object with fields `msg` or `when`, but got " <> show t
-    Err_Fork_ConsensusBadArrow _ ->
+    Err_Fork_ConsensusBadArrow _ow ->
       "Fork consensus block should be arrow with zero or one parameters, but got something else"
     Err_ParallelReduceIncomplete lab ->
       "Parallel reduce incomplete: " <> lab
     Err_ParallelReduceBranchArgs b n args ->
-      let numArgs = length args
-       in let arguments = if n == 1 then "argument" else "arguments"
-           in "The `" <> b <> "` branch of `parallelReduce` expects " <> show n <> " " <> arguments <> ", but received " <> show numArgs
+      "The `" <> b <> "` branch of `parallelReduce` expects " <> show n <> " " <> arguments <> ", but received " <> show numArgs
+      where
+        numArgs = length args
+        arguments = if n == 1 then "argument" else "arguments"
     Err_Type_None val ->
       "Value cannot exist at runtime: " <> show (pretty val)
     Err_Type_NotDT t ->
@@ -648,6 +661,8 @@ instance Show EvalError where
       intercalate "\n    " $ map (\(at, v) -> "unused variable: " <> v <> " at " <> show at) vars
     Err_Remote_NotFun k t ->
       "Remote type not a function, " <> show k <> " has type " <> show t
+    Err_API_NotFun k t ->
+      "API type not a function, " <> show k <> " has type " <> show t
     Err_Struct_Key_Invalid s ->
       "Struct key `" <> s <> "` is of the wrong format. A struct key should be of the format: [_a-zA-Z][_a-zA-Z0-9]*"
     Err_Struct_Key_Not_Unique sk k ->
@@ -688,5 +703,19 @@ instance Show EvalError where
       "Expected a `Type`, but received " <> show (pretty sv) <> " for " <> lab
     Err_TimeArg_NotStatic ->
       "Time argument must be statically determined as either time (Left) or seconds (Right)"
+    Err_Return_MustBeTail ->
+      "`return`s must be in tail position"
+    Err_Return_BothSidesMust ->
+      "If one side of a branch `return`s, the other side must as well"
+    Err_Switch_UnreachableCase cat cs dat ->
+      "The switch case `" <> cs <> "` defined at " <> show cat <> " is unreachable because `default` was used at " <> show dat
+    Err_NotAfterFirst ->
+      "Cannot inspect publication details until after first publication"
+    Err_UniqueFirstPublish ->
+      "A unique `Participant` must make the first publication"
+    Err_ApiCallAssign ->
+      "The left hand side of an API call must be a pair consisting of the domain and return function."
+    Err_DuplicateName s at ->
+      "The name `" <> s <> "` has already been used by a Participant, View or API at: " <> show at
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

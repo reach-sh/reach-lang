@@ -1,0 +1,13 @@
+--- examples/tut-9/index.js	2021-08-31 12:43:24.801893800 -0400
++++ examples/tut-9/index.js	2021-08-31 12:43:40.471893800 -0400
+@@ -6,7 +6,10 @@
+ import './index.css';
+ import * as backend from './build/index.main.mjs';
+ import {loadStdlib} from '@reach-sh/stdlib';
++import MyAlgoConnect from '@reach-sh/stdlib/ALGO_MyAlgoConnect';
+ const reach = loadStdlib(process.env);
++reach.setWalletFallback(reach.walletFallback({
++  providerEnv: 'TestNet', MyAlgoConnect }));
+ 
+ const handToInt = {'ROCK': 0, 'PAPER': 1, 'SCISSORS': 2};
+ const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];

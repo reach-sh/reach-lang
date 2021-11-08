@@ -135,7 +135,12 @@ instance AC DLBlock where
     return $ DLBlock at fs t' a
 
 instance {-# OVERLAPS #-} AC a => AC (SwitchCases a) where
-  ac = mapM $ \(mv, k) -> (,) mv <$> ac k
+  ac = mapM $ \(v, _, k) -> do
+    k' <- ac k
+    vu' <- ac_vdef True (DLV_Let DVC_Many v) >>= \case
+      DLV_Eff -> return False
+      _ -> return True
+    return $ (v, vu', k')
 
 instance AC ETail where
   ac = \case
@@ -161,7 +166,8 @@ instance AC ETail where
       et_tc_cons' <- ac et_tc_cons
       et_tc_from_mtime' <- ac et_tc_from_mtime
       ac_visit et_tc_from_me
-      return $ ET_ToConsensus et_tc_at et_tc_from et_tc_prev et_tc_which et_tc_from_me et_tc_from_msg et_tc_from_out et_tc_from_timev et_tc_from_secsv et_tc_from_mtime' et_tc_cons'
+      ac_visit et_tc_lct
+      return $ ET_ToConsensus et_tc_at et_tc_from et_tc_prev et_tc_lct et_tc_which et_tc_from_me et_tc_from_msg et_tc_from_out et_tc_from_timev et_tc_from_secsv et_tc_from_didSendv et_tc_from_mtime' et_tc_cons'
     ET_While {..} -> do
       et_w_k' <- ac et_w_k
       et_w_body' <- ac et_w_body
@@ -209,19 +215,19 @@ instance {-# OVERLAPS #-} AC a => AC (DLinExportBlock a) where
     DLinExportBlock at vs <$> ac a
 
 instance AC EPProg where
-  ac (EPProg at ie et) =
+  ac (EPProg at x ie et) =
     fresh $
-      EPProg at ie <$> ac et
+      EPProg at x ie <$> ac et
 
 instance AC EPPs where
-  ac (EPPs m) = EPPs <$> ac m
+  ac (EPPs {..}) = EPPs epps_apis <$> ac epps_m
 
 instance AC CHandlers where
   ac (CHandlers m) = CHandlers <$> ac m
 
 instance AC CPProg where
-  ac (CPProg at csvs vs chs) =
-    CPProg at csvs <$> ac vs <*> ac chs
+  ac (CPProg at vs ai chs) =
+    CPProg at <$> ac vs <*> pure ai <*> ac chs
 
 ac_vi :: AppT ViewsInfo
 ac_vi = mapM (mapM (fresh . ac))
@@ -240,7 +246,7 @@ instance AC DLSend where
 instance {-# OVERLAPS #-} AC a => AC (DLRecv a) where
   ac (DLRecv {..}) = do
     dr_k' <- ac dr_k
-    return $ DLRecv dr_from dr_msg dr_time dr_secs dr_k'
+    return $ DLRecv dr_from dr_msg dr_time dr_secs dr_didSend dr_k'
 
 instance AC LLConsensus where
   ac = \case
@@ -285,11 +291,12 @@ instance AC LLStep where
       mtime' <- ac lls_tc_mtime
       recv' <- ac lls_tc_recv
       send' <- ac lls_tc_send
-      return $ LLS_ToConsensus lls_tc_at send' recv' mtime'
+      lct' <- ac lls_tc_lct
+      return $ LLS_ToConsensus lls_tc_at lct' send' recv' mtime'
 
 instance AC LLProg where
-  ac (LLProg at llo ps dli dex vs s) =
-    LLProg at llo ps dli <$> ac dex <*> pure vs <*> ac s
+  ac (LLProg at llo ps dli dex vs das s) =
+    LLProg at llo ps dli <$> ac dex <*> pure vs <*> pure das <*> ac s
 
 add_counts :: AC a => a -> IO a
 add_counts x = do

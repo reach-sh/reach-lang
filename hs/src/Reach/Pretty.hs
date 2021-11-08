@@ -29,11 +29,11 @@ prettyIf ca t f =
 prettyIfp :: Pretty c => Pretty e => c -> e -> e -> Doc
 prettyIfp ca t f = prettyIf ca (pretty t) (pretty f)
 
-prettySwitch :: (Pretty a, Pretty b, Pretty c, Pretty d) => a -> M.Map b (c, d) -> Doc
+prettySwitch :: (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e) => a -> M.Map b (c, d, e) -> Doc
 prettySwitch ov csm =
   "switch" <+> parens (pretty ov) <+> render_nest (concatWith (surround hardline) $ map render_p $ M.toList csm)
   where
-    render_p (k, (mnv, ss)) = "case" <+> pretty k <+> "as" <+> pretty mnv <> ":" <+> render_nest (pretty ss)
+    render_p (k, (vc, vd, ve)) = "case" <+> pretty k <+> "as" <+> pretty vc <> "/" <> pretty vd <> ":" <+> render_nest (pretty ve)
 
 prettyWhile :: (Pretty a, Pretty b, Pretty c) => a -> b -> c -> Doc -> Doc
 prettyWhile asn inv cond bodyp =
@@ -63,9 +63,9 @@ prettyReduce ans x z b a f =
   "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
     <+> braces (nest $ hardline <> pretty f)
 
-prettyToConsensus__ :: (Pretty a, Pretty b, Pretty s, Pretty d, Pretty k2) => M.Map s a -> b -> Maybe (d, k2) -> Doc
-prettyToConsensus__ send recv mtime =
-  "publish" <> parens emptyDoc <> nest (hardline <> mtime' <> send' <> recv')
+prettyToConsensus__ :: (Pretty a, Pretty b, Pretty c, Pretty s, Pretty d, Pretty k2) => c -> M.Map s a -> b -> Maybe (d, k2) -> Doc
+prettyToConsensus__ lct send recv mtime =
+  "publish" <> parens ("@" <> pretty lct) <> nest (hardline <> mtime' <> send' <> recv')
   where
     mtime' = prettyTimeout mtime
     send' = prettySends send <> hardline

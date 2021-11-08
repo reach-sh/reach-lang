@@ -1,0 +1,6 @@
+depends_on:
+  - devnet-eth
+environment:
+  - REACH_DEBUG
+  - REACH_CONNECTOR_MODE=ETH-devnet
+  - ETH_NODE_URI=http://reach-devnet-eth:8545

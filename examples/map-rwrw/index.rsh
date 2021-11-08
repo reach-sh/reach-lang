@@ -7,7 +7,6 @@ export const main = Reach.App(() => {
     check: Fun([MUInt, MUInt], Null),
   };
   const A = Participant('Alice', common);
-  const B = Participant('Bob', common);
   deploy();
 
   A.only(() => {
@@ -23,7 +22,7 @@ export const main = Reach.App(() => {
 
   m[A] = a + 1;
   require(read() == a + 1);
-  
+
   m[A] = a + 2;
   require(read() == a + 2);
 

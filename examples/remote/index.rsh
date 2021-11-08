@@ -17,8 +17,8 @@ const CoolThing = {
 export const main = Reach.App(
   {},
   [ Participant('Alice', {
-      getAddr: Fun([], Address),
-      getCT: Fun([], Tuple(UInt, Address)),
+      getCTX: Fun([], Contract),
+      getCTY: Fun([], Tuple(UInt, Contract)),
       getGIL: Fun([], Token),
       getZMD: Fun([], Token),
     }),
@@ -30,8 +30,8 @@ export const main = Reach.App(
   ],
   (A, B) => {
     A.only(() => {
-      const ctxa = declassify(interact.getAddr());
-      const [amt, ctya] = declassify(interact.getCT()); });
+      const ctxa = declassify(interact.getCTX());
+      const [amt, ctya] = declassify(interact.getCTY()); });
     A.publish(ctxa, amt, ctya).pay(amt);
     const ctx = remote(ctxa, CoolThing);
     const cty = remote(ctya, CoolThing);

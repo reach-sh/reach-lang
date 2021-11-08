@@ -21,11 +21,13 @@ export const main =
       ParticipantClass('Player',
       { ...Common,
         shouldBuy: Fun([UInt], Bool),
-        buyerWas: Fun([Address], Null),
-        returnerWas: Fun([Address, UInt], Null),
+        didBuy: Fun([], Null),
+        didReturn: Fun([UInt], Null),
       }),
     ],
     (Sponsor, Player) => {
+      Sponsor.publish();
+      commit();
       Sponsor.only(() => {
         const { ticketPrice, deadline } =
           declassify(interact.getParams());
@@ -59,7 +61,7 @@ export const main =
           ((ticketCommit) => {
             const player = this;
             require(isNone(randomsM[player]));
-            Player.only(() => interact.buyerWas(player));
+            Player.only(() => { if ( didPublish() ) { interact.didBuy(); } });
             randomsM[player] = ticketCommit;
             return [ howMany + 1 ];
           })
@@ -75,6 +77,10 @@ export const main =
       };
 
       Sponsor.only(() => { interact.showReturning(howMany); });
+      if ( howMany == 0 ) {
+        commit();
+        exit();
+      }
 
       const ticketsM = new Map(UInt);
       const [ hwinner, howManyReturned ] =
@@ -90,7 +96,7 @@ export const main =
           }),
           ((ticket) => {
             const player = this;
-            Player.only(() => interact.returnerWas(player, howManyReturned));
+            Player.only(() => { if ( didPublish() ) { interact.didReturn(howManyReturned); } });
             require(isNone(ticketsM[player]));
             require(randomMatches(player, ticket));
             ticketsM[player] = howManyReturned;
@@ -100,9 +106,14 @@ export const main =
           })
         )
         .timeRemaining(returnTimeout());
-      commit();
 
       Sponsor.only(() => { interact.showReturned(howManyReturned); });
+      if ( howManyReturned == 0 ) {
+        transfer(balance()).to(Sponsor);
+        commit();
+        exit();
+      }
+      commit();
 
       // Here's an attack:
       // 1. Know that you are the last one to return
@@ -150,6 +161,7 @@ export const main =
           });
           transfer(howMany * ticketPrice).to(winner);
         }))
-      .timeout(deadline, () => closeTo(Sponsor, () => {}));
+      .timeout(relativeTime(deadline), () => closeTo(Sponsor, () => {}));
       commit();
     });
+    

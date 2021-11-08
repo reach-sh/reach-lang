@@ -5,14 +5,7 @@ import * as stdlibLoader from '@reach-sh/stdlib/loader.mjs';
   const stdlib = await stdlibLoader.loadStdlib();
   const connector = stdlibLoader.getConnector();
 
-  // Very rough approximation of value of 1 algo
-  const proportionalToAlgo = (x) => stdlib.parseCurrency(
-    connector === 'ETH' ? x / 1000
-      : connector === 'ALGO' ? x
-      : x * 5
-  );
-
-  const startingBalance = proportionalToAlgo(1000);
+  const startingBalance = stdlib.parseCurrency(100);
 
   const decimals = 2;
   const showCurrency = (amt) =>
@@ -46,7 +39,7 @@ import * as stdlibLoader from '@reach-sh/stdlib/loader.mjs';
   await logBalance('Alice', alice);
   await logBalance('Bob', bob);
 
-  await stdlib.transfer(alice, bob, proportionalToAlgo(100));
+  await stdlib.transfer(alice, bob, stdlib.parseCurrency(1));
   console.log('Alice transferred Bob some money.');
 
   await logBalance('Alice', alice);

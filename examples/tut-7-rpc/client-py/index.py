@@ -8,7 +8,7 @@ from reach_rpc import mk_rpc
 def main():
     rpc, rpc_callbacks = mk_rpc()
 
-    starting_balance = rpc('/stdlib/parseCurrency', 10)
+    starting_balance = rpc('/stdlib/parseCurrency', 100)
     acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)
     acc_bob          = rpc('/stdlib/newTestAccount', starting_balance)
 
@@ -22,7 +22,6 @@ def main():
     before_bob   = get_balance(acc_bob)
 
     ctc_alice    = rpc('/acc/deploy', acc_alice)
-    ctc_bob      = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
 
     HAND         = ['Rock', 'Paper', 'Scissors']
     OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
@@ -59,10 +58,12 @@ def main():
         def acceptWager(amt):
             print('Bob accepts the wager of %s' % fmt(amt))
 
+        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
         rpc_callbacks(
             '/backend/Bob',
             ctc_bob,
             dict(acceptWager=acceptWager, **player('Bob')))
+        rpc('/forget/ctc', ctc_bob)
 
     bob = Thread(target=play_bob)
     bob.start()
@@ -77,7 +78,7 @@ def main():
     print('  Bob went from %s to %s' % (before_bob,   after_bob))
 
     rpc('/forget/acc', acc_alice, acc_bob)
-    rpc('/forget/ctc', ctc_alice, ctc_bob)
+    rpc('/forget/ctc', ctc_alice)
 
 
 if __name__ == '__main__':

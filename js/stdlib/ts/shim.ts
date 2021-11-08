@@ -1,28 +1,15 @@
-import type { ethers } from 'ethers';
+import {
+  setDEBUG,
+  truthyEnv,
+} from './shared_impl';
+import node_fetch from 'node-fetch';
 // Some simple shims for defining stuff across node & browser
 
 type Process = {
   env: Env,
   stdout: Stdout,
 }
-type Env = {
-  REACH_CONNECTOR_MODE?: string,
-  REACH_DEBUG?: string,
-
-  ETH_NODE_URI?: string,
-  ETH_NET?: string,
-
-  ALGO_FAUCET_PASSPHRASE?: string,
-  ALGO_TOKEN?: string,
-  ALGO_SERVER?: string,
-  ALGO_PORT?: string,
-  ALGO_INDEXER_TOKEN?: string,
-  ALGO_INDEXER_SERVER?: string,
-  ALGO_INDEXER_PORT?: string,
-
-  CFX_NODE_URI?: string,
-  CFX_NETWORK_ID?: string,
-}
+export type Env = {[key: string]: string|undefined};
 type Stdout = {
   write: (data: any) => void,
 }
@@ -36,6 +23,7 @@ const processShim: Process = (() => {
   } catch (e) {
     // ReferenceError
     return {
+      _reachShim: true,
       env: {
         // XXX: figure out how to handle this stuff better
         REACH_CONNECTOR_MODE: 'ETH-browser',
@@ -47,21 +35,26 @@ const processShim: Process = (() => {
   }
 })();
 
-type Window = {
-  ethereum?: ethers.providers.ExternalProvider,
-  AlgoSigner?: any, // TODO
-  conflux?: any, // TODO
-  prompt?: (s: string) => string | null,
-  reach?: any, // TODO
+export const updateProcessEnv = (x:Env): void => {
+  const env = processShim.env;
+  for ( const k in x ) {
+    const kp = k.replace(/^REACT_APP_/,"");
+    env[kp] = x[k];
+  }
+  setDEBUG(truthyEnv(env['REACH_DEBUG']));
 };
 
+type Window = {[key: string]: any};
 const windowShim: Window = (() => {
   try {
     // @ts-ignore
     return window;
   } catch (e) {
     // ReferenceError
-    return {};
+    return {
+      _reachShim: true,
+      fetch: node_fetch,
+    };
   }
 })();
 

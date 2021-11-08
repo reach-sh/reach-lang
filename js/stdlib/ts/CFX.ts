@@ -7,6 +7,10 @@ export const connector = 'CFX';
 const ethLike = makeEthLike(cfxImpl);
 // The following should be identical to ETH.ts
 export const {
+  getQueryLowerBound,
+  setQueryLowerBound,
+  getValidQueryWindow,
+  setValidQueryWindow,
   getProvider,
   setProvider,
   randomUInt,
@@ -14,8 +18,8 @@ export const {
   setProviderByEnv,
   setProviderByName,
   providerEnvByName,
-  getSignStrategy,
-  setSignStrategy,
+  setWalletFallback,
+  walletFallback,
   balanceOf,
   transfer,
   connectAccount,
@@ -25,6 +29,7 @@ export const {
   getFaucet,
   setFaucet,
   createAccount,
+  canFundFromFaucet,
   fundFromFaucet,
   newTestAccount,
   newTestAccounts,
@@ -40,6 +45,7 @@ export const {
   minimumBalance,
   formatCurrency,
   formatAddress,
+  launchToken,
   reachStdlib,
 } = ethLike;
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = reachStdlib;

@@ -24,7 +24,7 @@ data LLConsensus
       , llc_w_k :: LLConsensus
       }
   | LLC_Continue SrcLoc DLAssignment
-  | LLC_ViewIs SrcLoc SLPart SLVar (Maybe DLExportBlock) LLConsensus
+  | LLC_ViewIs SrcLoc (Maybe SLPart) SLVar (Maybe DLExportBlock) LLConsensus
   deriving (Eq)
 
 instance Pretty LLConsensus where
@@ -45,6 +45,7 @@ data LLStep
   | LLS_Stop SrcLoc
   | LLS_ToConsensus
       { lls_tc_at :: SrcLoc
+      , lls_tc_lct :: DLArg
       , lls_tc_send :: M.Map SLPart DLSend
       , lls_tc_recv :: DLRecv LLConsensus
       , lls_tc_mtime :: Maybe (DLTimeArg, LLStep)
@@ -56,11 +57,10 @@ instance Pretty LLStep where
     LLS_Com x k -> prettyCom x k
     LLS_Stop _at -> prettyStop
     LLS_ToConsensus {..} ->
-      prettyToConsensus__ lls_tc_send lls_tc_recv lls_tc_mtime
+      prettyToConsensus__ lls_tc_lct lls_tc_send lls_tc_recv lls_tc_mtime
 
 data LLOpts = LLOpts
-  { llo_deployMode :: DeployMode
-  , llo_verifyArithmetic :: Bool
+  { llo_verifyArithmetic :: Bool
   , llo_counter :: Counter
   , llo_droppedAsserts :: Int
   }
@@ -70,14 +70,14 @@ instance HasCounter LLOpts where
   getCounter (LLOpts {..}) = llo_counter
 
 data LLProg
-  = LLProg SrcLoc LLOpts SLParts DLInit DLExports DLViews LLStep
+  = LLProg SrcLoc LLOpts SLParts DLInit DLExports DLViews DLAPIs LLStep
   deriving (Eq)
 
 instance HasCounter LLProg where
-  getCounter (LLProg _ llo _ _ _ _ _) = getCounter llo
+  getCounter (LLProg _ llo _ _ _ _ _ _) = getCounter llo
 
 instance Pretty LLProg where
-  pretty (LLProg _at _ sps dli dex dvs db) =
+  pretty (LLProg _at _ sps dli dex dvs dapis db) =
     "#lang ll" <> hardline
       <> pretty sps
       <> hardline
@@ -87,5 +87,7 @@ instance Pretty LLProg where
       <> pretty dex
       <> hardline
       <> pretty dvs
+      <> hardline
+      <> pretty dapis
       <> hardline
       <> pretty db

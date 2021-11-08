@@ -1,0 +1,11 @@
+build
+.gitignore
+/docs/.gitignore
+/docs/.dockerignore
+/docs/Makefile
+/docs/Dockerfile
+/docs/dev/README.md
+/docs/dev/node_modules
+/docs/dev/installed
+/docs/dev/proj.txt
+/docs/dev/build

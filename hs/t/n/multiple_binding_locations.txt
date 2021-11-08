@@ -8,31 +8,18 @@ Verification failed:
 
   // Violation Witness
 
-  const v26 = "A".interact.x;
-  //    ^ could = 7
-  //      from: ./multiple_binding_locations.rsh:6:17:application
-
+  const v33 = "A".interact.x;
+  //    ^ could = 4
+  //      from: ./multiple_binding_locations.rsh:6:27:property binding
 
   // Theorem Formalization
 
-  const x/32 = v26 - 4;
-  //    ^ would be 3
-  const v40 = (x/32 + x/32) == 4;
+  const v36 = v33 - 4;
+  //    ^ would be 0
+  const v44 = (v36 + v36) == 4;
   //    ^ would be false
-  assert(v40);
+  assert(v44);
 
   Verifying when NO participants are honest
-Verification failed:
-  when NO participants are honest
-  of theorem: assert
-  at ./multiple_binding_locations.rsh:22:13:application
-
-  (details omitted on repeat)
   Verifying when ONLY "A" is honest
-Verification failed:
-  when ONLY "A" is honest
-  of theorem: assert
-  at ./multiple_binding_locations.rsh:22:13:application
-
-  (details omitted on repeat)
-Checked 9 theorems; 3 failures. :'(
+Checked 9 theorems; 3 failures (and 2 omitted repeats) :'(

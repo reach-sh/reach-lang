@@ -1,5 +1,7 @@
 FROM reachsh/react-runner:0.1
 
+RUN apk --no-cache add make
+
 WORKDIR /app/
 RUN rm package.json public/index.html
 

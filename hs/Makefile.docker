@@ -1,0 +1,39 @@
+.PHONY: install-mo
+install-mo:
+	curl -sSL https://git.io/get-mo -o mo
+	chmod +x mo
+	mv mo /usr/local/bin
+
+OPENZEP=4.1.0
+OPENZEP_URL=https://github.com/OpenZeppelin/openzeppelin-contracts/archive/refs/tags/v$(OPENZEP).tar.gz
+sol/v$(OPENZEP).tar.gz:
+	(cd sol && wget $(OPENZEP_URL))
+
+ERC20=sol/openzeppelin-contracts-$(OPENZEP)/contracts/token/ERC20
+$(ERC20)/ERC20.sol: sol/v$(OPENZEP).tar.gz
+	(cd sol && tar xzvf v$(OPENZEP).tar.gz)
+	touch $@
+
+sol/stdlib_openzep.sol: $(ERC20)/ERC20.sol sol/stdlib_openzep.sol.sh
+	ERC20=$(ERC20) sol/stdlib_openzep.sol.sh > $@
+
+sol/stdlib.sol: sol/stdlib_openzep.sol sol/stdlib_reach.sol
+	cat $^ > $@
+
+sol/stdlib.json: sol/stdlib.sol
+	solc --optimize --combined-json abi,bin $< > $@
+
+package.yaml: package.mo.yaml $(ROOT)/VERSION
+	(. $(ROOT)/VERSION && export VERSION && mo $< > $@)
+
+src/Reach/Version.hs: src/Reach/Version.mo.hs $(ROOT)/VERSION $(ROOT)/DEPS
+	(. $(ROOT)/VERSION && export MAJOR MINOR PATCH && . $(ROOT)/DEPS && export SOLC_VERSION && mo $< > $@)
+
+.PHONY: docker-test-xml
+docker-test-xml:
+	stack test $(MAYBE_FAST) --test-arguments '--xml=test-reports/junit.xml'
+
+.PHONY: docker-check
+docker-check:
+	stack build stan
+	stack exec stan report

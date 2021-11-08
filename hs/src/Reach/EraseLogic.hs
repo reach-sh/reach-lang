@@ -56,13 +56,14 @@ instance Erase DLAssignment where
   el = viaCount
 
 instance {-# OVERLAPS #-} Erase a => Erase (SwitchCases a) where
-  el = mapM (\(x, y) -> (,) x <$> el y)
+  el = mapM (\(x, y, z) -> (,,) x y <$> el z)
 
 instance Erase DLStmt where
   el = \case
     DL_Nop at -> skip at
     DL_Let at mdv de ->
       case de of
+        DLE_TimeOrder {} -> skip at
         DLE_Claim _ _ CT_Assert _ _ -> skip at
         DLE_Claim _ _ CT_Possible _ _ -> skip at
         DLE_Claim _ _ (CT_Unknowable {}) _ _ -> skip at
@@ -169,21 +170,22 @@ instance Erase LLStep where
       m' <- el m
       return $ mkCom LLS_Com m' k'
     LLS_Stop at -> return $ LLS_Stop at
-    LLS_ToConsensus at send recv mtime -> do
+    LLS_ToConsensus at lct send recv mtime -> do
       k' <- el $ dr_k recv
       let recv' = recv {dr_k = k'}
       let mel (d, s) = (,) <$> el d <*> el s
       mtime' <- traverse mel mtime
       send' <- traverse viaCount send
-      return $ LLS_ToConsensus at send' recv' mtime'
+      lct' <- el lct
+      return $ LLS_ToConsensus at lct' send' recv' mtime'
 
 instance {-# OVERLAPS #-} Erase a => Erase (DLinExportBlock a) where
   el (DLinExportBlock at vs b) =
     DLinExportBlock at vs <$> el b
 
 instance Erase LLProg where
-  el (LLProg at llo ps dli dex dvs s) =
-    LLProg at llo ps dli <$> el dex <*> pure dvs <*> el s
+  el (LLProg at llo ps dli dex dvs das s) =
+    LLProg at llo ps dli <$> el dex <*> pure dvs <*> pure das <*> el s
 
 erase_logic :: LLProg -> IO LLProg
 erase_logic p = do

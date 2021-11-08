@@ -27,7 +27,7 @@ const simultaneousLoop =
         B.only(() => {
           interact.acceptTerms(terms); });
         B.pay(terms)
-          .timeout(DEADLINE, () => closeTo(A, informTimeout));
+          .timeout(relativeTime(DEADLINE), () => closeTo(A, informTimeout));
 
         var outcome = outcome0;
         invariant(balance() == 2 * terms && isOutcome(outcome));
@@ -39,14 +39,14 @@ const simultaneousLoop =
             const [_commitA, _saltA] = makeCommitment(interact, _moveA);
             const commitA = declassify(_commitA); });
           A.publish(commitA)
-            .timeout(DEADLINE, () => closeTo(B, informTimeout));
+            .timeout(relativeTime(DEADLINE), () => closeTo(B, informTimeout));
           commit();
 
           unknowable(B, A(_moveA, _saltA));
           B.only(() => {
             const moveB = declassify(interact.getMove()); });
           B.publish(moveB)
-            .timeout(DEADLINE, () => closeTo(A, informTimeout));
+            .timeout(relativeTime(DEADLINE), () => closeTo(A, informTimeout));
           commit();
 
           A.only(() => {
@@ -68,8 +68,8 @@ const simultaneousLoop =
 
 const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3);
 const [ isRPSOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);
-const winner = (handA, handB) =>
-      ((handA + (4 - handB)) % 3);
+const winner = (handAlice, handBob) =>
+      ((handAlice + (4 - handBob)) % 3);
 
 export const rps =
   Reach.App(() => {

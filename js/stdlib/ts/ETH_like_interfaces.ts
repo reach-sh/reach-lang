@@ -102,11 +102,15 @@ export interface EthLikeArgs {
   providerLib: ProviderLib
   isIsolatedNetwork(): boolean
   isWindowProvider(): boolean
+  canGetDefaultAccount(): boolean
   _getDefaultNetworkAccount(): any
   _getDefaultFaucetNetworkAccount(): any
+  _specialFundFromFaucet?: () => Promise<null | ((acc: any, val: any) => Promise<any>)>
   _warnTxNoBlockNumber?: boolean
+  canFundFromFaucet: () => Promise<boolean>
   standardUnit: string
   atomicUnit: string
+  validQueryWindow: number|true
 }
 
 export interface EthLikeCompiledArgs {

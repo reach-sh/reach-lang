@@ -5,6 +5,7 @@
 import { ethers } from 'ethers';
 import * as shared_backend from './shared_backend';
 import * as CBR from './CBR';
+const { bigNumberify, bigNumberToNumber } = CBR;
 
 import type { // =>
   BigNumber
@@ -99,7 +100,7 @@ const V_Bool = (b: boolean): CBR_Bool => {
 const T_UInt: ETH_Ty<CBR_UInt, BigNumber> = {
   ...CBR.BT_UInt(UInt_max),
   defaultValue: ethers.BigNumber.from(0),
-  munge: (bv: CBR_UInt): BigNumber => bv,
+  munge: (bv: CBR_UInt): BigNumber => bigNumberify(bv),
   unmunge: (nv: BigNumber): CBR_UInt => V_UInt(nv),
   paramType: 'uint256',
 };
@@ -125,13 +126,38 @@ function unBigInt<T>(x: T): number[]|T {
   }
 }
 
-const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, Array<number>> => {
+function splitToChunks<T>(arr: T[], chunkSize: number): T[][] {
+  const cs: T[][] = [];
+  for (let i = 0; i < Math.ceil(arr.length / chunkSize); i++) {
+    cs.push(arr.slice(i * chunkSize, (i + 1) * chunkSize));
+  }
+  return cs;
+};
+
+type ETH_Bytes = Array<Array<number>>;
+const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, ETH_Bytes> => {
   const me = {
     ...CBR.BT_Bytes(len),
     defaultValue: ''.padEnd(len, '\0'),
-    munge: (bv: CBR_Bytes): Array<number> => Array.from(ethers.utils.toUtf8Bytes(bv)),
-    unmunge: (nv: Array<number>) => me.canonicalize(hexToString(ethers.utils.hexlify(unBigInt(nv)))),
-    paramType: `uint8[${len}]`,
+    munge: ((bv: CBR_Bytes): ETH_Bytes => {
+      return splitToChunks(Array.from(ethers.utils.toUtf8Bytes(bv)), 32);
+    }),
+    unmunge: ((nvs: ETH_Bytes): CBR_Bytes => {
+      const nvs_s = nvs.map((nv:any): any => hexToString(ethers.utils.hexlify(unBigInt(nv))));
+      const nvss = "".concat(...nvs_s);
+      // debug(me.name, nvs, nvss);
+      return me.canonicalize(nvss);
+    }),
+    paramType: (() => {
+      let n = len;
+      const fs = [];
+      while ( 0 < n ) {
+        const ell = Math.min(32, n);
+        fs.push(`bytes${ell}`);
+        n = n - ell;
+      }
+      return `tuple(${fs.join(',')})`;
+    })(),
   };
   return me;
 };
@@ -321,7 +347,9 @@ const T_Data = <T>(
     // corresponding to    vs[0],       vs[1],       and vs[2] respectively.
     // We don't currently use these, but we could.
     unmunge: (vs: Array<T>): CBR_Data => {
-      const i = vs[0] as unknown as number;
+      // @ts-ignore
+      const ibn = T_UInt.unmunge(vs[0]);
+      const i = bigNumberToNumber(ibn);
       const label = ascLabels[i];
       const val = vs[i + 1];
       return V_Data(co)([label, co[label].unmunge(val)]);
@@ -343,7 +371,13 @@ const V_Data = <T>(
   return T_Data(co).canonicalize(val);
 };
 
+const T_Contract = {
+  ...T_Address,
+  name: 'Contract'
+};
+
 const addressEq = mkAddressEq(T_Address);
+const digestEq = shared_backend.eq;
 
 const T_Token = T_Address;
 const tokenEq = addressEq;
@@ -354,6 +388,7 @@ const typeDefs: TypeDefs = {
   T_UInt,
   T_Bytes,
   T_Address,
+  T_Contract,
   T_Digest,
   T_Token,
   T_Object,
@@ -365,14 +400,19 @@ const typeDefs: TypeDefs = {
 
 const arith: Arith = makeArith(UInt_max);
 
+const emptyContractInfo = "0x00000000000000000000000000000000";
+
 const stdlib: Stdlib_Backend_Base<AnyETH_Ty> = {
   ...shared_backend,
   ...arith,
   ...typeDefs,
   addressEq,
+  // @ts-ignore
+  digestEq,
   tokenEq,
   digest,
   UInt_max,
+  emptyContractInfo,
 };
 
 // ...............................................

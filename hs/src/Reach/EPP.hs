@@ -16,9 +16,12 @@ import Reach.AST.LL
 import Reach.AST.PL
 import Reach.CollectCounts
 import Reach.Counter
+import Reach.FixedPoint
 import Reach.Optimize
 import Reach.Texty
 import Reach.Util
+import Data.Bifunctor
+import Data.Bool
 
 shouldTrace :: Bool
 shouldTrace = False
@@ -95,72 +98,40 @@ instance Pretty FlowOutputData where
 fod_savel :: FlowOutputData -> [DLVar]
 fod_savel = S.toAscList . fod_save
 
-fixedPoint_ :: forall a. Eq a => a -> (a -> a) -> a
-fixedPoint_ x0 f = h x0
-  where
-    h :: a -> a
-    h x =
-      let x' = f x
-       in case x == x' of
-            True -> x
-            False -> h x'
-
-fixedPoint :: (Eq a, Monoid a) => (a -> a) -> a
-fixedPoint = fixedPoint_ mempty
-
-solve :: FlowInput -> FlowOutput
-solve fi' = fixedPoint go
-  where
-    mtrace m v =
-      case shouldTrace of
-        True -> trace m v
-        False -> v
-    fi = mtrace imsg fi'
-    imsg = "\nflow input:" <> show (pretty fi') <> "\n"
-    omsg fo = "\nflow output:" <> show (pretty fo) <> "\n"
-    go fo = mtrace (omsg fo) $ go' fo
-    go' fo = M.mapWithKey (go1 fo) fi
-    go1 fo me (FlowInputData {..}) = fod
-      where
-        fod =
-          FlowOutputData
-            { fod_save = need
-            }
-        foread n = fromMaybe mempty $ M.lookup n fo
-        unionmap f s = S.unions $ map f $ S.toList s
-        saves =
-          -- We need to save the saves we create
-          unionmap (fod_save . foread) fid_saves
-        (use, defs) =
-          -- We use what our saves need and what we actually use
-          closeEdges saves
-        need =
-          -- We need what we save & use, minus what we define
-          S.difference use defs
-        closeEdges extra =
-          fixedPoint_ (S.union fid_uses extra, fid_defns) closeEdges1
-        closeEdges1 in0 = mtrace msg $ out1
-          where
-            msg = "\ncloseEdges" <> show me <> ":\n" <> show (pretty in0) <> "\n->:\n" <> show (pretty out1) <> "\n"
-            (use0, defs0) = in0
-            out1 = (use1, defs1)
-            used_edge =
-              flip $ const $ flip S.member use0
-            edges =
-              M.filterWithKey used_edge fid_edges
-            edge_use =
-              S.unions $ M.elems edges
-            edge_defs =
-              -- We define the edges that remain
-              M.keysSet edges
-            use1 =
-              S.union use0 edge_use
-            defs1 =
-              S.union defs0 edge_defs
+solve :: FlowInput -> IO FlowOutput
+solve fi = do
+  let mtrace m = when shouldTrace $ putStrLn m
+  mtrace $ "\nflow input:" <> show (pretty fi) <> "\n"
+  fixedPoint $ \fo -> do
+    mtrace $ "\nflow output:" <> show (pretty fo) <> "\n"
+    flip mapWithKeyM fi $ \me (FlowInputData {..}) -> do
+      let foread n = fromMaybe mempty $ M.lookup n fo
+      let unionmap f s = S.unions $ map f $ S.toList s
+      -- We need to save the saves we create
+      let saves = unionmap (fod_save . foread) fid_saves
+      -- We use what our saves need and what we actually use
+      let use_ = S.union fid_uses saves
+      (use, defs) <- fixedPoint_ (use_, fid_defns) $ \in0 -> do
+        let (use0, defs0) = in0
+        let used_edge = flip $ const $ flip S.member use0
+        let edges = M.filterWithKey used_edge fid_edges
+        let edge_use = S.unions $ M.elems edges
+        -- We define the edges that remain
+        let edge_defs = M.keysSet edges
+        let use1 = S.union use0 edge_use
+        let defs1 = S.union defs0 edge_defs
+        let out1 = (use1, defs1)
+        mtrace $ "\ncloseEdges" <> show me <> ":\n" <> show (pretty in0) <> "\n->:\n" <> show (pretty out1) <> "\n"
+        return out1
+      -- We need what we save & use, minus what we define
+      let need = S.difference use defs
+      let fod_save = need
+      return $ FlowOutputData {..}
 
 -- Build flow
 data EPPError
   = Err_ContinueDomination
+  | Err_ViewSetDomination (Maybe SLPart) SLVar
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode EPPError where
@@ -171,11 +142,17 @@ instance HasErrorCode EPPError where
   -- Add new error codes at the end.
   errIndex = \case
     Err_ContinueDomination {} -> 0
+    Err_ViewSetDomination {} -> 1
 
 instance Show EPPError where
   show = \case
     Err_ContinueDomination ->
       "`continue` must be dominated by communication"
+    Err_ViewSetDomination v f ->
+      let mvn = maybe "" (\v' -> show (pretty v') <> ".") v in
+      "Cannot set the view " <> mvn <> show (pretty f) <> " because it does not dominate any `commit`s"
+
+type ViewSet = M.Map (Maybe SLPart, SLVar) (Bool, SrcLoc)
 
 data BEnv = BEnv
   { be_prev :: Int
@@ -189,10 +166,13 @@ data BEnv = BEnv
   , be_loop :: Maybe (Int, Int)
   , be_output_vs :: IORef [DLVar]
   , be_toks :: [DLArg]
-  , be_viewmc :: Maybe Counter
-  , be_viewr :: IORef ViewInfos
+  , be_viewr :: IORef (M.Map Int ([DLVar] -> ViewInfo))
   , be_views :: ViewsInfo
+  , be_view_setsr :: IORef ViewSet
   , be_inConsensus :: Bool
+  , be_counter :: Counter
+  , be_which :: Int
+  , be_api_info :: IORef (M.Map SLPart ApiInfo)
   }
 
 type BApp = ReaderT BEnv IO
@@ -251,6 +231,25 @@ captureOutputVars m = do
   a <- liftIO $ readIORef vsr
   return (a, x)
 
+captureViewSets :: ViewSet -> BApp a -> BApp (ViewSet, a)
+captureViewSets extra m = do
+  vsr <- asks be_view_setsr
+  vs <- liftIO $ readIORef vsr
+  tmpr <- liftIO $ newIORef
+            $ M.unionWith view_set_combine extra
+              $ M.filter fst vs
+  x <- local (\ e -> e { be_view_setsr = tmpr }) m
+  a <- liftIO $ readIORef tmpr
+  return (a, x)
+
+withViewSets :: ViewSet -> BApp b -> BApp b
+withViewSets extra m = do
+  vsr <- asks be_view_setsr
+  (tmp, x) <- captureViewSets extra m
+  liftIO $ modifyIORef vsr $
+      M.unionWith view_set_combine tmp
+  return x
+
 fg_record :: (FlowInputData -> FlowInputData) -> BApp ()
 fg_record fidm = do
   prev <- be_prev <$> ask
@@ -272,19 +271,6 @@ fg_edge (DLV_Let _ v) use = fg_record $ \f -> f {fid_edges = M.singleton v (coun
 fg_saves :: Int -> BApp ()
 fg_saves sp = do
   fg_record $ \f -> f {fid_saves = S.insert sp $ fid_saves f}
-
--- Views
-assignView :: BApp ViewSave
-assignView = do
-  BEnv {..} <- ask
-  let vs = countsl be_views
-  let vi = ViewInfo vs be_views
-  i <- case be_viewmc of
-    Nothing -> return $ 0
-    Just c -> liftIO $ incCounter c
-  let vis = ViewSave i $ asnLike vs
-  liftIO $ modifyIORef be_viewr $ M.insert i vi
-  return $ vis
 
 -- Read flow
 data CEnv = CEnv
@@ -365,6 +351,11 @@ be_m = \case
   DL_Let at mdv de -> do
     case de of
       DLE_Remote {} -> recordOutputVar mdv
+      DLE_EmitLog {} -> fg_use de
+      DLE_setApiDetails _ p tys mc -> do
+        which <- asks be_which
+        api_info <- asks be_api_info
+        liftIO $ modifyIORef api_info $ M.insert p $ ApiInfo tys mc which
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
@@ -402,14 +393,14 @@ be_m = \case
          return $ DL_LocalIf at c t' f')
   DL_LocalSwitch at ov csm -> do
     fg_use $ ov
-    let go (mv, k) = do
-          fg_defn $ mv
+    let go (v, vu, k) = do
+          when vu $ fg_defn $ v
           k'p <- be_t k
-          return $ (,) mv k'p
+          return $ (,,) v vu k'p
     csm' <- mapM go csm
     let mkt f = (DL_LocalSwitch at ov <$> mapM f' csm')
           where
-            f' (mv, k'p) = (,) mv <$> (f k'p)
+            f' (v, vu, k'p) = (,,) v vu <$> (f k'p)
     return $ (,) (mkt fst) (mkt snd)
   DL_MapReduce at mri ans x z b a f -> do
     fg_defn $ [ans, b, a]
@@ -467,28 +458,29 @@ be_bl (DLBlock at fs t a) = do
       (\t' ->
          return $ DLBlock at fs t' a)
 
-class OnlyHalts a where
-  onlyHalts :: a -> Bool
+check_view_sets :: Monad m => ViewSet -> m ()
+check_view_sets vs = do
+  case find (not . fst . snd) (M.toList vs) of
+    Nothing -> return ()
+    Just ((v, f), (_, at)) ->
+      expect_thrown at $ Err_ViewSetDomination v f
 
-instance OnlyHalts LLConsensus where
-  onlyHalts = \case
-    LLC_Com {} -> False
-    LLC_If {} -> False
-    LLC_Switch {} -> False
-    LLC_FromConsensus _ _ s -> onlyHalts s
-    LLC_While {} -> False
-    LLC_Continue {} -> False
-    LLC_ViewIs {} -> False
+mark_view_sets :: BApp ()
+mark_view_sets = do
+  vsr <- asks be_view_setsr
+  liftIO $ modifyIORef vsr $
+    M.map $ bimap (const True) id
 
-instance OnlyHalts LLStep where
-  onlyHalts = \case
-    LLS_Com _ k -> onlyHalts k
-    LLS_Stop _ -> True
-    LLS_ToConsensus {} -> False
+view_set_combine :: (Bool, b) -> (Bool, b) -> (Bool, b)
+view_set_combine (l, l_at) (r, r_at) =
+  (l || r, bool l_at r_at l)
 
 be_c :: LLConsensus -> BApp (CApp CTail, EApp ETail)
 be_c = \case
-  LLC_ViewIs _ v f ma k ->
+  LLC_ViewIs at v f ma k -> do
+    vsr <- asks be_view_setsr
+    liftIO $ modifyIORef vsr $
+      M.insertWith view_set_combine (v, f) (False, at)
     local (\e -> e {be_views = modv $ be_views e}) $
       be_c k
     where
@@ -518,36 +510,37 @@ be_c = \case
     return $ (,) (go CT_If t'c f'c) (go ET_If t'l f'l)
   LLC_Switch at ov csm -> do
     fg_use $ ov
-    let go (mv, k) = do
-          fg_defn $ mv
+    let go (v, vu, k) = do
+          when vu $ fg_defn v
           (k'c, k'l) <- be_c k
-          let wrap k' = (,) mv <$> k'
+          let wrap k' = (,,) v vu <$> k'
           return (wrap k'c, wrap k'l)
     csm' <- mapM go csm
     return $ (,) (CT_Switch at ov <$> mapM fst csm') (ET_Switch at ov <$> mapM snd csm')
   LLC_FromConsensus at1 _at2 s -> do
     this <- newSavePoint "fromConsensus"
+    views <- asks be_views
     (more, s'l) <-
-      captureMore $
-        local (\e -> e { be_interval = default_interval
-                       , be_prev = this
-                       , be_prevs = S.singleton this }) $ do
-          be_s s
-    toks <- be_toks <$> ask
-    mvis <-
-      case more of
-        True -> do
-          vis <- assignView
-          fg_use vis
-          return $ Just vis
-        False -> do
-          fg_use toks
-          return $ Nothing
+      withViewSets mempty $
+        captureMore $
+          local (\e -> e { be_interval = default_interval
+                         , be_prev = this
+                         , be_prevs = S.singleton this }) $ do
+            fg_use views
+            be_s s
+    when more $ mark_view_sets
+    toks <- asks be_toks
+    case more of
+      True -> do
+        viewr <- asks be_viewr
+        liftIO $ modifyIORef viewr $ M.insert this $ flip ViewInfo views
+      False -> do
+        fg_use toks
     let mkfrom_info do_read = do
           svs <- do_read this
-          return $ case mvis of
-            Just vis -> FI_Continue vis $ asnLike svs
-            Nothing -> FI_Halt toks
+          return $ case more of
+            True -> FI_Continue $ asnLike svs
+            False -> FI_Halt toks
     fg_saves this
     let cm = CT_From at1 this <$> mkfrom_info ce_readSave
     let lm = ET_FromConsensus at1 this <$> mkfrom_info ee_readSave <*> s'l
@@ -560,28 +553,9 @@ be_c = \case
           local (\e -> e { be_prev = the_prev
                          , be_prevs = S.union (be_prevs e) the_prevs })
     let inLoop = inBlock this_loopsp (S.singleton this_loopsp)
-    -- <Kont>
-    (goto_kont, k'l) <-
-      -- XXX This is a convoluted hack because Solidity does not allow empty
-      -- structs and if the computation immediately halts, then we won't have
-      -- any saved variables and therefore we'll crash solc. Even this isn't
-      -- enough though, because what if we don't immediately halt, but instead
-      -- transfer 0 ETH to the sender... there will be no SVS. So, that's why
-      -- this is a bad hack.
-      case onlyHalts k of
-        True -> inLoop $ be_c k
-        False -> do
-          kontsp <- newSavePoint "While Kont"
-          kontj <- newHandler "While Kont"
-          let inKont = inBlock kontsp (S.fromList [ this_loopsp, kontsp ])
-          (k'c, k'l) <- inKont $ be_c k
-          setHandler kontj $ do
-            kont_svs <- ce_readSave kontsp
-            C_Loop at kont_svs [] <$> (addVars at =<< k'c)
-          inLoop $ fg_saves $ kontsp
-          let gk = CT_Jump at kontj <$> ce_readSave kontsp <*> pure mempty
-          return (gk, k'l)
-    -- </Kont>
+    (k_vs, (goto_kont, k'l)) <-
+      captureViewSets mempty $
+        inLoop $ be_c k
     fg_use $ asn
     let loop_vars = assignment_vars asn
     fg_defn $ loop_vars
@@ -590,14 +564,16 @@ be_c = \case
       fg_use cond_a
       be_t cond_l
     (body'c, body'l) <-
-      inLoop $
-        local (\e -> e {be_loop = Just (this_loopj, this_loopsp)}) $
-          be_c body
+      withViewSets k_vs $
+        inLoop $
+          local (\e -> e {be_loop = Just (this_loopj, this_loopsp) }) $
+            be_c body
     let loop_if = CT_If cond_at cond_a <$> body'c <*> goto_kont
     let loop_top = dtReplace CT_Com <$> loop_if <*> cond_l'c
+    cnt <- asks be_counter
     setHandler this_loopj $ do
       loop_svs <- ce_readSave this_loopsp
-      loopc <- (liftIO . optimize) =<< addVars at =<< loop_top
+      loopc <- (liftIO . optimize_ cnt) =<< addVars at =<< loop_top
       return $ C_Loop at loop_svs loop_vars loopc
     fg_saves $ this_loopsp
     let cm = CT_Jump at this_loopj <$> ce_readSave this_loopsp <*> pure asn
@@ -613,6 +589,7 @@ be_c = \case
     when (S.member this_loopsp prevs) $
       expect_thrown at Err_ContinueDomination
     fg_saves $ this_loopsp
+    check_view_sets =<< (liftIO . readIORef) =<< asks be_view_setsr
     let cm = CT_Jump at this_loopj <$> ce_readSave this_loopsp <*> pure asn
     let lm = return $ ET_Continue at asn
     return $ (,) cm lm
@@ -630,8 +607,8 @@ be_s = \case
     return $ mkCom ET_Com <$> c'e <*> k'
   LLS_Stop at ->
     return $ (return $ ET_Stop at)
-  LLS_ToConsensus at send recv mtime -> do
-    let DLRecv from_v msg_vs time_v secs_v ok_c = recv
+  LLS_ToConsensus at lct_v send recv mtime -> do
+    let DLRecv from_v msg_vs time_v secs_v didSend_v ok_c = recv
     prev <- be_prev <$> ask
     signalMore
     this_h <- newHandler "ToConsensus"
@@ -656,6 +633,7 @@ be_s = \case
           (\e ->
              e
                { be_interval = int_ok
+               , be_which = this_h
                })
           $ do
             fg_use $ int_ok
@@ -679,7 +657,7 @@ be_s = \case
               svs <- ee_readSave prev
               return $ Just (ds_msg, ds_pay, ds_when, svs, soloSend)
           mtime' <- mtime'm
-          return $ ET_ToConsensus at from_v prev this_h mfrom msg_vs out_vs time_v secs_v mtime' ok_l'
+          return $ ET_ToConsensus at from_v prev (Just lct_v) this_h mfrom msg_vs out_vs time_v secs_v didSend_v mtime' ok_l'
     return $ ok_l''m
 
 mk_eb :: DLExportBlock -> BApp DLExportBlock
@@ -688,33 +666,36 @@ mk_eb (DLinExportBlock at vs (DLBlock bat sf ll a)) = do
   return $ DLinExportBlock at vs (DLBlock bat sf body' a)
 
 epp :: LLProg -> IO PLProg
-epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
+epp (LLProg at (LLOpts {..}) ps dli dex dvs das s) = do
   -- Step 1: Analyze the program to compute basic blocks
+  let be_counter = llo_counter
   be_savec <- newCounter 1
-  be_handlerc <- newCounter 1
+  be_handlerc <- newCounter 0
   be_handlers <- newIORef mempty
   be_flowr <- newIORef mempty
   be_more <- newIORef False
   let be_loop = Nothing
   let be_prev = 0
+  let be_which = 0
   let be_prevs = mempty
+  be_api_info <- newIORef mempty
   let be_interval = default_interval
   be_output_vs <- newIORef mempty
   let be_toks = mempty
-  be_viewc <- newCounter 1
-  let be_viewmc = if M.null dvs then Nothing else Just be_viewc
   be_viewr <- newIORef mempty
   let be_views = mempty
+  be_view_setsr <- newIORef mempty
   let be_inConsensus = False
   mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
-  vm <- readIORef be_viewr
+  api_info <- liftIO $ readIORef be_api_info
+  check_view_sets =<< readIORef be_view_setsr
   hs <- readIORef be_handlers
-  let mvm = if M.null dvs then Nothing else Just (dvs, vm)
+  mkvm <- readIORef be_viewr
   -- Step 2: Solve the flow graph
   flowi <- readIORef be_flowr
   last_save <- readCounter be_savec
   let flowi' = M.fromList $ zip [0..last_save] $ repeat mempty
-  let flow = solve $ flowi <> flowi'
+  flow <- solve $ flowi <> flowi'
   -- Step 3: Turn the blocks into handlers
   let mkh m = do
         let ce_flow = flow
@@ -723,19 +704,20 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs s) = do
   dex' <-
     flip runReaderT (BEnv {..}) $
       mapM mk_eb dex
-  csvs <- mkh $ ce_readSave 0
-  cp <- (CPProg at csvs mvm . CHandlers) <$> mapM mkh hs
+  vm <- flip mapWithKeyM mkvm $ \which mk ->
+    mkh $ mk <$> ce_readSave which
+  cp <- (CPProg at (dvs, vm) api_info . CHandlers) <$> mapM mkh hs
   -- Step 4: Generate the end-points
-  let SLParts p_to_ie = ps
+  let SLParts {..} = ps
   let mkep ee_who ie = do
+        let isAPI = S.member ee_who sps_apis
         let ee_flow = flow
         et <-
           flip runReaderT (EEnv {..}) $
             mkep_
-        return $ EPProg at ie et
-  pps <- EPPs <$> mapWithKeyM mkep p_to_ie
+        return $ EPProg at isAPI ie et
+  pps <- EPPs das <$> mapWithKeyM mkep sps_ies
   -- Step 4: Generate the final PLProg
-  let plo_deployMode = llo_deployMode
   let plo_verifyArithmetic = llo_verifyArithmetic
   let plo_counter = llo_counter
   return $ PLProg at (PLOpts {..}) dli dex' pps cp
