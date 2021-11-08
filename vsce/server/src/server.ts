@@ -47,7 +47,7 @@ import { reachCompletionKind, reachKeywords } from './keywordCompletion';
 // "resolveJsonModule": true,
 // to tsconfig.json.
 const KEYWORD_TO_DOCUMENTATION: { [ keyword: string ] : string } = require(
-	'../../compiler_outputted_files/keywordToDocumentation.json'
+	'../../data/keywordToDocumentation.json'
 );
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
