@@ -1138,6 +1138,25 @@ solBytesSplit sz f = map go [0 .. lastOne]
                 True -> lastLen
                 False -> maxLen
 
+apiDef :: SLPart -> ApiInfo -> App Doc
+apiDef _who ApiInfo{..} = do
+  let go = \case
+        -- API Call
+        (False, _) -> do
+          return ([], [])
+        -- Multi case fork
+        (True, Just _c_id) -> do
+          return ([], [])
+        -- Single case fork
+        (True, Nothing) -> do
+          return ([], [])
+  (_args, _body) <- go (ai_is_fork, ai_mcase_id)
+  return $ ""
+
+apiDefs :: ApiInfos -> App Doc
+apiDefs defs =
+  vsep <$> (mapM (uncurry apiDef) $ M.toList defs)
+
 solDefineType :: DLType -> App ()
 solDefineType t = case t of
   T_Null -> base
@@ -1243,7 +1262,7 @@ solEB args (DLinExportBlock _ mfargs (DLBlock _ _ t r)) = do
   return $ vsep [t', "return" <+> r' <> semi]
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) _ai hs)) = do
+solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) ai hs)) = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   ctxt_varm <- newIORef mempty
@@ -1351,6 +1370,7 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) _ai hs)) = do
             , "function _reachCurrentState() external view returns (uint256, bytes memory) { return (current_step, current_svbs); }"
             ] <> map_defns <> view_defns
     hs' <- solHandlers hs
+    apidefs <- apiDefs ai
     let getm ctxt_f = (vsep . map snd . M.toAscList) <$> (liftIO $ readIORef ctxt_f)
     typedsp <- getm ctxt_typed
     typefsp <- getm ctxt_typef
@@ -1360,7 +1380,7 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) _ai hs)) = do
     let defp = vsep $
           [ "receive () external payable {}"
           , "fallback () external payable {}" ]
-    let ctcbody = vsep $ [state_defn, typefsp, outputsp, tlfunsp, hs', defp]
+    let ctcbody = vsep $ [state_defn, typefsp, outputsp, tlfunsp, hs', apidefs, defp]
     let ctcp = solContract "ReachContract is Stdlib" $ ctcbody
     let cinfo =
           HM.fromList $

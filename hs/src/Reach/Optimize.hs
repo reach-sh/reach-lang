@@ -337,7 +337,7 @@ instance Optimize DLExpr where
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at m a -> DLE_EmitLog at m <$> opt a
-    DLE_setApiDetails at w t c -> return $ DLE_setApiDetails at w t c
+    DLE_setApiDetails at w t c f -> return $ DLE_setApiDetails at w t c f
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
 

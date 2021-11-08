@@ -1737,13 +1737,16 @@ evalForm f args = do
     SLForm_setApiDetails -> do
       at <- withAt id
       (who_e, is_fork, msg, mc_id) <- three_mfour_args
+      let isFork = case is_fork of
+                    JSLiteral _ "true" -> True
+                    _ -> False
       who <- evalExpr who_e >>= \case
                 (_, SLV_Participant _ part _ _) -> return part
                 _ -> impossible "setApiDetails: expected participant"
       let mCaseId = maybe Nothing (Just . jse_expect_id at) mc_id
-      tys <- case (is_fork, mCaseId) of
+      tys <- case (isFork, mCaseId) of
               -- API Call: spread domain
-              (JSLiteral _ "false", _) -> do
+              (False, _) -> do
                 e <- evalExpr msg
                 compileTypeOf (snd e) >>= \case
                   (T_Tuple ts, _) -> return ts
@@ -1758,7 +1761,7 @@ evalForm f args = do
                 e <- evalExpr msg
                 (dt, _) <- compileTypeOf $ snd e
                 return [dt]
-      ctxt_lift_eff $ DLE_setApiDetails at who tys mCaseId
+      ctxt_lift_eff $ DLE_setApiDetails at who tys mCaseId isFork
       return $ public $ SLV_Null at "setApiDetails"
   where
     illegal_args n = expect_ $ Err_Form_InvalidArgs f n args
