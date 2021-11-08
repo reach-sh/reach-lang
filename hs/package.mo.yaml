@@ -71,6 +71,7 @@ dependencies:
 - temporary
 - text
 - time
+- transformers
 - unix-compat
 - unordered-containers
 - vector
