@@ -21,15 +21,9 @@ data Initiator
   | DevnetCreate
   | DevnetDaily
   | Run
+  deriving (Read, Show)
 
-instance Show Initiator where
-  show = \case
-    Compile -> "compile"
-    DevnetCreate -> "devnet (create)"
-    DevnetDaily -> "devnet (daily)"
-    Run -> "run"
-
-startReport :: Maybe String -> Initiator -> IO (Report -> IO ())
+startReport :: Maybe String -> Maybe Initiator -> IO (Report -> IO ())
 startReport mwho i = do
   startTime <- getCurrentTime
   cm <- lookupEnv "REACH_CONNECTOR_MODE" >>= maybe (pure "") pure
@@ -50,7 +44,7 @@ startReport mwho i = do
             , "elapsed" .= diffUTCTime endTime startTime
             , "result" .= show what
             , "connectorMode" .= cm
-            , "initiator" .= show i
+            , "initiator" .= maybe "" show i
             ]
     m <- send (setRequestBodyJSON rep $ setRequestMethod "POST" req)
     let block = waitCatch m
