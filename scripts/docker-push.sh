@@ -27,6 +27,6 @@ if [ ${#REACH_GIT_HASH} = 8 ]; then
   tagpush "${REACH_GIT_HASH}"
 fi
 
-if [ "${MAJOR}.${MINOR}.${PATCH}" = "${STABLE}" ] ; then
-    tagpush stable
-fi
+#if [ "${MAJOR}.${MINOR}.${PATCH}" = "${STABLE}" ] ; then
+#    tagpush stable
+#fi
