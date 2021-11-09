@@ -10,7 +10,7 @@ This page shows you how to set up a Reach development environment for Mac, Linux
 
 The examples throughout this site use the following project directory structure:
 
-```
+``` nonum
 ~/reach                      # Root directory.
 ~/reach/reach                # Reach script file.
 ~/reach/hello-world
