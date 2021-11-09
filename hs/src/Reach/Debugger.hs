@@ -1,5 +1,4 @@
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
-{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
 
 module Reach.Debugger where
 
@@ -60,11 +59,11 @@ type Frontend = M.Map String ([DLVal] -> DLVal)
 --   | ShowAction String -- print the variable described by this string
 
 data Action
-  = TieBreakAction
-  | NewAccAction
-  | NewPartAction
-  | ImitateFrontendAction
-  | InteractAction [DLVal]
+  = ActionTieBreak
+  | ActionNewAcc
+  | ActionNewPart
+  | ActionImitateFrontend
+  | ActionInteract [DLVal]
 
 type Account = Integer
 
@@ -194,6 +193,7 @@ interpPrim = \case
   (BAND, [V_UInt lhs,V_UInt rhs]) -> return $ Succ $ V_UInt $ (.&.) lhs rhs
   (BIOR, [V_UInt lhs,V_UInt rhs]) -> return $ Succ $ V_UInt $ (.|.) lhs rhs
   (BXOR, [V_UInt lhs,V_UInt rhs]) -> return $ Succ $ V_UInt $ xor lhs rhs
+  _ -> impossible "unexpected error"
   -- (BYTES_CONCAT, [V_Bytes lhs,V_Bytes rhs]) -> return $ Succ $ V_Bytes $ (++) lhs rhs
 
 instance Interp DLArg where
@@ -225,6 +225,7 @@ instance Interp DLLargeArg where
     DLLA_Struct assoc_slvars_dlargs -> do
       evd_args <- mapM (\arg -> interp arg) $ M.fromList assoc_slvars_dlargs
       return $ Succ $ V_Struct $ M.toList $ M.map forceSucc evd_args
+    DLLA_Bytes _ -> undefined
 
 instance Interp DLExpr where
   interp = \case
@@ -274,7 +275,7 @@ instance Interp DLExpr where
         _ -> impossible "expression interpreter"
     DLE_Interact _at _slcxtframes _slpart _str _dltype dlargs -> do
       args <- map forceSucc <$> mapM interp dlargs
-      blockThread (InteractAction args) $ return $ Succ V_Null
+      blockThread (ActionInteract args) $ return $ Succ V_Null
     DLE_Digest _at dlargs -> Succ <$> V_Digest <$> V_Tuple <$> map forceSucc <$> mapM interp dlargs
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
       CT_Assert -> undefined
@@ -294,6 +295,7 @@ instance Interp DLExpr where
               ev <- forceSucc <$> interp tok
               case ev of
                 V_UInt tok' -> updateLedger acc tok' (+n) $ return $ Succ V_Null
+                _ -> impossible "unexpected error"
         _ -> impossible "expression interpreter"
     DLE_TokenInit _at _dlarg -> return $ Succ V_Null
     DLE_CheckPay _at _slcxtframes dlarg _maybe_dlarg -> interp dlarg
@@ -302,10 +304,12 @@ instance Interp DLExpr where
         ev <- forceSucc <$> interp dlarg
         case ev of
           V_UInt n -> incrNWtime n $ return $ Succ V_Null
+          _ -> impossible "unexpected error"
       Right dlarg -> do
         ev <- forceSucc <$> interp dlarg
         case ev of
           V_UInt n -> incrNWsecs n $ return $ Succ V_Null
+          _ -> impossible "unexpected error"
     DLE_PartSet _at _slpart dlarg -> interp dlarg
     DLE_MapRef _at dlmvar dlarg -> do
       linstate <- asks e_linstate
@@ -313,6 +317,7 @@ instance Interp DLExpr where
       case ev of
         V_Address acc -> do
           return $ Succ $ flip (M.!) acc $ (M.!) linstate dlmvar
+        _ -> impossible "unexpected error"
     DLE_MapSet _at dlmvar dlarg maybe_dlarg -> do
       linst <- asks e_linstate
       ev <- forceSucc <$> interp dlarg
@@ -325,6 +330,7 @@ instance Interp DLExpr where
             ev' <- forceSucc <$> interp dlarg'
             let m = M.insert acc ev' ((M.!) linst dlmvar)
             local (\e -> e {e_linstate = M.insert dlmvar m linst}) $ return $ Succ V_Null
+        _ -> impossible "unexpected error"
     DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill -> undefined
     DLE_TokenNew _at dltokennew -> do
       supply <- forceSucc <$> interp (dtn_supply dltokennew)
@@ -398,6 +404,7 @@ instance Interp DLStmt where
         V_Data k v -> do
           let (switch_binding,_,dltail) = (M.!) switch_cases k
           addToStore switch_binding v $ interp dltail
+        _ -> impossible "unexpected error"
     DL_Only _at _either_part dltail -> interp dltail
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
       accu <- forceSucc <$> interp arg
@@ -436,6 +443,7 @@ instance Interp LLConsensus where
         V_Data k v -> do
           let (switch_binding,_, cons) = (M.!) switch_cases k
           addToStore switch_binding v $ interp cons
+        _ -> impossible "unexpected error"
     LLC_FromConsensus _at1 _at2 step -> interp step
     LLC_While at asn _inv cond body k -> do
       case asn of
@@ -470,6 +478,7 @@ while bl cons = do
     V_Bool True -> do
       _ <- interp cons
       while bl cons
+    _ -> impossible "unexpected error"
 
 -- interpM :: Store -> LLProg -> App (Store)
 -- interpM st mprog = do
