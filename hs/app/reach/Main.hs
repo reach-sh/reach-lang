@@ -729,6 +729,9 @@ switchDisableReporting = switch
   $ long "disable-reporting"
  <> internal
 
+recursiveDisableReporting :: Bool -> Text
+recursiveDisableReporting d = if d then " --disable-reporting" else ""
+
 mkEnv :: IORef Effect -> Maybe Var -> IO (Parser Env)
 mkEnv eff mv = do
   var <- maybe mkVar pure mv
@@ -933,11 +936,20 @@ init' its = command "init" . info f $ d <> foot where
       putStrLn "Done."
 
 -- Tell `docker-compose` to skip connector containers if they're already running
-devnetDeps :: AppT Text
-devnetDeps = do
+devnetDeps :: Bool -> AppT Text
+devnetDeps nolog = do
   ConnectorMode c' _ <- dieConnectorModeNotSpecified
   let c = packs c'
-  pure [N.text| $([ "$(docker ps -qf label=sh.reach.devnet-for=$c)x" = 'x' ] || echo '--no-deps') |]
+  l <- if nolog then pure "" else log'' LogDevnetCreate
+  pure [N.text|
+    NO_DEPS=''
+    if [ "$(docker ps -qf label=sh.reach.devnet-for=$c)x" = 'x' ]; then
+      :
+      $l
+    else
+      NO_DEPS=' --no-deps'
+    fi
+  |]
 
 run' :: Subcommand
 run' = command "run" . info f $ d <> noIntersperse where
@@ -958,7 +970,7 @@ run' = command "run" . info f $ d <> noIntersperse where
     dieConnectorModeBrowser
     e@Env {..} <- ask
     proj@Project {..} <- projectFrom appOrDir'
-    dd <- devnetDeps
+    dd <- devnetDeps nolog
     let Var {..} = e_var
     let Scaffold {..} = mkScaffold proj
     toClean <- filterM (fmap not . liftIO . doesFileExist . fst)
@@ -978,9 +990,10 @@ run' = command "run" . info f $ d <> noIntersperse where
     scaffold' False True proj
 
     let target = pack $ projDirRel </> unpack projName <> ".rsh"
+    let dr = recursiveDisableReporting nolog
     let recompile' = [N.text|
       set +e
-      $reachEx compile $target
+      $reachEx compile$dr $target
       RES="$?"
       set -e
 
@@ -1002,8 +1015,9 @@ run' = command "run" . info f $ d <> noIntersperse where
     let projDirHost' = pack projDirHost
     let args'' = intercalate " " . map (<> "'") . map ("'" <>) $ projName : args'
     withCompose dm . scriptWithConnectorMode $ do
+      write dd
       maybe (pure ()) write recompile
-      unless nolog $ log'' Nothing Run
+      unless nolog $ log'' LogRun >>= write
       write [N.text|
         cd $projDirHost'
         CNAME="$appService-$$$$"
@@ -1011,7 +1025,7 @@ run' = command "run" . info f $ d <> noIntersperse where
         set +e
         docker build -f $dockerfile' --tag=$appImageTag . \
           && docker-compose -f "$$TMP/docker-compose.yml" run \
-            --name "$$CNAME" $dd --rm $appService $args''
+            --name "$$CNAME"$$NO_DEPS --rm $appService $args''
         RES="$?"
         set -e
 
@@ -1078,37 +1092,41 @@ react :: Subcommand
 react = command "react" $ info f d where
   d = progDesc "Run a simple React app"
   f = go <$> switchUseExistingDevnet <*> compiler
-  -- Leverage `optparse` for help/completions/validation/etc but disregard its
-  -- product and instead thread raw command line back through during `compile`
-  -- sub-shell
-  go ued _ = do
+  go ued CompilerToolArgs {..} = do
     warnDeprecatedFlagUseExistingDevnet ued
     ConnectorMode c _ <- dieConnectorModeNotSpecified
     v@Var {..} <- asks e_var
     local (\e -> e { e_var = v { connectorMode = Just (ConnectorMode c Browser) }}) $ do
       dm@DockerMeta {..} <- mkDockerMetaProj <$> ask <*> projectPwdIndex <*> pure React
-      dd <- devnetDeps
+      dd <- devnetDeps cta_disableReporting
       cargs <- forwardedCli "react"
-      withCompose dm . scriptWithConnectorMode $ write [N.text|
-        $reachEx compile $cargs
-        docker-compose -f "$$TMP/docker-compose.yml" run \
-          --name $appService $dd --service-ports --rm $appService
-      |]
+      withCompose dm . scriptWithConnectorMode $ do
+        unless cta_disableReporting $ log'' LogReact >>= write
+        write [N.text|
+          $dd
+          $reachEx compile $cargs
+          docker-compose -f "$$TMP/docker-compose.yml" run \
+            --name $appService$$NO_DEPS --service-ports --rm $appService
+        |]
 
-rpcServer' :: Text -> AppT Text
-rpcServer' appService = do
+rpcServer' :: Text -> Bool -> AppT Text
+rpcServer' appService nolog = do
   Var {..} <- asks e_var
-  dd <- devnetDeps
+  dd <- devnetDeps nolog
+  let dr = recursiveDisableReporting nolog
   pure [N.text|
-    $reachEx compile
-    docker-compose -f "$$TMP/docker-compose.yml" run --name $appService $dd --service-ports --rm $appService
+    $dd
+    $reachEx compile$dr
+    docker-compose -f "$$TMP/docker-compose.yml" run \
+      --name $appService$$NO_DEPS --service-ports --rm $appService
   |]
 
 rpcServer :: Subcommand
 rpcServer = command "rpc-server" $ info f d where
   d = progDesc "Run a simple Reach RPC server"
   f = go <$> switchUseExistingDevnet
-  go ued = do
+         <*> switchDisableReporting
+  go ued nolog = do
     env <- ask
     prj <- projectPwdIndex
     let dm@DockerMeta {..} = mkDockerMetaProj env prj RPC
@@ -1116,7 +1134,9 @@ rpcServer = command "rpc-server" $ info f d where
     warnDefRPCKey
     warnScaffoldDefRPCTLSPair prj
     warnDeprecatedFlagUseExistingDevnet ued
-    withCompose dm . scriptWithConnectorMode $ rpcServer' appService >>= write
+    withCompose dm . scriptWithConnectorMode $ do
+      unless nolog $ log'' LogRpcServer >>= write
+      rpcServer' appService nolog >>= write
 
 rpcServerAwait' :: Int -> AppT Text
 rpcServerAwait' t = do
@@ -1163,41 +1183,44 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
   fdoc = footerDoc . Just
      $  text "Example:"
    <$$> text " $ reach rpc-run python3 -u ./index.py"
-  f = go <$> strArgument (metavar "EXECUTABLE")
+  f = go <$> switchDisableReporting
+         <*> strArgument (metavar "EXECUTABLE")
          <*> manyArgs "EXECUTABLE"
-  go exe args = do
+  go nolog exe args = do
     env <- ask
     prj <- projectPwdIndex
     rsa <- rpcServerAwait' 30
     let dm@DockerMeta {..} = mkDockerMetaProj env prj RPC
-    runServer <- rpcServer' appService
+    runServer <- rpcServer' appService nolog
     let args' = intercalate " " args
     dieConnectorModeBrowser
     warnDefRPCKey
     warnScaffoldDefRPCTLSPair prj
     -- TODO detect if process is already listening on $REACH_RPC_PORT
     -- `lsof -i` cannot necessarily be used without `sudo`
-    withCompose dm . scriptWithConnectorMode $ write [N.text|
-      [ "x$$REACH_RPC_TLS_REJECT_UNVERIFIED" = "x" ] && REACH_RPC_TLS_REJECT_UNVERIFIED=0
-      export REACH_RPC_TLS_REJECT_UNVERIFIED
+    withCompose dm . scriptWithConnectorMode $ do
+      unless nolog $ log'' LogRpcRun >>= write
+      write [N.text|
+        [ "x$$REACH_RPC_TLS_REJECT_UNVERIFIED" = "x" ] && REACH_RPC_TLS_REJECT_UNVERIFIED=0
+        export REACH_RPC_TLS_REJECT_UNVERIFIED
 
-      $runServer &
-      spid="$!" # We'll SIGTERM `reach rpc-server` and all its child processes below
+        $runServer &
+        spid="$!" # We'll SIGTERM `reach rpc-server` and all its child processes below
 
-      $rsa
+        $rsa
 
-      killbg () {
-        echo
-        pkill -TERM -P "$$spid"
-      }
+        killbg () {
+          echo
+          pkill -TERM -P "$$spid"
+        }
 
-      [ ! "$$s" -eq 200 ] \
-        && killbg \
-        && echo "RPC server returned HTTP $$s after $$i seconds." \
-        && exit 1
+        [ ! "$$s" -eq 200 ] \
+          && killbg \
+          && echo "RPC server returned HTTP $$s after $$i seconds." \
+          && exit 1
 
-      sh -c "$exe $args'"; killbg
-    |]
+        sh -c "$exe $args'"; killbg
+      |]
 
 devnet :: Subcommand
 devnet = command "devnet" $ info f d where
@@ -1207,7 +1230,7 @@ devnet = command "devnet" $ info f d where
   go abg nolog = do
     ConnectorMode c m <- dieConnectorModeNotSpecified
     dieConnectorModeBrowser
-    dd <- devnetDeps
+    dd <- devnetDeps nolog
     let c' = packs c
     let s = devnetFor c
     let n = "reach-" <> s
@@ -1216,9 +1239,9 @@ devnet = command "devnet" $ info f d where
     unless (m == Devnet) . liftIO
       $ die "`reach devnet` may only be used when `REACH_CONNECTOR_MODE` ends with \"-devnet\"."
     withCompose mkDockerMetaStandaloneDevnet . scriptWithConnectorMode $ do
-      unless nolog $ log'' (Just DevnetDaily) DevnetCreate
       write [N.text|
-        docker-compose -f "$$TMP/docker-compose.yml" run --name $n $dd --service-ports --rm $s$a
+        $dd
+        docker-compose -f "$$TMP/docker-compose.yml" run --name $n$$NO_DEPS --service-ports --rm $s$a
       |]
       when abg $ write [N.text|
         printf 'Bringing up devnet...'
@@ -1493,26 +1516,16 @@ log' = command "log" $ info f fullDesc where
         <*> strOption (long "initiator")
   g w i = liftIO $ startReport (Just w) (readMay i) >>= \r -> r $ Right ()
 
-log'' :: Maybe Initiator -> Initiator -> App
-log'' daily i' = do
+log'' :: Initiator -> AppT Text
+log'' i' = do
   Var {..} <- asks e_var
-  unless ci $ do
-    let f' x = [N.text| $reachEx log --user-id=$$($whoami') --initiator=$x >/dev/null 2>&1 |]
-    let i = packs i'
-    let f = f' i
-    write [N.text|
-      log_$i () { $f; }
+  let i = packs i'
+  case ci of
+    True -> pure [N.text| # Skip logging $i on CI |]
+    False -> pure [N.text|
+      log_$i () { $reachEx log --user-id=$$($whoami') --initiator=$i >/dev/null 2>&1; }
       log_$i &
     |]
-    case daily of
-      Nothing -> pure ()
-      Just d' -> do
-        let d = packs d'
-        let g = f' d
-        write [N.text|
-          log_$d () { sleep 1d && $g && log_$d; }
-          log_$d &
-        |]
 
 failNonAbsPaths :: Env -> IO ()
 failNonAbsPaths Env {..} =
