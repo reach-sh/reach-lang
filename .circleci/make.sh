@@ -21,8 +21,8 @@ END
 cat >>"${IEND}" <<END
     - "build-sink":
         requires:
-          - "hs-test"
 END
+#          - "hs-test"
 
 deps () {
   IS_RC=$1
