@@ -10,7 +10,7 @@ import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.Util
 import Data.Bits
-import Control.Monad.Cont
+-- import Control.Monad.Cont
 import Control.Monad.Trans.Cont
 -- import Data.IORef
 -- import Data.Either
@@ -64,6 +64,7 @@ data Action
   | NewAccAction
   | NewPartAction
   | ImitateFrontendAction
+  | InteractAction [DLVal]
 
 type Account = Integer
 
@@ -95,7 +96,7 @@ data Env = Env
   {  e_store :: Store
    , e_ledger :: Ledger
    , e_linstate :: LinearState
-   , e_frontend :: Frontend
+   -- , e_frontend :: Frontend
    , e_nwtime :: Integer
    , e_nwsecs :: Integer
   }
@@ -144,9 +145,14 @@ type ResCont = ContT DLVal App Result
 class Interp a where
  interp :: a -> ResCont
 
--- TODO: needs abort-like
-block :: Action -> ResCont -> ResCont
-block a k = callCC $ \_ -> return $ Blocked a $ \_ -> k
+blockThread :: Action -> ResCont -> ResCont
+blockThread a k = callCC $ \_ -> return $ Blocked a $ \_ -> k
+
+-- shiftT' :: (DLVal -> ResCont) -> ResCont
+-- shiftT' = undefined
+--
+-- blockT :: Action -> ResCont
+-- blockT a = callCC $ shiftT' . Blocked a
 
 forceSucc :: Result -> DLVal
 forceSucc = \case
@@ -159,20 +165,10 @@ chainBlocks v ki kl = do
   case r of
     Succ k' -> kl k'
     Blocked a k' ->
-      return $ Blocked a $ \v -> chainBlocks v k' kl
+      return $ Blocked a $ \v' -> chainBlocks v' k' kl
 
 abort :: Result -> ResCont
 abort = undefined
-
-mapMToVal ::  (DLVal -> ResCont) -> [DLVal] -> ContT DLVal App [DLVal]
-mapMToVal f [] = return []
-mapMToVal f (x : xs) = do
-  r <- f x
-  case r of
-    Succ r' -> (:) r' <$> mapMToVal f xs
-    Blocked a k -> do
-      callCC $ \k -> do
-        shiftT $ Blocked a $ \v -> chainBlocks v k ((:) <$> f x <*> mapMToVal f xs)
 
 interpPrim :: (PrimOp, [DLVal]) -> ResCont
 interpPrim = \case
@@ -191,14 +187,14 @@ interpPrim = \case
   (DIGEST_EQ,  [V_Digest lhs,V_Digest rhs]) -> return $ Succ $ V_Bool $ (==) lhs rhs
   (ADDRESS_EQ,  [V_Address lhs,V_Address rhs]) -> return $ Succ $ V_Bool $ (==) lhs rhs
   (TOKEN_EQ, [V_Token lhs,V_Token rhs]) -> return $ Succ $ V_Bool $ (==) lhs rhs
-  -- TODO QUESTION
-  (SELF_ADDRESS, _) -> undefined
+  -- TODO
+  -- (SELF_ADDRESS, _) -> undefined
   (LSH, [V_UInt lhs,V_UInt rhs]) -> return $ Succ $ V_UInt $ shiftL lhs (fromIntegral rhs)
   (RSH, [V_UInt lhs,V_UInt rhs]) -> return $ Succ $ V_UInt $ shiftR lhs (fromIntegral rhs)
   (BAND, [V_UInt lhs,V_UInt rhs]) -> return $ Succ $ V_UInt $ (.&.) lhs rhs
   (BIOR, [V_UInt lhs,V_UInt rhs]) -> return $ Succ $ V_UInt $ (.|.) lhs rhs
   (BXOR, [V_UInt lhs,V_UInt rhs]) -> return $ Succ $ V_UInt $ xor lhs rhs
-  (BYTES_CONCAT, [V_Bytes lhs,V_Bytes rhs]) -> return $ Succ $ V_Bytes $ (++) lhs rhs
+  -- (BYTES_CONCAT, [V_Bytes lhs,V_Bytes rhs]) -> return $ Succ $ V_Bytes $ (++) lhs rhs
 
 instance Interp DLArg where
   interp = \case
@@ -216,7 +212,7 @@ instance Interp DLLiteral where
     DLL_Null -> return $ Succ $ V_Null
     DLL_Bool bool -> return $ Succ $ V_Bool bool
     DLL_Int _at int -> return $ Succ $ V_UInt int
-    DLL_Bytes bytes -> return $ Succ $ V_Bytes $ show bytes
+    -- DLL_Bytes bytes -> return $ Succ $ V_Bytes $ show bytes
 
 instance Interp DLLargeArg where
   interp = \case
@@ -234,7 +230,7 @@ instance Interp DLExpr where
   interp = \case
     DLE_Arg _at dlarg -> interp dlarg
     DLE_LArg _at dllargearg -> interp dllargearg
-    DLE_Impossible at err -> expect_thrown at err
+    -- DLE_Impossible at err -> expect_thrown at err
     DLE_PrimOp _at primop dlargs -> do
       evd_args <- map forceSucc <$> mapM interp dlargs
       interpPrim (primop,evd_args)
@@ -276,11 +272,9 @@ instance Interp DLExpr where
       case ev of
         V_Object obj -> return $ Succ $ obj M.! str
         _ -> impossible "expression interpreter"
-    DLE_Interact _at _slcxtframes _slpart str _dltype dlargs -> do
+    DLE_Interact _at _slcxtframes _slpart _str _dltype dlargs -> do
       args <- map forceSucc <$> mapM interp dlargs
-      frontend <- asks e_frontend
-      let f = (M.!) frontend str
-      return $ Succ $ f args
+      blockThread (InteractAction args) $ return $ Succ V_Null
     DLE_Digest _at dlargs -> Succ <$> V_Digest <$> V_Tuple <$> map forceSucc <$> mapM interp dlargs
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
       CT_Assert -> undefined
@@ -375,7 +369,7 @@ instance Interp DLStmt where
       let f x val = addToStore x val $ interp block
       case arr of
         V_Array arr' -> do
-          res <- V_Array <$> mapM (\val -> f var2 val) arr'
+          res <- V_Array <$> map forceSucc <$> mapM (\val -> f var2 val) arr'
           addToStore var1 res $ return $ Succ V_Null
         _ -> impossible "statement interpreter"
     DL_ArrayReduce _at var1 arg1 arg2 var2 var3 block -> do
@@ -384,10 +378,10 @@ instance Interp DLStmt where
       let f a x b y = addToStore a x $ addToStore b y $ interp block
       case arr of
         V_Array arr' -> do
-          res <- foldM (\x y -> f var2 x var3 y) acc arr'
+          res <- foldM (\x y -> forceSucc <$> f var2 x var3 y) acc arr'
           addToStore var1 res $ return $ Succ V_Null
         _ -> impossible "statement interpreter"
-    DL_Var _at _var -> return $ V_Null
+    DL_Var _at _var -> return $ Succ V_Null
     DL_Set _at var arg -> do
       ev <- forceSucc <$> interp arg
       addToStore var ev $ return $ Succ V_Null
@@ -399,24 +393,22 @@ instance Interp DLStmt where
         V_Bool False -> interp tail2
         _ -> impossible "statement interpreter"
     DL_LocalSwitch _at var switch_cases -> do
-      ev <- interp $ DLA_Var var
+      ev <- forceSucc <$> interp (DLA_Var var)
       case ev of
         V_Data k v -> do
-          let (switch_binding, dltail) = (M.!) switch_cases k
-          case switch_binding of
-            Nothing -> interp dltail
-            Just ident -> addToStore ident v $ interp dltail
+          let (switch_binding,_,dltail) = (M.!) switch_cases k
+          addToStore switch_binding v $ interp dltail
     DL_Only _at _either_part dltail -> interp dltail
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
-      accu <- interp arg
+      accu <- forceSucc <$> interp arg
       linst <- asks e_linstate
       let f a x b y = addToStore a x $ addToStore b y $ interp block
-      res <- foldM (\x y -> f var2 x var3 y) accu $ (M.!) linst dlmvar
+      res <- foldM (\x y -> forceSucc <$> f var2 x var3 y) accu $ (M.!) linst dlmvar
       addToStore var1 res $ return $ Succ V_Null
 
 instance Interp DLTail where
   interp = \case
-    DT_Return _at -> return V_Null
+    DT_Return _at -> return $ Succ V_Null
     DT_Com stmt dltail -> do
       _ <- interp stmt
       interp dltail
@@ -433,19 +425,17 @@ instance Interp LLConsensus where
       _ <- interp stmt
       interp cons
     LLC_If _at arg cons1 cons2 -> do
-      ev <- interp arg
+      ev <- forceSucc <$> interp arg
       case ev of
         V_Bool True -> interp cons1
         V_Bool False -> interp cons2
         _ -> impossible "consensus interpreter"
     LLC_Switch _at var switch_cases -> do
-      ev <- interp $ DLA_Var var
+      ev <- forceSucc <$> interp (DLA_Var var)
       case ev of
         V_Data k v -> do
-          let (switch_binding, cons) = (M.!) switch_cases k
-          case switch_binding of
-            Nothing -> interp cons
-            Just ident -> addToStore ident v $ interp cons
+          let (switch_binding,_, cons) = (M.!) switch_cases k
+          addToStore switch_binding v $ interp cons
     LLC_FromConsensus _at1 _at2 step -> interp step
     LLC_While at asn _inv cond body k -> do
       case asn of
@@ -457,7 +447,7 @@ instance Interp LLConsensus where
       case asn of
         DLAssignment asn' -> do
           _ <- mapM (\(k,v)-> interp $ DL_Set at k v) $ M.toList asn'
-          return V_Null
+          return $ Succ V_Null
     LLC_ViewIs _at _part _var _export cons -> interp cons
 
 instance Interp LLStep where
@@ -465,18 +455,18 @@ instance Interp LLStep where
     LLS_Com stmt step -> do
       _ <- interp stmt
       interp step
-    LLS_Stop _at -> return V_Null
-    LLS_ToConsensus _at _tc_send _tc_recv _tc_mtime -> undefined
+    LLS_Stop _at -> return $ Succ V_Null
+    LLS_ToConsensus _at _lct _tc_send _tc_recv _tc_mtime -> undefined
 
 -- evaluate a linear Reach program
 instance Interp LLProg where
-  interp (LLProg _at _llo _ps _dli _dex _dvs step) = interp step
+  interp (LLProg _at _llo _ps _dli _dex _dvs _apis step) = interp step
 
 while :: DLBlock -> LLConsensus -> ResCont
 while bl cons = do
-  bool <- interp bl
+  bool <- forceSucc <$> interp bl
   case bool of
-    V_Bool False -> return V_Null
+    V_Bool False -> return $ Succ V_Null
     V_Bool True -> do
       _ <- interp cons
       while bl cons
@@ -495,7 +485,7 @@ while bl cons = do
 
 -- creates the first state and returns its id
 init :: LLProg -> App Id
-init (LLProg _at _llo _ps _dli _dex _dvs _s) = return 0
+init (LLProg _at _llo _ps _dli _dex _dvs _apis _s) = return 0
 
 -- returns the set of possible reductions
 -- actions  :: Id -> App [ Action ]
