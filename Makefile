@@ -67,3 +67,7 @@ translate-mo-templates-haskell: mo
 
 .PHONY: translate-templates
 translate-templates: translate-mo-templates-stdlib translate-mo-templates-rpc-server translate-mo-templates-haskell
+
+.PHONY: prepare-version
+prepare-version: mo
+	(cd scripts && bash prepare-reach-version.sh)
