@@ -1,32 +1,32 @@
 import { CompletionItemKind } from 'vscode-languageserver';
 
+// Use a `require` statement instead of an `import`
+// statement to avoid the following error from TypeScript:
+// File '../../data/arrayMethods.json' is not under 'rootDir'
+// 'rootDir' is expected to contain all source files.ts(6059)
+const ARRAY_METHODS: string[] = require(
+  "../../data/arrayMethods.json"
+);
+// Declare the type here, this way, to avoid an error
+// from TypeScript later about an invalid index signature.
+const KEYWORD_TO_ITEM_KIND_IMPORT: {
+  [keyword: string] : "Text" | "Method" | "Function" |
+    "Constructor" | "Field" | "Variable" | "Class" |
+    "Interface" | "Module" | "Property" | "Unit" | "Value" |
+    "Enum" | "Keyword" | "Snippet" | "Color" | "File" |
+    "Reference" | "Folder" | "EnumMember" | "Constant" |
+    "Struct" | "Event" | "Operator" | "TypeParameter"
+} = require(
+  "../../data/keywordToItemKind.json"
+);
 type CompletionMap = { [key : string]: CompletionItemKind }
 
-const ArrayMethodCompletion: CompletionMap = {
-  'all': CompletionItemKind.Method,
-  'and': CompletionItemKind.Method,
-  'any': CompletionItemKind.Method,
-  'average': CompletionItemKind.Method,
-  'concat': CompletionItemKind.Method,
-  'count': CompletionItemKind.Method,
-  'empty': CompletionItemKind.Method,
-  'findIndex': CompletionItemKind.Method,
-  'forEach': CompletionItemKind.Method,
-	'includes': CompletionItemKind.Method,
-	'indexOf': CompletionItemKind.Method,
-	'iota': CompletionItemKind.Method,
-  'length': CompletionItemKind.Method,
-  'map': CompletionItemKind.Method,
-  'max': CompletionItemKind.Method,
-  'min': CompletionItemKind.Method,
-  'or': CompletionItemKind.Method,
-  'product': CompletionItemKind.Method,
-  'reduce': CompletionItemKind.Method,
-  'replicate': CompletionItemKind.Method,
-  'set': CompletionItemKind.Method,
-  'sum': CompletionItemKind.Method,
-  'zip': CompletionItemKind.Method,
-};
+const ARRAY_METHOD_TO_COMPLETION_ITEM_KIND: CompletionMap = {};
+
+ARRAY_METHODS.forEach(methodName =>
+  ARRAY_METHOD_TO_COMPLETION_ITEM_KIND[methodName]
+    = CompletionItemKind.Method
+);
 
 export const addPrefix = (o: CompletionMap, s: string) =>
   Object.entries(o).reduce((acc, [k, v]) => {
@@ -34,127 +34,20 @@ export const addPrefix = (o: CompletionMap, s: string) =>
     return acc;
   }, {} as CompletionMap);
 
-export const reachCompletionKind: CompletionMap = {
-  'Address': CompletionItemKind.TypeParameter,
-  'Anybody': CompletionItemKind.Keyword,
-	'array': CompletionItemKind.Function,
-  'Array': CompletionItemKind.TypeParameter,
-  ...ArrayMethodCompletion,
-  ...addPrefix(ArrayMethodCompletion, 'Array'),
-  'assert': CompletionItemKind.Function,
-	'assume': CompletionItemKind.Function,
-	'balance': CompletionItemKind.Function,
-  'Bool': CompletionItemKind.TypeParameter,
-  'Bytes': CompletionItemKind.TypeParameter,
-  'checkCommitment': CompletionItemKind.Function,
-  'closeTo': CompletionItemKind.Function,
-  'compose': CompletionItemKind.Function,
-	'connectors': CompletionItemKind.Field,
-  'const': CompletionItemKind.Keyword,
-	'continue': CompletionItemKind.Keyword,
-  'commit': CompletionItemKind.Function,
-  'concat': CompletionItemKind.Function,
-  'Data': CompletionItemKind.TypeParameter,
-  'declassify': CompletionItemKind.Function,
-  'deployMode': CompletionItemKind.Field,
-  'digest': CompletionItemKind.Function,
-  'Digest': CompletionItemKind.TypeParameter,
-  'each': CompletionItemKind.Method,
-  'Either': CompletionItemKind.TypeParameter,
-  'ensure': CompletionItemKind.Function,
-  'exit': CompletionItemKind.Function,
-  'export': CompletionItemKind.Keyword,
-  'fail': CompletionItemKind.Function,
-  'FixedPoint': CompletionItemKind.TypeParameter,
-  'forall': CompletionItemKind.Function,
-  'forEach': CompletionItemKind.Function,
-  'fromLeft': CompletionItemKind.Function,
-  'fromRight': CompletionItemKind.Function,
-  'Fun': CompletionItemKind.TypeParameter,
-  'fromMaybe': CompletionItemKind.Function,
-  'function': CompletionItemKind.Keyword,
-  'fx': CompletionItemKind.Function,
-  'fxint': CompletionItemKind.Function,
-  'fxrescale': CompletionItemKind.Function,
-  'fxunify': CompletionItemKind.Function,
-  'fxadd': CompletionItemKind.Function,
-  'fxsub': CompletionItemKind.Function,
-  'fxmul': CompletionItemKind.Function,
-  'fxdiv': CompletionItemKind.Function,
-  'fxmod': CompletionItemKind.Function,
-  'fxfloor': CompletionItemKind.Function,
-  'fxsqrt': CompletionItemKind.Function,
-  'fxpow': CompletionItemKind.Function,
-  'fxpowi': CompletionItemKind.Function,
-  'fxpowui': CompletionItemKind.Function,
-  'fxcmp': CompletionItemKind.Function,
-  'fxle': CompletionItemKind.Function,
-  'fxlt': CompletionItemKind.Function,
-  'fxge': CompletionItemKind.Function,
-  'fxgt': CompletionItemKind.Function,
-  'fxeq': CompletionItemKind.Function,
-  'fxne': CompletionItemKind.Function,
-  'hasRandom': CompletionItemKind.Function,
-  'iadd': CompletionItemKind.Function,
-  'isub': CompletionItemKind.Function,
-  'imul': CompletionItemKind.Function,
-  'idiv': CompletionItemKind.Function,
-  'imod': CompletionItemKind.Function,
-  'ilt': CompletionItemKind.Function,
-  'ile': CompletionItemKind.Function,
-  'igt': CompletionItemKind.Function,
-  'ige': CompletionItemKind.Function,
-  'ieq': CompletionItemKind.Function,
-  'ine': CompletionItemKind.Function,
-	'if': CompletionItemKind.Keyword,
-  'implies': CompletionItemKind.Function,
-	'import': CompletionItemKind.Keyword,
-  'int': CompletionItemKind.Function,
-  'Int': CompletionItemKind.TypeParameter,
-  'interact': CompletionItemKind.Struct,
-  'isLeft': CompletionItemKind.Function,
-  'isNone': CompletionItemKind.Function,
-  'isRight': CompletionItemKind.Function,
-  'isSome': CompletionItemKind.Function,
-  'length': CompletionItemKind.Function,
-  'makeCommitment': CompletionItemKind.Function,
-  'makeEnum': CompletionItemKind.Function,
-	'map': CompletionItemKind.Function,
-  'Maybe': CompletionItemKind.TypeParameter,
-  'Neg': CompletionItemKind.Variable,
-	'Null': CompletionItemKind.TypeParameter,
-  'Object': CompletionItemKind.TypeParameter,
-	'Object.set': CompletionItemKind.Method,
-	'only': CompletionItemKind.Method,
-  'Participant': CompletionItemKind.Constructor,
-  'ParticipantClass': CompletionItemKind.Constructor,
-  'Participant.set': CompletionItemKind.Method,
-	'pay': CompletionItemKind.Method,
-  'Pos': CompletionItemKind.Variable,
-  'possible': CompletionItemKind.Function,
-  'pow': CompletionItemKind.Function,
-  'publish': CompletionItemKind.Method,
-	'Reach.App': CompletionItemKind.Function,
-  'reduce': CompletionItemKind.Function,
-  'require': CompletionItemKind.Function,
-  'return': CompletionItemKind.Keyword,
-  'set': CompletionItemKind.Function,
-  'sqrt': CompletionItemKind.Function,
-  'switch': CompletionItemKind.Keyword,
-  'timeout': CompletionItemKind.Method,
-  'time_remaining': CompletionItemKind.Method,
-  'transfer': CompletionItemKind.Function,
-  'Tuple': CompletionItemKind.TypeParameter,
-  'Tuple.length': CompletionItemKind.Method,
-	'Tuple.set': CompletionItemKind.Method,
-  'UInt': CompletionItemKind.TypeParameter,
-  'unknowable': CompletionItemKind.Function,
-  'verifyOverflow': CompletionItemKind.Field,
-  'verifyPerConnector': CompletionItemKind.Field,
-  'wait': CompletionItemKind.Function,
-  'while': CompletionItemKind.Keyword,
-  'xor': CompletionItemKind.Function,
-  'zip': CompletionItemKind.Function,
+export const KEYWORD_TO_COMPLETION_ITEM_KIND: CompletionMap = {
+  ...ARRAY_METHOD_TO_COMPLETION_ITEM_KIND,
+  ...addPrefix(ARRAY_METHOD_TO_COMPLETION_ITEM_KIND, 'Array'),
 };
 
-export const reachKeywords = Object.keys(reachCompletionKind);
+for (
+  const [keyword, itemKind] of Object.entries(
+    KEYWORD_TO_ITEM_KIND_IMPORT
+  )
+) {
+  KEYWORD_TO_COMPLETION_ITEM_KIND[keyword]
+    = CompletionItemKind[itemKind];
+}
+
+export const REACH_KEYWORDS = Object.keys(
+  KEYWORD_TO_COMPLETION_ITEM_KIND
+);
