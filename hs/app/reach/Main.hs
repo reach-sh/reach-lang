@@ -941,7 +941,7 @@ devnetDeps :: Bool -> AppT Text
 devnetDeps nolog = do
   ConnectorMode c' _ <- dieConnectorModeNotSpecified
   let c = packs c'
-  l <- if nolog then pure "" else log'' LogDevnetCreate
+  l <- if nolog then pure "" else log'' "devnet_create"
   pure [N.text|
     NO_DEPS=''
     if [ "$(docker ps -qf label=sh.reach.devnet-for=$c)x" = 'x' ]; then
@@ -1018,7 +1018,7 @@ run' = command "run" . info f $ d <> noIntersperse where
     withCompose dm . scriptWithConnectorMode $ do
       write dd
       maybe (pure ()) write recompile
-      unless nolog $ log'' LogRun >>= write
+      unless nolog $ log'' "run" >>= write
       write [N.text|
         cd $projDirHost'
         CNAME="$appService-$$$$"
@@ -1102,7 +1102,7 @@ react = command "react" $ info f d where
       dd <- devnetDeps cta_disableReporting
       cargs <- forwardedCli "react"
       withCompose dm . scriptWithConnectorMode $ do
-        unless cta_disableReporting $ log'' LogReact >>= write
+        unless cta_disableReporting $ log'' "react" >>= write
         write [N.text|
           $dd
           $reachEx compile $cargs
@@ -1136,7 +1136,7 @@ rpcServer = command "rpc-server" $ info f d where
     warnScaffoldDefRPCTLSPair prj
     warnDeprecatedFlagUseExistingDevnet ued
     withCompose dm . scriptWithConnectorMode $ do
-      unless nolog $ log'' LogRpcServer >>= write
+      unless nolog $ log'' "rpc_server" >>= write
       rpcServer' appService nolog >>= write
 
 rpcServerAwait' :: Int -> AppT Text
@@ -1200,7 +1200,7 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
     -- TODO detect if process is already listening on $REACH_RPC_PORT
     -- `lsof -i` cannot necessarily be used without `sudo`
     withCompose dm . scriptWithConnectorMode $ do
-      unless nolog $ log'' LogRpcRun >>= write
+      unless nolog $ log'' "rpc_run" >>= write
       write [N.text|
         [ "x$$REACH_RPC_TLS_REJECT_UNVERIFIED" = "x" ] && REACH_RPC_TLS_REJECT_UNVERIFIED=0
         export REACH_RPC_TLS_REJECT_UNVERIFIED
@@ -1515,12 +1515,11 @@ log' :: Subcommand
 log' = command "log" $ info f fullDesc where
   f = g <$> strOption (long "user-id")
         <*> strOption (long "initiator")
-  g w i = liftIO $ startReport (Just w) (readMay i) >>= \r -> r $ Right ()
+  g w i = liftIO $ startReport (Just w) i >>= \r -> r $ Right ()
 
-log'' :: Initiator -> AppT Text
-log'' i' = do
+log'' :: Text -> AppT Text
+log'' i = do
   Var {..} <- asks e_var
-  let i = packs i'
   case ci of
     True -> pure [N.text| # Skip logging $i on CI |]
     False -> pure [N.text|
