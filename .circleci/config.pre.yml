@@ -353,7 +353,7 @@ workflows:
           - "build-sink-rc"
         filters:
           branches:
-            ignore: automated_tagging
+            only: automated_tagging
     - "deploy-stdlib":
         context:
         - release-test
@@ -361,7 +361,7 @@ workflows:
           - "build-sink-rc"
         filters:
           branches:
-            ignore: automated_tagging
+            only: automated_tagging
     - "RC-release":
         type: approval
         requires:
