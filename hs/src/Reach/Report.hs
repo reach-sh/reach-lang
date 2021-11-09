@@ -17,10 +17,13 @@ import Reach.Version
 type Report = Either SomeException ()
 
 data Initiator
-  = Compile
-  | DevnetCreate
-  | DevnetDaily
-  | Run
+  = LogCompile
+  | LogDevnetCreate
+  | LogDevnetDaily
+  | LogReact
+  | LogRpcRun
+  | LogRpcServer
+  | LogRun
   deriving (Read, Show)
 
 startReport :: Maybe String -> Maybe Initiator -> IO (Report -> IO ())
