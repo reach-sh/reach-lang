@@ -239,6 +239,7 @@ jobs:
     - and_restore_docker:
         deps: <<parameters.deps>>
     - run: |
+        make prepare-version
         IMAGE="<<parameters.image>>"
         mkdir -p "/tmp/workspace/docker-${IMAGE}"
         cd .circleci && ./image.sh "${IMAGE}"
