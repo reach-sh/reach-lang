@@ -845,6 +845,7 @@ compile = command "compile" $ info f d where
                  "compile" : x -> x
                  _ -> impossible $ "compile args do not start with 'compile': " <> show rawArgs
     let args = intercalate " " $ map pack argsl
+    let args' = intercalate " " . map pack $ filter (/= "--disable-reporting") argsl
     let CompilerOpts {..} = cta_co
     Var {..} <- asks e_var
     let v = versionBy majMinPat version''
@@ -869,7 +870,7 @@ compile = command "compile" $ info f d where
         export REACH
 
         if [ "$$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
-          ~/.local/bin/reachc --disable-reporting $args
+          ~/.local/bin/reachc $args' --disable-reporting
 
         elif [ "$${REACH_DOCKER}" = "0" ] \
           && [ -d "$${HS}/.stack-work"  ] \
