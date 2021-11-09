@@ -51,8 +51,8 @@ mo:
 	curl -sSL https://git.io/get-mo -o mo
 	chmod +x mo
 	mv mo .bin
-	echo $(pwd)
-	export PATH=${PATH}:$(pwd)/.bin
+	echo $$(pwd)
+	export PATH=${PATH}:$$(pwd)/.bin
 
 .PHONY: translate-mo-templates-stdlib
 translate-mo-templates-stdlib: mo
