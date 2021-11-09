@@ -275,7 +275,7 @@ instance Interp DLExpr where
         _ -> impossible "expression interpreter"
     DLE_Interact _at _slcxtframes _slpart _str _dltype dlargs -> do
       args <- map forceSucc <$> mapM interp dlargs
-      blockThread (ActionInteract args) $ return $ Succ V_Null
+      blockThread (Action_Interact args) $ return $ Succ V_Null
     DLE_Digest _at dlargs -> Succ <$> V_Digest <$> V_Tuple <$> map forceSucc <$> mapM interp dlargs
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
       CT_Assert -> undefined
