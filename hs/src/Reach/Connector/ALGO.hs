@@ -720,6 +720,11 @@ exprSmall = \case
   DLE_Arg _ a -> argSmall a
   _ -> return False
 
+czpad :: Integer -> App ()
+czpad xtra = do
+  padding xtra
+  op "concat"
+
 cprim :: PrimOp -> [DLArg] -> App ()
 cprim = \case
   SELF_ADDRESS {} -> impossible "self address"
@@ -758,8 +763,7 @@ cprim = \case
   BYTES_ZPAD xtra -> \case
     [x] -> do
       ca x
-      padding xtra
-      op "concat"
+      czpad xtra
     _ -> impossible $ "zpad"
   IF_THEN_ELSE -> \case
     [be, DLA_Literal (DLL_Bool True), DLA_Literal (DLL_Bool False)] -> do
@@ -1019,9 +1023,7 @@ cla = \case
     let vlen = 1 + typeSizeOf (argTypeOf va)
     op "concat"
     let dlen = typeSizeOf $ T_Data tm
-    let zlen = fromIntegral $ dlen - vlen
-    padding $ zlen
-    op "concat"
+    czpad $ fromIntegral $ dlen - vlen
     check_concat_len dlen
   DLLA_Struct kvs ->
     cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd kvs
