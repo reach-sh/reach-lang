@@ -11,7 +11,7 @@
   "chapters": null,
   "pages": null,
   "menuItem": "mi-docs",
-  "src": "ref-frontends-rpc-go.md",
-  "title": "Go (RPC)",
-  "pathname": "/proj/docs/dev/src/en/books/essentials/rpc-frontends/go-rpc"
+  "src": "ref-frontends-js.md",
+  "title": "JavaScript",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/reach-js-stdlib"
 }

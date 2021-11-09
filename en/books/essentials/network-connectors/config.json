@@ -11,7 +11,7 @@
   "chapters": null,
   "pages": null,
   "menuItem": "mi-docs",
-  "src": "ref-frontends-js.md",
-  "title": "JavaScript",
-  "pathname": "/proj/docs/dev/src/en/books/essentials/js-standard-library"
+  "src": "ref-networks.md",
+  "title": "Consensus Network Connectors",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/network-connectors"
 }

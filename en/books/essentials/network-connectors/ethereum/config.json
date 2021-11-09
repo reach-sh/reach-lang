@@ -11,7 +11,6 @@
   "chapters": null,
   "pages": null,
   "menuItem": "mi-docs",
-  "src": "ref-frontends-rpc-py.md",
-  "title": "Python (RPC)",
-  "pathname": "/proj/docs/dev/src/en/books/essentials/rpc-frontends/python-rpc"
+  "title": "Ethereum",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/network-connectors/ethereum"
 }

@@ -11,7 +11,7 @@
   "chapters": null,
   "pages": null,
   "menuItem": "mi-docs",
-  "src": "ref-networks.md",
-  "title": "Consensus Network Connectors",
-  "pathname": "/proj/docs/dev/src/en/books/essentials/reach-language/network-connectors"
+  "src": "ref-frontends-rpc-py.md",
+  "title": "Python (RPC)",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/reach-rpc-server/python-rpc"
 }
