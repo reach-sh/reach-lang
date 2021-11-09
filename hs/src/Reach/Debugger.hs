@@ -59,11 +59,11 @@ type Frontend = M.Map String ([DLVal] -> DLVal)
 --   | ShowAction String -- print the variable described by this string
 
 data Action
-  = ActionTieBreak
-  | ActionNewAcc
-  | ActionNewPart
-  | ActionImitateFrontend
-  | ActionInteract [DLVal]
+  = Action_TieBreak
+  | Action_NewAcc
+  | Action_NewPart
+  | Action_ImitateFrontend
+  | Action_Interact [DLVal]
 
 type Account = Integer
 
