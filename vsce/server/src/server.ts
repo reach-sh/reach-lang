@@ -37,7 +37,7 @@ import {
 import {
 	TextDocument, Range, TextEdit
 } from 'vscode-languageserver-textdocument';
-import { reachCompletionKind, reachKeywords } from './keywordCompletion';
+import { KEYWORD_TO_COMPLETION_ITEM_KIND, REACH_KEYWORDS } from './keywordCompletion';
 
 // Do this import differently so we can add types, to avoid a
 // "No index signature with a parameter of type 'string' was found... ts(7053)"
@@ -491,9 +491,9 @@ connection.onCompletion(
 	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
 		// The passed parameter contains the position of the text document in
 		// which code complete got requested.
-		return reachKeywords.map(kwd => ({
+		return REACH_KEYWORDS.map(kwd => ({
 			label: kwd,
-			kind: reachCompletionKind[kwd] || CompletionItemKind.Text,
+			kind: KEYWORD_TO_COMPLETION_ITEM_KIND[kwd] || CompletionItemKind.Text,
 			data: undefined,
 			detail: kwd,
 			documentation: {
@@ -584,7 +584,7 @@ connection.onHover(
 );
 
 function isReachKeyword(word: string): boolean {
-	return reachCompletionKind[word] != undefined;
+	return KEYWORD_TO_COMPLETION_ITEM_KIND[word] != undefined;
 }
 
 function getReachKeywordMarkdown(word: string): string {
