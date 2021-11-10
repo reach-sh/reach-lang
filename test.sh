@@ -116,6 +116,9 @@ tealcount () {
 # jb
 # ci CFX tut-7
 
+c users/AmbroseHill_stake.rsh
+exit 0
+
 c examples/atomic-swap-auction/index.rsh
 
 exit 0

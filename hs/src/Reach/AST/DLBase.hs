@@ -979,7 +979,10 @@ allFluidVars bals =
   , FV_thisConsensusSecs
   , FV_lastConsensusSecs
   , FV_baseWaitSecs
-  , FV_didSend
+  -- This function is not really to get all of them, but just to
+  -- get the ones that must be saved for a loop. didSend is only used locally,
+  -- so it doesn't need to be saved.
+  --, FV_didSend 
   ]
     <> map FV_balance all_toks
     <> map FV_supply all_toks
