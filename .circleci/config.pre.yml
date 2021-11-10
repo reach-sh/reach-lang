@@ -80,6 +80,7 @@ commands:
             zcat /tmp/workspace/docker-${IMG}/${IMG}.tar.gz | docker load
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
           done
+          docker image ls | grep reachsh
 
 jobs:
 #  "prepare-version":
