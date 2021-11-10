@@ -78,7 +78,7 @@ commands:
           source ./VERSION
           for IMG in <<parameters.deps>> ; do
             zcat /tmp/workspace/docker-${IMG}/${IMG}.tar.gz | docker load
-            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
+            docker tag reachsh/${IMG}:${VERSION} reachsh/${IMG}:latest 
           done
           docker image ls | grep reachsh
 
@@ -240,11 +240,12 @@ jobs:
         deps: <<parameters.deps>>
     - run: |
         make prepare-version
+        source ./VERSION
         IMAGE="<<parameters.image>>"
         mkdir -p "/tmp/workspace/docker-${IMAGE}"
         cd .circleci && ./image.sh "${IMAGE}"
-        echo "docker save reachsh/${IMAGE}:latest..."
-        docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
+        echo "docker save reachsh/${IMAGE}:${VERSION}..."
+        docker save "reachsh/${IMAGE}:${VERSION}" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
