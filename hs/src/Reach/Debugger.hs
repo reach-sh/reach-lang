@@ -464,7 +464,9 @@ instance Interp LLStep where
       _ <- interp stmt
       interp step
     LLS_Stop _at -> return $ Succ V_Null
-    LLS_ToConsensus _at _lct _tc_send _tc_recv _tc_mtime -> undefined
+    LLS_ToConsensus _at _lct _tc_send tc_recv _tc_mtime -> do
+      -- TODO: block thread for race winner
+      interp $ dr_k tc_recv
 
 -- evaluate a linear Reach program
 instance Interp LLProg where
