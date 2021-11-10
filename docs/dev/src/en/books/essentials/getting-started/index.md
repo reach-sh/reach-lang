@@ -5,7 +5,7 @@ menuItem: mi-docs
 
 # Getting Started
 
-This series will help you start programming with Reach.
+This series helps you start programming with Reach.
 
 <div class="card mb-3">
   <div class="row g-0">

@@ -485,7 +485,7 @@ iframe.gray-scale {
  Module Cards
 ************************************************/
 
-#page-col div.card {background: #f0f8ff; border-color: #f0f8ff;}
+#page-col div.card {background: #FAFDFF; border: 1px solid #cce7ff;}
 
 #page-col div.card a,
 #page-col div.card a:active,
@@ -498,7 +498,7 @@ iframe.gray-scale {
 #page-col div.card small {color: #00294d;}
 
 #page-col div.card:hover,
-#page-col div.card:focus {background: #e6f3ff; border-color: #e6f3ff;}
+#page-col div.card:focus {background: aliceblue;}
 
 /************************************************
  banish
