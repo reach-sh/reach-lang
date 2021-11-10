@@ -113,10 +113,10 @@ tealcount () {
 
 #exit 0
 
-# jb
+jb
 # ci CFX tut-7
 
-fc hs/t/n/API_NoOut2.rsh
+#c users/t.rsh
 exit 0
 
 c examples/atomic-swap-auction/index.rsh

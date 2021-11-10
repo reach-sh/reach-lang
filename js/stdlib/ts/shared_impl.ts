@@ -1,5 +1,6 @@
 // This can depend on the shared backend
 import crypto from 'crypto';
+import Timeout from 'await-timeout';
 import { ethers } from 'ethers';
 import {
   CBR_Address,
@@ -586,6 +587,36 @@ export class Signal {
   wait() { return this.p; }
   notify() { this.r(true); }
 };
+
+export class Lock {
+  locked: boolean;
+
+  constructor() {
+    this.locked = false;
+  }
+  async acquire(): Promise<void> {
+    let x = 1;
+    while ( this.locked ) {
+      await Timeout.set(Math.min(512, x));
+      x = x * 2;
+    }
+    this.locked = true;
+  }
+  release() {
+    this.locked = false;
+  }
+  async runWith<X>(f: (() => Promise<X>)): Promise<X> {
+    await this.acquire();
+    try {
+      const r = await f();
+      this.release();
+      return r;
+    } catch (e:any) {
+      this.release();
+      throw e;
+    }
+  }
+}
 
 // Given a func that takes an optional arg, and a Maybe arg:
 // f: (arg?: X) => Y

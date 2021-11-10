@@ -41,6 +41,7 @@ import {
   checkTimeout,
   truthyEnv,
   Signal,
+  Lock,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -752,14 +753,22 @@ const walletFallback_MyAlgoWallet = (MyAlgoConnect:any, opts:any) => (): ARC11_W
   debug(`using MyAlgoWallet wallet fallback`);
   // @ts-ignore
   const mac = new MyAlgoConnect();
+  // MyAlgoConnect uses a global popup object for managing, so we need to
+  // guarantee there is only one in flight at a time.
+  const lock = new Lock();
   const getAddr = async (): Promise<string> => {
     const accts =
-      await mac.connect({shouldSelectOneAccount: true});
+      await lock.runWith(async () => {
+        return await mac.connect({shouldSelectOneAccount: true});
+      });
     return accts[0].address;
   };
   const signTxns = async (txns: string[]): Promise<string[]> => {
     debug(`MAW signTransaction ->`, txns);
-    const stxns: Array<{blob: Uint8Array}> = await mac.signTransaction(txns);
+    const stxns: Array<{blob: Uint8Array}> =
+      await lock.runWith(async () => {
+        return await mac.signTransaction(txns);
+      });
     debug(`MAW signTransaction <-`, stxns);
     return stxns.map((sts) => Buffer.from(sts.blob).toString('base64'));
   };
