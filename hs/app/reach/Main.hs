@@ -194,6 +194,7 @@ data Env = Env
   , e_dirConfigContainer :: FilePath
   , e_dirConfigHost :: FilePath
   , e_emitRaw :: Bool
+  , e_disableReporting :: Bool
   , e_effect :: IORef Effect
   , e_var :: Var
   }
@@ -724,11 +725,6 @@ switchQuiet = switch
   $ long "quiet"
  <> help "Withhold progress messages"
 
-switchDisableReporting :: Parser Bool
-switchDisableReporting = switch
-  $ long "disable-reporting"
- <> internal
-
 recursiveDisableReporting :: Bool -> Text
 recursiveDisableReporting d = if d then " --disable-reporting" else ""
 
@@ -744,6 +740,7 @@ mkEnv eff mv = do
     <*> strOption (long "dir-config-container" <> internal <> value "/app/config")
     <*> strOption (long "dir-config-host" <> internal)
     <*> switch (long "emit-raw" <> internal)
+    <*> switch (long "disable-reporting" <> internal)
     <*> pure eff
     <*> pure var
 
@@ -768,12 +765,12 @@ forwardedCli n = do
     <*> subparser (command (unpack n) (info (pure ()) mempty))
     <*> switchUseExistingDevnet
     <*> manyArgs "a recursive invocation of `reachEx`"
-  pure $ intercalate " " f
+  pure . intercalate " " $ filter (/= "--disable-reporting") f
 
 scaffold' :: Bool -> Bool -> Project -> App
 scaffold' i quiet proj@Project {..} = do
   warnDeprecatedFlagIsolate i
-  e@(Env {..}) <- ask
+  e@Env {..} <- ask
   let Scaffold {..} = mkScaffold proj
   let DockerMeta {..} = mkDockerMetaProj e proj Console
   let scaffIfAbsent' n f = liftIO $ scaffIfAbsent quiet n f
@@ -839,15 +836,14 @@ compile = command "compile" $ info f d where
   d = progDesc "Compile an app"
   f = go <$> compiler
   go (CompilerToolArgs {..}) = do
+    Env{e_var = Var {..}, ..} <- ask
     rawArgs <- liftIO $ getArgs
     let rawArgs' = dropWhile (/= "compile") rawArgs
-    let argsl = case rawArgs' of
+    let argsl = intercalate " " . map pack . filter (/= "--disable-reporting") $ case rawArgs' of
                  "compile" : x -> x
                  _ -> impossible $ "compile args do not start with 'compile': " <> show rawArgs
-    let args = intercalate " " $ map pack argsl
-    let args' = intercalate " " . map pack $ filter (/= "--disable-reporting") argsl
+    let args = argsl <> recursiveDisableReporting e_disableReporting
     let CompilerOpts {..} = cta_co
-    Var {..} <- asks e_var
     let v = versionBy majMinPat version''
     let ci' = if ci then "true" else ""
     liftIO $ do
@@ -870,7 +866,7 @@ compile = command "compile" $ info f d where
         export REACH
 
         if [ "$$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
-          ~/.local/bin/reachc $args' --disable-reporting
+          ~/.local/bin/reachc $argsl --disable-reporting
 
         elif [ "$${REACH_DOCKER}" = "0" ] \
           && [ -d "$${HS}/.stack-work"  ] \
@@ -956,10 +952,9 @@ run' :: Subcommand
 run' = command "run" . info f $ d <> noIntersperse where
   d = progDesc "Run a simple app"
   f = go <$> switchIsolate
-         <*> switchDisableReporting
          <*> argAppOrDir
          <*> manyArgs "APP"
-  go i nolog appOrDir args = do
+  go i appOrDir args = do
     (appOrDir', args') <- liftIO $ do
       "run" : as <- dropWhile (/= "run") <$> getArgs
       pure $ case L.split (== "--") as of
@@ -971,7 +966,7 @@ run' = command "run" . info f $ d <> noIntersperse where
     dieConnectorModeBrowser
     e@Env {..} <- ask
     proj@Project {..} <- projectFrom appOrDir'
-    dd <- devnetDeps nolog
+    dd <- devnetDeps e_disableReporting
     let Var {..} = e_var
     let Scaffold {..} = mkScaffold proj
     toClean <- filterM (fmap not . liftIO . doesFileExist . fst)
@@ -991,10 +986,10 @@ run' = command "run" . info f $ d <> noIntersperse where
     scaffold' False True proj
 
     let target = pack $ projDirRel </> unpack projName <> ".rsh"
-    let dr = recursiveDisableReporting nolog
+    let dr = recursiveDisableReporting e_disableReporting
     let recompile' = [N.text|
       set +e
-      $reachEx compile$dr $target
+      $reachEx$dr compile $target
       RES="$?"
       set -e
 
@@ -1018,7 +1013,7 @@ run' = command "run" . info f $ d <> noIntersperse where
     withCompose dm . scriptWithConnectorMode $ do
       write dd
       maybe (pure ()) write recompile
-      unless nolog $ log'' "run" >>= write
+      unless e_disableReporting $ log'' "run" >>= write
       write [N.text|
         cd $projDirHost'
         CNAME="$appService-$$$$"
@@ -1093,19 +1088,21 @@ react :: Subcommand
 react = command "react" $ info f d where
   d = progDesc "Run a simple React app"
   f = go <$> switchUseExistingDevnet <*> compiler
-  go ued CompilerToolArgs {..} = do
+  go ued _ = do
     warnDeprecatedFlagUseExistingDevnet ued
     ConnectorMode c _ <- dieConnectorModeNotSpecified
     v@Var {..} <- asks e_var
     local (\e -> e { e_var = v { connectorMode = Just (ConnectorMode c Browser) }}) $ do
+      Env {..} <- ask
+      let dr = recursiveDisableReporting e_disableReporting
       dm@DockerMeta {..} <- mkDockerMetaProj <$> ask <*> projectPwdIndex <*> pure React
-      dd <- devnetDeps cta_disableReporting
+      dd <- devnetDeps e_disableReporting
       cargs <- forwardedCli "react"
       withCompose dm . scriptWithConnectorMode $ do
-        unless cta_disableReporting $ log'' "react" >>= write
+        unless e_disableReporting $ log'' "react" >>= write
         write [N.text|
           $dd
-          $reachEx compile $cargs
+          $reachEx$dr compile $cargs
           docker-compose -f "$$TMP/docker-compose.yml" run \
             --name $appService$$NO_DEPS --service-ports --rm $appService
         |]
@@ -1117,7 +1114,7 @@ rpcServer' appService nolog = do
   let dr = recursiveDisableReporting nolog
   pure [N.text|
     $dd
-    $reachEx compile$dr
+    $reachEx$dr compile
     docker-compose -f "$$TMP/docker-compose.yml" run \
       --name $appService$$NO_DEPS --service-ports --rm $appService
   |]
@@ -1126,9 +1123,8 @@ rpcServer :: Subcommand
 rpcServer = command "rpc-server" $ info f d where
   d = progDesc "Run a simple Reach RPC server"
   f = go <$> switchUseExistingDevnet
-         <*> switchDisableReporting
-  go ued nolog = do
-    env <- ask
+  go ued = do
+    env@Env {..} <- ask
     prj <- projectPwdIndex
     let dm@DockerMeta {..} = mkDockerMetaProj env prj RPC
     dieConnectorModeBrowser
@@ -1136,8 +1132,8 @@ rpcServer = command "rpc-server" $ info f d where
     warnScaffoldDefRPCTLSPair prj
     warnDeprecatedFlagUseExistingDevnet ued
     withCompose dm . scriptWithConnectorMode $ do
-      unless nolog $ log'' "rpc_server" >>= write
-      rpcServer' appService nolog >>= write
+      unless e_disableReporting $ log'' "rpc_server" >>= write
+      rpcServer' appService e_disableReporting >>= write
 
 rpcServerAwait' :: Int -> AppT Text
 rpcServerAwait' t = do
@@ -1184,15 +1180,14 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
   fdoc = footerDoc . Just
      $  text "Example:"
    <$$> text " $ reach rpc-run python3 -u ./index.py"
-  f = go <$> switchDisableReporting
-         <*> strArgument (metavar "EXECUTABLE")
+  f = go <$> strArgument (metavar "EXECUTABLE")
          <*> manyArgs "EXECUTABLE"
-  go nolog exe args = do
-    env <- ask
+  go exe args = do
+    env@Env {..} <- ask
     prj <- projectPwdIndex
     rsa <- rpcServerAwait' 30
     let dm@DockerMeta {..} = mkDockerMetaProj env prj RPC
-    runServer <- rpcServer' appService nolog
+    runServer <- rpcServer' appService e_disableReporting
     let args' = intercalate " " args
     dieConnectorModeBrowser
     warnDefRPCKey
@@ -1200,7 +1195,7 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
     -- TODO detect if process is already listening on $REACH_RPC_PORT
     -- `lsof -i` cannot necessarily be used without `sudo`
     withCompose dm . scriptWithConnectorMode $ do
-      unless nolog $ log'' "rpc_run" >>= write
+      unless e_disableReporting $ log'' "rpc_run" >>= write
       write [N.text|
         [ "x$$REACH_RPC_TLS_REJECT_UNVERIFIED" = "x" ] && REACH_RPC_TLS_REJECT_UNVERIFIED=0
         export REACH_RPC_TLS_REJECT_UNVERIFIED
@@ -1227,11 +1222,11 @@ devnet :: Subcommand
 devnet = command "devnet" $ info f d where
   d = progDesc "Run only the devnet"
   f = go <$> switch (long "await-background" <> help "Run in background and await availability")
-         <*> switchDisableReporting
-  go abg nolog = do
+  go abg = do
+    Env {..} <- ask
     ConnectorMode c m <- dieConnectorModeNotSpecified
     dieConnectorModeBrowser
-    dd <- devnetDeps nolog
+    dd <- devnetDeps e_disableReporting
     let c' = packs c
     let s = devnetFor c
     let n = "reach-" <> s
