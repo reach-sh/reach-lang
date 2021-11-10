@@ -4543,7 +4543,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
                   [JSMethodCall (JSMemberDot who_e a (jid "set")) a (JSLOne (jid "this")) a sp]
                 (False, True) -> []
         isApi <- is_api $ bpack who
-        all_afters <- mapM (getAfter who_e isApi who True) $ zip3 ats after_es [0..length after_es]
+        all_afters <- mapM (getAfter who_e isApi who True) $ zip3 ats after_es ([0..] :: [Int])
         let cfc_switch_case =
               map
                 (\(i, as) ->
