@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. ../VERSION.mo
+. ../VERSION
 
 export PATH=${PATH}:../.bin
 
@@ -14,13 +14,13 @@ rccount() {
   echo $rc
 }
 
-if [ "${RC_RELEASE}" = "TRUE" ]; then
+#if [ "${RC_RELEASE}" = "TRUE" ]; then
  rc=$(rccount)
  export tag="-rc.${rc}"
  export rc=".${rc}"
-else
- export tag=""
- export rc=""
-fi
+#else
+# export tag=""
+# export rc=""
+#fi
 
 mo ../VERSION.mo > ../VERSION

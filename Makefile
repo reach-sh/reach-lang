@@ -69,5 +69,5 @@ translate-templates: translate-mo-templates-stdlib translate-mo-templates-rpc-se
 
 .PHONY: prepare-version
 prepare-version: mo
-	git pull --tags
+	echo $$(git tag)
 	(cd scripts && bash prepare-reach-version.sh)
