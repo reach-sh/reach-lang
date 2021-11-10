@@ -47,10 +47,14 @@ docker-lint:
 
 .PHONY: mo
 mo:
-	mkdir .bin
-	curl -sSL https://git.io/get-mo -o mo
-	chmod +x mo
-	mv mo .bin
+	@if [ ! -d ./.bin ]; then\
+		mkdir ./.bin;\
+	fi
+	@if [ ! -f ./.bin/mo ]; then\
+		curl -sSL https://git.io/get-mo -o mo;\
+		chmod +x mo;\
+		mv mo .bin;\
+	fi
 
 .PHONY: translate-mo-templates-stdlib
 translate-mo-templates-stdlib: mo
