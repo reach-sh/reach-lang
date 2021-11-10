@@ -115,7 +115,7 @@ for CONN in ETH ALGO CFX ; do
         size: "${SIZE}"
         rank: "${RANK}"
 END
-    deps "reach" "reach-cli" "runner" "rpc-server" "${IMAGE}"
+    deps "1" "reach" "reach-cli" "runner" "rpc-server" "${IMAGE}"
     cat >>"${END}" <<END
           - "${NAME}"
 END

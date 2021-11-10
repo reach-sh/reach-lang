@@ -51,7 +51,6 @@ mo:
 	curl -sSL https://git.io/get-mo -o mo
 	chmod +x mo
 	mv mo .bin
-	export PATH=${PATH}:$$(pwd)/.bin
 
 .PHONY: translate-mo-templates-stdlib
 translate-mo-templates-stdlib: mo
@@ -70,4 +69,5 @@ translate-templates: translate-mo-templates-stdlib translate-mo-templates-rpc-se
 
 .PHONY: prepare-version
 prepare-version: mo
+	git pull --tags
 	(cd scripts && bash prepare-reach-version.sh)
