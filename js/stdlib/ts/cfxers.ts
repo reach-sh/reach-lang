@@ -366,7 +366,7 @@ export class BrowserWallet implements IWallet {
   // Call await cp.enable() before this
   constructor(cp: CP, address: string, provider?: providers.Provider) {
     this.cp = cp;
-    this.address = address
+    this.address = address_cfxStandardize(address);
     this.provider = provider; // XXX just use cp?
   }
 
@@ -383,7 +383,6 @@ export class BrowserWallet implements IWallet {
     }
   }
 
-  // XXX canonicalize?
   getAddress(): string { return this.address; }
 
   async sendTransaction(txnOrig: any): Promise<{
