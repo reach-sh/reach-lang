@@ -1,0 +1,17 @@
+{
+  "background": "white",
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
+  "bookTitle": "Reach Essentials",
+  "bookPath": "en/books/essentials",
+  "chapters": null,
+  "pages": null,
+  "menuItem": "mi-docs",
+  "src": "ref-programs-compute.md",
+  "title": "Computations",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/backend-programming/compute"
+}

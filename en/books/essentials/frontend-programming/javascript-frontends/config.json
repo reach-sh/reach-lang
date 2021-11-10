@@ -1,0 +1,17 @@
+{
+  "background": "white",
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
+  "bookTitle": "Reach Essentials",
+  "bookPath": "en/books/essentials",
+  "chapters": null,
+  "pages": null,
+  "menuItem": "mi-docs",
+  "src": "ref-frontends-js.md",
+  "title": "JavaScript",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/frontend-programming/javascript-frontends"
+}
