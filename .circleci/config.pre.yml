@@ -74,13 +74,11 @@ commands:
         type: string
     steps:
       - run: |
+          make prepare-version
           source ./VERSION
-
           for IMG in <<parameters.deps>> ; do
             zcat /tmp/workspace/docker-${IMG}/${IMG}.tar.gz | docker load
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
-            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}.${MINOR}
-            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
           done
 
 jobs:
