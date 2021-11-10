@@ -904,15 +904,17 @@ const newTestAccount = async (startingBalance: any): Promise<Account> => {
   const acc = await createAccount();
   const to = await getAddr(acc);
 
-  try {
-    debug('newTestAccount awaiting transfer:', to);
-    await fundFromFaucet(acc, startingBalance);
-    debug('newTestAccount got transfer:', to);
-    return acc;
-  } catch (e) {
-    console.log(`newTestAccount: Trouble with account ${to}`);
-    throw e;
+  if (bigNumberify(0).lt(startingBalance)) {
+    try {
+      debug('newTestAccount awaiting transfer:', to);
+      await fundFromFaucet(acc, startingBalance);
+      debug('newTestAccount got transfer:', to);
+    } catch (e) {
+      console.log(`newTestAccount: Trouble with account ${to}`);
+      throw e;
+    }
   }
+  return acc;
 };
 const newTestAccounts = make_newTestAccounts(newTestAccount);
 
