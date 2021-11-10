@@ -981,7 +981,7 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
   // for querying the contract.
   let creation_block = 0;
   try {
-    const tmpAccount: Account = await newTestAccount(0);
+    const tmpAccount: Account = await createAccount();
     const ctc = new ethers.Contract(address, ABI, tmpAccount.networkAccount);
     const creation_time_raw = await ctc["_reachCreationTime"]();
     const creation_time = T_UInt.unmunge(creation_time_raw);
