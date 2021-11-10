@@ -31,7 +31,7 @@ jb () {
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
-  #(cd "$ROOT"/js/react-runner && make build)
+  (cd "$ROOT"/js/react-runner && make build)
   # (cd "$ROOT"/js && make build)
 }
 
@@ -116,7 +116,7 @@ tealcount () {
 # jb
 # ci CFX tut-7
 
-c users/AmbroseHill_stake.rsh
+fc hs/t/n/API_NoOut2.rsh
 exit 0
 
 c examples/atomic-swap-auction/index.rsh
