@@ -1,0 +1,113 @@
+{
+	"name": "reach-ide",
+	"displayName": "Reach IDE",
+	"description": "IDE for the Reach DApp programming language",
+	"author": "Reach Platform, Inc.",
+	"license": "EPL-2.0",
+	"version": "0.18.0",
+	"preview": true,
+	"icon": "images/reach-logo-dark.png",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/reach-sh/reach-lang"
+	},
+	"publisher": "reachsh",
+	"categories": [
+		"Programming Languages",
+		"Snippets",
+		"Other"
+	],
+	"keywords": [
+		"reach",
+		"ethereum",
+		"algorand",
+		"blockchain",
+		"conflux"
+	],
+	"engines": {
+		"vscode": "^1.43.0"
+	},
+	"activationEvents": [
+		"workspaceContains:**/*.rsh",
+		"workspaceContains:reach"
+	],
+	"main": "./client/out/extension",
+	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "reach-ide",
+					"title": "Reach IDE",
+					"icon": "./images/reach-logo.png"
+				}
+			]
+		},
+		"views": {
+			"reach-ide": [
+				{
+					"id": "reach-commands",
+					"name": "Commands"
+				},
+				{
+					"id": "reach-docs",
+					"name": "Documentation"
+				},
+				{
+					"id": "reach-help",
+					"name": "Help and Feedback"
+				}
+			]
+		},
+		"snippets": [
+			{
+				"language": "javascript",
+				"path": "./snippets.json"
+			}
+		],
+		"configuration": {
+			"type": "object",
+			"title": "Reach IDE",
+			"properties": {
+				"reachide.maxNumberOfProblems": {
+					"scope": "resource",
+					"type": "number",
+					"default": 100,
+					"description": "Controls the maximum number of problems produced by the server."
+				},
+				"reachide.trace.server": {
+					"scope": "window",
+					"type": "string",
+					"enum": [
+						"off",
+						"messages",
+						"verbose"
+					],
+					"default": "off",
+					"description": "Traces the communication between VS Code and the Reach IDE language server."
+				},
+				"reachide.executableLocation": {
+					"default": "./reach",
+					"type": "string",
+					"description": "Specifies the filepath to the reach executable."
+				}
+			}
+		},
+		"menus": {}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w",
+		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+		"reinstall": "rm -rf ./node_modules && rm -rf ./server/node_modules && rm -rf ./client/node_modules && npm install",
+		"test": "sh ./scripts/e2e.sh"
+	},
+	"devDependencies": {
+		"@types/mocha": "^5.2.7",
+		"@types/node": "^12.12.0",
+		"@typescript-eslint/parser": "^2.3.0",
+		"eslint": "^6.4.0",
+		"mocha": "^6.2.2",
+		"typescript": "^3.8.3"
+	}
+}
