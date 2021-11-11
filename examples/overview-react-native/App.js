@@ -24,7 +24,13 @@ class App extends React.Component {
     this.state = {mode: 'ConnectAccount'}
   }
   async componentDidMount() { // from mode: ConnectAccount
-    const acc = await reach.getDefaultAccount();
+    // const acc = await reach.getDefaultAccount();
+    await reach.setProviderByName('TestNet');
+    const phrase = Platform.OS === 'ios'?
+      "humor sting race bonus unit arctic speak fine wood double hip crouch" 
+      : 
+      "oppose settle table giggle flush seven addict wrap pull jelly payment purchase";
+    const acc = await reach.newAccountFromMnemonic(phrase);
     const addr = reach.formatAddress(await acc.getAddress());
     const balAtomic = await reach.balanceOf(acc);
     const bal = reach.formatCurrency(balAtomic, 4);

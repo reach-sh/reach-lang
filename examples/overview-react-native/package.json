@@ -13,9 +13,9 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@reach-sh/stdlib": "^0.1.6-rc.1",
+    "@ethersproject/shims": "^5.5.0",
+    "@reach-sh/stdlib": "^0.1.6-rc.8",
     "@react-native-clipboard/clipboard": "^1.9.0",
-    "big-integer": "^1.6.50",
     "react": "17.0.2",
     "react-native": "0.66.1"
   },

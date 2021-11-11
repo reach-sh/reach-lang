@@ -1008,6 +1008,11 @@
     "@ethersproject/logger" "^5.5.0"
     hash.js "1.1.7"
 
+"@ethersproject/shims@^5.5.0":
+  version "5.5.0"
+  resolved "https://registry.yarnpkg.com/@ethersproject/shims/-/shims-5.5.0.tgz#e7102871135e4272928926c5f376fea13d799b05"
+  integrity sha512-Mx8KzgM3RIW1oLHLzJV8R0Ca3zEju6kfo0h8upFZHqSfB1ai9Jz5n3R5tHTGCcPAL4r+Dvclt9ZW3s63wNQPgg==
+
 "@ethersproject/signing-key@5.5.0", "@ethersproject/signing-key@^5.5.0":
   version "5.5.0"
   resolved "https://registry.yarnpkg.com/@ethersproject/signing-key/-/signing-key-5.5.0.tgz#2aa37169ce7e01e3e80f2c14325f624c29cedbe0"
@@ -1376,10 +1381,10 @@
     "@randlabs/communication-bridge" "^1.0.0"
     belter "^1.0.170"
 
-"@reach-sh/stdlib@^0.1.6-rc.1":
-  version "0.1.6-rc.1"
-  resolved "https://registry.yarnpkg.com/@reach-sh/stdlib/-/stdlib-0.1.6-rc.1.tgz#54961cb7d7a552484b2fe5d4a0198f6f7455e688"
-  integrity sha512-XRrOETN41dIlW33/PLWmlSm7s2uqQYJhdvXDZzOZoFKsixieHgpi7kitWLbu6IA7sb3aSsEtzZkLxThz3Mhldw==
+"@reach-sh/stdlib@^0.1.6-rc.4":
+  version "0.1.6-rc.8"
+  resolved "https://registry.yarnpkg.com/@reach-sh/stdlib/-/stdlib-0.1.6-rc.8.tgz#34cf69f1a42ab8c79fbed4cfcb7b16e52b3ceb37"
+  integrity sha512-DAKUdD7OdDRmOBnyOA05Z2sCC/dWCaZEkuq9r1/JQmv1XWHT/feHxvxrGeXQaRxzveJpSydx71cOqYjiITTF6w==
   dependencies:
     "@msgpack/msgpack" "^2.5.1"
     "@randlabs/myalgo-connect" "^1.1.1"
@@ -2417,7 +2422,7 @@ belter@^1.0.170:
     cross-domain-utils "^2"
     zalgo-promise "^1"
 
-big-integer@1.6.x, big-integer@^1.6.50:
+big-integer@1.6.x:
   version "1.6.50"
   resolved "https://registry.yarnpkg.com/big-integer/-/big-integer-1.6.50.tgz#299a4be8bd441c73dcc492ed46b7169c34e92e70"
   integrity sha512-+O2uoQWFRo8ysZNo/rjtri2jIwjr3XfeAgRjAUADRqGG+ZITvyn8J1kvXLTaKVr3hhGXk+f23tKfdzmklVM9vQ==
