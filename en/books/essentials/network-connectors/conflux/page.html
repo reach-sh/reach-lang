@@ -1,0 +1,33 @@
+<p>The <a href="https://confluxnetwork.org/">Conflux</a> Reach connector works almost identically to the <a href="/en/books/essentials/network-connectors/ethereum/">Ethereum</a> connector, except that it behaves differently at runtime: using, for example, Conflux Portal rather than MetaMask, and connecting to Conflux nodes.</p>
+<p>Backends must respect the following environment variables:</p>
+<p>
+  <code>CFX_NODE_URI</code> is used to contact the Conflux node. It defaults to <code>http://localhost:12537</code>.
+  <code>CFX_NETWORK_ID</code> is used to determine the Conflux network id. It defaults to <code>999</code>.
+</p>
+<p>
+  FAQ
+  How do I run my Reach DApp on CFX TestNet or MainNet?
+  You can add the following JavaScript near the beginning of your index.js or index.mjs file in order to run on Conflux TestNet:
+</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">reach.</span><span style="color: #8250DF">setProviderByName</span><span style="color: #24292F">(</span><span style="color: #0A3069">'TestNet'</span><span style="color: #24292F">);</span></li></ol></pre>
+<p>Or this to run on Conflux MainNet:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">reach.</span><span style="color: #8250DF">setProviderByName</span><span style="color: #24292F">(</span><span style="color: #0A3069">'MainNet'</span><span style="color: #24292F">);</span></li></ol></pre>
+<p>It is strongly recommended that you also use <code>setQueryLowerBound</code> to avoid waiting for unnecessary queries. For example, this code snippet sets the lower bound at 2000 blocks ago:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">now</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> reach.</span><span style="color: #8250DF">getNetworkTime</span><span style="color: #24292F">();</span></li><li value="2"><span style="color: #24292F">reach.</span><span style="color: #8250DF">setQueryLowerBound</span><span style="color: #24292F">(reach.</span><span style="color: #8250DF">sub</span><span style="color: #24292F">(now, </span><span style="color: #0550AE">2000</span><span style="color: #24292F">));</span></li></ol></pre>
+<p>Why is DApp startup very slow? Why do I need to use <code>setQueryLowerBound</code>?</p>
+<p>DApp startup doesn't have to be slow. Reach relies on querying Conflux event logs in order to run the DApp. The Conflux network does not yet provide fast APIs for querying event logs for a given contract across all time, so instead, Reach incrementally queries across chunks of 1000 blocks at a time. You can use <code>setQueryLowerBound</code> to help Reach know at what block number to start querying, so that it does not have to start querying at the beginning of time, which can take quite a while.</p>
+<p>How can I use ConfluxPortal with the Reach devnet?</p>
+<p>If you find that ConfluxPortal's Localhost 12537 default configuration does not work correctly with Reach apps, you can try configuring ConfluxPortal to use a custom RPC endpoint:</p>
+<ol>
+  <li>Click the network dropdown in Conflux Portal</li>
+  <li>Select: Custom RPC</li>
+  <li>Use RPC url: <code>http://127.0.0.1:12537</code></li>
+</ol>
+<p>If your locally-running Conflux devnet restarts, you may find that you need to reset ConfluxPortal's account history, which you can do like so:</p>
+<ol>
+  <li>Select the desired account</li>
+  <li>Click the profile image of the account (top-right)</li>
+  <li>Click Settings &gt; Advanced &gt; Reset Account &gt; (confirm) Reset</li>
+  <li>Switch to a different network and back</li>
+  <li>CTRL+SHIFT+R to hard-reset the webpage.</li>
+</ol>

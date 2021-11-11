@@ -11,7 +11,6 @@
   "chapters": null,
   "pages": null,
   "menuItem": "mi-docs",
-  "src": "ref-networks.md",
-  "title": "Consensus Network Connectors",
+  "title": "Network Connectors",
   "pathname": "/proj/docs/dev/src/en/books/essentials/network-connectors"
 }
