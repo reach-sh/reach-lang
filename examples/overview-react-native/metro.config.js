@@ -7,6 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const exclusionList = require('metro-config/src/defaults/exclusionList');
+const {getDefaultConfig} = require('metro-config');
 
 const rnwPath = fs.realpathSync(
   path.resolve(require.resolve('react-native-windows/package.json'), '..'),
@@ -34,3 +35,10 @@ module.exports = {
     }),
   },
 };
+
+module.exports = (async () => {
+  const {
+    resolver: {sourceExts},
+  } = await getDefaultConfig();
+  return {resolver: {sourceExts: [...sourceExts, 'mjs']}};
+})();
