@@ -57,7 +57,8 @@ clone-js-stdlib:
 
 .PHONY: refresh-js-stdlib
 refresh-js-stdlib: clone-js-stdlib
-	cd js-reach-stdlib && ./sbin/refresh.sh
+	cd js-reach-stdlib 
+	git checkout CORE-171 && ./sbin/refresh.sh
 
 .PHONY: bump-version-and-publish-js-stdlib
 bump-version-and-publish-js-stdlib: refresh-js-stdlib
