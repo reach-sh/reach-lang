@@ -48,6 +48,7 @@ exports.FundAccount = class extends React.Component {
             keyboardType="number-pad"
             placeholder={defaultFundAmt}
             onChangeText={e => this.setState({amt: e})}
+            style={styles.textInput}
           />
           <Button
             onPress={() => parent.fundAccount(amt)}

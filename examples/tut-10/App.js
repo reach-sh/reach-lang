@@ -26,10 +26,13 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {view: 'ConnectAccount', ...defaults};
+    const init = async () => {
+      await reach.setProviderByName('TestNet');
+    }
+    init();
   }
   async componentDidMount() {
     // const acc = await reach.getDefaultAccount();
-    await reach.setProviderByName('TestNet');
     const phrase = Platform.OS === 'ios'?
       "humor sting race bonus unit arctic speak fine wood double hip crouch" 
       : 

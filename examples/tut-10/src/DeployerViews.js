@@ -31,6 +31,7 @@ exports.SetWager = class extends React.Component {
             keyboardType="number-pad"
             placeholder={defaultWager}
             onChangeText={e => this.setState({wager: e})}
+            style={styles.textInput}
           />
           <Text  style={styles.textNormal}>{standardUnit}</Text>
         </View>
