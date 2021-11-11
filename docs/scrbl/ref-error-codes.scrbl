@@ -2466,7 +2466,7 @@ The error means that you use an @tech{API} in two places in your program, which 
 
 This might look like the following in the API_CONSENSUS_EXPR
 @reach{
-  (algoAmount, apiReturn) => {
+  .api(User.mintTok, (algoAmount, apiReturn) => {
     require(algoAmount > 0);
     require(oraclePrice > 0);
     const mint = algoAmount * oraclePrice;
@@ -2475,7 +2475,7 @@ This might look like the following in the API_CONSENSUS_EXPR
       apiReturn(true);
     }
     apiReturn(false);
-  }
+  })
 }
 
 You cannot call @tt{apiReturn} twice.
