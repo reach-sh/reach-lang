@@ -1,5 +1,6 @@
 import React from 'react';
-import { Button, Text, TextInput, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
+import Button from './Button';
 import styles from './Styles';
 
 export class Wrapper extends React.Component {

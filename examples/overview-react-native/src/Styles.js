@@ -41,6 +41,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white', 
     height: 40,
     marginVertical: 10, 
+    minWidth: 150,
   },
   Deployer: {},
   Attacher: {},
