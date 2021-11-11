@@ -2,9 +2,11 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Reach.Verify.SMT (verify_smt) where
 
+import Codec.Compression.GZip
 import qualified Control.Exception as Exn
 import Control.Monad
 import Control.Monad.Reader
+import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.ByteString.Char8 as B
 import Data.Digest.CRC32
 import Data.Foldable
@@ -32,6 +34,7 @@ import qualified SimpleSMT as SMT
 import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver(..))
 import System.Directory
 import System.Exit
+import System.FilePath
 import System.IO
 import Reach.Verify.SMTAst
 import Reach.AddCounts (add_counts)
@@ -1604,10 +1607,10 @@ seqPop = \case
   (Seq.:|>) x _ -> x
   _ -> impossible $ "empty seq"
 
-newSolverSet :: Integer -> String -> [String] -> (String -> IO (IO (), Maybe Logger)) -> IO Solver
-newSolverSet long_i p a mkl = do
+newSolverSet :: VerifyOpts -> String -> [String] -> (String -> IO (IO (), Maybe Logger)) -> IO Solver
+newSolverSet (VerifyOpts {..}) p a mkl = do
   let short_a = Atom $ "10"
-  let long_a = Atom $ show $ long_i
+  let long_a = Atom $ show $ vo_timeout
   let t_bin o x y = List [ Atom o, x, y ]
   let t_timeout = t_bin "try-for"
   let our_tactic = t_timeout (Atom "default")
@@ -1624,7 +1627,7 @@ newSolverSet long_i p a mkl = do
   let c = \case
         List [ Atom "reachCheckUsing", iptks ] -> do
           let iptk :: Bool = fromSExpr iptks
-          let after ac rs = do
+          let after_ ac rs = do
                 let r =
                       case rs of
                         Atom "sat" -> Sat
@@ -1637,17 +1640,35 @@ newSolverSet long_i p a mkl = do
                     -- (True, Unsat) -> f RD_UnsatCore "get-unsat-core"
                     (False, Sat) -> f RD_Model "get-model"
                     _ -> return Nothing
-                return $ toSExpr (r, mrd)
+                return $ show (r, mrd)
+          let after ac rs = Atom <$> after_ ac rs
           tc (reachCheckUsing short_a) >>= \case
             Atom "unknown" -> do
               sn <- incCounter subc
-              (slc, sl) <- mkl $ show sn
-              Solver sc se <- SMT.newSolver p a sl
-              readIORef rib >>= traverse_ (traverse_ sc)
-              r <- sc (reachCheckUsing long_a)
-              x <- after sc r
-              void $ doClose slc se
-              return x
+              ss <- readIORef rib
+              let doSS f = do
+                    traverse_ (traverse_ f) ss
+                    f (reachCheckUsing long_a)
+              hr <- newIORef $ crc32 (""::B.ByteString)
+              doSS $ \s -> do
+                modifyIORef hr $ flip crc32Update (bpack $ show s)
+              h <- readIORef hr
+              let cdir = vo_dir </> "smt-cache"
+              let cfile = cdir </> show h
+              let after__ = return . Atom
+              let w f = BL.unpack . f . BL.pack
+              doesFileExist cfile >>= \case
+                True -> do
+                  (w decompress <$> readFile cfile) >>= after__
+                False -> do
+                  (slc, sl) <- mkl $ show sn
+                  Solver sc se <- SMT.newSolver p a sl
+                  r <- doSS sc
+                  x <- after_ sc r
+                  void $ doClose slc se
+                  createDirectoryIfMissing True cdir
+                  writeFile cfile $ (w compress) x
+                  after__ x
             r -> after tc r
         s@(List [ Atom "push", Atom "1" ]) -> do
           modifyIORef rib $ seqPush mempty
@@ -1663,7 +1684,7 @@ newSolverSet long_i p a mkl = do
 
 verify_smt :: VerifySt -> LLProg -> String -> [String] -> IO ExitCode
 verify_smt vst lp prog args = do
-  let VerifyOpts {..} = vst_vo vst
+  let vo@VerifyOpts {..} = vst_vo vst
   let logpMay = ($ "smt") <$> vo_out
   ulp <- unrollLoops lp
   case logpMay of
@@ -1674,7 +1695,7 @@ verify_smt vst lp prog args = do
           (close, logpl) <- newFileLogger logp
           return (close, Just logpl)
         Nothing -> return (return (), Nothing)
-  smt <- newSolverSet vo_timeout prog args mkLogger
+  smt <- newSolverSet vo prog args mkLogger
   --unlessM (SMT.produceUnsatCores smt) $
   --  impossible "Prover doesn't support possible?"
   SMT.loadString smt smtStdLib
