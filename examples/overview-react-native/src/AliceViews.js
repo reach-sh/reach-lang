@@ -28,6 +28,7 @@ export class EnterInfo extends React.Component {
         <TextInput
           onChangeText={(e) => this.setState({ info: e })}
           placeholder={defaultInfo}
+          style={styles.textInput}
         />
         <Button
           onPress={() => parent.enterInfo(info || defaultInfo)}
@@ -42,19 +43,19 @@ export class EnterRequest extends React.Component {
     const { parent, standardUnit, defaultRequestStandard } = this.props;
     const { req } = this.state || {};
     return (
-      <div>
-        Alice, how much {standardUnit} should Bob pay you
-        to reveal this info?
-        <br />
-        <input
-          type='number'
-          onChange={(e) => this.setState({ req: e.currentTarget.value })}
+      <View style={styles.container}>
+        <Text style={styles.textNormal}>
+          Alice, how much {standardUnit} should Bob pay you
+          to reveal this info?
+        </Text>
+        <TextInput
+          keyboardType="number-pad"
+          onChangeText={(e) => this.setState({ req: e.currentTarget.value })}
           placeholder={defaultRequestStandard}
+          style={styles.textInput}
         />
-        <br />
-        <button onClick={() => parent.enterRequest(req || defaultRequestStandard)}
-        >Submit request</button>
-      </div>
+        <Button onPress={() => parent.enterRequest(req || defaultRequestStandard)} title="Submit request" />
+      </View>
     );
   }
 }

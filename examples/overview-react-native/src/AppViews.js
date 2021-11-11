@@ -6,10 +6,10 @@ export class Wrapper extends React.Component {
   render() {
     const { app } = this.props;
     return (
-      <View style={styles.container}>
-        <Text style={styles.textNormal}>
-          {app}
-        </Text>
+      <View style={styles.AppHeader}>
+      <Text style={styles.textNormal}>
+        {app}
+      </Text>
       </View>
     );
   }
@@ -47,6 +47,7 @@ export class FundAccount extends React.Component {
           keyboardType="number-pad"
           placeholder={defaultFundAmtStandard}
           onChangeText={(e) => this.setState({ amt: e })}
+          style={styles.textInput}
         />
         <Button
           onPress={() => parent.fundAccount(this.state.amt)}

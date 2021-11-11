@@ -16,16 +16,19 @@ const reach = loadStdlib(process.env);
 const {standardUnit} = reach;
 const defaultFundAmtStandard = '10';
 const defaultInfo = 'the cake is a lie';
-const defaultRequestStandard = '0.5';
+const defaultRequestStandard = '0.005';
 
 class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {mode: 'ConnectAccount'}
+    const init = async () => {
+      reach.setProviderByName('TestNet');
+    }
+    init();
   }
   async componentDidMount() { // from mode: ConnectAccount
     // const acc = await reach.getDefaultAccount();
-    await reach.setProviderByName('TestNet');
     const phrase = Platform.OS === 'ios'?
       "humor sting race bonus unit arctic speak fine wood double hip crouch" 
       : 
@@ -74,7 +77,7 @@ class Alice extends React.Component {
     this.state = { mode: 'Deploy'};
   }
   async deploy() { // from mode: Deploy
-    const ctc = this.props.acc.deploy(backend);
+    const ctc = this.props.acc.contract(backend);
     this.setState({mode: 'EnterInfo', ctc});
     const ctcInfoStr = JSON.stringify(await ctc.getInfo(), null, 2);
     this.setState({ctcInfoStr});
