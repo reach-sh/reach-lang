@@ -2464,6 +2464,22 @@ This is generally not possible unless you directly use the internal representati
 
 The error means that you use an @tech{API} in two places in your program, which is not allowed.
 
+This might look like the following in the API_CONSENSUS_EXPR
+@reach{
+  (algoAmount, apiReturn) => {
+    require(algoAmount > 0);
+    require(oraclePrice > 0);
+    const mint = algoAmount * oraclePrice;
+    if(balance(tok) > mint) {
+      transfer(mint, tok).to(this);
+      apiReturn(true);
+    }
+    apiReturn(false);
+  }
+}
+
+You cannot call @tt{apiReturn} twice.
+
 @error{RAPI0003}
 
 This error means that you did not return a result from an @tech{API} call.
