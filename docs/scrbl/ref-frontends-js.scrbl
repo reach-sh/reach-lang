@@ -326,7 +326,7 @@ In order to interact with a deployed contract, you must construct a @tech{contra
  acc.contract(bin, ?info) => ctc }
 
 @index{acc.contract} Returns a Reach @tech{contract} handle based on the @jsin{bin} argument provided with access to the account @jsin{acc}.
-This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
+This @jsin{bin} argument is the @filepath{index.main.mjs} module produced by the JavaScript @tech{backend}.
 
 If @jsin{info} is provided, it must be a @reachin{Contract} value, or a @jsin{Promise} that eventually yields a @reachin{Contract} value.
 Typically, the deployer of a contract with not provide @jsin{info}, while users of a contract will.
