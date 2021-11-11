@@ -20,7 +20,7 @@ const reach = loadStdlib(process.env);
 const handToInt = {ROCK: 0, PAPER: 1, SCISSORS: 2};
 const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];
 const {standardUnit} = reach;
-const defaults = {defaultFundAmt: '10', defaultWager: '3', standardUnit};
+const defaults = {defaultFundAmt: '10', defaultWager: '0.005', standardUnit};
 
 class App extends React.Component {
   constructor(props) {
