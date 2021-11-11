@@ -13,7 +13,10 @@ SHELL=/bin/bash
 # See https://stackoverflow.com/a/15978322.
 VSCE_VER := $$(($$(($$(($(MAJOR)+1))*1000)) + $(MINOR))).$(PATCH).$(DRAFT)
 
-all:
+package.json: base.package.json
+	node build.package.json.js
+
+publish:
 	@echo "Now attempting to publish version $(VSCE_VER)"
 	@echo "of Reach's Visual Studio Code extension."
 	vsce publish $(VSCE_VER)
