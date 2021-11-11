@@ -71,6 +71,7 @@ compile env (CompilerOpts {..}) = do
         let vo_out = woutnMay
         let vo_mvcs = doIf connectors dlo_verifyPerConnector
         let vo_timeout = co_verifyTimeout
+        let vo_dir = dirDotReach'
         verify (VerifyOpts {..}) ol >>= maybeDie
         el <- erase_logic ol
         showp "el" el

@@ -113,8 +113,9 @@ tealcount () {
 
 #exit 0
 
-jb
-# ci CFX tut-7
+#jb
+
+c users/duoswap-core/index.rsh
 
 #c users/t.rsh
 exit 0
