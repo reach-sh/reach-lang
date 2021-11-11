@@ -1015,6 +1015,11 @@
     "@ethersproject/logger" "^5.5.0"
     hash.js "1.1.7"
 
+"@ethersproject/shims@^5.5.0":
+  version "5.5.0"
+  resolved "https://registry.yarnpkg.com/@ethersproject/shims/-/shims-5.5.0.tgz#e7102871135e4272928926c5f376fea13d799b05"
+  integrity sha512-Mx8KzgM3RIW1oLHLzJV8R0Ca3zEju6kfo0h8upFZHqSfB1ai9Jz5n3R5tHTGCcPAL4r+Dvclt9ZW3s63wNQPgg==
+
 "@ethersproject/signing-key@5.5.0", "@ethersproject/signing-key@^5.5.0":
   version "5.5.0"
   resolved "https://registry.yarnpkg.com/@ethersproject/signing-key/-/signing-key-5.5.0.tgz#2aa37169ce7e01e3e80f2c14325f624c29cedbe0"
@@ -1375,7 +1380,7 @@
   resolved "https://registry.yarnpkg.com/@randlabs/communication-bridge/-/communication-bridge-1.0.0.tgz#9b1c0f440cf88ede8d58eb2ce641982ecb32bea9"
   integrity sha512-CuJNwtMTG1LHR1LQNWUPv+8xPUdkRY9p61wGJEp8J/N3q8djmnMySvSQlyVqLBvXsTPKmYc0ZmfXEXCpb5P5Cw==
 
-"@randlabs/myalgo-connect@^1.1.0":
+"@randlabs/myalgo-connect@^1.1.1":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@randlabs/myalgo-connect/-/myalgo-connect-1.1.1.tgz#08e76a95b63f106e4cc54381748a330bc6dc9935"
   integrity sha512-knW4eGfu/N5tlgRo+LP7ehNQ3zg6eL2fLJocRnAs0s2pWLmPXOAeXYhYgW0eV2VvxgLF/0nzIunY/dwei7k7JQ==
@@ -1383,18 +1388,18 @@
     "@randlabs/communication-bridge" "^1.0.0"
     belter "^1.0.170"
 
-"@reach-sh/stdlib@^0.1.5-rc.2":
-  version "0.1.5"
-  resolved "https://registry.yarnpkg.com/@reach-sh/stdlib/-/stdlib-0.1.5.tgz#177e3f0cddae7dbfffb0a7cb5486d4734d2ce538"
-  integrity sha512-CHlyUHmfmE/ppX1fIU+s9o8PjNsPKLVMbHbDnipDDw9bCZw7I5iGJpfofn3NNY4P+5+eD59TYbLKBFHndyRJWw==
+"@reach-sh/stdlib@^0.1.6-rc.8":
+  version "0.1.6-rc.8"
+  resolved "https://registry.yarnpkg.com/@reach-sh/stdlib/-/stdlib-0.1.6-rc.8.tgz#34cf69f1a42ab8c79fbed4cfcb7b16e52b3ceb37"
+  integrity sha512-DAKUdD7OdDRmOBnyOA05Z2sCC/dWCaZEkuq9r1/JQmv1XWHT/feHxvxrGeXQaRxzveJpSydx71cOqYjiITTF6w==
   dependencies:
     "@msgpack/msgpack" "^2.5.1"
-    "@randlabs/myalgo-connect" "^1.1.0"
+    "@randlabs/myalgo-connect" "^1.1.1"
     "@walletconnect/client" "^1.6.5"
     algorand-walletconnect-qrcode-modal "^1.6.1"
-    algosdk "^1.11.1"
+    algosdk "^1.12.0"
     await-timeout "^0.6.0"
-    ethers "^5.0.32"
+    ethers "^5.4.7"
     express "^4.17.1"
     hi-base32 "^0.5.0"
     js-conflux-sdk "git+https://github.com/reach-sh/js-conflux-sdk#v1_6_0_blockNumber"
@@ -2032,7 +2037,7 @@ algorand-walletconnect-qrcode-modal@^1.6.1:
     preact "10.4.1"
     qrcode "1.4.4"
 
-algosdk@^1.11.1:
+algosdk@^1.12.0:
   version "1.12.0"
   resolved "https://registry.yarnpkg.com/algosdk/-/algosdk-1.12.0.tgz#77e2a22568495210d26ecd1f830e98cc069815b5"
   integrity sha512-Iqek0AwcCeXLywVg4E8gWWjmuPZ10P7PUmpZrlR71FSNyEtX4Ie+UgrNHWhkYnhyykRU5mjtvD4Hrb2eOepsGA==
@@ -2434,7 +2439,7 @@ belter@^1.0.170:
     cross-domain-utils "^2"
     zalgo-promise "^1"
 
-big-integer@1.6.x, big-integer@^1.6.50:
+big-integer@1.6.x:
   version "1.6.50"
   resolved "https://registry.yarnpkg.com/big-integer/-/big-integer-1.6.50.tgz#299a4be8bd441c73dcc492ed46b7169c34e92e70"
   integrity sha512-+O2uoQWFRo8ysZNo/rjtri2jIwjr3XfeAgRjAUADRqGG+ZITvyn8J1kvXLTaKVr3hhGXk+f23tKfdzmklVM9vQ==
@@ -3651,7 +3656,7 @@ etag@~1.8.1:
   resolved "https://registry.yarnpkg.com/etag/-/etag-1.8.1.tgz#41ae2eeb65efa62268aebfea83ac7d79299b0887"
   integrity sha1-Qa4u62XvpiJorr/qg6x9eSmbCIc=
 
-ethers@^5.0.32:
+ethers@^5.4.7:
   version "5.5.1"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-5.5.1.tgz#d3259a95a42557844aa543906c537106c0406fbf"
   integrity sha512-RodEvUFZI+EmFcE6bwkuJqpCYHazdzeR1nMzg+YWQSmQEsNtfl1KHGfp/FWZYl48bI/g7cgBeP2IlPthjiVngw==
@@ -5232,9 +5237,9 @@ joi@^17.2.1:
     "@sideway/formula" "^3.0.0"
     "@sideway/pinpoint" "^2.0.0"
 
-"js-conflux-sdk@git+https://github.com/reach-sh/js-conflux-sdk#v1_6_0_blockNumber":
+"js-conflux-sdk@git+https://github.com/reach-sh/js-conflux-sdk.git#v1_6_0_blockNumber":
   version "1.6.0"
-  resolved "git+https://github.com/reach-sh/js-conflux-sdk#6df5f0538c2077a7e29f0be08205b937499a1040"
+  resolved "git+https://github.com/reach-sh/js-conflux-sdk.git#6df5f0538c2077a7e29f0be08205b937499a1040"
   dependencies:
     "@babel/runtime" "^7.8.4"
     "@conflux-dev/conflux-address-js" "^1.0.0"

@@ -13,6 +13,7 @@ import AttacherViews from './src/AttacherViews';
 import {renderView} from './src/render';
 import * as backend from './build/index.main.mjs';
 import {loadStdlib} from '@reach-sh/stdlib';
+import { Platform } from 'react-native';
 
 const reach = loadStdlib(process.env);
 
@@ -27,13 +28,14 @@ class App extends React.Component {
     this.state = {view: 'ConnectAccount', ...defaults};
   }
   async componentDidMount() {
-    console.log('componentDidMount');
+    // const acc = await reach.getDefaultAccount();
     await reach.setProviderByName('TestNet');
-    // const acc = await reach.newTestAccount(10);
-    const acc = await reach.newAccountFromMnemonic("humor sting race bonus unit arctic speak fine wood double hip crouch");
-    console.log('newAccountFromMnemonic', acc);
+    const phrase = Platform.OS === 'ios'?
+      "humor sting race bonus unit arctic speak fine wood double hip crouch" 
+      : 
+      "oppose settle table giggle flush seven addict wrap pull jelly payment purchase";
+    const acc = await reach.newAccountFromMnemonic(phrase);
     const balAtomic = await reach.balanceOf(acc);
-    console.log('balAtomic', balAtomic);
     const bal = reach.formatCurrency(balAtomic, 4);
     this.setState({acc, bal});
     if (await reach.canFundFromFaucet()) {
