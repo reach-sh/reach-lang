@@ -234,7 +234,7 @@
   while in non-automated programs, an application uses out-of-band communication, such as an external database or user input, to acquire the <code>info</code> argument.
 </p>
 <p>
-  The first publishing participant will attempt deploy a contract for application.
+  The first publishing participant will attempt to deploy a contract for an application.
   If <code>info</code> was provided, an error will be thrown.
   This deployment can only happen one time, so subsequent attempts will fail with an error.
 </p>
@@ -267,7 +267,7 @@
 <h3 id="ctcparticipants-ctcp"><code>ctc.participants</code>, <code>ctc.p</code></h3>
 <p>Contract handles provide access to the interface of the compiled backend, <code>bin</code>, that they were constructed with.</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292F">ctc.participants </span><span style="color: #6E7781">// {[name: string]: (interact:Object) =&gt; Promise}</span></li><li value="2"><span style="color: #24292F">ctc.p</span></li><li value="3"></li><li value="4"><span style="color: #24292F">ctc.p.</span><span style="color: #8250DF">Alice</span><span style="color: #24292F">(interact)</span></li></ol></pre>
-<p>An object where the keys are the participant names and the values are function that accept an interact object and return a Promise that completes when the participant ends.</p>
+<p>An object where the keys are the participant names and the values are functions that accept an interact object and return a Promise that completes when the participant ends.</p>
 <p><code>acc.contract(backend).p.Alice(io)</code> is equivalent to <code>backend.Alice(acc.contract(backend), io)</code>, but does not require duplication of the <code>backend</code> component.</p>
 <h3 id="ctcapis-ctca"><code>ctc.apis</code>, <code>ctc.a</code></h3>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292F">ctc.apis </span><span style="color: #6E7781">// {[name: string]: {[fun:string]: (...args) =&gt; Promise&lt;res&gt;}}</span></li><li value="2"><span style="color: #24292F">ctc.apis </span><span style="color: #6E7781">// {[name: string]: (...args) =&gt; Promise&lt;result&gt;}</span></li><li value="3"><span style="color: #24292F">ctc.a</span></li><li value="4"></li><li value="5"><span style="color: #24292F">ctc.a.Voter.</span><span style="color: #8250DF">cast</span><span style="color: #24292F">(</span><span style="color: #0A3069">"Pedro"</span><span style="color: #24292F">)</span></li></ol></pre>
@@ -287,10 +287,10 @@
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292F">ctc.views </span><span style="color: #6E7781">// {[name: string]: {[fun:string]: (...args) =&gt; Promise&lt;res&gt;}}</span></li><li value="2"><span style="color: #24292F">ctc.views </span><span style="color: #6E7781">// {[name: string]: (...args) =&gt; Promise&lt;res&gt;}</span></li><li value="3"><span style="color: #24292F">ctc.v</span></li><li value="4"></li><li value="5"><span style="color: #24292F">ctc.v.</span><span style="color: #0550AE">NFT</span><span style="color: #24292F">.</span><span style="color: #8250DF">owner</span><span style="color: #24292F">()</span></li></ol></pre>
 <p>
   An object that mirrors the view hierarchy, so if <code>X.Y</code> is a view, then <code>ctc.views.X.Y</code> is a ${defn("view function")}.
-  A view function accepts the arguments of the view and returns a <code>Promise</code> that results in the value of the view wrapped in a <code>Maybe</code> type (because the view may not be bound.)
+  A view function accepts the arguments of the view and returns a <code>Promise</code> that results in the value of the view wrapped in a <code>Maybe</code> type (because the view may not be bound).
   For example, if <code>NFT.owner</code> is a view with no arguments that represents the <code>Address</code> that owns an NFT, then <code>await ctc.v.NFT.owner()</code> is either <code>['Some', Owner]</code> or <code>['None', null]</code>.
 </p>
-<p>If a View was specified without an <code>viewName</code>, for example <code>View({ owner: Address })</code>, it may be accessed by its property name:</p>
+<p>If a View was specified without a <code>viewName</code>, for example <code>View({ owner: Address })</code>, it may be accessed by its property name:</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292F">ctc.v.</span><span style="color: #8250DF">owner</span><span style="color: #24292F">();</span></li></ol></pre>
 <hr>
 <p>${ref((quote js), "getViews")}</p>
