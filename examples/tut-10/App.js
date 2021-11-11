@@ -32,8 +32,6 @@ class App extends React.Component {
     init();
   }
   async componentDidMount() {
-    // const acc = await reach.getDefaultAccount();
-
     if (await reach.canFundFromFaucet()) {
       this.setState({ view: 'FundAccount' });
     } else {
@@ -42,6 +40,7 @@ class App extends React.Component {
   }
 
   async setAccount(isDeployer = true) {
+    // const acc = await reach.getDefaultAccount();
     const phrase = isDeployer ?
       "humor sting race bonus unit arctic speak fine wood double hip crouch"
       :
