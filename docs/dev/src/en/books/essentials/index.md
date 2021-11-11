@@ -8,21 +8,21 @@ Reach is a programming language for building blockchain applications and the sma
 
 <div id="develop-and-deploy-carousel" class="carousel slide carousel-fade" data-bs-interval="false" style="background:black;">
   <div class="carousel-inner" style="text-align:center;background:black;">
-    <div class="carousel-item active"><img src="slide001.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide002.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide003.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide004.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide005.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide006.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide007.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide008.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide009.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide010.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide011.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide012.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide013.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide014.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide015.png" class="img-fluid" width=880 height=495></div>
+    <div class="carousel-item active"><img src="slide01.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide02.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide03.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide04.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide05.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide06.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide07.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide08.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide09.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide10.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide11.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide12.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide13.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide14.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide15.png" class="img-fluid" width=880 height=493></div>
   </div>
   <button class="carousel-control-prev" type="button" data-bs-target="#develop-and-deploy-carousel" data-bs-slide="prev" style="justify-content: left;">
     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
