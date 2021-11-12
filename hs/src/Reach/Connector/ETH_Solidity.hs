@@ -1173,19 +1173,84 @@ solBytesSplit sz f = map go [0 .. lastOne]
                 False -> maxLen
 
 apiDef :: SLPart -> ApiInfo -> App Doc
-apiDef _who ApiInfo{..} = do
+apiDef who ApiInfo{..} = do
+  let who_s = bunpack who
+  let mf = pretty $ "this.m" <> show ai_which
+  let mkArgDefns ts = do
+        let indexedTypes = zip ts [0..length ts]
+        unzip <$> mapM (\ (ty, i) -> do
+          let name = pretty $ "_a" <> show i
+          sol_ty <- solType_ ty
+          let decl = solDecl name (sol_ty <> withArgLoc ty)
+          return (name, decl)
+          ) indexedTypes
+  m_arg_ty <- solArgType Nothing ai_msg_vs
+  -- Creates the tuple needed to call the consensus function
+  let makeConsensusArg args = do
+        case ai_msg_vs of
+          [] -> return "false"
+          _ -> do
+            tc_args <-
+              case ai_msg_vs of
+                [v] -> do
+                  tc' <- solType_ $ varType v
+                  return $ [ solApply tc' args ]
+                _ -> return args
+            tc <- solType_ $ vsToType ai_msg_vs
+            return $ solApply tc tc_args
   let go = \case
         -- API Call
         (False, _) -> do
-          return ([], [])
+          (args, argDefns) <- mkArgDefns ai_msg_tys
+          ty <- makeConsensusArg args
+          return $ (ty, argDefns, [])
         -- Multi case fork
-        (True, Just _c_id) -> do
-          return ([], [])
+        (True, Just c_id_s) -> do
+          let c_id = pretty c_id_s
+          -- Construct product of data variant
+          (data_t, con_t, argDefns) <-
+            case ai_msg_tys of
+              [dt@(T_Data env)] ->
+                case M.lookup c_id_s env of
+                  Just (T_Tuple []) -> return (dt, "false", [])
+                  Just (T_Tuple ts) -> do
+                    (args, argDefns) <- mkArgDefns ts
+                    t <- solType_ $ T_Tuple ts
+                    let ct = solApply t args
+                    return $ (dt, ct, argDefns)
+                  _ -> impossible  "apiDef: Constructor not in Data"
+              _ -> impossible "apiDef: Expected one `Data` arg"
+          dt <- solType_ data_t
+          let lifts = [ dt <+> "memory _vt;"
+                        , "_vt._" <> c_id <> " = " <> con_t <> semi
+                        , "_vt.which = _enum_" <> dt <> "." <> c_id <> semi ]
+          tc <- solType_ $ vsToType ai_msg_vs
+          let ty =  solApply tc ["_vt"]
+          return $ (ty, argDefns, lifts)
         -- Single case fork
         (True, Nothing) -> do
-          return ([], [])
-  (_args, _body) <- go (ai_is_fork, ai_mcase_id)
-  return $ ""
+          (args, argDefns) <-
+            case ai_msg_tys of
+              [T_Tuple ts] -> mkArgDefns ts
+              _ -> impossible "apiDef: Expected one tuple arg"
+          ty <- makeConsensusArg args
+          return $ (ty, argDefns, [])
+  (ty, argDefns, tyLifts) <- go (ai_is_fork, ai_mcase_id)
+  let body = vsep $ [ "ApiRng memory _r;"
+                    , m_arg_ty <+> "memory _t;"]
+                    <> tyLifts <>
+                    [ "_t.msg =" <+> ty <> semi
+                    , solApply mf ["_t", "_r" ] <> semi
+                    , pretty ("return _r." <> who_s) <> semi
+                    ]
+  api_rngs <- fmap (fromMaybe mempty) . liftIO . readIORef =<< asks ctxt_api_rngs
+  ret_ty <- case M.lookup (bunpack who) api_rngs of
+          Just t -> do
+            t' <- solType_ t
+            return $ t' <+> withArgLoc t
+          Nothing -> impossible "apiDef: return type not found"
+  let ret = "external returns"<+> parens ret_ty
+  return $ solFunction (pretty who_s) argDefns ret body
 
 apiDefs :: ApiInfos -> App Doc
 apiDefs defs =

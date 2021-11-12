@@ -487,17 +487,19 @@ data ApiInfo = ApiInfo
   { ai_msg_tys :: [DLType]
   , ai_mcase_id :: Maybe String
   , ai_which :: Int
-  , ai_is_fork :: Bool }
+  , ai_is_fork :: Bool
+  , ai_msg_vs :: [DLVar] }
   deriving (Eq)
 
 instance Pretty ApiInfo where
   pretty = \case
-    ApiInfo mtys mci which is_fork ->
+    ApiInfo mtys mci which is_fork vs ->
       braces $ hardline <> vsep [
         "msg_tys :" <+> pretty mtys
       , "mcase_id:" <+> pretty mci
       , "which:" <+> pretty which
       , "is_fork:" <+> pretty is_fork
+      , "msg:" <+> pretty vs
       ]
 
 data DLExpr
