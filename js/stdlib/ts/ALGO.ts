@@ -540,8 +540,8 @@ class EventCache {
     this.cache = this.cache.filter((txn) => {
       const notTooOld = txn['confirmed-round'] >= filterRound;
       const emptyOptIn =
-        (txn['on-completion'] === 'optin')
-        && (txn['application-transaction']['application-args'].length == 0);
+        (  (txn['application-transaction']['on-completion'] === 'optin')
+        && (txn['application-transaction']['application-args'].length == 0));
       return notTooOld && (! emptyOptIn);
     });
 
