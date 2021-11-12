@@ -2,6 +2,7 @@ import React from 'react';
 import { Text, TextInput, View } from 'react-native';
 import styles from './Styles';
 import Button from './Button';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 const sleep = (milliseconds) => new Promise(resolve => setTimeout(resolve, milliseconds));
 
@@ -74,9 +75,9 @@ export class RunBackend extends React.Component {
           Ready to connect to the contract?
         </Text>
         <Text style={styles.textNormal}>
-          You will be prompted to pay for two transactions.
-          The first transaction will publish your requested amount,
-          and the second will publish your secret while simultaneously
+          You will be prompted to pay for two transactions. 
+          The first transaction will publish your requested amount, 
+          and the second will publish your secret while simultaneously 
           retrieving the requested amount from the contract.
         </Text>
         <Button

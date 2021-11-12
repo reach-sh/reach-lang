@@ -96,14 +96,15 @@ class Alice extends React.Component {
   }
   async deploy() { // from mode: Deploy
     const ctc = this.props.acc.deploy(backend);
-    console.log('contract', ctc)
     this.setState({ mode: 'EnterInfo', ctc });
     const ctcInfoStr = JSON.stringify(await ctc.getInfo(), null, 2);
-    console.log('ctcInfoStr', ctcInfoStr)
     this.setState({ ctcInfoStr });
   }
+
   enterInfo(info) { this.setState({ mode: 'EnterRequest', info }); } // from mode: EnterInfo
+
   enterRequest(requestStandard) { this.setState({ mode: 'RunBackend', requestStandard }); } // from mode: EnterRequest
+  
   async runBackend() { // from mode: RunBackend
     const { ctc, requestStandard, info } = this.state;
     this.setState({ mode: 'BackendRunning' });
@@ -111,6 +112,7 @@ class Alice extends React.Component {
     await backend.Alice(ctc, { request, info });
     this.setState({ mode: 'BackendRan' });
   }
+  
   render() {
     let alice = null;
     const parent = this;
@@ -128,6 +130,7 @@ class Alice extends React.Component {
     } else { // 'BackendRan'
       alice = <AliceViews.BackendRan />;
     }
+    console.log('alice', alice)
     return <AliceViews.AliceWrapper {...{ alice }} />
   }
 }

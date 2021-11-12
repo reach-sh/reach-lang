@@ -1,20 +1,21 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 
 const styles = StyleSheet.create({
   boldText: {
     fontWeight: 'bold',
     fontSize: 24,
-    color: '#FFFFFF',
+    color: 'white',
     marginVertical: 10, 
   },
   textNormal: {
-    color: '#FFFFFF',
+    color: 'white',
     marginVertical: 10, 
+    textAlign: 'center'
   },
   boldTextH2: {
     fontWeight: 'bold',
     fontSize: 18,
-    color: '#FFFFFF',
+    color: 'white',
     marginVertical: 10, 
   },
   horizontalContainer: {
@@ -23,6 +24,7 @@ const styles = StyleSheet.create({
   },
   container: {
     alignItems: 'center',
+    width: Dimensions.get('window').width
   },
   App: {
     textAlign: 'center',

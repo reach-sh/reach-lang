@@ -7,10 +7,10 @@ export class Wrapper extends React.Component {
   render() {
     const { app } = this.props;
     return (
-      <View style={styles.AppHeader}>
-      <Text style={styles.textNormal}>
-        {app}
-      </Text>
+      <View style={styles.App}>
+        <View style={styles.AppHeader}>
+          {app}
+        </View>
       </View>
     );
   }
