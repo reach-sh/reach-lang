@@ -193,9 +193,9 @@ jsAssertInfo :: SrcLoc -> [SLCtxtFrame] -> Maybe B.ByteString -> App Doc
 jsAssertInfo at fs mmsg = do
   let msg_p = case mmsg of
         Nothing -> "null"
-        Just b -> jsString $ bunpack b
+        Just b -> jsBytes b
   who <- ctxt_who <$> ask
-  who_p <- jsCon $ DLL_Bytes $ who
+  let who_p = jsBytes who
   let fs_p = jsArray $ map (jsString . unsafeRedactAbsStr . show) fs
   return $
     jsObject $
@@ -220,7 +220,6 @@ jsCon = \case
   DLL_Int at i -> do
     uim <- jsArg (DLA_Constant $ DLC_UInt_max)
     return $ jsApply "stdlib.checkedBigNumberify" [jsAt at, uim, pretty i]
-  DLL_Bytes b -> return $ jsString $ bunpack b
 
 jsArg :: AppT DLArg
 jsArg = \case
@@ -246,6 +245,10 @@ jsLargeArg = \case
     return $ jsArray [jsString vn, vv']
   DLLA_Struct kvs ->
     jsLargeArg $ DLLA_Obj $ M.fromList kvs
+  DLLA_Bytes b -> return $ jsBytes b
+
+jsBytes :: B.ByteString -> Doc
+jsBytes = jsString . bunpack
 
 jsContractAndVals :: [DLArg] -> App [Doc]
 jsContractAndVals as = do
@@ -259,7 +262,7 @@ jsDigest as = jsApply "stdlib.digest" <$> jsContractAndVals as
 
 jsPrimApply :: PrimOp -> [Doc] -> Doc
 jsPrimApply = \case
-  SELF_ADDRESS -> jsApply "ctc.selfAddress"
+  SELF_ADDRESS {} -> jsApply "ctc.selfAddress"
   ADD -> jsApply "stdlib.add"
   SUB -> jsApply "stdlib.sub"
   MUL -> jsApply "stdlib.mul"
@@ -283,7 +286,7 @@ jsPrimApply = \case
   DIGEST_EQ -> jsApply "stdlib.digestEq"
   ADDRESS_EQ -> jsApply "stdlib.addressEq"
   TOKEN_EQ -> jsApply "stdlib.tokenEq"
-  BYTES_CONCAT -> jsApply "stdlib.bytesConcat"
+  BYTES_ZPAD xtra -> \args -> jsApply "stdlib.bytesConcat" (args <> [ jsBytes $ bytesZero xtra ])
 
 jsArg_m :: AppT (Maybe DLArg)
 jsArg_m = \case
@@ -457,7 +460,7 @@ jsExpr = \case
     txn' <- jsTxn
     dvt' <- jsContract $ varType dv
     return $ "await" <+> txn' <> "." <> jsApply "getOutput" [squotes (pretty mode), squotes dv', dvt', dv']
-
+  DLE_setApiDetails {} -> return "undefined"
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
   ov' <- jsVar ov
@@ -898,7 +901,7 @@ jsViews (cvs, vis) = do
                 return $ jsReturn $ parens eb'call
               Nothing -> return $ illegal
           return $ jsWhen c $ vsep [let', ret']
-    let enInfo' :: SLPart -> SLVar -> IType -> App Doc
+    let enInfo' :: Maybe SLPart -> SLVar -> IType -> App Doc
         enInfo' v k vt = do
           let (_, rng) = itype2arr vt
           rng' <- jsContract rng
@@ -911,8 +914,14 @@ jsViews (cvs, vis) = do
                 [ ("ty" :: String, rng')
                 , ("decode", decode')
                 ]
-    let enInfo v = toObj (enInfo' v)
-    infos <- toObj enInfo cvs
+    let enInfo k v = mapWithKeyM (enInfo' k) v
+    infos' <- mapWithKeyM enInfo cvs
+    -- Lift untagged views to same level as tagged views
+    let infos = jsObject $ M.foldrWithKey (\ mk ->
+          case mk of
+            Just k -> M.insert (bunpack k) . jsObject
+            Nothing -> M.union
+          ) mempty infos'
     maps_defn <- jsMapDefns False
     return $ vsep $
       [ maps_defn
@@ -942,7 +951,7 @@ reachBackendVersion :: Int
 reachBackendVersion = 5
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
-jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _)) = do
+jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ _)) = do
   let DLInit {..} = dli
   let preamble =
         vsep
@@ -962,7 +971,12 @@ jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _)) = do
       jsViews vi
   mapsp <- jsMaps dli_maps
   let partMap = flip M.mapWithKey epps_m $ \p _ -> pretty $ bunpack p
-  let apiMap = flip M.map epps_apis $ jsObject . (M.map $ \(p,_) -> pretty $ bunpack p)
+  let apiMap = M.foldrWithKey (\ k ->
+          case k of
+            Just k' -> M.insert (bunpack k') . jsObject
+            Nothing -> M.union
+          . M.map (\(p,_) -> pretty $ bunpack p)
+        ) mempty epps_apis
   return $ vsep $ [ preamble, exportsp, viewsp, mapsp] <> partsp <> cnpsp <> [jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
 
 backend_js :: Backend

@@ -151,6 +151,7 @@ data EvalError
   | Err_NotAfterFirst
   | Err_UniqueFirstPublish
   | Err_ApiCallAssign
+  | Err_DuplicateName String SrcLoc
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -283,6 +284,7 @@ instance HasErrorCode EvalError where
     Err_UniqueFirstPublish -> 120
     Err_API_NotFun {} -> 121
     Err_ApiCallAssign {} -> 122
+    Err_DuplicateName {} -> 123
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -524,7 +526,7 @@ instance Show EvalError where
     Err_Eval_RefNotInt slval ->
       "Invalid array index. Expected uint256, got: " <> show_sv slval
     Err_Eval_RefOutOfBounds maxi ix ->
-      "Invalid array index. Expected an index between 0 and " <> show maxi <> ", but got: " <> show ix
+      "Invalid array index. Expected an index greater than or equal to 0 and less than " <> show maxi <> ", but got: " <> show ix
     Err_Eval_UnboundId (LC_RefFrom ctxt) slvar slvars ->
       "Invalid unbound identifier in " <> ctxt <> ": " <> slvar <> didYouMean slvar slvars 5
     Err_Eval_UnboundId LC_CompilerRequired slvar _ ->
@@ -713,5 +715,7 @@ instance Show EvalError where
       "A unique `Participant` must make the first publication"
     Err_ApiCallAssign ->
       "The left hand side of an API call must be a pair consisting of the domain and return function."
+    Err_DuplicateName s at ->
+      "The name `" <> s <> "` has already been used by a Participant, View or API at: " <> show at
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

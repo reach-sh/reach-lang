@@ -183,6 +183,7 @@ kgq_la ctxt mv = \case
   DLLA_Obj m -> moreas $ M.elems m
   DLLA_Data _ _ a -> onea a
   DLLA_Struct kvs -> moreas $ map snd kvs
+  DLLA_Bytes _ -> mempty
   where
     moreas = mconcatMap onea
     onea = kgq_a_onlym ctxt mv
@@ -246,6 +247,7 @@ kgq_e ctxt mv = \case
   DLE_GetContract {} -> mempty
   DLE_GetAddress {} -> mempty
   DLE_EmitLog _ _ v -> kgq_a_onlym ctxt mv $ DLA_Var v
+  DLE_setApiDetails {} -> mempty
 
 kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case

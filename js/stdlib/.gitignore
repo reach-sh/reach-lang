@@ -8,3 +8,5 @@
 /dist/
 /package-lock.json
 /ts/stdlib_sol.ts
+/stdlib_sol.json
+/.docker-root

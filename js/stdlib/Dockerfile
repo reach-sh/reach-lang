@@ -7,18 +7,28 @@ ARG JS_DEPS_IMAGE=reachsh/js-deps:$REACH_VERSION
 # hadolint ignore=DL3006
 FROM $JS_DEPS_IMAGE as js-deps
 
+FROM reachsh/reach AS reach
+
 # hadolint ignore=DL3006
 FROM $NODE_IMAGE AS prepare
 
 WORKDIR /stdlib
-COPY --from=js-deps /js-deps/node_modules /stdlib/node_modules
-COPY package.json /stdlib/
+COPY --from=js-deps /js-deps/node_modules ./node_modules
+RUN apk add make curl bash
+COPY Makefile.docker ./Makefile
+COPY package.mo.json .
+COPY .docker-root ./.docker-root
+RUN make ROOT=.docker-root install-mo package.json
+
 # The above should cover all `npm install` needs
 # RUN npm install
 
 RUN npm link
 
 COPY ts /stdlib/ts
+COPY --from=reach /stdlib_sol.json .
+RUN make ROOT=.docker-root ts/version.ts ts/stdlib_sol.ts
+
 # uncomment if we ever need custom types again
 # COPY types /stdlib/types
 

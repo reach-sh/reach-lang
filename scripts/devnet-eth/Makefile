@@ -1,5 +1,5 @@
-IMAGE="reachsh/devnet-eth"
-ROOT="../.."
+IMAGE=reachsh/devnet-eth
+ROOT=../..
 include $(ROOT)/DEPS
 
 .PHONY: build

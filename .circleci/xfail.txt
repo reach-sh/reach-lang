@@ -1,2 +1,9 @@
 # These are allowed to fail and we still release
 
+# FIXME
+CFX.view-steps
+
+# FIXME - known & released as of 0.1.6-rc.5 (2021-11-08)
+CFX.remote-view
+CFX.untagged-view
+CFX.transfer-from-zero

@@ -10,8 +10,8 @@ const stdlib = loadStdlib(process.env);
   console.log('Hello, Alice and Bob!');
 
   console.log('Launching...');
-  const ctcAlice = accAlice.deploy(backend);
-  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
 
   console.log('Starting backends...');
   await Promise.all([

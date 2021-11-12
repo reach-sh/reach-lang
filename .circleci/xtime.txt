@@ -2,3 +2,9 @@
 
 # https://reachsh.atlassian.net/browse/CORE-463
 ETH.cache-events
+
+# FIXME
+CFX.api-full
+CFX.atomic-swap-auction
+CFX.cache-events
+CFX.popularity-contest

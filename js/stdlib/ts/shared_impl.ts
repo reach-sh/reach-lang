@@ -1,5 +1,6 @@
 // This can depend on the shared backend
 import crypto from 'crypto';
+import Timeout from 'await-timeout';
 import { ethers } from 'ethers';
 import {
   CBR_Address,
@@ -56,12 +57,21 @@ export type IBackendViewInfo<ConnectorTy extends AnyBackendTy> = {
   decode: (i:number, svs:Array<any>, args:Array<any>) => Promise<any>,
 };
 
+const isUntaggedView = (x: any) => {
+  return 'ty' in x && 'decode' in x;
+}
+
 export type IBackendViewsInfo<ConnectorTy extends AnyBackendTy> =
   {[viewi: number]: Array<ConnectorTy>};
+
+export type TaggedBackendView<ConnectorTy extends AnyBackendTy> =
+  {[keyn:string]: IBackendViewInfo<ConnectorTy>}
+
 export type IBackendViews<ConnectorTy extends AnyBackendTy> = {
   views: IBackendViewsInfo<ConnectorTy>,
-  infos: {[viewn: string]:
-    {[keyn: string]: IBackendViewInfo<ConnectorTy>}},
+  infos: {
+    [viewn: string]: TaggedBackendView<ConnectorTy> | IBackendViewInfo<ConnectorTy>,
+  },
 };
 
 export type IBackendMaps<ConnectorTy extends AnyBackendTy> = {
@@ -77,7 +87,7 @@ export type IBackend<ConnectorTy extends AnyBackendTy> = {
   _getViews: (stdlib:Object, viewlib:IViewLib) => IBackendViews<ConnectorTy>,
   _getMaps: (stdlib:Object) => IBackendMaps<ConnectorTy>,
   _Participants: {[n: string]: any},
-  _APIs: {[n: string]: {[n: string]: any}},
+  _APIs: {[n: string]: any | {[n: string]: any}},
 };
 
 export type OnProgress = (obj: {current: BigNumber, target: BigNumber}) => any;
@@ -135,7 +145,7 @@ export type ParticipantVal = (io:any) => Promise<any>;
 export type ParticipantMap = {[key: string]: ParticipantVal};
 export type ViewVal = (...args:any) => Promise<any>;
 export type ViewFunMap = {[key: string]: ViewVal};
-export type ViewMap = {[key: string]: ViewFunMap};
+export type ViewMap = {[key: string]: ViewVal | ViewFunMap};
 export type APIMap = ViewMap;
 
 export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
@@ -181,7 +191,7 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
 
 export type ISetupView<ContractInfo, ConnectorTy extends AnyBackendTy> = (getInfo:(() => Promise<ContractInfo>)) => {
   viewLib: IViewLib,
-  getView1: ((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string, vi:IBackendViewInfo<ConnectorTy>) => ViewVal)
+  getView1: ((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string|undefined, vi:IBackendViewInfo<ConnectorTy>) => ViewVal)
 };
 
 export const stdContract =
@@ -232,9 +242,11 @@ export const stdContract =
   const { viewLib, getView1 } = setupView(getInfo);
   const views_bin = bin._getViews({reachStdlib: stdlib}, viewLib);
   const views =
-    objectMap(views_bin.infos, ((v:string, vm:{[keyn:string]: IBackendViewInfo<ConnectorTy>}) =>
-      objectMap(vm, ((k:string, vi:IBackendViewInfo<ConnectorTy>) =>
-        getView1(views_bin.views, v, k, vi)))));
+    objectMap(views_bin.infos, ((v:string, vm: TaggedBackendView<ConnectorTy> | IBackendViewInfo<ConnectorTy>) =>
+      isUntaggedView(vm)
+        ? getView1(views_bin.views, v, undefined, vm as IBackendViewInfo<ConnectorTy>)
+        : objectMap(vm as TaggedBackendView<ConnectorTy>, ((k:string, vi:IBackendViewInfo<ConnectorTy>) =>
+            getView1(views_bin.views, v, k, vi)))));
 
   const participants = objectMap(bin._Participants, ((pn:string, p:any) => {
       void(pn);
@@ -244,10 +256,12 @@ export const stdContract =
   }));
 
   const apis = objectMap(bin._APIs, ((an:string, am:any) => {
-    return objectMap(am, ((afn:string, ab:any) => {
-      const bp = `${an}_${afn}`;
+    const f = (afn:string|undefined, ab:any) => {
+      const mk = (sep: string) =>
+        (afn === undefined) ? `${an}` : `${an}${sep}${afn}`;
+      const bp = mk(`_`);
       delete participants[bp];
-      const bl = `${an}.${afn}`;
+      const bl = mk(`.`);
       return (...args:any[]) => {
         const terminal = { terminated: bl };
         let theResolve: (x:any) => void;
@@ -277,7 +291,10 @@ export const stdContract =
         });
         return p;
       };
-    }));
+    };
+    return (typeof am === 'object')
+      ? objectMap(am, f)
+      : f(undefined, am);
   }));
 
   return {
@@ -570,6 +587,36 @@ export class Signal {
   wait() { return this.p; }
   notify() { this.r(true); }
 };
+
+export class Lock {
+  locked: boolean;
+
+  constructor() {
+    this.locked = false;
+  }
+  async acquire(): Promise<void> {
+    let x = 1;
+    while ( this.locked ) {
+      await Timeout.set(Math.min(512, x));
+      x = x * 2;
+    }
+    this.locked = true;
+  }
+  release() {
+    this.locked = false;
+  }
+  async runWith<X>(f: (() => Promise<X>)): Promise<X> {
+    await this.acquire();
+    try {
+      const r = await f();
+      this.release();
+      return r;
+    } catch (e:any) {
+      this.release();
+      throw e;
+    }
+  }
+}
 
 // Given a func that takes an optional arg, and a Maybe arg:
 // f: (arg?: X) => Y
