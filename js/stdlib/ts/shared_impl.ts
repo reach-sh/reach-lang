@@ -161,17 +161,21 @@ export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy exten
   getState: (v:BigNumber, ctcs:Array<ConnectorTy>) => Promise<Array<any>>,
 };
 
-export type ISetupArgs<ContractInfo> = {
+export type ISetupArgs<ContractInfo, VerifyResult> = {
   setInfo: (info: ContractInfo) => void,
   getInfo: () => Promise<ContractInfo>,
+  setTrustedVerifyResult: (vr:VerifyResult) => void,
+  getTrustedVerifyResult: () => (VerifyResult|undefined),
 };
+export type ISetupViewArgs<ContractInfo, VerifyResult> =
+  Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
 export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractAddress"|"sendrecv"|"recv"|"getState")>;
 
-export type IStdContractArgs<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
+export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
-  setupView: ISetupView<ContractInfo, ConnectorTy>,
+  setupView: ISetupView<ContractInfo, VerifyResult, ConnectorTy>,
   givenInfoP: (Promise<ContractInfo>|undefined)
-  _setup: (args: ISetupArgs<ContractInfo>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
+  _setup: (args: ISetupArgs<ContractInfo, VerifyResult>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
 } & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
 
 export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
@@ -189,18 +193,32 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
   _initialize: () => IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>,
 };
 
-export type ISetupView<ContractInfo, ConnectorTy extends AnyBackendTy> = (getInfo:(() => Promise<ContractInfo>)) => {
+export type ISetupView<ContractInfo, VerifyResult, ConnectorTy extends AnyBackendTy> = (args:ISetupViewArgs<ContractInfo, VerifyResult>) => {
   viewLib: IViewLib,
   getView1: ((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string|undefined, vi:IBackendViewInfo<ConnectorTy>) => ViewVal)
 };
 
+export const stdVerifyContract =
+  async <ContractInfo, VerifyResult>(
+    stdArgs: Pick<ISetupViewArgs<ContractInfo, VerifyResult>, ("getTrustedVerifyResult"|"setTrustedVerifyResult")>,
+    doVerify: (() => Promise<VerifyResult>)
+  ): Promise<VerifyResult> => {
+    const { getTrustedVerifyResult, setTrustedVerifyResult } = stdArgs;
+    let r = getTrustedVerifyResult();
+    if ( r ) { return r; }
+    r = await doVerify();
+    setTrustedVerifyResult(r);
+    return r;
+  };
+
 export const stdContract =
-  <ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
-    stdContractArgs: IStdContractArgs<ContractInfo, RawAddress, Token, ConnectorTy>):
+  <ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
+    stdContractArgs: IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy>):
   IContract<ContractInfo, RawAddress, Token, ConnectorTy> => {
   const { bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, _setup, givenInfoP } = stdContractArgs;
 
-  const { setInfo, getInfo }: ISetupArgs<ContractInfo> = (() => {
+  type SomeSetupArgs = Pick<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo"|"getInfo")>;
+  const { setInfo, getInfo }: SomeSetupArgs = (() => {
     let _setInfo = (info:ContractInfo) => {
       throw Error(`Cannot set info(${JSON.stringify(info)}) when acc.contract called with contract info`);
       return;
@@ -228,9 +246,16 @@ export const stdContract =
     }
   })();
 
+  let trustedVerifyResult:any = undefined;
+  const getTrustedVerifyResult = () => trustedVerifyResult;
+  const setTrustedVerifyResult = (x:any) => { trustedVerifyResult = x; };
+
+  const viewArgs = { getInfo, setTrustedVerifyResult, getTrustedVerifyResult };
+  const setupArgs = { ...viewArgs, setInfo };
+
   const _initialize = () => {
     const { getContractAddress, sendrecv, recv, getState } =
-      _setup({ setInfo, getInfo });
+      _setup(setupArgs);
     return {
       selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
       getInfo,
@@ -239,7 +264,7 @@ export const stdContract =
   };
   const ctcC = { _initialize };
 
-  const { viewLib, getView1 } = setupView(getInfo);
+  const { viewLib, getView1 } = setupView(viewArgs);
   const views_bin = bin._getViews({reachStdlib: stdlib}, viewLib);
   const views =
     objectMap(views_bin.infos, ((v:string, vm: TaggedBackendView<ConnectorTy> | IBackendViewInfo<ConnectorTy>) =>

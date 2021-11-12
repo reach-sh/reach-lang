@@ -114,7 +114,8 @@ tealcount () {
 #exit 0
 
 jb
-ci ALGO map-sender
+ci ETH api-full
+ci ALGO api-full
 
 exit 0
 

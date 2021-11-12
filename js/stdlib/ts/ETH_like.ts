@@ -6,7 +6,7 @@ import {
 import {
   replaceableThunk,
   debug,
-  stdContract,
+  stdContract, stdVerifyContract,
   stdAccount,
   makeRandom,
   argsSplit,
@@ -32,7 +32,7 @@ import type { // =>
   IBackendViewInfo,
   IBackendViewsInfo,
   IContract,
-  ISetupArgs, ISetupRes,
+  ISetupArgs, ISetupRes, ISetupViewArgs,
   IRecvArgs, ISendRecvArgs,
   IRecv,
   TimeArg,
@@ -94,7 +94,11 @@ type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Address, Token, AnyETH_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
   | any /* union in this field: { setGasLimit: (ngl:any) => void } */;
-type SetupArgs = ISetupArgs<ContractInfo>;
+type VerifyResult = {
+  creation_block: number,
+};
+type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
+type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
 type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyETH_Ty>;
 
 type AccountTransferable = Account | {
@@ -486,12 +490,16 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   ): Contract => {
     ensureConnectorAvailable(bin, 'ETH', reachBackendVersion, reachEthBackendVersion);
 
-    const makeGetC = (getInfo:(() => Promise<ContractInfo>), eventCache: EventCache, informCreationBlock: ((cb:number) => void), getTrustedVerifyResult: (() => VerifyResult|undefined)) => {
+    const makeGetC = (setupViewArgs:SetupViewArgs, eventCache: EventCache, informCreationBlock: ((cb:number) => void)) => {
+      const { getInfo } = setupViewArgs;
       let _ethersC: EthersLikeContract | null = null;
       return async (): Promise<EthersLikeContract> => {
         if (_ethersC) { return _ethersC; }
         const info = await getInfo();
-        const { creation_block } = getTrustedVerifyResult() || await verifyContract_(info, bin, eventCache, label);
+        const { creation_block } =
+          await stdVerifyContract( setupViewArgs, (async () => {
+            return await verifyContract_(info, bin, eventCache, label);
+          }));
         informCreationBlock(creation_block);
         const address = info;
         debug(label, `contract verified`);
@@ -501,7 +509,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     };
 
     const _setup = (setupArgs: SetupArgs): SetupRes => {
-      const { setInfo, getInfo } = setupArgs;
+      const { setInfo, getInfo, setTrustedVerifyResult } = setupArgs;
 
       const eventCache = new EventCache();
 
@@ -530,8 +538,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         setLastBlock(o.blockNumber);
       };
 
-      let trustedVerifyResult: VerifyResult|undefined = undefined;
-      const getC = makeGetC(getInfo, eventCache, setLastBlock, (() => trustedVerifyResult));
+      const getC = makeGetC(setupArgs, eventCache, setLastBlock);
 
       const callC = async (
         dhead: any, funcName: string, arg: any, pay: PayAmt,
@@ -636,7 +643,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           debug(label, `deploying factory; done:`, info);
           const creation_block = deploy_r.blockNumber;
           debug(label, `got receipt;`, creation_block);
-          trustedVerifyResult = { creation_block };
+          setTrustedVerifyResult({ creation_block });
           setInfo(info);
           return await trustedRecv(deploy_r);
         }
@@ -788,9 +795,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return { getContractAddress, sendrecv, recv, getState };
     };
 
-    const setupView = (getInfo:(() => Promise<ContractInfo>)) => {
+    const setupView = (setupViewArgs: SetupViewArgs) => {
       const eventCache = new EventCache();
-      const getC = makeGetC(getInfo, eventCache, ((cb) => { void(cb); }), (() => undefined));
+      const getC = makeGetC(setupViewArgs, eventCache, ((cb) => { void(cb); }));
       const viewLib: IViewLib = {
         viewMapRef: async (...args: any): Promise<any> => {
           void(args);
@@ -962,9 +969,6 @@ const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumbe
 // Check the contract info and the associated deployed bytecode;
 // Verify that:
 // * it matches the bytecode you are expecting.
-type VerifyResult = {
-  creation_block: number,
-};
 const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<VerifyResult> => {
   return await verifyContract_(ctcInfo, backend, new EventCache(), 'stdlib');
 }
