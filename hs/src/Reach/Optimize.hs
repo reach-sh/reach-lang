@@ -336,8 +336,8 @@ instance Optimize DLExpr where
     DLE_TimeOrder at tos -> DLE_TimeOrder at <$> opt tos
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
-    DLE_EmitLog at m a -> DLE_EmitLog at m <$> opt a
-    DLE_setApiDetails at w t c f -> return $ DLE_setApiDetails at w t c f
+    DLE_EmitLog at m ma a -> DLE_EmitLog at m ma <$> opt a
+    DLE_setApiDetails {..} -> return $ DLE_setApiDetails {..}
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
 

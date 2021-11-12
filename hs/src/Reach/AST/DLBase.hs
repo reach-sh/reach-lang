@@ -532,8 +532,13 @@ data DLExpr
   -- * the either is whether it is a generated one or a prescribed one
   -- * the type is the type
   -- * the dlarg is the value being logged
-  | DLE_EmitLog SrcLoc String DLVar
-  | DLE_setApiDetails SrcLoc SLPart [DLType] (Maybe String) Bool
+  | DLE_EmitLog SrcLoc String (Maybe String) DLVar
+  | DLE_setApiDetails {
+    sed_at :: SrcLoc,
+    sed_who :: SLPart,
+    sed_dom :: [DLType],
+    sed_mcase_id :: Maybe String,
+    sed_is_fork :: Bool }
   deriving (Eq, Ord, Generic)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
@@ -650,11 +655,11 @@ instance PrettySubst DLExpr where
       return $ "timeOrder" <> parens tos'
     DLE_GetContract {} -> return $ "getContract()"
     DLE_GetAddress {} -> return $ "getAddress()"
-    DLE_EmitLog _ m v -> do
+    DLE_EmitLog _ m mapi v -> do
       a' <- prettySubst $ DLA_Var v
-      return $ "emitLog" <> parens (pretty m) <> parens a'
-    DLE_setApiDetails _ p tys mc f ->
-      return $ "setApiDetails" <> parens (render_das [pretty p, pretty tys, pretty mc, pretty f])
+      return $ "emitLog" <> parens (pretty m <> ", " <> pretty mapi) <> parens a'
+    DLE_setApiDetails _ p d mc f ->
+      return $ "setApiDetails" <> parens (render_das [pretty p, pretty d, pretty mc, pretty f])
 
 pretty_subst :: PrettySubst a => PrettySubstEnv -> a -> Doc
 pretty_subst e x =

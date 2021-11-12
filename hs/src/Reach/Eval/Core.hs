@@ -1740,9 +1740,7 @@ evalForm f args = do
       let isFork = case is_fork of
                     JSLiteral _ "true" -> True
                     _ -> False
-      who <- evalExpr who_e >>= \case
-                (_, SLV_Participant _ part _ _) -> return part
-                _ -> impossible "setApiDetails: expected participant"
+      who <- expectParticipant who_e
       let mCaseId = maybe Nothing (Just . jse_expect_id at) mc_id
       tys <- case (isFork, mCaseId) of
               -- API Call: spread domain
@@ -1788,6 +1786,16 @@ evalForm f args = do
       [de, e] -> return (de, e)
       _ -> illegal_args 2
 
+expectParticipant :: JSExpression -> App SLPart
+expectParticipant who_e =
+  evalExpr who_e >>= \case
+    (_, SLV_Participant _ part _ _) -> return part
+    _ -> impossible "expected Participant"
+
+expectString :: SLVal -> String
+expectString = \case
+  SLV_Bytes _ s -> bunpack s
+  _ -> impossible "Expected String"
 
 evalPolyEq :: SecurityLevel -> SLVal -> SLVal -> App SLSVal
 evalPolyEq lvl x y =
@@ -2311,7 +2319,7 @@ evalPrim p sargs =
       ensure_mode SLM_ConsensusStep "new Token"
       tokdv_ <- ctxt_lift_expr (DLVar at Nothing T_Token) $
         DLE_TokenNew at tns
-      tokdv <- doEmitLog_ "tokenNew" tokdv_
+      tokdv <- doEmitLog_ "tokenNew" Nothing tokdv_
       st <- readSt id
       setSt $ st
         { st_toks = st_toks st <> [ tokdv ]
@@ -3069,7 +3077,7 @@ evalPrim p sargs =
           "remote"
           (CT_Assume True)
           (\_ fs _ dargs -> DLE_Remote at fs aa m payAmt dargs withBill)
-      res' <- doEmitLog "remote" res''
+      res' <- doEmitLog "remote" Nothing res''
       let getRemoteResults = do
             apdvv <- doArrRef_ res' zero
             case shouldRetNNToks of
@@ -3170,8 +3178,9 @@ evalPrim p sargs =
     SLPrim_getContract -> getContractInfo T_Contract
     SLPrim_getAddress -> getContractInfo T_Address
     SLPrim_EmitLog -> do
-      x <- one_arg
-      public <$> doEmitLog "api" x
+      (x, my) <- one_mtwo_arg
+      let ma = expectString <$> my
+      public <$> doEmitLog "api" ma x
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -3194,6 +3203,10 @@ evalPrim p sargs =
       _ -> illegal_args
     one_arg = case args of
       [x] -> return $ x
+      _ -> illegal_args
+    one_mtwo_arg = case args of
+      [x] -> return $ (x, Nothing)
+      [x, y] -> return $ (x, Just y)
       _ -> illegal_args
     two_args = case args of
       [x, y] -> return $ (x, y)
@@ -3282,15 +3295,16 @@ doInteractiveCall sargs iat estf mode lab ct mkexpr = do
   check_post rng_v
   return rng_v
 
-doEmitLog :: String -> SLVal -> App SLVal
-doEmitLog m v = SLV_DLVar <$> (doEmitLog_ m =<< compileToVar v)
 
-doEmitLog_ :: String -> DLVar -> App DLVar
-doEmitLog_ m dv = do
+doEmitLog :: String -> Maybe String -> SLVal -> App SLVal
+doEmitLog m ma v = SLV_DLVar <$> (doEmitLog_ m ma =<< compileToVar v)
+
+doEmitLog_ :: String -> Maybe String -> DLVar -> App DLVar
+doEmitLog_ m ma dv = do
   ensure_mode SLM_ConsensusStep "emitLog"
   at <- withAt id
   let t = varType dv
-  ctxt_lift_expr (DLVar at Nothing t) (DLE_EmitLog at m dv)
+  ctxt_lift_expr (DLVar at Nothing t) (DLE_EmitLog at m ma dv)
 
 assertRefinedArgs :: ClaimType -> [SLSVal] -> SrcLoc -> SLTypeFun -> App (SLVal, [DLArgExpr])
 assertRefinedArgs ct sargs iat (SLTypeFun {..}) = do
@@ -4330,6 +4344,7 @@ doApiCall lhs (ApiCallRec{..}) = do
   idx <- ctxt_alloc
   let jidg xi = jid $ ".api" <> show idx <> "." <> xi
   let whoOnly = mkDot a [slac_who, jid "only"]
+  who_str <- jsString a . bunpack <$> expectParticipant slac_who
   let callOnly s = es $ jsCall a whoOnly s
   -- Deconstruct args
   (dom, ret) <- sepLHS a lhs
@@ -4354,7 +4369,7 @@ doApiCall lhs (ApiCallRec{..}) = do
   let returnVal = jidg "rng"
   let returnLVal = jidg "rngl"
   let interactOut = jsCall a (mkIdDot a ["interact", "out"]) [dom, returnLVal]
-  let doLog = jsCall a (jid ".emitLog") [ jidg "rng" ]
+  let doLog = jsCall a (jid ".emitLog") [ jidg "rng", who_str ]
   let apiReturn = jsArrowStmts a [returnVal]
                     [ jsConst a returnLVal doLog, callOnly [ jsThunkStmts a [es interactOut] ] ]
   --
@@ -4390,7 +4405,9 @@ doForkAPI2Case args = do
   let mkx xp = jsThunkStmts a [ jsConst a dom (readJsExpr "declassify(interact.in())"), e2s (jsCall a xp [ dotdom ]), JSReturn a (Just $ jsObjectLiteral a $ M.fromList [ ("msg", dom) ] ) sp ]
   let x = mkx $ jsArrowStmts a [ dotdom2 ] [ e2s $ JSUnaryExpression (JSUnaryOpVoid a) dom2 ]
   let mky y = jsArrowExpr a [ dom ] $ jsCall a y [ dotdom ]
-  let doLog = jsCall a (jid ".emitLog") [ jidg "rng" ]
+  let doLog w = do
+        who_str <- jsString a . bunpack <$> expectParticipant w
+        return $ jsCall a (jid ".emitLog") [ jidg "rng", who_str ]
   let mkzOnly w = jsCall a (JSMemberDot w a (jid "only")) [ jsThunkStmts a [ JSIf a a (jsCall a (jid "didPublish") []) a $ JSExpressionStatement (jsCall a (JSMemberDot (jid "interact") a (jid "out")) [ dom, jidg "rngl" ]) sp ] ]
   let jsInlineCall _a f fargs =
         case f of
@@ -4402,7 +4419,8 @@ doForkAPI2Case args = do
             return $ ss' <> ss
           _ -> expect_ $ Err_Fork_ConsensusBadArrow f
   let mkz w z = do
-        z' <- jsInlineCall a z [ dotdom, jsArrowStmts a [jidg "rng"] [ jsConst a (jidg "rngl") doLog, e2s $ mkzOnly w ] ]
+        log' <- doLog w
+        z' <- jsInlineCall a z [ dotdom, jsArrowStmts a [jidg "rng"] [ jsConst a (jidg "rngl") log', e2s $ mkzOnly w ] ]
         return $ jsArrowStmts a [ dom ] z'
   let mkz' w l z = do
         z' <- mkz w z
