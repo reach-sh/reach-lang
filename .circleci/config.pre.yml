@@ -88,6 +88,21 @@ jobs:
 #    - checkout
 #    - run: |
 #        make prepare-version
+  "make-announcement":
+    executor: real
+    steps:
+    - checkout
+    - context:
+      - reachdevbot-on-dockerhub
+    - run: |
+        make prepare-version
+        source ./VERSION
+        export GIT_COMMIT_HASH=$CIRCLE_SHA1
+        apt update
+        apt install python3 python3-pip -y
+        pip3 install requests
+        cd reach-python-announcer
+        python3 announcer.py
   "deploy-stdlib":
     executor: real
     steps:
@@ -362,6 +377,13 @@ workflows:
         filters:
           branches:
             only: automated_tagging
+    - "make-announcement":
+       requires:
+         - "deploy-images"
+         - "deploy-stdlib"
+       context:
+       - reachdevbot-on-dockerhub
+       
     - "RC-release":
         type: approval
         requires:
