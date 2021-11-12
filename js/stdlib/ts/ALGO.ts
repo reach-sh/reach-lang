@@ -553,8 +553,15 @@ class EventCache {
       const txn = chooseMinRoundTxn(initPtxns)
       return { succ: true, txn };
     }
+    debug(`transaction not in event cache`);
 
-    debug(`Transaction not in Event Cache. Querying network...`);
+    const failed = (): {succ: false, round: number} => ({ succ: false, round: this.currentRound });
+    if ( this.cache.length != 0 ) {
+      debug(`cache not empty, contains some other message from future, not querying...`);
+      return failed();
+    }
+
+    debug(`querying network...`);
     // If no results, then contact network
     const indexer = await getIndexer();
 
@@ -583,7 +590,7 @@ class EventCache {
     const ptxns = this.cache.filter(filterFn);
 
     if ( ptxns.length == 0 ) {
-      return { succ: false, round: this.currentRound };
+      return failed();
     }
 
     const txn = chooseMinRoundTxn(ptxns);
@@ -618,9 +625,14 @@ async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<algosdk.Algodv2
 // something decent. This function is allowed to "fail" by not really waiting
 // until the round
 const indexer_statusAfterBlock = async (round: number): Promise<BigNumber> => {
+  debug('indexer_statusAfterBlock', {round});
   const client = await getAlgodClient();
   let now = bigNumberify(0);
-  while ( (now = await getNetworkTime()).lt(round) ) {
+  // When we're isolated, sometimes we wait for blocks that will never happen.
+  // This is a protection against that.
+  let tries = 0;
+  while ( (tries++ < 10) && (now = await getNetworkTime()).lt(round) ) {
+    debug('indexer_statusAfterBlock', {round, now});
     await client.statusAfterBlock(round);
     // XXX Get the indexer to index one and wait
     await Timeout.set(500);
@@ -1087,7 +1099,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           return r;
         };
 
-        return (_theC = { ApplicationID, Deployer, escrowAddr, escrow_prog, getLastRound, setLastRound, getLocalState, getAppState, getGlobalState, ensureOptIn, canIWin });
+        const isin = (await getProvider()).isIsolatedNetwork;
+        const isIsolatedNetwork = () => isin;
+
+        return (_theC = { ApplicationID, Deployer, escrowAddr, escrow_prog, getLastRound, setLastRound, getLocalState, getAppState, getGlobalState, ensureOptIn, canIWin, isIsolatedNetwork });
       };
     };
 
@@ -1211,7 +1226,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           trustedVerifyResult = { compiled, ApplicationID, startRound: allocRound, Deployer };
           fake_setInfo(ctcInfo);
         }
-        const { ApplicationID, Deployer, escrowAddr, escrow_prog, ensureOptIn, canIWin } = await getC();
+        const { ApplicationID, Deployer, escrowAddr, escrow_prog, ensureOptIn, canIWin, isIsolatedNetwork } = await getC();
 
         const [ value, toks ] = pay;
         void(toks); // <-- rely on simulation because of ordering
@@ -1274,7 +1289,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           // round, which we couldn't possibly be in, because it already
           // happened.
           debug(dhead, '--- TIMECHECK', { params, timeoutAt });
-          if ( await checkTimeout(getTimeSecs, timeoutAt, params.firstRound + 1) ) {
+          if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, params.firstRound + 1) ) {
             debug(dhead, '--- FAIL/TIMEOUT');
             return await doRecv(false, false);
           }
@@ -1523,16 +1538,17 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const dhead = `${label}: ${label} recv ${funcName} ${timeoutAt}`;
         debug(dhead, '--- START');
 
-        const { ApplicationID, getLastRound } = await getC();
+        const { ApplicationID, getLastRound, isIsolatedNetwork } = await getC();
 
         while ( true ) {
           const correctStep = makeIsMethod(funcNum);
-          const res = await eventCache.query(dhead, ApplicationID, { minRound: getLastRound() + fromBlock_summand, timeoutAt }, correctStep);
+          const minRound = getLastRound() + fromBlock_summand;
+          const res = await eventCache.query(dhead, ApplicationID, { minRound, timeoutAt }, correctStep);
           debug(`EventCache res: `, res);
           if ( ! res.succ ) {
             const currentRound = res.round;
-            debug(dhead, 'TIMECHECK', {timeoutAt, currentRound});
-            if ( await checkTimeout(getTimeSecs, timeoutAt, currentRound + 1) ) {
+            debug(dhead, 'TIMECHECK', {timeoutAt, minRound, currentRound});
+            if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, currentRound+1) ) {
               debug(dhead, 'TIMEOUT');
               return { didTimeout: true };
             }

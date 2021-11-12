@@ -287,9 +287,13 @@ class EventCache {
     }
     debug(dhead, lab, `not in cache`);
 
-    // If no results, then contact network
     const failed = (): {succ: false, block: number} => ({ succ: false, block: this.currentBlock });
+    if ( this.cache.length != 0 ) {
+      debug(`cache not empty, contains some other message from future, not querying...`);
+      return failed();
+    }
 
+    // If no results, then contact network
     debug(dhead, lab, `querying`);
 
     const leftOver = this.lastQueryTime + 1000 - Date.now();
@@ -643,7 +647,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
         while ( true ) {
           debug(dhead, 'TIMECHECK', { timeoutAt });
-          if ( await checkTimeout(getTimeSecs, timeoutAt, await getNetworkTimeNumber() + 1) ) {
+          if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, await getNetworkTimeNumber() + 1) ) {
             debug(dhead, 'FAIL/TIMEOUT');
             return await doRecv(false, false);
           }
@@ -753,7 +757,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           if ( ! res.succ ) {
             const currentTime = res.block;
             debug(dhead, 'TIMECHECK', {timeoutAt, currentTime});
-            if ( await checkTimeout(getTimeSecs, timeoutAt, currentTime + 1) ) {
+            if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, currentTime + 1) ) {
               debug(dhead, 'TIMEOUT');
               return { didTimeout: true };
             }

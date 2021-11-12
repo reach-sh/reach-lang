@@ -31,7 +31,7 @@ jb () {
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
-  (cd "$ROOT"/js/react-runner && make build)
+  #(cd "$ROOT"/js/react-runner && make build)
   # (cd "$ROOT"/js && make build)
 }
 
@@ -78,12 +78,12 @@ r () {
 
   export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
-  # REACH_CONNECTOR_MODE=ETH ${REACH} run
+  REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=ALGO ${REACH} run
   #REACH_CONNECTOR_MODE=CFX ${REACH} run
 
   # Ganache
-  REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
+  #REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
 
 )
 }
@@ -113,9 +113,9 @@ tealcount () {
 
 #exit 0
 
-#jb
-
-c users/duoswap-core/index.rsh
+jb
+ci ETH time-7fd44
+ci ALGO time-7fd44
 
 #c users/t.rsh
 exit 0

@@ -553,6 +553,7 @@ export const make_waitUntilX = (label: string, getCurrent: () => Promise<BigNumb
     onProg(o);
   };
   while (current.lt(target)) {
+    debug('waitUntilX', { label, current, target });
     current = await step(current.add(1));
     notify();
   }
@@ -560,7 +561,7 @@ export const make_waitUntilX = (label: string, getCurrent: () => Promise<BigNumb
   return current;
 };
 
-export const checkTimeout = async (getTimeSecs: ((now:BigNumber) => Promise<BigNumber>), timeoutAt: TimeArg | undefined, nowTimeN: number): Promise<boolean> => {
+export const checkTimeout = async (runningIsolated:(() => boolean), getTimeSecs: ((now:BigNumber) => Promise<BigNumber>), timeoutAt: TimeArg | undefined, nowTimeN: number): Promise<boolean> => {
   debug('checkTimeout', { timeoutAt, nowTimeN });
   if ( ! timeoutAt ) { return false; }
   const [ mode, val ] = timeoutAt;
@@ -568,8 +569,18 @@ export const checkTimeout = async (getTimeSecs: ((now:BigNumber) => Promise<BigN
   if ( mode === 'time' ) {
     return val.lte(nowTime);
   } else if ( mode === 'secs' ) {
-    const nowSecs = await getTimeSecs(nowTime);
-    return val.lte(nowSecs);
+    try {
+      const nowSecs = await getTimeSecs(nowTime);
+      return val.lte(nowSecs);
+    } catch (e) {
+      debug('checkTimeout','err', `${e}` );
+      if ( runningIsolated() ) {
+        const nowSecs = Math.floor(Date.now() / 1000);
+        debug('checkTimeout','isolated',val.toString(),nowSecs);
+        return val.lt(nowSecs - 1);
+      }
+      return false;
+    }
   } else {
     throw new Error(`invalid TimeArg mode`);
   }
