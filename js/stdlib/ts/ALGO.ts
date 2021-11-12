@@ -22,11 +22,11 @@ import {
   IViewLib, IBackend, IBackendViewInfo, IBackendViewsInfo,
   IRecvArgs, ISendRecvArgs,
   IAccount, IContract, IRecv,
-  ISetupArgs, ISetupRes,
+  ISetupArgs, ISetupViewArgs, ISetupRes,
   // ISimRes,
   TimeArg,
   ISimTxn,
-  stdContract,
+  stdContract, stdVerifyContract,
   stdAccount,
   debug, envDefault,
   argsSplit,
@@ -141,7 +141,8 @@ type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Address, Token, AnyALGO_Ty>;
 type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
 type SimTxn = ISimTxn<Token>
-type SetupArgs = ISetupArgs<ContractInfo>;
+type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
+type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
 type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyALGO_Ty>;
 
 // Helpers
@@ -1022,13 +1023,16 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     // XXX
     type ContractHandler = any;
 
-    const makeGetC = (fake_getInfo:(() => Promise<ContractInfo>), eventCache: EventCache, getTrustedVerifyResult: (() => VerifyResult|undefined)) => {
+    const makeGetC = (setupViewArgs: SetupViewArgs, eventCache: EventCache) => {
+      const { getInfo: fake_getInfo } = setupViewArgs;
       let _theC: ContractHandler|undefined = undefined;
       return async (): Promise<ContractHandler> => {
         if ( _theC ) { return _theC; }
         const ctcInfo = await fake_getInfo();
         const { compiled, ApplicationID, startRound, Deployer } =
-          getTrustedVerifyResult() || (await verifyContract_(label, ctcInfo, bin, eventCache));
+          await stdVerifyContract( setupViewArgs, (async () => {
+            return await verifyContract_(label, ctcInfo, bin, eventCache);
+          }));
         debug(label, 'getC', {ApplicationID, startRound} );
         let realLastRound = startRound;
         const getLastRound = () => realLastRound;
@@ -1128,7 +1132,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const _setup = (setupArgs: SetupArgs): SetupRes => {
-      const { setInfo, getInfo } = setupArgs;
+      const { setInfo, getInfo, setTrustedVerifyResult } = setupArgs;
 
       const didSet = new Signal();
       let fake_info: ContractInfo|undefined = undefined;
@@ -1153,8 +1157,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
 
       const eventCache = new EventCache();
-      let trustedVerifyResult: VerifyResult|undefined = undefined;
-      const getC = makeGetC(fake_getInfo, eventCache, (() => trustedVerifyResult));
+      const fake_setupArgs = {
+        ...setupArgs,
+        getInfo: fake_getInfo,
+      };
+      const getC = makeGetC(fake_setupArgs, eventCache);
 
       // Returns address of a Reach contract
       const getContractAddress = async () => {
@@ -1234,7 +1241,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           // eliminate the allocation from the event cache.
           // Once we make it so the allocation event is actually needed, then
           // we will modify this.
-          trustedVerifyResult = { compiled, ApplicationID, startRound: allocRound + 1, Deployer };
+          setTrustedVerifyResult({ compiled, ApplicationID, startRound: allocRound + 1, Deployer });
           fake_setInfo(ctcInfo);
         }
         const { ApplicationID, Deployer, escrowAddr, escrow_prog, ensureOptIn, canIWin, isIsolatedNetwork } = await getC();
@@ -1608,9 +1615,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       }
       return bs;
     };
-    const setupView = (getInfo:(() => Promise<ContractInfo>)) => {
+    const setupView = (setupViewArgs: SetupViewArgs) => {
       const eventCache = new EventCache();
-      const getC = makeGetC(getInfo, eventCache, (() => undefined));
+      const getC = makeGetC(setupViewArgs, eventCache);
       const viewLib: IViewLib = {
         viewMapRef: async (mapi: number, a:any): Promise<any> => {
           const { getLocalState } = await getC();
