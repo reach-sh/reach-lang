@@ -1,0 +1,18 @@
+include $(ROOT)/VERSION
+
+.PHONY: install-mo
+install-mo:
+	curl -sSL https://git.io/get-mo -o mo
+	chmod +x mo
+	mv mo /usr/local/bin
+
+package.json: package.mo.json $(ROOT)/VERSION
+	REACH_VERSION=$(VERSION) mo $< > $@
+
+ts/version.ts: ts/version.mo.ts $(ROOT)/VERSION
+	REACH_VERSION=$(VERSION) mo $< > $@
+
+ts/stdlib_sol.ts: stdlib_sol.json
+	(echo "export default" ; cat $<) > $@
+
+

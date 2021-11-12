@@ -1,5 +1,5 @@
 import cfxsdk from 'js-conflux-sdk';
-import {format} from 'js-conflux-sdk';
+const { format } = cfxsdk;
 import { ethers } from 'ethers';
 import * as providers from './cfxers_providers';
 import { ParamType } from '@ethersproject/abi';
@@ -80,6 +80,55 @@ function prepForConfluxPortal(txnOrig: any): any {
 
   return txn;
 }
+
+const addEstimates = async (cfx:any, txn:any): Promise<any> => {
+  debug(`addEstimates 1: start:`, txn);
+  type stringy = {toString: () => string} | undefined;
+  type Num = BigInt;
+  const numy = (n: stringy): Num => BigInt(n?.toString() || '0');
+  const f = (xf:string): Num => {
+    const x = txn[xf];
+    delete txn[xf];
+    return numy(x);
+  };
+  let gas: Num = f("gas");
+  let storage: Num = f("storageLimit");
+  debug(`addEstimates 2:  orig:`, { gas, storage });
+
+  let est: {gasUsed?: stringy, storageCollateralized?: stringy} | undefined = undefined;
+  let est_err = undefined;
+  try {
+    est = await cfx.estimateGasAndCollateral(txn);
+  } catch (e) {
+    est_err = e;
+  }
+  debug(`addEstimates 3:   est:`, { est, est_err });
+  if ( est ) {
+    const g = (x:any, y:any) => ((y > x) ? y : x);
+    gas = g(gas, numy(est?.gasUsed));
+    storage = g(storage, numy(est?.storageCollateralized));
+  }
+  debug(`addEstimates 4: eused:`, { gas, storage });
+  if ( storage === undefined || storage === numy(0) ) {
+    storage = numy(2048);
+  }
+  debug(`addEstimates 5:  non0:`, { gas, storage });
+
+  const h = (x:any, y:any) => numy(format.big(x).times(y).toFixed(0));
+  gas = h(gas, cfx.defaultGasRatio);
+  storage = h(storage, cfx.defaultStorageRatio);
+  debug(`addEstimates 6: ratio:`, { gas, storage });
+
+  let gasu: Num | undefined = gas;
+  if ( gas === numy('0') ) {
+    gasu = undefined;
+  }
+  debug(`addEstimates 7:   und:`, { gasu, storage });
+
+  txn.gas = gasu?.toString();
+  txn.storageLimit = storage.toString();
+  return txn;
+};
 
 export class Signer {
   static isSigner(x: any) {
@@ -191,25 +240,8 @@ export class Contract implements IContract {
         // @ts-ignore
         const cfc = self._contract[fname].call(...argsConformed);
         debug(`cfxers:handler`, fname, `cfc`, cfc);
-        let est = undefined;
-        let est_err = undefined;
-        try {
-          est = await cfc.estimateGasAndCollateral();
-        } catch (e) {
-          est_err = e;
-        }
-        debug(`cfxers:handler`, fname, {est, est_err});
-        if ( est ) {
-          if ( txn.gas === undefined ) {
-            txn.gas = est.gasUsed;
-          }
-          if ( txn.storageLimit === undefined ) {
-            txn.storageLimit = est.storageCollateralized;
-          }
-        }
-        if ( txn.storageLimit === undefined || txn.storageLimit == 0 ) {
-          txn.storageLimit = 2048;
-        }
+        // @ts-ignore
+        txn = await addEstimates(this._wallet.provider.conflux, txn);
         const {to, data} = cfc; // ('to' is just ctc address)
         const txnDat = {...txn, to, data};
         debug(`cfxers:handler`, fname, `txnDat`, txnDat);
@@ -334,7 +366,7 @@ export class BrowserWallet implements IWallet {
   // Call await cp.enable() before this
   constructor(cp: CP, address: string, provider?: providers.Provider) {
     this.cp = cp;
-    this.address = address
+    this.address = address_cfxStandardize(address);
     this.provider = provider; // XXX just use cp?
   }
 
@@ -351,7 +383,6 @@ export class BrowserWallet implements IWallet {
     }
   }
 
-  // XXX canonicalize?
   getAddress(): string { return this.address; }
 
   async sendTransaction(txnOrig: any): Promise<{
@@ -436,27 +467,9 @@ export class Wallet implements IWallet {
     if (!this.provider) throw Error(`Impossible: provider is undefined`);
     const from = this.getAddress();
     txn = {from, ...txn, value: (txn.value || '0').toString()};
-    const estimate = await this.provider.conflux.estimateGasAndCollateral(txn);
-    let storageRatio = this.provider.conflux.defaultStorageRatio;
-    let gasRatio = this.provider.conflux.defaultGasRatio;
-    const balance = await this.provider.conflux.getBalance(from);
-    //@ts-ignore
-    let newGasCost = format.big(estimate.gasUsed).times(gasRatio).toFixed(0);
-    //@ts-ignore
-    let newStorageCost = format.big(estimate.storageCollateralized).times(storageRatio).toFixed(0);
-
-    // Note: balace needs to cover value +  (gas + storageLimit)
-    let gasXstorage = format.big(newGasCost).plus(newStorageCost).toFixed(0);
-    let finalCost = format.big(txn.value).plus(gasXstorage).toFixed(0);
-    const final = BigInt(finalCost);
-
-    debug(`SendTxn attempt, Final Cost of Tx is , ${final},  Balance of sender ${from} is ${balance}`);
-    if ( final > balance ) {
-      debug(`Checking: Account balanace of  ${from} is ${balance} and gasFee is, ${newGasCost}: Total TxValue is ${final}`)
-      throw Error(` INSUFFICIENT FUNDS GAS COST IS ${newGasCost},  TXN VALUE IS  ${final}, ACCOUNT ${from} ONLY HAS A BALANCE OF ${balance}`);
-  }
-   // This is weird but whatever
-   if (txn.to instanceof Promise) {
+    txn = await addEstimates(this.provider.conflux, txn);
+    // This is weird but whatever
+    if (txn.to instanceof Promise) {
        txn.to = await txn.to;
     }
     return _retryingSendTxn(this.provider, txn);

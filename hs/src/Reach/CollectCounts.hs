@@ -110,6 +110,7 @@ instance Countable DLLargeArg where
     DLLA_Obj as -> counts as
     DLLA_Data _ _ v -> counts v
     DLLA_Struct kvs -> counts $ map snd kvs
+    DLLA_Bytes _ -> mempty
 
 instance Countable DLTokenNew where
   counts (DLTokenNew {..}) =
@@ -153,6 +154,7 @@ instance Countable DLExpr where
     DLE_GetContract _ -> mempty
     DLE_GetAddress _ -> mempty
     DLE_EmitLog _ _ a -> counts a
+    DLE_setApiDetails {} -> mempty
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m

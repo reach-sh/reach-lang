@@ -3,6 +3,7 @@ module Reach.CollectTypes (cts) where
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map as M
 import qualified Data.Set as S
+import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
@@ -97,12 +98,17 @@ instance CollectsTypes DLTokenNew where
 instance CollectsTypes DLWithBill where
   cts (DLWithBill y z) = cts y <> cts z
 
+instance CollectsTypes PrimOp where
+  cts = \case
+    BYTES_ZPAD l -> S.singleton $ T_Bytes l
+    _ -> mempty
+
 instance CollectsTypes DLExpr where
   cts = \case
     DLE_Arg _ a -> cts a
     DLE_LArg _ la -> cts $ largeArgTypeOf la
     DLE_Impossible {} -> mempty
-    DLE_PrimOp _ _ as -> cts as
+    DLE_PrimOp _ p as -> cts p <> cts as
     DLE_ArrayRef _ a i -> cts a <> cts i
     DLE_ArraySet _ a i v -> cts a <> cts i <> cts v
     DLE_ArrayConcat _ x y -> cts x <> cts y
@@ -127,6 +133,7 @@ instance CollectsTypes DLExpr where
     DLE_GetContract _ -> mempty
     DLE_GetAddress _ -> mempty
     DLE_EmitLog _ _ a -> cts a
+    DLE_setApiDetails {} -> mempty
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m

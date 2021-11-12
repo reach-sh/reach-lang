@@ -64,6 +64,8 @@ data AppRes = AppRes
   , ar_isAPI :: S.Set SLPart
   , ar_views :: DLViews
   , ar_apis :: DLAPIs
+  -- All the bound Participants, Views, APIs
+  , ar_entities :: M.Map String SrcLoc
   }
 
 data AppInitSt
@@ -380,13 +382,23 @@ ensure_level x y =
     True -> return ()
     False -> expect_ $ Err_ExpectedLevel x
 
-verifyName :: String -> String -> App ()
-verifyName ty ns = do
+verifyName :: SrcLoc -> String -> [String] -> String -> App ()
+verifyName at ty keys ns = do
   when (isSpecialBackendIdent ns) $
     expect_ $ Err_InvalidNameExport ty ns
   regex <- nameRegex
   unless (matched $ ns ?=~ regex) $
     expect_ $ Err_InvalidNameRegex ty ns
+  usedNames <- ar_entities <$> aisiGet aisi_res
+  let add n =
+        case M.lookup n usedNames of
+          Nothing ->
+            aisiPut aisi_res $ \ar ->
+              ar { ar_entities = M.insert n at (ar_entities ar) }
+          Just bat -> expect_ $ Err_DuplicateName n bat
+  add ns
+  -- Add tagged view fields which can clash with untagged
+  mapM_ (add . (<>) (ns <> "_")) keys
 
 isSpecialBackendIdent :: [Char] -> Bool
 isSpecialBackendIdent = flip elem ["getExports"]
@@ -574,7 +586,8 @@ base_env =
     , ("getContract", SLV_Prim $ SLPrim_getContract)
     , ("getAddress", SLV_Prim $ SLPrim_getAddress)
     , (".emitLog", SLV_Prim $ SLPrim_EmitLog)
-    , ("call", SLV_Form$ SLForm_apiCall)
+    , ("call", SLV_Form $ SLForm_apiCall)
+    , (".setApiDetails", SLV_Form $ SLForm_setApiDetails)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -623,6 +636,7 @@ dlvToDL = \case
   DLV_Obj _ menv -> DLAE_Obj . M.fromList <$> all_just (map recAssoc $ M.toList menv)
   DLV_Struct _ menv -> DLAE_Struct <$> all_just (map recAssoc menv)
   DLV_Data _ t s mdv -> DLAE_Data t s <$> dlvToDL mdv
+  DLV_Bytes _ b -> return $ DLAE_Bytes b
   _ -> Nothing
   where
     recAssoc (k, v) = (,) k <$> dlvToDL v
@@ -652,7 +666,7 @@ slToDLV = \case
   SLV_Null at _ -> lit at DLL_Null
   SLV_Bool at b -> lit at $ DLL_Bool b
   SLV_Int at i -> lit at $ DLL_Int at i
-  SLV_Bytes at bs -> lit at $ DLL_Bytes bs
+  SLV_Bytes at bs -> return $ Just $ DLV_Bytes at bs
   SLV_DLC c -> arg srcloc_builtin $ DLA_Constant c
   SLV_DLVar dv -> arg (srclocOf dv) $ DLA_Var dv
   SLV_Array at dt vs -> do
@@ -780,6 +794,8 @@ compileArgExpr = \case
     let go (k, v) = (,) k <$> compileArgExpr v
     kvs' <- mapM go kvs
     mk $ DLLA_Struct kvs'
+  DLAE_Bytes b -> do
+    mk $ DLLA_Bytes b
   where
     mk la = do
       at <- withAt id
@@ -1718,6 +1734,32 @@ evalForm f args = do
           expect_t rator $ Err_Eval_NotApplicable
       where
         go p' = retV $ public $ SLV_Form $ SLForm_apiCall_partial $ p' { slac_mode = Nothing }
+    SLForm_setApiDetails -> do
+      at <- withAt id
+      (who_e, is_fork, msg, mc_id) <- three_mfour_args
+      who <- evalExpr who_e >>= \case
+                (_, SLV_Participant _ part _ _) -> return part
+                _ -> impossible "setApiDetails: expected participant"
+      let mCaseId = maybe Nothing (Just . jse_expect_id at) mc_id
+      tys <- case (is_fork, mCaseId) of
+              -- API Call: spread domain
+              (JSLiteral _ "false", _) -> do
+                e <- evalExpr msg
+                compileTypeOf (snd e) >>= \case
+                  (T_Tuple ts, _) -> return ts
+                  _ -> impossible "API call domain is not a Tuple"
+              -- API Fork With Multiple Cases (msg is Data instance)
+              (_, Just _) -> do
+                evalExpr msg >>= \case
+                    (_, SLV_Type s) -> st2dte s <&> (:[])
+                    _ -> impossible "Expected data instance Type"
+              -- API Fork With One Case (not wrapped in Data)
+              (_, Nothing) -> do
+                e <- evalExpr msg
+                (dt, _) <- compileTypeOf $ snd e
+                return [dt]
+      ctxt_lift_eff $ DLE_setApiDetails at who tys mCaseId
+      return $ public $ SLV_Null at "setApiDetails"
   where
     illegal_args n = expect_ $ Err_Form_InvalidArgs f n args
     rator = SLV_Form f
@@ -1734,6 +1776,10 @@ evalForm f args = do
     _three_args = case args of
       [x, y, z] -> return $ (x, y, z)
       _ -> illegal_args 3
+    three_mfour_args = case args of
+      [w, x, y] -> return $ (w, x, y, Nothing)
+      [w, x, y, z] -> return $ (w, x, y, Just z)
+      _ -> illegal_args 2
     one_two_args ta = case args of
       [de] -> return (de, JSLiteral ta "null")
       [de, e] -> return (de, e)
@@ -1852,18 +1898,16 @@ evalPrimOp p sargs = do
   at <- withAt id
   let zero = SLV_Int at 0
   case p of
-    BYTES_CONCAT ->
+    BYTES_ZPAD xtra ->
       case args of
-        [SLV_Bytes _ "", rhs] -> static rhs
-        [lhs, SLV_Bytes _ ""] -> static lhs
-        [SLV_Bytes _ lhs, SLV_Bytes _ rhs] -> do
+        [SLV_Bytes _ lhs] -> do
+          let rhs = bytesZero xtra
           static $ SLV_Bytes at $ lhs <> rhs
-        [lhs, rhs] -> do
+        [lhs] -> do
           (lhs_l, lhs_ae) <- typeOfBytes lhs
-          (rhs_l, rhs_ae) <- typeOfBytes rhs
-          let rng = T_Bytes $ lhs_l + rhs_l
-          make_var_ rng [lhs_ae, rhs_ae]
-        _ -> expect_ $ Err_Apply_ArgCount at 2 (length args)
+          let rng = T_Bytes $ lhs_l + xtra
+          make_var_ rng [lhs_ae]
+        _ -> expect_ $ Err_Apply_ArgCount at 1 (length args)
     ADD ->
       case args of
         [SLV_Int _ 0, rhs] -> static rhs
@@ -1916,7 +1960,7 @@ evalPrimOp p sargs = do
     BAND -> nn2n (.&.)
     BIOR -> nn2n (.|.)
     BXOR -> nn2n (xor)
-    SELF_ADDRESS -> impossible "self address"
+    SELF_ADDRESS {} -> impossible "self address"
     MUL_DIV -> case args of
         [SLV_Int _ 1, rhs, den] -> evalPrimOp DIV $ map (lvl,) [rhs, den]
         [lhs, SLV_Int _ 1, den] -> evalPrimOp DIV $ map (lvl,) [lhs, den]
@@ -2185,6 +2229,14 @@ typeOfBytes v = do
     T_Bytes l -> return (l, ae)
     _ -> expect_t v $ Err_Expected "bytes"
 
+verifyNotReserved :: SrcLoc -> String -> App ()
+verifyNotReserved at s = do
+  connectors <- readDlo dlo_connectors
+  -- XXX extend `Connector` to convey this info we're checking
+  when ("ETH" `elem` connectors && s `elem` map show solReservedNames) $
+    expect_thrown at $ Err_Sol_Reserved s
+
+
 evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
   case p of
@@ -2226,22 +2278,33 @@ evalPrim p sargs =
       at <- withAt id
       metam <- mustBeObject =<< one_arg
       metam' <- mapM (ensure_public . sss_sls) metam
-      let go tns (k, v) = case k of
-            "name" -> bytes (\x -> tns { dtn_name = x}) tokenNameLen
-            "symbol" -> bytes (\x -> tns { dtn_sym = x}) tokenSymLen
-            "url" -> bytes (\x -> tns { dtn_url = x}) tokenURLLen
-            "metadata" -> bytes (\x -> tns { dtn_metadata = x}) tokenMetadataLen
-            "decimals" -> do
-              a <- compileCheckType T_UInt v
-              return $ tns { dtn_decimals = Just a }
-            "supply" -> do
-              a <- compileCheckType T_UInt v
-              return $ tns { dtn_supply = a }
-            _ -> expect_ $ Err_TokenNew_InvalidKey k
+      let metal f k = k (M.lookup f metam')
+      let bytes f len = metal f $ \case
+            Just v -> compileCheckType (T_Bytes len) v
+            Nothing -> compileArgExpr $ largeArgToArgExpr $ bytesZeroLit len
+      dtn_name <- bytes "name" tokenNameLen
+      dtn_sym <- bytes "symbol" tokenSymLen
+      dtn_url <- bytes "url" tokenURLLen
+      dtn_metadata <- bytes "metadata" tokenMetadataLen
+      dtn_supply <- metal "supply" $ \case
+        Nothing -> return $ DLA_Constant $ DLC_UInt_max
+        Just v -> compileCheckType T_UInt v
+      dtn_decimals <- metal "decimals" $ \case
+        Nothing -> return $ Nothing
+        Just v -> Just <$> compileCheckType T_UInt v
+      let check = \case
+            "name" -> ok
+            "symbol" -> ok
+            "url" -> ok
+            "metadata" -> ok
+            "decimals" -> ok
+            "supply" -> ok
+            k -> expect_ $ Err_TokenNew_InvalidKey k
             where
-              bytes u len = u <$> compileCheckType (T_Bytes len) v
-      tns <- foldM go defaultTokenNew (M.toAscList metam')
-      let supplya = dtn_supply tns
+              ok = return ()
+      mapM_ check (M.keys metam')
+      let tns = DLTokenNew {..}
+      let supplya = dtn_supply
       ensure_mode SLM_ConsensusStep "new Token"
       tokdv_ <- ctxt_lift_expr (DLVar at Nothing T_Token) $
         DLE_TokenNew at tns
@@ -2256,12 +2319,10 @@ evalPrim p sargs =
       doBalanceInit_ FV_destroyed mtok_a (DLA_Literal $ DLL_Bool False)
       return $ public $ SLV_DLVar tokdv
     SLPrim_padTo len -> do
-      at <- withAt id
       v <- one_arg
       (vl, _) <- typeOfBytes v
       let xtra = fromIntegral $ len - vl
-      let z = public $ SLV_Bytes at $ B.replicate xtra 0
-      evalPrimOp BYTES_CONCAT [public v, z]
+      evalPrimOp (BYTES_ZPAD xtra) [public v]
     SLPrim_race -> do
       at <- withAt id
       ps <- mapM slvParticipant_part $ map snd sargs
@@ -2570,10 +2631,7 @@ evalPrim p sargs =
       where
         verifyStructId r s = do
           at <- withAt id
-          connectors <- readDlo dlo_connectors
-          -- XXX extend `Connector` to convey this info we're checking
-          when ("ETH" `elem` connectors && s `elem` map show solReservedNames) $
-            expect_thrown at $ Err_Sol_Reserved s
+          verifyNotReserved at s
           bool (expect_ $ Err_Struct_Key_Invalid s) (return s) $ matched $ s ?=~ r
     SLPrim_Struct_fromTuple ts -> do
       tv <- one_arg
@@ -2796,15 +2854,20 @@ evalPrim p sargs =
     SLPrim_ParticipantClass -> makeParticipant False True
     SLPrim_API -> do
       ensure_mode SLM_AppInit "API"
-      (nv, intv) <- two_args
-      n <- mustBeBytes nv
+      (nv, intv) <- case args of
+                      [x] -> return (Nothing, x)
+                      [x, y] -> return (Just x, y)
+                      _ -> illegal_args
+      n <- mapM mustBeBytes nv
       SLInterface im <- mustBeInterface intv
-      let ns = bunpack n
-      verifyName "API" ns
+      let mns = bunpack <$> n
+      nAt <- withAt id
+      mapM_ (verifyName nAt "API" []) mns
+      let ns = fromMaybe "Untagged" mns
       ix <- flip mapWithKeyM im $ \k -> \ (at, ty) ->
         case ty of
         ST_Fun (SLTypeFun {..}) -> do
-          let nk = ns <> "_" <> k
+          let nk = maybe k (<> "_" <> k) mns
           let nkb = bpack nk
           let nv' = SLV_Bytes at nkb
           let stf_dom' = ST_Tuple stf_dom
@@ -2823,20 +2886,24 @@ evalPrim p sargs =
       let i' = M.map fst ix
       let io = M.map snd ix
       aisiPut aisi_res $ \ar ->
-        ar {ar_apis = M.insert n i' $ ar_apis ar}
-      at <- withAt id
-      retV $ (lvl, SLV_Object at (Just $ ns <> " API") io)
+        ar {ar_apis = M.insertWith M.union n i' $ ar_apis ar}
+      retV $ (lvl, SLV_Object nAt (Just $ ns <> " API") io)
     SLPrim_View -> do
       ensure_mode SLM_AppInit "View"
-      (nv, intv) <- two_args
-      n <- mustBeBytes nv
+      (nv, intv) <- case args of
+                      [x] -> return (Nothing, x)
+                      [x, y] -> return (Just x, y)
+                      _ -> illegal_args
+      n <- mapM mustBeBytes nv
       SLInterface im <- mustBeInterface intv
-      sv <- ar_views <$> aisiGet aisi_res
-      when (M.member n sv) $
-        expect_ $ Err_View_DuplicateView n
-      let ns = bunpack n
-      verifyName "View" ns
+      let mns = bunpack <$> n
+      nAt <- withAt id
+      mapM_ (verifyName nAt "View" $ M.keys im) mns
+      let ns = fromMaybe "Untagged" mns
       let go k (at, t) = do
+            when (isNothing nv) $ do
+              verifyName at "View" [] k
+              verifyNotReserved at k
             let vv = SLV_Prim $ SLPrim_viewis at n k t
             let vom = M.singleton "set" $ SLSSVal at Public vv
             let vo = SLV_Object at (Just $ ns <> " View, " <> k) vom
@@ -2852,10 +2919,10 @@ evalPrim p sargs =
       ix <- mapWithKeyM go im
       let i' = M.map fst ix
       let io = M.map snd ix
+      -- Merge untagged views which have `Nothing` key
       aisiPut aisi_res $ \ar ->
-        ar {ar_views = M.insert n i' $ ar_views ar}
-      at <- withAt id
-      retV $ (lvl, SLV_Object at (Just $ ns <> " View") io)
+        ar {ar_views = M.insertWith M.union n i' $ ar_views ar}
+      retV $ (lvl, SLV_Object nAt (Just $ ns <> " View") io)
     SLPrim_Map -> illegal_args
     SLPrim_Map_new -> do
       t <- expect_ty "Map.new" =<< one_arg
@@ -3161,10 +3228,7 @@ evalPrim p sargs =
       at <- withAt id
       n <- mustBeBytes nv
       let ns = bunpack n
-      verifyName "Participant" ns
-      ios <- ae_ios <$> aisiGet aisi_env
-      when (M.member n ios) $
-        expect_ $ Err_Part_DuplicatePart n
+      verifyName at "Participant" [] ns
       int <- mustBeInterface intv
       (io, ienv) <- makeInteract n int
       aisiPut aisi_env $ \ae ->
@@ -3247,7 +3311,6 @@ litToSV = \case
   DLL_Null -> withAt $ flip SLV_Null "litToSV"
   DLL_Bool b -> withAt $ flip SLV_Bool b
   DLL_Int a i -> return $ SLV_Int a i
-  DLL_Bytes bs -> withAt $ flip SLV_Bytes bs
 
 argToSV :: DLArg -> App SLVal
 argToSV = \case
@@ -3967,11 +4030,8 @@ doGetSelfAddress who = do
     (DLVar at Nothing T_Address)
     (DLE_PrimOp
        at
-       SELF_ADDRESS
-       [ DLA_Literal (DLL_Bytes who)
-       , DLA_Literal (DLL_Bool isClass)
-       , DLA_Literal (DLL_Int at $ fromIntegral nonce)
-       ])
+       (SELF_ADDRESS who isClass nonce)
+       [])
 
 all_just :: [Maybe a] -> Maybe [a]
 all_just = \case
@@ -4296,7 +4356,8 @@ doApiCall lhs (ApiCallRec{..}) = do
                     [ jsConst a returnLVal doLog, callOnly [ jsThunkStmts a [es interactOut] ] ]
   --
   let assignRet = jsConst a ret apiReturn
-  let ss = [callOnly [onlyThunk], es pub3, assignRet]
+  let setDetails = jsCall a (jid ".setApiDetails") [slac_who, JSLiteral a "false", dom]
+  let ss = [callOnly [onlyThunk], es pub3, es setDetails, assignRet]
   return ss
   where
     sepLHS a = \case
@@ -4391,7 +4452,8 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
             , defMsg
             ]
   let lookupMsgTy t = fromMaybe T_Null $ M.lookup "msg" t
-  let getAfter (a_at, after_e) = locAt a_at $
+  let mkPartCase who n = who <> show n
+  let getAfter who_e isApi who usesData (a_at, after_e, case_n) = locAt a_at $
         case after_e of
           JSArrowExpression args _ s -> do
             let JSBlock _ ss _ = jsArrowStmtToBlock s
@@ -4401,8 +4463,15 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
                 [] -> return []
                 [ae] -> return [defcon (awrap ae) (awrap msg_e)]
                 _ -> expect_ $ Err_Fork_ConsensusBadArrow after_e
-            return $ mdefmsg <> ss
-          JSExpressionParen _ e _ -> getAfter (a_at, e)
+            let sps = case isApi of
+                  False -> []
+                  True -> do
+                    let msg = if usesData then fd_e else msg_e
+                    let mce = if usesData then [jid $ mkPartCase who case_n] else []
+                    let e = jsCall a (jid ".setApiDetails") $ [who_e, JSLiteral a "true", msg] <> mce
+                    [JSExpressionStatement e sp]
+            return $ sps <> mdefmsg <> ss
+          JSExpressionParen _ e _ -> getAfter who_e isApi who usesData (a_at, e, case_n)
           _ -> expect_ $ Err_Fork_ConsensusBadArrow after_e
   let go pcases = do
         let (ats, whos, who_es, before_es, pay_es, after_es) =
@@ -4411,7 +4480,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let who_e = hdDie who_es
         let c_at = hdDie ats
         let cfc_part_e = who_e
-        let partCase n = who <> show n
+        let partCase = mkPartCase who
         -- Generate:
         -- const runAlice<N> = () => {
         --   const res = before<N>();
@@ -4473,7 +4542,8 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
                 (False, False) ->
                   [JSMethodCall (JSMemberDot who_e a (jid "set")) a (JSLOne (jid "this")) a sp]
                 (False, True) -> []
-        all_afters <- mapM getAfter $ zip ats after_es
+        isApi <- is_api $ bpack who
+        all_afters <- mapM (getAfter who_e isApi who True) $ zip3 ats after_es ([0..] :: [Int])
         let cfc_switch_case =
               map
                 (\(i, as) ->
@@ -4488,7 +4558,8 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let tc_head_e = fc_who_e
         let before_tc_ss = [makeOnly fc_who_e only_body]
         let pay_e = JSCallExpression fc_pay a (JSLOne msg_e) a
-        after_tc_ss <- getAfter (fc_at, fc_after)
+        isApi <- is_api $ bpack fc_who
+        after_tc_ss <- getAfter fc_who_e isApi fc_who False (fc_at, fc_after, 0 :: Int)
         return $ (False, before_tc_ss, pay_e, tc_head_e, after_tc_ss)
       _ -> do
         casel <- mapM go $ groupBy forkCaseSameParticipant cases

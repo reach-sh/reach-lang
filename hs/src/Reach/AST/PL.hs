@@ -233,7 +233,7 @@ instance Pretty ColorGraphs where
                 $ M.toList g
          in braces $ hardline <> vsep rows
 
-type ViewsInfo = M.Map SLPart (M.Map SLVar DLExportBlock)
+type ViewsInfo = M.Map (Maybe SLPart) (M.Map SLVar DLExportBlock)
 
 data ViewInfo = ViewInfo [DLVar] ViewsInfo
   deriving (Eq)
@@ -246,13 +246,16 @@ type ViewInfos = M.Map Int ViewInfo
 
 type CPViews = DLViews
 
+type ApiInfos = M.Map SLPart ApiInfo
+
 data CPProg
-  = CPProg SrcLoc (CPViews, ViewInfos) CHandlers
+  = CPProg SrcLoc (CPViews, ViewInfos) ApiInfos CHandlers
   deriving (Eq)
 
 instance Pretty CPProg where
-  pretty (CPProg _ vis chs) =
-    "views:" <+> pretty vis <> hardline
+  pretty (CPProg _ vis ai chs) =
+    "views:" <+> pretty vis <> hardline <>
+    "apiInfo:" <+> pretty ai <> hardline
     <> pretty chs
 
 data EPPs = EPPs

@@ -8,8 +8,8 @@
 .vscode
 .ethereum
 /todo.html
-/docs
 build
 /users
 /non-examples/dev
 *.index
+/exp

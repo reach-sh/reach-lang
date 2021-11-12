@@ -72,7 +72,7 @@ type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
   ABI: string,
   Bytecode: string,
-  views: {[viewn: string]: {[keyn: string]: string}},
+  views: {[viewn: string]: string | {[keyn: string]: string}},
 }}};
 type BackendViewsInfo = IBackendViewsInfo<AnyETH_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyETH_Ty>;
@@ -375,8 +375,8 @@ const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigN
   }
 };
 
-const ReachToken_ABI = ETHstdlib["contracts"]["stdlib.sol:ReachToken"]["abi"];
-const ERC20_ABI = ETHstdlib["contracts"]["stdlib.sol:IERC20"]["abi"];
+const ReachToken_ABI = ETHstdlib["contracts"]["sol/stdlib.sol:ReachToken"]["abi"];
+const ERC20_ABI = ETHstdlib["contracts"]["sol/stdlib.sol:IERC20"]["abi"];
 
 const balanceOf_token = async (networkAccount: NetworkAccount, address: Address, tok: Token): Promise<BigNumber> => {
   // @ts-ignore
@@ -657,10 +657,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             ok_r = await callC(dhead, funcName, arg, pay);
           } catch (e:any) {
             debug(...dhead, `ERROR`, { stack: e.stack }, e);
-            ok_r = undefined;
-          }
-
-          if ( ! ok_r ) {
             if ( ! soloSend ) {
               debug(...dhead, `LOST`);
               return await doRecv(false, false);
@@ -672,7 +668,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               continue;
             } else {
               // Otherwise, something bad is happening
-              throw Error(`${dhead} --- ABORT`);
+              throw Error(`${label} failed to call ${funcName}: ${e}`);
             }
           }
 
@@ -797,12 +793,13 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           throw Error('viewMapRef not used by ETH backend'); },
       };
       const views_namesm = bin._Connectors.ETH.views;
-      const getView1 = (vs:BackendViewsInfo, v:string, k:string, vim: BackendViewInfo) =>
+      const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo) =>
         async (...args: any[]): Promise<any> => {
           void(vs);
           const { ty } = vim;
           const ethersC = await getC();
-          const vkn = views_namesm[v][k];
+          const vnv = views_namesm[v];
+          const vkn = (typeof vnv === 'string') ? vnv : vnv[k!];
           debug(label, 'getView1', v, k, 'args', args, vkn, ty);
           try {
             const val = await ethersC[vkn](...args);
@@ -907,15 +904,17 @@ const newTestAccount = async (startingBalance: any): Promise<Account> => {
   const acc = await createAccount();
   const to = await getAddr(acc);
 
-  try {
-    debug('newTestAccount awaiting transfer:', to);
-    await fundFromFaucet(acc, startingBalance);
-    debug('newTestAccount got transfer:', to);
-    return acc;
-  } catch (e) {
-    console.log(`newTestAccount: Trouble with account ${to}`);
-    throw e;
+  if (bigNumberify(0).lt(startingBalance)) {
+    try {
+      debug('newTestAccount awaiting transfer:', to);
+      await fundFromFaucet(acc, startingBalance);
+      debug('newTestAccount got transfer:', to);
+    } catch (e) {
+      console.log(`newTestAccount: Trouble with account ${to}`);
+      throw e;
+    }
   }
+  return acc;
 };
 const newTestAccounts = make_newTestAccounts(newTestAccount);
 
@@ -984,13 +983,13 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
   // for querying the contract.
   let creation_block = 0;
   try {
-    const tmpAccount: Account = await newTestAccount(0);
+    const tmpAccount: Account = await createAccount();
     const ctc = new ethers.Contract(address, ABI, tmpAccount.networkAccount);
-    const creation_time = await ctc["_reachCreationTime"]();
+    const creation_time_raw = await ctc["_reachCreationTime"]();
+    const creation_time = T_UInt.unmunge(creation_time_raw);
     creation_block = bigNumberify(creation_time).toNumber();
-
   } catch (e) {
-    chk(false, `The contract is not a Reach contract: ${e}`);
+    chk(false, `Failed to call the '_reachCreationTime' method on the contract ${address} during contract bytecode verification. This could mean that there is a general network fault, or it could mean that the given address is not a Reach contract and does not provide this function. The internal error we caught is: ${e}`);
   }
 
   const chkeq = (a: any, e:any, msg:string) => {
@@ -1088,7 +1087,7 @@ function formatAddress(acc: string|NetworkAccount|Account): string {
 async function launchToken (accCreator:Account, name:string, sym:string, opts:any = {}) {
   debug(`Launching token, ${name} (${sym})`);
   const addr = (acc:Account) => acc.networkAccount.address;
-  const remoteCtc = ETHstdlib["contracts"]["stdlib.sol:ReachToken"];
+  const remoteCtc = ETHstdlib["contracts"]["sol/stdlib.sol:ReachToken"];
   const remoteABI = remoteCtc["abi"];
   const remoteBytecode = remoteCtc["bin"];
   const factory = new ethers.ContractFactory(remoteABI, remoteBytecode, accCreator.networkAccount);

@@ -1,5 +1,5 @@
-IMAGE="reachsh/devnet-cfx"
-ROOT="../.."
+IMAGE=reachsh/devnet-cfx
+ROOT=../..
 include $(ROOT)/DEPS
 
 .PHONY: build

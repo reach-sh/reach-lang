@@ -1,5 +1,5 @@
-IMAGE="reachsh/devnet-algo"
-ROOT="../.."
+IMAGE=reachsh/devnet-algo
+ROOT=../..
 include $(ROOT)/DEPS
 
 .PHONY: build
