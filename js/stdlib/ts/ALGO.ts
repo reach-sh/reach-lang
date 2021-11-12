@@ -557,7 +557,7 @@ class EventCache {
 
     const failed = (): {succ: false, round: number} => ({ succ: false, round: this.currentRound });
     if ( this.cache.length != 0 ) {
-      debug(`cache not empty, contains some other message from future, not querying...`);
+      debug(`cache not empty, contains some other message from future, not querying...`, this.cache);
       return failed();
     }
 
@@ -1223,7 +1223,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(`created`, {ApplicationID});
           const ctcInfo = ApplicationID;
           const compiled = await compileFor(bin, ctcInfo);
-          trustedVerifyResult = { compiled, ApplicationID, startRound: allocRound, Deployer };
+          // We are adding one to the allocRound because we want querying to
+          // start at the first place it possibly could, which is going to
+          // eliminate the allocation from the event cache.
+          // Once we make it so the allocation event is actually needed, then
+          // we will modify this.
+          trustedVerifyResult = { compiled, ApplicationID, startRound: allocRound + 1, Deployer };
           fake_setInfo(ctcInfo);
         }
         const { ApplicationID, Deployer, escrowAddr, escrow_prog, ensureOptIn, canIWin, isIsolatedNetwork } = await getC();
