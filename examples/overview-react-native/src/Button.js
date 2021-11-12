@@ -1,12 +1,12 @@
 import React from 'react';
-import { Text, View, StyleSheet, Pressable } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function Button(props) {
   const { onPress, title = 'Save' } = props;
   return (
-    <Pressable style={styles.button} onPress={onPress}>
+    <TouchableOpacity style={styles.button} onPress={onPress}>
       <Text style={styles.text}>{title}</Text>
-    </Pressable>
+    </TouchableOpacity>
   );
 }
 
