@@ -114,10 +114,7 @@ tealcount () {
 #exit 0
 
 jb
-one ALGO init
-exit 0
-ci ALGO time-7fd44
-ci ALGO atomic-swap
+ci ALGO map-sender
 
 exit 0
 

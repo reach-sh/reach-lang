@@ -536,7 +536,13 @@ class EventCache {
     // Clear cache of stale transactions.
     // Cache's min bound will be `minRound || specRound`
     const filterRound = minRound ?? specRound!;
-    this.cache = this.cache.filter(x => x['confirmed-round'] >= filterRound);
+    this.cache = this.cache.filter((txn) => {
+      const notTooOld = txn['confirmed-round'] >= filterRound;
+      const emptyOptIn =
+        (txn['on-completion'] === 'optin')
+        && (txn['application-transaction']['application-args'].length == 0);
+      return notTooOld && (! emptyOptIn);
+    });
 
     // When checking predicate, only choose transactions that are below
     // max round, or the specific round we're looking for.
