@@ -52,13 +52,12 @@ js-mjs: expand
 .PHONY: clone-js-stdlib
 clone-js-stdlib:
 	rm -rf js-reach-stdlib
-	git clone https://github.com/reach-sh/js-reach-stdlib.git
-	ln -s sbin js-reach-stdlib/sbin
+	git clone -b CORE-171 https://github.com/reach-sh/js-reach-stdlib.git
+	cp -r sbin js-reach-stdlib/sbin
 
 .PHONY: refresh-js-stdlib
 refresh-js-stdlib: clone-js-stdlib
-	cd js-reach-stdlib 
-	git checkout CORE-171 && ./sbin/refresh.sh
+	cd js-reach-stdlib && ./sbin/refresh.sh
 
 .PHONY: bump-version-and-publish-js-stdlib
 bump-version-and-publish-js-stdlib: refresh-js-stdlib

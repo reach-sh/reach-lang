@@ -98,7 +98,6 @@ jobs:
         deps: "stdlib"
     - run: |
         cd js/stdlib
-        make clone-js-stdlib
         make refresh-js-stdlib
         is_rc=$(echo ${CIRCLE_TAG} | grep rc > /dev/null ; echo $?)
         if [ $is_rc -eq 0 ] ; then
