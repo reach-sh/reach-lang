@@ -92,8 +92,6 @@ jobs:
     executor: real
     steps:
     - checkout
-    - context:
-      - reachdevbot-on-dockerhub
     - run: |
         make prepare-version
         source ./VERSION
@@ -383,7 +381,6 @@ workflows:
          - "deploy-stdlib"
        context:
        - reachdevbot-on-dockerhub
-       
     - "RC-release":
         type: approval
         requires:
