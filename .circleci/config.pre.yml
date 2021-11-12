@@ -112,11 +112,11 @@ jobs:
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
-        deps: "runner rpc-server reach reach-cli devnet-eth devnet-cfx devnet-algo"
+        deps: "stdlib runner rpc-server reach reach-cli devnet-eth devnet-cfx devnet-algo"
     - run: |
         make prepare-version
         docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
-        for IMG in runner rpc-server reach reach-cli devnet-algo devnet-eth devnet-cfx; do
+        for IMG in stdlib runner rpc-server reach reach-cli devnet-algo devnet-eth devnet-cfx; do
           ./scripts/docker-push.sh reachsh/${IMG}
         done 
   "docs-render":
