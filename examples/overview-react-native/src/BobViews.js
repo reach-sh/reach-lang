@@ -65,7 +65,7 @@ export class DisplayInfo extends React.Component {
       return (
         <View style={styles.container}>
           <Text style={styles.textNormal}>
-            Alice's secret info is: <strong>{info}</strong>
+            Alice's secret info is: {info}
           </Text>
           <Text style={styles.textNormal}>
             Thank you, Bob. The contract has run to completion.

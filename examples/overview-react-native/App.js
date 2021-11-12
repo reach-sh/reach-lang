@@ -130,7 +130,6 @@ class Alice extends React.Component {
     } else { // 'BackendRan'
       alice = <AliceViews.BackendRan />;
     }
-    console.log('alice', alice)
     return <AliceViews.AliceWrapper {...{ alice }} />
   }
 }
