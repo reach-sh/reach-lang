@@ -289,7 +289,7 @@ class EventCache {
 
     const failed = (): {succ: false, block: number} => ({ succ: false, block: this.currentBlock });
     if ( this.cache.length != 0 ) {
-      debug(`cache not empty, contains some other message from future, not querying...`);
+      debug(`cache not empty, contains some other message from future, not querying...`, this.cache);
       return failed();
     }
 

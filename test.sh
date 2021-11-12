@@ -114,14 +114,20 @@ tealcount () {
 #exit 0
 
 jb
-ci ETH time-7fd44
+one ALGO init
+exit 0
 ci ALGO time-7fd44
+ci ALGO atomic-swap
 
-#c users/t.rsh
 exit 0
 
-c examples/atomic-swap-auction/index.rsh
 
+jb
+ci ALGO overview
+#ci ALGO tut-7
+#ci ALGO mint-basic
+
+#c users/t.rsh
 exit 0
 
 # (cd hs && mk hs-test)
