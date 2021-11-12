@@ -109,15 +109,15 @@ jobs:
         at: /tmp/workspace
     - and_restore_docker:
         deps: "stdlib"
+        #is_rc=$(echo ${CIRCLE_TAG} | grep rc > /dev/null ; echo $?)
+        #if [ $is_rc -eq 0 ] ; then
+        #else
+        #  make finalize-patch-js-stdlib
+        #fi  
     - run: |
         cd js/stdlib
         make refresh-js-stdlib
-        is_rc=$(echo ${CIRCLE_TAG} | grep rc > /dev/null ; echo $?)
-        if [ $is_rc -eq 0 ] ; then
           make bump-version-and-publish-js-stdlib 
-        else
-          make finalize-patch-js-stdlib
-        fi  
   "deploy-images":
     executor: real
     steps:
