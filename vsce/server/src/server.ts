@@ -229,7 +229,8 @@ documents.onDidChangeContent(change => {
 	validateTextDocument(change.document);
 });
 
-let theCompilerIsCompiling = false;
+let	theCompilerIsCompiling 	= false,
+	weNeedToCompileAgain 	= false;
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
@@ -290,8 +291,9 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		: exeLoc;
 
 	if (theCompilerIsCompiling) {
+		weNeedToCompileAgain = true;
 		console.debug(
-			"Compilation is already in process! Returning...",
+			"Compilation already in process; will recompile",
 			new Date().toLocaleTimeString()
 		);
 		return;
@@ -315,6 +317,11 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 			new Date().toLocaleTimeString()
 		);
 		theCompilerIsCompiling = false;
+		if (weNeedToCompileAgain) {
+			weNeedToCompileAgain = false;
+			validateTextDocument(textDocument);
+			return;
+		}
 
 		if (error) {
 			connection.console.log(`Found compile error: ${error.message}`);
