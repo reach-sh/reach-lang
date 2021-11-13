@@ -473,6 +473,12 @@ parseVal env t v = do
               fields <- mapM (\ ((s, vt), mv) -> parseVal env vt mv <&> (s, ) ) $ zip (M.toAscList ts) vs
               return $ SMV_Object $ M.fromList fields
             _ -> impossible $ "parseVal: Object " <> show v
+        T_Struct ts ->
+          case v of
+            List (_:vs) -> do
+              fields <- mapM (\ ((s, vt), mv) -> parseVal env vt mv <&> (s, ) ) $ zip ts vs
+              return $ SMV_Struct $ fields
+            _ -> impossible $ "parseVal: Struct " <> show v
         T_Data ts ->
           case v of
             List [Atom con, vv] -> do
@@ -484,7 +490,6 @@ parseVal env t v = do
                       Nothing -> impossible $ "parseType: Data: Constructor type"
               return $ SMV_Data c [v']
             _ -> impossible $ "parseVal: Data " <> show v
-        _ -> impossible $ "parseVal: " <> show v <> " : " <> show t
       where
         parseArray env' ty = \case
           List [Atom "store", arr, _, el] -> do
