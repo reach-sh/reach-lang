@@ -2,17 +2,49 @@
 menuItem: mi-docs
 ---
 
-# Modes and Steps
+# Modes
 
-Reach programs are organized into four modes: *Init*, *Step*, *Local Step*, and *Consensus Step*. Consider this diagram:
+Reach programs are organized into four modes: 
 
-<div><img src="modes.png" class="img-fluid" width=700 height=503 loading="lazy"></div>
+1. [Initialization](#initialization) defines Participants, Views, and APIs, and, optionally, overrides default compilation settings.
+1. [Step](#step) defines actions taken by all participants.
+1. [Local Step](#local-step) defines actions taken by a particular participant.
+1. [Consensus Step](#consensus-step) defines actions taken by the contract.
 
-The dark blue boxes in the diagram represent modes. The orange functions cause transitions between modes. All modes allow the statements and expressions valid for [Computations](/en/books/essentials/backend-programming/computations/), but the light-blue boxes in the diagram represent some of the additional statements and expressions permitted by that particular mode.
+## Transitions
 
-# Init Mode
+The following diagram indicates mode transitions:
 
-The body of `Reach.App` represents Application Initialization mode:
+<div><img src="mode-transitions.png" class="img-fluid" width=500 height=390 loading="lazy"></div>
+
+## Consensus Transfers
+
+A consensus transfer is a statement or expression that (a) facilitates agreement among participants, (b) transitions to a consensus step, and (3) records the agreement as a transaction on the distributed ledger (i.e. blockchain) of the consensus network. These actions include `publish`, `pay`, `race`, `fork`, and `parallelReduce`. The developer chooses which consensus transfer to use depending on the number of participants, tasks, and iterations:
+
+|# Participants|# Tasks|# Iterations|Consensus Transfer|
+|-|-|-|-|
+|One|One|One|`publish` or `pay`|
+|Many|One|One|`race`|
+|Many|Many|One|`fork`|
+|Many|Many|Many|`parallelReduce`|
+
+The following list describes when to use each type of consensus transfer:
+
+* Use `publish` to cause one participant to make a value (e.g. the price of an item) available to all other participants.
+* Use `pay` to cause one participant to pay an amount to the contract account.
+* Use `race` when multiple participants are racing to `publish` or `pay`.
+* Use `fork` when multiple participants are racing to do different actions. 
+* Use `parallelReduce` when muliple participants are iteratively racing or forking.
+
+`commit` transitions from a consensus step to a step.
+
+## Computations
+
+All four modes support a range of statements and expressions described in [Computations](/en/books/essentials/backend-programming/computations/). Additionally, each mode supports the statements and expressions listed below.
+
+# Initialization
+
+The Reach compiler recognizes `export const main = Reach.App(() => {}` as a Reach DApp. The body of `Reach.App` represents Application Initialization mode:
 
 ``` js
 export const main = Reach.App(() => {
@@ -23,101 +55,160 @@ export const main = Reach.App(() => {
   deploy();
 ```
 
-* Line 1: Reach.App accepts a no-argument function that specifies a DApp. See [Reach.App]().
-* Line 2: Optionally, Init mode overrides default compile options.
-* Line 3-4: Init mode specifies DApp participants.
-* Line 5: Optionally, Init mode specifies DApp views.
-* Line 6: The `deploy` function transitions from Init mode to Step mode.
+* Line 1: `Reach.App` accepts a no-argument function that specifies a DApp.
+* Line 2: Optionally, `setOptions` overrides default compile options.
+* Line 3-4: `Participant` specifies DApp participants.
+* Line 5: `View` specifies DApp views.
+* Line 6: The `deploy` function transitions from Initialization mode to Step mode.
 
-Below are descriptions of each permitted statement/expression:
+Below are descriptions of the permitted statements/expressions within Initialization:
 
 ## API
 
-An API is defined with `API(apiName, apiInterface)` or `API(apiInterface)`:
+An `API` expression defines an API in the contract.
+
+### Declaration
 
 ``` js nonum
-API('Voter', { vote: Fun([Address], UInt) })
-API({ vote: Fun([Address], UInt) })
+API(name, interface)
+// or 
+API(interface)
 ```
 
-`apiName` is a string that labels the API and `apiInterface` is an object where each field indicates the type of a function provided by the contract as an API. These APIs are available in frontends via the `ctc.apis` object. The value returned by this function is an object where the fields are the members of apiInterface are may be used in .api components of fork and parallelReduce to specify the behavior of the corresponding call. These are called API member functions. Each function must occur exactly once in the entire program.
+* `name` is a string that labels the API.
+* `interface` is an object where each field indicates the type of a function provided by the contract as an API. These APIs are available in frontends via the `ctc.apis` object. The value returned by this function is an object where the fields are the members of `interface`. The object may be used in the `.api` components of `fork` and `parallelReduce` expressions. Each object method must occur exactly once in the entire program.
+
+### Example
+
+See [examples/api-full/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/api-full/index.rsh).
 
 ## deploy
 
-The `deploy()` statement deploys the DApp and finalizes all the available APIs, Participants, Views, and compilation options. Its continuation is a step, which means its content is specified by steps. It represents the body of the DApp to be compiled.
+The `deploy` statement defines Participants, Views, APIs, and compiler options, and transitions from Initialization mode to Step mode.
+
+### Declaration
+
+``` js nonum
+deploy();
+```
 
 ## Participant
 
-A participant is declared with the following:
+A `Participant` expression defines a participant.
+
+### Declaration
 
 ``` js nonum
-Participant(participantName, participantInteractInterface)
+Participant(name, interface)
 ```
 
-`participantName` is a string which indicates the name of the participant function in the generated backend code. Each `participantName` must be unique.
+* `name` is a string indicating the name of the participant function in the generated backend code. Each name must be unique.
+* `interface` is a participant interact interface, an object where each field indicates the type of a function or value which must be provided to the backend by the frontend for interacting with the participant.
 
-`participantInteractInterface` is a participant interact interface, an object where each field indicates the type of a function or value which must be provided to the backend by the frontend for interacting with the participant.
+### Example
+
+``` js nonum
+const sellerInteract = {
+  price: UInt,
+  wisdom: Bytes(128),
+  reportReady: Fun([UInt], Null)
+};
+
+const S = Participant('Seller', sellerInteract);
+```
 
 ## ParticipantClass
 
-A participant is declared with the following:
+A `ParticipantClass` expression defines a type of participant.
+
+### Declaration
 
 ``` js nonum
-ParticipantClass(participantName, participantInteractInterface)
+ParticipantClass(name, interface)
 ```
 
-`participantName` is a string which indicates the name of the participant function in the generated backend code. Each `participantName` must be unique.
+* `name` is a string which indicates the name of the participant class function in the generated backend code. Each name must be unique.
+* `interface` is a participant class interact interface, an object where each field indicates the type of a function or value which must be provided to the backend by the frontend for interacting with the participants.
 
-`participantInteractInterface` is a participant interact interface, an object where each field indicates the type of a function or value which must be provided to the backend by the frontend for interacting with the participant.
+### Example
+
+``` js nonum
+const sponsorApi = {
+  donation: UInt,
+  reportDonation: Fun([Address, UInt, UInt, UInt, UInt], Null),
+};
+
+const S = ParticipantClass('Sponsor', sponsorApi);
+```
 
 ## setOptions
 
-The `setOptions({})` statement overrides default application parameters. Here is an example:
+The `setOptions` statement overrides default application parameters.
+
+### Declaration
+
+``` js nonum
+setOptions(options)
+```
+
+* `options` is an object containing options and values
+
+The options object supports the following key:value pairs:
+
+|Option|Type|Default|
+|-|-|-|
+|`connectors`|`Array`|All available connectors|
+|`verifyArithmetic`|`Boolean`|`false`|
+|`verifyPerConnector`|`Boolean`|`false`|
+
+`connectors` is an array of tuples indicating for which consensus networks the compiler will generate contract bytecode. 
+
+`verifyArithmetic` is a boolean value indicating whether arithmetic operations introduce static assertions that they do not overflow beyond UInt.max. This defaults to false because it is onerous to verify. We recommend turning it on before final deployment, but leaving it off during development. When it is false, connectors will ensure that overflows do not actually occur on the network.
+
+`verifyPerConnector` is a boolean value that determines whether verification is done per connector, or once for a generic connector. When this is true, then connector-specific constants, like UInt.max, will be instantiated to literal numbers. This concretization of these constants can induce performance degradation in the verifier.
+
+### Example
 
 ``` js nonum
 setOptions({ verifyArithmetic: true, connectors: [ETH, ALGO ] });
 ```
 
-Possible options include the following:
-
-|Option|Type|Default|
-|-|-|-|
-|`connectors`|`Array`|`[ALGO, ETH]`|
-|`verifyArithmetic`|`Boolean`|`false`|
-|`verifyPerConnector`|`Boolean`|`false`|
-
-Descriptions:
-
-* *connectors*. A tuple of the connectors that the application should be compiled for. By default, all available connectors are chosen.
-* *verifyArithmetic*. Determines whether arithmetic operations automatically introduce static assertions that they do not overflow beyond UInt.max. This defaults to false, because it is onerous to verify. We recommend turning it on before final deployment, but leaving it off during development. When it is false, connectors will ensure that overflows do not actually occur on the network.
-* *verifyPerConnector*. Determines whether verification is done per connector, or once for a generic connector. When this is true, then connector-specific constants, like UInt.max, will be instantiated to literal numbers. This concretization of these constants can induce performance degradation in the verifier.
-
 ## View
 
-A view is defined with `View(viewName, viewInterface)` or `View(viewInterface)`:
+A View expression defines a view object that allows non-participants to see public variables in the contract.
+
+### Declaration
 
 ``` js nonum
-View('NFT', { owner: Address })
-View({ owner: Address })
+View(name, viewInterface)
+// or
+View(viewInterface)
 ```
 
-`viewName` is a string that labels the view and `viewInterface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp. These views are available in frontends via the ctc.views object. In the DApp, the result of this application argument is referred to as a view object.
+* `name` is a string that labels the view.
+* `interface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp. These views are available in frontends via the `ctc.views` object. In the DApp, the result of this argument is referred to as a `view` object.
 
-# Step Mode
+### Example
 
-Actions that apply to all participants occur within a step. The `exit()` statement is an example:
+The program instantiates the view in Line 4 and initializes the `price` property in Line 10:
 
-``` js nonum
+``` js
 export const main = Reach.App(() => {
-  const S = Participant('Seller', {});
-  const B = Participant('Buyer', {});
+  const S = Participant('Seller', sellerInteract);
+  const B = Participant('Buyer', buyerInteract);
+  const V = View('Main', { price: UInt });
   deploy();
 
-    ...
-
-  exit();
-});
+  S.only(() => { const price = declassify(interact.price); });
+  S.publish(price);
+  S.interact.reportReady(price);
+  V.price.set(price);
+  commit();
 ```
+
+# Step
+
+Actions that apply to all participants occur within a step. Below are descriptions of the permitted statements/expressions within a Step:
 
 ## call
 
@@ -414,9 +505,9 @@ wait(TIME);
  
 A wait statement, written wait(TIME);, delays the computation until the TIME time argument passes. TIME must be pure and only reference values known by the consensus state. It may only occur in a step.
 
-# Local Step Mode
+# Local Step
 
-A Reach local step occurs in the body of [each and only](#each-and-only) statements. It represents the actions taken by a single participant in an application. Inside of a local step, `this` refers to the participant performing the step. This is useful when the local step was initiated by an each expression.
+A Reach local step occurs in the body of [each and only](#each-and-only) statements. It represents the actions taken by a single participant in an application. Inside a local step, `this` refers to the participant performing the step. This is useful when the local step was initiated by an `each` expression. Below are descriptions of the permitted statements/expressions within a Local Step:
 
 ## assume
 
@@ -484,9 +575,9 @@ makeCommitment( interact, x )
 
 Returns two values, [ commitment, salt ], where salt is the result of calling interact.random(), and commitment is the digest of salt and x. This is used in a local step before checkCommitment is used in a consensus step.
 
-# Consensus Step Mode
+# Consensus Step
 
-A Reach consensus step occurs in the continuation of a consensus transfer statement. It represents the actions taken by the consensus network contract of an application. Inside of a consensus step, `this` refers to the address of the participant that performed the consensus transfer. This is useful when the consensus transfer was initiated by a race expression.
+A Reach consensus step occurs in the continuation of a consensus transfer statement. It represents the actions taken by the consensus network contract of an application. Inside of a consensus step, `this` refers to the address of the participant that performed the consensus transfer. This is useful when the consensus transfer was initiated by a race expression. Below are descriptions of the permitted statements/expressions within a Consensus Step:
 
 ## checkCommitment
 

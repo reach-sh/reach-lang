@@ -2,7 +2,7 @@
 menuItem: mi-docs
 ---
 
-# Reach RPC Server
+# RPC Frontends
 
 The Reach RPC Server provides access to compiled JavaScript backends via an HTTPS-accessible JSON-based RPC protocol. The server allows frontends to be written in any programming language. Reach provides client libraries for JavaScript, Python, and Go. It is easy to implement a client library yourself. An example frontend written using the Reach RPC Server is shown in the tutorial section on RPC-based frontends.
 
