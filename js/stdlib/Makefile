@@ -62,7 +62,6 @@ refresh-js-stdlib: clone-js-stdlib
 .PHONY: bump-version-and-publish-js-stdlib
 bump-version-and-publish-js-stdlib: 
 	cd js-reach-stdlib
-	sbin/check-recent-commits.sh
 	echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
 	npm version prerelease --preid=rc
 	npm publish --access=public --tag=rc
