@@ -75,3 +75,13 @@ translate-templates: translate-mo-templates-stdlib translate-mo-templates-rpc-se
 prepare-version: mo
 	echo $$(git tag)
 	(cd scripts && bash prepare-reach-version.sh)
+
+.PHONY: prepare-rc-tag-and-push
+prepare-rc-tag-and-push: prepare-version
+	source VERSION
+	git config user.name "reachdevbot"
+	git config user.email "reachdevbot@reach.com"
+	git add VERSION
+	git commit -m "Create tag ${VERSION}"
+	git tag ${VERSION}
+	git push --tags

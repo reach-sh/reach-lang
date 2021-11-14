@@ -60,7 +60,7 @@ refresh-js-stdlib: clone-js-stdlib
 	cd js-reach-stdlib && ./sbin/refresh.sh
 
 .PHONY: bump-version-and-publish-js-stdlib
-bump-version-and-publish-js-stdlib: refresh-js-stdlib
+bump-version-and-publish-js-stdlib: 
 	cd js-reach-stdlib
 	sbin/check-recent-commits.sh
 	echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
