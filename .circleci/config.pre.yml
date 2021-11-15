@@ -395,6 +395,6 @@ workflows:
           branches:
             only: automated_tagging
     - "prepare-version":
-      requires:
-        - "RC-release"
+        requires:
+          - "RC-release"
     # Sink and examples follow
