@@ -1,4 +1,4 @@
-// Automatically generated with Reach 0.1.6 (9085a407*)
+// Automatically generated with Reach 0.1.6 (5b964071*)
 pragma abicoder v2;
 
 pragma solidity ^0.8.9;
@@ -513,11 +513,17 @@ struct T4 {
   bool msg;
   }
 struct T5 {
-  uint8[128] v75;
+  bytes32 elem0;
+  bytes32 elem1;
+  bytes32 elem2;
+  bytes32 elem3;
   }
 struct T6 {
+  T5 v75;
+  }
+struct T7 {
   uint256 time;
-  T5 msg;
+  T6 msg;
   }
 
 
@@ -525,6 +531,8 @@ contract ReachContract is Stdlib {
   uint256 current_step;
   uint256 current_time;
     bytes current_svbs;
+  uint256 creation_time;
+  function _reachCreationTime() external view returns (uint256) { return creation_time; }
   function _reachCurrentTime() external view returns (uint256) { return current_time; }
   function _reachCurrentState() external view returns (uint256, bytes memory) { return (current_step, current_svbs); }
   
@@ -535,10 +543,11 @@ contract ReachContract is Stdlib {
   
   constructor(T2 memory _a) payable {
     current_step = 0x0;
+    creation_time = uint256(block.number);
     
     
     emit e0(_a);
-    reachRequire((msg.value == uint256(0)), uint256(7) /*'(./examples/overview/index.rsh:17:5:dot,[],"verify network token pay amount")'*/);
+    reachRequire((msg.value == uint256(0)), uint256(7) /*'(./index.rsh:17:5:dot,[],"verify network token pay amount")'*/);
     T0 memory nsvs;
     nsvs.v60 = payable(msg.sender);
     nsvs.v61 = _a.msg.v61;
@@ -552,14 +561,14 @@ contract ReachContract is Stdlib {
   event e1(T4 _a);
   
   function m1(T4 calldata _a) external payable {
-    reachRequire((current_step == uint256(1)), uint256(9) /*'state step check at ./examples/overview/index.rsh:22:5:dot'*/);
-    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(10) /*'state time check at ./examples/overview/index.rsh:22:5:dot'*/);
+    reachRequire((current_step == uint256(1)), uint256(9) /*'state step check at ./index.rsh:22:5:dot'*/);
+    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(10) /*'state time check at ./index.rsh:22:5:dot'*/);
     current_step = 0x0;
     (T0 memory _svs) = abi.decode(current_svbs, (T0));
     
     
     emit e1(_a);
-    reachRequire((msg.value == _svs.v61), uint256(8) /*'(./examples/overview/index.rsh:22:5:dot,[],"verify network token pay amount")'*/);
+    reachRequire((msg.value == _svs.v61), uint256(8) /*'(./index.rsh:22:5:dot,[],"verify network token pay amount")'*/);
     T0 memory nsvs;
     nsvs.v60 = _svs.v60;
     nsvs.v61 = _svs.v61;
@@ -570,18 +579,18 @@ contract ReachContract is Stdlib {
     
     }
   
-  event e2(T6 _a);
+  event e2(T7 _a);
   
-  function m2(T6 calldata _a) external payable {
-    reachRequire((current_step == uint256(2)), uint256(13) /*'state step check at ./examples/overview/index.rsh:27:5:dot'*/);
-    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(14) /*'state time check at ./examples/overview/index.rsh:27:5:dot'*/);
+  function m2(T7 calldata _a) external payable {
+    reachRequire((current_step == uint256(2)), uint256(13) /*'state step check at ./index.rsh:27:5:dot'*/);
+    reachRequire(((_a.time == uint256(0)) || (current_time == _a.time)), uint256(14) /*'state time check at ./index.rsh:27:5:dot'*/);
     current_step = 0x0;
     (T0 memory _svs) = abi.decode(current_svbs, (T0));
     
     
     emit e2(_a);
-    reachRequire((msg.value == uint256(0)), uint256(11) /*'(./examples/overview/index.rsh:27:5:dot,[],"verify network token pay amount")'*/);
-    reachRequire(((_svs.v60 == payable(msg.sender))), uint256(12) /*'(./examples/overview/index.rsh:27:5:dot,[],Just "sender correct")'*/);
+    reachRequire((msg.value == uint256(0)), uint256(11) /*'(./index.rsh:27:5:dot,[],"verify network token pay amount")'*/);
+    reachRequire(((_svs.v60 == payable(msg.sender))), uint256(12) /*'(./index.rsh:27:5:dot,[],Just "sender correct")'*/);
     _svs.v60.transfer(_svs.v61);
     current_step = 0x0;
     current_time = 0x0;

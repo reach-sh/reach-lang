@@ -41,7 +41,13 @@ WORKDIR ${SRC_PARENT}/indexer-${INDEXER_VERSION}
 # RUN git clone https://github.com/algorand/indexer && cd indexer && git checkout e54c4d97df60e2a6768abb3d97919f3412e58597
 # WORKDIR $SRC_PARENT/indexer
 RUN make
+COPY indexer1.patch .
+RUN patch -p1 < indexer1.patch
+RUN make
 RUN cp cmd/algorand-indexer/algorand-indexer /go/bin
+
+FROM alpine as goal
+COPY --from=builder /go/bin/goal /bin/
 
 FROM alpine:latest as prepare
 
