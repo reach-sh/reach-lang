@@ -135,7 +135,7 @@ instance Freshen DLExpr where
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at m ma a -> DLE_EmitLog at m ma <$> fu a
-    DLE_setApiDetails {..} -> return $ DLE_setApiDetails {..}
+    DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
 
 instance {-# OVERLAPS #-} Freshen k => Freshen (SwitchCases k) where
   fu = mapM (\(vn, vnu, k) -> (,,) <$> fu_v vn <*> pure vnu <*> fu k)

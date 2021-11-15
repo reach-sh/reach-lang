@@ -1736,30 +1736,23 @@ evalForm f args = do
         go p' = retV $ public $ SLV_Form $ SLForm_apiCall_partial $ p' { slac_mode = Nothing }
     SLForm_setApiDetails -> do
       at <- withAt id
-      (who_e, is_fork, msg, mc_id) <- three_mfour_args
-      let isFork = case is_fork of
-                    JSLiteral _ "true" -> True
-                    _ -> False
+      (who_e, msg, mc_id) <- two_mthree_args
       who <- expectParticipant who_e
       let mCaseId = maybe Nothing (Just . jse_expect_id at) mc_id
-      tys <- case (isFork, mCaseId) of
-              -- API Call: spread domain
-              (False, _) -> do
-                e <- evalExpr msg
-                compileTypeOf (snd e) >>= \case
-                  (T_Tuple ts, _) -> return ts
-                  _ -> impossible "API call domain is not a Tuple"
+      (ct, tys) <- case mCaseId of
               -- API Fork With Multiple Cases (msg is Data instance)
-              (_, Just _) -> do
+              Just _ -> do
                 evalExpr msg >>= \case
-                    (_, SLV_Type s) -> st2dte s <&> (:[])
+                    (_, SLV_Type s) -> do
+                      s' <- st2dte s
+                      return (AIC_Case, [s'])
                     _ -> impossible "Expected data instance Type"
-              -- API Fork With One Case (not wrapped in Data)
-              (_, Nothing) -> do
+              -- API Call / Single case fork
+              Nothing -> do
                 e <- evalExpr msg
                 (dt, _) <- compileTypeOf $ snd e
-                return [dt]
-      ctxt_lift_eff $ DLE_setApiDetails at who tys mCaseId isFork
+                return (AIC_SpreadArg, [dt])
+      ctxt_lift_eff $ DLE_setApiDetails at who tys mCaseId ct
       return $ public $ SLV_Null at "setApiDetails"
   where
     illegal_args n = expect_ $ Err_Form_InvalidArgs f n args
@@ -1777,9 +1770,9 @@ evalForm f args = do
     _three_args = case args of
       [x, y, z] -> return $ (x, y, z)
       _ -> illegal_args 3
-    three_mfour_args = case args of
-      [w, x, y] -> return $ (w, x, y, Nothing)
-      [w, x, y, z] -> return $ (w, x, y, Just z)
+    two_mthree_args = case args of
+      [w, x] -> return $ (w, x, Nothing)
+      [w, x, y] -> return $ (w, x, Just y)
       _ -> illegal_args 2
     one_two_args ta = case args of
       [de] -> return (de, JSLiteral ta "null")
@@ -4374,7 +4367,7 @@ doApiCall lhs (ApiCallRec{..}) = do
                     [ jsConst a returnLVal doLog, callOnly [ jsThunkStmts a [es interactOut] ] ]
   --
   let assignRet = jsConst a ret apiReturn
-  let setDetails = jsCall a (jid ".setApiDetails") [slac_who, JSLiteral a "false", dom]
+  let setDetails = jsCall a (jid ".setApiDetails") [slac_who, dom]
   let ss = [callOnly [onlyThunk], es pub3, es setDetails, assignRet]
   return ss
   where
@@ -4489,7 +4482,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
                   True -> do
                     let msg = if usesData then fd_e else msg_e
                     let mce = if usesData then [jid $ mkPartCase who case_n] else []
-                    let e = jsCall a (jid ".setApiDetails") $ [who_e, JSLiteral a "true", msg] <> mce
+                    let e = jsCall a (jid ".setApiDetails") $ [who_e, msg] <> mce
                     [JSExpressionStatement e sp]
             return $ sps <> mdefmsg <> ss
           JSExpressionParen _ e _ -> getAfter who_e isApi who usesData (a_at, e, case_n)

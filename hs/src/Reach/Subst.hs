@@ -101,7 +101,7 @@ instance Subst DLExpr where
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at m ma x -> DLE_EmitLog at m ma <$> subst x
-    DLE_setApiDetails {..} -> return $ DLE_setApiDetails {..}
+    DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
 
 instance Subst DLStmt where
   subst = \case

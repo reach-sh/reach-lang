@@ -1177,8 +1177,8 @@ apiDef who ApiInfo{..} = do
   let who_s = bunpack who
   let mf = pretty $ "this.m" <> show ai_which
   let mkArgDefns ts = do
-        let indexedTypes = zip ts [0..length ts]
-        unzip <$> mapM (\ (ty, i) -> do
+        let indexedTypes = zip ts [0..]
+        unzip <$> mapM (\ (ty, i :: Int) -> do
           let name = pretty $ "_a" <> show i
           sol_ty <- solType_ ty
           let decl = solDecl name (sol_ty <> withArgLoc ty)
@@ -1199,13 +1199,8 @@ apiDef who ApiInfo{..} = do
             tc <- solType_ $ vsToType ai_msg_vs
             return $ solApply tc tc_args
   let go = \case
-        -- API Call
-        (False, _) -> do
-          (args, argDefns) <- mkArgDefns ai_msg_tys
-          ty <- makeConsensusArg args
-          return $ (ty, argDefns, [])
-        -- Multi case fork
-        (True, Just c_id_s) -> do
+        AIC_Case -> do
+          let c_id_s = fromMaybe (impossible "Expected case id") ai_mcase_id
           let c_id = pretty c_id_s
           -- Construct product of data variant
           (data_t, con_t, argDefns) <-
@@ -1227,15 +1222,14 @@ apiDef who ApiInfo{..} = do
           tc <- solType_ $ vsToType ai_msg_vs
           let ty =  solApply tc ["_vt"]
           return $ (ty, argDefns, lifts)
-        -- Single case fork
-        (True, Nothing) -> do
+        AIC_SpreadArg -> do
           (args, argDefns) <-
             case ai_msg_tys of
               [T_Tuple ts] -> mkArgDefns ts
               _ -> impossible "apiDef: Expected one tuple arg"
           ty <- makeConsensusArg args
           return $ (ty, argDefns, [])
-  (ty, argDefns, tyLifts) <- go (ai_is_fork, ai_mcase_id)
+  (ty, argDefns, tyLifts) <- go ai_compile
   let body = vsep $ [ "ApiRng memory _r;"
                     , m_arg_ty <+> "memory _t;"]
                     <> tyLifts <>

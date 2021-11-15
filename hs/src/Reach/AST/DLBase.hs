@@ -483,11 +483,21 @@ instance PrettySubst DLTokenNew where
 
 type DLTimeArg = Either DLArg DLArg
 
+-- What additional work needs to be done when compiling the definition
+-- for a lifted API call
+data ApiInfoCompilation
+  = AIC_Case
+  | AIC_SpreadArg
+  deriving (Eq, Ord, Show)
+
+instance Pretty ApiInfoCompilation where
+  pretty = viaShow
+
 data ApiInfo = ApiInfo
   { ai_msg_tys :: [DLType]
   , ai_mcase_id :: Maybe String
   , ai_which :: Int
-  , ai_is_fork :: Bool
+  , ai_compile :: ApiInfoCompilation
   , ai_msg_vs :: [DLVar] }
   deriving (Eq)
 
@@ -536,11 +546,11 @@ data DLExpr
   -- * the dlarg is the value being logged
   | DLE_EmitLog SrcLoc String (Maybe String) DLVar
   | DLE_setApiDetails {
-    sed_at :: SrcLoc,
-    sed_who :: SLPart,
-    sed_dom :: [DLType],
-    sed_mcase_id :: Maybe String,
-    sed_is_fork :: Bool }
+    sad_at :: SrcLoc,
+    sad_who :: SLPart,
+    sad_dom :: [DLType],
+    sad_mcase_id :: Maybe String,
+    sad_compile :: ApiInfoCompilation }
   deriving (Eq, Ord, Generic)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
@@ -991,7 +1001,7 @@ allFluidVars bals =
   -- This function is not really to get all of them, but just to
   -- get the ones that must be saved for a loop. didSend is only used locally,
   -- so it doesn't need to be saved.
-  --, FV_didSend 
+  --, FV_didSend
   ]
     <> map FV_balance all_toks
     <> map FV_supply all_toks
