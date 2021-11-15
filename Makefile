@@ -1,5 +1,7 @@
 .DEFAULT_GOAL := routine-build
 
+include ./VERSION
+
 .PHONY: check
 check:
 	ag --ignore '*lock*' --ignore hs/stack.yaml '0\.1\.0' || exit 0
@@ -79,10 +81,9 @@ prepare-version: mo
 
 .PHONY: prepare-rc-tag-and-push
 prepare-rc-tag-and-push: prepare-version
-	source VERSION
 	git config user.name "reachdevbot"
 	git config user.email "reachdevbot@reach.com"
 	git add VERSION
-	git commit -m "Create tag ${VERSION}"
-	git tag ${VERSION}
+	git commit -m "Create tag $(VERSION)"
+	git tag $(VERSION)
 	git push --tags
