@@ -387,9 +387,6 @@ workflows:
          - "create-tag-and-push"
        context:
        - reachdevbot-on-dockerhub
-    - "prepare-version":
-      requires:
-        - "RC-release"
     - "RC-release":
         type: approval
         requires:
@@ -397,4 +394,7 @@ workflows:
         filters:
           branches:
             only: automated_tagging
+    - "prepare-version":
+      requires:
+        - "RC-release"
     # Sink and examples follow
