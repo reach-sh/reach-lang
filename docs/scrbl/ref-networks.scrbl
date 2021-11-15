@@ -11,14 +11,15 @@ supported by Reach version @|reach-vers|.
 
 @section[#:tag "ref-network-algo"]{Algorand}
 
-The @link["https://www.algorand.com/"]{Algorand} Reach @tech{connector} generates a set of
-@tech{contracts} that manage one instance of the @|DApp|'s
+The @link["https://www.algorand.com/"]{Algorand} Reach @tech{connector} generates a
+@tech{contract} that manage one instance of the @|DApp|'s
 execution.
 
 It uses finite on-chain state.
-The @|DApp| consists of one application and one contract-controlled escrow account.
+The @|DApp| consists of one application.
+The contract escrow account is the application account.
 
-It relies on versions of @tt{algod} that support TEAL version 4, such as Algorand 2.7.1 from July 2021.
+It relies on versions of @tt{algod} that support TEAL version 5, such as Algorand 3.0.1 from September 2021.
 It uses the Algorand @tt{indexer} version 2 to lookup and monitor @tech{publications}; in other words, it does @emph{not} rely on any communication network other than Algorand itself.
 
 Algorand uses the SHA256 algorithm to perform @tech{digest}s.
