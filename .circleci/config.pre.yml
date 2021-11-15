@@ -74,30 +74,31 @@ commands:
         type: string
     steps:
       - run: |
-          source ./VERSION
           for IMG in <<parameters.deps>> ; do
             zcat /tmp/workspace/docker-${IMG}/${IMG}.tar.gz | docker load
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}  
           done
           docker image ls | grep reachsh
-jobs:
-  "prepare-version":
-    executor: real
+  prepare-version:
+    description: "Prepare Version for Release Candidate release"
     steps:
-    - checkout
-    - run: |
-        make prepare-version
+      - run: |
+          make prepare-version
+          source ./VERSION
+jobs:
   "create-tag-and-push":
     executor: real
     steps:
     - checkout
+    - prepare-version
     - run: |
         make prepare-rc-tag-and-push
   "make-announcement":
     executor: real
     steps:
+    - checkout
+    - prepare-version
     - run: |
-        source ./VERSION
         export GIT_COMMIT_HASH=$CIRCLE_SHA1
         apt update
         apt install python3 python3-pip -y
@@ -107,6 +108,8 @@ jobs:
   "deploy-stdlib":
     executor: real
     steps:
+    - checkout
+    - prepare-version
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
@@ -123,6 +126,8 @@ jobs:
   "deploy-images":
     executor: real
     steps:
+    - checkout
+    - prepare-version
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
@@ -136,11 +141,11 @@ jobs:
     executor: fake
     steps:
     - checkout
+    - prepare-version
     # We don't mind not caching, because it doesn't take that long and we don't
     # want to steal a volume from the main build
     - srd_no
     - run: |
-        make prepare-version
         (cd docs && make build)
         mkdir -p /tmp/workspace/
         cp -fr docs/build /tmp/workspace/docs
@@ -245,11 +250,12 @@ jobs:
           equal: [ fake, << parameters.exec >> ]
         steps:
           - srd_yes
+    - checkout
+    - prepare-version
     - workattach
     - and_restore_docker:
         deps: <<parameters.deps>>
     - run: |
-        source ./VERSION
         IMAGE="<<parameters.image>>"
         mkdir -p "/tmp/workspace/docker-${IMAGE}"
         cd .circleci && ./image.sh "${IMAGE}"
@@ -391,7 +397,4 @@ workflows:
         filters:
           branches:
             only: automated_tagging
-    - "prepare-version":
-        requires:
-          - "RC-release"
     # Sink and examples follow

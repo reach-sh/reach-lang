@@ -38,7 +38,6 @@ END
     if [ "x${IS_RC}" != "x1" ]; then
     cat >>"${MID}" <<END
           - "RC-release"
-          - "prepare-version"
 END
     fi
     for DEP in "$@"; do
