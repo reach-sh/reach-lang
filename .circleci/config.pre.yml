@@ -399,11 +399,11 @@ workflows:
           branches:
             only: automated_tagging
     - "Release":
-      type: approval
-      filters:
-        tags: 
-          only: /[0-9]*\.[0-9]*\.[0-9]*-rc\.[0-9]*/
-        branches:
-          ignore: /.*/
+        type: approval
+        filters:
+          tags: 
+            only: /[0-9]*\.[0-9]*\.[0-9]*-rc\.[0-9]*/
+          branches:
+            ignore: /.*/
 
     # Sink and examples follow
