@@ -147,6 +147,10 @@ function TocviewToggle(glyph, id) {
   glyph.innerHTML = expand ? "&#9660;" : "&#9658;";
 }
 
+function TocsetToggle() {
+  document.body.classList.toggle("tocsetoverlay");
+}
+
 // Page Init ------------------------------------------------------------------
 
 // Note: could make a function that inspects and uses window.onload to chain to

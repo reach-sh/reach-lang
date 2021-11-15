@@ -136,6 +136,10 @@ table td {
   color: #e0e0e0;
 }
 
+.navleft .tocsettoggle {
+  display: none;
+}
+
 .searchform {
   display: inline;
   margin: 0;
