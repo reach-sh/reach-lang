@@ -22,8 +22,9 @@ export const main = Reach.App(
     B.only(() => {
       const [tokenB, amtB] = declassify(interact.accSwap(tokenA, amtA));
       assume(tokenA != tokenB); });
-    B.publish(tokenB, amtB)
-     .pay([ [amtB, tokenB] ])
+    B.publish(tokenB, amtB);
+    commit();
+    B.pay([ [amtB, tokenB] ])
      .timeout(relativeTime(time), () => {
        // closeToks(A, [tokenA])
        A.publish();

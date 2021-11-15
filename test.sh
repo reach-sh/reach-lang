@@ -107,6 +107,11 @@ tealcount () {
   done
 }
 
+checkteal () {
+  c "$1"/index.rsh
+  ./scripts/goal-devnet clerk compile "$1"/build/index.main.appApproval.teal
+}
+
 # tealcount
 
 #######
@@ -114,16 +119,23 @@ tealcount () {
 #exit 0
 
 jb
-ci ETH api-full
-ci ALGO api-full
-
+cd users/algo-test
+REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ../../reach run
 exit 0
 
+c examples/remote/index.rsh
+c hs/t/y/many_txns.rsh
+c examples/rent-seeking/index.rsh
+exit 0
 
 jb
+#exit 0
+exit 0
 ci ALGO overview
-#ci ALGO tut-7
-#ci ALGO mint-basic
+ci ALGO tut-7
+ci ALGO atomic-swap
+ci ALGO mint-basic
+ci ALGO api-full
 
 #c users/t.rsh
 exit 0

@@ -4,8 +4,5 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
 Checked 54 theorems; No failures!
-WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
- * This program could use 929 units of cost, but the limit is 700: [("preamble:",30),("l1_checkTxnK:",79),("l2_checkTxnK:",41),("l3_checkTxnK:",44),("l4_checkTxnK:",44),("l5_checkTxnK:",44),("l6_checkTxnK:",44),("l7_checkTxnK:",44),("l8_checkTxnK:",44),("l9_checkTxnK:",44),("l10_checkTxnK:",44),("l11_checkTxnK:",44),("l12_checkTxnK:",44),("l13_checkTxnK:",44),("l14_checkTxnK:",44),("l15_checkTxnK:",44),("l16_checkTxnK:",44),("l17_checkTxnK:",44),("l18_checkTxnK:",44),("l19_checkTxnK:",42),("updateState:",6),("checkSize:",9),("done:",16),("BOT:",2)]
-
 WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
- * Step 0 could have too many txns: could have 20 but limit is 16
+ * Step 0 could have too many inner transactions: could have 17 but limit is 16

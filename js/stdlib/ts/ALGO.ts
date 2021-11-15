@@ -112,12 +112,11 @@ type NetworkAccount = {
 };
 
 const reachBackendVersion = 5;
-const reachAlgoBackendVersion = 5;
+const reachAlgoBackendVersion = 6;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
   appApproval: string,
   appClear: string,
-  escrow: string,
   stateSize: number,
   stateKeys: number,
   mapDataSize: number,
@@ -128,10 +127,8 @@ type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
 
 type CompiledBackend = {
-  ApplicationID: number,
   appApproval: CompileResultBytes,
   appClear: CompileResultBytes,
-  escrow: CompileResultBytes,
 };
 
 type ContractInfo = number;
@@ -387,19 +384,15 @@ function must_be_supported(bin: Backend) {
 
 // Get these from stdlib
 // const MaxTxnLife = 1000;
-const LogicSigMaxSize = 1000;
+const MinTxnFee = 1000;
 const MaxAppProgramLen = 2048;
 const MaxAppTxnAccounts = 4;
 const MaxExtraAppProgramPages = 3;
+const MinBalance = 100000;
 
-async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBackend> {
-  debug(`compileFor`, info, typeof(info), Number.isInteger(info));
-  const ApplicationID = bigNumberToNumber(T_Contract.canonicalize(info));
+async function compileFor(bin: Backend): Promise<CompiledBackend> {
   must_be_supported(bin);
-  const { appApproval, appClear, escrow } = bin._Connectors.ALGO;
-
-  const subst_appid = (x: string) =>
-    replaceAll(x, '{{ApplicationID}}', `${ApplicationID}`);
+  const { appApproval, appClear } = bin._Connectors.ALGO;
 
   const checkLen = (label:string, actual:number, expected:number): void => {
     debug(`checkLen`, {label, actual, expected});
@@ -411,15 +404,10 @@ async function compileFor(bin: Backend, info: ContractInfo): Promise<CompiledBac
   const appClear_bin =
     await compileTEAL('appClear', appClear);
   checkLen(`App Program Length`, (appClear_bin.result.length + appApproval_bin.result.length), (1 + MaxExtraAppProgramPages) * MaxAppProgramLen);
-  const escrow_bin =
-    await compileTEAL('escrow_subst', subst_appid(escrow));
-  checkLen(`Escrow Contract`, escrow_bin.result.length, LogicSigMaxSize);
 
   return {
-    ApplicationID,
     appApproval: appApproval_bin,
     appClear: appClear_bin,
-    escrow: escrow_bin,
   };
 }
 
@@ -1020,8 +1008,20 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         emptyMapDataTy.toNet(emptyMapDataTy.canonicalize('')));
     debug({ emptyMapData });
 
-    // XXX
-    type ContractHandler = any;
+    type GlobalState = [BigNumber, BigNumber, Address];
+    type ContractHandler = {
+      ApplicationID: number,
+      Deployer: Address,
+      getLastRound: (() => number),
+      setLastRound: ((x:number) => void),
+      getLocalState: ((a:Address) => Promise<any>),
+      ensureOptIn: (() => Promise<void>),
+      getAppState: (() => Promise<any>),
+      getGlobalState: ((appSt_g?:any) => Promise<GlobalState|undefined>),
+      canIWin: ((lct:BigNumber) => Promise<boolean>),
+      isIsolatedNetwork: (() => boolean),
+      ctcAddr: Address,
+    };
 
     const makeGetC = (setupViewArgs: SetupViewArgs, eventCache: EventCache) => {
       const { getInfo: fake_getInfo } = setupViewArgs;
@@ -1029,17 +1029,18 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return async (): Promise<ContractHandler> => {
         if ( _theC ) { return _theC; }
         const ctcInfo = await fake_getInfo();
-        const { compiled, ApplicationID, startRound, Deployer } =
+        const { ApplicationID, Deployer, startRound } =
           await stdVerifyContract( setupViewArgs, (async () => {
             return await verifyContract_(label, ctcInfo, bin, eventCache);
           }));
         debug(label, 'getC', {ApplicationID, startRound} );
+
+        const ctcAddr = algosdk.getApplicationAddress(ApplicationID);
+        debug(label, 'getC', { ctcAddr });
+
         let realLastRound = startRound;
         const getLastRound = () => realLastRound;
         const setLastRound = (x:number) => (realLastRound = x);
-
-        const escrowAddr = compiled.escrow.hash;
-        const escrow_prog = algosdk.makeLogicSig(compiled.escrow.result, []);
 
         // Read map data
         const getLocalState = async (a:Address): Promise<any> => {
@@ -1090,7 +1091,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(lab, {appSt});
           return appSt;
         };
-        type GlobalState = [BigNumber, BigNumber, Address];
         const getGlobalState = async (appSt_g?:any): Promise<GlobalState|undefined> => {
           const appSt = appSt_g || await getAppState();
           if ( !appSt ) { return undefined; }
@@ -1112,7 +1112,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const isin = (await getProvider()).isIsolatedNetwork;
         const isIsolatedNetwork = () => isin;
 
-        return (_theC = { ApplicationID, Deployer, escrowAddr, escrow_prog, getLastRound, setLastRound, getLocalState, getAppState, getGlobalState, ensureOptIn, canIWin, isIsolatedNetwork });
+        return (_theC = { ApplicationID, ctcAddr, Deployer, getLastRound, setLastRound, getLocalState, getAppState, getGlobalState, ensureOptIn, canIWin, isIsolatedNetwork });
       };
     };
 
@@ -1165,8 +1165,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
       // Returns address of a Reach contract
       const getContractAddress = async () => {
-        const { escrowAddr } = await getC();
-        return T_Address.canonicalize(escrowAddr);
+        const { ctcAddr } = await getC();
+        return T_Address.canonicalize(ctcAddr);
       };
 
       const getState = async (vibne:BigNumber, vtys:AnyALGO_Ty[]): Promise<Array<any>> => {
@@ -1208,7 +1208,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         if ( isCtor ) {
           debug(label, 'deploy');
-          const { appApproval, appClear } = await compileFor(bin, 0);
+          const compiled = await compileFor(bin);
+          const { appApproval, appClear } = compiled;
           const extraPages =
             Math.ceil((appClear.result.length + appApproval.result.length) / MaxAppProgramLen) - 1;
 
@@ -1235,16 +1236,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
           debug(`created`, {ApplicationID});
           const ctcInfo = ApplicationID;
-          const compiled = await compileFor(bin, ctcInfo);
           // We are adding one to the allocRound because we want querying to
           // start at the first place it possibly could, which is going to
           // eliminate the allocation from the event cache.
           // Once we make it so the allocation event is actually needed, then
           // we will modify this.
-          setTrustedVerifyResult({ compiled, ApplicationID, startRound: allocRound + 1, Deployer });
+          setTrustedVerifyResult({ compiled, ApplicationID, Deployer, startRound: allocRound + 1 });
           fake_setInfo(ctcInfo);
         }
-        const { ApplicationID, Deployer, escrowAddr, escrow_prog, ensureOptIn, canIWin, isIsolatedNetwork } = await getC();
+        const { ApplicationID, ctcAddr, Deployer, ensureOptIn, canIWin, isIsolatedNetwork } = await getC();
 
         const [ value, toks ] = pay;
         void(toks); // <-- rely on simulation because of ordering
@@ -1272,8 +1272,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const sim_r = await sim_p( fake_res );
         debug(dhead , '--- SIMULATE', sim_r);
         if ( isCtor ) {
-          msg.unshift( T_Address.canonicalize(escrowAddr) );
-          msg_tys.unshift( T_Address );
           sim_r.txns.unshift({
             kind: 'to',
             amt: minimumBalance,
@@ -1283,23 +1281,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const { isHalt } = sim_r;
 
         // Maps
-        const { mapRefs } = sim_r;
-        const mapAccts: Array<Address> = [ ];
-        mapRefs.forEach((caddr:Address) => {
-          const addr = cbr2algo_addr(caddr);
-          if ( addressEq(thisAcc.addr, addr) ) { return; }
-          const addrIdx =
-            mapAccts.findIndex((other:Address) => addressEq(other, addr));
-          const present = addrIdx !== -1;
-          if ( present ) { return; }
-          mapAccts.push(addr);
-        });
-        if ( mapAccts.length > MaxAppTxnAccounts ) {
-          throw Error(`Application references too many local state cells in one step. Reach should catch this problem statically.`);
-        }
-        debug(dhead, 'MAP', { mapAccts });
         if ( hasMaps ) { await ensureOptIn(); }
-        const mapAcctsReal = (mapAccts.length === 0) ? undefined : mapAccts;
+        const { mapRefs } = sim_r;
 
         while ( true ) {
           const params = await getTxnParams();
@@ -1318,15 +1301,37 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
           debug(dhead, '--- ASSEMBLE w/', params);
 
-          let extraFees: number = 0;
-          type PreWalletTransaction = {
-            txn: Transaction,
-            escrow: boolean,
+          const mapAccts: Array<Address> = [ ];
+          const recordAccount_ = (addr:Address) => {
+            if ( addressEq(thisAcc.addr, addr) ) { return; }
+            const addrIdx =
+              mapAccts.findIndex((other:Address) => addressEq(other, addr));
+            const present = addrIdx !== -1;
+            if ( present ) { return; }
+            mapAccts.push(addr);
           };
-          const txnExtraTxns: Array<PreWalletTransaction> = [];
+          const recordAccount = (caddr:string) => {
+            debug(`recordAccount`, {caddr});
+            const addr = cbr2algo_addr(caddr);
+            debug(`recordAccount`, {addr});
+            recordAccount_(addr);
+          };
+          mapRefs.forEach(recordAccount);
+
+          const assetsArr: number[] = [];
+          const recordAsset = (tok:BigNumber|undefined) => {
+            if ( tok ) {
+              const tokn = bigNumberToNumber(tok);
+              if ( ! assetsArr.includes(tokn) ) {
+                assetsArr.push(tokn);
+              }
+            }
+          };
+          let extraFees: number = 0;
+          let howManyMoreFees: number = 0;
+          const txnExtraTxns: Array<Transaction> = [];
           let sim_i = 0;
           const processSimTxn = (t: SimTxn) => {
-            let escrow = true;
             let txn;
             if ( t.kind === 'tokenNew' ) {
               processSimTxn({
@@ -1334,68 +1339,64 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                 amt: minimumBalance,
                 tok: undefined,
               });
-              const zaddr = undefined;
-              const ap = bigNumberToBigInt(t.p);
-              debug(`tokenNew`, t.p, ap);
-              const decimals = t.d !== undefined ? t.d.toNumber() : 6;
-              txn = algosdk.makeAssetCreateTxnWithSuggestedParams(
-                escrowAddr, NOTE_Reach_tag(sim_i++), ap, decimals,
-                false, escrowAddr, zaddr, zaddr, zaddr,
-                t.s, t.n, t.u, t.m, params,
-              );
+              howManyMoreFees++; return;
             } else if ( t.kind === 'tokenBurn' ) {
               // There's no burning on Algorand
               return;
             } else if ( t.kind === 'tokenDestroy' ) {
-              txn = algosdk.makeAssetDestroyTxnWithSuggestedParams(
-                escrowAddr, NOTE_Reach_tag(sim_i++),
-                bigNumberToNumber(t.tok), params,
-              );
-              // XXX We could get the minimum balance back after
+              recordAsset(t.tok);
+              howManyMoreFees++; return;
             } else {
               const { tok } = t;
-              let always: boolean = false;
               let amt: BigNumber = bigNumberify(0);
-              let from: Address = escrowAddr;
-              let to: Address = escrowAddr;
+              let from: Address = ctcAddr;
+              let to: Address = ctcAddr;
               let closeTo: Address|undefined = undefined;
               if ( t.kind === 'from' ) {
-                from = escrowAddr;
-                to = cbr2algo_addr(t.to);
-                amt = t.amt;
+                recordAsset(tok);
+                recordAccount(t.to);
+                howManyMoreFees++; return;
               } else if ( t.kind === 'init' ) {
                 processSimTxn({
                   kind: 'to',
                   amt: minimumBalance,
                   tok: undefined,
                 });
-                from = escrowAddr;
-                to = escrowAddr;
-                always = true;
-                amt = t.amt;
+                recordAsset(tok);
+                howManyMoreFees++; return;
               } else if ( t.kind === 'halt' ) {
-                from = escrowAddr;
-                to = Deployer;
-                closeTo = Deployer;
-                always = true;
+                recordAccount_(Deployer);
+                howManyMoreFees++; return;
               } else if ( t.kind === 'to' ) {
                 from = thisAcc.addr;
-                to = escrowAddr;
+                to = ctcAddr;
                 amt = t.amt;
-                escrow = false;
               } else {
                 assert(false, 'sim txn kind');
               }
-              if ( ! always && amt.eq(0) ) { return; }
+              if ( amt.eq(0) ) { return; }
               txn = makeTransferTxn(from, to, amt, tok, params, closeTo, sim_i++);
             }
             extraFees += txn.fee;
             txn.fee = 0;
-            txnExtraTxns.push({txn, escrow});
+            txnExtraTxns.push(txn);
           };
           sim_r.txns.forEach(processSimTxn);
           debug(dhead, 'txnExtraTxns', txnExtraTxns);
-          debug(dhead, '--- extraFee =', extraFees);
+          debug(dhead, {howManyMoreFees, extraFees});
+          extraFees += MinTxnFee * howManyMoreFees;
+          debug(dhead, {extraFees});
+
+          debug(dhead, 'MAP', { mapAccts });
+          if ( mapAccts.length > MaxAppTxnAccounts ) {
+            throw Error(`Application references too many local state cells in one step. Reach should catch this problem statically.`);
+          }
+          const mapAcctsVal =
+            (mapAccts.length === 0) ? undefined : mapAccts;
+
+          const assetsVal: number[]|undefined =
+            (assetsArr.length === 0) ? undefined : assetsArr;
+          debug(dhead, {assetsArr, assetsVal});
 
           const actual_args = [ lct, msg ];
           const actual_tys = [ T_UInt, T_Tuple(msg_tys) ];
@@ -1422,25 +1423,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const txnAppl =
             whichAppl(
               thisAcc.addr, params, ApplicationID, safe_args,
-              mapAcctsReal, undefined, undefined, NOTE_Reach);
+              mapAcctsVal, undefined, assetsVal, NOTE_Reach);
           txnAppl.fee += extraFees;
-          const rtxns = [ ...txnExtraTxns, { txn: txnAppl, escrow: false } ];
+          const rtxns = [ ...txnExtraTxns, txnAppl ];
           debug(dhead, `assigning`, { rtxns });
-          algosdk.assignGroupID(rtxns.map((x:any) => x.txn));
-
-          const wtxns = rtxns.map((pwt:PreWalletTransaction): WalletTransaction => {
-            const { txn, escrow } = pwt;
-            if ( escrow ) {
-              const stxn = algosdk.signLogicSigTransactionObject(txn, escrow_prog);
-              return {
-                txn: encodeUnsignedTransaction(txn),
-                signers: [],
-                stxn: Buffer.from(stxn.blob).toString('base64'),
-              };
-            } else {
-              return toWTxn(txn);
-            }
-          });
+          algosdk.assignGroupID(rtxns);
+          const wtxns = rtxns.map(toWTxn);
 
           debug(dhead, 'signing', { wtxns });
           let res;
@@ -1483,9 +1471,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         txn: RecvTxn,
       };
       const recvFrom = async (rfargs:RecvFromArgs): Promise<Recv> => {
-        const { dhead, out_tys, didSend, funcNum, txn } = rfargs;
-        const { escrowAddr, getLastRound, setLastRound } = await getC();
-        const isCtor = (funcNum == 0);
+        const { dhead, out_tys, didSend, txn } = rfargs;
+        const { getLastRound, setLastRound } = await getC();
         debug(dhead, '--- txn =', txn);
         const theRound = txn['confirmed-round'];
         // const theSecs = txn['round-time'];
@@ -1500,17 +1487,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const ctc_args_s: string = ctc_args_all[argMsg];
 
         debug(dhead, 'out_tys', out_tys.map((x) => x.name));
-        if ( isCtor ) {
-          out_tys.unshift(T_Address);
-          debug(dhead, 'ctor, adding address', out_tys.map((x) => x.name));
-        }
         const msgTy = T_Tuple(out_tys);
         const ctc_args = msgTy.fromNet(reNetify(ctc_args_s));
         debug(dhead, {ctc_args});
-        if ( isCtor ) {
-          const shouldBeEscrow = ctc_args.shift();
-          debug(dhead, `dropped escrow addr`, { shouldBeEscrow, escrowAddr, ctc_args});
-        }
 
         const fromAddr = txn['sender'];
         const from = T_Address.canonicalize({addr: fromAddr});
@@ -1679,13 +1658,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     debug({tokenRes});
     const tokenInfo = tokenRes['params'];
     debug({tokenInfo});
+    const p_t = (t:AnyALGO_Ty, x:string): any =>
+      x ? t.fromNet(reNetify(x)) : undefined;
     const p = (n:number, x:string): any =>
-      x ? T_Bytes(n).fromNet(reNetify(x)) : undefined;
+      p_t(T_Bytes(n), x);
     // XXX share these numbers with hs and ethlike(?)
     const name = p(32, tokenInfo['name-b64']);
     const symbol = p(8, tokenInfo['unit-name-b64']);
     const url = p(96, tokenInfo['url-b64']);
-    const metadata = p(32, tokenInfo['metadata-hash']);
+    const metadata = p_t(T_Digest, tokenInfo['metadata-hash']);
     const supply = bigNumberify(tokenInfo['total']);
     const decimals = bigNumberify(tokenInfo['decimals']);
     return { name, symbol, url, metadata, supply, decimals };
@@ -1701,11 +1682,12 @@ export const balanceOf = async (acc: Account, token: Token|false = false): Promi
   }
   const client = await getAlgodClient();
   const info = await client.accountInformation(networkAccount.addr).do();
+  debug(`balanceOf`, info);
   if ( ! token ) {
     return bigNumberify(info.amount);
   } else {
     for ( const ai of info.assets ) {
-      if ( ai['asset-id'] === token ) {
+      if ( token.eq(ai['asset-id']) ) {
         return ai['amount'];
       }
     }
@@ -1773,10 +1755,8 @@ export function parseCurrency(amt: CurrencyAmount): BigNumber {
   return bigNumberify(algosdk.algosToMicroalgos(numericAmt));
 }
 
-// XXX get from SDK
-const raw_minimumBalance = 100000;
 export const minimumBalance: BigNumber =
-  bigNumberify(raw_minimumBalance);
+  bigNumberify(MinBalance);
 
 // lol I am not importing leftpad for this
 /** @example lpad('asdf', '0', 6); // => '00asdf' */
@@ -1900,8 +1880,8 @@ const appGlobalStateNumBytes = 1;
 type VerifyResult = {
   compiled: CompiledBackend,
   ApplicationID: number,
-  startRound: number,
   Deployer: Address,
+  startRound: number,
 };
 
 export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<VerifyResult> => {
@@ -1909,8 +1889,9 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
 }
 
 const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, eventCache: EventCache): Promise<VerifyResult> => {
-  const compiled = await compileFor(bin, info);
-  const { ApplicationID, appApproval, appClear } = compiled;
+  const compiled = await compileFor(bin);
+  const ApplicationID = info;
+  const { appApproval, appClear } = compiled;
   const { mapDataKeys, stateKeys } = bin._Connectors.ALGO;
 
   let dhead = `${label}: verifyContract`;
@@ -1974,8 +1955,8 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   chkeq(iatat['approval-program'], appInfo_p['approval-program'], `ApprovalProgram unchanged since creation`);
   chkeq(iatat['clear-state-program'], appInfo_p['clear-state-program'], `ClearStateProgram unchanged since creation`);
 
-  // Next, we check that the constructor was called with the actual escrow
-  // address and not something else
+  // Next, we wait for the constructor call
+  // XXX maybe don't care about this
   const isCtor = makeIsMethod(0);
   const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, { minRound: 0 }, isCtor);
   debug({icr});
@@ -1984,16 +1965,8 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   chk(ict, `Cannot query for constructor transaction`);
   debug({ict});
   const ctorRound = ict['confirmed-round']
-  const ictat = ict['application-transaction'];
-  debug({ictat});
-  const aescrow_b64 = ictat['application-args'][2];
-  const aescrow_ui8 = reNetify(aescrow_b64);
-  const aescrow_cbr = T_Tuple([T_Address]).fromNet(aescrow_ui8);
-  // @ts-ignore
-  const aescrow_algo = cbr2algo_addr(aescrow_cbr[0]);
-  chkeq( aescrow_algo, compiled.escrow.hash, `Must be constructed with proper escrow account address` );
 
-  return { compiled, ApplicationID, startRound: ctorRound, Deployer };
+  return { compiled, ApplicationID, Deployer, startRound: ctorRound };
 };
 
 /**
