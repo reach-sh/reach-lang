@@ -20,6 +20,19 @@
   The frontend can have <code>Alice</code> opt-in to the token in <code>informOfTokenId</code> by utilizing
   <code>acc.tokenAccept()</code>.
 </p>
+<h2 id="ra0001">RA0001</h2>
+<p>
+  This error indicates that a program, targeting the Algorand connector, is attempting to pay a <code>Token</code> at the same time it is published.
+  It is impossible to perform this action because one must opt-in to receive a token on Algorand.
+  To opt-in, one must know the id, however the application cannot learn the application until after it has received the publication, which must occur after all pay transactions.
+</p>
+<p>The following code has this error:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(tok).</span><span style="color: #8250DF">pay</span><span style="color: #24292F">([[</span><span style="color: #0550AE">5</span><span style="color: #24292F">, tok]]);</span></li><li value="2"><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
+<p>
+  This can be fixed by performing the <code>publish</code> and <code>pay</code> in two steps:
+  token in the next consensus step:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(tok);</span></li><li value="2"><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="3"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">([[</span><span style="color: #0550AE">5</span><span style="color: #24292F">, tok]]);</span></li><li value="4"><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
 <h2 id="rc0000">RC0000</h2>
 <p>
   This error indicates that the program uses a number that is beyond the range of acceptable numbers for the given
