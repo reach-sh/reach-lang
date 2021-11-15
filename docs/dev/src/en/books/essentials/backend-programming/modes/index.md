@@ -469,9 +469,9 @@ transfer(AMOUNT_EXPR).to(ADDR_EXPR)
 transfer(AMOUNT_EXPR, TOKEN_EXPR).to(ADDR_EXPR)
 ```
 
-* AMOUNT_EXPR is an unsigned integer specifying the number of tokens to transfer from the contract. This amount must evaluate to less than or equal to the balance of network tokens in the contract account.
-* ADDR_EXPR is the target address for the transfer.
-* TOKEN_EXPR is a Token type. This argument is optional.
+* `AMOUNT_EXPR` is an unsigned integer specifying the number of tokens to transfer from the contract. This amount must evaluate to less than or equal to the balance of network tokens in the contract account.
+* `ADDR_EXPR` is the target address for the transfer.
+* `TOKEN_EXPR` is a Token type. This argument is optional.
 
 ### Example
 
