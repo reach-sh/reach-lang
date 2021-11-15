@@ -1666,7 +1666,16 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const name = p(32, tokenInfo['name-b64']);
     const symbol = p(8, tokenInfo['unit-name-b64']);
     const url = p(96, tokenInfo['url-b64']);
-    const metadata = p_t(T_Digest, tokenInfo['metadata-hash']);
+    const metadata =
+      (() => {
+        const mh = tokenInfo['metadata-hash'];
+        try {
+          return p(32, mh);
+        } catch (e:any) {
+          debug(`tokenMetadata metadata-hash`, `${e}`);
+          return p_t(T_Digest, mh);
+        }
+    })();
     const supply = bigNumberify(tokenInfo['total']);
     const decimals = bigNumberify(tokenInfo['decimals']);
     return { name, symbol, url, metadata, supply, decimals };
@@ -1687,7 +1696,7 @@ export const balanceOf = async (acc: Account, token: Token|false = false): Promi
     return bigNumberify(info.amount);
   } else {
     for ( const ai of info.assets ) {
-      if ( token.eq(ai['asset-id']) ) {
+      if ( bigNumberify(token).eq(ai['asset-id']) ) {
         return ai['amount'];
       }
     }

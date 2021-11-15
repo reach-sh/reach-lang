@@ -27,7 +27,7 @@ err () {
 }
 
 jb () {
-  # (cd "$ROOT"/js/js-deps && make build)
+  (cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
@@ -119,18 +119,6 @@ checkteal () {
 #exit 0
 
 jb
-cd users/algo-test
-REACH_CONNECTOR_MODE=ALGO REACH_DEBUG=1 ../../reach run
-exit 0
-
-c examples/remote/index.rsh
-c hs/t/y/many_txns.rsh
-c examples/rent-seeking/index.rsh
-exit 0
-
-jb
-#exit 0
-exit 0
 ci ALGO overview
 ci ALGO tut-7
 ci ALGO atomic-swap
