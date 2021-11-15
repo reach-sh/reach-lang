@@ -1,4 +1,5 @@
 ROOT=../..
+include $(ROOT)/VERSION
 include $(ROOT)/js/JS_IMAGES
 include $(ROOT)/DEPS
 include Makefile.docker
@@ -61,11 +62,11 @@ refresh-js-stdlib: clone-js-stdlib
 
 .PHONY: bump-version-and-publish-js-stdlib
 bump-version-and-publish-js-stdlib: 
-	cd js-reach-stdlib
-	echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-	npm version prerelease --preid=rc
-	npm publish --access=public --tag=rc
-	git push
+	cd js-reach-stdlib ; \
+	echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc; \
+	npm publish --access=public --tag=rc; \
+	git tag $(VERSION); \
+	git push; \
 	git push --tags
 
 .PHONY: finalize-patch-js-stdlib
