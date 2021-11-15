@@ -75,6 +75,7 @@ translate-templates: translate-mo-templates-stdlib translate-mo-templates-rpc-se
 prepare-version: mo
 	echo $$(git tag)
 	(cd scripts && bash prepare-reach-version.sh)
+	echo $$(cat VERSION)
 
 .PHONY: prepare-rc-tag-and-push
 prepare-rc-tag-and-push: prepare-version

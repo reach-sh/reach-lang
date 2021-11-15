@@ -1,5 +1,7 @@
 #!/bin/bash
 
+git checkout -- ../VERSION
+
 . ../VERSION
 
 export PATH=${PATH}:../.bin
