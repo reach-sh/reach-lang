@@ -74,7 +74,6 @@ commands:
         type: string
     steps:
       - run: |
-          make prepare-version
           source ./VERSION
           for IMG in <<parameters.deps>> ; do
             zcat /tmp/workspace/docker-${IMG}/${IMG}.tar.gz | docker load
@@ -97,9 +96,7 @@ jobs:
   "make-announcement":
     executor: real
     steps:
-    - checkout
     - run: |
-        make prepare-version
         source ./VERSION
         export GIT_COMMIT_HASH=$CIRCLE_SHA1
         apt update
