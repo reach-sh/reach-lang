@@ -229,6 +229,9 @@ documents.onDidChangeContent(change => {
 	validateTextDocument(change.document);
 });
 
+let	theCompilerIsCompiling 	= false,
+	weNeedToCompileAgain 	= false;
+
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	let textDocumentFromURI = documents.get(textDocument.uri)
@@ -286,7 +289,40 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	const reachPath = (exeLoc == '' || exeLoc == './reach')
 		? path.join(workspaceFolder, "reach")
 		: exeLoc;
+
+	if (theCompilerIsCompiling) {
+		weNeedToCompileAgain = true;
+		console.debug(
+			"Compilation already in process; will recompile",
+			new Date().toLocaleTimeString()
+		);
+		return;
+	}
+
+	theCompilerIsCompiling = true;
+
+	console.debug(
+		"Starting compilation at",
+		new Date().toLocaleTimeString()
+	);
 	await exec("cd " + tempFolder + " && " + reachPath + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json", (error: { message: any; }, stdout: any, stderr: any) => {
+		// This callback function should execute exactly
+		// when this compilation command has finished.
+		// "child_process.exec(): spawns a shell...
+		// passing the stdout and stderr to a callback
+		// function when complete". See
+		// https://nodejs.org/api/child_process.html#child-process
+		console.debug(
+			"Compilation should now have finished.",
+			new Date().toLocaleTimeString()
+		);
+		theCompilerIsCompiling = false;
+		if (weNeedToCompileAgain) {
+			weNeedToCompileAgain = false;
+			validateTextDocument(textDocument);
+			return;
+		}
+
 		if (error) {
 			connection.console.log(`Found compile error: ${error.message}`);
 			const errorLocations: ErrorLocation[] = findErrorLocations(error.message);

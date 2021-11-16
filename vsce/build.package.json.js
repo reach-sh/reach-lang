@@ -125,7 +125,8 @@ NEW_PACKAGE_JSON.contributes.menus["editor/context"]
 NEW_PACKAGE_JSON.activationEvents
 	= ACTIVATION_EVENTS_ARRAY;
 
+// Add a newline character for more identical diffs
 fs.writeFileSync(
 	'./package.json',
-	JSON.stringify(NEW_PACKAGE_JSON, null, 4)
+	JSON.stringify(NEW_PACKAGE_JSON, null, 4) + "\n"
 );

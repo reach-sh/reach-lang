@@ -11,6 +11,10 @@ build:
 	docker build --build-arg REACH_GIT_HASH="$$(../git-hash.sh)" --tag=$(IMAGE):latest .
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
+.PHONY: goal-image
+goal-image:
+	docker build --build-arg REACH_GIT_HASH="$$(../git-hash.sh)" --target=goal --tag=$(IMAGE)-goal:latest .
+
 .PHONY: push
 push:
 	$(ROOT)/scripts/docker-push.sh $(IMAGE)

@@ -27,7 +27,7 @@ err () {
 }
 
 jb () {
-  # (cd "$ROOT"/js/js-deps && make build)
+  (cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
@@ -107,6 +107,11 @@ tealcount () {
   done
 }
 
+checkteal () {
+  c "$1"/index.rsh
+  ./scripts/goal-devnet clerk compile "$1"/build/index.main.appApproval.teal
+}
+
 # tealcount
 
 #######
@@ -114,16 +119,11 @@ tealcount () {
 #exit 0
 
 jb
-ci ETH api-full
-ci ALGO api-full
-
-exit 0
-
-
-jb
 ci ALGO overview
-#ci ALGO tut-7
-#ci ALGO mint-basic
+ci ALGO tut-7
+ci ALGO atomic-swap
+ci ALGO mint-basic
+ci ALGO api-full
 
 #c users/t.rsh
 exit 0

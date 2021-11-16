@@ -5,5 +5,5 @@ exec docker run \
   --volume "$PWD:/app" \
   --workdir /app \
   --entrypoint /bin/goal \
-  reachsh/devnet-algo \
+  reachsh/devnet-algo-goal \
   "$@"

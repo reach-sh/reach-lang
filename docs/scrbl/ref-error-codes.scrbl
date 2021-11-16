@@ -50,6 +50,29 @@ token in the next consensus step:
 The frontend can have @reachin{Alice} opt-in to the token in @reachin{informOfTokenId} by utilizing
 @jsin{acc.tokenAccept()}.
 
+@error{RA0001}
+
+This error indicates that a program, targeting the Algorand connector, is attempting to pay a @reachin{Token} at the same time it is published.
+It is impossible to perform this action because one must opt-in to receive a token on Algorand.
+To opt-in, one must know the id, however the application cannot learn the application until after it has received the publication, which must occur after all pay transactions.
+
+The following code has this error:
+
+@reach{
+  Alice.publish(tok).pay([[5, tok]]);
+  commit();
+}
+
+This can be fixed by performing the @reachin{publish} and @reachin{pay} in two steps:
+token in the next consensus step:
+
+@reach{
+  Alice.publish(tok);
+  commit();
+  Alice.pay([[5, tok]]);
+  commit();
+}
+
 @error{RC0000}
 
 This error indicates that the program uses a number that is beyond the range of acceptable numbers for the given
