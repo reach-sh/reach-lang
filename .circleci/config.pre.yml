@@ -103,7 +103,7 @@ jobs:
         export GIT_COMMIT_HASH=$CIRCLE_SHA1
         sudo apt update -y
         sudo apt install python3 python3-pip -y
-        sudo pip3 install requests
+        pip3 install requests
         cd reach-python-announcer
         python3 announcer.py
   "deploy-stdlib":
@@ -387,8 +387,8 @@ workflows:
        context:
        - reachdevbot-on-dockerhub
     - "make-announcement":
-       requires:
-         - "create-tag-and-push"
+       #requires:
+       #  - "create-tag-and-push"
        context:
        - reachdevbot-on-dockerhub
     - "RC-release":
