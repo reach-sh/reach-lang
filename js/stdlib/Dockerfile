@@ -40,12 +40,12 @@ COPY tsconfig*.json \
      .eslintrc.yaml .eslintignore .gitignore \
      launchToken.mjs \
      /stdlib/
-COPY sbin/* /stdlib/sbin/
+COPY sbin/fix.sh /stdlib/sbin/fix.sh
 
 RUN npm run build
 RUN ./sbin/fix.sh
 RUN mv ./dist/mjs/* ./
-RUN rm ./sbin/fix.sh
+RUN rm ./sbin/
 
 FROM $NODE_IMAGE 
 COPY --from=prepare /stdlib /stdlib
