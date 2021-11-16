@@ -42,14 +42,19 @@ Many instructions on this site assume that you have added `~/reach` to `PATH`.
 
 1. Install [Visual Studio Code](https://code.visualstudio.com/).
 
-1. Add the following file association to vscode preferences:
+    1. Add the following file association to [vscode preferences](https://www.gyanblog.com/vscode/visual-studio-code-associate-file-extensions-language/):
 
     ``` nonum
     "files.associations": {
       "*.rsh": "javascript"
     }
     ```
-    
+
+    2. OR: Install the Reach IDE
+    ![Reach-IDE-extension](https://user-images.githubusercontent.com/9493272/141937049-6482bd2d-b886-45ad-b8a4-0cda11c1ff22.png)
+        1. Open the extensions menu
+        1. Search for "Reach"
+        1. Install the current Reach IDE (May require VSCode restart after completion)
 1. Open `~/reach`:
 
     <p><img src="vscode.png" class="img-fluid" width=700 loading="lazy"></p>
