@@ -22,6 +22,7 @@ dependencies:
 - bytestring
 - containers
 - cryptonite
+- curl
 - deepseq
 - digest
 - directory
@@ -53,6 +54,7 @@ dependencies:
 - regex
 - safe
 - scientific
+- scotty >= 0.12
 - search-algorithms
 - silently
 - simple-smt
