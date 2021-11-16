@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
-module Reach.Simulator where
+module Reach.Simulator.Core where
 
 import Control.Monad.Reader
 import qualified Data.Map.Strict as M

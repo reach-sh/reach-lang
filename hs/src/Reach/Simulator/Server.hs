@@ -2,14 +2,14 @@
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-module Reach.SimServer where
+module Reach.Simulator.Server where
 
 import Web.Scotty
 import Data.Aeson (FromJSON, ToJSON)
 import GHC.Generics
 import Reach.AST.LL
 import Control.Monad.Reader
-import qualified Reach.Simulator as S
+import qualified Reach.Simulator.Core as S
 -- import qualified Data.Map.Strict as M
 
 type StateId = Int

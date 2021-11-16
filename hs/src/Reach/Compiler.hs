@@ -22,7 +22,7 @@ import Reach.Eval
 import Reach.Linearize
 import Reach.Optimize
 import Reach.Parser (gatherDeps_top)
-import Reach.SimServer
+import Reach.Simulator.Server
 import Reach.Texty
 import Reach.Util
 import Reach.Verify
