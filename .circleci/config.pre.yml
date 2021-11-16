@@ -85,8 +85,7 @@ commands:
     steps:
       - run: |
           make prepare-version
-          set -a
-          source ./VERSION
+          set -a; source ./VERSION
 jobs:
   "create-tag-and-push":
     executor: real
