@@ -245,6 +245,7 @@ data SolCtxt = SolCtxt
   , ctxt_tlfuns :: IORef (M.Map String Doc)
   , ctxt_requireMsg :: Counter
   , ctxt_api_rngs :: IORef (Maybe (M.Map String DLType))
+  , ctxt_which_msg :: IORef (M.Map Int [DLVar])
   }
 
 readCtxtIO :: (SolCtxt -> IORef a) -> App a
@@ -1086,6 +1087,8 @@ solHandler :: Int -> CHandler -> App Doc
 solHandler which h = freshVarMap $
   case h of
     C_Handler at interval from prev svs msg timev secsv ct -> do
+      which_msg_r <- asks ctxt_which_msg
+      liftIO $ modifyIORef which_msg_r $ M.insert which msg
       let checkMsg s = s <> " check at " <> show at
       let fromm = M.singleton from "payable(msg.sender)"
       let given_mm = M.fromList [(timev, solBlockTime), (secsv, solBlockSecs)]
@@ -1177,6 +1180,10 @@ apiDef :: SLPart -> ApiInfo -> App Doc
 apiDef who ApiInfo{..} = do
   let who_s = bunpack who
   let mf = pretty $ "m" <> show ai_which
+  which_msg <- (liftIO . readIORef) =<< asks ctxt_which_msg
+  ai_msg_vs <- case M.lookup ai_which which_msg of
+                Just vs -> return vs
+                Nothing -> impossible "apiDef: no which"
   let mkArgDefns ts = do
         let indexedTypes = zip ts [0..]
         unzip <$> mapM (\ (ty, i :: Int) -> do
@@ -1390,6 +1397,7 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) ai hs)) = do
   ctxt_outputs <- newIORef mempty
   ctxt_tlfuns <- newIORef mempty
   ctxt_api_rngs <- newIORef $ if M.null ai then Nothing else Just mempty
+  ctxt_which_msg <- newIORef mempty
   let ctxt_plo = plo
   flip runReaderT (SolCtxt {..}) $ do
     let map_defn (mpv, mi) = do

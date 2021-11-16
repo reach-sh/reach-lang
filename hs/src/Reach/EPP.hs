@@ -171,7 +171,7 @@ data BEnv = BEnv
   , be_view_setsr :: IORef ViewSet
   , be_inConsensus :: Bool
   , be_counter :: Counter
-  , be_which_msg :: (Int, [DLVar])
+  , be_which :: Int
   , be_api_info :: IORef (M.Map SLPart ApiInfo)
   }
 
@@ -353,9 +353,9 @@ be_m = \case
       DLE_Remote {} -> recordOutputVar mdv
       DLE_EmitLog {} -> fg_use de
       DLE_setApiDetails _ p tys mc isf -> do
-        (which, msg) <- asks be_which_msg
+        which <- asks be_which
         api_info <- asks be_api_info
-        liftIO $ modifyIORef api_info $ M.insert p $ ApiInfo tys mc which isf msg
+        liftIO $ modifyIORef api_info $ M.insert p $ ApiInfo tys mc which isf
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
@@ -633,7 +633,7 @@ be_s = \case
           (\e ->
              e
                { be_interval = int_ok
-               , be_which_msg = (this_h, msg_vs)
+               , be_which = this_h
                })
           $ do
             fg_use $ int_ok
@@ -676,7 +676,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das s) = do
   be_more <- newIORef False
   let be_loop = Nothing
   let be_prev = 0
-  let be_which_msg = (0, [])
+  let be_which = 0
   let be_prevs = mempty
   be_api_info <- newIORef mempty
   let be_interval = default_interval
