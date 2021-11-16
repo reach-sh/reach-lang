@@ -27,7 +27,7 @@ err () {
 }
 
 jb () {
-  (cd "$ROOT"/js/js-deps && make build)
+  #(cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
@@ -56,7 +56,7 @@ ci () {
   ${REACH} clean
   ${REACH} compile --intermediate-files
   make build
-  REACH_DEBUG=1 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=0 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 
@@ -119,11 +119,15 @@ checkteal () {
 #exit 0
 
 jb
+ci ALGO transfer-from-zero
+exit 0
+c users/awol1/broken-vault.rsh
+exit 0
 ci ALGO overview
-ci ALGO tut-7
 ci ALGO atomic-swap
 ci ALGO mint-basic
 ci ALGO api-full
+ci ALGO tut-7
 
 #c users/t.rsh
 exit 0
