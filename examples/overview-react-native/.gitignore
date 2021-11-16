@@ -8,6 +8,10 @@
 # OSX
 .DS_Store
 
+# Package manager lock files
+yarn.lock
+package-lock.json
+
 # Xcode
 build/
 *.pbxuser

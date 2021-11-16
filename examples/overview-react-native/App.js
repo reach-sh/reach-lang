@@ -76,14 +76,19 @@ class App extends React.Component {
     const { mode, addr, bal, role } = this.state;
     const parent = this;
     let app = null;
-    if (mode === 'ConnectAccount') {
-      app = <AppViews.ConnectAccount />
-    } else if (mode === 'FundAccount') {
-      app = <AppViews.FundAccount {...{ parent, addr, bal, standardUnit, defaultFundAmtStandard }} />
-    } else if (mode === 'SelectRole') {
-      app = <AppViews.SelectRole {...{ parent }} />
-    } else { // 'RunRole'
-      app = role;
+    switch (mode) {
+      case 'ConnectAccount':
+        app = <AppViews.ConnectAccount />        
+        break;
+      case 'FundAccount':
+        app = <AppViews.FundAccount {...{ parent, addr, bal, standardUnit, defaultFundAmtStandard }} />
+        break;
+      case 'SelectRole':
+        app = <AppViews.SelectRole {...{ parent }} />
+        break;
+      default: // 'RunRole'
+        app = role;
+        break;
     }
     return <AppViews.Wrapper {...{ app }} />;
   }
@@ -117,18 +122,25 @@ class Alice extends React.Component {
     let alice = null;
     const parent = this;
     const { mode, ctcInfoStr, requestStandard, info } = this.state;
-    if (mode === 'Deploy') {
-      alice = <AliceViews.Deploy {...{ parent }} />;
-    } else if (mode === 'EnterInfo') {
-      alice = <AliceViews.EnterInfo {...{ parent, defaultInfo }} />;
-    } else if (mode === 'EnterRequest') {
-      alice = <AliceViews.EnterRequest {...{ parent, standardUnit, defaultRequestStandard }} />;
-    } else if (mode === 'RunBackend') {
-      alice = <AliceViews.RunBackend {...{ parent, info, requestStandard, standardUnit }} />;
-    } else if (mode === 'BackendRunning') {
-      alice = <AliceViews.BackendRunning {...{ ctcInfoStr }} />;
-    } else { // 'BackendRan'
-      alice = <AliceViews.BackendRan />;
+    switch (mode) {
+      case 'Deploy':   
+        alice = <AliceViews.Deploy {...{ parent }} />;     
+        break;
+      case 'EnterInfo':
+        alice = <AliceViews.EnterInfo {...{ parent, defaultInfo }} />;       
+        break;
+      case 'EnterRequest':
+        alice = <AliceViews.EnterRequest {...{ parent, standardUnit, defaultRequestStandard }} />;    
+        break;
+      case 'RunBackend':
+        alice = <AliceViews.RunBackend {...{ parent, info, requestStandard, standardUnit }} />;
+        break;
+      case 'BackendRunning':
+        alice = <AliceViews.BackendRunning {...{ ctcInfoStr }} />;      
+        break;
+      default: // 'BackendRan'
+        alice = <AliceViews.BackendRan />;
+        break;
     }
     return <AliceViews.AliceWrapper {...{ alice }} />
   }
@@ -153,12 +165,16 @@ class Bob extends React.Component {
     let bob = null;
     const parent = this;
     const { mode, requestStandard, info } = this.state;
-    if (mode === 'RunBackend') {
-      bob = <BobViews.RunBackend {...{ parent }} />
-    } else if (mode === 'ApproveRequest') {
-      bob = <BobViews.ApproveRequest {...{ requestStandard }} />;
-    } else { // 'DisplayInfo'
-      bob = <BobViews.DisplayInfo {...{ info }} />
+    switch (mode) {
+      case 'RunBackend':
+        bob = <BobViews.RunBackend {...{ parent }} />        
+        break;
+      case 'ApproveRequest':
+        bob = <BobViews.ApproveRequest {...{ requestStandard }} />;     
+        break;    
+      default: // 'DisplayInfo'
+        bob = <BobViews.DisplayInfo {...{ info }} />
+        break;
     }
     return <BobViews.BobWrapper {...{ bob }} />;
   }
