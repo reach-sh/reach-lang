@@ -1365,6 +1365,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                 recordAsset(tok);
                 howManyMoreFees++; return;
               } else if ( t.kind === 'halt' ) {
+                if ( t.tok ) { recordAsset(t.tok); }
                 recordAccount_(Deployer);
                 howManyMoreFees++; return;
               } else if ( t.kind === 'to' ) {
