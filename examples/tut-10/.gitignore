@@ -4,13 +4,16 @@
 /macos
 /windows
 /reach
+/.reach
 
 # OSX
-
 .DS_Store
 
-# Xcode
+# Package manager lock files
+yarn.lock
+package-lock.json
 
+# Xcode
 build/
 *.pbxuser
 !default.pbxuser
@@ -38,7 +41,6 @@ local.properties
 *.hprof
 
 # node.js
-
 node_modules/
 npm-debug.log
 yarn-error.log
