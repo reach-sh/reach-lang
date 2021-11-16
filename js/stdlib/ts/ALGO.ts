@@ -1128,6 +1128,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const vtys = lookup(vi);
       const vty = T_Tuple(vtys);
       const vvs = vty.fromNet(vvn);
+      debug(`getState_`, { vvn, vvs });
       return vvs;
     };
 

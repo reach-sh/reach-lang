@@ -581,6 +581,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         }
         const codec = real_ethers.utils.defaultAbiCoder;
         const res = codec.decode(tys.map((x:AnyETH_Ty) => x.paramType), vsbs);
+        debug(`getState`, res);
         // @ts-ignore
         return res;
       };
