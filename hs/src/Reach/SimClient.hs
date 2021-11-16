@@ -4,18 +4,24 @@ module Reach.SimClient where
 
 import Network.Curl
 
-x = curlGet "www.reach.sh" []
+hostname :: [Char]
+hostname = "http://localhost:3000"
 
--- Identify program states
--- type Id = Integer
+initProg :: Int -> IO ()
+initProg s = curlPost (hostname ++ "/init/" ++ show s) []
 
--- creates the first state and returns its id
--- init :: LLProg -> App Id
--- init (LLProg _at _llo _ps _dli _dex _dvs _apis _s) = return 0
+getProgStates :: IO ()
+getProgStates = curlGet (hostname ++ "/states") []
 
--- returns the set of possible reductions
--- actions  :: Id -> App [ Action ]
--- actions = undefined
+getProgramState :: Int -> IO ()
+getProgramState s = curlGet (hostname ++ "/states/" ++ show s) []
+
+getStateActions :: Int -> IO ()
+getStateActions s = curlGet (hostname ++ "/states/" ++ show s ++ "/actions") []
+
+respondWithVal :: Int -> Int -> Int -> IO ()
+respondWithVal s a v = do
+  curlPost (hostname ++ "/states/" ++ show s ++ "/actions/" ++ show a ++ "/?data=" ++ show v) []
 
 -- applies an action (with its parameters) and returns a new state
 -- apply :: Id -> Action -> Params -> App Id

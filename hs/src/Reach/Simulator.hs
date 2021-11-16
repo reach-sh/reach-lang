@@ -216,7 +216,7 @@ instance Interp DLExpr where
   interp = \case
     DLE_Arg _at dlarg -> interp dlarg
     DLE_LArg _at dllargearg -> interp dllargearg
-    -- DLE_Impossible at err -> expect_thrown at err
+    DLE_Impossible at _int err -> expect_thrown at err
     DLE_PrimOp _at primop dlargs -> do
       evd_args <- mapM interp dlargs
       interpPrim (primop,evd_args)
@@ -346,6 +346,12 @@ instance Interp DLExpr where
           globalSet $ e {e_ledger = ledger { nw_ledger = new_nw_ledger }}
           return V_Null
         _ -> impossible "expression interpreter"
+    -- TODO: new stuff
+    DLE_TimeOrder _at _assoc_maybe_arg_vars -> undefined
+    DLE_GetContract _at -> undefined
+    DLE_GetAddress _at -> undefined
+    DLE_EmitLog at _str dlvar -> interp $ DL_Var at dlvar
+    DLE_setApiDetails _at _slpart _dltpes _maybe_str -> undefined
 
 instance Interp DLStmt where
   interp = \case

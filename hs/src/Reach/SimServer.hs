@@ -7,7 +7,9 @@ module Reach.SimServer where
 import Web.Scotty
 import Data.Aeson (FromJSON, ToJSON)
 import GHC.Generics
+import Reach.AST.LL
 import qualified Reach.Simulator as S
+import qualified Data.Map.Strict as M
 
 type StateId = Int
 type ActionId = Int
@@ -23,6 +25,9 @@ data Action = Action
   }
   deriving (Generic)
 
+portNumber :: Int
+portNumber = 3000
+
 type Program = Int
 
 instance ToJSON State
@@ -35,8 +40,17 @@ instance FromJSON Action
 p :: Program
 p = -1
 
-initProg :: Program -> ()
-initProg = undefined
+type Session = M.Map Program (M.Map Action State)
+
+fetchProgSrc :: Program -> LLProg
+fetchProgSrc = undefined
+
+initProg :: Program -> S.App S.DLVal
+initProg p' = do
+  -- TODO: init session
+  -- NOTE: monad with session state
+  let ll = fetchProgSrc p'
+  S.interp ll
 
 unblockProg :: Program -> StateId -> ActionId -> S.DLVal -> ()
 unblockProg = undefined
@@ -51,7 +65,12 @@ matchesId :: Int -> (a -> Int) -> a -> Bool
 matchesId i f a = f a == i
 
 main :: IO ()
-main = scotty 3000 $ do
+main = scotty portNumber $ do
+  post "/init/:s" $ do
+    s <- param "s"
+    _ <- return $ initProg s
+    return ()
+
   get "/states" $ do
     json $ allStates p
 
