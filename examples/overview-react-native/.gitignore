@@ -4,6 +4,7 @@
 /macos
 /windows
 /reach
+/.reach
 
 # OSX
 .DS_Store
