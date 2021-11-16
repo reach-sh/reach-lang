@@ -101,9 +101,9 @@ jobs:
     - prepare-version
     - run: |
         export GIT_COMMIT_HASH=$CIRCLE_SHA1
-        apt update
-        apt install python3 python3-pip -y
-        pip3 install requests
+        sudo apt update -y
+        sudo apt install python3 python3-pip -y
+        sudo pip3 install requests
         cd reach-python-announcer
         python3 announcer.py
   "deploy-stdlib":
