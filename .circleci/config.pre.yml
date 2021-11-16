@@ -85,6 +85,7 @@ commands:
     steps:
       - run: |
           make prepare-version
+          set -a
           source ./VERSION
 jobs:
   "create-tag-and-push":
@@ -100,7 +101,6 @@ jobs:
     - checkout
     - prepare-version
     - run: |
-        source ./VERSION
         export GIT_COMMIT_HASH=$CIRCLE_SHA1
         pip3 install requests
         cd reach-python-announcer
