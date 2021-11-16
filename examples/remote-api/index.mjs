@@ -41,16 +41,13 @@ const stdlib = loadStdlib(process.env);
 
   const v = 5;
 
-  Promise.all([
+  await Promise.all([
     guessBackend.A(ctcChi, {
       x: () => {
         console.log(`Returning guess value: ${v}`);
         return v;
       }
     }),
-  ]);
-
-  await Promise.all([
     backend.Alice(ctcAlice, {
       log: (...xs) => console.log(...xs),
       initCall: () => callCtc(),
