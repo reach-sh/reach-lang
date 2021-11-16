@@ -21,7 +21,7 @@ exports.Wrapper = class extends React.Component {
 exports.ConnectAccount = class extends React.Component {
   render() {
     return (
-      <Text  style={styles.textNormal}>
+      <Text style={styles.textNormal}>
         Please wait while we connect to your account. If this takes more than a
         few seconds, there may be something wrong.
       </Text>
@@ -36,13 +36,15 @@ exports.FundAccount = class extends React.Component {
     return (
       <View style={styles.container}>
         <Text style={styles.boldTextH2}>Fund account</Text>
-        <Text  style={styles.textNormal}>
+        <Text style={styles.textNormal}>
           Balance: {bal} {standardUnit}
         </Text>
-        <Text  style={styles.textNormal}>
+        <Text style={styles.textNormal}>
           Would you like to fund your account with additional {standardUnit}?
         </Text>
-        <Text  style={styles.textNormal}>(This only works on certain devnets)</Text>
+        <Text style={styles.textNormal}>
+          (This only works on certain devnets)
+        </Text>
         <View style={styles.horizontalContainer}>
           <TextInput
             keyboardType="number-pad"

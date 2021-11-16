@@ -23,7 +23,9 @@ exports.Attach = class extends React.Component {
     const {ctcInfoStr} = this.state || {};
     return (
       <View>
-        <Text  style={styles.textNormal}>Please paste the contract info to attach to:</Text>
+        <Text style={styles.textNormal}>
+          Please paste the contract info to attach to:
+        </Text>
         <TextInput
           onChangeText={e => this.setState({ctcInfoStr: e})}
           placeholder="{}"
@@ -33,7 +35,7 @@ exports.Attach = class extends React.Component {
         <TouchableOpacity
           disabled={!ctcInfoStr}
           onPress={() => parent.attach(ctcInfoStr)}>
-          <Text  style={styles.textNormal}>Attach</Text>
+          <Text style={styles.textNormal}>Attach</Text>
         </TouchableOpacity>
       </View>
     );
@@ -42,7 +44,7 @@ exports.Attach = class extends React.Component {
 
 exports.Attaching = class extends React.Component {
   render() {
-    return <Text  style={styles.textNormal}>Attaching, please wait...</Text>;
+    return <Text style={styles.textNormal}>Attaching, please wait...</Text>;
   }
 };
 
@@ -53,7 +55,7 @@ exports.AcceptTerms = class extends React.Component {
     return (
       <View>
         <Text style={styles.boldTextH2}>The terms of the game are:</Text>
-        <Text  style={styles.textNormal}>
+        <Text style={styles.textNormal}>
           Wager: {wager} {standardUnit}
         </Text>
         <TouchableOpacity
@@ -62,7 +64,7 @@ exports.AcceptTerms = class extends React.Component {
             this.setState({disabled: true});
             parent.termsAccepted();
           }}>
-          <Text  style={styles.textNormal}>Accept terms and pay wager</Text>
+          <Text style={styles.textNormal}>Accept terms and pay wager</Text>
         </TouchableOpacity>
       </View>
     );
@@ -73,7 +75,7 @@ exports.WaitingForTurn = class extends React.Component {
   render() {
     return (
       <View>
-        <Text  style={styles.textNormal}>Waiting for the other player...</Text>
+        <Text style={styles.textNormal}>Waiting for the other player...</Text>
         <Text style={styles.boldTextH2}>
           Think about which move you want to play.
         </Text>
