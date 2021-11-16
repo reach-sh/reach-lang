@@ -12,10 +12,12 @@ const MENUS_EDITORTITLE_ARRAY = [];
 const MENUS_TOUCHBAR_ARRAY = [];
 const MENUS_EDITORCONTEXT_ARRAY = [];
 
-// This actually has some pre-existing elements that
-// we need! See original.package.json.
-const ACTIVATION_EVENTS_ARRAY
-	= NEW_PACKAGE_JSON.activationEvents;
+// Build the activationEvents array from scratch
+// each time to avoid duplicate strings.
+const ACTIVATION_EVENTS_ARRAY = [
+	"workspaceContains:**/*.rsh",
+	"workspaceContains:reach"
+];
 
 // **Every** command seems to be present in
 // MAIN_JSON.contributes.menus["explorer/context"].
