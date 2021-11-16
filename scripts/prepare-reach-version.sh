@@ -16,13 +16,8 @@ rccount() {
   echo $rc
 }
 
-#if [ "${RC_RELEASE}" = "TRUE" ]; then
- rc=$(rccount)
- export tag="-rc.${rc}"
- export rc=".${rc}"
-#else
-# export tag=""
-# export rc=""
-#fi
+rc=$(rccount)
+export tag="-rc.${rc}"
+export rc=".${rc}"
 
 mo ../VERSION.mo > ../VERSION
