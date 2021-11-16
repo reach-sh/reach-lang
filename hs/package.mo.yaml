@@ -76,6 +76,7 @@ dependencies:
 - transformers
 - unix-compat
 - unordered-containers
+- utf8-string
 - vector
 - yaml
 - neat-interpolation

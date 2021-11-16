@@ -4,6 +4,7 @@
 
 module Reach.AST.DLBase where
 
+import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.List as List
 import Data.List.Extra
@@ -54,6 +55,9 @@ data DLType
   | T_Data (M.Map SLVar DLType)
   | T_Struct [(SLVar, DLType)]
   deriving (Eq, Generic, Ord)
+
+instance FromJSON DLType
+instance ToJSON DLType
 
 maybeT :: DLType -> DLType
 maybeT t = T_Data $ M.fromList $ [("None", T_Null), ("Some", t)]

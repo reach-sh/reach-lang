@@ -11,9 +11,10 @@ import Reach.Util
 import Data.Bits
 import Data.Aeson (FromJSON, ToJSON)
 import GHC.Generics
+import Data.ByteString.UTF8 (toString)
 
 -- state
-data Env = Env
+data State = State
   {  e_store :: Store
    , e_ledger :: Ledger
    , e_linstate :: LinearState
@@ -21,16 +22,16 @@ data Env = Env
    , e_nwsecs :: Integer
   }
 
-type PartCont = Env -> DLVal -> PartState
+type PartCont = State -> DLVal -> PartState
 -- type Part = Expr
 
 data PartState
-  = PS_Done Env DLVal
-  | PS_Suspend Action Env PartCont
+  = PS_Done State DLVal
+  | PS_Suspend Action State PartCont
 
 -- Manual Monad
 newtype App a =
-  App (Env -> (Env -> a -> PartState) -> PartState)
+  App (State -> (State -> a -> PartState) -> PartState)
 
 instance Functor App where
   fmap t (App f) = App (\gv k -> f gv (\gv' v -> k gv' (t v)))
@@ -50,16 +51,16 @@ instance Monad App where
         let App con = conF vVal
          in con gvVal kAns))
 
-suspend :: (Env -> PartCont -> PartState) -> App DLVal
+suspend :: (State -> PartCont -> PartState) -> App DLVal
 suspend = App
 
-globalGet :: App Env
+globalGet :: App State
 globalGet = App (\gvTop kAns -> kAns gvTop gvTop)
 
-globalSet :: Env -> App ()
+globalSet :: State -> App ()
 globalSet ngv = App (\_ kAns -> kAns ngv ())
 
-runApp :: Env -> App DLVal -> PartState
+runApp :: State -> App DLVal -> PartState
 runApp gv (App f) = f gv PS_Done
 
 type ConsensusEnv = M.Map DLVar DLVal
@@ -86,11 +87,11 @@ ledgerNewToken supply f  = do
   f
 
 data Action
-  = Action_TieBreak
-  | Action_NewAcc
-  | Action_NewPart
-  | Action_ImitateFrontend
-  | Action_Interact [DLVal]
+  = A_TieBreak
+  | A_NewAcc
+  | A_NewPart
+  | A_ImitateFrontend
+  | A_Interact SrcLoc [SLCtxtFrame] String String DLType [DLVal]
   deriving (Generic)
 
 instance ToJSON Action
@@ -118,29 +119,29 @@ data DLVal
 instance ToJSON DLVal
 instance FromJSON DLVal
 
-addToStore :: DLVar -> DLVal -> App DLVal -> App DLVal
-addToStore x v app = do
+addToStore :: DLVar -> DLVal -> App ()
+addToStore x v = do
   e <- globalGet
   let st = e_store e
   globalSet $ e {e_store = M.insert x v st}
-  app
+  return ()
 
-incrNWtime :: Integer -> App DLVal -> App DLVal
-incrNWtime n app = do
+incrNWtime :: Integer -> App ()
+incrNWtime n = do
   e <- globalGet
   let t = e_nwtime e
   globalSet $ e {e_nwtime = t + n }
-  app
+  return ()
 
-incrNWsecs :: Integer -> App DLVal -> App DLVal
-incrNWsecs n app = do
+incrNWsecs :: Integer -> App ()
+incrNWsecs n = do
   e <- globalGet
   let t = e_nwsecs e
   globalSet $ e {e_nwsecs = t + n }
-  app
+  return ()
 
-updateLedger :: Account -> Token -> (Integer -> Integer) -> App DLVal -> App DLVal
-updateLedger acc tok f app = do
+updateLedger :: Account -> Token -> (Integer -> Integer) -> App ()
+updateLedger acc tok f = do
   e <- globalGet
   let ledger = e_ledger e
   let map_ledger = nw_ledger ledger
@@ -148,7 +149,7 @@ updateLedger acc tok f app = do
   let new_amt = f prev_amt
   let new_nw_ledger = M.insert acc (M.insert tok new_amt ((M.!) map_ledger acc)) map_ledger
   globalSet $ e {e_ledger = ledger { nw_ledger = new_nw_ledger }}
-  app
+  return ()
 
 -- ## INTERPRETER ## --
 
@@ -233,13 +234,13 @@ instance Interp DLExpr where
       case (ev1,ev2) of
         (V_Array arr, V_UInt n) -> do
           let n' = fromIntegral n
-          return $ V_Array $ take n' arr ++ [ev3] ++ drop (n' + 1) arr
+          return $ V_Array $ take n' arr <> [ev3] <> drop (n' + 1) arr
         _ -> impossible "expression interpreter"
     DLE_ArrayConcat _at dlarg1 dlarg2 -> do
       ev1 <- interp dlarg1
       ev2 <- interp dlarg2
       case (ev1,ev2) of
-        (V_Array arr1, V_Array arr2) -> return $ V_Array $ arr1 ++ arr2
+        (V_Array arr1, V_Array arr2) -> return $ V_Array $ arr1 <> arr2
         _ -> impossible "expression interpreter"
     DLE_ArrayZip _at dlarg1 dlarg2 -> do
       ev1 <- interp dlarg1
@@ -258,9 +259,9 @@ instance Interp DLExpr where
       case ev of
         V_Object obj -> return $ obj M.! str
         _ -> impossible "expression interpreter"
-    DLE_Interact _at _slcxtframes _slpart _str _dltype dlargs -> do
+    DLE_Interact at slcxtframes slpart str dltype dlargs -> do
       args <- mapM interp dlargs
-      suspend $ PS_Suspend (Action_Interact args)
+      suspend $ PS_Suspend (A_Interact at slcxtframes (toString slpart) str dltype args)
     DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
     -- TODO
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
@@ -276,25 +277,33 @@ instance Interp DLExpr where
         -- TODO: "Remove funds from contract..." which contract?
         (V_UInt n, V_Address acc) -> do
           case maybe_dlarg of
-            Nothing -> updateLedger acc 0 (+n) $ return V_Null
+            Nothing -> do
+              updateLedger acc 0 (+n)
+              return V_Null
             Just tok -> do
               ev <- interp tok
               case ev of
-                V_UInt tok' -> updateLedger acc tok' (+n) $ return V_Null
+                V_UInt tok' -> do
+                  updateLedger acc tok' (+n)
+                  return V_Null
                 _ -> impossible "unexpected error"
         _ -> impossible "expression interpreter"
     DLE_TokenInit _at _dlarg -> return V_Null
-    DLE_CheckPay _at _slcxtframes dlarg _maybe_dlarg -> interp dlarg
+    DLE_CheckPay _at _slcxtframes _dlarg _maybe_dlarg -> return $ V_Null
     DLE_Wait _at dltimearg -> case dltimearg of
       Left dlarg -> do
         ev <- interp dlarg
         case ev of
-          V_UInt n -> incrNWtime n $ return V_Null
+          V_UInt n -> do
+            incrNWtime n
+            return V_Null
           _ -> impossible "unexpected error"
       Right dlarg -> do
         ev <- interp dlarg
         case ev of
-          V_UInt n -> incrNWsecs n $ return V_Null
+          V_UInt n -> do
+            incrNWsecs n
+            return V_Null
           _ -> impossible "unexpected error"
     DLE_PartSet _at _slpart dlarg -> interp dlarg
     DLE_MapRef _at dlmvar dlarg -> do
@@ -333,7 +342,8 @@ instance Interp DLExpr where
       ev2 <- interp dlarg2
       case (ev1,ev2) of
         (V_UInt tok, V_UInt burn_amt) -> do
-          updateLedger 0 tok (burn_amt-) $ return V_Null
+          updateLedger 0 tok (burn_amt-)
+          return V_Null
         _ -> impossible "expression interpreter"
     DLE_TokenDestroy _at dlarg -> do
       ev <- interp dlarg
@@ -351,7 +361,7 @@ instance Interp DLExpr where
     DLE_GetContract _at -> undefined
     DLE_GetAddress _at -> undefined
     DLE_EmitLog at _str dlvar -> interp $ DL_Var at dlvar
-    DLE_setApiDetails _at _slpart _dltpes _maybe_str -> undefined
+    DLE_setApiDetails _at _slpart _dltpes _maybe_str -> return V_Null
 
 instance Interp DLStmt where
   interp = \case
@@ -362,28 +372,37 @@ instance Interp DLStmt where
         return V_Null
       DLV_Let _ var -> do
         ev <- interp expr
-        addToStore var ev $ return V_Null
+        addToStore var ev
+        return V_Null
     DL_ArrayMap _at var1 arg var2 block -> do
       arr <- interp arg
-      let f x val = addToStore x val $ interp block
+      let f = (\x val -> do
+          addToStore x val
+          interp block)
       case arr of
         V_Array arr' -> do
           res <- V_Array <$> mapM (\val -> f var2 val) arr'
-          addToStore var1 res $ return V_Null
+          addToStore var1 res
+          return V_Null
         _ -> impossible "statement interpreter"
     DL_ArrayReduce _at var1 arg1 arg2 var2 var3 block -> do
       acc <- interp arg1
       arr <- interp arg2
-      let f a x b y = addToStore a x $ addToStore b y $ interp block
+      let f = (\a x b y -> do
+          addToStore a x
+          addToStore b y
+          interp block)
       case arr of
         V_Array arr' -> do
           res <- foldM (\x y -> f var2 x var3 y) acc arr'
-          addToStore var1 res $ return V_Null
+          addToStore var1 res
+          return V_Null
         _ -> impossible "statement interpreter"
     DL_Var _at _var -> return V_Null
     DL_Set _at var arg -> do
       ev <- interp arg
-      addToStore var ev $ return V_Null
+      addToStore var ev
+      return V_Null
     DL_LocalDo _at dltail -> interp dltail
     DL_LocalIf _at arg tail1 tail2 -> do
       ev <- interp arg
@@ -396,16 +415,21 @@ instance Interp DLStmt where
       case ev of
         V_Data k v -> do
           let (switch_binding,_,dltail) = (M.!) switch_cases k
-          addToStore switch_binding v $ interp dltail
+          addToStore switch_binding v
+          interp dltail
         _ -> impossible "unexpected error"
     DL_Only _at _either_part dltail -> interp dltail
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
       accu <- interp arg
       g <- globalGet
       let linst = e_linstate g
-      let f a x b y = addToStore a x $ addToStore b y $ interp block
+      let f = (\a x b y -> do
+          addToStore a x
+          addToStore b y
+          interp block)
       res <- foldM (\x y -> f var2 x var3 y) accu $ (M.!) linst dlmvar
-      addToStore var1 res $ return V_Null
+      addToStore var1 res
+      return V_Null
 
 instance Interp DLTail where
   interp = \case
@@ -436,7 +460,8 @@ instance Interp LLConsensus where
       case ev of
         V_Data k v -> do
           let (switch_binding,_, cons) = (M.!) switch_cases k
-          addToStore switch_binding v $ interp cons
+          addToStore switch_binding v
+          interp cons
         _ -> impossible "unexpected error"
     LLC_FromConsensus _at1 _at2 step -> interp step
     LLC_While at asn _inv cond body k -> do
