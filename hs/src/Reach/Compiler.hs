@@ -67,8 +67,7 @@ compile env (CompilerOpts {..}) = do
       showp "dl" dl
       unless co_stopAfterEval $ do
         ll <- linearize showp dl
-        -- TODO: compiler option
-        unless False $ do
+        unless co_sim $ do
           _ <- return $ initProgSim ll
           return ()
         ol <- optimize ll

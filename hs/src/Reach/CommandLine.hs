@@ -26,7 +26,7 @@ data CompilerOpts = CompilerOpts
   , co_installPkgs :: Bool
   , co_stopAfterEval :: Bool
   , co_verifyTimeout :: Integer
-  -- , co_sim :: Bool
+  , co_sim :: Bool
   }
 
 compiler :: Parser CompilerToolArgs
@@ -64,6 +64,8 @@ compiler =
             <> value (1000 * 60 * 2)
             <> help "Timeout per verification theorem in milliseconds"
             <> showDefault))
+    <*> (switch (long "sim"
+          <> help "Run Simulator"))
     )
 
 getCompilerArgs :: String -> IO CompilerToolArgs
