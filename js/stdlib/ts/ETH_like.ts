@@ -805,7 +805,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           throw Error('viewMapRef not used by ETH backend'); },
       };
       const views_namesm = bin._Connectors.ETH.views;
-      const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo) =>
+      const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo, isSafe = true) =>
         async (...args: any[]): Promise<any> => {
           void(vs);
           const { ty } = vim;
@@ -816,10 +816,15 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           try {
             const val = await ethersC[vkn](...args);
             debug(label, 'getView1', v, k, 'val', val);
-            return ['Some', ty.unmunge(val)];
+            const uv = ty.unmunge(val);
+            return isSafe ? ['Some', uv] : uv;
           } catch (e) {
             debug(label, 'getView1', v, k, 'error', e);
-            return ['None', null];
+            if (isSafe) {
+              return ['None', null];
+            } else {
+              throw Error(`View ${v}.${k} is not set.`);
+            }
           }
         };
       return { getView1, viewLib };
