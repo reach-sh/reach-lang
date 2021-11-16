@@ -67,11 +67,11 @@ compile env (CompilerOpts {..}) = do
       showp "dl" dl
       unless co_stopAfterEval $ do
         ll <- linearize showp dl
-        unless co_sim $ do
-          _ <- return $ initProgSim ll
-          return ()
         ol <- optimize ll
         showp "ol" ol
+        unless co_sim $ do
+          _ <- return $ initProgSim ol
+          return ()
         let vo_out = woutnMay
         let vo_mvcs = doIf connectors dlo_verifyPerConnector
         let vo_timeout = co_verifyTimeout
