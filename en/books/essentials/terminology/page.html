@@ -1,61 +1,27 @@
-<h1 id="account">Account</h1>
-<h1 id="agent">Agent</h1>
-<h1 id="algorand-virtual-machine-avm">Algorand Virtual Machine (AVM)</h1>
-<h1 id="backend">Backend</h1>
-<h1 id="block">Block</h1>
-<h1 id="blockchain">Blockchain</h1>
-<ul>
-  <li><a href="https://www.youtube.com/watch?v=r43LhSUUGTQ">Understand the Blockchain in Two Minutes</a></li>
-</ul>
-<h1 id="bridge">Bridge</h1>
-<h1 id="computation">Computation</h1>
-<h1 id="contract">Contract</h1>
-<h1 id="decentralized-application-dapp">Decentralized Application (DApp)</h1>
-<h1 id="decentralized-oracle">Decentralized Oracle</h1>
-<h1 id="declassification">Declassification</h1>
-<h1 id="deployment">Deployment</h1>
-<h1 id="domination">Domination</h1>
-<h1 id="duoswap">DuoSwap</h1>
-<h1 id="export">Export</h1>
-<h1 id="expression">Expression</h1>
-<h1 id="first-message">First Message</h1>
-<h1 id="fork">Fork</h1>
-<h1 id="frontend">Frontend</h1>
-<h1 id="hydrate">Hydrate</h1>
-<h1 id="import">Import</h1>
-<h1 id="interact-interface">Interact Interface</h1>
-<h1 id="javascript-standard-library">JavaScript Standard Library</h1>
-<h1 id="liquidity-provider-tokens">Liquidity Provider Tokens</h1>
-<h1 id="mode">Mode</h1>
-<h1 id="module">Module</h1>
-<h1 id="participant">Participant</h1>
-<h1 id="participant-api">Participant API</h1>
-<h1 id="participant-backend">Participant Backend</h1>
-<h1 id="participant-class">Participant Class</h1>
-<h1 id="participant-frontend">Participant Frontend</h1>
-<h1 id="pay">Pay</h1>
+<h1 id="assertion">Assertion</h1>
+<p>An assertion is either: a knowledge assertion, which is a claim that one honest participant cannot know something that another honest participant does know; a static assertion, which is an always-true formula; an assumption, which is a true formula if frontends behave honestly; a requirement, which is a true formula if participants behave honestly; or, a possibility assertion, which is a formula for which there exists some values that honest participants and frontends could submit which results in the truth of the formula. An honest participant is one that executes the steps specified by the DApp, while an honest frontend is one that only returns values which ensure that all assumptions evaluate to the boolean true.</p>
+<h1 id="linear-state">Linear State</h1>
 <h1 id="pay-amount">Pay Amount</h1>
-<h1 id="principal">Principal</h1>
-<h1 id="publication">Publication</h1>
-<h1 id="publish">Publish</h1>
-<h1 id="reach-wallet">Reach Wallet</h1>
-<h1 id="statement">Statement</h1>
-<h1 id="step">Step</h1>
-<h1 id="time">Time</h1>
-<h1 id="timeout">Timeout</h1>
-<h1 id="token">Token</h1>
-<h1 id="transfer">Transfer</h1>
-<h1 id="validity">Validity</h1><!--
-# Companies
-
-# Reach Networks](https://reach.sh/)
-
-## Smart Contract Platforms
-
-# Algorand
-# Cardano
-# Ethereum
-# Polkadot
-# Solana
-# Tezos
--->
+<p>A pay amount is either:</p>
+<ul>
+  <li>An integer, denoting an amount of network tokens; or,</li>
+  <li>A tuple of token amounts.</li>
+</ul>
+<p>A token amount is either:</p>
+<ul>
+  <li>An integer, denoting an amount of network tokens; or,</li>
+  <li>A tuple with two elements, where the first is an integer, denoting an amount of non-network tokens, and the second is Token, specifying a particular non-network token.</li>
+</ul>
+<p>For example, these are all pay amounts:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">0</li><li value="2">5</li><li value="3">[ 5 ]</li><li value="4">[ 5, [ 2, gil ] ]</li><li value="5">[ [ 2, gil ], 5 ]</li><li value="6">[ 5, [ 2, gil ], [ 8, zorkmids ] ]</li></ol></pre>
+<p>It is invalid for a pay amount to specify an amount of tokens multiple times. For examples, these are invalid pay amounts:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">[ 1, 2 ]</li><li value="2">[ [2, gil], [1, gil] ]</li></ol></pre>
+<p>
+  The ordering of a pay amount is only significant when used within a fork statement or parallel reduce statement that specifies a paySpec. In
+  this case, payments are expected to be a tuple where the first element is an integer pay amount, and the rest of the elements are token amount tuples. The ordering of the token amount elements should match the ordering in paySpec. For example,
+</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">.paySpec([tokA, tokB])</li></ol></pre>
+<p>will indicate that fork payments should be of the format:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">[ NETWORK_TOKEN_AMT, [ amtA, tokA ], [ amtB, tokB ] ]</li></ol></pre>
+<h1 id="time-argument">Time Argument</h1>
+<p>A time argument represents consensus-network time. The argument is of type <code>Either(UInt, UInt)</code>, where the left variant refers to absolute network time and the right variant refers to absolute network seconds.</p>

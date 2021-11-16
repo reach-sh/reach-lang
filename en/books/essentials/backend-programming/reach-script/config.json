@@ -11,7 +11,6 @@
   "chapters": null,
   "pages": null,
   "menuItem": "mi-docs",
-  "src": "ref-programs-compute.md",
-  "title": "Computations",
-  "pathname": "/proj/docs/dev/src/en/books/essentials/backend-programming/compute"
+  "title": "Reach Script",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/backend-programming/reach-script"
 }

@@ -11,6 +11,6 @@
   "chapters": null,
   "pages": null,
   "menuItem": "mi-docs",
-  "title": "Reach RPC Server",
-  "pathname": "/proj/docs/dev/src/en/books/essentials/frontend-programming/other-frontends"
+  "title": "RPC Frontends",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/frontend-programming/rpc-frontends"
 }
