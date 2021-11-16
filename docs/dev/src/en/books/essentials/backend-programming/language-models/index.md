@@ -2,7 +2,7 @@
 menuItem: mi-docs
 ---
 
-# Language Model
+# Language Models
 
 This page describes the fundamental assumptions and concepts of Reach. [Evaluation Model]() discusses the run-time model. [Compilation Model]() explores transformations relevant to developers. [Syntax Model]() details Reach language syntax.
 
