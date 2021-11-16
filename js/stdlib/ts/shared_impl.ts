@@ -187,6 +187,7 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
   p: ParticipantMap
   views: ViewMap,
   v: ViewMap,
+  unsafeViews: ViewMap,
   apis: APIMap,
   a: APIMap,
   // for compiled output
@@ -195,7 +196,7 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
 
 export type ISetupView<ContractInfo, VerifyResult, ConnectorTy extends AnyBackendTy> = (args:ISetupViewArgs<ContractInfo, VerifyResult>) => {
   viewLib: IViewLib,
-  getView1: ((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string|undefined, vi:IBackendViewInfo<ConnectorTy>) => ViewVal)
+  getView1: ((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string|undefined, vi:IBackendViewInfo<ConnectorTy>, isSafe: boolean) => ViewVal)
 };
 
 export const stdVerifyContract =
@@ -266,12 +267,15 @@ export const stdContract =
 
   const { viewLib, getView1 } = setupView(viewArgs);
   const views_bin = bin._getViews({reachStdlib: stdlib}, viewLib);
-  const views =
+  const mkViews = (isSafe: boolean) =>
     objectMap(views_bin.infos, ((v:string, vm: TaggedBackendView<ConnectorTy> | IBackendViewInfo<ConnectorTy>) =>
       isUntaggedView(vm)
-        ? getView1(views_bin.views, v, undefined, vm as IBackendViewInfo<ConnectorTy>)
+        ? getView1(views_bin.views, v, undefined, vm as IBackendViewInfo<ConnectorTy>, isSafe)
         : objectMap(vm as TaggedBackendView<ConnectorTy>, ((k:string, vi:IBackendViewInfo<ConnectorTy>) =>
-            getView1(views_bin.views, v, k, vi)))));
+            getView1(views_bin.views, v, k, vi, isSafe)))));
+
+  const views = mkViews(true);
+  const unsafeViews = mkViews(false);
 
   const participants = objectMap(bin._Participants, ((pn:string, p:any) => {
       void(pn);
@@ -332,6 +336,7 @@ export const stdContract =
       console.log(`WARNING: ctc.getViews() is deprecated; use ctc.views or ctc.v instead.`);
       return views;
     },
+    unsafeViews,
     apis, a: apis,
   };
 };

@@ -1616,7 +1616,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           return mr;
         },
       };
-      const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo) =>
+      const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo, isSafe = true) =>
         async (...args: any[]): Promise<any> => {
           debug('getView1', v, k, args);
           const { decode } = vim;
@@ -1630,10 +1630,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             });
             const vres = await decode(vi, vvs, args);
             debug({vres});
-            return ['Some', vres];
+            return isSafe ? ['Some', vres] : vres;
           } catch (e) {
             debug(`getView1`, v, k, 'error', e);
-            return ['None', null];
+            if (isSafe) {
+              return ['None', null];
+            } else {
+              throw Error(`View ${v}.${k} is not set.`);
+            }
           }
       };
       return { getView1, viewLib };
