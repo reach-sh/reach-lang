@@ -386,8 +386,8 @@ workflows:
        context:
        - reachdevbot-on-dockerhub
     - "make-announcement":
-       #requires:
-       #  - "create-tag-and-push"
+       requires:
+         - "create-tag-and-push"
        context:
        - reachdevbot-on-dockerhub
     - "RC-release":
