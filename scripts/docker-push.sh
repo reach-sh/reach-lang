@@ -20,18 +20,12 @@ tagpush() {
 is_rc=$(echo ${VERSION} | grep -e '\-rc\.' > /dev/null ; echo $?)
 
 if [ $is_rc -eq 1 ] ; then
-  echo "I WILL PUSH THE TAG latest"
-  #tagpush "latest"
-  #tagpush "stable"
+  tagpush "latest"
+  tagpush "stable"
 fi
 
 tagpush $VERSION
 
-#tagpush "${DATE}"
 if [ ${#REACH_GIT_HASH} = 8 ]; then
   tagpush "${REACH_GIT_HASH}"
 fi
-
-#if [ "${MAJOR}.${MINOR}.${PATCH}" = "${STABLE}" ] ; then
-#    tagpush stable
-#fi
