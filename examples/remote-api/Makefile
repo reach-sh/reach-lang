@@ -8,4 +8,4 @@ build/%.main.mjs: %.rsh
 	$(REACH) compile $^ main
 
 .PHONY: build
-build: build/index.main.mjs
+build: build/index.main.mjs build/guess.main.mjs

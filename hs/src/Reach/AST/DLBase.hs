@@ -503,12 +503,12 @@ data ApiInfo = ApiInfo
 
 instance Pretty ApiInfo where
   pretty = \case
-    ApiInfo mtys mci which is_fork vs ->
+    ApiInfo mtys mci which ac vs ->
       braces $ hardline <> vsep [
         "msg_tys :" <+> pretty mtys
       , "mcase_id:" <+> pretty mci
       , "which:" <+> pretty which
-      , "is_fork:" <+> pretty is_fork
+      , "compile:" <+> pretty ac
       , "msg:" <+> pretty vs
       ]
 

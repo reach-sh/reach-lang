@@ -1131,11 +1131,12 @@ solHandler which h = freshVarMap $
             case (uses_apis, sfl) of
               (True, SFL_Function _ name) -> do
                 let createStruct = solDecl "_r" (apiRngTy <> solArgLoc AM_Memory) <> semi
-                let callFun = solApply ("this." <> name) ["_a", "_r"] <> semi
+                let callFun = solApply name ["_a", "_r"] <> semi
                 let callBody = vsep [ createStruct, callFun ]
                 let apiRetDefn = solDecl apiRetVar (apiRngTy <> solArgLoc AM_Memory)
+                intArg <- solArgDefn AM_Memory Nothing msg
                 return [ mkFun [argDefn] callBody
-                       , mkFun [argDefn, apiRetDefn] body ]
+                       , solFunction name [intArg, apiRetDefn] "internal " body ]
               _ ->
                 return [ mkFun [argDefn] body ]
       return $ vsep $ [evtDefn, frameDefn ] <> funDefs
@@ -1175,7 +1176,7 @@ solBytesSplit sz f = map go [0 .. lastOne]
 apiDef :: SLPart -> ApiInfo -> App Doc
 apiDef who ApiInfo{..} = do
   let who_s = bunpack who
-  let mf = pretty $ "this.m" <> show ai_which
+  let mf = pretty $ "m" <> show ai_which
   let mkArgDefns ts = do
         let indexedTypes = zip ts [0..]
         unzip <$> mapM (\ (ty, i :: Int) -> do
@@ -1354,12 +1355,12 @@ solEB args (DLinExportBlock _ mfargs (DLBlock _ _ t r)) = do
   r' <- solArg r
   return $ vsep [t', "return" <+> r' <> semi]
 
-createApiRng :: Maybe (M.Map String DLType) -> App Doc
-createApiRng = \case
+createAPIRng :: Maybe (M.Map String DLType) -> App Doc
+createAPIRng = \case
   Nothing -> return ""
   Just env -> do
     fields <- mapM (\ (k, v) -> (pretty k, ) <$> solType_ v) $ M.toList env
-    return $ fromMaybe (impossible "createApiRng") $ solStruct "ApiRng" fields
+    return $ fromMaybe (impossible "createAPIRng") $ solStruct "ApiRng" fields
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
 solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) ai hs)) = do
@@ -1478,7 +1479,7 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) ai hs)) = do
     intsp <- getm ctxt_ints
     outputsp <- getm ctxt_outputs
     tlfunsp <- getm ctxt_tlfuns
-    api_rng <- (liftIO $ readIORef ctxt_api_rngs) >>= createApiRng
+    api_rng <- (liftIO $ readIORef ctxt_api_rngs) >>= createAPIRng
     let defp = vsep $
           [ "receive () external payable {}"
           , "fallback () external payable {}" ]

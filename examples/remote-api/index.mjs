@@ -1,5 +1,6 @@
 import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
+import * as guessBackend from './build/guess.main.mjs';
 import real_ethers from 'ethers';
 import * as cfxers from '@reach-sh/stdlib/cfxers.mjs';
 import * as fs from 'fs';
@@ -11,12 +12,12 @@ const stdlib = loadStdlib(process.env);
   const ethers = stdlib.connector === 'CFX' ? cfxers : real_ethers;
 
   const startingBalance = stdlib.parseCurrency(100);
-  const [ accAlice, accBob ] =
-    await stdlib.newTestAccounts(2, startingBalance);
+  const [ accAlice, accBob, accChi ] =
+    await stdlib.newTestAccounts(3, startingBalance);
 
   const gasLimit = 5000000;
-  accAlice.setGasLimit(gasLimit);
-  accBob.setGasLimit(gasLimit);
+  accAlice.setDebugLabel('Alice').setGasLimit(gasLimit);
+  accBob.setDebugLabel('Bob').setGasLimit(gasLimit);
   const compiled = JSON.parse(await fs.readFileSync('./build/index.sol.json'));
   const remoteCtc = compiled["contracts"]["index.sol:MyContract"];
   const remoteABI = remoteCtc["abi"];
@@ -36,14 +37,25 @@ const stdlib = loadStdlib(process.env);
     await x.wait();
   }
 
+  const ctcChi = accChi.setDebugLabel('Chi').contract(guessBackend);
+
+  const v = 5;
+
+  Promise.all([
+    guessBackend.A(ctcChi, {
+      x: () => {
+        console.log(`Returning guess value: ${v}`);
+        return v;
+      }
+    }),
+  ]);
+
   await Promise.all([
     backend.Alice(ctcAlice, {
-      log: (i) => {
-        console.log(`Ctc received ${i.toString()}`);
-      },
-      initCall: () => {
-        callCtc();
-      }
+      log: (...xs) => console.log(...xs),
+      initCall: () => callCtc(),
+      ctcInfo: async () => { return await ctcChi.getInfo() },
+      getGuess: () => v,
     }),
   ]);
 })();
