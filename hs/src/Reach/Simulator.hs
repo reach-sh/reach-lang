@@ -9,6 +9,8 @@ import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.Util
 import Data.Bits
+import Data.Aeson (FromJSON, ToJSON)
+import GHC.Generics
 
 -- state
 data Env = Env
@@ -62,9 +64,7 @@ runApp gv (App f) = f gv PS_Done
 
 type ConsensusEnv = M.Map DLVar DLVal
 type Store = ConsensusEnv
-
 type Balance = Integer
-
 type Token = Integer
 
 data Ledger = Ledger
@@ -91,6 +91,10 @@ data Action
   | Action_NewPart
   | Action_ImitateFrontend
   | Action_Interact [DLVal]
+  deriving (Generic)
+
+instance ToJSON Action
+instance FromJSON Action
 
 type Account = Integer
 
@@ -109,16 +113,10 @@ data DLVal
   | V_Object (M.Map SLVar DLVal)
   | V_Data SLVar DLVal
   | V_Struct [(SLVar, DLVal)]
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Generic)
 
--- Identify program states
--- type Id = Integer
-
--- All of the states visited
--- type Session = M.Map Id State
-
--- free-form & untyped parameters for the action
-type Params = String -- JSON.Value
+instance ToJSON DLVal
+instance FromJSON DLVal
 
 addToStore :: DLVar -> DLVal -> App DLVal -> App DLVal
 addToStore x v app = do
@@ -471,27 +469,3 @@ while bl cons = do
       _ <- interp cons
       while bl cons
     _ -> impossible "unexpected error"
-
--- creates the first state and returns its id
--- init :: LLProg -> App Id
--- init (LLProg _at _llo _ps _dli _dex _dvs _apis _s) = return 0
-
--- returns the set of possible reductions
--- actions  :: Id -> App [ Action ]
--- actions = undefined
-
--- applies an action (with its parameters) and returns a new state. Memoizes
--- apply :: Id -> Action -> Params -> App Id
--- apply = undefined
-
--- returns the children and how they can be derived
--- children :: Id -> App (M.Map Id [ (Action, Params) ])
--- children = undefined
-
--- returns the parent
--- parent :: Id -> App Id
--- parent = undefined
-
--- returns the state
--- inspect :: Id -> App State
--- inspect = undefined
