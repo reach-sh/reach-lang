@@ -16,6 +16,7 @@ import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
 import Reach.Texty
+import Reach.Pretty
 import Reach.UnsafeUtil
 import qualified System.Console.Pretty as TC
 import Safe (atMay)
@@ -261,13 +262,13 @@ data PrimOp
   | DIGEST_EQ
   | ADDRESS_EQ
   | TOKEN_EQ
-  | SELF_ADDRESS
+  | SELF_ADDRESS SLPart Bool Int
   | LSH
   | RSH
   | BAND
   | BIOR
   | BXOR
-  | BYTES_CONCAT
+  | BYTES_ZPAD Integer
   | MUL_DIV
   deriving (Eq, Generic, NFData, Ord, Show)
 
@@ -287,13 +288,13 @@ instance Pretty PrimOp where
     DIGEST_EQ -> "=="
     ADDRESS_EQ -> "=="
     TOKEN_EQ -> "=="
-    SELF_ADDRESS -> "selfAddress"
+    SELF_ADDRESS x y z -> "selfAddress" <> parens (render_das [ pretty x, pretty y, pretty z ])
     LSH -> "<<"
     RSH -> ">>"
     BAND -> "&"
     BIOR -> "|"
     BXOR -> "^"
-    BYTES_CONCAT -> "concat"
+    BYTES_ZPAD x -> "zpad" <> parens (pretty x)
     MUL_DIV -> "muldiv"
 
 data SLCtxtFrame

@@ -4,6 +4,8 @@ build
 /docs/.dockerignore
 /docs/Makefile
 /docs/Dockerfile
-/docs/dev/tools/node_modules
-/docs/dev/tools/installed
-/docs/dev/tools/proj.txt
+/docs/dev/README.md
+/docs/dev/node_modules
+/docs/dev/installed
+/docs/dev/proj.txt
+/docs/dev/build

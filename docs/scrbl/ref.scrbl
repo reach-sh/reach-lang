@@ -35,8 +35,46 @@ However, all commands support the following options:
 
 @itemlist[
 
-@item{The environment variable @defenv{REACH_VERSION} signifies what @seclink["guide-versions"]{version of Reach} to use.}
+@item{
+  The environment variable @defenv{REACH_VERSION} signifies what version of Reach to use.
 
+  Although normally expressed in a @seclink["guide-versions"]{semantic versioning}-friendly format, e.g. @exec{v0.1} or @exec{v0.1.6}, @envvar{REACH_VERSION} also supports:
+  @itemlist[
+  @item{
+    Hashes such as @link["https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore"]{639fa565}.
+
+    Valid hashes may be obtained by running:
+    @verbatim{
+      $ reach hashes
+      reach: 8150e7e4
+      reach-cli: 8150e7e4
+      react-runner: fb449c94
+      rpc-server: fb449c94
+      runner: fb449c94
+      devnet-algo: fb449c94
+      devnet-cfx fb449c94
+      devnet-eth: fb449c94
+    }
+  }
+
+  @item{
+    Date-stamps such as @link["https://hub.docker.com/layers/reachsh/reach/2021-11-04/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore"]{2021-11-04}.
+
+    Valid date-stamps may be obtained by browsing Reach's public Docker image registry on @link["https://hub.docker.com/r/reachsh/reach/tags"]{DockerHub}.
+
+    Tip: try entering your desired year in the filter box to skip other tag types.
+  }
+
+  @item{
+    The identifer "@exec{stable}".
+
+    Reach will interpret this to mean the most recent stable @seclink["guide-versions"]{major} version.
+  }
+  ]
+
+  When using the semantic versioning form of @envvar{REACH_VERSION} the preceding @exec{v} character is optional.
+  In other words, @exec{v0.1.6} is equivalent to @exec{0.1.6}.
+}
 ]
 
 @subsection[#:tag "ref-usage-compile"]{@tt{reach compile}}

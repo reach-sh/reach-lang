@@ -246,6 +246,7 @@ instance CanLift DKCommon where
     DKC_FluidSet {} -> True
     DKC_FluidRef {} -> True
     DKC_Only {} -> False --- XXX maybe okay
+    DKC_setApiDetails {} -> False
 
 noLifts :: LCApp a -> LCApp a
 noLifts = local (\e -> e {eLifts = Nothing})

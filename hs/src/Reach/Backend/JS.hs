@@ -193,9 +193,9 @@ jsAssertInfo :: SrcLoc -> [SLCtxtFrame] -> Maybe B.ByteString -> App Doc
 jsAssertInfo at fs mmsg = do
   let msg_p = case mmsg of
         Nothing -> "null"
-        Just b -> jsString $ bunpack b
+        Just b -> jsBytes b
   who <- ctxt_who <$> ask
-  who_p <- jsCon $ DLL_Bytes $ who
+  let who_p = jsBytes who
   let fs_p = jsArray $ map (jsString . unsafeRedactAbsStr . show) fs
   return $
     jsObject $
@@ -220,7 +220,6 @@ jsCon = \case
   DLL_Int at i -> do
     uim <- jsArg (DLA_Constant $ DLC_UInt_max)
     return $ jsApply "stdlib.checkedBigNumberify" [jsAt at, uim, pretty i]
-  DLL_Bytes b -> return $ jsString $ bunpack b
 
 jsArg :: AppT DLArg
 jsArg = \case
@@ -246,6 +245,10 @@ jsLargeArg = \case
     return $ jsArray [jsString vn, vv']
   DLLA_Struct kvs ->
     jsLargeArg $ DLLA_Obj $ M.fromList kvs
+  DLLA_Bytes b -> return $ jsBytes b
+
+jsBytes :: B.ByteString -> Doc
+jsBytes = jsString . bunpack
 
 jsContractAndVals :: [DLArg] -> App [Doc]
 jsContractAndVals as = do
@@ -259,7 +262,7 @@ jsDigest as = jsApply "stdlib.digest" <$> jsContractAndVals as
 
 jsPrimApply :: PrimOp -> [Doc] -> Doc
 jsPrimApply = \case
-  SELF_ADDRESS -> jsApply "ctc.selfAddress"
+  SELF_ADDRESS {} -> jsApply "ctc.selfAddress"
   ADD -> jsApply "stdlib.add"
   SUB -> jsApply "stdlib.sub"
   MUL -> jsApply "stdlib.mul"
@@ -283,7 +286,7 @@ jsPrimApply = \case
   DIGEST_EQ -> jsApply "stdlib.digestEq"
   ADDRESS_EQ -> jsApply "stdlib.addressEq"
   TOKEN_EQ -> jsApply "stdlib.tokenEq"
-  BYTES_CONCAT -> jsApply "stdlib.bytesConcat"
+  BYTES_ZPAD xtra -> \args -> jsApply "stdlib.bytesConcat" (args <> [ jsBytes $ bytesZero xtra ])
 
 jsArg_m :: AppT (Maybe DLArg)
 jsArg_m = \case
@@ -457,7 +460,7 @@ jsExpr = \case
     txn' <- jsTxn
     dvt' <- jsContract $ varType dv
     return $ "await" <+> txn' <> "." <> jsApply "getOutput" [squotes (pretty mode), squotes dv', dvt', dv']
-
+  DLE_setApiDetails {} -> return "undefined"
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
   ov' <- jsVar ov
@@ -948,7 +951,7 @@ reachBackendVersion :: Int
 reachBackendVersion = 5
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
-jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _)) = do
+jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ _)) = do
   let DLInit {..} = dli
   let preamble =
         vsep

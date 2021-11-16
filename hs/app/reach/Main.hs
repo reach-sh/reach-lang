@@ -10,7 +10,7 @@ import Data.Char
 import Data.Either
 import Data.IORef
 import Data.Text (Text, intercalate, pack, unpack, stripEnd)
-import Data.Time.Clock
+import Data.Time
 import Data.Time.Format.ISO8601
 import Data.Tuple.Extra (first)
 import Options.Applicative
@@ -25,9 +25,11 @@ import System.Posix.Files
 import Text.Parsec (ParsecT, parse, runParserT, eof, try)
 import Text.Parsec.Char
 import Text.Parsec.Language
+import Text.ParserCombinators.Parsec.Combinator (count)
 import Text.ParserCombinators.Parsec.Token
 
 import Reach.CommandLine
+import Reach.Report
 import Reach.Util
 import Reach.Version
 
@@ -70,7 +72,7 @@ data RVEnvNumeric = RVEnvNumeric
   , rvEnvNumericPatch :: Maybe Integer
   }
 
-data ReachVersionOf
+data RVWithMaj'
   = RVDefault
   | RVStable
   | RVNumeric
@@ -79,6 +81,11 @@ data ReachVersionOf
     , rvMinor :: Integer
     , rvPatch :: Integer
     }
+
+data ReachVersionOf
+  = RVWithMaj RVWithMaj'
+  | RVHash Text
+  | RVDate Day
 
 data ReachVersion = ReachVersion
   { rvEnvRaw :: Maybe Text
@@ -90,47 +97,55 @@ mkReachVersion = do
   mt <- lookupEnv "REACH_VERSION"
   let rvEnvRaw = pack <$> mt
   rv <- case mt of
-    Nothing -> pure RVDefault
-    Just "" -> pure RVDefault
-    Just "stable" -> pure RVStable
-    Just m -> do
-      let TokenParser {..} = makeTokenParser emptyDef
-      let xx = eof *> pure Nothing
-      let iv = const . die $ "Invalid `REACH_VERSION`: " <> m
-      let ti = toInteger
-
-      rvEnvNumeric@RVEnvNumeric {..} <- either iv pure $ parse
-        (RVEnvNumeric
-          <$> (Just <$> (optional (string "v") *> decimal))
-          <*> ((Just <$> (dot *> decimal)) <|> xx)
-          <*> ((Just <$> (dot *> decimal <* eof)) <|> xx))
-        "" m
-
-      let rvMajor = maybe (ti major) id rvEnvNumericMajor
-      let rvMinor = maybe (if rvMajor /= ti major then 0 else ti minor) id rvEnvNumericMinor
-      let rvPatch = maybe (if rvMinor /= ti minor then 0 else ti patch) id rvEnvNumericPatch
-
-      pure $ RVNumeric {..}
-
+    Nothing -> pure $ RVWithMaj RVDefault
+    Just "" -> pure $ RVWithMaj RVDefault
+    Just "stable" -> pure $ RVWithMaj RVStable
+    Just m -> either (iv m) pure $ parse (numeric <|> hash <|> datestamp m) "" m
   pure $ ReachVersion {..}
 
-versionMajMinPat :: ReachVersion -> Text
-versionMajMinPat ReachVersion {..} = case rv of
+ where
+  TokenParser {..} = makeTokenParser emptyDef
+  xx = eof *> pure Nothing
+  iv = const . die . ("Invalid `REACH_VERSION`: " <>)
+  ti = toInteger
+
+  hash = RVHash . pack <$> (try $ count 8 (oneOf $ ['0'..'9'] <> ['a'..'f']) <* eof)
+
+  datestamp m = maybe (fail m) (pure . RVDate) $ parseTimeM False defaultTimeLocale "%Y-%m-%d" m
+
+  numeric = try $ do
+    rvEnvNumeric@RVEnvNumeric {..} <- RVEnvNumeric
+      <$> (Just <$> (optional (string "v") *> decimal))
+      <*> ((Just <$> (dot *> decimal)) <|> xx)
+      <*> ((Just <$> (dot *> decimal <* eof)) <|> xx)
+    let rvMajor = maybe (ti major) id rvEnvNumericMajor
+    let rvMinor = maybe (if rvMajor /= ti major then 0 else ti minor) id rvEnvNumericMinor
+    let rvPatch = maybe (if rvMinor /= ti minor then 0 else ti patch) id rvEnvNumericPatch
+    pure $ RVWithMaj RVNumeric {..}
+
+majMinPat :: RVWithMaj' -> Text
+majMinPat = \case
   RVDefault -> pack versionStr
   RVStable -> pack versionStr
   RVNumeric {..} -> T.intercalate "." $ map packs [ rvMajor, rvMinor, rvPatch ]
 
-versionMajMin :: ReachVersion -> Text
-versionMajMin ReachVersion {..} = case rv of
+majMin :: RVWithMaj' -> Text
+majMin = \case
   RVDefault -> pack compatibleVersionStr
   RVStable -> pack compatibleVersionStr
   RVNumeric {..} -> T.intercalate "." $ map packs [ rvMajor, rvMinor ]
 
-versionMaj :: ReachVersion -> Text
-versionMaj ReachVersion {..} = case rv of
+maj :: RVWithMaj' -> Text
+maj = \case
   RVDefault -> packs major
   RVStable -> packs major
   RVNumeric {..} -> packs rvMajor
+
+versionBy :: (RVWithMaj' -> Text) -> ReachVersion -> Text
+versionBy f ReachVersion {..} = case rv of
+  RVWithMaj v -> f v
+  RVHash v -> v
+  RVDate v -> packs v
 
 data Shell
   = ShellUnknown
@@ -179,6 +194,7 @@ data Env = Env
   , e_dirConfigContainer :: FilePath
   , e_dirConfigHost :: FilePath
   , e_emitRaw :: Bool
+  , e_disableReporting :: Bool
   , e_effect :: IORef Effect
   , e_var :: Var
   }
@@ -508,7 +524,7 @@ mkDockerMetaProj (Env {..}) (p@Project {..}) wp = DockerMeta {..} where
   appImage = case wp of
                 RPC -> "reachsh/rpc-server"
                 _ -> "reachsh/" <> appService
-  appImageTag = appImage <> ":" <> (versionMajMinPat $ version'' e_var)
+  appImageTag = appImage <> ":" <> versionBy majMinPat (version'' e_var)
   compose = WithProject wp p
 
 mkDockerMetaStandaloneDevnet :: DockerMeta
@@ -634,9 +650,7 @@ withCompose DockerMeta {..} wrapped = do
         $extraEnv
       $deps
     |]
-  let mkConnSvs = liftIO . serviceConnector env cm connPorts appService
-  let thisVers = versionMajMinPat version''
-  let stdConnSvs = mkConnSvs thisVers
+  let stdConnSvs = liftIO . serviceConnector env cm connPorts appService $ versionBy majMinPat version''
   connSvs <- case (m, compose) of
     (Live, _) -> pure ""
     (_, StandaloneDevnet) -> stdConnSvs
@@ -711,6 +725,9 @@ switchQuiet = switch
   $ long "quiet"
  <> help "Withhold progress messages"
 
+recursiveDisableReporting :: Bool -> Text
+recursiveDisableReporting d = if d then " --disable-reporting" else ""
+
 mkEnv :: IORef Effect -> Maybe Var -> IO (Parser Env)
 mkEnv eff mv = do
   var <- maybe mkVar pure mv
@@ -723,6 +740,7 @@ mkEnv eff mv = do
     <*> strOption (long "dir-config-container" <> internal <> value "/app/config")
     <*> strOption (long "dir-config-host" <> internal)
     <*> switch (long "emit-raw" <> internal)
+    <*> switch (long "disable-reporting" <> internal)
     <*> pure eff
     <*> pure var
 
@@ -747,12 +765,12 @@ forwardedCli n = do
     <*> subparser (command (unpack n) (info (pure ()) mempty))
     <*> switchUseExistingDevnet
     <*> manyArgs "a recursive invocation of `reachEx`"
-  pure $ intercalate " " f
+  pure . intercalate " " $ filter (/= "--disable-reporting") f
 
 scaffold' :: Bool -> Bool -> Project -> App
 scaffold' i quiet proj@Project {..} = do
   warnDeprecatedFlagIsolate i
-  e@(Env {..}) <- ask
+  e@Env {..} <- ask
   let Scaffold {..} = mkScaffold proj
   let DockerMeta {..} = mkDockerMetaProj e proj Console
   let scaffIfAbsent' n f = liftIO $ scaffIfAbsent quiet n f
@@ -760,7 +778,7 @@ scaffold' i quiet proj@Project {..} = do
           swap "APP" projName
         . swap "MJS" (projName <> ".mjs")
         . swap "PROJ" appProj
-        . swap "REACH_VERSION" (versionMajMinPat $ version'' e_var)
+        . swap "REACH_VERSION" (versionBy majMinPat $ version'' e_var)
        <$> readScaff p
   -- TODO: s/lint/preapp. It's disabled because sometimes our
   -- generated code trips the linter
@@ -818,15 +836,15 @@ compile = command "compile" $ info f d where
   d = progDesc "Compile an app"
   f = go <$> compiler
   go (CompilerToolArgs {..}) = do
+    Env{e_var = Var {..}, ..} <- ask
     rawArgs <- liftIO $ getArgs
     let rawArgs' = dropWhile (/= "compile") rawArgs
-    let argsl = case rawArgs' of
+    let argsl = intercalate " " . map pack . filter (/= "--disable-reporting") $ case rawArgs' of
                  "compile" : x -> x
                  _ -> impossible $ "compile args do not start with 'compile': " <> show rawArgs
-    let args = intercalate " " $ map pack argsl
+    let args = argsl <> recursiveDisableReporting e_disableReporting
     let CompilerOpts {..} = cta_co
-    Var {..} <- asks e_var
-    let v = versionMajMinPat version''
+    let v = versionBy majMinPat version''
     let ci' = if ci then "true" else ""
     liftIO $ do
       diePathContainsParentDir co_source
@@ -848,7 +866,7 @@ compile = command "compile" $ info f d where
         export REACH
 
         if [ "$$CIRCLECI" = "true" ] && [ -x ~/.local/bin/reachc ]; then
-          ~/.local/bin/reachc --disable-reporting $args
+          ~/.local/bin/reachc $argsl --disable-reporting
 
         elif [ "$${REACH_DOCKER}" = "0" ] \
           && [ -d "$${HS}/.stack-work"  ] \
@@ -909,17 +927,26 @@ init' its = command "init" . info f $ d <> foot where
       abortIf rsh
       abortIf mjs
       T.putStrLn $ "Writing " <> app <> ".rsh..."
-      T.writeFile rsh $ swap "REACH_VERSION_SHORT" (versionMajMin $ version'' e_var) fmtInitRsh
+      T.writeFile rsh $ swap "REACH_VERSION_SHORT" (versionBy majMin $ version'' e_var) fmtInitRsh
       T.putStrLn $ "Writing " <> app <> ".mjs..."
       T.writeFile mjs $ swap "APP" app fmtInitMjs
       putStrLn "Done."
 
 -- Tell `docker-compose` to skip connector containers if they're already running
-devnetDeps :: AppT Text
-devnetDeps = do
+devnetDeps :: Bool -> AppT Text
+devnetDeps nolog = do
   ConnectorMode c' _ <- dieConnectorModeNotSpecified
   let c = packs c'
-  pure [N.text| $([ "$(docker ps -qf label=sh.reach.devnet-for=$c)x" = 'x' ] || echo '--no-deps') |]
+  l <- if nolog then pure "" else log'' "devnet_create"
+  pure [N.text|
+    NO_DEPS=''
+    if [ "$(docker ps -qf label=sh.reach.devnet-for=$c)x" = 'x' ]; then
+      :
+      $l
+    else
+      NO_DEPS=' --no-deps'
+    fi
+  |]
 
 run' :: Subcommand
 run' = command "run" . info f $ d <> noIntersperse where
@@ -939,7 +966,7 @@ run' = command "run" . info f $ d <> noIntersperse where
     dieConnectorModeBrowser
     e@Env {..} <- ask
     proj@Project {..} <- projectFrom appOrDir'
-    dd <- devnetDeps
+    dd <- devnetDeps e_disableReporting
     let Var {..} = e_var
     let Scaffold {..} = mkScaffold proj
     toClean <- filterM (fmap not . liftIO . doesFileExist . fst)
@@ -959,9 +986,10 @@ run' = command "run" . info f $ d <> noIntersperse where
     scaffold' False True proj
 
     let target = pack $ projDirRel </> unpack projName <> ".rsh"
+    let dr = recursiveDisableReporting e_disableReporting
     let recompile' = [N.text|
       set +e
-      $reachEx compile $target
+      $reachEx$dr compile $target
       RES="$?"
       set -e
 
@@ -983,7 +1011,9 @@ run' = command "run" . info f $ d <> noIntersperse where
     let projDirHost' = pack projDirHost
     let args'' = intercalate " " . map (<> "'") . map ("'" <>) $ projName : args'
     withCompose dm . scriptWithConnectorMode $ do
+      write dd
       maybe (pure ()) write recompile
+      unless e_disableReporting $ log'' "run" >>= write
       write [N.text|
         cd $projDirHost'
         CNAME="$appService-$$$$"
@@ -991,7 +1021,7 @@ run' = command "run" . info f $ d <> noIntersperse where
         set +e
         docker build -f $dockerfile' --tag=$appImageTag . \
           && docker-compose -f "$$TMP/docker-compose.yml" run \
-            --name "$$CNAME" $dd --rm $appService $args''
+            --name "$$CNAME"$$NO_DEPS --rm $appService $args''
         RES="$?"
         set -e
 
@@ -1058,30 +1088,35 @@ react :: Subcommand
 react = command "react" $ info f d where
   d = progDesc "Run a simple React app"
   f = go <$> switchUseExistingDevnet <*> compiler
-  -- Leverage `optparse` for help/completions/validation/etc but disregard its
-  -- product and instead thread raw command line back through during `compile`
-  -- sub-shell
   go ued _ = do
     warnDeprecatedFlagUseExistingDevnet ued
     ConnectorMode c _ <- dieConnectorModeNotSpecified
     v@Var {..} <- asks e_var
     local (\e -> e { e_var = v { connectorMode = Just (ConnectorMode c Browser) }}) $ do
+      Env {..} <- ask
+      let dr = recursiveDisableReporting e_disableReporting
       dm@DockerMeta {..} <- mkDockerMetaProj <$> ask <*> projectPwdIndex <*> pure React
-      dd <- devnetDeps
+      dd <- devnetDeps e_disableReporting
       cargs <- forwardedCli "react"
-      withCompose dm . scriptWithConnectorMode $ write [N.text|
-        $reachEx compile $cargs
-        docker-compose -f "$$TMP/docker-compose.yml" run \
-          --name $appService $dd --service-ports --rm $appService
-      |]
+      withCompose dm . scriptWithConnectorMode $ do
+        unless e_disableReporting $ log'' "react" >>= write
+        write [N.text|
+          $dd
+          $reachEx$dr compile $cargs
+          docker-compose -f "$$TMP/docker-compose.yml" run \
+            --name $appService$$NO_DEPS --service-ports --rm $appService
+        |]
 
-rpcServer' :: Text -> AppT Text
-rpcServer' appService = do
+rpcServer' :: Text -> Bool -> AppT Text
+rpcServer' appService nolog = do
   Var {..} <- asks e_var
-  dd <- devnetDeps
+  dd <- devnetDeps nolog
+  let dr = recursiveDisableReporting nolog
   pure [N.text|
-    $reachEx compile
-    docker-compose -f "$$TMP/docker-compose.yml" run --name $appService $dd --service-ports --rm $appService
+    $dd
+    $reachEx$dr compile
+    docker-compose -f "$$TMP/docker-compose.yml" run \
+      --name $appService$$NO_DEPS --service-ports --rm $appService
   |]
 
 rpcServer :: Subcommand
@@ -1089,14 +1124,16 @@ rpcServer = command "rpc-server" $ info f d where
   d = progDesc "Run a simple Reach RPC server"
   f = go <$> switchUseExistingDevnet
   go ued = do
-    env <- ask
+    env@Env {..} <- ask
     prj <- projectPwdIndex
     let dm@DockerMeta {..} = mkDockerMetaProj env prj RPC
     dieConnectorModeBrowser
     warnDefRPCKey
     warnScaffoldDefRPCTLSPair prj
     warnDeprecatedFlagUseExistingDevnet ued
-    withCompose dm . scriptWithConnectorMode $ rpcServer' appService >>= write
+    withCompose dm . scriptWithConnectorMode $ do
+      unless e_disableReporting $ log'' "rpc_server" >>= write
+      rpcServer' appService e_disableReporting >>= write
 
 rpcServerAwait' :: Int -> AppT Text
 rpcServerAwait' t = do
@@ -1146,47 +1183,50 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse 
   f = go <$> strArgument (metavar "EXECUTABLE")
          <*> manyArgs "EXECUTABLE"
   go exe args = do
-    env <- ask
+    env@Env {..} <- ask
     prj <- projectPwdIndex
     rsa <- rpcServerAwait' 30
     let dm@DockerMeta {..} = mkDockerMetaProj env prj RPC
-    runServer <- rpcServer' appService
+    runServer <- rpcServer' appService e_disableReporting
     let args' = intercalate " " args
     dieConnectorModeBrowser
     warnDefRPCKey
     warnScaffoldDefRPCTLSPair prj
     -- TODO detect if process is already listening on $REACH_RPC_PORT
     -- `lsof -i` cannot necessarily be used without `sudo`
-    withCompose dm . scriptWithConnectorMode $ write [N.text|
-      [ "x$$REACH_RPC_TLS_REJECT_UNVERIFIED" = "x" ] && REACH_RPC_TLS_REJECT_UNVERIFIED=0
-      export REACH_RPC_TLS_REJECT_UNVERIFIED
+    withCompose dm . scriptWithConnectorMode $ do
+      unless e_disableReporting $ log'' "rpc_run" >>= write
+      write [N.text|
+        [ "x$$REACH_RPC_TLS_REJECT_UNVERIFIED" = "x" ] && REACH_RPC_TLS_REJECT_UNVERIFIED=0
+        export REACH_RPC_TLS_REJECT_UNVERIFIED
 
-      $runServer &
-      spid="$!" # We'll SIGTERM `reach rpc-server` and all its child processes below
+        $runServer &
+        spid="$!" # We'll SIGTERM `reach rpc-server` and all its child processes below
 
-      $rsa
+        $rsa
 
-      killbg () {
-        echo
-        pkill -TERM -P "$$spid"
-      }
+        killbg () {
+          echo
+          pkill -TERM -P "$$spid"
+        }
 
-      [ ! "$$s" -eq 200 ] \
-        && killbg \
-        && echo "RPC server returned HTTP $$s after $$i seconds." \
-        && exit 1
+        [ ! "$$s" -eq 200 ] \
+          && killbg \
+          && echo "RPC server returned HTTP $$s after $$i seconds." \
+          && exit 1
 
-      sh -c "$exe $args'"; killbg
-    |]
+        sh -c "$exe $args'"; killbg
+      |]
 
 devnet :: Subcommand
 devnet = command "devnet" $ info f d where
   d = progDesc "Run only the devnet"
   f = go <$> switch (long "await-background" <> help "Run in background and await availability")
   go abg = do
+    Env {..} <- ask
     ConnectorMode c m <- dieConnectorModeNotSpecified
     dieConnectorModeBrowser
-    dd <- devnetDeps
+    dd <- devnetDeps e_disableReporting
     let c' = packs c
     let s = devnetFor c
     let n = "reach-" <> s
@@ -1196,7 +1236,8 @@ devnet = command "devnet" $ info f d where
       $ die "`reach devnet` may only be used when `REACH_CONNECTOR_MODE` ends with \"-devnet\"."
     withCompose mkDockerMetaStandaloneDevnet . scriptWithConnectorMode $ do
       write [N.text|
-        docker-compose -f "$$TMP/docker-compose.yml" run --name $n $dd --service-ports --rm $s$a
+        $dd
+        docker-compose -f "$$TMP/docker-compose.yml" run --name $n$$NO_DEPS --service-ports --rm $s$a
       |]
       when abg $ write [N.text|
         printf 'Bringing up devnet...'
@@ -1220,12 +1261,18 @@ update :: Subcommand
 update = command "update" $ info (pure f) d where
   d = progDesc "Update Reach Docker images"
   f = do
-    v <- asks (version'' . e_var)
-    let ts = [ "latest", versionMaj v, versionMajMin v, versionMajMinPat v ]
+    ReachVersion {..} <- asks (version'' . e_var)
+    let ts = case rv of
+              RVWithMaj v -> [ "latest", maj v, majMin v, majMinPat v ]
+              RVHash v -> [ v ]
+              RVDate v -> [ packs v ]
     let ps = either (\i -> [ "docker pull " <> i ])
                    $ \i -> [ "docker pull reachsh/" <> i <> ":" <> t | t <- ts ]
     let w = write . intercalate "\n" . ps
     scriptWithConnectorModeOptional $ do
+      case rv of -- Always pull `reach-cli:latest` regardless of `REACH_VERSION`
+        RVWithMaj _ -> pure ()
+        _ -> write [N.text| docker pull reachsh/reach-cli:latest |]
       mapM_ w imagesCommon
       connectorMode <$> asks e_var >>= \case
         Nothing -> mapM_ w imagesForAllConnectors
@@ -1292,11 +1339,11 @@ hashes :: Subcommand
 hashes = command "hashes" $ info f d where
   d = progDesc "Display git hashes used to build each Docker image"
   f = pure $ do
-    v <- versionMajMinPat . version'' <$> asks e_var
+    v <- versionBy majMinPat . version'' <$> asks e_var
     let is = rights $ imagesCommon <> imagesForAllConnectors
     script . forM_ is $ \i -> write [N.text|
       if [ ! "$(docker image ls -q "reachsh/$i:$v")" = '' ]; then
-        echo "$i:" "$(docker run --rm --entrypoint /bin/sh "reachsh/$i:$v" -c 'echo $$REACH_GIT_HASH')"
+        echo "$i:" "$(docker image inspect -f '{{json .Config.Env}}' reachsh/${i}:latest | sed -E 's/^.*REACH_GIT_HASH=([^"]+).*$/\1/')"
       fi
     |]
 
@@ -1312,20 +1359,8 @@ config = command "config" $ info f d where
     efc <- envFileContainer
     efh <- envFileHost
     dcc <- asks e_dirConfigContainer
+    dch <- asks e_dirConfigHost
     now <- pack . formatShow iso8601Format <$> liftIO getCurrentTime
-
-    let nope i = putStrLn $ show i <> " is not a valid selection."
-    let snet n = case connectorMode of
-          Nothing -> False
-          Just (ConnectorMode c _) -> c == n
-
-    let mkGetY n y p = do
-          putStr $ p <> " (Type 'y' if so): "
-          hFlush stdout >> getLine >>= \case
-            z | L.upper z /= "Y" -> n
-            _ -> y
-    let getY = mkGetY (exitWith ExitSuccess) (pure ())
-    let getY' = mkGetY (pure False) (pure True)
 
     envExists <- (liftIO $ doesFileExist efc) >>= \case
       True -> liftIO $ do
@@ -1333,11 +1368,11 @@ config = command "config" $ info f d where
         getY' "Would you like to back it up before creating a new one?" >>= \case
           False -> putStrLn "Skipped backup - use ctrl+c to abort overwriting!"
           True -> do
-            let b = dcc </> "_backup"
+            let b = (</> "_backup")
             let n = "env-" <> unpack now
-            createDirectoryIfMissing True b
-            copyFile efc (b </> n)
-            putStrLn $ "Backed up " <> efh <> " to " <> b </> n <> "."
+            createDirectoryIfMissing True (b dcc)
+            copyFile efc (b dcc </> n)
+            putStrLn $ "Backed up " <> efh <> " to " <> b dch </> n <> "."
         pure True
 
       False -> liftIO $ do
@@ -1346,17 +1381,7 @@ config = command "config" $ info f d where
         pure False
 
     dnet <- liftIO $ do
-      let promptNetSet = do
-            putStrLn "\nWould you like to set a default network?"
-            forM_ nets $ \case
-              (_, Nothing) -> putStrLn $ "  " <> lpad 0 <> ": No preference - I want them all!"
-              (i, Just n) -> putStrLn $ "  " <> lpad i <> ": " <> show n
-                <> if snet n then " (Currently selected with `REACH_CONNECTOR_MODE`)" else ""
-            putStr " Select from the numbers above: "
-            hFlush stdout
-      let netSet = getLine >>= \n -> maybe (nope n >> promptNetSet >> netSet) pure
-            $ L.find ((==) n . show . fst) nets
-      (_, net) <- promptNetSet >> netSet
+      (_, net) <- promptNetSet connectorMode >> netSet connectorMode
       pure $ maybe "" packs net
 
     let e = [N.text|
@@ -1437,6 +1462,42 @@ config = command "config" $ info f d where
           touch "$$P"
         |]
         sourceMe
+   where
+    nope i = putStrLn $ show i <> " is not a valid selection."
+    snet c = \case
+      Nothing -> False
+      Just cm -> cm == ConnectorMode c Devnet
+
+    mkGetY n y m p = do
+      putStr $ p <> m
+      hFlush stdout >> getLine >>= \case
+        z | L.upper z /= "Y" -> n
+        _ -> y
+    getY = mkGetY (exitWith ExitSuccess) (pure ()) " (Type 'y' if so): "
+    getY' = mkGetY (pure False) (pure True) " (Type 'y' if so): "
+
+    promptNetSet cm = do
+      putStrLn "\nWould you like to set a default connector?"
+      forM_ nets $ \case
+        (_, Nothing) -> putStrLn $ "  " <> lpad 0 <> ": No preference - I want them all!"
+        (i, Just n) -> putStrLn $ "  " <> lpad i <> ": " <> show n
+          <> if snet n cm then " (Currently selected with `REACH_CONNECTOR_MODE`)" else ""
+      putStr " Select from the numbers above: "
+      hFlush stdout
+
+    netSet cm = getLine >>= \n -> maybe (nope n >> promptNetSet cm >> netSet cm) (confirmNodef cm)
+      $ L.find ((==) n . show . fst) nets
+
+    confirmNodef cm = \case
+      n@(0, _) -> do
+        T.putStrLn $ intercalate "\n"
+          [ "\nDeclining to set a default connector means you'll need to explicitly supply"
+          , "`REACH_CONNECTOR_MODE` at the command-line or in your scripts. See:"
+          , "\nhttps://docs.reach.sh/ref-usage.html#%28env._.R.E.A.C.H_.C.O.N.N.E.C.T.O.R_.M.O.D.E%29"
+          , "\nIf this isn't what you want you may re-run `reach config` at any time to select one."
+          ]
+        mkGetY (promptNetSet cm >> netSet cm) (pure n) " (Type 'y'): " "Continue anyway?"
+      n -> pure n
 
 whoami' :: Text
 whoami' = "docker info --format '{{.ID}}' 2>/dev/null"
@@ -1444,6 +1505,22 @@ whoami' = "docker info --format '{{.ID}}' 2>/dev/null"
 whoami :: Subcommand
 whoami = command "whoami" $ info f fullDesc where
   f = pure . script $ write whoami'
+
+log' :: Subcommand
+log' = command "log" $ info f fullDesc where
+  f = g <$> strOption (long "user-id")
+        <*> strOption (long "initiator")
+  g w i = liftIO $ startReport (Just w) i >>= \r -> r $ Right ()
+
+log'' :: Text -> AppT Text
+log'' i = do
+  Var {..} <- asks e_var
+  case ci of
+    True -> pure [N.text| # Skip logging $i on CI |]
+    False -> pure [N.text|
+      log_$i () { $reachEx log --user-id=$$($whoami') --initiator=$i >/dev/null 2>&1; }
+      log_$i &
+    |]
 
 failNonAbsPaths :: Env -> IO ()
 failNonAbsPaths Env {..} =
@@ -1493,6 +1570,7 @@ main = do
         <> rpcServerDown
         <> unscaffold
         <> whoami
+        <> log'
   let cli = Cli
         <$> env
         <*> (hsubparser cs <|> hsubparser hs <**> helper)

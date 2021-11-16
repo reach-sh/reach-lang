@@ -82,42 +82,51 @@ function prepForConfluxPortal(txnOrig: any): any {
 }
 
 const addEstimates = async (cfx:any, txn:any): Promise<any> => {
-  debug(`addEstimates`, txn);
-  const f = (xf:string) => {
+  debug(`addEstimates 1: start:`, txn);
+  type stringy = {toString: () => string} | undefined;
+  type Num = BigInt;
+  const numy = (n: stringy): Num => BigInt(n?.toString() || '0');
+  const f = (xf:string): Num => {
     const x = txn[xf];
     delete txn[xf];
-    return (x === undefined ? 0 : x);
+    return numy(x);
   };
-  let gas = f("gas");
-  let storage = f("storageLimit");
-  debug(`addEstimates`, { gas, storage });
+  let gas: Num = f("gas");
+  let storage: Num = f("storageLimit");
+  debug(`addEstimates 2:  orig:`, { gas, storage });
 
-  let est = undefined;
+  let est: {gasUsed?: stringy, storageCollateralized?: stringy} | undefined = undefined;
   let est_err = undefined;
   try {
     est = await cfx.estimateGasAndCollateral(txn);
   } catch (e) {
     est_err = e;
   }
-  debug(`addEstimates`, { est, est_err });
+  debug(`addEstimates 3:   est:`, { est, est_err });
   if ( est ) {
     const g = (x:any, y:any) => ((y > x) ? y : x);
-    gas = g(gas, est.gasUsed);
-    storage = g(storage, est.storageCollateralized);
+    gas = g(gas, numy(est?.gasUsed));
+    storage = g(storage, numy(est?.storageCollateralized));
   }
-  debug(`addEstimates`, { gas, storage });
-  if ( storage === undefined || storage === 0 ) {
-    storage = 2048;
+  debug(`addEstimates 4: eused:`, { gas, storage });
+  if ( storage === undefined || storage === numy(0) ) {
+    storage = numy(2048);
   }
-  debug(`addEstimates`, { gas, storage });
+  debug(`addEstimates 5:  non0:`, { gas, storage });
 
-  const h = (x:any, y:any) => format.big(x).times(y).toFixed(0);
+  const h = (x:any, y:any) => numy(format.big(x).times(y).toFixed(0));
   gas = h(gas, cfx.defaultGasRatio);
   storage = h(storage, cfx.defaultStorageRatio);
-  debug(`addEstimates`, { gas, storage });
+  debug(`addEstimates 6: ratio:`, { gas, storage });
 
-  txn.gas = gas;
-  txn.storageLimit = storage;
+  let gasu: Num | undefined = gas;
+  if ( gas === numy('0') ) {
+    gasu = undefined;
+  }
+  debug(`addEstimates 7:   und:`, { gasu, storage });
+
+  txn.gas = gasu?.toString();
+  txn.storageLimit = storage.toString();
   return txn;
 };
 
@@ -357,7 +366,7 @@ export class BrowserWallet implements IWallet {
   // Call await cp.enable() before this
   constructor(cp: CP, address: string, provider?: providers.Provider) {
     this.cp = cp;
-    this.address = address
+    this.address = address_cfxStandardize(address);
     this.provider = provider; // XXX just use cp?
   }
 
@@ -374,7 +383,6 @@ export class BrowserWallet implements IWallet {
     }
   }
 
-  // XXX canonicalize?
   getAddress(): string { return this.address; }
 
   async sendTransaction(txnOrig: any): Promise<{

@@ -50,7 +50,6 @@ compile env (CompilerOpts {..}) = do
         Nothing -> \_ _ -> return ()
   dirDotReach' <- makeAbsolute co_dirDotReach
   djp <- gatherDeps_top co_source co_installPkgs dirDotReach'
-  -- interOut outn "bundle.js" $ render $ pretty djp
   unless co_installPkgs $ do
     let all_connectors = make_connectors env
     (avail, compileDApp) <- evalBundle all_connectors djp
@@ -60,6 +59,7 @@ compile env (CompilerOpts {..}) = do
       let woutnMay = outnMay woutn
       let showp :: Pretty a => T.Text -> a -> IO ()
           showp l = interOut woutn l . render . pretty
+      -- showp "bundle.js" $ render $ pretty djp
       dl <- compileDApp which
       let DLProg _ (DLOpts {..}) _ _ _ _ _ _ = dl
       let connectors = map (all_connectors M.!) dlo_connectors
@@ -71,6 +71,7 @@ compile env (CompilerOpts {..}) = do
         let vo_out = woutnMay
         let vo_mvcs = doIf connectors dlo_verifyPerConnector
         let vo_timeout = co_verifyTimeout
+        let vo_dir = dirDotReach'
         verify (VerifyOpts {..}) ol >>= maybeDie
         el <- erase_logic ol
         showp "el" el

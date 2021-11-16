@@ -171,6 +171,8 @@ data BEnv = BEnv
   , be_view_setsr :: IORef ViewSet
   , be_inConsensus :: Bool
   , be_counter :: Counter
+  , be_which :: Int
+  , be_api_info :: IORef (M.Map SLPart ApiInfo)
   }
 
 type BApp = ReaderT BEnv IO
@@ -350,6 +352,10 @@ be_m = \case
     case de of
       DLE_Remote {} -> recordOutputVar mdv
       DLE_EmitLog {} -> fg_use de
+      DLE_setApiDetails _ p tys mc -> do
+        which <- asks be_which
+        api_info <- asks be_api_info
+        liftIO $ modifyIORef api_info $ M.insert p $ ApiInfo tys mc which
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
@@ -627,6 +633,7 @@ be_s = \case
           (\e ->
              e
                { be_interval = int_ok
+               , be_which = this_h
                })
           $ do
             fg_use $ int_ok
@@ -669,7 +676,9 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das s) = do
   be_more <- newIORef False
   let be_loop = Nothing
   let be_prev = 0
+  let be_which = 0
   let be_prevs = mempty
+  be_api_info <- newIORef mempty
   let be_interval = default_interval
   be_output_vs <- newIORef mempty
   let be_toks = mempty
@@ -678,6 +687,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das s) = do
   be_view_setsr <- newIORef mempty
   let be_inConsensus = False
   mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
+  api_info <- liftIO $ readIORef be_api_info
   check_view_sets =<< readIORef be_view_setsr
   hs <- readIORef be_handlers
   mkvm <- readIORef be_viewr
@@ -696,7 +706,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das s) = do
       mapM mk_eb dex
   vm <- flip mapWithKeyM mkvm $ \which mk ->
     mkh $ mk <$> ce_readSave which
-  cp <- (CPProg at (dvs, vm) . CHandlers) <$> mapM mkh hs
+  cp <- (CPProg at (dvs, vm) api_info . CHandlers) <$> mapM mkh hs
   -- Step 4: Generate the end-points
   let SLParts {..} = ps
   let mkep ee_who ie = do

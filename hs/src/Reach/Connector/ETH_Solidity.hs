@@ -10,7 +10,6 @@ import Data.Aeson as Aeson
 import Data.Aeson.Encode.Pretty
 import Data.Bifunctor (Bifunctor (first))
 import qualified Data.ByteString.Char8 as B
-import qualified Data.ByteString.Internal as BI
 import qualified Data.ByteString.Lazy.Char8 as LB
 import Data.Foldable
 import qualified Data.HashMap.Strict as HM
@@ -21,9 +20,8 @@ import Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 import Data.String (IsString)
 import qualified Data.Text as T
-import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Lazy.IO as LTIO
-import qualified NeatInterpolation as N
+import Text.Printf
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
@@ -311,25 +309,10 @@ readDepth v = do
   mvars <- readCtxtIO ctxt_depths
   return $ fromMaybe 0 $ M.lookup v mvars
 
-addUint8ArrayToString :: Integer -> App Doc
-addUint8ArrayToString len = do
-  let f = "uint8ArrayToString_" <> show len
-  let ft = T.pack f
-  let lent = T.pack $ show len
-  modifyCtxtIO ctxt_tlfuns $ M.insert f $ DText $ LT.fromStrict $ [N.text|
-    function $ft(uint8[$lent] memory in_arr) internal pure returns (string memory) {
-      bytes memory inter = new bytes($lent);
-      for (uint8 i = 0; i < $lent; i++) {
-          inter[i] = bytes1(in_arr[i]);
-      }
-      return string(inter);
-    }
-    |]
-  return $ pretty f
-
 uint8ArrayToString :: Integer -> Doc -> App Doc
-uint8ArrayToString len a =
-  flip solApply [ a ] <$> addUint8ArrayToString len
+uint8ArrayToString len x = do
+  let xs = solBytesSplit len $ \i _ -> x <> ".elem" <> pretty i
+  return $ solApply "string" [ solApply "bytes.concat" xs ]
 
 class DepthOf a where
   depthOf :: a -> App Int
@@ -357,6 +340,7 @@ instance DepthOf DLLargeArg where
     DLLA_Obj m -> depthOf m
     DLLA_Data _ _ x -> depthOf x
     DLLA_Struct kvs -> depthOf $ map snd kvs
+    DLLA_Bytes {} -> return 1
 
 instance DepthOf DLTokenNew where
   depthOf (DLTokenNew {..}) =
@@ -397,6 +381,7 @@ instance DepthOf DLExpr where
     DLE_GetContract {} -> return 1
     DLE_GetAddress {} -> return 1
     DLE_EmitLog _ _ a -> add1 $ depthOf a
+    DLE_setApiDetails {} -> return 0
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])
@@ -471,9 +456,6 @@ solLit = \case
   DLL_Bool True -> "true"
   DLL_Bool False -> "false"
   DLL_Int at i -> solNum $ checkIntLiteralC at conName' conCons' i
-  DLL_Bytes s -> brackets $ solCommas $ map h $ B.unpack s
-  where
-    h x = solApply "uint8" [pretty $ show $ BI.c2w x]
 
 solArg :: AppT DLArg
 solArg = \case
@@ -484,7 +466,7 @@ solArg = \case
 
 solPrimApply :: PrimOp -> [Doc] -> App Doc
 solPrimApply = \case
-  SELF_ADDRESS -> impossible "self address"
+  SELF_ADDRESS {} -> impossible "self address"
   ADD -> safeOp "unsafeAdd" "+"
   SUB -> safeOp "unsafeSub" "-"
   MUL -> safeOp "unsafeMul" "*"
@@ -512,7 +494,7 @@ solPrimApply = \case
   DIGEST_EQ -> binOp "=="
   ADDRESS_EQ -> binOp "=="
   TOKEN_EQ -> binOp "=="
-  BYTES_CONCAT -> impossible "bytes concat"
+  BYTES_ZPAD {} -> impossible "bytes concat"
   where
     safeOp fun op args = do
       PLOpts {..} <- ctxt_plo <$> ask
@@ -545,6 +527,19 @@ solLargeArg' dv la =
     DLLA_Struct kvs -> c <$> (mapM go kvs)
       where
         go (k, a) = one ("." <> pretty k) <$> solArg a
+    DLLA_Bytes s -> do
+      let chunks :: Int -> B.ByteString -> [B.ByteString]
+          chunks n xs =
+            case B.length xs > n of
+              False -> [xs]
+              True -> ys : chunks n zs
+                where (ys, zs) = B.splitAt n xs
+      let cs = chunks 32 s
+      let g3 :: Char -> String -> String
+          g3 a b = (printf "%02x" a) <> b
+      let g2 x = "hex" <> solString (B.foldr g3 "" x)
+      let go i x = one (".elem" <> pretty i) (g2 x)
+      return $ c $ zipWith go ([0 ..] :: [Int]) cs
   where
     one :: Doc -> Doc -> Doc
     one f v = dv <> f <+> "=" <+> v <> semi
@@ -644,6 +639,7 @@ solExpr sp = \case
   DLE_GetContract {} -> return $ "payable(address(this))"
   DLE_GetAddress {} -> return $ "payable(address(this))"
   DLE_EmitLog {} -> impossible "emitLog"
+  DLE_setApiDetails {} -> impossible "setApiDetails"
   where
     spa m = (<> sp) <$> m
 
@@ -869,8 +865,14 @@ solCom = \case
   DL_Let _ (DLV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv
     solLargeArg dv la
-  DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ BYTES_CONCAT [x, y]) -> do
-    doConcat dv x y
+  DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ (BYTES_ZPAD _) [x]) -> do
+    addMemVar dv
+    dv' <- solVar dv
+    x' <- solArg x
+    let x_sz = arraySize x
+    let go i _ = dv' <> ei <+> "=" <> x' <> ei <> semi
+          where ei = ".elem" <> pretty i
+    return $ vsep $ solBytesSplit x_sz go
   DL_Let _ (DLV_Let _ dv) (DLE_ArrayConcat _ x y) -> do
     doConcat dv x y
   DL_Let _ (DLV_Let _ dv@(DLVar _ _ t _)) (DLE_ArrayZip _ x y) -> do
@@ -911,6 +913,7 @@ solCom = \case
         addMemVar dv
         de' <- solExpr emptyDoc de
         return $ solSet (solMemVar dv) de'
+  DL_Let _ _ (DLE_setApiDetails {}) -> mempty
   DL_Let _ DLV_Eff de -> solExpr semi de
   DL_Var _ dv -> do
     addMemVar dv
@@ -1068,16 +1071,16 @@ solHandler which h = freshVarMap $
       (frameDefn, frameDecl, ctp) <- solCTail_top which solSVSVar svs msg (Just msg) ct
       evtDefn <- solEvent which msg
       let ret = "payable"
-      (hc_reqs, svs_init, c_inits, am, sfl) <-
+      (hc_reqs, svs_init, am, sfl) <-
         case which == 0 of
           True -> do
             let inits = [solSet "creation_time" solBlockTime]
-            return (mempty, mempty, inits, AM_Memory, SFL_Constructor)
+            return (mempty, inits, AM_Memory, SFL_Constructor)
           False -> do
             csv <- solStateCheck prev
             svs_ty' <- solAsnType svs
             let csvs = [solSet (parens $ solDecl "_svs" (mayMemSol svs_ty')) $ solApply "abi.decode" ["current_svbs", parens svs_ty']]
-            return (csv, csvs, mempty, AM_Call, SFL_Function True (solMsg_fun which))
+            return (csv, csvs, AM_Call, SFL_Function True (solMsg_fun which))
       let hc_go lab chk =
             (<> semi) <$> solRequire (checkMsg $ "state " <> lab) chk
       hashCheck <- mapM (uncurry hc_go) hc_reqs
@@ -1099,7 +1102,7 @@ solHandler which h = freshVarMap $
             Just x -> (\y->[y]) <$> checkTime1 op x
       let CBetween ifrom ito = interval
       timeoutCheck <- vsep <$> ((<>) <$> checkTime PGE ifrom <*> checkTime PLT ito)
-      let body = vsep $ hashCheck <> lock <> svs_init <> [ frameDecl, timeoutCheck, ctp] <> c_inits
+      let body = vsep $ hashCheck <> lock <> svs_init <> [ frameDecl, timeoutCheck, ctp]
       let funDefn = solFunctionLike sfl [argDefn] ret body
       return $ vsep [evtDefn, frameDefn, funDefn]
     C_Loop _at svs lcmsg ct -> do
@@ -1115,15 +1118,39 @@ solHandlers :: CHandlers -> App Doc
 solHandlers (CHandlers hs) =
   vsep <$> (mapM (uncurry solHandler) $ M.toList hs)
 
+divup :: Integer -> Integer -> Integer
+divup x y = ceiling $ (fromIntegral x :: Double) / (fromIntegral y)
+
+solBytesSplit :: Integer -> (Integer -> Integer -> a) -> [a]
+solBytesSplit sz f = map go [0 .. lastOne]
+  where
+    maxLen = 32
+    howMany = divup sz maxLen
+    lastOne = howMany - 1
+    szRem = sz `rem` maxLen
+    lastLen =
+      case szRem == 0 of
+        True -> maxLen
+        False -> szRem
+    go i = f i len
+      where
+        len = case i == lastOne of
+                True -> lastLen
+                False -> maxLen
+
 solDefineType :: DLType -> App ()
 solDefineType t = case t of
   T_Null -> base
   T_Bool -> base
   T_UInt -> base
   T_Bytes sz -> do
-    -- NOTE: This wastes a lot of space, but we can't make fixed bytes larger
-    -- than 32
-    addMap $ "uint8[" <> pretty sz <> "]"
+    -- NOTE: Get rid of this stupidity when
+    -- https://github.com/ethereum/solidity/issues/8772
+    let atsn = solBytesSplit sz $ \i n ->
+          ("elem" <> pretty i, "bytes" <> pretty n)
+    (name, i) <- addName
+    let x = fromMaybe (impossible "bytes") $ solStruct name atsn
+    addDef i x
   T_Digest -> base
   T_Address -> base
   T_Contract -> base
@@ -1216,7 +1243,7 @@ solEB args (DLinExportBlock _ mfargs (DLBlock _ _ t r)) = do
   return $ vsep [t', "return" <+> r' <> semi]
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) hs)) = do
+solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) _ai hs)) = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   ctxt_varm <- newIORef mempty
@@ -1381,7 +1408,8 @@ try_compile_sol solf opt = do
             case mo of
               Nothing -> ("oD", o [])
               Just r -> ("o" <> show r, o ["--optimize-runs=" <> show r])
-  let args = oargs <> ["--combined-json", "abi,bin", solf]
+  let fmts = "abi,bin"
+  let args = oargs <> ["--combined-json", fmts, solf]
   -- putStrLn $ "solc " <> (show args)
   (ec, stdout, stderr) <- liftIO $ readProcessWithExitCode "solc" args []
   let show_output =

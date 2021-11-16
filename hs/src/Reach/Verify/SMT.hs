@@ -2,9 +2,11 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Reach.Verify.SMT (verify_smt) where
 
+import Codec.Compression.GZip
 import qualified Control.Exception as Exn
 import Control.Monad
 import Control.Monad.Reader
+import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.ByteString.Char8 as B
 import Data.Digest.CRC32
 import Data.Foldable
@@ -32,6 +34,7 @@ import qualified SimpleSMT as SMT
 import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver(..))
 import System.Directory
 import System.Exit
+import System.FilePath
 import System.IO
 import Reach.Verify.SMTAst
 import Reach.AddCounts (add_counts)
@@ -299,17 +302,16 @@ smtPrimOp at p dargs =
     DIGEST_EQ -> app "="
     ADDRESS_EQ -> app "="
     TOKEN_EQ -> app "="
-    BYTES_CONCAT -> app "bytesAppend"
+    (BYTES_ZPAD xtra) -> \args -> do
+      xtra' <- smt_la at $ bytesZeroLit xtra
+      return $ smtApply "bytesAppend" (args <> [ xtra' ])
     MUL_DIV ->
       \case
         [x, y, den] -> return $ smtApply "div" [ smtApply "*" [ x, y ], den ]
         _ -> impossible "smtPrimOp: MUL_DIV args"
-    SELF_ADDRESS ->
+    SELF_ADDRESS pn isClass _ ->
       case dargs of
-        [ DLA_Literal (DLL_Bytes pn)
-          , DLA_Literal (DLL_Bool isClass)
-          , _
-          ] -> \_ ->
+        [] -> \_ ->
             case isClass of
               False ->
                 return $ Atom $ smtAddress pn
@@ -321,7 +323,7 @@ smtPrimOp at p dargs =
                     ai <- smt_alloc_id
                     let av = "classAddr" <> show ai
                     let dv = DLVar at Nothing T_Address ai
-                    let smlet = SMTLet at dv (DLV_Let DVC_Once dv) Witness (SMTProgram $ DLE_PrimOp at SELF_ADDRESS dargs)
+                    let smlet = SMTLet at dv (DLV_Let DVC_Once dv) Witness (SMTProgram $ DLE_PrimOp at p dargs)
                     smtDeclare_v av T_Address $ Just smlet
                     return $ Atom av
         se -> impossible $ "self address " <> show se
@@ -471,6 +473,12 @@ parseVal env t v = do
               fields <- mapM (\ ((s, vt), mv) -> parseVal env vt mv <&> (s, ) ) $ zip (M.toAscList ts) vs
               return $ SMV_Object $ M.fromList fields
             _ -> impossible $ "parseVal: Object " <> show v
+        T_Struct ts ->
+          case v of
+            List (_:vs) -> do
+              fields <- mapM (\ ((s, vt), mv) -> parseVal env vt mv <&> (s, ) ) $ zip ts vs
+              return $ SMV_Struct $ fields
+            _ -> impossible $ "parseVal: Struct " <> show v
         T_Data ts ->
           case v of
             List [Atom con, vv] -> do
@@ -482,7 +490,6 @@ parseVal env t v = do
                       Nothing -> impossible $ "parseType: Data: Constructor type"
               return $ SMV_Data c [v']
             _ -> impossible $ "parseVal: Data " <> show v
-        _ -> impossible $ "parseVal: " <> show v <> " : " <> show t
       where
         parseArray env' ty = \case
           List [Atom "store", arr, _, el] -> do
@@ -921,8 +928,6 @@ smt_lt _at_de dc =
             , Atom (show i)
             ]
         False -> Atom $ show i
-    DLL_Bytes bs ->
-      smtApply "bytes" [Atom (show $ crc32 bs)]
 
 smt_v :: SrcLoc -> DLVar -> App SExpr
 smt_v _at_de dv = Atom <$> smtVar dv
@@ -951,6 +956,8 @@ smt_la at_de dla = do
       vv' <- smt_a at_de vv
       return $ smtApply (s ++ "_" ++ vn) [vv']
     DLLA_Struct kvs -> cons $ map snd kvs
+    DLLA_Bytes bs -> do
+      return $ smtApply "bytes" [Atom (show $ crc32 bs)]
 
 smt_e :: SrcLoc -> Maybe DLVar -> DLExpr -> App ()
 smt_e at_dv mdv de = do
@@ -961,7 +968,7 @@ smt_e at_dv mdv de = do
     DLE_Impossible {} -> unbound at_dv
     DLE_PrimOp at cp args -> do
       let f = case cp of
-                SELF_ADDRESS -> \ se -> pathAddBound at mdv (Just $ SMTProgram de) se Witness
+                SELF_ADDRESS {} -> \ se -> pathAddBound at mdv (Just $ SMTProgram de) se Witness
                 _ -> bound at
       args' <- mapM (smt_a at) args
       f =<< smtPrimOp at cp args args'
@@ -1052,6 +1059,7 @@ smt_e at_dv mdv de = do
     DLE_GetContract at -> unbound at
     DLE_GetAddress at -> unbound at
     DLE_EmitLog at _ v -> bound at =<< smt_v at v
+    DLE_setApiDetails {} -> mempty
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)
@@ -1604,10 +1612,10 @@ seqPop = \case
   (Seq.:|>) x _ -> x
   _ -> impossible $ "empty seq"
 
-newSolverSet :: Integer -> String -> [String] -> (String -> IO (IO (), Maybe Logger)) -> IO Solver
-newSolverSet long_i p a mkl = do
+newSolverSet :: VerifyOpts -> String -> [String] -> (String -> IO (IO (), Maybe Logger)) -> IO Solver
+newSolverSet (VerifyOpts {..}) p a mkl = do
   let short_a = Atom $ "10"
-  let long_a = Atom $ show $ long_i
+  let long_a = Atom $ show $ vo_timeout
   let t_bin o x y = List [ Atom o, x, y ]
   let t_timeout = t_bin "try-for"
   let our_tactic = t_timeout (Atom "default")
@@ -1624,7 +1632,7 @@ newSolverSet long_i p a mkl = do
   let c = \case
         List [ Atom "reachCheckUsing", iptks ] -> do
           let iptk :: Bool = fromSExpr iptks
-          let after ac rs = do
+          let after_ ac rs = do
                 let r =
                       case rs of
                         Atom "sat" -> Sat
@@ -1637,17 +1645,35 @@ newSolverSet long_i p a mkl = do
                     -- (True, Unsat) -> f RD_UnsatCore "get-unsat-core"
                     (False, Sat) -> f RD_Model "get-model"
                     _ -> return Nothing
-                return $ toSExpr (r, mrd)
+                return $ show (r, mrd)
+          let after ac rs = Atom <$> after_ ac rs
           tc (reachCheckUsing short_a) >>= \case
             Atom "unknown" -> do
               sn <- incCounter subc
-              (slc, sl) <- mkl $ show sn
-              Solver sc se <- SMT.newSolver p a sl
-              readIORef rib >>= traverse_ (traverse_ sc)
-              r <- sc (reachCheckUsing long_a)
-              x <- after sc r
-              void $ doClose slc se
-              return x
+              ss <- readIORef rib
+              let doSS f = do
+                    traverse_ (traverse_ f) ss
+                    f (reachCheckUsing long_a)
+              hr <- newIORef $ crc32 (""::B.ByteString)
+              doSS $ \s -> do
+                modifyIORef hr $ flip crc32Update (bpack $ show s)
+              h <- readIORef hr
+              let cdir = vo_dir </> "smt-cache"
+              let cfile = cdir </> show h
+              let after__ = return . Atom
+              let w f = BL.unpack . f . BL.pack
+              doesFileExist cfile >>= \case
+                True -> do
+                  (w decompress <$> readFile cfile) >>= after__
+                False -> do
+                  (slc, sl) <- mkl $ show sn
+                  Solver sc se <- SMT.newSolver p a sl
+                  r <- doSS sc
+                  x <- after_ sc r
+                  void $ doClose slc se
+                  createDirectoryIfMissing True cdir
+                  writeFile cfile $ (w compress) x
+                  after__ x
             r -> after tc r
         s@(List [ Atom "push", Atom "1" ]) -> do
           modifyIORef rib $ seqPush mempty
@@ -1663,7 +1689,7 @@ newSolverSet long_i p a mkl = do
 
 verify_smt :: VerifySt -> LLProg -> String -> [String] -> IO ExitCode
 verify_smt vst lp prog args = do
-  let VerifyOpts {..} = vst_vo vst
+  let vo@VerifyOpts {..} = vst_vo vst
   let logpMay = ($ "smt") <$> vo_out
   ulp <- unrollLoops lp
   case logpMay of
@@ -1674,7 +1700,7 @@ verify_smt vst lp prog args = do
           (close, logpl) <- newFileLogger logp
           return (close, Just logpl)
         Nothing -> return (return (), Nothing)
-  smt <- newSolverSet vo_timeout prog args mkLogger
+  smt <- newSolverSet vo prog args mkLogger
   --unlessM (SMT.produceUnsatCores smt) $
   --  impossible "Prover doesn't support possible?"
   SMT.loadString smt smtStdLib

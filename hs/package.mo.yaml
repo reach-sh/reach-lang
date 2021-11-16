@@ -78,6 +78,7 @@ dependencies:
 - neat-interpolation
 - pretty-terminal
 - generic-data
+- zlib
 
 default-extensions:
 - BangPatterns

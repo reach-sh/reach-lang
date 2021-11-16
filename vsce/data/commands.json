@@ -1,0 +1,159 @@
+[
+	{
+		"command": "reach.clean",
+		"category": "Reach IDE",
+		"title": "Clean Reach build files",
+		"label": "clean",
+		"commandsTreeDataProvider": true
+	},
+	{
+		"command": "reach.compile",
+		"category": "Reach IDE",
+		"title": "Compile Reach program",
+		"label": "compile",
+		"touchBar": true,
+		"editor/context": true,
+		"activationEvents": "onCommand:reach.compile",
+		"commandsTreeDataProvider": true
+	},
+	{
+		"command": "reach.devnet",
+		"category": "Reach IDE",
+		"title": "Reach devnet",
+		"label": "devnet",
+		"commandsTreeDataProvider": true
+	},
+	{
+		"command": "reach.discord",
+		"category": "Reach IDE",
+		"title": "Chat on Discord",
+		"label": "discord",
+		"url": "https://discord.gg/2XzY6MVpFH",
+		"helpTreeDataProvider": true
+	},
+	{
+		"command": "reach.docker-reset",
+		"category": "Reach IDE",
+		"title": "Reach docker reset",
+		"label": "docker-reset",
+		"commandsTreeDataProvider": true
+	},
+	{
+		"command": "reach.down",
+		"category": "Reach IDE",
+		"title": "Reach down",
+		"label": "down",
+		"commandsTreeDataProvider": true
+	},
+	{
+		"command": "reach.hashes",
+		"category": "Reach IDE",
+		"title": "Reach Hashes",
+		"label": "hashes",
+		"commandsTreeDataProvider": true
+	},
+	{
+		"command": "reach.docs",
+		"category": "Reach IDE",
+		"title": "Open Reach Documentation",
+		"label": "docs",
+		"icon": {
+			"light": "./images/reach-logo.png",
+			"dark": "./images/reach-logo.png"
+		},
+		"when": "resourceExtname == .rsh",
+		"group": "navigation",
+		"touchBar": true,
+		"editor/context": true,
+		"activationEvents": "onCommand:reach.docs",
+		"url": "https://docs.reach.sh/doc-index.html",
+		"documentationTreeDataProvider": true
+	},
+	{
+		"command": "reach.gist",
+		"category": "Reach IDE",
+		"title": "Create a Gist to share",
+		"label": "gist",
+		"url": "https://gist.github.com/",
+		"helpTreeDataProvider": true
+	},
+	{
+		"command": "reach.init",
+		"category": "Reach IDE",
+		"title": "Reach Init",
+		"label": "init",
+		"commandsTreeDataProvider": true
+	},
+	{
+		"command": "reach.issue",
+		"category": "Reach IDE",
+		"title": "Open an issue on GitHub",
+		"label": "issue",
+		"url": "https://github.com/reach-sh/reach-lang/issues/new",
+		"helpTreeDataProvider": true
+	},
+	{
+		"command": "reach.react",
+		"category": "Reach IDE",
+		"title": "Run Reach React",
+		"label": "react",
+		"commandsTreeDataProvider": true
+	},
+	{
+		"command": "reach.rpc-run",
+		"category": "Reach IDE",
+		"title": "Reach RPC-Run",
+		"label": "rpc-run",
+		"commandsTreeDataProvider": true
+	},
+	{
+		"command": "reach.rpc-server",
+		"category": "Reach IDE",
+		"title": "Reach RPC-Server",
+		"label": "rpc-server",
+		"commandsTreeDataProvider": true
+	},
+	{
+		"command": "reach.run",
+		"category": "Reach IDE",
+		"title": "Run Reach program",
+		"label": "run",
+		"touchBar": true,
+		"editor/context": true,
+		"activationEvents": "onCommand:reach.run",
+		"commandsTreeDataProvider": true
+	},
+	{
+		"command": "reach.scaffold",
+		"category": "Reach IDE",
+		"title": "Run Reach scaffold",
+		"label": "scaffold",
+		"commandsTreeDataProvider": true
+	},
+	{
+		"command": "reach.update",
+		"category": "Reach IDE",
+		"title": "Update Reach Docker images",
+		"label": "update",
+		"touchBar": true,
+		"editor/context": true,
+		"commandsTreeDataProvider": true
+	},
+	{
+		"command": "reach.upgrade",
+		"category": "Reach IDE",
+		"title": "Upgrade Reach",
+		"label": "upgrade",
+		"touchBar": true,
+		"editor/context": true,
+		"activationEvents": "onCommand:reach.upgrade",
+		"commandsTreeDataProvider": true
+	},
+	{
+		"command": "reach.version",
+		"category": "Reach IDE",
+		"title": "Reach Version",
+		"label": "version",
+		"commandsTreeDataProvider": true
+	}
+]

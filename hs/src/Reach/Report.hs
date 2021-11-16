@@ -16,8 +16,8 @@ import Reach.Version
 --- TODO maybe have each part collect some information and report it back through a (Map String String)
 type Report = Either SomeException ()
 
-startReport :: Maybe String -> IO (Report -> IO ())
-startReport mwho = do
+startReport :: Maybe String -> String -> IO (Report -> IO ())
+startReport mwho i = do
   startTime <- getCurrentTime
   cm <- lookupEnv "REACH_CONNECTOR_MODE" >>= maybe (pure "") pure
   req <- parseRequest $ "https://log.reach.sh/submit"
@@ -37,6 +37,7 @@ startReport mwho = do
             , "elapsed" .= diffUTCTime endTime startTime
             , "result" .= show what
             , "connectorMode" .= cm
+            , "initiator" .= i
             ]
     m <- send (setRequestBodyJSON rep $ setRequestMethod "POST" req)
     let block = waitCatch m

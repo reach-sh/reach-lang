@@ -1,5 +1,8 @@
 # These are allowed to fail and we still release
 
 # FIXME
-CFX.mint-basic
 CFX.view-steps
+
+# FIXME - known & released as of 0.1.6-rc.5 (2021-11-08)
+CFX.remote-view
+CFX.transfer-from-zero

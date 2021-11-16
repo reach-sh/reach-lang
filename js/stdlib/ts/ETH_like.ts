@@ -6,7 +6,7 @@ import {
 import {
   replaceableThunk,
   debug,
-  stdContract,
+  stdContract, stdVerifyContract,
   stdAccount,
   makeRandom,
   argsSplit,
@@ -32,7 +32,7 @@ import type { // =>
   IBackendViewInfo,
   IBackendViewsInfo,
   IContract,
-  ISetupArgs, ISetupRes,
+  ISetupArgs, ISetupRes, ISetupViewArgs,
   IRecvArgs, ISendRecvArgs,
   IRecv,
   TimeArg,
@@ -94,7 +94,11 @@ type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Address, Token, AnyETH_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
   | any /* union in this field: { setGasLimit: (ngl:any) => void } */;
-type SetupArgs = ISetupArgs<ContractInfo>;
+type VerifyResult = {
+  creation_block: number,
+};
+type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
+type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
 type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyETH_Ty>;
 
 type AccountTransferable = Account | {
@@ -287,9 +291,13 @@ class EventCache {
     }
     debug(dhead, lab, `not in cache`);
 
-    // If no results, then contact network
     const failed = (): {succ: false, block: number} => ({ succ: false, block: this.currentBlock });
+    if ( this.cache.length != 0 ) {
+      debug(`cache not empty, contains some other message from future, not querying...`, this.cache);
+      return failed();
+    }
 
+    // If no results, then contact network
     debug(dhead, lab, `querying`);
 
     const leftOver = this.lastQueryTime + 1000 - Date.now();
@@ -482,12 +490,16 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   ): Contract => {
     ensureConnectorAvailable(bin, 'ETH', reachBackendVersion, reachEthBackendVersion);
 
-    const makeGetC = (getInfo:(() => Promise<ContractInfo>), eventCache: EventCache, informCreationBlock: ((cb:number) => void), getTrustedVerifyResult: (() => VerifyResult|undefined)) => {
+    const makeGetC = (setupViewArgs:SetupViewArgs, eventCache: EventCache, informCreationBlock: ((cb:number) => void)) => {
+      const { getInfo } = setupViewArgs;
       let _ethersC: EthersLikeContract | null = null;
       return async (): Promise<EthersLikeContract> => {
         if (_ethersC) { return _ethersC; }
         const info = await getInfo();
-        const { creation_block } = getTrustedVerifyResult() || await verifyContract_(info, bin, eventCache, label);
+        const { creation_block } =
+          await stdVerifyContract( setupViewArgs, (async () => {
+            return await verifyContract_(info, bin, eventCache, label);
+          }));
         informCreationBlock(creation_block);
         const address = info;
         debug(label, `contract verified`);
@@ -497,7 +509,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     };
 
     const _setup = (setupArgs: SetupArgs): SetupRes => {
-      const { setInfo, getInfo } = setupArgs;
+      const { setInfo, getInfo, setTrustedVerifyResult } = setupArgs;
 
       const eventCache = new EventCache();
 
@@ -526,8 +538,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         setLastBlock(o.blockNumber);
       };
 
-      let trustedVerifyResult: VerifyResult|undefined = undefined;
-      const getC = makeGetC(getInfo, eventCache, setLastBlock, (() => trustedVerifyResult));
+      const getC = makeGetC(setupArgs, eventCache, setLastBlock);
 
       const callC = async (
         dhead: any, funcName: string, arg: any, pay: PayAmt,
@@ -632,7 +643,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           debug(label, `deploying factory; done:`, info);
           const creation_block = deploy_r.blockNumber;
           debug(label, `got receipt;`, creation_block);
-          trustedVerifyResult = { creation_block };
+          setTrustedVerifyResult({ creation_block });
           setInfo(info);
           return await trustedRecv(deploy_r);
         }
@@ -643,7 +654,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
         while ( true ) {
           debug(dhead, 'TIMECHECK', { timeoutAt });
-          if ( await checkTimeout(getTimeSecs, timeoutAt, await getNetworkTimeNumber() + 1) ) {
+          if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, await getNetworkTimeNumber() + 1) ) {
             debug(dhead, 'FAIL/TIMEOUT');
             return await doRecv(false, false);
           }
@@ -657,10 +668,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             ok_r = await callC(dhead, funcName, arg, pay);
           } catch (e:any) {
             debug(...dhead, `ERROR`, { stack: e.stack }, e);
-            ok_r = undefined;
-          }
-
-          if ( ! ok_r ) {
             if ( ! soloSend ) {
               debug(...dhead, `LOST`);
               return await doRecv(false, false);
@@ -672,7 +679,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               continue;
             } else {
               // Otherwise, something bad is happening
-              throw Error(`${dhead} --- ABORT`);
+              throw Error(`${label} failed to call ${funcName}: ${e}`);
             }
           }
 
@@ -757,7 +764,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           if ( ! res.succ ) {
             const currentTime = res.block;
             debug(dhead, 'TIMECHECK', {timeoutAt, currentTime});
-            if ( await checkTimeout(getTimeSecs, timeoutAt, currentTime + 1) ) {
+            if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, currentTime + 1) ) {
               debug(dhead, 'TIMEOUT');
               return { didTimeout: true };
             }
@@ -788,9 +795,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return { getContractAddress, sendrecv, recv, getState };
     };
 
-    const setupView = (getInfo:(() => Promise<ContractInfo>)) => {
+    const setupView = (setupViewArgs: SetupViewArgs) => {
       const eventCache = new EventCache();
-      const getC = makeGetC(getInfo, eventCache, ((cb) => { void(cb); }), (() => undefined));
+      const getC = makeGetC(setupViewArgs, eventCache, ((cb) => { void(cb); }));
       const viewLib: IViewLib = {
         viewMapRef: async (...args: any): Promise<any> => {
           void(args);
@@ -908,15 +915,17 @@ const newTestAccount = async (startingBalance: any): Promise<Account> => {
   const acc = await createAccount();
   const to = await getAddr(acc);
 
-  try {
-    debug('newTestAccount awaiting transfer:', to);
-    await fundFromFaucet(acc, startingBalance);
-    debug('newTestAccount got transfer:', to);
-    return acc;
-  } catch (e) {
-    console.log(`newTestAccount: Trouble with account ${to}`);
-    throw e;
+  if (bigNumberify(0).lt(startingBalance)) {
+    try {
+      debug('newTestAccount awaiting transfer:', to);
+      await fundFromFaucet(acc, startingBalance);
+      debug('newTestAccount got transfer:', to);
+    } catch (e) {
+      console.log(`newTestAccount: Trouble with account ${to}`);
+      throw e;
+    }
   }
+  return acc;
 };
 const newTestAccounts = make_newTestAccounts(newTestAccount);
 
@@ -960,9 +969,6 @@ const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumbe
 // Check the contract info and the associated deployed bytecode;
 // Verify that:
 // * it matches the bytecode you are expecting.
-type VerifyResult = {
-  creation_block: number,
-};
 const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<VerifyResult> => {
   return await verifyContract_(ctcInfo, backend, new EventCache(), 'stdlib');
 }
@@ -985,13 +991,13 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
   // for querying the contract.
   let creation_block = 0;
   try {
-    const tmpAccount: Account = await newTestAccount(0);
+    const tmpAccount: Account = await createAccount();
     const ctc = new ethers.Contract(address, ABI, tmpAccount.networkAccount);
     const creation_time_raw = await ctc["_reachCreationTime"]();
     const creation_time = T_UInt.unmunge(creation_time_raw);
     creation_block = bigNumberify(creation_time).toNumber();
   } catch (e) {
-    chk(false, `The contract is not a Reach contract: ${e}`);
+    chk(false, `Failed to call the '_reachCreationTime' method on the contract ${address} during contract bytecode verification. This could mean that there is a general network fault, or it could mean that the given address is not a Reach contract and does not provide this function. The internal error we caught is: ${e}`);
   }
 
   const chkeq = (a: any, e:any, msg:string) => {

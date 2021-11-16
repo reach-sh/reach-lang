@@ -11,17 +11,17 @@ Verification failed:
 
   const UInt.max = 35424;
 
-  const v184 = protect<Object({"amt": UInt, "doEarlyTransfer": Bool, "metadata": Bytes(32), "name": Bytes(32), "supply": UInt, "symbol": Bytes(8), "url": Bytes(96)})>("Alice".interact.getParams());
+  const v186 = protect<Object({"amt": UInt, "doEarlyTransfer": Bool, "metadata": Bytes(32), "name": Bytes(32), "supply": UInt, "symbol": Bytes(8), "url": Bytes(96)})>("Alice".interact.getParams());
   //    ^ could = {amt: 8856, doEarlyTransfer: false, metadata: "Bytes!val!0", name: "Bytes!val!1", supply: 35424, symbol: "Bytes!val!2", url: "Bytes!val!3" }
   //      from: ./mint-fail2.rsh:24:104:application
 
   // Theorem Formalization
 
-  const v226 = 2 * v184.amt;
+  const v228 = 2 * v186.amt;
   //    ^ would be 17712
-  const v305 = 0 == (UInt.max - ((UInt.max - v226) - v226));
+  const v309 = 0 == (UInt.max - ((UInt.max - v228) - v228));
   //    ^ would be false
-  assert(v305);
+  assert(v309);
 
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest

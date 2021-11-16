@@ -126,13 +126,38 @@ function unBigInt<T>(x: T): number[]|T {
   }
 }
 
-const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, Array<number>> => {
+function splitToChunks<T>(arr: T[], chunkSize: number): T[][] {
+  const cs: T[][] = [];
+  for (let i = 0; i < Math.ceil(arr.length / chunkSize); i++) {
+    cs.push(arr.slice(i * chunkSize, (i + 1) * chunkSize));
+  }
+  return cs;
+};
+
+type ETH_Bytes = Array<Array<number>>;
+const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, ETH_Bytes> => {
   const me = {
     ...CBR.BT_Bytes(len),
     defaultValue: ''.padEnd(len, '\0'),
-    munge: (bv: CBR_Bytes): Array<number> => Array.from(ethers.utils.toUtf8Bytes(bv)),
-    unmunge: (nv: Array<number>) => me.canonicalize(hexToString(ethers.utils.hexlify(unBigInt(nv)))),
-    paramType: `uint8[${len}]`,
+    munge: ((bv: CBR_Bytes): ETH_Bytes => {
+      return splitToChunks(Array.from(ethers.utils.toUtf8Bytes(bv)), 32);
+    }),
+    unmunge: ((nvs: ETH_Bytes): CBR_Bytes => {
+      const nvs_s = nvs.map((nv:any): any => hexToString(ethers.utils.hexlify(unBigInt(nv))));
+      const nvss = "".concat(...nvs_s);
+      // debug(me.name, nvs, nvss);
+      return me.canonicalize(nvss);
+    }),
+    paramType: (() => {
+      let n = len;
+      const fs = [];
+      while ( 0 < n ) {
+        const ell = Math.min(32, n);
+        fs.push(`bytes${ell}`);
+        n = n - ell;
+      }
+      return `tuple(${fs.join(',')})`;
+    })(),
   };
   return me;
 };

@@ -241,7 +241,6 @@ instance Equiv DLLiteral where
     (DLL_Null, DLL_Null) -> True
     (DLL_Bool b1, DLL_Bool b2) -> equiv b1 b2
     (DLL_Int _ x, DLL_Int _ y) -> equiv x y
-    (DLL_Bytes b1, DLL_Bytes b2) -> equiv b1 b2
     _ -> False
 
 instance Equiv SLTypeFun where
@@ -546,6 +545,7 @@ data SLForm
   | SLForm_apiCall
   | SLForm_apiCall_partial ApiCallRec
   | SLForm_wait
+  | SLForm_setApiDetails
   deriving (Eq, Generic)
 
 data SLKwd
@@ -601,7 +601,7 @@ allKeywords :: [SLKwd]
 allKeywords = enumFrom minBound
 
 primOpType :: PrimOp -> ([DLType], DLType)
-primOpType SELF_ADDRESS = impossible "self address"
+primOpType (SELF_ADDRESS {}) = impossible "self address"
 primOpType ADD = ([T_UInt, T_UInt], T_UInt)
 primOpType SUB = ([T_UInt, T_UInt], T_UInt)
 primOpType MUL = ([T_UInt, T_UInt], T_UInt)
@@ -612,7 +612,7 @@ primOpType PLE = ([T_UInt, T_UInt], T_Bool)
 primOpType PEQ = impossible "peq type"
 primOpType PGE = ([T_UInt, T_UInt], T_Bool)
 primOpType PGT = ([T_UInt, T_UInt], T_Bool)
-primOpType BYTES_CONCAT = impossible "pad type"
+primOpType (BYTES_ZPAD _) = impossible "pad type"
 primOpType IF_THEN_ELSE = impossible "ite type"
 primOpType DIGEST_EQ = ([T_Digest, T_Digest], T_Bool)
 primOpType ADDRESS_EQ = ([T_Address, T_Address], T_Bool)

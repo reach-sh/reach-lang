@@ -226,8 +226,8 @@ instance AC CHandlers where
   ac (CHandlers m) = CHandlers <$> ac m
 
 instance AC CPProg where
-  ac (CPProg at vs chs) =
-    CPProg at <$> ac vs <*> ac chs
+  ac (CPProg at vs ai chs) =
+    CPProg at <$> ac vs <*> pure ai <*> ac chs
 
 ac_vi :: AppT ViewsInfo
 ac_vi = mapM (mapM (fresh . ac))

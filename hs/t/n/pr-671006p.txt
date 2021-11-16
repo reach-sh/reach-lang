@@ -8,21 +8,21 @@ Verification failed:
 
   // Violation Witness
 
-  const sum/169 = <loop variable>;
+  const sum/167 = <loop variable>;
   //    ^ could = 0
   //      from: ./pr-671006p.rsh:31:37:while
-  const balance(0)/173 = <loop variable>;
+  const balance(0)/170 = <loop variable>;
   //    ^ could = 0
   //      from: ./pr-671006p.rsh:31:37:while
-  const v218 = <map reduction>;
+  const v214 = <map reduction>;
   //    ^ could = 1
   //      from: reach standard library:143:18:application
 
   // Theorem Formalization
 
-  const v226 = (balance(0)/173 == sum/169) ? (sum/169 == v218) : false;
+  const v222 = (balance(0)/170 == sum/167) ? (sum/167 == v214) : false;
   //    ^ would be false
-  assert(v226);
+  assert(v222);
 
   Verifying when NO participants are honest
   Verifying when ONLY "Contributor" is honest

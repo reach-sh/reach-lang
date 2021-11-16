@@ -326,14 +326,14 @@ In order to interact with a deployed contract, you must construct a @tech{contra
  acc.contract(bin, ?info) => ctc }
 
 @index{acc.contract} Returns a Reach @tech{contract} handle based on the @jsin{bin} argument provided with access to the account @jsin{acc}.
-This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
+This @jsin{bin} argument is the @filepath{index.main.mjs} module produced by the JavaScript @tech{backend}.
 
 If @jsin{info} is provided, it must be a @reachin{Contract} value, or a @jsin{Promise} that eventually yields a @reachin{Contract} value.
 Typically, the deployer of a contract with not provide @jsin{info}, while users of a contract will.
 In an automated, single instance program, @reachin{ctc.getInfo()} is typically used to acquire @jsin{info};
 while in non-automated programs, an application uses out-of-band communication, such as an external database or user input, to acquire the @jsin{info} argument.
 
-The first publishing participant will attempt deploy a contract for application.
+The first publishing participant will attempt to deploy a contract for an application.
 If @jsin{info} was provided, an error will be thrown.
 This deployment can only happen one time, so subsequent attempts will fail with an error.
 
@@ -387,7 +387,7 @@ Contract handles provide access to the interface of the compiled backend, @jsin{
 
 @index{ctc.participants}
 @index{ctc.p}
-An object where the keys are the participant names and the values are function that accept an interact object and return a Promise that completes when the participant ends.
+An object where the keys are the participant names and the values are functions that accept an interact object and return a Promise that completes when the participant ends.
 
 @jsin{acc.contract(backend).p.Alice(io)} is equivalent to @jsin{backend.Alice(acc.contract(backend), io)}, but does not require duplication of the @jsin{backend} component.
 
@@ -428,10 +428,10 @@ If an @tech{API} was specified without an @reachin{apiName}, for example @reachi
 @index{ctc.views}
 @index{ctc.v}
 An object that mirrors the @tech{view} hierarchy, so if @litchar{X.Y} is a @tech{view}, then @jsin{ctc.views.X.Y} is a @deftech{view function}.
-A @tech{view function} accepts the arguments of the @tech{view} and returns a @jsin{Promise} that results in the value of the @tech{view} wrapped in a @reachin{Maybe} type (because the @tech{view} may not be bound.)
+A @tech{view function} accepts the arguments of the @tech{view} and returns a @jsin{Promise} that results in the value of the @tech{view} wrapped in a @reachin{Maybe} type (because the @tech{view} may not be bound).
 For example, if @litchar{NFT.owner} is a @tech{view} with no arguments that represents the @reachin{Address} that owns an NFT, then @jsin{await ctc.v.NFT.owner()} is either @jsin{['Some', Owner]} or @jsin{['None', null]}.
 
-If a @tech{View} was specified without an @reachin{viewName}, for example @reachin{View({ owner: Address })}, it may be accessed by its property name:
+If a @tech{View} was specified without a @reachin{viewName}, for example @reachin{View({ owner: Address })}, it may be accessed by its property name:
 
 @js{
   ctc.v.owner();
