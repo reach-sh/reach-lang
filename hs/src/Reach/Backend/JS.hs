@@ -531,7 +531,7 @@ jsPLTail = \case
 
 jsNewScope :: Doc -> Doc
 jsNewScope body =
-  jsApply (parens (parens emptyDoc <+> "=>" <+> jsBraces body)) []
+  "await" <+> (jsApply (parens ("async" <+> parens emptyDoc <+> "=>" <+> jsBraces body)) [])
 
 jsBlockNewScope :: AppT DLBlock
 jsBlockNewScope b = do
