@@ -45,7 +45,7 @@ COPY sbin/fix.sh /stdlib/sbin/fix.sh
 RUN npm run build
 RUN ./sbin/fix.sh
 RUN mv ./dist/mjs/* ./
-RUN rm ./sbin/
+RUN rm -rf ./sbin/
 
 FROM $NODE_IMAGE 
 COPY --from=prepare /stdlib /stdlib
