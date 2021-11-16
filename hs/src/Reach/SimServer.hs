@@ -36,20 +36,23 @@ instance FromJSON State
 instance ToJSON Action
 instance FromJSON Action
 
--- TODO: need a way to load real programs from parser
 p :: Program
 p = -1
 
+-- TODO: init session
+-- NOTE: monad with session state
 type Session = M.Map Program (M.Map Action State)
 
 fetchProgSrc :: Program -> LLProg
 fetchProgSrc = undefined
 
-initProg :: Program -> S.App S.DLVal
-initProg p' = do
-  -- TODO: init session
-  -- NOTE: monad with session state
+initProgSimFromId :: Program -> S.App S.DLVal
+initProgSimFromId p' = do
   let ll = fetchProgSrc p'
+  S.interp ll
+
+initProgSim :: LLProg -> S.App S.DLVal
+initProgSim ll = do
   S.interp ll
 
 unblockProg :: Program -> StateId -> ActionId -> S.DLVal -> ()
@@ -68,7 +71,7 @@ main :: IO ()
 main = scotty portNumber $ do
   post "/init/:s" $ do
     s <- param "s"
-    _ <- return $ initProg s
+    _ <- return $ initProgSimFromId s
     return ()
 
   get "/states" $ do

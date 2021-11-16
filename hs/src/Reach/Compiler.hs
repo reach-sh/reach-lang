@@ -22,6 +22,7 @@ import Reach.Eval
 import Reach.Linearize
 import Reach.Optimize
 import Reach.Parser (gatherDeps_top)
+import Reach.SimServer
 import Reach.Texty
 import Reach.Util
 import Reach.Verify
@@ -66,6 +67,10 @@ compile env (CompilerOpts {..}) = do
       showp "dl" dl
       unless co_stopAfterEval $ do
         ll <- linearize showp dl
+        -- TODO: compiler option
+        unless False $ do
+          _ <- return $ initProgSim ll
+          return ()
         ol <- optimize ll
         showp "ol" ol
         let vo_out = woutnMay

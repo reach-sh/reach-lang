@@ -26,6 +26,7 @@ data CompilerOpts = CompilerOpts
   , co_installPkgs :: Bool
   , co_stopAfterEval :: Bool
   , co_verifyTimeout :: Integer
+  -- , co_sim :: Bool
   }
 
 compiler :: Parser CompilerToolArgs
