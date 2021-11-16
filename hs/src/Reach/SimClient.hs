@@ -7,9 +7,6 @@ import Network.Curl
 hostname :: [Char]
 hostname = "http://localhost:3000"
 
-initProg :: Int -> IO ()
-initProg s = curlPost (hostname ++ "/init/" ++ show s) []
-
 getProgStates :: IO ()
 getProgStates = curlGet (hostname ++ "/states") []
 

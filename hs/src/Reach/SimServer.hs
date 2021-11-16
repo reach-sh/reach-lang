@@ -8,8 +8,9 @@ import Web.Scotty
 import Data.Aeson (FromJSON, ToJSON)
 import GHC.Generics
 import Reach.AST.LL
+import Control.Monad.Reader
 import qualified Reach.Simulator as S
-import qualified Data.Map.Strict as M
+-- import qualified Data.Map.Strict as M
 
 type StateId = Int
 type ActionId = Int
@@ -28,40 +29,33 @@ data Action = Action
 portNumber :: Int
 portNumber = 3000
 
-type Program = Int
-
 instance ToJSON State
 instance FromJSON State
 
 instance ToJSON Action
 instance FromJSON Action
 
-p :: Program
-p = -1
+type Session = [[Action]]
 
--- TODO: init session
--- NOTE: monad with session state
-type Session = M.Map Program (M.Map Action State)
+-- state
+data Env = Env
+  {  e_session :: Session
+  ,  e_state :: Int
+  }
 
-fetchProgSrc :: Program -> LLProg
-fetchProgSrc = undefined
+type App a = ReaderT Env IO a
 
-initProgSimFromId :: Program -> S.App S.DLVal
-initProgSimFromId p' = do
-  let ll = fetchProgSrc p'
-  S.interp ll
-
-initProgSim :: LLProg -> S.App S.DLVal
+initProgSim :: LLProg -> App (S.App S.DLVal)
 initProgSim ll = do
-  S.interp ll
+  local (\e -> e {e_session = [[]], e_state = 0}) $ return $ S.interp ll
 
-unblockProg :: Program -> StateId -> ActionId -> S.DLVal -> ()
+unblockProg :: StateId -> ActionId -> S.DLVal -> ()
 unblockProg = undefined
 
-allStates :: Program -> [State]
+allStates :: [State]
 allStates = undefined
 
-actions :: Program -> StateId -> [Action]
+actions :: StateId -> [Action]
 actions = undefined
 
 matchesId :: Int -> (a -> Int) -> a -> Bool
@@ -69,24 +63,19 @@ matchesId i f a = f a == i
 
 main :: IO ()
 main = scotty portNumber $ do
-  post "/init/:s" $ do
-    s <- param "s"
-    _ <- return $ initProgSimFromId s
-    return ()
-
   get "/states" $ do
-    json $ allStates p
+    json $ allStates
 
   get "/states/:s" $ do
     s <- param "s"
-    json (filter (matchesId s state_id) $ allStates p)
+    json (filter (matchesId s state_id) $ allStates)
 
   get "/states/:s/actions" $ do
     s <- param "s"
-    json $ actions p s
+    json $ actions s
 
   post "/states/:s/actions/:a/?data=post_val" $ do
     s <- param "s"
     a <- param "a"
     v <- param "post_val"
-    return $ unblockProg p s a $ S.V_UInt v
+    return $ unblockProg s a $ S.V_UInt v
