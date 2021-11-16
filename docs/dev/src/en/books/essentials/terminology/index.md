@@ -4,6 +4,12 @@ menuItem: mi-docs
 
 # Terminology
 
+# Assertion
+
+An assertion is either: a knowledge assertion, which is a claim that one honest participant cannot know something that another honest participant does know; a static assertion, which is an always-true formula; an assumption, which is a true formula if frontends behave honestly; a requirement, which is a true formula if participants behave honestly; or, a possibility assertion, which is a formula for which there exists some values that honest participants and frontends could submit which results in the truth of the formula. An honest participant is one that executes the steps specified by the DApp, while an honest frontend is one that only returns values which ensure that all assumptions evaluate to the boolean true.
+
+# Linear State
+
 # Pay Amount
 
 A pay amount is either:
@@ -46,3 +52,7 @@ will indicate that fork payments should be of the format:
 ``` nonum
 [ NETWORK_TOKEN_AMT, [ amtA, tokA ], [ amtB, tokB ] ]
 ```
+
+# Time Argument
+
+A time argument represents consensus-network time. The argument is of type `Either(UInt, UInt)`, where the left variant refers to absolute network time and the right variant refers to absolute network seconds.
