@@ -21,12 +21,23 @@ data State = State
    , e_nwsecs :: Integer
   }
 
+initState :: State
+initState = State
+  { e_store = M.empty
+  , e_ledger = initLedger
+  , e_linstate = M.empty
+  , e_nwtime = 0
+  , e_nwsecs = 0
+  }
+
 type PartCont = State -> DLVal -> PartState
--- type Part = Expr
 
 data PartState
   = PS_Done State DLVal
   | PS_Suspend Action State PartCont
+
+initPartState :: PartState
+initPartState = PS_Done initState V_Null
 
 -- Manual Monad
 newtype App a =
@@ -50,6 +61,14 @@ instance Monad App where
         let App con = conF vVal
          in con gvVal kAns))
 
+unsuspend :: PartState -> State -> DLVal -> PartState
+unsuspend ps st v =
+ case ps of
+   PS_Done _ _ -> do
+     ps
+   PS_Suspend _ _ k ->
+     k st v
+
 suspend :: (State -> PartCont -> PartState) -> App DLVal
 suspend = App
 
@@ -60,7 +79,10 @@ globalSet :: State -> App ()
 globalSet ngv = App (\_ kAns -> kAns ngv ())
 
 runApp :: State -> App DLVal -> PartState
-runApp gv (App f) = f gv PS_Done
+runApp st (App f) = f st PS_Done
+
+initApp :: LLProg -> State -> PartState
+initApp p st = runApp st $ interp p
 
 type ConsensusEnv = M.Map DLVar DLVal
 type Store = ConsensusEnv
@@ -73,6 +95,13 @@ data Ledger = Ledger
   , nw_next_token :: Integer
   }
   deriving (Eq)
+
+initLedger :: Ledger
+initLedger = Ledger
+  { nw_ledger = M.empty
+  , nw_next_acc = 0
+  , nw_next_token = 0
+  }
 
 ledgerNewToken :: Integer -> App ()
 ledgerNewToken supply = do
@@ -88,7 +117,7 @@ data Action
   = A_TieBreak
   | A_NewAcc
   | A_NewPart
-  | A_ImitateFrontend
+  | A_None
   | A_Interact SrcLoc [SLCtxtFrame] String String DLType [DLVal]
   deriving (Generic)
 
@@ -228,7 +257,7 @@ instance Interp DLExpr where
       case (ev1,ev2) of
         (V_Array arr, V_UInt n) -> do
           let n' = fromIntegral n
-          return $ V_Array $ arraySet n' ev3 arr 
+          return $ V_Array $ arraySet n' ev3 arr
         _ -> impossible "expression interpreter"
     DLE_ArrayConcat _at dlarg1 dlarg2 -> do
       ev1 <- interp dlarg1

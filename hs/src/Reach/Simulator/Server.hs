@@ -35,19 +35,51 @@ instance FromJSON State
 instance ToJSON Action
 instance FromJSON Action
 
-type Session = [[Action]]
+type Actions = [[Action]]
 
 -- state
-data Env = Env
-  {  e_session :: Session
-  ,  e_state :: Int
+data Session = Session
+  {  e_actions :: Actions
+  ,  e_nsid :: Int -- next state id
+  ,  e_naid :: Int -- next action id
+  ,  e_pthread :: S.PartState
+  ,  e_res :: S.DLVal
   }
 
-type App a = ReaderT Env IO a
+initSession :: Session
+initSession = Session
+  { e_actions = [[]]
+  , e_nsid = 0
+  , e_naid = 0
+  , e_pthread = S.initPartState
+  , e_res = S.V_Null
+  }
 
-initProgSim :: LLProg -> App (S.App S.DLVal)
+type App a = ReaderT Session IO a
+
+initProgSim :: LLProg -> App S.PartState
 initProgSim ll = do
-  local (\e -> e {e_session = [[]], e_state = 0}) $ return $ S.interp ll
+  let st = S.initState
+  ps <- local (\_ -> initSession) $ return $ S.initApp ll st
+  sid <- asks e_nsid
+  actions <- asks e_actions
+  let new_actions =
+        case ps of
+          S.PS_Done _ _ -> [registerAction S.A_None]
+          S.PS_Suspend a _ _ -> [registerAction a]
+  let new_res =
+        case ps of
+          S.PS_Done _ v -> v
+          S.PS_Suspend _ _ _ -> S.V_Null
+  local (\e ->
+    e {e_actions = actions ++ [new_actions]}
+      {e_nsid = sid+1}
+      {e_pthread = ps}
+      {e_res = new_res})
+      $ return ps
+
+registerAction :: S.Action -> Action
+registerAction = undefined
 
 unblockProg :: StateId -> ActionId -> S.DLVal -> ()
 unblockProg = undefined
@@ -55,8 +87,8 @@ unblockProg = undefined
 allStates :: [State]
 allStates = undefined
 
-actions :: StateId -> [Action]
-actions = undefined
+computeActions :: StateId -> [Action]
+computeActions = undefined
 
 matchesId :: Int -> (a -> Int) -> a -> Bool
 matchesId i f a = f a == i
@@ -72,7 +104,7 @@ main = scotty portNumber $ do
 
   get "/states/:s/actions" $ do
     s <- param "s"
-    json $ actions s
+    json $ computeActions s
 
   post "/states/:s/actions/:a/?data=post_val" $ do
     s <- param "s"
