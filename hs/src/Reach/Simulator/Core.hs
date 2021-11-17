@@ -11,7 +11,6 @@ import Reach.Util
 import Data.Bits
 import Data.Aeson (FromJSON, ToJSON)
 import GHC.Generics
-import Data.ByteString.UTF8 (toString)
 
 -- state
 data State = State
@@ -75,8 +74,8 @@ data Ledger = Ledger
   }
   deriving (Eq)
 
-ledgerNewToken :: Integer -> App DLVal -> App DLVal
-ledgerNewToken supply f  = do
+ledgerNewToken :: Integer -> App ()
+ledgerNewToken supply = do
   -- TODO QUESTION: which account? 0 is placeholder
   e <- globalGet
   let ledger = e_ledger e
@@ -84,7 +83,6 @@ ledgerNewToken supply f  = do
   let new_nw_ledger = M.insert 0 (M.singleton token_id supply) (nw_ledger ledger)
   let new_ledger = ledger { nw_ledger = new_nw_ledger, nw_next_token = token_id + 1 }
   globalSet $ e {e_ledger = new_ledger}
-  f
 
 data Action
   = A_TieBreak
@@ -124,21 +122,18 @@ addToStore x v = do
   e <- globalGet
   let st = e_store e
   globalSet $ e {e_store = M.insert x v st}
-  return ()
 
 incrNWtime :: Integer -> App ()
 incrNWtime n = do
   e <- globalGet
   let t = e_nwtime e
   globalSet $ e {e_nwtime = t + n }
-  return ()
 
 incrNWsecs :: Integer -> App ()
 incrNWsecs n = do
   e <- globalGet
   let t = e_nwsecs e
   globalSet $ e {e_nwsecs = t + n }
-  return ()
 
 updateLedger :: Account -> Token -> (Integer -> Integer) -> App ()
 updateLedger acc tok f = do
@@ -149,7 +144,6 @@ updateLedger acc tok f = do
   let new_amt = f prev_amt
   let new_nw_ledger = M.insert acc (M.insert tok new_amt ((M.!) map_ledger acc)) map_ledger
   globalSet $ e {e_ledger = ledger { nw_ledger = new_nw_ledger }}
-  return ()
 
 -- ## INTERPRETER ## --
 
@@ -261,7 +255,7 @@ instance Interp DLExpr where
         _ -> impossible "expression interpreter"
     DLE_Interact at slcxtframes slpart str dltype dlargs -> do
       args <- mapM interp dlargs
-      suspend $ PS_Suspend (A_Interact at slcxtframes (toString slpart) str dltype args)
+      suspend $ PS_Suspend (A_Interact at slcxtframes (bunpack slpart) str dltype args)
     DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
     -- TODO
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
@@ -335,7 +329,8 @@ instance Interp DLExpr where
       supply <- interp (dtn_supply dltokennew)
       case supply of
         V_UInt supply' -> do
-          ledgerNewToken supply' $ return V_Null
+          ledgerNewToken supply'
+          return V_Null
         _ -> impossible "expression interpreter"
     DLE_TokenBurn _at dlarg1 dlarg2 -> do
       ev1 <- interp dlarg1
