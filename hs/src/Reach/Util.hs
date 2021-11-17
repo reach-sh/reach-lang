@@ -23,6 +23,7 @@ module Reach.Util
   , listDirectoriesRecursive
   , leftPad
   , makeErrCode
+  , arraySet
   )
 where
 
@@ -136,3 +137,6 @@ leftPad n e xs = replicate (n - length xs) e <> xs
 makeErrCode :: Show a => [Char] -> a -> [Char]
 makeErrCode errType errIndex =
   errType <> leftPad 4 '0' (show errIndex)
+
+arraySet :: Int -> a -> [a] -> [a]
+arraySet n a arr = take n arr <> [a] <> drop (n + 1) arr

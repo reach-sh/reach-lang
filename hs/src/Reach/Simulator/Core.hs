@@ -228,7 +228,7 @@ instance Interp DLExpr where
       case (ev1,ev2) of
         (V_Array arr, V_UInt n) -> do
           let n' = fromIntegral n
-          return $ V_Array $ take n' arr <> [ev3] <> drop (n' + 1) arr
+          return $ V_Array $ arraySet n' ev3 arr 
         _ -> impossible "expression interpreter"
     DLE_ArrayConcat _at dlarg1 dlarg2 -> do
       ev1 <- interp dlarg1

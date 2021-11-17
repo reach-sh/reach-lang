@@ -2575,7 +2575,7 @@ evalPrim p sargs =
                     True -> do
                       at <- withAt id
                       void $ typeCheck_d elem_ty valv
-                      let arrvs' = (take idxi' arrvs) ++ [valv] ++ (drop (idxi' + 1) arrvs)
+                      let arrvs' = arraySet idxi' valv arrvs
                       let arrv' = SLV_Array at elem_ty arrvs'
                       retV $ (lvl, arrv')
                     False ->
