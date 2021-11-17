@@ -55,7 +55,7 @@ build-m1:
 	docker build \
 	  --platform linux/arm64 \
 	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
-	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS)-m1:latest \
+	  --tag=$(IMG_REACHC)-m1:latest \
 	  -f Dockerfile.reachc-m1 .
 
 .PHONY: push
