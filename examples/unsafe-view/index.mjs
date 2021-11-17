@@ -3,8 +3,10 @@ import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib(process.env);
 
 const assertEq = (l, r) => {
-  if (JSON.stringify(l) != JSON.stringify(r)) {
-    throw Error(`Assertion failed!`);
+  const ls = JSON.stringify(l);
+  const rs = JSON.stringify(r);
+  if (ls != rs) {
+    throw Error(`Assertion failed! ${ls} != ${rs}`);
   }
 }
 
