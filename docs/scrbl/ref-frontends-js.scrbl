@@ -413,6 +413,18 @@ If an @tech{API} was specified without an @reachin{apiName}, for example @reachi
   ctc.a.cast("Pedro");
 }
 
+@subsection{@tt{ctc.safeApis}}
+
+@js{
+  ctc.safeApis
+  ctc.safeApis.Voter.cast("Pedro")
+}
+
+@index{ctc.safeApis}
+This object is the same as @jsin{ctc.apis} except the API functions return a @reachin{Maybe} value.
+If the call fails, then @jsin{['None', null]} will be returned. If the call succeeds, the return value will
+be wrapped with @jsin{Some}, e.g. @jsin{['Some', 4]}.
+
 @subsection{@tt{ctc.views}, @tt{ctc.v}}
 
 @margin-note{@tech{Views} are @seclink["ref-programs-appinit-view"]{defined in application initialization} and then they are @seclink["ref-programs-consensus-view"]{set in consensus steps}. Both of these steps are in Reach. This section is about accessing them in JavaScript frontends.}
@@ -445,6 +457,19 @@ If a @tech{View} was specified without a @reachin{viewName}, for example @reachi
 
 @index{ctc.getViews}
 This deprecated function is an abbreviation of @jsin{ctc.views}.
+
+@subsection{@tt{ctc.unsafeViews}}
+
+@jsin{
+  ctc.unsafeViews
+  ctc.unsafeViews.NFT.owner()
+}
+
+@index{ctc.unsafeViews}
+
+This object is the same as @jsin{ctc.views} except the value of the @tech{view} is not wrapped in a @reachin{Maybe} type.
+If a @tech{view} is set, the value will be returned as is, without being wrapped in @reachin{Some}.
+If a @tech{view} is not set, an error will be thrown.
 
 @section[#:tag "ref-frontends-js-network"]{Network Utilities}
 
