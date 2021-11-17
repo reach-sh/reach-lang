@@ -1,0 +1,76 @@
+FROM ubuntu:latest
+
+RUN set -e
+RUN apt-get update \
+  && apt-get install -y \
+    curl \
+    gcc \
+    git \
+    libnuma-dev \
+    llvm \
+    make \
+    python3 \
+    wget \
+    xz-utils \
+    z3 \
+    zlib1g-dev
+
+WORKDIR /tmp
+
+RUN curl https://downloads.haskell.org/~ghc/8.10.7/ghc-8.10.7-aarch64-deb10-linux.tar.xz \
+  -o ghc.tar.xz \
+ && mkdir ghc/ \
+ && tar -xvf ghc.tar.xz -C ghc/ \
+ && cd ghc/ghc-8.10.7/ \
+ && ./configure \
+ && make install \
+ && cd ../.. \
+ && rm -r ghc/ \
+ && rm ghc.tar.xz
+
+RUN curl -sSL https://github.com/commercialhaskell/stack/releases/download/v2.7.1/stack-2.7.1-linux-aarch64.bin > /usr/local/bin/stack && chmod +x /usr/local/bin/stack
+
+ENV LANG=C.UTF-8
+
+RUN mkdir /tmp/hs
+WORKDIR /tmp/hs
+
+# mostly copied form haskell-build-artifacts
+COPY .docker-root ./.docker-root
+COPY Makefile.docker ./Makefile
+COPY package.mo.yaml ./
+RUN make ROOT=.docker-root install-mo package.yaml
+
+# stack.yaml.lock intentionally omitted
+COPY stack.yaml ./
+RUN echo 'compiler: ghc-8.10.7' >> stack.yaml \
+ && echo 'system-ghc: true'     >> stack.yaml
+RUN stack update
+RUN stack build --dependencies-only
+COPY hie.yaml Setup.hs ./
+ADD app ./app/
+ADD rsh ./rsh/
+ADD smt2 ./smt2/
+# just make it here
+ADD sol ./sol/
+RUN make sol/stdlib.sol
+ADD src ./src/
+ADD test ./test/
+
+RUN make ROOT=.docker-root src/Reach/Version.hs
+
+SHELL ["/bin/bash", "-c"]
+RUN set -o pipefail ; stack build 2>&1 | tee build-log.txt
+RUN stack build --copy-bins
+# RUN mv "$(stack path --local-install-root)/bin" /build/bin/
+
+# mostly copied from Dockerfile.reachc
+WORKDIR /app
+ENTRYPOINT ["/root/.local/bin/reachc"]
+ARG REACHC_HASH
+ENV REACHC_HASH="${REACHC_HASH}"
+ENV REACH_GIT_HASH="${REACHC_HASH}"
+
+# TODO: use specific z3 version
+# TODO: cut down image size
+# TODO: solc
