@@ -152,6 +152,7 @@ data EvalError
   | Err_UniqueFirstPublish
   | Err_ApiCallAssign
   | Err_DuplicateName String SrcLoc
+  | Err_No_Participants
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -285,6 +286,7 @@ instance HasErrorCode EvalError where
     Err_API_NotFun {} -> 121
     Err_ApiCallAssign {} -> 122
     Err_DuplicateName {} -> 123
+    Err_No_Participants {} -> 124
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -717,5 +719,7 @@ instance Show EvalError where
       "The left hand side of an API call must be a pair consisting of the domain and return function."
     Err_DuplicateName s at ->
       "The name `" <> s <> "` has already been used by a Participant, View or API at: " <> show at
+    Err_No_Participants ->
+      "There are no `Participant`s in the program."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
