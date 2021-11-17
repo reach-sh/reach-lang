@@ -1,0 +1,7 @@
+reachc: error[RE0124]: There are no `Participant`s in the program.
+
+  ./Err_No_Participants.rsh:11:11:dot
+
+  11|   Anybody.publish();
+
+For further explanation of this error, see: https://docs.reach.sh/RE0124.html
