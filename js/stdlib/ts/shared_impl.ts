@@ -190,6 +190,7 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
   unsafeViews: ViewMap,
   apis: APIMap,
   a: APIMap,
+  safeApis: APIMap,
   // for compiled output
   _initialize: () => IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>,
 };
@@ -284,47 +285,58 @@ export const stdContract =
       });
   }));
 
-  const apis = objectMap(bin._APIs, ((an:string, am:any) => {
-    const f = (afn:string|undefined, ab:any) => {
-      const mk = (sep: string) =>
-        (afn === undefined) ? `${an}` : `${an}${sep}${afn}`;
-      const bp = mk(`_`);
-      delete participants[bp];
-      const bl = mk(`.`);
-      return (...args:any[]) => {
-        const terminal = { terminated: bl };
-        let theResolve: (x:any) => void;
-        let theReject: (x:any) => void;
-        const p = new Promise((resolve, reject) => {
-          theResolve = resolve;
-          theReject = reject;
-        });
-        ab(ctcC, {
-          "in": (() => {
-            debug(`${bl}: in`, args);
-            return args
-          }),
-          "out": ((oargs:any[], res:any) => {
-            debug(`${bl}: out`, oargs, res);
-            theResolve(res);
-            throw terminal;
-          }),
-        }).catch((err:any) => {
-          if ( Object.is(err, terminal) ) {
-            debug(`${bl}: done`);
-          } else {
-            theReject(new Error(`${bl} errored with ${err}`));
-          }
-        }).then((res:any) => {
-          theReject(new Error(`${bl} returned with ${JSON.stringify(res)}`));
-        });
-        return p;
+  const mkApis = (isSafe = false) =>
+    objectMap(bin._APIs, ((an:string, am:any) => {
+      const f = (afn:string|undefined, ab:any) => {
+        const mk = (sep: string) =>
+          (afn === undefined) ? `${an}` : `${an}${sep}${afn}`;
+        const bp = mk(`_`);
+        delete participants[bp];
+        const bl = mk(`.`);
+        return (...args:any[]) => {
+          const terminal = { terminated: bl };
+          let theResolve: (x:any) => void;
+          let theReject: (x:any) => void;
+          const p = new Promise((resolve, reject) => {
+            theResolve = resolve;
+            theReject = reject;
+          });
+          const fail = (err: Error) => {
+            if (isSafe) {
+              theResolve(['None', null]);
+            } else {
+              theReject(err);
+            }
+          };
+          ab(ctcC, {
+            "in": (() => {
+              debug(`${bl}: in`, args);
+              return args
+            }),
+            "out": ((oargs:any[], res:any) => {
+              debug(`${bl}: out`, oargs, res);
+              theResolve(isSafe ? ['Some', res] : res);
+              throw terminal;
+            }),
+          }).catch((err:any) => {
+            if ( Object.is(err, terminal) ) {
+              debug(`${bl}: done`);
+            } else {
+              fail(new Error(`${bl} errored with ${err}`));
+            }
+          }).then((res:any) => {
+            fail(new Error(`${bl} returned with ${JSON.stringify(res)}`));
+          });
+          return p;
+        };
       };
-    };
-    return (typeof am === 'object')
-      ? objectMap(am, f)
-      : f(undefined, am);
+      return (typeof am === 'object')
+        ? objectMap(am, f)
+        : f(undefined, am);
   }));
+
+  const apis = mkApis(false);
+  const safeApis = mkApis(true);
 
   return {
     ...ctcC,
@@ -338,6 +350,7 @@ export const stdContract =
     },
     unsafeViews,
     apis, a: apis,
+    safeApis,
   };
 };
 
