@@ -8,27 +8,18 @@ export const main = Reach.App(() => {
     go: Fun([], Bool),
   });
   deploy();
-  A.publish();
 
-  const [ keepGoing ] =
-    parallelReduce([ true ])
-    .while(keepGoing)
-    .invariant(balance() == 0)
-    .case(A,
-      (() => ({
-        when: declassify(interact.go())
-      })),
-      ((_) => {
-        return [ false ];
-      })
-    )
-    .api(B.go,
-      ((k) => {
-        k(true);
-        return [ true ];
-      })
-    )
-    .timeout(false);
+  A.publish();
+  commit();
+
+  const [ k ] = call(B.go);
+  k(true);
+  commit();
+
+  A.only(() => {
+    const x = declassify(interact.go());
+  });
+  A.publish();
 
   commit();
   exit();
