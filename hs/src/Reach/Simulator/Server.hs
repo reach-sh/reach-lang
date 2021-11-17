@@ -81,6 +81,8 @@ initProgSim ll = do
 registerAction :: S.Action -> Action
 registerAction = undefined
 
+-- TODO: which program to unblock?
+-- NOTE: need to store cont at each step
 unblockProg :: StateId -> ActionId -> S.DLVal -> ()
 unblockProg = undefined
 
