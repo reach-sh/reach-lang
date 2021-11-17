@@ -1126,8 +1126,14 @@ evalAsEnv obj = case obj of
       go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos vas (Just m) Nothing Nothing Nothing Nothing False)
       whos = S.singleton who
   SLV_Anybody -> do
+    at <- withAt id
+    apis <- ae_apis <$> aisd
     whos <- S.fromList . M.keys <$> (ae_ios <$> aisd)
-    evalAsEnv (SLV_RaceParticipant srcloc_builtin whos)
+    let ps = S.difference whos apis
+    case S.toList ps of
+      [] -> expect_ $ Err_No_Participants
+      [h] -> evalAsEnv $ SLV_Participant at h Nothing Nothing
+      _ -> evalAsEnv $ SLV_RaceParticipant srcloc_builtin ps
   SLV_RaceParticipant _ whos ->
     return $
       M.fromList
