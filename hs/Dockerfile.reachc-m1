@@ -64,6 +64,26 @@ RUN set -o pipefail ; stack build 2>&1 | tee build-log.txt
 RUN stack build --copy-bins
 # RUN mv "$(stack path --local-install-root)/bin" /build/bin/
 
+RUN apt-get install -y \
+  python3-distutils \
+  clang
+
+WORKDIR /tmp_z3
+ENV Z3_VER 4.8.12
+# ENV Z3_SYS x64-glibc-2.31
+# RUN wget -O /tmp/z3.zip \
+#      https://github.com/Z3Prover/z3/releases/download/z3-${Z3_VER}/z3-${Z3_VER}-${Z3_SYS}.zip \
+#   && unzip -p /tmp/z3.zip z3-${Z3_VER}-${Z3_SYS}/bin/z3 | cat > /usr/bin/z3 \
+#   && rm /tmp/z3.zip
+RUN git clone https://github.com/Z3Prover/z3
+
+WORKDIR /tmp_z3/z3
+RUN git checkout "z3-${Z3_VER}"
+RUN python3 scripts/mk_make.py
+WORKDIR /tmp_z3/z3/build
+RUN make
+RUN make install
+
 # mostly copied from Dockerfile.reachc
 WORKDIR /app
 ENTRYPOINT ["/root/.local/bin/reachc"]
