@@ -16,7 +16,7 @@ import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import Data.List (intersperse)
 import qualified Data.Map.Strict as M
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isJust)
 import qualified Data.Set as S
 import Data.String (IsString)
 import qualified Data.Text as T
@@ -198,6 +198,15 @@ solRawVar (DLVar _ _ _ n) = pretty $ "v" ++ show n
 solMemVar :: DLVar -> Doc
 solMemVar dv = "_f." <> solRawVar dv
 
+apiRetVar :: Doc
+apiRetVar = "_apiRet"
+
+apiRetMemVar :: String -> Doc
+apiRetMemVar f = apiRetVar <> "." <> pretty f
+
+apiRngTy :: Doc
+apiRngTy = "ApiRng"
+
 solArgSVSVar :: DLVar -> Doc
 solArgSVSVar dv = "_a.svs." <> solRawVar dv
 
@@ -235,6 +244,8 @@ data SolCtxt = SolCtxt
   , ctxt_outputs :: IORef (M.Map DLVar Doc)
   , ctxt_tlfuns :: IORef (M.Map String Doc)
   , ctxt_requireMsg :: Counter
+  , ctxt_api_rngs :: IORef (Maybe (M.Map String DLType))
+  , ctxt_which_msg :: IORef (M.Map Int [DLVar])
   }
 
 readCtxtIO :: (SolCtxt -> IORef a) -> App a
@@ -380,7 +391,7 @@ instance DepthOf DLExpr where
     DLE_TimeOrder {} -> impossible "timeorder"
     DLE_GetContract {} -> return 1
     DLE_GetAddress {} -> return 1
-    DLE_EmitLog _ _ a -> add1 $ depthOf a
+    DLE_EmitLog _ _ _ a -> add1 $ depthOf a
     DLE_setApiDetails {} -> return 0
     where
       add1 m = (+) 1 <$> m
@@ -740,6 +751,11 @@ doConcat dv x y = do
   y' <- copy y (arraySize x)
   return $ vsep [x', y']
 
+addApiRng :: String -> DLType -> App ()
+addApiRng f ty = do
+  api_rngs <- asks ctxt_api_rngs
+  liftIO $ modifyIORef api_rngs $ fmap $ M.insert f ty
+
 solCom :: AppT DLStmt
 solCom = \case
   DL_Nop _ -> mempty
@@ -849,19 +865,26 @@ solCom = \case
           <> checkNonNetTokAllowances
           <> sub'l
           <> pv'
-  DL_Let _ pv (DLE_EmitLog _ _ lv) -> do
+  DL_Let _ pv (DLE_EmitLog _ _ m_api lv) -> do
     lv' <- solVar lv
-    lv_ty' <- solType $ varType lv
+    let lv_ty = varType lv
+    lv_ty' <- solType lv_ty
     let go sv l = solApply (solOutput_evt lv) [l <+> sv lv] <> semi
     let ed = "event" <+> go solRawVar lv_ty'
     modifyCtxtIO ctxt_outputs $ M.insert lv ed
     let emitl = "emit" <+> go (const lv') ""
+    asn <-
+          case m_api of
+            Just f -> do
+              addApiRng f lv_ty
+              return $ solSet (apiRetMemVar f) lv'
+            Nothing -> return ""
     case pv of
       DLV_Eff -> do
-        return emitl
+        return $ vsep [ emitl, asn ]
       DLV_Let _ dv -> do
         addMemVar dv
-        return $ vsep [ solSet (solMemVar dv) lv', emitl ]
+        return $ vsep [ solSet (solMemVar dv) lv', emitl, asn ]
   DL_Let _ (DLV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv
     solLargeArg dv la
@@ -1064,6 +1087,8 @@ solHandler :: Int -> CHandler -> App Doc
 solHandler which h = freshVarMap $
   case h of
     C_Handler at interval from prev svs msg timev secsv ct -> do
+      which_msg_r <- asks ctxt_which_msg
+      liftIO $ modifyIORef which_msg_r $ M.insert which msg
       let checkMsg s = s <> " check at " <> show at
       let fromm = M.singleton from "payable(msg.sender)"
       let given_mm = M.fromList [(timev, solBlockTime), (secsv, solBlockSecs)]
@@ -1103,8 +1128,21 @@ solHandler which h = freshVarMap $
       let CBetween ifrom ito = interval
       timeoutCheck <- vsep <$> ((<>) <$> checkTime PGE ifrom <*> checkTime PLT ito)
       let body = vsep $ hashCheck <> lock <> svs_init <> [ frameDecl, timeoutCheck, ctp]
-      let funDefn = solFunctionLike sfl [argDefn] ret body
-      return $ vsep [evtDefn, frameDefn, funDefn]
+      let mkFun args b =  solFunctionLike sfl args ret b
+      uses_apis <- fmap isJust . liftIO . readIORef =<< asks ctxt_api_rngs
+      funDefs <-
+            case (uses_apis, sfl) of
+              (True, SFL_Function _ name) -> do
+                let createStruct = solDecl "_r" (apiRngTy <> solArgLoc AM_Memory) <> semi
+                let callFun = solApply name ["_a", "_r"] <> semi
+                let callBody = vsep [ createStruct, callFun ]
+                let apiRetDefn = solDecl apiRetVar (apiRngTy <> solArgLoc AM_Memory)
+                intArg <- solArgDefn AM_Memory Nothing msg
+                return [ mkFun [argDefn] callBody
+                       , solFunction name [intArg, apiRetDefn] "internal " body ]
+              _ ->
+                return [ mkFun [argDefn] body ]
+      return $ vsep $ [evtDefn, frameDefn ] <> funDefs
     C_Loop _at svs lcmsg ct -> do
       let msg = lcmsg
       (frameDefn, frameDecl, ctp) <- solCTail_top which solArgSVSVar svs msg Nothing ct
@@ -1137,6 +1175,88 @@ solBytesSplit sz f = map go [0 .. lastOne]
         len = case i == lastOne of
                 True -> lastLen
                 False -> maxLen
+
+apiDef :: SLPart -> ApiInfo -> App Doc
+apiDef who ApiInfo{..} = do
+  let who_s = bunpack who
+  let mf = pretty $ "m" <> show ai_which
+  which_msg <- (liftIO . readIORef) =<< asks ctxt_which_msg
+  ai_msg_vs <- case M.lookup ai_which which_msg of
+                Just vs -> return vs
+                Nothing -> impossible "apiDef: no which"
+  let mkArgDefns ts = do
+        let indexedTypes = zip ts [0..]
+        unzip <$> mapM (\ (ty, i :: Int) -> do
+          let name = pretty $ "_a" <> show i
+          sol_ty <- solType_ ty
+          let decl = solDecl name (sol_ty <> withArgLoc ty)
+          return (name, decl)
+          ) indexedTypes
+  m_arg_ty <- solArgType Nothing ai_msg_vs
+  -- Creates the tuple needed to call the consensus function
+  let makeConsensusArg args = do
+        case ai_msg_vs of
+          [] -> return "false"
+          _ -> do
+            tc_args <-
+              case ai_msg_vs of
+                [v] -> do
+                  tc' <- solType_ $ varType v
+                  return $ [ solApply tc' args ]
+                _ -> return args
+            tc <- solType_ $ vsToType ai_msg_vs
+            return $ solApply tc tc_args
+  let go = \case
+        AIC_Case -> do
+          let c_id_s = fromMaybe (impossible "Expected case id") ai_mcase_id
+          let c_id = pretty c_id_s
+          -- Construct product of data variant
+          (data_t, con_t, argDefns) <-
+            case ai_msg_tys of
+              [dt@(T_Data env)] ->
+                case M.lookup c_id_s env of
+                  Just (T_Tuple []) -> return (dt, "false", [])
+                  Just (T_Tuple ts) -> do
+                    (args, argDefns) <- mkArgDefns ts
+                    t <- solType_ $ T_Tuple ts
+                    let ct = solApply t args
+                    return $ (dt, ct, argDefns)
+                  _ -> impossible  "apiDef: Constructor not in Data"
+              _ -> impossible "apiDef: Expected one `Data` arg"
+          dt <- solType_ data_t
+          let lifts = [ dt <+> "memory _vt;"
+                        , "_vt._" <> c_id <> " = " <> con_t <> semi
+                        , "_vt.which = _enum_" <> dt <> "." <> c_id <> semi ]
+          tc <- solType_ $ vsToType ai_msg_vs
+          let ty =  solApply tc ["_vt"]
+          return $ (ty, argDefns, lifts)
+        AIC_SpreadArg -> do
+          (args, argDefns) <-
+            case ai_msg_tys of
+              [T_Tuple ts] -> mkArgDefns ts
+              _ -> impossible "apiDef: Expected one tuple arg"
+          ty <- makeConsensusArg args
+          return $ (ty, argDefns, [])
+  (ty, argDefns, tyLifts) <- go ai_compile
+  let body = vsep $ [ "ApiRng memory _r;"
+                    , m_arg_ty <+> "memory _t;"]
+                    <> tyLifts <>
+                    [ "_t.msg =" <+> ty <> semi
+                    , solApply mf ["_t", "_r" ] <> semi
+                    , pretty ("return _r." <> who_s) <> semi
+                    ]
+  api_rngs <- fmap (fromMaybe mempty) . liftIO . readIORef =<< asks ctxt_api_rngs
+  ret_ty <- case M.lookup (bunpack who) api_rngs of
+          Just t -> do
+            t' <- solType_ t
+            return $ t' <+> withArgLoc t
+          Nothing -> impossible "apiDef: return type not found"
+  let ret = "external returns"<+> parens ret_ty
+  return $ solFunction (pretty who_s) argDefns ret body
+
+apiDefs :: ApiInfos -> App Doc
+apiDefs defs =
+  vsep <$> (mapM (uncurry apiDef) $ M.toList defs)
 
 solDefineType :: DLType -> App ()
 solDefineType t = case t of
@@ -1242,8 +1362,15 @@ solEB args (DLinExportBlock _ mfargs (DLBlock _ _ t r)) = do
   r' <- solArg r
   return $ vsep [t', "return" <+> r' <> semi]
 
+createAPIRng :: Maybe (M.Map String DLType) -> App Doc
+createAPIRng = \case
+  Nothing -> return ""
+  Just env -> do
+    fields <- mapM (\ (k, v) -> (pretty k, ) <$> solType_ v) $ M.toList env
+    return $ fromMaybe (impossible "createAPIRng") $ solStruct "ApiRng" fields
+
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) _ai hs)) = do
+solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) ai hs)) = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   ctxt_varm <- newIORef mempty
@@ -1269,6 +1396,8 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) _ai hs)) = do
   ctxt_ints <- newIORef mempty
   ctxt_outputs <- newIORef mempty
   ctxt_tlfuns <- newIORef mempty
+  ctxt_api_rngs <- newIORef $ if M.null ai then Nothing else Just mempty
+  ctxt_which_msg <- newIORef mempty
   let ctxt_plo = plo
   flip runReaderT (SolCtxt {..}) $ do
     let map_defn (mpv, mi) = do
@@ -1351,16 +1480,18 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) _ai hs)) = do
             , "function _reachCurrentState() external view returns (uint256, bytes memory) { return (current_step, current_svbs); }"
             ] <> map_defns <> view_defns
     hs' <- solHandlers hs
+    apidefs <- apiDefs ai
     let getm ctxt_f = (vsep . map snd . M.toAscList) <$> (liftIO $ readIORef ctxt_f)
     typedsp <- getm ctxt_typed
     typefsp <- getm ctxt_typef
     intsp <- getm ctxt_ints
     outputsp <- getm ctxt_outputs
     tlfunsp <- getm ctxt_tlfuns
+    api_rng <- (liftIO $ readIORef ctxt_api_rngs) >>= createAPIRng
     let defp = vsep $
           [ "receive () external payable {}"
           , "fallback () external payable {}" ]
-    let ctcbody = vsep $ [state_defn, typefsp, outputsp, tlfunsp, hs', defp]
+    let ctcbody = vsep $ [state_defn, typefsp, api_rng, outputsp, tlfunsp, hs', apidefs, defp]
     let ctcp = solContract "ReachContract is Stdlib" $ ctcbody
     let cinfo =
           HM.fromList $

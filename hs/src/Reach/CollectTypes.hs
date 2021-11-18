@@ -132,7 +132,7 @@ instance CollectsTypes DLExpr where
     DLE_TimeOrder _ tos -> cts tos
     DLE_GetContract _ -> mempty
     DLE_GetAddress _ -> mempty
-    DLE_EmitLog _ _ a -> cts a
+    DLE_EmitLog _ _ _ a -> cts a
     DLE_setApiDetails {} -> mempty
 
 instance CollectsTypes DLAssignment where

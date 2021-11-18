@@ -85,8 +85,8 @@ instance Sanitize DLExpr where
     DLE_TimeOrder _ tos -> DLE_TimeOrder sb (sani tos)
     DLE_GetContract _ -> DLE_GetContract sb
     DLE_GetAddress _ -> DLE_GetAddress sb
-    DLE_EmitLog _ m a -> DLE_EmitLog sb m (sani a)
-    DLE_setApiDetails _ w t c -> DLE_setApiDetails sb w t c
+    DLE_EmitLog _ m ma a -> DLE_EmitLog sb m ma (sani a)
+    DLE_setApiDetails _ w d c f -> DLE_setApiDetails sb w d c f
 
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m
