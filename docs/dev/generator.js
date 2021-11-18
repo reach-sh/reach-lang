@@ -250,7 +250,8 @@ const processCodeSnippet = (doc, pre, code, spec) => {
   const olEl = doc.createRange().createContextualFragment(olStr);
   pre.append(olEl);
   pre.classList.add('snippet');
-  pre.classList.add(spec.numbered ? 'numbered' : 'unnumbered');
+  const shouldNumber = spec.numbered && (arr.length != 1);
+  pre.classList.add(shouldNumber ? 'numbered' : 'unnumbered');
 }
 
 const transformReachDoc = (md) => {
