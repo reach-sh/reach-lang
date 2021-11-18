@@ -1,39 +1,44 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS_GHC -Wno-missing-export-lists #-}
 {-# LANGUAGE DeriveGeneric #-}
+
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
+{-# OPTIONS_GHC -Wno-deriving-defaults #-}
+{-# OPTIONS_GHC -Wno-missing-methods #-}
 
 module Reach.Simulator.Server where
 
-import Web.Scotty
-import Data.Aeson (FromJSON, ToJSON)
-import GHC.Generics
 import Reach.AST.LL
 import Control.Monad.Reader
 import qualified Reach.Simulator.Core as S
+import Control.Concurrent.STM
+import Data.Default.Class
+import Data.Text.Lazy (Text)
+import Network.Wai.Middleware.RequestLogger
+import Web.Scotty.Trans
+-- import GHC.Generics
 -- import qualified Data.Map.Strict as M
+-- import Data.Aeson (FromJSON, ToJSON)
 
-type StateId = Int
-type ActionId = Int
+instance Default Session where
+  def = initSession
 
-data State = State
-  { state_id :: StateId
-  }
-  deriving (Show, Generic)
+newtype WebM a = WebM { runWebM :: ReaderT (TVar Session) IO a }
+  deriving (Applicative, Functor, Monad, MonadIO, MonadReader (TVar Session))
 
-data Action = Action
-  { action_id :: ActionId
-  , action_type :: S.Action
-  }
-  deriving (Generic)
+webM :: MonadTrans t => WebM a -> t WebM a
+webM = lift
+
+gets :: (Session -> b) -> WebM b
+gets f = ask >>= liftIO . readTVarIO >>= return . f
+
+modify :: (Session -> Session) -> WebM ()
+modify f = ask >>= liftIO . atomically . flip modifyTVar' f
+
+type State = Int
+type Action = Int
 
 portNumber :: Int
 portNumber = 3000
-
-instance ToJSON State
-instance FromJSON State
-
-instance ToJSON Action
-instance FromJSON Action
 
 type Actions = [[Action]]
 
@@ -55,15 +60,13 @@ initSession = Session
   , e_res = S.V_Null
   }
 
-type App a = ReaderT Session IO a
-
-initProgSim :: LLProg -> App S.PartState
+initProgSim :: LLProg -> WebM S.PartState
 initProgSim ll = do
-  let st = S.initState
-  ps <- local (\_ -> initSession) $ return $ S.initApp ll st
-  sid <- asks e_nsid
-  actions <- asks e_actions
-  let new_actions =
+  let initSt = S.initState
+  ps <- return $ S.initApp ll initSt
+  sid <- gets e_nsid
+  actions <- gets e_actions
+  let newActionsM =
         case ps of
           S.PS_Done _ _ -> [registerAction S.A_None]
           S.PS_Suspend a _ _ -> [registerAction a]
@@ -71,45 +74,54 @@ initProgSim ll = do
         case ps of
           S.PS_Done _ v -> v
           S.PS_Suspend _ _ _ -> S.V_Null
-  local (\e ->
-    e {e_actions = actions ++ [new_actions]}
-      {e_nsid = sid+1}
-      {e_pthread = ps}
-      {e_res = new_res})
-      $ return ps
+  newActions <- mapM id newActionsM
+  modify $ \ st -> st {e_actions = actions ++ [newActions]}
+    {e_nsid = sid+1}
+    {e_pthread = ps}
+    {e_res = new_res}
+  return ps
 
-registerAction :: S.Action -> Action
+registerAction :: S.Action -> WebM Action
 registerAction = undefined
 
 -- TODO: which program to unblock?
 -- NOTE: need to store cont at each step
-unblockProg :: StateId -> ActionId -> S.DLVal -> ()
+unblockProg :: State -> Action -> S.DLVal -> ()
 unblockProg = undefined
 
-allStates :: [State]
-allStates = undefined
+allStates :: WebM [State]
+allStates = do
+  a <- gets e_nsid
+  return [0..(a-1)]
 
-computeActions :: StateId -> [Action]
+computeActions :: State -> WebM [Action]
 computeActions = undefined
 
-matchesId :: Int -> (a -> Int) -> a -> Bool
-matchesId i f a = f a == i
-
 main :: IO ()
-main = scotty portNumber $ do
-  get "/states" $ do
-    json $ allStates
+main = do
+    sync <- newTVarIO def
+    let runActionToIO m = runReaderT (runWebM m) sync
+    scottyT portNumber runActionToIO app
 
-  get "/states/:s" $ do
-    s <- param "s"
-    json (filter (matchesId s state_id) $ allStates)
+app :: ScottyT Text WebM ()
+app = do
+    middleware logStdoutDev
+    get "/states" $ do
+      ss <- webM $ allStates
+      json $ ss
 
-  get "/states/:s/actions" $ do
-    s <- param "s"
-    json $ computeActions s
+    get "/states/:s" $ do
+      s <- param "s"
+      ss <- webM $ allStates
+      json (filter ((==) s) $ ss)
 
-  post "/states/:s/actions/:a/?data=post_val" $ do
-    s <- param "s"
-    a <- param "a"
-    v <- param "post_val"
-    return $ unblockProg s a $ S.V_UInt v
+    get "/states/:s/actions" $ do
+      s <- param "s"
+      as <- webM $ computeActions s
+      json $ as
+
+    post "/states/:s/actions/:a/?data=post_val" $ do
+      s <- param "s"
+      a <- param "a"
+      v <- param "post_val"
+      return $ unblockProg s a $ S.V_UInt v

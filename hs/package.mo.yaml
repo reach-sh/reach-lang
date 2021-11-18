@@ -23,6 +23,7 @@ dependencies:
 - containers
 - cryptonite
 - curl
+- data-default-class
 - deepseq
 - digest
 - directory
@@ -59,6 +60,7 @@ dependencies:
 - silently
 - simple-smt
 - smallcheck
+- stm
 - system-filepath
 - tasty
 - tasty-ant-xml
@@ -78,6 +80,7 @@ dependencies:
 - unordered-containers
 - utf8-string
 - vector
+- wai-extra
 - yaml
 - neat-interpolation
 - pretty-terminal

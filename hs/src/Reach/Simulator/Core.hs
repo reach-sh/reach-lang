@@ -401,8 +401,8 @@ instance Interp DLStmt where
     DL_ArrayMap _at var1 arg var2 block -> do
       arr <- interp arg
       let f = (\x val -> do
-          addToStore x val
-          interp block)
+            addToStore x val
+            interp block)
       case arr of
         V_Array arr' -> do
           res <- V_Array <$> mapM (\val -> f var2 val) arr'
@@ -413,9 +413,9 @@ instance Interp DLStmt where
       acc <- interp arg1
       arr <- interp arg2
       let f = (\a x b y -> do
-          addToStore a x
-          addToStore b y
-          interp block)
+            addToStore a x
+            addToStore b y
+            interp block)
       case arr of
         V_Array arr' -> do
           res <- foldM (\x y -> f var2 x var3 y) acc arr'
@@ -448,9 +448,9 @@ instance Interp DLStmt where
       g <- globalGet
       let linst = e_linstate g
       let f = (\a x b y -> do
-          addToStore a x
-          addToStore b y
-          interp block)
+            addToStore a x
+            addToStore b y
+            interp block)
       res <- foldM (\x y -> f var2 x var3 y) accu $ (M.!) linst dlmvar
       addToStore var1 res
       return V_Null
