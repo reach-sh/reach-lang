@@ -119,13 +119,10 @@ checkteal () {
 #exit 0
 
 jb
-ci ALGO transfer-from-zero
-exit 0
-c users/awol1/broken-vault.rsh
-exit 0
-ci ALGO overview
-ci ALGO atomic-swap
 ci ALGO mint-basic
+ci ALGO overview
+exit 0
+ci ALGO atomic-swap
 ci ALGO api-full
 ci ALGO tut-7
 
