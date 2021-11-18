@@ -16,8 +16,12 @@ sudo chown -R $(whoami) ./*
 
 rm ./version.mo.d.ts ./version.mo.mjs
 
-git add .
-git config user.name "circleci"
-git config user.email "circleci@reach.com"
+CHANGES=$(git diff --exit-code; echo $?)
 
-git commit -m "'refresh -> reach-sh/reach-lang@$HASH'"
+if [ $CHANGES -eq 1 ]; then
+  git add .
+  git config user.name "circleci"
+  git config user.email "circleci@reach.com"
+  
+  git commit -m "'refresh -> reach-sh/reach-lang@$HASH'"
+fi
