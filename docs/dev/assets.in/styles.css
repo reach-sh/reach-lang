@@ -90,7 +90,7 @@ header div.navbar-nav a:hover span,
   color: white;
 }
 
-header a.active span {
+header navbar-nav a.active span {
   border-bottom: 2px solid white;
   color: white;
 }
@@ -487,7 +487,7 @@ iframe.gray-scale {
  Module Cards
 ************************************************/
 
-#page-col div.card {background: #FAFDFF; border: 1px solid #cce7ff;}
+#page-col div.card {background: #cce7ff; border: 1px solid #cce7ff;}
 
 #page-col div.card a,
 #page-col div.card a:active,
@@ -500,7 +500,12 @@ iframe.gray-scale {
 #page-col div.card small {color: #00294d;}
 
 #page-col div.card:hover,
-#page-col div.card:focus {background: aliceblue;}
+#page-col div.card:focus {
+  box-shadow: 0 0 6px rgba(0,0,0,0.6);
+  -moz-box-shadow: 0 0 6px rgba(0,0,0,0.6);
+  -webkit-box-shadow: 0 0 6px rgba(0,0,0,0.6);
+  -o-box-shadow: 0 0 6px rgba(0,0,0,0.6);
+}
 
 /************************************************
  banish
