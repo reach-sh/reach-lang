@@ -278,6 +278,13 @@
 </p>
 <p>If an API was specified without an <code>apiName</code>, for example <code>API({ cast: Fun([String], Null)})</code>, it may be accessed by its property name:</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292F">ctc.a.</span><span style="color: #8250DF">cast</span><span style="color: #24292F">(</span><span style="color: #0A3069">"Pedro"</span><span style="color: #24292F">);</span></li></ol></pre>
+<h3 id="ctcsafeapis"><code>ctc.safeApis</code></h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292F">ctc.safeApis</span></li><li value="2"><span style="color: #24292F">ctc.safeApis.Voter.</span><span style="color: #8250DF">cast</span><span style="color: #24292F">(</span><span style="color: #0A3069">"Pedro"</span><span style="color: #24292F">)</span></li></ol></pre>
+<p>
+  This object is the same as <code>ctc.apis</code> except the API functions return a <code>Maybe</code> value.
+  If the call fails, then <code>['None', null]</code> will be returned. If the call succeeds, the return value will
+  be wrapped with <code>Some</code>, e.g. <code>['Some', 4]</code>.
+</p>
 <h3 id="ctcviews-ctcv"><code>ctc.views</code>, <code>ctc.v</code></h3>
 <p>
   ::: note
@@ -296,6 +303,13 @@
 <p>${ref((quote js), "getViews")}</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292F">ctc.</span><span style="color: #8250DF">getViews</span><span style="color: #24292F">() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">Object</span></li></ol></pre>
 <p>This deprecated function is an abbreviation of <code>ctc.views</code>.</p>
+<h3 id="ctcunsafeviews"><code>ctc.unsafeViews</code></h3>
+<p><code>ctc.unsafeViews ctc.unsafeViews.NFT.owner()</code></p>
+<p>
+  This object is the same as <code>ctc.views</code> except the value of the view is not wrapped in a <code>Maybe</code> type.
+  If a view is set, the value will be returned as is, without being wrapped in <code>Some</code>.
+  If a view is not set, an error will be thrown.
+</p>
 <h2 id="network-utilities">Network Utilities</h2>
 <p>These functions interact with the consensus network itself.</p>
 <hr>
