@@ -47,7 +47,7 @@ What's worse, an application may be programmed to either transfer everything or 
 Furthermore, suppose the application is programmed to clear the pot atomically, disbursing to each player in one single step;
 in this scenario, if recipients are required to pre-authorize holding a token, then George can revoke that permission to spite Ringo and prevent him from getting his allocation.
 
-In summary, the semantics of non-network tokens is non-intuitive considering the power given to their creators.
+In summary, non-network tokens' semantics are non-intuitive considering the power given to their creators.
 
 @section{What does Reach do about this?}
 
