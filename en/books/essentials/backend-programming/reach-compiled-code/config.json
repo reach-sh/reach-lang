@@ -11,6 +11,7 @@
   "chapters": null,
   "pages": null,
   "menuItem": "mi-docs",
-  "title": "Modes",
-  "pathname": "/proj/docs/dev/src/en/books/essentials/backend-programming/modes"
+  "src": "ref-backends-js.md",
+  "title": "JavaScript",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/backend-programming/reach-compiled-code"
 }

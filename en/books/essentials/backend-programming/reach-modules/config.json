@@ -11,7 +11,6 @@
   "chapters": null,
   "pages": null,
   "menuItem": "mi-docs",
-  "src": "ref-programs-module.md",
-  "title": "Modules",
-  "pathname": "/proj/docs/dev/src/en/books/essentials/backend-programming/modules"
+  "title": "Reach Modules",
+  "pathname": "/proj/docs/dev/src/en/books/essentials/backend-programming/reach-modules"
 }
