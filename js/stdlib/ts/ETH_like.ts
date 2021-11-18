@@ -155,7 +155,8 @@ function setQueryLowerBound(x: BigNumber|number) {
 
 /** @description convenience function for drilling down to the actual address */
 const getAddr = async (acc: AccountTransferable): Promise<Address> => {
-  if (!acc.networkAccount) throw Error(`Expected acc.networkAccount`);
+  if ( typeof acc === 'string' ) { return acc; }
+  if ( ! acc.networkAccount ) throw Error(`Expected acc.networkAccount`);
   // TODO better type design here
   // @ts-ignore
   if (acc.networkAccount.address) {
