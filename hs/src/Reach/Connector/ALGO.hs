@@ -1412,7 +1412,7 @@ ce = \case
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract _ -> code "txn" ["ApplicationID"]
   DLE_GetAddress _ -> cContractAddr
-  DLE_EmitLog at _ v@(DLVar _ _ _ n)  -> do
+  DLE_EmitLog at _ _ v@(DLVar _ _ _ n)  -> do
     clog $
       [ DLA_Literal (DLL_Int at $ fromIntegral n)
       , DLA_Var v
@@ -1609,7 +1609,7 @@ cm km = \case
       case de of
         DLE_TokenNew {} -> do
           return True
-        DLE_EmitLog _ _ dv' -> do
+        DLE_EmitLog _ _ _ dv' -> do
           isNewTok $ DLA_Var dv'
         _ -> do
           return False
