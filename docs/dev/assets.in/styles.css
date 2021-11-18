@@ -542,3 +542,12 @@ div.social-icons a i {color:#595959;}
   color: orange;
   font-style: normal;
 }
+
+/* Notes */
+
+div.note {
+  background: #F5F5DC;
+  margin-left: 2em;
+  padding: 1em;
+}
+
