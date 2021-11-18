@@ -350,7 +350,7 @@ This value is intended to be a @tech{digest} of a larger metadata document.}
 This returns a @reachin{Token} value and deposits a @reachin{supply} amount of the new @tech{non-network tokens} into the @tech{contract} account associated with the @|DApp|.
 These tokens must be destroyed by the end of the @|DApp|.
 
-@margin-note{Reach assumes that @tech{network tokens} and @tech{non-network tokens} behavior identically, but often they do not; @seclink["guide-nntoks"]{this article} discusses the causes and consequences of this.}
+@margin-note{Reach assumes that @tech{network tokens} and @tech{non-network tokens} behave identically, but often they do not; @seclink["guide-nntoks"]{this article} discusses the causes and consequences of this.}
 
 @(hrule)
 
