@@ -16,6 +16,43 @@ menuItem: mi-home
 
 # Reach News
 
+## November 2021
+
+<div class="row">
+<div class="col-12 col-lg-8">
+
+* Implemented an API expression enabling intermittent contract visits.
+* Implemented a call expression for invoking API expressions.
+* Implemented compile-time safety analysis of View expression use.
+* Released [Reach 0.1.6 rc.9](https://www.npmjs.com/package/@reach-sh/stdlib/v/0.1.6-rc.9).
+* Integrated [AVM](https://developer.algorand.org/docs/get-details/dapps/avm/) features on Algorand 1.0.
+* Solving [Apple M1](https://en.wikipedia.org/wiki/Apple_M1) / Haskell compiler issues.
+* Modified Tutorials to include React Native for Mobile.
+* Improved Visual Studio Code Reach extension.
+* Improved the Reach build process including build times.
+* Improved compiler error messages. 
+* Prepared the Reach Developer Portal for a late Nov beta release.
+* Attended NFT-NYC and Tampa Bay Blockchain Expo.
+* Added Reach App Initialization Templates.
+* Added RPC support for C# clients.
+* Initiated improvements to Reach Debugger.
+* Initiated Africa Bounty Hack.
+* Shout out to companies building with Reach: [xBacked](https://www.xbacked.io/), [Dequency](https://twitter.com/Dequency_io), [Zone](https://www.zone.game/), [Lando Defi](https://twitter.com/landodefi), [Humble DAO](https://twitter.com/HumbleDAO), [Game Jam Protocol](https://gamejamprotocol.com/), [Polynize](https://polynize.com/), [Headline](https://www.headline-inc.com/).
+* Welcomed to Reach Nina Klymenko (design), Chiké Abuah (security & debugging), Tim Yang (mobile).
+
+</div>
+<div class="col-12 col-lg-4">
+<div class="ratio ratio-16x9" style="max-width:400px;">
+  <iframe 
+    src="https://www.youtube.com/embed/TZ2KPh4q4H8?rel=0" 
+    frameborder="0"
+    loading="lazy"
+    allowfullscreen>
+  </iframe>
+</div>
+</div>
+</div>
+
 ## October 2021
 
 <div class="row">
@@ -39,7 +76,7 @@ menuItem: mi-home
 <div class="col-12 col-lg-4">
 <div class="ratio ratio-16x9" style="max-width:400px;">
   <iframe 
-    src="https://www.youtube.com/embed/G0X-BZWYrRs?start=5&rel=0" 
+    src="https://www.youtube.com/embed/G0X-BZWYrRs?rel=0" 
     frameborder="0"
     loading="lazy"
     allowfullscreen>
@@ -71,7 +108,7 @@ menuItem: mi-home
 <div class="col-12 col-lg-4">
 <div class="ratio ratio-16x9" style="max-width:400px;">
   <iframe 
-    src="https://www.youtube.com/embed/E3fseK_UScU?start=5&rel=0" 
+    src="https://www.youtube.com/embed/E3fseK_UScU?rel=0" 
     frameborder="0"
     loading="lazy"
     allowfullscreen>
@@ -101,7 +138,7 @@ menuItem: mi-home
 <div class="col-12 col-lg-4">
 <div class="ratio ratio-16x9" style="max-width:400px;">
   <iframe 
-    src="https://www.youtube.com/embed/ml6v5n0eEFU?start=5&rel=0" 
+    src="https://www.youtube.com/embed/ml6v5n0eEFU?rel=0" 
     frameborder="0"
     loading="lazy"
     allowfullscreen>

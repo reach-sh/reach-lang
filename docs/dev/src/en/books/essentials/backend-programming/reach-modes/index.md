@@ -2,7 +2,7 @@
 menuItem: mi-docs
 ---
 
-# Modes
+# Reach Modes
 
 Reach programs are organized into four modes: 
 
@@ -38,9 +38,9 @@ The following list describes when to use each type of consensus transfer:
 
 `commit` transitions from a consensus step to a step.
 
-## Computations
+## Statements and Expressions
 
-All four modes support a range of statements and expressions described in [Computations](/en/books/essentials/backend-programming/computations/). Each mode supports the additional statements/expressions as described below.
+In addition to the statements and expressions found in [Reach Syntax](/en/books/essentials/backend-programming/reach-syntax/), each mode supports the additional statements and expressions described below.
 
 # Initialization
 
