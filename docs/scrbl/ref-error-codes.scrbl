@@ -2179,6 +2179,23 @@ You can fix this error by using different names:
   const B = API('Flower', { girl2: Fun([UInt], Null) });
 }
 
+@error{RE0124}
+
+This error indicates that there is an attempt to make a publication in your program, but there are
+no @reachin{Participant}s or @reachin{ParticipantClass}es declared.
+
+This issue can arise when you use @reachin{Anybody.publish()}. To fix this issue, ensure you declare
+a @reachin{Participant} or @reachin{ParticipantClass}.
+
+@error{RE0125}
+
+This error indicates that an @reachin{API} is explicitly attempting to make a publication, e.g. @reachin{api.publish()}.
+An API may only make a publication through a @reachin{fork}, @reachin{parallelReduce}, or @reachin{call}.
+
+Depending on your program, you can fix this error by performing a @reachin{call} or adding an @reachin{.api}
+case to your @reachin{fork} or @reachin{parallelReduce} statement.
+
+
 @error{REP0000}
 
 This error indicates that the body of a @reachin{while} loop does not make a publication before the @reachin{continue}
