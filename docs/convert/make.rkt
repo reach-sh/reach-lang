@@ -139,9 +139,9 @@
     [`(item ,@l)
       (egol l) (d "\n")]
     [`(margin-note . ,l)
-      (d "::: note\n")
+      (d "<div class=\"note\">\n")
       (egol l)
-      (d "\n:::")]
+      (d "\n</div>")]
     [(or
        `(reachex ,f 'only ,from ,to ,_)
        `(reachex #:mode ,_ ,f 'only ,from ,to ,_))
