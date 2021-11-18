@@ -138,11 +138,20 @@ const remoteGet = async (url) => {
   return CACHE[url];
 };
 
-let shikiHighlighter = undefined;
+const shikiHighlighter =
+  await shiki.getHighlighter({
+    theme: 'github-light',
+    langs: [
+      ...shiki.BUNDLED_LANGUAGES,
+      {
+        id: 'reach',
+        scopeName: 'source.js',
+        // XXX customize this
+        path: 'languages/javascript.tmLanguage.json',
+      },
+    ],
+  });
 const shikiHighlight = async (code, lang) => {
-  if ( shikiHighlighter === undefined ) {
-    shikiHighlighter = await shiki.getHighlighter({ theme: 'github-light' });
-  }
   return shikiHighlighter.codeToHtml(code, lang);
 };
 
@@ -246,7 +255,6 @@ const processCodeSnippet = (doc, pre, code, spec) => {
 
 const transformReachDoc = (md) => {
   const match1 = /# {#(.*)}/; // Example: # {#guide-ctransfers}
-  const match2 = '```reach';
   const match3 = /\${toc}/;
 
   const mdArr = md.split('\n');
@@ -255,7 +263,6 @@ const transformReachDoc = (md) => {
     let line = mdArr[i];
 
     if (line.match(match1)) { line = line.replace(match1, '#'); }
-    if (line.match(match2)) { line = line.replace(match2, '```js'); }
     if (line.match(match3)) { line = line.replace(match3, ''); }
 
     md += `${line}\n`;
@@ -448,11 +455,9 @@ const findAndProcessFolder = async (inputBaseConfig, folder) => {
 
 // Main
 
-(async () => {
-  await Promise.all([
-    processCss(),
-    processJs(),
-    processBaseHtml('en'),
-    findAndProcessFolder({}, srcDir),
-  ]);
-})();
+await Promise.all([
+  processCss(),
+  processJs(),
+  processBaseHtml('en'),
+  findAndProcessFolder({}, srcDir),
+]);

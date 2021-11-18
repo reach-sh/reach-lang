@@ -29,6 +29,7 @@ ADD examples ./examples
 ADD rpc-client/py ./rpc-client/py
 ADD docs/scrbl ./docs/scrbl
 RUN (cd docs/scrbl && make render)
+RUN (cd ./docs/scrbl/build && ls *html) | sed 's/\.html//' > ./docs/scrbl/manifest.txt
 
 FROM racket as convert
 WORKDIR /proj
@@ -48,6 +49,9 @@ ADD examples ./examples
 ADD rpc-client/py ./rpc-client/py
 ADD docs/dev ./docs/dev
 COPY --from=convert /proj/docs/convert/src ./docs/md/
+RUN (cd docs/dev && ./rewire.sh)
+COPY --from=convert /proj/docs/convert/src ./docs/md/
+COPY --from=render /proj/docs/scrbl/manifest.txt ./docs/dev/
 RUN (cd docs/dev && make)
 WORKDIR /proj/docs/dev
 
