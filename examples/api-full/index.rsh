@@ -21,12 +21,12 @@ export const main = Reach.App(() => {
     end: Fun([], State),
   });
   deploy();
-  A.publish();
-  commit();
   A.only(() => {
     const [ tok, amt ] = declassify([ interact.tok, interact.amt ]);
   });
-  A.publish(tok, amt).pay([[amt, tok]]);
+  A.publish(tok, amt)
+  commit();
+  A.pay([[amt, tok]]);
   A.interact.log("Ready!");
 
   const [ done, x, an, at ] =

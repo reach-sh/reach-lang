@@ -8,18 +8,18 @@ Verification failed:
 
   // Violation Witness
 
-  const x/53 = <loop variable>;
+  const x/52 = <loop variable>;
   //    ^ could = [38, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const balance(0)/57 = <loop variable>;
+  const balance(0)/55 = <loop variable>;
   //    ^ could = 38
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization
 
-  const v92 = (balance(0)/57 + 1) == [(x/53[0] + 2), x/53[1] ][0];
+  const v89 = (balance(0)/55 + 1) == [(x/52[0] + 2), x/52[1] ][0];
   //    ^ would be false
-  assert(v92);
+  assert(v89);
 
   Verifying when NO participants are honest
 Verification failed:
@@ -29,18 +29,18 @@ Verification failed:
 
   // Violation Witness
 
-  const x/53 = <loop variable>;
+  const x/52 = <loop variable>;
   //    ^ could = [38, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const balance(0)/57 = <loop variable>;
+  const balance(0)/55 = <loop variable>;
   //    ^ could = 38
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization
 
-  const v112 = (balance(0)/57 + 1) == [(x/53[0] + 2), x/53[1] ][0];
+  const v108 = (balance(0)/55 + 1) == [(x/52[0] + 2), x/52[1] ][0];
   //    ^ would be false
-  assert(v112);
+  assert(v108);
 
   Verifying when ONLY "A" is honest
 Verification failed:
@@ -50,18 +50,18 @@ Verification failed:
 
   // Violation Witness
 
-  const x/53 = <loop variable>;
+  const x/52 = <loop variable>;
   //    ^ could = [38, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const balance(0)/57 = <loop variable>;
+  const balance(0)/55 = <loop variable>;
   //    ^ could = 38
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization
 
-  const v132 = (balance(0)/57 + 1) == [(x/53[0] + 2), x/53[1] ][0];
+  const v127 = (balance(0)/55 + 1) == [(x/52[0] + 2), x/52[1] ][0];
   //    ^ would be false
-  assert(v132);
+  assert(v127);
 
   Verifying when ONLY "B" is honest
 Verification failed:
@@ -71,17 +71,17 @@ Verification failed:
 
   // Violation Witness
 
-  const x/53 = <loop variable>;
+  const x/52 = <loop variable>;
   //    ^ could = [38, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const balance(0)/57 = <loop variable>;
+  const balance(0)/55 = <loop variable>;
   //    ^ could = 38
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization
 
-  const v152 = (balance(0)/57 + 1) == [(x/53[0] + 2), x/53[1] ][0];
+  const v146 = (balance(0)/55 + 1) == [(x/52[0] + 2), x/52[1] ][0];
   //    ^ would be false
-  assert(v152);
+  assert(v146);
 
 Checked 18 theorems; 4 failures :'(

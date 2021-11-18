@@ -26,28 +26,66 @@ const makeLabeledTreeItem = (label: string, title: string, command: string, icon
 	return t;
 };
 
+const COMMANDS = require('../../data/commands.json');
+const COMMANDS_TREE_DATA = [];
+const HELP_TREE_DATA = [];
+const DOCUMENTATION_TREE_DATA = [];
+
+COMMANDS.forEach(commandObject => {
+	// Extract all the properties we might need from
+	// the parameter.
+	const {
+		label, title, command,
+		commandsTreeDataProvider,
+		helpTreeDataProvider,
+		documentationTreeDataProvider
+	} = commandObject;
+
+	if (commandsTreeDataProvider) {
+		COMMANDS_TREE_DATA.push(
+			makeTreeItem(label, command)
+		);
+	}
+
+	else if (helpTreeDataProvider) {
+		let icon = `Error: Icon needed for ${label}`;
+
+		switch (label) {
+			case 'discord':
+				icon = discord_icon;
+				break;
+			case 'gist':
+				icon = gist_icon;
+				break;
+			case 'issue':
+				icon = github_icon
+				break;
+		};
+		
+		HELP_TREE_DATA.push(
+			makeLabeledTreeItem(
+				label, title, command, icon
+			)
+		);
+	}
+
+	else if (documentationTreeDataProvider) {
+		// All documentation tree items will have the
+		// same icon.
+		DOCUMENTATION_TREE_DATA.push(
+			makeLabeledTreeItem(
+				label, title, command, reach_icon_red
+			)
+		);
+	}
+});
+
 export class CommandsTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 
 	data: vscode.TreeItem[];
 
 	constructor() {
-		this.data = [
-			makeTreeItem('clean', 'reach.clean'),
-			makeTreeItem('compile', 'reach.compile'),
-			makeTreeItem('devnet', 'reach.devnet'),
-			makeTreeItem('docker-reset', 'reach.docker-reset'),
-			makeTreeItem('down', 'reach.down'),
-			makeTreeItem('hashes', 'reach.hashes'),
-			makeTreeItem('init', 'reach.init'),
-			makeTreeItem('react', 'reach.react'),
-			makeTreeItem('rpc-run', 'reach.rpc-run'),
-			makeTreeItem('rpc-server', 'reach.rpc-server'),
-			makeTreeItem('run', 'reach.run'),
-			makeTreeItem('scaffold', 'reach.scaffold'),
-			makeTreeItem('update', 'reach.update'),
-			makeTreeItem('upgrade', 'reach.upgrade'),
-			makeTreeItem('version', 'reach.version'),
-		];
+		this.data = COMMANDS_TREE_DATA;
 	}
 
 	getTreeItem(element: TreeItem) {
@@ -64,11 +102,7 @@ export class HelpTreeDataProvider implements vscode.TreeDataProvider<TreeItem> {
 	data: vscode.TreeItem[];
 
 	constructor() {
-		this.data = [
-			makeLabeledTreeItem('discord', 'Chat on Discord', 'reach.discord', discord_icon),
-			makeLabeledTreeItem('gist', 'Create a Gist to share', 'reach.gist', gist_icon),
-			makeLabeledTreeItem('issue', 'Open an issue on GitHub', 'reach.issue', github_icon)
-		];
+		this.data = HELP_TREE_DATA;
 	}
 
 	getTreeItem(element: TreeItem) {
@@ -85,9 +119,7 @@ export class DocumentationTreeDataProvider implements vscode.TreeDataProvider<Tr
 	data: vscode.TreeItem[];
 
 	constructor() {
-		this.data = [
-			makeLabeledTreeItem('docs', 'Open the documentation', 'reach.docs', reach_icon_red),
-		];
+		this.data = DOCUMENTATION_TREE_DATA;
 	}
 
 	getTreeItem(element: TreeItem) {

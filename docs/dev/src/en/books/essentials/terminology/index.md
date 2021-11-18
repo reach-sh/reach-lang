@@ -4,109 +4,55 @@ menuItem: mi-docs
 
 # Terminology
 
-# Account
+# Assertion
 
-# Agent
+An assertion is either: a knowledge assertion, which is a claim that one honest participant cannot know something that another honest participant does know; a static assertion, which is an always-true formula; an assumption, which is a true formula if frontends behave honestly; a requirement, which is a true formula if participants behave honestly; or, a possibility assertion, which is a formula for which there exists some values that honest participants and frontends could submit which results in the truth of the formula. An honest participant is one that executes the steps specified by the DApp, while an honest frontend is one that only returns values which ensure that all assumptions evaluate to the boolean true.
 
-# Algorand Virtual Machine (AVM)
-
-# Backend
-
-# Block
-
-# Blockchain
-
-* [Understand the Blockchain in Two Minutes](https://www.youtube.com/watch?v=r43LhSUUGTQ)
-
-# Bridge
-
-# Computation
-
-# Contract
-
-# Decentralized Application (DApp)
-
-# Decentralized Oracle
-
-# Declassification
-
-# Deployment
-
-# Domination
-
-# DuoSwap
-
-# Export
-
-# Expression
-
-# First Message
-
-# Fork
-
-# Frontend
-
-# Hydrate
-
-# Import
-
-# Interact Interface
-
-# JavaScript Standard Library
-
-# Liquidity Provider Tokens
-
-# Mode
-
-# Module
-
-# Participant
-
-# Participant API
-
-# Participant Backend
-
-# Participant Class
-
-# Participant Frontend
-
-# Pay
+# Linear State
 
 # Pay Amount
 
-# Principal
+A pay amount is either:
 
-# Publication
+* An integer, denoting an amount of network tokens; or,
+* A tuple of token amounts.
 
-# Publish
+A token amount is either:
 
-# Reach Wallet
+* An integer, denoting an amount of network tokens; or,
+* A tuple with two elements, where the first is an integer, denoting an amount of non-network tokens, and the second is Token, specifying a particular non-network token.
 
-# Statement
+For example, these are all pay amounts:
 
-# Step
+``` nonum
+0
+5
+[ 5 ]
+[ 5, [ 2, gil ] ]
+[ [ 2, gil ], 5 ]
+[ 5, [ 2, gil ], [ 8, zorkmids ] ]
+```
 
-# Time
+It is invalid for a pay amount to specify an amount of tokens multiple times. For examples, these are invalid pay amounts:
 
-# Timeout
+``` nonum
+[ 1, 2 ]
+[ [2, gil], [1, gil] ]
+```
 
-# Token
+The ordering of a pay amount is only significant when used within a fork statement or parallel reduce statement that specifies a paySpec. In 
+this case, payments are expected to be a tuple where the first element is an integer pay amount, and the rest of the elements are token amount tuples. The ordering of the token amount elements should match the ordering in paySpec. For example,
 
-# Transfer
+``` nonum
+.paySpec([tokA, tokB])
+```
 
-# Validity
+will indicate that fork payments should be of the format:
 
-<!--
-# Companies
+``` nonum
+[ NETWORK_TOKEN_AMT, [ amtA, tokA ], [ amtB, tokB ] ]
+```
 
-# Reach Networks](https://reach.sh/)
+# Time Argument
 
-## Smart Contract Platforms
-
-# Algorand
-# Cardano
-# Ethereum
-# Polkadot
-# Solana
-# Tezos
--->
+A time argument represents consensus-network time. The argument is of type `Either(UInt, UInt)`, where the left variant refers to absolute network time and the right variant refers to absolute network seconds.

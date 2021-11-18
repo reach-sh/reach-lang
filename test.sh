@@ -27,7 +27,7 @@ err () {
 }
 
 jb () {
-  # (cd "$ROOT"/js/js-deps && make build)
+  #(cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
@@ -56,7 +56,7 @@ ci () {
   ${REACH} clean
   ${REACH} compile --intermediate-files
   make build
-  REACH_DEBUG=1 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=0 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 
@@ -78,12 +78,12 @@ r () {
 
   export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
-  # REACH_CONNECTOR_MODE=ETH ${REACH} run
+  REACH_CONNECTOR_MODE=ETH ${REACH} run
   # REACH_CONNECTOR_MODE=ALGO ${REACH} run
   #REACH_CONNECTOR_MODE=CFX ${REACH} run
 
   # Ganache
-  REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
+  #REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 ${REACH} run
 
 )
 }
@@ -107,22 +107,26 @@ tealcount () {
   done
 }
 
+checkteal () {
+  c "$1"/index.rsh
+  ./scripts/goal-devnet clerk compile "$1"/build/index.main.appApproval.teal
+}
+
 # tealcount
 
 #######
 
 #exit 0
 
-# jb
-# ci CFX tut-7
-
 jb
-#c examples/dan-storage/index.rsh
-ci ETH tut-7
+ci ALGO mint-basic
+ci ALGO overview
 exit 0
+ci ALGO atomic-swap
+ci ALGO api-full
+ci ALGO tut-7
 
-c examples/atomic-swap-auction/index.rsh
-
+#c users/t.rsh
 exit 0
 
 # (cd hs && mk hs-test)

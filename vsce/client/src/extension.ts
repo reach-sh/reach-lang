@@ -23,6 +23,8 @@ import {
 } from 'vscode-languageclient';
 import { CommandsTreeDataProvider, DocumentationTreeDataProvider, HelpTreeDataProvider } from './CommandsTreeDataProvider';
 
+const COMMANDS = require('../../data/commands.json');
+
 let client: LanguageClient;
 
 var terminal;
@@ -118,27 +120,21 @@ const urlHelper = (context, label, url) => {
 function registerCommands(context: ExtensionContext, reachPath: string) {
 	const cmdHelper = commandHelper(context, reachPath);
 
-	cmdHelper('compile');
-	cmdHelper('run');
-	cmdHelper('clean');
-	cmdHelper('upgrade');
-	cmdHelper('update');
-	cmdHelper('hashes');
-	cmdHelper('version');
-	cmdHelper('docker-reset');
-	cmdHelper('devnet');
-	cmdHelper('rpc-server');
-	cmdHelper('rpc-run');
-	cmdHelper('react');
-	cmdHelper('scaffold');
-	cmdHelper('down');
-	cmdHelper('init');
-
-	urlHelper(context, 'docs', 'https://docs.reach.sh/doc-index.html');
-	urlHelper(context, 'issue', 'https://github.com/reach-sh/reach-lang/issues/new');
-	urlHelper(context, 'discord', 'https://discord.gg/2XzY6MVpFH');
-	urlHelper(context, 'gist', 'https://gist.github.com/');
-
+	// If a command has a url, we should call
+	// something like
+	// urlHelper(context, 'docs', 'https://link');
+	// Otherwise, call something like
+	// cmdHelper('compile');
+	COMMANDS.forEach((commandObject: {
+		label: string; url?: string;
+	}) => {
+		// Extract all the properties we might need
+		// from the parameter.
+		const { label, url } = commandObject;
+		commandObject.url ?
+			urlHelper(context, label, url) :
+			cmdHelper(label);
+	});
 }
 
 function associateRshFiles() {

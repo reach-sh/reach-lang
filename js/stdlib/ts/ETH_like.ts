@@ -6,7 +6,7 @@ import {
 import {
   replaceableThunk,
   debug,
-  stdContract,
+  stdContract, stdVerifyContract,
   stdAccount,
   makeRandom,
   argsSplit,
@@ -32,7 +32,7 @@ import type { // =>
   IBackendViewInfo,
   IBackendViewsInfo,
   IContract,
-  ISetupArgs, ISetupRes,
+  ISetupArgs, ISetupRes, ISetupViewArgs,
   IRecvArgs, ISendRecvArgs,
   IRecv,
   TimeArg,
@@ -94,7 +94,11 @@ type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Address, Token, AnyETH_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
   | any /* union in this field: { setGasLimit: (ngl:any) => void } */;
-type SetupArgs = ISetupArgs<ContractInfo>;
+type VerifyResult = {
+  creation_block: number,
+};
+type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
+type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
 type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyETH_Ty>;
 
 type AccountTransferable = Account | {
@@ -287,9 +291,13 @@ class EventCache {
     }
     debug(dhead, lab, `not in cache`);
 
-    // If no results, then contact network
     const failed = (): {succ: false, block: number} => ({ succ: false, block: this.currentBlock });
+    if ( this.cache.length != 0 ) {
+      debug(`cache not empty, contains some other message from future, not querying...`, this.cache);
+      return failed();
+    }
 
+    // If no results, then contact network
     debug(dhead, lab, `querying`);
 
     const leftOver = this.lastQueryTime + 1000 - Date.now();
@@ -482,12 +490,16 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
   ): Contract => {
     ensureConnectorAvailable(bin, 'ETH', reachBackendVersion, reachEthBackendVersion);
 
-    const makeGetC = (getInfo:(() => Promise<ContractInfo>), eventCache: EventCache, informCreationBlock: ((cb:number) => void), getTrustedVerifyResult: (() => VerifyResult|undefined)) => {
+    const makeGetC = (setupViewArgs:SetupViewArgs, eventCache: EventCache, informCreationBlock: ((cb:number) => void)) => {
+      const { getInfo } = setupViewArgs;
       let _ethersC: EthersLikeContract | null = null;
       return async (): Promise<EthersLikeContract> => {
         if (_ethersC) { return _ethersC; }
         const info = await getInfo();
-        const { creation_block } = getTrustedVerifyResult() || await verifyContract_(info, bin, eventCache, label);
+        const { creation_block } =
+          await stdVerifyContract( setupViewArgs, (async () => {
+            return await verifyContract_(info, bin, eventCache, label);
+          }));
         informCreationBlock(creation_block);
         const address = info;
         debug(label, `contract verified`);
@@ -497,7 +509,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     };
 
     const _setup = (setupArgs: SetupArgs): SetupRes => {
-      const { setInfo, getInfo } = setupArgs;
+      const { setInfo, getInfo, setTrustedVerifyResult } = setupArgs;
 
       const eventCache = new EventCache();
 
@@ -526,8 +538,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         setLastBlock(o.blockNumber);
       };
 
-      let trustedVerifyResult: VerifyResult|undefined = undefined;
-      const getC = makeGetC(getInfo, eventCache, setLastBlock, (() => trustedVerifyResult));
+      const getC = makeGetC(setupArgs, eventCache, setLastBlock);
 
       const callC = async (
         dhead: any, funcName: string, arg: any, pay: PayAmt,
@@ -570,6 +581,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         }
         const codec = real_ethers.utils.defaultAbiCoder;
         const res = codec.decode(tys.map((x:AnyETH_Ty) => x.paramType), vsbs);
+        debug(`getState`, res);
         // @ts-ignore
         return res;
       };
@@ -632,7 +644,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           debug(label, `deploying factory; done:`, info);
           const creation_block = deploy_r.blockNumber;
           debug(label, `got receipt;`, creation_block);
-          trustedVerifyResult = { creation_block };
+          setTrustedVerifyResult({ creation_block });
           setInfo(info);
           return await trustedRecv(deploy_r);
         }
@@ -643,7 +655,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
         while ( true ) {
           debug(dhead, 'TIMECHECK', { timeoutAt });
-          if ( await checkTimeout(getTimeSecs, timeoutAt, await getNetworkTimeNumber() + 1) ) {
+          if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, await getNetworkTimeNumber() + 1) ) {
             debug(dhead, 'FAIL/TIMEOUT');
             return await doRecv(false, false);
           }
@@ -753,7 +765,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           if ( ! res.succ ) {
             const currentTime = res.block;
             debug(dhead, 'TIMECHECK', {timeoutAt, currentTime});
-            if ( await checkTimeout(getTimeSecs, timeoutAt, currentTime + 1) ) {
+            if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, currentTime + 1) ) {
               debug(dhead, 'TIMEOUT');
               return { didTimeout: true };
             }
@@ -784,16 +796,16 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return { getContractAddress, sendrecv, recv, getState };
     };
 
-    const setupView = (getInfo:(() => Promise<ContractInfo>)) => {
+    const setupView = (setupViewArgs: SetupViewArgs) => {
       const eventCache = new EventCache();
-      const getC = makeGetC(getInfo, eventCache, ((cb) => { void(cb); }), (() => undefined));
+      const getC = makeGetC(setupViewArgs, eventCache, ((cb) => { void(cb); }));
       const viewLib: IViewLib = {
         viewMapRef: async (...args: any): Promise<any> => {
           void(args);
           throw Error('viewMapRef not used by ETH backend'); },
       };
       const views_namesm = bin._Connectors.ETH.views;
-      const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo) =>
+      const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo, isSafe = true) =>
         async (...args: any[]): Promise<any> => {
           void(vs);
           const { ty } = vim;
@@ -804,10 +816,15 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           try {
             const val = await ethersC[vkn](...args);
             debug(label, 'getView1', v, k, 'val', val);
-            return ['Some', ty.unmunge(val)];
+            const uv = ty.unmunge(val);
+            return isSafe ? ['Some', uv] : uv;
           } catch (e) {
             debug(label, 'getView1', v, k, 'error', e);
-            return ['None', null];
+            if (isSafe) {
+              return ['None', null];
+            } else {
+              throw Error(`View ${v}.${k} is not set.`);
+            }
           }
         };
       return { getView1, viewLib };
@@ -904,15 +921,17 @@ const newTestAccount = async (startingBalance: any): Promise<Account> => {
   const acc = await createAccount();
   const to = await getAddr(acc);
 
-  try {
-    debug('newTestAccount awaiting transfer:', to);
-    await fundFromFaucet(acc, startingBalance);
-    debug('newTestAccount got transfer:', to);
-    return acc;
-  } catch (e) {
-    console.log(`newTestAccount: Trouble with account ${to}`);
-    throw e;
+  if (bigNumberify(0).lt(startingBalance)) {
+    try {
+      debug('newTestAccount awaiting transfer:', to);
+      await fundFromFaucet(acc, startingBalance);
+      debug('newTestAccount got transfer:', to);
+    } catch (e) {
+      console.log(`newTestAccount: Trouble with account ${to}`);
+      throw e;
+    }
   }
+  return acc;
 };
 const newTestAccounts = make_newTestAccounts(newTestAccount);
 
@@ -956,9 +975,6 @@ const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumbe
 // Check the contract info and the associated deployed bytecode;
 // Verify that:
 // * it matches the bytecode you are expecting.
-type VerifyResult = {
-  creation_block: number,
-};
 const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<VerifyResult> => {
   return await verifyContract_(ctcInfo, backend, new EventCache(), 'stdlib');
 }
@@ -981,7 +997,7 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
   // for querying the contract.
   let creation_block = 0;
   try {
-    const tmpAccount: Account = await newTestAccount(0);
+    const tmpAccount: Account = await createAccount();
     const ctc = new ethers.Contract(address, ABI, tmpAccount.networkAccount);
     const creation_time_raw = await ctc["_reachCreationTime"]();
     const creation_time = T_UInt.unmunge(creation_time_raw);

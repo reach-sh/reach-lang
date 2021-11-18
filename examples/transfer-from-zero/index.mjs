@@ -5,6 +5,7 @@ const stdlib = loadStdlib(process.env);
 (async () => {
   const startingBalance = stdlib.parseCurrency(0);
 
+  console.log('Creating accounts w/ 0 balance...');
   const [ accAlice, accBob ] =
     await stdlib.newTestAccounts(2, startingBalance);
   console.log('Hello, Alice and Bob!');
@@ -28,14 +29,14 @@ const stdlib = loadStdlib(process.env);
 
   if (e) {
     // TODO: Add more connector-specific inspections here as we add more connectors
-    if (stdlib.connector === 'CFX' || stdlib.connector == 'ETH') {
+    if (stdlib.connector === 'CFX' || stdlib.connector === 'ETH') {
       if (!(typeof e.message === 'string' && e.message.toLowerCase().includes('insufficient funds'))) {
-        console.log(`Got an unexpected exn`);
+        console.log(`CFX|ETH: Got an unexpected exn`);
         throw e;
       }
     } else if (stdlib.connector === 'ALGO') {
       if (!(typeof e.message === 'string' && e.message.toLowerCase().includes('overspend'))) {
-        console.log(`Got an unexpected exn`);
+        console.log(`ALGO: Got an unexpected exn`);
         throw e;
       }
     }

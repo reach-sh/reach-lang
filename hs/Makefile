@@ -50,10 +50,13 @@ build: build-haskell-build-artifacts build-reach-cli build-reach
 
 .PHONY: build-m1
 build-m1:
+	mkdir -p .docker-root
+	cp -f $(ROOT)/VERSION $(ROOT)/DEPS .docker-root/
 	docker build \
 	  --platform linux/arm64 \
-	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS)-m1:latest \
-	  -f Dockerfile.haskell-build-artifacts .
+	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
+	  --tag=$(IMG_REACHC)-m1:latest \
+	  -f Dockerfile.reachc-m1 .
 
 .PHONY: push
 push:

@@ -1,5 +1,6 @@
 // This can depend on the shared backend
 import crypto from 'crypto';
+import Timeout from 'await-timeout';
 import { ethers } from 'ethers';
 import {
   CBR_Address,
@@ -160,17 +161,21 @@ export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy exten
   getState: (v:BigNumber, ctcs:Array<ConnectorTy>) => Promise<Array<any>>,
 };
 
-export type ISetupArgs<ContractInfo> = {
+export type ISetupArgs<ContractInfo, VerifyResult> = {
   setInfo: (info: ContractInfo) => void,
   getInfo: () => Promise<ContractInfo>,
+  setTrustedVerifyResult: (vr:VerifyResult) => void,
+  getTrustedVerifyResult: () => (VerifyResult|undefined),
 };
+export type ISetupViewArgs<ContractInfo, VerifyResult> =
+  Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
 export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractAddress"|"sendrecv"|"recv"|"getState")>;
 
-export type IStdContractArgs<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
+export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
-  setupView: ISetupView<ContractInfo, ConnectorTy>,
+  setupView: ISetupView<ContractInfo, VerifyResult, ConnectorTy>,
   givenInfoP: (Promise<ContractInfo>|undefined)
-  _setup: (args: ISetupArgs<ContractInfo>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
+  _setup: (args: ISetupArgs<ContractInfo, VerifyResult>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
 } & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
 
 export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
@@ -182,24 +187,40 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
   p: ParticipantMap
   views: ViewMap,
   v: ViewMap,
+  unsafeViews: ViewMap,
   apis: APIMap,
   a: APIMap,
+  safeApis: APIMap,
   // for compiled output
   _initialize: () => IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>,
 };
 
-export type ISetupView<ContractInfo, ConnectorTy extends AnyBackendTy> = (getInfo:(() => Promise<ContractInfo>)) => {
+export type ISetupView<ContractInfo, VerifyResult, ConnectorTy extends AnyBackendTy> = (args:ISetupViewArgs<ContractInfo, VerifyResult>) => {
   viewLib: IViewLib,
-  getView1: ((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string|undefined, vi:IBackendViewInfo<ConnectorTy>) => ViewVal)
+  getView1: ((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string|undefined, vi:IBackendViewInfo<ConnectorTy>, isSafe: boolean) => ViewVal)
 };
 
+export const stdVerifyContract =
+  async <ContractInfo, VerifyResult>(
+    stdArgs: Pick<ISetupViewArgs<ContractInfo, VerifyResult>, ("getTrustedVerifyResult"|"setTrustedVerifyResult")>,
+    doVerify: (() => Promise<VerifyResult>)
+  ): Promise<VerifyResult> => {
+    const { getTrustedVerifyResult, setTrustedVerifyResult } = stdArgs;
+    let r = getTrustedVerifyResult();
+    if ( r ) { return r; }
+    r = await doVerify();
+    setTrustedVerifyResult(r);
+    return r;
+  };
+
 export const stdContract =
-  <ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
-    stdContractArgs: IStdContractArgs<ContractInfo, RawAddress, Token, ConnectorTy>):
+  <ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
+    stdContractArgs: IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy>):
   IContract<ContractInfo, RawAddress, Token, ConnectorTy> => {
   const { bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, _setup, givenInfoP } = stdContractArgs;
 
-  const { setInfo, getInfo }: ISetupArgs<ContractInfo> = (() => {
+  type SomeSetupArgs = Pick<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo"|"getInfo")>;
+  const { setInfo, getInfo }: SomeSetupArgs = (() => {
     let _setInfo = (info:ContractInfo) => {
       throw Error(`Cannot set info(${JSON.stringify(info)}) when acc.contract called with contract info`);
       return;
@@ -227,9 +248,16 @@ export const stdContract =
     }
   })();
 
+  let trustedVerifyResult:any = undefined;
+  const getTrustedVerifyResult = () => trustedVerifyResult;
+  const setTrustedVerifyResult = (x:any) => { trustedVerifyResult = x; };
+
+  const viewArgs = { getInfo, setTrustedVerifyResult, getTrustedVerifyResult };
+  const setupArgs = { ...viewArgs, setInfo };
+
   const _initialize = () => {
     const { getContractAddress, sendrecv, recv, getState } =
-      _setup({ setInfo, getInfo });
+      _setup(setupArgs);
     return {
       selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
       getInfo,
@@ -238,14 +266,17 @@ export const stdContract =
   };
   const ctcC = { _initialize };
 
-  const { viewLib, getView1 } = setupView(getInfo);
+  const { viewLib, getView1 } = setupView(viewArgs);
   const views_bin = bin._getViews({reachStdlib: stdlib}, viewLib);
-  const views =
+  const mkViews = (isSafe: boolean) =>
     objectMap(views_bin.infos, ((v:string, vm: TaggedBackendView<ConnectorTy> | IBackendViewInfo<ConnectorTy>) =>
       isUntaggedView(vm)
-        ? getView1(views_bin.views, v, undefined, vm as IBackendViewInfo<ConnectorTy>)
+        ? getView1(views_bin.views, v, undefined, vm as IBackendViewInfo<ConnectorTy>, isSafe)
         : objectMap(vm as TaggedBackendView<ConnectorTy>, ((k:string, vi:IBackendViewInfo<ConnectorTy>) =>
-            getView1(views_bin.views, v, k, vi)))));
+            getView1(views_bin.views, v, k, vi, isSafe)))));
+
+  const views = mkViews(true);
+  const unsafeViews = mkViews(false);
 
   const participants = objectMap(bin._Participants, ((pn:string, p:any) => {
       void(pn);
@@ -254,47 +285,58 @@ export const stdContract =
       });
   }));
 
-  const apis = objectMap(bin._APIs, ((an:string, am:any) => {
-    const f = (afn:string|undefined, ab:any) => {
-      const mk = (sep: string) =>
-        (afn === undefined) ? `${an}` : `${an}${sep}${afn}`;
-      const bp = mk(`_`);
-      delete participants[bp];
-      const bl = mk(`.`);
-      return (...args:any[]) => {
-        const terminal = { terminated: bl };
-        let theResolve: (x:any) => void;
-        let theReject: (x:any) => void;
-        const p = new Promise((resolve, reject) => {
-          theResolve = resolve;
-          theReject = reject;
-        });
-        ab(ctcC, {
-          "in": (() => {
-            debug(`${bl}: in`, args);
-            return args
-          }),
-          "out": ((oargs:any[], res:any) => {
-            debug(`${bl}: out`, oargs, res);
-            theResolve(res);
-            throw terminal;
-          }),
-        }).catch((err:any) => {
-          if ( Object.is(err, terminal) ) {
-            debug(`${bl}: done`);
-          } else {
-            theReject(new Error(`${bl} errored with ${err}`));
-          }
-        }).then((res:any) => {
-          theReject(new Error(`${bl} returned with ${JSON.stringify(res)}`));
-        });
-        return p;
+  const mkApis = (isSafe = false) =>
+    objectMap(bin._APIs, ((an:string, am:any) => {
+      const f = (afn:string|undefined, ab:any) => {
+        const mk = (sep: string) =>
+          (afn === undefined) ? `${an}` : `${an}${sep}${afn}`;
+        const bp = mk(`_`);
+        delete participants[bp];
+        const bl = mk(`.`);
+        return (...args:any[]) => {
+          const terminal = { terminated: bl };
+          let theResolve: (x:any) => void;
+          let theReject: (x:any) => void;
+          const p = new Promise((resolve, reject) => {
+            theResolve = resolve;
+            theReject = reject;
+          });
+          const fail = (err: Error) => {
+            if (isSafe) {
+              theResolve(['None', null]);
+            } else {
+              theReject(err);
+            }
+          };
+          ab(ctcC, {
+            "in": (() => {
+              debug(`${bl}: in`, args);
+              return args
+            }),
+            "out": ((oargs:any[], res:any) => {
+              debug(`${bl}: out`, oargs, res);
+              theResolve(isSafe ? ['Some', res] : res);
+              throw terminal;
+            }),
+          }).catch((err:any) => {
+            if ( Object.is(err, terminal) ) {
+              debug(`${bl}: done`);
+            } else {
+              fail(new Error(`${bl} errored with ${err}`));
+            }
+          }).then((res:any) => {
+            fail(new Error(`${bl} returned with ${JSON.stringify(res)}`));
+          });
+          return p;
+        };
       };
-    };
-    return (typeof am === 'object')
-      ? objectMap(am, f)
-      : f(undefined, am);
+      return (typeof am === 'object')
+        ? objectMap(am, f)
+        : f(undefined, am);
   }));
+
+  const apis = mkApis(false);
+  const safeApis = mkApis(true);
 
   return {
     ...ctcC,
@@ -306,7 +348,9 @@ export const stdContract =
       console.log(`WARNING: ctc.getViews() is deprecated; use ctc.views or ctc.v instead.`);
       return views;
     },
+    unsafeViews,
     apis, a: apis,
+    safeApis,
   };
 };
 
@@ -552,6 +596,7 @@ export const make_waitUntilX = (label: string, getCurrent: () => Promise<BigNumb
     onProg(o);
   };
   while (current.lt(target)) {
+    debug('waitUntilX', { label, current, target });
     current = await step(current.add(1));
     notify();
   }
@@ -559,7 +604,7 @@ export const make_waitUntilX = (label: string, getCurrent: () => Promise<BigNumb
   return current;
 };
 
-export const checkTimeout = async (getTimeSecs: ((now:BigNumber) => Promise<BigNumber>), timeoutAt: TimeArg | undefined, nowTimeN: number): Promise<boolean> => {
+export const checkTimeout = async (runningIsolated:(() => boolean), getTimeSecs: ((now:BigNumber) => Promise<BigNumber>), timeoutAt: TimeArg | undefined, nowTimeN: number): Promise<boolean> => {
   debug('checkTimeout', { timeoutAt, nowTimeN });
   if ( ! timeoutAt ) { return false; }
   const [ mode, val ] = timeoutAt;
@@ -567,8 +612,18 @@ export const checkTimeout = async (getTimeSecs: ((now:BigNumber) => Promise<BigN
   if ( mode === 'time' ) {
     return val.lte(nowTime);
   } else if ( mode === 'secs' ) {
-    const nowSecs = await getTimeSecs(nowTime);
-    return val.lte(nowSecs);
+    try {
+      const nowSecs = await getTimeSecs(nowTime);
+      return val.lte(nowSecs);
+    } catch (e) {
+      debug('checkTimeout','err', `${e}` );
+      if ( runningIsolated() ) {
+        const nowSecs = Math.floor(Date.now() / 1000);
+        debug('checkTimeout','isolated',val.toString(),nowSecs);
+        return val.lt(nowSecs - 1);
+      }
+      return false;
+    }
   } else {
     throw new Error(`invalid TimeArg mode`);
   }
@@ -586,6 +641,36 @@ export class Signal {
   wait() { return this.p; }
   notify() { this.r(true); }
 };
+
+export class Lock {
+  locked: boolean;
+
+  constructor() {
+    this.locked = false;
+  }
+  async acquire(): Promise<void> {
+    let x = 1;
+    while ( this.locked ) {
+      await Timeout.set(Math.min(512, x));
+      x = x * 2;
+    }
+    this.locked = true;
+  }
+  release() {
+    this.locked = false;
+  }
+  async runWith<X>(f: (() => Promise<X>)): Promise<X> {
+    await this.acquire();
+    try {
+      const r = await f();
+      this.release();
+      return r;
+    } catch (e:any) {
+      this.release();
+      throw e;
+    }
+  }
+}
 
 // Given a func that takes an optional arg, and a Maybe arg:
 // f: (arg?: X) => Y

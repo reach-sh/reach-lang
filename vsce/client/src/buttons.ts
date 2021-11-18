@@ -1,10 +1,10 @@
 import { ExtensionContext } from 'vscode';
 import * as vscode from 'vscode';
 
-let shownButtons = [];
+let shownButtons: vscode.StatusBarItem[] = [];
 
-function createButtons(buttons) {
-	buttons.forEach(button => {
+function createButtons(buttons: string[][]) {
+	buttons.forEach((button: string[]) => {
 		const buttonBarItem = vscode.window.createStatusBarItem(1, 0);
 		buttonBarItem.text = button[0];
 		buttonBarItem.command = button[1];

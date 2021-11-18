@@ -11,14 +11,15 @@ supported by Reach version @|reach-vers|.
 
 @section[#:tag "ref-network-algo"]{Algorand}
 
-The @link["https://www.algorand.com/"]{Algorand} Reach @tech{connector} generates a set of
-@tech{contracts} that manage one instance of the @|DApp|'s
+The @link["https://www.algorand.com/"]{Algorand} Reach @tech{connector} generates a
+@tech{contract} that manage one instance of the @|DApp|'s
 execution.
 
 It uses finite on-chain state.
-The @|DApp| consists of one application and one contract-controlled escrow account.
+The @|DApp| consists of one application.
+The contract escrow account is the application account.
 
-It relies on versions of @tt{algod} that support TEAL version 4, such as Algorand 2.7.1 from July 2021.
+It relies on versions of @tt{algod} that support TEAL version 5, such as Algorand 3.0.1 from September 2021.
 It uses the Algorand @tt{indexer} version 2 to lookup and monitor @tech{publications}; in other words, it does @emph{not} rely on any communication network other than Algorand itself.
 
 Algorand uses the SHA256 algorithm to perform @tech{digest}s.
@@ -101,24 +102,6 @@ Or this to run on Conflux MainNet:
 reach.setProviderByName('MainNet');
 }
 
-It is strongly recommended that you also use @jsin{setQueryLowerBound}
-to avoid waiting for unnecessary queries.
-For example, this code snippet sets the lower bound at 2000 blocks ago:
-
-@js{
-const now = await reach.getNetworkTime();
-reach.setQueryLowerBound(reach.sub(now, 2000));
-}
-
-@subsubsection[#:tag "cfx-faq-query"]{Why is DApp startup very slow? Why do I need to use @tt{setQueryLowerBound}?}
-
-DApp startup doesn't have to be slow.
-Reach relies on querying Conflux event logs in order to run the DApp.
-The Conflux network does not yet provide fast APIs for querying event logs for a given contract across all time,
-so instead, Reach incrementally queries across chunks of 1000 blocks at a time.
-You can use @jsin{setQueryLowerBound} to help Reach know at what block number to start querying,
-so that it does not have to start querying at the beginning of time, which can take quite a while.
-
 @subsubsection[#:tag "cfx-faq-cplocal"]{How can I use ConfluxPortal with the Reach devnet?}
 
 If you find that ConfluxPortal's Localhost 12537 default configuration does not work correctly with Reach apps,
@@ -141,6 +124,67 @@ which you can do like so:
   @item{Switch to a different network and back}
   @item{CTRL+SHIFT+R to hard-reset the webpage.}
 ]
+
+@subsubsection[#:tag "cfx-faq-sponsor"]{How can I use gas and storage sponsorship?}
+
+Conflux, like many other networks, charges fees for using the network and interacting with smart contracts.
+These fees are normally pay by the originator the transaction: who we would call the "publisher" in Reach.
+However, unlike other networks, Conflux does not require these fees to be paid for by the originator.
+Instead, Conflux allows fees to be paid for by a third-party.
+This is called "sponsorship".
+
+Conflux maintains documentation for this feature on their @link["https://developer.confluxnetwork.org/conflux-rust/internal_contract/internal_contract/"]{internal contract} documentation page.
+You can follow the directions on the Conflux page exactly and it will work with Reach, because Reach programs, when deployed on Conflux, are just normal programs.
+
+We duplicate these instructions below; if you have any difficulties with these directions, please refer to the @link["https://developer.confluxnetwork.org/conflux-rust/internal_contract/internal_contract/"]{Conflux source} and then let us know, so we can update them.
+
+@(hrule)
+
+There are three steps to enabling sponsorship.
+
+First, you have to directly interact with @link["https://github.com/Conflux-Chain/js-conflux-sdk"]{the Conflux SDK}.
+This will require adding an @tt{npm} package dependency and initializing the library.
+The @link["https://confluxnetwork.gitbook.io/js-conflux-sdk/quick_start"]{Conflux SDK Quickstart} walks through this process.
+It will look something like:
+@js{
+// import Conflux Class
+const { Conflux } = require('js-conflux-sdk');
+// initialize a Conflux object
+const conflux = new Conflux({
+  // some options
+});
+}
+
+Second, you must call the @litchar{addPrivilegeByAdmin} Conflux internal contract from the creator (i.e. deployer) of the smart contract.
+This function requires you to provide an address that is eligible for sponsorship.
+It is documented in @link["https://developer.confluxnetwork.org/conflux-rust/internal_contract/internal_contract/#whitelist-maintenance"]{this section} of the Conflux manual.
+If you use an address which is all zeros, then every address is sponsored.
+The code will look something like:
+@js{
+const sponsor_contract = conflux.InternalContract('SponsorWhitelistControl');
+await sponsor_contract.addPrivilegeByAdmin(contractAddress, ["0x0000000000000000000000000000000000000000"])
+  .sendTransaction({from: creatorAddress});
+}
+In this code sample, we assume that @jsin{contractAddress} is the address of the Reach contract, which you might have acquired via @jsin{await ctc.getContractAddress()} and @jsin{creatorAddress} is the address of the creator of the Reach contract.
+
+Third, you have to provide a sponsoring account by calling @litchar{setSponsorForGas} (or @litchar{setSponsorForCollateral}) on the Conflux internal contract.
+This function must be called by the sponsoring account.
+It is documented in @link["https://developer.confluxnetwork.org/conflux-rust/internal_contract/internal_contract/#add-sponsor-balance"]{this section} of the Conflux manual.
+The code will look something like:
+@js{
+await sponsor_contract.setSponsorForGas(contractAddress, amount)
+  .sendTransaction({from: sponsorAddress});
+}
+In this code sample, we assume that @jsin{contractAddress} is the address of the Reach contract, which you might have acquired via @jsin{await ctc.getContractAddress()}, @jsin{amount} is the maximum amount the sponsor is willing to sponsor, and @jsin{sponsorAddress} is the address of the sponsor.
+
+@(hrule)
+
+If your application is made of equal peers, you may not want to enable the sponsorship feature.
+But, if your application has a clear party with extra authority and resources, you might like to make them the creator and sponsor of the contract, because this incentivizes participation in the program by lowering the cost to do so.
+
+As of November 2021, the Conflux Foundation is willing to sponsor some smart contracts.
+@link["https://forum.conflux.fun/t/announcement-usage-adjustment-of-ecosystem-fund-for-the-conflux-sponsorship-mechanism-2022-11-11/12056"]{This forum post} discusses how to request sponsorship of your contract.
+If the Foundation agrees to sponsor your program, then you only need to do steps one and two above: you can skip step three.
 
 @section[#:tag "ref-network-eth"]{Ethereum}
 

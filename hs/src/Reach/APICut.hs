@@ -69,7 +69,7 @@ instance Show APICutError where
     API_NoIn p -> p <> "does not occur in program"
     API_OutBeforeIn p -> p <> "calls interact.out() before interact.in()"
     API_Twice p -> p <> "occurs multiple times in program"
-    API_NoOut p -> p <> "does not return result"
+    API_NoOut p -> p <> "does not return result in same consensus step"
 
 type App = ReaderT Env IO
 data Env = Env
@@ -245,20 +245,23 @@ slurp = \case
       True -> return $ Just $ ET_Switch at x m'
   ET_FromConsensus at x y k -> do
     seekNoMore k
-    asks eSeenOut >>= \case
-      True -> return $ Just $ ET_FromConsensus at x y $ ET_Stop at
-      False -> return $ Nothing
+    ensureSeen $ return $ Just $ ET_FromConsensus at x y $ ET_Stop at
   ET_ToConsensus {..} -> do
     case et_tc_from_mtime of
       Just (_, mk) -> seekNoMore mk
       _ -> return ()
     fmap (ET_ToConsensus et_tc_at et_tc_from et_tc_prev Nothing et_tc_which et_tc_from_me et_tc_from_msg et_tc_from_out et_tc_from_timev et_tc_from_secsv et_tc_from_didSendv Nothing) <$> slurp et_tc_cons
-  ET_While at asn cb b k -> doWhile at asn cb b k
+  ET_While at asn cb b k ->
+    ensureSeen $ doWhile at asn cb b k
   ET_Continue at asn ->
     asks eWhile >>= \case
       Nothing -> impossible "continue not in while"
-      Just (cb, b, k) -> doWhile at asn cb b k
+      Just (cb, b, k) -> ensureSeen $ doWhile at asn cb b k
   where
+    ensureSeen m = do
+      asks eSeenOut >>= \case
+        True -> m
+        False -> return $ Nothing
     doWhile at (DLAssignment m) (DLBlock _ _ ct c) b k = do
       let ml = M.toAscList m
       let (mvs, mas) = unzip ml

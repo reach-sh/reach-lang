@@ -20,6 +20,7 @@ module Reach.JSUtil
   , toJSArray
   , jsBlockToStmts
   , jsFlattenLHS
+  , jsString
   )
 where
 
@@ -243,3 +244,5 @@ instance HasJSAnnot JSExpression where
     JSYieldExpression a _ -> a
     JSYieldFromExpression a _ _ -> a
 
+jsString :: JSAnnot -> String -> JSExpression
+jsString a s = JSStringLiteral a $ "'" <> s <> "'"

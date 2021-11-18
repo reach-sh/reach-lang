@@ -43,17 +43,21 @@ import Reach.CommandLine
 
 data AlgoError
   = Err_TransferNewToken
+  | Err_PayNewToken
   deriving (Eq, ErrorMessageForJson, ErrorSuggestions, Generic)
 
 instance HasErrorCode AlgoError where
   errPrefix = const "RA"
   errIndex = \case
     Err_TransferNewToken {} -> 0
+    Err_PayNewToken {} -> 1
 
 instance Show AlgoError where
   show = \case
     Err_TransferNewToken ->
       "Token cannot be transferred within the same consensus step it was created in on Algorand"
+    Err_PayNewToken ->
+      "Token cannot be paid within the same consensus step it was shared with the contract on Algorand"
 
 -- General tools that could be elsewhere
 
@@ -143,6 +147,15 @@ algoMinimumBalance = 100000
 
 algoMaxTxGroupSize :: Integer
 algoMaxTxGroupSize = 16
+
+algoMaxInnerTransactions :: Integer
+algoMaxInnerTransactions = 16
+
+algoMaxAppTxnAccounts :: Integer
+algoMaxAppTxnAccounts = 4
+
+algoMaxAppTxnForeignAssets :: Integer
+algoMaxAppTxnForeignAssets = 8
 
 algoMaxAppProgramCost :: Integer
 algoMaxAppProgramCost = 700
@@ -406,7 +419,7 @@ data Shared = Shared
   , sMapDataTy :: DLType
   , sMapDataSize :: Integer
   , sMapKeysl :: [Word8]
-  , sTxnCounts :: IORef (CostGraph Int)
+  , sResources :: IORef ResourceGraph
   }
 
 type Lets = M.Map DLVar (App ())
@@ -420,14 +433,15 @@ data Env = Env
   , eVars :: M.Map DLVar ScratchSlot
   , eLets :: Lets
   , eLetSmalls :: M.Map DLVar Bool
-  , eTxnCount :: Counter
+  , eResources :: ResourceCounters
   , eNewToks :: IORef (S.Set DLArg)
+  , eInitToks :: IORef (S.Set DLArg)
   }
 
 type App = ReaderT Env IO
 
 recordWhich :: Int -> App a -> App a
-recordWhich n = local (\e -> e { eWhich = n }) . dupeTxnCount . resetNewToks
+recordWhich n = local (\e -> e { eWhich = n }) . dupeResources . resetToks
 
 type CostGraph a = M.Map a (CostRecord a)
 data CostRecord a = CostRecord
@@ -435,58 +449,130 @@ data CostRecord a = CostRecord
   , cr_max :: S.Set a
   }
   deriving (Show)
-type TxnCountRec = CostRecord Int
-updateCostRecord :: Ord a => IORef (CostGraph a) -> a -> (CostRecord a -> CostRecord a) -> IO ()
-updateCostRecord cgr lab f = do
-  let g = Just . f . fromMaybe (CostRecord 0 mempty)
-  modifyIORef cgr $ M.alter g lab
+type ResourceRec = CostRecord Int
 
-dupeTxnCount :: App a -> App a
-dupeTxnCount m = do
-  c' <- (liftIO . dupeCounter) =<< asks eTxnCount
-  local (\e -> e { eTxnCount = c' }) m
-incTxnCount :: App ()
-incTxnCount = do
-  void $ (liftIO . incCounter) =<< asks eTxnCount
-updateTxnCount :: (TxnCountRec -> TxnCountRec) -> App ()
-updateTxnCount f = do
+data Resource
+  = R_Txn
+  | R_Asset
+  | R_Account
+  | R_InnerTxn
+  deriving (Eq, Ord)
+type ResourceGraph = M.Map Resource (CostGraph Int)
+type ResourceCounter = ((S.Set DLArg), Int)
+type ResourceCounters = IORef (M.Map Resource ResourceCounter)
+
+instance Show Resource where
+  show = \case
+    R_Txn -> "transactions"
+    R_Asset -> "assets"
+    R_Account -> "accounts"
+    R_InnerTxn -> "inner transactions"
+
+maxOf :: Resource -> Integer
+maxOf = \case
+  R_Txn -> algoMaxTxGroupSize
+  R_Asset -> algoMaxAppTxnForeignAssets
+  R_Account -> algoMaxAppTxnAccounts + 1 -- XXX could detect the sender as a free account
+  R_InnerTxn -> algoMaxInnerTransactions
+
+newResources :: IO ResourceCounters
+newResources = do
+  newIORef $ M.fromList $
+    [ (R_Txn, (mempty, 1))
+    , (R_Asset, (mempty, 0))
+    , (R_Account, (mempty, 0))
+    , (R_InnerTxn, (mempty, 0))
+    ]
+newResourceGraph :: IO (IORef ResourceGraph)
+newResourceGraph = do
+  newIORef $ M.fromList $
+    [ (R_Txn, mempty)
+    , (R_Asset, mempty)
+    , (R_Account, mempty)
+    , (R_InnerTxn, mempty)
+    ]
+
+dupeResources :: App a -> App a
+dupeResources m = do
+  c' <- (liftIO . dupeIORef) =<< asks eResources
+  local (\e -> e { eResources = c' }) m
+
+incResourceM :: Maybe DLArg -> Resource -> App ()
+incResourceM ma r = do
+  rsr <- asks eResources
+  let f (vs, i) =
+        case ma of
+          Nothing -> (vs, i + 1)
+          Just a ->
+            case S.member a vs of
+              True -> (vs, i)
+              False -> (S.insert a vs, i+1)
+  liftIO $ modifyIORef rsr $ M.adjust f r
+incResource :: Resource -> App ()
+incResource = incResourceM Nothing
+incResourceL :: DLArg -> Resource -> App ()
+incResourceL = incResourceM . Just
+
+updateResources :: (Resource -> ResourceRec -> ResourceRec) -> App ()
+updateResources f = do
   Env {..} <- ask
   let Shared {..} = eShared
-  liftIO $ updateCostRecord sTxnCounts eWhich f
-addTxnCountEdge :: Int -> App ()
-addTxnCountEdge w' = do
-  addTxnCount
-  updateTxnCount (\t -> t { cr_max = S.insert w' (cr_max t) })
-addTxnCount :: App ()
-addTxnCount = do
-  c <- (liftIO . readCounter) =<< asks eTxnCount
-  updateTxnCount (\t -> t { cr_n = max c (cr_n t) })
-checkTxnCount :: (LT.Text -> IO ()) -> CostGraph Int -> IO ()
-checkTxnCount bad' tcs = do
-  -- XXX Do this not dumb
-  let maximum' :: [Int] -> Int
-      maximum' l = maximum $ 0 : l
-  let chase i = cr_n + (maximum' $ map chase $ S.toAscList cr_max)
-        where CostRecord {..} = tcs M.! i
-  forM_ (M.keys tcs) $ \which -> do
-    let amt = chase which
-    when (fromIntegral amt > algoMaxTxGroupSize) $ do
-      bad' $ "Step " <> texty which <> " could have too many txns: could have " <> texty amt <> " but limit is " <> texty algoMaxTxGroupSize
+  let g r = Just . (f r) . fromMaybe (CostRecord 0 mempty)
+  liftIO $ modifyIORef sResources $ M.mapWithKey (\r -> M.alter (g r) eWhich)
+addResourceEdge :: Int -> App ()
+addResourceEdge w' = do
+  addResourceCheck
+  updateResources (\_ t -> t { cr_max = S.insert w' (cr_max t) })
+addResourceCheck :: App ()
+addResourceCheck = do
+  c <- (liftIO . readIORef) =<< asks eResources
+  updateResources $ \r t ->
+    t { cr_n = max (snd $ c M.! r) (cr_n t) }
+checkResources :: (LT.Text -> IO ()) -> ResourceGraph -> IO ()
+checkResources bad' rg = do
+  let one emit r = do
+        let maxc = maxOf r
+        let tcs = rg M.! r
+        -- XXX Do this not dumb
+        let maximum' :: [Int] -> Int
+            maximum' l = maximum $ 0 : l
+        let chase i = cr_n + (maximum' $ map chase $ S.toAscList cr_max)
+              where CostRecord {..} = tcs M.! i
+        forM_ (M.keys tcs) $ \which -> do
+          let amt = chase which
+          when (fromIntegral amt > maxc) $ do
+            emit $ "Step " <> texty which <> " could have too many " <> texty r <> ": could have " <> texty amt <> " but limit is " <> texty maxc
+  let warn x = emitWarning Nothing $ W_ALGOConservative [LT.unpack x]
+  one bad' R_Txn
+  one warn R_Asset
+  one warn R_Account
+  one bad' R_InnerTxn
 
-resetNewToks :: App a -> App a
-resetNewToks m = do
-  toks <- liftIO $ newIORef mempty
-  local (\e -> e { eNewToks = toks }) m
+resetToks :: App a -> App a
+resetToks m = do
+  ntoks <- liftIO $ newIORef mempty
+  itoks <- liftIO $ newIORef mempty
+  local (\e -> e { eNewToks = ntoks, eInitToks = itoks }) m
+
+addTok :: (Env -> IORef (S.Set DLArg)) -> DLArg -> App ()
+addTok ef tok = do
+  r <- asks ef
+  liftIO $ modifyIORef r (S.insert tok)
 
 addNewTok :: DLArg -> App ()
-addNewTok tok = do
-  Env {..} <- ask
-  liftIO $ modifyIORef eNewToks (S.insert tok)
+addNewTok = addTok eNewToks
+addInitTok :: DLArg -> App ()
+addInitTok = addTok eInitToks
+
+isTok :: (Env -> IORef (S.Set DLArg)) -> DLArg -> App Bool
+isTok ef tok = do
+  ts <- (liftIO . readIORef) =<< asks ef
+  return $ tok `S.member` ts
 
 isNewTok :: DLArg -> App Bool
-isNewTok tok = do
-  newToks <- (liftIO . readIORef) =<< asks eNewToks
-  return $ tok `S.member` newToks
+isNewTok = isTok eNewToks
+isInitTok :: DLArg -> App Bool
+isInitTok = isTok eInitToks
 
 output :: TEAL -> App ()
 output t = do
@@ -720,6 +806,11 @@ exprSmall = \case
   DLE_Arg _ a -> argSmall a
   _ -> return False
 
+czpad :: Integer -> App ()
+czpad xtra = do
+  padding xtra
+  op "concat"
+
 cprim :: PrimOp -> [DLArg] -> App ()
 cprim = \case
   SELF_ADDRESS {} -> impossible "self address"
@@ -758,8 +849,7 @@ cprim = \case
   BYTES_ZPAD xtra -> \case
     [x] -> do
       ca x
-      padding xtra
-      op "concat"
+      czpad xtra
     _ -> impossible $ "zpad"
   IF_THEN_ELSE -> \case
     [be, DLA_Literal (DLL_Bool True), DLA_Literal (DLL_Bool False)] -> do
@@ -1019,9 +1109,7 @@ cla = \case
     let vlen = 1 + typeSizeOf (argTypeOf va)
     op "concat"
     let dlen = typeSizeOf $ T_Data tm
-    let zlen = fromIntegral $ dlen - vlen
-    padding $ zlen
-    op "concat"
+    czpad $ fromIntegral $ dlen - vlen
     check_concat_len dlen
   DLLA_Struct kvs ->
     cconcatbs $ map (\a -> (argTypeOf a, ca a)) $ map snd kvs
@@ -1237,32 +1325,26 @@ ce = \case
   DLE_Digest _ args -> cdigest $ map go args
     where
       go a = (argTypeOf a, ca a)
-  DLE_Transfer ct_at who ct_amt ct_mtok -> do
-    let ct_always = False
-    let ct_mcrecv = Just $ ca who
-    let ct_mcsend = Just cContractAddr
-    let ct_mcclose = Nothing
-    checkTxn $ CheckTxn {..}
-  DLE_TokenInit ct_at tok -> do
+  DLE_Transfer mt_at who mt_amt mt_mtok -> do
+    let mt_always = False
+    let mt_mrecv = Just who
+    let mt_mcclose = Nothing
+    makeTxn $ MakeTxn {..}
+  DLE_TokenInit mt_at tok -> do
     comment $ "Initializing token"
-    let ct_always = True
-    let ct_mtok = Just tok
-    let ct_amt = DLA_Literal $ DLL_Int sb 0
-    let ct_mcsend = Just cContractAddr
-    let ct_mcrecv = Just cContractAddr
-    let ct_mcclose = Nothing
-    let cta = CheckTxn {..}
-    checkTxn $ cta
-      { ct_mtok = Nothing
-      , ct_amt = DLA_Literal $ minimumBalance_l
-      , ct_mcsend = Nothing }
-    checkTxn $ cta
+    let mt_always = True
+    let mt_mtok = Just tok
+    let mt_amt = DLA_Literal $ DLL_Int sb 0
+    let mt_mrecv = Nothing
+    let mt_mcclose = Nothing
+    let ct_at = mt_at
+    let ct_mtok = Nothing
+    let ct_amt = DLA_Literal $ minimumBalance_l
+    addInitTok tok
+    checkTxn $ CheckTxn {..}
+    makeTxn $ MakeTxn {..}
   DLE_CheckPay ct_at fs ct_amt ct_mtok -> do
     show_stack ("CheckPay" :: String) ct_at fs
-    let ct_always = False
-    let ct_mcsend = Nothing -- Flexible, not necc appl sender
-    let ct_mcrecv = Just $ cContractAddr
-    let ct_mcclose = Nothing
     checkTxn $ CheckTxn {..}
   DLE_Claim at fs t a mmsg -> do
     show_stack mmsg at fs
@@ -1277,11 +1359,13 @@ ce = \case
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
   DLE_MapRef _ (DLMVar i) fa -> do
+    incResourceL fa R_Account
     ca fa
     cMapLoad
     mdt <- getMapDataTy
     cTupleRef sb mdt $ fromIntegral i
   DLE_MapSet at mpv@(DLMVar i) fa mva -> do
+    incResourceL fa R_Account
     ca fa
     op "dup"
     cMapLoad
@@ -1293,60 +1377,42 @@ ce = \case
   DLE_Remote {} -> xxx "remote objects"
   DLE_TokenNew at (DLTokenNew {..}) -> do
     let ct_at = at
-    let ct_always = True
     let ct_mtok = Nothing
-    let ct_mcsend = Nothing
-    let ct_mcrecv = Just cContractAddr
-    let ct_mcclose = Nothing
     let ct_amt = DLA_Literal $ minimumBalance_l
     checkTxn $ CheckTxn {..}
-    checkTxnAlloc
+    op "itxn_begin"
     let vTypeEnum = "acfg"
-    checkTxnInit vTypeEnum $ Just cContractAddr
-    let i = cint_ at
-    let za = czaddr
-    i 0 >> checkTxn1 "ConfigAsset"
-    ca dtn_supply >> checkTxn1 "ConfigAssetTotal"
-    maybe (i 6) ca dtn_decimals >> checkTxn1 "ConfigAssetDecimals"
-    i 0 >> checkTxn1 "ConfigAssetDefaultFrozen"
-    ca dtn_sym >> checkTxn1 "ConfigAssetUnitName"
-    ca dtn_name >> checkTxn1 "ConfigAssetName"
-    ca dtn_url >> checkTxn1 "ConfigAssetURL"
-    ca dtn_metadata >> checkTxn1 "ConfigAssetMetadataHash"
-    cContractAddr >> checkTxn1 "ConfigAssetManager"
-    za >> checkTxn1 "ConfigAssetReserve"
-    za >> checkTxn1 "ConfigAssetFreeze"
-    za >> checkTxn1 "ConfigAssetClawback"
-    op "gaids"
+    code "int" [vTypeEnum]
+    makeTxn1 "TypeEnum"
+    ca dtn_supply >> makeTxn1 "ConfigAssetTotal"
+    maybe (cint_ at 6) ca dtn_decimals >> makeTxn1 "ConfigAssetDecimals"
+    ca dtn_sym >> makeTxn1 "ConfigAssetUnitName"
+    ca dtn_name >> makeTxn1 "ConfigAssetName"
+    ca dtn_url >> makeTxn1 "ConfigAssetURL"
+    ca dtn_metadata >> makeTxn1 "ConfigAssetMetadataHash"
+    cContractAddr >> makeTxn1 "ConfigAssetManager"
+    incResource R_InnerTxn
+    op "itxn_submit"
+    code "itxn" ["CreatedAssetID"]
   DLE_TokenBurn {} ->
     -- Burning does nothing on Algorand, because we already own it and we're
     -- the creator, and that's the rule for being able to destroy
     return ()
-  DLE_TokenDestroy at aida -> do
-    checkTxnAlloc
+  DLE_TokenDestroy _at aida -> do
+    op "itxn_begin"
     let vTypeEnum = "acfg"
-    let ct_mcsend = Just cContractAddr
-    checkTxnInit vTypeEnum ct_mcsend
-    let i0 = cint_ at 0
-    let b0 = padding 0
-    ca aida >> checkTxn1 "ConfigAsset"
-    i0 >> checkTxn1 "ConfigAssetTotal"
-    i0 >> checkTxn1 "ConfigAssetDecimals"
-    i0 >> checkTxn1 "ConfigAssetDefaultFrozen"
-    b0 >> checkTxn1 "ConfigAssetUnitName"
-    b0 >> checkTxn1 "ConfigAssetName"
-    b0 >> checkTxn1 "ConfigAssetURL"
-    czaddr >> checkTxn1 "ConfigAssetMetadataHash"
-    czaddr >> checkTxn1 "ConfigAssetManager"
-    czaddr >> checkTxn1 "ConfigAssetReserve"
-    czaddr >> checkTxn1 "ConfigAssetFreeze"
-    czaddr >> checkTxn1 "ConfigAssetClawback"
-    op "pop"
-    -- XXX We could get the minimum balance back
+    code "int" [vTypeEnum]
+    makeTxn1 "TypeEnum"
+    incResourceL aida R_Asset
+    ca aida
+    makeTxn1 "ConfigAsset"
+    op "itxn_submit"
+    incResource R_InnerTxn
+    -- XXX We could give the minimum balance back to the creator
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract _ -> code "txn" ["ApplicationID"]
   DLE_GetAddress _ -> cContractAddr
-  DLE_EmitLog at _ v@(DLVar _ _ _ n)  -> do
+  DLE_EmitLog at _ _ v@(DLVar _ _ _ n)  -> do
     clog $
       [ DLA_Literal (DLL_Int at $ fromIntegral n)
       , DLA_Var v
@@ -1372,12 +1438,16 @@ staticZero = \case
 
 data CheckTxn = CheckTxn
   { ct_at :: SrcLoc
-  , ct_mcsend :: Maybe (App ())
-  , ct_mcrecv :: Maybe (App ())
-  , ct_mcclose :: Maybe (App ())
-  , ct_always :: Bool
   , ct_amt :: DLArg
   , ct_mtok :: Maybe DLArg }
+
+data MakeTxn = MakeTxn
+  { mt_at :: SrcLoc
+  , mt_mrecv :: Maybe DLArg
+  , mt_mcclose :: Maybe (App ())
+  , mt_amt :: DLArg
+  , mt_always :: Bool
+  , mt_mtok :: Maybe DLArg }
 
 checkTxn1 :: LT.Text -> App ()
 checkTxn1 f = do
@@ -1385,78 +1455,117 @@ checkTxn1 f = do
   code "gtxns" [f]
   asserteq
 
-checkTxnAlloc :: App ()
-checkTxnAlloc = do
-  incTxnCount
-  gvLoad GV_txnCounter
-  op "dup"
-  cint 1
-  op "+"
-  gvStore GV_txnCounter
+makeTxn1 :: LT.Text -> App ()
+makeTxn1 f = code "itxn_field" [f]
 
-checkTxnInit :: LT.Text -> Maybe (App ()) -> App ()
-checkTxnInit vTypeEnum ct_mcsend = do
+checkTxnInit :: LT.Text -> App ()
+checkTxnInit vTypeEnum = do
   -- [ txn ]
   code "int" [vTypeEnum]
   checkTxn1 "TypeEnum"
   cint 0
   checkTxn1 "Fee"
-  -- XXX We could move this into the escrow, since it will always be happening.
-  -- The problem, though, is that we use this ALSO for when the user pays us...
-  -- and when can we check THOSE?
   czaddr
   checkTxn1 "Lease"
   czaddr
   checkTxn1 "RekeyTo"
-  whenJust ct_mcsend $ \csend -> do
-    csend
-    cfrombs T_Address
-    checkTxn1 "Sender"
   -- [ txn ]
   return ()
 
-checkTxnUsage :: CheckTxn -> App ()
-checkTxnUsage (CheckTxn {..}) = do
-  case ct_mtok of
+checkTxnUsage_ :: (DLArg -> App Bool) -> AlgoError -> SrcLoc -> Maybe DLArg -> App ()
+checkTxnUsage_ isXTok err at mtok = do
+  case mtok of
     Just tok -> do
-      x <- isNewTok tok
+      x <- isXTok tok
       when x $ do
-        bad $ LT.pack $ getErrorMessage [] ct_at True Err_TransferNewToken
+        bad $ LT.pack $ getErrorMessage [] at True err
     Nothing -> return ()
 
+makeTxnUsage :: SrcLoc -> Maybe DLArg -> App ()
+makeTxnUsage = checkTxnUsage_ isNewTok Err_TransferNewToken
+
+checkTxnUsage :: SrcLoc -> Maybe DLArg -> App ()
+checkTxnUsage = checkTxnUsage_ isInitTok Err_PayNewToken
+
+ntokFields :: (LT.Text, LT.Text, LT.Text, LT.Text)
+ntokFields = ("pay", "Receiver", "Amount", "CloseRemainderTo")
+
+tokFields :: (LT.Text, LT.Text, LT.Text, LT.Text)
+tokFields = ("axfer", "AssetReceiver", "AssetAmount", "AssetCloseTo")
+
 checkTxn :: CheckTxn -> App ()
-checkTxn ctok@(CheckTxn {..}) = when (ct_always || not (staticZero ct_amt) ) $ do
+checkTxn (CheckTxn {..}) = when (not (staticZero ct_amt) ) $ do
   let check1 = checkTxn1
-  let (vTypeEnum, fReceiver, fAmount, fCloseTo, extra) =
+  let ((vTypeEnum, fReceiver, fAmount, _fCloseTo), extra) =
         case ct_mtok of
           Nothing ->
-            ("pay", "Receiver", "Amount", "CloseRemainderTo", return ())
+            (ntokFields, return ())
           Just tok ->
-            ("axfer", "AssetReceiver", "AssetAmount", "AssetCloseTo", textra)
+            (tokFields, textra)
             where textra = ca tok >> check1 "XferAsset"
-  checkTxnUsage ctok
+  checkTxnUsage ct_at ct_mtok
   after_lab <- freshLabel "checkTxnK"
   ca ct_amt
-  unless ct_always $ do
-    op "dup"
-    code "bz" [after_lab]
-  checkTxnAlloc
+  op "dup"
+  code "bz" [after_lab]
+  incResource R_Txn
+  gvLoad GV_txnCounter
+  op "dup"
+  cint 1
+  op "+"
+  gvStore GV_txnCounter
   -- [ amt, id ]
   op "swap"
   -- [ id, amt ]
   check1 fAmount
   extra
-  checkTxnInit vTypeEnum ct_mcsend
-  whenJust ct_mcclose $ \cclose -> do
-    cclose
-    cfrombs T_Address
-    check1 fCloseTo
-  whenJust ct_mcrecv $ \crecv -> do
-    crecv
-    cfrombs T_Address
-    check1 fReceiver
+  checkTxnInit vTypeEnum
+  cContractAddr
+  cfrombs T_Address
+  check1 fReceiver
   label after_lab
   op "pop" -- if !always & zero then pop amt ; else pop id
+
+makeTxn :: MakeTxn -> App ()
+makeTxn (MakeTxn {..}) = when (mt_always || not (staticZero mt_amt) ) $ do
+  let ((vTypeEnum, fReceiver, fAmount, fCloseTo), extra) =
+        case mt_mtok of
+          Nothing ->
+            (ntokFields, return ())
+          Just tok ->
+            (tokFields, textra)
+            where
+              textra = do
+                incResourceL tok R_Asset
+                ca tok
+                makeTxn1 "XferAsset"
+  makeTxnUsage mt_at mt_mtok
+  after_lab <- freshLabel "makeTxnK"
+  ca mt_amt
+  unless mt_always $ do
+    op "dup"
+    code "bz" [after_lab]
+  op "itxn_begin"
+  makeTxn1 fAmount
+  code "int" [vTypeEnum]
+  makeTxn1 "TypeEnum"
+  whenJust mt_mcclose $ \cclose -> do
+    cclose
+    cfrombs T_Address
+    makeTxn1 fCloseTo
+  case mt_mrecv of
+    Nothing -> cContractAddr
+    Just a -> do
+      incResourceL a R_Account
+      ca a
+  cfrombs T_Address
+  makeTxn1 fReceiver
+  extra
+  op "itxn_submit"
+  incResource R_InnerTxn
+  cint 0
+  label after_lab
+  op "pop" -- if !always & zero then pop amt ; else pop 0
 
 doSwitch :: (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
 doSwitch ck at dv csm = do
@@ -1500,7 +1609,7 @@ cm km = \case
       case de of
         DLE_TokenNew {} -> do
           return True
-        DLE_EmitLog _ _ dv' -> do
+        DLE_EmitLog _ _ _ dv' -> do
           isNewTok $ DLA_Var dv'
         _ -> do
           return False
@@ -1588,7 +1697,7 @@ ct = \case
   CT_Jump _at which svs (DLAssignment msgm) -> do
     cla $ DLLA_Tuple $ map DLA_Var svs
     cla $ DLLA_Tuple $ map snd $ M.toAscList msgm
-    addTxnCountEdge which
+    addResourceEdge which
     code "b" [ loopLabel which ]
   CT_From at which msvs -> do
     isHalt <- do
@@ -1598,16 +1707,15 @@ ct = \case
           close_escrow
           return True
           where
-            ct_at = at
-            ct_mcrecv = Nothing
-            ct_mcsend = Just $ cContractAddr
-            ct_always = True
-            ct_amt = DLA_Literal $ DLL_Int sb 0
-            ct_mcclose = Just $ cDeployer
-            close_asset tok = checkTxn $ CheckTxn {..}
-              where ct_mtok = Just tok
-            close_escrow = checkTxn $ CheckTxn {..}
-              where ct_mtok = Nothing
+            mt_at = at
+            mt_always = True
+            mt_mrecv = Nothing
+            mt_amt = DLA_Literal $ DLL_Int sb 0
+            mt_mcclose = Just $ cDeployer
+            close_asset tok = makeTxn $ MakeTxn {..}
+              where mt_mtok = Just tok
+            close_escrow = makeTxn $ MakeTxn {..}
+              where mt_mtok = Nothing
         FI_Continue svs -> do
           cSvsSave at $ map snd svs
           cint $ fromIntegral which
@@ -1619,13 +1727,13 @@ ct = \case
     code "int" [ if isHalt then "DeleteApplication" else "NoOp" ]
     asserteq
     code "b" ["updateState"]
-    addTxnCount
+    addResourceCheck
   where
-    nct = dupeTxnCount . ct
+    nct = dupeResources . ct
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
-reachAlgoBackendVersion = 5
+reachAlgoBackendVersion = 6
 
 -- State:
 keyState :: B.ByteString
@@ -1635,7 +1743,7 @@ keyVary :: Word8 -> B.ByteString
 keyVary = B.singleton . BI.w2c
 
 cContractAddr :: App ()
-cContractAddr = gvLoad GV_contractAddr
+cContractAddr = code "global" ["CurrentApplicationAddress"]
 
 cDeployer :: App ()
 cDeployer = code "global" ["CreatorAddress"]
@@ -1662,7 +1770,6 @@ data GlobalVar
   = GV_txnCounter
   | GV_currentStep
   | GV_currentTime
-  | GV_contractAddr
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 gvSlot :: GlobalVar -> ScratchSlot
@@ -1679,10 +1786,9 @@ gvType = \case
   GV_txnCounter -> T_UInt
   GV_currentStep -> T_UInt
   GV_currentTime -> T_UInt
-  GV_contractAddr -> T_Address
 
 keyState_gvs :: [GlobalVar]
-keyState_gvs = [GV_currentStep, GV_currentTime, GV_contractAddr]
+keyState_gvs = [GV_currentStep, GV_currentTime]
 
 keyState_ty :: DLType
 keyState_ty = T_Tuple $ map gvType keyState_gvs
@@ -1728,33 +1834,8 @@ cloop which (C_Loop at svs vars body) = recordWhich which $ do
 
 ch :: LT.Text -> Int -> CHandler -> App ()
 ch _ _ (C_Loop {}) = return ()
-ch afterLab which (C_Handler at int from prev svs msg_ timev secsv body) = recordWhich which $ do
+ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = recordWhich which $ do
   let isCtor = which == 0
-  (extraCtorDo, extraCtorMsg) <-
-    case isCtor of
-      False -> return (return (), [])
-      True -> do
-        ctcAddrV <- allocDLVar at T_Address
-        let ctorInit = do
-              -- NOTE We are trusting the creator to tell us the correct
-              -- contractAddr. If they don't, this whole app is screwed. It
-              -- would technically be possible to figure this out by keccak-ing
-              -- (or something) the source of escrow with our own appid. We're
-              -- not going to do that because we know
-              -- applications-with-transactions are coming and the escrow
-              -- account is almost dead.
-              --
-              -- Since we can't check it anyways, we're not even going to
-              -- bother ensuring that there's a pay with it,
-              code "txn" ["Sender"]
-              cDeployer
-              asserteq
-              cv ctcAddrV
-              gvStore GV_contractAddr
-              ce $ DLE_CheckPay at [] (DLA_Literal $ minimumBalance_l) Nothing
-              return ()
-        return (ctorInit, [ ctcAddrV ])
-  let msg = extraCtorMsg <> msg_
   let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ svs <> msg)
   when (argSize > algoMaxAppTotalArgLen) $
     xxx $ texty $ "Step " <> show which <> "'s argument length is " <> show argSize <> ", but the maximum is " <> show algoMaxAppTotalArgLen
@@ -1800,7 +1881,8 @@ ch afterLab which (C_Handler at int from prev svs msg_ timev secsv body) = recor
         . bindFromSvs
         . (bindFromArg ArgMsg msg)
   bindVars $ do
-    extraCtorDo
+    when isCtor $ do
+      ce $ DLE_CheckPay at [] (DLA_Literal $ minimumBalance_l) Nothing
     let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
         checkTime1 cmp clhs rhsa = do
           clhs
@@ -1859,7 +1941,7 @@ compile_algo env disp pl = do
   let sMaps = dli_maps dli
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty
-  sTxnCounts <- newIORef mempty
+  sResources <- newResourceGraph
   let sMapDataTy = mapDataTy sMaps
   let sMapDataSize = typeSizeOf sMapDataTy
   let PLOpts {..} = plo
@@ -1891,7 +1973,8 @@ compile_algo env disp pl = do
         let eLetSmalls = mempty
         let eWhich = 0
         eNewToks <- newIORef mempty
-        eTxnCount <- newCounter 1
+        eInitToks <- newIORef mempty
+        eResources <- newResources
         flip runReaderT (Env {..}) m
         readIORef eOutputR
   let bad' = bad_io sFailuresR
@@ -1986,21 +2069,7 @@ compile_algo env disp pl = do
   -- Clear state is never allowed
   addProg "appClear" False $ do
     cl $ DLL_Bool False
-  -- The escrow account defers to the application
-  addProg "escrow" False $ do
-    code "global" ["GroupSize"]
-    cint 1
-    op "-"
-    op "dup"
-    code "gtxns" ["TypeEnum"]
-    code "int" ["appl"]
-    asserteq
-    code "gtxns" ["ApplicationID"]
-    code "int" ["{{ApplicationID}}"]
-    asserteq
-    code "b" ["done"]
-    defn_done
-  checkTxnCount bad' =<< readIORef sTxnCounts
+  checkResources bad' =<< readIORef sResources
   stateSize <- readIORef sStateSizeR
   void $ recordSizeAndKeys "state" stateSize algoMaxGlobalSchemaEntries_usable
   sFailures <- readIORef sFailuresR
