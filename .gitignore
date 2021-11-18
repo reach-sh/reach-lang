@@ -13,3 +13,4 @@ build
 /non-examples/dev
 *.index
 /exp
+.reach

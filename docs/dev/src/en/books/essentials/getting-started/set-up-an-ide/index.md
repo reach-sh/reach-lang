@@ -10,7 +10,7 @@ This page shows you how to set up a Reach development environment for Mac, Linux
 
 The examples throughout this site use the following project directory structure:
 
-```
+``` nonum
 ~/reach                      # Root directory.
 ~/reach/reach                # Reach script file.
 ~/reach/hello-world
@@ -42,13 +42,7 @@ Many instructions on this site assume that you have added `~/reach` to `PATH`.
 
 1. Install [Visual Studio Code](https://code.visualstudio.com/).
 
-1. Add the following file association to vscode preferences:
-
-    ``` nonum
-    "files.associations": {
-      "*.rsh": "javascript"
-    }
-    ```
+2. Install [Reach's Visual Studio extension](https://marketplace.visualstudio.com/items?itemName=reachsh.reach-ide).
     
 1. Open `~/reach`:
 

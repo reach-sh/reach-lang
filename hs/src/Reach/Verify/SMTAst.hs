@@ -254,6 +254,7 @@ data SMTVal
   | SMV_Array DLType [SMTVal]
   | SMV_Tuple [SMTVal]
   | SMV_Object (M.Map String SMTVal)
+  | SMV_Struct [(String, SMTVal)]
   | SMV_Data String [SMTVal]
   | SMV_Token String
   | SMV_Contract String
@@ -273,6 +274,7 @@ instance Pretty SMTVal where
     SMV_Array t xs -> "array" <> parens (hsep $ punctuate comma [pretty t, brackets $ hsep $ punctuate comma $ map pretty xs])
     SMV_Tuple xs -> brackets $ hsep $ punctuate comma $ map pretty xs
     SMV_Object ts -> braces $ hsep $ punctuate comma $ map (\ (k, v) -> pretty k <> ":" <+> pretty v) (M.toAscList ts)
+    SMV_Struct ts -> braces $ hsep $ punctuate comma $ map (\ (k, v) -> pretty k <> ":" <+> pretty v) ts
     SMV_Data c xs -> pretty c <> parens (hsep $ punctuate comma $ map pretty xs)
     SMV_Map -> "<map>"
 

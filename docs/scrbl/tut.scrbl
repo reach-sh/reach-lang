@@ -1806,15 +1806,6 @@ Similarly, to run with Conflux:
     reach.setProviderByName('TestNet'); // or 'MainNet'
   }
 
-  And add something like this at the start of of @jsin{componentDidMount}:
-  @js{
-    async componentDidMount() {
-      const now = await reach.getNetworkTime();
-      reach.setQueryLowerBound(reach.sub(now, 500));
-      // ...
-    }
-  }
-
   For details, see @seclink["cfx-faq-mainnet"]{the Conflux FAQ}.
 }
 

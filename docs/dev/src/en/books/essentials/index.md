@@ -1,4 +1,5 @@
 ---
+hasOtp: true
 menuItem: mi-docs
 ---
 
@@ -8,21 +9,21 @@ Reach is a programming language for building blockchain applications and the sma
 
 <div id="develop-and-deploy-carousel" class="carousel slide carousel-fade" data-bs-interval="false" style="background:black;">
   <div class="carousel-inner" style="text-align:center;background:black;">
-    <div class="carousel-item active"><img src="slide001.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide002.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide003.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide004.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide005.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide006.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide007.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide008.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide009.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide010.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide011.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide012.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide013.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide014.png" class="img-fluid" width=880 height=495></div>
-    <div class="carousel-item"><img src="slide015.png" class="img-fluid" width=880 height=495></div>
+    <div class="carousel-item active"><img src="slide01.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide02.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide03.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide04.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide05.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide06.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide07.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide08.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide09.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide10.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide11.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide12.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide13.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide14.png" class="img-fluid" width=880 height=493></div>
+    <div class="carousel-item"><img src="slide15.png" class="img-fluid" width=880 height=493></div>
   </div>
   <button class="carousel-control-prev" type="button" data-bs-target="#develop-and-deploy-carousel" data-bs-slide="prev" style="justify-content: left;">
     <span class="carousel-control-prev-icon" aria-hidden="true"></span>
@@ -34,64 +35,56 @@ Reach is a programming language for building blockchain applications and the sma
   </button>
 </div>
 
-# Programming Language
+# Reach DApps
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+Reach decentralized applications (DApps) enable participants to perform valid negotiations and transactions via smart contracts running on consensus networks. Consider this diagram:
 
-# Decentralized Applications
+<div><img src="reach-dapp.png" class="img-fluid my-4 d-block" width=800 height=439 loading="lazy"></div>
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+Match the items below to the numbers in the diagram:
 
-<!--
-Creating a Reach DApp does *not* entail implementing a smart contract. Rather, it involves using the Reach programming language to describe, step by step, participant interactions from which the Reach compiler derives a smart contract. The video below provides a mental framework for understanding Reach development and deployment. See also the [Google Slide Presentation](https://docs.google.com/presentation/d/1fzrBNkwzzC7DPL7reAOG6Vwy2bEjLp9CJBLnKAPg2yc/present?usp=sharing).
+1. Human beings give direction and receive information via user interfaces.
+1. The deployer deploys the contract to a consensus network.
+1. The attacher attaches to the contract and interacts with the deployer and/or other attachers.
+1. Participant frontends include UIs and participant interact objects which facilitate communication with backends.
+1. Participant backends facilitate communication between frontends and contracts.
+1. Participants represent human beings in contract negotiations and transactions.
+1. Contracts enable participants to interact, and they enforce rules including order of operation.
+1. Buyer accounts *pay* currency to contract accounts which *transfer* currency to seller accounts.
 
-<p class="ratio ratio-16x9 my-4" style="max-width:500px;">
-  <iframe 
-    src="https://www.youtube.com/embed/4MJqPNelqCE"
-    frameborder="0"  
-    allowfullscreen>
-  </iframe>
-</p>
+In Reach, a programmer need only specify the actions of participants, what they do individually and what they do in unison. The Reach compiler automatically derives a contract for the consensus network via a connector that enforces these rules.
 
-Mentioned in the video are (1) the Reach [JavaScript Standard Library](/en/books/essentials/support-for-js-frontends/) which supports Reach applications by providing properties and methods dealing with accounts, arithmetic, big numbers, comparisons, consensus network providers, contracts, debugging, encryption, randomization, and time, (2) interact objects which are JavaScript objects that enable communication between Reach frontends and backends, explained in detail below, and (3) the Reach Verification Engine which helps to ensure that the immutable smart contract you deploy will run without errors like the error of forgetting to transfer all the otherwise unretrievable tokens out of a smart contract account before the contract exits.
--->
+# Frontend and Backend
 
-# Smart Contracts
+In Reach, the terms *frontend* and *backend* denote two halves of a Reach DApp, halves that communicate via interact objects. The following diagram highlights the frontend:
 
-Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur
+<div><img src="frontend-programming.png" class="img-fluid my-4 d-block" width=600 height=367 loading="lazy"></div>
 
-# Participants
+Actually, developers write frontends in one of two ways:
 
-At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.
+1. Using JavaScript and the Reach JS Standard Library as seen in the diagram.
+1. Using C#, Go, JavaScript, or Python and the relevant RPC library accessing the Reach RPC Server.
 
-# Consensus Networks
+A pre-compiled backend, on the other hand, is written in the Reach programming language as highlighted in this diagram:
 
-Donec erat ex, luctus eu commodo sed, semper a ante. Pellentesque nibh mi, interdum quis tortor at, imperdiet porttitor nibh. Duis sollicitudin lacus eget imperdiet malesuada. Ut et ornare leo. Nunc interdum eget lacus eget mattis. In ullamcorper mollis augue, non faucibus nisi facilisis ac. Ut nulla tellus, vulputate lobortis posuere vulputate, tristique in nisi. Nulla viverra nisl sit amet consectetur pellentesque. Vivamus efficitur odio et auctor scelerisque. Ut elementum ex sit amet ante bibendum fermentum. Vivamus non tortor id arcu mattis ultricies sed vel leo.
+<div><img src="backend-programming.png" class="img-fluid my-4 d-block" width=600 height=367 loading="lazy"></div>
 
-# Transactions
+The Reach compiler transforms Reach code into the executable backend (JavaScript) and the smart contract (network-specific bytecode) as highlighted in this diagram:
 
-Donec lacinia ex nisi, tempus pellentesque ante pharetra blandit. Sed et sem et mauris vulputate tincidunt sit amet a erat. Quisque tortor erat, faucibus lobortis elit at, ornare tincidunt elit. Donec vitae ex id lacus interdum iaculis. Aliquam erat volutpat. Phasellus dui massa, egestas in arcu eu, eleifend vehicula lorem. Aliquam urna nulla, rutrum et elementum et, porta id tortor. Cras aliquet ipsum quam, vel imperdiet dolor sodales sed.
-
-# Frontend/Backend
-
-Donec erat ex, luctus eu commodo sed, semper a ante. Pellentesque nibh mi, interdum quis tortor at, imperdiet porttitor nibh. Duis sollicitudin lacus eget imperdiet malesuada. Ut et ornare leo. Nunc interdum eget lacus eget mattis. In ullamcorper mollis augue, non faucibus nisi facilisis ac. Ut nulla tellus, vulputate lobortis posuere vulputate, tristique in nisi. Nulla viverra nisl sit amet consectetur pellentesque. Vivamus efficitur odio et auctor scelerisque. Ut elementum ex sit amet ante bibendum fermentum. Vivamus non tortor id arcu mattis ultricies sed vel leo.
+<div><img src="backend-compiled.png" class="img-fluid my-4 d-block" width=600 height=367 loading="lazy"></div>
 
 # Interact Objects
 
-Quisque eget metus id sem lacinia ornare. Mauris tristique, sem a viverra bibendum, nisl sem posuere lectus, at auctor orci orci vitae justo. Vivamus sed ligula et nisl rhoncus pellentesque sed eget diam. Nam sit amet facilisis turpis, vitae feugiat dui. Curabitur feugiat lectus ac ipsum aliquam, in maximus risus fermentum. Cras imperdiet ac arcu quis venenatis. Maecenas mollis posuere arcu, nec aliquet odio cursus id. Cras mattis tincidunt ligula, eget tempor ipsum egestas eu. In lorem elit, aliquet eget est vitae, faucibus ultrices nisi.
+For each participant, a Reach DApp requires two interact objects, a frontend JavaScript object and a corresponding backend Reach object. The following diagram shows the frontend and backend interact objects for some *seller* participant:
 
-# Verification
+<div><img src="matching-interacts.png" class="img-fluid my-4 d-block" width=700 height=151 loading="lazy"></div>
 
-At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat.
+Frontend/backend pairs of interact objects form a communication pipeline between participant frontends and backends. In the diagram above, for example, the backend can call `reportReady` (passing an unsigned integer representing a price) which enables the frontend to do something with `price` like display it to the user.
 
-# Standard Library
+You can factor properties and methods common to multiple participant interact objects into a `commonInteract` object, and then *spread* the common object into the various participant objects:
 
-Quisque eget metus id sem lacinia ornare. Mauris tristique, sem a viverra bibendum, nisl sem posuere lectus, at auctor orci orci vitae justo. Vivamus sed ligula et nisl rhoncus pellentesque sed eget diam. Nam sit amet facilisis turpis, vitae feugiat dui. Curabitur feugiat lectus ac ipsum aliquam, in maximus risus fermentum. Cras imperdiet ac arcu quis venenatis. Maecenas mollis posuere arcu, nec aliquet odio cursus id. Cras mattis tincidunt ligula, eget tempor ipsum egestas eu. In lorem elit, aliquet eget est vitae, faucibus ultrices nisi.
+<div><img src="matching-interacts2.png" class="img-fluid my-4 d-block" width=700 loading="lazy"></div>
 
-# Frontend/Backend
+The following diagram provides a broader perspective:
 
-Donec erat ex, luctus eu commodo sed, semper a ante. Pellentesque nibh mi, interdum quis tortor at, imperdiet porttitor nibh. Duis sollicitudin lacus eget imperdiet malesuada. Ut et ornare leo. Nunc interdum eget lacus eget mattis. In ullamcorper mollis augue, non faucibus nisi facilisis ac. Ut nulla tellus, vulputate lobortis posuere vulputate, tristique in nisi. Nulla viverra nisl sit amet consectetur pellentesque. Vivamus efficitur odio et auctor scelerisque. Ut elementum ex sit amet ante bibendum fermentum. Vivamus non tortor id arcu mattis ultricies sed vel leo.
-
-# Accounts and Wallets
-
-Quisque eget metus id sem lacinia ornare. Mauris tristique, sem a viverra bibendum, nisl sem posuere lectus, at auctor orci orci vitae justo. Vivamus sed ligula et nisl rhoncus pellentesque sed eget diam. Nam sit amet facilisis turpis, vitae feugiat dui. Curabitur feugiat lectus ac ipsum aliquam, in maximus risus fermentum. Cras imperdiet ac arcu quis venenatis. Maecenas mollis posuere arcu, nec aliquet odio cursus id. Cras mattis tincidunt ligula, eget tempor ipsum egestas eu. In lorem elit, aliquet eget est vitae, faucibus ultrices nisi.
+<div><img src="design.png" class="img-fluid my-4 d-block" width=900 height=475 loading="lazy"></div>

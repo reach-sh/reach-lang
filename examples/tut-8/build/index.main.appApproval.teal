@@ -1,4 +1,4 @@
-#pragma version 4
+#pragma version 5
 txn RekeyTo
 global ZeroAddress
 ==
@@ -14,26 +14,24 @@ bz alloc
 byte base64()
 app_global_get
 dup
-substring 0 8
-btoi
+int 0
+extract_uint64
 store 1
-dup
-substring 8 16
-btoi
+int 8
+extract_uint64
 store 2
-substring 16 48
-store 3
 txn NumAppArgs
 int 3
 ==
 assert
 txna ApplicationArgs 0
 btoi
+preamble:
 // Handler 0
 dup
 int 0
 ==
-bz l0
+bz l0_afterHandler0
 pop
 // check step
 int 0
@@ -56,33 +54,24 @@ pop
 txna ApplicationArgs 2
 dup
 len
-int 48
+int 16
 ==
 assert
 dup
-substring 0 32
+int 0
+extract_uint64
 store 255
 dup
-substring 32 40
-btoi
+int 8
+extract_uint64
 store 254
-dup
-substring 40 48
-btoi
-store 253
 pop
-txn Sender
-global CreatorAddress
-==
-assert
-load 255
-store 3
 // "CheckPay"
 // "./index.rsh:49:9:dot"
 // "[]"
 int 100000
 dup
-bz l1
+bz l1_checkTxnK
 load 0
 dup
 int 1
@@ -113,19 +102,19 @@ dig 1
 gtxns RekeyTo
 ==
 assert
-load 3
+global CurrentApplicationAddress
 dig 1
 gtxns Receiver
 ==
 assert
-l1:
+l1_checkTxnK:
 pop
 // "CheckPay"
 // "./index.rsh:49:9:dot"
 // "[]"
-load 254
+load 255
 dup
-bz l2
+bz l2_checkTxnK
 load 0
 dup
 int 1
@@ -156,31 +145,31 @@ dig 1
 gtxns RekeyTo
 ==
 assert
-load 3
+global CurrentApplicationAddress
 dig 1
 gtxns Receiver
 ==
 assert
-l2:
+l2_checkTxnK:
 pop
 global Round
-load 253
+load 254
 +
-store 252
+store 253
 txn Sender
+load 255
+itob
+concat
 load 254
 itob
 concat
 load 253
-itob
-concat
-load 252
 itob
 concat
 int 1
 bzero
 dig 1
-substring 0 56
+extract 0 56
 app_global_put
 pop
 int 1
@@ -192,12 +181,12 @@ int NoOp
 ==
 assert
 b updateState
-l0:
+l0_afterHandler0:
 // Handler 1
 dup
 int 1
 ==
-bz l3
+bz l3_afterHandler1
 pop
 // check step
 int 1
@@ -219,19 +208,19 @@ int 1
 bzero
 app_global_get
 dup
-substring 0 32
+extract 0 32
 store 255
 dup
-substring 32 40
-btoi
+int 32
+extract_uint64
 store 254
 dup
-substring 40 48
-btoi
+int 40
+extract_uint64
 store 253
 dup
-substring 48 56
-btoi
+int 48
+extract_uint64
 store 252
 pop
 txna ApplicationArgs 2
@@ -250,7 +239,7 @@ assert
 // "[]"
 load 254
 dup
-bz l4
+bz l4_checkTxnK
 load 0
 dup
 int 1
@@ -281,12 +270,12 @@ dig 1
 gtxns RekeyTo
 ==
 assert
-load 3
+global CurrentApplicationAddress
 dig 1
 gtxns Receiver
 ==
 assert
-l4:
+l4_checkTxnK:
 pop
 load 255
 load 254
@@ -306,13 +295,13 @@ dup
 +
 itob
 concat
-b loop3
-l3:
+b loopBody3
+l3_afterHandler1:
 // Handler 2
 dup
 int 2
 ==
-bz l5
+bz l5_afterHandler2
 pop
 // check step
 int 1
@@ -334,19 +323,19 @@ int 1
 bzero
 app_global_get
 dup
-substring 0 32
+extract 0 32
 store 255
 dup
-substring 32 40
-btoi
+int 32
+extract_uint64
 store 254
 dup
-substring 40 48
-btoi
+int 40
+extract_uint64
 store 253
 dup
-substring 48 56
-btoi
+int 48
+extract_uint64
 store 252
 pop
 txna ApplicationArgs 2
@@ -361,119 +350,56 @@ load 252
 >=
 assert
 // "CheckPay"
-// "reach standard library:209:7:dot"
-// "[at ./index.rsh:57:51:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "reach standard library:206:7:dot"
+// "[at ./index.rsh:57:51:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
 // Just "sender correct"
-// "reach standard library:209:7:dot"
-// "[at ./index.rsh:57:51:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "reach standard library:206:7:dot"
+// "[at ./index.rsh:57:51:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
 load 255
 txn Sender
 ==
 assert
 load 254
 dup
-bz l6
-load 0
-dup
-int 1
-+
-store 0
-swap
-dig 1
-gtxns Amount
-==
-assert
+bz l6_makeTxnK
+itxn_begin
+itxn_field Amount
 int pay
-dig 1
-gtxns TypeEnum
-==
-assert
-int 0
-dig 1
-gtxns Fee
-==
-assert
-global ZeroAddress
-dig 1
-gtxns Lease
-==
-assert
-global ZeroAddress
-dig 1
-gtxns RekeyTo
-==
-assert
-load 3
-dig 1
-gtxns Sender
-==
-assert
+itxn_field TypeEnum
 load 255
-dig 1
-gtxns Receiver
-==
-assert
-l6:
+itxn_field Receiver
+itxn_submit
+int 0
+l6_makeTxnK:
 pop
 int 0
-load 0
-dup
-int 1
-+
-store 0
-swap
-dig 1
-gtxns Amount
-==
-assert
+itxn_begin
+itxn_field Amount
 int pay
-dig 1
-gtxns TypeEnum
-==
-assert
-int 0
-dig 1
-gtxns Fee
-==
-assert
-global ZeroAddress
-dig 1
-gtxns Lease
-==
-assert
-global ZeroAddress
-dig 1
-gtxns RekeyTo
-==
-assert
-load 3
-dig 1
-gtxns Sender
-==
-assert
+itxn_field TypeEnum
 global CreatorAddress
-dig 1
-gtxns CloseRemainderTo
-==
-assert
-l7:
+itxn_field CloseRemainderTo
+global CurrentApplicationAddress
+itxn_field Receiver
+itxn_submit
+int 0
+l7_makeTxnK:
 pop
 txn OnCompletion
 int DeleteApplication
 ==
 assert
 b updateState
-l5:
-l8:
-l9:
-// Handler 5
+l5_afterHandler2:
+l8_afterHandler3:
+// Handler 4
 dup
-int 5
+int 4
 ==
-bz l10
+bz l9_afterHandler4
 pop
 // check step
-int 6
+int 5
 load 1
 ==
 assert
@@ -492,26 +418,26 @@ int 1
 bzero
 app_global_get
 dup
-substring 0 32
+extract 0 32
 store 255
 dup
-substring 32 40
-btoi
+int 32
+extract_uint64
 store 254
 dup
-substring 40 48
-btoi
+int 40
+extract_uint64
 store 253
 dup
-substring 48 80
+extract 48 32
 store 252
 dup
-substring 80 88
-btoi
+int 80
+extract_uint64
 store 251
 dup
-substring 88 96
-btoi
+int 88
+extract_uint64
 store 250
 pop
 txna ApplicationArgs 2
@@ -561,14 +487,14 @@ concat
 int 1
 bzero
 dig 1
-substring 0 127
+extract 0 127
 app_global_put
 byte base64(AQ==)
 dig 1
-substring 127 128
+extract 127 1
 app_global_put
 pop
-int 8
+int 7
 store 1
 global Round
 store 2
@@ -577,15 +503,15 @@ int NoOp
 ==
 assert
 b updateState
-l10:
-// Handler 6
+l9_afterHandler4:
+// Handler 5
 dup
-int 6
+int 5
 ==
-bz l11
+bz l10_afterHandler5
 pop
 // check step
-int 6
+int 5
 load 1
 ==
 assert
@@ -604,26 +530,26 @@ int 1
 bzero
 app_global_get
 dup
-substring 0 32
+extract 0 32
 store 255
 dup
-substring 32 40
-btoi
+int 32
+extract_uint64
 store 254
 dup
-substring 40 48
-btoi
+int 40
+extract_uint64
 store 253
 dup
-substring 48 80
+extract 48 32
 store 252
 dup
-substring 80 88
-btoi
+int 80
+extract_uint64
 store 251
 dup
-substring 88 96
-btoi
+int 88
+extract_uint64
 store 250
 pop
 txna ApplicationArgs 2
@@ -638,117 +564,55 @@ load 250
 >=
 assert
 // "CheckPay"
-// "reach standard library:209:7:dot"
-// "[at ./index.rsh:70:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "reach standard library:206:7:dot"
+// "[at ./index.rsh:70:53:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
 // Just "sender correct"
-// "reach standard library:209:7:dot"
-// "[at ./index.rsh:70:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "reach standard library:206:7:dot"
+// "[at ./index.rsh:70:53:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
 load 252
 txn Sender
 ==
 assert
 load 251
 dup
-bz l12
-load 0
-dup
-int 1
-+
-store 0
-swap
-dig 1
-gtxns Amount
-==
-assert
+bz l11_makeTxnK
+itxn_begin
+itxn_field Amount
 int pay
-dig 1
-gtxns TypeEnum
-==
-assert
-int 0
-dig 1
-gtxns Fee
-==
-assert
-global ZeroAddress
-dig 1
-gtxns Lease
-==
-assert
-global ZeroAddress
-dig 1
-gtxns RekeyTo
-==
-assert
-load 3
-dig 1
-gtxns Sender
-==
-assert
+itxn_field TypeEnum
 load 252
-dig 1
-gtxns Receiver
-==
-assert
-l12:
+itxn_field Receiver
+itxn_submit
+int 0
+l11_makeTxnK:
 pop
 int 0
-load 0
-dup
-int 1
-+
-store 0
-swap
-dig 1
-gtxns Amount
-==
-assert
+itxn_begin
+itxn_field Amount
 int pay
-dig 1
-gtxns TypeEnum
-==
-assert
-int 0
-dig 1
-gtxns Fee
-==
-assert
-global ZeroAddress
-dig 1
-gtxns Lease
-==
-assert
-global ZeroAddress
-dig 1
-gtxns RekeyTo
-==
-assert
-load 3
-dig 1
-gtxns Sender
-==
-assert
+itxn_field TypeEnum
 global CreatorAddress
-dig 1
-gtxns CloseRemainderTo
-==
-assert
-l13:
+itxn_field CloseRemainderTo
+global CurrentApplicationAddress
+itxn_field Receiver
+itxn_submit
+int 0
+l12_makeTxnK:
 pop
 txn OnCompletion
 int DeleteApplication
 ==
 assert
 b updateState
-l11:
-// Handler 7
+l10_afterHandler5:
+// Handler 6
 dup
-int 7
+int 6
 ==
-bz l14
+bz l13_afterHandler6
 pop
 // check step
-int 8
+int 7
 load 1
 ==
 assert
@@ -770,29 +634,29 @@ byte base64(AQ==)
 app_global_get
 concat
 dup
-substring 0 32
+extract 0 32
 store 255
 dup
-substring 32 40
-btoi
+int 32
+extract_uint64
 store 254
 dup
-substring 40 48
-btoi
+int 40
+extract_uint64
 store 253
 dup
-substring 48 80
+extract 48 32
 store 252
 dup
-substring 80 88
-btoi
+int 80
+extract_uint64
 store 251
 dup
-substring 88 120
+extract 88 32
 store 250
 dup
-substring 120 128
-btoi
+int 120
+extract_uint64
 store 249
 pop
 txna ApplicationArgs 2
@@ -846,14 +710,14 @@ concat
 int 1
 bzero
 dig 1
-substring 0 127
+extract 0 127
 app_global_put
 byte base64(AQ==)
 dig 1
-substring 127 136
+extract 127 9
 app_global_put
 pop
-int 10
+int 9
 store 1
 global Round
 store 2
@@ -862,15 +726,15 @@ int NoOp
 ==
 assert
 b updateState
-l14:
-// Handler 8
+l13_afterHandler6:
+// Handler 7
 dup
-int 8
+int 7
 ==
-bz l15
+bz l14_afterHandler7
 pop
 // check step
-int 8
+int 7
 load 1
 ==
 assert
@@ -892,29 +756,29 @@ byte base64(AQ==)
 app_global_get
 concat
 dup
-substring 0 32
+extract 0 32
 store 255
 dup
-substring 32 40
-btoi
+int 32
+extract_uint64
 store 254
 dup
-substring 40 48
-btoi
+int 40
+extract_uint64
 store 253
 dup
-substring 48 80
+extract 48 32
 store 252
 dup
-substring 80 88
-btoi
+int 80
+extract_uint64
 store 251
 dup
-substring 88 120
+extract 88 32
 store 250
 dup
-substring 120 128
-btoi
+int 120
+extract_uint64
 store 249
 pop
 txna ApplicationArgs 2
@@ -929,117 +793,55 @@ load 249
 >=
 assert
 // "CheckPay"
-// "reach standard library:209:7:dot"
-// "[at ./index.rsh:78:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "reach standard library:206:7:dot"
+// "[at ./index.rsh:78:53:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
 // Just "sender correct"
-// "reach standard library:209:7:dot"
-// "[at ./index.rsh:78:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "reach standard library:206:7:dot"
+// "[at ./index.rsh:78:53:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
 load 255
 txn Sender
 ==
 assert
 load 251
 dup
-bz l16
-load 0
-dup
-int 1
-+
-store 0
-swap
-dig 1
-gtxns Amount
-==
-assert
+bz l15_makeTxnK
+itxn_begin
+itxn_field Amount
 int pay
-dig 1
-gtxns TypeEnum
-==
-assert
-int 0
-dig 1
-gtxns Fee
-==
-assert
-global ZeroAddress
-dig 1
-gtxns Lease
-==
-assert
-global ZeroAddress
-dig 1
-gtxns RekeyTo
-==
-assert
-load 3
-dig 1
-gtxns Sender
-==
-assert
+itxn_field TypeEnum
 load 255
-dig 1
-gtxns Receiver
-==
-assert
-l16:
+itxn_field Receiver
+itxn_submit
+int 0
+l15_makeTxnK:
 pop
 int 0
-load 0
-dup
-int 1
-+
-store 0
-swap
-dig 1
-gtxns Amount
-==
-assert
+itxn_begin
+itxn_field Amount
 int pay
-dig 1
-gtxns TypeEnum
-==
-assert
-int 0
-dig 1
-gtxns Fee
-==
-assert
-global ZeroAddress
-dig 1
-gtxns Lease
-==
-assert
-global ZeroAddress
-dig 1
-gtxns RekeyTo
-==
-assert
-load 3
-dig 1
-gtxns Sender
-==
-assert
+itxn_field TypeEnum
 global CreatorAddress
-dig 1
-gtxns CloseRemainderTo
-==
-assert
-l17:
+itxn_field CloseRemainderTo
+global CurrentApplicationAddress
+itxn_field Receiver
+itxn_submit
+int 0
+l16_makeTxnK:
 pop
 txn OnCompletion
 int DeleteApplication
 ==
 assert
 b updateState
-l15:
-// Handler 9
+l14_afterHandler7:
+// Handler 8
 dup
-int 9
+int 8
 ==
-bz l18
+bz l17_afterHandler8
 pop
 // check step
-int 10
+int 9
 load 1
 ==
 assert
@@ -1061,33 +863,33 @@ byte base64(AQ==)
 app_global_get
 concat
 dup
-substring 0 32
+extract 0 32
 store 255
 dup
-substring 32 40
-btoi
+int 32
+extract_uint64
 store 254
 dup
-substring 40 48
-btoi
+int 40
+extract_uint64
 store 253
 dup
-substring 48 80
+extract 48 32
 store 252
 dup
-substring 80 88
-btoi
+int 80
+extract_uint64
 store 251
 dup
-substring 88 120
+extract 88 32
 store 250
 dup
-substring 120 128
-btoi
+int 120
+extract_uint64
 store 249
 dup
-substring 128 136
-btoi
+int 128
+extract_uint64
 store 248
 pop
 txna ApplicationArgs 2
@@ -1097,12 +899,12 @@ int 16
 ==
 assert
 dup
-substring 0 8
-btoi
+int 0
+extract_uint64
 store 247
 dup
-substring 8 16
-btoi
+int 8
+extract_uint64
 store 246
 pop
 global Round
@@ -1120,8 +922,8 @@ txn Sender
 ==
 assert
 // Nothing
-// "reach standard library:65:17:application"
-// "[at ./index.rsh:87:20:application call to \"checkCommitment\" (defined at: reach standard library:64:8:function exp)]"
+// "reach standard library:62:17:application"
+// "[at ./index.rsh:87:20:application call to \"checkCommitment\" (defined at: reach standard library:61:8:function exp)]"
 load 250
 load 247
 itob
@@ -1154,16 +956,16 @@ concat
 load 251
 itob
 concat
-b loop3
-l18:
-// Handler 10
+b loopBody3
+l17_afterHandler8:
+// Handler 9
 dup
-int 10
+int 9
 ==
-bz l19
+bz l18_afterHandler9
 pop
 // check step
-int 10
+int 9
 load 1
 ==
 assert
@@ -1185,33 +987,33 @@ byte base64(AQ==)
 app_global_get
 concat
 dup
-substring 0 32
+extract 0 32
 store 255
 dup
-substring 32 40
-btoi
+int 32
+extract_uint64
 store 254
 dup
-substring 40 48
-btoi
+int 40
+extract_uint64
 store 253
 dup
-substring 48 80
+extract 48 32
 store 252
 dup
-substring 80 88
-btoi
+int 80
+extract_uint64
 store 251
 dup
-substring 88 120
+extract 88 32
 store 250
 dup
-substring 120 128
-btoi
+int 120
+extract_uint64
 store 249
 dup
-substring 128 136
-btoi
+int 128
+extract_uint64
 store 248
 pop
 txna ApplicationArgs 2
@@ -1226,144 +1028,82 @@ load 248
 >=
 assert
 // "CheckPay"
-// "reach standard library:209:7:dot"
-// "[at ./index.rsh:86:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "reach standard library:206:7:dot"
+// "[at ./index.rsh:86:53:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
 // Just "sender correct"
-// "reach standard library:209:7:dot"
-// "[at ./index.rsh:86:53:application call to \"closeTo\" (defined at: reach standard library:207:8:function exp)]"
+// "reach standard library:206:7:dot"
+// "[at ./index.rsh:86:53:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
 load 252
 txn Sender
 ==
 assert
 load 251
 dup
-bz l20
-load 0
-dup
-int 1
-+
-store 0
-swap
-dig 1
-gtxns Amount
-==
-assert
+bz l19_makeTxnK
+itxn_begin
+itxn_field Amount
 int pay
-dig 1
-gtxns TypeEnum
-==
-assert
-int 0
-dig 1
-gtxns Fee
-==
-assert
-global ZeroAddress
-dig 1
-gtxns Lease
-==
-assert
-global ZeroAddress
-dig 1
-gtxns RekeyTo
-==
-assert
-load 3
-dig 1
-gtxns Sender
-==
-assert
+itxn_field TypeEnum
 load 252
-dig 1
-gtxns Receiver
-==
-assert
-l20:
+itxn_field Receiver
+itxn_submit
+int 0
+l19_makeTxnK:
 pop
 int 0
-load 0
-dup
-int 1
-+
-store 0
-swap
-dig 1
-gtxns Amount
-==
-assert
+itxn_begin
+itxn_field Amount
 int pay
-dig 1
-gtxns TypeEnum
-==
-assert
-int 0
-dig 1
-gtxns Fee
-==
-assert
-global ZeroAddress
-dig 1
-gtxns Lease
-==
-assert
-global ZeroAddress
-dig 1
-gtxns RekeyTo
-==
-assert
-load 3
-dig 1
-gtxns Sender
-==
-assert
+itxn_field TypeEnum
 global CreatorAddress
-dig 1
-gtxns CloseRemainderTo
-==
-assert
-l21:
+itxn_field CloseRemainderTo
+global CurrentApplicationAddress
+itxn_field Receiver
+itxn_submit
+int 0
+l20_makeTxnK:
 pop
 txn OnCompletion
 int DeleteApplication
 ==
 assert
 b updateState
-l19:
+l18_afterHandler9:
 int 0
 assert
-loop3:
+loopBody3:
 dup
-substring 0 8
-btoi
+int 0
+extract_uint64
 store 255
 dup
-substring 8 16
-btoi
+int 8
+extract_uint64
 store 254
 dup
-substring 16 24
-btoi
+int 16
+extract_uint64
 store 253
 pop
 dup
-substring 0 32
+extract 0 32
 store 252
 dup
-substring 32 40
-btoi
+int 32
+extract_uint64
 store 251
 dup
-substring 40 48
-btoi
+int 40
+extract_uint64
 store 250
 dup
-substring 48 80
+extract 48 32
 store 249
 pop
 load 255
 int 1
 ==
-bz l22
+bz l21_ifF
 load 254
 load 250
 +
@@ -1386,10 +1126,10 @@ concat
 int 1
 bzero
 dig 1
-substring 0 96
+extract 0 96
 app_global_put
 pop
-int 6
+int 5
 store 1
 global Round
 store 2
@@ -1398,128 +1138,39 @@ int NoOp
 ==
 assert
 b updateState
-l22:
-load 252
-load 251
-itob
-concat
-load 249
-concat
-load 255
-itob
-concat
-byte base64()
-loop4:
-pop
-dup
-substring 0 32
-store 255
-dup
-substring 32 40
-btoi
-store 254
-dup
-substring 40 72
-store 253
-dup
-substring 72 80
-btoi
-store 252
-pop
+l21_ifF:
 int 2
-load 254
+load 251
 *
 dup
-bz l23
-load 0
-dup
-int 1
-+
-store 0
-swap
-dig 1
-gtxns Amount
-==
-assert
+bz l22_makeTxnK
+itxn_begin
+itxn_field Amount
 int pay
-dig 1
-gtxns TypeEnum
-==
-assert
-int 0
-dig 1
-gtxns Fee
-==
-assert
-global ZeroAddress
-dig 1
-gtxns Lease
-==
-assert
-global ZeroAddress
-dig 1
-gtxns RekeyTo
-==
-assert
-load 3
-dig 1
-gtxns Sender
-==
-assert
-load 253
-load 255
+itxn_field TypeEnum
+load 249
 load 252
+load 255
 int 2
 ==
 select
-dig 1
-gtxns Receiver
-==
-assert
-l23:
+itxn_field Receiver
+itxn_submit
+int 0
+l22_makeTxnK:
 pop
 int 0
-load 0
-dup
-int 1
-+
-store 0
-swap
-dig 1
-gtxns Amount
-==
-assert
+itxn_begin
+itxn_field Amount
 int pay
-dig 1
-gtxns TypeEnum
-==
-assert
-int 0
-dig 1
-gtxns Fee
-==
-assert
-global ZeroAddress
-dig 1
-gtxns Lease
-==
-assert
-global ZeroAddress
-dig 1
-gtxns RekeyTo
-==
-assert
-load 3
-dig 1
-gtxns Sender
-==
-assert
+itxn_field TypeEnum
 global CreatorAddress
-dig 1
-gtxns CloseRemainderTo
-==
-assert
-l24:
+itxn_field CloseRemainderTo
+global CurrentApplicationAddress
+itxn_field Receiver
+itxn_submit
+int 0
+l23_makeTxnK:
 pop
 txn OnCompletion
 int DeleteApplication
@@ -1531,8 +1182,6 @@ load 1
 itob
 load 2
 itob
-load 3
-concat
 concat
 app_global_put
 checkSize:
@@ -1564,6 +1213,4 @@ int 0
 store 1
 int 0
 store 2
-global ZeroAddress
-store 3
 b updateState

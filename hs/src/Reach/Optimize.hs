@@ -336,8 +336,8 @@ instance Optimize DLExpr where
     DLE_TimeOrder at tos -> DLE_TimeOrder at <$> opt tos
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
-    DLE_EmitLog at m a -> DLE_EmitLog at m <$> opt a
-    DLE_setApiDetails at w t c -> return $ DLE_setApiDetails at w t c
+    DLE_EmitLog at m ma a -> DLE_EmitLog at m ma <$> opt a
+    DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
 
@@ -514,7 +514,7 @@ _opt_dbg m = do
   liftIO $ putStrLn $ "got " <> show x
   return x
 
-opt_mtime :: AppT (Maybe (DLTimeArg, LLStep))
+opt_mtime :: (Optimize a, Optimize b) => AppT (Maybe (a, b))
 opt_mtime = \case
   Nothing -> pure $ Nothing
   Just (d, s) -> Just <$> (pure (,) <*> (focus_con $ opt d) <*> (newScope $ opt s))
@@ -584,7 +584,7 @@ instance Optimize ETail where
     ET_FromConsensus at vi fi k ->
       ET_FromConsensus at vi fi <$> opt k
     ET_ToConsensus {..} -> do
-      ET_ToConsensus et_tc_at et_tc_from et_tc_prev <$> opt et_tc_lct <*> pure et_tc_which <*> opt et_tc_from_me <*> pure et_tc_from_msg <*> pure et_tc_from_out <*> pure et_tc_from_timev <*> pure et_tc_from_secsv <*> pure et_tc_from_didSendv <*> opt et_tc_from_mtime <*> opt et_tc_cons
+      ET_ToConsensus et_tc_at et_tc_from et_tc_prev <$> opt et_tc_lct <*> pure et_tc_which <*> opt et_tc_from_me <*> pure et_tc_from_msg <*> pure et_tc_from_out <*> pure et_tc_from_timev <*> pure et_tc_from_secsv <*> pure et_tc_from_didSendv <*> opt_mtime et_tc_from_mtime <*> opt et_tc_cons
     ET_While at asn cond body k -> optWhile (ET_While at) asn cond body k
     ET_Continue at asn -> ET_Continue at <$> opt asn
 

@@ -24,7 +24,7 @@ minor :: Int
 minor = 1
 
 patch :: Int
-patch = 6
+patch = 7
 
 version :: Version
 version = makeVersion [major, minor, patch]

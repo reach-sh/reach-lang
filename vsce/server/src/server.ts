@@ -37,7 +37,7 @@ import {
 import {
 	TextDocument, Range, TextEdit
 } from 'vscode-languageserver-textdocument';
-import { reachCompletionKind, reachKeywords } from './keywordCompletion';
+import { KEYWORD_TO_COMPLETION_ITEM_KIND, REACH_KEYWORDS } from './keywordCompletion';
 
 // Do this import differently so we can add types, to avoid a
 // "No index signature with a parameter of type 'string' was found... ts(7053)"
@@ -47,7 +47,7 @@ import { reachCompletionKind, reachKeywords } from './keywordCompletion';
 // "resolveJsonModule": true,
 // to tsconfig.json.
 const KEYWORD_TO_DOCUMENTATION: { [ keyword: string ] : string } = require(
-	'../../compiler_outputted_files/keywordToDocumentation.json'
+	'../../data/keywordToDocumentation.json'
 );
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -229,6 +229,9 @@ documents.onDidChangeContent(change => {
 	validateTextDocument(change.document);
 });
 
+let	theCompilerIsCompiling 	= false,
+	weNeedToCompileAgain 	= false;
+
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	let textDocumentFromURI = documents.get(textDocument.uri)
@@ -286,7 +289,40 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	const reachPath = (exeLoc == '' || exeLoc == './reach')
 		? path.join(workspaceFolder, "reach")
 		: exeLoc;
+
+	if (theCompilerIsCompiling) {
+		weNeedToCompileAgain = true;
+		console.debug(
+			"Compilation already in process; will recompile",
+			new Date().toLocaleTimeString()
+		);
+		return;
+	}
+
+	theCompilerIsCompiling = true;
+
+	console.debug(
+		"Starting compilation at",
+		new Date().toLocaleTimeString()
+	);
 	await exec("cd " + tempFolder + " && " + reachPath + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json", (error: { message: any; }, stdout: any, stderr: any) => {
+		// This callback function should execute exactly
+		// when this compilation command has finished.
+		// "child_process.exec(): spawns a shell...
+		// passing the stdout and stderr to a callback
+		// function when complete". See
+		// https://nodejs.org/api/child_process.html#child-process
+		console.debug(
+			"Compilation should now have finished.",
+			new Date().toLocaleTimeString()
+		);
+		theCompilerIsCompiling = false;
+		if (weNeedToCompileAgain) {
+			weNeedToCompileAgain = false;
+			validateTextDocument(textDocument);
+			return;
+		}
+
 		if (error) {
 			connection.console.log(`Found compile error: ${error.message}`);
 			const errorLocations: ErrorLocation[] = findErrorLocations(error.message);
@@ -491,9 +527,9 @@ connection.onCompletion(
 	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
 		// The passed parameter contains the position of the text document in
 		// which code complete got requested.
-		return reachKeywords.map(kwd => ({
+		return REACH_KEYWORDS.map(kwd => ({
 			label: kwd,
-			kind: reachCompletionKind[kwd] || CompletionItemKind.Text,
+			kind: KEYWORD_TO_COMPLETION_ITEM_KIND[kwd] || CompletionItemKind.Text,
 			data: undefined,
 			detail: kwd,
 			documentation: {
@@ -584,7 +620,7 @@ connection.onHover(
 );
 
 function isReachKeyword(word: string): boolean {
-	return reachCompletionKind[word] != undefined;
+	return KEYWORD_TO_COMPLETION_ITEM_KIND[word] != undefined;
 }
 
 function getReachKeywordMarkdown(word: string): string {
