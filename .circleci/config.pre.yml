@@ -247,7 +247,7 @@ jobs:
         steps:
           - srd_yes
     - checkout
-#    - prepare-version
+    #- prepare-version
     - workattach
     - and_restore_docker:
         deps: <<parameters.deps>>
@@ -363,7 +363,7 @@ workflows:
         context:
         - reachdevbot-on-dockerhub
         requires:
-          - "build-sink-rc"
+          - "build-sink"
         filters:
           branches:
             only: automated_tagging
@@ -371,7 +371,7 @@ workflows:
         context:
         - release-test
         requires:
-          - "build-sink-rc"
+          - "build-sink"
         filters:
           branches:
             only: automated_tagging
