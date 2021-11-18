@@ -6,7 +6,7 @@ Verifying for generic connector
   Verifying when ONLY "Bob_checkEq" is honest
   Verifying when ONLY "Bob_noop" is honest
   Verifying when ONLY "Bob_payMe" is honest
-Checked 55 theorems; No failures!
+Checked 34 theorems; No failures!
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
 
   ./index.rsh:38:5:application
