@@ -1,0 +1,13 @@
+{
+  "name": "@reach-sh/tut-8",
+  "type": "module",
+  "dependencies": {
+    "@reach-sh/stdlib": ">=0.1.4-rc.0 <0.1.4-rc.9999"
+  },
+  "author": "reach.sh",
+  "license": "Apache-2.0",
+  "scripts": {
+    "lint": "eslint --ignore-path .gitignore --ext .mjs .",
+    "index": "node --experimental-modules --unhandled-rejections=strict index.mjs"
+  }
+}

@@ -1,0 +1,20 @@
+diff --git a/examples/tut-9/index.js b/examples/tut-9/index.js
+index 4b2705cea..1f5cf01e7 100644
+--- a/examples/tut-9/index.js
++++ b/examples/tut-9/index.js
+@@ -7,6 +7,7 @@ import './index.css';
+ import * as backend from './build/index.main.mjs';
+ import {loadStdlib} from '@reach-sh/stdlib';
+ const reach = loadStdlib(process.env);
++reach.setProviderByName('TestNet');
+ 
+ const handToInt = {'ROCK': 0, 'PAPER': 1, 'SCISSORS': 2};
+ const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];
+@@ -20,6 +21,7 @@ class App extends React.Component {
+   }
+   async componentDidMount() {
+     const acc = await reach.getDefaultAccount();
++    acc.setGasLimit(5000000);
+     const balAtomic = await reach.balanceOf(acc);
+     const bal = reach.formatCurrency(balAtomic, 4);
+     this.setState({acc, bal});

@@ -1,0 +1,35 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance zero at application exit"
+  at ./index-bad.rsh:8:30:compileDApp
+
+  // Violation Witness
+
+  const v71 = "Alice".interact.wager;
+  //    ^ could = 1
+  //      from: ./index-bad.rsh:11:10:property binding
+  const v74 = protect<UInt>("Alice".interact.getHand());
+  //    ^ could = 0
+  //      from: ./index-bad.rsh:21:50:application
+  const v84 = protect<UInt>("Bob".interact.getHand());
+  //    ^ could = 2
+  //      from: ./index-bad.rsh:29:48:application
+
+  // Theorem Formalization
+
+  const v93 = (v74 + (4 - v84)) % 3;
+  //    ^ would be 2
+  const v100 = (v93 == 2) ? [1, 0 ] : (v93 == 0) ? [0, 2 ] : [1, 1 ];
+  //    ^ would be [1, 0 ]
+  const v114 = 0 == (((v71 + v71) - (v100[0] * v71)) - (v100[1] * v71));
+  //    ^ would be false
+  assert(v114);
+
+  Verifying when NO participants are honest
+  Verifying when ONLY "Alice" is honest
+  Verifying when ONLY "Bob" is honest
+Checked 18 theorems; 4 failures (and 3 omitted repeats) :'(
