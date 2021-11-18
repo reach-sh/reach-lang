@@ -80,13 +80,13 @@ commands:
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}  
           done
           docker image ls | grep reachsh
- # prepare-version:
- #   description: "Prepare Version for Release Candidate release"
- #   steps:
- #     - run: |
- #         make prepare-version
- #         
- #         set -a; source ./VERSION
+  prepare-version:
+    description: "Prepare Version for Release Candidate release"
+    steps:
+      - run: |
+          make prepare-version
+          
+          set -a; source ./VERSION
 jobs:
   "create-tag-and-push":
     executor: fake
@@ -363,7 +363,7 @@ workflows:
         context:
         - reachdevbot-on-dockerhub
         requires:
-          - "build-sink"
+          - "RC-release"
         filters:
           branches:
             only: automated_tagging
@@ -371,7 +371,7 @@ workflows:
         context:
         - release-test
         requires:
-          - "build-sink"
+          - "RC-release"
         filters:
           branches:
             only: automated_tagging

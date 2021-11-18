@@ -73,14 +73,14 @@ translate-mo-templates-haskell: mo
 .PHONY: translate-templates
 translate-templates: translate-mo-templates-stdlib translate-mo-templates-rpc-server translate-mo-templates-haskell
 
-.PHONY: prepare-version
-prepare-version: mo
-	echo $$(git tag)
-	(cd scripts && bash prepare-reach-version.sh)
-	echo $$(cat VERSION)
-
+#.PHONY: prepare-version
+#prepare-version: mo
+#	echo $$(git tag)
+#	(cd scripts && bash prepare-reach-version.sh)
+#	echo $$(cat VERSION)
+#
 .PHONY: prepare-rc-tag-and-push
-prepare-rc-tag-and-push: prepare-version
+prepare-rc-tag-and-push:
 	git config user.name "reachdevbot"
 	git config user.email "reachdevbot@reach.com"
 	git add VERSION
