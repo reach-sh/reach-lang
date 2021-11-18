@@ -5,5 +5,5 @@
   "hasPageHeader": true,
   "hasPageScrollbar": true,
   "hasEditBtn": true,
-  "hasRefreshBtn": true
+  "hasRefreshBtn": false
 }
