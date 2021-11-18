@@ -1222,6 +1222,24 @@
 </p>
 <p>You can fix this error by using different names:</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">A</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Flower_girl'</span><span style="color: #24292F">, {});</span></li><li value="2"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">B</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">API</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Flower'</span><span style="color: #24292F">, { girl2: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Null) });</span></li></ol></pre>
+<h2 id="re0124">RE0124</h2>
+<p>
+  This error indicates that there is an attempt to make a publication in your program, but there are
+  no <code>Participant</code>s or <code>ParticipantClass</code>es declared.
+</p>
+<p>
+  This issue can arise when you use <code>Anybody.publish()</code>. To fix this issue, ensure you declare
+  a <code>Participant</code> or <code>ParticipantClass</code>.
+</p>
+<h2 id="re0125">RE0125</h2>
+<p>
+  This error indicates that an <code>API</code> is explicitly attempting to make a publication, e.g. <code>api.publish()</code>.
+  An API may only make a publication through a <code>fork</code>, <code>parallelReduce</code>, or <code>call</code>.
+</p>
+<p>
+  Depending on your program, you can fix this error by performing a <code>call</code> or adding an <code>.api</code>
+  case to your <code>fork</code> or <code>parallelReduce</code> statement.
+</p>
 <h2 id="rep0000">REP0000</h2>
 <p>
   This error indicates that the body of a <code>while</code> loop does not make a publication before the <code>continue</code>
