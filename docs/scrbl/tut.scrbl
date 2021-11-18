@@ -988,7 +988,7 @@ if she doesn't start the game, then no one is any worse off.
 @itemlist[
 
 @item{Line 50 has Alice declassify the @reachin{deadline} @tech{time delta}.}
-@item{Line 51 now has Alice publish the @reachin{deadline}.}
+@item{Line 52 now has Alice publish the @reachin{deadline}.}
 
 ]
 
