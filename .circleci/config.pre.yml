@@ -80,25 +80,26 @@ commands:
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}  
           done
           docker image ls | grep reachsh
-  prepare-version:
-    description: "Prepare Version for Release Candidate release"
-    steps:
-      - run: |
-          make prepare-version
-          set -a; source ./VERSION
+ # prepare-version:
+ #   description: "Prepare Version for Release Candidate release"
+ #   steps:
+ #     - run: |
+ #         make prepare-version
+ #         
+ #         set -a; source ./VERSION
 jobs:
   "create-tag-and-push":
-    executor: real
+    executor: fake
     steps:
     - checkout
-    - prepare-version
+#    - prepare-version
     - run: |
         make prepare-rc-tag-and-push
   "make-announcement":
-    executor: real
+    executor: fake
     steps:
     - checkout
-    - prepare-version
+#    - prepare-version
     - run: |
         set -a; source ./VERSION
         export GIT_COMMIT_HASH=$CIRCLE_SHA1
@@ -109,7 +110,7 @@ jobs:
     executor: real
     steps:
     - checkout
-    - prepare-version
+#    - prepare-version
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
@@ -122,7 +123,7 @@ jobs:
     executor: real
     steps:
     - checkout
-    - prepare-version
+#    - prepare-version
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
@@ -136,7 +137,7 @@ jobs:
     executor: fake
     steps:
     - checkout
-    - prepare-version
+#    - prepare-version
     # We don't mind not caching, because it doesn't take that long and we don't
     # want to steal a volume from the main build
     - srd_no
@@ -246,7 +247,7 @@ jobs:
         steps:
           - srd_yes
     - checkout
-    - prepare-version
+#    - prepare-version
     - workattach
     - and_restore_docker:
         deps: <<parameters.deps>>
