@@ -5,7 +5,7 @@ module Reach.Eval.Error
   )
 where
 
-import Data.List (intercalate, sortBy)
+import Data.List (intercalate, sortBy, isPrefixOf)
 import qualified Data.Map.Strict as M
 import Data.Ord (comparing)
 import qualified Data.Set as S
@@ -153,6 +153,7 @@ data EvalError
   | Err_ApiCallAssign
   | Err_DuplicateName String SrcLoc
   | Err_No_Participants
+  | Err_Api_Publish (S.Set SLPart)
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -287,6 +288,7 @@ instance HasErrorCode EvalError where
     Err_ApiCallAssign {} -> 122
     Err_DuplicateName {} -> 123
     Err_No_Participants {} -> 124
+    Err_Api_Publish {} -> 125
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -311,7 +313,8 @@ didYouMean invalidStr validOptions maxClosest =
     [] -> ""
     _ -> ". Did you mean: " <> show options
   where
-    options = getErrorSuggestions invalidStr validOptions maxClosest
+    visibleOptions = filter (not . isPrefixOf ".") validOptions
+    options = getErrorSuggestions invalidStr visibleOptions maxClosest
 
 showDiff :: Eq b => a -> a -> (a -> b) -> (b -> b -> String) -> String
 showDiff x y f s =
@@ -721,5 +724,7 @@ instance Show EvalError where
       "The name `" <> s <> "` has already been used by a Participant, View or API at: " <> show at
     Err_No_Participants ->
       "There are no `Participant`s in the program."
+    Err_Api_Publish apis ->
+      "The " <> intercalate ", " (map bunpack $ S.toList apis) <> " `API`(s) cannot explicitly make a publication."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
