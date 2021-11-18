@@ -166,9 +166,9 @@ const processCss = async () => {
   await writeFileMkdir(oPath, output.styles);
 };
 
-const processBaseHtml = async (lang) => {
-  const iPath = `${srcDir}/${lang}/base.html`;
-  const oPath = `${outDir}/${lang}/index.html`;
+const processBaseHtml = async () => {
+  const iPath = `${srcDir}/base.html`;
+  const oPath = `${outDir}/base.html`;
   console.log(`Minifying ${iPath}`);
   const output = await minify(iPath, { html: {} });
   await writeFileMkdir(oPath, output);
@@ -398,19 +398,6 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     processCodeSnippet(doc, pre, code, spec);
   }
 
-  // Create soft link in this folder to index.html file at root.
-  if(configJson.hasCustomBase == false) {
-    try { await fs.unlink(`${out_folder}/index.html`); } catch (e) { void(e); }
-    const backstepCount = relDir.split('/').length - 1;
-    let backstepUrl = '';
-    for (let i=0; i < backstepCount; i++) {
-      backstepUrl = backstepUrl + '../';
-    }
-    const target = `${backstepUrl}index.html`;
-    const symlink = `${out_folder}/index.html`;
-    await fs.symlink(target, symlink);
-  }
-
   // Write files
   await Promise.all([
     fs.writeFile(cfgPath, JSON.stringify(configJson, null, 2)),
@@ -418,7 +405,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   ]);
 };
 
-const findAndProcessFolder = async (inputBaseConfig, folder) => {
+const findAndProcessFolder = async (base_html, inputBaseConfig, folder) => {
   let relDir = normalizeDir(folder.replace(srcDir, ''));
   relDir = relDir.startsWith('/') ? relDir.slice(1) : relDir;
   const in_folder = `${srcDir}/${relDir}`;
@@ -437,6 +424,11 @@ const findAndProcessFolder = async (inputBaseConfig, folder) => {
 
   const out_folder = `${outDir}/${relDir}`;
   await fs.mkdir(out_folder, { recursive: true })
+
+  // Create soft link in this folder to index.html file at root.
+  try { await fs.unlink(`${out_folder}/index.html`); } catch (e) { void(e); }
+  await fs.symlink(base_html, `${out_folder}/index.html`);
+
   const fileArr = await fs.readdir(folder);
   await Promise.all(fileArr.map(async (p) => {
     if ( p === 'index.md' ) {
@@ -445,7 +437,7 @@ const findAndProcessFolder = async (inputBaseConfig, folder) => {
       const absolute = path.join(folder, p);
       const s = await fs.stat(absolute);
       if (s.isDirectory()) {
-        return await findAndProcessFolder(baseConfig, absolute);
+        return await findAndProcessFolder(`../${base_html}`, baseConfig, absolute);
       } else if ( ! INTERNAL.includes(p) ) {
         return await fs.copyFile(path.join(in_folder, p), path.join(out_folder, p));
       }
@@ -458,6 +450,6 @@ const findAndProcessFolder = async (inputBaseConfig, folder) => {
 await Promise.all([
   processCss(),
   processJs(),
-  processBaseHtml('en'),
-  findAndProcessFolder({}, srcDir),
+  processBaseHtml(),
+  findAndProcessFolder(`base.html`, {}, srcDir),
 ]);

@@ -1,6 +1,6 @@
 #!/bin/sh -e
 SRC=../md/
-DEST=./src/en/md
+DEST=./src/md
 
 r() {
   FROM="${SRC}/${1}.md"
