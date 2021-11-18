@@ -56,7 +56,7 @@ ci () {
   ${REACH} clean
   ${REACH} compile --intermediate-files
   make build
-  REACH_DEBUG=0 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=1 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 
@@ -119,12 +119,9 @@ checkteal () {
 #exit 0
 
 jb
-ci ALGO mint-basic
-ci ALGO overview
+ci ETH ctc-address
+ci ALGO ctc-address
 exit 0
-ci ALGO atomic-swap
-ci ALGO api-full
-ci ALGO tut-7
 
 #c users/t.rsh
 exit 0
