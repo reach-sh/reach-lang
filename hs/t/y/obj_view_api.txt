@@ -1,0 +1,32 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "P" is honest
+  Verifying when ONLY "o2" is honest
+  Verifying when ONLY "o3" is honest
+Checked 14 theorems; No failures!
+warning[RW0005]: The `Object` type is internal to Reach. Use `Struct` instead.
+
+  ./obj_view_api.rsh:7:17:application
+
+  7|   const V = View({ o1: Object({ a1: UInt }) });
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0005.html
+
+warning[RW0005]: The `Object` type is internal to Reach. Use `Struct` instead.
+
+  ./obj_view_api.rsh:8:16:application
+
+  8|   const A = API({ o2: Fun([Array(Object({ a2: UInt }), 2)], Null) });
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0005.html
+
+warning[RW0005]: The `Object` type is internal to Reach. Use `Struct` instead.
+
+  ./obj_view_api.rsh:9:16:application
+
+  9|   const B = API({ o3: Fun([], D) });
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0005.html
+

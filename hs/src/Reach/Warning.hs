@@ -36,6 +36,7 @@ data Warning
   | W_ALGOUnsupported [String]
   | W_ALGOConservative [String]
   | W_NoPublish
+  | W_ExternalObject
   deriving (Eq, Generic)
 
 instance HasErrorCode Warning where
@@ -46,6 +47,7 @@ instance HasErrorCode Warning where
     W_ALGOUnsupported {} -> 2
     W_ALGOConservative {} -> 3
     W_NoPublish {} -> 4
+    W_ExternalObject {} -> 5
 
 instance Show Deprecation where
   show = \case
@@ -72,6 +74,7 @@ instance Show Warning where
     W_ALGOConservative rs ->
       "Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:\n" <> (intercalate "\n" $ map (" * " <>) rs)
     W_NoPublish -> "There are no publications in the application."
+    W_ExternalObject -> "The `Object` type is internal to Reach. Use `Struct` instead."
 
 emitWarning :: Maybe SrcLoc -> Warning -> IO ()
 emitWarning at d = do
