@@ -96,7 +96,9 @@ jobs:
         cd reach-python-announcer
         ./announcer.sh
   "deploy-stdlib":
-    executor: fake
+    executor:
+      name: <<parameters.exec>>
+      dlc: true
     steps:
     - checkout
     - attach_workspace:
@@ -108,7 +110,9 @@ jobs:
         make refresh-js-stdlib
         make bump-version-and-publish-js-stdlib 
   "deploy-images":
-    executor: fake
+    executor:
+      name: fake
+      dlc: true
     steps:
     - checkout
     - attach_workspace:
