@@ -247,8 +247,6 @@ jobs:
         steps:
           - srd_yes
     - checkout
-    - setup_remote_docker:
-        docker_layer_caching: true
     #- prepare-version
     - workattach
     - and_restore_docker:
