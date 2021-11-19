@@ -3,31 +3,35 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 
-export const main =
-  Reach.App(
-    {},
-    [ Participant('Alice', { request: UInt,
-                                info: Bytes(128) }),
-      Participant('Bob', { want: Fun([UInt], Null),
-                            got: Fun([Bytes(128)], Null) })],
-    (A, B) => {
-      A.only(() => {
-        const request = declassify(interact.request); });
-      A.publish(request);
-      commit();
+export const main = Reach.App(
+  {},
+  [
+    Participant('Alice', {request: UInt, info: Bytes(128)}),
+    Participant('Bob', {want: Fun([UInt], Null), got: Fun([Bytes(128)], Null)}),
+  ],
+  (A, B) => {
+    A.only(() => {
+      const request = declassify(interact.request);
+    });
+    A.publish(request);
+    commit();
 
-      B.only(() => {
-        interact.want(request); });
-      B.pay(request);
-      commit();
+    B.only(() => {
+      interact.want(request);
+    });
+    B.pay(request);
+    commit();
 
-      A.only(() => {
-        const info = declassify(interact.info); });
-      A.publish(info);
-      transfer(request).to(A);
-      commit();
+    A.only(() => {
+      const info = declassify(interact.info);
+    });
+    A.publish(info);
+    transfer(request).to(A);
+    commit();
 
-      B.only(() => {
-        interact.got(info); });
-      exit();
-    } );
+    B.only(() => {
+      interact.got(info);
+    });
+    exit();
+  },
+);

@@ -1,17 +1,19 @@
 import React from 'react';
-import { TouchableOpacity, Text, TextInput, View } from 'react-native';
+import {TouchableOpacity, Text, TextInput, View} from 'react-native';
 import styles from './Styles';
 
 export class RunBackend extends React.Component {
   render() {
-    const { parent } = this.props;
-    const { ctcInfoStr } = this.state || {};
+    const {parent} = this.props;
+    const {ctcInfoStr} = this.state || {};
     return (
       <View style={styles.container}>
         <Text style={styles.textNormal}>Alice will deploy the contract.</Text>
-        <Text style={styles.textNormal}>Ask Alice for her contract info and paste it here:</Text>
+        <Text style={styles.textNormal}>
+          Ask Alice for her contract info and paste it here:
+        </Text>
         <TextInput
-          onChangeText={e => this.setState({ ctcInfoStr: e })}
+          onChangeText={e => this.setState({ctcInfoStr: e})}
           placeholder="{}"
           spellCheck={false}
           style={styles.textInput}
@@ -28,13 +30,13 @@ export class RunBackend extends React.Component {
 
 export class ApproveRequest extends React.Component {
   render() {
-    const { requestStandard } = this.props;
+    const {requestStandard} = this.props;
     if (!requestStandard) {
       return (
         <View style={styles.container}>
           <Text style={styles.textNormal}>
-            Once Alice has submitted her requested amount,
-            you will be prompted to pay it.
+            Once Alice has submitted her requested amount, you will be prompted
+            to pay it.
           </Text>
         </View>
       );
@@ -52,7 +54,7 @@ export class ApproveRequest extends React.Component {
 
 export class DisplayInfo extends React.Component {
   render() {
-    const { info } = this.props;
+    const {info} = this.props;
     if (!info) {
       return (
         <View style={styles.container}>
@@ -64,9 +66,7 @@ export class DisplayInfo extends React.Component {
     } else {
       return (
         <View style={styles.container}>
-          <Text style={styles.textNormal}>
-            Alice's secret info is: {info}
-          </Text>
+          <Text style={styles.textNormal}>Alice's secret info is: {info}</Text>
           <Text style={styles.textNormal}>
             Thank you, Bob. The contract has run to completion.
           </Text>
@@ -78,12 +78,10 @@ export class DisplayInfo extends React.Component {
 
 export class BobWrapper extends React.Component {
   render() {
-    const { bob } = this.props;
+    const {bob} = this.props;
     return (
       <View style={styles.container}>
-        <Text style={styles.textNormal}>
-          {bob}
-        </Text>
+        <Text style={styles.textNormal}>{bob}</Text>
       </View>
     );
   }
