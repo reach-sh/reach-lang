@@ -30,6 +30,7 @@ const normalizeDir = (s) => {
 
 const __filename = fileURLToPath(import.meta.url);
 const rootDir = path.dirname(__filename);
+const reachRoot = `${rootDir}/../../`;
 const cfgFile = "config.json";
 const repoBase = "https://raw.githubusercontent.com/reach-sh/reach-lang/master";
 const repoSrcDir = "/docs/md/";
@@ -124,7 +125,7 @@ const writeFileMkdir = async (p, c) => {
 
 const remoteGet_ = async (url) => {
   if ( url.startsWith(repoBase) ) {
-    const n = url.replace(repoBase, `${rootDir}/../../`);
+    const n = url.replace(repoBase, reachRoot);
     return await fs.readFile(n, 'utf8');
   }
   console.log(`Downloading ${url}`);
@@ -256,7 +257,6 @@ const processCodeSnippet = (doc, pre, code, spec) => {
 
 const transformReachDoc = (md) => {
   const match1 = /# {#(.*)}/; // Example: # {#guide-ctransfers}
-  const match3 = /\${toc}/;
 
   const mdArr = md.split('\n');
   md = '';
@@ -264,13 +264,32 @@ const transformReachDoc = (md) => {
     let line = mdArr[i];
 
     if (line.match(match1)) { line = line.replace(match1, '#'); }
-    if (line.match(match3)) { line = line.replace(match3, ''); }
 
     md += `${line}\n`;
   }
   return md;
 }
 
+const XXX = (name) => (...args) => {
+  const m = ['XXX', name, ...args];
+  console.log(m);
+  return JSON.stringify(m);
+};
+const seclink = XXX('seclink');
+const defn = XXX('defn');
+const workshopDeps = XXX('workshopDeps');
+const workshopWIP = XXX('workshopWIP');
+const errver = XXX('errver');
+
+const code = async ( rp, from = undefined, to = undefined ) => {
+  if ( from || to ) { console.log(['XXX', 'code', { from, to }]); }
+  const rpp = `${reachRoot}${rp}`;
+  const lang = ''; // XXX
+  const c = await fs.readFile(rpp, 'utf8');
+  return "```" + lang + "\n" + c + "\n```";
+};
+
+const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   const lang = relDir.split('/')[0];
   const mdPath = `${in_folder}/index.md`;
@@ -299,7 +318,35 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   };
   */
 
-  let md = await fs.readFile(mdPath, 'utf8');
+  const expandEnv = { ...configJson, seclink, defn, workshopDeps, workshopWIP, code };
+  const expandKeys = Object.keys(expandEnv);
+  const expandVals = Object.values(expandEnv);
+  const evil = async (c) => {
+    const af = new AsyncFunction(...expandKeys, `"use strict"; return (${c});`);
+    try {
+      return await af(...expandVals);
+    } catch (e) {
+      const es = `${e}`;
+      console.log(`evil`, mdPath, c, `err`, es);
+      return es;
+    }
+  }
+  const expand = async (s) => {
+    const ms = s.indexOf('${'); // }
+    if ( ms === -1 ) { return s; }
+    /* { */ const me = s.indexOf('}', ms);
+    if ( me === -1 ) { throw Error(`No closing } in interpolation`); }
+    const pre = s.slice(0, ms);
+    const mid = s.slice(ms+2, me);
+    const pos = s.slice(me+1);
+    const mid_e = await evil(mid);
+    const posp = `${mid_e}${pos}`;
+    const posp_e = await expand(posp);
+    return `${pre}${posp_e}`;
+  };
+
+  const raw = await fs.readFile(mdPath, 'utf8');
+  let md = await expand(raw);
 
   // If src == remote, get the remote markdown..
   const re = /---([\s\S]*?)---/;
@@ -426,7 +473,6 @@ const findAndProcessFolder = async (base_html, inputBaseConfig, folder) => {
   const out_folder = `${outDir}/${relDir}`;
   await fs.mkdir(out_folder, { recursive: true })
 
-  // Create soft link in this folder to index.html file at root.
   try { await fs.unlink(`${out_folder}/index.html`); } catch (e) { void(e); }
   await fs.symlink(base_html, `${out_folder}/index.html`);
 
@@ -452,5 +498,5 @@ await Promise.all([
   processCss(),
   processJs(),
   processBaseHtml(),
-  findAndProcessFolder(`base.html`, {}, srcDir),
+  findAndProcessFolder(`base.html`, process.env, srcDir),
 ]);
