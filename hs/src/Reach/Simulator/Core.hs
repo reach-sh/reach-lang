@@ -96,20 +96,28 @@ data Ledger = Ledger
   }
   deriving (Eq)
 
+nwToken :: Token
+nwToken = -1
+
+simContract :: Account
+simContract = -1
+
+simContractAmt :: Balance
+simContractAmt = 4444
+
 initLedger :: Ledger
 initLedger = Ledger
-  { nw_ledger = M.empty
+  { nw_ledger = M.singleton simContract (M.singleton nwToken simContractAmt)
   , nw_next_acc = 0
   , nw_next_token = 0
   }
 
-ledgerNewToken :: Integer -> App ()
-ledgerNewToken supply = do
-  -- TODO QUESTION: which account? 0 is placeholder
+ledgerNewToken :: Account -> Integer -> App ()
+ledgerNewToken acc supply = do
   e <- globalGet
   let ledger = e_ledger e
   let token_id = nw_next_token ledger
-  let new_nw_ledger = M.insert 0 (M.singleton token_id supply) (nw_ledger ledger)
+  let new_nw_ledger = M.insert acc (M.singleton token_id supply) (nw_ledger ledger)
   let new_ledger = ledger { nw_ledger = new_nw_ledger, nw_next_token = token_id + 1 }
   globalSet $ e {e_ledger = new_ledger}
 
@@ -286,13 +294,16 @@ instance Interp DLExpr where
       args <- mapM interp dlargs
       suspend $ PS_Suspend (A_Interact at slcxtframes (bunpack slpart) str dltype args)
     DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
-    -- TODO
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
       CT_Assert -> interp dlarg
-      CT_Assume _bool -> interp dlarg
+      CT_Assume bool -> case bool of
+        True -> interp dlarg
+        False -> error "CT_Assume error"
       CT_Require -> interp dlarg
-      CT_Possible -> return V_Null
-      CT_Unknowable _slpart _dlargs -> return $ V_Null
+      CT_Possible -> interp dlarg
+      CT_Unknowable _slpart dlargs -> do
+        _ <- mapM interp dlargs
+        interp dlarg
     DLE_Transfer _at dlarg1 dlarg2 maybe_dlarg -> do
       ev1 <- interp dlarg1
       ev2 <- interp dlarg2
@@ -301,12 +312,14 @@ instance Interp DLExpr where
         (V_UInt n, V_Address acc) -> do
           case maybe_dlarg of
             Nothing -> do
-              updateLedger acc 0 (+n)
+              updateLedger simContract nwToken (subtract n)
+              updateLedger acc nwToken (+n)
               return V_Null
             Just tok -> do
               ev <- interp tok
               case ev of
                 V_UInt tok' -> do
+                  updateLedger simContract tok' (subtract n)
                   updateLedger acc tok' (+n)
                   return V_Null
                 _ -> impossible "unexpected error"
@@ -358,7 +371,8 @@ instance Interp DLExpr where
       supply <- interp (dtn_supply dltokennew)
       case supply of
         V_UInt supply' -> do
-          ledgerNewToken supply'
+          -- TODO: include metadata for debugging
+          ledgerNewToken simContract supply'
           return V_Null
         _ -> impossible "expression interpreter"
     DLE_TokenBurn _at dlarg1 dlarg2 -> do
