@@ -384,8 +384,8 @@ instance Interp DLExpr where
     DLE_TimeOrder _at _assoc_maybe_arg_vars -> undefined
     DLE_GetContract _at -> undefined
     DLE_GetAddress _at -> undefined
-    DLE_EmitLog at _str dlvar -> interp $ DL_Var at dlvar
-    DLE_setApiDetails _at _slpart _dltpes _maybe_str -> return V_Null
+    DLE_EmitLog at _str _maybe_str dlvar -> interp $ DL_Var at dlvar
+    DLE_setApiDetails _ _ _ _ _ -> return V_Null
 
 instance Interp DLStmt where
   interp = \case

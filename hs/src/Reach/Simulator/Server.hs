@@ -9,14 +9,14 @@ module Reach.Simulator.Server where
 
 import Reach.AST.LL
 import Control.Monad.Reader
-import qualified Reach.Simulator.Core as S
+import qualified Reach.Simulator.Core as C
 import Control.Concurrent.STM
 import Data.Default.Class
 import Data.Text.Lazy (Text)
 import Network.Wai.Middleware.RequestLogger
 import Web.Scotty.Trans
+import qualified Data.Map.Strict as M
 -- import GHC.Generics
--- import qualified Data.Map.Strict as M
 -- import Data.Aeson (FromJSON, ToJSON)
 
 instance Default Session where
@@ -34,94 +34,121 @@ gets f = ask >>= liftIO . readTVarIO >>= return . f
 modify :: (Session -> Session) -> WebM ()
 modify f = ask >>= liftIO . atomically . flip modifyTVar' f
 
-type State = Int
-type Action = Int
+type StateId = Int
+type ActionId = Int
 
 portNumber :: Int
 portNumber = 3000
 
-type Actions = [[Action]]
-
 -- state
 data Session = Session
-  {  e_actions :: Actions
+  {  e_states_actions :: M.Map StateId [ActionId]
   ,  e_nsid :: Int -- next state id
   ,  e_naid :: Int -- next action id
-  ,  e_pthread :: S.PartState
-  ,  e_res :: S.DLVal
+  ,  e_res :: C.DLVal
+  ,  e_ids_actions :: M.Map ActionId C.Action
+  ,  e_states_ks :: M.Map StateId C.PartState
   }
 
 initSession :: Session
 initSession = Session
-  { e_actions = [[]]
+  { e_states_actions = M.empty
   , e_nsid = 0
   , e_naid = 0
-  , e_pthread = S.initPartState
-  , e_res = S.V_Null
+  , e_res = C.V_Null
+  , e_ids_actions = M.empty
+  , e_states_ks = M.empty
   }
 
-initProgSim :: LLProg -> WebM S.PartState
+initProgSim :: LLProg -> WebM C.PartState
 initProgSim ll = do
-  let initSt = S.initState
-  ps <- return $ S.initApp ll initSt
+  let initSt = C.initState
+  ps <- return $ C.initApp ll initSt
+  processNewState ps
+
+processNewState :: C.PartState -> WebM C.PartState
+processNewState ps = do
   sid <- gets e_nsid
-  actions <- gets e_actions
-  let newActionsM =
-        case ps of
-          S.PS_Done _ _ -> [registerAction S.A_None]
-          S.PS_Suspend a _ _ -> [registerAction a]
+  _ <- case ps of
+    C.PS_Done _ _ -> do
+      _ <- return $ putStrLn "EVAL DONE"
+      registerAction sid C.A_None
+    C.PS_Suspend a _ _ -> registerAction sid a
   let new_res =
         case ps of
-          S.PS_Done _ v -> v
-          S.PS_Suspend _ _ _ -> S.V_Null
-  newActions <- mapM id newActionsM
-  modify $ \ st -> st {e_actions = actions ++ [newActions]}
-    {e_nsid = sid+1}
-    {e_pthread = ps}
+          C.PS_Done _ v -> v
+          C.PS_Suspend _ _ _ -> C.V_Null
+  modify $ \ st -> st
+    {e_nsid = sid + 1}
     {e_res = new_res}
+    {e_states_ks = M.singleton sid ps}
   return ps
 
-registerAction :: S.Action -> WebM Action
-registerAction = undefined
+registerAction :: StateId -> C.Action -> WebM ActionId
+registerAction sid act = do
+  aid <- gets e_naid
+  modify $ \ st -> st {e_naid = aid + 1}
+  stacts <- gets e_states_actions
+  idacts <- gets e_ids_actions
+  modify $ \ st -> st {e_ids_actions = M.insert aid act idacts}
+  case M.lookup sid stacts of
+    Nothing -> modify $ \ st -> st {e_states_actions = M.insert sid [aid] stacts }
+    Just acts -> modify $ \ st -> st {e_states_actions = M.insert sid (aid:acts) stacts }
+  return aid
 
--- TODO: which program to unblock?
--- NOTE: need to store cont at each step
-unblockProg :: State -> Action -> S.DLVal -> ()
-unblockProg = undefined
+unblockProg :: StateId -> ActionId -> C.DLVal -> WebM ()
+unblockProg sid _aid v = do
+  stks <- gets e_states_ks
+  case M.lookup sid stks of
+    Nothing -> do
+      _ <- return $ putStrLn "previous state not found"
+      return ()
+    Just (C.PS_Suspend _a cst k) -> do
+      let ps = k cst v
+      _ <- processNewState ps
+      return ()
+    Just (C.PS_Done _ _) -> do
+      _ <- return $ putStrLn "previous state already terminated"
+      return ()
 
-allStates :: WebM [State]
+allStates :: WebM [StateId]
 allStates = do
   a <- gets e_nsid
   return [0..(a-1)]
 
-computeActions :: State -> WebM [Action]
-computeActions = undefined
+computeActions :: StateId -> WebM [ActionId]
+computeActions sid = do
+  stacts <- gets e_states_actions
+  case M.lookup sid stacts of
+    Nothing -> return []
+    Just acts -> return acts
 
 main :: IO ()
 main = do
-    sync <- newTVarIO def
-    let runActionToIO m = runReaderT (runWebM m) sync
-    scottyT portNumber runActionToIO app
+  sync <- newTVarIO def
+  let runActionToIO m = runReaderT (runWebM m) sync
+  scottyT portNumber runActionToIO app
 
 app :: ScottyT Text WebM ()
 app = do
-    middleware logStdoutDev
-    get "/states" $ do
-      ss <- webM $ allStates
-      json $ ss
+  middleware logStdoutDev
+  get "/states" $ do
+    ss <- webM $ allStates
+    json $ ss
 
-    get "/states/:s" $ do
-      s <- param "s"
-      ss <- webM $ allStates
-      json (filter ((==) s) $ ss)
+  get "/states/:s" $ do
+    s <- param "s"
+    ss <- webM $ allStates
+    json (filter ((==) s) $ ss)
 
-    get "/states/:s/actions" $ do
-      s <- param "s"
-      as <- webM $ computeActions s
-      json $ as
+  get "/states/:s/actions" $ do
+    s <- param "s"
+    as <- webM $ computeActions s
+    json $ as
 
-    post "/states/:s/actions/:a/?data=post_val" $ do
-      s <- param "s"
-      a <- param "a"
-      v <- param "post_val"
-      return $ unblockProg s a $ S.V_UInt v
+  post "/states/:s/actions/:a/?data=post_val" $ do
+    s <- param "s"
+    a <- param "a"
+    v <- param "post_val"
+    webM $ unblockProg s a $ C.V_UInt v
+    return ()
