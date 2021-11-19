@@ -15,7 +15,7 @@ const pathnameToId = (pathname) => { return pathname.replace(/^\/|\/$/g, '').rep
 const idToPathName = (id) => { return id.replace(/_/g, '/'); }
 
 let lang = window.navigator.language.split('-')[0];
-const homepage = `/${lang}/pages/home/`;
+const homepage = `/${lang}/home/`;
 
 const otpPreferences = { 'none': 'none', 'show': 'show', 'hide': 'hide' };
 Object.freeze(otpPreferences);
@@ -176,11 +176,6 @@ const setOtpItemToActive = (id) => {
 
 /************************************************************************************************
 * getWebpage
-* folder examples:
-*   /pages/demo/
-*   /books/demo/birds/owls/
-* hash examples:
-*   #create-a-project
 ************************************************************************************************/
 
 const getWebpage = async (folder, hash, shallUpdateHistory) => {

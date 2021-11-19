@@ -90,7 +90,7 @@ header div.navbar-nav a:hover span,
   color: white;
 }
 
-header navbar-nav a.active span {
+header div.navbar-nav a.active span {
   border-bottom: 2px solid white;
   color: white;
 }
@@ -501,10 +501,10 @@ iframe.gray-scale {
 
 #page-col div.card:hover,
 #page-col div.card:focus {
-  box-shadow: 0 0 6px rgba(0,0,0,0.6);
-  -moz-box-shadow: 0 0 6px rgba(0,0,0,0.6);
-  -webkit-box-shadow: 0 0 6px rgba(0,0,0,0.6);
-  -o-box-shadow: 0 0 6px rgba(0,0,0,0.6);
+  box-shadow: 0 0 4px #7ec2ff;
+  -moz-box-shadow: 0 0 4px #7ec2ff;
+  -webkit-box-shadow: 0 0 4px #7ec2ff;
+  -o-box-shadow: 0 0 4px #7ec2ff;
 }
 
 /************************************************
