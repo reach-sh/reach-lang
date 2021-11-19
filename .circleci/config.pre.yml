@@ -92,25 +92,21 @@ jobs:
     executor: fake
     steps:
     - checkout
-#    - prepare-version
     - run: |
         make prepare-rc-tag-and-push
   "make-announcement":
     executor: fake
     steps:
     - checkout
-#    - prepare-version
     - run: |
         set -a; source ./VERSION
         export GIT_COMMIT_HASH=$CIRCLE_SHA1
-        pip3 install requests
         cd reach-python-announcer
-        python3 announcer.py
+        ./announcer.sh
   "deploy-stdlib":
     executor: fake
     steps:
     - checkout
-#    - prepare-version
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
@@ -123,7 +119,6 @@ jobs:
     executor: fake
     steps:
     - checkout
-#    - prepare-version
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
@@ -137,7 +132,6 @@ jobs:
     executor: fake
     steps:
     - checkout
-#    - prepare-version
     # We don't mind not caching, because it doesn't take that long and we don't
     # want to steal a volume from the main build
     - srd_no
