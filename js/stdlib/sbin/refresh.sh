@@ -16,7 +16,7 @@ sudo chown -R $(whoami) ./*
 
 rm ./version.mo.d.ts ./version.mo.mjs
 
-CHANGES=$(git diff --exit-code; echo $?)
+CHANGES=$(git diff --exit-code > /dev/null ; echo $?)
 
 if [ $CHANGES -eq 1 ]; then
   git add .
