@@ -2552,5 +2552,6 @@ You can fix this issue by making sure at least one @reachin{Participant} perform
 
 This warning indicates that a @reachin{View} or @reachin{API} produces or consumes an @reachin{Object},
 which is a type internal to Reach.
+It has an opaque and unspecified representation that can only be consumed by other Reach programs, so it is probably a bad choice for general purpose interfaces.
 
 You can fix this issue by using a @reachin{Struct} instead of the @reachin{Object}.
