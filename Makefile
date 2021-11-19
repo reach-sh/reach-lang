@@ -83,7 +83,5 @@ translate-templates: translate-mo-templates-stdlib translate-mo-templates-rpc-se
 prepare-rc-tag-and-push:
 	git config user.name "reachdevbot"
 	git config user.email "reachdevbot@reach.com"
-	git add VERSION
-	git commit -m "Create tag $(VERSION)"
 	git tag $(VERSION)
 	git push --tags
