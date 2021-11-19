@@ -1,0 +1,91 @@
+{
+  "background": "white",
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
+  "bookTitle": "Demo Book",
+  "bookPath": "en/demo-book",
+  "chapters": null,
+  "pages": [
+    {
+      "Auks": "auks"
+    },
+    {
+      "Blackbirds": "blackbirds"
+    },
+    {
+      "Chickadees": "chickadees"
+    },
+    {
+      "Crows and Jays": "crows-and-jays"
+    },
+    {
+      "Doves": "doves"
+    },
+    {
+      "Ducks": "ducks"
+    },
+    {
+      "Finches": "finches"
+    },
+    {
+      "Flycatchers": "flycatchers"
+    },
+    {
+      "Game Birds": "game-birds"
+    },
+    {
+      "Gulls and Terns": "gulls-and-terns"
+    },
+    {
+      "Hawks and Falcons": "hawks-and-falcons"
+    },
+    {
+      "Herons": "herons"
+    },
+    {
+      "Hummingbirds": "hummingbirds"
+    },
+    {
+      "Kingfishers": "kingfishers"
+    },
+    {
+      "Nuthatches": "nuthatches"
+    },
+    {
+      "Owls": "owls"
+    },
+    {
+      "Parrots": "parrots"
+    },
+    {
+      "Seabirds": "seabirds"
+    },
+    {
+      "Shorebirds": "shorebirds"
+    },
+    {
+      "Sparrows": "sparrows"
+    },
+    {
+      "Swallows and Swifts": "swallows-and-swifts"
+    },
+    {
+      "Thrushes": "thrushes"
+    },
+    {
+      "Warlbers": "warblers"
+    },
+    {
+      "Woodpeckers": "woodpeckers"
+    },
+    {
+      "Wrens": "wrens"
+    }
+  ],
+  "title": "Birds",
+  "pathname": "/proj/docs/dev/src/en/demo-book/birds"
+}

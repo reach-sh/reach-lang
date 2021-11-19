@@ -1,0 +1,16 @@
+{
+  "background": "white",
+  "hasOtp": false,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
+  "chapters": null,
+  "pages": null,
+  "author": "Jay McCarthy",
+  "menuItem": "mi-articles",
+  "publishedDate": "2020-08-29T14:00:00.000Z",
+  "title": "How and what to verify",
+  "pathname": "/proj/docs/dev/src/en/articles/how-and-what-to-verify"
+}

@@ -1,0 +1,13 @@
+{
+  "background": "white",
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
+  "chapters": null,
+  "pages": null,
+  "title": "Demo Page",
+  "pathname": "/proj/docs/dev/src/en/demo-page"
+}

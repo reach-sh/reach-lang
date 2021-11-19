@@ -1,0 +1,17 @@
+{
+  "background": "white",
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
+  "bookTitle": "Reach Essentials",
+  "bookPath": "en/essentials",
+  "chapters": null,
+  "pages": null,
+  "menuItem": "mi-docs",
+  "src": "workshop-fomo.md",
+  "title": "Workshop: Fear of Missing Out",
+  "pathname": "/proj/docs/dev/src/en/essentials/examples/fomo"
+}

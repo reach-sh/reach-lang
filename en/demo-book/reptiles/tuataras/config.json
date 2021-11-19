@@ -1,0 +1,15 @@
+{
+  "background": "white",
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
+  "bookTitle": "Demo Book",
+  "bookPath": "en/demo-book",
+  "chapters": null,
+  "pages": null,
+  "title": "Tuataras",
+  "pathname": "/proj/docs/dev/src/en/demo-book/reptiles/tuataras"
+}

@@ -1,0 +1,16 @@
+{
+  "background": "white",
+  "hasOtp": false,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
+  "chapters": null,
+  "pages": null,
+  "author": "Jay McCarthy",
+  "menuItem": "mi-articles",
+  "publishedDate": "2020-12-09T14:00:00.000Z",
+  "title": "Racing non-determinism in decentralized applications",
+  "pathname": "/proj/docs/dev/src/en/articles/racing-non-determinism-in-dapps"
+}

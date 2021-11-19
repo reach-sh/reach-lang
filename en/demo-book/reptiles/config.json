@@ -1,0 +1,31 @@
+{
+  "background": "white",
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
+  "bookTitle": "Demo Book",
+  "bookPath": "en/demo-book",
+  "chapters": null,
+  "pages": [
+    {
+      "Crocodilians": "crocodilians"
+    },
+    {
+      "Lizards": "lizards"
+    },
+    {
+      "Snakes": "snakes"
+    },
+    {
+      "Tuataras": "tuataras"
+    },
+    {
+      "Turtles and Tortoises": "turtles-and-tortoises"
+    }
+  ],
+  "title": "Reptiles",
+  "pathname": "/proj/docs/dev/src/en/demo-book/reptiles"
+}

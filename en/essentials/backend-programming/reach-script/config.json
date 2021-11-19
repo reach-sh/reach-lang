@@ -1,0 +1,16 @@
+{
+  "background": "white",
+  "hasOtp": true,
+  "hasCustomBase": false,
+  "hasPageHeader": true,
+  "hasPageScrollbar": true,
+  "hasEditBtn": true,
+  "hasRefreshBtn": true,
+  "bookTitle": "Reach Essentials",
+  "bookPath": "en/essentials",
+  "chapters": null,
+  "pages": null,
+  "menuItem": "mi-docs",
+  "title": "Reach Script",
+  "pathname": "/proj/docs/dev/src/en/essentials/backend-programming/reach-script"
+}
