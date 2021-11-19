@@ -97,7 +97,7 @@ jobs:
         ./announcer.sh
   "deploy-stdlib":
     executor:
-      name: <<parameters.exec>>
+      name: fake
       dlc: true
     steps:
     - checkout
