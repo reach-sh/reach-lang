@@ -2548,3 +2548,9 @@ This warning indicates that your program does not contain any publications.
 
 You can fix this issue by making sure at least one @reachin{Participant} performs a @reachin{publish}.
 
+@error{RW0005}
+
+This warning indicates that a @reachin{View} or @reachin{API} produces or consumes an @reachin{Object},
+which is a type internal to Reach.
+
+You can fix this issue by using a @reachin{Struct} instead of the @reachin{Object}.

@@ -2250,6 +2250,21 @@ verifyNotReserved at s = do
   when ("ETH" `elem` connectors && s `elem` map show solReservedNames) $
     expect_thrown at $ Err_Sol_Reserved s
 
+warnInteractType :: SLType -> App ()
+warnInteractType = \case
+  ST_Object _ -> do
+    at <- withAt id
+    liftIO $ emitWarning (Just at) W_ExternalObject
+  ST_Tuple ts -> mapM_ r ts
+  ST_Data e -> mapM_ r e
+  ST_Struct a -> mapM_ (r . snd) a
+  ST_Fun (SLTypeFun {..}) -> mapM_ r (stf_rng : stf_dom)
+  ST_Array t _ -> r t
+  ST_UDFun t -> r t
+  ST_Refine t _ _ -> r t
+  _ -> return ()
+  where
+    r = warnInteractType
 
 evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
@@ -2883,6 +2898,7 @@ evalPrim p sargs =
         ST_Fun (SLTypeFun {..}) -> do
           let nk = maybe k (<> "_" <> k) mns
           let nkb = bpack nk
+          mapM_ warnInteractType $ stf_rng : stf_dom
           let nv' = SLV_Bytes at nkb
           let stf_dom' = ST_Tuple stf_dom
           let mkpre o = jsClo at (nk <> "pre") "(mt, dom) => o(dom)" $ M.fromList [ ("o", o) ]
@@ -2915,6 +2931,7 @@ evalPrim p sargs =
       mapM_ (verifyName nAt "View" $ M.keys im) mns
       let ns = fromMaybe "Untagged" mns
       let go k (at, t) = do
+            warnInteractType t
             when (isNothing nv) $ do
               verifyName at "View" [] k
               verifyNotReserved at k
