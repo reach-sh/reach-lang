@@ -4,5 +4,7 @@
   "hasPageHeader": true,
   "hasPageScrollbar": true,
   "hasEditBtn": true,
-  "hasRefreshBtn": false
+  "hasRefreshBtn": false,
+  "DISCORD": "https://discord.gg/AZsgcXu",
+  "REPO": "https://github.com/reach-sh/reach-lang/tree/master"
 }

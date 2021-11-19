@@ -34,17 +34,20 @@ RUN (cd ./docs/scrbl/build && ls *html) | sed 's/\.html//' > ./docs/scrbl/manife
 FROM racket as convert
 WORKDIR /proj
 
+RUN raco pkg install --no-setup lang-file lang-file-lib
+
 ADD docs/scrbl ./docs/scrbl
 ADD docs/convert ./docs/convert
-RUN raco pkg install --no-setup lang-file lang-file-lib
 RUN (cd docs/convert && make)
 
 FROM node:17-alpine3.13 as dev
 WORKDIR /proj
 
-RUN apk add make
+RUN apk add make bash
 COPY docs/dev/Makefile docs/dev/package.json ./docs/dev/
 RUN (cd docs/dev && make installed)
+
+COPY VERSION .
 ADD examples ./examples
 ADD rpc-client/py ./rpc-client/py
 ADD docs/dev ./docs/dev
@@ -64,3 +67,4 @@ COPY --from=render /proj/docs/scrbl/scribble.log ./
 COPY --from=convert /proj/docs/convert/src ./md/
 COPY --from=convert /proj/docs/convert/log ./convert.log
 COPY --from=dev /proj/docs/dev/build ./build/
+COPY --from=dev /proj/docs/dev/log ./dev.log

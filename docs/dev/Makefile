@@ -1,6 +1,9 @@
+ROOT=../..
+SHELL=/bin/bash
+
 .PHONY: build
 build: installed
-	NODE_ENV=production node generator.js
+	set -o pipefail ; (. $(ROOT)/VERSION && export VERSION && NODE_ENV=production node generator.js 2>&1) | tee log
 
 .PHONY: profile
 profile: installed

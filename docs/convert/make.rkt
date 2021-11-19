@@ -43,6 +43,12 @@
   (d (format "~a ~a" hash-lvl tag))
   (egol name))
 
+(define (exexpand f)
+  (match f
+    ['js-impl "tut-7/index.mjs"]
+    ['py-impl "tut-7-rpc/client-py/index.py"]
+    [(? string?) f]))
+
 (define ego
   (match-lambda
     [(? string? s) (d s)]
@@ -50,17 +56,17 @@
     [`(link ,t ,l)
       (d (format "[~a](~a)" l t))]
     [`(reachexlink ,f #:dir ,e)
-      (d (format "[~a](${repo}}/~a/~a)" f e f))]
+      (d (format "[~a](${REPO}}/~a/~a)" f e f))]
     [`(reachexlink ,f)
-      (d (format "[~a](${repo}}/examples/~a)" f f))]
+      (d (format "[~a](${REPO}}/examples/~a)" f f))]
     [`(reachexlink ,f ,c #:dir ,e)
       (d "[")
       (ego c)
-      (d (format "](${repo}}/~a/~a)" e f))]
+      (d (format "](${REPO}}/~a/~a)" e f))]
     [`(reachexlink ,f ,c)
       (d "[")
       (ego c)
-      (d (format "](${repo}}/examples/~a)" f))]
+      (d (format "](${REPO}}/examples/~a)" f))]
     [`(title ,@o) (header 1 o)]
     [`(section ,@o) (header 2 o)]
     [`(subsection ,@o) (header 3 o)]
@@ -96,14 +102,14 @@
     [`(filepath ,@c) (code c)]
     [`(litchar ,@c) (code c)]
     [`(the-community-link)
-      (ego '(link "${discord}" "the Discord community"))]
-    [`(local-table-of-contents . ,_) (d "${toc}")]
-    [`(table-of-contents . ,_) (d "${toc}")]
+      (ego '(link "${DISCORD}" "the Discord community"))]
+    [`(local-table-of-contents . ,_) (void)]
+    [`(table-of-contents . ,_) (void)]
     [`(element (make-style #f (list (url-anchor ,a))) '())
       (d (format "<a name=~s></a>" a))]
     [`(require . ,_) (void)]
-    [`(mint-scope ,ms)
-      (set-box! mint-scope ms)
+    [`(mint-scope ,(? symbol? ms))
+      (set-box! mint-scope (symbol->string ms))
       (void)]
     [`(define . ,_) (void)]
     [`(deftech ,c)
@@ -145,13 +151,13 @@
     [(or
        `(reachex ,f 'only ,from ,to ,_)
        `(reachex #:mode ,_ ,f 'only ,from ,to ,_))
-      (d (format "${code(\"/examples/~a\", ~a, ~a)}" f from to))]
+      (d (format "${code(\"/examples/~a\", ~a, ~a)}" (exexpand f) from to))]
     [`(reachex #:dir "rpc-client" py-impl 'only ,from ,to ,_)
       (d (format "${code(\"/rpc-client/py/src/reach_rpc/__init__.py\", ~a, ~a)}" from to))]
     [(or
        `(reachex ,f)
        `(reachex #:mode ,_ ,f))
-      (d (format "${code(\"/examples/~a\")}" f))]
+      (d (format "${code(\"/examples/~a\")}" (exexpand f)))]
     [`reach-vers
      (d "${VERSION}")]
     [`(error-version #:to ,t)
