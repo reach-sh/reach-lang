@@ -70,8 +70,7 @@
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">API</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Voter'</span><span style="color: #24292F">, { vote: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([Address], UInt) })</span></li><li value="2"><span style="color: #6E7781">// or</span></li><li value="3"><span style="color: #8250DF">API</span><span style="color: #24292F">({ vote: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([Address], UInt) })</span></li></ol></pre>
 <p>
   An API is defined with <code>API(apiName, apiInterface)</code> or <code>API(apiInterface)</code>, where <code>apiName</code> is a string that labels the API and <code>apiInterface</code> is an object where each field indicates the type of a function provided by the contract as an API.
-  These APIs are available in frontends via the <code>ctc.apis</code> object.
-  The value returned by this function is an object where the fields are the members of <code>apiInterface</code> are may be used in <code>.api</code> components of <code>fork</code> and <code>parallelReduce</code> to specify the behavior of the corresponding call.
+  These APIs are available in frontends via the <code>ctc.apis</code> object, wherein fields are the members of <code>apiInterface</code> and may be used in <code>.api</code> components of <code>fork</code> and <code>parallelReduce</code> to specify the behavior of the corresponding call.
   These are called ${defn("API member function")}s.
   Each function must occur exactly once in the entire program.
 </p>
