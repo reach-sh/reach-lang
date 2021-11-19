@@ -101,6 +101,7 @@ jobs:
       dlc: true
     steps:
     - checkout
+    - srd_yes
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
@@ -115,6 +116,7 @@ jobs:
       dlc: true
     steps:
     - checkout
+    - srd_yes
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
