@@ -14,7 +14,13 @@ docker run --entrypoint /bin/sh --volume "$(pwd):/cwd" "$IMAGE" \
 
 sudo chown -R $(whoami) ./*
 
-rm ./version.mo.d.ts ./version.mo.mjs
+if [ -f ./version.mo.d.ts ]; then
+  rm -f ./version.mo.d.ts
+fi
+
+if [ -f ./version.mo.mjs ]; then
+  rm -f ./version.mo.mjs
+fi
 
 git diff --exit-code > /dev/null || CHANGES=$?
 

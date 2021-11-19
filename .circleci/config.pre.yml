@@ -93,7 +93,7 @@ jobs:
     - run: |
         set -a; source ./VERSION
         export GIT_COMMIT_HASH=$CIRCLE_SHA1
-        cd reach-python-announcer
+        cd scripts
         ./announcer.sh
   "deploy-stdlib":
     executor:
