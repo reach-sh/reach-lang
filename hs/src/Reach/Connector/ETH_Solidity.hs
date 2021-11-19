@@ -153,15 +153,17 @@ solEnum :: Doc -> [Doc] -> Doc
 solEnum name opts = "enum" <+> name <+> braces (hcat $ intersperse (comma <> space) opts)
 
 --- Runtime helpers
+reachPre :: Doc
+reachPre = "_reach_"
 
 solOutput_evt :: DLVar -> Doc
-solOutput_evt dv = "oe_" <> solRawVar dv
+solOutput_evt dv = reachPre <> "oe_" <> solRawVar dv
 
 solMsg_evt :: Pretty i => i -> Doc
-solMsg_evt i = "e" <> pretty i
+solMsg_evt i = reachPre <> "e" <> pretty i
 
 solMsg_fun :: Pretty i => i -> Doc
-solMsg_fun i = "m" <> pretty i
+solMsg_fun i = reachPre <> "m" <> pretty i
 
 solLoop_fun :: Pretty i => i -> Doc
 solLoop_fun i = "l" <> pretty i
@@ -1179,7 +1181,7 @@ solBytesSplit sz f = map go [0 .. lastOne]
 apiDef :: SLPart -> ApiInfo -> App Doc
 apiDef who ApiInfo{..} = do
   let who_s = bunpack who
-  let mf = pretty $ "m" <> show ai_which
+  let mf = solMsg_fun ai_which
   which_msg <- (liftIO . readIORef) =<< asks ctxt_which_msg
   ai_msg_vs <- case M.lookup ai_which which_msg of
                 Just vs -> return vs
