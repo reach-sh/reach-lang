@@ -93,10 +93,10 @@ const joinCodeClasses = () => {
   return (tree, file) => {
     visit(tree, 'code', node => {
       if(node.lang || node.meta) {
-        node.lang = 
-        node.meta==null ? node.lang 
-        : node.lang==null ? node.meta.split(' ').join('_')
-        : `${node.lang}_${node.meta.split(' ').join('_')}`;
+        node.lang =
+          node.meta == null ? node.lang
+          : node.lang == null ? node.meta.split(' ').join('_')
+          : `${node.lang}_${node.meta.split(' ').join('_')}`;
       }
     });
   }
@@ -335,7 +335,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     const ms = s.indexOf('${'); // }
     if ( ms === -1 ) { return s; }
     /* { */ const me = s.indexOf('}', ms);
-    if ( me === -1 ) { throw Error(`No closing } in interpolation`); }
+    if ( me === -1 ) { throw Error(`No closing } in interpolation: ${mdPath}: ${s.slice(ms)}`); }
     const pre = s.slice(0, ms);
     const mid = s.slice(ms+2, me);
     const pos = s.slice(me+1);
