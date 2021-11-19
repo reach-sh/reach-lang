@@ -92,6 +92,7 @@ jobs:
     - checkout
     - run: |
         set -a; source ./VERSION
+        make mo
         export GIT_COMMIT_HASH=$CIRCLE_SHA1
         cd scripts
         ./announcer.sh
@@ -107,6 +108,8 @@ jobs:
     - and_restore_docker:
         deps: "stdlib"
     - run: |
+        sudo apt update -y
+        sudo apt install npm -y
         cd js/stdlib
         make refresh-js-stdlib
         make bump-version-and-publish-js-stdlib 
