@@ -80,13 +80,6 @@ commands:
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}  
           done
           docker image ls | grep reachsh
-  prepare-version:
-    description: "Prepare Version for Release Candidate release"
-    steps:
-      - run: |
-          make prepare-version
-          
-          set -a; source ./VERSION
 jobs:
   "create-tag-and-push":
     executor: fake
@@ -241,7 +234,6 @@ jobs:
         steps:
           - srd_yes
     - checkout
-    #- prepare-version
     - workattach
     - and_restore_docker:
         deps: <<parameters.deps>>
