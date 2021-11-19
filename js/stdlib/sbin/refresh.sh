@@ -16,12 +16,15 @@ sudo chown -R $(whoami) ./*
 
 rm ./version.mo.d.ts ./version.mo.mjs
 
-CHANGES=$(git diff --exit-code > /dev/null ; echo $?)
+git diff --exit-code > /dev/null || CHANGES=$?
 
-if [ $CHANGES -eq 1 ]; then
+if [ "${CHANGES}x" == "1x" ]; then
   git add .
   git config user.name "circleci"
   git config user.email "circleci@reach.com"
   
   git commit -m "'refresh -> reach-sh/reach-lang@$HASH'"
+
+else
+  printf '\n\n\nThere are no changes on stdlib. Cannot release.'
 fi
