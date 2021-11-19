@@ -58,20 +58,20 @@ mo:
 		mv mo .bin;\
 	fi
 
-.PHONY: translate-mo-templates-stdlib
-translate-mo-templates-stdlib: mo
-	(cd js/stdlib && make package.json ts/version.ts)
-
-.PHONY: translate-mo-templates-rpc-server
-translate-mo-templates-rpc-server: mo
-	(cd js/rpc-server && make package.json)
-
-.PHONY: translate-mo-templates-rpc-server
-translate-mo-templates-haskell: mo
-	(cd hs && make package.yaml src/Reach/Version.hs)
-
-.PHONY: translate-templates
-translate-templates: translate-mo-templates-stdlib translate-mo-templates-rpc-server translate-mo-templates-haskell
+#.PHONY: translate-mo-templates-stdlib
+#translate-mo-templates-stdlib: mo
+#	(cd js/stdlib && make package.json ts/version.ts)
+#
+#.PHONY: translate-mo-templates-rpc-server
+#translate-mo-templates-rpc-server: mo
+#	(cd js/rpc-server && make package.json)
+#
+#.PHONY: translate-mo-templates-rpc-server
+#translate-mo-templates-haskell: mo
+#	(cd hs && make package.yaml src/Reach/Version.hs)
+#
+#.PHONY: translate-templates
+#translate-templates: translate-mo-templates-stdlib translate-mo-templates-rpc-server translate-mo-templates-haskell
 
 #.PHONY: prepare-version
 #prepare-version: mo

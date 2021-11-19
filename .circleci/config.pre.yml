@@ -107,7 +107,7 @@ jobs:
         cd reach-python-announcer
         python3 announcer.py
   "deploy-stdlib":
-    executor: real
+    executor: fake
     steps:
     - checkout
 #    - prepare-version
@@ -120,7 +120,7 @@ jobs:
         make refresh-js-stdlib
         make bump-version-and-publish-js-stdlib 
   "deploy-images":
-    executor: real
+    executor: fake
     steps:
     - checkout
 #    - prepare-version
