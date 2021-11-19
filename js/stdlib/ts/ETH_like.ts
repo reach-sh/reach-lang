@@ -109,6 +109,9 @@ type AccountTransferable = Account | {
 // Helpers
 // ****************************************************************************
 
+const reachPublish = (m: string | number) => `_reach_m${m}`
+const reachEvent = (e: string | number) => `_reach_e${e}`
+const reachOutputEvent = (e: string | number) => `_reach_oe_${e}`;
 
 // TODO: add return type once types are in place
 export function makeEthLike(ethLikeArgs: EthLikeArgs) {
@@ -614,7 +617,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           return await doRecv(false, true);
         }
 
-        const funcName = `m${funcNum}`;
+        const funcName = reachPublish(funcNum);
         const dhead = [label, 'send', funcName, timeoutAt, 'SEND'];
         const trustedRecv = async (ok_r:any): Promise<Recv> => {
           const didSend = true;
@@ -699,7 +702,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       };
       const recvFrom = async (rfargs:RecvFromArgs): Promise<Recv> => {
         const { dhead, out_tys, didSend, funcNum, ok_r } = rfargs;
-        const ok_evt = func2evt(funcNum);
+        const ok_evt = reachEvent(funcNum);
         const theBlock = ok_r.blockNumber;
         debug(dhead, `AT`, theBlock);
         updateLast(ok_r);
@@ -739,7 +742,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const getOutput = async (o_mode:string, o_lab:string, l_ctc:any, o_val:any): Promise<any> => {
           void(o_mode);
           void(o_val);
-          return await getLog(`oe_${o_lab}`, l_ctc, ((x:any) => x));
+          return await getLog(reachOutputEvent(o_lab), l_ctc, ((x:any) => x));
         };
         return {
           data, getOutput, from, didSend,
@@ -749,12 +752,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         };
       };
 
-      const func2evt = (x:number): string => `e${x}`;
       const recv = async (rargs:RecvArgs): Promise<Recv> => {
         const { funcNum, out_tys, didSend, waitIfNotPresent, timeoutAt } = rargs;
         const isCtor = (funcNum == 0)
         const lastBlock = await getLastBlock();
-        const ok_evt = func2evt(funcNum);
+        const ok_evt = reachEvent(funcNum);
         const dhead = { t: 'recv', label, ok_evt };
         debug(dhead, `START`);
 
@@ -1024,7 +1026,7 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
     }
     chk(false, `Contract was claimed to be deployed, but the current block is ${now} (cached @ ${eventCache.currentBlock}) and it hasn't been deployed yet.`);
   };
-  const e0log = await lookupLog('e0');
+  const e0log = await lookupLog(reachEvent(0));
 
   debug(dhead, `checking code...`);
   const dt = await provider.getTransaction( e0log.transactionHash );
