@@ -77,7 +77,7 @@
       (d (format "@{seclink(~s)}" t))]
     [`(seclink ,t . ,l)
       (d "[")
-      (d l)
+      (egol l)
       (d (format "](##~a)" t))]
     [`(reachin ,@c) (code c 'reach)]
     [`(jsin ,@c) (code c 'js)]
@@ -130,8 +130,7 @@
       (define s (unbox mint-scope))
       (cond
         [(not s)
-         (set-box! BAD #t)
-         (eprintf "XXX no mint-scope at ~v\n" ts)]
+         (error 'go "XXX no mint-scope at ~v\n" ts)]
         [else
           (for ([ts (in-list ts)])
             (match-define `'(,@tsl) ts)
@@ -156,9 +155,9 @@
     [`(item ,@l)
       (egol l) (d "\n")]
     [`(margin-note . ,l)
-      (d "<div class=\"note\">\n")
+      (d ":::note\n")
       (egol l)
-      (d "\n</div>")]
+      (d "\n:::\n")]
     [(or
        `(reachex ,f 'only ,from ,to ,_)
        `(reachex #:mode ,_ ,f 'only ,from ,to ,_))
@@ -215,6 +214,25 @@
       (d "**Insert `interact` calls to the frontend into the program.**")]
     [`(drstep-de-stop)
       (d "**Decide how you will deploy and use this application.**")]
+    [`(check:tf ,ans . ,c)
+      (d ":::testQ\n")
+      (egol c)
+      (d "\n:::testA\n")
+      (ego ans)
+      (d "\n:::\n")
+      (d "\n:::\n")
+      ]
+    [`(,(or 'check:multi 'check:many) ,ans ,p . ,opts)
+      (d ":::testQ\n")
+      (ego p) (d "\n")
+      (for ([o (in-list opts)])
+        (d "1. ") (ego o) (d "\n"))
+      (d "\n:::testA\n")
+      (ego ans)
+      (d "\n:::\n")
+      (d "\n:::\n")
+      ]
+    [`(list . ,es) (egol es)]
     [`(pkg-fmts)
       (ego `(verbatim "
 @account/repo
@@ -247,13 +265,10 @@
 @server:account/repo#ref:a/b/file.rsh
 @server:account/repo#ref:a/b/
 @server:account/repo#ref:file.rsh
-"))]
+"))] ; "
     [x
-      (set-box! BAD #t)
       (define xs (pretty-format x #:mode 'write))
-      (eprintf "XXX ~a\n" (string-limit xs 70))
-      (d "XXX ")
-      (d xs)]))
+      (error 'go "XXX ~a\n" (string-limit xs 70))]))
 
 (define (string-limit s n)
   (substring s 0 (min n (string-length s))))
@@ -270,18 +285,15 @@
     (lambda ()
       (egol cs))))
 
-(define BAD (box #f))
 (define mint-scope (box #f))
 (module+ main
   (define ns (normalize-path scrbl))
   (for ([p (in-directory scrbl)])
     (define bn (file-name-from-path p))
     (when (equal? #".scrbl" (path-get-extension bn))
-      (set-box! BAD #f)
       (set-box! mint-scope #f)
       (define rp (find-relative-path ns (normalize-path p)))
       (define n (build-path "src" (path-replace-extension rp #".md")))
+      (eprintf "^ >>> ~a\n" n)
       (make-parent-directory* n)
-      (go! p n)
-      (when (unbox BAD)
-        (eprintf "^ >>> ~a\n" n)))))
+      (go! p n))))

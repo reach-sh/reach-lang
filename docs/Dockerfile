@@ -66,6 +66,5 @@ COPY --from=render /proj/docs/scrbl/scribble.log ./
 # This can be deleted, but I'm leaving it in for inspecting the output for
 # debugging
 COPY --from=convert /proj/docs/convert/src ./md/
-COPY --from=convert /proj/docs/convert/log ./convert.log
 COPY --from=dev /proj/docs/dev/build ./build/
 COPY --from=dev /proj/docs/dev/log ./dev.log

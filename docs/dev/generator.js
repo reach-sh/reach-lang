@@ -18,6 +18,7 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import remarkSlug from 'remark-slug';
 import remarkToc from 'remark-toc';
+import remarkDirective from 'remark-directive';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { JSDOM } from 'jsdom';
@@ -114,6 +115,28 @@ const copyFmToConfig = (configJson) => {
     });
   }
 };
+
+const directiveTest = () => (tree) => {
+  visit(tree, (node) => {
+    if (
+      node.type === 'textDirective' ||
+      node.type === 'leafDirective' ||
+      node.type === 'containerDirective'
+    ) {
+      const data = node.data || (node.data = {});
+      if ( node.name === 'note') {
+        data.hName = "div";
+        data.hProperties = { class: "note" };
+      }
+      if ( node.name === 'testQ') {
+        data.hName = "XXX testQ";
+      }
+      if ( node.name === 'testA') {
+        data.hName = "XXX testA";
+      }
+    }
+  })
+}
 
 // Tools
 
@@ -372,6 +395,8 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     .use(remarkFrontmatter) // Prepend YAML node with frontmatter.
     .use(copyFmToConfig, configJson) // Remove YAML node and write frontmatter to config file.
     .use(prependTocNode) // Prepend Heading, level 6, value "toc".
+    .use(remarkDirective)
+    .use(directiveTest)
     //.use(() => (tree) => { console.dir(tree); })
     .use(remarkToc, { maxDepth: 2 }) // Build toc list under the heading.
     //.use(() => (tree) => { console.dir(JSON.stringify(tree.children[1].children, null, 2)); })
