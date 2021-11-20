@@ -133,7 +133,7 @@
 We assume that you'll go through this workshop in a directory named @tt{~/reach/@|WHICH|}:
 @cmd{mkdir -p ~/reach/@|WHICH| && cd ~/reach/@|WHICH|}
 
-And that you have a copy of Reach @seclink["install"]{installed} in @tt{~/reach} so you can write
+And that you have a copy of Reach @seclink["ref-install"]{installed} in @tt{~/reach} so you can write
 @cmd{../reach version}
 
 And it will run Reach.

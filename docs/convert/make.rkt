@@ -73,13 +73,16 @@
     [`(subsubsection ,@o) (header 4 o)]
     [`(secref ,t)
       (d (format "@{seclink(~s)}" t))]
-    [`(seclink ,t ,l)
-      (d (format "[~a](##~a)" l t))]
+    [`(seclink ,t . ,l)
+      (d "[")
+      (d l)
+      (d (format "](##~a)" t))]
     [`(reachin ,@c) (code c 'reach)]
     [`(jsin ,@c) (code c 'js)]
     [`(pyin ,@c) (code c 'py)]
     [`(goin ,@c) (code c 'go)]
     [`(author (author+email ,a ,e)) (void)]
+    [`(table-of-contents) (void)]
     [`DApp (d "DApp")]
     [`DApps (d "DApps")]
     [`(hrule) (d "---")]
@@ -103,8 +106,6 @@
     [`(litchar ,@c) (code c)]
     [`(the-community-link)
       (ego '(link "@{DISCORD}" "the Discord community"))]
-    [`(local-table-of-contents . ,_) (void)]
-    [`(table-of-contents . ,_) (void)]
     [`(element (make-style #f (list (url-anchor ,a))) '())
       (d (format "<a name=~s></a>" a))]
     [`(require . ,_) (void)]
@@ -174,10 +175,14 @@
       (d (format "@{workshopDeps()}"))]
     [`(workshop-deps ,t)
       (d (format "@{workshopDeps(~s)}" t))]
+    [`(workshop-init ,t)
+      (d (format "@{workshopInit(~s)}" t))]
     [`(WIP/XXX)
       (d (format "@{workshopWIP()}"))]
     [`(WIP/XXX ,x)
       (d (format "@{workshopWIP(~s)}" x))]
+    [`(image ,p .,_)
+      (d (format "![](/~a)" p))]
     [`(drstep-pr ,t)
       (ego `(section #:tag ,(format "~a-pr" t) "Problem Analysis"))]
     [`(drstep-dd ,t)

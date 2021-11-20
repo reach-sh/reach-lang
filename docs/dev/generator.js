@@ -278,10 +278,10 @@ const XXX = (name) => (...args) => {
 const seclink = XXX('seclink');
 const defn = XXX('defn');
 const workshopDeps = XXX('workshopDeps');
+const workshopInit = XXX('workshopInit');
 const workshopWIP = XXX('workshopWIP');
 const errver = XXX('errver');
 const ref = XXX('ref');
-
 const code = async ( rp, from = undefined, to = undefined ) => {
   if ( from || to ) { console.log(['XXX', 'code', { from, to }]); }
   const rpp = `${reachRoot}${rp}`;
@@ -319,7 +319,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   };
   */
 
-  const expandEnv = { ...configJson, seclink, defn, workshopDeps, workshopWIP, code, errver, ref };
+  const expandEnv = { ...configJson, seclink, defn, workshopDeps, workshopWIP, workshopInit, code, errver, ref };
   const expandKeys = Object.keys(expandEnv);
   const expandVals = Object.values(expandEnv);
   const evil = async (c) => {

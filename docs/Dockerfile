@@ -50,13 +50,14 @@ RUN (cd docs/dev && make installed)
 COPY VERSION .
 ADD examples ./examples
 ADD rpc-client/py ./rpc-client/py
+ADD docs/scrbl/images ./docs/dev/src/images
 ADD docs/dev ./docs/dev
 COPY --from=convert /proj/docs/convert/src ./docs/md/
 RUN (cd docs/dev && ./rewire.sh)
 COPY --from=convert /proj/docs/convert/src ./docs/md/
 COPY --from=render /proj/docs/scrbl/manifest.txt ./docs/dev/
 RUN (cd docs/dev && make)
-WORKDIR /proj/docs/dev
+RUN rm ./docs/dev/build/index.html
 
 FROM scratch
 

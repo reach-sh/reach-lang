@@ -7,8 +7,7 @@
 
 This section provides an in depth explanation of the error codes produced from
 the Reach compiler.
-
-@(local-table-of-contents)
+See the list on the left bar.
 
 @;{
   What is a "good" error description?

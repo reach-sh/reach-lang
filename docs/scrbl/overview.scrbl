@@ -396,7 +396,7 @@ However, unless you're ready to dive deep now, the next steps for you are to:
 
 @itemlist[
 
-@item{@seclink["install"]{Install Reach};}
+@item{@seclink["ref-install"]{Install Reach};}
 
 @item{Work through the @seclink["tut"]{tutorial};}
 

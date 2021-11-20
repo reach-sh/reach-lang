@@ -5,9 +5,12 @@
 'toc]{Consensus Network Connectors}
 
 This section describes the @tech{consensus network} @tech{connectors}
-supported by Reach version @|reach-vers|.
-
-@local-table-of-contents[#:style 'immediate-only]
+supported by Reach version @|reach-vers|:
+@itemlist[
+@item{@secref["ref-network-algo"]}
+@item{@secref["ref-network-eth"]}
+@item{@secref["ref-network-cfx"]}
+]
 
 @section[#:tag "ref-network-algo"]{Algorand}
 
