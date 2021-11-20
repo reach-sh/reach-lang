@@ -1582,13 +1582,10 @@ to achieve the desired effect.
 On these lines we define a few helpful constants and defaults for later,
 some corresponding to the enumerations we defined in Reach.
 
-@(hrule) @;; Explain App
+@subsection[#:tag "tut-9-App"]{Application component}
 
-We start defining @jsin{App} as a React component,
+We start defining the main application view, @jsin{App}, as a React component,
 and tell it what to do once it mounts, which is the React term for starting.
-
-@exviewfigs["tut-9" "AppViews"
-  '["ConnectAccount" 19 28]]
 
 @reachex[#:mode js
          "tut-9/index.js"
@@ -1599,18 +1596,22 @@ and tell it what to do once it mounts, which is the React term for starting.
          'only 39 41 "// ..."]
 
 @itemlist[
- @item{On line 19, we initialize the component state to display @exviewref["tut-9" "ConnectAccount"].}
+ @item{On line 19, we initialize the component state to display @secref["tut-9-ConnectAccount"].}
  @item{On lines 21 thru 31, we hook into React's @jsin{componentDidMount} lifecycle event, which is called when the component starts.}
  @item{On line 22, we use @jsin{getDefaultAccount}, which accesses the default browser account.
   For example, when used with Ethereum, it can discover the currently-selected MetaMask account.}
  @item{On line 26, we use @jsin{canFundFromFaucet} to see if we can access the Reach developer testing network faucet.}
- @item{On line 27, if @jsin{canFundFromFaucet} was @jsin{true}, we set the component state to display @exviewref["tut-9" "FundAccount"].}
- @item{On line 29, if @jsin{canFundFromFaucet} was @jsin{false}, we set the component state to skip to @exviewref["tut-9" "DeployerOrAttacher"].}
+ @item{On line 27, if @jsin{canFundFromFaucet} was @jsin{true}, we set the component state to display @secref["tut-9-FundAccount"].}
+ @item{On line 29, if @jsin{canFundFromFaucet} was @jsin{false}, we set the component state to skip to @secref["tut-9-DeployerOrAttacher"].}
  @item{On line 39, we render the appropriate view from @reachexlink{tut-9/views/AppViews.js}.}
 ]
 
-@exviewfigs["tut-9" "AppViews"
-  '["FundAccount" 30 54]]
+@subsection[#:tag "tut-9-ConnectAccount"]{Connect Account dialog}
+
+When we combine the application component with the view (@reachexlink[#:loc (cons 19 28)]{tut-9/views/AppViews.js}) it will look like:
+@image["images/tut-9/ConnectAccount.png"]
+
+@subsection[#:tag "tut-9-FundAccount"]{Fund Account dialog}
 
 Next, we define callbacks on @jsin{App} for what to do when the user clicks certain buttons.
 
@@ -1621,13 +1622,15 @@ Next, we define callbacks on @jsin{App} for what to do when the user clicks cert
 @itemlist[
   @item{On lines 32 thru 35, we define what happens when the user clicks the @litchar{Fund Account} button.}
   @item{On line 33, we transfer funds from the faucet to the user's account.}
-  @item{On line 34, we set the component state to display @exviewref["tut-9" "DeployerOrAttacher"].}
+  @item{On line 34, we set the component state to display @secref["tut-9-DeployerOrAttacher"].}
   @item{On line 36, we define what to do when the user clicks the @litchar{Skip} button,
-   which is to set the component state to display @exviewref["tut-9" "DeployerOrAttacher"].}
+   which is to set the component state to display @secref["tut-9-DeployerOrAttacher"].}
 ]
 
-@exviewfigs["tut-9" "AppViews"
-  '["DeployerOrAttacher" 56 78]]
+When we combine this with the view (@reachexlink[#:loc (cons 30 54)]{tut-9/views/AppViews.js}) it will look like:
+@image["images/tut-9/FundAccount.png"]
+
+@subsection[#:tag "tut-9-DeployerOrAttacher"]{Choose Role}
 
 @reachex[#:mode js
          "tut-9/index.js"
@@ -1636,13 +1639,14 @@ Next, we define callbacks on @jsin{App} for what to do when the user clicks cert
 On lines 37 and 38, we set a sub-component
 based on whether the user clicks @litchar{Deployer} or @litchar{Attacher}.
 
-@(hrule) @;; Explain Player
+When we combine this with the view (@reachexlink[#:loc (cons 56 78)]{tut-9/views/AppViews.js}) it will look like:
+@image["images/tut-9/DeployerOrAttacher.png"]
+
+@subsection[#:tag "tut-9-Player"]{Player component}
 
 Next, we will define @jsin{Player} as a React component,
+that will hold all of the behavior of the players and
 which will be extended by the specialized components for Alice and Bob.
-
-@exviewfigs["tut-9" "PlayerViews"
-  '["GetHand" 8 32]]
 
 Our Web frontend needs to implement the @tech{participant interact interface} for players, which we defined as:
 
@@ -1658,30 +1662,41 @@ We will provide these callbacks via the React component directly.
 @itemlist[
  @item{On line 43, we provide the @jsin{random} callback}
  @item{On lines 44 thru 50, we provide the @jsin{getHand} callback.}
- @item{On lines 45 thru 47, we set the component state to display @exviewref["tut-9" "GetHand"],
+ @item{On lines 45 thru 47, we set the component state to display @secref["tut-9-GetHand"],
   and wait for a @jsin{Promise} which can be resolved via user interaction.}
  @item{On line 48, which occurs after the @jsin{Promise} is resolved,
-  we set the component state to display @exviewref["tut-9" "WaitingForResults"].}
+  we set the component state to display @secref["tut-9-WaitingForResults"].}
  @item{On lines 51 and 52, we provide the @jsin{seeOutcome} and @jsin{informTimeout} callbacks,
-  which set the component state to display @exviewref["tut-9" "Done"] and @exviewref["tut-9" "Timeout"], respectively.}
+  which set the component state to display @secref["tut-9-Done"] and @secref["tut-9-Timeout"], respectively.}
  @item{On line 53, we define what happens when the user clicks @litchar{Rock}, @litchar{Paper}, or @litchar{Scissors}:
   The @jsin{Promise} from line 45 is resolved.}
 ]
 
-@exviewfigs["tut-9" "PlayerViews"
-  '["WaitingForResults" 34 42]
-  '["Done" 44 54]
-  '["Timeout" 56 64]]
+@subsection[#:tag "tut-9-GetHand"]{Get Hand dialog}
 
-@(hrule) @;; explain Deployer
+The dialog used to get a hand from the player (@reachexlink[#:loc (cons 8 32)]{tut-9/views/PlayerViews.js}) looks like:
+@image["images/tut-9/GetHand.png"]
+
+@subsection[#:tag "tut-9-WaitingForResults"]{Waiting for results display}
+
+The dialog used to get a hand from the player (@reachexlink[#:loc (cons 34 42)]{tut-9/views/PlayerViews.js}) looks like:
+@image["images/tut-9/WaitingForResults.png"]
+
+@subsection[#:tag "tut-9-Done"]{Done display}
+
+The display when the player sees the end of the game (@reachexlink[#:loc (cons 44 54)]{tut-9/views/PlayerViews.js}) looks like:
+@image["images/tut-9/Done.png"]
+
+@subsection[#:tag "tut-9-Timeout"]{Timeout display}
+
+The display when the player sees a timeout (@reachexlink[#:loc (cons 56 64)]{tut-9/views/PlayerViews.js}) looks like:
+@image["images/tut-9/Timeout.png"]
+
+@subsection[#:tag "tut-9-Deployer"]{Deployer component}
 
 @;; TODO: rename Deployer->Alice, Attacher->Bob
 Next, we will define @jsin{Deployer} as a React component for Alice,
 which extends @jsin{Player}.
-
-@exviewfigs["tut-9" "DeployerViews"
-  '["SetWager" 20 38]
-  '["Deploy" 40 53]]
 
 Our Web frontend needs to implement the @tech{participant interact interface} for Alice, which we defined as:
 
@@ -1696,30 +1711,42 @@ and define some button handlers in order to trigger the deployment of the contra
          'only 56 72 "// ..."]
 
 @itemlist[
- @item{On line 59, we set the component state to display @exviewref["tut-9" "SetWager"].}
+ @item{On line 59, we set the component state to display @secref["tut-9-SetWager"].}
  @item{On line 61, we define what to do when the user clicks the @litchar{Set Wager} button,
-  which is to set the component state to display @exviewref["tut-9" "Deploy"].}
+  which is to set the component state to display @secref["tut-9-Deploy"].}
  @item{On lines 62 thru 69, we define what to do when the user clicks the @litchar{Deploy} button.}
  @item{On line 63, we call @jsin{acc.deploy}, which triggers a deploy of the contract.}
- @item{On line 64, we set the component state to display @exviewref["tut-9" "Deploying"].}
+ @item{On line 64, we set the component state to display @secref["tut-9-Deploying"].}
  @item{On line 65, we set the @jsin{wager} property.}
  @item{On line 66, we set the @jsin{deadline} property based on which connector is being used.}
  @item{On line 67, we start running the Reach program as Alice, using the @jsin{this} React component
   as the @tech{participant interact interface} object.}
- @item{On lines 68 and 69, we set the component state to display @exviewref["tut-9" "WaitingForAttacher"],
+ @item{On lines 68 and 69, we set the component state to display @secref["tut-9-WaitingForAttacher"],
   which displays the deployed contract info as JSON.}
  @item{On line 71, we render the appropriate view from @reachexlink{tut-9/views/DeployerViews.js}.}
 ]
 
-@exviewfigs["tut-9" "DeployerViews"
-  '["Deploying" 55 61]
-  '["WaitingForAttacher" 63 90]]
+@subsection[#:tag "tut-9-SetWager"]{Set Wager dialog}
 
-@(hrule) @;; Explain Attacher
+The dialog used to set the wager (@reachexlink[#:loc (cons 20 38)]{tut-9/views/DeployerViews.js}) looks like:
+@image["images/tut-9/SetWager.png"]
 
-@exviewfigs["tut-9" "AttacherViews"
-  '["Attach" 18 39]
-  '["Attaching" 41 49]]
+@subsection[#:tag "tut-9-Deploy"]{Deploy dialog}
+
+The dialog used to deploy (@reachexlink[#:loc (cons 40 53)]{tut-9/views/DeployerViews.js}) looks like:
+@image["images/tut-9/Deploy.png"]
+
+@subsection[#:tag "tut-9-Deploying"]{Deploying display}
+
+The display shown while deploying (@reachexlink[#:loc (cons 55 61)]{tut-9/views/DeployerViews.js}) looks like:
+@image["images/tut-9/Deploying.png"]
+
+@subsection[#:tag "tut-9-WaitingForAttacher"]{Waiting for Attacher display}
+
+The display shown while waiting for the attacher (@reachexlink[#:loc (cons 63 90)]{tut-9/views/DeployerViews.js}) looks like:
+@image["images/tut-9/WaitingForAttacher.png"]
+
+@subsection[#:tag "tut-9-Attacher"]{Attacher component}
 
 Our Web frontend needs to implement the @tech{participant interact interface} for Bob, which we defined as:
 
@@ -1734,25 +1761,41 @@ and define some button handlers in order to attach to the deployed contract.
          'only 73 95 "// ..."]
 
 @itemlist[
- @item{On line 76, we initialize the component state to display @exviewref["tut-9" "Attach"].}
+ @item{On line 76, we initialize the component state to display @secref["tut-9-Attach"].}
  @item{On lines 78 thru 82, we define what happens when the user clicks the @litchar{Attach} button.}
  @item{On line 79, we call @jsin{acc.attach}}
- @item{On line 80, we set the component state to display @exviewref["tut-9" "Attaching"].}
+ @item{On line 80, we set the component state to display @secref["tut-9-Attaching"].}
  @item{On line 81, we start running the Reach program as Bob, using the @jsin{this} React component
   as the @tech{participant interact interface} object.}
  @item{On lines 83 thru 88, we define the @jsin{acceptWager} callback.}
- @item{On lines 85 thru 87, we set the component state to display @exviewref["tut-9" "AcceptTerms"],
+ @item{On lines 85 thru 87, we set the component state to display @secref["tut-9-AcceptTerms"],
   and wait for a @jsin{Promise} which can be resolved via user interaction.}
  @item{On lines 89 thru 92, we define what happens when the user clicks the @litchar{Accept Terms and Pay Wager} button:
-  the @jsin{Promise} from line 90 is resolved, and we set the component state to display @exviewref["tut-9" "WaitingForTurn"].}
+  the @jsin{Promise} from line 90 is resolved, and we set the component state to display @secref["tut-9-WaitingForTurn"].}
  @item{On line 93, we render the appropriate view from @reachexlink{tut-9/views/AttacherViews.js}}
 ]
 
-@exviewfigs["tut-9" "AttacherViews"
-  '["AcceptTerms" 51 70]
-  '["WaitingForTurn" 72 81]]
+@subsection[#:tag "tut-9-Attach"]{Attach dialog}
 
-@(hrule) @;; explain renderDOM
+The dialog used to attach (@reachexlink[#:loc (cons 18 39)]{tut-9/views/AttacherViews.js}) looks like:
+@image["images/tut-9/Attach.png"]
+
+@subsection[#:tag "tut-9-Attaching"]{Attaching display}
+
+The display when attaching (@reachexlink[#:loc (cons 41 49)]{tut-9/views/AttacherViews.js}) looks like:
+@image["images/tut-9/Attaching.png"]
+
+@subsection[#:tag "tut-9-AcceptTerms"]{Accept Terms dialog}
+
+The dialog used to accept the terms of the wager (@reachexlink[#:loc (cons 51 70)]{tut-9/views/AttacherViews.js}) looks like:
+@image["images/tut-9/AcceptTerms.png"]
+
+@subsection[#:tag "tut-9-WaitingForTurn"]{Waiting for Turn display}
+
+The display when waiting for a turn (@reachexlink[#:loc (cons 72 81)]{tut-9/views/AttacherViews.js}) looks like:
+@image["images/tut-9/WaitingForTurn.png"]
+
+@subsection[#:tag "tut-9-Final"]{Putting it all together}
 
 @reachex[#:mode js
          "tut-9/index.js"

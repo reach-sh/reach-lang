@@ -410,7 +410,9 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
 
   // Adjust image urls.
   doc.querySelectorAll('img').forEach(img => {
-    img.src = `/${relDir}/${img.src}`;
+    if ( ! img.src.startsWith("/") ) {
+      img.src = `/${relDir}/${img.src}`;
+    }
   });
 
   // Process code snippets.
