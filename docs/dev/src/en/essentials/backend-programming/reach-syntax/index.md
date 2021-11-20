@@ -154,32 +154,93 @@ function f(a, b, c = a + 1, d = b + c) => a + b + c + d;
 
 # Expressions
 
-*Expressions* evaluate to a value. Here are four examples:
+An *expression* evaluates to a value. 
 
-``` js
-4
-4 + 4
-`Balance = ${balance}`
-declassify(interact.wager)
+Expressions may include parentheses that enforce operational order:
+
+``` js nonum
+(a + b) - c 
 ```
 
 Reach includes the expressions described below.
 
+## Arrays
+
+An *array* is ...
+
+`array` converts a tuple of homogeneous values of the specified type into an array.
+
+An *element reference* ...
+
+## Arrow Expression
+
+## Data
+
+A *data instance* is ...
+
+## Either
+
 ## Literals
+
+## Maps
+
+A *map* is ...
+
+## match
+
+## Maybe
+
+## new
+
+## Objects
+
+An *object* is ...
 
 ## Operators
 
-*Operators* (arithmetic, comparison, logical, assignment, and ternary) perform operations on operands:
+*Operators* perform operations on operands. Most operators have equivalent JS Stdlib function equivalents.
 
-``` js
-x + y                                       // arithmetic
-order.prodNum > sellerInfo.products.length  // comparison
-order.prodNum == 0 || order.prodAmt == 0    // logical
-var x = 0;                                  // assignment
-outcome == A_WINS ? Alice : Bob             // ternary
-```
+| Operator | Function | Description |
+|-|-|-|
+| `-` | `sub(a, b)` | `a - b` |
+| `!` | n/a | `not` |
+| `!=` | `polyNeq(a, b)` | |
+| `!==` | `polyNeq(a, b)` | |
+| `*` | `mul(a, b)` | `a * b` |
+| `/` | `div(a, b)` | `a / b` |
+| `&` | `band(a, b)` | |
+| `&&` | `and(a, b)` | |
+| `%` | `mod(a, b)` | |
+| `^` | `bxor(a, b)` | |
+| `+` | `add(a, b)` | `a + b` |
+| `<` | `lt(a, b)` | |
+| `<<` | `lsh(a, b)` | |
+| `<=` | `le(a, b)` | |
+| `==` <br/> `===`| `addrEq(a, b)` <br/> `boolEq(a, b)` <br/> `digestEq(a, b)` <br/> `fxeq(a, b)` <br/> `ieq(a, b)` <br/> `intEq(a, b)` <br/> `polyEq(a, b)` <br/> `typeEq(a, b)` | |
+| `>` | `gt(a, b)` | |
+| `>=` | `ge(a, b)` | |
+| `>>` | `rsh(a, b)` | |
+| `\|` | `bior(a, b)` | |
+| `\|\|` | `or(a, b)` | |
+| n/a | `xor(a, b)` | |
+
+## pad
+
+## Sets
+
+A *set* is ...
+
+## Structs
+
+A *struct* is ...
+
+## Ternary Operator
 
 ## this
+
+## Tuples
+
+A *tuple* is ...
 
 ## Types
 
