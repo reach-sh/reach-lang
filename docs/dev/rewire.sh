@@ -33,6 +33,8 @@ r guide-windows guide/windows
 r overview tut/overview
 r reach top
 r ref ref
+r ref-install ref/install
+r ref-usage ref/usage
 r ref-backends compiled
 r ref-backends-js compiled/js
 r ref-backends-rpc rpc

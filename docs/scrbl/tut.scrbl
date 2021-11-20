@@ -10,8 +10,6 @@ On the other hand, if this is too simple, then you may want to start @seclink["w
 
 If you're ready, click through to the @seclink["tut-1"]{first step}!
 
-@local-table-of-contents[#:style 'immediate-only]
-
 @section[#:tag "tut-1"]{Install and Initialize}
 
 Reach is designed to work on POSIX systems with @link["https://en.wikipedia.org/wiki/Make_(software)"]{make}, @link["https://www.docker.com/get-started"]{Docker}, and @link["https://docs.docker.com/compose/install/"]{Docker Compose} installed.

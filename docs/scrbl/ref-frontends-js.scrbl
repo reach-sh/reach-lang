@@ -18,9 +18,18 @@ npm install @"@"reach-sh/stdlib
 Although, if you use @exec{reach run}, you don't need to install this package, because @exec{reach} automatically manages your standard library install behind the scenes.
 You only need to install the package directly if you are running your frontend without @exec{reach} or using a tool like @link["https://webpack.js.org/"]{webpack} for deployment.
 
-These libraries provide a standard interface that support developing @tech{frontends}.
+These libraries provide a standard interface that support developing @tech{frontends} in JavaScript.
 
-@(local-table-of-contents)
+@itemlist[
+@item{@secref["ref-frontends-js-loader.mjs"] discusses how to load the standard library.}
+@item{@secref["ref-frontends-js-provider"] discusses how to adjust what provider is used to connect to a consensus network.}
+@item{@secref["ref-frontends-js-network"] discuss some utility functions that provide access to consensus network parameters and resources.}
+@item{@secref["ref-frontends-js-acc"] discusses how to construct an account handle, which is necessary to access contracts.}
+@item{@secref["ref-frontends-js-ctc"] discusses how to construct a contract handle, which is used to interact with a DApp.}
+@item{@secref["ref-frontends-js-types"] discusses the way that JavaScript values are used to represent Reach values.}
+@item{@secref["ref-frontends-js-utils"] discusses some utility functions for working with JavaScript-represented Reach values.}
+@item{@secref["ref-frontends-js-ask.mjs"] discusses a helper library for building text-based UIs.}
+]
 
 @section[#:tag "ref-frontends-js-types"]{Types}
 

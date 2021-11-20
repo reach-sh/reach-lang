@@ -91,37 +91,16 @@ An @deftech{honest} @tech{participant} is one that executes the @tech{steps} spe
 A @deftech{value} is either: the @litchar{null} value, a boolean, an unsigned integer, a string of bytes, a @tech{digest}, an @tech{address}, a fixed tuple of @tech{values}, a statically-sized homogeneous array of @tech{values}, or a fixed record of @tech{values}.
 @tech{Values} may be @deftech{digest}ed to produce a @link["https://en.wikipedia.org/wiki/Cryptographic_hash_function"]{cryptographic hash} of their binary encoding.
 
-@tech{Values} are in one of three possible conditions. They could be @tech{consensus state}, in which case they are known to all @tech{participants}. They could be @tech{local state} of a single @tech{participant}, which means they are known by only that @tech{participant}. @tech{Local state} is further divided into @tech{private} @tech{local state}, which cannot be included in a @tech{publication}, and @tech{public} @tech{local state}, which can. These conditions are summarized in @figure-ref["fig:value-states"].
-
-@figure["fig:value-states" "The three conditions of values"]{
-@(let ()
-(local-require pict)
-(define (add-edge all from label to)
-(pin-arrow-line
-10 all
-from rc-find
-to lc-find
-#:line-width 3
-#:label (inset (text label) 5)))
-
-(define (state ls)
-(frame (inset (apply vc-append (map text ls)) 5)))
-
-(define p
-(let* ([initial (blank)]
-[local-private (state '("local" "private"))]
-[local-public (state '("local" "public"))]
-[consensus (state '("consensus"))]
-[p (hc-append 75
-initial local-private
-local-public consensus)]
-[p (add-edge p initial "" local-private)]
-[p (add-edge p local-private "declassify" local-public)]
-[p (add-edge p local-public "publish" consensus)]
-[p (inset p 25)])
-p))
-
-p)}
+@tech{Values} are in one of three possible conditions.
+They could be @tech{consensus state}, in which case they are known to all @tech{participants}.
+They could be @tech{local state} of a single @tech{participant}, which means they are known by only that @tech{participant}.
+@tech{Local state} is further divided into @tech{private} @tech{local state}, which cannot be included in a @tech{publication}, and @tech{public} @tech{local state}, which can.
+These conditions are summarized thus:
+@itemlist[
+ @item{@bold{Local, private}: The initial state.}
+ @item{@bold{Local, public}: The result of @reachin{declassify}.}
+ @item{@bold{Consensus}: The result of @reachin{publish}.}
+]
 
 @section[#:tag "ref-model-compile"]{Compilation Model}
 
