@@ -318,7 +318,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   };
   */
 
-  const expandEnv = { ...configJson, seclink, defn, workshopDeps, workshopWIP, code };
+  const expandEnv = { ...configJson, seclink, defn, workshopDeps, workshopWIP, code, errver };
   const expandKeys = Object.keys(expandEnv);
   const expandVals = Object.values(expandEnv);
   const evil = async (c) => {
@@ -332,7 +332,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     }
   }
   const expand = async (s) => {
-    const ms = s.indexOf('${'); // }
+    const ms = s.indexOf('@{'); // }
     if ( ms === -1 ) { return s; }
     /* { */ const me = s.indexOf('}', ms);
     if ( me === -1 ) { throw Error(`No closing } in interpolation: ${mdPath}: ${s.slice(ms)}`); }

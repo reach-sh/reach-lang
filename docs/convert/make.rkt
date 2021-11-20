@@ -56,23 +56,23 @@
     [`(link ,t ,l)
       (d (format "[~a](~a)" l t))]
     [`(reachexlink ,f #:dir ,e)
-      (d (format "[~a](${REPO}}/~a/~a)" f e f))]
+      (d (format "[~a](@{REPO}}/~a/~a)" f e f))]
     [`(reachexlink ,f)
-      (d (format "[~a](${REPO}}/examples/~a)" f f))]
+      (d (format "[~a](@{REPO}}/examples/~a)" f f))]
     [`(reachexlink ,f ,c #:dir ,e)
       (d "[")
       (ego c)
-      (d (format "](${REPO}}/~a/~a)" e f))]
+      (d (format "](@{REPO}}/~a/~a)" e f))]
     [`(reachexlink ,f ,c)
       (d "[")
       (ego c)
-      (d (format "](${REPO}}/examples/~a)" f))]
+      (d (format "](@{REPO}}/examples/~a)" f))]
     [`(title ,@o) (header 1 o)]
     [`(section ,@o) (header 2 o)]
     [`(subsection ,@o) (header 3 o)]
     [`(subsubsection ,@o) (header 4 o)]
     [`(secref ,t)
-      (d (format "${seclink(~s)}" t))]
+      (d (format "@{seclink(~s)}" t))]
     [`(seclink ,t ,l)
       (d (format "[~a](##~a)" l t))]
     [`(reachin ,@c) (code c 'reach)]
@@ -102,7 +102,7 @@
     [`(filepath ,@c) (code c)]
     [`(litchar ,@c) (code c)]
     [`(the-community-link)
-      (ego '(link "${DISCORD}" "the Discord community"))]
+      (ego '(link "@{DISCORD}" "the Discord community"))]
     [`(local-table-of-contents . ,_) (void)]
     [`(table-of-contents . ,_) (void)]
     [`(element (make-style #f (list (url-anchor ,a))) '())
@@ -113,7 +113,7 @@
       (void)]
     [`(define . ,_) (void)]
     [`(deftech ,c)
-      (d (format "${defn(~s)}" c))]
+      (d (format "@{defn(~s)}" c))]
     [`(error ,x) (ego `(section #:tag ,x ,x))]
     [`(mint-define! ,@ts)
       (define s (unbox mint-scope))
@@ -125,7 +125,7 @@
           (for ([ts (in-list ts)])
             (match-define `'(,@tsl) ts)
             (define t (apply string-append tsl))
-            (d (format "${ref(~s, ~s)}" s t)))])]
+            (d (format "@{ref(~s, ~s)}" s t)))])]
     [`(include-section . ,_) (void)]
     [`(index-section . ,_) (void)]
     [`(index . ,_) (void)]
@@ -151,25 +151,25 @@
     [(or
        `(reachex ,f 'only ,from ,to ,_)
        `(reachex #:mode ,_ ,f 'only ,from ,to ,_))
-      (d (format "${code(\"/examples/~a\", ~a, ~a)}" (exexpand f) from to))]
+      (d (format "@{code(\"/examples/~a\", ~a, ~a)}" (exexpand f) from to))]
     [`(reachex #:dir "rpc-client" py-impl 'only ,from ,to ,_)
-      (d (format "${code(\"/rpc-client/py/src/reach_rpc/__init__.py\", ~a, ~a)}" from to))]
+      (d (format "@{code(\"/rpc-client/py/src/reach_rpc/__init__.py\", ~a, ~a)}" from to))]
     [(or
        `(reachex ,f)
        `(reachex #:mode ,_ ,f))
-      (d (format "${code(\"/examples/~a\")}" (exexpand f)))]
+      (d (format "@{code(\"/examples/~a\")}" (exexpand f)))]
     [`reach-vers
-     (d "${VERSION}")]
+     (d "@{VERSION}")]
     [`(error-version #:to ,t)
-     (d (format "${errver(~s)}" t))]
+     (d (format "@{errver(~s)}" t))]
     [`(workshop-deps)
-      (d (format "${workshopDeps()}"))]
+      (d (format "@{workshopDeps()}"))]
     [`(workshop-deps ,t)
-      (d (format "${workshopDeps(~s)}" t))]
+      (d (format "@{workshopDeps(~s)}" t))]
     [`(WIP/XXX)
-      (d (format "${workshopWIP()}"))]
+      (d (format "@{workshopWIP()}"))]
     [`(WIP/XXX ,x)
-      (d (format "${workshopWIP(~s)}" x))]
+      (d (format "@{workshopWIP(~s)}" x))]
     [`(drstep-pr ,t)
       (ego `(section #:tag ,(format "~a-pr" t) "Problem Analysis"))]
     [`(drstep-dd ,t)
