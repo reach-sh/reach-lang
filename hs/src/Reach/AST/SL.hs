@@ -446,6 +446,7 @@ data ToConsensusMode
   | TCM_Timeout
   | TCM_ThrowTimeout
   | TCM_Fork
+  | TCM_Api
   deriving (Eq, Generic, Show)
 
 data ForkMode
@@ -484,6 +485,7 @@ data ToConsensusRec = ToConsensusRec
   , slptc_whene :: Maybe JSExpression
   , slptc_timeout :: Maybe (SrcLoc, JSExpression, Maybe JSBlock)
   , slptc_fork :: Bool
+  , slptc_api :: Bool
   }
   deriving (Eq, Generic)
 

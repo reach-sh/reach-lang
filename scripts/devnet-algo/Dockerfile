@@ -12,7 +12,6 @@ RUN apk add --no-cache \
   gcc \
   boost-dev \
   g++ \
-  shellcheck \
   sqlite
 
 ENV SRC_PARENT ${GOPATH}/src/github.com/algorand

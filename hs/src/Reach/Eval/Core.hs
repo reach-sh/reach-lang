@@ -1123,18 +1123,24 @@ evalAsEnv obj = case obj of
         , ("interact", makeInteractField)
         ]
     where
-      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos vas (Just m) Nothing Nothing Nothing Nothing False)
+      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos vas (Just m) Nothing Nothing Nothing Nothing False False)
       whos = S.singleton who
   SLV_Anybody -> do
+    at <- withAt id
+    apis <- ae_apis <$> aisd
     whos <- S.fromList . M.keys <$> (ae_ios <$> aisd)
-    evalAsEnv (SLV_RaceParticipant srcloc_builtin whos)
+    let ps = S.difference whos apis
+    case S.toList ps of
+      [] -> expect_ $ Err_No_Participants
+      [h] -> evalAsEnv $ SLV_Participant at h Nothing Nothing
+      _ -> evalAsEnv $ SLV_RaceParticipant srcloc_builtin ps
   SLV_RaceParticipant _ whos ->
     return $
       M.fromList
         [ ("publish", go TCM_Publish)
         , ("pay", go TCM_Pay) ]
     where
-      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos Nothing (Just m) Nothing Nothing Nothing Nothing False)
+      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos Nothing (Just m) Nothing Nothing Nothing Nothing False False)
   SLV_Form (SLForm_Part_ToConsensus p@(ToConsensusRec {..})) | slptc_mode == Nothing ->
     return $
       M.fromList $
@@ -1144,6 +1150,7 @@ evalAsEnv obj = case obj of
           <> gom "timeout" TCM_Timeout slptc_timeout
           <> gom "throwTimeout" TCM_ThrowTimeout slptc_timeout
           <> gob ".fork" TCM_Fork slptc_fork
+          <> gob ".api" TCM_Api slptc_api
     where
       gob key mode = \case
         False -> go key mode
@@ -1619,6 +1626,9 @@ evalForm f args = do
         Just TCM_Fork -> do
           zero_args
           go $ p { slptc_fork = True }
+        Just TCM_Api -> do
+          zero_args
+          go $ p { slptc_api = True }
         Just TCM_Timeout -> do
           at <- withAt id
           let proc = \case
@@ -4088,6 +4098,9 @@ compilePayAmt tt v = do
 doToConsensus :: [JSStatement] -> ToConsensusRec -> App SLStmtRes
 doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
   let whos = slptc_whos
+  who_apis <- S.intersection whos <$> (ae_apis <$> aisd)
+  unless (S.null who_apis || slptc_api) $
+    expect_ $ Err_Api_Publish who_apis
   let vas = slptc_mv
   let msg = fromMaybe [] slptc_msg
   let amt_e = fromMaybe (JSDecimal JSNoAnnot "0") slptc_amte
@@ -4358,6 +4371,7 @@ doApiCall lhs (ApiCallRec{..}) = do
         case slac_mtime of
           Nothing -> pub2
           Just (to, e) -> jsCall a (mkDot a [pub2, jid "throwTimeout"]) [to, e]
+  let pub4 = jsCall a (mkDot a [pub3, jid ".api"]) []
   -- Construct `k = interact.out()`
   let returnVal = jidg "rng"
   let returnLVal = jidg "rngl"
@@ -4368,7 +4382,7 @@ doApiCall lhs (ApiCallRec{..}) = do
   --
   let assignRet = jsConst a ret apiReturn
   let setDetails = jsCall a (jid ".setApiDetails") [slac_who, dom]
-  let ss = [callOnly [onlyThunk], es pub3, es setDetails, assignRet]
+  let ss = [callOnly [onlyThunk], es pub4, es setDetails, assignRet]
   return ss
   where
     sepLHS a = \case
@@ -4591,7 +4605,8 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let before_tc_ss = data_ss <> cases_onlys
         return $ (True, before_tc_ss, pay_e, tc_head_e, switch_ss)
   let tc_pub_e = JSCallExpression (JSMemberDot tc_head_e a (jid "publish")) a (JSLOne msg_e) a
-  let tc_when_e = JSCallExpression (JSMemberDot tc_pub_e a (jid "when")) a (JSLOne when_e) a
+  let tc_api_e = JSCallExpression (JSMemberDot tc_pub_e a (jid ".api")) a JSLNil a
+  let tc_when_e = JSCallExpression (JSMemberDot tc_api_e a (jid "when")) a (JSLOne when_e) a
   -- START: Non-network token pay
   pay_expr <-
     case slf_mnntpay of

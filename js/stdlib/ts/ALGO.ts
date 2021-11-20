@@ -59,6 +59,7 @@ import {
   addressFromHex,
   stdlib,
   typeDefs,
+  extractAddr,
 } from './ALGO_compiled';
 import { window, process, Env } from './shim';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = stdlib;
@@ -947,7 +948,7 @@ export const transfer = async (
   tag: number|undefined = undefined,
 ): Promise<RecvTxn> => {
   const sender = from.networkAccount;
-  const receiver = to.networkAccount.addr;
+  const receiver = extractAddr(to);
   const valuebn = bigNumberify(value);
   const ps = await getTxnParams();
   const txn = toWTxn(makeTransferTxn(sender.addr, receiver, valuebn, token, ps, undefined, tag));
@@ -1691,12 +1692,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 };
 
 export const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
-  const { networkAccount } = acc;
-  if (!networkAccount) {
-    throw Error(`acc.networkAccount missing. Got: ${acc}`);
-  }
+  const addr = extractAddr(acc);
   const client = await getAlgodClient();
-  const info = await client.accountInformation(networkAccount.addr).do();
+  const info = await client.accountInformation(addr).do();
   debug(`balanceOf`, info);
   if ( ! token ) {
     return bigNumberify(info.amount);
