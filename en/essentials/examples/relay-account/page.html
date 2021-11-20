@@ -1,11 +1,11 @@
 <p>
   In this workshop, we'll revisit the problem of allowing a payer to transfer funds to another party before knowing their identity.
-  However, unlike in ${seclink("workshop-hash-lock")}, we will use a technique that is safe against malicious miners.
+  However, unlike in @{seclink("workshop-hash-lock")}, we will use a technique that is safe against malicious miners.
   One deployment of a decentralized application like this is as a "gift card" where a funder provides a fixed amount of currency to another without knowing their identity.
 </p>
 <p>
-  ${workshopDeps("workshop-hash-lock")}
-  XXX (workshop-init "workshop-relay")
+  @{workshopDeps("workshop-hash-lock")}
+  @{workshopInit("workshop-relay")}
 </p>
 <h2 id="problem-analysis">Problem Analysis</h2>
 <p>For this workshop, we'll provide some constraints on your solution and problem analysis, since we'd like you to explore writing a Reach program with a specific design.</p>
@@ -19,7 +19,7 @@
   <li>Bob can transfer the funds to wherever he'd like.</li>
 </ul>
 <p>
-  In ${seclink("workshop-hash-lock")}, we designed the application so that the "secret" was a special number that the contract compared against a known digest to release the funds.
+  In @{seclink("workshop-hash-lock")}, we designed the application so that the "secret" was a special number that the contract compared against a known digest to release the funds.
   This approach was flawed, because when Bob used the secret to gain access, it was possible for anyone else to see the transaction and attempt to play it themselves.
 </p>
 <p>
@@ -27,7 +27,7 @@
   With that in mind, let's use the following design:
 </p>
 <p><strong>Alice will represent her secret as an account that is authorized to withdraw the funds.</strong></p>
-<p>This is called a ${defn("relay account")}, because it exists temporarily to faciliate the relaying of funds from Alice to Bob.</p>
+<p>This is called a @{defn("relay account")}, because it exists temporarily to faciliate the relaying of funds from Alice to Bob.</p>
 <p>With this in mind, let's answer the questions:</p>
 <ul>
   <li>Who are the principals of the application?</li>
@@ -56,16 +56,16 @@
   Which are functions and which are values?
   Finally, how should the Relay account information and Bob's identity be represented?
   (Hint: Reach has a type named <code>Address</code> that represents an account address!)
-  ::: note
-  Refer to ${seclink("ref-programs-types")}for a reminder of what data types are available in Reach.
-  :::
 </p>
+<div class="note">
+  <p>Refer to @{seclink("ref-programs-types")}for a reminder of what data types are available in Reach.</p>
+</div>
 <p><strong>Write down the data definitions for this program as definitions.</strong></p>
 <p>
   Let's compare notes again.
   Here's what we wrote in our program:
 </p>
-<p>${code("/examples/workshop-relay/index.rsh", 6, 8)}</p>
+<p>@{code("/examples/workshop-relay/index.rsh", 6, 8)}</p>
 <p>
   We chose to represent the amount as a <code>UInt</code> field, which should be unsurprising.
   We then have two functions that take no arguments and return an <code>Address</code> which respectively return the Relay identity and the Bob identity.
@@ -74,7 +74,7 @@
 <h2 id="communication-construction">Communication Construction</h2>
 <p>
   Now, we can write down the structure of communication and action in our application.
-  Try this on your own based on your experience with ${seclink("workshop-hash-lock")}.
+  Try this on your own based on your experience with @{seclink("workshop-hash-lock")}.
 </p>
 <p><strong>Write down the communication pattern for this program as comments.</strong></p>
 <p>Here's what we wrote:</p>
@@ -100,14 +100,14 @@
   You may have thought that the <code>to</code> position in a <code>transfer</code> must be a participant, but actually it can be any address.
   Participants, however, can be used as addresses if they are bound.
 </p>
-<p>
-  ::: note
-  You might like to re-write this program to have a third participant, Bob, who takes no actions, and try to write <code>transfer(amt).to(Bob)</code>.
-  You'll find that Reach rejects this program because Bob is not bound.
-  You can correct this by adding <code>Bob.set(bob)</code> after the Relay publishes Bob's address.
-  There's nothing better about this version of the program, but it is unneccessary to have a participant like Bob that performs no part in the computation.
-  :::
-</p>
+<div class="note">
+  <p>
+    You might like to re-write this program to have a third participant, Bob, who takes no actions, and try to write <code>transfer(amt).to(Bob)</code>.
+    You'll find that Reach rejects this program because Bob is not bound.
+    You can correct this by adding <code>Bob.set(bob)</code> after the Relay publishes Bob's address.
+    There's nothing better about this version of the program, but it is unneccessary to have a participant like Bob that performs no part in the computation.
+  </p>
+</div>
 <h2 id="assertion-insertion">Assertion Insertion</h2>
 <p>
   As usual, we should consider what assertions we can add to our program.
@@ -126,7 +126,7 @@
 </p>
 <p><strong>Insert <code>interact</code> calls to the frontend into the program.</strong></p>
 <p>Let's look at our whole program now:</p>
-<p>${code("/examples/workshop-relay/index.rsh")}</p>
+<p>@{code("/examples/workshop-relay/index.rsh")}</p>
 <h2 id="deployment-decisions">Deployment Decisions</h2>
 <p>
   This program is a bit odd to test, because it relies on Alice creating a temporary account and then sharing its information with Bob.
@@ -136,7 +136,7 @@
 <p>If you're brave, then try it yourself; otherwise, scroll down to see our solution.</p>
 <p><strong>Decide how you will deploy and use this application.</strong></p>
 <p>Here's the JavaScript frontend we wrote:</p>
-<p>${code("/examples/workshop-relay/index.mjs")}</p>
+<p>@{code("/examples/workshop-relay/index.mjs")}</p>
 <p>We do a few sneaky things in this program:</p>
 <ul>
   <li>Lines 18 through 21 create a JavaScript <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promise</a> that will be filled in later by Alice.</li>
@@ -157,7 +157,7 @@
   You could use this application today and start minting gift cards of tokens for your friends on their birthdays!
   Wouldn't that be fun?
 </p>
-<p>If you found this workshop rewarding, please let us know on <a href="$%7Bdiscord%7D">the Discord community</a>!</p>
+<p>If you found this workshop rewarding, please let us know on <a href="@%7BDISCORD%7D">the Discord community</a>!</p>
 <p>If you'd like to make this application a little more interesting, maybe you'd like to have a secret password just like <a href="##workshop-hash-lock">the hash lock</a> as well, so Alice can separate the revealing of information to Bob.</p>
 <p>
   If you want to know what to do next to advance your study of decentralized application design, a natural extension of the concepts in this workshop is a <a href="##workshop-trust-fund">trust fund</a>.

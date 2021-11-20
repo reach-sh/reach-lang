@@ -1,0 +1,13 @@
+<p>Reach uses <a href="https://semver.org/">semantic versioning</a>, which means that given Reach version number <code>MAJOR.MINOR.PATCH</code>,</p>
+<ul>
+  <li><code>MAJOR</code> versions are incompatible.</li>
+  <li><code>MINOR</code> versions are compatible, but have additional features relative to earlier versions.</li>
+  <li><code>PATCH</code> versions are entirely compatible.</li>
+</ul>
+<p>However, the major version <code>0.y.z</code> is pre-stability and makes no promises about compatibility of any kind.</p>
+<hr>
+<p>Reach source code starts with</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #0A3069">'reach reach-short-vers'</span><span style="color: #24292F">;</span></li></ol></pre>
+<p>because this indicates that it relies on this major version and the features added in this minor version.</p>
+<hr>
+<p>Reach tools are specified by the entire version number with a <code>v</code> at the front, <code>vMAJOR.MINOR.PATCH</code>, but are also available at all prefixes (i.e., <code>vMAJOR.MINOR</code> and <code>vMAJOR</code>). Additionally, there is a version <code>stable</code> which resolves to the most recent stable <code>vMAJOR</code> version.</p>

@@ -2,8 +2,8 @@
   The Reach JavaScript backend produces a compilation output named <code>input.APP.mjs</code>.
   This will normally be imported by writing:
 </p>
-<p>${ref((quote js), "backend")}</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> </span><span style="color: #0550AE">*</span><span style="color: #24292F"> </span><span style="color: #CF222E">as</span><span style="color: #24292F"> backend </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'./build/index.main.mjs'</span><span style="color: #24292F">;</span></li></ol></pre>
+<p>@{ref("js", "backend")}</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> </span><span style="color: #0550AE">*</span><span style="color: #24292F"> </span><span style="color: #CF222E">as</span><span style="color: #24292F"> backend </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'./build/index.main.mjs'</span><span style="color: #24292F">;</span></li></ol></pre>
 <p>
   This module exports an asynchronous function for each participant.
   For example, if a Reach program contains a participant named <code>'A'</code> in the <code>Reach.App</code>, then the JavaScript backend will include a function named <code>A</code> (i.e. <code>backend.A</code>).
@@ -22,7 +22,7 @@
   For example, the version of Reach used to produce this documentation would contain the string <code>'reach-vers'</code>.
 </p>
 <p>
-  The backend provides a function, ${ref((quote js), "getExports")} <code>getExports</code>, which exposes the exports of a Reach program.
+  The backend provides a function, @{ref("js", "getExports")} <code>getExports</code>, which exposes the exports of a Reach program.
   This function receives the standard library as an argument and returns an object with all the exports.
   For example, if a Reach program
   exported a variable <code>x</code>, i.e. <code>export const x = 5</code>, the frontend could access the value in the following manner:

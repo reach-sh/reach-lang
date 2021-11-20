@@ -9,8 +9,8 @@
 </p>
 <p>This workshop utilizes participant classes to represent Buyers, which allows us to handle multiple participants in a generic way.</p>
 <p>
-  ${workshopDeps()}
-  XXX (workshop-init "workshop-fomo")
+  @{workshopDeps()}
+  @{workshopInit("workshop-fomo")}
 </p>
 <h2 id="problem-analysis">Problem Analysis</h2>
 <p>
@@ -62,11 +62,9 @@
   <li>What data type will represent the ticket price set by the Funder?</li>
   <li>What data type will represent the Buyer's decision to purchase a ticket?</li>
 </ul>
-<p>
-  ::: note
-  Refer to ${seclink("ref-programs-types")}for a reminder of what data types are available in Reach.
-  :::
-</p>
+<div class="note">
+  <p>Refer to @{seclink("ref-programs-types")}for a reminder of what data types are available in Reach.</p>
+</div>
 <p>Now that we've decided what data types to use, we need to determine how the programs will obtain this information. We need to outline the participant interact interface for each participant.</p>
 <ul>
   <li>What participant interact interface will Funder use?</li>
@@ -91,7 +89,7 @@
   <li>The decision to buy a ticket will be represented by a function <code>Fun([UInt], Bool)</code></li>
 </ul>
 <p>Our participant interact interface, with the addition of some handy logging functions, looks like this so far:</p>
-<p>${code("/examples/workshop-fomo/index.rsh", 4, 22)}</p>
+<p>@{code("/examples/workshop-fomo/index.rsh", 4, 22)}</p>
 <p>
   At this point, you can modify your JavaScript file (<code>index.mjs</code>) to contain definitions of these values, although you may want to use placeholders for the actual values.
   When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the participant interact interface.
@@ -133,7 +131,7 @@
 </p>
 <p><strong>Insert <code>interact</code> calls to the frontend into the program.</strong></p>
 <p>Let's look at our whole program now:</p>
-<p>${code("/examples/workshop-fomo/index.rsh")}</p>
+<p>@{code("/examples/workshop-fomo/index.rsh")}</p>
 <h2 id="deployment-decisions">Deployment Decisions</h2>
 <p>
   Next, it is time to test our program. As usual, we'll present a completely
@@ -146,12 +144,12 @@
 </p>
 <p><strong>Decide how you will deploy and use this application.</strong></p>
 <p>Here's the JavaScript frontend we wrote:</p>
-<p>${code("/examples/workshop-fomo/index.mjs")}</p>
+<p>@{code("/examples/workshop-fomo/index.mjs")}</p>
 <p>Let's see what it looks like when we run the program:</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1">$ ../reach run</li><li value="2">Buyer 0 bought a ticket.</li><li value="3">Buyer 3 bought a ticket.</li><li value="4">...</li><li value="5">Buyer 5 bought a ticket.</li><li value="6">Buyer 9 bought a ticket.</li><li value="7">Buyer 1 bought a ticket.</li><li value="8">Funder saw 0x94CAC1b24C1f7b0EBAD4A51797dE5d59A39910C4 won.</li><li value="9">Buyer 5 saw they lost.</li><li value="10">Buyer 1 saw they won.</li><li value="11">Buyer 6 saw they lost.</li><li value="12">Buyer 0 saw they lost.</li><li value="13">Buyer 4 saw they lost.</li><li value="14">Buyer 8 saw they lost.</li><li value="15">Buyer 2 saw they lost.</li><li value="16">Buyer 7 saw they lost.</li><li value="17">Buyer 3 saw they lost.</li><li value="18">Buyer 9 saw they lost.</li></ol></pre>
 <h2 id="discussion-and-next-steps">Discussion and Next Steps</h2>
 <p>Great job!</p>
-<p>If you found this workshop rewarding, please let us know on <a href="$%7Bdiscord%7D">the Discord community</a>!</p>
+<p>If you found this workshop rewarding, please let us know on <a href="@%7BDISCORD%7D">the Discord community</a>!</p>
 <p>
   If you'd like to make this application a little more interesting, maybe you'd like
   to extend this program to make the last <code>N</code> buyers split the winnings. Check out

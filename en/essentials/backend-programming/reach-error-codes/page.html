@@ -1,6 +1,7 @@
 <p>
   This section provides an in depth explanation of the error codes produced from
   the Reach compiler.
+  See the list on the left bar.
 </p>
 <h2 id="ra0000">RA0000</h2>
 <p>
@@ -39,7 +40,7 @@
   connector.
 </p>
 <p>For example, the code below uses a value too large for the <code>ALGO</code> connector:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">y</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">18446744073709551616</span><span style="color: #24292F">;</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">y</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">18446744073709551616</span><span style="color: #24292F">;</span></li></ol></pre>
 <p>
   You can fix this error by having your frontend provide the value and accessing it
   via the participant interact interface:
@@ -125,7 +126,7 @@
 </p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">var</span><span style="color: #24292F"> rounds </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">0</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #8250DF">invariant</span><span style="color: #24292F">(</span><span style="color: #8250DF">balance</span><span style="color: #24292F">() </span><span style="color: #CF222E">==</span><span style="color: #24292F"> rounds);</span></li><li value="3"><span style="color: #CF222E">while</span><span style="color: #24292F"> (</span><span style="color: #0550AE">true</span><span style="color: #24292F">) {</span></li><li value="4"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="5"><span style="color: #24292F">  Alice.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(</span><span style="color: #0550AE">1</span><span style="color: #24292F">);</span></li><li value="6"><span style="color: #24292F">  rounds </span><span style="color: #CF222E">=</span><span style="color: #24292F"> rounds </span><span style="color: #CF222E">+</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li><li value="7"><span style="color: #24292F">  </span><span style="color: #CF222E">continue</span><span style="color: #24292F">;</span></li><li value="8"><span style="color: #24292F">}</span></li></ol></pre>
 <h2 id="re0006">RE0006</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>This error indicates that <code>return</code> may not be used within the current statement block.</p>
 <h2 id="re0007">RE0007</h2>
 <p>
@@ -164,9 +165,9 @@
   For example, the code below erroneously provides two atomic values in the pay amount,
   which are both interpreted as the amount of network tokens to pay:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">([ amt, amt, [ amt, tok ]]);</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">([ amt, amt, [ amt, tok ]]);</span></li></ol></pre>
 <p>You can fix this by deleting one of the atomic values:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">([ amt, [ amt, tok ]]);</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">([ amt, [ amt, tok ]]);</span></li></ol></pre>
 <h2 id="re0010">RE0010</h2>
 <p>
   This error indicates that the pay amount provided states the amount of
@@ -176,9 +177,9 @@
   For example, the code below erroneously provides two tuples in the pay amount,
   both of which specify the amount of the same token:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">([ amt, [amt, tok ], [ amt, tok ] ]);</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">([ amt, [amt, tok ], [ amt, tok ] ]);</span></li></ol></pre>
 <p>You can fix this by deleting one of the tuples:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">([ amt, [amt, tok ] ]);</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">([ amt, [amt, tok ] ]);</span></li></ol></pre>
 <h2 id="re0011">RE0011</h2>
 <p>
   This error indicates that the pay amount provided does not provide values of the correct
@@ -188,7 +189,7 @@
   For example, the code below erroneously provides a pay amount that consists of a one element
   tuple:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">([ amt, [ amt ] ];)</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">([ amt, [ amt ] ];)</span></li></ol></pre>
 <p>
   However, a tuple in a pay amount must specify the amount and the <code>Token</code>. You can fix this
   by adding the <code>Token</code> to the tuple:
@@ -263,9 +264,9 @@
   is invalid. These names must satisfy the regex <code>[a-zA-Z][_a-zA-Z0-9]*</code>.
 </p>
 <p>For example, the code below provides a Participant name that is unsatisfactory:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">P</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Part 4!'</span><span style="color: #24292F">, {});</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">P</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Part 4!'</span><span style="color: #24292F">, {});</span></li></ol></pre>
 <p>You can fix this by removing any illegal characters and replacing spaces with underscores:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">P</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Part_4'</span><span style="color: #24292F">, {});</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">P</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Part_4'</span><span style="color: #24292F">, {});</span></li></ol></pre>
 <h2 id="re0018">RE0018</h2>
 <p>
   This error indicates that an invalid expression is used on the left hand side of an
@@ -275,12 +276,12 @@
   For example, the code below erroneously puts an arithmetic expression on the left hand
   side of an assignment:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> (</span><span style="color: #0550AE">f</span><span style="color: #24292F"> + 1) </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">10</span><span style="color: #24292F">;</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> (</span><span style="color: #0550AE">f</span><span style="color: #24292F"> + 1) </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">10</span><span style="color: #24292F">;</span></li></ol></pre>
 <p>
   You can fix this by moving all the arithmetic to the right hand side, leaving only the variable
   on the left:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">f</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">10</span><span style="color: #24292F"> </span><span style="color: #CF222E">-</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">f</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">10</span><span style="color: #24292F"> </span><span style="color: #CF222E">-</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li></ol></pre>
 <h2 id="re0019">RE0019</h2>
 <p>
   This error indicates that an object spread is occurring before the last position in a
@@ -291,9 +292,9 @@
   For example, the code below erroneously attempts to destructure one element <code>y</code>
   and the remaining elements into <code>x</code>:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> {</span><span style="color: #CF222E">...</span><span style="color: #0550AE">x</span><span style="color: #24292F">, </span><span style="color: #0550AE">y</span><span style="color: #24292F">} </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {x: </span><span style="color: #0550AE">1</span><span style="color: #24292F">, y: </span><span style="color: #0550AE">2</span><span style="color: #24292F">, z: </span><span style="color: #0550AE">3</span><span style="color: #24292F">};</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> {</span><span style="color: #CF222E">...</span><span style="color: #0550AE">x</span><span style="color: #24292F">, </span><span style="color: #0550AE">y</span><span style="color: #24292F">} </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {x: </span><span style="color: #0550AE">1</span><span style="color: #24292F">, y: </span><span style="color: #0550AE">2</span><span style="color: #24292F">, z: </span><span style="color: #0550AE">3</span><span style="color: #24292F">};</span></li></ol></pre>
 <p>You can fix this by moving <code>...x</code> to the last position:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> {</span><span style="color: #0550AE">y</span><span style="color: #24292F">, </span><span style="color: #CF222E">...</span><span style="color: #0550AE">x</span><span style="color: #24292F">} </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {x: </span><span style="color: #0550AE">1</span><span style="color: #24292F">, y: </span><span style="color: #0550AE">2</span><span style="color: #24292F">, z: </span><span style="color: #0550AE">3</span><span style="color: #24292F">};</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> {</span><span style="color: #0550AE">y</span><span style="color: #24292F">, </span><span style="color: #CF222E">...</span><span style="color: #0550AE">x</span><span style="color: #24292F">} </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {x: </span><span style="color: #0550AE">1</span><span style="color: #24292F">, y: </span><span style="color: #0550AE">2</span><span style="color: #24292F">, z: </span><span style="color: #0550AE">3</span><span style="color: #24292F">};</span></li></ol></pre>
 <h2 id="re0020">RE0020</h2>
 <p>
   This error indicates that an array spread is occurring before the last position in a
@@ -304,9 +305,9 @@
   For example, the code below erroneously attempts to destructure one element <code>y</code>
   and the remaining elements into <code>x</code>:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> [</span><span style="color: #CF222E">...</span><span style="color: #0550AE">x</span><span style="color: #24292F">, </span><span style="color: #0550AE">y</span><span style="color: #24292F">] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [</span><span style="color: #0550AE">1</span><span style="color: #24292F">, </span><span style="color: #0550AE">2</span><span style="color: #24292F">, </span><span style="color: #0550AE">3</span><span style="color: #24292F">];</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> [</span><span style="color: #CF222E">...</span><span style="color: #0550AE">x</span><span style="color: #24292F">, </span><span style="color: #0550AE">y</span><span style="color: #24292F">] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [</span><span style="color: #0550AE">1</span><span style="color: #24292F">, </span><span style="color: #0550AE">2</span><span style="color: #24292F">, </span><span style="color: #0550AE">3</span><span style="color: #24292F">];</span></li></ol></pre>
 <p>You can fix this by moving <code>...x</code> to the last position:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> [</span><span style="color: #0550AE">y</span><span style="color: #24292F">, </span><span style="color: #CF222E">...</span><span style="color: #0550AE">x</span><span style="color: #24292F">] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [</span><span style="color: #0550AE">1</span><span style="color: #24292F">, </span><span style="color: #0550AE">2</span><span style="color: #24292F">, </span><span style="color: #0550AE">3</span><span style="color: #24292F">];</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> [</span><span style="color: #0550AE">y</span><span style="color: #24292F">, </span><span style="color: #CF222E">...</span><span style="color: #0550AE">x</span><span style="color: #24292F">] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [</span><span style="color: #0550AE">1</span><span style="color: #24292F">, </span><span style="color: #0550AE">2</span><span style="color: #24292F">, </span><span style="color: #0550AE">3</span><span style="color: #24292F">];</span></li></ol></pre>
 <h2 id="re0021">RE0021</h2>
 <p>
   This error indicates that the compiler expected to receive a closure, but
@@ -331,11 +332,11 @@
   For example, the code below erroneously attempts to bind <code>x</code> and <code>y</code>
   within one <code>const</code> assignment:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">, </span><span style="color: #0550AE">y</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">2</span><span style="color: #24292F">;</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">, </span><span style="color: #0550AE">y</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">2</span><span style="color: #24292F">;</span></li></ol></pre>
 <p>You can fix this by breaking apart the declarations into two <code>const</code> statements:</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">y</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">2</span><span style="color: #24292F">;</span></li></ol></pre>
 <h2 id="re0023">RE0023</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>This error indicates that there was an invalid declaration.</p>
 <h2 id="re0024">RE0024</h2>
 <p>
@@ -346,9 +347,9 @@
   For example, the code below erroneously tries to unpack an <code>array</code> of 3 values into
   2 variables:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> [ </span><span style="color: #0550AE">x</span><span style="color: #24292F">, </span><span style="color: #0550AE">y</span><span style="color: #24292F"> ] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [ </span><span style="color: #0550AE">1</span><span style="color: #24292F">, </span><span style="color: #0550AE">2</span><span style="color: #24292F">, </span><span style="color: #0550AE">3</span><span style="color: #24292F"> ];</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> [ </span><span style="color: #0550AE">x</span><span style="color: #24292F">, </span><span style="color: #0550AE">y</span><span style="color: #24292F"> ] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [ </span><span style="color: #0550AE">1</span><span style="color: #24292F">, </span><span style="color: #0550AE">2</span><span style="color: #24292F">, </span><span style="color: #0550AE">3</span><span style="color: #24292F"> ];</span></li></ol></pre>
 <p>You can fix this by either binding or ignoring, via <code>_</code>, the last element of the <code>array</code>:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> [ </span><span style="color: #0550AE">x</span><span style="color: #24292F">, </span><span style="color: #0550AE">y</span><span style="color: #24292F">, </span><span style="color: #0550AE">_</span><span style="color: #24292F"> ] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [ </span><span style="color: #0550AE">1</span><span style="color: #24292F">, </span><span style="color: #0550AE">2</span><span style="color: #24292F">, </span><span style="color: #0550AE">3</span><span style="color: #24292F"> ];</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> [ </span><span style="color: #0550AE">x</span><span style="color: #24292F">, </span><span style="color: #0550AE">y</span><span style="color: #24292F">, </span><span style="color: #0550AE">_</span><span style="color: #24292F"> ] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [ </span><span style="color: #0550AE">1</span><span style="color: #24292F">, </span><span style="color: #0550AE">2</span><span style="color: #24292F">, </span><span style="color: #0550AE">3</span><span style="color: #24292F"> ];</span></li></ol></pre>
 <h2 id="re0025">RE0025</h2>
 <p>
   This error indicates that there is an attempt to access a field of an <code>object</code>
@@ -410,7 +411,7 @@
 <p>
   This error indicates that you are attempting to use a specific statement or expression in the wrong
   mode. Consult the documentation for the specific keyword to learn more about what mode is
-  expected. Additionally, see the figure on ${seclink("ref-programs")} for a diagram regarding the modes
+  expected. Additionally, see the figure on @{seclink("ref-programs")} for a diagram regarding the modes
   of a Reach application.
 </p>
 <h2 id="re0032">RE0032</h2>
@@ -463,9 +464,9 @@
   For example, the code erroneously tries to create an <code>array</code> the same
   size as <code>arr</code>, but filled with <code>1</code>:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">a</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> arr.</span><span style="color: #8250DF">map</span><span style="color: #24292F">(</span><span style="color: #0550AE">1</span><span style="color: #24292F">);</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">a</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> arr.</span><span style="color: #8250DF">map</span><span style="color: #24292F">(</span><span style="color: #0550AE">1</span><span style="color: #24292F">);</span></li></ol></pre>
 <p>You can fix this code by providing a function to <code>Array.map</code>:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">a</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> arr.</span><span style="color: #8250DF">map</span><span style="color: #24292F">((</span><span style="color: #953800">_</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">);</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">a</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> arr.</span><span style="color: #8250DF">map</span><span style="color: #24292F">((</span><span style="color: #953800">_</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">);</span></li></ol></pre>
 <h2 id="re0037">RE0037</h2>
 <p>
   This error indicates that a value, which is not an <code>Object</code>, is being
@@ -538,13 +539,13 @@
   The acceptable <code>import</code> formats are defined in the documentation for the keyword.
 </p>
 <p>For example, the code below erroneously performs a default <code>import</code>:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> blah </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'sample_lib.rsh'</span><span style="color: #24292F">;</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> blah </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'sample_lib.rsh'</span><span style="color: #24292F">;</span></li></ol></pre>
 <p>You can fix this code by explicitly importing the bindings you want:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> {a,b,c} </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'sample_lib.rsh'</span><span style="color: #24292F">;</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> {a,b,c} </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'sample_lib.rsh'</span><span style="color: #24292F">;</span></li></ol></pre>
 <p>or by binding all the exports to an identifier:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> </span><span style="color: #0550AE">*</span><span style="color: #24292F"> </span><span style="color: #CF222E">as</span><span style="color: #24292F"> lib </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'sample_lib.rsh'</span><span style="color: #24292F">;</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> </span><span style="color: #0550AE">*</span><span style="color: #24292F"> </span><span style="color: #CF222E">as</span><span style="color: #24292F"> lib </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'sample_lib.rsh'</span><span style="color: #24292F">;</span></li></ol></pre>
 <h2 id="re0047">RE0047</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>
   This error indicates that there was a <code>return</code> statement
   at the top level.
@@ -559,7 +560,7 @@
   For example, the code below erroneously exports an application
   without specifying what version of Reach it uses:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">main</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Reach.</span><span style="color: #8250DF">App</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {});</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">main</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Reach.</span><span style="color: #8250DF">App</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {});</span></li></ol></pre>
 <p>Fix this by adding a header to the file:</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0A3069">"reach 0.1"</span><span style="color: #24292F">;</span></li><li value="2"></li><li value="3"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">main</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Reach.</span><span style="color: #8250DF">App</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {});</span></li></ol></pre>
 <h2 id="re0049">RE0049</h2>
@@ -571,7 +572,7 @@
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.x);</span></li><li value="3"><span style="color: #24292F">});</span></li><li value="4"><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(x);</span></li><li value="5"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">o</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {</span></li><li value="6"><span style="color: #24292F">  [x]: </span><span style="color: #0550AE">4</span><span style="color: #24292F">,</span></li><li value="7"><span style="color: #24292F">};</span></li></ol></pre>
 <p>You can fix this by using a static string as the key.</p>
 <h2 id="re0050">RE0050</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>
   This error indicates an <code>Object</code> has an incorrect number of values
   associated with a field.
@@ -625,32 +626,32 @@
   and you can fix this issue by deleting them.
 </p>
 <h2 id="re0058">RE0058</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>
   This error indicates that you tried to use the <code>publish</code> keyword twice
   in a publication.
 </p>
 <h2 id="re0059">RE0059</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>
   This error indicates that there is a function at the top level without a name.
   You can fix this by naming your function.
 </p>
 <h2 id="re0060">RE0060</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>
   This error indicates that there is an illegal <code>while</code> loop <code>invariant</code>.
   You can fix this issue by providing only one expression to <code>invariant</code>.
 </p>
 <h2 id="re0061">RE0061</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>
   This error indicates that <code>Participant.only</code> was not supplied a single thunk
   as its argument.
 </p>
 <p>You can fix this by providing the expected value to the function.</p>
 <h2 id="re0062">RE0062</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>
   This error indicates that <code>each</code> was not given a <code>Tuple</code> of <code>Participant</code>s
   as its first argument.
@@ -725,9 +726,9 @@
   of the wrong format. public identifiers cannot be prefixed with <code>_</code>.
 </p>
 <p>For example, the code below erroneously assigns a public value to a secret identifier, <code>_x</code>:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">_x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">_x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li></ol></pre>
 <p>You can fix this by removing the <code>_</code> prefix:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li></ol></pre>
 <h2 id="re0069">RE0069</h2>
 <p>
   This error indicates that you are attempting to read the value of <code>_</code>. Any binding to <code>_</code> is
@@ -786,12 +787,12 @@
   not match the expected <code>Type</code>.
 </p>
 <p>For example, the code below erroneously provides a number as the second argument to <code>assert</code>:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">assert</span><span style="color: #24292F">(</span><span style="color: #0550AE">2</span><span style="color: #24292F"> </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0550AE">2</span><span style="color: #24292F">, </span><span style="color: #0550AE">5</span><span style="color: #24292F">);</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">assert</span><span style="color: #24292F">(</span><span style="color: #0550AE">2</span><span style="color: #24292F"> </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0550AE">2</span><span style="color: #24292F">, </span><span style="color: #0550AE">5</span><span style="color: #24292F">);</span></li></ol></pre>
 <p>
   However, the second argument of <code>assert</code> is expected to be of type <code>Bytes</code>.
   You can fix this issue by providing a value of the correct type:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">assert</span><span style="color: #24292F">(</span><span style="color: #0550AE">2</span><span style="color: #24292F"> </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0550AE">2</span><span style="color: #24292F">, </span><span style="color: #0A3069">"5th assertion"</span><span style="color: #24292F">)</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">assert</span><span style="color: #24292F">(</span><span style="color: #0550AE">2</span><span style="color: #24292F"> </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0550AE">2</span><span style="color: #24292F">, </span><span style="color: #0A3069">"5th assertion"</span><span style="color: #24292F">)</span></li></ol></pre>
 <h2 id="re0077">RE0077</h2>
 <p>
   This error indicates that the depth of recursion for a function call exceeded the limit allowed.
@@ -811,7 +812,7 @@
 <p>You can fix this code by wrapping the <code>exit</code> in a conditional:</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #8250DF">f</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { </span><span style="color: #8250DF">exit</span><span style="color: #24292F">(); };</span></li><li value="2"><span style="color: #CF222E">if</span><span style="color: #24292F"> (</span><span style="color: #6E7781">/* ... */</span><span style="color: #24292F">) {</span></li><li value="3"><span style="color: #24292F">  </span><span style="color: #8250DF">f</span><span style="color: #24292F">();</span></li><li value="4"><span style="color: #24292F">}</span></li><li value="5"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li><li value="6"><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
 <h2 id="re0079">RE0079</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>
   This error indicates that a statement is being used in place of an expression.
   Refer to the documentation for the statement you are attempting to use for more
@@ -897,9 +898,9 @@
   may be caused by a <code>Fun</code> in a participant interact interface having a return
   type of another <code>Fun</code>.
 </p>
-<p>For examples of this error and how to fix it, see ${seclink("RE0012")}.</p>
+<p>For examples of this error and how to fix it, see @{seclink("RE0012")}.</p>
 <h2 id="re0087">RE0087</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>
   This error indicates that you are attempting to apply a non-function value as if it were a function. This
   issue is most likely caused by a typo with an identifier.
@@ -946,7 +947,7 @@
   not possible. <code>Foldable</code> is an interface that <code>Array</code> and <code>Map</code> implement.
 </p>
 <p>For example, the code below erroneously tries to create a <code>Foldable</code> value:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">container</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Foldable</span><span style="color: #24292F">();</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">container</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Foldable</span><span style="color: #24292F">();</span></li></ol></pre>
 <p>You can fix this code by instead creating a <code>Map</code> or an <code>Array</code>.</p>
 <h2 id="re0092">RE0092</h2>
 <p>
@@ -987,18 +988,18 @@
   <code>Struct</code> keys must satisfy the regex: <code>[_a-zA-Z][_a-zA-Z0-9]*</code>.
 </p>
 <p>For example, the code below provides an erroneous key value:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">s</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Struct</span><span style="color: #24292F">([[</span><span style="color: #0A3069">"$x "</span><span style="color: #24292F">, UInt]]);</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">s</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Struct</span><span style="color: #24292F">([[</span><span style="color: #0A3069">"$x "</span><span style="color: #24292F">, UInt]]);</span></li></ol></pre>
 <p>You can fix this by removing any illegal characters:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">s</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Struct</span><span style="color: #24292F">([[</span><span style="color: #0A3069">"x"</span><span style="color: #24292F">, UInt]]);</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">s</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Struct</span><span style="color: #24292F">([[</span><span style="color: #0A3069">"x"</span><span style="color: #24292F">, UInt]]);</span></li></ol></pre>
 <h2 id="re0097">RE0097</h2>
 <p>
   This error indicates that a key in a <code>Struct</code> has been used more than once.
   Every key must be unique in a <code>Struct</code>.
 </p>
 <p>For example, the code below erroneously uses the same key twice:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">s</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Struct</span><span style="color: #24292F">([[</span><span style="color: #0A3069">"x"</span><span style="color: #24292F">, UInt], [</span><span style="color: #0A3069">"y"</span><span style="color: #24292F">, UInt], [</span><span style="color: #0A3069">"x"</span><span style="color: #24292F">, UInt]]);</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">s</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Struct</span><span style="color: #24292F">([[</span><span style="color: #0A3069">"x"</span><span style="color: #24292F">, UInt], [</span><span style="color: #0A3069">"y"</span><span style="color: #24292F">, UInt], [</span><span style="color: #0A3069">"x"</span><span style="color: #24292F">, UInt]]);</span></li></ol></pre>
 <p>You can fix this by renaming one of the <code>"x"</code> fields:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">s</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Struct</span><span style="color: #24292F">([[</span><span style="color: #0A3069">"x"</span><span style="color: #24292F">, UInt], [</span><span style="color: #0A3069">"y"</span><span style="color: #24292F">, UInt], [</span><span style="color: #0A3069">"x2"</span><span style="color: #24292F">, UInt]]);</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">s</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Struct</span><span style="color: #24292F">([[</span><span style="color: #0A3069">"x"</span><span style="color: #24292F">, UInt], [</span><span style="color: #0A3069">"y"</span><span style="color: #24292F">, UInt], [</span><span style="color: #0A3069">"x2"</span><span style="color: #24292F">, UInt]]);</span></li></ol></pre>
 <h2 id="re0098">RE0098</h2>
 <p>
   This error indicates that you are attempting to export a name that the
@@ -1009,7 +1010,7 @@
   Reach exports a few names from the backend automatically, such as <code>getExports</code>.
   Therefore, you cannot export a <code>Participant</code> named <code>getExports</code> as such:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">P</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'getExports'</span><span style="color: #24292F">, {});</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">P</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'getExports'</span><span style="color: #24292F">, {});</span></li></ol></pre>
 <p>You can fix this error by choosing a different name.</p>
 <h2 id="re0099">RE0099</h2>
 <p>
@@ -1093,7 +1094,7 @@
 </p>
 <p>You can fix this error by renaming the duplicate <code>View</code>s, ensuring that every name is unique.</p>
 <h2 id="re0107">RE0107</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>
   This error indicates that the value of a <code>View</code> cannot be exposed. This would
   only occur if the value cannot be represented at runtime.
@@ -1156,11 +1157,11 @@
   a <code>Type</code>. This code can be fixed by providing an argument to <code>Bytes</code> that represents the length:
 </p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">Person</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">Object</span><span style="color: #24292F">({</span></li><li value="2"><span style="color: #24292F">  name: </span><span style="color: #8250DF">Bytes</span><span style="color: #24292F">(</span><span style="color: #0550AE">32</span><span style="color: #24292F">)</span></li><li value="3"><span style="color: #24292F">});</span></li></ol></pre>
-<p>For more information about data types, visit ${seclink("ref-programs-types")}.</p>
+<p>For more information about data types, visit @{seclink("ref-programs-types")}.</p>
 <h2 id="re0115">RE0115</h2>
 <p>This error indicates that a time argument's type is not known at compile-time.</p>
 <p>For example, if <code>x</code> is not known at compile-time, then</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">wait</span><span style="color: #24292F">(x </span><span style="color: #CF222E">?</span><span style="color: #24292F"> </span><span style="color: #8250DF">relativeTime</span><span style="color: #24292F">(</span><span style="color: #0550AE">10</span><span style="color: #24292F">) </span><span style="color: #CF222E">:</span><span style="color: #24292F"> </span><span style="color: #8250DF">relativeSecs</span><span style="color: #24292F">(</span><span style="color: #0550AE">10</span><span style="color: #24292F">));</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">wait</span><span style="color: #24292F">(x </span><span style="color: #CF222E">?</span><span style="color: #24292F"> </span><span style="color: #8250DF">relativeTime</span><span style="color: #24292F">(</span><span style="color: #0550AE">10</span><span style="color: #24292F">) </span><span style="color: #CF222E">:</span><span style="color: #24292F"> </span><span style="color: #8250DF">relativeSecs</span><span style="color: #24292F">(</span><span style="color: #0550AE">10</span><span style="color: #24292F">));</span></li></ol></pre>
 <p>results in this error.</p>
 <h2 id="re0116">RE0116</h2>
 <p>This error means that a <code>return</code> statement, typically inside of an <code>if</code> statement, does not occur in tail position.</p>
@@ -1205,10 +1206,10 @@
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">A</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">API</span><span style="color: #24292F">(</span><span style="color: #0A3069">'api'</span><span style="color: #24292F">, {</span></li><li value="2"><span style="color: #24292F">  tastiness: UInt,</span></li><li value="3"><span style="color: #24292F">});</span></li></ol></pre>
 <h2 id="re0122">RE0122</h2>
 <p>
-  This error indicates that the left-hand side of a ```js
+  This error indicates that the left-hand side of a ```reach
   call
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"> assignment is not a pair of the domain and a function to return a result to the function.</li><li value="2">For example:</li><li value="3"></li><li value="4">```js</li><li value="5">const x = call(Voter.vote);</li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"> assignment is not a pair of the domain and a function to return a result to the function.</li><li value="2">For example:</li><li value="3"></li><li value="4">```reach</li><li value="5">const x = call(Voter.vote);</li></ol></pre>
 <h2 id="re0123">RE0123</h2>
 <p>
   This error indicates that the name provided to a <code>Participant</code>, <code>ParticipantClass</code>, <code>API</code>, or <code>View</code> is already in use.
@@ -1314,11 +1315,11 @@
 <p>This error indicates that there is a <a href="https://en.wikipedia.org/wiki/Circular_dependency">circular dependency</a> in the <code>import</code>s of your application.</p>
 <p>You can fix this by refactoring your code to remove the cyclic imports.</p>
 <h2 id="rp0001">RP0001</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>This error indicates that you have specified a function without an argument list.</p>
 <p>You can fix this by adding an argument list.</p>
 <h2 id="rp0002">RP0002</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>
   This error indicates that an identifier was expected during parsing, but an expression
   was received.
@@ -1329,9 +1330,9 @@
   destructuring assignment, but an object method was received.
 </p>
 <p>For example, the code below creates a method within a destructuring assignment:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> {</span><span style="color: #0550AE">x</span><span style="color: #24292F">() { </span><span style="color: #0550AE">return</span><span style="color: #24292F"> 1 }} </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {x: </span><span style="color: #0550AE">2</span><span style="color: #24292F">};</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> {</span><span style="color: #0550AE">x</span><span style="color: #24292F">() { </span><span style="color: #0550AE">return</span><span style="color: #24292F"> 1 }} </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {x: </span><span style="color: #0550AE">2</span><span style="color: #24292F">};</span></li></ol></pre>
 <p>You can fix this code by simply specifying <code>x</code> in the assignment:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> { </span><span style="color: #0550AE">x</span><span style="color: #24292F"> } </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {x: </span><span style="color: #0550AE">2</span><span style="color: #24292F">};</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> { </span><span style="color: #0550AE">x</span><span style="color: #24292F"> } </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {x: </span><span style="color: #0550AE">2</span><span style="color: #24292F">};</span></li></ol></pre>
 <h2 id="rp0004">RP0004</h2>
 <p>
   This error indicates that an unsupported binary operator was encountered.
@@ -1343,7 +1344,7 @@
   on the logic of your program.
 </p>
 <h2 id="rp0005">RP0005</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>
   This error indicates that an unsupported literal was encountered.
   Reach is a subset of JavaScript and does not support all of the literals that
@@ -1382,7 +1383,7 @@
 </p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0A3069">"reach 0.1"</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #CF222E">import</span><span style="color: #24292F"> </span><span style="color: #0A3069">"./a.rsh"</span><span style="color: #24292F">;</span></li></ol></pre>
 <h2 id="rp0009">RP0009</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>This error indicates that the Reach file could not be parsed as a module.</p>
 <h2 id="rp0010">RP0010</h2>
 <p>
@@ -1393,11 +1394,11 @@
   For example, the code below erroneously passes <code>_x</code>, a secret value of
   <code>Bob</code>, to <code>unknowable</code>:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">unknowable</span><span style="color: #24292F">(</span><span style="color: #0550AE">A</span><span style="color: #24292F">, _x);</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">unknowable</span><span style="color: #24292F">(</span><span style="color: #0550AE">A</span><span style="color: #24292F">, _x);</span></li></ol></pre>
 <p>You can fix this by providing a call-like expression to the function:</p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">unknowable</span><span style="color: #24292F">(</span><span style="color: #0550AE">A</span><span style="color: #24292F">, </span><span style="color: #8250DF">B</span><span style="color: #24292F">(_x));</span></li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">unknowable</span><span style="color: #24292F">(</span><span style="color: #0550AE">A</span><span style="color: #24292F">, </span><span style="color: #8250DF">B</span><span style="color: #24292F">(_x));</span></li></ol></pre>
 <h2 id="rp0011">RP0011</h2>
-<p>${errver("v0.1")}</p>
+<p>@{errver("v0.1")}</p>
 <p>This error indicates that Reach expected to parse an identifier, but none was given.</p>
 <p>You can fix this error by adding an identifier name to the erroneous location.</p>
 <h2 id="rx0000">RX0000</h2>

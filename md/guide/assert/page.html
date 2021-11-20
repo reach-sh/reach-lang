@@ -1,0 +1,22 @@
+<p>Reach's verification engine ensures that invariants about the state of a program assumed by programmers are held by all possible executions of the program.</p>
+<p>
+  At a high-level, the goal of a programmer getting started with verification is to write down <em>every single assumption they have</em> into the program in the form of <code>assert</code> statements.
+  For example, if a value, <code>x</code> is assumed to be smaller than 20, then the programmer should always include <code>assert(x &lt; 20);</code> in the program.
+  This is not to help the verification engine prove later properties, but is to give the verification engine assumptions that it can attempt to falsify so the programmer can learn if their assumptions are correct.
+</p>
+<p>
+  At a low-level, the programmer should see the verification engine as a tool to prevent test regressions by encoding tests directly into the program in the form of assertions.
+  For example, suppose that during development and testing, a programmer observes an erroneous state where the variable <code>y</code> is assigned to the value <code>41</code>, then the programmer should insert <code>assert(y != 41);</code> into the program.
+  The programmer should insert this check <em>before</em> they fix the problem in the code.
+  This will ensure that all future versions of the program will also be protected from these problems.
+</p>
+<p>
+  These high- and low-level perspectives on assertions apply to individual code fragments, like the body of an <code>only</code> statement, as well as entire functions.
+  For example, if a programmer expects a unary function over integers, <code>f</code>, to always return a number between <code>0</code> and <code>50</code>, then they should write <code>assert(f(forall(UInt)) &lt;= 50);</code> in their program.
+  Similarly, the unit tests for a function that a developer would normally write in a test suite, should instead be written as a series of assertions in the module that defines a function.
+</p>
+<p>
+  If you'd like to continue learning about verification, we recommend reading about <a href="https://duckduckgo.com/?q=property-based+testing">"property-based testing"</a>.
+  Although most resources on the topic will refer to dynamic, random tools, like <a href="https://en.wikipedia.org/wiki/QuickCheck">QuickCheck</a>, the strategies used transfer automatically to a formally verified context, like Reach.
+</p>
+<p>If you'd like to continue reading about verification in Reach specifically, read <a href="##guide-loop-invs">the guide section on loop invariants</a>.</p>

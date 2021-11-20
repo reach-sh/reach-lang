@@ -3,8 +3,8 @@
   You could think of this as a variant of the <a href="##workshop-relay">relay account</a>, with a mandatory waiting period and two fallbacks on <a href="##guide-timeout">non-participation</a>.
 </p>
 <p>
-  ${workshopDeps("workshop-relay")}
-  XXX (workshop-init "workshop-trust-fund")
+  @{workshopDeps("workshop-relay")}
+  @{workshopInit("workshop-trust-fund")}
 </p>
 <h2 id="problem-analysis">Problem Analysis</h2>
 <p>For this workshop, we'll provide some constraints on your solution and problem analysis, since we'd like you to explore writing a Reach program with a specific design.</p>
@@ -46,12 +46,12 @@
   Let's compare notes again.
   Here's what we wrote in our program:
 </p>
-<p>${code("/examples/workshop-trust-fund/index.rsh", 1, 21)}</p>
+<p>@{code("/examples/workshop-trust-fund/index.rsh", 1, 21)}</p>
 <p>We've represented most values as <code>UInt</code> fields, and created a "common" interface that has a series of signals for the different phases of the application: one for when the account is <code>funded</code>, one for when the particular participant is <code>ready</code> to extract the funds, and finally one for when they have successfuly <code>recvd</code> (received) them.</p>
 <h2 id="communication-construction">Communication Construction</h2>
 <p>
   Now, we can write down the structure of communication and action in our application.
-  Try this on your own based on your experience with ${seclink("workshop-relay")}.
+  Try this on your own based on your experience with @{seclink("workshop-relay")}.
 </p>
 <p><strong>Write down the communication pattern for this program as comments.</strong></p>
 <p>Here's what we wrote:</p>
@@ -79,11 +79,9 @@
 <p><strong>Write down the communication pattern for this program as code.</strong></p>
 <p>The body of your application should look something like:</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6E7781">// 1. The Funder publishes the parameters of the fund and makes the initial deposit.</span></li><li value="2"><span style="color: #24292F">Funder.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(receiverAddr, payment, maturity, refund, dormant )</span></li><li value="3"><span style="color: #24292F">  .</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(payment);</span></li><li value="4"></li><li value="5"><span style="color: #6E7781">// 2. The consensus remembers who the Receiver is.</span></li><li value="6"><span style="color: #24292F">Receiver.</span><span style="color: #8250DF">set</span><span style="color: #24292F">(receiverAddr);</span></li><li value="7"><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="8"></li><li value="9"><span style="color: #6E7781">// 3. Everyone waits for the fund to mature.</span></li><li value="10"><span style="color: #8250DF">wait</span><span style="color: #24292F">(maturity);</span></li><li value="11"></li><li value="12"><span style="color: #6E7781">// 4. The Receiver may extract the funds with a deadline of `refund`.</span></li><li value="13"><span style="color: #24292F">Receiver.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">()</span></li><li value="14"><span style="color: #24292F">  .</span><span style="color: #8250DF">timeout</span><span style="color: #24292F">(refund,</span></li><li value="15"><span style="color: #24292F">    () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="16"><span style="color: #24292F">     </span><span style="color: #6E7781">// 5. The Funder may extract the funds with a deadline of `dormant`.</span></li><li value="17"><span style="color: #24292F">      Funder.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">()</span></li><li value="18"><span style="color: #24292F">        .</span><span style="color: #8250DF">timeout</span><span style="color: #24292F">(dormant,</span></li><li value="19"><span style="color: #24292F">          () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="20"><span style="color: #24292F">            </span><span style="color: #6E7781">// 6. The Bystander may extract the funds with no deadline.</span></li><li value="21"><span style="color: #24292F">            Bystander.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li><li value="22"><span style="color: #24292F">            </span><span style="color: #8250DF">transfer</span><span style="color: #24292F">(payment).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(Bystander);</span></li><li value="23"><span style="color: #24292F">            </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="24"><span style="color: #24292F">            </span><span style="color: #8250DF">exit</span><span style="color: #24292F">(); });</span></li><li value="25"><span style="color: #24292F">       </span><span style="color: #8250DF">transfer</span><span style="color: #24292F">(payment).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(Funder);</span></li><li value="26"><span style="color: #24292F">       </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="27"><span style="color: #24292F">       </span><span style="color: #8250DF">exit</span><span style="color: #24292F">(); });</span></li><li value="28"><span style="color: #8250DF">transfer</span><span style="color: #24292F">(payment).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(Receiver);</span></li><li value="29"><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="30"><span style="color: #8250DF">exit</span><span style="color: #24292F">();</span></li></ol></pre>
-<p>
-  ::: note
-  If you'd like to see how you might contain the repetition into a function, keep reading!
-  :::
-</p>
+<div class="note">
+  <p>If you'd like to see how you might contain the repetition into a function, keep reading!</p>
+</div>
 <h2 id="assertion-insertion">Assertion Insertion</h2>
 <p>
   As usual, we should consider what assertions we can add to our program, but this program doesn't have any interesting properties to prove, so we'll move on.
@@ -97,7 +95,7 @@
 </p>
 <p><strong>Insert <code>interact</code> calls to the frontend into the program.</strong></p>
 <p>Let's look at our whole program now:</p>
-<p>${code("/examples/workshop-trust-fund/index.rsh")}</p>
+<p>@{code("/examples/workshop-trust-fund/index.rsh")}</p>
 <ul>
   <li>Lines 33 and 34 use <code>each</code> to run the same code block <code>only</code> in each of the given participants.</li>
   <li>Lines 51 through 59 abstract the duplicate copied repeated structure of the program into three calls to the same function.</li>
@@ -120,7 +118,7 @@
 <p>We highly recommend that you try to implement a test setup like this yourself; when you're done, scroll down to see our solution.</p>
 <p><strong>Decide how you will deploy and use this application.</strong></p>
 <p>Here's the JavaScript frontend we wrote:</p>
-<p>${code("/examples/workshop-trust-fund/index.mjs")}</p>
+<p>@{code("/examples/workshop-trust-fund/index.mjs")}</p>
 <p>The most interesting part of this program is on lines 20 through 23 when we optionally cause a delay in the participant after they receive the signal that the account is funded.</p>
 <p>Let's see what it looks like when we run this program:</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1">$ ../reach run</li><li value="2">Begin demo with funder delay(0) and receiver delay(0).</li><li value="3">Receiver sees that the account is funded.</li><li value="4">Bystander sees that the account is funded.</li><li value="5">Funder sees that the account is funded.</li><li value="6">Receiver is ready to receive the funds.</li><li value="7">Receiver received the funds.</li><li value="8">Funder has a balance of 89.99926093</li><li value="9">Receiver has a balance of 109.999956574</li><li value="10">Bystander has a balance of 100.0</li><li value="11"></li><li value="12">Begin demo with funder delay(0) and receiver delay(21).</li><li value="13">Receiver sees that the account is funded.</li><li value="14">Receiver begins to wait...</li><li value="15">Bystander sees that the account is funded.</li><li value="16">Funder sees that the account is funded.</li><li value="17">Funder is ready to receive the funds.</li><li value="18">Receiver is ready to receive the funds.</li><li value="19">Funder received the funds.</li><li value="20">Funder has a balance of 99.999217452</li><li value="21">Receiver has a balance of 99.99995488</li><li value="22">Bystander has a balance of 100.0</li><li value="23"></li><li value="24">Begin demo with funder delay(31) and receiver delay(21).</li><li value="25">Receiver sees that the account is funded.</li><li value="26">Receiver begins to wait...</li><li value="27">Bystander sees that the account is funded.</li><li value="28">Funder sees that the account is funded.</li><li value="29">Funder begins to wait...</li><li value="30">Receiver is ready to receive the funds.</li><li value="31">Bystander is ready to receive the funds.</li><li value="32">Funder is ready to receive the funds.</li><li value="33">Bystander received the funds.</li><li value="34">Funder has a balance of 89.99921581</li><li value="35">Receiver has a balance of 100.0</li><li value="36">Bystander has a balance of 109.999956956</li></ol></pre>
@@ -130,7 +128,7 @@
   You could use this application today and start putting your child's college funds away for safe keeping!
   Although, perhaps you should wait until you read the workshop about interest-bearing accounts like this.
 </p>
-<p>If you found this workshop rewarding, please let us know on <a href="$%7Bdiscord%7D">the Discord community</a>!</p>
+<p>If you found this workshop rewarding, please let us know on <a href="@%7BDISCORD%7D">the Discord community</a>!</p>
 <p>
   If you'd like to make this application a little more interesting, maybe you'd like to have a secret password just like <a href="##workshop-hash-lock">the hash lock</a> as well, so the Funder can separate the revealing of information to Receiver.
   Similarly, you could make it like <a href="##workshop-relay">a relay account</a> and have the Receiver generated by the Funder and allow the Receiver to specify a third-party (fourth-party) to receive the actual funds.

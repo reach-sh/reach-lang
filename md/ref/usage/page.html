@@ -1,0 +1,287 @@
+<p>Reach has a few sub-commands, each with their own options.</p>
+<p>However, all commands support the following options:</p>
+<ul>
+  <li>The environment variable <code>REACH_VERSION</code> signifies what version of Reach to use.</li>
+</ul>
+<p>Although normally expressed in a <a href="##guide-versions">semantic versioning</a>-friendly format, e.g. <code>v0.1</code> or <code>v0.1.6</code>, <code>REACH_VERSION</code> also supports:</p>
+<ul>
+  <li>Hashes such as <a href="https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore">639fa565</a>.</li>
+</ul>
+<p>Valid hashes may be obtained by running:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">$ reach hashes</li><li value="2">reach: 8150e7e4</li><li value="3">reach-cli: 8150e7e4</li><li value="4">react-runner: fb449c94</li><li value="5">rpc-server: fb449c94</li><li value="6">runner: fb449c94</li><li value="7">devnet-algo: fb449c94</li><li value="8">devnet-cfx fb449c94</li><li value="9">devnet-eth: fb449c94</li></ol></pre>
+<ul>
+  <li>Date-stamps such as <a href="https://hub.docker.com/layers/reachsh/reach/2021-11-04/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore">2021-11-04</a>.</li>
+</ul>
+<p>Valid date-stamps may be obtained by browsing Reach's public Docker image registry on <a href="https://hub.docker.com/r/reachsh/reach/tags">DockerHub</a>.</p>
+<p>Tip: try entering your desired year in the filter box to skip other tag types.</p>
+<ul>
+  <li>The identifer "<code>stable</code>".</li>
+</ul>
+<p>Reach will interpret this to mean the most recent stable <a href="##guide-versions">major</a> version.</p>
+<p>
+  When using the semantic versioning form of <code>REACH_VERSION</code> the preceding <code>v</code> character is optional.
+  In other words, <code>v0.1.6</code> is equivalent to <code>0.1.6</code>.
+</p>
+<h2 id="ref-usage-compile-reach-compile">{#ref-usage-compile} <code>reach compile</code></h2>
+<p>You compile your Reach code by executing</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach compile SOURCE EXPORT ...</li></ol></pre>
+<p>
+  where <code>SOURCE</code> is your source file,
+  and each <code>EXPORT</code> is an exported Reach.App.
+</p>
+<p>If no <code>SOURCE</code> is provided, then <code>index.rsh</code> is used.</p>
+<p>
+  If no <code>EXPORT</code> is provided, then all the exported Reach.Apps will be compiled. If there are no
+  Reach.Apps exported, then the program will be compiled as a library, where its exports are available
+  to other Reach programs and frontends. The output name of a library is the same as if it exported a Reach.App
+  named <code>default</code>.
+</p>
+<p><code>reach compile</code> supports the following options:</p>
+<ul>
+  <li><code>-o</code>/<code>--output</code> <code>OUTPUT</code> --- Writes compiler output files to <code>OUTPUT</code>, which defaults to a directory named <code>build</code> in the same directory as <code>SOURCE</code>.</li>
+  <li><code>--intermediate-files</code> --- Write intermediate files, which may be interesting for debugging compilation failures or using in other contexts.</li>
+  <li><code>--install-pkgs</code> --- Allows Reach to fetch remote package imports and stop after doing so.</li>
+</ul>
+<p>Reach will fail with an error message if package imports have not yet been fetched and this flag is not activated.</p>
+<p>
+  Using this flag will create a <code>.reach</code> directory for your project.
+  This directory stores your project's ["XXX","defn","lockfile"], which is how Reach pins remote packages to specific versions.
+  It is recommended that you commit the <code>.reach</code> directory to source control.
+  Deleting this directory is also safe; it can easily be rebuilt by using the <code>--install-pkgs</code> flag again; in fact, this is the best way to upgrade your packages.
+</p>
+<ul>
+  <li>
+    <code>--stop-after-eval</code> --- Stops the compilation process before verification and producing output files.
+    This might be useful for performing syntax and type checking quickly.
+  </li>
+  <li>
+    <code>--verify-timeout</code> <code>TIMEOUT-MS</code> --- Sets the timeout of individual verification theorems, in milliseconds.
+    The default value is 2 minutes.
+  </li>
+  <li>
+    The environment variable <code>REACH_DEBUG</code>, if set to any non-empty value, enables debug messages from the Reach compiler, which will appear in the console.
+    This debug information includes: the estimated cost of the contract on Algorand.
+  </li>
+</ul>
+<h2 id="ref-usage-init-reach-init">{#ref-usage-init} <code>reach init</code></h2>
+<p>You can create template <code>index.rsh</code> and <code>index.mjs</code> files for a simple Reach app by running</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach init</li></ol></pre>
+<h2 id="ref-usage-run-reach-run">{#ref-usage-run} <code>reach run</code></h2>
+<p>You can run a simple Reach application by executing</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach run [APP or DIR] [ARGS]</li></ol></pre>
+<p><code>APP</code> represents a Reach module name without its extension (e.g. "index" by default).</p>
+<p>If no <code>APP</code> or <code>DIR</code> is provided then <code>index</code> in the current working directory is assumed.</p>
+<p>If <code>DIR</code> matches an existing, relative subdirectory of the current working directory then <code>DIR/index</code> is used.</p>
+<p><code>ARGS</code> represents zero or more arguments to be passed into <code>APP</code>'s frontend.</p>
+<p>This assumes</p>
+<ul>
+  <li>Your Reach program is named <code>APP.rsh</code>.</li>
+  <li>
+    You are using the JavaScript backend and your frontend is named <code>APP.mjs</code>.
+    It also assumes the backend is located at <code>DIR/build/APP.main.mjs</code>, and only depends on the Reach standard library.
+  </li>
+</ul>
+<p>It then</p>
+<ul>
+  <li>Compiles your program with Reach.</li>
+  <li>Builds a Docker image named <code>reachsh/reach-app-APP:latest</code> that depends on the Reach JavaScript standard library.</li>
+  <li>Executes a container based upon that image while connected to the network determined by <code>REACH_CONNECTOR_MODE</code>.</li>
+</ul>
+<p><code>reach run</code> supports the following options:</p>
+<ul>
+  <li>
+    <p>
+      The mandatory environment variable <code>REACH_CONNECTOR_MODE</code> specifies which context to run in.
+      The options are:
+    </p>
+  </li>
+  <li>
+    <p><code>ETH-live</code>, which uses a live Ethereum network node, specified by the environment variable <code>ETH_NODE_URI</code>.</p>
+  </li>
+  <li>
+    <p><code>ETH-browser</code>, which uses Ethereum via a browser extension, like MetaMask.</p>
+  </li>
+  <li>
+    <p><code>ETH-devnet</code>, which uses a Dockerized private Ethereum network.</p>
+  </li>
+  <li>
+    <p><code>ALGO-live</code>, which uses a live Algorand network node, specified by the environment variables documented in <a href="##ref-network-algo">the Algorand connector section</a>.</p>
+  </li>
+  <li>
+    <p><code>ALGO-browser</code>, which uses Algorand via an ARC-0011 browser wallet.</p>
+  </li>
+  <li>
+    <p><code>ALGO-devnet</code>, which uses a Dockerized private Algorand network.</p>
+  </li>
+  <li>
+    <p>The environment variable <code>REACH_DEBUG</code>, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the console.</p>
+  </li>
+</ul>
+<p>
+  <code>reach run</code> can be further specialized via the presence of a <code>Dockerfile</code> and <code>package.json</code> file.
+  If either are absent, <code>reach run</code> assumes a default behavior (which may be persisted with <code>reach scaffold</code>).
+</p>
+<p>The <code>Dockerfile</code> can be modified to introduce new dependencies, services, or filesystem prerequisites into your app's containerized environment, and the <code>package.json</code> file may likewise be extended to include additional libraries or make configuration changes to the resultant Node.js package.</p>
+<h2 id="ref-usage-down-reach-down">{#ref-usage-down} <code>reach down</code></h2>
+<p>You can halt all Dockerized Reach apps and devnets by running</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach down</li></ol></pre>
+<h2 id="ref-usage-scaffold-reach-scaffold">{#ref-usage-scaffold} <code>reach scaffold</code></h2>
+<p>You can create templated <code>Dockerfile</code> and <code>package.json</code> files for a simple Reach app by running</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach scaffold</li></ol></pre>
+<p>The files created are the same as those used temporarily by <code>reach run</code>.</p>
+<h2 id="ref-usage-react-reach-react">{#ref-usage-react} <code>reach react</code></h2>
+<p>You can run a simple React app by executing</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach react</li></ol></pre>
+<p>This assumes</p>
+<ul>
+  <li>Your Reach program is named <code>index.rsh</code></li>
+  <li>Your frontend React program is named <code>index.js</code></li>
+</ul>
+<p>It then</p>
+<ul>
+  <li>Compiles your program with Reach</li>
+  <li>Runs the appropriate devnet based on <code>REACH_CONNECTOR_MODE</code></li>
+  <li>Mounts the current directory into <code>/app/src/</code> in the <code>reachsh/react-runner</code> Docker image and runs it.</li>
+</ul>
+<p><code>reach react</code> supports the following options:</p>
+<ul>
+  <li>
+    <p>
+      The mandatory environment variable <code>REACH_CONNECTOR_MODE</code> specifies which context to run in.
+      The options are:
+    </p>
+  </li>
+  <li>
+    <p><code>ETH</code>, which runs a Dockerized private Ethereum network which may be used. The app can use any Ethereum network.</p>
+  </li>
+  <li>
+    <p><code>ALGO</code>, which runs a Dockerized private Algorand network which may be used. (Support for using any Algorand network is forthcoming with TEAL 3.)</p>
+  </li>
+  <li>
+    <p>The environment variable <code>REACH_DEBUG</code>, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the browser console.</p>
+  </li>
+</ul>
+<p>
+  When using <code>loadStdlib</code> in conjunction with <code>reach react</code>,
+  be sure to pass in <code>process.env</code> as its argument.
+  See <code>loadStdlib</code> for details.
+</p>
+<p>
+  <code>reach react</code> does not respect the same scaffolded files as <code>reach run</code>.
+  It is just a simplified tool to give you a taste of web programming with reach.
+  If you would like access to more customizations on a browser-based project,
+  such as custom environment variables,
+  custom JavaScript dependencies,
+  or using other JavaScript frameworks like Angular,
+  we recommend that you simply use <code>reach compile</code>,
+  and use your own preferred JavaScript setup for the project.
+  The compiled <code>build/index.main.mjs</code> JavaScript file
+  and the <code>'@reach-sh/stdlib'</code> JavaScript library
+  may be used in any JavaScript project like any other JavaScript file and library, respectively.
+</p>
+<h2 id="ref-usage-devnet-reach-devnet">{#ref-usage-devnet} <code>reach devnet</code></h2>
+<p>You can run a private Reach devnet by executing</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach devnet</li></ol></pre>
+<p><code>reach devnet</code> supports the following options:</p>
+<ul>
+  <li>
+    <p><code>--await-background</code> --- Run in background and await availability.</p>
+  </li>
+  <li>
+    <p>
+      The mandatory environment variable <code>REACH_CONNECTOR_MODE</code> specifies which devnet to run.
+      The options are:
+    </p>
+  </li>
+  <li>
+    <p><code>ETH</code>, which runs an Ethereum devnet on <code>localhost:8545</code></p>
+  </li>
+  <li>
+    <p><code>ALGO</code>, which runs an Algorand devnet on <code>localhost:4180</code> and an Algorand indexer on <code>localhost:8980</code></p>
+  </li>
+  <li>
+    <p>The environment variable <code>REACH_DEBUG</code> enables some additional debugging information for the Algorand devnet, which is accessible via <a href="http://localhost:9392">http://localhost:9392</a></p>
+  </li>
+</ul>
+<h2 id="ref-usage-rpc-server-reach-rpc-server">{#ref-usage-rpc-server} <code>reach rpc-server</code></h2>
+<p>The sub-command</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach rpc-server</li></ol></pre>
+<p>starts an instance of the <a href="##ref-backends-rpc">Reach RPC Server</a> using all of the same options and defaults as <code>reach run</code>.</p>
+<p><code>reach rpc-server</code> supports the following options:</p>
+<ul>
+  <li>
+    The environment variable <code>REACH_RPC_KEY</code> is used to determine the RPC server key.
+    If not defined, it defaults to <code>opensesame</code>, and a warning will
+    appear in the console stating that the development key is being used.
+  </li>
+</ul>
+<p>
+  In a production context this key must be kept secret, and it should be
+  randomly generated with a suitably strong method, such as:
+</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ head -c 24 /dev/urandom | base64</li></ol></pre>
+<ul>
+  <li>
+    The environment variable <code>REACH_RPC_PORT</code> is used to determine which port to bind to.
+    It defaults to <code>3000</code>.
+  </li>
+  <li>
+    The environment variable <code>REACH_RPC_TLS_KEY</code> is used to determine the path to the TLS <code>key</code> file, which must be in the <code>./tls</code> directory.
+    It defaults to <code>reach-server.key</code>.
+  </li>
+  <li>
+    The environment variable <code>REACH_RPC_TLS_CRT</code> is used to determine the path to the TLS <code>crt</code> file, which must be in the <code>./tls</code> directory.
+    It defaults to <code>reach-server.crt</code>.
+  </li>
+  <li>
+    The environment variable <code>REACH_RPC_TLS_PASSPHRASE</code> is used to determine the TLS passphrase.
+    It defaults to <code>rpc-demo</code>.
+  </li>
+</ul>
+<h2 id="ref-usage-rpc-run-reach-rpc-run">{#ref-usage-rpc-run} <code>reach rpc-run</code></h2>
+<p>The sub-command</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach rpc-run CMD</li></ol></pre>
+<p>
+  is a convenient means of launching a pre-configured RPC server and
+  frontend which are suitable for development purposes.
+  It uses a <code>REACH_RPC_KEY</code> value of <code>opensesame</code> (the standard
+  development API key), and sets <code>REACH_RPC_TLS_REJECT_UNVERIFIED</code> to
+  <code>0</code>.
+</p>
+<p>Consider this example from the ["XXX","seclink","tut-7-rpc"] tutorial:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach rpc-run python3 -u ./index.py</li></ol></pre>
+<h2 id="ref-usage-docker-reset-reach-docker-reset">{#ref-usage-docker-reset} <code>reach docker-reset</code></h2>
+<p>You can easily kill and remove all Docker containers by executing</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach docker-reset</li></ol></pre>
+<p>
+  This can be a useful thing to try if your Docker containers stop responding to requests or otherwise misbehave, or if you have updated your Reach images (with <code>reach update</code>) but those changes are not taking effect.
+  This command is a loose approximation of "turning Docker off and on again."
+  It will affect all Docker containers on your machine, not just those created by Reach.
+</p>
+<h2 id="ref-usage-upgrade-reach-upgrade">{#ref-usage-upgrade} <code>reach upgrade</code></h2>
+<p>You can upgrade your Reach installation by executing</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach upgrade</li></ol></pre>
+<p>This may change the default version used by <code>reach</code> commands.</p>
+<h2 id="ref-usage-update-reach-update">{#ref-usage-update} <code>reach update</code></h2>
+<p>You can update the Docker images used by your Reach installation by executing</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach update</li></ol></pre>
+<p>This may change the patch version used by <code>reach</code> commands.</p>
+<h2 id="ref-usage-version-reach-version">{#ref-usage-version} <code>reach version</code></h2>
+<p>You can see what version of Reach you have installed by running</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach version</li></ol></pre>
+<h2 id="ref-usage-hashes-reach-hashes">{#ref-usage-hashes} <code>reach hashes</code></h2>
+<p>You can see which exact versions of Reach Docker images you are using by running</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach hashes</li></ol></pre>
+<p>
+  This is more precise, but less readable, than <code>reach version</code>,
+  in that each hash refers to the git commit used to build the image.
+</p>
+<h2 id="ref-usage-config-reach-config">{#ref-usage-config} <code>reach config</code></h2>
+<p>Reach recommends tuning your default workflow settings by executing</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach config</li></ol></pre>
+<p>Using <code>reach config</code> is advisable when running Reach for the first time since it will set the <code>REACH_CONNECTOR_MODE</code> environment variable, which is required when executing some other sub-commands (e.g. <code>reach run</code>).</p>
+<p>
+  <code>reach config</code> presents users with a guided menu which automatically creates an <code>env</code> file and suggests subsequent steps to activate and make it permanent.
+  This <code>env</code> file exports environment variable settings and is intended to be <code>source</code>d by users' shells.
+</p>
+<p>If an <code>env</code> file already exists, <code>reach config</code> will offer to back it up before proceeding.</p>

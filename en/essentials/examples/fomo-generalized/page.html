@@ -9,8 +9,8 @@
   will receive 1/5 of the funds each, and the Funder will receive the remaining 2/5 of the funds.
 </p>
 <p>
-  ${workshopDeps("workshop-fomo")}
-  XXX (workshop-init "workshop-fomo-generalized")
+  @{workshopDeps("workshop-fomo")}
+  @{workshopInit("workshop-fomo-generalized")}
 </p>
 <h2 id="problem-analysis">Problem Analysis</h2>
 <p>
@@ -30,22 +30,22 @@
   The data type representation of this program will basically be the same as the
   regular Fear of Missing Out program. However, instead of tracking the latest Buyer as an
   <code>Address</code>, we will track the last <code>N</code> Buyers as an <code>Array(Address, N)</code>.
-  ::: note
-  Refer to ${seclink("ref-programs-types")}for a reminder of what data types are available in Reach.
-  :::
 </p>
+<div class="note">
+  <p>Refer to @{seclink("ref-programs-types")}for a reminder of what data types are available in Reach.</p>
+</div>
 <p>You should take the time now to fill out the interaction interface for the participants.</p>
 <p><strong>Write down the data definitions for this program as definitions.</strong></p>
 <p>Our participant interact interface, with the addition of some handy logging functions, looks like this so far:</p>
-<p>
-  ::: note
-  It is worth noting that Reach does not support arbitrarily sized arrays, so we
-  could not determine <code>NUM_OF_WINNERS</code> at runtime, e.g. from the interaction interface.
-  However, we can still write a program that is generic in the size of the array, then
-  specialize it when we compile.
-  :::
-</p>
-<p>${code("/examples/workshop-fomo-generalized/index.rsh", 5, 23)}</p>
+<div class="note">
+  <p>
+    It is worth noting that Reach does not support arbitrarily sized arrays, so we
+    could not determine <code>NUM_OF_WINNERS</code> at runtime, e.g. from the interaction interface.
+    However, we can still write a program that is generic in the size of the array, then
+    specialize it when we compile.
+  </p>
+</div>
+<p>@{code("/examples/workshop-fomo-generalized/index.rsh", 5, 23)}</p>
 <p>
   At this point, you can modify your JavaScript file (<code>index.mjs</code>) to contain definitions of these values, although you may want to use placeholders for the actual values.
   When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the participant interact interface.
@@ -97,7 +97,7 @@
 </p>
 <p><strong>Insert <code>interact</code> calls to the frontend into the program.</strong></p>
 <p>Let's look at our whole program now:</p>
-<p>${code("/examples/workshop-fomo-generalized/index.rsh")}</p>
+<p>@{code("/examples/workshop-fomo-generalized/index.rsh")}</p>
 <h2 id="deployment-decisions">Deployment Decisions</h2>
 <p>
   Next, it is time to test our program. As usual, we'll present a completely
@@ -110,7 +110,7 @@
 </p>
 <p><strong>Decide how you will deploy and use this application.</strong></p>
 <p>Here's the JavaScript frontend we wrote:</p>
-<p>${code("/examples/workshop-fomo-generalized/index.mjs")}</p>
+<p>@{code("/examples/workshop-fomo-generalized/index.mjs")}</p>
 <p>Let's see what it looks like when we run the program:</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1">$ ../reach run</li><li value="2">Buyer #6 bought a ticket.</li><li value="3">Buyer #3 bought a ticket.</li><li value="4">...</li><li value="5">Buyer #4 bought a ticket.</li><li value="6">Buyer #1 bought a ticket.</li><li value="7">Buyer #3 bought a ticket.</li><li value="8">Buyer #8 bought a ticket.</li><li value="9">Buyer #6 bought a ticket.</li><li value="10">Funder saw they lost</li><li value="11">Buyer #1 saw they lost</li><li value="12">Buyer #5 saw they lost</li><li value="13">Buyer #9 saw they lost</li><li value="14">Buyer #0 saw they lost</li><li value="15">Buyer #8 saw they won</li><li value="16">Buyer #7 saw they lost</li><li value="17">Buyer #2 saw they lost</li><li value="18">Buyer #6 saw they won</li><li value="19">Buyer #3 saw they won</li><li value="20">Buyer #4 saw they lost</li></ol></pre>
 <h2 id="discussion-and-next-steps">Discussion and Next Steps</h2>
@@ -126,4 +126,4 @@
     e.g. every time the ring buffer is filled.
   </li>
 </ul>
-<p>If you found this workshop rewarding, please let us know on <a href="$%7Bdiscord%7D">the Discord community</a>!</p>
+<p>If you found this workshop rewarding, please let us know on <a href="@%7BDISCORD%7D">the Discord community</a>!</p>

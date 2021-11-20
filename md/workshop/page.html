@@ -1,0 +1,245 @@
+<p>
+  The workshop is a collection of self-study projects to help you on your way to mastery building decentralized applications through practice by building specific projects in Reach.
+  It is designed to help direct you along the path of learning effective use of Reach and points out for you some of the design decisions that Reach programmers often make.
+</p>
+<p>
+  Unlike <a href="##tut">the tutorial</a>, it is not meant for you just to copy code and see what appears; instead, you're meant to work on your own to build a project yourself.
+  This way, you'll learn more and slowly be able to build your own project using Reach.
+</p>
+<p>At the end of every project, we'll always show a "final" version with commentary about why we implemented it the way that we did.</p>
+<div class="note">
+  <p>
+    We would love your feedback on any project, especially the parts that you struggled the most with.
+    This will help us improve the language, our developer tools, and the project materials.
+    The best way is through the <a href="https://github.com/reach-sh/reach-lang/issues">GitHub issue tracker</a> or by messaging <code>@team</code> in <a href="https://discord.gg/AZsgcXu">the Discord community</a>.
+  </p>
+</div>
+<p>
+  We highly recommend going through <a href="##overview">the overview</a> and <a href="##tut">the tutorial</a> before continuing through the workshop.
+  However, you can do most workshops in any order.
+  If there's a pre-requisite, it will be explicitly mentioned.
+</p>
+<p>Here are the current workshops, in the order we recommend doing them:</p>
+<ul>
+  <li>["XXX","seclink","workshop-hash-lock"]</li>
+  <li>["XXX","seclink","workshop-relay"]</li>
+  <li>["XXX","seclink","workshop-trust-fund"]</li>
+  <li>["XXX","seclink","workshop-fomo"]</li>
+  <li>["XXX","seclink","workshop-fomo-generalized"]</li>
+  <li>["XXX","seclink","workshop-rps-fair"]</li>
+  <li>["XXX","seclink","workshop-rps-eff"]</li>
+  <li>["XXX","seclink","workshop-rental"]</li>
+  <li>["XXX","seclink","workshop-abstract-simul"]</li>
+  <li>["XXX","seclink","workshop-guardian-account"]</li>
+  <li>["XXX","seclink","workshop-utility"]</li>
+  <li>["XXX","seclink","workshop-nim"]</li>
+  <li>["XXX","seclink","workshop-ttt"]</li>
+  <li>["XXX","seclink","workshop-secured-loan"]</li>
+  <li>["XXX","seclink","workshop-atomic-swap"]</li>
+  <li>["XXX","seclink","workshop-atomic-swap-auction"]</li>
+  <li>["XXX","seclink","workshop-race"]</li>
+  <li>["XXX","seclink","workshop-chicken-race"]</li>
+  <li>["XXX","seclink","workshop-popularity-contest"]</li>
+  <li>["XXX","seclink","workshop-nft-dumb"]</li>
+  <li>["XXX","seclink","workshop-nft-auction"]</li>
+  <li>["XXX","seclink","workshop-nft-tax"]</li>
+  <li>["XXX","seclink","workshop-raffle"]</li>
+  <li>["XXX","seclink","workshop-rent-seeking"]</li>
+  <li>["XXX","seclink","workshop-remote"]</li>
+  <li>["XXX","seclink","workshop-oracle"]</li>
+  <li>["XXX","seclink","workshop-auction-te"]</li>
+  <li>["XXX","seclink","workshop-crowdfund"]</li>
+</ul>
+<h2 id="workshop-rps-fair-workshop-fair-rock-paper-scissors">{#workshop-rps-fair} Workshop: Fair Rock-Paper-Scissors</h2>
+<p>["XXX","workshopDeps","tut"]</p>
+<p>
+  In this workshop, we observe that the <a href="##tut">tutorial</a>'s version of <em>Rock, Paper, Scissors!</em> is unfair in that Alice is responsible for more steps than Bob.
+  On most consensus networks, each action is charged a fee to run, so this means that Alice pays more than Bob for the game to be played.
+  How could you revise the application to make it fair, without requiring a change to the frontend?
+</p>
+<p>["XXX","workshopWIP"]</p>
+<h2 id="workshop-rps-eff-workshop-efficient-rock-paper-scissors">{#workshop-rps-eff} Workshop: Efficient Rock-Paper-Scissors</h2>
+<p>["XXX","workshopDeps","workshop-rps-fair"]</p>
+<p>
+  In this workshop, we study how transaction costs on consensus networks can be understood as the constants hidden by asymptotic notations when determining the expense of an algorithm when run on a decentralized application.
+  In typical programming contexts, an algorithm that uses <code>3 log_2 n + 4 n</code> operations is considered equivalent to an algorithm that uses <code>5 log_4 n + 22 n</code> operations, because constants and bases are <a href="https://en.wikipedia.org/wiki/Big_O_notation#Properties">ignored in asymptoptic analysis</a>.
+  However, imagine that a program used <code>n</code> local computations and <code>m</code> consensus computations.
+  We'll call <code>n</code> the "computations" and <code>m</code> the "communications".
+  In this case, the computations are free from the perspective of the consensus network, because they don't cost network tokens, while the communications cost their price in gas, plus the fee to run them.
+  Therefore, it is often economically efficient to increase <code>n</code> so that <code>m</code> can be smaller.
+</p>
+<p>
+  For example, in the context of the <a href="##tut">tutorial</a>'s version of <em>Rock, Paper, Scissors!</em>, the application uses <code>2 + 3r</code> communications for a game with <code>r</code> rounds.
+  This is because it takes two communications to set up the loop, then each round of the loop takes three communications.
+  We could make a more complicated version of the application that is optimized in two ways.
+</p>
+<p>
+  First, we could optimize for the common case of when there is no draw and bundle a hand into the opening messages, and use <code>3 + 3(r - 1) = 3r</code> communications for <code>r</code> rounds, for a saving of two communications.
+  This would slightly increase the complexity of our program by duplicating the submission of hands, but we could easily abstract this into a Reach function.
+</p>
+<p>
+  Second, we could bundle <code>k</code> hands into each communication, so that the number of communications is <code>3(r//k)</code> for <code>r</code> rounds for a reduction of communications by <code>k</code> times.
+  This is possible through Reach's ability to deal with array values.
+  The exact value of <code>k</code> would be chosen empirically based on the relative difference in cost between increased message sizes and computations versus the fixed cost of having any transaction at all on the consensus network.
+  Reach's ability to abstract away the details of communication patterns allows us to write this program abstractly and only specify the value of <code>k</code> as a compile-time parameter.
+</p>
+<p>This is a general strategy that is regularly employed in efficient decentralized applications: although a textbook algorithm might say to use a setup phase and many round trips as you divide a space in half each time, it might be vastly more efficient on an actual network to apply meaning-preserving transformations like merging the setup into the loop and dividing the space by a much larger constant, like one hundred.</p>
+<p>["XXX","workshopWIP"]</p>
+<h2 id="workshop-rental-workshop-rental-agreement">{#workshop-rental} Workshop: Rental Agreement</h2>
+<p>["XXX","workshopDeps","tut"]</p>
+<p>
+  In this workshop, we consider a scenario where Alice and Bob are engaged in an indefinite rental agreement where they both made a security deposit to be given to whomever leaves the arrangement first.
+  At some regular interval, both participants submit whether they would like to <code>Stay</code> or <code>Leave</code>.
+  If they both decide to <code>Stay</code>, then they wait for the next round.
+  If they both decide to <code>Leave</code>, then they both get back their deposit.
+  But if only one wants to <code>Leave</code>, then both deposits go to the participant that wants to <code>Stay</code>, based on the assumption that they are harmed by being surprised at the change in circumstances in the next interval.
+</p>
+<p>This scenario demonstrates the value of decentralization, because in traditional institutions, one party is typically empowered as always dictating the decision to the other who must take it, as is the case for most landlords; or, the two parties must play "chicken" with each other to see who will flinch first, as is often the case in divorces; or, the two parties must pay a third-party to act as the arbitrator.</p>
+<p>It turns out that this scenario is structurally identical to <em>Rock, Paper, Scissors!</em>, except with different "hands" and a different pay-out structure.</p>
+<p>["XXX","workshopWIP","rental"]</p>
+<h2 id="workshop-abstract-simul-workshop-simultaneous-games">{#workshop-abstract-simul} Workshop: Simultaneous Games</h2>
+<p>["XXX","workshopDeps","workshop-rental"]</p>
+<p>
+  In this workshop, we generalize from <a href="##tut">the tutorial</a> and <a href="##workshop-rental">the rental workshop</a> to build an abstract library that models any game with simultaneous play.
+  This shows the power of Reach's ability to construct and reason about communication abstractions.
+</p>
+<p>["XXX","workshopWIP","abstract-simul"]</p>
+<h2 id="workshop-guardian-account-workshop-guardian-account">{#workshop-guardian-account} Workshop: Guardian Account</h2>
+<p>["XXX","workshopDeps","workshop-trust-fund"]</p>
+<p>
+  In ["XXX","seclink","workshop-trust-fund"], we developed an application where the entire contents of a trust fund devolve to the receipient after a certain time.
+  In this workshop, we revisit this problem and instead allow portions of the funds to be removed by the funder at her discretion.
+  This is like a "multi-signature wallet", where one account originates the funds and approves transactions, while another account solely spends those funds.
+  It might be used to give a child an "allowance" from their trust fund.
+  It could be modified to allow the funder to add funds over time if the fund runs low.
+  This is the first workshop on the "transfer funds" track that introduces <code>while</code> statements.
+</p>
+<p>["XXX","workshopWIP","multisig"]</p>
+<h2 id="workshop-utility-workshop-periodic-payment">{#workshop-utility} Workshop: Periodic Payment</h2>
+<p>["XXX","workshopDeps","workshop-guardian-account"]</p>
+<p>
+  In ["XXX","seclink","workshop-guardian-account"], we developed an application where a funder has discretion over the disbursement on portions of a pre-funded account.
+  In this workshop, we modify this application so that the funder has no discretion and automatically approves transfers out, but the receiver is restricted to only asking for a certain amount at a time and at a particular interval.
+  This could be used to make a periodic payment to a utility company, for example.
+</p>
+<p>["XXX","workshopWIP"]</p>
+<h2 id="workshop-nim-workshop-nim">{#workshop-nim} Workshop: Nim</h2>
+<p>["XXX","workshopDeps","tut"]</p>
+<p>
+  In <a href="##tut">the tutorial</a>, we built a version of <em>Rock, Paper, Scissors!</em> where two parties can wager over the results of the game.
+  This application has an interesting communication pattern with information hiding through cryptographic commitments, but the application logic is simple and uninteresting.
+  In this workshop, we implement a version of <a href="https://en.wikipedia.org/wiki/Nim">Nim</a>, where the communication structure is simpler, since it is a <a href="https://en.wikipedia.org/wiki/Combinatorial_game_theory">combinatorial game</a>, but has a more interesting application logic.
+  Thus, this workshop demonstrates using more interesting data-structures in Reach programs, as well as using compile-time abstractions to simplify DApp structure.
+</p>
+<p>["XXX","workshopWIP","nim"]</p>
+<h2 id="workshop-ttt-workshop-tic-tac-toe">{#workshop-ttt} Workshop: Tic-Tac-Toe</h2>
+<p>["XXX","workshopDeps","workshop-nim"]</p>
+<p>
+  Like ["XXX","seclink","workshop-nim"], this workshop develops an implementation of the <a href="https://en.wikipedia.org/wiki/Combinatorial_game_theory">combinatorial game</a>, <a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Tic-tac-toe</a>.
+  This workshop demonstrates the use of arrays and more advanced Reach data-structures.
+  We'll discuss two variations of this same application:
+  one where the consensus network verifies the moves of each player;
+  and, another where the consensus network allows illegal moves to be disputed by the other player.
+  These variations demonstrate two DApp patterns that occur commonly in existing DApp designs, each with different usage constraints and performance trade-offs.
+</p>
+<p>["XXX","workshopWIP","ttt"]</p>
+<h2 id="workshop-secured-loan-workshop-secured-loan">{#workshop-secured-loan} Workshop: Secured Loan</h2>
+<p>["XXX","workshopDeps","workshop-trust-fund"]</p>
+<p>
+  In this workshop, we implement a <a href="https://en.wikipedia.org/wiki/Secured_loan">secured loan</a>, wherein a Borrower posts collateral and terms to the public, and an arbitrary Lender gives a loan, then after some maturity, the Borrower either repays the loan, plus interest, or sacrifices the collateral.
+  It is easy to model this scenario using only network tokens, but it would be useless, because the premise of a loan is that the participants believe the Borrower can make better use of the funds than the Lender.
+  However, many consensus networks also support custom fungible assets that are like tokens.
+  If this is the case, then a secured loan will typically have different assets as the loan amount and the collateral amount.
+  Thus, the interest rate for the loan is essentially the Lender's prediction of the movement of the exchange rate between the two currencies over the lifetime of the loan. In this workshop, the Borrower pledges non-network tokens as collateral for the loan.
+</p>
+<p>["XXX","workshopWIP","secured-loan"]</p>
+<h2 id="workshop-atomic-swap-workshop-atomic-swap">{#workshop-atomic-swap} Workshop: Atomic Swap</h2>
+<p>["XXX","workshopDeps","tut"]</p>
+<p>
+  In this workshop, we implement an atomic swap, or sell order, wherein a Seller offers an amount of an asset, X of A, in exchange for a prescribed amount of another asset, Y of B, and waits for a Buyer to complete the other side of the trade.
+  This workshop demonstrates the use of non-network tokens.
+</p>
+<p>["XXX","workshopWIP","atomic-swap"]</p>
+<h2 id="workshop-atomic-swap-auction-workshop-atomic-swap-auction">{#workshop-atomic-swap-auction} Workshop: Atomic Swap Auction</h2>
+<p>["XXX","workshopDeps","workshop-atomic-swap"]</p>
+<p>In this workshop, we extend the <a href="##workshop-atomic-swap">Atomic Swap</a> workshop by allowing the Seller to solicit bids for their X of A in a prescribed asset B and accept whichever buyer is willing to provide the most before a preset time.</p>
+<p>["XXX","workshopWIP","atomic-swap-auction"]</p>
+<h2 id="workshop-race-workshop-race">{#workshop-race} Workshop: Race</h2>
+<p>["XXX","workshopDeps","tut"]</p>
+<p>
+  In this workshop, we implement the example of the <code>race</code> expression discussed in <a href="##guide-race">the guide section on races</a>.
+  This provides an introduction to races, as well as a cautionary tale on their danger.
+</p>
+<p>["XXX","workshopWIP","race"]</p>
+<h2 id="workshop-chicken-race-workshop-chicken">{#workshop-chicken-race} Workshop: Chicken</h2>
+<p>["XXX","workshopDeps","workshop-race"]</p>
+<p>
+  In this workshop, we implement a game of <a href="https://en.wikipedia.org/wiki/Chicken_(game)">Chicken</a>, where each player submits an equal wager, and then competes with the other to submit more transactions to the consensus before a deadline.
+  In other words, they must decide between the risk of losing the entire pot and the risk of overspending on transaction costs.
+  Like ["XXX","seclink","workshop-race"], this demonstrates the deadweight losses associated with <code>race</code>s, as discussed in <a href="##guide-race">the guide section on races</a>.
+</p>
+<p>["XXX","workshopWIP","chicken-race"]</p>
+<h2 id="workshop-popularity-contest-workshop-popularity-contest">{#workshop-popularity-contest} Workshop: Popularity Contest</h2>
+<p>["XXX","workshopDeps","workshop-chicken-race"]</p>
+<p>
+  In this workshop, we implement a <a href="https://en.wikipedia.org/wiki/Plurality_voting">two-party winner-takes-all vote</a>, where a pollster proposes two candidates---Alice and Bob---along with a voting price and a deadline, then a participant class of voters each pay and cast their ballot.
+  Once the deadline passes, the winning candidate takes the entire pot.
+  This workshop introduces effective use of participant classes and <code>parallelReduce</code>.
+</p>
+<p>["XXX","workshopWIP","popularity-contest"]</p>
+<h2 id="workshop-nft-dumb-workshop-simple-nft">{#workshop-nft-dumb} Workshop: Simple NFT</h2>
+<p>["XXX","workshopDeps","workshop-race"]</p>
+<p>
+  In this workshop, we implement a trivial <a href="https://en.wikipedia.org/wiki/Non-fungible_token">non-fungible token</a> (NFT) where a single creator creates a unique item and initial owns it.
+  The creator and all subsequent owners may transfer ownership of the unique item to a different owner and so on.
+  This workshop uses a participant class to represent owners and is a kind of trivial template before we explore more interesting and in-depth variants of the NFT concept.
+</p>
+<p>["XXX","workshopWIP","nft-dumb"]</p>
+<h2 id="workshop-nft-auction-workshop-nft-with-auction">{#workshop-nft-auction} Workshop: NFT with Auction</h2>
+<p>["XXX","workshopDeps","workshop-nft-dumb"]</p>
+<p>
+  In this workshop, we extend ["XXX","seclink","workshop-nft-dumb"] by adding an auction when the current owner is ready to sell their NFT.
+  This could be extended to give creators (or royalty rights holders) a percentage of the auction yield.
+</p>
+<p>["XXX","workshopWIP","nft-auction"]</p>
+<h2 id="workshop-nft-tax-workshop-nft-with-royalties-and-harberger-tax">{#workshop-nft-tax} Workshop: NFT with Royalties and Harberger Tax</h2>
+<p>["XXX","workshopDeps","workshop-nft-dumb"]</p>
+<p>
+  In this workshop, we extend ["XXX","seclink","workshop-nft-dumb"] by incorporating a Harberger Tax (c.f. <a href="https://en.wikipedia.org/wiki/Arnold_Harberger">Arnold Harberger</a>) where owners must state a price at which they are willing to part with the asset and pay a percentage of that price to the creator.
+  They can update this price upwards by paying an additional tax, or decrease it without cost (to free themselves of the asset).
+  This represents an interesting place in the NFT design space where utility increasing transfers are immediate and creators receive royalties.
+</p>
+<h2 id="workshop-raffle-workshop-raffle">{#workshop-raffle} Workshop: Raffle</h2>
+<p>["XXX","workshopDeps","workshop-popularity-contest"]</p>
+<p>In this workshop, we implement a <a href="https://en.wikipedia.org/wiki/Raffle">raffle</a>, where a sponsor starts a timed raffle and a participant class of ticket buyers each buy tickets. This workshop contains two interesting ideas: first, it uses linear state through the <code>Map</code> structure; second, it uses a commitment pattern structure to acquire safe randomness from the set of buyers.</p>
+<p>["XXX","workshopWIP","raffle"]</p>
+<h2 id="workshop-rent-seeking-workshop-rent-seeking">{#workshop-rent-seeking} Workshop: Rent Seeking</h2>
+<p>["XXX","workshopDeps","workshop-raffle"]</p>
+<p>In this workshop, we implement a <a href="https://en.wikipedia.org/wiki/Rent-seeking">rent-seeking</a> competition, where a sponsor attempts to sell a prize (e.g. 10 ETH) and a number of bidders seek to acquire the prize by bidding for it (e.g. 5 ETH). Unlike a "normal" auction, however, the bidders lose the money they bid to the sponsor. Thus, while the winner may get more than the bid, and the sponsor may get more than they give away, there is a net transfer away from the bidders to the sponsor. This program also uses linear state.</p>
+<p>["XXX","workshopWIP","rent-seeking"]</p>
+<h2 id="workshop-remote-workshop-remote-objects">{#workshop-remote} Workshop: Remote Objects</h2>
+<p>["XXX","workshopDeps","tut"]</p>
+<p>
+  In this workshop, we demonstrate interaction with a remote object implemented externally to Reach.
+  Rather than connect to an existing contract, this example includes testing code to launch a bespoke contract simply to demonstrate how remote interactions can occur.
+  It may be representative of a DApp that is implemented simultaneously in Reach and the low-level language of the chosen consensus network, in this case Solidity.
+</p>
+<p>["XXX","workshopWIP","remote"]</p>
+<h2 id="workshop-oracle-workshop-oracle">{#workshop-oracle} Workshop: Oracle</h2>
+<p>["XXX","workshopDeps","tut"]</p>
+<p>
+  In this workshop, we implement a centralized <a href="https://en.wikipedia.org/wiki/Oracle_machine">oracle</a> for some property not otherwise computable within a Reach program.
+  Typically oracles are used to connect physical data from outside a consensus network to the agents of the network, such as by reading physical sensors, like a thermometer, and posting the information inside the network.
+</p>
+<p>["XXX","workshopWIP"]</p>
+<h2 id="workshop-auction-te-workshop-timed-english-auction">{#workshop-auction-te} Workshop: Timed English Auction</h2>
+<p>["XXX","workshopDeps","tut"]</p>
+<p>
+  In this workshop, we implement a timed <a href="https://en.wikipedia.org/wiki/English_auction">English auction</a> wherein a Seller auctions off the right for a Bidder to decide the argument to call a certain external contract method with.
+  This demonstrates the use of collective operations in Reach with finite state.
+</p>
+<p>["XXX","workshopWIP"]</p>
+<h2 id="workshop-crowdfund-workshop-crowd-funding">{#workshop-crowdfund} Workshop: Crowd-funding</h2>
+<p>["XXX","workshopDeps","workshop-auction-te"]</p>
+<p>In this workshop, we implement a <a href="https://en.wikipedia.org/wiki/Crowdfunding">crowdfunding campaign</a> wherein a Fundraiser requests a funding amount, which is provided by Donors if a reserve is reached before the funding window closes, after which it is either disbursed to the Fundraiser, or returned to the Donors.</p>
+<p>["XXX","workshopWIP"]</p>
