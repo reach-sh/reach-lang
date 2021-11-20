@@ -108,8 +108,16 @@
     [`(element (make-style #f (list (url-anchor ,a))) '())
       (d (format "<a name=~s></a>" a))]
     [`(require . ,_) (void)]
-    [`(mint-scope ,(? symbol? ms))
-      (set-box! mint-scope (symbol->string ms))
+    [`(mint-scope ,ms)
+      (set-box! mint-scope
+                (match ms
+                  [''js "js"]
+                  [''go "go"]
+                  [''py "py"]
+                  [''rsh "rsh"]
+                  ["overview" ""]
+                  [(? symbol?) (symbol->string ms)]
+                  [_ (error 'mint-scope "~e" ms)]))
       (void)]
     [`(define . ,_) (void)]
     [`(deftech ,c)
