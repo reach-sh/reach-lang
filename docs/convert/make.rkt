@@ -56,17 +56,19 @@
     [`(link ,t ,l)
       (d (format "[~a](~a)" l t))]
     [`(reachexlink ,f #:dir ,e)
-      (d (format "[~a](@{REPO}}/~a/~a)" f e f))]
+      (d (format "[~a](@{REPO}/~a/~a)" f e f))]
     [`(reachexlink ,f)
-      (d (format "[~a](@{REPO}}/examples/~a)" f f))]
+      (d (format "[~a](@{REPO}/examples/~a)" f f))]
+    [`(reachexlink #:loc (cons ,s ,e) ,f)
+      (d (format "[~a](@{REPO}/examples/~a#L~a-L~a)" f f s e))]
     [`(reachexlink ,f ,c #:dir ,e)
       (d "[")
       (ego c)
-      (d (format "](@{REPO}}/~a/~a)" e f))]
+      (d (format "](@{REPO}/~a/~a)" e f))]
     [`(reachexlink ,f ,c)
       (d "[")
       (ego c)
-      (d (format "](@{REPO}}/examples/~a)" f))]
+      (d (format "](@{REPO}/examples/~a)" f))]
     [`(title ,@o) (header 1 o)]
     [`(section ,@o) (header 2 o)]
     [`(subsection ,@o) (header 3 o)]

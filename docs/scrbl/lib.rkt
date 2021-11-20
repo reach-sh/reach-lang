@@ -151,44 +151,6 @@ You should start off by initializing your Reach program:
 (define rpc-client (build-path ROOT "rpc-client"))
 (define-runtime-path images "./images/")
 
-(define (eximage path)
-  (image (build-path images path)
-         #:scale 0.6))
-
-(define (exviewfig-name dir view)
-  (format "fig:~a/views/~a" dir view))
-
-;; The following should be true:
-;; * examples/${dir}/views/${src-file}.js exists
-;; * ${view} is defined from ${src-from} to ${src-to} in that file
-;; * docs/scrbl/${dir}/${view}.png exists
-(define (exviewfig dir view src-file src-from src-to)
-  (define link-file (format "~a.js" src-file))
-  (define link
-    (reachexlink
-      (format "~a/views/~a" dir (format "~a.js" src-file))
-      (format "~a.~a" src-file view)
-      #:loc (cons src-from src-to)))
-  (define caption
-    (list "The " @jsin{@view} " view. See: " link))
-  @figure[(exviewfig-name dir view) caption]{
-    @eximage[(build-path dir (format "~a.png" view))]})
-
-;; dir must be present in examples/ for the links to work
-(define (exviewfigs dir src-file . views)
-  (for/list ([view-info views])
-    (match view-info
-      [(list view src-from src-to)
-       @exviewfig[dir view src-file src-from src-to]])))
-
-(define (exviewref dir view [the "the"])
-  (define fig (figure-ref (exviewfig-name dir view)))
-  (list the " " @jsin{@view} " view (" fig ")"))
-
-;; Same as exviewref but with capitalized "The"
-(define (Exviewref dir view)
-  (exviewref dir view "The"))
-
 (define (reachexlink p [label #f] #:loc [loc #f] #:dir [dir "examples"])
   (define url
     (format "https://github.com/reach-sh/reach-lang/blob/master/~a/~a~a"
