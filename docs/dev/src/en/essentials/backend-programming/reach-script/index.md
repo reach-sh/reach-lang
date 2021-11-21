@@ -37,18 +37,42 @@ Run `reach help` to view available commands.
 
 ## reach clean
 
-This command deletes `build/index.main.mjs`.
+By default, this command deletes `build/index.main.mjs`:
 
 ``` nonum
-$ reach clean -h
+$ reach clean
+```
+
+To delete `build/myindex.mymain.mjs`, run the following:
+
+``` nonum
+$ reach clean myindex mymain
+```
+
+To delete `~/reach/hello-world/build/index.mymain.mjs`, run the following:
+
+``` nonum
+$ reach clean ~/reach/hello-world mymain
 ```
 
 ## reach compile
 
-This command compiles `reach.rsh` into `build/index.main.mjs`.
+By default, this command compiles `index.rsh` into `build/index.main.mjs` and verifies it:
 
 ``` nonum
-$ reach compile -h
+$ reach compile
+```
+
+To compile `myindex.rsh` into `build/myindex.main.mjs`, run the following:
+
+``` nonum
+$ reach compile myindex.rsh 
+```
+
+To compile `myindex.rsh` into `mybuild/myindex.main.mjs`, run the following:
+
+``` nonum
+$ reach compile myindex.rsh -o mybuild
 ```
 
 ## reach config
