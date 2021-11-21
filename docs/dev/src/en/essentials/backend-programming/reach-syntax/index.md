@@ -164,6 +164,16 @@ Expressions may include parentheses that enforce operational order:
 
 Reach includes the expressions described below.
 
+## Anybody
+
+## Arithmetic
+
+muldiv
+
+sqrt
+
+pow
+
 ## Arrays
 
 An *array* is ...
@@ -174,13 +184,51 @@ An *element reference* ...
 
 ## Arrow Expression
 
+## assert
+
+## balance
+
+## compose
+
 ## Data
 
 A *data instance* is ...
 
+## digest
+
 ## Either
 
+## ensure
+
+## Fixed-point Numbers
+
+## forall
+
+## getAddress
+
+## getContract
+
+## hasConsoleLogger
+
+## hasRandom
+
+## implies
+
+## Intervals
+
+Constructors
+
+Accessors
+
+Relational Operations
+
+Arithmetic Operations
+
+Other Operations
+
 ## Literals
+
+## makeEnum
 
 ## Maps
 
@@ -204,8 +252,7 @@ An *object* is ...
 |-|-|-|
 | `-` | `sub(a, b)` | `a - b` |
 | `!` | n/a | `not` |
-| `!=` | `polyNeq(a, b)` | |
-| `!==` | `polyNeq(a, b)` | |
+| `!=` <br/> `!==` | `polyNeq(a, b)` | |
 | `*` | `mul(a, b)` | `a * b` |
 | `/` | `div(a, b)` | `a / b` |
 | `&` | `band(a, b)` | |
@@ -226,15 +273,39 @@ An *object* is ...
 
 ## pad
 
+## possible
+
 ## Sets
 
 A *set* is ...
+
+## Signed Integers
 
 ## Structs
 
 A *struct* is ...
 
 ## Ternary Operator
+
+## Time
+
+lastConsensusTime
+
+lastConsensusSecs
+
+baseWaitTime
+
+baseWaitSecs
+
+relativeTime
+
+absoluteTime
+
+relativeSecs
+
+absoluteSecs
+
+makeDeadline
 
 ## this
 

@@ -4,252 +4,161 @@ menuItem: mi-docs
 
 # Reach Script
 
-The [reach](https://github.com/reach-sh/reach-lang/blob/master/reach) command-line script is the primary tool for Reach developers:
+The [reach](https://github.com/reach-sh/reach-lang/blob/master/reach) command-line tool enables you to compile Reach DApps and manage your Reach development environment. To install the tool, see [Install and Run](/en/essentials/getting-started/install-and-run/). 
 
-``` nonum
-$ reach help
-reach 0.1.6 (66f7fd96) - Reach command-line tool
+# Environment Variables
 
-Usage: reach COMMAND
+In addition to passing command-line arguments, you can influence the behavior of the [reach](https://github.com/reach-sh/reach-lang/blob/master/reach) command-line tool by setting environment variables.
 
-Available options:
-  -h,--help                Show this help text
+## Reach Connector Mode
 
-Available commands:
-  config                   Configure default Reach settings
-  compile                  Compile an app
-  clean                    Delete 'build/$MODULE.$IDENT.mjs'
-  init                     Set up source files for a simple app in the current
-                           directory
-  run                      Run a simple app
-  down                     Halt all Dockerized Reach services and devnets
-  scaffold                 Set up Docker scaffolding for a simple app in the
-                           current directory
-  react                    Run a simple React app
-  rpc-server               Run a simple Reach RPC server
-  rpc-run                  Run an RPC server + frontend with development
-                           configuration
-  devnet                   Run only the devnet
-  upgrade                  Upgrade Reach
-  update                   Update Reach Docker images
-  docker-reset             Kill and remove all Docker containers
-  version                  Display version
-  hashes                   Display git hashes used to build each Docker image
-  help                     Show usage
-```
+To target a specific [consensus network](/en/essentials/network-connectors/), set the `REACH_CONNECTOR_MODE` environment variable to the desired [connector mode](https://github.com/reach-sh/reach-lang/blob/master/js/stdlib/ts/ConnectorMode.ts):
 
-# reach clean
+|Network|Example|
+|-|-|
+|Algorand|`export REACH_CONNECTOR_MODE=ALGO-devnet` <br/> `export REACH_CONNECTOR_MODE=ALGO-live` <br/> `export REACH_CONNECTOR_MODE=ALGO-browser`|
+|Conflux|`export REACH_CONNECTOR_MODE=CFX-devnet` <br/> `export REACH_CONNECTOR_MODE=CFX-live` <br/> `export REACH_CONNECTOR_MODE=CFX-browser`|
+|Ethereum|`export REACH_CONNECTOR_MODE=ETH-devnet` <br/> `export REACH_CONNECTOR_MODE=ETH-live` <br/> `export REACH_CONNECTOR_MODE=ETH-browser`|
+
+## Reach Version
+
+To target a specific Reach compiler version, find the version on [DockerHub](https://hub.docker.com/r/reachsh/reach/tags), and set the `REACH_VERSION` environment variable to the desired version, hash tag, date, or identifier:
+
+|Technique|Example|
+|-|-|
+|Version|`export REACH_VERSION 0.1.6` <br/> `export REACH_VERSION v0.1.6` |
+|Hash Tag|`export REACH_VERSION 639fa565`|
+|Date|`export REACH_VERSION 2021-11-04`|
+|Identifier|`export REACH_VERSION latest` <br/> `export REACH_VERSION stable`|
+
+# Commands
+
+Run `reach help` to view available commands.
+
+## reach clean
+
+This command deletes `build/index.main.mjs`.
 
 ``` nonum
 $ reach clean -h
-Usage: reach clean [MODULE] [IDENT]
-  Delete 'build/$MODULE.$IDENT.mjs'
-
-Available options:
-  -h,--help                Show this help text
-
-MODULE is "index" by default
-IDENT  is "main"  by default
-
-If:
- * MODULE is a directory then `cd $MODULE && rm -f "build/index.$IDENT.mjs";
- * MODULE is <something-else> then `rm -f "build/$MODULE.$IDENT.mjs"
 ```
 
-# reach compile
+## reach compile
+
+This command compiles `reach.rsh` into `build/index.main.mjs`.
 
 ``` nonum
 $ reach compile -h
-Usage: reach compile [-o|--output DIR] [SOURCE] [EXPORTS...] 
-                     [--intermediate-files] [--install-pkgs] [--stop-after-eval]
-                     [--verify-timeout TIMEOUT-MS]
-  Compile an app
-
-Available options:
-  -o,--output DIR          Directory for output files
-  --intermediate-files     Store intermediate files in output DIR
-  --install-pkgs           Allow Reach to fetch remote package imports
-  --stop-after-eval        Stop compilation process after evaluation
-  --verify-timeout TIMEOUT-MS
-                           Timeout per verification theorem in
-                           milliseconds (default: 120000)
-  -h,--help                Show this help text
 ```
 
-# reach config
+## reach config
+
+This command creates an *env* file that exports environment variables such as `REACH_CONNECTOR_MODE`.
 
 ``` nonum
 $ reach config -h
-Usage: reach config [-v|--verbose]
-  Configure default Reach settings
-
-Available options:
-  -v,--verbose             Print additional config info to `stdout`
-  -h,--help                Show this help text
 ```
 
-# reach devnet
+## reach devnet
+
+This command runs a devnet.
 
 ``` nonum
 $ reach devnet -h
-Usage: reach devnet [--await-background]
-  Run only the devnet
-
-Available options:
-  --await-background       Run in background and await availability
-  -h,--help                Show this help text
 ```
 
-# reach docker-reset
+## reach docker-reset
+
+This command halts and deletes all Docker containers. 
 
 ``` nonum
 $ reach docker-reset -h
-Usage: reach docker-reset [-y|--even-non-reach]
-  Kill and remove all Docker containers
-
-Available options:
-  -y,--even-non-reach      Acknowledge non-interactively that ALL containers
-                           will be halted
-  -h,--help                Show this help text
 ```
 
-# reach down
+## reach down
+
+This command halts all Dockerized Reach containers. 
 
 ``` nonum
 $ reach down -h
-Usage: reach down 
-  Halt all Dockerized Reach services and devnets
-
-Available options:
-  -h,--help                Show this help text
 ```
 
-# reach hashes
+## reach hashes
+
+This command displays git hash values associated with Reach Docker images.
 
 ``` nonum
 $ reach hashes -h
-Usage: reach hashes 
-  Display git hashes used to build each Docker image
-
-Available options:
-  -h,--help                Show this help text
 ```
 
-# reach init
+## reach init
+
+This command creates minimal index.rsh and index.mjs files in the current directory.
 
 ``` nonum
 $ reach init [TEMPLATE]
-  Set up source files for a simple app in the current directory
-
-Available options:
-  -h,--help                Show this help text
-
-Available templates:
-  - default
-
-Aborts if index.rsh or index.mjs already exist
 ```
 
-# reach react
+## reach react
+
+This command runs a simple React app.
 
 ``` nonum
 $ reach react -h
-Usage: reach react [-o|--output DIR] [SOURCE] [EXPORTS...] 
-                   [--intermediate-files] [--install-pkgs] [--stop-after-eval] 
-                   [--verify-timeout TIMEOUT-MS]
-  Run a simple React app
-
-Available options:
-  -o,--output DIR          Directory for output files
-  --intermediate-files     Store intermediate files in output DIR
-  --install-pkgs           Allow Reach to fetch remote package imports
-  --stop-after-eval        Stop compilation process after evaluation
-  --verify-timeout TIMEOUT-MS
-                           Timeout per verification theorem in
-                           milliseconds (default: 120000)
-  -h,--help                Show this help text
 ```
 
-# reach rpc-run
+## reach rpc-run
+
+This command runs a Reach RPC server and an RPC frontend with a development configuration.
 
 ``` nonum
 $ reach rpc-run -h
-Usage: reach rpc-run EXECUTABLE [ARGS]
-  Run an RPC server + frontend with development configuration
-
-Available options:
-  ARGS                     Zero or more arguments to be passed into EXECUTABLE
-  -h,--help                Show this help text
-
-Example:
- $ reach rpc-run python3 -u ./index.py
 ```
 
-# reach rpc-server
+## reach rpc-server
+
+This command runs a Reach RPC server.
 
 ``` nonum
 $ reach rpc-server -h
-Usage: reach rpc-server 
-  Run a simple Reach RPC server
-
-Available options:
-  -h,--help                Show this help text
 ```
 
-# reach run
+## reach run
+
+This command runs a simple Reach DApp.
 
 ``` nonum
 $ reach run -h
-Usage: reach run [APP or DIR] [ARGS]
-  Run a simple app
-
-Available options:
-  APP or DIR               May be either a module name without its extension
-                           (e.g. "index") or a relative sub-directory path
-  ARGS                     Zero or more arguments to be passed into APP
-  -h,--help                Show this help text
 ```
 
-# reach scaffold
+## reach scaffold
+
+This command creates Docker files for a simple app in the current directory.
 
 ``` nonum
 $ reach scaffold -h
-Usage: reach scaffold [--quiet]
-  Set up Docker scaffolding for a simple app in the current directory
-
-Available options:
-  --quiet                  Withhold progress messages
-  -h,--help                Show this help text
 ```
 
-# reach update
+## reach update
+
+This command updates the Reach Docker images.
 
 ``` nonum
 $ reach update -h
-Usage: reach update 
-  Update Reach Docker images
-
-Available options:
-  -h,--help                Show this help text
 ```
 
-# reach upgrade
+## reach upgrade
+
+This command upgrades the Reach CLI.
 
 ``` nonum
 $ reach upgrade -h
-Usage: reach upgrade 
-  Upgrade Reach
-
-Available options:
-  -h,--help                Show this help text
 ```
 
-# reach version
+## reach version
+
+This command displays the Reach compiler version.
 
 ``` nonum
 $ reach version 
-  Display version
-
-Available options:
-  -h,--help                Show this help text
 ```
