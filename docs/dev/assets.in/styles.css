@@ -387,7 +387,7 @@ iframe.gray-scale {
 
 #page-col div.hh-viewer pre:not(.snippet) code {
   font-family: var(--bs-font-monospace);
-  font-size: 92%;
+  font-size: 90%;
 }
 
 #page-col div.hh-viewer ol.snippet li:first-child {
@@ -421,7 +421,8 @@ iframe.gray-scale {
 }
 
 #page-col code {
-  color: #9f6314;
+  color: #009999;
+  font-size: 13px;
 }
 
 /************************************************
