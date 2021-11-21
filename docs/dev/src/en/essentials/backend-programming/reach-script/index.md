@@ -72,7 +72,19 @@ $ reach compile myindex.rsh
 To compile `myindex.rsh` into `mybuild/myindex.main.mjs`, run the following:
 
 ``` nonum
-$ reach compile myindex.rsh -o mybuild
+$ reach compile myindex.rsh --output mybuild
+```
+
+To retain intermediate build files in `/build`, use `--intermediate-files`:
+
+``` nonum
+$ reach compile --intermediate-files
+```
+
+To fetch remote package imports without compiling, use `--install-pkgs`:
+
+``` nonum
+$ reach compile --install-pkgs
 ```
 
 ## reach config
