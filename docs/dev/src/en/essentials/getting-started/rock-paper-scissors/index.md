@@ -13,17 +13,15 @@ This tutorial shows you how to build Rock Paper Scissors, a command-line and web
 This module uses the following project directory structure:
 
 ``` nonum
-~/reach/rock-paper-scissors/tut-1-setup
-~/reach/rock-paper-scissors/tut-2-rps
-~/reach/rock-paper-scissors/tut-3-bets
-~/reach/rock-paper-scissors/tut-4-trust
-~/reach/rock-paper-scissors/tut-5-attack
-~/reach/rock-paper-scissors/tut-6-timeouts
-~/reach/rock-paper-scissors/tut-7-loops
-~/reach/rock-paper-scissors/tut-7-array
-~/reach/rock-paper-scissors/tut-7-rpc
-~/reach/rock-paper-scissors/tut-8-interact
-~/reach/rock-paper-scissors/tut-9-web
+~/reach/rock-paper-scissors/rps-1-setup
+~/reach/rock-paper-scissors/rps-2-rps
+~/reach/rock-paper-scissors/rps-3-bets
+~/reach/rock-paper-scissors/rps-4-trust
+~/reach/rock-paper-scissors/rps-5-attack
+~/reach/rock-paper-scissors/rps-6-timeouts
+~/reach/rock-paper-scissors/rps-7-loops
+~/reach/rock-paper-scissors/rps-8-interact
+~/reach/rock-paper-scissors/rps-9-web
 ```
 
 Begin by creating and navigating to a subdirectory inside your ~/reach/ directory. 
