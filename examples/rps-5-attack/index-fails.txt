@@ -1,0 +1,13 @@
+Verifying knowledge assertions
+Verification failed:
+  of theorem unknowable("Bob", handAlice/77)
+  at ./index-fails.rsh:27:13:application
+
+  Bob knows of handAlice/77 because it is published.
+
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Alice" is honest
+  Verifying when ONLY "Bob" is honest
+Checked 19 theorems; 1 failures :'(
