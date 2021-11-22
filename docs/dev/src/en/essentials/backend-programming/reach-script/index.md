@@ -20,6 +20,28 @@ To target a specific [consensus network](/en/essentials/network-connectors/), se
 |Conflux|`export REACH_CONNECTOR_MODE=CFX-devnet` <br/> `export REACH_CONNECTOR_MODE=CFX-live` <br/> `export REACH_CONNECTOR_MODE=CFX-browser`|
 |Ethereum|`export REACH_CONNECTOR_MODE=ETH-devnet` <br/> `export REACH_CONNECTOR_MODE=ETH-live` <br/> `export REACH_CONNECTOR_MODE=ETH-browser`|
 
+## Reach Debug
+
+To cause the Reach compiler to display additional debug information, set REACH_DEBUG to a non-empty value:
+
+``` nonum
+export REACH_DEBUG=1
+```
+
+## Reach RPC
+
+The [Reach RPC Server](/en/essentials/frontend-programming/rpc-frontends/) supports the environment variables listed below. See [reach rpc-server](/en/essentials/backend-programming/reach-script/#reach-rpc-server) for details:
+
+``` nonum
+REACH_RPC_KEY
+REACH_RPC_PORT
+REACH_RPC_SERVER
+REACH_RPC_TLS_CRT
+REACH_RPC_TLS_KEY
+REACH_RPC_TLS_PASSPHRASE
+REACH_RPC_TLS_REJECT_UNVERIFIED
+```
+
 ## Reach Version
 
 To target a specific Reach compiler version, find the version on [DockerHub](https://hub.docker.com/r/reachsh/reach/tags), and set the `REACH_VERSION` environment variable to the desired version, hash tag, date, or identifier:
@@ -89,18 +111,26 @@ $ reach compile --install-pkgs
 
 ## reach config
 
-This command creates an *env* file that exports environment variables such as `REACH_CONNECTOR_MODE`.
+After soliciting information from you, this command creates a `~/.config/reach/env` script containing commands to export Reach environment variables:
 
 ``` nonum
-$ reach config -h
+$ reach config
 ```
+
+The command also supplies you with customized directions for using the `env` script.
 
 ## reach devnet
 
-This command runs a devnet.
+With the `REACH_CONNECTOR_MODE` set, this commmand runs a private devnet:
 
 ``` nonum
-$ reach devnet -h
+$ reach devnet
+```
+
+To run the devnet in the background, use `--await-background`:
+
+``` nonum
+$ reach devnet --await-background
 ```
 
 ## reach docker-reset
@@ -108,7 +138,7 @@ $ reach devnet -h
 This command halts and deletes all Docker containers. 
 
 ``` nonum
-$ reach docker-reset -h
+$ reach docker-reset
 ```
 
 ## reach down
@@ -116,7 +146,7 @@ $ reach docker-reset -h
 This command halts all Dockerized Reach containers. 
 
 ``` nonum
-$ reach down -h
+$ reach down
 ```
 
 ## reach hashes
@@ -124,7 +154,7 @@ $ reach down -h
 This command displays git hash values associated with Reach Docker images.
 
 ``` nonum
-$ reach hashes -h
+$ reach hashes
 ```
 
 ## reach init
@@ -140,7 +170,7 @@ $ reach init [TEMPLATE]
 This command runs a simple React app.
 
 ``` nonum
-$ reach react -h
+$ reach react
 ```
 
 ## reach rpc-run
@@ -148,7 +178,7 @@ $ reach react -h
 This command runs a Reach RPC server and an RPC frontend with a development configuration.
 
 ``` nonum
-$ reach rpc-run -h
+$ reach rpc-run
 ```
 
 ## reach rpc-server
@@ -156,7 +186,7 @@ $ reach rpc-run -h
 This command runs a Reach RPC server.
 
 ``` nonum
-$ reach rpc-server -h
+$ reach rpc-server
 ```
 
 ## reach run
@@ -164,7 +194,7 @@ $ reach rpc-server -h
 This command runs a simple Reach DApp.
 
 ``` nonum
-$ reach run -h
+$ reach run
 ```
 
 ## reach scaffold
@@ -172,7 +202,7 @@ $ reach run -h
 This command creates Docker files for a simple app in the current directory.
 
 ``` nonum
-$ reach scaffold -h
+$ reach scaffold
 ```
 
 ## reach update
@@ -180,7 +210,7 @@ $ reach scaffold -h
 This command updates the Reach Docker images.
 
 ``` nonum
-$ reach update -h
+$ reach update
 ```
 
 ## reach upgrade
@@ -188,7 +218,7 @@ $ reach update -h
 This command upgrades the Reach CLI.
 
 ``` nonum
-$ reach upgrade -h
+$ reach upgrade
 ```
 
 ## reach version
