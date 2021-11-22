@@ -1,16 +1,16 @@
 #lang scribble/manual
 @(require "lib.rkt")
 
-@title[#:version reach-vers #:tag "tut" #:style 'toc]{Tutorial}
+@title[#:version reach-vers #:tag "rps" #:style 'toc]{Tutorial}
 
 This tutorial walks through the creation of a simple decentralized application.
 It contains everything you need to know to build and test this application and assumes no prior experience with @|DApp|/blockchain development of any kind.
 If you want a broad overview before diving in it, we recommend reading @seclink["overview"]{the overview} first.
 On the other hand, if this is too simple, then you may want to start @seclink["workshop"]{the workshop} for larger and less constrained projects or @seclink["ref"]{the reference manual} for the minute details of Reach.
 
-If you're ready, click through to the @seclink["tut-1"]{first step}!
+If you're ready, click through to the @seclink["rps-1"]{first step}!
 
-@section[#:tag "tut-1"]{Install and Initialize}
+@section[#:tag "rps-1"]{Install and Initialize}
 
 Reach is designed to work on POSIX systems with @link["https://en.wikipedia.org/wiki/Make_(software)"]{make}, @link["https://www.docker.com/get-started"]{Docker}, and @link["https://docs.docker.com/compose/install/"]{Docker Compose} installed.
 The best way to install Docker on Mac and Windows is with @link["https://www.docker.com/products/docker-desktop"]{Docker Desktop}.
@@ -29,7 +29,7 @@ You'll know that you have everything installed if you can run the following thre
 
 Once you've confirmed that they are installed, choose a directory for this project. We recommend
 
-@cmd{mkdir -p ~/reach/tut && cd ~/reach/tut}
+@cmd{mkdir -p ~/reach/rps && cd ~/reach/rps}
 
 Next, download Reach by running
 
@@ -60,9 +60,9 @@ You'll know that everything is in order if you can run
 
 @margin-note{Get language support for Reach in your editor by visiting @secref["guide-editor-support"].}
 
-Now that your Reach installation is in order, you should open a text editor and get ready to @seclink["tut-2"]{write your first Reach application}!
+Now that your Reach installation is in order, you should open a text editor and get ready to @seclink["rps-2"]{write your first Reach application}!
 
-@section[#:tag "tut-2"]{Scaffolding and Setup}
+@section[#:tag "rps-2"]{Scaffolding and Setup}
 
 In this tutorial, we'll be building a version of @|RPS| where two players, @emph{Alice} and @emph{Bob}, can wager on the result of the game.
 We'll start simple and slowly make the application more fully-featured.
@@ -71,7 +71,7 @@ You should follow along by copying each part of the program and seeing how thing
 If you're like us, you may find it beneficial to type each line out, rather than copying & pasting so you can start building your muscle memory and begin to get a sense for each part of a Reach program.
 
 Let's start by creating a file named @exec{index.rsh}.
-It doesn't matter where you put this file, but we recommend putting it in the current directory, which would be @exec{~/reach/tut} if you're following along exactly.
+It doesn't matter where you put this file, but we recommend putting it in the current directory, which would be @exec{~/reach/rps} if you're following along exactly.
 In all the subsequent code samples, we'll label the files based on the chapter of the tutorial you're reading.
 For example, start off by typing the following into @exec{index.rsh}:
 
@@ -156,7 +156,7 @@ Since the application doesn't do anything, you'll just see a lot of diagnostic m
 
 @margin-note{The entire process that we just went through can be automated by running @cmd{./reach init} when you start your next project!}
 
-In @seclink["tut-3"]{the next step}, we'll implement the logic of @|RPS| and our application will start doing something!
+In @seclink["rps-3"]{the next step}, we'll implement the logic of @|RPS| and our application will start doing something!
 
 @(check:multi
   "2; Reach abstracts away the details of the underlying consensus network"
@@ -164,7 +164,7 @@ In @seclink["tut-3"]{the next step}, we'll implement the logic of @|RPS| and our
   "write a smart contract in Solidity, a backend in JavaScript using the Ethereum SDK, and a frontend in JavaScript, then use Reach to test and deploy it;"
   "write a program in Reach that generates a smart contract & a backend and a front-end in JavaScript, then use Reach to test and deploy it?")
 
-@section[#:tag "tut-3"]{Rock, Paper, and Scissors}
+@section[#:tag "rps-3"]{Rock, Paper, and Scissors}
 
 In this section, we'll have Alice and Bob actually execute the game of @|RPS|.
 
@@ -227,7 +227,7 @@ In our @tech{frontend}, we explicitly ran @reachin{backend.Alice} and @reachin{b
 When we did that, we were committing that particular JavaScript thread to be either Alice or Bob.
 In our game, whoever chose to run the Alice backend is the one that will go first.
 In other words, @bold{Alice goes first}.
-This will be more obvious at @seclink["tut-8"]{the end of the tutorial} when we'll make the choice interactively about which role to play.}
+This will be more obvious at @seclink["rps-8"]{the end of the tutorial} when we'll make the choice interactively about which role to play.}
 
 The game proceeds in three steps.
 
@@ -316,7 +316,7 @@ That's why every time you run @exec{./reach run}, both Alice and Bob will see th
 
 @margin-note{If your version isn't working, look at the complete versions of @reachexlink["rps-2-rps/index.rsh"] and @reachexlink["rps-2-rps/index.mjs"] to make sure you copied everything down correctly!}
 
-In @seclink["tut-4"]{the next step}, we'll add some stakes to the game, because Alice needs to take her skills to the bank!
+In @seclink["rps-4"]{the next step}, we'll add some stakes to the game, because Alice needs to take her skills to the bank!
 
 @(check:many
   @list{2 and 3; Reach programs specify a two-way interface between the frontend and the backend via the @tech{participant interact interface}.}
@@ -332,7 +332,7 @@ In @seclink["tut-4"]{the next step}, we'll add some stakes to the game, because 
   @item{The Reach primitive @reachin{publish} allows a participant to share information with all other participants, which happens automatically without the other parties needing to do anything special;}
   @item{The Reach primitive @reachin{publish} allows a participant to share information with all other participants, but they need to explicitly run the receive primitive to receive published information.})
 
-@section[#:tag "tut-4"]{Bets and Wagers}
+@section[#:tag "rps-4"]{Bets and Wagers}
 
 Although it's fun to play @|RPS| with friends for a laugh, it's even better to play it with enemies and your entire life-savings on the line!
 Let's change our program so that Alice can offer a wager to Bob and whoever wins will take the pot.
@@ -532,7 +532,7 @@ Alice is doing okay - if she keeps this up, she'll make a fortune on @|RPS|!
 @margin-note{If your version isn't working, look at the complete versions of @reachexlink["rps-3-bets/index.rsh"] and @reachexlink["rps-3-bets/index.mjs"] to make sure you copied everything down correctly!}
 
 Now that there is a reason to play this game, it turns out that there's a major security vulnerability.
-We'll fix this in @seclink["tut-5"]{the next step}; make sure you don't launch with this version, or Alice is going to go broke!
+We'll fix this in @seclink["rps-5"]{the next step}; make sure you don't launch with this version, or Alice is going to go broke!
 
 @(check:multi
   @list{2; the @reachin{pay} and @reachin{transfer} primitives do everything for you.}
@@ -540,7 +540,7 @@ We'll fix this in @seclink["tut-5"]{the next step}; make sure you don't launch w
   "They don’t; you need to manage them explicitly in parallel to the Reach program;"
   @item{The @reachin{pay} primitive can be added to a @reachin{publish} primitive to send funds to the Reach program, which can then use the @reachin{transfer} primitive to send funds back to participants, and other addresses.})
 
-@section[#:tag "tut-5"]{Trust and Commitments}
+@section[#:tag "rps-5"]{Trust and Commitments}
 
 In the last section, we made it so that Alice and Bob can actually exchange currency when they play @|RPS|.
 However, the version of the application we wrote has a fundamental flaw: Bob can win every game!
@@ -887,7 +887,7 @@ Non-Reach programmers that try to write decentralized applications are on their 
 
 Now our implementation of @|RPS| is secure and doesn't contain any exploits for either Alice or Bob to guarantee a win.
 However, it still has a final category of mistake that is common in decentralized applications: @seclink["guide-timeout"]{non-participation}.
-We'll fix this in @seclink["tut-6"]{the next step}; make sure you don't launch with this version, or Alice may decide to back out of the game when she knows she's going to lose!
+We'll fix this in @seclink["rps-6"]{the next step}; make sure you don't launch with this version, or Alice may decide to back out of the game when she knows she's going to lose!
 
 @check:tf["False"]{Since blockchain programs run on a single, global, publicly-checked and certified consensus network, you don’t need to test them as much as normal software, which run on a wide variety of different platforms and operating systems.}
 
@@ -897,7 +897,7 @@ We'll fix this in @seclink["tut-6"]{the next step}; make sure you don't launch w
 
 @check:tf["True"]{Reach provides tools for you to add custom verifications to your program, like ensuring that information is known only to one party, or that your implementation of a sensitive algorithm is correct.}
 
-@section[#:tag "tut-6"]{Timeouts and Participation}
+@section[#:tag "rps-6"]{Timeouts and Participation}
 
 In the last section, we removed a security vulnerability from @|RPS| that was a clear attack on the viability of the application.
 In this section, we'll focus on a more subtle issue that is important and unique to decentralized applications: @seclink["guide-timeout"]{non-participation}.
@@ -1092,7 +1092,7 @@ Of course, when you run, you may not get two of the three times ending in a time
 @margin-note{If your version isn't working, look at the complete versions of @reachexlink["rps-6-timeouts/index.rsh"] and @reachexlink["rps-6-timeouts/index.mjs"] to make sure you copied everything down correctly!}
 
 Now our implementation of @|RPS| is robust against either participant dropping from the game.
-In @seclink["tut-7"]{the next step}, we'll extend the application to disallow draws and have Alice and Bob play again until there is a winner.
+In @seclink["rps-7"]{the next step}, we'll extend the application to disallow draws and have Alice and Bob play again until there is a winner.
 
 @(check:multi
   "4; Reach empowers programmers to design the application with the business logic they want."
@@ -1102,7 +1102,7 @@ In @seclink["tut-7"]{the next step}, we'll extend the application to disallow dr
   "Alice is punished and the program proceeds as-if Bob were the winner;"
   @item{It depends on how the program was written; if the developer used Reach, the default is (2), but the developer could include a @reachin{timeout} block to implement the (3) behavior.})
 
-@section[#:tag "tut-7"]{Play and Play Again}
+@section[#:tag "rps-7"]{Play and Play Again}
 
 In this section, we extend our application so that Alice and Bob will continue to play against each other until there is a clear winner, so if it is a draw they will continue playing.
 
@@ -1319,7 +1319,7 @@ As usual, your results may differ, but you should be able to see single round vi
 @margin-note{If your version isn't working, look at the complete versions of @reachexlink["rps-7-loops/index.rsh"] and @reachexlink["rps-7-loops/index.mjs"] to make sure you copied everything down correctly!}
 
 Now our implementation of @|RPS| will always result in a pay-out, which is much more fun for everyone.
-In @seclink["tut-8"]{the next step}, we'll show how to exit "testing" mode with Reach and turn our JavaScript into an interactive @|RPS| game with real users.
+In @seclink["rps-8"]{the next step}, we'll show how to exit "testing" mode with Reach and turn our JavaScript into an interactive @|RPS| game with real users.
 
 @(check:multi
   @list{2; Reach supports @reachin{while} loops.}
@@ -1334,7 +1334,7 @@ In @seclink["tut-8"]{the next step}, we'll show how to exit "testing" mode with 
   "The condition and the body of the loop must establish the invariant."
   "The negation of the condition and the invariant must establish any properties of the rest of the program.")
 
-@section[#:tag "tut-8"]{Interaction and Independence}
+@section[#:tag "rps-8"]{Interaction and Independence}
 
 In the last section, we made our @|RPS| run until there was a definitive winner.
 In this section, we won't be making any changes to the Reach program itself.
@@ -1506,11 +1506,11 @@ Now our implementation of @|RPS| is finished!
 We are protected against attacks, timeouts, and draws, and we can run interactively on non-test networks.
 
 In this step, we made a command-line interface for our Reach program.
-In @seclink["tut-9"]{the next step}, we'll replace this with a Web interface for the same Reach program.
+In @seclink["rps-9"]{the next step}, we'll replace this with a Web interface for the same Reach program.
 
 @check:tf["False; Reach does not impose any constraints on what kind of frontend is attached to your Reach application."]{Reach helps you build automated tests for your decentralized application, but it doesn’t support building interactive user-interfaces.}
 
-@section[#:tag "tut-9"]{Web Interaction}
+@section[#:tag "rps-9"]{Web Interaction}
 @author[(author+email "Dan Burton" "dan@reach.sh")]
 
 In the last section, we made @|RPS| run as a command-line application, without any changes to the Reach program.
@@ -1582,7 +1582,7 @@ to achieve the desired effect.
 On these lines we define a few helpful constants and defaults for later,
 some corresponding to the enumerations we defined in Reach.
 
-@subsection[#:tag "tut-9-App"]{Application component}
+@subsection[#:tag "rps-9-App"]{Application component}
 
 We start defining the main application view, @jsin{App}, as a React component,
 and tell it what to do once it mounts, which is the React term for starting.
@@ -1596,22 +1596,22 @@ and tell it what to do once it mounts, which is the React term for starting.
          'only 39 41 "// ..."]
 
 @itemlist[
- @item{On line 19, we initialize the component state to display @secref["tut-9-ConnectAccount"].}
+ @item{On line 19, we initialize the component state to display @secref["rps-9-ConnectAccount"].}
  @item{On lines 21 thru 31, we hook into React's @jsin{componentDidMount} lifecycle event, which is called when the component starts.}
  @item{On line 22, we use @jsin{getDefaultAccount}, which accesses the default browser account.
   For example, when used with Ethereum, it can discover the currently-selected MetaMask account.}
  @item{On line 26, we use @jsin{canFundFromFaucet} to see if we can access the Reach developer testing network faucet.}
- @item{On line 27, if @jsin{canFundFromFaucet} was @jsin{true}, we set the component state to display @secref["tut-9-FundAccount"].}
- @item{On line 29, if @jsin{canFundFromFaucet} was @jsin{false}, we set the component state to skip to @secref["tut-9-DeployerOrAttacher"].}
+ @item{On line 27, if @jsin{canFundFromFaucet} was @jsin{true}, we set the component state to display @secref["rps-9-FundAccount"].}
+ @item{On line 29, if @jsin{canFundFromFaucet} was @jsin{false}, we set the component state to skip to @secref["rps-9-DeployerOrAttacher"].}
  @item{On line 39, we render the appropriate view from @reachexlink{rps-9-web/views/AppViews.js}.}
 ]
 
-@subsection[#:tag "tut-9-ConnectAccount"]{Connect Account dialog}
+@subsection[#:tag "rps-9-ConnectAccount"]{Connect Account dialog}
 
 When we combine the application component with the view (@reachexlink[#:loc (cons 19 28)]{rps-9-web/views/AppViews.js}) it will look like:
 @image["images/rps-9-web/ConnectAccount.png"]
 
-@subsection[#:tag "tut-9-FundAccount"]{Fund Account dialog}
+@subsection[#:tag "rps-9-FundAccount"]{Fund Account dialog}
 
 Next, we define callbacks on @jsin{App} for what to do when the user clicks certain buttons.
 
@@ -1622,15 +1622,15 @@ Next, we define callbacks on @jsin{App} for what to do when the user clicks cert
 @itemlist[
   @item{On lines 32 thru 35, we define what happens when the user clicks the @litchar{Fund Account} button.}
   @item{On line 33, we transfer funds from the faucet to the user's account.}
-  @item{On line 34, we set the component state to display @secref["tut-9-DeployerOrAttacher"].}
+  @item{On line 34, we set the component state to display @secref["rps-9-DeployerOrAttacher"].}
   @item{On line 36, we define what to do when the user clicks the @litchar{Skip} button,
-   which is to set the component state to display @secref["tut-9-DeployerOrAttacher"].}
+   which is to set the component state to display @secref["rps-9-DeployerOrAttacher"].}
 ]
 
 When we combine this with the view (@reachexlink[#:loc (cons 30 54)]{rps-9-web/views/AppViews.js}) it will look like:
 @image["images/rps-9-web/FundAccount.png"]
 
-@subsection[#:tag "tut-9-DeployerOrAttacher"]{Choose Role}
+@subsection[#:tag "rps-9-DeployerOrAttacher"]{Choose Role}
 
 @reachex[#:mode js
          "rps-9-web/index.js"
@@ -1642,7 +1642,7 @@ based on whether the user clicks @litchar{Deployer} or @litchar{Attacher}.
 When we combine this with the view (@reachexlink[#:loc (cons 56 78)]{rps-9-web/views/AppViews.js}) it will look like:
 @image["images/rps-9-web/DeployerOrAttacher.png"]
 
-@subsection[#:tag "tut-9-Player"]{Player component}
+@subsection[#:tag "rps-9-Player"]{Player component}
 
 Next, we will define @jsin{Player} as a React component,
 that will hold all of the behavior of the players and
@@ -1662,37 +1662,37 @@ We will provide these callbacks via the React component directly.
 @itemlist[
  @item{On line 43, we provide the @jsin{random} callback}
  @item{On lines 44 thru 50, we provide the @jsin{getHand} callback.}
- @item{On lines 45 thru 47, we set the component state to display @secref["tut-9-GetHand"],
+ @item{On lines 45 thru 47, we set the component state to display @secref["rps-9-GetHand"],
   and wait for a @jsin{Promise} which can be resolved via user interaction.}
  @item{On line 48, which occurs after the @jsin{Promise} is resolved,
-  we set the component state to display @secref["tut-9-WaitingForResults"].}
+  we set the component state to display @secref["rps-9-WaitingForResults"].}
  @item{On lines 51 and 52, we provide the @jsin{seeOutcome} and @jsin{informTimeout} callbacks,
-  which set the component state to display @secref["tut-9-Done"] and @secref["tut-9-Timeout"], respectively.}
+  which set the component state to display @secref["rps-9-Done"] and @secref["rps-9-Timeout"], respectively.}
  @item{On line 53, we define what happens when the user clicks @litchar{Rock}, @litchar{Paper}, or @litchar{Scissors}:
   The @jsin{Promise} from line 45 is resolved.}
 ]
 
-@subsection[#:tag "tut-9-GetHand"]{Get Hand dialog}
+@subsection[#:tag "rps-9-GetHand"]{Get Hand dialog}
 
 The dialog used to get a hand from the player (@reachexlink[#:loc (cons 8 32)]{rps-9-web/views/PlayerViews.js}) looks like:
 @image["images/rps-9-web/GetHand.png"]
 
-@subsection[#:tag "tut-9-WaitingForResults"]{Waiting for results display}
+@subsection[#:tag "rps-9-WaitingForResults"]{Waiting for results display}
 
 The dialog used to get a hand from the player (@reachexlink[#:loc (cons 34 42)]{rps-9-web/views/PlayerViews.js}) looks like:
 @image["images/rps-9-web/WaitingForResults.png"]
 
-@subsection[#:tag "tut-9-Done"]{Done display}
+@subsection[#:tag "rps-9-Done"]{Done display}
 
 The display when the player sees the end of the game (@reachexlink[#:loc (cons 44 54)]{rps-9-web/views/PlayerViews.js}) looks like:
 @image["images/rps-9-web/Done.png"]
 
-@subsection[#:tag "tut-9-Timeout"]{Timeout display}
+@subsection[#:tag "rps-9-Timeout"]{Timeout display}
 
 The display when the player sees a timeout (@reachexlink[#:loc (cons 56 64)]{rps-9-web/views/PlayerViews.js}) looks like:
 @image["images/rps-9-web/Timeout.png"]
 
-@subsection[#:tag "tut-9-Deployer"]{Deployer component}
+@subsection[#:tag "rps-9-Deployer"]{Deployer component}
 
 @;; TODO: rename Deployer->Alice, Attacher->Bob
 Next, we will define @jsin{Deployer} as a React component for Alice,
@@ -1711,42 +1711,42 @@ and define some button handlers in order to trigger the deployment of the contra
          'only 56 72 "// ..."]
 
 @itemlist[
- @item{On line 59, we set the component state to display @secref["tut-9-SetWager"].}
+ @item{On line 59, we set the component state to display @secref["rps-9-SetWager"].}
  @item{On line 61, we define what to do when the user clicks the @litchar{Set Wager} button,
-  which is to set the component state to display @secref["tut-9-Deploy"].}
+  which is to set the component state to display @secref["rps-9-Deploy"].}
  @item{On lines 62 thru 69, we define what to do when the user clicks the @litchar{Deploy} button.}
  @item{On line 63, we call @jsin{acc.deploy}, which triggers a deploy of the contract.}
- @item{On line 64, we set the component state to display @secref["tut-9-Deploying"].}
+ @item{On line 64, we set the component state to display @secref["rps-9-Deploying"].}
  @item{On line 65, we set the @jsin{wager} property.}
  @item{On line 66, we set the @jsin{deadline} property based on which connector is being used.}
  @item{On line 67, we start running the Reach program as Alice, using the @jsin{this} React component
   as the @tech{participant interact interface} object.}
- @item{On lines 68 and 69, we set the component state to display @secref["tut-9-WaitingForAttacher"],
+ @item{On lines 68 and 69, we set the component state to display @secref["rps-9-WaitingForAttacher"],
   which displays the deployed contract info as JSON.}
  @item{On line 71, we render the appropriate view from @reachexlink{rps-9-web/views/DeployerViews.js}.}
 ]
 
-@subsection[#:tag "tut-9-SetWager"]{Set Wager dialog}
+@subsection[#:tag "rps-9-SetWager"]{Set Wager dialog}
 
 The dialog used to set the wager (@reachexlink[#:loc (cons 20 38)]{rps-9-web/views/DeployerViews.js}) looks like:
 @image["images/rps-9-web/SetWager.png"]
 
-@subsection[#:tag "tut-9-Deploy"]{Deploy dialog}
+@subsection[#:tag "rps-9-Deploy"]{Deploy dialog}
 
 The dialog used to deploy (@reachexlink[#:loc (cons 40 53)]{rps-9-web/views/DeployerViews.js}) looks like:
 @image["images/rps-9-web/Deploy.png"]
 
-@subsection[#:tag "tut-9-Deploying"]{Deploying display}
+@subsection[#:tag "rps-9-Deploying"]{Deploying display}
 
 The display shown while deploying (@reachexlink[#:loc (cons 55 61)]{rps-9-web/views/DeployerViews.js}) looks like:
 @image["images/rps-9-web/Deploying.png"]
 
-@subsection[#:tag "tut-9-WaitingForAttacher"]{Waiting for Attacher display}
+@subsection[#:tag "rps-9-WaitingForAttacher"]{Waiting for Attacher display}
 
 The display shown while waiting for the attacher (@reachexlink[#:loc (cons 63 90)]{rps-9-web/views/DeployerViews.js}) looks like:
 @image["images/rps-9-web/WaitingForAttacher.png"]
 
-@subsection[#:tag "tut-9-Attacher"]{Attacher component}
+@subsection[#:tag "rps-9-Attacher"]{Attacher component}
 
 Our Web frontend needs to implement the @tech{participant interact interface} for Bob, which we defined as:
 
@@ -1761,41 +1761,41 @@ and define some button handlers in order to attach to the deployed contract.
          'only 73 95 "// ..."]
 
 @itemlist[
- @item{On line 76, we initialize the component state to display @secref["tut-9-Attach"].}
+ @item{On line 76, we initialize the component state to display @secref["rps-9-Attach"].}
  @item{On lines 78 thru 82, we define what happens when the user clicks the @litchar{Attach} button.}
  @item{On line 79, we call @jsin{acc.attach}}
- @item{On line 80, we set the component state to display @secref["tut-9-Attaching"].}
+ @item{On line 80, we set the component state to display @secref["rps-9-Attaching"].}
  @item{On line 81, we start running the Reach program as Bob, using the @jsin{this} React component
   as the @tech{participant interact interface} object.}
  @item{On lines 83 thru 88, we define the @jsin{acceptWager} callback.}
- @item{On lines 85 thru 87, we set the component state to display @secref["tut-9-AcceptTerms"],
+ @item{On lines 85 thru 87, we set the component state to display @secref["rps-9-AcceptTerms"],
   and wait for a @jsin{Promise} which can be resolved via user interaction.}
  @item{On lines 89 thru 92, we define what happens when the user clicks the @litchar{Accept Terms and Pay Wager} button:
-  the @jsin{Promise} from line 90 is resolved, and we set the component state to display @secref["tut-9-WaitingForTurn"].}
+  the @jsin{Promise} from line 90 is resolved, and we set the component state to display @secref["rps-9-WaitingForTurn"].}
  @item{On line 93, we render the appropriate view from @reachexlink{rps-9-web/views/AttacherViews.js}}
 ]
 
-@subsection[#:tag "tut-9-Attach"]{Attach dialog}
+@subsection[#:tag "rps-9-Attach"]{Attach dialog}
 
 The dialog used to attach (@reachexlink[#:loc (cons 18 39)]{rps-9-web/views/AttacherViews.js}) looks like:
 @image["images/rps-9-web/Attach.png"]
 
-@subsection[#:tag "tut-9-Attaching"]{Attaching display}
+@subsection[#:tag "rps-9-Attaching"]{Attaching display}
 
 The display when attaching (@reachexlink[#:loc (cons 41 49)]{rps-9-web/views/AttacherViews.js}) looks like:
 @image["images/rps-9-web/Attaching.png"]
 
-@subsection[#:tag "tut-9-AcceptTerms"]{Accept Terms dialog}
+@subsection[#:tag "rps-9-AcceptTerms"]{Accept Terms dialog}
 
 The dialog used to accept the terms of the wager (@reachexlink[#:loc (cons 51 70)]{rps-9-web/views/AttacherViews.js}) looks like:
 @image["images/rps-9-web/AcceptTerms.png"]
 
-@subsection[#:tag "tut-9-WaitingForTurn"]{Waiting for Turn display}
+@subsection[#:tag "rps-9-WaitingForTurn"]{Waiting for Turn display}
 
 The display when waiting for a turn (@reachexlink[#:loc (cons 72 81)]{rps-9-web/views/AttacherViews.js}) looks like:
 @image["images/rps-9-web/WaitingForTurn.png"]
 
-@subsection[#:tag "tut-9-Final"]{Putting it all together}
+@subsection[#:tag "rps-9-Final"]{Putting it all together}
 
 @reachex[#:mode js
          "rps-9-web/index.js"
@@ -1873,35 +1873,35 @@ through any Web UI framework of our choice.
 If we wanted to deploy this application to the world, then we would take the static files that React produces and host them on a Web server.
 These files embed your compiled Reach program, so there's nothing more to do than provide them to the world.
 
-In @seclink["tut-10"]{the next section}, we'll summarize where we've gone and direct you to the next step of your journey to decentralized application mastery.
+In @seclink["rps-10"]{the next section}, we'll summarize where we've gone and direct you to the next step of your journey to decentralized application mastery.
 
 @check:tf["True"]{Reach integrates with all Web interface libraries, like React, Vue, and so on, because Reach frontends are just normal JavaScript programs.}
 
 @check:tf["True"]{Reach accelerates your development with React by baking-in a React development server and the deployment process to test React programs locally.}
 
-@section[#:tag "tut-10"]{Onward and Further}
+@section[#:tag "rps-10"]{Onward and Further}
 
 Let's review what we've done through this tutorial:
 
 @itemlist[
 
-@item{In @seclink["tut-1"]{part one}, we saw how Reach can be installed with one command on almost any system without any dependencies beyond what most developers have anyways.}
+@item{In @seclink["rps-1"]{part one}, we saw how Reach can be installed with one command on almost any system without any dependencies beyond what most developers have anyways.}
 
-@item{In @seclink["tut-2"]{part two}, we saw how Reach programs have a succinct setup that easily abstracts the details of your chosen @tech{consensus network} into a couple lines and three key API calls.}
+@item{In @seclink["rps-2"]{part two}, we saw how Reach programs have a succinct setup that easily abstracts the details of your chosen @tech{consensus network} into a couple lines and three key API calls.}
 
-@item{In @seclink["tut-3"]{part three}, we saw how Reach allows developers to focus on the business logic of their decentralized application and look past the nitty-gritty details of blockchain interaction and protocol design.}
+@item{In @seclink["rps-3"]{part three}, we saw how Reach allows developers to focus on the business logic of their decentralized application and look past the nitty-gritty details of blockchain interaction and protocol design.}
 
-@item{In @seclink["tut-4"]{part four}, we saw that it is just as easy for Reach to deal with tokens and network transactions as it is to deal with data sharing.}
+@item{In @seclink["rps-4"]{part four}, we saw that it is just as easy for Reach to deal with tokens and network transactions as it is to deal with data sharing.}
 
-@item{In @seclink["tut-5"]{part five}, we introduced you to the Reach @seclink["guide-assert"]{automatic formal verification} engine and its ability to ensure our program doesn't have entire categories of flaws and security vulnerabilities.}
+@item{In @seclink["rps-5"]{part five}, we introduced you to the Reach @seclink["guide-assert"]{automatic formal verification} engine and its ability to ensure our program doesn't have entire categories of flaws and security vulnerabilities.}
 
-@item{In @seclink["tut-6"]{part six}, we saw how Reach allows you to specify how to deal with @seclink["guide-timeout"]{non-participation} and protect against funds being locked in contracts.}
+@item{In @seclink["rps-6"]{part six}, we saw how Reach allows you to specify how to deal with @seclink["guide-timeout"]{non-participation} and protect against funds being locked in contracts.}
 
-@item{In @seclink["tut-7"]{part seven}, we saw how Reach can express arbitrary length interactions and how flexible the Reach @tech{frontends} are to variations in the @tech{backend}.}
+@item{In @seclink["rps-7"]{part seven}, we saw how Reach can express arbitrary length interactions and how flexible the Reach @tech{frontends} are to variations in the @tech{backend}.}
 
-@item{In @seclink["tut-8"]{part eight}, we saw how to decouple your Reach program from the Reach standard testing environment and launch an interactive version on a real network.}
+@item{In @seclink["rps-8"]{part eight}, we saw how to decouple your Reach program from the Reach standard testing environment and launch an interactive version on a real network.}
 
-@item{In @seclink["tut-9"]{part nine}, we saw how to deploy your Reach program as a fully decentralized Web application.}
+@item{In @seclink["rps-9"]{part nine}, we saw how to deploy your Reach program as a fully decentralized Web application.}
 
 ]
 
@@ -1938,7 +1938,7 @@ Now that you've seen an entire Reach application from beginning to end, it's tim
 
 @item{Or, maybe it's time for you to dive into @seclink["ref"]{the reference} and look into the minutiae of Reach's features.}
 
-@item{Finally, you may like to repeat a portion of this tutorial, but using @seclink["tut-7-rpc"]{a language other than JavaScript}, like Python or Go!}
+@item{Finally, you may like to repeat a portion of this tutorial, but using @seclink["rps-7-rpc"]{a language other than JavaScript}, like Python or Go!}
 
 ]
 
@@ -1947,4 +1947,4 @@ Once you join, message @litchar{@"@"team, I just completed the tutorial!} and we
 
 Thanks for spending your afternoon with us!
 
-@include-section["tut-7-rpc.scrbl"]
+@include-section["rps-7-rpc.scrbl"]
