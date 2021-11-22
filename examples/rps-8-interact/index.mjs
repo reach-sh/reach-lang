@@ -33,7 +33,7 @@ const stdlib = loadStdlib(process.env);
     yesno
   );
   if (deployCtc) {
-    ctc = acc.deploy(backend);
+    ctc = acc.contract(backend);
     ctc.getInfo().then((info) => {
       console.log(`The contract is deployed as = ${JSON.stringify(info)}`); });
   } else {
@@ -41,7 +41,7 @@ const stdlib = loadStdlib(process.env);
       `Please paste the contract information:`,
       JSON.parse
     );
-    ctc = acc.attach(backend, info);
+    ctc = acc.contract(backend, info);
   }
 
   const fmt = (x) => stdlib.formatCurrency(x, 4);
