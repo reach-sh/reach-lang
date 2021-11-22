@@ -3,11 +3,11 @@
           scribble/html-properties
           "lib.rkt")
 
-@title[#:version reach-vers #:tag "tut-7-rpc" #:style 'toc]{Rock, Paper, Scissors in Python}
+@title[#:version reach-vers #:tag "rps-7-rpc" #:style 'toc]{Rock, Paper, Scissors in Python}
 @author[(author+email "Matt Audesse" "matt@reach.sh")]
 
-@(define py-impl "tut-7-rpc/client-py/index.py")
-@(define js-impl "tut-7/index.mjs")
+@(define py-impl "rps-7-rpc/client-py/index.py")
+@(define js-impl "rps-7-loops/index.mjs")
 
 The main sequence of the tutorial uses the
 @seclink["ref-frontends-js"]{JavaScript frontend support library} to implement
@@ -17,11 +17,11 @@ But, Reach supports using any programming language through the
 
 This tutorial walks through using this technique to implement a @|RPS| frontend
 in Python.
-It is based on the frontend from @secref["tut-7"], so it does not include a
+It is based on the frontend from @secref["rps-7"], so it does not include a
 text-based interface, or a Web interface, but uses the final version of the
 Reach code.
 
-Below we will compare the @secref["tut-7"] JavaScript @tech{frontend} with the
+Below we will compare the @secref["rps-7"] JavaScript @tech{frontend} with the
 equivalent Python code communicating via RPC, section by section.
 Follow along by typing the Python code into a file called @tt{index.py}.
 
@@ -189,7 +189,7 @@ invoke our @pyin{main} function.
 Now that we have written an entire @|RPS| game in Python it is time to try
 running it.
 
-First you will need to copy the @tt{index.rsh} file you used for @seclink["tut-7"]{the tutorial}
+First you will need to copy the @tt{index.rsh} file you used for @seclink["rps-7"]{the tutorial}
 into the directory where you saved @tt{index.py}.
 
 Next, open a terminal in that directory and install the Reach Python RPC
@@ -213,7 +213,7 @@ Consult the @seclink["ref-usage-rpc-run"]{command-line} reference section for mo
 how this sub-command works.
 }
 
-Its output will be the same as the @seclink["tut-7"]{final tutorial} version of the frontend:
+Its output will be the same as the @seclink["rps-7"]{final tutorial} version of the frontend:
 
 @verbatim{
 Bob accepts the wager of 5
@@ -239,7 +239,7 @@ reference section for configuration details.
 
 When you are done, type @exec{deactivate} to exit your @tt{venv}.
 
-Well done! You have just reimplemented @seclink["tut-7"]{the tutorial} in Python.
+Well done! You have just reimplemented @seclink["rps-7"]{the tutorial} in Python.
 
 @(hrule)
 
