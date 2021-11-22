@@ -12,7 +12,7 @@ struct T5 {
 
 contract LogAttack1 {
   
-  event e1(T5 _a);
+  event _reach_e1(T5 _a);
 
   constructor () payable {
     }
@@ -22,6 +22,6 @@ contract LogAttack1 {
     a.time = 0;
     a.msg.v62 = acct;
     a.msg.v63 = amt + 1;
-    emit e1(a);
+    emit _reach_e1(a);
   }
 }

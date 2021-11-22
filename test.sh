@@ -119,8 +119,9 @@ checkteal () {
 #exit 0
 
 jb
-ci ETH ctc-address
-ci ALGO ctc-address
+ci ETH log-attack1
+ci ETH log-attack2
+ci ETH log-attack1j
 exit 0
 
 #c users/t.rsh
