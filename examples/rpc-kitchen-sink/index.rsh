@@ -26,5 +26,7 @@ export const main = Reach.App(() => {
   runView.fun(A, v1, Bytes(10).pad('Main/fun'));
   runView.fun(A, v2, Bytes(10).pad('fun'));
 
+  A.publish(); commit();
+
   exit();
 });
