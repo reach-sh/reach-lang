@@ -1832,7 +1832,18 @@ you can call:
     stdlib.setWalletFallback(stdlib.walletFallback({
       providerEnv: 'TestNet', MyAlgoConnect }));
   }
-  Of course, you may want to replace @js{'TestNet'} with a different network name.
+
+  Or, you could have your users use @link["https://walletconnect.com/"]{WalletConnect} to connect to the @link["https://algorandwallet.com/"]{Algorand Wallet}, by adding the following:
+  @js{
+    import WalletConnect from '@"@"reach-sh/stdlib/ALGO_WalletConnect';
+    stdlib.setWalletFallback(stdlib.walletFallback({
+      providerEnv: 'TestNet', WalletConnect }));
+  }
+
+  (Of course, you may want to replace @js{'TestNet'} in either of these samples with a different network name, like @js{'MainNet'}.)
+
+  Because these are fallbacks, you need to decide for your users which wallet they'll use, or make a user interface element to let them select which wallet fallback to use.
+
 }
 
 Similarly, to run with Conflux:

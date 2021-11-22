@@ -665,6 +665,7 @@ On Ethereum and Conflux, it always errors and cannot provide a wallet.
 On Algorand, it can provide a wallet that directly connects to the Algorand network, like @jsin{setProviderByName} (& @jsin{setProviderByEnv}), but provide interactive signing.
 The network connection is specified via the @litchar{providerEnv} key, which may be a string (which is used as an argument to @jsin{providerEnvByName}) or an environment (which is used as an argument to @jsin{setProviderByEnv}).
 By default, signing is via an interactive browser window prompt, where the user repeatedly provides their mnemonic.
+
 If the key @litchar{MyAlgoConnect} is provided, and bound to the export of @litchar{@"@"reach-sh/stdlib/ALGO_MyAlgoConnect}, then @link["https://wallet.myalgo.com/home"]{My Algo} will be used for signing.
 For example, this sets the wallet fallback to be My Algo used with Algorand TestNet:
 @js{
@@ -672,6 +673,16 @@ import MyAlgoConnect from '@"@"reach-sh/stdlib/ALGO_MyAlgoConnect';
 stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', MyAlgoConnect }));
 }
+
+If the key @litchar{WalletConnect} is provided, and bound to the export of @litchar{@"@"reach-sh/stdlib/ALGO_WalletConnect}, then @link["https://walletconnect.com/"]{WalletConnect} is used to connect to the @link["https://algorandwallet.com/"]{Algorand Wallet} for signing.
+For example, this sets the wallet fallback to be WalletConnect and the Algorand TestNet:
+@js{
+import WalletConnect from '@"@"reach-sh/stdlib/ALGO_WalletConnect';
+stdlib.setWalletFallback(stdlib.walletFallback({
+  providerEnv: 'TestNet', WalletConnect }));
+}
+
+Because these are fallbacks, you need to decide for your users which wallet they'll use, or make a user interface element to let them select which wallet fallback to use.
 
 @section[#:tag "ref-frontends-js-utils"]{Utilities}
 
