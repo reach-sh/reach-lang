@@ -1,34 +1,128 @@
-<p>The <a href="https://github.com/reach-sh/reach-lang/blob/master/reach">reach</a> command-line script is the primary tool for Reach developers:</p>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach help</li><li value="2">reach 0.1.6 (66f7fd96) - Reach command-line tool</li><li value="3"></li><li value="4">Usage: reach COMMAND</li><li value="5"></li><li value="6">Available options:</li><li value="7">  -h,--help                Show this help text</li><li value="8"></li><li value="9">Available commands:</li><li value="10">  config                   Configure default Reach settings</li><li value="11">  compile                  Compile an app</li><li value="12">  clean                    Delete 'build/$MODULE.$IDENT.mjs'</li><li value="13">  init                     Set up source files for a simple app in the current</li><li value="14">                           directory</li><li value="15">  run                      Run a simple app</li><li value="16">  down                     Halt all Dockerized Reach services and devnets</li><li value="17">  scaffold                 Set up Docker scaffolding for a simple app in the</li><li value="18">                           current directory</li><li value="19">  react                    Run a simple React app</li><li value="20">  rpc-server               Run a simple Reach RPC server</li><li value="21">  rpc-run                  Run an RPC server + frontend with development</li><li value="22">                           configuration</li><li value="23">  devnet                   Run only the devnet</li><li value="24">  upgrade                  Upgrade Reach</li><li value="25">  update                   Update Reach Docker images</li><li value="26">  docker-reset             Kill and remove all Docker containers</li><li value="27">  version                  Display version</li><li value="28">  hashes                   Display git hashes used to build each Docker image</li><li value="29">  help                     Show usage</li></ol></pre>
-<h1 id="reach-clean">reach clean</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach clean -h</li><li value="2">Usage: reach clean [MODULE] [IDENT]</li><li value="3">  Delete 'build/$MODULE.$IDENT.mjs'</li><li value="4"></li><li value="5">Available options:</li><li value="6">  -h,--help                Show this help text</li><li value="7"></li><li value="8">MODULE is "index" by default</li><li value="9">IDENT  is "main"  by default</li><li value="10"></li><li value="11">If:</li><li value="12"> * MODULE is a directory then `cd $MODULE &amp;&amp; rm -f "build/index.$IDENT.mjs";</li><li value="13"> * MODULE is <something-else> then `rm -f "build/$MODULE.$IDENT.mjs"</something-else></li></ol></pre>
-<h1 id="reach-compile">reach compile</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach compile -h</li><li value="2">Usage: reach compile [-o|--output DIR] [SOURCE] [EXPORTS...] </li><li value="3">                     [--intermediate-files] [--install-pkgs] [--stop-after-eval]</li><li value="4">                     [--verify-timeout TIMEOUT-MS]</li><li value="5">  Compile an app</li><li value="6"></li><li value="7">Available options:</li><li value="8">  -o,--output DIR          Directory for output files</li><li value="9">  --intermediate-files     Store intermediate files in output DIR</li><li value="10">  --install-pkgs           Allow Reach to fetch remote package imports</li><li value="11">  --stop-after-eval        Stop compilation process after evaluation</li><li value="12">  --verify-timeout TIMEOUT-MS</li><li value="13">                           Timeout per verification theorem in</li><li value="14">                           milliseconds (default: 120000)</li><li value="15">  -h,--help                Show this help text</li></ol></pre>
-<h1 id="reach-config">reach config</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach config -h</li><li value="2">Usage: reach config [-v|--verbose]</li><li value="3">  Configure default Reach settings</li><li value="4"></li><li value="5">Available options:</li><li value="6">  -v,--verbose             Print additional config info to `stdout`</li><li value="7">  -h,--help                Show this help text</li></ol></pre>
-<h1 id="reach-devnet">reach devnet</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach devnet -h</li><li value="2">Usage: reach devnet [--await-background]</li><li value="3">  Run only the devnet</li><li value="4"></li><li value="5">Available options:</li><li value="6">  --await-background       Run in background and await availability</li><li value="7">  -h,--help                Show this help text</li></ol></pre>
-<h1 id="reach-docker-reset">reach docker-reset</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach docker-reset -h</li><li value="2">Usage: reach docker-reset [-y|--even-non-reach]</li><li value="3">  Kill and remove all Docker containers</li><li value="4"></li><li value="5">Available options:</li><li value="6">  -y,--even-non-reach      Acknowledge non-interactively that ALL containers</li><li value="7">                           will be halted</li><li value="8">  -h,--help                Show this help text</li></ol></pre>
-<h1 id="reach-down">reach down</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach down -h</li><li value="2">Usage: reach down </li><li value="3">  Halt all Dockerized Reach services and devnets</li><li value="4"></li><li value="5">Available options:</li><li value="6">  -h,--help                Show this help text</li></ol></pre>
-<h1 id="reach-hashes">reach hashes</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach hashes -h</li><li value="2">Usage: reach hashes </li><li value="3">  Display git hashes used to build each Docker image</li><li value="4"></li><li value="5">Available options:</li><li value="6">  -h,--help                Show this help text</li></ol></pre>
-<h1 id="reach-init">reach init</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach init [TEMPLATE]</li><li value="2">  Set up source files for a simple app in the current directory</li><li value="3"></li><li value="4">Available options:</li><li value="5">  -h,--help                Show this help text</li><li value="6"></li><li value="7">Available templates:</li><li value="8">  - default</li><li value="9"></li><li value="10">Aborts if index.rsh or index.mjs already exist</li></ol></pre>
-<h1 id="reach-react">reach react</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach react -h</li><li value="2">Usage: reach react [-o|--output DIR] [SOURCE] [EXPORTS...] </li><li value="3">                   [--intermediate-files] [--install-pkgs] [--stop-after-eval] </li><li value="4">                   [--verify-timeout TIMEOUT-MS]</li><li value="5">  Run a simple React app</li><li value="6"></li><li value="7">Available options:</li><li value="8">  -o,--output DIR          Directory for output files</li><li value="9">  --intermediate-files     Store intermediate files in output DIR</li><li value="10">  --install-pkgs           Allow Reach to fetch remote package imports</li><li value="11">  --stop-after-eval        Stop compilation process after evaluation</li><li value="12">  --verify-timeout TIMEOUT-MS</li><li value="13">                           Timeout per verification theorem in</li><li value="14">                           milliseconds (default: 120000)</li><li value="15">  -h,--help                Show this help text</li></ol></pre>
-<h1 id="reach-rpc-run">reach rpc-run</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach rpc-run -h</li><li value="2">Usage: reach rpc-run EXECUTABLE [ARGS]</li><li value="3">  Run an RPC server + frontend with development configuration</li><li value="4"></li><li value="5">Available options:</li><li value="6">  ARGS                     Zero or more arguments to be passed into EXECUTABLE</li><li value="7">  -h,--help                Show this help text</li><li value="8"></li><li value="9">Example:</li><li value="10"> $ reach rpc-run python3 -u ./index.py</li></ol></pre>
-<h1 id="reach-rpc-server">reach rpc-server</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach rpc-server -h</li><li value="2">Usage: reach rpc-server </li><li value="3">  Run a simple Reach RPC server</li><li value="4"></li><li value="5">Available options:</li><li value="6">  -h,--help                Show this help text</li></ol></pre>
-<h1 id="reach-run">reach run</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach run -h</li><li value="2">Usage: reach run [APP or DIR] [ARGS]</li><li value="3">  Run a simple app</li><li value="4"></li><li value="5">Available options:</li><li value="6">  APP or DIR               May be either a module name without its extension</li><li value="7">                           (e.g. "index") or a relative sub-directory path</li><li value="8">  ARGS                     Zero or more arguments to be passed into APP</li><li value="9">  -h,--help                Show this help text</li></ol></pre>
-<h1 id="reach-scaffold">reach scaffold</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach scaffold -h</li><li value="2">Usage: reach scaffold [--quiet]</li><li value="3">  Set up Docker scaffolding for a simple app in the current directory</li><li value="4"></li><li value="5">Available options:</li><li value="6">  --quiet                  Withhold progress messages</li><li value="7">  -h,--help                Show this help text</li></ol></pre>
-<h1 id="reach-update">reach update</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach update -h</li><li value="2">Usage: reach update </li><li value="3">  Update Reach Docker images</li><li value="4"></li><li value="5">Available options:</li><li value="6">  -h,--help                Show this help text</li></ol></pre>
-<h1 id="reach-upgrade">reach upgrade</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach upgrade -h</li><li value="2">Usage: reach upgrade </li><li value="3">  Upgrade Reach</li><li value="4"></li><li value="5">Available options:</li><li value="6">  -h,--help                Show this help text</li></ol></pre>
-<h1 id="reach-version">reach version</h1>
-<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach version </li><li value="2">  Display version</li><li value="3"></li><li value="4">Available options:</li><li value="5">  -h,--help                Show this help text</li></ol></pre>
+<p>The <a href="https://github.com/reach-sh/reach-lang/blob/master/reach">reach</a> command-line tool enables you to compile Reach DApps and manage your Reach development environment. To install the tool, see <a href="/en/essentials/getting-started/install-and-run/">Install and Run</a>.</p>
+<h1 id="environment-variables">Environment Variables</h1>
+<p>In addition to passing command-line arguments, you can influence the behavior of the <a href="https://github.com/reach-sh/reach-lang/blob/master/reach">reach</a> command-line tool by setting environment variables.</p>
+<h2 id="reach-connector-mode">Reach Connector Mode</h2>
+<p>To target a specific <a href="/en/essentials/network-connectors/">consensus network</a>, set the <code>REACH_CONNECTOR_MODE</code> environment variable to the desired <a href="https://github.com/reach-sh/reach-lang/blob/master/js/stdlib/ts/ConnectorMode.ts">connector mode</a>:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Network</th>
+      <th>Example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Algorand</td>
+      <td><code>export REACH_CONNECTOR_MODE=ALGO-devnet</code><br><code>export REACH_CONNECTOR_MODE=ALGO-live</code><br><code>export REACH_CONNECTOR_MODE=ALGO-browser</code></td>
+    </tr>
+    <tr>
+      <td>Conflux</td>
+      <td><code>export REACH_CONNECTOR_MODE=CFX-devnet</code><br><code>export REACH_CONNECTOR_MODE=CFX-live</code><br><code>export REACH_CONNECTOR_MODE=CFX-browser</code></td>
+    </tr>
+    <tr>
+      <td>Ethereum</td>
+      <td><code>export REACH_CONNECTOR_MODE=ETH-devnet</code><br><code>export REACH_CONNECTOR_MODE=ETH-live</code><br><code>export REACH_CONNECTOR_MODE=ETH-browser</code></td>
+    </tr>
+  </tbody>
+</table>
+<h2 id="reach-debug">Reach Debug</h2>
+<p>To cause the Reach compiler to display additional debug information, set REACH_DEBUG to a non-empty value:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">export REACH_DEBUG=1</li></ol></pre>
+<h2 id="reach-rpc">Reach RPC</h2>
+<p>The <a href="/en/essentials/frontend-programming/rpc-frontends/">Reach RPC Server</a> supports the environment variables listed below. See <a href="/en/essentials/backend-programming/reach-script/#reach-rpc-server">reach rpc-server</a> for details:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">REACH_RPC_KEY</li><li value="2">REACH_RPC_PORT</li><li value="3">REACH_RPC_SERVER</li><li value="4">REACH_RPC_TLS_CRT</li><li value="5">REACH_RPC_TLS_KEY</li><li value="6">REACH_RPC_TLS_PASSPHRASE</li><li value="7">REACH_RPC_TLS_REJECT_UNVERIFIED</li></ol></pre>
+<h2 id="reach-version">Reach Version</h2>
+<p>To target a specific Reach compiler version, find the version on <a href="https://hub.docker.com/r/reachsh/reach/tags">DockerHub</a>, and set the <code>REACH_VERSION</code> environment variable to the desired version, hash tag, date, or identifier:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Technique</th>
+      <th>Example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Version</td>
+      <td><code>export REACH_VERSION 0.1.6</code><br><code>export REACH_VERSION v0.1.6</code></td>
+    </tr>
+    <tr>
+      <td>Hash Tag</td>
+      <td><code>export REACH_VERSION 639fa565</code></td>
+    </tr>
+    <tr>
+      <td>Date</td>
+      <td><code>export REACH_VERSION 2021-11-04</code></td>
+    </tr>
+    <tr>
+      <td>Identifier</td>
+      <td><code>export REACH_VERSION latest</code><br><code>export REACH_VERSION stable</code></td>
+    </tr>
+  </tbody>
+</table>
+<h1 id="commands">Commands</h1>
+<p>Run <code>reach help</code> to view available commands.</p>
+<h2 id="reach-clean">reach clean</h2>
+<p>By default, this command deletes <code>build/index.main.mjs</code>:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach clean</li></ol></pre>
+<p>To delete <code>build/myindex.mymain.mjs</code>, run the following:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach clean myindex mymain</li></ol></pre>
+<p>To delete <code>~/reach/hello-world/build/index.mymain.mjs</code>, run the following:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach clean ~/reach/hello-world mymain</li></ol></pre>
+<h2 id="reach-compile">reach compile</h2>
+<p>By default, this command compiles <code>index.rsh</code> into <code>build/index.main.mjs</code> and verifies it:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach compile</li></ol></pre>
+<p>To compile <code>myindex.rsh</code> into <code>build/myindex.main.mjs</code>, run the following:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach compile myindex.rsh</li></ol></pre>
+<p>To compile <code>myindex.rsh</code> into <code>mybuild/myindex.main.mjs</code>, run the following:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach compile myindex.rsh --output mybuild</li></ol></pre>
+<p>To retain intermediate build files in <code>/build</code>, use <code>--intermediate-files</code>:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach compile --intermediate-files</li></ol></pre>
+<p>To fetch remote package imports without compiling, use <code>--install-pkgs</code>:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach compile --install-pkgs</li></ol></pre>
+<h2 id="reach-config">reach config</h2>
+<p>After soliciting information from you, this command creates a <code>~/.config/reach/env</code> script containing commands to export Reach environment variables:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach config</li></ol></pre>
+<p>Output from this command supplies you with customized directions for sourcing the <code>env</code> script.</p>
+<h2 id="reach-devnet">reach devnet</h2>
+<p>With <code>REACH_CONNECTOR_MODE</code> set, this command launches a private devnet on which you can run/test your Reach DApps:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach devnet</li></ol></pre>
+<p>To run the devnet in the background, use <code>--await-background</code>:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach devnet --await-background</li></ol></pre>
+<h2 id="reach-docker-reset">reach docker-reset</h2>
+<p>This command stops and deletes all Docker containers including Reach Docker containers.</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach docker-reset</li></ol></pre>
+<p>Use <a href="#reach-down">reach down</a> to stop and delete only Reach Docker containers.</p>
+<h2 id="reach-down">reach down</h2>
+<p>This command stops and deletes all Reach Docker containers.</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach down</li></ol></pre>
+<p>Docker containers are instances of Docker images. So, after you run <code>reach update</code> to refresh you Reach Docker images, running <code>reach down</code> ensures that all Reach Docker containers based on old Reach Docker images are removed.</p>
+<h2 id="reach-hashes">reach hashes</h2>
+<p>This command displays git hash values associated with your current Reach Docker images:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach hashes</li></ol></pre>
+<h2 id="reach-init">reach init</h2>
+<p>This command creates minimal index.rsh and index.mjs files in the current directory.</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach init [TEMPLATE]</li></ol></pre>
+<h2 id="reach-react">reach react</h2>
+<p>This command runs a simple React app.</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach react</li></ol></pre>
+<h2 id="reach-rpc-run">reach rpc-run</h2>
+<p>This command runs a Reach RPC server and an RPC frontend with a development configuration.</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach rpc-run</li></ol></pre>
+<h2 id="reach-rpc-server">reach rpc-server</h2>
+<p>This command runs a Reach RPC server.</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach rpc-server</li></ol></pre>
+<h2 id="reach-run">reach run</h2>
+<p>This command runs a simple Reach DApp.</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach run</li></ol></pre>
+<h2 id="reach-scaffold">reach scaffold</h2>
+<p>This command creates Docker files for a simple app in the current directory.</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach scaffold</li></ol></pre>
+<h2 id="reach-update">reach update</h2>
+<p>This command updates the Reach Docker images.</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach update</li></ol></pre>
+<h2 id="reach-upgrade">reach upgrade</h2>
+<p>This command upgrades the Reach CLI.</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach upgrade</li></ol></pre>
+<h2 id="reach-version-1">reach version</h2>
+<p>This command displays the Reach compiler version.</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach version</li></ol></pre>

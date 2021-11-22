@@ -1,0 +1,468 @@
+<p>Reach programs are organized into four modes:</p>
+<ol>
+  <li><a href="#initialization">Initialization</a> defines Participants, Views, and APIs, and, optionally, overrides default compilation settings.</li>
+  <li><a href="#step">Step</a> defines actions taken by all participants.</li>
+  <li><a href="#local-step">Local Step</a> defines actions taken by a particular participant.</li>
+  <li><a href="#consensus-step">Consensus Step</a> defines actions taken by the contract.</li>
+</ol>
+<h2 id="transitions">Transitions</h2>
+<p>The following diagram indicates mode transitions:</p>
+<div>
+  <img src="/en/essentials/backend-programming/reach-modes/mode-transitions.png" class="img-fluid" width="500" height="390" loading="lazy">
+</div>
+<h2 id="consensus-transfers">Consensus Transfers</h2>
+<p>A consensus transfer is a statement or expression that (a) facilitates agreement among participants, (b) transitions to a consensus step, and (3) records the agreement as a transaction on the distributed ledger (i.e. blockchain) of the consensus network. These actions include <code>publish</code>, <code>pay</code>, <code>race</code>, <code>fork</code>, and <code>parallelReduce</code>. The developer chooses which consensus transfer to use depending on the number of participants, tasks, and iterations:</p>
+<table>
+  <thead>
+    <tr>
+      <th># Participants</th>
+      <th># Tasks</th>
+      <th># Iterations</th>
+      <th>Consensus Transfer</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>One</td>
+      <td>One</td>
+      <td>One</td>
+      <td><code>publish</code> or <code>pay</code></td>
+    </tr>
+    <tr>
+      <td>Many</td>
+      <td>One</td>
+      <td>One</td>
+      <td><code>race</code></td>
+    </tr>
+    <tr>
+      <td>Many</td>
+      <td>Many</td>
+      <td>One</td>
+      <td><code>fork</code></td>
+    </tr>
+    <tr>
+      <td>Many</td>
+      <td>Many</td>
+      <td>Many</td>
+      <td><code>parallelReduce</code></td>
+    </tr>
+  </tbody>
+</table>
+<p>The following list describes when to use each type of consensus transfer:</p>
+<ul>
+  <li>Use <code>publish</code> to cause one participant to make a value (e.g. the price of an item) available to all other participants.</li>
+  <li>Use <code>pay</code> to cause one participant to pay an amount to the contract account.</li>
+  <li>Use <code>race</code> when multiple participants are racing to <code>publish</code> or <code>pay</code>.</li>
+  <li>Use <code>fork</code> when multiple participants are racing to do different actions.</li>
+  <li>Use <code>parallelReduce</code> when muliple participants are iteratively racing or forking.</li>
+</ul>
+<p><code>commit</code> transitions from a consensus step to a step.</p>
+<h2 id="statements-and-expressions">Statements and Expressions</h2>
+<p>In addition to the statements and expressions found in <a href="/en/books/essentials/backend-programming/reach-syntax/">Reach Syntax</a>, each mode supports the additional statements and expressions described below.</p>
+<h1 id="initialization">Initialization</h1>
+<p>The Reach compiler recognizes <code>export const main = Reach.App(() =&gt; {}</code> as a Reach DApp, and the body of <code>Reach.App</code> represents Application Initialization mode:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">main</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Reach.</span><span style="color: #8250DF">App</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #8250DF">setOptions</span><span style="color: #24292F">({ verifyArithmetic: </span><span style="color: #0550AE">true</span><span style="color: #24292F">, connectors: [</span><span style="color: #0550AE">ETH</span><span style="color: #24292F">, </span><span style="color: #0550AE">ALGO</span><span style="color: #24292F"> ] });</span></li><li value="3"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">S</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Seller'</span><span style="color: #24292F">, sellerInteract);</span></li><li value="4"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">B</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Buyer'</span><span style="color: #24292F">, buyerInteract);</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">V</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">View</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Main'</span><span style="color: #24292F">, { price: UInt });</span></li><li value="6"><span style="color: #24292F">  </span><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></li></ol></pre>
+<ul>
+  <li>Line 1: <code>Reach.App</code> accepts a no-argument function that specifies a DApp.</li>
+  <li>Line 2: Optionally, <code>setOptions</code> overrides default compile options.</li>
+  <li>Line 3-4: <code>Participant</code> specifies DApp participants.</li>
+  <li>Line 5: <code>View</code> specifies DApp views.</li>
+  <li>Line 6: The <code>deploy</code> function transitions from Initialization mode to Step mode.</li>
+</ul>
+<p>In addition to the statements and expressions described in <a href="/en/books/essentials/backend-programming/computations/">Computations</a>, Initialization mode supports the following statements/expressions:</p>
+<h2 id="api">API</h2>
+<p>An <code>API</code> expression defines an API in the contract.</p>
+<h3 id="declaration">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">API</span><span style="color: #24292F">(name, interface)</span></li><li value="2"><span style="color: #6E7781">// or </span></li><li value="3"><span style="color: #8250DF">API</span><span style="color: #24292F">(interface)</span></li></ol></pre>
+<ul>
+  <li><code>name</code> is a string that labels the API.</li>
+  <li><code>interface</code> is an object comprised of methods available in frontends via the <code>ctc.apis</code> object.</li>
+  <li>The return value is an object whose fields are the <code>interface</code> methods. The object may be used in the <code>.api</code> component of <code>fork</code> and <code>parallelReduce</code> expressions. Each object method must occur exactly once in the entire program.</li>
+</ul>
+<h3 id="example">Example</h3>
+<p>See <a href="https://github.com/reach-sh/reach-lang/blob/master/examples/api-full/index.rsh">examples/api-full/index.rsh</a>.</p>
+<h2 id="deploy">deploy</h2>
+<p>The <code>deploy</code> statement defines Participants, Views, APIs, and compiler options, and transitions from Initialization mode to Step mode.</p>
+<h3 id="example-1">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></li></ol></pre>
+<h2 id="participant">Participant</h2>
+<p>A <code>Participant</code> expression defines a participant.</p>
+<h3 id="declaration-1">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">Participant</span><span style="color: #24292F">(name, interface)</span></li></ol></pre>
+<ul>
+  <li><code>name</code> is a string indicating the name of the participant function in the generated backend code. Each name must be unique.</li>
+  <li><code>interface</code> is an interact object comprised of property and method declarations defined in the corresponding frontend interact object.</li>
+</ul>
+<h3 id="example-2">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">sellerInteract</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  price: UInt,</span></li><li value="3"><span style="color: #24292F">  wisdom: </span><span style="color: #8250DF">Bytes</span><span style="color: #24292F">(</span><span style="color: #0550AE">128</span><span style="color: #24292F">),</span></li><li value="4"><span style="color: #24292F">  reportReady: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Null)</span></li><li value="5"><span style="color: #24292F">};</span></li><li value="6"></li><li value="7"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">S</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Seller'</span><span style="color: #24292F">, sellerInteract);</span></li></ol></pre>
+<h2 id="participantclass">ParticipantClass</h2>
+<p>A <code>ParticipantClass</code> expression defines a type of participant.</p>
+<h3 id="declaration-2">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">ParticipantClass</span><span style="color: #24292F">(name, interface)</span></li></ol></pre>
+<ul>
+  <li><code>name</code> is a string which indicates the name of the participant class function in the generated backend code. Each name must be unique.</li>
+  <li><code>interface</code> is an interact object comprised of property and method declarations defined in the corresponding frontend interact object.</li>
+</ul>
+<h3 id="example-3">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">sponsorApi</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  donation: UInt,</span></li><li value="3"><span style="color: #24292F">  reportDonation: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([Address, UInt, UInt, UInt, UInt], Null),</span></li><li value="4"><span style="color: #24292F">};</span></li><li value="5"></li><li value="6"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">S</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">ParticipantClass</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Sponsor'</span><span style="color: #24292F">, sponsorApi);</span></li></ol></pre>
+<h2 id="setoptions">setOptions</h2>
+<p>The <code>setOptions</code> statement overrides default application parameters.</p>
+<h3 id="declaration-3">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">setOptions</span><span style="color: #24292F">(options)</span></li></ol></pre>
+<p><code>options</code> is an object containing zero or more of the following options:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Option</th>
+      <th>Type</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>connectors</code></td>
+      <td><code>Array</code></td>
+      <td>All available connectors</td>
+    </tr>
+    <tr>
+      <td><code>verifyArithmetic</code></td>
+      <td><code>Boolean</code></td>
+      <td><code>false</code></td>
+    </tr>
+    <tr>
+      <td><code>verifyPerConnector</code></td>
+      <td><code>Boolean</code></td>
+      <td><code>false</code></td>
+    </tr>
+  </tbody>
+</table>
+<p><code>connectors</code> is an array of tuples indicating for which consensus networks the compiler will generate contract bytecode.</p>
+<p><code>verifyArithmetic</code> is a boolean value indicating whether arithmetic operations introduce static assertions that they do not overflow beyond <code>UInt.max</code>. This defaults to false because it is onerous to verify. We recommend turning it on before final deployment, but leaving it off during development. When it is false, connectors will ensure that overflows do not actually occur on the network.</p>
+<p><code>verifyPerConnector</code> is a boolean value that determines whether verification is done per connector, or once for a generic connector. When this is true, then connector-specific constants, like UInt.max, will be instantiated to literal numbers. This concretization of these constants can induce performance degradation in the verifier.</p>
+<h3 id="example-4">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">setOptions</span><span style="color: #24292F">({ verifyArithmetic: </span><span style="color: #0550AE">true</span><span style="color: #24292F">, connectors: [</span><span style="color: #0550AE">ETH</span><span style="color: #24292F">, </span><span style="color: #0550AE">ALGO</span><span style="color: #24292F"> ] });</span></li></ol></pre>
+<h2 id="view">View</h2>
+<p>A View expression defines a view object that allows non-participants to see public variables in the contract.</p>
+<h3 id="declaration-4">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">View</span><span style="color: #24292F">(name, viewInterface)</span></li><li value="2"><span style="color: #6E7781">// or</span></li><li value="3"><span style="color: #8250DF">View</span><span style="color: #24292F">(viewInterface)</span></li></ol></pre>
+<ul>
+  <li><code>name</code> is a string that labels the view.</li>
+  <li><code>interface</code> is an object comprised of properties and methods available in frontends via the <code>ctc.views</code> object.</li>
+  <li>The return value is an object referred to as a <code>view</code> object.</li>
+</ul>
+<h3 id="example-5">Example</h3>
+<p>The program instantiates the view in Line 4 and initializes the <code>price</code> property in Line 10:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">main</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Reach.</span><span style="color: #8250DF">App</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">S</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Seller'</span><span style="color: #24292F">, sellerInteract);</span></li><li value="3"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">B</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Buyer'</span><span style="color: #24292F">, buyerInteract);</span></li><li value="4"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">V</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">View</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Main'</span><span style="color: #24292F">, { price: UInt });</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></li><li value="6"></li><li value="7"><span style="color: #24292F">  </span><span style="color: #0550AE">S</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">price</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.price); });</span></li><li value="8"><span style="color: #24292F">  </span><span style="color: #0550AE">S</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(price);</span></li><li value="9"><span style="color: #24292F">  </span><span style="color: #0550AE">S</span><span style="color: #24292F">.interact.</span><span style="color: #8250DF">reportReady</span><span style="color: #24292F">(price);</span></li><li value="10"><span style="color: #24292F">  </span><span style="color: #0550AE">V</span><span style="color: #24292F">.price.</span><span style="color: #8250DF">set</span><span style="color: #24292F">(price);</span></li><li value="11"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
+<h1 id="step">Step</h1>
+<p>A <em>Step</em> consists of actions that apply to all participants. In addition to the statements and expressions described in <a href="/en/books/essentials/backend-programming/computations/">Computations</a>, Step mode supports the following statements/expressions:</p>
+<h2 id="call">call</h2>
+<p>The <code>call</code> expression invokes the specified API function.</p>
+<h3 id="declaration-5">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> [ </span><span style="color: #0550AE">DOMAIN</span><span style="color: #24292F">, </span><span style="color: #0550AE">RET_FUN</span><span style="color: #24292F"> ] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">call</span><span style="color: #24292F">(</span><span style="color: #0550AE">API_EXPR</span><span style="color: #24292F">)</span></li><li value="2"><span style="color: #24292F">  .</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(</span><span style="color: #0550AE">API_PAY_EXPR</span><span style="color: #24292F">)</span></li><li value="3"><span style="color: #24292F">  .</span><span style="color: #8250DF">assume</span><span style="color: #24292F">(</span><span style="color: #0550AE">API_ASSUME_EXPR</span><span style="color: #24292F">)</span></li><li value="4"><span style="color: #24292F">  .</span><span style="color: #8250DF">throwTimeout</span><span style="color: #24292F">(</span><span style="color: #0550AE">DELAY_EXPR</span><span style="color: #24292F">, </span><span style="color: #0550AE">THROW_EXPR</span><span style="color: #24292F">)</span></li></ol></pre>
+<ul>
+  <li><code>API_EXPR</code> is an expression that evaluates to an API member function.</li>
+  <li><code>pay</code>, <code>assume</code>, and <code>throwTimeout</code> are optional. See <a href="#fork">Fork</a>.</li>
+  <li>The return value is <code>[ DOMAIN, RET_FUN ]</code> where <code>DOMAIN</code> is specific to the function, and <code>RET_FUN</code> is a function that <em>must be called</em> to return a value to the API function.</li>
+</ul>
+<h3 id="example-6">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">A</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">API</span><span style="color: #24292F">(</span><span style="color: #0A3069">'A'</span><span style="color: #24292F">, { isGt: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt, UInt], Bool); });</span></li><li value="2"><span style="color: #6E7781">// ...</span></li><li value="3"><span style="color: #CF222E">const</span><span style="color: #24292F"> [ </span><span style="color: #0550AE">dom</span><span style="color: #24292F">, </span><span style="color: #0550AE">k</span><span style="color: #24292F"> ] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">call</span><span style="color: #24292F">(</span><span style="color: #0550AE">A</span><span style="color: #24292F">.isGt).</span><span style="color: #8250DF">assume</span><span style="color: #24292F">((</span><span style="color: #953800">x</span><span style="color: #24292F">, </span><span style="color: #953800">y</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> x </span><span style="color: #CF222E">!=</span><span style="color: #24292F"> y).</span><span style="color: #8250DF">pay</span><span style="color: #24292F">((</span><span style="color: #953800">x</span><span style="color: #24292F">, </span><span style="color: #953800">y</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> x);</span></li><li value="4"><span style="color: #CF222E">const</span><span style="color: #24292F"> [</span><span style="color: #0550AE">x</span><span style="color: #24292F">, </span><span style="color: #0550AE">y</span><span style="color: #24292F">] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> dom;</span></li><li value="5"><span style="color: #8250DF">k</span><span style="color: #24292F">(x </span><span style="color: #CF222E">&gt;</span><span style="color: #24292F"> y);</span></li><li value="6"><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
+<h2 id="closeto">closeTo</h2>
+<p>The <code>closeTo</code> expression causes the specified participant to publish, receive a <code>transfer</code> of the contract balance and the <a href="/en/books/essentials/terminology/#pay-amount">pay amount</a>, and then exit.</p>
+<h3 id="declaration-6">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">closeTo</span><span style="color: #24292F">( Who, after, nonNetPayAmt )</span></li></ol></pre>
+<ul>
+  <li><code>Who</code> is the participant.</li>
+  <li><code>after</code> is a no-argument function called before exit. It is optional.</li>
+  <li><code>nonNetPayAmt</code>. See <a href="/en/books/essentials/terminology/#pay-amount">Pay Amount</a>. It is optional.</li>
+</ul>
+<h3 id="example-7">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">aliceInteract</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  informTimeout: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([], Null)</span></li><li value="3"><span style="color: #24292F">};</span></li><li value="4"></li><li value="5"><span style="color: #0550AE">B</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(wager).</span><span style="color: #8250DF">timeout</span><span style="color: #24292F">(</span><span style="color: #0550AE">DEADLINE</span><span style="color: #24292F">, () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #8250DF">closeTo</span><span style="color: #24292F">(</span><span style="color: #0550AE">A</span><span style="color: #24292F">, informTimeout));</span></li></ol></pre>
+<h2 id="exit">exit</h2>
+<p>The <code>exit</code> statement halts the computation. It is a terminator statement, so it must have an empty tail.</p>
+<h3 id="example-8">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">exit</span><span style="color: #24292F">();</span></li></ol></pre>
+<h2 id="fork">fork</h2>
+<p>A <code>fork</code> statement organizes a competition among several participants (each intent on accomplishing a potentially different task), determines which participant wins the competition, and executes the winner's task.</p>
+<h3 id="declaration-7">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">fork</span><span style="color: #24292F">()</span></li><li value="2"><span style="color: #24292F">  .</span><span style="color: #8250DF">paySpec</span><span style="color: #24292F">(</span><span style="color: #0550AE">TOKENS_EXPR</span><span style="color: #24292F">)</span></li><li value="3"><span style="color: #24292F">  .</span><span style="color: #8250DF">case</span><span style="color: #24292F">(</span><span style="color: #0550AE">PART_EXPR</span><span style="color: #24292F">,</span></li><li value="4"><span style="color: #24292F">    </span><span style="color: #0550AE">PUBLISH_EXPR</span><span style="color: #24292F">,</span></li><li value="5"><span style="color: #24292F">    </span><span style="color: #0550AE">PAY_EXPR</span><span style="color: #24292F">,</span></li><li value="6"><span style="color: #24292F">    </span><span style="color: #0550AE">CONSENSUS_EXPR</span><span style="color: #24292F">)</span></li><li value="7"><span style="color: #24292F">  .</span><span style="color: #8250DF">api</span><span style="color: #24292F">(</span><span style="color: #0550AE">API_EXPR</span><span style="color: #24292F">,</span></li><li value="8"><span style="color: #24292F">    </span><span style="color: #0550AE">API_ASSUME_EXPR</span><span style="color: #24292F">,</span></li><li value="9"><span style="color: #24292F">    </span><span style="color: #0550AE">API_PAY_EXPR</span><span style="color: #24292F">,</span></li><li value="10"><span style="color: #24292F">    </span><span style="color: #0550AE">API_CONSENSUS_EXPR</span><span style="color: #24292F">)</span></li><li value="11"><span style="color: #24292F">  .</span><span style="color: #8250DF">timeout</span><span style="color: #24292F">(</span><span style="color: #0550AE">DELAY_EXPR</span><span style="color: #24292F">, () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">TIMEOUT_BLOCK</span><span style="color: #24292F">);</span></li><li value="12"><span style="color: #24292F">  </span><span style="color: #6E7781">// or</span></li><li value="13"><span style="color: #24292F">  .</span><span style="color: #8250DF">throwTimeout</span><span style="color: #24292F">(</span><span style="color: #0550AE">DELAY_EXPR</span><span style="color: #24292F">, </span><span style="color: #0550AE">THROW_EXPR</span><span style="color: #24292F">)</span></li></ol></pre>
+<ul>
+  <li><code>TOKENS_EXPR</code> is an expression that evaluates to a tuple of Tokens;</li>
+  <li><code>PART_EXPR</code> is an expression that evaluates to a participant;</li>
+  <li><code>PUBLISH_EXPR</code> is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a msg field, which may be of any type, and a when field, which must be a boolean;</li>
+  <li>(optional) <code>PAY_EXPR</code> is an expression that evaluates to a function parameterized over the msg value and returns a <a href="/en/books/essentials/terminology/#pay-amount">pay amount</a>; if this component is left-out, it is synthesized to zero;</li>
+  <li><code>CONSENSUS_EXPR</code> is a syntactic arrow expression parameterized over the msg value which is evaluated in a consensus step;</li>
+  <li><code>API_EXPR</code> is an expression that evaluates to an API member function;</li>
+  <li>(optional) <code>API_ASSUME_EXPR</code> is a function parameterized over the input to the API member function which is evaluated for effect in a local step; thus it may be used to add assume constraints on the values given by the API; if this is absent, then it is synthesized to an empty function; if it is present, then API_PAY_EXPR must be included;</li>
+  <li>(optional) <code>API_PAY_EXPR</code> is a function parameterized over the input to the API member function which is evaluated to determine the <a href="/en/books/essentials/terminology/#pay-amount">pay amount</a>, like PAY_EXPR;</li>
+  <li><code>API_CONSENSUS_EXPR</code> is a function parameterized over the input to the API member function and a function that returns a value to the API call; this function must be called;</li>
+  <li>the timeout and throwTimeout parameter are as in an consensus transfer.</li>
+</ul>
+<h3 id="example-9">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">fork</span><span style="color: #24292F">()</span></li><li value="2"><span style="color: #24292F">.</span><span style="color: #8250DF">case</span><span style="color: #24292F">(Alice, (() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> ({</span></li><li value="3"><span style="color: #24292F">  msg: </span><span style="color: #0550AE">19</span><span style="color: #24292F">,</span></li><li value="4"><span style="color: #24292F">  when: </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.</span><span style="color: #8250DF">keepGoing</span><span style="color: #24292F">()) })),</span></li><li value="5"><span style="color: #24292F">  ((</span><span style="color: #953800">v</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> v),</span></li><li value="6"><span style="color: #24292F">  (</span><span style="color: #953800">v</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="7"><span style="color: #24292F">    </span><span style="color: #0550AE">require</span><span style="color: #24292F">(v </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0550AE">19</span><span style="color: #24292F">);</span></li><li value="8"><span style="color: #24292F">    </span><span style="color: #8250DF">transfer</span><span style="color: #24292F">(wager </span><span style="color: #CF222E">+</span><span style="color: #24292F"> </span><span style="color: #0550AE">19</span><span style="color: #24292F">).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(</span><span style="color: #0550AE">this</span><span style="color: #24292F">);</span></li><li value="9"><span style="color: #24292F">    </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="10"><span style="color: #24292F">    </span><span style="color: #8250DF">exit</span><span style="color: #24292F">();</span></li><li value="11"><span style="color: #24292F">  })</span></li><li value="12"><span style="color: #24292F">.</span><span style="color: #8250DF">case</span><span style="color: #24292F">(Bob, (() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> ({</span></li><li value="13"><span style="color: #24292F">  when: </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.</span><span style="color: #8250DF">keepGoing</span><span style="color: #24292F">()) })),</span></li><li value="14"><span style="color: #24292F">  ((</span><span style="color: #953800">_</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> wager),</span></li><li value="15"><span style="color: #24292F">  (</span><span style="color: #953800">_</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="16"><span style="color: #24292F">    </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="17"></li><li value="18"><span style="color: #24292F">    Alice.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> interact.</span><span style="color: #8250DF">showOpponent</span><span style="color: #24292F">(Bob));</span></li><li value="19"></li><li value="20"><span style="color: #24292F">    </span><span style="color: #8250DF">race</span><span style="color: #24292F">(Alice, Bob).</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li><li value="21"><span style="color: #24292F">    </span><span style="color: #8250DF">transfer</span><span style="color: #24292F">(</span><span style="color: #0550AE">2</span><span style="color: #24292F"> </span><span style="color: #CF222E">*</span><span style="color: #24292F"> wager).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(</span><span style="color: #0550AE">this</span><span style="color: #24292F">);</span></li><li value="22"><span style="color: #24292F">    </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="23"><span style="color: #24292F">    </span><span style="color: #8250DF">exit</span><span style="color: #24292F">();</span></li><li value="24"><span style="color: #24292F">  })</span></li><li value="25"><span style="color: #24292F">.</span><span style="color: #8250DF">timeout</span><span style="color: #24292F">(deadline, () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="26"><span style="color: #24292F">  </span><span style="color: #8250DF">race</span><span style="color: #24292F">(Alice, Bob).</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li><li value="27"><span style="color: #24292F">  </span><span style="color: #8250DF">transfer</span><span style="color: #24292F">(wager).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(</span><span style="color: #0550AE">this</span><span style="color: #24292F">);</span></li><li value="28"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="29"><span style="color: #24292F">  </span><span style="color: #8250DF">exit</span><span style="color: #24292F">(); });</span></li></ol></pre>
+<h3 id="intuition">Intuition</h3>
+<p>A fork statement is an abbreviation of a common race and switch pattern you could write yourself. The idea is that each of the participants in the case components do an independent local step evaluation of a value they would like to publish and then all race to publish their value. The one that "wins" the race then determines not only the value (&amp; pay expression), but also what consensus step code runs to consume the value. The example above is roughly equivalent to the following:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #6E7781">// We first define a Data instance so that each participant can publish a different kind of value.</span></li><li value="2"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">ForkData</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Data</span><span style="color: #24292F">({ Alice: UInt, Bob: Null });</span></li><li value="3"></li><li value="4"><span style="color: #6E7781">// Then we bind these values for each participant</span></li><li value="5"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="6"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">fork_msg</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> ForkData.</span><span style="color: #8250DF">Alice</span><span style="color: #24292F">(</span><span style="color: #0550AE">19</span><span style="color: #24292F">);</span></li><li value="7"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">fork_when</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.</span><span style="color: #8250DF">keepGoing</span><span style="color: #24292F">());</span></li><li value="8"><span style="color: #24292F">});</span></li><li value="9"><span style="color: #24292F">Bob.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="10"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">fork_msg</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> ForkData.</span><span style="color: #8250DF">Bob</span><span style="color: #24292F">(</span><span style="color: #0550AE">null</span><span style="color: #24292F">);</span></li><li value="11"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">fork_when</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.</span><span style="color: #8250DF">keepGoing</span><span style="color: #24292F">());</span></li><li value="12"><span style="color: #24292F">});</span></li><li value="13"></li><li value="14"><span style="color: #6E7781">// They race</span></li><li value="15"><span style="color: #8250DF">race</span><span style="color: #24292F">(Alice, Bob)</span></li><li value="16"><span style="color: #24292F">  .</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(fork_msg)</span></li><li value="17"><span style="color: #24292F">  .</span><span style="color: #8250DF">when</span><span style="color: #24292F">(fork_when)</span></li><li value="18"></li><li value="19"><span style="color: #24292F">  </span><span style="color: #6E7781">// The pay ammount depends on who is publishing</span></li><li value="20"><span style="color: #24292F">  .</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(fork_msg.</span><span style="color: #8250DF">match</span><span style="color: #24292F">({</span></li><li value="21"><span style="color: #24292F">    Alice: (</span><span style="color: #953800">v</span><span style="color: #24292F"> </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> v),</span></li><li value="22"><span style="color: #24292F">    Bob: ((</span><span style="color: #953800">_</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> wager)</span></li><li value="23"><span style="color: #24292F">  }))</span></li><li value="24"></li><li value="25"><span style="color: #24292F">  </span><span style="color: #6E7781">// The timeout is always the same</span></li><li value="26"><span style="color: #24292F">  .</span><span style="color: #8250DF">timeout</span><span style="color: #24292F">(deadline, () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="27"><span style="color: #24292F">    </span><span style="color: #8250DF">race</span><span style="color: #24292F">(Alice, Bob).</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li><li value="28"><span style="color: #24292F">    </span><span style="color: #8250DF">transfer</span><span style="color: #24292F">(wager).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(</span><span style="color: #0550AE">this</span><span style="color: #24292F">);</span></li><li value="29"><span style="color: #24292F">    </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="30"><span style="color: #24292F">    </span><span style="color: #8250DF">exit</span><span style="color: #24292F">();</span></li><li value="31"><span style="color: #24292F">  });</span></li><li value="32"></li><li value="33"><span style="color: #6E7781">// We ensure that the correct participant published the correct kind of value</span></li><li value="34"><span style="color: #0550AE">require</span><span style="color: #24292F">(fork_msg.</span><span style="color: #8250DF">match</span><span style="color: #24292F">({</span></li><li value="35"></li><li value="36"><span style="color: #24292F">  </span><span style="color: #6E7781">// Alice had previously published</span></li><li value="37"><span style="color: #24292F">  Alice: (</span><span style="color: #953800">v</span><span style="color: #24292F"> </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">this</span><span style="color: #24292F"> </span><span style="color: #CF222E">==</span><span style="color: #24292F"> Alice),</span></li><li value="38"></li><li value="39"><span style="color: #24292F">  </span><span style="color: #6E7781">// But Bob had not.</span></li><li value="40"><span style="color: #24292F">  Bob: ((</span><span style="color: #953800">_</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">true</span><span style="color: #24292F">)</span></li><li value="41"><span style="color: #24292F">}));</span></li><li value="42"></li><li value="43"><span style="color: #6E7781">// Then we select the appropriate body to run</span></li><li value="44"><span style="color: #CF222E">switch</span><span style="color: #24292F"> (fork_msg) {</span></li><li value="45"><span style="color: #24292F">  </span><span style="color: #CF222E">case</span><span style="color: #24292F"> Alice: {</span></li><li value="46"><span style="color: #24292F">    </span><span style="color: #8250DF">assert</span><span style="color: #24292F">(</span><span style="color: #0550AE">this</span><span style="color: #24292F"> </span><span style="color: #CF222E">==</span><span style="color: #24292F"> Alice);</span></li><li value="47"><span style="color: #24292F">    </span><span style="color: #0550AE">require</span><span style="color: #24292F">(v </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0550AE">19</span><span style="color: #24292F">);</span></li><li value="48"><span style="color: #24292F">    </span><span style="color: #8250DF">transfer</span><span style="color: #24292F">(wager </span><span style="color: #CF222E">+</span><span style="color: #24292F"> </span><span style="color: #0550AE">19</span><span style="color: #24292F">).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(</span><span style="color: #0550AE">this</span><span style="color: #24292F">);</span></li><li value="49"><span style="color: #24292F">    </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="50"><span style="color: #24292F">    </span><span style="color: #8250DF">exit</span><span style="color: #24292F">();</span></li><li value="51"><span style="color: #24292F">  }</span></li><li value="52"><span style="color: #24292F">  </span><span style="color: #CF222E">case</span><span style="color: #24292F"> Bob: {</span></li><li value="53"><span style="color: #24292F">    Bob.</span><span style="color: #8250DF">set</span><span style="color: #24292F">(</span><span style="color: #0550AE">this</span><span style="color: #24292F">);</span></li><li value="54"><span style="color: #24292F">    </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="55"></li><li value="56"><span style="color: #24292F">    Alice.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> interact.</span><span style="color: #8250DF">showOpponent</span><span style="color: #24292F">(Bob));</span></li><li value="57"></li><li value="58"><span style="color: #24292F">    </span><span style="color: #8250DF">race</span><span style="color: #24292F">(Alice, Bob).</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li><li value="59"><span style="color: #24292F">    </span><span style="color: #8250DF">transfer</span><span style="color: #24292F">(</span><span style="color: #0550AE">2</span><span style="color: #24292F"> </span><span style="color: #CF222E">*</span><span style="color: #24292F"> wager).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(</span><span style="color: #0550AE">this</span><span style="color: #24292F">);</span></li><li value="60"><span style="color: #24292F">    </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="61"><span style="color: #24292F">    </span><span style="color: #8250DF">exit</span><span style="color: #24292F">();</span></li><li value="62"><span style="color: #24292F">  }</span></li><li value="63"><span style="color: #24292F">}</span></li></ol></pre>
+<p>This pattern is tedious to write and error-prone, so the fork statement abbreviates it for Reach programmers. When a participant specifies multiple cases, the msg field of the participant will be wrapped with an additional variant signifying what case was chosen.</p>
+<h2 id="each-and-only">each and only</h2>
+<p><code>each</code> and <code>only</code> statements transition from <em>step</em> mode to <em>local step</em> mode and then back to <em>step</em> mode. In other words, local steps occur within the body of <code>each</code> and <code>only</code> statements.</p>
+<h3 id="declaration-8">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">each</span><span style="color: #24292F">(</span><span style="color: #8250DF">PART_TUPLE</span><span style="color: #24292F"> () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">BLOCK</span><span style="color: #24292F">)</span></li><li value="2"><span style="color: #6E7781">// and</span></li><li value="3"><span style="color: #0550AE">PART</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">BLOCK</span><span style="color: #24292F">)</span></li></ol></pre>
+<ul>
+  <li><code>PART_TUPLE</code> is a tuple of participants (e.g. <code>[Alice, Bob]</code>).</li>
+  <li><code>PART</code> is a participant.</li>
+  <li><code>BLOCK</code> stands for one or more local statements.</li>
+</ul>
+<h3 id="example-10">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">3</span><span style="color: #24292F">; });</span></li><li value="2"><span style="color: #6E7781">// and </span></li><li value="3"><span style="color: #8250DF">each</span><span style="color: #24292F">([Alice, Bob], () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">pretzel</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> interact.</span><span style="color: #8250DF">random</span><span style="color: #24292F">(); });</span></li></ol></pre>
+<h3 id="details">Details</h3>
+<p>A local step statement is written PART.only(() =&gt; BLOCK), where PART is a participant identifier and BLOCK is a block. Within BLOCK, PART is bound to the address of the participant. Any bindings defined within the block of a local step are available in the statement’s tail as new local state. For example,</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">3</span><span style="color: #24292F">; });</span></li><li value="3"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="4"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">y</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> x </span><span style="color: #CF222E">+</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">; });</span></li></ol></pre>
+<p>is a valid program where Alice’s local state includes the private values x (bound to 3) and y (bound to 4). However, such bindings are not consensus state, so they are purely local state. For example,</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">3</span><span style="color: #24292F">; });</span></li><li value="3"><span style="color: #24292F">Bob.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="4"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">y</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> x </span><span style="color: #CF222E">+</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">; });</span></li></ol></pre>
+<p>is an invalid program, because Bob does not know x.</p>
+<p>The interact shorthand, written PART.interact.METHOD(EXPR_0, ..., EXPR_n), is available for calling an interact function from outside of an only block. Such functions must return Null; therefore, they are only useful if they produce side-effects, such as logging on the frontend. For example, the function log in the participant interact interface of Alice may be called via:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">Alice.interact.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(x);</span></li></ol></pre>
+<p>An each local step statement can be written as each(PART_TUPLE () =&gt; BLOCK), where PART_TUPLE is a tuple of participants and BLOCK is a block. It is an abbreviation of many local step statements that could have been written with only.</p>
+<h2 id="publish-pay-when-timeout">publish, pay, when, timeout</h2>
+<p>A consensus transfer often involves one or more of the following expressions: <code>publish</code>, <code>pay</code>, <code>when</code>, and <code>timeout</code>.</p>
+<h3 id="declaration-9">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">PART_EXPR</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(</span><span style="color: #0550AE">ID_0</span><span style="color: #24292F">, </span><span style="color: #CF222E">...</span><span style="color: #24292F">, ID_n)</span></li><li value="2"><span style="color: #24292F">  .</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(</span><span style="color: #0550AE">PAY_EXPR</span><span style="color: #24292F">)</span></li><li value="3"><span style="color: #24292F">  .</span><span style="color: #8250DF">when</span><span style="color: #24292F">(</span><span style="color: #0550AE">WHEN_EXPR</span><span style="color: #24292F">)</span></li><li value="4"><span style="color: #24292F">  .</span><span style="color: #8250DF">timeout</span><span style="color: #24292F">(</span><span style="color: #0550AE">DELAY_EXPR</span><span style="color: #24292F">, () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">TIMEOUT_BLOCK</span><span style="color: #24292F">)</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #6E7781">// or</span></li><li value="6"><span style="color: #24292F">  .</span><span style="color: #8250DF">throwTimeout</span><span style="color: #24292F">(</span><span style="color: #0550AE">DELAY_EXPR</span><span style="color: #24292F">, </span><span style="color: #0550AE">THROWN_EXPR</span><span style="color: #24292F">)</span></li></ol></pre>
+<ul>
+  <li><code>PART_EXPR</code> is an expression that evaluates to a participant or race expression.</li>
+  <li><code>ID_0</code> through <code>ID_n</code> are identifiers for the participants’s public local state.</li>
+  <li><code>PAY_EXPR</code> is a public expression evaluating to a <a href="/en/books/essentials/terminology/#pay-amount">pay amount</a>.</li>
+  <li><code>WHEN_EXPR</code> is a public expression evaluating to a boolean and determines if the consensus transfer takes place.</li>
+  <li><code>DELAY_EXPR</code> is a public expression that depends on only consensus state and evaluates to a time argument.</li>
+  <li><code>TIMEOUT_BLOCK</code> is a timeout block, which will be executed after the delay.</li>
+  <li><code>DELAY_EXPR</code> time argument passes without the participant executing this consensus transfer.</li>
+</ul>
+<h3 id="examples">Examples</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(wagerAmount)</span></li><li value="2"><span style="color: #24292F">  .</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(wagerAmount)</span></li><li value="3"><span style="color: #24292F">  .</span><span style="color: #8250DF">timeout</span><span style="color: #24292F">(</span><span style="color: #0550AE">DELAY</span><span style="color: #24292F">, () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="4"><span style="color: #24292F">    Bob.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li><li value="5"><span style="color: #24292F">    </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="6"><span style="color: #24292F">    </span><span style="color: #CF222E">return</span><span style="color: #24292F"> </span><span style="color: #0550AE">false</span><span style="color: #24292F">; </span></li><li value="7"><span style="color: #24292F">  }); </span></li><li value="8"></li><li value="9"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(wagerAmount)</span></li><li value="10"><span style="color: #24292F">  .</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(wagerAmount)</span></li><li value="11"><span style="color: #24292F">  .</span><span style="color: #8250DF">timeout</span><span style="color: #24292F">(</span><span style="color: #0550AE">DELAY</span><span style="color: #24292F">, () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #8250DF">closeTo</span><span style="color: #24292F">(Bob, </span><span style="color: #0550AE">false</span><span style="color: #24292F">)); </span></li><li value="12"></li><li value="13"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(wagerAmount)</span></li><li value="14"><span style="color: #24292F">  .</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(wagerAmount)</span></li><li value="15"><span style="color: #24292F">  .</span><span style="color: #8250DF">timeout</span><span style="color: #24292F">(</span><span style="color: #0550AE">false</span><span style="color: #24292F">);</span></li></ol></pre>
+<h3 id="details-1">Details</h3>
+<p>All of the expressions within a consensus transfer are evaluated in a pure context, which may not alter the state of the application. The PAY_EXPR, WHEN_EXPR, and DELAY_EXPR expressions must refer only to the consensus state, including the new data published via the .publish component.</p>
+<p>The continuation of a consensus transfer statement is a consensus step, which is finalized with a commit statement. The continuation of a timeout block is the same as the continuation of the function the timeout occurs within.</p>
+<p>See the guide section on non-participation to understand when to use timeouts and how to use them most effectively.</p>
+<p>The publish component exclusive-or the pay component may be omitted, if either there is no publication or no transfer of network tokens to accompany this consensus transfer. The when component may always be omitted, in which case it is assumed to be true. publish or pay must occur first, after which components may occur in any order. For example, the following are all valid:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(coinFlip);</span></li><li value="2"></li><li value="3"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(penaltyAmount);</span></li><li value="4"></li><li value="5"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(penaltyAmount).</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(coinFlip);</span></li><li value="6"></li><li value="7"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(coinFlip)</span></li><li value="8"><span style="color: #24292F">  .</span><span style="color: #8250DF">timeout</span><span style="color: #24292F">(</span><span style="color: #0550AE">DELAY</span><span style="color: #24292F">, () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #8250DF">closeTo</span><span style="color: #24292F">(Bob, () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #8250DF">exit</span><span style="color: #24292F">()));</span></li><li value="9"></li><li value="10"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(penaltyAmount)</span></li><li value="11"><span style="color: #24292F">  .</span><span style="color: #8250DF">timeout</span><span style="color: #24292F">(</span><span style="color: #0550AE">DELAY</span><span style="color: #24292F">, () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="12"><span style="color: #24292F">    Bob.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li><li value="13"><span style="color: #24292F">    </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="14"><span style="color: #24292F">    </span><span style="color: #8250DF">exit</span><span style="color: #24292F">(); </span></li><li value="15"><span style="color: #24292F">  });</span></li><li value="16"></li><li value="17"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(bid).</span><span style="color: #8250DF">when</span><span style="color: #24292F">(wantsToBid);</span></li></ol></pre>
+<p>The timeout component must be included if when is not statically true. This ensures that your clients will eventually complete the program. If a consensus transfer is a guaranteed race between non-class participants and a participant class that may attempt to transfer (i.e. when is not statically false), then a timeout may be explicitly omitted by writing .timeout(false).</p>
+<p>.throwTimeout may be used in place of .timeout. It accepts a DELAY_EXPR and an EXPR, which will be thrown if a timeout should occur. If an EXPR is not provided, then null will be thrown. If a consensus transfer uses .throwTimeout, it must be within a try statement.</p>
+<p>If a consensus transfer specifies a single participant, which has not yet been fixed in the application and is not a participant class, then this statement does so; therefore, after it the PART may be used as an address.</p>
+<p>If a consensus transfer specificies a single participant class, then all members of that class will attempt to perform the transfer, but only one will succeed.</p>
+<p>A consensus transfer binds the identifiers ID_0 through ID_n for all participants to the values included in the consensus transfer, overwriting any bindings that already exist for those identifiers. If an existing participant, not included in PART_EXPR, has previously bound one of these identifiers, then the program is not valid. In other words, the following program is not valid:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">; });</span></li><li value="2"><span style="color: #24292F">Bob.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">2</span><span style="color: #24292F">; });</span></li><li value="3"><span style="color: #24292F">Claire.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">3</span><span style="color: #24292F">; });</span></li><li value="4"><span style="color: #8250DF">race</span><span style="color: #24292F">(Alice, Bob).</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(x);</span></li><li value="5"><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
+<p>because Claire is not included in the race. However, if we were to rename Claire’s x into y, then it would be valid, because although Alice and Bob both bind x, they participate in the race, so it is allowed. In the tail of this program, x is bound to either 1 or 2, i.e., either Alice or Bob’s value is overwritten. This overwriting applies even if Alice wins and Alice is a participant class, i.e., the value of x in the tail is guaranteed to be the single value that was agreed upon in the consensus.</p>
+<h2 id="race">race</h2>
+<p>A <code>race</code> expression organizes a competition among several participants (each intent on accomplishing the same task), determines which participant wins the competition, and executes task for the winner.</p>
+<h3 id="declaration-10">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">race</span><span style="color: #24292F">(</span><span style="color: #0550AE">PARTICIPANT_0</span><span style="color: #24292F">, </span><span style="color: #CF222E">...</span><span style="color: #24292F">, PARTICIPANT_n)</span></li></ol></pre>
+<h3 id="example-11">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">race</span><span style="color: #24292F">(Alice, Bob).</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(bet);</span></li></ol></pre>
+<h2 id="unknowable">unknowable</h2>
+<p>The <code>unknowable</code> expression asserts that one participant does not know certain values while another participant does.</p>
+<h3 id="declaration-11">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">unknowable</span><span style="color: #24292F">( Notter, </span><span style="color: #8250DF">Knower</span><span style="color: #24292F">(var_0, </span><span style="color: #CF222E">...</span><span style="color: #24292F">, var_N), [msg] )</span></li></ol></pre>
+<ul>
+  <li><code>Notter</code> is the participant that is asserted not to know.</li>
+  <li><code>Knower</code> is the participant that is asserted to know.</li>
+  <li><code>var_0, ..., var_N</code> are the values not known and known.</li>
+  <li><code>msg</code> is a byte array included in any reported violation.</li>
+</ul>
+<h3 id="example-12">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h2 id="wait">wait</h2>
+<p>A <code>wait</code> statement delays computation for a duration specified in terms of seconds or in terms of increments specific to the consensus network.</p>
+<h3 id="declaration-12">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">wait</span><span style="color: #24292F">(</span><span style="color: #0550AE">TIME</span><span style="color: #24292F">)</span></li></ol></pre>
+<ul>
+  <li><code>Time</code> (See <a href="/en/books/essentials/terminology/#time-argument">Time Argument</a>.)</li>
+</ul>
+<h3 id="example-13">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h1 id="local-step">Local Step</h1>
+<p>A <em>Local Step</em> occurs in the body of <a href="#each-and-only">each and only</a> statements. It represents the actions taken by a single participant in an application. Inside a local step, <code>this</code> refers to the participant performing the step, useful when the local step was initiated by an <code>each</code> expression. In addition to the statements and expressions described in <a href="/en/books/essentials/backend-programming/computations/">Computations</a>, Local Step mode supports the following statements/expressions:</p>
+<h2 id="assume">assume</h2>
+<p>The <code>assume</code> expression asserts that a particular claim is true for honest frontends.</p>
+<h3 id="declaration-13">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">assume</span><span style="color: #24292F">( claim, [msg] )</span></li></ol></pre>
+<ul>
+  <li><code>claim</code> is an expression that evaluates to <code>true</code> or <code>false</code>.</li>
+  <li><code>msg</code> is a byte array included in any reported violation.</li>
+</ul>
+<h3 id="example-14">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h2 id="declassify">declassify</h2>
+<p>A <code>declassify</code> expression changes a local-state value from private to public.</p>
+<h3 id="declaration-14">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">declassify</span><span style="color: #24292F">( arg )</span></li></ol></pre>
+<p><code>arg</code> is any private local-state value.</p>
+<h3 id="example-15">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h2 id="didpublish">didPublish</h2>
+<p>The <code>didPublish</code> expression returns a boolean indicating whether the last publication was made by this principal.</p>
+<h3 id="example-16">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">didPublish</span><span style="color: #24292F">();</span></li></ol></pre>
+<h2 id="fail">fail</h2>
+<p>The <code>fail</code> expression is equivalent to <code>assume(false)</code>.</p>
+<h2 id="interact">interact</h2>
+<p>The <code>interact</code> expression represents the interact object of the local participant.</p>
+<h3 id="declaration-15">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">interact.</span><span style="color: #8250DF">METHOD</span><span style="color: #24292F">(</span><span style="color: #0550AE">EXPR_0</span><span style="color: #24292F">, </span><span style="color: #CF222E">...</span><span style="color: #24292F">, EXPR_n)</span></li><li value="2"><span style="color: #6E7781">// or</span></li><li value="3"><span style="color: #24292F">interact.</span><span style="color: #0550AE">PROPERTY</span></li></ol></pre>
+<ul>
+  <li><code>METHOD</code> is an interact object method.</li>
+  <li><code>PROPERTY</code> is an interact object property.</li>
+</ul>
+<h3 id="example-17">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">each</span><span style="color: #24292F">([</span><span style="color: #0550AE">S</span><span style="color: #24292F">, </span><span style="color: #0550AE">B</span><span style="color: #24292F">], () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> interact.</span><span style="color: #8250DF">reportCancellation</span><span style="color: #24292F">());</span></li><li value="2"><span style="color: #6E7781">// or</span></li><li value="3"><span style="color: #0550AE">S</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">price</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.price); });</span></li></ol></pre>
+<h2 id="makecommitment">makeCommitment</h2>
+<p>The <code>makeCommitment</code> expression</p>
+<h3 id="declaration-16">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h3 id="example-18">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h1 id="consensus-step">Consensus Step</h1>
+<p>A <em>Consensus Step</em> occurs in the continuation of a consensus transfer statement. It represents the actions taken by the consensus network contract of an application. Inside of a consensus step, <code>this</code> refers to the address of the participant that performed the consensus transfer. This is useful when the consensus transfer was initiated by a race expression. In addition to the statements and expressions described in <a href="/en/books/essentials/backend-programming/computations/">Computations</a>, Consensus Step mode supports the following statements/expressions:</p>
+<h2 id="checkcommitment">checkCommitment</h2>
+<h3 id="declaration-17">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h3 id="example-19">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h2 id="commit">commit</h2>
+<p>A <code>commit</code> statement ends the current consensus step and transitions to the next step allowing additional local steps.</p>
+<h3 id="example-20">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
+<h2 id="continue">continue</h2>
+<p>A <code>continue</code> statement</p>
+<h3 id="declaration-18">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h3 id="example-21">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h2 id="each-and-only-consensus">each and only (consensus)</h2>
+<p><a href="#each-and-only">each and only</a> are allowed in consensus steps and are executed by backends once they observe the completion of the consensus step (i.e., after the associated commit statement.)</p>
+<h2 id="map">Map</h2>
+<p>A <code>Map</code> expression creates a specialized array. The length of the array is the number of participants in the contract. The keys are the participant addresses. All values are one specified type.</p>
+<h3 id="declaration-19">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">new</span><span style="color: #24292F"> </span><span style="color: #0550AE">Map</span><span style="color: #24292F">(</span><span style="color: #0550AE">TYPE_EXPR</span><span style="color: #24292F">)</span></li></ol></pre>
+<ul>
+  <li><code>TYPE_EXPR</code> specifies the <a href="/en/books/essentials/backend-programming/computations/#types">Type</a> for all values.</li>
+</ul>
+<h3 id="example-22">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">bidsM</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">new</span><span style="color: #24292F"> </span><span style="color: #0550AE">Map</span><span style="color: #24292F">(UInt);</span></li><li value="2"><span style="color: #24292F">bidsM[</span><span style="color: #0550AE">this</span><span style="color: #24292F">] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">17</span><span style="color: #24292F">;</span></li><li value="3"><span style="color: #CF222E">delete</span><span style="color: #24292F"> bidsM[</span><span style="color: #0550AE">this</span><span style="color: #24292F">];</span></li></ol></pre>
+<h2 id="parallelreduce">parallelReduce</h2>
+<h3 id="declaration-20">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h3 id="example-23">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h2 id="remote">remote</h2>
+<h3 id="declaration-21">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h3 id="example-24">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h2 id="require">require</h2>
+<h3 id="declaration-22">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h3 id="example-25">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h2 id="set">Set</h2>
+<p>A <code>Set</code> expression creates a specialized Array. The length of the array is the number of participants in the contract. The keys are the participant addresses. All values are boolean (initially set to <code>false</code>).</p>
+<h3 id="example-26">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">bidders</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">new</span><span style="color: #24292F"> </span><span style="color: #0550AE">Set</span><span style="color: #24292F">();</span></li><li value="2"><span style="color: #24292F">bidders.</span><span style="color: #8250DF">insert</span><span style="color: #24292F">(Alice);</span></li><li value="3"><span style="color: #24292F">bidders.</span><span style="color: #8250DF">remove</span><span style="color: #24292F">(Alice);</span></li><li value="4"><span style="color: #24292F">bidders.</span><span style="color: #8250DF">member</span><span style="color: #24292F">(Alice); </span><span style="color: #6E7781">// false</span></li></ol></pre>
+<h2 id="throughtimeout">.throughTimeout</h2>
+<h3 id="declaration-23">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h3 id="example-27">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h2 id="timeremaining">.timeRemaining</h2>
+<h3 id="declaration-24">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h3 id="example-28">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">sss</span></li></ol></pre>
+<h2 id="token">Token</h2>
+<p>The <code>Token</code> expression mints a new non-network token.</p>
+<h3 id="declaration-25">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">new</span><span style="color: #24292F"> </span><span style="color: #8250DF">Token</span><span style="color: #24292F">(</span><span style="color: #0550AE">PARAMS</span><span style="color: #24292F">)</span></li></ol></pre>
+<ul>
+  <li>
+    <p><code>PARAMS</code> is an object with the keys in the table below.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Key</th>
+          <th>Type</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>name</code></td>
+          <td><code>Bytes(32)</code></td>
+          <td>empty</td>
+        </tr>
+        <tr>
+          <td><code>symbol</code></td>
+          <td><code>Bytes(8)</code></td>
+          <td>empty</td>
+        </tr>
+        <tr>
+          <td><code>url</code></td>
+          <td><code>Bytes(96)</code></td>
+          <td>empty</td>
+        </tr>
+        <tr>
+          <td><code>metadata</code></td>
+          <td><code>Bytes(32)</code></td>
+          <td>empty</td>
+        </tr>
+        <tr>
+          <td><code>supply</code></td>
+          <td><code>UInt</code></td>
+          <td><code>UInt.max</code></td>
+        </tr>
+        <tr>
+          <td><code>decimals</code></td>
+          <td><code>UInt</code></td>
+          <td>ALGO = 6; CFX and ETH = 18</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+</ul>
+<p>This returns a Token value and deposits a supply amount of the new non-network tokens into the contract account associated with the DApp. These tokens must be destroyed by the end of the DApp. A token has the following methods:</p>
+<ul>
+  <li>
+    <p><code>Token.burn(tok, amt)</code> or <code>tok.burn(amt)</code>, where tok is a Token value and amt is a UInt value, may be used to burn tokens in the contract account, meaning that they are utterly destroyed and can never be recovered.</p>
+  </li>
+  <li>
+    <p><code>Token.destroy(tok)</code> or <code>tok.destroy()</code>, where tok is a Token value, may be used to destroy the token so that it may never be used again by any users on the consensus network. This must be called before the application exits.</p>
+  </li>
+  <li>
+    <p><code>Token.destroyed(tok)</code> or <code>tok.destroyed()</code>, where tok is a Token value, returns whether destroy has been called on tok yet.</p>
+  </li>
+  <li>
+    <p><code>Token.supply(tok)</code> or <code>tok.supply()</code>, where tok is a Token value, may be used to query the current supply of tokens, i.e. the number of tokens which have not been burnt.</p>
+  </li>
+</ul>
+<h3 id="example-29">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">require</span><span style="color: #24292F">(supply </span><span style="color: #CF222E">&gt;=</span><span style="color: #24292F"> </span><span style="color: #0550AE">2</span><span style="color: #24292F"> </span><span style="color: #CF222E">*</span><span style="color: #24292F"> amt);</span></li><li value="2"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">tok</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">new</span><span style="color: #24292F"> </span><span style="color: #8250DF">Token</span><span style="color: #24292F">({ name, symbol, url, metadata, supply, decimals });</span></li><li value="3"><span style="color: #8250DF">transfer</span><span style="color: #24292F">(amt, tok).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(who);</span></li><li value="4"><span style="color: #24292F">tok.</span><span style="color: #8250DF">burn</span><span style="color: #24292F">(amt);</span></li><li value="5"><span style="color: #8250DF">assert</span><span style="color: #24292F">(tok.</span><span style="color: #8250DF">supply</span><span style="color: #24292F">() </span><span style="color: #CF222E">==</span><span style="color: #24292F"> supply </span><span style="color: #CF222E">-</span><span style="color: #24292F"> amt);</span></li><li value="6"><span style="color: #24292F">tok.</span><span style="color: #8250DF">burn</span><span style="color: #24292F">();</span></li><li value="7"><span style="color: #8250DF">assert</span><span style="color: #24292F">(tok.</span><span style="color: #8250DF">destroyed</span><span style="color: #24292F">() </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0550AE">false</span><span style="color: #24292F">);</span></li><li value="8"><span style="color: #24292F">tok.</span><span style="color: #8250DF">destroy</span><span style="color: #24292F">();</span></li></ol></pre>
+<h2 id="transfer">transfer</h2>
+<p>A <code>transfer</code> expression transfers the specified number of tokens from the contract account to the specified participant account.</p>
+<h3 id="declaration-26">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">transfer</span><span style="color: #24292F">(</span><span style="color: #0550AE">AMOUNT_EXPR</span><span style="color: #24292F">).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(</span><span style="color: #0550AE">ADDR_EXPR</span><span style="color: #24292F">)</span></li><li value="2"><span style="color: #6E7781">// or</span></li><li value="3"><span style="color: #8250DF">transfer</span><span style="color: #24292F">(</span><span style="color: #0550AE">AMOUNT_EXPR</span><span style="color: #24292F">, </span><span style="color: #0550AE">TOKEN_EXPR</span><span style="color: #24292F">).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(</span><span style="color: #0550AE">ADDR_EXPR</span><span style="color: #24292F">)</span></li></ol></pre>
+<ul>
+  <li><code>AMOUNT_EXPR</code> is an unsigned integer specifying the number of tokens to transfer from the contract. This amount must evaluate to less than or equal to the balance of network tokens in the contract account.</li>
+  <li><code>ADDR_EXPR</code> is the target address for the transfer.</li>
+  <li><code>TOKEN_EXPR</code> is a Token type. This argument is optional.</li>
+</ul>
+<h3 id="example-30">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">transfer</span><span style="color: #24292F">(</span><span style="color: #0550AE">10</span><span style="color: #24292F">).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(Alice);</span></li></ol></pre>
+<h2 id="while">while</h2>
+<p>A <code>while</code> statement loops until the specified condition is <code>false</code>.</p>
+<h3 id="declaration-27">Declaration</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">var</span><span style="color: #24292F"> </span><span style="color: #0550AE">LHS</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">INIT_EXPR</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #0550AE">DEFINE_BLOCK</span><span style="color: #24292F">; </span><span style="color: #6E7781">// optional</span></li><li value="3"><span style="color: #8250DF">invariant</span><span style="color: #24292F">(</span><span style="color: #0550AE">INVARIANT_EXPR</span><span style="color: #24292F">);</span></li><li value="4"><span style="color: #CF222E">while</span><span style="color: #24292F">( </span><span style="color: #0550AE">COND_EXPR</span><span style="color: #24292F"> ) </span><span style="color: #0550AE">BLOCK</span></li></ol></pre>
+<ul>
+  <li><code>LHS</code> is a valid left-hand side of an identifier definition where the expression INIT_EXPR is the right-hand side.</li>
+  <li><code>DEFINE_BLOCK</code> is an optional block that may define bindings that use the LHS values which are bound inside the rest of the while and its tail.</li>
+  <li><code>INVARIANT_EXPR</code> is an expression, called the loop invariant, that must be true before and after every execution of the block BLOCK</li>
+  <li><code>COND_EXPR</code> is the condition. While it is true the block executes. When it is false the loop terminates and control transfers to the continuation of the while statement. The identifiers bound by <code>LHS</code> are bound within <code>DEFINE_BLOCK</code>, <code>INVARIANT_EXPR</code>, <code>COND_EXPR</code>, <code>BLOCK</code>, and the tail of the while statement.</li>
+</ul>
+<h3 id="example-31">Example</h3>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">var</span><span style="color: #24292F"> [ heap1, heap2 ] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [ </span><span style="color: #0550AE">21</span><span style="color: #24292F">, </span><span style="color: #0550AE">21</span><span style="color: #24292F"> ];</span></li><li value="2"><span style="color: #24292F">{ </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #8250DF">sum</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> heap1 </span><span style="color: #CF222E">+</span><span style="color: #24292F"> heap2; }</span></li><li value="3"><span style="color: #8250DF">invariant</span><span style="color: #24292F">(</span><span style="color: #8250DF">balance</span><span style="color: #24292F">() </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0550AE">2</span><span style="color: #24292F"> </span><span style="color: #CF222E">*</span><span style="color: #24292F"> wagerAmount);</span></li><li value="4"><span style="color: #CF222E">while</span><span style="color: #24292F"> ( </span><span style="color: #8250DF">sum</span><span style="color: #24292F">() </span><span style="color: #CF222E">&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">0</span><span style="color: #24292F"> ) {</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #CF222E">...</span><span style="color: #24292F">.</span></li><li value="6"><span style="color: #24292F">  [ heap1, heap2 ] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [ heap1 </span><span style="color: #CF222E">-</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">, heap2 ];</span></li><li value="7"><span style="color: #24292F">  </span><span style="color: #CF222E">continue</span><span style="color: #24292F">; }</span></li></ol></pre>
