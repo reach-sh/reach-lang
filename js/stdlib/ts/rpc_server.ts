@@ -158,7 +158,7 @@ export const serveRpc = async (backend: any) => {
       await account.id(id).getAddress(),
 
     setGasLimit: async (id: string, ...args: any[]) =>
-      await account.id(id).setGasLimit(...args),
+      await account.id(id).setGasLimit(...args) || null,
   };
 
   const rpc_ctc = {
