@@ -16,8 +16,8 @@ This module uses the following project directory structure:
 ~/reach/rock-paper-scissors/rps-1-setup
 ~/reach/rock-paper-scissors/rps-2-rps
 ~/reach/rock-paper-scissors/rps-3-bets
-~/reach/rock-paper-scissors/rps-4-trust
-~/reach/rock-paper-scissors/rps-5-attack
+~/reach/rock-paper-scissors/rps-4-attack
+~/reach/rock-paper-scissors/rps-5-trust
 ~/reach/rock-paper-scissors/rps-6-timeouts
 ~/reach/rock-paper-scissors/rps-7-loops
 ~/reach/rock-paper-scissors/rps-8-interact
@@ -411,10 +411,10 @@ The problem is that we've only executed an [honest](https://docs.reach.sh/ref-mo
 
 Let's give Bob a dishonest advantage:
 
-[rps-5-attack/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-attack/index.rsh#L27-L32)
+[rps-4-attack/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-attack/index.rsh#L27-L32)
 
 ``` js
-load: /examples/rps-5-attack/index.rsh
+load: /examples/rps-4-attack/index.rsh
 range: 27-32
 ```
 
@@ -439,10 +439,10 @@ We can see from the output that Bob never consults the frontend. Bob will never 
 
 How do we know it's not just luck of the random number generator that observes Bob winning? Reach comes with an automatic verification engine that mathematically proves that this version always results in the `outcome` equaling 0, meaning Bob wins. We can prove this theorem with the `require` and `assert` statements after computing the `outcome`.
 
-[rps-5-attack/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-attack/index.rsh#L34-L37)
+[rps-4-attack/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-attack/index.rsh#L34-L37)
 
 ``` js
-load: /examples/rps-5-attack/index.rsh
+load: /examples/rps-4-attack/index.rsh
 range: 34-37
 ```
 
@@ -569,10 +569,10 @@ With this knowledge in mind, let's create a brand-new version of _Rock, Paper, S
 
 Let's begin by defining the rules of _Rock, Paper, Scissors!_ with a greater amount of abstraction. This will allow us to separate the logic of the game from the details of the application.
 
-[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L1-L7)
+[rps-5-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-trust/index.rsh#L1-L7)
 
 ``` js
-load: /examples/rps-4-trust/index.rsh
+load: /examples/rps-5-trust/index.rsh
 range: 1-7
 ```
 
@@ -580,28 +580,28 @@ range: 1-7
 * Lines 3 - 4: Define [enumeration](https://docs.reach.sh/ref-programs-compute.html#%28tech._enumeration%29)s for the hands that may be played, as well as the outcomes of the game. 
 * Lines 6 - 7: Defines the function that computes the winner of the game.
 
-[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L9-L11)
+[rps-5-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-trust/index.rsh#L9-L11)
 
 ``` js
-load: /examples/rps-4-trust/index.rsh
+load: /examples/rps-5-trust/index.rsh
 range: 9-11
 ```
 
 * Lines 9 - 11: Test cases that assert a winner or a draw. This ensures that despite the values found in `handAlice` and `handBob`, `winner` will always be a valid outcome.
 
-[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L13-L15)
+[rps-5-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-trust/index.rsh#L13-L15)
 
 ``` js
-load: /examples/rps-4-trust/index.rsh
+load: /examples/rps-5-trust/index.rsh
 range: 13-15
 ```
 
 Lines 13 - 15: Specifies that whenever the same value is provided for both hands that the `winner` value is `DRAW`.
 
-[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L17-L18)
+[rps-5-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-trust/index.rsh#L17-L18)
 
 ``` js
-load: /examples/rps-4-trust/index.rsh
+load: /examples/rps-5-trust/index.rsh
 range: 17-18
 ```
 
@@ -610,19 +610,19 @@ range: 17-18
 
 Next, we'll specify the participant interact interface for Alice and Bob.
 
-[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L20-L24)
+[rps-5-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-trust/index.rsh#L20-L24)
 
 ``` js
-load: /examples/rps-4-trust/index.rsh
+load: /examples/rps-5-trust/index.rsh
 range: 20-24
 ```
 
 * Line 21: Provides the frontend access to random numbers. This will be used to protect Alice's hand from a dishonest Bob.
 
-[rps-4-trust/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.mjs#L20-L30)
+[rps-5-trust/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-trust/index.mjs#L20-L30)
 
 ``` js
-load: /examples/rps-4-trust/index.mjs
+load: /examples/rps-5-trust/index.mjs
 range: 20-30
 ```
 
@@ -632,10 +632,10 @@ range: 20-30
 
 These two changes might look identical, but they mean very different things. The first, line 21 in the Reach program, adds `hasRandom` to the interface that the [backend](https://docs.reach.sh/ref-model.html#%28tech._backend%29) expects the [frontend](https://docs.reach.sh/ref-model.html#%28tech._frontend%29) to provide. The second, line 21 in the JavaScript, adds [hasRandom] to the implementation that the frontend provides to the backend.
 
-[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L25-L36)
+[rps-5-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-trust/index.rsh#L25-L36)
 
 ``` js
-load: /examples/rps-4-trust/index.rsh
+load: /examples/rps-5-trust/index.rsh
 range: 25-36
 ```
 
@@ -643,10 +643,10 @@ There is nothing new or exciting in this snippet. We're creating the Reach appli
 
 In the next snippet, we'll implement the application while ensuring that Alice's hand is protected until Bob reveals his hand. We could just have Alice publish her wager, but then this would leave Bob vulnerable. Our challenge is that we need Alice to publish her hand, but also keep it secret. Our solution is to use a [cryptographic commitment scheme](https://en.wikipedia.org/wiki/Commitment_scheme). Reach’s standard library comes with `makeCommitment` to make this easier.
 
-[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L37-L45)
+[rps-5-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-trust/index.rsh#L37-L45)
 
 ``` js
-load: /examples/rps-4-trust/index.rsh
+load: /examples/rps-5-trust/index.rsh
 range: 37-45
 ```
 
@@ -658,10 +658,10 @@ range: 37-45
 
 Next, we'll state the [knowledge assertion](https://docs.reach.sh/ref-model.html#%28tech._knowledge._assertion%29) that Bob can't know either the hand or the "salt" and continue with his part of the program.
 
-[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L47-L54)
+[rps-5-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-trust/index.rsh#L47-L54)
 
 ``` js
-load: /examples/rps-4-trust/index.rsh
+load: /examples/rps-5-trust/index.rsh
 range: 47-54
 ```
 
@@ -671,10 +671,10 @@ range: 47-54
 
 Alice is ready to reveal her secrets so let's return our focus to her.
 
-[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L56-L61)
+[rps-5-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-trust/index.rsh#L56-L61)
 
 ``` js
-load: /examples/rps-4-trust/index.rsh
+load: /examples/rps-5-trust/index.rsh
 range: 56-61
 ```
 
@@ -684,10 +684,10 @@ Line 61: Checks that the published values match the original values. This will a
 
 The rest of the program is unchanged from the original version, except that it uses the new names for the outcomes.
 
-[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L63-L74)
+[rps-5-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-trust/index.rsh#L63-L74)
 
 ``` js
-load: /examples/rps-4-trust/index.rsh
+load: /examples/rps-5-trust/index.rsh
 range: 63-74
 ```
 
@@ -1684,10 +1684,10 @@ load: /examples/rps-7-loops/index.mjs
 range: 1-5
 ```
 
-[tut-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L1-L10)
+[rps-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L1-L10)
 
 ``` python
-load: /examples/tut-7-rpc/client-py/index.py
+load: /examples/rps-7-rpc/client-py/index.py
 range: 1-10
 ```
 
@@ -1708,10 +1708,10 @@ load: /examples/rps-7-loops/index.mjs
 range: 6-9
 ```
 
-[tut-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L11-L14)
+[rps-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L11-L14)
 
 ``` python
-load: /examples/tut-7-rpc/client-py/index.py
+load: /examples/rps-7-rpc/client-py/index.py
 range: 11-14
 ```
 
@@ -1728,10 +1728,10 @@ load: /examples/rps-7-loops/index.mjs
 range: 10-14
 ```
 
-[tut-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L15-L23)
+[rps-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L15-L23)
 
 ``` python
-load: /examples/tut-7-rpc/client-py/index.py
+load: /examples/rps-7-rpc/client-py/index.py
 range: 15-23
 ```
 
@@ -1746,10 +1746,10 @@ load: /examples/rps-7-loops/index.mjs
 range: 15-17
 ```
 
-[tut-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L24-L25)
+[rps-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L24-L25)
 
 ``` python
-load: /examples/tut-7-rpc/client-py/index.py
+load: /examples/rps-7-rpc/client-py/index.py
 range: 24-25
 ```
 
@@ -1768,10 +1768,10 @@ load: /examples/rps-7-loops/index.mjs
 range: 18-19
 ```
 
-[tut-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L26-L28)
+[rps-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L26-L28)
 
 ``` python
-load: /examples/tut-7-rpc/client-py/index.py
+load: /examples/rps-7-rpc/client-py/index.py
 range: 26-28
 ```
 
@@ -1786,10 +1786,10 @@ load: /examples/rps-7-loops/index.mjs
 range: 20-32
 ```
 
-[tut-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L29-L34)
+[rps-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L29-L34)
 
 ``` python
-load: /examples/tut-7-rpc/client-py/index.py
+load: /examples/rps-7-rpc/client-py/index.py
 range: 29-34
 ```
 
@@ -1808,10 +1808,10 @@ load: /examples/rps-7-loops/index.mjs
 range: 36-38
 ```
 
-[tut-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L35-L37)
+[rps-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L35-L37)
 
 ``` python
-load: /examples/tut-7-rpc/client-py/index.py
+load: /examples/rps-7-rpc/client-py/index.py
 range: 35-37
 ```
 
@@ -1828,10 +1828,10 @@ load: /examples/rps-7-loops/index.mjs
 range: 33-35
 ```
 
-[tut-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L38-L47)
+[rps-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L38-L47)
 
 ``` python
-load: /examples/tut-7-rpc/client-py/index.py
+load: /examples/rps-7-rpc/client-py/index.py
 range: 38-47
 ```
 
@@ -1850,10 +1850,10 @@ load: /examples/rps-7-loops/index.mjs
 range: 41-60
 ```
 
-[tut-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L48-L85)
+[rps-7-rpc/client-py/index.py](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L48-L85)
 
 ``` python
-load: /examples/tut-7-rpc/client-py/index.py
+load: /examples/rps-7-rpc/client-py/index.py
 range: 48-85
 ```
 
