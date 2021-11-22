@@ -6,7 +6,7 @@ menuItem: mi-docs
 
 This tutorial shows you how to build Rock Paper Scissors, a command-line and web-based decentralized application that enables two players, Alice and Bob, to compete against each other and wager on the outcome.
 
-> # Note
+> # Install & Setup
 > Be sure to complete [Install and Run](/en/books/essentials/getting-started/install-and-run/) and [Set up an IDE](/en/books/essentials/getting-started/set-up-an-ide/) before continuing.
 
 ## File Structure
@@ -37,24 +37,24 @@ To make the most of this tutorial, follow along by copying each part of the prog
 Create a subdirectory inside the rock-paper-scissors folder for this section of the tutorial. We'll also create a file named `index.rsh`.
 
 ``` bash
-$ mkdir -p /tut-1-setup/index.rsh
+$ mkdir -p /rps-1-setup/index.rsh
 ```
 
 > We will be creating subdirectories for each section of this tutorial within the `/rock-paper-scissors/` directory.
 
 Type the following into `index.rsh`:
 
-[tut-1-setup/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-2/index.rsh)
+[rps-1-setup/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-1-setup/index.rsh)
 
 ``` js
-load: /examples/rock-paper-scissors/tut-1-setup/index.rsh
+load: /examples/rock-paper-scissors/rps-1-setup/index.rsh
 ```
 
 > # Links to Documentation
 > You may have noticed that `export`, `const`, `exit`, and so on are links. In any Reach code sample you can click on the names of keywords and standard library functions to read more detailed documentation.
 
 > # Links to Source
-> You may have noticed that `tut-2/index.rsh` is a link above the code snippet. Click these links to view the full source code.
+> You may have noticed that `rps-1-setup/index.rsh` is a link above the code snippet. Click these links to view the full source code.
 
 * Line 1: Indicates that this is a Reach program. This will always be at the top of every index.rsh file.
 * Line 3: Defines the main export from the program. The compiler looks at this during run time.
@@ -67,10 +67,10 @@ Next, we'll create a shell for the JavaScript [frontend](https://docs.reach.sh/r
 $ touch index.mjs
 ```
 
-[tut-1-setup/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-2/index.mjs)
+[rps-1-setup/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-1-setup/index.mjs)
 
 ``` js
-load: /examples/rock-paper-scissors/tut-1-setup/index.mjs
+load: /examples/rock-paper-scissors/rps-1-setup/index.mjs
 ```
 
 * Line 1: Imports the Reach standard library loader.
@@ -116,10 +116,10 @@ Let's change the Reach program to specify that Alice and Bob's frontends can be 
 > # Unsigned integers in Reach
 > Reach does not support unsigned integers of exactly two bits. Rather than using the integers, 0, 1, and 2, we represent the equivalence class of integers modulo three.
 
-[tut-2-rps/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-3/index.rsh)
+[rps-2-rps/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-2-rps/index.rsh)
 
 ``` js
-load: /examples/tut-2-rps/index.rsh
+load: /examples/rps-2-rps/index.rsh
 range: 1-17
 ```
 
@@ -128,10 +128,10 @@ range: 1-17
 
 Let's leave the Reach application and move over to the JavaScript interface to implement these methods in the frontend.
 
-[tut-3/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-3/index.mjs)
+[rps-2-rps/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-2-rps/index.mjs)
 
 ``` js
-load: /examples/tut-2-rps/index.mjs
+load: /examples/rps-2-rps/index.mjs
 range: 13-33
 ```
 
@@ -140,6 +140,8 @@ range: 13-33
 * Lines 16 - 20: Implement the `getHand` method.
 * Lines 21 - 23: Implement the `seeOutcome` method.
 * Lines 28 * 31: Instantiate the implementation once for Alice and once for Bob. These objects will be bound to [`interact`](https://docs.reach.sh/ref-programs-local.html#%28reach._%28%28interact%29%29%29) in the Reach program.
+
+## Business Logic
 
 There should be nothing interesting or controversial about these implementations; that's the point of Reach. We write normal business logic without worrying about the details of the [consensus network](https://docs.reach.sh/ref-model.html#%28tech._consensus._network%29) and decentralized application. 
 
@@ -153,10 +155,10 @@ The game proceeds in three steps:
 1. Gets Alice's hand,
 1. And publishes it.
 
-[tut-3/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-3/index.rsh)
+[rps-2-rps/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-2-rps/index.rsh)
 
 ``` js
-load: /examples/tut-2-rps/index.rsh
+load: /examples/rps-2-rps/index.rsh
 range: 17-21
 ```
 
@@ -165,12 +167,12 @@ range: 17-21
 * Line 20: Alice [joins](https://docs.reach.sh/ref-model.html#%28tech._join%29) the application by publishing the value to the [consensus network](https://docs.reach.sh/ref-model.html#%28tech._consensus._network%29), so it can be used to evaluate the outcome of the game. Once this happens, the code is in a "[consensus step](https://docs.reach.sh/ref-model.html#%28tech._consensus._step%29)" where all participants act together.
 * Line 21: Commits the state of the [consensus network](https://docs.reach.sh/ref-model.html#%28tech._consensus._network%29) and returns to "[local step](https://docs.reach.sh/ref-model.html#%28tech._local._step%29)" where individual participants can act alone.
 
-The next step is similar, in that Bob publishes his hand, however, we won't immediately commit the state, instead we compute the outcome of the game. 
+The next step is similar, in that Bob publishes his hand, however, we won't immediately commit the state, instead we compute the outcome of the game.
 
-[tut-3/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-3/index.rsh)
+[rps-2-rps/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-2-rps/index.rsh)
 
 ``` js
-load: /examples/tut-2-rps/index.rsh
+load: /examples/rps-2-rps/index.rsh
 range: 23-29
 ```
 
@@ -179,10 +181,10 @@ range: 23-29
 
 In the next snippet we use the [each](https://docs.reach.sh/ref-programs-step.html#%28tech._each%29) form to have each of the participants send the final outcome to their frontends.
 
-[tut-3/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-3/index.rsh)
+[rps-2-rps/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-2-rps/index.rsh)
 
 ``` js
-load: /examples/tut-2-rps/index.rsh
+load: /examples/rps-2-rps/index.rsh
 range: 30 - 33
 ```
 
@@ -218,9 +220,11 @@ Bob saw outcome Alice wins
 
 Alice is good!
 
+## Consensus Networks
+
 [Consensus networks](https://docs.reach.sh/ref-model.html#%28tech._consensus._network%29) in general, and Reach specifically, guarantee that all participants agree on the outcome of their decentralized computation. Indeed, this is where the name [consensus network](https://docs.reach.sh/ref-model.html#%28tech._consensus._network%29) comes from, as they enable these distributed, and untrusted, parties to come to a consensus, or agreement, about the intermediate states of a computation. If they agree on the intermediate states, they will also agree on the output. That's why every time you run `reach run`, both Alice and Bob will see the same outcome!
 
-> If your version isn't working, look at the complete versions of [index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-3/index.rsh) and [index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-3/index.mjs) to make sure you've copied everything correctly.
+> If your version isn't working, look at the complete versions of [index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-2-rps/index.rsh) and [index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-2-rps/index.mjs) to make sure you've copied everything correctly.
 
 > # Whose on First
 > Does Alice go first or do we call the player that goes first, "Alice"? It may seem like an unnecessary distinction, but this is a subtle point about the way Reach works. In this section, we explicitly ran `backend.Alice` and `backend.Bob` in the [frontend](https://docs.reach.sh/ref-model.html#%28tech._frontend%29). When we did that, we committed that particular JavaScript thread to be either Alice or Bob. In our game, whoever chose to run the Alice backend is the one that will go first. In other words: **Alice goes first**. This will be more obvious at [the end of the tutorial](https://docs.reach.sh/tut-8.html) when we'll make the choice interactively about which role to play.
@@ -246,10 +250,10 @@ This time, we'll start with changes to the JavaScript [frontend](https://docs.re
 
 Since we're going to have funds transferred, we'll record the balances of each participant before the game starts, so we can clearly show what they won at the end. Add this code between account creation and contract deployment. 
 
-[tut-4/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-4/index.mjs)
+[rps-3-bets/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-3-bets/index.mjs)
 
 ``` js
-load: /examples/tut-3-bets/index.mjs
+load: /examples/rps-3-bets/index.mjs
 range: 6-13
 ```
 
@@ -257,24 +261,26 @@ range: 6-13
 * Line 11: A helpful function for getting the balance of a participant and displaying it with up to 4 decimal places.
 * Line 12 & 13: Get the balance before the game starts for Alice and Bob.
 
-Now, let's update Alice's interace object to include her wager.
+## Interface Object
 
-[tut-4/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-4/index.mjs)
+Now, let's update Alice's interface object to include her wager.
+
+[rps-3-bets/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-3-bets/index.mjs)
 
 ``` js
-load: /examples/tut-3-bets/index.mjs
+load: /examples/rps-3-bets/index.mjs
 range: 32-35
 ```
 
-* Line 33: Splices the common `Player` interace into Alice's interface.
+* Line 33: Splices the common `Player` interface into Alice's interface.
 * Line 34: Defines her wager as 5 units of the [network token](https://docs.reach.sh/ref-model.html#%28tech._network._token%29). This is an example of using a concrete value, rather than a function, in a [participant interact interface](https://docs.reach.sh/ref-programs-appinit.html#%28tech._participant._interact._interface%29).
 
 Bob's interface will now be modified to show Alice's wager and then immediately accept it. 
 
-[tut-4/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-4/index.mjs)
+[rps-3-bets/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-3-bets/index.mjs)
 
 ``` js
-load: /examples/tut-3-bets/index.mjs
+load: /examples/rps-3-bets/index.mjs
 range: 36-41
 ```
 
@@ -282,10 +288,10 @@ range: 36-41
 
 Now that the computation is over we'll get the balance again and show a message that prints the change in funds.
 
-[tut-4/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-4/index.mjs)
+[rps-3-bets/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-3-bets/index.mjs)
 
 ``` js
-load: /examples/tut-3-bets/index.mjs
+load: /examples/rps-3-bets/index.mjs
 range: 44 - 48
 ```
 
@@ -296,22 +302,24 @@ The changes that we've made only address the presentation and interfacing of the
 
 Let's focus on the backend, now. To begin, we'll update the [participant interact interface](https://docs.reach.sh/ref-programs-appinit.html#%28tech._participant._interact._interface%29).
 
-[tut-4/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-4/index.rsh)
+[rps-3-bets/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-3-bets/index.rsh)
 
 ``` js
-load: /examples/tut-3-bets/index.rsh
+load: /examples/rps-3-bets/index.rsh
 range: 1-19
 ```
 
 * Lines 9 - 12: Defines Alice's interace as the `Player` interace and an integer value, `wager`.
 * Lines 13 - 16: Define Bob's interface along with a called `acceptWager`, which can look at the wager value.
 
+## Updating the Application
+
 Next, we'll need to update each of the three parts of the application so it can work with the wager. We'll begin with Alice:
 
-[tut-4/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-4/index.rsh)
+[rps-3-bets/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-3-bets/index.rsh)
 
 ``` js
-load: /examples/tut-3-bets/index.rsh
+load: /examples/rps-3-bets/index.rsh
 range: 19-25
 ```
 
@@ -319,12 +327,14 @@ range: 19-25
 * Line 23: Adds the `wager` method so Alice can share her wager with Bob.
 * Line 24: Alice transfers her wager as part of her [publication](https://docs.reach.sh/ref-model.html#%28tech._publication%29). If `wager` did not appear in line 23 but did in line 24, then the compiler would throw an exception. _Change the program and try for yourself._ The [consensus network](https://docs.reach.sh/ref-model.html#%28tech._consensus._network%29) needs to verify that the amount of [network tokens](https://docs.reach.sh/ref-model.html#%28tech._network._token%29) in Alice's publication match the computation available to the consensus network. 
 
+## Accept and Transfer Funds
+
 Next, Bob will be given the ability to be shown the wager, have the opportunity to accept it and then transfer funds.
 
-[tut-3-bets/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-4/index.rsh)
+[rps-3-bets/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-3-bets/index.rsh)
 
 ``` js
-load: /examples/tut-3-bets/index.rsh
+load: /examples/rps-3-bets/index.rsh
 range: 27-32
 ```
 
@@ -333,10 +343,10 @@ range: 27-32
 
 At this point, the dApp is running in a [consensus step](https://docs.reach.sh/ref-model.html#%28tech._consensus._step%29) and the contract itself will now hold twice the wager amount. Previously, it would compute the outcome and then commit the state. Now, it needs to look at the outcome and use it to balance the account.
 
-[tut-3-bets/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-4/index.rsh)
+[rps-3-bets/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-3-bets/index.rsh)
 
 ``` js
-load: /examples/tut-3-bets/index.rsh
+load: /examples/rps-3-bets/index.rsh
 range: 34-41
 ```
 
@@ -401,10 +411,10 @@ The problem is that we've only executed an [honest](https://docs.reach.sh/ref-mo
 
 Let's give Bob a dishonest advantage:
 
-[tut-4-attack/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-5-attack/index.rsh#L27-L32)
+[rps-5-attack/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-attack/index.rsh#L27-L32)
 
 ``` js
-load: /examples/tut-4-attack/index.rsh
+load: /examples/rps-5-attack/index.rsh
 range: 27-32
 ```
 
@@ -425,12 +435,14 @@ Bob went from 100 to 104.9999.
 
 We can see from the output that Bob never consults the frontend. Bob will never print his hand and he will always win. 
 
+## Automatic Verification Engine
+
 How do we know it's not just luck of the random number generator that observes Bob winning? Reach comes with an automatic verification engine that mathematically proves that this version always results in the `outcome` equalling 0, meaning Bob wins. We can prove this theorem with the `require` and `assert` statements after computing the `outcome`.
 
-[tut-4-attack/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-5-attack/index.rsh#L34-L37)
+[rps-5-attack/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-attack/index.rsh#L34-L37)
 
 ``` js
-load: /examples/tut-4-attack/index.rsh
+load: /examples/rps-5-attack/index.rsh
 range: 34-37
 ```
 
@@ -448,6 +460,8 @@ Now our verification engine checks an additional 5 theorems and prints this when
  6      Verifying when ONLY "Bob" is honest
  7    Checked 23 theorems; No failures!
 ```
+
+## Automatic Verification Engine
 
 At compile time, Reach conducts a mathematical proof that the expression always evaluates to `true`. We use the [verification engine](https://docs.reach.sh/guide-assert.html) to prove that an attack would do what we expect. But, it's better to use verification to show that _no flaws_ exist and that _no attack_ is possible.
 
@@ -509,13 +523,15 @@ Running `$ reach compile` will share details about the error:
 ..    
 ```
 
-There's a lot of information here that you'll be able use after some experience. For now, we'll choose to focus on the most important parts:
+There's a lot of information here that you'll be able use with some experience. For now, we'll choose to focus on the most important parts:
 
 * Line 7 states an attempt to prove that the balance at the end of the program is zero. This is important because a balance left at the end of a program will result in tokens being sealed in the [contract](https://docs.reach.sh/ref-model.html#%28tech._contract%29) forever. 
 * Lines 10 - 20: Describe values that will cause the theorem to fail.
 * Lines 23 - 31: Detailed the theorem that failed.
 
 The [automatic verficiations](https://docs.reach.sh/guide-assert.html) help Reach programmers by protecting them from entire categories of errors.
+
+## Assertions
 
 Now, let's add an [assert](https://docs.reach.sh/ref-model.html#%28tech._assert%29)ion that rejects a dishonest Bob. We'll rewind our code to the end of the Bets and Wagers section. In this version Bob is still honest. To help keep Bob honest, we'll add a single line after Alice publishes, but before Bob's [local step](https://docs.reach.sh/ref-model.html#%28tech._local._step%29):
 
@@ -549,14 +565,16 @@ Running `$ reach run` will report that this assertion is false:
 
 It's not enough to correct failures and attacks as they are discovered. **Always** add asserts to your program where a failure or an attack would create an undesirable outcome. This will ensure that all similar attacks are not present or accidentally reintroduced.
 
+## A More Secure Version
+
 With this knowledge in mind, let's create a brand new version of _Rock, Paper, Scissors!_ so that it is more trustworthy and secure. 
 
 Let's begin by defining the rules of _Rock, Paper, Scissors!_ with a greater amount of abstraction. This will allow us to separate the logic of the game from the details of the application.
 
-[tut-5/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-5-attack/index.rsh#L1-L7)
+[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L1-L7)
 
 ``` js
-load: /examples/tut-5/index.rsh
+load: /examples/rps-4-trust/index.rsh
 range: 1-7
 ```
 
@@ -564,28 +582,28 @@ range: 1-7
 * Lines 3 - 4: Define [enumeration](https://docs.reach.sh/ref-programs-compute.html#%28tech._enumeration%29)s for the hands that may be played, as well as the outcomes of the game. 
 * Lines 6 - 7: Defines the function that computes the winner of the game.
 
-[tut-5/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-5-attack/index.rsh#L9-L11)
+[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L9-L11)
 
 ``` js
-load: /examples/tut-5/index.rsh
+load: /examples/rps-4-trust/index.rsh
 range: 9-11
 ```
 
 * Lines 9 - 11: Test cases that assert a winner or a draw. This ensures that despite the values found in `handAlice` and `handBob`, `winner` will always be a valid outcome.
 
-[tut-5/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-5-attack/index.rsh#L13-L15)
+[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L13-L15)
 
 ``` js
-load: /examples/tut-5/index.rsh
+load: /examples/rps-4-trust/index.rsh
 range: 13-15
 ```
 
 Lines 13 - 15: Specifies that whenever the same value is provided for both hands that the `winner` value is `DRAW`.
 
-[tut-5/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-5-attack/index.rsh#L17-L18)
+[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L17-L18)
 
 ``` js
-load: /examples/tut-5/index.rsh
+load: /examples/rps-4-trust/index.rsh
 range: 17-18
 ```
 
@@ -594,30 +612,32 @@ range: 17-18
 
 Next, we'll specify the participant interact interface for Alice and Bob.
 
-[tut-5/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-5-attack/index.rsh#L20-L24)
+[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L20-L24)
 
 ``` js
-load: /examples/tut-5/index.rsh
+load: /examples/rps-4-trust/index.rsh
 range: 20-24
 ```
 
 * Line 21: Provides the frontend access to random numbers. This will be used to protect Alice's hand from a dishonest Bob.
 
-[tut-5/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-5-attack/index.mjs#L20-L30)
+[rps-4-trust/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.mjs#L20-L30)
 
 ``` js
-load: /examples/tut-5/index.mjs
+load: /examples/rps-4-trust/index.mjs
 range: 20-30
 ```
 
 * Line 21: Allows each participant to generate random numbers
 
+## Randomness
+
 These two changes might look identical, but they mean very different things. The first, line 21 in the Reach program, adds `hasRandom` to the interface that the [backend](https://docs.reach.sh/ref-model.html#%28tech._backend%29) expects the [frontend](https://docs.reach.sh/ref-model.html#%28tech._frontend%29) to provide. The second, line 21 in the JavaScript, adds [hasRandom] to the implementation that the frontend provides to the backend.
 
-[tut-5/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-5-attack/index.rsh#L25-L36)
+[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L25-L36)
 
 ``` js
-load: /examples/tut-5/index.rsh
+load: /examples/rps-4-trust/index.rsh
 range: 25-36
 ```
 
@@ -625,10 +645,10 @@ There is nothing new or exciting in this snippet. We're creating the Reach appli
 
 In the next snippet, we'll implement the application while ensuring that Alice's hand is protected until Bob reveals his hand. We could just have Alice publish her wager, but then this would leave Bob vulnerable. Our challenge is that we need Alice to publish her hand, but also keep it secret. Our solution is to use a [cryptographic commitment scheme](https://en.wikipedia.org/wiki/Commitment_scheme). Reache's standard library comes with `makeCommitment` to make this easier.
 
-[tut-5/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-5-attack/index.rsh#L37-L45)
+[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L37-L45)
 
 ``` js
-load: /examples/tut-5/index.rsh
+load: /examples/rps-4-trust/index.rsh
 range: 37-45
 ```
 
@@ -640,10 +660,10 @@ range: 37-45
 
 Next, we'll state the [knowledge assertion](https://docs.reach.sh/ref-model.html#%28tech._knowledge._assertion%29) that Bob can't know either the hand or the "salt" and continue with his part of the program.
 
-[tut-5/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-5-attack/index.rsh#L47-L54)
+[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L47-L54)
 
 ``` js
-load: /examples/tut-5/index.rsh
+load: /examples/rps-4-trust/index.rsh
 range: 47-54
 ```
 
@@ -653,10 +673,10 @@ range: 47-54
 
 Alice is ready to reveal her secrets so let's return our focus to her.
 
-[tut-5/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-5-attack/index.rsh#L56-L61)
+[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L56-L61)
 
 ``` js
-load: /examples/tut-5/index.rsh
+load: /examples/rps-4-trust/index.rsh
 range: 56-61
 ```
 
@@ -666,10 +686,10 @@ Line 61: Checks that the published values match the original values. This will a
 
 The rest of the program is unchanged from the original version, except that it uses the new names for the outcomes.
 
-[tut-5/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-5-attack/index.rsh#L63-L74)
+[rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L63-L74)
 
 ``` js
-load: /examples/tut-5/index.rsh
+load: /examples/rps-4-trust/index.rsh
 range: 63-74
 ```
 
@@ -735,14 +755,16 @@ We can also imagine a scenario where Bob accepts and pays his wager, but Alice n
 
 Of course, for our tutorial, this is a trivial matter, but as a microcosm of decentralized application design, it is a consideration of extreme importance. Let's explore how Reach helps to address non-participation. 
 
+## Mitigating Non-Participation
+
 In Reach, non-participation is mitigated through a "timeout" mechanism that pairs each [consensus transfer](https://docs.reach.sh/ref-model.html#%28tech._consensus._transfer%29) with a [step](https://docs.reach.sh/ref-model.html#%28tech._step%29) that occurs for all [participants](https://docs.reach.sh/ref-model.html#%28tech._participant%29) if the [originator](https://docs.reach.sh/ref-model.html#%28tech._originator%29) of the [consensus transfer](https://docs.reach.sh/ref-model.html#%28tech._consensus._transfer%29) fails to make the required [publication](https://docs.reach.sh/ref-model.html#%28tech._publication%29) before a particular network time.
 
 Let's modify the [participant interact interface](https://docs.reach.sh/ref-programs-appinit.html#%28tech._participant._interact._interface%29) to allow the [frontend](https://docs.reach.sh/ref-model.html#%28tech._frontend%29) to be informed in the event of a timeout.
 
-[tut-6/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.rsh#L20-L25)
+[rps-6-timeouts/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-6-timeouts/index.rsh#L20-L25)
 
 ``` js
-load: /examples/tut-6/index.rsh
+load: /examples/rps-6-timeouts/index.rsh
 range: 20-25
 ```
 
@@ -750,10 +772,10 @@ range: 20-25
 
 Now let's update the JavaScript frontend so it can receive the message and display it in the console. 
 
-[tut-6/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.mjs#L20-L33)
+[rps-6-timeouts/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-6-timeouts/index.mjs#L20-L33)
 
 ``` js
-load: /examples/tut-6/index.mjs
+load: /examples/rps-6-timeouts/index.mjs
 range: 20-33
 ```
 
@@ -761,10 +783,10 @@ range: 20-33
 
 We'll return to the Reach program and declare a deadline value. Alice will provide the deadline similar to how she provides the wager.
 
-[tut-6/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.rsh#L28-L32)
+[rps-6-timeouts/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-6-timeouts/index.rsh#L28-L32)
 
 ``` js
-load: /examples/tut-6/index.rsh
+load: /examples/rps-6-timeouts/index.rsh
 range: 28-32
 ```
 
@@ -772,10 +794,10 @@ range: 28-32
 
 Next, we'll define a helper function to inform each of the participants of the timeout.
 
-[tut-6/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.rsh#L39-L43)
+[rps-6-timeouts/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-6-timeouts/index.rsh#L39-L43)
 
 ``` js
-load: /examples/tut-6/index.rsh
+load: /examples/rps-6-timeouts/index.rsh
 range: 39-43
 ```
 
@@ -787,10 +809,10 @@ Our next step is to have Alice declassify and publish the `deadline` to use in f
 
 We won't add a timeout clause to Alice's first message because there's no consequence to her non-participation. She doesn't start the game, then no one is any worse off!
 
-[tut-6/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.rsh#L45-L54)
+[rps-6-timeouts/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-6-timeouts/index.rsh#L45-L54)
 
 ``` js
-load: /examples/tut-6/index.rsh
+load: /examples/rps-6-timeouts/index.rsh
 range: 45-54
 ```
 
@@ -799,23 +821,25 @@ range: 45-54
 
 Bob's non-participation is different in nature than Alice's first opportunity for non-participation. If he fails to participate then Alice loses her initial wager. With this in mind, let's adjust Bob's first message.
 
-[tut-6/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.rsh#L61-L64)
+[rps-6-timeouts/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-6-timeouts/index.rsh#L61-L64)
 
 ``` js
-load: /examples/tut-6/index.rsh
+load: /examples/rps-6-timeouts/index.rsh
 range: 61-64
 ```
 
 * Line 63 adds a timeout handler to Bob's [publication](https://docs.reach.sh/ref-model.html#%28tech._publication%29).
 
+## Timeout Handler
+
 The timeout handler specifies that if the deadline is breached then the program will transition to the next step. In this case, the next step is to publish a message in the console and return the network tokens to Alice.
 
 Next, we'll add a similar timeout handler to Alice's second message.
 
-[tut-6/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.rsh#L70-L71)
+[rps-6-timeouts/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-6-timeouts/index.rsh#L70-L71)
 
 ``` js
-load: /examples/tut-6/index.rsh
+load: /examples/rps-6-timeouts/index.rsh
 range: 70-71
 ```
 
@@ -827,16 +851,18 @@ Our Reach program is now robust against non-participation attacks with a minimal
 
 For the purposes of our tutorial, we'll now modify the frontend to purposely cause a random timeout when Bob is supposed to accept the wager. 
 
-[tut-6/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.rsh#L35-L54)
+[rps-6-timeouts/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-6-timeouts/index.rsh#L35-L54)
 
 ``` js
-load: /examples/tut-6/index.mjs
+load: /examples/rps-6-timeouts/index.mjs
 range: 35-54
 ```
 
 * Line 39: Alice specifies a `deadline` of ten blocks
 * Lines 43 - 52: redefine Bob's `acceptWager` method as an asynchronous function. 
 * Lines 44 - 46: Now, half of the time Bob will trigger a timeout event.
+
+## Run with Timeouts
 
 Let's observe two possible outcomes:
 
@@ -886,10 +912,10 @@ While this refactor will only require a change to the Reach program, we will als
 
 We'll begin by modifying the `Player` interact object so that it will have a different `getHand` method.
 
-[tut-7/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.mjs#L20-L39)
+[rps-7-loops/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L20-L39)
 
 ``` js
-load: /examples/tut-6/index.mjs
+load: /examples/rps-7-loops/index.mjs
 range: 20-39
 ```
 
@@ -897,14 +923,16 @@ range: 20-39
 
 Next, we'll adjust Bob's `acceptWager` function to remove the timeout code.
 
-[tut-7/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.mjs#L41-L53)
+[rps-7-loops/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L41-L53)
 
 ``` js
-load: /examples/tut-6/index.mjs
+load: /examples/rps-7-loops/index.mjs
 range: 41-53
 ```
 
 * Lines 49 - 51: The `acceptWager` method has been simplified.
+
+## Order of Actions
 
 Let's step back and look at our game's original steps and our new order of actions.
 
@@ -926,25 +954,27 @@ But, now because players might submit many hands, but should only have a single 
 
 Let's make these changes now.
 
-[tut-7/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.rsh#L45-L51)
+[rps-7-loops/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.rsh#L45-L51)
 
 ``` js
-load: /examples/tut-6/index.mjs
+load: /examples/rps-7-loops/index.mjs
 range: 45-51
 ```
 
 * Line 49: Alice publishes the wager and deadline.
 * Line 50: Alice pays the wager.
 
-[tut-7/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.rsh#L53-L58)
+[rps-7-loops/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.rsh#L53-L58)
 
 ``` js
-load: /examples/tut-6/index.rsh
+load: /examples/rps-7-loops/index.rsh
 range: 53-58
 ```
 
 * Line 56: Bob pays the wager.
 * Line 58: Does **not** have the previously implemented [consensus step](https://docs.reach.sh/ref-model.html#%28tech._consensus._step%29) commit.
+
+## Loop Invariants
 
 It's now time to begin the repeatable section of the application. Each party will repeatedly submit hands until the outcome is not a draw. In normal programming languages, such a circumstance would be implemented with a `while` loop, which is exactly what we'll do in Reach. However, `while` loops in Reach require extra care. We'll take our time working through loops in this tutorial. Upon your completion of the tutorial, you can learn more about loops in our [guide](https://docs.reach.sh/guide-loop-invs.html).
 
@@ -954,10 +984,10 @@ Due to Reach's [automatic verfication](https://docs.reach.sh/guide-assert.html) 
 
 It's important to note that these loops _may only occur_ inside [consensus steps](https://docs.reach.sh/ref-model.html#%28tech._consensus._step%29). This is why we didn't commit Bob's transaction, previously. We need to remain inside the consensus to start the `while` loop, because all [participants](https://docs.reach.sh/ref-model.html#%28tech._participant%29) must agree on the direction of control flow in the dApp.
 
-[tut-7/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.rsh#L59-L61)
+[rps-7-loops/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.rsh#L59-L61)
 
 ``` js
-load: /examples/tut-6/index.rsh
+load: /examples/rps-7-loops/index.rsh
 range: 59-61
 ```
 
@@ -967,29 +997,29 @@ range: 59-61
 
 Now, we'll create the body of the loop, beginning with Alice's commitment to her hand. 
 
-[tut-7/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.rsh#L61-L71)
+[rps-7-loops/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.rsh#L61-L71)
 
 ``` js
-load: /examples/tut-6/index.rsh
+load: /examples/rps-7-loops/index.rsh
 range: 61-71
 ```
 
 * Line 62: Commits the last transaction. At the beginning of the loop, this commits Bob's acceptance of the wager, and in subsequent runs, publishes Alice's hand.
 * Line 64 - 71: Similar to before, but now the wager is already known and paid.
 
-[tut-7/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.rsh#L73-L79)
+[rps-7-loops/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.rsh#L73-L79)
 
 ``` js
-load: /examples/tut-6/index.rsh
+load: /examples/rps-7-loops/index.rsh
 range: 73-79
 ```
 
 Bob's code is almost identical to the previous version, except that he's already accepted and paid the wager.
 
-[tut-7/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.rsh#L81-L87)
+[rps-7-loops/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.rsh#L81-L87)
 
 ``` js
-load: /examples/tut-6/index.rsh
+load: /examples/rps-7-loops/index.rsh
 range: 81-87
 ```
 
@@ -997,10 +1027,10 @@ Alice's next step is identical, because she is still revealing her hand in exact
 
 Finally, we write the end of the loop:
 
-[tut-7/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.rsh#L89-L91)
+[rps-7-loops/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.rsh#L89-L91)
 
 ``` js
-load: /examples/tut-6/index.rsh
+load: /examples/rps-7-loops/index.rsh
 range: 89-91
 ```
 
@@ -1009,10 +1039,10 @@ range: 89-91
 
 The rest of the program could be the same as before, except it now occurs outside of the loop. We'll make one additional simplification because we now know that the outcome can never be a draw.
 
-[tut-7/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-6/index.rsh#L93-L100)
+[rps-7-loops/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.rsh#L93-L100)
 
 ``` js
-load: /examples/tut-6/index.rsh
+load: /examples/rps-7-loops/index.rsh
 range: 93-100
 ```
 
@@ -1020,6 +1050,8 @@ range: 93-100
 * Line 94: Transfers the funds to the winner.
 * Line 95: Commits to the consensus network.
 * Lines 97 - 99: Allows Alice and Bob to interact with the contract and see the outcome of the game.
+
+## Run Without Draws
 
 Let's run the program to witness our loop in action:
 
@@ -1072,31 +1104,33 @@ This implementation of _Rock, Paper, Scissors!_ will always result in a pay-out,
 
 Previously, we eliminated the possibility of a DRAW in our Reach program and made very few changes in the JavaScript frontend. In this section, we won't make any changes to the backend. Instead, we'll customize the frontend to facilitate interactivity and provide the option to connect to a real consensus network.
 
+## Start From Scratch
+
 We'll start from scratch and show every line of the program, again. While much of the code will be similar to the previous version, for the sake of completeness, we'll show every line.
 
-[tut-8/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs#L1-L6)
+[rps-8-interact/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/index.mjs#L1-L6)
 
 ``` js
-load: /examples/tut-8/index.mjs
+load: /examples/rps-8-interact/index.mjs
 range: 1-6
 ```
 
 * Lines 1, 2, & 4: Are the same as before; importing the standard library and backend.
 * Line 3: Imports a helpful library for simple console applications called `ask.mjs` from the Reach standard library. We'll see how these three functions are used below.
 
-[tut-8/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs#L7-L12)
+[rps-8-interact/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/index.mjs#L7-L12)
 
 ``` js
-load: /examples/tut-8/index.mjs
+load: /examples/rps-8-interact/index.mjs
 range: 7-12
 ```
 
 * Lines 7 - 10: Asks whether the user is playing as Alice and expects a "Yes" or "No" answer. `ask` presents a prompt and collects a line of input until its argument does not error. `yesno` errors if it is not give "y" or "n".
 
-[tut-8/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs#L13-L29)
+[rps-8-interact/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/index.mjs#L13-L29)
 
 ``` js
-load: /examples/tut-8/index.mjs
+load: /examples/rps-8-interact/index.mjs
 range: 13-29
 ```
 
@@ -1104,10 +1138,10 @@ range: 13-29
 * Line 21: Creates the test account.
 * Line 27: Loads the existing account.
 
-[tut-8/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs#L30-L46)
+[rps-8-interact/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/index.mjs#L30-L46)
 
 ``` js
-load: /examples/tut-8/index.mjs
+load: /examples/rps-8-interact/index.mjs
 range: 30-46
 ```
 
@@ -1115,59 +1149,61 @@ range: 30-46
 * Lines 36 - 38: deploy it and print out public information (`ctc.getInfo`) that can be given to the other player when it becomes available.
 * Lines 40 - 44: Request, parse, and process the information.
 
-[tut-8/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs#L47-L54)
+[rps-8-interact/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/index.mjs#L47-L54)
 
 ``` js
-load: /examples/tut-8/index.mjs
+load: /examples/rps-8-interact/index.mjs
 range: 47-54
 ```
 
 Next, we define a few helper functions and start the participant interaction interface.
 
-[tut-8/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs#L55-L59)
+[rps-8-interact/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/index.mjs#L55-L59)
 
 ``` js
-load: /examples/tut-8/index.mjs
+load: /examples/rps-8-interact/index.mjs
 range: 55-59
 ```
 
 * Lines 55 - 58: Define a timeout handler
 
-[tut-8/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs#L60-L78)
+[rps-8-interact/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/index.mjs#L60-L78)
 
 ``` js
-load: /examples/tut-8/index.mjs
+load: /examples/rps-8-interact/index.mjs
 range: 60-78
 ```
 
 Next, we request the wager amount or define the `acceptWager` method, depending on if we are Alice or not.
 
-[tut-8/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs#L79-L97)
+[rps-8-interact/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/index.mjs#L79-L97)
 
 ``` js
-load: /examples/tut-8/index.mjs
+load: /examples/rps-8-interact/index.mjs
 range: 79-97
 ```
 
 Lines 86 - 96: Defines the shared `getHand` method.
 
-[tut-8/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs#L98-L102)
+[rps-8-interact/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/index.mjs#L98-L102)
 
 ``` js
-load: /examples/tut-8/index.mjs
+load: /examples/rps-8-interact/index.mjs
 range: 98-102
 ```
 
 * Lines 98 - 101: Creates the `seeOutcome` method.
 
-[tut-8/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs#L103-L110)
+[rps-8-interact/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/index.mjs#L103-L110)
 
 ``` js
-load: /examples/tut-8/index.mjs
+load: /examples/rps-8-interact/index.mjs
 range: 103-110
 ```
 
 Line 103: Chooses the appropriate backend function and awaits its completion.
+
+## Run in Two Terminals
 
 We can now open two terminals. Run the first as Alice and the second as Bob:
 
@@ -1228,6 +1264,8 @@ Connecting to live [consensus networks](https://docs.reach.sh/ref-model.html#%28
 $ REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI="http://some.node.fqdn:8545" reach run
 ```
 
+## Completing the Command-Line Interface
+
 Our implementation of _Rock, Paper, Scissors!_ is now finished! We are protected against attacks, timeouts, and draws and can run interactively on non-test networks. 
 
 In this step we made a command-line interface for each participant. In the next section, we'll create a web interface.
@@ -1257,7 +1295,7 @@ This tutorial assumes we're deploying and testing with Ethereum. Reach web appli
 
 To complete this section, we'll use the `index.rsh` file you've already written, but create an `index.js` file from scratch. This will replace the `index.mjs` file we wrote for the command-line interface.
 
-This code is supplemented with [index.css](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.css) and some [views](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/views). These details are not specific to Reach, and are fairly trivial, so we will not explain the specific of those files. If you run this locally, you'll want to download those file. Your directory should look like:
+This code is supplemented with [index.css](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.css) and some [views](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/views). These details are not specific to Reach, and are fairly trivial, so we will not explain the specific of those files. If you run this locally, you'll want to download those file. Your directory should look like:
 
 ``` bash
 .
@@ -1272,12 +1310,14 @@ This code is supplemented with [index.css](https://github.com/reach-sh/reach-lan
     └── render.js
 ```
 
+## React Frontend
+
 Let's begin writing the new JavaScript frontend. 
 
-[tut-9/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.js#L1-L9)
+[rps-9-web/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.js#L1-L9)
 
 ``` js
-load: /examples/tut-9/index.js
+load: /examples/rps-9-web/index.js
 range: 1-9
 ```
 
@@ -1285,19 +1325,21 @@ range: 1-9
 * Line 7: Import the compiled `backend`
 * Lines 8 & 9: Load the `stdlib` as `reach`.
 
-[tut-9/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.js#L10-L14)
+[rps-9-web/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.js#L10-L14)
 
 ``` js
-load: /examples/tut-9/index.js
+load: /examples/rps-9-web/index.js
 range: 10-14
 ```
 
 Here we've defined helpful constants and defaults for later use.
 
-[tut-9/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.js#L15-L31)
+## Application Component
+
+[rps-9-web/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.js#L15-L31)
 
 ``` js
-load: /examples/tut-9/index.js
+load: /examples/rps-9-web/index.js
 range: 15-31
 ```
 
@@ -1310,25 +1352,29 @@ Here, we've begun defining `App` as a React component, and provide instructions 
 * Line 27: If `canFundFromFaucet` is `true`, we set the component state to display the `FundAccount` view.
 * Line 29: If `canFundFromFaucet` is `false`, we set the component state to skip to the `DeployerOrAttacher` view. 
 
+## Connect Account Dialog
+
 ![The `ConnectAccount` view](https://docs.reach.sh/ConnectAccount.png)
 
-[tut-9/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.js#L39-L41)
+[rps-9-web/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.js#L39-L41)
 
 ``` js
-load: /examples/tut-9/index.js
+load: /examples/rps-9-web/index.js
 range: 39-41
 ```
 
-* Line 39: We render the appropriate view from [tut-9/views/AppViews.js](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/views/AppViews.js)
+* Line 39: We render the appropriate view from [rps-9-web/views/AppViews.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/views/AppViews.js)
 
 ![Figure 2: The `FundAccount` view](https://docs.reach.sh/FundAccount.png)
 
 We'll return to the close of `componentDidMount` to define callbacks on `App` for what to do when the user clicks certain buttons.
 
-[tut-9/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.js#L32-L36)
+## Fund Account Dialog
+
+[rps-9-web/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.js#L32-L36)
 
 ``` js
-load: /examples/tut-9/index.js
+load: /examples/rps-9-web/index.js
 range: 32-36
 ```
 
@@ -1337,32 +1383,36 @@ range: 32-36
 * Line 34: Sets the component state to display the `DeployerOrAttacher` view. (figure 3).
 * Line 36: Define what to do when the user clicks the `Skip` button, which is to set the component state to display the `DeployerOrAttacher` view.
 
+## Choose Role
+
 ![Figure 3: The `DeployerOrAttacher` view](https://docs.reach.sh/DeployerOrAttacher.png)
 
-[tut-9/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.js#L36-L38)
+[rps-9-web/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.js#L36-L38)
 
 ``` js
-load: /examples/tut-9/index.js
+load: /examples/rps-9-web/index.js
 range: 36-38
 ```
 
 * Lines 37 & 38: Sets a sub-component based on whether the user clicks `Deployer` or `Attacher`.
 
+## Player Component
+
 Next, we define `Player` as a React component, which will be extended by the specialized components for Alice and Bob. The web frontend needs to implement the participant interact interface for players, which we previously defined as:
 
-[tut-9/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.rsh#L20-L25)
+[rps-9-web/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.rsh#L20-L25)
 
 ``` js
-load: /examples/tut-9/index.rsh
+load: /examples/rps-9-web/index.rsh
 range: 20-25
 ```
 
 We will provide these callbacks via the React component directly:
 
-[tut-9/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.js#L42-L55)
+[rps-9-web/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.js#L42-L55)
 
 ``` js
-load: /examples/tut-9/index.js
+load: /examples/rps-9-web/index.js
 range: 42-55
 ```
 
@@ -1373,29 +1423,39 @@ range: 42-55
 * Lines 51 & 52: Provides the `seeOutcome` and `informTimeout` callbacks, which set the component state to display the `Done` view (figure 6) and the `Timeout` view (figure 7), respectively.
 * Line 53: Defines what happens when the user clicks `Rock`, `Paper`, `Scissors`: The `Promise` from line 45 is resolved.
 
+## Get Hand Dialog
+
 ![Figure 4: The `GetHand` view](https://docs.reach.sh/GetHand.png)
+
+## Waiting for Results Display
 
 ![Figure 5: The `WaitingForResults` view](https://docs.reach.sh/WaitingForResults.png)
 
+## Done Display
+
 ![Figure 6: The `Done` view](https://docs.reach.sh/Done.png)
+
+## Timeout Display
 
 ![Figure 7: The `Timeout` view](https://docs.reach.sh/Timeout.png)
 
+## Deployer Component
+
 Next, our web frontend needs to implement the participant interact interface for Alice, which we previously defined as:
 
-[tut-9/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.rsh#L28-L32)
+[rps-9-web/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.rsh#L28-L32)
 
 ``` js
-load: /examples/tut-9/index.rsh
+load: /examples/rps-9-web/index.rsh
 range: 28-32
 ```
 
 We provide the `wager` and `deadline` values, and define some button handlers in order to trigger the deployment of the contract. 
 
-[tut-9/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.js#L56-L72)
+[rps-9-web/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.js#L56-L72)
 
 ``` js
-load: /examples/tut-9/index.js
+load: /examples/rps-9-web/index.js
 range: 56-72
 ```
 
@@ -1408,28 +1468,41 @@ range: 56-72
 * Line 66: Sets the `deadline` property based on which connector is being used.
 * Line 67: Starts running the Reach program as Alice, using the `this` React component as the participant interact interface object.
 * Lines 68 & 69: Sets the component state to display the `WaitingForAttacher` view (figure 11), which displays the deployed contract info as JSON.
-* Line 71: Renders the appropriate view from [tut-9/views/DeployerViews.js](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/views/DeployerViews.js).
+* Line 71: Renders the appropriate view from [rps-9-web/views/DeployerViews.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/views/DeployerViews.js).
+
+## Set Wager Dialog
 
 ![Figure 8: The `SetWager` view](https://docs.reach.sh/SetWager.png)
+
+## Deploy Dialog
+
 ![Figure 9: The `Deploy` view](https://docs.reach.sh/Deploy.png)
+
+## Deploying Display
+
 ![Figure 10: The `Deploying` view](https://docs.reach.sh/Deploying.png)
+
+## Waiting for Attacher Display
+
 ![Figure 11: The `WaitingForAttacher` view](https://docs.reach.sh/WaitingForAttacher.png)
+
+## Attacher Component
 
 The frontend needs to implement the participant interact interface for Bob, which we previously defined as:
 
-[tut-9/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.rsh#L33-L36)
+[rps-9-web/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.rsh#L33-L36)
 
 ``` js
-load: /examples/tut-9/index.rsh
+load: /examples/rps-9-web/index.rsh
 range: 33-36
 ```
 
 Next, we'll provide the `acceptWager` callback in the JavaScript. We'll also define some button handlers in order to attach to the deployed contract.
 
-[tut-9/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.js#L73-L95)
+[rps-9-web/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.js#L73-L95)
 
 ``` js
-load: /examples/tut-9/index.js
+load: /examples/rps-9-web/index.js
 range: 73-95
 ```
 
@@ -1441,19 +1514,32 @@ range: 73-95
 * Lines 83 - 88: Defines the `acceptWager` callback.
 * Lines 85 - 87: Sets the component state to display the `AcceptTerms` view (figure 14), and waits for a `Promise` which can be resolved via user interaction.
 * Lines 89 - 92: Defines what happens when the user clicks the `Accept Terms and Pay Wager` button: the `Promise` from line 90 is resolved, and we set the component state to display the `WaitingForTurn` view (figure 15).
-* Line 93: Renders the appropriate view from [tut-9/views/AttacherViews.js](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/views/AttacherViews.js).
+* Line 93: Renders the appropriate view from [rps-9-web/views/AttacherViews.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/views/AttacherViews.js).
+
+## Attach Dialog
 
 ![Figure 12: The `Attach` view](https://docs.reach.sh/Attach.png)
+
+## Attaching Display
+
 ![Figure 13: The `Attaching` view](https://docs.reach.sh/Attaching.png)
+
+## Accept Terms Dialog
+
 ![Figure 14: The `AcceptTerms` view](https://docs.reach.sh/AcceptTerms.png)
+
+## Waiting for Turn Display
+
 ![Figure 15: The `WaitingForTurn` view](https://docs.reach.sh/WaitingForTurn.png)
 
-Finally, we call a small helper function from [tut-9/views/render.js](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/views/render.js) to render our App component.
+## Putting it All Together
 
-[tut-9/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.js#L96)
+Finally, we call a small helper function from [rps-9-web/views/render.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/views/render.js) to render our App component.
+
+[rps-9-web/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.js#L96)
 
 ``` js
-load: /examples/tut-9/index.js
+load: /examples/rps-9-web/index.js
 range: 96
 ```
 
@@ -1492,6 +1578,8 @@ Similarly, to run with Conflux:
 >  `reach.setProviderByName('TestNet'); // or 'MainNet'`
 > For details, see the [Conflux FAQ](https://docs.reach.sh/ref-network-cfx.html#%28part._cfx-faq-mainnet%29).
 
+## Use Reach in Your JavaScript Project
+
 If you'd like to use Reach in your own JavaScript project, you can call:
 
 `npm install @reach-sh/stdlib`
@@ -1501,6 +1589,8 @@ If you'd like to use Reach in your own JavaScript project, you can call:
 As usual, you can compile your Reach program `index.rsh` to the backend build artifact `build/index.main.mjs` with:
 
 `$ reach compile`
+
+## Live in the Browser
 
 Now our implementation of _Rock, Paper, Scissors!_ is live in the browser! We can leverage callbacks in the participant interact interface to display to and gather information from the user, through any Web UI framework of our choice.
 
@@ -1518,45 +1608,55 @@ Next, we'll summarize where we've gone and direct you to the next step of your j
 Let's review what we've completed in this tutorial:
 
 * In [Scaffolding and Setup](#scaffolding-and-setup) we saw how easy it is to setup initial Reach files and choose a consensus network.
-* In [Rock Paper and Scissors](#rock-paper-and-scissors) we saw how Reach allows developers to focus on the business logic of their decentralized application and look past the nitty-gritty details of blockchain interaction and protocol design.
+* In [Rock Paper and Scissors](#rock-paper-scissors) we saw how Reach allows developers to focus on the business logic of their decentralized application and look past the nitty-gritty details of blockchain interaction and protocol design.
 * In [Bets and Wagers](#bets-and-wagers) we saw how simple it is for Reach to work with tokens, network transactions and data sharing.
 * In [Trust, Commitments, and Attacks](#trust-commitments-and-attacks), we introduced the automatic formal verification engine and how it ensures Reach programs are free of entire categories of flaws and security vulnerabilities.
 * In [Timeouts and Participation](#timeouts-and-participation), we learned how Reach protects funds when handling non-participation attacks.
 * In [Play and Play Again](#play-and-play-again), we experienced loops in Reach and how flexible the frontend is to variations in the backend.
 * In [Interaction and Independence](#interaction-and-independence), we saw how to launch an interactive version of a dApp on a real network.
-* In [Web Interaction](#web-interaction) we deployed our Reach program as a fully decentralized Web app using React.
+* In [Web Interaction](#web-interaction-with-react) we deployed our Reach program as a fully decentralized Web app using React.
 
 Despite having done so much, this is really only a brief introduction to what is possible with Reach. 
 
 How difficult was it to write a complete dApp using Reach? Let's look at the final versions of our programs to assess.
 
+## Reach Backend
+
 Here's the Reach backend:
 
-[tut-9/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.rsh)
+[rps-8-interact/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/index.rsh)
 
 ``` js
-load: /examples/tut-9/index.rsh
+load: /examples/rps-8-interact/index.rsh
 ```
+
+## Command-Line
 
 This is the JavaScript command-line frontend:
 
-[tut-8/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/index.mjs)
+[rps-8-interact/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/index.mjs)
 
 ``` js
-load: /examples/tut-8/index.mjs
+load: /examples/rps-8-interact/index.mjs
 ```
+
+## Web Frontend
 
 Finally, the code of our web frontend:
 
-[tut-9/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-9/index.js)
+[rps-9-web/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.js)
 
 ``` js
-load: /examples/tut-9/index.js
+load: /examples/rps-9-web/index.js
 ```
+
+## Reach Behind the Scenes
 
 As we've witnessed, we wrote about one-hundred lines of Reach and created two different frontends. Our command-line version is about a hundred lines of JavaScript, while our Web version is about the same length, but it has a lot of presentation code, as well.
 
-Behind the scenes, Reach generated hundreds of lines of Solidity (which you can see here: [tut-8/build/index.main.sol](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/build/index.main.sol)), almost two-thousand lines of TEAL (which is here: [tut-8/build/index.main.appApproval.teal](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/build/index.main.appApproval.teal)), as well as over a thousand lines of JavaScript (as seen here: [tut-8/build/index.main.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-8/build/index.main.mjs)). If we weren't using Reach, we'd have to write all of this code ourselves. Not only that, we'd need to ensure the frontend and backend were consistent and that they were completely bug and error free.
+Behind the scenes, Reach generated hundreds of lines of Solidity (which you can see here: [rps-8-interact/build/index.main.sol](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/build/index.main.sol)), almost two-thousand lines of TEAL (which is here: [rps-8-interact/build/index.main.appApproval.teal](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/build/index.main.appApproval.teal)), as well as over a thousand lines of JavaScript (as seen here: [rps-8-interact/build/index.main.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/build/index.main.mjs)). If we weren't using Reach, we'd have to write all of this code ourselves. Not only that, we'd need to ensure the frontend and backend were consistent and that they were completely bug and error free.
+
+## Build Your Own!
 
 Now that you've seen an entire Reach application, it's time for you to start working on your own applications!
 
@@ -1569,16 +1669,20 @@ If you're interested in using Reach with frontends other than JavaScript, then t
 
 Reach supports using any programming language through the [Reach RPC Server](https://docs.reach.sh/ref-backends-rpc.html).
 
-This tutorial walks through an implementation of _Rock, Paper, Scissors!_ using Python in the frontend. This version of the program is based on the [Play and Play Again](https://docs.reach.sh/tut-7.html) section of our _Rock, Paper, Scissors!_ tutorial. While we don't include a text- or web-based interface, we will use the final version of the Reach backend code.
+This tutorial walks through an implementation of _Rock, Paper, Scissors!_ using Python in the frontend. This version of the program is based on the [Play and Play Again](https://docs.reach.sh/rps-7-loops.html) section of our _Rock, Paper, Scissors!_ tutorial. While we don't include a text- or web-based interface, we will use the final version of the Reach backend code.
+
+## Comparing JavaScript Frontend to Python
 
 Below, we will compare the _Play and Play Again_ JavaScript frontend with the equivalent Python code communicating via RPC. Follow along by typing the Python code into a file called _index.py_. 
 
+### Imports
+
 Let's begin by comparing the necessary imports and program body:
 
-[tut-7/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L1-L5)
+[rps-7-loops/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L1-L5)
 
 ``` js
-load: /examples/tut-7/index.mjs
+load: /examples/rps-7-loops/index.mjs
 range: 1-5
 ```
 
@@ -1595,12 +1699,14 @@ The Python version also borrows functionality from the `random` and `threading` 
 
 In line 9 the Python program binds `rpc` and `rpc_callbacks` out of `mk_rpc`. These are the only two functions we need to communicate with the [Python RPC server](https://docs.reach.sh/ref-frontends-rpc-py.html).
 
+### Funding Accounts
+
 Next, we'll define the Alice and Bob accounts and pre-fund them with a balance of 100 network tokens.
 
-[tut-7/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L6-L9)
+[rps-7-loops/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L6-L9)
 
 ``` js
-load: /examples/tut-7/index.mjs
+load: /examples/rps-7-loops/index.mjs
 range: 6-9
 ```
 
@@ -1613,12 +1719,14 @@ range: 11-14
 
 Translating code with RPC only requires specifying the corresponding [RPC](https://docs.reach.sh/ref-frontends-rpc-py.html) method and supplying the same arguments. In this snippet, we can see that the Python arguments matche the [JavaScript frontend support library](https://docs.reach.sh/ref-frontends-js.html) methods, followed by the parameter seen in the matching line of JavaScript.
 
+### Helper Functions
+
 Next, we'll define two helper functions and use them to query Alice and Bob's beginning balances:
 
-[tut-7/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L10-L14)
+[rps-7-loops/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L10-L14)
 
 ``` js
-load: /examples/tut-7/index.mjs
+load: /examples/rps-7-loops/index.mjs
 range: 10-14
 ```
 
@@ -1629,12 +1737,14 @@ load: /examples/tut-7-rpc/client-py/index.py
 range: 15-23
 ```
 
+### Deploying Contracts
+
 Deploying and attaching contracts works slightly differently over RPC:
 
-[tut-7/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L15-L17)
+[rps-7-loops/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L15-L17)
 
 ``` js
-load: /examples/tut-7/index.mjs
+load: /examples/rps-7-loops/index.mjs
 range: 15-17
 ```
 
@@ -1651,10 +1761,10 @@ We will delay Bob's contract attach until later because Python lacks promises th
 
 `HAND` and `OUTCOME` only differ syntactically from their JavaScript equivalents:
 
-[tut-7/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L18-L19)
+[rps-7-loops/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L18-L19)
 
 ``` js
-load: /examples/tut-7/index.mjs
+load: /examples/rps-7-loops/index.mjs
 range: 18-19
 ```
 
@@ -1667,10 +1777,10 @@ range: 26-28
 
 The participant interact interface definitions remain similar:
 
-[tut-7/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L20-L32)
+[rps-7-loops/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L20-L32)
 
 ``` js
-load: /examples/tut-7/index.mjs
+load: /examples/rps-7-loops/index.mjs
 range: 20-32
 ```
 
@@ -1687,10 +1797,10 @@ While the JavaScript includes an explicit call to the `hasRandom` method in the 
 
 A `getHand` function is defined in line 22, and line 30, respectively. This randomly selects an element from the predefined `HAND` set and returns to the backend. The function will be passed as a callable method of the interface later.
 
-[tut-7/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L36-L38)
+[rps-7-loops/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L36-L38)
 
 ``` js
-load: /examples/tut-7/index.mjs
+load: /examples/rps-7-loops/index.mjs
 range: 36-38
 ```
 
@@ -1705,10 +1815,10 @@ Lines 36 and 35, respectively, show how a participant may be informed of a timeo
 
 Similarly, we see the `seeOutcome` function in the following snippet:
 
-[tut-7/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L33-L35)
+[rps-7-loops/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L33-L35)
 
 ``` js
-load: /examples/tut-7/index.mjs
+load: /examples/rps-7-loops/index.mjs
 range: 33-35
 ```
 
@@ -1726,10 +1836,10 @@ In line 42 we see `'stdlib.hasRandom' : True`. When communicating via RPC, this 
 Finally, we able to use our previous code to play the game!
 
 
-[tut-7/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L41-L60)
+[rps-7-loops/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L41-L60)
 
 ``` js
-load: /examples/tut-7/index.mjs
+load: /examples/rps-7-loops/index.mjs
 range: 41-60
 ```
 
