@@ -47,7 +47,7 @@ Type the following into `index.rsh`:
 [rps-1-setup/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-1-setup/index.rsh)
 
 ``` js
-load: /examples/rock-paper-scissors/rps-1-setup/index.rsh
+load: /examples/rps-1-setup/index.rsh
 ```
 
 > # Links to Documentation
@@ -70,7 +70,7 @@ $ touch index.mjs
 [rps-1-setup/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-1-setup/index.mjs)
 
 ``` js
-load: /examples/rock-paper-scissors/rps-1-setup/index.mjs
+load: /examples/rps-1-setup/index.mjs
 ```
 
 * Line 1: Imports the Reach standard library loader.
@@ -460,8 +460,6 @@ Now our verification engine checks an additional 5 theorems and prints this when
  6      Verifying when ONLY "Bob" is honest
  7    Checked 23 theorems; No failures!
 ```
-
-## Automatic Verification Engine
 
 At compile time, Reach conducts a mathematical proof that the expression always evaluates to `true`. We use the [verification engine](https://docs.reach.sh/guide-assert.html) to prove that an attack would do what we expect. But, it's better to use verification to show that _no flaws_ exist and that _no attack_ is possible.
 
@@ -1759,6 +1757,8 @@ The RPC Server interfaces with the backend. As such, there is no need to call `b
 
 We will delay Bob's contract attach until later because Python lacks promises that are available in JavaScript. When Bob attaches to the account, we'll only need Bob's account RPC handle and Alice's contract [RPC handle](https://docs.reach.sh/ref-backends-rpc-proto.html#%28tech._rpc._handle%29).
 
+## HAND & OUTCOME
+
 `HAND` and `OUTCOME` only differ syntactically from their JavaScript equivalents:
 
 [rps-7-loops/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L18-L19)
@@ -1774,6 +1774,8 @@ range: 18-19
 load: /examples/tut-7-rpc/client-py/index.py
 range: 26-28
 ```
+
+## Participant Interact Interface
 
 The participant interact interface definitions remain similar:
 
@@ -1797,6 +1799,8 @@ While the JavaScript includes an explicit call to the `hasRandom` method in the 
 
 A `getHand` function is defined in line 22, and line 30, respectively. This randomly selects an element from the predefined `HAND` set and returns to the backend. The function will be passed as a callable method of the interface later.
 
+## Timeout
+
 [rps-7-loops/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L36-L38)
 
 ``` js
@@ -1812,6 +1816,8 @@ range: 35-37
 ```
 
 Lines 36 and 35, respectively, show how a participant may be informed of a timeout.
+
+## See Outcome
 
 Similarly, we see the `seeOutcome` function in the following snippet:
 
@@ -1833,8 +1839,9 @@ In lines 42 - 46 of the Python code, we see a return of `dict`, which represents
 
 In line 42 we see `'stdlib.hasRandom' : True`. When communicating via RPC, this instructs the server to append the signature on the receiving end.
 
-Finally, we able to use our previous code to play the game!
+## Build the Game
 
+Finally, we able to use our previous code to play the game!
 
 [rps-7-loops/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L41-L60)
 
@@ -1901,4 +1908,6 @@ Once complete, type `deactivate` to exit the `venv` (virtual environment).
 
 Great work! You've reimplemented the JavaScript tutorial as Python.
 
-This tutorial uses Python to demonstrate how RPC frontends are built in Reach, but it is similarly easy to write RPC frontends in other languages, such as with the [JavaScript (RPC)](https://docs.reach.sh/ref-frontends-rpc-js.html), [Go (RPC)](https://docs.reach.sh/ref-frontends-rpc-go.html), and [C# RPC](https://docs.reach.sh/ref-frontends-rpc-cs.html) libraries.
+## Summary
+
+This tutorial used Python to demonstrate how RPC frontends are built in Reach, but it is similarly easy to write RPC frontends in other languages, such as with the [JavaScript (RPC)](https://docs.reach.sh/ref-frontends-rpc-js.html), [Go (RPC)](https://docs.reach.sh/ref-frontends-rpc-go.html), and [C# RPC](https://docs.reach.sh/ref-frontends-rpc-cs.html) libraries.
