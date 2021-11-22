@@ -455,10 +455,18 @@
   On Algorand, it can provide a wallet that directly connects to the Algorand network, like <code>setProviderByName</code> (&amp; <code>setProviderByEnv</code>), but provide interactive signing.
   The network connection is specified via the <code>providerEnv</code> key, which may be a string (which is used as an argument to <code>providerEnvByName</code>) or an environment (which is used as an argument to <code>setProviderByEnv</code>).
   By default, signing is via an interactive browser window prompt, where the user repeatedly provides their mnemonic.
+</p>
+<p>
   If the key <code>MyAlgoConnect</code> is provided, and bound to the export of <code>@reach-sh/stdlib/ALGO_MyAlgoConnect</code>, then <a href="https://wallet.myalgo.com/home">My Algo</a> will be used for signing.
   For example, this sets the wallet fallback to be My Algo used with Algorand TestNet:
 </p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> MyAlgoConnect </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'@reach-sh/stdlib/ALGO_MyAlgoConnect'</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #24292F">stdlib.</span><span style="color: #8250DF">setWalletFallback</span><span style="color: #24292F">(stdlib.</span><span style="color: #8250DF">walletFallback</span><span style="color: #24292F">({</span></li><li value="3"><span style="color: #24292F">  providerEnv: </span><span style="color: #0A3069">'TestNet'</span><span style="color: #24292F">, MyAlgoConnect }));</span></li></ol></pre>
+<p>
+  If the key <code>WalletConnect</code> is provided, and bound to the export of <code>@reach-sh/stdlib/ALGO_WalletConnect</code>, then <a href="https://walletconnect.com/">WalletConnect</a> is used to connect to the <a href="https://algorandwallet.com/">Algorand Wallet</a> for signing.
+  For example, this sets the wallet fallback to be WalletConnect and the Algorand TestNet:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> WalletConnect </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'@reach-sh/stdlib/ALGO_WalletConnect'</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #24292F">stdlib.</span><span style="color: #8250DF">setWalletFallback</span><span style="color: #24292F">(stdlib.</span><span style="color: #8250DF">walletFallback</span><span style="color: #24292F">({</span></li><li value="3"><span style="color: #24292F">  providerEnv: </span><span style="color: #0A3069">'TestNet'</span><span style="color: #24292F">, WalletConnect }));</span></li></ol></pre>
+<p>Because these are fallbacks, you need to decide for your users which wallet they'll use, or make a user interface element to let them select which wallet fallback to use.</p>
 <h2 id="utilities">Utilities</h2>
 <p>These functions operate on JavaScript representations of Reach values.</p>
 <hr>

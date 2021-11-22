@@ -1324,11 +1324,15 @@
   <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">reach.</span><span style="color: #8250DF">setWalletFallback</span><span style="color: #24292F">(reach.</span><span style="color: #8250DF">walletFallback</span><span style="color: #24292F">({}));</span></li></ol></pre>
   <p>Instead, if you would like to allow your users to use <a href="https://wallet.myalgo.com/home">My Algo</a>, then you can add the following:</p>
   <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> MyAlgoConnect </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'@reach-sh/stdlib/ALGO_MyAlgoConnect'</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #24292F">stdlib.</span><span style="color: #8250DF">setWalletFallback</span><span style="color: #24292F">(stdlib.</span><span style="color: #8250DF">walletFallback</span><span style="color: #24292F">({</span></li><li value="3"><span style="color: #24292F">  providerEnv: </span><span style="color: #0A3069">'TestNet'</span><span style="color: #24292F">, MyAlgoConnect }));</span></li></ol></pre>
+  <p>Or, you could have your users use <a href="https://walletconnect.com/">WalletConnect</a> to connect to the <a href="https://algorandwallet.com/">Algorand Wallet</a>, by adding the following:</p>
+  <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> WalletConnect </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'@reach-sh/stdlib/ALGO_WalletConnect'</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #24292F">stdlib.</span><span style="color: #8250DF">setWalletFallback</span><span style="color: #24292F">(stdlib.</span><span style="color: #8250DF">walletFallback</span><span style="color: #24292F">({</span></li><li value="3"><span style="color: #24292F">  providerEnv: </span><span style="color: #0A3069">'TestNet'</span><span style="color: #24292F">, WalletConnect }));</span></li></ol></pre>
   <p>
-    Of course, you may want to replace ```js
+    (Of course, you may want to replace ```js
     'TestNet'
   </p>
-  <pre class="snippet unnumbered"><ol class="snippet"><li value="1"> with a different network name.</li></ol></pre>
+  <pre class="snippet numbered"><ol class="snippet"><li value="1"> in either of these samples with a different network name, like ```js</li><li value="2">'MainNet'</li></ol></pre>
+  <p>.)</p>
+  <p>Because these are fallbacks, you need to decide for your users which wallet they'll use, or make a user interface element to let them select which wallet fallback to use.</p>
 </div>
 <p>Similarly, to run with Conflux:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ REACH_CONNECTOR_MODE=CFX ./reach react</li></ol></pre>
