@@ -26,7 +26,7 @@ import * as fs from 'fs';
   const remoteCtc = compiled["contracts"]["index.sol:LogAttack2"];
   const remoteABI = remoteCtc["abi"];
   const remoteBytecode = remoteCtc["bin"];
-  const which = 'e2';
+  const which = '_reach_e2';
   assertEq(getEvt(which, JSON.parse(backend._Connectors.ETH.ABI)), getEvt(which, remoteABI));
   
   const startingBalance = stdlib.parseCurrency(100);

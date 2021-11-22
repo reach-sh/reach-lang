@@ -27,7 +27,7 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
   const remoteCtc = compiled["contracts"]["index.sol:WeirdContract"];
   const remoteABI = remoteCtc["abi"];
   const remoteBytecode = remoteCtc["bin"];
-  const which = 'e1';
+  const which = '_reach_e1';
   assertEq(getEvt(which, JSON.parse(backend._Connectors.ETH.ABI)), getEvt(which, remoteABI));
 
   const startingBalance = stdlib.parseCurrency(100);
