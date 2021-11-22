@@ -1360,7 +1360,7 @@ range: 39-41
 
 * Line 39: We render the appropriate view from [rps-9-web/views/AppViews.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/views/AppViews.js)
 
-![Figure 2: The `FundAccount` view](https://reach-sh.io/en/books/essentials/getting-started/rock-paper-scissors/FundAccount.png)
+![Figure 2: The `FundAccount` view](FundAccount.png)
 
 We'll return to the close of `componentDidMount` to define callbacks on `App` for what to do when the user clicks certain buttons.
 
@@ -1380,7 +1380,7 @@ range: 32-36
 
 ## Choose Role
 
-![Figure 3: The `DeployerOrAttacher` view](https://reach-sh.io/en/books/essentials/getting-started/rock-paper-scissors/DeployerOrAttacher.png)
+![Figure 3: The `DeployerOrAttacher` view](DeployerOrAttacher.png)
 
 [rps-9-web/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.js#L36-L38)
 
@@ -1420,19 +1420,19 @@ range: 42-55
 
 ## Get Hand Dialog
 
-![Figure 4: The `GetHand` view](https://reach-sh.io/en/books/essentials/getting-started/rock-paper-scissors/GetHand.png)
+![Figure 4: The `GetHand` view](GetHand.png)
 
 ## Waiting for Results Display
 
-![Figure 5: The `WaitingForResults` view](https://reach-sh.io/en/books/essentials/getting-started/rock-paper-scissors/WaitingForResults.png)
+![Figure 5: The `WaitingForResults` view](WaitingForResults.png)
 
 ## Done Display
 
-![Figure 6: The `Done` view](https://reach-sh.io/en/books/essentials/getting-started/rock-paper-scissors/Done.png)
+![Figure 6: The `Done` view](Done.png)
 
 ## Timeout Display
 
-![Figure 7: The `Timeout` view](https://reach-sh.io/en/books/essentials/getting-started/rock-paper-scissors/Timeout.png)
+![Figure 7: The `Timeout` view](Timeout.png)
 
 ## Deployer Component
 
@@ -1467,19 +1467,19 @@ range: 56-72
 
 ## Set Wager Dialog
 
-![Figure 8: The `SetWager` view](https://reach-sh.io/en/books/essentials/getting-started/rock-paper-scissors/SetWager.png)
+![Figure 8: The `SetWager` view](SetWager.png)
 
 ## Deploy Dialog
 
-![Figure 9: The `Deploy` view](https://reach-sh.io/en/books/essentials/getting-started/rock-paper-scissors/Deploy.png)
+![Figure 9: The `Deploy` view](Deploy.png)
 
 ## Deploying Display
 
-![Figure 10: The `Deploying` view](https://reach-sh.io/en/books/essentials/getting-started/rock-paper-scissors/Deploying.png)
+![Figure 10: The `Deploying` view](Deploying.png)
 
 ## Waiting for Attacher Display
 
-![Figure 11: The `WaitingForAttacher` view](https://reach-sh.io/en/books/essentials/getting-started/rock-paper-scissors/WaitingForAttacher.png)
+![Figure 11: The `WaitingForAttacher` view](WaitingForAttacher.png)
 
 ## Attacher Component
 
@@ -1513,19 +1513,19 @@ range: 73-95
 
 ## Attach Dialog
 
-![Figure 12: The `Attach` view](https://reach-sh.io/en/books/essentials/getting-started/rock-paper-scissors/Attach.png)
+![Figure 12: The `Attach` view](Attach.png)
 
 ## Attaching Display
 
-![Figure 13: The `Attaching` view](https://reach-sh.io/en/books/essentials/getting-started/rock-paper-scissors/Attaching.png)
+![Figure 13: The `Attaching` view](Attaching.png)
 
 ## Accept Terms Dialog
 
-![Figure 14: The `AcceptTerms` view](https://reach-sh.io/en/books/essentials/getting-started/rock-paper-scissors/AcceptTerms.png)
+![Figure 14: The `AcceptTerms` view](AcceptTerms.png)
 
 ## Waiting for Turn Display
 
-![Figure 15: The `WaitingForTurn` view](https://reach-sh.io/en/books/essentials/getting-started/rock-paper-scissors/WaitingForTurn.png)
+![Figure 15: The `WaitingForTurn` view](WaitingForTurn.png)
 
 ## Putting it All Together
 
