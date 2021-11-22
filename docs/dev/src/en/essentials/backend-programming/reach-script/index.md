@@ -117,11 +117,11 @@ After soliciting information from you, this command creates a `~/.config/reach/e
 $ reach config
 ```
 
-The command also supplies you with customized directions for using the `env` script.
+Output from this command supplies you with customized directions for sourcing the `env` script.
 
 ## reach devnet
 
-With the `REACH_CONNECTOR_MODE` set, this commmand runs a private devnet:
+With `REACH_CONNECTOR_MODE` set, this command launches a private devnet on which you can run/test your Reach DApps:
 
 ``` nonum
 $ reach devnet
@@ -135,23 +135,27 @@ $ reach devnet --await-background
 
 ## reach docker-reset
 
-This command halts and deletes all Docker containers. 
+This command stops and deletes all Docker containers including Reach Docker containers. 
 
 ``` nonum
 $ reach docker-reset
 ```
 
+Use [reach down](#reach-down) to stop and delete only Reach Docker containers.
+
 ## reach down
 
-This command halts all Dockerized Reach containers. 
+This command stops and deletes all Reach Docker containers. 
 
 ``` nonum
 $ reach down
 ```
 
+Docker containers are instances of Docker images. So, after you run `reach update` to refresh you Reach Docker images, running `reach down` ensures that all Reach Docker containers based on old Reach Docker images are removed. 
+
 ## reach hashes
 
-This command displays git hash values associated with Reach Docker images.
+This command displays git hash values associated with your current Reach Docker images:
 
 ``` nonum
 $ reach hashes
