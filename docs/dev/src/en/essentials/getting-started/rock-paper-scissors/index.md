@@ -51,7 +51,7 @@ load: /examples/rps-1-setup/index.rsh
 ```
 
 > # Links to Documentation
-> You may have noticed that `export`, `const`, `exit`, and so on are links. In any Reach code sample you can click on the names of keywords and standard library functions to read more detailed documentation.
+> You may have noticed that `export`, `const`, `exit`, and so on are links. In any Reach code sample, you can click on the names of keywords and standard library functions to read more detailed documentation.
 
 > # Links to Source
 > You may have noticed that `rps-1-setup/index.rsh` is a link above the code snippet. Click these links to view the full source code.
@@ -82,8 +82,8 @@ load: /examples/rps-1-setup/index.mjs
 * Line 10: Alice deploys the application. This activates the code in `index.rsh`.
 * Line 11: Bob attaches to the application.
 * Line 13: Awaits for the backend to complete before running the block of code.
-* Lines 14 - 16: Initalizes a backend for Alice
-* Lines 17 - 19: Initalizes a backend for Bob
+* Lines 14 - 16: Initializes a backend for Alice
+* Lines 17 - 19: Initializes a backend for Bob
 * Line 21: Calls the asynchronous function defined in line 5.
 
 At this point, we can compile and run the program. Be sure Docker is running or the command will not work.
@@ -92,7 +92,7 @@ At this point, we can compile and run the program. Be sure Docker is running or 
 $ reach run
 ```
 
-Assuming no errors, Reach will now build and launch a Docker container for the application. However, our application doesn't do anything yet. At this point in time, you'll only see diagnotic messages.
+Assuming no errors, Reach will now build and launch a Docker container for the application. However, our application doesn't do anything yet. At this point in time, you'll only see diagnostic messages.
 
 In the future, you can automate the entire process that we've walked through in this section by running `reach init`. We won't run this now, but in the future, you can use `reach init` to create a boilerplate for your dApps.
 
@@ -100,7 +100,7 @@ In the next step, we'll implement the logic of _Rock, Paper, Scissors!_ so our a
 
 > # Check your Understanding
 > When you write a dApp using Reach, do you:
-A) Write a smart contract in Solidity, a backend in JavaScript using the Ethereum SDK, and a frontend in JavaScript, then use Reach to test and deploy it;
+A) Write a smart contract in Solidity, a backend in JavaScript using the Ethereum SDK, and a frontend in JavaScript, then use Reach to test and deploy it.
 B) Write a program in Reach that generates a smart contract and a backend and a frontend in JavaScript, then use Reach to test and deploy it?
 
 # Rock, Paper, Scissors
@@ -177,7 +177,7 @@ range: 23-29
 ```
 
 * Lines 23 - 26: Match Alice's similar [local step](https://docs.reach.sh/ref-model.html#%28tech._local._step%29) and [join](https://docs.reach.sh/ref-model.html#%28tech._join%29)ing of the application through a [consensus transfer](https://docs.reach.sh/ref-model.html#%28tech._consensus._transfer%29) [publication](https://docs.reach.sh/ref-model.html#%28tech._publication%29).
-* Line 28: Computes the outcome of the game before committing. The equation itself is not critical to understand for the purposes of our tutorial. However,we will say that `Outcome` stores a value of an integer modulo, which will correlate to the winning hand.
+* Line 28: Computes the outcome of the game before committing. The equation itself is not critical to understand for the purposes of our tutorial. However, we will say that `Outcome` stores a value of an integer modulo, which will correlate to the winning hand.
 
 In the next snippet we use the [each](https://docs.reach.sh/ref-programs-step.html#%28tech._each%29) form to have each of the participants send the final outcome to their frontends.
 
@@ -226,16 +226,16 @@ Alice is good!
 
 > If your version isn't working, look at the complete versions of [index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-2-rps/index.rsh) and [index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-2-rps/index.mjs) to make sure you've copied everything correctly.
 
-> # Whose on First
-> Does Alice go first or do we call the player that goes first, "Alice"? It may seem like an unnecessary distinction, but this is a subtle point about the way Reach works. In this section, we explicitly ran `backend.Alice` and `backend.Bob` in the [frontend](https://docs.reach.sh/ref-model.html#%28tech._frontend%29). When we did that, we committed that particular JavaScript thread to be either Alice or Bob. In our game, whoever chose to run the Alice backend is the one that will go first. In other words: **Alice goes first**. This will be more obvious at [the end of the tutorial](https://docs.reach.sh/tut-8.html) when we'll make the choice interactively about which role to play.
+> # Who’s on First
+> Does Alice go first, or do we call the player that goes first, "Alice"? It may seem like an unnecessary distinction, but this is a subtle point about the way Reach works. In this section, we explicitly ran `backend.Alice` and `backend.Bob` in the [frontend](https://docs.reach.sh/ref-model.html#%28tech._frontend%29). When we did that, we committed that particular JavaScript thread to be either Alice or Bob. In our game, whoever chose to run the Alice backend is the one that will go first. In other words: **Alice goes first**. This will be more obvious at [the end of the tutorial](https://docs.reach.sh/tut-8.html) when we'll make the choice interactively about which role to play.
 
 In the next step, we'll add stakes to the game, because Alice needs to take her skills to the bank!
 
 > # Check Your Understanding
 > Reach programs allow interaction with a user interface through which of the following methods?
-> 1. By forcing you to write a custom backend for the user interace that connects to the generated smart contract
+> 1. By forcing you to write a custom backend for the user interface that connects to the generated smart contract
 > 1. By allowing the frontends to provide values directly to the Reach application
-> 1. By allowing the REach program to callback to the frontend via the interact object.
+> 1. By allowing the Reach program to callback to the frontend via the interact object.
 
 > How do participants in a Reach application share information with each other and find out what others have shared?
 > 1. Reach generates a smart contract, but you need to implement a process to scan the blockchain for events that correspond to sharing. 
@@ -244,7 +244,7 @@ In the next step, we'll add stakes to the game, because Alice needs to take her 
 
 # Bets and Wagers
 
-It's fun to play _Rock, Paper, Scissors!_ with friends for a laugh, but it's even better to play it with enemies and your entire life-savings on the line! Let's change our program so Alice can offer a wager to Bob and whomever wins will take the pot.
+It's fun to play _Rock, Paper, Scissors!_ with friends for a laugh, but it's even better to play it with enemies and your entire lifesavings on the line! Let's change our program so Alice can offer a wager to Bob and whomever wins will take the pot.
 
 This time, we'll start with changes to the JavaScript [frontend](https://docs.reach.sh/ref-model.html#%28tech._frontend%29) and then we'll go back into the Reach code and connect the new methods.
 
@@ -286,7 +286,7 @@ range: 36-41
 
 * Lines 38 - 40: Define the `acceptWager` function and print a statement in the console.
 
-Now that the computation is over we'll get the balance again and show a message that prints the change in funds.
+Now that the computation is over, we'll get the balance again and show a message that prints the change in funds.
 
 [rps-3-bets/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-3-bets/index.mjs)
 
@@ -298,7 +298,7 @@ range: 44 - 48
 * Lines 44 & 45: Gets the balance after the transaction.
 * Lines 47 & 48: Prints the before and after balances.
 
-The changes that we've made only address the presentation and interfacing of the [frontend](https://docs.reach.sh/ref-model.html#%28tech._frontend%29). The business logic and actual wagers and transfers of funds happen in the Reach code; the backend.
+The changes that we've made only address the presentation and interfacing of the [frontend](https://docs.reach.sh/ref-model.html#%28tech._frontend%29). The business logic and actual wagers and transfers of funds happen in the Reach code.
 
 Let's focus on the backend, now. To begin, we'll update the [participant interact interface](https://docs.reach.sh/ref-programs-appinit.html#%28tech._participant._interact._interface%29).
 
@@ -309,7 +309,7 @@ load: /examples/rps-3-bets/index.rsh
 range: 1-19
 ```
 
-* Lines 9 - 12: Defines Alice's interace as the `Player` interace and an integer value, `wager`.
+* Lines 9 - 12: Defines Alice's interface as the `Player` interface and an integer value, `wager`.
 * Lines 13 - 16: Define Bob's interface along with a called `acceptWager`, which can look at the wager value.
 
 ## Updating the Application
@@ -329,7 +329,7 @@ range: 19-25
 
 ## Accept and Transfer Funds
 
-Next, Bob will be given the ability to be shown the wager, have the opportunity to accept it and then transfer funds.
+Next, Bob will be given the ability to be shown the wager, and have the opportunity to accept it, then transfer funds.
 
 [rps-3-bets/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-3-bets/index.rsh)
 
@@ -351,7 +351,7 @@ range: 34-41
 ```
 
 * Lines 35 - 38: Compute the amounts given to each participant depending on the outcome. If the outcome is 2 then Alice wins and she receives two portions of the wager amount. If the outcome is 0 then Bob wins and collects the portions. In a draw, both participants receive 1 portion, each. 
-* Lines 39 - 40: Transfer the wagers. Funds reside inside the contract so the transfer always takes place from the contract to the participants. In this manner, participants do not need to trust one another in order to honestly play the game. 
+* Lines 39 - 40: Transfer the wagers. Funds reside inside the contract, so the transfer always takes place from the contract to the participants. In this manner, participants do not need to trust one another in order to honestly play the game. 
 * Line 41: Commits the state of the application and allows the participants to see the outcome and completes the contract.
 
 We can now run the program and view its output. 
@@ -420,7 +420,7 @@ range: 27-32
 
 Now Bob will ignore the frontend and compute the correct value. 
 
-Running the program will return an output simiar to this:
+Running the program will return an output similar to this:
 
 ``` bash
 
@@ -437,7 +437,7 @@ We can see from the output that Bob never consults the frontend. Bob will never 
 
 ## Automatic Verification Engine
 
-How do we know it's not just luck of the random number generator that observes Bob winning? Reach comes with an automatic verification engine that mathematically proves that this version always results in the `outcome` equalling 0, meaning Bob wins. We can prove this theorem with the `require` and `assert` statements after computing the `outcome`.
+How do we know it's not just luck of the random number generator that observes Bob winning? Reach comes with an automatic verification engine that mathematically proves that this version always results in the `outcome` equaling 0, meaning Bob wins. We can prove this theorem with the `require` and `assert` statements after computing the `outcome`.
 
 [rps-5-attack/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-5-attack/index.rsh#L34-L37)
 
@@ -461,7 +461,7 @@ Now our verification engine checks an additional 5 theorems and prints this when
  7    Checked 23 theorems; No failures!
 ```
 
-At compile time, Reach conducts a mathematical proof that the expression always evaluates to `true`. We use the [verification engine](https://docs.reach.sh/guide-assert.html) to prove that an attack would do what we expect. But, it's better to use verification to show that _no flaws_ exist and that _no attack_ is possible.
+At compile time, Reach conducts a mathematical proof that the expression always evaluates to `true`. We use the [verification engine](https://docs.reach.sh/guide-assert.html) to prove that an attack would do what we expect. But it's better to use verification to show that _no flaws_ exist and that _no attack_ is possible.
 
 Reach will check a certain number of theorems even without explicit `require` and `assert` statements. Let's see these theorems in action by inserting an error into the program.
 
@@ -471,7 +471,7 @@ First, undo the recent changes we made. So, we'll remove the `require` and `asse
 29        const handBob = declassify(interact.getHand());
 ```
 
-Find the payout computation and alter it so that when Alice wins she only gets her wager back, not Bob's, as well.
+Find the payout computation and alter it so that when Alice wins, she only gets her wager back, not Bob's, as well.
 
 ```js
 34      const outcome = (handAlice + (4 - handBob)) % 3;
@@ -527,7 +527,7 @@ There's a lot of information here that you'll be able use with some experience. 
 * Lines 10 - 20: Describe values that will cause the theorem to fail.
 * Lines 23 - 31: Detailed the theorem that failed.
 
-The [automatic verficiations](https://docs.reach.sh/guide-assert.html) help Reach programmers by protecting them from entire categories of errors.
+The [automatic verifications](https://docs.reach.sh/guide-assert.html) help Reach programmers by protecting them from entire categories of errors.
 
 ## Assertions
 
@@ -565,7 +565,7 @@ It's not enough to correct failures and attacks as they are discovered. **Always
 
 ## A More Secure Version
 
-With this knowledge in mind, let's create a brand new version of _Rock, Paper, Scissors!_ so that it is more trustworthy and secure. 
+With this knowledge in mind, let's create a brand-new version of _Rock, Paper, Scissors!_ so that it is more trustworthy and secure. 
 
 Let's begin by defining the rules of _Rock, Paper, Scissors!_ with a greater amount of abstraction. This will allow us to separate the logic of the game from the details of the application.
 
@@ -641,7 +641,7 @@ range: 25-36
 
 There is nothing new or exciting in this snippet. We're creating the Reach application and providing functionality to the participant interact interface.
 
-In the next snippet, we'll implement the application while ensuring that Alice's hand is protected until Bob reveals his hand. We could just have Alice publish her wager, but then this would leave Bob vulnerable. Our challenge is that we need Alice to publish her hand, but also keep it secret. Our solution is to use a [cryptographic commitment scheme](https://en.wikipedia.org/wiki/Commitment_scheme). Reache's standard library comes with `makeCommitment` to make this easier.
+In the next snippet, we'll implement the application while ensuring that Alice's hand is protected until Bob reveals his hand. We could just have Alice publish her wager, but then this would leave Bob vulnerable. Our challenge is that we need Alice to publish her hand, but also keep it secret. Our solution is to use a [cryptographic commitment scheme](https://en.wikipedia.org/wiki/Commitment_scheme). Reach’s standard library comes with `makeCommitment` to make this easier.
 
 [rps-4-trust/index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-4-trust/index.rsh#L37-L45)
 
@@ -650,7 +650,7 @@ load: /examples/rps-4-trust/index.rsh
 range: 37-45
 ```
 
-* Line 39: Alice computes her hand, but does not declassify it.
+* Line 39: Alice computes her hand but does not declassify it.
 * Line 40: Alice computes a commitment to her hand. We've added a secret "salt" value that was generated by the `random` function, which we'll reveal later.
 * Line 41: Alice declassifies the commitment.
 * Line 43: Alice publishes the commitment.
@@ -680,7 +680,7 @@ range: 56-61
 
 Lines 57 - 58: Alice declassifies the secret information.
 Line 60: Alice publishes the secret information.
-Line 61: Checks that the published values match the original values. This will always be true for nonest participants, but dishonst participants may violate this assumption.
+Line 61: Checks that the published values match the original values. This will always be true for honest participants, but dishonest participants may violate this assumption.
 
 The rest of the program is unchanged from the original version, except that it uses the new names for the outcomes.
 
@@ -728,16 +728,16 @@ You may have noticed that this version of the application proves more theorems w
 
 Our implementation of _Rock, Paper, Scissors!_ is secure and free of exploits for Alice and Bob. However, there is a final category of mistakes that is common in dApps: non-participation. 
 
-Similar to before, don't launch this version of _Rock, Paper, Scissors!_ in the mainnet or Alice may ghost Bob when she knows she's going to lose!
+As before, don't launch this version of _Rock, Paper, Scissors!_ in the mainnet or Alice may ghost Bob when she knows she's going to lose!
 
 > # Check Your Understanding
-> True or false: Since blockchain programs run on a single, global, publicly-checked and certified consensus network, you don't need to test them as much as normal software, which run on a wide variety of different platforms and operating systems. 
+> True or false: Since blockchain programs run on a single, global, publicly checked and certified consensus network, you don't need to test them as much as normal software, which run on a wide variety of different platforms and operating systems. 
 
 > True or false: It is easy to write correct programs that handle financial information, and even if you make a mistake, blockchains support an "Undo" operation that allows you to rollback to earlier versions of the leader to correct mistakes and recover lost funds.
 
 > True or false: Reach provides automatic verifications to ensure that your program does not lose, lock away, or overspend funds and guarantees that your applications are free from entire categories of errors. 
 
-> True or false: Reach provides tools for you to add custom verfications to your program, like ensuring that information is known only to one party, or that your implementation of a sensitive algorithm is correct.
+> True or false: Reach provides tools for you to add custom verifications to your program, like ensuring that information is known only to one party, or that your implementation of a sensitive algorithm is correct.
 
 # Timeouts and Participation
 
@@ -745,11 +745,11 @@ We've just removed a major security vulnerability. Way to avoid a scandal in the
 
 Non-participation is the act of one party ceasing to continue playing their role in an application.
 
-In traditional client-server programs this would be the equivalent of a client not sending additional requests to the server, or the server ceasing to send responses to the client. In centralized appls, non-participation is an exceptional circumstance that often leads to an error message for clients or a log entry for servers. Traditionally, developers have not needed to meticulously consider the consequences of non-participation. 
+In traditional client-server programs this would be the equivalent of a client not sending additional requests to the server, or the server ceasing to send responses to the client. In centralized apps, non-participation is an exceptional circumstance that often leads to an error message for clients or a log entry for servers. Traditionally, developers have not needed to meticulously consider the consequences of non-participation. 
 
-However, in decentralized applications engineers must carefully consider the behavior of their dApp in the even of non-participation. Imagine if Alice pays her wager, but Bob never accepts. The application will not continue and Alice's [network tokens](https://docs.reach.sh/ref-model.html#%28tech._network._token%29) will be locked away in the [contract](https://docs.reach.sh/ref-model.html#%28tech._contract%29) forever. That wouldn't be too smart, right?
+However, in decentralized applications engineers must carefully consider the behavior of their dApp in the event of non-participation. Imagine if Alice pays her wager, but Bob never accepts. The application will not continue and Alice's [network tokens](https://docs.reach.sh/ref-model.html#%28tech._network._token%29) will be locked away in the [contract](https://docs.reach.sh/ref-model.html#%28tech._contract%29) forever. That wouldn't be too smart, right?
 
-We can also imagine a scenario where Bob accepts and pays his wager, but Alice never submits her hand, locking away both of their funds forever. In either case, both parties would be hurt and their fear of non-participation would increase the costs of each transaction and reduce the value of interacting with that contract.
+We can also imagine a scenario where Bob accepts and pays his wager, but Alice never submits her hand, locking away both of their funds forever. In either case, both parties would be hurt, and their fear of non-participation would increase the costs of each transaction and reduce the value of interacting with that contract.
 
 Of course, for our tutorial, this is a trivial matter, but as a microcosm of decentralized application design, it is a consideration of extreme importance. Let's explore how Reach helps to address non-participation. 
 
@@ -841,7 +841,7 @@ load: /examples/rps-6-timeouts/index.rsh
 range: 70-71
 ```
 
-* Lines 70 - 71: This is similar to our `timeout` handler in Bob's publication, but in this case, if Alice triggers the `timeout` event then Bob will collect all of the funds. 
+* Lines 70 - 71: This is like our `timeout` handler in Bob's publication, but in this case, if Alice triggers the `timeout` event then Bob will collect all the funds. 
 
 While it might be "fair" for Alice and Bob to each receive their own funds, this type of implementation would incentivize Alice to always timeout if she were going to lose, which she will know, because she'll know her hand and Bob's hand.
 
@@ -893,14 +893,14 @@ Alice went from 10 to 9.9999.
 Bob went from 10 to 9.9999.
 ```
 
-We've now created a robust dApp that prevents either participant from dropping the game. If you'd like to dig into a deeper discussion on this subject then visit our [guide on non-participation](https://docs.reach.sh/guide-timeout.html). In the next iteration, we'll extend the application to disallow draws. 
+We've now created a robust dApp that prevents either participant from dropping the game. If you'd like to dig into a deeper discussion on this subject, then visit our [guide on non-participation](https://docs.reach.sh/guide-timeout.html). In the next iteration, we'll extend the application to disallow draws. 
 
 > # Check Your Understanding
-> What happens in a decentralized application when one particpant refuses to take the next step of the program? 
+> What happens in a decentralized application when one participant refuses to take the next step of the program? 
 1. This is not possible, because the blockchain guarantees that each party performs a particular set of actions
 1. The program hangs forever waiting for a participant to provide a value
 1. The program punishes the non-participant and proceeds as if the active participant won.
-1. It depends on how the program was written; if the developer used REach, the default is (2), but the developer could include a `timeout` block to implement the behavior in #3.
+1. It depends on how the program was written; if the developer used Reach, the default is (2), but the developer could include a `timeout` block to implement the behavior in #3.
 
 # Play and Play Again (Loops in Reach)
 
@@ -917,7 +917,7 @@ load: /examples/rps-7-loops/index.mjs
 range: 20-39
 ```
 
-* Lines 25 - 30: Moves the forced timeout code that we wrote for Bob's `acceptWager` function into the `getHand` method. We've also changed the threshold so timeouts only happen 1% of the time. 
+* Lines 25 - 30: Moves the forced timeout code that we wrote for Bob's `acceptWager` function into the `getHand` method. We've also changed the threshold, so timeouts only happen 1% of the time. 
 
 Next, we'll adjust Bob's `acceptWager` function to remove the timeout code.
 
@@ -941,7 +941,7 @@ Previously, our steps were:
 1. Alice reveals her hand.
 1. The game ends.
 
-But, now because players might submit many hands, but should only have a single wager, we'll break these steps up differently:
+But now because players might submit many hands, but should only have a single wager, we'll break these steps up differently:
 
 1. Alice sends her wager.
 1. Bob accepts the wager.
@@ -976,9 +976,9 @@ range: 53-58
 
 It's now time to begin the repeatable section of the application. Each party will repeatedly submit hands until the outcome is not a draw. In normal programming languages, such a circumstance would be implemented with a `while` loop, which is exactly what we'll do in Reach. However, `while` loops in Reach require extra care. We'll take our time working through loops in this tutorial. Upon your completion of the tutorial, you can learn more about loops in our [guide](https://docs.reach.sh/guide-loop-invs.html).
 
-So far, all of our identifier bindings have been static and unchangeable. However, if this were the case with while loops they would never start or terminate, because the loop condition would never change. So, we bind `while` loops using `var`.
+So far, our identifier bindings have been static and unchangeable. However, if this were the case with while loops, they would never start or terminate, because the loop condition would never change. So, we bind `while` loops using `var`.
 
-Due to Reach's [automatic verfication](https://docs.reach.sh/guide-assert.html) engine, we need to make a statement about what properties of the program are invariant before and after a `while` loop body's execution. This is known as a "[loop invariant](https://docs.reach.sh/guide-loop-invs.html)."
+Due to Reach's [automatic verification](https://docs.reach.sh/guide-assert.html) engine, we need to make a statement about what properties of the program are invariant before and after a `while` loop body's execution. This is known as a "[loop invariant](https://docs.reach.sh/guide-loop-invs.html)."
 
 It's important to note that these loops _may only occur_ inside [consensus steps](https://docs.reach.sh/ref-model.html#%28tech._consensus._step%29). This is why we didn't commit Bob's transaction, previously. We need to remain inside the consensus to start the `while` loop, because all [participants](https://docs.reach.sh/ref-model.html#%28tech._participant%29) must agree on the direction of control flow in the dApp.
 
@@ -1021,7 +1021,7 @@ load: /examples/rps-7-loops/index.rsh
 range: 81-87
 ```
 
-Alice's next step is identical, because she is still revealing her hand in exactly the same way.
+Alice's next step is identical, because she is still revealing her hand in the same way.
 
 Finally, we write the end of the loop:
 
@@ -1093,7 +1093,7 @@ This implementation of _Rock, Paper, Scissors!_ will always result in a pay-out,
 1. This is not possible, because all Reach programs are finitely long
 1. You can use a `while` loop that runs until the outcome of the game is decided.
 
-> When you check if a program with a `while` loop is correct, you need to have a property called a loop invariant. Which of the following statements have to be true about the loop invariant?
+> When you check if a program with a `while` loop is correct, you need to have a property called a loop invariant. Which of the following statements must be true about the loop invariant?
 1. The part of the program before the `while` loop must establish the invariant.
 1. The condition and the body of the loop must establish the invariant.
 1. The negation of the condition and the invariant must establish any properties of the rest of the program.
@@ -1102,9 +1102,9 @@ This implementation of _Rock, Paper, Scissors!_ will always result in a pay-out,
 
 Previously, we eliminated the possibility of a DRAW in our Reach program and made very few changes in the JavaScript frontend. In this section, we won't make any changes to the backend. Instead, we'll customize the frontend to facilitate interactivity and provide the option to connect to a real consensus network.
 
-## Start From Scratch
+## Start from Scratch
 
-We'll start from scratch and show every line of the program, again. While much of the code will be similar to the previous version, for the sake of completeness, we'll show every line.
+We'll start from scratch and show every line of the program, again. While much of the code will be like the previous version, for the sake of completeness, we'll show every line.
 
 [rps-8-interact/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/index.mjs#L1-L6)
 
@@ -1123,7 +1123,7 @@ load: /examples/rps-8-interact/index.mjs
 range: 7-12
 ```
 
-* Lines 7 - 10: Asks whether the user is playing as Alice and expects a "Yes" or "No" answer. `ask` presents a prompt and collects a line of input until its argument does not error. `yesno` errors if it is not give "y" or "n".
+* Lines 7 - 10: Asks whether the user is playing as Alice and expects a "Yes" or "No" answer. `ask` presents a prompt and collects a line of input until its argument does not error. `yesno` errors if it is not given "y" or "n".
 
 [rps-8-interact/index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/index.mjs#L13-L29)
 
@@ -1269,7 +1269,7 @@ Our implementation of _Rock, Paper, Scissors!_ is now finished! We are protected
 In this step we made a command-line interface for each participant. In the next section, we'll create a web interface.
 
 > # Check Your Understanding
-> Reachs helps you build automated tests for your decentralized application, but it doesn't support building interactive user-interfaces.
+> Reach helps you build automated tests for your decentralized application, but it doesn't support building interactive user-interfaces.
 
 # Web Interaction with React
 
@@ -1287,13 +1287,13 @@ If you’ve never used React before, here are some basics about how it works:
 
 ## Deploying
 
-This tutorial assumes we're deploying and testing with Ethereum. Reach web applications rely on the web browser to provide access to a consensus network account and its associated wallet. Ethereums standard wallet is [MetaMask](https://metamask.io/). Install and set it up if you want to test this code. 
+This tutorial assumes we're deploying and testing with Ethereum. Reach web applications rely on the web browser to provide access to a consensus network account and its associated wallet. Ethereum’s standard wallet is [MetaMask](https://metamask.io/). Install and set it up if you want to test this code. 
 
-> Note that MetaMask does not support multiple active accounts, so testing locally will require the use of two separate browswer instances with two MetaMask accounts: one to act as Alice and the other as Bob.
+> Note that MetaMask does not support multiple active accounts, so testing locally will require the use of two separate browser instances with two MetaMask accounts: one to act as Alice and the other as Bob.
 
-To complete this section, we'll use the `index.rsh` file you've already written, but create an `index.js` file from scratch. This will replace the `index.mjs` file we wrote for the command-line interface.
+To complete this section, we'll use the `index.rsh` file you've already written but create an `index.js` file from scratch. This will replace the `index.mjs` file we wrote for the command-line interface.
 
-This code is supplemented with [index.css](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.css) and some [views](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/views). These details are not specific to Reach, and are fairly trivial, so we will not explain the specific of those files. If you run this locally, you'll want to download those file. Your directory should look like:
+This code is supplemented with [index.css](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.css) and some [views](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/views). These details are not specific to Reach, and are trivial, so we will not explain the specific of those files. If you run this locally, you'll want to download those file. Your directory should look like:
 
 ``` bash
 .
@@ -1341,11 +1341,11 @@ load: /examples/rps-9-web/index.js
 range: 15-31
 ```
 
-Here, we've begun defining `App` as a React component, and provide instructions for what do do once React mounts (i.e. when React starts).
+Here, we've begun defining `App` as a React component and provide instructions for what to do once React mounts (i.e., when React starts).
 
 * Line 19: We initialize the component state to display the `ConnectAccount` view. (As pictured below).
 * Lines 21 - 31: Hooks into React's `componentDidMount` lifecycle event, which is called when the component starts.
-* Line 22: We use `getDefaultAccount`, which accesses the default browser account. (i.e. MetaMask)
+* Line 22: We use `getDefaultAccount`, which accesses the default browser account. (i.e., MetaMask)
 * Line 26: We use `canFundFromFaucet` to check if we can access the Reach developer testing network faucet.
 * Line 27: If `canFundFromFaucet` is `true`, we set the component state to display the `FundAccount` view.
 * Line 29: If `canFundFromFaucet` is `false`, we set the component state to skip to the `DeployerOrAttacher` view. 
@@ -1416,7 +1416,7 @@ range: 42-55
 
 * Line 43: Provides the `random` callback.
 * Lines 44 - 50: Provides the `getHand` callback.
-* Lines 45 - 47: Sets the component state to display the `GetHand` view (figure 4), and wait for a `Promise` which can be resolved via user interaction.
+* Lines 45 - 47: Sets the component state to display the `GetHand` view (figure 4) and wait for a `Promise` which can be resolved via user interaction.
 * Line 48: Occurs after the `Promise` is resolved, we set the component state to display the `WaitingForResults` view (figure 5).
 * Lines 51 & 52: Provides the `seeOutcome` and `informTimeout` callbacks, which set the component state to display the `Done` view (figure 6) and the `Timeout` view (figure 7), respectively.
 * Line 53: Defines what happens when the user clicks `Rock`, `Paper`, `Scissors`: The `Promise` from line 45 is resolved.
@@ -1448,7 +1448,7 @@ load: /examples/rps-9-web/index.rsh
 range: 28-32
 ```
 
-We provide the `wager` and `deadline` values, and define some button handlers in order to trigger the deployment of the contract. 
+We provide the `wager` and `deadline` values and define some button handlers in order to trigger the deployment of the contract. 
 
 [rps-9-web/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.js#L56-L72)
 
@@ -1458,7 +1458,7 @@ range: 56-72
 ```
 
 * Line 59: Sets the component state to display the `SetWager` view (figure 8).
-* Line 61: Defines what to do when the user clicks the `Set Wager` button, which is to set the comonent state to display the `Deploy` view (figure 9).
+* Line 61: Defines what to do when the user clicks the `Set Wager` button, which is to set the component state to display the `Deploy` view (figure 9).
 * Lines 62 - 69: Defines what to do when the user clicks the `Deploy` button.
 * Line 63: Calls `acc.deploy`, which triggers a deploy of the contract.
 * Line 64: Sets the component state to display the `Deploying` view (figure 10).
@@ -1510,7 +1510,7 @@ range: 73-95
 * Line 80: Sets the component state to display the `Attaching` view (figure 13).
 * Line 81: Starts running the Reach program as Bob, using the `this` React component as the participant interact interface object.
 * Lines 83 - 88: Defines the `acceptWager` callback.
-* Lines 85 - 87: Sets the component state to display the `AcceptTerms` view (figure 14), and waits for a `Promise` which can be resolved via user interaction.
+* Lines 85 - 87: Sets the component state to display the `AcceptTerms` view (figure 14) and waits for a `Promise` which can be resolved via user interaction.
 * Lines 89 - 92: Defines what happens when the user clicks the `Accept Terms and Pay Wager` button: the `Promise` from line 90 is resolved, and we set the component state to display the `WaitingForTurn` view (figure 15).
 * Line 93: Renders the appropriate view from [rps-9-web/views/AttacherViews.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/views/AttacherViews.js).
 
@@ -1614,7 +1614,7 @@ Let's review what we've completed in this tutorial:
 * In [Interaction and Independence](#interaction-and-independence), we saw how to launch an interactive version of a dApp on a real network.
 * In [Web Interaction](#web-interaction-with-react) we deployed our Reach program as a fully decentralized Web app using React.
 
-Despite having done so much, this is really only a brief introduction to what is possible with Reach. 
+Despite having done so much, this is only a brief introduction to what is possible with Reach. 
 
 How difficult was it to write a complete dApp using Reach? Let's look at the final versions of our programs to assess.
 
@@ -1652,7 +1652,7 @@ load: /examples/rps-9-web/index.js
 
 As we've witnessed, we wrote about one-hundred lines of Reach and created two different frontends. Our command-line version is about a hundred lines of JavaScript, while our Web version is about the same length, but it has a lot of presentation code, as well.
 
-Behind the scenes, Reach generated hundreds of lines of Solidity (which you can see here: [rps-8-interact/build/index.main.sol](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/build/index.main.sol)), almost two-thousand lines of TEAL (which is here: [rps-8-interact/build/index.main.appApproval.teal](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/build/index.main.appApproval.teal)), as well as over a thousand lines of JavaScript (as seen here: [rps-8-interact/build/index.main.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/build/index.main.mjs)). If we weren't using Reach, we'd have to write all of this code ourselves. Not only that, we'd need to ensure the frontend and backend were consistent and that they were completely bug and error free.
+Behind the scenes, Reach generated hundreds of lines of Solidity (which you can see here: [rps-8-interact/build/index.main.sol](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/build/index.main.sol)), almost two-thousand lines of TEAL (which is here: [rps-8-interact/build/index.main.appApproval.teal](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/build/index.main.appApproval.teal)), as well as over a thousand lines of JavaScript (as seen here: [rps-8-interact/build/index.main.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-8-interact/build/index.main.mjs)). If we weren't using Reach, we'd have to write all this code ourselves. Not only that, but we’d also need to ensure the frontend and backend were consistent and that they were completely bug and error free.
 
 ## Build Your Own!
 
@@ -1660,7 +1660,7 @@ Now that you've seen an entire Reach application, it's time for you to start wor
 
 The very next thing you should do right now is **join us on the [Discord Community](https://discord.gg/AZsgcXu)**! Once you've joined and verified (be sure to have DMs enabled), visit the #tutorial channel and message: "@team, I just completed the tutorial!" and we'll give you the `tutorial veteran` badge, so you can more easily help others work through the tutorials.
 
-If you're interested in using Reach with frontends other than JavaScript, then take time to work through the next section. If you're primarily focused on using Reach with JavaScript then we encourage you to get active in the Discord (we're excited to welcome you!) and begin building a project. You might also refer to our [JavaScript Frontend](https://reach-sh.github.io/en/books/essentials/frontend-programming/javascript-frontends/) reference material as additional development support.
+If you're interested in using Reach with frontends other than JavaScript, then take time to work through the next section. If you're primarily focused on using Reach with JavaScript, then we encourage you to get active in the Discord (we're excited to welcome you!) and begin building a project. You might also refer to our [JavaScript Frontend](https://reach-sh.github.io/en/books/essentials/frontend-programming/javascript-frontends/) reference material as additional development support.
 
 # Rock, Paper, Scissors in Python
 > By Matt Audesse <matt@reach.sh>
@@ -1715,7 +1715,7 @@ load: /examples/tut-7-rpc/client-py/index.py
 range: 11-14
 ```
 
-Translating code with RPC only requires specifying the corresponding [RPC](https://docs.reach.sh/ref-frontends-rpc-py.html) method and supplying the same arguments. In this snippet, we can see that the Python arguments matche the [JavaScript frontend support library](https://docs.reach.sh/ref-frontends-js.html) methods, followed by the parameter seen in the matching line of JavaScript.
+Translating code with RPC only requires specifying the corresponding [RPC](https://docs.reach.sh/ref-frontends-rpc-py.html) method and supplying the same arguments. In this snippet, we can see that the Python arguments match the [JavaScript frontend support library](https://docs.reach.sh/ref-frontends-js.html) methods, followed by the parameter seen in the matching line of JavaScript.
 
 ### Helper Functions
 
@@ -1859,7 +1859,7 @@ range: 48-85
 
 In the Python version, we create a function called `play_alice` and spawn it as a concurrent thread, which begins running in the background with `alice.start()` on line 55.
 
-`play_alice` sends Alice's RPC handle and her participant interact interface to the server with `rpc_callbacks`. The interface includes methods and values created by `player('Alice')`, and adds an additional `wager` value which is set to the result of `rpc('/stdlib/parseCurrency', 5), as well as setting a deadline of 10.
+`play_alice` sends Alice's RPC handle and her participant interact interface to the server with `rpc_callbacks`. The interface includes methods and values created by `player('Alice')` and adds an additional `wager` value which is set to the result of `rpc('/stdlib/parseCurrency', 5), as well as setting a deadline of 10.
 
 Bob's interface is likewise defined and spawned as another thread, which also begins running concurrently on line 69. In Bob's case we add an `acceptWager` method to his participant interact interface. His function is more complex, because we delay creating his contract handle until this time, so that the main thread does not block waiting for Alice's contract information to resolve. This separation is not necessary in JavaScript thanks to JavaScript Promises.
 
@@ -1875,7 +1875,7 @@ Lines 84 & 85 invoke Python's process interpreter
 
 Now it's time to play our game!
 
-Move a copy of the `index.rsh` file we used for the [Play and Play Again](https://docs.reach.sh/tut-7.html) section, and save it in the same directory as `index.py`.
+Move a copy of the `index.rsh` file we used for the [Play and Play Again](https://docs.reach.sh/tut-7.html) section and save it in the same directory as `index.py`.
 
 Next, open a terminal in that directory and install the Reach Python RPC client:
 
