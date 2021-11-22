@@ -1349,7 +1349,7 @@ Here, we've begun defining `App` as a React component and provide instructions f
 
 ## Connect Account Dialog
 
-![The `ConnectAccount` view](https://reach-sh.io/en/books/essentials/getting-started/rock-paper-scissors/ConnectAccount.png)
+![The `ConnectAccount` view](ConnectAccount.png)
 
 [rps-9-web/index.js](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-9-web/index.js#L39-L41)
 
@@ -1603,7 +1603,7 @@ Next, we'll summarize where we've gone and direct you to the next step of your j
 Let's review what we've completed in this tutorial:
 
 * In [Scaffolding and Setup](#scaffolding-and-setup) we saw how easy it is to setup initial Reach files and choose a consensus network.
-* In [Rock Paper and Scissors](#rock-paper-scissors) we saw how Reach allows developers to focus on the business logic of their decentralized application and look past the nitty-gritty details of blockchain interaction and protocol design.
+* In [Rock, Paper, and Scissors](#rock-paper-scissors-1) we saw how Reach allows developers to focus on the business logic of their decentralized application and look past the nitty-gritty details of blockchain interaction and protocol design.
 * In [Bets and Wagers](#bets-and-wagers) we saw how simple it is for Reach to work with tokens, network transactions and data sharing.
 * In [Trust, Commitments, and Attacks](#trust-commitments-and-attacks), we introduced the automatic formal verification engine and how it ensures Reach programs are free of entire categories of flaws and security vulnerabilities.
 * In [Timeouts and Participation](#timeouts-and-participation), we learned how Reach protects funds when handling non-participation attacks.
