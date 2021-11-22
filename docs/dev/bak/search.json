@@ -59,6 +59,23 @@
     ]
   },
   {
+    "objectID": "en_essentials_getting-started_rock-paper-scissors",
+    "title": "Rock Paper Scissors",
+    "url": "/en/essentials/getting-started/rock-paper-scissors/",
+    "summary": "Focusing on the Reach programming language itself, this tutorial helps you build a game in which two participants play Rock, Paper, Scissors.",
+    "type": "tutorial",
+    "topics": [
+      "Alice",
+      "bet",
+      "Bob",
+      "commitment",
+      "participant",
+      "trust",
+      "timeout",
+      "wager"
+    ]
+  },
+  {
     "objectID": "en_articles_how-to-sponsor-a-reach-contract-on-conflux",
     "title": "How to sponsor a Reach contract on Conflux",
     "url": "/en/articles/how-to-sponsor-a-reach-contract-on-conflux/",
