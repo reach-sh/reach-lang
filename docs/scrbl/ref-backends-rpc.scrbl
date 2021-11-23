@@ -10,7 +10,7 @@ Reach provides client libraries for
 @seclink["ref-frontends-rpc-py"]{Python}, and
 @seclink["ref-frontends-rpc-go"]{Go}.
 It is easy to @seclink["ref-backends-rpc-client"]{implement a client library yourself}.
-An example @tech{frontend} written using the Reach RPC Server is shown in the @seclink["tut-7-rpc"]{tutorial section on RPC-based frontends}.
+An example @tech{frontend} written using the Reach RPC Server is shown in the @seclink["rps-7-rpc"]{tutorial section on RPC-based frontends}.
 
 The command @cmd{reach rpc-server} starts an instance of the Reach RPC Server.
 

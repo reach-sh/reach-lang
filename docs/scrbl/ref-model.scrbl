@@ -6,7 +6,7 @@
 This document describes the fundamental assumptions and concepts of Reach. First, we discuss the model of running a Reach program in @secref["ref-model-eval"]. Next, we discuss the details about compilation of a Reach program that are relevant to Reach programmers in @secref["ref-model-compile"]. Finally, we discuss how Reach programs are syntactically constructed in @secref["ref-model-syntax"].
 
 @margin-note{This is not an introduction to Reach.
-We recommend reading @seclink["overview"]{the overview} for an introduction to what Reach is and the @seclink["tut"]{tutorial} to get started with programming Reach.
+We recommend reading @seclink["overview"]{the overview} for an introduction to what Reach is and the @seclink["rps"]{tutorial} to get started with programming Reach.
 
 Furthermore, it is not an introduction to @tech{consensus networks} or "blockchain".
 If you would like to read such an introduction, we recommend the @link["https://en.wikipedia.org/wiki/Consensus_(computer_science)"]{Wikipedia article on consensus} and the @link["https://en.wikipedia.org/wiki/Blockchain"]{Wikipedia article on blockchains}.}

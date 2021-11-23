@@ -104,7 +104,7 @@ When you're writing a Reach program, especially in the early phases, you should 
 A fundamental aspect of a decentralized application is the pattern of communication
 and transfer among the participants. We should write down this structure as comments
 in our program to serve as an outline and guide us in implementation.
-For example, for the @seclink["tut"]{tutorial} version of @emph{Rock, Paper, Scissors!}, we might write:
+For example, for the @seclink["rps"]{tutorial} version of @emph{Rock, Paper, Scissors!}, we might write:
 @reach{
  // Alice publishes the wager and pays it
  // Bob accepts the wager and pays it

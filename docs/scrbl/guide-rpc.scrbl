@@ -15,7 +15,7 @@ Presently, Reach provides RPC client implementations for:
 
 ]
 
-The @seclink["tut-7-rpc"]{tutorial section on RPC-based frontends} provides a walkthrough of using these libraries.
+The @seclink["rps-7-rpc"]{tutorial section on RPC-based frontends} provides a walkthrough of using these libraries.
 
 If your language of choice isn't available yet, it is very simple to @seclink["ref-backends-rpc-proto"]{implement one yourself} if you've ever used a JSON-based RPC protocol before.
 Most implementations are less than 100 lines of code!

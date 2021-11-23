@@ -45,8 +45,8 @@
 
 (define (exexpand f)
   (match f
-    ['js-impl "tut-7/index.mjs"]
-    ['py-impl "tut-7-rpc/client-py/index.py"]
+    ['js-impl "rps-7-loops/index.mjs"]
+    ['py-impl "rps-7-rpc/client-py/index.py"]
     [(? string?) f]))
 
 (define ego

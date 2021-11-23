@@ -106,7 +106,7 @@ For example, who initiates the application?
 Who responds next?
 Is there a repeated segment of the program that occurs over and over again?
 We should explicitly write down this structure as comments in our program.
-For example, for the @seclink["tut"]{tutorial} version of @emph{Rock, Paper, Scissors!}, we might write:
+For example, for the @seclink["rps"]{tutorial} version of @emph{Rock, Paper, Scissors!}, we might write:
 @reach{
  // Alice publishes the wager and pays it
  // Bob accepts the wager and pays it
@@ -305,8 +305,8 @@ You did it!
 
 You implemented a Reach program totally on your own, with only a little bit of prodding.
 
-Unlike @seclink["tut"]{the tutorial}, this workshop uses a "top-down" perspective on Reach application design, where you derive the program from the requirements and slowly fill out the shell, while knowing that each step was correct before moving on.
-In contrast, in @seclink["tut"]{the tutorial}, we demonstrated a "bottom-up" style where you start implementing the easy parts and realize the problems and their fixes as you go.
+Unlike @seclink["rps"]{the tutorial}, this workshop uses a "top-down" perspective on Reach application design, where you derive the program from the requirements and slowly fill out the shell, while knowing that each step was correct before moving on.
+In contrast, in @seclink["rps"]{the tutorial}, we demonstrated a "bottom-up" style where you start implementing the easy parts and realize the problems and their fixes as you go.
 There's no right way to program and in our own Reach development, we use a combination of the two tactics.
 Try both and keep them both in mind during your own development.
 

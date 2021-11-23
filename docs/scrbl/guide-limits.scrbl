@@ -3,7 +3,7 @@
 
 @title[#:version reach-vers #:tag "guide-limits"]{What are Reach's limitations?}
 
-Today, Reach is a powerful language for building decentralized applications, as demonstrated in @seclink["overview"]{the overview}, @seclink["tut"]{the tutorial}, and the @seclink["workshop"]{workshop series}.
+Today, Reach is a powerful language for building decentralized applications, as demonstrated in @seclink["overview"]{the overview}, @seclink["rps"]{the tutorial}, and the @seclink["workshop"]{workshop series}.
 However, it has a lot of potential for growth.
 This section describes a few of these areas and gives brief sketches of our roadmap for directing this growth.
 We welcome your contributions on @link["https://github.com/reach-sh/reach-lang"]{GitHub} and in @(the-community-link) to help bring these plans to fruition.

@@ -5,7 +5,7 @@
 
 The @seclink["ref-backends-rpc-proto"]{Reach RPC Protocol} is designed to be simple to implement in languages that support HTTP and JSON interaction.
 This document walks through the implementation of an RPC client in @link["https://www.python.org"]{Python}.
-An example use of this library is shown in the @seclink["tut-7-rpc"]{tutorial section on RPC-based frontends}.
+An example use of this library is shown in the @seclink["rps-7-rpc"]{tutorial section on RPC-based frontends}.
 The entire library is 80 lines of code.
 
 @(define py-impl "py/src/reach_rpc/__init__.py")

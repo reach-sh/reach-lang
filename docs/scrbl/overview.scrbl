@@ -5,7 +5,7 @@
 @title[#:version reach-vers #:tag "overview"]{Overview}
 
 This is an informal overview of Reach and the structure of a Reach program.
-The goal of this document is to give enough technical specifics to help you understand what Reach does, but it isn't intended as either a @seclink["tut"]{tutorial} or a @seclink["ref"]{reference}.
+The goal of this document is to give enough technical specifics to help you understand what Reach does, but it isn't intended as either a @seclink["rps"]{tutorial} or a @seclink["ref"]{reference}.
 When you're ready to really begin a project, you can start with one of those, or @seclink["workshop"]{the workshop}.
 
 If you have experience with blockchain development using existing tools, we recommend reading this article and @seclink["guide-solidity"]{a comparison with other development platforms}.
@@ -398,7 +398,7 @@ However, unless you're ready to dive deep now, the next steps for you are to:
 
 @item{@seclink["ref-install"]{Install Reach};}
 
-@item{Work through the @seclink["tut"]{tutorial};}
+@item{Work through the @seclink["rps"]{tutorial};}
 
 @item{Join @(the-community-link).}
 

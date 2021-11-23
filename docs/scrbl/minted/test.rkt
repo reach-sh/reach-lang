@@ -20,17 +20,17 @@ Big example:
 
 @(mint "reach"
        #:defines '(("isHand") ("winner"))
-       #:scope "tut-8/index.rsh"
+       #:scope "rps-8-interact/index.rsh"
        (file->string
-        (build-path here "../../examples/tut-8/index.rsh")))
+        (build-path here "../../examples/rps-8-interact/index.rsh")))
 
 Big example two:
 
 @(mint "reach"
-       #:scope "tut-8/index.rsh"
+       #:scope "rps-8-interact/index.rsh"
        (file->string
-        (build-path here "../../examples/tut-8/index.rsh")))
+        (build-path here "../../examples/rps-8-interact/index.rsh")))
 
 Short example:
 
-This is some inline text that references some terms @(mint "reach" #:inline? #t #:scope "tut-8/index.rsh" "isHand") and @(mint "reach" #:inline? #t #:scope "tut-8/index.rsh" "winner") and @(mint "reach" #:inline? #t #:scope "tut-8/index.rsh" "isOutcome").
+This is some inline text that references some terms @(mint "reach" #:inline? #t #:scope "rps-8-interact/index.rsh" "isHand") and @(mint "reach" #:inline? #t #:scope "rps-8-interact/index.rsh" "winner") and @(mint "reach" #:inline? #t #:scope "rps-8-interact/index.rsh" "isOutcome").

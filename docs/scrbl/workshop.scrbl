@@ -6,7 +6,7 @@
 The workshop is a collection of self-study projects to help you on your way to mastery building decentralized applications through practice by building specific projects in Reach.
 It is designed to help direct you along the path of learning effective use of Reach and points out for you some of the design decisions that Reach programmers often make.
 
-Unlike @seclink["tut"]{the tutorial}, it is not meant for you just to copy code and see what appears; instead, you're meant to work on your own to build a project yourself.
+Unlike @seclink["rps"]{the tutorial}, it is not meant for you just to copy code and see what appears; instead, you're meant to work on your own to build a project yourself.
 This way, you'll learn more and slowly be able to build your own project using Reach.
 
 At the end of every project, we'll always show a "final" version with commentary about why we implemented it the way that we did.
@@ -15,7 +15,7 @@ At the end of every project, we'll always show a "final" version with commentary
 This will help us improve the language, our developer tools, and the project materials.
 The best way is through the @link["https://github.com/reach-sh/reach-lang/issues"]{GitHub issue tracker} or by messaging @litchar{@"@"team} in @(the-community-link).}
 
-We highly recommend going through @seclink["overview"]{the overview} and @seclink["tut"]{the tutorial} before continuing through the workshop.
+We highly recommend going through @seclink["overview"]{the overview} and @seclink["rps"]{the tutorial} before continuing through the workshop.
 However, you can do most workshops in any order.
 If there's a pre-requisite, it will be explicitly mentioned.
 
@@ -68,7 +68,7 @@ Here are the current workshops, in the order we recommend doing them:
 
 @(workshop-deps "tut")
 
-In this workshop, we observe that the @seclink["tut"]{tutorial}'s version of @RPS is unfair in that Alice is responsible for more steps than Bob.
+In this workshop, we observe that the @seclink["rps"]{tutorial}'s version of @RPS is unfair in that Alice is responsible for more steps than Bob.
 On most @tech{consensus networks}, each action is charged a fee to run, so this means that Alice pays more than Bob for the game to be played.
 How could you revise the application to make it fair, without requiring a change to the @tech{frontend}?
 
@@ -85,7 +85,7 @@ We'll call @tt{n} the "computations" and @tt{m} the "communications".
 In this case, the computations are free from the perspective of the @tech{consensus network}, because they don't cost @tech{network tokens}, while the communications cost their price in gas, plus the fee to run them.
 Therefore, it is often economically efficient to increase @tt{n} so that @tt{m} can be smaller.
 
-For example, in the context of the @seclink["tut"]{tutorial}'s version of @|RPS|, the application uses @tt{2 + 3r} communications for a game with @tt{r} rounds.
+For example, in the context of the @seclink["rps"]{tutorial}'s version of @|RPS|, the application uses @tt{2 + 3r} communications for a game with @tt{r} rounds.
 This is because it takes two communications to set up the loop, then each round of the loop takes three communications.
 We could make a more complicated version of the application that is optimized in two ways.
 
@@ -121,7 +121,7 @@ It turns out that this scenario is structurally identical to @|RPS|, except with
 
 @(workshop-deps "workshop-rental")
 
-In this workshop, we generalize from @seclink["tut"]{the tutorial} and @seclink["workshop-rental"]{the rental workshop} to build an abstract library that models any game with simultaneous play.
+In this workshop, we generalize from @seclink["rps"]{the tutorial} and @seclink["workshop-rental"]{the rental workshop} to build an abstract library that models any game with simultaneous play.
 This shows the power of Reach's ability to construct and reason about communication abstractions.
 
 @(WIP/XXX "abstract-simul")
@@ -153,7 +153,7 @@ This could be used to make a periodic payment to a utility company, for example.
 
 @(workshop-deps "tut")
 
-In @seclink["tut"]{the tutorial}, we built a version of @|RPS| where two parties can wager over the results of the game.
+In @seclink["rps"]{the tutorial}, we built a version of @|RPS| where two parties can wager over the results of the game.
 This application has an interesting communication pattern with information hiding through cryptographic commitments, but the application logic is simple and uninteresting.
 In this workshop, we implement a version of @link["https://en.wikipedia.org/wiki/Nim"]{Nim}, where the communication structure is simpler, since it is a @link["https://en.wikipedia.org/wiki/Combinatorial_game_theory"]{combinatorial game}, but has a more interesting application logic.
 Thus, this workshop demonstrates using more interesting data-structures in Reach programs, as well as using compile-time abstractions to simplify DApp structure.
