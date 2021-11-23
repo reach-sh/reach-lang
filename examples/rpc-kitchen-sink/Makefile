@@ -21,7 +21,7 @@ clean: clean-client-lib-js
 client-lib-js: clean-client-lib-js
 	cp -r $(ROOT)/rpc-client/js ./lib
 
-build/index.main.mjs: index.rsh
+build/index.main.mjs: $(shell find . -name "*.rsh")
 	$(REACH) compile index.rsh main
 
 .PHONY: build
