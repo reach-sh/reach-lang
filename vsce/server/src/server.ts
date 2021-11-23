@@ -363,7 +363,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 
 	function addDiagnostic(element: ErrorLocation, message: string, details: string, severity: DiagnosticSeverity, code: string | undefined, suggestions: string[]) {
-		const href = `https://docs.reach.sh/${code}`;
+		const href = `https://docs.reach.sh/${code}.html`;
 		let diagnostic: Diagnostic = {
 			severity: severity,
 			range: element.range,
