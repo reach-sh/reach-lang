@@ -607,7 +607,7 @@ jsClo at name js env_ = SLV_Clo at Nothing $ SLClo (Just name) args body cloenv
       case readJsExpr js of
         JSArrowExpression aformals _ bodys -> (a_, b_)
           where
-            b_ = jsArrowStmtToBlock bodys
+            b_ = jsArrowBodyToRetBlock bodys
             a_ = parseJSArrowFormals at aformals
         _ -> impossible "not arrow"
 
@@ -1500,11 +1500,11 @@ evalForm f args = do
       SLScope {..} <- asks e_sco
       top_s <-
         case args of
-          [JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ top_s] -> return $ top_s
+          [JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ top_s] -> return $ jsArrowBodyToStmt top_s
           [opte, partse, JSArrowExpression top_formals a top_s] -> do
             -- liftIO $ emitWarning $ W_Deprecated at D_ReachAppArgs
             let at' = srcloc_jsa "app arrow" a at
-            return $ convertTernaryReachApp at' a opte top_formals partse top_s
+            return $ convertTernaryReachApp at' a opte top_formals partse (jsArrowBodyToStmt top_s)
           _ -> expect_ $ Err_App_InvalidArgs args
       retV $ public $ SLV_Prim $ SLPrim_App_Delay at top_s (sco_cenv, sco_use_strict)
     SLForm_Part_Only who mv -> do
@@ -1633,7 +1633,8 @@ evalForm f args = do
           at <- withAt id
           let proc = \case
                 JSExpressionParen _ e _ -> proc e
-                JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s -> return $ jsStmtToBlock dt_s
+                JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s ->
+                  return $ jsArrowBodyToBlock dt_s
                 _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
           x <-
             case args of
@@ -3637,7 +3638,7 @@ evalExpr e = case e of
   JSExpressionPostfix _ _ -> illegal
   JSExpressionTernary ce a te fa fe -> doTernary ce a te fa fe
   JSArrowExpression aformals a bodys -> locAtf (srcloc_jsa "arrow" a) $ do
-    let body = jsArrowStmtToBlock bodys
+    let body = jsArrowBodyToRetBlock bodys
     fformals <- withAt $ flip jsArrowFormalsToFunFormals aformals
     evalExpr $ JSFunctionExpression a JSIdentNone a fformals a body
   JSFunctionExpression a name _ jsformals _ body ->
@@ -4421,7 +4422,7 @@ doForkAPI2Case args = do
           JSExpressionParen _ e _ -> jsInlineCall a e fargs
           JSArrowExpression aargs a' s -> do
             let pargs = parseJSArrowFormals at aargs
-            let JSBlock _ ss _ = jsArrowStmtToBlock s
+            let JSBlock _ ss _ = jsArrowBodyToRetBlock s
             let ss' = [ jsConst a' (jsArrayLiteral a' pargs) (jsArrayLiteral a fargs) ]
             return $ ss' <> ss
           _ -> expect_ $ Err_Fork_ConsensusBadArrow f
@@ -4484,7 +4485,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   let getAfter who_e isApi who usesData (a_at, after_e, case_n) = locAt a_at $
         case after_e of
           JSArrowExpression args _ s -> do
-            let JSBlock _ ss _ = jsArrowStmtToBlock s
+            let JSBlock _ ss _ = jsArrowBodyToRetBlock s
             let awrap x = jsArrayLiteral a [x]
             mdefmsg <-
               case parseJSArrowFormals a_at args of
@@ -4763,7 +4764,7 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let while_body = [commit_s, fork_s]
   let while_s = JSWhile a a while_e a $ JSStatementBlock a while_body a sp
   block_s <- case pr_mdef of
-                  Just (JSArrowExpression _ _ sb@JSStatementBlock {}) -> return sb
+                  Just (JSArrowExpression _ _ b) -> return $ jsArrowBodyToStmt b
                   Just ow -> locAtf (srcloc_jsa "define" $ jsa ow) $ expect_ Err_ParallelReduce_DefineBlock
                   Nothing -> return $ JSStatementBlock a [] a sp
   let pr_ss = [var_s, block_s, inv_s, while_s]
@@ -4772,7 +4773,7 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   return $ pr_ss
 
 jsArrow :: JSAnnot -> [JSExpression] -> JSStatement -> JSExpression
-jsArrow a args s = JSArrowExpression args' a s
+jsArrow a args s = JSArrowExpression args' a (jsStmtToConciseBody s)
   where
     args' = JSParenthesizedArrowParameterList a (toJSCL args) a
 

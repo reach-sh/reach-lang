@@ -1202,6 +1202,8 @@ apiDef who ApiInfo{..} = do
           _ -> do
             tc_args <-
               case ai_msg_vs of
+                [DLVar _ _ (T_Tuple []) _] ->
+                  return $ [ "false" ]
                 [v] -> do
                   tc' <- solType_ $ varType v
                   return $ [ solApply tc' args ]

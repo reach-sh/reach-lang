@@ -37,7 +37,7 @@ dependencies:
 - http-client-tls
 - http-conduit
 - io-capture
-- language-javascript >= 0.7.1.0
+- language-javascript >= 0.7.1.1
 - lattices
 - loop
 - main-tester
