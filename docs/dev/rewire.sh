@@ -30,7 +30,7 @@ r guide-solidity guide/solidity
 r guide-timeout guide/timeout
 r guide-versions guide/versions
 r guide-windows guide/windows
-r overview tut/overview
+r overview rps/overview
 r reach top
 r ref ref
 r ref-install ref/install
@@ -56,8 +56,8 @@ r ref-programs-consensus reach/consensus
 r ref-programs-local reach/local
 r ref-programs-module reach/module
 r ref-programs-step reach/step
-r tut tut/rps
-r tut-7-rpc tut/rps/7-rpc
+r rps rps/rps
+r rps-7-rpc rps/rps/7-rpc
 r workshop workshop
 r workshop-fomo workshop/fomo
 r workshop-fomo-generalized workshop/fomo-generalized
