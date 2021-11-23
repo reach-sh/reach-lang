@@ -64,8 +64,6 @@ let hasDiagnosticRelatedInformationCapability: boolean = false;
 
 const NAME: string = 'Reach IDE';
 
-const DIAGNOSTIC_TYPE_COMPILE_ERROR: string = 'Compile Error';
-
 const DID_YOU_MEAN_PREFIX = 'Did you mean: ';
 
 let reachTempIndexFile: string;
@@ -337,7 +335,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 						`${err.errorMessage}`,
 						'Reach compilation encountered an error.',
 						DiagnosticSeverity.Error,
-						DIAGNOSTIC_TYPE_COMPILE_ERROR,
+						err.code,
 						err.suggestions
 					);
 				}
