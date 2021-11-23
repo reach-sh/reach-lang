@@ -47,13 +47,13 @@ Reach assumes the presence of a [POSIX](https://en.wikipedia.org/wiki/POSIX)-com
     $ cd ~/reach
     ```
 
-1. Download the [reach](https://github.com/reach-sh/reach-lang/blob/master/reach) script to the *reach* directory:
+1. Download the [reach](https://github.com/reach-sh/reach-lang/blob/master/reach) tool to the *reach* directory:
 
     ``` nonum
     $ curl https://docs.reach.sh/reach -o reach ; chmod +x reach
     ```
 
-1. Verify that you can run the reach script:
+1. Verify that you can run the reach tool:
 
     ``` nonum
     $ ./reach version
