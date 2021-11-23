@@ -202,6 +202,11 @@ updateLedger acc tok f = do
   let new_nw_ledger = M.insert acc (M.insert tok new_amt ((M.!) map_ledger acc)) map_ledger
   globalSet $ e {e_ledger = ledger { nw_ledger = new_nw_ledger }}
 
+transferLedger :: Account -> Account -> Token -> Integer -> App ()
+transferLedger fromAcc toAcc tok n = do
+  updateLedger fromAcc tok (n-)
+  updateLedger toAcc tok (+n)
+
 -- ## INTERPRETER ## --
 
 class Interp a where
@@ -332,15 +337,13 @@ instance Interp DLExpr where
         (V_UInt n, V_Address acc) -> do
           case maybe_dlarg of
             Nothing -> do
-              updateLedger simContract nwToken (subtract n)
-              updateLedger acc nwToken (+n)
+              transferLedger simContract acc nwToken n
               return V_Null
             Just tok -> do
               ev <- interp tok
               case ev of
                 V_UInt tok' -> do
-                  updateLedger simContract tok' (subtract n)
-                  updateLedger acc tok' (+n)
+                  transferLedger simContract acc tok' n
                   return V_Null
                 _ -> impossible "unexpected error"
         _ -> impossible "expression interpreter"
