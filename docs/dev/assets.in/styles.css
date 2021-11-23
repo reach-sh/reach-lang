@@ -421,7 +421,8 @@ iframe.gray-scale {
 }
 
 #page-col code {
-  color: #009999;
+  /*color: #009999;*/
+  color:#806600;
   font-size: 13px;
 }
 
