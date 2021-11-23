@@ -1,8 +1,4 @@
 # Reach
-/android
-/ios
-/macos
-/windows
 /reach
 /.reach
 
@@ -30,6 +26,7 @@ DerivedData
 *.hmap
 *.ipa
 *.xcuserstate
+Pods/
 
 # Android/IntelliJ
 build/
@@ -38,6 +35,7 @@ build/
 local.properties
 *.iml
 *.hprof
+raw/
 
 # node.js
 node_modules/
