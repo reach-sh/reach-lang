@@ -8,6 +8,7 @@ include $(ROOT)/DEPS
 NAME="reach-app-rpc-kitchen-sink-client"
 CIMG="reachsh/$(NAME):latest"
 RKEY=REACH_RPC_KEY=$$(cat REACH_RPC_KEY.txt)
+PORT=REACH_RPC_PORT=3001
 
 .PHONY: clean-client-lib-js
 clean-client-lib-js:
@@ -32,17 +33,17 @@ build: client-lib-js build/index.main.mjs
 	  .
 
 run:
-	@# Start fresh devnet to ensure server-log is populated correctly
+	@# Start fresh RPC server to ensure server-log is populated correctly
 	@echo "Awaiting RPC server..." \
-	  && $(REACH) down \
-	  && { REACH_DEBUG=1 $(RKEY) $(REACH) rpc-server >server-log & } \
-	  && $(RKEY) $(REACH) rpc-server-await
+	  && docker container stop $$(docker ps -aq -f name=reach-app-rpc-kitchen-sink) >/dev/null 2>&1 \
+	   ; { REACH_DEBUG=1 $(RKEY) $(PORT) $(REACH) rpc-server >server-log & } \
+	  && $(RKEY) $(PORT) $(REACH) rpc-server-await
 	@docker run --rm \
 	  -e "REACH_DEBUG" \
 	  -e "REACH_RPC_SERVER=host.docker.internal" \
-	  -e "REACH_RPC_PORT=3000" \
 	  -e "REACH_RPC_TLS_REJECT_UNVERIFIED=0" \
 	  -e $(RKEY) \
+	  -e $(PORT) \
 	  --add-host "host.docker.internal:172.17.0.1" \
 	  --name     $(NAME) \
 	  --network  reach-devnet \
