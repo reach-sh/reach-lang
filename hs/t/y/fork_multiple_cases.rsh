@@ -18,14 +18,14 @@ export const main =
       fork()
         .case(
           A,
-          (() => ({ when: declassify(interact.doCase1()) })),
+          () => ({ when: declassify(interact.doCase1()) }),
           () => {
             commit();
             A.only(() => interact.show(1));
           })
         .case(
           A,
-          (() => ({ when: declassify(interact.doCase2()) })),
+          () => ({ when: declassify(interact.doCase2()) }),
           () => {
             commit();
             A.only(() => interact.show(2));

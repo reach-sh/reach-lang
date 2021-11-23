@@ -2,7 +2,7 @@ reachc: error[RE0082]: Fork consensus block should be arrow with zero or one par
 
   ./Err_Fork_ConsensusBadArrow.rsh:9:12:application
 
-  9|       .case(A, (() => ({
+  9|       .case(A, () => ({
 
 For further explanation of this error, see: https://docs.reach.sh/RE0082.html
 

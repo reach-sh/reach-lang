@@ -8,7 +8,7 @@ export const main = Reach.App(() => {
   deploy();
   const x = Command.Deposit(1);
   const y = x.match({
-    default: (() => 0),
-    Deposit: ((a) => a),
+    default: () => 0,
+    Deposit: (a) => a,
   });
 })

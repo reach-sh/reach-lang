@@ -30,29 +30,29 @@ export const main = Reach.App(() => {
     .invariant(balance() == 0)
     .while(i < 3)
     .case(A,
-      (() => {
+      () => {
         interact.log("Alice case", i);
         return {
           when: declassify(!interact.isObserving(lastConsensusTime())),
           msg: declassify(interact.doAliceStuff())
         }
-      }),
-      ((_) => 0),
-      ((_) => {
+      },
+      (_) => 0,
+      (_) => {
         return [i + 1];
-      }))
+      })
     .case(B,
-      (() => {
+      () => {
         interact.log("Bob case", i);
         return {
           when: declassify(!interact.isObserving(lastConsensusTime())),
           msg: declassify(interact.doBobStuff())
         }
-      }),
-      ((_) => 0),
-      ((_) => {
+      },
+      (_) => 0,
+      (_) => {
         return [i + 1];
-      }))
+      })
     .timeout(relativeSecs(10), () => {
       A.interact.log("Alice time b", i);
       B.interact.log("Bob time b", i);

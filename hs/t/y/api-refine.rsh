@@ -15,11 +15,11 @@ export const main = Reach.App(() => {
     parallelReduce([ 1 ])
     .invariant(balance() == 0 && x > 0)
     .while( x < 10 )
-    .api(U.f, ((_) => 0), ((i, k) => {
+    .api(U.f, (_) => 0, (i, k) => {
       const xp = x + i;
       k(xp);
       return [xp];
-    }));
+    });
   commit();
 
   exit();

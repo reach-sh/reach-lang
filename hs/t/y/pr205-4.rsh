@@ -18,19 +18,19 @@ export const main = Reach.App(
         .while(keepGoing)
         .case(
           A,
-          (() => ({ when: true })),
-          ((_) => {
+          () => ({ when: true }),
+          (_) => {
             const keepGoingB =
               parallelReduce(true)
                 .invariant(balance() == 1)
                 .while(keepGoingB)
                 .case(
                   B,
-                  (() => ({ when: declassify(interact.doCase(1)) })),
+                  () => ({ when: declassify(interact.doCase(1)) }),
                   (_) => { return true; })
                 .case(
                   B,
-                  (() => ({ when: declassify(interact.doCase(2)) })),
+                  () => ({ when: declassify(interact.doCase(2)) }),
                   (_) => { return true; })
                 .timeout(1000, () => {
                   Anybody.publish();
@@ -39,7 +39,7 @@ export const main = Reach.App(
 
             return false;
 
-          })
+          }
         )
         .timeout(false);
 

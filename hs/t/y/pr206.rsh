@@ -8,7 +8,7 @@
 const emptyOrderMetadata = {
   taxAmt: 0,
   shippingAmt: 0,
-  unitPrice: 0, 
+  unitPrice: 0,
   orderID: 0,
   orderTotal: 0
 }
@@ -24,7 +24,7 @@ const setViewActiveOrderMetadata = (view, orderMetadata) => {
 const resetViewActiveOrderMetadata = (view) => {
   setViewActiveOrderMetadata(view, emptyOrderMetadata);
 }
- 
+
 const countTrue = (arr) => arr.reduce(0, (z, x) => z + (x ? 1 : 0))
 
 
@@ -89,7 +89,7 @@ const ViewInterface = {
 
 export const main = Reach.App(
   {}, [
-    Participant('Merchant', MerchantInterface), 
+    Participant('Merchant', MerchantInterface),
     ParticipantClass('PotentialBuyer', PotentialBuyerInterface),
     View('ActiveOrderMetadata', ViewInterface),
     Participant('HandcraftedFeeAcct', {}),
@@ -116,22 +116,22 @@ export const main = Reach.App(
      * @var {OrderMetadataInterface} finalPaymentAmts
      *   The order metadata to be used for final payouts.
      */
-    const [ hasBeenPurchased, finalPaymentAmts ] = 
-      parallelReduce([ false, emptyOrderMetadata]) 
+    const [ hasBeenPurchased, finalPaymentAmts ] =
+      parallelReduce([ false, emptyOrderMetadata])
         .invariant(balance() == finalPaymentAmts.orderTotal)
         .while(!hasBeenPurchased)
-        
+
         // Steps 2 & 3 - Potential buyer makes a deposit.
         .case(PotentialBuyer,
-          (() => ({
+          () => ({
             when: declassify(interact.intendsToPurchase())
-          })),
-          ((_) => {
+          }),
+          (_) => {
 
-            // We can assume that a deposit has been made if 
-            // the balance is greater than 0. It is not enough 
-            // to check for a loop var depositIsActive 
-            // because that is set at the end of the step, 
+            // We can assume that a deposit has been made if
+            // the balance is greater than 0. It is not enough
+            // to check for a loop var depositIsActive
+            // because that is set at the end of the step,
             // but a second user may make end up making a deposit
             // between when the first user makes a deposit and
             // the loop returns the updated depositIsActive.
@@ -166,16 +166,16 @@ export const main = Reach.App(
 
 
               // 4. Approval/refund logic
-              const [ orderTimedOut, orderDenied, orderApproved ] = 
+              const [ orderTimedOut, orderDenied, orderApproved ] =
                 parallelReduce([ false, false, false ])
-                  .invariant((countTrue(array(Bool, [orderTimedOut, orderDenied, orderApproved])) <= 1)    
+                  .invariant((countTrue(array(Bool, [orderTimedOut, orderDenied, orderApproved])) <= 1)
                     && (balance() == orderMetadata.orderTotal))
                   .while(!orderTimedOut && !orderDenied && !orderApproved)
                   .case(
                     Merchant,
-                    (() => ({ when: declassify(interact.wantsToApproveOrder())})),
+                    () => ({ when: declassify(interact.wantsToApproveOrder())}),
                     (_) => { return [ false, false, true ]; }
-                  )                  
+                  )
                   // Commented out until fix is released: https://github.com/reach-sh/reach-lang/issues/205#issuecomment-873118085
                   // .case(
                   //   Merchant,
@@ -187,10 +187,10 @@ export const main = Reach.App(
                   .timeout(1000, () => {
                     Anybody.publish();
                     return [ false, false, true ];
-                  });  
+                  });
 
               // Verification fails without this. Seems like it's needed
-              // to protect against some sort of malicious activity in 
+              // to protect against some sort of malicious activity in
               // the timeout due to Anybody.publish().
               if(balance() != orderMetadata.orderTotal) {
                 transfer(balance()).to(ThisPotentialBuyer);
@@ -199,8 +199,8 @@ export const main = Reach.App(
                 return [ true, orderMetadata ];
               }
             }
-          })
-        ) 
+          }
+        )
         .timeout(false);
 
     commit();

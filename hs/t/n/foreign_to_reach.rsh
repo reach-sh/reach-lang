@@ -16,11 +16,11 @@ export const main =
           .while(keepGoing)
           .invariant(true)
           .case(A,
-            (() => ({ exposeAs: "stop" })),
-            (() => 1),
-            (() => {
+            () => ({ exposeAs: "stop" }),
+            () => 1,
+            () => {
               A.only(() => interact.onStop());
-              return [ false ]; })
+              return [ false ]; }
           )
           .timeout(100, () => {
             A.publish();
