@@ -10,10 +10,10 @@ export const main = Reach.App(() => {
 
   fork()
     .case(A,
-      (() => ({ when: declassify(interact.go()) })),
-      (() => {
+      () => ({ when: declassify(interact.go()) }),
+      () => {
         A.interact.ok();
-      }))
+      })
     .timeout(false);
 
   commit();

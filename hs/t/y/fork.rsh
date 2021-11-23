@@ -24,19 +24,19 @@ export const main =
       Bob.only(() => interact.showOpponent(Alice));
 
       fork()
-      .case(Alice, (() => ({
+      .case(Alice, () => ({
         msg: 19,
-        when: declassify(interact.keepGoing()) })),
-        ((v) => v),
+        when: declassify(interact.keepGoing()) }),
+        (v) => v,
         (v) => {
           require(v == 19);
           transfer(wager + 19).to(this);
           commit();
           exit();
         })
-      .case(Bob, (() => ({
-        when: declassify(interact.keepGoing()) })),
-        (() => wager),
+      .case(Bob, () => ({
+        when: declassify(interact.keepGoing()) }),
+        () => wager,
         () => {
           commit();
 

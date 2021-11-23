@@ -6,8 +6,8 @@ export const main =
     [Participant('A', {})],
     (A) => {
       fork()
-      .case(A, (() =>
-        5),
+      .case(A, () =>
+        5,
         () => {
           commit();
           exit();

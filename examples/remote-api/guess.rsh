@@ -18,11 +18,11 @@ export const main = Reach.App(() => {
       .invariant(balance() == 0)
       .while(!guessed)
       .api(B.guess,
-        ((msg, k) => {
+        (msg, k) => {
           const isCorrect = msg == x;
           k(isCorrect);
           return [ isCorrect ];
-        }))
+        })
       .timeout(false);
 
   commit();

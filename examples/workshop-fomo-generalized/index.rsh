@@ -44,16 +44,16 @@ export const main = Reach.App(
         .while(keepGoing)
         .case(
           Buyer,
-          (() => ({
-            when: declassify(interact.shouldBuyTicket(ticketPrice)) })),
-          ((_) => ticketPrice),
-          ((_) => {
+          () => ({
+            when: declassify(interact.shouldBuyTicket(ticketPrice)) }),
+          (_) => ticketPrice,
+          (_) => {
             const buyer = this;
             Buyer.only(() => interact.showPurchase(buyer));
             const idx = ticketsSold % NUM_OF_WINNERS;
             const newWinners =
               Array.set(winners, idx, buyer);
-            return [ true, newWinners, ticketsSold + 1 ]; }))
+            return [ true, newWinners, ticketsSold + 1 ]; })
         .timeout(relativeTime(deadline), () => {
           Anybody.publish();
           return [ false, winners, ticketsSold ]; });

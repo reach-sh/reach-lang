@@ -19,8 +19,8 @@ export const main = Reach.App(() => {
       .while(i < 10)
       .paySpec([tokA, tokB])
       .case(A,
-        (() => ({ when: true })),
-        ((_) => { return [ i + 1 ]; })
+        () => ({ when: true }),
+        (_) => { return [ i + 1 ]; }
       )
       .timeout(1024, () => {
         A.publish();

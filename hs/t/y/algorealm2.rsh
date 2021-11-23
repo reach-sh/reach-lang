@@ -18,8 +18,8 @@ export const main = Reach.App(
     const boons = new Map(UInt);
     const getBoon = (who) =>
       boons[who].match({
-        None: (() => 0),
-        Some: ((x) => x)
+        None: () => 0,
+        Some: (x) => x
       });
     var [ owner, lastBoon ] = [ Creator, 0 ];
     invariant(balance() == 0);

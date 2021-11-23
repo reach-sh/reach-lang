@@ -5,7 +5,7 @@
 // ========================================================
 
 // Since reach cannot really handle floating point numbers.
-const BAKESALE_FEE_PERCENT = 5; 
+const BAKESALE_FEE_PERCENT = 5;
 const BAKESALE_FEE_MULTIPLE = BAKESALE_FEE_PERCENT / 100;
 
 const MAX_BENEFICIARIES_PER_ITEM = 1;
@@ -18,9 +18,9 @@ const MAX_TOTAL_MERCHANTS = 1;
 
 /**
  * Create an "isReal" version of an object.
- * 
+ *
  * @param {object} x
- *   The object to clarify as real. 
+ *   The object to clarify as real.
  * @param {bool} state
  *   Whether or not the object is real.
  * @returns {object}
@@ -42,10 +42,10 @@ const Beneficiary = {
 
 /**
  * Create a fake benficiary.
- * 
+ *
  * @param addr
- *   The fake address. 
- * @returns 
+ *   The fake address.
+ * @returns
  *   The fake Beneficiary.
  */
 const createFakeBeneficiary = (addr) => {
@@ -68,10 +68,10 @@ const LineItem = {
 
 /**
  * Create a fake LineItem.
- * 
+ *
  * @param addr
  *   The fake address.
- * @returns 
+ * @returns
  *   The fake LineItem.
  */
 const createFakeLineItem = (addr) => {
@@ -91,26 +91,26 @@ const createFakeLineItem = (addr) => {
 const Merchant = {
   isReal: Bool,
   addr: Address,
-  lineItems: Array(Maybe(Object(LineItem)), MAX_LINE_ITEMS_PER_MERCHANT) 
+  lineItems: Array(Maybe(Object(LineItem)), MAX_LINE_ITEMS_PER_MERCHANT)
 }
 
 /**
  * Create a fake Merchants.
- * 
+ *
  * @param addr
- *   The fake address. 
- * @returns 
+ *   The fake address.
+ * @returns
  *   The fake Merchants obj.
  */
  const createFakeMerchants = (addr) => {
   assert(addr !== null)
- 
-  return createIsReal(false, { 
+
+  return createIsReal(false, {
     addr,
     lineItems: Array.iota(MAX_LINE_ITEMS_PER_MERCHANT).map(_ => Maybe(Object(LineItem)).Some(createFakeLineItem(addr)))
     // lineItems: []
-  }); 
- } 
+  });
+ }
 
 /**
  * The order data for which payment is processed.
@@ -127,10 +127,10 @@ const OrderData = {
 
 /**
  * Convert Array(Maybe(Object(Beneficiary)) to usable Array(Object(Beneficiary)).
- * 
+ *
  * @param {Array(Maybe(Object(Beneficiary))} beneficiaries
  *   The array of maybe beneficiaries.
- * @param addr 
+ * @param addr
  *   The address to be used for the fakes.
  * @returns {Array(Object(Beneficiary)}
  *   Array of usable beneficiaries.
@@ -138,18 +138,18 @@ const OrderData = {
  const cleanBeneficiaries = (beneficiaries, addr) => {
   return beneficiaries.map((x) => {
     return fromMaybe(x,
-      (() => createFakeBeneficiary(addr)), 
+      (() => createFakeBeneficiary(addr)),
       ((y) => createIsReal(true, y))
-    ); 
+    );
   })
 }
 
 /**
  * Convert Array(Maybe(Object(LineItem)) to usable Array(Object(LineItem)).
- * 
+ *
  * @param {Array(Maybe(Object(LineItem))} lis
  *   The array of maybe line items..
- * @param addr 
+ * @param addr
  *   The address to be used for the fakes.
  * @returns {Array(Object(LineItem)}
  *   Array of usable line items.
@@ -157,51 +157,51 @@ const OrderData = {
 const cleanLineItems = (lis, addr) => {
   return lis.map((x) => {
     return fromMaybe(x,
-      (() => createFakeLineItem(addr)), 
+      (() => createFakeLineItem(addr)),
       ((y) => createIsReal(true, y))
-    ); 
+    );
   })
 }
 
 /**
  * Convert Array(Maybe(Object(Merchant)) to usable Array(Object(Merchant)).
- * 
+ *
  * @param {Array(Maybe(Object(Merchant))} m
  *   The array of maybe merchants.
- * @param addr 
+ * @param addr
  *   The address to be used for the fakes.
  * @returns {Array(Object(Merchant)}
  *   Array of usable merchants.
  */
 const cleanMerchants = (m, addr) => {
-  return m.map((x) => { 
+  return m.map((x) => {
     return fromMaybe(x,
-      (() => createFakeMerchants(addr)), 
+      (() => createFakeMerchants(addr)),
       ((y) => createIsReal(true, y))
-    ); 
+    );
   })
 }
 
 /**
  * Clean the entire orderData's tree.
- * 
+ *
  * @param {OrderData} orderData
- *   The order data to be cleaned. 
- * @param {Address} fakesAddr 
+ *   The order data to be cleaned.
+ * @param {Address} fakesAddr
  *   The address to be used for fakes.
- * 
- * @returns {OrderData} 
- *   The cleaned OrderData. 
+ *
+ * @returns {OrderData}
+ *   The cleaned OrderData.
  */
 const cleanOrderData = (orderData, fakesAddr) => {
   const merchantItemsClean = cleanMerchants(orderData.merchantItems, fakesAddr);
   const merchantItemsFinal = merchantItemsClean.map(x => {
-    
-    // Cleaning LineItems for single Merchant 
+
+    // Cleaning LineItems for single Merchant
     const lineItemsClean = cleanLineItems(x.lineItems, fakesAddr);
     const lineItemsFinal = lineItemsClean.map(y => {
-      
-      // Cleaning Benficiaries for a single LineItem 
+
+      // Cleaning Benficiaries for a single LineItem
       const beneficiariesClean = cleanBeneficiaries(y.beneficiaries, fakesAddr);
 
       return {
@@ -212,17 +212,17 @@ const cleanOrderData = (orderData, fakesAddr) => {
         beneficiaries: beneficiariesClean
       }
     });
-     
-    return { 
+
+    return {
       isReal: x.isReal,
       addr: x.addr,
       lineItems: lineItemsFinal
     }
-  }); 
+  });
 
   return {
     orderTotal: orderData.orderTotal,
-    merchantItems: merchantItemsFinal 
+    merchantItems: merchantItemsFinal
   }
 }
 
@@ -233,9 +233,9 @@ const cleanOrderData = (orderData, fakesAddr) => {
 
 /**
  * Check whether or not the order is valid to be processed.
- * 
+ *
  * @todo Check that no merchants appear more than once.
- * 
+ *
  * @param {OrderData} orderData
  *   The CLEANED order data. The logic assumes that all
  *   objects are operable, i.e. no Maybes.
@@ -268,31 +268,31 @@ const validateCleanOrder = (orderData) => {
       const beneficiariesPct = y.beneficiaries.reduce(0, (pctTotal, z) => {
         return pctTotal + z.percentToReceive;
       });
-      
+
       return !itemPctValid ? false : beneficiariesPct <= 100;
     });
- 
+
     return !pctsValid ? false : itemPctsValid;
   });
 
   // Any individual items' tax + shipping must be less than the order item's totalCost.
   // If they exceed it then that means the total does not account for one of them.
   const taxShippingValid = orderData.merchantItems.reduce(true, (tsValid, x) => {
-    const itemTsValid = x.lineItems.reduce(true, (itemTsValid, y) => {      
+    const itemTsValid = x.lineItems.reduce(true, (itemTsValid, y) => {
       return y.totalCost > y.tax + y.shipping;
     });
 
     return !tsValid ? false : itemTsValid;
   });
 
-  const orderIsValid = orderTotalsMatch 
+  const orderIsValid = orderTotalsMatch
     && allAmtsNonNegative
     && beneficiaryPctsValid
     && taxShippingValid;
 
   return {
     orderIsValid,
-    orderTotalsMatch, 
+    orderTotalsMatch,
     allAmtsNonNegative,
     beneficiaryPctsValid,
     taxShippingValid
@@ -313,57 +313,57 @@ const validateCleanOrder = (orderData) => {
   // errorInvalidRecipientAmounts: Fun([], Null),
   errorGenericInvalidOrder: Fun([], Null),
 }
- 
+
 /**
  * The Buyer Interface.
  */
-const BuyerInterface = {  
+const BuyerInterface = {
   getOrderData: Fun([], Object(OrderData)),
   // alertPaidRecipient: Fun([Address, UInt, Bytes], Null),
   ...errors,
 };
- 
+
 // ========================================================
 // Main Contract Logic
 // ========================================================
 
 export const main = Reach.App(
-  {}, [ 
+  {}, [
     ParticipantClass('Buyer', BuyerInterface),
     Participant('Bakesale', {}),
   ],
   (Buyer, Bakesale) => {
     Bakesale.publish();
 
-    const keepGoing = 
+    const keepGoing =
       parallelReduce(true)
         .invariant(balance() == balance())
         .while(keepGoing)
         .case(Buyer,
-          (() => {
+          () => {
             const orderData = declassify(interact.getOrderData());
             const orderDataClean = cleanOrderData(orderData, Bakesale);
             const validationResult = validateCleanOrder(orderDataClean);
 
             if(!validationResult.orderIsValid) {
               interact.errorGenericInvalidOrder();
-            } 
+            }
             return {
               when: validationResult.orderIsValid
             }
-          }), 
-          ((_) => {
+          },
+          (_) => {
             commit();
             Buyer.only(() => {
               const orderData = declassify(interact.getOrderData());
             });
-            Buyer.publish(orderData); 
+            Buyer.publish(orderData);
             const orderDataClean = cleanOrderData(orderData, Bakesale);
             const validationResult = validateCleanOrder(orderDataClean);
 
-            // This should never happen since we validate in the 
+            // This should never happen since we validate in the
             // local step above, but just in case.
-            if(!validationResult.orderIsValid) { 
+            if(!validationResult.orderIsValid) {
               Buyer.only(() => declassify(interact.errorGenericInvalidOrder()));
               return true;
             } else {
@@ -412,22 +412,22 @@ export const main = Reach.App(
               assert(balace() == 0)
 
               return true;
-            } 
+            }
 
-          })
+          }
         )
         // Sufficiently long timeout that it will never be
         // executed since the contract needs to be persistent.
         .timeout(100^100, () => {
           Anybody.publish();
           return true;
-        }); 
-    
+        });
+
     if(balance() > 0) {
-      // Not sure how we'd ever end up with a balance here, 
+      // Not sure how we'd ever end up with a balance here,
       // but for now just transfer the remaining balance.
       // We need to fix this so that it tracks the last buyer
-      // since it seems like they'd be the most likely source 
+      // since it seems like they'd be the most likely source
       // of these orphan funds?
       transfer(balance()).to(Bakesale);
     }
