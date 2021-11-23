@@ -35,7 +35,7 @@ export const main = Reach.App(() => {
       .invariant(balance(nftId) == amt && balance() == lastPrice)
       .while(lastConsensusTime() <= end)
       .case(Bidder,
-        (() => {
+        () => {
           const mbid = highestBidder != this
             ? declassify(interact.getBid(currentPrice))
             : MUInt.None();
@@ -43,14 +43,14 @@ export const main = Reach.App(() => {
             when: maybe(mbid, false, ((b) => b > currentPrice)),
             msg : fromSome(mbid, 0)
           });
-        }),
-        ((bid) => bid),
-        ((bid) => {
+        },
+        (bid) => bid,
+        (bid) => {
           require(bid > currentPrice);
           transfer(lastPrice).to(highestBidder);
           Creator.interact.seeBid(this, bid);
           return [ this, bid, bid ];
-        }))
+        })
       .timeout(absoluteTime(end), () => {
         Creator.interact.timeout();
         Creator.publish();

@@ -14,14 +14,14 @@ export const main = Reach.App(() => {
     parallelReduce(0)
     .invariant(balance() == 0)
     .while( x < 10 )
-    .api(U.f, ((k) => {
+    .api(U.f, (k) => {
         k(null);
         return x + 1;
-    }))
-    .api(U.f, ((k) => {
+    })
+    .api(U.f, (k) => {
         k(null);
         return x + 2;
-    }));
+    });
 
   commit();
   exit();

@@ -15,13 +15,13 @@ export const main = Reach.App(() => {
       .while(sum() < 10)
       .case(
         Alice,
-        (() => ({ when: sum() < 15 })),
-        (() => {
+        () => ({ when: sum() < 15 }),
+        () => {
           Alice.interact.show(x);
           Alice.interact.show(y);
           Alice.interact.show(sum());
           return [ x + 1, y + 1 ];
-        })
+        }
       )
       .timeout(10, () => {
         Anybody.publish();

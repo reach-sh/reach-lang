@@ -9,7 +9,7 @@ export const main = Reach.App({},
     [ Participant('Administrator', IAdministrator) ],
      (Admin) => {
         Admin.publish();
-        
+
         const registry = new Set()
 
         const isRunning = parallelReduce(true)
@@ -18,16 +18,16 @@ export const main = Reach.App({},
             .case(
                 Admin,
                 /* publish_expr */
-                (() => ({
+                () => ({
                     msg: declassify(interact.getNewEntry())
-                })),
+                }),
                 /* pay_expr */
-                ((_) => 0),
+                (_) => 0,
                 /* consensus_expr */
-                ((addr) => {
+                (addr) => {
                     registry.insert(addr);
                     return isRunning;
-                })
+                }
             )
 
         commit();

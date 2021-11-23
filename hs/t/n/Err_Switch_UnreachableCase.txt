@@ -2,7 +2,7 @@ reachc: error[RE0118]: The switch case `Deposit` defined at ./Err_Switch_Unreach
 
   ./Err_Switch_UnreachableCase.rsh:12:12:case
 
-  12|     Deposit: ((a) => a),
+  12|     Deposit: (a) => a,
 
 Trace:
   in [unknown function] from (./Err_Switch_UnreachableCase.rsh:10:20:function exp) at (./Err_Switch_UnreachableCase.rsh:10:20:application)
