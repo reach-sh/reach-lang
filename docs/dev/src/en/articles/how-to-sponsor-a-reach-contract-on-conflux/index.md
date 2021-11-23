@@ -42,7 +42,7 @@ This article shows you how to pay the gas and storage fees on behalf of particip
     * Line 3: Sponsor all addresses in the array (or, in this case, all addresses).
     * Line 4: Send a transaction signed by ConfluxPortal. `addPrivilegeByAdmin` returns the address of the initiator.
 
-Below is an example from [Tutorial 9](https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9):
+Below is an example from the [web-based Rock Paper Scissors](https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web):
 
 ``` js nonum
 async deploy() {

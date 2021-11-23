@@ -42,7 +42,7 @@ load: /examples/rps-3-bets/index.rsh
 ```
 
 ``` js
-load: /examples/tut-9/views/AppViews.js
+load: /examples/rps-9-web/views/AppViews.js
 ```
 
 ## HL Num
@@ -385,7 +385,7 @@ Technical documentation often uses various types of lists.
 1. Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 
     ```
-    load: /examples/tut-6/index.rsh
+    load: /examples/rps-6-timeouts/index.rsh
     ```
 
 1. Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
