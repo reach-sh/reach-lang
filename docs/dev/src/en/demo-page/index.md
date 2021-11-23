@@ -31,14 +31,14 @@ Here are the possiblities:
 ## HL Num Loaded Ranged
 
 ``` js
-load: /examples/tut-3/index.rsh
+load: /examples/rps-3-bets/index.rsh
 range: 3-6
 ```
 
 ## HL Num Loaded
 
 ``` js
-load: /examples/tut-3/index.rsh
+load: /examples/rps-3-bets/index.rsh
 ```
 
 ``` js
@@ -70,14 +70,14 @@ docker build -f Dockerfile --tag=reachsh/reach-app-market-day:latest .
 ## HL Loaded Ranged
 
 ``` js unnumbered
-load: /examples/tut-3/index.rsh
+load: /examples/rps-3-bets/index.rsh
 range: 3-6
 ```
 
 ## HL Loaded
 
 ``` js unnumbered
-load: /examples/tut-3/index.rsh
+load: /examples/rps-3-bets/index.rsh
 ```
 
 ## HL
@@ -92,14 +92,14 @@ const Player = {
 ## Num Loaded Ranged
 
 ```
-load: /examples/tut-3/index.rsh
+load: /examples/rps-3-bets/index.rsh
 range: 3-6
 ```
 
 ## Num Loaded
 
 ```
-load: /examples/tut-3/index.rsh
+load: /examples/rps-3-bets/index.rsh
 ```
 
 ## Num
@@ -114,14 +114,14 @@ const Player = {
 ## Loaded Ranged
 
 ``` unnumbered
-load: /examples/tut-3/index.rsh
+load: /examples/rps-3-bets/index.rsh
 range: 3-6
 ```
 
 ## Loaded
 
 ``` unnumbered
-load: /examples/tut-3/index.rsh
+load: /examples/rps-3-bets/index.rsh
 ```
 
 ## Simple
