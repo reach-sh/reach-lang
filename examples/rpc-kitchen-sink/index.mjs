@@ -20,6 +20,7 @@ import { mkRPC } from '@reach-sh/rpc-client';
   const ctcAlice = await rpc('/acc/contract', accAlice);
   const meta     = "This is a test string";
 
+  /* Views */
   const checkViewFun = async (l, x, e) => {
     await assertEq(`ctc.v     > ${l}:`, e, await rpc(`/ctc/v/${l}`,     ctcAlice, x));
     await assertEq(`ctc.views > ${l}:`, e, await rpc(`/ctc/views/${l}`, ctcAlice, x));
@@ -31,6 +32,22 @@ import { mkRPC } from '@reach-sh/rpc-client';
     await assertEq(`ctc.views > ${l1} + ${l2}:`, e, [ await rpc(`/ctc/views/${l1}`, ctcAlice),
                                                       await rpc(`/ctc/views/${l2}`, ctcAlice) ]);
   };
+
+  /* Exports */
+  // TODO: how should we access nested elements in arrays?
+  const five = await rpc('/backend/getExports/five');
+  assertEq('backend.getExports > app.timesTwoPlusThree(app.five):',
+    await rpc('/stdlib/bigNumberify', 13),
+    await rpc('/backend/getExports/timesTwoPlusThree', five));
+
+  assertEq('backend.getExports > app.a.b.e:',
+    [ five, await rpc('/stdlib/bigNumberify', 6) ],
+    await rpc('/backend/getExports/a/b/e'));
+
+  assertEq('backend.getExports > app.a.b.c:',         'd',  await rpc('/backend/getExports/a/b/c'));
+  assertEq('backend.getExports > app.a.z.c:',         null, await rpc('/backend/getExports/a/z/c'));
+  assertEq('backend.getExports > app.nonExistent:',   null, await rpc('/backend/getExports/nonExistent'));
+  assertEq('backend.getExports > app.nonExistent.a:', null, await rpc('/backend/getExports/nonExistent/a'));
 
   await rpcCallbacks('/backend/Alice', ctcAlice, { checkViewFun, checkViewBytes, meta });
 })();
