@@ -1,7 +1,7 @@
 <p>The <a href="https://github.com/reach-sh/reach-lang/blob/master/reach">reach</a> command-line tool enables you to compile Reach DApps and manage your Reach development environment. To install the tool, see <a href="/en/essentials/getting-started/install-and-run/">Install and Run</a>.</p>
 <h1 id="environment-variables">Environment Variables</h1>
 <p>In addition to passing command-line arguments, you can influence the behavior of the <a href="https://github.com/reach-sh/reach-lang/blob/master/reach">reach</a> command-line tool by setting environment variables.</p>
-<h2 id="reach-connector-mode">Reach Connector Mode</h2>
+<h2 id="reach_connector_mode">REACH_CONNECTOR_MODE</h2>
 <p>To target a specific <a href="/en/essentials/network-connectors/">consensus network</a>, set the <code>REACH_CONNECTOR_MODE</code> environment variable to the desired <a href="https://github.com/reach-sh/reach-lang/blob/master/js/stdlib/ts/ConnectorMode.ts">connector mode</a>:</p>
 <table>
   <thead>
@@ -25,13 +25,13 @@
     </tr>
   </tbody>
 </table>
-<h2 id="reach-debug">Reach Debug</h2>
+<h2 id="reach_debug">REACH_DEBUG</h2>
 <p>To cause the Reach compiler to display additional debug information, set REACH_DEBUG to a non-empty value:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">export REACH_DEBUG=1</li></ol></pre>
-<h2 id="reach-rpc">Reach RPC</h2>
-<p>The <a href="/en/essentials/frontend-programming/rpc-frontends/">Reach RPC Server</a> supports the environment variables listed below. See <a href="/en/essentials/backend-programming/reach-script/#reach-rpc-server">reach rpc-server</a> for details:</p>
+<h2 id="reach_rpc">REACH_RPC</h2>
+<p>The <a href="/en/essentials/frontend-programming/rpc-frontends/">Reach RPC Server</a> supports the environment variables listed below. See <a href="/en/essentials/backend-programming/reach-tool/#reach-rpc-server">reach rpc-server</a> for details:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">REACH_RPC_KEY</li><li value="2">REACH_RPC_PORT</li><li value="3">REACH_RPC_SERVER</li><li value="4">REACH_RPC_TLS_CRT</li><li value="5">REACH_RPC_TLS_KEY</li><li value="6">REACH_RPC_TLS_PASSPHRASE</li><li value="7">REACH_RPC_TLS_REJECT_UNVERIFIED</li></ol></pre>
-<h2 id="reach-version">Reach Version</h2>
+<h2 id="reach_version">REACH_VERSION</h2>
 <p>To target a specific Reach compiler version, find the version on <a href="https://hub.docker.com/r/reachsh/reach/tags">DockerHub</a>, and set the <code>REACH_VERSION</code> environment variable to the desired version, hash tag, date, or identifier:</p>
 <table>
   <thead>
@@ -71,6 +71,8 @@
 <h2 id="reach-compile">reach compile</h2>
 <p>By default, this command compiles <code>index.rsh</code> into <code>build/index.main.mjs</code> and verifies it:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach compile</li></ol></pre>
+<p>To output debug information, set <code>REACH_DEBUG</code> to a non-zero value:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ export REACH_DEBUG=1</li><li value="2">$ reach compile</li></ol></pre>
 <p>To compile <code>myindex.rsh</code> into <code>build/myindex.main.mjs</code>, run the following:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach compile myindex.rsh</li></ol></pre>
 <p>To compile <code>myindex.rsh</code> into <code>mybuild/myindex.main.mjs</code>, run the following:</p>
@@ -82,7 +84,7 @@
 <h2 id="reach-config">reach config</h2>
 <p>After soliciting information from you, this command creates a <code>~/.config/reach/env</code> script containing commands to export Reach environment variables:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach config</li></ol></pre>
-<p>Output from this command supplies you with customized directions for sourcing the <code>env</code> script.</p>
+<p>Output from this command supplies you with customized directions to <a href="https://en.wikipedia.org/wiki/Dot_(command)">source</a> the <code>env</code> script.</p>
 <h2 id="reach-devnet">reach devnet</h2>
 <p>With <code>REACH_CONNECTOR_MODE</code> set, this command launches a private devnet on which you can run/test your Reach DApps:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach devnet</li></ol></pre>
@@ -100,29 +102,93 @@
 <p>This command displays git hash values associated with your current Reach Docker images:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach hashes</li></ol></pre>
 <h2 id="reach-init">reach init</h2>
-<p>This command creates minimal index.rsh and index.mjs files in the current directory.</p>
+<p>This command creates minimal <em>index.rsh</em> and <em>index.mjs</em> files in the current directory:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach init [TEMPLATE]</li></ol></pre>
+<p>The command aborts if <em>index.rsh</em> or <em>index.mjs</em> already exists.</p>
 <h2 id="reach-react">reach react</h2>
-<p>This command runs a simple React app.</p>
+<p>This command runs a simple React app consisting of <em>index.rsh</em> and <em>index.js</em>:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach react</li></ol></pre>
+<p>The command compiles <em>index.rsh</em>, runs the devnet specified by <code>REACH_CONNECTOR_MODE</code>, mounts the current directory into <code>/app/src/</code> in the <code>reachsh/react-runner</code> Docker image, and runs the app.</p>
+<p>To output debug information, set <code>REACH_DEBUG</code> to a non-zero value:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ export REACH_DEBUG=1</li><li value="2">$ reach react</li></ol></pre>
 <h2 id="reach-rpc-run">reach rpc-run</h2>
-<p>This command runs a Reach RPC server and an RPC frontend with a development configuration.</p>
+<p>This command runs a Reach RPC server and an RPC frontend with a development configuration:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach rpc-run</li></ol></pre>
+<p>The command sets <code>REACH_RPC_KEY=opensesame</code> and <code>REACH_RPC_TLS_REJECT_UNVERIFIED=0</code>.</p>
+<p>You can include on the <code>reach rpc-run</code> command line any arguments destined for your frontend executable like this:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach rpc-run python3 -u ./index.py</li></ol></pre>
 <h2 id="reach-rpc-server">reach rpc-server</h2>
-<p>This command runs a Reach RPC server.</p>
+<p>With <code>REACH_CONNECTOR_MODE</code> set, this command runs a Reach RPC server in support of <a href="/en/essentials/frontend-programming/rpc-frontends/">RPC frontends</a>:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach rpc-server</li></ol></pre>
+<p>The command respects the following environment variables:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>REACH_RPC_KEY</code></td>
+      <td><code>opensesame</code></td>
+    </tr>
+    <tr>
+      <td><code>REACH_RPC_PORT</code></td>
+      <td><code>3000</code></td>
+    </tr>
+    <tr>
+      <td><code>REACH_RPC_TLS_KEY</code></td>
+      <td><code>reach-server.key</code></td>
+    </tr>
+    <tr>
+      <td><code>REACH_RPC_TLS_CRT</code></td>
+      <td><code>reach-server.crt</code></td>
+    </tr>
+    <tr>
+      <td><code>REACH_RPC_TLS_PASSPHRASE</code></td>
+      <td><code>rpc-demo</code></td>
+    </tr>
+  </tbody>
+</table>
+<p>In a production context, <code>REACH_RPC_KEY</code> should be secret, generated via a suitable method like this:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ head -c 24 /dev/urandom | base64</li></ol></pre>
+<p><code>REACH_RPC_TLS_KEY</code> specifies the path to the TLS key file in the <code>./tls</code> directory.</p>
+<p><code>REACH_RPC_TLS_CRT</code> specifies the path to the TLS crt file in the <code>./tls</code> directory.</p>
 <h2 id="reach-run">reach run</h2>
-<p>This command runs a simple Reach DApp.</p>
+<p>With <code>REACH_CONNECTOR_MODE</code> set, this command runs an app in the current directory consisting of <em>index.rsh</em> and <em>index.js</em>:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach run</li></ol></pre>
+<p>The command does the following:</p>
+<ol>
+  <li>Compiles <code>index.rsh</code> into <code>build/index.main.mjs</code>.</li>
+  <li>Builds a Docker image named <code>reachsh/reach-app-APP:latest</code> that depends on the <a href="/en/essentials/frontend-programming/javascript-frontends/">Reach JS standard library</a>.</li>
+  <li>Instantiates a Docker container based on the Docker image.</li>
+  <li>Connects to the consensus network determined by <code>REACH_CONNECTOR_MODE</code>.</li>
+</ol>
+<p>To output debug information, set <code>REACH_DEBUG</code> to a non-zero value:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ export REACH_DEBUG=1</li><li value="2">$ reach run</li></ol></pre>
+<p>To run an app in the current directory consisting of <em>myindex.rsh</em> and <em>myindex.js</em>, use the following:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach run myindex</li></ol></pre>
+<p>To pass arguments to <code>index.mjs</code> (e.g. <code>seller</code>), add the arguments to the <code>reach run index</code> command line:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach run index seller</li></ol></pre>
+<p>To extend <code>reach run</code> functionality, see <a href="#reach-scaffold">reach scaffold</a>.</p>
 <h2 id="reach-scaffold">reach scaffold</h2>
-<p>This command creates Docker files for a simple app in the current directory.</p>
+<p>This command lays the groundwork for adding NPM packages to your Reach DApp by creating two files, <em>package.json</em> and <em>Dockerfile</em>:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach scaffold</li></ol></pre>
+<p>After running <code>reach scaffold</code>, open <em>package.json</em>, and add desired dependencies (e.g. <code>yargs</code>):</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">"dependencies": {</li><li value="2">  "yargs": "^17.2.1"</li><li value="3">},</li></ol></pre>
+<p>If you have an NPM environment installed on your computer, you can add dependencies by running <code>npm install</code>:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ npm i yargs</li></ol></pre>
+<p>Then, open <code>Dockerfile</code>, and uncomment the following lines:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">COPY package.json /app/package.json</li><li value="2">RUN npm install</li><li value="3">RUN npm link @reach-sh/stdlib</li></ol></pre>
+<p>These lines direct <code>reach run</code> to copy <em>package.json</em> to the Docker container where your app will run, and install your packages.</p>
 <h2 id="reach-update">reach update</h2>
-<p>This command updates the Reach Docker images.</p>
+<p>This command downloads Reach Docker images to your computer.</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach update</li></ol></pre>
+<p>By default, the command downloads the latest images. Set <a href="#reach_version">REACH_VERSION</a> to specify a different version.</p>
 <h2 id="reach-upgrade">reach upgrade</h2>
-<p>This command upgrades the Reach CLI.</p>
+<p>This command upgrades your copy of the <a href="https://github.com/reach-sh/reach-lang/blob/master/reach">Reach Tool</a>.</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach upgrade</li></ol></pre>
-<h2 id="reach-version-1">reach version</h2>
-<p>This command displays the Reach compiler version.</p>
+<h2 id="reach-version">reach version</h2>
+<p>This command displays the version of the Reach tool, compiler, and other images installed on your computer:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach version</li></ol></pre>
