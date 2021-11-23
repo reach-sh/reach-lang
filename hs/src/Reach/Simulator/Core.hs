@@ -12,13 +12,30 @@ import Data.Bits
 import Data.Aeson (FromJSON, ToJSON)
 import GHC.Generics
 
+data LocalState = LocalState
+  { acct :: Account
+  , who :: Maybe SLPart
+  -- TODO QUESTION: partstates for each participant?
+  }
+
+initLocalState :: LocalState
+initLocalState = LocalState
+  { acct = -1
+  , who = Nothing
+  }
+
+type PartId = Int
+type Locals = M.Map PartId LocalState
+
 -- state
 data State = State
-  {  e_store :: Store
-   , e_ledger :: Ledger
-   , e_linstate :: LinearState
-   , e_nwtime :: Integer
-   , e_nwsecs :: Integer
+  { e_store :: Store
+  , e_ledger :: Ledger
+  , e_linstate :: LinearState
+  , e_nwtime :: Integer
+  , e_nwsecs :: Integer
+  , e_locals :: Locals
+  , e_partid :: Int
   }
 
 initState :: State
@@ -28,6 +45,8 @@ initState = State
   , e_linstate = M.empty
   , e_nwtime = 0
   , e_nwsecs = 0
+  , e_locals = M.empty
+  , e_partid = -1
   }
 
 type PartCont = State -> DLVal -> PartState
@@ -103,7 +122,7 @@ simContract :: Account
 simContract = -1
 
 simContractAmt :: Balance
-simContractAmt = 4444
+simContractAmt = 0
 
 initLedger :: Ledger
 initLedger = Ledger
@@ -126,6 +145,7 @@ data Action
   | A_NewAcc
   | A_NewPart
   | A_None
+  | A_ChangePart Int
   | A_Interact SrcLoc [SLCtxtFrame] String String DLType [DLVal]
   deriving (Generic)
 

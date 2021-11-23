@@ -97,16 +97,24 @@ registerAction sid act = do
   return aid
 
 unblockProg :: StateId -> ActionId -> C.DLVal -> WebM ()
-unblockProg sid _aid v = do
+unblockProg sid aid v = do
   stks <- gets e_states_ks
+  av_actions <- gets e_ids_actions
   case M.lookup sid stks of
     Nothing -> do
       _ <- return $ putStrLn "previous state not found"
       return ()
     Just (C.PS_Suspend _a cst k) -> do
-      let ps = k cst v
-      _ <- processNewState ps
-      return ()
+      case M.lookup aid av_actions of
+        Just (C.A_ChangePart part_id) -> do
+          let ps = k cst{C.e_partid = part_id} v
+          _ <- processNewState ps
+          return ()
+        -- TODO
+        _ -> do
+          let ps = k cst v
+          _ <- processNewState ps
+          return ()
     Just (C.PS_Done _ _) -> do
       _ <- return $ putStrLn "previous state already terminated"
       return ()
