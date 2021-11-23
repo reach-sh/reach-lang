@@ -16,14 +16,14 @@ This set of documents contains everything you need to know about Reach.
 It can be helpful to get some context before diving into other sections.
 If you have experience with blockchain development using existing tools, we recommend reading @seclink["overview"]{the overview} and @seclink["guide-solidity"]{a comparision with other development platforms}.}
 
-@item{@seclink["tut"]{The tutorial} is a directed series of steps to create a simple @|DApp|.
+@item{@seclink["rps"]{The tutorial} is a directed series of steps to create a simple @|DApp|.
 You should start here if you've never used Reach before and want to start at the beginning.
 It assumes no prior experience in @|DApp|/blockchain development.}
 
 @item{@seclink["guide"]{The guide} continues @seclink["overview"]{the overview} by discussing the key ideas and concepts used throughout Reach.
 You may want to revisit the guide often to reinforce background knowledge and to understand the "why" of newly learned topics.}
 
-@item{@seclink["workshop"]{The workshop} continues @seclink["tut"]{the tutorial} with a set of self-study projects to help you gain mastery in decentralized application design through practice with Reach.
+@item{@seclink["workshop"]{The workshop} continues @seclink["rps"]{the tutorial} with a set of self-study projects to help you gain mastery in decentralized application design through practice with Reach.
 Each project contains a completed solution, so it is also a collection of recipes for building specific things in Reach and demonstrates effective use of Reach, as well as some of the design decisions that Reach programmers face.}
 
 @item{Finally, @seclink["ref"]{the reference} provides an exhaustive technical reference on each aspect of Reach.}
@@ -49,7 +49,7 @@ we welcome @link["https://github.com/reach-sh/reach-lang/pulls"]{Pull Requests} 
 @(table-of-contents)
 
 @include-section["overview.scrbl"]
-@include-section["tut.scrbl"]
+@include-section["rps.scrbl"]
 @include-section["guide.scrbl"]
 @include-section["workshop.scrbl"]
 @include-section["ref.scrbl"]
