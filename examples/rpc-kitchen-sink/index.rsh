@@ -9,6 +9,11 @@ const v = {
   meta: BS,
 };
 
+export const five = 5;
+export const a    = { b: { c: 'd', e: [ five, 6 ] }};
+
+export const timesTwoPlusThree = is((x => x * 2 + 3), Fun([ UInt ], UInt));
+
 export const main = Reach.App(() => {
   const A = Participant('Alice', {
     checkViewFun:   Fun([ Bytes(10), UInt, MUInt ], Null),

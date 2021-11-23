@@ -211,6 +211,11 @@ export const serveRpc = async (backend: any) => {
     return router;
   };
 
+
+  // `hasOwnProperty` is important for denying access to prototype fields
+  const userDefinedField = (a: any, m: string) =>
+    a && a.hasOwnProperty && a.hasOwnProperty(m) && a[m] || null;
+
   const mkUserDefined = (olab: string, prop: string, k: any) => {
     const router = express.Router();
     router.post(/^\/(.*)/, safely(async (req: Request, res: Response) => {
@@ -218,13 +223,9 @@ export const serveRpc = async (backend: any) => {
       const lab = `RPC ${olab}${req.path} ${JSON.stringify(req.body)}`;
       debug(lab);
 
-      // `hasOwnProperty` is important for denying access to prototype fields
-      const f = (a: any, m: string) =>
-        a && a.hasOwnProperty && a.hasOwnProperty(m) && a[m] || null;
-
       const a = await req.path.split('/')
         .filter(a => a !== '')
-        .reduce(f, k.id(id)[prop])(...args);
+        .reduce(userDefinedField, k.id(id)[prop])(...args);
 
       debug(`${lab} ==> ${JSON.stringify(a)}`);
       res.json(a);
@@ -232,9 +233,30 @@ export const serveRpc = async (backend: any) => {
     return router;
   };
 
+  route_backend.post(/^\/getExports\/(.*)/, safely(async (req: Request, res: Response) => {
+    const args = req.body;
+    if (!Array.isArray(args))
+      throw new Error(`Expected an array but received: ${args}`);
+
+    const lab = `RPC /backend${req.path}${args.length > 0 ? ' ' + JSON.stringify(args) : ''}`;
+    debug(lab);
+
+    const b = await req.path.split('/')
+      .filter(a => a !== '')
+      .slice(1) // drop `getExports` path root
+      .reduce(userDefinedField, await backend.getExports(real_stdlib));
+
+    const a = typeof b === 'function'
+      ? await b(...args)
+      : b;
+
+    debug(`${lab} ==> ${JSON.stringify(a)}`);
+    res.json(a);
+  }));
+
   for (const b in backend) {
     route_backend.post(`/${b}`, safely(async (req: Request, res: Response) => {
-      let lab = `RPC backend/${b}`;
+      let lab = `RPC /backend/${b}`;
       debug(`${lab} IN`);
 
       const [ cid, vals, meths ] = req.body;
