@@ -21,9 +21,9 @@ import { mkRPC } from '@reach-sh/rpc-client';
   const meta     = "This is a test string";
 
   /* Views */
-  const checkViewFun = async (l, x, e) => {
-    await assertEq(`ctc.v     > ${l}:`, e, await rpc(`/ctc/v/${l}`,     ctcAlice, x));
-    await assertEq(`ctc.views > ${l}:`, e, await rpc(`/ctc/views/${l}`, ctcAlice, x));
+  const checkViewFun = async (l, x, y, e) => {
+    await assertEq(`ctc.v     > ${l}:`, e, await rpc(`/ctc/v/${l}`,     ctcAlice, x, y));
+    await assertEq(`ctc.views > ${l}:`, e, await rpc(`/ctc/views/${l}`, ctcAlice, x, y));
   };
 
   const checkViewBytes = async (l1, l2, e) => {

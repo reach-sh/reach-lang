@@ -1,13 +1,6 @@
 'reach 0.1';
 
-import * as runView           from './runView.rsh';
-import { MUInt, MA, MBS, BS } from './type.rsh';
-
-const v = {
-  fun:  Fun([UInt], UInt),
-  who:  Address,
-  meta: BS,
-};
+import * as runView from './runView.rsh';
 
 export const five = 5;
 export const a    = { b: { c: 'd', e: [ five, 6 ] }};
@@ -16,13 +9,12 @@ export const timesTwoPlusThree = is((x => x * 2 + 3), Fun([ UInt ], UInt));
 
 export const main = Reach.App(() => {
   const A = Participant('Alice', {
-    checkViewFun:   Fun([ Bytes(10), UInt, MUInt ], Null),
-    checkViewBytes: Fun([ Bytes(10), Bytes(10), Tuple(MA, MBS) ], Null),
-    meta: BS,
+    ...runView.pii,
   });
 
-  const [ v1, v2 ] = [ View('Main', v), View(v) ];
+  const [ v1, v2 ] = [ View('Main', runView.T), View(runView.T) ];
 
+  setOptions({ verifyArithmetic: true, verifyPerConnector: true });
   deploy(); A.publish(); commit();
 
   runView.vbytes(A, v1, Bytes(10).pad('Main/who'), Bytes(10).pad('Main/meta'));
@@ -30,7 +22,6 @@ export const main = Reach.App(() => {
 
   runView.fun(A, v1, Bytes(10).pad('Main/fun'));
   runView.fun(A, v2, Bytes(10).pad('fun'));
-
   A.publish(); commit();
 
   exit();
