@@ -16,6 +16,7 @@ export class RunBackend extends React.Component {
           onChangeText={e => this.setState({ctcInfoStr: e})}
           placeholder="{}"
           spellCheck={false}
+          placeholderTextColor='#333333'
           style={styles.textInput}
         />
         <TouchableOpacity

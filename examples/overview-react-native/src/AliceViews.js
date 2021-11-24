@@ -31,6 +31,7 @@ export class EnterInfo extends React.Component {
         <TextInput
           onChangeText={e => this.setState({info: e})}
           placeholder={defaultInfo}
+          placeholderTextColor='#333333'
           style={styles.textInput}
         />
         <Button
@@ -53,8 +54,9 @@ export class EnterRequest extends React.Component {
         </Text>
         <TextInput
           keyboardType="number-pad"
-          onChangeText={e => this.setState({req: e.currentTarget.value})}
+          onChangeText={e => this.setState({req: e})}
           placeholder={defaultRequestStandard}
+          placeholderTextColor='#333333'
           style={styles.textInput}
         />
         <Button
