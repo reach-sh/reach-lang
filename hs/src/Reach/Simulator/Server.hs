@@ -40,7 +40,8 @@ type ActionId = Int
 portNumber :: Int
 portNumber = 3000
 
--- state
+type Graph = M.Map StateId C.State;
+
 data Session = Session
   {  e_states_actions :: M.Map StateId [ActionId]
   ,  e_nsid :: Int -- next state id
@@ -48,6 +49,7 @@ data Session = Session
   ,  e_res :: C.DLVal
   ,  e_ids_actions :: M.Map ActionId C.Action
   ,  e_states_ks :: M.Map StateId C.PartState
+  ,  e_graph :: Graph
   }
 
 initSession :: Session
@@ -58,6 +60,7 @@ initSession = Session
   , e_res = C.V_Null
   , e_ids_actions = M.empty
   , e_states_ks = M.empty
+  , e_graph = M.empty
   }
 
 initProgSim :: LLProg -> WebM C.PartState
@@ -74,14 +77,17 @@ processNewState ps = do
       _ <- return $ putStrLn "EVAL DONE"
       registerAction sid C.A_None
     C.PS_Suspend a _ _ -> registerAction sid a
-  let new_res =
+  let (new_st, new_res) =
         case ps of
-          C.PS_Done _ v -> v
-          C.PS_Suspend _ _ _ -> C.V_Null
+          C.PS_Done s v -> (s,v)
+          C.PS_Suspend _ s _ -> (s,C.V_Null)
+  graph <- gets e_graph
+  sks <- gets e_states_ks
   modify $ \ st -> st
     {e_nsid = sid + 1}
     {e_res = new_res}
-    {e_states_ks = M.singleton sid ps}
+    {e_states_ks = M.insert sid ps sks}
+    {e_graph = M.insert sid new_st graph}
   return ps
 
 registerAction :: StateId -> C.Action -> WebM ActionId
@@ -110,7 +116,7 @@ unblockProg sid aid v = do
           let ps = k cst{C.e_partid = part_id} v
           _ <- processNewState ps
           return ()
-        -- TODO
+        -- TODO: handle other actions
         _ -> do
           let ps = k cst v
           _ <- processNewState ps

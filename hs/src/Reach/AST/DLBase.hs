@@ -4,7 +4,7 @@
 
 module Reach.AST.DLBase where
 
-import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson
 import qualified Data.ByteString.Char8 as B
 import qualified Data.List as List
 import Data.List.Extra
@@ -174,6 +174,9 @@ data DLConstant
   = DLC_UInt_max
   deriving (Eq, Generic, Show, Ord)
 
+instance ToJSON DLConstant
+instance FromJSON DLConstant
+
 instance Pretty DLConstant where
   pretty = \case
     DLC_UInt_max -> "UInt.max"
@@ -187,6 +190,9 @@ data DLLiteral
   | DLL_Bool Bool
   | DLL_Int SrcLoc Integer
   deriving (Eq, Generic, Show, Ord)
+
+instance ToJSON DLLiteral
+instance FromJSON DLLiteral
 
 instance Pretty DLLiteral where
   pretty = \case
@@ -202,6 +208,9 @@ litTypeOf = \case
 
 data DLVar = DLVar SrcLoc (Maybe (SrcLoc, SLVar)) DLType Int
   deriving (Generic)
+
+instance ToJSON DLVar
+instance FromJSON DLVar
 
 instance SrcLocOf DLVar where
   srclocOf (DLVar a _ _ _) = a

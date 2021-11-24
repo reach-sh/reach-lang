@@ -13,19 +13,22 @@ import Data.Aeson (FromJSON, ToJSON)
 import GHC.Generics
 
 data LocalState = LocalState
-  { acct :: Account
-  , who :: Maybe SLPart
+  { l_acct :: Account
+  , l_who :: Maybe SLPart
   -- TODO QUESTION: partstates for each participant?
   }
 
 initLocalState :: LocalState
 initLocalState = LocalState
-  { acct = -1
-  , who = Nothing
+  { l_acct = -1
+  , l_who = Nothing
   }
 
 type PartId = Int
 type Locals = M.Map PartId LocalState
+
+-- TODO: state here and in the server should
+-- probably all be IORefs
 
 -- state
 data State = State
@@ -80,13 +83,14 @@ instance Monad App where
         let App con = conF vVal
          in con gvVal kAns))
 
-unsuspend :: PartState -> State -> DLVal -> PartState
-unsuspend ps st v =
- case ps of
-   PS_Done _ _ -> do
-     ps
-   PS_Suspend _ _ k ->
-     k st v
+-- unsuspend :: PartState -> State -> DLVal -> PartState
+-- unsuspend ps st v =
+--  case ps of
+--    PS_Done _ _ -> do
+--      -- error?
+--      ps
+--    PS_Suspend _ _ k ->
+--      k st v
 
 suspend :: (State -> PartCont -> PartState) -> App DLVal
 suspend = App
@@ -131,21 +135,27 @@ initLedger = Ledger
   , nw_next_token = 0
   }
 
-ledgerNewToken :: Account -> Integer -> App ()
-ledgerNewToken acc supply = do
+ledgerNewToken :: Account -> DLTokenNew -> App ()
+ledgerNewToken acc tk = do
   e <- globalGet
   let ledger = e_ledger e
   let token_id = nw_next_token ledger
-  let new_nw_ledger = M.insert acc (M.singleton token_id supply) (nw_ledger ledger)
-  let new_ledger = ledger { nw_ledger = new_nw_ledger, nw_next_token = token_id + 1 }
-  globalSet $ e {e_ledger = new_ledger}
+  supply' <- interp (dtn_supply tk)
+  case supply' of
+    V_UInt supply -> do
+      let new_nw_ledger = M.insert acc (M.singleton token_id supply) (nw_ledger ledger)
+      let new_ledger = ledger { nw_ledger = new_nw_ledger, nw_next_token = token_id + 1 }
+      globalSet $ e {e_ledger = new_ledger}
+    _ -> impossible "expression interpreter"
 
 data Action
-  = A_TieBreak
+  = A_TieBreak [String]
   | A_NewAcc
   | A_NewPart
   | A_None
   | A_ChangePart Int
+  | A_AdvanceTime Integer
+  | A_AdvanceSeconds Integer
   | A_Interact SrcLoc [SLCtxtFrame] String String DLType [DLVal]
   deriving (Generic)
 
@@ -354,15 +364,13 @@ instance Interp DLExpr where
         ev <- interp dlarg
         case ev of
           V_UInt n -> do
-            incrNWtime n
-            return V_Null
+            suspend $ PS_Suspend (A_AdvanceTime n)
           _ -> impossible "unexpected error"
       Right dlarg -> do
         ev <- interp dlarg
         case ev of
           V_UInt n -> do
-            incrNWsecs n
-            return V_Null
+            suspend $ PS_Suspend (A_AdvanceSeconds n)
           _ -> impossible "unexpected error"
     DLE_PartSet _at _slpart dlarg -> interp dlarg
     DLE_MapRef _at dlmvar dlarg -> do
@@ -391,13 +399,8 @@ instance Interp DLExpr where
         _ -> impossible "unexpected error"
     DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill -> undefined
     DLE_TokenNew _at dltokennew -> do
-      supply <- interp (dtn_supply dltokennew)
-      case supply of
-        V_UInt supply' -> do
-          -- TODO: include metadata for debugging
-          ledgerNewToken simContract supply'
-          return V_Null
-        _ -> impossible "expression interpreter"
+      ledgerNewToken simContract dltokennew
+      return V_Null
     DLE_TokenBurn _at dlarg1 dlarg2 -> do
       ev1 <- interp dlarg1
       ev2 <- interp dlarg2
@@ -524,7 +527,10 @@ instance Interp LLConsensus where
           addToStore switch_binding v
           interp cons
         _ -> impossible "unexpected error"
-    LLC_FromConsensus _at1 _at2 step -> interp step
+    LLC_FromConsensus _at1 _at2 step -> do
+      incrNWtime 1
+      incrNWsecs 1
+      interp step
     LLC_While at asn _inv cond body k -> do
       case asn of
         DLAssignment asn' -> do
@@ -544,9 +550,21 @@ instance Interp LLStep where
       _ <- interp stmt
       interp step
     LLS_Stop _at -> return V_Null
-    LLS_ToConsensus _at _lct _tc_send tc_recv _tc_mtime -> do
-      -- TODO: block thread for race winner
-      interp $ dr_k tc_recv
+    LLS_ToConsensus _at _lct tc_send (DLRecv {..}) _tc_mtime -> do
+      v <- suspend $ PS_Suspend (A_TieBreak $ M.keys $ M.mapKeys bunpack tc_send)
+      case v of
+        V_UInt n -> do
+          g <- globalGet
+          let locals = e_locals g
+          let lclst = l_who (locals M.! (fromIntegral n))
+          case lclst of
+            Nothing ->  impossible "expected participant id, received consensus id"
+            Just part -> case tc_send M.! part of
+              DLSend {..} -> do
+                ds_msg' <- mapM interp ds_msg
+                _ <- zipWithM addToStore dr_msg ds_msg'
+                interp $ dr_k
+        _ -> impossible "unexpected client answer"
 
 -- evaluate a linear Reach program
 instance Interp LLProg where
