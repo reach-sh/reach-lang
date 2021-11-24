@@ -31,18 +31,18 @@ Here are the possiblities:
 ## HL Num Loaded Ranged
 
 ``` js
-load: /examples/tut-3/index.rsh
+load: /examples/rps-2-rps/index.rsh
 range: 3-6
 ```
 
 ## HL Num Loaded
 
 ``` js
-load: /examples/tut-3/index.rsh
+load: /examples/rps-2-rps/index.rsh
 ```
 
 ``` js
-load: /examples/tut-9/views/AppViews.js
+load: /examples/rps-9-web/views/AppViews.js
 ```
 
 ## HL Num
@@ -70,14 +70,14 @@ docker build -f Dockerfile --tag=reachsh/reach-app-market-day:latest .
 ## HL Loaded Ranged
 
 ``` js unnumbered
-load: /examples/tut-3/index.rsh
+load: /examples/rps-2-rps/index.rsh
 range: 3-6
 ```
 
 ## HL Loaded
 
 ``` js unnumbered
-load: /examples/tut-3/index.rsh
+load: /examples/rps-2-rps/index.rsh
 ```
 
 ## HL
@@ -92,14 +92,14 @@ const Player = {
 ## Num Loaded Ranged
 
 ```
-load: /examples/tut-3/index.rsh
+load: /examples/rps-2-rps/index.rsh
 range: 3-6
 ```
 
 ## Num Loaded
 
 ```
-load: /examples/tut-3/index.rsh
+load: /examples/rps-2-rps/index.rsh
 ```
 
 ## Num
@@ -114,14 +114,14 @@ const Player = {
 ## Loaded Ranged
 
 ``` unnumbered
-load: /examples/tut-3/index.rsh
+load: /examples/rps-2-rps/index.rsh
 range: 3-6
 ```
 
 ## Loaded
 
 ``` unnumbered
-load: /examples/tut-3/index.rsh
+load: /examples/rps-2-rps/index.rsh
 ```
 
 ## Simple
@@ -385,7 +385,7 @@ Technical documentation often uses various types of lists.
 1. Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 
     ```
-    load: /examples/tut-6/index.rsh
+    load: /examples/rps-6-timeouts/index.rsh
     ```
 
 1. Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
