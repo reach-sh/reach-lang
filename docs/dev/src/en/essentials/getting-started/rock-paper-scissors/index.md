@@ -224,7 +224,7 @@ Alice is good!
 > If your version isn't working, look at the complete versions of [index.rsh](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-2-rps/index.rsh) and [index.mjs](https://github.com/reach-sh/reach-lang/blob/master/examples/rps-2-rps/index.mjs) to make sure you've copied everything correctly.
 
 > # Who’s on First
-> Does Alice go first, or do we call the player that goes first, "Alice"? It may seem like an unnecessary distinction, but this is a subtle point about the way Reach works. In this section, we explicitly ran `backend.Alice` and `backend.Bob` in the [frontend](https://docs.reach.sh/ref-model.html#%28tech._frontend%29). When we did that, we committed that particular JavaScript thread to be either Alice or Bob. In our game, whoever chose to run the Alice backend is the one that will go first. In other words: **Alice goes first**. This will be more obvious at [the end of the tutorial](https://docs.reach.sh/tut-8.html) when we'll make the choice interactively about which role to play.
+> Does Alice go first, or do we call the player that goes first, "Alice"? It may seem like an unnecessary distinction, but this is a subtle point about the way Reach works. In this section, we explicitly ran `backend.Alice` and `backend.Bob` in the [frontend](https://docs.reach.sh/ref-model.html#%28tech._frontend%29). When we did that, we committed that particular JavaScript thread to be either Alice or Bob. In our game, whoever chose to run the Alice backend is the one that will go first. In other words: **Alice goes first**. This will be more obvious at [the end of the tutorial](https://docs.reach.sh/rps-8-interact.html) when we'll make the choice interactively about which role to play.
 
 In the next step, we'll add stakes to the game, because Alice needs to take her skills to the bank!
 
@@ -1872,7 +1872,7 @@ Lines 84 & 85 invoke Python's process interpreter
 
 Now it's time to play our game!
 
-Move a copy of the `index.rsh` file we used for the [Play and Play Again](https://docs.reach.sh/tut-7.html) section and save it in the same directory as `index.py`.
+Move a copy of the `index.rsh` file we used for the [Play and Play Again](https://docs.reach.sh/rps-7-loops.html) section and save it in the same directory as `index.py`.
 
 Next, open a terminal in that directory and install the Reach Python RPC client:
 
