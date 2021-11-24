@@ -3,7 +3,7 @@
 import * as runView from './runView.rsh';
 
 export const five = 5;
-export const a    = { b: { c: 'd', e: [ five, 6 ] }};
+export const a    = { b: { c: 'd', e: [ five, { f: [{ g: 'h' }] }, 6 ] }};
 
 export const timesTwoPlusThree = is((x => x * 2 + 3), Fun([ UInt ], UInt));
 
