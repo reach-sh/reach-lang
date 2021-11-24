@@ -33,12 +33,7 @@ build: client-lib-js build/index.main.mjs
 	  .
 
 run:
-	@# Start fresh RPC server to ensure server-log is populated correctly
-	@echo "Awaiting RPC server..." \
-	  && docker container stop $$(docker ps -aq -f name=reach-app-rpc-kitchen-sink) >/dev/null 2>&1 \
-	   ; { REACH_DEBUG=1 $(RKEY) $(PORT) $(REACH) rpc-server >server-log & } \
-	  && $(RKEY) $(PORT) $(REACH) rpc-server-await
-	@docker run --rm \
+	$(RKEY) $(PORT) $(REACH) rpc-run docker run --rm \
 	  -e "REACH_DEBUG" \
 	  -e "REACH_RPC_SERVER=host.docker.internal" \
 	  -e "REACH_RPC_TLS_REJECT_UNVERIFIED=0" \
@@ -47,4 +42,4 @@ run:
 	  --add-host "host.docker.internal:172.17.0.1" \
 	  --name     $(NAME) \
 	  --network  reach-devnet \
-	  "$(CIMG)" || (cat server-log && exit 1)
+	  "$(CIMG)"
