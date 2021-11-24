@@ -6,8 +6,8 @@
 @title[#:version reach-vers #:tag "tut-7-rpc" #:style 'toc]{Rock, Paper, Scissors in Python}
 @author[(author+email "Matt Audesse" "matt@reach.sh")]
 
-@(define py-impl "tut-7-rpc/client-py/index.py")
-@(define js-impl "tut-7/index.mjs")
+@(define py-impl "rps-7-rpc/client-py/index.py")
+@(define js-impl "rps-7-loops/index.mjs")
 
 The main sequence of the tutorial uses the
 @seclink["ref-frontends-js"]{JavaScript frontend support library} to implement
