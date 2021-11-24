@@ -20,7 +20,7 @@ import {
 	LanguageClientOptions,
 	ServerOptions,
 	TransportKind,
-} from 'vscode-languageclient';
+} from 'vscode-languageclient/node';
 import { CommandsTreeDataProvider, DocumentationTreeDataProvider, HelpTreeDataProvider } from './CommandsTreeDataProvider';
 
 const COMMANDS = require('../../data/commands.json');
