@@ -30,7 +30,6 @@ type Locals = M.Map PartId LocalState
 -- TODO: state here and in the server should
 -- probably all be IORefs
 
--- state
 data State = State
   { e_store :: Store
   , e_ledger :: Ledger
@@ -239,8 +238,11 @@ interpPrim = \case
   (DIGEST_EQ,  [V_Digest lhs,V_Digest rhs]) -> return $ V_Bool $ (==) lhs rhs
   (ADDRESS_EQ,  [V_Address lhs,V_Address rhs]) -> return $ V_Bool $ (==) lhs rhs
   (TOKEN_EQ, [V_Token lhs,V_Token rhs]) -> return $ V_Bool $ (==) lhs rhs
-  -- TODO
-  -- (SELF_ADDRESS, _) -> undefined
+  (SELF_ADDRESS _slpart _bool _int, _) -> do
+    g <- globalGet
+    let partid = e_partid g
+    let locals = e_locals g
+    return $ V_Address $ l_acct $ locals M.! partid
   (LSH, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ shiftL lhs (fromIntegral rhs)
   (RSH, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ shiftR lhs (fromIntegral rhs)
   (BAND, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (.&.) lhs rhs
