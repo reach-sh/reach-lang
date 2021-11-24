@@ -16,13 +16,14 @@ data LocalState = LocalState
   { l_acct :: Account
   , l_who :: Maybe SLPart
   -- TODO QUESTION: partstates for each participant?
+  , l_init_val :: DLVal
   }
 
-initLocalState :: LocalState
-initLocalState = LocalState
-  { l_acct = -1
-  , l_who = Nothing
-  }
+-- initLocalState :: LocalState
+-- initLocalState = LocalState
+--   { l_acct = -1
+--   , l_who = Nothing
+--   }
 
 type PartId = Int
 type Locals = M.Map PartId LocalState
@@ -250,17 +251,22 @@ interpPrim = \case
   (BXOR, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ xor lhs rhs
   _ -> impossible "unexpected error"
 
+conCons' :: DLConstant -> DLVal
+conCons' DLC_UInt_max = V_UInt $ 2 ^ (64 :: Integer) - 1
+
 instance Interp DLArg where
   interp = \case
     DLA_Var dlvar -> do
       g <- globalGet
       let st = e_store g
       return $ st M.! dlvar
-    -- TODO: fake constants per connector
-    DLA_Constant _dlconst -> return $ V_UInt $ toInteger (maxBound :: Int)
+    DLA_Constant dlconst -> return $ conCons' dlconst
     DLA_Literal dllit -> interp dllit
-    -- TODO: handle interact case: needs participant frontend state
-    DLA_Interact _slpart _string _dltype -> undefined
+    DLA_Interact _slpart _string _dltype -> do
+      g <- globalGet
+      let partid = e_partid g
+      let lclst = e_locals g
+      return $ l_init_val $ lclst M.! partid
 
 instance Interp DLLiteral where
   interp = \case
