@@ -9,7 +9,7 @@ It is based on the frontend from <a href="tut-7.html" data-pltdoc="x">Play and P
 text-based interface, or a Web interface, but uses the final version of the
 Reach code.</p><p>Below we will compare the <a href="tut-7.html" data-pltdoc="x">Play and Play Again</a> JavaScript <a href="ref-model.html#%28tech._frontend%29" class="techoutside" data-pltdoc="x"><span class="techinside">frontend</span></a> with the
 equivalent Python code communicating via RPC, section by section.
-Follow along by typing the Python code into a file called <span class="stt">index.py</span>.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>We begin by comparing the necessary imports and program body:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L1-L5"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="import { loadStdlib } from '@reach-sh/stdlib';
+Follow along by typing the Python code into a file called <span class="stt">index.py</span>.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>We begin by comparing the necessary imports and program body:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L1-L5"><span class="stt">rps-7-loops/index.mjs</span></a><button class="btn" data-clipboard-text="import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib(process.env);
 
@@ -20,7 +20,7 @@ const stdlib = loadStdlib(process.env);
  <span class="mi">5</span>    <span class="p">(</span><font class="badlink"><span class="nx">async</span></font> <span class="p">()</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">{</span>
 <span class="p">..</span>    <span class="c1">// ...</span>
 </pre></div>
-</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L1-L10"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="# flake8: noqa
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L1-L10"><span class="stt">rps-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="# flake8: noqa
 
 import random
 from threading import Thread
@@ -52,7 +52,7 @@ These will be necessary when providing callable methods in the
 These two functions are the only tools we will need to communicate with the
 RPC server.
 See <a href="ref-frontends-rpc-py.html" data-pltdoc="x">Python (RPC)</a> for more details on how they work.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>Next, we define our Alice and Bob accounts and pre-fund them each with a
-starting balance of <span class="stt">10</span>.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L6-L9"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="  const startingBalance = stdlib.parseCurrency(100);
+starting balance of <span class="stt">10</span>.</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L6-L9"><span class="stt">rps-7-loops/index.mjs</span></a><button class="btn" data-clipboard-text="  const startingBalance = stdlib.parseCurrency(100);
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
 "><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
@@ -62,7 +62,7 @@ starting balance of <span class="stt">10</span>.</p><p><div class="SIntrapara"><
  <span class="mi">9</span>    
 <span class="p">..</span>    <span class="c1">// ...</span>
 </pre></div>
-</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L11-L14"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    starting_balance = rpc('/stdlib/parseCurrency', 100)
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L11-L14"><span class="stt">rps-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    starting_balance = rpc('/stdlib/parseCurrency', 100)
     acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)
     acc_bob          = rpc('/stdlib/newTestAccount', starting_balance)
 "><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
@@ -76,7 +76,7 @@ starting balance of <span class="stt">10</span>.</p><p><div class="SIntrapara"><
 <a href="ref-frontends-rpc-py.html" data-pltdoc="x">Python RPC</a> equivalent is a simple matter of
 specifying the corresponding RPC method (e.g.
 <span class="stt"></span><span class="stt">&rsquo;</span><span class="stt">/stdlib/newTestAccount</span><span class="stt">&rsquo;</span><span class="stt"></span>), and supplying the same arguments thereafter.</p><p><div class="SIntrapara"><span style="font-weight: bold">&#8212;<wbr></wbr></span></div><div class="SIntrapara">Now we define two helper functions and use them to query Alice and Bob&rsquo;s
-beginning balances:</div></p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L10-L14"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="  const fmt = (x) =&gt; stdlib.formatCurrency(x, 4);
+beginning balances:</div></p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L10-L14"><span class="stt">rps-7-loops/index.mjs</span></a><button class="btn" data-clipboard-text="  const fmt = (x) =&gt; stdlib.formatCurrency(x, 4);
   const getBalance = async (who) =&gt; fmt(await stdlib.balanceOf(who));
   const beforeAlice = await getBalance(accAlice);
   const beforeBob = await getBalance(accBob);
@@ -88,7 +88,7 @@ beginning balances:</div></p><p><div class="SIntrapara"><table cellspacing="0" c
 <span class="mi">14</span>    
 <span class="p">..</span>    <span class="c1">// ...</span>
 </pre></div>
-</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L15-L23"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    def fmt(x):
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L15-L23"><span class="stt">rps-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    def fmt(x):
         return rpc('/stdlib/formatCurrency', x, 4)
 
     def get_balance(w):
@@ -107,7 +107,7 @@ beginning balances:</div></p><p><div class="SIntrapara"><table cellspacing="0" c
 <span class="mi">22</span>        <font class="badlink"><span class="nx">before_bob</span></font>   <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">get_balance</span></font><span class="p">(</span><font class="badlink"><span class="nx">acc_bob</span></font><span class="p">)</span>
 <span class="mi">23</span>    
 <span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
-</pre></div></div></p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>Deploying and attaching to contracts works slightly differently over RPC:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L15-L17"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="  const ctcAlice = accAlice.deploy(backend);
+</pre></div></div></p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>Deploying and attaching to contracts works slightly differently over RPC:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L15-L17"><span class="stt">rps-7-loops/index.mjs</span></a><button class="btn" data-clipboard-text="  const ctcAlice = accAlice.deploy(backend);
   const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
 "><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
 <span class="mi">15</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">ctcAlice</span></font> <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">accAlice</span></font><span class="p">.</span><a href="ref-programs-appinit.html#%28reach._%28%28deploy%29%29%29" class="nb" data-pltdoc="x">deploy</a><span class="p">(</span><font class="badlink"><span class="nx">backend</span></font><span class="p">);</span>
@@ -115,7 +115,7 @@ beginning balances:</div></p><p><div class="SIntrapara"><table cellspacing="0" c
 <span class="mi">17</span>    
 <span class="p">..</span>    <span class="c1">// ...</span>
 </pre></div>
-</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L24-L25"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    ctc_alice    = rpc('/acc/deploy', acc_alice)
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L24-L25"><span class="stt">rps-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    ctc_alice    = rpc('/acc/deploy', acc_alice)
 "><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
 <span class="mi">24</span>        <font class="badlink"><span class="nx">ctc_alice</span></font>    <font class="badlink"><span class="o">=</span></font> <font class="badlink"><span class="nx">rpc</span></font><span class="p">(</span><span class="s1">&#39;/acc/deploy&#39;</span><span class="p">,</span> <font class="badlink"><span class="nx">acc_alice</span></font><span class="p">)</span>
 <span class="mi">25</span>    
@@ -129,20 +129,20 @@ deploy.
 We also need to delay Bob&rsquo;s attach until later, because Python lacks Promises that work like JavaScript&rsquo;s.
 When we do attach Bob, only Bob&rsquo;s <a href="ref-model.html#%28tech._account%29" class="techoutside" data-pltdoc="x"><span class="techinside">account</span></a> <a href="ref-backends-rpc-proto.html#%28tech._rpc._handle%29" class="techoutside" data-pltdoc="x"><span class="techinside">RPC handle</span></a> and Alice&rsquo;s
 <a href="ref-model.html#%28tech._contract%29" class="techoutside" data-pltdoc="x"><span class="techinside">contract</span></a> <a href="ref-backends-rpc-proto.html#%28tech._rpc._handle%29" class="techoutside" data-pltdoc="x"><span class="techinside">RPC handle</span></a> are necessary for him to attach.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p><code class="highlight"><span class="n">HAND</span></code> and <code class="highlight"><span class="n">OUTCOME</span></code> only differ syntactically from their JavaScript
-equivalents:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L18-L19"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="  const HAND = ['Rock', 'Paper', 'Scissors'];
+equivalents:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L18-L19"><span class="stt">rps-7-loops/index.mjs</span></a><button class="btn" data-clipboard-text="  const HAND = ['Rock', 'Paper', 'Scissors'];
   const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
 <span class="mi">18</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">HAND</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">[</span><span class="s1">&#39;Rock&#39;</span><span class="p">,</span> <span class="s1">&#39;Paper&#39;</span><span class="p">,</span> <span class="s1">&#39;Scissors&#39;</span><span class="p">];</span>
 <span class="mi">19</span>      <a href="ref-programs-compute.html#%28reach._%28%28const%29%29%29" class="kd" data-pltdoc="x">const</a> <font class="badlink"><span class="nx">OUTCOME</span></font> <font class="badlink"><span class="o">=</span></font> <span class="p">[</span><span class="s1">&#39;Bob wins&#39;</span><span class="p">,</span> <span class="s1">&#39;Draw&#39;</span><span class="p">,</span> <span class="s1">&#39;Alice wins&#39;</span><span class="p">];</span>
 <span class="p">..</span>    <span class="c1">// ...</span>
 </pre></div>
-</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L26-L28"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    HAND         = ['Rock', 'Paper', 'Scissors']
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L26-L28"><span class="stt">rps-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    HAND         = ['Rock', 'Paper', 'Scissors']
     OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
 "><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
 <span class="mi">26</span>        <font class="badlink"><span class="nx">HAND</span></font>         <font class="badlink"><span class="o">=</span></font> <span class="p">[</span><span class="s1">&#39;Rock&#39;</span><span class="p">,</span> <span class="s1">&#39;Paper&#39;</span><span class="p">,</span> <span class="s1">&#39;Scissors&#39;</span><span class="p">]</span>
 <span class="mi">27</span>        <font class="badlink"><span class="nx">OUTCOME</span></font>      <font class="badlink"><span class="o">=</span></font> <span class="p">[</span><span class="s1">&#39;Bob wins&#39;</span><span class="p">,</span> <span class="s1">&#39;Draw&#39;</span><span class="p">,</span> <span class="s1">&#39;Alice wins&#39;</span><span class="p">]</span>
 <span class="mi">28</span>    
 <span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
-</pre></div></div></p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>Even <a href="ref-programs-appinit.html#%28tech._participant._interact._interface%29" class="techoutside" data-pltdoc="x"><span class="techinside">participant interact interface</span></a> definitions remain largely the same:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L20-L32"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="  const Player = (Who) =&gt; ({
+</pre></div></div></p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>Even <a href="ref-programs-appinit.html#%28tech._participant._interact._interface%29" class="techoutside" data-pltdoc="x"><span class="techinside">participant interact interface</span></a> definitions remain largely the same:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L20-L32"><span class="stt">rps-7-loops/index.mjs</span></a><button class="btn" data-clipboard-text="  const Player = (Who) =&gt; ({
     ...stdlib.hasRandom,
     getHand: async () =&gt; { // &lt;-- async now
       const hand = Math.floor(Math.random() * 3);
@@ -170,7 +170,7 @@ equivalents:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0
 <span class="mi">32</span>        <span class="p">},</span>
 <span class="p">..</span>    <span class="c1">// ...</span>
 </pre></div>
-</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L29-L34"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    def player(who):
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L29-L34"><span class="stt">rps-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    def player(who):
         def getHand():
             hand = random.randint(0, 2)
             print('%s played %s' % (who, HAND[hand]))
@@ -194,7 +194,7 @@ element from the previously defined <code class="highlight"><span class="n">HAND
 <a href="ref-model.html#%28tech._backend%29" class="techoutside" data-pltdoc="x"><span class="techinside">backend</span></a>.
 This function will be passed as a callable method of the interface later.</p><p>The Python version does not mimic the JavaScript&rsquo;s occasional "pause behavior",
 although it easily could with a few extra lines of code.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p><code class="highlight"><span class="n">informTimeout</span></code> requires no subsequent <a href="ref-model.html#%28tech._backend%29" class="techoutside" data-pltdoc="x"><span class="techinside">backend</span></a> interaction and is
-accordingly easily to implement in either language:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L36-L38"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="    informTimeout: () =&gt; {
+accordingly easily to implement in either language:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L36-L38"><span class="stt">rps-7-loops/index.mjs</span></a><button class="btn" data-clipboard-text="    informTimeout: () =&gt; {
       console.log(`${Who} observed a timeout`);
     },"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
 <span class="mi">36</span>        <font class="badlink"><span class="nx">informTimeout</span></font><font class="badlink"><span class="o">:</span></font> <span class="p">()</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">{</span>
@@ -202,7 +202,7 @@ accordingly easily to implement in either language:</p><p><div class="SIntrapara
 <span class="mi">38</span>        <span class="p">},</span>
 <span class="p">..</span>    <span class="c1">// ...</span>
 </pre></div>
-</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L35-L37"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="        def informTimeout():
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L35-L37"><span class="stt">rps-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="        def informTimeout():
             print('%s observed a timeout' % who)
 "><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
 <span class="mi">35</span>            <font class="badlink"><span class="nx">def</span></font> <font class="badlink"><span class="nx">informTimeout</span></font><span class="p">()</span><font class="badlink"><span class="o">:</span></font>
@@ -210,7 +210,7 @@ accordingly easily to implement in either language:</p><p><div class="SIntrapara
 <span class="mi">37</span>    
 <span class="p">..</span>    <span class="err">#</span> <span class="p">...</span>
 </pre></div></div></p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p><a name="py-return"></a><span></span>
-The same is true of <code class="highlight"><span class="n">seeOutcome</span></code>:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L33-L35"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="    seeOutcome: (outcome) =&gt; {
+The same is true of <code class="highlight"><span class="n">seeOutcome</span></code>:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L33-L35"><span class="stt">rps-7-loops/index.mjs</span></a><button class="btn" data-clipboard-text="    seeOutcome: (outcome) =&gt; {
       console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
     },"><img class="clippy" width="13" src="clippy.svg" alt="Copy to clipboard"> </img></button>&nbsp;</p></td></tr></table></div><div class="SIntrapara"><div class="highlight"><pre><span></span><span class="p">..</span>    <span class="c1">// ...</span>
 <span class="mi">33</span>        <font class="badlink"><span class="nx">seeOutcome</span></font><font class="badlink"><span class="o">:</span></font> <span class="p">(</span><font class="badlink"><span class="nx">outcome</span></font><span class="p">)</span> <a href="ref-programs-compute.html#%28reach._%28%28~3d._~3e%29%29%29" class="o" data-pltdoc="x">=&gt;</a> <span class="p">{</span>
@@ -218,7 +218,7 @@ The same is true of <code class="highlight"><span class="n">seeOutcome</span></c
 <span class="mi">35</span>        <span class="p">},</span>
 <span class="p">..</span>    <span class="c1">// ...</span>
 </pre></div>
-</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L38-L47"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="        def seeOutcome(n):
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L38-L47"><span class="stt">rps-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="        def seeOutcome(n):
             print('%s saw outcome %s'
                   % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))
 
@@ -244,7 +244,7 @@ fields which are common to both Alice and Bob&rsquo;s
 <a href="ref-programs-appinit.html#%28tech._participant._interact._interface%29" class="techoutside" data-pltdoc="x"><span class="techinside">participant interact interfaces</span></a>.</p><p>Again, <code class="highlight"><span class="s1">&#39;stdlib.hasRandom&#39;</span><span class="p">:</span> <font class="badlink"><span class="kc">True</span></font></code> has special significance when
 communicating via RPC: it instructs the server to append this signature on the
 receiving end.</p><p><span style="font-weight: bold">&#8212;<wbr></wbr></span></p><p>Finally, we proceed to the most interesting part of the program and use the
-code we have built up thus far to actually play a game of <span class="emph">Rock, Paper, Scissors!</span>:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7/index.mjs#L41-L60"><span class="stt">tut-7/index.mjs</span></a><button class="btn" data-clipboard-text="  await Promise.all([
+code we have built up thus far to actually play a game of <span class="emph">Rock, Paper, Scissors!</span>:</p><p><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-loops/index.mjs#L41-L60"><span class="stt">rps-7-loops/index.mjs</span></a><button class="btn" data-clipboard-text="  await Promise.all([
     backend.Alice(ctcAlice, {
       ...Player('Alice'),
       wager: stdlib.parseCurrency(5),
@@ -286,7 +286,7 @@ code we have built up thus far to actually play a game of <span class="emph">Roc
 <span class="mi">60</span>    
 <span class="p">..</span>    <span class="c1">// ...</span>
 </pre></div>
-</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/tut-7-rpc/client-py/index.py#L48-L85"><span class="stt">tut-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    def play_alice():
+</div><div class="SIntrapara"><table cellspacing="0" cellpadding="0" class="boxed"><tr><td><p><a href="https://github.com/reach-sh/reach-lang/blob/master/examples/rps-7-rpc/client-py/index.py#L48-L85"><span class="stt">rps-7-rpc/client-py/index.py</span></a><button class="btn" data-clipboard-text="    def play_alice():
         rpc_callbacks(
             '/backend/Alice',
             ctc_alice,

@@ -70,7 +70,7 @@
 </div>
 <div class="note">
   <p>
-    Did you notice that <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-2/index.rsh">tut-2/index.rsh</a> was a link in the box above the code sample?
+    Did you notice that <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-1-setup/index.rsh">rps-1-setup/index.rsh</a> was a link in the box above the code sample?
     You can always click on these links to see the entire file in our <a href="https://github.com/reach-sh/reach-lang">GitHub</a> repository.
   </p>
 </div>
@@ -125,7 +125,7 @@
   <li>Line 10 has Alice deploy the application.</li>
 </ul>
 <div class="note">
-  <p>The program defined in <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-2/index.rsh">tut-2/index.rsh</a> will only begin to run after it has been deployed via <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-2/index.mjs">tut-2/index.mjs</a>.</p>
+  <p>The program defined in <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-1-setup/index.rsh">rps-1-setup/index.rsh</a> will only begin to run after it has been deployed via <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-1-setup/index.mjs">rps-1-setup/index.mjs</a>.</p>
 </div>
 <ul>
   <li>Line 11 has Bob attach to it.</li>
@@ -255,7 +255,7 @@
   That's why every time you run <code>./reach run</code>, both Alice and Bob will see the same outcome!
 </p>
 <div class="note">
-  <p>If your version isn't working, look at the complete versions of <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-3/index.rsh">tut-3/index.rsh</a> and <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-3/index.mjs">tut-3/index.mjs</a> to make sure you copied everything down correctly!</p>
+  <p>If your version isn't working, look at the complete versions of <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-2-rps/index.rsh">rps-2-rps/index.rsh</a> and <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-2-rps/index.mjs">rps-2-rps/index.mjs</a> to make sure you copied everything down correctly!</p>
 </div>
 <p>In <a href="##tut-4">the next step</a>, we'll add some stakes to the game, because Alice needs to take her skills to the bank!</p>
 <xxx testq="">
@@ -405,7 +405,7 @@
 </div>
 <p>Alice is doing okay - if she keeps this up, she'll make a fortune on <em>Rock, Paper, Scissors!</em>!</p>
 <div class="note">
-  <p>If your version isn't working, look at the complete versions of <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-4/index.rsh">tut-4/index.rsh</a> and <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-4/index.mjs">tut-4/index.mjs</a> to make sure you copied everything down correctly!</p>
+  <p>If your version isn't working, look at the complete versions of <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-3-bets/index.rsh">rps-3-bets/index.rsh</a> and <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-3-bets/index.mjs">rps-3-bets/index.mjs</a> to make sure you copied everything down correctly!</p>
 </div>
 <p>
   Now that there is a reason to play this game, it turns out that there's a major security vulnerability.
@@ -494,7 +494,7 @@
 <ul>
   <li>Line 36 has <code>[1, 0]</code>, but should have <code>[2, 0]</code>.</li>
 </ul>
-<p>When we run <code>./reach compile (reachexlink tut-5-attack/index-bad.rsh)</code>, it gives details about the error:</p>
+<p>When we run <code>./reach compile (reachexlink rps-4-attack/index-bad.rsh)</code>, it gives details about the error:</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1">Verifying knowledge assertions</li><li value="2">Verifying for generic connector</li><li value="3">  Verifying when ALL participants are honest</li><li value="4">Verification failed:</li><li value="5">  when ALL participants are honest</li><li value="6">  of theorem: assert</li><li value="7">  msg: "balance zero at application exit"</li><li value="8">  at ./index-bad.rsh:8:30:compileDApp</li><li value="9"></li><li value="10">  // Violation Witness</li><li value="11"></li><li value="12">  const v71 = "Alice".interact.wager;</li><li value="13">  //    ^ could = 1</li><li value="14">  //      from: ./index-bad.rsh:11:10:property binding</li><li value="15">  const v74 = protect<uint>("Alice".interact.getHand());</uint></li><li value="16">  //    ^ could = 0</li><li value="17">  //      from: ./index-bad.rsh:21:50:application</li><li value="18">  const v84 = protect<uint>("Bob".interact.getHand());</uint></li><li value="19">  //    ^ could = 2</li><li value="20">  //      from: ./index-bad.rsh:29:48:application</li><li value="21"></li><li value="22">  // Theorem Formalization</li><li value="23"></li><li value="24">  const v93 = (v74 + (4 - v84)) % 3;</li><li value="25">  //    ^ would be 2</li><li value="26">  const v100 = (v93 == 2) ? [1, 0 ] : (v93 == 0) ? [0, 2 ] : [1, 1 ];</li><li value="27">  //    ^ would be [1, 0 ]</li><li value="28">  const v114 = 0 == (((v71 + v71) - (v100[0] * v71)) - (v100[1] * v71));</li><li value="29">  //    ^ would be false</li><li value="30">  assert(v114);</li><li value="31"></li><li value="32">  Verifying when NO participants are honest</li><li value="33">  Verifying when ONLY "Alice" is honest</li><li value="34">  Verifying when ONLY "Bob" is honest</li><li value="35">Checked 18 theorems; 4 failures (and 3 omitted repeats) :'(</li></ol></pre>
 <p>There's a lot of information in the compiler output that can help an experienced programmer track down the problem. But the most important parts are</p>
 <ul>
@@ -506,7 +506,7 @@
 <hr>
 <p>However, now let's add an assertion to the program that will ensure that every version of the program that allows Bob to know Alice's hand before he chooses his own will be rejected.</p>
 <p>
-  We'll go back to the version of <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-4/index.rsh">tut-4/index.rsh</a> from the last section, which has an honest version of Bob.
+  We'll go back to the version of <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-3-bets/index.rsh">rps-3-bets/index.rsh</a> from the last section, which has an honest version of Bob.
   (Click on the preceding link if you need to see what it contained.)
 </p>
 <p>We'll add a single line to the program after Alice publishes, but before Bob takes a local step:</p>
@@ -630,7 +630,7 @@
   Non-Reach programmers that try to write decentralized applications are on their own trying to ensure that these problems don't exist.
 </p>
 <div class="note">
-  <p>If your version isn't working, look at the complete versions of <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-5/index.rsh">tut-5/index.rsh</a> and <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-5/index.mjs">tut-5/index.mjs</a> to make sure you copied everything down correctly!</p>
+  <p>If your version isn't working, look at the complete versions of <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-5-trust/index.rsh">rps-5-trust/index.rsh</a> and <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-5-trust/index.mjs">rps-5-trust/index.mjs</a> to make sure you copied everything down correctly!</p>
 </div>
 <p>
   Now our implementation of <em>Rock, Paper, Scissors!</em> is secure and doesn't contain any exploits for either Alice or Bob to guarantee a win.
@@ -776,7 +776,7 @@
 <pre class="snippet numbered"><ol class="snippet"><li value="1">$ ./reach run</li><li value="2">Alice played Rock</li><li value="3">Bob accepts the wager of 5.</li><li value="4">Bob played Paper</li><li value="5">Bob saw outcome Bob wins</li><li value="6">Alice saw outcome Bob wins</li><li value="7">Alice went from 100 to 94.9999.</li><li value="8">Bob went from 100 to 104.9999.</li><li value="9"></li><li value="10">$ ./reach run</li><li value="11">Alice played Scissors</li><li value="12">  Bob takes his sweet time...</li><li value="13">  Bob takes his sweet time...</li><li value="14">  Bob takes his sweet time...</li><li value="15">  Bob takes his sweet time...</li><li value="16">  Bob takes his sweet time...</li><li value="17">  Bob takes his sweet time...</li><li value="18">  Bob takes his sweet time...</li><li value="19">  Bob takes his sweet time...</li><li value="20">  Bob takes his sweet time...</li><li value="21">  Bob takes his sweet time...</li><li value="22">Bob played Scissors</li><li value="23">Bob observed a timeout</li><li value="24">Alice observed a timeout</li><li value="25">Alice went from 10 to 9.9999.</li><li value="26">Bob went from 10 to 9.9999.</li><li value="27"></li><li value="28">$ ./reach run</li><li value="29">Alice played Paper</li><li value="30">  Bob takes his sweet time...</li><li value="31">  Bob takes his sweet time...</li><li value="32">  Bob takes his sweet time...</li><li value="33">  Bob takes his sweet time...</li><li value="34">  Bob takes his sweet time...</li><li value="35">  Bob takes his sweet time...</li><li value="36">  Bob takes his sweet time...</li><li value="37">  Bob takes his sweet time...</li><li value="38">  Bob takes his sweet time...</li><li value="39">  Bob takes his sweet time...</li><li value="40">Bob played Scissors</li><li value="41">Bob observed a timeout</li><li value="42">Alice observed a timeout</li><li value="43">Alice went from 10 to 9.9999.</li><li value="44">Bob went from 10 to 9.9999.</li></ol></pre>
 <p>Of course, when you run, you may not get two of the three times ending in a timeout.</p>
 <div class="note">
-  <p>If your version isn't working, look at the complete versions of <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-6/index.rsh">tut-6/index.rsh</a> and <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-6/index.mjs">tut-6/index.mjs</a> to make sure you copied everything down correctly!</p>
+  <p>If your version isn't working, look at the complete versions of <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-6-timeouts/index.rsh">rps-6-timeouts/index.rsh</a> and <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-6-timeouts/index.mjs">rps-6-timeouts/index.mjs</a> to make sure you copied everything down correctly!</p>
 </div>
 <p>
   Now our implementation of <em>Rock, Paper, Scissors!</em> is robust against either participant dropping from the game.
@@ -904,7 +904,7 @@
 <pre class="snippet numbered"><ol class="snippet"><li value="1">$ ./reach run</li><li value="2">Bob accepts the wager of 5.</li><li value="3">Alice played Paper</li><li value="4">Bob played Rock</li><li value="5">Bob saw outcome Alice wins</li><li value="6">Alice saw outcome Alice wins</li><li value="7">Alice went from 100 to 104.9999.</li><li value="8">Bob went from 100 to 94.9999.</li><li value="9"></li><li value="10">$ ./reach run</li><li value="11">Bob accepts the wager of 5.</li><li value="12">Alice played Rock</li><li value="13">Bob played Rock</li><li value="14">Alice played Paper</li><li value="15">Bob played Scissors</li><li value="16">Bob saw outcome Bob wins</li><li value="17">Alice saw outcome Bob wins</li><li value="18">Alice went from 100 to 94.9999.</li><li value="19">Bob went from 100 to 104.9999.</li><li value="20"></li><li value="21">$ ./reach run</li><li value="22">Bob accepts the wager of 5.</li><li value="23">Alice played Scissors</li><li value="24">Bob played Rock</li><li value="25">Bob saw outcome Bob wins</li><li value="26">Alice saw outcome Bob wins</li><li value="27">Alice went from 100 to 94.9999.</li><li value="28">Bob went from 100 to 104.9999.</li></ol></pre>
 <p>As usual, your results may differ, but you should be able to see single round victories like this, as well as multi-round fights and timeouts from either party.</p>
 <div class="note">
-  <p>If your version isn't working, look at the complete versions of <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-7/index.rsh">tut-7/index.rsh</a> and <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-7/index.mjs">tut-7/index.mjs</a> to make sure you copied everything down correctly!</p>
+  <p>If your version isn't working, look at the complete versions of <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-loops/index.rsh">rps-7-loops/index.rsh</a> and <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-loops/index.mjs">rps-7-loops/index.mjs</a> to make sure you copied everything down correctly!</p>
 </div>
 <p>
   Now our implementation of <em>Rock, Paper, Scissors!</em> will always result in a pay-out, which is much more fun for everyone.
@@ -1002,7 +1002,7 @@
 <pre class="snippet numbered"><ol class="snippet"><li value="1">$ ./reach run</li><li value="2">Are you Alice?</li><li value="3">n</li><li value="4">Starting Rock, Paper, Scissors as Bob</li><li value="5">Would you like to create an account? (only possible on devnet)</li><li value="6">y</li><li value="7">Do you want to deploy the contract? (y/n)</li><li value="8">n</li><li value="9">Please paste the contract information:</li><li value="10">"0x132b724e55AEb074C15A5CBb7b8EeE0dBEd45F7b"</li><li value="11">Your balance is 1000</li><li value="12">Do you accept the wager of 10?</li><li value="13">y</li><li value="14">What hand will you play?</li><li value="15">p</li><li value="16">You played Paper</li><li value="17">The outcome is: Bob wins</li><li value="18">Your balance is now 1009.9999</li></ol></pre>
 <p>Of course, when you run the exact amounts and addresses may be different.</p>
 <div class="note">
-  <p>If your version isn't working, compare with <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-8/index.rsh">tut-8/index.rsh</a> and <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-8/index.mjs">tut-8/index.mjs</a> to ensure you've copied everything down correctly!</p>
+  <p>If your version isn't working, compare with <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-8-interact/index.rsh">rps-8-interact/index.rsh</a> and <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-8-interact/index.mjs">rps-8-interact/index.mjs</a> to ensure you've copied everything down correctly!</p>
 </div>
 <p>If we were to instead run</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ REACH_CONNECTOR_MODE=ALGO-devnet ./reach run</li></ol></pre>
@@ -1053,8 +1053,8 @@
 </p>
 <p>To complete this section we'll use the <code>index.rsh</code> you've already written and create an <code>index.js</code> file from scratch which replaces <code>index.mjs</code>.</p>
 <p>
-  This code is also supplemented with <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/index.css">index.css</a>
-  and some <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views">views</a>.
+  This code is also supplemented with <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/index.css">index.css</a>
+  and some <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views">views</a>.
   These details are not specific to Reach, and are fairly trivial,
   so we will not explain the specifics of those files.
   If you run this locally, you'll want to download those files.
@@ -1063,8 +1063,8 @@
 <pre class="snippet numbered"><ol class="snippet"><li value="1">.</li><li value="2">├── index.css</li><li value="3">├── index.js</li><li value="4">├── index.rsh</li><li value="5">└── views</li><li value="6">    ├── AppViews.js</li><li value="7">    ├── AttacherViews.js</li><li value="8">    ├── DeployerViews.js</li><li value="9">    ├── PlayerViews.js</li><li value="10">    └── render.js</li></ol></pre>
 <hr>
 <p>
-  We will focus on <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/index.js">tut-9/index.js</a>,
-  because <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/index.rsh">tut-9/index.rsh</a> is the same as previous sections.
+  We will focus on <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/index.js">rps-9-web/index.js</a>,
+  because <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/index.rsh">rps-9-web/index.rsh</a> is the same as previous sections.
 </p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1">import React from 'react';</li><li value="2">import AppViews from './views/AppViews';</li><li value="3">import DeployerViews from './views/DeployerViews';</li><li value="4">import AttacherViews from './views/AttacherViews';</li><li value="5">import {renderDOM, renderView} from './views/render';</li><li value="6">import './index.css';</li><li value="7">import * as backend from './build/index.main.mjs';</li><li value="8">import {loadStdlib} from '@reach-sh/stdlib';</li><li value="9">const reach = loadStdlib(process.env);</li><li value="10"></li><li value="11">const handToInt = {'ROCK': 0, 'PAPER': 1, 'SCISSORS': 2};</li><li value="12">const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];</li><li value="13">const {standardUnit} = reach;</li><li value="14">const defaults = {defaultFundAmt: '10', defaultWager: '3', standardUnit};</li><li value="15"></li><li value="16">class App extends React.Component {</li><li value="17">  constructor(props) {</li><li value="18">    super(props);</li><li value="19">    this.state = {view: 'ConnectAccount', ...defaults};</li><li value="20">  }</li><li value="21">  async componentDidMount() {</li><li value="22">    const acc = await reach.getDefaultAccount();</li><li value="23">    const balAtomic = await reach.balanceOf(acc);</li><li value="24">    const bal = reach.formatCurrency(balAtomic, 4);</li><li value="25">    this.setState({acc, bal});</li><li value="26">    if (await reach.canFundFromFaucet()) {</li><li value="27">      this.setState({view: 'FundAccount'});</li><li value="28">    } else {</li><li value="29">      this.setState({view: 'DeployerOrAttacher'});</li><li value="30">    }</li><li value="31">  }</li><li value="32">  async fundAccount(fundAmount) {</li><li value="33">    await reach.fundFromFaucet(this.state.acc, reach.parseCurrency(fundAmount));</li><li value="34">    this.setState({view: 'DeployerOrAttacher'});</li><li value="35">  }</li><li value="36">  async skipFundAccount() { this.setState({view: 'DeployerOrAttacher'}); }</li><li value="37">  selectAttacher() { this.setState({view: 'Wrapper', ContentView: Attacher}); }</li><li value="38">  selectDeployer() { this.setState({view: 'Wrapper', ContentView: Deployer}); }</li><li value="39">  render() { return renderView(this, AppViews); }</li><li value="40">}</li><li value="41"></li><li value="42">class Player extends React.Component {</li><li value="43">  random() { return reach.hasRandom.random(); }</li><li value="44">  async getHand() { // Fun([], UInt)</li><li value="45">    const hand = await new Promise(resolveHandP =&gt; {</li><li value="46">      this.setState({view: 'GetHand', playable: true, resolveHandP});</li><li value="47">    });</li><li value="48">    this.setState({view: 'WaitingForResults', hand});</li><li value="49">    return handToInt[hand];</li><li value="50">  }</li><li value="51">  seeOutcome(i) { this.setState({view: 'Done', outcome: intToOutcome[i]}); }</li><li value="52">  informTimeout() { this.setState({view: 'Timeout'}); }</li><li value="53">  playHand(hand) { this.state.resolveHandP(hand); }</li><li value="54">}</li><li value="55"></li><li value="56">class Deployer extends Player {</li><li value="57">  constructor(props) {</li><li value="58">    super(props);</li><li value="59">    this.state = {view: 'SetWager'};</li><li value="60">  }</li><li value="61">  setWager(wager) { this.setState({view: 'Deploy', wager}); }</li><li value="62">  async deploy() {</li><li value="63">    const ctc = this.props.acc.deploy(backend);</li><li value="64">    this.setState({view: 'Deploying', ctc});</li><li value="65">    this.wager = reach.parseCurrency(this.state.wager); // UInt</li><li value="66">    this.deadline = {ETH: 10, ALGO: 100, CFX: 1000}[reach.connector]; // UInt</li><li value="67">    backend.Alice(ctc, this);</li><li value="68">    const ctcInfoStr = JSON.stringify(await ctc.getInfo(), null, 2);</li><li value="69">    this.setState({view: 'WaitingForAttacher', ctcInfoStr});</li><li value="70">  }</li><li value="71">  render() { return renderView(this, DeployerViews); }</li><li value="72">}</li><li value="73">class Attacher extends Player {</li><li value="74">  constructor(props) {</li><li value="75">    super(props);</li><li value="76">    this.state = {view: 'Attach'};</li><li value="77">  }</li><li value="78">  attach(ctcInfoStr) {</li><li value="79">    const ctc = this.props.acc.attach(backend, JSON.parse(ctcInfoStr));</li><li value="80">    this.setState({view: 'Attaching'});</li><li value="81">    backend.Bob(ctc, this);</li><li value="82">  }</li><li value="83">  async acceptWager(wagerAtomic) { // Fun([UInt], Null)</li><li value="84">    const wager = reach.formatCurrency(wagerAtomic, 4);</li><li value="85">    return await new Promise(resolveAcceptedP =&gt; {</li><li value="86">      this.setState({view: 'AcceptTerms', wager, resolveAcceptedP});</li><li value="87">    });</li><li value="88">  }</li><li value="89">  termsAccepted() {</li><li value="90">    this.state.resolveAcceptedP();</li><li value="91">    this.setState({view: 'WaitingForTurn'});</li><li value="92">  }</li><li value="93">  render() { return renderView(this, AttacherViews); }</li><li value="94">}</li><li value="95"></li><li value="96">renderDOM(<app>);</app></li></ol></pre>
 <p>
@@ -1101,13 +1101,13 @@
   <li>On line 26, we use <code>canFundFromFaucet</code> to see if we can access the Reach developer testing network faucet.</li>
   <li>On line 27, if <code>canFundFromFaucet</code> was <code>true</code>, we set the component state to display ["XXX","seclink","tut-9-FundAccount"].</li>
   <li>On line 29, if <code>canFundFromFaucet</code> was <code>false</code>, we set the component state to skip to ["XXX","seclink","tut-9-DeployerOrAttacher"].</li>
-  <li>On line 39, we render the appropriate view from <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/AppViews.js">tut-9/views/AppViews.js</a>.</li>
+  <li>On line 39, we render the appropriate view from <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/AppViews.js">rps-9-web/views/AppViews.js</a>.</li>
 </ul>
 <h3 id="tut-9-connectaccount-connect-account-dialog">{#tut-9-ConnectAccount} Connect Account dialog</h3>
 <p>
-  When we combine the application component with the view (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/AppViews.js#L19-L28">tut-9/views/AppViews.js</a>) it will look like:
+  When we combine the application component with the view (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/AppViews.js#L19-L28">rps-9-web/views/AppViews.js</a>) it will look like:
   
-  <img src="/images/tut-9/ConnectAccount.png" alt="">
+  <img src="/images/rps-9-web/ConnectAccount.png" alt="">
 </p>
 <h3 id="tut-9-fundaccount-fund-account-dialog">{#tut-9-FundAccount} Fund Account dialog</h3>
 <p>Next, we define callbacks on <code>App</code> for what to do when the user clicks certain buttons.</p>
@@ -1122,9 +1122,9 @@
   </li>
 </ul>
 <p>
-  When we combine this with the view (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/AppViews.js#L30-L54">tut-9/views/AppViews.js</a>) it will look like:
+  When we combine this with the view (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/AppViews.js#L30-L54">rps-9-web/views/AppViews.js</a>) it will look like:
   
-  <img src="/images/tut-9/FundAccount.png" alt="">
+  <img src="/images/rps-9-web/FundAccount.png" alt="">
 </p>
 <h3 id="tut-9-deployerorattacher-choose-role">{#tut-9-DeployerOrAttacher} Choose Role</h3>
 <pre class="snippet numbered"><ol class="snippet"><li value="1">import React from 'react';</li><li value="2">import AppViews from './views/AppViews';</li><li value="3">import DeployerViews from './views/DeployerViews';</li><li value="4">import AttacherViews from './views/AttacherViews';</li><li value="5">import {renderDOM, renderView} from './views/render';</li><li value="6">import './index.css';</li><li value="7">import * as backend from './build/index.main.mjs';</li><li value="8">import {loadStdlib} from '@reach-sh/stdlib';</li><li value="9">const reach = loadStdlib(process.env);</li><li value="10"></li><li value="11">const handToInt = {'ROCK': 0, 'PAPER': 1, 'SCISSORS': 2};</li><li value="12">const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];</li><li value="13">const {standardUnit} = reach;</li><li value="14">const defaults = {defaultFundAmt: '10', defaultWager: '3', standardUnit};</li><li value="15"></li><li value="16">class App extends React.Component {</li><li value="17">  constructor(props) {</li><li value="18">    super(props);</li><li value="19">    this.state = {view: 'ConnectAccount', ...defaults};</li><li value="20">  }</li><li value="21">  async componentDidMount() {</li><li value="22">    const acc = await reach.getDefaultAccount();</li><li value="23">    const balAtomic = await reach.balanceOf(acc);</li><li value="24">    const bal = reach.formatCurrency(balAtomic, 4);</li><li value="25">    this.setState({acc, bal});</li><li value="26">    if (await reach.canFundFromFaucet()) {</li><li value="27">      this.setState({view: 'FundAccount'});</li><li value="28">    } else {</li><li value="29">      this.setState({view: 'DeployerOrAttacher'});</li><li value="30">    }</li><li value="31">  }</li><li value="32">  async fundAccount(fundAmount) {</li><li value="33">    await reach.fundFromFaucet(this.state.acc, reach.parseCurrency(fundAmount));</li><li value="34">    this.setState({view: 'DeployerOrAttacher'});</li><li value="35">  }</li><li value="36">  async skipFundAccount() { this.setState({view: 'DeployerOrAttacher'}); }</li><li value="37">  selectAttacher() { this.setState({view: 'Wrapper', ContentView: Attacher}); }</li><li value="38">  selectDeployer() { this.setState({view: 'Wrapper', ContentView: Deployer}); }</li><li value="39">  render() { return renderView(this, AppViews); }</li><li value="40">}</li><li value="41"></li><li value="42">class Player extends React.Component {</li><li value="43">  random() { return reach.hasRandom.random(); }</li><li value="44">  async getHand() { // Fun([], UInt)</li><li value="45">    const hand = await new Promise(resolveHandP =&gt; {</li><li value="46">      this.setState({view: 'GetHand', playable: true, resolveHandP});</li><li value="47">    });</li><li value="48">    this.setState({view: 'WaitingForResults', hand});</li><li value="49">    return handToInt[hand];</li><li value="50">  }</li><li value="51">  seeOutcome(i) { this.setState({view: 'Done', outcome: intToOutcome[i]}); }</li><li value="52">  informTimeout() { this.setState({view: 'Timeout'}); }</li><li value="53">  playHand(hand) { this.state.resolveHandP(hand); }</li><li value="54">}</li><li value="55"></li><li value="56">class Deployer extends Player {</li><li value="57">  constructor(props) {</li><li value="58">    super(props);</li><li value="59">    this.state = {view: 'SetWager'};</li><li value="60">  }</li><li value="61">  setWager(wager) { this.setState({view: 'Deploy', wager}); }</li><li value="62">  async deploy() {</li><li value="63">    const ctc = this.props.acc.deploy(backend);</li><li value="64">    this.setState({view: 'Deploying', ctc});</li><li value="65">    this.wager = reach.parseCurrency(this.state.wager); // UInt</li><li value="66">    this.deadline = {ETH: 10, ALGO: 100, CFX: 1000}[reach.connector]; // UInt</li><li value="67">    backend.Alice(ctc, this);</li><li value="68">    const ctcInfoStr = JSON.stringify(await ctc.getInfo(), null, 2);</li><li value="69">    this.setState({view: 'WaitingForAttacher', ctcInfoStr});</li><li value="70">  }</li><li value="71">  render() { return renderView(this, DeployerViews); }</li><li value="72">}</li><li value="73">class Attacher extends Player {</li><li value="74">  constructor(props) {</li><li value="75">    super(props);</li><li value="76">    this.state = {view: 'Attach'};</li><li value="77">  }</li><li value="78">  attach(ctcInfoStr) {</li><li value="79">    const ctc = this.props.acc.attach(backend, JSON.parse(ctcInfoStr));</li><li value="80">    this.setState({view: 'Attaching'});</li><li value="81">    backend.Bob(ctc, this);</li><li value="82">  }</li><li value="83">  async acceptWager(wagerAtomic) { // Fun([UInt], Null)</li><li value="84">    const wager = reach.formatCurrency(wagerAtomic, 4);</li><li value="85">    return await new Promise(resolveAcceptedP =&gt; {</li><li value="86">      this.setState({view: 'AcceptTerms', wager, resolveAcceptedP});</li><li value="87">    });</li><li value="88">  }</li><li value="89">  termsAccepted() {</li><li value="90">    this.state.resolveAcceptedP();</li><li value="91">    this.setState({view: 'WaitingForTurn'});</li><li value="92">  }</li><li value="93">  render() { return renderView(this, AttacherViews); }</li><li value="94">}</li><li value="95"></li><li value="96">renderDOM(<app>);</app></li></ol></pre>
@@ -1133,9 +1133,9 @@
   based on whether the user clicks <code>Deployer</code> or <code>Attacher</code>.
 </p>
 <p>
-  When we combine this with the view (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/AppViews.js#L56-L78">tut-9/views/AppViews.js</a>) it will look like:
+  When we combine this with the view (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/AppViews.js#L56-L78">rps-9-web/views/AppViews.js</a>) it will look like:
   
-  <img src="/images/tut-9/DeployerOrAttacher.png" alt="">
+  <img src="/images/rps-9-web/DeployerOrAttacher.png" alt="">
 </p>
 <h3 id="tut-9-player-player-component">{#tut-9-Player} Player component</h3>
 <p>
@@ -1169,27 +1169,27 @@
 </ul>
 <h3 id="tut-9-gethand-get-hand-dialog">{#tut-9-GetHand} Get Hand dialog</h3>
 <p>
-  The dialog used to get a hand from the player (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/PlayerViews.js#L8-L32">tut-9/views/PlayerViews.js</a>) looks like:
+  The dialog used to get a hand from the player (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/PlayerViews.js#L8-L32">rps-9-web/views/PlayerViews.js</a>) looks like:
   
-  <img src="/images/tut-9/GetHand.png" alt="">
+  <img src="/images/rps-9-web/GetHand.png" alt="">
 </p>
 <h3 id="tut-9-waitingforresults-waiting-for-results-display">{#tut-9-WaitingForResults} Waiting for results display</h3>
 <p>
-  The dialog used to get a hand from the player (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/PlayerViews.js#L34-L42">tut-9/views/PlayerViews.js</a>) looks like:
+  The dialog used to get a hand from the player (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/PlayerViews.js#L34-L42">rps-9-web/views/PlayerViews.js</a>) looks like:
   
-  <img src="/images/tut-9/WaitingForResults.png" alt="">
+  <img src="/images/rps-9-web/WaitingForResults.png" alt="">
 </p>
 <h3 id="tut-9-done-done-display">{#tut-9-Done} Done display</h3>
 <p>
-  The display when the player sees the end of the game (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/PlayerViews.js#L44-L54">tut-9/views/PlayerViews.js</a>) looks like:
+  The display when the player sees the end of the game (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/PlayerViews.js#L44-L54">rps-9-web/views/PlayerViews.js</a>) looks like:
   
-  <img src="/images/tut-9/Done.png" alt="">
+  <img src="/images/rps-9-web/Done.png" alt="">
 </p>
 <h3 id="tut-9-timeout-timeout-display">{#tut-9-Timeout} Timeout display</h3>
 <p>
-  The display when the player sees a timeout (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/PlayerViews.js#L56-L64">tut-9/views/PlayerViews.js</a>) looks like:
+  The display when the player sees a timeout (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/PlayerViews.js#L56-L64">rps-9-web/views/PlayerViews.js</a>) looks like:
   
-  <img src="/images/tut-9/Timeout.png" alt="">
+  <img src="/images/rps-9-web/Timeout.png" alt="">
 </p>
 <h3 id="tut-9-deployer-deployer-component">{#tut-9-Deployer} Deployer component</h3>
 <p>
@@ -1222,31 +1222,31 @@
     On lines 68 and 69, we set the component state to display ["XXX","seclink","tut-9-WaitingForAttacher"],
     which displays the deployed contract info as JSON.
   </li>
-  <li>On line 71, we render the appropriate view from <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/DeployerViews.js">tut-9/views/DeployerViews.js</a>.</li>
+  <li>On line 71, we render the appropriate view from <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/DeployerViews.js">rps-9-web/views/DeployerViews.js</a>.</li>
 </ul>
 <h3 id="tut-9-setwager-set-wager-dialog">{#tut-9-SetWager} Set Wager dialog</h3>
 <p>
-  The dialog used to set the wager (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/DeployerViews.js#L20-L38">tut-9/views/DeployerViews.js</a>) looks like:
+  The dialog used to set the wager (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/DeployerViews.js#L20-L38">rps-9-web/views/DeployerViews.js</a>) looks like:
   
-  <img src="/images/tut-9/SetWager.png" alt="">
+  <img src="/images/rps-9-web/SetWager.png" alt="">
 </p>
 <h3 id="tut-9-deploy-deploy-dialog">{#tut-9-Deploy} Deploy dialog</h3>
 <p>
-  The dialog used to deploy (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/DeployerViews.js#L40-L53">tut-9/views/DeployerViews.js</a>) looks like:
+  The dialog used to deploy (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/DeployerViews.js#L40-L53">rps-9-web/views/DeployerViews.js</a>) looks like:
   
-  <img src="/images/tut-9/Deploy.png" alt="">
+  <img src="/images/rps-9-web/Deploy.png" alt="">
 </p>
 <h3 id="tut-9-deploying-deploying-display">{#tut-9-Deploying} Deploying display</h3>
 <p>
-  The display shown while deploying (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/DeployerViews.js#L55-L61">tut-9/views/DeployerViews.js</a>) looks like:
+  The display shown while deploying (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/DeployerViews.js#L55-L61">rps-9-web/views/DeployerViews.js</a>) looks like:
   
-  <img src="/images/tut-9/Deploying.png" alt="">
+  <img src="/images/rps-9-web/Deploying.png" alt="">
 </p>
 <h3 id="tut-9-waitingforattacher-waiting-for-attacher-display">{#tut-9-WaitingForAttacher} Waiting for Attacher display</h3>
 <p>
-  The display shown while waiting for the attacher (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/DeployerViews.js#L63-L90">tut-9/views/DeployerViews.js</a>) looks like:
+  The display shown while waiting for the attacher (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/DeployerViews.js#L63-L90">rps-9-web/views/DeployerViews.js</a>) looks like:
   
-  <img src="/images/tut-9/WaitingForAttacher.png" alt="">
+  <img src="/images/rps-9-web/WaitingForAttacher.png" alt="">
 </p>
 <h3 id="tut-9-attacher-attacher-component">{#tut-9-Attacher} Attacher component</h3>
 <p>Our Web frontend needs to implement the participant interact interface for Bob, which we defined as:</p>
@@ -1274,36 +1274,36 @@
     On lines 89 thru 92, we define what happens when the user clicks the <code>Accept Terms and Pay Wager</code> button:
     the <code>Promise</code> from line 90 is resolved, and we set the component state to display ["XXX","seclink","tut-9-WaitingForTurn"].
   </li>
-  <li>On line 93, we render the appropriate view from <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/AttacherViews.js">tut-9/views/AttacherViews.js</a></li>
+  <li>On line 93, we render the appropriate view from <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/AttacherViews.js">rps-9-web/views/AttacherViews.js</a></li>
 </ul>
 <h3 id="tut-9-attach-attach-dialog">{#tut-9-Attach} Attach dialog</h3>
 <p>
-  The dialog used to attach (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/AttacherViews.js#L18-L39">tut-9/views/AttacherViews.js</a>) looks like:
+  The dialog used to attach (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/AttacherViews.js#L18-L39">rps-9-web/views/AttacherViews.js</a>) looks like:
   
-  <img src="/images/tut-9/Attach.png" alt="">
+  <img src="/images/rps-9-web/Attach.png" alt="">
 </p>
 <h3 id="tut-9-attaching-attaching-display">{#tut-9-Attaching} Attaching display</h3>
 <p>
-  The display when attaching (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/AttacherViews.js#L41-L49">tut-9/views/AttacherViews.js</a>) looks like:
+  The display when attaching (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/AttacherViews.js#L41-L49">rps-9-web/views/AttacherViews.js</a>) looks like:
   
-  <img src="/images/tut-9/Attaching.png" alt="">
+  <img src="/images/rps-9-web/Attaching.png" alt="">
 </p>
 <h3 id="tut-9-acceptterms-accept-terms-dialog">{#tut-9-AcceptTerms} Accept Terms dialog</h3>
 <p>
-  The dialog used to accept the terms of the wager (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/AttacherViews.js#L51-L70">tut-9/views/AttacherViews.js</a>) looks like:
+  The dialog used to accept the terms of the wager (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/AttacherViews.js#L51-L70">rps-9-web/views/AttacherViews.js</a>) looks like:
   
-  <img src="/images/tut-9/AcceptTerms.png" alt="">
+  <img src="/images/rps-9-web/AcceptTerms.png" alt="">
 </p>
 <h3 id="tut-9-waitingforturn-waiting-for-turn-display">{#tut-9-WaitingForTurn} Waiting for Turn display</h3>
 <p>
-  The display when waiting for a turn (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/AttacherViews.js#L72-L81">tut-9/views/AttacherViews.js</a>) looks like:
+  The display when waiting for a turn (<a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/AttacherViews.js#L72-L81">rps-9-web/views/AttacherViews.js</a>) looks like:
   
-  <img src="/images/tut-9/WaitingForTurn.png" alt="">
+  <img src="/images/rps-9-web/WaitingForTurn.png" alt="">
 </p>
 <h3 id="tut-9-final-putting-it-all-together">{#tut-9-Final} Putting it all together</h3>
 <pre class="snippet numbered"><ol class="snippet"><li value="1">import React from 'react';</li><li value="2">import AppViews from './views/AppViews';</li><li value="3">import DeployerViews from './views/DeployerViews';</li><li value="4">import AttacherViews from './views/AttacherViews';</li><li value="5">import {renderDOM, renderView} from './views/render';</li><li value="6">import './index.css';</li><li value="7">import * as backend from './build/index.main.mjs';</li><li value="8">import {loadStdlib} from '@reach-sh/stdlib';</li><li value="9">const reach = loadStdlib(process.env);</li><li value="10"></li><li value="11">const handToInt = {'ROCK': 0, 'PAPER': 1, 'SCISSORS': 2};</li><li value="12">const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];</li><li value="13">const {standardUnit} = reach;</li><li value="14">const defaults = {defaultFundAmt: '10', defaultWager: '3', standardUnit};</li><li value="15"></li><li value="16">class App extends React.Component {</li><li value="17">  constructor(props) {</li><li value="18">    super(props);</li><li value="19">    this.state = {view: 'ConnectAccount', ...defaults};</li><li value="20">  }</li><li value="21">  async componentDidMount() {</li><li value="22">    const acc = await reach.getDefaultAccount();</li><li value="23">    const balAtomic = await reach.balanceOf(acc);</li><li value="24">    const bal = reach.formatCurrency(balAtomic, 4);</li><li value="25">    this.setState({acc, bal});</li><li value="26">    if (await reach.canFundFromFaucet()) {</li><li value="27">      this.setState({view: 'FundAccount'});</li><li value="28">    } else {</li><li value="29">      this.setState({view: 'DeployerOrAttacher'});</li><li value="30">    }</li><li value="31">  }</li><li value="32">  async fundAccount(fundAmount) {</li><li value="33">    await reach.fundFromFaucet(this.state.acc, reach.parseCurrency(fundAmount));</li><li value="34">    this.setState({view: 'DeployerOrAttacher'});</li><li value="35">  }</li><li value="36">  async skipFundAccount() { this.setState({view: 'DeployerOrAttacher'}); }</li><li value="37">  selectAttacher() { this.setState({view: 'Wrapper', ContentView: Attacher}); }</li><li value="38">  selectDeployer() { this.setState({view: 'Wrapper', ContentView: Deployer}); }</li><li value="39">  render() { return renderView(this, AppViews); }</li><li value="40">}</li><li value="41"></li><li value="42">class Player extends React.Component {</li><li value="43">  random() { return reach.hasRandom.random(); }</li><li value="44">  async getHand() { // Fun([], UInt)</li><li value="45">    const hand = await new Promise(resolveHandP =&gt; {</li><li value="46">      this.setState({view: 'GetHand', playable: true, resolveHandP});</li><li value="47">    });</li><li value="48">    this.setState({view: 'WaitingForResults', hand});</li><li value="49">    return handToInt[hand];</li><li value="50">  }</li><li value="51">  seeOutcome(i) { this.setState({view: 'Done', outcome: intToOutcome[i]}); }</li><li value="52">  informTimeout() { this.setState({view: 'Timeout'}); }</li><li value="53">  playHand(hand) { this.state.resolveHandP(hand); }</li><li value="54">}</li><li value="55"></li><li value="56">class Deployer extends Player {</li><li value="57">  constructor(props) {</li><li value="58">    super(props);</li><li value="59">    this.state = {view: 'SetWager'};</li><li value="60">  }</li><li value="61">  setWager(wager) { this.setState({view: 'Deploy', wager}); }</li><li value="62">  async deploy() {</li><li value="63">    const ctc = this.props.acc.deploy(backend);</li><li value="64">    this.setState({view: 'Deploying', ctc});</li><li value="65">    this.wager = reach.parseCurrency(this.state.wager); // UInt</li><li value="66">    this.deadline = {ETH: 10, ALGO: 100, CFX: 1000}[reach.connector]; // UInt</li><li value="67">    backend.Alice(ctc, this);</li><li value="68">    const ctcInfoStr = JSON.stringify(await ctc.getInfo(), null, 2);</li><li value="69">    this.setState({view: 'WaitingForAttacher', ctcInfoStr});</li><li value="70">  }</li><li value="71">  render() { return renderView(this, DeployerViews); }</li><li value="72">}</li><li value="73">class Attacher extends Player {</li><li value="74">  constructor(props) {</li><li value="75">    super(props);</li><li value="76">    this.state = {view: 'Attach'};</li><li value="77">  }</li><li value="78">  attach(ctcInfoStr) {</li><li value="79">    const ctc = this.props.acc.attach(backend, JSON.parse(ctcInfoStr));</li><li value="80">    this.setState({view: 'Attaching'});</li><li value="81">    backend.Bob(ctc, this);</li><li value="82">  }</li><li value="83">  async acceptWager(wagerAtomic) { // Fun([UInt], Null)</li><li value="84">    const wager = reach.formatCurrency(wagerAtomic, 4);</li><li value="85">    return await new Promise(resolveAcceptedP =&gt; {</li><li value="86">      this.setState({view: 'AcceptTerms', wager, resolveAcceptedP});</li><li value="87">    });</li><li value="88">  }</li><li value="89">  termsAccepted() {</li><li value="90">    this.state.resolveAcceptedP();</li><li value="91">    this.setState({view: 'WaitingForTurn'});</li><li value="92">  }</li><li value="93">  render() { return renderView(this, AttacherViews); }</li><li value="94">}</li><li value="95"></li><li value="96">renderDOM(<app>);</app></li></ol></pre>
 <p>
-  Finally, we call a small helper function from <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-9/views/render.js">tut-9/views/render.js</a>
+  Finally, we call a small helper function from <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-9-web/views/render.js">rps-9-web/views/render.js</a>
   to render our App component.
 </p>
 <hr>
@@ -1412,7 +1412,7 @@
   Our command-line version is about a hundred lines of JavaScript, while our Web version is about the same length, but has a lot of presentation code as well.
 </p>
 <p>
-  Behind the scenes, Reach generated hundreds of lines of Solidity (which you can look at here: <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-8/build/index.main.sol">tut-8/build/index.main.sol</a>), almost two thousand lines of TEAL (which you can look at here: <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-8/build/index.main.appApproval.teal">tut-8/build/index.main.appApproval.teal</a>), as well as over a thousand lines of JavaScript (which you can look at here: <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/tut-8/build/index.main.mjs">tut-8/build/index.main.mjs</a>).
+  Behind the scenes, Reach generated hundreds of lines of Solidity (which you can look at here: <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-8-interact/build/index.main.sol">rps-8-interact/build/index.main.sol</a>), almost two thousand lines of TEAL (which you can look at here: <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-8-interact/build/index.main.appApproval.teal">rps-8-interact/build/index.main.appApproval.teal</a>), as well as over a thousand lines of JavaScript (which you can look at here: <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-8-interact/build/index.main.mjs">rps-8-interact/build/index.main.mjs</a>).
   If we weren't using Reach, then we'd have to write all this code ourselves and ensure that they are consistent and updated at every change to the application.
 </p>
 <p>Now that you've seen an entire Reach application from beginning to end, it's time for you to start working on your own applications!</p>
