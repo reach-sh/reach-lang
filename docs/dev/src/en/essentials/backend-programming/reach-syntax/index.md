@@ -358,15 +358,90 @@ An *expression* evaluates to a value (e.g. `add(4, 5)`). Reach includes the expr
 
 ## Arithmetic
 
-See [FixedPoint](#fixedpoint), [Int](#int), [Interval](#interval), or [UInt](#uint).
+See [Array](#array), [FixedPoint](#fixedpoint), [Int](#int), [Interval](#interval), and [UInt](#uint).
 
 ## Array
 
-An *array* is ...
+An *Array* is an order list of values. The size of an array is fixed, and the values must be of the same type. Values may be referenced using a zero-based index. The following creates an array of type `Array(UInt, 3)` from a tuple:
 
-`array` converts a tuple of homogeneous values of the specified type into an array.
+``` js nonum
+const a = array(UInt, [4, 6, 8]);
+const v = a[0]; // 4
+```
 
-An *element reference* ...
+The following creates an array of type `Array(Object({price: UInt, quantity: UInt}), 3)` from a tuple:
+
+``` js nonum
+const a = array(
+  Object({price: UInt, quantity: UInt}),
+  [
+    {price:1000, quantity:10},
+    {price:2000, quantity:20},
+    {price:3000, quantity:30}
+  ]
+);
+const p = a[0].price; // 1000
+```
+
+### Array.all
+
+### Array.and
+
+### Array.any
+
+### Array.average
+
+### Array.concat
+
+### Array.count
+
+### Array.elemType
+
+### Array.empty
+
+### Array.find
+
+### Array.findIndex
+
+### Array.forEach
+
+### Array.includes
+
+### Array.indexOf
+
+### Array.iota
+
+### Array.length
+
+### Array.map
+
+### Array.mapWithIndex
+
+### Array.max
+
+### Array.min
+
+### Array.or
+
+### Array.product
+
+### Array.reduce
+
+### Array.reduceWithIndex
+
+### Array.replicate
+
+### Array.set
+
+### Array.size
+
+### Array.slice
+
+### Array.sum
+
+### Array.withIndex
+
+### Array.zip
 
 ## Arrow Expression
 
@@ -410,31 +485,31 @@ A *data instance* is ...
 
 ## Int
 
-### Adding
+### iadd
 
 ``` js nonum
 iadd(a, b) // iadd(Int, Int)
 ```
 
-### Subtracting
+### isub
 
 ``` js nonum
 isub(a, b) // isub(Int, Int)
 ```
 
-### Multiplying
+### imul
 
 ``` js nonum
 imul(a, b) // imul(Int, Int)
 ```
 
-### Dividing
+### idiv
 
 ``` js nonum
 idiv(a, b) // idiv(Int, Int)
 ```
 
-### Modulus
+### imod
 
 ``` js nonum
 imod(a, b) // imod(Int, Int)
@@ -539,30 +614,76 @@ makeDeadline
 
 ## Tuple
 
-A *tuple* is ...
+A *Tuple* is an order list of values. The size of a tuple is fixed. The values may be different types. Values may be referenced using a zero-based index. The following creates a tuple of type `Tuple(UInt, UInt, UInt)`:
+
+``` js nonum
+const t = [5, 10, 15];
+const v = t[2]; // 15
+```
+
+The following creates a tuple of type `Tuple(UInt, Object({price: UInt, quantity: UInt}), UInt)`:
+
+``` js nonum
+const t = [5, { price: 1000, quantity: 40 }, 15];
+const p = t[1].price; // 1000
+const v = t[2];       // 15
+```
+
+The following creates a tuple of type `Tuple(UInt, UInt, UInt, UInt, Object({price: UInt, quantity: UInt}), UInt)`:
+
+``` js nonum
+const t_temp = [5, { price: 1000, quantity: 40 }, 15];
+const t = [5, 10, 15, ...t_temp];
+const p = t[4].price; // 1000
+const v = t[5];       // 15
+```
+
+### Tuple.length
+
+`Tuple.length` returns the length of the tuple:
+
+``` js nonum
+const lenA = Tuple.length([5, 10, 15]); // 3
+// or
+const lenB = [5, 10, 15].length; // 3
+```
+
+### Tuple.set
+
+`Tuple.set` returns a new tuple identical to the original except that the value at the specified index is the new value:
+
+``` js nonum
+const tA = Tuple.set([5, 10, 15], 1, 44);
+const vA = tA[1]; // 44
+// or
+const tB = [5, 10, 15].set(1, 44);
+const vB = tB[1]; // 44
+```
 
 ## UInt
 
-### Adding
+### add
 
 ``` js nonum
 a + b      // UInt + UInt
 add(a, b)  // add(UInt, UInt)
 ```
 
-### Subtracting
+### sub
 
 ``` js nonum
 a - b      // UInt - UInt
 sub(a, b)  // sub(UInt, UInt)
 ```
 
-### Multiplying
+### mul
 
 ``` js nonum
 a * b      // UInt * UInt
 mul(a, b)  // mul(UInt, UInt)
 ```
+
+### muldiv
 
 The `muldiv` function performs `(a * b) / c`:
 
@@ -572,21 +693,21 @@ muldiv(a, b, c) // muldiv(UInt, UInt, UInt)
 
 The product of `a * b` may exceed `UInt.max`, but the final quotient must be less than `UInt.max`.
 
-### Dividing
+### div
 
 ``` js nonum
 a / b      // UInt * UInt
 div(a, b)  // div(UInt, UInt)
 ```
 
-### Modulus
+### mod
 
 ``` js nonum
 a % b      // UInt % UInt
 mod(a, b)  // mod(UInt, UInt)
 ```
 
-### Square Root
+### sqrt
 
 The `sqrt` function finds the square root of `value`, iterating `iterations` number of times.
 
