@@ -352,10 +352,10 @@ be_m = \case
     case de of
       DLE_Remote {} -> recordOutputVar mdv
       DLE_EmitLog {} -> fg_use de
-      DLE_setApiDetails _ p tys mc -> do
+      DLE_setApiDetails _ p tys mc isf -> do
         which <- asks be_which
         api_info <- asks be_api_info
-        liftIO $ modifyIORef api_info $ M.insert p $ ApiInfo tys mc which
+        liftIO $ modifyIORef api_info $ M.insert p $ ApiInfo tys mc which isf
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de

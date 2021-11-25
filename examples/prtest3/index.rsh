@@ -22,7 +22,7 @@ export const main = Reach.App(() => {
   const x = parallelReduce(0)
     .invariant(balance() == 0)
     .while(kg())
-    .case(A, (() => ({})), (_) => {
+    .case(A, () => ({}), (_) => {
       each([A, B], () => { interact.log('while-after',x); });
       return x + 1;
     })

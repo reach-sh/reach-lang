@@ -453,9 +453,9 @@ jsExpr = \case
     asks ctxt_mode >>= \case
       JM_Simulate
         | isInitial -> return $ jsApply "stdlib.emptyContractInfo" []
-      _ -> return $ "await" <+> jsApply "ctc.getInfo" []
+      _ -> return $ "await" <+> jsApply "ctc.getContractInfo" []
   DLE_GetAddress {} -> return $ "await" <+> jsApply "ctc.getContractAddress" []
-  DLE_EmitLog _at mode dv -> do
+  DLE_EmitLog _at mode _ dv -> do
     dv' <- jsVar dv
     txn' <- jsTxn
     dvt' <- jsContract $ varType dv
@@ -531,7 +531,7 @@ jsPLTail = \case
 
 jsNewScope :: Doc -> Doc
 jsNewScope body =
-  jsApply (parens (parens emptyDoc <+> "=>" <+> jsBraces body)) []
+  "await" <+> (jsApply (parens ("async" <+> parens emptyDoc <+> "=>" <+> jsBraces body)) [])
 
 jsBlockNewScope :: AppT DLBlock
 jsBlockNewScope b = do
@@ -948,7 +948,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 5
+reachBackendVersion = 6
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ _)) = do

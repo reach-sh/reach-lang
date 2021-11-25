@@ -18,9 +18,18 @@ npm install @"@"reach-sh/stdlib
 Although, if you use @exec{reach run}, you don't need to install this package, because @exec{reach} automatically manages your standard library install behind the scenes.
 You only need to install the package directly if you are running your frontend without @exec{reach} or using a tool like @link["https://webpack.js.org/"]{webpack} for deployment.
 
-These libraries provide a standard interface that support developing @tech{frontends}.
+These libraries provide a standard interface that support developing @tech{frontends} in JavaScript.
 
-@(local-table-of-contents)
+@itemlist[
+@item{@secref["ref-frontends-js-loader.mjs"] discusses how to load the standard library.}
+@item{@secref["ref-frontends-js-provider"] discusses how to adjust what provider is used to connect to a consensus network.}
+@item{@secref["ref-frontends-js-network"] discuss some utility functions that provide access to consensus network parameters and resources.}
+@item{@secref["ref-frontends-js-acc"] discusses how to construct an account handle, which is necessary to access contracts.}
+@item{@secref["ref-frontends-js-ctc"] discusses how to construct a contract handle, which is used to interact with a DApp.}
+@item{@secref["ref-frontends-js-types"] discusses the way that JavaScript values are used to represent Reach values.}
+@item{@secref["ref-frontends-js-utils"] discusses some utility functions for working with JavaScript-represented Reach values.}
+@item{@secref["ref-frontends-js-ask.mjs"] discusses a helper library for building text-based UIs.}
+]
 
 @section[#:tag "ref-frontends-js-types"]{Types}
 
@@ -326,14 +335,14 @@ In order to interact with a deployed contract, you must construct a @tech{contra
  acc.contract(bin, ?info) => ctc }
 
 @index{acc.contract} Returns a Reach @tech{contract} handle based on the @jsin{bin} argument provided with access to the account @jsin{acc}.
-This @jsin{bin} argument is the @filepath{input.mjs} module produced by the JavaScript @tech{backend}.
+This @jsin{bin} argument is the @filepath{index.main.mjs} module produced by the JavaScript @tech{backend}.
 
 If @jsin{info} is provided, it must be a @reachin{Contract} value, or a @jsin{Promise} that eventually yields a @reachin{Contract} value.
 Typically, the deployer of a contract with not provide @jsin{info}, while users of a contract will.
 In an automated, single instance program, @reachin{ctc.getInfo()} is typically used to acquire @jsin{info};
 while in non-automated programs, an application uses out-of-band communication, such as an external database or user input, to acquire the @jsin{info} argument.
 
-The first publishing participant will attempt deploy a contract for application.
+The first publishing participant will attempt to deploy a contract for an application.
 If @jsin{info} was provided, an error will be thrown.
 This deployment can only happen one time, so subsequent attempts will fail with an error.
 
@@ -387,7 +396,7 @@ Contract handles provide access to the interface of the compiled backend, @jsin{
 
 @index{ctc.participants}
 @index{ctc.p}
-An object where the keys are the participant names and the values are function that accept an interact object and return a Promise that completes when the participant ends.
+An object where the keys are the participant names and the values are functions that accept an interact object and return a Promise that completes when the participant ends.
 
 @jsin{acc.contract(backend).p.Alice(io)} is equivalent to @jsin{backend.Alice(acc.contract(backend), io)}, but does not require duplication of the @jsin{backend} component.
 
@@ -413,6 +422,18 @@ If an @tech{API} was specified without an @reachin{apiName}, for example @reachi
   ctc.a.cast("Pedro");
 }
 
+@subsection{@tt{ctc.safeApis}}
+
+@js{
+  ctc.safeApis
+  ctc.safeApis.Voter.cast("Pedro")
+}
+
+@index{ctc.safeApis}
+This object is the same as @jsin{ctc.apis} except the API functions return a @reachin{Maybe} value.
+If the call fails, then @jsin{['None', null]} will be returned. If the call succeeds, the return value will
+be wrapped with @jsin{Some}, e.g. @jsin{['Some', 4]}.
+
 @subsection{@tt{ctc.views}, @tt{ctc.v}}
 
 @margin-note{@tech{Views} are @seclink["ref-programs-appinit-view"]{defined in application initialization} and then they are @seclink["ref-programs-consensus-view"]{set in consensus steps}. Both of these steps are in Reach. This section is about accessing them in JavaScript frontends.}
@@ -428,10 +449,10 @@ If an @tech{API} was specified without an @reachin{apiName}, for example @reachi
 @index{ctc.views}
 @index{ctc.v}
 An object that mirrors the @tech{view} hierarchy, so if @litchar{X.Y} is a @tech{view}, then @jsin{ctc.views.X.Y} is a @deftech{view function}.
-A @tech{view function} accepts the arguments of the @tech{view} and returns a @jsin{Promise} that results in the value of the @tech{view} wrapped in a @reachin{Maybe} type (because the @tech{view} may not be bound.)
+A @tech{view function} accepts the arguments of the @tech{view} and returns a @jsin{Promise} that results in the value of the @tech{view} wrapped in a @reachin{Maybe} type (because the @tech{view} may not be bound).
 For example, if @litchar{NFT.owner} is a @tech{view} with no arguments that represents the @reachin{Address} that owns an NFT, then @jsin{await ctc.v.NFT.owner()} is either @jsin{['Some', Owner]} or @jsin{['None', null]}.
 
-If a @tech{View} was specified without an @reachin{viewName}, for example @reachin{View({ owner: Address })}, it may be accessed by its property name:
+If a @tech{View} was specified without a @reachin{viewName}, for example @reachin{View({ owner: Address })}, it may be accessed by its property name:
 
 @js{
   ctc.v.owner();
@@ -445,6 +466,19 @@ If a @tech{View} was specified without an @reachin{viewName}, for example @reach
 
 @index{ctc.getViews}
 This deprecated function is an abbreviation of @jsin{ctc.views}.
+
+@subsection{@tt{ctc.unsafeViews}}
+
+@jsin{
+  ctc.unsafeViews
+  ctc.unsafeViews.NFT.owner()
+}
+
+@index{ctc.unsafeViews}
+
+This object is the same as @jsin{ctc.views} except the value of the @tech{view} is not wrapped in a @reachin{Maybe} type.
+If a @tech{view} is set, the value will be returned as is, without being wrapped in @reachin{Some}.
+If a @tech{view} is not set, an error will be thrown.
 
 @section[#:tag "ref-frontends-js-network"]{Network Utilities}
 
@@ -631,6 +665,7 @@ On Ethereum and Conflux, it always errors and cannot provide a wallet.
 On Algorand, it can provide a wallet that directly connects to the Algorand network, like @jsin{setProviderByName} (& @jsin{setProviderByEnv}), but provide interactive signing.
 The network connection is specified via the @litchar{providerEnv} key, which may be a string (which is used as an argument to @jsin{providerEnvByName}) or an environment (which is used as an argument to @jsin{setProviderByEnv}).
 By default, signing is via an interactive browser window prompt, where the user repeatedly provides their mnemonic.
+
 If the key @litchar{MyAlgoConnect} is provided, and bound to the export of @litchar{@"@"reach-sh/stdlib/ALGO_MyAlgoConnect}, then @link["https://wallet.myalgo.com/home"]{My Algo} will be used for signing.
 For example, this sets the wallet fallback to be My Algo used with Algorand TestNet:
 @js{
@@ -638,6 +673,16 @@ import MyAlgoConnect from '@"@"reach-sh/stdlib/ALGO_MyAlgoConnect';
 stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', MyAlgoConnect }));
 }
+
+If the key @litchar{WalletConnect} is provided, and bound to the export of @litchar{@"@"reach-sh/stdlib/ALGO_WalletConnect}, then @link["https://walletconnect.com/"]{WalletConnect} is used to connect to the @link["https://algorandwallet.com/"]{Algorand Wallet} for signing.
+For example, this sets the wallet fallback to be WalletConnect and the Algorand TestNet:
+@js{
+import WalletConnect from '@"@"reach-sh/stdlib/ALGO_WalletConnect';
+stdlib.setWalletFallback(stdlib.walletFallback({
+  providerEnv: 'TestNet', WalletConnect }));
+}
+
+Because these are fallbacks, you need to decide for your users which wallet they'll use, or make a user interface element to let them select which wallet fallback to use.
 
 @section[#:tag "ref-frontends-js-utils"]{Utilities}
 

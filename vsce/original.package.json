@@ -1,0 +1,319 @@
+{
+	"name": "reach-ide",
+	"displayName": "Reach IDE",
+	"description": "IDE for the Reach DApp programming language",
+	"author": "Reach Platform, Inc.",
+	"license": "EPL-2.0",
+	"version": "0.18.0",
+	"preview": true,
+	"icon": "images/reach-logo-dark.png",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/reach-sh/reach-lang"
+	},
+	"publisher": "reachsh",
+	"categories": [
+		"Programming Languages",
+		"Snippets",
+		"Other"
+	],
+	"keywords": [
+		"reach",
+		"ethereum",
+		"algorand",
+		"blockchain",
+		"conflux"
+	],
+	"engines": {
+		"vscode": "^1.43.0"
+	},
+	"activationEvents": [
+		"workspaceContains:**/*.rsh",
+		"workspaceContains:reach",
+		"onCommand:reach.compile",
+		"onCommand:reach.run",
+		"onCommand:reach.docs",
+		"onCommand:reach.upgrade"
+	],
+	"main": "./client/out/extension",
+	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "reach-ide",
+					"title": "Reach IDE",
+					"icon": "./images/reach-logo.png"
+				}
+			]
+		},
+		"views": {
+			"reach-ide": [
+				{
+					"id": "reach-commands",
+					"name": "Commands"
+				},
+				{
+					"id": "reach-docs",
+					"name": "Documentation"
+				},
+				{
+					"id": "reach-help",
+					"name": "Help and Feedback"
+				}
+			]
+		},
+		"snippets": [
+			{
+				"language": "javascript",
+				"path": "./snippets.json"
+			}
+		],
+		"configuration": {
+			"type": "object",
+			"title": "Reach IDE",
+			"properties": {
+				"reachide.maxNumberOfProblems": {
+					"scope": "resource",
+					"type": "number",
+					"default": 100,
+					"description": "Controls the maximum number of problems produced by the server."
+				},
+				"reachide.trace.server": {
+					"scope": "window",
+					"type": "string",
+					"enum": [
+						"off",
+						"messages",
+						"verbose"
+					],
+					"default": "off",
+					"description": "Traces the communication between VS Code and the Reach IDE language server."
+				},
+				"reachide.executableLocation": {
+					"default": "./reach",
+					"type": "string",
+					"description": "Specifies the filepath to the reach executable."
+				}
+			}
+		},
+		"menus": {
+			"explorer/context": [
+				{
+					"command": "reach.compile"
+				},
+				{
+					"command": "reach.run"
+				},
+				{
+					"command": "reach.clean"
+				},
+				{
+					"command": "reach.issue"
+				},
+				{
+					"command": "reach.discord"
+				},
+				{
+					"command": "reach.gist"
+				},
+				{
+					"command": "reach.docs"
+				},
+				{
+					"command": "reach.upgrade"
+				},
+				{
+					"command": "reach.hashes"
+				},
+				{
+					"command": "reach.version"
+				},
+				{
+					"command": "reach.docker-reset"
+				},
+				{
+					"command": "reach.devnet"
+				},
+				{
+					"command": "reach.rpc-server"
+				},
+				{
+					"command": "reach.rpc-run"
+				},
+				{
+					"command": "reach.react"
+				},
+				{
+					"command": "reach.scaffold"
+				},
+				{
+					"command": "reach.down"
+				},
+				{
+					"command": "reach.init"
+				},
+				{
+					"command": "reach.update"
+				}
+			],
+			"editor/title": [
+				{
+					"when": "resourceExtname == .rsh",
+					"command": "reach.docs",
+					"group": "navigation"
+				}
+			],
+			"touchBar": [
+				{
+					"command": "reach.compile"
+				},
+				{
+					"command": "reach.run"
+				},
+				{
+					"command": "reach.docs"
+				},
+				{
+					"command": "reach.upgrade"
+				},
+				{
+					"command": "reach.update"
+				}
+			],
+			"editor/context": [
+				{
+					"command": "reach.compile"
+				},
+				{
+					"command": "reach.run"
+				},
+				{
+					"command": "reach.docs"
+				},
+				{
+					"command": "reach.upgrade"
+				},
+				{
+					"command": "reach.update"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "reach.clean",
+				"category": "Reach IDE",
+				"title": "Clean Reach build files"
+			},
+			{
+				"command": "reach.compile",
+				"category": "Reach IDE",
+				"title": "Compile Reach program"
+			},
+			{
+				"command": "reach.devnet",
+				"category": "Reach IDE",
+				"title": "Reach devnet"
+			},
+			{
+				"command": "reach.discord",
+				"category": "Reach IDE",
+				"title": "Chat on Discord"
+			},
+			{
+				"command": "reach.docker-reset",
+				"category": "Reach IDE",
+				"title": "Reach docker reset"
+			},
+			{
+				"command": "reach.down",
+				"category": "Reach IDE",
+				"title": "Reach down"
+			},
+			{
+				"command": "reach.hashes",
+				"category": "Reach IDE",
+				"title": "Reach Hashes"
+			},
+			{
+				"command": "reach.docs",
+				"category": "Reach IDE",
+				"title": "Open Reach Documentation",
+				"icon": {
+					"light": "./images/reach-logo.png",
+					"dark": "./images/reach-logo.png"
+				}
+			},
+			{
+				"command": "reach.gist",
+				"category": "Reach IDE",
+				"title": "Create a Gist to share"
+			},
+			{
+				"command": "reach.init",
+				"category": "Reach IDE",
+				"title": "Reach Init"
+			},
+			{
+				"command": "reach.issue",
+				"category": "Reach IDE",
+				"title": "Open an issue on GitHub"
+			},
+			{
+				"command": "reach.react",
+				"category": "Reach IDE",
+				"title": "Run Reach React"
+			},
+			{
+				"command": "reach.rpc-run",
+				"category": "Reach IDE",
+				"title": "Reach RPC-Run"
+			},
+			{
+				"command": "reach.rpc-server",
+				"category": "Reach IDE",
+				"title": "Reach RPC-Server"
+			},
+			{
+				"command": "reach.run",
+				"category": "Reach IDE",
+				"title": "Run Reach program"
+			},
+			{
+				"command": "reach.scaffold",
+				"category": "Reach IDE",
+				"title": "Run Reach scaffold"
+			},
+			{
+				"command": "reach.update",
+				"category": "Reach IDE",
+				"title": "Update Reach Docker images"
+			},
+			{
+				"command": "reach.upgrade",
+				"category": "Reach IDE",
+				"title": "Upgrade Reach"
+			},
+			{
+				"command": "reach.version",
+				"category": "Reach IDE",
+				"title": "Reach Version"
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w",
+		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+		"reinstall": "rm -rf ./node_modules && rm -rf ./server/node_modules && rm -rf ./client/node_modules && npm install",
+		"test": "sh ./scripts/e2e.sh"
+	},
+	"devDependencies": {
+		"@types/mocha": "^5.2.7",
+		"@types/node": "^12.12.0",
+		"@typescript-eslint/parser": "^2.3.0",
+		"eslint": "^6.4.0",
+		"mocha": "^6.2.2",
+		"typescript": "^3.8.3"
+	}
+}

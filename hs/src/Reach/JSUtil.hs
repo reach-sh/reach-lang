@@ -5,7 +5,10 @@ module Reach.JSUtil
   , toJSCL
   , jsa_flatten
   , dropEmptyJSStmts
-  , jsArrowStmtToBlock
+  , jsArrowBodyToRetBlock
+  , jsArrowBodyToStmt
+  , jsArrowBodyToBlock
+  , jsStmtToConciseBody
   , jsStmtToBlock
   , tp
   , srcloc_jsa
@@ -20,6 +23,7 @@ module Reach.JSUtil
   , toJSArray
   , jsBlockToStmts
   , jsFlattenLHS
+  , jsString
   )
 where
 
@@ -82,17 +86,31 @@ toJSArray a = concatMap f a
     f e = [JSArrayElement e, JSArrayComma JSNoAnnot]
 
 
-jsArrowStmtToBlock :: JSStatement -> JSBlock
-jsArrowStmtToBlock = \case
-  JSExpressionStatement e sp -> JSBlock JSNoAnnot [JSReturn JSNoAnnot (Just e) sp] JSNoAnnot
-  JSMethodCall e la args ra sp -> JSBlock la [JSReturn la (Just (JSCallExpression e la args ra)) sp] ra
-  s -> jsStmtToBlock s
+jsArrowBodyToRetBlock :: JSConciseBody -> JSBlock
+jsArrowBodyToRetBlock = \case
+  JSConciseExprBody e -> JSBlock JSNoAnnot [JSReturn JSNoAnnot (Just e) JSSemiAuto] JSNoAnnot
+  JSConciseFunBody b -> b
+
+jsArrowBodyToBlock :: JSConciseBody -> JSBlock
+jsArrowBodyToBlock = \case
+  JSConciseExprBody e -> JSBlock JSNoAnnot [JSExpressionStatement e JSSemiAuto] JSNoAnnot
+  JSConciseFunBody b -> b
+
+jsArrowBodyToStmt :: JSConciseBody -> JSStatement
+jsArrowBodyToStmt = \case
+  JSConciseExprBody e -> JSExpressionStatement e JSSemiAuto
+  JSConciseFunBody (JSBlock a ss a2) -> JSStatementBlock a ss a2 JSSemiAuto
 
 jsStmtToBlock :: JSStatement -> JSBlock
 jsStmtToBlock = \case
   JSStatementBlock ba bodyss aa _ -> JSBlock ba bodyss aa
   bodys -> JSBlock JSNoAnnot [bodys] JSNoAnnot
 
+jsStmtToConciseBody :: JSStatement -> JSConciseBody
+jsStmtToConciseBody = \case
+  JSExpressionStatement e _ -> JSConciseExprBody e
+  JSMethodCall e la args ra _ -> JSConciseExprBody (JSCallExpression e la args ra)
+  ow -> JSConciseFunBody $ jsStmtToBlock ow
 
 jsBlockToStmts :: JSBlock -> [JSStatement]
 jsBlockToStmts (JSBlock _ s _) = s
@@ -243,3 +261,5 @@ instance HasJSAnnot JSExpression where
     JSYieldExpression a _ -> a
     JSYieldFromExpression a _ _ -> a
 
+jsString :: JSAnnot -> String -> JSExpression
+jsString a s = JSStringLiteral a $ "'" <> s <> "'"

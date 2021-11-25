@@ -10,10 +10,10 @@ export const main =
           .invariant(balance() == balance())
           .while(true)
           .case(A,
-            (() => { when: true }),
-            (() => {
+            () => { when: true },
+            () => {
               return [ x + 1]
-            })
+            }
           )
          .timeRemaining(1, () => {});
     });

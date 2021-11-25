@@ -9,17 +9,17 @@ export const main = Reach.App(() => {
 
   fork()
     .case(Admin,
-      (() => ({ msg: 0 })),
-      ((_) => 0),
-      ((x) => {
+      () => ({ msg: 0 }),
+      (_) => 0,
+      (x) => {
         commit();
         exit();
-      }))
+      })
     .case(Admin,
-      (() => ({ msg: 1 })),
-      ((_) => 0),
-      ((y) => {
+      () => ({ msg: 1 }),
+      (_) => 0,
+      (y) => {
         commit();
         exit();
-      }));
+      });
 });

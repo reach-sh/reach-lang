@@ -483,19 +483,31 @@ instance PrettySubst DLTokenNew where
 
 type DLTimeArg = Either DLArg DLArg
 
+-- What additional work needs to be done when compiling the definition
+-- for a lifted API call
+data ApiInfoCompilation
+  = AIC_Case
+  | AIC_SpreadArg
+  deriving (Eq, Ord, Show)
+
+instance Pretty ApiInfoCompilation where
+  pretty = viaShow
+
 data ApiInfo = ApiInfo
   { ai_msg_tys :: [DLType]
   , ai_mcase_id :: Maybe String
-  , ai_which :: Int }
+  , ai_which :: Int
+  , ai_compile :: ApiInfoCompilation }
   deriving (Eq)
 
 instance Pretty ApiInfo where
   pretty = \case
-    ApiInfo mtys mci which ->
+    ApiInfo mtys mci which ac ->
       braces $ hardline <> vsep [
         "msg_tys :" <+> pretty mtys
       , "mcase_id:" <+> pretty mci
       , "which:" <+> pretty which
+      , "compile:" <+> pretty ac
       ]
 
 data DLExpr
@@ -530,8 +542,13 @@ data DLExpr
   -- * the either is whether it is a generated one or a prescribed one
   -- * the type is the type
   -- * the dlarg is the value being logged
-  | DLE_EmitLog SrcLoc String DLVar
-  | DLE_setApiDetails SrcLoc SLPart [DLType] (Maybe String)
+  | DLE_EmitLog SrcLoc String (Maybe String) DLVar
+  | DLE_setApiDetails {
+    sad_at :: SrcLoc,
+    sad_who :: SLPart,
+    sad_dom :: [DLType],
+    sad_mcase_id :: Maybe String,
+    sad_compile :: ApiInfoCompilation }
   deriving (Eq, Ord, Generic)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
@@ -648,11 +665,11 @@ instance PrettySubst DLExpr where
       return $ "timeOrder" <> parens tos'
     DLE_GetContract {} -> return $ "getContract()"
     DLE_GetAddress {} -> return $ "getAddress()"
-    DLE_EmitLog _ m v -> do
+    DLE_EmitLog _ m mapi v -> do
       a' <- prettySubst $ DLA_Var v
-      return $ "emitLog" <> parens (pretty m) <> parens a'
-    DLE_setApiDetails _ p tys mc ->
-      return $ "setApiDetails" <> parens (render_das [pretty p, pretty tys, pretty mc])
+      return $ "emitLog" <> parens (pretty m <> ", " <> pretty mapi) <> parens a'
+    DLE_setApiDetails _ p d mc f ->
+      return $ "setApiDetails" <> parens (render_das [pretty p, pretty d, pretty mc, pretty f])
 
 pretty_subst :: PrettySubst a => PrettySubstEnv -> a -> Doc
 pretty_subst e x =
@@ -982,7 +999,7 @@ allFluidVars bals =
   -- This function is not really to get all of them, but just to
   -- get the ones that must be saved for a loop. didSend is only used locally,
   -- so it doesn't need to be saved.
-  --, FV_didSend 
+  --, FV_didSend
   ]
     <> map FV_balance all_toks
     <> map FV_supply all_toks

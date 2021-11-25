@@ -32,7 +32,9 @@ export const main = Reach.App(
     A.only(() => {
       const ctxa = declassify(interact.getCTX());
       const [amt, ctya] = declassify(interact.getCTY()); });
-    A.publish(ctxa, amt, ctya).pay(amt);
+    A.publish(ctxa, amt, ctya);
+    commit();
+    A.pay(amt);
     const ctx = remote(ctxa, CoolThing);
     const cty = remote(ctya, CoolThing);
     commit();
@@ -62,8 +64,9 @@ export const main = Reach.App(
       const zmd = declassify(interact.getZMD());
       assume(gil != zmd); });
 
-    A.publish(gil, zmd)
-     .pay([ [amt * 2, gil], [amt, zmd] ]); // CTC has 2x gil, x zmd
+    A.publish(gil, zmd);
+    commit();
+    A.pay([ [amt * 2, gil], [amt, zmd] ]); // CTC has 2x gil, x zmd
     commit();
 
     A.publish();

@@ -48,15 +48,15 @@ export const main = Reach.App(
         .while(keepGoing)
         .case(
           Buyer,
-          (() => ({
+          () => ({
             when: declassify(interact.shouldBuyTicket(ticketPrice)),
-          })),
-          ((_) => ticketPrice),
-          ((_) => {
+          }),
+          (_) => ticketPrice,
+          (_) => {
             const buyer = this;
             Buyer.only(() => interact.showPurchase(buyer));
             return [ true, buyer, ticketsSold + 1 ];
-          })
+          }
         )
         .timeout(relativeTime(deadline), () => {
           Anybody.publish();

@@ -11,6 +11,7 @@ data VerifyOpts = VerifyOpts
   { vo_out :: Maybe (T.Text -> String)
   , vo_mvcs :: Maybe [Connector]
   , vo_timeout :: Integer
+  , vo_dir :: FilePath
   }
 
 data VerifySt = VerifySt

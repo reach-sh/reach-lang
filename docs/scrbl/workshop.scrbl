@@ -20,8 +20,36 @@ However, you can do most workshops in any order.
 If there's a pre-requisite, it will be explicitly mentioned.
 
 Here are the current workshops, in the order we recommend doing them:
-
-@local-table-of-contents[#:style 'immediate-only]
+@itemlist[
+@item{@secref["workshop-hash-lock"]}
+@item{@secref["workshop-relay"]}
+@item{@secref["workshop-trust-fund"]}
+@item{@secref["workshop-fomo"]}
+@item{@secref["workshop-fomo-generalized"]}
+@item{@secref["workshop-rps-fair"]}
+@item{@secref["workshop-rps-eff"]}
+@item{@secref["workshop-rental"]}
+@item{@secref["workshop-abstract-simul"]}
+@item{@secref["workshop-guardian-account"]}
+@item{@secref["workshop-utility"]}
+@item{@secref["workshop-nim"]}
+@item{@secref["workshop-ttt"]}
+@item{@secref["workshop-secured-loan"]}
+@item{@secref["workshop-atomic-swap"]}
+@item{@secref["workshop-atomic-swap-auction"]}
+@item{@secref["workshop-race"]}
+@item{@secref["workshop-chicken-race"]}
+@item{@secref["workshop-popularity-contest"]}
+@item{@secref["workshop-nft-dumb"]}
+@item{@secref["workshop-nft-auction"]}
+@item{@secref["workshop-nft-tax"]}
+@item{@secref["workshop-raffle"]}
+@item{@secref["workshop-rent-seeking"]}
+@item{@secref["workshop-remote"]}
+@item{@secref["workshop-oracle"]}
+@item{@secref["workshop-auction-te"]}
+@item{@secref["workshop-crowdfund"]}
+]
 
 @include-section["workshop-hash-lock.scrbl"]
 @include-section["workshop-relay.scrbl"]

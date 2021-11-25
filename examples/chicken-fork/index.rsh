@@ -46,15 +46,15 @@ export const main = Reach.App(() => {
     commit();
 
     fork()
-      .case(Alice, (() => ({
-        when: declassify(interact.keepGoing()) })),
+      .case(Alice, () => ({
+        when: declassify(interact.keepGoing()) }),
         () => {
           each([Alice, Bob], () => {
             interact.roundWinnerWas(true); });
           [ keepGoing, as, bs ] = [ true, as + 1, bs ];
           continue; })
-      .case(Bob, (() => ({
-        when: declassify(interact.keepGoing()) })),
+      .case(Bob, () => ({
+        when: declassify(interact.keepGoing()) }),
         () => {
           each([Alice, Bob], () => {
             interact.roundWinnerWas(false); });

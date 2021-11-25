@@ -18,6 +18,7 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import remarkSlug from 'remark-slug';
 import remarkToc from 'remark-toc';
+import remarkDirective from 'remark-directive';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { JSDOM } from 'jsdom';
@@ -30,6 +31,7 @@ const normalizeDir = (s) => {
 
 const __filename = fileURLToPath(import.meta.url);
 const rootDir = path.dirname(__filename);
+const reachRoot = `${rootDir}/../../`;
 const cfgFile = "config.json";
 const repoBase = "https://raw.githubusercontent.com/reach-sh/reach-lang/master";
 const repoSrcDir = "/docs/md/";
@@ -92,10 +94,10 @@ const joinCodeClasses = () => {
   return (tree, file) => {
     visit(tree, 'code', node => {
       if(node.lang || node.meta) {
-        node.lang = 
-        node.meta==null ? node.lang 
-        : node.lang==null ? node.meta.split(' ').join('_')
-        : `${node.lang}_${node.meta.split(' ').join('_')}`;
+        node.lang =
+          node.meta == null ? node.lang
+          : node.lang == null ? node.meta.split(' ').join('_')
+          : `${node.lang}_${node.meta.split(' ').join('_')}`;
       }
     });
   }
@@ -114,6 +116,28 @@ const copyFmToConfig = (configJson) => {
   }
 };
 
+const directiveTest = () => (tree) => {
+  visit(tree, (node) => {
+    if (
+      node.type === 'textDirective' ||
+      node.type === 'leafDirective' ||
+      node.type === 'containerDirective'
+    ) {
+      const data = node.data || (node.data = {});
+      if ( node.name === 'note') {
+        data.hName = "div";
+        data.hProperties = { class: "note" };
+      }
+      if ( node.name === 'testQ') {
+        data.hName = "XXX testQ";
+      }
+      if ( node.name === 'testA') {
+        data.hName = "XXX testA";
+      }
+    }
+  })
+}
+
 // Tools
 
 const writeFileMkdir = async (p, c) => {
@@ -124,7 +148,7 @@ const writeFileMkdir = async (p, c) => {
 
 const remoteGet_ = async (url) => {
   if ( url.startsWith(repoBase) ) {
-    const n = url.replace(repoBase, `${rootDir}/../../`);
+    const n = url.replace(repoBase, reachRoot);
     return await fs.readFile(n, 'utf8');
   }
   console.log(`Downloading ${url}`);
@@ -138,11 +162,20 @@ const remoteGet = async (url) => {
   return CACHE[url];
 };
 
-let shikiHighlighter = undefined;
+const shikiHighlighter =
+  await shiki.getHighlighter({
+    theme: 'github-light',
+    langs: [
+      ...shiki.BUNDLED_LANGUAGES,
+      {
+        id: 'reach',
+        scopeName: 'source.js',
+        // XXX customize this
+        path: 'languages/javascript.tmLanguage.json',
+      },
+    ],
+  });
 const shikiHighlight = async (code, lang) => {
-  if ( shikiHighlighter === undefined ) {
-    shikiHighlighter = await shiki.getHighlighter({ theme: 'github-light' });
-  }
   return shikiHighlighter.codeToHtml(code, lang);
 };
 
@@ -157,9 +190,9 @@ const processCss = async () => {
   await writeFileMkdir(oPath, output.styles);
 };
 
-const processBaseHtml = async (lang) => {
-  const iPath = `${srcDir}/${lang}/base.html`;
-  const oPath = `${outDir}/${lang}/index.html`;
+const processBaseHtml = async () => {
+  const iPath = `${srcDir}/base.html`;
+  const oPath = `${outDir}/base.html`;
   console.log(`Minifying ${iPath}`);
   const output = await minify(iPath, { html: {} });
   await writeFileMkdir(oPath, output);
@@ -241,13 +274,12 @@ const processCodeSnippet = (doc, pre, code, spec) => {
   const olEl = doc.createRange().createContextualFragment(olStr);
   pre.append(olEl);
   pre.classList.add('snippet');
-  pre.classList.add(spec.numbered ? 'numbered' : 'unnumbered');
+  const shouldNumber = spec.numbered && (arr.length != 1);
+  pre.classList.add(shouldNumber ? 'numbered' : 'unnumbered');
 }
 
 const transformReachDoc = (md) => {
   const match1 = /# {#(.*)}/; // Example: # {#guide-ctransfers}
-  const match2 = '```reach';
-  const match3 = /\${toc}/;
 
   const mdArr = md.split('\n');
   md = '';
@@ -255,14 +287,33 @@ const transformReachDoc = (md) => {
     let line = mdArr[i];
 
     if (line.match(match1)) { line = line.replace(match1, '#'); }
-    if (line.match(match2)) { line = line.replace(match2, '```js'); }
-    if (line.match(match3)) { line = line.replace(match3, ''); }
 
     md += `${line}\n`;
   }
   return md;
 }
 
+const XXX = (name) => (...args) => {
+  const m = ['XXX', name, ...args];
+  console.log(m);
+  return JSON.stringify(m);
+};
+const seclink = XXX('seclink');
+const defn = XXX('defn');
+const workshopDeps = XXX('workshopDeps');
+const workshopInit = XXX('workshopInit');
+const workshopWIP = XXX('workshopWIP');
+const errver = XXX('errver');
+const ref = XXX('ref');
+const code = async ( rp, from = undefined, to = undefined ) => {
+  if ( from || to ) { console.log(['XXX', 'code', { from, to }]); }
+  const rpp = `${reachRoot}${rp}`;
+  const lang = ''; // XXX
+  const c = await fs.readFile(rpp, 'utf8');
+  return "```" + lang + "\n" + c + "\n```";
+};
+
+const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   const lang = relDir.split('/')[0];
   const mdPath = `${in_folder}/index.md`;
@@ -291,7 +342,35 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   };
   */
 
-  let md = await fs.readFile(mdPath, 'utf8');
+  const expandEnv = { ...configJson, seclink, defn, workshopDeps, workshopWIP, workshopInit, code, errver, ref };
+  const expandKeys = Object.keys(expandEnv);
+  const expandVals = Object.values(expandEnv);
+  const evil = async (c) => {
+    const af = new AsyncFunction(...expandKeys, `"use strict"; return (${c});`);
+    try {
+      return await af(...expandVals);
+    } catch (e) {
+      const es = `${e}`;
+      console.log(`evil`, mdPath, c, `err`, es);
+      return es;
+    }
+  }
+  const expand = async (s) => {
+    const ms = s.indexOf('@{'); // }
+    if ( ms === -1 ) { return s; }
+    /* { */ const me = s.indexOf('}', ms);
+    if ( me === -1 ) { throw Error(`No closing } in interpolation: ${mdPath}: ${s.slice(ms)}`); }
+    const pre = s.slice(0, ms);
+    const mid = s.slice(ms+2, me);
+    const pos = s.slice(me+1);
+    const mid_e = await evil(mid);
+    const posp = `${mid_e}${pos}`;
+    const posp_e = await expand(posp);
+    return `${pre}${posp_e}`;
+  };
+
+  const raw = await fs.readFile(mdPath, 'utf8');
+  let md = await expand(raw);
 
   // If src == remote, get the remote markdown..
   const re = /---([\s\S]*?)---/;
@@ -316,6 +395,8 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     .use(remarkFrontmatter) // Prepend YAML node with frontmatter.
     .use(copyFmToConfig, configJson) // Remove YAML node and write frontmatter to config file.
     .use(prependTocNode) // Prepend Heading, level 6, value "toc".
+    .use(remarkDirective)
+    .use(directiveTest)
     //.use(() => (tree) => { console.dir(tree); })
     .use(remarkToc, { maxDepth: 2 }) // Build toc list under the heading.
     //.use(() => (tree) => { console.dir(JSON.stringify(tree.children[1].children, null, 2)); })
@@ -354,7 +435,9 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
 
   // Adjust image urls.
   doc.querySelectorAll('img').forEach(img => {
-    img.src = `/${relDir}/${img.src}`;
+    if ( ! img.src.startsWith("/") ) {
+      img.src = `/${relDir}/${img.src}`;
+    }
   });
 
   // Process code snippets.
@@ -391,19 +474,6 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     processCodeSnippet(doc, pre, code, spec);
   }
 
-  // Create soft link in this folder to index.html file at root.
-  if(configJson.hasCustomBase == false) {
-    try { await fs.unlink(`${out_folder}/index.html`); } catch (e) { void(e); }
-    const backstepCount = relDir.split('/').length - 1;
-    let backstepUrl = '';
-    for (let i=0; i < backstepCount; i++) {
-      backstepUrl = backstepUrl + '../';
-    }
-    const target = `${backstepUrl}index.html`;
-    const symlink = `${out_folder}/index.html`;
-    await fs.symlink(target, symlink);
-  }
-
   // Write files
   await Promise.all([
     fs.writeFile(cfgPath, JSON.stringify(configJson, null, 2)),
@@ -411,7 +481,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   ]);
 };
 
-const findAndProcessFolder = async (inputBaseConfig, folder) => {
+const findAndProcessFolder = async (base_html, inputBaseConfig, folder) => {
   let relDir = normalizeDir(folder.replace(srcDir, ''));
   relDir = relDir.startsWith('/') ? relDir.slice(1) : relDir;
   const in_folder = `${srcDir}/${relDir}`;
@@ -430,6 +500,10 @@ const findAndProcessFolder = async (inputBaseConfig, folder) => {
 
   const out_folder = `${outDir}/${relDir}`;
   await fs.mkdir(out_folder, { recursive: true })
+
+  try { await fs.unlink(`${out_folder}/index.html`); } catch (e) { void(e); }
+  await fs.symlink(base_html, `${out_folder}/index.html`);
+
   const fileArr = await fs.readdir(folder);
   await Promise.all(fileArr.map(async (p) => {
     if ( p === 'index.md' ) {
@@ -438,7 +512,7 @@ const findAndProcessFolder = async (inputBaseConfig, folder) => {
       const absolute = path.join(folder, p);
       const s = await fs.stat(absolute);
       if (s.isDirectory()) {
-        return await findAndProcessFolder(baseConfig, absolute);
+        return await findAndProcessFolder(`../${base_html}`, baseConfig, absolute);
       } else if ( ! INTERNAL.includes(p) ) {
         return await fs.copyFile(path.join(in_folder, p), path.join(out_folder, p));
       }
@@ -448,11 +522,9 @@ const findAndProcessFolder = async (inputBaseConfig, folder) => {
 
 // Main
 
-(async () => {
-  await Promise.all([
-    processCss(),
-    processJs(),
-    processBaseHtml('en'),
-    findAndProcessFolder({}, srcDir),
-  ]);
-})();
+await Promise.all([
+  processCss(),
+  processJs(),
+  processBaseHtml(),
+  findAndProcessFolder(`base.html`, process.env, srcDir),
+]);

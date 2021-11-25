@@ -25,23 +25,23 @@ export const main =
         .invariant(balance() == balance())
         .case(
           A,
-          (() => ({ when: declassify(interact.doCase(1)) })),
-          ((_) => payment),
+          () => ({ when: declassify(interact.doCase(1)) }),
+          (_) => payment,
           (_) => { return [ keepGoing ]; })
         .case(
           A,
-          (() => ({ when: declassify(interact.doCase(2)) })),
-          ((_) => payment * 2),
+          () => ({ when: declassify(interact.doCase(2)) }),
+          (_) => payment * 2,
           (_) => { return [ keepGoing ]; })
         .case(
           A,
-          (() => ({ when: declassify(interact.doCase(3)) })),
-          ((_) => payment * 3),
+          () => ({ when: declassify(interact.doCase(3)) }),
+          (_) => payment * 3,
           (_) => { return [ keepGoing ]; })
         .case(
           B,
-          (() => ({ when: declassify(interact.doCase(4)) })),
-          ((_) => payment * 4),
+          () => ({ when: declassify(interact.doCase(4)) }),
+          (_) => payment * 4,
           (_) => { return [ keepGoing ]; })
         .timeout(relativeTime(timeout), () => {
           Anybody.publish();

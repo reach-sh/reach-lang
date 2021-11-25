@@ -134,8 +134,8 @@ instance Freshen DLExpr where
     DLE_TimeOrder at tos -> DLE_TimeOrder at <$> fu tos
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
-    DLE_EmitLog at m a -> DLE_EmitLog at m <$> fu a
-    DLE_setApiDetails at w t c -> return $ DLE_setApiDetails at w t c
+    DLE_EmitLog at m ma a -> DLE_EmitLog at m ma <$> fu a
+    DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
 
 instance {-# OVERLAPS #-} Freshen k => Freshen (SwitchCases k) where
   fu = mapM (\(vn, vnu, k) -> (,,) <$> fu_v vn <*> pure vnu <*> fu k)

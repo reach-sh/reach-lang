@@ -7,8 +7,7 @@
 
 This section provides an in depth explanation of the error codes produced from
 the Reach compiler.
-
-@(local-table-of-contents)
+See the list on the left bar.
 
 @;{
   What is a "good" error description?
@@ -49,6 +48,29 @@ token in the next consensus step:
 
 The frontend can have @reachin{Alice} opt-in to the token in @reachin{informOfTokenId} by utilizing
 @jsin{acc.tokenAccept()}.
+
+@error{RA0001}
+
+This error indicates that a program, targeting the Algorand connector, is attempting to pay a @reachin{Token} at the same time it is published.
+It is impossible to perform this action because one must opt-in to receive a token on Algorand.
+To opt-in, one must know the id, however the application cannot learn the application until after it has received the publication, which must occur after all pay transactions.
+
+The following code has this error:
+
+@reach{
+  Alice.publish(tok).pay([[5, tok]]);
+  commit();
+}
+
+This can be fixed by performing the @reachin{publish} and @reachin{pay} in two steps:
+token in the next consensus step:
+
+@reach{
+  Alice.publish(tok);
+  commit();
+  Alice.pay([[5, tok]]);
+  commit();
+}
 
 @error{RC0000}
 
@@ -2155,6 +2177,23 @@ You can fix this error by using different names:
   const A = Participant('Flower_girl', {});
   const B = API('Flower', { girl2: Fun([UInt], Null) });
 }
+
+@error{RE0124}
+
+This error indicates that there is an attempt to make a publication in your program, but there are
+no @reachin{Participant}s or @reachin{ParticipantClass}es declared.
+
+This issue can arise when you use @reachin{Anybody.publish()}. To fix this issue, ensure you declare
+a @reachin{Participant} or @reachin{ParticipantClass}.
+
+@error{RE0125}
+
+This error indicates that an @reachin{API} is explicitly attempting to make a publication, e.g. @reachin{api.publish()}.
+An API may only make a publication through a @reachin{fork}, @reachin{parallelReduce}, or @reachin{call}.
+
+Depending on your program, you can fix this error by performing a @reachin{call} or adding an @reachin{.api}
+case to your @reachin{fork} or @reachin{parallelReduce} statement.
+
 
 @error{REP0000}
 
