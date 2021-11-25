@@ -66,7 +66,7 @@ type Log = real_ethers.providers.Log;
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-const reachBackendVersion = 5;
+const reachBackendVersion = 6;
 const reachEthBackendVersion = 5;
 type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
@@ -795,8 +795,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
       // Returns address of a Reach contract
       const getContractAddress = getInfo;
+      const getContractInfo = getInfo;
 
-      return { getContractAddress, sendrecv, recv, getState };
+      return { getContractInfo, getContractAddress, sendrecv, recv, getState };
     };
 
     const setupView = (setupViewArgs: SetupViewArgs) => {

@@ -119,7 +119,8 @@ checkteal () {
 #exit 0
 
 jb
-ci ALGO rps-7-loops
+ci ALGO ctc-address
+#ci ETH ctc-address
 exit 0
 
 #c users/t.rsh

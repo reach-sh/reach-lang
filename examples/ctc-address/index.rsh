@@ -13,9 +13,6 @@ export const main = Reach.App(() => {
   deploy();
 
   A.publish();
-  commit();
-  A.publish();
-
   const info = getContract();
   const addr = getAddress();
 
