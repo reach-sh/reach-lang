@@ -14,9 +14,67 @@ Writing Reach code feels familiar because Reach syntax is a subset of modern Jav
 const info = getContract();
 ```
 
-Most of what you know about JavaScript statements, expressions, keywords, comments, declarations, operators, flow control, iterations, arrays, objects, functions, maps, sets, and error handling applies to Reach. 
+Most of what you know about JavaScript statements, expressions, keywords, comments, declarations, operators, flow control, iterations, arrays, objects, functions, maps, sets, and error handling applies to Reach.
 
-# Statements
+# Reach Types
+
+Reach defines the following data types for use in Reach modules (e.g. *index.rsh* files):
+
+|Type|Description|
+|-|-|
+|[Address](#address)||
+|[Array](#array)||
+|`Bool`|A boolean type can be `true` or `false`.|
+|[Bytes](#bytes)||
+|[Contract](#contract)||
+|[Data](#data)||
+|[Digest](#digest)||
+|[FixedPoint](#fixedpoint)|A fixed-point type is used to represent numbers that have a fixed number of digits after the decimal. It is represented by the object `{ sign: Bool, i: { scale: UInt, i: UInt} }` where `scale` is `1`, `10`, `100`, `1000`, etc., and `i` is the underlying unsigned integer. The value of a fixed-point number is `(i / scale) * sign`.|
+|[Fun](#fun)||
+|[Int](#int)|A signed integer is represented by the object `{ sign: Bool, i: UInt }` rather than a scalar value because some consensus networks do not support signed integers.|
+|[Interval](#interval)||
+|`Null`||
+|[Object](#object)||
+|[Refine](#refine)||
+|[Struct](#struct)||
+|[Token](#token)||
+|[Tuple](#tuple)||
+|[UInt](#uint)||
+
+Use the unary operator `typeof` or the function `typeOf()` to return the type of the argument:
+
+``` js nonum
+const XTy = typeof 0;
+const YTy = typeOf(true);
+```
+
+You can use the returned type in declarations like this:
+
+``` js nonum
+{
+  getX: Fun([], XTy),
+  getY: Fun([], YTy)
+}
+```
+
+Use the `is()` function to verify that a variable is of a certain type:
+
+``` js nonum
+const addOneImpl = (x) => x + 1;
+export const addOne = is(addOneImpl, Fun([UInt], UInt));
+```
+
+If `true`, `is()` returns its first argument. Otherwise, the compiler outputs an error. Consider the following:
+
+
+``` js nonum
+const addOneImpl = (x) => x + 1;
+export const addOne = is(addOneImpl, Fun([UInt], Null));
+```
+
+The compiler outputs `These types are mismatched: UInt vs Null` because `addOneImpl` returns a `UInt` not a `Null`.
+
+# Reach Statements
 
 *Statements* are instructions composed of values, operators, expressions, keywords, and/or comments.  Statements often end with semicolons. Here are two examples:
 
@@ -160,7 +218,7 @@ const [_, x, _] = [1, 2, 3];
 function randomBool() { return (interact.random() % 2) == 0; };
 ```
 
-Function parameters may specify default arguments, but they must appear after parameters that do not specify defaults:
+Function parameters may specify default arguments, but they must appear last:
 
 ``` js nonum
 function f(a, b, c = a + 1, d = b + c) => a + b + c + d;
@@ -288,15 +346,21 @@ Reach supports `var` in two situations:
     );
     ```
 
-# Expressions
+# Reach Expressions
 
 An *expression* evaluates to a value (e.g. `add(4, 5)`). Reach includes the expressions described below.
 
-For arithmetic expressions, see [Fixed-point Numbers](), [Intervals](), [Signed Integers](), and [Unsigned Integers]().
+## Address
+
+### getAddress
 
 ## Anybody
 
-## Arrays
+## Arithmetic
+
+See [FixedPoint](#fixedpoint), [Int](#int), [Interval](#interval), or [UInt](#uint).
+
+## Array
 
 An *array* is ...
 
@@ -312,27 +376,31 @@ An *element reference* ...
 
 ## bitwise
 
+## Bytes
+
 ## comparison
 
 ## compose
+
+## Contract
+
+### getContract
 
 ## Data
 
 A *data instance* is ...
 
-## digest
+## Digest
 
 ## Either
 
 ## ensure
 
-## Fixed-point Numbers
+## FixedPoint
+
+## Fun
 
 ## forall
-
-## getAddress
-
-## getContract
 
 ## hasConsoleLogger
 
@@ -340,7 +408,39 @@ A *data instance* is ...
 
 ## implies
 
-## Intervals
+## Int
+
+### Adding
+
+``` js nonum
+iadd(a, b) // iadd(Int, Int)
+```
+
+### Subtracting
+
+``` js nonum
+isub(a, b) // isub(Int, Int)
+```
+
+### Multiplying
+
+``` js nonum
+imul(a, b) // imul(Int, Int)
+```
+
+### Dividing
+
+``` js nonum
+idiv(a, b) // idiv(Int, Int)
+```
+
+### Modulus
+
+``` js nonum
+imod(a, b) // imod(Int, Int)
+```
+
+## Interval
 
 Constructors
 
@@ -366,7 +466,7 @@ A *map* is ...
 
 ## new
 
-## Objects
+## Object
 
 An *object* is ...
 
@@ -401,43 +501,13 @@ An *object* is ...
 
 ## possible
 
+## Refine
+
 ## Sets
 
 A *set* is ...
 
-## Signed Integers
-
-### Adding
-
-``` js nonum
-iadd(a, b) // iadd(Int, Int)
-```
-
-### Subtracting
-
-``` js nonum
-isub(a, b) // isub(Int, Int)
-```
-
-### Multiplying
-
-``` js nonum
-imul(a, b) // imul(Int, Int)
-```
-
-### Dividing
-
-``` js nonum
-idiv(a, b) // idiv(Int, Int)
-```
-
-### Modulus
-
-``` js nonum
-imod(a, b) // imod(Int, Int)
-```
-
-## Structs
+## Struct
 
 A *struct* is ...
 
@@ -465,13 +535,13 @@ makeDeadline
 
 ## this
 
-## Tuples
+## Token
+
+## Tuple
 
 A *tuple* is ...
 
-## Types
-
-## Unsigned Integers
+## UInt
 
 ### Adding
 
@@ -534,7 +604,7 @@ The `pow` function calculates the approximate value of raising `base` to `power`
 pow(base, power, iterations) // pow(UInt, UInt, UInt)
 ```
 
-`iterations` must be known at compile time. Six iterations provides enough accuracy to calculate up to `2^64 - 1`, so the largest power it can compute is 63.
+`iterations` must be known at compile time. Six iterations provides enough accuracy to calculate up to <code>2<sup>63</sup></code>.
 
 ## unstrict
 
