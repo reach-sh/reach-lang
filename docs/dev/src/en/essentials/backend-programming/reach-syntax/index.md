@@ -20,14 +20,14 @@ Most of what you know about JavaScript statements, expressions, keywords, commen
 
 *Statements* are instructions composed of values, operators, expressions, keywords, and/or comments.  Statements often end with semicolons. Here are two examples:
 
-``` js
+``` js nonum
 const wager = declassify(interact.wager);
 const deadline = declassify(interact.deadline);
 ```
 
 But, *conditional statements* do not end with semicolons:
 
-``` js
+``` js nonum
 if (!willBuy) {
   commit();
   each([S, B], () => interact.reportCancellation());
@@ -48,7 +48,7 @@ switch ( mi ) {
 
 *Blocks* are sequences of statements surrounded by curly braces. Below are five blocks. The third contains the fourth and fifth:
 
-``` js
+``` js nonum
 { return 42; }
 
 {
@@ -67,7 +67,7 @@ switch ( mi ) {
 
 *Tails* are statements that follow a prior statement. Consider the following:
 
-``` js
+``` js nonum
 {
   X;
   Y;
@@ -79,7 +79,7 @@ In this block, the tail of statement `X` is `{ Y; Z; }`, and the tail of stateme
 
 *Continuations* are all the statements that follow a prior statement. Consider the following:
 
-``` js
+``` js nonum
 { 
   {
     X;
@@ -93,14 +93,14 @@ In this block, the continuation of statement `X` is `{ Y; }; Z;`. Continuations 
 
 A *block statement*, a statement composed of a block, establishes a local scope for the identifier definitions within the curly braces, isolating the definitions from the statement tail. Consider this example that does *not* include a block statement:
 
-``` js
+``` js nonum
 const x = 4;
 return x; 
 ```
 
 Above, `x` evaluates to `4`. The snippet below isolates `const x = 4` within a block statment:
 
-``` js
+``` js nonum
 { const x = 4; }
 return x;
 ```
@@ -109,7 +109,7 @@ Now, `return x` is erroneous because `x` is unbound outside the block statement.
 
 *Terminator Statements* are statements with no tail. Consider the following:
 
-``` js
+``` js nonum
 {
   X;
   Y;
@@ -123,7 +123,7 @@ In this block, `Z` is the terminator statement because it does not have a tail. 
 
 `const` is an *identifier definition* that binds an identifier to a *value* definition. Here are examples:
 
-``` js
+``` js nonum
 const DELAY = 10;
 const [ Good, Bad ] = [ 42, 43 ];
 const { x, y } = { x: 1, y: 2 };
@@ -132,47 +132,169 @@ const [ x, { y } ] = [ 1, { y: 2 } ];
 const { x: [ a, b ] } = { x: [ 1, 2 ] };
 ```
 
+You cannot re-bind a previously bound identifier. The following is invalid:
+
+``` js nonum
+const x = 3;
+const x = 4; 
+```
+
+The following is also invalid:
+
+``` js nonum
+Alice.only(() => { const x = 3; });
+Bob.only(() => { const x = 4; });
+```
+
+The special identifier `_` is an exception to this rule. The `_` binding is always considered to be unbound. This means that `_` is both an identifier that can never be read, as well as an identifier that may be bound many times which is useful for ignoring unwanted values. The following, for example, binds `x = 2` while ignoring `1` and `3`:
+
+``` js nonum
+const [_, x, _] = [1, 2, 3];
+```
+
 ## function
 
-`function` is an *identifier definition* that binds an identifier to a *function* definition. Here are examples:
+`function` is an *identifier definition* that binds an identifier to a *function* definition. Here is an example:
 
-``` js
+``` js nonum
 function randomBool() { return (interact.random() % 2) == 0; };
 ```
 
-``` js
+Function parameters may specify default arguments, but they must appear after parameters that do not specify defaults:
+
+``` js nonum
 function f(a, b, c = a + 1, d = b + c) => a + b + c + d;
 ```
 
-## if...else
+Argument expressions like `d = b + c` have access to preceding arguments (e.g. `c`) and to any variables within the scope in which the function itself was defined.
+
+The last parameter of a function may be a *rest* parameter (e.g. `...nums`) which allows the function to be called with an arbitrary number of arguments:
+
+``` js nonum
+function sum(x, ...nums) {
+  const arr = array(UInt, nums);
+  return x + arr.reduce(0, add);
+}
+```
+
+You might invoke the `sum` function like this:
+
+``` js nonum
+A.interact.report(sum(2, 4, 6, 8));
+```
+
+You cannot re-bind a previously bound identifier to a new function definition. For more, see [const](#const).
+
+## if else
+
+Reach supports conditional statements. Here is an example:
+
+``` js nonum
+if (!willBuy) {
+  commit();
+  each([S, B], () => interact.reportCancellation());
+  exit();
+} else {
+  commit();
+}
+```
+
+If one branch of a conditional contains `commit` or `return`, then the other must, too.
+
+Identifiers bound within the scopes of the `if` or `else` sets of curly braces are not bound outside the scopes:
+
+``` js nonum
+if ( x < y ) {
+  const z = 3;
+}
+else {
+  const z = 4;
+}
+return z; // Invalid
+```
+
+A conditional statement may include a consensus transfer only when the statement occurs within a consensus step.
 
 ## return
 
+Reach supports the `return` statement which returns a value to the surrounding scope:
+
+``` js nonum
+function whoWinsBestOfThree(winCountA, winCountB, lastOutcome) {
+  if (winCountA > winCountB) { return A_WINS; } 
+  else if (winCountB > winCountA) { return B_WINS; } 
+  else if (lastOutcome == B_QUITS) { return B_QUITS; } 
+  else if (lastOutcome == A_QUITS) { return A_QUITS; } 
+  else { return A_WINS; }
+}
+```
+
+A `return` statement is a terminator statement, so it must be the last statement in the scope:
+
+``` js nonum
+function whoWinsBestOfThree(winCountA, winCountB, lastOutcome) {
+  return 3;
+  const x = 5; // Invalid
+}
+```
+
 ## switch
+
+Reach supports the `switch` statement which selects one of many code blocks based on a given expression:
+
+``` js nonum
+switch (x) {
+  case 0: return 0;
+  case 1: return 1;
+  default: return fib(x - 1) + fib(x - 2);
+}
+```
+
+Note the following:
+
+* If one case of a `switch` contains a `return` statement, then all must.
+* A `case` must appear only once.
+* A `case` must be the same type as the evaluated expression.
+* `switch` statements do not support `break` statements because a previous `case` does not fall through to the next.
 
 ## var
 
+Reach supports `var` in two situations:
+
+1. Outside `export const main = Reach.App(() => {}`:
+
+    ``` js nonum
+    'reach 0.1';
+    var x = 0;
+    export const main = Reach.App(() => {}
+    ```
+
+1. Immediately before a while loop and its invariant:
+
+    ``` js nonum
+    'reach 0.1';
+
+    export const main = Reach.App(
+      {}, [Participant('A', {})], (A) => {
+        A.publish();
+        var [x] = [1];
+        invariant(true);
+        while(x < 2) {
+          [ x, y ] = [ x + 1, x ];
+          continue;
+        }
+        commit();
+      }
+    );
+    ```
+
 # Expressions
 
-An *expression* evaluates to a value. 
+An *expression* evaluates to a value (e.g. `add(4, 5)`). Reach includes the expressions described below.
 
-Expressions may include parentheses that enforce operational order:
-
-``` js nonum
-(a + b) - c 
-```
-
-Reach includes the expressions described below.
+For arithmetic expressions, see [Fixed-point Numbers](), [Intervals](), [Signed Integers](), and [Unsigned Integers]().
 
 ## Anybody
-
-## Arithmetic
-
-muldiv
-
-sqrt
-
-pow
 
 ## Arrays
 
@@ -187,6 +309,10 @@ An *element reference* ...
 ## assert
 
 ## balance
+
+## bitwise
+
+## comparison
 
 ## compose
 
@@ -281,6 +407,36 @@ A *set* is ...
 
 ## Signed Integers
 
+### Adding
+
+``` js nonum
+iadd(a, b) // iadd(Int, Int)
+```
+
+### Subtracting
+
+``` js nonum
+isub(a, b) // isub(Int, Int)
+```
+
+### Multiplying
+
+``` js nonum
+imul(a, b) // imul(Int, Int)
+```
+
+### Dividing
+
+``` js nonum
+idiv(a, b) // idiv(Int, Int)
+```
+
+### Modulus
+
+``` js nonum
+imod(a, b) // imod(Int, Int)
+```
+
 ## Structs
 
 A *struct* is ...
@@ -314,6 +470,71 @@ makeDeadline
 A *tuple* is ...
 
 ## Types
+
+## Unsigned Integers
+
+### Adding
+
+``` js nonum
+a + b      // UInt + UInt
+add(a, b)  // add(UInt, UInt)
+```
+
+### Subtracting
+
+``` js nonum
+a - b      // UInt - UInt
+sub(a, b)  // sub(UInt, UInt)
+```
+
+### Multiplying
+
+``` js nonum
+a * b      // UInt * UInt
+mul(a, b)  // mul(UInt, UInt)
+```
+
+The `muldiv` function performs `(a * b) / c`:
+
+``` js nonum
+muldiv(a, b, c) // muldiv(UInt, UInt, UInt)
+```
+
+The product of `a * b` may exceed `UInt.max`, but the final quotient must be less than `UInt.max`.
+
+### Dividing
+
+``` js nonum
+a / b      // UInt * UInt
+div(a, b)  // div(UInt, UInt)
+```
+
+### Modulus
+
+``` js nonum
+a % b      // UInt % UInt
+mod(a, b)  // mod(UInt, UInt)
+```
+
+### Square Root
+
+The `sqrt` function finds the square root of `value`, iterating `iterations` number of times.
+
+``` js nonum
+sqrt(value, iterations) // sqrt(UInt, UInt)
+```
+
+This function utilizes the [Babylonian Method](https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method) for computing the square root. `iterations` must be known at compile time. When performing 5 iterations, the algorithm can reliably calculate the square root up to 32 squared, or 1,024. When performing 10 iterations, the algorithm can reliably calculate the square root up to 580 squared, or 336,400.
+
+### Power
+
+The `pow` function calculates the approximate value of raising `base` to `power`, iterating `iterations` number of times.:
+
+``` js nonum
+pow(base, power, iterations) // pow(UInt, UInt, UInt)
+```
+
+`iterations` must be known at compile time. Six iterations provides enough accuracy to calculate up to `2^64 - 1`, so the largest power it can compute is 63.
 
 ## unstrict
 

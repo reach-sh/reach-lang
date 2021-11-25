@@ -244,10 +244,10 @@ i.fas:hover {cursor: pointer;}
 }
 
 #page-col div.hh-viewer h3 {
-  color: #1a1a1a;
-  font-weight: normal;
-  font-style: italic;
-  text-decoration: underline;
+  color: coral;
+  font-weight: bold;
+  font-style: normal;
+  text-decoration: normal;
   font-size: 16px;
 }
 
