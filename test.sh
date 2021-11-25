@@ -119,9 +119,7 @@ checkteal () {
 #exit 0
 
 jb
-ci ETH log-attack1
-ci ETH log-attack2
-ci ETH log-attack1j
+ci ALGO rps-7-loops
 exit 0
 
 #c users/t.rsh
