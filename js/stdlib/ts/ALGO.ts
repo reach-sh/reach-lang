@@ -113,7 +113,7 @@ type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 5;
+const reachBackendVersion = 6;
 const reachAlgoBackendVersion = 6;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
@@ -1171,6 +1171,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const { ctcAddr } = await getC();
         return T_Address.canonicalize(ctcAddr);
       };
+      const getContractInfo = async () => {
+        const { ApplicationID } = await getC();
+        return ApplicationID;
+      };
 
       const getState = async (vibne:BigNumber, vtys:AnyALGO_Ty[]): Promise<Array<any>> => {
         return await getState_(getC, (vibna:BigNumber) => {
@@ -1571,7 +1575,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
       };
 
-      return { getContractAddress, getState, sendrecv, recv };
+      return { getContractInfo, getContractAddress, getState, sendrecv, recv };
     };
 
     const readStateBytes = (prefix:string, key:number[], src:any): any => {
