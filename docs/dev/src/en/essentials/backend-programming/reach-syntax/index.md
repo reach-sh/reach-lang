@@ -33,6 +33,7 @@ Reach defines the following data types for use in Reach modules (e.g. *index.rsh
 |[Fun](#fun)||
 |[Int](#int)|A signed integer is represented by the object `{ sign: Bool, i: UInt }` rather than a scalar value because some consensus networks do not support signed integers.|
 |[Interval](#interval)||
+|[Map](#map)||
 |`Null`||
 |[Object](#object)||
 |[Refine](#refine)||
@@ -531,9 +532,37 @@ Other Operations
 
 ## makeEnum
 
-## Maps
+## Map
 
 A *map* is ...
+
+### Map.all
+
+### Map.and
+
+### Map.any
+
+### Map.average
+
+### Map.count
+
+### Map.forEach
+
+### Map.includes
+
+### Map.max
+
+### Map.min
+
+### Map.or
+
+### Map.product
+
+### Map.reduce
+
+### Map.size
+
+### Map.sum
 
 ## match
 
@@ -544,6 +573,12 @@ A *map* is ...
 ## Object
 
 An *object* is ...
+
+### Object.has
+
+### Object.set
+
+### Object.setIfUnset
 
 ## Operators
 
@@ -577,10 +612,6 @@ An *object* is ...
 ## possible
 
 ## Refine
-
-## Sets
-
-A *set* is ...
 
 ## Struct
 
