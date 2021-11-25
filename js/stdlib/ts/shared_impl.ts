@@ -689,3 +689,14 @@ export function isSome<T>(m: Maybe<T>): m is Some<T> {
 }
 export const Some = <T>(m: T): Some<T> => [m];
 export const None: None = [];
+
+export const retryLoop = async <T>(lab: any, f: (() => Promise<T>)) => {
+  let retries = 0;
+  while ( true ) {
+    try { return await f(); }
+    catch (e:any) {
+      console.log(`retryLoop`, { lab, retries, e });
+      retries++;
+    }
+  }
+};

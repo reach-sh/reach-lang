@@ -42,6 +42,7 @@ import {
   truthyEnv,
   Signal,
   Lock,
+  retryLoop,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -1481,7 +1482,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         // const theSecs = txn['round-time'];
         // ^ The contract actually uses `global LatestTimestamp` which is the
         // time of the PREVIOUS round.
-        const theSecs = await getTimeSecs(bigNumberify(theRound - 0));
+        // ^ Also, this field is only available from the indexer
+        const theSecs = await retryLoop([dhead, 'getTimeSecs'], () => getTimeSecs(bigNumberify(theRound - 0)));
+        // ^ XXX it would be nice if Reach could support variables bound to
+        // promises and then we wouldn't need to wait here.
 
         // XXX need to move this to a log
         const ctc_args_all = txn['application-args'];
