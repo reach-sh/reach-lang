@@ -244,7 +244,7 @@ i.fas:hover {cursor: pointer;}
 }
 
 #page-col div.hh-viewer h3 {
-  color: coral;
+  color: #990099;
   font-weight: bold;
   font-style: normal;
   text-decoration: normal;
@@ -338,7 +338,8 @@ iframe.gray-scale {
 #page-col div.hh-viewer td,
 #page-col div.hh-viewer th {
   border: 1px solid #ddd;
-  line-height: normal;
+  line-height: var(--bs-body-line-height);
+  /*line-height: normal;*/
   padding: 0.5rem;
   /*text-align: left;*/
   vertical-align: top;
