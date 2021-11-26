@@ -15,5 +15,7 @@ build:
 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
 	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
 	  --build-arg REFRESH_LOCK=${REFRESH_LOCK} \
+	  --cache-from $(IMAGE):${CIRCLE_BRANCH} \
+	  --cache-from $(IMAGE):master \
 	  .
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)

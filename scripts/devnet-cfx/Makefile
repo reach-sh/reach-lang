@@ -3,8 +3,21 @@ ROOT=../..
 include $(ROOT)/DEPS
 
 .PHONY: build
-build:
-	docker build --build-arg REACH_GIT_HASH="$$(../git-hash.sh)" --tag=$(IMAGE):latest .
+build-devnet-cfx-build:
+	docker build --target build \
+	--build-arg REACH_GIT_HASH="$$(../git-hash.sh)" \
+	--tag=$(IMAGE):build-latest \
+	--cache-from=reachsh/devnet-cfx:build-${CIRCLE_BRANCH} \
+	--cache-from=reachsh/devnet-cfx:build-master .
+
+.PHONY: build
+build-devnet-cfx:
+	docker build --build-arg REACH_GIT_HASH="$$(../git-hash.sh)" \
+	--tag=$(IMAGE):latest \
+	--cache-from=reachsh/devnet-cfx:build-${CIRCLE_BRANCH} \
+	--cache-from=reachsh/devnet-cfx:build-master \
+	--cache-from=reachsh/devnet-cfx:${CIRCLE_BRANCH} \
+	--cache-from=reachsh/devnet-cfx:master .
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: push

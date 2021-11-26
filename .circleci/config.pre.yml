@@ -3,6 +3,7 @@ orbs:
   jq: "circleci/jq@2.2.0"
   shellcheck: "circleci/shellcheck@2.2.0"
   slack: "circleci/slack@4.3.3"
+  docker-cache: cci-x/docker-registry-image-cache@0.2.0
 
 executors:
   fake:
@@ -31,7 +32,7 @@ executors:
         type: boolean
     machine:
       image: "ubuntu-2004:202107-02"
-      docker_layer_caching: << parameters.dlc >>
+      #docker_layer_caching: << parameters.dlc >>
     resource_class: "medium"
     environment:
       LC_ALL: "en_US.UTF-8"
@@ -233,6 +234,10 @@ jobs:
       deps:
         description: "docker dependencies"
         type: string
+      extra_layer:
+        description: "extra docker layers"
+        type: string
+        default: ""
     executor:
       name: <<parameters.exec>>
       dlc: true
@@ -247,11 +252,46 @@ jobs:
     - and_restore_docker:
         deps: <<parameters.deps>>
     - run: |
-        IMAGE="<<parameters.image>>"
-        mkdir -p "/tmp/workspace/docker-${IMAGE}"
-        cd .circleci && ./image.sh "${IMAGE}"
-        echo "docker save reachsh/${IMAGE}:latest..."
-        docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
+        docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
+    - docker-cache/with-save-restore-images:
+        repository: reachsh
+        images: >-
+          <<parameters.image>>:master
+          <<parameters.image>>:z3-master
+          <<parameters.image>>:solc-master
+          <<parameters.image>>:build-master
+          <<parameters.image>>:prepare-master
+          <<parameters.image>>:generate-master
+          <<parameters.image>>:${CIRCLE_BRANCH/\//-}
+          <<parameters.image>>:z3-${CIRCLE_BRANCH/\//-}
+          <<parameters.image>>:solc-${CIRCLE_BRANCH/\//-}
+          <<parameters.image>>:build-${CIRCLE_BRANCH/\//-}
+          <<parameters.image>>:prepare-${CIRCLE_BRANCH/\//-}
+          <<parameters.image>>:generate-${CIRCLE_BRANCH/\//-}
+        steps:
+          - when:
+             condition: <<parameters.extra_layer>>
+             steps:
+               - docker-cache/build: 
+                   command: |
+                     LAYERS="<<parameters.extra_layer>>"
+                     for i in $LAYERS; do
+                       IMAGE="<<parameters.image>>"
+                       cd .circleci && ./image.sh "${IMAGE}-${i}"; cd ..
+                       docker tag reachsh/${IMAGE}:${i}-latest reachsh/${IMAGE}:${i}-${CIRCLE_BRANCH/\//-}
+                     done 
+          - docker-cache/build: 
+              command: |
+                IMAGE="<<parameters.image>>"
+                mkdir -p "/tmp/workspace/docker-${IMAGE}"
+                cd .circleci && ./image.sh "${IMAGE}"
+                docker tag reachsh/${IMAGE}:latest reachsh/${IMAGE}:${CIRCLE_BRANCH/\//-}
+                docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
+#    - run: |
+#        mkdir -p "/tmp/workspace/docker-${IMAGE}"
+#        cd .circleci && ./image.sh "${IMAGE}"
+#        echo "docker save reachsh/${IMAGE}:latest..."
+#        docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:

@@ -8,9 +8,13 @@ include $(ROOT)/DEPS
 build-js-deps:
 	(cd js-deps && $(MAKE) build)
 
+.PHONY: build-stdlib-build
+build-stdlib-build:
+	(cd stdlib && $(MAKE) build-stdlib-build)
+
 .PHONY: build-stdlib
 build-stdlib:
-	(cd stdlib && $(MAKE) build)
+	(cd stdlib && $(MAKE) build-stdlib)
 
 .PHONY: build-runner
 build-runner:

@@ -9,7 +9,7 @@ FROM $JS_DEPS_IMAGE as js-deps
 FROM reachsh/reach AS reach
 
 # hadolint ignore=DL3006
-FROM $NODE_IMAGE AS prepare
+FROM $NODE_IMAGE AS build
 ARG REACH_VERSION
 ENV REACH_VERSION=${REACH_VERSION}
 RUN apk update; apk add bash curl
@@ -48,7 +48,7 @@ RUN mv ./dist/mjs/* ./
 RUN rm -rf ./sbin/
 
 FROM $NODE_IMAGE 
-COPY --from=prepare /stdlib /stdlib
+COPY --from=build /stdlib /stdlib
 RUN apk add git
 
 ARG REACH_GIT_HASH

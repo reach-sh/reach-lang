@@ -36,13 +36,15 @@ END
 image () {
   EXEC="$1"
   IMAGE="$2"
-  shift 2
+  EXTRA_LAYER="$3"
+  shift 3
   NAME="build-${IMAGE}"
   cat >>"${MID}" <<END
     - "build-image":
         name: "${NAME}"
         image: "${IMAGE}"
         exec: "${EXEC}"
+        extra_layer: "${EXTRA_LAYER}"
 END
   deps "$@"
   cat >>"${IEND}" <<END
@@ -50,14 +52,14 @@ END
 END
 }
 
-image "real" "haskell-build-artifacts"
-image "fake" "reach" "haskell-build-artifacts"
-image "fake" "reach-cli" "haskell-build-artifacts"
-image "real" "js-deps"
-image "real" "stdlib" "reach" "js-deps"
-image "fake" "runner" "stdlib"
-image "fake" "react-runner" "stdlib" "js-deps"
-image "fake" "rpc-server" "runner"
+image "real" "haskell-build-artifacts" "solc z3" ""
+image "fake" "reach" "" "haskell-build-artifacts"
+image "fake" "reach-cli" "" "haskell-build-artifacts"
+image "real" "js-deps" "" "haskell-build-artifacts"
+image "real" "stdlib" "build" "reach" "js-deps"
+image "fake" "runner" "" "stdlib"
+image "fake" "react-runner" "" "stdlib" "js-deps"
+image "fake" "rpc-server" "" "runner"
 
 cat >>"${END}" <<END
     - "examples-sink":
@@ -68,11 +70,11 @@ for CONN in ETH ALGO CFX ; do
   CONNlc=$(echo "${CONN}" | tr '[:upper:]' '[:lower:]')
   IMAGE="devnet-${CONNlc}"
   case "${CONN}" in
-    ALGO) PER=8 EXEC="fake";;
-    CFX) PER=8 EXEC="real";;
-    ETH) PER=16 EXEC="fake";;
+    ALGO) PER=8 EXEC="fake" LAYERS="build prepare generate";;
+    CFX) PER=8 EXEC="real" LAYERS="build";;
+    ETH) PER=16 EXEC="fake" LAYERS="";;
   esac
-  image "${EXEC}" "${IMAGE}"
+  image "${EXEC}" "${IMAGE}" "${LAYERS}"
   SIZE=$(((TOTAL + (PER - 1)) / PER))
   for RANK in $(seq 0 $((SIZE - 1))) ; do
     NAME="examples.${CONN}.${RANK}"

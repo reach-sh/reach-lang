@@ -11,7 +11,7 @@ RUN apk update --allow-untrusted && apk add libgmpxx ca-certificates git
 RUN apk add --allow-untrusted --repository="http://host.docker.internal:30000/" z3=4.8.12-r0 z3-dev=4.8.12-r0
 RUN chmod +x /usr/bin/z3
 
-FROM alpine AS build
+FROM alpine
 RUN apk update
 RUN apk add ncurses ncurses-dev libc6-compat zlib-dev gcc g++ git gmp-dev curl bash
 RUN ln -s /lib64/ld-linux-x86-64.so.2 /lib/ld-linux-x86-64.so.2

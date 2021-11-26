@@ -4,15 +4,20 @@ ROOT=".."
 TARGET="build-${WHICH}"
 
 case "$WHICH" in
-  "haskell-build-artifacts"|"reach"|"reach-cli")
+  haskell-build-artifacts*|"reach"|"reach-cli")
     DIR="hs"
     ;;
-  "js-deps"|"stdlib"|"runner"|"react-runner"|"rpc-server")
+  "js-deps"|"runner"|"react-runner"|"rpc-server"|stdlib*)
     DIR="js"
     ;;
-  devnet-*)
-    DIR="scripts/${WHICH}"
-    TARGET="build"
+  devnet-algo*)
+    DIR="scripts/devnet-algo"
+    ;;
+  devnet-cfx*)
+    DIR="scripts/devnet-cfx"
+    ;;
+  devnet-eth*)
+    DIR="scripts/devnet-eth"
     ;;
   *)
     echo "No image: ${WHICH}"
