@@ -1201,10 +1201,15 @@ apiDef who ApiInfo{..} = do
           [] -> return "false"
           _ -> do
             tc_args <-
-              case ai_msg_vs of
-                [DLVar _ _ (T_Tuple []) _] ->
+              case (ai_msg_vs, ai_msg_tys) of
+                ([DLVar _ _ (T_Tuple []) _], _) ->
                   return $ [ "false" ]
-                [v] -> do
+                -- If the argument to the exported function
+                -- is the same type that the consensus msg's
+                -- type constructor takes, apply it directly
+                ([v], [T_Tuple [t]]) | varType v == t -> do
+                  return $ args
+                ([v], _) -> do
                   tc' <- solType_ $ varType v
                   return $ [ solApply tc' args ]
                 _ -> return args
