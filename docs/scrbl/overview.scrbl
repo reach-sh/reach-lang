@@ -228,7 +228,7 @@ Let's look at initializing and interfacing each participant, starting with Alice
 
 @itemlist[
 
-@item{Line 14 invokes Alice, passing a contract object which includes the standard library used by the backend to interface with the consensus network. }
+@item{Line 14 uses the contract handle associated with Alice's account to run the Alice participant backend, passing an object which holds the interact functions.}
 
 @item{Line 15 provides the @reachin{request} value.}
 
@@ -244,7 +244,7 @@ Let's look at Bob next.
 
 @itemlist[
 
-@item{Line 18 initializes Bob just like Alice.}
+@item{Line 18 initializes Bob just like Alice, although we use the @jsin{p} short-hand.}
 
 @item{Line 19 provides his @reachin{want} function, which produces a log message and always accepts.}
 

@@ -28,12 +28,8 @@ const stdlib = loadStdlib(process.env);
   }
 
   let ctc = null;
-  const deployCtc = await ask(
-    `Do you want to deploy the contract? (y/n)`,
-    yesno
-  );
-  if (deployCtc) {
-    ctc = acc.deploy(backend);
+  if (isAlice) {
+    ctc = acc.contract(backend);
     ctc.getInfo().then((info) => {
       console.log(`The contract is deployed as = ${JSON.stringify(info)}`); });
   } else {
@@ -41,7 +37,7 @@ const stdlib = loadStdlib(process.env);
       `Please paste the contract information:`,
       JSON.parse
     );
-    ctc = acc.attach(backend, info);
+    ctc = acc.contract(backend, info);
   }
 
   const fmt = (x) => stdlib.formatCurrency(x, 4);
@@ -100,8 +96,8 @@ const stdlib = loadStdlib(process.env);
     console.log(`The outcome is: ${OUTCOME[outcome]}`);
   };
 
-  const part = isAlice ? backend.Alice : backend.Bob;
-  await part(ctc, interact);
+  const part = isAlice ? ctc.p.Alice : ctc.p.Bob;
+  await part(interact);
 
   const after = await getBalance();
   console.log(`Your balance is now ${after}`);

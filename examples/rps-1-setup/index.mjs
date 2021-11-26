@@ -7,14 +7,14 @@ const stdlib = loadStdlib(process.env);
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
 
-  const ctcAlice = accAlice.deploy(backend);
-  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
 
   await Promise.all([
-    backend.Alice(ctcAlice, {
+    ctcAlice.p.Alice({
       // implement Alice's interact object here
     }),
-    backend.Bob(ctcBob, {
+    ctcBob.p.Bob({
       // implement Bob's interact object here
     }),
   ]);

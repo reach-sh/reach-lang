@@ -7,8 +7,8 @@ const stdlib = loadStdlib(process.env);
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
 
-  const ctcAlice = accAlice.deploy(backend);
-  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
 
   const HAND = ['Rock', 'Paper', 'Scissors'];
   const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
@@ -24,10 +24,10 @@ const stdlib = loadStdlib(process.env);
   });
 
   await Promise.all([
-    backend.Alice(ctcAlice, {
+    ctcAlice.p.Alice({
       ...Player('Alice'),
     }),
-    backend.Bob(ctcBob, {
+    ctcBob.p.Bob({
       ...Player('Bob'),
     }),
   ]);

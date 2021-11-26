@@ -1386,51 +1386,51 @@ We'll see how these three functions are used below.}
 
 @reachex[#:mode js
          "rps-8-interact/index.mjs"
-         'only 30 46 "  // ..."]
+         'only 30 41 "  // ..."]
 
 @itemlist[
 
-@item{Lines 31 through 34 ask if the participant will deploy the contract.}
+@item{Line 31 branches based on whether the player is running as Alice, who must deploy the contract, or Bob, who must attach to it.}
 
-@item{Lines 36 through 38 deploy it and print out public information (@jsin{ctc.getInfo}) that can be given to the other player when it becomes available.}
+@item{Lines 32 through 34 deploy it and print out public information (@jsin{ctc.getInfo}) that can be given to the other player when it becomes available.}
 
-@item{Lines 40 through 44 request, parse, and process this information.}
+@item{Lines 36 through 41 request, parse, and process this information.}
 
 ]
 
 @reachex[#:mode js
          "rps-8-interact/index.mjs"
-         'only 47 54 "  // ..."]
+         'only 43 49 "  // ..."]
 
 Next we define a few helper functions and start the participant interaction interface.
 
 @reachex[#:mode js
          "rps-8-interact/index.mjs"
-         'only 55 59 "  // ..."]
+         'only 51 54 "  // ..."]
 
 Then we define a timeout handler.
 
 @reachex[#:mode js
          "rps-8-interact/index.mjs"
-         'only 60 78 "  // ..."]
+         'only 56 73 "  // ..."]
 
 Next, we request the wager amount or define the @jsin{acceptWager} method, depending on if we are Alice or not.
 
 @reachex[#:mode js
          "rps-8-interact/index.mjs"
-         'only 79 97 "  // ..."]
+         'only 75 92 "  // ..."]
 
 Next, we define the shared @jsin{getHand} method.
 
 @reachex[#:mode js
          "rps-8-interact/index.mjs"
-         'only 98 102 "  // ..."]
+         'only 94 97 "  // ..."]
 
 Finally, the @jsin{seeOutcome} method.
 
 @reachex[#:mode js
          "rps-8-interact/index.mjs"
-         'only 103 111 "  // ..."]
+         'only 99 106 "  // ..."]
 
 Lastly, we choose the appropriate backend function and await its completion.
 
@@ -1455,12 +1455,10 @@ y
 Starting Rock, Paper, Scissors as Alice
 Would you like to create an account? (only possible on devnet)
 y
-Do you want to deploy the contract? (y/n)
-y
-The contract is deployed as = "0x132b724e55AEb074C15A5CBb7b8EeE0dBEd45F7b"
 Your balance is 999.9999
 How much do you want to wager?
 10
+The contract is deployed as = "0x132b724e55AEb074C15A5CBb7b8EeE0dBEd45F7b"
 What hand will you play?
 r
 You played Rock
@@ -1476,8 +1474,6 @@ n
 Starting Rock, Paper, Scissors as Bob
 Would you like to create an account? (only possible on devnet)
 y
-Do you want to deploy the contract? (y/n)
-n
 Please paste the contract information:
 "0x132b724e55AEb074C15A5CBb7b8EeE0dBEd45F7b"
 Your balance is 1000

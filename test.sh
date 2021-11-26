@@ -56,7 +56,7 @@ ci () {
   ${REACH} clean
   ${REACH} compile --intermediate-files
   make build
-  REACH_DEBUG=1 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=0 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 
@@ -118,9 +118,8 @@ checkteal () {
 
 #exit 0
 
-jb
-ci ALGO ctc-address
-#ci ETH ctc-address
+one ALGO \
+rps-8-interact
 exit 0
 
 #c users/t.rsh

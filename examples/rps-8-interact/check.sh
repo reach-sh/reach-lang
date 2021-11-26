@@ -51,9 +51,6 @@ get_Alice
 get_Alice
 to_Alice y
 get_Alice
-to_Alice y
-get_Alice
-get_Alice # deprecated
 get_Alice
 to_Alice 10
 get_Alice
@@ -67,11 +64,8 @@ get_Bob
 get_Bob
 to_Bob y
 get_Bob
-to_Bob n
-get_Bob
 to_Bob "$INFO"
 get_Bob
-get_Bob # deprecated
 get_Bob
 to_Bob y
 

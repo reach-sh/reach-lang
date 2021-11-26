@@ -12,8 +12,8 @@ const stdlib = loadStdlib(process.env);
   const beforeAlice = await getBalance(accAlice);
   const beforeBob = await getBalance(accBob);
 
-  const ctcAlice = accAlice.deploy(backend);
-  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
 
   const HAND = ['Rock', 'Paper', 'Scissors'];
   const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
@@ -33,12 +33,12 @@ const stdlib = loadStdlib(process.env);
   });
 
   await Promise.all([
-    backend.Alice(ctcAlice, {
+    ctcAlice.p.Alice({
       ...Player('Alice'),
       wager: stdlib.parseCurrency(5),
       deadline: 10,
     }),
-    backend.Bob(ctcBob, {
+    ctcBob.p.Bob({
       ...Player('Bob'),
       acceptWager: async (amt) => { // <-- async now
         if ( Math.random() <= 0.5 ) {

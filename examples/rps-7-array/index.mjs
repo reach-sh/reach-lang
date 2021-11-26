@@ -12,8 +12,8 @@ import * as backend from './build/index.main.mjs';
   const beforeAlice = await getBalance(accAlice);
   const beforeBob = await getBalance(accBob);
 
-  const ctcAlice = accAlice.deploy(backend);
-  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
 
   const HAND = ['Rock', 'Paper', 'Scissors'];
   const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
@@ -50,11 +50,11 @@ import * as backend from './build/index.main.mjs';
   };
 
   await Promise.all([
-    backend.Alice(ctcAlice, {
+    ctcAlice.p.Alice({
       ...Player('Alice'),
       wager: stdlib.parseCurrency(5),
     }),
-    backend.Bob(ctcBob, {
+    ctcBob.p.Bob({
       ...Player('Bob'),
       acceptWager: (amt) => {
         console.log(`Bob accepts the wager of ${fmt(amt)}.`);
