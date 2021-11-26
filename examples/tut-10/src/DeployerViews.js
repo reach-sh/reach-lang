@@ -32,6 +32,7 @@ exports.SetWager = class extends React.Component {
             placeholder={defaultWager}
             onChangeText={e => this.setState({wager: e})}
             style={styles.textInput}
+            placeholderTextColor="#333333"
           />
           <Text style={styles.textNormal}>{standardUnit}</Text>
         </View>

@@ -51,6 +51,7 @@ exports.FundAccount = class extends React.Component {
             placeholder={defaultFundAmt}
             onChangeText={e => this.setState({amt: e})}
             style={styles.textInput}
+            placeholderTextColor="#333333"
           />
           <Button
             onPress={() => parent.fundAccount(amt)}

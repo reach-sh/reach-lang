@@ -31,6 +31,7 @@ exports.Attach = class extends React.Component {
           placeholder="{}"
           spellCheck={false}
           style={styles.textInput}
+          placeholderTextColor="#333333"
         />
         <TouchableOpacity
           disabled={!ctcInfoStr}
