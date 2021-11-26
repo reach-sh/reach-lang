@@ -3,5 +3,5 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
-  Verifying when ONLY "guess" is honest
+  Verifying when ONLY "pay" is honest
 Checked 22 theorems; No failures!
