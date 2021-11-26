@@ -1454,3 +1454,10 @@
 <h2 id="rw0004">RW0004</h2>
 <p>This warning indicates that your program does not contain any publications.</p>
 <p>You can fix this issue by making sure at least one <code>Participant</code> performs a <code>publish</code>.</p>
+<h2 id="rw0005">RW0005</h2>
+<p>
+  This warning indicates that a <code>View</code> or <code>API</code> produces or consumes an <code>Object</code>,
+  which is a type internal to Reach.
+  It has an opaque and unspecified representation that can only be consumed by other Reach programs, so it is probably a bad choice for general purpose interfaces.
+</p>
+<p>You can fix this issue by using a <code>Struct</code> instead of the <code>Object</code>.</p>
