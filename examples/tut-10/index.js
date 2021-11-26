@@ -2,6 +2,7 @@
  * @format
  */
 
+import './shim';
 import '@ethersproject/shims';
 import {AppRegistry} from 'react-native';
 import App from './App';

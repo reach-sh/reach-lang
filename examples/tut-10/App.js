@@ -13,9 +13,15 @@ import AttacherViews from './src/AttacherViews';
 import {renderView} from './src/render';
 import * as backend from './build/index.main.mjs';
 import {loadStdlib} from '@reach-sh/stdlib';
+import { Platform } from 'react-native';
 
-const reach = loadStdlib(process.env);
-
+// const reach = loadStdlib(process.env);
+const reach = loadStdlib({
+  REACH_CONNECTOR_MODE: 'ALGO',
+  REACH_DEBUG: true,
+  ALGO_SERVER: (Platform.OS == 'ios' || Platform.OS == 'macos') ? 'http://127.0.0.1' : 'http://10.0.2.2',
+  ALGO_INDEXER_SERVER: (Platform.OS == 'ios' || Platform.OS == 'macos') ? 'http://127.0.0.1' : 'http://10.0.2.2',
+});
 const handToInt = {ROCK: 0, PAPER: 1, SCISSORS: 2};
 const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];
 const {standardUnit} = reach;
@@ -25,12 +31,16 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {view: 'ConnectAccount', ...defaults};
-    const init = async () => {
-      await reach.setProviderByName('TestNet');
-    };
-    init();
+    // const init = async () => {
+    //   await reach.setProviderByName('TestNet');
+    // };
+    // init();
   }
   async componentDidMount() {
+    const acc = await reach.createAccount();
+    const balAtomic = await reach.balanceOf(acc);
+    const bal = reach.formatCurrency(balAtomic, 4);
+    this.setState({acc, bal});
     if (await reach.canFundFromFaucet()) {
       this.setState({view: 'FundAccount'});
     } else {
@@ -39,14 +49,13 @@ class App extends React.Component {
   }
 
   async setAccount(isDeployer = true) {
-    // const acc = await reach.getDefaultAccount();
-    const phrase = isDeployer
-      ? 'humor sting race bonus unit arctic speak fine wood double hip crouch'
-      : 'oppose settle table giggle flush seven addict wrap pull jelly payment purchase';
-    const acc = await reach.newAccountFromMnemonic(phrase);
-    const balAtomic = await reach.balanceOf(acc);
-    const bal = reach.formatCurrency(balAtomic, 4);
-    this.setState({acc, bal});
+    // const phrase = isDeployer
+    //   ? 'humor sting race bonus unit arctic speak fine wood double hip crouch'
+    //   : 'oppose settle table giggle flush seven addict wrap pull jelly payment purchase';
+    // const acc = await reach.newAccountFromMnemonic(phrase);
+    // const balAtomic = await reach.balanceOf(acc);
+    // const bal = reach.formatCurrency(balAtomic, 4);
+    // this.setState({acc, bal});
   }
 
   async fundAccount(fundAmount) {
