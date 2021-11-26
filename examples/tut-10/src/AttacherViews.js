@@ -35,7 +35,8 @@ exports.Attach = class extends React.Component {
         />
         <TouchableOpacity
           disabled={!ctcInfoStr}
-          onPress={() => parent.attach(ctcInfoStr)}>
+          onPress={() => parent.attach(ctcInfoStr)}
+        >
           <Text style={styles.textNormal}>Attach</Text>
         </TouchableOpacity>
       </View>
@@ -64,7 +65,8 @@ exports.AcceptTerms = class extends React.Component {
           onPress={() => {
             this.setState({disabled: true});
             parent.termsAccepted();
-          }}>
+          }}
+        >
           <Text style={styles.textNormal}>Accept terms and pay wager</Text>
         </TouchableOpacity>
       </View>

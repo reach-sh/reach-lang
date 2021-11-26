@@ -13,14 +13,20 @@ import AttacherViews from './src/AttacherViews';
 import {renderView} from './src/render';
 import * as backend from './build/index.main.mjs';
 import {loadStdlib} from '@reach-sh/stdlib';
-import { Platform } from 'react-native';
+import {Platform} from 'react-native';
 
 // const reach = loadStdlib(process.env);
 const reach = loadStdlib({
   REACH_CONNECTOR_MODE: 'ALGO',
   REACH_DEBUG: true,
-  ALGO_SERVER: (Platform.OS == 'ios' || Platform.OS == 'macos') ? 'http://127.0.0.1' : 'http://10.0.2.2',
-  ALGO_INDEXER_SERVER: (Platform.OS == 'ios' || Platform.OS == 'macos') ? 'http://127.0.0.1' : 'http://10.0.2.2',
+  ALGO_SERVER:
+    Platform.OS == 'ios' || Platform.OS == 'macos'
+      ? 'http://127.0.0.1'
+      : 'http://10.0.2.2',
+  ALGO_INDEXER_SERVER:
+    Platform.OS == 'ios' || Platform.OS == 'macos'
+      ? 'http://127.0.0.1'
+      : 'http://10.0.2.2',
 });
 const handToInt = {ROCK: 0, PAPER: 1, SCISSORS: 2};
 const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];
