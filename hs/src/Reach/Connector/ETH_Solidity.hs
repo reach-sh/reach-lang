@@ -1190,7 +1190,7 @@ apiDef who ApiInfo{..} = do
         let indexedTypes = zip ts [0..]
         unzip <$> mapM (\ (ty, i :: Int) -> do
           let name = pretty $ "_a" <> show i
-          sol_ty <- solType_ ty
+          sol_ty <- solType ty
           let decl = solDecl name (sol_ty <> withArgLoc ty)
           return (name, decl)
           ) indexedTypes
