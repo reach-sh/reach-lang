@@ -310,7 +310,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		"Starting compilation at",
 		new Date().toLocaleTimeString()
 	);
-	await exec("cd " + tempFolder + " && " + reachPath + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json", (error: { message: any; }, stdout: any, stderr: any) => {
+	await exec("cd " + tempFolder + " && " + reachPath + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json --stop-after-eval", (error: { message: any; }, stdout: any, stderr: any) => {
 		// This callback function should execute exactly
 		// when this compilation command has finished.
 		// "child_process.exec(): spawns a shell...
