@@ -69,7 +69,7 @@ let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
 let hasDiagnosticRelatedInformationCapability: boolean = false;
 
-const NAME: string = 'Reach IDE';
+const COMPILER_DIAGNOSTIC_SRC: string = 'Reach Compiler';
 
 const DID_YOU_MEAN_PREFIX = 'Did you mean: ';
 
@@ -343,7 +343,8 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 						'Reach compilation encountered an error.',
 						DiagnosticSeverity.Error,
 						err.code,
-						err.suggestions
+						err.suggestions,
+						COMPILER_DIAGNOSTIC_SRC
 					);
 				}
 			});
@@ -362,13 +363,13 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	// Send the computed diagnostics to VSCode (before the above promise finishes, just to clear stuff).
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 
-	function addDiagnostic(element: ErrorLocation, message: string, details: string, severity: DiagnosticSeverity, code: string | undefined, suggestions: string[]) {
+	function addDiagnostic(element: ErrorLocation, message: string, details: string, severity: DiagnosticSeverity, code: string | undefined, suggestions: string[], source: string) {
 		const href = `https://docs.reach.sh/${code}.html`;
 		let diagnostic: Diagnostic = {
 			severity: severity,
 			range: element.range,
 			message: message,
-			source: NAME,
+			source,
 			code: code,
 			codeDescription: {
 				href
