@@ -4,7 +4,7 @@ menuItem: mi-docs
 
 # Backend Programming
 
-This chapter focuses on Reach Programming which uses the Reach programming language to write code in *index.rsh*, and the [Reach Script]() to (among other things) compile *index.rsh* into *index.main.mjs*:
+This chapter focuses on Reach Programming which uses the Reach programming language to write code in *index.rsh*, and the [Reach Tool](/en/essentials/backend-programming/reach-tool/) to (among other things) compile *index.rsh* into *index.main.mjs*:
 
 <div><img src="backend-programming.png" class="img-fluid" width=600 height=367 loading="lazy"></div>
 
@@ -77,4 +77,4 @@ If these assertions cannot be statically verified, then the compilation process 
 
 ## Syntax
 
-See [Reach Syntax](/en/essentials/backend-programming/reach-syntax/).
+See [Reach Basic](/en/essentials/backend-programming/reach-basic/).
