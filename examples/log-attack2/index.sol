@@ -14,11 +14,11 @@ contract LogAttack2  {
   constructor () payable {
   }
 
-  event e2(T7 _a);
+  event _reach_e2(T7 _a);
   function m2() external payable {
     T7 memory a;
     a.time = 0;
     a.msg.v84 = 1337;
-    emit e2(a);
+    emit _reach_e2(a);
   }
 }

@@ -30,28 +30,28 @@ export const main = Reach.App(() => {
     parallelReduce([ false, 0, 0 ])
     .invariant(balance() == an)
     .while( ! done )
-    .api(U.pay, (() => amt), ((k) => {
+    .api(U.pay, () => amt, (k) => {
       k(null);
       return [ done, x, an + amt ];
-    }))
-    .api(U.read, ((k) => {
+    })
+    .api(U.read, (k) => {
       k(x);
       return [ done, x, an ];
-    }))
-    .api(U.write, ((nx, k) => {
+    })
+    .api(U.write, (nx, k) => {
       k(x);
       return [ done, nx, an ];
-    }))
-    .api(U.writeC, ((nx) => {
+    })
+    .api(U.writeC, (nx) => {
       assume(nx > x);
-    }), ((_) => 0), ((nx, k) => {
+    }, (_) => 0, (nx, k) => {
       k(x);
       return [ done, nx, an ];
-    }))
-    .api(U.stop, ((k) => {
+    })
+    .api(U.stop, (k) => {
       k(x);
       return [ true, x, an ];
-    }));
+    });
 
   transfer(an).to(A);
   commit();

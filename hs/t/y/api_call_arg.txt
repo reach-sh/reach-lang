@@ -1,0 +1,8 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Constructor" is honest
+  Verifying when ONLY "Listener" is honest
+  Verifying when ONLY "Manager_getPoolInfo" is honest
+Checked 21 theorems; No failures!

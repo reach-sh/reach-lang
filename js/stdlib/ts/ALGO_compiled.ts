@@ -121,12 +121,24 @@ export const addressToHex = (x: string): string =>
 export const addressFromHex = (hexAddr: string): string =>
   algosdk.encodeAddress(Buffer.from(hexAddr.slice(2), 'hex'));
 
-function addressUnwrapper(x: any): string {
+const extractAddrM = (x: any): string|false => {
   const addr: string|false =
     x && x.networkAccount && x.networkAccount.addr
     || x && x.addr
     || typeof x === 'string' && x;
+  debug(`extractAddrM`, {x, addr});
+  return addr;
+};
 
+export const extractAddr = (x:any): string => {
+  const a = extractAddrM(x);
+  debug(`extractAddr`, {x, a});
+  if ( a === false ) { throw Error(`Expected address, got ${x}`); }
+  return a;
+};
+
+function addressUnwrapper(x: any): string {
+  const addr = extractAddrM(x);
   return !addr ? x
    : addr.slice(0, 2) === '0x' ? addr
    : addressToHex(addr);

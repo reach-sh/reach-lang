@@ -72,8 +72,8 @@ export const main =
             Anybody.publish();
             keepGoing = false;
             continue; });
-        require(fMsg.match({fAlice: (() => this == Alice),
-                             fBob  : (() => this == Bob  ) }));
+        require(fMsg.match({fAlice: () => this == Alice,
+                             fBob : () => this == Bob }));
         switch ( fMsg ) {
           case fAlice: {
             assert(this == Alice);

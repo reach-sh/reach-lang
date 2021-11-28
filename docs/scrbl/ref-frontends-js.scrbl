@@ -18,9 +18,18 @@ npm install @"@"reach-sh/stdlib
 Although, if you use @exec{reach run}, you don't need to install this package, because @exec{reach} automatically manages your standard library install behind the scenes.
 You only need to install the package directly if you are running your frontend without @exec{reach} or using a tool like @link["https://webpack.js.org/"]{webpack} for deployment.
 
-These libraries provide a standard interface that support developing @tech{frontends}.
+These libraries provide a standard interface that support developing @tech{frontends} in JavaScript.
 
-@(local-table-of-contents)
+@itemlist[
+@item{@secref["ref-frontends-js-loader.mjs"] discusses how to load the standard library.}
+@item{@secref["ref-frontends-js-provider"] discusses how to adjust what provider is used to connect to a consensus network.}
+@item{@secref["ref-frontends-js-network"] discuss some utility functions that provide access to consensus network parameters and resources.}
+@item{@secref["ref-frontends-js-acc"] discusses how to construct an account handle, which is necessary to access contracts.}
+@item{@secref["ref-frontends-js-ctc"] discusses how to construct a contract handle, which is used to interact with a DApp.}
+@item{@secref["ref-frontends-js-types"] discusses the way that JavaScript values are used to represent Reach values.}
+@item{@secref["ref-frontends-js-utils"] discusses some utility functions for working with JavaScript-represented Reach values.}
+@item{@secref["ref-frontends-js-ask.mjs"] discusses a helper library for building text-based UIs.}
+]
 
 @section[#:tag "ref-frontends-js-types"]{Types}
 
@@ -656,6 +665,7 @@ On Ethereum and Conflux, it always errors and cannot provide a wallet.
 On Algorand, it can provide a wallet that directly connects to the Algorand network, like @jsin{setProviderByName} (& @jsin{setProviderByEnv}), but provide interactive signing.
 The network connection is specified via the @litchar{providerEnv} key, which may be a string (which is used as an argument to @jsin{providerEnvByName}) or an environment (which is used as an argument to @jsin{setProviderByEnv}).
 By default, signing is via an interactive browser window prompt, where the user repeatedly provides their mnemonic.
+
 If the key @litchar{MyAlgoConnect} is provided, and bound to the export of @litchar{@"@"reach-sh/stdlib/ALGO_MyAlgoConnect}, then @link["https://wallet.myalgo.com/home"]{My Algo} will be used for signing.
 For example, this sets the wallet fallback to be My Algo used with Algorand TestNet:
 @js{
@@ -663,6 +673,16 @@ import MyAlgoConnect from '@"@"reach-sh/stdlib/ALGO_MyAlgoConnect';
 stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', MyAlgoConnect }));
 }
+
+If the key @litchar{WalletConnect} is provided, and bound to the export of @litchar{@"@"reach-sh/stdlib/ALGO_WalletConnect}, then @link["https://walletconnect.com/"]{WalletConnect} is used to connect to the @link["https://algorandwallet.com/"]{Algorand Wallet} for signing.
+For example, this sets the wallet fallback to be WalletConnect and the Algorand TestNet:
+@js{
+import WalletConnect from '@"@"reach-sh/stdlib/ALGO_WalletConnect';
+stdlib.setWalletFallback(stdlib.walletFallback({
+  providerEnv: 'TestNet', WalletConnect }));
+}
+
+Because these are fallbacks, you need to decide for your users which wallet they'll use, or make a user interface element to let them select which wallet fallback to use.
 
 @section[#:tag "ref-frontends-js-utils"]{Utilities}
 

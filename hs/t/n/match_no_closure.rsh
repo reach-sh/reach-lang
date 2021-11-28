@@ -15,7 +15,7 @@ export const main =
 
       const f = (m) => m.match({
         None: 4,
-        Some: (i) => { return i },
+        Some: i => i,
       });
       const i = f(Maybe(UInt).Some(5));
       const j = f(Maybe(UInt).None());

@@ -42,6 +42,7 @@ import {
   truthyEnv,
   Signal,
   Lock,
+  retryLoop,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -59,6 +60,7 @@ import {
   addressFromHex,
   stdlib,
   typeDefs,
+  extractAddr,
 } from './ALGO_compiled';
 import { window, process, Env } from './shim';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = stdlib;
@@ -111,7 +113,7 @@ type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 5;
+const reachBackendVersion = 6;
 const reachAlgoBackendVersion = 6;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
@@ -947,7 +949,7 @@ export const transfer = async (
   tag: number|undefined = undefined,
 ): Promise<RecvTxn> => {
   const sender = from.networkAccount;
-  const receiver = to.networkAccount.addr;
+  const receiver = extractAddr(to);
   const valuebn = bigNumberify(value);
   const ps = await getTxnParams();
   const txn = toWTxn(makeTransferTxn(sender.addr, receiver, valuebn, token, ps, undefined, tag));
@@ -1168,6 +1170,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const getContractAddress = async () => {
         const { ctcAddr } = await getC();
         return T_Address.canonicalize(ctcAddr);
+      };
+      const getContractInfo = async () => {
+        const { ApplicationID } = await getC();
+        return ApplicationID;
       };
 
       const getState = async (vibne:BigNumber, vtys:AnyALGO_Ty[]): Promise<Array<any>> => {
@@ -1480,7 +1486,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         // const theSecs = txn['round-time'];
         // ^ The contract actually uses `global LatestTimestamp` which is the
         // time of the PREVIOUS round.
-        const theSecs = await getTimeSecs(bigNumberify(theRound - 0));
+        // ^ Also, this field is only available from the indexer
+        const theSecs = await retryLoop([dhead, 'getTimeSecs'], () => getTimeSecs(bigNumberify(theRound - 0)));
+        // ^ XXX it would be nice if Reach could support variables bound to
+        // promises and then we wouldn't need to wait here.
 
         // XXX need to move this to a log
         const ctc_args_all = txn['application-args'];
@@ -1566,7 +1575,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
       };
 
-      return { getContractAddress, getState, sendrecv, recv };
+      return { getContractInfo, getContractAddress, getState, sendrecv, recv };
     };
 
     const readStateBytes = (prefix:string, key:number[], src:any): any => {
@@ -1691,12 +1700,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 };
 
 export const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
-  const { networkAccount } = acc;
-  if (!networkAccount) {
-    throw Error(`acc.networkAccount missing. Got: ${acc}`);
-  }
+  const addr = extractAddr(acc);
   const client = await getAlgodClient();
-  const info = await client.accountInformation(networkAccount.addr).do();
+  const info = await client.accountInformation(addr).do();
   debug(`balanceOf`, info);
   if ( ! token ) {
     return bigNumberify(info.amount);

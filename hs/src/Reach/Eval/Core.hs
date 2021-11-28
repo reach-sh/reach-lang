@@ -607,7 +607,7 @@ jsClo at name js env_ = SLV_Clo at Nothing $ SLClo (Just name) args body cloenv
       case readJsExpr js of
         JSArrowExpression aformals _ bodys -> (a_, b_)
           where
-            b_ = jsArrowStmtToBlock bodys
+            b_ = jsArrowBodyToRetBlock bodys
             a_ = parseJSArrowFormals at aformals
         _ -> impossible "not arrow"
 
@@ -1123,18 +1123,24 @@ evalAsEnv obj = case obj of
         , ("interact", makeInteractField)
         ]
     where
-      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos vas (Just m) Nothing Nothing Nothing Nothing False)
+      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos vas (Just m) Nothing Nothing Nothing Nothing False False)
       whos = S.singleton who
   SLV_Anybody -> do
+    at <- withAt id
+    apis <- ae_apis <$> aisd
     whos <- S.fromList . M.keys <$> (ae_ios <$> aisd)
-    evalAsEnv (SLV_RaceParticipant srcloc_builtin whos)
+    let ps = S.difference whos apis
+    case S.toList ps of
+      [] -> expect_ $ Err_No_Participants
+      [h] -> evalAsEnv $ SLV_Participant at h Nothing Nothing
+      _ -> evalAsEnv $ SLV_RaceParticipant srcloc_builtin ps
   SLV_RaceParticipant _ whos ->
     return $
       M.fromList
         [ ("publish", go TCM_Publish)
         , ("pay", go TCM_Pay) ]
     where
-      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos Nothing (Just m) Nothing Nothing Nothing Nothing False)
+      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos Nothing (Just m) Nothing Nothing Nothing Nothing False False)
   SLV_Form (SLForm_Part_ToConsensus p@(ToConsensusRec {..})) | slptc_mode == Nothing ->
     return $
       M.fromList $
@@ -1144,6 +1150,7 @@ evalAsEnv obj = case obj of
           <> gom "timeout" TCM_Timeout slptc_timeout
           <> gom "throwTimeout" TCM_ThrowTimeout slptc_timeout
           <> gob ".fork" TCM_Fork slptc_fork
+          <> gob ".api" TCM_Api slptc_api
     where
       gob key mode = \case
         False -> go key mode
@@ -1493,11 +1500,11 @@ evalForm f args = do
       SLScope {..} <- asks e_sco
       top_s <-
         case args of
-          [JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ top_s] -> return $ top_s
+          [JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ top_s] -> return $ jsArrowBodyToStmt top_s
           [opte, partse, JSArrowExpression top_formals a top_s] -> do
             -- liftIO $ emitWarning $ W_Deprecated at D_ReachAppArgs
             let at' = srcloc_jsa "app arrow" a at
-            return $ convertTernaryReachApp at' a opte top_formals partse top_s
+            return $ convertTernaryReachApp at' a opte top_formals partse (jsArrowBodyToStmt top_s)
           _ -> expect_ $ Err_App_InvalidArgs args
       retV $ public $ SLV_Prim $ SLPrim_App_Delay at top_s (sco_cenv, sco_use_strict)
     SLForm_Part_Only who mv -> do
@@ -1619,11 +1626,15 @@ evalForm f args = do
         Just TCM_Fork -> do
           zero_args
           go $ p { slptc_fork = True }
+        Just TCM_Api -> do
+          zero_args
+          go $ p { slptc_api = True }
         Just TCM_Timeout -> do
           at <- withAt id
           let proc = \case
                 JSExpressionParen _ e _ -> proc e
-                JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s -> return $ jsStmtToBlock dt_s
+                JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s ->
+                  return $ jsArrowBodyToBlock dt_s
                 _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
           x <-
             case args of
@@ -2240,6 +2251,21 @@ verifyNotReserved at s = do
   when ("ETH" `elem` connectors && s `elem` map show solReservedNames) $
     expect_thrown at $ Err_Sol_Reserved s
 
+warnInteractType :: SLType -> App ()
+warnInteractType = \case
+  ST_Object _ -> do
+    at <- withAt id
+    liftIO $ emitWarning (Just at) W_ExternalObject
+  ST_Tuple ts -> mapM_ r ts
+  ST_Data e -> mapM_ r e
+  ST_Struct a -> mapM_ (r . snd) a
+  ST_Fun (SLTypeFun {..}) -> mapM_ r (stf_rng : stf_dom)
+  ST_Array t _ -> r t
+  ST_UDFun t -> r t
+  ST_Refine t _ _ -> r t
+  _ -> return ()
+  where
+    r = warnInteractType
 
 evalPrim :: SLPrimitive -> [SLSVal] -> App SLSVal
 evalPrim p sargs =
@@ -2873,6 +2899,7 @@ evalPrim p sargs =
         ST_Fun (SLTypeFun {..}) -> do
           let nk = maybe k (<> "_" <> k) mns
           let nkb = bpack nk
+          mapM_ warnInteractType $ stf_rng : stf_dom
           let nv' = SLV_Bytes at nkb
           let stf_dom' = ST_Tuple stf_dom
           let mkpre o = jsClo at (nk <> "pre") "(mt, dom) => o(dom)" $ M.fromList [ ("o", o) ]
@@ -2905,6 +2932,7 @@ evalPrim p sargs =
       mapM_ (verifyName nAt "View" $ M.keys im) mns
       let ns = fromMaybe "Untagged" mns
       let go k (at, t) = do
+            warnInteractType t
             when (isNothing nv) $ do
               verifyName at "View" [] k
               verifyNotReserved at k
@@ -3627,7 +3655,7 @@ evalExpr e = case e of
   JSExpressionPostfix _ _ -> illegal
   JSExpressionTernary ce a te fa fe -> doTernary ce a te fa fe
   JSArrowExpression aformals a bodys -> locAtf (srcloc_jsa "arrow" a) $ do
-    let body = jsArrowStmtToBlock bodys
+    let body = jsArrowBodyToRetBlock bodys
     fformals <- withAt $ flip jsArrowFormalsToFunFormals aformals
     evalExpr $ JSFunctionExpression a JSIdentNone a fformals a body
   JSFunctionExpression a name _ jsformals _ body ->
@@ -4088,6 +4116,9 @@ compilePayAmt tt v = do
 doToConsensus :: [JSStatement] -> ToConsensusRec -> App SLStmtRes
 doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
   let whos = slptc_whos
+  who_apis <- S.intersection whos <$> (ae_apis <$> aisd)
+  unless (S.null who_apis || slptc_api) $
+    expect_ $ Err_Api_Publish who_apis
   let vas = slptc_mv
   let msg = fromMaybe [] slptc_msg
   let amt_e = fromMaybe (JSDecimal JSNoAnnot "0") slptc_amte
@@ -4358,6 +4389,7 @@ doApiCall lhs (ApiCallRec{..}) = do
         case slac_mtime of
           Nothing -> pub2
           Just (to, e) -> jsCall a (mkDot a [pub2, jid "throwTimeout"]) [to, e]
+  let pub4 = jsCall a (mkDot a [pub3, jid ".api"]) []
   -- Construct `k = interact.out()`
   let returnVal = jidg "rng"
   let returnLVal = jidg "rngl"
@@ -4368,7 +4400,7 @@ doApiCall lhs (ApiCallRec{..}) = do
   --
   let assignRet = jsConst a ret apiReturn
   let setDetails = jsCall a (jid ".setApiDetails") [slac_who, dom]
-  let ss = [callOnly [onlyThunk], es pub3, es setDetails, assignRet]
+  let ss = [callOnly [onlyThunk], es pub4, es setDetails, assignRet]
   return ss
   where
     sepLHS a = \case
@@ -4407,7 +4439,7 @@ doForkAPI2Case args = do
           JSExpressionParen _ e _ -> jsInlineCall a e fargs
           JSArrowExpression aargs a' s -> do
             let pargs = parseJSArrowFormals at aargs
-            let JSBlock _ ss _ = jsArrowStmtToBlock s
+            let JSBlock _ ss _ = jsArrowBodyToRetBlock s
             let ss' = [ jsConst a' (jsArrayLiteral a' pargs) (jsArrayLiteral a fargs) ]
             return $ ss' <> ss
           _ -> expect_ $ Err_Fork_ConsensusBadArrow f
@@ -4470,7 +4502,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   let getAfter who_e isApi who usesData (a_at, after_e, case_n) = locAt a_at $
         case after_e of
           JSArrowExpression args _ s -> do
-            let JSBlock _ ss _ = jsArrowStmtToBlock s
+            let JSBlock _ ss _ = jsArrowBodyToRetBlock s
             let awrap x = jsArrayLiteral a [x]
             mdefmsg <-
               case parseJSArrowFormals a_at args of
@@ -4591,7 +4623,8 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let before_tc_ss = data_ss <> cases_onlys
         return $ (True, before_tc_ss, pay_e, tc_head_e, switch_ss)
   let tc_pub_e = JSCallExpression (JSMemberDot tc_head_e a (jid "publish")) a (JSLOne msg_e) a
-  let tc_when_e = JSCallExpression (JSMemberDot tc_pub_e a (jid "when")) a (JSLOne when_e) a
+  let tc_api_e = JSCallExpression (JSMemberDot tc_pub_e a (jid ".api")) a JSLNil a
+  let tc_when_e = JSCallExpression (JSMemberDot tc_api_e a (jid "when")) a (JSLOne when_e) a
   -- START: Non-network token pay
   pay_expr <-
     case slf_mnntpay of
@@ -4748,7 +4781,7 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let while_body = [commit_s, fork_s]
   let while_s = JSWhile a a while_e a $ JSStatementBlock a while_body a sp
   block_s <- case pr_mdef of
-                  Just (JSArrowExpression _ _ sb@JSStatementBlock {}) -> return sb
+                  Just (JSArrowExpression _ _ b) -> return $ jsArrowBodyToStmt b
                   Just ow -> locAtf (srcloc_jsa "define" $ jsa ow) $ expect_ Err_ParallelReduce_DefineBlock
                   Nothing -> return $ JSStatementBlock a [] a sp
   let pr_ss = [var_s, block_s, inv_s, while_s]
@@ -4757,7 +4790,7 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   return $ pr_ss
 
 jsArrow :: JSAnnot -> [JSExpression] -> JSStatement -> JSExpression
-jsArrow a args s = JSArrowExpression args' a s
+jsArrow a args s = JSArrowExpression args' a (jsStmtToConciseBody s)
   where
     args' = JSParenthesizedArrowParameterList a (toJSCL args) a
 

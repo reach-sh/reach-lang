@@ -7,8 +7,7 @@
 
 This section provides an in depth explanation of the error codes produced from
 the Reach compiler.
-
-@(local-table-of-contents)
+See the list on the left bar.
 
 @;{
   What is a "good" error description?
@@ -2179,6 +2178,23 @@ You can fix this error by using different names:
   const B = API('Flower', { girl2: Fun([UInt], Null) });
 }
 
+@error{RE0124}
+
+This error indicates that there is an attempt to make a publication in your program, but there are
+no @reachin{Participant}s or @reachin{ParticipantClass}es declared.
+
+This issue can arise when you use @reachin{Anybody.publish()}. To fix this issue, ensure you declare
+a @reachin{Participant} or @reachin{ParticipantClass}.
+
+@error{RE0125}
+
+This error indicates that an @reachin{API} is explicitly attempting to make a publication, e.g. @reachin{api.publish()}.
+An API may only make a publication through a @reachin{fork}, @reachin{parallelReduce}, or @reachin{call}.
+
+Depending on your program, you can fix this error by performing a @reachin{call} or adding an @reachin{.api}
+case to your @reachin{fork} or @reachin{parallelReduce} statement.
+
+
 @error{REP0000}
 
 This error indicates that the body of a @reachin{while} loop does not make a publication before the @reachin{continue}
@@ -2531,3 +2547,10 @@ This warning indicates that your program does not contain any publications.
 
 You can fix this issue by making sure at least one @reachin{Participant} performs a @reachin{publish}.
 
+@error{RW0005}
+
+This warning indicates that a @reachin{View} or @reachin{API} produces or consumes an @reachin{Object},
+which is a type internal to Reach.
+It has an opaque and unspecified representation that can only be consumed by other Reach programs, so it is probably a bad choice for general purpose interfaces.
+
+You can fix this issue by using a @reachin{Struct} instead of the @reachin{Object}.

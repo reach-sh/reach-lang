@@ -118,13 +118,9 @@ checkteal () {
 
 #exit 0
 
-jb
-ci ALGO mint-basic
-ci ALGO overview
+one ALGO \
+rps-8-interact
 exit 0
-ci ALGO atomic-swap
-ci ALGO api-full
-ci ALGO tut-7
 
 #c users/t.rsh
 exit 0

@@ -32,7 +32,7 @@ extra-deps:
     commit: ca66b8dcfe22d1c1afbe81c83274dbc27115bf68
     # ^ from branch "reach-fork-2"
   - git: https://github.com/reach-sh/language-javascript.git
-    commit: a9bde32d618f0f6a2098ff256001b48ff5a9a511
+    commit: bb807bd75fd45a8cce355f4be4bc413f9541e276
     # ^ from branch "reach-1"
   - git: https://github.com/google/ormolu.git
     commit: ffdf145bbdf917d54a3ef4951fc2655e35847ff0

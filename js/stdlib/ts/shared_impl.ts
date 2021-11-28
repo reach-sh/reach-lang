@@ -149,7 +149,7 @@ export type ViewMap = {[key: string]: ViewVal | ViewFunMap};
 export type APIMap = ViewMap;
 
 export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
-  getInfo: () => Promise<ContractInfo>,
+  getContractInfo: () => Promise<ContractInfo>,
   getContractAddress: () => Promise<CBR_Address>,
   waitUntilTime: (v:BigNumber) => Promise<BigNumber>,
   waitUntilSecs: (v:BigNumber) => Promise<BigNumber>,
@@ -169,14 +169,14 @@ export type ISetupArgs<ContractInfo, VerifyResult> = {
 };
 export type ISetupViewArgs<ContractInfo, VerifyResult> =
   Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
-export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractAddress"|"sendrecv"|"recv"|"getState")>;
+export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
 
 export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
   setupView: ISetupView<ContractInfo, VerifyResult, ConnectorTy>,
   givenInfoP: (Promise<ContractInfo>|undefined)
   _setup: (args: ISetupArgs<ContractInfo, VerifyResult>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
-} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
+} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
 
 export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
@@ -222,7 +222,7 @@ export const stdContract =
   type SomeSetupArgs = Pick<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo"|"getInfo")>;
   const { setInfo, getInfo }: SomeSetupArgs = (() => {
     let _setInfo = (info:ContractInfo) => {
-      throw Error(`Cannot set info(${JSON.stringify(info)}) when acc.contract called with contract info`);
+      throw Error(`Cannot set info(${JSON.stringify(info)}) (i.e. deploy) when acc.contract called with contract info`);
       return;
     };
     if ( givenInfoP !== undefined ) {
@@ -256,11 +256,11 @@ export const stdContract =
   const setupArgs = { ...viewArgs, setInfo };
 
   const _initialize = () => {
-    const { getContractAddress, sendrecv, recv, getState } =
+    const { getContractInfo, getContractAddress, sendrecv, recv, getState } =
       _setup(setupArgs);
     return {
       selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
-      getInfo,
+      getContractInfo,
       getContractAddress, sendrecv, recv, getState,
     };
   };
@@ -689,3 +689,14 @@ export function isSome<T>(m: Maybe<T>): m is Some<T> {
 }
 export const Some = <T>(m: T): Some<T> => [m];
 export const None: None = [];
+
+export const retryLoop = async <T>(lab: any, f: (() => Promise<T>)) => {
+  let retries = 0;
+  while ( true ) {
+    try { return await f(); }
+    catch (e:any) {
+      console.log(`retryLoop`, { lab, retries, e });
+      retries++;
+    }
+  }
+};

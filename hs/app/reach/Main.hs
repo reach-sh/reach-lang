@@ -1343,7 +1343,7 @@ hashes = command "hashes" $ info f d where
     let is = rights $ imagesCommon <> imagesForAllConnectors
     script . forM_ is $ \i -> write [N.text|
       if [ ! "$(docker image ls -q "reachsh/$i:$v")" = '' ]; then
-        echo "$i:" "$(docker image inspect -f '{{json .Config.Env}}' reachsh/${i}:latest | sed -E 's/^.*REACH_GIT_HASH=([^"]+).*$/\1/')"
+        echo "$i:" "$(docker image inspect -f '{{json .Config.Env}}' reachsh/${i}:$v | sed -E 's/^.*REACH_GIT_HASH=([^"]+).*$/\1/')"
       fi
     |]
 

@@ -153,15 +153,17 @@ solEnum :: Doc -> [Doc] -> Doc
 solEnum name opts = "enum" <+> name <+> braces (hcat $ intersperse (comma <> space) opts)
 
 --- Runtime helpers
+reachPre :: Doc
+reachPre = "_reach_"
 
 solOutput_evt :: DLVar -> Doc
-solOutput_evt dv = "oe_" <> solRawVar dv
+solOutput_evt dv = reachPre <> "oe_" <> solRawVar dv
 
 solMsg_evt :: Pretty i => i -> Doc
-solMsg_evt i = "e" <> pretty i
+solMsg_evt i = reachPre <> "e" <> pretty i
 
 solMsg_fun :: Pretty i => i -> Doc
-solMsg_fun i = "m" <> pretty i
+solMsg_fun i = reachPre <> "m" <> pretty i
 
 solLoop_fun :: Pretty i => i -> Doc
 solLoop_fun i = "l" <> pretty i
@@ -1179,7 +1181,7 @@ solBytesSplit sz f = map go [0 .. lastOne]
 apiDef :: SLPart -> ApiInfo -> App Doc
 apiDef who ApiInfo{..} = do
   let who_s = bunpack who
-  let mf = pretty $ "m" <> show ai_which
+  let mf = solMsg_fun ai_which
   which_msg <- (liftIO . readIORef) =<< asks ctxt_which_msg
   ai_msg_vs <- case M.lookup ai_which which_msg of
                 Just vs -> return vs
@@ -1188,7 +1190,7 @@ apiDef who ApiInfo{..} = do
         let indexedTypes = zip ts [0..]
         unzip <$> mapM (\ (ty, i :: Int) -> do
           let name = pretty $ "_a" <> show i
-          sol_ty <- solType_ ty
+          sol_ty <- solType ty
           let decl = solDecl name (sol_ty <> withArgLoc ty)
           return (name, decl)
           ) indexedTypes
@@ -1199,8 +1201,15 @@ apiDef who ApiInfo{..} = do
           [] -> return "false"
           _ -> do
             tc_args <-
-              case ai_msg_vs of
-                [v] -> do
+              case (ai_msg_vs, ai_msg_tys) of
+                ([DLVar _ _ (T_Tuple []) _], _) ->
+                  return $ [ "false" ]
+                -- If the argument to the exported function
+                -- is the same type that the consensus msg's
+                -- type constructor takes, apply it directly
+                ([v], [T_Tuple [t]]) | varType v == t -> do
+                  return $ args
+                ([v], _) -> do
                   tc' <- solType_ $ varType v
                   return $ [ solApply tc' args ]
                 _ -> return args

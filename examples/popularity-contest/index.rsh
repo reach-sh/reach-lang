@@ -49,16 +49,16 @@ export const main =
       parallelReduce([ 0, 0])
       .invariant(balance() == (forA + forB) * ticketPrice)
       .while( keepGoing() )
-      .case(Voter, (() => ({
+      .case(Voter, () => ({
           msg: declassify(interact.getVote()),
           when: declassify(interact.shouldVote()),
-        })),
-        ((_) => ticketPrice),
-        ((forAlice) => {
+        }),
+        (_) => ticketPrice,
+        (forAlice) => {
           const voter = this;
           Voter.only(() => interact.voterWas(voter));
           const [ nA, nB ] = forAlice ? [ 1, 0 ] : [ 0, 1 ];
-          return [ forA + nA, forB + nB ]; }))
+          return [ forA + nA, forB + nB ]; })
       .timeout(timeRemaining(), () => {
         Anybody.publish();
         showOutcome(TIMEOUT, forA, forB)();

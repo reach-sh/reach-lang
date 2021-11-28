@@ -44,7 +44,7 @@ export const main = Reach.App(() => {
         .while(keepGoing())
         .paySpec([ tokB ])
         .case(Bidder,
-          (() => {
+          () => {
             const mbid = highestBidder != this
               ? declassify(interact.getBid(currentPrice))
               : Maybe(UInt).None();
@@ -52,13 +52,13 @@ export const main = Reach.App(() => {
               when: maybe(mbid, false, ((b) => b > currentPrice)),
               msg : fromSome(mbid, 0)
             });
-          }),
-          ((bid) => [ 0, [bid, tokB] ]),
-          ((bid) => {
+          },
+          (bid) => [ 0, [bid, tokB] ],
+          (bid) => {
             require(bid > currentPrice);
             transfer(isFirstBid ? 0 : currentPrice, tokB).to(highestBidder);
             return [ this, false, bid ];
-          }))
+          })
         .timeRemaining(timeRemaining());
     commit();
 

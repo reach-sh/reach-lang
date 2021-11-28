@@ -42,14 +42,14 @@ export const main =
         parallelReduce([ true, 0, 0 ])
         .invariant(balance() == 2 * wager)
         .while(keepGoing)
-        .case(Alice, (() => ({
-          when: declassify(interact.keepGoing()) })),
+        .case(Alice, () => ({
+          when: declassify(interact.keepGoing()) }),
           (_) => {
             each([Alice, Bob], () => {
               interact.roundWinnerWas(true); });
             return [ true, 1 + as, bs ]; })
-        .case(Bob, (() => ({
-          when: declassify(interact.keepGoing()) })),
+        .case(Bob, () => ({
+          when: declassify(interact.keepGoing()) }),
           (_) => {
             each([Alice, Bob], () => {
               interact.roundWinnerWas(false); });

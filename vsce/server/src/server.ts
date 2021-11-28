@@ -13,7 +13,6 @@ import { Url } from 'url';
  * ------------------------------------------------------------------------------------------ */
 
 import {
-	createConnection,
 	TextDocuments,
 	Diagnostic,
 	DiagnosticSeverity,
@@ -33,6 +32,14 @@ import {
 	HoverParams,
 	Hover,
 } from 'vscode-languageserver';
+
+// Do this import from vscode-languageserver/node instead of
+// vscode-languageserver to avoid
+// "Expected 2-3 arguments, but got 1.ts(2554)
+// server.d.ts(866, 202):
+// An argument for 'watchDog' was not provided."
+// error from TypeScript later
+import { createConnection } from 'vscode-languageserver/node';
 
 import {
 	TextDocument, Range, TextEdit
@@ -63,8 +70,6 @@ let hasWorkspaceFolderCapability: boolean = false;
 let hasDiagnosticRelatedInformationCapability: boolean = false;
 
 const NAME: string = 'Reach IDE';
-
-const DIAGNOSTIC_TYPE_COMPILE_ERROR: string = 'Compile Error';
 
 const DID_YOU_MEAN_PREFIX = 'Did you mean: ';
 
@@ -305,7 +310,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		"Starting compilation at",
 		new Date().toLocaleTimeString()
 	);
-	await exec("cd " + tempFolder + " && " + reachPath + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json", (error: { message: any; }, stdout: any, stderr: any) => {
+	await exec("cd " + tempFolder + " && " + reachPath + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json --stop-after-eval", (error: { message: any; }, stdout: any, stderr: any) => {
 		// This callback function should execute exactly
 		// when this compilation command has finished.
 		// "child_process.exec(): spawns a shell...
@@ -337,7 +342,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 						`${err.errorMessage}`,
 						'Reach compilation encountered an error.',
 						DiagnosticSeverity.Error,
-						DIAGNOSTIC_TYPE_COMPILE_ERROR,
+						err.code,
 						err.suggestions
 					);
 				}
@@ -358,12 +363,16 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 
 	function addDiagnostic(element: ErrorLocation, message: string, details: string, severity: DiagnosticSeverity, code: string | undefined, suggestions: string[]) {
+		const href = `https://docs.reach.sh/${code}.html`;
 		let diagnostic: Diagnostic = {
 			severity: severity,
 			range: element.range,
 			message: message,
 			source: NAME,
-			code: code
+			code: code,
+			codeDescription: {
+				href
+			}
 		};
 		if (hasDiagnosticRelatedInformationCapability) {
 			diagnostic.relatedInformation = [

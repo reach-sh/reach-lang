@@ -31,16 +31,16 @@ export const main = Reach.App(() => {
   const [sum, stop] = parallelReduce([0, false])
     .invariant(balance() == sum && balance() == ctMap.sum())
     .while(! stop && balance() < p.goal)
-    .case(C, (() => {
+    .case(C, () => {
         const amt = declassify(interact.getContribution());
         return { when: amt > 0, msg: amt };
-      }),
-      ((amt) => amt),
-      ((amt) => {
+      },
+      (amt) => amt,
+      (amt) => {
         const winner = this;
         ctMap[winner] = myFromMaybe(ctMap[winner]) + amt;
         return [sum + amt, false];
-      })
+      }
     )
     .timeout(p.duration, () => {
       Anybody.publish();

@@ -104,8 +104,7 @@ Each @reachin{participantName} must be unique.
 }
 
 An @tech{API} is defined with @reachin{API(apiName, apiInterface)} or @reachin{API(apiInterface)}, where @reachin{apiName} is a string that labels the @tech{API} and @reachin{apiInterface} is an object where each field indicates the type of a function provided by the @tech{contract} as an @tech{API}.
-These @tech{API}s are available in @tech{frontends} via the @jsin{ctc.apis} object.
-The value returned by this function is an object where the fields are the members of @reachin{apiInterface} are may be used in @reachin{.api} components of @reachin{fork} and @reachin{parallelReduce} to specify the behavior of the corresponding call.
+These @tech{API}s are available in @tech{frontends} via the @jsin{ctc.apis} object, wherein fields are the members of @reachin{apiInterface} and may be used in @reachin{.api} components of @reachin{fork} and @reachin{parallelReduce} to specify the behavior of the corresponding call.
 These are called @deftech{API member function}s.
 Each function must occur exactly once in the entire program.
 

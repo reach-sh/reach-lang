@@ -43,6 +43,12 @@
   (d (format "~a ~a" hash-lvl tag))
   (egol name))
 
+(define (exexpand f)
+  (match f
+    ['js-impl "tut-7/index.mjs"]
+    ['py-impl "tut-7-rpc/client-py/index.py"]
+    [(? string?) f]))
+
 (define ego
   (match-lambda
     [(? string? s) (d s)]
@@ -50,30 +56,35 @@
     [`(link ,t ,l)
       (d (format "[~a](~a)" l t))]
     [`(reachexlink ,f #:dir ,e)
-      (d (format "[~a](${repo}}/~a/~a)" f e f))]
+      (d (format "[~a](@{REPO}/~a/~a)" f e f))]
     [`(reachexlink ,f)
-      (d (format "[~a](${repo}}/examples/~a)" f f))]
+      (d (format "[~a](@{REPO}/examples/~a)" f f))]
+    [`(reachexlink #:loc (cons ,s ,e) ,f)
+      (d (format "[~a](@{REPO}/examples/~a#L~a-L~a)" f f s e))]
     [`(reachexlink ,f ,c #:dir ,e)
       (d "[")
       (ego c)
-      (d (format "](${repo}}/~a/~a)" e f))]
+      (d (format "](@{REPO}/~a/~a)" e f))]
     [`(reachexlink ,f ,c)
       (d "[")
       (ego c)
-      (d (format "](${repo}}/examples/~a)" f))]
+      (d (format "](@{REPO}/examples/~a)" f))]
     [`(title ,@o) (header 1 o)]
     [`(section ,@o) (header 2 o)]
     [`(subsection ,@o) (header 3 o)]
     [`(subsubsection ,@o) (header 4 o)]
     [`(secref ,t)
-      (d (format "${seclink(~s)}" t))]
-    [`(seclink ,t ,l)
-      (d (format "[~a](##~a)" l t))]
+      (d (format "@{seclink(~s)}" t))]
+    [`(seclink ,t . ,l)
+      (d "[")
+      (egol l)
+      (d (format "](##~a)" t))]
     [`(reachin ,@c) (code c 'reach)]
     [`(jsin ,@c) (code c 'js)]
     [`(pyin ,@c) (code c 'py)]
     [`(goin ,@c) (code c 'go)]
     [`(author (author+email ,a ,e)) (void)]
+    [`(table-of-contents) (void)]
     [`DApp (d "DApp")]
     [`DApps (d "DApps")]
     [`(hrule) (d "---")]
@@ -90,36 +101,41 @@
     [`(envvar ,@c) (code c)]
     [`(nonterm ,@c) (code c)]
     [`(cmd ,@c)
-      (d "```\n$ ") (egol c) (d "\n```\n")]
+      (d "\n```\n$ ") (egol c) (d "\n```\n")]
     [`(Flag ,@c) (code (cons "-" c))]
     [`(DFlag ,@c) (code (cons "--" c))]
     [`(filepath ,@c) (code c)]
     [`(litchar ,@c) (code c)]
     [`(the-community-link)
-      (ego '(link "${discord}" "the Discord community"))]
-    [`(local-table-of-contents . ,_) (d "${toc}")]
-    [`(table-of-contents . ,_) (d "${toc}")]
+      (ego '(link "@{DISCORD}" "the Discord community"))]
     [`(element (make-style #f (list (url-anchor ,a))) '())
       (d (format "<a name=~s></a>" a))]
     [`(require . ,_) (void)]
     [`(mint-scope ,ms)
-      (set-box! mint-scope ms)
+      (set-box! mint-scope
+                (match ms
+                  [''js "js"]
+                  [''go "go"]
+                  [''py "py"]
+                  [''rsh "rsh"]
+                  ["overview" ""]
+                  [(? symbol?) (symbol->string ms)]
+                  [_ (error 'mint-scope "~e" ms)]))
       (void)]
     [`(define . ,_) (void)]
     [`(deftech ,c)
-      (d (format "${defn(~s)}" c))]
+      (d (format "@{defn(~s)}" c))]
     [`(error ,x) (ego `(section #:tag ,x ,x))]
     [`(mint-define! ,@ts)
       (define s (unbox mint-scope))
       (cond
         [(not s)
-         (set-box! BAD #t)
-         (eprintf "XXX no mint-scope at ~v\n" ts)]
+         (error 'go "XXX no mint-scope at ~v\n" ts)]
         [else
           (for ([ts (in-list ts)])
             (match-define `'(,@tsl) ts)
             (define t (apply string-append tsl))
-            (d (format "${ref(~s, ~s)}" s t)))])]
+            (d (format "@{ref(~s, ~s)}" s t)))])]
     [`(include-section . ,_) (void)]
     [`(index-section . ,_) (void)]
     [`(index . ,_) (void)]
@@ -139,31 +155,35 @@
     [`(item ,@l)
       (egol l) (d "\n")]
     [`(margin-note . ,l)
-      (d "::: note\n")
+      (d ":::note\n")
       (egol l)
-      (d "\n:::")]
+      (d "\n:::\n")]
     [(or
        `(reachex ,f 'only ,from ,to ,_)
        `(reachex #:mode ,_ ,f 'only ,from ,to ,_))
-      (d (format "${code(\"/examples/~a\", ~a, ~a)}" f from to))]
+      (d (format "@{code(\"/examples/~a\", ~a, ~a)}" (exexpand f) from to))]
     [`(reachex #:dir "rpc-client" py-impl 'only ,from ,to ,_)
-      (d (format "${code(\"/rpc-client/py/src/reach_rpc/__init__.py\", ~a, ~a)}" from to))]
+      (d (format "@{code(\"/rpc-client/py/src/reach_rpc/__init__.py\", ~a, ~a)}" from to))]
     [(or
        `(reachex ,f)
        `(reachex #:mode ,_ ,f))
-      (d (format "${code(\"/examples/~a\")}" f))]
+      (d (format "@{code(\"/examples/~a\")}" (exexpand f)))]
     [`reach-vers
-     (d "${VERSION}")]
+     (d "@{VERSION}")]
     [`(error-version #:to ,t)
-     (d (format "${errver(~s)}" t))]
+     (d (format "@{errver(~s)}" t))]
     [`(workshop-deps)
-      (d (format "${workshopDeps()}"))]
+      (d (format "@{workshopDeps()}"))]
     [`(workshop-deps ,t)
-      (d (format "${workshopDeps(~s)}" t))]
+      (d (format "@{workshopDeps(~s)}" t))]
+    [`(workshop-init ,t)
+      (d (format "@{workshopInit(~s)}" t))]
     [`(WIP/XXX)
-      (d (format "${workshopWIP()}"))]
+      (d (format "@{workshopWIP()}"))]
     [`(WIP/XXX ,x)
-      (d (format "${workshopWIP(~s)}" x))]
+      (d (format "@{workshopWIP(~s)}" x))]
+    [`(image ,p .,_)
+      (d (format "![](/~a)" p))]
     [`(drstep-pr ,t)
       (ego `(section #:tag ,(format "~a-pr" t) "Problem Analysis"))]
     [`(drstep-dd ,t)
@@ -194,6 +214,25 @@
       (d "**Insert `interact` calls to the frontend into the program.**")]
     [`(drstep-de-stop)
       (d "**Decide how you will deploy and use this application.**")]
+    [`(check:tf ,ans . ,c)
+      (d ":::testQ\n")
+      (egol c)
+      (d "\n:::testA\n")
+      (ego ans)
+      (d "\n:::\n")
+      (d "\n:::\n")
+      ]
+    [`(,(or 'check:multi 'check:many) ,ans ,p . ,opts)
+      (d ":::testQ\n")
+      (ego p) (d "\n")
+      (for ([o (in-list opts)])
+        (d "1. ") (ego o) (d "\n"))
+      (d "\n:::testA\n")
+      (ego ans)
+      (d "\n:::\n")
+      (d "\n:::\n")
+      ]
+    [`(list . ,es) (egol es)]
     [`(pkg-fmts)
       (ego `(verbatim "
 @account/repo
@@ -226,13 +265,10 @@
 @server:account/repo#ref:a/b/file.rsh
 @server:account/repo#ref:a/b/
 @server:account/repo#ref:file.rsh
-"))]
+"))] ; "
     [x
-      (set-box! BAD #t)
       (define xs (pretty-format x #:mode 'write))
-      (eprintf "XXX ~a\n" (string-limit xs 70))
-      (d "XXX ")
-      (d xs)]))
+      (error 'go "XXX ~a\n" (string-limit xs 70))]))
 
 (define (string-limit s n)
   (substring s 0 (min n (string-length s))))
@@ -249,18 +285,15 @@
     (lambda ()
       (egol cs))))
 
-(define BAD (box #f))
 (define mint-scope (box #f))
 (module+ main
   (define ns (normalize-path scrbl))
   (for ([p (in-directory scrbl)])
     (define bn (file-name-from-path p))
     (when (equal? #".scrbl" (path-get-extension bn))
-      (set-box! BAD #f)
       (set-box! mint-scope #f)
       (define rp (find-relative-path ns (normalize-path p)))
       (define n (build-path "src" (path-replace-extension rp #".md")))
+      (eprintf "^ >>> ~a\n" n)
       (make-parent-directory* n)
-      (go! p n)
-      (when (unbox BAD)
-        (eprintf "^ >>> ~a\n" n)))))
+      (go! p n))))

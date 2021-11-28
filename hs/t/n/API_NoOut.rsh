@@ -13,9 +13,9 @@ export const main = Reach.App(() => {
     parallelReduce(0)
     .invariant(balance() == 0)
     .while( x < 10 )
-    .api(U.f, ((k) => {
+    .api(U.f, (k) => {
         return x + 1;
-    }));
+    });
 
   commit();
   exit();

@@ -9,7 +9,7 @@ export const main = Reach.App(() => {
   const x = Command.Deposit(1);
   // Test that `default` does not come first in macro expansion (maintains correct order)
   const y = x.match({
-    Deposit: ((a) => a),
-    default: (() => 0),
+    Deposit: (a) => a,
+    default: () => 0,
   });
 })

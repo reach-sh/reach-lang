@@ -16,8 +16,8 @@ export const main = Reach.App(() => {
     .while(x < 5)
     .invariant(balance() == 0)
     .case(A,
-      (() => ({ when: declassify(interact.go()) })),
-      ((_) => x + 1))
+      () => ({ when: declassify(interact.go()) }),
+      (_) => x + 1)
     .timeout(false);
 
   commit();

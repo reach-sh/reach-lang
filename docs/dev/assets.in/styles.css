@@ -90,7 +90,7 @@ header div.navbar-nav a:hover span,
   color: white;
 }
 
-header a.active span {
+header div.navbar-nav a.active span {
   border-bottom: 2px solid white;
   color: white;
 }
@@ -387,7 +387,7 @@ iframe.gray-scale {
 
 #page-col div.hh-viewer pre:not(.snippet) code {
   font-family: var(--bs-font-monospace);
-  font-size: 92%;
+  font-size: 90%;
 }
 
 #page-col div.hh-viewer ol.snippet li:first-child {
@@ -421,7 +421,9 @@ iframe.gray-scale {
 }
 
 #page-col code {
-  color: #9f6314;
+  /*color: #009999;*/
+  color:#806600;
+  font-size: 13px;
 }
 
 /************************************************
@@ -487,7 +489,7 @@ iframe.gray-scale {
  Module Cards
 ************************************************/
 
-#page-col div.card {background: #FAFDFF; border: 1px solid #cce7ff;}
+#page-col div.card {background: #cce7ff; border: 1px solid #cce7ff;}
 
 #page-col div.card a,
 #page-col div.card a:active,
@@ -500,7 +502,12 @@ iframe.gray-scale {
 #page-col div.card small {color: #00294d;}
 
 #page-col div.card:hover,
-#page-col div.card:focus {background: aliceblue;}
+#page-col div.card:focus {
+  box-shadow: 0 0 4px #7ec2ff;
+  -moz-box-shadow: 0 0 4px #7ec2ff;
+  -webkit-box-shadow: 0 0 4px #7ec2ff;
+  -o-box-shadow: 0 0 4px #7ec2ff;
+}
 
 /************************************************
  banish
@@ -537,3 +544,12 @@ div.social-icons a i {color:#595959;}
   color: orange;
   font-style: normal;
 }
+
+/* Notes */
+
+div.note {
+  background: #F5F5DC;
+  margin-left: 2em;
+  padding: 1em;
+}
+

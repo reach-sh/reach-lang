@@ -51,20 +51,20 @@ export const main =
         parallelReduce([ 0 ])
         .invariant(balance() == ticketPrice * howMany)
         .while( keepBuying() )
-        .case( Player, (() => {
+        .case( Player, () => {
             const when = declassify(interact.shouldBuy(ticketPrice));
             assume(implies(when, isNone(randomsM[this])));
             const msg = declassify(digest(_ticket));
             return { msg, when };
-          }),
-          ((_) => ticketPrice),
-          ((ticketCommit) => {
+          },
+          (_) => ticketPrice,
+          (ticketCommit) => {
             const player = this;
             require(isNone(randomsM[player]));
             Player.only(() => { if ( didPublish() ) { interact.didBuy(); } });
             randomsM[player] = ticketCommit;
             return [ howMany + 1 ];
-          })
+          }
         )
         .timeRemaining(buyTimeout());
 
@@ -87,14 +87,14 @@ export const main =
         parallelReduce([ 0, 0 ])
         .invariant(balance() == howMany * ticketPrice)
         .while( keepReturning() && howManyReturned < howMany )
-        .case( Player, (() => {
+        .case( Player, () => {
             const player = this;
             const ticket = declassify(_ticket);
             const when = isNone(ticketsM[player])
               && randomMatches(player, ticket);
             return { msg: ticket, when };
-          }),
-          ((ticket) => {
+          },
+          (ticket) => {
             const player = this;
             Player.only(() => { if ( didPublish() ) { interact.didReturn(howManyReturned); } });
             require(isNone(ticketsM[player]));
@@ -103,7 +103,7 @@ export const main =
             delete randomsM[player];
             return [ (hwinner + (ticket % howMany)) % howMany,
                      howManyReturned + 1 ];
-          })
+          }
         )
         .timeRemaining(returnTimeout());
 
@@ -150,18 +150,18 @@ export const main =
       };
 
       fork()
-      .case(Player, (() => ({
+      .case(Player, () => ({
           when: isWinner(this),
-        })),
-        (() => {
+        }),
+        () => {
           const winner = this;
           require(isWinner(winner));
           each([Sponsor, Player], () => {
             interact.showOutcome(winner);
           });
           transfer(howMany * ticketPrice).to(winner);
-        }))
+        })
       .timeout(relativeTime(deadline), () => closeTo(Sponsor, () => {}));
       commit();
     });
-    
+

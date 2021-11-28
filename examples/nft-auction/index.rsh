@@ -54,7 +54,7 @@ export const main = Reach.App(() => {
           .invariant(balance() == (isFirstBid ? 0 : currentPrice))
           .while(keepGoing())
           .case(Owner,
-            (() => {
+            () => {
               const mbid = (this != owner && this != winner)
                 ? declassify(interact.getBid(currentPrice))
                 : Maybe(UInt).None();
@@ -62,14 +62,14 @@ export const main = Reach.App(() => {
                 when: maybe(mbid, false, ((bid) => bid > currentPrice)),
                 msg : fromSome(mbid, 0),
               });
-            }),
-            ((bid) => bid),
-            ((bid) => {
+            },
+            (bid) => bid,
+            (bid) => {
               require(bid > currentPrice);
               // Return funds to previous highest bidder
               transfer(isFirstBid ? 0 : currentPrice).to(winner);
               return [ this, false, bid ];
-            })
+            }
           )
           .timeRemaining(timeRemaining());
 
