@@ -69,7 +69,7 @@ let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
 let hasDiagnosticRelatedInformationCapability: boolean = false;
 
-const COMPILER_DIAGNOSTIC_SRC: string = 'Reach Compiler';
+const DIAGNOSTIC_SOURCE: string = 'Reach';
 
 const DID_YOU_MEAN_PREFIX = 'Did you mean: ';
 
@@ -344,7 +344,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 						DiagnosticSeverity.Error,
 						err.code,
 						err.suggestions,
-						COMPILER_DIAGNOSTIC_SRC
+						DIAGNOSTIC_SOURCE
 					);
 				}
 			});
