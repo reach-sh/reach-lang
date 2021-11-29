@@ -18,17 +18,76 @@ For arithmetic expressions, see [Array](/en/essentials/backend-programming/reach
 
 ### assume
 
+### fail
+
+The `fail` expression is equivalent to `assume(false)`.
+
 ### false
 
 ### require
 
 ### unknowable
 
+The `unknowable` expression asserts that one participant does not know certain values while another participant does. Here is the declaration:
+
+``` js nonum
+unknowable( Notter, Knower(var_0, ..., var_N), [msg] )
+```
+
+* `Notter` is the participant that is asserted not to know.
+* `Knower` is the participant that is asserted to know.
+* `var_0, ..., var_N` are the values not known and known.
+* `msg` is a byte array included in any reported violation.
+
 # call
+
+A `call` expression invokes the specified API function. Below is the declaration:
+
+``` js nonum
+const [ DOMAIN, RET_FUN ] = call(API_EXPR)
+  .pay(API_PAY_EXPR)
+  .assume(API_ASSUME_EXPR)
+  .throwTimeout(DELAY_EXPR, THROW_EXPR)
+```
+
+* `API_EXPR` is an expression that evaluates to an API member function.
+* `pay`, `assume`, and `throwTimeout` are optional. See [Fork](#fork).
+* The return value is `[ DOMAIN, RET_FUN ]` where `DOMAIN` is specific to the function, and `RET_FUN` is a function that *must be called* to return a value to the API function.
+
+Here is an example:
+
+``` js nonum
+const A = API('A', { isGt: Fun([UInt, UInt], Bool); });
+// ...
+const [ dom, k ] = call(A.isGt).assume((x, y) => x != y).pay((x, y) => x);
+const [x, y] = dom;
+k(x > y);
+commit();
+```
 
 # checkCommitment
 
 # closeTo
+
+The `closeTo` expression causes the specified participant to publish, receive a `transfer` of the contract balance and the [pay amount](/en/books/essentials/terminology/#pay-amount), and then exit. Below is the declaration:
+
+``` js nonum
+closeTo( Who, after, nonNetPayAmt ) 
+```
+
+* `Who` is the participant.
+* `after` is a no-argument function called before exit. It is optional.
+* `nonNetPayAmt`. See [Pay Amount](/en/books/essentials/terminology/#pay-amount). It is optional.
+
+Here is an example:
+
+``` js nonum
+const aliceInteract = {
+  informTimeout: Fun([], Null)
+};
+
+B.pay(wager).timeout(DEADLINE, () => closeTo(A, informTimeout));
+```
 
 # compose
 
@@ -66,6 +125,12 @@ For arithmetic expressions, see [Array](/en/essentials/backend-programming/reach
 
 # race
 
+A `race` expression organizes a competition among several participants (each intent on accomplishing the same task), determines which participant wins the competition, and executes task for the winner:
+
+``` js nonum
+race(Alice, Bob).publish(bet);
+```
+
 # this
 
 # Time Expressions
@@ -87,3 +152,7 @@ For arithmetic expressions, see [Array](/en/essentials/backend-programming/reach
 ### relativeSecs
 
 ### relativeTime
+
+### throughTimeout
+
+### timeRemaining

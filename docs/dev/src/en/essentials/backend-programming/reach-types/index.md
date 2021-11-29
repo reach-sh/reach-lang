@@ -77,7 +77,7 @@ export const main = Reach.App(() => {
 });
 ```
 
-`API` arguments include a name and an interface comprised of methods available in frontends via the `ctc.apis` object. The return value is an object whose fields are the interface methods. The object may be used in the `.api` component of [fork](/en/essentials/backend-programming/reach-statements/#fork) and [parallelReduce](/en/essentials/backend-programming/reach-statements/#parallelreduce) expressions. Each object method must occur exactly once in the entire program. See [this example](https://github.com/reach-sh/reach-lang/blob/master/examples/api-full/index.rsh).
+`API` arguments include a name and an interface comprised of methods available in frontends via the `ctc.apis` object. The return value is an object whose fields are the interface methods. The object may be used in the `.api` component of [fork](/en/essentials/backend-programming/reach-statements/#fork) and [parallelReduce](/en/essentials/backend-programming/reach-statements/#parallelreduce) expressions. Each method must occur exactly once in the entire program. See [this example](https://github.com/reach-sh/reach-lang/blob/master/examples/api-full/index.rsh).
 
 # Array
 
@@ -145,7 +145,7 @@ This method returns the mean of an array of `UInts`.
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportBool: Fun([Bool], Null) }
+const myInteract = { reportUInt: Fun([UInt], Null) }
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportUInt(Array.average(a)); // 6
 // or
@@ -197,25 +197,172 @@ const t = a.elemType;
 
 ### Array.find
 
+This method returns the first element in the array that satisfies the given `Bool` function. The return value is of type [Data](#data). 
+
+``` js nonum
+// index.rsh
+const myInteract = { reportData: Fun([Data({"None": Null, "Some": UInt})], Null) }
+const a = array(UInt, [4, 6, 8]);
+M.interact.reportData(Array.find(a, e => e > 3)); // Some,4
+// or
+M.interact.reportData(a.find(e => e > 3)); // Some,4
+```
+
 ### Array.findIndex
+
+This method returns the index of the first element in the array that satisfies the given `Bool` function. The return value is of type [Data](#data). 
+
+``` js nonum
+// index.rsh
+const myInteract = { reportData: Fun([Data({"None": Null, "Some": UInt})], Null) }
+const a = array(UInt, [4, 6, 8]);
+M.interact.reportData(Array.findIndex(a, e => e > 5)); // Some,1
+// or
+M.interact.reportData(a.findIndex(e => e > 5)); // Some,1
+```
 
 ### Array.forEach
 
+This method iterates the specified function over the elements of the array and returns `Null`. It is often used to transfer funds to accounts:
+
+``` js nonum
+// index.rsh
+// Assume that sale.arbitrator is Array(Address, 3)
+const arbFee = (buyerPmt * (2 / 100)) / Array.length(sale.arbitrator);
+Array.forEach(sale.arbitrator, (a) => {
+  transfer(arbFee).to(a);
+});
+transfer(balance()).to(Owner);
+```
+
 ### Array.includes
+
+This method returns `true` if the array contains the specified element. Otherwise, it returns `false`.
+
+``` js nonum
+// index.rsh
+const myInteract = { reportBool: Fun([Bool], Null) }
+const a = array(UInt, [4, 6, 8]);
+M.interact.reportBool(Array.includes(a, 4)); // true
+// or
+M.interact.reportBool(a.includes(4)); // true
+```
 
 ### Array.indexOf
 
+This method returns the index of the first element in the array that equals the given value. The return value is of type [Data](#data). 
+
+``` js nonum
+// index.rsh
+const myInteract = { reportData: Fun([Data({"None": Null, "Some": UInt})], Null) }
+const a = array(UInt, [4, 6, 8]);
+M.interact.reportData(Array.indexOf(a, 6)); // Some,1
+// or
+M.interact.reportData(a.indexOf(6)); // Some,1
+```
+
 ### Array.iota
+
+This method returns an array of the specified length where each element is the same as its index.
+
+``` js nonum
+// index.rsh
+const myInteract = { reportUIntArray: Fun([Array(UInt, 3)], Null), }
+M.interact.reportUIntArray(Array.iota(3)); // array(UInt, [0, 1, 2])
+```
 
 ### Array.length
 
+This method returns the length of the array.
+
+``` js nonum
+// index.rsh
+const myInteract = { reportUInt: Fun([UInt], Null) }
+const a = array(UInt, [4, 6, 8]);
+M.interact.reportUInt(Array.length(a)); // 3
+// or
+M.interact.reportUInt(a.length); // 3
+```
+
 ### Array.map
+
+This method applies the given function to each element of the given array, and returns a new same-length array containing the transformed values.
+
+``` js nonum
+// index.rsh
+const myInteract = { reportUIntArray: Fun([Array(UInt, 3)], Null) }
+const a = array(UInt, [4, 6, 8]);
+M.interact.reportUIntArray(Array.map(a, e => e + 1)); // array(UInt, [5, 7, 9])
+// or
+M.interact.reportUIntArray(a.map(e => e + 1)); // array(UInt, [5, 7, 9])
+// also
+M.interact.reportUIntArray(Array.iota(3).map(a, add)); // array(UInt, [4, 7, 10])
+```
 
 ### Array.mapWithIndex
 
+This method is similar to `Array.map` except that it provides the function with the element's index, too.
+
+``` js nonum
+// index.rsh
+const myInteract = { reportObjectArray: Fun([Array(Object({value: UInt, index: UInt}), 3)], Null) }
+const a = array(UInt, [4, 6, 8]);
+M.interact.reportObjectArray(Array.mapWithIndex(a, (e, i)  => {return {"value": e + 1, "index": i}}));
+// or
+M.interact.reportObjectArray(a.mapWithIndex((e, i)  => {return {"value": e + 1, "index": i}}));
+```
+
+Here is one implementation of the corresponding frontend interact object:
+
+``` js nonum
+// index.mjs
+reportObjectArray: (v) => { console.log(v); }
+```
+
+Here is the output:
+
+``` nonum
+[
+  {
+    index: BigNumber { _hex: '0x00', _isBigNumber: true },
+    value: BigNumber { _hex: '0x05', _isBigNumber: true }
+  },
+  {
+    index: BigNumber { _hex: '0x01', _isBigNumber: true },
+    value: BigNumber { _hex: '0x07', _isBigNumber: true }
+  },
+  {
+    index: BigNumber { _hex: '0x02', _isBigNumber: true },
+    value: BigNumber { _hex: '0x09', _isBigNumber: true }
+  }
+]
+```
+
 ### Array.max
 
+This method returns the largest number in an array of unsigned integers:
+
+``` js nonum
+// index.rsh
+const myInteract = { reportUInt: Fun([UInt], Null) }
+const a = array(UInt, [4, 6, 8]);
+M.interact.reportUInt(Array.max(a)); // 8
+// or
+M.interact.reportUInt(a.max()); // 8
+```
+
 ### Array.min
+
+This method returns the smallest number in an array of unsigned integers:
+
+``` js nonum
+// index.rsh
+const myInteract = { reportUInt: Fun([UInt], Null) }
+const a = array(UInt, [4, 6, 8]);
+M.interact.reportUInt(Array.min(a)); // 4
+// or
+M.interact.reportUInt(a.min()); // 4
+```
 
 ### Array.or
 
@@ -230,23 +377,128 @@ M.interact.reportBool(Array.or(a)); // true
 
 ### Array.product
 
+This method returns the product of an array of unsigned integers:
+
+``` js nonum
+// index.rsh
+const myInteract = { reportUInt: Fun([UInt], Null) }
+const a = array(UInt, [4, 6, 8]);
+M.interact.reportUInt(Array.product(a)); // 192
+// or
+M.interact.reportUInt(a.product()); // 192
+```
+
 ### Array.reduce
+
+Starting with the specified value, this method returns the [left fold](https://en.wikipedia.org/wiki/Fold_(higher-order_function)) of the given function over the array:
+
+``` js nonum
+// index.rsh
+const myInteract = { reportUInt: Fun([UInt], Null) }
+const a = array(UInt, [4, 6, 8]);
+M.interact.reportUInt(Array.reduce(a, 0, (x, total) => (total + x))); // 18
+// or
+M.interact.reportUInt(Array.reduce(a, 0, add)); // 18
+// or
+M.interact.reportUInt(a.reduce(0, (x, total) => (total + x))); // 18
+// or
+M.interact.reportUInt(a.reduce(0, add)); // 18
+// also
+M.interact.reportUInt(Array.iota(3).reduce(a, 0, (x, y, total) => (total + x + y))); // 21
+```
 
 ### Array.reduceWithIndex
 
+This method is similar to `Array.reduce` except that it provides the function with the element's index, too.
+
 ### Array.replicate
+
+This method creates an array of the specified length where each element is the specified value:
+
+``` js nonum
+// index.rsh
+const myInteract = { reportUIntArray: Fun([Array(UInt, 3)], Null) }
+M.interact.reportUIntArray(Array.replicate(3, 256)); // array(UInt, [256, 256, 256])
+```
 
 ### Array.set
 
+This method returns an array identical to the specified array except that the specified index contains the specified value.
+
+``` js nonum
+// index.rsh
+const myInteract = { reportUIntArray: Fun([Array(UInt, 3)], Null) }
+const a = array(UInt, [4, 6, 8]);
+M.interact.reportUIntArray(Array.set(a, 1, 256)); // array(UInt, [4, 256, 8])
+// or
+M.interact.reportUIntArray(a.set(1, 256)); // array(UInt, [4, 256, 8])
+```
+
 ### Array.size
+
+This method returns the number of elements in the array.
+
+``` js nonum
+// index.rsh
+const myInteract = { reportUInt: Fun([UInt], Null) }
+const a = array(UInt, [4, 6, 8]);
+M.interact.reportUInt(Array.size(a)); // 3
+// or
+M.interact.reportUInt(a.size()); // 3
+```
 
 ### Array.slice
 
+This method creates a new array which is that portion of the given array defined by a starting index and a length.
+
+``` js nonum
+// index.rsh
+const myInteract = { reportUIntArray: Fun([Array(UInt, 3)], Null) }
+const a = array(UInt, [4, 6, 8, 10, 12, 14]);
+M.interact.reportUIntArray(Array.slice(a, 1, 3)); // array(UInt, [6, 8, 10])
+// or
+M.interact.reportUIntArray(a.slice(1, 3)); // array(UInt, [6, 8, 10])
+```
+
 ### Array.sum
+
+This method returns the sum of an array of unsigned integers.
+
+``` js nonum
+// index.rsh
+const myInteract = { reportUInt: Fun([UInt], Null) }
+const a = array(UInt, [4, 6, 8]);
+M.interact.reportUInt(Array.sum(a)); // 18
+// or
+M.interact.reportUInt(a.sum()); // 18
+```
 
 ### Array.withIndex
 
+This method creates a new same-length array where each element pairs the corresponding original element with its index.
+
+``` js nonum
+// index.rsh
+const myInteract = { reportTupleArray: Fun([Array(Tuple(UInt, UInt), 3)], Null) }
+const a = array(UInt, [4, 6, 8]);
+M.interact.reportTupleArray(Array.withIndex(a)); // array(Tuple(UInt, UInt), [[4, 0], [6, 1], [8, 2]])
+// or
+M.interact.reportTupleArray(a.withIndex()); // array(Tuple(UInt, UInt), [[4, 0], [6, 1], [8, 2]])
+```
+
 ### Array.zip
+
+Given two same-length arrays, this method creates a new same-length array where each element pairs the elements of the original arrays.
+
+``` js nonum
+// index.rsh
+const myInteract = { reportTupleArray: Fun([Array(Tuple(UInt, UInt), 3)], Null) }
+const a = array(UInt, [4, 6, 8]);
+const b = array(UInt, [10, 12, 14]);
+M.interact.reportTupleArray(Array.zip(a, b)); // array(Tuple(UInt, UInt), [[4, 10], [6, 12], [8, 14]])
+// or
+M.interact.reportTupleArray(a.zip(b)); // array(Tuple(UInt, UInt), [[4, 10], [6, 12], [8, 14]])
+```
 
 # Bool
 
@@ -420,6 +672,24 @@ NET999:ACC3MBPMGWWKET1Z405M7CT697775FMKZPBURP3CVZ
 
 ### transfer
 
+A `transfer` expression transfers the specified number of tokens from the contract account to the specified participant account. Here is the declaration:
+
+``` js nonum
+transfer(AMOUNT_EXPR).to(ADDR_EXPR)
+// or
+transfer(AMOUNT_EXPR, TOKEN_EXPR).to(ADDR_EXPR)
+```
+
+* `AMOUNT_EXPR` is an unsigned integer specifying the number of tokens to transfer from the contract. This amount must evaluate to less than or equal to the balance of network tokens in the contract account.
+* `ADDR_EXPR` is the target address for the transfer.
+* `TOKEN_EXPR` is a Token type. This argument is optional.
+
+Here is an example:
+
+``` js nonum
+transfer(10).to(Alice);
+```
+
 # Data
 
 A *data instance* is ...
@@ -431,6 +701,26 @@ A *data instance* is ...
 # FixedPoint
 
 A `FixedPoint` is an object `{ sign: Bool, i: { scale: UInt, i: UInt} }` where `scale` is `1`, `10`, `100`, `1000`, etc., and `i` is the underlying unsigned integer. The value of a fixed-point number is `(i / scale) * sign`. It is used to represent numbers that have a fixed number of digits after the decimal.
+
+# Foldable
+
+`Foldable` acts as a base class to `Array` and `Map` providing the methods listed below. See [Array](#array) and [Map](#map) for details.
+
+``` nonum
+Foldable.all
+Foldable.and
+Foldable.any
+Foldable.average
+Foldable.count
+Foldable.forEach
+Foldable.includes
+Foldable.max
+Foldable.min
+Foldable.or
+Foldable.product
+Foldable.size
+Foldable.sum
+```
 
 # Fun
 
@@ -482,7 +772,7 @@ Other Operations
 
 # Map
 
-A *map* is ...
+A `Map` is a `Foldable` container. A mapping associates an `Address` to a value. `Map` methods enable mappings to be aggregated within the invariant of a while loop.
 
 ### Map.all
 
@@ -534,7 +824,57 @@ An *object* is ...
 
 # Participant
 
+A `Participant` expression defines a participant (Lines 12 and 13):
+
+``` js
+// index.rsh
+const sellerInteract = {
+  price: UInt,
+  reportReady: Fun([UInt], Null)
+};
+
+const buyerInteract = {
+  confirmPurchase: Fun([UInt], Bool),
+};
+
+export const main = Reach.App(() => {
+  const S = Participant('Seller', sellerInteract);
+  const B = Participant('Buyer', buyerInteract);
+  deploy();
+  // ...
+});
+```
+
+A `Participant`, which represents a real-world entity such as a human being, *participates* in transactions within the smart contract. A participant has a name and an interact object. The Reach compiler uses the participant name (e.g. *Seller*) in the *index.rsh* file to name the corresponding function in *index.main.mjs* which, among other things, binds a participant to the consensus-network account of the caller:
+
+``` js nonum
+export async function Seller(ctc, interact) { /*...*/ }
+```
+
+The Participant uses the interact object to communicate with the Reach DApp frontend:
+
+``` js nonum
+S.interact.reportReady(price);
+```
+
 # ParticipantClass
+
+A `ParticipantClass` expression defines a category of participants.
+
+``` js nonum
+// index.rsh
+const hostApi = {};
+const playerApi = {};
+
+export const main = Reach.App(() => {
+  const F = Participant('Host', hostApi);
+  const S = ParticipantClass('Player', playerApi);
+  deploy();
+  // ...
+});
+```
+
+The DApp above, for example, supports one host and many players. 
 
 # Refine
 
@@ -542,11 +882,60 @@ An *object* is ...
 
 # Set
 
+A `Set` expression creates a specialized Array. The length of the array is the number of participants in the contract. The keys are the participant addresses. All values are boolean (initially set to `false`).
+
+``` js nonum
+const bidders = new Set();
+bidders.insert(Alice);
+bidders.remove(Alice);
+bidders.member(Alice); // false
+```
+
 # Struct
 
 A *struct* is ...
 
 # Token
+
+The `Token` expression mints a new non-network token. Here is the declaration:
+
+``` js nonum
+new Token(PARAMS)
+```
+
+* `PARAMS` is an object with the keys in the table below.
+
+    |Key|Type|Default|
+    |-|-|-|
+    |`name`|`Bytes(32)`|empty|
+    |`symbol`|`Bytes(8)`|empty|
+    |`url`|`Bytes(96)`|empty|
+    |`metadata`|`Bytes(32)`|empty|
+    |`supply`|`UInt`|`UInt.max`|
+    |`decimals`|`UInt`|ALGO = 6; CFX and ETH = 18|
+
+This returns a Token value and deposits a supply amount of the new non-network tokens into the contract account associated with the DApp. These tokens must be destroyed by the end of the DApp. A token has the following methods:
+
+* `Token.burn(tok, amt)` or `tok.burn(amt)`, where tok is a Token value and amt is a UInt value, may be used to burn tokens in the contract account, meaning that they are utterly destroyed and can never be recovered.
+
+* `Token.destroy(tok)` or `tok.destroy()`, where tok is a Token value, may be used to destroy the token so that it may never be used again by any users on the consensus network. This must be called before the application exits.
+
+* `Token.destroyed(tok)` or `tok.destroyed()`, where tok is a Token value, returns whether destroy has been called on tok yet.
+
+* `Token.supply(tok)` or `tok.supply()`, where tok is a Token value, may be used to query the current supply of tokens, i.e. the number of tokens which have not been burnt.
+
+Here is an example:
+
+``` js nonum
+require(supply >= 2 * amt);
+const tok = new Token({ name, symbol, url, metadata, supply, decimals });
+transfer(amt, tok).to(who);
+tok.burn(amt);
+assert(tok.supply() == supply - amt);
+tok.burn();
+assert(tok.destroyed() == false);
+tok.destroy();
+```
 
 # Tuple
 
@@ -664,3 +1053,27 @@ pow(base, power, iterations) // pow(UInt, UInt, UInt)
 `iterations` must be known at compile time. Six iterations provides enough accuracy to calculate up to <code>2<sup>63</sup></code>.
 
 # View
+
+A View expression defines a view object that allows non-participants to see public variables in the contract. The following program instantiates the view in Line 4 and initializes the `price` property in Line 10:
+
+``` js
+// index.rsh
+export const main = Reach.App(() => {
+  const S = Participant('Seller', sellerInteract);
+  const B = Participant('Buyer', buyerInteract);
+  const V = View('Main', { price: UInt });
+  deploy();
+
+  S.only(() => { const price = declassify(interact.price); });
+  S.publish(price);
+  S.interact.reportReady(price);
+  V.price.set(price);
+  commit();
+```
+
+A frontend might access the view like this:
+
+``` js nonum
+const price = await ctc.views.Main.price();
+console.log(`The price of wisdom is ${price[0] == 'None' ? '0' : toSU(price[1])} ${suStr}.`);
+```
