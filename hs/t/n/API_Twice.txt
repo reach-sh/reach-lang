@@ -7,7 +7,7 @@ Verifying for generic connector
 Checked 22 theorems; No failures!
 reachc: error[RAPI0002]: API "Writer_f" occurs multiple times in program
 
-  ./API_Twice.rsh:21:9:application
+  ./API_Twice.rsh:21:10:application
 
   21|     .api(U.f, (k) => {
 

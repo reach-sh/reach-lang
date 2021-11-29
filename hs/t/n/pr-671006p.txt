@@ -30,9 +30,9 @@ Verification failed:
 Checked 53 theorems; 4 failures (and 3 omitted repeats) :'(
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
 
-  ./pr-671006p.rsh:31:37:application
+  ./pr-671006p.rsh:45:13:application
 
-  31|   const [sum, stop] = parallelReduce([0, false])
+  45|     .timeout(p.duration, () => {
 
 For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
 

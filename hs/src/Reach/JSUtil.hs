@@ -24,6 +24,7 @@ module Reach.JSUtil
   , jsBlockToStmts
   , jsFlattenLHS
   , jsString
+  , jsaList
   )
 where
 
@@ -260,6 +261,63 @@ instance HasJSAnnot JSExpression where
     JSVarInitExpression a _ -> jsa a
     JSYieldExpression a _ -> a
     JSYieldFromExpression a _ _ -> a
+
+instance HasJSAnnot JSObjectProperty where
+  jsa = \case
+    JSPropertyNameandValue _ ja _ -> ja
+    JSPropertyIdentRef ja _ -> ja
+    JSObjectMethod jmd -> jsa jmd
+    JSObjectSpread ja _ -> ja
+
+instance HasJSAnnot JSMethodDefinition where
+  jsa = \case
+    JSMethodDefinition _ ja _ _ _ -> ja
+    JSGeneratorMethodDefinition ja _ _ _ _ _ -> ja
+    JSPropertyAccessor _ _ ja _ _ _ -> ja
+
+instance HasJSAnnot JSStatement where
+  jsa = \case
+    JSStatementBlock ja _ _ _ -> ja
+    JSBreak ja _ _ -> ja
+    JSLet ja _ _ -> ja
+    JSClass ja _ _ _ _ _ _ -> ja
+    JSConstant ja _ _ -> ja
+    JSContinue ja _ _ -> ja
+    JSDoWhile ja _ _ _ _ _ _ -> ja
+    JSFor ja _ _ _ _ _ _ _ _ -> ja
+    JSForIn ja _ _ _ _ _ _ -> ja
+    JSForVar ja _ _ _ _ _ _ _ _ _ -> ja
+    JSForVarIn ja _ _ _ _ _ _ _ -> ja
+    JSForLet ja _ _ _ _ _ _ _ _ _ -> ja
+    JSForLetIn ja _ _ _ _ _ _ _ -> ja
+    JSForLetOf ja _ _ _ _ _ _ _ -> ja
+    JSForConst ja _ _ _ _ _ _ _ _ _ -> ja
+    JSForConstIn ja _ _ _ _ _ _ _ -> ja
+    JSForConstOf ja _ _ _ _ _ _ _ -> ja
+    JSForOf ja _ _ _ _ _ _ -> ja
+    JSForVarOf ja _ _ _ _ _ _ _ -> ja
+    JSAsyncFunction ja _ _ _ _ _ _ _ -> ja
+    JSFunction ja _ _ _ _ _ _ -> ja
+    JSGenerator ja _ _ _ _ _ _ _ -> ja
+    JSIf ja _ _ _ _ -> ja
+    JSIfElse ja _ _ _ _ _ _ -> ja
+    JSLabelled _ ja _ -> ja
+    JSEmptyStatement ja -> ja
+    JSExpressionStatement e _ -> jsa e
+    JSAssignStatement e _ _ _ -> jsa e
+    JSMethodCall _ ja _ _ _ -> ja
+    JSReturn ja _ _ -> ja
+    JSSwitch ja _ _ _ _ _ _ _ -> ja
+    JSThrow ja _ _ -> ja
+    JSTry ja _ _ _ -> ja
+    JSVariable ja _ _ -> ja
+    JSWhile ja _ _ _ _ -> ja
+    JSWith ja _ _ _ _ _ -> ja
+
+jsaList :: HasJSAnnot a => JSAnnot -> [a] -> JSAnnot
+jsaList def = \case
+  [] -> def
+  h:_ -> jsa h
 
 jsString :: JSAnnot -> String -> JSExpression
 jsString a s = JSStringLiteral a $ "'" <> s <> "'"
