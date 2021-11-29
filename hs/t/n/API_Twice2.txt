@@ -7,9 +7,9 @@ Verifying for generic connector
 Checked 29 theorems; No failures!
 reachc: error[RAPI0002]: API "Writer_f" occurs multiple times in program
 
-  ./API_Twice2.rsh:22:19:application
+  ./API_Twice2.rsh:25:9:application
 
-  22|     parallelReduce(0)
+  25|     .api(U.f, (k) => {
 
 For further explanation of this error, see: https://docs.reach.sh/RAPI0002.html
 

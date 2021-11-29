@@ -7,9 +7,9 @@ Verifying for generic connector
 Checked 40 theorems; No failures!
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
 
-  ./pr190.rsh:339:21:application
+  ./pr190.rsh:421:17:application
 
-  339|       parallelReduce(true)
+  421|         .timeout(100^100, () => {
 
 For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
 

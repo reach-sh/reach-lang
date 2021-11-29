@@ -13,7 +13,7 @@ reachc: error[RE0042]: Invalid unbound identifier in expression: interact. Did y
   19|         msg: declassify(interact.amts()),
 
 Trace:
-  in "publishE" from (./pay_multiple_currency.rsh:18:27:function exp) at (./pay_multiple_currency.rsh:29:23:application)
+  in "publishE" from (./pay_multiple_currency.rsh:18:27:function exp) at (./pay_multiple_currency.rsh:32:20:application)
 
 For further explanation of this error, see: https://docs.reach.sh/RE0042.html
 
