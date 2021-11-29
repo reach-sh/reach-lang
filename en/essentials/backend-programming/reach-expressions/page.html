@@ -1,0 +1,74 @@
+<p>See <a href="/en/essentials/backend-programming/reach-types/">Reach Types</a> for expressions related to specific Reach types.</p>
+<p>For arithmetic expressions, see <a href="/en/essentials/backend-programming/reach-types/#array">Array</a>, <a href="/en/essentials/backend-programming/reach-types/#fixedpoint">FixedPoint</a>, <a href="/en/essentials/backend-programming/reach-types/#int">Int</a>, <a href="/en/essentials/backend-programming/reach-types/#interval">Interval</a>, and <a href="/en/essentials/backend-programming/reach-types/#uint">UInt</a>. See also <a href="/en/essentials/backend-programming/reach-operators/">Reach Operators</a>.</p>
+<h1 id="anybody">Anybody</h1>
+<h1 id="arrow-expression">Arrow Expression</h1>
+<h1 id="assertion-expressions">Assertion Expressions</h1>
+<h3 id="assert">assert</h3>
+<h3 id="assume">assume</h3>
+<h3 id="fail">fail</h3>
+<p>The <code>fail</code> expression is equivalent to <code>assume(false)</code>.</p>
+<h3 id="false">false</h3>
+<h3 id="require">require</h3>
+<h3 id="unknowable">unknowable</h3>
+<p>The <code>unknowable</code> expression asserts that one participant does not know certain values while another participant does. Here is the declaration:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">unknowable</span><span style="color: #24292F">( Notter, </span><span style="color: #8250DF">Knower</span><span style="color: #24292F">(var_0, </span><span style="color: #CF222E">...</span><span style="color: #24292F">, var_N), [msg] )</span></li></ol></pre>
+<ul>
+  <li><code>Notter</code> is the participant that is asserted not to know.</li>
+  <li><code>Knower</code> is the participant that is asserted to know.</li>
+  <li><code>var_0, ..., var_N</code> are the values not known and known.</li>
+  <li><code>msg</code> is a byte array included in any reported violation.</li>
+</ul>
+<h1 id="call">call</h1>
+<p>A <code>call</code> expression invokes the specified API function. Below is the declaration:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> [ </span><span style="color: #0550AE">DOMAIN</span><span style="color: #24292F">, </span><span style="color: #0550AE">RET_FUN</span><span style="color: #24292F"> ] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">call</span><span style="color: #24292F">(</span><span style="color: #0550AE">API_EXPR</span><span style="color: #24292F">)</span></li><li value="2"><span style="color: #24292F">  .</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(</span><span style="color: #0550AE">API_PAY_EXPR</span><span style="color: #24292F">)</span></li><li value="3"><span style="color: #24292F">  .</span><span style="color: #8250DF">assume</span><span style="color: #24292F">(</span><span style="color: #0550AE">API_ASSUME_EXPR</span><span style="color: #24292F">)</span></li><li value="4"><span style="color: #24292F">  .</span><span style="color: #8250DF">throwTimeout</span><span style="color: #24292F">(</span><span style="color: #0550AE">DELAY_EXPR</span><span style="color: #24292F">, </span><span style="color: #0550AE">THROW_EXPR</span><span style="color: #24292F">)</span></li></ol></pre>
+<ul>
+  <li><code>API_EXPR</code> is an expression that evaluates to an API member function.</li>
+  <li><code>pay</code>, <code>assume</code>, and <code>throwTimeout</code> are optional. See <a href="#fork">Fork</a>.</li>
+  <li>The return value is <code>[ DOMAIN, RET_FUN ]</code> where <code>DOMAIN</code> is specific to the function, and <code>RET_FUN</code> is a function that <em>must be called</em> to return a value to the API function.</li>
+</ul>
+<p>Here is an example:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">A</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">API</span><span style="color: #24292F">(</span><span style="color: #0A3069">'A'</span><span style="color: #24292F">, { isGt: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt, UInt], Bool); });</span></li><li value="2"><span style="color: #6E7781">// ...</span></li><li value="3"><span style="color: #CF222E">const</span><span style="color: #24292F"> [ </span><span style="color: #0550AE">dom</span><span style="color: #24292F">, </span><span style="color: #0550AE">k</span><span style="color: #24292F"> ] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">call</span><span style="color: #24292F">(</span><span style="color: #0550AE">A</span><span style="color: #24292F">.isGt).</span><span style="color: #8250DF">assume</span><span style="color: #24292F">((</span><span style="color: #953800">x</span><span style="color: #24292F">, </span><span style="color: #953800">y</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> x </span><span style="color: #CF222E">!=</span><span style="color: #24292F"> y).</span><span style="color: #8250DF">pay</span><span style="color: #24292F">((</span><span style="color: #953800">x</span><span style="color: #24292F">, </span><span style="color: #953800">y</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> x);</span></li><li value="4"><span style="color: #CF222E">const</span><span style="color: #24292F"> [</span><span style="color: #0550AE">x</span><span style="color: #24292F">, </span><span style="color: #0550AE">y</span><span style="color: #24292F">] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> dom;</span></li><li value="5"><span style="color: #8250DF">k</span><span style="color: #24292F">(x </span><span style="color: #CF222E">&gt;</span><span style="color: #24292F"> y);</span></li><li value="6"><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
+<h1 id="checkcommitment">checkCommitment</h1>
+<h1 id="closeto">closeTo</h1>
+<p>The <code>closeTo</code> expression causes the specified participant to publish, receive a <code>transfer</code> of the contract balance and the <a href="/en/books/essentials/terminology/#pay-amount">pay amount</a>, and then exit. Below is the declaration:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">closeTo</span><span style="color: #24292F">( Who, after, nonNetPayAmt )</span></li></ol></pre>
+<ul>
+  <li><code>Who</code> is the participant.</li>
+  <li><code>after</code> is a no-argument function called before exit. It is optional.</li>
+  <li><code>nonNetPayAmt</code>. See <a href="/en/books/essentials/terminology/#pay-amount">Pay Amount</a>. It is optional.</li>
+</ul>
+<p>Here is an example:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">aliceInteract</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  informTimeout: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([], Null)</span></li><li value="3"><span style="color: #24292F">};</span></li><li value="4"></li><li value="5"><span style="color: #0550AE">B</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(wager).</span><span style="color: #8250DF">timeout</span><span style="color: #24292F">(</span><span style="color: #0550AE">DEADLINE</span><span style="color: #24292F">, () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #8250DF">closeTo</span><span style="color: #24292F">(</span><span style="color: #0550AE">A</span><span style="color: #24292F">, informTimeout));</span></li></ol></pre>
+<h1 id="compose">compose</h1>
+<h1 id="declassify">declassify</h1>
+<h1 id="didpublish">didPublish</h1>
+<h1 id="ensure">ensure</h1>
+<h1 id="forall">forall</h1>
+<h1 id="hasconsolelogger">hasConsoleLogger</h1>
+<h1 id="hasrandom">hasRandom</h1>
+<h1 id="implies">implies</h1>
+<h1 id="interact">interact</h1>
+<h1 id="literal-expressions">Literal Expressions</h1>
+<h3 id="unstrict">unstrict</h3>
+<h3 id="use-strict">use strict</h3>
+<h1 id="makecommitment">makeCommitment</h1>
+<h1 id="makeenum">makeEnum</h1>
+<h1 id="match">match</h1>
+<h1 id="new">new</h1>
+<h1 id="possible">possible</h1>
+<h1 id="race">race</h1>
+<p>A <code>race</code> expression organizes a competition among several participants (each intent on accomplishing the same task), determines which participant wins the competition, and executes task for the winner:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">race</span><span style="color: #24292F">(Alice, Bob).</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(bet);</span></li></ol></pre>
+<h1 id="this">this</h1>
+<h1 id="time-expressions">Time Expressions</h1>
+<h3 id="absolutesecs">absoluteSecs</h3>
+<h3 id="absolutetime">absoluteTime</h3>
+<h3 id="basewaitsecs">baseWaitSecs</h3>
+<h3 id="basewaittime">baseWaitTime</h3>
+<h3 id="lastconsensussecs">lastConsensusSecs</h3>
+<h3 id="lastconsensustime">lastConsensusTime</h3>
+<h3 id="makedeadline">makeDeadline</h3>
+<h3 id="relativesecs">relativeSecs</h3>
+<h3 id="relativetime">relativeTime</h3>
+<h3 id="throughtimeout">throughTimeout</h3>
+<h3 id="timeremaining">timeRemaining</h3>
