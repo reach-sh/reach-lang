@@ -30,4 +30,9 @@ import { mkAssertEq } from './common.mjs';
   };
 
   await rpcCallbacks('/backend/Alice', ctcAlice, { observe });
+
+  await Promise.all([
+    rpc('/forget/ctc', ctcAlice),
+    rpc('/forget/acc', accAlice),
+  ]);
 })();
