@@ -6,12 +6,9 @@ import { mkAssertEq } from './common.mjs';
 
   const accAlice = await rpc('/stdlib/newTestAccount', await rpc('/stdlib/parseCurrency', 100));
   const ctcAlice = await rpc('/acc/contract', accAlice);
-  const meta     = 'This is a test string';
 
-  const checkView = async e => mkAssertEq(rpc)('checkView:', e, [
-    await rpc('/ctc/v/Main/who',  ctcAlice),
-    await rpc('/ctc/v/Main/meta', ctcAlice),
-  ]);
+  const checkView = async (x, e) => mkAssertEq(rpc)(
+    'checkView:', e, await rpc('/ctc/v/Main/f', ctcAlice, x));
 
-  await rpcCallbacks('/backend/Alice', ctcAlice, { meta, checkView });
+  await rpcCallbacks('/backend/Alice', ctcAlice, { checkView });
 })();
