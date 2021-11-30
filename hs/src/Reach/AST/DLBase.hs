@@ -561,7 +561,7 @@ data DLExpr
   -- * the either is whether it is a generated one or a prescribed one
   -- * the type is the type
   -- * the dlarg is the value being logged
-  | DLE_EmitLog SrcLoc String (Maybe String) DLVar
+  | DLE_EmitLog SrcLoc (Maybe String) (Maybe String) DLVar
   | DLE_setApiDetails {
     sad_at :: SrcLoc,
     sad_who :: SLPart,
@@ -1032,3 +1032,5 @@ class HasCounter a where
 type DLViews = M.Map (Maybe SLPart) (M.Map SLVar IType)
 
 type DLAPIs = M.Map (Maybe SLPart) (M.Map SLVar (SLPart, IType))
+
+type DLEvents = M.Map SLPart (M.Map SLVar DLType)

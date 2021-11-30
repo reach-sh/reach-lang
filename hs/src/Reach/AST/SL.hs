@@ -712,6 +712,8 @@ data SLPrimitive
   | SLPrim_getContract
   | SLPrim_getAddress
   | SLPrim_EmitLog
+  | SLPrim_Event
+  | SLPrim_event_is SLVar
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where
