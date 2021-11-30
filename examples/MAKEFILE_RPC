@@ -33,6 +33,10 @@ clean:
 	@rm -f  Dockerfile
 	@rm -f  package.json
 
+.PHONY: down
+down:
+	@$(REACH) down
+
 client-lib-js: $(ROOT)/rpc-client/js
 	@mkdir -p ./lib
 	@cp -vru $(ROOT)/rpc-client/js/* ./lib
