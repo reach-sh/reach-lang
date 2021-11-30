@@ -6,9 +6,61 @@ menuItem: mi-docs
 
 # Assertion
 
-An assertion is either: a knowledge assertion, which is a claim that one honest participant cannot know something that another honest participant does know; a static assertion, which is an always-true formula; an assumption, which is a true formula if frontends behave honestly; a requirement, which is a true formula if participants behave honestly; or, a possibility assertion, which is a formula for which there exists some values that honest participants and frontends could submit which results in the truth of the formula. An honest participant is one that executes the steps specified by the DApp, while an honest frontend is one that only returns values which ensure that all assumptions evaluate to the boolean true.
+An assertion is a statement that a given expression must be `true` or `false`. Consider the following:
+
+``` js nonum
+const a = Array.iota(5); // array(UInt, [0, 1, 2, 3, 4])
+assert(a.sum() == 10);
+```
+
+In the example above, `assert` *asserts* that the sum of the elements in the array is 10. If the sum is not 10, the compiler stops.
+
+Some assertions hinge on the assumption of honesty. An honest participant executes the steps specified by the DApp, and an honest frontend only returns values that ensure assumptions evaluate to `true`.
+
+Types of assertions include the following:
+
+* A *static assertion* is a must-be-true formula. 
+
+* A *knowledge assertion* is a claim that one honest participant does not know something that another honest participant does know. 
+
+* A *possibility assertion* is a formula for which there exists some values that honest participants and frontends could submit which result in the truth of the formula.
 
 # Linear State
+
+A smart contract may include [Maps](/en/essentials/backend-programming/reach-types/#map) that associate participant account addresses with values of different types. The length of each `Map` equals the number of participants in the contract which is known as *linear state*:
+
+<div><img src="linear-state.png" class="img-fluid my-4 d-block" width=200 loading="lazy"></div>
+
+# Loop Invariant
+
+A [Loop Invariant](https://en.wikipedia.org/wiki/Loop_invariant) is a property of a loop that is true before and after each iteration. Contract balance is a common example. Because any tokens paid to a contract account must be transferred out before a DApp exits -- a rule called the *Token Linearity Property* -- one invariant of many Reach `while` loops is contract balance. Consider the following:
+
+``` js
+const ctMap = new Map(UInt);
+const [sum, stop] = parallelReduce([0, false])
+  .invariant(balance() == sum && balance() == ctMap.sum())
+  .while(!stop && balance() < p.goal)
+  .case(C, () => {
+    const amt = declassify(interact.getContribution());
+    return { when: amt > 0, msg: amt };
+  },
+    (amt) => amt,
+    (amt) => {
+      const winner = this;
+      ctMap[winner] = myFromMaybe(ctMap[winner]) + amt;
+      return [sum + amt, false];
+    }
+  )
+  .timeout(p.duration, () => {
+    Anybody.publish();
+    return [sum, true];
+  });
+```
+
+* Line 2: Sets `sum` equal to 0.
+* Line 3: Asserts that `balance()` will always be equal to `sum`.
+* Line 9: Pays `amt` to the contract balance.
+* Line 13: Adds `amt` to `sum`.
 
 # Pay Amount
 

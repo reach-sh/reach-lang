@@ -772,7 +772,62 @@ Other Operations
 
 # Map
 
-A `Map` is a `Foldable` container. A mapping associates an `Address` to a value. `Map` methods enable mappings to be aggregated within the invariant of a while loop.
+A `Map` is a means of associating participants with values of a given type:
+
+|Participant|Value|
+|-|-|
+|Participant 1|`200`|
+|Participant 2|`400`|
+|Participant 3|`100`|
+|Participant 4|`125`|
+
+A `Map` represents participants by account address:
+
+|Participant|Value|
+|-|-|
+|`0x1234abcd0`|`200`|
+|`0x1234abcd1`|`400`|
+|`0x1234abcd2`|`100`|
+|`0x1234abcd3`|`125`|
+
+The `Map` constructor requires a type:
+
+``` js nonum
+const m = new Map(UInt);
+```
+
+Use `[]` to reference and dereference:
+
+``` js nonum
+// index.rsh
+const sellerInteract = {
+  reportData: Fun([Data({"None": Null, "Some": UInt})], Null),
+};
+export const main = Reach.App(() => {
+  const S = Participant('Seller', sellerInteract);
+  deploy();
+  // ...
+  const m = new Map(UInt); // Address <> UInt
+  m[S] = 256;              // reference
+  const v = m[S];          // dereference
+  S.interact.reportData(v);
+  // ...
+});
+```
+
+In the example above, `const v` is not a `UInt`. It is a `Data({"None": Null, "Some": UInt})` because `m[S]` allows for the possibility that the specified participant address is not in the `Map`. 
+
+`Map` is a `Foldable` container, so it includes all the [Foldable](#foldable) methods, but these methods are only valid within the `invariant` of a `while` loop (Line 3):
+
+``` js
+const ctMap = new Map(UInt);
+// ...
+.invariant( balance() == sum && balance() == ctMap.sum() )
+.while( !stop && balance() < p.goal )
+// ...
+```
+
+See [Loop Invariant](/en/essentials/terminology/#loop-invariant) for a fuller example.
 
 ### Map.all
 
