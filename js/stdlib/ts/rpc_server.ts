@@ -216,19 +216,32 @@ export const serveRpc = async (backend: any) => {
   const userDefinedField = (a: any, m: string) =>
     a && a.hasOwnProperty && a.hasOwnProperty(m) && a[m] || null;
 
-  const mkUserDefined = (olab: string, prop: string, k: any) => {
+  const mkUserDefined = (olab: string, prop: string, k: any, unsafe: boolean) => {
     const router = express.Router();
     router.post(/^\/(.*)/, safely(async (req: Request, res: Response) => {
+      if (!Array.isArray(req.body))
+        throw new Error(`Expected an array but received: ${req.body}`);
+
       const [ id, ...args ] = req.body;
       const lab = `RPC ${olab}${req.path} ${JSON.stringify(req.body)}`;
       debug(lab);
 
-      const a = await req.path.split('/')
-        .filter(a => a !== '')
-        .reduce(userDefinedField, k.id(id)[prop])(...args);
+      try {
+        const a = await req.path.split('/')
+          .filter(a => a !== '')
+          .reduce(userDefinedField, k.id(id)[prop])(...args);
 
-      debug(`${lab} ==> ${JSON.stringify(a)}`);
-      res.json(a);
+        debug(`${lab} ==> ${JSON.stringify(a)}`);
+        return res.json(a);
+      } catch (e: any) {
+        if (unsafe) {
+          debug(`${lab} ==> ${JSON.stringify(e)}`);
+          return res.status(404).json({});
+        } else {
+          debug(`${lab} ==> ${JSON.stringify(null)}`);
+          return res.json(null);
+        }
+      }
     }));
     return router;
   };
@@ -323,8 +336,9 @@ export const serveRpc = async (backend: any) => {
   app.use(`/backend`, route_backend);
 
   // NOTE: since `getViews()` is deprecated we deliberately skip it here
-  app.use(`/ctc/v`,     mkUserDefined('/ctc/v',     'v',     contract));
-  app.use(`/ctc/views`, mkUserDefined('/ctc/views', 'views', contract));
+  app.use(`/ctc/v`,           mkUserDefined('/ctc/v',           'v',           contract, false));
+  app.use(`/ctc/views`,       mkUserDefined('/ctc/views',       'views',       contract, false));
+  app.use(`/ctc/unsafeViews`, mkUserDefined('/ctc/unsafeViews', 'unsafeViews', contract, true));
 
   app.post(`/kont`, do_kont);
 
