@@ -6,7 +6,8 @@ e="$2"
 
 has_target() {
   set +e
-  grep -E "^$MODE:" Makefile 2> /dev/null
+  grep -E "^include ../MAKEFILE_RPC$" Makefile >/dev/null 2>&1 \
+    || grep -E "^$MODE:" Makefile 2>/dev/null
   RESULT_T=$?
   set -e
   [ $RESULT_T -eq 0 ]
@@ -31,6 +32,10 @@ echo
         ;;
       clean)
         ../../reach clean
+        ;;
+      *)
+        echo "No such mode: $MODE."
+        exit 1
         ;;
     esac
   fi
