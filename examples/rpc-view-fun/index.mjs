@@ -11,4 +11,9 @@ import { mkAssertEq } from './common.mjs';
     'checkView:', e, await rpc('/ctc/v/Main/f', ctcAlice, x));
 
   await rpcCallbacks('/backend/Alice', ctcAlice, { checkView });
+
+  await Promise.all([
+    rpc('/forget/ctc', ctcAlice),
+    rpc('/forget/acc', accAlice),
+  ]);
 })();
