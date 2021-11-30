@@ -159,6 +159,9 @@ export const serveRpc = async (backend: any) => {
 
     setGasLimit: async (id: string, ...args: any[]) =>
       await account.id(id).setGasLimit(...args) || null,
+
+    setDebugLabel: async (id: string, l: string) =>
+      account.id(id).setDebugLabel(l) || null,
   };
 
   const rpc_ctc = {
@@ -210,7 +213,6 @@ export const serveRpc = async (backend: any) => {
     }
     return router;
   };
-
 
   // `hasOwnProperty` is important for denying access to prototype fields
   const userDefinedField = (a: any, m: string) =>
