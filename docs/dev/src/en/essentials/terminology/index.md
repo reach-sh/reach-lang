@@ -27,9 +27,9 @@ Types of assertions include the following:
 
 # Linear State
 
-A smart contract may include [Maps](/en/essentials/backend-programming/reach-types/#map) that associate participant account addresses with values of different types. The length of each `Map` equals the number of participants in the contract which is known as *linear state*:
+A smart contract may include [Maps](/en/essentials/backend-programming/reach-types/#map) that associate participant account addresses with values. The length of each `Map` equals the number of participants in the contract. This equality is called *linear state*:
 
-<div><img src="linear-state.png" class="img-fluid my-4 d-block" width=200 loading="lazy"></div>
+<div><img src="linear-state.png" class="img-fluid my-4 d-block" width=200 height=198 loading="lazy"></div>
 
 # Loop Invariant
 
