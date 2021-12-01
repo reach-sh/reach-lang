@@ -135,6 +135,11 @@ instance CollectsTypes DLExpr where
     DLE_EmitLog _ _ _ a -> cts a
     DLE_setApiDetails {} -> mempty
 
+instance CollectsTypes LogValue where
+  cts = \case
+    L_Internal v -> cts v
+    L_Event v    -> cts v
+
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m
 

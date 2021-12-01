@@ -103,6 +103,11 @@ instance Subst DLExpr where
     DLE_EmitLog at m ma x -> DLE_EmitLog at m ma <$> subst x
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
 
+instance Subst LogValue where
+  subst = \case
+    L_Internal a -> L_Internal <$> subst a
+    L_Event as   -> L_Event <$> subst as
+
 instance Subst DLStmt where
   subst = \case
     DL_Nop at -> return $ DL_Nop at

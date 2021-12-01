@@ -137,6 +137,11 @@ instance Freshen DLExpr where
     DLE_EmitLog at m ma a -> DLE_EmitLog at m ma <$> fu a
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
 
+instance Freshen LogValue where
+  fu = \case
+    L_Internal a -> L_Internal <$> fu a
+    L_Event as   -> L_Event <$> fu as
+
 instance {-# OVERLAPS #-} Freshen k => Freshen (SwitchCases k) where
   fu = mapM (\(vn, vnu, k) -> (,,) <$> fu_v vn <*> pure vnu <*> fu k)
 

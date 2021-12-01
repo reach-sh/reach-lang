@@ -557,11 +557,11 @@ data DLExpr
   | DLE_TimeOrder SrcLoc [(Maybe DLArg, DLVar)]
   | DLE_GetContract SrcLoc
   | DLE_GetAddress SrcLoc
-  -- | DLE_EmitLog SrcLoc (Either Int String) DLType DLArg
-  -- * the either is whether it is a generated one or a prescribed one
-  -- * the type is the type
-  -- * the dlarg is the value being logged
-  | DLE_EmitLog SrcLoc (Maybe String) (Maybe String) DLVar
+  -- | DLE_EmitLog SrcLoc (Maybe String) (Maybe String) LogValue
+  -- * the first (maybe string) is the label of the `Event` that generated the log
+  -- * the second (maybe string) is the label of the `API` that generated the log
+  -- * the LogValue is the value to log and its origin
+  | DLE_EmitLog SrcLoc (Maybe String) (Maybe String) LogValue
   | DLE_setApiDetails {
     sad_at :: SrcLoc,
     sad_who :: SLPart,
@@ -569,6 +569,16 @@ data DLExpr
     sad_mcase_id :: Maybe String,
     sad_compile :: ApiInfoCompilation }
   deriving (Eq, Ord, Generic)
+
+data LogValue
+  = L_Internal DLVar
+  | L_Event [DLVar]
+  deriving (Eq, Ord, Show)
+
+getLogValues :: LogValue -> [DLVar]
+getLogValues = \case
+  L_Internal dv -> [dv]
+  L_Event dvs   -> dvs
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
 prettyClaim ct a m = do
@@ -684,11 +694,18 @@ instance PrettySubst DLExpr where
       return $ "timeOrder" <> parens tos'
     DLE_GetContract {} -> return $ "getContract()"
     DLE_GetAddress {} -> return $ "getAddress()"
-    DLE_EmitLog _ m mapi v -> do
-      a' <- prettySubst $ DLA_Var v
-      return $ "emitLog" <> parens (pretty m <> ", " <> pretty mapi) <> parens a'
+    DLE_EmitLog _ m mapi vs -> do
+      return $ "emitLog" <> parens (pretty m <> ", " <> pretty mapi) <> parens (pretty vs)
     DLE_setApiDetails _ p d mc f ->
       return $ "setApiDetails" <> parens (render_das [pretty p, pretty d, pretty mc, pretty f])
+
+instance PrettySubst LogValue where
+  prettySubst = \case
+    L_Internal a ->
+      return $ "internal" <> parens (pretty a)
+    L_Event as -> do
+      a' <- render_dasM (map DLA_Var as) <&> brackets
+      return $ "event" <> parens a'
 
 pretty_subst :: PrettySubst a => PrettySubstEnv -> a -> Doc
 pretty_subst e x =

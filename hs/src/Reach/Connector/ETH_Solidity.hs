@@ -243,7 +243,7 @@ data SolCtxt = SolCtxt
   , ctxt_plo :: PLOpts
   , ctxt_intidx :: Counter
   , ctxt_ints :: IORef (M.Map Int Doc)
-  , ctxt_outputs :: IORef (M.Map DLVar Doc)
+  , ctxt_outputs :: IORef (M.Map String Doc)
   , ctxt_tlfuns :: IORef (M.Map String Doc)
   , ctxt_requireMsg :: Counter
   , ctxt_api_rngs :: IORef (Maybe (M.Map String DLType))
@@ -398,6 +398,11 @@ instance DepthOf DLExpr where
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])
+
+instance DepthOf LogValue where
+  depthOf = \case
+    L_Internal a -> depthOf a
+    L_Event as   -> depthOf as
 
 solVar :: AppT DLVar
 solVar v = do
@@ -871,26 +876,50 @@ solCom = \case
           <> checkNonNetTokAllowances
           <> sub'l
           <> pv'
-  DL_Let _ pv (DLE_EmitLog _ _ m_api lv) -> do
-    lv' <- solVar lv
-    let lv_ty = varType lv
-    lv_ty' <- solType lv_ty
-    let go sv l = solApply (solOutput_evt lv) [l <+> sv lv] <> semi
-    let ed = "event" <+> go solRawVar lv_ty'
-    modifyCtxtIO ctxt_outputs $ M.insert lv ed
-    let emitl = "emit" <+> go (const lv') ""
-    asn <-
-          case m_api of
-            Just f -> do
-              addApiRng f lv_ty
-              return $ solSet (apiRetMemVar f) lv'
-            Nothing -> return ""
+  DL_Let _ pv (DLE_EmitLog _ m_lab m_api lv) -> do
+    lv' <- case lv of
+            L_Internal a -> Left <$> solVar a
+            L_Event as   -> Right <$> mapM solVar as
+    let lv_tys = case lv of
+            L_Internal a -> Left $ varType a
+            L_Event as   -> Right $ map varType as
+    lv_tys' <- case lv_tys of
+            Left t   -> Left <$> solType t
+            Right ts -> Right <$> mapM solType ts
+    -- Get event label or use variable name from internal log
+    let oe = case (m_lab, lv) of
+            (Just l, _) -> pretty $ l
+            (Nothing, L_Internal h) -> solOutput_evt h
+            (_, _) -> impossible "Expecting one value to emit"
+    let go sv ls = solApply oe (map (\ (l, v) -> l <+> sv v) $ ls) <> semi
+    let eventVars = case (lv_tys', lv) of
+            (Left t, L_Internal v) -> [(t, v)]
+            (Right rs, L_Event vs) -> do
+              -- Name doesn't matter in event definition just needs to be unique
+              let fvs = map (\ (i, DLVar at ml t _) -> DLVar at ml t i) $ zip [0..] vs
+              zip rs fvs
+            _ -> impossible "solCom: emitLog bad"
+    let ed = "event" <+> go solRawVar eventVars
+    modifyCtxtIO ctxt_outputs $ M.insert (show oe) ed
+    let emitVars = case lv' of
+            Left v   -> [(mempty, v)]
+            Right vs -> map (mempty,) vs
+    let emitl = "emit" <+> go id emitVars
+    asn <- case (m_api, lv_tys, lv') of
+            (Just f, Left ty, Left v) -> do
+              addApiRng f ty
+              return $ solSet (apiRetMemVar f) v
+            (Nothing, _, _) -> return ""
+            (Just _, _, _) -> impossible "API logs multiple values"
     case pv of
       DLV_Eff -> do
         return $ vsep [ emitl, asn ]
       DLV_Let _ dv -> do
         addMemVar dv
-        return $ vsep [ solSet (solMemVar dv) lv', emitl, asn ]
+        v' <- case lv of
+            L_Internal h -> solVar h
+            _ -> impossible "solCom: emitLog expected L_Internal"
+        return $ vsep [ solSet (solMemVar dv) v', emitl, asn ]
   DL_Let _ (DLV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv
     solLargeArg dv la

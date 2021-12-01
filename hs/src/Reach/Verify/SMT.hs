@@ -1061,7 +1061,8 @@ smt_e at_dv mdv de = do
           go n =<< smtPrimOp at ADD [o, w] [o', w']
     DLE_GetContract at -> unbound at
     DLE_GetAddress at -> unbound at
-    DLE_EmitLog at _ _ v -> bound at =<< smt_v at v
+    DLE_EmitLog at _ _ lv ->
+      mapM_ (bound at <=< smt_v at) $ getLogValues lv
     DLE_setApiDetails {} -> mempty
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context

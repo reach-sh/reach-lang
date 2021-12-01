@@ -156,6 +156,11 @@ instance Countable DLExpr where
     DLE_EmitLog _ _ _ a -> counts a
     DLE_setApiDetails {} -> mempty
 
+instance Countable LogValue where
+  counts = \case
+    L_Internal a -> counts a
+    L_Event as   -> counts as
+
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m
 

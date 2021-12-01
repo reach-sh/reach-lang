@@ -88,6 +88,11 @@ instance Sanitize DLExpr where
     DLE_EmitLog _ m ma a -> DLE_EmitLog sb m ma (sani a)
     DLE_setApiDetails _ w d c f -> DLE_setApiDetails sb w d c f
 
+instance Sanitize LogValue where
+  sani = \case
+    L_Internal a -> L_Internal $ sani a
+    L_Event as   -> L_Event $ sani as
+
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m
 

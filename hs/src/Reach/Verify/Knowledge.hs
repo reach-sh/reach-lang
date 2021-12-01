@@ -246,7 +246,8 @@ kgq_e ctxt mv = \case
   DLE_TimeOrder {} -> mempty
   DLE_GetContract {} -> mempty
   DLE_GetAddress {} -> mempty
-  DLE_EmitLog _ _ _ v -> kgq_a_onlym ctxt mv $ DLA_Var v
+  DLE_EmitLog _ _ _ lv ->
+    mapM_ (kgq_a_onlym ctxt mv . DLA_Var) $ getLogValues lv
   DLE_setApiDetails {} -> mempty
 
 kgq_m :: KCtxt -> DLStmt -> IO ()

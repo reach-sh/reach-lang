@@ -341,6 +341,11 @@ instance Optimize DLExpr where
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
 
+instance Optimize LogValue where
+  opt = \case
+    L_Internal a -> L_Internal <$> opt a
+    L_Event as   -> L_Event <$> opt as
+
 instance Optimize DLAssignment where
   opt (DLAssignment m) = DLAssignment <$> opt m
 

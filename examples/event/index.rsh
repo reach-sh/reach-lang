@@ -6,7 +6,8 @@ export const main = Reach.App(() => {
     getX: Fun([], UInt),
   });
   const E = Event('x_event', {
-    x: Tuple(UInt),
+    x: [UInt],
+    y: [UInt, UInt],
   });
   deploy();
 
@@ -21,6 +22,9 @@ export const main = Reach.App(() => {
     });
     A.publish(x);
     E.x(x);
+    E.x(4);
+    E.y(x, x);
+    E.y(x, 2);
 
     [ xl ] = [ x ];
     continue;

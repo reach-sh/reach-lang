@@ -455,7 +455,8 @@ jsExpr = \case
         | isInitial -> return $ jsApply "stdlib.emptyContractInfo" []
       _ -> return $ "await" <+> jsApply "ctc.getContractInfo" []
   DLE_GetAddress {} -> return $ "await" <+> jsApply "ctc.getContractAddress" []
-  DLE_EmitLog _at mode _ dv -> do
+  DLE_EmitLog _ _ _ (L_Event _) -> return $ "null"
+  DLE_EmitLog _at mode _ (L_Internal dv) -> do
     dv' <- jsVar dv
     txn' <- jsTxn
     dvt' <- jsContract $ varType dv
