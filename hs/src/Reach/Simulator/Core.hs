@@ -19,6 +19,7 @@ type Participant = String
 data LocalState = LocalState
   { l_acct :: Account
   , l_who :: Maybe Participant
+  , l_store :: Store
   , l_init_val :: DLVal
   }
 
@@ -26,7 +27,7 @@ type ActorId = Int
 type Locals = M.Map ActorId LocalState
 
 data State = State
-  { e_store :: Store
+  { e_record :: Store
   , e_ledger :: Ledger
   , e_linstate :: LinearState
   , e_nwtime :: Integer
@@ -39,7 +40,7 @@ data State = State
 
 initState :: State
 initState = State
-  { e_store = mempty
+  { e_record = mempty
   , e_ledger = initLedger
   , e_linstate = mempty
   , e_nwtime = 0
@@ -185,11 +186,24 @@ data DLVal
 instance ToJSON DLVal
 instance FromJSON DLVal
 
+addToRecord :: DLVar -> DLVal -> App ()
+addToRecord x v = do
+  e <- globalGet
+  let st = e_record e
+  globalSet $ e {e_record = M.insert x v st}
+
+
 addToStore :: DLVar -> DLVal -> App ()
 addToStore x v = do
   e <- globalGet
-  let st = e_store e
-  globalSet $ e {e_store = M.insert x v st}
+  let locals = e_locals e
+  let aid = e_actorid e
+  case M.lookup aid locals of
+    Nothing -> possible "addToStore: no local store"
+    Just lst -> do
+      let st = l_store lst
+      let lst' = lst {l_store = M.insert x v st}
+      globalSet $ e {e_locals = M.insert aid lst' locals}
 
 incrNWtime :: Integer -> App ()
 incrNWtime n = do
@@ -265,8 +279,13 @@ instance Interp DLArg where
   interp = \case
     DLA_Var dlvar -> do
       g <- globalGet
-      let st = e_store g
-      return $ (fromMaybe (impossible "DLA_Var") (M.lookup dlvar st))
+      let locals = e_locals g
+      let aid = e_actorid g
+      case M.lookup aid locals of
+        Nothing -> possible "addToStore: no local store"
+        Just lst -> do
+          let st = l_store lst
+          return $ (fromMaybe (impossible "DLA_Var") (M.lookup dlvar st))
     DLA_Constant dlconst -> return $ conCons' dlconst
     DLA_Literal dllit -> interp dllit
     DLA_Interact _slpart _string _dltype -> do
@@ -583,6 +602,7 @@ instance Interp LLStep where
                 DLSend {..} -> do
                   ds_msg' <- mapM interp ds_msg
                   _ <- zipWithM addToStore dr_msg ds_msg'
+                  _ <- zipWithM addToRecord dr_msg ds_msg'
                   interp $ dr_k
         _ -> impossible "unexpected client answer"
 
@@ -602,6 +622,7 @@ registerParts (p:ps) = do
   let lcl = LocalState
         { l_acct = fromIntegral aid
         , l_who = Just $ bunpack p
+        , l_store = mempty
         , l_init_val = V_Null
         }
   let locals' = M.insert pid lcl locals
