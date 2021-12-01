@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
 
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
-{-# OPTIONS_GHC -Wno-deriving-defaults #-}
-{-# OPTIONS_GHC -Wno-missing-methods #-}
 
 module Reach.Simulator.Server where
 
 import Reach.AST.LL
+-- import Reach.Util
 import Control.Monad.Reader
 import qualified Reach.Simulator.Core as C
 import Control.Concurrent.STM
@@ -23,7 +23,7 @@ instance Default Session where
   def = initSession
 
 newtype WebM a = WebM { runWebM :: ReaderT (TVar Session) IO a }
-  deriving (Applicative, Functor, Monad, MonadIO, MonadReader (TVar Session))
+  deriving newtype (Applicative, Functor, Monad, MonadIO, MonadReader (TVar Session))
 
 webM :: MonadTrans t => WebM a -> t WebM a
 webM = lift
@@ -44,12 +44,12 @@ type Graph = M.Map StateId C.State;
 
 data Session = Session
   {  e_states_actions :: M.Map StateId [ActionId]
-  ,  e_nsid :: Int -- next state id
-  ,  e_naid :: Int -- next action id
-  ,  e_res :: C.DLVal
+  ,  e_nsid :: Int
+  ,  e_naid :: Int
   ,  e_ids_actions :: M.Map ActionId C.Action
   ,  e_states_ks :: M.Map StateId C.PartState
   ,  e_graph :: Graph
+  ,  e_src :: Maybe LLProg
   }
 
 initSession :: Session
@@ -57,19 +57,13 @@ initSession = Session
   { e_states_actions = M.empty
   , e_nsid = 0
   , e_naid = 0
-  , e_res = C.V_Null
   , e_ids_actions = M.empty
   , e_states_ks = M.empty
   , e_graph = M.empty
+  , e_src = Nothing
   }
 
-initProgSim :: LLProg -> WebM C.PartState
-initProgSim ll = do
-  let initSt = C.initState
-  ps <- return $ C.initApp ll initSt
-  processNewState ps
-
-processNewState :: C.PartState -> WebM C.PartState
+processNewState :: C.PartState -> WebM ()
 processNewState ps = do
   sid <- gets e_nsid
   _ <- case ps of
@@ -77,18 +71,16 @@ processNewState ps = do
       _ <- return $ putStrLn "EVAL DONE"
       registerAction sid C.A_None
     C.PS_Suspend a _ _ -> registerAction sid a
-  let (new_st, new_res) =
+  let new_st =
         case ps of
-          C.PS_Done s v -> (s,v)
-          C.PS_Suspend _ s _ -> (s,C.V_Null)
+          C.PS_Done s _ -> s
+          C.PS_Suspend _ s _ -> s
   graph <- gets e_graph
   sks <- gets e_states_ks
   modify $ \ st -> st
     {e_nsid = sid + 1}
-    {e_res = new_res}
     {e_states_ks = M.insert sid ps sks}
     {e_graph = M.insert sid new_st graph}
-  return ps
 
 registerAction :: StateId -> C.Action -> WebM ActionId
 registerAction sid act = do
@@ -137,15 +129,39 @@ computeActions sid = do
     Nothing -> return []
     Just acts -> return acts
 
-main :: IO ()
-main = do
+initProgSim :: LLProg -> WebM ()
+initProgSim ll = do
+  let initSt = C.initState
+  ps <- return $ C.initApp ll initSt
+  processNewState ps
+
+-- initSimServer :: LLProg -> WebM ()
+-- initSimServer ll = do
+--   modify $ \ st -> st {e_src = Just ll}
+
+startServer :: LLProg -> IO ()
+startServer p = do
   sync <- newTVarIO def
   let runActionToIO m = runReaderT (runWebM m) sync
-  scottyT portNumber runActionToIO app
+  putStrLn "Starting Sim Server..."
+  scottyT portNumber runActionToIO (app p)
 
-app :: ScottyT Text WebM ()
-app = do
+app :: LLProg -> ScottyT Text WebM ()
+app p = do
   middleware logStdoutDev
+
+  post "/load" $ do
+    webM $ modify $ \ st -> st {e_src = Just p}
+    json $ ("OK" :: String)
+
+  post "/init" $ do
+    ll <- webM $ gets e_src
+    case ll of
+      Nothing -> json $ ("No Program" :: String)
+      Just ll' -> do
+        webM $ initProgSim ll'
+        json $ ("OK" :: String)
+
   get "/states" $ do
     ss <- webM $ allStates
     json $ ss
@@ -166,3 +182,6 @@ app = do
     v <- param "post_val"
     webM $ unblockProg s a $ C.V_UInt v
     return ()
+
+  get "/ping" $ do
+    json $ ("Hello World" :: String)

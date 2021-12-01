@@ -69,9 +69,8 @@ compile env (CompilerOpts {..}) = do
         ll <- linearize showp dl
         ol <- optimize ll
         showp "ol" ol
-        unless co_sim $ do
-          _ <- return $ initProgSim ol
-          return ()
+        unless (not co_sim) $ do
+          startServer ol
         let vo_out = woutnMay
         let vo_mvcs = doIf connectors dlo_verifyPerConnector
         let vo_timeout = co_verifyTimeout
