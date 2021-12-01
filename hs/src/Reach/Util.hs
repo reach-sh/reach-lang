@@ -6,6 +6,7 @@ module Reach.Util
   , b2t
   , s2t
   , impossible
+  , possible
   , trimQuotes
   , fromIntegerMay
   , maybeDie
@@ -78,6 +79,12 @@ impossible msg =
       <> "This error indicates a problem with the Reach compiler, not your program. "
       <> "Please report this error, along with the pertinent program, to the Reach team as soon as possible "
       <> "so we can fix it.\n\nOpen an issue at: https://github.com/reach-sh/reach-lang/issues\n"
+
+
+possible :: HasCallStack => String -> b
+possible msg =
+  error $
+    "The compiler has encountered an internal error:\n\n  " <> msg <> "\n\n"
 
 -- Note: drop 1 is safer than init/tail on empty strings
 trimQuotes :: String -> String

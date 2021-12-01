@@ -20,14 +20,10 @@ data LocalState = LocalState
   { l_acct :: Account
   , l_who :: Maybe Participant
   , l_init_val :: DLVal
-  -- TODO QUESTION: partstates for each participant?
   }
 
-type PartId = Int
-type Locals = M.Map PartId LocalState
-
--- TODO: state here and in the server should
--- probably all be IORefs
+type ActorId = Int
+type Locals = M.Map ActorId LocalState
 
 data State = State
   { e_store :: Store
@@ -36,20 +32,20 @@ data State = State
   , e_nwtime :: Integer
   , e_nwsecs :: Integer
   , e_locals :: Locals
-  , e_partid :: Int
+  , e_actorid :: Int
   , e_npid :: Int
   , e_naid :: Int
   }
 
 initState :: State
 initState = State
-  { e_store = M.empty
+  { e_store = mempty
   , e_ledger = initLedger
-  , e_linstate = M.empty
+  , e_linstate = mempty
   , e_nwtime = 0
   , e_nwsecs = 0
-  , e_locals = M.empty
-  , e_partid = fromIntegral consensusId
+  , e_locals = mempty
+  , e_actorid = fromIntegral consensusId
   , e_npid = 0
   , e_naid = 0
   }
@@ -156,9 +152,9 @@ ledgerNewToken acc tk = do
 data Action
   = A_TieBreak [String]
   | A_NewAcc
-  | A_NewPart
+  | A_NewActor
   | A_None
-  | A_ChangePart Int
+  | A_ChangeActor Int
   | A_AdvanceTime Integer
   | A_AdvanceSeconds Integer
   | A_Interact SrcLoc [SLCtxtFrame] String String DLType [DLVal]
@@ -248,11 +244,11 @@ interpPrim = \case
   (TOKEN_EQ, [V_Token lhs,V_Token rhs]) -> return $ V_Bool $ (==) lhs rhs
   (SELF_ADDRESS _slpart _bool _int, _) -> do
     g <- globalGet
-    let partid = e_partid g
-    case partid == (fromIntegral consensusId) of
+    let actorid = e_actorid g
+    case actorid == (fromIntegral consensusId) of
       False -> do
         let locals = e_locals g
-        return $ V_Address $ l_acct $ (fromMaybe (impossible "SELF_ADDRESS") (M.lookup partid locals))
+        return $ V_Address $ l_acct $ (fromMaybe (impossible "SELF_ADDRESS") (M.lookup actorid locals))
       True -> do
         return $ V_Address $ consensusId
   (LSH, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ shiftL lhs (fromIntegral rhs)
@@ -275,9 +271,9 @@ instance Interp DLArg where
     DLA_Literal dllit -> interp dllit
     DLA_Interact _slpart _string _dltype -> do
       g <- globalGet
-      let partid = e_partid g
+      let actorid = e_actorid g
       let lclst = e_locals g
-      return $ l_init_val $ (fromMaybe (impossible "DLA_Interact") (M.lookup partid lclst))
+      return $ l_init_val $ (fromMaybe (impossible "DLA_Interact") (M.lookup actorid lclst))
 
 instance Interp DLLiteral where
   interp = \case
@@ -581,11 +577,13 @@ instance Interp LLStep where
           let lclst = l_who (fromMaybe (impossible "LLS_ToConsensus") (M.lookup (fromIntegral n) locals))
           case lclst of
             Nothing ->  impossible "expected participant id, received consensus id"
-            Just part -> case (fromMaybe (impossible "LLS_ToConsensus1") (M.lookup (bpack part) tc_send)) of
-              DLSend {..} -> do
-                ds_msg' <- mapM interp ds_msg
-                _ <- zipWithM addToStore dr_msg ds_msg'
-                interp $ dr_k
+            Just part -> do
+              let m = (fromMaybe (impossible "LLS_ToConsensus1") (M.lookup (bpack part) tc_send))
+              case m of
+                DLSend {..} -> do
+                  ds_msg' <- mapM interp ds_msg
+                  _ <- zipWithM addToStore dr_msg ds_msg'
+                  interp $ dr_k
         _ -> impossible "unexpected client answer"
 
 -- evaluate a linear Reach program
@@ -608,7 +606,6 @@ registerParts (p:ps) = do
         }
   let locals' = M.insert pid lcl locals
   globalSet $ g {e_npid = pid + 1, e_naid = aid + 1, e_locals = locals'}
-
   registerParts ps
 
 while :: DLBlock -> LLConsensus -> App DLVal

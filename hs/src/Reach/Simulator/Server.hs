@@ -7,7 +7,7 @@
 module Reach.Simulator.Server where
 
 import Reach.AST.LL
--- import Reach.Util
+import Reach.Util
 import Control.Monad.Reader
 import qualified Reach.Simulator.Core as C
 import Control.Concurrent.STM
@@ -43,23 +43,25 @@ portNumber = 3000
 type Graph = M.Map StateId C.State;
 
 data Session = Session
-  {  e_states_actions :: M.Map StateId [ActionId]
-  ,  e_nsid :: Int
-  ,  e_naid :: Int
-  ,  e_ids_actions :: M.Map ActionId C.Action
-  ,  e_states_ks :: M.Map StateId C.PartState
-  ,  e_graph :: Graph
-  ,  e_src :: Maybe LLProg
+  { e_states_actions :: M.Map StateId [ActionId]
+  , e_nsid :: Int
+  , e_naid :: Int
+  , e_ids_actions :: M.Map ActionId C.Action
+  , e_actors_states_ks :: M.Map C.ActorId (M.Map StateId C.PartState)
+  , e_actorid :: C.ActorId
+  , e_graph :: Graph
+  , e_src :: Maybe LLProg
   }
 
 initSession :: Session
 initSession = Session
-  { e_states_actions = M.empty
+  { e_states_actions = mempty
   , e_nsid = 0
   , e_naid = 0
-  , e_ids_actions = M.empty
-  , e_states_ks = M.empty
-  , e_graph = M.empty
+  , e_ids_actions = mempty
+  , e_actors_states_ks = mempty
+  , e_actorid = fromIntegral C.consensusId
+  , e_graph = mempty
   , e_src = Nothing
   }
 
@@ -76,11 +78,15 @@ processNewState ps = do
           C.PS_Done s _ -> s
           C.PS_Suspend _ s _ -> s
   graph <- gets e_graph
-  sks <- gets e_states_ks
-  modify $ \ st -> st
-    {e_nsid = sid + 1}
-    {e_states_ks = M.insert sid ps sks}
-    {e_graph = M.insert sid new_st graph}
+  astks <- gets e_actors_states_ks
+  actorId <- gets e_actorid
+  case M.lookup actorId astks of
+    Nothing -> impossible "processNewState actorId not found"
+    Just m ->
+      modify $ \ st -> st
+        {e_nsid = sid + 1}
+        {e_actors_states_ks = M.insert actorId (M.insert sid ps m) astks}
+        {e_graph = M.insert sid new_st graph}
 
 registerAction :: StateId -> C.Action -> WebM ActionId
 registerAction sid act = do
@@ -96,26 +102,29 @@ registerAction sid act = do
 
 unblockProg :: StateId -> ActionId -> C.DLVal -> WebM ()
 unblockProg sid aid v = do
-  stks <- gets e_states_ks
+  astks <- gets e_actors_states_ks
+  actorId <- gets e_actorid
   av_actions <- gets e_ids_actions
-  case M.lookup sid stks of
+  case M.lookup actorId astks of
     Nothing -> do
-      _ <- return $ putStrLn "previous state not found"
-      return ()
-    Just (C.PS_Suspend _a cst k) -> do
-      case M.lookup aid av_actions of
-        Just (C.A_ChangePart part_id) -> do
-          let ps = k cst{C.e_partid = part_id} v
-          _ <- processNewState ps
-          return ()
-        -- TODO: handle other actions
-        _ -> do
-          let ps = k cst v
-          _ <- processNewState ps
-          return ()
-    Just (C.PS_Done _ _) -> do
-      _ <- return $ putStrLn "previous state already terminated"
-      return ()
+      possible "actor states not found"
+    Just stks -> do
+      case M.lookup sid stks of
+        Nothing -> do
+          possible "previous state not found"
+        Just (C.PS_Suspend _a cst k) -> do
+          case M.lookup aid av_actions of
+            Just (C.A_ChangeActor actor_id) -> do
+              let ps = k cst{C.e_actorid = actor_id} v
+              _ <- processNewState ps
+              return ()
+            -- TODO: handle other actions
+            _ -> do
+              let ps = k cst v
+              _ <- processNewState ps
+              return ()
+        Just (C.PS_Done _ _) -> do
+          possible "previous state already terminated"
 
 allStates :: WebM [StateId]
 allStates = do
