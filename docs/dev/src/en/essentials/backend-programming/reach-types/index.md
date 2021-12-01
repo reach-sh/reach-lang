@@ -81,7 +81,7 @@ export const main = Reach.App(() => {
 
 # Array
 
-An *Array* is an immutable, ordered list of values. The size of an array is fixed, and the values must be of the same type. Values may be referenced using a zero-based index. The following creates an array of type `Array(UInt, 3)` from a tuple:
+An `Array` is an immutable, ordered list of values. The size of an array is fixed, and the values must be of the same type. Values may be referenced using a zero-based index. The following creates an array of type `Array(UInt, 3)` from a tuple:
 
 ``` js nonum
 const a = array(UInt, [4, 6, 8]);
@@ -817,7 +817,7 @@ export const main = Reach.App(() => {
 
 In the example above, `const v` is not a `UInt`. It is a `Data({"None": Null, "Some": UInt})` because `m[S]` allows for the possibility that the specified participant address is not in the `Map`. 
 
-`Map` is a `Foldable` container, so it includes all the [Foldable](#foldable) methods, but these methods are only valid within the `invariant` of a `while` loop (Line 3):
+`Map` is a `Foldable` container, so it includes all the [Foldable](#foldable) methods, but these methods are only valid within the `invariant` of a `while` loop. Consider the following:
 
 ``` js
 const ctMap = new Map(UInt);
@@ -827,35 +827,163 @@ const ctMap = new Map(UInt);
 // ...
 ```
 
-See [Loop Invariant](/en/essentials/terminology/#loop-invariant) for a fuller example.
+Line 3 shows `Map.sum` within the loop invariant. See [Loop Invariant](/en/essentials/terminology/#loop-invariant) for a more detailed example.
 
 ### Map.all
 
+This method returns `true` if every element in the map satisfies the given `Bool` function. Otherwise, it returns `false`. 
+
+``` js nonum
+// index.rsh
+const m = new Map(UInt);
+var x = 0;
+invariant(balance() == 0 && Map.all(m, e => e < 5));
+while ( x < 5 ) {
+  // ...
+}
+// or 
+invariant(balance() == 0 && m.all(e => e < 5));
+```
+
 ### Map.and
+
+This method returns `true` if all elements in a map are `true`. Otherwise, it returns `false`.
+
+``` js nonum
+// index.rsh
+const m = new Map(Bool);
+var x = 0;
+invariant(balance() == 0 && Map.and(m));
+while ( x < 5 ) {
+  // ...
+}
+// or 
+invariant(balance() == 0 && m.and());
+```
 
 ### Map.any
 
-### Map.average
+This method returns `true` if at least one element in the map satisfies the given `Bool` function. Otherwise, it returns `false`. 
+
+``` js nonum
+// index.rsh
+const m = new Map(UInt);
+m[S] = 0;
+var x = 0;
+invariant(balance() == 0 && Map.any(m, e => e < 5));
+while ( x < 5 ) {
+  // ...
+}
+// or 
+invariant(balance() == 0 && m.any(e => e < 5));
+```
 
 ### Map.count
 
-### Map.forEach
+This method returns the number of elements in the map that satisfy the given `Bool` function.
+
+``` js nonum
+// index.rsh
+const m = new Map(UInt);
+m[S] = 5;
+var x = 0;
+invariant(balance() == 0 && Map.count(m, e => e == 5) == 1);
+while ( x < 5 ) {
+  // ...
+}
+// or 
+invariant(balance() == 0 && m.count(e => e == 5) == 1);
+```
 
 ### Map.includes
 
+This method returns `true` if the map contains the specified element. Otherwise, it returns `false`.
+
+``` js nonum
+// index.rsh
+const m = new Map(UInt);
+m[S] = 5;
+var x = 0;
+invariant(balance() == 0 && Map.includes(m, 5));
+while ( x < 5 ) {
+  // ...
+}
+// or 
+invariant(balance() == 0 && m.includes(5));
+```
+
 ### Map.max
+
+This method returns the largest number in a map of unsigned integers:
+
+``` js nonum
+// index.rsh
+const m = new Map(UInt);
+m[S] = 5;
+var x = 0;
+invariant(balance() == 0 && Map.max(m) == 5);
+while ( x < 5 ) {
+  // ...
+}
+// or 
+invariant(balance() == 0 && m.max() == 5);
+```
 
 ### Map.min
 
+This method returns the smallest number in a map of unsigned integers:
+
+``` js nonum
+// index.rsh
+```
+
 ### Map.or
 
-### Map.product
+This method returns `true` if any elements in a map are `true`. Otherwise, it returns `false`.
+
+``` js nonum
+// index.rsh
+const m = new Map(Bool);
+m[S] = true;
+var x = 0;
+invariant(balance() == 0 && Map.or(m));
+while ( x < 5 ) {
+  // ...
+}
+// or 
+invariant(balance() == 0 && m.or()); // Didn't work for MJH.
+```
 
 ### Map.reduce
 
+Starting with the specified value, this method returns the [left fold](https://en.wikipedia.org/wiki/Fold_(higher-order_function)) of the given function over the map:
+
+``` js nonum
+// index.rsh
+```
+
 ### Map.size
 
+This method returns the number of elements in the map.
+
+``` js nonum
+// index.rsh
+const m = new Map(UInt);
+m[S] = 5;
+var x = 0;
+invariant(balance() == 0 && m.size() == 1);
+while ( x < 5 ) {
+  // ...
+}
+```
+
 ### Map.sum
+
+This method returns the sum of a map of unsigned integers.
+
+``` js nonum
+// index.rsh
+```
 
 # Maybe
 
