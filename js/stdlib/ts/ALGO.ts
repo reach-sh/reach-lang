@@ -881,7 +881,7 @@ function randlabsProviderEnv(net: string): ProviderEnv {
     ALGO_SERVER: `https://${RANDLABS_BASE}`,
     ALGO_PORT: '',
     ALGO_TOKEN: '',
-    ALGO_INDEXER_SERVER: `https://algoindexer.${RANDLABS_BASE}/v2`,
+    ALGO_INDEXER_SERVER: `https://algoindexer.${RANDLABS_BASE}`,
     ALGO_INDEXER_PORT: '',
     ALGO_INDEXER_TOKEN: '',
     REACH_ISOLATED_NETWORK: 'no',
