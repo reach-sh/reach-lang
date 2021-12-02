@@ -16,8 +16,8 @@ import Data.Text.Lazy (Text)
 import Network.Wai.Middleware.RequestLogger
 import Web.Scotty.Trans
 import qualified Data.Map.Strict as M
--- import GHC.Generics
--- import Data.Aeson (FromJSON, ToJSON)
+import GHC.Generics
+import Data.Aeson (FromJSON, ToJSON)
 
 instance Default Session where
   def = initSession
@@ -40,7 +40,13 @@ type ActionId = Int
 portNumber :: Int
 portNumber = 3000
 
-type Graph = M.Map StateId C.State;
+type Graph = M.Map StateId C.State
+
+data Status = Initial | Running | Done
+  deriving (Show, Generic)
+
+instance ToJSON Status
+instance FromJSON Status
 
 data Session = Session
   { e_states_actions :: M.Map StateId [ActionId]
@@ -51,6 +57,7 @@ data Session = Session
   , e_actorid :: C.ActorId
   , e_graph :: Graph
   , e_src :: Maybe LLProg
+  , e_status :: Status
   }
 
 initSession :: Session
@@ -63,6 +70,7 @@ initSession = Session
   , e_actorid = fromIntegral C.consensusId
   , e_graph = mempty
   , e_src = Nothing
+  , e_status = Initial
   }
 
 processNewState :: C.PartState -> WebM ()
@@ -73,20 +81,21 @@ processNewState ps = do
       _ <- return $ putStrLn "EVAL DONE"
       registerAction sid C.A_None
     C.PS_Suspend a _ _ -> registerAction sid a
-  let new_st =
+  let (new_st, stat) =
         case ps of
-          C.PS_Done s _ -> s
-          C.PS_Suspend _ s _ -> s
+          C.PS_Done s _ -> (s, Done)
+          C.PS_Suspend _ s _ -> (s, Running)
   graph <- gets e_graph
   astks <- gets e_actors_states_ks
   actorId <- gets e_actorid
-  case M.lookup actorId astks of
-    Nothing -> impossible "processNewState actorId not found"
-    Just m ->
-      modify $ \ st -> st
-        {e_nsid = sid + 1}
-        {e_actors_states_ks = M.insert actorId (M.insert sid ps m) astks}
-        {e_graph = M.insert sid new_st graph}
+  let sks = case M.lookup actorId astks of
+        Nothing -> mempty
+        Just m -> m
+  modify $ \ st -> st
+    {e_nsid = sid + 1}
+    {e_actors_states_ks = M.insert actorId (M.insert sid ps sks) astks}
+    {e_status = stat}
+    {e_graph = M.insert sid new_st graph}
 
 registerAction :: StateId -> C.Action -> WebM ActionId
 registerAction sid act = do
@@ -129,7 +138,12 @@ unblockProg sid aid v = do
 allStates :: WebM [StateId]
 allStates = do
   a <- gets e_nsid
-  return [0..(a-1)]
+  return [0..a]
+
+getStatus :: WebM Status
+getStatus = do
+  s <- gets e_status
+  return s
 
 computeActions :: StateId -> WebM [ActionId]
 computeActions sid = do
@@ -173,6 +187,10 @@ app p = do
 
   get "/states" $ do
     ss <- webM $ allStates
+    json $ ss
+
+  get "/status" $ do
+    ss <- webM $ getStatus
     json $ ss
 
   get "/states/:s" $ do

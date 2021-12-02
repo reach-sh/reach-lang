@@ -10,6 +10,12 @@ let getStates = () => {
     .then(data => console.log(data));
 }
 
+let getStatus = () => {
+  fetch(`${hostname}/status`)
+    .then(response => response.json())
+    .then(data => console.log(data));
+}
+
 // let getStateActions = (s) => {
 //   fetch(`${hostname}/states/${s}/actions`)
 //     .then(response => response.json())

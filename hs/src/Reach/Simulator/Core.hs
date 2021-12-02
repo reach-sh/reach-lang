@@ -16,6 +16,11 @@ import Data.Maybe (fromMaybe)
 
 type Participant = String
 
+data Transmission = Transmission
+  { t_sender :: ActorId
+  , t_store :: Store
+  }
+
 data LocalState = LocalState
   { l_acct :: Account
   , l_who :: Maybe Participant
@@ -27,7 +32,7 @@ type ActorId = Int
 type Locals = M.Map ActorId LocalState
 
 data State = State
-  { e_record :: Store
+  { e_record :: [Transmission]
   , e_ledger :: Ledger
   , e_linstate :: LinearState
   , e_nwtime :: Integer
@@ -45,7 +50,8 @@ initState = State
   , e_linstate = mempty
   , e_nwtime = 0
   , e_nwsecs = 0
-  , e_locals = mempty
+  , e_locals = M.singleton (fromIntegral consensusId) LocalState
+      {l_acct = consensusId, l_who = Nothing, l_init_val = V_Null, l_store = mempty}
   , e_actorid = fromIntegral consensusId
   , e_npid = 0
   , e_naid = 0
@@ -186,12 +192,11 @@ data DLVal
 instance ToJSON DLVal
 instance FromJSON DLVal
 
-addToRecord :: DLVar -> DLVal -> App ()
-addToRecord x v = do
+addToRecord :: ActorId -> DLVar -> DLVal -> App ()
+addToRecord aid x v = do
   e <- globalGet
-  let st = e_record e
-  globalSet $ e {e_record = M.insert x v st}
-
+  let trs = e_record e
+  globalSet $ e {e_record = trs ++ [Transmission {t_sender = aid, t_store = M.singleton x v}]}
 
 addToStore :: DLVar -> DLVal -> App ()
 addToStore x v = do
@@ -602,7 +607,7 @@ instance Interp LLStep where
                 DLSend {..} -> do
                   ds_msg' <- mapM interp ds_msg
                   _ <- zipWithM addToStore dr_msg ds_msg'
-                  _ <- zipWithM addToRecord dr_msg ds_msg'
+                  _ <- zipWithM (addToRecord $ fromIntegral n) dr_msg ds_msg'
                   interp $ dr_k
         _ -> impossible "unexpected client answer"
 
