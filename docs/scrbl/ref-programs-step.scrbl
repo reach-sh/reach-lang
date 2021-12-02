@@ -86,7 +86,7 @@ For example, these are all @tech{pay amounts}:
 }
 
 It is @tech{invalid} for a @tech{pay amount} to specify an amount of tokens multiple times.
-For examples, these are @tech{invalid} @tech{pay amounts}:
+For example, these are @tech{invalid} @tech{pay amounts}:
 @reach{
 [ 1, 2 ]
 [ [2, gil], [1, gil] ]
