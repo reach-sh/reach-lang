@@ -31,5 +31,5 @@ build: checkout
 .PHONY: run
 run:
 	cd ../ext-${NAME} && ../one.sh run
-# echo "external code will not be ran"
+# echo "External code will not be run."
 END

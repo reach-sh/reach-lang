@@ -13,4 +13,4 @@ build: checkout
 
 .PHONY: run
 run:
-	echo "external code will not be ran"
+	echo "External code will not be run."
