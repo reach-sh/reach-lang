@@ -32,7 +32,6 @@ executors:
         type: boolean
     machine:
       image: "ubuntu-2004:202107-02"
-      #docker_layer_caching: << parameters.dlc >>
     resource_class: "medium"
     environment:
       LC_ALL: "en_US.UTF-8"
@@ -287,11 +286,6 @@ jobs:
                 cd .circleci && ./image.sh "${IMAGE}"
                 docker tag reachsh/${IMAGE}:latest reachsh/${IMAGE}:${CIRCLE_BRANCH/\//-}
                 docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
-#    - run: |
-#        mkdir -p "/tmp/workspace/docker-${IMAGE}"
-#        cd .circleci && ./image.sh "${IMAGE}"
-#        echo "docker save reachsh/${IMAGE}:latest..."
-#        docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
