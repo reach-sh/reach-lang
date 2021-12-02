@@ -3368,7 +3368,7 @@ evalApplyArgs' rator randas =
 evalApplyClosureVals :: SrcLoc -> SLClo -> [SLSVal] -> App SLAppRes
 evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEnv {..}) randvs = do
   ret <- ctxt_alloc
-  let body_at = srcloc_jsa "block" body_a clo_at
+  let body_at = srcloc_jsa "block app" body_a clo_at
   let err = Err_Apply_ArgCount clo_at (length formals) (length randvs)
   using_unstrict <- sco_lookup_unstrict
   let clo_sco =
@@ -4089,28 +4089,35 @@ compilePayAmt tt v = do
   at <- withAt id
   let v_at = srclocOf_ at v
   (t, ae) <- typeOf v
-  case (t, ae) of
-    (T_UInt, _) -> do
+  case t of
+    T_UInt -> do
       a <- compileArgExpr ae
       return $ DLPayAmt a []
-    (T_Tuple ts, DLAE_Tuple aes) -> do
-      let go sa = \case
-            (T_UInt, gae) -> do
-              let ((seenNet, sks), DLPayAmt _ tks) = sa
-              when seenNet $
-                locAt v_at $ expect_ $ Err_Transfer_DoubleNetworkToken tt
-              a <- compileArgExpr gae
-              return $ ((True, sks), DLPayAmt a tks)
-            (T_Tuple [T_UInt, T_Token], DLAE_Tuple [amt_ae, token_ae]) -> do
-              let ((seenNet, sks), DLPayAmt nts tks) = sa
-              amt_a <- compileArgExpr amt_ae
-              token_a <- compileArgExpr token_ae
-              when (token_a `elem` sks) $ do
-                locAt v_at $ expect_ $ Err_Transfer_DoubleToken tt
-              let sks' = token_a : sks
-              return $ ((seenNet, sks'), (DLPayAmt nts $ ((amt_a, token_a) : tks)))
-            _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
-      snd <$> (foldM go ((False, []), DLPayAmt (DLA_Literal $ DLL_Int at 0) []) $ zip ts aes)
+    T_Tuple ts -> do
+      case ae of
+        DLAE_Tuple aes -> do
+          let go sa (gt, gae) =
+                case gt of
+                  T_UInt -> do
+                    let ((seenNet, sks), DLPayAmt _ tks) = sa
+                    when seenNet $
+                      locAt v_at $ expect_ $ Err_Transfer_DoubleNetworkToken tt
+                    a <- compileArgExpr gae
+                    return $ ((True, sks), DLPayAmt a tks)
+                  T_Tuple [T_UInt, T_Token] ->
+                    case gae of
+                      DLAE_Tuple [amt_ae, token_ae] -> do
+                        let ((seenNet, sks), DLPayAmt nts tks) = sa
+                        amt_a <- compileArgExpr amt_ae
+                        token_a <- compileArgExpr token_ae
+                        when (token_a `elem` sks) $ do
+                          locAt v_at $ expect_ $ Err_Transfer_DoubleToken tt
+                        let sks' = token_a : sks
+                        return $ ((seenNet, sks'), (DLPayAmt nts $ ((amt_a, token_a) : tks)))
+                      _ -> locAt v_at $ expect_ $ Err_Token_DynamicRef
+                  _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
+          snd <$> (foldM go ((False, []), DLPayAmt (DLA_Literal $ DLL_Int at 0) []) $ zip ts aes)
+        _ -> locAt v_at $ expect_ $ Err_Token_DynamicRef
     _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
 
 doToConsensus :: [JSStatement] -> ToConsensusRec -> App SLStmtRes
@@ -5039,8 +5046,8 @@ evalStmt = \case
         ret []
       RS_MayBeEmpty -> ret []
   ((JSStatementBlock a ss' _ sp) : ks) -> do
-    br <- locAtf (srcloc_jsa "block" a) $ evalStmt ss'
-    locAtf (srcloc_after_semi "block" a sp) $ retSeqn br ks
+    br <- locAtf (srcloc_jsa "block pre" a) $ evalStmt ss'
+    locAtf (srcloc_after_semi "block post" a sp) $ retSeqn br ks
   (s@(JSBreak a _ _) : _) -> illegal a s "break"
   (s@(JSLet a _ _) : _) -> illegal a s "let"
   (s@(JSClass a _ _ _ _ _ _) : _) -> illegal a s "class"
@@ -5152,7 +5159,7 @@ evalStmt = \case
     locAtf (srcloc_jsa "empty" a) $ evalStmt ks
   ((JSExpressionStatement e sp) : ks) -> do
     sev <- snd <$> evalExpr e
-    locAtf (srcloc_after_semi "expr stmt" JSNoAnnot sp) $
+    locAtf (srcloc_after_semi "expr stmt" (jsa e) sp) $
       evalStmtTrampoline sp ks sev
   ((JSAssignStatement lhs op rhs asp) : ks) ->
     case (op, ks) of

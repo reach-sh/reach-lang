@@ -118,8 +118,8 @@ checkteal () {
 
 #exit 0
 
-cd users
-${REACH} compile george1.rsh
+c hs/t/y/pr417.rsh
+fc hs/t/n/pr417.rsh
 
 exit 0
 

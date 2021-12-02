@@ -44,11 +44,11 @@ jscl_flatten = \case
   JSLOne a -> [a]
   JSLCons a _ b -> (jscl_flatten a) ++ [b]
 
-toJSCL :: [a] -> JSCommaList a
+toJSCL :: HasJSAnnot a => [a] -> JSCommaList a
 toJSCL = \case
   [] -> JSLNil
   [a] -> JSLOne a
-  x : ys -> foldl' (flip JSLCons JSNoAnnot) (JSLOne x) ys
+  x : ys -> foldl' (flip JSLCons (jsa x)) (JSLOne x) ys
 
 jsctl_flatten :: JSCommaTrailingList a -> [a]
 jsctl_flatten = \case
@@ -80,21 +80,21 @@ jsFlattenLHS e =
       ) $ jso_flatten ps
     _ -> []
 
-
 toJSArray :: [JSExpression] -> [JSArrayElement]
 toJSArray a = concatMap f a
   where
-    f e = [JSArrayElement e, JSArrayComma JSNoAnnot]
-
+    f e = [JSArrayElement e, JSArrayComma (jsa e)]
 
 jsArrowBodyToRetBlock :: JSConciseBody -> JSBlock
 jsArrowBodyToRetBlock = \case
-  JSConciseExprBody e -> JSBlock JSNoAnnot [JSReturn JSNoAnnot (Just e) JSSemiAuto] JSNoAnnot
+  JSConciseExprBody e -> JSBlock a [JSReturn a (Just e) (JSSemi a)] a
+    where a = jsa e
   JSConciseFunBody b -> b
 
 jsArrowBodyToBlock :: JSConciseBody -> JSBlock
 jsArrowBodyToBlock = \case
-  JSConciseExprBody e -> JSBlock JSNoAnnot [JSExpressionStatement e JSSemiAuto] JSNoAnnot
+  JSConciseExprBody e -> JSBlock a [JSExpressionStatement e (JSSemi a)] a
+    where a = jsa e
   JSConciseFunBody b -> b
 
 jsArrowBodyToStmt :: JSConciseBody -> JSStatement
@@ -105,7 +105,8 @@ jsArrowBodyToStmt = \case
 jsStmtToBlock :: JSStatement -> JSBlock
 jsStmtToBlock = \case
   JSStatementBlock ba bodyss aa _ -> JSBlock ba bodyss aa
-  bodys -> JSBlock JSNoAnnot [bodys] JSNoAnnot
+  bodys -> JSBlock a [bodys] a
+    where a = jsa bodys
 
 jsStmtToConciseBody :: JSStatement -> JSConciseBody
 jsStmtToConciseBody = \case
@@ -130,9 +131,10 @@ dropEmptyJSStmts (s : ks) =
     ks' = dropEmptyJSStmts ks
 
 tp :: JSAnnot -> Maybe TokenPosn
-tp (JSAnnot x _) = Just x
-tp JSAnnotSpace = Nothing
-tp JSNoAnnot = Nothing
+tp = \case
+  JSAnnot x _ -> Just x
+  JSAnnotSpace -> Nothing
+  JSNoAnnot -> Nothing
 
 srcloc_jsa :: String -> JSAnnot -> SrcLoc -> SrcLoc
 srcloc_jsa lab a at = srcloc_at lab (tp a) at
@@ -157,10 +159,10 @@ srcloc_src_only src = SrcLoc Nothing Nothing (Just src)
 mkCommaList :: [JSExpression] -> JSCommaList JSExpression
 mkCommaList = aux . reverse
   where
-    aux (h : t) = JSLCons (mkCommaList t) JSNoAnnot h
+    aux (h : t) = JSLCons (mkCommaList t) (jsa h) h
     aux [] = JSLNil
 
-mkCommaTrailingList :: [a] -> JSCommaTrailingList a
+mkCommaTrailingList :: HasJSAnnot a => [a] -> JSCommaTrailingList a
 mkCommaTrailingList xs = JSCTLComma (toJSCL xs) JSNoAnnot
 
 a2sp :: JSAnnot -> JSSemi
