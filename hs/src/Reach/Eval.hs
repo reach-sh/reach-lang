@@ -79,7 +79,7 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
   let sps_ies = ar_pie
   let sps_apis = ar_isAPI
   let sps = SLParts {..}
-  return $ DLProg at final_dlo' sps dli exports ar_views ar_apis final
+  return $ DLProg at final_dlo' sps dli exports ar_views ar_apis ar_events final
 compileDApp _ _ _ = impossible "compileDApp called without a Reach.App"
 
 mmapMaybeM :: Monad m => (a -> m (Maybe b)) -> M.Map k a -> m (M.Map k b)

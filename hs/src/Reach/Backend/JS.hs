@@ -455,12 +455,17 @@ jsExpr = \case
         | isInitial -> return $ jsApply "stdlib.emptyContractInfo" []
       _ -> return $ "await" <+> jsApply "ctc.getContractInfo" []
   DLE_GetAddress {} -> return $ "await" <+> jsApply "ctc.getContractAddress" []
-  DLE_EmitLog _ _ _ (L_Event _) -> return $ "null"
-  DLE_EmitLog _at mode _ (L_Internal dv) -> do
-    dv' <- jsVar dv
-    txn' <- jsTxn
-    dvt' <- jsContract $ varType dv
-    return $ "await" <+> txn' <> "." <> jsApply "getOutput" [squotes (pretty mode), squotes dv', dvt', dv']
+  DLE_EmitLog _at kind dvs -> do
+    let go :: String -> DLVar -> App Doc
+        go mode dv = do
+          dv' <- jsVar dv
+          txn' <- jsTxn
+          dvt' <- jsContract $ varType dv
+          return $ "await" <+> txn' <> "." <> jsApply "getOutput" [squotes (pretty mode), squotes dv', dvt', dv']
+    case (kind, dvs) of
+      (L_Internal, [dv]) -> go "internal" dv
+      (L_Api s, [dv]) -> go s dv
+      (_, _) -> return $ "null"
   DLE_setApiDetails {} -> return "undefined"
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
@@ -880,6 +885,18 @@ jsExports exports =
     exportM <- mapM (jsExportBlock False) exports
     return $ jsReturn $ jsObject exportM
 
+jsEvents :: DLEvents -> App Doc
+jsEvents events = do
+  jsFunctionWStdlib "_getEvents" [] $ do
+    let devts' = M.foldrWithKey (\ k m acc ->
+            M.union acc $ M.foldrWithKey (\ k2 v -> M.insert (bunpack k <> "_" <> k2) v) mempty m
+          ) mempty events
+    devts'' <- mapM (\ ts -> mapM jsContract ts) devts'
+    let evtMap = M.foldrWithKey (\ evt ts -> do
+            M.insert evt $ jsArray ts
+          ) mempty devts''
+    return $ jsReturn $ jsObject evtMap
+
 jsViews :: (CPViews, ViewInfos) -> App Doc
 jsViews (cvs, vis) = do
   let menv e = e { ctxt_mode = JM_View }
@@ -952,7 +969,7 @@ reachBackendVersion :: Int
 reachBackendVersion = 6
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
-jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ _)) = do
+jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ devts _)) = do
   let DLInit {..} = dli
   let preamble =
         vsep
@@ -978,7 +995,8 @@ jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ _)) = do
             Nothing -> M.union
           . M.map (\(p,_) -> pretty $ bunpack p)
         ) mempty epps_apis
-  return $ vsep $ [ preamble, exportsp, viewsp, mapsp] <> partsp <> cnpsp <> [jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
+  eventsp <- jsEvents devts
+  return $ vsep $ [ preamble, exportsp, eventsp, viewsp, mapsp] <> partsp <> cnpsp <> [jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
 
 backend_js :: Backend
 backend_js outn crs pl = do

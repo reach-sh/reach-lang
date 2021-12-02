@@ -1650,7 +1650,18 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return { getView1, viewLib };
     };
 
-    return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, _setup, givenInfoP });
+    const setupEvents = (a: any, b: any) => {
+      void a;
+      void b;
+      const getEvent = async (evt: string, tys: any) => {
+        void evt;
+        void tys;
+        return { when: 0, what: undefined };
+      }
+      return { getEvent };
+    }
+
+    return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
   };
 
   function setDebugLabel(newLabel: string): Account {

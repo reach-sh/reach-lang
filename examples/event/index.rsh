@@ -5,7 +5,7 @@ export const main = Reach.App(() => {
   const A = Participant('A', {
     getX: Fun([], UInt),
   });
-  const E = Event('x_event', {
+  const E = Events('x_event', {
     x: [UInt],
     y: [UInt, UInt],
   });

@@ -336,15 +336,10 @@ instance Optimize DLExpr where
     DLE_TimeOrder at tos -> DLE_TimeOrder at <$> opt tos
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
-    DLE_EmitLog at m ma a -> DLE_EmitLog at m ma <$> opt a
+    DLE_EmitLog at k a -> DLE_EmitLog at k <$> opt a
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
-
-instance Optimize LogValue where
-  opt = \case
-    L_Internal a -> L_Internal <$> opt a
-    L_Event as   -> L_Event <$> opt as
 
 instance Optimize DLAssignment where
   opt (DLAssignment m) = DLAssignment <$> opt m
@@ -552,13 +547,13 @@ instance Optimize DLInit where
         }
 
 instance Optimize LLProg where
-  opt (LLProg at opts ps dli dex dvs das s) = do
+  opt (LLProg at opts ps dli dex dvs das devts s) = do
     let SLParts {..} = ps
     let psl = M.keys sps_ies
     env0 <- liftIO $ mkEnv0 (getCounter opts) psl
     local (\_ -> env0) $
       focus_ctor $
-        LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> pure das <*> opt s
+        LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> pure das <*> pure devts <*> opt s
 
 -- This is a bit of a hack...
 
@@ -616,8 +611,8 @@ instance Optimize ViewInfo where
   opt (ViewInfo vs vi) = ViewInfo vs <$> (newScope $ opt vi)
 
 instance Optimize CPProg where
-  opt (CPProg at vi ai (CHandlers hs)) =
-    CPProg at <$> (newScope $ opt vi) <*> pure ai <*> (CHandlers <$> mapM (newScope . opt) hs)
+  opt (CPProg at vi ai devts (CHandlers hs)) =
+    CPProg at <$> (newScope $ opt vi) <*> pure ai <*> pure devts <*> (CHandlers <$> mapM (newScope . opt) hs)
 
 instance Optimize EPProg where
   opt (EPProg at x ie et) = newScope $ EPProg at x ie <$> opt et

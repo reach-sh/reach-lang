@@ -88,6 +88,7 @@ export type IBackend<ConnectorTy extends AnyBackendTy> = {
   _getMaps: (stdlib:Object) => IBackendMaps<ConnectorTy>,
   _Participants: {[n: string]: any},
   _APIs: {[n: string]: any | {[n: string]: any}},
+  _getEvents: (stdlib:Object) => ({ [n:string]: [any] })
 };
 
 export type OnProgress = (obj: {current: BigNumber, target: BigNumber}) => any;
@@ -147,6 +148,7 @@ export type ViewVal = (...args:any) => Promise<any>;
 export type ViewFunMap = {[key: string]: ViewVal};
 export type ViewMap = {[key: string]: ViewVal | ViewFunMap};
 export type APIMap = ViewMap;
+export type EventMap = { [key: string]: any }
 
 export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getContractInfo: () => Promise<ContractInfo>,
@@ -169,11 +171,16 @@ export type ISetupArgs<ContractInfo, VerifyResult> = {
 };
 export type ISetupViewArgs<ContractInfo, VerifyResult> =
   Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
+
+export type ISetupEventArgs<ContractInfo, VerifyResult> =
+  Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
+
 export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
 
 export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
   setupView: ISetupView<ContractInfo, VerifyResult, ConnectorTy>,
+  setupEvents: ISetupEvent<ContractInfo, VerifyResult, ConnectorTy>,
   givenInfoP: (Promise<ContractInfo>|undefined)
   _setup: (args: ISetupArgs<ContractInfo, VerifyResult>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
 } & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
@@ -191,6 +198,8 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
   apis: APIMap,
   a: APIMap,
   safeApis: APIMap,
+  e: EventMap,
+  events: EventMap,
   // for compiled output
   _initialize: () => IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>,
 };
@@ -199,6 +208,28 @@ export type ISetupView<ContractInfo, VerifyResult, ConnectorTy extends AnyBacken
   viewLib: IViewLib,
   getView1: ((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string|undefined, vi:IBackendViewInfo<ConnectorTy>, isSafe: boolean) => ViewVal)
 };
+
+export type ISetupEvent<ContractInfo, VerifyResult, ConnectorTy extends AnyBackendTy> = (args:ISetupEventArgs<ContractInfo, VerifyResult>, bin: IBackend<ConnectorTy>) => {
+  getEvent: (name: string, ty: any) => Promise<Event<any>>;
+}
+
+export type Time = number;
+
+export type Event<T> = {
+  when: Time,
+  what: T
+}
+
+export type EventStream<T> = {
+  // mvp
+  seek: (t:Time) => void,
+  next: () => Promise<Event<T>>
+  // additional
+  seekNow: () => void,
+  lastTime: () => Time,
+  // why can't TS handle a function type as arg
+  monitor: (f: any) => void
+}
 
 export const stdVerifyContract =
   async <ContractInfo, VerifyResult>(
@@ -217,7 +248,7 @@ export const stdContract =
   <ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
     stdContractArgs: IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy>):
   IContract<ContractInfo, RawAddress, Token, ConnectorTy> => {
-  const { bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, _setup, givenInfoP } = stdContractArgs;
+  const { bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP } = stdContractArgs;
 
   type SomeSetupArgs = Pick<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo"|"getInfo")>;
   const { setInfo, getInfo }: SomeSetupArgs = (() => {
@@ -338,6 +369,12 @@ export const stdContract =
   const apis = mkApis(false);
   const safeApis = mkApis(true);
 
+  const eventMap = bin._getEvents({ reachStdlib: stdlib });
+  const { getEvent } = setupEvents(viewArgs, bin);
+  const events = objectMap(eventMap, (eventName, eventTys) => {
+    return getEvent(eventName, eventTys)
+  });
+
   return {
     ...ctcC,
     getInfo,
@@ -351,6 +388,8 @@ export const stdContract =
     unsafeViews,
     apis, a: apis,
     safeApis,
+    e: events,
+    events
   };
 };
 

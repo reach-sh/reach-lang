@@ -579,7 +579,7 @@ base_env =
     , ("ParticipantClass", SLV_Prim SLPrim_ParticipantClass)
     , ("View", SLV_Prim SLPrim_View)
     , ("API", SLV_Prim SLPrim_API)
-    , ("Event", SLV_Prim SLPrim_Event)
+    , ("Events", SLV_Prim SLPrim_Event)
     , ("deploy", SLV_Prim SLPrim_deploy)
     , ("setOptions", SLV_Prim SLPrim_setOptions)
     , (".adaptReachAppTupleArgs", SLV_Prim SLPrim_adaptReachAppTupleArgs)
@@ -3220,7 +3220,7 @@ evalPrim p sargs =
                 case st2dt ty of
                   Nothing -> expect_ $ Err_Type_NotDT ty
                   Just dt -> return dt
-            return $ (T_Tuple di, io)
+            return $ (di, io)
       let i' = M.map fst ix
       let io = M.map snd ix
       aisiPut aisi_res $ \ar ->
@@ -3365,12 +3365,13 @@ doEmitLog_ isInternal ml ma dvs = do
   ensure_mode SLM_ConsensusStep "emitLog"
   at <- withAt id
   let tys = map varType dvs
-  case (isInternal, dvs, tys) of
-    (True, [v], [ty]) -> do
-      dv <- ctxt_lift_expr (DLVar at Nothing ty) $ DLE_EmitLog at ml ma $ L_Internal v
+  case (isInternal, ml, dvs, tys) of
+    (True, Nothing, [_], [ty]) -> do
+      let lk = maybe L_Internal L_Api ma
+      dv <- ctxt_lift_expr (DLVar at Nothing ty) $ DLE_EmitLog at lk dvs
       return $ SLV_DLVar dv
-    (False, vs, _) -> do
-      ctxt_lift_eff $ DLE_EmitLog at ml ma $ L_Event vs
+    (False, Just l, vs, _) -> do
+      ctxt_lift_eff $ DLE_EmitLog at (L_Event l) vs
       return $ SLV_Null at (fromMaybe "emitLog" ml)
     _ -> impossible "doEmitLog_: Expected one arg for internal emitLog"
 

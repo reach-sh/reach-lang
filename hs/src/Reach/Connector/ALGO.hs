@@ -1412,15 +1412,24 @@ ce = \case
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract _ -> code "txn" ["ApplicationID"]
   DLE_GetAddress _ -> cContractAddr
-  DLE_EmitLog _ _ _ (L_Event vs) -> do
-    clog $ map DLA_Var vs
-    ca $ DLA_Literal DLL_Null
-  DLE_EmitLog at _ _ (L_Internal v@(DLVar _ _ _ n)) -> do
-    clog $
-      [ DLA_Literal (DLL_Int at $ fromIntegral n)
-      , DLA_Var v
-      ]
-    cv v
+  DLE_EmitLog at k vs
+    | isInternalLog k -> do
+      (v, n) <- case vs of
+          [v'@(DLVar _ _ _ n')] -> return (v', n')
+          _ -> impossible "algo ce: Expected one value"
+      clog $
+        [ DLA_Literal (DLL_Int at $ fromIntegral n)
+        , DLA_Var v
+        ]
+      cv v
+    | otherwise -> do
+      clog $ map DLA_Var vs
+      ca $ DLA_Literal DLL_Null
+    where
+      isInternalLog = \case
+        L_Internal -> True
+        L_Api {} -> True
+        _ -> False
   DLE_setApiDetails {} -> return ()
   where
     show_stack msg at fs = do
@@ -1612,7 +1621,7 @@ cm km = \case
       case de of
         DLE_TokenNew {} -> do
           return True
-        DLE_EmitLog _ _ _ (L_Internal dv') -> do
+        DLE_EmitLog _ _ [dv'] -> do
           isNewTok $ DLA_Var dv'
         _ -> do
           return False
@@ -1940,7 +1949,7 @@ cStateSlice at size iw = do
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
   let PLProg _at plo dli _ _ cpp = pl
-  let CPProg at _ _ai (CHandlers hm) = cpp
+  let CPProg at _ _ai _ (CHandlers hm) = cpp
   let sMaps = dli_maps dli
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty

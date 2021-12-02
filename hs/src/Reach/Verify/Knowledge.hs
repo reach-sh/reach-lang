@@ -246,8 +246,8 @@ kgq_e ctxt mv = \case
   DLE_TimeOrder {} -> mempty
   DLE_GetContract {} -> mempty
   DLE_GetAddress {} -> mempty
-  DLE_EmitLog _ _ _ lv ->
-    mapM_ (kgq_a_onlym ctxt mv . DLA_Var) $ getLogValues lv
+  DLE_EmitLog _ _ lv ->
+    mapM_ (kgq_a_onlym ctxt mv . DLA_Var) lv
   DLE_setApiDetails {} -> mempty
 
 kgq_m :: KCtxt -> DLStmt -> IO ()
@@ -369,7 +369,7 @@ kgq_pie ctxt who (InteractEnv m) =
     >> (mapM_ (kgq_pie1 ctxt who) $ M.keys m)
 
 kgq_lp :: Maybe Handle -> VerifySt -> LLProg -> IO ()
-kgq_lp mh vst (LLProg _ (LLOpts {}) (SLParts {..}) _dli _ _ _ s) = do
+kgq_lp mh vst (LLProg _ (LLOpts {}) (SLParts {..}) _dli _ _ _ _ s) = do
   putStrLn $ "Verifying knowledge assertions"
   let ps = M.keys sps_ies
   llr <- newIORefRef 0
