@@ -9,7 +9,7 @@
   "MAKELEVEL": "1",
   "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
   "VERSION": "0.1.7",
-  "NODE_VERSION": "17.1.0",
+  "NODE_VERSION": "17.2.0",
   "OLDPWD": "/proj",
   "_": "/usr/local/bin/node",
   "background": "white",
