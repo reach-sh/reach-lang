@@ -843,7 +843,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return this;
   };
 
-  async function tokenAccept(token:Token): Promise<void> {
+  const tokenAccepted = async (token:Token): Promise<boolean> => {
+    debug(`tokenAccepted: Unnecessary on ETHlike`, token);
+    return true;
+  };
+  const tokenAccept = async (token:Token): Promise<void> => {
     debug(`tokenAccept: Unnecessary on ETHlike`, token);
     return;
   };
@@ -873,7 +877,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return md;
   };
 
-  return { ...stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccept, tokenMetadata, contract }), setGasLimit, getGasLimit, setStorageLimit, getStorageLimit };
+  return { ...stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract }), setGasLimit, getGasLimit, setStorageLimit, getStorageLimit };
 };
 
 const newAccountFromSecret = async (secret: string): Promise<Account> => {

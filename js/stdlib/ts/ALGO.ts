@@ -1659,10 +1659,19 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     return this;
   }
 
-  async function tokenAccept(token:Token): Promise<void> {
-    debug(`tokenAccept`, token);
+  const me_na = { networkAccount };
+  const tokenAccepted = async (token:Token): Promise<boolean> => {
+    debug(`tokenAccepted`, token);
     // @ts-ignore
-    await transfer(this, this, 0, token);
+    const r = await balanceOfM(me_na, token);
+    return ( r !== false );
+  };
+  const tokenAccept = async (token:Token): Promise<void> => {
+    if ( ! (await tokenAccepted(token)) ) {
+      debug(`tokenAccept`, token);
+      // @ts-ignore
+      await transfer(me_na, me_na, 0, token);
+    }
   };
   const tokenMetadata = async (token:Token): Promise<any> => {
     debug(`tokenMetadata`, token);
@@ -1694,10 +1703,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     return { name, symbol, url, metadata, supply, decimals };
   };
 
-  return stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccept, tokenMetadata, contract });
+  return stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract });
 };
 
-export const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
+const balanceOfM = async (acc: Account, token: Token|false = false): Promise<BigNumber|false> => {
   const addr = extractAddr(acc);
   const client = await getAlgodClient();
   const info = await client.accountInformation(addr).do();
@@ -1710,10 +1719,17 @@ export const balanceOf = async (acc: Account, token: Token|false = false): Promi
         return ai['amount'];
       }
     }
-    return bigNumberify(0);
+    return false;
   }
 };
 
+export const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
+  const r = await balanceOfM(acc, token);
+  if ( r === false ) {
+    return bigNumberify(0);
+  }
+  return r;
+};
 
 export const createAccount = async (): Promise<Account> => {
   const networkAccount = algosdk.generateAccount();

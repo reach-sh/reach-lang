@@ -363,6 +363,7 @@ export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   getAddress: () => string,
   setDebugLabel: (lab: string) => IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>,
   tokenAccept: (token: Token) => Promise<void>,
+  tokenAccepted: (token: Token) => Promise<boolean>,
   tokenMetadata: (token: Token) => Promise<any>,
 };
 

@@ -265,6 +265,14 @@ Returns a Promise for a Reach @tech{account} abstraction for an existing @tech{a
 This does nothing on some @tech{consensus networks}, but should always be used to ensure your frontend is blockchain agnostic.
 
 @(hrule)
+@(mint-define! '("tokenAccepted"))
+@js{
+  acc.tokenAccepted(token) => Promise<boolean>}
+
+@index{acc.tokenAccepted} Returns a Promise that returns if an account may accept a given token.
+This does nothing on some @tech{consensus networks}, but should always be used to ensure your frontend is blockchain agnostic.
+
+@(hrule)
 @(mint-define! '("tokenMetadata"))
 @js{
   acc.tokenMetadata(token) => Promise<object>}

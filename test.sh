@@ -56,7 +56,7 @@ ci () {
   ${REACH} clean
   ${REACH} compile --intermediate-files
   make build
-  REACH_DEBUG=0 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=1 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 
@@ -118,10 +118,8 @@ checkteal () {
 
 #exit 0
 
-fc hs/t/n/API_Twice3.rsh
-c examples/api-full/index.rsh
-fc users/xbacked1/policy.rsh
-
+jb
+ci ALGO mint-basic
 
 #c users/t.rsh
 exit 0
