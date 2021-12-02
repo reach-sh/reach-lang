@@ -29,7 +29,9 @@ The backend provides a value, @jsin{_version}, which is a string representation 
 For example, the version of Reach used to produce this documentation would contain the string @jsin{'@|reach-vers|'}.
 
 The backend provides a function, @(mint-define! '("getExports")) @jsin{getExports}, which exposes the @tech{exports} of a Reach program.
-This function receives the standard library as an argument and returns an object with all the exports.
+This function receives the standard library as an argument and returns an object with all the exports present in the @tech{module} being compiled.
+@margin-note{It's possible to expose bindings from other @tech{modules} to @jsin{getExports} by re-exporting them in your "top-level" module.}
+
 For example, if a Reach program
 exported a variable @tt{x}, i.e. @reachin{export const x = 5}, the frontend could access the value in the following manner:
 
