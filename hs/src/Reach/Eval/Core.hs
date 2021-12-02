@@ -4743,13 +4743,14 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let fork_e0 = jsCall a (jid "fork") []
   let injectContinueIntoBody addArgs e = do
         let ea = jsa e
+        let esp = JSSemi ea
         let def_e = JSIdentifier ea $ prid "res"
         let dotargs = JSSpreadExpression a (JSIdentifier ea $ prid "args")
         let argsl = if addArgs then [ dotargs ] else []
         let call_og = jsCall ea e argsl
-        let def_s = JSConstant ea (JSLOne $ JSVarInitExpression def_e $ JSVarInit ea call_og) sp
-        let asn_s = JSAssignStatement lhs (JSAssign ea) def_e sp
-        let continue_s = JSContinue ea JSIdentNone sp
+        let def_s = JSConstant ea (JSLOne $ JSVarInitExpression def_e $ JSVarInit ea call_og) esp
+        let asn_s = JSAssignStatement lhs (JSAssign ea) def_e esp
+        let continue_s = JSContinue ea JSIdentNone esp
         return $ jsArrowStmts ea argsl [ def_s, asn_s, continue_s ]
   fork_e1 <-
     case pr_mtime of

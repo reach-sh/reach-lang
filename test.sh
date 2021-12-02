@@ -118,8 +118,9 @@ checkteal () {
 
 #exit 0
 
-jb
-ci ALGO rps-7-loops
+cd users
+${REACH} compile george1.rsh
+
 exit 0
 
 #c users/t.rsh
