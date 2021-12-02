@@ -121,15 +121,15 @@ unblockProg sid aid v = do
       case M.lookup sid stks of
         Nothing -> do
           possible "previous state not found"
-        Just (C.PS_Suspend _a cst k) -> do
+        Just (C.PS_Suspend _a (g,l) k) -> do
           case M.lookup aid av_actions of
             Just (C.A_ChangeActor actor_id) -> do
-              let ps = k cst{C.e_curr_actorid = actor_id} v
+              let ps = k (g,l{C.e_curr_actorid = actor_id}) v
               _ <- processNewState ps
               return ()
             -- TODO: handle other actions
             _ -> do
-              let ps = k cst v
+              let ps = k (g,l) v
               _ <- processNewState ps
               return ()
         Just (C.PS_Done _ _) -> do

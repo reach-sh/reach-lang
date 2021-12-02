@@ -21,7 +21,7 @@ data Transmission = Transmission
   , t_store :: Store
   }
 
-data LocalState = LocalState
+data LocalInfo = LocalInfo
   { l_acct :: Account
   , l_who :: Maybe Participant
   , l_store :: Store
@@ -31,34 +31,46 @@ data LocalState = LocalState
 type ActorId = Int
 type PoolId = Integer
 type AccountId = Int
-type Locals = M.Map ActorId LocalState
+type Locals = M.Map ActorId LocalInfo
 
-data State = State
+data Global = Global
   { e_record :: [Transmission]
   , e_ledger :: Ledger
   , e_linstate :: LinearState
   , e_nwtime :: Integer
   , e_nwsecs :: Integer
-  , e_locals :: Locals
-  , e_curr_actorid :: ActorId
   , e_nactid :: ActorId
   , e_naccid :: AccountId
   , e_nmsgid :: PoolId
   }
 
+data Local = Local
+  { e_locals :: Locals
+  , e_curr_actorid :: ActorId
+  }
+
+type State = (Global, Local)
+
 initState :: State
-initState = State
+initState = (initGlobal, initLocal)
+
+initGlobal :: Global
+initGlobal = Global
   { e_record = mempty
   , e_ledger = initLedger
   , e_linstate = mempty
   , e_nwtime = 0
   , e_nwsecs = 0
-  , e_locals = M.singleton (fromIntegral consensusId) LocalState
-      {l_acct = consensusId, l_who = Nothing, l_init_val = V_Null, l_store = mempty}
-  , e_curr_actorid = fromIntegral consensusId
   , e_nactid = 0
   , e_naccid = 0
   , e_nmsgid = 0
+  }
+
+initLocal :: Local
+initLocal = Local
+  { e_locals = M.singleton (fromIntegral consensusId) LocalInfo
+      {l_acct = consensusId, l_who = Nothing, l_init_val = V_Null, l_store = mempty}
+  , e_curr_actorid = fromIntegral consensusId
   }
 
 type PartCont = State -> DLVal -> PartState
@@ -104,11 +116,31 @@ instance Monad App where
 suspend :: (State -> PartCont -> PartState) -> App DLVal
 suspend = App
 
-globalGet :: App State
-globalGet = App (\gvTop kAns -> kAns gvTop gvTop)
+getState :: App State
+getState = App (\gvTop kAns -> kAns gvTop gvTop)
 
-globalSet :: State -> App ()
-globalSet ngv = App (\_ kAns -> kAns ngv ())
+getGlobal :: App Global
+getGlobal = do
+  (g,_) <- getState
+  return g
+
+getLocal :: App Local
+getLocal = do
+  (_,l) <- getState
+  return l
+
+setState :: State -> App ()
+setState ngv = App (\_ kAns -> kAns ngv ())
+
+setGlobal :: Global -> App ()
+setGlobal g = do
+  l <- getLocal
+  setState (g,l)
+
+setLocal :: Local -> App ()
+setLocal l = do
+  g <- getGlobal
+  setState (g,l)
 
 runApp :: State -> App DLVal -> PartState
 runApp st (App f) = f st PS_Done
@@ -149,7 +181,7 @@ initLedger = Ledger
 
 ledgerNewToken :: Account -> DLTokenNew -> App ()
 ledgerNewToken acc tk = do
-  e <- globalGet
+  (e, _) <- getState
   let ledger = e_ledger e
   let token_id = nw_next_token ledger
   supply' <- interp (dtn_supply tk)
@@ -157,7 +189,7 @@ ledgerNewToken acc tk = do
     V_UInt supply -> do
       let new_nw_ledger = M.insert acc (M.singleton token_id supply) (nw_ledger ledger)
       let new_ledger = ledger { nw_ledger = new_nw_ledger, nw_next_token = token_id + 1 }
-      globalSet $ e {e_ledger = new_ledger}
+      setGlobal $ e {e_ledger = new_ledger}
     _ -> impossible "expression interpreter"
 
 data Action
@@ -198,51 +230,51 @@ instance FromJSON DLVal
 
 addToRecord :: ActorId -> DLVar -> DLVal -> App ()
 addToRecord aid x v = do
-  e <- globalGet
+  (e, _) <- getState
   let trs = e_record e
-  globalSet $ e {e_record = trs ++ [Transmission {t_sender = aid, t_store = M.singleton x v}]}
+  setGlobal $ e {e_record = trs ++ [Transmission {t_sender = aid, t_store = M.singleton x v}]}
 
 addToStore :: DLVar -> DLVal -> App ()
 addToStore x v = do
-  e <- globalGet
-  let locals = e_locals e
-  let aid = e_curr_actorid e
+  (_, l) <- getState
+  let locals = e_locals l
+  let aid = e_curr_actorid l
   case M.lookup aid locals of
     Nothing -> possible "addToStore: no local store"
     Just lst -> do
       let st = l_store lst
       let lst' = lst {l_store = M.insert x v st}
-      globalSet $ e {e_locals = M.insert aid lst' locals}
+      setLocal $ l {e_locals = M.insert aid lst' locals}
 
 incrNWtime :: Integer -> App ()
 incrNWtime n = do
-  e <- globalGet
+  (e, _) <- getState
   let t = e_nwtime e
-  globalSet $ e {e_nwtime = t + n }
+  setGlobal $ e {e_nwtime = t + n }
 
 incrNWsecs :: Integer -> App ()
 incrNWsecs n = do
-  e <- globalGet
+  (e, _) <- getState
   let t = e_nwsecs e
-  globalSet $ e {e_nwsecs = t + n }
+  setGlobal $ e {e_nwsecs = t + n }
 
 incrMessageId :: App ()
 incrMessageId = do
-  e <- globalGet
+  (e, _) <- getState
   let t = e_nmsgid e
-  globalSet $ e {e_nwsecs = t + 1 }
+  setGlobal $ e {e_nwsecs = t + 1 }
 
 updateLedger :: Account -> Token -> (Integer -> Integer) -> App ()
 updateLedger acc tok f = do
-  e <- globalGet
+  (e, _) <- getState
   let ledger = e_ledger e
   let map_ledger = nw_ledger ledger
-  let m = (fromMaybe (impossible "updateLedger") (M.lookup acc map_ledger))
-  let prev_amt = (fromMaybe (impossible "updateLedger1") (M.lookup tok m))
+  let m = saferMapRef "updateLedger" $ M.lookup acc map_ledger
+  let prev_amt = saferMapRef "updateLedger1" $ M.lookup tok m
   let new_amt = f prev_amt
-  let q = ((fromMaybe (impossible "updateLedger2") (M.lookup acc map_ledger)))
+  let q = saferMapRef "updateLedger2" $ M.lookup acc map_ledger
   let new_nw_ledger = M.insert acc (M.insert tok new_amt q) map_ledger
-  globalSet $ e {e_ledger = ledger { nw_ledger = new_nw_ledger }}
+  setGlobal $ e {e_ledger = ledger { nw_ledger = new_nw_ledger }}
 
 transferLedger :: Account -> Account -> Token -> Integer -> App ()
 transferLedger fromAcc toAcc tok n = do
@@ -272,12 +304,12 @@ interpPrim = \case
   (ADDRESS_EQ,  [V_Address lhs,V_Address rhs]) -> return $ V_Bool $ (==) lhs rhs
   (TOKEN_EQ, [V_Token lhs,V_Token rhs]) -> return $ V_Bool $ (==) lhs rhs
   (SELF_ADDRESS _slpart _bool _int, _) -> do
-    g <- globalGet
-    let actorid = e_curr_actorid g
+    (_, l) <- getState
+    let actorid = e_curr_actorid l
     case actorid == (fromIntegral consensusId) of
       False -> do
-        let locals = e_locals g
-        return $ V_Address $ l_acct $ (fromMaybe (impossible "SELF_ADDRESS") (M.lookup actorid locals))
+        let locals = e_locals l
+        return $ V_Address $ l_acct $ saferMapRef "SELF_ADDRESS" $ M.lookup actorid locals
       True -> do
         return $ V_Address $ consensusId
   (LSH, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ shiftL lhs (fromIntegral rhs)
@@ -293,21 +325,21 @@ conCons' DLC_UInt_max = V_UInt $ 2 ^ (64 :: Integer) - 1
 instance Interp DLArg where
   interp = \case
     DLA_Var dlvar -> do
-      g <- globalGet
-      let locals = e_locals g
-      let aid = e_curr_actorid g
+      (_, l) <- getState
+      let locals = e_locals l
+      let aid = e_curr_actorid l
       case M.lookup aid locals of
         Nothing -> possible "addToStore: no local store"
         Just lst -> do
           let st = l_store lst
-          return $ (fromMaybe (impossible "DLA_Var") (M.lookup dlvar st))
+          return $ saferMapRef "DLA_Var" $ M.lookup dlvar st
     DLA_Constant dlconst -> return $ conCons' dlconst
     DLA_Literal dllit -> interp dllit
     DLA_Interact _slpart _string _dltype -> do
-      g <- globalGet
-      let actorid = e_curr_actorid g
-      let lclst = e_locals g
-      return $ l_init_val $ (fromMaybe (impossible "DLA_Interact") (M.lookup actorid lclst))
+      (_, l) <- getState
+      let actorid = e_curr_actorid l
+      let lclst = e_locals l
+      return $ l_init_val $ saferMapRef "DLA_Interact" $ M.lookup actorid lclst
 
 instance Interp DLLiteral where
   interp = \case
@@ -372,7 +404,7 @@ instance Interp DLExpr where
     DLE_ObjectRef _at dlarg str -> do
       ev <- interp dlarg
       case ev of
-        V_Object obj -> return $ (fromMaybe (impossible "DLE_ObjectRef") (M.lookup str obj))
+        V_Object obj -> return $ saferMapRef "DLE_ObjectRef" $ M.lookup str obj
         _ -> impossible "expression interpreter"
     DLE_Interact at slcxtframes slpart str dltype dlargs -> do
       args <- mapM interp dlargs
@@ -423,28 +455,28 @@ instance Interp DLExpr where
           _ -> impossible "unexpected error"
     DLE_PartSet _at _slpart dlarg -> interp dlarg
     DLE_MapRef _at dlmvar dlarg -> do
-      g <- globalGet
+      (g, _) <- getState
       let linstate = e_linstate g
       ev <- interp dlarg
       case ev of
         V_Address acc -> do
-          let m = (fromMaybe (impossible "DLE_MapRef1") (M.lookup dlmvar linstate))
-          return $ (fromMaybe (impossible "DLE_MapRef2") (M.lookup acc m))
+          let m = saferMapRef "DLE_MapRef1" $ M.lookup dlmvar linstate
+          return $ saferMapRef "DLE_MapRef2" $ M.lookup acc m
         _ -> impossible "unexpected error"
     DLE_MapSet _at dlmvar dlarg maybe_dlarg -> do
-      e <- globalGet
+      (e, _) <- getState
       let linst = e_linstate e
       ev <- interp dlarg
       case ev of
         V_Address acc -> case maybe_dlarg of
           Nothing -> do
-            let m = M.delete acc $ (fromMaybe (impossible "DLE_MapSet1") (M.lookup dlmvar linst))
-            globalSet $ e {e_linstate = M.insert dlmvar m linst}
+            let m = M.delete acc $ saferMapRef "DLE_MapSet1" $ M.lookup dlmvar linst
+            setGlobal $ e {e_linstate = M.insert dlmvar m linst}
             return V_Null
           Just dlarg' -> do
             ev' <- interp dlarg'
-            let m = M.insert acc ev' $ (fromMaybe (impossible "DLE_MapSet2") (M.lookup dlmvar linst))
-            globalSet $ e {e_linstate = M.insert dlmvar m linst}
+            let m = M.insert acc ev' $ saferMapRef "DLE_MapSet2" $ M.lookup dlmvar linst
+            setGlobal $ e {e_linstate = M.insert dlmvar m linst}
             return V_Null
         _ -> impossible "unexpected error"
     DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill -> undefined
@@ -463,12 +495,12 @@ instance Interp DLExpr where
       ev <- interp dlarg
       case ev of
         V_UInt tok -> do
-          e <- globalGet
+          (e, _) <- getState
           let ledger = e_ledger e
           let map_ledger = nw_ledger ledger
-          let m = ((fromMaybe (impossible "DLE_TokenDestroy") (M.lookup 0 map_ledger)))
+          let m = saferMapRef "DLE_TokenDestroy" $ M.lookup 0 map_ledger
           let new_nw_ledger = M.insert 0 (M.delete tok m) map_ledger
-          globalSet $ e {e_ledger = ledger { nw_ledger = new_nw_ledger }}
+          setGlobal $ e {e_ledger = ledger { nw_ledger = new_nw_ledger }}
           return V_Null
         _ -> impossible "expression interpreter"
     -- TODO: new stuff
@@ -529,20 +561,20 @@ instance Interp DLStmt where
       ev <- interp (DLA_Var var)
       case ev of
         V_Data k v -> do
-          let (switch_binding,_,dltail) = (fromMaybe (impossible "DL_LocalSwitch") (M.lookup k cases))
+          let (switch_binding,_,dltail) = saferMapRef "DL_LocalSwitch" $ M.lookup k cases
           addToStore switch_binding v
           interp dltail
         _ -> impossible "unexpected error"
     DL_Only _at _either_part dltail -> interp dltail
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
       accu <- interp arg
-      g <- globalGet
+      (g, _) <- getState
       let linst = e_linstate g
       let f = (\a x b y -> do
             addToStore a x
             addToStore b y
             interp block)
-      let m = (fromMaybe (impossible "DL_MapReduce") (M.lookup dlmvar linst))
+      let m = saferMapRef "DL_MapReduce" $ M.lookup dlmvar linst
       res <- foldM (\x y -> f var2 x var3 y) accu $ m
       addToStore var1 res
       return V_Null
@@ -575,7 +607,7 @@ instance Interp LLConsensus where
       ev <- interp (DLA_Var var)
       case ev of
         V_Data k v -> do
-          let (switch_binding,_, cons) = (fromMaybe (impossible "LLC_Switch") (M.lookup k switch_cases))
+          let (switch_binding,_, cons) = saferMapRef "LLC_Switch" $ M.lookup k switch_cases
           addToStore switch_binding v
           interp cons
         _ -> impossible "unexpected error"
@@ -603,18 +635,18 @@ instance Interp LLStep where
       interp step
     LLS_Stop _at -> return V_Null
     LLS_ToConsensus _at _lct tc_send (DLRecv {..}) _tc_mtime -> do
-      g <- globalGet
+      (g, l) <- getState
       let mid = e_nmsgid g
       incrMessageId
       v <- suspend $ PS_Suspend (A_TieBreak mid $ M.keys $ M.mapKeys bunpack tc_send)
       case v of
         V_UInt n -> do
-          let locals = e_locals g
-          let lclst = l_who (fromMaybe (impossible "LLS_ToConsensus") (M.lookup (fromIntegral n) locals))
+          let locals = e_locals l
+          let lclst = l_who $ saferMapRef "LLS_ToConsensus" $ M.lookup (fromIntegral n) locals
           case lclst of
             Nothing -> impossible "expected participant id, received consensus id"
             Just part -> do
-              let m = (fromMaybe (impossible "LLS_ToConsensus1") (M.lookup (bpack part) tc_send))
+              let m = saferMapRef "LLS_ToConsensus1" $ M.lookup (bpack part) tc_send
               case m of
                 DLSend {..} -> do
                   ds_msg' <- mapM interp ds_msg
@@ -632,18 +664,20 @@ instance Interp LLProg where
 registerParts :: [SLPart] -> App ()
 registerParts [] = return ()
 registerParts (p:ps) = do
-  g <- globalGet
+  (g, l) <- getState
   let pid = e_nactid g
   let aid = e_naccid g
-  let locals = e_locals g
-  let lcl = LocalState
+  let locals = e_locals l
+  let lcl = LocalInfo
         { l_acct = fromIntegral aid
         , l_who = Just $ bunpack p
         , l_store = mempty
         , l_init_val = V_Null
         }
   let locals' = M.insert pid lcl locals
-  globalSet $ g {e_nactid = pid + 1, e_naccid = aid + 1, e_locals = locals'}
+  setGlobal $ g {e_nactid = pid + 1, e_naccid = aid + 1}
+  setLocal $ l {e_locals = locals'}
+
   registerParts ps
 
 while :: DLBlock -> LLConsensus -> App DLVal
@@ -655,3 +689,6 @@ while bl cons = do
       _ <- interp cons
       while bl cons
     _ -> impossible "unexpected error"
+
+saferMapRef :: String -> Maybe b -> b
+saferMapRef s m = (fromMaybe (possible s) m)
