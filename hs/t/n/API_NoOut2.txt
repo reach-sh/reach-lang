@@ -7,9 +7,9 @@ Verifying for generic connector
 Checked 29 theorems; No failures!
 reachc: error[RAPI0003]: API "C_f" does not return result in same consensus step
 
-  ./API_NoOut2.rsh:14:7:application
+  ./API_NoOut2.rsh:17:7:while
 
-  14|   .api( C.f, (apiReturn) => {
+  17|       while (keepGoing) {
 
 For further explanation of this error, see: https://docs.reach.sh/RAPI0003.html
 

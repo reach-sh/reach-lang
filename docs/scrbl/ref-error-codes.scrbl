@@ -2515,6 +2515,36 @@ This might look like the following in the @reachin{API_CONSENSUS_EXPR}:
 
 You cannot return from an API call twice.
 
+Sometimes the second instance is a by-product of an effect duplicating a continuation, such as:
+@reach{
+  .api(User.f, (x, ret) => {
+    if (x > 5) {
+      m[this] = x;
+    }
+    ret(false);
+  })
+}
+This is because this is equivalent to:
+@reach{
+  .api(User.f, (x, ret) => {
+    if (x > 5) {
+      m[this] = x;
+      ret(false);
+    } else {
+      ret(false);
+    }
+  })
+}
+Instead, the effect should happen after the return:
+@reach{
+  .api(User.f, (x, ret) => {
+    ret(false);
+    if (x > 5) {
+      m[this] = x;
+    }
+  })
+}
+
 @error{RAPI0003}
 
 This error means that you did not return a result from an @tech{API} call.

@@ -118,10 +118,10 @@ checkteal () {
 
 #exit 0
 
-c hs/t/y/pr417.rsh
-fc hs/t/n/pr417.rsh
+fc hs/t/n/API_Twice3.rsh
+c examples/api-full/index.rsh
+fc users/xbacked1/policy.rsh
 
-exit 0
 
 #c users/t.rsh
 exit 0

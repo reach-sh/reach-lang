@@ -252,17 +252,24 @@ slurp = \case
       _ -> return ()
     fmap (ET_ToConsensus et_tc_at et_tc_from et_tc_prev Nothing et_tc_which et_tc_from_me et_tc_from_msg et_tc_from_out et_tc_from_timev et_tc_from_secsv et_tc_from_didSendv Nothing) <$> slurp et_tc_cons
   ET_While at asn cb b k ->
-    ensureSeen $ doWhile at asn cb b k
+    doWhile at asn cb b k
   ET_Continue at asn ->
     asks eWhile >>= \case
       Nothing -> impossible "continue not in while"
-      Just (cb, b, k) -> ensureSeen $ doWhile at asn cb b k
+      Just (cb, b, k) -> doWhile at asn cb b k
   where
     ensureSeen m = do
       asks eSeenOut >>= \case
         True -> m
         False -> return $ Nothing
-    doWhile at (DLAssignment m) (DLBlock _ _ ct c) b k = do
+    doWhile at asn cb b k = do
+      let m = doWhile_ at asn cb b k
+      asks eSeenOut >>= \case
+        True -> m
+        False -> m >>= \case
+          Nothing -> return $ Nothing
+          Just _ -> err at API_NoOut
+    doWhile_ at (DLAssignment m) (DLBlock _ _ ct c) b k = do
       let ml = M.toAscList m
       let (mvs, mas) = unzip ml
       let ift = ET_If at c (clipAtFrom b) k
