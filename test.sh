@@ -118,8 +118,8 @@ checkteal () {
 
 #exit 0
 
-one ALGO \
-rps-8-interact
+jb
+ci ALGO rps-7-loops
 exit 0
 
 #c users/t.rsh

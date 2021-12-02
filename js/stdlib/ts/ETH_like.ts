@@ -684,7 +684,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               continue;
             } else {
               // Otherwise, something bad is happening
-              throw Error(`${label} failed to call ${funcName}: ${e}`);
+              throw Error(`${label} failed to call ${funcName}: ${JSON.stringify(e)}`);
             }
           }
 

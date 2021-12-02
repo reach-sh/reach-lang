@@ -1443,11 +1443,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           try {
             res = await signSendAndConfirm( thisAcc, wtxns );
           } catch (e:any) {
-            if ( e.type === 'sendRawTransaction' ) {
-              debug(dhead, '--- FAIL:', format_failed_request(e?.e));
-            } else {
-              debug(dhead, '--- FAIL:', e);
-            }
+            const es = ( e.type === 'sendRawTransaction' ) ?
+              format_failed_request(e?.e) : e;
+            debug(dhead, '--- FAIL:', es);
 
             if ( ! soloSend ) {
               // If there is no soloSend, then someone else "won", so let's
@@ -1462,7 +1460,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               continue;
             } else {
               // Otherwise, something bad is happening
-              throw Error(`${label} failed to call ${funcName}: ${e}`);
+              throw Error(`${label} failed to call ${funcName}: ${JSON.stringify(es)}`);
             }
           }
 
