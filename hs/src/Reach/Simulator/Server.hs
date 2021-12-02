@@ -124,7 +124,7 @@ unblockProg sid aid v = do
         Just (C.PS_Suspend _a cst k) -> do
           case M.lookup aid av_actions of
             Just (C.A_ChangeActor actor_id) -> do
-              let ps = k cst{C.e_actorid = actor_id} v
+              let ps = k cst{C.e_curr_actorid = actor_id} v
               _ <- processNewState ps
               return ()
             -- TODO: handle other actions

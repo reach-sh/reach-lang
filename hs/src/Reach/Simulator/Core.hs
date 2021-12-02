@@ -29,6 +29,8 @@ data LocalState = LocalState
   }
 
 type ActorId = Int
+type PoolId = Integer
+type AccountId = Int
 type Locals = M.Map ActorId LocalState
 
 data State = State
@@ -38,9 +40,10 @@ data State = State
   , e_nwtime :: Integer
   , e_nwsecs :: Integer
   , e_locals :: Locals
-  , e_actorid :: Int
-  , e_npid :: Int
-  , e_naid :: Int
+  , e_curr_actorid :: ActorId
+  , e_nactid :: ActorId
+  , e_naccid :: AccountId
+  , e_nmsgid :: PoolId
   }
 
 initState :: State
@@ -52,9 +55,10 @@ initState = State
   , e_nwsecs = 0
   , e_locals = M.singleton (fromIntegral consensusId) LocalState
       {l_acct = consensusId, l_who = Nothing, l_init_val = V_Null, l_store = mempty}
-  , e_actorid = fromIntegral consensusId
-  , e_npid = 0
-  , e_naid = 0
+  , e_curr_actorid = fromIntegral consensusId
+  , e_nactid = 0
+  , e_naccid = 0
+  , e_nmsgid = 0
   }
 
 type PartCont = State -> DLVal -> PartState
@@ -157,7 +161,7 @@ ledgerNewToken acc tk = do
     _ -> impossible "expression interpreter"
 
 data Action
-  = A_TieBreak [String]
+  = A_TieBreak PoolId [String]
   | A_NewAcc
   | A_NewActor
   | A_None
@@ -202,7 +206,7 @@ addToStore :: DLVar -> DLVal -> App ()
 addToStore x v = do
   e <- globalGet
   let locals = e_locals e
-  let aid = e_actorid e
+  let aid = e_curr_actorid e
   case M.lookup aid locals of
     Nothing -> possible "addToStore: no local store"
     Just lst -> do
@@ -221,6 +225,12 @@ incrNWsecs n = do
   e <- globalGet
   let t = e_nwsecs e
   globalSet $ e {e_nwsecs = t + n }
+
+incrMessageId :: App ()
+incrMessageId = do
+  e <- globalGet
+  let t = e_nmsgid e
+  globalSet $ e {e_nwsecs = t + 1 }
 
 updateLedger :: Account -> Token -> (Integer -> Integer) -> App ()
 updateLedger acc tok f = do
@@ -263,7 +273,7 @@ interpPrim = \case
   (TOKEN_EQ, [V_Token lhs,V_Token rhs]) -> return $ V_Bool $ (==) lhs rhs
   (SELF_ADDRESS _slpart _bool _int, _) -> do
     g <- globalGet
-    let actorid = e_actorid g
+    let actorid = e_curr_actorid g
     case actorid == (fromIntegral consensusId) of
       False -> do
         let locals = e_locals g
@@ -285,7 +295,7 @@ instance Interp DLArg where
     DLA_Var dlvar -> do
       g <- globalGet
       let locals = e_locals g
-      let aid = e_actorid g
+      let aid = e_curr_actorid g
       case M.lookup aid locals of
         Nothing -> possible "addToStore: no local store"
         Just lst -> do
@@ -295,7 +305,7 @@ instance Interp DLArg where
     DLA_Literal dllit -> interp dllit
     DLA_Interact _slpart _string _dltype -> do
       g <- globalGet
-      let actorid = e_actorid g
+      let actorid = e_curr_actorid g
       let lclst = e_locals g
       return $ l_init_val $ (fromMaybe (impossible "DLA_Interact") (M.lookup actorid lclst))
 
@@ -593,14 +603,16 @@ instance Interp LLStep where
       interp step
     LLS_Stop _at -> return V_Null
     LLS_ToConsensus _at _lct tc_send (DLRecv {..}) _tc_mtime -> do
-      v <- suspend $ PS_Suspend (A_TieBreak $ M.keys $ M.mapKeys bunpack tc_send)
+      g <- globalGet
+      let mid = e_nmsgid g
+      incrMessageId
+      v <- suspend $ PS_Suspend (A_TieBreak mid $ M.keys $ M.mapKeys bunpack tc_send)
       case v of
         V_UInt n -> do
-          g <- globalGet
           let locals = e_locals g
           let lclst = l_who (fromMaybe (impossible "LLS_ToConsensus") (M.lookup (fromIntegral n) locals))
           case lclst of
-            Nothing ->  impossible "expected participant id, received consensus id"
+            Nothing -> impossible "expected participant id, received consensus id"
             Just part -> do
               let m = (fromMaybe (impossible "LLS_ToConsensus1") (M.lookup (bpack part) tc_send))
               case m of
@@ -621,8 +633,8 @@ registerParts :: [SLPart] -> App ()
 registerParts [] = return ()
 registerParts (p:ps) = do
   g <- globalGet
-  let pid = e_npid g
-  let aid = e_naid g
+  let pid = e_nactid g
+  let aid = e_naccid g
   let locals = e_locals g
   let lcl = LocalState
         { l_acct = fromIntegral aid
@@ -631,7 +643,7 @@ registerParts (p:ps) = do
         , l_init_val = V_Null
         }
   let locals' = M.insert pid lcl locals
-  globalSet $ g {e_npid = pid + 1, e_naid = aid + 1, e_locals = locals'}
+  globalSet $ g {e_nactid = pid + 1, e_naccid = aid + 1, e_locals = locals'}
   registerParts ps
 
 while :: DLBlock -> LLConsensus -> App DLVal
