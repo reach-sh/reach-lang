@@ -1,0 +1,15 @@
+warning[RW0004]: There are no publications in the application.
+
+  ./index.rsh:38:30:application
+
+  38| export const main = Reach.App(
+
+For further explanation of this warning, see: https://docs.reach.sh/RW0004.html
+
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+  Verifying when ONLY "Alice" is honest
+  Verifying when ONLY "Bob" is honest
+Checked 34 theorems; No failures!
