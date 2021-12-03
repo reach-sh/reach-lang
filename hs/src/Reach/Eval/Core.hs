@@ -4335,7 +4335,7 @@ typeToExpr = \case
   T_Data m -> call "Data" [rm m]
   T_Struct ts -> call "Struct" $ [arr $ map sg ts]
   where
-    str x = JSStringLiteral a x
+    str x = JSStringLiteral a $ "'" <> x <> "'"
     arr = jsArrayLiteral a
     sg (k, t) = arr [(str k), r t]
     call f = jsCall a (var f)

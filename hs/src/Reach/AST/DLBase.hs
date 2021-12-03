@@ -79,7 +79,6 @@ bytesTypeLen = \case
   T_Bytes l -> l
   _ -> impossible "no bytes"
 
-
 showTys :: Show a => [a] -> String
 showTys = List.intercalate ", " . map show
 

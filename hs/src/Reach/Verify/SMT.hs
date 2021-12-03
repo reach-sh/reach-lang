@@ -472,6 +472,8 @@ parseVal env t v = do
             List (_:vs) -> do
               fields <- mapM (\ ((s, vt), mv) -> parseVal env vt mv <&> (s, ) ) $ zip (M.toAscList ts) vs
               return $ SMV_Object $ M.fromList fields
+            Atom _ ->
+              return $ SMV_Object $ mempty
             _ -> impossible $ "parseVal: Object " <> show v
         T_Struct ts ->
           case v of

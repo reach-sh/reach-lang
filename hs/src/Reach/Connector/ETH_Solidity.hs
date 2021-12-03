@@ -586,7 +586,11 @@ solExpr sp = \case
     return $ ae' <> ".elem" <> pretty i <> sp
   DLE_ObjectRef _ oe f -> do
     oe' <- solArg oe
-    return $ oe' <> "." <> objPrefix (pretty f) <> sp
+    let p = case argTypeOf oe of
+              T_Struct {} -> id
+              T_Object {} -> objPrefix
+              _ -> impossible "objectref"
+    return $ oe' <> "." <> p (pretty f) <> sp
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> do
     args' <- mapM solArg args
