@@ -24,6 +24,7 @@ build-stdlib-build:
 	  --build-arg NODE_VERSION=$(NODE_VERSION) \
 	  --build-arg REACH_VERSION=$(VERSION) \
 	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
+	  --target build
 	  --cache-from=$(IMAGE):build-${CIRCLE_BRANCH} \
 	  --cache-from=$(IMAGE):build-master \
 	  .
