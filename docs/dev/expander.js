@@ -8,7 +8,15 @@ const XXX = (name) => (...args) => {
 
 export const seclink = XXX('seclink');
 export const defn = XXX('defn');
-export const workshopDeps = XXX('workshopDeps');
+
+export const workshopDeps = (pre) => {
+  if ( pre === undefined ) {
+    return `:::note\nThis workshop is independent of all others.\n:::`;
+  } else {
+    return `:::note\nThis workshop assumes that you have recently completed @{seclink(\"${pre}\")}.\n:::`;
+  }
+};
+
 export const workshopInit = XXX('workshopInit');
 export const workshopWIP = XXX('workshopWIP');
 export const errver = XXX('errver');
