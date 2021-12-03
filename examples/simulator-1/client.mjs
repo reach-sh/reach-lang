@@ -77,8 +77,6 @@ const ping = async () => {
   return r
 }
 
-const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
-
 const main = async () => {
 
   const params = {
