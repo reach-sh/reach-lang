@@ -13,3 +13,4 @@ run:
 .PHONY: clean
 clean:
 	$(REACH) down
+	lsof -ti tcp:3001 | xargs kill
