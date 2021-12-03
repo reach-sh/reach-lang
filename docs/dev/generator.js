@@ -159,7 +159,14 @@ const workshopWIP = (dir) => {
   return `:::note\nThis page is a placeholder for a future more detailed workshop.\nYou could try to implement it yourself though, given the sketch above!\n${more}:::\n`;
 };
 
-const errver = XXX('errver');
+const errver = (f, t) => {
+  const m = (s, x) => `${s} version \`${x}\``;
+  const fm = m('before', f);
+  const tm = m('after', t);
+  const msg = (f && t) ? `${fm} or ${tm}` : (f ? fm : tm);
+  return `:::note\nThis error will not happen ${msg}.\n:::`;
+};
+
 const ref = XXX('ref');
 
 const directive_note = (node) => {

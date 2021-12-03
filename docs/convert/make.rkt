@@ -179,7 +179,7 @@
     [`reach-vers
      (d "@{VERSION}")]
     [`(error-version #:to ,t)
-     (d (format "@{errver(~s)}" t))]
+     (d (format "@{errver(false, ~s)}" t))]
     [`(workshop-deps)
       (d (format "@{workshopDeps()}"))]
     [`(workshop-deps ,t)
