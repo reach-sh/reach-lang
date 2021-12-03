@@ -205,76 +205,6 @@ const processJs = async () => {
   await writeFileMkdir(oPath, output.code);
 }
 
-const evaluateCodeSnippet = (code) => {
-  const spec = {
-    "numbered": true,
-    "language": null, // indicates highlighted
-    "url": null,      // indicates loaded
-    "range": null     // indicates ranged
-  };
-
-  if (code.classList && code.classList.length == 1 && code.classList[0].startsWith('language')) {
-    const arrLC = code.classList[0].replace('language-', '').split('_');
-    for (let i = 0; i < arrLC.length; i++) {
-      if (arrLC[i] == 'unnumbered' || arrLC[i] == 'nonum') {
-        spec.numbered = false;
-      } else {
-        spec.language = arrLC[i];
-      }
-    }
-  }
-
-  const arr = code.textContent.trimEnd().split(/\r?\n/g);
-  if (arr.length > 0) {
-    const line1 = arr[0].replace(/\s+/g, '');
-    if (line1.slice(0, 5) == 'load:') {
-      const url = line1.slice(5);
-      if (url.slice(0, 4) == 'http') { spec.url = url; }
-      else { spec.url = `${repoBase}${url}`; }
-      if (arr.length > 1) {
-        const line2 = arr[1].replace(/\s+/g, '');
-        if (line2.slice(0, 6) == 'range:') {
-          spec.range = line2.slice(6);
-        }
-      }
-    }
-  }
-  return spec;
-}
-
-const processCodeSnippet = (doc, pre, code, spec) => {
-  let firstLineIndex = null;
-  let lastLineIndex = null;
-  if (spec.range) {
-    const rangeArr = spec.range.split('-');
-    firstLineIndex = rangeArr[0] - 1;
-    if (rangeArr.length > 1) {
-      lastLineIndex = rangeArr[1] - 1;
-    }
-  }
-
-  const arr = code.textContent.split(/\r?\n/g);
-  let olStr = '<ol class="snippet">';
-  for (let i = 0; i < arr.length; i++) {
-
-    if (firstLineIndex && i < firstLineIndex) {
-      continue;
-    } else if (lastLineIndex && lastLineIndex < i) {
-      break;
-    }
-
-    olStr += `<li value="${i + 1}">${arr[i]}</li>`;
-
-  }
-  olStr += '</ol>';
-  code.remove();
-  const olEl = doc.createRange().createContextualFragment(olStr);
-  pre.append(olEl);
-  pre.classList.add('snippet');
-  const shouldNumber = spec.numbered && (arr.length != 1);
-  pre.classList.add(shouldNumber ? 'numbered' : 'unnumbered');
-}
-
 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   const lang = relDir.split('/')[0];
@@ -291,18 +221,6 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     chapters: null,
     pages: null,
   };
-
-  /*
-  const docOptions = {
-    "title": "Reach Developer Portal",
-    "link": [
-      { "rel": "icon", "type": "image/png", "href": "/assets/favicon.png" },
-      { "rel": "stylesheet", "type": "text/css", "href": "https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" },
-      { "rel": "stylesheet", "type": "text/css", "href": "https://use.fontawesome.com/releases/v5.6.3/css/all.css" },
-      { "rel": "stylesheet", "type": "text/css", "href": "/assets/styles.min.css" }
-    ]
-  };
-  */
 
   const expandEnv = { ...configJson, ...expanderCore };
   const expandKeys = Object.keys(expandEnv);
@@ -336,24 +254,34 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
 
   // markdown-to-html pipeline.
   const output = await unified()
-    .use(remarkParse) // Parse markdown to Markdown Abstract Syntax Tree (MDAST).
-    .use(remarkFrontmatter) // Prepend YAML node with frontmatter.
-    .use(copyFmToConfig, configJson) // Remove YAML node and write frontmatter to config file.
-    .use(prependTocNode) // Prepend Heading, level 6, value "toc".
+    // Parse markdown to Markdown Abstract Syntax Tree (MDAST).
+    .use(remarkParse)
+    // Prepend YAML node with frontmatter.
+    .use(remarkFrontmatter)
+    // Remove YAML node and write frontmatter to config file.
+    .use(copyFmToConfig, configJson)
+    // Prepend Heading, level 6, value "toc".
+    .use(prependTocNode)
     .use(remarkDirective)
     .use(expanderDirective)
-    //.use(() => (tree) => { console.dir(tree); })
-    .use(remarkToc, { maxDepth: 2 }) // Build toc list under the heading.
-    //.use(() => (tree) => { console.dir(JSON.stringify(tree.children[1].children, null, 2)); })
-    .use(remarkSlug) // Create IDs (acting as anchors) for headings throughout the document.
-    .use(joinCodeClasses) // Concatenate (using _) class names for code elements.
-    .use(remarkGfm) // Normalize Github Flavored Markdown so it can be converted to html.
-    .use(remarkRehype, { allowDangerousHtml: true }) // Convert MDAST to html.
-    .use(rehypeRaw) // Copy over html embedded in markdown.
-    //.use(rehypeDocument, docOptions) // Adds full-page html tags.
-    .use(rehypeFormat) // Prettify html.
-    .use(rehypeStringify) // Serialize html.
-    .process(md); // Push the markdown through the pipeline.
+    // Build toc list under the heading.
+    .use(remarkToc, { maxDepth: 2 })
+    // Create IDs (acting as anchors) for headings throughout the document.
+    .use(remarkSlug)
+    // Concatenate (using _) class names for code elements.
+    .use(joinCodeClasses)
+    // Normalize Github Flavored Markdown so it can be converted to html.
+    .use(remarkGfm)
+    // Convert MDAST to html.
+    .use(remarkRehype, { allowDangerousHtml: true })
+    // Copy over html embedded in markdown.
+    .use(rehypeRaw)
+    // Prettify html.
+    .use(rehypeFormat)
+    // Serialize html.
+    .use(rehypeStringify)
+    // Push the markdown through the pipeline.
+    .process(md);
 
   const doc = new JSDOM(output).window.document;
 
@@ -390,18 +318,46 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   for (let i = 0; i < preArray.length; i++) {
     const pre = preArray[i];
     const code = pre.querySelector('code');
-
-    // Evaluate code snippet
     if (!code) { continue; }
-    const spec = evaluateCodeSnippet(code);
+
+    const spec = {
+      "numbered": true,
+      "language": null, // indicates highlighted
+      "url": null,      // indicates loaded
+      "range": null     // indicates ranged
+    };
+
+    if (code.classList && code.classList.length == 1 && code.classList[0].startsWith('language')) {
+      const arrLC = code.classList[0].replace('language-', '').split('_');
+      for (let i = 0; i < arrLC.length; i++) {
+        if (arrLC[i] == 'unnumbered' || arrLC[i] == 'nonum') {
+          spec.numbered = false;
+        } else {
+          spec.language = arrLC[i];
+        }
+      }
+    }
+
+    const arr = code.textContent.trimEnd().split(/\r?\n/g);
+    if (arr.length > 0) {
+      const line1 = arr[0].replace(/\s+/g, '');
+      if (line1.slice(0, 5) == 'load:') {
+        const url = line1.slice(5);
+        if (url.slice(0, 4) == 'http') { spec.url = url; }
+        else { spec.url = `${repoBase}${url}`; }
+        if (arr.length > 1) {
+          const line2 = arr[1].replace(/\s+/g, '');
+          if (line2.slice(0, 6) == 'range:') {
+            spec.range = line2.slice(6);
+          }
+        }
+      }
+    }
 
     // Get remote content if specified.
     if (spec.url) {
       code.textContent = await remoteGet(spec.url);
     }
-
-    // Replace < and > with code.
-    code.textContent = code.textContent/*.replaceAll('<', '&lt;').replaceAll('>', '&gt;')*/.trimEnd();
 
     // Highlight the content if specified.
     // https://github.com/shikijs/shiki/blob/main/docs/themes.md
@@ -416,7 +372,33 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
         .replace('</code></pre>', '');
     }
 
-    processCodeSnippet(doc, pre, code, spec);
+    let firstLineIndex = null;
+    let lastLineIndex = null;
+    if (spec.range) {
+      const rangeArr = spec.range.split('-');
+      firstLineIndex = rangeArr[0] - 1;
+      if (rangeArr.length > 1) {
+        lastLineIndex = rangeArr[1] - 1;
+      }
+    }
+
+    const arr = code.textContent.split(/\r?\n/g);
+    let olStr = '<ol class="snippet">';
+    for (let i = 0; i < arr.length; i++) {
+      if (firstLineIndex && i < firstLineIndex) {
+        continue;
+      } else if (lastLineIndex && lastLineIndex < i) {
+        break;
+      }
+      olStr += `<li value="${i + 1}">${arr[i]}</li>`;
+    }
+    olStr += '</ol>';
+    code.remove();
+    const olEl = doc.createRange().createContextualFragment(olStr);
+    pre.append(olEl);
+    pre.classList.add('snippet');
+    const shouldNumber = spec.numbered && (arr.length != 1);
+    pre.classList.add(shouldNumber ? 'numbered' : 'unnumbered');
   }
 
   // Write files
