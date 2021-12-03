@@ -22,7 +22,6 @@ dependencies:
 - bytestring
 - containers
 - cryptonite
-- curl
 - data-default-class
 - deepseq
 - digest

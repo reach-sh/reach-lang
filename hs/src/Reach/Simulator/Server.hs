@@ -38,7 +38,7 @@ type StateId = Int
 type ActionId = Int
 
 portNumber :: Int
-portNumber = 3000
+portNumber = 3001
 
 type Graph = M.Map StateId C.State
 

@@ -29,7 +29,6 @@ data LocalInfo = LocalInfo
 type ActorId = Int
 type PoolId = Integer
 type AccountId = Int
-type Locals = M.Map ActorId LocalInfo
 
 data Global = Global
   { e_record :: [Transmission]
@@ -42,6 +41,8 @@ data Global = Global
   , e_nmsgid :: PoolId
   , e_partacts :: M.Map Participant ActorId
   }
+
+type Locals = M.Map ActorId LocalInfo
 
 data Local = Local
   { e_locals :: Locals
