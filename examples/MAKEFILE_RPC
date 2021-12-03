@@ -13,11 +13,12 @@ PORT_RPC_EXPORTS     = 3106
 
 ROOT = ../..
 include $(ROOT)/DEPS
+include $(ROOT)/VERSION
 
 REACH  = $(ROOT)/reach
 BASE  ?= $(shell basename "$$(pwd)" | sed 's/^rpc-//')
 CNAME ?= reach-app-$(shell basename "$$(pwd)")
-CIMG  ?= reachsh/$(CNAME):latest
+CIMG  ?= reachsh/$(CNAME):$(VERSION)
 PROJ  ?= $(shell basename "$$(pwd)" | tr a-z A-Z | tr - _)
 RSHES ?= $(shell find ../$(BASE) -name \*.rsh -exec sh -c "echo {} | sed 's/\.\.\/$(BASE)\///'" \;)
 PORT   = $(shell ([ ! $(PORT_$(PROJ)) = '' ] && echo $(PORT_$(PROJ))) \
