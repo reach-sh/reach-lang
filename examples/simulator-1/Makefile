@@ -3,10 +3,11 @@ NODE = node
 
 .PHONY: build
 build:
-	$(REACH) compile --sim &
+	cd .
 
 .PHONY: run
 run:
+	$(REACH) compile --sim &
 	$(NODE) client.mjs
 
 .PHONY: clean

@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "node-fetch": "2.0"
+    "node-fetch": "2.0",
+    "wait-port": "0.2.9"
   }
 }
