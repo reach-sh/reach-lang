@@ -1,0 +1,30 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: while invariant before loop
+  at ./smtSortEq.rsh:17:27:invariant
+
+  // Violation Witness
+
+  const x/120 = <loop variable>;
+  //    ^ could = 2
+  //      from: ./smtSortEq.rsh:9:27:while
+  const balance(0)/123 = <loop variable>;
+  //    ^ could = 0
+  //      from: ./smtSortEq.rsh:9:27:while
+  const v149 = <map reduction>;
+  //    ^ could = 0
+  //      from: reach standard library:143:18:application
+
+  // Theorem Formalization
+
+  const v157 = (balance(0)/123 == 0) ? (v149 == x/120) : false;
+  //    ^ would be false
+  assert(v157);
+
+  Verifying when NO participants are honest
+  Verifying when ONLY "A" is honest
+  Verifying when ONLY "B" is honest
+Checked 29 theorems; 4 failures (and 3 omitted repeats) :'(

@@ -118,10 +118,7 @@ checkteal () {
 
 #exit 0
 
-jb
-ci ALGO mint-basic
-
-#c users/t.rsh
+c users/metaboy2.rsh
 exit 0
 
 # (cd hs && mk hs-test)

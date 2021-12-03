@@ -866,7 +866,8 @@ smtMapReviewRecordReduce at mri ans x z b a f = do
         -- the same. We know they are the same if the accumulators are the
         -- same, because the elements are definitely the same and the final
         -- value is the same as the accumulators
-        when ((==) (varType a) (varType smr_a)) $ do
+        let varTypeEq v0 v1 = ((==) (varType v0) (varType v1))
+        when ((varTypeEq b smr_b) && (varTypeEq a smr_a)) $ do
           (b_x, a_x, mkf_x) <- smtMapReduceApply at b a f
           (b_y, a_y, mkf_y) <- smtMapReduceApply at smr_b smr_a smr_f
           f_x <- mkf_x
