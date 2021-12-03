@@ -13,13 +13,6 @@ export const workshopInit = XXX('workshopInit');
 export const workshopWIP = XXX('workshopWIP');
 export const errver = XXX('errver');
 export const ref = XXX('ref');
-export const code = async ( rp, from = undefined, to = undefined ) => {
-  if ( from || to ) { console.log(['XXX', 'code', { from, to }]); }
-  const rpp = `${reachRoot}${rp}`;
-  const lang = ''; // XXX
-  const c = await fs.readFile(rpp, 'utf8');
-  return "```" + lang + "\n" + c + "\n```";
-};
 
 export const directive_note = (node) => {
   const data = node.data;

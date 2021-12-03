@@ -45,9 +45,17 @@
 
 (define (exexpand f)
   (match f
-    ['js-impl "tut-7/index.mjs"]
-    ['py-impl "tut-7-rpc/client-py/index.py"]
+    ['js-impl "rps-7-loops/index.mjs"]
+    ['py-impl "rps-7-rpc/client-py/index.py"]
     [(? string?) f]))
+
+(define (code! p #:from [from #f] #:to [to #f])
+  (d "```\n")
+  (d (format "load: ~a\n" p))
+  (cond
+    [(and from to)
+     (d (format "range: ~a-~a\n" from to))])
+  (d "```\n"))
 
 (define ego
   (match-lambda
@@ -161,13 +169,13 @@
     [(or
        `(reachex ,f 'only ,from ,to ,_)
        `(reachex #:mode ,_ ,f 'only ,from ,to ,_))
-      (d (format "@{code(\"/examples/~a\", ~a, ~a)}" (exexpand f) from to))]
+     (code! (format "/examples/~a" (exexpand f)) #:from from #:to to)]
     [`(reachex #:dir "rpc-client" py-impl 'only ,from ,to ,_)
-      (d (format "@{code(\"/rpc-client/py/src/reach_rpc/__init__.py\", ~a, ~a)}" from to))]
+      (code! "/rpc-client/py/src/reach_rpc/__init__.py" #:from from #:to to)]
     [(or
        `(reachex ,f)
        `(reachex #:mode ,_ ,f))
-      (d (format "@{code(\"/examples/~a\")}" (exexpand f)))]
+     (code! (format "/examples/~a" (exexpand f)))]
     [`reach-vers
      (d "@{VERSION}")]
     [`(error-version #:to ,t)

@@ -338,7 +338,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
       }
     }
 
-    const arr = code.textContent.trimEnd().split(/\r?\n/g);
+    { const arr = code.textContent.trimEnd().split(/\r?\n/g);
     if (arr.length > 0) {
       const line1 = arr[0].replace(/\s+/g, '');
       if (line1.slice(0, 5) == 'load:') {
@@ -352,12 +352,14 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
           }
         }
       }
-    }
+    } }
 
     // Get remote content if specified.
     if (spec.url) {
       code.textContent = await remoteGet(spec.url);
     }
+
+    code.textContent = code.textContent.trimEnd();
 
     // Highlight the content if specified.
     // https://github.com/shikijs/shiki/blob/main/docs/themes.md
