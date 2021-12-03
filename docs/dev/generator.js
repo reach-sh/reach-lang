@@ -22,7 +22,6 @@ import remarkDirective from 'remark-directive';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { JSDOM } from 'jsdom';
-import * as expanderCore from './expander.js';
 
 const INTERNAL = [ 'base.html', 'config.json', 'index.md' ];
 
@@ -34,6 +33,7 @@ const __filename = fileURLToPath(import.meta.url);
 const rootDir = path.dirname(__filename);
 const reachRoot = `${rootDir}/../../`;
 const cfgFile = "config.json";
+const repoBaseNice = "https://github.com/reach-sh/reach-lang/tree/master";
 const repoBase = "https://raw.githubusercontent.com/reach-sh/reach-lang/master";
 const repoSrcDir = "/docs/md/";
 const srcDir = normalizeDir(`${rootDir}/src`);
@@ -117,6 +117,52 @@ const copyFmToConfig = (configJson) => {
   }
 };
 
+const XXX = (name) => (...args) => {
+  const m = ['XXX', name, ...args];
+  console.log(m);
+  return JSON.stringify(m);
+};
+
+const seclink = XXX('seclink');
+const defn = XXX('defn');
+
+const workshopDeps = (pre) => {
+  if ( pre === undefined ) {
+    return `:::note\nThis workshop is independent of all others.\n:::\n`;
+  } else {
+    return `:::note\nThis workshop assumes that you have recently completed @{seclink(\"${pre}\")}.\n:::\n`;
+  }
+};
+
+const workshopInit = XXX('workshopInit');
+
+const workshopWIP = (dir) => {
+  const d = `examples/${dir}`;
+  const more = dir ? `If you'd like to see a draft version of our code, please visit [\`${d}\`](${repoBaseNice}/${d}).\n` : '';
+  return `:::note\nThis page is a placeholder for a future more detailed workshop.\nYou could try to implement it yourself though, given the sketch above!\n${more}:::\n`;
+};
+
+const errver = XXX('errver');
+const ref = XXX('ref');
+
+const directive_note = (node) => {
+  const data = node.data;
+  data.hName = "div";
+  data.hProperties = { class: "note" };
+}
+const directive_testQ = (node) => {
+  const data = node.data;
+  data.hName = "testQ";
+  console.log(['XXX', 'testQ']);
+}
+const directive_testA = (node) => {
+  const data = node.data;
+  data.hName = "testA";
+  console.log(['XXX', 'testA']);
+}
+
+const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, ref, directive_note, directive_testQ, directive_testA };
+
 const expanderDirective = () => (tree) => {
   visit(tree, (node) => {
     if (
@@ -126,8 +172,8 @@ const expanderDirective = () => (tree) => {
     ) {
       const data = node.data || (node.data = {});
       const k = `directive_${node.name}`;
-      if (k in expanderCore) {
-        expanderCore[k](node);
+      if (k in expanderEnv) {
+        expanderEnv[k](node);
       } else {
         console.log(['XXX expanderDirective', node.name]);
       }
@@ -136,7 +182,6 @@ const expanderDirective = () => (tree) => {
 }
 
 // Tools
-
 const writeFileMkdir = async (p, c) => {
   const dir = path.dirname(p);
   await fs.mkdir(dir, {recursive: true});
@@ -222,7 +267,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     pages: null,
   };
 
-  const expandEnv = { ...configJson, ...expanderCore };
+  const expandEnv = { ...configJson, ...expanderEnv };
   const expandKeys = Object.keys(expandEnv);
   const expandVals = Object.values(expandEnv);
   const evil = async (c) => {

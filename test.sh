@@ -118,6 +118,7 @@ checkteal () {
 
 #exit 0
 
+c users/enthuGuy3.rsh
 c users/enthuGuy2.rsh
 exit 0
 
