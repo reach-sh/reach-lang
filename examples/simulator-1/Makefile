@@ -7,7 +7,7 @@ build:
 
 .PHONY: run
 run:
-	REACH_DOCKER=0 $(REACH) compile --sim &
+	$(REACH) compile --sim &
 	$(NODE) client.mjs
 
 .PHONY: clean
