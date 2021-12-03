@@ -60,6 +60,18 @@
 <p>A <code>race</code> expression organizes a competition among several participants (each intent on accomplishing the same task), determines which participant wins the competition, and executes task for the winner:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">race</span><span style="color: #24292F">(Alice, Bob).</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(bet);</span></li></ol></pre>
 <h1 id="this">this</h1>
+<p>Inside a local step, <code>this</code> refers to the participant performing the step:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6E7781">// index.rsh</span></li><li value="2"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">commonInteract</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> { reportAddress: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([Address], Null) };</span></li><li value="3"><span style="color: #0550AE">S</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { </span></li><li value="4"><span style="color: #24292F">  interact.</span><span style="color: #8250DF">reportAddress</span><span style="color: #24292F">(</span><span style="color: #0550AE">this</span><span style="color: #24292F">); </span></li><li value="5"><span style="color: #24292F">  interact.</span><span style="color: #8250DF">reportAddress</span><span style="color: #24292F">(</span><span style="color: #8250DF">getAddress</span><span style="color: #24292F">());</span></li><li value="6"><span style="color: #24292F">});</span></li></ol></pre>
+<ul>
+  <li>Line 4: <code>reportAddress</code> passes the account address of Participant <code>S</code> to the frontend.</li>
+  <li>Line 5: <code>reportAddress</code> passes the account address of the contract to the frontend.</li>
+</ul>
+<p>Inside a consensus step, <code>this</code> refers to the address of the participant that performed the consensus transfer, especially useful when the consensus transfer was initiated by a race expression:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">race</span><span style="color: #24292F">(</span><span style="color: #0550AE">S</span><span style="color: #24292F">, </span><span style="color: #0550AE">B</span><span style="color: #24292F">).</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li><li value="2"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">winner</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">this</span><span style="color: #24292F">;</span></li></ol></pre>
+<ul>
+  <li>Line 1: <code>publish</code> transitions to a consensus step.</li>
+  <li>Line 2: <code>this</code> is the address of the <code>race</code> winner (Participant <code>S</code> or Participant <code>B</code>).</li>
+</ul>
 <h1 id="time-expressions">Time Expressions</h1>
 <h3 id="absolutesecs">absoluteSecs</h3>
 <h3 id="absolutetime">absoluteTime</h3>
