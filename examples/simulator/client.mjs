@@ -16,17 +16,13 @@ let getStatus = () => {
     .then(data => console.log(data));
 }
 
-// let getStateActions = (s) => {
-//   fetch(`${hostname}/states/${s}/actions`)
-//     .then(response => response.json())
-//     .then(data => console.log(data));
-// }
-//
-// let respondWithVal = (s,a,v) => {
-//   fetch(`${hostname}/states/${s}/actions/${a}/?data=${v}`)
-//     .then(response => response.json())
-//     .then(data => console.log(data));
-// }
+async function getStateActions(s) {
+  const r = await fetch(`${hostname}/states/${s}/actions`)
+    .then(response => response.json())
+    .then(data => data);
+  console.log(r)
+  return r
+}
 
 async function interact(method = 'GET', url = '', data = {}) {
   const response = await fetch(url, {
@@ -53,6 +49,13 @@ let load = () => {
 
 let init = () => {
   interact('POST', `${hostname}/init`, {})
+    .then(data => {
+      console.log(data);
+    });
+}
+
+let respondWithVal = (s,a,v,t) => {
+  interact('POST', `${hostname}/states/${s}/actions/${a}/?data=${v}&type=${t}`, {})
     .then(data => {
       console.log(data);
     });

@@ -4,7 +4,6 @@ module Reach.Simulator.Core where
 
 import Control.Monad.Reader
 import qualified Data.Map.Strict as M
-import qualified Data.Set as S
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
@@ -12,7 +11,6 @@ import Reach.Util
 import Data.Bits
 import Data.Aeson (FromJSON, ToJSON)
 import GHC.Generics
-import Data.Maybe (fromMaybe)
 
 type Participant = String
 
@@ -39,9 +37,10 @@ data Global = Global
   , e_linstate :: LinearState
   , e_nwtime :: Integer
   , e_nwsecs :: Integer
-  , e_nactid :: ActorId
+  , e_nactorid :: ActorId
   , e_naccid :: AccountId
   , e_nmsgid :: PoolId
+  , e_partacts :: M.Map Participant ActorId
   }
 
 data Local = Local
@@ -61,9 +60,10 @@ initGlobal = Global
   , e_linstate = mempty
   , e_nwtime = 0
   , e_nwsecs = 0
-  , e_nactid = 0
+  , e_nactorid = 0
   , e_naccid = 0
   , e_nmsgid = 0
+  , e_partacts = mempty
   }
 
 initLocal :: Local
@@ -82,7 +82,6 @@ data PartState
 initPartState :: PartState
 initPartState = PS_Done initState V_Null
 
--- Manual Monad
 newtype App a =
   App (State -> (State -> a -> PartState) -> PartState)
 
@@ -504,7 +503,7 @@ instance Interp DLExpr where
           return V_Null
         _ -> impossible "expression interpreter"
     -- TODO: new stuff
-    DLE_TimeOrder _at _assoc_maybe_arg_vars -> undefined
+    DLE_TimeOrder _at _assoc_maybe_arg_vars -> return V_Null
     DLE_GetContract _at -> undefined
     DLE_GetAddress _at -> undefined
     DLE_EmitLog at _str _maybe_str dlvar -> interp $ DL_Var at dlvar
@@ -658,27 +657,29 @@ instance Interp LLStep where
 -- evaluate a linear Reach program
 instance Interp LLProg where
   interp (LLProg _at _llo slparts _dli _dex _dvs _apis step) = do
-    registerParts $ S.toList $ sps_apis slparts
+    registerParts $ M.keys $ sps_ies slparts
     interp step
 
 registerParts :: [SLPart] -> App ()
 registerParts [] = return ()
 registerParts (p:ps) = do
   (g, l) <- getState
-  let pid = e_nactid g
+  let actorid = e_nactorid g
+  let pacts = e_partacts g
   let aid = e_naccid g
   let locals = e_locals l
+  let s = bunpack p
   let lcl = LocalInfo
         { l_acct = fromIntegral aid
-        , l_who = Just $ bunpack p
+        , l_who = Just $ s
         , l_store = mempty
         , l_init_val = V_Null
         }
-  let locals' = M.insert pid lcl locals
-  setGlobal $ g {e_nactid = pid + 1, e_naccid = aid + 1}
+  let locals' = M.insert actorid lcl locals
+  setGlobal $ g {e_nactorid = actorid + 1, e_naccid = aid + 1, e_partacts = M.insert s aid pacts}
   setLocal $ l {e_locals = locals'}
-
   registerParts ps
+
 
 while :: DLBlock -> LLConsensus -> App DLVal
 while bl cons = do
@@ -689,6 +690,3 @@ while bl cons = do
       _ <- interp cons
       while bl cons
     _ -> impossible "unexpected error"
-
-saferMapRef :: String -> Maybe b -> b
-saferMapRef s m = (fromMaybe (possible s) m)

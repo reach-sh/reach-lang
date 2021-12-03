@@ -113,7 +113,7 @@ unblockProg :: StateId -> ActionId -> C.DLVal -> WebM ()
 unblockProg sid aid v = do
   astks <- gets e_actors_states_ks
   actorId <- gets e_actorid
-  av_actions <- gets e_ids_actions
+  avActions <- gets e_ids_actions
   case M.lookup actorId astks of
     Nothing -> do
       possible "actor states not found"
@@ -122,35 +122,45 @@ unblockProg sid aid v = do
         Nothing -> do
           possible "previous state not found"
         Just (C.PS_Suspend _a (g,l) k) -> do
-          case M.lookup aid av_actions of
+          case M.lookup aid avActions of
             Just (C.A_ChangeActor actor_id) -> do
               let ps = k (g,l{C.e_curr_actorid = actor_id}) v
-              _ <- processNewState ps
-              return ()
-            -- TODO: handle other actions
-            _ -> do
+              processNewState ps
+            Just (C.A_Interact _at _slcxtframes _part _str _dltype _args) -> do
               let ps = k (g,l) v
-              _ <- processNewState ps
-              return ()
+              processNewState ps
+            Just (C.A_TieBreak _poolid _parts) -> do
+              let pacts = C.e_partacts g
+              case v of
+                C.V_Bytes s -> do
+                  case M.lookup s pacts of
+                    Nothing -> do
+                      possible $ "A_TieBreak: participant not found in " ++ show pacts
+                    Just actid -> do
+                      let ps = k (g,l) $ C.V_UInt $ fromIntegral actid
+                      processNewState ps
+                _ -> impossible "A_TieBreak: expected string value"
+            _ -> impossible "unhandled action type"
         Just (C.PS_Done _ _) -> do
           possible "previous state already terminated"
 
 allStates :: WebM [StateId]
 allStates = do
   a <- gets e_nsid
-  return [0..a]
+  return [0..(a-1)]
 
 getStatus :: WebM Status
 getStatus = do
   s <- gets e_status
   return s
 
-computeActions :: StateId -> WebM [ActionId]
+computeActions :: StateId -> WebM [C.Action]
 computeActions sid = do
   stacts <- gets e_states_actions
+  idacts <- gets e_ids_actions
   case M.lookup sid stacts of
     Nothing -> return []
-    Just acts -> return acts
+    Just acts -> return $ map (\x -> saferMapRef "computeActions" $ M.lookup x idacts) acts
 
 initProgSim :: LLProg -> WebM ()
 initProgSim ll = do
@@ -203,12 +213,19 @@ app p = do
     as <- webM $ computeActions s
     json $ as
 
-  post "/states/:s/actions/:a/?data=post_val" $ do
+  post "/states/:s/actions/:a/" $ do
     s <- param "s"
     a <- param "a"
-    v <- param "post_val"
-    webM $ unblockProg s a $ C.V_UInt v
-    return ()
+    t :: String <- param "type"
+    case t of
+      "String" -> do
+        v :: String <- param "data"
+        webM $ unblockProg s a $ C.V_Bytes v
+      "Number" -> do
+        v :: Integer <- param "data"
+        webM $ unblockProg s a $ C.V_UInt v
+      _ -> impossible "unsupported type"
+    json $ ("OK" :: String)
 
   get "/ping" $ do
     json $ ("Hello World" :: String)

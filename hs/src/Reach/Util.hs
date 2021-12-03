@@ -7,6 +7,7 @@ module Reach.Util
   , s2t
   , impossible
   , possible
+  , saferMapRef
   , trimQuotes
   , fromIntegerMay
   , maybeDie
@@ -35,6 +36,7 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Foldable (foldr')
 import Data.IORef (IORef, newIORef, readIORef)
 import qualified Data.Map as M
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -85,6 +87,9 @@ possible :: HasCallStack => String -> b
 possible msg =
   error $
     "The compiler has encountered an internal error:\n\n  " <> msg <> "\n\n"
+
+saferMapRef :: String -> Maybe b -> b
+saferMapRef s m = (fromMaybe (possible s) m)
 
 -- Note: drop 1 is safer than init/tail on empty strings
 trimQuotes :: String -> String
