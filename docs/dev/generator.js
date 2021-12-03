@@ -134,7 +134,24 @@ const workshopDeps = (pre) => {
   }
 };
 
-const workshopInit = XXX('workshopInit');
+const workshopInit = (which) => {
+  const s = [
+    `We assume that you'll go through this workshop in a directory named \`~/reach/${which}\`:`,
+    '```',
+    `$ mkdir -p ~/reach/${which} && cd ~/reach/${which}`,
+    '```',
+    `And that you have a copy of Reach [installed](##ref-install) in \`~/reach\` so you can write`,
+    '```',
+    `$ ../reach version`,
+    '```',
+    `And it will run Reach.`,
+    `You should start off by initializing your Reach program:`,
+    '```',
+    `$ ../reach init`,
+    '```',
+  ];
+  return s.join('\n');
+};
 
 const workshopWIP = (dir) => {
   const d = `examples/${dir}`;
