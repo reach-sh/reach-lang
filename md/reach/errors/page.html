@@ -126,7 +126,9 @@
 </p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">var</span><span style="color: #24292F"> rounds </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">0</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #8250DF">invariant</span><span style="color: #24292F">(</span><span style="color: #8250DF">balance</span><span style="color: #24292F">() </span><span style="color: #CF222E">==</span><span style="color: #24292F"> rounds);</span></li><li value="3"><span style="color: #CF222E">while</span><span style="color: #24292F"> (</span><span style="color: #0550AE">true</span><span style="color: #24292F">) {</span></li><li value="4"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="5"><span style="color: #24292F">  Alice.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(</span><span style="color: #0550AE">1</span><span style="color: #24292F">);</span></li><li value="6"><span style="color: #24292F">  rounds </span><span style="color: #CF222E">=</span><span style="color: #24292F"> rounds </span><span style="color: #CF222E">+</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li><li value="7"><span style="color: #24292F">  </span><span style="color: #CF222E">continue</span><span style="color: #24292F">;</span></li><li value="8"><span style="color: #24292F">}</span></li></ol></pre>
 <h2 id="re0006-re0006">{#RE0006} RE0006</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>This error indicates that <code>return</code> may not be used within the current statement block.</p>
 <h2 id="re0007-re0007">{#RE0007} RE0007</h2>
 <p>
@@ -336,7 +338,9 @@
 <p>You can fix this by breaking apart the declarations into two <code>const</code> statements:</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">y</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">2</span><span style="color: #24292F">;</span></li></ol></pre>
 <h2 id="re0023-re0023">{#RE0023} RE0023</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>This error indicates that there was an invalid declaration.</p>
 <h2 id="re0024-re0024">{#RE0024} RE0024</h2>
 <p>
@@ -545,7 +549,9 @@
 <p>or by binding all the exports to an identifier:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> </span><span style="color: #0550AE">*</span><span style="color: #24292F"> </span><span style="color: #CF222E">as</span><span style="color: #24292F"> lib </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'sample_lib.rsh'</span><span style="color: #24292F">;</span></li></ol></pre>
 <h2 id="re0047-re0047">{#RE0047} RE0047</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>
   This error indicates that there was a <code>return</code> statement
   at the top level.
@@ -572,7 +578,9 @@
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.x);</span></li><li value="3"><span style="color: #24292F">});</span></li><li value="4"><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(x);</span></li><li value="5"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">o</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {</span></li><li value="6"><span style="color: #24292F">  [x]: </span><span style="color: #0550AE">4</span><span style="color: #24292F">,</span></li><li value="7"><span style="color: #24292F">};</span></li></ol></pre>
 <p>You can fix this by using a static string as the key.</p>
 <h2 id="re0050-re0050">{#RE0050} RE0050</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>
   This error indicates an <code>Object</code> has an incorrect number of values
   associated with a field.
@@ -626,32 +634,42 @@
   and you can fix this issue by deleting them.
 </p>
 <h2 id="re0058-re0058">{#RE0058} RE0058</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>
   This error indicates that you tried to use the <code>publish</code> keyword twice
   in a publication.
 </p>
 <h2 id="re0059-re0059">{#RE0059} RE0059</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>
   This error indicates that there is a function at the top level without a name.
   You can fix this by naming your function.
 </p>
 <h2 id="re0060-re0060">{#RE0060} RE0060</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>
   This error indicates that there is an illegal <code>while</code> loop <code>invariant</code>.
   You can fix this issue by providing only one expression to <code>invariant</code>.
 </p>
 <h2 id="re0061-re0061">{#RE0061} RE0061</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>
   This error indicates that <code>Participant.only</code> was not supplied a single thunk
   as its argument.
 </p>
 <p>You can fix this by providing the expected value to the function.</p>
 <h2 id="re0062-re0062">{#RE0062} RE0062</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>
   This error indicates that <code>each</code> was not given a <code>Tuple</code> of <code>Participant</code>s
   as its first argument.
@@ -812,7 +830,9 @@
 <p>You can fix this code by wrapping the <code>exit</code> in a conditional:</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #8250DF">f</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { </span><span style="color: #8250DF">exit</span><span style="color: #24292F">(); };</span></li><li value="2"><span style="color: #CF222E">if</span><span style="color: #24292F"> (</span><span style="color: #6E7781">/* ... */</span><span style="color: #24292F">) {</span></li><li value="3"><span style="color: #24292F">  </span><span style="color: #8250DF">f</span><span style="color: #24292F">();</span></li><li value="4"><span style="color: #24292F">}</span></li><li value="5"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li><li value="6"><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
 <h2 id="re0079-re0079">{#RE0079} RE0079</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>
   This error indicates that a statement is being used in place of an expression.
   Refer to the documentation for the statement you are attempting to use for more
@@ -900,7 +920,9 @@
 </p>
 <p>For examples of this error and how to fix it, see ["XXX","seclink","RE0012"].</p>
 <h2 id="re0087-re0087">{#RE0087} RE0087</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>
   This error indicates that you are attempting to apply a non-function value as if it were a function. This
   issue is most likely caused by a typo with an identifier.
@@ -1094,7 +1116,9 @@
 </p>
 <p>You can fix this error by renaming the duplicate <code>View</code>s, ensuring that every name is unique.</p>
 <h2 id="re0107-re0107">{#RE0107} RE0107</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>
   This error indicates that the value of a <code>View</code> cannot be exposed. This would
   only occur if the value cannot be represented at runtime.
@@ -1315,11 +1339,15 @@
 <p>This error indicates that there is a <a href="https://en.wikipedia.org/wiki/Circular_dependency">circular dependency</a> in the <code>import</code>s of your application.</p>
 <p>You can fix this by refactoring your code to remove the cyclic imports.</p>
 <h2 id="rp0001-rp0001">{#RP0001} RP0001</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>This error indicates that you have specified a function without an argument list.</p>
 <p>You can fix this by adding an argument list.</p>
 <h2 id="rp0002-rp0002">{#RP0002} RP0002</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>
   This error indicates that an identifier was expected during parsing, but an expression
   was received.
@@ -1344,7 +1372,9 @@
   on the logic of your program.
 </p>
 <h2 id="rp0005-rp0005">{#RP0005} RP0005</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>
   This error indicates that an unsupported literal was encountered.
   Reach is a subset of JavaScript and does not support all of the literals that
@@ -1383,7 +1413,9 @@
 </p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0A3069">"reach 0.1"</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #CF222E">import</span><span style="color: #24292F"> </span><span style="color: #0A3069">"./a.rsh"</span><span style="color: #24292F">;</span></li></ol></pre>
 <h2 id="rp0009-rp0009">{#RP0009} RP0009</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>This error indicates that the Reach file could not be parsed as a module.</p>
 <h2 id="rp0010-rp0010">{#RP0010} RP0010</h2>
 <p>
@@ -1398,7 +1430,9 @@
 <p>You can fix this by providing a call-like expression to the function:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">unknowable</span><span style="color: #24292F">(</span><span style="color: #0550AE">A</span><span style="color: #24292F">, </span><span style="color: #8250DF">B</span><span style="color: #24292F">(_x));</span></li></ol></pre>
 <h2 id="rp0011-rp0011">{#RP0011} RP0011</h2>
-<p>["XXX","errver","v0.1"]</p>
+<div class="note">
+  <p>This error will not happen after version <code>v0.1</code>.</p>
+</div>
 <p>This error indicates that Reach expected to parse an identifier, but none was given.</p>
 <p>You can fix this error by adding an identifier name to the erroneous location.</p>
 <h2 id="rx0000-rx0000">{#RX0000} RX0000</h2>

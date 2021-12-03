@@ -19,10 +19,8 @@
 </p>
 <hr>
 <p>We begin by comparing the necessary imports and program body:</p>
-<p>
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7/index.mjs'
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7-rpc/client-py/index.py'
-</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">import { loadStdlib } from '@reach-sh/stdlib';</li><li value="2">import * as backend from './build/index.main.mjs';</li><li value="3">const stdlib = loadStdlib(process.env);</li><li value="4"></li><li value="5">(async () =&gt; {</li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"># flake8: noqa</li><li value="2"></li><li value="3">import random</li><li value="4">from threading import Thread</li><li value="5">from reach_rpc import mk_rpc</li><li value="6"></li><li value="7"></li><li value="8">def main():</li><li value="9">    rpc, rpc_callbacks = mk_rpc()</li><li value="10"></li></ol></pre>
 <p>
   Rather than importing <code>loadStdlib</code> and <code>backend</code> as with the
   JavaScript version, the Python frontend instead plucks <code>mk_rpc</code> from its
@@ -48,10 +46,8 @@
   Next, we define our Alice and Bob accounts and pre-fund them each with a
   starting balance of <code>10</code>.
 </p>
-<p>
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7/index.mjs'
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7-rpc/client-py/index.py'
-</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="6">  const startingBalance = stdlib.parseCurrency(100);</li><li value="7">  const accAlice = await stdlib.newTestAccount(startingBalance);</li><li value="8">  const accBob = await stdlib.newTestAccount(startingBalance);</li><li value="9"></li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="11">    starting_balance = rpc('/stdlib/parseCurrency', 100)</li><li value="12">    acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)</li><li value="13">    acc_bob          = rpc('/stdlib/newTestAccount', starting_balance)</li><li value="14"></li></ol></pre>
 <p>
   Translating code which uses the
   <a href="##ref-frontends-js">JavaScript frontend support library</a> to its
@@ -64,16 +60,12 @@
   Now we define two helper functions and use them to query Alice and Bob's
   beginning balances:
 </p>
-<p>
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7/index.mjs'
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7-rpc/client-py/index.py'
-</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="10">  const fmt = (x) =&gt; stdlib.formatCurrency(x, 4);</li><li value="11">  const getBalance = async (who) =&gt; fmt(await stdlib.balanceOf(who));</li><li value="12">  const beforeAlice = await getBalance(accAlice);</li><li value="13">  const beforeBob = await getBalance(accBob);</li><li value="14"></li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="15">    def fmt(x):</li><li value="16">        return rpc('/stdlib/formatCurrency', x, 4)</li><li value="17"></li><li value="18">    def get_balance(w):</li><li value="19">        return fmt(rpc('/stdlib/balanceOf', w))</li><li value="20"></li><li value="21">    before_alice = get_balance(acc_alice)</li><li value="22">    before_bob   = get_balance(acc_bob)</li><li value="23"></li></ol></pre>
 <hr>
 <p>Deploying and attaching to contracts works slightly differently over RPC:</p>
-<p>
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7/index.mjs'
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7-rpc/client-py/index.py'
-</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="15">  const ctcAlice = accAlice.contract(backend);</li><li value="16">  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());</li><li value="17"></li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="24">    ctc_alice    = rpc('/acc/deploy', acc_alice)</li><li value="25"></li></ol></pre>
 <p>
   As previously mentioned, it is the responsibility of the
   <a href="##ref-backends-rpc">RPC Server</a> (rather than that of the frontend
@@ -90,16 +82,12 @@
   <code>HAND</code> and <code>OUTCOME</code> only differ syntactically from their JavaScript
   equivalents:
 </p>
-<p>
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7/index.mjs'
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7-rpc/client-py/index.py'
-</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="18">  const HAND = ['Rock', 'Paper', 'Scissors'];</li><li value="19">  const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];</li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="26">    HAND         = ['Rock', 'Paper', 'Scissors']</li><li value="27">    OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']</li><li value="28"></li></ol></pre>
 <hr>
 <p>Even participant interact interface definitions remain largely the same:</p>
-<p>
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7/index.mjs'
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7-rpc/client-py/index.py'
-</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="20">  const Player = (Who) =&gt; ({</li><li value="21">    ...stdlib.hasRandom,</li><li value="22">    getHand: async () =&gt; { // &lt;-- async now</li><li value="23">      const hand = Math.floor(Math.random() * 3);</li><li value="24">      console.log(`${Who} played ${HAND[hand]}`);</li><li value="25">      if ( Math.random() &lt;= 0.01 ) {</li><li value="26">        for ( let i = 0; i &lt; 10; i++ ) {</li><li value="27">          console.log(`  ${Who} takes their sweet time sending it back...`);</li><li value="28">          await stdlib.wait(1);</li><li value="29">        }</li><li value="30">      }</li><li value="31">      return hand;</li><li value="32">    },</li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="29">    def player(who):</li><li value="30">        def getHand():</li><li value="31">            hand = random.randint(0, 2)</li><li value="32">            print('%s played %s' % (who, HAND[hand]))</li><li value="33">            return hand</li><li value="34"></li></ol></pre>
 <p>
   Here, both the JavaScript and Python frontends begin declaring a
   reusable "player constructor".
@@ -127,16 +115,12 @@
   <code>informTimeout</code> requires no subsequent backend interaction and is
   accordingly easily to implement in either language:
 </p>
-<p>
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7/index.mjs'
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7-rpc/client-py/index.py'
-</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="36">    informTimeout: () =&gt; {</li><li value="37">      console.log(`${Who} observed a timeout`);</li><li value="38">    },</li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="35">        def informTimeout():</li><li value="36">            print('%s observed a timeout' % who)</li><li value="37"></li></ol></pre>
 <hr>
 <p><a name="py-return"></a>The same is true of <code>seeOutcome</code>:</p>
-<p>
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7/index.mjs'
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7-rpc/client-py/index.py'
-</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="33">    seeOutcome: (outcome) =&gt; {</li><li value="34">      console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);</li><li value="35">    },</li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="38">        def seeOutcome(n):</li><li value="39">            print('%s saw outcome %s'</li><li value="40">                  % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))</li><li value="41"></li><li value="42">        return {'stdlib.hasRandom': True,</li><li value="43">                'getHand':          getHand,</li><li value="44">                'informTimeout':    informTimeout,</li><li value="45">                'seeOutcome':       seeOutcome,</li><li value="46">                }</li><li value="47"></li></ol></pre>
 <p>
   At the end of the Python code we return a <code>dict</code> that represents those
   fields which are common to both Alice and Bob's
@@ -152,10 +136,8 @@
   Finally, we proceed to the most interesting part of the program and use the
   code we have built up thus far to actually play a game of <em>Rock, Paper, Scissors!</em>:
 </p>
-<p>
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7/index.mjs'
-  Error: ENOENT: no such file or directory, open '/proj/docs/dev/../..//examples/tut-7-rpc/client-py/index.py'
-</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="41">  await Promise.all([</li><li value="42">    ctcAlice.p.Alice({</li><li value="43">      ...Player('Alice'),</li><li value="44">      wager: stdlib.parseCurrency(5),</li><li value="45">      deadline: 10,</li><li value="46">    }),</li><li value="47">    ctcBob.p.Bob({</li><li value="48">      ...Player('Bob'),</li><li value="49">      acceptWager: (amt) =&gt; {</li><li value="50">        console.log(`Bob accepts the wager of ${fmt(amt)}.`);</li><li value="51">      },</li><li value="52">    }),</li><li value="53">  ]);</li><li value="54"></li><li value="55">  const afterAlice = await getBalance(accAlice);</li><li value="56">  const afterBob = await getBalance(accBob);</li><li value="57"></li><li value="58">  console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);</li><li value="59">  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);</li><li value="60"></li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="48">    def play_alice():</li><li value="49">        rpc_callbacks(</li><li value="50">            '/backend/Alice',</li><li value="51">            ctc_alice,</li><li value="52">            dict(wager=rpc('/stdlib/parseCurrency', 5), deadline=10, **player('Alice')))</li><li value="53"></li><li value="54">    alice = Thread(target=play_alice)</li><li value="55">    alice.start()</li><li value="56"></li><li value="57">    def play_bob():</li><li value="58">        def acceptWager(amt):</li><li value="59">            print('Bob accepts the wager of %s' % fmt(amt))</li><li value="60"></li><li value="61">        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))</li><li value="62">        rpc_callbacks(</li><li value="63">            '/backend/Bob',</li><li value="64">            ctc_bob,</li><li value="65">            dict(acceptWager=acceptWager, **player('Bob')))</li><li value="66">        rpc('/forget/ctc', ctc_bob)</li><li value="67"></li><li value="68">    bob = Thread(target=play_bob)</li><li value="69">    bob.start()</li><li value="70"></li><li value="71">    alice.join()</li><li value="72">    bob.join()</li><li value="73"></li><li value="74">    after_alice = get_balance(acc_alice)</li><li value="75">    after_bob   = get_balance(acc_bob)</li><li value="76"></li><li value="77">    print('Alice went from %s to %s' % (before_alice, after_alice))</li><li value="78">    print('  Bob went from %s to %s' % (before_bob,   after_bob))</li><li value="79"></li><li value="80">    rpc('/forget/acc', acc_alice, acc_bob)</li><li value="81">    rpc('/forget/ctc', ctc_alice)</li><li value="82"></li><li value="83"></li><li value="84">if __name__ == '__main__':</li><li value="85">    main()</li></ol></pre>
 <p>
   In the Python version we create a function called <code>play_alice</code> and spawn
   it as a concurrent thread, which begins running in the background on line 56.

@@ -3,10 +3,18 @@
   However, unlike in ["XXX","seclink","workshop-hash-lock"], we will use a technique that is safe against malicious miners.
   One deployment of a decentralized application like this is as a "gift card" where a funder provides a fixed amount of currency to another without knowing their identity.
 </p>
+<div class="note">
+  <p>This workshop assumes that you have recently completed ["XXX","seclink","workshop-hash-lock"].</p>
+</div>
+<p>We assume that you'll go through this workshop in a directory named <code>~/reach/workshop-relay</code>:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ mkdir -p ~/reach/workshop-relay &amp;&amp; cd ~/reach/workshop-relay</li></ol></pre>
+<p>And that you have a copy of Reach <a href="##ref-install">installed</a> in <code>~/reach</code> so you can write</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ ../reach version</li></ol></pre>
 <p>
-  ["XXX","workshopDeps","workshop-hash-lock"]
-  ["XXX","workshopInit","workshop-relay"]
+  And it will run Reach.
+  You should start off by initializing your Reach program:
 </p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ ../reach init</li></ol></pre>
 <h2 id="workshop-relay-pr-problem-analysis">{#workshop-relay-pr} Problem Analysis</h2>
 <p>For this workshop, we'll provide some constraints on your solution and problem analysis, since we'd like you to explore writing a Reach program with a specific design.</p>
 <p>The overall purpose of this application is so that:</p>
@@ -65,7 +73,7 @@
   Let's compare notes again.
   Here's what we wrote in our program:
 </p>
-<pre class="snippet numbered"><ol class="snippet"><li value="1">'reach 0.1';</li><li value="2">'use strict';</li><li value="3"></li><li value="4">export const main = Reach.App(</li><li value="5">  {},</li><li value="6">  [Participant('Alice', { amt : UInt,</li><li value="7">               getRelay: Fun([], Address) }),</li><li value="8">   Participant('Relay', { getBob: Fun([], Address) }) ],</li><li value="9">  (Alice, Relay) =&gt; {</li><li value="10">    Alice.only(() =&gt; {</li><li value="11">      const [ amt, relay ] =</li><li value="12">            declassify([ interact.amt,</li><li value="13">                         interact.getRelay()]); });</li><li value="14">    Alice.publish(amt, relay)</li><li value="15">      .pay(amt);</li><li value="16">    Relay.set(relay);</li><li value="17">    commit();</li><li value="18"></li><li value="19">    Relay.only(() =&gt; {</li><li value="20">      const bob = declassify(interact.getBob()); });</li><li value="21">    Relay.publish(bob);</li><li value="22">    transfer(amt).to(bob);</li><li value="23">    commit();</li><li value="24"></li><li value="25">    exit(); } );</li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="6">  [Participant('Alice', { amt : UInt,</li><li value="7">               getRelay: Fun([], Address) }),</li><li value="8">   Participant('Relay', { getBob: Fun([], Address) }) ],</li></ol></pre>
 <p>
   We chose to represent the amount as a <code>UInt</code> field, which should be unsurprising.
   We then have two functions that take no arguments and return an <code>Address</code> which respectively return the Relay identity and the Bob identity.

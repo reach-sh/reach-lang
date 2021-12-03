@@ -2,10 +2,18 @@
   In this workshop, we'll design an application that allows a payer to lock funds with a secret password, independent from their consensus network identity, which can be drawn by anyone possessing the secret password.
   This is a useful way for a payer to show that they have funds and have committed to disbursing them, without deciding beforehand who they are paying.
 </p>
+<div class="note">
+  <p>This workshop is independent of all others.</p>
+</div>
+<p>We assume that you'll go through this workshop in a directory named <code>~/reach/workshop-hash-lock</code>:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ mkdir -p ~/reach/workshop-hash-lock &amp;&amp; cd ~/reach/workshop-hash-lock</li></ol></pre>
+<p>And that you have a copy of Reach <a href="##ref-install">installed</a> in <code>~/reach</code> so you can write</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ ../reach version</li></ol></pre>
 <p>
-  ["XXX","workshopDeps"]
-  ["XXX","workshopInit","workshop-hash-lock"]
+  And it will run Reach.
+  You should start off by initializing your Reach program:
 </p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ ../reach init</li></ol></pre>
 <h2 id="workshop-hash-lock-pr-problem-analysis">{#workshop-hash-lock-pr} Problem Analysis</h2>
 <p>
   The first step in any program design is to perform problem analysis and determine what information is relevant to the problem.

@@ -1,0 +1,754 @@
+<p>This page helps you compare rendered html to source markdown. To view the Github Flavored Markdown (GFM) source file for this page, click the pencil icon above which opens a new browser tab. Then, on the new tab, click the "Edit this file" pencil icon. Now, you can compare what you see on this page to what the page author wrote in the source markdown.</p>
+<h1 id="code-snippets">Code Snippets</h1>
+<p>Code snippets have the following boolean characteristics:</p>
+<ul>
+  <li>Numbered (Num).</li>
+  <li>Highlighted (HL) by language.</li>
+  <li>Loaded from some other file.</li>
+  <li>Ranged which applies only to loaded snippets.</li>
+</ul>
+<p>Here are the possiblities:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th align="center">Highlighted</th>
+      <th align="center">Numbered</th>
+      <th align="center">Loaded</th>
+      <th align="center">Ranged</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>HL Num Loaded Ranged</td>
+      <td align="center">✓</td>
+      <td align="center">✓</td>
+      <td align="center">✓</td>
+      <td align="center">✓</td>
+    </tr>
+    <tr>
+      <td>HL Num Loaded</td>
+      <td align="center">✓</td>
+      <td align="center">✓</td>
+      <td align="center">✓</td>
+      <td align="center">&nbsp;</td>
+    </tr>
+    <tr>
+      <td>HL Num</td>
+      <td align="center">✓</td>
+      <td align="center">✓</td>
+      <td align="center">&nbsp;</td>
+      <td align="center">&nbsp;</td>
+    </tr>
+    <tr>
+      <td>HL Loaded Ranged</td>
+      <td align="center">✓</td>
+      <td align="center">&nbsp;</td>
+      <td align="center">✓</td>
+      <td align="center">✓</td>
+    </tr>
+    <tr>
+      <td>HL Loaded</td>
+      <td align="center">✓</td>
+      <td align="center">&nbsp;</td>
+      <td align="center">✓</td>
+      <td align="center">&nbsp;</td>
+    </tr>
+    <tr>
+      <td>HL</td>
+      <td align="center">✓</td>
+      <td align="center">&nbsp;</td>
+      <td align="center">&nbsp;</td>
+      <td align="center">&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Num Loaded Ranged</td>
+      <td align="center">&nbsp;</td>
+      <td align="center">✓</td>
+      <td align="center">✓</td>
+      <td align="center">✓</td>
+    </tr>
+    <tr>
+      <td>Num Loaded</td>
+      <td align="center">&nbsp;</td>
+      <td align="center">✓</td>
+      <td align="center">✓</td>
+      <td align="center">&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Num</td>
+      <td align="center">&nbsp;</td>
+      <td align="center">✓</td>
+      <td align="center">&nbsp;</td>
+      <td align="center">&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Loaded Ranged</td>
+      <td align="center">&nbsp;</td>
+      <td align="center">&nbsp;</td>
+      <td align="center">✓</td>
+      <td align="center">✓</td>
+    </tr>
+    <tr>
+      <td>Loaded</td>
+      <td align="center">&nbsp;</td>
+      <td align="center">&nbsp;</td>
+      <td align="center">✓</td>
+      <td align="center">&nbsp;</td>
+    </tr>
+    <tr>
+      <td>Simple</td>
+      <td align="center">&nbsp;</td>
+      <td align="center">&nbsp;</td>
+      <td align="center">&nbsp;</td>
+      <td align="center"></td>
+    </tr>
+  </tbody>
+</table>
+<h2 id="hl-num-loaded-ranged">HL Num Loaded Ranged</h2>
+<pre class="snippet numbered"><ol class="snippet"><li value="3"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">Player</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {</span></li><li value="4"><span style="color: #24292F">  getHand: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([], UInt),</span></li><li value="5"><span style="color: #24292F">  seeOutcome: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Null),</span></li><li value="6"><span style="color: #24292F">};</span></li></ol></pre>
+<h2 id="hl-num-loaded">HL Num Loaded</h2>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0A3069">'reach 0.1'</span><span style="color: #24292F">;</span></li><li value="2"></li><li value="3"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">Player</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {</span></li><li value="4"><span style="color: #24292F">  getHand: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([], UInt),</span></li><li value="5"><span style="color: #24292F">  seeOutcome: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Null),</span></li><li value="6"><span style="color: #24292F">};</span></li><li value="7"></li><li value="8"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">main</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Reach.</span><span style="color: #8250DF">App</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="9"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">Alice</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Alice'</span><span style="color: #24292F">, {</span></li><li value="10"><span style="color: #24292F">    </span><span style="color: #CF222E">...</span><span style="color: #24292F">Player,</span></li><li value="11"><span style="color: #24292F">  });</span></li><li value="12"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">Bob</span><span style="color: #24292F">   </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Bob'</span><span style="color: #24292F">, {</span></li><li value="13"><span style="color: #24292F">    </span><span style="color: #CF222E">...</span><span style="color: #24292F">Player,</span></li><li value="14"><span style="color: #24292F">  });</span></li><li value="15"><span style="color: #24292F">  </span><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></li><li value="16"></li><li value="17"><span style="color: #24292F">  Alice.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="18"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">handAlice</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.</span><span style="color: #8250DF">getHand</span><span style="color: #24292F">());</span></li><li value="19"><span style="color: #24292F">  });</span></li><li value="20"><span style="color: #24292F">  Alice.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(handAlice);</span></li><li value="21"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="22"></li><li value="23"><span style="color: #24292F">  Bob.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="24"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">handBob</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.</span><span style="color: #8250DF">getHand</span><span style="color: #24292F">());</span></li><li value="25"><span style="color: #24292F">  });</span></li><li value="26"><span style="color: #24292F">  Bob.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(handBob);</span></li><li value="27"></li><li value="28"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">outcome</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> (handAlice </span><span style="color: #CF222E">+</span><span style="color: #24292F"> (</span><span style="color: #0550AE">4</span><span style="color: #24292F"> </span><span style="color: #CF222E">-</span><span style="color: #24292F"> handBob)) </span><span style="color: #CF222E">%</span><span style="color: #24292F"> </span><span style="color: #0550AE">3</span><span style="color: #24292F">;</span></li><li value="29"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="30"></li><li value="31"><span style="color: #24292F">  </span><span style="color: #8250DF">each</span><span style="color: #24292F">([Alice, Bob], () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="32"><span style="color: #24292F">    interact.</span><span style="color: #8250DF">seeOutcome</span><span style="color: #24292F">(outcome);</span></li><li value="33"><span style="color: #24292F">  });</span></li><li value="34"><span style="color: #24292F">});</span></li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> React </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'react'</span><span style="color: #24292F">;</span></li><li value="2"></li><li value="3"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">exports</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {};</span></li><li value="4"></li><li value="5"><span style="color: #0550AE">exports</span><span style="color: #24292F">.Wrapper </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">class</span><span style="color: #24292F"> </span><span style="color: #CF222E">extends</span><span style="color: #24292F"> </span><span style="color: #953800">React</span><span style="color: #24292F">.</span><span style="color: #0550AE">Component</span><span style="color: #24292F"> {</span></li><li value="6"><span style="color: #24292F">  </span><span style="color: #8250DF">render</span><span style="color: #24292F">() {</span></li><li value="7"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> {</span><span style="color: #0550AE">content</span><span style="color: #24292F">} </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">this</span><span style="color: #24292F">.props;</span></li><li value="8"><span style="color: #24292F">    </span><span style="color: #CF222E">return</span><span style="color: #24292F"> (</span></li><li value="9"><span style="color: #24292F">      &lt;</span><span style="color: #116329">div</span><span style="color: #24292F"> </span><span style="color: #0550AE">className</span><span style="color: #CF222E">=</span><span style="color: #0A3069">"App"</span><span style="color: #24292F">&gt;</span></li><li value="10"><span style="color: #24292F">        &lt;</span><span style="color: #116329">header</span><span style="color: #24292F"> </span><span style="color: #0550AE">className</span><span style="color: #CF222E">=</span><span style="color: #0A3069">"App-header"</span><span style="color: #24292F"> </span><span style="color: #0550AE">id</span><span style="color: #CF222E">=</span><span style="color: #0A3069">"root"</span><span style="color: #24292F">&gt;</span></li><li value="11"><span style="color: #24292F">          &lt;</span><span style="color: #116329">h1</span><span style="color: #24292F">&gt;Rock, Paper, Scissors&lt;/</span><span style="color: #116329">h1</span><span style="color: #24292F">&gt;</span></li><li value="12"><span style="color: #24292F">          {content}</span></li><li value="13"><span style="color: #24292F">        &lt;/</span><span style="color: #116329">header</span><span style="color: #24292F">&gt;</span></li><li value="14"><span style="color: #24292F">      &lt;/</span><span style="color: #116329">div</span><span style="color: #24292F">&gt;</span></li><li value="15"><span style="color: #24292F">    );</span></li><li value="16"><span style="color: #24292F">  }</span></li><li value="17"><span style="color: #24292F">}</span></li><li value="18"></li><li value="19"><span style="color: #0550AE">exports</span><span style="color: #24292F">.ConnectAccount </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">class</span><span style="color: #24292F"> </span><span style="color: #CF222E">extends</span><span style="color: #24292F"> </span><span style="color: #953800">React</span><span style="color: #24292F">.</span><span style="color: #0550AE">Component</span><span style="color: #24292F"> {</span></li><li value="20"><span style="color: #24292F">  </span><span style="color: #8250DF">render</span><span style="color: #24292F">() {</span></li><li value="21"><span style="color: #24292F">    </span><span style="color: #CF222E">return</span><span style="color: #24292F"> (</span></li><li value="22"><span style="color: #24292F">      &lt;</span><span style="color: #116329">div</span><span style="color: #24292F">&gt;</span></li><li value="23"><span style="color: #24292F">        Please wait while we connect to your account.</span></li><li value="24"><span style="color: #24292F">        If this takes more than a few seconds, there may be something wrong.</span></li><li value="25"><span style="color: #24292F">      &lt;/</span><span style="color: #116329">div</span><span style="color: #24292F">&gt;</span></li><li value="26"><span style="color: #24292F">    )</span></li><li value="27"><span style="color: #24292F">  }</span></li><li value="28"><span style="color: #24292F">}</span></li><li value="29"></li><li value="30"><span style="color: #0550AE">exports</span><span style="color: #24292F">.FundAccount </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">class</span><span style="color: #24292F"> </span><span style="color: #CF222E">extends</span><span style="color: #24292F"> </span><span style="color: #953800">React</span><span style="color: #24292F">.</span><span style="color: #0550AE">Component</span><span style="color: #24292F"> {</span></li><li value="31"><span style="color: #24292F">  </span><span style="color: #8250DF">render</span><span style="color: #24292F">() {</span></li><li value="32"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> {</span><span style="color: #0550AE">bal</span><span style="color: #24292F">, </span><span style="color: #0550AE">standardUnit</span><span style="color: #24292F">, </span><span style="color: #0550AE">defaultFundAmt</span><span style="color: #24292F">, </span><span style="color: #0550AE">parent</span><span style="color: #24292F">} </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">this</span><span style="color: #24292F">.props;</span></li><li value="33"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">amt</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> (</span><span style="color: #0550AE">this</span><span style="color: #24292F">.state </span><span style="color: #CF222E">||</span><span style="color: #24292F"> {}).amt </span><span style="color: #CF222E">||</span><span style="color: #24292F"> defaultFundAmt;</span></li><li value="34"><span style="color: #24292F">    </span><span style="color: #CF222E">return</span><span style="color: #24292F"> (</span></li><li value="35"><span style="color: #24292F">      &lt;</span><span style="color: #116329">div</span><span style="color: #24292F">&gt;</span></li><li value="36"><span style="color: #24292F">        &lt;</span><span style="color: #116329">h2</span><span style="color: #24292F">&gt;Fund account&lt;/</span><span style="color: #116329">h2</span><span style="color: #24292F">&gt;</span></li><li value="37"><span style="color: #24292F">        &lt;</span><span style="color: #116329">br</span><span style="color: #24292F"> /&gt;</span></li><li value="38"><span style="color: #24292F">        Balance: {bal} {standardUnit}</span></li><li value="39"><span style="color: #24292F">        &lt;</span><span style="color: #116329">hr</span><span style="color: #24292F"> /&gt;</span></li><li value="40"><span style="color: #24292F">        Would you like to fund your account with additional {standardUnit}?</span></li><li value="41"><span style="color: #24292F">        &lt;</span><span style="color: #116329">br</span><span style="color: #24292F"> /&gt;</span></li><li value="42"><span style="color: #24292F">        (This only works on certain devnets)</span></li><li value="43"><span style="color: #24292F">        &lt;</span><span style="color: #116329">br</span><span style="color: #24292F"> /&gt;</span></li><li value="44"><span style="color: #24292F">        &lt;</span><span style="color: #116329">input</span></li><li value="45"><span style="color: #24292F">          </span><span style="color: #0550AE">type</span><span style="color: #CF222E">=</span><span style="color: #0A3069">'number'</span></li><li value="46"><span style="color: #24292F">          </span><span style="color: #0550AE">placeholder</span><span style="color: #CF222E">=</span><span style="color: #24292F">{defaultFundAmt}</span></li><li value="47"><span style="color: #24292F">          </span><span style="color: #0550AE">onChange</span><span style="color: #CF222E">=</span><span style="color: #24292F">{(</span><span style="color: #953800">e</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">this</span><span style="color: #24292F">.</span><span style="color: #8250DF">setState</span><span style="color: #24292F">({amt: e.currentTarget.value})}</span></li><li value="48"><span style="color: #24292F">        /&gt;</span></li><li value="49"><span style="color: #24292F">        &lt;</span><span style="color: #116329">button</span><span style="color: #24292F"> </span><span style="color: #0550AE">onClick</span><span style="color: #CF222E">=</span><span style="color: #24292F">{() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> parent.</span><span style="color: #8250DF">fundAccount</span><span style="color: #24292F">(amt)}&gt;Fund Account&lt;/</span><span style="color: #116329">button</span><span style="color: #24292F">&gt;</span></li><li value="50"><span style="color: #24292F">        &lt;</span><span style="color: #116329">button</span><span style="color: #24292F"> </span><span style="color: #0550AE">onClick</span><span style="color: #CF222E">=</span><span style="color: #24292F">{() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> parent.</span><span style="color: #8250DF">skipFundAccount</span><span style="color: #24292F">()}&gt;Skip&lt;/</span><span style="color: #116329">button</span><span style="color: #24292F">&gt;</span></li><li value="51"><span style="color: #24292F">      &lt;/</span><span style="color: #116329">div</span><span style="color: #24292F">&gt;</span></li><li value="52"><span style="color: #24292F">    );</span></li><li value="53"><span style="color: #24292F">  }</span></li><li value="54"><span style="color: #24292F">}</span></li><li value="55"></li><li value="56"><span style="color: #0550AE">exports</span><span style="color: #24292F">.DeployerOrAttacher </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">class</span><span style="color: #24292F"> </span><span style="color: #CF222E">extends</span><span style="color: #24292F"> </span><span style="color: #953800">React</span><span style="color: #24292F">.</span><span style="color: #0550AE">Component</span><span style="color: #24292F"> {</span></li><li value="57"><span style="color: #24292F">  </span><span style="color: #8250DF">render</span><span style="color: #24292F">() {</span></li><li value="58"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> {</span><span style="color: #0550AE">parent</span><span style="color: #24292F">} </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">this</span><span style="color: #24292F">.props;</span></li><li value="59"><span style="color: #24292F">    </span><span style="color: #CF222E">return</span><span style="color: #24292F"> (</span></li><li value="60"><span style="color: #24292F">      &lt;</span><span style="color: #116329">div</span><span style="color: #24292F">&gt;</span></li><li value="61"><span style="color: #24292F">        Please select a role:</span></li><li value="62"><span style="color: #24292F">        &lt;</span><span style="color: #116329">br</span><span style="color: #24292F"> /&gt;</span></li><li value="63"><span style="color: #24292F">        &lt;</span><span style="color: #116329">p</span><span style="color: #24292F">&gt;</span></li><li value="64"><span style="color: #24292F">          &lt;</span><span style="color: #116329">button</span></li><li value="65"><span style="color: #24292F">            </span><span style="color: #0550AE">onClick</span><span style="color: #CF222E">=</span><span style="color: #24292F">{() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> parent.</span><span style="color: #8250DF">selectDeployer</span><span style="color: #24292F">()}</span></li><li value="66"><span style="color: #24292F">          &gt;Deployer&lt;/</span><span style="color: #116329">button</span><span style="color: #24292F">&gt;</span></li><li value="67"><span style="color: #24292F">          &lt;</span><span style="color: #116329">br</span><span style="color: #24292F"> /&gt; Set the wager, deploy the contract.</span></li><li value="68"><span style="color: #24292F">        &lt;/</span><span style="color: #116329">p</span><span style="color: #24292F">&gt;</span></li><li value="69"><span style="color: #24292F">        &lt;</span><span style="color: #116329">p</span><span style="color: #24292F">&gt;</span></li><li value="70"><span style="color: #24292F">          &lt;</span><span style="color: #116329">button</span></li><li value="71"><span style="color: #24292F">            </span><span style="color: #0550AE">onClick</span><span style="color: #CF222E">=</span><span style="color: #24292F">{() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> parent.</span><span style="color: #8250DF">selectAttacher</span><span style="color: #24292F">()}</span></li><li value="72"><span style="color: #24292F">          &gt;Attacher&lt;/</span><span style="color: #116329">button</span><span style="color: #24292F">&gt;</span></li><li value="73"><span style="color: #24292F">          &lt;</span><span style="color: #116329">br</span><span style="color: #24292F"> /&gt; Attach to the Deployer's contract.</span></li><li value="74"><span style="color: #24292F">        &lt;/</span><span style="color: #116329">p</span><span style="color: #24292F">&gt;</span></li><li value="75"><span style="color: #24292F">      &lt;/</span><span style="color: #116329">div</span><span style="color: #24292F">&gt;</span></li><li value="76"><span style="color: #24292F">    );</span></li><li value="77"><span style="color: #24292F">  }</span></li><li value="78"><span style="color: #24292F">}</span></li><li value="79"></li><li value="80"><span style="color: #CF222E">export</span><span style="color: #953800"> </span><span style="color: #CF222E">default</span><span style="color: #953800"> </span><span style="color: #0550AE">exports</span><span style="color: #24292F">;</span></li></ol></pre>
+<h2 id="hl-num">HL Num</h2>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">Player</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  getHand: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([], UInt),</span></li><li value="3"><span style="color: #24292F">  seeOutcome: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Null),</span></li><li value="4"><span style="color: #24292F">};</span></li></ol></pre>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292F">$ make build</span></li><li value="2"><span style="color: #24292F">reach compile index.rsh</span></li><li value="3"><span style="color: #24292F">Verifying knowledge assertions</span></li><li value="4"><span style="color: #24292F">Verifying </span><span style="color: #CF222E">for</span><span style="color: #24292F"> generic connector</span></li><li value="5"><span style="color: #24292F">  Verifying when ALL participants are honest</span></li><li value="6"><span style="color: #24292F">  Verifying when NO participants are honest</span></li><li value="7"><span style="color: #24292F">  Verifying when ONLY </span><span style="color: #0A3069">"Buyer"</span><span style="color: #24292F"> is honest</span></li><li value="8"><span style="color: #24292F">  Verifying when ONLY </span><span style="color: #0A3069">"Seller"</span><span style="color: #24292F"> is honest</span></li><li value="9"><span style="color: #24292F">Checked 34 theorems</span><span style="color: #CF222E">;</span><span style="color: #24292F"> No failures</span><span style="color: #CF222E">!</span></li><li value="10"><span style="color: #24292F">docker build -f Dockerfile --tag=reachsh/reach-app-market-day:latest </span><span style="color: #0550AE">.</span></li></ol></pre>
+<h2 id="hl-loaded-ranged">HL Loaded Ranged</h2>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="3"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">Player</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {</span></li><li value="4"><span style="color: #24292F">  getHand: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([], UInt),</span></li><li value="5"><span style="color: #24292F">  seeOutcome: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Null),</span></li><li value="6"><span style="color: #24292F">};</span></li></ol></pre>
+<h2 id="hl-loaded">HL Loaded</h2>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #0A3069">'reach 0.1'</span><span style="color: #24292F">;</span></li><li value="2"></li><li value="3"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">Player</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {</span></li><li value="4"><span style="color: #24292F">  getHand: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([], UInt),</span></li><li value="5"><span style="color: #24292F">  seeOutcome: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Null),</span></li><li value="6"><span style="color: #24292F">};</span></li><li value="7"></li><li value="8"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">main</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Reach.</span><span style="color: #8250DF">App</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="9"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">Alice</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Alice'</span><span style="color: #24292F">, {</span></li><li value="10"><span style="color: #24292F">    </span><span style="color: #CF222E">...</span><span style="color: #24292F">Player,</span></li><li value="11"><span style="color: #24292F">  });</span></li><li value="12"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">Bob</span><span style="color: #24292F">   </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Bob'</span><span style="color: #24292F">, {</span></li><li value="13"><span style="color: #24292F">    </span><span style="color: #CF222E">...</span><span style="color: #24292F">Player,</span></li><li value="14"><span style="color: #24292F">  });</span></li><li value="15"><span style="color: #24292F">  </span><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></li><li value="16"></li><li value="17"><span style="color: #24292F">  Alice.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="18"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">handAlice</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.</span><span style="color: #8250DF">getHand</span><span style="color: #24292F">());</span></li><li value="19"><span style="color: #24292F">  });</span></li><li value="20"><span style="color: #24292F">  Alice.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(handAlice);</span></li><li value="21"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="22"></li><li value="23"><span style="color: #24292F">  Bob.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="24"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">handBob</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.</span><span style="color: #8250DF">getHand</span><span style="color: #24292F">());</span></li><li value="25"><span style="color: #24292F">  });</span></li><li value="26"><span style="color: #24292F">  Bob.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(handBob);</span></li><li value="27"></li><li value="28"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">outcome</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> (handAlice </span><span style="color: #CF222E">+</span><span style="color: #24292F"> (</span><span style="color: #0550AE">4</span><span style="color: #24292F"> </span><span style="color: #CF222E">-</span><span style="color: #24292F"> handBob)) </span><span style="color: #CF222E">%</span><span style="color: #24292F"> </span><span style="color: #0550AE">3</span><span style="color: #24292F">;</span></li><li value="29"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="30"></li><li value="31"><span style="color: #24292F">  </span><span style="color: #8250DF">each</span><span style="color: #24292F">([Alice, Bob], () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="32"><span style="color: #24292F">    interact.</span><span style="color: #8250DF">seeOutcome</span><span style="color: #24292F">(outcome);</span></li><li value="33"><span style="color: #24292F">  });</span></li><li value="34"><span style="color: #24292F">});</span></li></ol></pre>
+<h2 id="hl">HL</h2>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">Player</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  getHand: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([], UInt),</span></li><li value="3"><span style="color: #24292F">  seeOutcome: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Null),</span></li><li value="4"><span style="color: #24292F">};</span></li></ol></pre>
+<h2 id="num-loaded-ranged">Num Loaded Ranged</h2>
+<pre class="snippet numbered"><ol class="snippet"><li value="3">const Player = {</li><li value="4">  getHand: Fun([], UInt),</li><li value="5">  seeOutcome: Fun([UInt], Null),</li><li value="6">};</li></ol></pre>
+<h2 id="num-loaded">Num Loaded</h2>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">'reach 0.1';</li><li value="2"></li><li value="3">const Player = {</li><li value="4">  getHand: Fun([], UInt),</li><li value="5">  seeOutcome: Fun([UInt], Null),</li><li value="6">};</li><li value="7"></li><li value="8">export const main = Reach.App(() =&gt; {</li><li value="9">  const Alice = Participant('Alice', {</li><li value="10">    ...Player,</li><li value="11">  });</li><li value="12">  const Bob   = Participant('Bob', {</li><li value="13">    ...Player,</li><li value="14">  });</li><li value="15">  deploy();</li><li value="16"></li><li value="17">  Alice.only(() =&gt; {</li><li value="18">    const handAlice = declassify(interact.getHand());</li><li value="19">  });</li><li value="20">  Alice.publish(handAlice);</li><li value="21">  commit();</li><li value="22"></li><li value="23">  Bob.only(() =&gt; {</li><li value="24">    const handBob = declassify(interact.getHand());</li><li value="25">  });</li><li value="26">  Bob.publish(handBob);</li><li value="27"></li><li value="28">  const outcome = (handAlice + (4 - handBob)) % 3;</li><li value="29">  commit();</li><li value="30"></li><li value="31">  each([Alice, Bob], () =&gt; {</li><li value="32">    interact.seeOutcome(outcome);</li><li value="33">  });</li><li value="34">});</li></ol></pre>
+<h2 id="num">Num</h2>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">const Player = {</li><li value="2">  getHand: Fun([], UInt),</li><li value="3">  seeOutcome: Fun([UInt], Null),</li><li value="4">};</li></ol></pre>
+<h2 id="loaded-ranged">Loaded Ranged</h2>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="3">const Player = {</li><li value="4">  getHand: Fun([], UInt),</li><li value="5">  seeOutcome: Fun([UInt], Null),</li><li value="6">};</li></ol></pre>
+<h2 id="loaded">Loaded</h2>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">'reach 0.1';</li><li value="2"></li><li value="3">const Player = {</li><li value="4">  getHand: Fun([], UInt),</li><li value="5">  seeOutcome: Fun([UInt], Null),</li><li value="6">};</li><li value="7"></li><li value="8">export const main = Reach.App(() =&gt; {</li><li value="9">  const Alice = Participant('Alice', {</li><li value="10">    ...Player,</li><li value="11">  });</li><li value="12">  const Bob   = Participant('Bob', {</li><li value="13">    ...Player,</li><li value="14">  });</li><li value="15">  deploy();</li><li value="16"></li><li value="17">  Alice.only(() =&gt; {</li><li value="18">    const handAlice = declassify(interact.getHand());</li><li value="19">  });</li><li value="20">  Alice.publish(handAlice);</li><li value="21">  commit();</li><li value="22"></li><li value="23">  Bob.only(() =&gt; {</li><li value="24">    const handBob = declassify(interact.getHand());</li><li value="25">  });</li><li value="26">  Bob.publish(handBob);</li><li value="27"></li><li value="28">  const outcome = (handAlice + (4 - handBob)) % 3;</li><li value="29">  commit();</li><li value="30"></li><li value="31">  each([Alice, Bob], () =&gt; {</li><li value="32">    interact.seeOutcome(outcome);</li><li value="33">  });</li><li value="34">});</li></ol></pre>
+<h2 id="simple">Simple</h2>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">const Player = {</li><li value="2">  getHand: Fun([], UInt),</li><li value="3">  seeOutcome: Fun([UInt], Null),</li><li value="4">};</li></ol></pre>
+<h1 id="block-quotes">Block Quotes</h1>
+<blockquote>
+  <h1 id="header-is-optional">Header is optional</h1>
+  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+</blockquote>
+<h1 id="paragraphs">Paragraphs</h1>
+<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+<p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur</p>
+<h1 id="headings">Headings</h1>
+<p>This heading reflects an <code>H1</code> element. The site uses <code>H1</code>, <code>H2</code>, and <code>H3</code> elements on content pages. Only <code>H1</code> and <code>H2</code> headings appear on the <em>On This Page</em> panel.</p>
+<h2 id="subheadings">Subheadings</h2>
+<p>This heading reflects an <code>H2</code> element.</p>
+<h3 id="heading-3">Heading 3</h3>
+<p>This heading reflects an <code>H3</code> element.</p>
+<h1 id="links">Links</h1>
+<ul>
+  <li><a href="/en/articles/">Internal Page</a></li>
+  <li><a href="https://reach.sh/">External Page</a></li>
+</ul>
+<h1 id="tables">Tables</h1>
+<p>Tables look like this:</p>
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>1</th>
+      <th>2</th>
+      <th>3</th>
+      <th>4</th>
+      <th>5</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>English</td>
+      <td>One</td>
+      <td>Two</td>
+      <td>Three</td>
+      <td>Four</td>
+      <td>Five</td>
+    </tr>
+    <tr>
+      <td>Français</td>
+      <td>Un</td>
+      <td>Deux</td>
+      <td>Trois</td>
+      <td>Quatre</td>
+      <td>Cinq</td>
+    </tr>
+    <tr>
+      <td>日本語</td>
+      <td>一</td>
+      <td>二</td>
+      <td>三</td>
+      <td>四</td>
+      <td>五</td>
+    </tr>
+    <tr>
+      <td>Deutsche</td>
+      <td>Ein</td>
+      <td>Zwei</td>
+      <td>Drei</td>
+      <td>Vier</td>
+      <td>Funf</td>
+    </tr>
+  </tbody>
+</table>
+<p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+<h1 id="images">Images</h1>
+<p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+<h2 id="responsive">Responsive</h2>
+<p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+<p>
+  <img src="/en/demo/img-800.png" class="img-fluid mx-auto d-block" width="700" loading="lazy">
+</p>
+<p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+<h2 id="left-justified">Left-justified</h2>
+<p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+<p>
+  <img src="/en/demo/img-800.png" width="500" loading="lazy">
+</p>
+<p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+<h2 id="centered-justified">Centered-justified</h2>
+<p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+<p>
+  <img src="/en/demo/img-800.png" width="500" class="mx-auto d-block" loading="lazy">
+</p>
+<p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+<h2 id="right-justified">Right-justified</h2>
+<p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+<p class="text-end">
+  <img src="/en/demo/img-800.png" width="500" loading="lazy">
+</p>
+<p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+<h2 id="indented">Indented</h2>
+<p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+<p>
+  <img src="/en/demo/img-800.png" width="500" class="hh-halign-indent" loading="lazy">
+</p>
+<p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+<h1 id="videos">Videos</h1>
+<p>You can <a href="https://youtu.be/HCT-FurFVLQ">link to a video</a> or embed a video. Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+<p class="ratio ratio-16x9 mx-auto" style="max-width:600px;">
+  <iframe src="https://www.youtube.com/embed/HCT-FurFVLQ" frameborder="0" allowfullscreen=""></iframe>
+</p>
+<p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+<h1 id="lists">Lists</h1>
+<p>Technical documentation often uses various types of lists.</p>
+<h2 id="compact-ordered">Compact ordered</h2>
+<ol>
+  <li>Blue bell</li>
+  <li>Blue jeans</li>
+  <li>Blue yonder</li>
+</ol>
+<h2 id="compact-unordered">Compact unordered</h2>
+<ul>
+  <li>Blue bell</li>
+  <li>Blue jeans</li>
+  <li>Blue yonder</li>
+</ul>
+<h2 id="spaced-ordered">Spaced ordered</h2>
+<ol>
+  <li>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nam libero tempore cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est omnis dolor repellendus.</p>
+  </li>
+  <li>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+  </li>
+</ol>
+<h2 id="spaced-unordered">Spaced unordered</h2>
+<ul>
+  <li>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nam libero tempore cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est omnis dolor repellendus.</p>
+  </li>
+  <li>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+  </li>
+  <li>
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+  </li>
+</ul>
+<h2 id="compact-nested-ordered">Compact nested ordered</h2>
+<ol>
+  <li>Leaves of grass.</li>
+  <li>Leaves of grass.
+    <ol>
+      <li>Leaves of grass.</li>
+      <li>Leaves of grass.
+        <ol>
+          <li>Leaves of grass.</li>
+          <li>Leaves of grass.
+            <ol>
+              <li>Leaves of grass.</li>
+              <li>Leaves of grass.</li>
+            </ol>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+  <li>Leaves of grass.</li>
+  <li>Leaves of grass.</li>
+</ol>
+<h2 id="compact-nested-unordered">Compact nested unordered</h2>
+<ul>
+  <li>Leaves of grass.</li>
+  <li>Leaves of grass.
+    <ul>
+      <li>Leaves of grass.</li>
+      <li>Leaves of grass.
+        <ul>
+          <li>Leaves of grass.</li>
+          <li>Leaves of grass.
+            <ul>
+              <li>Leaves of grass.</li>
+              <li>Leaves of grass.</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>Leaves of grass.</li>
+  <li>Leaves of grass.</li>
+</ul>
+<h2 id="roomy-nested-ordered">Roomy nested ordered</h2>
+<ol>
+  <li>
+    <p>Leaves of grass.</p>
+  </li>
+  <li>
+    <p>Leaves of grass.</p>
+    <ol>
+      <li>Leaves of grass.</li>
+      <li>Leaves of grass.
+        <ol>
+          <li>Leaves of grass.</li>
+          <li>Leaves of grass.
+            <ol>
+              <li>Leaves of grass.</li>
+              <li>Leaves of grass.</li>
+            </ol>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <p>Leaves of grass.</p>
+  </li>
+  <li>
+    <p>Leaves of grass.</p>
+  </li>
+</ol>
+<h2 id="roomy-nested-unordered">Roomy nested unordered</h2>
+<ul>
+  <li>
+    <p>Leaves of grass.</p>
+  </li>
+  <li>
+    <p>Leaves of grass.</p>
+    <ul>
+      <li>Leaves of grass.</li>
+      <li>Leaves of grass.
+        <ul>
+          <li>Leaves of grass.</li>
+          <li>Leaves of grass.
+            <ul>
+              <li>Leaves of grass.</li>
+              <li>Leaves of grass.</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>Leaves of grass.</p>
+  </li>
+  <li>
+    <p>Leaves of grass.</p>
+  </li>
+</ul>
+<h2 id="spaced-nested-ordered">Spaced nested ordered</h2>
+<ol>
+  <li>
+    <p>Leaves of grass.</p>
+  </li>
+  <li>
+    <p>Leaves of grass.</p>
+    <ol>
+      <li>
+        <p>Leaves of grass.</p>
+      </li>
+      <li>
+        <p>Leaves of grass.</p>
+        <ol>
+          <li>
+            <p>Leaves of grass.</p>
+          </li>
+          <li>
+            <p>Leaves of grass.</p>
+            <ol>
+              <li>
+                <p>Leaves of grass.</p>
+              </li>
+              <li>
+                <p>Leaves of grass.</p>
+              </li>
+            </ol>
+          </li>
+        </ol>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <p>Leaves of grass.</p>
+  </li>
+  <li>
+    <p>Leaves of grass.</p>
+  </li>
+</ol>
+<h2 id="spaced-nested-unordered">Spaced nested unordered</h2>
+<ul>
+  <li>
+    <p>Leaves of grass.</p>
+  </li>
+  <li>
+    <p>Leaves of grass.</p>
+    <ul>
+      <li>
+        <p>Leaves of grass.</p>
+      </li>
+      <li>
+        <p>Leaves of grass.</p>
+        <ul>
+          <li>
+            <p>Leaves of grass.</p>
+          </li>
+          <li>
+            <p>Leaves of grass.</p>
+            <ul>
+              <li>
+                <p>Leaves of grass.</p>
+              </li>
+              <li>
+                <p>Leaves of grass.</p>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>Leaves of grass.</p>
+  </li>
+  <li>
+    <p>Leaves of grass.</p>
+  </li>
+</ul>
+<h2 id="multi-element">Multi-element</h2>
+<ol>
+  <li>
+    <p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1">$(function () {</li><li value="2">  base.winWidth = base.calcWinWidthStr()</li><li value="3">  base.currentPage.baseId = $('meta[name='base-id']').attr('content')</li><li value="4">  getPage(pathnameToIdentifier(window.location.pathname))</li><li value="5">})</li></ol></pre>
+  </li>
+  <li>
+    <p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1">'reach 0.1';</li><li value="2"></li><li value="3">const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3);</li><li value="4">const [ isOutcome, B_WINS, DRAW, A_WINS ] = makeEnum(3);</li><li value="5"></li><li value="6">const winner = (handAlice, handBob) =&gt;</li><li value="7">  ((handAlice + (4 - handBob)) % 3);</li><li value="8"></li><li value="9">assert(winner(ROCK, PAPER) == B_WINS);</li><li value="10">assert(winner(PAPER, ROCK) == A_WINS);</li><li value="11">assert(winner(ROCK, ROCK) == DRAW);</li><li value="12"></li><li value="13">forall(UInt, handAlice =&gt;</li><li value="14">  forall(UInt, handBob =&gt;</li><li value="15">    assert(isOutcome(winner(handAlice, handBob)))));</li><li value="16"></li><li value="17">forall(UInt, (hand) =&gt;</li><li value="18">  assert(winner(hand, hand) == DRAW));</li><li value="19"></li><li value="20">const Player = {</li><li value="21">  ...hasRandom,</li><li value="22">  getHand: Fun([], UInt),</li><li value="23">  seeOutcome: Fun([UInt], Null),</li><li value="24">  informTimeout: Fun([], Null),</li><li value="25">};</li><li value="26"></li><li value="27">export const main = Reach.App(() =&gt; {</li><li value="28">  const Alice = Participant('Alice', {</li><li value="29">    ...Player,</li><li value="30">    wager: UInt, // atomic units of currency</li><li value="31">    deadline: UInt, // time delta (blocks/rounds)</li><li value="32">  });</li><li value="33">  const Bob   = Participant('Bob', {</li><li value="34">    ...Player,</li><li value="35">    acceptWager: Fun([UInt], Null),</li><li value="36">  });</li><li value="37">  deploy();</li><li value="38"></li><li value="39">  const informTimeout = () =&gt; {</li><li value="40">    each([Alice, Bob], () =&gt; {</li><li value="41">      interact.informTimeout();</li><li value="42">    });</li><li value="43">  };</li><li value="44"></li><li value="45">  Alice.only(() =&gt; {</li><li value="46">    const wager = declassify(interact.wager);</li><li value="47">    const _handAlice = interact.getHand();</li><li value="48">    const [_commitAlice, _saltAlice] = makeCommitment(interact, _handAlice);</li><li value="49">    const commitAlice = declassify(_commitAlice);</li><li value="50">    const deadline = declassify(interact.deadline);</li><li value="51">  });</li><li value="52">  Alice.publish(wager, commitAlice, deadline)</li><li value="53">    .pay(wager);</li><li value="54">  commit();</li><li value="55"></li><li value="56">  unknowable(Bob, Alice(_handAlice, _saltAlice));</li><li value="57">  Bob.only(() =&gt; {</li><li value="58">    interact.acceptWager(wager);</li><li value="59">    const handBob = declassify(interact.getHand());</li><li value="60">  });</li><li value="61">  Bob.publish(handBob)</li><li value="62">    .pay(wager)</li><li value="63">    .timeout(relativeTime(deadline), () =&gt; closeTo(Alice, informTimeout));</li><li value="64">  commit();</li><li value="65"></li><li value="66">  Alice.only(() =&gt; {</li><li value="67">    const saltAlice = declassify(_saltAlice);</li><li value="68">    const handAlice = declassify(_handAlice);</li><li value="69">  });</li><li value="70">  Alice.publish(saltAlice, handAlice)</li><li value="71">    .timeout(relativeTime(deadline), () =&gt; closeTo(Bob, informTimeout));</li><li value="72">  checkCommitment(commitAlice, saltAlice, handAlice);</li><li value="73"></li><li value="74">  const outcome = winner(handAlice, handBob);</li><li value="75">  const                 [forAlice, forBob] =</li><li value="76">    outcome == A_WINS ? [       2,      0] :</li><li value="77">    outcome == B_WINS ? [       0,      2] :</li><li value="78">    /* tie           */ [       1,      1];</li><li value="79">  transfer(forAlice * wager).to(Alice);</li><li value="80">  transfer(forBob   * wager).to(Bob);</li><li value="81">  commit();</li><li value="82"></li><li value="83">  each([Alice, Bob], () =&gt; {</li><li value="84">    interact.seeOutcome(outcome);</li><li value="85">  });</li><li value="86">});</li></ol></pre>
+  </li>
+  <li>
+    <p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>&nbsp;</th>
+          <th>1</th>
+          <th>2</th>
+          <th>3</th>
+          <th>4</th>
+          <th>5</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>English</td>
+          <td>One</td>
+          <td>Two</td>
+          <td>Three</td>
+          <td>Four</td>
+          <td>Five</td>
+        </tr>
+        <tr>
+          <td>Français</td>
+          <td>Un</td>
+          <td>Deux</td>
+          <td>Trois</td>
+          <td>Quatre</td>
+          <td>Cinq</td>
+        </tr>
+        <tr>
+          <td>日本語</td>
+          <td>一</td>
+          <td>二</td>
+          <td>三</td>
+          <td>四</td>
+          <td>五</td>
+        </tr>
+        <tr>
+          <td>Deutsche</td>
+          <td>Ein</td>
+          <td>Zwei</td>
+          <td>Drei</td>
+          <td>Vier</td>
+          <td>Funf</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li>
+    <p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    <img src="/en/demo/img-800.png" width="200" height="120" loading="lazy">
+  </li>
+  <li>
+    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+    <ol>
+      <li>Blue bell</li>
+      <li>Blue jeans</li>
+      <li>Blue yonder</li>
+    </ol>
+  </li>
+  <li>
+    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+    <ul>
+      <li>Blue bell</li>
+      <li>Blue jeans</li>
+      <li>Blue yonder</li>
+    </ul>
+  </li>
+  <li>
+    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+    <ol>
+      <li>
+        <p>Red</p>
+      </li>
+      <li>
+        <p>Yellow</p>
+      </li>
+      <li>
+        <p>Blue</p>
+      </li>
+      <li>
+        <p>Orange</p>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+    <ul>
+      <li>
+        <p>Red</p>
+      </li>
+      <li>
+        <p>Yellow</p>
+      </li>
+      <li>
+        <p>Blue</p>
+      </li>
+      <li>
+        <p>Orange</p>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    <ol>
+      <li>
+        <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+      </li>
+      <li>
+        <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+      </li>
+    </ol>
+  </li>
+  <li>
+    <p>Lorem ipsum dolor sit amete, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    <ul>
+      <li>
+        <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+      </li>
+      <li>
+        <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+    <p>Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus.</p>
+    <p>Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur.</p>
+  </li>
+  <li>
+    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1">$(function () {</li><li value="2">  base.winWidth = base.calcWinWidthStr()</li><li value="3">  base.currentPage.baseId = $('meta[name='base-id']').attr('content')</li><li value="4">  getPage(pathnameToIdentifier(window.location.pathname))</li><li value="5">})</li></ol></pre>
+    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>&nbsp;</th>
+          <th>1</th>
+          <th>2</th>
+          <th>3</th>
+          <th>4</th>
+          <th>5</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>English</td>
+          <td>One</td>
+          <td>Two</td>
+          <td>Three</td>
+          <td>Four</td>
+          <td>Five</td>
+        </tr>
+        <tr>
+          <td>Français</td>
+          <td>Un</td>
+          <td>Deux</td>
+          <td>Trois</td>
+          <td>Quatre</td>
+          <td>Cinq</td>
+        </tr>
+        <tr>
+          <td>日本語</td>
+          <td>一</td>
+          <td>二</td>
+          <td>三</td>
+          <td>四</td>
+          <td>五</td>
+        </tr>
+        <tr>
+          <td>Deutsche</td>
+          <td>Ein</td>
+          <td>Zwei</td>
+          <td>Drei</td>
+          <td>Vier</td>
+          <td>Funf</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+    <img src="/en/demo/img-800.png" width="200" height="120" loading="lazy">
+    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+  </li>
+  <li>
+    <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+  </li>
+</ol>
+<h1 id="inline-text">Inline text</h1>
+<p>Authors can use the following inline markdown:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Markdown</th>
+      <th>HTML</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>*snowman*</code></td>
+      <td><code>&lt;em&gt;snowman&lt;/em&gt;</code></td>
+    </tr>
+    <tr>
+      <td><code>_snowman_</code></td>
+      <td><code>&lt;em&gt;snowman&lt;/em&gt;</code></td>
+    </tr>
+    <tr>
+      <td><code>**snowman**</code></td>
+      <td><code>&lt;strong&gt;snowman&lt;/strong&gt;</code></td>
+    </tr>
+    <tr>
+      <td><code>__snowman__</code></td>
+      <td><code>&lt;strong&gt;snowman&lt;/strong&gt;</code></td>
+    </tr>
+    <tr>
+      <td><code>`snowman`</code></td>
+      <td><code>&lt;code&gt;snowman&lt;/code&gt;</code></td>
+    </tr>
+    <tr>
+      <td><code>~~snowman~~</code></td>
+      <td><code>&lt;del&gt;snowman&lt;/del&gt;</code></td>
+    </tr>
+    <tr>
+      <td><code>&gt; one</code><br><code>&gt; two</code></td>
+      <td><code>&lt;blockquote&gt;&lt;p&gt;one two&lt;/p&gt;&lt;/blockquote&gt;</code></td>
+    </tr>
+    <tr>
+      <td><code>https://github.com</code></td>
+      <td><code>&lt;a href="https://github.com"&gt;https://github.com&lt;/a&gt;</code></td>
+    </tr>
+    <tr>
+      <td><code>[Github](https://github.com)</code></td>
+      <td><code>&lt;a href="https://github.com"&gt;Github&lt;/a&gt;</code></td>
+    </tr>
+    <tr>
+      <td><code>![logo](pic.png)</code></td>
+      <td><code>&lt;img src="pic.png"</code></td>
+    </tr>
+  </tbody>
+</table>
+<h1 id="html">HTML</h1>
+<h2 id="html-table">HTML Table</h2>
+<table>
+  <thead>
+    <tr>
+      <th>&nbsp;</th>
+      <th>1</th>
+      <th>2</th>
+      <th>3</th>
+      <th>4</th>
+      <th>5</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>English</td>
+      <td>One</td>
+      <td>Two</td>
+      <td>Three</td>
+      <td>Four</td>
+      <td>Five</td>
+    </tr>
+    <tr>
+      <td>Français</td>
+      <td>Un</td>
+      <td>Deux</td>
+      <td>Trois</td>
+      <td>Quatre</td>
+      <td>Cinq</td>
+    </tr>
+    <tr>
+      <td>日本語</td>
+      <td>一</td>
+      <td>二</td>
+      <td>三</td>
+      <td>四</td>
+      <td>五</td>
+    </tr>
+    <tr>
+      <td>Deutsche</td>
+      <td>Ein</td>
+      <td>Zwei</td>
+      <td>Drei</td>
+      <td>Vier</td>
+      <td>Funf</td>
+    </tr>
+  </tbody>
+</table>
