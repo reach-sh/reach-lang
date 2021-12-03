@@ -22,6 +22,7 @@ import remarkDirective from 'remark-directive';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { JSDOM } from 'jsdom';
+import * as expanderCore from './expander.js';
 
 const INTERNAL = [ 'base.html', 'config.json', 'index.md' ];
 
@@ -116,7 +117,7 @@ const copyFmToConfig = (configJson) => {
   }
 };
 
-const directiveTest = () => (tree) => {
+const expanderDirective = () => (tree) => {
   visit(tree, (node) => {
     if (
       node.type === 'textDirective' ||
@@ -124,15 +125,11 @@ const directiveTest = () => (tree) => {
       node.type === 'containerDirective'
     ) {
       const data = node.data || (node.data = {});
-      if ( node.name === 'note') {
-        data.hName = "div";
-        data.hProperties = { class: "note" };
-      }
-      if ( node.name === 'testQ') {
-        data.hName = "XXX testQ";
-      }
-      if ( node.name === 'testA') {
-        data.hName = "XXX testA";
+      const k = `directive_${node.name}`;
+      if (k in expanderCore) {
+        expanderCore[k](node);
+      } else {
+        console.log(['XXX expanderDirective', node.name]);
       }
     }
   })
@@ -278,41 +275,6 @@ const processCodeSnippet = (doc, pre, code, spec) => {
   pre.classList.add(shouldNumber ? 'numbered' : 'unnumbered');
 }
 
-const transformReachDoc = (md) => {
-  const match1 = /# {#(.*)}/; // Example: # {#guide-ctransfers}
-
-  const mdArr = md.split('\n');
-  md = '';
-  for (let i = 0; i < mdArr.length; i++) {
-    let line = mdArr[i];
-
-    if (line.match(match1)) { line = line.replace(match1, '#'); }
-
-    md += `${line}\n`;
-  }
-  return md;
-}
-
-const XXX = (name) => (...args) => {
-  const m = ['XXX', name, ...args];
-  console.log(m);
-  return JSON.stringify(m);
-};
-const seclink = XXX('seclink');
-const defn = XXX('defn');
-const workshopDeps = XXX('workshopDeps');
-const workshopInit = XXX('workshopInit');
-const workshopWIP = XXX('workshopWIP');
-const errver = XXX('errver');
-const ref = XXX('ref');
-const code = async ( rp, from = undefined, to = undefined ) => {
-  if ( from || to ) { console.log(['XXX', 'code', { from, to }]); }
-  const rpp = `${reachRoot}${rp}`;
-  const lang = ''; // XXX
-  const c = await fs.readFile(rpp, 'utf8');
-  return "```" + lang + "\n" + c + "\n```";
-};
-
 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   const lang = relDir.split('/')[0];
@@ -342,7 +304,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   };
   */
 
-  const expandEnv = { ...configJson, seclink, defn, workshopDeps, workshopWIP, workshopInit, code, errver, ref };
+  const expandEnv = { ...configJson, ...expanderCore };
   const expandKeys = Object.keys(expandEnv);
   const expandVals = Object.values(expandEnv);
   const evil = async (c) => {
@@ -372,23 +334,6 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   const raw = await fs.readFile(mdPath, 'utf8');
   let md = await expand(raw);
 
-  // If src == remote, get the remote markdown..
-  const re = /---([\s\S]*?)---/;
-  const fm = md.match(re);
-  if (fm) {
-    const fmArr = fm[0].split('\n');
-    for (let i = 0; i < fmArr.length; i++) {
-      const s = fmArr[i].replaceAll(' ', '').trim();
-      if (s.substring(0, 4) === 'src:') {
-        const target = `${repoSrcDir}${s.substring(4)}`;
-        const url = `${repoBase}${target}`;
-        const content = (await remoteGet(url));
-        md = fm[0] + '\n' + transformReachDoc(content);
-        break;
-      }
-    }
-  }
-
   // markdown-to-html pipeline.
   const output = await unified()
     .use(remarkParse) // Parse markdown to Markdown Abstract Syntax Tree (MDAST).
@@ -396,7 +341,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     .use(copyFmToConfig, configJson) // Remove YAML node and write frontmatter to config file.
     .use(prependTocNode) // Prepend Heading, level 6, value "toc".
     .use(remarkDirective)
-    .use(directiveTest)
+    .use(expanderDirective)
     //.use(() => (tree) => { console.dir(tree); })
     .use(remarkToc, { maxDepth: 2 }) // Build toc list under the heading.
     //.use(() => (tree) => { console.dir(JSON.stringify(tree.children[1].children, null, 2)); })
