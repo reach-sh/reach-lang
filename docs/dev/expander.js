@@ -11,14 +11,20 @@ export const defn = XXX('defn');
 
 export const workshopDeps = (pre) => {
   if ( pre === undefined ) {
-    return `:::note\nThis workshop is independent of all others.\n:::`;
+    return `:::note\nThis workshop is independent of all others.\n:::\n`;
   } else {
-    return `:::note\nThis workshop assumes that you have recently completed @{seclink(\"${pre}\")}.\n:::`;
+    return `:::note\nThis workshop assumes that you have recently completed @{seclink(\"${pre}\")}.\n:::\n`;
   }
 };
 
 export const workshopInit = XXX('workshopInit');
-export const workshopWIP = XXX('workshopWIP');
+
+export const workshopWIP = (dir) => {
+  const d = `examples/${dir}`;
+  const more = dir ? `If you'd like to see a draft version of our code, please visit [\`${d}\`](http://github.com/reach-sh/reach-lang/tree/master/${d}).\n` : '';
+  return `:::note\nThis page is a placeholder for a future more detailed workshop.\nYou could try to implement it yourself though, given the sketch above!\n${more}:::\n`;
+};
+
 export const errver = XXX('errver');
 export const ref = XXX('ref');
 
