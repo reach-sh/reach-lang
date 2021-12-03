@@ -133,6 +133,30 @@ race(Alice, Bob).publish(bet);
 
 # this
 
+Inside a local step, `this` refers to the participant performing the step:
+
+``` js
+// index.rsh
+const commonInteract = { reportAddress: Fun([Address], Null) };
+S.only(() => { 
+  interact.reportAddress(this); 
+  interact.reportAddress(getAddress());
+});
+```
+
+* Line 4: `reportAddress` passes the account address of Participant `S` to the frontend.
+* Line 5: `reportAddress` passes the account address of the contract to the frontend.
+
+Inside a consensus step, `this` refers to the address of the participant that performed the consensus transfer, especially useful when the consensus transfer was initiated by a race expression:
+
+``` js 
+race(S, B).publish();
+const winner = this;
+```
+
+* Line 1: `publish` transitions to a consensus step.
+* Line 2: `this` is the address of the `race` winner (Participant `S` or Participant `B`).
+
 # Time Expressions
 
 ### absoluteSecs

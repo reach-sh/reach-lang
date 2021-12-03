@@ -14,7 +14,7 @@ An `Address` represents an account address. The `Address` format differs slightl
 // index.rsh
 const myInteract = {
   reportAddress: Fun([Address], Null)
-}
+};
 M.interact.reportAddress(this);
 ```
 
@@ -24,7 +24,7 @@ Here is one implementation of the corresponding frontend interact object:
 // index.mjs
 const myInteract = {
   reportAddress: (v) => { console.log(v); }
-}
+};
 ```
 
 And, here is the output:
@@ -46,7 +46,7 @@ The `addressEq` function compares two addresses. The following example compares 
 // index.rsh
 const myInteract = {
   reportBool: (v) => { console.log(v); }
-}
+};
 M.interact.reportBool(addressEq(getAddress(), this));
 ```
 
@@ -108,7 +108,7 @@ This method returns `true` if every element in the array satisfies the given `Bo
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportBool: Fun([Bool], Null) }
+const myInteract = { reportBool: Fun([Bool], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportBool(Array.all(a, e => e > 0)); // true
 // or
@@ -121,7 +121,7 @@ This method returns `true` if all elements in a `Bool` array are `true`. Otherwi
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportBool: Fun([Bool], Null) }
+const myInteract = { reportBool: Fun([Bool], Null) };
 const a = array(Bool, [true, false, true]);
 M.interact.reportBool(Array.and(a)); // false
 ```
@@ -132,7 +132,7 @@ This method returns `true` if at least one element in the array satisfies the gi
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportBool: Fun([Bool], Null) }
+const myInteract = { reportBool: Fun([Bool], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportBool(Array.any(a, e => e > 7)); // true
 // or
@@ -145,7 +145,7 @@ This method returns the mean of an array of `UInts`.
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUInt: Fun([UInt], Null) }
+const myInteract = { reportUInt: Fun([UInt], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportUInt(Array.average(a)); // 6
 // or
@@ -158,7 +158,7 @@ This method returns a new array representing the concatenation of the two given 
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUIntArray: Fun([Array(UInt, 6)], Null) }
+const myInteract = { reportUIntArray: Fun([Array(UInt, 6)], Null) };
 const a = array(UInt, [4, 6, 8]);
 const b = array(UInt, [10, 12, 14]);
 M.interact.reportUIntArray(Array.concat(a, b)); // array(UInt, [4, 6, 8, 10, 12, 14])
@@ -172,7 +172,7 @@ This method returns the number of elements in the array that satisfy the given `
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUInt: Fun([UInt], Null) }
+const myInteract = { reportUInt: Fun([UInt], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportUInt(Array.count(a, e => e > 5)); // 2
 // or
@@ -201,7 +201,7 @@ This method returns the first element in the array that satisfies the given `Boo
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportData: Fun([Data({"None": Null, "Some": UInt})], Null) }
+const myInteract = { reportData: Fun([Data({"None": Null, "Some": UInt})], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportData(Array.find(a, e => e > 3)); // Some,4
 // or
@@ -214,7 +214,7 @@ This method returns the index of the first element in the array that satisfies t
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportData: Fun([Data({"None": Null, "Some": UInt})], Null) }
+const myInteract = { reportData: Fun([Data({"None": Null, "Some": UInt})], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportData(Array.findIndex(a, e => e > 5)); // Some,1
 // or
@@ -241,7 +241,7 @@ This method returns `true` if the array contains the specified element. Otherwis
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportBool: Fun([Bool], Null) }
+const myInteract = { reportBool: Fun([Bool], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportBool(Array.includes(a, 4)); // true
 // or
@@ -254,7 +254,7 @@ This method returns the index of the first element in the array that equals the 
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportData: Fun([Data({"None": Null, "Some": UInt})], Null) }
+const myInteract = { reportData: Fun([Data({"None": Null, "Some": UInt})], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportData(Array.indexOf(a, 6)); // Some,1
 // or
@@ -267,7 +267,7 @@ This method returns an array of the specified length where each element is the s
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUIntArray: Fun([Array(UInt, 3)], Null), }
+const myInteract = { reportUIntArray: Fun([Array(UInt, 3)], Null), };
 M.interact.reportUIntArray(Array.iota(3)); // array(UInt, [0, 1, 2])
 ```
 
@@ -277,7 +277,7 @@ This method returns the length of the array.
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUInt: Fun([UInt], Null) }
+const myInteract = { reportUInt: Fun([UInt], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportUInt(Array.length(a)); // 3
 // or
@@ -290,7 +290,7 @@ This method applies the given function to each element of the given array, and r
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUIntArray: Fun([Array(UInt, 3)], Null) }
+const myInteract = { reportUIntArray: Fun([Array(UInt, 3)], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportUIntArray(Array.map(a, e => e + 1)); // array(UInt, [5, 7, 9])
 // or
@@ -305,7 +305,7 @@ This method is similar to `Array.map` except that it provides the function with 
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportObjectArray: Fun([Array(Object({value: UInt, index: UInt}), 3)], Null) }
+const myInteract = { reportObjectArray: Fun([Array(Object({value: UInt, index: UInt}), 3)], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportObjectArray(Array.mapWithIndex(a, (e, i)  => {return {"value": e + 1, "index": i}}));
 // or
@@ -344,7 +344,7 @@ This method returns the largest number in an array of unsigned integers:
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUInt: Fun([UInt], Null) }
+const myInteract = { reportUInt: Fun([UInt], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportUInt(Array.max(a)); // 8
 // or
@@ -357,7 +357,7 @@ This method returns the smallest number in an array of unsigned integers:
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUInt: Fun([UInt], Null) }
+const myInteract = { reportUInt: Fun([UInt], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportUInt(Array.min(a)); // 4
 // or
@@ -370,7 +370,7 @@ This method returns `true` if any elements in a `Bool` array are `true`. Otherwi
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportBool: Fun([Bool], Null) }
+const myInteract = { reportBool: Fun([Bool], Null) };
 const a = array(Bool, [true, false, true]);
 M.interact.reportBool(Array.or(a)); // true
 ```
@@ -381,7 +381,7 @@ This method returns the product of an array of unsigned integers:
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUInt: Fun([UInt], Null) }
+const myInteract = { reportUInt: Fun([UInt], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportUInt(Array.product(a)); // 192
 // or
@@ -394,7 +394,7 @@ Starting with the specified value, this method returns the [left fold](https://e
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUInt: Fun([UInt], Null) }
+const myInteract = { reportUInt: Fun([UInt], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportUInt(Array.reduce(a, 0, (x, total) => (total + x))); // 18
 // or
@@ -417,7 +417,7 @@ This method creates an array of the specified length where each element is the s
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUIntArray: Fun([Array(UInt, 3)], Null) }
+const myInteract = { reportUIntArray: Fun([Array(UInt, 3)], Null) };
 M.interact.reportUIntArray(Array.replicate(3, 256)); // array(UInt, [256, 256, 256])
 ```
 
@@ -427,7 +427,7 @@ This method returns an array identical to the specified array except that the sp
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUIntArray: Fun([Array(UInt, 3)], Null) }
+const myInteract = { reportUIntArray: Fun([Array(UInt, 3)], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportUIntArray(Array.set(a, 1, 256)); // array(UInt, [4, 256, 8])
 // or
@@ -440,7 +440,7 @@ This method returns the number of elements in the array.
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUInt: Fun([UInt], Null) }
+const myInteract = { reportUInt: Fun([UInt], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportUInt(Array.size(a)); // 3
 // or
@@ -453,7 +453,7 @@ This method creates a new array which is that portion of the given array defined
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUIntArray: Fun([Array(UInt, 3)], Null) }
+const myInteract = { reportUIntArray: Fun([Array(UInt, 3)], Null) };
 const a = array(UInt, [4, 6, 8, 10, 12, 14]);
 M.interact.reportUIntArray(Array.slice(a, 1, 3)); // array(UInt, [6, 8, 10])
 // or
@@ -466,7 +466,7 @@ This method returns the sum of an array of unsigned integers.
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUInt: Fun([UInt], Null) }
+const myInteract = { reportUInt: Fun([UInt], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportUInt(Array.sum(a)); // 18
 // or
@@ -479,7 +479,7 @@ This method creates a new same-length array where each element pairs the corresp
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportTupleArray: Fun([Array(Tuple(UInt, UInt), 3)], Null) }
+const myInteract = { reportTupleArray: Fun([Array(Tuple(UInt, UInt), 3)], Null) };
 const a = array(UInt, [4, 6, 8]);
 M.interact.reportTupleArray(Array.withIndex(a)); // array(Tuple(UInt, UInt), [[4, 0], [6, 1], [8, 2]])
 // or
@@ -492,7 +492,7 @@ Given two same-length arrays, this method creates a new same-length array where 
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportTupleArray: Fun([Array(Tuple(UInt, UInt), 3)], Null) }
+const myInteract = { reportTupleArray: Fun([Array(Tuple(UInt, UInt), 3)], Null) };
 const a = array(UInt, [4, 6, 8]);
 const b = array(UInt, [10, 12, 14]);
 M.interact.reportTupleArray(Array.zip(a, b)); // array(Tuple(UInt, UInt), [[4, 10], [6, 12], [8, 14]])
@@ -502,7 +502,7 @@ M.interact.reportTupleArray(a.zip(b)); // array(Tuple(UInt, UInt), [[4, 10], [6,
 
 # Bool
 
-A *Bool* is a boolean which may be `true` or `false`.
+A `Bool` is a boolean which may be `true` or `false`.
 
 # Bytes
 
@@ -524,7 +524,7 @@ Two `Bytes` of different lengths are not interchangeable. Consider the following
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportBytes: Fun([Bytes(24)], Null) }
+const myInteract = { reportBytes: Fun([Bytes(24)], Null) };
 M.interact.reportBytes('butterfly'); // Bytes(9)
 ```
 
@@ -538,7 +538,7 @@ To match the two types, use the `pad` function:
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportBytes: Fun([Bytes(24)], Null) }
+const myInteract = { reportBytes: Fun([Bytes(24)], Null) };
 M.interact.reportBytes(Bytes(24).pad('butterfly'));
 ```
 
@@ -546,7 +546,7 @@ Here is one implementation of the corresponding frontend interact object:
 
 ``` js nonum
 // index.mjs
-const myInteract = { reportBytes: (v) => { console.log(`Length is ${v.length}. Value is ${v}.`); }}
+const myInteract = { reportBytes: (v) => { console.log(`Length is ${v.length}. Value is ${v}.`); }};
 ```
 
 Note that the lengths vary:
@@ -562,7 +562,7 @@ Length is 21. Value is Con bướm.
 Length is 20. Value is 蝴蝶.
 ```
 
-Another `reportBytes` implementation enables you to inspect the strings as byte arrays:
+Another frontend `reportBytes` implementation enables you to inspect the strings as byte arrays:
 
 ``` js nonum
 // index.mjs
@@ -575,7 +575,7 @@ const myInteract = {
     }
     console.log(...myBuffer);
   },
-}
+};
 ```
 
 Here is the output:
@@ -593,13 +593,15 @@ Here is the output:
 
 # Contract
 
+`Contract` is *not* an explicit type in *index.rsh* files. However, the functions `balance`, `getAddress`, `getContract`, and `transfer` implicitly refer to the contract:
+
 ### balance
 
 The `balance` function returns the balance of the contract account.
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportUInt: Fun([UInt], Null) }
+const myInteract = { reportUInt: Fun([UInt], Null) };
 M.interact.reportUInt(balance());
 ```
 
@@ -607,7 +609,7 @@ Here is one implementation of the corresponding frontend interact object:
 
 ``` js nonum
 // index.mjs
-const myInteract = { reportUInt: (v) => { console.log(`${v}`); } }
+const myInteract = { reportUInt: (v) => { console.log(`${v}`); } };
 ```
 
 ### getAddress
@@ -616,7 +618,7 @@ The `getAddress` function returns the `Address` of the contract:
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportAddress: Fun([Address], Null) }
+const myInteract = { reportAddress: Fun([Address], Null) };
 M.interact.reportAddress(getAddress());
 ```
 
@@ -624,7 +626,7 @@ Here is one implementation of the corresponding frontend interact object:
 
 ``` js nonum
 // index.mjs
-const myInteract = { reportAddress: (v) => { console.log(v); } }
+const myInteract = { reportAddress: (v) => { console.log(v); } };
 ```
 
 And, here is the output:
@@ -646,7 +648,7 @@ The `getContract` function returns the `Contract` information representing the c
 
 ``` js nonum
 // index.rsh
-const myInteract = { reportContract: Fun([Contract], Null) }
+const myInteract = { reportContract: Fun([Contract], Null) };
 M.interact.reportContract(getContract());
 ```
 
@@ -654,7 +656,7 @@ Here is one implementation of the corresponding frontend interact object:
 
 ``` js nonum
 // index.mjs
-const myInteract = { reportContract: (v) => { console.log(v); } }
+const myInteract = { reportContract: (v) => { console.log(v); } };
 ```
 
 And, here is the output:
@@ -692,9 +694,73 @@ transfer(10).to(Alice);
 
 # Data
 
-A *data instance* is ...
+Use `Data` to define a data type (e.g. `Shape`):
+
+``` js nonum
+const Shape = Data({
+  Circle: Object({ radius: UInt }),
+  Square: Object({ side: UInt }),
+  Rect: Object({ width: UInt, height: UInt })
+});
+```
+
+In the example, the `Shape` data type has three variants: `Circle`, `Square`, and `Rect`. Create data instances like this:
+
+``` js nonum
+const circle = Shape.Circle({ radius: 7 });
+const square = Shape.Square({ side: 5 });
+const rect = Shape.Rect({ width: 3, height: 6 });
+```
+
+Data instances (e.g. `circle`, `square`, `rect`) are consumed by `switch` statements and `match` expressions.
 
 # Digest
+
+A `Digest` is a cryptographic hash of a value:
+
+``` js 
+// index.rsh
+const sellerInteract = {
+  password: Bytes(24), // "sellerPwd123$"
+  reportDigest: Fun([Digest], Null)
+};
+
+export const main = Reach.App(() => {
+  const S = Participant('Seller', sellerInteract);
+  const B = Participant('Buyer', {});
+  deploy();
+  S.publish();
+  commit();
+  B.publish();
+  commit();
+
+  S.only(() => {
+    const _pwd = digest(interact.password);
+    interact.reportDigest(_pwd);
+    const pwdDigest = declassify(_pwd);
+  });
+  S.publish(pwdDigest);
+  commit();
+
+  exit();
+});
+```
+
+* Line 3: Assume that the frontend furnishes "sellerPwd123$" as the clear-text password.
+* Line 17: `digest` converts the password to a hash (`0x51db28...`).
+* Line 18: `reportDigest` passes the hash value to the frontend to demonstrate the use of the `Digest` type and to show you one way to inspect the hash value. Normally, you would not pass a hash value to a frontend.
+
+The hash value for "sellerPwd123$" is the following:
+
+``` nonum
+0x51db281cfa433bd72491c79c46d0a2d1da211fda094e5904f2d3d77bbd51a2d5
+```
+
+You cannot *un*-digest a hash value to reveal the original string, but, you can compare hashed values:
+
+``` js nonum
+require( pwdDigest == digest(buyerPassword) );
+```
 
 # Either
 
@@ -796,9 +862,9 @@ The `Map` constructor requires a type:
 const m = new Map(UInt);
 ```
 
-Use `[]` to reference and dereference:
+Use `[]` to reference (Line 10) and dereference (Line 11):
 
-``` js nonum
+``` js
 // index.rsh
 const sellerInteract = {
   reportData: Fun([Data({"None": Null, "Some": UInt})], Null),
@@ -815,7 +881,7 @@ export const main = Reach.App(() => {
 });
 ```
 
-In the example above, `const v` is not a `UInt`. It is a `Data({"None": Null, "Some": UInt})` because `m[S]` allows for the possibility that the specified participant address is not in the `Map`. 
+In the example above, `const v` is not a `UInt`. It is a `Data({"None": Null, "Some": UInt})` because `m[S]` allows for the possibility that the specified participant address is not in the `Map`. See [Maybe](#maybe).
 
 `Map` is a `Foldable` container, so it includes all the [Foldable](#foldable) methods, but these methods are only valid within the `invariant` of a `while` loop. Consider the following:
 
@@ -935,6 +1001,15 @@ This method returns the smallest number in a map of unsigned integers:
 
 ``` js nonum
 // index.rsh
+const m = new Map(UInt);
+m[S] = 5;
+var x = 0;
+invariant(balance() == 0 && Map.min(m) == 5);
+while ( x < 5 ) {
+  // ...
+}
+// or 
+invariant(balance() == 0 && m.min() == 5);
 ```
 
 ### Map.or
@@ -960,6 +1035,19 @@ Starting with the specified value, this method returns the [left fold](https://e
 
 ``` js nonum
 // index.rsh
+const m = new Map(UInt);
+m[S] = 5;
+var x = 0;
+invariant(balance() == 0 && Map.reduce(m, 0, (e, total) => (total + e)) > 0);
+while ( x < 5 ) {
+  // ...
+}
+// or
+invariant(balance() == 0 && Map.reduce(m, 0, add) > 0);
+// or
+invariant(balance() == 0 && m.reduce(0, (e, total) => (total + e)) > 0);
+// or
+invariant(balance() == 0 && m.reduce(0, add) > 0);
 ```
 
 ### Map.size
@@ -983,13 +1071,75 @@ This method returns the sum of a map of unsigned integers.
 
 ``` js nonum
 // index.rsh
+const m = new Map(UInt);
+m[S] = 5;
+var x = 0;
+invariant(balance() == 0 && Map.sum(m) > 0);
+while ( x < 5 ) {
+  // ...
+}
+// or
+invariant(balance() == 0 && m.sum() > 0);
 ```
 
 # Maybe
 
-### Some
+`Maybe` is a built-in [Data](#data) type with two variants (i.e. `None` and `Some`). It is implemented as a function that assigns a particular type `A` to the `Some` variant:
 
-### None
+``` js nonum
+export const Maybe = (A) => Data({ None: Null, Some: A });
+```
+
+`Maybe` is useful when a particular action may or may not return a valid value. Dereferencing a [Map](#map) is one example:
+
+``` js nonum
+const myMap = new Map(UInt);
+// ...
+const myMaybe = myMap[Seller]; // Maybe
+```
+
+In the example above, `Seller` may or may not be a valid address in `myMap`, so `myMap[Seller]` returns a `Maybe` to cover both possibilities. Programs use the functions `fromSome`, `isNone`, and `isSome` to evaluate `Maybe` values as described below.
+
+Programs create `Maybe` values like this:
+
+``` js nonum
+const mUInt = Maybe(UInt);
+const success = mUInt.Some(256);
+const failure = mUInt.None();
+```
+
+### fromSome
+
+This method takes a `Maybe` value and a default value as arguments. It returns the `Some` variant is it exists. Otherwise, it returns the default value:
+
+``` js nonum
+const v = fromSome(myMaybe, 0);
+if(v) {
+  // ...
+} else {
+  // ...
+}
+```
+
+### isNone
+
+This method returns `true` if the specified `Maybe` argument is `None`:
+
+``` js nonum
+if( isNone( myMaybe ) ) {
+  // ...
+}
+```
+
+### isSome
+
+This method returns `true` if the specified `Maybe` argument is `Some`:
+
+``` js nonum
+if( isSome( myMaybe ) ) {
+  // ...
+}
+```
 
 # Null
 
@@ -997,13 +1147,81 @@ This method returns the sum of a map of unsigned integers.
 
 # Object
 
-An *object* is ...
+An `Object` is a container of key-value pairs where keys are identifiers (e.g. `name`) or strings (e.g. `'name'`), and values are expressions:
+
+``` js nonum
+// index.rsh
+const product = {
+  name: Bytes(24).pad('Carrots'),
+  unit: Bytes(10).pad('Bunch'),
+  units: Bytes(10).pad('Bunches'),
+  price: 100
+};
+```
+
+A Reach backend might pass `product` to a frontend like this:
+
+``` js nonum
+const myInteract = {
+  reportObject: Fun([Object({name: Bytes(24), price: UInt, unit: Bytes(10), units: Bytes(10)})], Null)
+};
+M.interact.reportObject(product);
+```
+
+Objects have the following methods:
 
 ### Object.has
 
+This method returns `true` if the specified object has the specified field. Otherwise, it returns `false`:
+
+``` js nonum
+const myInteract = { reportBool: Fun([Bool], Null) };
+const product = {
+  name: Bytes(24).pad('Carrots'),
+  unit: Bytes(10).pad('Bunch'),
+  units: Bytes(10).pad('Bunches'),
+  price: 100
+};
+M.interact.reportBool(Object.has(product, 'name')); // true
+```
+
 ### Object.set
 
+This method returns a new object identical to the specified one except that the specified field (which may or may not exist in the original object) is set to the specified value. The following example resets an existing field:
+
+``` js nonum
+const myInteract = {
+  reportObject: Fun([Object({name: Bytes(24), price: UInt, unit: Bytes(10), units: Bytes(10)})], Null)
+};
+const product = {
+  name: Bytes(24).pad('Carrots'),
+  unit: Bytes(10).pad('Bunch'),
+  units: Bytes(10).pad('Bunches'),
+  price: 100
+};
+const product2 = Object.set(product, "price", 200);
+M.interact.reportObject(product2);
+```
+
+The following example adds a new field:
+
+``` js nonum
+const sellerInteract = {
+  reportObject: Fun([Object({name: Bytes(24), price: UInt, unit: Bytes(10), units: Bytes(10), color: Bytes(12)})], Null)
+};
+const product = {
+  name: Bytes(24).pad('Carrots'),
+  unit: Bytes(10).pad('Bunch'),
+  units: Bytes(10).pad('Bunches'),
+  price: 100
+};
+const product2 = Object.set(product, "color", Bytes(12).pad("orange"));
+S.interact.reportObject(product2);
+```
+
 ### Object.setIfUnset
+
+This method is similar to [Object.set](#objectset). However, `Object.setIfUnset` will not overwrite an existing property value. It will only add a new property and value to the specified object.
 
 # Participant
 
