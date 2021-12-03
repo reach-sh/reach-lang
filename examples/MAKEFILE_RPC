@@ -12,12 +12,11 @@ PORT_RPC_VIEW_MAYBE  = 3105
 PORT_RPC_EXPORTS     = 3106
 
 ROOT = ../..
-include $(ROOT)/VERSION
 include $(ROOT)/DEPS
 
 REACH  = $(ROOT)/reach
 BASE  ?= $(shell basename "$$(pwd)" | sed 's/^rpc-//')
-CNAME ?= reach-app-$(shell basename "$$(pwd)")-client
+CNAME ?= reach-app-$(shell basename "$$(pwd)")
 CIMG  ?= reachsh/$(CNAME):latest
 PROJ  ?= $(shell basename "$$(pwd)" | tr a-z A-Z | tr - _)
 RSHES ?= $(shell find ../$(BASE) -name \*.rsh -exec sh -c "echo {} | sed 's/\.\.\/$(BASE)\///'" \;)
@@ -46,7 +45,10 @@ common.mjs: ../crpc-common.mjs
 	@cp -vu ../crpc-common.mjs ./common.mjs
 
 Dockerfile: ../crpc-Dockerfile
-	@cp -vu ../crpc-Dockerfile ./Dockerfile
+	@cat ../crpc-Dockerfile \
+	  | sed 's/{{NODE_VERSION}}/$(NODE_VERSION)/' \
+	  | sed 's/{{PORT}}/$(PORT)/' \
+	  > ./Dockerfile
 
 package.json: ../crpc-package.json
 	@cat ../crpc-package.json | sed 's/{{CNAME}}/$(CNAME)/' > ./package.json
@@ -62,20 +64,8 @@ build/index.main.mjs: $(RSHES) $(shell find . -name \*.rsh)
 	@$(REACH) compile index.rsh
 
 build: common.mjs Dockerfile package.json client-lib-js build/index.main.mjs
-	@docker build \
-	   --tag=$(CIMG) \
-	   --build-arg NODE_VERSION=$(NODE_VERSION) \
-	   .
+	@docker build --tag=$(CIMG) .
 
 .PHONY: run
 run: build
-	@REACH_RPC_PORT=$(PORT) $(REACH) rpc-run docker run --rm \
-	  -e REACH_DEBUG \
-	  -e REACH_RPC_SERVER=host.docker.internal \
-	  -e REACH_RPC_TLS_REJECT_UNVERIFIED=0 \
-	  -e REACH_RPC_KEY=opensesame \
-	  -e REACH_RPC_PORT \
-	  --add-host "host.docker.internal:172.17.0.1" \
-	  --name     $(CNAME) \
-	  --network  reach-devnet \
-	  "$(CIMG)"
+	@REACH_RPC_PORT=$(PORT) $(REACH) rpc-run $(REACH) run
