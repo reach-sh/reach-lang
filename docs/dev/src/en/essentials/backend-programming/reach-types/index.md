@@ -764,6 +764,145 @@ require( pwdDigest == digest(buyerPassword) );
 
 # Either
 
+`Either` is a built-in [Data](#data) type with two variants (i.e. `Left` and `Right`). It is implemented as a function that assigns type `A` to `Left` and type `B` to `Right`:
+
+``` js nonum
+export const Either = (A, B) => Data({Left: A, Right: B});
+```
+
+`Either` is useful for representing either the successful (i.e. `Right`) or the unsuccessful (i.e. `Left`) state of a return value. Consider, for example, a function called `addEvenNumbers` which only adds even numbers, and returns a value of type `Either` containing a sum in the `Right` variant if both arguments are even, and an object (containing the first offending argument and a message) in the `Left` variant if either argument is odd:
+
+``` js nonum
+// index.rsh
+function addEvenNumbers(a, b) {
+  const answer = Either(Object({ arg: UInt, msg: Bytes(40) }), UInt);
+  if(a % 2 != 0) {
+    return answer.Left({arg: a, msg: Bytes(40).pad('First arg must be an even number.')});
+  } else if (b % 2 != 0) {
+    return answer.Left({arg: b, msg: Bytes(40).pad('Second arg must be an even number.')});
+  }
+  return answer.Right(a + b);
+}
+```
+
+One way to invoke `addEvenNumbers` and deal with the return value is like this:
+
+``` js nonum
+// index.rsh
+const myInteract = {
+  reportLeft: Fun([Object({"arg": UInt, "msg": Bytes(40)})], Null),
+  reportRight: Fun([UInt], Null)
+};
+
+const myEither = addEvenNumbers(6, 4);
+M.only(() => { 
+  either(myEither, interact.reportLeft, interact.reportRight);
+}
+```
+
+Reach provides the following methods for processing `Either` types:
+
+### either
+
+This method determines whether an argument of type `Either` is a `Left` or `Right` variant, and then invokes the relevant function passing the relevant variant as an argument:
+
+``` js nonum
+// index.rsh
+const myInteract = {
+  reportLeft: Fun([Object({"arg": UInt, "msg": Bytes(40)})], Null),
+  reportRight: Fun([UInt], Null)
+};
+
+const myEither = addEvenNumbers(6, 4);
+M.only(() => { 
+  either(myEither, interact.reportLeft, interact.reportRight);
+}
+```
+
+### fromLeft
+
+This method returns the `Left` variant or, if the `Left` variant does not exist, a default value:
+
+``` js nonum
+// index.rsh
+const myInteract = {
+  reportLeft: Fun([Object({"arg": UInt, "msg": Bytes(40)})], Null)
+};
+
+const myEither = addEvenNumbers(5, 4);
+S.only(() => { 
+  interact.reportLeft(fromLeft(myEither, { arg: 0, msg: Bytes(40).pad('No error.')}));
+});
+```
+
+### fromRight
+
+This method returns the `Right` variant or, if the `Right` variant does not exist, a default value:
+
+``` js nonum
+// index.rsh
+const myInteract = {
+  reportRight: Fun([UInt], Null)
+};
+
+const myEither = addEvenNumbers(5, 4);
+S.only(() => { 
+  interact.reportRight(fromRight(myEither, 0));
+});
+```
+
+### isLeft
+
+This method returns `true` if the `Left` variant exists:
+
+``` js nonum
+// index.rsh
+const myInteract = {
+  reportBool: Fun([Bool], Null)
+};
+
+const myEither = addEvenNumbers(5, 4);
+S.only(() => { 
+  interact.reportBool(isLeft(myEither));
+});
+```
+
+### isRight
+
+This method returns `true` if the `Right` variant exists:
+
+``` js nonum
+// index.rsh
+const myInteract = {
+  reportBool: Fun([Bool], Null)
+};
+
+const myEither = addEvenNumbers(5, 4);
+S.only(() => { 
+  interact.reportBool(isRight(myEither));
+});
+```
+
+### left
+
+This method assigns a value to the `Left` variant:
+
+``` js nonum
+// index.rsh
+const answer = Either(Object({ arg: UInt, msg: Bytes(40) }), UInt);
+answer.Left({arg: a, msg: Bytes(40).pad('First arg must be an even number.')});
+```
+
+### right
+
+This method assigns a value to the `Right` variant:
+
+``` js nonum
+// index.rsh
+const answer = Either(Object({ arg: UInt, msg: Bytes(40) }), UInt);
+answer.Right(a + b);
+```
+
 # FixedPoint
 
 A `FixedPoint` is an object `{ sign: Bool, i: { scale: UInt, i: UInt} }` where `scale` is `1`, `10`, `100`, `1000`, etc., and `i` is the underlying unsigned integer. The value of a fixed-point number is `(i / scale) * sign`. It is used to represent numbers that have a fixed number of digits after the decimal.
