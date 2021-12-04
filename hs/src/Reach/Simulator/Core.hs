@@ -194,7 +194,6 @@ ledgerNewToken acc tk = do
 
 data Action
   = A_TieBreak PoolId [String]
-  | A_NewAcc
   | A_NewActor
   | A_None
   | A_ChangeActor Int
@@ -664,12 +663,18 @@ instance Interp LLProg where
 registerParts :: [SLPart] -> App ()
 registerParts [] = return ()
 registerParts (p:ps) = do
-  (g, l) <- getState
+  s <- getState
+  let (g,l) = registerPart s (bunpack p)
+  setGlobal g
+  setLocal l
+  registerParts ps
+
+registerPart :: State -> String -> State
+registerPart (g,l) s = do
   let actorid = e_nactorid g
   let pacts = e_partacts g
   let aid = e_naccid g
   let locals = e_locals l
-  let s = bunpack p
   let lcl = LocalInfo
         { l_acct = fromIntegral aid
         , l_who = Just $ s
@@ -677,10 +682,9 @@ registerParts (p:ps) = do
         , l_init_val = V_Null
         }
   let locals' = M.insert actorid lcl locals
-  setGlobal $ g {e_nactorid = actorid + 1, e_naccid = aid + 1, e_partacts = M.insert s aid pacts}
-  setLocal $ l {e_locals = locals'}
-  registerParts ps
-
+  let g' = g {e_nactorid = actorid + 1, e_naccid = aid + 1, e_partacts = M.insert s aid pacts}
+  let l' = l {e_locals = locals'}
+  (g',l')
 
 while :: DLBlock -> LLConsensus -> App DLVal
 while bl cons = do

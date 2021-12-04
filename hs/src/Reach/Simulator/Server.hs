@@ -140,7 +140,23 @@ unblockProg sid aid v = do
                       let ps = k (g,l) $ C.V_UInt $ fromIntegral actid
                       processNewState ps
                 _ -> impossible "A_TieBreak: expected string value"
-            _ -> impossible "unhandled action type"
+            Just C.A_NewActor -> do
+              case v of
+                C.V_Bytes s -> do
+                  let (g',l') = C.registerPart (g,l) s
+                  let ps = k (g',l') v
+                  processNewState ps
+                _ -> possible "A_NewActor: expected string value"
+            Just C.A_None -> return ()
+            Just (C.A_AdvanceTime n)  -> do
+              let s = (C.e_nwtime g) + n
+              let ps = k (g{C.e_nwtime = s},l) v
+              processNewState ps
+            Just (C.A_AdvanceSeconds n)  -> do
+              let s = (C.e_nwsecs g) + n
+              let ps = k (g{C.e_nwsecs = s},l) v
+              processNewState ps
+            Nothing -> possible "action not found"
         Just (C.PS_Done _ _) -> do
           possible "previous state already terminated"
 
