@@ -133,12 +133,6 @@ const copyFmToConfig = (configJson) => {
   }
 };
 
-const XXX = (name) => (...args) => {
-  const m = ['XXX', name, ...args];
-  fail(...m);
-  return JSON.stringify(m);
-};
-
 const processXRefs = ({here}) => (tree) => {
   visit(tree, (node) => {
     if ( node.type === 'heading' ) {
@@ -324,15 +318,32 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     data.hName = "div";
     data.hProperties = { class: "note" };
   }
+  let c_qna = 0;
   const directive_testQ = (node) => {
     const data = node.data;
-    data.hName = "testQ";
-    fail('XXX', 'testQ');
+    const which = c_qna++;
+    data.hName = "div";
+    data.hProperties = {
+      class: "q-and-a",
+      "data-bs-toggle": "collapse",
+      "aria-expanded": "false",
+      href: `#q${which}`,
+    };
+
+    const pushAll = (n) => {
+      const d = n.data || (n.data = {});
+      d.which = which;
+    };
+    node.children.forEach(pushAll);
   }
   const directive_testA = (node) => {
     const data = node.data;
-    data.hName = "testA";
-    fail('XXX', 'testA');
+    const which = data.which;
+    data.hName = "div";
+    data.hProperties = {
+      class: "collapse",
+      id: `q${which}`,
+    };
   }
 
   const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, ref, directive_note, directive_testQ, directive_testA };
@@ -562,7 +573,7 @@ const findAndProcessFolder = async (base_html, inputBaseConfig, folder) => {
   };
 
   if ( thisConfig.bookTitle !== undefined ) {
-    console.log(`Found book ${relDir}`);
+    //console.log(`Found book ${relDir}`);
     baseConfig.bookPath = relDir;
   }
 

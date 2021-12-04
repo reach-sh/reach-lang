@@ -554,6 +554,13 @@ div.note {
   padding: 0em 0.5em;
 }
 
+div.q-and-a {
+  background: #F5F5DC;
+  margin-left: 2em;
+  padding: 0em 0.5em;
+  cursor: pointer;
+}
+
 a span.icon-link:after {
   content:"#";
   margin-left: 0.2em;

@@ -223,22 +223,22 @@
     [`(drstep-de-stop)
       (d "**Decide how you will deploy and use this application.**")]
     [`(check:tf ,ans . ,c)
-      (d ":::testQ\n")
+      (d "::::testQ\n")
       (egol c)
       (d "\n:::testA\n")
       (ego ans)
       (d "\n:::\n")
-      (d "\n:::\n")
+      (d "\n::::\n")
       ]
     [`(,(or 'check:multi 'check:many) ,ans ,p . ,opts)
-      (d ":::testQ\n")
+      (d "::::testQ\n")
       (ego p) (d "\n")
       (for ([o (in-list opts)])
         (d "1. ") (ego o) (d "\n"))
       (d "\n:::testA\n")
       (ego ans)
       (d "\n:::\n")
-      (d "\n:::\n")
+      (d "\n::::\n")
       ]
     [`(list . ,es) (egol es)]
     [`(pkg-fmts)
