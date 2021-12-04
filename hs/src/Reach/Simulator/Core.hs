@@ -357,7 +357,7 @@ instance Interp DLLargeArg where
     DLLA_Struct assoc_slvars_dlargs -> do
       evd_args <- mapM (\arg -> interp arg) $ M.fromList assoc_slvars_dlargs
       return $ V_Struct $ M.toList evd_args
-    DLLA_Bytes _ -> undefined
+    DLLA_Bytes _ -> impossible "undefined"
 
 instance Interp DLExpr where
   interp = \case
@@ -423,7 +423,6 @@ instance Interp DLExpr where
       ev1 <- interp dlarg1
       ev2 <- interp dlarg2
       case (ev1,ev2) of
-        -- TODO: "Remove funds from contract..." which contract?
         (V_UInt n, V_Address acc) -> do
           case maybe_dlarg of
             Nothing -> do
@@ -478,7 +477,7 @@ instance Interp DLExpr where
             setGlobal $ e {e_linstate = M.insert dlmvar m linst}
             return V_Null
         _ -> impossible "unexpected error"
-    DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill -> undefined
+    DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill -> impossible "undefined"
     DLE_TokenNew _at dltokennew -> do
       ledgerNewToken simContract dltokennew
       return V_Null
@@ -504,8 +503,8 @@ instance Interp DLExpr where
         _ -> impossible "expression interpreter"
     -- TODO: new stuff
     DLE_TimeOrder _at _assoc_maybe_arg_vars -> return V_Null
-    DLE_GetContract _at -> undefined
-    DLE_GetAddress _at -> undefined
+    DLE_GetContract _at -> impossible "undefined"
+    DLE_GetAddress _at -> impossible "undefined"
     DLE_EmitLog at _str _maybe_str dlvar -> interp $ DL_Var at dlvar
     DLE_setApiDetails _ _ _ _ _ -> return V_Null
 
