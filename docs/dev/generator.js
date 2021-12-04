@@ -38,8 +38,29 @@ const repoBase = "https://raw.githubusercontent.com/reach-sh/reach-lang/master";
 const repoSrcDir = "/docs/md/";
 const srcDir = normalizeDir(`${rootDir}/src`);
 const outDir = normalizeDir(`${rootDir}/build`);
+let forReal = false;
+let hasError = false;
+
+const fail = (...args) => {
+  if ( forReal ) {
+    console.log(...args);
+    hasError = true;
+  }
+};
 
 // Plugins
+const xrefs = {};
+const xrefPut = (t, v) => {
+  xrefs[t] = v;
+};
+const xrefGet = (t) => {
+  const r = xrefs[t];
+  if ( r === undefined ) {
+    fail(`Missing xref:`, t);
+    return { title: `XXX ${t}`, path: t };
+  }
+  return r;
+};
 
 const prependTocNode = (options = {}) => {
   return (tree, file) => {
@@ -80,14 +101,6 @@ const prependTocNode = (options = {}) => {
       },
       ...tree.children.slice(0)
     ];
-
-    /*
-    node.children = [
-      ...node.children.slice(0, result.index),
-      result.map,
-      ...node.children.slice(result.endIndex)
-    ]
-    */
   }
 };
 
@@ -111,7 +124,8 @@ const copyFmToConfig = (configJson) => {
       for ( const k in fm ) {
         configJson[k] = fm[k];
       }
-      p.children.splice(index, 1); // Remove yaml node.
+      // Remove yaml node.
+      p.children.splice(index, 1);
       return [visit.SKIP, index];
     });
   }
@@ -119,11 +133,14 @@ const copyFmToConfig = (configJson) => {
 
 const XXX = (name) => (...args) => {
   const m = ['XXX', name, ...args];
-  console.log(m);
+  fail(...m);
   return JSON.stringify(m);
 };
 
-const seclink = XXX('seclink');
+const seclink = (t) => {
+  const { path, title } = xrefGet(t);
+  return `[${title}](${path})`;
+};
 const defn = XXX('defn');
 
 const workshopDeps = (pre) => {
@@ -197,13 +214,39 @@ const expanderDirective = () => (tree) => {
       const data = node.data || (node.data = {});
       const k = `directive_${node.name}`;
       if (k in expanderEnv) {
-        expanderEnv[k](node);
+        try { expanderEnv[k](node); }
+        catch (e) {
+          fail('expanderDirective', k, 'err', e);
+        }
       } else {
-        console.log(['XXX expanderDirective', node.name]);
+        fail('expanderDirective', node.name, 'missing');
       }
     }
   })
-}
+};
+
+const processXRefs = ({here}) => (tree) => {
+  visit(tree, (node) => {
+    if ( node.type === 'heading' ) {
+      const cs = node.children;
+      if ( cs.length > 0 ) {
+        const c0v = cs[0].value;
+        if ( c0v && c0v.startsWith("{#") ) {
+          const cp = c0v.indexOf("} ", 2);
+          const t = c0v.slice(2, cp);
+          const v = c0v.slice(cp+2);
+          xrefPut(t, { title: v, path: `/${here}/#${t}` });
+          cs[0].value = v;
+        }
+      }
+    } else if ( node.type === 'link' ) {
+      const u = node.url;
+      if ( u && u.startsWith("##") ) {
+        node.url = xrefGet(u.slice(2)).path;
+      }
+    }
+  });
+};
 
 // Tools
 const writeFileMkdir = async (p, c) => {
@@ -238,6 +281,7 @@ const shikiHighlighter =
         scopeName: 'source.js',
         // XXX customize this
         path: 'languages/javascript.tmLanguage.json',
+        aliases: ['rsh'],
       },
     ],
   });
@@ -299,9 +343,8 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     try {
       return await af(...expandVals);
     } catch (e) {
-      const es = `${e}`;
-      console.log(`evil`, mdPath, c, `err`, es);
-      return es;
+      fail(`evil`, mdPath, c, `err`, e);
+      return `${e}`;
     }
   }
   const expand = async (s) => {
@@ -329,10 +372,11 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     .use(remarkFrontmatter)
     // Remove YAML node and write frontmatter to config file.
     .use(copyFmToConfig, configJson)
-    // Prepend Heading, level 6, value "toc".
-    .use(prependTocNode)
     .use(remarkDirective)
     .use(expanderDirective)
+    .use(processXRefs, { here: relDir } )
+    // Prepend Heading, level 6, value "toc".
+    .use(prependTocNode)
     // Build toc list under the heading.
     .use(remarkToc, { maxDepth: 2 })
     // Create IDs (acting as anchors) for headings throughout the document.
@@ -520,9 +564,15 @@ const findAndProcessFolder = async (base_html, inputBaseConfig, folder) => {
 
 // Main
 
+await findAndProcessFolder(`base.html`, process.env, srcDir);
+forReal = true;
 await Promise.all([
   processCss(),
   processJs(),
   processBaseHtml(),
   findAndProcessFolder(`base.html`, process.env, srcDir),
 ]);
+
+if ( false && hasError ) {
+  process.exit(1);
+}
