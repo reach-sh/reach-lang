@@ -51,11 +51,12 @@ const fail = (...args) => {
 
 // Plugins
 const xrefs = {};
-const xrefPut = (t, v) => {
-  xrefs[t] = v;
+const xrefPut = (s, t, v) => {
+  if ( ! xrefs[s] ) { xrefs[s] = {}; }
+  xrefs[s][t] = v;
 };
-const xrefGet = (t) => {
-  const r = xrefs[t];
+const xrefGet = (s, t) => {
+  const r = (xrefs[s] || {})[t];
   if ( r === undefined ) {
     fail(`Missing xref:`, t);
     return { title: `XXX ${t}`, path: t };
@@ -138,94 +139,6 @@ const XXX = (name) => (...args) => {
   return JSON.stringify(m);
 };
 
-const seclink = (t) => {
-  const { path, title } = xrefGet(t);
-  return `[${title}](${path})`;
-};
-const defn = XXX('defn');
-
-const workshopDeps = (pre) => {
-  if ( pre === undefined ) {
-    return `:::note\nThis workshop is independent of all others.\n:::\n`;
-  } else {
-    return `:::note\nThis workshop assumes that you have recently completed @{seclink(\"${pre}\")}.\n:::\n`;
-  }
-};
-
-const workshopInit = (which) => {
-  const s = [
-    `We assume that you'll go through this workshop in a directory named \`~/reach/${which}\`:`,
-    '```',
-    `$ mkdir -p ~/reach/${which} && cd ~/reach/${which}`,
-    '```',
-    `And that you have a copy of Reach [installed](##ref-install) in \`~/reach\` so you can write`,
-    '```',
-    `$ ../reach version`,
-    '```',
-    `And it will run Reach.`,
-    `You should start off by initializing your Reach program:`,
-    '```',
-    `$ ../reach init`,
-    '```',
-  ];
-  return s.join('\n');
-};
-
-const workshopWIP = (dir) => {
-  const d = `examples/${dir}`;
-  const more = dir ? `If you'd like to see a draft version of our code, please visit [\`${d}\`](${repoBaseNice}/${d}).\n` : '';
-  return `:::note\nThis page is a placeholder for a future more detailed workshop.\nYou could try to implement it yourself though, given the sketch above!\n${more}:::\n`;
-};
-
-const errver = (f, t) => {
-  const m = (s, x) => `${s} version \`${x}\``;
-  const fm = m('before', f);
-  const tm = m('after', t);
-  const msg = (f && t) ? `${fm} or ${tm}` : (f ? fm : tm);
-  return `:::note\nThis error will not happen ${msg}.\n:::`;
-};
-
-const ref = XXX('ref');
-
-const directive_note = (node) => {
-  const data = node.data;
-  data.hName = "div";
-  data.hProperties = { class: "note" };
-}
-const directive_testQ = (node) => {
-  const data = node.data;
-  data.hName = "testQ";
-  console.log(['XXX', 'testQ']);
-}
-const directive_testA = (node) => {
-  const data = node.data;
-  data.hName = "testA";
-  console.log(['XXX', 'testA']);
-}
-
-const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, ref, directive_note, directive_testQ, directive_testA };
-
-const expanderDirective = () => (tree) => {
-  visit(tree, (node) => {
-    if (
-      node.type === 'textDirective' ||
-      node.type === 'leafDirective' ||
-      node.type === 'containerDirective'
-    ) {
-      const data = node.data || (node.data = {});
-      const k = `directive_${node.name}`;
-      if (k in expanderEnv) {
-        try { expanderEnv[k](node); }
-        catch (e) {
-          fail('expanderDirective', k, 'err', e);
-        }
-      } else {
-        fail('expanderDirective', node.name, 'missing');
-      }
-    }
-  })
-};
-
 const processXRefs = ({here}) => (tree) => {
   visit(tree, (node) => {
     if ( node.type === 'heading' ) {
@@ -236,7 +149,7 @@ const processXRefs = ({here}) => (tree) => {
           const cp = c0v.indexOf("} ", 2);
           const t = c0v.slice(2, cp);
           const v = c0v.slice(cp+2);
-          xrefPut(t, { title: v, path: `/${here}/#${t}` });
+          xrefPut('h', t, { title: v, path: `/${here}/#${t}` });
 
           const d = node.data || (node.data = {});
           const hp = d.hProperties || (d.hProperties = {});
@@ -248,7 +161,7 @@ const processXRefs = ({here}) => (tree) => {
     } else if ( node.type === 'link' ) {
       const u = node.url;
       if ( u && u.startsWith("##") ) {
-        node.url = xrefGet(u.slice(2)).path;
+        node.url = xrefGet('h', u.slice(2)).path;
       }
     }
   });
@@ -331,6 +244,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   const cfgPath = `${out_folder}/${cfgFile}`;
   const pagePath = `${out_folder}/page.html`;
   const otpPath = `${out_folder}/otp.html`;
+  const here = relDir;
 
   // console.log(`Building page ${relDir}`);
 
@@ -339,6 +253,109 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     ...baseConfig,
     chapters: null,
     pages: null,
+  };
+
+  const seclink = (t) => {
+    const { path, title } = xrefGet('h', t);
+    return `[${title}](${path})`;
+  };
+
+  const workshopDeps = (pre) => {
+    if ( pre === undefined ) {
+      return `:::note\nThis workshop is independent of all others.\n:::\n`;
+    } else {
+      return `:::note\nThis workshop assumes that you have recently completed @{seclink(\"${pre}\")}.\n:::\n`;
+    }
+  };
+
+  const workshopInit = (which) => {
+    const s = [
+      `We assume that you'll go through this workshop in a directory named \`~/reach/${which}\`:`,
+      '```',
+      `$ mkdir -p ~/reach/${which} && cd ~/reach/${which}`,
+      '```',
+      `And that you have a copy of Reach [installed](##ref-install) in \`~/reach\` so you can write`,
+      '```',
+      `$ ../reach version`,
+      '```',
+      `And it will run Reach.`,
+      `You should start off by initializing your Reach program:`,
+      '```',
+      `$ ../reach init`,
+      '```',
+    ];
+    return s.join('\n');
+  };
+
+  const workshopWIP = (dir) => {
+    const d = `examples/${dir}`;
+    const more = dir ? `If you'd like to see a draft version of our code, please visit [\`${d}\`](${repoBaseNice}/${d}).\n` : '';
+    return `:::note\nThis page is a placeholder for a future more detailed workshop.\nYou could try to implement it yourself though, given the sketch above!\n${more}:::\n`;
+  };
+
+  const errver = (f, t) => {
+    const m = (s, x) => `${s} version \`${x}\``;
+    const fm = m('before', f);
+    const tm = m('after', t);
+    const msg = (f && t) ? `${fm} or ${tm}` : (f ? fm : tm);
+    return `:::note\nThis error will not happen ${msg}.\n:::`;
+  };
+
+  const defn = (phrase) => {
+    const t = encodeURI(`term_${phrase}`);
+    xrefPut('term', phrase, {
+      title: `Term: ${phrase}`,
+      path: `/${here}/#${t}`,
+    });
+    return `<span id="${t}">${phrase}</span>`;
+  };
+
+  const ref = (scope, symbol) => {
+    const t = encodeURI(`${scope}_${symbol}`);
+    xrefPut(scope, symbol, {
+      title: `${scope}: ${symbol}`,
+      path: `/${here}/#${t}`,
+    });
+    return `<span id="${t}"></span>`;
+  };
+
+  const directive_note = (node) => {
+    const data = node.data;
+    data.hName = "div";
+    data.hProperties = { class: "note" };
+  }
+  const directive_testQ = (node) => {
+    const data = node.data;
+    data.hName = "testQ";
+    fail('XXX', 'testQ');
+  }
+  const directive_testA = (node) => {
+    const data = node.data;
+    data.hName = "testA";
+    fail('XXX', 'testA');
+  }
+
+  const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, ref, directive_note, directive_testQ, directive_testA };
+
+  const expanderDirective = () => (tree) => {
+    visit(tree, (node) => {
+      if (
+        node.type === 'textDirective' ||
+        node.type === 'leafDirective' ||
+        node.type === 'containerDirective'
+      ) {
+        const data = node.data || (node.data = {});
+        const k = `directive_${node.name}`;
+        if (k in expanderEnv) {
+          try { expanderEnv[k](node); }
+          catch (e) {
+            fail('expanderDirective', k, 'err', e);
+          }
+        } else {
+          fail('expanderDirective', node.name, 'missing');
+        }
+      }
+    })
   };
 
   const expandEnv = { ...configJson, ...expanderEnv };
@@ -380,7 +397,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     .use(copyFmToConfig, configJson)
     .use(remarkDirective)
     .use(expanderDirective)
-    .use(processXRefs, { here: relDir } )
+    .use(processXRefs, { here } )
     // Prepend Heading, level 6, value "toc".
     .use(prependTocNode)
     // Build toc list under the heading.
@@ -431,7 +448,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   // Adjust image urls.
   doc.querySelectorAll('img').forEach(img => {
     if ( ! img.src.startsWith("/") ) {
-      img.src = `/${relDir}/${img.src}`;
+      img.src = `/${here}/${img.src}`;
     }
   });
 

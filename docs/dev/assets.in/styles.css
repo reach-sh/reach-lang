@@ -551,7 +551,7 @@ div.social-icons a i {color:#595959;}
 div.note {
   background: #F5F5DC;
   margin-left: 2em;
-  padding: 1em;
+  padding: 0em 0.5em;
 }
 
 a span.icon-link:after {
