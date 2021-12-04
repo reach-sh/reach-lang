@@ -1,4 +1,4 @@
-FROM reachsh/runner:0.1
+FROM reachsh/runner:latest
 
 RUN node --version
 RUN npm --version
