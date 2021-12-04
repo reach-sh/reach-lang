@@ -22,6 +22,7 @@ import Reach.Eval
 import Reach.Linearize
 import Reach.Optimize
 import Reach.Parser (gatherDeps_top)
+import Reach.Simulator.Server
 import Reach.Texty
 import Reach.Util
 import Reach.Verify
@@ -68,6 +69,8 @@ compile env (CompilerOpts {..}) = do
         ll <- linearize showp dl
         ol <- optimize ll
         showp "ol" ol
+        unless (not co_sim) $ do
+          startServer ol
         let vo_out = woutnMay
         let vo_mvcs = doIf connectors dlo_verifyPerConnector
         let vo_timeout = co_verifyTimeout
