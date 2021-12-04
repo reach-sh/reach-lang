@@ -423,7 +423,6 @@ instance Interp DLExpr where
       ev1 <- interp dlarg1
       ev2 <- interp dlarg2
       case (ev1,ev2) of
-        -- TODO: "Remove funds from contract..." which contract?
         (V_UInt n, V_Address acc) -> do
           case maybe_dlarg of
             Nothing -> do

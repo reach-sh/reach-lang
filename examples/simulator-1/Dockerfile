@@ -1,5 +1,6 @@
 FROM reachsh/runner:latest
 
-RUN node --version
-RUN npm --version
+COPY package.json /app/package.json
 RUN npm install
+
+COPY . /app
