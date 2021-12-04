@@ -404,7 +404,7 @@ instance Interp DLExpr where
       ev <- interp dlarg
       case ev of
         V_Object obj -> return $ saferMapRef "DLE_ObjectRef" $ M.lookup str obj
-        _ -> impossible "expression interpreter"
+        _ -> impossible $ "expression interpreter"
     DLE_Interact at slcxtframes slpart str dltype dlargs -> do
       args <- mapM interp dlargs
       suspend $ PS_Suspend (A_Interact at slcxtframes (bunpack slpart) str dltype args)

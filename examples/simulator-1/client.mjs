@@ -9,27 +9,21 @@ const port = 3001
 const address = `${hostname}:${port}`
 
 const getStates = async () => {
-  const r = fetch(`${address}/states`)
-    .then(response => response.json())
-    .then(data => data);
+  const r = await fetch(`${address}/states`)
   console.log(r)
-  return r
+  return r.json();
 }
 
 const getStatus = async () => {
   const r = await fetch(`${address}/status`)
-    .then(response => response.json())
-    .then(data => data);
   console.log(r)
-  return r
+  return r.json();
 }
 
 async function getStateActions(s) {
   const r = await fetch(`${address}/states/${s}/actions`)
-    .then(response => response.json())
-    .then(data => data);
   console.log(r)
-  return r
+  return r.json();
 }
 
 async function interact(method = 'GET', url = '', data = {}) {
@@ -52,7 +46,7 @@ const load = async () => {
   const r = await interact('POST', `${address}/load`, {})
     .then(data => data);
   console.log(r)
-  return r
+  return r;
 }
 
 const init = async () => {
@@ -71,10 +65,8 @@ const respondWithVal = async (s,a,v,t) => {
 
 const ping = async () => {
   const r = await fetch(`${address}/ping`)
-    .then(response => response.json())
-    .then(data => data);
   console.log(r)
-  return r
+  return r.json();
 }
 
 const main = async () => {
