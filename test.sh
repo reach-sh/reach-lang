@@ -118,7 +118,7 @@ checkteal () {
 
 #exit 0
 
-c hs/t/y/enthuGuy4.rsh
+c users/enthuGuy5.rsh
 exit 0
 
 # (cd hs && mk hs-test)

@@ -242,14 +242,11 @@ const processJs = async () => {
 
 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
 const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
-  const lang = relDir.split('/')[0];
   const mdPath = `${in_folder}/index.md`;
   const cfgPath = `${out_folder}/${cfgFile}`;
   const pagePath = `${out_folder}/page.html`;
   const otpPath = `${out_folder}/otp.html`;
   const here = relDir;
-
-  // console.log(`Building page ${relDir}`);
 
   // Create fresh config file with default values.
   const configJson = {
@@ -326,7 +323,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     const data = node.data;
     data.hName = "div";
     data.hProperties = { class: "note" };
-  }
+  };
   let c_qna = 0;
   const directive_testQ = (node) => {
     const data = node.data;
@@ -344,7 +341,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
       d.which = which;
     };
     node.children.forEach(pushAll);
-  }
+  };
   const directive_testA = (node) => {
     const data = node.data;
     const which = data.which;
@@ -353,9 +350,20 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
       class: "collapse",
       id: `q${which}`,
     };
-  }
+  };
 
-  const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, ref, directive_note, directive_testQ, directive_testA };
+  const generateIndex = () => {
+    const r = [];
+    for ( const s in xrefs ) {
+      for ( const t in xrefs[s] ) {
+        const { title, path } = xrefs[s][t];
+        r.push(`1. [${title}](${path})`);
+      }
+    }
+    return r.join(`\n`);
+  };
+
+  const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, ref, directive_note, directive_testQ, directive_testA, generateIndex };
 
   const expanderDirective = () => (tree) => {
     visit(tree, (node) => {
@@ -441,6 +449,8 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     .use(rehypeStringify)
     // Push the markdown through the pipeline.
     .process(md);
+
+  if ( !forReal ) { return; }
 
   const doc = new JSDOM(output).window.document;
 
@@ -602,7 +612,7 @@ const findAndProcessFolder = async (base_html, inputBaseConfig, folder) => {
       const s = await fs.stat(absolute);
       if (s.isDirectory()) {
         return await findAndProcessFolder(`../${base_html}`, baseConfig, absolute);
-      } else if ( ! INTERNAL.includes(p) ) {
+      } else if ( ! INTERNAL.includes(p) && forReal ) {
         return await fs.copyFile(path.join(in_folder, p), path.join(out_folder, p));
       }
     }
@@ -620,6 +630,6 @@ await Promise.all([
   findAndProcessFolder(`base.html`, process.env, srcDir),
 ]);
 
-if ( false && hasError ) {
+if ( hasError ) {
   process.exit(1);
 }
