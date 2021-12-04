@@ -929,6 +929,48 @@ Foldable.sum
 
 # Fun
 
+A `Fun` type declares a function in a participant interact interface. 
+
+### Fun Example 1
+
+The following example declares `reportUInt`:
+
+``` js nonum
+// index.rsh
+const myInteract = {
+  reportUInt: Fun([UInt], Null)
+};
+```
+
+The first argument (e.g. `[UInt]`) is the array of arguments (by type) accepted by the function. `reportUInt` accepts one argument of type `UInt`. The second argument is the type of value returned by the function. `reportUInt` returns `Null`. 
+
+### Fun Example 2
+
+This example declares `willPurchase`:
+
+``` js nonum
+// index.rsh
+const myInteract = {
+  willPurchase: Fun( [Bytes(24), UInt, UInt], Bool)
+};
+```
+
+`willPurchase` accepts three arguments. `Bytes[(24)` is a token name. The first `UInt` is the price. The second `UInt` is the quantity. `willPurchase` returns a `Bool`, `true` for *purchase* and `false` for *do not purchase*. 
+
+### Fun Example 3
+
+This example declares `shop`:
+
+``` js nonum
+// index.rsh
+const product = Object({ name: Bytes(24), price: UInt })
+const myInteract = {
+  shop: Fun( [Array(product, 3)], UInt) ),
+};
+```
+
+`shop` accepts one argument which is an `Array` of project objects where each object has a name and a price. `shop` returns a `UInt` which is a zero-based index (e.g. 0, 1, or 2) into the array. 
+
 # Int
 
 An `Int` is an object `{ sign: Bool, i: UInt }` rather than a scalar value because some consensus networks do not support signed integers.
