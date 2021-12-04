@@ -12,6 +12,7 @@ import rehypeFormat from 'rehype-format';
 import rehypeRaw from 'rehype-raw'
 import rehypeDocument from 'rehype-document';
 import rehypeStringify from 'rehype-stringify';
+import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import remarkFrontmatter from 'remark-frontmatter';
 import remarkGfm from 'remark-gfm';
 import remarkParse from 'remark-parse';
@@ -236,6 +237,11 @@ const processXRefs = ({here}) => (tree) => {
           const t = c0v.slice(2, cp);
           const v = c0v.slice(cp+2);
           xrefPut(t, { title: v, path: `/${here}/#${t}` });
+
+          const d = node.data || (node.data = {});
+          const hp = d.hProperties || (d.hProperties = {});
+          d.id = hp.id = t;
+
           cs[0].value = v;
         }
       }
@@ -294,7 +300,7 @@ const cleanCss = new CleanCss({level: 2});
 const processCss = async () => {
   const iPath = `${rootDir}/assets.in/styles.css`;
   const oPath = `${outDir}/assets/styles.min.css`;
-  console.log(`Minifying ${iPath}`);
+  //console.log(`Minifying ${iPath}`);
   const input = await fs.readFile(iPath, 'utf8');
   const output = cleanCss.minify(input);
   await writeFileMkdir(oPath, output.styles);
@@ -303,7 +309,7 @@ const processCss = async () => {
 const processBaseHtml = async () => {
   const iPath = `${srcDir}/base.html`;
   const oPath = `${outDir}/base.html`;
-  console.log(`Minifying ${iPath}`);
+  //console.log(`Minifying ${iPath}`);
   const output = await minify(iPath, { html: {} });
   await writeFileMkdir(oPath, output);
 };
@@ -311,7 +317,7 @@ const processBaseHtml = async () => {
 const processJs = async () => {
   const iPath = `${rootDir}/assets.in/scripts.js`;
   const oPath = `${outDir}/assets/scripts.min.js`;
-  console.log(`Minifying ${iPath}`);
+  //console.log(`Minifying ${iPath}`);
   const input = await fs.readFile(iPath, 'utf8');
   const output = new UglifyJS.minify(input, {});
   if (output.error) throw output.error;
@@ -326,7 +332,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   const pagePath = `${out_folder}/page.html`;
   const otpPath = `${out_folder}/otp.html`;
 
-  console.log(`Building page ${relDir}`);
+  // console.log(`Building page ${relDir}`);
 
   // Create fresh config file with default values.
   const configJson = {
@@ -389,6 +395,9 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     .use(remarkRehype, { allowDangerousHtml: true })
     // Copy over html embedded in markdown.
     .use(rehypeRaw)
+    .use(rehypeAutolinkHeadings, {
+      behavior: 'append',
+    })
     // Prettify html.
     .use(rehypeFormat)
     // Serialize html.

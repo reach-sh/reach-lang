@@ -554,3 +554,7 @@ div.note {
   padding: 1em;
 }
 
+a span.icon-link:after {
+  content:"#";
+  margin-left: 0.2em;
+}
