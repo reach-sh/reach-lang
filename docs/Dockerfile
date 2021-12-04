@@ -54,7 +54,6 @@ ADD docs/scrbl/images ./docs/dev/src/images
 ADD docs/dev ./docs/dev
 COPY --from=convert /proj/docs/convert/src ./docs/md/
 RUN (cd docs/dev && ./rewire.sh)
-COPY --from=convert /proj/docs/convert/src ./docs/md/
 COPY --from=render /proj/docs/scrbl/manifest.txt ./docs/dev/
 RUN (cd docs/dev && make)
 RUN rm ./docs/dev/build/index.html
@@ -63,8 +62,4 @@ FROM scratch
 
 COPY --from=render /proj/docs/scrbl/build/ ./build/
 COPY --from=render /proj/docs/scrbl/scribble.log ./
-# This can be deleted, but I'm leaving it in for inspecting the output for
-# debugging
-COPY --from=convert /proj/docs/convert/src ./md/
 COPY --from=dev /proj/docs/dev/build ./build/
-COPY --from=dev /proj/docs/dev/log ./dev.log
