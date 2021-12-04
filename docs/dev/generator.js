@@ -64,6 +64,10 @@ const xrefGet = (s, t) => {
   return r;
 };
 
+const urlExtension = (url) => {
+  return url.split(/[#?]/)[0].split('.').pop().trim();
+};
+
 const prependTocNode = (options = {}) => {
   return (tree, file) => {
     tree.children = [
@@ -188,7 +192,12 @@ const shikiHighlighter =
   await shiki.getHighlighter({
     theme: 'github-light',
     langs: [
-      ...shiki.BUNDLED_LANGUAGES,
+      ...shiki.BUNDLED_LANGUAGES.map((l) => {
+        if ( l.id === 'javascript' ) {
+          l.aliases.push('mjs');
+        }
+        return l;
+      }),
       {
         id: 'reach',
         scopeName: 'source.js',
@@ -507,6 +516,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     // Get remote content if specified.
     if (spec.url) {
       code.textContent = await remoteGet(spec.url);
+      spec.language = urlExtension(spec.url);
     }
 
     code.textContent = code.textContent.trimEnd();
