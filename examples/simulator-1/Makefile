@@ -5,9 +5,6 @@ NPM = npm
 .PHONY: build
 build:
 	$(NPM) install
-	$(REACH) version
-	pwd
-	ls
 	$(REACH) compile
 	$(REACH) run
 	$(REACH) compile --sim  & echo $!
@@ -15,6 +12,9 @@ build:
 
 .PHONY: run
 run:
+	pgrep ghc
+	pgrep stack
+	pgrep reach
 	$(NODE) client.mjs
 
 .PHONY: clean
