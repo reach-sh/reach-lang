@@ -5,10 +5,10 @@ NPM = npm
 .PHONY: build
 build:
 	$(NPM) install
+	$(REACH) compile --sim 2>&1 &
 
 .PHONY: run
 run:
-	REACH_DOCKER=0 $(REACH) compile --sim &
 	$(NODE) client.mjs
 
 .PHONY: clean
