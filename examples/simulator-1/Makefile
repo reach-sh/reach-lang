@@ -7,6 +7,7 @@ build:
 	$(NPM) install
 	$(REACH) version
 	pwd
+	ls 
 	$(REACH) compile --sim 2>&1 &
 
 .PHONY: run
