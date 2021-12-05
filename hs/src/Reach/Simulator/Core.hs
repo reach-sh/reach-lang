@@ -371,7 +371,7 @@ instance Interp DLExpr where
       ev1 <- interp dlarg1
       ev2 <- interp dlarg2
       case (ev1,ev2) of
-        (V_Array arr, V_UInt n) -> return $ arr !! (fromIntegral n)
+        (V_Array arr, V_UInt n) -> return $ saferIndex (fromIntegral n) arr
         _ -> impossible "expression interpreter"
     DLE_ArraySet _at dlarg1 dlarg2 dlarg3 -> do
       ev1 <- interp dlarg1
@@ -398,7 +398,7 @@ instance Interp DLExpr where
     DLE_TupleRef _at dlarg n -> do
       ev <- interp dlarg
       case ev of
-        V_Tuple arr -> return $ arr !! (fromIntegral n)
+        V_Tuple arr -> return $ saferIndex (fromIntegral n) arr
         _ -> impossible "expression interpreter"
     DLE_ObjectRef _at dlarg str -> do
       ev <- interp dlarg
@@ -694,3 +694,8 @@ while bl cons = do
       _ <- interp cons
       while bl cons
     _ -> impossible "unexpected error"
+
+saferIndex :: Int -> [a] -> a
+saferIndex 0 (x:_) = x
+saferIndex _ [] = possible "saferIndex failed"
+saferIndex n (_:xs) = saferIndex (n-1) xs
