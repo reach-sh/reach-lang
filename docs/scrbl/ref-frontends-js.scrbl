@@ -21,14 +21,14 @@ You only need to install the package directly if you are running your frontend w
 These libraries provide a standard interface that support developing @tech{frontends} in JavaScript.
 
 @itemlist[
-@item{@secref["ref-frontends-js-loader.mjs"] discusses how to load the standard library.}
+@item{@secref["ref-frontends-js-loader"] discusses how to load the standard library.}
 @item{@secref["ref-frontends-js-provider"] discusses how to adjust what provider is used to connect to a consensus network.}
 @item{@secref["ref-frontends-js-network"] discuss some utility functions that provide access to consensus network parameters and resources.}
 @item{@secref["ref-frontends-js-acc"] discusses how to construct an account handle, which is necessary to access contracts.}
 @item{@secref["ref-frontends-js-ctc"] discusses how to construct a contract handle, which is used to interact with a DApp.}
 @item{@secref["ref-frontends-js-types"] discusses the way that JavaScript values are used to represent Reach values.}
 @item{@secref["ref-frontends-js-utils"] discusses some utility functions for working with JavaScript-represented Reach values.}
-@item{@secref["ref-frontends-js-ask.mjs"] discusses a helper library for building text-based UIs.}
+@item{@secref["ref-frontends-js-ask"] discusses a helper library for building text-based UIs.}
 ]
 
 @section[#:tag "ref-frontends-js-types"]{Types}
@@ -64,7 +64,7 @@ A @reachin{Connector} is the abbreviated name of the network
 being connected to.
 
 
-@section[#:tag "ref-frontends-js-loader.mjs"]{@tt{loader.mjs}}
+@section[#:tag "ref-frontends-js-loader"]{@tt{loader.mjs}}
 
 The @tt{loader.mjs} module exports the following functions
 that might help you write code that is portable to multiple consensus networks.
@@ -888,7 +888,7 @@ There is no corresponding @jsin{parseAddress} function because
 the user-friendly form is also accepted from the frontend
 in all places that Reach expects an address.
 
-@section[#:tag "ref-frontends-js-ask.mjs"]{@tt{ask.mjs}}
+@section[#:tag "ref-frontends-js-ask"]{@tt{ask.mjs}}
 
 The Reach JavaScript standard library also provides the helper module @litchar{@"@"reach-sh/stdlib/ask.mjs} for constructing console interfaces to your @tech{frontends}.
 

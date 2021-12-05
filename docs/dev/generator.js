@@ -241,6 +241,36 @@ const processJs = async () => {
 }
 
 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+
+const makeExpander = (msg, expandEnv) => {
+  const expandKeys = Object.keys(expandEnv);
+  const expandVals = Object.values(expandEnv);
+  const evil = async (c) => {
+    const af = new AsyncFunction(...expandKeys, `"use strict"; return (${c});`);
+    try {
+      return await af(...expandVals);
+    } catch (e) {
+      fail(`evil`, msg, c, `err`, e);
+      return `${e}`;
+    }
+  }
+  const expand = async (s) => {
+    const ms = s.indexOf('@{'); // }
+    if ( ms === -1 ) { return s; }
+    /* { */ const me = s.indexOf('}', ms);
+    if ( me === -1 ) { throw Error(`No closing } in interpolation: ${msg}: ${s.slice(ms)}`); }
+    const pre = s.slice(0, ms);
+    const mid = s.slice(ms+2, me);
+    const pos = s.slice(me+1);
+    const mid_e = await evil(mid);
+    const posp = `${mid_e}${pos}`;
+    const posp_e = await expand(posp);
+    return `${pre}${posp_e}`;
+  };
+
+  return expand;
+};
+
 const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   const mdPath = `${in_folder}/index.md`;
   const cfgPath = `${out_folder}/${cfgFile}`;
@@ -386,31 +416,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     })
   };
 
-  const expandEnv = { ...configJson, ...expanderEnv };
-  const expandKeys = Object.keys(expandEnv);
-  const expandVals = Object.values(expandEnv);
-  const evil = async (c) => {
-    const af = new AsyncFunction(...expandKeys, `"use strict"; return (${c});`);
-    try {
-      return await af(...expandVals);
-    } catch (e) {
-      fail(`evil`, mdPath, c, `err`, e);
-      return `${e}`;
-    }
-  }
-  const expand = async (s) => {
-    const ms = s.indexOf('@{'); // }
-    if ( ms === -1 ) { return s; }
-    /* { */ const me = s.indexOf('}', ms);
-    if ( me === -1 ) { throw Error(`No closing } in interpolation: ${mdPath}: ${s.slice(ms)}`); }
-    const pre = s.slice(0, ms);
-    const mid = s.slice(ms+2, me);
-    const pos = s.slice(me+1);
-    const mid_e = await evil(mid);
-    const posp = `${mid_e}${pos}`;
-    const posp_e = await expand(posp);
-    return `${pre}${posp_e}`;
-  };
+  const expand = makeExpander(mdPath, { ...configJson, ...expanderEnv });
 
   const raw = await fs.readFile(mdPath, 'utf8');
   let md = await expand(raw);
@@ -619,6 +625,22 @@ const findAndProcessFolder = async (base_html, inputBaseConfig, folder) => {
   }));
 };
 
+const generateRedirects = async () => {
+  const rehtml = await fs.readFile('redirect.html', { encoding: 'utf8' });
+  const root = `${outDir}/redirects`;
+  await fs.mkdir(root);
+
+  const ms = await fs.readFile('manifest.txt', { encoding: 'utf8' });
+  const fl = ms.trimEnd().split('\n');
+  await Promise.all(fl.map(async (f) => {
+    if ( f === 'google00951c88ddc5bd51' || f === 'index' ) { return; }
+    const { path } = xrefGet('h', f);
+    const expand = makeExpander('generateRedirects', { URL: path });
+    const re_f = await expand(rehtml);
+    await fs.writeFile( `${root}/${f}.html`, re_f );
+  }));
+};
+
 // Main
 
 await findAndProcessFolder(`base.html`, process.env, srcDir);
@@ -628,8 +650,9 @@ await Promise.all([
   processJs(),
   processBaseHtml(),
   findAndProcessFolder(`base.html`, process.env, srcDir),
+  generateRedirects(),
 ]);
 
 if ( hasError ) {
-  process.exit(1);
+  throw Error(`Build had errors`);
 }
