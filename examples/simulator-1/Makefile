@@ -1,9 +1,10 @@
 REACH = ../../reach
 NODE = node
+NPM = npm
 
 .PHONY: build
 build:
-	cd .
+	$(NPM) install 
 
 .PHONY: run
 run:
@@ -12,5 +13,4 @@ run:
 
 .PHONY: clean
 clean:
-	$(REACH) down
 	lsof -ti tcp:3001 | xargs kill
