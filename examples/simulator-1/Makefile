@@ -4,7 +4,7 @@ NPM = npm
 
 .PHONY: build
 build:
-	$(NPM) install 
+	$(NPM) install
 
 .PHONY: run
 run:
@@ -13,4 +13,4 @@ run:
 
 .PHONY: clean
 clean:
-	lsof -ti tcp:3001 | xargs kill
+	cd .
