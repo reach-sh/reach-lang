@@ -1,5 +1,5 @@
 <p>
-  As discussed <a href="##guide-determ">earlier in the guide</a>, Reach computations have a deterministic structure, but non-deterministic values.
+  As discussed <a href="/md/guide/determ/#guide-determ">earlier in the guide</a>, Reach computations have a deterministic structure, but non-deterministic values.
   This means that a program will always execute steps A, B, and then C, but the values manipulated by those steps may be different on every execution.
 </p>
 <p>
@@ -9,7 +9,7 @@
 <p>
   However, a more subtle form of value non-determinism occurs with the <code>race</code> expression.
   This expression allows multiple participants to all attempt to provide the same value for a publication.
-  For example, consider a turn-based game, like <a href="##workshop-nim">Nim</a>, where there is no <em>a priori</em> way to determine who goes first.
+  For example, consider a turn-based game, like <a href="/md/workshop/#workshop-nim">Nim</a>, where there is no <em>a priori</em> way to determine who goes first.
   We could write a Reach program like:
 </p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6E7781">// Alice publishes the wager</span></li><li value="2"></li><li value="3"><span style="color: #6E7781">// Bob accepts the wager</span></li><li value="4"></li><li value="5"><span style="color: #24292F">Alice.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="6"><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">aliceGoesFirst</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">true</span><span style="color: #24292F">; });</span></li><li value="7"><span style="color: #24292F">Bob.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="8"><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">aliceGoesFirst</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">false</span><span style="color: #24292F">; });</span></li><li value="9"><span style="color: #8250DF">race</span><span style="color: #24292F">(Alice, Bob).</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(aliceGoesFirst);</span></li><li value="10"></li><li value="11"><span style="color: #6E7781">// They play the game, taking turns</span></li></ol></pre>

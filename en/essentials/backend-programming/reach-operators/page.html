@@ -1,4 +1,4 @@
-<h1 id="arithmetic-operators">Arithmetic Operators</h1>
+<h1 id="arithmetic-operators">Arithmetic Operators<a aria-hidden="true" tabindex="-1" href="#arithmetic-operators"><span class="icon icon-link"></span></a></h1>
 <p>These operators work on unsigned integers. Corresponding functions are <code>add</code>, <code>sub</code>, <code>mul</code>, <code>div</code>, and <code>mod</code>.</p>
 <table>
   <thead>
@@ -36,7 +36,7 @@
     </tr>
   </tbody>
 </table>
-<h1 id="assignment-operators">Assignment Operators</h1>
+<h1 id="assignment-operators">Assignment Operators<a aria-hidden="true" tabindex="-1" href="#assignment-operators"><span class="icon icon-link"></span></a></h1>
 <p>Reach supports only the assignment operator (i.e. <code>=</code>). All other operators (e.g. <code>+=</code>, <code>*=</code>, ...) are invalid because Reach does not support the reassignment of an identifier.</p>
 <table>
   <thead>
@@ -54,7 +54,7 @@
     </tr>
   </tbody>
 </table>
-<h1 id="bitwise-operators">Bitwise Operators</h1>
+<h1 id="bitwise-operators">Bitwise Operators<a aria-hidden="true" tabindex="-1" href="#bitwise-operators"><span class="icon icon-link"></span></a></h1>
 <p>Bitwise operations are not supported by all consensus networks. They also decrease the efficiency of verification.</p>
 <table>
   <thead>
@@ -92,7 +92,7 @@
     </tr>
   </tbody>
 </table>
-<h1 id="comparison-operators">Comparison Operators</h1>
+<h1 id="comparison-operators">Comparison Operators<a aria-hidden="true" tabindex="-1" href="#comparison-operators"><span class="icon icon-link"></span></a></h1>
 <p>Comparison operators evaluate to <code>true</code> or <code>false</code>. Comparisons between values of different types are invalid. Therefore, <code>==</code> and <code>===</code> have the same meaning, and <code>!=</code> and <code>!==</code> do, too.</p>
 <table>
   <thead>
@@ -135,7 +135,7 @@
     </tr>
   </tbody>
 </table>
-<h1 id="logical-operators">Logical Operators</h1>
+<h1 id="logical-operators">Logical Operators<a aria-hidden="true" tabindex="-1" href="#logical-operators"><span class="icon icon-link"></span></a></h1>
 <p>Logical <code>and</code> evaluates to <code>true</code> when both the left-side expression and the right-side expression evaluate to <code>true</code>, and logical <code>or</code> evaluates to <code>true</code> when either the left-side expression or the right-side expression evaluates to <code>true</code>.</p>
 <table>
   <thead>
@@ -158,7 +158,7 @@
     </tr>
   </tbody>
 </table>
-<h1 id="type-operator">Type Operator</h1>
+<h1 id="type-operator">Type Operator<a aria-hidden="true" tabindex="-1" href="#type-operator"><span class="icon icon-link"></span></a></h1>
 <p>Reach supports the <code>typeof</code> operator and two functions, <code>typeOf()</code> and <code>is()</code>, for examining data types of values.</p>
 <table>
   <thead>
@@ -191,7 +191,7 @@
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #8250DF">addOneImpl</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> (</span><span style="color: #953800">x</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> x </span><span style="color: #CF222E">+</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">addOne</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">is</span><span style="color: #24292F">(addOneImpl, </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Null)); </span><span style="color: #6E7781">// invalid</span></li></ol></pre>
 <p>Because <code>addOneImpl</code> is not of type <code>Fun([UInt], Null)</code>, the compiler outputs an error:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">These types are mismatched: UInt vs Null</li></ol></pre>
-<h1 id="ternary-operator">Ternary Operator</h1>
+<h1 id="ternary-operator">Ternary Operator<a aria-hidden="true" tabindex="-1" href="#ternary-operator"><span class="icon icon-link"></span></a></h1>
 <table>
   <thead>
     <tr>

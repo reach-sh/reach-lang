@@ -1,28 +1,27 @@
 <div class="note">
-  <p>This frontend library relies on the <a href="##ref-backends-rpc">Reach RPC Server</a>.</p>
+  <p>This frontend library relies on the <a href="/md/rpc/#ref-backends-rpc">Reach RPC Server</a>.</p>
 </div>
 <p>
   A <a href="https://golang.org">Go</a> client library for the
-  <a href="##ref-backends-rpc">Reach RPC protocol</a> may be installed by running:
+  <a href="/md/rpc/#ref-backends-rpc">Reach RPC protocol</a> may be installed by running:
 </p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ go get github.com/reach-sh/reach-lang/rpc-client/go</li></ol></pre>
 <p>
   Once installed, add the following import line to your Go file which will connect
-  to the <a href="##ref-backends-rpc">RPC server</a>:
+  to the <a href="/md/rpc/#ref-backends-rpc">RPC server</a>:
 </p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> </span><span style="color: #0550AE">reachrpc</span><span style="color: #24292F"> </span><span style="color: #0A3069">"</span><span style="color: #953800">github.com/reach-sh/reach-lang/rpc-client/go</span><span style="color: #0A3069">"</span></li></ol></pre>
 <p>The library provides the following bindings:</p>
 <hr>
-<p>["XXX","ref","go","reachrpc.Mk"]</p>
+<p><span id="go_reachrpc.Mk"></span></p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">rpc, rpcCallbacks </span><span style="color: #CF222E">:=</span><span style="color: #24292F"> reachrpc.</span><span style="color: #0550AE">Mk</span><span style="color: #24292F">(opts)</span></li></ol></pre>
 <p>
-  <code>reachrpc.Mk</code> accepts the ["XXX","seclink","ref-backends-rpc-opts"] as a <code>map</code>
+  <code>reachrpc.Mk</code> accepts the <a href="/md/rpc/#ref-backends-rpc-opts">Reach RPC Client Standard Options</a> as a <code>map</code>
   and returns two functions, traditionally called <code>rpc</code> and
   <code>rpcCallbacks</code>.
 </p>
 <p>
-  ["XXX","ref","go","rpc"]
-  <code>rpc</code> is a function that invokes a synchronous value RPC method.
+  <span id="go_rpc"></span><code>rpc</code> is a function that invokes a synchronous value RPC method.
   It takes a string, naming the RPC method, and some JSON values to provide as arguments.
   It returns a single JSON value as the result.
 </p>
@@ -30,8 +29,7 @@
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">rpc</span><span style="color: #24292F">(</span><span style="color: #0A3069">"/stdlib/formatCurrency"</span><span style="color: #24292F">, i, </span><span style="color: #0550AE">4</span><span style="color: #24292F">).(</span><span style="color: #CF222E">string</span><span style="color: #24292F">)</span></li></ol></pre>
 <p>calls <code>formatCurrency</code> with some value <code>i</code> and <code>4</code> and returns the result as a string.</p>
 <p>
-  ["XXX","ref","go","rpcCallbacks"]
-  <code>rpcCallbacks</code> is a function that invokes an interactive RPC method, such as for a backend.
+  <span id="go_rpcCallbacks"></span><code>rpcCallbacks</code> is a function that invokes an interactive RPC method, such as for a backend.
   It takes a string, naming the RPC method, a JSON value as an argument, and map from strings to JSON values or functions.
   The functions will be provided as interactive RPC callbacks to the RPC method and should expect JSON values as arguments and return a JSON value as a result.
   It returns <code>void</code>.

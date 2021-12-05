@@ -1,21 +1,21 @@
 <p>
-  The Reach RPC Server provides access to compiled JavaScript backends via an <a href="##ref-backends-rpc-proto">HTTPS-accessible JSON-based RPC protocol</a>.
+  The Reach RPC Server provides access to compiled JavaScript backends via an <a href="/md/rpc/proto/#ref-backends-rpc-proto">HTTPS-accessible JSON-based RPC protocol</a>.
   The server allows frontends to be written in any programming language.
   Reach provides client libraries for
-  <a href="##ref-frontends-rpc-js">JavaScript</a>,
-  <a href="##ref-frontends-rpc-py">Python</a>, and
-  <a href="##ref-frontends-rpc-go">Go</a>.
-  It is easy to <a href="##ref-backends-rpc-client">implement a client library yourself</a>.
-  An example frontend written using the Reach RPC Server is shown in the <a href="##tut-7-rpc">tutorial section on RPC-based frontends</a>.
+  <a href="/md/rpc/js/#ref-frontends-rpc-js">JavaScript</a>,
+  <a href="/md/rpc/py/#ref-frontends-rpc-py">Python</a>, and
+  <a href="/md/rpc/go/#ref-frontends-rpc-go">Go</a>.
+  It is easy to <a href="/md/rpc/client/#ref-backends-rpc-client">implement a client library yourself</a>.
+  An example frontend written using the Reach RPC Server is shown in the <a href="/md/tut/rps/7-rpc/#tut-7-rpc">tutorial section on RPC-based frontends</a>.
 </p>
 <p>The command</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach rpc-server</li></ol></pre>
 <p>starts an instance of the Reach RPC Server.</p>
 <hr>
-<p>The Reach RPC Server supports the following ["XXX","defn","RPC methods"]:</p>
+<p>The Reach RPC Server supports the following <span id="term_RPC%20methods">RPC methods</span>:</p>
 <ul>
   <li><code>/health</code> returns <code>true</code> to indicate the server is running properly.</li>
-  <li><code>/stdlib/$METHOD</code> where <code>$METHOD</code> is a function of the <a href="##ref-frontends-js">JavaScript standard library</a>.</li>
+  <li><code>/stdlib/$METHOD</code> where <code>$METHOD</code> is a function of the <a href="/md/frontend/js/#ref-frontends-js">JavaScript standard library</a>.</li>
 </ul>
 <p>All <code>/stdlib</code> methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except those that produce or consume account representations.</p>
 <p>
@@ -24,7 +24,7 @@
 </p>
 <ul>
   <li><code>/forget/acc</code> accepts an account RPC handle and deletes it from the Reach RPC Server's memory.</li>
-  <li><code>/acc/$METHOD</code> where <code>$METHOD</code> is a method of an account representation of the <a href="##ref-frontends-js">JavaScript standard library</a>.</li>
+  <li><code>/acc/$METHOD</code> where <code>$METHOD</code> is a method of an account representation of the <a href="/md/frontend/js/#ref-frontends-js">JavaScript standard library</a>.</li>
 </ul>
 <p>All <code>/acc</code> methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the account RPC handle returned by a prior RPC method invocation; and, a method that accepts a backend (like <code>/acc/attach</code> (i.e. <code>acc.attach</code>) or <code>/acc/deploy</code> (i.e. <code>acc.deploy</code>) does not accept a backend argument, but has it implicitly provided by the Reach RPC Server.</p>
 <p>
@@ -33,11 +33,11 @@
 </p>
 <ul>
   <li><code>/forget/ctc</code> accepts a contract RPC handle and deletes it from the Reach RPC Server's memory.</li>
-  <li><code>/ctc/$METHOD</code> where <code>$METHOD</code> is a method of a contract representation of the <a href="##ref-frontends-js">JavaScript standard library</a>.</li>
+  <li><code>/ctc/$METHOD</code> where <code>$METHOD</code> is a method of a contract representation of the <a href="/md/frontend/js/#ref-frontends-js">JavaScript standard library</a>.</li>
 </ul>
 <p>All <code>/ctc</code> methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the contract RPC handle returned by a prior RPC method invocation.</p>
 <ul>
-  <li><code>/backend/$PARTICIPANT</code> where <code>$PARTICIPANT</code> is a participant of the backend compiled by the <a href="##ref-backends-js">JavaScript backend</a>.</li>
+  <li><code>/backend/$PARTICIPANT</code> where <code>$PARTICIPANT</code> is a participant of the backend compiled by the <a href="/md/compiled/js/#ref-backends-js">JavaScript backend</a>.</li>
 </ul>
 <p>All <code>/backend</code> methods are interactive RPC methods that accept three arguments:</p>
 <ul>
@@ -45,9 +45,9 @@
   <li><code>values</code> --- An object containing the non-function components of the participant interact interface of the backend.</li>
   <li><code>methods</code> --- An object whose keys correspond to the function components of the participant interact interface of the backend, but whose values are <code>true</code>.</li>
 </ul>
-<p>As a special case, if <code>values</code> contains <code>stdlib.hasRandom</code> bound to <code>true</code>, then the <a href="##ref-frontends-js">JavaScript standard library</a>'s implementation of <code>hasRandom</code> is provided to the backend.</p>
+<p>As a special case, if <code>values</code> contains <code>stdlib.hasRandom</code> bound to <code>true</code>, then the <a href="/md/frontend/js/#ref-frontends-js">JavaScript standard library</a>'s implementation of <code>hasRandom</code> is provided to the backend.</p>
 <p>
-  As the backend executes, any of the components of <code>methods</code> invoked will be executed as interactive RPC callbacks as described by the <a href="##ref-backends-rpc-proto">Reach RPC Protocol Specification</a>.
+  As the backend executes, any of the components of <code>methods</code> invoked will be executed as interactive RPC callbacks as described by the <a href="/md/rpc/proto/#ref-backends-rpc-proto">Reach RPC Protocol Specification</a>.
   Reach RPC Client libraries <em>should</em> expose a function that hides the details of the construction of the <code>values</code> and <code>methods</code> objects and implements interactive RPC callback handlers automatically.
 </p>
 <ul>
@@ -61,7 +61,7 @@
     <p><code>/stop</code> quits the server.</p>
   </li>
 </ul>
-<h2 id="ref-backends-rpc-opts-reach-rpc-client-standard-options">{#ref-backends-rpc-opts} Reach RPC Client Standard Options</h2>
+<h2 id="ref-backends-rpc-opts">Reach RPC Client Standard Options<a aria-hidden="true" tabindex="-1" href="#ref-backends-rpc-opts"><span class="icon icon-link"></span></a></h2>
 <p>Reach RPC client libraries must accept a dictionary data structure with the following keys for customizing their behavior:</p>
 <ul>
   <li>

@@ -3,11 +3,11 @@
   supported by Reach version 0.1.7:
 </p>
 <ul>
-  <li>["XXX","seclink","ref-network-algo"]</li>
-  <li>["XXX","seclink","ref-network-eth"]</li>
-  <li>["XXX","seclink","ref-network-cfx"]</li>
+  <li><a href="/md/networks/#ref-network-algo">Algorand</a></li>
+  <li><a href="/md/networks/#ref-network-eth">Ethereum</a></li>
+  <li><a href="/md/networks/#ref-network-cfx">Conflux</a></li>
 </ul>
-<h2 id="ref-network-algo-algorand">{#ref-network-algo} Algorand</h2>
+<h2 id="ref-network-algo">Algorand<a aria-hidden="true" tabindex="-1" href="#ref-network-algo"><span class="icon icon-link"></span></a></h2>
 <p>
   The <a href="https://www.algorand.com/">Algorand</a> Reach connector generates a
   contract that manage one instance of the DApp's
@@ -72,8 +72,8 @@
     This is useful if you are running your own testing network.
   </li>
 </ul>
-<h2 id="ref-network-cfx-conflux">{#ref-network-cfx} Conflux</h2>
-<p>The <a href="https://confluxnetwork.org/">Conflux</a> Reach connector works almost identically to the <a href="##ref-network-eth">Ethereum connector</a>, except that it behaves differently at runtime: using, for example, <a href="https://portal.confluxnetwork.org/">Conflux Portal</a> rather than <a href="https://metamask.io/">MetaMask</a>, and connecting to Conflux nodes.</p>
+<h2 id="ref-network-cfx">Conflux<a aria-hidden="true" tabindex="-1" href="#ref-network-cfx"><span class="icon icon-link"></span></a></h2>
+<p>The <a href="https://confluxnetwork.org/">Conflux</a> Reach connector works almost identically to the <a href="/md/networks/#ref-network-eth">Ethereum connector</a>, except that it behaves differently at runtime: using, for example, <a href="https://portal.confluxnetwork.org/">Conflux Portal</a> rather than <a href="https://metamask.io/">MetaMask</a>, and connecting to Conflux nodes.</p>
 <p>Backends must respect the following environment variables:</p>
 <ul>
   <li>
@@ -85,8 +85,8 @@
     It defaults to <code>999</code>.
   </li>
 </ul>
-<h3 id="cfx-faq-faq">{#cfx-faq} FAQ</h3>
-<h4 id="cfx-faq-mainnet-how-do-i-run-my-reach-dapp-on-cfx-testnet-or-mainnet">{#cfx-faq-mainnet} How do I run my Reach DApp on CFX TestNet or MainNet?</h4>
+<h3 id="cfx-faq">FAQ<a aria-hidden="true" tabindex="-1" href="#cfx-faq"><span class="icon icon-link"></span></a></h3>
+<h4 id="cfx-faq-mainnet">How do I run my Reach DApp on CFX TestNet or MainNet?<a aria-hidden="true" tabindex="-1" href="#cfx-faq-mainnet"><span class="icon icon-link"></span></a></h4>
 <p>
   You can add the following JavaScript near the beginning of your index.js or index.mjs file
   in order to run on Conflux TestNet:
@@ -94,7 +94,7 @@
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">reach.</span><span style="color: #8250DF">setProviderByName</span><span style="color: #24292F">(</span><span style="color: #0A3069">'TestNet'</span><span style="color: #24292F">);</span></li></ol></pre>
 <p>Or this to run on Conflux MainNet:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">reach.</span><span style="color: #8250DF">setProviderByName</span><span style="color: #24292F">(</span><span style="color: #0A3069">'MainNet'</span><span style="color: #24292F">);</span></li></ol></pre>
-<h4 id="cfx-faq-cplocal-how-can-i-use-confluxportal-with-the-reach-devnet">{#cfx-faq-cplocal} How can I use ConfluxPortal with the Reach devnet?</h4>
+<h4 id="cfx-faq-cplocal">How can I use ConfluxPortal with the Reach devnet?<a aria-hidden="true" tabindex="-1" href="#cfx-faq-cplocal"><span class="icon icon-link"></span></a></h4>
 <p>
   If you find that ConfluxPortal's Localhost 12537 default configuration does not work correctly with Reach apps,
   you can try configuring ConfluxPortal to use a custom RPC endpoint:
@@ -116,7 +116,7 @@
   <li>Switch to a different network and back</li>
   <li>CTRL+SHIFT+R to hard-reset the webpage.</li>
 </ul>
-<h4 id="cfx-faq-sponsor-how-can-i-use-gas-and-storage-sponsorship">{#cfx-faq-sponsor} How can I use gas and storage sponsorship?</h4>
+<h4 id="cfx-faq-sponsor">How can I use gas and storage sponsorship?<a aria-hidden="true" tabindex="-1" href="#cfx-faq-sponsor"><span class="icon icon-link"></span></a></h4>
 <p>
   Conflux, like many other networks, charges fees for using the network and interacting with smart contracts.
   These fees are normally pay by the originator the transaction: who we would call the "publisher" in Reach.
@@ -165,7 +165,7 @@
   <a href="https://forum.conflux.fun/t/announcement-usage-adjustment-of-ecosystem-fund-for-the-conflux-sponsorship-mechanism-2022-11-11/12056">This forum post</a> discusses how to request sponsorship of your contract.
   If the Foundation agrees to sponsor your program, then you only need to do steps one and two above: you can skip step three.
 </p>
-<h2 id="ref-network-eth-ethereum">{#ref-network-eth} Ethereum</h2>
+<h2 id="ref-network-eth">Ethereum<a aria-hidden="true" tabindex="-1" href="#ref-network-eth"><span class="icon icon-link"></span></a></h2>
 <p>
   The <a href="https://ethereum.org/">Ethereum</a> Reach connector generates a contract that
   manages one instance of the DApp's execution.

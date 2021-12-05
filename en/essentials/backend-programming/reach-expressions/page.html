@@ -1,15 +1,15 @@
 <p>See <a href="/en/essentials/backend-programming/reach-types/">Reach Types</a> for expressions related to specific Reach types.</p>
 <p>For arithmetic expressions, see <a href="/en/essentials/backend-programming/reach-types/#array">Array</a>, <a href="/en/essentials/backend-programming/reach-types/#fixedpoint">FixedPoint</a>, <a href="/en/essentials/backend-programming/reach-types/#int">Int</a>, <a href="/en/essentials/backend-programming/reach-types/#interval">Interval</a>, and <a href="/en/essentials/backend-programming/reach-types/#uint">UInt</a>. See also <a href="/en/essentials/backend-programming/reach-operators/">Reach Operators</a>.</p>
-<h1 id="anybody">Anybody</h1>
-<h1 id="arrow-expression">Arrow Expression</h1>
-<h1 id="assertion-expressions">Assertion Expressions</h1>
-<h3 id="assert">assert</h3>
-<h3 id="assume">assume</h3>
-<h3 id="fail">fail</h3>
+<h1 id="anybody">Anybody<a aria-hidden="true" tabindex="-1" href="#anybody"><span class="icon icon-link"></span></a></h1>
+<h1 id="arrow-expression">Arrow Expression<a aria-hidden="true" tabindex="-1" href="#arrow-expression"><span class="icon icon-link"></span></a></h1>
+<h1 id="assertion-expressions">Assertion Expressions<a aria-hidden="true" tabindex="-1" href="#assertion-expressions"><span class="icon icon-link"></span></a></h1>
+<h3 id="assert">assert<a aria-hidden="true" tabindex="-1" href="#assert"><span class="icon icon-link"></span></a></h3>
+<h3 id="assume">assume<a aria-hidden="true" tabindex="-1" href="#assume"><span class="icon icon-link"></span></a></h3>
+<h3 id="fail">fail<a aria-hidden="true" tabindex="-1" href="#fail"><span class="icon icon-link"></span></a></h3>
 <p>The <code>fail</code> expression is equivalent to <code>assume(false)</code>.</p>
-<h3 id="false">false</h3>
-<h3 id="require">require</h3>
-<h3 id="unknowable">unknowable</h3>
+<h3 id="false">false<a aria-hidden="true" tabindex="-1" href="#false"><span class="icon icon-link"></span></a></h3>
+<h3 id="require">require<a aria-hidden="true" tabindex="-1" href="#require"><span class="icon icon-link"></span></a></h3>
+<h3 id="unknowable">unknowable<a aria-hidden="true" tabindex="-1" href="#unknowable"><span class="icon icon-link"></span></a></h3>
 <p>The <code>unknowable</code> expression asserts that one participant does not know certain values while another participant does. Here is the declaration:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">unknowable</span><span style="color: #24292F">( Notter, </span><span style="color: #8250DF">Knower</span><span style="color: #24292F">(var_0, </span><span style="color: #CF222E">...</span><span style="color: #24292F">, var_N), [msg] )</span></li></ol></pre>
 <ul>
@@ -18,7 +18,7 @@
   <li><code>var_0, ..., var_N</code> are the values not known and known.</li>
   <li><code>msg</code> is a byte array included in any reported violation.</li>
 </ul>
-<h1 id="call">call</h1>
+<h1 id="call">call<a aria-hidden="true" tabindex="-1" href="#call"><span class="icon icon-link"></span></a></h1>
 <p>A <code>call</code> expression invokes the specified API function. Below is the declaration:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> [ </span><span style="color: #0550AE">DOMAIN</span><span style="color: #24292F">, </span><span style="color: #0550AE">RET_FUN</span><span style="color: #24292F"> ] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">call</span><span style="color: #24292F">(</span><span style="color: #0550AE">API_EXPR</span><span style="color: #24292F">)</span></li><li value="2"><span style="color: #24292F">  .</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(</span><span style="color: #0550AE">API_PAY_EXPR</span><span style="color: #24292F">)</span></li><li value="3"><span style="color: #24292F">  .</span><span style="color: #8250DF">assume</span><span style="color: #24292F">(</span><span style="color: #0550AE">API_ASSUME_EXPR</span><span style="color: #24292F">)</span></li><li value="4"><span style="color: #24292F">  .</span><span style="color: #8250DF">throwTimeout</span><span style="color: #24292F">(</span><span style="color: #0550AE">DELAY_EXPR</span><span style="color: #24292F">, </span><span style="color: #0550AE">THROW_EXPR</span><span style="color: #24292F">)</span></li></ol></pre>
 <ul>
@@ -28,8 +28,8 @@
 </ul>
 <p>Here is an example:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">A</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">API</span><span style="color: #24292F">(</span><span style="color: #0A3069">'A'</span><span style="color: #24292F">, { isGt: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt, UInt], Bool); });</span></li><li value="2"><span style="color: #6E7781">// ...</span></li><li value="3"><span style="color: #CF222E">const</span><span style="color: #24292F"> [ </span><span style="color: #0550AE">dom</span><span style="color: #24292F">, </span><span style="color: #0550AE">k</span><span style="color: #24292F"> ] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">call</span><span style="color: #24292F">(</span><span style="color: #0550AE">A</span><span style="color: #24292F">.isGt).</span><span style="color: #8250DF">assume</span><span style="color: #24292F">((</span><span style="color: #953800">x</span><span style="color: #24292F">, </span><span style="color: #953800">y</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> x </span><span style="color: #CF222E">!=</span><span style="color: #24292F"> y).</span><span style="color: #8250DF">pay</span><span style="color: #24292F">((</span><span style="color: #953800">x</span><span style="color: #24292F">, </span><span style="color: #953800">y</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> x);</span></li><li value="4"><span style="color: #CF222E">const</span><span style="color: #24292F"> [</span><span style="color: #0550AE">x</span><span style="color: #24292F">, </span><span style="color: #0550AE">y</span><span style="color: #24292F">] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> dom;</span></li><li value="5"><span style="color: #8250DF">k</span><span style="color: #24292F">(x </span><span style="color: #CF222E">&gt;</span><span style="color: #24292F"> y);</span></li><li value="6"><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
-<h1 id="checkcommitment">checkCommitment</h1>
-<h1 id="closeto">closeTo</h1>
+<h1 id="checkcommitment">checkCommitment<a aria-hidden="true" tabindex="-1" href="#checkcommitment"><span class="icon icon-link"></span></a></h1>
+<h1 id="closeto">closeTo<a aria-hidden="true" tabindex="-1" href="#closeto"><span class="icon icon-link"></span></a></h1>
 <p>The <code>closeTo</code> expression causes the specified participant to publish, receive a <code>transfer</code> of the contract balance and the <a href="/en/books/essentials/terminology/#pay-amount">pay amount</a>, and then exit. Below is the declaration:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">closeTo</span><span style="color: #24292F">( Who, after, nonNetPayAmt )</span></li></ol></pre>
 <ul>
@@ -39,27 +39,27 @@
 </ul>
 <p>Here is an example:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">aliceInteract</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  informTimeout: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([], Null)</span></li><li value="3"><span style="color: #24292F">};</span></li><li value="4"></li><li value="5"><span style="color: #0550AE">B</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(wager).</span><span style="color: #8250DF">timeout</span><span style="color: #24292F">(</span><span style="color: #0550AE">DEADLINE</span><span style="color: #24292F">, () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #8250DF">closeTo</span><span style="color: #24292F">(</span><span style="color: #0550AE">A</span><span style="color: #24292F">, informTimeout));</span></li></ol></pre>
-<h1 id="compose">compose</h1>
-<h1 id="declassify">declassify</h1>
-<h1 id="didpublish">didPublish</h1>
-<h1 id="ensure">ensure</h1>
-<h1 id="forall">forall</h1>
-<h1 id="hasconsolelogger">hasConsoleLogger</h1>
-<h1 id="hasrandom">hasRandom</h1>
-<h1 id="implies">implies</h1>
-<h1 id="interact">interact</h1>
-<h1 id="literal-expressions">Literal Expressions</h1>
-<h3 id="unstrict">unstrict</h3>
-<h3 id="use-strict">use strict</h3>
-<h1 id="makecommitment">makeCommitment</h1>
-<h1 id="makeenum">makeEnum</h1>
-<h1 id="match">match</h1>
-<h1 id="new">new</h1>
-<h1 id="possible">possible</h1>
-<h1 id="race">race</h1>
+<h1 id="compose">compose<a aria-hidden="true" tabindex="-1" href="#compose"><span class="icon icon-link"></span></a></h1>
+<h1 id="declassify">declassify<a aria-hidden="true" tabindex="-1" href="#declassify"><span class="icon icon-link"></span></a></h1>
+<h1 id="didpublish">didPublish<a aria-hidden="true" tabindex="-1" href="#didpublish"><span class="icon icon-link"></span></a></h1>
+<h1 id="ensure">ensure<a aria-hidden="true" tabindex="-1" href="#ensure"><span class="icon icon-link"></span></a></h1>
+<h1 id="forall">forall<a aria-hidden="true" tabindex="-1" href="#forall"><span class="icon icon-link"></span></a></h1>
+<h1 id="hasconsolelogger">hasConsoleLogger<a aria-hidden="true" tabindex="-1" href="#hasconsolelogger"><span class="icon icon-link"></span></a></h1>
+<h1 id="hasrandom">hasRandom<a aria-hidden="true" tabindex="-1" href="#hasrandom"><span class="icon icon-link"></span></a></h1>
+<h1 id="implies">implies<a aria-hidden="true" tabindex="-1" href="#implies"><span class="icon icon-link"></span></a></h1>
+<h1 id="interact">interact<a aria-hidden="true" tabindex="-1" href="#interact"><span class="icon icon-link"></span></a></h1>
+<h1 id="literal-expressions">Literal Expressions<a aria-hidden="true" tabindex="-1" href="#literal-expressions"><span class="icon icon-link"></span></a></h1>
+<h3 id="unstrict">unstrict<a aria-hidden="true" tabindex="-1" href="#unstrict"><span class="icon icon-link"></span></a></h3>
+<h3 id="use-strict">use strict<a aria-hidden="true" tabindex="-1" href="#use-strict"><span class="icon icon-link"></span></a></h3>
+<h1 id="makecommitment">makeCommitment<a aria-hidden="true" tabindex="-1" href="#makecommitment"><span class="icon icon-link"></span></a></h1>
+<h1 id="makeenum">makeEnum<a aria-hidden="true" tabindex="-1" href="#makeenum"><span class="icon icon-link"></span></a></h1>
+<h1 id="match">match<a aria-hidden="true" tabindex="-1" href="#match"><span class="icon icon-link"></span></a></h1>
+<h1 id="new">new<a aria-hidden="true" tabindex="-1" href="#new"><span class="icon icon-link"></span></a></h1>
+<h1 id="possible">possible<a aria-hidden="true" tabindex="-1" href="#possible"><span class="icon icon-link"></span></a></h1>
+<h1 id="race">race<a aria-hidden="true" tabindex="-1" href="#race"><span class="icon icon-link"></span></a></h1>
 <p>A <code>race</code> expression organizes a competition among several participants (each intent on accomplishing the same task), determines which participant wins the competition, and executes task for the winner:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">race</span><span style="color: #24292F">(Alice, Bob).</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(bet);</span></li></ol></pre>
-<h1 id="this">this</h1>
+<h1 id="this">this<a aria-hidden="true" tabindex="-1" href="#this"><span class="icon icon-link"></span></a></h1>
 <p>Inside a local step, <code>this</code> refers to the participant performing the step:</p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #6E7781">// index.rsh</span></li><li value="2"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">commonInteract</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> { reportAddress: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([Address], Null) };</span></li><li value="3"><span style="color: #0550AE">S</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { </span></li><li value="4"><span style="color: #24292F">  interact.</span><span style="color: #8250DF">reportAddress</span><span style="color: #24292F">(</span><span style="color: #0550AE">this</span><span style="color: #24292F">); </span></li><li value="5"><span style="color: #24292F">  interact.</span><span style="color: #8250DF">reportAddress</span><span style="color: #24292F">(</span><span style="color: #8250DF">getAddress</span><span style="color: #24292F">());</span></li><li value="6"><span style="color: #24292F">});</span></li></ol></pre>
 <ul>
@@ -72,15 +72,15 @@
   <li>Line 1: <code>publish</code> transitions to a consensus step.</li>
   <li>Line 2: <code>this</code> is the address of the <code>race</code> winner (Participant <code>S</code> or Participant <code>B</code>).</li>
 </ul>
-<h1 id="time-expressions">Time Expressions</h1>
-<h3 id="absolutesecs">absoluteSecs</h3>
-<h3 id="absolutetime">absoluteTime</h3>
-<h3 id="basewaitsecs">baseWaitSecs</h3>
-<h3 id="basewaittime">baseWaitTime</h3>
-<h3 id="lastconsensussecs">lastConsensusSecs</h3>
-<h3 id="lastconsensustime">lastConsensusTime</h3>
-<h3 id="makedeadline">makeDeadline</h3>
-<h3 id="relativesecs">relativeSecs</h3>
-<h3 id="relativetime">relativeTime</h3>
-<h3 id="throughtimeout">throughTimeout</h3>
-<h3 id="timeremaining">timeRemaining</h3>
+<h1 id="time-expressions">Time Expressions<a aria-hidden="true" tabindex="-1" href="#time-expressions"><span class="icon icon-link"></span></a></h1>
+<h3 id="absolutesecs">absoluteSecs<a aria-hidden="true" tabindex="-1" href="#absolutesecs"><span class="icon icon-link"></span></a></h3>
+<h3 id="absolutetime">absoluteTime<a aria-hidden="true" tabindex="-1" href="#absolutetime"><span class="icon icon-link"></span></a></h3>
+<h3 id="basewaitsecs">baseWaitSecs<a aria-hidden="true" tabindex="-1" href="#basewaitsecs"><span class="icon icon-link"></span></a></h3>
+<h3 id="basewaittime">baseWaitTime<a aria-hidden="true" tabindex="-1" href="#basewaittime"><span class="icon icon-link"></span></a></h3>
+<h3 id="lastconsensussecs">lastConsensusSecs<a aria-hidden="true" tabindex="-1" href="#lastconsensussecs"><span class="icon icon-link"></span></a></h3>
+<h3 id="lastconsensustime">lastConsensusTime<a aria-hidden="true" tabindex="-1" href="#lastconsensustime"><span class="icon icon-link"></span></a></h3>
+<h3 id="makedeadline">makeDeadline<a aria-hidden="true" tabindex="-1" href="#makedeadline"><span class="icon icon-link"></span></a></h3>
+<h3 id="relativesecs">relativeSecs<a aria-hidden="true" tabindex="-1" href="#relativesecs"><span class="icon icon-link"></span></a></h3>
+<h3 id="relativetime">relativeTime<a aria-hidden="true" tabindex="-1" href="#relativetime"><span class="icon icon-link"></span></a></h3>
+<h3 id="throughtimeout">throughTimeout<a aria-hidden="true" tabindex="-1" href="#throughtimeout"><span class="icon icon-link"></span></a></h3>
+<h3 id="timeremaining">timeRemaining<a aria-hidden="true" tabindex="-1" href="#timeremaining"><span class="icon icon-link"></span></a></h3>

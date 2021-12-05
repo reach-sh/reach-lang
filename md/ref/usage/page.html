@@ -3,7 +3,7 @@
 <ul>
   <li>The environment variable <code>REACH_VERSION</code> signifies what version of Reach to use.</li>
 </ul>
-<p>Although normally expressed in a <a href="##guide-versions">semantic versioning</a>-friendly format, e.g. <code>v0.1</code> or <code>v0.1.6</code>, <code>REACH_VERSION</code> also supports:</p>
+<p>Although normally expressed in a <a href="/md/guide/versions/#guide-versions">semantic versioning</a>-friendly format, e.g. <code>v0.1</code> or <code>v0.1.6</code>, <code>REACH_VERSION</code> also supports:</p>
 <ul>
   <li>Hashes such as <a href="https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore">639fa565</a>.</li>
 </ul>
@@ -17,12 +17,12 @@
 <ul>
   <li>The identifer "<code>stable</code>".</li>
 </ul>
-<p>Reach will interpret this to mean the most recent stable <a href="##guide-versions">major</a> version.</p>
+<p>Reach will interpret this to mean the most recent stable <a href="/md/guide/versions/#guide-versions">major</a> version.</p>
 <p>
   When using the semantic versioning form of <code>REACH_VERSION</code> the preceding <code>v</code> character is optional.
   In other words, <code>v0.1.6</code> is equivalent to <code>0.1.6</code>.
 </p>
-<h2 id="ref-usage-compile-reach-compile">{#ref-usage-compile} <code>reach compile</code></h2>
+<h2 id="ref-usage-compile"><code>reach compile</code><a aria-hidden="true" tabindex="-1" href="#ref-usage-compile"><span class="icon icon-link"></span></a></h2>
 <p>You compile your Reach code by executing</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach compile SOURCE EXPORT ...</li></ol></pre>
 <p>
@@ -45,7 +45,7 @@
 <p>Reach will fail with an error message if package imports have not yet been fetched and this flag is not activated.</p>
 <p>
   Using this flag will create a <code>.reach</code> directory for your project.
-  This directory stores your project's ["XXX","defn","lockfile"], which is how Reach pins remote packages to specific versions.
+  This directory stores your project's <span id="term_lockfile">lockfile</span>, which is how Reach pins remote packages to specific versions.
   It is recommended that you commit the <code>.reach</code> directory to source control.
   Deleting this directory is also safe; it can easily be rebuilt by using the <code>--install-pkgs</code> flag again; in fact, this is the best way to upgrade your packages.
 </p>
@@ -63,10 +63,10 @@
     This debug information includes: the estimated cost of the contract on Algorand.
   </li>
 </ul>
-<h2 id="ref-usage-init-reach-init">{#ref-usage-init} <code>reach init</code></h2>
+<h2 id="ref-usage-init"><code>reach init</code><a aria-hidden="true" tabindex="-1" href="#ref-usage-init"><span class="icon icon-link"></span></a></h2>
 <p>You can create template <code>index.rsh</code> and <code>index.mjs</code> files for a simple Reach app by running</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach init</li></ol></pre>
-<h2 id="ref-usage-run-reach-run">{#ref-usage-run} <code>reach run</code></h2>
+<h2 id="ref-usage-run"><code>reach run</code><a aria-hidden="true" tabindex="-1" href="#ref-usage-run"><span class="icon icon-link"></span></a></h2>
 <p>You can run a simple Reach application by executing</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach run [APP or DIR] [ARGS]</li></ol></pre>
 <p><code>APP</code> represents a Reach module name without its extension (e.g. "index" by default).</p>
@@ -105,7 +105,7 @@
     <p><code>ETH-devnet</code>, which uses a Dockerized private Ethereum network.</p>
   </li>
   <li>
-    <p><code>ALGO-live</code>, which uses a live Algorand network node, specified by the environment variables documented in <a href="##ref-network-algo">the Algorand connector section</a>.</p>
+    <p><code>ALGO-live</code>, which uses a live Algorand network node, specified by the environment variables documented in <a href="/md/networks/#ref-network-algo">the Algorand connector section</a>.</p>
   </li>
   <li>
     <p><code>ALGO-browser</code>, which uses Algorand via an ARC-0011 browser wallet.</p>
@@ -122,14 +122,14 @@
   If either are absent, <code>reach run</code> assumes a default behavior (which may be persisted with <code>reach scaffold</code>).
 </p>
 <p>The <code>Dockerfile</code> can be modified to introduce new dependencies, services, or filesystem prerequisites into your app's containerized environment, and the <code>package.json</code> file may likewise be extended to include additional libraries or make configuration changes to the resultant Node.js package.</p>
-<h2 id="ref-usage-down-reach-down">{#ref-usage-down} <code>reach down</code></h2>
+<h2 id="ref-usage-down"><code>reach down</code><a aria-hidden="true" tabindex="-1" href="#ref-usage-down"><span class="icon icon-link"></span></a></h2>
 <p>You can halt all Dockerized Reach apps and devnets by running</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach down</li></ol></pre>
-<h2 id="ref-usage-scaffold-reach-scaffold">{#ref-usage-scaffold} <code>reach scaffold</code></h2>
+<h2 id="ref-usage-scaffold"><code>reach scaffold</code><a aria-hidden="true" tabindex="-1" href="#ref-usage-scaffold"><span class="icon icon-link"></span></a></h2>
 <p>You can create templated <code>Dockerfile</code> and <code>package.json</code> files for a simple Reach app by running</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach scaffold</li></ol></pre>
 <p>The files created are the same as those used temporarily by <code>reach run</code>.</p>
-<h2 id="ref-usage-react-reach-react">{#ref-usage-react} <code>reach react</code></h2>
+<h2 id="ref-usage-react"><code>reach react</code><a aria-hidden="true" tabindex="-1" href="#ref-usage-react"><span class="icon icon-link"></span></a></h2>
 <p>You can run a simple React app by executing</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach react</li></ol></pre>
 <p>This assumes</p>
@@ -179,7 +179,7 @@
   and the <code>'@reach-sh/stdlib'</code> JavaScript library
   may be used in any JavaScript project like any other JavaScript file and library, respectively.
 </p>
-<h2 id="ref-usage-devnet-reach-devnet">{#ref-usage-devnet} <code>reach devnet</code></h2>
+<h2 id="ref-usage-devnet"><code>reach devnet</code><a aria-hidden="true" tabindex="-1" href="#ref-usage-devnet"><span class="icon icon-link"></span></a></h2>
 <p>You can run a private Reach devnet by executing</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach devnet</li></ol></pre>
 <p><code>reach devnet</code> supports the following options:</p>
@@ -203,10 +203,10 @@
     <p>The environment variable <code>REACH_DEBUG</code> enables some additional debugging information for the Algorand devnet, which is accessible via <a href="http://localhost:9392">http://localhost:9392</a></p>
   </li>
 </ul>
-<h2 id="ref-usage-rpc-server-reach-rpc-server">{#ref-usage-rpc-server} <code>reach rpc-server</code></h2>
+<h2 id="ref-usage-rpc-server"><code>reach rpc-server</code><a aria-hidden="true" tabindex="-1" href="#ref-usage-rpc-server"><span class="icon icon-link"></span></a></h2>
 <p>The sub-command</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach rpc-server</li></ol></pre>
-<p>starts an instance of the <a href="##ref-backends-rpc">Reach RPC Server</a> using all of the same options and defaults as <code>reach run</code>.</p>
+<p>starts an instance of the <a href="/md/rpc/#ref-backends-rpc">Reach RPC Server</a> using all of the same options and defaults as <code>reach run</code>.</p>
 <p><code>reach rpc-server</code> supports the following options:</p>
 <ul>
   <li>
@@ -238,7 +238,7 @@
     It defaults to <code>rpc-demo</code>.
   </li>
 </ul>
-<h2 id="ref-usage-rpc-run-reach-rpc-run">{#ref-usage-rpc-run} <code>reach rpc-run</code></h2>
+<h2 id="ref-usage-rpc-run"><code>reach rpc-run</code><a aria-hidden="true" tabindex="-1" href="#ref-usage-rpc-run"><span class="icon icon-link"></span></a></h2>
 <p>The sub-command</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach rpc-run CMD</li></ol></pre>
 <p>
@@ -248,9 +248,9 @@
   development API key), and sets <code>REACH_RPC_TLS_REJECT_UNVERIFIED</code> to
   <code>0</code>.
 </p>
-<p>Consider this example from the ["XXX","seclink","tut-7-rpc"] tutorial:</p>
+<p>Consider this example from the <a href="/md/tut/rps/7-rpc/#tut-7-rpc">Rock, Paper, Scissors in Python</a> tutorial:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach rpc-run python3 -u ./index.py</li></ol></pre>
-<h2 id="ref-usage-docker-reset-reach-docker-reset">{#ref-usage-docker-reset} <code>reach docker-reset</code></h2>
+<h2 id="ref-usage-docker-reset"><code>reach docker-reset</code><a aria-hidden="true" tabindex="-1" href="#ref-usage-docker-reset"><span class="icon icon-link"></span></a></h2>
 <p>You can easily kill and remove all Docker containers by executing</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach docker-reset</li></ol></pre>
 <p>
@@ -258,25 +258,25 @@
   This command is a loose approximation of "turning Docker off and on again."
   It will affect all Docker containers on your machine, not just those created by Reach.
 </p>
-<h2 id="ref-usage-upgrade-reach-upgrade">{#ref-usage-upgrade} <code>reach upgrade</code></h2>
+<h2 id="ref-usage-upgrade"><code>reach upgrade</code><a aria-hidden="true" tabindex="-1" href="#ref-usage-upgrade"><span class="icon icon-link"></span></a></h2>
 <p>You can upgrade your Reach installation by executing</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach upgrade</li></ol></pre>
 <p>This may change the default version used by <code>reach</code> commands.</p>
-<h2 id="ref-usage-update-reach-update">{#ref-usage-update} <code>reach update</code></h2>
+<h2 id="ref-usage-update"><code>reach update</code><a aria-hidden="true" tabindex="-1" href="#ref-usage-update"><span class="icon icon-link"></span></a></h2>
 <p>You can update the Docker images used by your Reach installation by executing</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach update</li></ol></pre>
 <p>This may change the patch version used by <code>reach</code> commands.</p>
-<h2 id="ref-usage-version-reach-version">{#ref-usage-version} <code>reach version</code></h2>
+<h2 id="ref-usage-version"><code>reach version</code><a aria-hidden="true" tabindex="-1" href="#ref-usage-version"><span class="icon icon-link"></span></a></h2>
 <p>You can see what version of Reach you have installed by running</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach version</li></ol></pre>
-<h2 id="ref-usage-hashes-reach-hashes">{#ref-usage-hashes} <code>reach hashes</code></h2>
+<h2 id="ref-usage-hashes"><code>reach hashes</code><a aria-hidden="true" tabindex="-1" href="#ref-usage-hashes"><span class="icon icon-link"></span></a></h2>
 <p>You can see which exact versions of Reach Docker images you are using by running</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach hashes</li></ol></pre>
 <p>
   This is more precise, but less readable, than <code>reach version</code>,
   in that each hash refers to the git commit used to build the image.
 </p>
-<h2 id="ref-usage-config-reach-config">{#ref-usage-config} <code>reach config</code></h2>
+<h2 id="ref-usage-config"><code>reach config</code><a aria-hidden="true" tabindex="-1" href="#ref-usage-config"><span class="icon icon-link"></span></a></h2>
 <p>Reach recommends tuning your default workflow settings by executing</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach config</li></ol></pre>
 <p>Using <code>reach config</code> is advisable when running Reach for the first time since it will set the <code>REACH_CONNECTOR_MODE</code> environment variable, which is required when executing some other sub-commands (e.g. <code>reach run</code>).</p>

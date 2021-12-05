@@ -1,24 +1,23 @@
 <div class="note">
-  <p>This frontend library relies on the <a href="##ref-backends-rpc">Reach RPC Server</a>.</p>
+  <p>This frontend library relies on the <a href="/md/rpc/#ref-backends-rpc">Reach RPC Server</a>.</p>
 </div>
 <p>
   A <a href="https://www.javascript.com">JavaScript</a> client library for the
-  <a href="##ref-backends-rpc">Reach RPC protocol</a> may be installed by running:
+  <a href="/md/rpc/#ref-backends-rpc">Reach RPC protocol</a> may be installed by running:
 </p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ npm install --save @reach-sh/rpc-client</li></ol></pre>
 <p>
   Once installed, add the following import line to your JavaScript file which will
-  connect to the <a href="##ref-backends-rpc">RPC server</a>:
+  connect to the <a href="/md/rpc/#ref-backends-rpc">RPC server</a>:
 </p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> { mkRPC } </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'@reach-sh/rpc-client'</span><span style="color: #24292F">;</span></li></ol></pre>
 <p>The library provides the following bindings:</p>
 <hr>
-<p>["XXX","ref","js","mkRPC"]</p>
+<p><span id="js_mkRPC"></span></p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> { </span><span style="color: #0550AE">rpc</span><span style="color: #24292F">, </span><span style="color: #0550AE">rpcCallbacks</span><span style="color: #24292F"> } </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #8250DF">mkRPC</span><span style="color: #24292F">(opts);</span></li></ol></pre>
-<p><code>mkRPC</code> accepts the ["XXX","seclink","ref-backends-rpc-opts"] as an object and returns a Promise of an object with two fields, <code>rpc</code> and <code>rpcCallbacks</code>.</p>
+<p><code>mkRPC</code> accepts the <a href="/md/rpc/#ref-backends-rpc-opts">Reach RPC Client Standard Options</a> as an object and returns a Promise of an object with two fields, <code>rpc</code> and <code>rpcCallbacks</code>.</p>
 <p>
-  ["XXX","ref","js","rpc"]
-  <code>rpc</code> is a function that invokes a synchronous value RPC method.
+  <span id="js_rpc"></span><code>rpc</code> is a function that invokes a synchronous value RPC method.
   It takes a string, naming the RPC method, and some JSON values to provide as arguments.
   It returns a Promise of a single JSON value as the result.
 </p>
@@ -26,8 +25,7 @@
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #8250DF">rpc</span><span style="color: #24292F">(</span><span style="color: #0A3069">`/stdlib/formatCurrency`</span><span style="color: #24292F">, i, </span><span style="color: #0550AE">4</span><span style="color: #24292F">);</span></li></ol></pre>
 <p>calls <code>formatCurrency</code> with some value <code>i</code> and <code>4</code>.</p>
 <p>
-  ["XXX","ref","js","rpcCallbacks"]
-  <code>rpcCallbacks</code> is a function that invokes an interactive RPC method, such as for a backend.
+  <span id="js_rpcCallbacks"></span><code>rpcCallbacks</code> is a function that invokes an interactive RPC method, such as for a backend.
   It takes a string, naming the RPC method, a JSON value as an argument, and dictionary from strings to JSON values or <code>async</code> functions.
   The functions will be provided as interactive RPC callbacks to the RPC method and should expect JSON values as arguments and return a Promise of a JSON value as a result.
   It returns a Promise that does not contain a value.

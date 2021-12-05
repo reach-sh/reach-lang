@@ -22,6 +22,6 @@
   "REPO": "https://github.com/reach-sh/reach-lang/tree/master",
   "chapters": null,
   "pages": null,
-  "title": "{#guide-packages} Sharing and discovering shared Reach packages",
+  "title": "Sharing and discovering shared Reach packages",
   "pathname": "/proj/docs/dev/src/md/guide/packages"
 }

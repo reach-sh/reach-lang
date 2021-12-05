@@ -1,11 +1,11 @@
 <p>Reach assumes that network tokens and non-network tokens behave identically on consensus networks, but this is not the case in practice.</p>
-<h2 id="how-do-network-tokens-behave">How do network tokens behave?</h2>
+<h2 id="how-do-network-tokens-behave">How do network tokens behave?<a aria-hidden="true" tabindex="-1" href="#how-do-network-tokens-behave"><span class="icon icon-link"></span></a></h2>
 <p>
   An account on a consensus network can hold network tokens and as long as the network is available, it may send these tokens to other accounts or receive tokens from other accounts without preapproval from recipients and without the interference of third-parties not involved in a particular transfer.
   Each network may prescribe fees on transfers or other similar constraints on transfers (such as a minimum balance holding to send funds) but may not restrict the reception of funds or arbitrarily hold or reclaim network tokens.
   All consensus networks that Reach supports obey these properties.
 </p>
-<h2 id="how-do-non-network-tokens-violate-this">How do non-network tokens violate this?</h2>
+<h2 id="how-do-non-network-tokens-violate-this">How do non-network tokens violate this?<a aria-hidden="true" tabindex="-1" href="#how-do-non-network-tokens-violate-this"><span class="icon icon-link"></span></a></h2>
 <p>In each of the networks supported by Reach, non-network tokens may violate these expectations.</p>
 <p>
   On Ethereum, and Ethereum-like networks, where non-network tokens are just particular patterns of smart contracts, the concrete behavior of abstract operations like "Transfer 10 Zorkmids from John to Paul" may have arbitrary semantics.
@@ -25,7 +25,7 @@
 </p>
 <p>On each network, it is possible to minimize these differences---by disabling these options and obeying a standard semantics---but that behavior is not universal among all tokens.</p>
 <p>Non-network tokens minted by Reach always disable these options and behave as closely as possible to network tokens.</p>
-<h2 id="why-does-this-matter">Why does this matter?</h2>
+<h2 id="why-does-this-matter">Why does this matter?<a aria-hidden="true" tabindex="-1" href="#why-does-this-matter"><span class="icon icon-link"></span></a></h2>
 <p>These issues matter because developers and users of their applications need to understand that when they interact with a non-network token, they are interacting with a third party that can potentially control their application's behavior.</p>
 <p>
   For example, suppose George and Ringo decide to play poker on a consensus network and bet Zorkmids, rather than network tokens.
@@ -40,7 +40,7 @@
   in this scenario, if recipients are required to pre-authorize holding a token, then George can revoke that permission to spite Ringo and prevent him from getting his allocation.
 </p>
 <p>In summary, non-network tokens' semantics are non-intuitive considering the power given to their creators.</p>
-<h2 id="what-does-reach-do-about-this">What does Reach do about this?</h2>
+<h2 id="what-does-reach-do-about-this">What does Reach do about this?<a aria-hidden="true" tabindex="-1" href="#what-does-reach-do-about-this"><span class="icon icon-link"></span></a></h2>
 <p>
   Reach uses a verification engine to model the semantics of Reach programs to predict and reason about their behavior.
   In particular, it tries to prove two theorems:
@@ -74,7 +74,7 @@
   Third, we can assume that non-network tokens behave the same as network tokens and document the differences and educate developers and users about the consequences of this.
   Clearly, this is what we did.
 </p>
-<h2 id="what-can-i-do-about-it">What can I do about it?</h2>
+<h2 id="what-can-i-do-about-it">What can I do about it?<a aria-hidden="true" tabindex="-1" href="#what-can-i-do-about-it"><span class="icon icon-link"></span></a></h2>
 <p>
   First, if you use non-network tokens, you need to understand that you are trusting the token issuer as much as you are trusting the consensus network itself.
   This means that you need to audit its code, or configuration, and decide if you can place trust in its manager.

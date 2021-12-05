@@ -1,7 +1,7 @@
 <p>The Reach RPC Protocol (hereafter, "the protocol" or "it") is an instance of <a href="https://en.wikipedia.org/wiki/JSON">JSON</a>-based RPC protocol.</p>
 <p>It should be transported over <a href="https://en.wikipedia.org/wiki/HTTPS">HTTPS</a> (i.e. HTTP over TLS).</p>
 <p>
-  Requests must include an <code>X-API-Key</code> header whose value is a shared secret between a server instance and an RPC client, referred to as the ["XXX","defn","API key"].
+  Requests must include an <code>X-API-Key</code> header whose value is a shared secret between a server instance and an RPC client, referred to as the <span id="term_API%20key">API key</span>.
   Typically this value comes from the environment variable <code>REACH_RPC_KEY</code> and is the <a href="https://en.wikipedia.org/wiki/Base64">Base64</a> encoding of 24 random bytes.
 </p>
 <p>Requests must use the <code>POST</code> HTTP method.</p>
@@ -15,11 +15,11 @@
   Responses must include a <a href="https://en.wikipedia.org/wiki/JSON">JSON</a>-encoded value in their body.
   Responses should indicate this by setting the <code>Content-Type</code> header to <code>application/json; charset=utf-8</code>.
 </p>
-<p>Responses may include ["XXX","defn","RPC handles"], which are strings that represent intermediate resources held on the RPC server that cannot be serialized to JSON.</p>
+<p>Responses may include <span id="term_RPC%20handles">RPC handles</span>, which are strings that represent intermediate resources held on the RPC server that cannot be serialized to JSON.</p>
 <p>RPC methods are either synchronous value RPC methods or interactive RPC methods.</p>
 <hr>
 <p>
-  ["XXX","defn","Synchronous value RPC methods"] consume arguments and produce a single result without further interaction with the client.
+  <span id="term_Synchronous%20value%20RPC%20methods">Synchronous value RPC methods</span> consume arguments and produce a single result without further interaction with the client.
   The result is the body of the response.
 </p>
 <p>
@@ -28,9 +28,9 @@
 </p>
 <pre class="snippet numbered"><ol class="snippet"><li value="1">+ POST /stdlib/formatCurrency HTTP/1.1</li><li value="2">+ X-API-Key: OpenSesame</li><li value="3">+ Content-Type: application/json; charset=utf-8</li><li value="4">+</li><li value="5">+ [ "19283.1035819471", 4 ]</li><li value="6"></li><li value="7">- HTTP/1.1 200 OK</li><li value="8">- Content-Type: application/json; charset=utf-8</li><li value="9">-</li><li value="10">- "19283.1035"</li></ol></pre>
 <hr>
-<p>["XXX","defn","Interactive RPC methods"] consume arguments, including a specification of interactive RPC callbacks, and produce an interactive RPC continuation.</p>
-<p>An ["XXX","defn","interactive RPC callback"] is a key of a JSON object, bound to <code>true</code>, that indicates that the initiator of an interactive RPC method responds to requests for further data during the execution of this call.</p>
-<p>An ["XXX","defn","interactive RPC continuation"] is a JSON object that matches either:</p>
+<p><span id="term_Interactive%20RPC%20methods">Interactive RPC methods</span> consume arguments, including a specification of interactive RPC callbacks, and produce an interactive RPC continuation.</p>
+<p>An <span id="term_interactive%20RPC%20callback">interactive RPC callback</span> is a key of a JSON object, bound to <code>true</code>, that indicates that the initiator of an interactive RPC method responds to requests for further data during the execution of this call.</p>
+<p>An <span id="term_interactive%20RPC%20continuation">interactive RPC continuation</span> is a JSON object that matches either:</p>
 <ul>
   <li><code>{t: "Done", ans}</code>, where <code>ans</code> is the final result of the original interactive RPC method.</li>
   <li><code>{t: "Kont", kid, m, args}</code>, where <code>kid</code> is an RPC handle, <code>m</code> is a string naming one of the interactive RPC callback methods, and <code>args</code> is an array of the arguments to that method.</li>

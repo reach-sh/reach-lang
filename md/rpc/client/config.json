@@ -22,6 +22,6 @@
   "REPO": "https://github.com/reach-sh/reach-lang/tree/master",
   "chapters": null,
   "pages": null,
-  "title": "{#ref-backends-rpc-client} Reach RPC Protocol Client Implementation Walkthrough",
+  "title": "Reach RPC Protocol Client Implementation Walkthrough",
   "pathname": "/proj/docs/dev/src/md/rpc/client"
 }
