@@ -1,6 +1,6 @@
-IMG_HASKELL_BUILD_ARTIFACTS="reachsh/haskell-build-artifacts"
-IMG_REACHC="reachsh/reach"
-IMG_REACH_CLI="reachsh/reach-cli"
+IMG_HASKELL_BUILD_ARTIFACTS=reachsh/haskell-build-artifacts
+IMG_REACHC=reachsh/reach
+IMG_REACH_CLI=reachsh/reach-cli
 ALPINE_VERSION="3.14.2"
 ROOT=..
 DOCKER_LAYERS="solc z3"
@@ -18,20 +18,8 @@ clean: hs-clean
 
 .PHONY: build-haskell-build-artifacts
 build-haskell-build-artifacts:
-	CACHE_FROM=""
-	for i in $(DOCKER_LAYERS); do\
-		CACHE_FROM="--cache-from=$(IMG_REACH_CLI):$$i-${CIRCLE_BRANCH} $(IMG_REACH_CLI):$$i-master ${CACHE_FROM}"; \
-		docker build \
-	  	  --build-arg SOLC_VERSION=$(SOLC_VERSION) \
-	      --target $$i \
-		  $(CACHE_FROM) \
-		  -f Dockerfile.haskell-build-artifacts .; \
-	done
-	docker build \
-	  --build-arg SOLC_VERSION=$(SOLC_VERSION) \
-	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS):${CIRCLE_BRANCH} \
-	  $(CACHE_FROM) \
-	  -f Dockerfile.haskell-build-artifacts .
+	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
+	./build_image.sh $(IMG_HASKELL_BUILD_ARTIFACTS) $(DOCKER_LAYERS) Dockerfile.haskell-build-artifacts --build-arg SOLC_VERSION=$(SOLC_VERSION) --add-host host.docker.internal:172.17.0.1
 
 #.PHONY: build-haskell-build-artifacts-solc
 #build-haskell-build-artifacts-solc:
