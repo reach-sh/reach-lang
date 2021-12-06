@@ -288,6 +288,7 @@ jobs:
           #      docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
           - docker-cache/build: 
               command: |
+                export LAYERS=<<parameters.extra_layer>>
                 cd .circleci && ./image.sh "${IMAGE}"
     - persist_to_workspace:
         root: /tmp/workspace/

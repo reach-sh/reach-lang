@@ -27,4 +27,4 @@
 #cd "${ROOT}/${DIR}" || exit 1
 #exec make "${TARGET}"
 #
-echo "THESE ARE THE ARGS: ${@}"
+echo $LAYERS
