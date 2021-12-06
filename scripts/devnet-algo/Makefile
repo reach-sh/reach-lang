@@ -1,36 +1,37 @@
 IMAGE=reachsh/devnet-algo
 ROOT=../..
 include $(ROOT)/DEPS
+DOCKER_LAYERS="build prepare generate"
 
-.PHONY: build-devnet-algo-build
-build-devnet-algo-build:
-	docker build \
-	--build-arg REACH_GIT_HASH="$$(../git-hash.sh)" \
-	--tag=$(IMAGE):build-latest \
-	--target build \
-	--cache-from=$(IMAGE):build-${CIRCLE_BRANCH} .
-
-.PHONY: build-devnet-algo-prepare
-build-devnet-algo-prepare:
-	docker build \
-	--build-arg REACH_GIT_HASH="$$(../git-hash.sh)" \
-	--tag=$(IMAGE):prepare-latest \
-	--target prepare \
-	--cache-from=$(IMAGE):build-${CIRCLE_BRANCH} \
-	--cache-from=$(IMAGE):prepare-${CIRCLE_BRANCH} .
-
-.PHONY: build-devnet-algo-generate
-build-devnet-algo-generate:
-	docker build \
-	--build-arg REACH_GIT_HASH="$$(../git-hash.sh)" \
-	--tag=$(IMAGE):generate-latest \
-	--target generate \
-	--cache-from=$(IMAGE):build-master \
-	--cache-from=$(IMAGE):prepare-master \
-	--cache-from=$(IMAGE):generate-master \
-	--cache-from=$(IMAGE):build-${CIRCLE_BRANCH} \
-	--cache-from=$(IMAGE):prepare-${CIRCLE_BRANCH} \
-	--cache-from=$(IMAGE):generate-${CIRCLE_BRANCH} .
+#.PHONY: build-devnet-algo-build
+#build-devnet-algo-build:
+#	docker build \
+#	--build-arg REACH_GIT_HASH="$$(../git-hash.sh)" \
+#	--tag=$(IMAGE):build-latest \
+#	--target build \
+#	--cache-from=$(IMAGE):build-${CIRCLE_BRANCH} .
+#
+#.PHONY: build-devnet-algo-prepare
+#build-devnet-algo-prepare:
+#	docker build \
+#	--build-arg REACH_GIT_HASH="$$(../git-hash.sh)" \
+#	--tag=$(IMAGE):prepare-latest \
+#	--target prepare \
+#	--cache-from=$(IMAGE):build-${CIRCLE_BRANCH} \
+#	--cache-from=$(IMAGE):prepare-${CIRCLE_BRANCH} .
+#
+#.PHONY: build-devnet-algo-generate
+#build-devnet-algo-generate:
+#	docker build \
+#	--build-arg REACH_GIT_HASH="$$(../git-hash.sh)" \
+#	--tag=$(IMAGE):generate-latest \
+#	--target generate \
+#	--cache-from=$(IMAGE):build-master \
+#	--cache-from=$(IMAGE):prepare-master \
+#	--cache-from=$(IMAGE):generate-master \
+#	--cache-from=$(IMAGE):build-${CIRCLE_BRANCH} \
+#	--cache-from=$(IMAGE):prepare-${CIRCLE_BRANCH} \
+#	--cache-from=$(IMAGE):generate-${CIRCLE_BRANCH} .
 
 .PHONY: build-devnet-algo
 build-devnet-algo:
@@ -38,17 +39,11 @@ build-devnet-algo:
 		echo 'Please run `make generate-network` first' ; \
 		exit 1 ; \
 	fi
-	docker build \
-	--build-arg REACH_GIT_HASH="$$(../git-hash.sh)" \
-	--tag=$(IMAGE):latest \
-	--cache-from=$(IMAGE):master .
-	--cache-from=$(IMAGE):build-master \
-	--cache-from=$(IMAGE):prepare-master \
-	--cache-from=$(IMAGE):generate-master \
-	--cache-from=$(IMAGE):build-${CIRCLE_BRANCH} \
-	--cache-from=$(IMAGE):prepare-${CIRCLE_BRANCH} \
-	--cache-from=$(IMAGE):generate-${CIRCLE_BRANCH} \
-	--cache-from=$(IMAGE):${CIRCLE_BRANCH} .
+	$(ROOT)/scripts/build_image.sh \
+	$(IMAGE) \
+	$(DOCKER_LAYERS) \
+	Dockerfile \
+	--build-arg REACH_GIT_HASH="$$(../git-hash.sh)";
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: goal-image

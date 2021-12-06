@@ -6,7 +6,7 @@ DOCKER_FILE=$3
 shift 3
 ARGS=$@
 
-CACHE_FROM="--cache-from=${IMAGE_NAME}:${CIRCLE_BRANCH}"
+CACHE_FROM="--cache-from=${IMAGE_NAME}:${CIRCLE_BRANCH} --cache-from=${IMAGE_NAME}:master"
 
 for i in $LAYERS; do
 	CACHE_FROM="--cache-from=${IMAGE_NAME}:${i}-${CIRCLE_BRANCH} --cache-from=${IMAGE_NAME}:${i}-master ${CACHE_FROM}";
