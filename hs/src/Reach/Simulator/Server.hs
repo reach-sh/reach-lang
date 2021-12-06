@@ -18,6 +18,7 @@ import Web.Scotty.Trans
 import qualified Data.Map.Strict as M
 import GHC.Generics
 import Data.Aeson (FromJSON, ToJSON)
+import System.IO
 
 instance Default Session where
   def = initSession
@@ -194,6 +195,7 @@ startServer p = do
   sync <- newTVarIO def
   let runActionToIO m = runReaderT (runWebM m) sync
   putStrLn "Starting Sim Server..."
+  hFlush stdout
   scottyT portNumber runActionToIO (app p)
 
 app :: LLProg -> ScottyT Text WebM ()
