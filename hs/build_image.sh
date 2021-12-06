@@ -22,10 +22,7 @@ build_image () {
         TARGET=""
     fi
 
-    #echo "PWD: $(pwd)"
-    #echo "FILES ON DIR: $(ls -la .)"
-    echo docker build $TAG $TARGET $CACHE_FROM $ARGS --file $DOCKER_FILE .
-    echo " "
+    docker build $TAG $TARGET $CACHE_FROM $ARGS --file $DOCKER_FILE .
 }
 
 for i in $LAYERS; do
