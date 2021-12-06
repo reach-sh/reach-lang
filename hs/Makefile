@@ -19,13 +19,13 @@ clean: hs-clean
 .PHONY: build-haskell-build-artifacts
 build-haskell-build-artifacts:
 	CACHE_FROM=""
-	for i in $(DOCKER_LAYERS); do
-		CACHE_FROM="--cache-from=$(IMG_REACH_CLI):$$i-${CIRCLE_BRANCH} $(IMG_REACH_CLI):$$i-master ${CACHE_FROM}"
+	for i in $(DOCKER_LAYERS); do\
+		CACHE_FROM="--cache-from=$(IMG_REACH_CLI):$$i-${CIRCLE_BRANCH} $(IMG_REACH_CLI):$$i-master ${CACHE_FROM}"; \
 		docker build \
 	  	  --build-arg SOLC_VERSION=$(SOLC_VERSION) \
 	      --target $$i \
-		  $(CACHE_FROM)\
-		  -f Dockerfile.haskell-build-artifacts .
+		  $(CACHE_FROM) \
+		  -f Dockerfile.haskell-build-artifacts .; \
 	done
 	docker build \
 	  --build-arg SOLC_VERSION=$(SOLC_VERSION) \
