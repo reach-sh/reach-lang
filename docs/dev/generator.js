@@ -119,19 +119,6 @@ const prependTocNode = (options = {}) => {
   }
 };
 
-const joinCodeClasses = () => {
-  return (tree, file) => {
-    visit(tree, 'code', node => {
-      if(node.lang || node.meta) {
-        node.lang =
-          node.meta == null ? node.lang
-          : node.lang == null ? node.meta.split(' ').join('_')
-          : `${node.lang}_${node.meta.split(' ').join('_')}`;
-      }
-    });
-  }
-};
-
 const copyFmToConfig = (configJson) => {
   return (tree, file) => {
     visit(tree, 'yaml', (node, index, p) => {
@@ -450,8 +437,6 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     .use(remarkToc, { maxDepth: 100 })
     // Create IDs (acting as anchors) for headings throughout the document.
     .use(remarkSlug)
-    // Concatenate (using _) class names for code elements.
-    .use(joinCodeClasses)
     // Normalize Github Flavored Markdown so it can be converted to html.
     .use(remarkGfm)
     // Convert MDAST to html.
