@@ -1,5 +1,0 @@
-build/
-node_modules/
-/Alice.*
-/Bob.*
-/docker-compose.*.yml
