@@ -6,13 +6,10 @@ NPM = npm
 build:
 	$(NPM) install
 	$(REACH) compile
-	$(REACH) compile --sim  & echo $!
+	$(REACH) compile --sim
 
 .PHONY: run
 run:
-	pgrep ghc
-	pgrep stack
-	pgrep reach
 	$(NODE) client.mjs
 	lsof -ti tcp:3001 | xargs kill
 
