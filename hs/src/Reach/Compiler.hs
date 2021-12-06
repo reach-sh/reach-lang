@@ -40,6 +40,7 @@ make_connectors env =
 
 compile :: CompilerToolEnv -> CompilerOpts -> IO ()
 compile env (CompilerOpts {..}) = do
+  putStrLn "got here0"
   let outd = fromMaybe (takeDirectory co_source </> "build") co_moutputDir
   let co_dirDotReach = fromMaybe (takeDirectory co_source </> ".reach") co_mdirDotReach
   let co_output ext = FP.encodeString $ FP.append (FP.decodeString outd) $ (FP.filename $ FP.decodeString co_source) `FP.replaceExtension` ext
