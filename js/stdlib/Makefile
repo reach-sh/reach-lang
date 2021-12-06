@@ -6,6 +6,7 @@ include Makefile.docker
 
 IMAGE=$(STDLIB_IMAGE)
 JS-PACKAGE='@reach-sh/stdlib'
+DOCKER_LAYERS="build"
 
 $(ROOT)/hs/sol/stdlib.json:
 	cd $(ROOT)/hs && $(MAKE) sol/stdlib.json
@@ -17,30 +18,16 @@ stdlib_sol.json: $(ROOT)/hs/sol/stdlib.json
 expand: package.json ts/version.ts ts/stdlib_sol.ts
 
 .PHONY: build
-build-stdlib-build:
-	mkdir -p .docker-root
-	cp -f $(ROOT)/VERSION .docker-root/
-	docker build --tag=$(IMAGE):build-latest \
-	  --build-arg NODE_VERSION=$(NODE_VERSION) \
-	  --build-arg REACH_VERSION=$(VERSION) \
-	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
-	  --target build
-	  --cache-from=$(IMAGE):build-${CIRCLE_BRANCH} \
-	  --cache-from=$(IMAGE):build-master \
-	  .
-
-.PHONY: build
 build-stdlib:
 	mkdir -p .docker-root
 	cp -f $(ROOT)/VERSION .docker-root/
-	docker build --tag=$(IMAGE) \
-	  --build-arg NODE_VERSION=$(NODE_VERSION) \
-	  --build-arg REACH_VERSION=$(VERSION) \
-	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
-	  --cache-from=$(IMAGE):build-${CIRCLE_BRANCH} \
-	  --cache-from=$(IMAGE):build-master \
-	  --cache-from=$(IMAGE):latest \
-	  .
+	$(ROOT)/scripts/build_image.sh \
+		$(IMAGE) \
+		$(DOCKER_LAYERS) \
+		Dockerfile \
+		--build-arg NODE_VERSION=$(NODE_VERSION) \
+		--build-arg REACH_VERSION=$(VERSION) \
+		--build-arg REACH_GIT_HASH=$(REACH_GIT_HASH);
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: push

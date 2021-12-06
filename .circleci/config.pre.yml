@@ -233,10 +233,6 @@ jobs:
       deps:
         description: "docker dependencies"
         type: string
-      extra_layer:
-        description: "extra docker layers"
-        type: string
-        default: ""
     executor:
       name: <<parameters.exec>>
       dlc: true
@@ -268,17 +264,6 @@ jobs:
           <<parameters.image>>:prepare-${CIRCLE_BRANCH/\//-}
           <<parameters.image>>:generate-${CIRCLE_BRANCH/\//-}
         steps:
-          #- when:
-          #   condition: <<parameters.extra_layer>>
-          #   steps:
-          #     - docker-cache/build: 
-          #         command: |
-          #           LAYERS="<<parameters.extra_layer>>"
-          #           for i in $LAYERS; do
-          #             IMAGE="<<parameters.image>>"
-          #             cd .circleci && ./image.sh "${IMAGE}-${i}"; cd ..
-          #             docker tag reachsh/${IMAGE}:${i}-latest reachsh/${IMAGE}:${i}-${CIRCLE_BRANCH/\//-}
-          #           done 
           - docker-cache/build: 
               command: |
                 IMAGE="<<parameters.image>>"
@@ -287,10 +272,6 @@ jobs:
                 cd .circleci && ./image.sh "${IMAGE}"
                 docker tag reachsh/${IMAGE}:latest reachsh/${IMAGE}:${CIRCLE_BRANCH/\//-}
                 docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
-          #- docker-cache/build: 
-          #    command: |
-          #      export LAYERS="<<parameters.extra_layer>>"
-          #      cd .circleci && ./image.sh "${IMAGE}"
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:

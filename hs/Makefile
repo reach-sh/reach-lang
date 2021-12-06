@@ -23,49 +23,6 @@ build-haskell-build-artifacts:
 	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
 	$(ROOT)/scripts/build_image.sh $(IMG_HASKELL_BUILD_ARTIFACTS) $(DOCKER_LAYERS) Dockerfile.haskell-build-artifacts --build-arg SOLC_VERSION=$(SOLC_VERSION) --add-host host.docker.internal:172.17.0.1
 
-#.PHONY: build-haskell-build-artifacts-solc
-#build-haskell-build-artifacts-solc:
-#	docker build \
-#	  --build-arg SOLC_VERSION=$(SOLC_VERSION) \
-#	  --target solc \
-#	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS):solc-latest \
-#	  --cache-from=reachsh/haskell-build-artifacts:solc-master \
-#	  --cache-from=reachsh/haskell-build-artifacts:solc-${CIRCLE_BRANCH} \
-#	  -f Dockerfile.haskell-build-artifacts .
-#
-#.PHONY: build-haskell-build-artifacts-z3
-#build-haskell-build-artifacts-z3:
-#	docker container rm -f repo || true
-#	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
-#	docker build \
-#	  --build-arg SOLC_VERSION=$(SOLC_VERSION) \
-#	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS):z3-latest \
-#	  --add-host host.docker.internal:172.17.0.1 \
-#	  --target z3 \
-#	  --cache-from=reachsh/haskell-build-artifacts:z3-master \
-#	  --cache-from=reachsh/haskell-build-artifacts:z3-${CIRCLE_BRANCH} \
-#	  -f Dockerfile.haskell-build-artifacts .
-#	docker container rm -f repo
-#
-#.PHONY: build-haskell-build-artifacts
-#build-haskell-build-artifacts:
-#	mkdir -p .docker-root
-#	cp -f $(ROOT)/VERSION $(ROOT)/DEPS .docker-root/
-#	docker container rm -f repo || true
-##	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
-##	  --add-host host.docker.internal:172.17.0.1
-##	docker container rm -f repo
-#	docker build \
-#	  --build-arg SOLC_VERSION=$(SOLC_VERSION) \
-#	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS):latest \
-#	  --cache-from=reachsh/haskell-build-artifacts:master \
-#	  --cache-from=reachsh/haskell-build-artifacts:solc-master \
-#	  --cache-from=reachsh/haskell-build-artifacts:z3-master \
-#	  --cache-from=reachsh/haskell-build-artifacts:solc-${CIRCLE_BRANCH} \
-#	  --cache-from=reachsh/haskell-build-artifacts:z3-${CIRCLE_BRANCH} \
-#	  --cache-from=reachsh/haskell-build-artifacts:${CIRCLE_BRANCH} \
-#	  -f Dockerfile.haskell-build-artifacts .
-
 .PHONY: build-reach-cli
 build-reach-cli:
 	docker build \
