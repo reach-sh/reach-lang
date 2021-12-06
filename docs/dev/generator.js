@@ -42,11 +42,12 @@ const outDir = normalizeDir(`${rootDir}/build`);
 let forReal = false;
 let hasError = false;
 
+const warn = (...args) => {
+  if ( forReal ) { console.log(...args); }
+};
 const fail = (...args) => {
-  if ( forReal ) {
-    console.log(...args);
-    hasError = true;
-  }
+  warn(...args);
+  if ( forReal ) { hasError = true; }
 };
 
 // Plugins
@@ -162,6 +163,9 @@ const processXRefs = ({here}) => (tree) => {
           d.id = hp.id = t;
 
           cs[0].value = v;
+        } else {
+          // XXX change to fail
+          warn(here, `missing xref on header`, c0v);
         }
       }
     } else if ( node.type === 'link' ) {
