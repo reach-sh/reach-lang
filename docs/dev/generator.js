@@ -68,7 +68,7 @@ const xrefGet = (s, t) => {
   const r = (xrefs[s] || {})[t];
   if ( r === undefined ) {
     fail(`Missing xref:`, t);
-    return { title: `XXX ${t}`, path: t };
+    return { title: t, path: t };
   }
   return r;
 };
@@ -447,7 +447,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     // Prepend Heading, level 6, value "toc".
     .use(prependTocNode)
     // Build toc list under the heading.
-    .use(remarkToc, { maxDepth: 2 })
+    .use(remarkToc, { maxDepth: 100 })
     // Create IDs (acting as anchors) for headings throughout the document.
     .use(remarkSlug)
     // Concatenate (using _) class names for code elements.
