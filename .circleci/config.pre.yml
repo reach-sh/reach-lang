@@ -279,17 +279,18 @@ jobs:
           #             cd .circleci && ./image.sh "${IMAGE}-${i}"; cd ..
           #             docker tag reachsh/${IMAGE}:${i}-latest reachsh/${IMAGE}:${i}-${CIRCLE_BRANCH/\//-}
           #           done 
-          #- docker-cache/build: 
-          #    command: |
-          #      IMAGE="<<parameters.image>>"
-          #      #mkdir -p "/tmp/workspace/docker-${IMAGE}"
-          #      cd .circleci && ./image.sh "${IMAGE}"
-          #      docker tag reachsh/${IMAGE}:latest reachsh/${IMAGE}:${CIRCLE_BRANCH/\//-}
-          #      docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
           - docker-cache/build: 
               command: |
+                IMAGE="<<parameters.image>>"
                 export LAYERS="<<parameters.extra_layer>>"
+                mkdir -p "/tmp/workspace/docker-${IMAGE}"
                 cd .circleci && ./image.sh "${IMAGE}"
+                docker tag reachsh/${IMAGE}:latest reachsh/${IMAGE}:${CIRCLE_BRANCH/\//-}
+                docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
+          #- docker-cache/build: 
+          #    command: |
+          #      export LAYERS="<<parameters.extra_layer>>"
+          #      cd .circleci && ./image.sh "${IMAGE}"
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
