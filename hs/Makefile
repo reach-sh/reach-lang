@@ -18,6 +18,8 @@ clean: hs-clean
 
 .PHONY: build-haskell-build-artifacts
 build-haskell-build-artifacts:
+	mkdir -p .docker-root
+	cp -f $(ROOT)/VERSION $(ROOT)/DEPS .docker-root/
 	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
 	./build_image.sh $(IMG_HASKELL_BUILD_ARTIFACTS) $(DOCKER_LAYERS) Dockerfile.haskell-build-artifacts --build-arg SOLC_VERSION=$(SOLC_VERSION) --add-host host.docker.internal:172.17.0.1
 
