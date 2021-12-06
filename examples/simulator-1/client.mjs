@@ -44,21 +44,18 @@ async function interact(method = 'GET', url = '', data = {}) {
 
 const load = async () => {
   const r = await interact('POST', `${address}/load`, {})
-    .then(data => data);
   console.log(r)
   return r;
 }
 
 const init = async () => {
   const r = await interact('POST', `${address}/init`, {})
-    .then(data => data);
   console.log(r)
   return r
 }
 
 const respondWithVal = async (s,a,v,t) => {
   const r = await interact('POST', `${address}/states/${s}/actions/${a}/?data=${v}&type=${t}`, {})
-    .then(data => data);
   console.log(r)
   return r
 }
