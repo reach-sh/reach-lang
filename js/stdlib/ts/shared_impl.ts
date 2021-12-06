@@ -180,7 +180,7 @@ export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
 export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
   setupView: ISetupView<ContractInfo, VerifyResult, ConnectorTy>,
-  setupEvents: ISetupEvent<ContractInfo, VerifyResult, ConnectorTy>,
+  setupEvents: ISetupEvent<ContractInfo, VerifyResult>,
   givenInfoP: (Promise<ContractInfo>|undefined)
   _setup: (args: ISetupArgs<ContractInfo, VerifyResult>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
 } & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
@@ -209,11 +209,13 @@ export type ISetupView<ContractInfo, VerifyResult, ConnectorTy extends AnyBacken
   getView1: ((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string|undefined, vi:IBackendViewInfo<ConnectorTy>, isSafe: boolean) => ViewVal)
 };
 
-export type ISetupEvent<ContractInfo, VerifyResult, ConnectorTy extends AnyBackendTy> = (args:ISetupEventArgs<ContractInfo, VerifyResult>, bin: IBackend<ConnectorTy>) => {
-  getEvent: (name: string, ty: any) => Promise<Event<any>>;
-}
+export type ISetupEvent<ContractInfo, VerifyResult> =
+  (args:ISetupEventArgs<ContractInfo, VerifyResult>) =>
+      (event: string, tys: any[]) =>
+          { next: () => Promise<any>,
+            seek: (t: Time) => Promise<void> }
 
-export type Time = number;
+export type Time = BigNumber;
 
 export type Event<T> = {
   when: Time,
@@ -370,9 +372,9 @@ export const stdContract =
   const safeApis = mkApis(true);
 
   const eventMap = bin._getEvents({ reachStdlib: stdlib });
-  const { getEvent } = setupEvents(viewArgs, bin);
-  const events = objectMap(eventMap, (eventName, eventTys) => {
-    return getEvent(eventName, eventTys)
+  const createEventStream = setupEvents(viewArgs);
+  const events = objectMap(eventMap, (k, v) => {
+    return createEventStream(k, v)
   });
 
   return {

@@ -14,6 +14,8 @@ import {
   make_newTestAccounts,
   make_waitUntilX,
   checkTimeout,
+  Time,
+  ISetupEventArgs,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -99,6 +101,7 @@ type VerifyResult = {
 };
 type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
 type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
+type SetupEventArgs = ISetupEventArgs<ContractInfo, VerifyResult>;
 type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyETH_Ty>;
 
 type AccountTransferable = Account | {
@@ -208,6 +211,14 @@ const sendRecv_prepArg = (lct:BigNumber, args:Array<any>, tys:Array<any>, evt_cn
 // Event Cache
 // ****************************************************************************
 
+const getMinBlockWithLogIndex = (logIdx: number) => (allLogs: any[]) => {
+  const logs = allLogs.filter(log => log.logIndex > logIdx);
+  return logs.reduce((acc: Log, x: Log) =>
+    (x.blockNumber == acc.blockNumber)
+      ? (x.logIndex > logIdx && x.logIndex < acc.logIndex ? x : acc)
+      : (x.blockNumber.toString() < acc.blockNumber.toString() ? x : acc), logs[0]);
+}
+
 const getMinBlock = (logs: any[]) =>
   logs.reduce((acc: Log, x: Log) =>
     (x.blockNumber == acc.blockNumber)
@@ -245,18 +256,18 @@ class EventCache {
     }
   }
 
-  async query(dhead:any, getC: () => Promise<EthersLikeContract>, fromBlock: number, timeoutAt: TimeArg | undefined, evt: string ) {
+  async query(dhead:any, getC: () => Promise<EthersLikeContract>, fromBlock: number, timeoutAt: TimeArg | undefined, evt: string, f = getMinBlock) {
     const ethersC = await getC();
-    return await this.queryContract(dhead, ethersC.address, ethersC.interface, fromBlock, timeoutAt, evt);
+    return await this.queryContract(dhead, ethersC.address, ethersC.interface, fromBlock, timeoutAt, evt, f);
   }
 
-  async queryContract(dhead:any, address:string, iface:any, fromBlock: number, timeoutAt: TimeArg|undefined, evt: string) {
+  async queryContract(dhead:any, address:string, iface:any, fromBlock: number, timeoutAt: TimeArg|undefined, evt: string, f = getMinBlock) {
     const topic = iface.getEventTopic(evt);
     this.checkAddress(address);
-    return await this.query_(dhead, fromBlock, timeoutAt, topic);
+    return await this.query_(dhead, fromBlock, timeoutAt, topic, f);
   }
 
-  async query_(dhead:any, fromBlock: number, timeoutAt: TimeArg|undefined, topic: string): Promise<QueryResult> {
+  async query_(dhead:any, fromBlock: number, timeoutAt: TimeArg|undefined, topic: string, f: ((logs: any[]) => any|undefined)): Promise<QueryResult> {
     const lab = `EventCache.query`;
     debug(dhead, lab, { fromBlock, timeoutAt, topic });
 
@@ -291,7 +302,10 @@ class EventCache {
     const initLogs = await searchLogs(this.cache);
     if(initLogs.length > 0) {
       debug(dhead, lab, `in cache`);
-      return { succ: true, evt: getMinBlock(initLogs) };
+      const evt = f(initLogs);
+      if (evt !== undefined) {
+        return { succ: true, evt };
+      }
     }
     debug(dhead, lab, `not in cache`);
 
@@ -352,7 +366,10 @@ class EventCache {
     const foundLogs = await searchLogs(this.cache);
     if ( foundLogs.length > 0 ) {
       debug(dhead, lab, `in network`);
-      return { succ: true, evt: getMinBlock(foundLogs) };
+      const evt = f(foundLogs);
+      if (evt !== undefined) {
+        return { succ: true, evt };
+      }
     }
 
     debug(dhead, lab, `not in network`);
@@ -834,15 +851,41 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return { getView1, viewLib };
     };
 
-    const setupEvents = (a: any, b: any) => {
-      void a;
-      void b;
-      const getEvent = async (evt: string, tys: any) => {
-        void evt;
+    const setupEvents = (setupArgs: SetupEventArgs) => {
+      const eventCache = new EventCache(); // shared across getEvents
+      let creation_block = bigNumberify(0);
+      const getC = makeGetC(setupArgs, eventCache, (cb) => {
+        creation_block = bigNumberify(cb);
+      });
+      const createEventStream = (event: string, tys: any[]) => {
         void tys;
-          return { when: 0, what: undefined };
-      }
-      return { getEvent };
+        let dhead = "EventStream";
+        let time = creation_block;
+        let logIndex = 0;
+        const seek = async (t: Time) => {
+          time = t;
+          logIndex = 0;
+        }
+        const next = async () => {
+          dhead = dhead + "::next";
+          const ctc = await getC();
+          const res = await eventCache.query(dhead, getC, time.toNumber(), undefined, event, getMinBlockWithLogIndex(logIndex));
+          if (!res.succ) {
+            throw Error('Event not found');
+          }
+          const { evt } = res;
+          debug(dhead + ` evt:`, evt);
+          const blockTime = bigNumberify(evt.blockNumber);
+          const blockLogIdx = evt.logIndex;
+          logIndex = blockLogIdx;
+          const { args } = ctc.interface.parseLog(evt);
+          const thisArgs = tys.map((_, i) => args[i]);
+          return { when: blockTime, what: thisArgs };
+        }
+        return { seek, next };
+      };
+
+      return createEventStream;
     }
 
     return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });

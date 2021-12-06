@@ -4,6 +4,9 @@
 export const main = Reach.App(() => {
   const A = Participant('A', {
     getX: Fun([], UInt),
+    checkX: Fun(true, Null),
+    checkY: Fun(true, Null),
+    loopCont: Fun(true, Null),
   });
   const E = Events('x_event', {
     x: [UInt],
@@ -21,10 +24,21 @@ export const main = Reach.App(() => {
       const x = declassify(interact.getX());
     });
     A.publish(x);
+
     E.x(x);
+    A.interact.checkX();
+
     E.x(4);
+    A.interact.checkX();
+
     E.y(x, x);
+    A.interact.checkY();
+
     E.y(x, 2);
+    A.interact.checkY();
+
+    // Signal frontend we should seek next block
+    A.interact.loopCont();
 
     [ xl ] = [ x ];
     continue;

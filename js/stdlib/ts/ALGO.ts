@@ -43,6 +43,8 @@ import {
   Signal,
   Lock,
   retryLoop,
+  Time,
+  ISetupEventArgs,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -142,6 +144,7 @@ type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
 type SimTxn = ISimTxn<Token>
 type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
 type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
+type SetupEventArgs = ISetupEventArgs<ContractInfo, VerifyResult>;
 type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyALGO_Ty>;
 
 // Helpers
@@ -1650,15 +1653,20 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return { getView1, viewLib };
     };
 
-    const setupEvents = (a: any, b: any) => {
+    const setupEvents = (a: SetupEventArgs) => {
       void a;
-      void b;
-      const getEvent = async (evt: string, tys: any) => {
-        void evt;
-        void tys;
-        return { when: 0, what: undefined };
-      }
-      return { getEvent };
+      const eventCache = new EventCache();
+      void eventCache;
+      const createEventStream = () => {
+        const seek = async (t: Time) => {
+          void t;
+        }
+        const next = async () => {
+          return null;
+        }
+        return { seek, next };
+      };
+      return createEventStream;
     }
 
     return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
