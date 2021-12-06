@@ -22,6 +22,7 @@ build_image () {
         TARGET=""
     fi
 
+    echo "PWD: $(pwd)"
     docker build $TAG $TARGET $CACHE_FROM $ARGS --file $DOCKER_FILE .
 }
 
