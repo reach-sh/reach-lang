@@ -4,7 +4,7 @@ import waitPort from 'wait-port';
 
 // const fetch = require('node-fetch')
 
-const hostname = "host.docker.internal"
+const hostname = "http://localhost"
 const port = 3001
 const address = `${hostname}:${port}`
 
