@@ -69,7 +69,9 @@ compile env (CompilerOpts {..}) = do
         ll <- linearize showp dl
         ol <- optimize ll
         showp "ol" ol
+        putStrLn "got here"
         unless (not co_sim) $ do
+          putStrLn "got here1"
           startServer ol
         let vo_out = woutnMay
         let vo_mvcs = doIf connectors dlo_verifyPerConnector

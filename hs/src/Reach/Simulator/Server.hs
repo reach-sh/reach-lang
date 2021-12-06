@@ -190,6 +190,7 @@ initProgSim ll = do
 
 startServer :: LLProg -> IO ()
 startServer p = do
+  putStrLn "got here2"
   sync <- newTVarIO def
   let runActionToIO m = runReaderT (runWebM m) sync
   putStrLn "Starting Sim Server..."

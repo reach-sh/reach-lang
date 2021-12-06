@@ -14,6 +14,7 @@ run:
 	pgrep stack
 	pgrep reach
 	$(NODE) client.mjs
+	lsof -ti tcp:3001 | xargs kill
 
 .PHONY: clean
 clean:
