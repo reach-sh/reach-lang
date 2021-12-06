@@ -53,6 +53,14 @@ const fail = (...args) => {
 const xrefs = {};
 const xrefPut = (s, t, v) => {
   if ( ! xrefs[s] ) { xrefs[s] = {}; }
+  const e = xrefs[s][t];
+  if ( e !== undefined ) {
+    const es = JSON.stringify(e);
+    const vs = JSON.stringify(v);
+    if ( es !== vs ) {
+      fail(`Duplicated xref`, s, t, e, v);
+    }
+  }
   xrefs[s][t] = v;
 };
 const xrefGet = (s, t) => {

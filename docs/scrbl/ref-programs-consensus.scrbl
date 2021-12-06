@@ -171,7 +171,7 @@ const [ keepGoing, as, bs ] =
 
 A @deftech{parallel reduce statement} is written:
 
-@(mint-define! '("paySpec") '("define"))
+@(mint-define! '("define"))
 @reach{
 const LHS =
   parallelReduce(INIT_EXPR)
