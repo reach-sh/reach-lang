@@ -5,7 +5,7 @@ DOCKER_FILE=$3
 shift 3
 ARGS=$@
 
-CACHE_FROM="--cache-from=${IMAGE_NAME}"
+CACHE_FROM="--cache-from=${IMAGE_NAME}:${CIRCLE_BRANCH}"
 
 for i in $LAYERS; do
 	CACHE_FROM="--cache-from=${IMAGE_NAME}:${i}-${CIRCLE_BRANCH} --cache-from=${IMAGE_NAME}:${i}-master ${CACHE_FROM}";
@@ -22,9 +22,10 @@ build_image () {
         TARGET=""
     fi
 
-    echo "PWD: $(pwd)"
-    echo "FILES ON DIR: $(ls -la .)"
-    docker build $TAG $TARGET $CACHE_FROM $ARGS --file $DOCKER_FILE .
+    #echo "PWD: $(pwd)"
+    #echo "FILES ON DIR: $(ls -la .)"
+    echo docker build $TAG $TARGET $CACHE_FROM $ARGS --file $DOCKER_FILE .
+    echo " "
 }
 
 for i in $LAYERS; do
