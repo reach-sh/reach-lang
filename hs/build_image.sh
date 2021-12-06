@@ -23,6 +23,7 @@ build_image () {
     fi
 
     echo "PWD: $(pwd)"
+    echo "FILES ON DIR: $(ls -la .)"
     docker build $TAG $TARGET $CACHE_FROM $ARGS --file $DOCKER_FILE .
 }
 
