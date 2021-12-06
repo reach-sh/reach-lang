@@ -1,4 +1,4 @@
-!/bin/sh
+#!/bin/sh
 WHICH="$1"
 ROOT=".."
 TARGET="build-${WHICH}"
