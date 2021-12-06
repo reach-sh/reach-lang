@@ -6,9 +6,7 @@ NPM = npm
 build:
 	$(NPM) install
 	$(REACH) compile
-	$(REACH) run
 	$(REACH) compile --sim  & echo $!
-
 
 .PHONY: run
 run:
