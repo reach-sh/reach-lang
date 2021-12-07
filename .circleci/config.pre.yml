@@ -267,7 +267,6 @@ jobs:
           - docker-cache/build: 
               command: |
                 IMAGE="<<parameters.image>>"
-                export LAYERS="<<parameters.extra_layer>>"
                 mkdir -p "/tmp/workspace/docker-${IMAGE}"
                 cd .circleci && ./image.sh "${IMAGE}"
                 docker tag reachsh/${IMAGE}:latest reachsh/${IMAGE}:${CIRCLE_BRANCH/\//-}
