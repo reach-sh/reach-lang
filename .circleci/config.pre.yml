@@ -254,7 +254,7 @@ jobs:
         cd .circleci && ./image.sh "${IMAGE}"
         docker tag reachsh/${IMAGE}:latest reachsh/${IMAGE}:${CIRCLE_BRANCH/\//-}
         docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
-        ./scripts/cache-image.sh "${IMAGE}"
+        $ROOT/scripts/cache-image.sh "${IMAGE}"
     #- docker-cache/with-save-restore-images:
     #    repository: reachsh
     #    images: >-
