@@ -342,6 +342,10 @@ export const serveRpc = async (backend: any) => {
   app.use(`/ctc/views`,       mkUserDefined('/ctc/views',       'views',       contract, false));
   app.use(`/ctc/unsafeViews`, mkUserDefined('/ctc/unsafeViews', 'unsafeViews', contract, true));
 
+  app.use(`/ctc/a`,           mkUserDefined('/ctc/a',           'a',           contract, true));
+  app.use(`/ctc/apis`,        mkUserDefined('/ctc/apis',        'apis',        contract, true));
+  app.use(`/ctc/safeApis`,    mkUserDefined('/ctc/safeApis',    'safeApis',    contract, false));
+
   app.post(`/kont`, do_kont);
 
   // Note: successful `/backend/<p>` requests automatically `forget` their
