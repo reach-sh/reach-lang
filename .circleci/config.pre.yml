@@ -247,30 +247,37 @@ jobs:
     - and_restore_docker:
         deps: <<parameters.deps>>
     - run: |
+        ROOT=$(pwd)
         docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
-    - docker-cache/with-save-restore-images:
-        repository: reachsh
-        images: >-
-          <<parameters.image>>:master
-          <<parameters.image>>:z3-master
-          <<parameters.image>>:solc-master
-          <<parameters.image>>:build-master
-          <<parameters.image>>:prepare-master
-          <<parameters.image>>:generate-master
-          <<parameters.image>>:${CIRCLE_BRANCH/\//-}
-          <<parameters.image>>:z3-${CIRCLE_BRANCH/\//-}
-          <<parameters.image>>:solc-${CIRCLE_BRANCH/\//-}
-          <<parameters.image>>:build-${CIRCLE_BRANCH/\//-}
-          <<parameters.image>>:prepare-${CIRCLE_BRANCH/\//-}
-          <<parameters.image>>:generate-${CIRCLE_BRANCH/\//-}
-        steps:
-          - docker-cache/build: 
-              command: |
-                IMAGE="<<parameters.image>>"
-                mkdir -p "/tmp/workspace/docker-${IMAGE}"
-                cd .circleci && ./image.sh "${IMAGE}"
-                docker tag reachsh/${IMAGE}:latest reachsh/${IMAGE}:${CIRCLE_BRANCH/\//-}
-                docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
+        IMAGE="<<parameters.image>>"
+        mkdir -p "/tmp/workspace/docker-${IMAGE}"
+        cd .circleci && ./image.sh "${IMAGE}"
+        docker tag reachsh/${IMAGE}:latest reachsh/${IMAGE}:${CIRCLE_BRANCH/\//-}
+        docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
+        ./scripts/cache-image.sh "${IMAGE}"
+    #- docker-cache/with-save-restore-images:
+    #    repository: reachsh
+    #    images: >-
+    #      <<parameters.image>>:master
+    #      <<parameters.image>>:z3-master
+    #      <<parameters.image>>:solc-master
+    #      <<parameters.image>>:build-master
+    #      <<parameters.image>>:prepare-master
+    #      <<parameters.image>>:generate-master
+    #      <<parameters.image>>:${CIRCLE_BRANCH/\//-}
+    #      <<parameters.image>>:z3-${CIRCLE_BRANCH/\//-}
+    #      <<parameters.image>>:solc-${CIRCLE_BRANCH/\//-}
+    #      <<parameters.image>>:build-${CIRCLE_BRANCH/\//-}
+    #      <<parameters.image>>:prepare-${CIRCLE_BRANCH/\//-}
+    #      <<parameters.image>>:generate-${CIRCLE_BRANCH/\//-}
+    #    steps:
+    #      - docker-cache/build: 
+    #          command: |
+    #            IMAGE="<<parameters.image>>"
+    #            mkdir -p "/tmp/workspace/docker-${IMAGE}"
+    #            cd .circleci && ./image.sh "${IMAGE}"
+    #            docker tag reachsh/${IMAGE}:latest reachsh/${IMAGE}:${CIRCLE_BRANCH/\//-}
+    #            docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
