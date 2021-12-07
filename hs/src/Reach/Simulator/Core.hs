@@ -23,7 +23,6 @@ data LocalInfo = LocalInfo
   { l_acct :: Account
   , l_who :: Maybe Participant
   , l_store :: Store
-  , l_init_val :: DLVal
   }
 
 type ActorId = Int
@@ -70,7 +69,7 @@ initGlobal = Global
 initLocal :: Local
 initLocal = Local
   { e_locals = M.singleton (fromIntegral consensusId) LocalInfo
-      {l_acct = consensusId, l_who = Nothing, l_init_val = V_Null, l_store = mempty}
+      {l_acct = consensusId, l_who = Nothing, l_store = mempty}
   , e_curr_actorid = fromIntegral consensusId
   }
 
@@ -199,6 +198,7 @@ data Action
   | A_ChangeActor Int
   | A_AdvanceTime Integer
   | A_AdvanceSeconds Integer
+  | A_InteractV String String DLType
   | A_Interact SrcLoc [SLCtxtFrame] String String DLType [DLVal]
   deriving (Generic)
 
@@ -334,11 +334,8 @@ instance Interp DLArg where
           return $ saferMapRef "DLA_Var" $ M.lookup dlvar st
     DLA_Constant dlconst -> return $ conCons' dlconst
     DLA_Literal dllit -> interp dllit
-    DLA_Interact _slpart _string _dltype -> do
-      (_, l) <- getState
-      let actorid = e_curr_actorid l
-      let lclst = e_locals l
-      return $ l_init_val $ saferMapRef "DLA_Interact" $ M.lookup actorid lclst
+    DLA_Interact slpart str dltype -> do
+      suspend $ PS_Suspend (A_InteractV (bunpack slpart) str dltype)
 
 instance Interp DLLiteral where
   interp = \case
@@ -678,7 +675,6 @@ registerPart (g,l) s = do
         { l_acct = fromIntegral aid
         , l_who = Just $ s
         , l_store = mempty
-        , l_init_val = V_Null
         }
   let locals' = M.insert actorid lcl locals
   let g' = g {e_nactorid = actorid + 1, e_naccid = aid + 1, e_partacts = M.insert s aid pacts}

@@ -129,6 +129,9 @@ unblockProg sid aid v = do
             Just (C.A_Interact _at _slcxtframes _part _str _dltype _args) -> do
               let ps = k (g,l) v
               processNewState ps
+            Just (C.A_InteractV _part _str _dltype) -> do
+              let ps = k (g,l) v
+              processNewState ps
             Just (C.A_TieBreak _poolid _parts) -> do
               let pacts = C.e_partacts g
               case v of
