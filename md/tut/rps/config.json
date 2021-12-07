@@ -20,6 +20,8 @@
   "hasRefreshBtn": false,
   "DISCORD": "https://discord.gg/AZsgcXu",
   "REPO": "https://github.com/reach-sh/reach-lang/tree/master",
+  "bookTitle": "Reach",
+  "bookPath": "md",
   "chapters": null,
   "pages": null,
   "title": "Tutorial",
