@@ -896,6 +896,7 @@ compile = command "compile" $ info f d where
             -e REACH_CONNECTOR_MODE \
             -e "REACHC_ID=$${ID}" \
             -e "CI=$ci'" \
+            -p 3001:3001 \
             reachsh/reach:$v \
             $args
         fi
