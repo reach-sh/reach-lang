@@ -8,7 +8,7 @@ FROM $STDLIB_IMAGE AS stdlib
 FROM node:$NODE_VERSION as stage
 COPY --from=stdlib /stdlib /stdlib
 
-RUN apk update && apk add git
+RUN apk update && apk add git make python3 libc-dev gcc g++
 
 WORKDIR /stdlib
 RUN npm link

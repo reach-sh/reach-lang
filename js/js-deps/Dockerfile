@@ -4,7 +4,7 @@ ARG NODE_IMAGE=node:$NODE_VERSION
 # hadolint ignore=DL3006
 FROM $NODE_IMAGE
 
-RUN apk update && apk add git
+RUN apk update && apk add git make python3 libc-dev gcc g++
 WORKDIR /js-deps
 COPY package.json /js-deps/
 COPY package-lock.json /js-deps/maybe
