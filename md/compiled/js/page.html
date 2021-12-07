@@ -23,7 +23,12 @@
 </p>
 <p>
   The backend provides a function, <span id="js_getExports"></span><code>getExports</code>, which exposes the exports of a Reach program.
-  This function receives the standard library as an argument and returns an object with all the exports.
+  This function receives the standard library as an argument and returns an object with all the exports present in the module being compiled.
+</p>
+<div class="note">
+  <p>It's possible to expose bindings from other modules to <code>getExports</code> by re-exporting them in your "top-level" module.</p>
+</div>
+<p>
   For example, if a Reach program
   exported a variable <code>x</code>, i.e. <code>export const x = 5</code>, the frontend could access the value in the following manner:
 </p>

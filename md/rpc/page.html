@@ -2,6 +2,7 @@
   The Reach RPC Server provides access to compiled JavaScript backends via an <a href="/md/rpc/proto/#ref-backends-rpc-proto">HTTPS-accessible JSON-based RPC protocol</a>.
   The server allows frontends to be written in any programming language.
   Reach provides client libraries for
+  <a href="/md/rpc/cs/#ref-frontends-rpc-cs">C#</a>,
   <a href="/md/rpc/js/#ref-frontends-rpc-js">JavaScript</a>,
   <a href="/md/rpc/py/#ref-frontends-rpc-py">Python</a>, and
   <a href="/md/rpc/go/#ref-frontends-rpc-go">Go</a>.
@@ -28,7 +29,7 @@
 </ul>
 <p>All <code>/acc</code> methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the account RPC handle returned by a prior RPC method invocation; and, a method that accepts a backend (like <code>/acc/attach</code> (i.e. <code>acc.attach</code>) or <code>/acc/deploy</code> (i.e. <code>acc.deploy</code>) does not accept a backend argument, but has it implicitly provided by the Reach RPC Server.</p>
 <p>
-  Furthermore, those that produce contract representations, instead produce contract RPC handles.
+  Furthermore, those that produce contract representations instead produce contract RPC handles.
   For example, <code>/acc/deploy</code> does not return a contract representation like <code>acc.deploy</code>, but instead returns a contract RPC handle.
 </p>
 <ul>
@@ -39,7 +40,7 @@
 <ul>
   <li><code>/backend/$PARTICIPANT</code> where <code>$PARTICIPANT</code> is a participant of the backend compiled by the <a href="/md/compiled/js/#ref-backends-js">JavaScript backend</a>.</li>
 </ul>
-<p>All <code>/backend</code> methods are interactive RPC methods that accept three arguments:</p>
+<p>All <code>/backend/$PARTICIPANT</code> methods are interactive RPC methods that accept three arguments:</p>
 <ul>
   <li><code>ctcId</code> --- A contract RPC handle to provide as the contract to the backend</li>
   <li><code>values</code> --- An object containing the non-function components of the participant interact interface of the backend.</li>
@@ -50,6 +51,16 @@
   As the backend executes, any of the components of <code>methods</code> invoked will be executed as interactive RPC callbacks as described by the <a href="/md/rpc/proto/#ref-backends-rpc-proto">Reach RPC Protocol Specification</a>.
   Reach RPC Client libraries <em>should</em> expose a function that hides the details of the construction of the <code>values</code> and <code>methods</code> objects and implements interactive RPC callback handlers automatically.
 </p>
+<ul>
+  <li><code>/backend/getExports/$EXPORT_NAME</code> where <code>$EXPORT_NAME</code> is an export of the backend compiled by the <a href="/md/compiled/js/#ref-backends-js">JavaScript backend</a>.</li>
+</ul>
+<p>
+  Any Reach module exports, including functions, may be accessed via this method.
+  Field accessors and zero-indexed array references support arbitrarily deep nesting.
+</p>
+<p>For example:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1">RPC /backend/getExports/o          # Top-level data</li><li value="2">RPC /backend/getExports/o/foo/bar  # Data nested within data</li><li value="3">RPC /backend/getExports/a/0/2      # A deeply-nested element of an array</li><li value="4">RPC /backend/getExports/add 2 3    # 5; i.e. `add(2, 3)`</li></ol></pre>
+<p>Requests for non-existent exports and non-existent nested fields or elements always return <code>null</code>.</p>
 <ul>
   <li>
     <p>
