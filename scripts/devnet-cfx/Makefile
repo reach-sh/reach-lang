@@ -3,15 +3,6 @@ ROOT=../..
 DOCKER_LAYERS="build"
 include $(ROOT)/DEPS
 
-#.PHONY: build
-#build-devnet-cfx-build:
-#	docker build --target build \
-#	--target build \
-#	--build-arg REACH_GIT_HASH="$$(../git-hash.sh)" \
-#	--tag=$(IMAGE):build-latest \
-#	--cache-from=reachsh/devnet-cfx:build-${CIRCLE_BRANCH} \
-#	--cache-from=reachsh/devnet-cfx:build-master .
-
 .PHONY: build
 build-devnet-cfx:
 	$(ROOT)/scripts/build_image.sh \
