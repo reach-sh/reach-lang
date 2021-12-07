@@ -57,6 +57,12 @@ const KEYWORD_TO_DOCUMENTATION: { [ keyword: string ] : string } = require(
 	'../../data/keywordToDocumentation.json'
 );
 
+// for "smart auto-complete" for things like
+// Reach.App, Participant.Set, Array.zip, etc.
+import {
+	KEYWORD_WITH_PERIOD_TO_KEYWORDS_LIST
+} from "./mapKeywordsWithAPeriodToAKeywordList";
+
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 let connection = createConnection(ProposedFeatures.all);
@@ -531,24 +537,73 @@ function getQuickFix(diagnostic: Diagnostic, title: string, range: Range, replac
 	return codeAction;
 }
 
+const GET_KEYWORDS_FOR = (
+	currentLine: string | undefined,
+	map: { [key: string]: string[]; },
+	fallbackCompletionList: string[]
+): string[] => {
+	for (const keywordWithPeriod in map)
+		if (currentLine?.endsWith(keywordWithPeriod))
+			return map[keywordWithPeriod];
+	
+	return fallbackCompletionList;
+};
 
-// This handler provides the initial list of the completion items.
-connection.onCompletion(
-	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-		// The passed parameter contains the position of the text document in
-		// which code complete got requested.
-		return REACH_KEYWORDS.map(kwd => ({
-			label: kwd,
-			kind: KEYWORD_TO_COMPLETION_ITEM_KIND[kwd] || CompletionItemKind.Text,
-			data: undefined,
-			detail: kwd,
-			documentation: {
-				kind: 'markdown',
-				value: getReachKeywordMarkdown(kwd)
+// This handler provides the initial list of the
+// completion items.
+connection.onCompletion((
+	textDocumentPosition: TextDocumentPositionParams
+): CompletionItem[] => {
+	const {
+		textDocument,
+		position
+	} = textDocumentPosition;
+
+	console.debug(position);
+
+	const currentDocument = documents.get(
+		textDocument.uri
+	);
+	
+	// Grab the current line.
+	const currentLine = currentDocument?.getText(
+		{
+			start: {
+				line: position.line,
+				character: 0
 			},
-		}));
-	}
-);
+			end: position
+		}
+	);
+
+	console.debug(currentLine);
+
+	// Do we have "smart auto-complete" for this
+	// keyword? If so, just give the "smart"
+	// suggestions. Otherwise, give the regular
+	// suggestions.
+	const keywords: string[] = GET_KEYWORDS_FOR(
+		currentLine,
+		KEYWORD_WITH_PERIOD_TO_KEYWORDS_LIST,
+		REACH_KEYWORDS
+	);
+		
+	// The passed parameter contains the position of
+	// the text document in which code complete got
+	// requested.
+	return keywords.map(keyword => ({
+		label: keyword,
+		kind: KEYWORD_TO_COMPLETION_ITEM_KIND[
+			keyword
+		] || CompletionItemKind.Text,
+		data: undefined,
+		detail: keyword,
+		documentation: {
+			kind: 'markdown',
+			value: getReachKeywordMarkdown(keyword)
+		},
+	}));
+});
 
 function insertSnippet(_textDocumentPosition: TextDocumentPositionParams, snippetText: string, completionItems: CompletionItem[], imports: string | undefined, label: string, sortOrder: number) {
 	let textEdit: TextEdit = {
