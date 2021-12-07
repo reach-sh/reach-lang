@@ -233,8 +233,10 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
 
       // On click book-col chapter-title or page-title.
       document.querySelectorAll('#book-col div.chapter-title, #book-col div.page-title').forEach(el => {
-        el.addEventListener('click', (event) => {
-          followLink(`/${idToPathName(event.target.id)}/`);
+        el.addEventListener('click', (evt) => {
+          const t = evt.target;
+          const l = `/${idToPathName(t.id)}/`;
+          followLink(l);
         });
       });
     }
@@ -373,7 +375,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
       el.classList.add('active');
       let chapter = el.closest('div.chapter');
       let pages = chapter.querySelector('div.pages');
-      if (pages.hasChildNodes()) {
+      if (pages && pages.hasChildNodes()) {
         let icon = chapter.querySelector('i.chapter-icon');
         icon.classList.remove('fa-angle-right');
         icon.classList.add('fa-angle-down');

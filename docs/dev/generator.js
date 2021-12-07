@@ -20,6 +20,7 @@ import remarkRehype from 'remark-rehype';
 import remarkSlug from 'remark-slug';
 import remarkToc from 'remark-toc';
 import remarkDirective from 'remark-directive';
+import {h} from 'hastscript';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { JSDOM } from 'jsdom';
@@ -50,7 +51,8 @@ const fail = (...args) => {
   if ( forReal ) { hasError = true; }
 };
 
-// Plugins
+const pathNameToId = (x) => x.replace(/\//g, '_');
+
 const xrefs = {};
 const xrefPut = (s, t, v) => {
   if ( ! xrefs[s] ) { xrefs[s] = {}; }
@@ -453,8 +455,6 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     // Push the markdown through the pipeline.
     .process(md);
 
-  if ( !forReal ) { return; }
-
   const doc = new JSDOM(output).window.document;
 
   // Process OTP.
@@ -477,6 +477,19 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   doc.querySelector('h1').remove();
   configJson.title = title;
   configJson.pathname = in_folder;
+
+  const bp = configJson.bookPath;
+  if ( bp ) {
+    if ( books[bp] === undefined ) { books[bp] = []; }
+    if ( ! configJson.bookHide ) {
+      books[bp].push({ here, title,
+        hidec: configJson.bookHideChildren,
+        path: here.split('/'),
+        rank: (configJson.rank || 0)});
+    }
+  }
+
+  if ( !forReal ) { return; }
 
   // Adjust image urls.
   doc.querySelectorAll('img').forEach(img => {
@@ -583,6 +596,78 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   ]);
 };
 
+const books = {};
+const generateBook = async (destp, bookp) => {
+  const cs = books[bookp] || [];
+  const treeify = (ct, cp, c) => {
+    const n = c.path.shift();
+    const cpn = [...cp, n];
+    if ( ! (n in ct) ) {
+      ct[n] = { path: cpn, children: {} };
+    }
+    const ctn = ct[n];
+    if ( c.path.length === 0 ) {
+      ctn.rank = c.rank;
+      ctn.here = c.here;
+      ctn.title = c.title;
+      ctn.hidec = c.hidec;
+    } else {
+      treeify(ctn.children, cpn, c);
+    }
+  };
+  const compareNumbers = (a, b) => (a - b);
+  const compareChapters = (x, y) => {
+    const pc = compareNumbers(x.path.length, y.path.length);
+    if ( pc === 0 ) {
+      const rc = compareNumbers(x.rank, y.rank);
+      return rc;
+    } else {
+      return pc;
+    }
+  };
+  const hify = (ctc) => {
+    const d = h('div', {class: "row chapter dynamic"});
+    const cs = [];
+    if ( ctc.hidec || Object.keys(ctc.children).length === 0 ) {
+      d.children.push(h('div', {class: "col-auto chapter-empty-col"}));
+    } else {
+      d.children.push(h('div', {class: "col-auto chapter-icon-col"}, [
+        h('i', {class: "chapter-icon fas fa-angle-right"})
+      ]));
+      cs.push(h('div', {class: "pages", style: "display:none"},
+        hifyList(ctc)
+      ));
+    }
+    if ( ctc.title === undefined ) {
+      // XXX fail
+      warn(`Missing chapter title`, ctc.path);
+      ctc.title = `XXX ${ctc.path}`;
+    }
+    d.children.push(h('div', {class: "col"}, [
+      h('div', {class: "chapter-title", id: pathNameToId(ctc.here || "")}, ctc.title),
+      ...cs
+    ]));
+    return d;
+  };
+  const hifyList = (ct) =>
+    Object.values(ct.children || {}).map(hify);
+  const hifyTop = (ct, p) => {
+    if ( p.length !== 0 ) {
+      const n = p.shift();
+      return hifyTop((ct[n] || {}), p);
+    } else {
+      return hifyList(ct);
+    }
+  };
+  const ct = { };
+  const toc = { type: 'root', children: [] };
+  cs.forEach((c) => treeify(ct, [], c));
+  toc.children = hifyTop(ct, bookp.split('/'));
+  const bookPipe = await unified()
+    .use(rehypeStringify);
+  await fs.writeFile(destp, bookPipe.stringify(toc));
+};
+
 const findAndProcessFolder = async (base_html, inputBaseConfig, folder) => {
   let relDir = normalizeDir(folder.replace(srcDir, ''));
   relDir = relDir.startsWith('/') ? relDir.slice(1) : relDir;
@@ -595,16 +680,18 @@ const findAndProcessFolder = async (base_html, inputBaseConfig, folder) => {
     ...thisConfig,
   };
 
-  if ( thisConfig.bookTitle !== undefined ) {
-    //console.log(`Found book ${relDir}`);
-    baseConfig.bookPath = relDir;
-  }
-
   const out_folder = `${outDir}/${relDir}`;
   await fs.mkdir(out_folder, { recursive: true })
 
   try { await fs.unlink(`${out_folder}/index.html`); } catch (e) { void(e); }
   await fs.symlink(base_html, `${out_folder}/index.html`);
+
+  if ( thisConfig.bookTitle !== undefined ) {
+    baseConfig.bookPath = relDir;
+    if ( ! await fs.exists(`${in_folder}/book.html`) ) {
+      await generateBook(`${out_folder}/book.html`, relDir);
+    }
+  }
 
   const fileArr = await fs.readdir(folder);
   await Promise.all(fileArr.map(async (p) => {
