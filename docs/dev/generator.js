@@ -485,7 +485,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
       books[bp].push({ here, title,
         hidec: configJson.bookHideChildren,
         path: here.split('/'),
-        rank: (configJson.rank || 0)});
+        rank: (configJson.bookRank || 0)});
     }
   }
 
