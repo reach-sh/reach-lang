@@ -1,6 +1,4 @@
 import fetch from 'node-fetch';
-import assert from 'assert';
-import waitPort from 'wait-port';
 
 // const fetch = require('node-fetch')
 

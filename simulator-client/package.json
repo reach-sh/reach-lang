@@ -10,8 +10,7 @@
   },
   "type": "module",
   "dependencies": {
-    "node-fetch": "2.6",
-    "wait-port": "0.2.9"
+    "node-fetch": "2.6"
   },
   "author": "reach.sh",
   "license": "Apache-2.0",
