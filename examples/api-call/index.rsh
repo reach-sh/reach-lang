@@ -38,7 +38,7 @@ export const main = Reach.App(() => {
     const [ _, k3 ] =
       call(B.noop)
         .assume(() => assume(true))
-        .throwTimeout(1024);
+        .throwTimeout(relativeTime(1024));
 
     k3(false);
   } catch (_) {
