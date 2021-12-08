@@ -316,7 +316,7 @@ interpPrim = \case
   (BAND, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (.&.) lhs rhs
   (BIOR, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (.|.) lhs rhs
   (BXOR, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ xor lhs rhs
-  _ -> impossible "unexpected error"
+  (f, args) -> impossible $ "unhandled primop" ++ show f ++ " " ++ show args
 
 conCons' :: DLConstant -> DLVal
 conCons' DLC_UInt_max = V_UInt $ 2 ^ (64 :: Integer) - 1
@@ -331,7 +331,9 @@ instance Interp DLArg where
         Nothing -> possible "addToStore: no local store"
         Just lst -> do
           let st = l_store lst
-          return $ saferMapRef "DLA_Var" $ M.lookup dlvar st
+          case M.lookup dlvar st of
+            Nothing -> possible $ "DLA_Var " ++ show dlvar ++ show st
+            Just a -> return a
     DLA_Constant dlconst -> return $ conCons' dlconst
     DLA_Literal dllit -> interp dllit
     DLA_Interact slpart str dltype -> do
@@ -420,7 +422,7 @@ instance Interp DLExpr where
       ev1 <- interp dlarg1
       ev2 <- interp dlarg2
       case (ev1,ev2) of
-        (V_UInt n, V_Address acc) -> do
+        (V_Address acc, V_UInt n) -> do
           case maybe_dlarg of
             Nothing -> do
               transferLedger simContract acc nwToken n
@@ -448,7 +450,7 @@ instance Interp DLExpr where
           V_UInt n -> do
             suspend $ PS_Suspend (A_AdvanceSeconds n)
           _ -> impossible "unexpected error"
-    DLE_PartSet _at _slpart dlarg -> interp dlarg
+    DLE_PartSet _at _slpart dlarg -> interp dlarg --TODO
     DLE_MapRef _at dlmvar dlarg -> do
       (g, _) <- getState
       let linstate = e_linstate g
@@ -560,7 +562,7 @@ instance Interp DLStmt where
           addToStore switch_binding v
           interp dltail
         _ -> impossible "unexpected error"
-    DL_Only _at _either_part dltail -> interp dltail
+    DL_Only _at _either_part dltail -> interp dltail --TODO
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
       accu <- interp arg
       (g, _) <- getState
@@ -637,7 +639,8 @@ instance Interp LLStep where
       case v of
         V_UInt n -> do
           let locals = e_locals l
-          let lclst = l_who $ saferMapRef "LLS_ToConsensus" $ M.lookup (fromIntegral n) locals
+          let lclsv = saferMapRef "LLS_ToConsensus" $ M.lookup (fromIntegral n) locals
+          let lclst = l_who $ lclsv
           case lclst of
             Nothing -> impossible "expected participant id, received consensus id"
             Just part -> do
@@ -645,6 +648,7 @@ instance Interp LLStep where
               case m of
                 DLSend {..} -> do
                   ds_msg' <- mapM interp ds_msg
+                  addToStore dr_from $ V_Address $ l_acct lclsv
                   _ <- zipWithM addToStore dr_msg ds_msg'
                   _ <- zipWithM (addToRecord $ fromIntegral n) dr_msg ds_msg'
                   interp $ dr_k

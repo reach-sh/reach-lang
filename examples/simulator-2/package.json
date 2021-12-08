@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "wait-port": "0.2.9",
+    "@reach-sh/simulator-client": "0.0.0"
+  }
+}
