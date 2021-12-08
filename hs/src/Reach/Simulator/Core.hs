@@ -154,6 +154,9 @@ type Token = Integer
 
 data Ledger = Ledger
   { nw_ledger :: M.Map Account (M.Map Token Balance)
+  -- QUESTION: do you still want nw_next_acc here as
+  -- opposed to in `Global`?
+  -- I would rather not nest data unless for a good reason :)
   , nw_next_acc :: Integer
   , nw_next_token :: Integer
   }
@@ -631,28 +634,63 @@ instance Interp LLStep where
       _ <- interp stmt
       interp step
     LLS_Stop _at -> return V_Null
-    LLS_ToConsensus _at _lct tc_send (DLRecv {..}) _tc_mtime -> do
+    LLS_ToConsensus _at _lct tc_send recv tc_mtime -> do
       (g, l) <- getState
       let mid = e_nmsgid g
       incrMessageId
-      v <- suspend $ PS_Suspend (A_TieBreak mid $ M.keys $ M.mapKeys bunpack tc_send)
-      case v of
-        V_UInt n -> do
-          let locals = e_locals l
-          let lclsv = saferMapRef "LLS_ToConsensus" $ M.lookup (fromIntegral n) locals
-          let lclst = l_who $ lclsv
-          case lclst of
-            Nothing -> impossible "expected participant id, received consensus id"
-            Just part -> do
-              let m = saferMapRef "LLS_ToConsensus1" $ M.lookup (bpack part) tc_send
-              case m of
-                DLSend {..} -> do
+      let sends = M.mapKeys bunpack tc_send
+      v <- suspend $ PS_Suspend (A_TieBreak mid $ M.keys sends)
+      case tc_mtime of
+        Just (dltimearg, step) -> case dltimearg of
+          Left dlarg -> do
+            ev <- interp dlarg
+            case ev of
+              V_UInt n -> do
+                let t = e_nwtime g
+                case (t < n) of
+                  True -> consensusBody g l v sends recv
+                  False -> interp step
+              _ -> impossible "unexpected error: expected integer"
+          Right dlarg -> do
+            ev <- interp dlarg
+            case ev of
+              V_UInt n -> do
+                let t = e_nwsecs g
+                case (t < n) of
+                  True -> consensusBody g l v sends recv
+                  False -> interp step
+              _ -> impossible "unexpected error: expected integer"
+        Nothing -> consensusBody g l v sends recv
+
+consensusBody :: Global -> Local -> DLVal -> M.Map String DLSend -> DLRecv LLConsensus -> App DLVal
+consensusBody g l v sends (DLRecv {..}) = do
+  case v of
+    V_UInt n -> do
+      let locals = e_locals l
+      let lclsv = saferMapRef "LLS_ToConsensus" $ M.lookup (fromIntegral n) locals
+      let lclst = l_who $ lclsv
+      case lclst of
+        Nothing -> impossible "expected participant id, received consensus id"
+        Just part -> do
+          let dls = saferMapRef "LLS_ToConsensus1" $ M.lookup part sends
+          case dls of
+            DLSend {..} -> do
+              addToStore dr_time $ V_UInt (e_nwtime g)
+              addToStore dr_secs $ V_UInt (e_nwsecs g)
+              addToStore dr_didSend $ V_Bool True
+              addToStore dr_from $ V_Address $ l_acct lclsv
+              let (DLPayAmt {..}) = ds_pay
+              net <- interp pa_net
+              case net of
+                V_UInt net' -> do
+                  transferLedger (l_acct lclsv) simContract nwToken net'
                   ds_msg' <- mapM interp ds_msg
-                  addToStore dr_from $ V_Address $ l_acct lclsv
                   _ <- zipWithM addToStore dr_msg ds_msg'
                   _ <- zipWithM (addToRecord $ fromIntegral n) dr_msg ds_msg'
                   interp $ dr_k
-        _ -> impossible "unexpected client answer"
+                _ -> impossible "LLS_ToConsensus2: expected integer"
+    _ -> impossible "unexpected client answer"
+
 
 -- evaluate a linear Reach program
 instance Interp LLProg where
@@ -681,7 +719,13 @@ registerPart (g,l) s = do
         , l_store = mempty
         }
   let locals' = M.insert actorid lcl locals
-  let g' = g {e_nactorid = actorid + 1, e_naccid = aid + 1, e_partacts = M.insert s aid pacts}
+  let ledger = nw_ledger $ e_ledger g
+  let ledger' = M.insert (fromIntegral aid) (M.singleton nwToken simContractAmt) ledger
+  let ledger'' = (e_ledger g) { nw_ledger = ledger' }
+  let g' = g { e_nactorid = actorid + 1,
+    e_naccid = aid + 1,
+    e_partacts = M.insert s aid pacts,
+    e_ledger = ledger'' }
   let l' = l {e_locals = locals'}
   (g',l')
 
