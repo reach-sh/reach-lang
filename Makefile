@@ -18,6 +18,10 @@ routine-build-push:
 routine-build:
 	scripts/routine.sh build
 
+.PHONY: routine-build-m1
+routine-build-m1:
+	scripts/routine.sh build-m1
+
 .PHONY: docs
 docs:
 	cd docs-src && $(MAKE)
