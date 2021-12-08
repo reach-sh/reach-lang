@@ -35,7 +35,7 @@ for (const keyword in KEYWORD_TO_ITEM_KIND_IMPORT) {
 		
 		KEYWORD_WITH_PERIOD_TO_KEYWORDS_LIST[
 			DOT_DELIMITED_KEYWORDS[0]
-		].push(keyword);
+		].push(DOT_DELIMITED_KEYWORDS[1]);
 	}
 }
 
