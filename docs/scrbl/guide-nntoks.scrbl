@@ -16,8 +16,8 @@ All consensus networks that Reach supports obey these properties.
 In each of the networks supported by Reach, non-network tokens may violate these expectations.
 
 On Ethereum, and Ethereum-like networks, where non-network tokens are just particular patterns of smart contracts, the concrete behavior of abstract operations like "Transfer 10 Zorkmids from John to Paul" may have arbitrary semantics.
-For example, a smart contract insist that Paul pre-approve the reception of Zorkmids;
-a smart contract could allow all transfers to be universally halted, like an old fashion bank closure;
+For example, a smart contract insisting that Paul pre-approve the reception of Zorkmids;
+a smart contract could allow all transfers to be universally halted, like an old-fashioned bank closure;
 a smart contract could simply take John's Zorkmids away because the administrator of the token decides to;
 and so on.
 Smart contracts have power to implement arbitrary semantics and there is no guarantee that a smart contract that supplies a function with the name @tt{transfer} and the signature @tt{function transfer(address _to, uint256 _value) public returns (bool success)} has any particular behavior.
