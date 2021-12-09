@@ -45,15 +45,15 @@ export const main = Reach.App(() => {
   };
 
   Alice.only(() => {
-    const wager = declassify(interact.wager); // wager #1
+    const wager = declassify(interact.wager);
     const deadline = declassify(interact.deadline);
   });
-  Alice.publish(wager, deadline) // wager #1
-    .pay(wager); // wager #3
+  Alice.publish(wager, deadline)
+    .pay(wager);
   commit();
 
   Bob.only(() => {
-    interact.acceptWager(wager); // wager #2
+    interact.acceptWager(wager);
   });
   Bob.pay(wager) // wager #3
     .timeout(relativeTime(deadline), () => closeTo(Alice, informTimeout));
