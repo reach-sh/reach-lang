@@ -36,6 +36,9 @@ import Safe (atMay)
 import Text.Read
 import Generics.Deriving ( Generic )
 import Reach.CommandLine
+import Data.List (intercalate)
+import Data.List.Extra (maximumOn)
+import Crypto.Hash
 
 -- import Debug.Trace
 
@@ -177,6 +180,26 @@ _udiv x y = z
   where
     (q, d) = quotRem x y
     z = if d == 0 then q else q + 1
+
+typeSig :: DLType -> String
+typeSig x =
+  case x of
+  T_Null -> "null"
+  T_Bool -> "bool"
+  T_UInt -> "uint64"
+  T_Bytes sz -> "byte" <> array sz
+  T_Digest -> "digest"
+  T_Address -> "address"
+  T_Contract -> typeSig T_UInt
+  T_Token -> typeSig T_UInt
+  T_Array  t sz -> typeSig t <> array sz
+  T_Tuple ts -> "(" <> intercalate "," (map typeSig ts) <> ")"
+  T_Object m -> typeSig $ T_Tuple $ M.elems m
+  T_Data m -> "(byte, byte" <> array (maximumOn typeSizeOf $ M.elems m) <> ")"
+  T_Struct ts -> typeSig $ T_Tuple $ map snd ts
+  where
+    array sz = "[" <> show sz <> "]"
+
 
 typeSizeOf :: DLType -> Integer
 typeSizeOf = \case
@@ -1422,9 +1445,10 @@ ce = \case
         , DLA_Var v
         ]
       cv v
-    | otherwise -> do
-      clog $ map DLA_Var vs
-      ca $ DLA_Literal DLL_Null
+    | L_Event en <- k -> do
+      clogEvent en vs
+      cl DLL_Null
+    | otherwise -> impossible "algo: emitLog"
     where
       isInternalLog = \case
         L_Internal -> True
@@ -1436,6 +1460,15 @@ ce = \case
       comment $ texty msg
       comment $ texty $ unsafeRedactAbsStr $ show at
       comment $ texty $ unsafeRedactAbsStr $ show fs
+
+clogEvent :: String -> [DLVar] -> ReaderT Env IO ()
+clogEvent eventName vs = do
+  let signature = eventName <> "(" <> intercalate "," (map (typeSig . varType) vs) <> ")"
+  let shaString = show $ hashWith SHA512t_256 (B.pack signature)
+  let shaBytes = B.pack $ take 4 $ shaString
+  let as = map DLA_Var vs
+  cconcatbs $ (T_Bytes 4, cbs shaBytes) : map (\a -> (argTypeOf a, ca a)) as
+  code "log" [ "//", texty $ typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as ]
 
 clog :: [DLArg] -> App ()
 clog as = do

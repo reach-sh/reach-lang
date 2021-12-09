@@ -859,27 +859,28 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       });
       const createEventStream = (event: string, tys: any[]) => {
         void tys;
-        let dhead = "EventStream";
         let time = creation_block;
         let logIndex = 0;
         const seek = async (t: Time) => {
+          debug("EventStream::seek", t);
           time = t;
           logIndex = 0;
         }
         const next = async () => {
-          dhead = dhead + "::next";
+          const dhead = "EventStream::next";
+          debug(dhead, time);
           const ctc = await getC();
           const res = await eventCache.query(dhead, getC, time.toNumber(), undefined, event, getMinBlockWithLogIndex(logIndex));
           if (!res.succ) {
             throw Error('Event not found');
           }
           const { evt } = res;
-          debug(dhead + ` evt:`, evt);
           const blockTime = bigNumberify(evt.blockNumber);
           const blockLogIdx = evt.logIndex;
           logIndex = blockLogIdx;
           const { args } = ctc.interface.parseLog(evt);
           const thisArgs = tys.map((_, i) => args[i]);
+          debug(dhead + ` parsed log`, thisArgs, blockTime);
           return { when: blockTime, what: thisArgs };
         }
         return { seek, next };

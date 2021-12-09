@@ -26,16 +26,16 @@ export const main = Reach.App(() => {
     A.publish(x);
 
     E.x(x);
-    A.interact.checkX();
+    A.interact.checkX(false);
 
     E.x(4);
-    A.interact.checkX();
+    A.interact.checkX(true);
 
     E.y(x, x);
-    A.interact.checkY();
+    A.interact.checkY(false);
 
     E.y(x, 2);
-    A.interact.checkY();
+    A.interact.checkY(true);
 
     // Signal frontend we should seek next block
     A.interact.loopCont();

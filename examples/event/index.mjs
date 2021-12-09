@@ -4,8 +4,8 @@ const stdlib = loadStdlib(process.env);
 const thread = async (f) => await f();
 
 const assertEq = (a, b) => {
-  if (a !== b) {
-    throw Error(`Expected ${a} == ${b}`);
+  if (!a.eq(b)) {
+    throw Error(`Expected ${JSON.stringify(a)} == ${JSON.stringify(b)}`);
   }
 }
 
@@ -17,10 +17,18 @@ const assertEq = (a, b) => {
 
   const ctcAlice = accAlice.contract(backend);
   const e = ctcAlice.events;
-  console.log(e);
 
   let x = stdlib.bigNumberify(0);
   let lastTime = stdlib.bigNumberify(0);
+
+  const getLog = (f) => async () => {
+    const { when, what } = await f.next();
+    lastTime = when;
+    return what;
+  }
+
+  const getXLog = getLog(e.x_event_x);
+  const getYLog = getLog(e.x_event_y);
 
   await Promise.all([
     backend.A(ctcAlice, {
@@ -28,19 +36,14 @@ const assertEq = (a, b) => {
         x = x.add(1);
         return x;
       },
-      checkX: async () => {
-        const { when, what } = await e.x_event_x.next();
-        lastTime = when;
-        console.log(what);
-        console.log(x);
-        // assertEq(what, x);
+      checkX: async (isHardcoded) => {
+        const what = await getXLog();
+        assertEq(what[0], isHardcoded ? stdlib.bigNumberify(4) : x);
       },
-      checkY: async () => {
-        const { when, what } = await e.x_event_y.next();
-        lastTime = when;
-        console.log(what);
-        // assertEq(what[0], x);
-        // assertEq(what[1], x);
+      checkY: async (isHardcoded) => {
+        const what = await getYLog();
+        assertEq(what[0], x);
+        assertEq(what[1], isHardcoded ? stdlib.bigNumberify(2) : x);
       },
       loopCont: async () => {
         e.x_event_x.seek(lastTime.add(1));

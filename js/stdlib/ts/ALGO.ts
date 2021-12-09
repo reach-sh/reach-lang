@@ -65,6 +65,7 @@ import {
   extractAddr,
 } from './ALGO_compiled';
 import { window, process, Env } from './shim';
+import { sha512_256 } from 'js-sha512';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = stdlib;
 export * from './shared_user';
 
@@ -1654,15 +1655,50 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const setupEvents = (a: SetupEventArgs) => {
-      void a;
       const eventCache = new EventCache();
-      void eventCache;
-      const createEventStream = () => {
+      const getC = makeGetC(a, eventCache);
+      const createEventStream = (event: string, tys: AnyALGO_Ty[]) => {
+        let time: BigNumber | null = null;
+        let logIndex = 0;
+        let sig = `${event}(${tys.map(ty => ty.netName).join(',')})`;
+        debug(`createEventStream signature`, sig);
+        let hashPrefix = sha512_256(sig).substring(0, 4);
+        let base64Hash = replaceAll(base64ify(hashPrefix) as string, '=', '');
+        debug(`createEventStream hash`, base64Hash);
+
         const seek = async (t: Time) => {
-          void t;
+          debug("EventStream::seek", t);
+          time = t;
+          logIndex = 0;
         }
+
         const next = async () => {
-          return null;
+          let dhead = "EventStream::next";
+          const { ApplicationID, getLastRound } = await getC();
+          if (time == null) {
+            time = bigNumberify(getLastRound());
+          }
+          const pred = (txn: any) => {
+            const logs: string[] = (txn['logs'] || []).slice(logIndex);
+            const good = logs.some((log) => log.startsWith(base64Hash));
+            return good;
+          };
+          const res = await eventCache.query(dhead, ApplicationID, { minRound: time.toNumber() }, pred);
+          if (!res.succ) {
+            throw Error(`Event not found`);
+          }
+          const logs = res.txn.logs.slice(logIndex);
+          let log = logs.find((l: string, idx: number) => {
+            const matches = l.startsWith(base64Hash);
+            if (matches) { logIndex += idx + 1; }
+            return matches;
+          });
+          // @ts-ignore
+          const parsedLog = T_Tuple([T_Bytes(4)].concat(tys)).fromNet(reNetify(log));
+          const blockTime = bigNumberify(res.txn['confirmed-round']);
+          debug(dhead + ` parsed log`, parsedLog, blockTime);
+          parsedLog.shift(); // Remove tag
+          return { when: blockTime, what: parsedLog };
         }
         return { seek, next };
       };
