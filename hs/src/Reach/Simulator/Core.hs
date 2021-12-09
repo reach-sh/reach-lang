@@ -234,7 +234,7 @@ addToRecord :: ActorId -> DLVar -> DLVal -> App ()
 addToRecord aid x v = do
   (e, _) <- getState
   let trs = e_record e
-  setGlobal $ e {e_record = trs ++ [Transmission {t_sender = aid, t_store = M.singleton x v}]}
+  setGlobal $ e {e_record = trs <> [Transmission {t_sender = aid, t_store = M.singleton x v}]}
 
 addToStore :: DLVar -> DLVal -> App ()
 addToStore x v = do
@@ -247,6 +247,19 @@ addToStore x v = do
       let st = l_store lst
       let lst' = lst {l_store = M.insert x v st}
       setLocal $ l {e_locals = M.insert aid lst' locals}
+
+checkRecord :: DLVar -> App (Maybe DLVal)
+checkRecord x = do
+  (g, _) <- getState
+  let record = reverse $ e_record g
+  return $ checkRecord' record
+  where
+    checkRecord' [] = Nothing
+    checkRecord' (a:as) = do
+      let store = t_store a
+      case M.lookup x store of
+        Nothing -> checkRecord' as
+        Just v -> Just v
 
 incrNWtime :: Integer -> App ()
 incrNWtime n = do
@@ -319,7 +332,7 @@ interpPrim = \case
   (BAND, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (.&.) lhs rhs
   (BIOR, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (.|.) lhs rhs
   (BXOR, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ xor lhs rhs
-  (f, args) -> impossible $ "unhandled primop" ++ show f ++ " " ++ show args
+  (f, args) -> impossible $ "unhandled primop" <> show f <> " " <> show args
 
 conCons' :: DLConstant -> DLVal
 conCons' DLC_UInt_max = V_UInt $ 2 ^ (64 :: Integer) - 1
@@ -331,11 +344,24 @@ instance Interp DLArg where
       let locals = e_locals l
       let aid = e_curr_actorid l
       case M.lookup aid locals of
-        Nothing -> possible "addToStore: no local store"
+        Nothing -> possible "DLA_Var: no local store"
         Just lst -> do
           let st = l_store lst
           case M.lookup dlvar st of
-            Nothing -> possible $ "DLA_Var " ++ show dlvar ++ show st
+            Nothing -> do
+              r <- checkRecord dlvar
+              case r of
+                Just a -> return a
+                Nothing -> possible $ "DLA_Var "
+                  <> show dlvar
+                  <> " "
+                  <> show st
+                  <> " "
+                  <> show (l_who lst)
+                  <> " "
+                  <> show (M.map l_store locals)
+                  -- <> " "
+                  -- <> show (M.map l_store locals)
             Just a -> return a
     DLA_Constant dlconst -> return $ conCons' dlconst
     DLA_Literal dllit -> interp dllit
@@ -565,7 +591,18 @@ instance Interp DLStmt where
           addToStore switch_binding v
           interp dltail
         _ -> impossible "unexpected error"
-    DL_Only _at _either_part dltail -> interp dltail --TODO
+    DL_Only _at either_part dltail -> do
+      (g,l) <- getState
+      case either_part of
+        Left slpart -> do
+          let pacts = e_partacts g
+          let actid = saferMapRef "DL_Only" $ M.lookup (bunpack slpart) pacts
+          -- let restore_id = e_curr_actorid l
+          setLocal $ l {e_curr_actorid = actid}
+          r <- interp dltail
+          -- setLocal $ l {e_curr_actorid = restore_id}
+          return r
+        Right _b -> interp dltail
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
       accu <- interp arg
       (g, _) <- getState
@@ -675,6 +712,8 @@ consensusBody g l v sends (DLRecv {..}) = do
           let dls = saferMapRef "LLS_ToConsensus1" $ M.lookup part sends
           case dls of
             DLSend {..} -> do
+              -- let restore_id = e_curr_actorid l
+              setLocal $ l {e_curr_actorid = fromIntegral n}
               addToStore dr_time $ V_UInt (e_nwtime g)
               addToStore dr_secs $ V_UInt (e_nwsecs g)
               addToStore dr_didSend $ V_Bool True
@@ -685,6 +724,7 @@ consensusBody g l v sends (DLRecv {..}) = do
                 V_UInt net' -> do
                   transferLedger (l_acct lclsv) simContract nwToken net'
                   ds_msg' <- mapM interp ds_msg
+                  -- setLocal $ l {e_curr_actorid = restore_id}
                   _ <- zipWithM addToStore dr_msg ds_msg'
                   _ <- zipWithM (addToRecord $ fromIntegral n) dr_msg ds_msg'
                   interp $ dr_k
