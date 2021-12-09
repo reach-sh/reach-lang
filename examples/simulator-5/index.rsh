@@ -48,14 +48,14 @@ export const main = Reach.App(() => {
     const wager = declassify(interact.wager); // wager #1
     const deadline = declassify(interact.deadline);
   });
-  Alice.publish(wager, deadline) // wager #2
+  Alice.publish(wager, deadline) // wager #1&2
     .pay(wager); // wager #3
   commit();
 
   Bob.only(() => {
-    interact.acceptWager(wager);
+    interact.acceptWager(wager); // wager #2 
   });
-  Bob.pay(wager)
+  Bob.pay(wager) // wager #3
     .timeout(relativeTime(deadline), () => closeTo(Alice, informTimeout));
 
   var outcome = DRAW;

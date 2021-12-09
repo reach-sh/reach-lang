@@ -103,14 +103,6 @@ instance Monad App where
         let App con = conF vVal
          in con gvVal kAns))
 
--- unsuspend :: PartState -> State -> DLVal -> PartState
--- unsuspend ps st v =
---  case ps of
---    PS_Done _ _ -> do
---      -- error?
---      ps
---    PS_Suspend _ _ k ->
---      k st v
 
 suspend :: (State -> PartCont -> PartState) -> App DLVal
 suspend = App
@@ -343,11 +335,12 @@ instance Interp DLArg where
       (_, l) <- getState
       let locals = e_locals l
       let aid = e_curr_actorid l
-      case M.lookup aid locals of
-        Nothing -> possible "DLA_Var: no local store"
-        Just lst -> do
+      case (M.lookup aid locals, M.lookup (fromIntegral consensusId) locals) of
+        (Nothing,_) -> possible "DLA_Var: no local store"
+        (Just lst,Just conslst) -> do
           let st = l_store lst
-          case M.lookup dlvar st of
+          let cst = l_store conslst
+          case M.lookup dlvar (M.union st cst) of
             Nothing -> do
               r <- checkRecord dlvar
               case r of
@@ -360,9 +353,8 @@ instance Interp DLArg where
                   <> show (l_who lst)
                   <> " "
                   <> show (M.map l_store locals)
-                  -- <> " "
-                  -- <> show (M.map l_store locals)
             Just a -> return a
+        _ -> impossible "a consensus store must exist"
     DLA_Constant dlconst -> return $ conCons' dlconst
     DLA_Literal dllit -> interp dllit
     DLA_Interact slpart str dltype -> do
@@ -597,10 +589,11 @@ instance Interp DLStmt where
         Left slpart -> do
           let pacts = e_partacts g
           let actid = saferMapRef "DL_Only" $ M.lookup (bunpack slpart) pacts
-          -- let restore_id = e_curr_actorid l
+          let restore_id = e_curr_actorid l
           setLocal $ l {e_curr_actorid = actid}
           r <- interp dltail
-          -- setLocal $ l {e_curr_actorid = restore_id}
+          l' <- getLocal
+          setLocal $ l' {e_curr_actorid = restore_id}
           return r
         Right _b -> interp dltail
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
@@ -677,59 +670,60 @@ instance Interp LLStep where
       incrMessageId
       let sends = M.mapKeys bunpack tc_send
       v <- suspend $ PS_Suspend (A_TieBreak mid $ M.keys sends)
-      case tc_mtime of
-        Just (dltimearg, step) -> case dltimearg of
-          Left dlarg -> do
-            ev <- interp dlarg
-            case ev of
-              V_UInt n -> do
-                let t = e_nwtime g
-                case (t < n) of
-                  True -> consensusBody g l v sends recv
-                  False -> interp step
-              _ -> impossible "unexpected error: expected integer"
-          Right dlarg -> do
-            ev <- interp dlarg
-            case ev of
-              V_UInt n -> do
-                let t = e_nwsecs g
-                case (t < n) of
-                  True -> consensusBody g l v sends recv
-                  False -> interp step
-              _ -> impossible "unexpected error: expected integer"
-        Nothing -> consensusBody g l v sends recv
+      case v of
+        V_UInt n -> do
+          let locals = e_locals l
+          let lclsv = saferMapRef "LLS_ToConsensus" $ M.lookup (fromIntegral n) locals
+          let lclst = l_who $ lclsv
+          case lclst of
+            Nothing -> impossible "expected participant id, received consensus id"
+            Just part -> do
+              let dls = saferMapRef "LLS_ToConsensus1" $ M.lookup part sends
+              case tc_mtime of
+                Just (dltimearg, step) -> case dltimearg of
+                  Left dlarg -> do
+                    ev <- interp dlarg
+                    case ev of
+                      V_UInt n' -> do
+                        let t = e_nwtime g
+                        case (t < n') of
+                          True -> consensusBody n g l dls recv
+                          False -> interp step
+                      _ -> impossible "unexpected error: expected integer"
+                  Right dlarg -> do
+                    ev <- interp dlarg
+                    case ev of
+                      V_UInt n' -> do
+                        let t = e_nwsecs g
+                        case (t < n') of
+                          True -> consensusBody n g l dls recv
+                          False -> interp step
+                      _ -> impossible "unexpected error: expected integer"
+                Nothing -> consensusBody n g l dls recv
+        _ -> impossible "unexpected client answer"
 
-consensusBody :: Global -> Local -> DLVal -> M.Map String DLSend -> DLRecv LLConsensus -> App DLVal
-consensusBody g l v sends (DLRecv {..}) = do
-  case v of
-    V_UInt n -> do
-      let locals = e_locals l
-      let lclsv = saferMapRef "LLS_ToConsensus" $ M.lookup (fromIntegral n) locals
-      let lclst = l_who $ lclsv
-      case lclst of
-        Nothing -> impossible "expected participant id, received consensus id"
-        Just part -> do
-          let dls = saferMapRef "LLS_ToConsensus1" $ M.lookup part sends
-          case dls of
-            DLSend {..} -> do
-              -- let restore_id = e_curr_actorid l
-              setLocal $ l {e_curr_actorid = fromIntegral n}
-              addToStore dr_time $ V_UInt (e_nwtime g)
-              addToStore dr_secs $ V_UInt (e_nwsecs g)
-              addToStore dr_didSend $ V_Bool True
-              addToStore dr_from $ V_Address $ l_acct lclsv
-              let (DLPayAmt {..}) = ds_pay
-              net <- interp pa_net
-              case net of
-                V_UInt net' -> do
-                  transferLedger (l_acct lclsv) simContract nwToken net'
-                  ds_msg' <- mapM interp ds_msg
-                  -- setLocal $ l {e_curr_actorid = restore_id}
-                  _ <- zipWithM addToStore dr_msg ds_msg'
-                  _ <- zipWithM (addToRecord $ fromIntegral n) dr_msg ds_msg'
-                  interp $ dr_k
-                _ -> impossible "LLS_ToConsensus2: expected integer"
-    _ -> impossible "unexpected client answer"
+
+consensusBody :: Integer -> Global -> Local -> DLSend -> DLRecv LLConsensus -> App DLVal
+consensusBody n g l (DLSend {..}) (DLRecv {..}) = do
+  let locals = e_locals l
+  let lclsv = saferMapRef "LLS_ToConsensus" $ M.lookup (fromIntegral n) locals
+  addToRecord (fromIntegral n) dr_time $ V_UInt (e_nwtime g)
+  addToRecord (fromIntegral n) dr_secs $ V_UInt (e_nwsecs g)
+  addToRecord (fromIntegral n) dr_didSend $ V_Bool True
+  addToRecord (fromIntegral n) dr_from $ V_Address $ l_acct lclsv
+  let (DLPayAmt {..}) = ds_pay
+  let restore_id = e_curr_actorid l
+  setLocal $ l {e_curr_actorid = fromIntegral n}
+  net <- interp pa_net
+  case net of
+    V_UInt net' -> do
+      transferLedger (l_acct lclsv) simContract nwToken net'
+      ds_msg' <- mapM interp ds_msg
+      setLocal $ l {e_curr_actorid = restore_id}
+      _ <- zipWithM addToStore dr_msg ds_msg'
+      _ <- zipWithM (addToRecord $ fromIntegral n) dr_msg ds_msg'
+      interp $ dr_k
+    _ -> impossible "LLS_ToConsensus2: expected integer"
 
 
 -- evaluate a linear Reach program
