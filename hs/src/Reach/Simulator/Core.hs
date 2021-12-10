@@ -177,7 +177,7 @@ data Action
   | A_ChangeActor Int
   | A_AdvanceTime Integer
   | A_AdvanceSeconds Integer
-  | A_InteractV String String DLType
+  | A_InteractV String String DLType --TODO either remove or add protection
   | A_Interact SrcLoc [SLCtxtFrame] String String DLType [DLVal]
   deriving (Generic)
 
@@ -224,6 +224,7 @@ addToStore x v = do
       let lst' = lst {l_store = M.insert x v st}
       setLocal $ l {e_locals = M.insert aid lst' locals}
 
+--TODO: replace with correct queue based impl
 checkRecord :: DLVar -> App (Maybe DLVal)
 checkRecord x = do
   (g, _) <- getState
@@ -323,6 +324,7 @@ instance Interp DLArg where
         (Just lst,Just conslst) -> do
           let st = l_store lst
           let cst = l_store conslst
+          --TODO: replace with correct queue based impl
           case M.lookup dlvar (M.union st cst) of
             Nothing -> do
               r <- checkRecord dlvar
@@ -567,6 +569,7 @@ instance Interp DLStmt where
         _ -> impossible "unexpected error"
     DL_Only _at either_part dltail -> do
       (g,l) <- getState
+      --TODO: You should only run this if you actually are this part
       case either_part of
         Left slpart -> do
           let pacts = e_partacts g
@@ -661,6 +664,7 @@ instance Interp LLStep where
             Nothing -> impossible "expected participant id, received consensus id"
             Just part -> do
               let dls = saferMapRef "LLS_ToConsensus1" $ M.lookup part sends
+              --TODO: there should be another action called "Run Timeout"
               let f t n' step = case (t < n') of
                     True -> consensusBody n g l dls recv
                     False -> interp step
@@ -681,13 +685,16 @@ consensusBody :: Integer -> Global -> Local -> DLSend -> DLRecv LLConsensus -> A
 consensusBody n g l (DLSend {..}) (DLRecv {..}) = do
   let locals = e_locals l
   let lclsv = saferMapRef "LLS_ToConsensus" $ M.lookup (fromIntegral n) locals
+  --TODO: replace with correct queue based impl
   addToRecord (fromIntegral n) dr_time $ V_UInt (e_nwtime g)
   addToRecord (fromIntegral n) dr_secs $ V_UInt (e_nwsecs g)
+  --TODO: This is only true for the actual sender. It is false for everyone else
   addToRecord (fromIntegral n) dr_didSend $ V_Bool True
   addToRecord (fromIntegral n) dr_from $ V_Address $ l_acct lclsv
   let (DLPayAmt {..}) = ds_pay
   let restore_id = e_curr_actorid l
   setLocal $ l {e_curr_actorid = fromIntegral n}
+  --TODO: currently ignoring the token amounts
   net <- interp pa_net
   case net of
     V_UInt net' -> do
