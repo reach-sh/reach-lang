@@ -89,10 +89,10 @@ export const mkKont = () => {
 };
 
 
-export const mkStdlibProxy = async (lib: any) => {
-  const account = mkKont();
+export const mkStdlibProxy = async (lib: any, ks: any) => {
+  const { account, token } = ks;
 
-  const rpc_stdlib = {
+  return {
     ...lib,
 
     newTestAccount: async (bal: any) =>
@@ -119,30 +119,39 @@ export const mkStdlibProxy = async (lib: any) => {
     connectAccount: async (id: string) =>
       account.track(await lib.connectAccount(account.id(id).networkAccount)),
 
-    balanceOf: async (id: string) =>
-      lib.balanceOf(account.id(id)),
+    balanceOf: async (id: string, token?: any) => {
+      const t = token === undefined ? undefined
+              : token.id            ? token.id // From `launchToken`
+              : token;
+      return await lib.balanceOf(account.id(id), t);
+    },
 
     transfer: async (from: string, to: string, bal: any) =>
       lib.transfer(account.id(from), account.id(to), bal),
 
     assert: (x: any) =>
-      lib.assert(x) || null,
-  };
+      lib.assert(x),
 
-  return {
-    account,
-    rpc_stdlib,
+    // As of 2021-12-08 `launchToken` isn't officially documented
+    // These are unlike `Token` values but we'll track them together, with the
+    // intention that functions like `tokenAccept` should accept either
+    launchToken: async (id: string, name: string, sym: string, opts: any = {}) => {
+      const t = await lib.launchToken(account.id(id), name, sym, opts);
+      return { kid: await token.track(t), token: t };
+    },
   };
 };
 
 
 export const serveRpc = async (backend: any) => {
-  const real_stdlib             = await loadStdlib();
-  const { account, rpc_stdlib } = await mkStdlibProxy(real_stdlib);
-  const contract                = mkKont();
-  const kont                    = mkKont();
-  const app                     = express();
-  const route_backend           = express.Router();
+  const account       = mkKont();
+  const contract      = mkKont();
+  const token         = mkKont();
+  const kont          = mkKont();
+  const real_stdlib   = await loadStdlib();
+  const rpc_stdlib    = await mkStdlibProxy(real_stdlib, { account, token });
+  const app           = express();
+  const route_backend = express.Router();
 
   const rpc_acc = {
     contract: async (id: string, ...args: any[]) =>
@@ -158,15 +167,34 @@ export const serveRpc = async (backend: any) => {
       await account.id(id).getAddress(),
 
     setGasLimit: async (id: string, ...args: any[]) =>
-      await account.id(id).setGasLimit(...args) || null,
+      await account.id(id).setGasLimit(...args),
 
     setDebugLabel: async (id: string, l: string) =>
-      account.id(id).setDebugLabel(l) || null,
+      account.id(id).setDebugLabel(l),
+
+    tokenAccept: async (acc: string, tok: string) => {
+      const t = token.id(tok);
+      await account.id(acc).tokenAccept(t.id ? t.id : t);
+      return null;
+    },
+
+    tokenAccepted: async (acc: string, tok: string) => {
+      const t = token.id(tok);
+      return await account.id(acc).tokenAccepted(t.id ? t.id : t);
+    },
   };
 
   const rpc_ctc = {
     getInfo: async (id: string) =>
       contract.id(id).getInfo(),
+  };
+
+  const rpc_launchToken = {
+    mint: async (kid: string, accTo: string, amt: any) =>
+      token.id(kid).mint(account.id(accTo), amt),
+
+    optOut: async (kid: string, accFrom: string, accTo?: string) =>
+      token.id(kid).optOut(account.id(accFrom), accTo ? account.id(accTo) : undefined),
   };
 
   const safely = (f: any) => (req: Request, res: Response) => (async (): Promise<any> => {
@@ -206,9 +234,10 @@ export const serveRpc = async (backend: any) => {
         debug(lab);
 
         const ans = await obj[k](...args);
-        debug(`${lab} ==> ${JSON.stringify(ans)}`);
+        const ret = ans === undefined ? null : ans;
+        debug(`${lab} ==> ${JSON.stringify(ret)}`);
 
-        res.json(ans);
+        res.json(ret);
       }));
     }
     return router;
@@ -332,10 +361,11 @@ export const serveRpc = async (backend: any) => {
   app.use(withApiKey());
   app.use(express.json());
 
-  app.use(`/stdlib`,  mkRPC('stdlib', rpc_stdlib));
-  app.use(`/acc`,     mkRPC('acc',    rpc_acc));
-  app.use(`/ctc`,     mkRPC('ctc',    rpc_ctc));
-  app.use(`/backend`, route_backend);
+  app.use(`/stdlib`,      mkRPC('stdlib',      rpc_stdlib));
+  app.use(`/acc`,         mkRPC('acc',         rpc_acc));
+  app.use(`/ctc`,         mkRPC('ctc',         rpc_ctc));
+  app.use(`/launchToken`, mkRPC('launchToken', rpc_launchToken));
+  app.use(`/backend`,     route_backend);
 
   // NOTE: since `getViews()` is deprecated we deliberately skip it here
   app.use(`/ctc/v`,           mkUserDefined('/ctc/v',           'v',           contract, false));
@@ -348,11 +378,12 @@ export const serveRpc = async (backend: any) => {
 
   app.post(`/kont`, do_kont);
 
-  // Note: successful `/backend/<p>` requests automatically `forget` their
-  // continuation ID before yielding a "Done" response; likewise with requests
-  // to `/kont` due to their relationship with `/backend/<p>`
-  app.post(`/forget/acc`, mkForget(account));
-  app.post(`/forget/ctc`, mkForget(contract));
+  // Note: successful `/backend/<participant>` requests automatically `forget`
+  // their continuation ID before yielding a "Done" response; likewise with
+  // requests to `/kont` due to their relationship with `/backend/<participant>`
+  app.post(`/forget/acc`,   mkForget(account));
+  app.post(`/forget/ctc`,   mkForget(contract));
+  app.post(`/forget/token`, mkForget(token));
 
   app.post(`/stop`, safely(async (_: Request, res: Response) => {
     res.json(true);
