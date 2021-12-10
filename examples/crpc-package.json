@@ -3,7 +3,8 @@
   "type": "module",
   "dependencies": {
     "@reach-sh/rpc-client": "0.0.1",
-    "chalk": "5.0.0"
+    "chalk": "5.0.0",
+    "await-timeout": "^0.6.0"
   },
   "author": "reach.sh",
   "license": "Apache-2.0",
