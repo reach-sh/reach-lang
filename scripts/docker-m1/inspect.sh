@@ -5,6 +5,7 @@
 HERE=.
 VER="$1"
 
+# shellcheck disable=SC2013
 for IMG in $(cat "$HERE/imgs.txt") ; do
   echo "$IMG:$VER"
   M="$(docker manifest inspect --verbose "reachsh/$IMG:$VER")"

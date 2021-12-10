@@ -2,8 +2,8 @@
 # usage:
 # ./m1-stuff.sh 2022-02-02 abc1234
 
-DATEVER="$1"
-HASHVER="$2"
+# DATEVER="$1"
+# HASHVER="$2"
 
 # run this after building all images so that 'latest' is the m1 stuff
 ./retag.sh latest latest-arm64
