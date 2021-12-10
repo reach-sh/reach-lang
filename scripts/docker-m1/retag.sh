@@ -1,0 +1,11 @@
+#!/bin/sh
+# usage: (src dst)
+# ./retag.sh latest latest-m1
+set -ex
+
+FROM="$1"
+TO="$2"
+
+for IMG in $(cat "$HERE/imgs.txt") ; do
+  docker tag "reachsh/$IMG:$FROM" "reachsh/$IMG:$TO"
+done
