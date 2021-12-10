@@ -846,7 +846,7 @@ compile = command "compile" $ info f d where
     let CompilerOpts {..} = cta_co
     let v = versionBy majMinPat version''
     let ci' = if ci then "true" else ""
-    let ports = if co_sim then "-p 3001:3001" else "-p 3001:3001"
+    let ports = if elem "--sim" rawArgs then "-p 3001:3001" else ""
     liftIO $ do
       diePathContainsParentDir co_source
       maybe (pure ()) diePathContainsParentDir co_mdirDotReach
