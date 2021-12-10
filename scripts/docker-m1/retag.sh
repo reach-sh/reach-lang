@@ -3,6 +3,7 @@
 # ./retag.sh latest latest-m1
 set -ex
 
+HERE=.
 FROM="$1"
 TO="$2"
 
