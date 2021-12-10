@@ -521,7 +521,7 @@ class EventCache {
     this.cache = [];
   }
 
-  async query(dhead: string, ApplicationID: number, roundInfo: RoundInfo, pred: ((x:any) => boolean)): Promise<QueryResult> {
+  async query(dhead: string, ApplicationID: number, roundInfo: RoundInfo, isEventStream: boolean, pred: ((x:any) => boolean), choose : (x: any[]) => any = chooseMinRoundTxn): Promise<QueryResult> {
     const { minRound, timeoutAt, specRound } = roundInfo;
     const h = (mode:string): (number | undefined) => timeoutAt && timeoutAt[0] === mode ? bigNumberToNumber(timeoutAt[1]) : undefined;
     const maxRound = h('time');
@@ -551,13 +551,13 @@ class EventCache {
 
     if (initPtxns.length != 0) {
       debug(`Found transaction in Event Cache`);
-      const txn = chooseMinRoundTxn(initPtxns)
+      const txn = choose(initPtxns)
       return { succ: true, txn };
     }
     debug(`transaction not in event cache`);
 
     const failed = (): {succ: false, round: number} => ({ succ: false, round: this.currentRound });
-    if ( this.cache.length != 0 ) {
+    if ( this.cache.length != 0 && !isEventStream ) {
       debug(`cache not empty, contains some other message from future, not querying...`, this.cache);
       return failed();
     }
@@ -594,7 +594,7 @@ class EventCache {
       return failed();
     }
 
-    const txn = chooseMinRoundTxn(ptxns);
+    const txn = choose(ptxns);
 
     return { succ: true, txn };
   }
@@ -1553,7 +1553,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         while ( true ) {
           const correctStep = makeIsMethod(funcNum);
           const minRound = getLastRound() + fromBlock_summand;
-          const res = await eventCache.query(dhead, ApplicationID, { minRound, timeoutAt }, correctStep);
+          const res = await eventCache.query(dhead, ApplicationID, { minRound, timeoutAt }, false, correctStep);
           debug(`EventCache res: `, res);
           if ( ! res.succ ) {
             const currentRound = res.round;
@@ -1656,10 +1656,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     const setupEvents = (a: SetupEventArgs) => {
       const eventCache = new EventCache();
+      let time: BigNumber | null = null;
       const getC = makeGetC(a, eventCache);
       const createEventStream = (event: string, tys: AnyALGO_Ty[]) => {
-        let time: BigNumber | null = null;
-        let logIndex = 0;
+        let logIndex: any = {};
         let sig = `${event}(${tys.map(ty => ty.netName).join(',')})`;
         debug(`createEventStream signature`, sig);
         let hashPrefix = sha512_256(sig).substring(0, 4);
@@ -1669,7 +1669,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const seek = async (t: Time) => {
           debug("EventStream::seek", t);
           time = t;
-          logIndex = 0;
+          // logIndex = 0;
         }
 
         const next = async () => {
@@ -1677,32 +1677,65 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const { ApplicationID, getLastRound } = await getC();
           if (time == null) {
             time = bigNumberify(getLastRound());
+            logIndex[time.toNumber()] = 0;
           }
           const pred = (txn: any) => {
-            const logs: string[] = (txn['logs'] || []).slice(logIndex);
+            const round = txn['confirmed-round'];
+            const logIdx = logIndex[round] || 0;
+            const logs: string[] = (txn['logs'] || []).slice(logIdx);
             const good = logs.some((log) => log.startsWith(base64Hash));
             return good;
           };
-          const res = await eventCache.query(dhead, ApplicationID, { minRound: time.toNumber() }, pred);
-          if (!res.succ) {
-            throw Error(`Event not found`);
+          let res: QueryResult = { succ: false, round: 0  };
+          while (!res.succ) {
+            res = await eventCache.query(dhead, ApplicationID, { minRound: time.toNumber() }, true, pred);
           }
-          const logs = res.txn.logs.slice(logIndex);
+          const round = res.txn['confirmed-round'];
+          const logIdx = logIndex[round] || 0;
+          const logs = res.txn.logs.slice(logIdx);
           let log = logs.find((l: string, idx: number) => {
             const matches = l.startsWith(base64Hash);
-            if (matches) { logIndex += idx + 1; }
+            if (matches) { logIndex[round] = logIdx + idx + 1; }
             return matches;
           });
           // @ts-ignore
           const parsedLog = T_Tuple([T_Bytes(4)].concat(tys)).fromNet(reNetify(log));
-          const blockTime = bigNumberify(res.txn['confirmed-round']);
+          const blockTime = bigNumberify(round);
+          time = blockTime;
           debug(dhead + ` parsed log`, parsedLog, blockTime);
           parsedLog.shift(); // Remove tag
           return { when: blockTime, what: parsedLog };
         }
-        return { seek, next };
+
+        const seekNow = async () => {
+          eventCache.currentRound = (await getNetworkTime()).toNumber() - 1;
+        }
+
+        const lastTime = async () => {
+          const dhead = "EventStream::lastTime";
+          debug(dhead, time);
+          const { ApplicationID, getLastRound } = await getC();
+          const pred = (txn: any) => {
+            const logs: string[] = txn['logs'] || [];
+            return logs.some((log) => log.startsWith(base64Hash));
+          };
+          const res = await eventCache.query(dhead, ApplicationID, { minRound: getLastRound() }, true, pred, chooseMaxRoundTxn);
+          if (!res.succ) {
+            throw Error(`Event not found`);
+          }
+          const blockTime = bigNumberify(res.txn['confirmed-round']);
+          return blockTime;
+        }
+
+        const monitor = async (onEvent: (x: any) => void) => {
+          while (true) {
+            onEvent(await next());
+          }
+        }
+
+        return { lastTime, seek, seekNow, monitor, next };
       };
-      return createEventStream;
+      return { createEventStream };
     }
 
     return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
@@ -2035,7 +2068,7 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
 
   // Next, we check that it was created with this program and wasn't created
   // with a different program first (which could have modified the state)
-  const iar = await eventCache.query(dhead, ApplicationID, { specRound: allocRound }, (_: any) => true);
+  const iar = await eventCache.query(dhead, ApplicationID, { specRound: allocRound }, false, (_: any) => true);
   // @ts-ignore
   const iat = iar.txn;
   chk(iat, `Cannot query for allocation transaction`);
@@ -2048,7 +2081,7 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   // Next, we wait for the constructor call
   // XXX maybe don't care about this
   const isCtor = makeIsMethod(0);
-  const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, { minRound: 0 }, isCtor);
+  const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, { minRound: 0 }, false, isCtor);
   debug({icr});
   // @ts-ignore
   const ict = icr.txn;

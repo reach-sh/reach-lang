@@ -37,7 +37,6 @@ import Text.Read
 import Generics.Deriving ( Generic )
 import Reach.CommandLine
 import Data.List (intercalate)
-import Data.List.Extra (maximumOn)
 import Crypto.Hash
 
 -- import Debug.Trace
@@ -195,7 +194,7 @@ typeSig x =
   T_Array  t sz -> typeSig t <> array sz
   T_Tuple ts -> "(" <> intercalate "," (map typeSig ts) <> ")"
   T_Object m -> typeSig $ T_Tuple $ M.elems m
-  T_Data m -> "(byte, byte" <> array (maximumOn typeSizeOf $ M.elems m) <> ")"
+  T_Data m -> "(byte, byte" <> array (maximum $ map typeSizeOf $ M.elems m) <> ")"
   T_Struct ts -> typeSig $ T_Tuple $ map snd ts
   where
     array sz = "[" <> show sz <> "]"

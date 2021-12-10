@@ -210,10 +210,15 @@ export type ISetupView<ContractInfo, VerifyResult, ConnectorTy extends AnyBacken
 };
 
 export type ISetupEvent<ContractInfo, VerifyResult> =
-  (args:ISetupEventArgs<ContractInfo, VerifyResult>) =>
-      (event: string, tys: any[]) =>
-          { next: () => Promise<any>,
-            seek: (t: Time) => Promise<void> }
+  (args:ISetupEventArgs<ContractInfo, VerifyResult>) => {
+      createEventStream : (event: string, tys: any[]) => {
+                            lastTime: () => Promise<Time>,
+                            next: () => Promise<any>,
+                            seek: (t: Time) => Promise<void>
+                            seekNow: () => Promise<void>,
+                            monitor: (onEvent: (x:any) => void) => Promise<void>
+                          }
+    }
 
 export type Time = BigNumber;
 
@@ -372,7 +377,7 @@ export const stdContract =
   const safeApis = mkApis(true);
 
   const eventMap = bin._getEvents({ reachStdlib: stdlib });
-  const createEventStream = setupEvents(viewArgs);
+  const { createEventStream } = setupEvents(viewArgs);
   const events = objectMap(eventMap, (k, v) => {
     return createEventStream(k, v)
   });

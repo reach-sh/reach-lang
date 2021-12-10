@@ -5,8 +5,7 @@ export const main = Reach.App(() => {
   const A = Participant('A', {
     getX: Fun([], UInt),
     checkX: Fun(true, Null),
-    checkY: Fun(true, Null),
-    loopCont: Fun(true, Null),
+    checkY: Fun(true, Null)
   });
   const E = Events('x_event', {
     x: [UInt],
@@ -18,7 +17,7 @@ export const main = Reach.App(() => {
 
   var [ xl ] = [ 0 ];
   invariant(balance() == 0);
-  while (xl < 10) {
+  while (xl < 5) {
     commit();
     A.only(() => {
       const x = declassify(interact.getX());
@@ -36,9 +35,6 @@ export const main = Reach.App(() => {
 
     E.y(x, 2);
     A.interact.checkY(true);
-
-    // Signal frontend we should seek next block
-    A.interact.loopCont();
 
     [ xl ] = [ x ];
     continue;
