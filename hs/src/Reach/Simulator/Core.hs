@@ -454,7 +454,7 @@ instance Interp DLExpr where
           V_UInt n -> do
             suspend $ PS_Suspend (A_AdvanceSeconds n)
           _ -> impossible "unexpected error"
-    DLE_PartSet _at _slpart dlarg -> interp dlarg --TODO
+    DLE_PartSet _at _slpart dlarg -> interp dlarg
     DLE_MapRef _at dlmvar dlarg -> do
       (g, _) <- getState
       let linstate = e_linstate g
@@ -577,7 +577,7 @@ instance Interp DLStmt where
           l' <- getLocal
           setLocal $ l' {e_curr_actorid = restore_id}
           return r
-        Right _b -> interp dltail
+        _ -> impossible "unexpected error"
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
       accu <- interp arg
       (g, _) <- getState
