@@ -8,7 +8,7 @@ build:
 
 .PHONY: run
 run:
-	$(REACH) compile --sim
+	$(REACH) compile --sim &
 	$(NODE) client.mjs
 
 .PHONY: clean
