@@ -15,6 +15,7 @@
 	"product": "Method",
 	"replicate": "Method",
 	"sum": "Method",
+	"App": "Function",
 	"Array.all": "Method",
 	"Array.and": "Method",
 	"Array.any": "Method",

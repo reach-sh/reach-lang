@@ -14,7 +14,7 @@ FROM $NODE_IMAGE AS prepare
 
 WORKDIR /stdlib
 COPY --from=js-deps /js-deps/node_modules ./node_modules
-RUN apk add make curl bash
+RUN apk update && apk add git make python3 libc-dev gcc g++ curl bash
 COPY Makefile.docker ./Makefile
 COPY package.mo.json .
 COPY .docker-root ./.docker-root
@@ -49,7 +49,7 @@ RUN rm ./sbin/fix.sh
 FROM $NODE_IMAGE 
 
 COPY --from=prepare /stdlib /stdlib
-RUN apk add git
+RUN apk update && apk add git make python3 libc-dev gcc g++
 # XXX does this need to be uncommented?
 # RUN npm link
 

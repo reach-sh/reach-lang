@@ -124,6 +124,9 @@ export const mkStdlibProxy = async (lib: any) => {
 
     transfer: async (from: string, to: string, bal: any) =>
       lib.transfer(account.id(from), account.id(to), bal),
+
+    assert: (x: any) =>
+      lib.assert(x) || null,
   };
 
   return {
@@ -155,7 +158,10 @@ export const serveRpc = async (backend: any) => {
       await account.id(id).getAddress(),
 
     setGasLimit: async (id: string, ...args: any[]) =>
-      await account.id(id).setGasLimit(...args),
+      await account.id(id).setGasLimit(...args) || null,
+
+    setDebugLabel: async (id: string, l: string) =>
+      account.id(id).setDebugLabel(l) || null,
   };
 
   const rpc_ctc = {
@@ -173,7 +179,7 @@ export const serveRpc = async (backend: any) => {
       debug(`Attempting to process request by ${client}`);
       await f(req, res);
 
-    } catch (e:any) {
+    } catch (e: any) {
       debug(`!! Witnessed exception triggered by ${client}:\n  ${e.stack}`);
 
       const [ s, message ]
@@ -196,8 +202,8 @@ export const serveRpc = async (backend: any) => {
     for (const k in obj) {
       router.post(`/${k}`, safely(async (req: Request, res: Response) => {
         const args = req.body;
-        const lab  = `RPC ${olab}/${k} ${JSON.stringify(args)}`;
-        debug(`${lab}`);
+        const lab  = `RPC /${olab}/${k} ${JSON.stringify(args)}`;
+        debug(lab);
 
         const ans = await obj[k](...args);
         debug(`${lab} ==> ${JSON.stringify(ans)}`);
@@ -208,9 +214,64 @@ export const serveRpc = async (backend: any) => {
     return router;
   };
 
+  // `hasOwnProperty` is important for denying access to prototype fields
+  const userDefinedField = (a: any, m: string) =>
+    a && a.hasOwnProperty && a.hasOwnProperty(m) && a[m] || null;
+
+  const mkUserDefined = (olab: string, prop: string, k: any, unsafe: boolean) => {
+    const router = express.Router();
+    router.post(/^\/(.*)/, safely(async (req: Request, res: Response) => {
+      if (!Array.isArray(req.body))
+        throw new Error(`Expected an array but received: ${req.body}`);
+
+      const [ id, ...args ] = req.body;
+      const lab = `RPC ${olab}${req.path} ${JSON.stringify(req.body)}`;
+      debug(lab);
+
+      try {
+        const a = await req.path.split('/')
+          .filter(a => a !== '')
+          .reduce(userDefinedField, k.id(id)[prop])(...args);
+
+        debug(`${lab} ==> ${JSON.stringify(a)}`);
+        return res.json(a);
+      } catch (e: any) {
+        if (unsafe) {
+          debug(`${lab} ==> ${JSON.stringify(e)}`);
+          return res.status(404).json({});
+        } else {
+          debug(`${lab} ==> ${JSON.stringify(null)}`);
+          return res.json(null);
+        }
+      }
+    }));
+    return router;
+  };
+
+  route_backend.post(/^\/getExports\/(.*)/, safely(async (req: Request, res: Response) => {
+    const args = req.body;
+    if (!Array.isArray(args))
+      throw new Error(`Expected an array but received: ${args}`);
+
+    const lab = `RPC /backend${req.path}${args.length > 0 ? ' ' + JSON.stringify(args) : ''}`;
+    debug(lab);
+
+    const b = await req.path.split('/')
+      .filter(a => a !== '')
+      .slice(1) // drop `getExports` path root
+      .reduce(userDefinedField, await backend.getExports(real_stdlib));
+
+    const a = typeof b === 'function'
+      ? await b(...args)
+      : b;
+
+    debug(`${lab} ==> ${JSON.stringify(a)}`);
+    res.json(a);
+  }));
+
   for (const b in backend) {
     route_backend.post(`/${b}`, safely(async (req: Request, res: Response) => {
-      let lab = `RPC backend/${b}`;
+      let lab = `RPC /backend/${b}`;
       debug(`${lab} IN`);
 
       const [ cid, vals, meths ] = req.body;
@@ -276,7 +337,12 @@ export const serveRpc = async (backend: any) => {
   app.use(`/ctc`,     mkRPC('ctc',    rpc_ctc));
   app.use(`/backend`, route_backend);
 
-  app.post(`/kont`,   do_kont);
+  // NOTE: since `getViews()` is deprecated we deliberately skip it here
+  app.use(`/ctc/v`,           mkUserDefined('/ctc/v',           'v',           contract, false));
+  app.use(`/ctc/views`,       mkUserDefined('/ctc/views',       'views',       contract, false));
+  app.use(`/ctc/unsafeViews`, mkUserDefined('/ctc/unsafeViews', 'unsafeViews', contract, true));
+
+  app.post(`/kont`, do_kont);
 
   // Note: successful `/backend/<p>` requests automatically `forget` their
   // continuation ID before yielding a "Done" response; likewise with requests

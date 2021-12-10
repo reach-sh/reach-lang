@@ -6,6 +6,7 @@
 The Reach RPC Server provides access to compiled JavaScript @tech{backends} via an @seclink["ref-backends-rpc-proto"]{HTTPS-accessible JSON-based RPC protocol}.
 The server allows @tech{frontends} to be written in any programming language.
 Reach provides client libraries for
+@seclink["ref-frontends-rpc-cs"]{C#},
 @seclink["ref-frontends-rpc-js"]{JavaScript},
 @seclink["ref-frontends-rpc-py"]{Python}, and
 @seclink["ref-frontends-rpc-go"]{Go}.
@@ -37,7 +38,7 @@ For example, @tt{/stdlib/newTestAccount} does not return an @tech{account} like 
 
 All @tt{/acc} methods are @tech{synchronous value RPC methods} that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the @tech{account} @tech{RPC handle} returned by a prior @tech{RPC method} invocation; and, a method that accepts a @tech{backend} (like @tt{/acc/attach} (i.e. @jsin{acc.attach}) or @tt{/acc/deploy} (i.e. @jsin{acc.deploy}) does not accept a @tech{backend} argument, but has it implicitly provided by the Reach RPC Server.
 
-Furthermore, those that produce @tech{contract} representations, instead produce @tech{contract} @tech{RPC handles}.
+Furthermore, those that produce @tech{contract} representations instead produce @tech{contract} @tech{RPC handles}.
 For example, @tt{/acc/deploy} does not return a @tech{contract} representation like @jsin{acc.deploy}, but instead returns a @tech{contract} @tech{RPC handle}.
 
 }
@@ -52,7 +53,7 @@ All @tt{/ctc} methods are @tech{synchronous value RPC methods} that accept and p
 
 @item{@tt{/backend/$PARTICIPANT} where @tt{$PARTICIPANT} is a @tech{participant} of the @tech{backend} compiled by the @seclink["ref-backends-js"]{JavaScript backend}.
 
-All @tt{/backend} methods are @tech{interactive RPC methods} that accept three arguments:
+All @tt{/backend/$PARTICIPANT} methods are @tech{interactive RPC methods} that accept three arguments:
 @itemlist[
 
 @item{@tt{ctcId} --- A @tech{contract} @tech{RPC handle} to provide as the @tech{contract} to the @tech{backend}}
@@ -68,6 +69,22 @@ As a special case, if @tt{values} contains @litchar{stdlib.hasRandom} bound to @
 As the @tech{backend} executes, any of the components of @tt{methods} invoked will be executed as @tech{interactive RPC callbacks} as described by the @seclink["ref-backends-rpc-proto"]{Reach RPC Protocol Specification}.
 Reach RPC Client libraries @emph{should} expose a function that hides the details of the construction of the @tt{values} and @tt{methods} objects and implements @tech{interactive RPC callback} handlers automatically.
 
+}
+
+@item{@tt{/backend/getExports/$EXPORT_NAME} where @tt{$EXPORT_NAME} is an @tech{export} of the @tech{backend} compiled by the @seclink["ref-backends-js"]{JavaScript backend}.
+
+Any Reach @tech{module} @tech{exports}, including functions, may be accessed via this method.
+Field accessors and zero-indexed array references support arbitrarily deep nesting.
+
+For example:
+@verbatim{
+  RPC /backend/getExports/o          # Top-level data
+  RPC /backend/getExports/o/foo/bar  # Data nested within data
+  RPC /backend/getExports/a/0/2      # A deeply-nested element of an array
+  RPC /backend/getExports/add 2 3    # 5; i.e. `add(2, 3)`
+}
+
+Requests for non-existent @tech{exports} and non-existent nested fields or elements always return @tt{null}.
 }
 
 @item{@tt{/kont} handles @tech{interactive RPC continuation} completion during an @tech{interactive RPC method}.

@@ -1,0 +1,19 @@
+# vi: ft=dockerfile
+FROM node:{{NODE_VERSION}}
+
+WORKDIR /app
+
+COPY package.json /app/package.json
+COPY ./lib /lib
+RUN npm install --loglevel=verbose /lib
+RUN npm install --loglevel=verbose
+
+COPY index.mjs common.mjs /app/
+
+ENV FORCE_COLOR 1
+ENV REACH_RPC_PORT={{PORT}}
+ENV REACH_RPC_SERVER=host.docker.internal
+ENV REACH_RPC_KEY=opensesame
+ENV REACH_RPC_TLS_REJECT_UNVERIFIED=0
+ENTRYPOINT ["npm", "run", "--"]
+CMD ["index"]
