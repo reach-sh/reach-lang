@@ -1,6 +1,6 @@
 // Declare the type here, this way, to avoid an error
 // from TypeScript about an invalid index signature.
-const KEYWORD_TO_ITEM_KIND_IMPORT: {
+export const KEYWORD_TO_ITEM_KIND_IMPORT: {
 	[keyword: string] : 'Text' | 'Method' |
 		'Function' | 'Constructor' | 'Field' |
 		'Variable' | 'Class' | 'Interface' |

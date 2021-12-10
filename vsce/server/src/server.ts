@@ -60,7 +60,8 @@ const KEYWORD_TO_DOCUMENTATION: { [ keyword: string ] : string } = require(
 // for "smart auto-complete" for things like
 // Reach.App, Participant.Set, Array.zip, etc.
 import {
-	KEYWORD_WITH_PERIOD_TO_KEYWORDS_LIST
+	KEYWORD_WITH_PERIOD_TO_KEYWORDS_LIST,
+	KEYWORD_TO_ITEM_KIND_IMPORT
 } from "./mapKeywordsWithAPeriodToAKeywordList";
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -597,7 +598,9 @@ connection.onCompletion((
 			keyword
 		] || CompletionItemKind.Text,
 		data: undefined,
-		detail: keyword,
+		detail: `(${
+			KEYWORD_TO_ITEM_KIND_IMPORT[keyword]
+		})`,
 		documentation: {
 			kind: 'markdown',
 			value: getReachKeywordMarkdown(keyword)
