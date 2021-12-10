@@ -46,13 +46,13 @@ import { mkRPC } from '@reach-sh/rpc-client';
 
     rpc(`/ctc/getInfo`, ctcAlice).then(async (info) => {
       const ctcBob = await rpc(`/acc/attach`, accBob, info);
-      rpcCallbacks(`/backend/Bob`, ctcBob, {
+      await rpcCallbacks(`/backend/Bob`, ctcBob, {
         ...Player('Bob'),
         acceptWager: async (amt) => {
           console.log(`Bob accepts the wager of ${await fmt(amt)}.`);
         },
       });
-    return await rpc(`/forget/ctc`, ctcBob);
+      return await rpc(`/forget/ctc`, ctcBob);
     }),
   ]);
 
