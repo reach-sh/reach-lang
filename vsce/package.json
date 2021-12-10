@@ -4,7 +4,7 @@
     "description": "IDE for the Reach DApp programming language",
     "author": "Reach Platform, Inc.",
     "license": "EPL-2.0",
-    "version": "1001.6.9",
+    "version": "1001.7.3",
     "preview": true,
     "icon": "images/reach-logo-dark.png",
     "repository": {
@@ -314,6 +314,6 @@
         "@typescript-eslint/parser": "^2.3.0",
         "eslint": "^6.4.0",
         "mocha": "^6.2.2",
-        "typescript": "^3.8.3"
+        "typescript": "^4.5.3"
     }
 }
