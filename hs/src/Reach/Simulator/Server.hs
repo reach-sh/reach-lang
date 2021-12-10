@@ -129,6 +129,9 @@ unblockProg sid aid v = do
             Just (C.A_Interact _at _slcxtframes _part _str _dltype _args) -> do
               let ps = k (g,l) v
               processNewState ps
+            Just (C.A_InteractV _part _str _dltype) -> do
+              let ps = k (g,l) v
+              processNewState ps
             Just (C.A_TieBreak _poolid _parts) -> do
               let pacts = C.e_partacts g
               case v of
@@ -149,13 +152,21 @@ unblockProg sid aid v = do
                 _ -> possible "A_NewActor: expected string value"
             Just C.A_None -> return ()
             Just (C.A_AdvanceTime n)  -> do
-              let s = (C.e_nwtime g) + n
-              let ps = k (g{C.e_nwtime = s},l) v
-              processNewState ps
+              case ((C.e_nwtime g) < n) of
+                True -> do
+                  let ps = k (g{C.e_nwtime = n},l) v
+                  processNewState ps
+                False -> do
+                  let ps = k (g,l) v
+                  processNewState ps
             Just (C.A_AdvanceSeconds n)  -> do
-              let s = (C.e_nwsecs g) + n
-              let ps = k (g{C.e_nwsecs = s},l) v
-              processNewState ps
+              case ((C.e_nwsecs g) < n) of
+                True -> do
+                  let ps = k (g{C.e_nwsecs = n},l) v
+                  processNewState ps
+                False -> do
+                  let ps = k (g,l) v
+                  processNewState ps
             Nothing -> possible "action not found"
         Just (C.PS_Done _ _) -> do
           possible "previous state already terminated"

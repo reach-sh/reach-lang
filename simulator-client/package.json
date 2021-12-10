@@ -1,0 +1,21 @@
+{
+  "name": "@reach-sh/simulator-client",
+  "description": "client for the Reach Simulator",
+  "version": "0.0.0",
+  "main": "./client.mjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reach-sh/reach-lang.git",
+    "directory": "simulator-client"
+  },
+  "type": "module",
+  "dependencies": {
+    "node-fetch": "2.6"
+  },
+  "author": "reach.sh",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/reach-sh/reach-lang/issues"
+  },
+  "homepage": "https://github.com/reach-sh/reach-lang#readme"
+}

@@ -69,8 +69,6 @@ compile env (CompilerOpts {..}) = do
         ll <- linearize showp dl
         ol <- optimize ll
         showp "ol" ol
-        unless (not co_sim) $ do
-          startServer ol
         let vo_out = woutnMay
         let vo_mvcs = doIf connectors dlo_verifyPerConnector
         let vo_timeout = co_verifyTimeout
@@ -78,6 +76,8 @@ compile env (CompilerOpts {..}) = do
         verify (VerifyOpts {..}) ol >>= maybeDie
         el <- erase_logic ol
         showp "el" el
+        unless (not co_sim) $ do
+          startServer el
         eol <- bigopt (showp, "eol") el
         pil <- epp eol
         showp "pil" pil

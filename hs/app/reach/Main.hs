@@ -846,6 +846,7 @@ compile = command "compile" $ info f d where
     let CompilerOpts {..} = cta_co
     let v = versionBy majMinPat version''
     let ci' = if ci then "true" else ""
+    let ports = if elem "--sim" rawArgs then "-p 3001:3001" else ""
     liftIO $ do
       diePathContainsParentDir co_source
       maybe (pure ()) diePathContainsParentDir co_mdirDotReach
@@ -896,7 +897,7 @@ compile = command "compile" $ info f d where
             -e REACH_CONNECTOR_MODE \
             -e "REACHC_ID=$${ID}" \
             -e "CI=$ci'" \
-            -p 3001:3001 \
+            $ports \
             reachsh/reach:$v \
             $args
         fi
