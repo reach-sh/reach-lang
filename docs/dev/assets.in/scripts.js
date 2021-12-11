@@ -237,17 +237,11 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   }
 
   // On click link on page.
-  document.querySelectorAll('div.hh-viewer-wrapper div.hh-viewer a').forEach(el => {
-    el.addEventListener('click', (event) => {
-      event.preventDefault();
-      followLink(event.target.closest('a').href);
-    });
-  });
+  querySetClickFollowLink('div.hh-viewer-wrapper div.hh-viewer a');
 
   // Write otp html.
   if (configJson.hasOtp) {
-    document.querySelectorAll('#otp-col ul ul.dynamic').forEach(n => { n.remove(); });
-    document.querySelectorAll('#otp-col ul li.dynamic').forEach(n => { n.remove(); });
+    document.querySelectorAll('#otp-col ul ul.dynamic, #otp-col ul li.dynamic').forEach(n => { n.remove(); });
     const otpUl = document.querySelector('#otp-col ul');
     const otpDoc = document.createRange().createContextualFragment(otpHtml);
     otpDoc.querySelector('ul').querySelectorAll(':scope > li').forEach((el, index) => {
@@ -264,12 +258,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   currentPage.hasOtp = configJson.hasOtp;
 
   // On click link on otp.
-  document.querySelectorAll('#otp-col li.dynamic a').forEach(el => {
-    el.addEventListener('click', (event) => {
-      event.preventDefault();
-      followLink(event.target.href);
-    });
-  });
+  querySetClickFollowLink('#otp-col li.dynamic a');
 
   // Adjust active indicators.
   document.querySelectorAll('header a, #book-col div.chapter-title, #book-col div.page-title').forEach(el => {
@@ -343,6 +332,17 @@ const followLink = async (href) => {
   }
 }
 
+const clickFollowLink = (evt) => {
+  evt.preventDefault();
+  followLink(evt.target.href);
+};
+
+const setClickFollowLink = (el) =>
+  el.addEventListener('click', clickFollowLink);
+
+const querySetClickFollowLink = (qry) =>
+  document.querySelectorAll(qry).forEach(setClickFollowLink);
+
 window.onpopstate = function (event) {
   const a = document.createElement('a');
   a.href = document.location.href;
@@ -383,24 +383,9 @@ document.querySelector('button.show-otp-col').addEventListener('click', (event) 
   otpPreference = otpPreferences.show;
 });
 
-document.querySelectorAll('header a.navbar-brand').forEach(el => {
-  el.addEventListener('click', (event) => {
-    event.preventDefault();
-    followLink(event.currentTarget.href);
-  });
-});
-
-document.querySelectorAll('header a.follow').forEach(el => {
-  el.addEventListener('click', (event) => {
-    event.preventDefault();
-    followLink(event.currentTarget.href);
-  });
-});
-
-document.querySelector("#otp-col a[href='#on-this-page']").addEventListener('click', (event) => {
-  event.preventDefault();
-  followLink('#on-this-page');
-});
+querySetClickFollowLink('header a.navbar-brand');
+querySetClickFollowLink('header a.follow');
+querySetClickFollowLink("#otp-col a[href='#on-this-page']");
 
 document.querySelector('div.hh-viewer-wrapper button.edit-btn').addEventListener('click', (event) => {
   event.preventDefault();
@@ -409,7 +394,7 @@ document.querySelector('div.hh-viewer-wrapper button.edit-btn').addEventListener
 
 document.getElementById('about-this-book').addEventListener('click', (event) => {
   event.preventDefault();
-  getWebpage(`/${currentPage.bookPath}/`, null, true);
+  followLink(`/${currentPage.bookPath}/`);
 });
 
 document.getElementById('page-col').addEventListener('scroll', scrollHandler);
