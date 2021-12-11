@@ -2,7 +2,6 @@
   "background": "white",
   "hasOtp": true,
   "hasPageHeader": true,
-  "hasEditBtn": true,
   "DISCORD": "https://discord.gg/AZsgcXu",
   "REPO": "https://github.com/reach-sh/reach-lang/tree/master"
 }

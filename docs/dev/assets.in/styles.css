@@ -111,19 +111,19 @@ i.fa-angle-right {width:10px;}
 #book-col, #otp-col {padding: 16px 12px;}
 #page-col {padding: 16px 24px;}
 
-#book-col div.book-title,
-#book-col div.chapter-title,
-#book-col div.page-title {
+#book-col a.book-title,
+#book-col a.chapter-title {
+  color: inherit;
+  text-decoration: inherit;
   border-radius: 4px;
   padding: 3px 4px;
 }
 
-#book-col div.book-title{
+#book-col a.book-title{
   margin: 1px 0px 1px 30px;
 }
 
-#book-col div.chapter-title,
-#book-col div.page-title {
+#book-col a.chapter-title {
   margin: 1px 0px;
 }
 
@@ -136,34 +136,27 @@ i.fa-angle-right {width:10px;}
   width:30px;
 }
 
-#book-col div.book-title {
+#book-col a.book-title {
   font-weight: bold;
 }
 
-#book-col div.book-title:hover,
-#book-col div.chapter-title:hover,
-#book-col div.page-title:hover,
+#book-col a.book-title:hover,
+#book-col a.chapter-title:hover,
 #otp-col i:hover {
   cursor: pointer;
 }
 
-#book-col div.chapter-title:hover,
-#book-col div.page-title:hover,
+#book-col a.chapter-title:hover,
 #otp-col ul li a:hover {
   background: #f2f2f2; /* 6AC6E7 */
   /*color: white;*/
 }
 
-#book-col div.chapter-title.active,
-#book-col div.page-title.active,
+#book-col a.chapter-title.active,
 #otp-col ul li:not(.top) a.active {background: #1a1c23; color: white;} /* 28ADDC */
 
 /*i.fas {color: #bfbfbf;}*/
 i.fas:hover {cursor: pointer;}
-
-/************************************************
- book-col
-************************************************/
 
 #book-col div.chapter-icon-col i.clear {
   color: white;
@@ -173,17 +166,10 @@ i.fas:hover {cursor: pointer;}
   padding-left: 0;
 }
 
-#book-col div.chapter-title, #book-col div.page-title, #otp-col li a {
+#book-col a.chapter-title,
+#otp-col li a {
   font-size: 94%;
 }
-
-#book-col div.page-title {
-  margin-left: 12px;
-}
-
-/************************************************
- page-col
-************************************************/
 
 #book-col {
   /*box-shadow: inset -1px 0 3px -2px black;*/

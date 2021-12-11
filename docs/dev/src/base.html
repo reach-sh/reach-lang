@@ -54,7 +54,7 @@
     <div id="book-col" class="col display" style="display:none;">
       <div class="row chapter">
         <div class="col my-auto">
-          <div id="about-this-book" class="book-title"></div>
+          <a id="about-this-book" class="book-title"></a>
         </div>
         <div class="col-auto x-icon-col">
           <button class="btn btn-outline-secondary btn-sm hide-book-icon"><i class="fas fa-times"></i></button>
@@ -77,7 +77,7 @@
                 <div class="col"><span class="title">&nbsp;</span></div>
                 <div class="col-auto">
                   <div class="btn-group btn-group-sm" role="group" aria-label="">
-                    <button class="btn btn-outline-secondary btn-sm edit-btn"><i class="fas fa-pencil-alt"></i></button>
+                    <a id="edit-btn" class="btn btn-outline-secondary btn-sm"><i class="fas fa-pencil-alt"></i></a>
                     <button class="btn btn-outline-secondary btn-sm show-otp-col"><i class="fas fa-bars"></i></button>
                   </div>
                 </div>
@@ -92,10 +92,10 @@
 
           </div>
         </div>
-        <div class="hh-versions" style="display:none;">
+        <!-- <div class="hh-versions" style="display:none;">
           <button class="btn btn-outline-dark btn-sm dropdown-toggle" type="button" id="versions" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Choose a version</button>
           <div class="dropdown-menu" aria-labelledby="versions"></div>
-        </div>
+        </div> -->
         <div class="hh-viewer"></div>
       </div>
     </div>
@@ -121,7 +121,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.0/axios.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@reach-sh/stdlib@latest/dist/browser/reachsdk.min.js"></script>
-  <script src="/assets/scripts.min.js?v=58" type="module"></script>
+  <script src="/assets/scripts.min.js?v=59" type="module"></script>
 
 </body>
 

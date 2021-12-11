@@ -1,3 +1,8 @@
+const axiosGetData = async (u) => {
+  const c = await axios.get(u);
+  return c.data;
+};
+
 import algoliasearch from 'https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.esm.browser.js';
 const searchClient = algoliasearch('M53HHHS0ZW', '0cfd8f1c1a0e3cb7b2abd77b831614dc');
 const searchIndex = searchClient.initIndex('rdp_en');
@@ -9,16 +14,10 @@ const currentPage = {
   src: null
 };
 
+// XXX move into generator
 const github = 'https://github.com/reach-sh/reach-lang/tree/master/docs/dev/src';
 
-const pathnameToId = (pathname) => { return pathname.replace(/^\/|\/$/g, '').replace(/\//g, '_'); }
-const idToPathName = (id) => { return id.replace(/_/g, '/'); }
-
 // let lang = window.navigator.language.split('-')[0];
-
-const otpPreferences = { 'none': 'none', 'show': 'show', 'hide': 'hide' };
-Object.freeze(otpPreferences);
-let otpPreference = otpPreferences.none;
 
 const getWinWidthStr = () => {
   const s = window.innerWidth;
@@ -50,24 +49,10 @@ const establishDisplay = () => {
   if (currentPage.hasOtp) {
     const otpCol = document.getElementById('otp-col');
     const otpBtn = document.querySelector('button.show-otp-col');
-    if (winWidth == 'xl' || winWidth == 'lg') {
+    if (winWidth == 'xl' || winWidth == 'lg' || winWidth == 'md') {
       otpCol.style.maxWidth = maxColWidth;
-      if (otpPreference == otpPreferences.hide) {
-        otpCol.style.display = 'none';
-        otpBtn.style.display = 'block';
-      } else {
-        otpCol.style.display = 'block';
-        otpBtn.style.display = 'none';
-      }
-    } else if (winWidth == 'md') {
-      otpCol.style.maxWidth = maxColWidth;
-      if (otpPreference == otpPreferences.show) {
-        otpCol.style.display = 'block';
-        otpBtn.style.display = 'none';
-      } else {
-        otpCol.style.display = 'none';
-        otpBtn.style.display = 'block';
-      }
+      otpCol.style.display = 'block';
+      otpBtn.style.display = 'none';
     } else if (winWidth == 'sm' || winWidth == 'xs') {
       otpCol.style.maxWidth = 'none';
       otpCol.style.display = 'none';
@@ -138,23 +123,18 @@ const setOtpItemToActive = (id) => {
 
 const getWebpage = async (folder, hash, shallUpdateHistory) => {
   folder = folder.replace(/index\.html$/, '');
-
   const url = `${window.location.origin}${folder}`;
-  const configJsonUrl = `${url}config.json`;
-  const pageHtmlUrl = `${url}page.html`;
-  const otpHtmlUrl = `${url}otp.html`;
-  const folderId = pathnameToId(folder);
+  if ( ! folder || ! url ) { throw Error(`getWebpage on undefined`); }
 
-  let [configJson, pageHtml, otpHtml] =
-    (await Promise.all([
-      axios.get(configJsonUrl),
-      axios.get(pageHtmlUrl),
-      axios.get(otpHtmlUrl),
-    ])).map((x) => x.data);
+  const pageHtmlP = axiosGetData(`${url}page.html`);
+  const otpHtmlP = axiosGetData(`${url}otp.html`);
+  const configJson = await axiosGetData(`${url}config.json`);
 
   // Book or different book?
   if (configJson.bookPath && configJson.bookPath !== currentPage.bookPath) {
-    document.getElementById('about-this-book').innerHTML = configJson.bookTitle;
+    const bookTitle_a = document.getElementById('about-this-book');
+    bookTitle_a.href = `/${configJson.bookPath}/`;
+    bookTitle_a.innerHTML = configJson.bookTitle;
     let bookHtml = document.createRange().createContextualFragment((await axios.get(`${window.location.origin}/${configJson.bookPath}/book.html`)).data);
     document.querySelectorAll('#book-col div.dynamic').forEach(n => n.remove());
     document.querySelector('#book-col').append(bookHtml);
@@ -175,15 +155,6 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
         }
       });
     });
-
-    // On click book-col chapter-title or page-title.
-    document.querySelectorAll('#book-col div.chapter-title, #book-col div.page-title').forEach(el => {
-      el.addEventListener('click', (evt) => {
-        const t = evt.target;
-        const l = `/${idToPathName(t.id)}/`;
-        followLink(l);
-      });
-    });
   }
   currentPage.bookPath = configJson.bookPath;
 
@@ -195,8 +166,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   document.title = `Reach > ${ctitle}`;
 
   // Update and show/hide edit btn.
-  currentPage.src = `${github}${folder}index.md`;
-  document.querySelector('div.hh-page-header button.edit-btn').style.display = configJson.hasEditBtn ? 'block' : 'none';
+  document.getElementById('edit-btn').href = `${github}${folder}index.md`;
 
   // Write author
   document.querySelector('div.hh-viewer-wrapper span.author').innerHTML = configJson.author ? `By ${configJson.author}` : '';
@@ -204,10 +174,11 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   // Write published data
   document.querySelector('div.hh-viewer-wrapper span.published-date').innerHTML = configJson.publishedDate ? `Published on ${(new Date(configJson.publishedDate)).toLocaleDateString()}` : '';
 
-  // Write page html.
-  pageHtml = document.createRange().createContextualFragment(pageHtml);
+  // Write page html
+  const pageHtml = await pageHtmlP;
+  const pageDoc = document.createRange().createContextualFragment(pageHtml);
   document.querySelector('div.hh-viewer-wrapper div.hh-viewer').textContent = '';
-  document.querySelector('div.hh-viewer-wrapper div.hh-viewer').append(pageHtml);
+  document.querySelector('div.hh-viewer-wrapper div.hh-viewer').append(pageDoc);
 
   // If search page.
   const searchInput = document.getElementById('search-input');
@@ -236,32 +207,30 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
     });
   }
 
-  // On click link on page.
-  querySetClickFollowLink('div.hh-viewer-wrapper div.hh-viewer a');
-
   // Write otp html.
   if (configJson.hasOtp) {
     document.querySelectorAll('#otp-col ul ul.dynamic, #otp-col ul li.dynamic').forEach(n => { n.remove(); });
     const otpUl = document.querySelector('#otp-col ul');
+    const otpHtml = await otpHtmlP;
     const otpDoc = document.createRange().createContextualFragment(otpHtml);
-    otpDoc.querySelector('ul').querySelectorAll(':scope > li').forEach((el, index) => {
-      if (index == 0) {
-        const ul = el.querySelector('ul');
-        if (ul) {
-          otpUl.querySelector('li').append(ul);
+    const oul = otpDoc.querySelector('ul');
+    if ( oul ) {
+      oul.querySelectorAll(':scope > li').forEach((el, index) => {
+        if (index == 0) {
+          const ul = el.querySelector('ul');
+          if (ul) {
+            otpUl.querySelector('li').append(ul);
+          }
+        } else {
+          otpUl.append(el);
         }
-      } else {
-        otpUl.append(el);
-      }
-    })
+      });
+    }
   }
   currentPage.hasOtp = configJson.hasOtp;
 
-  // On click link on otp.
-  querySetClickFollowLink('#otp-col li.dynamic a');
-
   // Adjust active indicators.
-  document.querySelectorAll('header a, #book-col div.chapter-title, #book-col div.page-title').forEach(el => {
+  document.querySelectorAll('a').forEach(el => {
     el.classList.remove('active');
   });
 
@@ -270,7 +239,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
     document.getElementById(configJson.menuItem).classList.add('active');
   }
 
-  const el = document.getElementById(folderId);
+  const el = document.querySelector(`a[href="${folder}"]`);
   if (el) {
     el.classList.add('active');
     const chapter = el.closest('div.chapter');
@@ -311,7 +280,18 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
 
   // Scroll to proper place and update history
   currentPage.folder = folder;
+  setClickFollowLink();
   await gotoTarget(shallUpdateHistory, hash ? hash.substring(1) : 'on-this-page');
+};
+
+const clickFollowLink = (evt) => {
+  evt.preventDefault();
+  followLink(evt.target.href);
+};
+const setClickFollowLink = () => {
+  document.querySelectorAll('a').forEach((el) => {
+    el.addEventListener('click', clickFollowLink);
+  });
 };
 
 const followLink = async (href) => {
@@ -319,7 +299,7 @@ const followLink = async (href) => {
   a.href = href;
 
   if (a.pathname.endsWith('.pdf')) {
-    window.open(a.href, '_blank').focus();
+    window.open(a.href, '_blank');
   } else if (a.hostname === window.location.hostname) {
     if (currentPage.folder == a.pathname && a.hash) {
       const t = (a.hash === '#on-this-page') ? 'on-this-page' : a.hash.substring(1);
@@ -328,20 +308,9 @@ const followLink = async (href) => {
       await getWebpage(a.pathname, a.hash, true);
     }
   } else {
-    window.open(a.href, '_blank').focus();
+    window.open(a.href, '_blank');
   }
 }
-
-const clickFollowLink = (evt) => {
-  evt.preventDefault();
-  followLink(evt.target.href);
-};
-
-const setClickFollowLink = (el) =>
-  el.addEventListener('click', clickFollowLink);
-
-const querySetClickFollowLink = (qry) =>
-  document.querySelectorAll(qry).forEach(setClickFollowLink);
 
 window.onpopstate = function (event) {
   const a = document.createElement('a');
@@ -371,7 +340,6 @@ document.querySelector('button.hide-otp-icon').addEventListener('click', (event)
   }
   document.getElementById('otp-col').style.display = 'none';
   document.querySelector('button.show-otp-col').style.display = 'block';
-  otpPreference = otpPreferences.hide;
 });
 
 document.querySelector('button.show-otp-col').addEventListener('click', (event) => {
@@ -380,21 +348,6 @@ document.querySelector('button.show-otp-col').addEventListener('click', (event) 
   }
   document.getElementById('otp-col').style.display = 'block';
   document.querySelector('button.show-otp-col').style.display = 'none';
-  otpPreference = otpPreferences.show;
-});
-
-querySetClickFollowLink('header a.navbar-brand');
-querySetClickFollowLink('header a.follow');
-querySetClickFollowLink("#otp-col a[href='#on-this-page']");
-
-document.querySelector('div.hh-viewer-wrapper button.edit-btn').addEventListener('click', (event) => {
-  event.preventDefault();
-  followLink(currentPage.src);
-});
-
-document.getElementById('about-this-book').addEventListener('click', (event) => {
-  event.preventDefault();
-  followLink(`/${currentPage.bookPath}/`);
 });
 
 document.getElementById('page-col').addEventListener('scroll', scrollHandler);

@@ -51,8 +51,6 @@ const fail = (...args) => {
   if ( forReal ) { hasError = true; }
 };
 
-const pathNameToId = (x) => x.replace(/\//g, '_');
-
 const xrefs = {};
 const xrefPut = (s, t, v) => {
   if ( ! xrefs[s] ) { xrefs[s] = {}; }
@@ -648,7 +646,7 @@ const generateBook = async (destp, bookp) => {
       ctc.title = `XXX ${ctc.path}`;
     }
     d.children.push(h('div', {class: "col"}, [
-      h('div', {class: "chapter-title", id: pathNameToId(ctc.here || "")}, ctc.title),
+      h('a', {class: "chapter-title", href: `/${ctc.here}/`}, ctc.title),
       ...cs
     ]));
     return d;
