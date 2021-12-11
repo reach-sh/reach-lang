@@ -187,8 +187,12 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   }
   currentPage.bookPath = configJson.bookPath;
 
-  // Write page title.
-  document.querySelector('div.hh-viewer-wrapper span.title').textContent = configJson.title;
+  // Write page title
+  const ctitle = configJson.title;
+  const tspan = document.querySelector('div.hh-viewer-wrapper span.title');
+  tspan.id = configJson.titleId;
+  tspan.textContent = ctitle;
+  document.title = `Reach > ${ctitle}`;
 
   // Update and show/hide edit btn.
   currentPage.src = `${github}${folder}index.md`;

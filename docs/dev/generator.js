@@ -473,9 +473,11 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   }
 
   // Update config.json with title and pathname.
-  const title = doc.querySelector('h1').textContent;
-  doc.querySelector('h1').remove();
+  const theader = doc.querySelector('h1');
+  const title = theader.textContent;
+  theader.remove();
   configJson.title = title;
+  configJson.titleId = theader.id;
   configJson.pathname = in_folder;
 
   const bp = configJson.bookPath;
