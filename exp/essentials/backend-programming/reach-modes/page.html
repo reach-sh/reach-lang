@@ -1,0 +1,121 @@
+<p>Reach programs are organized into four modes:</p>
+<ol>
+  <li><a href="#initialization">Initialization</a> defines Participants, Views, and APIs, and, optionally, overrides default compilation settings.</li>
+  <li><a href="#step">Step</a> defines actions taken by all participants.</li>
+  <li><a href="#local-step">Local Step</a> defines actions taken by a particular participant.</li>
+  <li><a href="#consensus-step">Consensus Step</a> defines actions taken by the contract.</li>
+</ol>
+<h1 id="transitions">Transitions<a aria-hidden="true" tabindex="-1" href="#transitions"><span class="icon icon-link"></span></a></h1>
+<p>The following diagram indicates mode transitions:</p>
+<div>
+  <img src="/exp/essentials/backend-programming/reach-modes/mode-transitions.png" class="img-fluid" width="500" height="390" loading="lazy">
+</div>
+<h1 id="consensus-transfers">Consensus Transfers<a aria-hidden="true" tabindex="-1" href="#consensus-transfers"><span class="icon icon-link"></span></a></h1>
+<p>A consensus transfer is a statement or expression that (a) facilitates agreement among participants, (b) transitions to a consensus step, and (3) records the agreement as a transaction on the distributed ledger (i.e. blockchain) of the consensus network. These actions include <code>publish</code>, <code>pay</code>, <code>race</code>, <code>fork</code>, and <code>parallelReduce</code>. The developer chooses which consensus transfer to use depending on the number of participants, tasks, and iterations:</p>
+<table>
+  <thead>
+    <tr>
+      <th align="none"># Participants</th>
+      <th align="none"># Tasks</th>
+      <th align="none"># Iterations</th>
+      <th align="none">Consensus Transfer</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="none">One</td>
+      <td align="none">One</td>
+      <td align="none">One</td>
+      <td align="none"><code>publish</code> or <code>pay</code></td>
+    </tr>
+    <tr>
+      <td align="none">Many</td>
+      <td align="none">One</td>
+      <td align="none">One</td>
+      <td align="none"><code>race</code></td>
+    </tr>
+    <tr>
+      <td align="none">Many</td>
+      <td align="none">Many</td>
+      <td align="none">One</td>
+      <td align="none"><code>fork</code></td>
+    </tr>
+    <tr>
+      <td align="none">Many</td>
+      <td align="none">Many</td>
+      <td align="none">Many</td>
+      <td align="none"><code>parallelReduce</code></td>
+    </tr>
+  </tbody>
+</table>
+<p>The following list describes when to use each type of consensus transfer:</p>
+<ul>
+  <li>Use <code>publish</code> to cause one participant to make a value (e.g. the price of an item) available to all other participants.</li>
+  <li>Use <code>pay</code> to cause one participant to pay an amount to the contract account.</li>
+  <li>Use <code>race</code> when multiple participants are racing to <code>publish</code> or <code>pay</code>.</li>
+  <li>Use <code>fork</code> when multiple participants are racing to do different actions.</li>
+  <li>Use <code>parallelReduce</code> when muliple participants are iteratively racing or forking.</li>
+</ul>
+<p><code>commit</code> transitions from a consensus step to a step.</p>
+<h1 id="modes">Modes<a aria-hidden="true" tabindex="-1" href="#modes"><span class="icon icon-link"></span></a></h1>
+<h2 id="initialization">Initialization<a aria-hidden="true" tabindex="-1" href="#initialization"><span class="icon icon-link"></span></a></h2>
+<p>The Reach compiler recognizes <code>export const main = Reach.App(() =&gt; {}</code> as a Reach DApp. Initialization Mode is the first part of <code>Reach.App</code>, ending when <code>deploy()</code> transitions to Step Mode:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">main</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Reach.</span><span style="color: #8250DF">App</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #6E7781">// Initialization Mode</span></li><li value="3"><span style="color: #24292F">  </span><span style="color: #8250DF">setOptions</span><span style="color: #24292F">({ verifyArithmetic: </span><span style="color: #0550AE">true</span><span style="color: #24292F">, connectors: [</span><span style="color: #0550AE">ETH</span><span style="color: #24292F">, </span><span style="color: #0550AE">ALGO</span><span style="color: #24292F"> ] });</span></li><li value="4"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">S</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Seller'</span><span style="color: #24292F">, sellerInteract);</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">B</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Buyer'</span><span style="color: #24292F">, buyerInteract);</span></li><li value="6"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">V</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">View</span><span style="color: #24292F">(</span><span style="color: #0A3069">'View'</span><span style="color: #24292F">, { price: UInt });</span></li><li value="7"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">A</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">API</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Voter'</span><span style="color: #24292F">, { write: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], State) });</span></li><li value="8"><span style="color: #24292F">  </span><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></li><li value="9"><span style="color: #24292F">  </span><span style="color: #6E7781">// Step Mode</span></li><li value="10"><span style="color: #24292F">  </span><span style="color: #6E7781">// ...</span></li><li value="11"><span style="color: #24292F">});</span></li></ol></pre>
+<ul>
+  <li>Line 1: <code>Reach.App</code> accepts a no-argument function that specifies a DApp.</li>
+  <li>Line 3: Optionally, <code>setOptions</code> overrides default compile options.</li>
+  <li>Line 4-5: <code>Participant</code> specifies DApp participants.</li>
+  <li>Line 6: <code>View</code> specifies a DApp view through which non-participants can see public variables.</li>
+  <li>Line 7: <code>API</code> specifies a DApp API offering member functions.</li>
+  <li>Line 8: The <code>deploy</code> function transitions from Initialization mode to Step mode.</li>
+</ul>
+<p>Statements and expressions unique to Initialization Mode include the following:</p>
+<ul>
+  <li><a href="/en/essentials/backend-programming/reach-types/#api">API</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-statements/#deploy">deploy</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-types/#participant">Participant</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-types/#participant-class">ParticipantClass</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-statements/#setoptions">setOptions</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-types/#view">View</a></li>
+</ul>
+<h2 id="step">Step<a aria-hidden="true" tabindex="-1" href="#step"><span class="icon icon-link"></span></a></h2>
+<p>A <em>Step</em> consists of actions that apply to all participants. Statements and expressions unique (or partially unique) to Step Mode include the following:</p>
+<ul>
+  <li><a href="/en/essentials/backend-programming/reach-expressions/#call">call</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-expressions/#closeto">closeTo</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-statements/#exit">exit</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-statements/#fork">fork</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-statements/#only">each, only</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-statements/#publish">publish, pay, when, timeout</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-expressions/#race">race</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-expressions/#unknowable">unknowable</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-statements/#wait">wait</a></li>
+</ul>
+<h2 id="local-step">Local Step<a aria-hidden="true" tabindex="-1" href="#local-step"><span class="icon icon-link"></span></a></h2>
+<p>A <em>Local Step</em> occurs in the body of <a href="/en/essentials/backend-programming/reach-statements/#only">each and only</a> statements. It represents the actions taken by a single participant in an application. Inside a local step, <code>this</code> refers to the participant performing the step which is useful when the local step was initiated by an <code>each</code> expression. Statements and expressions unique to Local Step Mode include the following:</p>
+<ul>
+  <li><a href="/en/essentials/backend-programming/reach-expressions/#assume">assume</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-expressions/#declassify">declassify</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-expressions/#didpublish">didPublish</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-expressions/#fail">fail</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-expressions/#interact">interact</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-expressions/#makecommitment">makeCommitment</a></li>
+</ul>
+<h2 id="consensus-step">Consensus Step<a aria-hidden="true" tabindex="-1" href="#consensus-step"><span class="icon icon-link"></span></a></h2>
+<p>A <em>Consensus Step</em> occurs in the continuation of a consensus transfer statement. It represents the actions taken by the consensus network contract of an application. Inside a consensus step, <code>this</code> refers to the address of the participant that performed the consensus transfer. This is useful when the consensus transfer was initiated by a race expression. Statements and expressions unique (or partially unique) to Consensus Step Mode include the following:</p>
+<ul>
+  <li><a href="/en/essentials/backend-programming/reach-expressions/#checkcommitment">checkCommitment</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-statements/#commit">commit</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-statements/#continue">continue</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-statements/#only">each, only</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-types/#map">Map</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-statements/#parallelreduce">parallelReduce</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-types/#remote">remote</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-expressions/#require">require</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-types/#set">Set</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-expressions/#throughtimeout">throughTimeout</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-expressions/#timeremaining">timeRemaining</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-types/#token">Token</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-types/#transfer">transfer</a></li>
+  <li><a href="/en/essentials/backend-programming/reach-statements/#while">while</a></li>
+</ul>

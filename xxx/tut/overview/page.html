@@ -1,0 +1,290 @@
+<p>
+  This is an informal overview of Reach and the structure of a Reach program.
+  The goal of this document is to give enough technical specifics to help you understand what Reach does, but it isn't intended as either a <a href="/xxx/tut/rps/#tut">tutorial</a> or a <a href="/xxx/ref/#ref">reference</a>.
+  When you're ready to really begin a project, you can start with one of those, or <a href="/xxx/workshop/#workshop">the workshop</a>.
+</p>
+<p>If you have experience with blockchain development using existing tools, we recommend reading this article and <a href="/xxx/guide/solidity/#guide-solidity">a comparison with other development platforms</a>.</p>
+<div class="note">
+  <p>A recording of a live workshop that goes over this material is <a href="https://www.youtube.com/watch?v=1jmi8XdOvD4">available on YouTube</a>.</p>
+</div>
+<h2 id="over-model" class="refHeader">Decentralized applications<a aria-hidden="true" tabindex="-1" href="#over-model"><span class="icon icon-link"></span></a></h2>
+<p>
+  DApps are made of multiple agents interacting with each other through some backend consensus network, like Ethereum or Algorand.
+  These agents act on behalf of principals that provide direction and authority through information.
+  These principals might be humans or other autonomous agents or even committees and organizations with their own structure.
+  The consensus network allows these agents to transfer and receive value in the form of network-specific tokens, like ETH or ALGO.
+  The network also allows the creation of "contracts" that ensure that all agents follow the same rules as they take turns computing and publishing values and information.
+  The details of these "contracts" are specific to each consensus network, but they are implicitly trusted by all agents and principals because their operation can be independently verified to match the previously agreed-upon rules.
+</p>
+<p>A single Reach program incorporates all aspects of a DApp:</p>
+<ul>
+  <li>Participant backends are the agents acting on behalf of the principals.</li>
+  <li>Frontends are the technical representation of the interface between the participants and the principals.</li>
+  <li>A contract enforces the rules of the program, including the order of operation.</li>
+</ul>
+<p>
+  In Reach, a programmer only needs to specify the actions of participants---what they do individually and what they do in unison.
+  The Reach compiler automatically derives a contract for the consensus network via a connector that enforces these rules.
+</p>
+<h2 id="over-minimal" class="refHeader">A minimal Reach program<a aria-hidden="true" tabindex="-1" href="#over-minimal"><span class="icon icon-link"></span></a></h2>
+<p>Let's look at a simple Reach program where two principals, Alice and Bob, interact. In this DApp, Alice has some information that Bob might want and she has an amount of network tokens in mind that she'd like to trade for it.</p>
+<div class="note">
+  <p>You can look at the entire example program by visiting <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/overview/index.rsh">overview/index.rsh</a>.</p>
+</div>
+<div class="note">
+  <p>Get language support for Reach in your editor by visiting <a href="/xxx/guide/editor-support/#guide-editor-support">the guide on editor support</a>.</p>
+</div>
+<p>The main part of the program looks like this:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0A3069">'reach 0.1'</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #0A3069">'use strict'</span><span style="color: #24292F">;</span></li><li value="3"></li><li value="4"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">main</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Reach.</span><span style="color: #8250DF">App</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">A</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Alice'</span><span style="color: #24292F">, {</span></li><li value="6"><span style="color: #24292F">    request: UInt,</span></li><li value="7"><span style="color: #24292F">    info: </span><span style="color: #8250DF">Bytes</span><span style="color: #24292F">(</span><span style="color: #0550AE">128</span><span style="color: #24292F">),</span></li><li value="8"><span style="color: #24292F">  });</span></li><li value="9"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">B</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Bob'</span><span style="color: #24292F">, {</span></li><li value="10"><span style="color: #24292F">    want: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Null),</span></li><li value="11"><span style="color: #24292F">    got: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([</span><span style="color: #8250DF">Bytes</span><span style="color: #24292F">(</span><span style="color: #0550AE">128</span><span style="color: #24292F">)], Null),</span></li><li value="12"><span style="color: #24292F">  });</span></li><li value="13"><span style="color: #24292F">  </span><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></li><li value="14"></li><li value="15"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li></ol></pre>
+<ul>
+  <li>Line 1 specifies that this is a Reach program.</li>
+  <li>Line 2 specifies that this program will be compiled with strict mode, which enables unused variable checks.</li>
+  <li>Line 4 defines the main export from this program. <code>main</code> is the default used by Reach.</li>
+  <li>Line 4 also specifies that it is an application.</li>
+  <li>Line 5 specifies that the program identifier <code>A</code> will represent the Alice participant.</li>
+  <li>Lines 6 and 7 specify the interface between Alice's participant and frontend. In this case, Alice's frontend must provide a number called <code>request</code> and a string called <code>info</code>.</li>
+  <li>Line 9 specifies that the program identifier <code>B</code> will represent the Bob participant.</li>
+  <li>Lines 10 and 11 specify the interface for Bob, which includes a function named <code>want</code>, that takes a number and returns <code>null</code>, as well as a function named <code>got</code>, that receives the information.</li>
+  <li>Finally, line 13, deploys the DApp.</li>
+</ul>
+<p>The elided lines, 14 through 34, contain the body of the application, which we can divide into four parts.</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="15"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="16"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">request</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.request); });</span></li><li value="17"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(request);</span></li><li value="18"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
+<ul>
+  <li>
+    Lines 15 and 16 specify that Alice takes a local step where she declassifies the amount of tokens requested.
+    In Reach, all values from the frontend are secret until explicitly made public with declassify.
+  </li>
+  <li>Line 17 has Alice join the application by publishing that value, and the logic of the program transitions to specifying what the contract does.</li>
+  <li>Line 18 has the contract commit to these values and continue the rest of the program.</li>
+</ul>
+<p>At this point, Bob's backend has learned the value of <code>request</code> and can deliver it to Bob's frontend for his approval. This happens next.</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="20"><span style="color: #24292F">  </span><span style="color: #0550AE">B</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="21"><span style="color: #24292F">    interact.</span><span style="color: #8250DF">want</span><span style="color: #24292F">(request); });</span></li><li value="22"><span style="color: #24292F">  </span><span style="color: #0550AE">B</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(request);</span></li><li value="23"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
+<ul>
+  <li>
+    Lines 20 and 21 have Bob perform that delivery.
+    <code>interact.want</code> doesn't explicitly return a boolean because the frontend cannot return if Bob doesn't want to continue.
+    A better version of this program might return <code>false</code> and have that communicated to Alice.
+  </li>
+  <li>Lines 22 and 23 have Bob join the application and submit a payment matching the appropriate amount, and then the contract commits.</li>
+</ul>
+<p>It's now Alice's turn again:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="25"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="26"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">info</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.info); });</span></li><li value="27"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(info);</span></li><li value="28"><span style="color: #24292F">  </span><span style="color: #8250DF">transfer</span><span style="color: #24292F">(request).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(</span><span style="color: #0550AE">A</span><span style="color: #24292F">);</span></li><li value="29"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
+<ul>
+  <li>Lines 25 and 26 specify that Alice declassifies the information.</li>
+  <li>Line 27 has her publish it.</li>
+  <li>Line 28 has the contract transfer the requested amount to her.</li>
+  <li>Line 29 commits the transactions on the consensus network.</li>
+</ul>
+<p>The only thing left is for Bob's backend to deliver the information to his frontend.</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="31"><span style="color: #24292F">  </span><span style="color: #0550AE">B</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="32"><span style="color: #24292F">    interact.</span><span style="color: #8250DF">got</span><span style="color: #24292F">(info); });</span></li><li value="33"><span style="color: #24292F">  </span><span style="color: #8250DF">exit</span><span style="color: #24292F">();</span></li></ol></pre>
+<ul>
+  <li>Line 31 and 32 use an interaction expression to transfer the information to the frontend.</li>
+  <li>Line 33 exits the program.</li>
+</ul>
+<hr>
+<p>Reach programmers don't need to think about details like <em>contract storage</em>, <em>protocol diagrams</em>, <em>state validation</em>, or <em>network details</em>; instead, they can focus exclusively on the business logic of their application.</p>
+<h2 id="over-compile" class="refHeader">Compile<a aria-hidden="true" tabindex="-1" href="#over-compile"><span class="icon icon-link"></span></a></h2>
+<p>After a Reach programmer writes this application in a file like <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/overview/index.rsh"><code>overview/index.rsh</code></a>, they could run</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach compile [overview/index.rsh](https://github.com/reach-sh/reach-lang/tree/master/examples/overview/index.rsh)</li></ol></pre>
+<p>and the <code>build</code> directory will contain a new file named <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/overview/build/index.main.mjs"><code>index.main.mjs</code></a>, which contains a JavaScript implementation of a backend for each participant, as well as the Ethereum bytecode for the contract.</p>
+<div class="note">
+  <p>
+    If you are curious, you can take a look at this file by going to <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/overview/build/index.main.mjs">overview/build/index.main.mjs</a>.
+    The Ethereum bytecode is not readable, but if you understand Solidity, you may want to look at <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/overview/build/index.main.sol">overview/build/index.main.sol</a> to see the original Solidity source that it is compiled from.
+    Reach can leave files like these in place when run with <code>--intermediate-files</code>.
+  </p>
+</div>
+<p>
+  For this thirty line application, the Reach compiler generated hundreds of lines of JavaScript code in two functions, one for Alice and one for Bob.
+  Separately, it generated hundreds more lines of Solidity code to implement the contract.
+  If a programmer wasn't using Reach, they would have to write all this code in these three modules individually and keep them synchronized at every step of the development process.
+</p>
+<p>
+  Moreover, Reach doesn't only work for Ethereum: it is blockchain agnostic and can be easily configured to use a different connector to target a different consensus network, like Algorand.
+  Nor is Reach tied to JavaScript: it can be configured to target other backend languages, like Go.
+</p>
+<h2 id="over-verify" class="refHeader">Verify<a aria-hidden="true" tabindex="-1" href="#over-verify"><span class="icon icon-link"></span></a></h2>
+<p>
+  Reach doesn't just compile your program: it also verifies it and ensures that entire categories of errors don't occur.
+  For example, it always guarantees that the balance in the contract at the end of the program is zero.
+  This is important because if it were not true, then tokens would be locked away by the contract and inaccessible.
+</p>
+<p>
+  For this example program, it is obvious that when a single transfer of <code>request</code> goes in at line 22 and a single transfer of <code>request</code> goes out at line 28, then the balance is zero at the end of the program.
+  We could make a small tweak, however, to demonstrate things going wrong.
+</p>
+<p>Let's change the third step to leave a single unit in the balance:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="25"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="26"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">info</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.info); });</span></li><li value="27"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(info);</span></li><li value="28"><span style="color: #24292F">  </span><span style="color: #8250DF">transfer</span><span style="color: #24292F">(request</span><span style="color: #CF222E">-</span><span style="color: #0550AE">1</span><span style="color: #24292F">).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(</span><span style="color: #0550AE">A</span><span style="color: #24292F">); </span><span style="color: #6E7781">// &lt;--- Oops!</span></li><li value="29"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
+<p>And then run the compiler:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach compile [overview/index-error.rsh](https://github.com/reach-sh/reach-lang/tree/master/examples/overview/index-error.rsh)</li></ol></pre>
+<p>It will print out a detailed error message showing the violation.</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="2">Verifying for generic connector</li><li value="3">  Verifying when ALL participants are honest</li><li value="4">Verification failed:</li><li value="5">  when ALL participants are honest</li><li value="6">  of theorem: assert</li><li value="7">  msg: "balance zero at application exit"</li><li value="8">  at ./index-error.rsh:33:7:application</li><li value="9"></li><li value="10">  // Violation Witness</li><li value="11"></li><li value="12">  const v58 = "Alice".interact.request;</li><li value="13">  //    ^ could = 1</li><li value="14">  //      from: ./index-error.rsh:6:12:property binding</li><li value="15"></li><li value="16">  // Theorem Formalization</li><li value="17"></li><li value="18">  const v87 = 0 == (v58 - (v58 - 1));</li><li value="19">  //    ^ would be false</li><li value="20">  assert(v87);</li><li value="21"></li><li value="22">  Verifying when NO participants are honest</li><li value="23">  Verifying when ONLY "Alice" is honest</li><li value="24">  Verifying when ONLY "Bob" is honest</li><li value="25">Checked 17 theorems; 4 failures (and 3 omitted repeats) :'(</li></ol></pre>
+<p>
+  Verification failures include a lot of information, such as a concrete counter-example showing values that could have been provided by frontends that would lead to the property failing to hold.
+  In this case, it reports that if Alice were to pass an <code>interact.request</code> over <code>1</code> at the start of the program on line 5, then the balance of the contract would not be provably <code>0</code> at the end of the program.
+</p>
+<hr>
+<p>
+  Reach programmers don't need to worry about entire categories of errors because the compiler automatically checks their code and ensures that those errors aren't present.
+  Of course, there's a lot more to say about the details of <a href="/xxx/guide/assert/#guide-assert">automatic verification</a>; indeed, it is one of the most powerful features of Reach, but we'll leave it at that for now.
+</p>
+<h2 id="over-interface" class="refHeader">Interface<a aria-hidden="true" tabindex="-1" href="#over-interface"><span class="icon icon-link"></span></a></h2>
+<p>
+  The backend produced by the Reach compiler isn't an application on its own.
+  In particular, each participant needs a frontend to interact with.
+  In a real deployment, this interfacing code would be tied to a GUI, like a Web or smartphone app.
+  Let's look at a simple command-line version that demonstrates how it would work for testing on a private devnet.
+</p>
+<div class="note">
+  <p>You can look at the entire example interface program by visiting <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/overview/index.mjs">overview/index.mjs</a>.</p>
+</div>
+<p>The program is just a few dozen lines long and the shell of it is quite simple:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> { loadStdlib } </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'@reach-sh/stdlib'</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #CF222E">import</span><span style="color: #24292F"> </span><span style="color: #0550AE">*</span><span style="color: #24292F"> </span><span style="color: #CF222E">as</span><span style="color: #24292F"> backend </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'./build/index.main.mjs'</span><span style="color: #24292F">;</span></li><li value="3"></li><li value="4"><span style="color: #24292F">(</span><span style="color: #CF222E">async</span><span style="color: #24292F"> () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">stdlib</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #8250DF">loadStdlib</span><span style="color: #24292F">(process.env);</span></li><li value="6"></li><li value="7"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">accAlice</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> stdlib.</span><span style="color: #8250DF">newTestAccount</span><span style="color: #24292F">(stdlib.</span><span style="color: #8250DF">parseCurrency</span><span style="color: #24292F">(</span><span style="color: #0550AE">100</span><span style="color: #24292F">));</span></li><li value="8"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">accBob</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> stdlib.</span><span style="color: #8250DF">newTestAccount</span><span style="color: #24292F">(stdlib.</span><span style="color: #8250DF">parseCurrency</span><span style="color: #24292F">(</span><span style="color: #0550AE">100</span><span style="color: #24292F">));</span></li><li value="9"></li><li value="10"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">ctcAlice</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> accAlice.</span><span style="color: #8250DF">contract</span><span style="color: #24292F">(backend);</span></li><li value="11"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">ctcBob</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> accBob.</span><span style="color: #8250DF">contract</span><span style="color: #24292F">(backend, ctcAlice.</span><span style="color: #8250DF">getInfo</span><span style="color: #24292F">());</span></li><li value="12"></li><li value="13"><span style="color: #24292F">  </span><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #0550AE">Promise</span><span style="color: #24292F">.</span><span style="color: #8250DF">all</span><span style="color: #24292F">([</span></li><li value="14"><span style="color: #24292F">    ctcAlice.participants.</span><span style="color: #8250DF">Alice</span><span style="color: #24292F">({</span></li><li value="15"><span style="color: #24292F">      request: stdlib.</span><span style="color: #8250DF">parseCurrency</span><span style="color: #24292F">(</span><span style="color: #0550AE">5</span><span style="color: #24292F">),</span></li><li value="16"><span style="color: #24292F">      info: </span><span style="color: #0A3069">'If you wear these, you can see beyond evil illusions.'</span></li><li value="17"><span style="color: #24292F">    }),</span></li><li value="18"><span style="color: #24292F">    ctcBob.p.</span><span style="color: #8250DF">Bob</span><span style="color: #24292F">({</span></li><li value="19"><span style="color: #24292F">      </span><span style="color: #8250DF">want</span><span style="color: #24292F">: (</span><span style="color: #953800">amt</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`Alice asked Bob for ${</span><span style="color: #24292F">stdlib</span><span style="color: #0A3069">.</span><span style="color: #8250DF">formatCurrency</span><span style="color: #0A3069">(</span><span style="color: #24292F">amt</span><span style="color: #0A3069">)</span><span style="color: #0A3069">}`</span><span style="color: #24292F">),</span></li><li value="20"><span style="color: #24292F">      </span><span style="color: #8250DF">got</span><span style="color: #24292F">: (</span><span style="color: #953800">secret</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`Alice's secret is: ${</span><span style="color: #24292F">secret</span><span style="color: #0A3069">}`</span><span style="color: #24292F">),</span></li><li value="21"><span style="color: #24292F">    }),</span></li><li value="22"><span style="color: #24292F">  ]);</span></li><li value="23"><span style="color: #24292F">})();</span></li></ol></pre>
+<ul>
+  <li>Lines 1 and 2 import the Reach standard library loader and the compiled app backend.</li>
+  <li>
+    Line 5 dynamically loads the appropriate network-specific Reach standard library,
+    based on the <code>REACH_CONNECTOR_MODE</code> environment variable.
+    All of Reach's network-specific standard libraries adhere to a common interface allowing you to write programs that are network-agnostic.
+  </li>
+  <li>Lines 7 and 8 initialize new test accounts for Alice and Bob.</li>
+  <li>Line 10 has Alice deploy the contract on the consensus network.</li>
+  <li>
+    Line 11 has Bob attach to the contract.
+    The value <code>ctcAlice</code> contains no secret information and could easily be printed out and shared with Bob outside of the consensus network.
+  </li>
+  <li>Lines 13 through 22 launch the backends and wait for their completion. We'll look at the details in a moment.</li>
+</ul>
+<p>This code, similar for all test programs, demonstrates how straightforward it is to scaffold a Reach application for testing.</p>
+<p>Let's look at initializing and interfacing each participant, starting with Alice.</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="14"><span style="color: #24292F">    ctcAlice.participants.</span><span style="color: #8250DF">Alice</span><span style="color: #24292F">({</span></li><li value="15"><span style="color: #24292F">      request: stdlib.</span><span style="color: #8250DF">parseCurrency</span><span style="color: #24292F">(</span><span style="color: #0550AE">5</span><span style="color: #24292F">),</span></li><li value="16"><span style="color: #24292F">      info: </span><span style="color: #0A3069">'If you wear these, you can see beyond evil illusions.'</span></li><li value="17"><span style="color: #24292F">    }),</span></li></ol></pre>
+<ul>
+  <li>Line 14 uses the contract handle associated with Alice's account to run the Alice participant backend, passing an object which holds the interact functions.</li>
+  <li>Line 15 provides the <code>request</code> value.</li>
+  <li>Line 16 provides the <code>info</code> value.</li>
+</ul>
+<p>Let's look at Bob next.</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="18"><span style="color: #24292F">    ctcBob.p.</span><span style="color: #8250DF">Bob</span><span style="color: #24292F">({</span></li><li value="19"><span style="color: #24292F">      </span><span style="color: #8250DF">want</span><span style="color: #24292F">: (</span><span style="color: #953800">amt</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`Alice asked Bob for ${</span><span style="color: #24292F">stdlib</span><span style="color: #0A3069">.</span><span style="color: #8250DF">formatCurrency</span><span style="color: #0A3069">(</span><span style="color: #24292F">amt</span><span style="color: #0A3069">)</span><span style="color: #0A3069">}`</span><span style="color: #24292F">),</span></li><li value="20"><span style="color: #24292F">      </span><span style="color: #8250DF">got</span><span style="color: #24292F">: (</span><span style="color: #953800">secret</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`Alice's secret is: ${</span><span style="color: #24292F">secret</span><span style="color: #0A3069">}`</span><span style="color: #24292F">),</span></li><li value="21"><span style="color: #24292F">    }),</span></li></ol></pre>
+<ul>
+  <li>Line 18 initializes Bob just like Alice, although we use the <code>p</code> short-hand.</li>
+  <li>Line 19 provides his <code>want</code> function, which produces a log message and always accepts.</li>
+  <li>Line 20 provides his <code>got</code> function, which displays the secret on the console as well.</li>
+</ul>
+<hr>
+<p>
+  Reach completely abstracts all the details of the chosen consensus network from the programmer, except for those directly impinging on business decisions, like the amounts of currency transacted.
+  Reach allows programmers to focus on the business logic of their application at every stage, from the core application to the interfacing elements.
+</p>
+<h2 id="over-execute" class="refHeader">Execute<a aria-hidden="true" tabindex="-1" href="#over-execute"><span class="icon icon-link"></span></a></h2>
+<p>
+  It's now time to execute this test program and ensure that everything is working correctly.
+  In this case, we've set up our application simply: there's one Reach file for the application and one JavaScript file for the interface.
+  This is a common practice, so Reach comes with a simple wrapper script to build and execute such applications.
+  We just run:
+</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach run</li></ol></pre>
+<p>And then Reach</p>
+<ul>
+  <li>compiles <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/overview/index.rsh">overview/index.rsh</a>;</li>
+  <li>creates a temporary Node.js package;</li>
+  <li>builds a Docker image based on Reach's standard image for the package; and,</li>
+  <li>runs the application connected to Reach's standard private Ethereum devnet image.</li>
+</ul>
+<p>On typical developer laptops, this entire process takes seconds and can be completely integrated into existing development IDEs, like VSCode, so Reach developers can compile, verify, build, launch, and test their Reach app with a single command.</p>
+<hr>
+<p>
+  Reach completely abstracts all the details of building and maintaining consensus network test environments and build scripts from the programmer, so they can focus exclusively on the business logic of their application.
+  In fact, Reach works for multiple networks, so if we instead run
+</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ REACH_CONNECTOR_MODE=ALGO reach run</li></ol></pre>
+<p>
+  then Reach will start up a private Algorand devnet and use the Algorand connector.
+  The developer does not need to change anything about their program because Reach is entirely agnostic to the consensus network choice during deployment.
+</p>
+<p>The same goes for Conflux:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ REACH_CONNECTOR_MODE=CFX reach run</li></ol></pre>
+<h2 id="over-react" class="refHeader">Web app<a aria-hidden="true" tabindex="-1" href="#over-react"><span class="icon icon-link"></span></a></h2>
+<div class="note">
+  <p>
+    You can <a href="https://www.youtube.com/watch?v=jHEKIMNvs-o">watch a 7-minute video</a> on YouTube
+    which demonstrates this section's code in action
+    and provides a brief explanation of how it works.
+  </p>
+</div>
+<p>
+  The previous section uses Node.js to perform a test run at the command line.
+  However, most Reach developers deploy their DApps via a Web application, as we describe below.
+</p>
+<p>
+  A Web deployment uses the exact same <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/overview-react/index.rsh">index.rsh</a> file connected, this time, to a React-based <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/overview-react/index.js">index.js</a> file.
+  (It also uses some simple React <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/overview-react/views">views</a>
+  and <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/overview-react/index.css"><code>css</code></a> to go with it.)
+  Let's take a look at some snippets from the React <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/overview-react/index.js">index.js</a> and compare with the Node.js <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/overview/index.mjs">index.mjs</a> from before:
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="7"><span style="color: #CF222E">import</span><span style="color: #24292F"> </span><span style="color: #0550AE">*</span><span style="color: #24292F"> </span><span style="color: #CF222E">as</span><span style="color: #24292F"> backend </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'./build/index.main.mjs'</span><span style="color: #24292F">;</span></li><li value="8"><span style="color: #CF222E">import</span><span style="color: #24292F"> {loadStdlib} </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'@reach-sh/stdlib'</span><span style="color: #24292F">;</span></li><li value="9"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">reach</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">loadStdlib</span><span style="color: #24292F">(process.env);</span></li></ol></pre>
+<p>At the top of the file, we import the Reach-generated backend as <code>backend</code> and we load the standard library as <code>reach</code>.</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="27"><span style="color: #24292F">  </span><span style="color: #CF222E">async</span><span style="color: #24292F"> </span><span style="color: #8250DF">componentDidMount</span><span style="color: #24292F">() { </span><span style="color: #6E7781">// from mode: ConnectAccount</span></li><li value="28"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">acc</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> reach.</span><span style="color: #8250DF">getDefaultAccount</span><span style="color: #24292F">();</span></li></ol></pre>
+<p>
+  We hook into the App <a href="https://reactjs.org/docs/react-component.html">component</a>'s <a href="https://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/">lifecycle event</a> <code>componentDidMount</code>
+  in order to fetch the user's account.
+  <code>getDefaultAccount</code> automatically interacts with browser extensions, like MetaMask, to get the user's
+  currently-selected account.
+  Reach is able to deploy contracts and send transactions to the consensus network by prompting the user directly through the extension's API, without additional assistance from the React frontend.
+  This is just like how in the Node.js deployment, the Reach programmer does not need to decode the details of the underlying consensus network's interaction API.
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="71"><span style="color: #24292F">  </span><span style="color: #CF222E">async</span><span style="color: #24292F"> </span><span style="color: #8250DF">deploy</span><span style="color: #24292F">() { </span><span style="color: #6E7781">// from mode: Deploy</span></li><li value="72"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">ctc</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">this</span><span style="color: #24292F">.props.acc.</span><span style="color: #8250DF">deploy</span><span style="color: #24292F">(backend);</span></li><li value="73"><span style="color: #24292F">    </span><span style="color: #0550AE">this</span><span style="color: #24292F">.</span><span style="color: #8250DF">setState</span><span style="color: #24292F">({mode: </span><span style="color: #0A3069">'EnterInfo'</span><span style="color: #24292F">, ctc});</span></li><li value="74"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">ctcInfoStr</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">JSON</span><span style="color: #24292F">.</span><span style="color: #0550AE">stringify</span><span style="color: #24292F">(</span><span style="color: #CF222E">await</span><span style="color: #24292F"> ctc.</span><span style="color: #8250DF">getInfo</span><span style="color: #24292F">(), </span><span style="color: #0550AE">null</span><span style="color: #24292F">, </span><span style="color: #0550AE">2</span><span style="color: #24292F">);</span></li><li value="75"><span style="color: #24292F">    </span><span style="color: #0550AE">this</span><span style="color: #24292F">.</span><span style="color: #8250DF">setState</span><span style="color: #24292F">({ctcInfoStr});</span></li><li value="76"><span style="color: #24292F">  }</span></li></ol></pre>
+<p>
+  Our React component has a method called <code>deploy</code> that actually deploys the contract on the network, using the same calls as in the test deployment:
+  on line 72 we call the <code>acc.deploy</code> function,
+  and on line 74, we call the <code>ctc.getInfo</code> function;
+  exactly as we did for the Node.js program.
+</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="79"><span style="color: #24292F">  </span><span style="color: #CF222E">async</span><span style="color: #24292F"> </span><span style="color: #8250DF">runBackend</span><span style="color: #24292F">() { </span><span style="color: #6E7781">// from mode: RunBackend</span></li><li value="80"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> {</span><span style="color: #0550AE">ctc</span><span style="color: #24292F">, </span><span style="color: #0550AE">requestStandard</span><span style="color: #24292F">, </span><span style="color: #0550AE">info</span><span style="color: #24292F">} </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">this</span><span style="color: #24292F">.state;</span></li><li value="81"><span style="color: #24292F">    </span><span style="color: #0550AE">this</span><span style="color: #24292F">.</span><span style="color: #8250DF">setState</span><span style="color: #24292F">({mode: </span><span style="color: #0A3069">'BackendRunning'</span><span style="color: #24292F">});</span></li><li value="82"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">request</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> reach.</span><span style="color: #8250DF">parseCurrency</span><span style="color: #24292F">(requestStandard);</span></li><li value="83"><span style="color: #24292F">    </span><span style="color: #CF222E">await</span><span style="color: #24292F"> backend.</span><span style="color: #8250DF">Alice</span><span style="color: #24292F">(ctc, {request, info});</span></li><li value="84"><span style="color: #24292F">    </span><span style="color: #0550AE">this</span><span style="color: #24292F">.</span><span style="color: #8250DF">setState</span><span style="color: #24292F">({mode: </span><span style="color: #0A3069">'BackendRan'</span><span style="color: #24292F">});</span></li><li value="85"><span style="color: #24292F">  }</span></li></ol></pre>
+<p>Similarly, we implement a <code>runBackend</code> method that executes the Reach program as Alice using information gathered from the React UI.</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="112"><span style="color: #24292F">  </span><span style="color: #CF222E">async</span><span style="color: #24292F"> </span><span style="color: #8250DF">runBackend</span><span style="color: #24292F">(</span><span style="color: #953800">ctcInfoStr</span><span style="color: #24292F">) { </span><span style="color: #6E7781">// from mode: RunBackend</span></li><li value="113"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">ctcInfo</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">JSON</span><span style="color: #24292F">.</span><span style="color: #0550AE">parse</span><span style="color: #24292F">(ctcInfoStr);</span></li><li value="114"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">ctc</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">this</span><span style="color: #24292F">.props.acc.</span><span style="color: #8250DF">attach</span><span style="color: #24292F">(backend, ctcInfo);</span></li><li value="115"><span style="color: #24292F">    </span><span style="color: #0550AE">this</span><span style="color: #24292F">.</span><span style="color: #8250DF">setState</span><span style="color: #24292F">({mode: </span><span style="color: #0A3069">'ApproveRequest'</span><span style="color: #24292F">});</span></li><li value="116"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">interact</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {</span></li><li value="117"><span style="color: #24292F">      </span><span style="color: #8250DF">want</span><span style="color: #24292F">: (</span><span style="color: #953800">request</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">this</span><span style="color: #24292F">.</span><span style="color: #8250DF">setState</span><span style="color: #24292F">({mode: </span><span style="color: #0A3069">'DisplayInfo'</span><span style="color: #24292F">, requestStandard: reach.</span><span style="color: #8250DF">formatCurrency</span><span style="color: #24292F">(request, </span><span style="color: #0550AE">4</span><span style="color: #24292F">)}),</span></li><li value="118"><span style="color: #24292F">      </span><span style="color: #8250DF">got</span><span style="color: #24292F">: (</span><span style="color: #953800">info</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">this</span><span style="color: #24292F">.</span><span style="color: #8250DF">setState</span><span style="color: #24292F">({info}),</span></li><li value="119"><span style="color: #24292F">    };</span></li><li value="120"><span style="color: #24292F">    </span><span style="color: #CF222E">await</span><span style="color: #24292F"> backend.</span><span style="color: #8250DF">Bob</span><span style="color: #24292F">(ctc, interact);</span></li><li value="121"><span style="color: #24292F">  }</span></li></ol></pre>
+<p>We implement a similar method in the <code>Bob</code> component that runs the backend as Bob.</p>
+<p>
+  We specify Alice's and Bob's respective participant interact interfaces
+  just as we would in Node.js.
+  In the React program,
+  we have the ability to leverage Bob's <code>interact</code> functions as callbacks
+  that can update the React state
+  in order to display to, or harvest information from, the React user interface.
+</p>
+<p>
+  You can install the <code>@reachsh/stdlib</code> JavaScript library
+  into your React project,
+  or for convenience, instead of setting up a React project,
+  you can simply use the command
+</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach react</li></ol></pre>
+<p>This command runs your DApp with the React development server in a Docker container which has Reach and React JavaScript dependencies pre-installed, so it starts up much faster than building them yourself.</p>
+<p>As before, you can use <code>REACH_CONNECTOR_MODE</code> to choose your desired connector.</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ REACH_CONNECTOR_MODE=ETH reach react</li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ REACH_CONNECTOR_MODE=ALGO reach react</li></ol></pre>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ REACH_CONNECTOR_MODE=CFX reach react</li></ol></pre>
+<h2 id="over-next" class="refHeader">Next steps<a aria-hidden="true" tabindex="-1" href="#over-next"><span class="icon icon-link"></span></a></h2>
+<p>
+  In this overview, we've briefly described the structure and fundamental concepts of a Reach application.
+  We've shown how to construct a simple program, compile it, connect an interface, test at the command-line, and deploy it using a React Web application.
+  Since this is only a brief overview of what Reach can do, we left a lot out.
+  But even so, it should be clear why Reach is the easiest and safest programming language for decentralized application development.
+</p>
+<p>
+  Furthermore, this example program has many flaws and should not be used in practice.
+  For example, it provides no protection to Bob in the event that Alice fails to deliver the information, and makes no attempt to ensure that the information is what he wants.
+  Reach allows you to abstract away the low-level details of your decentralized program and focus on these sorts of bigger picture issues.
+  In the rest of <a href="/xxx/guide/#guide">the guide</a>, we discuss design issues like this. For example,
+</p>
+<ul>
+  <li>Effectively using <a href="/xxx/guide/assert/#guide-assert">automatic verification</a> to check your application;</li>
+  <li>Fortifying your application against <a href="/xxx/guide/timeout/#guide-timeout">non-participation</a>;</li>
+  <li>Building <a href="/xxx/guide/abstract/#guide-abstract">interaction abstractions</a> for related applications.</li>
+</ul>
+<p>However, unless you're ready to dive deep now, the next steps for you are to:</p>
+<ul>
+  <li><a href="/xxx/ref/install/#ref-install">Install Reach</a>;</li>
+  <li>Work through the <a href="/xxx/tut/rps/#tut">tutorial</a>;</li>
+  <li>Join <a href="https://discord.gg/AZsgcXu">the Discord community</a>.</li>
+</ul>
+<p>Thanks for being part of Reach!</p>

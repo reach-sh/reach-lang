@@ -1,0 +1,482 @@
+<p>This module builds upon <a href="/en/essentials/getting-started/wisdom-for-sale/">Wisdom for Sale</a> by demonstrating how to use a variety of data types (string, integer, boolean, object, and array) in interact objects. You should complete <a href="/en/essentials/getting-started/wisdom-for-sale/">Wisdom for Sale</a> before continuing.</p>
+<p>The module shows you how to build <a href="https://github.com/hagenhaus/market-day">Market Day</a>, a command-line and web-based application that enables two participants, a seller and a buyer, to trade vegetables for tokens via a smart contract running on a private Algorand, Ethereum, or Conflux consensus network residing in a Docker container on your computer. Your DApp creates and funds two accounts (one for each participant), enables the seller and buyer to make a transaction, and exits.</p>
+<p>The contract in this module supports a single transaction between a seller and a buyer. Other modules present contracts that support transactions between a seller and multiple buyers.</p>
+<h1 id="learning-objectives">Learning Objectives<a aria-hidden="true" tabindex="-1" href="#learning-objectives"><span class="icon icon-link"></span></a></h1>
+<p>The following learning objectives describe what you will be able to do as a result of completing this module.</p>
+<ol>
+  <li>Visualize Reach command-line DApp design</li>
+  <li>Implement strings, integers, booleans, objects, and arrays in interact object.</li>
+</ol>
+<h1 id="examine-the-transaction">Examine the transaction<a aria-hidden="true" tabindex="-1" href="#examine-the-transaction"><span class="icon icon-link"></span></a></h1>
+<p>The following diagram represents a market-day transaction:</p>
+<div>
+  <img src="/exp/essentials/getting-started/market-day/seller-buyer.png" class="img-fluid my-4 d-block" width="850" height="463" loading="lazy">
+</div>
+<p>The contract automatically supplies a product list to the buyer who chooses a product type, chooses a quantity, and confirms the purchase. Once the buyer completes or cancels the purchase, the contract exits.</p>
+<h1 id="clone-and-run">Clone and run<a aria-hidden="true" tabindex="-1" href="#clone-and-run"><span class="icon icon-link"></span></a></h1>
+<p>This section shows you how to clone the repository used in this module.</p>
+<ol>
+  <li>
+    <p>Clone the <a href="https://github.com/hagenhaus/market-day">market-day</a> repository:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ cd ~/reach</li><li value="2">$ git clone https://github.com/hagenhaus/market-day.git</li></ol></pre>
+  </li>
+  <li>
+    <p>Open the repository in vscode, and change directory to <em>current</em>.</p>
+    <p>
+      <img src="/exp/essentials/getting-started/market-day/vscode-initial.png" class="img-fluid" width="700" loading="lazy">
+    </p>
+  </li>
+  <li>
+    <p>Copy <em>index.mjs</em> and <em>index.rsh</em> from the <em>starter</em> folder to the <em>current</em> folder.</p>
+    <p>
+      <img src="/exp/essentials/getting-started/market-day/vscode-open.png" class="img-fluid" width="700" loading="lazy">
+    </p>
+  </li>
+  <li>
+    <p>Open two terminals (i.e. shells):</p>
+    <p>
+      <img src="/exp/essentials/getting-started/market-day/terminals-empty.png" class="img-fluid" width="700" loading="lazy">
+    </p>
+  </li>
+  <li>
+    <p>Change directory in both terminals:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ ~/reach/market-day/current</li></ol></pre>
+  </li>
+  <li>
+    <p>Run the following command in both terminals:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ export REACH_CONNECTOR_MODE=ALGO-devnet</li></ol></pre>
+  </li>
+  <li>
+    <p>In the Seller Terminal, run your DApp as the seller:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach run index seller</li></ol></pre>
+  </li>
+  <li>
+    <p>In the Buyer Terminal, run your DApp as the buyer:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach run index buyer</li></ol></pre>
+  </li>
+  <li>
+    <p>When prompted, copy &amp; paste the contract info from the Seller Terminal to the Buyer Terminal. Final output should resemble the following:</p>
+    <div class="row gx-3">
+      <div class="col-12 col-lg-auto">
+        <pre class="snippet unnumbered"><ol class="snippet"><li value="1">Your role is seller.</li><li value="2">The consensus network is ALGO.</li><li value="3">Your balance is 1000 ALGO.</li><li value="4">Contract info: 259</li><li value="5">Exiting contract.</li><li value="6">Your balance is 999.997 ALGO.</li></ol></pre>
+      </div>
+      <div class="col-12 col-lg-auto">
+        <pre class="snippet unnumbered"><ol class="snippet"><li value="1">Your role is buyer.</li><li value="2">The consensus network is ALGO.</li><li value="3">Paste contract info:</li><li value="4">259</li><li value="5">Your balance is 1000 ALGO.</li><li value="6">Exiting contract.</li><li value="7">Your balance is 999.998 ALGO.</li></ol></pre>
+      </div>
+    </div>
+  </li>
+  <li>
+    <p>Repeat Steps 6-9 for <em>CFX-devnet</em> and <em>ETH-devnet</em>.</p>
+  </li>
+</ol>
+<h1 id="examine-dapp-design">Examine DApp design<a aria-hidden="true" tabindex="-1" href="#examine-dapp-design"><span class="icon icon-link"></span></a></h1>
+<p>The starter files for this module may seem, at first glance, more complex than the starter files for the Wisdom for Sale module. But, upon closer inspection, you will notice that they consist of boilerplate code useful for starting any Reach command-line DApp. Together, a Reach DApp frontend (index.mjs) and backend (index.rsh) reflect, roughly, the organization illustrated in the diagram below:</p>
+<div>
+  <img src="/exp/essentials/getting-started/market-day/design.png" class="img-fluid my-4 d-block" width="900" height="475" loading="lazy">
+</div>
+<p>Note the following:</p>
+<ul>
+  <li>There is a one-to-one correspondence between the frontend and backend interact objects.</li>
+  <li>This correspondence includes most interact properties and methods.</li>
+  <li>The seller calls <code>backend.Seller</code> to pass the interact object to the backend.</li>
+  <li>The buyer calls <code>contract.participant.Buyer</code> to do the same.</li>
+  <li>The seller and buyer sections often include methods that return promises, so async/await is needed.</li>
+</ul>
+<h2 id="review-frontend-starter">Review frontend starter<a aria-hidden="true" tabindex="-1" href="#review-frontend-starter"><span class="icon icon-link"></span></a></h2>
+<p>This section helps you map the frontend portion of the diagram to the code in <em>index.mjs</em>.</p>
+<div>
+  <img src="/exp/essentials/getting-started/market-day/design-fe.png" class="img-fluid my-4 d-block" width="900" height="475" loading="lazy">
+</div>
+<p>This table maps the diagram to the code below:</p>
+<table>
+  <thead>
+    <tr>
+      <th align="none">Diagram</th>
+      <th align="none">Code</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="none">imports</td>
+      <td align="none">Lines 1-3</td>
+    </tr>
+    <tr>
+      <td align="none">definitions</td>
+      <td align="none">Lines 9-19</td>
+    </tr>
+    <tr>
+      <td align="none">commonInteract</td>
+      <td align="none">Lines 23-25</td>
+    </tr>
+    <tr>
+      <td align="none">seller and sellerInteract</td>
+      <td align="none">Lines 28-39</td>
+    </tr>
+    <tr>
+      <td align="none">buyer and buyerInteract</td>
+      <td align="none">Lines 42-53</td>
+    </tr>
+  </tbody>
+</table>
+<h3 id="indexmjs">index.mjs<a aria-hidden="true" tabindex="-1" href="#indexmjs"><span class="icon icon-link"></span></a></h3>
+<p>XXX load: <a href="https://raw.githubusercontent.com/hagenhaus/market-day/master/starter/index.mjs">https://raw.githubusercontent.com/hagenhaus/market-day/master/starter/index.mjs</a></p>
+<h2 id="review-backend-starter">Review backend starter<a aria-hidden="true" tabindex="-1" href="#review-backend-starter"><span class="icon icon-link"></span></a></h2>
+<p>This section helps you map the backend portion of the diagram to the code in <em>index.rsh</em>.</p>
+<div>
+  <img src="/exp/essentials/getting-started/market-day/design-be.png" class="img-fluid my-4 d-block" width="900" height="475" loading="lazy">
+</div>
+<p>This table maps the diagram to the code below:</p>
+<table>
+  <thead>
+    <tr>
+      <th align="none">Diagram</th>
+      <th align="none">Code</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="none">commonInteract</td>
+      <td align="none">Lines 3-5</td>
+    </tr>
+    <tr>
+      <td align="none">sellerInteract</td>
+      <td align="none">Lines 7-10</td>
+    </tr>
+    <tr>
+      <td align="none">buyerInteract</td>
+      <td align="none">Lines 12-14</td>
+    </tr>
+    <tr>
+      <td align="none">Participant definitions</td>
+      <td align="none">Lines 16-18</td>
+    </tr>
+    <tr>
+      <td align="none">Init mode to Step mode transition</td>
+      <td align="none">Line 17</td>
+    </tr>
+    <tr>
+      <td align="none">Participant interactions</td>
+      <td align="none">Lines 21-28</td>
+    </tr>
+  </tbody>
+</table>
+<h3 id="indexrsh">index.rsh<a aria-hidden="true" tabindex="-1" href="#indexrsh"><span class="icon icon-link"></span></a></h3>
+<p>XXX load: <a href="https://raw.githubusercontent.com/hagenhaus/market-day/master/starter/index.rsh">https://raw.githubusercontent.com/hagenhaus/market-day/master/starter/index.rsh</a></p>
+<h1 id="add-products-to-contract-seller">Add products to contract (seller)<a aria-hidden="true" tabindex="-1" href="#add-products-to-contract-seller"><span class="icon icon-link"></span></a></h1>
+<p>This section shows you how to do the following:</p>
+<ol>
+  <li>Implement seller code that adds a product list to the contract.</li>
+  <li>Implement contract code that passes the product list to the buyer.</li>
+  <li>Implement buyer code that displays the list.</li>
+</ol>
+<p>The seller offers potatoes at 200 <strong>standard units</strong> per bag, carrots at 100 su per bunch, and corn at 50 su per ear:</p>
+<div>
+  <img src="/exp/essentials/getting-started/market-day/products.png" class="img-fluid my-4 d-block" width="400" height="146" loading="lazy">
+</div>
+<p>The <code>products</code> object reflects this information:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">products</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [</span></li><li value="2"><span style="color: #24292F">  { name: </span><span style="color: #0A3069">'Potatoes'</span><span style="color: #24292F">, unit: </span><span style="color: #0A3069">'bag'</span><span style="color: #24292F">, units: </span><span style="color: #0A3069">'bags'</span><span style="color: #24292F">, price: </span><span style="color: #8250DF">toAU</span><span style="color: #24292F">(</span><span style="color: #0550AE">200</span><span style="color: #24292F">) },</span></li><li value="3"><span style="color: #24292F">  { name: </span><span style="color: #0A3069">'Carrots'</span><span style="color: #24292F">, unit: </span><span style="color: #0A3069">'bunch'</span><span style="color: #24292F">, units: </span><span style="color: #0A3069">'bunches'</span><span style="color: #24292F">, price: </span><span style="color: #8250DF">toAU</span><span style="color: #24292F">(</span><span style="color: #0550AE">100</span><span style="color: #24292F">) },</span></li><li value="4"><span style="color: #24292F">  { name: </span><span style="color: #0A3069">'Corn'</span><span style="color: #24292F">, unit: </span><span style="color: #0A3069">'ear'</span><span style="color: #24292F">, units: </span><span style="color: #0A3069">'ears'</span><span style="color: #24292F">, price: </span><span style="color: #8250DF">toAU</span><span style="color: #24292F">(</span><span style="color: #0550AE">50</span><span style="color: #24292F">) }</span></li><li value="5"><span style="color: #24292F">];</span></li></ol></pre>
+<p>The seller also provides an announcement:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">announcement</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0A3069">'List of products for sale:'</span><span style="color: #24292F">;</span></li></ol></pre>
+<p>We can bundle <code>announcement</code> and <code>products</code> into a <code>sellerInfo</code> object:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">sellerInfo</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  announcement: </span><span style="color: #0A3069">'List of products for sale:'</span><span style="color: #24292F">,</span></li><li value="3"><span style="color: #24292F">  products: [</span></li><li value="4"><span style="color: #24292F">    { name: </span><span style="color: #0A3069">'Potatoes'</span><span style="color: #24292F">, unit: </span><span style="color: #0A3069">'bag'</span><span style="color: #24292F">, units: </span><span style="color: #0A3069">'bags'</span><span style="color: #24292F">, price: </span><span style="color: #8250DF">toAU</span><span style="color: #24292F">(</span><span style="color: #0550AE">200</span><span style="color: #24292F">) },</span></li><li value="5"><span style="color: #24292F">    { name: </span><span style="color: #0A3069">'Carrots'</span><span style="color: #24292F">, unit: </span><span style="color: #0A3069">'bunch'</span><span style="color: #24292F">, units: </span><span style="color: #0A3069">'bunches'</span><span style="color: #24292F">, price: </span><span style="color: #8250DF">toAU</span><span style="color: #24292F">(</span><span style="color: #0550AE">100</span><span style="color: #24292F">) },</span></li><li value="6"><span style="color: #24292F">    { name: </span><span style="color: #0A3069">'Corn'</span><span style="color: #24292F">, unit: </span><span style="color: #0A3069">'ear'</span><span style="color: #24292F">, units: </span><span style="color: #0A3069">'ears'</span><span style="color: #24292F">, price: </span><span style="color: #8250DF">toAU</span><span style="color: #24292F">(</span><span style="color: #0550AE">50</span><span style="color: #24292F">) }</span></li><li value="7"><span style="color: #24292F">  ]</span></li><li value="8"><span style="color: #24292F">};</span></li></ol></pre>
+<p>The following are directions to add code that passes <code>sellerInfo</code> from seller to buyer via the contract:</p>
+<ol>
+  <li>
+    <p>In <em>index.mjs</em>, add a <code>sellerInfo</code> property to <code>sellerInteract</code>:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #953800">sellerInfo</span><span style="color: #24292F">: {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #953800">announcement</span><span style="color: #24292F">: </span><span style="color: #0A3069">'List of products for sale:'</span><span style="color: #24292F">,</span></li><li value="3"><span style="color: #24292F">  </span><span style="color: #953800">products</span><span style="color: #24292F">: [</span></li><li value="4"><span style="color: #24292F">    { name: </span><span style="color: #0A3069">'Potatoes'</span><span style="color: #24292F">, unit: </span><span style="color: #0A3069">'bag'</span><span style="color: #24292F">, units: </span><span style="color: #0A3069">'bags'</span><span style="color: #24292F">, price: </span><span style="color: #8250DF">toAU</span><span style="color: #24292F">(</span><span style="color: #0550AE">200</span><span style="color: #24292F">) },</span></li><li value="5"><span style="color: #24292F">    { name: </span><span style="color: #0A3069">'Carrots'</span><span style="color: #24292F">, unit: </span><span style="color: #0A3069">'bunch'</span><span style="color: #24292F">, units: </span><span style="color: #0A3069">'bunches'</span><span style="color: #24292F">, price: </span><span style="color: #8250DF">toAU</span><span style="color: #24292F">(</span><span style="color: #0550AE">100</span><span style="color: #24292F">) },</span></li><li value="6"><span style="color: #24292F">    { name: </span><span style="color: #0A3069">'Corn'</span><span style="color: #24292F">, unit: </span><span style="color: #0A3069">'ear'</span><span style="color: #24292F">, units: </span><span style="color: #0A3069">'ears'</span><span style="color: #24292F">, price: </span><span style="color: #8250DF">toAU</span><span style="color: #24292F">(</span><span style="color: #0550AE">50</span><span style="color: #24292F">) }</span></li><li value="7"><span style="color: #24292F">  ]</span></li><li value="8"><span style="color: #24292F">}</span></li></ol></pre>
+  </li>
+  <li>
+    <p>In <em>index.mjs</em>, add a <code>shop</code> method to <code>buyerInteract</code>:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #953800">shop</span><span style="color: #24292F">: </span><span style="color: #CF222E">async</span><span style="color: #24292F"> (</span><span style="color: #953800">sellerInfo</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(sellerInfo.announcement);</span></li><li value="3"><span style="color: #24292F">  sellerInfo.products.</span><span style="color: #8250DF">forEach</span><span style="color: #24292F">((</span><span style="color: #953800">p</span><span style="color: #24292F">, </span><span style="color: #953800">i</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="4"><span style="color: #24292F">    console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`${</span><span style="color: #24292F">i</span><span style="color: #0A3069"> </span><span style="color: #CF222E">+</span><span style="color: #0A3069"> </span><span style="color: #0550AE">1</span><span style="color: #0A3069">}. ${</span><span style="color: #24292F">p</span><span style="color: #0A3069">.</span><span style="color: #24292F">name</span><span style="color: #0A3069">} at ${</span><span style="color: #8250DF">toSU</span><span style="color: #0A3069">(</span><span style="color: #24292F">p</span><span style="color: #0A3069">.</span><span style="color: #24292F">price</span><span style="color: #0A3069">)</span><span style="color: #0A3069">} ${</span><span style="color: #24292F">suStr</span><span style="color: #0A3069">} per unit (${</span><span style="color: #24292F">p</span><span style="color: #0A3069">.</span><span style="color: #24292F">unit</span><span style="color: #0A3069">}).`</span><span style="color: #24292F">);</span></li><li value="5"><span style="color: #24292F">  });</span></li><li value="6"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">order</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> { prodNum: </span><span style="color: #0550AE">0</span><span style="color: #24292F">, prodAmt: </span><span style="color: #0550AE">0</span><span style="color: #24292F"> };</span></li><li value="7"><span style="color: #24292F">  </span><span style="color: #CF222E">return</span><span style="color: #24292F"> order;</span></li><li value="8"><span style="color: #24292F">}</span></li></ol></pre>
+    <p>The <code>shop</code> method accepts a <code>sellerInfo</code> object and returns an <code>order</code> object.</p>
+  </li>
+  <li>
+    <p>In <em>index.rsh</em>, add the following constants to the top of the file:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">announcement</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Bytes</span><span style="color: #24292F">(</span><span style="color: #0550AE">28</span><span style="color: #24292F">);</span></li><li value="2"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">product</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">Object</span><span style="color: #24292F">({ name: </span><span style="color: #8250DF">Bytes</span><span style="color: #24292F">(</span><span style="color: #0550AE">10</span><span style="color: #24292F">), unit: </span><span style="color: #8250DF">Bytes</span><span style="color: #24292F">(</span><span style="color: #0550AE">6</span><span style="color: #24292F">), units: </span><span style="color: #8250DF">Bytes</span><span style="color: #24292F">(</span><span style="color: #0550AE">8</span><span style="color: #24292F">), price: UInt })</span></li><li value="3"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">products</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">Array</span><span style="color: #24292F">(product, </span><span style="color: #0550AE">3</span><span style="color: #24292F">);</span></li></ol></pre>
+  </li>
+  <li>
+    <p>In <em>index.rsh</em>, add a <code>sellerInfo</code> property to <code>sellerInteract</code>:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #953800">sellerInfo</span><span style="color: #24292F">: </span><span style="color: #0550AE">Object</span><span style="color: #24292F">({ announcement: announcement, products: products }),</span></li></ol></pre>
+  </li>
+  <li>
+    <p>In <em>index.rsh</em>, add a <code>shop</code> method to <code>buyerInteract</code>:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #953800">shop</span><span style="color: #24292F">: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">(</span></li><li value="2"><span style="color: #24292F">  [</span><span style="color: #0550AE">Object</span><span style="color: #24292F">({ announcement: announcement, products: products })],</span></li><li value="3"><span style="color: #24292F">  </span><span style="color: #0550AE">Object</span><span style="color: #24292F">({ prodNum: UInt, prodAmt: UInt })</span></li><li value="4"><span style="color: #24292F">)</span></li></ol></pre>
+    <p>This <code>shop</code> method also accepts a <code>sellerInfo</code> object and returns an <code>order</code> object.</p>
+  </li>
+  <li>
+    <p>In <em>index.rsh</em>, find the following:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">S</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li></ol></pre>
+  </li>
+  <li>
+    <p>Replace it with the following:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">S</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">sellerInfo</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.sellerInfo); });</span></li><li value="2"><span style="color: #0550AE">S</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(sellerInfo);</span></li></ol></pre>
+  </li>
+  <li>
+    <p>In <em>index.rsh</em>, find the following:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">B</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li></ol></pre>
+  </li>
+  <li>
+    <p>Replace it with the following:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">B</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">order</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.</span><span style="color: #8250DF">shop</span><span style="color: #24292F">(sellerInfo)); });</span></li><li value="2"><span style="color: #0550AE">B</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(order);</span></li></ol></pre>
+  </li>
+  <li>
+    <p>Run your DApp in the seller and buyer terminals. Output should resemble the following:</p>
+    <div class="row gx-3">
+      <div class="col-12 col-lg-auto">
+        <pre class="snippet unnumbered"><ol class="snippet"><li value="1">Your role is seller.</li><li value="2">The consensus network is ALGO.</li><li value="3">Your balance is 1000 ALGO.</li><li value="4">Contract info: 105</li><li value="5">Exiting contract.</li><li value="6">Your balance is 999.997 ALGO.</li></ol></pre>
+      </div>
+      <div class="col-12 col-lg-auto">
+        <pre class="snippet unnumbered"><ol class="snippet"><li value="1">Your role is buyer.</li><li value="2">The consensus network is ALGO.</li><li value="3">Paste contract info:</li><li value="4">105</li><li value="5">Your balance is 1000 ALGO.</li><li value="6">List of products for sale:</li><li value="7">1. Potatoes at 200 ALGO per unit (bag).</li><li value="8">2. Carrots at 100 ALGO per unit (bunch).</li><li value="9">3. Corn at 50 ALGO per unit (ear).</li><li value="10">Exiting contract.</li><li value="11">Your balance is 999.998 ALGO.</li></ol></pre>
+      </div>
+    </div>
+  </li>
+</ol>
+<h1 id="shop-for-products-buyer">Shop for products (buyer)<a aria-hidden="true" tabindex="-1" href="#shop-for-products-buyer"><span class="icon icon-link"></span></a></h1>
+<p>This section enables the frontend to take the buyer's order (or cancellation), and pass it via the backend to the contract.</p>
+<ol>
+  <li>
+    <p>In <em>index.mjs</em>, find the <code>shop</code> method in <code>buyerInteract</code>.</p>
+  </li>
+  <li>
+    <p>Add Lines 7-14 which query the buyer about the product and amount:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #953800">shop</span><span style="color: #24292F">: </span><span style="color: #CF222E">async</span><span style="color: #24292F"> (</span><span style="color: #953800">sellerInfo</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(sellerInfo.announcement);</span></li><li value="3"><span style="color: #24292F">  sellerInfo.products.</span><span style="color: #8250DF">forEach</span><span style="color: #24292F">((</span><span style="color: #953800">p</span><span style="color: #24292F">, </span><span style="color: #953800">i</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="4"><span style="color: #24292F">    console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`${</span><span style="color: #24292F">i</span><span style="color: #0A3069"> </span><span style="color: #CF222E">+</span><span style="color: #0A3069"> </span><span style="color: #0550AE">1</span><span style="color: #0A3069">}. ${</span><span style="color: #24292F">p</span><span style="color: #0A3069">.</span><span style="color: #24292F">name</span><span style="color: #0A3069">} at ${</span><span style="color: #8250DF">toSU</span><span style="color: #0A3069">(</span><span style="color: #24292F">p</span><span style="color: #0A3069">.</span><span style="color: #24292F">price</span><span style="color: #0A3069">)</span><span style="color: #0A3069">} ${</span><span style="color: #24292F">suStr</span><span style="color: #0A3069">} per unit (${</span><span style="color: #24292F">p</span><span style="color: #0A3069">.</span><span style="color: #24292F">unit</span><span style="color: #0A3069">}).`</span><span style="color: #24292F">);</span></li><li value="5"><span style="color: #24292F">  });</span></li><li value="6"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">order</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> { prodNum: </span><span style="color: #0550AE">0</span><span style="color: #24292F">, prodAmt: </span><span style="color: #0550AE">0</span><span style="color: #24292F"> };</span></li><li value="7"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">prodNum</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #8250DF">ask</span><span style="color: #24292F">(</span><span style="color: #0A3069">`Enter 1-${</span><span style="color: #24292F">sellerInfo</span><span style="color: #0A3069">.</span><span style="color: #24292F">products</span><span style="color: #0A3069">.</span><span style="color: #0550AE">length</span><span style="color: #0A3069">}, or 0 to exit:`</span><span style="color: #24292F">, (</span><span style="color: #953800">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> x));</span></li><li value="8"><span style="color: #24292F">  </span><span style="color: #CF222E">if</span><span style="color: #24292F"> (</span><span style="color: #0550AE">1</span><span style="color: #24292F"> </span><span style="color: #CF222E">&lt;=</span><span style="color: #24292F"> prodNum </span><span style="color: #CF222E">&amp;&amp;</span><span style="color: #24292F"> prodNum </span><span style="color: #CF222E">&lt;=</span><span style="color: #24292F"> sellerInfo.products.</span><span style="color: #0550AE">length</span><span style="color: #24292F">) {</span></li><li value="9"><span style="color: #24292F">    order.prodNum </span><span style="color: #CF222E">=</span><span style="color: #24292F"> prodNum;</span></li><li value="10"><span style="color: #24292F">    order.prodAmt </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #8250DF">ask</span><span style="color: #24292F">(</span><span style="color: #0A3069">`Enter number of units, or 0 to exit:`</span><span style="color: #24292F">, (</span><span style="color: #953800">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> x));</span></li><li value="11"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">p</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> sellerInfo.products[order.prodNum </span><span style="color: #CF222E">-</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">];</span></li><li value="12"><span style="color: #24292F">    </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">unitWord</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> order.prodAmt </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F"> </span><span style="color: #CF222E">?</span><span style="color: #24292F"> p.unit </span><span style="color: #CF222E">:</span><span style="color: #24292F"> p.units;</span></li><li value="13"><span style="color: #24292F">    console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`You are ordering ${</span><span style="color: #24292F">order</span><span style="color: #0A3069">.</span><span style="color: #24292F">prodAmt</span><span style="color: #0A3069">} ${</span><span style="color: #24292F">unitWord</span><span style="color: #0A3069">} of ${</span><span style="color: #24292F">p</span><span style="color: #0A3069">.</span><span style="color: #24292F">name</span><span style="color: #0A3069">} at ${</span><span style="color: #8250DF">toSU</span><span style="color: #0A3069">(</span><span style="color: #24292F">p</span><span style="color: #0A3069">.</span><span style="color: #24292F">price</span><span style="color: #0A3069">)</span><span style="color: #0A3069">} ${</span><span style="color: #24292F">suStr</span><span style="color: #0A3069">} per ${</span><span style="color: #24292F">p</span><span style="color: #0A3069">.</span><span style="color: #24292F">unit</span><span style="color: #0A3069">}.`</span><span style="color: #24292F">);</span></li><li value="14"><span style="color: #24292F">  }</span></li><li value="15"><span style="color: #24292F">  </span><span style="color: #CF222E">return</span><span style="color: #24292F"> order;</span></li><li value="16"><span style="color: #24292F">}</span></li></ol></pre>
+    <p>An order with <code>prodNum == 0</code> or <code>prodAmt == 0</code> means a cancelled order.</p>
+  </li>
+  <li>
+    <p>In <em>index.mjs</em>, add <code>reportCancellation</code> to <code>commonInteract</code>:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #953800">reportCancellation</span><span style="color: #24292F">: () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`${</span><span style="color: #24292F">role</span><span style="color: #0A3069"> </span><span style="color: #CF222E">==</span><span style="color: #0A3069"> </span><span style="color: #0A3069">'buyer'</span><span style="color: #0A3069"> </span><span style="color: #CF222E">?</span><span style="color: #0A3069"> </span><span style="color: #0A3069">'You'</span><span style="color: #0A3069"> </span><span style="color: #CF222E">:</span><span style="color: #0A3069"> </span><span style="color: #0A3069">'The buyer'} cancelled the order.`</span><span style="color: #24292F">); }</span></li></ol></pre>
+  </li>
+  <li>
+    <p>In <em>index.rsh</em>, add <code>reportCancellation</code> to <code>commonInteract</code>:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #953800">reportCancellation</span><span style="color: #24292F">: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([], Null)</span></li></ol></pre>
+  </li>
+  <li>
+    <p>In <em>index.rsh</em>, replace the last <code>commit()</code> with the following:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">if</span><span style="color: #24292F"> (order.prodNum </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0550AE">0</span><span style="color: #24292F"> </span><span style="color: #CF222E">||</span><span style="color: #24292F"> order.prodNum </span><span style="color: #CF222E">&gt;</span><span style="color: #24292F"> sellerInfo.products.</span><span style="color: #0550AE">length</span><span style="color: #24292F"> </span><span style="color: #CF222E">||</span><span style="color: #24292F"> order.prodAmt </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0550AE">0</span><span style="color: #24292F">) {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="3"><span style="color: #24292F">  </span><span style="color: #8250DF">each</span><span style="color: #24292F">([</span><span style="color: #0550AE">S</span><span style="color: #24292F">, </span><span style="color: #0550AE">B</span><span style="color: #24292F">], () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> interact.</span><span style="color: #8250DF">reportCancellation</span><span style="color: #24292F">());</span></li><li value="4"><span style="color: #24292F">  </span><span style="color: #8250DF">each</span><span style="color: #24292F">([</span><span style="color: #0550AE">S</span><span style="color: #24292F">, </span><span style="color: #0550AE">B</span><span style="color: #24292F">], () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> interact.</span><span style="color: #8250DF">reportExit</span><span style="color: #24292F">());</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #8250DF">exit</span><span style="color: #24292F">();</span></li><li value="6"><span style="color: #24292F">} </span><span style="color: #CF222E">else</span><span style="color: #24292F"> {</span></li><li value="7"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="8"><span style="color: #24292F">}</span></li></ol></pre>
+  </li>
+  <li>
+    <p>Run your DApp in the seller and buyer terminals several times. As the buyer, when you specify an order, buyer output should include an order summary:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1">You are ordering 2 bunches of Carrots at 100 ALGO per bunch.</li><li value="2">Exiting contract.</li><li value="3">Your balance is 999.998 ALGO.</li></ol></pre>
+    <p>When you cancel an order (by setting <code>prodNum</code> or <code>prodAmt</code> to 0) output should indicate the cancellation:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1">You cancelled the order.</li><li value="2">Exiting contract.</li><li value="3">Your balance is 999.998 ALGO.</li></ol></pre>
+  </li>
+</ol>
+<h1 id="complete-a-transaction">Complete a transaction<a aria-hidden="true" tabindex="-1" href="#complete-a-transaction"><span class="icon icon-link"></span></a></h1>
+<p>This section shows you how to do the following:</p>
+<ol>
+  <li>Implement contract code to calculate the total price of the transaction.</li>
+  <li>Implement contract and frontend code to verify the transaction with the buyer.</li>
+  <li>Implement contract code to complete the transaction.</li>
+</ol>
+<p>Here are the steps:</p>
+<ol>
+  <li>
+    <p>In <em>index.mjs</em>, add a <code>confirmPurchase</code> method to <code>buyerInteract</code>:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #953800">confirmPurchase</span><span style="color: #24292F">: </span><span style="color: #CF222E">async</span><span style="color: #24292F"> (</span><span style="color: #953800">total</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #8250DF">ask</span><span style="color: #24292F">(</span><span style="color: #0A3069">`Do you want to complete the purchase for ${</span><span style="color: #8250DF">toSU</span><span style="color: #0A3069">(</span><span style="color: #24292F">total</span><span style="color: #0A3069">)</span><span style="color: #0A3069">} ${</span><span style="color: #24292F">suStr</span><span style="color: #0A3069">}?`</span><span style="color: #24292F">, yesno)</span></li></ol></pre>
+  </li>
+  <li>
+    <p>In <em>index.rsh</em>, add a <code>confirmPurchase</code> method to <code>buyerInteract</code>:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #953800">confirmPurchase</span><span style="color: #24292F">: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Bool)</span></li></ol></pre>
+  </li>
+  <li>
+    <p>In <em>index.rsh</em>, add the following:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">S</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">total</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> sellerInfo.products[order.prodNum </span><span style="color: #CF222E">-</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">].price </span><span style="color: #CF222E">*</span><span style="color: #24292F"> order.prodAmt; });</span></li><li value="2"><span style="color: #0550AE">S</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(total);</span></li><li value="3"><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="4"></li><li value="5"><span style="color: #0550AE">B</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">willBuy</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.</span><span style="color: #8250DF">confirmPurchase</span><span style="color: #24292F">(total)); });</span></li><li value="6"><span style="color: #0550AE">B</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(willBuy);</span></li><li value="7"></li><li value="8"><span style="color: #CF222E">if</span><span style="color: #24292F"> (</span><span style="color: #CF222E">!</span><span style="color: #24292F">willBuy) {</span></li><li value="9"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="10"><span style="color: #24292F">  </span><span style="color: #8250DF">each</span><span style="color: #24292F">([</span><span style="color: #0550AE">S</span><span style="color: #24292F">, </span><span style="color: #0550AE">B</span><span style="color: #24292F">], () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> interact.</span><span style="color: #8250DF">reportCancellation</span><span style="color: #24292F">());</span></li><li value="11"><span style="color: #24292F">  </span><span style="color: #8250DF">each</span><span style="color: #24292F">([</span><span style="color: #0550AE">S</span><span style="color: #24292F">, </span><span style="color: #0550AE">B</span><span style="color: #24292F">], () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> interact.</span><span style="color: #8250DF">reportExit</span><span style="color: #24292F">());</span></li><li value="12"><span style="color: #24292F">  </span><span style="color: #8250DF">exit</span><span style="color: #24292F">();</span></li><li value="13"><span style="color: #24292F">} </span><span style="color: #CF222E">else</span><span style="color: #24292F"> {</span></li><li value="14"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="15"><span style="color: #24292F">}</span></li><li value="16"></li><li value="17"><span style="color: #0550AE">B</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(total);</span></li><li value="18"><span style="color: #8250DF">transfer</span><span style="color: #24292F">(total).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(</span><span style="color: #0550AE">S</span><span style="color: #24292F">);</span></li><li value="19"><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
+    <p>Note that the contract (not the frontend) must calculate the total price to ensure transparency. Also note that the simple calculation shown here does not check whether <code>prodAmt</code> is less than available inventory, nor does it check whether <code>prodAmt * price</code> is less than the buyer's account balance. A production-ready calculation would include both checks.</p>
+  </li>
+  <li>
+    <p>Run the DApp in the seller and buyer terminals, and purchase a reasonable amount of a product:</p>
+    <div class="row gx-3">
+      <div class="col-12 col-lg-auto">
+        <pre class="snippet unnumbered"><ol class="snippet"><li value="1">Your role is seller.</li><li value="2">The consensus network is ALGO.</li><li value="3">Your balance is 1000 ALGO.</li><li value="4">Contract info: 161</li><li value="5">Exiting contract.</li><li value="6">Your balance is 1199.996 ALGO.</li></ol></pre>
+      </div>
+      <div class="col-12 col-lg-auto">
+        <pre class="snippet unnumbered"><ol class="snippet"><li value="1">Your role is buyer.</li><li value="2">The consensus network is ALGO.</li><li value="3">Paste contract info:</li><li value="4">161</li><li value="5">Your balance is 1000 ALGO.</li><li value="6">List of products for sale:</li><li value="7">1. Potatoes at 200 ALGO per unit (bag).</li><li value="8">2. Carrots at 100 ALGO per unit (bunch).</li><li value="9">3. Corn at 50 ALGO per unit (ear).</li><li value="10">Enter 1-3, or 0 to exit:</li><li value="11">2</li><li value="12">Enter number of units, or 0 to exit:</li><li value="13">2</li><li value="14">You are ordering 2 bunches of Carrots at 100 ALGO per bunch.</li><li value="15">Do you want to complete the purchase for 200 ALGO?</li><li value="16">y</li><li value="17">Exiting contract.</li><li value="18">Your balance is 799.994 ALGO.</li></ol></pre>
+      </div>
+    </div>
+    <p>Although the transaction completes successfully, the DApp does not provide enough information about the transaction to either participant. The following steps implement additional notifications.</p>
+  </li>
+  <li>
+    <p>In <em>index.mjs</em>, add the following methods to <code>commonInteract</code>:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #953800">reportPayment</span><span style="color: #24292F">: (</span><span style="color: #953800">payment</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`${</span><span style="color: #24292F">role</span><span style="color: #0A3069"> </span><span style="color: #CF222E">==</span><span style="color: #0A3069"> </span><span style="color: #0A3069">'buyer'</span><span style="color: #0A3069"> </span><span style="color: #CF222E">?</span><span style="color: #0A3069"> </span><span style="color: #0A3069">'You'</span><span style="color: #0A3069"> </span><span style="color: #CF222E">:</span><span style="color: #0A3069"> </span><span style="color: #0A3069">'The buyer'} paid ${</span><span style="color: #8250DF">toSU</span><span style="color: #0A3069">(</span><span style="color: #24292F">payment</span><span style="color: #0A3069">)</span><span style="color: #0A3069">} ${</span><span style="color: #24292F">suStr</span><span style="color: #0A3069">} to the contract.`</span><span style="color: #24292F">),</span></li><li value="2"><span style="color: #953800">reportTransfer</span><span style="color: #24292F">: (</span><span style="color: #953800">payment</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`The contract paid ${</span><span style="color: #8250DF">toSU</span><span style="color: #0A3069">(</span><span style="color: #24292F">payment</span><span style="color: #0A3069">)</span><span style="color: #0A3069">} ${</span><span style="color: #24292F">suStr</span><span style="color: #0A3069">} to ${</span><span style="color: #24292F">role</span><span style="color: #0A3069"> </span><span style="color: #CF222E">==</span><span style="color: #0A3069"> </span><span style="color: #0A3069">'seller'</span><span style="color: #0A3069"> </span><span style="color: #CF222E">?</span><span style="color: #0A3069"> </span><span style="color: #0A3069">'you'</span><span style="color: #0A3069"> </span><span style="color: #CF222E">:</span><span style="color: #0A3069"> </span><span style="color: #0A3069">'the seller'}.`</span><span style="color: #24292F">),</span></li><li value="3"><span style="color: #953800">reportFulfillment</span><span style="color: #24292F">: (</span><span style="color: #953800">p</span><span style="color: #24292F">, </span><span style="color: #953800">amt</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { </span></li><li value="4"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">subjectVerb</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> role </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0A3069">'seller'</span><span style="color: #24292F"> </span><span style="color: #CF222E">?</span><span style="color: #24292F"> </span><span style="color: #0A3069">'You owe'</span><span style="color: #24292F"> </span><span style="color: #CF222E">:</span><span style="color: #24292F"> </span><span style="color: #0A3069">'The seller owes'</span><span style="color: #24292F">;</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">directObject</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> role </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0A3069">'buyer'</span><span style="color: #24292F"> </span><span style="color: #CF222E">?</span><span style="color: #24292F"> </span><span style="color: #0A3069">'you'</span><span style="color: #24292F"> </span><span style="color: #CF222E">:</span><span style="color: #24292F"> </span><span style="color: #0A3069">'the buyer'</span><span style="color: #24292F">;</span></li><li value="6"><span style="color: #24292F">  console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`${</span><span style="color: #24292F">subjectVerb</span><span style="color: #0A3069">} ${</span><span style="color: #24292F">directObject</span><span style="color: #0A3069">} ${</span><span style="color: #24292F">amt</span><span style="color: #0A3069">} ${</span><span style="color: #24292F">amt</span><span style="color: #0A3069"> </span><span style="color: #CF222E">==</span><span style="color: #0A3069"> </span><span style="color: #0550AE">1</span><span style="color: #0A3069"> </span><span style="color: #CF222E">?</span><span style="color: #0A3069"> </span><span style="color: #24292F">p</span><span style="color: #0A3069">.</span><span style="color: #24292F">unit</span><span style="color: #0A3069"> </span><span style="color: #CF222E">:</span><span style="color: #0A3069"> </span><span style="color: #24292F">p</span><span style="color: #0A3069">.</span><span style="color: #24292F">units</span><span style="color: #0A3069">} of ${</span><span style="color: #24292F">p</span><span style="color: #0A3069">.</span><span style="color: #24292F">name</span><span style="color: #0A3069">}.`</span><span style="color: #24292F">); </span></li><li value="7"><span style="color: #24292F">}</span></li></ol></pre>
+  </li>
+  <li>
+    <p>In <em>index.rsh</em>, add the same methods to <code>commonInteract</code>:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #953800">reportPayment</span><span style="color: #24292F">: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Null),</span></li><li value="2"><span style="color: #953800">reportTransfer</span><span style="color: #24292F">: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Null),</span></li><li value="3"><span style="color: #953800">reportFulfillment</span><span style="color: #24292F">: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([product, UInt], Null),</span></li></ol></pre>
+  </li>
+  <li>
+    <p>In <em>index.rsh</em>, add Lines 2, 4, and 5 to call these methods:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #0550AE">B</span><span style="color: #24292F">.</span><span style="color: #8250DF">pay</span><span style="color: #24292F">(total);</span></li><li value="2"><span style="color: #8250DF">each</span><span style="color: #24292F">([</span><span style="color: #0550AE">S</span><span style="color: #24292F">, </span><span style="color: #0550AE">B</span><span style="color: #24292F">], () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> interact.</span><span style="color: #8250DF">reportPayment</span><span style="color: #24292F">(total));</span></li><li value="3"><span style="color: #8250DF">transfer</span><span style="color: #24292F">(total).</span><span style="color: #8250DF">to</span><span style="color: #24292F">(</span><span style="color: #0550AE">S</span><span style="color: #24292F">);</span></li><li value="4"><span style="color: #8250DF">each</span><span style="color: #24292F">([</span><span style="color: #0550AE">S</span><span style="color: #24292F">, </span><span style="color: #0550AE">B</span><span style="color: #24292F">], () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> interact.</span><span style="color: #8250DF">reportTransfer</span><span style="color: #24292F">(total));</span></li><li value="5"><span style="color: #8250DF">each</span><span style="color: #24292F">([</span><span style="color: #0550AE">S</span><span style="color: #24292F">, </span><span style="color: #0550AE">B</span><span style="color: #24292F">], () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> interact.</span><span style="color: #8250DF">reportFulfillment</span><span style="color: #24292F">(sellerInfo.products[order.prodNum </span><span style="color: #CF222E">-</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">], order.prodAmt));</span></li><li value="6"><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
+  </li>
+  <li>
+    <p>Run the DApp. The output should include lines similar to the following:</p>
+    <div class="row gx-3">
+      <div class="col-12 col-lg-auto">
+        <pre class="snippet unnumbered"><ol class="snippet"><li value="1">Your role is seller.</li><li value="2">...</li><li value="3">The buyer paid 250 ALGO to the contract.</li><li value="4">The contract paid 250 ALGO to you.</li><li value="5">You owe the buyer 5 ears of Corn.</li></ol></pre>
+      </div>
+      <div class="col-12 col-lg-auto">
+        <pre class="snippet unnumbered"><ol class="snippet"><li value="1">Your role is buyer.</li><li value="2">...</li><li value="3">You paid 250 ALGO to the contract.</li><li value="4">The contract paid 250 ALGO to the seller.</li><li value="5">The seller owes you 5 ears of Corn.</li></ol></pre>
+      </div>
+    </div>
+  </li>
+</ol>
+<h1 id="view-the-contract">View the contract<a aria-hidden="true" tabindex="-1" href="#view-the-contract"><span class="icon icon-link"></span></a></h1>
+<p>This section shows you how to have the buyer (before attaching) peek into the deployed contract to view the <code>sellerInfo</code> (including the array of <code>products</code>), and explains why viewing contract data before attaching is sometimes advantageous.</p>
+<p>Below is the <em>index.mjs</em> version of <code>confirmPurchase</code> from the <code>buyerInteract</code> object:</p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #953800">confirmPurchase</span><span style="color: #24292F">: </span><span style="color: #CF222E">async</span><span style="color: #24292F"> (</span><span style="color: #953800">total</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #8250DF">ask</span><span style="color: #24292F">(</span><span style="color: #0A3069">`Do you want to complete the purchase for ${</span><span style="color: #8250DF">toSU</span><span style="color: #0A3069">(</span><span style="color: #24292F">total</span><span style="color: #0A3069">)</span><span style="color: #0A3069">} ${</span><span style="color: #24292F">suStr</span><span style="color: #0A3069">}?`</span><span style="color: #24292F">, yesno)</span></li></ol></pre>
+<p>The backend calls the function (passing <code>total</code>), and the frontend displays <code>total</code> to the buyer, asks for a decision, waits for the answer, and returns <code>true</code> or <code>false</code> to the backend. Effective for a command-line app, this approach doesn't work as well for a webapp which might use a modal in place of <code>ask-yesno</code>:</p>
+<div>
+  <img src="/exp/essentials/getting-started/market-day/modal.png" class="img-fluid my-4 d-block" width="400" loading="lazy">
+</div>
+<p>Using Bootstrap as a example, here is how to display a modal:</p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">modal</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">new</span><span style="color: #24292F"> bootstrap.</span><span style="color: #8250DF">Modal</span><span style="color: #24292F">(document.</span><span style="color: #8250DF">getElementById</span><span style="color: #24292F">(</span><span style="color: #0A3069">'confirm-modal'</span><span style="color: #24292F">), {})</span></li><li value="2"><span style="color: #24292F">modal.</span><span style="color: #8250DF">show</span><span style="color: #24292F">();</span></li></ol></pre>
+<p>Note that <code>modal.show()</code> does not display the modal and wait for an answer. Rather, it returns immediately to the caller (before the modal appears), and, to get the answer, the application listens (asynchronously) for <em>Yes</em> and <em>No</em> button events. So, the application cannot call <code>modal.show()</code> from within <code>confirmPurchase</code>, wait for an answer, and return <code>true</code> or <code>false</code> to the backend.</p>
+<p>Instead, a webapp can do the following prior to attaching to the contract:</p>
+<ol>
+  <li>Get and display the product list to the buyer.</li>
+  <li>Get confirmation from the buyer.</li>
+</ol>
+<p>Once confirmed, the webapp can attach to the contract and complete the transaction (skipping the existing <code>confirmPurchase</code> by, for now, always returning <code>true</code>). The following directions show you how to obtain <code>sellerInfo</code> from the contract before attaching:</p>
+<ol>
+  <li>
+    <p>In <em>index.rsh</em>, add Lines 4 and 10:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">main</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Reach.</span><span style="color: #8250DF">App</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">S</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Seller'</span><span style="color: #24292F">, sellerInteract);</span></li><li value="3"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">B</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Buyer'</span><span style="color: #24292F">, buyerInteract);</span></li><li value="4"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">V</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">View</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Main'</span><span style="color: #24292F">, { sellerInfo: </span><span style="color: #0550AE">Object</span><span style="color: #24292F">({ announcement: announcement, products: products }) });</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></li><li value="6"></li><li value="7"><span style="color: #24292F">  </span><span style="color: #0550AE">S</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">sellerInfo</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">declassify</span><span style="color: #24292F">(interact.sellerInfo); });</span></li><li value="8"><span style="color: #24292F">  </span><span style="color: #0550AE">S</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(sellerInfo);</span></li><li value="9"><span style="color: #24292F">  </span><span style="color: #0550AE">S</span><span style="color: #24292F">.interact.</span><span style="color: #8250DF">reportReady</span><span style="color: #24292F">();</span></li><li value="10"><span style="color: #24292F">  </span><span style="color: #0550AE">V</span><span style="color: #24292F">.sellerInfo.</span><span style="color: #8250DF">set</span><span style="color: #24292F">(sellerInfo);</span></li><li value="11"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li></ol></pre>
+  </li>
+  <li>
+    <p>In <em>index.mjs</em>, add Lines 4-9 (in the Buyer section):</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">acc</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> stdlib.</span><span style="color: #8250DF">newTestAccount</span><span style="color: #24292F">(iBalance);</span></li><li value="2"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">info</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #8250DF">ask</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Paste contract info:'</span><span style="color: #24292F">, (</span><span style="color: #953800">s</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">JSON</span><span style="color: #24292F">.</span><span style="color: #0550AE">parse</span><span style="color: #24292F">(s));</span></li><li value="3"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">ctc</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> acc.</span><span style="color: #8250DF">contract</span><span style="color: #24292F">(backend, info);</span></li><li value="4"><span style="color: #24292F">console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">'BEGIN VIEW SECTION'</span><span style="color: #24292F">);</span></li><li value="5"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">sellerInfo</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> ctc.views.Main.</span><span style="color: #8250DF">sellerInfo</span><span style="color: #24292F">();</span></li><li value="6"><span style="color: #24292F">sellerInfo[</span><span style="color: #0550AE">1</span><span style="color: #24292F">].products.</span><span style="color: #8250DF">forEach</span><span style="color: #24292F">((</span><span style="color: #953800">p</span><span style="color: #24292F">, </span><span style="color: #953800">i</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="7"><span style="color: #24292F">  console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`${</span><span style="color: #24292F">i</span><span style="color: #0A3069"> </span><span style="color: #CF222E">+</span><span style="color: #0A3069"> </span><span style="color: #0550AE">1</span><span style="color: #0A3069">}. ${</span><span style="color: #24292F">p</span><span style="color: #0A3069">.</span><span style="color: #24292F">name</span><span style="color: #0A3069">} at ${</span><span style="color: #8250DF">toSU</span><span style="color: #0A3069">(</span><span style="color: #24292F">p</span><span style="color: #0A3069">.</span><span style="color: #24292F">price</span><span style="color: #0A3069">)</span><span style="color: #0A3069">} ${</span><span style="color: #24292F">suStr</span><span style="color: #0A3069">} per unit (${</span><span style="color: #24292F">p</span><span style="color: #0A3069">.</span><span style="color: #24292F">unit</span><span style="color: #0A3069">}).`</span><span style="color: #24292F">);</span></li><li value="8"><span style="color: #24292F">});</span></li><li value="9"><span style="color: #24292F">console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">'END VIEW SECTION'</span><span style="color: #24292F">);</span></li><li value="10"><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #8250DF">showBalance</span><span style="color: #24292F">(acc);</span></li><li value="11"><span style="color: #CF222E">await</span><span style="color: #24292F"> ctc.p.</span><span style="color: #8250DF">Buyer</span><span style="color: #24292F">(buyerInteract);</span></li><li value="12"><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #8250DF">showBalance</span><span style="color: #24292F">(acc);</span></li></ol></pre>
+  </li>
+  <li>
+    <p>Run your DApp as the seller and the buyer. Buyer output should resemble the following:</p>
+    <pre class="snippet numbered"><ol class="snippet"><li value="1">Your role is buyer.</li><li value="2">The consensus network is ALGO.</li><li value="3">Paste contract info:</li><li value="4">15</li><li value="5">BEGIN VIEW SECTION</li><li value="6">1. Potatoes at 200 ALGO per unit (bag).</li><li value="7">2. Carrots at 100 ALGO per unit (bunch).</li><li value="8">3. Corn at 50 ALGO per unit (ear).</li><li value="9">END VIEW SECTION</li><li value="10">Your balance is 1000 ALGO.</li><li value="11">List of products for sale:</li><li value="12">1. Potatoes at 200 ALGO per unit (bag).</li><li value="13">2. Carrots at 100 ALGO per unit (bunch).</li><li value="14">3. Corn at 50 ALGO per unit (ear).</li><li value="15">Enter 1-3, or 0 to exit:</li><li value="16">2</li><li value="17">Enter number of units, or 0 to exit:</li><li value="18">2</li><li value="19">You are ordering 2 bunches of Carrots at 100 ALGO per bunch.</li><li value="20">Do you want to complete the purchase for 200 ALGO?</li><li value="21">y</li><li value="22">You paid 200 ALGO to the contract.</li><li value="23">The contract paid 200 ALGO to the seller.</li><li value="24">The seller owes you 2 bunches of Carrots.</li><li value="25">Exiting contract.</li><li value="26">Your balance is 799.994 ALGO.</li></ol></pre>
+    <p>Lines 5-9 in the output demonstrate that the buyer can view <code>sellerInfo</code> before attaching to the contract.</p>
+  </li>
+  <li>
+    <p>In <em>index.mjs</em>, comment out the <em>VIEW SECTION</em> code that you added above. You don't need this code in the command-line implementation of your DApp, but you will see the equivalent of this code when you examine the webapp implementation below. Specifically, in <a href="https://github.com/hagenhaus/market-day/blob/master/solution/webapp.mjs">webapp.mjs</a>, see the <code>view-btn</code> event listener.</p>
+  </li>
+</ol>
+<h1 id="examine-the-webapp">Examine the webapp<a aria-hidden="true" tabindex="-1" href="#examine-the-webapp"><span class="icon icon-link"></span></a></h1>
+<p>The <a href="https://github.com/hagenhaus/market-day">market-day</a> repository includes a <a href="https://getbootstrap.com/docs/5.1/getting-started/introduction/">Bootstrap</a>-based webapp implementation that you can inspect and modify:</p>
+<p class="ratio ratio-16x9 my-4" style="max-width:500px;">
+  <iframe src="https://www.youtube.com/embed/lZnzqOiYarY" frameborder="0" allowfullscreen=""></iframe>
+</p>
+<p>You need node.js and npm installed on your computer because you will need the <a href="https://www.npmjs.com/package/http-server">http-server</a> package (or similar) to run the webapp. Below are directions for running and inspecting the DApp:</p>
+<ol>
+  <li>
+    <p>Copy <a href="https://github.com/hagenhaus/market-day/blob/master/solution/index.html">index.html</a> and <a href="https://github.com/hagenhaus/market-day/blob/master/solution/webapp.mjs">webapp.mjs</a> from the solution directory to your current directory.</p>
+  </li>
+  <li>
+    <p>Stop and remove all your Reach containers:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ reach down</li></ol></pre>
+  </li>
+  <li>
+    <p>Open four terminals (i.e. shells):</p>
+    <p>
+      <img src="/exp/essentials/getting-started/market-day/webapp-windows.png" class="img-fluid" width="800" loading="lazy">
+    </p>
+  </li>
+  <li>
+    <p>Change directory in each terminal:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ ~/reach/market-day/current</li></ol></pre>
+  </li>
+  <li>
+    <p>In the ALGO Terminal, run the following:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ export REACH_CONNECTOR_MODE=ALGO-devnet</li><li value="2">$ reach devnet</li></ol></pre>
+  </li>
+  <li>
+    <p>In the CFX Terminal, run the following:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ export REACH_CONNECTOR_MODE=CFX-devnet</li><li value="2">$ reach devnet</li></ol></pre>
+  </li>
+  <li>
+    <p>In the ETH Terminal, run the following:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ export REACH_CONNECTOR_MODE=ETH-devnet</li><li value="2">$ reach devnet</li></ol></pre>
+  </li>
+  <li>
+    <p>In the Webapp Terminal, run the following:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1">$ npm i --global http-server # Install the package globally if you haven't already.</li><li value="2">$ http-server -c-1 -p 8080   # Run the webapp.</li></ol></pre>
+    <p>Output should look similar to the following:</p>
+    <pre class="snippet unnumbered"><ol class="snippet"><li value="1">Starting up http-server, serving ./</li><li value="2"></li><li value="3">http-server settings: </li><li value="4">CORS: disabled</li><li value="5">Cache: -1 seconds</li><li value="6">Connection Timeout: 120 seconds</li><li value="7">Directory Listings: visible</li><li value="8">AutoIndex: visible</li><li value="9">Serve GZIP Files: false</li><li value="10">Serve Brotli Files: false</li><li value="11">Default File Extension: none</li><li value="12"></li><li value="13">Available on:</li><li value="14">  http://127.0.0.1:8080</li><li value="15">  http://192.168.1.4:8080</li><li value="16">Hit CTRL-C to stop the server</li></ol></pre>
+  </li>
+  <li>
+    <p>Browse to one of the urls listed above. <code>http://localhost:8080</code> should probably work, too.</p>
+  </li>
+  <li>
+    <p>Click <em>Choose a DevNet</em>, and select <em>Algorand</em>. The Deploy button should turn green.</p>
+  </li>
+  <li>
+    <p>Click <em>Deploy</em>. The <em>View</em> button should turn green.</p>
+  </li>
+  <li>
+    <p>Click <em>View</em>. The <em>Attach</em> button should turn green. Choose a product and quantity.</p>
+  </li>
+  <li>
+    <p>Click <em>Attach</em>, and then click <em>Yes</em>. The <em>Reset</em> button should turn green.</p>
+  </li>
+  <li>
+    <p>Click <em>Reset</em>, and try it again with a different <code>Price</code> and <code>Wisdom</code> string.</p>
+  </li>
+</ol>
+<p>Note that the webapp doesn't run reliably on Conflux or Ethereum yet.</p>
+<h1 id="self-assessment">Self assessment<a aria-hidden="true" tabindex="-1" href="#self-assessment"><span class="icon icon-link"></span></a></h1>
+<p>Click on the question to view the answer.</p>
+<ol>
+  <li>
+    <p class="q-and-a" data-bs-toggle="collapse" href="#one-to-one" aria-expanded="false">Is there is a one-to-one correspondence between frontend and backend interact objects?</p>
+    <div class="collapse mb-3" id="one-to-one">
+      <div class="card card-body">Yes. Generally, participant frontend and backend interact objects mirror each other to enable communication between frontends and backends.</div>
+    </div>
+  </li>
+  <li>
+    <p class="q-and-a" data-bs-toggle="collapse" href="#async-await" aria-expanded="false">Why do Reach JS Stdlib method invocations often appear within an async scope?</p>
+    <div class="collapse mb-3" id="async-await">
+      <div class="card card-body">Many Stdlib methods are asynchronous. Examples include balanceOf and newTestAccount. An synchronous method returns a promise immediately and the promised value eventually. JavaScipt code uses the await keyword to wait for promised values, and the await keyword must appear within an async scope.</div>
+    </div>
+  </li>
+  <li>
+    <p class="q-and-a" data-bs-toggle="collapse" href="#common-interact" aria-expanded="false">What is the best practice for including the same properties and/or methods in two different interact objects?</p>
+    <div class="collapse mb-3" id="common-interact">
+      <div class="card card-body">Put the common properties and methods in their own interact object (e.g. commonInteract) and use the JavaScript spread operator (i.e. ...commonInteract) inside the interact objects where you want to include the common items.</div>
+    </div>
+  </li>
+  <li>
+    <p class="q-and-a" data-bs-toggle="collapse" href="#pay-transfer" aria-expanded="false">In Reach smart contracts, does a participant pay another participant directly?</p>
+    <div class="collapse mb-3" id="pay-transfer">
+      <div class="card card-body">No. A participant pays the contract, and the contract transfers funds to another participant.</div>
+    </div>
+  </li>
+  <li>
+    <p class="q-and-a" data-bs-toggle="collapse" href="#view" aria-expanded="false">Is it possible to peak at data inside a smart contract without attaching to the contract?</p>
+    <div class="collapse mb-3" id="view">
+      <div class="card card-body">Yes. Reach views enable participants to view declassified smart-contract data with attaching to the contract.</div>
+    </div>
+  </li>
+  <li>
+    <p class="q-and-a" data-bs-toggle="collapse" href="#modes" aria-expanded="false">Name the four Reach modes.</p>
+    <div class="collapse mb-3" id="modes">
+      <div class="card card-body">Init, Step, Local Step, and Consensus Step.</div>
+    </div>
+  </li>
+  <li>
+    <p class="q-and-a" data-bs-toggle="collapse" href="#consensus-step" aria-expanded="false">A consensus step specifies actions taken by ____.</p>
+    <div class="collapse mb-3" id="consensus-step">
+      <div class="card card-body">The contract.</div>
+    </div>
+  </li>
+  <li>
+    <p class="q-and-a" data-bs-toggle="collapse" href="#deploy" aria-expanded="false">What is the name of the Reach function that causes a transition from Init mode to Step mode?</p>
+    <div class="collapse mb-3" id="deploy">
+      <div class="card card-body">deploy.</div>
+    </div>
+  </li>
+  <li>
+    <p class="q-and-a" data-bs-toggle="collapse" href="#fun" aria-expanded="false">Explain the parts of a Reach function definition.</p>
+    <div class="collapse mb-3" id="fun">
+      <div class="card card-body">Consider Fun([UInt], Bool). Fun means function definition. [] indicates the argument array. This function has one argument. The argument is an unsigned integer. Bool indicates that this function returns a boolean.</div>
+    </div>
+  </li>
+  <li>
+    <p class="q-and-a" data-bs-toggle="collapse" href="#webapp-stdlib" aria-expanded="false">How does a webapp access the Reach JS Stdlib?</p>
+    <div class="collapse mb-3" id="webapp-stdlib">
+      <div class="card card-body">The Reach JS Stdlib is available on a CDN: (e.g. https://cdn.jsdelivr.net/npm/@reach-sh/stdlib@latest/dist/browser/reachsdk.min.js).</div>
+    </div>
+  </li>
+</ol>
