@@ -284,33 +284,27 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   await gotoTarget(shallUpdateHistory, hash ? hash.substring(1) : 'on-this-page');
 };
 
-const clickFollowLink = (evt) => {
-  evt.preventDefault();
-  followLink(evt.target.href);
-};
-const setClickFollowLink = () => {
-  document.querySelectorAll('a').forEach((el) => {
-    el.addEventListener('click', clickFollowLink);
-  });
-};
-
-const followLink = async (href) => {
+const clickFollowLink = async (evt) => {
+  if ( evt.shiftKey || evt.ctrlKey ) { return; }
+  const href = evt.target.href;
   const a = document.createElement('a');
   a.href = href;
-
-  if (a.pathname.endsWith('.pdf')) {
-    window.open(a.href, '_blank');
-  } else if (a.hostname === window.location.hostname) {
+  if (a.hostname === window.location.hostname) {
+    evt.preventDefault();
     if (currentPage.folder == a.pathname && a.hash) {
       const t = (a.hash === '#on-this-page') ? 'on-this-page' : a.hash.substring(1);
       await gotoTarget(true, t);
     } else {
       await getWebpage(a.pathname, a.hash, true);
     }
-  } else {
-    window.open(a.href, '_blank');
   }
-}
+};
+
+const setClickFollowLink = () => {
+  document.querySelectorAll('a').forEach((el) => {
+    el.addEventListener('click', clickFollowLink);
+  });
+};
 
 window.onpopstate = function (event) {
   const a = document.createElement('a');
