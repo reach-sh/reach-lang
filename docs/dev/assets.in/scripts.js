@@ -1,6 +1,6 @@
 import algoliasearch from 'https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.esm.browser.js';
-const client = algoliasearch('ACB2H3EIYF', 'a68db1cd7dba243d4295be6ed2419435');
-const index = client.initIndex('rdp_en');
+const searchClient = algoliasearch('M53HHHS0ZW', '0cfd8f1c1a0e3cb7b2abd77b831614dc');
+const searchIndex = searchClient.initIndex('rdp_en');
 
 const currentPage = {
   folder: null,
@@ -20,10 +20,6 @@ const otpPreferences = { 'none': 'none', 'show': 'show', 'hide': 'hide' };
 Object.freeze(otpPreferences);
 let otpPreference = otpPreferences.none;
 
-/************************************************************************************************
-* getWinWidth
-************************************************************************************************/
-
 const getWinWidthStr = () => {
   let s = window.innerWidth;
   if (s >= 1200) { return 'xl' }
@@ -35,10 +31,6 @@ const getWinWidthStr = () => {
 
 const maxColWidth = '280px';
 let winWidth = getWinWidthStr();
-
-/************************************************************************************************
-* establishDisplay
-************************************************************************************************/
 
 const establishDisplay = () => {
   if (currentPage.bookPath) {
@@ -84,10 +76,6 @@ const establishDisplay = () => {
   }
 }
 
-/************************************************************************************************
-* window horizontal resize
-************************************************************************************************/
-
 window.addEventListener('resize', () => {
   let newWinWidth = getWinWidthStr();
   if (winWidth != newWinWidth) {
@@ -95,10 +83,6 @@ window.addEventListener('resize', () => {
     establishDisplay();
   }
 });
-
-/************************************************************************************************
-* scrollHandler
-************************************************************************************************/
 
 const scrollHandler = (event) => {
   if (document.querySelectorAll('#otp-col li.dynamic').length == false) {
@@ -125,10 +109,6 @@ const scrollHandler = (event) => {
   }
 }
 
-/************************************************************************************************
-* scrollPage
-************************************************************************************************/
-
 const scrollPage = (id) => {
   if (id == 'on-this-page') {
     document.getElementById('page-col').scrollTo(0, 0);
@@ -138,10 +118,6 @@ const scrollPage = (id) => {
   }
 }
 
-/************************************************************************************************
-* updateHistory
-************************************************************************************************/
-
 const updateHistory = (id) => {
   if (id == 'on-this-page') {
     window.history.pushState(null, null, `${window.location.origin}${currentPage.folder}`);
@@ -150,10 +126,6 @@ const updateHistory = (id) => {
     window.history.pushState(null, null, `${window.location.origin}${currentPage.folder}#${id}`);
   }
 }
-
-/************************************************************************************************
-* setOtpItemToActive
-************************************************************************************************/
 
 const setOtpItemToActive = (id) => {
   let link = null;
@@ -173,12 +145,7 @@ const setOtpItemToActive = (id) => {
   }
 }
 
-/************************************************************************************************
-* getWebpage
-************************************************************************************************/
-
 const getWebpage = async (folder, hash, shallUpdateHistory) => {
-  // console.log('getWebpage');
   folder = folder.replace(/index\.html$/, '');
 
   const url = `${window.location.origin}${folder}`;
@@ -187,8 +154,6 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   const otpHtmlUrl = `${url}otp.html`;
   const folderId = pathnameToId(folder);
 
-  // console.log({ folder, hash, url, configJsonUrl, pageHtmlUrl, otpHtmlUrl, folderId });
-
   try {
     let [configJson, pageHtml, otpHtml] =
       (await Promise.all([
@@ -196,10 +161,6 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
         axios.get(pageHtmlUrl),
         axios.get(otpHtmlUrl),
       ])).map((x) => x.data);
-
-    //console.log(JSON.stringify(configJson, null, 2));
-    //console.log(pageHtml);
-    //console.log(otpHtml);
 
     // Set body background color.
     //document.querySelector('body').style.background = configJson.background;
@@ -293,7 +254,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
     if (searchInput) {
       searchInput.focus();
       searchInput.addEventListener('keyup', function (event) {
-        index.search(searchInput.value).then(({ hits }) => {
+        searchIndex.search(searchInput.value).then(({ hits }) => {
           if(hits.length) {
             let searchResultsList = document.getElementById('search-results-list');
             searchResultsList.innerHTML = '';
@@ -422,18 +383,9 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   }
 }
 
-/************************************************************************************************
-* followLink
-* href is a full or partial path that starts with /. It may have a hash.
-************************************************************************************************/
-
 const followLink = async (href) => {
-  // console.log('followLink');
   let a = document.createElement('a');
   a.href = href;
-
-  //console.log(a.pathname);
-  //if(a.hash) {console.log(a.hash)};
 
   if (a.pathname.endsWith('.pdf')) {
     window.open(a.href, '_blank').focus();
@@ -456,19 +408,11 @@ const followLink = async (href) => {
   }
 }
 
-/************************************************************************************************
-* window onpopstate
-************************************************************************************************/
-
 window.onpopstate = function (event) {
   let a = document.createElement('a');
   a.href = document.location.href;
   getWebpage(a.pathname, null, false);
 };
-
-/************************************************************************************************
-* book and otp listeners
-************************************************************************************************/
 
 document.querySelector('button.hide-book-icon').addEventListener('click', (event) => {
   if (winWidth == 'sm' || winWidth == 'xs') {
@@ -504,10 +448,6 @@ document.querySelector('button.show-otp-col').addEventListener('click', (event) 
   otpPreference = otpPreferences.show;
 });
 
-/************************************************************************************************
-* on click
-************************************************************************************************/
-
 document.querySelectorAll('header a.navbar-brand').forEach(el => {
   el.addEventListener('click', (event) => {
     event.preventDefault();
@@ -542,9 +482,6 @@ document.getElementById('about-this-book').addEventListener('click', (event) => 
   getWebpage(`/${currentPage.bookPath}/`, null, true);
 });
 
-/************************************************************************************************
-* onPageColScroll
-************************************************************************************************/
 /*
 document.getElementById('page-col').addEventListener('scroll', function (event) {
   scrollHandler(event);
@@ -552,17 +489,5 @@ document.getElementById('page-col').addEventListener('scroll', function (event) 
 */
 document.getElementById('page-col').addEventListener('scroll', scrollHandler);
 
-/************************************************************************************************
-* on load
-************************************************************************************************/
-
-
-//console.log(window.location.origin);
-//console.log(window.location.href);
-//console.log(window.location.pathname);
 getWebpage(window.location.pathname, window.location.hash, true);
 
-//function callGetWebpage() {
-//  getWebpage(window.location.pathname, window.location.hash, true);
-//}
-//window.setTimeout(callGetWebpage, 500);
