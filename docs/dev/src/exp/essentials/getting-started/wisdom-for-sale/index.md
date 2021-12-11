@@ -45,9 +45,7 @@ This section shows you how to clone the repository used in this module.
 
 The frontend source file is [index.mjs](https://github.com/hagenhaus/wisdom-for-sale/blob/master/starter/index.mjs):
 
-``` js
-load: https://raw.githubusercontent.com/hagenhaus/wisdom-for-sale/master/starter/index.mjs
-```
+XXX load: https://raw.githubusercontent.com/hagenhaus/wisdom-for-sale/master/starter/index.mjs
 
 Below is a line-by-line description of this JavaScript code:
 
@@ -71,9 +69,7 @@ Below is a line-by-line description of this JavaScript code:
 
 The backend source file is [index.rsh](https://github.com/hagenhaus/wisdom-for-sale/blob/master/starter/index.rsh).
 
-``` js
-load: https://raw.githubusercontent.com/hagenhaus/wisdom-for-sale/master/starter/index.rsh
-```
+XXX load: https://raw.githubusercontent.com/hagenhaus/wisdom-for-sale/master/starter/index.rsh
 
 Below is a line-by-line description of this Reach code:
 

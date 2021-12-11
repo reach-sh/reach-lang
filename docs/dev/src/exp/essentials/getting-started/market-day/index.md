@@ -136,9 +136,7 @@ This table maps the diagram to the code below:
 
 ### index.mjs
 
-``` js
-load: https://raw.githubusercontent.com/hagenhaus/market-day/master/starter/index.mjs
-```
+XXX load: https://raw.githubusercontent.com/hagenhaus/market-day/master/starter/index.mjs
 
 ## Review backend starter
 
@@ -159,9 +157,7 @@ This table maps the diagram to the code below:
 
 ### index.rsh
 
-``` js
-load: https://raw.githubusercontent.com/hagenhaus/market-day/master/starter/index.rsh
-```
+XXX load: https://raw.githubusercontent.com/hagenhaus/market-day/master/starter/index.rsh
 
 # Add products to contract (seller)
 

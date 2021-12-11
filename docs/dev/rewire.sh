@@ -1,6 +1,6 @@
 #!/bin/sh -e
 SRC=../md/
-DEST=./src/md
+DEST=./src/xxx
 
 r() {
   FROM="${SRC}/${1}.md"
@@ -31,7 +31,7 @@ r guide-timeout guide/timeout
 r guide-versions guide/versions
 r guide-windows guide/windows
 r overview tut/overview
-r reach top
+r reach .
 r ref ref
 r ref-install ref/install
 r ref-usage ref/usage

@@ -14,8 +14,7 @@ const github = 'https://github.com/reach-sh/reach-lang/tree/master/docs/dev/src'
 const pathnameToId = (pathname) => { return pathname.replace(/^\/|\/$/g, '').replace(/\//g, '_'); }
 const idToPathName = (id) => { return id.replace(/_/g, '/'); }
 
-let lang = window.navigator.language.split('-')[0];
-const homepage = `/${lang}/home/`;
+// let lang = window.navigator.language.split('-')[0];
 
 const otpPreferences = { 'none': 'none', 'show': 'show', 'hide': 'hide' };
 Object.freeze(otpPreferences);
@@ -180,10 +179,8 @@ const setOtpItemToActive = (id) => {
 
 const getWebpage = async (folder, hash, shallUpdateHistory) => {
   // console.log('getWebpage');
-
   folder = folder.replace(/index\.html$/, '');
 
-  folder = folder == '/' || folder == `/${lang}/` ? homepage : folder;
   const url = `${window.location.origin}${folder}`;
   const configJsonUrl = `${url}config.json`;
   const pageHtmlUrl = `${url}page.html`;
