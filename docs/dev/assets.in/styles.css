@@ -561,6 +561,14 @@ div.q-and-a {
   cursor: pointer;
 }
 
+a span.icon-link {
+  display: none;
+}
+
+.refHeader:hover > a span.icon-link {
+  display: inline-block;
+}
+
 a span.icon-link:after {
   content:"#";
   margin-left: 0.2em;

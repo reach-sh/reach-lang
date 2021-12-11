@@ -137,6 +137,8 @@ const copyFmToConfig = (configJson) => {
 
 const processXRefs = ({here}) => (tree) => {
   visit(tree, (node) => {
+    const d = node.data || (node.data = {});
+    const hp = d.hProperties || (d.hProperties = {});
     if ( node.type === 'heading' ) {
       const cs = node.children;
       if ( cs.length > 0 ) {
@@ -147,9 +149,9 @@ const processXRefs = ({here}) => (tree) => {
           const v = c0v.slice(cp+2);
           xrefPut('h', t, { title: v, path: `/${here}/#${t}` });
 
-          const d = node.data || (node.data = {});
-          const hp = d.hProperties || (d.hProperties = {});
           d.id = hp.id = t;
+          if ( hp.class === undefined ) { hp.class = ''; }
+          hp.class = `${hp.class} refHeader`;
 
           cs[0].value = v;
         } else {
