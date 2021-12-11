@@ -21,7 +21,7 @@ Object.freeze(otpPreferences);
 let otpPreference = otpPreferences.none;
 
 const getWinWidthStr = () => {
-  let s = window.innerWidth;
+  const s = window.innerWidth;
   if (s >= 1200) { return 'xl' }
   else if (s >= 992) { return 'lg' }
   else if (s >= 768) { return 'md' }
@@ -77,7 +77,7 @@ const establishDisplay = () => {
 }
 
 window.addEventListener('resize', () => {
-  let newWinWidth = getWinWidthStr();
+  const newWinWidth = getWinWidthStr();
   if (winWidth != newWinWidth) {
     winWidth = newWinWidth;
     establishDisplay();
@@ -88,23 +88,17 @@ const scrollHandler = (event) => {
   if (document.querySelectorAll('#otp-col li.dynamic').length == false) {
     event.target.onscroll = null;
   } else {
-    let found = false;
-
-    let arr = document.querySelectorAll('#page-col div.hh-viewer h1, #page-col div.hh-viewer h2');
+    const arr = document.querySelectorAll('#page-col div.hh-viewer h1, #page-col div.hh-viewer h2');
     if (arr.length) {
+      let t = 'on-this-page';
       for (let i = arr.length - 1; i >= 0; i--) {
-        let rect = arr[i].getBoundingClientRect();
+        const rect = arr[i].getBoundingClientRect();
         if (rect.y <= 80.0) {
-          found = true;
-          updateHistory(arr[i].id);
-          setOtpItemToActive(arr[i].id);
+          t = arr[i].id;
           break;
         }
       }
-      if (found == false) {
-        updateHistory('on-this-page');
-        setOtpItemToActive('on-this-page');
-      }
+      gotoTarget(true, t, false);
     }
   }
 }
@@ -112,38 +106,35 @@ const scrollHandler = (event) => {
 const scrollPage = (id) => {
   if (id == 'on-this-page') {
     document.getElementById('page-col').scrollTo(0, 0);
+  } else {
+    const t = document.getElementById(id);
+    if ( t ) { t.scrollIntoView(); }
   }
-  else {
-    document.getElementById(id).scrollIntoView();
-  }
-}
+};
 
 const updateHistory = (id) => {
-  if (id == 'on-this-page') {
-    window.history.pushState(null, null, `${window.location.origin}${currentPage.folder}`);
-  }
-  else {
-    window.history.pushState(null, null, `${window.location.origin}${currentPage.folder}#${id}`);
-  }
+  const base = `${window.location.origin}${currentPage.folder}`;
+  const p = (id == 'on-this-page') ? base : `${base}#${id}`;
+  window.history.pushState(null, '', p);
 }
 
+const gotoTarget = async (shallUpdateHistory, t, shouldScroll = true) => {
+  if ( shouldScroll ) { scrollPage(t); }
+  if (shallUpdateHistory) { updateHistory(t); }
+  setOtpItemToActive(t);
+};
+
 const setOtpItemToActive = (id) => {
-  let link = null;
-  if (id == 'on-this-page') {
-    link = document.querySelector('#otp-col ul li a[href="#on-this-page"]');
-    if (link.classList.contains('active') == false) {
-      document.querySelector('#otp-col a.active').classList.remove('active');
-      link.classList.add('active');
-    }
+  const link =
+    (id === 'on-this-page') ?
+      document.querySelector('#otp-col ul li a[href="#on-this-page"]') :
+      document.querySelector('#otp-col ul li a[href="' + "#" + id + '"]');
+  if ( link && link.classList && link.classList.contains('active') === false) {
+    const a = document.querySelector('#otp-col a.active');
+    if ( a ) { a.classList.remove('active'); }
+    link.classList.add('active');
   }
-  else {
-    link = document.querySelector('#otp-col ul li a[href="' + "#" + id + '"]');
-    if (link.classList.contains('active') == false) {
-      document.querySelector('#otp-col a.active').classList.remove('active');
-      link.classList.add('active');
-    }
-  }
-}
+};
 
 const getWebpage = async (folder, hash, shallUpdateHistory) => {
   folder = folder.replace(/index\.html$/, '');
@@ -154,252 +145,192 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   const otpHtmlUrl = `${url}otp.html`;
   const folderId = pathnameToId(folder);
 
-  try {
-    let [configJson, pageHtml, otpHtml] =
-      (await Promise.all([
-        axios.get(configJsonUrl),
-        axios.get(pageHtmlUrl),
-        axios.get(otpHtmlUrl),
-      ])).map((x) => x.data);
+  let [configJson, pageHtml, otpHtml] =
+    (await Promise.all([
+      axios.get(configJsonUrl),
+      axios.get(pageHtmlUrl),
+      axios.get(otpHtmlUrl),
+    ])).map((x) => x.data);
 
-    // Set body background color.
-    //document.querySelector('body').style.background = configJson.background;
+  // Book or different book?
+  if (configJson.bookPath && configJson.bookPath !== currentPage.bookPath) {
+    document.getElementById('about-this-book').innerHTML = configJson.bookTitle;
+    let bookHtml = document.createRange().createContextualFragment((await axios.get(`${window.location.origin}/${configJson.bookPath}/book.html`)).data);
+    document.querySelectorAll('#book-col div.dynamic').forEach(n => n.remove());
+    document.querySelector('#book-col').append(bookHtml);
 
-    // Book or different book?
-    if (configJson.bookPath && configJson.bookPath != currentPage.bookPath) {
-      document.getElementById('about-this-book').innerHTML = configJson.bookTitle;
-      let bookHtml = document.createRange().createContextualFragment((await axios.get(`${window.location.origin}/${configJson.bookPath}/book.html`)).data);
-      document.querySelectorAll('#book-col div.dynamic').forEach(n => n.remove());
-      document.querySelector('#book-col').append(bookHtml);
-
-      // On click chapter-icon.
-      document.querySelectorAll('#book-col i.chapter-icon').forEach(el => {
-        el.addEventListener('click', (event) => {
-          const item = event.target;
-          let pages = item.closest('div.chapter').querySelector('div.pages');
-          if (item.classList.contains('fa-angle-right')) {
-            item.classList.remove('fa-angle-right');
-            item.classList.add('fa-angle-down');
-            pages.style.display = 'block';
-          } else {
-            item.classList.remove('fa-angle-down');
-            item.classList.add('fa-angle-right');
-            pages.style.display = 'none';
-          }
-        });
-      });
-
-      // On click book-col chapter-title or page-title.
-      document.querySelectorAll('#book-col div.chapter-title, #book-col div.page-title').forEach(el => {
-        el.addEventListener('click', (evt) => {
-          const t = evt.target;
-          const l = `/${idToPathName(t.id)}/`;
-          followLink(l);
-        });
-      });
-    }
-    currentPage.bookPath = configJson.bookPath;
-
-    // Write page title.
-    document.querySelector('div.hh-viewer-wrapper span.title').textContent = configJson.title;
-
-    // Update and show/hide edit btn.
-    currentPage.src = `${github}${folder}index.md`;
-    if (configJson.hasEditBtn) {
-      document.querySelector('div.hh-page-header button.edit-btn').style.display = 'block';
-    } else {
-      document.querySelector('div.hh-page-header button.edit-btn').style.display = 'none';
-    }
-
-    // Show/hide refresh btn.
-    if (configJson.hasRefreshBtn) {
-      document.querySelector('div.hh-page-header button.refresh').style.display = 'block';
-    } else {
-      document.querySelector('div.hh-page-header button.refresh').style.display = 'none';
-    }
-
-    // Write author
-    if (configJson.author) {
-      document.querySelector('div.hh-viewer-wrapper span.author').innerHTML = `By ${configJson.author}`;
-    } else {
-      document.querySelector('div.hh-viewer-wrapper span.author').innerHTML = '';
-    }
-
-    // Write published data
-    if (configJson.publishedDate) {
-      let date = new Date(configJson.publishedDate)
-      if (document.querySelector('div.hh-viewer-wrapper span.author').innerHTML) {
-        document.querySelector('div.hh-viewer-wrapper span.published-date').innerHTML = `on ${date.toLocaleDateString()}`;
-      } else {
-        document.querySelector('div.hh-viewer-wrapper span.published-date').innerHTML = `Published on ${date.toLocaleDateString()}`;
-      }
-    } else {
-      document.querySelector('div.hh-viewer-wrapper span.published-date').innerHTML = '';
-    }
-
-    // Write page html.
-    pageHtml = document.createRange().createContextualFragment(pageHtml);
-    document.querySelector('div.hh-viewer-wrapper div.hh-viewer').textContent = '';
-    document.querySelector('div.hh-viewer-wrapper div.hh-viewer').append(pageHtml);
-
-    // Show/hide page scrollbar
-    if (configJson.hasPageScrollbar) {
-      document.getElementById('page-col').classList.remove('noscroll');
-    } else {
-      document.getElementById('page-col').classList.add('noscroll');
-    }
-
-    // If search page.
-    let searchInput = document.getElementById('search-input');
-    if (searchInput) {
-      searchInput.focus();
-      searchInput.addEventListener('keyup', function (event) {
-        searchIndex.search(searchInput.value).then(({ hits }) => {
-          if(hits.length) {
-            let searchResultsList = document.getElementById('search-results-list');
-            searchResultsList.innerHTML = '';
-            hits.forEach((el, index) => {
-              console.log(JSON.stringify(el, null, 2));
-              let a = document.createElement('a');
-              a.href = el.url;
-              let anchorTextSpan = document.createElement('span');
-              anchorTextSpan.innerHTML = el._highlightResult.title.value;
-              a.append(anchorTextSpan);
-              let summarySpan = document.createElement('span');
-              summarySpan.innerHTML = ` - ${el._highlightResult.summary.value}`;
-              let li = document.createElement('li');
-              li.append(a);
-              li.append(summarySpan);
-              searchResultsList.append(li);
-            });
-          }
-        });
-      });
-    }
-
-    // On click link on page.
-    document.querySelectorAll('div.hh-viewer-wrapper div.hh-viewer a').forEach(el => {
+    // On click chapter-icon.
+    document.querySelectorAll('#book-col i.chapter-icon').forEach(el => {
       el.addEventListener('click', (event) => {
-        event.preventDefault();
-        followLink(event.target.closest('a').href);
-      });
-    });
-
-    // Write otp html.
-    if (configJson.hasOtp) {
-      document.querySelectorAll('#otp-col ul ul.dynamic').forEach(n => { n.remove(); });
-      document.querySelectorAll('#otp-col ul li.dynamic').forEach(n => { n.remove(); });
-      const otpUl = document.querySelector('#otp-col ul');
-      const otpDoc = document.createRange().createContextualFragment(otpHtml);
-      otpDoc.querySelector('ul').querySelectorAll(':scope > li').forEach((el, index) => {
-        if (index == 0) {
-          let ul = el.querySelector('ul');
-          if (ul) {
-            otpUl.querySelector('li').append(ul);
-          }
+        const item = event.target;
+        const pages = item.closest('div.chapter').querySelector('div.pages');
+        if (item.classList.contains('fa-angle-right')) {
+          item.classList.remove('fa-angle-right');
+          item.classList.add('fa-angle-down');
+          pages.style.display = 'block';
         } else {
-          otpUl.append(el);
+          item.classList.remove('fa-angle-down');
+          item.classList.add('fa-angle-right');
+          pages.style.display = 'none';
         }
-      })
-    }
-    currentPage.hasOtp = configJson.hasOtp;
-
-    // On click link on otp.
-    document.querySelectorAll('#otp-col li.dynamic a').forEach(el => {
-      el.addEventListener('click', (event) => {
-        event.preventDefault();
-        followLink(event.target.href);
       });
     });
 
-    // Adjust navbar active indicator.
-    if (configJson.menuItem) {
-      let el = document.getElementById(configJson.menuItem);
-      if (el && !el.classList.contains('active')) {
-        document.querySelectorAll('header a').forEach(el => { el.classList.remove('active'); });
-        document.getElementById(configJson.menuItem).classList.add('active');
-      }
-    } else {
-      document.querySelectorAll('header a').forEach(el => { el.classList.remove('active'); });
-    }
-
-    // Adjust book-col active indicators.
+    // On click book-col chapter-title or page-title.
     document.querySelectorAll('#book-col div.chapter-title, #book-col div.page-title').forEach(el => {
-      el.classList.remove('active');
+      el.addEventListener('click', (evt) => {
+        const t = evt.target;
+        const l = `/${idToPathName(t.id)}/`;
+        followLink(l);
+      });
     });
-
-    let el = document.getElementById(folderId);
-    if (el) {
-      el.classList.add('active');
-      let chapter = el.closest('div.chapter');
-      let pages = chapter.querySelector('div.pages');
-      if (pages && pages.hasChildNodes()) {
-        let icon = chapter.querySelector('i.chapter-icon');
-        icon.classList.remove('fa-angle-right');
-        icon.classList.add('fa-angle-down');
-        pages.style.display = 'block';
-      }
-    }
-
-    // Establish correct display values.
-    establishDisplay();
-
-    // Display book.
-    if (configJson.bookPath) {
-      document.getElementById('book-col').classList.remove('banish');
-      document.querySelector('div.show-book-col').classList.remove('banish');
-    } else {
-      document.getElementById('book-col').classList.add('banish');
-      document.querySelector('div.show-book-col').classList.add('banish');
-    }
-
-    // Display page.
-    if (configJson.hasPageHeader) { document.querySelector('div.hh-page-header').style.display = 'block'; }
-    else { document.querySelector('div.hh-page-header').style.display = 'none'; }
-    document.getElementById('page-col').style.display = 'block';
-
-    // Display OTP.
-    if (configJson.hasOtp) {
-      document.getElementById('otp-col').classList.remove('banish');
-      document.querySelector('button.show-otp-col').classList.remove('banish');
-    } else {
-      document.getElementById('otp-col').classList.add('banish');
-      document.querySelector('button.show-otp-col').classList.add('banish');
-    }
-
-    // Scroll to proper place and update history
-    currentPage.folder = folder;
-    if (hash) {
-      scrollPage(hash.substring(1));
-      if (shallUpdateHistory) { updateHistory(hash.substring(1)); }
-      setOtpItemToActive(hash.substring(1));
-    } else {
-      scrollPage('on-this-page');
-      window.history.pushState(null, null, `${window.location.origin}${currentPage.folder}`);
-    }
-
-  } catch (error) {
-    console.log('getWebPage', error);
   }
-}
+  currentPage.bookPath = configJson.bookPath;
+
+  // Write page title.
+  document.querySelector('div.hh-viewer-wrapper span.title').textContent = configJson.title;
+
+  // Update and show/hide edit btn.
+  currentPage.src = `${github}${folder}index.md`;
+  document.querySelector('div.hh-page-header button.edit-btn').style.display = configJson.hasEditBtn ? 'block' : 'none';
+
+  // Write author
+  document.querySelector('div.hh-viewer-wrapper span.author').innerHTML = configJson.author ? `By ${configJson.author}` : '';
+
+  // Write published data
+  document.querySelector('div.hh-viewer-wrapper span.published-date').innerHTML = configJson.publishedDate ? `Published on ${(new Date(configJson.publishedDate)).toLocaleDateString()}` : '';
+
+  // Write page html.
+  pageHtml = document.createRange().createContextualFragment(pageHtml);
+  document.querySelector('div.hh-viewer-wrapper div.hh-viewer').textContent = '';
+  document.querySelector('div.hh-viewer-wrapper div.hh-viewer').append(pageHtml);
+
+  // If search page.
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) {
+    searchInput.focus();
+    searchInput.addEventListener('keyup', function (event) {
+      searchIndex.search(searchInput.value).then(({ hits }) => {
+        if(hits.length) {
+          const searchResultsList = document.getElementById('search-results-list');
+          searchResultsList.innerHTML = '';
+          hits.forEach((el, index) => {
+            const a = document.createElement('a');
+            a.href = el.url;
+            const anchorTextSpan = document.createElement('span');
+            anchorTextSpan.innerHTML = el._highlightResult.title.value;
+            a.append(anchorTextSpan);
+            const summarySpan = document.createElement('span');
+            summarySpan.innerHTML = ` - ${el._highlightResult.summary.value}`;
+            const li = document.createElement('li');
+            li.append(a);
+            li.append(summarySpan);
+            searchResultsList.append(li);
+          });
+        }
+      });
+    });
+  }
+
+  // On click link on page.
+  document.querySelectorAll('div.hh-viewer-wrapper div.hh-viewer a').forEach(el => {
+    el.addEventListener('click', (event) => {
+      event.preventDefault();
+      followLink(event.target.closest('a').href);
+    });
+  });
+
+  // Write otp html.
+  if (configJson.hasOtp) {
+    document.querySelectorAll('#otp-col ul ul.dynamic').forEach(n => { n.remove(); });
+    document.querySelectorAll('#otp-col ul li.dynamic').forEach(n => { n.remove(); });
+    const otpUl = document.querySelector('#otp-col ul');
+    const otpDoc = document.createRange().createContextualFragment(otpHtml);
+    otpDoc.querySelector('ul').querySelectorAll(':scope > li').forEach((el, index) => {
+      if (index == 0) {
+        const ul = el.querySelector('ul');
+        if (ul) {
+          otpUl.querySelector('li').append(ul);
+        }
+      } else {
+        otpUl.append(el);
+      }
+    })
+  }
+  currentPage.hasOtp = configJson.hasOtp;
+
+  // On click link on otp.
+  document.querySelectorAll('#otp-col li.dynamic a').forEach(el => {
+    el.addEventListener('click', (event) => {
+      event.preventDefault();
+      followLink(event.target.href);
+    });
+  });
+
+  // Adjust active indicators.
+  document.querySelectorAll('header a, #book-col div.chapter-title, #book-col div.page-title').forEach(el => {
+    el.classList.remove('active');
+  });
+
+  // Adjust navbar active indicator.
+  if (configJson.menuItem) {
+    document.getElementById(configJson.menuItem).classList.add('active');
+  }
+
+  const el = document.getElementById(folderId);
+  if (el) {
+    el.classList.add('active');
+    const chapter = el.closest('div.chapter');
+    const pages = chapter.querySelector('div.pages');
+    if (pages && pages.hasChildNodes()) {
+      const icon = chapter.querySelector('i.chapter-icon');
+      icon.classList.remove('fa-angle-right');
+      icon.classList.add('fa-angle-down');
+      pages.style.display = 'block';
+    }
+  }
+
+  // Establish correct display values.
+  establishDisplay();
+
+  // Display book.
+  if (configJson.bookPath) {
+    document.getElementById('book-col').classList.remove('banish');
+    document.querySelector('div.show-book-col').classList.remove('banish');
+  } else {
+    document.getElementById('book-col').classList.add('banish');
+    document.querySelector('div.show-book-col').classList.add('banish');
+  }
+
+  // Display page.
+  document.querySelector('div.hh-page-header').style.display = configJson.hasPageHeader ? 'block' : 'none';
+
+  document.getElementById('page-col').style.display = 'block';
+
+  // Display OTP.
+  if (configJson.hasOtp) {
+    document.getElementById('otp-col').classList.remove('banish');
+    document.querySelector('button.show-otp-col').classList.remove('banish');
+  } else {
+    document.getElementById('otp-col').classList.add('banish');
+    document.querySelector('button.show-otp-col').classList.add('banish');
+  }
+
+  // Scroll to proper place and update history
+  currentPage.folder = folder;
+  await gotoTarget(shallUpdateHistory, hash ? hash.substring(1) : 'on-this-page');
+};
 
 const followLink = async (href) => {
-  let a = document.createElement('a');
+  const a = document.createElement('a');
   a.href = href;
 
   if (a.pathname.endsWith('.pdf')) {
     window.open(a.href, '_blank').focus();
   } else if (a.hostname === window.location.hostname) {
     if (currentPage.folder == a.pathname && a.hash) {
-      if (a.hash === '#on-this-page') {
-        scrollPage('on-this-page');
-        updateHistory('on-this-page');
-        setOtpItemToActive('on-this-page');
-      } else {
-        scrollPage(a.hash.substring(1));
-        updateHistory(a.hash.substring(1));
-        setOtpItemToActive(a.hash.substring(1));
-      }
+      const t = (a.hash === '#on-this-page') ? 'on-this-page' : a.hash.substring(1);
+      await gotoTarget(true, t);
     } else {
       await getWebpage(a.pathname, a.hash, true);
     }
@@ -409,9 +340,9 @@ const followLink = async (href) => {
 }
 
 window.onpopstate = function (event) {
-  let a = document.createElement('a');
+  const a = document.createElement('a');
   a.href = document.location.href;
-  getWebpage(a.pathname, null, false);
+  getWebpage(a.pathname, a.hash, false);
 };
 
 document.querySelector('button.hide-book-icon').addEventListener('click', (event) => {
@@ -472,21 +403,11 @@ document.querySelector('div.hh-viewer-wrapper button.edit-btn').addEventListener
   followLink(currentPage.src);
 });
 
-document.querySelector('div.hh-page-header button.refresh').addEventListener('click', (event) => {
-  event.preventDefault();
-  getWebpage(window.location.pathname, null, false);
-});
-
 document.getElementById('about-this-book').addEventListener('click', (event) => {
   event.preventDefault();
   getWebpage(`/${currentPage.bookPath}/`, null, true);
 });
 
-/*
-document.getElementById('page-col').addEventListener('scroll', function (event) {
-  scrollHandler(event);
-});
-*/
 document.getElementById('page-col').addEventListener('scroll', scrollHandler);
 
 getWebpage(window.location.pathname, window.location.hash, true);
