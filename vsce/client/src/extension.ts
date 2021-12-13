@@ -22,6 +22,7 @@ import {
 	TransportKind,
 } from 'vscode-languageclient/node';
 import { CommandsTreeDataProvider, DocumentationTreeDataProvider, HelpTreeDataProvider } from './CommandsTreeDataProvider';
+import { terminalOptions } from "./terminalOptions";
 
 const COMMANDS = require('../../data/commands.json');
 
@@ -54,7 +55,7 @@ export function activate(context: ExtensionContext) {
 		}
 	};
 
-	terminal = window.createTerminal({ name: 'Reach IDE' });
+	terminal = window.createTerminal(terminalOptions);
 	const reachExecutablePath = workspace.getConfiguration().get('reachide.executableLocation') as string;
 	const wf = workspace.workspaceFolders[0].uri.path || '.';
 	const reachPath = (reachExecutablePath === './reach')

@@ -33,6 +33,11 @@ import {
 	Hover,
 } from 'vscode-languageserver';
 
+// edit env variable to track extension usage; see
+// https://nodejs.org/api/process.html#processenv
+import { env } from "process";
+env.REACH_IDE = "1";
+
 // Do this import from vscode-languageserver/node instead of
 // vscode-languageserver to avoid
 // "Expected 2-3 arguments, but got 1.ts(2554)
