@@ -5,6 +5,7 @@ NPM = npm
 .PHONY: build
 build:
 	$(NPM) install
+	cp ../rps-7-loops/index.rsh .
 
 .PHONY: run
 run:
