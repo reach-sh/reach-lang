@@ -5,6 +5,7 @@ NPM = npm
 .PHONY: build
 build:
 	$(NPM) install
+	cp ../rps-6-timeouts/index.rsh .
 
 .PHONY: run
 run:
