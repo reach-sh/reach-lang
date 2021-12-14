@@ -559,3 +559,7 @@ a span.icon-link:after {
   content:"#";
   margin-left: 0.2em;
 }
+
+img {
+  max-width: 100%;
+}
