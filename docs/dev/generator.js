@@ -591,9 +591,14 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     olStr += '</ol>';
     code.remove();
     const mkEl = (s) => doc.createRange().createContextualFragment(s);
+    const chEl = mkEl(`<div class="codeHeader"></div>`);
     if ( spec.url ) {
-      pre.append(mkEl(`<div class="codeHeader"><a href="${repoBaseNice}${spec.url}">${spec.url}</a></div>`));
+      chEl.append(mkEl(`<a href="${repoBaseNice}${spec.url}">${spec.url}</a>`));
     }
+    const cpyEl = mkEl(`<button class="btn"><img class="clippy" width="13" src="/assets/clippy.svg" alt="Copy to clipboard"> </img></button>`);
+    cpyEl.dataset["clipboard-text"] = "XXX text";
+    chEl.append(cpyEl);
+    pre.append(chEl);
     pre.append(mkEl(olStr));
     pre.classList.add('snippet');
     const shouldNumber = spec.numbered && (arr.length != 1);
