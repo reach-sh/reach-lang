@@ -316,7 +316,7 @@ The Reach RPC Protocol is designed to be simple to implement in languages that s
 The library uses a few standard Python libraries for interacting with JSON, HTTP servers, and networking:
 
 ```python
-load: https://raw.githubusercontent.com/reach-sh/reach-lang/master/rpc-client/py/src/reach_rpc/__init__.py
+load: /rpc-client/py/src/reach_rpc/__init__.py
 range: 1-8
 ```
 
@@ -325,7 +325,7 @@ range: 1-8
 The library provides a single function, `mk_rpc`, that accepts the Reach RPC Client Standard Options:
 
 ```python
-load: https://raw.githubusercontent.com/reach-sh/reach-lang/master/rpc-client/py/src/reach_rpc/__init__.py
+load: /rpc-client/py/src/reach_rpc/__init__.py
 range: 11-26
 ```
 
@@ -334,7 +334,7 @@ range: 11-26
 It starts by observing the verify option and informing the Python library it uses for HTTPS interaction to turn off warnings. It displays a warning to users that they should be nervous about using this setting:
 
 ```python
-load: https://raw.githubusercontent.com/reach-sh/reach-lang/master/rpc-client/py/src/reach_rpc/__init__.py
+load: /rpc-client/py/src/reach_rpc/__init__.py
 range: 28-33
 ```
 
@@ -343,7 +343,7 @@ range: 28-33
 Next, it attempts to connect to the Reach RPC Server and throws an error if it does not respond quickly enough:
 
 ```python
-load: https://raw.githubusercontent.com/reach-sh/reach-lang/master/rpc-client/py/src/reach_rpc/__init__.py
+load: /rpc-client/py/src/reach_rpc/__init__.py
 range: 35-46
 ```
 
@@ -352,7 +352,7 @@ range: 35-46
 It defines a function, `rpc`, which will be returned later on, that implements the protocol for synchronous value RPC methods. It formats a given request, posts it, and then returns the deserialized result. It prints debugging information for convenience.
 
 ```python
-load: https://raw.githubusercontent.com/reach-sh/reach-lang/master/rpc-client/py/src/reach_rpc/__init__.py
+load: /rpc-client/py/src/reach_rpc/__init__.py
 range: 52-61
 ```
 
@@ -361,7 +361,7 @@ range: 52-61
 It defines a function, rpc_callbacks, which will be returned later on, that implements the protocol for interactive RPC methods. On lines 64 and 65, this function inspects its third argument, cbacks, and separates the callable arguments from the values and creates the intermediate objects, vals and meths, to provide the RPC invocation. After it makes the call, in the while loop starting on line 68, it inspects the result to determine if it is a final answer or an interactive RPC callback. If it is a callback, as indicated by the test on line 72, then it extracts the name of the method, p['m'], and invokes it in the original third argument, cbacks, with the provided arguments. It replaces the p value with the result of that continuation invocation and continues:
 
 ```python
-load: https://raw.githubusercontent.com/reach-sh/reach-lang/master/rpc-client/py/src/reach_rpc/__init__.py
+load: /rpc-client/py/src/reach_rpc/__init__.py
 range: 63-78
 ```
 
@@ -370,6 +370,6 @@ range: 63-78
 Finally, it returns rpc and rpc_callbacks to the user:
 
 ```python
-load: https://raw.githubusercontent.com/reach-sh/reach-lang/master/rpc-client/py/src/reach_rpc/__init__.py
+load: /rpc-client/py/src/reach_rpc/__init__.py
 range: 80
 ```

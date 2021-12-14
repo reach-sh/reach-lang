@@ -49,7 +49,7 @@ r ref-frontends-rpc-js rpc/js
 r ref-frontends-rpc-py rpc/py
 r ref-model model
 r ref-networks networks
-r ref-programs reach/programs
+r ref-programs reach
 r ref-programs-appinit reach/appinit
 r ref-programs-compute reach/compute
 r ref-programs-consensus reach/consensus

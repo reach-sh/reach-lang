@@ -337,6 +337,11 @@ iframe.gray-scale {
  Snippet
 ************************************************/
 
+#page-col pre.snippet div.codeHeader {
+  background-color: var(--snippet);
+  border-bottom: 1px solid var(--snippet-border);
+}
+
 #page-col div.hh-viewer ol.snippet{
   background-color: var(--snippet); /* github-light modified*/
   overflow-y: scroll;

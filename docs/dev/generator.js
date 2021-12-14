@@ -508,9 +508,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   });
 
   // Process code snippets.
-  const preArray = doc.querySelectorAll('pre');
-  for (let i = 0; i < preArray.length; i++) {
-    const pre = preArray[i];
+  for (const pre of doc.querySelectorAll('pre') ) {
     const code = pre.querySelector('code');
     if (!code) { continue; }
 
@@ -536,9 +534,10 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     if (arr.length > 0) {
       const line1 = arr[0].replace(/\s+/g, '');
       if (line1.slice(0, 5) == 'load:') {
-        const url = line1.slice(5);
-        if (url.slice(0, 4) == 'http') { spec.url = url; }
-        else { spec.url = `${repoBase}${url}`; }
+        spec.url = line1.slice(5);
+        if (spec.url.slice(0, 4) == 'http') {
+          throw Error(`code: Cannot load any HTTP resource ${spec.url}`);
+        }
         if (arr.length > 1) {
           const line2 = arr[1].replace(/\s+/g, '');
           if (line2.slice(0, 6) == 'range:') {
@@ -550,7 +549,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
 
     // Get remote content if specified.
     if (spec.url) {
-      code.textContent = await remoteGet(spec.url);
+      code.textContent = await remoteGet(`${repoBase}${spec.url}`);
       spec.language = urlExtension(spec.url);
     }
 
@@ -591,8 +590,11 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     }
     olStr += '</ol>';
     code.remove();
-    const olEl = doc.createRange().createContextualFragment(olStr);
-    pre.append(olEl);
+    const mkEl = (s) => doc.createRange().createContextualFragment(s);
+    if ( spec.url ) {
+      pre.append(mkEl(`<div class="codeHeader"><a href="${repoBaseNice}${spec.url}">${spec.url}</a></div>`));
+    }
+    pre.append(mkEl(olStr));
     pre.classList.add('snippet');
     const shouldNumber = spec.numbered && (arr.length != 1);
     pre.classList.add(shouldNumber ? 'numbered' : 'unnumbered');
