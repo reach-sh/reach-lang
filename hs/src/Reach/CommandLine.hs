@@ -5,10 +5,12 @@ module Reach.CommandLine
   , compiler
   , getCompilerArgs
   , getCompilerEnv
+  , truthyEnv
   ) where
 
 import Options.Applicative
 import System.Environment
+import Data.Char
 import Data.Maybe (isJust)
 
 data CompilerToolArgs = CompilerToolArgs
@@ -97,3 +99,8 @@ getCompilerEnv = do
   cte_TF_BUILD <- lookupEnv "TF_BUILD"
   cte_REACH_DEBUG <- fmap isJust $ lookupEnv "REACH_DEBUG"
   return CompilerToolEnv {..}
+
+truthyEnv :: Maybe String -> Bool
+truthyEnv = \case
+  Nothing -> False
+  Just s -> not $ elem (map toLower s) [ "", "0", "false", "f", "#f", "no", "off", "n" ]

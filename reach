@@ -29,6 +29,7 @@ run_d () {
       -e "REACH_EX=$0" \
       -e "REACH_CONNECTOR_MODE" \
       -e "REACH_DEBUG" \
+      -e "REACH_IDE" \
       -e "REACH_RPC_KEY" \
       -e "REACH_RPC_PORT"  \
       -e "REACH_RPC_SERVER" \
