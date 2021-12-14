@@ -5,7 +5,7 @@ const axiosGetData = async (u) => {
 
 import algoliasearch from 'https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.esm.browser.js';
 const searchClient = algoliasearch('M53HHHS0ZW', '0cfd8f1c1a0e3cb7b2abd77b831614dc');
-const searchIndex = searchClient.initIndex('rdp_en');
+const searchIndex = searchClient.initIndex('docs');
 
 const currentPage = {
   folder: null,
