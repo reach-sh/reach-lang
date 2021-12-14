@@ -1,7 +1,7 @@
 import { setTimeout } from 'timers/promises';
 import CleanCss from 'clean-css';
 import fs from 'fs-extra';
-import minify from 'minify';
+import * as htmlMinify from 'html-minifier';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import UglifyJS from 'uglify-js';
@@ -224,7 +224,6 @@ const cleanCss = new CleanCss({level: 2});
 const processCss = async () => {
   const iPath = `${rootDir}/assets.in/styles.css`;
   const oPath = `${outDir}/assets/styles.min.css`;
-  //console.log(`Minifying ${iPath}`);
   const input = await fs.readFile(iPath, 'utf8');
   const output = cleanCss.minify(input);
   await writeFileMkdir(oPath, output.styles);
@@ -233,15 +232,31 @@ const processCss = async () => {
 const processBaseHtml = async () => {
   const iPath = `${srcDir}/base.html`;
   const oPath = `${outDir}/base.html`;
-  //console.log(`Minifying ${iPath}`);
-  const output = await minify(iPath, { html: {} });
+  const defaultOptions = {
+    removeComments: true,
+    removeCommentsFromCDATA: true,
+    removeCDATASectionsFromCDATA: true,
+    collapseWhitespace: true,
+    collapseBooleanAttributes: true,
+    removeAttributeQuotes: true,
+    removeRedundantAttributes: true,
+    useShortDoctype: true,
+    removeEmptyAttributes: true,
+    removeEmptyElements: false,
+    removeOptionalTags: true,
+    removeScriptTypeAttributes: true,
+    removeStyleLinkTypeAttributes: true,
+    minifyJS: true,
+    minifyCSS: true,
+  };
+  const cnt = await fs.readFile(iPath, 'utf8');
+  const output = await htmlMinify.minify(cnt, defaultOptions);
   await writeFileMkdir(oPath, output);
 };
 
 const processJs = async () => {
   const iPath = `${rootDir}/assets.in/scripts.js`;
   const oPath = `${outDir}/assets/scripts.min.js`;
-  //console.log(`Minifying ${iPath}`);
   const input = await fs.readFile(iPath, 'utf8');
   const output = new UglifyJS.minify(input, {});
   if (output.error) throw output.error;
