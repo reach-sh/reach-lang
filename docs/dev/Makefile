@@ -13,6 +13,7 @@ profile: installed
 
 installed:
 	npm install
+	patch -u -p0 < mdast-util-toc.patch
 	touch $@
 
 NAME=reach-rdp

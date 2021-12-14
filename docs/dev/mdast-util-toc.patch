@@ -1,0 +1,11 @@
+--- node_modules/mdast-util-toc/lib/search.js.bak	2021-12-14 09:52:15.816192205 -0500
++++ node_modules/mdast-util-toc/lib/search.js	2021-12-14 09:52:45.632652555 -0500
+@@ -71,7 +71,7 @@
+     /** @type {string} */
+     // @ts-expect-error `hProperties` from <https://github.com/syntax-tree/mdast-util-to-hast>
+     const id = node.data && node.data.hProperties && node.data.hProperties.id
+-    const slug = slugs.slug(id || value)
++    const slug = id || slugs.slug(value)
+ 
+     if (!parents(parent)) {
+       return

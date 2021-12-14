@@ -133,6 +133,13 @@ const copyFmToConfig = (configJson) => {
   }
 };
 
+// .use(inspect("beforeToc"), { here, what: "xxx/tut/rps" })
+const inspect = (when) => ({here, what}) => (tree) => {
+  if ( here.includes(what) ) {
+    console.log(`inspect`, when, JSON.stringify(tree));
+  }
+};
+
 const processXRefs = ({here}) => (tree) => {
   visit(tree, (node) => {
     const d = node.data || (node.data = {});
@@ -458,11 +465,11 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   const doc = new JSDOM(output).window.document;
 
   // Process OTP.
-  if (doc.getElementById('toc')) {
-    doc.getElementById('toc').remove();
+  const tocEl = doc.getElementById('toc');
+  if (tocEl) {
+    tocEl.remove();
     const otpEl = doc.querySelector('ul');
-    otpEl.querySelectorAll('li').forEach(el => el.classList.add('dynamic'));
-    otpEl.querySelectorAll('ul').forEach(el => el.classList.add('dynamic'));
+    otpEl.querySelectorAll('li, ul').forEach(el => el.classList.add('dynamic'));
     otpEl.querySelectorAll('p').forEach(el => {
       const p = el.parentNode;
       while (el.firstChild) { p.insertBefore(el.firstChild, el); }

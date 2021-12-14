@@ -43,8 +43,8 @@ RUN (cd docs/convert && make)
 FROM node:17-alpine3.13 as dev
 WORKDIR /proj
 
-RUN apk add make bash
-COPY docs/dev/Makefile docs/dev/package.json ./docs/dev/
+RUN apk add make bash patch
+COPY docs/dev/Makefile docs/dev/package.json docs/dev/mdast-util-toc.patch ./docs/dev/
 RUN (cd docs/dev && make installed)
 
 COPY VERSION .
@@ -63,3 +63,4 @@ FROM scratch
 COPY --from=render /proj/docs/scrbl/build/ ./build/
 COPY --from=render /proj/docs/scrbl/scribble.log ./
 COPY --from=dev /proj/docs/dev/build ./build/
+COPY --from=dev /proj/docs/dev/log ./dev.log
