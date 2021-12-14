@@ -346,7 +346,7 @@ In order to interact with a deployed contract, you must construct a @tech{contra
 This @jsin{bin} argument is the @filepath{index.main.mjs} module produced by the JavaScript @tech{backend}.
 
 If @jsin{info} is provided, it must be a @reachin{Contract} value, or a @jsin{Promise} that eventually yields a @reachin{Contract} value.
-Typically, the deployer of a contract with not provide @jsin{info}, while users of a contract will.
+Typically, the deployer of a contract will not provide @jsin{info}, while users of a contract will.
 In an automated, single instance program, @reachin{ctc.getInfo()} is typically used to acquire @jsin{info};
 while in non-automated programs, an application uses out-of-band communication, such as an external database or user input, to acquire the @jsin{info} argument.
 
