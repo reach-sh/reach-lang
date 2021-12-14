@@ -312,37 +312,25 @@ window.onpopstate = function (event) {
   getWebpage(a.pathname, a.hash, false);
 };
 
-document.querySelector('button.hide-book-icon').addEventListener('click', (event) => {
-  if (winWidth == 'sm' || winWidth == 'xs') {
-    document.getElementById('page-col').style.display = 'block';
-  }
-  document.getElementById('book-col').style.display = 'none';
-  document.querySelector('div.show-book-col').style.display = 'block';
-});
+const makeShowHide = (hideQ, showQ, showId) => {
+  const f = (isHide) => {
+    const g = (b) => b ? 'block' : 'none';
+    const x = g(isHide); const y = g(! isHide);
+    const q = isHide ? hideQ : showQ;
+    document.querySelector(q).addEventListener('click', (event) => {
+      if (winWidth == 'sm' || winWidth == 'xs') {
+        document.getElementById('page-col').style.display = x;
+      }
+      document.getElementById(showId).style.display = y;
+      document.querySelector(showQ).style.display = x;
+    });
+  };
+  f(true);
+  f(false);
+};
 
-document.querySelector('button.show-book-col').addEventListener('click', (event) => {
-  if (winWidth == 'sm' || winWidth == 'xs') {
-    document.getElementById('page-col').style.display = 'none';
-  }
-  document.getElementById('book-col').style.display = 'block';
-  document.querySelector('div.show-book-col').style.display = 'none';
-});
-
-document.querySelector('button.hide-otp-icon').addEventListener('click', (event) => {
-  if (winWidth == 'sm' || winWidth == 'xs') {
-    document.getElementById('page-col').style.display = 'block';
-  }
-  document.getElementById('otp-col').style.display = 'none';
-  document.querySelector('button.show-otp-col').style.display = 'block';
-});
-
-document.querySelector('button.show-otp-col').addEventListener('click', (event) => {
-  if (winWidth == 'sm' || winWidth == 'xs') {
-    document.getElementById('page-col').style.display = 'none';
-  }
-  document.getElementById('otp-col').style.display = 'block';
-  document.querySelector('button.show-otp-col').style.display = 'none';
-});
+makeShowHide('button.hide-book-icon', 'div.show-book-col', 'book-col');
+makeShowHide('button.hide-otp-icon', 'button.show-otp-col', 'otp-col');
 
 document.getElementById('page-col').addEventListener('scroll', scrollHandler);
 
