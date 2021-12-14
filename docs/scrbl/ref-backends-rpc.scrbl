@@ -51,6 +51,8 @@ All @tt{/ctc} methods are @tech{synchronous value RPC methods} that accept and p
 
 }
 
+@item{@tt{/forget/token} accepts a token @tech{RPC handle} and deletes it from the Reach RPC Server's memory.}
+
 @item{@tt{/backend/$PARTICIPANT} where @tt{$PARTICIPANT} is a @tech{participant} of the @tech{backend} compiled by the @seclink["ref-backends-js"]{JavaScript backend}.
 
 All @tt{/backend/$PARTICIPANT} methods are @tech{interactive RPC methods} that accept three arguments:
