@@ -288,7 +288,13 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
 
 const clickFollowLink = async (evt) => {
   if ( evt.shiftKey || evt.ctrlKey ) { return; }
-  const href = evt.target.href;
+  const t = evt.target;
+  if ( t.classList && t.classList.contains("copyBtn") ) {
+    evt.preventDefault();
+    await navigator.clipboard.writeText(t.getAttribute('data-clipboard-text'));
+    return;
+  }
+  const href = t.href;
   const a = document.createElement('a');
   a.href = href;
   if (a.hostname === window.location.hostname) {

@@ -20,7 +20,7 @@ import remarkRehype from 'remark-rehype';
 import remarkSlug from 'remark-slug';
 import remarkToc from 'remark-toc';
 import remarkDirective from 'remark-directive';
-import {h} from 'hastscript';
+import { h } from 'hastscript';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { JSDOM } from 'jsdom';
@@ -554,12 +554,13 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     }
 
     code.textContent = code.textContent.trimEnd();
+    const rawCode = code.textContent;
 
     // Highlight the content if specified.
     // https://github.com/shikijs/shiki/blob/main/docs/themes.md
     // https://github.com/shikijs/shiki/blob/main/docs/languages.md
     if (spec.language) {
-      const hicode = await shikiHighlight(code.textContent, spec.language);
+      const hicode = await shikiHighlight(rawCode, spec.language);
       code.textContent = hicode
         //.replace('<pre class="shiki" style="background-color: #282A36"><code>', '') // dracula
         .replace('<pre class="shiki" style="background-color: #ffffff"><code>', '') // github-light
@@ -591,13 +592,16 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     olStr += '</ol>';
     code.remove();
     const mkEl = (s) => doc.createRange().createContextualFragment(s);
-    const chEl = mkEl(`<div class="codeHeader"></div>`);
+    const chEl = doc.createElement('div');
+    chEl.classList.add("codeHeader");
     if ( spec.url ) {
-      chEl.append(mkEl(`<a href="${repoBaseNice}${spec.url}">${spec.url}</a>`));
+      chEl.appendChild(mkEl(`<a href="${repoBaseNice}${spec.url}">${spec.url}</a>`));
     }
-    const cpyEl = mkEl(`<button class="btn"><img class="clippy" width="13" src="/assets/clippy.svg" alt="Copy to clipboard"> </img></button>`);
-    cpyEl.dataset["clipboard-text"] = "XXX text";
-    chEl.append(cpyEl);
+    const cpEl = doc.createElement('a');
+    cpEl.classList.add("far", "fa-copy", "copyBtn");
+    cpEl.setAttribute("data-clipboard-text", rawCode);
+    cpEl.href = "#";
+    chEl.appendChild(cpEl);
     pre.append(chEl);
     pre.append(mkEl(olStr));
     pre.classList.add('snippet');

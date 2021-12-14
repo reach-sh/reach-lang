@@ -342,6 +342,12 @@ iframe.gray-scale {
   border-bottom: 1px solid var(--snippet-border);
 }
 
+#page-col pre.snippet div.codeHeader a.copyBtn {
+  float: right;
+  margin-right: 0.2em;
+  margin-top: 0.2em;
+}
+
 #page-col div.hh-viewer ol.snippet{
   background-color: var(--snippet); /* github-light modified*/
   overflow-y: scroll;
