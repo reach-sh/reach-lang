@@ -73,18 +73,21 @@ const scrollHandler = (event) => {
   if (document.querySelectorAll('#otp-col li.dynamic').length == false) {
     event.target.onscroll = null;
   } else {
-    const arr = document.querySelectorAll('#page-col div.hh-viewer h1, #page-col div.hh-viewer h2');
-    if (arr.length) {
-      let t = 'on-this-page';
-      for (let i = arr.length - 1; i >= 0; i--) {
-        const rect = arr[i].getBoundingClientRect();
-        if (rect.y <= 80.0) {
-          t = arr[i].id;
-          break;
-        }
+    const a = document.createElement('a');
+    const arr = document.querySelectorAll('#otp-col a');
+    let t = 'on-this-page';
+    for (let i = arr.length - 1; i >= 0; i--) {
+      a.href = arr[i].href;
+      const h = a.hash;
+      const hid = h && h.substring(1);
+      const el = hid && document.getElementById(hid);
+      const rect = el && el.getBoundingClientRect();
+      if (rect && rect.y <= 80.0) {
+        t = el.id;
+        break;
       }
-      gotoTarget(true, t, false);
     }
+    gotoTarget(false, t, false);
   }
 }
 
@@ -105,18 +108,18 @@ const updateHistory = (id) => {
 
 const gotoTarget = async (shallUpdateHistory, t, shouldScroll = true) => {
   if ( shouldScroll ) { scrollPage(t); }
-  if (shallUpdateHistory) { updateHistory(t); }
+  if ( shallUpdateHistory ) { updateHistory(t); }
   setOtpItemToActive(t);
 };
 
 const setOtpItemToActive = (id) => {
+  const a = document.querySelector('#otp-col a.active');
+  if ( a ) { a.classList.remove('active'); }
   const link =
     (id === 'on-this-page') ?
-      document.querySelector('#otp-col ul li a[href="#on-this-page"]') :
-      document.querySelector('#otp-col ul li a[href="' + "#" + id + '"]');
+      document.querySelector('#otp-col a[href="#on-this-page"]') :
+      document.querySelector('#otp-col a[href="' + "#" + id + '"]');
   if ( link && link.classList && link.classList.contains('active') === false) {
-    const a = document.querySelector('#otp-col a.active');
-    if ( a ) { a.classList.remove('active'); }
     link.classList.add('active');
   }
 };
