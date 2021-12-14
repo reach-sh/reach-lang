@@ -24,6 +24,8 @@ import { h } from 'hastscript';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { JSDOM } from 'jsdom';
+import githubSlugger from 'github-slugger';
+const slugify = githubSlugger.slug;
 
 const INTERNAL = [ 'base.html', 'config.json', 'index.md' ];
 
@@ -133,7 +135,7 @@ const copyFmToConfig = (configJson) => {
   }
 };
 
-// .use(inspect("beforeToc"), { here, what: "xxx/tut/rps" })
+// .use(inspect("beforeToc"), { here, what: "tut/rps" })
 const inspect = (when) => ({here, what}) => (tree) => {
   if ( here.includes(what) ) {
     console.log(`inspect`, when, JSON.stringify(tree));
@@ -146,24 +148,22 @@ const processXRefs = ({here}) => (tree) => {
     const hp = d.hProperties || (d.hProperties = {});
     if ( node.type === 'heading' ) {
       const cs = node.children;
-      if ( cs.length > 0 ) {
-        const c0v = cs[0].value;
-        if ( c0v && c0v.startsWith("{#") ) {
-          const cp = c0v.indexOf("} ", 2);
-          const t = c0v.slice(2, cp);
-          const v = c0v.slice(cp+2);
-          xrefPut('h', t, { title: v, path: `/${here}/#${t}` });
+      if ( cs.length === 0 ) { return; }
+      const c0v = cs[0].value;
 
-          d.id = hp.id = t;
-          if ( hp.class === undefined ) { hp.class = ''; }
-          hp.class = `${hp.class} refHeader`;
-
-          cs[0].value = v;
-        } else {
-          // XXX change to fail
-          warn(here, `missing xref on header`, c0v);
-        }
+      let v = c0v;
+      let t = slugify(v);
+      if ( c0v && c0v.startsWith("{#") ) {
+        const cp = c0v.indexOf("} ", 2);
+        t = c0v.slice(2, cp);
+        v = c0v.slice(cp+2);
+        xrefPut('h', t, { title: v, path: `/${here}/#${t}` });
       }
+
+      d.id = hp.id = t;
+      cs[0].value = v;
+      if ( hp.class === undefined ) { hp.class = ''; }
+      hp.class = `${hp.class} refHeader`;
     } else if ( node.type === 'link' ) {
       const u = node.url;
       if ( u && u.startsWith("##") ) {
@@ -659,9 +659,7 @@ const generateBook = async (destp, bookp) => {
       ));
     }
     if ( ctc.title === undefined ) {
-      // XXX fail
-      warn(`Missing chapter title`, ctc.path);
-      ctc.title = `XXX ${ctc.path}`;
+      fail(`Missing chapter title`, ctc.path);
     }
     d.children.push(h('div', {class: "col"}, [
       h('a', {class: "chapter-title", href: `/${ctc.here}/`}, ctc.title),
