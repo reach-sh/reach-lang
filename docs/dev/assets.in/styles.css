@@ -563,3 +563,7 @@ a span.icon-link:after {
 img {
   max-width: 100%;
 }
+
+#otp-col a.otp-link {
+  font-weight: bold;
+}

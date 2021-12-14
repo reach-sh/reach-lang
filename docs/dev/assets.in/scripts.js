@@ -11,7 +11,6 @@ const currentPage = {
   folder: null,
   bookPath: null,
   hasOtp: false,
-  src: null
 };
 
 // XXX move into generator
