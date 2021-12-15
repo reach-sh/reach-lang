@@ -449,12 +449,15 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   let paraN = 0;
   const addParalinks = () => (tree) => {
     visit(tree, (node) => {
+      const d = node.data || (node.data = {});
+      const hp = d.hProperties || (d.hProperties = {});
       if ( node.type === 'paragraph' ) {
         const tcs = node.children.filter((x) => x.type === 'text');
         if ( tcs.length > 0 ) {
           const i = paraN++;
-          node.children.unshift({type: 'html', value: `<a id="_p${i}"> </a>`});
-          node.children.push({type: 'html', value: `<a href="#_p${i}" class="pid">${i}</a>`});
+          const id = (d.id || hp.id) || `p_${i}`;
+          d.id = hp.id = id;
+          node.children.push({type: 'html', value: `<a href="#${id}" class="pid">${i}</a>`});
         }
       }
     })
@@ -465,9 +468,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   const raw = await fs.readFile(mdPath, 'utf8');
   let md = await expand(raw);
 
-  // markdown-to-html pipeline.
   const output = await unified()
-    // Parse markdown to Markdown Abstract Syntax Tree (MDAST).
     .use(remarkParse)
     // Prepend YAML node with frontmatter.
     .use(remarkFrontmatter)
@@ -485,18 +486,14 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     .use(remarkSlug)
     // Normalize Github Flavored Markdown so it can be converted to html.
     .use(remarkGfm)
-    // Convert MDAST to html.
     .use(remarkRehype, { allowDangerousHtml: true })
-    // Copy over html embedded in markdown.
     .use(rehypeRaw)
     .use(rehypeAutolinkHeadings, {
       behavior: 'append',
     })
-    // Prettify html.
+    .use(gatherSearchData, { here })
     .use(rehypeFormat)
-    // Serialize html.
     .use(rehypeStringify)
-    // Push the markdown through the pipeline.
     .process(md);
 
   const doc = new JSDOM(output).window.document;
@@ -782,8 +779,20 @@ const generateRedirects = async () => {
   }));
 };
 
+const searchData = [];
+const gatherSearchData = ({here}) => (tree) => {
+  // if ( ! forReal ) { return; }
+  visit(tree, (node) => {
+    const ps = node.properties || {};
+    if ( ps && ps.id ) {
+      searchData.push({
+        objectId: `${here}#${ps.id}`,
+        tagName: node.tagName,
+      });
+    }
+  });
+};
 const generateSearch = async () => {
-  const searchData = [];
   await fs.writeFile(`${rootDir}/searchData.json`, JSON.stringify(searchData, null, 2));
 };
 
