@@ -544,7 +544,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     }
   });
 
-  await gatherSearchData({doc, here});
+  await gatherSearchData({doc, title, here});
 
   // Process code snippets.
   for (const pre of doc.querySelectorAll('pre') ) {
@@ -785,11 +785,12 @@ const generateRedirects = async () => {
 };
 
 const searchData = [];
-const gatherSearchData = async ({doc, here}) => {
+const gatherSearchData = async ({doc, title, here}) => {
   const mini = (x) => x.replace(/\s+/g, ' ').trim();
   doc.querySelectorAll('.ref').forEach((el) => {
     searchData.push({
       objectID: `${here}#${el.id}`,
+      pt: title,
       t: 'r',
       s: el.getAttribute('data-scope'),
       c: el.getAttribute('data-symbol'),
@@ -798,6 +799,7 @@ const gatherSearchData = async ({doc, here}) => {
   doc.querySelectorAll('.term').forEach((el) => {
     searchData.push({
       objectID: `${here}#${el.id}`,
+      pt: title,
       t: 't',
       c: mini(el.textContent),
     });
@@ -805,13 +807,17 @@ const gatherSearchData = async ({doc, here}) => {
   doc.querySelectorAll('.refHeader').forEach((el) => {
     searchData.push({
       objectID: `${here}#${el.id}`,
+      pt: title,
       t: 'h',
       c: mini(el.textContent),
     });
   });
   doc.querySelectorAll('i.pid').forEach((el) => {
+    // XXX it would be cool to get the closest header, but .closest won't do
+    // it, because the header won't be a parent
     searchData.push({
       objectID: `${here}#${el.id}`,
+      pt: title,
       t: 'p',
       c: mini(el.parentElement.textContent).replace(/\d+$/, ''),
     });
