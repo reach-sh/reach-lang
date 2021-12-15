@@ -26,6 +26,7 @@ import { visit } from 'unist-util-visit';
 import { JSDOM } from 'jsdom';
 import githubSlugger from 'github-slugger';
 const slugify = githubSlugger.slug;
+const topDoc = new JSDOM("").window.document;
 
 const INTERNAL = [ 'base.html', 'config.json', 'index.md' ];
 
@@ -367,7 +368,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
       title: `Term: ${phrase}`,
       path: `/${here}/#${t}`,
     });
-    return `<span id="${t}">${phrase}</span>`;
+    return `<span class="term" id="${t}">${phrase}</span>`;
   };
 
   const ref = (scope, symbol) => {
@@ -376,7 +377,12 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
       title: `${scope}: ${symbol}`,
       path: `/${here}/#${t}`,
     });
-    return `<span id="${t}"></span>`;
+    const s = topDoc.createElement('span');
+    s.classList.add("ref");
+    s.id = t;
+    s.setAttribute("data-scope", scope);
+    s.setAttribute("data-symbol", symbol);
+    return s.outerHTML;
   };
 
   const directive_note = (node) => {
@@ -449,14 +455,12 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   let paraN = 0;
   const addParalinks = () => (tree) => {
     visit(tree, (node) => {
-      const d = node.data || (node.data = {});
-      const hp = d.hProperties || (d.hProperties = {});
       if ( node.type === 'paragraph' ) {
         const tcs = node.children.filter((x) => x.type === 'text');
         if ( tcs.length > 0 ) {
           const i = paraN++;
-          const id = (d.id || hp.id) || `p_${i}`;
-          d.id = hp.id = id;
+          const id = `p_${i}`;
+          node.children.unshift({type: 'html', value: `<i id="${id}" class="pid"></i>`});
           node.children.push({type: 'html', value: `<a href="#${id}" class="pid">${i}</a>`});
         }
       }
@@ -491,7 +495,6 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     .use(rehypeAutolinkHeadings, {
       behavior: 'append',
     })
-    .use(gatherSearchData, { here })
     .use(rehypeFormat)
     .use(rehypeStringify)
     .process(md);
@@ -540,6 +543,8 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
       img.src = `/${here}/${img.src}`;
     }
   });
+
+  await gatherSearchData({doc, here});
 
   // Process code snippets.
   for (const pre of doc.querySelectorAll('pre') ) {
@@ -780,16 +785,36 @@ const generateRedirects = async () => {
 };
 
 const searchData = [];
-const gatherSearchData = ({here}) => (tree) => {
-  // if ( ! forReal ) { return; }
-  visit(tree, (node) => {
-    const ps = node.properties || {};
-    if ( ps && ps.id ) {
-      searchData.push({
-        objectId: `${here}#${ps.id}`,
-        tagName: node.tagName,
-      });
-    }
+const gatherSearchData = async ({doc, here}) => {
+  const mini = (x) => x.replace(/\s+/g, ' ').trim();
+  doc.querySelectorAll('.ref').forEach((el) => {
+    searchData.push({
+      objectID: `${here}#${el.id}`,
+      t: 'r',
+      s: el.getAttribute('data-scope'),
+      c: el.getAttribute('data-symbol'),
+    });
+  });
+  doc.querySelectorAll('.term').forEach((el) => {
+    searchData.push({
+      objectID: `${here}#${el.id}`,
+      t: 't',
+      c: mini(el.textContent),
+    });
+  });
+  doc.querySelectorAll('.refHeader').forEach((el) => {
+    searchData.push({
+      objectID: `${here}#${el.id}`,
+      t: 'h',
+      c: mini(el.textContent),
+    });
+  });
+  doc.querySelectorAll('i.pid').forEach((el) => {
+    searchData.push({
+      objectID: `${here}#${el.id}`,
+      t: 'p',
+      c: mini(el.parentElement.textContent).replace(/\d+$/, ''),
+    });
   });
 };
 const generateSearch = async () => {
@@ -800,12 +825,16 @@ const generateSearch = async () => {
 
 await findAndProcessFolder(`base.html`, process.env, srcDir);
 forReal = true;
+// This depends on the xrefs being assembled
 await Promise.all([
   processCss(),
   processJs(),
   processBaseHtml(),
   findAndProcessFolder(`base.html`, process.env, srcDir),
   generateRedirects(),
+]);
+// This depends on the actual content being complete
+await Promise.all([
   generateSearch(),
 ]);
 
