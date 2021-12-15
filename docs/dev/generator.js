@@ -447,6 +447,20 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     })
   };
 
+  let paraN = 0;
+  const addParalinks = () => (tree) => {
+    visit(tree, (node) => {
+      if ( node.type === 'paragraph' ) {
+        const tcs = node.children.filter((x) => x.type === 'text');
+        if ( tcs.length > 0 ) {
+          const i = paraN++;
+          node.children.unshift({type: 'html', value: `<a id="_p${i}"> </a>`});
+          node.children.push({type: 'html', value: `<a href="#_p${i}" class="pid">${i}</a>`});
+        }
+      }
+    })
+  };
+
   const expand = makeExpander(mdPath, { ...configJson, ...expanderEnv });
 
   const raw = await fs.readFile(mdPath, 'utf8');
@@ -463,6 +477,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     .use(remarkDirective)
     .use(expanderDirective)
     .use(processXRefs, { here } )
+    .use(addParalinks)
     // Prepend Heading, level 6, value "toc".
     .use(prependTocNode)
     // Build toc list under the heading.

@@ -578,3 +578,11 @@ img {
 #otp-col a.otp-link {
   font-weight: bold;
 }
+
+#page-col a.pid {
+  font-weight: bold;
+  font-size: x-small;
+  font-style: italic;
+  color: #C8A8FF;
+  margin-left: 0.2em;
+}
