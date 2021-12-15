@@ -619,6 +619,8 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     chEl.classList.add("codeHeader");
     if ( spec.url ) {
       chEl.appendChild(mkEl(`<a href="${repoBaseNice}${spec.url}">${spec.url}</a>`));
+    } else {
+      chEl.appendChild(mkEl(`&nbsp;`));
     }
     const cpEl = doc.createElement('a');
     cpEl.classList.add("far", "fa-copy", "copyBtn");
