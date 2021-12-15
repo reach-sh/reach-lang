@@ -241,9 +241,12 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
     document.getElementById(configJson.menuItem).classList.add('active');
   }
 
-  const el = document.querySelector(`a[href="${folder}"]`);
-  if (el) {
+  document.querySelectorAll(`a[href="${folder}"]`).forEach((el) => {
     el.classList.add('active');
+  });
+
+  const el = document.querySelector(`#book-col a[href="${folder}"]`);
+  if (el) {
     const chapter = el.closest('div.chapter');
     const pages = chapter.querySelector('div.pages');
     if (pages && pages.hasChildNodes()) {

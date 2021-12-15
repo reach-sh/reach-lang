@@ -249,8 +249,16 @@ const processBaseHtml = async () => {
     minifyJS: true,
     minifyCSS: true,
   };
-  const cnt = await fs.readFile(iPath, 'utf8');
-  const output = await htmlMinify.minify(cnt, defaultOptions);
+  const menuItem = (t, gtext = false) => {
+    const { title, path } = xrefGet('h', t);
+    const text = gtext || title;
+    return `<a class="nav-link follow" href="${path}">${text}</a>`;
+  };
+
+  const raw = await fs.readFile(iPath, 'utf8');
+  const expand = makeExpander('baseHtml', { menuItem });
+  const exp = await expand(raw)
+  const output = await htmlMinify.minify(exp, defaultOptions);
   await writeFileMkdir(oPath, output);
 };
 

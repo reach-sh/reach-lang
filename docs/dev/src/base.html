@@ -26,13 +26,14 @@
       <div class="collapse navbar-collapse" id="navbar-collapse">
 
         <div class="navbar-nav me-auto">
-          <!-- config menuItem matches id to get highlight -->
-          <a id="xxx1" class="nav-link follow" href="/xxx"><span>XXX</span></a>
-          <a id="xxx2" class="nav-link follow" href="/xxx"><span>XXX</span></a>
+          @{menuItem('ref-programs')}
+          @{menuItem('ref-frontends-js')}
+          @{menuItem('tuts')}
+          @{menuItem('guide-changelog')}
         </div>
 
         <div class="navbar-nav">
-          <a class="nav-link follow" href="https://reach.sh/"><span>reach.sh</span></a>
+          <a class="nav-link follow" href="https://reach.sh/">reach.sh</a>
         </div>
 
         <div class="navbar-nav" style="cursor: pointer;">

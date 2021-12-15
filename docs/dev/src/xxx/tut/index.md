@@ -1,4 +1,4 @@
-# Tutorials
+# {#tuts} Tutorials
 
 There are two tutorials:
 1. [Overview](##overview)
