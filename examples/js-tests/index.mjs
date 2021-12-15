@@ -609,8 +609,10 @@ const mkKont = async () =>
 
 
 (async () => {
-  const l              = loadStdlib(process.env);
-  const { rpc_stdlib } = await RPC.mkStdlibProxy(l);
+  const l          = loadStdlib(process.env);
+  const account    = RPC.mkKont();
+  const token      = RPC.mkKont();
+  const rpc_stdlib = await RPC.mkStdlibProxy(l, { account, token });
 
   const mkConnectAccount = async (lib, g, accessor) =>
     describe(`exposes a \`connectAccount\` function where`, async () => {
