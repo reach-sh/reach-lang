@@ -459,9 +459,10 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
         const tcs = node.children.filter((x) => x.type === 'text');
         if ( tcs.length > 0 ) {
           const i = paraN++;
-          const id = `p_${i}`;
+          const is = i.toString(16);
+          const id = `p_${is}`;
           node.children.unshift({type: 'html', value: `<i id="${id}" class="pid"></i>`});
-          node.children.push({type: 'html', value: `<a href="#${id}" class="pid">${i}</a>`});
+          node.children.push({type: 'html', value: `<a href="#${id}" class="pid">${is}</a>`});
         }
       }
     })
@@ -785,13 +786,14 @@ const generateRedirects = async () => {
 };
 
 const searchData = [];
+const [ sd_r, sd_t, sd_h, sd_p ] = [ 0, 1, 2, 3 ];
 const gatherSearchData = async ({doc, title, here}) => {
   const mini = (x) => x.replace(/\s+/g, ' ').trim();
   doc.querySelectorAll('.ref').forEach((el) => {
     searchData.push({
       objectID: `${here}#${el.id}`,
       pt: title,
-      t: 'r',
+      t: sd_r,
       s: el.getAttribute('data-scope'),
       c: el.getAttribute('data-symbol'),
     });
@@ -800,7 +802,7 @@ const gatherSearchData = async ({doc, title, here}) => {
     searchData.push({
       objectID: `${here}#${el.id}`,
       pt: title,
-      t: 't',
+      t: sd_t,
       c: mini(el.textContent),
     });
   });
@@ -808,7 +810,7 @@ const gatherSearchData = async ({doc, title, here}) => {
     searchData.push({
       objectID: `${here}#${el.id}`,
       pt: title,
-      t: 'h',
+      t: sd_h,
       c: mini(el.textContent),
     });
   });
@@ -818,7 +820,7 @@ const gatherSearchData = async ({doc, title, here}) => {
     searchData.push({
       objectID: `${here}#${el.id}`,
       pt: title,
-      t: 'p',
+      t: sd_p,
       c: mini(el.parentElement.textContent).replace(/\d+$/, ''),
     });
   });

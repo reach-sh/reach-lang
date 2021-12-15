@@ -64,4 +64,4 @@ COPY --from=render /proj/docs/scrbl/build/ ./build/
 COPY --from=render /proj/docs/scrbl/scribble.log ./
 COPY --from=dev /proj/docs/dev/build ./build/
 COPY --from=dev /proj/docs/dev/log ./dev.log
-COPY --from=dev /proj/docs/dev/searchData.json ./
+COPY --from=dev /proj/docs/dev/searchData.json ./search/index.json

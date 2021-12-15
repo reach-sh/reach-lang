@@ -5,6 +5,10 @@ build:
 	  -o $$(pwd) \
 	  -f Dockerfile ..
 
+.PHONY: update-search
+update-search:
+	cd search && $(MAKE) run
+
 NAME=reach-docs
 
 .PHONY: serve-up
