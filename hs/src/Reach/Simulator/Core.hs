@@ -9,7 +9,7 @@ import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.Util
 import Data.Bits
-import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson
 import GHC.Generics
 
 type Participant = String
@@ -17,13 +17,19 @@ type Participant = String
 data Transmission = Transmission
   { t_sender :: ActorId
   , t_store :: Store
-  }
+  } deriving (Generic)
+
+instance ToJSON Transmission where
+  toEncoding = genericToEncoding defaultOptions
+-- instance FromJSON Transmission
 
 data LocalInfo = LocalInfo
   { l_acct :: Account
   , l_who :: Maybe Participant
   , l_store :: Store
-  }
+  } deriving (Generic)
+
+instance ToJSON LocalInfo
 
 type ActorId = Int
 type PoolId = Integer
@@ -40,14 +46,19 @@ data Global = Global
   , e_naccid :: AccountId
   , e_nmsgid :: PoolId
   , e_partacts :: M.Map Participant ActorId
-  }
+  } deriving (Generic)
+
+instance ToJSON Global
+-- instance FromJSON Global
 
 type Locals = M.Map ActorId LocalInfo
 
 data Local = Local
   { e_locals :: Locals
   , e_curr_actorid :: ActorId
-  }
+  } deriving (Generic)
+
+instance ToJSON Local
 
 type State = (Global, Local)
 

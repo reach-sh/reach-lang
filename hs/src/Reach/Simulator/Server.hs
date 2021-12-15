@@ -181,6 +181,13 @@ getStatus = do
   s <- gets e_status
   return s
 
+getProgState :: StateId -> WebM (Maybe C.State)
+getProgState sid = do
+  s <- gets e_graph
+  case M.lookup sid s of
+    Nothing -> return Nothing
+    Just st -> return $ Just st
+
 computeActions :: StateId -> WebM [C.Action]
 computeActions sid = do
   stacts <- gets e_states_actions
@@ -194,10 +201,6 @@ initProgSim ll = do
   let initSt = C.initState
   ps <- return $ C.initApp ll initSt
   processNewState ps
-
--- initSimServer :: LLProg -> WebM ()
--- initSimServer ll = do
---   modify $ \ st -> st {e_src = Just ll}
 
 startServer :: LLProg -> IO ()
 startServer p = do
@@ -224,11 +227,25 @@ app p = do
 
   get "/states" $ do
     ss <- webM $ allStates
-    json $ ss
+    json ss
+
+  get "/global/:s" $ do
+    s <- param "s"
+    g' <- webM $ getProgState s
+    case g' of
+      Nothing -> json $ ("Not Found" :: String)
+      Just (g,_) -> json g
+
+  get "/local/:s" $ do
+    s <- param "s"
+    l' <- webM $ getProgState s
+    case l' of
+      Nothing -> json $ ("Not Found" :: String)
+      Just (_,l) -> json l
 
   get "/status" $ do
     ss <- webM $ getStatus
-    json $ ss
+    json ss
 
   get "/states/:s" $ do
     s <- param "s"
@@ -238,7 +255,7 @@ app p = do
   get "/states/:s/actions" $ do
     s <- param "s"
     as <- webM $ computeActions s
-    json $ as
+    json as
 
   post "/states/:s/actions/:a/" $ do
     s <- param "s"
@@ -252,7 +269,7 @@ app p = do
         v :: Integer <- param "data"
         webM $ unblockProg s a $ C.V_UInt v
       _ -> impossible "unsupported type"
-    json $ ("OK" :: String)
+    json ("OK" :: String)
 
   get "/ping" $ do
-    json $ ("Hello World" :: String)
+    json ("Hello World" :: String)

@@ -208,7 +208,11 @@ litTypeOf = \case
 data DLVar = DLVar SrcLoc (Maybe (SrcLoc, SLVar)) DLType Int
   deriving (Generic)
 
-instance ToJSON DLVar
+instance ToJSONKey DLVar
+
+instance ToJSON DLVar where
+  toEncoding = genericToEncoding defaultOptions
+
 instance FromJSON DLVar
 
 instance SrcLocOf DLVar where
@@ -245,6 +249,9 @@ varType (DLVar _ _ t _) = t
 
 newtype DLMVar = DLMVar Int
   deriving (Eq, Ord, Generic)
+
+instance ToJSONKey DLMVar
+instance ToJSON DLMVar
 
 instance Pretty DLMVar where
   pretty (DLMVar i) = "map" <> pretty i
