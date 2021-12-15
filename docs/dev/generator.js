@@ -39,7 +39,6 @@ const reachRoot = `${rootDir}/../../`;
 const cfgFile = "config.json";
 const repoBaseNice = "https://github.com/reach-sh/reach-lang/tree/master";
 const repoBase = "https://raw.githubusercontent.com/reach-sh/reach-lang/master";
-const repoSrcDir = "/docs/md/";
 const srcDir = normalizeDir(`${rootDir}/src`);
 const outDir = normalizeDir(`${rootDir}/build`);
 let forReal = false;
@@ -783,6 +782,11 @@ const generateRedirects = async () => {
   }));
 };
 
+const generateSearch = async () => {
+  const searchData = [];
+  await fs.writeFile(`${rootDir}/searchData.json`, JSON.stringify(searchData, null, 2));
+};
+
 // Main
 
 await findAndProcessFolder(`base.html`, process.env, srcDir);
@@ -793,6 +797,7 @@ await Promise.all([
   processBaseHtml(),
   findAndProcessFolder(`base.html`, process.env, srcDir),
   generateRedirects(),
+  generateSearch(),
 ]);
 
 if ( hasError ) {
