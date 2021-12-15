@@ -47,7 +47,10 @@ For example, @tt{/acc/deploy} does not return a @tech{contract} representation l
 
 @item{@tt{/ctc/$METHOD} where @tt{$METHOD} is a method of a @tech{contract} representation of the @seclink["ref-frontends-js"]{JavaScript standard library}.
 
-All @tt{/ctc} methods are @tech{synchronous value RPC methods} that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the @tech{contract} @tech{RPC handle} returned by a prior @tech{RPC method} invocation.
+Most @tt{/ctc} methods are @tech{synchronous value RPC methods} that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the @tech{contract} @tech{RPC handle} returned by a prior @tech{RPC method} invocation.
+
+@tt{/ctc/p/$PARTICIPANT} and @tt{/ctc/participants/$PARTICIPANT} are @tech{interactive RPC method} alternatives to the @tt{/backend/$PARTICIPANT} method described below.
+They accept the same arguments and behave identically.
 
 }
 
