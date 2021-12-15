@@ -1205,8 +1205,10 @@ smt_asn_def :: SrcLoc -> DLAssignment -> App ()
 smt_asn_def at asn = mapM_ def1 $ M.keys asnm
   where
     DLAssignment asnm = asn
-    def1 dv =
+    def1 dv = do
       pathAddUnbound at (Just dv) (Just $ SMTModel O_Assignment)
+      when (varType dv == T_UInt) $ do
+        smtAssert (smtApply "<=" [Atom $ getVarName dv, Atom $ smtConstant DLC_UInt_max])
 
 smt_alloc_id :: App Int
 smt_alloc_id = do

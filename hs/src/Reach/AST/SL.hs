@@ -713,7 +713,7 @@ data SLPrimitive
   | SLPrim_getAddress
   | SLPrim_EmitLog
   | SLPrim_Event
-  | SLPrim_event_is SLVar [SLType]
+  | SLPrim_event_is (Maybe SLPart) SLVar [SLType]
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

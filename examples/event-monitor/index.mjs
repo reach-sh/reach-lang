@@ -40,7 +40,7 @@ const assertEq = (a, b) => {
     }
   }
 
-  e.Logger_log.monitor(check);
+  e.log.monitor(check);
 
   await Promise.all([
     backend.Alice(ctcAlice, {}),

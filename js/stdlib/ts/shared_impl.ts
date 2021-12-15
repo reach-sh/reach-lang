@@ -214,7 +214,7 @@ export type ISetupEvent<ContractInfo, VerifyResult> =
       createEventStream : (event: string, tys: any[]) => {
                             lastTime: () => Promise<Time>,
                             next: () => Promise<any>,
-                            seek: (t: Time) => Promise<void>
+                            seek: (t: Time) => void,
                             seekNow: () => Promise<void>,
                             monitor: (onEvent: (x:any) => void) => Promise<void>
                           }
@@ -378,9 +378,13 @@ export const stdContract =
 
   const eventMap = bin._getEvents({ reachStdlib: stdlib });
   const { createEventStream } = setupEvents(viewArgs);
-  const events = objectMap(eventMap, (k, v) => {
-    return createEventStream(k, v)
-  });
+
+  const events =
+    objectMap(eventMap, ((k:string, v: any) =>
+      Array.isArray(v) // untagged
+        ? createEventStream(k, v)
+        : objectMap(v, ((kp, vp: any) =>
+          createEventStream(k + "_" + kp, vp)))));
 
   return {
     ...ctcC,

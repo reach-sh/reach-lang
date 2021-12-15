@@ -7,7 +7,7 @@ const E  = Either(A, MB);
 
 export const main = Reach.App(() => {
   const Alice = Participant('Alice', {});
-  const Logger = Events('Logger', {
+  const Logger = Events({
     log: [E],
   });
   deploy();

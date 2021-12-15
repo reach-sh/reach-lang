@@ -11,6 +11,9 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 Version 0.1.7 is the current Reach release candidate version.
 
 @itemlist[
+@item{2021/12/15: Added @reachin{Events}.}
+@item{2021/12/15: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.}
+@item{2021/12/15: The backend interface to deployed contracts was updated, so old contracts will not work with this version.}
 @item{2021/12/10: Added support for using Reach on Apple silicon.}
 @item{2021/11/25: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.}
 @item{2021/11/19: The backend interface to deployed contracts was updated, so old contracts will not work with this version.}

@@ -877,7 +877,7 @@ solCom = \case
     lv_tys' <- mapM solType lv_tys
     -- Get event label or use variable name from internal log
     let oe = case (lk, lvs) of
-            (L_Event l, _) -> pretty $ l
+            (L_Event ml l, _) -> pretty $ maybe l (\l' -> bunpack l' <> "_" <> l) ml
             (_, [h]) -> solOutput_evt h
             (_, _) -> impossible "Expecting one value to emit"
     let go sv ls = solApply oe (map (\ (l, v) -> l <+> sv v) $ ls) <> semi

@@ -888,14 +888,14 @@ jsExports exports =
 jsEvents :: DLEvents -> App Doc
 jsEvents events = do
   jsFunctionWStdlib "_getEvents" [] $ do
-    let devts' = M.foldrWithKey (\ k m acc ->
-            M.union acc $ M.foldrWithKey (\ k2 v -> M.insert (bunpack k <> "_" <> k2) v) mempty m
-          ) mempty events
-    devts'' <- mapM (\ ts -> mapM jsContract ts) devts'
-    let evtMap = M.foldrWithKey (\ evt ts -> do
-            M.insert evt $ jsArray ts
-          ) mempty devts''
-    return $ jsReturn $ jsObject evtMap
+    devts <- foldM (\ acc (mk, m) -> do
+            dv <- mapM (\ts -> jsArray <$> mapM jsContract ts) m
+            case mk of
+              Just k -> do
+                return $ M.insert (bunpack k) (jsObject dv) acc
+              Nothing -> return $ M.union acc dv
+          ) mempty $ M.toList events
+    return $ jsReturn $ jsObject devts
 
 jsViews :: (CPViews, ViewInfos) -> App Doc
 jsViews (cvs, vis) = do

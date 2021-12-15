@@ -3206,15 +3206,22 @@ evalPrim p sargs =
       public <$> doInternalLog (Just ma) x
     SLPrim_Event -> do
       ensure_mode SLM_AppInit "Event"
-      (label, intv) <- two_args
+      (nv, intv) <- case args of
+                      [x] -> return (Nothing, x)
+                      [x, y] -> return (Just x, y)
+                      _ -> illegal_args
       at <- withAt id
-      n <- mustBeBytes label
+      n <- mapM mustBeBytes nv
       im <- eventInterface intv
-      let ns = bunpack n
-      verifyName at "Event" (M.keys im) ns
+      let mns = bunpack <$> n
+      mapM_ (verifyName at "Event" (M.keys im)) mns
+      let ns = fromMaybe "Untagged" mns
       ix <- flip mapWithKeyM im $ \k (at', tys) -> do
             mapM_ warnInteractType tys
-            let v = SLV_Prim $ SLPrim_event_is (ns <> "_" <> k) tys
+            when (isNothing nv) $ do
+              verifyName at "Event" [] k
+              verifyNotReserved at k
+            let v = SLV_Prim $ SLPrim_event_is n k tys
             let io = SLSSVal at' Public v
             di <- flip mapM tys $ \ ty ->
                 case st2dt ty of
@@ -3226,12 +3233,12 @@ evalPrim p sargs =
       aisiPut aisi_res $ \ar ->
         ar { ar_events = M.insert n i' $ ar_events ar }
       retV $ (lvl, SLV_Object at (Just $ ns <> " Event") io)
-    SLPrim_event_is which tys -> do
+    SLPrim_event_is eventLabel which tys -> do
       at <- withAt id
       typedArgs <- zipEq (Err_Apply_ArgCount at) tys args
       vs <- flip mapM typedArgs $ \ (ty, arg) ->
           (snd <$> evalPrim SLPrim_is [public arg, public $ SLV_Type ty])
-      void $ doEmitLog False (Just which) Nothing vs
+      void $ doEmitLog False (Just $ (eventLabel, which)) Nothing vs
       return $ public $ SLV_Null at "event_is"
   where
     lvl = mconcatMap fst sargs
@@ -3356,11 +3363,11 @@ doInternalLog ma x = doEmitLog True Nothing ma [x]
 doInternalLog_ :: Maybe String -> DLVar -> App DLVar
 doInternalLog_ ma x = expectDLVar <$> doEmitLog_ True Nothing ma [x]
 
-doEmitLog :: Bool -> Maybe String -> Maybe String -> [SLVal] -> App SLVal
+doEmitLog :: Bool -> Maybe (Maybe SLPart, String) -> Maybe String ->  [SLVal] -> App SLVal
 doEmitLog isInternal ml ma vs =
   doEmitLog_ isInternal ml ma =<< mapM compileToVar vs
 
-doEmitLog_ :: Bool -> Maybe String -> Maybe String -> [DLVar] -> App SLVal
+doEmitLog_ :: Bool -> Maybe (Maybe SLPart, String) -> Maybe String -> [DLVar] -> App SLVal
 doEmitLog_ isInternal ml ma dvs = do
   ensure_mode SLM_ConsensusStep "emitLog"
   at <- withAt id
@@ -3370,9 +3377,9 @@ doEmitLog_ isInternal ml ma dvs = do
       let lk = maybe L_Internal L_Api ma
       dv <- ctxt_lift_expr (DLVar at Nothing ty) $ DLE_EmitLog at lk dvs
       return $ SLV_DLVar dv
-    (False, Just l, vs, _) -> do
-      ctxt_lift_eff $ DLE_EmitLog at (L_Event l) vs
-      return $ SLV_Null at (fromMaybe "emitLog" ml)
+    (False, Just (ml', l), vs, _) -> do
+      ctxt_lift_eff $ DLE_EmitLog at (L_Event ml' l) vs
+      return $ SLV_Null at "emitLog"
     _ -> impossible "doEmitLog_: Expected one arg for internal emitLog"
 
 assertRefinedArgs :: ClaimType -> [SLSVal] -> SrcLoc -> SLTypeFun -> App (SLVal, [DLArgExpr])

@@ -26,8 +26,8 @@ const assertEq = (a, b) => {
     return what;
   }
 
-  const getXLog = getLog(e.x_event_x);
-  const getYLog = getLog(e.x_event_y);
+  const getXLog = getLog(e.x_event.x);
+  const getYLog = getLog(e.x_event.y);
 
   await Promise.all([
     backend.A(ctcAlice, {

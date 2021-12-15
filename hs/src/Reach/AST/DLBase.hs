@@ -572,7 +572,7 @@ data DLExpr
 
 data LogKind
   = L_Api String
-  | L_Event String
+  | L_Event (Maybe SLPart) String
   | L_Internal
   deriving (Eq, Ord, Show)
 
@@ -699,8 +699,8 @@ instance PrettySubst LogKind where
   prettySubst = \case
     L_Internal ->
       return $ "internal"
-    L_Event s -> do
-      return $ "event" <> parens (pretty s)
+    L_Event ml s -> do
+      return $ "event" <> parens (pretty ml <> ", " <> pretty s)
     L_Api s -> do
       return $ "api" <> parens (pretty s)
 
@@ -1047,4 +1047,4 @@ type DLViews = M.Map (Maybe SLPart) (M.Map SLVar IType)
 
 type DLAPIs = M.Map (Maybe SLPart) (M.Map SLVar (SLPart, IType))
 
-type DLEvents = M.Map SLPart (M.Map SLVar [DLType])
+type DLEvents = M.Map (Maybe SLPart) (M.Map SLVar [DLType])

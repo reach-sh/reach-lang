@@ -1444,8 +1444,9 @@ ce = \case
         , DLA_Var v
         ]
       cv v
-    | L_Event en <- k -> do
-      clogEvent en vs
+    | L_Event ml en <- k -> do
+      let name = maybe en (\l -> bunpack l <> "_" <> en) ml
+      clogEvent name vs
       cl DLL_Null
     | otherwise -> impossible "algo: emitLog"
     where
