@@ -139,6 +139,9 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
       const t = await lib.launchToken(account.id(id), name, sym, opts);
       return { kid: await token.track(t), token: t };
     },
+
+    setQueryLowerBound: (nt: any) =>
+      lib.setQueryLowerBound(lib.bigNumberify(nt)),
   };
 };
 
@@ -298,9 +301,9 @@ export const serveRpc = async (backend: any) => {
     res.json(a);
   }));
 
+  const ctcPs: any = {};
   for (const b in backend) {
-    route_backend.post(`/${b}`, safely(async (req: Request, res: Response) => {
-      let lab = `RPC /backend/${b}`;
+    const h = (lab: string) => safely(async (req: Request, res: Response) => {
       debug(`${lab} IN`);
 
       const [ cid, vals, meths ] = req.body;
@@ -311,8 +314,8 @@ export const serveRpc = async (backend: any) => {
       debug(`${lab} START ${JSON.stringify(req.body)}`);
       let io = { ...vals };
 
-      if (io["stdlib.hasRandom"]) {
-        delete io["stdlib.hasRandom"];
+      if (io['stdlib.hasRandom']) {
+        delete io['stdlib.hasRandom'];
         io = { ...real_stdlib.hasRandom, ...io };
       }
 
@@ -334,7 +337,11 @@ export const serveRpc = async (backend: any) => {
       debug(`${lab} DONE`);
 
       new_res.json({t: `Done`, ans});
-    }));
+    });
+
+    route_backend.post(`/${b}`, h(`RPC /backend/${b}`));
+    ctcPs[`/ctc/p/${b}`           ] = h(`RPC /ctc/p/${b}`);
+    ctcPs[`/ctc/participants/${b}`] = h(`RPC /ctc/participants/${b}`);
   }
 
   const do_kont = safely(async (req: Request, res: Response) => {
@@ -376,9 +383,12 @@ export const serveRpc = async (backend: any) => {
   app.use(`/ctc/apis`,        mkUserDefined('/ctc/apis',        'apis',        contract, true));
   app.use(`/ctc/safeApis`,    mkUserDefined('/ctc/safeApis',    'safeApis',    contract, false));
 
+  // NOTE: it's important these are deferred in order to preserve middleware precedence
+  for (const p in ctcPs) { app.use(p, ctcPs[p]); }
+
   app.post(`/kont`, do_kont);
 
-  // Note: successful `/backend/<participant>` requests automatically `forget`
+  // NOTE: successful `/backend/<participant>` requests automatically `forget`
   // their continuation ID before yielding a "Done" response; likewise with
   // requests to `/kont` due to their relationship with `/backend/<participant>`
   app.post(`/forget/acc`,   mkForget(account));
