@@ -860,11 +860,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
     const setupEvents = (setupArgs: SetupEventArgs) => {
       const eventCache = new EventCache(); // shared across getEvents
-      let creation_block = bigNumberify(0);
+      let time = bigNumberify(0);
       const getC = makeGetC(setupArgs, eventCache, (cb) => {
-        creation_block = bigNumberify(cb);
+        time = bigNumberify(cb);
       });
-      let time = creation_block;
       const createEventStream = (event: string, tys: any[]) => {
         void tys;
         let logIndex: any = {};

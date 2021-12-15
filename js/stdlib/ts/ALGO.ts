@@ -1030,7 +1030,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       ctcAddr: Address,
     };
 
-    const makeGetC = (setupViewArgs: SetupViewArgs, eventCache: EventCache) => {
+    const makeGetC = (setupViewArgs: SetupViewArgs, eventCache: EventCache, informCreationBlock: (cb: number) => void) => {
       const { getInfo: fake_getInfo } = setupViewArgs;
       let _theC: ContractHandler|undefined = undefined;
       return async (): Promise<ContractHandler> => {
@@ -1042,6 +1042,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }));
         debug(label, 'getC', {ApplicationID, startRound} );
 
+        informCreationBlock(startRound);
         const ctcAddr = algosdk.getApplicationAddress(ApplicationID);
         debug(label, 'getC', { ctcAddr });
 
@@ -1169,7 +1170,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         ...setupArgs,
         getInfo: fake_getInfo,
       };
-      const getC = makeGetC(fake_setupArgs, eventCache);
+      const getC = makeGetC(fake_setupArgs, eventCache, () => {});
 
       // Returns address of a Reach contract
       const getContractAddress = async () => {
@@ -1610,7 +1611,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
     const setupView = (setupViewArgs: SetupViewArgs) => {
       const eventCache = new EventCache();
-      const getC = makeGetC(setupViewArgs, eventCache);
+      const getC = makeGetC(setupViewArgs, eventCache, () => {});
       const viewLib: IViewLib = {
         viewMapRef: async (mapi: number, a:any): Promise<any> => {
           const { getLocalState } = await getC();
@@ -1657,8 +1658,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     const setupEvents = (a: SetupEventArgs) => {
       const eventCache = new EventCache();
-      let time: BigNumber | null = null;
-      const getC = makeGetC(a, eventCache);
+      let time = bigNumberify(0);
+      const getC = makeGetC(a, eventCache, (cb: number) => {
+        time = bigNumberify(cb);
+      });
       const createEventStream = (event: string, tys: AnyALGO_Ty[]) => {
         let logIndex: any = {};
         let sig = `${event}(${tys.map(ty => ty.netName).join(',')})`;
@@ -1676,11 +1679,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         const next = async () => {
           let dhead = "EventStream::next";
-          const { ApplicationID, getLastRound } = await getC();
-          if (time == null) {
-            time = bigNumberify(getLastRound());
-            logIndex[time.toNumber()] = 0;
-          }
+          const { ApplicationID } = await getC();
           const pred = (txn: any) => {
             const round = txn['confirmed-round'];
             const logIdx = logIndex[round] || 0;
@@ -1711,7 +1710,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
 
         const seekNow = async () => {
-          eventCache.currentRound = (await getNetworkTime()).toNumber() - 1;
+          time = await getNetworkTime();
         }
 
         const lastTime = async () => {
