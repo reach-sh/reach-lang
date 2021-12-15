@@ -34,6 +34,7 @@ data Global = Global
   , e_naccid :: AccountId
   , e_phaseid :: PhaseId
   , e_partacts :: M.Map Participant ActorId
+  , e_actblocked :: M.Map ActorId Bool
   }
 
 data LocalInfo = LocalInfo
@@ -67,6 +68,7 @@ initGlobal = Global
   , e_naccid = 0
   , e_phaseid = 0
   , e_partacts = mempty
+  , e_actblocked = mempty
   }
 
 initLocal :: Local
@@ -664,6 +666,13 @@ instance Interp LLStep where
       let pid = e_phaseid g
       incrPhaseId
       let sends = M.mapKeys bunpack tc_send
+      -- check who's available
+      -- update their phase id
+      -- race
+      -- update record
+      -- update store of everyone who raced
+      -- how do we know what race this is ?
+      -- if this race already happened, just ref record 
       v <- suspend $ PS_Suspend (A_TieBreak pid $ M.keys sends)
       case v of
         V_UInt n -> do
