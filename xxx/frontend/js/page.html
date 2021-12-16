@@ -311,6 +311,35 @@
 </p>
 <p>If a View was specified without a <code>viewName</code>, for example <code>View({ owner: Address })</code>, it may be accessed by its property name:</p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">ctc.v.</span><span style="color: #8250DF">owner</span><span style="color: #24292F">();</span></li></ol></pre>
+<h3 id="ctcevents-ctce"><code>ctc.events</code>, <code>ctc.e</code><a aria-hidden="true" tabindex="-1" href="#ctcevents-ctce"><span class="icon icon-link"></span></a></h3>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292F">ctc.events </span><span style="color: #6E7781">// { [name: string]: EventStream }</span></li><li value="2"><span style="color: #24292F">ctc.e      </span><span style="color: #6E7781">// { [name: string]: EventStream }</span></li><li value="3"></li><li value="4"><span style="color: #CF222E">await</span><span style="color: #24292F"> ctc.e.log.</span><span style="color: #8250DF">next</span><span style="color: #24292F">();</span></li></ol></pre>
+<p>
+  An object that mirrors the event hierarchy, so if <code>X.Y</code> is an event, then <code>ctc.events.X.Y</code> is an <span id="term_EventStream">EventStream</span>.
+  An EventStream supports the following operations for a given <code>Event</code>:
+</p>
+<p><span id="js_EventStream"></span></p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #24292F">EventStream</span><span style="color: #CF222E">&lt;</span><span style="color: #0550AE">T</span><span style="color: #CF222E">&gt;</span><span style="color: #24292F"> : {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #8250DF">next</span><span style="color: #24292F">    : () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">Promise</span><span style="color: #CF222E">&lt;</span><span style="color: #24292F">Event</span><span style="color: #CF222E">&lt;</span><span style="color: #0550AE">T</span><span style="color: #CF222E">&gt;&gt;</span><span style="color: #24292F">,</span></li><li value="3"><span style="color: #24292F">  </span><span style="color: #8250DF">seek</span><span style="color: #24292F">    : (</span><span style="color: #953800">t</span><span style="color: #CF222E">:</span><span style="color: #24292F"> </span><span style="color: #953800">Time</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #CF222E">void</span><span style="color: #24292F">,</span></li><li value="4"><span style="color: #24292F">  </span><span style="color: #8250DF">seekNow</span><span style="color: #24292F"> : () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">Promise</span><span style="color: #CF222E">&lt;void&gt;</span><span style="color: #24292F">,</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #8250DF">lastTime</span><span style="color: #24292F">: () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">Promise</span><span style="color: #CF222E">&lt;</span><span style="color: #24292F">Time</span><span style="color: #CF222E">&gt;</span><span style="color: #24292F">,</span></li><li value="6"><span style="color: #24292F">  monitor : ((</span><span style="color: #953800">Event</span><span style="color: #24292F">&lt;</span><span style="color: #953800">T</span><span style="color: #24292F">&gt;) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #CF222E">void</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">Promise</span><span style="color: #CF222E">&lt;void&gt;</span><span style="color: #24292F">,</span></li><li value="7"><span style="color: #24292F">}</span></li></ol></pre>
+<p>where</p>
+<p><span id="js_Event"></span></p>
+<pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">Event</span><span style="color: #CF222E">&lt;</span><span style="color: #0550AE">T</span><span style="color: #CF222E">&gt;</span><span style="color: #24292F"> : { when: Time, what: </span><span style="color: #0550AE">T</span><span style="color: #24292F"> }</span></li></ol></pre>
+<p>An <code>Event</code> is instantiated with it's corresponding type declared in Reach.</p>
+<p>
+  <code>next</code> will wait for the next <code>Event</code> to occur, returning the time the event occured
+  and the arguments to the event.
+</p>
+<p>
+  <code>seek</code> will set the internal time of the EventStream to the given argument.
+  The EventStream will use this time as the minimum bound when searching for <code>Event</code>s.
+</p>
+<p>
+  <code>seekNow</code> will set the internal time of the EventStream to the latest network time.
+  The EventStream will use this time as the minimum bound when searching for <code>Event</code>s.
+</p>
+<p><code>lastTime</code> will return the last network time that an <code>Event</code> was emitted.</p>
+<p>
+  <code>monitor</code> accepts a function of type <code>Event&lt;T&gt; =&gt; void</code> as an argument. The provided function will be
+  called whenever the <code>Event</code> occurs.
+</p>
 <hr>
 <p><span id="js_getViews"></span></p>
 <pre class="snippet unnumbered"><ol class="snippet"><li value="1"><span style="color: #24292F">ctc.</span><span style="color: #8250DF">getViews</span><span style="color: #24292F">() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">Object</span></li></ol></pre>

@@ -85,3 +85,11 @@
   These views are available in frontends via the <code>ctc.views</code> object.
   In the DApp, the result of this application argument is referred to as a view object.
 </p>
+<h3 id="ref-programs-appinit-events" class="refHeader">Events Definition<a aria-hidden="true" tabindex="-1" href="#ref-programs-appinit-events"><span class="icon icon-link"></span></a></h3>
+<p><span id="rsh_Events"></span></p>
+<pre class="snippet numbered"><ol class="snippet"><li value="1"><span style="color: #8250DF">Events</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Logger'</span><span style="color: #24292F">, {</span></li><li value="2"><span style="color: #24292F">  log: [UInt, </span><span style="color: #8250DF">Byte</span><span style="color: #24292F">(</span><span style="color: #0550AE">64</span><span style="color: #24292F">)]</span></li><li value="3"><span style="color: #24292F">})</span></li><li value="4"><span style="color: #6E7781">// or</span></li><li value="5"><span style="color: #8250DF">Events</span><span style="color: #24292F">({</span></li><li value="6"><span style="color: #24292F">  log: [UInt, </span><span style="color: #8250DF">Byte</span><span style="color: #24292F">(</span><span style="color: #0550AE">64</span><span style="color: #24292F">)]</span></li><li value="7"><span style="color: #24292F">})</span></li></ol></pre>
+<p>
+  An event is defined with <code>Events(eventName, eventInterface)</code> or <code>Events(eventInterface)</code>, where <code>eventName</code> is a string that labels the event and <code>eventInterface</code> is an object where each field is a <code>Tuple</code> of <code>Type</code>s, representing the type of values that an event will emit.
+  These events are available in the frontends via the <code>ctc.events</code> object.
+  In the DApp, the result of this application argument is referred to as an event object.
+</p>
