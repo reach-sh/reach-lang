@@ -518,6 +518,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     const bp = configJson.bookPath;
     if ( bp ) {
       books.push({ here, title,
+        isBook: (bp === here),
         rank: (configJson.bookRank || 0)});
     }
     return;
@@ -678,7 +679,7 @@ const generateBook = async (destp, bookp) => {
   const hify = (ctc) => {
     const d = h('div', {class: "row chapter dynamic"});
     const cs = [];
-    if ( Object.keys(ctc.children).length === 0 ) {
+    if ( ctc.isBook || Object.keys(ctc.children).length === 0 ) {
       d.children.push(h('div', {class: "col-auto chapter-empty-col"}));
     } else {
       d.children.push(h('div', {class: "col-auto chapter-icon-col"}, [
