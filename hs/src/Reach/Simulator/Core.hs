@@ -194,9 +194,7 @@ ledgerNewToken acc tk = do
 
 data Action
   = A_TieBreak PhaseId [String]
-  | A_NewActor
   | A_None
-  | A_ChangeActor Int
   | A_AdvanceTime Integer
   | A_AdvanceSeconds Integer
   | A_InteractV String String DLType --TODO either remove or add protection

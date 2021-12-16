@@ -54,7 +54,7 @@ data Session = Session
   , e_naid :: Int
   , e_ids_actions :: M.Map ActionId C.Action
   , e_actors_states_ks :: M.Map C.ActorId (M.Map StateId C.PartState)
-  , e_actorid :: C.ActorId
+  , e_actor_id :: C.ActorId
   , e_graph :: Graph
   , e_src :: Maybe LLProg
   , e_status :: Status
@@ -67,7 +67,7 @@ initSession = Session
   , e_naid = 0
   , e_ids_actions = mempty
   , e_actors_states_ks = mempty
-  , e_actorid = fromIntegral C.consensusId
+  , e_actor_id = fromIntegral C.consensusId
   , e_graph = mempty
   , e_src = Nothing
   , e_status = Initial
@@ -87,7 +87,7 @@ processNewState ps = do
           C.PS_Suspend _ s _ -> (s, Running)
   graph <- gets e_graph
   astks <- gets e_actors_states_ks
-  actorId <- gets e_actorid
+  actorId <- gets e_actor_id
   let sks = case M.lookup actorId astks of
         Nothing -> mempty
         Just m -> m
@@ -112,7 +112,7 @@ registerAction sid act = do
 unblockProg :: StateId -> ActionId -> C.DLVal -> WebM ()
 unblockProg sid aid v = do
   astks <- gets e_actors_states_ks
-  actorId <- gets e_actorid
+  actorId <- gets e_actor_id
   avActions <- gets e_ids_actions
   case M.lookup actorId astks of
     Nothing -> do
@@ -121,11 +121,10 @@ unblockProg sid aid v = do
       case M.lookup sid stks of
         Nothing -> do
           possible "previous state not found"
-        Just (C.PS_Suspend _a (g,l) k) -> do
+        Just (C.PS_Suspend _a (g,l'') k) -> do
+          new_act_id <- gets e_actor_id
+          let l = l'' {C.l_curr_actor_id = new_act_id}
           case M.lookup aid avActions of
-            Just (C.A_ChangeActor actor_id) -> do
-              let ps = k (g,l{C.l_curr_actor_id = actor_id}) v
-              processNewState ps
             Just (C.A_Interact _at _slcxtframes _part _str _dltype _args) -> do
               let ps = k (g,l) v
               processNewState ps
@@ -143,13 +142,6 @@ unblockProg sid aid v = do
                       let ps = k (g,l) $ C.V_UInt $ fromIntegral actid
                       processNewState ps
                 _ -> impossible "A_TieBreak: expected string value"
-            Just C.A_NewActor -> do
-              case v of
-                C.V_Bytes s -> do
-                  let (g',l') = C.registerPart (g,l) s
-                  let ps = k (g',l') v
-                  processNewState ps
-                _ -> possible "A_NewActor: expected string value"
             Just C.A_None -> return ()
             Just (C.A_AdvanceTime n)  -> do
               case ((C.e_nwtime g) < n) of
@@ -187,6 +179,10 @@ getProgState sid = do
   case M.lookup sid s of
     Nothing -> return Nothing
     Just st -> return $ Just st
+
+changeActor :: C.ActorId -> WebM ()
+changeActor actid = do
+  modify $ \ st -> st {e_actor_id = actid}
 
 computeActions :: StateId -> WebM [C.Action]
 computeActions sid = do
@@ -256,6 +252,11 @@ app p = do
     s <- param "s"
     as <- webM $ computeActions s
     json as
+
+  post "/change_actor/:s" $ do
+    s <- param "s"
+    _ <- webM $ changeActor s
+    json ("OK" :: String)
 
   post "/states/:s/actions/:a/" $ do
     s <- param "s"
