@@ -132,7 +132,7 @@ instance CollectsTypes DLExpr where
     DLE_TimeOrder _ tos -> cts tos
     DLE_GetContract _ -> mempty
     DLE_GetAddress _ -> mempty
-    DLE_EmitLog _ _ _ a -> cts a
+    DLE_EmitLog _ _ a -> cts a
     DLE_setApiDetails {} -> mempty
 
 instance CollectsTypes DLAssignment where
@@ -190,9 +190,12 @@ instance CollectsTypes LLStep where
 instance CollectsTypes a => CollectsTypes (DLinExportBlock a) where
   cts (DLinExportBlock _ vs r) = cts vs <> cts r
 
+instance CollectsTypes Int where
+  cts _ = mempty
+
 instance CollectsTypes LLProg where
-  cts (LLProg _ _ ps dli dex dvs das s) =
-    cts ps <> cts dli <> cts dex <> cts dvs <> cts das <> cts s
+  cts (LLProg _ _ ps dli dex dvs das devts s) =
+    cts ps <> cts dli <> cts dex <> cts dvs <> cts das <> cts devts <> cts s
 
 instance CollectsTypes DLLetVar where
   cts (DLV_Eff) = mempty

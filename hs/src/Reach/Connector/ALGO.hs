@@ -36,6 +36,8 @@ import Safe (atMay)
 import Text.Read
 import Generics.Deriving ( Generic )
 import Reach.CommandLine
+import Data.List (intercalate)
+import Crypto.Hash
 
 -- import Debug.Trace
 
@@ -177,6 +179,26 @@ _udiv x y = z
   where
     (q, d) = quotRem x y
     z = if d == 0 then q else q + 1
+
+typeSig :: DLType -> String
+typeSig x =
+  case x of
+  T_Null -> "null"
+  T_Bool -> "bool"
+  T_UInt -> "uint64"
+  T_Bytes sz -> "byte" <> array sz
+  T_Digest -> "digest"
+  T_Address -> "address"
+  T_Contract -> typeSig T_UInt
+  T_Token -> typeSig T_UInt
+  T_Array  t sz -> typeSig t <> array sz
+  T_Tuple ts -> "(" <> intercalate "," (map typeSig ts) <> ")"
+  T_Object m -> typeSig $ T_Tuple $ M.elems m
+  T_Data m -> "(byte, byte" <> array (maximum $ map typeSizeOf $ M.elems m) <> ")"
+  T_Struct ts -> typeSig $ T_Tuple $ map snd ts
+  where
+    array sz = "[" <> show sz <> "]"
+
 
 typeSizeOf :: DLType -> Integer
 typeSizeOf = \case
@@ -1412,18 +1434,41 @@ ce = \case
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract _ -> code "txn" ["ApplicationID"]
   DLE_GetAddress _ -> cContractAddr
-  DLE_EmitLog at _ _ v@(DLVar _ _ _ n)  -> do
-    clog $
-      [ DLA_Literal (DLL_Int at $ fromIntegral n)
-      , DLA_Var v
-      ]
-    cv v
+  DLE_EmitLog at k vs
+    | isInternalLog k -> do
+      (v, n) <- case vs of
+          [v'@(DLVar _ _ _ n')] -> return (v', n')
+          _ -> impossible "algo ce: Expected one value"
+      clog $
+        [ DLA_Literal (DLL_Int at $ fromIntegral n)
+        , DLA_Var v
+        ]
+      cv v
+    | L_Event ml en <- k -> do
+      let name = maybe en (\l -> bunpack l <> "_" <> en) ml
+      clogEvent name vs
+      cl DLL_Null
+    | otherwise -> impossible "algo: emitLog"
+    where
+      isInternalLog = \case
+        L_Internal -> True
+        L_Api {} -> True
+        _ -> False
   DLE_setApiDetails {} -> return ()
   where
     show_stack msg at fs = do
       comment $ texty msg
       comment $ texty $ unsafeRedactAbsStr $ show at
       comment $ texty $ unsafeRedactAbsStr $ show fs
+
+clogEvent :: String -> [DLVar] -> ReaderT Env IO ()
+clogEvent eventName vs = do
+  let signature = eventName <> "(" <> intercalate "," (map (typeSig . varType) vs) <> ")"
+  let shaString = show $ hashWith SHA512t_256 (B.pack signature)
+  let shaBytes = B.pack $ take 4 $ shaString
+  let as = map DLA_Var vs
+  cconcatbs $ (T_Bytes 4, cbs shaBytes) : map (\a -> (argTypeOf a, ca a)) as
+  code "log" [ "//", texty $ typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as ]
 
 clog :: [DLArg] -> App ()
 clog as = do
@@ -1609,7 +1654,7 @@ cm km = \case
       case de of
         DLE_TokenNew {} -> do
           return True
-        DLE_EmitLog _ _ _ dv' -> do
+        DLE_EmitLog _ _ [dv'] -> do
           isNewTok $ DLA_Var dv'
         _ -> do
           return False
@@ -1937,7 +1982,7 @@ cStateSlice at size iw = do
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
   let PLProg _at plo dli _ _ cpp = pl
-  let CPProg at _ _ai (CHandlers hm) = cpp
+  let CPProg at _ _ai _ (CHandlers hm) = cpp
   let sMaps = dli_maps dli
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty

@@ -226,8 +226,8 @@ instance AC CHandlers where
   ac (CHandlers m) = CHandlers <$> ac m
 
 instance AC CPProg where
-  ac (CPProg at vs ai chs) =
-    CPProg at <$> ac vs <*> pure ai <*> ac chs
+  ac (CPProg at vs ai devts chs) =
+    CPProg at <$> ac vs <*> pure ai <*> pure devts <*> ac chs
 
 ac_vi :: AppT ViewsInfo
 ac_vi = mapM (mapM (fresh . ac))
@@ -295,8 +295,8 @@ instance AC LLStep where
       return $ LLS_ToConsensus lls_tc_at lct' send' recv' mtime'
 
 instance AC LLProg where
-  ac (LLProg at llo ps dli dex vs das s) =
-    LLProg at llo ps dli <$> ac dex <*> pure vs <*> pure das <*> ac s
+  ac (LLProg at llo ps dli dex vs das devts s) =
+    LLProg at llo ps dli <$> ac dex <*> pure vs <*> pure das <*> pure devts <*> ac s
 
 add_counts :: AC a => a -> IO a
 add_counts x = do

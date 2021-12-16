@@ -249,14 +249,15 @@ type CPViews = DLViews
 type ApiInfos = M.Map SLPart ApiInfo
 
 data CPProg
-  = CPProg SrcLoc (CPViews, ViewInfos) ApiInfos CHandlers
+  = CPProg SrcLoc (CPViews, ViewInfos) ApiInfos DLEvents CHandlers
   deriving (Eq)
 
 instance Pretty CPProg where
-  pretty (CPProg _ vis ai chs) =
+  pretty (CPProg _ vis ai devts chs) =
     "views:" <+> pretty vis <> hardline <>
-    "apiInfo:" <+> pretty ai <> hardline
-    <> pretty chs
+    "apiInfo:" <+> pretty ai <> hardline <>
+    "events:" <+> pretty devts <> hardline <>
+    pretty chs
 
 data EPPs = EPPs
   { epps_apis :: DLAPIs

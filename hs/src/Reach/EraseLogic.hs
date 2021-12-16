@@ -184,8 +184,8 @@ instance {-# OVERLAPS #-} Erase a => Erase (DLinExportBlock a) where
     DLinExportBlock at vs <$> el b
 
 instance Erase LLProg where
-  el (LLProg at llo ps dli dex dvs das s) =
-    LLProg at llo ps dli <$> el dex <*> pure dvs <*> pure das <*> el s
+  el (LLProg at llo ps dli dex dvs das devts s) =
+    LLProg at llo ps dli <$> el dex <*> pure dvs <*> pure das <*> pure devts <*> el s
 
 erase_logic :: LLProg -> IO LLProg
 erase_logic p = do

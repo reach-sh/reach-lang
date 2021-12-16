@@ -134,7 +134,7 @@ instance Freshen DLExpr where
     DLE_TimeOrder at tos -> DLE_TimeOrder at <$> fu tos
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
-    DLE_EmitLog at m ma a -> DLE_EmitLog at m ma <$> fu a
+    DLE_EmitLog at k a -> DLE_EmitLog at k <$> fu a
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
 
 instance {-# OVERLAPS #-} Freshen k => Freshen (SwitchCases k) where
@@ -251,8 +251,8 @@ instance Freshen ETail where
     ET_Continue at asn -> ET_Continue at <$> fu asn
 
 instance Freshen LLProg where
-  fu (LLProg at opts sps dli dex dvs das s) =
-    LLProg at opts sps dli dex dvs das <$> fu s
+  fu (LLProg at opts sps dli dex dvs das devts s) =
+    LLProg at opts sps dli dex dvs das devts <$> fu s
 
 freshen_ :: Freshen a => Counter -> a -> [DLVar] -> IO (a, [DLVar])
 freshen_ fCounter x vs = do

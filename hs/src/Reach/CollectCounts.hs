@@ -153,7 +153,7 @@ instance Countable DLExpr where
     DLE_TimeOrder _ tos -> counts tos
     DLE_GetContract _ -> mempty
     DLE_GetAddress _ -> mempty
-    DLE_EmitLog _ _ _ a -> counts a
+    DLE_EmitLog _ _ a -> counts a
     DLE_setApiDetails {} -> mempty
 
 instance Countable DLAssignment where

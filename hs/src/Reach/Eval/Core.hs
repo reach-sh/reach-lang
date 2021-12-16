@@ -64,6 +64,7 @@ data AppRes = AppRes
   , ar_isAPI :: S.Set SLPart
   , ar_views :: DLViews
   , ar_apis :: DLAPIs
+  , ar_events :: DLEvents
   -- All the bound Participants, Views, APIs
   , ar_entities :: M.Map String SrcLoc
   }
@@ -578,6 +579,7 @@ base_env =
     , ("ParticipantClass", SLV_Prim SLPrim_ParticipantClass)
     , ("View", SLV_Prim SLPrim_View)
     , ("API", SLV_Prim SLPrim_API)
+    , ("Events", SLV_Prim SLPrim_Event)
     , ("deploy", SLV_Prim SLPrim_deploy)
     , ("setOptions", SLV_Prim SLPrim_setOptions)
     , (".adaptReachAppTupleArgs", SLV_Prim SLPrim_adaptReachAppTupleArgs)
@@ -2338,7 +2340,7 @@ evalPrim p sargs =
       ensure_mode SLM_ConsensusStep "new Token"
       tokdv_ <- ctxt_lift_expr (DLVar at Nothing T_Token) $
         DLE_TokenNew at tns
-      tokdv <- doEmitLog_ "tokenNew" Nothing tokdv_
+      tokdv <- doInternalLog_ Nothing tokdv_
       st <- readSt id
       setSt $ st
         { st_toks = st_toks st <> [ tokdv ]
@@ -3098,7 +3100,7 @@ evalPrim p sargs =
           "remote"
           (CT_Assume True)
           (\_ fs _ dargs -> DLE_Remote at fs aa m payAmt dargs withBill)
-      res' <- doEmitLog "remote" Nothing res''
+      res' <- doInternalLog Nothing res''
       let getRemoteResults = do
             apdvv <- doArrRef_ res' zero
             case shouldRetNNToks of
@@ -3199,9 +3201,45 @@ evalPrim p sargs =
     SLPrim_getContract -> getContractInfo T_Contract
     SLPrim_getAddress -> getContractInfo T_Address
     SLPrim_EmitLog -> do
-      (x, my) <- one_mtwo_arg
-      let ma = expectString <$> my
-      public <$> doEmitLog "api" ma x
+      (x, y) <- two_args
+      let ma = expectString y
+      public <$> doInternalLog (Just ma) x
+    SLPrim_Event -> do
+      ensure_mode SLM_AppInit "Event"
+      (nv, intv) <- case args of
+                      [x] -> return (Nothing, x)
+                      [x, y] -> return (Just x, y)
+                      _ -> illegal_args
+      at <- withAt id
+      n <- mapM mustBeBytes nv
+      im <- eventInterface intv
+      let mns = bunpack <$> n
+      mapM_ (verifyName at "Event" (M.keys im)) mns
+      let ns = fromMaybe "Untagged" mns
+      ix <- flip mapWithKeyM im $ \k (at', tys) -> do
+            mapM_ warnInteractType tys
+            when (isNothing nv) $ do
+              verifyName at "Event" [] k
+              verifyNotReserved at k
+            let v = SLV_Prim $ SLPrim_event_is n k tys
+            let io = SLSSVal at' Public v
+            di <- flip mapM tys $ \ ty ->
+                case st2dt ty of
+                  Nothing -> expect_ $ Err_Type_NotDT ty
+                  Just dt -> return dt
+            return $ (di, io)
+      let i' = M.map fst ix
+      let io = M.map snd ix
+      aisiPut aisi_res $ \ar ->
+        ar { ar_events = M.insert n i' $ ar_events ar }
+      retV $ (lvl, SLV_Object at (Just $ ns <> " Event") io)
+    SLPrim_event_is eventLabel which tys -> do
+      at <- withAt id
+      typedArgs <- zipEq (Err_Apply_ArgCount at) tys args
+      vs <- flip mapM typedArgs $ \ (ty, arg) ->
+          (snd <$> evalPrim SLPrim_is [public arg, public $ SLV_Type ty])
+      void $ doEmitLog False (Just $ (eventLabel, which)) Nothing vs
+      return $ public $ SLV_Null at "event_is"
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -3225,10 +3263,6 @@ evalPrim p sargs =
     one_arg = case args of
       [x] -> return $ x
       _ -> illegal_args
-    one_mtwo_arg = case args of
-      [x] -> return $ (x, Nothing)
-      [x, y] -> return $ (x, Just y)
-      _ -> illegal_args
     two_args = case args of
       [x, y] -> return $ (x, y)
       _ -> illegal_args
@@ -3249,6 +3283,13 @@ evalPrim p sargs =
     make_dlvar at' ty = do
       dv <- ctxt_mkvar $ DLVar at' Nothing ty
       return $ (dv, SLV_DLVar dv)
+    eventInterface intv = do
+      objEnv <- mustBeObject intv
+      let checkInt = \case
+            SLSSVal tAt _ (SLV_Tuple _ ts) ->
+              (tAt,) <$> mapM (expect_ty "Event") ts
+            SLSSVal idAt _ idV -> locAt idAt $ expect_t idV $ Err_App_InvalidInteract
+      mapM checkInt objEnv
     mustBeInterface intv = do
       objEnv <- mustBeObject intv
       let checkint = \case
@@ -3316,16 +3357,30 @@ doInteractiveCall sargs iat estf mode lab ct mkexpr = do
   check_post rng_v
   return rng_v
 
+doInternalLog :: Maybe String -> SLVal -> App SLVal
+doInternalLog ma x = doEmitLog True Nothing ma [x]
 
-doEmitLog :: String -> Maybe String -> SLVal -> App SLVal
-doEmitLog m ma v = SLV_DLVar <$> (doEmitLog_ m ma =<< compileToVar v)
+doInternalLog_ :: Maybe String -> DLVar -> App DLVar
+doInternalLog_ ma x = expectDLVar <$> doEmitLog_ True Nothing ma [x]
 
-doEmitLog_ :: String -> Maybe String -> DLVar -> App DLVar
-doEmitLog_ m ma dv = do
+doEmitLog :: Bool -> Maybe (Maybe SLPart, String) -> Maybe String ->  [SLVal] -> App SLVal
+doEmitLog isInternal ml ma vs =
+  doEmitLog_ isInternal ml ma =<< mapM compileToVar vs
+
+doEmitLog_ :: Bool -> Maybe (Maybe SLPart, String) -> Maybe String -> [DLVar] -> App SLVal
+doEmitLog_ isInternal ml ma dvs = do
   ensure_mode SLM_ConsensusStep "emitLog"
   at <- withAt id
-  let t = varType dv
-  ctxt_lift_expr (DLVar at Nothing t) (DLE_EmitLog at m ma dv)
+  let tys = map varType dvs
+  case (isInternal, ml, dvs, tys) of
+    (True, Nothing, [_], [ty]) -> do
+      let lk = maybe L_Internal L_Api ma
+      dv <- ctxt_lift_expr (DLVar at Nothing ty) $ DLE_EmitLog at lk dvs
+      return $ SLV_DLVar dv
+    (False, Just (ml', l), vs, _) -> do
+      ctxt_lift_eff $ DLE_EmitLog at (L_Event ml' l) vs
+      return $ SLV_Null at "emitLog"
+    _ -> impossible "doEmitLog_: Expected one arg for internal emitLog"
 
 assertRefinedArgs :: ClaimType -> [SLSVal] -> SrcLoc -> SLTypeFun -> App (SLVal, [DLArgExpr])
 assertRefinedArgs ct sargs iat (SLTypeFun {..}) = do

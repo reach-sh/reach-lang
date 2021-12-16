@@ -243,7 +243,7 @@ data SolCtxt = SolCtxt
   , ctxt_plo :: PLOpts
   , ctxt_intidx :: Counter
   , ctxt_ints :: IORef (M.Map Int Doc)
-  , ctxt_outputs :: IORef (M.Map DLVar Doc)
+  , ctxt_outputs :: IORef (M.Map String Doc)
   , ctxt_tlfuns :: IORef (M.Map String Doc)
   , ctxt_requireMsg :: Counter
   , ctxt_api_rngs :: IORef (Maybe (M.Map String DLType))
@@ -393,7 +393,7 @@ instance DepthOf DLExpr where
     DLE_TimeOrder {} -> impossible "timeorder"
     DLE_GetContract {} -> return 1
     DLE_GetAddress {} -> return 1
-    DLE_EmitLog _ _ _ a -> add1 $ depthOf a
+    DLE_EmitLog _ _ a -> add1 $ depthOf a
     DLE_setApiDetails {} -> return 0
     where
       add1 m = (+) 1 <$> m
@@ -871,26 +871,38 @@ solCom = \case
           <> checkNonNetTokAllowances
           <> sub'l
           <> pv'
-  DL_Let _ pv (DLE_EmitLog _ _ m_api lv) -> do
-    lv' <- solVar lv
-    let lv_ty = varType lv
-    lv_ty' <- solType lv_ty
-    let go sv l = solApply (solOutput_evt lv) [l <+> sv lv] <> semi
-    let ed = "event" <+> go solRawVar lv_ty'
-    modifyCtxtIO ctxt_outputs $ M.insert lv ed
-    let emitl = "emit" <+> go (const lv') ""
-    asn <-
-          case m_api of
-            Just f -> do
-              addApiRng f lv_ty
-              return $ solSet (apiRetMemVar f) lv'
-            Nothing -> return ""
+  DL_Let _ pv (DLE_EmitLog _ lk lvs) -> do
+    lvs' <- mapM solVar lvs
+    let lv_tys = map varType lvs
+    lv_tys' <- mapM solType lv_tys
+    -- Get event label or use variable name from internal log
+    let oe = case (lk, lvs) of
+            (L_Event ml l, _) -> pretty $ maybe l (\l' -> bunpack l' <> "_" <> l) ml
+            (_, [h]) -> solOutput_evt h
+            (_, _) -> impossible "Expecting one value to emit"
+    let go sv ls = solApply oe (map (\ (l, v) -> l <+> sv v) $ ls) <> semi
+    let eventVars = do
+          -- Name doesn't matter in event definition just needs to be unique
+          let fvs = map (\ (i, DLVar at ml t _) -> DLVar at ml t i) $ zip [0..] lvs
+          zip lv_tys' fvs
+    let ed = "event" <+> go solRawVar eventVars
+    modifyCtxtIO ctxt_outputs $ M.insert (show oe) ed
+    let emitVars = map (mempty,) lvs'
+    let emitl = "emit" <+> go id emitVars
+    asn <- case (lk, lv_tys, lvs') of
+            (L_Api f, [ty], [v]) -> do
+              addApiRng f ty
+              return $ solSet (apiRetMemVar f) v
+            (_, _, _) -> return ""
     case pv of
       DLV_Eff -> do
         return $ vsep [ emitl, asn ]
       DLV_Let _ dv -> do
         addMemVar dv
-        return $ vsep [ solSet (solMemVar dv) lv', emitl, asn ]
+        v' <- case lvs of
+            [h] -> solVar h
+            _ -> impossible "solCom: emitLog expected one value"
+        return $ vsep [ solSet (solMemVar dv) v', emitl, asn ]
   DL_Let _ (DLV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv
     solLargeArg dv la
@@ -1383,7 +1395,7 @@ createAPIRng = \case
     return $ fromMaybe (impossible "createAPIRng") $ solStruct "ApiRng" fields
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) ai hs)) = do
+solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) ai _ hs)) = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   ctxt_varm <- newIORef mempty

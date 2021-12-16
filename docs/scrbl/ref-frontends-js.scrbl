@@ -466,6 +466,54 @@ If a @tech{View} was specified without a @reachin{viewName}, for example @reachi
   ctc.v.owner();
 }
 
+@subsection{@tt{ctc.events}, @tt{ctc.e}}
+
+@js{
+  ctc.events // { [name: string]: EventStream }
+  ctc.e      // { [name: string]: EventStream }
+
+  await ctc.e.log.next();
+}
+
+@index{ctc.events}
+@index{ctc.e}
+An object that mirrors the @tech{event} hierarchy, so if @litchar{X.Y} is an @tech{event}, then @jsin{ctc.events.X.Y} is an @deftech{EventStream}.
+An @tech{EventStream} supports the following operations for a given @reachin{Event}:
+
+@(mint-define! '("EventStream"))
+@js{
+  EventStream<T> : {
+    next    : () => Promise<Event<T>>,
+    seek    : (t: Time) => void,
+    seekNow : () => Promise<void>,
+    lastTime: () => Promise<Time>,
+    monitor : ((Event<T>) => void) => Promise<void>,
+  }
+}
+
+where
+
+@(mint-define! '("Event"))
+@js{
+  Event<T> : { when: Time, what: T }
+}
+
+An @jsin{Event} is instantiated with it's corresponding type declared in Reach.
+
+@index{next} @jsin{next} will wait for the next @reachin{Event} to occur, returning the time the event occured
+and the arguments to the event.
+
+@index{seek} @jsin{seek} will set the internal time of the @tech{EventStream} to the given argument.
+The @tech{EventStream} will use this time as the minimum bound when searching for @reachin{Event}s.
+
+@index{seekNow} @jsin{seekNow} will set the internal time of the @tech{EventStream} to the latest @tech{network time}.
+The @tech{EventStream} will use this time as the minimum bound when searching for @reachin{Event}s.
+
+@index{lastTime} @jsin{lastTime} will return the last @tech{network time} that an @reachin{Event} was emitted.
+
+@index{monitor} @jsin{monitor} accepts a function of type @jsin{Event<T> => void} as an argument. The provided function will be
+called whenever the @reachin{Event} occurs.
+
 @(hrule)
 
 @(mint-define! '("getViews"))

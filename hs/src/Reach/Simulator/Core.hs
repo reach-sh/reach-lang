@@ -520,7 +520,11 @@ instance Interp DLExpr where
     DLE_TimeOrder _at _assoc_maybe_arg_vars -> return V_Null
     DLE_GetContract _at -> impossible "undefined"
     DLE_GetAddress _at -> impossible "undefined"
-    DLE_EmitLog at _str _maybe_str dlvar -> interp $ DL_Var at dlvar
+    DLE_EmitLog at (L_Api _) [dlvar] -> interp $ DL_Var at dlvar
+    DLE_EmitLog at L_Internal [dlvar] -> interp $ DL_Var at dlvar
+    -- events from Events are : [a] -> Null
+    DLE_EmitLog _ (L_Event {}) _ -> return V_Null
+    DLE_EmitLog {} -> impossible "DLE_EmitLog invariants not satisified"
     DLE_setApiDetails _ _ _ _ _ -> return V_Null
 
 instance Interp DLStmt where
@@ -720,7 +724,7 @@ consensusBody n g l (DLSend {..}) (DLRecv {..}) = do
 
 -- evaluate a linear Reach program
 instance Interp LLProg where
-  interp (LLProg _at _llo slparts _dli _dex _dvs _apis step) = do
+  interp (LLProg _at _llo slparts _dli _dex _dvs _apis _evts step) = do
     registerParts $ M.keys $ sps_ies slparts
     interp step
 

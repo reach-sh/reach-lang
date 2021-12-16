@@ -100,7 +100,7 @@ instance Subst DLExpr where
     DLE_TimeOrder at tos -> DLE_TimeOrder at <$> subst tos
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
-    DLE_EmitLog at m ma x -> DLE_EmitLog at m ma <$> subst x
+    DLE_EmitLog at lk x -> DLE_EmitLog at lk <$> subst x
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
 
 instance Subst DLStmt where

@@ -557,11 +557,10 @@ data DLExpr
   | DLE_TimeOrder SrcLoc [(Maybe DLArg, DLVar)]
   | DLE_GetContract SrcLoc
   | DLE_GetAddress SrcLoc
-  -- | DLE_EmitLog SrcLoc (Either Int String) DLType DLArg
-  -- * the either is whether it is a generated one or a prescribed one
-  -- * the type is the type
-  -- * the dlarg is the value being logged
-  | DLE_EmitLog SrcLoc String (Maybe String) DLVar
+  -- | DLE_EmitLog SrcLoc LogKind [DLVar]
+  -- * the LogKind specifies whether the log generated from an API, Events, or is internal
+  -- * the [DLVar] are the values to log
+  | DLE_EmitLog SrcLoc LogKind [DLVar]
   | DLE_setApiDetails {
     sad_at :: SrcLoc,
     sad_who :: SLPart,
@@ -569,6 +568,12 @@ data DLExpr
     sad_mcase_id :: Maybe String,
     sad_compile :: ApiInfoCompilation }
   deriving (Eq, Ord, Generic)
+
+data LogKind
+  = L_Api String
+  | L_Event (Maybe SLPart) String
+  | L_Internal
+  deriving (Eq, Ord, Show)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
 prettyClaim ct a m = do
@@ -684,11 +689,19 @@ instance PrettySubst DLExpr where
       return $ "timeOrder" <> parens tos'
     DLE_GetContract {} -> return $ "getContract()"
     DLE_GetAddress {} -> return $ "getAddress()"
-    DLE_EmitLog _ m mapi v -> do
-      a' <- prettySubst $ DLA_Var v
-      return $ "emitLog" <> parens (pretty m <> ", " <> pretty mapi) <> parens a'
+    DLE_EmitLog _ lk vs -> do
+      return $ "emitLog" <> parens (pretty lk) <> parens (pretty vs)
     DLE_setApiDetails _ p d mc f ->
       return $ "setApiDetails" <> parens (render_das [pretty p, pretty d, pretty mc, pretty f])
+
+instance PrettySubst LogKind where
+  prettySubst = \case
+    L_Internal ->
+      return $ "internal"
+    L_Event ml s -> do
+      return $ "event" <> parens (pretty ml <> ", " <> pretty s)
+    L_Api s -> do
+      return $ "api" <> parens (pretty s)
 
 pretty_subst :: PrettySubst a => PrettySubstEnv -> a -> Doc
 pretty_subst e x =
@@ -1032,3 +1045,5 @@ class HasCounter a where
 type DLViews = M.Map (Maybe SLPart) (M.Map SLVar IType)
 
 type DLAPIs = M.Map (Maybe SLPart) (M.Map SLVar (SLPart, IType))
+
+type DLEvents = M.Map (Maybe SLPart) (M.Map SLVar [DLType])

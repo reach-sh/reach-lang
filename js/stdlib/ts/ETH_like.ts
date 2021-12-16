@@ -14,6 +14,8 @@ import {
   make_newTestAccounts,
   make_waitUntilX,
   checkTimeout,
+  Time,
+  ISetupEventArgs,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -99,6 +101,7 @@ type VerifyResult = {
 };
 type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
 type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
+type SetupEventArgs = ISetupEventArgs<ContractInfo, VerifyResult>;
 type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyETH_Ty>;
 
 type AccountTransferable = Account | {
@@ -208,6 +211,14 @@ const sendRecv_prepArg = (lct:BigNumber, args:Array<any>, tys:Array<any>, evt_cn
 // Event Cache
 // ****************************************************************************
 
+const getMinBlockWithLogIndex = (logIndex: any) => (allLogs: any[]) => {
+  const logs = allLogs.filter(log => log.logIndex > (logIndex[log.blockNumber] || 0) );
+  return logs.reduce((acc: Log, x: Log) =>
+    (x.blockNumber == acc.blockNumber)
+      ? (x.logIndex > (logIndex[x.blockNumber] || 0) && x.logIndex < acc.logIndex ? x : acc)
+      : (x.blockNumber.toString() < acc.blockNumber.toString() ? x : acc), logs[0]);
+}
+
 const getMinBlock = (logs: any[]) =>
   logs.reduce((acc: Log, x: Log) =>
     (x.blockNumber == acc.blockNumber)
@@ -223,6 +234,12 @@ const getMaxBlock = (logs: any[]) =>
 type QueryResult =
   | { succ: true, evt: any }
   | { succ: false, block: number }
+
+type QueryInfo = {
+  fromBlock: number,
+  timeoutAt?: TimeArg,
+  isEventStream?: boolean,
+}
 
 class EventCache {
   cache: any[] = [];
@@ -245,20 +262,21 @@ class EventCache {
     }
   }
 
-  async query(dhead:any, getC: () => Promise<EthersLikeContract>, fromBlock: number, timeoutAt: TimeArg | undefined, evt: string ) {
+  async query(dhead:any, getC: () => Promise<EthersLikeContract>, evt: string, queryInfo: QueryInfo, f = getMinBlock) {
     const ethersC = await getC();
-    return await this.queryContract(dhead, ethersC.address, ethersC.interface, fromBlock, timeoutAt, evt);
+    return await this.queryContract(dhead, ethersC.address, ethersC.interface, evt, queryInfo, f);
   }
 
-  async queryContract(dhead:any, address:string, iface:any, fromBlock: number, timeoutAt: TimeArg|undefined, evt: string) {
+  async queryContract(dhead:any, address:string, iface:any, evt: string, queryInfo: QueryInfo, f = getMinBlock) {
     const topic = iface.getEventTopic(evt);
     this.checkAddress(address);
-    return await this.query_(dhead, fromBlock, timeoutAt, topic);
+    return await this.query_(dhead, topic, queryInfo, f);
   }
 
-  async query_(dhead:any, fromBlock: number, timeoutAt: TimeArg|undefined, topic: string): Promise<QueryResult> {
+  async query_(dhead:any, topic: string, queryInfo: QueryInfo, f: ((logs: any[]) => any|undefined)): Promise<QueryResult> {
     const lab = `EventCache.query`;
-    debug(dhead, lab, { fromBlock, timeoutAt, topic });
+    const { fromBlock, timeoutAt, isEventStream = false } = queryInfo;
+    debug(dhead, lab, { fromBlock, timeoutAt, isEventStream, topic });
 
     const h = (mode:string): (number | undefined) => timeoutAt && timeoutAt[0] === mode ? bigNumberToNumber(timeoutAt[1]) : undefined;
     const maxTime = h('time');
@@ -291,12 +309,15 @@ class EventCache {
     const initLogs = await searchLogs(this.cache);
     if(initLogs.length > 0) {
       debug(dhead, lab, `in cache`);
-      return { succ: true, evt: getMinBlock(initLogs) };
+      const evt = f(initLogs);
+      if (evt !== undefined) {
+        return { succ: true, evt };
+      }
     }
     debug(dhead, lab, `not in cache`);
 
     const failed = (): {succ: false, block: number} => ({ succ: false, block: this.currentBlock });
-    if ( this.cache.length != 0 ) {
+    if ( this.cache.length != 0 && !isEventStream ) {
       debug(`cache not empty, contains some other message from future, not querying...`, this.cache);
       return failed();
     }
@@ -352,7 +373,10 @@ class EventCache {
     const foundLogs = await searchLogs(this.cache);
     if ( foundLogs.length > 0 ) {
       debug(dhead, lab, `in network`);
-      return { succ: true, evt: getMinBlock(foundLogs) };
+      const evt = f(foundLogs);
+      if (evt !== undefined) {
+        return { succ: true, evt };
+      }
     }
 
     debug(dhead, lab, `not in network`);
@@ -764,7 +788,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const fromBlock: number =
           lastBlock + (isCtor ? 0 : 1);
         while ( true ) {
-          const res = await eventCache.query(dhead, getC, fromBlock, timeoutAt, ok_evt);
+          const res = await eventCache.query(dhead, getC, ok_evt, { fromBlock, timeoutAt });
           if ( ! res.succ ) {
             const currentTime = res.block;
             debug(dhead, 'TIMECHECK', {timeoutAt, currentTime});
@@ -834,7 +858,66 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       return { getView1, viewLib };
     };
 
-    return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, _setup, givenInfoP });
+    const setupEvents = (setupArgs: SetupEventArgs) => {
+      const eventCache = new EventCache(); // shared across getEvents
+      let time = bigNumberify(0);
+      const getC = makeGetC(setupArgs, eventCache, (cb) => {
+        time = bigNumberify(cb);
+      });
+      const createEventStream = (event: string, tys: any[]) => {
+        void tys;
+        let logIndex: any = {};
+        let lastLog: any = undefined;
+
+        const seek = (t: Time) => {
+          debug("EventStream::seek", t);
+          time = t;
+          logIndex[time.toNumber()] = 0;
+        }
+
+        const next = async () => {
+          const dhead = "EventStream::next";
+          debug(dhead, time);
+          const ctc = await getC();
+          let res: QueryResult = { succ: false, block: 0 } ;
+          while (!res.succ) {
+            res = await eventCache.query(dhead, getC, event, { fromBlock: time.toNumber(), isEventStream: true }, getMinBlockWithLogIndex(logIndex));
+            if (!res.succ) { await Timeout.set(5000); }
+          }
+          const { evt } = res;
+          const blockTime = bigNumberify(evt.blockNumber);
+          const blockLogIdx = evt.logIndex;
+          logIndex[blockTime.toNumber()] = blockLogIdx;
+          const { args } = ctc.interface.parseLog(evt);
+          const thisArgs = tys.map((ty, i) => ty.unmunge(args[i]));
+          debug(dhead + ` parsed log`, thisArgs, blockTime);
+          lastLog = { when: blockTime, what: thisArgs };
+          return lastLog;
+        }
+
+        const seekNow = async () => {
+          time = await getNetworkTime();
+        }
+
+        const lastTime = async () => {
+          const dhead = "EventStream::lastTime";
+          debug(dhead, time);
+          return lastLog?.when;
+        }
+
+        const monitor = async (onEvent: (x: any) => void) => {
+          while (true) {
+            onEvent(await next());
+          }
+        }
+
+        return { lastTime, seek, seekNow, monitor, next };
+      };
+
+      return { createEventStream };
+    }
+
+    return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
   };
 
   function setDebugLabel(newLabel: string): Account {
@@ -1025,7 +1108,7 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
   const lookupLog = async (event:string): Promise<any> => {
     debug(dhead, 'lookupLog', {event, now});
     while ( eventCache.currentBlock <= now ) {
-      const res = await eventCache.queryContract(dhead, address, iface, creation_block, [ 'time', bigNumberify(now) ], event);
+      const res = await eventCache.queryContract(dhead, address, iface, event, { fromBlock: creation_block, timeoutAt: [ 'time', bigNumberify(now) ] });
       if ( ! res.succ ) { continue; }
       return res.evt;
     }
