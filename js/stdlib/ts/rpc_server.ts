@@ -194,7 +194,7 @@ export const serveRpc = async (backend: any) => {
 
   const rpc_launchToken = {
     mint: async (kid: string, accTo: string, amt: any) =>
-      token.id(kid).mint(account.id(accTo), amt),
+      token.id(kid).mint(account.id(accTo), real_stdlib.bigNumberify(amt)),
 
     optOut: async (kid: string, accFrom: string, accTo?: string) =>
       token.id(kid).optOut(account.id(accFrom), accTo ? account.id(accTo) : undefined),
