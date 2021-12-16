@@ -6,7 +6,7 @@ import { resolve                  } from 'path';
 import express, { Request, Response, NextFunction } from 'express';
 
 import { loadStdlib } from './loader';
-import { debug } from './shared_impl';
+import { debug      } from './shared_impl';
 
 const withApiKey = () => {
   const key = process.env.REACH_RPC_KEY;
@@ -156,6 +156,13 @@ export const serveRpc = async (backend: any) => {
   const app           = express();
   const route_backend = express.Router();
 
+  // `isBigNumber` in stdlib uses type reflection which doesn't work here due
+  // to `n` having been serialized into JSON
+  const reBigNumberify = (n: any) =>
+    n && n.hex && n.type && n.type === 'BigNumber'
+      ? (() => { try { return real_stdlib.bigNumberify(n); } catch (e) { return n; }})()
+      : n;
+
   const rpc_acc = {
     contract: async (id: string, ...args: any[]) =>
       contract.track(await account.id(id).contract(backend, ...args)),
@@ -263,7 +270,7 @@ export const serveRpc = async (backend: any) => {
       try {
         const a = await req.path.split('/')
           .filter(a => a !== '')
-          .reduce(userDefinedField, k.id(id)[prop])(...args);
+          .reduce(userDefinedField, k.id(id)[prop])(...args.map(reBigNumberify));
 
         debug(`${lab} ==> ${JSON.stringify(a)}`);
         return res.json(a);
