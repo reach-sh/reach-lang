@@ -514,18 +514,14 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   configJson.titleId = theader.id;
   configJson.pathname = in_folder;
 
-  const bp = configJson.bookPath;
-  if ( bp ) {
-    if ( books[bp] === undefined ) { books[bp] = []; }
-    if ( ! configJson.bookHide ) {
-      books[bp].push({ here, title,
-        hidec: configJson.bookHideChildren,
-        path: here.split('/'),
+  if ( !forReal ) {
+    const bp = configJson.bookPath;
+    if ( bp ) {
+      books.push({ here, title,
         rank: (configJson.bookRank || 0)});
     }
+    return;
   }
-
-  if ( !forReal ) { return; }
 
   // Adjust image urls.
   doc.querySelectorAll('img').forEach(img => {
@@ -648,25 +644,31 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   ]);
 };
 
-const books = {};
+const books = [];
+const booksT = { path: [], children: {} };
+const generateBooksTree = () => {
+  for ( const c of books ) {
+    let ct = booksT.children;
+    let cp = [];
+    let p = c.here.split('/');
+    while ( p.length !== 0 ) {
+      const [ n, ...pn ] = p;
+      p = pn;
+      cp = [...cp, n];
+      if ( ! (n in ct) ) {
+        ct[n] = { path: cp, children: {} };
+      }
+      ct = ct[n];
+      if ( p.length !== 0 ) {
+        ct = ct.children;
+      }
+    }
+    Object.assign(ct, c);
+  }
+};
+const bookPipe = await unified()
+  .use(rehypeStringify);
 const generateBook = async (destp, bookp) => {
-  const cs = books[bookp] || [];
-  const treeify = (ct, cp, c) => {
-    const n = c.path.shift();
-    const cpn = [...cp, n];
-    if ( ! (n in ct) ) {
-      ct[n] = { path: cpn, children: {} };
-    }
-    const ctn = ct[n];
-    if ( c.path.length === 0 ) {
-      ctn.rank = c.rank;
-      ctn.here = c.here;
-      ctn.title = c.title;
-      ctn.hidec = c.hidec;
-    } else {
-      treeify(ctn.children, cpn, c);
-    }
-  };
   const compareNumbers = (a, b) => (a - b);
   const compareChapters = (x, y) => {
     const rc = compareNumbers(x.rank, y.rank);
@@ -676,7 +678,7 @@ const generateBook = async (destp, bookp) => {
   const hify = (ctc) => {
     const d = h('div', {class: "row chapter dynamic"});
     const cs = [];
-    if ( ctc.hidec || Object.keys(ctc.children).length === 0 ) {
+    if ( Object.keys(ctc.children).length === 0 ) {
       d.children.push(h('div', {class: "col-auto chapter-empty-col"}));
     } else {
       d.children.push(h('div', {class: "col-auto chapter-icon-col"}, [
@@ -702,18 +704,14 @@ const generateBook = async (destp, bookp) => {
   }
   const hifyTop = (ct, p) => {
     if ( p.length !== 0 ) {
-      const n = p.shift();
-      return hifyTop((ct[n] || {}), p);
+      const [ n, ...pn ] = p;
+      return hifyTop(((ct.children || {})[n] || {}), pn);
     } else {
       return hifyList(ct);
     }
   };
-  const ct = { };
   const toc = { type: 'root', children: [] };
-  cs.forEach((c) => treeify(ct, [], c));
-  toc.children = hifyTop(ct, bookp.split('/'));
-  const bookPipe = await unified()
-    .use(rehypeStringify);
+  toc.children = hifyTop(booksT, bookp.split('/'));
   await fs.writeFile(destp, bookPipe.stringify(toc));
 };
 
@@ -820,8 +818,11 @@ const generateSearch = async () => {
 };
 
 // Main
-
 await findAndProcessFolder(`base.html`, process.env, srcDir);
+console.log(JSON.stringify(books, null, 2));
+generateBooksTree();
+console.log(JSON.stringify(booksT, null, 2));
+
 forReal = true;
 // This depends on the xrefs being assembled
 await Promise.all([

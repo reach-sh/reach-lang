@@ -17,11 +17,20 @@ rank() {
   { "bookRank": ${RANK} }
 EOF
 }
+bookrank() {
+  RANK="${1}"
+  BOOK="${2}"
+  cat > "${TOD}"/config.json <<EOF
+  { "bookRank": ${RANK},
+    "bookTitle": "${BOOK}"
+  }
+EOF
+}
 
 r reach .
 
-r overview tut/overview
-rank 10
+  r overview tut/overview
+  rank 10
   r tut tut/rps
   rank 20
     r tut-7-rpc tut/rps/7-rpc
@@ -68,7 +77,7 @@ r ref-networks networks
 rank 60
 
 r ref-backends-rpc rpc
-rank 70
+bookrank 70 "Reach RPC Server"
   r ref-frontends-rpc-cs rpc/cs
   rank 10
   r ref-frontends-rpc-go rpc/go
@@ -83,7 +92,7 @@ rank 70
   rank 60
 
 r workshop workshop
-rank 80
+bookrank 80 "Workshops"
   r workshop-hash-lock workshop/hash-lock
   rank 10
   r workshop-relay workshop/relay
@@ -96,7 +105,7 @@ rank 80
   rank 50
 
 r guide guide
-rank 90
+bookrank 90 "Guide"
   r guide-windows guide/windows
   rank 10
   r guide-versions guide/versions
