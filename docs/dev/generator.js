@@ -5,7 +5,6 @@ import * as htmlMinify from 'html-minifier';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import UglifyJS from 'uglify-js';
-import axios from 'axios';
 import shiki from 'shiki';
 import yaml from 'js-yaml';
 import rehypeFormat from 'rehype-format';
@@ -39,7 +38,6 @@ const rootDir = path.dirname(__filename);
 const reachRoot = `${rootDir}/../../`;
 const cfgFile = "config.json";
 const repoBaseNice = "https://github.com/reach-sh/reach-lang/tree/master";
-const repoBase = "https://raw.githubusercontent.com/reach-sh/reach-lang/master";
 const srcDir = normalizeDir(`${rootDir}/src`);
 const outDir = normalizeDir(`${rootDir}/build`);
 let forReal = false;
@@ -181,22 +179,6 @@ const writeFileMkdir = async (p, c) => {
   const dir = path.dirname(p);
   await fs.mkdir(dir, {recursive: true});
   await fs.writeFile(p, c);
-};
-
-const remoteGet_ = async (url) => {
-  if ( url.startsWith(repoBase) ) {
-    const n = url.replace(repoBase, reachRoot);
-    return await fs.readFile(n, 'utf8');
-  }
-  console.log(`Downloading ${url}`);
-  return (await axios.get(url)).data;
-};
-const CACHE = {};
-const remoteGet = async (url) => {
-  if ( ! (url in CACHE) ) {
-    CACHE[url] = await remoteGet_(url);
-  }
-  return CACHE[url];
 };
 
 const shikiHighlighter =
@@ -577,10 +559,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     if (arr.length > 0) {
       const line1 = arr[0].replace(/\s+/g, '');
       if (line1.slice(0, 5) == 'load:') {
-        spec.url = line1.slice(5);
-        if (spec.url.slice(0, 4) == 'http') {
-          throw Error(`code: Cannot load any HTTP resource ${spec.url}`);
-        }
+        spec.load = line1.slice(5);
         if (arr.length > 1) {
           const line2 = arr[1].replace(/\s+/g, '');
           if (line2.slice(0, 6) == 'range:') {
@@ -591,9 +570,9 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     } }
 
     // Get remote content if specified.
-    if (spec.url) {
-      code.textContent = await remoteGet(`${repoBase}${spec.url}`);
-      spec.language = urlExtension(spec.url);
+    if (spec.load) {
+      code.textContent = await fs.readFile(`${reachRoot}${spec.load}`, 'utf8');
+      spec.language = urlExtension(spec.load);
     }
 
     code.textContent = code.textContent.trimEnd();
@@ -637,8 +616,8 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     const mkEl = (s) => doc.createRange().createContextualFragment(s);
     const chEl = doc.createElement('div');
     chEl.classList.add("codeHeader");
-    if ( spec.url ) {
-      chEl.appendChild(mkEl(`<a href="${repoBaseNice}${spec.url}">${spec.url}</a>`));
+    if ( spec.load ) {
+      chEl.appendChild(mkEl(`<a href="${repoBaseNice}${spec.load}">${spec.load}</a>`));
     } else {
       chEl.appendChild(mkEl(`&nbsp;`));
     }
