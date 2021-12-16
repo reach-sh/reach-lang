@@ -462,7 +462,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
         const tcs = node.children.filter((x) => x.type === 'text');
         if ( tcs.length > 0 ) {
           const i = paraN++;
-          const is = i.toString(16);
+          const is = i.toString();
           const id = `p_${is}`;
           node.children.unshift({type: 'html', value: `<i id="${id}" class="pid"></i>`});
           node.children.push({type: 'html', value: `<a href="#${id}" class="pid">${is}</a>`});
@@ -825,7 +825,7 @@ const gatherSearchData = async ({doc, title, here}) => {
       objectID: `${h}#${el.id}`,
       pt: title,
       t: sd_p,
-      c: mini(el.parentElement.textContent).replace(/[\da-f]+$/, ''),
+      c: mini(el.parentElement.textContent).replace(/\d+$/, ''),
     });
   });
 };
