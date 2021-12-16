@@ -12,6 +12,9 @@ import Data.Bits
 import Data.Aeson
 import GHC.Generics
 
+data Identity = Consensus | Participant Participant
+  deriving (Eq,Ord,Show,Generic)
+
 type Participant = String
 
 data Transmission = Transmission
@@ -23,20 +26,17 @@ instance ToJSON Transmission where
   toEncoding = genericToEncoding defaultOptions
 -- instance FromJSON Transmission
 
-data LocalInfo = LocalInfo
-  { l_acct :: Account
-  , l_who :: Maybe Participant
-  , l_store :: Store
-  } deriving (Generic)
-
-instance ToJSON LocalInfo
-
 type ActorId = Int
-type PoolId = Integer
+type PhaseId = Integer
 type AccountId = Int
 
+data MessageInfo = NotFixedYet [Store] | Fixed Store
+  deriving (Generic)
+
+instance ToJSON MessageInfo
+
 data Global = Global
-  { e_record :: [Transmission]
+  { e_record :: M.Map PhaseId Transmission
   , e_ledger :: M.Map Account (M.Map Token Balance)
   , e_next_token :: Token
   , e_linstate :: LinearState
@@ -44,19 +44,29 @@ data Global = Global
   , e_nwsecs :: Integer
   , e_nactorid :: ActorId
   , e_naccid :: AccountId
-  , e_nmsgid :: PoolId
+  , e_phaseid :: PhaseId
   , e_partacts :: M.Map Participant ActorId
+  , e_messages :: M.Map PhaseId MessageInfo
   } deriving (Generic)
 
 instance ToJSON Global
 -- instance FromJSON Global
 
+data LocalInfo = LocalInfo
+  { l_acct :: Account
+  , l_who :: Maybe Participant
+  , l_store :: Store
+  , l_phase :: PhaseId
+  } deriving (Generic)
+
 type Locals = M.Map ActorId LocalInfo
 
 data Local = Local
-  { e_locals :: Locals
-  , e_curr_actorid :: ActorId
+  { l_locals :: Locals
+  , l_curr_actor_id :: ActorId
   } deriving (Generic)
+
+instance ToJSON LocalInfo
 
 instance ToJSON Local
 
@@ -75,15 +85,16 @@ initGlobal = Global
   , e_nwsecs = 0
   , e_nactorid = 0
   , e_naccid = 0
-  , e_nmsgid = 0
+  , e_phaseid = 0
   , e_partacts = mempty
+  , e_messages = mempty
   }
 
 initLocal :: Local
 initLocal = Local
-  { e_locals = M.singleton (fromIntegral consensusId) LocalInfo
-      {l_acct = consensusId, l_who = Nothing, l_store = mempty}
-  , e_curr_actorid = fromIntegral consensusId
+  { l_locals = M.singleton (fromIntegral consensusId) LocalInfo
+      {l_acct = consensusId, l_who = Nothing, l_store = mempty, l_phase = 0}
+  , l_curr_actor_id = fromIntegral consensusId
   }
 
 type PartCont = State -> DLVal -> PartState
@@ -182,7 +193,7 @@ ledgerNewToken acc tk = do
     _ -> impossible "expression interpreter"
 
 data Action
-  = A_TieBreak PoolId [String]
+  = A_TieBreak PhaseId [String]
   | A_NewActor
   | A_None
   | A_ChangeActor Int
@@ -217,37 +228,51 @@ data DLVal
 instance ToJSON DLVal
 instance FromJSON DLVal
 
-addToRecord :: ActorId -> DLVar -> DLVal -> App ()
-addToRecord aid x v = do
+addToRecord :: PhaseId -> ActorId -> DLVar -> DLVal -> App ()
+addToRecord pid aid x v = do
   (e, _) <- getState
   let trs = e_record e
-  setGlobal $ e {e_record = trs <> [Transmission {t_sender = aid, t_store = M.singleton x v}]}
+  setGlobal $ e {e_record = M.insert pid (Transmission {t_sender = aid, t_store = M.singleton x v}) trs}
 
 addToStore :: DLVar -> DLVal -> App ()
 addToStore x v = do
   (_, l) <- getState
-  let locals = e_locals l
-  let aid = e_curr_actorid l
+  let locals = l_locals l
+  let aid = l_curr_actor_id l
   case M.lookup aid locals of
     Nothing -> possible "addToStore: no local store"
     Just lst -> do
       let st = l_store lst
       let lst' = lst {l_store = M.insert x v st}
-      setLocal $ l {e_locals = M.insert aid lst' locals}
+      setLocal $ l {l_locals = M.insert aid lst' locals}
 
---TODO: replace with correct queue based impl
-checkRecord :: DLVar -> App (Maybe DLVal)
-checkRecord x = do
-  (g, _) <- getState
-  let record = reverse $ e_record g
-  return $ checkRecord' record
+
+addToStores :: DLVar -> DLVal -> App ()
+addToStores x v = do
+  (_, l') <- getState
+  let locals = l_locals l'
+  _ <- mapM (\(a,b) -> f a b) $ M.toList locals
+  return ()
   where
-    checkRecord' [] = Nothing
-    checkRecord' (a:as) = do
-      let store = t_store a
-      case M.lookup x store of
-        Nothing -> checkRecord' as
-        Just v -> Just v
+    f aid lst = do
+      (_, l) <- getState
+      let locals = l_locals l
+      let st = l_store lst
+      let lst' = lst {l_store = M.insert x v st}
+      setLocal $ l {l_locals = M.insert aid lst' locals}
+
+-- checkRecord :: DLVar -> App (Maybe DLVal)
+-- checkRecord x = do
+--   (g, _) <- getState
+--   let record = reverse $ e_record g
+--   return $ checkRecord' record
+--   where
+--     checkRecord' [] = Nothing
+--     checkRecord' (a:as) = do
+--       let store = t_store a
+--       case M.lookup x store of
+--         Nothing -> checkRecord' as
+--         Just v -> Just v
 
 incrNWtime :: Integer -> App ()
 incrNWtime n = do
@@ -261,10 +286,10 @@ incrNWsecs n = do
   let t = e_nwsecs e
   setGlobal $ e {e_nwsecs = t + n }
 
-incrMessageId :: App ()
-incrMessageId = do
+incrPhaseId :: App ()
+incrPhaseId = do
   (e, _) <- getState
-  let t = e_nmsgid e
+  let t = e_phaseid e
   setGlobal $ e {e_nwsecs = t + 1 }
 
 updateLedger :: Account -> Token -> (Integer -> Integer) -> App ()
@@ -307,10 +332,10 @@ interpPrim = \case
   (TOKEN_EQ, [V_Token lhs,V_Token rhs]) -> return $ V_Bool $ (==) lhs rhs
   (SELF_ADDRESS _slpart _bool _int, _) -> do
     (_, l) <- getState
-    let actorid = e_curr_actorid l
+    let actorid = l_curr_actor_id l
     case actorid == (fromIntegral consensusId) of
       False -> do
-        let locals = e_locals l
+        let locals = l_locals l
         return $ V_Address $ l_acct $ saferMapRef "SELF_ADDRESS" $ M.lookup actorid locals
       True -> do
         return $ V_Address $ consensusId
@@ -328,27 +353,22 @@ instance Interp DLArg where
   interp = \case
     DLA_Var dlvar -> do
       (_, l) <- getState
-      let locals = e_locals l
-      let aid = e_curr_actorid l
+      let locals = l_locals l
+      let aid = l_curr_actor_id l
       case (M.lookup aid locals, M.lookup (fromIntegral consensusId) locals) of
         (Nothing,_) -> possible "DLA_Var: no local store"
         (Just lst,Just conslst) -> do
           let st = l_store lst
           let cst = l_store conslst
-          --TODO: replace with correct queue based impl
           case M.lookup dlvar (M.union st cst) of
-            Nothing -> do
-              r <- checkRecord dlvar
-              case r of
-                Just a -> return a
-                Nothing -> possible $ "DLA_Var "
-                  <> show dlvar
-                  <> " "
-                  <> show st
-                  <> " "
-                  <> show (l_who lst)
-                  <> " "
-                  <> show (M.map l_store locals)
+            Nothing -> possible $ "DLA_Var "
+              <> show dlvar
+              <> " "
+              <> show st
+              <> " "
+              <> show (l_who lst)
+              <> " "
+              <> show (M.map l_store locals)
             Just a -> return a
         _ -> impossible "a consensus store must exist"
     DLA_Constant dlconst -> return $ conCons' dlconst
@@ -436,22 +456,26 @@ instance Interp DLExpr where
         _ <- mapM interp dlargs
         interp dlarg
     DLE_Transfer _at dlarg1 dlarg2 maybe_dlarg -> do
-      ev1 <- interp dlarg1
-      ev2 <- interp dlarg2
-      case (ev1,ev2) of
-        (V_Address acc, V_UInt n) -> do
-          case maybe_dlarg of
-            Nothing -> do
-              transferLedger simContract acc nwToken n
-              return V_Null
-            Just tok -> do
-              ev <- interp tok
-              case ev of
-                V_UInt tok' -> do
-                  transferLedger simContract acc tok' n
+      who <- whoAmI
+      case who of
+        Participant _ -> return V_Null
+        Consensus -> do
+          ev1 <- interp dlarg1
+          ev2 <- interp dlarg2
+          case (ev1,ev2) of
+            (V_Address acc, V_UInt n) -> do
+              case maybe_dlarg of
+                Nothing -> do
+                  transferLedger simContract acc nwToken n
                   return V_Null
-                _ -> impossible "unexpected error"
-        _ -> impossible "expression interpreter"
+                Just tok -> do
+                  ev <- interp tok
+                  case ev of
+                    V_UInt tok' -> do
+                      transferLedger simContract acc tok' n
+                      return V_Null
+                    _ -> impossible "unexpected error"
+            _ -> impossible "expression interpreter"
     DLE_TokenInit _at _dlarg -> return V_Null
     DLE_CheckPay _at _slcxtframes _dlarg _maybe_dlarg -> return $ V_Null
     DLE_Wait _at dltimearg -> case dltimearg of
@@ -580,17 +604,20 @@ instance Interp DLStmt where
         _ -> impossible "unexpected error"
     DL_Only _at either_part dltail -> do
       (g,l) <- getState
-      --TODO: You should only run this if you actually are this part
       case either_part of
         Left slpart -> do
-          let pacts = e_partacts g
-          let actid = saferMapRef "DL_Only" $ M.lookup (bunpack slpart) pacts
-          let restore_id = e_curr_actorid l
-          setLocal $ l {e_curr_actorid = actid}
-          r <- interp dltail
-          l' <- getLocal
-          setLocal $ l' {e_curr_actorid = restore_id}
-          return r
+          who <- whoAmI
+          case who == Participant (bunpack slpart) of
+            False -> return V_Null
+            True -> do
+              let pacts = e_partacts g
+              let actid = saferMapRef "DL_Only" $ M.lookup (bunpack slpart) pacts
+              let restore_id = l_curr_actor_id l
+              setLocal $ l {l_curr_actor_id = actid}
+              r <- interp dltail
+              l' <- getLocal
+              setLocal $ l' {l_curr_actor_id = restore_id}
+              return r
         _ -> impossible "unexpected error"
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
       accu <- interp arg
@@ -662,13 +689,20 @@ instance Interp LLStep where
     LLS_Stop _at -> return V_Null
     LLS_ToConsensus _at _lct tc_send recv tc_mtime -> do
       (g, l) <- getState
-      let mid = e_nmsgid g
-      incrMessageId
+      let pid = e_phaseid g
+      incrPhaseId
       let sends = M.mapKeys bunpack tc_send
-      v <- suspend $ PS_Suspend (A_TieBreak mid $ M.keys sends)
+      -- check who's available
+      -- update their phase id
+      -- race
+      -- update record
+      -- update store of everyone who raced
+      -- how do we know what race this is ?
+      -- if this race already happened, just ref record
+      v <- suspend $ PS_Suspend (A_TieBreak pid $ M.keys sends)
       case v of
         V_UInt n -> do
-          let locals = e_locals l
+          let locals = l_locals l
           let lclsv = saferMapRef "LLS_ToConsensus" $ M.lookup (fromIntegral n) locals
           let lclst = l_who $ lclsv
           case lclst of
@@ -677,7 +711,7 @@ instance Interp LLStep where
               let dls = saferMapRef "LLS_ToConsensus1" $ M.lookup part sends
               --TODO: there should be another action called "Run Timeout"
               let f t n' step = case (t < n') of
-                    True -> consensusBody n g l dls recv
+                    True -> consensusBody pid n g l dls recv
                     False -> interp step
               case tc_mtime of
                 Just (dltimearg, step) -> case dltimearg of
@@ -689,22 +723,21 @@ instance Interp LLStep where
                     n' <- vUInt <$> interp dlarg
                     let t = e_nwtime g
                     f t n' step
-                Nothing -> consensusBody n g l dls recv
+                Nothing -> consensusBody pid n g l dls recv
         _ -> impossible "unexpected client answer"
 
-consensusBody :: Integer -> Global -> Local -> DLSend -> DLRecv LLConsensus -> App DLVal
-consensusBody n g l (DLSend {..}) (DLRecv {..}) = do
-  let locals = e_locals l
+consensusBody :: PhaseId -> Integer -> Global -> Local -> DLSend -> DLRecv LLConsensus -> App DLVal
+consensusBody p n g l (DLSend {..}) (DLRecv {..}) = do
+  let locals = l_locals l
   let lclsv = saferMapRef "LLS_ToConsensus" $ M.lookup (fromIntegral n) locals
-  --TODO: replace with correct queue based impl
-  addToRecord (fromIntegral n) dr_time $ V_UInt (e_nwtime g)
-  addToRecord (fromIntegral n) dr_secs $ V_UInt (e_nwsecs g)
+  addToStores dr_time $ V_UInt (e_nwtime g)
+  addToStores dr_secs $ V_UInt (e_nwsecs g)
   --TODO: This is only true for the actual sender. It is false for everyone else
-  addToRecord (fromIntegral n) dr_didSend $ V_Bool True
-  addToRecord (fromIntegral n) dr_from $ V_Address $ l_acct lclsv
+  addToStores dr_didSend $ V_Bool True
+  addToStores dr_from $ V_Address $ l_acct lclsv
   let (DLPayAmt {..}) = ds_pay
-  let restore_id = e_curr_actorid l
-  setLocal $ l {e_curr_actorid = fromIntegral n}
+  let restore_id = l_curr_actor_id l
+  setLocal $ l {l_curr_actor_id = fromIntegral n}
   --TODO: currently ignoring the token amounts
   net <- interp pa_net
   case net of
@@ -712,9 +745,9 @@ consensusBody n g l (DLSend {..}) (DLRecv {..}) = do
       transferLedger (l_acct lclsv) simContract nwToken net'
       ds_msg' <- mapM interp ds_msg
       l' <- getLocal
-      setLocal $ l' {e_curr_actorid = restore_id}
+      setLocal $ l' {l_curr_actor_id = restore_id}
       _ <- zipWithM addToStore dr_msg ds_msg'
-      _ <- zipWithM (addToRecord $ fromIntegral n) dr_msg ds_msg'
+      _ <- zipWithM (addToRecord p $ fromIntegral n) dr_msg ds_msg'
       interp $ dr_k
     _ -> impossible "LLS_ToConsensus2: expected integer"
 
@@ -735,23 +768,24 @@ registerParts (p:ps) = do
 
 registerPart :: State -> String -> State
 registerPart (g,l) s = do
-  let actorid = e_nactorid g
+  let actorId = e_nactorid g
   let pacts = e_partacts g
   let aid = e_naccid g
-  let locals = e_locals l
+  let locals = l_locals l
   let lcl = LocalInfo
         { l_acct = fromIntegral aid
         , l_who = Just $ s
         , l_store = mempty
+        , l_phase = 0
         }
-  let locals' = M.insert actorid lcl locals
+  let locals' = M.insert actorId lcl locals
   let ledger = e_ledger g
   let ledger' = M.insert (fromIntegral aid) (M.singleton nwToken simContractAmt) ledger
-  let g' = g { e_nactorid = actorid + 1,
+  let g' = g { e_nactorid = actorId + 1,
     e_naccid = aid + 1,
-    e_partacts = M.insert s aid pacts,
+    e_partacts = M.insert s actorId pacts,
     e_ledger = ledger' }
-  let l' = l {e_locals = locals'}
+  let l' = l {l_locals = locals'}
   (g',l')
 
 while :: DLBlock -> LLConsensus -> App DLVal
@@ -772,3 +806,14 @@ saferIndex n (_:xs) = saferIndex (n-1) xs
 vUInt :: DLVal -> Integer
 vUInt (V_UInt n) = n
 vUInt _ =  impossible "unexpected error: expected integer"
+
+whoAmI :: App Identity
+whoAmI = do
+  l <- getLocal
+  let actId = l_curr_actor_id l
+  let locals = l_locals l
+  let local' = saferMapRef "whoAmI" $ M.lookup actId locals
+  let who = l_who local'
+  case who of
+    Nothing -> return Consensus
+    Just p -> return $ Participant p
