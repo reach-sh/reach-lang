@@ -159,6 +159,9 @@ const processXRefs = ({here}) => (tree) => {
         v = c0v.slice(cp+2);
         xrefPut('h', t, { title: v, path: `/${here}/#${t}` });
       }
+      if ( t === 'on-this-page' ) {
+        fail(here, 'uses reserved id', t);
+      }
 
       d.id = hp.id = t;
       cs[0].value = v;
@@ -788,10 +791,11 @@ const generateRedirects = async () => {
 const searchData = [];
 const [ sd_r, sd_t, sd_h, sd_p ] = [ 0, 1, 2, 3 ];
 const gatherSearchData = async ({doc, title, here}) => {
+  const h = `/${here}/`;
   const mini = (x) => x.replace(/\s+/g, ' ').trim();
   doc.querySelectorAll('.ref').forEach((el) => {
     searchData.push({
-      objectID: `${here}#${el.id}`,
+      objectID: `${h}#${el.id}`,
       pt: title,
       t: sd_r,
       s: el.getAttribute('data-scope'),
@@ -800,7 +804,7 @@ const gatherSearchData = async ({doc, title, here}) => {
   });
   doc.querySelectorAll('.term').forEach((el) => {
     searchData.push({
-      objectID: `${here}#${el.id}`,
+      objectID: `${h}#${el.id}`,
       pt: title,
       t: sd_t,
       c: mini(el.textContent),
@@ -808,7 +812,7 @@ const gatherSearchData = async ({doc, title, here}) => {
   });
   doc.querySelectorAll('.refHeader').forEach((el) => {
     searchData.push({
-      objectID: `${here}#${el.id}`,
+      objectID: `${h}#${el.id}`,
       pt: title,
       t: sd_h,
       c: mini(el.textContent),
@@ -818,10 +822,10 @@ const gatherSearchData = async ({doc, title, here}) => {
     // XXX it would be cool to get the closest header, but .closest won't do
     // it, because the header won't be a parent
     searchData.push({
-      objectID: `${here}#${el.id}`,
+      objectID: `${h}#${el.id}`,
       pt: title,
       t: sd_p,
-      c: mini(el.parentElement.textContent).replace(/\d+$/, ''),
+      c: mini(el.parentElement.textContent).replace(/[\da-f]+$/, ''),
     });
   });
 };

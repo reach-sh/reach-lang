@@ -7,15 +7,15 @@ html, body {height: 100%;}
 #book-col, #page-col, #otp-col { height: 100%; overflow-x: hidden; overflow-y: auto;}
 main {height: calc(100% - 56px);}
 
-#page-col div.hh-viewer h1 {margin-top: 24px; margin-bottom: 16px;}
-#page-col div.hh-viewer h2 {margin-top: 20px; margin-bottom: 16px;}
-#page-col div.hh-viewer p,
-#page-col div.hh-viewer h3,
-#page-col div.hh-viewer h4,
-#page-col div.hh-viewer h6,
-#page-col div.hh-viewer table {margin-top: 16px; margin-bottom: 16px;}
+#page-col div#hh-viewer h1 {margin-top: 24px; margin-bottom: 16px;}
+#page-col div#hh-viewer h2 {margin-top: 20px; margin-bottom: 16px;}
+#page-col div#hh-viewer p,
+#page-col div#hh-viewer h3,
+#page-col div#hh-viewer h4,
+#page-col div#hh-viewer h6,
+#page-col div#hh-viewer table {margin-top: 16px; margin-bottom: 16px;}
 
-#page-col div.hh-viewer div[class^="col-"] img {margin: 0 !important;}
+#page-col div#hh-viewer div[class^="col-"] img {margin: 0 !important;}
 
 /************************************************
  responsive
@@ -185,51 +185,51 @@ i.fas:hover {cursor: pointer;}
   border-left: 1px solid var(--soft1);
 }
 
-#page-col div.hh-page-header {
+#page-col div#hh-page-header {
   border-bottom: 3px double var(--soft1);
   padding-bottom: 16px;
 }
 
-#page-col div.hh-viewer-wrapper {
+#page-col div#hh-viewer-wrapper {
   max-width: 1200px;
 }
 
-#page-col div.hh-viewer-wrapper span.title {
+#page-col div#hh-viewer-wrapper span.title {
   font-weight: normal;
   font-size: 22px;
 }
 
-#page-col div.hh-viewer-wrapper div.metadata {
+#page-col div#hh-viewer-wrapper div.metadata {
   font-size: 92%;
 }
 
-#page-col div.hh-viewer-wrapper div.hh-page-header {
+#page-col div#hh-viewer-wrapper div#hh-page-header {
   margin-bottom: 16px;
 }
 
-#page-col div.hh-viewer-wrapper div.hh-versions {
+#page-col div#hh-viewer-wrapper div#hh-versions {
   margin-bottom: 16px;
 }
 
-#page-col div.hh-viewer h1 {
+#page-col div#hh-viewer h1 {
   font-weight: normal;
   font-size: 22px;
 }
 
-#page-col div.hh-viewer h1:after {
+#page-col div#hh-viewer h1:after {
   content: ' ';
   display: block;
   border-top: 1px solid var(--soft1);
   margin-top: 3px;
 }
 
-#page-col div.hh-viewer h2 {
+#page-col div#hh-viewer h2 {
   color: black;
   font-weight: bold;
   font-size: 18px;
 }
 
-#page-col div.hh-viewer h3 {
+#page-col div#hh-viewer h3 {
   color: #6666ff;
   font-weight: bold;
   font-style: normal;
@@ -237,12 +237,12 @@ i.fas:hover {cursor: pointer;}
   font-size: 16px;
 }
 
-#page-col div.hh-viewer h4 {
+#page-col div#hh-viewer h4 {
   font-weight: bold;
   font-size: 15px;
 }
 
-#page-col div.hh-viewer h6 {
+#page-col div#hh-viewer h6 {
   font-weight: bold;
   font-size: 15px;
 }
@@ -250,7 +250,7 @@ i.fas:hover {cursor: pointer;}
 #page-col a:not(.btn) {color: steelblue; text-decoration: none;}
 #page-col a:hover:not(.btn) {color: #2b506e; text-decoration: none;}
 
-#page-col div.hh-viewer ul:not(.nav) {list-style-type: square;}
+#page-col div#hh-viewer ul:not(.nav) {list-style-type: square;}
 
 #page-col img.hh-shadow {box-shadow: 0px 3px 5px #cccccc;}
 #page-col img.hh-halign-indent {margin-left:18px;margin-right:auto;}
@@ -262,8 +262,8 @@ i.fas:hover {cursor: pointer;}
 
 p.punch span {color:#F45747;}
 
-#page-col div.hh-viewer-wrapper span.author,
-#page-col div.hh-viewer-wrapper span.published-date {
+#page-col div#hh-viewer-wrapper span.author,
+#page-col div#hh-viewer-wrapper span.published-date {
   font-size:92%;
 }
 
@@ -277,26 +277,26 @@ p.punch span {color:#F45747;}
  blockquote
 ************************************************/
 
-#page-col div.hh-viewer blockquote {
+#page-col div#hh-viewer blockquote {
   background: #fff6e6;
   border-left: 5px solid orange;
   margin: 20px 0;
   padding: 3px 12px;
 }
 
-#page-col div.hh-viewer blockquote h1,
-#page-col div.hh-viewer blockquote h2,
-#page-col div.hh-viewer blockquote h3,
-#page-col div.hh-viewer blockquote h4,
-#page-col div.hh-viewer blockquote h5,
-#page-col div.hh-viewer blockquote h6 {
+#page-col div#hh-viewer blockquote h1,
+#page-col div#hh-viewer blockquote h2,
+#page-col div#hh-viewer blockquote h3,
+#page-col div#hh-viewer blockquote h4,
+#page-col div#hh-viewer blockquote h5,
+#page-col div#hh-viewer blockquote h6 {
   margin-top: 16px; 
   margin-bottom: 16px;
   font-weight: bold;
   font-size: 16px;
 }
 
-#page-col div.hh-viewer blockquote h1:after {
+#page-col div#hh-viewer blockquote h1:after {
   content: ' ';
   display: none;
 }
@@ -317,12 +317,12 @@ iframe.gray-scale {
  table
 ************************************************/
 
-#page-col div.hh-viewer table {
+#page-col div#hh-viewer table {
   border-collapse: collapse;
 }
 
-#page-col div.hh-viewer td,
-#page-col div.hh-viewer th {
+#page-col div#hh-viewer td,
+#page-col div#hh-viewer th {
   border: 1px solid #ddd;
   line-height: var(--bs-body-line-height);
   /*line-height: normal;*/
@@ -331,7 +331,7 @@ iframe.gray-scale {
   vertical-align: top;
 }
 
-#page-col div.hh-viewer td:first-child {white-space: nowrap;}
+#page-col div#hh-viewer td:first-child {white-space: nowrap;}
 
 /************************************************
  Snippet
@@ -348,7 +348,7 @@ iframe.gray-scale {
   margin-top: 0.2em;
 }
 
-#page-col div.hh-viewer ol.snippet{
+#page-col div#hh-viewer ol.snippet{
   background-color: var(--snippet); /* github-light modified*/
   overflow-y: scroll;
   scrollbar-width: none; /* Firefox */
@@ -356,7 +356,7 @@ iframe.gray-scale {
   margin-bottom: 0;
 }
 
-#page-col div.hh-viewer pre:not(.snippet) {
+#page-col div#hh-viewer pre:not(.snippet) {
   background-color: var(--soft6);
   padding: .5rem .5rem;
   overflow-x: none;
@@ -365,16 +365,16 @@ iframe.gray-scale {
   -ms-overflow-style: none;  /* Internet Explorer 10+ */
 }
 
-#page-col div.hh-viewer ol.snippet::-webkit-scrollbar { /* WebKit */
+#page-col div#hh-viewer ol.snippet::-webkit-scrollbar { /* WebKit */
   width: 0;
   height: 0;
 }
 
-#page-col div.hh-viewer ol.snippet li:first-child {
+#page-col div#hh-viewer ol.snippet li:first-child {
   padding-top: 3px;
 }
 
-#page-col div.hh-viewer ol.snippet li {
+#page-col div#hh-viewer ol.snippet li {
   background-color: var(--snippet); /* github-light modified*/
   font-family: var(--bs-font-monospace);
   font-size: 95%;
@@ -383,38 +383,38 @@ iframe.gray-scale {
   color: var(--bs-body-color);
 }
 
-#page-col div.hh-viewer pre:not(.snippet) code {
+#page-col div#hh-viewer pre:not(.snippet) code {
   font-family: var(--bs-font-monospace);
   font-size: 90%;
 }
 
-#page-col div.hh-viewer ol.snippet li:first-child {
+#page-col div#hh-viewer ol.snippet li:first-child {
   padding-top: 6px;
 }
 
-#page-col div.hh-viewer ol.snippet li:last-child {
+#page-col div#hh-viewer ol.snippet li:last-child {
   padding-bottom: 6px;
 }
 
-#page-col div.hh-viewer pre.numbered ol.snippet li::marker {
+#page-col div#hh-viewer pre.numbered ol.snippet li::marker {
   color: var(--bs-body-color);
   content: attr(value) " ";
 }
 
-#page-col div.hh-viewer pre.numbered ol {
+#page-col div#hh-viewer pre.numbered ol {
   padding-left: 3.0rem;
 }
 
-#page-col div.hh-viewer pre.numbered ol li {
+#page-col div#hh-viewer pre.numbered ol li {
   border-left: 1px solid var(--snippet-border);
 }
 
-#page-col div.hh-viewer pre.unnumbered ol {
+#page-col div#hh-viewer pre.unnumbered ol {
   list-style-type: none;
   padding-left: 0;
 }
 
-#page-col div.hh-viewer pre.unnumbered ol li {
+#page-col div#hh-viewer pre.unnumbered ol li {
   border-left: none;
 }
 
@@ -530,19 +530,6 @@ iframe.gray-scale {
 
 div.social-icons a i {color:#595959;}
 
-/************************************************
- Search
-************************************************/
-
-#search-results-list li {
-  margin-top: 18px;
-}
-
-#search-results-list span em {
-  color: orange;
-  font-style: normal;
-}
-
 /* Notes */
 
 div.note {
@@ -586,4 +573,39 @@ img {
   color: #C8A8FF;
   vertical-align: middle;
   margin-left: 0.5em;
+  text-transform: uppercase;
+}
+
+#search-results-list li a.pt {
+  margin-right: 1em;
+}
+#search-results-list li.sdRef {
+}
+#search-results-list li.sdRef span.symbol {
+  font-family: monospace;
+}
+#search-results-list li.sdRef span.scope {
+  margin-left: 1em;
+  font-family: monospace;
+}
+#search-results-list li.sdRef span.scope::before {
+  content: "("
+}
+#search-results-list li.sdRef span.scope::after {
+  content: ")"
+}
+
+#search-results-list li.sdTerm {
+}
+#search-results-list li.sdTerm span.term {
+  font-style: italic;
+}
+#search-results-list li.sdHeader {
+}
+#search-results-list li.sdHeader span.h {
+  font-weight: bold;
+}
+#search-results-list li.sdPara {
+}
+#search-results-list li.sdPara span.p {
 }
