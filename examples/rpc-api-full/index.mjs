@@ -1,5 +1,4 @@
 import { mkRPC }      from '@reach-sh/rpc-client';
-import { mkAssertEq } from './common.mjs';
 import Timeout        from 'await-timeout';
 
 export class Signal {
@@ -20,8 +19,8 @@ export class Signal {
   const gil = await rpc('/stdlib/launchToken', accAdmin, 'gil', 'GIL');
 
   const getBal = async w => Promise.all([
-    rpc('/stdlib/formatCurrency', await rpc('/stdlib/balanceOf', w),               4),
-    rpc('/stdlib/formatCurrency', await rpc('/stdlib/balanceOf', w, gil.token.id), 4),
+    rpc('/stdlib/formatCurrency', await rpc('/stdlib/balanceOf', w),            4),
+    rpc('/stdlib/formatCurrency', await rpc('/stdlib/balanceOf', w, gil.token), 4),
   ]);
 
   const showBal = (who, acc) => async when =>
@@ -40,55 +39,58 @@ export class Signal {
     await rpc('/acc/tokenAccept', a, gil.kid);
     await rpc('/launchToken/mint', gil.kid, a, bal);
 
-    const c = await rpc('/acc/contract', a, await rpc('/ctc/getInfo', ctcAdmin));
-    ctcs.push(c);
+    return async () => {
+      const c = await rpc('/acc/contract', a, await rpc('/ctc/getInfo', ctcAdmin));
+      ctcs.push(c);
 
-    const getRead     = async () => rpc('/ctc/v/Reader/read', c);
-    const showUserBal = showBal(uid, a);
+      const getRead     = async () => rpc('/ctc/v/Reader/read', c);
+      const showUserBal = showBal(uid, a);
 
-    await ready.wait();
-    await showUserBal('Start');
+      await ready.wait();
+      await showUserBal('Start');
 
-    let i = 0;
-    const callPut = async (t, ...args) => {
-      await showUserBal(`Sleep ${i}`);
-      await Timeout.set((10 + i) * Math.random());
-      await showUserBal(`Before ${i}`);
-      const before = await getRead();
+      let i = 0;
+      const callPut = async (t, ...args) => {
+        await showUserBal(`Sleep ${i}`);
+        await Timeout.set((10 + i) * Math.random());
+        await showUserBal(`Before ${i}`);
+        const before = await getRead();
 
-      let res;
-      try {
-        res = await rpc(`/ctc/a/Writer/${t}`, c, ...args);
-      } catch (e) {
-        res = [ 'err', e ];
-      }
+        let res;
+        try {
+          res = await rpc(`/ctc/a/Writer/${t}`, c, ...args);
+        } catch (e) {
+          res = [ 'err', e ];
+        }
 
-      const after = await getRead();
-      console.log(uid, i, before, res, after);
-      await showUserBal(`After ${i}`);
-      i++;
+        const after = await getRead();
+        console.log(uid, i, before, res, after);
+        await showUserBal(`After ${i}`);
+        i++;
+      };
+
+      await callPut('touch',  i);
+      await callPut('writeN', i);
+      await callPut('touch',  i);
+      await callPut('writeN', i);
+      await callPut('touch',  i);
+      await callPut('writeT', i);
+      await callPut('touch',  i);
+      await callPut('writeB', i);
+      await callPut('touch',  i);
+      await callPut('end');
+
+      await showUserBal('End');
     };
-
-    await callPut('touch',  i);
-    await callPut('writeN', i);
-    await callPut('touch',  i);
-    await callPut('writeN', i);
-    await callPut('touch',  i);
-    await callPut('writeT', i);
-    await callPut('touch',  i);
-    await callPut('writeB', i);
-    await callPut('touch',  i);
-    await callPut('end');
-
-    await showUserBal('End');
   };
 
   const showAdminBal = showBal('Admin', accAdmin);
   await showAdminBal('Start');
 
+  const thread = async f => await f();
   await Promise.all([
-    user('Alice'),
-    user('Bob'),
+    thread(await user('Alice')),
+    thread(await user('Bob')),
 
     rpcCallbacks('/backend/Admin', ctcAdmin, {
       log: (...args) => {
