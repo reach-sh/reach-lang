@@ -174,12 +174,6 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   // Update and show/hide edit btn.
   doc.getElementById('edit-btn').href = `${github}${folder}index.md`;
 
-  // Write author
-  doc.querySelector('div#hh-viewer-wrapper span.author').innerHTML = configJson.author ? `By ${configJson.author}` : '';
-
-  // Write published data
-  doc.querySelector('div#hh-viewer-wrapper span.published-date').innerHTML = configJson.publishedDate ? `Published on ${(new Date(configJson.publishedDate)).toLocaleDateString()}` : '';
-
   // Write page html
   const pageHtml = await pageHtmlP;
   const pageDoc = doc.createRange().createContextualFragment(pageHtml);
