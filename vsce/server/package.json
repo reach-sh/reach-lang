@@ -1,7 +1,7 @@
 {
-	"name": "reach-lsp-server",
+	"name": "@reach-sh/reach-lsp-server",
 	"description": "Reach Language Server",
-	"version": "0.0.1",
+	"version": "0.1.7-rc.3",
 	"author": "Reach Platform, Inc.",
 	"license": "EPL-2.0",
 	"engines": {
