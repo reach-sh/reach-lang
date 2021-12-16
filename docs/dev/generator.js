@@ -152,7 +152,7 @@ const processXRefs = ({here}) => (tree) => {
       const c0v = cs[0].value;
 
       let v = c0v;
-      let t = slugify(v);
+      let t = slugify(cs.map((x) => x.value).join(' '));
       if ( c0v && c0v.startsWith("{#") ) {
         const cp = c0v.indexOf("} ", 2);
         t = c0v.slice(2, cp);
