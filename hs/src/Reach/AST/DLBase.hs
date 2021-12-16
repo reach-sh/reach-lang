@@ -557,10 +557,9 @@ data DLExpr
   | DLE_TimeOrder SrcLoc [(Maybe DLArg, DLVar)]
   | DLE_GetContract SrcLoc
   | DLE_GetAddress SrcLoc
-  -- | DLE_EmitLog SrcLoc (Maybe String) (Maybe String) LogValue
-  -- * the first (maybe string) is the label of the `Event` that generated the log
-  -- * the second (maybe string) is the label of the `API` that generated the log
-  -- * the LogValue is the value to log and its origin
+  -- | DLE_EmitLog SrcLoc LogKind [DLVar]
+  -- * the LogKind specifies whether the log generated from an API, Events, or is internal
+  -- * the [DLVar] are the values to log
   | DLE_EmitLog SrcLoc LogKind [DLVar]
   | DLE_setApiDetails {
     sad_at :: SrcLoc,

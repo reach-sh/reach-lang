@@ -751,7 +751,3 @@ export const retryLoop = async <T>(lab: any, f: (() => Promise<T>)) => {
     }
   }
 };
-
-export const sleep = async (ms: number) => {
-	return new Promise(resolve => setTimeout(resolve, ms));
-}
