@@ -2,12 +2,31 @@
 
 This is React native version of overview-react web application.
 
-## Installation
+## 1. Installation & Environment Set up
 
 ### Use the package manager npm or yarn to run React Native apps.
 
 Node.js can be installed  by downloading [node.pkg](https://nodejs.org/en/download/) or homebrew for MacOS or LinuxOS
 
+### Install Android Studio
+
+Visit the [web page](https://developer.android.com/studio/) and download android studio.
+
+### Install Xcode
+
+You need to install Xcode for iOS and MacOS app development.
+
+Install Xcode from AppStore on MacOS.
+
+* In order to run iOS app, [cocoapods](https://cocoapods.org/) needs to be installed on the development machine.
+
+### Install Visual Studio
+You need to install [Visual Studio](https://visualstudio.microsoft.com/downloads/) for Windows app
+
+## 2. Run
+
+React Native developers can start from scratch or beginners can start by cloning tut 2.10.
+### Start
 After cloning or downloading this project from Github, npm libraries need to be installed by running command 
 ```
 npm install
@@ -16,9 +35,13 @@ npm install
 yarn install
 ```
 
-### Installing Android Studio
-
-Visit the [web page](https://developer.android.com/studio/) and download android studio.
+### Compile Reach file
+Place index.rsh file which is same as tut 2.9 in the project root folder.
+Compile reach by running following comand.
+```
+./reach compile
+```
+### Run Android app
 
 Open command prompt, browse through your project folder and, execute the react-native run-android command.
 
@@ -26,22 +49,35 @@ Open command prompt, browse through your project folder and, execute the react-n
 react-native run-android
 ```
 
-### Installing Xcode
+### Run iOS app
 
-Install Xcode from AppStore on MacOS.
+By running following command, you can install iOS dependencies in ios project.
 
-* In order to run iOS app, [cocoapods](https://cocoapods.org/) needs to be installed on the development machine. 
-* By running following command, 
 ```
 cd ios && pod install && cd ..
 ```
+
 Open command prompt, browse through your project folder and, execute the react-native run-android command.
 
 ```
 react-native run-ios
 ```
 
+### Run Windows app
 
+Open command prompt, browse through your project folder and, execute the react-native run-android command.
+
+```
+react-native run-windows
+```
+
+### Run MacOS app
+
+Open command prompt, browse through your project folder and, execute the react-native run-android command.
+
+```
+react-native run-macos
+```
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
