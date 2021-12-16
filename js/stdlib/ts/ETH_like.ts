@@ -16,6 +16,7 @@ import {
   checkTimeout,
   Time,
   ISetupEventArgs,
+  sleep,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -882,6 +883,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           let res: QueryResult = { succ: false, block: 0 } ;
           while (!res.succ) {
             res = await eventCache.query(dhead, getC, event, { fromBlock: time.toNumber(), isEventStream: true }, getMinBlockWithLogIndex(logIndex));
+            if (!res.succ) { sleep(5000); }
           }
           const { evt } = res;
           const blockTime = bigNumberify(evt.blockNumber);

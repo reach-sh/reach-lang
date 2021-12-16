@@ -45,6 +45,7 @@ import {
   retryLoop,
   Time,
   ISetupEventArgs,
+  sleep,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -1690,6 +1691,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           let res: QueryResult = { succ: false, round: 0  };
           while (!res.succ) {
             res = await eventCache.query(dhead, ApplicationID, { minRound: time.toNumber(), isEventStream: true }, pred);
+            if (!res.succ) { sleep(5000); }
           }
           const round = res.txn['confirmed-round'];
           const logIdx = logIndex[round] || 0;
