@@ -634,8 +634,12 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   }
 
   // Write files
+  const configJsonSaved = {};
+  for ( const k of ['bookPath', 'bookTitle', 'title', 'titleId', 'author', 'publishedDate', 'hasOtp', 'hasPageHeader'] ) {
+    configJsonSaved[k] = configJson[k];
+  }
   await Promise.all([
-    fs.writeFile(cfgPath, JSON.stringify(configJson, null, 2)),
+    fs.writeFile(cfgPath, JSON.stringify(configJsonSaved, null, 2)),
     fs.writeFile(pagePath, doc.body.innerHTML.trim()),
   ]);
 };
@@ -661,13 +665,9 @@ const generateBook = async (destp, bookp) => {
   };
   const compareNumbers = (a, b) => (a - b);
   const compareChapters = (x, y) => {
-    const pc = compareNumbers(x.path.length, y.path.length);
-    if ( pc === 0 ) {
-      const rc = compareNumbers(x.rank, y.rank);
-      return rc;
-    } else {
-      return pc;
-    }
+    const rc = compareNumbers(x.rank, y.rank);
+    if ( rc !== 0 ) { return rc; }
+    return x.title.localeCompare(y.title);
   };
   const hify = (ctc) => {
     const d = h('div', {class: "row chapter dynamic"});
@@ -691,8 +691,11 @@ const generateBook = async (destp, bookp) => {
     ]));
     return d;
   };
-  const hifyList = (ct) =>
-    Object.values(ct.children || {}).map(hify);
+  const hifyList = (ct) => {
+    const cs = Object.values(ct.children || {});
+    cs.sort(compareChapters);
+    return cs.map(hify);
+  }
   const hifyTop = (ct, p) => {
     if ( p.length !== 0 ) {
       const n = p.shift();

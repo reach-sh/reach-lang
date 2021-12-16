@@ -255,11 +255,6 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
     el.classList.remove('active');
   });
 
-  // Adjust navbar active indicator.
-  if (configJson.menuItem) {
-    doc.getElementById(configJson.menuItem).classList.add('active');
-  }
-
   doc.querySelectorAll(`a[href="${folder}"]`).forEach((el) => {
     el.classList.add('active');
   });
