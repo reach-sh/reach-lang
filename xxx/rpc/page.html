@@ -36,8 +36,13 @@
   <li><code>/forget/ctc</code> accepts a contract RPC handle and deletes it from the Reach RPC Server's memory.</li>
   <li><code>/ctc/$METHOD</code> where <code>$METHOD</code> is a method of a contract representation of the <a href="/xxx/frontend/js/#ref-frontends-js">JavaScript standard library</a>.</li>
 </ul>
-<p>All <code>/ctc</code> methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the contract RPC handle returned by a prior RPC method invocation.</p>
+<p>Most <code>/ctc</code> methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the contract RPC handle returned by a prior RPC method invocation.</p>
+<p>
+  <code>/ctc/p/$PARTICIPANT</code> and <code>/ctc/participants/$PARTICIPANT</code> are interactive RPC method alternatives to the <code>/backend/$PARTICIPANT</code> method described below.
+  They accept the same arguments and behave identically.
+</p>
 <ul>
+  <li><code>/forget/token</code> accepts a token RPC handle and deletes it from the Reach RPC Server's memory.</li>
   <li><code>/backend/$PARTICIPANT</code> where <code>$PARTICIPANT</code> is a participant of the backend compiled by the <a href="/xxx/compiled/js/#ref-backends-js">JavaScript backend</a>.</li>
 </ul>
 <p>All <code>/backend/$PARTICIPANT</code> methods are interactive RPC methods that accept three arguments:</p>
