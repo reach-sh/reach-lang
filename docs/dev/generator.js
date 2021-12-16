@@ -234,6 +234,10 @@ const processBaseHtml = async () => {
     minifyJS: true,
     minifyCSS: true,
   };
+  const xrefHref = (t) => {
+    const { path } = xrefGet('h', t);
+    return path;
+  };
   const menuItem = (t, gtext = false) => {
     const { title, path } = xrefGet('h', t);
     const text = gtext || title;
@@ -241,7 +245,7 @@ const processBaseHtml = async () => {
   };
 
   const raw = await fs.readFile(iPath, 'utf8');
-  const expand = makeExpander('baseHtml', { menuItem });
+  const expand = makeExpander('baseHtml', { menuItem, xrefHref });
   const exp = await expand(raw)
   const output = await htmlMinify.minify(exp, defaultOptions);
   await writeFileMkdir(oPath, output);
