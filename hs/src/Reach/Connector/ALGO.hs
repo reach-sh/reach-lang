@@ -1464,8 +1464,8 @@ ce = \case
 clogEvent :: String -> [DLVar] -> ReaderT Env IO ()
 clogEvent eventName vs = do
   let signature = eventName <> "(" <> intercalate "," (map (typeSig . varType) vs) <> ")"
-  let shaString = show $ hashWith SHA512t_256 (B.pack signature)
-  let shaBytes = B.pack $ take 4 $ shaString
+  let shaString = show . hashWith SHA512t_256 $ bpack signature
+  let shaBytes = bpack . take 4 $ shaString
   let as = map DLA_Var vs
   cconcatbs $ (T_Bytes 4, cbs shaBytes) : map (\a -> (argTypeOf a, ca a)) as
   code "log" [ "//", texty $ typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as ]
