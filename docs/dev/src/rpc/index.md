@@ -1,7 +1,4 @@
-
-
-
-# {#ref-backends-rpc} Reach RPC Server
+# {#ref-backends-rpc} RPC Server
 
 The Reach RPC Server provides access to compiled JavaScript backends via an [HTTPS-accessible JSON-based RPC protocol](##ref-backends-rpc-proto).
 The server allows frontends to be written in any programming language.

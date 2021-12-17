@@ -1,8 +1,11 @@
+# {#ref-backends} Compiled Output
 
+This section describes the compilation output of Reach version @{VERSION},
+which are participant backends.
 
+They are accessed via [JavaScript](##ref-backends-js) or via [the RPC server](##ref-backends-rpc).
 
-
-# {#ref-backends-js} JavaScript
+## {#ref-backends-js} JavaScript
 
 The Reach JavaScript backend produces a compilation output named `input.APP.mjs`.
 This will normally be imported by writing:
@@ -47,7 +50,7 @@ backend.getExports(stdlib).x; // 5
 
 Finally, the backend provides a value, `{!js} _Connectors`, which is an opaque object representing the connectors the app was compiled for.
 
-## {#ref-backends-js-guarantees} Guarantees
+### {#ref-backends-js-guarantees} Guarantees
 
 This backend does not guarantee that values in a positive position in a participant interact interface, that are later passed to a negative position in a participant interact interface, will be identical, in the sense of JavaScript's `{!js} ===` operator, to the original value.
 In other words, this backend does not ensure that Reach programs are parametric over JavaScript values that they interact with.
