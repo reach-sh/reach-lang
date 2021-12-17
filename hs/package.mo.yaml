@@ -22,6 +22,7 @@ dependencies:
 - bytestring
 - containers
 - cryptonite
+- data-default-class
 - deepseq
 - digest
 - directory
@@ -37,7 +38,7 @@ dependencies:
 - http-client-tls
 - http-conduit
 - io-capture
-- language-javascript >= 0.7.1.0
+- language-javascript >= 0.7.1.1
 - lattices
 - loop
 - main-tester
@@ -53,10 +54,12 @@ dependencies:
 - regex
 - safe
 - scientific
+- scotty >= 0.12
 - search-algorithms
 - silently
 - simple-smt
 - smallcheck
+- stm
 - system-filepath
 - tasty
 - tasty-ant-xml
@@ -71,9 +74,12 @@ dependencies:
 - temporary
 - text
 - time
+- transformers
 - unix-compat
 - unordered-containers
+- utf8-string
 - vector
+- wai-extra
 - yaml
 - neat-interpolation
 - pretty-terminal

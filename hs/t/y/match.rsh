@@ -15,9 +15,9 @@ export const main =
       Alice.only(() => {
         const mx = declassify(interact.get());
         const i = mx.match({
-          ENull: () => { return 0; },
-          EInt: (x) => { return x; },
-          EObj: (o) => { return o.i; },
+          ENull: () => 0,
+          EInt: (x) => x,
+          EObj: (o) => o.i,
         });
       });
       Alice.publish(i);

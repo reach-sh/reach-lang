@@ -88,8 +88,8 @@ test_examples = goldenTests "../examples" f
       [ "./pkg/index.rsh"
       , "./pkg/local.rsh"
       , "./pkg/index-master.rsh"
-      , "./tut-5-attack/index-bad.rsh"
-      , "./tut-5-attack/index-fails.rsh"
+      , "./rps-4-attack/index-bad.rsh"
+      , "./rps-4-attack/index-fails.rsh"
       , "./overview/index-error.rsh"
       ]
     f fp =

@@ -172,6 +172,7 @@ data Var = Var
   { reachEx :: Text
   , connectorMode :: Maybe ConnectorMode
   , debug :: Bool
+  , ide :: Bool
   , rpcKey :: Text
   , rpcPort :: Text
   , rpcServer'' :: Text
@@ -281,11 +282,6 @@ warnScaffoldDefRPCTLSPair (Project {..}) = do
       defC <- readFile (embd "tls-default.key")
       when (keyC == defC) warnDev
 
-truthyEnv :: Maybe String -> Bool
-truthyEnv = \case
-  Nothing -> False
-  Just s -> not $ elem (map toLower s) [ "", "0", "false", "f", "#f", "no", "off", "n" ]
-
 mkVar :: IO Var
 mkVar = do
   let packed = pure . pack
@@ -299,6 +295,7 @@ mkVar = do
   rpcTLSCrt <- q "REACH_RPC_TLS_CRT" (pure "reach-server.crt")
   version'' <- mkReachVersion
   debug <- truthyEnv <$> lookupEnv "REACH_DEBUG"
+  ide <- truthyEnv <$> lookupEnv "REACH_IDE"
   rpcTLSRejectUnverified <- lookupEnv "REACH_RPC_TLS_REJECT_UNVERIFIED"
     >>= maybe (pure True) (pure . (/= "0"))
   reachEx <- lookupEnv "REACH_EX"
@@ -317,6 +314,7 @@ mkScript :: Text -> App -> App
 mkScript connectorMode' wrapped = do
   Var {..} <- asks e_var
   let debug' = if debug then "REACH_DEBUG=1\n" else ""
+  let ide' = if ide then "REACH_IDE=1\n" else ""
   let rpcTLSRejectUnverified' = case rpcTLSRejectUnverified of
         True -> ""
         False -> "REACH_RPC_TLS_REJECT_UNVERIFIED=0\n"
@@ -335,6 +333,7 @@ mkScript connectorMode' wrapped = do
        |]
     <> "\n\n"
     <> debug'
+    <> ide'
     <> rpcTLSRejectUnverified'
     -- Don't leak production `REACH_RPC_KEY` or `REACH_RPC_TLS_PASSPHRASE`
     <> defOrBlank "REACH_RPC_KEY" defRPCKey rpcKey
@@ -349,6 +348,7 @@ mkScript connectorMode' wrapped = do
 
           export REACH_CONNECTOR_MODE
           export REACH_DEBUG
+          export REACH_IDE
           export REACH_RPC_KEY
           export REACH_RPC_PORT
           export REACH_RPC_SERVER
@@ -846,6 +846,7 @@ compile = command "compile" $ info f d where
     let CompilerOpts {..} = cta_co
     let v = versionBy majMinPat version''
     let ci' = if ci then "true" else ""
+    let ports = if (elem "--sim" rawArgs || co_sim) then "-p 3001:3001" else ""
     liftIO $ do
       diePathContainsParentDir co_source
       maybe (pure ()) diePathContainsParentDir co_mdirDotReach
@@ -894,8 +895,10 @@ compile = command "compile" $ info f d where
             --volume "$$PWD:/app" \
             -u "$(id -ru):$(id -rg)" \
             -e REACH_CONNECTOR_MODE \
+            -e REACH_IDE \
             -e "REACHC_ID=$${ID}" \
             -e "CI=$ci'" \
+            $ports \
             reachsh/reach:$v \
             $args
         fi

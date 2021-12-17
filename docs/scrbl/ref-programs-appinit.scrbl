@@ -123,3 +123,19 @@ A @tech{view} is defined with @reachin{View(viewName, viewInterface)} or @reachi
 These @tech{views} are available in @tech{frontends} via the @jsin{ctc.views} object.
 In the @|DApp|, the result of this application argument is referred to as a @tech{view object}.
 
+@subsection[#:tag "ref-programs-appinit-events"]{Events Definition}
+
+@(mint-define! '("Events"))
+@reach{
+  Events('Logger', {
+    log: [UInt, Byte(64)]
+  })
+  // or
+  Events({
+    log: [UInt, Byte(64)]
+  })
+}
+
+An @tech{event} is defined with @reachin{Events(eventName, eventInterface)} or @reachin{Events(eventInterface)}, where @reachin{eventName} is a string that labels the @tech{event} and @reachin{eventInterface} is an object where each field is a @reachin{Tuple} of @reachin{Type}s, representing the type of values that an event will emit.
+These @tech{events} are available in the @tech{frontends} via the @jsin{ctc.events} object.
+In the @|DApp|, the result of this application argument is referred to as an @tech{event object}.

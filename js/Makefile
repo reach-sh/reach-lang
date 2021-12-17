@@ -31,6 +31,9 @@ build-react-runner:
 .PHONY: build
 build: build-js-deps build-stdlib build-runner build-rpc-server build-react-runner
 
+.PHONY: build-m1
+build-m1: build
+
 # faster build for local tests; ignores react-runner
 .PHONY: b
 b: build-js-deps build-stdlib build-runner build-rpc-server

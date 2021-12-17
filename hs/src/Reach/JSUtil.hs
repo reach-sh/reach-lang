@@ -5,7 +5,10 @@ module Reach.JSUtil
   , toJSCL
   , jsa_flatten
   , dropEmptyJSStmts
-  , jsArrowStmtToBlock
+  , jsArrowBodyToRetBlock
+  , jsArrowBodyToStmt
+  , jsArrowBodyToBlock
+  , jsStmtToConciseBody
   , jsStmtToBlock
   , tp
   , srcloc_jsa
@@ -21,6 +24,7 @@ module Reach.JSUtil
   , jsBlockToStmts
   , jsFlattenLHS
   , jsString
+  , jsaList
   )
 where
 
@@ -40,11 +44,11 @@ jscl_flatten = \case
   JSLOne a -> [a]
   JSLCons a _ b -> (jscl_flatten a) ++ [b]
 
-toJSCL :: [a] -> JSCommaList a
+toJSCL :: HasJSAnnot a => [a] -> JSCommaList a
 toJSCL = \case
   [] -> JSLNil
   [a] -> JSLOne a
-  x : ys -> foldl' (flip JSLCons JSNoAnnot) (JSLOne x) ys
+  x : ys -> foldl' (flip JSLCons (jsa x)) (JSLOne x) ys
 
 jsctl_flatten :: JSCommaTrailingList a -> [a]
 jsctl_flatten = \case
@@ -76,24 +80,39 @@ jsFlattenLHS e =
       ) $ jso_flatten ps
     _ -> []
 
-
 toJSArray :: [JSExpression] -> [JSArrayElement]
 toJSArray a = concatMap f a
   where
-    f e = [JSArrayElement e, JSArrayComma JSNoAnnot]
+    f e = [JSArrayElement e, JSArrayComma (jsa e)]
 
+jsArrowBodyToRetBlock :: JSConciseBody -> JSBlock
+jsArrowBodyToRetBlock = \case
+  JSConciseExprBody e -> JSBlock a [JSReturn a (Just e) (JSSemi a)] a
+    where a = jsa e
+  JSConciseFunBody b -> b
 
-jsArrowStmtToBlock :: JSStatement -> JSBlock
-jsArrowStmtToBlock = \case
-  JSExpressionStatement e sp -> JSBlock JSNoAnnot [JSReturn JSNoAnnot (Just e) sp] JSNoAnnot
-  JSMethodCall e la args ra sp -> JSBlock la [JSReturn la (Just (JSCallExpression e la args ra)) sp] ra
-  s -> jsStmtToBlock s
+jsArrowBodyToBlock :: JSConciseBody -> JSBlock
+jsArrowBodyToBlock = \case
+  JSConciseExprBody e -> JSBlock a [JSExpressionStatement e (JSSemi a)] a
+    where a = jsa e
+  JSConciseFunBody b -> b
+
+jsArrowBodyToStmt :: JSConciseBody -> JSStatement
+jsArrowBodyToStmt = \case
+  JSConciseExprBody e -> JSExpressionStatement e JSSemiAuto
+  JSConciseFunBody (JSBlock a ss a2) -> JSStatementBlock a ss a2 JSSemiAuto
 
 jsStmtToBlock :: JSStatement -> JSBlock
 jsStmtToBlock = \case
   JSStatementBlock ba bodyss aa _ -> JSBlock ba bodyss aa
-  bodys -> JSBlock JSNoAnnot [bodys] JSNoAnnot
+  bodys -> JSBlock a [bodys] a
+    where a = jsa bodys
 
+jsStmtToConciseBody :: JSStatement -> JSConciseBody
+jsStmtToConciseBody = \case
+  JSExpressionStatement e _ -> JSConciseExprBody e
+  JSMethodCall e la args ra _ -> JSConciseExprBody (JSCallExpression e la args ra)
+  ow -> JSConciseFunBody $ jsStmtToBlock ow
 
 jsBlockToStmts :: JSBlock -> [JSStatement]
 jsBlockToStmts (JSBlock _ s _) = s
@@ -112,9 +131,10 @@ dropEmptyJSStmts (s : ks) =
     ks' = dropEmptyJSStmts ks
 
 tp :: JSAnnot -> Maybe TokenPosn
-tp (JSAnnot x _) = Just x
-tp JSAnnotSpace = Nothing
-tp JSNoAnnot = Nothing
+tp = \case
+  JSAnnot x _ -> Just x
+  JSAnnotSpace -> Nothing
+  JSNoAnnot -> Nothing
 
 srcloc_jsa :: String -> JSAnnot -> SrcLoc -> SrcLoc
 srcloc_jsa lab a at = srcloc_at lab (tp a) at
@@ -139,10 +159,10 @@ srcloc_src_only src = SrcLoc Nothing Nothing (Just src)
 mkCommaList :: [JSExpression] -> JSCommaList JSExpression
 mkCommaList = aux . reverse
   where
-    aux (h : t) = JSLCons (mkCommaList t) JSNoAnnot h
+    aux (h : t) = JSLCons (mkCommaList t) (jsa h) h
     aux [] = JSLNil
 
-mkCommaTrailingList :: [a] -> JSCommaTrailingList a
+mkCommaTrailingList :: HasJSAnnot a => [a] -> JSCommaTrailingList a
 mkCommaTrailingList xs = JSCTLComma (toJSCL xs) JSNoAnnot
 
 a2sp :: JSAnnot -> JSSemi
@@ -243,6 +263,63 @@ instance HasJSAnnot JSExpression where
     JSVarInitExpression a _ -> jsa a
     JSYieldExpression a _ -> a
     JSYieldFromExpression a _ _ -> a
+
+instance HasJSAnnot JSObjectProperty where
+  jsa = \case
+    JSPropertyNameandValue _ ja _ -> ja
+    JSPropertyIdentRef ja _ -> ja
+    JSObjectMethod jmd -> jsa jmd
+    JSObjectSpread ja _ -> ja
+
+instance HasJSAnnot JSMethodDefinition where
+  jsa = \case
+    JSMethodDefinition _ ja _ _ _ -> ja
+    JSGeneratorMethodDefinition ja _ _ _ _ _ -> ja
+    JSPropertyAccessor _ _ ja _ _ _ -> ja
+
+instance HasJSAnnot JSStatement where
+  jsa = \case
+    JSStatementBlock ja _ _ _ -> ja
+    JSBreak ja _ _ -> ja
+    JSLet ja _ _ -> ja
+    JSClass ja _ _ _ _ _ _ -> ja
+    JSConstant ja _ _ -> ja
+    JSContinue ja _ _ -> ja
+    JSDoWhile ja _ _ _ _ _ _ -> ja
+    JSFor ja _ _ _ _ _ _ _ _ -> ja
+    JSForIn ja _ _ _ _ _ _ -> ja
+    JSForVar ja _ _ _ _ _ _ _ _ _ -> ja
+    JSForVarIn ja _ _ _ _ _ _ _ -> ja
+    JSForLet ja _ _ _ _ _ _ _ _ _ -> ja
+    JSForLetIn ja _ _ _ _ _ _ _ -> ja
+    JSForLetOf ja _ _ _ _ _ _ _ -> ja
+    JSForConst ja _ _ _ _ _ _ _ _ _ -> ja
+    JSForConstIn ja _ _ _ _ _ _ _ -> ja
+    JSForConstOf ja _ _ _ _ _ _ _ -> ja
+    JSForOf ja _ _ _ _ _ _ -> ja
+    JSForVarOf ja _ _ _ _ _ _ _ -> ja
+    JSAsyncFunction ja _ _ _ _ _ _ _ -> ja
+    JSFunction ja _ _ _ _ _ _ -> ja
+    JSGenerator ja _ _ _ _ _ _ _ -> ja
+    JSIf ja _ _ _ _ -> ja
+    JSIfElse ja _ _ _ _ _ _ -> ja
+    JSLabelled _ ja _ -> ja
+    JSEmptyStatement ja -> ja
+    JSExpressionStatement e _ -> jsa e
+    JSAssignStatement e _ _ _ -> jsa e
+    JSMethodCall _ ja _ _ _ -> ja
+    JSReturn ja _ _ -> ja
+    JSSwitch ja _ _ _ _ _ _ _ -> ja
+    JSThrow ja _ _ -> ja
+    JSTry ja _ _ _ -> ja
+    JSVariable ja _ _ -> ja
+    JSWhile ja _ _ _ _ -> ja
+    JSWith ja _ _ _ _ _ -> ja
+
+jsaList :: HasJSAnnot a => JSAnnot -> [a] -> JSAnnot
+jsaList def = \case
+  [] -> def
+  h:_ -> jsa h
 
 jsString :: JSAnnot -> String -> JSExpression
 jsString a s = JSStringLiteral a $ "'" <> s <> "'"

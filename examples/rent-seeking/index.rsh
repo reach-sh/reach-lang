@@ -39,14 +39,14 @@ export const main =
       .invariant( balance() == prize + bidsM.sum()
         && balance() == prize + Map.sum(bidsM) )
       .while( keepBidding() )
-      .case( Bidder, (() => {
+      .case( Bidder, () => {
           const previousBid = getBid(this);
           const addl =
             declassify(interact.getBid(prize, winningBid, previousBid));
           return { msg: addl, when: addl != 0 };
-        }),
-        ((addl) => addl),
-        ((addl) => {
+        },
+        (addl) => addl,
+        (addl) => {
           // This is here to stress the verifier
           const x = getBid(this)
           delete bidsM[this];
@@ -64,7 +64,7 @@ export const main =
           } else {
             return [ winner, winningBid ];
           }
-        })
+        }
       )
       .timeRemaining(bidTimeout());
     commit();

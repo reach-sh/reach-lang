@@ -31,12 +31,12 @@ export const main =
             .invariant(balance() == 20)
             .while(keepGoing ())
             .case(A,
-              (() => ({ when : declassify(interact.shouldGo()) })),
-              ((_) => { return [ this ]; })
+              () => ({ when : declassify(interact.shouldGo()) }),
+              (_) => { return [ this ]; }
             )
             .case(B,
-              (() => ({ when : declassify(interact.shouldGo()) })),
-              ((_) => { return [ this ]; })
+              () => ({ when : declassify(interact.shouldGo()) }),
+              (_) => { return [ this ]; }
             )
             .timeRemaining(timeRemaining());
 

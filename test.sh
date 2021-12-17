@@ -118,12 +118,7 @@ checkteal () {
 
 #exit 0
 
-jb
-ci ETH ctc-address
-ci ALGO ctc-address
-exit 0
-
-#c users/t.rsh
+c users/berry.rsh
 exit 0
 
 # (cd hs && mk hs-test)

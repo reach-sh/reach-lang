@@ -22,6 +22,7 @@ import Reach.Eval
 import Reach.Linearize
 import Reach.Optimize
 import Reach.Parser (gatherDeps_top)
+import Reach.Simulator.Server
 import Reach.Texty
 import Reach.Util
 import Reach.Verify
@@ -61,7 +62,7 @@ compile env (CompilerOpts {..}) = do
           showp l = interOut woutn l . render . pretty
       -- showp "bundle.js" $ render $ pretty djp
       dl <- compileDApp which
-      let DLProg _ (DLOpts {..}) _ _ _ _ _ _ = dl
+      let DLProg _ (DLOpts {..}) _ _ _ _ _ _ _ = dl
       let connectors = map (all_connectors M.!) dlo_connectors
       showp "dl" dl
       unless co_stopAfterEval $ do
@@ -75,6 +76,8 @@ compile env (CompilerOpts {..}) = do
         verify (VerifyOpts {..}) ol >>= maybeDie
         el <- erase_logic ol
         showp "el" el
+        unless (not co_sim) $ do
+          startServer el
         eol <- bigopt (showp, "eol") el
         pil <- epp eol
         showp "pil" pil

@@ -16,6 +16,9 @@ build-devnet-algo:
 	--build-arg REACH_GIT_HASH="$$(../git-hash.sh)";
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
+.PHONY: build-m1
+build-m1: build
+
 .PHONY: goal-image
 goal-image:
 	docker build --build-arg REACH_GIT_HASH="$$(../git-hash.sh)" --target=goal --tag=$(IMAGE)-goal:latest .

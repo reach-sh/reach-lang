@@ -1,3 +1,11 @@
 /*/build
 /ext-*
 /*/node_modules
+
+# Copy RSH modules from corresponding, non-RPC test case by default (via MAKEFILE_RPC)
+rpc-*/*.rsh
+rpc-*/common.mjs
+rpc-*/Dockerfile
+rpc-*/package.json
+rpc-*/lib/
+rpc-*/tls/

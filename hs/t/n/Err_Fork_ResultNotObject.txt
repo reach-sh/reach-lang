@@ -2,7 +2,7 @@ reachc: error[RE0081]: Fork local result must be object with fields `msg` or `wh
 
   ./Err_Fork_ResultNotObject.rsh:10:9:decimal
 
-  10|         5),
+  10|         5,
 
 For further explanation of this error, see: https://docs.reach.sh/RE0081.html
 

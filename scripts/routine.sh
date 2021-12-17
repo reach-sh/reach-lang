@@ -8,6 +8,8 @@ elif [ "$MODE" = "push" ]; then
   alias go='make push'
 elif [ "$MODE" = "build-push" ]; then
   alias go='make build push'
+elif [ "$MODE" = "build-m1" ]; then
+  alias go='make build-m1'
 else
   echo "I don't know how to '$MODE'"
   exit 1
@@ -15,6 +17,10 @@ fi
 
 (cd hs && go) &
 HS=$!
+
+# XXX js relies on hs, so this has to be done first
+wait $HS
+
 (cd js && go) &
 JS=$!
 (cd scripts/devnet-algo && go) &

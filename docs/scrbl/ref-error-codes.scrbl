@@ -2515,6 +2515,36 @@ This might look like the following in the @reachin{API_CONSENSUS_EXPR}:
 
 You cannot return from an API call twice.
 
+Sometimes the second instance is a by-product of an effect duplicating a continuation, such as:
+@reach{
+  .api(User.f, (x, ret) => {
+    if (x > 5) {
+      m[this] = x;
+    }
+    ret(false);
+  })
+}
+This is because this is equivalent to:
+@reach{
+  .api(User.f, (x, ret) => {
+    if (x > 5) {
+      m[this] = x;
+      ret(false);
+    } else {
+      ret(false);
+    }
+  })
+}
+Instead, the effect should happen after the return:
+@reach{
+  .api(User.f, (x, ret) => {
+    ret(false);
+    if (x > 5) {
+      m[this] = x;
+    }
+  })
+}
+
 @error{RAPI0003}
 
 This error means that you did not return a result from an @tech{API} call.
@@ -2547,3 +2577,10 @@ This warning indicates that your program does not contain any publications.
 
 You can fix this issue by making sure at least one @reachin{Participant} performs a @reachin{publish}.
 
+@error{RW0005}
+
+This warning indicates that a @reachin{View} or @reachin{API} produces or consumes an @reachin{Object},
+which is a type internal to Reach.
+It has an opaque and unspecified representation that can only be consumed by other Reach programs, so it is probably a bad choice for general purpose interfaces.
+
+You can fix this issue by using a @reachin{Struct} instead of the @reachin{Object}.

@@ -12,10 +12,10 @@ export const main = Reach.App(() => {
   invariant(balance() == 0);
   while (true) {
     commit();
-    fork().api(A.f, ((x, k) => {
+    fork().api(A.f, (x, k) => {
       k(x);
       continue;
-    }));
+    });
   };
   commit();
   exit();

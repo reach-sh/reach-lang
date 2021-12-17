@@ -8,8 +8,12 @@ const discord_icon = path.join(__filename, '..', '..', '..', 'images', 'discord-
 const github_icon = path.join(__filename, '..', '..', '..', 'images', 'github-icon-red.png');
 const gist_icon = path.join(__filename, '..', '..', '..', 'images', 'github-icon-blue.png');
 
-const makeTreeItem = (label, command, icon = reach_icon) => {
-	return makeLabeledTreeItem(label, label, command, icon);
+const makeTreeItem = (
+	label: string, command: string, icon = reach_icon
+) => {
+	return makeLabeledTreeItem(
+		label, label, command, icon
+	);
 };
 
 const makeLabeledTreeItem = (label: string, title: string, command: string, icon = reach_icon) => {
@@ -26,7 +30,19 @@ const makeLabeledTreeItem = (label: string, title: string, command: string, icon
 	return t;
 };
 
-const COMMANDS = require('../../data/commands.json');
+type Command = {
+	label: string,
+	title: string,
+	command: string,
+	// If any of the following three properties exist,
+	// their value should be "true".
+	commandsTreeDataProvider?: true,
+	helpTreeDataProvider?: true,
+	documentationTreeDataProvider?: true
+};
+
+const COMMANDS: Command[]
+	= require('../../data/commands.json');
 const COMMANDS_TREE_DATA = [];
 const HELP_TREE_DATA = [];
 const DOCUMENTATION_TREE_DATA = [];

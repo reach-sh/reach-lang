@@ -89,13 +89,15 @@ WORKDIR /tmp_z3/z3/build
 RUN make
 RUN make install
 
+WORKDIR /
 COPY --from=solc /usr/local/bin/solc /usr/bin/solc
 RUN chmod +x /usr/bin/solc
-COPY --from=solc /sol/stdlib.json .
+COPY --from=solc /sol/stdlib.json /stdlib_sol.json
+RUN cp /root/.local/bin/reachc /usr/bin/reachc && chmod +x /usr/bin/reachc
 
 # mostly copied from Dockerfile.reachc
 WORKDIR /app
-ENTRYPOINT ["/root/.local/bin/reachc"]
+ENTRYPOINT ["/usr/bin/reachc"]
 ARG REACHC_HASH
 ENV REACHC_HASH="${REACHC_HASH}"
 ENV REACH_GIT_HASH="${REACHC_HASH}"

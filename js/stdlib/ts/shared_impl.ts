@@ -88,6 +88,7 @@ export type IBackend<ConnectorTy extends AnyBackendTy> = {
   _getMaps: (stdlib:Object) => IBackendMaps<ConnectorTy>,
   _Participants: {[n: string]: any},
   _APIs: {[n: string]: any | {[n: string]: any}},
+  _getEvents: (stdlib:Object) => ({ [n:string]: [any] })
 };
 
 export type OnProgress = (obj: {current: BigNumber, target: BigNumber}) => any;
@@ -147,9 +148,10 @@ export type ViewVal = (...args:any) => Promise<any>;
 export type ViewFunMap = {[key: string]: ViewVal};
 export type ViewMap = {[key: string]: ViewVal | ViewFunMap};
 export type APIMap = ViewMap;
+export type EventMap = { [key: string]: any }
 
 export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
-  getInfo: () => Promise<ContractInfo>,
+  getContractInfo: () => Promise<ContractInfo>,
   getContractAddress: () => Promise<CBR_Address>,
   waitUntilTime: (v:BigNumber) => Promise<BigNumber>,
   waitUntilSecs: (v:BigNumber) => Promise<BigNumber>,
@@ -169,14 +171,19 @@ export type ISetupArgs<ContractInfo, VerifyResult> = {
 };
 export type ISetupViewArgs<ContractInfo, VerifyResult> =
   Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
-export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractAddress"|"sendrecv"|"recv"|"getState")>;
+
+export type ISetupEventArgs<ContractInfo, VerifyResult> =
+  Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
+
+export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
 
 export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
   setupView: ISetupView<ContractInfo, VerifyResult, ConnectorTy>,
+  setupEvents: ISetupEvent<ContractInfo, VerifyResult>,
   givenInfoP: (Promise<ContractInfo>|undefined)
   _setup: (args: ISetupArgs<ContractInfo, VerifyResult>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
-} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
+} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
 
 export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
@@ -191,6 +198,8 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
   apis: APIMap,
   a: APIMap,
   safeApis: APIMap,
+  e: EventMap,
+  events: EventMap,
   // for compiled output
   _initialize: () => IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>,
 };
@@ -199,6 +208,35 @@ export type ISetupView<ContractInfo, VerifyResult, ConnectorTy extends AnyBacken
   viewLib: IViewLib,
   getView1: ((views:IBackendViewsInfo<ConnectorTy>, v:string, k:string|undefined, vi:IBackendViewInfo<ConnectorTy>, isSafe: boolean) => ViewVal)
 };
+
+export type ISetupEvent<ContractInfo, VerifyResult> =
+  (args:ISetupEventArgs<ContractInfo, VerifyResult>) => {
+      createEventStream : (event: string, tys: any[]) => {
+                            lastTime: () => Promise<Time>,
+                            next: () => Promise<any>,
+                            seek: (t: Time) => void,
+                            seekNow: () => Promise<void>,
+                            monitor: (onEvent: (x:any) => void) => Promise<void>
+                          }
+    }
+
+export type Time = BigNumber;
+
+export type Event<T> = {
+  when: Time,
+  what: T
+}
+
+export type EventStream<T> = {
+  // mvp
+  seek: (t:Time) => void,
+  next: () => Promise<Event<T>>
+  // additional
+  seekNow: () => void,
+  lastTime: () => Time,
+  // why can't TS handle a function type as arg
+  monitor: (f: any) => void
+}
 
 export const stdVerifyContract =
   async <ContractInfo, VerifyResult>(
@@ -217,12 +255,12 @@ export const stdContract =
   <ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
     stdContractArgs: IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy>):
   IContract<ContractInfo, RawAddress, Token, ConnectorTy> => {
-  const { bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, _setup, givenInfoP } = stdContractArgs;
+  const { bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP } = stdContractArgs;
 
   type SomeSetupArgs = Pick<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo"|"getInfo")>;
   const { setInfo, getInfo }: SomeSetupArgs = (() => {
     let _setInfo = (info:ContractInfo) => {
-      throw Error(`Cannot set info(${JSON.stringify(info)}) when acc.contract called with contract info`);
+      throw Error(`Cannot set info(${JSON.stringify(info)}) (i.e. deploy) when acc.contract called with contract info`);
       return;
     };
     if ( givenInfoP !== undefined ) {
@@ -256,11 +294,11 @@ export const stdContract =
   const setupArgs = { ...viewArgs, setInfo };
 
   const _initialize = () => {
-    const { getContractAddress, sendrecv, recv, getState } =
+    const { getContractInfo, getContractAddress, sendrecv, recv, getState } =
       _setup(setupArgs);
     return {
       selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
-      getInfo,
+      getContractInfo,
       getContractAddress, sendrecv, recv, getState,
     };
   };
@@ -338,6 +376,16 @@ export const stdContract =
   const apis = mkApis(false);
   const safeApis = mkApis(true);
 
+  const eventMap = bin._getEvents({ reachStdlib: stdlib });
+  const { createEventStream } = setupEvents(viewArgs);
+
+  const events =
+    objectMap(eventMap, ((k:string, v: any) =>
+      Array.isArray(v) // untagged
+        ? createEventStream(k, v)
+        : objectMap(v, ((kp, vp: any) =>
+          createEventStream(k + "_" + kp, vp)))));
+
   return {
     ...ctcC,
     getInfo,
@@ -351,6 +399,8 @@ export const stdContract =
     unsafeViews,
     apis, a: apis,
     safeApis,
+    e: events,
+    events
   };
 };
 
@@ -363,6 +413,7 @@ export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   getAddress: () => string,
   setDebugLabel: (lab: string) => IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>,
   tokenAccept: (token: Token) => Promise<void>,
+  tokenAccepted: (token: Token) => Promise<boolean>,
   tokenMetadata: (token: Token) => Promise<any>,
 };
 
@@ -689,3 +740,14 @@ export function isSome<T>(m: Maybe<T>): m is Some<T> {
 }
 export const Some = <T>(m: T): Some<T> => [m];
 export const None: None = [];
+
+export const retryLoop = async <T>(lab: any, f: (() => Promise<T>)) => {
+  let retries = 0;
+  while ( true ) {
+    try { return await f(); }
+    catch (e:any) {
+      console.log(`retryLoop`, { lab, retries, e });
+      retries++;
+    }
+  }
+};

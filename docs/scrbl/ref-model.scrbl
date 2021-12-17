@@ -51,6 +51,7 @@ In addition to @tech{values}, @tech{consensus state} may contain a fixed number 
 These @tech{mappings} are referred to as "@deftech{linear state}" because their size is linear in the number of @tech{participants} in the @tech{contract}.
 Furthermore, a @tech{contract} may provide @deftech{views} of its @tech{consensus state}, which are labeled functions and values which may be hierarchically organized, such as @litchar{NFT.owner} or @litchar{scoreOfPlayer}.
 These @tech{views} are visible in sub-trees of the computation graph.
+A @tech{contract} may also emit @deftech{event}s, which are externally observable values that are persistently available.
 The creation of a @tech{contract} is called @deftech{deploy}ment.
 
 A @deftech{participant} is a logical actor which takes part in a @|DApp|.

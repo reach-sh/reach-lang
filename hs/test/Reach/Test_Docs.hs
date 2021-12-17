@@ -14,6 +14,7 @@ import           Test.Hspec
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import           Reach.Connector.ALGO         (AlgoError(..))
+import Reach.Warning (Warning (W_ExternalObject))
 
 docName :: String
 docName = "../docs/scrbl/ref-error-codes.scrbl"
@@ -32,6 +33,7 @@ allErrorCodes =
   , (errPrefix Err_Impossible_InspectForall, gconNum @ImpossibleError)
   , (errPrefix Err_TransferNewToken, gconNum @AlgoError)
   , (errPrefix (API_NoIn ""), gconNum @APICutError)
+  , (errPrefix W_ExternalObject, gconNum @Warning)
   ]
 
 getCodes :: String -> Int -> [T.Text]

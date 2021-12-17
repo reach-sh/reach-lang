@@ -6,6 +6,8 @@ module Reach.Util
   , b2t
   , s2t
   , impossible
+  , possible
+  , saferMapRef
   , trimQuotes
   , fromIntegerMay
   , maybeDie
@@ -23,6 +25,7 @@ module Reach.Util
   , listDirectoriesRecursive
   , leftPad
   , makeErrCode
+  , arraySet
   )
 where
 
@@ -33,6 +36,7 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Foldable (foldr')
 import Data.IORef (IORef, newIORef, readIORef)
 import qualified Data.Map as M
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
@@ -77,6 +81,15 @@ impossible msg =
       <> "This error indicates a problem with the Reach compiler, not your program. "
       <> "Please report this error, along with the pertinent program, to the Reach team as soon as possible "
       <> "so we can fix it.\n\nOpen an issue at: https://github.com/reach-sh/reach-lang/issues\n"
+
+
+possible :: HasCallStack => String -> b
+possible msg =
+  error $
+    "The compiler has encountered an internal error:\n\n  " <> msg <> "\n\n"
+
+saferMapRef :: String -> Maybe b -> b
+saferMapRef s m = (fromMaybe (possible s) m)
 
 -- Note: drop 1 is safer than init/tail on empty strings
 trimQuotes :: String -> String
@@ -136,3 +149,6 @@ leftPad n e xs = replicate (n - length xs) e <> xs
 makeErrCode :: Show a => [Char] -> a -> [Char]
 makeErrCode errType errIndex =
   errType <> leftPad 4 '0' (show errIndex)
+
+arraySet :: Int -> a -> [a] -> [a]
+arraySet n a arr = take n arr <> [a] <> drop (n + 1) arr

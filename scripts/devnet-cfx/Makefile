@@ -12,6 +12,9 @@ build-devnet-cfx:
     	--build-arg REACH_GIT_HASH="$$(../git-hash.sh)";
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
+.PHONY: build-m1
+build-m1: build
+
 .PHONY: push
 push:
 	$(ROOT)/scripts/docker-push.sh $(IMAGE)

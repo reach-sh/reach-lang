@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Reach.AST.Base where
 
 import Control.Applicative ((<|>))
 import Control.DeepSeq (NFData)
-import Data.Aeson (encode)
-import Data.Aeson.Types (ToJSON)
+import Data.Aeson as Aeson
 import qualified Data.ByteString.Char8 as B
 import Data.ByteString.Internal (w2c)
 import qualified Data.ByteString.Lazy as LB
@@ -35,6 +35,15 @@ instance Show ReachSource where
 
 data SrcLoc = SrcLoc (Maybe String) (Maybe TokenPosn) (Maybe ReachSource)
   deriving (Eq, Generic, NFData, Ord)
+
+instance FromJSON TokenPosn
+instance ToJSON TokenPosn
+
+instance FromJSON ReachSource
+instance ToJSON ReachSource
+
+instance ToJSON SrcLoc
+instance FromJSON SrcLoc
 
 -- This is a "defaulting" instance where the left info is preferred,
 -- but can fall back on the right if info is absent from the left.
@@ -300,6 +309,9 @@ instance Pretty PrimOp where
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)
   deriving (Eq, Ord, Generic, NFData)
+
+instance FromJSON SLCtxtFrame
+instance ToJSON SLCtxtFrame
 
 instance Show SLCtxtFrame where
   show (SLC_CloApp call_at clo_at mname) =

@@ -1,0 +1,8 @@
+reachc: error[RE0104]: Token reference based on dynamic computation, which Reach cannot track, yet.
+
+  ./pr417.rsh:18:12:block app
+
+  18|     x.match({
+
+For further explanation of this error, see: https://docs.reach.sh/RE0104.html
+

@@ -453,13 +453,19 @@ jsExpr = \case
     asks ctxt_mode >>= \case
       JM_Simulate
         | isInitial -> return $ jsApply "stdlib.emptyContractInfo" []
-      _ -> return $ "await" <+> jsApply "ctc.getInfo" []
+      _ -> return $ "await" <+> jsApply "ctc.getContractInfo" []
   DLE_GetAddress {} -> return $ "await" <+> jsApply "ctc.getContractAddress" []
-  DLE_EmitLog _at mode _ dv -> do
-    dv' <- jsVar dv
-    txn' <- jsTxn
-    dvt' <- jsContract $ varType dv
-    return $ "await" <+> txn' <> "." <> jsApply "getOutput" [squotes (pretty mode), squotes dv', dvt', dv']
+  DLE_EmitLog _at kind dvs -> do
+    let go :: String -> DLVar -> App Doc
+        go mode dv = do
+          dv' <- jsVar dv
+          txn' <- jsTxn
+          dvt' <- jsContract $ varType dv
+          return $ "await" <+> txn' <> "." <> jsApply "getOutput" [squotes (pretty mode), squotes dv', dvt', dv']
+    case (kind, dvs) of
+      (L_Internal, [dv]) -> go "internal" dv
+      (L_Api s, [dv]) -> go s dv
+      (_, _) -> return $ "null"
   DLE_setApiDetails {} -> return "undefined"
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
@@ -879,6 +885,18 @@ jsExports exports =
     exportM <- mapM (jsExportBlock False) exports
     return $ jsReturn $ jsObject exportM
 
+jsEvents :: DLEvents -> App Doc
+jsEvents events = do
+  jsFunctionWStdlib "_getEvents" [] $ do
+    devts <- foldM (\ acc (mk, m) -> do
+            dv <- mapM (\ts -> jsArray <$> mapM jsContract ts) m
+            case mk of
+              Just k -> do
+                return $ M.insert (bunpack k) (jsObject dv) acc
+              Nothing -> return $ M.union acc dv
+          ) mempty $ M.toList events
+    return $ jsReturn $ jsObject devts
+
 jsViews :: (CPViews, ViewInfos) -> App Doc
 jsViews (cvs, vis) = do
   let menv e = e { ctxt_mode = JM_View }
@@ -948,10 +966,10 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 5
+reachBackendVersion = 6
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
-jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ _)) = do
+jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ devts _)) = do
   let DLInit {..} = dli
   let preamble =
         vsep
@@ -977,7 +995,8 @@ jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ _)) = do
             Nothing -> M.union
           . M.map (\(p,_) -> pretty $ bunpack p)
         ) mempty epps_apis
-  return $ vsep $ [ preamble, exportsp, viewsp, mapsp] <> partsp <> cnpsp <> [jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
+  eventsp <- jsEvents devts
+  return $ vsep $ [ preamble, exportsp, eventsp, viewsp, mapsp] <> partsp <> cnpsp <> [jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
 
 backend_js :: Backend
 backend_js outn crs pl = do

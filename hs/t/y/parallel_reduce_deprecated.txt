@@ -14,9 +14,9 @@ For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
 
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
 
-  ./parallel_reduce_deprecated.rsh:11:24:application
+  ./parallel_reduce_deprecated.rsh:19:19:application
 
-  11|         parallel_reduce([ 0 ])
+  19|           .timeout(1, () => {
 
 For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
 

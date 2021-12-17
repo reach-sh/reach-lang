@@ -53,6 +53,57 @@ The frontend compares that value with what is returned by
 
 When a @tech{view} is bound to a function, it may inspect any values in its scope, including @tech{linear state}.
 
+@subsection[#:tag "ref-programs-consensus-events"]{Event Objects}
+
+@reach{
+  Logger.log(4, x);
+}
+
+If @reachin{EVENT} is an @deftech{event object}, then its fields are the elements of the associated @tech{event}.
+Each of these fields are a function, whose domain is specified by the @reachin{Events} interface.
+
+For example, consider the following program:
+
+@reach{
+  'reach 0.1';
+
+  export const main = Reach.App(() => {
+    const A = Participant('A', {
+      getCtc: Fun([], Contract)
+    });
+    const E = Events('Announcer', {
+      announce: [UInt, Contract],
+    });
+    deploy();
+
+    A.publish();
+
+    var [ i ] = [ 0 ];
+    invariant(balance() == 0);
+    while (true) {
+      commit();
+      A.only(() => {
+        const ctc = declassify(interact.getCtc());
+      });
+      A.publish(ctc);
+
+      E.announce(i, ctc);
+
+      [ i ] = [ i + 1];
+      continue;
+    }
+
+    commit();
+
+  });
+}
+
+In this program, there is an announcement made every loop; an event is emitted with the published
+@reachin{ctc} and its corresponding index @reachin{i}.
+A frontend may observe the values of these events with @jsin{await ctc.e.Announcer.announce.next()} or
+@jsin{await ctc.e.Announcer.announce.monitor(announceHandler)} where @jsin{announceHandler} is a function.
+
+
 @subsection{@tt{Participant.set} and @tt{.set}}
 
 @(mint-define! '("Participant.set"))
@@ -171,7 +222,7 @@ const [ keepGoing, as, bs ] =
 
 A @deftech{parallel reduce statement} is written:
 
-@(mint-define! '("paySpec") '("define"))
+@(mint-define! '("define"))
 @reach{
 const LHS =
   parallelReduce(INIT_EXPR)

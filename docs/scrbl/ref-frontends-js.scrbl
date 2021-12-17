@@ -21,14 +21,14 @@ You only need to install the package directly if you are running your frontend w
 These libraries provide a standard interface that support developing @tech{frontends} in JavaScript.
 
 @itemlist[
-@item{@secref["ref-frontends-js-loader.mjs"] discusses how to load the standard library.}
+@item{@secref["ref-frontends-js-loader"] discusses how to load the standard library.}
 @item{@secref["ref-frontends-js-provider"] discusses how to adjust what provider is used to connect to a consensus network.}
 @item{@secref["ref-frontends-js-network"] discuss some utility functions that provide access to consensus network parameters and resources.}
 @item{@secref["ref-frontends-js-acc"] discusses how to construct an account handle, which is necessary to access contracts.}
 @item{@secref["ref-frontends-js-ctc"] discusses how to construct a contract handle, which is used to interact with a DApp.}
 @item{@secref["ref-frontends-js-types"] discusses the way that JavaScript values are used to represent Reach values.}
 @item{@secref["ref-frontends-js-utils"] discusses some utility functions for working with JavaScript-represented Reach values.}
-@item{@secref["ref-frontends-js-ask.mjs"] discusses a helper library for building text-based UIs.}
+@item{@secref["ref-frontends-js-ask"] discusses a helper library for building text-based UIs.}
 ]
 
 @section[#:tag "ref-frontends-js-types"]{Types}
@@ -64,7 +64,7 @@ A @reachin{Connector} is the abbreviated name of the network
 being connected to.
 
 
-@section[#:tag "ref-frontends-js-loader.mjs"]{@tt{loader.mjs}}
+@section[#:tag "ref-frontends-js-loader"]{@tt{loader.mjs}}
 
 The @tt{loader.mjs} module exports the following functions
 that might help you write code that is portable to multiple consensus networks.
@@ -265,6 +265,14 @@ Returns a Promise for a Reach @tech{account} abstraction for an existing @tech{a
 This does nothing on some @tech{consensus networks}, but should always be used to ensure your frontend is blockchain agnostic.
 
 @(hrule)
+@(mint-define! '("tokenAccepted"))
+@js{
+  acc.tokenAccepted(token) => Promise<boolean>}
+
+@index{acc.tokenAccepted} Returns a Promise that returns if an account may accept a given token.
+This does nothing on some @tech{consensus networks}, but should always be used to ensure your frontend is blockchain agnostic.
+
+@(hrule)
 @(mint-define! '("tokenMetadata"))
 @js{
   acc.tokenMetadata(token) => Promise<object>}
@@ -338,7 +346,7 @@ In order to interact with a deployed contract, you must construct a @tech{contra
 This @jsin{bin} argument is the @filepath{index.main.mjs} module produced by the JavaScript @tech{backend}.
 
 If @jsin{info} is provided, it must be a @reachin{Contract} value, or a @jsin{Promise} that eventually yields a @reachin{Contract} value.
-Typically, the deployer of a contract with not provide @jsin{info}, while users of a contract will.
+Typically, the deployer of a contract will not provide @jsin{info}, while users of a contract will.
 In an automated, single instance program, @reachin{ctc.getInfo()} is typically used to acquire @jsin{info};
 while in non-automated programs, an application uses out-of-band communication, such as an external database or user input, to acquire the @jsin{info} argument.
 
@@ -457,6 +465,54 @@ If a @tech{View} was specified without a @reachin{viewName}, for example @reachi
 @js{
   ctc.v.owner();
 }
+
+@subsection{@tt{ctc.events}, @tt{ctc.e}}
+
+@js{
+  ctc.events // { [name: string]: EventStream }
+  ctc.e      // { [name: string]: EventStream }
+
+  await ctc.e.log.next();
+}
+
+@index{ctc.events}
+@index{ctc.e}
+An object that mirrors the @tech{event} hierarchy, so if @litchar{X.Y} is an @tech{event}, then @jsin{ctc.events.X.Y} is an @deftech{EventStream}.
+An @tech{EventStream} supports the following operations for a given @reachin{Event}:
+
+@(mint-define! '("EventStream"))
+@js{
+  EventStream<T> : {
+    next    : () => Promise<Event<T>>,
+    seek    : (t: Time) => void,
+    seekNow : () => Promise<void>,
+    lastTime: () => Promise<Time>,
+    monitor : ((Event<T>) => void) => Promise<void>,
+  }
+}
+
+where
+
+@(mint-define! '("Event"))
+@js{
+  Event<T> : { when: Time, what: T }
+}
+
+An @jsin{Event} is instantiated with it's corresponding type declared in Reach.
+
+@index{next} @jsin{next} will wait for the next @reachin{Event} to occur, returning the time the event occured
+and the arguments to the event.
+
+@index{seek} @jsin{seek} will set the internal time of the @tech{EventStream} to the given argument.
+The @tech{EventStream} will use this time as the minimum bound when searching for @reachin{Event}s.
+
+@index{seekNow} @jsin{seekNow} will set the internal time of the @tech{EventStream} to the latest @tech{network time}.
+The @tech{EventStream} will use this time as the minimum bound when searching for @reachin{Event}s.
+
+@index{lastTime} @jsin{lastTime} will return the last @tech{network time} that an @reachin{Event} was emitted.
+
+@index{monitor} @jsin{monitor} accepts a function of type @jsin{Event<T> => void} as an argument. The provided function will be
+called whenever the @reachin{Event} occurs.
 
 @(hrule)
 
@@ -665,6 +721,7 @@ On Ethereum and Conflux, it always errors and cannot provide a wallet.
 On Algorand, it can provide a wallet that directly connects to the Algorand network, like @jsin{setProviderByName} (& @jsin{setProviderByEnv}), but provide interactive signing.
 The network connection is specified via the @litchar{providerEnv} key, which may be a string (which is used as an argument to @jsin{providerEnvByName}) or an environment (which is used as an argument to @jsin{setProviderByEnv}).
 By default, signing is via an interactive browser window prompt, where the user repeatedly provides their mnemonic.
+
 If the key @litchar{MyAlgoConnect} is provided, and bound to the export of @litchar{@"@"reach-sh/stdlib/ALGO_MyAlgoConnect}, then @link["https://wallet.myalgo.com/home"]{My Algo} will be used for signing.
 For example, this sets the wallet fallback to be My Algo used with Algorand TestNet:
 @js{
@@ -672,6 +729,16 @@ import MyAlgoConnect from '@"@"reach-sh/stdlib/ALGO_MyAlgoConnect';
 stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', MyAlgoConnect }));
 }
+
+If the key @litchar{WalletConnect} is provided, and bound to the export of @litchar{@"@"reach-sh/stdlib/ALGO_WalletConnect}, then @link["https://walletconnect.com/"]{WalletConnect} is used to connect to the @link["https://algorandwallet.com/"]{Algorand Wallet} for signing.
+For example, this sets the wallet fallback to be WalletConnect and the Algorand TestNet:
+@js{
+import WalletConnect from '@"@"reach-sh/stdlib/ALGO_WalletConnect';
+stdlib.setWalletFallback(stdlib.walletFallback({
+  providerEnv: 'TestNet', WalletConnect }));
+}
+
+Because these are fallbacks, you need to decide for your users which wallet they'll use, or make a user interface element to let them select which wallet fallback to use.
 
 @section[#:tag "ref-frontends-js-utils"]{Utilities}
 
@@ -869,7 +936,7 @@ There is no corresponding @jsin{parseAddress} function because
 the user-friendly form is also accepted from the frontend
 in all places that Reach expects an address.
 
-@section[#:tag "ref-frontends-js-ask.mjs"]{@tt{ask.mjs}}
+@section[#:tag "ref-frontends-js-ask"]{@tt{ask.mjs}}
 
 The Reach JavaScript standard library also provides the helper module @litchar{@"@"reach-sh/stdlib/ask.mjs} for constructing console interfaces to your @tech{frontends}.
 

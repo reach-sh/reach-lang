@@ -4,6 +4,7 @@
 
 module Reach.AST.DLBase where
 
+import Data.Aeson
 import qualified Data.ByteString.Char8 as B
 import qualified Data.List as List
 import Data.List.Extra
@@ -55,6 +56,9 @@ data DLType
   | T_Struct [(SLVar, DLType)]
   deriving (Eq, Generic, Ord)
 
+instance FromJSON DLType
+instance ToJSON DLType
+
 maybeT :: DLType -> DLType
 maybeT t = T_Data $ M.fromList $ [("None", T_Null), ("Some", t)]
 
@@ -78,7 +82,6 @@ bytesTypeLen :: DLType -> Integer
 bytesTypeLen = \case
   T_Bytes l -> l
   _ -> impossible "no bytes"
-
 
 showTys :: Show a => [a] -> String
 showTys = List.intercalate ", " . map show
@@ -170,6 +173,9 @@ data DLConstant
   = DLC_UInt_max
   deriving (Eq, Generic, Show, Ord)
 
+instance ToJSON DLConstant
+instance FromJSON DLConstant
+
 instance Pretty DLConstant where
   pretty = \case
     DLC_UInt_max -> "UInt.max"
@@ -183,6 +189,9 @@ data DLLiteral
   | DLL_Bool Bool
   | DLL_Int SrcLoc Integer
   deriving (Eq, Generic, Show, Ord)
+
+instance ToJSON DLLiteral
+instance FromJSON DLLiteral
 
 instance Pretty DLLiteral where
   pretty = \case
@@ -198,6 +207,13 @@ litTypeOf = \case
 
 data DLVar = DLVar SrcLoc (Maybe (SrcLoc, SLVar)) DLType Int
   deriving (Generic)
+
+instance ToJSONKey DLVar
+
+instance ToJSON DLVar where
+  toEncoding = genericToEncoding defaultOptions
+
+instance FromJSON DLVar
 
 instance SrcLocOf DLVar where
   srclocOf (DLVar a _ _ _) = a
@@ -233,6 +249,9 @@ varType (DLVar _ _ t _) = t
 
 newtype DLMVar = DLMVar Int
   deriving (Eq, Ord, Generic)
+
+instance ToJSONKey DLMVar
+instance ToJSON DLMVar
 
 instance Pretty DLMVar where
   pretty (DLMVar i) = "map" <> pretty i
@@ -538,11 +557,10 @@ data DLExpr
   | DLE_TimeOrder SrcLoc [(Maybe DLArg, DLVar)]
   | DLE_GetContract SrcLoc
   | DLE_GetAddress SrcLoc
-  -- | DLE_EmitLog SrcLoc (Either Int String) DLType DLArg
-  -- * the either is whether it is a generated one or a prescribed one
-  -- * the type is the type
-  -- * the dlarg is the value being logged
-  | DLE_EmitLog SrcLoc String (Maybe String) DLVar
+  -- | DLE_EmitLog SrcLoc LogKind [DLVar]
+  -- * the LogKind specifies whether the log generated from an API, Events, or is internal
+  -- * the [DLVar] are the values to log
+  | DLE_EmitLog SrcLoc LogKind [DLVar]
   | DLE_setApiDetails {
     sad_at :: SrcLoc,
     sad_who :: SLPart,
@@ -550,6 +568,12 @@ data DLExpr
     sad_mcase_id :: Maybe String,
     sad_compile :: ApiInfoCompilation }
   deriving (Eq, Ord, Generic)
+
+data LogKind
+  = L_Api String
+  | L_Event (Maybe SLPart) String
+  | L_Internal
+  deriving (Eq, Ord, Show)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
 prettyClaim ct a m = do
@@ -665,11 +689,19 @@ instance PrettySubst DLExpr where
       return $ "timeOrder" <> parens tos'
     DLE_GetContract {} -> return $ "getContract()"
     DLE_GetAddress {} -> return $ "getAddress()"
-    DLE_EmitLog _ m mapi v -> do
-      a' <- prettySubst $ DLA_Var v
-      return $ "emitLog" <> parens (pretty m <> ", " <> pretty mapi) <> parens a'
+    DLE_EmitLog _ lk vs -> do
+      return $ "emitLog" <> parens (pretty lk) <> parens (pretty vs)
     DLE_setApiDetails _ p d mc f ->
       return $ "setApiDetails" <> parens (render_das [pretty p, pretty d, pretty mc, pretty f])
+
+instance PrettySubst LogKind where
+  prettySubst = \case
+    L_Internal ->
+      return $ "internal"
+    L_Event ml s -> do
+      return $ "event" <> parens (pretty ml <> ", " <> pretty s)
+    L_Api s -> do
+      return $ "api" <> parens (pretty s)
 
 pretty_subst :: PrettySubst a => PrettySubstEnv -> a -> Doc
 pretty_subst e x =
@@ -1013,3 +1045,5 @@ class HasCounter a where
 type DLViews = M.Map (Maybe SLPart) (M.Map SLVar IType)
 
 type DLAPIs = M.Map (Maybe SLPart) (M.Map SLVar (SLPart, IType))
+
+type DLEvents = M.Map (Maybe SLPart) (M.Map SLVar [DLType])

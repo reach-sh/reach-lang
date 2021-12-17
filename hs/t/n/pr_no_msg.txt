@@ -1,0 +1,8 @@
+reachc: error[RE0000]: Invalid function application. Expected 0 args, got 1 for function defined at ./pr_no_msg.rsh:17:10:function exp
+
+  ./pr_no_msg.rsh:17:10:application
+
+  17|       () => { return [ false ]; })
+
+For further explanation of this error, see: https://docs.reach.sh/RE0000.html
+

@@ -666,7 +666,7 @@ mk_eb (DLinExportBlock at vs (DLBlock bat sf ll a)) = do
   return $ DLinExportBlock at vs (DLBlock bat sf body' a)
 
 epp :: LLProg -> IO PLProg
-epp (LLProg at (LLOpts {..}) ps dli dex dvs das s) = do
+epp (LLProg at (LLOpts {..}) ps dli dex dvs das devts s) = do
   -- Step 1: Analyze the program to compute basic blocks
   let be_counter = llo_counter
   be_savec <- newCounter 1
@@ -706,7 +706,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das s) = do
       mapM mk_eb dex
   vm <- flip mapWithKeyM mkvm $ \which mk ->
     mkh $ mk <$> ce_readSave which
-  cp <- (CPProg at (dvs, vm) api_info . CHandlers) <$> mapM mkh hs
+  cp <- (CPProg at (dvs, vm) api_info devts . CHandlers) <$> mapM mkh hs
   -- Step 4: Generate the end-points
   let SLParts {..} = ps
   let mkep ee_who ie = do

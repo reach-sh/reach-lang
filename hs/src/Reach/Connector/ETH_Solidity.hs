@@ -243,7 +243,7 @@ data SolCtxt = SolCtxt
   , ctxt_plo :: PLOpts
   , ctxt_intidx :: Counter
   , ctxt_ints :: IORef (M.Map Int Doc)
-  , ctxt_outputs :: IORef (M.Map DLVar Doc)
+  , ctxt_outputs :: IORef (M.Map String Doc)
   , ctxt_tlfuns :: IORef (M.Map String Doc)
   , ctxt_requireMsg :: Counter
   , ctxt_api_rngs :: IORef (Maybe (M.Map String DLType))
@@ -393,7 +393,7 @@ instance DepthOf DLExpr where
     DLE_TimeOrder {} -> impossible "timeorder"
     DLE_GetContract {} -> return 1
     DLE_GetAddress {} -> return 1
-    DLE_EmitLog _ _ _ a -> add1 $ depthOf a
+    DLE_EmitLog _ _ a -> add1 $ depthOf a
     DLE_setApiDetails {} -> return 0
     where
       add1 m = (+) 1 <$> m
@@ -586,7 +586,11 @@ solExpr sp = \case
     return $ ae' <> ".elem" <> pretty i <> sp
   DLE_ObjectRef _ oe f -> do
     oe' <- solArg oe
-    return $ oe' <> "." <> objPrefix (pretty f) <> sp
+    let p = case argTypeOf oe of
+              T_Struct {} -> id
+              T_Object {} -> objPrefix
+              _ -> impossible "objectref"
+    return $ oe' <> "." <> p (pretty f) <> sp
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> do
     args' <- mapM solArg args
@@ -867,26 +871,38 @@ solCom = \case
           <> checkNonNetTokAllowances
           <> sub'l
           <> pv'
-  DL_Let _ pv (DLE_EmitLog _ _ m_api lv) -> do
-    lv' <- solVar lv
-    let lv_ty = varType lv
-    lv_ty' <- solType lv_ty
-    let go sv l = solApply (solOutput_evt lv) [l <+> sv lv] <> semi
-    let ed = "event" <+> go solRawVar lv_ty'
-    modifyCtxtIO ctxt_outputs $ M.insert lv ed
-    let emitl = "emit" <+> go (const lv') ""
-    asn <-
-          case m_api of
-            Just f -> do
-              addApiRng f lv_ty
-              return $ solSet (apiRetMemVar f) lv'
-            Nothing -> return ""
+  DL_Let _ pv (DLE_EmitLog _ lk lvs) -> do
+    lvs' <- mapM solVar lvs
+    let lv_tys = map varType lvs
+    lv_tys' <- mapM solType lv_tys
+    -- Get event label or use variable name from internal log
+    let oe = case (lk, lvs) of
+            (L_Event ml l, _) -> pretty $ maybe l (\l' -> bunpack l' <> "_" <> l) ml
+            (_, [h]) -> solOutput_evt h
+            (_, _) -> impossible "Expecting one value to emit"
+    let go sv ls = solApply oe (map (\ (l, v) -> l <+> sv v) $ ls) <> semi
+    let eventVars = do
+          -- Name doesn't matter in event definition just needs to be unique
+          let fvs = map (\ (i, DLVar at ml t _) -> DLVar at ml t i) $ zip [0..] lvs
+          zip lv_tys' fvs
+    let ed = "event" <+> go solRawVar eventVars
+    modifyCtxtIO ctxt_outputs $ M.insert (show oe) ed
+    let emitVars = map (mempty,) lvs'
+    let emitl = "emit" <+> go id emitVars
+    asn <- case (lk, lv_tys, lvs') of
+            (L_Api f, [ty], [v]) -> do
+              addApiRng f ty
+              return $ solSet (apiRetMemVar f) v
+            (_, _, _) -> return ""
     case pv of
       DLV_Eff -> do
         return $ vsep [ emitl, asn ]
       DLV_Let _ dv -> do
         addMemVar dv
-        return $ vsep [ solSet (solMemVar dv) lv', emitl, asn ]
+        v' <- case lvs of
+            [h] -> solVar h
+            _ -> impossible "solCom: emitLog expected one value"
+        return $ vsep [ solSet (solMemVar dv) v', emitl, asn ]
   DL_Let _ (DLV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv
     solLargeArg dv la
@@ -1190,7 +1206,7 @@ apiDef who ApiInfo{..} = do
         let indexedTypes = zip ts [0..]
         unzip <$> mapM (\ (ty, i :: Int) -> do
           let name = pretty $ "_a" <> show i
-          sol_ty <- solType_ ty
+          sol_ty <- solType ty
           let decl = solDecl name (sol_ty <> withArgLoc ty)
           return (name, decl)
           ) indexedTypes
@@ -1201,8 +1217,15 @@ apiDef who ApiInfo{..} = do
           [] -> return "false"
           _ -> do
             tc_args <-
-              case ai_msg_vs of
-                [v] -> do
+              case (ai_msg_vs, ai_msg_tys) of
+                ([DLVar _ _ (T_Tuple []) _], _) ->
+                  return $ [ "false" ]
+                -- If the argument to the exported function
+                -- is the same type that the consensus msg's
+                -- type constructor takes, apply it directly
+                ([v], [T_Tuple [t]]) | varType v == t -> do
+                  return $ args
+                ([v], _) -> do
                   tc' <- solType_ $ varType v
                   return $ [ solApply tc' args ]
                 _ -> return args
@@ -1372,7 +1395,7 @@ createAPIRng = \case
     return $ fromMaybe (impossible "createAPIRng") $ solStruct "ApiRng" fields
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) ai hs)) = do
+solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) ai _ hs)) = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   ctxt_varm <- newIORef mempty

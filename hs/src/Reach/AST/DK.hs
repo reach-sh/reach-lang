@@ -100,10 +100,10 @@ type DKExports = M.Map SLVar DKExportBlock
 type DKViews = DLViews
 
 data DKProg
-  = DKProg SrcLoc DLOpts SLParts DLInit DKExports DKViews DLAPIs DKTail
+  = DKProg SrcLoc DLOpts SLParts DLInit DKExports DKViews DLAPIs DLEvents DKTail
 
 instance Pretty DKProg where
-  pretty (DKProg _at _ sps dli dex dvs das t) =
+  pretty (DKProg _at _ sps dli dex dvs das devt t) =
     "#lang dk" <> hardline
       <> pretty sps
       <> hardline
@@ -115,5 +115,7 @@ instance Pretty DKProg where
       <> pretty dvs
       <> hardline
       <> pretty das
+      <> hardline
+      <> pretty devt
       <> hardline
       <> pretty t

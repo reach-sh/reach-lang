@@ -1,0 +1,76 @@
+# vi: ft=make
+#
+# Note: This template is meant to be consumed by Makefiles that live another
+# level deep under examples/; path resolution will otherwise fail
+.DEFAULT_GOAL := build
+
+PORT_RPC_UNSAFE_VIEW = 3101
+PORT_RPC_VIEW_BYTES  = 3102
+PORT_RPC_VIEW_FUN    = 3103
+PORT_RPC_VIEW_MAP    = 3104
+PORT_RPC_VIEW_MAYBE  = 3105
+PORT_RPC_EXPORTS     = 3106
+PORT_RPC_SAFE_API    = 3107
+PORT_RPC_API_CALL    = 3108
+PORT_RPC_API_FULL    = 3109
+PORT_RPC_VIEW_STEPS  = 3110
+
+ROOT = ../..
+include $(ROOT)/DEPS
+include $(ROOT)/VERSION
+
+REACH  = $(ROOT)/reach
+BASE  ?= $(shell basename "$$(pwd)" | sed 's/^rpc-//')
+CNAME ?= reach-app-$(shell basename "$$(pwd)")
+CIMG  ?= reachsh/$(CNAME):$(VERSION)
+PROJ  ?= $(shell basename "$$(pwd)" | tr a-z A-Z | tr - _)
+RSHES ?= $(shell find ../$(BASE) -name \*.rsh -exec sh -c "echo {} | sed 's/\.\.\/$(BASE)\///'" \;)
+PORT   = $(shell ([ ! $(PORT_$(PROJ)) = '' ] && echo $(PORT_$(PROJ))) \
+  || echo 'No port selected! Please define in MAKEFILE_RPC.')
+
+.PHONY: clean
+clean:
+	@rm -fr ./lib
+	@rm -fr ./tls
+	@rm -fr ./build/*.main.mjs
+	@rm -f  $(RSHES)
+	@rm -f  common.mjs
+	@rm -f  Dockerfile
+	@rm -f  package.json
+
+.PHONY: down
+down:
+	@$(REACH) down
+
+client-lib-js: $(ROOT)/rpc-client/js
+	@mkdir -p ./lib
+	@cp -vru $(ROOT)/rpc-client/js/* ./lib
+
+common.mjs: ../crpc-common.mjs
+	@cp -vu ../crpc-common.mjs ./common.mjs
+
+Dockerfile: ../crpc-Dockerfile
+	@cat ../crpc-Dockerfile \
+	  | sed 's/{{NODE_VERSION}}/$(NODE_VERSION)/' \
+	  | sed 's/{{PORT}}/$(PORT)/' \
+	  > ./Dockerfile
+
+package.json: ../crpc-package.json
+	@cat ../crpc-package.json | sed 's/{{CNAME}}/$(CNAME)/' > ./package.json
+
+$(RSHES): $(shell find ../$(BASE) -name \*.rsh)
+	@mkdir -p "$$(dirname $@)"
+	@cp -vu ../$(BASE)/$@ ./$@
+
+build/index.main.mjs: $(RSHES) $(shell find . -name \*.rsh)
+	@for r in $?; do \
+	  diff ../$(BASE)/$$r ./$$r >/dev/null || ( echo "$$r doesn't match source in $(BASE)"; exit 1 ); \
+	 done
+	@$(REACH) compile index.rsh
+
+build: common.mjs Dockerfile package.json client-lib-js build/index.main.mjs
+	@docker build --tag=$(CIMG) .
+
+.PHONY: run
+run: build
+	@REACH_RPC_PORT=$(PORT) $(REACH) rpc-run $(REACH) run

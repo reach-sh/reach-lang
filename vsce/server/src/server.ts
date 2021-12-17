@@ -13,7 +13,6 @@ import { Url } from 'url';
  * ------------------------------------------------------------------------------------------ */
 
 import {
-	createConnection,
 	TextDocuments,
 	Diagnostic,
 	DiagnosticSeverity,
@@ -34,6 +33,19 @@ import {
 	Hover,
 } from 'vscode-languageserver';
 
+// edit env variable to track extension usage; see
+// https://nodejs.org/api/process.html#processenv
+import { env } from "process";
+env.REACH_IDE = "1";
+
+// Do this import from vscode-languageserver/node instead of
+// vscode-languageserver to avoid
+// "Expected 2-3 arguments, but got 1.ts(2554)
+// server.d.ts(866, 202):
+// An argument for 'watchDog' was not provided."
+// error from TypeScript later
+import { createConnection } from 'vscode-languageserver/node';
+
 import {
 	TextDocument, Range, TextEdit
 } from 'vscode-languageserver-textdocument';
@@ -50,6 +62,13 @@ const KEYWORD_TO_DOCUMENTATION: { [ keyword: string ] : string } = require(
 	'../../data/keywordToDocumentation.json'
 );
 
+// for "smart auto-complete" for things like
+// Reach.App, Participant.Set, Array.zip, etc.
+import {
+	KEYWORD_WITH_PERIOD_TO_KEYWORDS_LIST,
+	KEYWORD_TO_ITEM_KIND_IMPORT
+} from "./mapKeywordsWithAPeriodToAKeywordList";
+
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 let connection = createConnection(ProposedFeatures.all);
@@ -62,9 +81,7 @@ let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
 let hasDiagnosticRelatedInformationCapability: boolean = false;
 
-const NAME: string = 'Reach IDE';
-
-const DIAGNOSTIC_TYPE_COMPILE_ERROR: string = 'Compile Error';
+const DIAGNOSTIC_SOURCE: string = 'Reach';
 
 const DID_YOU_MEAN_PREFIX = 'Did you mean: ';
 
@@ -305,7 +322,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		"Starting compilation at",
 		new Date().toLocaleTimeString()
 	);
-	await exec("cd " + tempFolder + " && " + reachPath + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json", (error: { message: any; }, stdout: any, stderr: any) => {
+	await exec("cd " + tempFolder + " && " + reachPath + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json --stop-after-eval", (error: { message: any; }, stdout: any, stderr: any) => {
 		// This callback function should execute exactly
 		// when this compilation command has finished.
 		// "child_process.exec(): spawns a shell...
@@ -337,8 +354,9 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 						`${err.errorMessage}`,
 						'Reach compilation encountered an error.',
 						DiagnosticSeverity.Error,
-						DIAGNOSTIC_TYPE_COMPILE_ERROR,
-						err.suggestions
+						err.code,
+						err.suggestions,
+						DIAGNOSTIC_SOURCE
 					);
 				}
 			});
@@ -357,13 +375,17 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	// Send the computed diagnostics to VSCode (before the above promise finishes, just to clear stuff).
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 
-	function addDiagnostic(element: ErrorLocation, message: string, details: string, severity: DiagnosticSeverity, code: string | undefined, suggestions: string[]) {
+	function addDiagnostic(element: ErrorLocation, message: string, details: string, severity: DiagnosticSeverity, code: string | undefined, suggestions: string[], source: string) {
+		const href = `https://docs.reach.sh/${code}.html`;
 		let diagnostic: Diagnostic = {
 			severity: severity,
 			range: element.range,
 			message: message,
-			source: NAME,
-			code: code
+			source,
+			code: code,
+			codeDescription: {
+				href
+			}
 		};
 		if (hasDiagnosticRelatedInformationCapability) {
 			diagnostic.relatedInformation = [
@@ -521,24 +543,75 @@ function getQuickFix(diagnostic: Diagnostic, title: string, range: Range, replac
 	return codeAction;
 }
 
+const GET_KEYWORDS_FOR = (
+	currentLine: string | undefined,
+	map: { [key: string]: string[]; },
+	fallbackCompletionList: string[]
+): string[] => {
+	for (const keywordWithPeriod in map)
+		if (currentLine?.endsWith(keywordWithPeriod))
+			return map[keywordWithPeriod];
+	
+	return fallbackCompletionList;
+};
 
-// This handler provides the initial list of the completion items.
-connection.onCompletion(
-	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-		// The passed parameter contains the position of the text document in
-		// which code complete got requested.
-		return REACH_KEYWORDS.map(kwd => ({
-			label: kwd,
-			kind: KEYWORD_TO_COMPLETION_ITEM_KIND[kwd] || CompletionItemKind.Text,
-			data: undefined,
-			detail: kwd,
-			documentation: {
-				kind: 'markdown',
-				value: getReachKeywordMarkdown(kwd)
+// This handler provides the initial list of the
+// completion items.
+connection.onCompletion((
+	textDocumentPosition: TextDocumentPositionParams
+): CompletionItem[] => {
+	const {
+		textDocument,
+		position
+	} = textDocumentPosition;
+
+	console.debug(position);
+
+	const currentDocument = documents.get(
+		textDocument.uri
+	);
+	
+	// Grab the current line.
+	const currentLine = currentDocument?.getText(
+		{
+			start: {
+				line: position.line,
+				character: 0
 			},
-		}));
-	}
-);
+			end: position
+		}
+	);
+
+	console.debug(currentLine);
+
+	// Do we have "smart auto-complete" for this
+	// keyword? If so, just give the "smart"
+	// suggestions. Otherwise, give the regular
+	// suggestions.
+	const keywords: string[] = GET_KEYWORDS_FOR(
+		currentLine,
+		KEYWORD_WITH_PERIOD_TO_KEYWORDS_LIST,
+		REACH_KEYWORDS
+	);
+		
+	// The passed parameter contains the position of
+	// the text document in which code complete got
+	// requested.
+	return keywords.map(keyword => ({
+		label: keyword,
+		kind: KEYWORD_TO_COMPLETION_ITEM_KIND[
+			keyword
+		] || CompletionItemKind.Text,
+		data: undefined,
+		detail: `(${
+			KEYWORD_TO_ITEM_KIND_IMPORT[keyword]
+		})`,
+		documentation: {
+			kind: 'markdown',
+			value: getReachKeywordMarkdown(keyword)
+		},
+	}));
+});
 
 function insertSnippet(_textDocumentPosition: TextDocumentPositionParams, snippetText: string, completionItems: CompletionItem[], imports: string | undefined, label: string, sortOrder: number) {
 	let textEdit: TextEdit = {

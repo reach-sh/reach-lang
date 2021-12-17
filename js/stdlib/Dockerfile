@@ -15,7 +15,7 @@ ENV REACH_VERSION=${REACH_VERSION}
 RUN apk update; apk add bash curl
 WORKDIR /stdlib
 COPY --from=js-deps /js-deps/node_modules ./node_modules
-RUN apk add make curl bash
+RUN apk update && apk add git make python3 libc-dev gcc g++ curl bash
 COPY Makefile.docker ./Makefile
 COPY package.mo.json .
 COPY .docker-root ./.docker-root

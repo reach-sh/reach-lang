@@ -27,14 +27,14 @@ export const main = Reach.App(
           .invariant(balance() == balance())
           .while(keepGoing() || (!aliceGone && !bobGone))
           .case(Alice,
-            (() => ({ when: declassify(interact.go())  })),
-            ((_) => aWager),
-            ((_) => { return [ true, bobGone, x + 1 ]; })
+            () => ({ when: declassify(interact.go())  }),
+            (_) => aWager,
+            (_) => { return [ true, bobGone, x + 1 ]; }
           )
           .case(Bob,
-            (() => ({ when: declassify(interact.go()) })),
-            ((_) => bWager),
-            ((_) => { return [ aliceGone, true, x + 1 ]; })
+            () => ({ when: declassify(interact.go()) }),
+            (_) => bWager,
+            (_) => { return [ aliceGone, true, x + 1 ]; }
           )
           // equivalent to, .timeout(timeRemaining(), () => { throw <lhs>; });
           .throwTimeout(timeRemaining())

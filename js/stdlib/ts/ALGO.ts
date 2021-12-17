@@ -42,6 +42,9 @@ import {
   truthyEnv,
   Signal,
   Lock,
+  retryLoop,
+  Time,
+  ISetupEventArgs,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -62,6 +65,7 @@ import {
   extractAddr,
 } from './ALGO_compiled';
 import { window, process, Env } from './shim';
+import { sha512_256 } from 'js-sha512';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = stdlib;
 export * from './shared_user';
 
@@ -112,7 +116,7 @@ type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 5;
+const reachBackendVersion = 6;
 const reachAlgoBackendVersion = 6;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
@@ -141,6 +145,7 @@ type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
 type SimTxn = ISimTxn<Token>
 type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
 type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
+type SetupEventArgs = ISetupEventArgs<ContractInfo, VerifyResult>;
 type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyALGO_Ty>;
 
 // Helpers
@@ -475,10 +480,11 @@ const chooseMinRoundTxn = (ptxns: any[]) =>
 const chooseMaxRoundTxn = (ptxns: any[]) =>
   argMax(ptxns, (x: any) => x['confirmed-round']);
 
-type RoundInfo = {
+type QueryInfo = {
   minRound?: number,
   timeoutAt?: TimeArg,
   specRound?: number,
+  isEventStream?: boolean,
 }
 
 const [_getQueryLowerBound, _setQueryLowerBound] = replaceableThunk<number>(() => 0);
@@ -516,8 +522,8 @@ class EventCache {
     this.cache = [];
   }
 
-  async query(dhead: string, ApplicationID: number, roundInfo: RoundInfo, pred: ((x:any) => boolean)): Promise<QueryResult> {
-    const { minRound, timeoutAt, specRound } = roundInfo;
+  async query(dhead: string, ApplicationID: number, queryInfo: QueryInfo, pred: ((x:any) => boolean), choose : (x: any[]) => any = chooseMinRoundTxn): Promise<QueryResult> {
+    const { minRound, timeoutAt, specRound, isEventStream = false } = queryInfo;
     const h = (mode:string): (number | undefined) => timeoutAt && timeoutAt[0] === mode ? bigNumberToNumber(timeoutAt[1]) : undefined;
     const maxRound = h('time');
     const maxSecs = h('secs');
@@ -546,13 +552,13 @@ class EventCache {
 
     if (initPtxns.length != 0) {
       debug(`Found transaction in Event Cache`);
-      const txn = chooseMinRoundTxn(initPtxns)
+      const txn = choose(initPtxns)
       return { succ: true, txn };
     }
     debug(`transaction not in event cache`);
 
     const failed = (): {succ: false, round: number} => ({ succ: false, round: this.currentRound });
-    if ( this.cache.length != 0 ) {
+    if ( this.cache.length != 0 && !isEventStream ) {
       debug(`cache not empty, contains some other message from future, not querying...`, this.cache);
       return failed();
     }
@@ -589,7 +595,7 @@ class EventCache {
       return failed();
     }
 
-    const txn = chooseMinRoundTxn(ptxns);
+    const txn = choose(ptxns);
 
     return { succ: true, txn };
   }
@@ -875,12 +881,12 @@ export function setProviderByEnv(env: Partial<ProviderEnv>): void {
 
 function randlabsProviderEnv(net: string): ProviderEnv {
   const prefix = net === 'MainNet' ? '' : `${net.toLowerCase()}.`;
-  const RANDLABS_BASE = `https://${prefix}algoexplorerapi.io`;
+  const RANDLABS_BASE = `${prefix}algoexplorerapi.io`;
   return {
-    ALGO_SERVER: RANDLABS_BASE,
+    ALGO_SERVER: `https://${RANDLABS_BASE}`,
     ALGO_PORT: '',
     ALGO_TOKEN: '',
-    ALGO_INDEXER_SERVER: `${RANDLABS_BASE}/idx2`,
+    ALGO_INDEXER_SERVER: `https://algoindexer.${RANDLABS_BASE}`,
     ALGO_INDEXER_PORT: '',
     ALGO_INDEXER_TOKEN: '',
     REACH_ISOLATED_NETWORK: 'no',
@@ -1024,7 +1030,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       ctcAddr: Address,
     };
 
-    const makeGetC = (setupViewArgs: SetupViewArgs, eventCache: EventCache) => {
+    const makeGetC = (setupViewArgs: SetupViewArgs, eventCache: EventCache, informCreationBlock: (cb: number) => void) => {
       const { getInfo: fake_getInfo } = setupViewArgs;
       let _theC: ContractHandler|undefined = undefined;
       return async (): Promise<ContractHandler> => {
@@ -1036,6 +1042,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }));
         debug(label, 'getC', {ApplicationID, startRound} );
 
+        informCreationBlock(startRound);
         const ctcAddr = algosdk.getApplicationAddress(ApplicationID);
         debug(label, 'getC', { ctcAddr });
 
@@ -1163,12 +1170,16 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         ...setupArgs,
         getInfo: fake_getInfo,
       };
-      const getC = makeGetC(fake_setupArgs, eventCache);
+      const getC = makeGetC(fake_setupArgs, eventCache, () => {});
 
       // Returns address of a Reach contract
       const getContractAddress = async () => {
         const { ctcAddr } = await getC();
         return T_Address.canonicalize(ctcAddr);
+      };
+      const getContractInfo = async () => {
+        const { ApplicationID } = await getC();
+        return ApplicationID;
       };
 
       const getState = async (vibne:BigNumber, vtys:AnyALGO_Ty[]): Promise<Array<any>> => {
@@ -1438,11 +1449,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           try {
             res = await signSendAndConfirm( thisAcc, wtxns );
           } catch (e:any) {
-            if ( e.type === 'sendRawTransaction' ) {
-              debug(dhead, '--- FAIL:', format_failed_request(e?.e));
-            } else {
-              debug(dhead, '--- FAIL:', e);
-            }
+            const es = ( e.type === 'sendRawTransaction' ) ?
+              format_failed_request(e?.e) : e;
+            debug(dhead, '--- FAIL:', es);
 
             if ( ! soloSend ) {
               // If there is no soloSend, then someone else "won", so let's
@@ -1457,7 +1466,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               continue;
             } else {
               // Otherwise, something bad is happening
-              throw Error(`${label} failed to call ${funcName}: ${e}`);
+              throw Error(`${label} failed to call ${funcName}: ${JSON.stringify(es)}`);
             }
           }
 
@@ -1481,7 +1490,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         // const theSecs = txn['round-time'];
         // ^ The contract actually uses `global LatestTimestamp` which is the
         // time of the PREVIOUS round.
-        const theSecs = await getTimeSecs(bigNumberify(theRound - 0));
+        // ^ Also, this field is only available from the indexer
+        const theSecs = await retryLoop([dhead, 'getTimeSecs'], () => getTimeSecs(bigNumberify(theRound - 0)));
+        // ^ XXX it would be nice if Reach could support variables bound to
+        // promises and then we wouldn't need to wait here.
 
         // XXX need to move this to a log
         const ctc_args_all = txn['application-args'];
@@ -1567,7 +1579,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
       };
 
-      return { getContractAddress, getState, sendrecv, recv };
+      return { getContractInfo, getContractAddress, getState, sendrecv, recv };
     };
 
     const readStateBytes = (prefix:string, key:number[], src:any): any => {
@@ -1599,7 +1611,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
     const setupView = (setupViewArgs: SetupViewArgs) => {
       const eventCache = new EventCache();
-      const getC = makeGetC(setupViewArgs, eventCache);
+      const getC = makeGetC(setupViewArgs, eventCache, () => {});
       const viewLib: IViewLib = {
         viewMapRef: async (mapi: number, a:any): Promise<any> => {
           const { getLocalState } = await getC();
@@ -1644,7 +1656,82 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return { getView1, viewLib };
     };
 
-    return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, _setup, givenInfoP });
+    const setupEvents = (a: SetupEventArgs) => {
+      const eventCache = new EventCache();
+      let time = bigNumberify(0);
+      const getC = makeGetC(a, eventCache, (cb: number) => {
+        time = bigNumberify(cb);
+      });
+      const createEventStream = (event: string, tys: AnyALGO_Ty[]) => {
+        let logIndex: any = {};
+        let sig = `${event}(${tys.map(ty => ty.netName).join(',')})`;
+        debug(`createEventStream signature`, sig);
+        let hashPrefix = sha512_256(sig).substring(0, 4);
+        let base64Hash = replaceAll(base64ify(hashPrefix) as string, '=', '');
+        debug(`createEventStream hash`, base64Hash);
+        let lastLog: any = undefined;
+
+        const seek = (t: Time) => {
+          debug("EventStream::seek", t);
+          time = t;
+          logIndex[time.toNumber()] = 0;
+        }
+
+        const next = async () => {
+          let dhead = "EventStream::next";
+          const { ApplicationID } = await getC();
+          const pred = (txn: any) => {
+            const round = txn['confirmed-round'];
+            const logIdx = logIndex[round] || 0;
+            const logs: string[] = (txn['logs'] || []).slice(logIdx);
+            const good = logs.some((log) => log.startsWith(base64Hash));
+            return good;
+          };
+          let res: QueryResult = { succ: false, round: 0  };
+          while (!res.succ) {
+            res = await eventCache.query(dhead, ApplicationID, { minRound: time.toNumber(), isEventStream: true }, pred);
+            if (!res.succ) { await Timeout.set(5000); }
+          }
+          const round = res.txn['confirmed-round'];
+          const logIdx = logIndex[round] || 0;
+          const logs = res.txn.logs.slice(logIdx);
+          let log = logs.find((l: string, idx: number) => {
+            const matches = l.startsWith(base64Hash);
+            if (matches) { logIndex[round] = logIdx + idx + 1; }
+            return matches;
+          });
+          // @ts-ignore
+          const parsedLog = T_Tuple([T_Bytes(4)].concat(tys)).fromNet(reNetify(log));
+          const blockTime = bigNumberify(round);
+          time = blockTime;
+          debug(dhead + ` parsed log`, parsedLog, blockTime);
+          parsedLog.shift(); // Remove tag
+          lastLog = { when: blockTime, what: parsedLog };
+          return lastLog;
+        }
+
+        const seekNow = async () => {
+          time = await getNetworkTime();
+        }
+
+        const lastTime = async () => {
+          const dhead = "EventStream::lastTime";
+          debug(dhead, time);
+          return lastLog?.when;
+        }
+
+        const monitor = async (onEvent: (x: any) => void) => {
+          while (true) {
+            onEvent(await next());
+          }
+        }
+
+        return { lastTime, seek, seekNow, monitor, next };
+      };
+      return { createEventStream };
+    }
+
+    return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
   };
 
   function setDebugLabel(newLabel: string): Account {
@@ -1653,10 +1740,19 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     return this;
   }
 
-  async function tokenAccept(token:Token): Promise<void> {
-    debug(`tokenAccept`, token);
+  const me_na = { networkAccount };
+  const tokenAccepted = async (token:Token): Promise<boolean> => {
+    debug(`tokenAccepted`, token);
     // @ts-ignore
-    await transfer(this, this, 0, token);
+    const r = await balanceOfM(me_na, token);
+    return ( r !== false );
+  };
+  const tokenAccept = async (token:Token): Promise<void> => {
+    if ( ! (await tokenAccepted(token)) ) {
+      debug(`tokenAccept`, token);
+      // @ts-ignore
+      await transfer(me_na, me_na, 0, token);
+    }
   };
   const tokenMetadata = async (token:Token): Promise<any> => {
     debug(`tokenMetadata`, token);
@@ -1688,10 +1784,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     return { name, symbol, url, metadata, supply, decimals };
   };
 
-  return stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccept, tokenMetadata, contract });
+  return stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract });
 };
 
-export const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
+const balanceOfM = async (acc: Account, token: Token|false = false): Promise<BigNumber|false> => {
   const addr = extractAddr(acc);
   const client = await getAlgodClient();
   const info = await client.accountInformation(addr).do();
@@ -1704,10 +1800,17 @@ export const balanceOf = async (acc: Account, token: Token|false = false): Promi
         return ai['amount'];
       }
     }
-    return bigNumberify(0);
+    return false;
   }
 };
 
+export const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
+  const r = await balanceOfM(acc, token);
+  if ( r === false ) {
+    return bigNumberify(0);
+  }
+  return r;
+};
 
 export const createAccount = async (): Promise<Account> => {
   const networkAccount = algosdk.generateAccount();
