@@ -23,7 +23,7 @@ Algorand uses the SHA256 algorithm to perform digests.
 Its bit width is 64-bits.
 
 Non-network tokens are compiled to [Algorand Standard Assets](https://developer.algorand.org/docs/features/asa/) (ASAs).
-Specifically, the `{!reach} Token` type refers to the id of the ASA.
+Specifically, the `{!rsh} Token` type refers to the id of the ASA.
 
 Token minting creates an ASA owned and managed by the contract account.
 Freezing, clawback, reserves, and separate managers are not supported.
@@ -46,7 +46,7 @@ In Algorand, network time corresponds to round numbers and network seconds corre
 (This is because the current round's timestamp is not determined until after it is finalized.
 This means that a network second-based deadline could be exceeded by the round time of the network, which is typically five seconds.)
 
-The connector provides a binding named `{!reach} ALGO` to
+The connector provides a binding named `{!rsh} ALGO` to
 backends.
 
 Backends must respect the following environment variables:
@@ -188,7 +188,7 @@ Ethereum uses the Keccak256 algorithm to perform digests.
 Its bit width is 256-bits.
 
 Non-network tokens are compiled to [ERC-20](https://ethereum.org/en/developers/docs/standards/tokens/erc-20/) fungible tokens.
-Specifically, the `{!reach} Token` type refers to the address of the ERC-20 contract.
+Specifically, the `{!rsh} Token` type refers to the address of the ERC-20 contract.
 Token minting launches a fresh ERC-20 contract based on the OpenZeppelin ERC-20 implementation, which stores additional metadata and allows the creator to burn tokens and destroy the token if there is no supply (i.e. it has all been burned).
 
 Views are compiled to `view` functions.
@@ -198,7 +198,7 @@ Views expand the on-chain state to include the free variables of all values boun
 
 In Ethereum, network time corresponds to block numbers and network seconds correspond to the Unix timestamp of the block.
 
-The connector provides a binding named `{!reach} ETH` to
+The connector provides a binding named `{!rsh} ETH` to
 backends.
 
 During compilation, the connector produces one intermediate output: `input.export.sol`, containing

@@ -19,7 +19,7 @@ In this case, let's ask the questions:
 
 
 You should write your answers in your Reach program (`index.rsh`) using a comment.
-`{!reach} /* Remember comments are written like this. */`
+`{!rsh} /* Remember comments are written like this. */`
 
 **Write down the problem analysis of this program as a comment.**
 
@@ -65,7 +65,7 @@ In other words:
 
 
 You should look back at your problem analysis to do this step.
-Whenever a participant starts off knowing something, then it is a field in the `{!reach} interact` object.
+Whenever a participant starts off knowing something, then it is a field in the `{!rsh} interact` object.
 If they learn something, then it will be an argument to a function.
 If they provide something later, then it will be the result of a function.
 
@@ -74,9 +74,9 @@ You should write your answers in your Reach file (`index.rsh`) as the participan
 **Write down the data definitions for this program as definitions.**
 
 Let's compare notes again.
-+ We're going to represent the amount Alice transfers as an unsigned integer (`{!reach} UInt`) named `{!reach} amt`.
-+ We will represent the password as another unsigned integer (`{!reach} UInt`) named `{!reach} pass`.
-+ These two values are the only fields of Alice's interface, but Bob will have a function named `{!reach} getPass` that will return the password that he knows.
++ We're going to represent the amount Alice transfers as an unsigned integer (`{!rsh} UInt`) named `{!rsh} amt`.
++ We will represent the password as another unsigned integer (`{!rsh} UInt`) named `{!rsh} pass`.
++ These two values are the only fields of Alice's interface, but Bob will have a function named `{!rsh} getPass` that will return the password that he knows.
 
 
 We wrote this in our program as:
@@ -89,7 +89,7 @@ We wrote this in our program as:
 
 
 It would be very surprising if you choose the exact same names as us in your code, but did you choose the same types?
-We expect that many of you might have chosen to represent the password by a string of bytes using the Reach type, `{!reach} Bytes`.
+We expect that many of you might have chosen to represent the password by a string of bytes using the Reach type, `{!rsh} Bytes`.
 There's nothing necessarily wrong with this option, but we did not choose it because it is hard to decide exactly how long to make it, but we are satisfied with an unsigned integer, because it has a minimum of 64 bits on typical consensus networks.
 
 At this point, you can modify your JavaScript file (`index.mjs`) to contain definitions of these values, although you may want to use a placeholder like `{!js} 42` or something for the actual value.
@@ -151,7 +151,7 @@ In other words, we should use a pattern like:
 
 It is cheaper to go through this iteration process in the human-centered design phase than in the code-centered programming phase, even when you're using a high-level language like Reach for programming.
 
-Next, we need to convert this pattern into actual program code using `{!reach} publish`, `{!reach} pay`, and `{!reach} commit`.
+Next, we need to convert this pattern into actual program code using `{!rsh} publish`, `{!rsh} pay`, and `{!rsh} commit`.
 
 **Write down the communication pattern for this program as code.**
 
@@ -195,7 +195,7 @@ The first property essentially guarantees that the erroneous version of the appl
 The second property encodes Bob's assumption of good will and integrity when he submits his value: an honest version of the Bob participant would not willingly send a password that wasn't the correct one.
 Furthermore, it is possible for any participant to check, without going through consensus, if they know what the password is.
 
-Now that we know what the properties are, we need to encode them into our program via calls to Reach functions like `{!reach} unknowable`, `{!reach} assume`, and `{!reach} require`.
+Now that we know what the properties are, we need to encode them into our program via calls to Reach functions like `{!rsh} unknowable`, `{!rsh} assume`, and `{!rsh} require`.
 Let's do that now.
 
 **Insert assertions into the program corresponding to facts that should be true.**
@@ -224,7 +224,7 @@ commit();
 
 
 At this point, we are almost ready to complete our program and make it so that we can run it.
-You've probably noticed that in our samples, the variables `{!reach} pass`, `{!reach} amt`, and `{!reach} passDigest` are undefined.
+You've probably noticed that in our samples, the variables `{!rsh} pass`, `{!rsh} amt`, and `{!rsh} passDigest` are undefined.
 We'll handle that next.
 
 ## {#workshop-hash-lock-ii} Interaction Introduction
@@ -233,7 +233,7 @@ A key concept of Reach programs is that they are concerned solely with the commu
 Frontends are responsible for all other aspects of the program.
 Thus, eventually a Reach programmer needs to insert calls into their code to send data to and from the frontend via the participant interact interfaces that they defined during the _Data Definition_ step.
 
-In our program, that means defining `{!reach} amt` and `{!reach} passDigest` by Alice and `{!reach} pass` by Bob.
+In our program, that means defining `{!rsh} amt` and `{!rsh} passDigest` by Alice and `{!rsh} pass` by Bob.
 Do that now.
 
 **Insert `interact` calls to the frontend into the program.**

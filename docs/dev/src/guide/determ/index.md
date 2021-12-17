@@ -5,7 +5,7 @@
 
 The structure of a Reach computation is deterministic, because at each point in a computation, all participants agree on which publication is the next one in the computation.
 If this were not the case, then different participants may attempt to pursue different paths through a computation and thereby reach different values at the end.
-This deterministic structure, however, does not mean that the participant that provides the publication must be fixed, merely that which publication event is next must be fixed; see for example `{!reach} race` expressions and the [the guide section on races](##guide-race) for an elaboration of this point.
+This deterministic structure, however, does not mean that the participant that provides the publication must be fixed, merely that which publication event is next must be fixed; see for example `{!rsh} race` expressions and the [the guide section on races](##guide-race) for an elaboration of this point.
 Even in the presence of this non-determinism in actors, Reach programs remain deterministic in their structure.
 
 However, many developers think of their application as having a step when two participants act simultaneously.

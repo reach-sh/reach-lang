@@ -53,12 +53,12 @@ export const main = Reach.App(() => {
 ```
 
 
-However, as this example shows, it can be inconvenient to use this pattern, because `{!reach} Fun` types constrain their domains to particular input data types, but we may need to log different kinds of data at different points in the program.
-Similarly, it is inconvenient to use an entire `{!reach} only` block for a simple log.
+However, as this example shows, it can be inconvenient to use this pattern, because `{!rsh} Fun` types constrain their domains to particular input data types, but we may need to log different kinds of data at different points in the program.
+Similarly, it is inconvenient to use an entire `{!rsh} only` block for a simple log.
 
 Reach provides two conveniences for this situation that taste great together: unconstrained domain function types and interact shorthand.
 The first allows a function in a participant interact interface to have a completely unconstrained domain.
-The second allows a call to a frontend from anywhere without an `{!reach} only`, provided the function returns no value.
+The second allows a call to a frontend from anywhere without an `{!rsh} only`, provided the function returns no value.
 If we re-write the above example using both of these patterns, it looks like:
 ```reach
 export const main = Reach.App(() => {
@@ -82,7 +82,7 @@ export const main = Reach.App(() => {
 
 Then, a JavaScript frontend can simply use `{!js} console.log` as the value of the `log` function.
 
-Reach provides `{!reach} hasConsoleLogger` and hasConsoleLogger (Frontend) in the standard library
+Reach provides `{!rsh} hasConsoleLogger` and hasConsoleLogger (Frontend) in the standard library
 for default implementations of logging to stdout. It can be used in Reach with:
 
 ```reach

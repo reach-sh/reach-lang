@@ -30,7 +30,7 @@ Let's compare answers for how funds should change ownership in this generalized 
 
 The data type representation of this program will basically be the same as the
 regular Fear of Missing Out program. However, instead of tracking the latest Buyer as an
-`{!reach} Address`, we will track the last `N` Buyers as an `{!reach} Array(Address, N)`.
+`{!rsh} Address`, we will track the last `N` Buyers as an `{!rsh} Array(Address, N)`.
 :::note
 Refer to @{seclink("ref-programs-types")} for a reminder of what data types are available in Reach.
 :::
@@ -136,13 +136,13 @@ commit();
 ```
 
 
-Extending this program to track an array of `{!reach} Address`es, as opposed to a single
-`{!reach} Address` is fairly straightforward. We maintain an array of size `NUM_OF_WINNERS`
+Extending this program to track an array of `{!rsh} Address`es, as opposed to a single
+`{!rsh} Address` is fairly straightforward. We maintain an array of size `NUM_OF_WINNERS`
 and implement a ring buffer to keep it up to date with the most recent `N` winners, as
 demonstrated in step `2b`.
 
 Another aspect of this code worth highlighting is step `3`.
-We transfer `{!reach} balance() % NUM_OF_WINNERS` to the winner because the total balance may not be evenly
+We transfer `{!rsh} balance() % NUM_OF_WINNERS` to the winner because the total balance may not be evenly
 divisible by the number of winners.
 
 For example, if the ticket price is `4 ETH`
@@ -154,13 +154,13 @@ will transfer `1 ETH` to the Funder, and split the remaining `39 ETH` between th
 
 This program doesn't have many interesting properties to prove
 as assertions, beyond the token linearity property. The
-only property of interest is the `{!reach} parallelReduce` invariant
+only property of interest is the `{!rsh} parallelReduce` invariant
 which states that the balance must be equal to the number of tickets
 sold multiplied by the ticket price.
 
 ## {#workshop-fomo-generalized-ii} Interaction Introduction
 
-Next, we need to insert the appropriate calls to `{!reach} interact`.
+Next, we need to insert the appropriate calls to `{!rsh} interact`.
 In this case, our program is very simple and we expect you'll do a great job without further discussion.
 
 **Insert `interact` calls to the frontend into the program.**

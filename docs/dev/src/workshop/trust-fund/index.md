@@ -57,7 +57,7 @@ range: 1-21
 ```
 
 
-We've represented most values as `{!reach} UInt` fields, and created a "common" interface that has a series of signals for the different phases of the application: one for when the account is `{!reach} funded`, one for when the particular participant is `{!reach} ready` to extract the funds, and finally one for when they have successfuly `{!reach} recvd` (received) them.
+We've represented most values as `{!rsh} UInt` fields, and created a "common" interface that has a series of signals for the different phases of the application: one for when the account is `{!rsh} funded`, one for when the particular participant is `{!rsh} ready` to extract the funds, and finally one for when they have successfuly `{!rsh} recvd` (received) them.
 
 ## {#workshop-trust-fund-cc} Communication Construction
 
@@ -77,18 +77,18 @@ Here's what we wrote:
 ```
 
 
-The next step is to convert this pattern into actual program code using `{!reach} publish`, `{!reach} pay`, and `{!reach} commit`.
+The next step is to convert this pattern into actual program code using `{!rsh} publish`, `{!rsh} pay`, and `{!rsh} commit`.
 However, this program gives us the opportunity to look at a few more features of Reach.
 
 First, how do we implement step three, where each party waits for the fund to mature?
-Reach has a primitive named `{!reach} wait` which causes this to happen.
-This may only occur in a step, which is the same context where `{!reach} publish` may occur.
+Reach has a primitive named `{!rsh} wait` which causes this to happen.
+This may only occur in a step, which is the same context where `{!rsh} publish` may occur.
 This primitive, however, doesn't just cause the _participants_ to wait, instead it guarantees that the entire computation waits.
 In other words, this means that the contract will ensure that the later steps do not occur until after the waiting time.
 
 Second, how do we implement steps four and five, where there is a deadline for an action to take place?
-Reach publication steps take an option called `{!reach} .timeout` that specifies an alternative computation to occur if the first does not take place before the deadline.
-The syntax looks like: `{!reach} publish().timeout(deadline, () => alternative)`, which uses the arrow expression syntax for specifying the alternative computation.
+Reach publication steps take an option called `{!rsh} .timeout` that specifies an alternative computation to occur if the first does not take place before the deadline.
+The syntax looks like: `{!rsh} publish().timeout(deadline, () => alternative)`, which uses the arrow expression syntax for specifying the alternative computation.
 
 Finally, we hope you notice that steps four, five, and six are extremely similar.
 Consider trying to write a function that is used three times to implement all of them!
@@ -142,9 +142,9 @@ Or rather, all of its interesting properties are the ones automatically included
 
 ## {#workshop-trust-fund-ii} Interaction Introduction
 
-Next, we need to insert the appropriate calls to `{!reach} interact`.
+Next, we need to insert the appropriate calls to `{!rsh} interact`.
 In this case, our program is very simple and we expect you'll do a great job without further discussion.
-However, if you want to simplify things, you might like to use `{!reach} each` to signal to all the parties that the account is funded, rather than duplicating the interaction code over and over.
+However, if you want to simplify things, you might like to use `{!rsh} each` to signal to all the parties that the account is funded, rather than duplicating the interaction code over and over.
 
 **Insert `interact` calls to the frontend into the program.**
 
@@ -155,7 +155,7 @@ load: /examples/workshop-trust-fund/index.rsh
 ```
 
 
-+ Lines 33 and 34 use `{!reach} each` to run the same code block `{!reach} only` in each of the given participants.
++ Lines 33 and 34 use `{!rsh} each` to run the same code block `{!rsh} only` in each of the given participants.
 + Lines 51 through 59 abstract the duplicate copied repeated structure of the program into three calls to the same function.
 + Lines 37 through 49 define this function as one that abstracts over who is permitted to extract the funds and whether there is a deadline.
 
@@ -170,7 +170,7 @@ As usual, we'll present a completely automated test deployment, rather than an i
 This means that we'll have to have our participants purposefully "miss" their deadlines so we can see that the timeouts and deadlines work correctly.
 We'll implement it by abstracting away the test into a function of two parameters: booleans that decide whether the Receiver and Funder (respectively) should miss their deadline.
 We'll implement this miss by using the standard library function `{!js} stdlib.wait` which takes a time delta encoded as a number.
-This function is like `{!reach} wait`, except it is local only to a single participant and has no bearing on the rules of the application.
+This function is like `{!rsh} wait`, except it is local only to a single participant and has no bearing on the rules of the application.
 It's just a convenience mechanism for allowing time to pass on the consensus network.
 
 We highly recommend that you try to implement a test setup like this yourself; when you're done, scroll down to see our solution.

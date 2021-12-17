@@ -20,7 +20,7 @@ This is the strategy [used in the tutorial](##tut-6), where Alice's wager is los
 Punishment is a dangerous strategy, because it is difficult to know a priori what the threshold of non-participation is.
 If you estimate too low, then you will inappropriately punish parties that are honestly delayed.
 In consensus networks where transactions bid for space in blocks, like Ethereum, low-value transactions may be starved when high-value activity is happening on the network concurrently.
-Reach allows timeout deadlines to be dynamically set, because the deadline expression of a `{!reach} timeout` clause can be any equation over `{!reach} consensus state`.
+Reach allows timeout deadlines to be dynamically set, because the deadline expression of a `{!rsh} timeout` clause can be any equation over `{!rsh} consensus state`.
 This does, however, imply that the application must decide the deadline for a message before or during the immediately preceding message.
 
 **Disincentivizing.** The disincentivizing strategy allows all participants to drop participation, but ensures that if they do so, they will punish themselves by forgoing some resource held in escrow by the application.

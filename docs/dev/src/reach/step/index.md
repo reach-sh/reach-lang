@@ -21,8 +21,8 @@ Alice.only(() => {
 ```
 
 
-A local step statement is written `{!reach} PART.only(() => BLOCK)`, where `{!reach} PART` is a participant identifier and `{!reach} BLOCK` is a block.
-Within `{!reach} BLOCK`, `{!reach} PART` is bound to the address of the participant.
+A local step statement is written `{!rsh} PART.only(() => BLOCK)`, where `{!rsh} PART` is a participant identifier and `{!rsh} BLOCK` is a block.
+Within `{!rsh} BLOCK`, `{!rsh} PART` is bound to the address of the participant.
 Any bindings defined within the block of a local step are available in the statement's tail as new local state.
 For example,
 
@@ -34,7 +34,7 @@ Alice.only(() => {
 ```
 
 
-is a valid program where `{!reach} Alice`'s local state includes the private values `{!reach} x` (bound to `{!reach} 3`) and `{!reach} y` (bound to `{!reach} 4`). However, such bindings are _not_ consensus state, so they are purely local state. For example,
+is a valid program where `{!rsh} Alice`'s local state includes the private values `{!rsh} x` (bound to `{!rsh} 3`) and `{!rsh} y` (bound to `{!rsh} 4`). However, such bindings are _not_ consensus state, so they are purely local state. For example,
 
 ```reach
 Alice.only(() => {
@@ -44,12 +44,12 @@ Bob.only(() => {
 ```
 
 
-is an invalid program, because `{!reach} Bob` does not know `{!reach} x`.
+is an invalid program, because `{!rsh} Bob` does not know `{!rsh} x`.
 
-The @{defn("interact shorthand")}, written `{!reach} PART.interact.METHOD(EXPR_0, ..., EXPR_n)`, is available for calling an `{!reach} interact` function
-from outside of an `{!reach} only` block. Such functions must return `{!reach} Null`; therefore, they are only useful
+The @{defn("interact shorthand")}, written `{!rsh} PART.interact.METHOD(EXPR_0, ..., EXPR_n)`, is available for calling an `{!rsh} interact` function
+from outside of an `{!rsh} only` block. Such functions must return `{!rsh} Null`; therefore, they are only useful
 if they produce side-effects, such as logging on the frontend. For example, the
-function `{!reach} log` in the participant interact interface of `{!reach} Alice` may be called via:
+function `{!rsh} log` in the participant interact interface of `{!rsh} Alice` may be called via:
 
 ```reach
 Alice.interact.log(x); 
@@ -65,8 +65,8 @@ each([Alice, Bob], () => {
 ```
 
 
-An @{defn("each")} local step statement can be written as `{!reach} each(PART_TUPLE () => BLOCK)`, where `{!reach} PART_TUPLE` is a tuple of participants and `{!reach} BLOCK` is a block.
-It is an abbreviation of many local step statements that could have been written with `{!reach} only`.
+An @{defn("each")} local step statement can be written as `{!rsh} each(PART_TUPLE () => BLOCK)`, where `{!rsh} PART_TUPLE` is a tuple of participants and `{!rsh} BLOCK` is a block.
+It is an abbreviation of many local step statements that could have been written with `{!rsh} only`.
 
 ### Pay Amounts
 
@@ -77,7 +77,7 @@ A @{defn("pay amount")} is either:
 
 A @{defn("token amount")} is either:
 + An integer, denoting an amount of network tokens; or,
-+ A tuple with two elements, where the first is an integer, denoting an amount of non-network tokens, and the second is `{!reach} Token`, specifying a particular non-network token.
++ A tuple with two elements, where the first is an integer, denoting an amount of non-network tokens, and the second is `{!rsh} Token`, specifying a particular non-network token.
 
 
 For example, these are all pay amounts:
@@ -99,14 +99,14 @@ For example, these are invalid pay amounts:
 ```
 
 
-The ordering of a pay amount is only significant when used within a fork statement or parallel reduce statement that specifies a `{!reach} paySpec`.
-In this case, payments are expected to be a tuple where the first element is an integer pay amount, and the rest of the elements are token amount tuples. The ordering of the token amount elements should match the ordering in `{!reach} paySpec`. For example,
+The ordering of a pay amount is only significant when used within a fork statement or parallel reduce statement that specifies a `{!rsh} paySpec`.
+In this case, payments are expected to be a tuple where the first element is an integer pay amount, and the rest of the elements are token amount tuples. The ordering of the token amount elements should match the ordering in `{!rsh} paySpec`. For example,
 ```reach
 .paySpec([tokA, tokB])
 ```
 
 
-will indicate that `{!reach} fork` payments should be of the format:
+will indicate that `{!rsh} fork` payments should be of the format:
 
 ```reach
 [ NETWORK_TOKEN_AMT, [ amtA, tokA ], [ amtB, tokB ] ]
@@ -159,16 +159,16 @@ PART_EXPR.publish(ID_0, ..., ID_n)
  .throwTimeout(DELAY_EXPR, THROWN_EXPR)
 ```
 
-where `{!reach} PART_EXPR` is an expression that evaluates to a participant or race expression,
-`{!reach} ID_0` through `{!reach} ID_n` are identifiers for `{!reach} PART`'s public local state,
-`{!reach} PAY_EXPR` is a public expression evaluating to a pay amount,
-`{!reach} WHEN_EXPR` is a public expression evaluating to a boolean and determines if the consensus transfer takes place,
-`{!reach} DELAY_EXPR` is a public expression that depends on only consensus state and evaluates to a time argument,
-`{!reach} TIMEOUT_BLOCK` is a timeout block, which will be executed after the `{!reach} DELAY_EXPR` time argument passes without `{!reach} PART` executing this consensus transfer.
+where `{!rsh} PART_EXPR` is an expression that evaluates to a participant or race expression,
+`{!rsh} ID_0` through `{!rsh} ID_n` are identifiers for `{!rsh} PART`'s public local state,
+`{!rsh} PAY_EXPR` is a public expression evaluating to a pay amount,
+`{!rsh} WHEN_EXPR` is a public expression evaluating to a boolean and determines if the consensus transfer takes place,
+`{!rsh} DELAY_EXPR` is a public expression that depends on only consensus state and evaluates to a time argument,
+`{!rsh} TIMEOUT_BLOCK` is a timeout block, which will be executed after the `{!rsh} DELAY_EXPR` time argument passes without `{!rsh} PART` executing this consensus transfer.
 
 All of the expressions within a consensus transfer are evaluated in a @{defn("pure")} context, which may not alter the state of the
 application.
-The `{!reach} PAY_EXPR`, `{!reach} WHEN_EXPR`, and `{!reach} DELAY_EXPR` expressions must refer only to the consensus state, including the new data published via the `{!reach} .publish` component.
+The `{!rsh} PAY_EXPR`, `{!rsh} WHEN_EXPR`, and `{!rsh} DELAY_EXPR` expressions must refer only to the consensus state, including the new data published via the `{!rsh} .publish` component.
 
 The continuation of a consensus transfer statement is a consensus step, which is finalized with a commit statement.
 The continuation of a timeout block is the same as the continuation of the function the timeout occurs within.
@@ -178,9 +178,9 @@ See [the guide section on non-participation](##guide-timeout) to understand when
 :::
 
 
-The `{!reach} publish` component exclusive-or the `{!reach} pay` component may be omitted, if either there is no publication or no transfer of network tokens to accompany this consensus transfer.
-The `{!reach} when` component may always be omitted, in which case it is assumed to be `{!reach} true`.
-`{!reach} publish` or `{!reach} pay` must occur first, after which components may occur in any order.
+The `{!rsh} publish` component exclusive-or the `{!rsh} pay` component may be omitted, if either there is no publication or no transfer of network tokens to accompany this consensus transfer.
+The `{!rsh} when` component may always be omitted, in which case it is assumed to be `{!rsh} true`.
+`{!rsh} publish` or `{!rsh} pay` must occur first, after which components may occur in any order.
 For example, the following are all valid:
 
 ```reach
@@ -204,20 +204,20 @@ Alice.publish(bid).when(wantsToBid);
 ```
 
 
-The `{!reach} timeout` component must be included if `{!reach} when` is not statically `{!reach} true`.
+The `{!rsh} timeout` component must be included if `{!rsh} when` is not statically `{!rsh} true`.
 This ensures that your clients will eventually complete the program.
-If a consensus transfer is a guaranteed race between non-class participants and a participant class that _may_ attempt to transfer (i.e. `{!reach} when` is not statically `{!reach} false`), then a `{!reach} timeout` may be explicitly omitted by writing `{!reach} .timeout(false)`.
+If a consensus transfer is a guaranteed race between non-class participants and a participant class that _may_ attempt to transfer (i.e. `{!rsh} when` is not statically `{!rsh} false`), then a `{!rsh} timeout` may be explicitly omitted by writing `{!rsh} .timeout(false)`.
 
-`{!reach} .throwTimeout` may be used in place of `{!reach} .timeout`. It accepts a `{!reach} DELAY_EXPR` and an `{!reach} EXPR`, which will be thrown if a timeout should occur.
-If an `{!reach} EXPR` is not provided, then `{!reach} null` will be thrown.
-If a consensus transfer uses `{!reach} .throwTimeout`, it must be within a try statement.
+`{!rsh} .throwTimeout` may be used in place of `{!rsh} .timeout`. It accepts a `{!rsh} DELAY_EXPR` and an `{!rsh} EXPR`, which will be thrown if a timeout should occur.
+If an `{!rsh} EXPR` is not provided, then `{!rsh} null` will be thrown.
+If a consensus transfer uses `{!rsh} .throwTimeout`, it must be within a try statement.
 
-If a consensus transfer specifies a single participant, which has not yet been fixed in the application and is not a participant class, then this statement does so; therefore, after it the `{!reach} PART` may be used as an address.
+If a consensus transfer specifies a single participant, which has not yet been fixed in the application and is not a participant class, then this statement does so; therefore, after it the `{!rsh} PART` may be used as an address.
 
 If a consensus transfer specificies a single participant class, then all members of that class will attempt to perform the transfer, but only one will succeed.
 
-A consensus transfer binds the identifiers `{!reach} ID_0` through `{!reach} ID_n` for all participants to the values included in the consensus transfer, overwriting any bindings that already exist for those identifiers.
-If an existing participant, not included in `{!reach} PART_EXPR`, has previously bound one of these identifiers, then the program is not valid. In other words, the following program is not valid:
+A consensus transfer binds the identifiers `{!rsh} ID_0` through `{!rsh} ID_n` for all participants to the values included in the consensus transfer, overwriting any bindings that already exist for those identifiers.
+If an existing participant, not included in `{!rsh} PART_EXPR`, has previously bound one of these identifiers, then the program is not valid. In other words, the following program is not valid:
 
 ```reach
 Alice.only(() => {
@@ -231,10 +231,10 @@ commit();
 ```
 
 
-because `{!reach} Claire` is not included in the `{!reach} race`.
-However, if we were to rename `{!reach} Claire`'s `{!reach} x` into `{!reach} y`, then it would be valid, because although `{!reach} Alice` and `{!reach} Bob` both bind `{!reach} x`, they participate in the `{!reach} race`, so it is allowed.
-In the tail of this program, `{!reach} x` is bound to either `{!reach} 1` or `{!reach} 2`, i.e., either `{!reach} Alice` or `{!reach} Bob`'s value is overwritten.
-This overwriting applies even if `{!reach} Alice` wins and `{!reach} Alice` is a participant class, i.e., the value of `{!reach} x` in the tail is guaranteed to be the single value that was agreed upon in the consensus.
+because `{!rsh} Claire` is not included in the `{!rsh} race`.
+However, if we were to rename `{!rsh} Claire`'s `{!rsh} x` into `{!rsh} y`, then it would be valid, because although `{!rsh} Alice` and `{!rsh} Bob` both bind `{!rsh} x`, they participate in the `{!rsh} race`, so it is allowed.
+In the tail of this program, `{!rsh} x` is bound to either `{!rsh} 1` or `{!rsh} 2`, i.e., either `{!rsh} Alice` or `{!rsh} Bob`'s value is overwritten.
+This overwriting applies even if `{!rsh} Alice` wins and `{!rsh} Alice` is a participant class, i.e., the value of `{!rsh} x` in the tail is guaranteed to be the single value that was agreed upon in the consensus.
 
 ### `fork`
 
@@ -298,45 +298,45 @@ fork()
 
 
 where:
-+ `{!reach} TOKENS_EXPR` is an expression that evaluates to a tuple of `{!reach} Token`s;
-+ `{!reach} PART_EXPR` is an expression that evaluates to a participant;
-+ `{!reach} PUBLISH_EXPR` is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a `msg` field, which may be of any type, and a `when` field, which must be a boolean;
-+ (optional) `{!reach} PAY_EXPR` is an expression that evaluates to a function parameterized over the `msg` value and returns a pay amount; if this component is left-out, it is synthesized to zero;
-+ `{!reach} CONSENSUS_EXPR` is a syntactic arrow expression parameterized over the `msg` value which is evaluated in a consensus step;
-+ `{!reach} API_EXPR` is an expression that evaluates to an API member function;
-+ (optional) `{!reach} API_ASSUME_EXPR` is a function parameterized over the input to the API member function which is evaluated for effect in a local step; thus it may be used to add `{!reach} assume` constraints on the values given by the API; if this is absent, then it is synthesized to an empty function; if it is present, then `{!reach} API_PAY_EXPR` must be included;
-+ (optional) `{!reach} API_PAY_EXPR` is a function parameterized over the input to the API member function which is evaluated to determine the pay amount, like `{!reach} PAY_EXPR`;
-+ `{!reach} API_CONSENSUS_EXPR` is a function parameterized over the input to the API member function and a function that returns a value to the API call; this function must be called;
-+ the `{!reach} timeout` and `{!reach} throwTimeout` parameter are as in an consensus transfer.
++ `{!rsh} TOKENS_EXPR` is an expression that evaluates to a tuple of `{!rsh} Token`s;
++ `{!rsh} PART_EXPR` is an expression that evaluates to a participant;
++ `{!rsh} PUBLISH_EXPR` is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a `msg` field, which may be of any type, and a `when` field, which must be a boolean;
++ (optional) `{!rsh} PAY_EXPR` is an expression that evaluates to a function parameterized over the `msg` value and returns a pay amount; if this component is left-out, it is synthesized to zero;
++ `{!rsh} CONSENSUS_EXPR` is a syntactic arrow expression parameterized over the `msg` value which is evaluated in a consensus step;
++ `{!rsh} API_EXPR` is an expression that evaluates to an API member function;
++ (optional) `{!rsh} API_ASSUME_EXPR` is a function parameterized over the input to the API member function which is evaluated for effect in a local step; thus it may be used to add `{!rsh} assume` constraints on the values given by the API; if this is absent, then it is synthesized to an empty function; if it is present, then `{!rsh} API_PAY_EXPR` must be included;
++ (optional) `{!rsh} API_PAY_EXPR` is a function parameterized over the input to the API member function which is evaluated to determine the pay amount, like `{!rsh} PAY_EXPR`;
++ `{!rsh} API_CONSENSUS_EXPR` is a function parameterized over the input to the API member function and a function that returns a value to the API call; this function must be called;
++ the `{!rsh} timeout` and `{!rsh} throwTimeout` parameter are as in an consensus transfer.
 
 
-If the discussion of `{!reach} .api` component, the phrase "parameterized over the input" means that if an API function has two arguments, such as `{!reach} Fun([UInt, UInt], Null)`, then the corresponding expression must receive two arguments.
-For example, the `{!reach} API_PAY_EXPR` component would be a function that accepts two arguments, while the `{!reach} API_CONSENSUS_EXPR` would be a function that acccepts three arguments---the two for the API and the function used to return a value.
+If the discussion of `{!rsh} .api` component, the phrase "parameterized over the input" means that if an API function has two arguments, such as `{!rsh} Fun([UInt, UInt], Null)`, then the corresponding expression must receive two arguments.
+For example, the `{!rsh} API_PAY_EXPR` component would be a function that accepts two arguments, while the `{!rsh} API_CONSENSUS_EXPR` would be a function that acccepts three arguments---the two for the API and the function used to return a value.
 
-If the `msg` field is absent from the object returned from `{!reach} PUBLISH_EXPR`, then it is treated as if it were `{!reach} null`.
+If the `msg` field is absent from the object returned from `{!rsh} PUBLISH_EXPR`, then it is treated as if it were `{!rsh} null`.
 
-If the `when` field is absent from the object returned from `{!reach} PUBLISH_EXPR`, then it is treated as if it were `{!reach} true`.
+If the `when` field is absent from the object returned from `{!rsh} PUBLISH_EXPR`, then it is treated as if it were `{!rsh} true`.
 
-If the `{!reach} PAY_EXPR` is absent, then it is treated as if it were `{!reach} (_) => 0`.
+If the `{!rsh} PAY_EXPR` is absent, then it is treated as if it were `{!rsh} (_) => 0`.
 
-The `{!reach} TOKENS_EXPR` and `{!reach} PAY_EXPR` have the same restrictions as the `{!reach} .pay` component of a consensus transfer: i.e., they must be pure and can only refer to consensus state.
+The `{!rsh} TOKENS_EXPR` and `{!rsh} PAY_EXPR` have the same restrictions as the `{!rsh} .pay` component of a consensus transfer: i.e., they must be pure and can only refer to consensus state.
 
-The `{!reach} .case` and `{!reach} .api` components may be repeated many times.
+The `{!rsh} .case` and `{!rsh} .api` components may be repeated many times.
 
 The same participant may specify multiple cases.
 In this situation, the order of the cases is significant.
-That is, a subsequent case will only be evaluated if the prior case's `when` field is `{!reach} false`.
+That is, a subsequent case will only be evaluated if the prior case's `when` field is `{!rsh} false`.
 
-If the participant specified by `{!reach} PART_EXPR` is not already fixed (in the sense of `{!reach} Participant.set`), then if it wins the `{!reach} race`, it is fixed, provided it is not a participant class.
+If the participant specified by `{!rsh} PART_EXPR` is not already fixed (in the sense of `{!rsh} Participant.set`), then if it wins the `{!rsh} race`, it is fixed, provided it is not a participant class.
 
 #### `fork` intuition
 
-A fork statement is an abbreviation of a common `{!reach} race` and `{!reach} switch` pattern you could write yourself.
+A fork statement is an abbreviation of a common `{!rsh} race` and `{!rsh} switch` pattern you could write yourself.
 
-The idea is that each of the participants in the `{!reach} case` components do an independent local step evaluation of a value they would like to `{!reach} publish` and then all `{!reach} race` to `{!reach} publish` their value.
-The one that "wins" the `{!reach} race` then determines not only the value (& `{!reach} pay` expression), but also what consensus step code runs to consume the value.
+The idea is that each of the participants in the `{!rsh} case` components do an independent local step evaluation of a value they would like to `{!rsh} publish` and then all `{!rsh} race` to `{!rsh} publish` their value.
+The one that "wins" the `{!rsh} race` then determines not only the value (& `{!rsh} pay` expression), but also what consensus step code runs to consume the value.
 
-The sample `{!reach} fork` statement linked to the `{!reach} fork` keyword is roughly equivalent to:
+The sample `{!rsh} fork` statement linked to the `{!rsh} fork` keyword is roughly equivalent to:
 ```reach
 // We first define a Data instance so that each participant can publish a
 // different kind of value
@@ -392,7 +392,7 @@ race(Alice, Bob)
 ```
 
 
-This pattern is tedious to write and error-prone, so the `{!reach} fork` statement abbreviates it for Reach programmers.
+This pattern is tedious to write and error-prone, so the `{!rsh} fork` statement abbreviates it for Reach programmers.
 When a participant specifies multiple cases, the `msg` field of the participant will be wrapped with an additional
 variant signifying what case was chosen.
 
@@ -404,8 +404,8 @@ wait(TIME);
 ```
 
 
-A @{defn("wait statement")}, written `{!reach} wait(TIME);`, delays the computation until the `{!reach} TIME` time argument passes.
-`{!reach} TIME` must be pure and only reference values known by the consensus state.
+A @{defn("wait statement")}, written `{!rsh} wait(TIME);`, delays the computation until the `{!rsh} TIME` time argument passes.
+`{!rsh} TIME` must be pure and only reference values known by the consensus state.
 It may only occur in a step.
 
 ### `exit`
@@ -416,7 +416,7 @@ exit();
 ```
 
 
-An @{defn("exit statement")}, written `{!reach} exit();`, halts the computation.
+An @{defn("exit statement")}, written `{!rsh} exit();`, halts the computation.
 It is a terminator statement, so it must have an empty tail.
 It may only occur in a step.
 
@@ -438,12 +438,12 @@ If you're unsure of what kind of consensus transfer to use, you may want to read
 :::
 
 
-A @{defn("race expression")}, written `{!reach} race(PARTICIPANT_0, ..., PARTICIPANT_n);`, constructs a participant that may be used in a consensus transfer statement, such as `{!reach} publish` or `{!reach} pay`, where the various participants race to be the first one to perform the consensus transfer.
+A @{defn("race expression")}, written `{!rsh} race(PARTICIPANT_0, ..., PARTICIPANT_n);`, constructs a participant that may be used in a consensus transfer statement, such as `{!rsh} publish` or `{!rsh} pay`, where the various participants race to be the first one to perform the consensus transfer.
 
-Reach provides a shorthand, `{!reach} Anybody`, which serves as a `{!reach} race` between all the participants.
+Reach provides a shorthand, `{!rsh} Anybody`, which serves as a `{!rsh} race` between all the participants.
 
 :::note
-See [the guide section on races](##guide-race) to understand the benefits and dangers of using `{!reach} race`.
+See [the guide section on races](##guide-race) to understand the benefits and dangers of using `{!rsh} race`.
 :::
 
 
@@ -455,7 +455,7 @@ unknowable( Notter, Knower(var_0, ..., var_N), [msg] )
 ```
 
 
- A knowledge assertion that the participant `{!reach} Notter` _does not_ know the results of the variables `{!reach} var_0` through `{!reach} var_N`, but that the participant `{!reach} Knower` _does_ know those values.
+ A knowledge assertion that the participant `{!rsh} Notter` _does not_ know the results of the variables `{!rsh} var_0` through `{!rsh} var_N`, but that the participant `{!rsh} Knower` _does_ know those values.
 It accepts an optional bytes argument, which is included in any reported violation.
 
 ### `closeTo`
@@ -466,9 +466,9 @@ closeTo( Who, after, nonNetPayAmt )
 ```
 
 
- Has participant `{!reach} Who` make a publication, then transfer the `{!reach} balance()` and the non-network pay amount to `{!reach} Who` and end the DApp after executing the function `{!reach} after` in a step.
-The `{!reach} nonNetPayAmt` parameter should be a pay amount. For example, when closing a program that uses a `{!reach} Token` `{!reach} token`, the argument would be `{!reach} [ [balance(tok), tok] ]`.
-The `{!reach} after` and `{!reach} nonNetPayAmt` arguments are optional.
+ Has participant `{!rsh} Who` make a publication, then transfer the `{!rsh} balance()` and the non-network pay amount to `{!rsh} Who` and end the DApp after executing the function `{!rsh} after` in a step.
+The `{!rsh} nonNetPayAmt` parameter should be a pay amount. For example, when closing a program that uses a `{!rsh} Token` `{!rsh} token`, the argument would be `{!rsh} [ [balance(tok), tok] ]`.
+The `{!rsh} after` and `{!rsh} nonNetPayAmt` arguments are optional.
 
 ### `call`
 
@@ -502,10 +502,10 @@ where:
 + `DOMAIN` is the the domain of the API member function.
 + `RET_FUN` is a function that returns a value to the API call. This function must be called.
 + `API_EXPR` is an expression that evaluates to an API member function.
-+ `API_PAY_EXPR`, `API_ASSUME_EXPR`, and `{!reach} throwTimeout` are like the corresponding parts in a `{!reach} fork` statement.
++ `API_PAY_EXPR`, `API_ASSUME_EXPR`, and `{!rsh} throwTimeout` are like the corresponding parts in a `{!rsh} fork` statement.
 They are optional.
 
 
- `{!reach} call` will call the given API member function, returning a pair, `{!reach} [DOMAIN, RET_FUN]`.
-`{!reach} call` will publish the domain of the API member function, transferring the program from
+ `{!rsh} call` will call the given API member function, returning a pair, `{!rsh} [DOMAIN, RET_FUN]`.
+`{!rsh} call` will publish the domain of the API member function, transferring the program from
 a step to consensus step.

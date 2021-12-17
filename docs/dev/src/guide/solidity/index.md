@@ -59,13 +59,13 @@ This means that Reach developers do not need to manually keep the middleware and
 Reach developers design and build user interfaces just like they do in Solidity-style development, except that they tend to have an easier time, because the automatically-generated middleware layer thoroughly insulates them from the low-level details of the consensus network.
 Reach developers can easily build their interface with JavaScript using the Reach standard library; soon, they will be able to use the language of their choice using the Reach RPC server.
 5. **Testing** --- Reach facilitates testing in two ways.
-First, the Reach language embeds a high-quality property-based testing system via the `{!reach} assert` and `{!reach} forall` primitives, which can be used in a basic way to write simple test cases.
+First, the Reach language embeds a high-quality property-based testing system via the `{!rsh} assert` and `{!rsh} forall` primitives, which can be used in a basic way to write simple test cases.
 Second, the Reach deployment tool, `reach run`, allows for the easy construction and running of automated test suites for the workflows of a DApp.
 In both cases, it is not necessary for Reach developers to directly manage their own development networks or otherwise interact with the consensus networks they're testing with in any way.
 6. **Verification** --- Every Reach compilation includes a thorough formal verification of the DApp using an SMT-based theorem prover.
 This theorem prover verifies general properties that all programs should exhibit, such as never overflowing finite memory bounds or accessing uninitialized memory.
 It verifies properties that all DApps should exhibit, such as token linearity property which guarantees that funds are not double-spent or forgotten about.
-Furthermore, it verifies bespoke properties that are unique to the particular DApp, as specified with the `{!reach} assert` primitive.
+Furthermore, it verifies bespoke properties that are unique to the particular DApp, as specified with the `{!rsh} assert` primitive.
 7. **Deployment** --- Some aspects of deployment decisions are embedded inside of Reach programs, such as whether to use a contract factory or whether to have each instance of the DApp use an independent smart contract deployed by one of the participants.
 Other aspects are part of the configuration of the Reach compiler, such as which consensus network will be targeted.
 Still others are part of the configuration of the Reach standard library and testing infrastructure, like which wallet the middleware should connect to or which kind of development node should be launched and managed by Reach.

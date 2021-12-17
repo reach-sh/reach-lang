@@ -58,10 +58,10 @@ range: 1-15
 + Line 2 specifies that this program will be compiled with strict mode, which enables unused variable checks.
 + Line 4 defines the main export from this program. `main` is the default used by Reach.
 + Line 4 also specifies that it is an application.
-+ Line 5 specifies that the program identifier `{!reach} A` will represent the Alice participant.
++ Line 5 specifies that the program identifier `{!rsh} A` will represent the Alice participant.
 + Lines 6 and 7 specify the interface between Alice's participant and frontend. In this case, Alice's frontend must provide a number called `request` and a string called `info`.
-+ Line 9 specifies that the program identifier `{!reach} B` will represent the Bob participant.
-+ Lines 10 and 11 specify the interface for Bob, which includes a function named `want`, that takes a number and returns `{!reach} null`, as well as a function named `got`, that receives the information.
++ Line 9 specifies that the program identifier `{!rsh} B` will represent the Bob participant.
++ Lines 10 and 11 specify the interface for Bob, which includes a function named `want`, that takes a number and returns `{!rsh} null`, as well as a function named `got`, that receives the information.
 + Finally, line 13, deploys the DApp.
 
 
@@ -79,7 +79,7 @@ In Reach, all values from the frontend are secret until explicitly made public w
 + Line 18 has the contract commit to these values and continue the rest of the program.
 
 
-At this point, Bob's backend has learned the value of `{!reach} request` and can deliver it to Bob's frontend for his approval. This happens next.
+At this point, Bob's backend has learned the value of `{!rsh} request` and can deliver it to Bob's frontend for his approval. This happens next.
 
 ```
 load: /examples/overview/index.rsh
@@ -88,8 +88,8 @@ range: 20-23
 
 
 + Lines 20 and 21 have Bob perform that delivery.
-`{!reach} interact.want` doesn't explicitly return a boolean because the frontend cannot return if Bob doesn't want to continue.
-A better version of this program might return `{!reach} false` and have that communicated to Alice.
+`{!rsh} interact.want` doesn't explicitly return a boolean because the frontend cannot return if Bob doesn't want to continue.
+A better version of this program might return `{!rsh} false` and have that communicated to Alice.
 + Lines 22 and 23 have Bob join the application and submit a payment matching the appropriate amount, and then the contract commits.
 
 
@@ -155,7 +155,7 @@ Reach doesn't just compile your program: it also verifies it and ensures that en
 For example, it always guarantees that the balance in the contract at the end of the program is zero.
 This is important because if it were not true, then tokens would be locked away by the contract and inaccessible.
 
-For this example program, it is obvious that when a single transfer of `{!reach} request` goes in at line 22 and a single transfer of `{!reach} request` goes out at line 28, then the balance is zero at the end of the program.
+For this example program, it is obvious that when a single transfer of `{!rsh} request` goes in at line 22 and a single transfer of `{!rsh} request` goes out at line 28, then the balance is zero at the end of the program.
 We could make a small tweak, however, to demonstrate things going wrong.
 
 Let's change the third step to leave a single unit in the balance:
@@ -183,7 +183,7 @@ range: 2-28
 
 
 Verification failures include a lot of information, such as a concrete counter-example showing values that could have been provided by frontends that would lead to the property failing to hold.
-In this case, it reports that if Alice were to pass an `{!reach} interact.request` over `{!reach} 1` at the start of the program on line 5, then the balance of the contract would not be provably `{!reach} 0` at the end of the program.
+In this case, it reports that if Alice were to pass an `{!rsh} interact.request` over `{!rsh} 1` at the start of the program on line 5, then the balance of the contract would not be provably `{!rsh} 0` at the end of the program.
 
 ---
 
@@ -231,8 +231,8 @@ range: 14-17
 
 
 + Line 14 uses the contract handle associated with Alice's account to run the Alice participant backend, passing an object which holds the interact functions.
-+ Line 15 provides the `{!reach} request` value.
-+ Line 16 provides the `{!reach} info` value.
++ Line 15 provides the `{!rsh} request` value.
++ Line 16 provides the `{!rsh} info` value.
 
 
 Let's look at Bob next.
@@ -244,8 +244,8 @@ range: 18-21
 
 
 + Line 18 initializes Bob just like Alice, although we use the `{!js} p` short-hand.
-+ Line 19 provides his `{!reach} want` function, which produces a log message and always accepts.
-+ Line 20 provides his `{!reach} got` function, which displays the secret on the console as well.
++ Line 19 provides his `{!rsh} want` function, which produces a log message and always accepts.
++ Line 20 provides his `{!rsh} got` function, which displays the secret on the console as well.
 
 
 ---
@@ -366,7 +366,7 @@ We implement a similar method in the `{!js} Bob` component that runs the backend
 We specify Alice's and Bob's respective participant interact interfaces
 just as we would in Node.js.
 In the React program,
-we have the ability to leverage Bob's `{!reach} interact` functions as callbacks
+we have the ability to leverage Bob's `{!rsh} interact` functions as callbacks
 that can update the React state
 in order to display to, or harvest information from, the React user interface.
 

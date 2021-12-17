@@ -8,7 +8,7 @@ A Reach @{defn("source file")} is a textual file which specifies a Reach module.
 It is traditionally given the file extension `rsh`,
 e.g. `dao.rsh`.
 
-A @{defn("module")} starts with `{!reach} 'reach reach-short-vers';`
+A @{defn("module")} starts with `{!rsh} 'reach reach-short-vers';`
 followed by a sequence of imports and identifier definitions.
 :::note
 See [the guide section on versions](##guide-versions) to understand how Reach uses version numbers like this.
@@ -23,7 +23,7 @@ However, some additional statements are allowed.
 ### {#ref-programs-export} `export`
 
 Module-level identifier definitions may be @{defn("export")}ed
-by writing @{ref("rsh", "export")} `{!reach} export` in front of them.
+by writing @{ref("rsh", "export")} `{!rsh} export` in front of them.
 For example,
 ```reach
 export const x = 1;
@@ -55,7 +55,7 @@ export {u, x as other_x} from './other-module.rsh';
 An exported identifier in a given module may be imported by other modules.
 
 Exports are also exposed to the frontend via `{!js} getExports`. Functions are only exposed
-if they are typed, that is, if they are constructed with `{!reach} is`.
+if they are typed, that is, if they are constructed with `{!rsh} is`.
 
 ### {#ref-programs-import} `import`
 
@@ -79,7 +79,7 @@ import 'games-of-chance.rsh';
 
 
 When a module, `X`, contains a @{defn("local import")},
-written `{!reach} import "LIB.rsh";`,
+written `{!rsh} import "LIB.rsh";`,
 then the path `LIB.rsh` must resolve to another Reach source file.
 The exports from the module defined by `LIB.rsh` are included in the set of bound identifiers in `X`.
 
@@ -256,7 +256,7 @@ export const main = Reach.App(() => {
 This function is applied during compilation as an application initialization.
 It specifies the entire DApp in its body.
 
-If the result of `{!reach} Reach.App` is eventually bound to an identifier that is exported, then that identifier may be a target given to the compiler, as discussed in [the section on usage](##ref-usage-compile).
+If the result of `{!rsh} Reach.App` is eventually bound to an identifier that is exported, then that identifier may be a target given to the compiler, as discussed in [the section on usage](##ref-usage-compile).
 
 #### Deprecated long-form
 
@@ -271,9 +271,9 @@ export const main =
 
 
 Previous versions of Reach only allowed a form of Reach.App which accepted three arguments:
-an `{!reach} options` object,
-an `{!reach} applicationArgs` tuple,
-and a `{!reach} program` arrow of the form `{!reach} (applicationIds) => body`.
+an `{!rsh} options` object,
+an `{!rsh} applicationArgs` tuple,
+and a `{!rsh} program` arrow of the form `{!rsh} (applicationIds) => body`.
 
 This form was equivalent to
 ```reach
@@ -286,7 +286,7 @@ Reach.App(() => {
 ```
 
 
-The current version of Reach will automatically transform these "ternary" `{!reach} Reach.App` instances into the above form.
+The current version of Reach will automatically transform these "ternary" `{!rsh} Reach.App` instances into the above form.
 
 Future versions of Reach will deprecate this transform and such programs will be invalid.
 

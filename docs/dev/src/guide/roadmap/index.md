@@ -11,10 +11,10 @@ Last updated: 2021/09/01
 
 **Short term**:
 + General - Apple Silicon support
-+ Language - `{!reach} race`-winner `{!reach} only` blocks
-+ Language - `{!reach} fork`/`{!reach} parallelReduce` local pass-through values
++ Language - `{!rsh} race`-winner `{!rsh} only` blocks
++ Language - `{!rsh} fork`/`{!rsh} parallelReduce` local pass-through values
 + Language - Stateless participants
-+ Language - `{!reach} interact` continuations
++ Language - `{!rsh} interact` continuations
 + Networks - Explicit state compilation option
 + Networks - Participant fast catch-up
 + Networks - Algorand - Post-AVM limitation removal - remote objects, token minting, arbitrary contract length, etc
@@ -30,13 +30,13 @@ Last updated: 2021/09/01
 **Medium term**:
 + IDE - Language Server Protocol implementation
 + Language - threading / futures
-+ Language - `{!reach} for` to `{!reach} while` syntactic sugar
-+ Language - tail-recursive function to `{!reach} while`
++ Language - `{!rsh} for` to `{!rsh} while` syntactic sugar
++ Language - tail-recursive function to `{!rsh} while`
 + Language - fixed range integer types
 + Optimization - data-type coallescing
 + Language - non-communicating guaranteed termination loops
 + Verification - Constrain eventual use of values
-+ Verification - `{!reach} exit()` reachability
++ Verification - `{!rsh} exit()` reachability
 + Verification - network analysis
 + Language - Dynamic token tracking
 

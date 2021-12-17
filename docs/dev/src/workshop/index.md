@@ -129,7 +129,7 @@ In this workshop, we revisit this problem and instead allow portions of the fund
 This is like a "multi-signature wallet", where one account originates the funds and approves transactions, while another account solely spends those funds.
 It might be used to give a child an "allowance" from their trust fund.
 It could be modified to allow the funder to add funds over time if the fund runs low.
-This is the first workshop on the "transfer funds" track that introduces `{!reach} while` statements.
+This is the first workshop on the "transfer funds" track that introduces `{!rsh} while` statements.
 
 @{workshopWIP("multisig")}
 
@@ -201,7 +201,7 @@ In this workshop, we extend the [Atomic Swap](##workshop-atomic-swap) workshop b
 
 @{workshopDeps("tut")}
 
-In this workshop, we implement the example of the `{!reach} race` expression discussed in [the guide section on races](##guide-race).
+In this workshop, we implement the example of the `{!rsh} race` expression discussed in [the guide section on races](##guide-race).
 This provides an introduction to races, as well as a cautionary tale on their danger.
 
 @{workshopWIP("race")}
@@ -212,7 +212,7 @@ This provides an introduction to races, as well as a cautionary tale on their da
 
 In this workshop, we implement a game of [Chicken](https://en.wikipedia.org/wiki/Chicken_(game)), where each player submits an equal wager, and then competes with the other to submit more transactions to the consensus before a deadline.
 In other words, they must decide between the risk of losing the entire pot and the risk of overspending on transaction costs.
-Like @{seclink("workshop-race")}, this demonstrates the deadweight losses associated with `{!reach} race`s, as discussed in [the guide section on races](##guide-race).
+Like @{seclink("workshop-race")}, this demonstrates the deadweight losses associated with `{!rsh} race`s, as discussed in [the guide section on races](##guide-race).
 
 @{workshopWIP("chicken-race")}
 
@@ -222,7 +222,7 @@ Like @{seclink("workshop-race")}, this demonstrates the deadweight losses associ
 
 In this workshop, we implement a [two-party winner-takes-all vote](https://en.wikipedia.org/wiki/Plurality_voting), where a pollster proposes two candidates---Alice and Bob---along with a voting price and a deadline, then a participant class of voters each pay and cast their ballot.
 Once the deadline passes, the winning candidate takes the entire pot.
-This workshop introduces effective use of participant classes and `{!reach} parallelReduce`.
+This workshop introduces effective use of participant classes and `{!rsh} parallelReduce`.
 
 @{workshopWIP("popularity-contest")}
 
@@ -257,7 +257,7 @@ This represents an interesting place in the NFT design space where utility incre
 
 @{workshopDeps("workshop-popularity-contest")}
 
-In this workshop, we implement a [raffle](https://en.wikipedia.org/wiki/Raffle), where a sponsor starts a timed raffle and a participant class of ticket buyers each buy tickets. This workshop contains two interesting ideas: first, it uses linear state through the `{!reach} Map` structure; second, it uses a commitment pattern structure to acquire safe randomness from the set of buyers.
+In this workshop, we implement a [raffle](https://en.wikipedia.org/wiki/Raffle), where a sponsor starts a timed raffle and a participant class of ticket buyers each buy tickets. This workshop contains two interesting ideas: first, it uses linear state through the `{!rsh} Map` structure; second, it uses a commitment pattern structure to acquire safe randomness from the set of buyers.
 
 @{workshopWIP("raffle")}
 

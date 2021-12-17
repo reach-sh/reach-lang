@@ -109,7 +109,7 @@ communicates with another contract (referred to as a remote object),
 or @{defn("commits")} to the next step.
 
 An @{defn("assert")}ion is either: a @{defn("knowledge assertion")}, which is a claim that one honest participant cannot know something that another honest participant does know; a @{defn("static assertion")}, which is an always-true formula; an @{defn("assumption")}, which is a true formula if frontends behave honestly; a @{defn("requirement")}, which is a true formula if participants behave honestly; or, a @{defn("possibility assertion")}, which is a formula for which there exists some values that honest participants and frontends could submit which results in the truth of the formula.
-An @{defn("honest")} participant is one that executes the steps specified by the DApp, while an honest frontend is one that only returns values which ensure that all assumptions evaluate to the boolean `{!reach} true`.
+An @{defn("honest")} participant is one that executes the steps specified by the DApp, while an honest frontend is one that only returns values which ensure that all assumptions evaluate to the boolean `{!rsh} true`.
 
 A @{defn("value")} is either: the `null` value, a boolean, an unsigned integer, a string of bytes, a digest, an address, a fixed tuple of values, a statically-sized homogeneous array of values, or a fixed record of values.
 Values may be @{defn("digest")}ed to produce a [cryptographic hash](https://en.wikipedia.org/wiki/Cryptographic_hash_function) of their binary encoding.
@@ -120,8 +120,8 @@ They could be local state of a single participant, which means they are known by
 Local state is further divided into private local state, which cannot be included in a publication, and public local state, which can.
 These conditions are summarized thus:
 + **Local, private**: The initial state.
-+ **Local, public**: The result of `{!reach} declassify`.
-+ **Consensus**: The result of `{!reach} publish`.
++ **Local, public**: The result of `{!rsh} declassify`.
++ **Consensus**: The result of `{!rsh} publish`.
 
 
 ## {#ref-model-compile} Compilation Model

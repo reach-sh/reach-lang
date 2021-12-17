@@ -32,7 +32,7 @@ These restrictions are described throughout this manual using the term @{defn("v
 and the term @{defn("invalid")} to refer to constructions that do not obey them.
 
 It is always invalid to use a value with an operation for which it is undefined.
-For example, `{!reach} 1 + true` is invalid.
+For example, `{!rsh} 1 + true` is invalid.
 In other words, Reach enforces a static type discipline.
 
 ### Security levels and scope
@@ -45,11 +45,11 @@ Secrets can only be made public by using the declassify primitive.
 
 When secret values are bound to an identifier
 within a local step,
-the identifier name MUST be prefixed by an underscore (`{!reach} _`).
+the identifier name MUST be prefixed by an underscore (`{!rsh} _`).
 
 When public values are bound to an identifier,
 regardless of context,
-the identifier name MUST NOT be prefixed by an underscore (`{!reach} _`).
+the identifier name MUST NOT be prefixed by an underscore (`{!rsh} _`).
 
 Consequently, identifiers which appear inside of a
 function definition or arrow expression
@@ -75,9 +75,9 @@ m();
 ```
 
 
-`{!reach} f` dominates `{!reach} p`, `{!reach} g`, `{!reach} h`, and `{!reach} m`.
+`{!rsh} f` dominates `{!rsh} p`, `{!rsh} g`, `{!rsh} h`, and `{!rsh} m`.
 But no other term dominates any other term.
-In particular, `{!reach} g` does not dominate `{!reach} m` because it is possible to reach `{!reach} m` without going through `{!reach} g`, such as when `{!reach} p()` is false.
+In particular, `{!rsh} g` does not dominate `{!rsh} m` because it is possible to reach `{!rsh} m` without going through `{!rsh} g`, such as when `{!rsh} p()` is false.
 
 
 

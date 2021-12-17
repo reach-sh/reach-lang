@@ -222,8 +222,8 @@ When you write a DApp using Reach, do you
 In this section, we'll have Alice and Bob actually execute the game of _Rock, Paper, Scissors!_.
 
 We have to decide how to represent the hands of the game.
-A simple way is to represent them as the numbers `{!reach} 0`, `{!reach} 1`, and `{!reach} 2`, standing for `Rock`, `Paper`, and `Scissors`.
-However, Reach does not support unsigned integers of exactly two bits, so it is better to represent them as the equivalence class of integers modulo three, so we won't distinguish between `{!reach} 0` and `{!reach} 3` as `Rock`.
+A simple way is to represent them as the numbers `{!rsh} 0`, `{!rsh} 1`, and `{!rsh} 2`, standing for `Rock`, `Paper`, and `Scissors`.
+However, Reach does not support unsigned integers of exactly two bits, so it is better to represent them as the equivalence class of integers modulo three, so we won't distinguish between `{!rsh} 0` and `{!rsh} 3` as `Rock`.
 
 We'll use a similar strategy for representing the three outcomes of the game: `B wins`, `Draw`, and `A wins`.
 
@@ -236,9 +236,9 @@ range: 1-17
 
 
 + Lines 3 through 6 define a participant interact interface that will be shared between the two players.
-In this case, it provides two methods: `{!reach} getHand`, which returns a number; and `{!reach} seeOutcome`, which receives a number.
+In this case, it provides two methods: `{!rsh} getHand`, which returns a number; and `{!rsh} seeOutcome`, which receives a number.
 + Lines 9 through 14 use this interface for both participants.
-Because of this line, `{!reach} interact` in the rest of the program will be bound to an object with methods corresponding to these actions, which will connect to the frontend of the corresponding participant.
+Because of this line, `{!rsh} interact` in the rest of the program will be bound to an object with methods corresponding to these actions, which will connect to the frontend of the corresponding participant.
 
 
 Before continuing with the Reach application, let's move over to the JavaScript interface and implement these methods in our frontend.
@@ -254,7 +254,7 @@ range: 13-33
 + Lines 16 through 20 implement the `{!js} getHand` method.
 + Lines 21 through 23 implement the `{!js} seeOutcome` method.
 + Finally, lines 28 and 31 instantiate the implementation once for Alice and once for Bob.
-These are the actual objects that will be bound to `{!reach} interact` in the Reach program.
+These are the actual objects that will be bound to `{!rsh} interact` in the Reach program.
 
 
 There should be nothing interesting or controversial about these implementations; that's the point of Reach: we get to just write normal business logic without worrying about the details of the consensus network and decentralized application.
@@ -271,7 +271,7 @@ In this case, we'll choose Alice.
 :::note
 Does Alice go first, or do we call the player that goes first "Alice"?
 This might seem like an unnecessary distinction to make, but it is a very subtle point about the way that Reach works.
-In our frontend, we explicitly ran `{!reach} backend.Alice` and `{!reach} backend.Bob`.
+In our frontend, we explicitly ran `{!rsh} backend.Alice` and `{!rsh} backend.Bob`.
 When we did that, we were committing that particular JavaScript thread to be either Alice or Bob.
 In our game, whoever chose to run the Alice backend is the one that will go first.
 In other words, **Alice goes first**.
@@ -289,9 +289,9 @@ range: 17-21
 ```
 
 
-+ Line 17 states that this block of code is something that _only_ `{!reach} Alice` performs.
-+ That means that the variable, `{!reach} handAlice`, bound on line 18 is known only to Alice.
-+ Line 18 binds that value to the result of interacting with Alice through the `{!reach} getHand` method, which we wrote in JavaScript.
++ Line 17 states that this block of code is something that _only_ `{!rsh} Alice` performs.
++ That means that the variable, `{!rsh} handAlice`, bound on line 18 is known only to Alice.
++ Line 18 binds that value to the result of interacting with Alice through the `{!rsh} getHand` method, which we wrote in JavaScript.
 + Line 18 also declassifies the value, because in Reach, all information from frontends is secret until it is explicitly made public.
 + Line 20 has Alice join the application by publishing the value to the consensus network, so it can be used to evaluate the outcome of the game.
 Once this happens, the code is in a "consensus step" where all participants act together.
@@ -308,9 +308,9 @@ range: 23-29
 
 + Lines 23 through 26 match Alice's similar local step and joining of the application through a consensus transfer publication.
 + But, line 28 computes the outcome of the game before committing.
-(`{!reach} (handAlice + (4 - handBob)) % 3` is a clever equation to compute the winner of a game of _Rock, Paper, Scissors!_ using modular arithmetic.
-Consider when `{!reach} handAlice` is `{!reach} 0` (i.e., `Rock`) and `{!reach} handBob` is `{!reach} 2` (i.e., `Scissors`),
-then this equation is `{!reach} ((handAlice + (4 - handBob)) % 3) = ((0 + (4 - 2)) % 3) = ((0 + 2) % 3) = (2 % 3) = 2`,
+(`{!rsh} (handAlice + (4 - handBob)) % 3` is a clever equation to compute the winner of a game of _Rock, Paper, Scissors!_ using modular arithmetic.
+Consider when `{!rsh} handAlice` is `{!rsh} 0` (i.e., `Rock`) and `{!rsh} handBob` is `{!rsh} 2` (i.e., `Scissors`),
+then this equation is `{!rsh} ((handAlice + (4 - handBob)) % 3) = ((0 + (4 - 2)) % 3) = ((0 + 2) % 3) = (2 % 3) = 2`,
 which is the last outcome, that is `Alice wins`, as we expect it to be.)
 
 
@@ -386,13 +386,13 @@ Reach programs allow interaction with a user interface through which of the foll
 ::::testQ
 How do participants in a Reach application share information with each other and find out what others have shared?
 1. Reach generates a smart contract, but you need to implement a process to scan the blockchain for events that correspond to sharing;
-1. The Reach primitive `{!reach} publish` allows a participant to share information with all other participants, which happens automatically without the other parties needing to do anything special;
+1. The Reach primitive `{!rsh} publish` allows a participant to share information with all other participants, which happens automatically without the other parties needing to do anything special;
 
-1. The Reach primitive `{!reach} publish` allows a participant to share information with all other participants, but they need to explicitly run the receive primitive to receive published information.
+1. The Reach primitive `{!rsh} publish` allows a participant to share information with all other participants, but they need to explicitly run the receive primitive to receive published information.
 
 
 :::testA
-2; the `{!reach} publish` primitive does everything for you.
+2; the `{!rsh} publish` primitive does everything for you.
 :::
 
 ::::
@@ -468,8 +468,8 @@ range: 1-19
 ```
 
 
-+ Lines 9 through 12 define Alice's interface as the `{!reach} Player` interface, plus an integer value called `{!reach} wager`.
-+ Lines 13 through 16 do the same for Bob, where he has a method called `{!reach} acceptWager` that can look at the wager value.
++ Lines 9 through 12 define Alice's interface as the `{!rsh} Player` interface, plus an integer value called `{!rsh} wager`.
++ Lines 13 through 16 do the same for Bob, where he has a method called `{!rsh} acceptWager` that can look at the wager value.
 
 
 Each of the three parts of the application have to be updated to deal with the wager.
@@ -484,7 +484,7 @@ range: 19-25
 + Line 20 has Alice declassify the wager for transmission.
 + Line 23 is updated so that Alice shares the wager amount with Bob.
 + Line 24 has her transfer the amount as part of her publication.
-The Reach compiler would throw an exception if `{!reach} wager` did not appear on line 23, but did appear on line 24.
+The Reach compiler would throw an exception if `{!rsh} wager` did not appear on line 23, but did appear on line 24.
 Change the program and try it.
 This is because the consensus network needs to be able to verify that the amount of network tokens included in Alice's publication match some computation available to consensus network.
 
@@ -512,8 +512,8 @@ range: 34-41
 ```
 
 
-+ Lines 35 through 38 compute the amounts given to each participant depending on the outcome by determining how many `{!reach} wager` amounts each party gets.
-If the outcome is `{!reach} 2`, `Alice wins`, then she gets two portions; while if it is `{!reach} 0`, `Bob wins`, then he gets two portions; otherwise they each get one portion.
++ Lines 35 through 38 compute the amounts given to each participant depending on the outcome by determining how many `{!rsh} wager` amounts each party gets.
+If the outcome is `{!rsh} 2`, `Alice wins`, then she gets two portions; while if it is `{!rsh} 0`, `Bob wins`, then he gets two portions; otherwise they each get one portion.
 + Lines 39 and 40 transfer the corresponding amounts.
 This transfer takes place from the contract to the participants, not from the participants to each other, because all of the funds reside inside of the contract.
 + Line 41 commits the state of the application and allows the participants to see the outcome and complete.
@@ -603,11 +603,11 @@ We'll fix this in [the next step](##tut-5); make sure you don't launch with this
 ::::testQ
 How do Reach programs manage token funds?
 1. They don’t; you need to manage them explicitly in parallel to the Reach program;
-1. The `{!reach} pay` primitive can be added to a `{!reach} publish` primitive to send funds to the Reach program, which can then use the `{!reach} transfer` primitive to send funds back to participants, and other addresses.
+1. The `{!rsh} pay` primitive can be added to a `{!rsh} publish` primitive to send funds to the Reach program, which can then use the `{!rsh} transfer` primitive to send funds back to participants, and other addresses.
 
 
 :::testA
-2; the `{!reach} pay` and `{!reach} transfer` primitives do everything for you.
+2; the `{!rsh} pay` and `{!rsh} transfer` primitives do everything for you.
 :::
 
 ::::
@@ -634,7 +634,7 @@ Bob went from 100 to 94.9999.
 
 
 The problem is that this version of the game only executed an honest version of Bob, that is, one that followed the Reach program exactly, including in his private local steps.
-It is possible for a deviant and dishonest version of a Bob backend to execute different code and always win by computing the appropriate guess based on what value Alice provided for `{!reach} handAlice`.
+It is possible for a deviant and dishonest version of a Bob backend to execute different code and always win by computing the appropriate guess based on what value Alice provided for `{!rsh} handAlice`.
 
 If we change Bob's code to the following:
 
@@ -666,8 +666,8 @@ No matter what Alice chooses, Bob will always win.
 
 Is it just a fluke of the random number generator that we observed Bob always winning?
 How would we know?
-Reach comes with an    [automatic verification](##guide-assert) engine that we can use to mathematically prove that this version will always result in the `{!reach} outcome` variable equalling `{!reach} 0`, which means Bob wins.
-We can instruct Reach to prove this theorem by adding these lines after computing the `{!reach} outcome`:
+Reach comes with an    [automatic verification](##guide-assert) engine that we can use to mathematically prove that this version will always result in the `{!rsh} outcome` variable equalling `{!rsh} 0`, which means Bob wins.
+We can instruct Reach to prove this theorem by adding these lines after computing the `{!rsh} outcome`:
 
 ```
 load: /examples/rps-4-attack/index.rsh
@@ -703,7 +703,7 @@ It prints out five more, rather than one more, because the theorem is proved dif
 
 Many programming languages include [assertions](https://en.wikipedia.org/wiki/Assertion_(software_development)) like this,
 but Reach is one of a small category where the compiler doesn't just insert a runtime check for the property,
-but actually conducts a mathematical proof at compile-time that the expression _always_ evaluates to `{!reach} true`.
+but actually conducts a mathematical proof at compile-time that the expression _always_ evaluates to `{!rsh} true`.
 
 In this case, we used Reach's [automatic verification](##guide-assert) engine to prove that an attack did what we expected it would.
 But, it is better to use verification to show that _no flaw_ exists and _no attack_ is possible.
@@ -746,7 +746,7 @@ range: 27-41
 ```
 
 
-+ Line 36 has `{!reach} [1, 0]`, but should have `{!reach} [2, 0]`.
++ Line 36 has `{!rsh} [1, 0]`, but should have `{!rsh} [2, 0]`.
 
 
 When we run `./reach compile (reachexlink rps-4-attack/index-bad.rsh)`, it gives details about the error:
@@ -781,8 +781,8 @@ range: 23-31
 ```
 
 
-+ Line 27 contains a knowledge assertion that Bob cannot know Alice's value `{!reach} handAlice` at this point in the program.
-In this case, it is obvious that this is not true, because Alice shares `{!reach} handAlice` at line 23.
++ Line 27 contains a knowledge assertion that Bob cannot know Alice's value `{!rsh} handAlice` at this point in the program.
+In this case, it is obvious that this is not true, because Alice shares `{!rsh} handAlice` at line 23.
 In many cases, this is not obvious and Reach's [automatic verification](##guide-assert) engine has to reason about how values that Bob _does know_ are connected to values that might be related to Alice's secret values.
 
 
@@ -832,7 +832,7 @@ range: 9-11
 
 
 But, Reach's [automatic verification](##guide-assert) allows us to express even more powerful statements about our program's behavior.
-For example, we can state that no matter what values are provided for `{!reach} handAlice` and `{!reach} handBob`, `{!reach} winner` will always provide a valid outcome:
+For example, we can state that no matter what values are provided for `{!rsh} handAlice` and `{!rsh} handBob`, `{!rsh} winner` will always provide a valid outcome:
 
 ```
 load: /examples/rps-5-trust/index.rsh
@@ -840,7 +840,7 @@ range: 13-15
 ```
 
 
-And we can specify that whenever the same value is provided for both hands, no matter what it is, `{!reach} winner` always returns `{!reach} DRAW`:
+And we can specify that whenever the same value is provided for both hands, no matter what it is, `{!rsh} winner` always returns `{!rsh} DRAW`:
 
 ```
 load: /examples/rps-5-trust/index.rsh
@@ -848,8 +848,8 @@ range: 17-18
 ```
 
 
-These examples both use `{!reach} forall`, which allows Reach programmers to quantify over all possible values that might be provided to a part of their program.
-You might think that these theorems will take a very long time to prove, because they have to loop over all the billions and billions of possibilities (e.g., Ethereum uses 256-bits for its unsigned integers) for the bits of `{!reach} handAlice` (twice!) and `{!reach} handBob`.
+These examples both use `{!rsh} forall`, which allows Reach programmers to quantify over all possible values that might be provided to a part of their program.
+You might think that these theorems will take a very long time to prove, because they have to loop over all the billions and billions of possibilities (e.g., Ethereum uses 256-bits for its unsigned integers) for the bits of `{!rsh} handAlice` (twice!) and `{!rsh} handBob`.
 In fact, on rudimentary laptops, it takes less than half a second.
 That's because Reach uses an advanced [symbolic execution engine](##guide-reach) to reason about this theorem abstractly without considering individual values.
 
@@ -863,7 +863,7 @@ range: 20-24
 ```
 
 
-The only line that is different is line 21, which includes `{!reach} hasRandom`, from the Reach standard library, in the interface.
+The only line that is different is line 21, which includes `{!rsh} hasRandom`, from the Reach standard library, in the interface.
 We'll use this to generate a random number to protect Alice's hand.
 
 ```
@@ -876,14 +876,14 @@ Similarly, we only need to modify one line of our JavaScript frontend.
 Line 21 allows each participant's Reach code to generate random numbers as necessary.
 
 These two changes might look identical, but they mean very different things.
-The first, line 21 in the Reach program, adds `{!reach} hasRandom` to the interface that the backend expects the frontend to provide.
-The second, line 21 in the JavaScript, adds `{!reach} hasRandom` to the implementation that the frontend provides to the backend.
+The first, line 21 in the Reach program, adds `{!rsh} hasRandom` to the interface that the backend expects the frontend to provide.
+The second, line 21 in the JavaScript, adds `{!rsh} hasRandom` to the implementation that the frontend provides to the backend.
 
 We're now at the crucial juncture where we will implement the actual application and ensure that Alice's hand is protected until after Bob reveals his hand.
 The simplest thing would be to have Alice just publish the wager, but this, of course, would just leave Bob vulnerable.
 We need Alice to be able to publish her hand, but also keep it secret.
 This is a job for a [cryptographic commitment scheme](https://en.wikipedia.org/wiki/Commitment_scheme).
-Reach's standard library comes with `{!reach} makeCommitment` to make this easier for you.
+Reach's standard library comes with `{!rsh} makeCommitment` to make this easier for you.
 
 ```
 load: /examples/rps-5-trust/index.rsh
@@ -894,7 +894,7 @@ range: 37-45
 + Line 39 has Alice compute her hand, but _not_ declassify it.
 + Line 40 has her compute a commitment to the hand.
 It comes with a secret "salt" value that must be revealed later.
-This "salt" was generated by the `{!reach} random` function inside of `{!reach} hasRandom` and it's why we pass `{!reach} interact` to this function.
+This "salt" was generated by the `{!rsh} random` function inside of `{!rsh} hasRandom` and it's why we pass `{!rsh} interact` to this function.
 + Line 41 has Alice declassify the commitment.
 + Line 43 has her publish them, and line 44 has her include the wager funds in the publication.
 
@@ -1064,7 +1064,7 @@ range: 20-25
 ```
 
 
-+ Line 24 introduces a new method, `{!reach} informTimeout`, that receives no arguments and returns no information.
++ Line 24 introduces a new method, `{!rsh} informTimeout`, that receives no arguments and returns no information.
 We'll call this function when a timeout occurs.
 
 
@@ -1101,10 +1101,10 @@ range: 39-43
 
 + Line 39 defines the function as an arrow expression.
 + Line 40 has each of the participants perform a local step.
-+ Line 41 has them call the new `{!reach} informTimeout` method.
++ Line 41 has them call the new `{!rsh} informTimeout` method.
 
 
-We will have Alice declassify and publish the `{!reach} deadline` for later timeout clauses.
+We will have Alice declassify and publish the `{!rsh} deadline` for later timeout clauses.
 
 We won't add a timeout clause to Alice's first message, because there is no consequence to her non-participation:
 if she doesn't start the game, then no one is any worse off.
@@ -1115,8 +1115,8 @@ range: 45-54
 ```
 
 
-+ Line 50 has Alice declassify the `{!reach} deadline` time delta.
-+ Line 52 now has Alice publish the `{!reach} deadline`.
++ Line 50 has Alice declassify the `{!rsh} deadline` time delta.
++ Line 52 now has Alice publish the `{!rsh} deadline`.
 
 
 However, we will adjust Bob's first message, because if he fails to participate, then Alice's initial wager will be lost to her.
@@ -1130,8 +1130,8 @@ range: 61-64
 + Line 63 adds a timeout handler to Bob's publication.
 
 
-The timeout handler specifies that if Bob does not complete this action within a time delta of `{!reach} deadline`, then the application transitions to the step given by the arrow expression.
-In this case, the timeout code is a call to `{!reach} closeTo`, which is a Reach standard library function that has Alice send a message and transfer all of the funds in the contract to herself, then call the given function afterwards.
+The timeout handler specifies that if Bob does not complete this action within a time delta of `{!rsh} deadline`, then the application transitions to the step given by the arrow expression.
+In this case, the timeout code is a call to `{!rsh} closeTo`, which is a Reach standard library function that has Alice send a message and transfer all of the funds in the contract to herself, then call the given function afterwards.
 This means that if Bob fails to publish his hand, then Alice will take her network tokens back.
 
 We will add a similar timeout handler to Alice's second message.
@@ -1233,7 +1233,7 @@ What happens in a decentralized application when one participant refuses to take
 1. This is not possible, because the blockchain guarantees that each party performs a particular set of actions;
 1. The program hangs forever waiting for Alice to provide the value;
 1. Alice is punished and the program proceeds as-if Bob were the winner;
-1. It depends on how the program was written; if the developer used Reach, the default is (2), but the developer could include a `{!reach} timeout` block to implement the (3) behavior.
+1. It depends on how the program was written; if the developer used Reach, the default is (2), but the developer could include a `{!rsh} timeout` block to implement the (3) behavior.
 
 
 :::testA
@@ -1325,15 +1325,15 @@ range: 53-58
 
 It's now time to begin the repeatable section of the application, where each party will repeatedly submit hands until the the outcome is not a draw.
 In normal programming languages, such a circumstance would be implemented with a `{!js} while` loop, which is exactly what we'll do in Reach.
-However, `{!reach} while` loops in Reach require extra care, as discussed in [the guide on loops in Reach](##guide-loop-invs), so we'll take it slow.
+However, `{!rsh} while` loops in Reach require extra care, as discussed in [the guide on loops in Reach](##guide-loop-invs), so we'll take it slow.
 
-In the rest of a Reach program, all identifier bindings are static and unchangeable, but if this were the case throughout all of Reach, then `{!reach} while` loops would either never start or never terminate, because the loop condition would never change.
-So, a `{!reach} while` loop in Reach can introduce a variable binding.
+In the rest of a Reach program, all identifier bindings are static and unchangeable, but if this were the case throughout all of Reach, then `{!rsh} while` loops would either never start or never terminate, because the loop condition would never change.
+So, a `{!rsh} while` loop in Reach can introduce a variable binding.
 
-Next, because of Reach's [automatic verification](##guide-assert) engine, we must be able to make a statement about what properties of the program are invariant before and after a `{!reach} while` loop body's execution, a so-called ["loop invariant"](##guide-loop-invs).
+Next, because of Reach's [automatic verification](##guide-assert) engine, we must be able to make a statement about what properties of the program are invariant before and after a `{!rsh} while` loop body's execution, a so-called ["loop invariant"](##guide-loop-invs).
 
 Finally, such loops _may only occur_ inside of consensus steps.
-That's why Bob's transaction was not committed, because we need to remain inside of the consensus to start the `{!reach} while` loop.
+That's why Bob's transaction was not committed, because we need to remain inside of the consensus to start the `{!rsh} while` loop.
 This is because all of the participants must agree on the direction of control flow in the application.
 
 Here's what the structure looks like:
@@ -1344,8 +1344,8 @@ range: 59-61
 ```
 
 
-+ Line 59 defines the loop variable, `{!reach} outcome`.
-+ Line 60 states the invariant that the body of the loop does not change the balance in the contract account and that  `{!reach} outcome` is a valid outcome.
++ Line 59 defines the loop variable, `{!rsh} outcome`.
++ Line 60 states the invariant that the body of the loop does not change the balance in the contract account and that  `{!rsh} outcome` is a valid outcome.
 + Line 61 begins the loop with the condition that it continues as long as the outcome is a draw.
 
 
@@ -1385,9 +1385,9 @@ range: 89-91
 ```
 
 
-+ Line 89 updates the `{!reach} outcome` loop variable with the new value.
++ Line 89 updates the `{!rsh} outcome` loop variable with the new value.
 + Line 90 continues the loop.
-Unlike most programming languages, Reach **requires** that `{!reach} continue` be explicitly written in the loop body.
+Unlike most programming languages, Reach **requires** that `{!rsh} continue` be explicitly written in the loop body.
 
 
 The rest of the program could be exactly the same as it was before, except now it occurs outside of the loop, but we will simplify it, because we know that the outcome can never be a draw.
@@ -1398,7 +1398,7 @@ range: 93-95
 ```
 
 
-+ Line 93 asserts that the outcome is never draw, which is trivially true because otherwise the `{!reach} while` loop would not have exited.
++ Line 93 asserts that the outcome is never draw, which is trivially true because otherwise the `{!rsh} while` loop would not have exited.
 + Line 104 transfers the funds to the winner.
 
 
@@ -1451,19 +1451,19 @@ In [the next step](##tut-8), we'll show how to exit "testing" mode with Reach an
 ::::testQ
 How do you write an application in Reach that runs arbitrarily long, like a game of Rock, Paper, Scissors that is guaranteed to not end in a draw?
 1. This is not possible, because all Reach programs are finitely long;
-1. You can use a `{!reach} while` loop that runs until the outcome of the game is decided.
+1. You can use a `{!rsh} while` loop that runs until the outcome of the game is decided.
 
 
 :::testA
-2; Reach supports `{!reach} while` loops.
+2; Reach supports `{!rsh} while` loops.
 :::
 
 ::::
 
 
 ::::testQ
-When you check if a program with a `{!reach} while` loop is correct, you need to have a property called a loop invariant. Which of the following statements have to be true about the loop invariant?
-1. The part of the program before the `{!reach} while` loop must establish the invariant.
+When you check if a program with a `{!rsh} while` loop is correct, you need to have a property called a loop invariant. Which of the following statements have to be true about the loop invariant?
+1. The part of the program before the `{!rsh} while` loop must establish the invariant.
 
 1. The condition and the body of the loop must establish the invariant.
 1. The negation of the condition and the invariant must establish any properties of the rest of the program.
@@ -1741,8 +1741,8 @@ range: 1-9
 
 
 On lines 1 thru 6, we import our view code and CSS.
-On line 7, we import the compiled `{!reach} backend`.
-On lines 8 and 9, we load the `{!reach} stdlib` as `{!reach} reach`.
+On line 7, we import the compiled `{!rsh} backend`.
+On lines 8 and 9, we load the `{!rsh} stdlib` as `{!rsh} reach`.
 
 React compiles the Reach standard library in such a way that
 it does not have direct access to the environment variables

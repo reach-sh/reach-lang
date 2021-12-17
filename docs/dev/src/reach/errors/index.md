@@ -14,11 +14,11 @@ See the list on the left bar.
 ## {#RA0000} RA0000
 
 This error indicates that a program, targeting the Algorand connector, is attempting to
-transfer a `{!reach} Token` in the same consensus step it was created in. It is impossible
+transfer a `{!rsh} Token` in the same consensus step it was created in. It is impossible
 to perform this action because one must opt-in to receive a token on Algorand. To opt-in, one must
 know the id, however the id of the token cannot be known until after the transaction that created it.
 
-The following code erroneously tries to transfer a newly created `{!reach} Token`:
+The following code erroneously tries to transfer a newly created `{!rsh} Token`:
 
 ```reach
 Alice.publish();
@@ -28,7 +28,7 @@ commit();
 ```
 
 
-This can be fixed by performing a `{!reach} commit` after creating the token and transferring the
+This can be fixed by performing a `{!rsh} commit` after creating the token and transferring the
 token in the next consensus step:
 
 ```reach
@@ -42,12 +42,12 @@ commit();
 ```
 
 
-The frontend can have `{!reach} Alice` opt-in to the token in `{!reach} informOfTokenId` by utilizing
+The frontend can have `{!rsh} Alice` opt-in to the token in `{!rsh} informOfTokenId` by utilizing
 `{!js} acc.tokenAccept()`.
 
 ## {#RA0001} RA0001
 
-This error indicates that a program, targeting the Algorand connector, is attempting to pay a `{!reach} Token` at the same time it is published.
+This error indicates that a program, targeting the Algorand connector, is attempting to pay a `{!rsh} Token` at the same time it is published.
 It is impossible to perform this action because one must opt-in to receive a token on Algorand.
 To opt-in, one must know the id, however the application cannot learn the application until after it has received the publication, which must occur after all pay transactions.
 
@@ -59,7 +59,7 @@ commit();
 ```
 
 
-This can be fixed by performing the `{!reach} publish` and `{!reach} pay` in two steps:
+This can be fixed by performing the `{!rsh} publish` and `{!rsh} pay` in two steps:
 token in the next consensus step:
 
 ```reach
@@ -75,7 +75,7 @@ commit();
 This error indicates that the program uses a number that is beyond the range of acceptable numbers for the given
 connector.
 
-For example, the code below uses a value too large for the `{!reach} ALGO` connector:
+For example, the code below uses a value too large for the `{!rsh} ALGO` connector:
 
 ```reach
 const y = 18446744073709551616;
@@ -103,7 +103,7 @@ case, your application will no longer be blockchain agnostic.
 
 This error indicates that you provided an incorrect number of arguments to a function.
 
-For example, the code below applies one value to `{!reach} f`:
+For example, the code below applies one value to `{!rsh} f`:
 
 ```reach
 const f = () => { return 3 };
@@ -122,11 +122,11 @@ const x = f();
 ## {#RE0001} RE0001
 
 This error indicates that a program uses an invalid assignment operator.
-Reach only supports assignment using the `{!reach} =` operator. Any other operator,
-such as `{!reach} +=, *=, ...` is not allowed.
+Reach only supports assignment using the `{!rsh} =` operator. Any other operator,
+such as `{!rsh} +=, *=, ...` is not allowed.
 
-For example, the code below erroneously tries to re-assign `{!reach} x` at the end of
-a `{!reach} while` loop:
+For example, the code below erroneously tries to re-assign `{!rsh} x` at the end of
+a `{!rsh} while` loop:
 
 ```reach
 x *= 2;
@@ -135,7 +135,7 @@ continue;
 
 
 You can fix this by explicitly writing out the operation on the right hand
-side of `{!reach} =`:
+side of `{!rsh} =`:
 
 ```reach
 x = x * 2;
@@ -144,7 +144,7 @@ continue;
 
 
 Keep in mind, that the assignment operator is a form of mutation and is only allowed
-immediately before a `{!reach} continue`.
+immediately before a `{!rsh} continue`.
 
 ## {#RE0002} RE0002
 
@@ -163,8 +163,8 @@ for (let i = 0; i < arr.length; i++) {
 ```
 
 
-You can fix this by either using a `{!reach} while` loop or a combination of
-`{!reach} Array.iota` and `{!reach} Array.map/Array.forEach`:
+You can fix this by either using a `{!rsh} while` loop or a combination of
+`{!rsh} Array.iota` and `{!rsh} Array.map/Array.forEach`:
 
 ```reach
 Array.iota(arr.length).map((i) => {
@@ -175,15 +175,15 @@ Array.iota(arr.length).map((i) => {
 
 ## {#RE0003} RE0003
 
-This error indicates that a statement block returns a non-null value although a `{!reach} null` value is expected.
-The block should either use a `{!reach} return null;` statement or no return statement at all.
+This error indicates that a statement block returns a non-null value although a `{!rsh} null` value is expected.
+The block should either use a `{!rsh} return null;` statement or no return statement at all.
 
 ## {#RE0004} RE0004
 
-This error indicates that the program uses `{!reach} var` incorrectly.
-In Reach, `{!reach} var` is only allowed immediately before a while loop and its `{!reach} invariant`.
+This error indicates that the program uses `{!rsh} var` incorrectly.
+In Reach, `{!rsh} var` is only allowed immediately before a while loop and its `{!rsh} invariant`.
 
-For example, this code erroneously tries to declare `{!reach} x` as a mutable variable then
+For example, this code erroneously tries to declare `{!rsh} x` as a mutable variable then
 re-assign it at some point:
 
 ```reach
@@ -194,7 +194,7 @@ if (iAmLegend) {
 ```
 
 
-You can fix this by using `{!reach} const` and either creating fresh variables or collapsing the logic if simple enough:
+You can fix this by using `{!rsh} const` and either creating fresh variables or collapsing the logic if simple enough:
 
 ```reach
 const x = 0;
@@ -206,10 +206,10 @@ const x = iAmLegend ? 5 : 0;
 
 ## {#RE0005} RE0005
 
-This error indicates an incorrect use of `{!reach} while`. `{!reach} while` must be immediately
-prefaced by a `{!reach} var` and `{!reach} invariant` declaration.
+This error indicates an incorrect use of `{!rsh} while`. `{!rsh} while` must be immediately
+prefaced by a `{!rsh} var` and `{!rsh} invariant` declaration.
 
-For example, this code erroneously tries to run a continuous loop where Alice pays `{!reach} 1` network token
+For example, this code erroneously tries to run a continuous loop where Alice pays `{!rsh} 1` network token
 per loop:
 
 ```reach
@@ -221,8 +221,8 @@ while (true) {
 ```
 
 
-Reach requires the `{!reach} invariant` to reason about the `{!reach} while` loop during verification. You
-can fix this by adding a `{!reach} var` and `{!reach} invariant` declaration before the loop:
+Reach requires the `{!rsh} invariant` to reason about the `{!rsh} while` loop during verification. You
+can fix this by adding a `{!rsh} var` and `{!rsh} invariant` declaration before the loop:
 
 ```reach
 var rounds = 0;
@@ -240,15 +240,15 @@ while (true) {
 
 @{errver(false, "v0.1")}
 
-This error indicates that `{!reach} return` may not be used within the current statement block.
+This error indicates that `{!rsh} return` may not be used within the current statement block.
 
 ## {#RE0007} RE0007
 
-This error indicates that the `{!reach} timeout` branch of a statement such
-as `{!reach} publish, pay, fork` has been given the wrong arguments.
+This error indicates that the `{!rsh} timeout` branch of a statement such
+as `{!rsh} publish, pay, fork` has been given the wrong arguments.
 
-For example, the following code erroneously attempts to `{!reach} closeTo(Bob)` in the event that
-`{!reach} Alice` does not publish in time:
+For example, the following code erroneously attempts to `{!rsh} closeTo(Bob)` in the event that
+`{!rsh} Alice` does not publish in time:
 
 ```reach
 Alice
@@ -257,8 +257,8 @@ Alice
 ```
 
 
-However, the second argument of the `{!reach} timeout` branch must be a thunk. You can fix this by
-wrapping `{!reach} closeTo(Bob)` in an arrow expression:
+However, the second argument of the `{!rsh} timeout` branch must be a thunk. You can fix this by
+wrapping `{!rsh} closeTo(Bob)` in an arrow expression:
 
 ```reach
 Alice
@@ -269,11 +269,11 @@ Alice
 
 ## {#RE0008} RE0008
 
-This error indicates that a `{!reach} timeout` branch of a statement such as
-`{!reach} publish, pay, fork` has not been given a block of code to execute in the
-event of a `{!reach} timeout`.
+This error indicates that a `{!rsh} timeout` branch of a statement such as
+`{!rsh} publish, pay, fork` has not been given a block of code to execute in the
+event of a `{!rsh} timeout`.
 
-For example, the code below erroneously provides a `{!reach} timeout` delay, but does
+For example, the code below erroneously provides a `{!rsh} timeout` delay, but does
 not specify a function to run if the timeout occurs:
 
 ```reach
@@ -282,7 +282,7 @@ A.pay(0)
 ```
 
 
-You can fix this by providing a function as a second argument to `{!reach} timeout`:
+You can fix this by providing a function as a second argument to `{!rsh} timeout`:
 
 ```reach
 A.pay(0)
@@ -345,8 +345,8 @@ A.pay([ amt, [ amt ] ];)
 ```
 
 
-However, a tuple in a pay amount must specify the amount and the `{!reach} Token`. You can fix this
-by adding the `{!reach} Token` to the tuple:
+However, a tuple in a pay amount must specify the amount and the `{!rsh} Token`. You can fix this
+by adding the `{!rsh} Token` to the tuple:
 
 ```reach
 // tok : Token
@@ -410,25 +410,25 @@ await Promise.all([
 
 ## {#RE0013} RE0013
 
-This error indicates that you provided an unrecognized option to `{!reach} setOptions`.
+This error indicates that you provided an unrecognized option to `{!rsh} setOptions`.
 There is most likely a typo in your code.
 
-Please review the recognized options in the documentation for `{!reach} setOptions`.
+Please review the recognized options in the documentation for `{!rsh} setOptions`.
 
 ## {#RE0014} RE0014
 
 This error indicates that you did not provide an acceptable value for a specific option
-in `{!reach} setOptions`.
+in `{!rsh} setOptions`.
 
-Please review the eligible values listed in the documentation for `{!reach} setOptions`.
+Please review the eligible values listed in the documentation for `{!rsh} setOptions`.
 
 ## {#RE0015} RE0015
 
-This error indicates that your participant interact interface does not provide a `{!reach} Type`
+This error indicates that your participant interact interface does not provide a `{!rsh} Type`
 for a given field.
 
-For example, in the erroneous code below, `{!reach} x` is assigned `{!reach} 3` in the participant interact interface
-of `{!reach} Alice`:
+For example, in the erroneous code below, `{!rsh} x` is assigned `{!rsh} 3` in the participant interact interface
+of `{!rsh} Alice`:
 
 ```reach
 const Alice = Participant('Alice', {
@@ -438,7 +438,7 @@ const Alice = Participant('Alice', {
 
 
 However, the interact interface specifies the type of values that will be provided at runtime. You can fix this by
-either making `{!reach} x` a variable within Alice's scope inside the program:
+either making `{!rsh} x` a variable within Alice's scope inside the program:
 
 ```reach
 const Alice = Participant('Alice', {});
@@ -449,7 +449,7 @@ Alice.only(() => {
 ```
 
 
-or by putting `{!reach} 3` as the value of `{!reach} x` in your frontend and adjusting the
+or by putting `{!rsh} 3` as the value of `{!rsh} x` in your frontend and adjusting the
 participant interact interface to list the type:
 
 ```reach
@@ -462,10 +462,10 @@ const Alice = Participant('Alice', {
 
 ## {#RE0016} RE0016
 
-This error indicates that the arguments passed to `{!reach} Reach.App` are incorrect.
-`{!reach} Reach.App` accepts a single thunk as its argument.
+This error indicates that the arguments passed to `{!rsh} Reach.App` are incorrect.
+`{!rsh} Reach.App` accepts a single thunk as its argument.
 
-For example, the code below erroneously declares a `{!reach} Reach.App` without too
+For example, the code below erroneously declares a `{!rsh} Reach.App` without too
 many arguments:
 
 ```reach
@@ -474,7 +474,7 @@ export const main = Reach.App({}, () => {
 ```
 
 
-You can fix this by ensuring only one argument is passed to `{!reach} Reach.App`,
+You can fix this by ensuring only one argument is passed to `{!rsh} Reach.App`,
 which is a function with no arguments:
 
 ```reach
@@ -485,8 +485,8 @@ export const main = Reach.App(() => {
 
 ## {#RE0017} RE0017
 
-This error indicates that the name of the `{!reach} Participant` or `{!reach} View` provided
-is invalid. These names must satisfy the regex `{!reach} [a-zA-Z][_a-zA-Z0-9]*`.
+This error indicates that the name of the `{!rsh} Participant` or `{!rsh} View` provided
+is invalid. These names must satisfy the regex `{!rsh} [a-zA-Z][_a-zA-Z0-9]*`.
 
 For example, the code below provides a Participant name that is unsatisfactory:
 
@@ -529,15 +529,15 @@ This error indicates that an object spread is occurring before the last position
 destructuring assignment. It must come last due to the fact it binds the remaining
 elements to the given variable.
 
-For example, the code below erroneously attempts to destructure one element `{!reach} y`
-and the remaining elements into `{!reach} x`:
+For example, the code below erroneously attempts to destructure one element `{!rsh} y`
+and the remaining elements into `{!rsh} x`:
 
 ```reach
 const {...x, y} = {x: 1, y: 2, z: 3};
 ```
 
 
-You can fix this by moving `{!reach} ...x` to the last position:
+You can fix this by moving `{!rsh} ...x` to the last position:
 
 ```reach
 const {y, ...x} = {x: 1, y: 2, z: 3};
@@ -550,15 +550,15 @@ This error indicates that an array spread is occurring before the last position 
 destructuring assignment. It must come last due to the fact it binds the remaining
 elements to the given variable.
 
-For example, the code below erroneously attempts to destructure one element `{!reach} y`
-and the remaining elements into `{!reach} x`:
+For example, the code below erroneously attempts to destructure one element `{!rsh} y`
+and the remaining elements into `{!rsh} x`:
 
 ```reach
 const [...x, y] = [1, 2, 3];
 ```
 
 
-You can fix this by moving `{!reach} ...x` to the last position:
+You can fix this by moving `{!rsh} ...x` to the last position:
 
 ```reach
 const [y, ...x] = [1, 2, 3];
@@ -571,7 +571,7 @@ This error indicates that the compiler expected to receive a closure, but
 it was given a different value.
 
 For example, the code below erroneously attempts to provide a value for
-the `{!reach} match` case of a nullary `{!reach} Data` constructor:
+the `{!rsh} match` case of a nullary `{!rsh} Data` constructor:
 
 ```reach
 Maybe(UInt).None().match({
@@ -581,8 +581,8 @@ Maybe(UInt).None().match({
 ```
 
 
-You can fix this by wrapping the value `{!reach} 0` in an arrow expression because
-`{!reach} match` expects all cases to be bound to closures:
+You can fix this by wrapping the value `{!rsh} 0` in an arrow expression because
+`{!rsh} match` expects all cases to be bound to closures:
 
 ```reach
 Maybe(UInt).None().match({
@@ -595,17 +595,17 @@ Maybe(UInt).None().match({
 ## {#RE0022} RE0022
 
 This error indicates that there was an invalid declaration. This error will
-occur when attempting to bind multiple variables within a single `{!reach} const`.
+occur when attempting to bind multiple variables within a single `{!rsh} const`.
 
-For example, the code below erroneously attempts to bind `{!reach} x` and `{!reach} y`
-within one `{!reach} const` assignment:
+For example, the code below erroneously attempts to bind `{!rsh} x` and `{!rsh} y`
+within one `{!rsh} const` assignment:
 
 ```reach
 const x = 1, y = 2;
 ```
 
 
-You can fix this by breaking apart the declarations into two `{!reach} const` statements:
+You can fix this by breaking apart the declarations into two `{!rsh} const` statements:
 
 ```reach
 const x = 1;
@@ -621,10 +621,10 @@ This error indicates that there was an invalid declaration.
 
 ## {#RE0024} RE0024
 
-This error indicates that there is an attempt to unpack an `{!reach} array`, but the binding
-does not expect the same amount of values that the `{!reach} array` contains.
+This error indicates that there is an attempt to unpack an `{!rsh} array`, but the binding
+does not expect the same amount of values that the `{!rsh} array` contains.
 
-For example, the code below erroneously tries to unpack an `{!reach} array` of 3 values into
+For example, the code below erroneously tries to unpack an `{!rsh} array` of 3 values into
 2 variables:
 
 ```reach
@@ -632,7 +632,7 @@ const [ x, y ] = [ 1, 2, 3 ];
 ```
 
 
-You can fix this by either binding or ignoring, via `{!reach} _`, the last element of the `{!reach} array`:
+You can fix this by either binding or ignoring, via `{!rsh} _`, the last element of the `{!rsh} array`:
 
 ```reach
 const [ x, y, _ ] = [ 1, 2, 3 ];
@@ -642,15 +642,15 @@ const [ x, y, _ ] = [ 1, 2, 3 ];
 
 ## {#RE0025} RE0025
 
-This error indicates that there is an attempt to access a field of an `{!reach} object`
+This error indicates that there is an attempt to access a field of an `{!rsh} object`
 that does not exist. Ensure that you are referring to the correct name, or
-add the needed field to the `{!reach} object` if necessary.
+add the needed field to the `{!rsh} object` if necessary.
 
 ## {#RE0026} RE0026
 
-This error indicates that the `{!reach} continue` statement is used outside of a
-`{!reach} while` loop. To fix this issue, delete the erroneous `{!reach} continue`,
-or move it to the end of your `{!reach} while` loop.
+This error indicates that the `{!rsh} continue` statement is used outside of a
+`{!rsh} while` loop. To fix this issue, delete the erroneous `{!rsh} continue`,
+or move it to the end of your `{!rsh} while` loop.
 
 ## {#RE0027} RE0027
 
@@ -666,7 +666,7 @@ export const main = Reach.App(() => {
 ```
 
 
-You can fix this by having a `{!reach} Participant` `{!reach} publish` first:
+You can fix this by having a `{!rsh} Participant` `{!rsh} publish` first:
 
 ```reach
 export const main = Reach.App(() => {
@@ -680,12 +680,12 @@ export const main = Reach.App(() => {
 
 ## {#RE0028} RE0028
 
-This error indicates that a the variable update inside of a loop, e.g. `{!reach} while`,
-is attempting to mutate variables that are not mutable. For a `{!reach} while` loop, this
-means the variable was not declared with `{!reach} var` prior to the loop.
+This error indicates that a the variable update inside of a loop, e.g. `{!rsh} while`,
+is attempting to mutate variables that are not mutable. For a `{!rsh} while` loop, this
+means the variable was not declared with `{!rsh} var` prior to the loop.
 
-For example, the code below erroneously attempts to mutate `{!reach} y` which has not been
-defined via `{!reach} var`:
+For example, the code below erroneously attempts to mutate `{!rsh} y` which has not been
+defined via `{!rsh} var`:
 
 ```reach
 var [x] = [1];
@@ -697,7 +697,7 @@ while(x < 2) {
 ```
 
 
-You can fix this by either deleting `{!reach} y` or adding it to the variable list:
+You can fix this by either deleting `{!rsh} y` or adding it to the variable list:
 
 ```reach
 var [ x, y ] = [ 1, 1 ];
@@ -712,10 +712,10 @@ while(x < 2) {
 
 ## {#RE0029} RE0029
 
-This error indicates an attempt to bind a `{!reach} ParticipantClass` to a
-specific `{!reach} Address`.
+This error indicates an attempt to bind a `{!rsh} ParticipantClass` to a
+specific `{!rsh} Address`.
 
-For example, the example code below erroneously tries to `{!reach} set` a `{!reach} ParticipantClass`
+For example, the example code below erroneously tries to `{!rsh} set` a `{!rsh} ParticipantClass`
 to a specific address:
 
 ```reach
@@ -725,7 +725,7 @@ C.set(addr);
 ```
 
 
-You can fix this by using a `{!reach} Participant`, which may be associated with a single address:
+You can fix this by using a `{!rsh} Participant`, which may be associated with a single address:
 
 ```reach
 const C = Participant('C', {});
@@ -736,11 +736,11 @@ C.set(addr);
 
 ## {#RE0030} RE0030
 
-This error indicates an attempt to re-bind a `{!reach} Participant` to another `{!reach} Address`.
-Once a `{!reach} Participant` is bound to an `{!reach} Address`, either by making a publication
-or explicitly via `{!reach} Participant.set`, they may not be re-bound.
+This error indicates an attempt to re-bind a `{!rsh} Participant` to another `{!rsh} Address`.
+Once a `{!rsh} Participant` is bound to an `{!rsh} Address`, either by making a publication
+or explicitly via `{!rsh} Participant.set`, they may not be re-bound.
 
-For example, the code below erroneously has `{!reach} Bob` make a publication, then later,
+For example, the code below erroneously has `{!rsh} Bob` make a publication, then later,
 attempts to bind him to a specific address:
 
 ```reach
@@ -762,8 +762,8 @@ of a Reach application.
 ## {#RE0032} RE0032
 
 This error indicates that you are attempting to mutate a variable in an inappropriate place.
-Variable mutation is only allowed to occur on variables declared via `{!reach} var` and immediately
-before a `{!reach} continue` statement of a loop.
+Variable mutation is only allowed to occur on variables declared via `{!rsh} var` and immediately
+before a `{!rsh} continue` statement of a loop.
 
 For example, the code below attempts to mutate a loop variable improperly:
 
@@ -779,7 +779,7 @@ while (true) {
 ```
 
 
-You can fix this issue by moving the mutation directly before the `{!reach} continue`:
+You can fix this issue by moving the mutation directly before the `{!rsh} continue`:
 
 ```reach
 var [ x ] = [ 0 ];
@@ -801,10 +801,10 @@ expressions are valid Reach, as they are not applicable to the language.
 ## {#RE0034} RE0034
 
 This error indicates that there is nowhere to return to in the current statement block.
-This may occur if you write a `{!reach} return` statement at the top level of a file
-or if you've already wrote a `{!reach} return` statement.
+This may occur if you write a `{!rsh} return` statement at the top level of a file
+or if you've already wrote a `{!rsh} return` statement.
 
-For example, the code below has two `{!reach} return` statements, the first of which will
+For example, the code below has two `{!rsh} return` statements, the first of which will
 always occur, since it is not within a conditional:
 
 ```reach
@@ -815,7 +815,7 @@ const f = () => {
 ```
 
 
-You can fix this by removing the second `{!reach} return` which is dead code:
+You can fix this by removing the second `{!rsh} return` which is dead code:
 
 ```reach
 const f = () => {
@@ -830,7 +830,7 @@ This error indicates that a value, which is not a function, is being
 applied as if it were a function. Ensure you are writing the correct name
 of the function you intend to use.
 
-For example, the code below has two variables: `{!reach} f` and `{!reach} g`:
+For example, the code below has two variables: `{!rsh} f` and `{!rsh} g`:
 
 ```reach
 const f = () => 2;
@@ -839,8 +839,8 @@ const h = g();
 ```
 
 
-`{!reach} g` is being applied as if it were a function, although we really intended
-on calling `{!reach} f`. This can be fixed by ensuring we call a function:
+`{!rsh} g` is being applied as if it were a function, although we really intended
+on calling `{!rsh} f`. This can be fixed by ensuring we call a function:
 
 ```reach
 const f = () => 2;
@@ -854,15 +854,15 @@ const h = f();
 This error indicates that a value, which is not a function, is being
 applied as if it were a function.
 
-For example, the code erroneously tries to create an `{!reach} array` the same
-size as `{!reach} arr`, but filled with `{!reach} 1`:
+For example, the code erroneously tries to create an `{!rsh} array` the same
+size as `{!rsh} arr`, but filled with `{!rsh} 1`:
 
 ```reach
 const a = arr.map(1);
 ```
 
 
-You can fix this code by providing a function to `{!reach} Array.map`:
+You can fix this code by providing a function to `{!rsh} Array.map`:
 
 ```reach
 const a = arr.map((_) => 1);
@@ -871,41 +871,41 @@ const a = arr.map((_) => 1);
 
 ## {#RE0037} RE0037
 
-This error indicates that a value, which is not an `{!reach} Object`, is being
-treated as if it were an `{!reach} Object`. This error occurs when you try to access
+This error indicates that a value, which is not an `{!rsh} Object`, is being
+treated as if it were an `{!rsh} Object`. This error occurs when you try to access
 a field of an erroneous value. This issue is most likely caused by a typo in your
 program.
 
 ## {#RE0038} RE0038
 
-This error indicates that a value, which is not an `{!reach} Array` or `{!reach} Tuple`, is being
+This error indicates that a value, which is not an `{!rsh} Array` or `{!rsh} Tuple`, is being
 treated as if it were. This error occurs when you try to access
 an element of an erroneous value. This issue is most likely caused by a typo in your
 program.
 
 ## {#RE0039} RE0039
 
-This error indicates that there is an attempt to dereference an `{!reach} Array` or `{!reach} Tuple`
-with a non-numerical value. You must use a value of type `{!reach} UInt` to dereference
-an `{!reach} Array`.
+This error indicates that there is an attempt to dereference an `{!rsh} Array` or `{!rsh} Tuple`
+with a non-numerical value. You must use a value of type `{!rsh} UInt` to dereference
+an `{!rsh} Array`.
 
 ## {#RE0040} RE0040
 
-This error indicates that you are using a dynamic value to dereference a value which is not an `{!reach} Array`.
-This issue is most likely caused by a typo. Please ensure you are dereferencing an `{!reach} Array`.
+This error indicates that you are using a dynamic value to dereference a value which is not an `{!rsh} Array`.
+This issue is most likely caused by a typo. Please ensure you are dereferencing an `{!rsh} Array`.
 
 ## {#RE0041} RE0041
 
-This error indicates that there is an attempt to statically dereference an `{!reach} Array` beyond its bounds.
-Ensure you are using an index that is between `0` and `1` less than the length of the `{!reach} Array`.
+This error indicates that there is an attempt to statically dereference an `{!rsh} Array` beyond its bounds.
+Ensure you are using an index that is between `0` and `1` less than the length of the `{!rsh} Array`.
 
 ## {#RE0042} RE0042
 
 This error indicates that there is an attempt to reference an identifier that is not in scope. This issue may be
-caused by a typo, a scoping issue, or a missing `{!reach} import`.
+caused by a typo, a scoping issue, or a missing `{!rsh} import`.
 
-For example, the code below declares a function with a variable `{!reach} x` declared within it. Attempting to reference
-`{!reach} x` outside of the function will result in an error:
+For example, the code below declares a function with a variable `{!rsh} x` declared within it. Attempting to reference
+`{!rsh} x` outside of the function will result in an error:
 
 ```reach
 const f = () => {
@@ -915,7 +915,7 @@ const y = x;
 ```
 
 
-You can fix this issue by returning the value of `{!reach} x` from the function:
+You can fix this issue by returning the value of `{!rsh} x` from the function:
 
 ```reach
 const f = () => {
@@ -926,7 +926,7 @@ const y = f();
 ```
 
 
-If you are attempting to use a value from a library, simply add the necessary `{!reach} import` to the top
+If you are attempting to use a value from a library, simply add the necessary `{!rsh} import` to the top
 of the Reach file.
 
 ## {#RE0043} RE0043
@@ -935,7 +935,7 @@ This error indicates that there is a mismatch between the expected security leve
 and the actual one provided. This may happen if you use a public variable where a secret
 is expected, or vice versa.
 
-For example, the code below erroneously declassifies the variable `{!reach} x`, which is not secret:
+For example, the code below erroneously declassifies the variable `{!rsh} x`, which is not secret:
 
 ```reach
 const x = 0;
@@ -945,7 +945,7 @@ A.only(() => {
 ```
 
 
-You can fix this issue by simply assigning `{!reach} y` to `{!reach} x`.
+You can fix this issue by simply assigning `{!rsh} y` to `{!rsh} x`.
 
 ## {#RE0044} RE0044
 
@@ -956,7 +956,7 @@ by providing the same amount of arguments expected.
 
 This error indicates that an anonymous function was provided a name, which is not allowed.
 
-For example, the code below names the anonymous function `{!reach} m`:
+For example, the code below names the anonymous function `{!rsh} m`:
 
 ```reach
 const x = array(UInt, [0, 1, 2]);
@@ -974,10 +974,10 @@ const y = x.map(function (i){ return i + 1; });
 
 ## {#RE0046} RE0046
 
-This error indicates that there was an invalid syntax used for an `{!reach} import`.
-The acceptable `{!reach} import` formats are defined in the documentation for the keyword.
+This error indicates that there was an invalid syntax used for an `{!rsh} import`.
+The acceptable `{!rsh} import` formats are defined in the documentation for the keyword.
 
-For example, the code below erroneously performs a default `{!reach} import`:
+For example, the code below erroneously performs a default `{!rsh} import`:
 
 ```reach
 import blah from 'sample_lib.rsh';
@@ -1002,7 +1002,7 @@ import * as lib from 'sample_lib.rsh';
 
 @{errver(false, "v0.1")}
 
-This error indicates that there was a `{!reach} return` statement
+This error indicates that there was a `{!rsh} return` statement
 at the top level.
 
 ## {#RE0048} RE0048
@@ -1030,8 +1030,8 @@ export const main = Reach.App(() => {});
 
 ## {#RE0049} RE0049
 
-This error indicates that an `{!reach} object` has been given a field
-that is not an identifier or a `{!reach} string`.
+This error indicates that an `{!rsh} object` has been given a field
+that is not an identifier or a `{!rsh} string`.
 
 For example, the code below erroneously uses a dynamic string as an object key:
 
@@ -1052,12 +1052,12 @@ You can fix this by using a static string as the key.
 
 @{errver(false, "v0.1")}
 
-This error indicates an `{!reach} Object` has an incorrect number of values
+This error indicates an `{!rsh} Object` has an incorrect number of values
 associated with a field.
 
 ## {#RE0051} RE0051
 
-This error indicates that the field of an `{!reach} Object` uses the incorrect
+This error indicates that the field of an `{!rsh} Object` uses the incorrect
 syntax for defining a function.
 
 For example, the code below declares a field as a function with the following syntax:
@@ -1083,8 +1083,8 @@ const o = {
 
 ## {#RE0052} RE0052
 
-This error indicates that a `{!reach} UInt` has been used as the key of an
-`{!reach} Object`. However, only identifiers and values of type `{!reach} Bytes`
+This error indicates that a `{!rsh} UInt` has been used as the key of an
+`{!rsh} Object`. However, only identifiers and values of type `{!rsh} Bytes`
 are valid object keys.
 
 You can fix this issue by replacing the erroneous key with a static string.
@@ -1097,11 +1097,11 @@ an object. This issue is most likely caused by a typo in your program.
 
 ## {#RE0054} RE0054
 
-This error indicates that the argument provided to `{!reach} Array.iota` is
-not static. `{!reach} Array.iota` requires its argument to be computable at
+This error indicates that the argument provided to `{!rsh} Array.iota` is
+not static. `{!rsh} Array.iota` requires its argument to be computable at
 compile time.
 
-You can fix this issue by providing a static `{!reach} UInt` to the function.
+You can fix this issue by providing a static `{!rsh} UInt` to the function.
 
 ## {#RE0055} RE0055
 
@@ -1120,7 +1120,7 @@ variable declarations to another scope where it does not conflict with the other
 
 This error indicates that the compiler expected the tail of a statement block
 to be empty, but it wasn't. This issue may arise if there are statements beyond
-a `{!reach} return` or `{!reach} exit` statement. These statements are dead code
+a `{!rsh} return` or `{!rsh} exit` statement. These statements are dead code
 and you can fix this issue by deleting them.
 
 
@@ -1128,7 +1128,7 @@ and you can fix this issue by deleting them.
 
 @{errver(false, "v0.1")}
 
-This error indicates that you tried to use the `{!reach} publish` keyword twice
+This error indicates that you tried to use the `{!rsh} publish` keyword twice
 in a publication.
 
 ## {#RE0059} RE0059
@@ -1142,14 +1142,14 @@ You can fix this by naming your function.
 
 @{errver(false, "v0.1")}
 
-This error indicates that there is an illegal `{!reach} while` loop `{!reach} invariant`.
-You can fix this issue by providing only one expression to `{!reach} invariant`.
+This error indicates that there is an illegal `{!rsh} while` loop `{!rsh} invariant`.
+You can fix this issue by providing only one expression to `{!rsh} invariant`.
 
 ## {#RE0061} RE0061
 
 @{errver(false, "v0.1")}
 
-This error indicates that `{!reach} Participant.only` was not supplied a single thunk
+This error indicates that `{!rsh} Participant.only` was not supplied a single thunk
 as its argument.
 
 You can fix this by providing the expected value to the function.
@@ -1158,18 +1158,18 @@ You can fix this by providing the expected value to the function.
 
 @{errver(false, "v0.1")}
 
-This error indicates that `{!reach} each` was not given a `{!reach} Tuple` of `{!reach} Participant`s
+This error indicates that `{!rsh} each` was not given a `{!rsh} Tuple` of `{!rsh} Participant`s
 as its first argument.
 
 You can fix this by providing the expected value to the function.
 
 ## {#RE0063} RE0063
 
-This error indicates that a given function expects a `{!reach} Participant` or `{!reach} ParticipantClass`
+This error indicates that a given function expects a `{!rsh} Participant` or `{!rsh} ParticipantClass`
 as an argument, but it was given something else.
 
-For example, the code below erroneously provides `{!reach} false` instead of a `{!reach} Participant` to
-`{!reach} unknowable`:
+For example, the code below erroneously provides `{!rsh} false` instead of a `{!rsh} Participant` to
+`{!rsh} unknowable`:
 
 ```reach
 A.only(() => {
@@ -1179,7 +1179,7 @@ unknowable(false, A(_x));
 ```
 
 
-You can fix this by passing a `{!reach} Participant` as the first argument to `{!reach} unknowable`:
+You can fix this by passing a `{!rsh} Participant` as the first argument to `{!rsh} unknowable`:
 
 ```reach
 A.only(() => {
@@ -1191,10 +1191,10 @@ unknowable(B, A(_x));
 
 ## {#RE0064} RE0064
 
-This error indicates that the program is attempting to transfer funds to a `{!reach} Participant`
-that is not yet bound to an `{!reach} Address`.
+This error indicates that the program is attempting to transfer funds to a `{!rsh} Participant`
+that is not yet bound to an `{!rsh} Address`.
 
-For example, the code below transfers funds to `{!reach} Bob` before he has a set `{!reach} Address`:
+For example, the code below transfers funds to `{!rsh} Bob` before he has a set `{!rsh} Address`:
 
 ```reach
 Alice.publish().pay(100);
@@ -1202,8 +1202,8 @@ transfer(100).to(Bob);
 ```
 
 
-You can fix this by using `{!reach} Participant.set` first or having `{!reach} Bob` publish before the
-`{!reach} transfer`:
+You can fix this by using `{!rsh} Participant.set` first or having `{!rsh} Bob` publish before the
+`{!rsh} transfer`:
 
 ```reach
 Bob.publish();
@@ -1215,10 +1215,10 @@ transfer(100).to(Bob);
 
 ## {#RE0065} RE0065
 
-This error indicates that you are attempting to `{!reach} transfer` funds to a `{!reach} ParticipantClass`.
-This is not possible because `{!reach} transfer` expects a single `{!reach} Address` to transfer to.
+This error indicates that you are attempting to `{!rsh} transfer` funds to a `{!rsh} ParticipantClass`.
+This is not possible because `{!rsh} transfer` expects a single `{!rsh} Address` to transfer to.
 
-For example, the code below erroneously attempts to transfer the `{!reach} balance` of the contract to a class:
+For example, the code below erroneously attempts to transfer the `{!rsh} balance` of the contract to a class:
 
 ```reach
 const Alice = Participant('Alice', {});
@@ -1229,8 +1229,8 @@ transfer(100).to(Bob);
 ```
 
 
-You can fix this code by specifying a specific `{!reach} Address` to use. For example, the
-class could `{!reach} race` to specify their own address:
+You can fix this code by specifying a specific `{!rsh} Address` to use. For example, the
+class could `{!rsh} race` to specify their own address:
 
 ```reach
 const Alice = Participant('Alice', {});
@@ -1256,16 +1256,16 @@ runtime, the continuation of those branches must make the same assumption about 
 For example, this error may be caused by having one branch end in consensus step and
 the other in a step. You can fix this by ensuring both branches end in the same mode.
 
-Another example is a `{!reach} Participant` makes their first publication in the branch
-of a conditional. You can fix this by having the `{!reach} Participant` make their first
+Another example is a `{!rsh} Participant` makes their first publication in the branch
+of a conditional. You can fix this by having the `{!rsh} Participant` make their first
 publication before the conditional statement.
 
 ## {#RE0067} RE0067
 
 This error indicates that you are attempting to bind a secret value to an identifier
-of the wrong format. secret identifiers must be prefixed with `{!reach} _`.
+of the wrong format. secret identifiers must be prefixed with `{!rsh} _`.
 
-For example, the code below erroneously assigns a secret value to a public identifier, `{!reach} x`:
+For example, the code below erroneously assigns a secret value to a public identifier, `{!rsh} x`:
 
 ```reach
 A.only(() => {
@@ -1274,7 +1274,7 @@ A.only(() => {
 ```
 
 
-You can fix this by either changing the identifier to start with `{!reach} _` or using `{!reach} declassify`
+You can fix this by either changing the identifier to start with `{!rsh} _` or using `{!rsh} declassify`
 to make the value public:
 
 ```reach
@@ -1291,16 +1291,16 @@ A.only(() => {
 ## {#RE0068} RE0068
 
 This error indicates that you are attempting to bind a public value to an identifier
-of the wrong format. public identifiers cannot be prefixed with `{!reach} _`.
+of the wrong format. public identifiers cannot be prefixed with `{!rsh} _`.
 
-For example, the code below erroneously assigns a public value to a secret identifier, `{!reach} _x`:
+For example, the code below erroneously assigns a public value to a secret identifier, `{!rsh} _x`:
 
 ```reach
 const _x = 1;
 ```
 
 
-You can fix this by removing the `{!reach} _` prefix:
+You can fix this by removing the `{!rsh} _` prefix:
 
 ```reach
 const x = 1;
@@ -1309,7 +1309,7 @@ const x = 1;
 
 ## {#RE0069} RE0069
 
-This error indicates that you are attempting to read the value of `{!reach} _`. Any binding to `{!reach} _` is
+This error indicates that you are attempting to read the value of `{!rsh} _`. Any binding to `{!rsh} _` is
 ignored and therefore cannot be read from.
 
 You can fix this by using another identifier and referencing it as usual.
@@ -1317,7 +1317,7 @@ You can fix this by using another identifier and referencing it as usual.
 ## {#RE0070} RE0070
 
 This error indicates that you are attempting to spread a value as if it were
-`{!reach} Tuple`, `{!reach} Array`, or `{!reach} Struct`, but it is not. This issue
+`{!rsh} Tuple`, `{!rsh} Array`, or `{!rsh} Struct`, but it is not. This issue
 is likely caused by a typo in your code.
 
 For example, the code below erroneously spreads the wrong values:
@@ -1329,7 +1329,7 @@ add(1, ...xi);
 ```
 
 
-You can fix this code by spreading a tuple-like value for the second argument of `{!reach} add`:
+You can fix this code by spreading a tuple-like value for the second argument of `{!rsh} add`:
 
 ```reach
 const xi = 1;
@@ -1340,16 +1340,16 @@ add(1, ...xa);
 
 ## {#RE0071} RE0071
 
-This error indicates that the two `{!reach} Array`s given to `{!reach} Array.zip` are not of
-equal length. You can fix this error by providing two `{!reach} Array`s of equal length to
+This error indicates that the two `{!rsh} Array`s given to `{!rsh} Array.zip` are not of
+equal length. You can fix this error by providing two `{!rsh} Array`s of equal length to
 the function.
 
 ## {#RE0072} RE0072
 
-This error indicates that a `{!reach} switch` statement was supplied with a value that is not a
-`{!reach} Data` instance.
+This error indicates that a `{!rsh} switch` statement was supplied with a value that is not a
+`{!rsh} Data` instance.
 
-For example, the code below expects a `{!reach} Maybe` type, but is erroneously provided with a `{!reach} UInt`:
+For example, the code below expects a `{!rsh} Maybe` type, but is erroneously provided with a `{!rsh} UInt`:
 
 ```reach
 const f = (mx) => {
@@ -1363,7 +1363,7 @@ f(1);
 ```
 
 
-You can fix this code by providing a value with the correct `{!reach} Type` to the `{!reach} switch` statement:
+You can fix this code by providing a value with the correct `{!rsh} Type` to the `{!rsh} switch` statement:
 
 ```reach
 const f = (mx) => {
@@ -1379,39 +1379,39 @@ f(Maybe(UInt).Some(1));
 
 ## {#RE0073} RE0073
 
-This error indicates that there are multiple cases for the same variant in a `{!reach} switch` statement or
-`{!reach} match` expression.
+This error indicates that there are multiple cases for the same variant in a `{!rsh} switch` statement or
+`{!rsh} match` expression.
 
 You can fix this error by deleting one of the branches, ensuring there is only one branch per variant.
 
 ## {#RE0074} RE0074
 
-This error indicates that a `{!reach} switch` statement or `{!reach} match` expression does not have a case
-for every variant of a `{!reach} Data` instance.
+This error indicates that a `{!rsh} switch` statement or `{!rsh} match` expression does not have a case
+for every variant of a `{!rsh} Data` instance.
 
 You can fix this issue by adding the missing cases listed
 in the error message.
 
 ## {#RE0075} RE0075
 
-This error indicates that a `{!reach} switch` statement or `{!reach} match` expression contains cases
-for unknown variants. These erroneous variants are not listed in the `{!reach} Data` definition.
+This error indicates that a `{!rsh} switch` statement or `{!rsh} match` expression contains cases
+for unknown variants. These erroneous variants are not listed in the `{!rsh} Data` definition.
 
-You can fix this issue by adding the unknown variant to the `{!reach} Data` definition or removing the case.
+You can fix this issue by adding the unknown variant to the `{!rsh} Data` definition or removing the case.
 
 ## {#RE0076} RE0076
 
-This error indicates that the `{!reach} Type` of a value you provided to a function or operation does
-not match the expected `{!reach} Type`.
+This error indicates that the `{!rsh} Type` of a value you provided to a function or operation does
+not match the expected `{!rsh} Type`.
 
-For example, the code below erroneously provides a number as the second argument to `{!reach} assert`:
+For example, the code below erroneously provides a number as the second argument to `{!rsh} assert`:
 
 ```reach
 assert(2 == 2, 5);
 ```
 
 
-However, the second argument of `{!reach} assert` is expected to be of type `{!reach} Bytes`.
+However, the second argument of `{!rsh} assert` is expected to be of type `{!rsh} Bytes`.
 You can fix this issue by providing a value of the correct type:
 
 ```reach
@@ -1425,14 +1425,14 @@ This error indicates that the depth of recursion for a function call exceeded th
 This issue may indicate that the recursive function does not have a base case.
 
 You can fix this issue by re-writing your recursive function into an iterative set of
-statements, e.g. `{!reach} while` loop.
+statements, e.g. `{!rsh} while` loop.
 
 ## {#RE0078} RE0078
 
 This error indicates that the program is no longer live by the time it reaches a publication.
-That is, the program will have already `{!reach} exit`ed before the given point.
+That is, the program will have already `{!rsh} exit`ed before the given point.
 
-For example, the code below will always `{!reach} exit` before calling `{!reach} publish`:
+For example, the code below will always `{!rsh} exit` before calling `{!rsh} publish`:
 
 ```reach
 const f = () => { exit(); };
@@ -1442,7 +1442,7 @@ commit();
 ```
 
 
-You can fix this code by wrapping the `{!reach} exit` in a conditional:
+You can fix this code by wrapping the `{!rsh} exit` in a conditional:
 
 ```reach
 const f = () => { exit(); };
@@ -1465,12 +1465,12 @@ information on how to use it.
 ## {#RE0080} RE0080
 
 This error indicates that there is an attempt to conditionally transition to consensus
-without a `{!reach} timeout`. When making a conditional publication, such as `{!reach} A.publish(x).when(shouldPublish)`,
-there needs to be a timeout associated with the publication if `{!reach} shouldPublish` is not statically `{!reach} true`.
+without a `{!rsh} timeout`. When making a conditional publication, such as `{!rsh} A.publish(x).when(shouldPublish)`,
+there needs to be a timeout associated with the publication if `{!rsh} shouldPublish` is not statically `{!rsh} true`.
 
-In `{!reach} parallelReduce` or `{!reach} fork`, a `{!reach} timeout` is required unless one `{!reach} Participant`
-always races, the `{!reach} when` field in their `PUBLISH_EXPR` is statically `{!reach} true`, or if one
-`{!reach} ParticipantClass` will attempt to race.
+In `{!rsh} parallelReduce` or `{!rsh} fork`, a `{!rsh} timeout` is required unless one `{!rsh} Participant`
+always races, the `{!rsh} when` field in their `PUBLISH_EXPR` is statically `{!rsh} true`, or if one
+`{!rsh} ParticipantClass` will attempt to race.
 
 For example, the code below erroneously attempts to publish a value if a certain condition holds:
 
@@ -1484,7 +1484,7 @@ commit();
 ```
 
 
-You can fix this issue by providing a `{!reach} timeout` case for
+You can fix this issue by providing a `{!rsh} timeout` case for
 
 ```reach
 A.only(() => {
@@ -1499,11 +1499,11 @@ commit();
 
 ## {#RE0081} RE0081
 
-This error indicates that the result of `PUBLISH_EXPR` for a `{!reach} fork` or `{!reach} parallelReduce`
-is not of the right `{!reach} Type`. It is expected to be an `{!reach} Object` with a `{!reach} when` field,
-and optionally a `{!reach} msg` field.
+This error indicates that the result of `PUBLISH_EXPR` for a `{!rsh} fork` or `{!rsh} parallelReduce`
+is not of the right `{!rsh} Type`. It is expected to be an `{!rsh} Object` with a `{!rsh} when` field,
+and optionally a `{!rsh} msg` field.
 
-For example, the code below erroneously tries to publish a value in a `{!reach} parallelReduce` case:
+For example, the code below erroneously tries to publish a value in a `{!rsh} parallelReduce` case:
 
 ```reach
 parallelReduce(/* ... */)
@@ -1518,8 +1518,8 @@ parallelReduce(/* ... */)
 ```
 
 
-This code can be fixed by using an `{!reach} Object` and assigning the value to be published to
-the `{!reach} msg` field of the object:
+This code can be fixed by using an `{!rsh} Object` and assigning the value to be published to
+the `{!rsh} msg` field of the object:
 
 ```reach
 parallelReduce(/* ... */)
@@ -1538,9 +1538,9 @@ parallelReduce(/* ... */)
 
 ## {#RE0082} RE0082
 
-This error indicates that the parameters of a `CONSENSUS_EXPR` in a `{!reach} fork` or
-`{!reach} parallelReduce` are incorrect. The function provided should either accept zero
-parameters or one parameter, which represents the `{!reach} msg` of the `{!reach} PUBLISH_EXPR`.
+This error indicates that the parameters of a `CONSENSUS_EXPR` in a `{!rsh} fork` or
+`{!rsh} parallelReduce` are incorrect. The function provided should either accept zero
+parameters or one parameter, which represents the `{!rsh} msg` of the `{!rsh} PUBLISH_EXPR`.
 
 For example, the code below erroneously tries to publish multiple values and bind them in
 the function provided to `CONSENSUS_EXPR`:
@@ -1561,7 +1561,7 @@ parallelReduce(/* ... */)
 
 
 You can fix this code by changing the arrow expression to accept one parameter. You can
-either destructure the argument with a `{!reach} const` assignment or as part of the function
+either destructure the argument with a `{!rsh} const` assignment or as part of the function
 syntax:
 
 ```reach
@@ -1581,18 +1581,18 @@ parallelReduce(/* ... */)
 
 ## {#RE0083} RE0083
 
-This error indicates that not all the components of the `{!reach} parallelReduce` statement are provided.
-Please refer to the documentation of `{!reach} parallelReduce` to see the required components.
+This error indicates that not all the components of the `{!rsh} parallelReduce` statement are provided.
+Please refer to the documentation of `{!rsh} parallelReduce` to see the required components.
 
 You can fix this error by adding any components the compiler has listed.
 
 ## {#RE0084} RE0084
 
 This error indicates that you have provided the wrong number of arguments to a component of
-`{!reach} parallelReduce`. Please refer to the documentation for the specific component you
+`{!rsh} parallelReduce`. Please refer to the documentation for the specific component you
 are trying to use.
 
-For example, the code below erroneously supplies a closure as the second argument to `{!reach} timeRemaining`.
+For example, the code below erroneously supplies a closure as the second argument to `{!rsh} timeRemaining`.
 
 ```reach
 parallelReduce([ 0 ])
@@ -1608,17 +1608,17 @@ parallelReduce([ 0 ])
 ```
 
 
-However, `{!reach} timeRemaining` is a shorthand for a timeout which automatically publishes and returns the
-`{!reach} parallelReduce` accumulator. The component only expects one argument. You can fix this code by removing
+However, `{!rsh} timeRemaining` is a shorthand for a timeout which automatically publishes and returns the
+`{!rsh} parallelReduce` accumulator. The component only expects one argument. You can fix this code by removing
 the second argument supplied.
 
 ## {#RE0085} RE0085
 
 This error indicates that your program would contain a value at runtime which would not be allowed. This
 error usually stems from not fully applying a primitive function or using a value incorrectly, such
-as the participant interact interface of a `{!reach} Participant`.
+as the participant interact interface of a `{!rsh} Participant`.
 
-For example, the code below erroneously tries to publish `{!reach} Alice`'s interact interface:
+For example, the code below erroneously tries to publish `{!rsh} Alice`'s interact interface:
 
 ```reach
 Alice.only(() => {
@@ -1628,7 +1628,7 @@ Alice.publish(aInteract);
 ```
 
 
-You can fix this code by specifying a specific field of `{!reach} Alice`'s interact interface to `{!reach} publish`:
+You can fix this code by specifying a specific field of `{!rsh} Alice`'s interact interface to `{!rsh} publish`:
 
 ```reach
 Alice.only(() => {
@@ -1640,9 +1640,9 @@ Alice.publish(aX);
 
 ## {#RE0086} RE0086
 
-This error indicates that the `{!reach} Type` of a value cannot exist at runtime. This error
-may be caused by a `{!reach} Fun` in a participant interact interface having a return
-type of another `{!reach} Fun`.
+This error indicates that the `{!rsh} Type` of a value cannot exist at runtime. This error
+may be caused by a `{!rsh} Fun` in a participant interact interface having a return
+type of another `{!rsh} Fun`.
 
 For examples of this error and how to fix it, see @{seclink("RE0012")}.
 
@@ -1655,11 +1655,11 @@ issue is most likely caused by a typo with an identifier.
 
 ## {#RE0088} RE0088
 
-This error indicates that there is a mismatch between the actual `{!reach} Type` of a value and the expected
-`{!reach} Type` of a value.
+This error indicates that there is a mismatch between the actual `{!rsh} Type` of a value and the expected
+`{!rsh} Type` of a value.
 
-For example, the code below erroneously returns a `{!reach} Bool` when the type annotation states that
-the function should return a `{!reach} UInt`.
+For example, the code below erroneously returns a `{!rsh} Bool` when the type annotation states that
+the function should return a `{!rsh} UInt`.
 
 ```reach
 export const f =
@@ -1668,10 +1668,10 @@ export const f =
 ```
 
 
-You can fix this code by returning a `{!reach} UInt` from the function or changing the return type of the function.
+You can fix this code by returning a `{!rsh} UInt` from the function or changing the return type of the function.
 
 This error may be caused by using a value of the incorrect type in an operation. The code below erroneously uses
-a `{!reach} Maybe` value in a `{!reach} +` expression:
+a `{!rsh} Maybe` value in a `{!rsh} +` expression:
 
 ```reach
 A.only(() => {
@@ -1683,8 +1683,8 @@ A.only(() => {
 ```
 
 
-In this code, `{!reach} mi` is still of `{!reach} Maybe` type. You can fix this code by changing `{!reach} default`
-to `{!reach} case Some`, which will re-bind `{!reach} mi` to the value contained within `{!reach} Some`:
+In this code, `{!rsh} mi` is still of `{!rsh} Maybe` type. You can fix this code by changing `{!rsh} default`
+to `{!rsh} case Some`, which will re-bind `{!rsh} mi` to the value contained within `{!rsh} Some`:
 
 ```reach
 A.only(() => {
@@ -1698,10 +1698,10 @@ A.only(() => {
 
 ## {#RE0089} RE0089
 
-This error indicates that a `{!reach} Map.reduce` is being performed outside of an `{!reach} invariant`, which
+This error indicates that a `{!rsh} Map.reduce` is being performed outside of an `{!rsh} invariant`, which
 is the only place map reductions are allowed to occur.
 
-For example, the code below erroneously attempts to keep the sum of the `{!reach} Map` as a loop variable:
+For example, the code below erroneously attempts to keep the sum of the `{!rsh} Map` as a loop variable:
 
 ```reach
 var [keepGoing, sum] = [true, m.sum()];
@@ -1718,7 +1718,7 @@ while (keepGoing) {
 ```
 
 
-You can fix this code by moving any `{!reach} Map` reductions to inside the `{!reach} invariant`:
+You can fix this code by moving any `{!rsh} Map` reductions to inside the `{!rsh} invariant`:
 
 ```reach
 var keepGoing = true;
@@ -1737,23 +1737,23 @@ while (keepGoing) {
 
 ## {#RE0090} RE0090
 
-This error indicates that a `{!reach} Map` was expected in an expression, but a value
+This error indicates that a `{!rsh} Map` was expected in an expression, but a value
 of a different type was provided. This issue is most likely caused by a typo in an
 identifier.
 
 ## {#RE0091} RE0091
 
-This error indicates that you are attempting to create a `{!reach} Foldable` value, which is
-not possible. `{!reach} Foldable` is an interface that `{!reach} Array` and `{!reach} Map` implement.
+This error indicates that you are attempting to create a `{!rsh} Foldable` value, which is
+not possible. `{!rsh} Foldable` is an interface that `{!rsh} Array` and `{!rsh} Map` implement.
 
-For example, the code below erroneously tries to create a `{!reach} Foldable` value:
+For example, the code below erroneously tries to create a `{!rsh} Foldable` value:
 
 ```reach
 const container = Foldable();
 ```
 
 
-You can fix this code by instead creating a `{!reach} Map` or an `{!reach} Array`.
+You can fix this code by instead creating a `{!rsh} Map` or an `{!rsh} Array`.
 
 ## {#RE0092} RE0092
 
@@ -1791,7 +1791,7 @@ closeTo(Bob,
 ```
 
 
-The result of `{!reach} each` cannot be bound as a function argument. You can fix this code by
+The result of `{!rsh} each` cannot be bound as a function argument. You can fix this code by
 wrapping the statement in an arrow expression:
 
 ```reach
@@ -1804,21 +1804,21 @@ closeTo(Bob, () => {
 ## {#RE0094} RE0094
 
 This error indicates that there are unused variables in your program. This error will
-only occur with `{!reach} 'use strict'`.
+only occur with `{!rsh} 'use strict'`.
 
-You can fix this error by either replacing the unused variable names with `{!reach} _` or
-subsequently using `{!reach} void(x)`.
+You can fix this error by either replacing the unused variable names with `{!rsh} _` or
+subsequently using `{!rsh} void(x)`.
 
 ## {#RE0095} RE0095
 
-This error indicates that a field in a `{!reach} Remote` object is not a function. You
-can fix this by ensuring your `{!reach} Remote` object only contains fields that are functions.
+This error indicates that a field in a `{!rsh} Remote` object is not a function. You
+can fix this by ensuring your `{!rsh} Remote` object only contains fields that are functions.
 This fix may require changes to the foreign contract you are attempting to connect to.
 
 ## {#RE0096} RE0096
 
-This error indicates that the key supplied to a `{!reach} Struct` does not match the required regex.
-`{!reach} Struct` keys must satisfy the regex: `[_a-zA-Z][_a-zA-Z0-9]*`.
+This error indicates that the key supplied to a `{!rsh} Struct` does not match the required regex.
+`{!rsh} Struct` keys must satisfy the regex: `[_a-zA-Z][_a-zA-Z0-9]*`.
 
 For example, the code below provides an erroneous key value:
 
@@ -1836,8 +1836,8 @@ const s = Struct([["x", UInt]]);
 
 ## {#RE0097} RE0097
 
-This error indicates that a key in a `{!reach} Struct` has been used more than once.
-Every key must be unique in a `{!reach} Struct`.
+This error indicates that a key in a `{!rsh} Struct` has been used more than once.
+Every key must be unique in a `{!rsh} Struct`.
 
 For example, the code below erroneously uses the same key twice:
 
@@ -1846,7 +1846,7 @@ const s = Struct([["x", UInt], ["y", UInt], ["x", UInt]]);
 ```
 
 
-You can fix this by renaming one of the `{!reach} "x"` fields:
+You can fix this by renaming one of the `{!rsh} "x"` fields:
 
 ```reach
 const s = Struct([["x", UInt], ["y", UInt], ["x2", UInt]]);
@@ -1856,11 +1856,11 @@ const s = Struct([["x", UInt], ["y", UInt], ["x2", UInt]]);
 ## {#RE0098} RE0098
 
 This error indicates that you are attempting to export a name that the
-Reach backend already produces. For example, the names provided in `{!reach} Participant`,
-`{!reach} ParticipantClass`, and `{!reach} View` will be exported by the Reach backend.
+Reach backend already produces. For example, the names provided in `{!rsh} Participant`,
+`{!rsh} ParticipantClass`, and `{!rsh} View` will be exported by the Reach backend.
 
-Reach exports a few names from the backend automatically, such as `{!reach} getExports`.
-Therefore, you cannot export a `{!reach} Participant` named `{!reach} getExports` as such:
+Reach exports a few names from the backend automatically, such as `{!rsh} getExports`.
+Therefore, you cannot export a `{!rsh} Participant` named `{!rsh} getExports` as such:
 
 ```reach
 const P = Participant('getExports', {});
@@ -1871,10 +1871,10 @@ You can fix this error by choosing a different name.
 
 ## {#RE0099} RE0099
 
-This error indicates that you are attempting to use a value that is not a `{!reach} Bool`
+This error indicates that you are attempting to use a value that is not a `{!rsh} Bool`
 in a condition, while using strict mode.
 
-For example, the code below erroneously uses a number as the condition to `{!reach} if`:
+For example, the code below erroneously uses a number as the condition to `{!rsh} if`:
 
 ```reach
 const y = declassify(interact.getInt());
@@ -1882,8 +1882,8 @@ const x = y ? 2 : 3;
 ```
 
 
-You can fix this code by using a `{!reach} Bool` instead. The following code will consider
-any number that is not `{!reach} 0` `{!reach} true`:
+You can fix this code by using a `{!rsh} Bool` instead. The following code will consider
+any number that is not `{!rsh} 0` `{!rsh} true`:
 
 ```reach
 const y = declassify(interact.getInt());
@@ -1893,13 +1893,13 @@ const x = (y != 0) ? 2 : 3;
 
 ## {#RE0100} RE0100
 
-This error indicates that there are multiple `{!reach} throw` statements inside a `{!reach} try`
-block and the values thrown are of different `{!reach} Type`s.
+This error indicates that there are multiple `{!rsh} throw` statements inside a `{!rsh} try`
+block and the values thrown are of different `{!rsh} Type`s.
 
 You can fix this error by ensuring that every value thrown is of the same type. It may be necessary
-to create a new `{!reach} Data` instance that can handle different types.
+to create a new `{!rsh} Data` instance that can handle different types.
 
-For example, the code below erroneously throws a `{!reach} UInt` and a `{!reach} Bool`:
+For example, the code below erroneously throws a `{!rsh} UInt` and a `{!rsh} Bool`:
 
 ```reach
 Alice.only(() => {
@@ -1923,7 +1923,7 @@ try {
 ```
 
 
-You can fix this code by abstracting the `{!reach} Type`s of values thrown into a new `{!reach} Data` type:
+You can fix this code by abstracting the `{!rsh} Type`s of values thrown into a new `{!rsh} Data` type:
 
 ```reach
 const TransferType = Data({
@@ -1957,26 +1957,26 @@ try {
 
 ## {#RE0101} RE0101
 
-This error occurs when you attempt to use a `{!reach} throw` statement outside of a `{!reach} try`
+This error occurs when you attempt to use a `{!rsh} throw` statement outside of a `{!rsh} try`
 block.
 
-You can fix this error by moving your `{!reach} throw` statement inside the appropriate block of code
-or wrapping the necessary code into a `{!reach} try/catch` block.
+You can fix this error by moving your `{!rsh} throw` statement inside the appropriate block of code
+or wrapping the necessary code into a `{!rsh} try/catch` block.
 
 ## {#RE0102} RE0102
 
-This error indicates that you are attempting to `{!reach} pay` on the first publication.
+This error indicates that you are attempting to `{!rsh} pay` on the first publication.
 This is not possible, because the contract will not yet exist, and receiving tokens depends on knowing the address of a contract first on those networks.
 
 You can fix this by paying into the contract after the first publication.
 
 ## {#RE0103} RE0103
 
-This error indicates that you are attempting to `{!reach} publish` a `{!reach} Token` within
-a `{!reach} while` loop. This is not currently possible in Reach. You must publish `{!reach} Token`
+This error indicates that you are attempting to `{!rsh} publish` a `{!rsh} Token` within
+a `{!rsh} while` loop. This is not currently possible in Reach. You must publish `{!rsh} Token`
 values outside of loops.
 
-For example, the code below erroneously publishes a `{!reach} Token` inside a loop:
+For example, the code below erroneously publishes a `{!rsh} Token` inside a loop:
 
 ```reach
 var [] = [];
@@ -1992,7 +1992,7 @@ while ( true ) {
 ```
 
 
-You can fix this code by publishing `{!reach} tok` before the loop:
+You can fix this code by publishing `{!rsh} tok` before the loop:
 
 ```reach
 A.only(() => {
@@ -2014,11 +2014,11 @@ while ( true ) {
 
 ## {#RE0104} RE0104
 
-This error indicates that you are attempting to reference a `{!reach} Token` that
+This error indicates that you are attempting to reference a `{!rsh} Token` that
 was computed dynamically. Reach does not yet support this.
 
-For example, the code below attempts to transfer the balance of an `{!reach} array` of `{!reach} Token`s
-to a `{!reach} Participant`:
+For example, the code below attempts to transfer the balance of an `{!rsh} array` of `{!rsh} Token`s
+to a `{!rsh} Participant`:
 
 ```reach
 const allTokens = array(Token, toks);
@@ -2026,7 +2026,7 @@ Foldable_forEach(allTokens, (tok) => transfer(balance(tok), tok).to(Who));
 ```
 
 
-You can work around this issue by writing out the `{!reach} Token` values explicitly:
+You can work around this issue by writing out the `{!rsh} Token` values explicitly:
 
 ```reach
 const nonNetPayAmt = [ [balance(tok), tok], [balance(tok2), tok2] ];
@@ -2036,12 +2036,12 @@ transfer([ balance(), ...nonNetPayAmt ]).to(Who);
 
 ## {#RE0105} RE0105
 
-This error indicates that the incorrect arguments were supplied to `{!reach} withBill`.
-`{!reach} withBill` either expects zero arguments, when only receiving network tokens,
-or a `{!reach} Tuple` of `{!reach} Token`s when receiving non-network tokens.
+This error indicates that the incorrect arguments were supplied to `{!rsh} withBill`.
+`{!rsh} withBill` either expects zero arguments, when only receiving network tokens,
+or a `{!rsh} Tuple` of `{!rsh} Token`s when receiving non-network tokens.
 
 For example, the code below erroneously provides multiple non-network tokens to
-`{!reach} withBill`:
+`{!rsh} withBill`:
 
 ```reach
 const [ returned, [gilRecv, zmdRecv], randomValue ] =
@@ -2049,7 +2049,7 @@ const [ returned, [gilRecv, zmdRecv], randomValue ] =
 ```
 
 
-You can fix this by wrapping all the arguments into a single `{!reach} Tuple`:
+You can fix this by wrapping all the arguments into a single `{!rsh} Tuple`:
 
 ```reach
 const [ returned, [gilRecv, zmdRecv], randomValue ] =
@@ -2059,39 +2059,39 @@ const [ returned, [gilRecv, zmdRecv], randomValue ] =
 
 ## {#RE0106} RE0106
 
-This error indicates that a program declared multiple `{!reach} View`s with the same
+This error indicates that a program declared multiple `{!rsh} View`s with the same
 name.
 
-You can fix this error by renaming the duplicate `{!reach} View`s, ensuring that every name is unique.
+You can fix this error by renaming the duplicate `{!rsh} View`s, ensuring that every name is unique.
 
 ## {#RE0107} RE0107
 
 @{errver(false, "v0.1")}
 
-This error indicates that the value of a `{!reach} View` cannot be exposed. This would
+This error indicates that the value of a `{!rsh} View` cannot be exposed. This would
 only occur if the value cannot be represented at runtime.
 
 ## {#RE0108} RE0108
 
-This error indicates that a `{!reach} View` function has an unconstrained domain. Every
-`{!reach} View` must explicitly state the `{!reach} Type` of function arguments it accepts.
+This error indicates that a `{!rsh} View` function has an unconstrained domain. Every
+`{!rsh} View` must explicitly state the `{!rsh} Type` of function arguments it accepts.
 
-If your `{!reach} View` function relies on a varying number of arguments or `{!reach} Type`s, you
-can either abstract the arguments into a new `{!reach} Data` type or make separate `{!reach} View`s.
+If your `{!rsh} View` function relies on a varying number of arguments or `{!rsh} Type`s, you
+can either abstract the arguments into a new `{!rsh} Data` type or make separate `{!rsh} View`s.
 
 ## {#RE0109} RE0109
 
-This error indicates that there are multiple `{!reach} Participant`s or `{!reach} ParticipantClass`es
+This error indicates that there are multiple `{!rsh} Participant`s or `{!rsh} ParticipantClass`es
 with the same name. Each participant name must be unique.
 
 You can fix this error by renaming the duplicate names.
 
 ## {#RE0110} RE0110
 
-This error indicates that a `{!reach} Struct` contains an invalid field name.
+This error indicates that a `{!rsh} Struct` contains an invalid field name.
 A field name may be invalid if it is a reserved word in the connector you are targeting.
 
-For example, the code below erroneously uses the field name `{!reach} "super"`, which is
+For example, the code below erroneously uses the field name `{!rsh} "super"`, which is
 reserved in Solidity:
 
 ```reach
@@ -2116,30 +2116,30 @@ const A = Participant('A', {
 
 ## {#RE0111} RE0111
 
-This error indicates that an unexpected key was provided to the `{!reach} Token` constructor.
+This error indicates that an unexpected key was provided to the `{!rsh} Token` constructor.
 You may find the acceptable parameters in the following section: token minting.
 
 ## {#RE0112} RE0112
 
-This error indicates that you are attempting to perform an invalid operation on a `{!reach} Token`.
-Some `{!reach} Token` methods such as `{!reach} destroy`, `{!reach} burn`, and
-`{!reach} supply` are only valid for tokens that were created in your program.
+This error indicates that you are attempting to perform an invalid operation on a `{!rsh} Token`.
+Some `{!rsh} Token` methods such as `{!rsh} destroy`, `{!rsh} burn`, and
+`{!rsh} supply` are only valid for tokens that were created in your program.
 
 You can fix this by removing the erroneous statement.
 
 ## {#RE0113} RE0113
 
-This error indicates that you provided an incorrect value to the `{!reach} .define` component of a
-`{!reach} parallelReduce` statement. The argument to `{!reach} .define` should be of the form: `{!reach} () => DEFINE_BLOCK`.
-Please review the `{!reach} parallelReduce` documentation for information on how `{!reach} .define` works.
+This error indicates that you provided an incorrect value to the `{!rsh} .define` component of a
+`{!rsh} parallelReduce` statement. The argument to `{!rsh} .define` should be of the form: `{!rsh} () => DEFINE_BLOCK`.
+Please review the `{!rsh} parallelReduce` documentation for information on how `{!rsh} .define` works.
 
 ## {#RE0114} RE0114
 
 This error indicates that you provided an incorrect value to a function.
-The function expected to receive a `{!reach} Type`, but received something else.
-This issue can arise when a `{!reach} Type` constructor does not have any arguments applied to it.
+The function expected to receive a `{!rsh} Type`, but received something else.
+This issue can arise when a `{!rsh} Type` constructor does not have any arguments applied to it.
 
-For example, the code below erroneously creates an `{!reach} Object` type with a field `{!reach} name`:
+For example, the code below erroneously creates an `{!rsh} Object` type with a field `{!rsh} name`:
 
 ```reach
 const Person = Object({
@@ -2148,8 +2148,8 @@ const Person = Object({
 ```
 
 
-This code is incorrect because `{!reach} Bytes` is not a type; it is a function that accepts a `{!reach} UInt` and returns
-a `{!reach} Type`. This code can be fixed by providing an argument to `{!reach} Bytes` that represents the length:
+This code is incorrect because `{!rsh} Bytes` is not a type; it is a function that accepts a `{!rsh} UInt` and returns
+a `{!rsh} Type`. This code can be fixed by providing an argument to `{!rsh} Bytes` that represents the length:
 
 ```reach
 const Person = Object({
@@ -2164,7 +2164,7 @@ For more information about data types, visit @{seclink("ref-programs-types")}.
 
 This error indicates that a time argument's type is not known at compile-time.
 
-For example, if `{!reach} x` is not known at compile-time, then
+For example, if `{!rsh} x` is not known at compile-time, then
 
 ```reach
 wait(x ? relativeTime(10) : relativeSecs(10));
@@ -2175,7 +2175,7 @@ results in this error.
 
 ## {#RE0116} RE0116
 
-This error means that a `{!reach} return` statement, typically inside of an `{!reach} if` statement, does not occur in tail position.
+This error means that a `{!rsh} return` statement, typically inside of an `{!rsh} if` statement, does not occur in tail position.
 
 For example, this function would have this error:
 
@@ -2191,11 +2191,11 @@ const f = (x) => {
 ```
 
 
-The third `{!reach} return` can never be reached, so the way to correct the program is to remove it.
+The third `{!rsh} return` can never be reached, so the way to correct the program is to remove it.
 
 ## {#RE0117} RE0117
 
-This error means that only one branch of a conditional (`{!reach} if` or `{!reach} switch`) contains a `{!reach} return` statement.
+This error means that only one branch of a conditional (`{!rsh} if` or `{!rsh} switch`) contains a `{!rsh} return` statement.
 
 For example, this function would have this error:
 
@@ -2209,7 +2209,7 @@ const f = (x) => {
 ```
 
 
-It should be corrected by moving the tail of the `{!reach} if` into the `{!reach} else` branch:
+It should be corrected by moving the tail of the `{!rsh} if` into the `{!rsh} else` branch:
 
 ```reach
 const f = (x) => {
@@ -2225,9 +2225,9 @@ const f = (x) => {
 ## {#RE0118} RE0118
 
 This error indicates that a switch case is unreachable.
-This issue will occur when a `{!reach} case` is listed after `{!reach} default`.
+This issue will occur when a `{!rsh} case` is listed after `{!rsh} default`.
 
-For example, the code below erroneously puts a `{!reach} case` after `{!reach} default`:
+For example, the code below erroneously puts a `{!rsh} case` after `{!rsh} default`:
 
 ```reach
 Maybe(UInt).Some(5).match({
@@ -2237,7 +2237,7 @@ Maybe(UInt).Some(5).match({
 ```
 
 
-This error can be corrected by either removing the `{!reach} Some` case or placing it before the `{!reach} default` case:
+This error can be corrected by either removing the `{!rsh} Some` case or placing it before the `{!rsh} default` case:
 
 ```reach
 Maybe(UInt).Some(5).match({
@@ -2249,16 +2249,16 @@ Maybe(UInt).Some(5).match({
 
 ## {#RE0119} RE0119
 
-This error indicates that you have inspected the details about a publication, such as via `{!reach} didPublish()`, before there has been a publication.
+This error indicates that you have inspected the details about a publication, such as via `{!rsh} didPublish()`, before there has been a publication.
 This is impossible, so the expression must be moved after the first publication.
 
 ## {#RE0120} RE0120
 
-This error indicates that an actor who is not a `{!reach} Participant`, e.g. a `{!reach} ParticipantClass`, is
+This error indicates that an actor who is not a `{!rsh} Participant`, e.g. a `{!rsh} ParticipantClass`, is
 attempting to make the first publication of a Reach program.
 
-You can fix this error by assigning the first publication to one of your `{!reach} Participant`s.
-Additionally, you can create a new `{!reach} Participant` to specifically perform this action.
+You can fix this error by assigning the first publication to one of your `{!rsh} Participant`s.
+Additionally, you can create a new `{!rsh} Participant` to specifically perform this action.
 
 ```reach
 const Constructor = Participant('Constructor', {});
@@ -2297,7 +2297,7 @@ const x = call(Voter.vote);
 
 ## {#RE0123} RE0123
 
-This error indicates that the name provided to a `{!reach} Participant`, `{!reach} ParticipantClass`, `{!reach} API`, or `{!reach} View` is already in use.
+This error indicates that the name provided to a `{!rsh} Participant`, `{!rsh} ParticipantClass`, `{!rsh} API`, or `{!rsh} View` is already in use.
 There is a single namespace for all of these entities.
 
 For example, the code below erroneously uses the same name multiple times:
@@ -2308,7 +2308,7 @@ const B = API('Flower', { girl: Fun([UInt], Null) });
 ```
 
 
-`{!reach} 'Flower_girl'` is used multiple times because every method of an `{!reach} API` will
+`{!rsh} 'Flower_girl'` is used multiple times because every method of an `{!rsh} API` will
 introduce a binding, of the format: `<API name>_<method name>`, into the namespace.
 
 You can fix this error by using different names:
@@ -2322,23 +2322,23 @@ const B = API('Flower', { girl2: Fun([UInt], Null) });
 ## {#RE0124} RE0124
 
 This error indicates that there is an attempt to make a publication in your program, but there are
-no `{!reach} Participant`s or `{!reach} ParticipantClass`es declared.
+no `{!rsh} Participant`s or `{!rsh} ParticipantClass`es declared.
 
-This issue can arise when you use `{!reach} Anybody.publish()`. To fix this issue, ensure you declare
-a `{!reach} Participant` or `{!reach} ParticipantClass`.
+This issue can arise when you use `{!rsh} Anybody.publish()`. To fix this issue, ensure you declare
+a `{!rsh} Participant` or `{!rsh} ParticipantClass`.
 
 ## {#RE0125} RE0125
 
-This error indicates that an `{!reach} API` is explicitly attempting to make a publication, e.g. `{!reach} api.publish()`.
-An API may only make a publication through a `{!reach} fork`, `{!reach} parallelReduce`, or `{!reach} call`.
+This error indicates that an `{!rsh} API` is explicitly attempting to make a publication, e.g. `{!rsh} api.publish()`.
+An API may only make a publication through a `{!rsh} fork`, `{!rsh} parallelReduce`, or `{!rsh} call`.
 
-Depending on your program, you can fix this error by performing a `{!reach} call` or adding an `{!reach} .api`
-case to your `{!reach} fork` or `{!reach} parallelReduce` statement.
+Depending on your program, you can fix this error by performing a `{!rsh} call` or adding an `{!rsh} .api`
+case to your `{!rsh} fork` or `{!rsh} parallelReduce` statement.
 
 
 ## {#REP0000} REP0000
 
-This error indicates that the body of a `{!reach} while` loop does not make a publication before the `{!reach} continue`
+This error indicates that the body of a `{!rsh} while` loop does not make a publication before the `{!rsh} continue`
 statement.
 
 For example, the code below does not make any publications before continuing the loop:
@@ -2353,7 +2353,7 @@ while (true) {
 ```
 
 
-You can fix this code by making a publication within the `{!reach} loop`:
+You can fix this code by making a publication within the `{!rsh} loop`:
 
 ```reach
 var x = 0;
@@ -2367,14 +2367,14 @@ while (true) {
 ```
 
 
-Note that the body of a `{!reach} while` starts in a consensus step so you must first `{!reach} commit` before making a publication.
+Note that the body of a `{!rsh} while` starts in a consensus step so you must first `{!rsh} commit` before making a publication.
 
 ## {#REP0001} REP0001
 
-This error indicates that a `{!reach} View` is set, but never [dominates](https://en.wikipedia.org/wiki/Dominator_(graph_theory)) any `{!reach} commit`s.
-This means the value the `{!reach} View` is set to will never be observable.
+This error indicates that a `{!rsh} View` is set, but never [dominates](https://en.wikipedia.org/wiki/Dominator_(graph_theory)) any `{!rsh} commit`s.
+This means the value the `{!rsh} View` is set to will never be observable.
 
-For example, the code below attempts to set a loop variable as the value of a `{!reach} View`:
+For example, the code below attempts to set a loop variable as the value of a `{!rsh} View`:
 
 ```reach
 export const main = Reach.App(() => {
@@ -2406,12 +2406,12 @@ export const main = Reach.App(() => {
 ```
 
 
-The effect of `{!reach} I.i.set(i)` is only observable after the next `{!reach} commit` in its scope.
-Since, there are no `{!reach} commit`s between `{!reach} I.i.set(i)` and `{!reach} continue`, which is the end of the lexical scope, there is no
-way to observe the effect of setting `{!reach} I.i`.
+The effect of `{!rsh} I.i.set(i)` is only observable after the next `{!rsh} commit` in its scope.
+Since, there are no `{!rsh} commit`s between `{!rsh} I.i.set(i)` and `{!rsh} continue`, which is the end of the lexical scope, there is no
+way to observe the effect of setting `{!rsh} I.i`.
 
-You can generally fix this error by inserting a `{!reach} commit` in the area where you'd like
-the effect of setting a `{!reach} View` to be observable. In the case of a `{!reach} while` loop, like the
+You can generally fix this error by inserting a `{!rsh} commit` in the area where you'd like
+the effect of setting a `{!rsh} View` to be observable. In the case of a `{!rsh} while` loop, like the
 program above, it can be fixed the following way:
 
 ```reach
@@ -2444,9 +2444,9 @@ export const main = Reach.App(() => {
 ```
 
 
-This change will ensure the `{!reach} View` `{!reach} I.i` is set to `{!reach} i` on every iteration of the
-loop. Additionally, the continuation of the loop will have `{!reach} I.i` set to the last value of
-the loop variable `{!reach} i`.
+This change will ensure the `{!rsh} View` `{!rsh} I.i` is set to `{!rsh} i` on every iteration of the
+loop. Additionally, the continuation of the loop will have `{!rsh} I.i` set to the last value of
+the loop variable `{!rsh} i`.
 
 ## {#RI0000} RI0000
 
@@ -2468,7 +2468,7 @@ Please ensure you have specified the correct import.
 ## {#RI0003} RI0003
 
 This error indicates that your project dependencies need to be retrieved but you did not specify
-`{!reach} --install-pkgs` with your `reach` command.
+`{!rsh} --install-pkgs` with your `reach` command.
 
 You can fix this by specifying the needed flag with your command.
 
@@ -2484,14 +2484,14 @@ This error indicates that the given code must not be reachable because it would
 result in an error if reached. This error may be caused for different reasons,
 which will be explained if encountered.
 
-One reason this code could be encountered is if there is a branch within a `{!reach} while`
-loop, which does not contain a `{!reach} continue` statement when it is expected.
-You can fix this by explicitly adding the `{!reach} continue` statement to the erroneous block
+One reason this code could be encountered is if there is a branch within a `{!rsh} while`
+loop, which does not contain a `{!rsh} continue` statement when it is expected.
+You can fix this by explicitly adding the `{!rsh} continue` statement to the erroneous block
 of code.
 
 ## {#RP0000} RP0000
 
-This error indicates that there is a [circular dependency](https://en.wikipedia.org/wiki/Circular_dependency) in the `{!reach} import`s of your application.
+This error indicates that there is a [circular dependency](https://en.wikipedia.org/wiki/Circular_dependency) in the `{!rsh} import`s of your application.
 
 You can fix this by refactoring your code to remove the cyclic imports.
 
@@ -2522,7 +2522,7 @@ const {x() { return 1 }} = {x: 2};
 ```
 
 
-You can fix this code by simply specifying `{!reach} x` in the assignment:
+You can fix this code by simply specifying `{!rsh} x` in the assignment:
 
 ```reach
 const { x } = {x: 2};
@@ -2557,18 +2557,18 @@ on the logic of your program.
 
 ## {#RP0007} RP0007
 
-This error indicates that you are attempting to `{!reach} import` a file using an absolute
+This error indicates that you are attempting to `{!rsh} import` a file using an absolute
 path which is not supported.
 
-You can fix this by using a relative path for your `{!reach} import`.
+You can fix this by using a relative path for your `{!rsh} import`.
 
 ## {#RP0008} RP0008
 
-This error indicates that you are trying to `{!reach} import` a path
-that is accessing its parent directory via `{!reach} ..`. This type of
+This error indicates that you are trying to `{!rsh} import` a path
+that is accessing its parent directory via `{!rsh} ..`. This type of
 import is not allowed. Please view the documentation for package imports.
 
-For example, the code below erroneously `{!reach} import`s a file from its parent
+For example, the code below erroneously `{!rsh} import`s a file from its parent
 directory:
 
 ```reach
@@ -2577,7 +2577,7 @@ import "../a.rsh";
 ```
 
 
-You can fix this error by moving your file, `{!reach} "../a.rsh"`, to the same
+You can fix this error by moving your file, `{!rsh} "../a.rsh"`, to the same
 directory your program is in. Then, reference it using a relative import:
 
 ```reach
@@ -2597,8 +2597,8 @@ This error indicates that the Reach file could not be parsed as a module.
 This error indicates that a call-like expression was expected, but another
 value was provided.
 
-For example, the code below erroneously passes `{!reach} _x`, a secret value of
-`{!reach} Bob`, to `{!reach} unknowable`:
+For example, the code below erroneously passes `{!rsh} _x`, a secret value of
+`{!rsh} Bob`, to `{!rsh} unknowable`:
 
 ```reach
 unknowable(A, _x);
@@ -2622,11 +2622,11 @@ You can fix this error by adding an identifier name to the erroneous location.
 
 ## {#RX0000} RX0000
 
-This error indicates that you are trying to inspect or use the value produced from `{!reach} forall`
-outside of an `{!reach} assert`.
+This error indicates that you are trying to inspect or use the value produced from `{!rsh} forall`
+outside of an `{!rsh} assert`.
 
-For example, the code below attempts to verify that all `{!reach} UInt`s are greater than or
-equal to zero via a `{!reach} require`:
+For example, the code below attempts to verify that all `{!rsh} UInt`s are greater than or
+equal to zero via a `{!rsh} require`:
 
 ```reach
 const x = forall(UInt);
@@ -2634,8 +2634,8 @@ require(x >= 0);
 ```
 
 
-This is invalid because the result of `{!reach} forall` is an abstract value, which cannot exist
-at runtime. You can fix this code by verifying the claim via an `{!reach} assert`:
+This is invalid because the result of `{!rsh} forall` is an abstract value, which cannot exist
+at runtime. You can fix this code by verifying the claim via an `{!rsh} assert`:
 
 ```reach
 const x = forall(UInt);
@@ -2656,7 +2656,7 @@ This is generally not possible unless you directly use the internal representati
 
 The error means that you use an API in two places in your program, which is not allowed.
 
-This might look like the following in the `{!reach} API_CONSENSUS_EXPR`:
+This might look like the following in the `{!rsh} API_CONSENSUS_EXPR`:
 ```reach
 .api(User.f, (x, ret) => {
   if (x > 5) {
@@ -2732,12 +2732,12 @@ reasons include a limit on the total computation cost.
 
 This warning indicates that your program does not contain any publications.
 
-You can fix this issue by making sure at least one `{!reach} Participant` performs a `{!reach} publish`.
+You can fix this issue by making sure at least one `{!rsh} Participant` performs a `{!rsh} publish`.
 
 ## {#RW0005} RW0005
 
-This warning indicates that a `{!reach} View` or `{!reach} API` produces or consumes an `{!reach} Object`,
+This warning indicates that a `{!rsh} View` or `{!rsh} API` produces or consumes an `{!rsh} Object`,
 which is a type internal to Reach.
 It has an opaque and unspecified representation that can only be consumed by other Reach programs, so it is probably a bad choice for general purpose interfaces.
 
-You can fix this issue by using a `{!reach} Struct` instead of the `{!reach} Object`.
+You can fix this issue by using a `{!rsh} Struct` instead of the `{!rsh} Object`.

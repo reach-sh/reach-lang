@@ -14,8 +14,8 @@ import * as backend from './build/index.main.mjs';
 
 
 This module exports an asynchronous function for each participant.
-For example, if a Reach program contains a participant named `{!reach} 'A'` in the `{!reach} Reach.App`, then the JavaScript backend will include a function named `{!js} A` (i.e. `{!js} backend.A`).
-The `{!js} Promise` returned by these functions is resolved when the Reach program terminates (i.e. reaches `{!reach} exit();`).
+For example, if a Reach program contains a participant named `{!rsh} 'A'` in the `{!rsh} Reach.App`, then the JavaScript backend will include a function named `{!js} A` (i.e. `{!js} backend.A`).
+The `{!js} Promise` returned by these functions is resolved when the Reach program terminates (i.e. reaches `{!rsh} exit();`).
 
 Each function accepts two arguments: `{!js} ctc` and `{!js} interact`. These functions should be called by the frontend.
 
@@ -37,7 +37,7 @@ It's possible to expose bindings from other modules to `{!js} getExports` by re-
 
 
 For example, if a Reach program
-exported a variable `x`, i.e. `{!reach} export const x = 5`, the frontend could access the value in the following manner:
+exported a variable `x`, i.e. `{!rsh} export const x = 5`, the frontend could access the value in the following manner:
 
 ```js
 const stdlib = await loadStdlib();
@@ -80,6 +80,6 @@ const x = "A string";
 ```
 
 
-then it is not guaranteed that `{!reach} A` will publish `{!reach} true`, because the `{!js} str` given to `{!js} give` may not be identical to `{!js} x`.
+then it is not guaranteed that `{!rsh} A` will publish `{!rsh} true`, because the `{!js} str` given to `{!js} give` may not be identical to `{!js} x`.
 (However, they are `{!js} bytesEq`.)
 

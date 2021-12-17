@@ -53,7 +53,7 @@ Struct    => object
 ```
 
 
-For example, the Reach type `{!reach} MInt = Data({None: Null, Some: UInt})` inhabitant `{!reach} MInt.Some(42)` is represented as `{!reach} ['Some', 42]` in JavaScript.
+For example, the Reach type `{!rsh} MInt = Data({None: Null, Some: UInt})` inhabitant `{!rsh} MInt.Some(42)` is represented as `{!rsh} ['Some', 42]` in JavaScript.
 
 ---
 @{ref("js", "Connector")}
@@ -62,7 +62,7 @@ type Connector = 'ETH' | 'ALGO' | 'CFX'
 ```
 
 
-A `{!reach} Connector` is the abbreviated name of the network
+A `{!rsh} Connector` is the abbreviated name of the network
 being connected to.
 
 
@@ -392,9 +392,9 @@ acc.contract(bin, ?info) => ctc
  Returns a Reach contract handle based on the `{!js} bin` argument provided with access to the account `{!js} acc`.
 This `{!js} bin` argument is the `index.main.mjs` module produced by the JavaScript backend.
 
-If `{!js} info` is provided, it must be a `{!reach} Contract` value, or a `{!js} Promise` that eventually yields a `{!reach} Contract` value.
+If `{!js} info` is provided, it must be a `{!rsh} Contract` value, or a `{!js} Promise` that eventually yields a `{!rsh} Contract` value.
 Typically, the deployer of a contract will not provide `{!js} info`, while users of a contract will.
-In an automated, single instance program, `{!reach} ctc.getInfo()` is typically used to acquire `{!js} info`;
+In an automated, single instance program, `{!rsh} ctc.getInfo()` is typically used to acquire `{!js} info`;
 while in non-automated programs, an application uses out-of-band communication, such as an external database or user input, to acquire the `{!js} info` argument.
 
 The first publishing participant will attempt to deploy a contract for an application.
@@ -429,13 +429,13 @@ ctc.getInfo() => Promise<ctcInfo>
 ```
 
 
- Returns a Promise for a `{!reach} Contract` value that may be given to `{!js} contract` to construct a Reach contract handle for this contract.
+ Returns a Promise for a `{!rsh} Contract` value that may be given to `{!js} contract` to construct a Reach contract handle for this contract.
 This object may be stringified with `{!js} JSON.stringify` for printing and parsed again with `{!js} JSON.parse` without any loss of information.
 
 If `{!js} ctc` will deploy the program, then the Promise will only be resolved after the contract is actually deployed on the network,
-thus you cannot block on this Promise with `{!js} await` until after the first `{!reach} publish` has occurred.
-Awaiting `{!reach} getInfo` too early may cause your program to enter a state of deadlock.
-It is safer to make an `{!reach} interact` function that receives `{!reach} getContract()` from the Reach program.
+thus you cannot block on this Promise with `{!js} await` until after the first `{!rsh} publish` has occurred.
+Awaiting `{!rsh} getInfo` too early may cause your program to enter a state of deadlock.
+It is safer to make an `{!rsh} interact` function that receives `{!rsh} getContract()` from the Reach program.
 
 ---
 @{ref("js", "getContractAddress")}
@@ -483,7 +483,7 @@ An object that mirrors the API hierarchy, so if `X.Y` is an API, then `{!js} ctc
 An API function accepts the arguments of the API and returns a `{!js} Promise` that results in the value of the API.
 This function may throw an error if the API is not available.
 
-If an API was specified without an `{!reach} apiName`, for example `{!reach} API({ cast: Fun([String], Null)})`, it may be accessed by its property name:
+If an API was specified without an `{!rsh} apiName`, for example `{!rsh} API({ cast: Fun([String], Null)})`, it may be accessed by its property name:
 
 ```js
 ctc.a.cast("Pedro");
@@ -499,7 +499,7 @@ ctc.safeApis.Voter.cast("Pedro")
 
 
 
-This object is the same as `{!js} ctc.apis` except the API functions return a `{!reach} Maybe` value.
+This object is the same as `{!js} ctc.apis` except the API functions return a `{!rsh} Maybe` value.
 If the call fails, then `{!js} ['None', null]` will be returned. If the call succeeds, the return value will
 be wrapped with `{!js} Some`, e.g. `{!js} ['Some', 4]`.
 
@@ -522,10 +522,10 @@ ctc.v.NFT.owner()
 
 
 An object that mirrors the view hierarchy, so if `X.Y` is a view, then `{!js} ctc.views.X.Y` is a @{defn("view function")}.
-A view function accepts the arguments of the view and returns a `{!js} Promise` that results in the value of the view wrapped in a `{!reach} Maybe` type (because the view may not be bound).
-For example, if `NFT.owner` is a view with no arguments that represents the `{!reach} Address` that owns an NFT, then `{!js} await ctc.v.NFT.owner()` is either `{!js} ['Some', Owner]` or `{!js} ['None', null]`.
+A view function accepts the arguments of the view and returns a `{!js} Promise` that results in the value of the view wrapped in a `{!rsh} Maybe` type (because the view may not be bound).
+For example, if `NFT.owner` is a view with no arguments that represents the `{!rsh} Address` that owns an NFT, then `{!js} await ctc.v.NFT.owner()` is either `{!js} ['Some', Owner]` or `{!js} ['None', null]`.
 
-If a View was specified without a `{!reach} viewName`, for example `{!reach} View({ owner: Address })`, it may be accessed by its property name:
+If a View was specified without a `{!rsh} viewName`, for example `{!rsh} View({ owner: Address })`, it may be accessed by its property name:
 
 ```js
 ctc.v.owner();
@@ -545,7 +545,7 @@ await ctc.e.log.next();
 
 
 An object that mirrors the event hierarchy, so if `X.Y` is an event, then `{!js} ctc.events.X.Y` is an @{defn("EventStream")}.
-An EventStream supports the following operations for a given `{!reach} Event`:
+An EventStream supports the following operations for a given `{!rsh} Event`:
 
 @{ref("js", "EventStream")}
 ```js
@@ -569,19 +569,19 @@ Event<T> : { when: Time, what: T }
 
 An `{!js} Event` is instantiated with it's corresponding type declared in Reach.
 
- `{!js} next` will wait for the next `{!reach} Event` to occur, returning the time the event occured
+ `{!js} next` will wait for the next `{!rsh} Event` to occur, returning the time the event occured
 and the arguments to the event.
 
  `{!js} seek` will set the internal time of the EventStream to the given argument.
-The EventStream will use this time as the minimum bound when searching for `{!reach} Event`s.
+The EventStream will use this time as the minimum bound when searching for `{!rsh} Event`s.
 
  `{!js} seekNow` will set the internal time of the EventStream to the latest network time.
-The EventStream will use this time as the minimum bound when searching for `{!reach} Event`s.
+The EventStream will use this time as the minimum bound when searching for `{!rsh} Event`s.
 
- `{!js} lastTime` will return the last network time that an `{!reach} Event` was emitted.
+ `{!js} lastTime` will return the last network time that an `{!rsh} Event` was emitted.
 
  `{!js} monitor` accepts a function of type `{!js} Event<T> => void` as an argument. The provided function will be
-called whenever the `{!reach} Event` occurs.
+called whenever the `{!rsh} Event` occurs.
 
 ---
 
@@ -601,8 +601,8 @@ ctc.unsafeViews.NFT.owner()`
 
 
 
-This object is the same as `{!js} ctc.views` except the value of the view is not wrapped in a `{!reach} Maybe` type.
-If a view is set, the value will be returned as is, without being wrapped in `{!reach} Some`.
+This object is the same as `{!js} ctc.views` except the value of the view is not wrapped in a `{!rsh} Maybe` type.
+If a view is set, the value will be returned as is, without being wrapped in `{!rsh} Some`.
 If a view is not set, an error will be thrown.
 
 ## {#ref-frontends-js-network} Network Utilities
@@ -890,7 +890,7 @@ bigNumberToNumber(x) => number
 
 
 @{defn("bigNumberify")} converts a JavaScript number to a BigNumber,
-the JavaScript representation of Reach's `{!reach} UInt`.
+the JavaScript representation of Reach's `{!rsh} UInt`.
 
 @{defn("isBigNumber")} checks if its input is a BigNumber.
 
@@ -929,7 +929,7 @@ randomUInt() => UInt
 ```
 
 
-Generates random bits as a `{!reach} UInt`.
+Generates random bits as a `{!rsh} UInt`.
 The number of bits generated depends on the particular consensus network.
 
 ---
@@ -938,7 +938,7 @@ hasRandom
 ```
 
 
-@{defn("hasRandom (Frontend)")} A value suitable for use as a participant interact interface requiring a `random` function, such as `{!reach} hasRandom`.
+@{defn("hasRandom (Frontend)")} A value suitable for use as a participant interact interface requiring a `random` function, such as `{!rsh} hasRandom`.
 Reach does not natively support randomness and leaves random number generation to the frontend implementation.
 This value is provided out of convenience; it is not mandatory to use this implementation.
 
@@ -948,7 +948,7 @@ hasConsoleLogger
 ```
 
 
-@{defn("hasConsoleLogger (Frontend)")} A value suitable for use as a participant interact interface requiring a `log` function, such as `{!reach} hasConsoleLogger`.
+@{defn("hasConsoleLogger (Frontend)")} A value suitable for use as a participant interact interface requiring a `log` function, such as `{!rsh} hasConsoleLogger`.
 The `{!js} log` function provided takes an arbitrary amount of elements and prints them to stdout.
 This value is provided out of convenience; it is not mandatory to use this implementation.
 
@@ -959,7 +959,7 @@ parseFixedPoint(FixedPoint) => number
 ```
 
 
-Parses a `{!reach} FixedPoint` number into a JavaScript number.
+Parses a `{!rsh} FixedPoint` number into a JavaScript number.
 
 ---
 @{ref("js", "numberToFixedPoint")}
@@ -968,7 +968,7 @@ numberToFixedPoint(number) => FixedPoint
 ```
 
 
-Parses a JavaScript number into a `{!reach} FixedPoint`.
+Parses a JavaScript number into a `{!rsh} FixedPoint`.
 
 ---
 @{ref("js", "parseInt")}
@@ -977,7 +977,7 @@ parseInt(Int) => number
 ```
 
 
-Parses a signed `{!reach} Int` into a JavaScript number.
+Parses a signed `{!rsh} Int` into a JavaScript number.
 
 ---
 @{ref("js", "numberToInt")}
@@ -986,7 +986,7 @@ numberToInt(number) => Int
 ```
 
 
-Parses a JavaScript number into an `{!reach} Int`.
+Parses a JavaScript number into an `{!rsh} Int`.
 
 ---
 @{ref("js", "add")}@{ref("js", "sub")}@{ref("js", "mod")}@{ref("js", "mul")}@{ref("js", "div")}
@@ -999,7 +999,7 @@ div(UInt, UInt) => UInt
 ```
 
 
-Integer arithmetic on `{!reach} UInt`.
+Integer arithmetic on `{!rsh} UInt`.
 
 ---
 @{ref("js", "eq")}@{ref("js", "ge")}@{ref("js", "gt")}@{ref("js", "le")}@{ref("js", "lt")}
@@ -1012,7 +1012,7 @@ lt(UInt, UInt) => bool
 ```
 
 
-Integer comparisons on `{!reach} UInt`.
+Integer comparisons on `{!rsh} UInt`.
 
 ---
 The following exports are for dealing with network tokens.

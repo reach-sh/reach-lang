@@ -20,7 +20,7 @@ commit();
 ```
 
 
-A @{defn("commit statement")}, written `{!reach} commit();`, commits to statement's continuation as the next step of the DApp computation. In other words, it ends the current consensus step and allows more local steps.
+A @{defn("commit statement")}, written `{!rsh} commit();`, commits to statement's continuation as the next step of the DApp computation. In other words, it ends the current consensus step and allows more local steps.
 
 ### {#ref-programs-only-consensus} `only` and `each`
 
@@ -40,7 +40,7 @@ vNFT.owner.set(creator);
 ```
 
 
-If `{!reach} VIEW` is a @{defn("view object")}, then its fields are the elements of the associated view.
+If `{!rsh} VIEW` is a @{defn("view object")}, then its fields are the elements of the associated view.
 Each of these fields are bound to an object with a `set` method that accepts the function or value to be bound to that view at the current step, and all steps dominated by the current step (unless otherwise overridden).
 If this function is not provided with an argument, then the corresponding view is unset.
 
@@ -51,7 +51,7 @@ load: /examples/view-steps/index.rsh
 ```
 
 
-In this program, the Reach backend calls the frontend `{!reach} interact` function, `{!reach} checkView` with the expected value of the views at each point in the program.
+In this program, the Reach backend calls the frontend `{!rsh} interact` function, `{!rsh} checkView` with the expected value of the views at each point in the program.
 The frontend compares that value with what is returned by
 ```js
 [ await ctc.getViews().Main.last(),
@@ -68,8 +68,8 @@ Logger.log(4, x);
 ```
 
 
-If `{!reach} EVENT` is an @{defn("event object")}, then its fields are the elements of the associated event.
-Each of these fields are a function, whose domain is specified by the `{!reach} Events` interface.
+If `{!rsh} EVENT` is an @{defn("event object")}, then its fields are the elements of the associated event.
+Each of these fields are a function, whose domain is specified by the `{!rsh} Events` interface.
 
 For example, consider the following program:
 
@@ -109,7 +109,7 @@ export const main = Reach.App(() => {
 
 
 In this program, there is an announcement made every loop; an event is emitted with the published
-`{!reach} ctc` and its corresponding index `{!reach} i`.
+`{!rsh} ctc` and its corresponding index `{!rsh} i`.
 A frontend may observe the values of these events with `{!js} await ctc.e.Announcer.announce.next()` or
 `{!js} await ctc.e.Announcer.announce.monitor(announceHandler)` where `{!js} announceHandler` is a function.
 
@@ -124,7 +124,7 @@ PART.set(ADDR);
 
 
  After execution, the given participant is fixed to the given address.
-It is invalid to attempt to `{!reach} .set` a participant class.
+It is invalid to attempt to `{!rsh} .set` a participant class.
 If a backend is running for this participant and its address does not match the given address, then it will abort.
 This may only occur within a consensus step.
 
@@ -157,12 +157,12 @@ while( COND_EXPR ) BLOCK
 ```
 
 
-where `{!reach} LHS` is a valid left-hand side of an identifier definition where the expression `{!reach} INIT_EXPR` is the right-hand side, and
-`{!reach} DEFINE_BLOCK` is an optional block that may define bindings that use the `{!reach} LHS` values which are bound inside the rest of the `{!reach} while` and its tail, and
-`{!reach} INVARIANT_EXPR` is an expression, called the @{defn("loop invariant")}, that must be true before and after every execution of the block `{!reach} BLOCK`, and
-if `{!reach} COND_EXPR` is true, then the block executes,
+where `{!rsh} LHS` is a valid left-hand side of an identifier definition where the expression `{!rsh} INIT_EXPR` is the right-hand side, and
+`{!rsh} DEFINE_BLOCK` is an optional block that may define bindings that use the `{!rsh} LHS` values which are bound inside the rest of the `{!rsh} while` and its tail, and
+`{!rsh} INVARIANT_EXPR` is an expression, called the @{defn("loop invariant")}, that must be true before and after every execution of the block `{!rsh} BLOCK`, and
+if `{!rsh} COND_EXPR` is true, then the block executes,
 and if not, then the loop terminates and control transfers to the continuation of the while statement.
-The identifiers bound by `{!reach} LHS` are bound within `{!reach} DEFINE_BLOCK`, `{!reach} INVARIANT_EXPR`, `{!reach} COND_EXPR`, `{!reach} BLOCK`, and the tail of the while statement.
+The identifiers bound by `{!rsh} LHS` are bound within `{!rsh} DEFINE_BLOCK`, `{!rsh} INVARIANT_EXPR`, `{!rsh} COND_EXPR`, `{!rsh} BLOCK`, and the tail of the while statement.
 
 :::note
 Read about finding [loop invariants](##guide-loop-invs) in the Reach guide.
@@ -186,7 +186,7 @@ continue;
 ```
 
 
-where the identifiers bound by `{!reach} LHS` are a subset of the variables bound by the nearest enclosing while statement and `{!reach} UPDATE_EXPR` is an expression which may be bound by `{!reach} LHS`.
+where the identifiers bound by `{!rsh} LHS` are a subset of the variables bound by the nearest enclosing while statement and `{!rsh} UPDATE_EXPR` is an expression which may be bound by `{!rsh} LHS`.
 
 A continue statement is a terminator statement, so it must have an empty tail.
 
@@ -198,12 +198,12 @@ continue;
 ```
 
 
-A continue statement must be dominated by a consensus transfer, which means that the body of a while statement must always `{!reach} commit();` before calling `{!reach} continue;`.
+A continue statement must be dominated by a consensus transfer, which means that the body of a while statement must always `{!rsh} commit();` before calling `{!rsh} continue;`.
 This restriction may be lifted in future versions of Reach, which will perform termination checking.
 
 ---
 
-As a special case, a continue statement may occur in a step, if the `{!reach} UPDATE_EXPR` transitions to a consensus step.
+As a special case, a continue statement may occur in a step, if the `{!rsh} UPDATE_EXPR` transitions to a consensus step.
 In other words, this is a valid program:
 ```reach
 const f = () => {
@@ -276,21 +276,21 @@ const LHS =
 ```
 
 
-The `{!reach} LHS` and `{!reach} INIT_EXPR` are like the initialization component of a `{!reach} while` loop; and,
-the `{!reach} .invariant` and `{!reach} .while` components are like the invariant and condition of a `{!reach} while` loop;
-the `{!reach} DEFINE_BLOCK` is like the `{!reach} DEFINE_BLOCK` of a `{!reach} while` loop;
-while the `{!reach} .case`, `{!reach} .api`, `{!reach} .timeout`, and `{!reach} .paySpec` components are like the corresponding components of a `{!reach} fork` statement.
+The `{!rsh} LHS` and `{!rsh} INIT_EXPR` are like the initialization component of a `{!rsh} while` loop; and,
+the `{!rsh} .invariant` and `{!rsh} .while` components are like the invariant and condition of a `{!rsh} while` loop;
+the `{!rsh} DEFINE_BLOCK` is like the `{!rsh} DEFINE_BLOCK` of a `{!rsh} while` loop;
+while the `{!rsh} .case`, `{!rsh} .api`, `{!rsh} .timeout`, and `{!rsh} .paySpec` components are like the corresponding components of a `{!rsh} fork` statement.
 
-The `{!reach} .case` component may be repeated many times, just like in a `{!reach} fork` statement.
+The `{!rsh} .case` component may be repeated many times, just like in a `{!rsh} fork` statement.
 
-The `{!reach} .define` component may define bindings that reference the `{!reach} LHS` values. These bindings are accessible
-from every component of the `{!reach} parallelReduce` statement, except for the `{!reach} INIT_EXPR`.
+The `{!rsh} .define` component may define bindings that reference the `{!rsh} LHS` values. These bindings are accessible
+from every component of the `{!rsh} parallelReduce` statement, except for the `{!rsh} INIT_EXPR`.
 
 #### `.timeRemaining`
 
-When dealing with absolute deadlines in `{!reach} parallelReduce`, there is a common pattern in the
-`{!reach} TIMEOUT_BLOCK` to have participants `{!reach} race` to `{!reach} publish` and return the accumulator.
-There is a shorthand, `{!reach} .timeRemaining`, available for this situation:
+When dealing with absolute deadlines in `{!rsh} parallelReduce`, there is a common pattern in the
+`{!rsh} TIMEOUT_BLOCK` to have participants `{!rsh} race` to `{!rsh} publish` and return the accumulator.
+There is a shorthand, `{!rsh} .timeRemaining`, available for this situation:
 
 @{ref("rsh", "timeRemaining")}
 ```reach
@@ -314,8 +314,8 @@ which will expand to:
 
 #### `.throwTimeout`
 
-`{!reach} .throwTimeout` is a shorthand that will throw the accumulator as an exception when a timeout occurs.
-Therefore, a `{!reach} parallelReduce` that uses this branch must be inside of a try statement. For example,
+`{!rsh} .throwTimeout` is a shorthand that will throw the accumulator as an exception when a timeout occurs.
+Therefore, a `{!rsh} parallelReduce` that uses this branch must be inside of a try statement. For example,
 
 @{ref("rsh", "throwTimeout")}
 ```reach
@@ -328,7 +328,7 @@ try {
 ```
 
 
- will expand `{!reach} throwTimeout` to:
+ will expand `{!rsh} throwTimeout` to:
 
 ```reach
 .timeout(deadline, () => {
@@ -339,10 +339,10 @@ try {
 
 #### `parallelReduce` intuition
 
-A parallel reduce statement is essentially an abbreviation of pattern of a `{!reach} while` loop combined with a `{!reach} fork` statement that you could write yourself.
+A parallel reduce statement is essentially an abbreviation of pattern of a `{!rsh} while` loop combined with a `{!rsh} fork` statement that you could write yourself.
 This is an extremely common pattern in decentralized applications.
 
-The idea is that there are some values (the `{!reach} LHS`) which after intialization will be repeatedly updated uniquely by each of the racing participants until the condition does not hold.
+The idea is that there are some values (the `{!rsh} LHS`) which after intialization will be repeatedly updated uniquely by each of the racing participants until the condition does not hold.
 
 ```reach
 var LHS = INIT_EXPR;
@@ -369,8 +369,8 @@ However, some additional expressions are allowed.
 
 ### {#ref-programs-consensus-this} `this`
 
-Inside of a consensus step, `{!reach} this` refers to the address of the participant that performed the consensus transfer.
-This is useful when the consensus transfer was initiated by a `{!reach} race` expression.
+Inside of a consensus step, `{!rsh} this` refers to the address of the participant that performed the consensus transfer.
+This is useful when the consensus transfer was initiated by a `{!rsh} race` expression.
 
 ### `transfer`
 
@@ -382,14 +382,14 @@ transfer(2, gil).to(Alice);
 
 
 A @{defn("transfer expression")},
-written `{!reach} transfer(AMOUNT_EXPR).to(ADDR_EXPR)`,
-where `{!reach} AMOUNT_EXPR` is an expression that evaluates to an unsigned integer, and
-`{!reach} ADDR_EXPR` evaluates to an address,
+written `{!rsh} transfer(AMOUNT_EXPR).to(ADDR_EXPR)`,
+where `{!rsh} AMOUNT_EXPR` is an expression that evaluates to an unsigned integer, and
+`{!rsh} ADDR_EXPR` evaluates to an address,
 performs a transfer of network tokens from the contract to the named participant.
-`{!reach} AMOUNT_EXPR` must evaluate to less than or equal to the balance of network tokens in the contract account.
+`{!rsh} AMOUNT_EXPR` must evaluate to less than or equal to the balance of network tokens in the contract account.
 
-A transfer expression may also be written `{!reach} transfer(AMOUNT_EXPR, TOKEN_EXPR).to(ADDR_EXPR)`,
-where `{!reach} TOKEN_EXPR` is a `{!reach} Token`,
+A transfer expression may also be written `{!rsh} transfer(AMOUNT_EXPR, TOKEN_EXPR).to(ADDR_EXPR)`,
+where `{!rsh} TOKEN_EXPR` is a `{!rsh} Token`,
 which transfers non-network tokens of the specified type.
 
 A transfer expression may only occur within a consensus step.
@@ -402,7 +402,7 @@ require( claim, [msg] )
 ```
 
 
- A requirement where `{!reach} claim` evaluates to `{!reach} true` with honest participants.
+ A requirement where `{!rsh} claim` evaluates to `{!rsh} true` with honest participants.
 This may only appear in a consensus step.
 It accepts an optional bytes argument, which is included in any reported violation.
 
@@ -414,8 +414,8 @@ checkCommitment( commitment, salt, x )
 ```
 
 
- Makes a requirement that `{!reach} commitment` is the digest of `{!reach} salt` and `{!reach} x`.
-This is used in a consensus step after `{!reach} makeCommitment` was used in a local step.
+ Makes a requirement that `{!rsh} commitment` is the digest of `{!rsh} salt` and `{!rsh} x`.
+This is used in a consensus step after `{!rsh} makeCommitment` was used in a local step.
 
 ### Token minting
 
@@ -438,17 +438,17 @@ tok.destroy();
 
 
 We refer to creation of a new non-network token as @{defn("token minting")}.
-It is written with the expression `{!reach} new Token(PARAMS)`, where `{!reach} PARAMS` is an object with the following keys:
-+ `name`: A value of type `{!reach} Bytes(32)`; defaults to empty.
-+ `symbol`: A value of type `{!reach} Bytes(8)`; defaults to empty.
-+ `url`: A value of type `{!reach} Bytes(96)`; defaults to empty.
-+ `metadata`: A value of type `{!reach} Bytes(32)`; defaults to empty.
+It is written with the expression `{!rsh} new Token(PARAMS)`, where `{!rsh} PARAMS` is an object with the following keys:
++ `name`: A value of type `{!rsh} Bytes(32)`; defaults to empty.
++ `symbol`: A value of type `{!rsh} Bytes(8)`; defaults to empty.
++ `url`: A value of type `{!rsh} Bytes(96)`; defaults to empty.
++ `metadata`: A value of type `{!rsh} Bytes(32)`; defaults to empty.
 This value is intended to be a digest of a larger metadata document.
-+ `supply`: A value of type `{!reach} UInt`; defaults to `{!reach} UInt.max`.
-+ `decimals`: A value of type `{!reach} UInt`; defaults to `{!reach} 6` on Algorand, and `{!reach} 18` on Ethereum and Conflux.
++ `supply`: A value of type `{!rsh} UInt`; defaults to `{!rsh} UInt.max`.
++ `decimals`: A value of type `{!rsh} UInt`; defaults to `{!rsh} 6` on Algorand, and `{!rsh} 18` on Ethereum and Conflux.
 
 
-This returns a `{!reach} Token` value and deposits a `{!reach} supply` amount of the new non-network tokens into the contract account associated with the DApp.
+This returns a `{!rsh} Token` value and deposits a `{!rsh} supply` amount of the new non-network tokens into the contract account associated with the DApp.
 These tokens must be destroyed by the end of the DApp.
 
 :::note
@@ -458,21 +458,21 @@ Reach assumes that network tokens and non-network tokens behave identically, but
 
 ---
 
-`{!reach} Token.burn(tok, amt)`, or `{!reach} tok.burn(amt)`, where `{!reach} tok` is a `{!reach} Token` value and `{!reach} amt` is a `{!reach} UInt` value, may be used to @{defn("burn")} tokens in the contract account, meaning that they are utterly destroyed and can never be recovered.
+`{!rsh} Token.burn(tok, amt)`, or `{!rsh} tok.burn(amt)`, where `{!rsh} tok` is a `{!rsh} Token` value and `{!rsh} amt` is a `{!rsh} UInt` value, may be used to @{defn("burn")} tokens in the contract account, meaning that they are utterly destroyed and can never be recovered.
 
 ---
 
-`{!reach} Token.destroy(tok)`, or `{!reach} tok.destroy()`, where `{!reach} tok` is a `{!reach} Token` value, may be used to destroy the token so that it may never be used again by any users on the consensus network.
+`{!rsh} Token.destroy(tok)`, or `{!rsh} tok.destroy()`, where `{!rsh} tok` is a `{!rsh} Token` value, may be used to destroy the token so that it may never be used again by any users on the consensus network.
 This must be called before the application exits.
 
 ---
 
-`{!reach} Token.destroyed(tok)`, or `{!reach} tok.destroyed()`, where `{!reach} tok` is a `{!reach} Token` value, returns whether `{!reach} destroy`
-has been called on `{!reach} tok` yet.
+`{!rsh} Token.destroyed(tok)`, or `{!rsh} tok.destroyed()`, where `{!rsh} tok` is a `{!rsh} Token` value, returns whether `{!rsh} destroy`
+has been called on `{!rsh} tok` yet.
 
 ---
 
-`{!reach} Token.supply(tok)`, or `{!reach} tok.supply()`, where `{!reach} tok` is a `{!reach} Token` value, may be used to query the current supply of tokens, i.e. the number of tokens which have not been burnt.
+`{!rsh} Token.supply(tok)`, or `{!rsh} tok.supply()`, where `{!rsh} tok` is a `{!rsh} Token` value, may be used to query the current supply of tokens, i.e. the number of tokens which have not been burnt.
 
 ### Remote objects
 
@@ -494,7 +494,7 @@ const randomVal = randomOracle.getRandom.pay(randomFee)();
 A @{defn("remote object")} represents a foreign contract in a Reach application.
 During a consensus step, a Reach computation may consensually communicate with such an object via a prescribed interface.
 
-A remote object is constructed by calling the `{!reach} remote` function with a `{!reach} Contract` and an interface---an object where each key is bound to a function type. For example:
+A remote object is constructed by calling the `{!rsh} remote` function with a `{!rsh} Contract` and an interface---an object where each key is bound to a function type. For example:
 ```reach
 const randomOracle =
   remote( randomOracleCtcInfo, {
@@ -509,21 +509,21 @@ const token =
 
 
 Once constructed, the fields of a remote object represent those remote contract interactions, referred to as @{defn("remote functions")}.
-For example, `{!reach} randomOracle.getRandom`, `{!reach} token.balanceOf`, and `{!reach} token.transferTo` are remote functions in the example.
+For example, `{!rsh} randomOracle.getRandom`, `{!rsh} token.balanceOf`, and `{!rsh} token.transferTo` are remote functions in the example.
 
 A remote function may be invoked by calling it with the appropriate arguments, whereupon it returns the specified output.
 In addition, a remote function may be augmented with one of the following operations:
 
-+ `{!reach} REMOTE_FUN.pay(AMT)` --- Returns a remote function that receives a pay amount, `{!reach} AMT`, _from_ the caller when it is called.
-+ @{ref("rsh", "bill")} `{!reach} REMOTE_FUN.bill(AMT)` --- Returns a remote function that provides a pay amount, `{!reach} AMT`, _to_ the caller when it returns.
-+ @{ref("rsh", "withBill")} `{!reach} REMOTE_FUN.withBill()` --- Returns a remote function that provides some number of network tokens and, possibly, non-network tokens _to_ the caller when it returns.
++ `{!rsh} REMOTE_FUN.pay(AMT)` --- Returns a remote function that receives a pay amount, `{!rsh} AMT`, _from_ the caller when it is called.
++ @{ref("rsh", "bill")} `{!rsh} REMOTE_FUN.bill(AMT)` --- Returns a remote function that provides a pay amount, `{!rsh} AMT`, _to_ the caller when it returns.
++ @{ref("rsh", "withBill")} `{!rsh} REMOTE_FUN.withBill()` --- Returns a remote function that provides some number of network tokens and, possibly, non-network tokens _to_ the caller when it returns.
 The exact amount is returned from the invocation by wrapping the original result in a tuple.
 
 If the remote contract is not expected to return non-network tokens then a pair is returned, where the amount of network tokens received is the first element, and the original result is the second element.
 
 If the remote contract is expected to return non-network tokens then a triple is returned, where the amount of network tokens received
 is the first element, a tuple of the non-network tokens received is the second element, and the original result is the third element.
-If the caller expects to receive non-network tokens, they must provide a tuple of tokens as an argument to `{!reach} withBill`. The ordering of
+If the caller expects to receive non-network tokens, they must provide a tuple of tokens as an argument to `{!rsh} withBill`. The ordering of
 tokens in the argument is reserved when returning the amounts received.
 For example,
 
@@ -534,7 +534,7 @@ const [ returned, [gilRecv, zmdRecv], randomValue ] =
 
 
 might be the way to communicate with a random oracle that receives a conservative approximation of its actual cost and returns what it does not use, along with some amount of `GIL` and `ZMD`.
-This operation may not be used with `{!reach} REMOTE_FUN.bill`.
+This operation may not be used with `{!rsh} REMOTE_FUN.bill`.
 
 
 ### Mappings: creation and modification
@@ -547,12 +547,12 @@ delete bidsM[this];
 ```
 
 
-A new mapping of linear state may be constructed in a consensus step by writing `{!reach} new Map(TYPE_EXPR)`, where `{!reach} TYPE_EXPR` is some type.
+A new mapping of linear state may be constructed in a consensus step by writing `{!rsh} new Map(TYPE_EXPR)`, where `{!rsh} TYPE_EXPR` is some type.
 
-This returns a value which may be used to dereference particular mappings via `{!reach} map[ADDR_EXPR]`, where `{!reach} ADDR_EXPR` is an address.
-Such dereferences return a value of type `{!reach} Maybe(TYPE_EXPR)`, because the mapping may not contain a value for `{!reach} ADDR_EXPR`.
+This returns a value which may be used to dereference particular mappings via `{!rsh} map[ADDR_EXPR]`, where `{!rsh} ADDR_EXPR` is an address.
+Such dereferences return a value of type `{!rsh} Maybe(TYPE_EXPR)`, because the mapping may not contain a value for `{!rsh} ADDR_EXPR`.
 
-A mapping may be modified by writing `{!reach} map[ADDR_EXPR] = VALUE_EXPR` to install `{!reach} VALUE_EXPR` (of type `{!reach} TYPE_EXPR`) at `{!reach} ADDR_EXPR`, or by writing `{!reach} delete map[ADDR_EXPR]` to remove the mapping entry.
+A mapping may be modified by writing `{!rsh} map[ADDR_EXPR] = VALUE_EXPR` to install `{!rsh} VALUE_EXPR` (of type `{!rsh} TYPE_EXPR`) at `{!rsh} ADDR_EXPR`, or by writing `{!rsh} delete map[ADDR_EXPR]` to remove the mapping entry.
 Such modifications may only occur in a consensus step.
 
 ### Sets: creation and modification
@@ -566,12 +566,12 @@ bidders.member(Alice); // false
 ```
 
 
-A `{!reach} Set` is another container for linear state. It is simply a type alias of `{!reach} Map(Null)`;
-it is only useful for tracking `{!reach} Address`es. Because a `{!reach} Set` is internally a `{!reach} Map`, it may
+A `{!rsh} Set` is another container for linear state. It is simply a type alias of `{!rsh} Map(Null)`;
+it is only useful for tracking `{!rsh} Address`es. Because a `{!rsh} Set` is internally a `{!rsh} Map`, it may
 only be constructed in a consensus step.
 
-A `{!reach} Set` may be modified by writing `{!reach} s.insert(ADDRESS)` to install `{!reach} ADDRESS` in the
-set, `{!reach} s`, or `{!reach} s.remove(ADDRESS)` to remove the `{!reach} ADDRESS` from the set.
+A `{!rsh} Set` may be modified by writing `{!rsh} s.insert(ADDRESS)` to install `{!rsh} ADDRESS` in the
+set, `{!rsh} s`, or `{!rsh} s.remove(ADDRESS)` to remove the `{!rsh} ADDRESS` from the set.
 Such modifications may only occur in a consensus step.
 
-`{!reach} s.member(ADDRESS)` will return a `{!reach} Bool` representing whether the address is in the set.
+`{!rsh} s.member(ADDRESS)` will return a `{!rsh} Bool` representing whether the address is in the set.

@@ -7,7 +7,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.7 is the current Reach release candidate version.
 
-+ 2021/12/16: Added `{!reach} Events`.
++ 2021/12/16: Added `{!rsh} Events`.
 + 2021/12/16: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2021/12/16: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
 + 2021/12/10: Added support for using Reach on Apple Silicon.
@@ -25,7 +25,7 @@ On the other hand, some things that used to not work, now do; for example, there
 
 Version 0.1.6 is the current Reach release version.
 
-+ 2021/11/02: Allow `{!reach} API`s and `{!reach} View`s to be specified without names.
++ 2021/11/02: Allow `{!rsh} API`s and `{!rsh} View`s to be specified without names.
 + 2021/10/28: `REACH_CONNECTOR_MODE` no longer defaults to `ETH` when unset.
 
 Users are instead encouraged to run [`reach config`](##ref-usage-config) to set a persistent default in their shell or supply `REACH_CONNECTOR_MODE` explicitly at the command-line and in scripts.
@@ -34,8 +34,8 @@ Attempting to `reach run|react|rpc-server|rpc-run|devnet` without setting `REACH
 + 2021/10/28: Added [`reach config` subcommand](##ref-usage-config).
 + 2021/10/28: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
 + 2021/10/28: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
-+ 2021/10/20: Added `{!reach} decimals` field for token minting.
-+ 2021/10/18: Added APIs via the `{!reach} API` form.
++ 2021/10/20: Added `{!rsh} decimals` field for token minting.
++ 2021/10/18: Added APIs via the `{!rsh} API` form.
 + 2021/10/15: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
 + 2021/10/15: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2021/10/15: Algorand devnet updated to versions 3.0.1 and 2.6.4
@@ -48,19 +48,19 @@ Version 0.1.5 is the current Reach release version.
 + 2021/10/15: Added `{!js} setValidQueryWindow`.
 + 2021/10/11: The Solidity compiler has been upgraded to 0.8.9.
 + 2021/10/08: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
-+ 2021/10/08: `{!reach} parallelReduce` is more strict in checking that the `msg` argument is present in the parameter list of `{!reach} case` components, even when it is is bound to a `{!reach} null`.
-+ 2021/10/08: Added `{!reach} getContract` and `{!reach} getAddress`.
++ 2021/10/08: `{!rsh} parallelReduce` is more strict in checking that the `msg` argument is present in the parameter list of `{!rsh} case` components, even when it is is bound to a `{!rsh} null`.
++ 2021/10/08: Added `{!rsh} getContract` and `{!rsh} getAddress`.
 + 2021/10/08: Added `{!js} ctc.getContractAddress`.
-+ 2021/10/05: Added `{!reach} Contract`. Updated `{!js} ctc.getInfo` to return a `{!reach} Contract`.
-+ 2021/10/04: Added `{!reach} unstrict`.
++ 2021/10/05: Added `{!rsh} Contract`. Updated `{!js} ctc.getInfo` to return a `{!rsh} Contract`.
++ 2021/10/04: Added `{!rsh} unstrict`.
 + 2021/09/25: Reach clients will detect that they are attempting to publish in a race that they cannot win and switch to listening for the publication of another.
 This has the impact of frontends not being asked to sign transactions that cannot possibly succeed.
-+ 2021/09/25: Added `{!reach} didPublish()`.
++ 2021/09/25: Added `{!rsh} didPublish()`.
 + 2021/09/24: Contracts do not store the Merkleization of the state, but store the state itself; this changes the interface to contracts, so this release cannot communicate with DApps compiled by older versions of Reach.
-+ 2021/09/16: Bare integers used as time arguments will throw a deprecation warning. Use `{!reach} relativeTime` instead.
++ 2021/09/16: Bare integers used as time arguments will throw a deprecation warning. Use `{!rsh} relativeTime` instead.
 + 2021/09/16: The concept of deployment modes has been removed and the only available behavior is what was previously the `firstMsg` deployment mode.
 
-If you would like the old behavior, then you'll want to create a new participant, perhaps called `Constructor`, that exists simply to run `{!reach} Constructor.publish(); commit();`, but we expect that almost no one actually wants the old behavior exactly.
+If you would like the old behavior, then you'll want to create a new participant, perhaps called `Constructor`, that exists simply to run `{!rsh} Constructor.publish(); commit();`, but we expect that almost no one actually wants the old behavior exactly.
 Instead, you probably want to select one of your existing participants and assign the first publication to them.
 + 2021/09/16: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
 + 2021/09/16: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
@@ -70,7 +70,7 @@ Instead, you probably want to select one of your existing participants and assig
 
 Version 0.1.4 is is an old Reach release version.
 
-+ 2021/09/15: `{!reach} muldiv` added.
++ 2021/09/15: `{!rsh} muldiv` added.
 + 2021/09/08: Add `--stop-after-eval` and `--verify-timeout` options to `reach compile`.
 + 2021/08/31: Removed `{!js} getSignStrategy` and `{!js} setSignStrategy` in favor of `{!js} setWalletFallBack` and `{!js} walletFallback`.
 + 2021/08/31: Algorand devnet updated to versions 2.9.1 and 2.6.1
@@ -98,22 +98,22 @@ Authors of existing projects which contain unmodified `Makefile` or `docker-comp
 Version 0.1.3 is an old Reach release version.
 
 + 2021/08/31: Added `{!js} acc.setStorageLimit` to JavaScript standard library for Conflux.
-+ 2021/08/16: Allow `{!reach} continue` in step in some cases.
++ 2021/08/16: Allow `{!rsh} continue` in step in some cases.
 + 2021/07/31: Added `{!js} newTestAccounts`, `{!js} waitUntilSecs`, and `{!js} getNetworkSecs` to JavaScript standard library.
 + 2021/07/31: Updated `{!js} onProgress` type in JavaScript standard library.
-+ 2021/07/31: Added `{!reach} relativeTime`, `{!reach} absoluteTime`, `{!reach} relativeSecs`, `{!reach} absoluteSecs`, `{!reach} baseWaitTime`, `{!reach} baseWaitSecs`, and `{!reach} lastConsensusSecs` to Reach, with support in `{!reach} wait` and `{!reach} .timeout`.
++ 2021/07/31: Added `{!rsh} relativeTime`, `{!rsh} absoluteTime`, `{!rsh} relativeSecs`, `{!rsh} absoluteSecs`, `{!rsh} baseWaitTime`, `{!rsh} baseWaitSecs`, and `{!rsh} lastConsensusSecs` to Reach, with support in `{!rsh} wait` and `{!rsh} .timeout`.
 + 2021/07/22: `{!js} numberToFixedPoint()` and `{!js} numberToInt()` added.
 + 2021/07/21: Renamed Ethereum devnet Docker image to `devnet-eth`.
 + 2021/07/21: Renamed connector modes to use naming convention `$NET-devnet`, rather than exposing implementation.
 + 2021/07/21: Ethereum contract bytecode verification changed to directly compare deployment data
-+ 2021/07/20: `{!reach} Array.slice()` added.
-+ 2021/07/19: `{!reach} Token.destroyed()` added.
++ 2021/07/20: `{!rsh} Array.slice()` added.
++ 2021/07/19: `{!rsh} Token.destroyed()` added.
 + 2021/07/15: Ethereum contract info (i.e. `{!js} ctc.getInfo()`) reduced to address only.
 + 2021/07/14: Algorand contract info (i.e. `{!js} ctc.getInfo()`) reduced to application id only.
 + 2021/07/14: Minted tokens must be destroyed by end of application.
 + 2021/07/14: Token minting support added to Algorand.
 + 2021/07/14: Token URL metadata increased to 96 bytes.
-+ 2021/07/14: Algorand `{!reach} digest` switched to SHA256 (to save compute cost).
++ 2021/07/14: Algorand `{!rsh} digest` switched to SHA256 (to save compute cost).
 + 2021/07/14: Algorand connector updated to AVM 0.9 (TEAL version 4)
 + 2021/07/14: Algorand devnet version updated to 2.7.1, plus `DevMode` patch
 + 2021/07/14: Algorand devnet image renamed to `devnet-algo`
@@ -126,7 +126,7 @@ Version 0.1.2 is an old Reach release version.
 
 It is the last version that supports Algorand using TEAL3; if you deployed a contract on Algorand using Reach version 0.1.2, you will need to continue accessing it via the 0.1.2 version of the Reach standard library.
 
-+ 2021/07/09: `{!reach} .define` component added to `{!reach} parallelReduce`
++ 2021/07/09: `{!rsh} .define` component added to `{!rsh} parallelReduce`
 + 2021/07/08: [Error code reference](##ref-error-codes) created
 + 2021/06/20: Token minting introduced, with implementation on ETH.
 + ... many interesting things ...

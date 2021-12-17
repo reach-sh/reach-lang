@@ -21,7 +21,7 @@ the program.
 
 You should write the answer to the following questions in your
 Reach program (`index.rsh`) using a comment.
-`{!reach} /* Remember comments are written like this. */`
+`{!rsh} /* Remember comments are written like this. */`
 
 + Who is involved in this application?
 + What information do they know at the start of the program?
@@ -68,7 +68,7 @@ Now that we've decided what data types to use, we need to determine how the prog
 
 Revisit the problem analysis section when completing this section. Whenever
 a participant starts off with some knowledge, that will be a field in the
-`{!reach} interact` object.
+`{!rsh} interact` object.
 If they learn something, then it will be an argument to a function.
 If they provide something later, then it will be the result of a function.
 
@@ -78,10 +78,10 @@ You should write your answers in your Reach file (`index.rsh`) as the participan
 
 Let's compare your answers with ours:
 
-+ The deadline will be represented with a `{!reach} UInt`, as it is
++ The deadline will be represented with a `{!rsh} UInt`, as it is
 a relative time delta signifying a change in block numbers.
-+ The `ticketPrice` will be represented with a `{!reach} UInt`
-+ The decision to buy a ticket will be represented by a function `{!reach} Fun([UInt], Bool)`
++ The `ticketPrice` will be represented with a `{!rsh} UInt`
++ The decision to buy a ticket will be represented by a function `{!rsh} Fun([UInt], Bool)`
 
 
 Our participant interact interface, with the addition of some handy logging functions, looks like this so far:
@@ -167,7 +167,7 @@ commit();
 ```
 
 
-We use `{!reach} parallelReduce` to allow Buyers to purchase tickets until
+We use `{!rsh} parallelReduce` to allow Buyers to purchase tickets until
 the deadline passes and accumulate the current winner. We maintain the invariant
 that the balance must be equal to the number of tickets sold multiplied by the
 ticket price.
@@ -176,14 +176,14 @@ ticket price.
 
 This program doesn't have many interesting properties to prove
 as assertions, beyond the token linearity property. The
-only property of interest is the `{!reach} parallelReduce` invariant
+only property of interest is the `{!rsh} parallelReduce` invariant
 which states that the balance must be equal to the number of tickets
 sold multiplied by the ticket price.
 
 
 ## {#workshop-fomo-ii} Interaction Introduction
 
-Next, we need to insert the appropriate calls to `{!reach} interact`.
+Next, we need to insert the appropriate calls to `{!rsh} interact`.
 In this case, our program is very simple and we expect you'll do a great job without further discussion.
 
 **Insert `interact` calls to the frontend into the program.**

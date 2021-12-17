@@ -18,7 +18,7 @@ However, we believe that many decentralized application developers would like to
 Presently, this can be accomplished via the [RPC server](##ref-backends-rpc), but we'd like to build a dedicated backend for languages like these.
 
 ---
-**Computation.** Reach's computational language is based on JavaScript and contains many of JavaScript's most desirable features, like arrow expressions, free-form objects, destructuring bindings, robust `{!reach} import` and `{!reach} export` specificiers, and so on.
+**Computation.** Reach's computational language is based on JavaScript and contains many of JavaScript's most desirable features, like arrow expressions, free-form objects, destructuring bindings, robust `{!rsh} import` and `{!rsh} export` specificiers, and so on.
 However, there are some differences that represent limitations, such as the inability to use functions as values at runtime and the need to enforce finite limits on data.
 
 ---

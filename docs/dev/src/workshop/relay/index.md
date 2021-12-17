@@ -56,7 +56,7 @@ The next step of designing our program is representing this information in our p
 Which pieces of information go with which participants?
 Which are functions and which are values?
 Finally, how should the Relay account information and Bob's identity be represented?
-(Hint: Reach has a type named `{!reach} Address` that represents an account address!)
+(Hint: Reach has a type named `{!rsh} Address` that represents an account address!)
 :::note
 Refer to @{seclink("ref-programs-types")} for a reminder of what data types are available in Reach.
 :::
@@ -73,8 +73,8 @@ range: 6-8
 ```
 
 
-We chose to represent the amount as a `{!reach} UInt` field, which should be unsurprising.
-We then have two functions that take no arguments and return an `{!reach} Address` which respectively return the Relay identity and the Bob identity.
+We chose to represent the amount as a `{!rsh} UInt` field, which should be unsurprising.
+We then have two functions that take no arguments and return an `{!rsh} Address` which respectively return the Relay identity and the Bob identity.
 The idea here is that Alice will create the Relay account in the midst of the program and Bob will provide his own identity when he's acting as Relay.
 
 ## {#workshop-relay-cc} Communication Construction
@@ -98,10 +98,10 @@ Perhaps you felt that step two is implied by step one, where Alice says who the 
 But, it all depends upon what the meaning of the word "is" is.
 Since that is unclear to some, we'll make it explicit by stating that the consensus will remember the Relay's identity.
 
-The next step is to convert this pattern into actual program code using `{!reach} publish`, `{!reach} pay`, and `{!reach} commit`.
+The next step is to convert this pattern into actual program code using `{!rsh} publish`, `{!rsh} pay`, and `{!rsh} commit`.
 However, we expect that you'll need a bit of help with step two.
-Reach has a special operation, available only in consensus steps, for asserting the identity of a participant: `{!reach} Participant.set`.
-You can write `{!reach} Relay.set(someAddr)` to assert that the address of the Relay is `{!reach} someAddr`.
+Reach has a special operation, available only in consensus steps, for asserting the identity of a participant: `{!rsh} Participant.set`.
+You can write `{!rsh} Relay.set(someAddr)` to assert that the address of the Relay is `{!rsh} someAddr`.
 With that in mind...
 
 **Write down the communication pattern for this program as code.**
@@ -126,13 +126,13 @@ commit();
 
 
 We expect that for most of you, the coding of step four is also a bit strange, because we've never seen an example where the destination of a transfer is not a participant.
-You may have thought that the `{!reach} to` position in a `{!reach} transfer` must be a participant, but actually it can be any address.
+You may have thought that the `{!rsh} to` position in a `{!rsh} transfer` must be a participant, but actually it can be any address.
 Participants, however, can be used as addresses if they are bound.
 
 :::note
-You might like to re-write this program to have a third participant, Bob, who takes no actions, and try to write `{!reach} transfer(amt).to(Bob)`.
+You might like to re-write this program to have a third participant, Bob, who takes no actions, and try to write `{!rsh} transfer(amt).to(Bob)`.
 You'll find that Reach rejects this program because Bob is not bound.
-You can correct this by adding `{!reach} Bob.set(bob)` after the Relay publishes Bob's address.
+You can correct this by adding `{!rsh} Bob.set(bob)` after the Relay publishes Bob's address.
 There's nothing better about this version of the program, but it is unneccessary to have a participant like Bob that performs no part in the computation.
 :::
 
@@ -140,7 +140,7 @@ There's nothing better about this version of the program, but it is unneccessary
 ## {#workshop-relay-ai} Assertion Insertion
 
 As usual, we should consider what assertions we can add to our program.
-In some ways this is what we just did with the `{!reach} Relay.set(relay)` line above, but that is unlike a normal assertion in that it is added primarily to direct the runtime activities on the consensus contract, rather than as a statement about the logical properties of our program variables.
+In some ways this is what we just did with the `{!rsh} Relay.set(relay)` line above, but that is unlike a normal assertion in that it is added primarily to direct the runtime activities on the consensus contract, rather than as a statement about the logical properties of our program variables.
 
 Sometimes it can be difficult to decide which things are _part of_ the application, like this, and which things are _properties of_ the application, like the assertions we've seen before.
 This is a general problem in verification where the logical properties of the _desired_ program are often mixed up with the logical properties of the _actual_ program.
@@ -150,7 +150,7 @@ Now, if we were devious, we might send you on a SNARK hunt after some more asser
 
 ## {#workshop-relay-ii} Interaction Introduction
 
-Next, we need to insert the appropriate calls to `{!reach} interact`.
+Next, we need to insert the appropriate calls to `{!rsh} interact`.
 In this case, our program is very simple and we expect you'll do a great job without further discussion.
 
 **Insert `interact` calls to the frontend into the program.**
@@ -181,9 +181,9 @@ load: /examples/workshop-relay/index.mjs
 
 We do a few sneaky things in this program:
 + Lines 18 through 21 create a JavaScript [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) that will be filled in later by Alice.
-+ Alice's `{!reach} getRelay` function (lines 26 through 32) creates the new account and communicates it "outside of the network" through the aforementioned Promise.
++ Alice's `{!rsh} getRelay` function (lines 26 through 32) creates the new account and communicates it "outside of the network" through the aforementioned Promise.
 + Bob's thread (lines 34 through 48) waits for the Promise to resolve and then connects to the application with this new account.
-+ The Relay's `{!reach} getBob` function (lines 43 through 46) returns his own address to receive the funds.
++ The Relay's `{!rsh} getBob` function (lines 43 through 46) returns his own address to receive the funds.
 
 
 If this program is scary for you, don't worry!
