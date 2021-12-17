@@ -23,7 +23,7 @@ type PhaseId = Integer
 type AccountId = Int
 
 data MessageInfo = NotFixedYet (M.Map ActorId Store) | Fixed (ActorId,Store)
-  deriving (Generic)
+  deriving (Show, Generic)
 
 instance ToJSON MessageInfo
 
@@ -685,21 +685,18 @@ instance Interp LLStep where
                       winner dlr actId' phId
                       interp $ dr_k
             Consensus -> do
-              let msgs = unfixedMsgs $ msgs'
               v <- suspend $ PS_Suspend (A_TieBreak phId $ M.keys sends)
-              let locals = l_locals l
-              let lclsv = saferMapRef "LLS_ToConsensus" $ M.lookup (fromIntegral actId) locals
-              let lclst = l_who $ lclsv
-              case lclst of
-                Nothing -> impossible "expected participant id, received consensus id"
-                Just part -> do
-                  let dls = saferMapRef "LLS_ToConsensus1" $ M.lookup part sends
-                  consensusPayout lclsv (ds_pay dls)
-                  let actId' = fromIntegral $ vUInt v
-                  let winningMsg = saferMapRef "LLS_ToConsensus2" $ M.lookup actId' msgs
-                  _ <- fixMessageInRecord phId (fromIntegral actId') $ winningMsg
-                  winner dlr actId' phId
-                  interp $ dr_k
+              let actId' = fromIntegral $ vUInt v
+              part <- partName <$> whoIs actId'
+              let dls = saferMapRef "LLS_ToConsensus1" $ M.lookup part sends
+              accId <- getAccId actId'
+              consensusPayout accId (ds_pay dls)
+              m' <- saferMapRef ("LLS_ToCon") <$> M.lookup phId <$> e_messages <$> getGlobal
+              let msgs = unfixedMsgs $ m'
+              let winningMsg = saferMapRef ("LLS_ToCon1") $ M.lookup actId' msgs
+              _ <- fixMessageInRecord phId (fromIntegral actId') $ winningMsg
+              winner dlr actId' phId
+              interp $ dr_k
 
 winner :: DLRecv LLConsensus -> ActorId -> PhaseId -> App ()
 winner dlr actId phId = do
@@ -725,15 +722,14 @@ getPhaseId actId = do
   let lclsv = saferMapRef "getPhaseId" $ M.lookup (fromIntegral actId) locals
   return $ l_phase lclsv
 
-consensusPayout :: LocalInfo -> DLPayAmt -> App ()
-consensusPayout lclsv DLPayAmt {..} = do
-  let acct = l_acct lclsv
+consensusPayout :: AccountId -> DLPayAmt -> App ()
+consensusPayout accId DLPayAmt {..} = do
   _ <- mapM (\(a,b) -> do
     b' <- vUInt <$> (interp b)
     a' <- vUInt <$> (interp a)
-    transferLedger acct simContract b' a') pa_ks
+    transferLedger (fromIntegral accId) simContract b' a') pa_ks
   net <- vUInt <$> interp pa_net
-  transferLedger acct simContract nwToken net
+  transferLedger (fromIntegral accId) simContract nwToken net
 
 bindConsensusMeta :: DLRecv LLConsensus -> ActorId -> AccountId -> App ()
 bindConsensusMeta (DLRecv {..}) actorId accId = do
@@ -839,3 +835,17 @@ whoAmI = do
   case who of
     Nothing -> return Consensus
     Just p -> return $ Participant p
+
+whoIs :: ActorId -> App Identity
+whoIs actId = do
+  l <- getLocal
+  let locals = l_locals l
+  let local' = saferMapRef "whoIs" $ M.lookup actId locals
+  let who = l_who local'
+  case who of
+    Nothing -> return Consensus
+    Just p -> return $ Participant p
+
+partName :: Identity -> Participant
+partName (Participant p) =  p
+partName _ = possible "expected participant"

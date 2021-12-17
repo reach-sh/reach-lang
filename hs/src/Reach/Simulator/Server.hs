@@ -114,13 +114,13 @@ unblockProg sid aid v = do
   case M.lookup sid graph of
     Nothing -> do
       possible "previous state not found"
-    Just (_g,l') -> do
+    Just (g,l') -> do
       case C.l_ks <$> M.lookup actorId (C.l_locals l') of
         Nothing -> do
           possible "actor not found"
         Just Nothing -> do
           possible "partstate not found for actor"
-        Just (Just (C.PS_Suspend _a (g,l'') k)) -> do
+        Just (Just (C.PS_Suspend _a (_g,l'') k)) -> do
           let l = l'' {C.l_curr_actor_id = actorId}
           case M.lookup aid avActions of
             Just (C.A_Interact _at _slcxtframes _part _str _dltype _args) -> do
@@ -133,16 +133,8 @@ unblockProg sid aid v = do
               let ps = k (g,l) v
               processNewState ps
             Just (C.A_TieBreak _poolid _parts) -> do
-              let pacts = C.e_partacts g
-              case v of
-                C.V_Bytes s -> do
-                  case M.lookup s pacts of
-                    Nothing -> do
-                      possible $ "A_TieBreak: participant not found in " ++ show pacts
-                    Just actid -> do
-                      let ps = k (g,l) $ C.V_UInt $ fromIntegral actid
-                      processNewState ps
-                _ -> impossible "A_TieBreak: expected string value"
+              let ps = k (g,l) v
+              processNewState ps
             Just C.A_None -> return ()
             Just (C.A_AdvanceTime n)  -> do
               case ((C.e_nwtime g) < n) of
