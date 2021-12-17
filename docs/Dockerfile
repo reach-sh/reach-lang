@@ -12,7 +12,6 @@ ADD examples ./examples
 ADD rpc-client/py ./rpc-client/py
 ADD docs/dev ./docs/dev
 RUN (cd docs/dev && make)
-RUN rm ./docs/dev/build/index.html
 
 FROM scratch
 

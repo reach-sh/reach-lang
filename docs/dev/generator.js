@@ -27,6 +27,7 @@ import githubSlugger from 'github-slugger';
 const slugify = githubSlugger.slug;
 const topDoc = new JSDOM("").window.document;
 
+const hh = (x) => x === '' ? '/' : `/${x}/`;
 const INTERNAL = [ 'base.html', 'config.json', 'index.md' ];
 
 const normalizeDir = (s) => {
@@ -141,6 +142,7 @@ const inspect = (when) => ({here, what}) => (tree) => {
 };
 
 const processXRefs = ({here}) => (tree) => {
+  const h = hh(here);
   visit(tree, (node) => {
     const d = node.data || (node.data = {});
     const hp = d.hProperties || (d.hProperties = {});
@@ -155,7 +157,7 @@ const processXRefs = ({here}) => (tree) => {
         const cp = c0v.indexOf("} ", 2);
         t = c0v.slice(2, cp);
         v = c0v.slice(cp+2);
-        xrefPut('h', t, { title: v, path: `/${here}/#${t}` });
+        xrefPut('h', t, { title: v, path: `${h}#${t}` });
       }
       if ( t === 'on-this-page' ) {
         fail(here, 'uses reserved id', t);
@@ -302,6 +304,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   const pagePath = `${out_folder}/page.html`;
   const otpPath = `${out_folder}/otp.html`;
   const here = relDir;
+  const h = hh(here);
 
   // Create fresh config file with default values.
   const configJson = {
@@ -360,7 +363,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     const t = encodeURI(`term_${phrase}`);
     xrefPut('term', phrase, {
       title: `Term: ${phrase}`,
-      path: `/${here}/#${t}`,
+      path: `${h}#${t}`,
     });
     return `<span class="term" id="${t}">${phrase}</span>`;
   };
@@ -369,7 +372,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     const t = encodeURI(`${scope}_${symbol}`);
     xrefPut(scope, symbol, {
       title: `${scope}: ${symbol}`,
-      path: `/${here}/#${t}`,
+      path: `${h}#${t}`,
     });
     const s = topDoc.createElement('span');
     s.classList.add("ref");
@@ -520,7 +523,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
 
   if ( !forReal ) {
     const bp = configJson.bookPath;
-    if ( bp ) {
+    if ( bp !== undefined ) {
       const ib = bp === here;
       bookL.push({ here,
         title: (ib ? configJson.bookTitle : title),
@@ -533,7 +536,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   // Adjust image urls.
   doc.querySelectorAll('img').forEach(img => {
     if ( ! img.src.startsWith("/") ) {
-      img.src = `/${here}/${img.src}`;
+      img.src = `${h}${img.src}`;
     }
   });
 
@@ -659,14 +662,17 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   ]);
 };
 
+const splitMt = (x) => x === "" ? [] : x.split('/');
+
 const bookL = [];
 const bookT = { path: [], children: {} };
 const generateBooksTree = () => {
   for ( const c of bookL ) {
-    let ct = bookT.children;
+    let ct = bookT;
     let cp = [];
-    let p = c.here.split('/');
+    let p = splitMt(c.here);
     while ( p.length !== 0 ) {
+      ct = ct.children;
       const [ n, ...pn ] = p;
       p = pn;
       cp = [...cp, n];
@@ -674,9 +680,6 @@ const generateBooksTree = () => {
         ct[n] = { path: cp, children: {} };
       }
       ct = ct[n];
-      if ( p.length !== 0 ) {
-        ct = ct.children;
-      }
     }
     Object.assign(ct, c);
   }
@@ -684,6 +687,7 @@ const generateBooksTree = () => {
 const bookPipe = await unified()
   .use(rehypeStringify);
 const generateBook = async (destp, bookp) => {
+  console.log(`generateBook`, JSON.stringify(bookp));
   const compareNumbers = (a, b) => (a - b);
   const compareChapters = (x, y) => {
     const rc = compareNumbers(x.rank, y.rank);
@@ -707,7 +711,7 @@ const generateBook = async (destp, bookp) => {
       fail(`Missing chapter title`, ctc.path);
     }
     d.children.push(h('div', {class: "col"}, [
-      h('a', {class: "chapter-title", href: `/${ctc.here}/`}, ctc.title),
+      h('a', {class: "chapter-title", href: hh(ctc.here)}, ctc.title),
       ...cs
     ]));
     return d;
@@ -718,26 +722,30 @@ const generateBook = async (destp, bookp) => {
     return cs.map(hify);
   }
   const hifyTop = (ct, p) => {
+    console.log(`hifyTop`, JSON.stringify(p));
     const bc = [];
-    for ( const n of p ) {
-      ct = ((ct.children || {})[n] || {});
-
+    const bcPush = () => {
       bc.push(
         h('div', {class: "row chapter dynamic"}, [
           h('div', {class: "col-auto chapter-icon-col"}, [
             h('i', {class: "fas fa-angle-down"})
           ]),
           h('div', {class: "col my-auto"}, [
-            h('a', {class: "book-title", href: `/${ct.here}/`}, ct.title)
+            h('a', {class: "book-title", href: hh(ct.here)}, ct.title)
           ]),
         ])
       );
+    }
+    bcPush();
+    for ( const n of p ) {
+      ct = ((ct.children || {})[n] || {});
+      bcPush();
     }
     const bcd = h('div', {class: "bookCrumbs dynamic"}, bc);
     return [ bcd ].concat(hifyList(ct));
   };
   const toc = { type: 'root', children: [] };
-  toc.children = hifyTop(bookT, bookp.split('/'));
+  toc.children = hifyTop(bookT, splitMt(bookp));
   await fs.writeFile(destp, bookPipe.stringify(toc));
 };
 
@@ -797,7 +805,7 @@ const generateRedirects = async () => {
 const searchData = [];
 const [ sd_r, sd_t, sd_h, sd_p ] = [ 0, 1, 2, 3 ];
 const gatherSearchData = async ({doc, title, here}) => {
-  const h = `/${here}/`;
+  const h = hh(here);
   const mini = (x) => x.replace(/\s+/g, ' ').trim();
   doc.querySelectorAll('.ref').forEach((el) => {
     searchData.push({
@@ -841,9 +849,9 @@ const generateSearch = async () => {
 
 // Main
 await findAndProcessFolder(`base.html`, process.env, srcDir);
-//console.log(JSON.stringify(bookL, null, 2));
+console.log(JSON.stringify(bookL, null, 2));
 generateBooksTree();
-//console.log(JSON.stringify(bookT, null, 2));
+console.log(JSON.stringify(bookT, null, 2));
 
 forReal = true;
 // This depends on the xrefs being assembled

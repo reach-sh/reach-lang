@@ -3,18 +3,16 @@ const axiosGetData = async (u) => {
   return c.data;
 };
 const doc = window.document;
+const hh = (x) => x === '' ? '/' : `/${x}/`;
 
 const searchClient = algoliasearch('M53HHHS0ZW', '0cfd8f1c1a0e3cb7b2abd77b831614dc');
 const searchIndex = searchClient.initIndex('docs');
 
 const currentPage = {
   folder: null,
-  bookPath: null,
+  bookPath: undefined,
   hasOtp: false,
 };
-
-// XXX move into generator
-const github = 'https://github.com/reach-sh/reach-lang/tree/master/docs/dev/src';
 
 // let lang = window.navigator.language.split('-')[0];
 
@@ -32,7 +30,7 @@ let winWidth = getWinWidthStr();
 
 const establishDisplay = () => {
   const bookCol = doc.getElementById('book-col');
-  if (currentPage.bookPath) {
+  if (currentPage.bookPath !== undefined) {
     const bookBtn = doc.querySelector('div.show-book-col');
     if (winWidth == 'xl' || winWidth == 'lg' || winWidth == 'md') {
       bookCol.style.maxWidth = maxColWidth;
@@ -133,8 +131,8 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   const configJson = await axiosGetData(`${url}config.json`);
 
   // Book or different book?
-  if (configJson.bookPath && configJson.bookPath !== currentPage.bookPath) {
-    let bookHtml = doc.createRange().createContextualFragment(await axiosGetData(`${window.location.origin}/${configJson.bookPath}/book.html`));
+  if (configJson.bookPath !== undefined && configJson.bookPath !== currentPage.bookPath) {
+    let bookHtml = doc.createRange().createContextualFragment(await axiosGetData(`${window.location.origin}${hh(configJson.bookPath)}book.html`));
     doc.querySelectorAll('#book-col div.dynamic').forEach(n => n.remove());
     doc.querySelector('#book-col').append(bookHtml);
 
@@ -165,6 +163,8 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   doc.title = `Reach > ${ctitle}`;
 
   // Update and show/hide edit btn.
+  // XXX move into generator
+  const github = 'https://github.com/reach-sh/reach-lang/tree/master/docs/dev/src';
   doc.getElementById('edit-btn').href = `${github}${folder}index.md`;
 
   // Write page html
@@ -262,7 +262,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   establishDisplay();
 
   // Display book.
-  if (currentPage.bookPath) {
+  if (currentPage.bookPath != undefined) {
     doc.getElementById('book-col').classList.remove('banish');
     doc.querySelector('div.show-book-col').classList.remove('banish');
   } else {

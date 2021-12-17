@@ -19,11 +19,11 @@ serve-up: serve-down
 serve-down:
 	docker rm --force $(NAME)
 
-.PHONY: watch-render
-watch-render:
+.PHONY: watch
+watch:
 	@command -v inotifywait >/dev/null \
 	  || (echo 'Unable to find `inotifywait`' && exit 1)
-	@while inotifywait -e modify -r ./scrbl; \
+	@while inotifywait -e modify -r ./dev; \
 	  do clear \
 	   ; date \
 	   ; echo 'Re-rendering docs...' \
