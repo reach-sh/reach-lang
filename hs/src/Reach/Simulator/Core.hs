@@ -46,6 +46,7 @@ data LocalInfo = LocalInfo
   , l_who :: Maybe Participant
   , l_store :: Store
   , l_phase :: PhaseId
+  , l_ks :: Maybe PartState
   } deriving (Generic)
 
 type Locals = M.Map ActorId LocalInfo
@@ -80,7 +81,7 @@ initGlobal = Global
 initLocal :: Local
 initLocal = Local
   { l_locals = M.singleton (fromIntegral consensusId) LocalInfo
-      {l_acct = consensusId, l_who = Nothing, l_store = mempty, l_phase = 0}
+      {l_acct = consensusId, l_who = Nothing, l_store = mempty, l_phase = 0, l_ks = Nothing}
   , l_curr_actor_id = fromIntegral consensusId
   }
 
@@ -89,6 +90,11 @@ type PartCont = State -> DLVal -> PartState
 data PartState
   = PS_Done State DLVal
   | PS_Suspend Action State PartCont
+  deriving (Generic)
+
+instance ToJSON PartState where
+  toJSON (PS_Done _ _) = "PS_Done"
+  toJSON (PS_Suspend _ _ _) = "PS_Suspend"
 
 initPartState :: PartState
 initPartState = PS_Done initState V_Null
@@ -148,6 +154,9 @@ runApp st (App f) = f st PS_Done
 
 initApp :: LLProg -> State -> PartState
 initApp p st = runApp st $ interp p
+
+initAppFromStep :: LLStep -> State -> PartState
+initAppFromStep step st = runApp st $ interp step
 
 type ConsensusEnv = M.Map DLVar DLVal
 type Store = ConsensusEnv
@@ -566,9 +575,7 @@ instance Interp DLStmt where
           who <- whoAmI
           case who == Participant (bunpack slpart) of
             False -> return V_Null
-            True -> do
-              r <- interp dltail
-              return r
+            True -> interp dltail
         _ -> impossible "unexpected error"
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
       accu <- interp arg
@@ -642,7 +649,12 @@ instance Interp LLStep where
       (g, l) <- getState
       let actId = l_curr_actor_id l
       phId <- getPhaseId actId
-      let msgs' = saferMapRef "LLS_ToConsensus3" $ M.lookup phId $ e_messages g
+      msgs' <- case M.lookup phId $ e_messages g of
+            Just m -> return m
+            Nothing -> do
+              let msg = NotFixedYet mempty
+              setGlobal g { e_messages = M.insert phId msg $ e_messages g }
+              return msg
       let sends = M.mapKeys bunpack tc_send
       incrPhaseId
       isTheTimePast tc_mtime >>= \case
@@ -651,7 +663,15 @@ instance Interp LLStep where
           whoAmI >>= \case
             Participant who -> do
               case M.lookup who sends of
-                Nothing -> return V_Null
+                Nothing -> do
+                  case msgs' of
+                    NotFixedYet _msgs'' -> do
+                      _ <- suspend $ PS_Suspend (A_Contest phId)
+                      winner dlr actId phId
+                      interp $ dr_k
+                    Fixed (actId',_msg) -> do
+                      winner dlr actId' phId
+                      interp $ dr_k
                 Just (DLSend {..}) -> do
                   case msgs' of
                     NotFixedYet msgs'' -> do
@@ -726,7 +746,6 @@ bindConsensusMeta (DLRecv {..}) actorId accId = do
     True -> addToStore dr_didSend $ V_Bool True
     False -> addToStore dr_didSend $ V_Bool False
 
--- evaluate a linear Reach program
 instance Interp LLProg where
   interp (LLProg _at _llo slparts _dli _dex _dvs _apis step) = do
     registerParts $ M.keys $ sps_ies slparts
@@ -771,6 +790,7 @@ registerPart (g,l) s = do
         , l_who = Just $ s
         , l_store = mempty
         , l_phase = 0
+        , l_ks = Nothing
         }
   let locals' = M.insert actorId lcl locals
   let ledger = e_ledger g
