@@ -1,0 +1,77 @@
+<p>
+  <i id="p_0" class="pid"></i>This document describes the structure and content of Reach <span class="term" id="term_programs">programs</span>, including
+  their syntactic forms,
+  the standard library,
+  and the standards of valid programs.<a href="#p_0" class="pid">0</a>
+</p>
+<div class="note">
+  <p><i id="p_1" class="pid"></i>Get language support for Reach in your editor by visiting <a href="/guide/editor-support/#guide-editor-support">IDE/Text Editor Support</a>.<a href="#p_1" class="pid">1</a></p>
+</div>
+<p><i id="p_2" class="pid"></i>The rest of this section is structured according to the contexts of the different parts of a Reach program, as follows:<a href="#p_2" class="pid">2</a></p>
+<ul>
+  <li><i id="p_3" class="pid"></i><a href="/reach/#ref-programs-valid">Validity and other concepts</a> describes what is meant by the term valid in Reach.<a href="#p_3" class="pid">3</a></li>
+  <li><i id="p_4" class="pid"></i><a href="/reach/module/#ref-programs-module">Modules</a> describes the top-level structure of a Reach module.<a href="#p_4" class="pid">4</a></li>
+  <li><i id="p_5" class="pid"></i><a href="/reach/appinit/#ref-programs-appinit">Application Initialization</a> describes the structure of Reach application initialization.<a href="#p_5" class="pid">5</a></li>
+  <li><i id="p_6" class="pid"></i><a href="/reach/step/#ref-programs-step">Steps</a> describes the structure of Reach steps.<a href="#p_6" class="pid">6</a></li>
+  <li><i id="p_7" class="pid"></i><a href="/reach/local/#ref-programs-local">Local Steps</a> describes the structure of Reach local steps.<a href="#p_7" class="pid">7</a></li>
+  <li><i id="p_8" class="pid"></i><a href="/reach/consensus/#ref-programs-consensus">Consensus Steps</a> describes the structure of Reach consensus steps.<a href="#p_8" class="pid">8</a></li>
+  <li><i id="p_9" class="pid"></i><a href="/reach/compute/#ref-programs-compute">Computations</a> describes the common structure of Reach computations shared by all contexts.<a href="#p_9" class="pid">9</a></li>
+</ul>
+<p><i id="p_10" class="pid"></i>The relationship between the modes of a Reach application is shown by this diagram:<a href="#p_10" class="pid">10</a></p>
+<p>
+  <img src="/images/reference/StepDiagram.png" alt="">
+</p>
+<h2 id="ref-programs-valid" class="refHeader">Validity and other concepts<a aria-hidden="true" tabindex="-1" href="#ref-programs-valid"><span class="icon icon-link"></span></a></h2>
+<p>
+  <i id="p_11" class="pid"></i>Reach imposes further restrictions on syntactically well-formed programs.
+  These restrictions are described throughout this manual using the term <span class="term" id="term_valid">valid</span> to refer to constructions that obey the restrictions,
+  and the term <span class="term" id="term_invalid">invalid</span> to refer to constructions that do not obey them.<a href="#p_11" class="pid">11</a>
+</p>
+<p>
+  <i id="p_12" class="pid"></i>It is always invalid to use a value with an operation for which it is undefined.
+  For example, <span class="snip"><span style="color: #0550AE">1</span><span style="color: #24292F"> </span><span style="color: #CF222E">+</span><span style="color: #24292F"> </span><span style="color: #0550AE">true</span></span> is invalid.
+  In other words, Reach enforces a static type discipline.<a href="#p_12" class="pid">12</a>
+</p>
+<h3 id="security-levels-and-scope" class="refHeader">Security levels and scope<a aria-hidden="true" tabindex="-1" href="#security-levels-and-scope"><span class="icon icon-link"></span></a></h3>
+<p>
+  <i id="p_13" class="pid"></i>The text of a Reach program is public knowledge to all participants.
+  However, any value that comes from an interaction expression is a <span class="term" id="term_secret">secret</span> which only that participant knows.
+  Furthermore, any values derived from secret values are also secret.
+  A value, X, is considered derived from another, Y, if the value of Y is provided to a primitive operation to arrive at X, or if Y is used as part of a conditional that influences the definition of X.
+  Secrets can only be made public by using the declassify primitive.<a href="#p_13" class="pid">13</a>
+</p>
+<p>
+  <i id="p_14" class="pid"></i>When secret values are bound to an identifier
+  within a local step,
+  the identifier name MUST be prefixed by an underscore (<span class="snip"><span style="color: #24292F">_</span></span>).<a href="#p_14" class="pid">14</a>
+</p>
+<p>
+  <i id="p_15" class="pid"></i>When public values are bound to an identifier,
+  regardless of context,
+  the identifier name MUST NOT be prefixed by an underscore (<span class="snip"><span style="color: #24292F">_</span></span>).<a href="#p_15" class="pid">15</a>
+</p>
+<p>
+  <i id="p_16" class="pid"></i>Consequently, identifiers which appear inside of a
+  function definition or arrow expression
+  MAY be prefixed by an underscore.
+  This will cause a compiler error if any value bound to that
+  identifier is public.<a href="#p_16" class="pid">16</a>
+</p>
+<h3 id="domination" class="refHeader">Domination<a aria-hidden="true" tabindex="-1" href="#domination"><span class="icon icon-link"></span></a></h3>
+<p>
+  <i id="p_17" class="pid"></i>A term Y is said to be "<span class="term" id="term_dominated">dominated</span>" by a term X if all paths in the control-flow graph of the application from the root to Y pass through X.
+  In most cases, this corresponds to "X appears above Y at the same or lower level of indentation" in the program source code.<a href="#p_17" class="pid">17</a>
+</p>
+<p><i id="p_18" class="pid"></i>For example, in the following program:<a href="#p_18" class="pid">18</a></p>
+<pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="f();
+if ( p() ) {
+ g();
+} else {
+ h();
+}
+m();" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #8250DF">f</span><span style="color: #24292F">();</span></li><li value="2"><span style="color: #CF222E">if</span><span style="color: #24292F"> ( </span><span style="color: #8250DF">p</span><span style="color: #24292F">() ) {</span></li><li value="3"><span style="color: #24292F"> </span><span style="color: #8250DF">g</span><span style="color: #24292F">();</span></li><li value="4"><span style="color: #24292F">} </span><span style="color: #CF222E">else</span><span style="color: #24292F"> {</span></li><li value="5"><span style="color: #24292F"> </span><span style="color: #8250DF">h</span><span style="color: #24292F">();</span></li><li value="6"><span style="color: #24292F">}</span></li><li value="7"><span style="color: #8250DF">m</span><span style="color: #24292F">();</span></li></ol></pre>
+<p>
+  <i id="p_19" class="pid"></i><span class="snip"><span style="color: #24292F">f</span></span> dominates <span class="snip"><span style="color: #24292F">p</span></span>, <span class="snip"><span style="color: #24292F">g</span></span>, <span class="snip"><span style="color: #24292F">h</span></span>, and <span class="snip"><span style="color: #24292F">m</span></span>.
+  But no other term dominates any other term.
+  In particular, <span class="snip"><span style="color: #24292F">g</span></span> does not dominate <span class="snip"><span style="color: #24292F">m</span></span> because it is possible to reach <span class="snip"><span style="color: #24292F">m</span></span> without going through <span class="snip"><span style="color: #24292F">g</span></span>, such as when <span class="snip"><span style="color: #8250DF">p</span><span style="color: #24292F">()</span></span> is false.<a href="#p_19" class="pid">19</a>
+</p>

@@ -1,0 +1,71 @@
+<p>
+  <i id="p_0" class="pid"></i>This section describes the compilation output of Reach version 0.1.7,
+  which are participant backends.<a href="#p_0" class="pid">0</a>
+</p>
+<p><i id="p_1" class="pid"></i>They are accessed via <a href="/cout/#ref-backends-js">JavaScript</a> or via <a href="/rpc/#ref-backends-rpc">the RPC server</a>.<a href="#p_1" class="pid">1</a></p>
+<h2 id="ref-backends-js" class="refHeader">JavaScript<a aria-hidden="true" tabindex="-1" href="#ref-backends-js"><span class="icon icon-link"></span></a></h2>
+<p>
+  <i id="p_2" class="pid"></i>The Reach JavaScript backend produces a compilation output named <code>input.APP.mjs</code>.
+  This will normally be imported by writing:<a href="#p_2" class="pid">2</a>
+</p>
+<p><span class="ref" id="js_backend" data-scope="js" data-symbol="backend"></span></p>
+<pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="import * as backend from './build/index.main.mjs';" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> </span><span style="color: #0550AE">*</span><span style="color: #24292F"> </span><span style="color: #CF222E">as</span><span style="color: #24292F"> backend </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'./build/index.main.mjs'</span><span style="color: #24292F">;</span></li></ol></pre>
+<p>
+  <i id="p_3" class="pid"></i>This module exports an asynchronous function for each participant.
+  For example, if a Reach program contains a participant named <span class="snip"><span style="color: #0A3069">'A'</span></span> in the <span class="snip"><span style="color: #24292F">Reach.App</span></span>, then the JavaScript backend will include a function named <span class="snip"><span style="color: #0550AE">A</span></span> (i.e. <span class="snip"><span style="color: #24292F">backend.</span><span style="color: #0550AE">A</span></span>).
+  The <span class="snip"><span style="color: #0550AE">Promise</span></span> returned by these functions is resolved when the Reach program terminates (i.e. reaches <span class="snip"><span style="color: #8250DF">exit</span><span style="color: #24292F">();</span></span>).<a href="#p_3" class="pid">3</a>
+</p>
+<p><i id="p_4" class="pid"></i>Each function accepts two arguments: <span class="snip"><span style="color: #24292F">ctc</span></span> and <span class="snip"><span style="color: #24292F">interact</span></span>. These functions should be called by the frontend.<a href="#p_4" class="pid">4</a></p>
+<p><i id="p_5" class="pid"></i>The <span class="snip"><span style="color: #24292F">ctc</span></span> argument is the result of a call to the functions <span class="snip"><span style="color: #24292F">acc.deploy</span></span> or <span class="snip"><span style="color: #24292F">acc.attach</span></span> provided by the <a href="/frontend/#ref-frontends-js">JavaScript frontend support library</a>.<a href="#p_5" class="pid">5</a></p>
+<p>
+  <i id="p_6" class="pid"></i>The <span class="snip"><span style="color: #24292F">interact</span></span> argument is an object matching the participant interact interface for the corresponding participant.
+  The types of values this object contains must match those specified
+  <a href="/frontend/#ref-frontends-js-types">on this list</a>.
+  Each function may return a <span class="snip"><span style="color: #0550AE">Promise</span></span>, which the backend will <span class="snip"><span style="color: #CF222E">await</span></span>, if it needs to perform an asynchronous action.<a href="#p_6" class="pid">6</a>
+</p>
+<p>
+  <i id="p_7" class="pid"></i>The backend provides a value, <span class="snip"><span style="color: #24292F">_version</span></span>, which is a string representation of the Reach version used to compile the program.
+  For example, the version of Reach used to produce this documentation would contain the string <span class="snip"><span style="color: #0A3069">'reach-vers'</span></span>.<a href="#p_7" class="pid">7</a>
+</p>
+<p>
+  <i id="p_8" class="pid"></i>The backend provides a function, <span class="ref" id="js_getExports" data-scope="js" data-symbol="getExports"></span><span class="snip"><span style="color: #24292F">getExports</span></span>, which exposes the exports of a Reach program.
+  This function receives the standard library as an argument and returns an object with all the exports present in the module being compiled.<a href="#p_8" class="pid">8</a>
+</p>
+<div class="note">
+  <p><i id="p_9" class="pid"></i>It's possible to expose bindings from other modules to <span class="snip"><span style="color: #24292F">getExports</span></span> by re-exporting them in your "top-level" module.<a href="#p_9" class="pid">9</a></p>
+</div>
+<p>
+  <i id="p_10" class="pid"></i>For example, if a Reach program
+  exported a variable <code>x</code>, i.e. <span class="snip"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">5</span></span>, the frontend could access the value in the following manner:<a href="#p_10" class="pid">10</a>
+</p>
+<pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="const stdlib = await loadStdlib();
+backend.getExports(stdlib).x; // 5" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">stdlib</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #8250DF">loadStdlib</span><span style="color: #24292F">();</span></li><li value="2"><span style="color: #24292F">backend.</span><span style="color: #8250DF">getExports</span><span style="color: #24292F">(stdlib).x; </span><span style="color: #6E7781">// 5</span></li></ol></pre>
+<p><i id="p_11" class="pid"></i>Finally, the backend provides a value, <span class="snip"><span style="color: #24292F">_Connectors</span></span>, which is an opaque object representing the connectors the app was compiled for.<a href="#p_11" class="pid">11</a></p>
+<h3 id="ref-backends-js-guarantees" class="refHeader">Guarantees<a aria-hidden="true" tabindex="-1" href="#ref-backends-js-guarantees"><span class="icon icon-link"></span></a></h3>
+<p>
+  <i id="p_12" class="pid"></i>This backend does not guarantee that values in a positive position in a participant interact interface, that are later passed to a negative position in a participant interact interface, will be identical, in the sense of JavaScript's <span class="snip"><span style="color: #CF222E">===</span></span> operator, to the original value.
+  In other words, this backend does not ensure that Reach programs are parametric over JavaScript values that they interact with.<a href="#p_12" class="pid">12</a>
+</p>
+<p>
+  <i id="p_13" class="pid"></i>Positive and negative are best understood by example with a function type: a positive position is supplied by the function, such as the result; while a negative position is supplied by the caller, such as the arguments.
+  These notions generalize, however, to higher (and lower) order contexts.
+  In the case of Reach, this means that non-function values in a participant interact interface are positive.<a href="#p_13" class="pid">13</a>
+</p>
+<p><i id="p_14" class="pid"></i>For example, if the Reach program,<a href="#p_14" class="pid">14</a></p>
+<pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="Reach.App( {},
+ [ Participant(&quot;A&quot;, {
+     get: Bytes(32),
+     give: Fun([Bytes(32)], Bool) } ) ],
+ (A) => {
+  A.only(() => {
+   const x = interact.give(interact.get); });
+  A.publish(x);
+  commit(); });" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #24292F">Reach.</span><span style="color: #8250DF">App</span><span style="color: #24292F">( {},</span></li><li value="2"><span style="color: #24292F"> [ </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">"A"</span><span style="color: #24292F">, {</span></li><li value="3"><span style="color: #24292F">     get: </span><span style="color: #8250DF">Bytes</span><span style="color: #24292F">(</span><span style="color: #0550AE">32</span><span style="color: #24292F">),</span></li><li value="4"><span style="color: #24292F">     give: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([</span><span style="color: #8250DF">Bytes</span><span style="color: #24292F">(</span><span style="color: #0550AE">32</span><span style="color: #24292F">)], Bool) } ) ],</span></li><li value="5"><span style="color: #24292F"> (</span><span style="color: #953800">A</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="6"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="7"><span style="color: #24292F">   </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> interact.</span><span style="color: #8250DF">give</span><span style="color: #24292F">(interact.get); });</span></li><li value="8"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(x);</span></li><li value="9"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">(); });</span></li></ol></pre>
+<p><i id="p_15" class="pid"></i>is given the <span class="snip"><span style="color: #24292F">interact</span></span> object,<a href="#p_15" class="pid">15</a></p>
+<pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="const x = &quot;A string&quot;;
+{ get: x,
+  give: (str) => x === str }" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0A3069">"A string"</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #24292F">{ </span><span style="color: #953800">get</span><span style="color: #24292F">: x,</span></li><li value="3"><span style="color: #24292F">  </span><span style="color: #953800">give</span><span style="color: #24292F">: (</span><span style="color: #953800">str</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> x </span><span style="color: #CF222E">===</span><span style="color: #24292F"> str }</span></li></ol></pre>
+<p>
+  <i id="p_16" class="pid"></i>then it is not guaranteed that <span class="snip"><span style="color: #0550AE">A</span></span> will publish <span class="snip"><span style="color: #0550AE">true</span></span>, because the <span class="snip"><span style="color: #24292F">str</span></span> given to <span class="snip"><span style="color: #24292F">give</span></span> may not be identical to <span class="snip"><span style="color: #24292F">x</span></span>.
+  (However, they are <span class="snip"><span style="color: #24292F">bytesEq</span></span>.)<a href="#p_16" class="pid">16</a>
+</p>

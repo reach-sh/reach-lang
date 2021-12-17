@@ -1,0 +1,80 @@
+<p>
+  <i id="p_0" class="pid"></i>Sometimes it is useful to add "tracing logs" to your program so you can see the values of variables and computations as the program is running.
+  For example, if we were writing purely in JavaScript, we might write<a href="#p_0" class="pid">0</a>
+</p>
+<pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="function fib(n) {
+  console.log(`Starting to compute Fibonacci`);
+  let i = 1;
+  let [a, b] = [0, 1];
+  while ( i++ < n ) {
+    console.log(i, a, b);
+    [a, b] = [b, a + b];
+  }
+  return a;
+}
+fib(9);" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">function</span><span style="color: #24292F"> </span><span style="color: #8250DF">fib</span><span style="color: #24292F">(</span><span style="color: #953800">n</span><span style="color: #24292F">) {</span></li><li value="2"><span style="color: #24292F">  console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`Starting to compute Fibonacci`</span><span style="color: #24292F">);</span></li><li value="3"><span style="color: #24292F">  </span><span style="color: #CF222E">let</span><span style="color: #24292F"> i </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li><li value="4"><span style="color: #24292F">  </span><span style="color: #CF222E">let</span><span style="color: #24292F"> [a, b] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [</span><span style="color: #0550AE">0</span><span style="color: #24292F">, </span><span style="color: #0550AE">1</span><span style="color: #24292F">];</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #CF222E">while</span><span style="color: #24292F"> ( i</span><span style="color: #CF222E">++</span><span style="color: #24292F"> </span><span style="color: #CF222E">&lt;</span><span style="color: #24292F"> n ) {</span></li><li value="6"><span style="color: #24292F">    console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(i, a, b);</span></li><li value="7"><span style="color: #24292F">    [a, b] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [b, a </span><span style="color: #CF222E">+</span><span style="color: #24292F"> b];</span></li><li value="8"><span style="color: #24292F">  }</span></li><li value="9"><span style="color: #24292F">  </span><span style="color: #CF222E">return</span><span style="color: #24292F"> a;</span></li><li value="10"><span style="color: #24292F">}</span></li><li value="11"><span style="color: #8250DF">fib</span><span style="color: #24292F">(</span><span style="color: #0550AE">9</span><span style="color: #24292F">);</span></li></ol></pre>
+<p><i id="p_1" class="pid"></i>And we'd see the output<a href="#p_1" class="pid">1</a></p>
+<pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="Starting to compute Fibonacci
+2 0 1
+3 1 1
+4 1 2
+5 2 3
+6 3 5
+7 5 8
+8 8 13
+9 13 21" href="#"></a></div><ol class="snippet"><li value="1">Starting to compute Fibonacci</li><li value="2">2 0 1</li><li value="3">3 1 1</li><li value="4">4 1 2</li><li value="5">5 2 3</li><li value="6">6 3 5</li><li value="7">7 5 8</li><li value="8">8 8 13</li><li value="9">9 13 21</li></ol></pre>
+<p><i id="p_2" class="pid"></i>How can we do something like this in Reach?<a href="#p_2" class="pid">2</a></p>
+<p>
+  <i id="p_3" class="pid"></i>The key is to use participant interact interfaces to share arbitrary information with the frontend,
+  which has the ability to log to a console or any other tracing service.
+  For example:<a href="#p_3" class="pid">3</a>
+</p>
+<pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="export const main = Reach.App(() => {
+  const A = Participant('Alice', {
+    logBool: Fun([UBool], Null),
+    logNumber: Fun([UInt], Null),
+  });
+  deploy();
+  A.only(() => {
+    interact.logBool(true);
+    interact.logNumber(1); });
+  exit();
+});" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">main</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Reach.</span><span style="color: #8250DF">App</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">A</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Alice'</span><span style="color: #24292F">, {</span></li><li value="3"><span style="color: #24292F">    logBool: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UBool], Null),</span></li><li value="4"><span style="color: #24292F">    logNumber: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Null),</span></li><li value="5"><span style="color: #24292F">  });</span></li><li value="6"><span style="color: #24292F">  </span><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></li><li value="7"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">only</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="8"><span style="color: #24292F">    interact.</span><span style="color: #8250DF">logBool</span><span style="color: #24292F">(</span><span style="color: #0550AE">true</span><span style="color: #24292F">);</span></li><li value="9"><span style="color: #24292F">    interact.</span><span style="color: #8250DF">logNumber</span><span style="color: #24292F">(</span><span style="color: #0550AE">1</span><span style="color: #24292F">); });</span></li><li value="10"><span style="color: #24292F">  </span><span style="color: #8250DF">exit</span><span style="color: #24292F">();</span></li><li value="11"><span style="color: #24292F">});</span></li></ol></pre>
+<p>
+  <i id="p_4" class="pid"></i>However, as this example shows, it can be inconvenient to use this pattern, because <span class="snip"><span style="color: #24292F">Fun</span></span> types constrain their domains to particular input data types, but we may need to log different kinds of data at different points in the program.
+  Similarly, it is inconvenient to use an entire <span class="snip"><span style="color: #24292F">only</span></span> block for a simple log.<a href="#p_4" class="pid">4</a>
+</p>
+<p>
+  <i id="p_5" class="pid"></i>Reach provides two conveniences for this situation that taste great together: unconstrained domain function types and interact shorthand.
+  The first allows a function in a participant interact interface to have a completely unconstrained domain.
+  The second allows a call to a frontend from anywhere without an <span class="snip"><span style="color: #24292F">only</span></span>, provided the function returns no value.
+  If we re-write the above example using both of these patterns, it looks like:<a href="#p_5" class="pid">5</a>
+</p>
+<pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="export const main = Reach.App(() => {
+  const A = Participant('Alice', {
+    log: Fun(true, Null),
+  });
+  deploy();
+  A.interact.log(true);
+  A.interact.log(1);
+  // We can easily add more complex log entries as well.
+  A.interact.log([1, true]);
+  A.interact.log({x: 1, y: true});
+  const x = 1;
+  const y = true;
+  A.interact.log({x, y});
+  A.interact.log(Maybe(UInt).Some(5));
+  exit();
+});" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">main</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Reach.</span><span style="color: #8250DF">App</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">A</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Alice'</span><span style="color: #24292F">, {</span></li><li value="3"><span style="color: #24292F">    log: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">(</span><span style="color: #0550AE">true</span><span style="color: #24292F">, Null),</span></li><li value="4"><span style="color: #24292F">  });</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></li><li value="6"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.interact.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0550AE">true</span><span style="color: #24292F">);</span></li><li value="7"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.interact.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0550AE">1</span><span style="color: #24292F">);</span></li><li value="8"><span style="color: #24292F">  </span><span style="color: #6E7781">// We can easily add more complex log entries as well.</span></li><li value="9"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.interact.</span><span style="color: #8250DF">log</span><span style="color: #24292F">([</span><span style="color: #0550AE">1</span><span style="color: #24292F">, </span><span style="color: #0550AE">true</span><span style="color: #24292F">]);</span></li><li value="10"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.interact.</span><span style="color: #8250DF">log</span><span style="color: #24292F">({x: </span><span style="color: #0550AE">1</span><span style="color: #24292F">, y: </span><span style="color: #0550AE">true</span><span style="color: #24292F">});</span></li><li value="11"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li><li value="12"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">y</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">true</span><span style="color: #24292F">;</span></li><li value="13"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.interact.</span><span style="color: #8250DF">log</span><span style="color: #24292F">({x, y});</span></li><li value="14"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.interact.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #8250DF">Maybe</span><span style="color: #24292F">(UInt).</span><span style="color: #8250DF">Some</span><span style="color: #24292F">(</span><span style="color: #0550AE">5</span><span style="color: #24292F">));</span></li><li value="15"><span style="color: #24292F">  </span><span style="color: #8250DF">exit</span><span style="color: #24292F">();</span></li><li value="16"><span style="color: #24292F">});</span></li></ol></pre>
+<p><i id="p_6" class="pid"></i>Then, a JavaScript frontend can simply use <span class="snip"><span style="color: #24292F">console.log</span></span> as the value of the <code>log</code> function.<a href="#p_6" class="pid">6</a></p>
+<p>
+  <i id="p_7" class="pid"></i>Reach provides <span class="snip"><span style="color: #24292F">hasConsoleLogger</span></span> and hasConsoleLogger (Frontend) in the standard library
+  for default implementations of logging to stdout. It can be used in Reach with:<a href="#p_7" class="pid">7</a>
+</p>
+<pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="const A = Participant('Alice', { ...hasConsoleLogger })" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">A</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Alice'</span><span style="color: #24292F">, { </span><span style="color: #CF222E">...</span><span style="color: #24292F">hasConsoleLogger })</span></li></ol></pre>
+<p><i id="p_8" class="pid"></i>and in the JavaScript frontend with:<a href="#p_8" class="pid">8</a></p>
+<pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="backend.Alice(
+   ctcAlice,
+   { ...stdlib.hasConsoleLogger },
+ )," href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #24292F">backend.</span><span style="color: #8250DF">Alice</span><span style="color: #24292F">(</span></li><li value="2"><span style="color: #24292F">   ctcAlice,</span></li><li value="3"><span style="color: #24292F">   { </span><span style="color: #CF222E">...</span><span style="color: #24292F">stdlib.hasConsoleLogger },</span></li><li value="4"><span style="color: #24292F"> ),</span></li></ol></pre>
+<p><i id="p_9" class="pid"></i>The Reach development repository contains an example of this pattern: <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/log/index.rsh">log/index.rsh</a> and <a href="https://github.com/reach-sh/reach-lang/tree/master/examples/log/index.mjs">log/index.mjs</a>.<a href="#p_9" class="pid">9</a></p>

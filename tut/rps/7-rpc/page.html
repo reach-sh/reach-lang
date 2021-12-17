@@ -1,0 +1,1537 @@
+<p>
+  <i id="p_0" class="pid"></i>The main sequence of the tutorial uses the
+  <a href="/frontend/#ref-frontends-js">JavaScript frontend support library</a> to implement
+  a frontend for our Reach program using JavaScript.
+  But, Reach supports using any programming language through the
+  <a href="/rpc/#ref-backends-rpc">Reach RPC Server</a>.<a href="#p_0" class="pid">0</a>
+</p>
+<p>
+  <i id="p_1" class="pid"></i>This tutorial walks through using this technique to implement a <em>Rock, Paper, Scissors!</em> frontend
+  in Python.
+  It is based on the frontend from <a href="/tut/rps/#tut-7">Play and Play Again</a>, so it does not include a
+  text-based interface, or a Web interface, but uses the final version of the
+  Reach code.<a href="#p_1" class="pid">1</a>
+</p>
+<p>
+  <i id="p_2" class="pid"></i>Below we will compare the <a href="/tut/rps/#tut-7">Play and Play Again</a> JavaScript frontend with the
+  equivalent Python code communicating via RPC, section by section.
+  Follow along by typing the Python code into a file called <code>index.py</code>.<a href="#p_2" class="pid">2</a>
+</p>
+<hr>
+<p><i id="p_3" class="pid"></i>We begin by comparing the necessary imports and program body:<a href="#p_3" class="pid">3</a></p>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-loops/index.mjs">/examples/rps-7-loops/index.mjs</a><a class="far fa-copy copyBtn" data-clipboard-text="import { loadStdlib } from '@reach-sh/stdlib';
+import * as backend from './build/index.main.mjs';
+const stdlib = loadStdlib(process.env);
+
+(async () => {
+  const startingBalance = stdlib.parseCurrency(100);
+  const accAlice = await stdlib.newTestAccount(startingBalance);
+  const accBob = await stdlib.newTestAccount(startingBalance);
+
+  const fmt = (x) => stdlib.formatCurrency(x, 4);
+  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
+  const beforeAlice = await getBalance(accAlice);
+  const beforeBob = await getBalance(accBob);
+
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
+
+  const HAND = ['Rock', 'Paper', 'Scissors'];
+  const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
+  const Player = (Who) => ({
+    ...stdlib.hasRandom,
+    getHand: async () => { // <-- async now
+      const hand = Math.floor(Math.random() * 3);
+      console.log(`${Who} played ${HAND[hand]}`);
+      if ( Math.random() <= 0.01 ) {
+        for ( let i = 0; i < 10; i++ ) {
+          console.log(`  ${Who} takes their sweet time sending it back...`);
+          await stdlib.wait(1);
+        }
+      }
+      return hand;
+    },
+    seeOutcome: (outcome) => {
+      console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
+    },
+    informTimeout: () => {
+      console.log(`${Who} observed a timeout`);
+    },
+  });
+
+  await Promise.all([
+    ctcAlice.p.Alice({
+      ...Player('Alice'),
+      wager: stdlib.parseCurrency(5),
+      deadline: 10,
+    }),
+    ctcBob.p.Bob({
+      ...Player('Bob'),
+      acceptWager: (amt) => {
+        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
+      },
+    }),
+  ]);
+
+  const afterAlice = await getBalance(accAlice);
+  const afterBob = await getBalance(accBob);
+
+  console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
+  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
+
+})();" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">import</span><span style="color: #24292F"> { loadStdlib } </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'@reach-sh/stdlib'</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #CF222E">import</span><span style="color: #24292F"> </span><span style="color: #0550AE">*</span><span style="color: #24292F"> </span><span style="color: #CF222E">as</span><span style="color: #24292F"> backend </span><span style="color: #CF222E">from</span><span style="color: #24292F"> </span><span style="color: #0A3069">'./build/index.main.mjs'</span><span style="color: #24292F">;</span></li><li value="3"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">stdlib</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">loadStdlib</span><span style="color: #24292F">(process.env);</span></li><li value="4"></li><li value="5"><span style="color: #24292F">(</span><span style="color: #CF222E">async</span><span style="color: #24292F"> () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li></ol></pre>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-rpc/client-py/index.py">/examples/rps-7-rpc/client-py/index.py</a><a class="far fa-copy copyBtn" data-clipboard-text="# flake8: noqa
+
+import random
+from threading import Thread
+from reach_rpc import mk_rpc
+
+
+def main():
+    rpc, rpc_callbacks = mk_rpc()
+
+    starting_balance = rpc('/stdlib/parseCurrency', 100)
+    acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)
+    acc_bob          = rpc('/stdlib/newTestAccount', starting_balance)
+
+    def fmt(x):
+        return rpc('/stdlib/formatCurrency', x, 4)
+
+    def get_balance(w):
+        return fmt(rpc('/stdlib/balanceOf', w))
+
+    before_alice = get_balance(acc_alice)
+    before_bob   = get_balance(acc_bob)
+
+    ctc_alice    = rpc('/acc/deploy', acc_alice)
+
+    HAND         = ['Rock', 'Paper', 'Scissors']
+    OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
+
+    def player(who):
+        def getHand():
+            hand = random.randint(0, 2)
+            print('%s played %s' % (who, HAND[hand]))
+            return hand
+
+        def informTimeout():
+            print('%s observed a timeout' % who)
+
+        def seeOutcome(n):
+            print('%s saw outcome %s'
+                  % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))
+
+        return {'stdlib.hasRandom': True,
+                'getHand':          getHand,
+                'informTimeout':    informTimeout,
+                'seeOutcome':       seeOutcome,
+                }
+
+    def play_alice():
+        rpc_callbacks(
+            '/backend/Alice',
+            ctc_alice,
+            dict(wager=rpc('/stdlib/parseCurrency', 5), deadline=10, **player('Alice')))
+
+    alice = Thread(target=play_alice)
+    alice.start()
+
+    def play_bob():
+        def acceptWager(amt):
+            print('Bob accepts the wager of %s' % fmt(amt))
+
+        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        rpc_callbacks(
+            '/backend/Bob',
+            ctc_bob,
+            dict(acceptWager=acceptWager, **player('Bob')))
+        rpc('/forget/ctc', ctc_bob)
+
+    bob = Thread(target=play_bob)
+    bob.start()
+
+    alice.join()
+    bob.join()
+
+    after_alice = get_balance(acc_alice)
+    after_bob   = get_balance(acc_bob)
+
+    print('Alice went from %s to %s' % (before_alice, after_alice))
+    print('  Bob went from %s to %s' % (before_bob,   after_bob))
+
+    rpc('/forget/acc', acc_alice, acc_bob)
+    rpc('/forget/ctc', ctc_alice)
+
+
+if __name__ == '__main__':
+    main()" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #6E7781"># flake8: noqa</span></li><li value="2"></li><li value="3"><span style="color: #CF222E">import</span><span style="color: #24292F"> random</span></li><li value="4"><span style="color: #CF222E">from</span><span style="color: #24292F"> threading </span><span style="color: #CF222E">import</span><span style="color: #24292F"> Thread</span></li><li value="5"><span style="color: #CF222E">from</span><span style="color: #24292F"> reach_rpc </span><span style="color: #CF222E">import</span><span style="color: #24292F"> mk_rpc</span></li><li value="6"></li><li value="7"></li><li value="8"><span style="color: #CF222E">def</span><span style="color: #24292F"> </span><span style="color: #8250DF">main</span><span style="color: #24292F">():</span></li><li value="9"><span style="color: #24292F">    rpc, rpc_callbacks </span><span style="color: #CF222E">=</span><span style="color: #24292F"> mk_rpc()</span></li><li value="10"></li></ol></pre>
+<p>
+  <i id="p_4" class="pid"></i>Rather than importing <span class="snip"><span style="color: #24292F">loadStdlib</span></span> and <span class="snip"><span style="color: #24292F">backend</span></span> as with the
+  JavaScript version, the Python frontend instead plucks <span class="snip"><span style="color: #24292F">mk_rpc</span></span> from its
+  supporting <span class="snip"><span style="color: #24292F">reach_rpc</span></span> library.
+  It is unnecessary for an RPC <em>frontend</em> to import a backend
+  because the <a href="/rpc/#ref-backends-rpc">RPC Server</a> handles doing so instead.<a href="#p_4" class="pid">4</a>
+</p>
+<p>
+  <i id="p_5" class="pid"></i>The Python version also borrows functionality from the <span class="snip"><span style="color: #24292F">random</span></span> and
+  <span class="snip"><span style="color: #24292F">threading</span></span> libraries.
+  These will be necessary when providing callable methods in the
+  participant interact interface it offers the RPC server.<a href="#p_5" class="pid">5</a>
+</p>
+<p>
+  <i id="p_6" class="pid"></i>On line 9 the Python program binds <span class="snip"><span style="color: #24292F">rpc</span></span> and <span class="snip"><span style="color: #24292F">rpc_callbacks</span></span> out of
+  <span class="snip"><span style="color: #24292F">mk_rpc</span></span>.
+  These two functions are the only tools we will need to communicate with the
+  RPC server.
+  See <a href="/rpc/py/#ref-frontends-rpc-py">Python</a> for more details on how they work.<a href="#p_6" class="pid">6</a>
+</p>
+<hr>
+<p>
+  <i id="p_7" class="pid"></i>Next, we define our Alice and Bob accounts and pre-fund them each with a
+  starting balance of <code>10</code>.<a href="#p_7" class="pid">7</a>
+</p>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-loops/index.mjs">/examples/rps-7-loops/index.mjs</a><a class="far fa-copy copyBtn" data-clipboard-text="import { loadStdlib } from '@reach-sh/stdlib';
+import * as backend from './build/index.main.mjs';
+const stdlib = loadStdlib(process.env);
+
+(async () => {
+  const startingBalance = stdlib.parseCurrency(100);
+  const accAlice = await stdlib.newTestAccount(startingBalance);
+  const accBob = await stdlib.newTestAccount(startingBalance);
+
+  const fmt = (x) => stdlib.formatCurrency(x, 4);
+  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
+  const beforeAlice = await getBalance(accAlice);
+  const beforeBob = await getBalance(accBob);
+
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
+
+  const HAND = ['Rock', 'Paper', 'Scissors'];
+  const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
+  const Player = (Who) => ({
+    ...stdlib.hasRandom,
+    getHand: async () => { // <-- async now
+      const hand = Math.floor(Math.random() * 3);
+      console.log(`${Who} played ${HAND[hand]}`);
+      if ( Math.random() <= 0.01 ) {
+        for ( let i = 0; i < 10; i++ ) {
+          console.log(`  ${Who} takes their sweet time sending it back...`);
+          await stdlib.wait(1);
+        }
+      }
+      return hand;
+    },
+    seeOutcome: (outcome) => {
+      console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
+    },
+    informTimeout: () => {
+      console.log(`${Who} observed a timeout`);
+    },
+  });
+
+  await Promise.all([
+    ctcAlice.p.Alice({
+      ...Player('Alice'),
+      wager: stdlib.parseCurrency(5),
+      deadline: 10,
+    }),
+    ctcBob.p.Bob({
+      ...Player('Bob'),
+      acceptWager: (amt) => {
+        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
+      },
+    }),
+  ]);
+
+  const afterAlice = await getBalance(accAlice);
+  const afterBob = await getBalance(accBob);
+
+  console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
+  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
+
+})();" href="#"></a></div><ol class="snippet"><li value="6"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">startingBalance</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> stdlib.</span><span style="color: #8250DF">parseCurrency</span><span style="color: #24292F">(</span><span style="color: #0550AE">100</span><span style="color: #24292F">);</span></li><li value="7"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">accAlice</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> stdlib.</span><span style="color: #8250DF">newTestAccount</span><span style="color: #24292F">(startingBalance);</span></li><li value="8"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">accBob</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> stdlib.</span><span style="color: #8250DF">newTestAccount</span><span style="color: #24292F">(startingBalance);</span></li><li value="9"></li></ol></pre>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-rpc/client-py/index.py">/examples/rps-7-rpc/client-py/index.py</a><a class="far fa-copy copyBtn" data-clipboard-text="# flake8: noqa
+
+import random
+from threading import Thread
+from reach_rpc import mk_rpc
+
+
+def main():
+    rpc, rpc_callbacks = mk_rpc()
+
+    starting_balance = rpc('/stdlib/parseCurrency', 100)
+    acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)
+    acc_bob          = rpc('/stdlib/newTestAccount', starting_balance)
+
+    def fmt(x):
+        return rpc('/stdlib/formatCurrency', x, 4)
+
+    def get_balance(w):
+        return fmt(rpc('/stdlib/balanceOf', w))
+
+    before_alice = get_balance(acc_alice)
+    before_bob   = get_balance(acc_bob)
+
+    ctc_alice    = rpc('/acc/deploy', acc_alice)
+
+    HAND         = ['Rock', 'Paper', 'Scissors']
+    OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
+
+    def player(who):
+        def getHand():
+            hand = random.randint(0, 2)
+            print('%s played %s' % (who, HAND[hand]))
+            return hand
+
+        def informTimeout():
+            print('%s observed a timeout' % who)
+
+        def seeOutcome(n):
+            print('%s saw outcome %s'
+                  % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))
+
+        return {'stdlib.hasRandom': True,
+                'getHand':          getHand,
+                'informTimeout':    informTimeout,
+                'seeOutcome':       seeOutcome,
+                }
+
+    def play_alice():
+        rpc_callbacks(
+            '/backend/Alice',
+            ctc_alice,
+            dict(wager=rpc('/stdlib/parseCurrency', 5), deadline=10, **player('Alice')))
+
+    alice = Thread(target=play_alice)
+    alice.start()
+
+    def play_bob():
+        def acceptWager(amt):
+            print('Bob accepts the wager of %s' % fmt(amt))
+
+        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        rpc_callbacks(
+            '/backend/Bob',
+            ctc_bob,
+            dict(acceptWager=acceptWager, **player('Bob')))
+        rpc('/forget/ctc', ctc_bob)
+
+    bob = Thread(target=play_bob)
+    bob.start()
+
+    alice.join()
+    bob.join()
+
+    after_alice = get_balance(acc_alice)
+    after_bob   = get_balance(acc_bob)
+
+    print('Alice went from %s to %s' % (before_alice, after_alice))
+    print('  Bob went from %s to %s' % (before_bob,   after_bob))
+
+    rpc('/forget/acc', acc_alice, acc_bob)
+    rpc('/forget/ctc', ctc_alice)
+
+
+if __name__ == '__main__':
+    main()" href="#"></a></div><ol class="snippet"><li value="11"><span style="color: #24292F">    starting_balance </span><span style="color: #CF222E">=</span><span style="color: #24292F"> rpc(</span><span style="color: #0A3069">'/stdlib/parseCurrency'</span><span style="color: #24292F">, </span><span style="color: #0550AE">100</span><span style="color: #24292F">)</span></li><li value="12"><span style="color: #24292F">    acc_alice        </span><span style="color: #CF222E">=</span><span style="color: #24292F"> rpc(</span><span style="color: #0A3069">'/stdlib/newTestAccount'</span><span style="color: #24292F">, starting_balance)</span></li><li value="13"><span style="color: #24292F">    acc_bob          </span><span style="color: #CF222E">=</span><span style="color: #24292F"> rpc(</span><span style="color: #0A3069">'/stdlib/newTestAccount'</span><span style="color: #24292F">, starting_balance)</span></li><li value="14"></li></ol></pre>
+<p>
+  <i id="p_8" class="pid"></i>Translating code which uses the
+  <a href="/frontend/#ref-frontends-js">JavaScript frontend support library</a> to its
+  <a href="/rpc/py/#ref-frontends-rpc-py">Python RPC</a> equivalent is a simple matter of
+  specifying the corresponding RPC method (e.g.
+  <code>'/stdlib/newTestAccount'</code>), and supplying the same arguments thereafter.<a href="#p_8" class="pid">8</a>
+</p>
+<hr>
+<p>
+  <i id="p_9" class="pid"></i>Now we define two helper functions and use them to query Alice and Bob's
+  beginning balances:<a href="#p_9" class="pid">9</a>
+</p>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-loops/index.mjs">/examples/rps-7-loops/index.mjs</a><a class="far fa-copy copyBtn" data-clipboard-text="import { loadStdlib } from '@reach-sh/stdlib';
+import * as backend from './build/index.main.mjs';
+const stdlib = loadStdlib(process.env);
+
+(async () => {
+  const startingBalance = stdlib.parseCurrency(100);
+  const accAlice = await stdlib.newTestAccount(startingBalance);
+  const accBob = await stdlib.newTestAccount(startingBalance);
+
+  const fmt = (x) => stdlib.formatCurrency(x, 4);
+  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
+  const beforeAlice = await getBalance(accAlice);
+  const beforeBob = await getBalance(accBob);
+
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
+
+  const HAND = ['Rock', 'Paper', 'Scissors'];
+  const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
+  const Player = (Who) => ({
+    ...stdlib.hasRandom,
+    getHand: async () => { // <-- async now
+      const hand = Math.floor(Math.random() * 3);
+      console.log(`${Who} played ${HAND[hand]}`);
+      if ( Math.random() <= 0.01 ) {
+        for ( let i = 0; i < 10; i++ ) {
+          console.log(`  ${Who} takes their sweet time sending it back...`);
+          await stdlib.wait(1);
+        }
+      }
+      return hand;
+    },
+    seeOutcome: (outcome) => {
+      console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
+    },
+    informTimeout: () => {
+      console.log(`${Who} observed a timeout`);
+    },
+  });
+
+  await Promise.all([
+    ctcAlice.p.Alice({
+      ...Player('Alice'),
+      wager: stdlib.parseCurrency(5),
+      deadline: 10,
+    }),
+    ctcBob.p.Bob({
+      ...Player('Bob'),
+      acceptWager: (amt) => {
+        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
+      },
+    }),
+  ]);
+
+  const afterAlice = await getBalance(accAlice);
+  const afterBob = await getBalance(accBob);
+
+  console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
+  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
+
+})();" href="#"></a></div><ol class="snippet"><li value="10"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #8250DF">fmt</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> (</span><span style="color: #953800">x</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> stdlib.</span><span style="color: #8250DF">formatCurrency</span><span style="color: #24292F">(x, </span><span style="color: #0550AE">4</span><span style="color: #24292F">);</span></li><li value="11"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #8250DF">getBalance</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">async</span><span style="color: #24292F"> (</span><span style="color: #953800">who</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> </span><span style="color: #8250DF">fmt</span><span style="color: #24292F">(</span><span style="color: #CF222E">await</span><span style="color: #24292F"> stdlib.</span><span style="color: #8250DF">balanceOf</span><span style="color: #24292F">(who));</span></li><li value="12"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">beforeAlice</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #8250DF">getBalance</span><span style="color: #24292F">(accAlice);</span></li><li value="13"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">beforeBob</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #8250DF">getBalance</span><span style="color: #24292F">(accBob);</span></li><li value="14"></li></ol></pre>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-rpc/client-py/index.py">/examples/rps-7-rpc/client-py/index.py</a><a class="far fa-copy copyBtn" data-clipboard-text="# flake8: noqa
+
+import random
+from threading import Thread
+from reach_rpc import mk_rpc
+
+
+def main():
+    rpc, rpc_callbacks = mk_rpc()
+
+    starting_balance = rpc('/stdlib/parseCurrency', 100)
+    acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)
+    acc_bob          = rpc('/stdlib/newTestAccount', starting_balance)
+
+    def fmt(x):
+        return rpc('/stdlib/formatCurrency', x, 4)
+
+    def get_balance(w):
+        return fmt(rpc('/stdlib/balanceOf', w))
+
+    before_alice = get_balance(acc_alice)
+    before_bob   = get_balance(acc_bob)
+
+    ctc_alice    = rpc('/acc/deploy', acc_alice)
+
+    HAND         = ['Rock', 'Paper', 'Scissors']
+    OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
+
+    def player(who):
+        def getHand():
+            hand = random.randint(0, 2)
+            print('%s played %s' % (who, HAND[hand]))
+            return hand
+
+        def informTimeout():
+            print('%s observed a timeout' % who)
+
+        def seeOutcome(n):
+            print('%s saw outcome %s'
+                  % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))
+
+        return {'stdlib.hasRandom': True,
+                'getHand':          getHand,
+                'informTimeout':    informTimeout,
+                'seeOutcome':       seeOutcome,
+                }
+
+    def play_alice():
+        rpc_callbacks(
+            '/backend/Alice',
+            ctc_alice,
+            dict(wager=rpc('/stdlib/parseCurrency', 5), deadline=10, **player('Alice')))
+
+    alice = Thread(target=play_alice)
+    alice.start()
+
+    def play_bob():
+        def acceptWager(amt):
+            print('Bob accepts the wager of %s' % fmt(amt))
+
+        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        rpc_callbacks(
+            '/backend/Bob',
+            ctc_bob,
+            dict(acceptWager=acceptWager, **player('Bob')))
+        rpc('/forget/ctc', ctc_bob)
+
+    bob = Thread(target=play_bob)
+    bob.start()
+
+    alice.join()
+    bob.join()
+
+    after_alice = get_balance(acc_alice)
+    after_bob   = get_balance(acc_bob)
+
+    print('Alice went from %s to %s' % (before_alice, after_alice))
+    print('  Bob went from %s to %s' % (before_bob,   after_bob))
+
+    rpc('/forget/acc', acc_alice, acc_bob)
+    rpc('/forget/ctc', ctc_alice)
+
+
+if __name__ == '__main__':
+    main()" href="#"></a></div><ol class="snippet"><li value="15"><span style="color: #24292F">    </span><span style="color: #CF222E">def</span><span style="color: #24292F"> </span><span style="color: #8250DF">fmt</span><span style="color: #24292F">(x):</span></li><li value="16"><span style="color: #24292F">        </span><span style="color: #CF222E">return</span><span style="color: #24292F"> rpc(</span><span style="color: #0A3069">'/stdlib/formatCurrency'</span><span style="color: #24292F">, x, </span><span style="color: #0550AE">4</span><span style="color: #24292F">)</span></li><li value="17"></li><li value="18"><span style="color: #24292F">    </span><span style="color: #CF222E">def</span><span style="color: #24292F"> </span><span style="color: #8250DF">get_balance</span><span style="color: #24292F">(w):</span></li><li value="19"><span style="color: #24292F">        </span><span style="color: #CF222E">return</span><span style="color: #24292F"> fmt(rpc(</span><span style="color: #0A3069">'/stdlib/balanceOf'</span><span style="color: #24292F">, w))</span></li><li value="20"></li><li value="21"><span style="color: #24292F">    before_alice </span><span style="color: #CF222E">=</span><span style="color: #24292F"> get_balance(acc_alice)</span></li><li value="22"><span style="color: #24292F">    before_bob   </span><span style="color: #CF222E">=</span><span style="color: #24292F"> get_balance(acc_bob)</span></li><li value="23"></li></ol></pre>
+<hr>
+<p><i id="p_10" class="pid"></i>Deploying and attaching to contracts works slightly differently over RPC:<a href="#p_10" class="pid">10</a></p>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-loops/index.mjs">/examples/rps-7-loops/index.mjs</a><a class="far fa-copy copyBtn" data-clipboard-text="import { loadStdlib } from '@reach-sh/stdlib';
+import * as backend from './build/index.main.mjs';
+const stdlib = loadStdlib(process.env);
+
+(async () => {
+  const startingBalance = stdlib.parseCurrency(100);
+  const accAlice = await stdlib.newTestAccount(startingBalance);
+  const accBob = await stdlib.newTestAccount(startingBalance);
+
+  const fmt = (x) => stdlib.formatCurrency(x, 4);
+  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
+  const beforeAlice = await getBalance(accAlice);
+  const beforeBob = await getBalance(accBob);
+
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
+
+  const HAND = ['Rock', 'Paper', 'Scissors'];
+  const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
+  const Player = (Who) => ({
+    ...stdlib.hasRandom,
+    getHand: async () => { // <-- async now
+      const hand = Math.floor(Math.random() * 3);
+      console.log(`${Who} played ${HAND[hand]}`);
+      if ( Math.random() <= 0.01 ) {
+        for ( let i = 0; i < 10; i++ ) {
+          console.log(`  ${Who} takes their sweet time sending it back...`);
+          await stdlib.wait(1);
+        }
+      }
+      return hand;
+    },
+    seeOutcome: (outcome) => {
+      console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
+    },
+    informTimeout: () => {
+      console.log(`${Who} observed a timeout`);
+    },
+  });
+
+  await Promise.all([
+    ctcAlice.p.Alice({
+      ...Player('Alice'),
+      wager: stdlib.parseCurrency(5),
+      deadline: 10,
+    }),
+    ctcBob.p.Bob({
+      ...Player('Bob'),
+      acceptWager: (amt) => {
+        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
+      },
+    }),
+  ]);
+
+  const afterAlice = await getBalance(accAlice);
+  const afterBob = await getBalance(accBob);
+
+  console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
+  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
+
+})();" href="#"></a></div><ol class="snippet"><li value="15"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">ctcAlice</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> accAlice.</span><span style="color: #8250DF">contract</span><span style="color: #24292F">(backend);</span></li><li value="16"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">ctcBob</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> accBob.</span><span style="color: #8250DF">contract</span><span style="color: #24292F">(backend, ctcAlice.</span><span style="color: #8250DF">getInfo</span><span style="color: #24292F">());</span></li><li value="17"></li></ol></pre>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-rpc/client-py/index.py">/examples/rps-7-rpc/client-py/index.py</a><a class="far fa-copy copyBtn" data-clipboard-text="# flake8: noqa
+
+import random
+from threading import Thread
+from reach_rpc import mk_rpc
+
+
+def main():
+    rpc, rpc_callbacks = mk_rpc()
+
+    starting_balance = rpc('/stdlib/parseCurrency', 100)
+    acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)
+    acc_bob          = rpc('/stdlib/newTestAccount', starting_balance)
+
+    def fmt(x):
+        return rpc('/stdlib/formatCurrency', x, 4)
+
+    def get_balance(w):
+        return fmt(rpc('/stdlib/balanceOf', w))
+
+    before_alice = get_balance(acc_alice)
+    before_bob   = get_balance(acc_bob)
+
+    ctc_alice    = rpc('/acc/deploy', acc_alice)
+
+    HAND         = ['Rock', 'Paper', 'Scissors']
+    OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
+
+    def player(who):
+        def getHand():
+            hand = random.randint(0, 2)
+            print('%s played %s' % (who, HAND[hand]))
+            return hand
+
+        def informTimeout():
+            print('%s observed a timeout' % who)
+
+        def seeOutcome(n):
+            print('%s saw outcome %s'
+                  % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))
+
+        return {'stdlib.hasRandom': True,
+                'getHand':          getHand,
+                'informTimeout':    informTimeout,
+                'seeOutcome':       seeOutcome,
+                }
+
+    def play_alice():
+        rpc_callbacks(
+            '/backend/Alice',
+            ctc_alice,
+            dict(wager=rpc('/stdlib/parseCurrency', 5), deadline=10, **player('Alice')))
+
+    alice = Thread(target=play_alice)
+    alice.start()
+
+    def play_bob():
+        def acceptWager(amt):
+            print('Bob accepts the wager of %s' % fmt(amt))
+
+        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        rpc_callbacks(
+            '/backend/Bob',
+            ctc_bob,
+            dict(acceptWager=acceptWager, **player('Bob')))
+        rpc('/forget/ctc', ctc_bob)
+
+    bob = Thread(target=play_bob)
+    bob.start()
+
+    alice.join()
+    bob.join()
+
+    after_alice = get_balance(acc_alice)
+    after_bob   = get_balance(acc_bob)
+
+    print('Alice went from %s to %s' % (before_alice, after_alice))
+    print('  Bob went from %s to %s' % (before_bob,   after_bob))
+
+    rpc('/forget/acc', acc_alice, acc_bob)
+    rpc('/forget/ctc', ctc_alice)
+
+
+if __name__ == '__main__':
+    main()" href="#"></a></div><ol class="snippet"><li value="24"><span style="color: #24292F">    ctc_alice    </span><span style="color: #CF222E">=</span><span style="color: #24292F"> rpc(</span><span style="color: #0A3069">'/acc/deploy'</span><span style="color: #24292F">, acc_alice)</span></li><li value="25"></li></ol></pre>
+<p>
+  <i id="p_11" class="pid"></i>As previously mentioned, it is the responsibility of the
+  <a href="/rpc/#ref-backends-rpc">RPC Server</a> (rather than that of the frontend
+  communicating over RPC) to interface with the DApp's backend, so that
+  argument is absent in the Python version shown above.
+  Instead, Alice's account RPC handle alone is sufficient for her to
+  deploy.
+  We also need to delay Bob's attach until later, because Python lacks Promises that work like JavaScript's.
+  When we do attach Bob, only Bob's account RPC handle and Alice's
+  contract RPC handle are necessary for him to attach.<a href="#p_11" class="pid">11</a>
+</p>
+<hr>
+<p>
+  <i id="p_12" class="pid"></i><span class="snip"><span style="color: #0550AE">HAND</span></span> and <span class="snip"><span style="color: #0550AE">OUTCOME</span></span> only differ syntactically from their JavaScript
+  equivalents:<a href="#p_12" class="pid">12</a>
+</p>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-loops/index.mjs">/examples/rps-7-loops/index.mjs</a><a class="far fa-copy copyBtn" data-clipboard-text="import { loadStdlib } from '@reach-sh/stdlib';
+import * as backend from './build/index.main.mjs';
+const stdlib = loadStdlib(process.env);
+
+(async () => {
+  const startingBalance = stdlib.parseCurrency(100);
+  const accAlice = await stdlib.newTestAccount(startingBalance);
+  const accBob = await stdlib.newTestAccount(startingBalance);
+
+  const fmt = (x) => stdlib.formatCurrency(x, 4);
+  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
+  const beforeAlice = await getBalance(accAlice);
+  const beforeBob = await getBalance(accBob);
+
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
+
+  const HAND = ['Rock', 'Paper', 'Scissors'];
+  const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
+  const Player = (Who) => ({
+    ...stdlib.hasRandom,
+    getHand: async () => { // <-- async now
+      const hand = Math.floor(Math.random() * 3);
+      console.log(`${Who} played ${HAND[hand]}`);
+      if ( Math.random() <= 0.01 ) {
+        for ( let i = 0; i < 10; i++ ) {
+          console.log(`  ${Who} takes their sweet time sending it back...`);
+          await stdlib.wait(1);
+        }
+      }
+      return hand;
+    },
+    seeOutcome: (outcome) => {
+      console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
+    },
+    informTimeout: () => {
+      console.log(`${Who} observed a timeout`);
+    },
+  });
+
+  await Promise.all([
+    ctcAlice.p.Alice({
+      ...Player('Alice'),
+      wager: stdlib.parseCurrency(5),
+      deadline: 10,
+    }),
+    ctcBob.p.Bob({
+      ...Player('Bob'),
+      acceptWager: (amt) => {
+        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
+      },
+    }),
+  ]);
+
+  const afterAlice = await getBalance(accAlice);
+  const afterBob = await getBalance(accBob);
+
+  console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
+  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
+
+})();" href="#"></a></div><ol class="snippet"><li value="18"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">HAND</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [</span><span style="color: #0A3069">'Rock'</span><span style="color: #24292F">, </span><span style="color: #0A3069">'Paper'</span><span style="color: #24292F">, </span><span style="color: #0A3069">'Scissors'</span><span style="color: #24292F">];</span></li><li value="19"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">OUTCOME</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [</span><span style="color: #0A3069">'Bob wins'</span><span style="color: #24292F">, </span><span style="color: #0A3069">'Draw'</span><span style="color: #24292F">, </span><span style="color: #0A3069">'Alice wins'</span><span style="color: #24292F">];</span></li></ol></pre>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-rpc/client-py/index.py">/examples/rps-7-rpc/client-py/index.py</a><a class="far fa-copy copyBtn" data-clipboard-text="# flake8: noqa
+
+import random
+from threading import Thread
+from reach_rpc import mk_rpc
+
+
+def main():
+    rpc, rpc_callbacks = mk_rpc()
+
+    starting_balance = rpc('/stdlib/parseCurrency', 100)
+    acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)
+    acc_bob          = rpc('/stdlib/newTestAccount', starting_balance)
+
+    def fmt(x):
+        return rpc('/stdlib/formatCurrency', x, 4)
+
+    def get_balance(w):
+        return fmt(rpc('/stdlib/balanceOf', w))
+
+    before_alice = get_balance(acc_alice)
+    before_bob   = get_balance(acc_bob)
+
+    ctc_alice    = rpc('/acc/deploy', acc_alice)
+
+    HAND         = ['Rock', 'Paper', 'Scissors']
+    OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
+
+    def player(who):
+        def getHand():
+            hand = random.randint(0, 2)
+            print('%s played %s' % (who, HAND[hand]))
+            return hand
+
+        def informTimeout():
+            print('%s observed a timeout' % who)
+
+        def seeOutcome(n):
+            print('%s saw outcome %s'
+                  % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))
+
+        return {'stdlib.hasRandom': True,
+                'getHand':          getHand,
+                'informTimeout':    informTimeout,
+                'seeOutcome':       seeOutcome,
+                }
+
+    def play_alice():
+        rpc_callbacks(
+            '/backend/Alice',
+            ctc_alice,
+            dict(wager=rpc('/stdlib/parseCurrency', 5), deadline=10, **player('Alice')))
+
+    alice = Thread(target=play_alice)
+    alice.start()
+
+    def play_bob():
+        def acceptWager(amt):
+            print('Bob accepts the wager of %s' % fmt(amt))
+
+        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        rpc_callbacks(
+            '/backend/Bob',
+            ctc_bob,
+            dict(acceptWager=acceptWager, **player('Bob')))
+        rpc('/forget/ctc', ctc_bob)
+
+    bob = Thread(target=play_bob)
+    bob.start()
+
+    alice.join()
+    bob.join()
+
+    after_alice = get_balance(acc_alice)
+    after_bob   = get_balance(acc_bob)
+
+    print('Alice went from %s to %s' % (before_alice, after_alice))
+    print('  Bob went from %s to %s' % (before_bob,   after_bob))
+
+    rpc('/forget/acc', acc_alice, acc_bob)
+    rpc('/forget/ctc', ctc_alice)
+
+
+if __name__ == '__main__':
+    main()" href="#"></a></div><ol class="snippet"><li value="26"><span style="color: #24292F">    </span><span style="color: #0550AE">HAND</span><span style="color: #24292F">         </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [</span><span style="color: #0A3069">'Rock'</span><span style="color: #24292F">, </span><span style="color: #0A3069">'Paper'</span><span style="color: #24292F">, </span><span style="color: #0A3069">'Scissors'</span><span style="color: #24292F">]</span></li><li value="27"><span style="color: #24292F">    </span><span style="color: #0550AE">OUTCOME</span><span style="color: #24292F">      </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [</span><span style="color: #0A3069">'Bob wins'</span><span style="color: #24292F">, </span><span style="color: #0A3069">'Draw'</span><span style="color: #24292F">, </span><span style="color: #0A3069">'Alice wins'</span><span style="color: #24292F">]</span></li><li value="28"></li></ol></pre>
+<hr>
+<p><i id="p_13" class="pid"></i>Even participant interact interface definitions remain largely the same:<a href="#p_13" class="pid">13</a></p>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-loops/index.mjs">/examples/rps-7-loops/index.mjs</a><a class="far fa-copy copyBtn" data-clipboard-text="import { loadStdlib } from '@reach-sh/stdlib';
+import * as backend from './build/index.main.mjs';
+const stdlib = loadStdlib(process.env);
+
+(async () => {
+  const startingBalance = stdlib.parseCurrency(100);
+  const accAlice = await stdlib.newTestAccount(startingBalance);
+  const accBob = await stdlib.newTestAccount(startingBalance);
+
+  const fmt = (x) => stdlib.formatCurrency(x, 4);
+  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
+  const beforeAlice = await getBalance(accAlice);
+  const beforeBob = await getBalance(accBob);
+
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
+
+  const HAND = ['Rock', 'Paper', 'Scissors'];
+  const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
+  const Player = (Who) => ({
+    ...stdlib.hasRandom,
+    getHand: async () => { // <-- async now
+      const hand = Math.floor(Math.random() * 3);
+      console.log(`${Who} played ${HAND[hand]}`);
+      if ( Math.random() <= 0.01 ) {
+        for ( let i = 0; i < 10; i++ ) {
+          console.log(`  ${Who} takes their sweet time sending it back...`);
+          await stdlib.wait(1);
+        }
+      }
+      return hand;
+    },
+    seeOutcome: (outcome) => {
+      console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
+    },
+    informTimeout: () => {
+      console.log(`${Who} observed a timeout`);
+    },
+  });
+
+  await Promise.all([
+    ctcAlice.p.Alice({
+      ...Player('Alice'),
+      wager: stdlib.parseCurrency(5),
+      deadline: 10,
+    }),
+    ctcBob.p.Bob({
+      ...Player('Bob'),
+      acceptWager: (amt) => {
+        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
+      },
+    }),
+  ]);
+
+  const afterAlice = await getBalance(accAlice);
+  const afterBob = await getBalance(accBob);
+
+  console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
+  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
+
+})();" href="#"></a></div><ol class="snippet"><li value="20"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #8250DF">Player</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> (</span><span style="color: #953800">Who</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> ({</span></li><li value="21"><span style="color: #24292F">    </span><span style="color: #CF222E">...</span><span style="color: #24292F">stdlib.hasRandom,</span></li><li value="22"><span style="color: #24292F">    </span><span style="color: #8250DF">getHand</span><span style="color: #24292F">: </span><span style="color: #CF222E">async</span><span style="color: #24292F"> () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> { </span><span style="color: #6E7781">// &lt;-- async now</span></li><li value="23"><span style="color: #24292F">      </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">hand</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">Math</span><span style="color: #24292F">.</span><span style="color: #0550AE">floor</span><span style="color: #24292F">(</span><span style="color: #0550AE">Math</span><span style="color: #24292F">.</span><span style="color: #0550AE">random</span><span style="color: #24292F">() </span><span style="color: #CF222E">*</span><span style="color: #24292F"> </span><span style="color: #0550AE">3</span><span style="color: #24292F">);</span></li><li value="24"><span style="color: #24292F">      console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`${</span><span style="color: #24292F">Who</span><span style="color: #0A3069">} played ${</span><span style="color: #0550AE">HAND</span><span style="color: #0A3069">[</span><span style="color: #24292F">hand</span><span style="color: #0A3069">]</span><span style="color: #0A3069">}`</span><span style="color: #24292F">);</span></li><li value="25"><span style="color: #24292F">      </span><span style="color: #CF222E">if</span><span style="color: #24292F"> ( </span><span style="color: #0550AE">Math</span><span style="color: #24292F">.</span><span style="color: #0550AE">random</span><span style="color: #24292F">() </span><span style="color: #CF222E">&lt;=</span><span style="color: #24292F"> </span><span style="color: #0550AE">0.01</span><span style="color: #24292F"> ) {</span></li><li value="26"><span style="color: #24292F">        </span><span style="color: #CF222E">for</span><span style="color: #24292F"> ( </span><span style="color: #CF222E">let</span><span style="color: #24292F"> i </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">0</span><span style="color: #24292F">; i </span><span style="color: #CF222E">&lt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">10</span><span style="color: #24292F">; i</span><span style="color: #CF222E">++</span><span style="color: #24292F"> ) {</span></li><li value="27"><span style="color: #24292F">          console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`  ${</span><span style="color: #24292F">Who</span><span style="color: #0A3069">} takes their sweet time sending it back...`</span><span style="color: #24292F">);</span></li><li value="28"><span style="color: #24292F">          </span><span style="color: #CF222E">await</span><span style="color: #24292F"> stdlib.</span><span style="color: #8250DF">wait</span><span style="color: #24292F">(</span><span style="color: #0550AE">1</span><span style="color: #24292F">);</span></li><li value="29"><span style="color: #24292F">        }</span></li><li value="30"><span style="color: #24292F">      }</span></li><li value="31"><span style="color: #24292F">      </span><span style="color: #CF222E">return</span><span style="color: #24292F"> hand;</span></li><li value="32"><span style="color: #24292F">    },</span></li></ol></pre>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-rpc/client-py/index.py">/examples/rps-7-rpc/client-py/index.py</a><a class="far fa-copy copyBtn" data-clipboard-text="# flake8: noqa
+
+import random
+from threading import Thread
+from reach_rpc import mk_rpc
+
+
+def main():
+    rpc, rpc_callbacks = mk_rpc()
+
+    starting_balance = rpc('/stdlib/parseCurrency', 100)
+    acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)
+    acc_bob          = rpc('/stdlib/newTestAccount', starting_balance)
+
+    def fmt(x):
+        return rpc('/stdlib/formatCurrency', x, 4)
+
+    def get_balance(w):
+        return fmt(rpc('/stdlib/balanceOf', w))
+
+    before_alice = get_balance(acc_alice)
+    before_bob   = get_balance(acc_bob)
+
+    ctc_alice    = rpc('/acc/deploy', acc_alice)
+
+    HAND         = ['Rock', 'Paper', 'Scissors']
+    OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
+
+    def player(who):
+        def getHand():
+            hand = random.randint(0, 2)
+            print('%s played %s' % (who, HAND[hand]))
+            return hand
+
+        def informTimeout():
+            print('%s observed a timeout' % who)
+
+        def seeOutcome(n):
+            print('%s saw outcome %s'
+                  % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))
+
+        return {'stdlib.hasRandom': True,
+                'getHand':          getHand,
+                'informTimeout':    informTimeout,
+                'seeOutcome':       seeOutcome,
+                }
+
+    def play_alice():
+        rpc_callbacks(
+            '/backend/Alice',
+            ctc_alice,
+            dict(wager=rpc('/stdlib/parseCurrency', 5), deadline=10, **player('Alice')))
+
+    alice = Thread(target=play_alice)
+    alice.start()
+
+    def play_bob():
+        def acceptWager(amt):
+            print('Bob accepts the wager of %s' % fmt(amt))
+
+        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        rpc_callbacks(
+            '/backend/Bob',
+            ctc_bob,
+            dict(acceptWager=acceptWager, **player('Bob')))
+        rpc('/forget/ctc', ctc_bob)
+
+    bob = Thread(target=play_bob)
+    bob.start()
+
+    alice.join()
+    bob.join()
+
+    after_alice = get_balance(acc_alice)
+    after_bob   = get_balance(acc_bob)
+
+    print('Alice went from %s to %s' % (before_alice, after_alice))
+    print('  Bob went from %s to %s' % (before_bob,   after_bob))
+
+    rpc('/forget/acc', acc_alice, acc_bob)
+    rpc('/forget/ctc', ctc_alice)
+
+
+if __name__ == '__main__':
+    main()" href="#"></a></div><ol class="snippet"><li value="29"><span style="color: #24292F">    </span><span style="color: #CF222E">def</span><span style="color: #24292F"> </span><span style="color: #8250DF">player</span><span style="color: #24292F">(who):</span></li><li value="30"><span style="color: #24292F">        </span><span style="color: #CF222E">def</span><span style="color: #24292F"> </span><span style="color: #8250DF">getHand</span><span style="color: #24292F">():</span></li><li value="31"><span style="color: #24292F">            hand </span><span style="color: #CF222E">=</span><span style="color: #24292F"> random.randint(</span><span style="color: #0550AE">0</span><span style="color: #24292F">, </span><span style="color: #0550AE">2</span><span style="color: #24292F">)</span></li><li value="32"><span style="color: #24292F">            </span><span style="color: #0550AE">print</span><span style="color: #24292F">(</span><span style="color: #0A3069">'</span><span style="color: #0550AE">%s</span><span style="color: #0A3069"> played </span><span style="color: #0550AE">%s</span><span style="color: #0A3069">'</span><span style="color: #24292F"> </span><span style="color: #CF222E">%</span><span style="color: #24292F"> (who, </span><span style="color: #0550AE">HAND</span><span style="color: #24292F">[hand]))</span></li><li value="33"><span style="color: #24292F">            </span><span style="color: #CF222E">return</span><span style="color: #24292F"> hand</span></li><li value="34"></li></ol></pre>
+<p>
+  <i id="p_14" class="pid"></i>Here, both the JavaScript and Python frontends begin declaring a
+  reusable "player constructor".
+  This constructor represents those fields which are common to both Alice and
+  Bob's participant interact interfaces.<a href="#p_14" class="pid">14</a>
+</p>
+<p>
+  <i id="p_15" class="pid"></i>The JavaScript code explicitly includes <span class="snip"><span style="color: #CF222E">...</span><span style="color: #24292F">stdlib.hasRandom</span></span> itself, but
+  the Python code can instead direct the RPC server to append it to the interface
+  by including <span class="snip"><span style="color: #0A3069">'stdlib.hasRandom'</span><span style="color: #24292F">: </span><span style="color: #0550AE">True</span></span> as a field in the constructor's
+  <a href="#py-return">return value</a>.<a href="#p_15" class="pid">15</a>
+</p>
+<p>
+  <i id="p_16" class="pid"></i>Next, they each define a <span class="snip"><span style="color: #24292F">getHand</span></span> function which randomly selects an
+  element from the previously defined <span class="snip"><span style="color: #0550AE">HAND</span></span> set and returns it to the
+  backend.
+  This function will be passed as a callable method of the interface later.<a href="#p_16" class="pid">16</a>
+</p>
+<p>
+  <i id="p_17" class="pid"></i>The Python version does not mimic the JavaScript's occasional "pause behavior",
+  although it easily could with a few extra lines of code.<a href="#p_17" class="pid">17</a>
+</p>
+<hr>
+<p>
+  <i id="p_18" class="pid"></i><span class="snip"><span style="color: #24292F">informTimeout</span></span> requires no subsequent backend interaction and is
+  accordingly easily to implement in either language:<a href="#p_18" class="pid">18</a>
+</p>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-loops/index.mjs">/examples/rps-7-loops/index.mjs</a><a class="far fa-copy copyBtn" data-clipboard-text="import { loadStdlib } from '@reach-sh/stdlib';
+import * as backend from './build/index.main.mjs';
+const stdlib = loadStdlib(process.env);
+
+(async () => {
+  const startingBalance = stdlib.parseCurrency(100);
+  const accAlice = await stdlib.newTestAccount(startingBalance);
+  const accBob = await stdlib.newTestAccount(startingBalance);
+
+  const fmt = (x) => stdlib.formatCurrency(x, 4);
+  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
+  const beforeAlice = await getBalance(accAlice);
+  const beforeBob = await getBalance(accBob);
+
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
+
+  const HAND = ['Rock', 'Paper', 'Scissors'];
+  const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
+  const Player = (Who) => ({
+    ...stdlib.hasRandom,
+    getHand: async () => { // <-- async now
+      const hand = Math.floor(Math.random() * 3);
+      console.log(`${Who} played ${HAND[hand]}`);
+      if ( Math.random() <= 0.01 ) {
+        for ( let i = 0; i < 10; i++ ) {
+          console.log(`  ${Who} takes their sweet time sending it back...`);
+          await stdlib.wait(1);
+        }
+      }
+      return hand;
+    },
+    seeOutcome: (outcome) => {
+      console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
+    },
+    informTimeout: () => {
+      console.log(`${Who} observed a timeout`);
+    },
+  });
+
+  await Promise.all([
+    ctcAlice.p.Alice({
+      ...Player('Alice'),
+      wager: stdlib.parseCurrency(5),
+      deadline: 10,
+    }),
+    ctcBob.p.Bob({
+      ...Player('Bob'),
+      acceptWager: (amt) => {
+        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
+      },
+    }),
+  ]);
+
+  const afterAlice = await getBalance(accAlice);
+  const afterBob = await getBalance(accBob);
+
+  console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
+  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
+
+})();" href="#"></a></div><ol class="snippet"><li value="36"><span style="color: #24292F">    </span><span style="color: #8250DF">informTimeout</span><span style="color: #24292F">: () </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="37"><span style="color: #24292F">      console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`${</span><span style="color: #24292F">Who</span><span style="color: #0A3069">} observed a timeout`</span><span style="color: #24292F">);</span></li><li value="38"><span style="color: #24292F">    },</span></li></ol></pre>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-rpc/client-py/index.py">/examples/rps-7-rpc/client-py/index.py</a><a class="far fa-copy copyBtn" data-clipboard-text="# flake8: noqa
+
+import random
+from threading import Thread
+from reach_rpc import mk_rpc
+
+
+def main():
+    rpc, rpc_callbacks = mk_rpc()
+
+    starting_balance = rpc('/stdlib/parseCurrency', 100)
+    acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)
+    acc_bob          = rpc('/stdlib/newTestAccount', starting_balance)
+
+    def fmt(x):
+        return rpc('/stdlib/formatCurrency', x, 4)
+
+    def get_balance(w):
+        return fmt(rpc('/stdlib/balanceOf', w))
+
+    before_alice = get_balance(acc_alice)
+    before_bob   = get_balance(acc_bob)
+
+    ctc_alice    = rpc('/acc/deploy', acc_alice)
+
+    HAND         = ['Rock', 'Paper', 'Scissors']
+    OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
+
+    def player(who):
+        def getHand():
+            hand = random.randint(0, 2)
+            print('%s played %s' % (who, HAND[hand]))
+            return hand
+
+        def informTimeout():
+            print('%s observed a timeout' % who)
+
+        def seeOutcome(n):
+            print('%s saw outcome %s'
+                  % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))
+
+        return {'stdlib.hasRandom': True,
+                'getHand':          getHand,
+                'informTimeout':    informTimeout,
+                'seeOutcome':       seeOutcome,
+                }
+
+    def play_alice():
+        rpc_callbacks(
+            '/backend/Alice',
+            ctc_alice,
+            dict(wager=rpc('/stdlib/parseCurrency', 5), deadline=10, **player('Alice')))
+
+    alice = Thread(target=play_alice)
+    alice.start()
+
+    def play_bob():
+        def acceptWager(amt):
+            print('Bob accepts the wager of %s' % fmt(amt))
+
+        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        rpc_callbacks(
+            '/backend/Bob',
+            ctc_bob,
+            dict(acceptWager=acceptWager, **player('Bob')))
+        rpc('/forget/ctc', ctc_bob)
+
+    bob = Thread(target=play_bob)
+    bob.start()
+
+    alice.join()
+    bob.join()
+
+    after_alice = get_balance(acc_alice)
+    after_bob   = get_balance(acc_bob)
+
+    print('Alice went from %s to %s' % (before_alice, after_alice))
+    print('  Bob went from %s to %s' % (before_bob,   after_bob))
+
+    rpc('/forget/acc', acc_alice, acc_bob)
+    rpc('/forget/ctc', ctc_alice)
+
+
+if __name__ == '__main__':
+    main()" href="#"></a></div><ol class="snippet"><li value="35"><span style="color: #24292F">        </span><span style="color: #CF222E">def</span><span style="color: #24292F"> </span><span style="color: #8250DF">informTimeout</span><span style="color: #24292F">():</span></li><li value="36"><span style="color: #24292F">            </span><span style="color: #0550AE">print</span><span style="color: #24292F">(</span><span style="color: #0A3069">'</span><span style="color: #0550AE">%s</span><span style="color: #0A3069"> observed a timeout'</span><span style="color: #24292F"> </span><span style="color: #CF222E">%</span><span style="color: #24292F"> who)</span></li><li value="37"></li></ol></pre>
+<hr>
+<p><i id="p_19" class="pid"></i><a name="py-return"></a>The same is true of <span class="snip"><span style="color: #24292F">seeOutcome</span></span>:<a href="#p_19" class="pid">19</a></p>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-loops/index.mjs">/examples/rps-7-loops/index.mjs</a><a class="far fa-copy copyBtn" data-clipboard-text="import { loadStdlib } from '@reach-sh/stdlib';
+import * as backend from './build/index.main.mjs';
+const stdlib = loadStdlib(process.env);
+
+(async () => {
+  const startingBalance = stdlib.parseCurrency(100);
+  const accAlice = await stdlib.newTestAccount(startingBalance);
+  const accBob = await stdlib.newTestAccount(startingBalance);
+
+  const fmt = (x) => stdlib.formatCurrency(x, 4);
+  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
+  const beforeAlice = await getBalance(accAlice);
+  const beforeBob = await getBalance(accBob);
+
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
+
+  const HAND = ['Rock', 'Paper', 'Scissors'];
+  const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
+  const Player = (Who) => ({
+    ...stdlib.hasRandom,
+    getHand: async () => { // <-- async now
+      const hand = Math.floor(Math.random() * 3);
+      console.log(`${Who} played ${HAND[hand]}`);
+      if ( Math.random() <= 0.01 ) {
+        for ( let i = 0; i < 10; i++ ) {
+          console.log(`  ${Who} takes their sweet time sending it back...`);
+          await stdlib.wait(1);
+        }
+      }
+      return hand;
+    },
+    seeOutcome: (outcome) => {
+      console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
+    },
+    informTimeout: () => {
+      console.log(`${Who} observed a timeout`);
+    },
+  });
+
+  await Promise.all([
+    ctcAlice.p.Alice({
+      ...Player('Alice'),
+      wager: stdlib.parseCurrency(5),
+      deadline: 10,
+    }),
+    ctcBob.p.Bob({
+      ...Player('Bob'),
+      acceptWager: (amt) => {
+        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
+      },
+    }),
+  ]);
+
+  const afterAlice = await getBalance(accAlice);
+  const afterBob = await getBalance(accBob);
+
+  console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
+  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
+
+})();" href="#"></a></div><ol class="snippet"><li value="33"><span style="color: #24292F">    </span><span style="color: #8250DF">seeOutcome</span><span style="color: #24292F">: (</span><span style="color: #953800">outcome</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="34"><span style="color: #24292F">      console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`${</span><span style="color: #24292F">Who</span><span style="color: #0A3069">} saw outcome ${</span><span style="color: #0550AE">OUTCOME</span><span style="color: #0A3069">[</span><span style="color: #24292F">outcome</span><span style="color: #0A3069">]</span><span style="color: #0A3069">}`</span><span style="color: #24292F">);</span></li><li value="35"><span style="color: #24292F">    },</span></li></ol></pre>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-rpc/client-py/index.py">/examples/rps-7-rpc/client-py/index.py</a><a class="far fa-copy copyBtn" data-clipboard-text="# flake8: noqa
+
+import random
+from threading import Thread
+from reach_rpc import mk_rpc
+
+
+def main():
+    rpc, rpc_callbacks = mk_rpc()
+
+    starting_balance = rpc('/stdlib/parseCurrency', 100)
+    acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)
+    acc_bob          = rpc('/stdlib/newTestAccount', starting_balance)
+
+    def fmt(x):
+        return rpc('/stdlib/formatCurrency', x, 4)
+
+    def get_balance(w):
+        return fmt(rpc('/stdlib/balanceOf', w))
+
+    before_alice = get_balance(acc_alice)
+    before_bob   = get_balance(acc_bob)
+
+    ctc_alice    = rpc('/acc/deploy', acc_alice)
+
+    HAND         = ['Rock', 'Paper', 'Scissors']
+    OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
+
+    def player(who):
+        def getHand():
+            hand = random.randint(0, 2)
+            print('%s played %s' % (who, HAND[hand]))
+            return hand
+
+        def informTimeout():
+            print('%s observed a timeout' % who)
+
+        def seeOutcome(n):
+            print('%s saw outcome %s'
+                  % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))
+
+        return {'stdlib.hasRandom': True,
+                'getHand':          getHand,
+                'informTimeout':    informTimeout,
+                'seeOutcome':       seeOutcome,
+                }
+
+    def play_alice():
+        rpc_callbacks(
+            '/backend/Alice',
+            ctc_alice,
+            dict(wager=rpc('/stdlib/parseCurrency', 5), deadline=10, **player('Alice')))
+
+    alice = Thread(target=play_alice)
+    alice.start()
+
+    def play_bob():
+        def acceptWager(amt):
+            print('Bob accepts the wager of %s' % fmt(amt))
+
+        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        rpc_callbacks(
+            '/backend/Bob',
+            ctc_bob,
+            dict(acceptWager=acceptWager, **player('Bob')))
+        rpc('/forget/ctc', ctc_bob)
+
+    bob = Thread(target=play_bob)
+    bob.start()
+
+    alice.join()
+    bob.join()
+
+    after_alice = get_balance(acc_alice)
+    after_bob   = get_balance(acc_bob)
+
+    print('Alice went from %s to %s' % (before_alice, after_alice))
+    print('  Bob went from %s to %s' % (before_bob,   after_bob))
+
+    rpc('/forget/acc', acc_alice, acc_bob)
+    rpc('/forget/ctc', ctc_alice)
+
+
+if __name__ == '__main__':
+    main()" href="#"></a></div><ol class="snippet"><li value="38"><span style="color: #24292F">        </span><span style="color: #CF222E">def</span><span style="color: #24292F"> </span><span style="color: #8250DF">seeOutcome</span><span style="color: #24292F">(n):</span></li><li value="39"><span style="color: #24292F">            </span><span style="color: #0550AE">print</span><span style="color: #24292F">(</span><span style="color: #0A3069">'</span><span style="color: #0550AE">%s</span><span style="color: #0A3069"> saw outcome </span><span style="color: #0550AE">%s</span><span style="color: #0A3069">'</span></li><li value="40"><span style="color: #24292F">                  </span><span style="color: #CF222E">%</span><span style="color: #24292F"> (who, </span><span style="color: #0550AE">OUTCOME</span><span style="color: #24292F">[rpc(</span><span style="color: #0A3069">'/stdlib/bigNumberToNumber'</span><span style="color: #24292F">, n)]))</span></li><li value="41"></li><li value="42"><span style="color: #24292F">        </span><span style="color: #CF222E">return</span><span style="color: #24292F"> {</span><span style="color: #0A3069">'stdlib.hasRandom'</span><span style="color: #24292F">: </span><span style="color: #0550AE">True</span><span style="color: #24292F">,</span></li><li value="43"><span style="color: #24292F">                </span><span style="color: #0A3069">'getHand'</span><span style="color: #24292F">:          getHand,</span></li><li value="44"><span style="color: #24292F">                </span><span style="color: #0A3069">'informTimeout'</span><span style="color: #24292F">:    informTimeout,</span></li><li value="45"><span style="color: #24292F">                </span><span style="color: #0A3069">'seeOutcome'</span><span style="color: #24292F">:       seeOutcome,</span></li><li value="46"><span style="color: #24292F">                }</span></li><li value="47"></li></ol></pre>
+<p>
+  <i id="p_20" class="pid"></i>At the end of the Python code we return a <span class="snip"><span style="color: #0550AE">dict</span></span> that represents those
+  fields which are common to both Alice and Bob's
+  participant interact interfaces.<a href="#p_20" class="pid">20</a>
+</p>
+<p>
+  <i id="p_21" class="pid"></i>Again, <span class="snip"><span style="color: #0A3069">'stdlib.hasRandom'</span><span style="color: #24292F">: </span><span style="color: #0550AE">True</span></span> has special significance when
+  communicating via RPC: it instructs the server to append this signature on the
+  receiving end.<a href="#p_21" class="pid">21</a>
+</p>
+<hr>
+<p>
+  <i id="p_22" class="pid"></i>Finally, we proceed to the most interesting part of the program and use the
+  code we have built up thus far to actually play a game of <em>Rock, Paper, Scissors!</em>:<a href="#p_22" class="pid">22</a>
+</p>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-loops/index.mjs">/examples/rps-7-loops/index.mjs</a><a class="far fa-copy copyBtn" data-clipboard-text="import { loadStdlib } from '@reach-sh/stdlib';
+import * as backend from './build/index.main.mjs';
+const stdlib = loadStdlib(process.env);
+
+(async () => {
+  const startingBalance = stdlib.parseCurrency(100);
+  const accAlice = await stdlib.newTestAccount(startingBalance);
+  const accBob = await stdlib.newTestAccount(startingBalance);
+
+  const fmt = (x) => stdlib.formatCurrency(x, 4);
+  const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
+  const beforeAlice = await getBalance(accAlice);
+  const beforeBob = await getBalance(accBob);
+
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
+
+  const HAND = ['Rock', 'Paper', 'Scissors'];
+  const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
+  const Player = (Who) => ({
+    ...stdlib.hasRandom,
+    getHand: async () => { // <-- async now
+      const hand = Math.floor(Math.random() * 3);
+      console.log(`${Who} played ${HAND[hand]}`);
+      if ( Math.random() <= 0.01 ) {
+        for ( let i = 0; i < 10; i++ ) {
+          console.log(`  ${Who} takes their sweet time sending it back...`);
+          await stdlib.wait(1);
+        }
+      }
+      return hand;
+    },
+    seeOutcome: (outcome) => {
+      console.log(`${Who} saw outcome ${OUTCOME[outcome]}`);
+    },
+    informTimeout: () => {
+      console.log(`${Who} observed a timeout`);
+    },
+  });
+
+  await Promise.all([
+    ctcAlice.p.Alice({
+      ...Player('Alice'),
+      wager: stdlib.parseCurrency(5),
+      deadline: 10,
+    }),
+    ctcBob.p.Bob({
+      ...Player('Bob'),
+      acceptWager: (amt) => {
+        console.log(`Bob accepts the wager of ${fmt(amt)}.`);
+      },
+    }),
+  ]);
+
+  const afterAlice = await getBalance(accAlice);
+  const afterBob = await getBalance(accBob);
+
+  console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
+  console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
+
+})();" href="#"></a></div><ol class="snippet"><li value="41"><span style="color: #24292F">  </span><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #0550AE">Promise</span><span style="color: #24292F">.</span><span style="color: #8250DF">all</span><span style="color: #24292F">([</span></li><li value="42"><span style="color: #24292F">    ctcAlice.p.</span><span style="color: #8250DF">Alice</span><span style="color: #24292F">({</span></li><li value="43"><span style="color: #24292F">      </span><span style="color: #CF222E">...</span><span style="color: #8250DF">Player</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Alice'</span><span style="color: #24292F">),</span></li><li value="44"><span style="color: #24292F">      wager: stdlib.</span><span style="color: #8250DF">parseCurrency</span><span style="color: #24292F">(</span><span style="color: #0550AE">5</span><span style="color: #24292F">),</span></li><li value="45"><span style="color: #24292F">      deadline: </span><span style="color: #0550AE">10</span><span style="color: #24292F">,</span></li><li value="46"><span style="color: #24292F">    }),</span></li><li value="47"><span style="color: #24292F">    ctcBob.p.</span><span style="color: #8250DF">Bob</span><span style="color: #24292F">({</span></li><li value="48"><span style="color: #24292F">      </span><span style="color: #CF222E">...</span><span style="color: #8250DF">Player</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Bob'</span><span style="color: #24292F">),</span></li><li value="49"><span style="color: #24292F">      </span><span style="color: #8250DF">acceptWager</span><span style="color: #24292F">: (</span><span style="color: #953800">amt</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="50"><span style="color: #24292F">        console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`Bob accepts the wager of ${</span><span style="color: #8250DF">fmt</span><span style="color: #0A3069">(</span><span style="color: #24292F">amt</span><span style="color: #0A3069">)</span><span style="color: #0A3069">}.`</span><span style="color: #24292F">);</span></li><li value="51"><span style="color: #24292F">      },</span></li><li value="52"><span style="color: #24292F">    }),</span></li><li value="53"><span style="color: #24292F">  ]);</span></li><li value="54"></li><li value="55"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">afterAlice</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #8250DF">getBalance</span><span style="color: #24292F">(accAlice);</span></li><li value="56"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">afterBob</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">await</span><span style="color: #24292F"> </span><span style="color: #8250DF">getBalance</span><span style="color: #24292F">(accBob);</span></li><li value="57"></li><li value="58"><span style="color: #24292F">  console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`Alice went from ${</span><span style="color: #24292F">beforeAlice</span><span style="color: #0A3069">} to ${</span><span style="color: #24292F">afterAlice</span><span style="color: #0A3069">}.`</span><span style="color: #24292F">);</span></li><li value="59"><span style="color: #24292F">  console.</span><span style="color: #8250DF">log</span><span style="color: #24292F">(</span><span style="color: #0A3069">`Bob went from ${</span><span style="color: #24292F">beforeBob</span><span style="color: #0A3069">} to ${</span><span style="color: #24292F">afterBob</span><span style="color: #0A3069">}.`</span><span style="color: #24292F">);</span></li><li value="60"></li></ol></pre>
+<pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-7-rpc/client-py/index.py">/examples/rps-7-rpc/client-py/index.py</a><a class="far fa-copy copyBtn" data-clipboard-text="# flake8: noqa
+
+import random
+from threading import Thread
+from reach_rpc import mk_rpc
+
+
+def main():
+    rpc, rpc_callbacks = mk_rpc()
+
+    starting_balance = rpc('/stdlib/parseCurrency', 100)
+    acc_alice        = rpc('/stdlib/newTestAccount', starting_balance)
+    acc_bob          = rpc('/stdlib/newTestAccount', starting_balance)
+
+    def fmt(x):
+        return rpc('/stdlib/formatCurrency', x, 4)
+
+    def get_balance(w):
+        return fmt(rpc('/stdlib/balanceOf', w))
+
+    before_alice = get_balance(acc_alice)
+    before_bob   = get_balance(acc_bob)
+
+    ctc_alice    = rpc('/acc/deploy', acc_alice)
+
+    HAND         = ['Rock', 'Paper', 'Scissors']
+    OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
+
+    def player(who):
+        def getHand():
+            hand = random.randint(0, 2)
+            print('%s played %s' % (who, HAND[hand]))
+            return hand
+
+        def informTimeout():
+            print('%s observed a timeout' % who)
+
+        def seeOutcome(n):
+            print('%s saw outcome %s'
+                  % (who, OUTCOME[rpc('/stdlib/bigNumberToNumber', n)]))
+
+        return {'stdlib.hasRandom': True,
+                'getHand':          getHand,
+                'informTimeout':    informTimeout,
+                'seeOutcome':       seeOutcome,
+                }
+
+    def play_alice():
+        rpc_callbacks(
+            '/backend/Alice',
+            ctc_alice,
+            dict(wager=rpc('/stdlib/parseCurrency', 5), deadline=10, **player('Alice')))
+
+    alice = Thread(target=play_alice)
+    alice.start()
+
+    def play_bob():
+        def acceptWager(amt):
+            print('Bob accepts the wager of %s' % fmt(amt))
+
+        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        rpc_callbacks(
+            '/backend/Bob',
+            ctc_bob,
+            dict(acceptWager=acceptWager, **player('Bob')))
+        rpc('/forget/ctc', ctc_bob)
+
+    bob = Thread(target=play_bob)
+    bob.start()
+
+    alice.join()
+    bob.join()
+
+    after_alice = get_balance(acc_alice)
+    after_bob   = get_balance(acc_bob)
+
+    print('Alice went from %s to %s' % (before_alice, after_alice))
+    print('  Bob went from %s to %s' % (before_bob,   after_bob))
+
+    rpc('/forget/acc', acc_alice, acc_bob)
+    rpc('/forget/ctc', ctc_alice)
+
+
+if __name__ == '__main__':
+    main()" href="#"></a></div><ol class="snippet"><li value="48"><span style="color: #24292F">    </span><span style="color: #CF222E">def</span><span style="color: #24292F"> </span><span style="color: #8250DF">play_alice</span><span style="color: #24292F">():</span></li><li value="49"><span style="color: #24292F">        rpc_callbacks(</span></li><li value="50"><span style="color: #24292F">            </span><span style="color: #0A3069">'/backend/Alice'</span><span style="color: #24292F">,</span></li><li value="51"><span style="color: #24292F">            ctc_alice,</span></li><li value="52"><span style="color: #24292F">            </span><span style="color: #0550AE">dict</span><span style="color: #24292F">(</span><span style="color: #953800">wager</span><span style="color: #CF222E">=</span><span style="color: #24292F">rpc(</span><span style="color: #0A3069">'/stdlib/parseCurrency'</span><span style="color: #24292F">, </span><span style="color: #0550AE">5</span><span style="color: #24292F">), </span><span style="color: #953800">deadline</span><span style="color: #CF222E">=</span><span style="color: #0550AE">10</span><span style="color: #24292F">, </span><span style="color: #CF222E">**</span><span style="color: #24292F">player(</span><span style="color: #0A3069">'Alice'</span><span style="color: #24292F">)))</span></li><li value="53"></li><li value="54"><span style="color: #24292F">    alice </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Thread(</span><span style="color: #953800">target</span><span style="color: #CF222E">=</span><span style="color: #24292F">play_alice)</span></li><li value="55"><span style="color: #24292F">    alice.start()</span></li><li value="56"></li><li value="57"><span style="color: #24292F">    </span><span style="color: #CF222E">def</span><span style="color: #24292F"> </span><span style="color: #8250DF">play_bob</span><span style="color: #24292F">():</span></li><li value="58"><span style="color: #24292F">        </span><span style="color: #CF222E">def</span><span style="color: #24292F"> </span><span style="color: #8250DF">acceptWager</span><span style="color: #24292F">(amt):</span></li><li value="59"><span style="color: #24292F">            </span><span style="color: #0550AE">print</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Bob accepts the wager of </span><span style="color: #0550AE">%s</span><span style="color: #0A3069">'</span><span style="color: #24292F"> </span><span style="color: #CF222E">%</span><span style="color: #24292F"> fmt(amt))</span></li><li value="60"></li><li value="61"><span style="color: #24292F">        ctc_bob </span><span style="color: #CF222E">=</span><span style="color: #24292F"> rpc(</span><span style="color: #0A3069">'/acc/attach'</span><span style="color: #24292F">, acc_bob, rpc(</span><span style="color: #0A3069">'/ctc/getInfo'</span><span style="color: #24292F">, ctc_alice))</span></li><li value="62"><span style="color: #24292F">        rpc_callbacks(</span></li><li value="63"><span style="color: #24292F">            </span><span style="color: #0A3069">'/backend/Bob'</span><span style="color: #24292F">,</span></li><li value="64"><span style="color: #24292F">            ctc_bob,</span></li><li value="65"><span style="color: #24292F">            </span><span style="color: #0550AE">dict</span><span style="color: #24292F">(</span><span style="color: #953800">acceptWager</span><span style="color: #CF222E">=</span><span style="color: #24292F">acceptWager, </span><span style="color: #CF222E">**</span><span style="color: #24292F">player(</span><span style="color: #0A3069">'Bob'</span><span style="color: #24292F">)))</span></li><li value="66"><span style="color: #24292F">        rpc(</span><span style="color: #0A3069">'/forget/ctc'</span><span style="color: #24292F">, ctc_bob)</span></li><li value="67"></li><li value="68"><span style="color: #24292F">    bob </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Thread(</span><span style="color: #953800">target</span><span style="color: #CF222E">=</span><span style="color: #24292F">play_bob)</span></li><li value="69"><span style="color: #24292F">    bob.start()</span></li><li value="70"></li><li value="71"><span style="color: #24292F">    alice.join()</span></li><li value="72"><span style="color: #24292F">    bob.join()</span></li><li value="73"></li><li value="74"><span style="color: #24292F">    after_alice </span><span style="color: #CF222E">=</span><span style="color: #24292F"> get_balance(acc_alice)</span></li><li value="75"><span style="color: #24292F">    after_bob   </span><span style="color: #CF222E">=</span><span style="color: #24292F"> get_balance(acc_bob)</span></li><li value="76"></li><li value="77"><span style="color: #24292F">    </span><span style="color: #0550AE">print</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Alice went from </span><span style="color: #0550AE">%s</span><span style="color: #0A3069"> to </span><span style="color: #0550AE">%s</span><span style="color: #0A3069">'</span><span style="color: #24292F"> </span><span style="color: #CF222E">%</span><span style="color: #24292F"> (before_alice, after_alice))</span></li><li value="78"><span style="color: #24292F">    </span><span style="color: #0550AE">print</span><span style="color: #24292F">(</span><span style="color: #0A3069">'  Bob went from </span><span style="color: #0550AE">%s</span><span style="color: #0A3069"> to </span><span style="color: #0550AE">%s</span><span style="color: #0A3069">'</span><span style="color: #24292F"> </span><span style="color: #CF222E">%</span><span style="color: #24292F"> (before_bob,   after_bob))</span></li><li value="79"></li><li value="80"><span style="color: #24292F">    rpc(</span><span style="color: #0A3069">'/forget/acc'</span><span style="color: #24292F">, acc_alice, acc_bob)</span></li><li value="81"><span style="color: #24292F">    rpc(</span><span style="color: #0A3069">'/forget/ctc'</span><span style="color: #24292F">, ctc_alice)</span></li><li value="82"></li><li value="83"></li><li value="84"><span style="color: #CF222E">if</span><span style="color: #24292F"> </span><span style="color: #0550AE">__name__</span><span style="color: #24292F"> </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0A3069">'__main__'</span><span style="color: #24292F">:</span></li><li value="85"><span style="color: #24292F">    main()</span></li></ol></pre>
+<p>
+  <i id="p_23" class="pid"></i>In the Python version we create a function called <span class="snip"><span style="color: #24292F">play_alice</span></span> and spawn
+  it as a concurrent thread, which begins running in the background on line 56.<a href="#p_23" class="pid">23</a>
+</p>
+<p>
+  <i id="p_24" class="pid"></i><span class="snip"><span style="color: #24292F">play_alice</span></span> sends Alice's contract RPC handle and her
+  participant interact interface to the server with <span class="snip"><span style="color: #24292F">rpc_callbacks</span></span>.
+  The interface includes methods and values created by <span class="snip"><span style="color: #24292F">player(</span><span style="color: #0A3069">'Alice'</span><span style="color: #24292F">)</span></span>,
+  and adds an additional <span class="snip"><span style="color: #24292F">wager</span></span> value which is set to the result of
+  <span class="snip"><span style="color: #24292F">rpc(</span><span style="color: #0A3069">'/stdlib/parseCurrency'</span><span style="color: #24292F">, </span><span style="color: #0550AE">5</span><span style="color: #24292F">)</span></span>,
+  as well as setting a <span class="snip"><span style="color: #24292F">deadline</span></span> of <span class="snip"><span style="color: #0550AE">10</span></span>.<a href="#p_24" class="pid">24</a>
+</p>
+<p>
+  <i id="p_25" class="pid"></i>Bob's interface is likewise defined and spawned as another thread, which also
+  begins running concurrently on line 69.
+  In Bob's case we add an <span class="snip"><span style="color: #24292F">acceptWager</span></span> method instead of another value to
+  his participant interact interface.
+  Furthermore, his function is more complex, because we delay creating his contract handle until this time, so that the main thread does not block waiting for Alice's contract information to resolve.
+  This separation is not necessary in JavaScript, because of how JavaScript Promises work.<a href="#p_25" class="pid">25</a>
+</p>
+<p>
+  <i id="p_26" class="pid"></i>Calling <span class="snip"><span style="color: #24292F">.join()</span></span> on <span class="snip"><span style="color: #24292F">alice</span></span> and <span class="snip"><span style="color: #24292F">bob</span></span> instructs the main thread
+  to wait until both child threads have run to completion, signifying the end of
+  the <em>Rock, Paper, Scissors!</em> game.
+  At this point we again collect each player's remaining balance and print them
+  to the console.
+  Each player's child thread will have already printed their success/failure
+  result to the screen prior to reaching this step, because that is how we encoded
+  their <span class="snip"><span style="color: #24292F">seeOutcome</span></span> methods.<a href="#p_26" class="pid">26</a>
+</p>
+<p>
+  <i id="p_27" class="pid"></i>All that remains is to release Alice and Bob's RPC handles from the
+  server's memory on lines 80 and 81 with the <code>/forget/acc</code> and
+  <code>/forget/ctc</code> methods, then instruct the Python process' interpreter to
+  invoke our <span class="snip"><span style="color: #24292F">main</span></span> function.<a href="#p_27" class="pid">27</a>
+</p>
+<hr>
+<p>
+  <i id="p_28" class="pid"></i>Now that we have written an entire <em>Rock, Paper, Scissors!</em> game in Python it is time to try
+  running it.<a href="#p_28" class="pid">28</a>
+</p>
+<p>
+  <i id="p_29" class="pid"></i>First you will need to copy the <code>index.rsh</code> file you used for <a href="/tut/rps/#tut-7">the tutorial</a>
+  into the directory where you saved <code>index.py</code>.<a href="#p_29" class="pid">29</a>
+</p>
+<p>
+  <i id="p_30" class="pid"></i>Next, open a terminal in that directory and install the Reach Python RPC
+  client:<a href="#p_30" class="pid">30</a>
+</p>
+<pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="$ ([ -d ./venv ] || python3 -m venv ./venv) &amp;&amp; source ./venv/bin/activate" href="#"></a></div><ol class="snippet"><li value="1">$ ([ -d ./venv ] || python3 -m venv ./venv) &amp;&amp; source ./venv/bin/activate</li></ol></pre>
+<div class="note">
+  <p><i id="p_31" class="pid"></i>What is this <code>"venv"</code> thing?<a href="#p_31" class="pid">31</a></p>
+  <p>
+    <i id="p_32" class="pid"></i>A Python
+    <a href="https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment">venv</a>
+    is a "virtual environment" that sandboxes dependencies to avoid cluttering your
+    system directories.<a href="#p_32" class="pid">32</a>
+  </p>
+</div>
+<pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="$ pip install --upgrade reach-rpc-client" href="#"></a></div><ol class="snippet"><li value="1">$ pip install --upgrade reach-rpc-client</li></ol></pre>
+<p><i id="p_33" class="pid"></i>Then use <code>./reach rpc-run</code> to play a game of <em>Rock, Paper, Scissors!</em>:<a href="#p_33" class="pid">33</a></p>
+<pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="$ ./reach rpc-run python3 -u ./index.py" href="#"></a></div><ol class="snippet"><li value="1">$ ./reach rpc-run python3 -u ./index.py</li></ol></pre>
+<div class="note">
+  <p>
+    <i id="p_34" class="pid"></i>Consult the <a href="/tool/usage/#ref-usage-rpc-run">command-line</a> reference section for more details on
+    how this sub-command works.<a href="#p_34" class="pid">34</a>
+  </p>
+</div>
+<p><i id="p_35" class="pid"></i>Its output will be the same as the <a href="/tut/rps/#tut-7">final tutorial</a> version of the frontend:<a href="#p_35" class="pid">35</a></p>
+<pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="Bob accepts the wager of 5
+Alice played Rock
+Bob played Paper
+Bob saw outcome Bob wins
+Alice saw outcome Bob wins
+Alice went from 10 to 4.9999
+  Bob went from 10 to 14.9999" href="#"></a></div><ol class="snippet"><li value="1">Bob accepts the wager of 5</li><li value="2">Alice played Rock</li><li value="3">Bob played Paper</li><li value="4">Bob saw outcome Bob wins</li><li value="5">Alice saw outcome Bob wins</li><li value="6">Alice went from 10 to 4.9999</li><li value="7">  Bob went from 10 to 14.9999</li></ol></pre>
+<p>
+  <i id="p_36" class="pid"></i>This will launch an RPC server using the development API key
+  <code>"opensesame"</code> and a TLS certificate designed for testing.<a href="#p_36" class="pid">36</a>
+</p>
+<div class="note">
+  <p>
+    <i id="p_37" class="pid"></i>Deploying your DApp into production with the RPC server requires obtaining a
+    certificate which is specific to your DNS domain and which has been signed by a
+    certificate authority such as
+    <a href="https://letsencrypt.org/getting-started/">Let's Encrypt</a>.<a href="#p_37" class="pid">37</a>
+  </p>
+  <p>
+    <i id="p_38" class="pid"></i>Users who are ready to go live should consult the <a href="/tool/usage/#ref-usage-rpc-server">RPC Server command-line</a>
+    reference section for configuration details.<a href="#p_38" class="pid">38</a>
+  </p>
+</div>
+<p><i id="p_39" class="pid"></i>When you are done, type <code>deactivate</code> to exit your <code>venv</code>.<a href="#p_39" class="pid">39</a></p>
+<p><i id="p_40" class="pid"></i>Well done! You have just reimplemented <a href="/tut/rps/#tut-7">the tutorial</a> in Python.<a href="#p_40" class="pid">40</a></p>
+<hr>
+<p>
+  <i id="p_41" class="pid"></i>This tutorial uses Python to demonstrate how RPC frontends are
+  built in Reach, but it is similarly easy to write RPC frontends in other
+  languages, such as with the <a href="/rpc/js/#ref-frontends-rpc-js">JavaScript</a> and
+  <a href="/rpc/go/#ref-frontends-rpc-go">Go</a> libraries.<a href="#p_41" class="pid">41</a>
+</p>

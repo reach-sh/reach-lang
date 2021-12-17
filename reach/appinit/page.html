@@ -1,0 +1,106 @@
+<p>
+  <i id="p_0" class="pid"></i>The body of <span class="snip"><span style="color: #24292F">Reach.app</span></span> is an <span class="term" id="term_application%20initialization">application initialization</span>.
+  It defines the various participants and views of the DApp, as well as sets compilation options.
+  It is finalized with <span class="snip"><span style="color: #8250DF">deploy</span><span style="color: #24292F">()</span></span> and then the application begins in a step.<a href="#p_0" class="pid">0</a>
+</p>
+<h2 id="ref-programs-appinit-stmts" class="refHeader">Statements<a aria-hidden="true" tabindex="-1" href="#ref-programs-appinit-stmts"><span class="icon icon-link"></span></a></h2>
+<p>
+  <i id="p_1" class="pid"></i>Any statements valid for a <a href="/reach/compute/#ref-programs-compute-stmts">computation</a> are valid for application initialization.
+  However, some additional statements are allowed.<a href="#p_1" class="pid">1</a>
+</p>
+<h3 id="deploy" class="refHeader"><code>deploy</code><a aria-hidden="true" tabindex="-1" href="#deploy"><span class="icon icon-link"></span></a></h3>
+<p><span class="ref" id="rsh_deploy" data-scope="rsh" data-symbol="deploy"></span></p>
+<pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="deploy();" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></li></ol></pre>
+<p><i id="p_2" class="pid"></i>A <span class="term" id="term_deploy%20statement">deploy statement</span>, written <span class="snip"><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></span>, deploys the DApp and finalizes all of the available participants, views, and compilation options.<a href="#p_2" class="pid">2</a></p>
+<p>
+  <i id="p_3" class="pid"></i>Its continuation is a step, which means its content is specified by <a href="/reach/step/#ref-programs-step">Steps</a>.
+  It represents the body of the DApp to be compiled.<a href="#p_3" class="pid">3</a>
+</p>
+<h3 id="setoptions" class="refHeader"><code>setOptions</code><a aria-hidden="true" tabindex="-1" href="#setoptions"><span class="icon icon-link"></span></a></h3>
+<p><span class="ref" id="rsh_setOptions" data-scope="rsh" data-symbol="setOptions"></span></p>
+<pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="setOptions({ verifyArithmetic: true });
+setOptions({});" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #8250DF">setOptions</span><span style="color: #24292F">({ verifyArithmetic: </span><span style="color: #0550AE">true</span><span style="color: #24292F"> });</span></li><li value="2"><span style="color: #8250DF">setOptions</span><span style="color: #24292F">({});</span></li></ol></pre>
+<p><i id="p_4" class="pid"></i>The <span class="term" id="term_compilation%20options">compilation options</span> for the DApp may be set by calling <span class="snip"><span style="color: #8250DF">setOptions</span><span style="color: #24292F">(</span><span style="color: #0550AE">OBJ_EXPR</span><span style="color: #24292F">);</span></span> where <span class="snip"><span style="color: #0550AE">OBJ_EXPR</span></span> is an object with the following keys and values:<a href="#p_4" class="pid">4</a></p>
+<ul>
+  <li><i id="p_5" class="pid"></i><span class="ref" id="rsh_verifyArithmetic" data-scope="rsh" data-symbol="verifyArithmetic"></span><span class="snip"><span style="color: #24292F">verifyArithmetic</span></span><a href="#p_5" class="pid">5</a></li>
+</ul>
+<p><i id="p_6" class="pid"></i><span class="snip"><span style="color: #0550AE">true</span></span> or <span class="snip"><span style="color: #0550AE">false</span></span> (default)<a href="#p_6" class="pid">6</a></p>
+<p>
+  <i id="p_7" class="pid"></i>Determines whether arithmetic operations automatically introduce static assertions that they do not overflow beyond <span class="snip"><span style="color: #24292F">UInt.max</span></span>.
+  This defaults to <span class="snip"><span style="color: #0550AE">false</span></span>, because it is onerous to verify.
+  We recommend turning it on before final deployment, but leaving it off during development.
+  When it is <span class="snip"><span style="color: #0550AE">false</span></span>, connectors will ensure that overflows do not actually occur on the network.<a href="#p_7" class="pid">7</a>
+</p>
+<ul>
+  <li><i id="p_8" class="pid"></i><span class="ref" id="rsh_verifyPerConnector" data-scope="rsh" data-symbol="verifyPerConnector"></span><span class="snip"><span style="color: #24292F">verifyPerConnector</span></span><a href="#p_8" class="pid">8</a></li>
+</ul>
+<p><i id="p_9" class="pid"></i><span class="snip"><span style="color: #0550AE">true</span></span> or <span class="snip"><span style="color: #0550AE">false</span></span> (default)<a href="#p_9" class="pid">9</a></p>
+<p>
+  <i id="p_10" class="pid"></i>Determines whether verification is done per connector, or once for a generic connector.
+  When this is <span class="snip"><span style="color: #0550AE">true</span></span>, then connector-specific constants, like <span class="snip"><span style="color: #24292F">UInt.max</span></span>, will be instantiated to literal numbers.
+  This concretization of these constants can induce performance degradation in the verifier.<a href="#p_10" class="pid">10</a>
+</p>
+<ul>
+  <li><i id="p_11" class="pid"></i><span class="ref" id="rsh_connectors" data-scope="rsh" data-symbol="connectors"></span><span class="snip"><span style="color: #24292F">connectors</span></span><a href="#p_11" class="pid">11</a></li>
+</ul>
+<p><i id="p_12" class="pid"></i><span class="ref" id="rsh_ETH" data-scope="rsh" data-symbol="ETH"></span><span class="ref" id="rsh_ALGO" data-scope="rsh" data-symbol="ALGO"></span><span class="snip"><span style="color: #24292F">[</span><span style="color: #0550AE">ETH</span><span style="color: #24292F">, </span><span style="color: #0550AE">ALGO</span><span style="color: #24292F">]</span></span> (default)<a href="#p_12" class="pid">12</a></p>
+<p>
+  <i id="p_13" class="pid"></i>A tuple of the connectors that the application should be compiled for.
+  By default, all available connectors are chosen.<a href="#p_13" class="pid">13</a>
+</p>
+<h2 id="ref-programs-appinit-exprs" class="refHeader">Expressions<a aria-hidden="true" tabindex="-1" href="#ref-programs-appinit-exprs"><span class="icon icon-link"></span></a></h2>
+<p>
+  <i id="p_14" class="pid"></i>Any expressions valid for a <a href="/reach/appinit/#ref-programs-appinit-exprs">computation</a> are valid for application initialization.
+  However, some additional expressions are allowed.<a href="#p_14" class="pid">14</a>
+</p>
+<h3 id="participant-definition" class="refHeader">Participant Definition<a aria-hidden="true" tabindex="-1" href="#participant-definition"><span class="icon icon-link"></span></a></h3>
+<p><i id="p_15" class="pid"></i>A participant and participant class may be declared with<a href="#p_15" class="pid">15</a></p>
+<p><span class="ref" id="rsh_Participant" data-scope="rsh" data-symbol="Participant"></span></p>
+<pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="Participant(participantName, participantInteractInterface)" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #8250DF">Participant</span><span style="color: #24292F">(participantName, participantInteractInterface)</span></li></ol></pre>
+<p><i id="p_16" class="pid"></i>and<a href="#p_16" class="pid">16</a></p>
+<p><span class="ref" id="rsh_ParticipantClass" data-scope="rsh" data-symbol="ParticipantClass"></span></p>
+<pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="ParticipantClass(participantName, participantInteractInterface)" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #8250DF">ParticipantClass</span><span style="color: #24292F">(participantName, participantInteractInterface)</span></li></ol></pre>
+<p><i id="p_17" class="pid"></i>respectively.<a href="#p_17" class="pid">17</a></p>
+<p>
+  <i id="p_18" class="pid"></i><span class="snip"><span style="color: #24292F">participantName</span></span> is a string which indicates the name of the participant function in the generated backend code.
+  Each <span class="snip"><span style="color: #24292F">participantName</span></span> must be unique.<a href="#p_18" class="pid">18</a>
+</p>
+<p><i id="p_19" class="pid"></i><span class="snip"><span style="color: #24292F">participantInteractInterface</span></span> is a <span class="term" id="term_participant%20interact%20interface">participant interact interface</span>, an object where each field indicates the type of a function or value which must be provided to the backend by the frontend for interacting with the participant.<a href="#p_19" class="pid">19</a></p>
+<h3 id="ref-programs-appinit-api" class="refHeader">API Definition<a aria-hidden="true" tabindex="-1" href="#ref-programs-appinit-api"><span class="icon icon-link"></span></a></h3>
+<p><span class="ref" id="rsh_API" data-scope="rsh" data-symbol="API"></span></p>
+<pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="API('Voter', { vote: Fun([Address], UInt) })
+// or
+API({ vote: Fun([Address], UInt) })" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #8250DF">API</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Voter'</span><span style="color: #24292F">, { vote: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([Address], UInt) })</span></li><li value="2"><span style="color: #6E7781">// or</span></li><li value="3"><span style="color: #8250DF">API</span><span style="color: #24292F">({ vote: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([Address], UInt) })</span></li></ol></pre>
+<p>
+  <i id="p_20" class="pid"></i>An API is defined with <span class="snip"><span style="color: #8250DF">API</span><span style="color: #24292F">(apiName, apiInterface)</span></span> or <span class="snip"><span style="color: #8250DF">API</span><span style="color: #24292F">(apiInterface)</span></span>, where <span class="snip"><span style="color: #24292F">apiName</span></span> is a string that labels the API and <span class="snip"><span style="color: #24292F">apiInterface</span></span> is an object where each field indicates the type of a function provided by the contract as an API.
+  These APIs are available in frontends via the <span class="snip"><span style="color: #24292F">ctc.apis</span></span> object, wherein fields are the members of <span class="snip"><span style="color: #24292F">apiInterface</span></span> and may be used in <span class="snip"><span style="color: #24292F">.api</span></span> components of <span class="snip"><span style="color: #24292F">fork</span></span> and <span class="snip"><span style="color: #24292F">parallelReduce</span></span> to specify the behavior of the corresponding call.
+  These are called <span class="term" id="term_API%20member%20function">API member function</span>s.
+  Each function must occur exactly once in the entire program.<a href="#p_20" class="pid">20</a>
+</p>
+<h3 id="ref-programs-appinit-view" class="refHeader">View Definition<a aria-hidden="true" tabindex="-1" href="#ref-programs-appinit-view"><span class="icon icon-link"></span></a></h3>
+<div class="note">
+  <p><i id="p_21" class="pid"></i>This section is about defining views during application initialization. Views are <a href="/reach/consensus/#ref-programs-consensus-view">set in consensus steps</a>, in your Reach program. But, they are <a href="/frontend/#ref-frontends-js-ctc">accessed by frontends</a> by using the Reach standard library of the frontend language, such as JavaScript.<a href="#p_21" class="pid">21</a></p>
+</div>
+<p><span class="ref" id="rsh_View" data-scope="rsh" data-symbol="View"></span></p>
+<pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="View('NFT', { owner: Address })
+// or
+View({ owner: Address })" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #8250DF">View</span><span style="color: #24292F">(</span><span style="color: #0A3069">'NFT'</span><span style="color: #24292F">, { owner: Address })</span></li><li value="2"><span style="color: #6E7781">// or</span></li><li value="3"><span style="color: #8250DF">View</span><span style="color: #24292F">({ owner: Address })</span></li></ol></pre>
+<p>
+  <i id="p_22" class="pid"></i>A view is defined with <span class="snip"><span style="color: #8250DF">View</span><span style="color: #24292F">(viewName, viewInterface)</span></span> or <span class="snip"><span style="color: #8250DF">View</span><span style="color: #24292F">(viewInterface)</span></span>, where <span class="snip"><span style="color: #24292F">viewName</span></span> is a string that labels the view and <span class="snip"><span style="color: #24292F">viewInterface</span></span> is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp.
+  These views are available in frontends via the <span class="snip"><span style="color: #24292F">ctc.views</span></span> object.
+  In the DApp, the result of this application argument is referred to as a view object.<a href="#p_22" class="pid">22</a>
+</p>
+<h3 id="ref-programs-appinit-events" class="refHeader">Events Definition<a aria-hidden="true" tabindex="-1" href="#ref-programs-appinit-events"><span class="icon icon-link"></span></a></h3>
+<p><span class="ref" id="rsh_Events" data-scope="rsh" data-symbol="Events"></span></p>
+<pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="Events('Logger', {
+  log: [UInt, Byte(64)]
+})
+// or
+Events({
+  log: [UInt, Byte(64)]
+})" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #8250DF">Events</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Logger'</span><span style="color: #24292F">, {</span></li><li value="2"><span style="color: #24292F">  log: [UInt, </span><span style="color: #8250DF">Byte</span><span style="color: #24292F">(</span><span style="color: #0550AE">64</span><span style="color: #24292F">)]</span></li><li value="3"><span style="color: #24292F">})</span></li><li value="4"><span style="color: #6E7781">// or</span></li><li value="5"><span style="color: #8250DF">Events</span><span style="color: #24292F">({</span></li><li value="6"><span style="color: #24292F">  log: [UInt, </span><span style="color: #8250DF">Byte</span><span style="color: #24292F">(</span><span style="color: #0550AE">64</span><span style="color: #24292F">)]</span></li><li value="7"><span style="color: #24292F">})</span></li></ol></pre>
+<p>
+  <i id="p_23" class="pid"></i>An event is defined with <span class="snip"><span style="color: #8250DF">Events</span><span style="color: #24292F">(eventName, eventInterface)</span></span> or <span class="snip"><span style="color: #8250DF">Events</span><span style="color: #24292F">(eventInterface)</span></span>, where <span class="snip"><span style="color: #24292F">eventName</span></span> is a string that labels the event and <span class="snip"><span style="color: #24292F">eventInterface</span></span> is an object where each field is a <span class="snip"><span style="color: #24292F">Tuple</span></span> of <span class="snip"><span style="color: #24292F">Type</span></span>s, representing the type of values that an event will emit.
+  These events are available in the frontends via the <span class="snip"><span style="color: #24292F">ctc.events</span></span> object.
+  In the DApp, the result of this application argument is referred to as an event object.<a href="#p_23" class="pid">23</a>
+</p>
