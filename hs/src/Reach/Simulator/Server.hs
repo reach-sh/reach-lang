@@ -122,13 +122,15 @@ unblockProg sid aid v = do
         Nothing -> do
           possible "previous state not found"
         Just (C.PS_Suspend _a (g,l'') k) -> do
-          new_act_id <- gets e_actor_id
-          let l = l'' {C.l_curr_actor_id = new_act_id}
+          let l = l'' {C.l_curr_actor_id = actorId}
           case M.lookup aid avActions of
             Just (C.A_Interact _at _slcxtframes _part _str _dltype _args) -> do
               let ps = k (g,l) v
               processNewState ps
             Just (C.A_InteractV _part _str _dltype) -> do
+              let ps = k (g,l) v
+              processNewState ps
+            Just (C.A_Contest _phid) -> do
               let ps = k (g,l) v
               processNewState ps
             Just (C.A_TieBreak _poolid _parts) -> do
