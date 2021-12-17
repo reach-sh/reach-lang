@@ -108,8 +108,8 @@ jobs:
     - workattach
     - srd_no
     - run: |
-      cp /tmp/workspace/search/* ./docs/search/
-      (cd docs && make update-search)
+        cp /tmp/workspace/search/* ./docs/search/
+        (cd docs && make update-search)
     - add_ssh_keys:
         fingerprints:
         - "83:23:9c:21:6a:74:61:48:20:da:a3:45:79:89:3e:86"
