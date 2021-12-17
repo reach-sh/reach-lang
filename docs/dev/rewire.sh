@@ -13,14 +13,14 @@ r() {
 }
 rank() {
   RANK="${1}"
-  cat > "${TOD}"/config.json <<EOF
+  cat > "${L}"/config.json <<EOF
   { "bookRank": ${RANK} }
 EOF
 }
 bookrank() {
   RANK="${1}"
   BOOK="${2}"
-  cat > "${TOD}"/config.json <<EOF
+  cat > "${L}"/config.json <<EOF
   { "bookRank": ${RANK},
     "bookTitle": "${BOOK}"
   }
