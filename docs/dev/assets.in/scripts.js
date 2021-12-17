@@ -6,10 +6,6 @@ const doc = window.document;
 
 const searchClient = algoliasearch('M53HHHS0ZW', '0cfd8f1c1a0e3cb7b2abd77b831614dc');
 const searchIndex = searchClient.initIndex('docs');
-const searchItem = (hit) => {
-  // XXX add click
-  return e;
-};
 
 const currentPage = {
   folder: null,
@@ -138,17 +134,14 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
 
   // Book or different book?
   if (configJson.bookPath && configJson.bookPath !== currentPage.bookPath) {
-    const bookTitle_a = doc.getElementById('about-this-book');
-    bookTitle_a.href = `/${configJson.bookPath}/`;
-    bookTitle_a.innerHTML = configJson.bookTitle;
-    let bookHtml = doc.createRange().createContextualFragment((await axios.get(`${window.location.origin}/${configJson.bookPath}/book.html`)).data);
+    let bookHtml = doc.createRange().createContextualFragment(await axiosGetData(`${window.location.origin}/${configJson.bookPath}/book.html`));
     doc.querySelectorAll('#book-col div.dynamic').forEach(n => n.remove());
     doc.querySelector('#book-col').append(bookHtml);
 
     // On click chapter-icon.
     doc.querySelectorAll('#book-col i.chapter-icon').forEach(el => {
-      el.addEventListener('click', (event) => {
-        const item = event.target;
+      el.addEventListener('click', (evt) => {
+        const item = evt.target;
         const pages = item.closest('div.chapter').querySelector('div.pages');
         if (item.classList.contains('fa-angle-right')) {
           item.classList.remove('fa-angle-right');
@@ -256,7 +249,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   const el = doc.querySelector(`#book-col a[href="${folder}"]`);
   if (el) {
     const chapter = el.closest('div.chapter');
-    const pages = chapter.querySelector('div.pages');
+    const pages = chapter && chapter.querySelector('div.pages');
     if (pages && pages.hasChildNodes()) {
       const icon = chapter.querySelector('i.chapter-icon');
       icon.classList.remove('fa-angle-right');

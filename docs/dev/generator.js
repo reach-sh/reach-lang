@@ -255,7 +255,7 @@ const processJs = async () => {
   const iPath = `${rootDir}/assets.in/scripts.js`;
   const oPath = `${outDir}/assets/scripts.min.js`;
   const input = await fs.readFile(iPath, 'utf8');
-  const output = new UglifyJS.minify(input, {});
+  const output = false ? { code: input } : new UglifyJS.minify(input, {});
   if (output.error) throw output.error;
   await writeFileMkdir(oPath, output.code);
 }
@@ -517,8 +517,10 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   if ( !forReal ) {
     const bp = configJson.bookPath;
     if ( bp ) {
-      books.push({ here, title,
-        isBook: (bp === here),
+      const ib = bp === here;
+      bookL.push({ here,
+        title: (ib ? configJson.bookTitle : title),
+        isBook: ib,
         rank: (configJson.bookRank || 0)});
     }
     return;
@@ -636,20 +638,20 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
 
   // Write files
   const configJsonSaved = {};
-  for ( const k of ['bookPath', 'bookTitle', 'title', 'titleId', 'author', 'publishedDate', 'hasOtp', 'hasPageHeader'] ) {
+  for ( const k of ['bookPath', 'title', 'titleId', 'hasOtp', 'hasPageHeader'] ) {
     configJsonSaved[k] = configJson[k];
   }
   await Promise.all([
-    fs.writeFile(cfgPath, JSON.stringify(configJsonSaved, null, 2)),
+    fs.writeFile(cfgPath, JSON.stringify(configJsonSaved)),
     fs.writeFile(pagePath, doc.body.innerHTML.trim()),
   ]);
 };
 
-const books = [];
-const booksT = { path: [], children: {} };
+const bookL = [];
+const bookT = { path: [], children: {} };
 const generateBooksTree = () => {
-  for ( const c of books ) {
-    let ct = booksT.children;
+  for ( const c of bookL ) {
+    let ct = bookT.children;
     let cp = [];
     let p = c.here.split('/');
     while ( p.length !== 0 ) {
@@ -670,6 +672,7 @@ const generateBooksTree = () => {
 const bookPipe = await unified()
   .use(rehypeStringify);
 const generateBook = async (destp, bookp) => {
+  console.log('generateBook', bookp);
   const compareNumbers = (a, b) => (a - b);
   const compareChapters = (x, y) => {
     const rc = compareNumbers(x.rank, y.rank);
@@ -704,15 +707,26 @@ const generateBook = async (destp, bookp) => {
     return cs.map(hify);
   }
   const hifyTop = (ct, p) => {
-    if ( p.length !== 0 ) {
-      const [ n, ...pn ] = p;
-      return hifyTop(((ct.children || {})[n] || {}), pn);
-    } else {
-      return hifyList(ct);
+    const bc = [];
+    for ( const n of p ) {
+      ct = ((ct.children || {})[n] || {});
+
+      bc.push(
+        h('div', {class: "row chapter dynamic"}, [
+          h('div', {class: "col-auto chapter-icon-col"}, [
+            h('i', {class: "fas fa-angle-down"})
+          ]),
+          h('div', {class: "col my-auto"}, [
+            h('a', {class: "book-title", href: `/${ct.here}/`}, ct.title)
+          ]),
+        ])
+      );
     }
+    const bcd = h('div', {class: "bookCrumbs dynamic"}, bc);
+    return [ bcd ].concat(hifyList(ct));
   };
   const toc = { type: 'root', children: [] };
-  toc.children = hifyTop(booksT, bookp.split('/'));
+  toc.children = hifyTop(bookT, bookp.split('/'));
   await fs.writeFile(destp, bookPipe.stringify(toc));
 };
 
@@ -815,14 +829,14 @@ const gatherSearchData = async ({doc, title, here}) => {
   });
 };
 const generateSearch = async () => {
-  await fs.writeFile(`${rootDir}/searchData.json`, JSON.stringify(searchData, null, 2));
+  await fs.writeFile(`${rootDir}/searchData.json`, JSON.stringify(searchData));
 };
 
 // Main
 await findAndProcessFolder(`base.html`, process.env, srcDir);
-console.log(JSON.stringify(books, null, 2));
+console.log(JSON.stringify(bookL, null, 2));
 generateBooksTree();
-console.log(JSON.stringify(booksT, null, 2));
+console.log(JSON.stringify(bookT, null, 2));
 
 forReal = true;
 // This depends on the xrefs being assembled

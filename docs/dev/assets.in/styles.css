@@ -120,7 +120,11 @@ i.fa-angle-right {width:10px;}
 }
 
 #book-col a.book-title{
-  margin: 1px 0px 1px 30px;
+  margin: 1px 0px 1px 0px;
+}
+
+#book-col div.bookCrumbs {
+  margin-bottom: 1em;
 }
 
 #book-col a.chapter-title {
