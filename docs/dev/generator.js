@@ -784,17 +784,13 @@ const findAndProcessFolder = async (base_html, inputBaseConfig, folder) => {
 
 const generateRedirects = async () => {
   const rehtml = await fs.readFile('redirect.html', { encoding: 'utf8' });
-  const root = `${outDir}/redirects`;
-  await fs.mkdir(root);
-
   const ms = await fs.readFile('manifest.txt', { encoding: 'utf8' });
   const fl = ms.trimEnd().split('\n');
   await Promise.all(fl.map(async (f) => {
-    if ( f === 'google00951c88ddc5bd51' || f === 'index' ) { return; }
     const { path } = xrefGet('h', f);
     const expand = makeExpander('generateRedirects', { URL: path });
     const re_f = await expand(rehtml);
-    await fs.writeFile( `${root}/${f}.html`, re_f );
+    await fs.writeFile( `${outDir}/${f}.html`, re_f );
   }));
 };
 

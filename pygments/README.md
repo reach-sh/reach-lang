@@ -1,1 +1,0 @@
-XXX: document pygments-reach
