@@ -9,16 +9,20 @@
 (define-runtime-path scrbl "../scrbl")
 
 (define d display)
+(define ell
+  (match-lambda
+    ["reach" "rsh"]
+    [x x]))
 
 (define (code c [lang #f])
-  ;; XXX lang
   (d "`")
+  (when lang (d "{!") (d (ell lang)) (d "} "))
   (for-each d c)
   (d "`"))
 
 (define (code-block l [lang #f])
   (d "```")
-  (when lang (d lang))
+  (when lang (d (ell lang)))
   (d "\n")
   (for-each d l)
   (d "\n```\n"))

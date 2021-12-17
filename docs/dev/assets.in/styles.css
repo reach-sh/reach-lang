@@ -380,10 +380,10 @@ iframe.gray-scale {
 #page-col div#hh-viewer ol.snippet li {
   background-color: var(--snippet); /* github-light modified*/
   font-family: var(--bs-font-monospace);
+  color: var(--bs-body-color);
   font-size: 95%;
   padding: 1px 12px;
   white-space: pre;
-  color: var(--bs-body-color);
 }
 
 #page-col div#hh-viewer pre:not(.snippet) code {
@@ -421,10 +421,14 @@ iframe.gray-scale {
   border-left: none;
 }
 
-#page-col code {
-  /*color: #009999;*/
-  color:#806600;
+#page-col code, #page-col span.snip {
+  /* color: #806600; */
   font-size: 13px;
+  padding: 2px 2px;
+  white-space: pre;
+  background-color: var(--snippet); /* github-light modified*/
+  font-family: var(--bs-font-monospace);
+  color: var(--bs-body-color);
 }
 
 /************************************************

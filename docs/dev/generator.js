@@ -181,7 +181,7 @@ const writeFileMkdir = async (p, c) => {
   await fs.writeFile(p, c);
 };
 
-const shikiHighlighter =
+const sher =
   await shiki.getHighlighter({
     theme: 'github-light',
     langs: [
@@ -201,7 +201,12 @@ const shikiHighlighter =
     ],
   });
 const shikiHighlight = async (code, lang) => {
-  return shikiHighlighter.codeToHtml(code, lang);
+  const fc = sher.codeToHtml(code, lang);
+  return fc
+    .replace('<pre class="shiki" style="background-color: #ffffff"><code>', '')
+    .replaceAll('<span class="line">', '')
+    .replaceAll('</span></span>', '</span>')
+    .replace('</code></pre>', '');
 };
 
 // Library
@@ -536,6 +541,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   theader.remove();
 
   // Process code snippets.
+  const mkEl = (s) => doc.createRange().createContextualFragment(s);
   for (const pre of doc.querySelectorAll('pre') ) {
     const code = pre.querySelector('code');
     if (!code) { continue; }
@@ -585,13 +591,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     // https://github.com/shikijs/shiki/blob/main/docs/themes.md
     // https://github.com/shikijs/shiki/blob/main/docs/languages.md
     if (spec.language) {
-      const hicode = await shikiHighlight(rawCode, spec.language);
-      code.textContent = hicode
-        //.replace('<pre class="shiki" style="background-color: #282A36"><code>', '') // dracula
-        .replace('<pre class="shiki" style="background-color: #ffffff"><code>', '') // github-light
-        .replaceAll('<span class="line">', '')
-        .replaceAll('</span></span>', '</span>')
-        .replace('</code></pre>', '');
+      code.textContent = await shikiHighlight(rawCode, spec.language);
     }
 
     let firstLineIndex = null;
@@ -616,7 +616,6 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     }
     olStr += '</ol>';
     code.remove();
-    const mkEl = (s) => doc.createRange().createContextualFragment(s);
     const chEl = doc.createElement('div');
     chEl.classList.add("codeHeader");
     if ( spec.load ) {
@@ -634,6 +633,19 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     pre.classList.add('snippet');
     const shouldNumber = spec.numbered && (arr.length != 1);
     pre.classList.add(shouldNumber ? 'numbered' : 'unnumbered');
+  }
+  for (const c of doc.querySelectorAll('code') ) {
+    const rt = c.textContent.trimEnd();
+    if ( ! rt.startsWith('{!') ) { continue; }
+    const le = rt.indexOf('} ');
+    if ( ! le ) { continue; }
+    const lang = rt.slice(2, le);
+    const rc = rt.slice(le+2);
+    const hc = await shikiHighlight(rc, lang);
+    const s = doc.createElement('span');
+    s.classList.add('snip');
+    s.appendChild(mkEl(hc));
+    c.outerHTML = s.outerHTML;
   }
 
   // Write files
@@ -672,7 +684,6 @@ const generateBooksTree = () => {
 const bookPipe = await unified()
   .use(rehypeStringify);
 const generateBook = async (destp, bookp) => {
-  console.log('generateBook', bookp);
   const compareNumbers = (a, b) => (a - b);
   const compareChapters = (x, y) => {
     const rc = compareNumbers(x.rank, y.rank);
