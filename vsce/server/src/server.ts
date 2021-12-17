@@ -520,6 +520,26 @@ async function getCodeActions(diagnostics: Diagnostic[], textDocument: TextDocum
 			suggestions.forEach(suggestion => {
 				codeActions.push(getQuickFix(diagnostic, labelPrefix + suggestion, range, suggestion, textDocument));
 			});
+		} else if (diagnostic.code === "RE0048") {
+			const title = "Add Reach program header.";
+			const newText: string = "'reach 0.1';\n\n";
+			const textEdit: TextEdit = {
+				newText,
+				range
+			};
+			const changes = {
+				[ textDocument.uri ]: [ textEdit ]
+			};
+			const edit: WorkspaceEdit = {
+				changes
+			};
+			const codeAction: CodeAction = {
+				edit,
+				diagnostics: [ diagnostic ],
+				kind: CodeActionKind.QuickFix,
+				title
+			};
+			codeActions.push(codeAction);
 		}
 	});
 
