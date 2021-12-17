@@ -509,7 +509,6 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   // Update config.json with title and pathname.
   const theader = doc.querySelector('h1');
   const title = theader.textContent;
-  theader.remove();
   configJson.title = title;
   configJson.titleId = theader.id;
   configJson.pathname = in_folder;
@@ -534,6 +533,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   });
 
   await gatherSearchData({doc, title, here});
+  theader.remove();
 
   // Process code snippets.
   for (const pre of doc.querySelectorAll('pre') ) {
@@ -829,14 +829,14 @@ const gatherSearchData = async ({doc, title, here}) => {
   });
 };
 const generateSearch = async () => {
-  await fs.writeFile(`${rootDir}/searchData.json`, JSON.stringify(searchData));
+  await fs.writeFile(`${rootDir}/searchData.json`, JSON.stringify(searchData,null,2));
 };
 
 // Main
 await findAndProcessFolder(`base.html`, process.env, srcDir);
-console.log(JSON.stringify(bookL, null, 2));
+//console.log(JSON.stringify(bookL, null, 2));
 generateBooksTree();
-console.log(JSON.stringify(bookT, null, 2));
+//console.log(JSON.stringify(bookT, null, 2));
 
 forReal = true;
 // This depends on the xrefs being assembled
