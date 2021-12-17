@@ -130,7 +130,7 @@ jobs:
     - slack_fail
     - run: |
         if [ -f .did_change ]; then
-          git diff --exit-code HEAD~ guide-changelog.html
+          git diff --exit-code HEAD~ changelog/page.html
         fi
     - slack/notify:
         event: fail
@@ -142,7 +142,7 @@ jobs:
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "<https://docs.reach.sh/guide-changelog.html|Changelog> has changed!"
+                "text": "<https://docs.reach.sh/changelog/|Changelog> has changed!"
               }
             }]
           }
