@@ -100,6 +100,7 @@ jobs:
         root: /tmp/workspace/
         paths:
           - docs
+          - search
     - slack_fail
   "docs-deploy":
     executor: fake
