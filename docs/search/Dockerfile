@@ -3,6 +3,6 @@ WORKDIR /proj
 
 COPY package.json .
 RUN npm install
-COPY index.mjs index.json .
+COPY index.mjs index.json ./
 
 ENTRYPOINT node index.mjs
