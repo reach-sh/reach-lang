@@ -441,12 +441,13 @@ Reach's @{defn("type")}s are represented in programs by the following identifier
 Bytes of different lengths are not compatible; however the shorter bytes may be padded.
 + @{ref("rsh", "Digest")} `{!reach} Digest`, which denotes a digest.
 + @{ref("rsh", "Address")} `{!reach} Address`, which denotes an account address.
-+ :::note
++ @{ref("rsh", "Contract")} `{!reach} Contract`, which denotes the identifying information of a contract.
+
+:::note
 Reach has different representations of contracts across connectors.
 For example, on Algorand a `{!reach} Contract` is an Application ID, but on Ethereum it is an Address.
 :::
 
-@{ref("rsh", "Contract")} `{!reach} Contract`, which denotes the identifying information of a contract.
 + @{ref("rsh", "Token")} `{!reach} Token`, which denotes a non-network token. @{seclink("ref-networks")} discusses how `{!reach} Token`s are represented on specific networks.
 + @{ref("rsh", "Fun")} `{!reach} Fun([Domain_0, ..., Domain_N], Range)`, which denotes a @{defn("function type")}, when `{!reach} Domain_i` and `{!reach} Range` are types.
 The domain of a function is negative position.
@@ -469,10 +470,10 @@ When a refinement type appears in a @{defn("negative position")} (such as in an 
 while when it is in a @{defn("positive position")}, it introduces an `{!reach} assume`.
 `{!reach} Message` is an optional string to display if the predicate fails verification.
 
-For example, if `{!reach} f` had type ```reach
+For example, if `{!reach} f` had type
+```reach
 Fun([Refine(UInt, (x => x < 5))], Refine(UInt, (x => x > 10)))
 ```
-
 
 then `{!reach} const z = f(y)` is equivalent to
 

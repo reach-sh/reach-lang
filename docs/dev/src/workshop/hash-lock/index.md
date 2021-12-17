@@ -1,7 +1,4 @@
-
-
-
-# {#workshop-hash-lock} Workshop: Hash Lock
+# {#workshop-hash-lock} Hash Lock
 
 In this workshop, we'll design an application that allows a payer to lock funds with a secret password, independent from their consensus network identity, which can be drawn by anyone possessing the secret password.
 This is a useful way for a payer to show that they have funds and have committed to disbursing them, without deciding beforehand who they are paying.
@@ -57,7 +54,7 @@ So, for this program, we should decide:
 + What data type will represent Alice's password?
 
 :::note
-Refer to @{seclink("ref-programs-types")}for a reminder of what data types are available in Reach.
+Refer to @{seclink("ref-programs-types")} for a reminder of what data types are available in Reach.
 :::
 
 

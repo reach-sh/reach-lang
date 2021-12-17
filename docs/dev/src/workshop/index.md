@@ -1,6 +1,3 @@
-
-
-
 # {#workshop} Workshop
 
 The workshop is a collection of self-study projects to help you on your way to mastery building decentralized applications through practice by building specific projects in Reach.
@@ -61,7 +58,7 @@ Here are the current workshops, in the order we recommend doing them:
 
 
 
-## {#workshop-rps-fair} Workshop: Fair Rock-Paper-Scissors
+## {#workshop-rps-fair} Fair Rock-Paper-Scissors
 
 @{workshopDeps("tut")}
 
@@ -71,7 +68,7 @@ How could you revise the application to make it fair, without requiring a change
 
 @{workshopWIP()}
 
-## {#workshop-rps-eff} Workshop: Efficient Rock-Paper-Scissors
+## {#workshop-rps-eff} Efficient Rock-Paper-Scissors
 
 @{workshopDeps("workshop-rps-fair")}
 
@@ -98,7 +95,7 @@ This is a general strategy that is regularly employed in efficient decentralized
 
 @{workshopWIP()}
 
-## {#workshop-rental} Workshop: Rental Agreement
+## {#workshop-rental} Rental Agreement
 
 @{workshopDeps("tut")}
 
@@ -114,7 +111,7 @@ It turns out that this scenario is structurally identical to _Rock, Paper, Sciss
 
 @{workshopWIP("rental")}
 
-## {#workshop-abstract-simul} Workshop: Simultaneous Games
+## {#workshop-abstract-simul} Simultaneous Games
 
 @{workshopDeps("workshop-rental")}
 
@@ -123,7 +120,7 @@ This shows the power of Reach's ability to construct and reason about communicat
 
 @{workshopWIP("abstract-simul")}
 
-## {#workshop-guardian-account} Workshop: Guardian Account
+## {#workshop-guardian-account} Guardian Account
 
 @{workshopDeps("workshop-trust-fund")}
 
@@ -136,7 +133,7 @@ This is the first workshop on the "transfer funds" track that introduces `{!reac
 
 @{workshopWIP("multisig")}
 
-## {#workshop-utility} Workshop: Periodic Payment
+## {#workshop-utility} Periodic Payment
 
 @{workshopDeps("workshop-guardian-account")}
 
@@ -146,7 +143,7 @@ This could be used to make a periodic payment to a utility company, for example.
 
 @{workshopWIP()}
 
-## {#workshop-nim} Workshop: Nim
+## {#workshop-nim} Nim
 
 @{workshopDeps("tut")}
 
@@ -157,7 +154,7 @@ Thus, this workshop demonstrates using more interesting data-structures in Reach
 
 @{workshopWIP("nim")}
 
-## {#workshop-ttt} Workshop: Tic-Tac-Toe
+## {#workshop-ttt} Tic-Tac-Toe
 
 @{workshopDeps("workshop-nim")}
 
@@ -170,7 +167,7 @@ These variations demonstrate two DApp patterns that occur commonly in existing D
 
 @{workshopWIP("ttt")}
 
-## {#workshop-secured-loan} Workshop: Secured Loan
+## {#workshop-secured-loan} Secured Loan
 
 @{workshopDeps("workshop-trust-fund")}
 
@@ -183,7 +180,7 @@ Thus, the interest rate for the loan is essentially the Lender's prediction of t
 
 @{workshopWIP("secured-loan")}
 
-## {#workshop-atomic-swap} Workshop: Atomic Swap
+## {#workshop-atomic-swap} Atomic Swap
 
 @{workshopDeps("tut")}
 
@@ -192,7 +189,7 @@ This workshop demonstrates the use of non-network tokens.
 
 @{workshopWIP("atomic-swap")}
 
-## {#workshop-atomic-swap-auction} Workshop: Atomic Swap Auction
+## {#workshop-atomic-swap-auction} Atomic Swap Auction
 
 @{workshopDeps("workshop-atomic-swap")}
 
@@ -200,7 +197,7 @@ In this workshop, we extend the [Atomic Swap](##workshop-atomic-swap) workshop b
 
 @{workshopWIP("atomic-swap-auction")}
 
-## {#workshop-race} Workshop: Race
+## {#workshop-race} Race
 
 @{workshopDeps("tut")}
 
@@ -209,7 +206,7 @@ This provides an introduction to races, as well as a cautionary tale on their da
 
 @{workshopWIP("race")}
 
-## {#workshop-chicken-race} Workshop: Chicken
+## {#workshop-chicken-race} Chicken
 
 @{workshopDeps("workshop-race")}
 
@@ -219,7 +216,7 @@ Like @{seclink("workshop-race")}, this demonstrates the deadweight losses associ
 
 @{workshopWIP("chicken-race")}
 
-## {#workshop-popularity-contest} Workshop: Popularity Contest
+## {#workshop-popularity-contest} Popularity Contest
 
 @{workshopDeps("workshop-chicken-race")}
 
@@ -229,7 +226,7 @@ This workshop introduces effective use of participant classes and `{!reach} para
 
 @{workshopWIP("popularity-contest")}
 
-## {#workshop-nft-dumb} Workshop: Simple NFT
+## {#workshop-nft-dumb} Simple NFT
 
 @{workshopDeps("workshop-race")}
 
@@ -239,7 +236,7 @@ This workshop uses a participant class to represent owners and is a kind of triv
 
 @{workshopWIP("nft-dumb")}
 
-## {#workshop-nft-auction} Workshop: NFT with Auction
+## {#workshop-nft-auction} NFT with Auction
 
 @{workshopDeps("workshop-nft-dumb")}
 
@@ -248,7 +245,7 @@ This could be extended to give creators (or royalty rights holders) a percentage
 
 @{workshopWIP("nft-auction")}
 
-## {#workshop-nft-tax} Workshop: NFT with Royalties and Harberger Tax
+## {#workshop-nft-tax} NFT with Royalties and Harberger Tax
 
 @{workshopDeps("workshop-nft-dumb")}
 
@@ -256,7 +253,7 @@ In this workshop, we extend @{seclink("workshop-nft-dumb")} by incorporating a H
 They can update this price upwards by paying an additional tax, or decrease it without cost (to free themselves of the asset).
 This represents an interesting place in the NFT design space where utility increasing transfers are immediate and creators receive royalties.
 
-## {#workshop-raffle} Workshop: Raffle
+## {#workshop-raffle} Raffle
 
 @{workshopDeps("workshop-popularity-contest")}
 
@@ -264,7 +261,7 @@ In this workshop, we implement a [raffle](https://en.wikipedia.org/wiki/Raffle),
 
 @{workshopWIP("raffle")}
 
-## {#workshop-rent-seeking} Workshop: Rent Seeking
+## {#workshop-rent-seeking} Rent Seeking
 
 @{workshopDeps("workshop-raffle")}
 
@@ -272,7 +269,7 @@ In this workshop, we implement a [rent-seeking](https://en.wikipedia.org/wiki/Re
 
 @{workshopWIP("rent-seeking")}
 
-## {#workshop-remote} Workshop: Remote Objects
+## {#workshop-remote} Remote Objects
 
 @{workshopDeps("tut")}
 
@@ -282,7 +279,7 @@ It may be representative of a DApp that is implemented simultaneously in Reach a
 
 @{workshopWIP("remote")}
 
-## {#workshop-oracle} Workshop: Oracle
+## {#workshop-oracle} Oracle
 
 @{workshopDeps("tut")}
 
@@ -291,7 +288,7 @@ Typically oracles are used to connect physical data from outside a consensus net
 
 @{workshopWIP()}
 
-## {#workshop-auction-te} Workshop: Timed English Auction
+## {#workshop-auction-te} Timed English Auction
 
 @{workshopDeps("tut")}
 
@@ -300,7 +297,7 @@ This demonstrates the use of collective operations in Reach with finite state.
 
 @{workshopWIP()}
 
-## {#workshop-crowdfund} Workshop: Crowd-funding
+## {#workshop-crowdfund} Crowd-funding
 
 @{workshopDeps("workshop-auction-te")}
 

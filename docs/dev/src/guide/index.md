@@ -1,6 +1,3 @@
-
-
-
 # {#guide} Guide
 
 These guides discuss some key ideas and concepts used through Reach.
@@ -27,26 +24,4 @@ The following guides are available:
 + @{seclink("guide-reach")}
 + @{seclink("guide-limits")}
 + @{seclink("guide-roadmap")}
-+ @{seclink("guide-changelog")}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -793,7 +793,7 @@ The value that `{!js} make` should return differs between connectors.
 
 On Ethereum, it must match the interface of MetaMask.
 On Conflux, it must match the interface of ConfluxPortal.
-On Algorand, it must match the [ARC-0011](https://github.com/reach-sh/ARCs/blob/reach-wallet/ARCs/arc-0011.md) standard.
+On Algorand, it must match the [ARC-0011](https://github.com/algorandfoundation/ARCs/blob/main/ARCs/arc-0011.md) standard.
 
 ---
 @{ref("js", "walletFallback")}

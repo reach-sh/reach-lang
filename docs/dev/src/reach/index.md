@@ -1,8 +1,4 @@
-
-
-
-
-# {#ref-programs} Programs
+# {#ref-programs} Language
 
 This document describes the structure and content of Reach @{defn("programs")}, including
 their syntactic forms,

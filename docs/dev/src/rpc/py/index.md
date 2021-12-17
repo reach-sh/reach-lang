@@ -1,8 +1,4 @@
-
-
-
-
-# {#ref-frontends-rpc-py} Python (RPC)
+# {#ref-frontends-rpc-py} Python
 
 :::note
 This frontend library relies on the [Reach RPC Server](##ref-backends-rpc).

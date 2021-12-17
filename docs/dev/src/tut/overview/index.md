@@ -129,7 +129,7 @@ After a Reach programmer writes this application in a file like [`overview/index
 
 
 ```
-$ reach compile [overview/index.rsh](@{REPO}/examples/overview/index.rsh)
+$ reach compile overview/index.rsh
 ```
 
 
@@ -170,7 +170,7 @@ And then run the compiler:
 
 
 ```
-$ reach compile [overview/index-error.rsh](@{REPO}/examples/overview/index-error.rsh)
+$ reach compile overview/index-error.rsh
 ```
 
 

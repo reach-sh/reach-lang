@@ -1,7 +1,4 @@
-
-
-
-# {#guide-changelog} Reach's Changelog
+# {#guide-changelog} Changelog
 
 Below is a list of changes to Reach.
 Versions and changes-within-versions are listed in reverse-chronological order: newest things first.

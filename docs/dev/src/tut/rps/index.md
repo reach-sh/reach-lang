@@ -1,7 +1,4 @@
-
-
-
-# {#tut} Tutorial
+# {#tut} Rock, Paper, Scissors!
 
 This tutorial walks through the creation of a simple decentralized application.
 It contains everything you need to know to build and test this application and assumes no prior experience with DApp/blockchain development of any kind.
@@ -124,24 +121,15 @@ For example, start off by typing the following into `index.rsh`:
 load: /examples/rps-1-setup/index.rsh
 ```
 
-
 :::note
-Did you notice that `{!reach} export`, `{!reach} const`, `{!reach} exit`, and so on are links?
-In Reach code samples, you can click on the names of keywords and standard library functions to be brought to their documentation.
-:::
-
-
-:::note
-Did you notice that [rps-1-setup/index.rsh](@{REPO}/examples/rps-1-setup/index.rsh) was a link in the box above the code sample?
+Did you notice that [`rps-1-setup/index.rsh`](@{REPO}/examples/rps-1-setup/index.rsh) was a link in the box above the code sample?
 You can always click on these links to see the entire file in our [GitHub](https://github.com/reach-sh/reach-lang) repository.
 :::
 
-
 :::note
-Did you notice the attractive clipboard icon on the top the right of that box?
+Did you notice the attractive copy icon on the top the right of that box?
 You can click on it and the content of the code box will be copied onto your clipboard.
 :::
-
 
 :::note
 Did your text editor recognize `index.rsh` as a Reach program and give you proper syntax highlighting?
@@ -185,7 +173,7 @@ This JavaScript code is similarly schematic and will be consistent across all of
 This will only work on the Reach-provided developer testing network.
 + Line 10 has Alice deploy the application.
 :::note
-The program defined in [rps-1-setup/index.rsh](@{REPO}/examples/rps-1-setup/index.rsh) will only begin to run after it has been deployed via [rps-1-setup/index.mjs](@{REPO}/examples/rps-1-setup/index.mjs).
+The program defined in [`rps-1-setup/index.rsh`](@{REPO}/examples/rps-1-setup/index.rsh) will only begin to run after it has been deployed via [rps-1-setup/index.mjs](@{REPO}/examples/rps-1-setup/index.mjs).
 :::
 
 + Line 11 has Bob attach to it.
@@ -376,7 +364,7 @@ Indeed, this is where the name consensus network comes from, as they enable thes
 That's why every time you run `./reach run`, both Alice and Bob will see the same outcome!
 
 :::note
-If your version isn't working, look at the complete versions of [rps-2-rps/index.rsh](@{REPO}/examples/rps-2-rps/index.rsh) and [rps-2-rps/index.mjs](@{REPO}/examples/rps-2-rps/index.mjs) to make sure you copied everything down correctly!
+If your version isn't working, look at the complete versions of [`rps-2-rps/index.rsh`](@{REPO}/examples/rps-2-rps/index.rsh) and [`rps-2-rps/index.mjs`](@{REPO}/examples/rps-2-rps/index.mjs) to make sure you copied everything down correctly!
 :::
 
 
@@ -605,7 +593,7 @@ She has to pay to deploy the contract, because she publishes the first message i
 Alice is doing okay - if she keeps this up, she'll make a fortune on _Rock, Paper, Scissors!_!
 
 :::note
-If your version isn't working, look at the complete versions of [rps-3-bets/index.rsh](@{REPO}/examples/rps-3-bets/index.rsh) and [rps-3-bets/index.mjs](@{REPO}/examples/rps-3-bets/index.mjs) to make sure you copied everything down correctly!
+If your version isn't working, look at the complete versions of [`rps-3-bets/index.rsh`](@{REPO}/examples/rps-3-bets/index.rsh) and [`rps-3-bets/index.mjs`](@{REPO}/examples/rps-3-bets/index.mjs) to make sure you copied everything down correctly!
 :::
 
 
@@ -782,7 +770,7 @@ These kinds of [automatic verifications](##guide-assert) are helpful for Reach p
 
 However, now let's add an assertion to the program that will ensure that every version of the program that allows Bob to know Alice's hand before he chooses his own will be rejected.
 
-We'll go back to the version of [rps-3-bets/index.rsh](@{REPO}/examples/rps-3-bets/index.rsh) from the last section, which has an honest version of Bob.
+We'll go back to the version of [`rps-3-bets/index.rsh`](@{REPO}/examples/rps-3-bets/index.rsh) from the last section, which has an honest version of Bob.
 (Click on the preceding link if you need to see what it contained.)
 
 We'll add a single line to the program after Alice publishes, but before Bob takes a local step:
@@ -991,7 +979,7 @@ When we compile this version of the application, Reach's [automatic formal verif
 Non-Reach programmers that try to write decentralized applications are on their own trying to ensure that these problems don't exist.
 
 :::note
-If your version isn't working, look at the complete versions of [rps-5-trust/index.rsh](@{REPO}/examples/rps-5-trust/index.rsh) and [rps-5-trust/index.mjs](@{REPO}/examples/rps-5-trust/index.mjs) to make sure you copied everything down correctly!
+If your version isn't working, look at the complete versions of [`rps-5-trust/index.rsh`](@{REPO}/examples/rps-5-trust/index.rsh) and [`rps-5-trust/index.mjs`](@{REPO}/examples/rps-5-trust/index.mjs) to make sure you copied everything down correctly!
 :::
 
 
@@ -1233,7 +1221,7 @@ Bob went from 10 to 9.9999.
 Of course, when you run, you may not get two of the three times ending in a timeout.
 
 :::note
-If your version isn't working, look at the complete versions of [rps-6-timeouts/index.rsh](@{REPO}/examples/rps-6-timeouts/index.rsh) and [rps-6-timeouts/index.mjs](@{REPO}/examples/rps-6-timeouts/index.mjs) to make sure you copied everything down correctly!
+If your version isn't working, look at the complete versions of [`rps-6-timeouts/index.rsh`](@{REPO}/examples/rps-6-timeouts/index.rsh) and [`rps-6-timeouts/index.mjs`](@{REPO}/examples/rps-6-timeouts/index.mjs) to make sure you copied everything down correctly!
 :::
 
 
@@ -1453,7 +1441,7 @@ Bob went from 100 to 104.9999.
 As usual, your results may differ, but you should be able to see single round victories like this, as well as multi-round fights and timeouts from either party.
 
 :::note
-If your version isn't working, look at the complete versions of [rps-7-loops/index.rsh](@{REPO}/examples/rps-7-loops/index.rsh) and [rps-7-loops/index.mjs](@{REPO}/examples/rps-7-loops/index.mjs) to make sure you copied everything down correctly!
+If your version isn't working, look at the complete versions of [`rps-7-loops/index.rsh`](@{REPO}/examples/rps-7-loops/index.rsh) and [`rps-7-loops/index.mjs`](@{REPO}/examples/rps-7-loops/index.mjs) to make sure you copied everything down correctly!
 :::
 
 
@@ -1656,7 +1644,7 @@ Your balance is now 1009.9999
 Of course, when you run the exact amounts and addresses may be different.
 
 :::note
-If your version isn't working, compare with [rps-8-interact/index.rsh](@{REPO}/examples/rps-8-interact/index.rsh) and [rps-8-interact/index.mjs](@{REPO}/examples/rps-8-interact/index.mjs) to ensure you've copied everything down correctly!
+If your version isn't working, compare with [`rps-8-interact/index.rsh`](@{REPO}/examples/rps-8-interact/index.rsh) and [`rps-8-interact/index.mjs`](@{REPO}/examples/rps-8-interact/index.mjs) to ensure you've copied everything down correctly!
 :::
 
 
@@ -1743,8 +1731,8 @@ Your directory should look like:
 
 ---
 
-We will focus on [rps-9-web/index.js](@{REPO}/examples/rps-9-web/index.js),
-because [rps-9-web/index.rsh](@{REPO}/examples/rps-9-web/index.rsh) is the same as previous sections.
+We will focus on [`rps-9-web/index.js`](@{REPO}/examples/rps-9-web/index.js),
+because [`rps-9-web/index.rsh`](@{REPO}/examples/rps-9-web/index.rsh) is the same as previous sections.
 
 ```
 load: /examples/rps-9-web/index.js
@@ -2034,7 +2022,7 @@ $ REACH_CONNECTOR_MODE=ALGO ./reach react
 
 
 :::note
-If you expect that your Algorand users do not have access to an [ARC-0011](https://github.com/reach-sh/ARCs/blob/reach-wallet/ARCs/arc-0011.md) browser wallet, you want to provide a fallback.
+If you expect that your Algorand users do not have access to an [ARC-0011](https://github.com/algorandfoundation/ARCs/blob/main/ARCs/arc-0011.md) browser wallet, you want to provide a fallback.
 
 If you add the following to your program, then you can provide a simple wallet where the user copies and pastes their mnemonic for each interaction.
 ```js
@@ -2058,13 +2046,7 @@ stdlib.setWalletFallback(stdlib.walletFallback({
 ```
 
 
-(Of course, you may want to replace ```js
-'TestNet'
-```
- in either of these samples with a different network name, like ```js
-'MainNet'
-```
-.)
+(Of course, you may want to replace `'TestNet'` in either of these samples with a different network name, like `'MainNet'`.)
 
 Because these are fallbacks, you need to decide for your users which wallet they'll use, or make a user interface element to let them select which wallet fallback to use.
 
@@ -2188,7 +2170,7 @@ load: /examples/rps-9-web/index.js
 We wrote about a hundred lines of Reach and two different frontends.
 Our command-line version is about a hundred lines of JavaScript, while our Web version is about the same length, but has a lot of presentation code as well.
 
-Behind the scenes, Reach generated hundreds of lines of Solidity (which you can look at here: [rps-8-interact/build/index.main.sol](@{REPO}/examples/rps-8-interact/build/index.main.sol)), almost two thousand lines of TEAL (which you can look at here: [rps-8-interact/build/index.main.appApproval.teal](@{REPO}/examples/rps-8-interact/build/index.main.appApproval.teal)), as well as over a thousand lines of JavaScript (which you can look at here: [rps-8-interact/build/index.main.mjs](@{REPO}/examples/rps-8-interact/build/index.main.mjs)).
+Behind the scenes, Reach generated hundreds of lines of Solidity (which you can look at here: [`rps-8-interact/build/index.main.sol`](@{REPO}/examples/rps-8-interact/build/index.main.sol)), almost two thousand lines of TEAL (which you can look at here: [`rps-8-interact/build/index.main.appApproval.teal`](@{REPO}/examples/rps-8-interact/build/index.main.appApproval.teal)), as well as over a thousand lines of JavaScript (which you can look at here: [`rps-8-interact/build/index.main.mjs`](@{REPO}/examples/rps-8-interact/build/index.main.mjs)).
 If we weren't using Reach, then we'd have to write all this code ourselves and ensure that they are consistent and updated at every change to the application.
 
 Now that you've seen an entire Reach application from beginning to end, it's time for you to start working on your own applications!

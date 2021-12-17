@@ -1,8 +1,4 @@
-
-
-
-# {#workshop-fomo-generalized} Workshop: Fear of Missing Out Generalized
-
+# {#workshop-fomo-generalized} Fear of Missing Out+
 
 In this workshop, we will extend our [Fear of Missing Out application](##workshop-fomo)
 with the ability to split the reward between the `N` most recent Buyers.
@@ -36,7 +32,7 @@ The data type representation of this program will basically be the same as the
 regular Fear of Missing Out program. However, instead of tracking the latest Buyer as an
 `{!reach} Address`, we will track the last `N` Buyers as an `{!reach} Array(Address, N)`.
 :::note
-Refer to @{seclink("ref-programs-types")}for a reminder of what data types are available in Reach.
+Refer to @{seclink("ref-programs-types")} for a reminder of what data types are available in Reach.
 :::
 
 

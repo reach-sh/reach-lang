@@ -1,8 +1,4 @@
-
-
-
-
-# {#ref-frontends-rpc-go} Go (RPC)
+# {#ref-frontends-rpc-go} Go
 
 :::note
 This frontend library relies on the [Reach RPC Server](##ref-backends-rpc).

@@ -1,7 +1,4 @@
-
-
-
-# {#ref-backends-rpc-proto} Reach RPC Protocol Specification
+# {#ref-backends-rpc-proto} Specification
 
 The Reach RPC Protocol (hereafter, "the protocol" or "it") is an instance of [JSON](https://en.wikipedia.org/wiki/JSON)-based RPC protocol.
 

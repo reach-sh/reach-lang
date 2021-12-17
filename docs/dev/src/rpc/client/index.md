@@ -1,7 +1,4 @@
-
-
-
-# {#ref-backends-rpc-client} Reach RPC Protocol Client Implementation Walkthrough
+# {#ref-backends-rpc-client} Client Walkthrough
 
 The [Reach RPC Protocol](##ref-backends-rpc-proto) is designed to be simple to implement in languages that support HTTP and JSON interaction.
 This document walks through the implementation of an RPC client in [Python](https://www.python.org).

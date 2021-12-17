@@ -1,7 +1,4 @@
-
-
-
-# {#workshop-relay} Workshop: Relay Account
+# {#workshop-relay} Relay Account
 
 In this workshop, we'll revisit the problem of allowing a payer to transfer funds to another party before knowing their identity.
 However, unlike in @{seclink("workshop-hash-lock")}, we will use a technique that is safe against malicious miners.
@@ -61,7 +58,7 @@ Which are functions and which are values?
 Finally, how should the Relay account information and Bob's identity be represented?
 (Hint: Reach has a type named `{!reach} Address` that represents an account address!)
 :::note
-Refer to @{seclink("ref-programs-types")}for a reminder of what data types are available in Reach.
+Refer to @{seclink("ref-programs-types")} for a reminder of what data types are available in Reach.
 :::
 
 

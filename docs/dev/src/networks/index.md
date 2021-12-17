@@ -1,14 +1,10 @@
-
-
-
-# {#ref-networks} Consensus Network Connectors
+# {#ref-networks} Networks
 
 This section describes the consensus network connectors
 supported by Reach version @{VERSION}:
 + @{seclink("ref-network-algo")}
 + @{seclink("ref-network-eth")}
 + @{seclink("ref-network-cfx")}
-
 
 ## {#ref-network-algo} Algorand
 

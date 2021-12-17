@@ -1,8 +1,4 @@
-
-
-
-# {#workshop-fomo} Workshop: Fear of Missing Out
-
+# {#workshop-fomo} Fear of Missing Out
 
 In this workshop, we'll design an application that allows a Funder
 to create an auction where participants may purchase tickets.
@@ -60,7 +56,7 @@ in the program:
 + What data type will represent the Buyer's decision to purchase a ticket?
 
 :::note
-Refer to @{seclink("ref-programs-types")}for a reminder of what data types are available in Reach.
+Refer to @{seclink("ref-programs-types")} for a reminder of what data types are available in Reach.
 :::
 
 

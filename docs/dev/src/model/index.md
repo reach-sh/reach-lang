@@ -1,7 +1,4 @@
-
-
-
-# {#ref-model} Language Model
+# {#ref-model} Model
 
 This document describes the fundamental assumptions and concepts of Reach. First, we discuss the model of running a Reach program in @{seclink("ref-model-eval")}. Next, we discuss the details about compilation of a Reach program that are relevant to Reach programmers in @{seclink("ref-model-compile")}. Finally, we discuss how Reach programs are syntactically constructed in @{seclink("ref-model-syntax")}.
 
@@ -51,11 +48,9 @@ Finally, Reach's definition of consensus network does not require any particular
 In particular, it does not only refer to so-called "layer-1" protocols, nor does it exclude centralized systems with trusted parties controlling the network.
 :::
 
-
 :::note
 Reach assumes that network tokens and non-network tokens behave identically, but often they do not; [this article](##guide-nntoks) discusses the causes and consequences of this.
 :::
-
 
 @{defn("Contracts")} are accounts with three extra capacities: they persistently store values (called the @{defn("consensus state")}), they may receive publications, and when they receive publications, they systematically process them and may modify their consensus state, make publications, and may transfer network tokens and non-network tokens in response to the reception.
 In addition to values, consensus state may contain a fixed number of @{defn("mappings")} between an address and a value.
@@ -67,6 +62,7 @@ The creation of a contract is called @{defn("deploy")}ment.
 
 A @{defn("participant")} is a logical actor which takes part in a DApp.
 It is associated with an account on the consensus network.
+
 :::note
 The same account may be used by multiple participants in a DApp.
 :::
@@ -82,13 +78,19 @@ An @{defn("API")} is a source of publications that do not correspond to any part
 The contract returns a value to an API call.
 APIs are organized into a labeled hierarchy, like `Contest.vote` and `User.write`.
 
-Since DApps have an associated contract, they have an associated account. :::note
+Since DApps have an associated contract, they have an associated account.
+
+:::note
 The contract account must be distinct from all participant accounts.
 :::
- This account is assumed to be empty when the computation starts.:::note
+
+This account is assumed to be empty when the computation starts.
+
+:::note
 On some consensus networks, it is possible for transfers to a contract account to occur outside of the purview of Reach. If this occurs, then those network tokens are remitted to the originator of the final consensus transfer.
 :::
- Any network tokens transferred into the account must be removed by the DApp's completion. This is called the @{defn("token linearity property")}.
+
+Any network tokens transferred into the account must be removed by the DApp's completion. This is called the @{defn("token linearity property")}.
 
 A DApp computation can be seen as a graph of steps with a unique first step. A @{defn("step")} is a set of local steps by participants followed by a single consensus step introduced via a single consensus transfer.
 

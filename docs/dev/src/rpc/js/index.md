@@ -1,8 +1,4 @@
-
-
-
-
-# {#ref-frontends-rpc-js} JavaScript (RPC)
+# {#ref-frontends-rpc-js} JavaScript
 
 :::note
 This frontend library relies on the [Reach RPC Server](##ref-backends-rpc).
