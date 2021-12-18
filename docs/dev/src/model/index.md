@@ -54,7 +54,7 @@ Reach assumes that network tokens and non-network tokens behave identically, but
 
 @{defn("Contracts")} are accounts with three extra capacities: they persistently store values (called the @{defn("consensus state")}), they may receive publications, and when they receive publications, they systematically process them and may modify their consensus state, make publications, and may transfer network tokens and non-network tokens in response to the reception.
 In addition to values, consensus state may contain a fixed number of @{defn("mappings")} between an address and a value.
-These mappings are referred to as "@{defn("linear state")}" because their size is linear in the number of participants in the contract.
+These mappings are referred to as "@{defn("linear state")}" because their size is linear in the number of addresses visible to the contract.
 Furthermore, a contract may provide @{defn("views")} of its consensus state, which are labeled functions and values which may be hierarchically organized, such as `NFT.owner` or `scoreOfPlayer`.
 These views are visible in sub-trees of the computation graph.
 A contract may also emit @{defn("event")}s, which are externally observable values that are persistently available.
