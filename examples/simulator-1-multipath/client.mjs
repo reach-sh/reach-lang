@@ -1,6 +1,5 @@
-import * as c from '@reach-sh/simulator-client';
-import assert from 'assert';
-import waitPort from 'wait-port';
+const c = await import('../../simulator-client/client.mjs');
+const assert = await import('assert');
 
 const main = async () => {
   const port = 3001

@@ -115,13 +115,14 @@ unblockProg sid aid v = do
     Nothing -> do
       possible "previous state not found"
     Just (g,l') -> do
-      case C.l_ks <$> M.lookup actorId (C.l_locals l') of
+      let locals = C.l_locals l'
+      case C.l_ks <$> M.lookup actorId locals of
         Nothing -> do
           possible "actor not found"
         Just Nothing -> do
-          possible "partstate not found for actor"
-        Just (Just (C.PS_Suspend _a (_g,l'') k)) -> do
-          let l = l'' {C.l_curr_actor_id = actorId}
+          possible ("partstate not found for actor in: " ++ (show $ M.keys locals))
+        Just (Just (C.PS_Suspend _a (_g,_l) k)) -> do
+          let l = l' {C.l_curr_actor_id = actorId}
           case M.lookup aid avActions of
             Just (C.A_Interact _at _slcxtframes _part _str _dltype _args) -> do
               let ps = k (g,l) v
@@ -135,7 +136,9 @@ unblockProg sid aid v = do
             Just (C.A_TieBreak _poolid _parts) -> do
               let ps = k (g,l) v
               processNewState ps
-            Just C.A_None -> return ()
+            Just C.A_None -> do
+              let ps = k (g,l) v
+              processNewState ps
             Just (C.A_AdvanceTime n)  -> do
               case ((C.e_nwtime g) < n) of
                 True -> do
