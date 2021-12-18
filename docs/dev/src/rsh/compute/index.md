@@ -449,6 +449,12 @@ For example, on Algorand a `{!rsh} Contract` is an Application ID, but on Ethere
 :::
 
 + @{ref("rsh", "Token")} `{!rsh} Token`, which denotes a non-network token. @{seclink("ref-networks")} discusses how `{!rsh} Token`s are represented on specific networks.
+
+:::note
+Reach assumes that every `{!rsh} Token` in your program refers to a different non-network token.
+It will automatically insert `{!rsh} require` statements that enforce this constraint.
+:::
+
 + @{ref("rsh", "Fun")} `{!rsh} Fun([Domain_0, ..., Domain_N], Range)`, which denotes a @{defn("function type")}, when `{!rsh} Domain_i` and `{!rsh} Range` are types.
 The domain of a function is negative position.
 The range of a function is positive position.

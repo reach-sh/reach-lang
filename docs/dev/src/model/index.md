@@ -26,13 +26,14 @@ A @{defn("consensus network")} is a network protocol with a network token, a set
 A @{defn("network token")} is an opaque unit of account.
 A @{defn("non-network token")} is an opaque unit of account;
 typical consensus networks allow the set of non-network tokens to grow over time and be issued by accounts.
+
+:::note
+Reach assumes that network tokens and non-network tokens behave identically, but often they do not; [this article](##guide-nntoks) discusses the causes and consequences of this.
+:::
+
 A consensus network's @{defn("network time")} is some monotonically increasing discrete value from a totally ordered set; typically, it is the height of the blockchain for consensus networks that use blockchains.
 A @{defn("time delta")} represents the difference between two points in network time as a discrete number of network time units.
 Each network time corresponds to some @{defn("network second")}, which has a connection to real time; typically, it is a [Unix time](https://en.wikipedia.org/wiki/Unix_time).
-Consensus networks support @{defn("transfers")} of network tokens and non-network tokens between accounts.
-An @{defn("account")} is a unique identity (called an @{defn("address")}) with a non-negative balance of network tokens.
-Accounts may sign values in a way that may not be repudiated or impersonated; this is called @{defn("publication")}.
-The chapter, @{seclink("ref-networks")}, discusses which consensus networks are supported by Reach.
 
 :::note
 This description of consensus networks is an abstraction that may not be directly implemented by actual networks.
@@ -48,9 +49,10 @@ Finally, Reach's definition of consensus network does not require any particular
 In particular, it does not only refer to so-called "layer-1" protocols, nor does it exclude centralized systems with trusted parties controlling the network.
 :::
 
-:::note
-Reach assumes that network tokens and non-network tokens behave identically, but often they do not; [this article](##guide-nntoks) discusses the causes and consequences of this.
-:::
+Consensus networks support @{defn("transfers")} of network tokens and non-network tokens between accounts.
+An @{defn("account")} is a unique identity (called an @{defn("address")}) with a non-negative balance of network tokens.
+Accounts may sign values in a way that may not be repudiated or impersonated; this is called @{defn("publication")}.
+The chapter, @{seclink("ref-networks")}, discusses which consensus networks are supported by Reach.
 
 @{defn("Contracts")} are accounts with three extra capacities: they persistently store values (called the @{defn("consensus state")}), they may receive publications, and when they receive publications, they systematically process them and may modify their consensus state, make publications, and may transfer network tokens and non-network tokens in response to the reception.
 In addition to values, consensus state may contain a fixed number of @{defn("mappings")} between an address and a value.
