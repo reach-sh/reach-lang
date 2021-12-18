@@ -36,7 +36,7 @@ data EvalError
   | Err_Block_Variable
   | Err_Block_While
   | Err_CannotReturn
-  | Err_ToConsensus_TimeoutArgs [JSExpression]
+  | Err_ToConsensus_Args ToConsensusMode [JSExpression]
   | Err_ToConsensus_NoTimeoutBlock
   | Err_Transfer_DoubleNetworkToken TransferType
   | Err_Transfer_DoubleToken TransferType
@@ -169,7 +169,7 @@ instance HasErrorCode EvalError where
     Err_Block_Variable {} -> 4
     Err_Block_While {} -> 5
     Err_CannotReturn {} -> 6
-    Err_ToConsensus_TimeoutArgs {} -> 7
+    Err_ToConsensus_Args {} -> 7
     Err_ToConsensus_NoTimeoutBlock {} -> 8
     Err_Transfer_DoubleNetworkToken {} -> 9
     Err_Transfer_DoubleToken {} -> 10
@@ -445,8 +445,8 @@ instance Show EvalError where
       "Invalid `return` syntax"
     Err_ToConsensus_NoTimeoutBlock ->
       "Timeout delay given without timeout block"
-    Err_ToConsensus_TimeoutArgs jes ->
-      "Invalid Participant.timeout args"
+    Err_ToConsensus_Args tcm jes ->
+      "Invalid Participant." <> show (pretty tcm) <> " args"
         <> case jes of
           [_, y] ->
             case y of

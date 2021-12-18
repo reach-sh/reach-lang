@@ -584,6 +584,7 @@ const makeTimeHelper = (time, relative) => (value) => {
   const mk = time ? T.Left : T.Right;
   const last = time ? baseWaitTime : baseWaitSecs;
   const base = relative ? last() : 0;
+  require(UInt.max - base - value >= 0);
   return mk(base + value);
 };
 export const relativeTime = makeTimeHelper(true, true);

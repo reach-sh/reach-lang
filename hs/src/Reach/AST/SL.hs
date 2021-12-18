@@ -449,6 +449,16 @@ data ToConsensusMode
   | TCM_Api
   deriving (Eq, Generic, Show)
 
+instance Pretty ToConsensusMode where
+  pretty = \case
+    TCM_Publish -> "publish"
+    TCM_Pay -> "pay"
+    TCM_When -> "when"
+    TCM_Timeout -> "timeout"
+    TCM_ThrowTimeout -> "throwTimeout"
+    TCM_Fork -> "fork"
+    TCM_Api -> "api"
+
 data ForkMode
   = FM_Case
   | FM_API
@@ -482,6 +492,7 @@ data ToConsensusRec = ToConsensusRec
   , slptc_mode :: Maybe ToConsensusMode
   , slptc_msg :: Maybe [SLVar]
   , slptc_amte :: Maybe JSExpression
+  , slptc_amt_req :: Maybe JSExpression
   , slptc_whene :: Maybe JSExpression
   , slptc_timeout :: Maybe (SrcLoc, JSExpression, Maybe JSBlock)
   , slptc_fork :: Bool
