@@ -1,0 +1,12 @@
+reachc: error[RE0042]: Invalid unbound identifier in expression: y. Did you mean: ["A","D","i","x","eq"]
+
+  ./apiCallLHS.rsh:16:34:id ref
+
+  16|     .assume((i) => { assume(i == y); });
+
+Trace:
+  in [unknown function] from (./apiCallLHS.rsh:16:17:function exp) at (./apiCallLHS.rsh:15:3:application)
+  in [unknown function] from (./apiCallLHS.rsh:15:3:function exp) at (./apiCallLHS.rsh:15:3:application)
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0042
+

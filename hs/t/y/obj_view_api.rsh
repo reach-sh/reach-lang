@@ -12,11 +12,11 @@ export const main = Reach.App(() => {
   P.publish();
   commit();
 
-  const [o, k] = call(A.o2);
+  const [o2d,, k] = call(A.o2);
   k(null);
   commit();
 
-  const [k2] = call(B.o3);
+  const [o3d, k2] = call(B.o3);
   k2(D.Yo({ a3: 4 }));
   commit();
 

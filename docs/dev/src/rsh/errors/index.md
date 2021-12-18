@@ -2276,6 +2276,8 @@ const A = API('api', {
 
 ## {#RE0122} RE0122
 
+@{errver(false, '0.1.7')}
+
 This error indicates that the left-hand side of a ```reach
 call
 ```

@@ -4436,7 +4436,7 @@ doApiCall lhs (ApiCallRec{..}) = do
   who_str <- jsString a . bunpack <$> expectParticipant slac_who
   let callOnly s = es $ jsCall a whoOnly s
   -- Deconstruct args
-  (dom, ret) <- sepLHS a lhs
+  let dom = jidg "dom"
   -- Construct `only`
   let interactIn = jsCall a (jid "declassify") [jsCall a (mkIdDot a ["interact", "in"]) [] ]
   let assumeStmts = case slac_massume of
@@ -4444,8 +4444,7 @@ doApiCall lhs (ApiCallRec{..}) = do
                       Just as -> [ es $ jsCall a as [spread dom] ]
   let onlyThunk = jsThunkStmts a $ jsConst a dom interactIn : assumeStmts
   -- Construct publish
-  let domVars = jsFlattenLHS dom
-  let pub1 = jsCall a (mkDot a [slac_who, jid "publish"]) domVars
+  let pub1 = jsCall a (mkDot a [slac_who, jid "publish"]) [ dom ]
   let pub2 =
         case slac_mpay of
           Nothing -> pub1
@@ -4462,22 +4461,10 @@ doApiCall lhs (ApiCallRec{..}) = do
   let doLog = jsCall a (jid ".emitLog") [ jidg "rng", who_str ]
   let apiReturn = jsArrowStmts a [returnVal]
                     [ jsConst a returnLVal doLog, callOnly [ jsThunkStmts a [es interactOut] ] ]
-  --
-  let assignRet = jsConst a ret apiReturn
+  let assignLhs = jsConst a lhs $ jsArrayLiteral a [ dom, apiReturn ]
   let setDetails = jsCall a (jid ".setApiDetails") [slac_who, dom]
-  let ss = [callOnly [onlyThunk], es pub4, es setDetails, assignRet]
+  let ss = [callOnly [onlyThunk], es pub4, es setDetails, assignLhs]
   return ss
-  where
-    sepLHS a = \case
-      JSArrayLiteral _ xs _ ->
-        case jsa_flatten xs of
-          [JSIdentifier _ "_", k] -> return (mt, k)
-          [d, k] -> return (d, k)
-          [k] -> return (mt, k)
-          _ -> expect_ Err_ApiCallAssign
-      _ -> expect_ Err_ApiCallAssign
-      where
-        mt = JSArrayLiteral a [] a
 
 doForkAPI2Case :: [JSExpression] -> App [JSExpression]
 doForkAPI2Case args = do

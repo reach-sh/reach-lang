@@ -79,7 +79,7 @@ r () {
   export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
   REACH_CONNECTOR_MODE=ETH ${REACH} run
-  # REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  #REACH_CONNECTOR_MODE=ALGO ${REACH} run
   #REACH_CONNECTOR_MODE=CFX ${REACH} run
 
   # Ganache
@@ -118,8 +118,9 @@ checkteal () {
 
 #exit 0
 
-fc hs/t/n/distinctToks.rsh
-c examples/mint-basic/index.rsh
+#jb
+#r users/hamza1
+fc users/apierr.rsh
 exit 0
 
 # (cd hs && mk hs-test)
