@@ -1,4 +1,4 @@
-const c = await import('../../simulator-client/client.mjs');
+const c = await import('@reach-sh/simulator-client');
 const assert = await import('assert');
 
 const main = async () => {
