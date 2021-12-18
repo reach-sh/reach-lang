@@ -233,6 +233,12 @@ instance Show DLVar where
       Nothing -> "v" <> show i
       Just (_, v) -> v <> "/" <> show i
 
+showErr :: DLVar -> String
+showErr v@(DLVar a b _ _) = show v <> " from " <> show at
+  where at = case b of
+               Nothing -> a
+               Just (c, _) -> c
+
 dvdelete :: DLVar -> [DLVar] -> [DLVar]
 dvdelete x = filter (x /=)
 

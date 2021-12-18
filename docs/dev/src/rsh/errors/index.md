@@ -2700,6 +2700,12 @@ Instead, the effect should happen after the return:
 
 This error means that you did not return a result from an API call.
 
+## {#RAPI0004} RAPI0004
+
+This error means that an API caller relies on non-consensus state to operate.
+Typically, this is because the `{!rsh} assume` uses a value not needed by the consensus.
+This is likely a sign of a bigger error, because a `{!rsh} assume` that does not have a "matching" `{!rsh} require` in the consensus is not useful.
+
 ## {#RW0000} RW0000
 
 This warning means the syntax or function you are trying to use is deprecated. It is still supported

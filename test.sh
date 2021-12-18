@@ -119,8 +119,10 @@ checkteal () {
 #exit 0
 
 #jb
-#r users/hamza1
-fc users/apierr.rsh
+c hs/t/y/enthuGuy4.rsh
+c hs/t/y/enthuGuy3.rsh
+fc hs/t/n/API_NonCS.rsh
+r users/hamza1
 exit 0
 
 # (cd hs && mk hs-test)

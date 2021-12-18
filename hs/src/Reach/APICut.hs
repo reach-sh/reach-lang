@@ -13,7 +13,9 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
 import Reach.Counter
+import Reach.CollectCounts
 import Reach.Freshen
+import Reach.Texty
 import Reach.Util
 
 -- What is going on in this file?
@@ -54,6 +56,7 @@ data APICutError
   | API_OutBeforeIn String
   | API_Twice String
   | API_NoOut String
+  | API_NonCS [DLVar] String
   deriving (Eq, ErrorMessageForJson, ErrorSuggestions, Generic)
 
 instance HasErrorCode APICutError where
@@ -63,6 +66,7 @@ instance HasErrorCode APICutError where
     API_OutBeforeIn {} -> 1
     API_Twice {} -> 2
     API_NoOut {} -> 3
+    API_NonCS {} -> 4
 
 instance Show APICutError where
   show = \case
@@ -70,6 +74,7 @@ instance Show APICutError where
     API_OutBeforeIn p -> p <> "calls interact.out() before interact.in()"
     API_Twice p -> p <> "occurs multiple times in program"
     API_NoOut p -> p <> "does not return result in same consensus step"
+    API_NonCS vs p -> p <> "refers to non-consensus state: " <> (show $ pretty $ map showErr vs)
 
 type App = ReaderT Env IO
 data Env = Env
@@ -298,7 +303,11 @@ apc hc eWho = \case
     let env0 = Env {..}
     et' <- flip runReaderT env0 $ do
       seek et >>= \case
-        Just x -> return x
+        Just x -> do
+          let badVars = countsl x
+          unless (null badVars) $
+            err at (API_NonCS badVars)
+          return x
         Nothing -> err at API_NoIn
     return $ EPProg at True ie et'
   p -> return p

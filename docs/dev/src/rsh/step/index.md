@@ -271,11 +271,9 @@ fork()
   exit(); });
 ```
 
-
 :::note
 If you're unsure of what kind of consensus transfer to use, you may want to read the [explanation of the differences](##guide-ctransfers) in the Guide.
 :::
-
 
 A @{defn("fork statement")} is written:
 
@@ -295,8 +293,6 @@ fork()
 // or
 .throwTimeout(DELAY_EXPR, THROW_EXPR)
 ```
-
-
 where:
 + `{!rsh} TOKENS_EXPR` is an expression that evaluates to a tuple of `{!rsh} Token`s;
 + `{!rsh} PART_EXPR` is an expression that evaluates to a participant;
@@ -309,9 +305,9 @@ where:
 + `{!rsh} API_CONSENSUS_EXPR` is a function parameterized over the input to the API member function and a function that returns a value to the API call; this function must be called;
 + the `{!rsh} timeout` and `{!rsh} throwTimeout` parameter are as in an consensus transfer.
 
-
-If the discussion of `{!rsh} .api` component, the phrase "parameterized over the input" means that if an API function has two arguments, such as `{!rsh} Fun([UInt, UInt], Null)`, then the corresponding expression must receive two arguments.
+In the discussion of `{!rsh} .api` component, the phrase "parameterized over the input" means that if an API function has two arguments, such as `{!rsh} Fun([UInt, UInt], Null)`, then the corresponding expression must receive two arguments.
 For example, the `{!rsh} API_PAY_EXPR` component would be a function that accepts two arguments, while the `{!rsh} API_CONSENSUS_EXPR` would be a function that acccepts three arguments---the two for the API and the function used to return a value.
+All API functions must rely only on consensus state and the function domain.
 
 If the `msg` field is absent from the object returned from `{!rsh} PUBLISH_EXPR`, then it is treated as if it were `{!rsh} null`.
 
