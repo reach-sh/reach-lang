@@ -1881,7 +1881,7 @@ ch :: LT.Text -> Int -> CHandler -> App ()
 ch _ _ (C_Loop {}) = return ()
 ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = recordWhich which $ do
   let isCtor = which == 0
-  let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ svs <> msg)
+  let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ msg)
   when (argSize > algoMaxAppTotalArgLen) $
     xxx $ texty $ "Step " <> show which <> "'s argument length is " <> show argSize <> ", but the maximum is " <> show algoMaxAppTotalArgLen
   let bindFromArg ai vs m = do
