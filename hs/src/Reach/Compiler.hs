@@ -28,6 +28,7 @@ import Reach.Util
 import Reach.Verify
 import System.Directory
 import System.FilePath
+import Reach.Eval.Core (Env(..))
 
 make_connectors :: CompilerToolEnv -> Connectors
 make_connectors env =
@@ -38,7 +39,7 @@ make_connectors env =
       , connect_algo env
       ]
 
-compile :: CompilerToolEnv -> CompilerOpts -> IO ()
+compile :: CompilerToolEnv -> CompilerOpts -> IO (Maybe Env)
 compile env (CompilerOpts {..}) = do
   let outd = fromMaybe (takeDirectory co_source </> "build") co_moutputDir
   let co_dirDotReach = fromMaybe (takeDirectory co_source </> ".reach") co_mdirDotReach
@@ -51,43 +52,46 @@ compile env (CompilerOpts {..}) = do
         Nothing -> \_ _ -> return ()
   dirDotReach' <- makeAbsolute co_dirDotReach
   djp <- gatherDeps_top co_source co_installPkgs dirDotReach'
-  unless co_installPkgs $ do
-    let all_connectors = make_connectors env
-    (avail, compileDApp) <- evalBundle all_connectors djp
-    let chosen = S.toAscList $ fromMaybe avail co_tops
-    forM_ chosen $ \which -> do
-      let woutn = co_output . ((T.pack which <> ".") <>)
-      let woutnMay = outnMay woutn
-      let showp :: Pretty a => T.Text -> a -> IO ()
-          showp l = interOut woutn l . render . pretty
-      -- showp "bundle.js" $ render $ pretty djp
-      dl <- compileDApp which
-      let DLProg _ (DLOpts {..}) _ _ _ _ _ _ _ = dl
-      let connectors = map (all_connectors M.!) dlo_connectors
-      showp "dl" dl
-      unless co_stopAfterEval $ do
-        ll <- linearize showp dl
-        ol <- optimize ll
-        showp "ol" ol
-        let vo_out = woutnMay
-        let vo_mvcs = doIf connectors dlo_verifyPerConnector
-        let vo_timeout = co_verifyTimeout
-        let vo_dir = dirDotReach'
-        verify (VerifyOpts {..}) ol >>= maybeDie
-        el <- erase_logic ol
-        showp "el" el
-        unless (not co_sim) $ do
-          startServer el
-        eol <- bigopt (showp, "eol") el
-        pil <- epp eol
-        showp "pil" pil
-        apc <- apicut pil
-        showp "apc" apc
-        pl <- bigopt (showp, "pl") apc
-        let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
-        crs <- HM.fromList <$> mapM runConnector connectors
-        backend_js woutn crs pl
-        return ()
+  case co_installPkgs of
+    False -> do
+      let all_connectors = make_connectors env
+      (evalEnv, avail, compileDApp) <- evalBundle all_connectors djp
+      let chosen = S.toAscList $ fromMaybe avail co_tops
+      forM_ chosen $ \which -> do
+        let woutn = co_output . ((T.pack which <> ".") <>)
+        let woutnMay = outnMay woutn
+        let showp :: Pretty a => T.Text -> a -> IO ()
+            showp l = interOut woutn l . render . pretty
+        -- showp "bundle.js" $ render $ pretty djp
+        dl <- compileDApp which
+        let DLProg _ (DLOpts {..}) _ _ _ _ _ _ _ = dl
+        let connectors = map (all_connectors M.!) dlo_connectors
+        showp "dl" dl
+        unless co_stopAfterEval $ do
+          ll <- linearize showp dl
+          ol <- optimize ll
+          showp "ol" ol
+          let vo_out = woutnMay
+          let vo_mvcs = doIf connectors dlo_verifyPerConnector
+          let vo_timeout = co_verifyTimeout
+          let vo_dir = dirDotReach'
+          verify (VerifyOpts {..}) ol >>= maybeDie
+          el <- erase_logic ol
+          showp "el" el
+          unless (not co_sim) $ do
+            startServer el
+          eol <- bigopt (showp, "eol") el
+          pil <- epp eol
+          showp "pil" pil
+          apc <- apicut pil
+          showp "apc" apc
+          pl <- bigopt (showp, "pl") apc
+          let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
+          crs <- HM.fromList <$> mapM runConnector connectors
+          backend_js woutn crs pl
+          return ()
+      return $ Just evalEnv
+    True -> return Nothing
 
 doIf :: a -> Bool -> Maybe a
 doIf b = \case

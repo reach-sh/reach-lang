@@ -8,6 +8,7 @@ import Reach.Report
 import Reach.Version
 import System.Environment
 import System.Exit
+import Reach.AST.Base (ReachExcept(ReachExcept))
 
 shouldReport :: CompilerToolArgs -> CompilerToolEnv -> Bool
 shouldReport CompilerToolArgs {..} CompilerToolEnv {..} =
@@ -39,9 +40,9 @@ main = do
     case shouldReport args env of
       False -> return $ const $ return ()
       True -> startReport (cte_REACHC_ID env) "compile"
-  (e :: Either SomeException ()) <-
-    try $ compile env $ cta_co args
+  (e :: Either ReachExcept ()) <-
+    try $ void $ compile env $ cta_co args
   report e
   case e of
-    Left exn -> throwIO exn
+    Left (ReachExcept _ msg) -> throwIO (ErrorCall msg)
     Right () -> return ()

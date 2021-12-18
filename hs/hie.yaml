@@ -6,5 +6,7 @@ cradle:
       component: "reach:reach-test"
     - path: "./app/reachc"
       component: "reach:exe:reachc"
+    - path: "./app/reach-lsp"
+      component: "reach:exe:reach-lsp"
     - path: "./app/gen-reach"
       component: "reach:exe:gen-reach"

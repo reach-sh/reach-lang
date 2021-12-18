@@ -47,12 +47,7 @@ export function activate(context: ExtensionContext) {
 	// If the extension is launched in debug mode then the debug server options are used
 	// Otherwise the run options are used
 	let serverOptions: ServerOptions = {
-		run: { module: serverModule, transport: TransportKind.ipc },
-		debug: {
-			module: serverModule,
-			transport: TransportKind.ipc,
-			options: debugOptions
-		}
+		command: 'reach-lsp', transport: TransportKind.stdio, args: [] // workspace.getConfiguration('reachide').get('reachLspExecutable', 'reach-lsp')
 	};
 
 	terminal = window.createTerminal(terminalOptions);

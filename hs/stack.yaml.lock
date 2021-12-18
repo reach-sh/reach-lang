@@ -82,6 +82,48 @@ packages:
   original:
     hackage: streaming-bytestring-0.1.7@sha256:5b53960c1c5f8352d46a4f1a604d04340a08dcf7ff27ca3ed31253e02c01fd03,2968
 - completed:
+    hackage: lsp-1.1.1.0@sha256:c8856e5fc71bc9834301731b5ba8786159e1d7e2d2d8ee07aec4f5421f2cf847,5568
+    pantry-tree:
+      size: 1397
+      sha256: c94bd9be1c7c038c25c993985753fc88bc742321119282ecb2c3edf4beb9b599
+  original:
+    hackage: lsp-1.1.1.0
+- completed:
+    hackage: lsp-types-1.1.0.0@sha256:2930757867872b8a84c6d5d1fe9b02597cc4350d7b2502a4bb07a79f57548e70,4388
+    pantry-tree:
+      size: 3955
+      sha256: 3c4c4de57192627f6fb40a60f40ab388462fe67a4729d9e1ed15b3b8ea01d473
+  original:
+    hackage: lsp-types-1.1.0.0
+- completed:
+    hackage: dependent-map-0.4.0.0@sha256:ca2b131046f4340a1c35d138c5a003fe4a5be96b14efc26291ed35fd08c62221,1657
+    pantry-tree:
+      size: 551
+      sha256: 5defa30010904d2ad05a036f3eaf83793506717c93cbeb599f40db1a3632cfc5
+  original:
+    hackage: dependent-map-0.4.0.0@sha256:ca2b131046f4340a1c35d138c5a003fe4a5be96b14efc26291ed35fd08c62221,1657
+- completed:
+    hackage: dependent-sum-0.7.1.0@sha256:0e419237f5b86da3659772afff9cab355c0f8d5b3fdb15a5b30e673d8dc83941,2147
+    pantry-tree:
+      size: 290
+      sha256: 009601e5d33e835c7a384e240c5c6ad12643bce9c54b2a0b07201daee3380e51
+  original:
+    hackage: dependent-sum-0.7.1.0@sha256:0e419237f5b86da3659772afff9cab355c0f8d5b3fdb15a5b30e673d8dc83941,2147
+- completed:
+    hackage: dependent-sum-template-0.1.1.1@sha256:f3789e58ec1b0b91fbe4009708b3c6c5e34975a4059073eb855a0fe8ff287bd8,1847
+    pantry-tree:
+      size: 436
+      sha256: f22ce42e4c26be1548047fc51214ce158f5672d630b9ce260513b8b9bcfc2a9f
+  original:
+    hackage: dependent-sum-template-0.1.1.1@sha256:f3789e58ec1b0b91fbe4009708b3c6c5e34975a4059073eb855a0fe8ff287bd8,1847
+- completed:
+    hackage: constraints-extras-0.3.2.0@sha256:0897821d9d0428f41cf2179b2a8e99e0053e96a98dd39d91a31ab2851052338f,1777
+    pantry-tree:
+      size: 595
+      sha256: 5f2b720724999342f33a52f52f646a33dac9c3ed85853ac10896be882ee3c65b
+  original:
+    hackage: constraints-extras-0.3.2.0@sha256:0897821d9d0428f41cf2179b2a8e99e0053e96a98dd39d91a31ab2851052338f,1777
+- completed:
     name: shell-monad
     version: 0.6.9
     git: https://github.com/reach-sh/shell-monad.git

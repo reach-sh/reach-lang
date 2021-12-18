@@ -122,12 +122,12 @@ parseIdent at = \case
   JSIdentNone ->
     expect_thrown at $ Err_Parse_JSIdentNone
 
-jse_expect_id :: HasCallStack => SrcLoc -> JSExpression -> String
+jse_expect_id :: SrcLoc -> JSExpression -> String
 jse_expect_id at = \case
   (JSIdentifier _ x) -> x
   j -> expect_thrown at (Err_Parse_ExpectIdentifier j)
 
-jso_expect_id :: HasCallStack => SrcLoc -> JSObjectProperty -> String
+jso_expect_id :: SrcLoc -> JSObjectProperty -> String
 jso_expect_id at = \case
   JSPropertyIdentRef _ x -> x
   j -> expect_thrown at $ Err_Parse_ExpectIdentifierProp j

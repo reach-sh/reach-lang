@@ -347,7 +347,7 @@ app_options =
         _ -> Left $ "expected tuple"
 
 --- Utilities
-expect_ :: (HasCallStack, HasErrorCode e, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
+expect_ :: (HasErrorCode e, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
 expect_ e = do
   Env {..} <- ask
   expect_throw (Just e_stack) e_at e
@@ -357,10 +357,10 @@ mkValType v = do
   r <- typeOfM v
   return (v, fmap fst r)
 
-expect_t :: (HasCallStack, HasErrorCode e, Show e, ErrorMessageForJson e, ErrorSuggestions e) => SLVal -> (SLValTy -> e) -> App a
+expect_t :: (HasErrorCode e, Show e, ErrorMessageForJson e, ErrorSuggestions e) => SLVal -> (SLValTy -> e) -> App a
 expect_t v f = (expect_ . f) =<< mkValType v
 
-expect_ts :: (HasCallStack, HasErrorCode e, Show e, ErrorMessageForJson e, ErrorSuggestions e) => [SLVal] -> ([SLValTy] -> e) -> App a
+expect_ts :: (HasErrorCode e, Show e, ErrorMessageForJson e, ErrorSuggestions e) => [SLVal] -> ([SLValTy] -> e) -> App a
 expect_ts vs f = (expect_ . f) =<< mapM mkValType vs
 
 zipEq :: (Show e, HasErrorCode e, ErrorMessageForJson e, ErrorSuggestions e) => (Int -> Int -> e) -> [a] -> [b] -> App [(a, b)]
@@ -2110,10 +2110,10 @@ doBaseWaitUpdate = \case
   Left x -> doFluidSet_ FV_baseWaitTime x
   Right x -> doFluidSet_ FV_baseWaitSecs x
 
-lookupBalanceFV :: HasCallStack => (Int -> FluidVar) -> Maybe DLArg -> App FluidVar
+lookupBalanceFV :: (Int -> FluidVar) -> Maybe DLArg -> App FluidVar
 lookupBalanceFV = lookupBalanceFV_
 
-lookupBalanceFV_ :: HasCallStack => (Int -> FluidVar) -> Maybe DLArg -> App FluidVar
+lookupBalanceFV_ :: (Int -> FluidVar) -> Maybe DLArg -> App FluidVar
 lookupBalanceFV_ fv mtok = do
   toks <- readSt st_toks
   let bad = expect_ $ Err_Token_DynamicRef

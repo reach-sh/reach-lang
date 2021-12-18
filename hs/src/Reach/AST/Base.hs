@@ -12,7 +12,6 @@ import qualified Data.ByteString.Lazy as LB
 import qualified Data.List as List
 import qualified Data.Text as T
 import GHC.Generics
-import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
 import Reach.Texty
@@ -22,6 +21,8 @@ import qualified System.Console.Pretty as TC
 import Safe (atMay)
 import Data.Maybe (fromMaybe)
 import Reach.Util (makeErrCode)
+import Control.Exception
+import Data.Data (Typeable)
 
 --- Source Information
 data ReachSource
@@ -153,12 +154,16 @@ getErrorMessage mCtx src isWarning ce = do
     stackTrace <> hardline <>
     docsUrl
 
+data ReachExcept = ReachExcept SrcLoc String
+  deriving (Show, Typeable)
 
-expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
+instance Exception ReachExcept
+
+expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =
   case unsafeIsErrorFormatJson of
     True ->
-      error $
+      throw $ ReachExcept src $
         "error: "
           ++ (map w2c $
                 LB.unpack $
@@ -170,9 +175,9 @@ expect_throw mCtx src ce =
                       , ce_position = srcloc_line_col src
                       , ce_errorCode = makeErrCode (errPrefix ce) (errIndex ce)
                       })
-    False -> error $ getErrorMessage mCtx src False ce
+    False -> throw $ ReachExcept src $ getErrorMessage mCtx src False ce
 
-expect_thrown :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => SrcLoc -> a -> b
+expect_thrown :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => SrcLoc -> a -> b
 expect_thrown = expect_throw Nothing
 
 topOfStackTrace :: [SLCtxtFrame] -> [String]

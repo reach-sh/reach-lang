@@ -9,7 +9,6 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Yaml
 import GHC.Generics
-import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.Util
 import System.Directory
@@ -67,7 +66,7 @@ instance Show PkgError where
 
 -- Library
 
-expect_ :: (HasErrorCode e, HasCallStack, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
+expect_ :: (HasErrorCode e, Show e, ErrorMessageForJson e, ErrorSuggestions e) => e -> App a
 expect_ e = asks e_at >>= flip expect_thrown e
 
 runGit :: FilePath -> [String] -> App (Either String String)
@@ -130,7 +129,7 @@ gitBareDir gr = (</> gitDir False gr) <$> dirBare
 gitRevDir :: GitRepo -> App FilePath
 gitRevDir gr = (</> gitDir True gr) <$> dirRev
 
-ensureInstall :: HasCallStack => App ()
+ensureInstall :: App ()
 ensureInstall =
   (e_install <$> ask) >>= \case
     True -> return ()

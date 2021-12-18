@@ -145,7 +145,7 @@ withUnusedVars m = do
   reportUnusedVars $ S.toList uvs
   return a
 
-evalBundle :: Connectors -> JSBundle -> IO (S.Set SLVar, (SLVar -> IO DLProg))
+evalBundle :: Connectors -> JSBundle -> IO (Env, S.Set SLVar, (SLVar -> IO DLProg))
 evalBundle cns (JSBundle mods) = do
   evalEnv <- makeEnv cns
   let run = flip runReaderT evalEnv
@@ -169,7 +169,7 @@ evalBundle cns (JSBundle mods) = do
           compileDApp shared_lifts exports topv
   case S.null tops of
     True -> do
-      return (S.singleton "default", const $ go $ return defaultApp)
+      return (evalEnv, S.singleton "default", const $ go $ return defaultApp)
     False -> do
       let go' which = go $ env_lookup LC_CompilerRequired which exe_ex
-      return (tops, go')
+      return (evalEnv, tops, go')

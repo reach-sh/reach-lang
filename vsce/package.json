@@ -93,6 +93,11 @@
                     "default": "./reach",
                     "type": "string",
                     "description": "Specifies the filepath to the reach executable."
+                },
+                "reachide.reachLspExecutable": {
+                    "default": "reach-lsp",
+                    "type": "string",
+                    "description": "Specifies the filepath to the reach lsp executable."
                 }
             }
         },
@@ -315,5 +320,9 @@
         "eslint": "^6.4.0",
         "mocha": "^6.2.2",
         "typescript": "^4.5.3"
+    },
+    "dependencies": {
+        "lru-cache": "^6.0.0",
+        "minimatch": "^3.0.4"
     }
 }

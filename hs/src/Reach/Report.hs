@@ -2,7 +2,6 @@ module Reach.Report (Report, startReport) where
 
 import Control.Concurrent
 import Control.Concurrent.Async
-import Control.Exception
 import Control.Monad.Reader
 import Data.Aeson
 import Data.Time
@@ -13,9 +12,10 @@ import Network.HTTP.Simple (setRequestBodyJSON, setRequestMethod)
 import System.Environment
 import Reach.CommandLine
 import Reach.Version
+import Reach.AST.Base (ReachExcept(..))
 
 --- TODO maybe have each part collect some information and report it back through a (Map String String)
-type Report = Either SomeException ()
+type Report = Either ReachExcept ()
 
 startReport :: Maybe String -> String -> IO (Report -> IO ())
 startReport mwho i = do
