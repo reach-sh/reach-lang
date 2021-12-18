@@ -276,15 +276,8 @@ app p = do
   post "/states/:s/actions/:a/" $ do
     s <- param "s"
     a <- param "a"
-    t :: String <- param "type"
-    case t of
-      "String" -> do
-        v :: String <- param "data"
-        webM $ unblockProg s a $ C.V_Bytes v
-      "Number" -> do
-        v :: Integer <- param "data"
-        webM $ unblockProg s a $ C.V_UInt v
-      _ -> impossible "unsupported type"
+    v :: Integer <- param "data"
+    webM $ unblockProg s a $ C.V_UInt v
     json ("OK" :: String)
 
   get "/ping" $ do

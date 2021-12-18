@@ -59,8 +59,8 @@ const init = async () => {
   return r
 }
 
-const respondWithVal = async (s,a,v,t) => {
-  const r = await interact('POST', `${address}/states/${s}/actions/${a}/?data=${v}&type=${t}`, {})
+const respondWithVal = async (s,a,v) => {
+  const r = await interact('POST', `${address}/states/${s}/actions/${a}/?data=${v}`, {})
   console.log(r)
   return r
 }
