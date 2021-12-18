@@ -1,0 +1,73 @@
+#!/bin/sh
+
+IMG='reachsh/reach-cli:latest'
+TMP=$(mktemp -d "/tmp/reach.$(date -u '+%Y-%m-%dT%H-%M-%SZ')-XXXX")
+CNF="${XDG_CONFIG_HOME:-$HOME/.config}/reach"; CNF="$(mkdir -p "$CNF" && cd "$CNF" && pwd)"
+export TMP
+
+run_d () {
+  REACH_HS="$(cd "$(dirname "$0")" && pwd)/hs"
+  export REACH_DIR_EMBED="${REACH_DIR_EMBED:-"$(cd "$(dirname "$0")" && pwd)/hs/app/reach/embed"}"
+  export REACH_STACK_YAML="${REACH_STACK_YAML:-"$(cd "$(dirname "$0")" && pwd)/hs/stack.yaml"}"
+
+  if  [ "$REACH_DOCKER" = "0"  ] \
+   && [ -d "$REACH_DIR_EMBED"  ] \
+   && [ -f "$REACH_STACK_YAML" ] \
+   && which stack >/dev/null 2>&1; then
+    export STACK_YAML="$REACH_STACK_YAML"
+    REACH_EX="$0" $(cd "${REACH_HS}" && make hs-build 1>&2 && stack exec -- which reach 2>/dev/null) \
+      --dir-embed="$REACH_DIR_EMBED" \
+      --dir-project-container="$(pwd)" \
+      --dir-project-host="$(pwd)" \
+      --dir-tmp-container="$TMP" \
+      --dir-tmp-host="$TMP" \
+      --dir-config-container="$CNF" \
+      --dir-config-host="$CNF" \
+      "$@"
+  else
+    docker run -i --rm \
+      -e "REACH_EX=$0" \
+      -e "REACH_CONNECTOR_MODE" \
+      -e "REACH_DEBUG" \
+      -e "REACH_IDE" \
+      -e "REACH_RPC_KEY" \
+      -e "REACH_RPC_PORT"  \
+      -e "REACH_RPC_SERVER" \
+      -e "REACH_RPC_TLS_CRT" \
+      -e "REACH_RPC_TLS_KEY" \
+      -e "REACH_RPC_TLS_PASSPHRASE" \
+      -e "REACH_RPC_TLS_REJECT_UNVERIFIED" \
+      -e "REACH_VERSION" \
+      -e "CI" \
+      -e "SHELL" \
+      -u "$(id -ru):$(id -rg)" \
+      -v "$(pwd):/app/src" \
+      -v "$TMP:/app/tmp" \
+      -v "$CNF:/app/config" \
+      "$IMG" --dir-project-host="$(pwd)" --dir-tmp-host="$TMP" --dir-config-host="$CNF" "$@"
+  fi
+}
+
+run_s () {
+  chmod 700 "$TMP/out.sh"
+  sh -ac "$TMP/out.sh" "$0"
+}
+
+for DEP in make curl docker docker-compose; do
+  if ! (which "${DEP}" >/dev/null 2>&1); then
+    echo "Reach relies on an installation of ${DEP}"
+    exit 1
+  fi
+done
+
+if [ ! "$CIRCLECI" = "true" ] && [ "$(docker image ls -q $IMG)" = '' ]; then
+  if ! (docker pull "$IMG" && run_d update; run_s); then exit 1; fi
+fi
+
+run_d "$@"
+case "$?" in
+  42) run_s && rm -r "$TMP" ;;
+  50) docker pull "$IMG" && curl https://docs.reach.sh/reach -o "$0" && chmod +x "$0" && rm -r "$TMP" && exit 0 ;;
+   0) rm -r "$TMP" ;;
+   *) [ -z "$(ls -A "$TMP")" ] && rm -r "$TMP"; exit 1 ;;
+esac

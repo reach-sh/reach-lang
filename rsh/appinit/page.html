@@ -5,7 +5,7 @@
 </p>
 <h2 id="ref-programs-appinit-stmts" class="refHeader">Statements<a aria-hidden="true" tabindex="-1" href="#ref-programs-appinit-stmts"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_1" class="pid"></i>Any statements valid for a <a href="/reach/compute/#ref-programs-compute-stmts">computation</a> are valid for application initialization.
+  <i id="p_1" class="pid"></i>Any statements valid for a <a href="/rsh/compute/#ref-programs-compute-stmts">computation</a> are valid for application initialization.
   However, some additional statements are allowed.<a href="#p_1" class="pid">1</a>
 </p>
 <h3 id="deploy" class="refHeader"><code>deploy</code><a aria-hidden="true" tabindex="-1" href="#deploy"><span class="icon icon-link"></span></a></h3>
@@ -13,7 +13,7 @@
 <pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="deploy();" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></li></ol></pre>
 <p><i id="p_2" class="pid"></i>A <span class="term" id="term_deploy%20statement">deploy statement</span>, written <span class="snip"><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></span>, deploys the DApp and finalizes all of the available participants, views, and compilation options.<a href="#p_2" class="pid">2</a></p>
 <p>
-  <i id="p_3" class="pid"></i>Its continuation is a step, which means its content is specified by <a href="/reach/step/#ref-programs-step">Steps</a>.
+  <i id="p_3" class="pid"></i>Its continuation is a step, which means its content is specified by <a href="/rsh/step/#ref-programs-step">Steps</a>.
   It represents the body of the DApp to be compiled.<a href="#p_3" class="pid">3</a>
 </p>
 <h3 id="setoptions" class="refHeader"><code>setOptions</code><a aria-hidden="true" tabindex="-1" href="#setoptions"><span class="icon icon-link"></span></a></h3>
@@ -50,7 +50,7 @@ setOptions({});" href="#"></a></div><ol class="snippet"><li value="1"><span styl
 </p>
 <h2 id="ref-programs-appinit-exprs" class="refHeader">Expressions<a aria-hidden="true" tabindex="-1" href="#ref-programs-appinit-exprs"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_14" class="pid"></i>Any expressions valid for a <a href="/reach/appinit/#ref-programs-appinit-exprs">computation</a> are valid for application initialization.
+  <i id="p_14" class="pid"></i>Any expressions valid for a <a href="/rsh/appinit/#ref-programs-appinit-exprs">computation</a> are valid for application initialization.
   However, some additional expressions are allowed.<a href="#p_14" class="pid">14</a>
 </p>
 <h3 id="participant-definition" class="refHeader">Participant Definition<a aria-hidden="true" tabindex="-1" href="#participant-definition"><span class="icon icon-link"></span></a></h3>
@@ -79,7 +79,7 @@ API({ vote: Fun([Address], UInt) })" href="#"></a></div><ol class="snippet"><li 
 </p>
 <h3 id="ref-programs-appinit-view" class="refHeader">View Definition<a aria-hidden="true" tabindex="-1" href="#ref-programs-appinit-view"><span class="icon icon-link"></span></a></h3>
 <div class="note">
-  <p><i id="p_21" class="pid"></i>This section is about defining views during application initialization. Views are <a href="/reach/consensus/#ref-programs-consensus-view">set in consensus steps</a>, in your Reach program. But, they are <a href="/frontend/#ref-frontends-js-ctc">accessed by frontends</a> by using the Reach standard library of the frontend language, such as JavaScript.<a href="#p_21" class="pid">21</a></p>
+  <p><i id="p_21" class="pid"></i>This section is about defining views during application initialization. Views are <a href="/rsh/consensus/#ref-programs-consensus-view">set in consensus steps</a>, in your Reach program. But, they are <a href="/frontend/#ref-frontends-js-ctc">accessed by frontends</a> by using the Reach standard library of the frontend language, such as JavaScript.<a href="#p_21" class="pid">21</a></p>
 </div>
 <p><span class="ref" id="rsh_View" data-scope="rsh" data-symbol="View"></span></p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="View('NFT', { owner: Address })

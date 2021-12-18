@@ -278,7 +278,7 @@ void foo(MObj.None());" href="#"></a></div><ol class="snippet"><li value="1"><sp
 Y
 Z" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #0550AE">X</span></li><li value="2"><span style="color: #0550AE">Y</span></li><li value="3"><span style="color: #0550AE">Z</span></li></ol></pre>
 <p><i id="p_51" class="pid"></i>An identifier, written <span class="snip"><span style="color: #0550AE">ID</span></span>, is an expression that evaluates to the value of the bound identifier.<a href="#p_51" class="pid">51</a></p>
-<p><i id="p_52" class="pid"></i><span class="ref" id="rsh_this" data-scope="rsh" data-symbol="this"></span>The identifier <span class="snip"><span style="color: #0550AE">this</span></span> has a special meaning inside of a local step (i.e. the body of an <span class="snip"><span style="color: #24292F">only</span></span> or <span class="snip"><span style="color: #24292F">each</span></span> expression), as well as in a consensus step (i.e. the tail of <span class="snip"><span style="color: #24292F">publish</span></span> or <span class="snip"><span style="color: #24292F">pay</span></span> statement and before a <span class="snip"><span style="color: #24292F">commit</span></span> statement). For details, see <a href="/reach/local/#ref-programs-local-this"></a>and <a href="/reach/consensus/#ref-programs-consensus-this"></a>.<a href="#p_52" class="pid">52</a></p>
+<p><i id="p_52" class="pid"></i><span class="ref" id="rsh_this" data-scope="rsh" data-symbol="this"></span>The identifier <span class="snip"><span style="color: #0550AE">this</span></span> has a special meaning inside of a local step (i.e. the body of an <span class="snip"><span style="color: #24292F">only</span></span> or <span class="snip"><span style="color: #24292F">each</span></span> expression), as well as in a consensus step (i.e. the tail of <span class="snip"><span style="color: #24292F">publish</span></span> or <span class="snip"><span style="color: #24292F">pay</span></span> statement and before a <span class="snip"><span style="color: #24292F">commit</span></span> statement). For details, see <a href="/rsh/local/#ref-programs-local-this"></a>and <a href="/rsh/consensus/#ref-programs-consensus-this"></a>.<a href="#p_52" class="pid">52</a></p>
 <h3 id="function-application" class="refHeader">Function application<a aria-hidden="true" tabindex="-1" href="#function-application"><span class="icon icon-link"></span></a></h3>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="assert( amount <= heap1 )
 step( moveA )
@@ -327,24 +327,24 @@ declassify( _coinFlip )" href="#"></a></div><ol class="snippet"><li value="1"><s
   </li>
   <li>
     <i id="p_67" class="pid"></i><span class="ref" id="rsh_Tuple" data-scope="rsh" data-symbol="Tuple"></span><span class="snip"><span style="color: #8250DF">Tuple</span><span style="color: #24292F">(Field_0, </span><span style="color: #CF222E">...</span><span style="color: #24292F">, FieldN)</span></span>, which denotes a tuple.
-    (Refer to <a href="/reach/compute/#ref-programs-tuples">Tuples</a> for constructing tuples.)<a href="#p_67" class="pid">67</a>
+    (Refer to <a href="/rsh/compute/#ref-programs-tuples">Tuples</a> for constructing tuples.)<a href="#p_67" class="pid">67</a>
   </li>
   <li>
     <i id="p_68" class="pid"></i><span class="ref" id="rsh_Object" data-scope="rsh" data-symbol="Object"></span><span class="snip"><span style="color: #0550AE">Object</span><span style="color: #24292F">({key_0: Type_0, </span><span style="color: #CF222E">...</span><span style="color: #24292F">, key_N: Type_N})</span></span>, which denotes an object.
-    (Refer to <a href="/reach/compute/#ref-programs-objects">Objects</a> for constructing objects.)<a href="#p_68" class="pid">68</a>
+    (Refer to <a href="/rsh/compute/#ref-programs-objects">Objects</a> for constructing objects.)<a href="#p_68" class="pid">68</a>
   </li>
   <li>
     <i id="p_69" class="pid"></i><span class="ref" id="rsh_Struct" data-scope="rsh" data-symbol="Struct"></span><span class="snip"><span style="color: #8250DF">Struct</span><span style="color: #24292F">([[key_0, Type_0], </span><span style="color: #CF222E">...</span><span style="color: #24292F">, [key_N, Type_N]])</span></span>, which denotes a struct.
-    (Refer to <a href="/reach/compute/#ref-programs-structs">Structs</a> for constructing structs.)<a href="#p_69" class="pid">69</a>
+    (Refer to <a href="/rsh/compute/#ref-programs-structs">Structs</a> for constructing structs.)<a href="#p_69" class="pid">69</a>
   </li>
   <li>
     <i id="p_70" class="pid"></i><span class="ref" id="rsh_Array" data-scope="rsh" data-symbol="Array"></span><span class="snip"><span style="color: #0550AE">Array</span><span style="color: #24292F">(Type_0, size)</span></span>, which denotes a statically-sized array.
     <span class="snip"><span style="color: #24292F">Type_0</span></span> must be a type that can exist at runtime (i.e., not a function type.)
-    (Refer to <a href="/reach/compute/#ref-programs-arrays"></a>for constructing arrays.)<a href="#p_70" class="pid">70</a>
+    (Refer to <a href="/rsh/compute/#ref-programs-arrays"></a>for constructing arrays.)<a href="#p_70" class="pid">70</a>
   </li>
   <li>
     <i id="p_71" class="pid"></i><span class="ref" id="rsh_Data" data-scope="rsh" data-symbol="Data"></span><span class="snip"><span style="color: #8250DF">Data</span><span style="color: #24292F">({variant_0: Type_0, </span><span style="color: #CF222E">...</span><span style="color: #24292F">, variant_N: Type_N})</span></span>, which denotes a <a href="https://en.wikipedia.org/wiki/Tagged_union">tagged union</a> (or <em>sum type</em>).
-    (Refer to <a href="/reach/compute/#ref-programs-data">Data</a> for constructing data instances.)<a href="#p_71" class="pid">71</a>
+    (Refer to <a href="/rsh/compute/#ref-programs-data">Data</a> for constructing data instances.)<a href="#p_71" class="pid">71</a>
   </li>
   <li>
     <i id="p_72" class="pid"></i><span class="ref" id="rsh_Refine" data-scope="rsh" data-symbol="Refine"></span><span class="snip"><span style="color: #8250DF">Refine</span><span style="color: #24292F">(Type_0, Predicate, </span><span style="color: #CF222E">?</span><span style="color: #24292F">Message)</span></span>, where <span class="snip"><span style="color: #24292F">Predicate</span></span> is a unary function returning a boolean, which denotes a <a href="https://en.wikipedia.org/wiki/Refinement_type">refinement type</a>, that is instances of <span class="snip"><span style="color: #24292F">Type_0</span></span> that satisfy <span class="snip"><span style="color: #24292F">Predicate</span></span>.
