@@ -1891,10 +1891,11 @@ evalAndMap f = \case
     t' <- evalAndMap f t
     evalAnd h' t'
 
-evalAllDistinct :: [SLVal] -> App SLVal
-evalAllDistinct = \case
+evalDistinctTokens :: [SLVal] -> [SLVal] -> App SLVal
+evalDistinctTokens old = \case
   [] -> withAt $ flip SLV_Bool True
-  (v : vs) -> evalAndMap (\v' -> snd <$> (evalNeg =<< (snd <$> evalPolyEq Public v v'))) vs
+  (v : vs) ->
+    evalAndMap (\v' -> snd <$> (evalNeg =<< (snd <$> evalPolyEq Public v v'))) $ old <> vs
 
 evalITE :: SecurityLevel -> SLVal -> SLVal -> SLVal -> App SLSVal
 evalITE lvl c t f = do
@@ -4251,11 +4252,13 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
     sco <- e_sco <$> ask
     when (isJust $ sco_while_vars sco) $
       expect_ $ Err_Token_InWhile
+  let old_toks = st_toks st
+  let all_toks = old_toks <> toks
   let st_recv =
         st
           { st_mode = SLM_ConsensusStep
           , st_pdvs = pdvs_recv
-          , st_toks = st_toks st <> toks
+          , st_toks = all_toks
           , st_after_first = True
           }
   msg_env <- foldlM env_insertp mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ dr_msg
@@ -4268,8 +4271,8 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
       locSco sco_recv $ do
         let req_rator = SLV_Prim $ SLPrim_claim CT_Require
         -- Initialize and distinctize tokens
-        bv <- evalAllDistinct $ map SLV_DLVar toks
-        void $ locSt st_pure $ evalApplyVals' req_rator [public bv]
+        bv <- let f = map SLV_DLVar in evalDistinctTokens (f old_toks) (f toks)
+        void $ locSt st_pure $ evalApplyVals' req_rator [public bv, public $ SLV_Bytes at $ "non-network tokens distinct"]
         forM_ (map DLA_Var toks) $ \tok -> do
           doBalanceInit $ Just tok
           ctxt_lift_eff $ DLE_TokenInit at tok

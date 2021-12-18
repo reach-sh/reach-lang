@@ -118,7 +118,8 @@ checkteal () {
 
 #exit 0
 
-c users/berry.rsh
+fc hs/t/n/distinctToks.rsh
+c examples/mint-basic/index.rsh
 exit 0
 
 # (cd hs && mk hs-test)

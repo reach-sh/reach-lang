@@ -1,0 +1,27 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: require
+  msg: "non-network tokens distinct"
+  at ./distinctToks.rsh:15:5:dot
+
+  // Violation Witness
+
+  const v43 = "A".interact.x;
+  //    ^ could = Token!val!0
+  //      from: ./distinctToks.rsh:5:6:property binding
+  const v44 = "A".interact.y;
+  //    ^ could = Token!val!0
+  //      from: ./distinctToks.rsh:6:6:property binding
+
+  // Theorem Formalization
+
+  const v57 = (v44 == v43) ? false : true;
+  //    ^ would be false
+  require(v57);
+
+  Verifying when NO participants are honest
+  Verifying when ONLY "A" is honest
+Checked 15 theorems; 1 failures :'(
