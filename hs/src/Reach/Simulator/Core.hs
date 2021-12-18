@@ -80,9 +80,9 @@ initGlobal = Global
 
 initLocal :: Local
 initLocal = Local
-  { l_locals = M.singleton (fromIntegral consensusId) LocalInfo
-      {l_acct = consensusId, l_who = Nothing, l_store = mempty, l_phase = 0, l_ks = Nothing}
-  , l_curr_actor_id = fromIntegral consensusId
+  { l_locals = M.singleton consensusId LocalInfo
+      {l_acct = simContract, l_who = Nothing, l_store = mempty, l_phase = 0, l_ks = Nothing}
+  , l_curr_actor_id = consensusId
   }
 
 type PartCont = State -> DLVal -> PartState
@@ -163,14 +163,14 @@ type Store = ConsensusEnv
 type Balance = Integer
 type Token = Integer
 
-consensusId :: Account
+consensusId :: ActorId
 consensusId = -1
 
 nwToken :: Token
 nwToken = -1
 
 simContract :: Account
-simContract = consensusId
+simContract = fromIntegral consensusId
 
 simContractAmt :: Balance
 simContractAmt = 0
@@ -227,12 +227,15 @@ addToStore x v = do
   (_, l) <- getState
   let locals = l_locals l
   let aid = l_curr_actor_id l
-  case M.lookup aid locals of
-    Nothing -> possible "addToStore: no local store"
-    Just lst -> do
+  case (M.lookup aid locals, M.lookup consensusId locals) of
+    (Nothing,_) -> possible "addToStore: no local store"
+    (Just lst, Just cslst) -> do
       let st = l_store lst
       let lst' = lst {l_store = M.insert x v st}
-      setLocal $ l {l_locals = M.insert aid lst' locals}
+      let csst = l_store cslst
+      let cslst' = cslst {l_store = M.insert x v csst}
+      setLocal $ l {l_locals = M.insert consensusId cslst' $ M.insert aid lst' locals}
+    _ -> impossible "consensus store must exist"
 
 fixMessageInRecord :: PhaseId -> ActorId -> Store -> App ()
 fixMessageInRecord phId actId sto = do
@@ -304,12 +307,12 @@ interpPrim = \case
   (SELF_ADDRESS _slpart _bool _int, _) -> do
     (_, l) <- getState
     let actorid = l_curr_actor_id l
-    case actorid == (fromIntegral consensusId) of
+    case actorid == consensusId of
       False -> do
         let locals = l_locals l
         return $ V_Address $ l_acct $ saferMapRef "SELF_ADDRESS" $ M.lookup actorid locals
       True -> do
-        return $ V_Address $ consensusId
+        return $ V_Address $ simContract
   (LSH, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ shiftL lhs (fromIntegral rhs)
   (RSH, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ shiftR lhs (fromIntegral rhs)
   (BAND, [V_UInt lhs,V_UInt rhs]) -> return $ V_UInt $ (.&.) lhs rhs
@@ -690,12 +693,12 @@ instance Interp LLStep where
               part <- partName <$> whoIs actId'
               let dls = saferMapRef "LLS_ToConsensus1" $ M.lookup part sends
               accId <- getAccId actId'
-              consensusPayout accId (ds_pay dls)
               m' <- saferMapRef ("LLS_ToCon") <$> M.lookup phId <$> e_messages <$> getGlobal
               let msgs = unfixedMsgs $ m'
-              let winningMsg = saferMapRef ("LLS_ToCon1") $ M.lookup actId' msgs
+              let winningMsg = saferMapRef ("Message not yet seen") $ M.lookup actId' msgs
               _ <- fixMessageInRecord phId (fromIntegral actId') $ winningMsg
               winner dlr actId' phId
+              consensusPayout accId (ds_pay dls)
               interp $ dr_k
 
 winner :: DLRecv LLConsensus -> ActorId -> PhaseId -> App ()
@@ -819,11 +822,11 @@ vUInt _ = impossible "unexpected error: expected integer"
 
 unfixedMsgs :: G.HasCallStack => MessageInfo -> M.Map ActorId Store
 unfixedMsgs (NotFixedYet m) = m
-unfixedMsgs _ = impossible "unexpected error: expected unfixed message"
+unfixedMsgs _ = possible "unexpected error: expected unfixed message"
 
 fixedMsg :: G.HasCallStack => MessageInfo -> Store
 fixedMsg (Fixed (_,m)) = m
-fixedMsg _ = impossible "unexpected error: expected fixed message"
+fixedMsg _ = possible "unexpected error: expected fixed message"
 
 whoAmI :: App Identity
 whoAmI = do

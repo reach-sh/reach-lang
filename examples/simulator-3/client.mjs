@@ -1,26 +1,42 @@
-const c = await import('@reach-sh/simulator-client');
+const c = await import('../../simulator-client/client.mjs');
 const assert = await import('assert');
 
 const main = async () => {
-  const port = 3001
   console.log("Init Testing!")
-  const params = {
-    port: port
-  };
-  await waitPort(params)
+  await c.waitForPort()
   await c.ping()
   await c.load()
   await c.init()
-  await c.respondWithVal(0,0,10,"Number")
-  await c.respondWithVal(1,1,1,"Number")
-  await c.respondWithVal(2,2,7,"Number")
-  await c.respondWithVal(3,3,"Alice","String")
-  await c.respondWithVal(4,4,0,"Number")
-  await c.respondWithVal(5,5,2,"Number")
-  await c.respondWithVal(6,6,"Bob","String")
-  await c.respondWithVal(7,7,"Alice","String")
-  await c.respondWithVal(8,8,0,"Number")
-  await c.respondWithVal(9,9,0,"Number")
+  await c.initFor(0,0)
+  await c.initFor(1,1)
+  await c.changeActor(0)
+  await c.respondWithVal(2,2,10,"Number")
+  await c.respondWithVal(3,3,0,"Number")
+  await c.respondWithVal(4,4,4444,"Number")
+  await c.changeActor(-1)
+  await c.respondWithVal(5,5,0,"Number")
+  await c.changeActor(0)
+  await c.respondWithVal(6,6,-99,"Number")
+  await c.changeActor(1)
+  await c.respondWithVal(7,7,-99,"Number")
+  await c.respondWithVal(8,8,-99,"Number")
+  await c.respondWithVal(9,9,1,"Number")
+  await c.changeActor(-1)
+  await c.respondWithVal(10,10,1,"Number")
+  await c.changeActor(0)
+  await c.respondWithVal(11,11,1,"Number")
+  await c.changeActor(1)
+  await c.respondWithVal(12,12,1,"Number")
+  await c.changeActor(-1)
+  await c.respondWithVal(13,13,0,"Number")
+  await c.changeActor(0)
+  await c.respondWithVal(14,14,-99,"Number")
+  await c.changeActor(1)
+  await c.respondWithVal(14,14,-99,"Number")
+  await c.changeActor(0)
+  await c.respondWithVal(15,15,-99,"Number")
+  await c.changeActor(1)
+  await c.respondWithVal(16,16,-99,"Number")
   const r = await c.getStatus()
   assert.equal(r,"Done");
   console.log("Testing Complete!")
