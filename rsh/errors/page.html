@@ -1,7 +1,6 @@
 <p>
   <i id="p_0" class="pid"></i>This section provides an in depth explanation of the error codes produced from
-  the Reach compiler.
-  See the list on the left bar.<a href="#p_0" class="pid">0</a>
+  the Reach compiler.<a href="#p_0" class="pid">0</a>
 </p>
 <h2 id="RA0000" class="refHeader">RA0000<a aria-hidden="true" tabindex="-1" href="#RA0000"><span class="icon icon-link"></span></a></h2>
 <p>
@@ -1668,9 +1667,12 @@ commit();
   tastiness: UInt,
 });" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">A</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">API</span><span style="color: #24292F">(</span><span style="color: #0A3069">'api'</span><span style="color: #24292F">, {</span></li><li value="2"><span style="color: #24292F">  tastiness: UInt,</span></li><li value="3"><span style="color: #24292F">});</span></li></ol></pre>
 <h2 id="RE0122" class="refHeader">RE0122<a aria-hidden="true" tabindex="-1" href="#RE0122"><span class="icon icon-link"></span></a></h2>
+<div class="note">
+  <p><i id="p_315" class="pid"></i>This error will not happen after version <code>0.1.7</code>.<a href="#p_315" class="pid">315</a></p>
+</div>
 <p>
-  <i id="p_315" class="pid"></i>This error indicates that the left-hand side of a ```reach
-  call<a href="#p_315" class="pid">315</a>
+  <i id="p_316" class="pid"></i>This error indicates that the left-hand side of a ```reach
+  call<a href="#p_316" class="pid">316</a>
 </p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text=" assignment is not a pair of the domain and a function to return a result to the function.
 For example:
@@ -1679,50 +1681,50 @@ For example:
 const x = call(Voter.vote);" href="#"></a></div><ol class="snippet"><li value="1"> assignment is not a pair of the domain and a function to return a result to the function.</li><li value="2">For example:</li><li value="3"></li><li value="4">```reach</li><li value="5">const x = call(Voter.vote);</li></ol></pre>
 <h2 id="RE0123" class="refHeader">RE0123<a aria-hidden="true" tabindex="-1" href="#RE0123"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_316" class="pid"></i>This error indicates that the name provided to a <span class="snip"><span style="color: #24292F">Participant</span></span>, <span class="snip"><span style="color: #24292F">ParticipantClass</span></span>, <span class="snip"><span style="color: #0550AE">API</span></span>, or <span class="snip"><span style="color: #24292F">View</span></span> is already in use.
-  There is a single namespace for all of these entities.<a href="#p_316" class="pid">316</a>
+  <i id="p_317" class="pid"></i>This error indicates that the name provided to a <span class="snip"><span style="color: #24292F">Participant</span></span>, <span class="snip"><span style="color: #24292F">ParticipantClass</span></span>, <span class="snip"><span style="color: #0550AE">API</span></span>, or <span class="snip"><span style="color: #24292F">View</span></span> is already in use.
+  There is a single namespace for all of these entities.<a href="#p_317" class="pid">317</a>
 </p>
-<p><i id="p_317" class="pid"></i>For example, the code below erroneously uses the same name multiple times:<a href="#p_317" class="pid">317</a></p>
+<p><i id="p_318" class="pid"></i>For example, the code below erroneously uses the same name multiple times:<a href="#p_318" class="pid">318</a></p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="const A = Participant('Flower_girl', {});
 const B = API('Flower', { girl: Fun([UInt], Null) });" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">A</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Flower_girl'</span><span style="color: #24292F">, {});</span></li><li value="2"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">B</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">API</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Flower'</span><span style="color: #24292F">, { girl: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Null) });</span></li></ol></pre>
 <p>
-  <i id="p_318" class="pid"></i><span class="snip"><span style="color: #0A3069">'Flower_girl'</span></span> is used multiple times because every method of an <span class="snip"><span style="color: #0550AE">API</span></span> will
-  introduce a binding, of the format: <code>&lt;API name&gt;_&lt;method name&gt;</code>, into the namespace.<a href="#p_318" class="pid">318</a>
+  <i id="p_319" class="pid"></i><span class="snip"><span style="color: #0A3069">'Flower_girl'</span></span> is used multiple times because every method of an <span class="snip"><span style="color: #0550AE">API</span></span> will
+  introduce a binding, of the format: <code>&lt;API name&gt;_&lt;method name&gt;</code>, into the namespace.<a href="#p_319" class="pid">319</a>
 </p>
-<p><i id="p_319" class="pid"></i>You can fix this error by using different names:<a href="#p_319" class="pid">319</a></p>
+<p><i id="p_320" class="pid"></i>You can fix this error by using different names:<a href="#p_320" class="pid">320</a></p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="const A = Participant('Flower_girl', {});
 const B = API('Flower', { girl2: Fun([UInt], Null) });" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">A</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Flower_girl'</span><span style="color: #24292F">, {});</span></li><li value="2"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">B</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">API</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Flower'</span><span style="color: #24292F">, { girl2: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([UInt], Null) });</span></li></ol></pre>
 <h2 id="RE0124" class="refHeader">RE0124<a aria-hidden="true" tabindex="-1" href="#RE0124"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_320" class="pid"></i>This error indicates that there is an attempt to make a publication in your program, but there are
-  no <span class="snip"><span style="color: #24292F">Participant</span></span>s or <span class="snip"><span style="color: #24292F">ParticipantClass</span></span>es declared.<a href="#p_320" class="pid">320</a>
+  <i id="p_321" class="pid"></i>This error indicates that there is an attempt to make a publication in your program, but there are
+  no <span class="snip"><span style="color: #24292F">Participant</span></span>s or <span class="snip"><span style="color: #24292F">ParticipantClass</span></span>es declared.<a href="#p_321" class="pid">321</a>
 </p>
 <p>
-  <i id="p_321" class="pid"></i>This issue can arise when you use <span class="snip"><span style="color: #24292F">Anybody.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">()</span></span>. To fix this issue, ensure you declare
-  a <span class="snip"><span style="color: #24292F">Participant</span></span> or <span class="snip"><span style="color: #24292F">ParticipantClass</span></span>.<a href="#p_321" class="pid">321</a>
+  <i id="p_322" class="pid"></i>This issue can arise when you use <span class="snip"><span style="color: #24292F">Anybody.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">()</span></span>. To fix this issue, ensure you declare
+  a <span class="snip"><span style="color: #24292F">Participant</span></span> or <span class="snip"><span style="color: #24292F">ParticipantClass</span></span>.<a href="#p_322" class="pid">322</a>
 </p>
 <h2 id="RE0125" class="refHeader">RE0125<a aria-hidden="true" tabindex="-1" href="#RE0125"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_322" class="pid"></i>This error indicates that an <span class="snip"><span style="color: #0550AE">API</span></span> is explicitly attempting to make a publication, e.g. <span class="snip"><span style="color: #24292F">api.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">()</span></span>.
-  An API may only make a publication through a <span class="snip"><span style="color: #24292F">fork</span></span>, <span class="snip"><span style="color: #24292F">parallelReduce</span></span>, or <span class="snip"><span style="color: #24292F">call</span></span>.<a href="#p_322" class="pid">322</a>
+  <i id="p_323" class="pid"></i>This error indicates that an <span class="snip"><span style="color: #0550AE">API</span></span> is explicitly attempting to make a publication, e.g. <span class="snip"><span style="color: #24292F">api.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">()</span></span>.
+  An API may only make a publication through a <span class="snip"><span style="color: #24292F">fork</span></span>, <span class="snip"><span style="color: #24292F">parallelReduce</span></span>, or <span class="snip"><span style="color: #24292F">call</span></span>.<a href="#p_323" class="pid">323</a>
 </p>
 <p>
-  <i id="p_323" class="pid"></i>Depending on your program, you can fix this error by performing a <span class="snip"><span style="color: #24292F">call</span></span> or adding an <span class="snip"><span style="color: #24292F">.api</span></span>
-  case to your <span class="snip"><span style="color: #24292F">fork</span></span> or <span class="snip"><span style="color: #24292F">parallelReduce</span></span> statement.<a href="#p_323" class="pid">323</a>
+  <i id="p_324" class="pid"></i>Depending on your program, you can fix this error by performing a <span class="snip"><span style="color: #24292F">call</span></span> or adding an <span class="snip"><span style="color: #24292F">.api</span></span>
+  case to your <span class="snip"><span style="color: #24292F">fork</span></span> or <span class="snip"><span style="color: #24292F">parallelReduce</span></span> statement.<a href="#p_324" class="pid">324</a>
 </p>
 <h2 id="REP0000" class="refHeader">REP0000<a aria-hidden="true" tabindex="-1" href="#REP0000"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_324" class="pid"></i>This error indicates that the body of a <span class="snip"><span style="color: #CF222E">while</span></span> loop does not make a publication before the <span class="snip"><span style="color: #CF222E">continue</span></span>
-  statement.<a href="#p_324" class="pid">324</a>
+  <i id="p_325" class="pid"></i>This error indicates that the body of a <span class="snip"><span style="color: #CF222E">while</span></span> loop does not make a publication before the <span class="snip"><span style="color: #CF222E">continue</span></span>
+  statement.<a href="#p_325" class="pid">325</a>
 </p>
-<p><i id="p_325" class="pid"></i>For example, the code below does not make any publications before continuing the loop:<a href="#p_325" class="pid">325</a></p>
+<p><i id="p_326" class="pid"></i>For example, the code below does not make any publications before continuing the loop:<a href="#p_326" class="pid">326</a></p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="var x = 0;
 invariant(balance() == 0);
 while (true) {
   x = x + 1;
   continue;
 }" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">var</span><span style="color: #24292F"> x </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">0</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #8250DF">invariant</span><span style="color: #24292F">(</span><span style="color: #8250DF">balance</span><span style="color: #24292F">() </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0550AE">0</span><span style="color: #24292F">);</span></li><li value="3"><span style="color: #CF222E">while</span><span style="color: #24292F"> (</span><span style="color: #0550AE">true</span><span style="color: #24292F">) {</span></li><li value="4"><span style="color: #24292F">  x </span><span style="color: #CF222E">=</span><span style="color: #24292F"> x </span><span style="color: #CF222E">+</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #CF222E">continue</span><span style="color: #24292F">;</span></li><li value="6"><span style="color: #24292F">}</span></li></ol></pre>
-<p><i id="p_326" class="pid"></i>You can fix this code by making a publication within the <span class="snip"><span style="color: #24292F">loop</span></span>:<a href="#p_326" class="pid">326</a></p>
+<p><i id="p_327" class="pid"></i>You can fix this code by making a publication within the <span class="snip"><span style="color: #24292F">loop</span></span>:<a href="#p_327" class="pid">327</a></p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="var x = 0;
 invariant(balance() == 0);
 while (true) {
@@ -1731,13 +1733,13 @@ while (true) {
   x = x + 1;
   continue;
 }" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">var</span><span style="color: #24292F"> x </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">0</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #8250DF">invariant</span><span style="color: #24292F">(</span><span style="color: #8250DF">balance</span><span style="color: #24292F">() </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0550AE">0</span><span style="color: #24292F">);</span></li><li value="3"><span style="color: #CF222E">while</span><span style="color: #24292F"> (</span><span style="color: #0550AE">true</span><span style="color: #24292F">) {</span></li><li value="4"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="5"><span style="color: #24292F">  Alice.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li><li value="6"><span style="color: #24292F">  x </span><span style="color: #CF222E">=</span><span style="color: #24292F"> x </span><span style="color: #CF222E">+</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li><li value="7"><span style="color: #24292F">  </span><span style="color: #CF222E">continue</span><span style="color: #24292F">;</span></li><li value="8"><span style="color: #24292F">}</span></li></ol></pre>
-<p><i id="p_327" class="pid"></i>Note that the body of a <span class="snip"><span style="color: #CF222E">while</span></span> starts in a consensus step so you must first <span class="snip"><span style="color: #24292F">commit</span></span> before making a publication.<a href="#p_327" class="pid">327</a></p>
+<p><i id="p_328" class="pid"></i>Note that the body of a <span class="snip"><span style="color: #CF222E">while</span></span> starts in a consensus step so you must first <span class="snip"><span style="color: #24292F">commit</span></span> before making a publication.<a href="#p_328" class="pid">328</a></p>
 <h2 id="REP0001" class="refHeader">REP0001<a aria-hidden="true" tabindex="-1" href="#REP0001"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_328" class="pid"></i>This error indicates that a <span class="snip"><span style="color: #24292F">View</span></span> is set, but never <a href="https://en.wikipedia.org/wiki/Dominator_(graph_theory)">dominates</a> any <span class="snip"><span style="color: #24292F">commit</span></span>s.
-  This means the value the <span class="snip"><span style="color: #24292F">View</span></span> is set to will never be observable.<a href="#p_328" class="pid">328</a>
+  <i id="p_329" class="pid"></i>This error indicates that a <span class="snip"><span style="color: #24292F">View</span></span> is set, but never <a href="https://en.wikipedia.org/wiki/Dominator_(graph_theory)">dominates</a> any <span class="snip"><span style="color: #24292F">commit</span></span>s.
+  This means the value the <span class="snip"><span style="color: #24292F">View</span></span> is set to will never be observable.<a href="#p_329" class="pid">329</a>
 </p>
-<p><i id="p_329" class="pid"></i>For example, the code below attempts to set a loop variable as the value of a <span class="snip"><span style="color: #24292F">View</span></span>:<a href="#p_329" class="pid">329</a></p>
+<p><i id="p_330" class="pid"></i>For example, the code below attempts to set a loop variable as the value of a <span class="snip"><span style="color: #24292F">View</span></span>:<a href="#p_330" class="pid">330</a></p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="export const main = Reach.App(() => {
   const A = Participant('Alice', {
     observe: Fun([], Null)
@@ -1765,14 +1767,14 @@ while (true) {
   commit();
 });" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">main</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Reach.</span><span style="color: #8250DF">App</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">A</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Alice'</span><span style="color: #24292F">, {</span></li><li value="3"><span style="color: #24292F">    observe: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([], Null)</span></li><li value="4"><span style="color: #24292F">  });</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">I</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">View</span><span style="color: #24292F">(</span><span style="color: #0A3069">'I'</span><span style="color: #24292F">, { i: UInt });</span></li><li value="6"><span style="color: #24292F">  </span><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></li><li value="7"></li><li value="8"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li><li value="9"></li><li value="10"><span style="color: #24292F">  </span><span style="color: #CF222E">var</span><span style="color: #24292F"> [ i ] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [</span><span style="color: #0550AE">0</span><span style="color: #24292F">];</span></li><li value="11"><span style="color: #24292F">  { }</span></li><li value="12"><span style="color: #24292F">  </span><span style="color: #8250DF">invariant</span><span style="color: #24292F"> (</span><span style="color: #8250DF">balance</span><span style="color: #24292F">() </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0550AE">0</span><span style="color: #24292F">);</span></li><li value="13"><span style="color: #24292F">  </span><span style="color: #CF222E">while</span><span style="color: #24292F"> ( i </span><span style="color: #CF222E">&lt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">5</span><span style="color: #24292F"> ) {</span></li><li value="14"><span style="color: #24292F">    </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="15"></li><li value="16"><span style="color: #24292F">    </span><span style="color: #0550AE">A</span><span style="color: #24292F">.interact.</span><span style="color: #8250DF">observe</span><span style="color: #24292F">();</span></li><li value="17"><span style="color: #24292F">    </span><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li><li value="18"></li><li value="19"><span style="color: #24292F">    </span><span style="color: #0550AE">I</span><span style="color: #24292F">.i.</span><span style="color: #8250DF">set</span><span style="color: #24292F">(i);</span></li><li value="20"></li><li value="21"><span style="color: #24292F">    i </span><span style="color: #CF222E">=</span><span style="color: #24292F"> i </span><span style="color: #CF222E">+</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li><li value="22"><span style="color: #24292F">    </span><span style="color: #CF222E">continue</span><span style="color: #24292F">;</span></li><li value="23"><span style="color: #24292F">  }</span></li><li value="24"></li><li value="25"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="26"><span style="color: #24292F">});</span></li></ol></pre>
 <p>
-  <i id="p_330" class="pid"></i>The effect of <span class="snip"><span style="color: #0550AE">I</span><span style="color: #24292F">.i.</span><span style="color: #8250DF">set</span><span style="color: #24292F">(i)</span></span> is only observable after the next <span class="snip"><span style="color: #24292F">commit</span></span> in its scope.
+  <i id="p_331" class="pid"></i>The effect of <span class="snip"><span style="color: #0550AE">I</span><span style="color: #24292F">.i.</span><span style="color: #8250DF">set</span><span style="color: #24292F">(i)</span></span> is only observable after the next <span class="snip"><span style="color: #24292F">commit</span></span> in its scope.
   Since, there are no <span class="snip"><span style="color: #24292F">commit</span></span>s between <span class="snip"><span style="color: #0550AE">I</span><span style="color: #24292F">.i.</span><span style="color: #8250DF">set</span><span style="color: #24292F">(i)</span></span> and <span class="snip"><span style="color: #CF222E">continue</span></span>, which is the end of the lexical scope, there is no
-  way to observe the effect of setting <span class="snip"><span style="color: #0550AE">I</span><span style="color: #24292F">.i</span></span>.<a href="#p_330" class="pid">330</a>
+  way to observe the effect of setting <span class="snip"><span style="color: #0550AE">I</span><span style="color: #24292F">.i</span></span>.<a href="#p_331" class="pid">331</a>
 </p>
 <p>
-  <i id="p_331" class="pid"></i>You can generally fix this error by inserting a <span class="snip"><span style="color: #24292F">commit</span></span> in the area where you'd like
+  <i id="p_332" class="pid"></i>You can generally fix this error by inserting a <span class="snip"><span style="color: #24292F">commit</span></span> in the area where you'd like
   the effect of setting a <span class="snip"><span style="color: #24292F">View</span></span> to be observable. In the case of a <span class="snip"><span style="color: #CF222E">while</span></span> loop, like the
-  program above, it can be fixed the following way:<a href="#p_331" class="pid">331</a>
+  program above, it can be fixed the following way:<a href="#p_332" class="pid">332</a>
 </p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="export const main = Reach.App(() => {
   const A = Participant('Alice', {
@@ -1801,191 +1803,191 @@ while (true) {
   commit();
 });" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">export</span><span style="color: #24292F"> </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">main</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> Reach.</span><span style="color: #8250DF">App</span><span style="color: #24292F">(() </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">A</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">Participant</span><span style="color: #24292F">(</span><span style="color: #0A3069">'Alice'</span><span style="color: #24292F">, {</span></li><li value="3"><span style="color: #24292F">    observe: </span><span style="color: #8250DF">Fun</span><span style="color: #24292F">([], Null)</span></li><li value="4"><span style="color: #24292F">  });</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">I</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">View</span><span style="color: #24292F">(</span><span style="color: #0A3069">'I'</span><span style="color: #24292F">, { i: UInt });</span></li><li value="6"><span style="color: #24292F">  </span><span style="color: #8250DF">deploy</span><span style="color: #24292F">();</span></li><li value="7"></li><li value="8"><span style="color: #24292F">  </span><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li><li value="9"></li><li value="10"><span style="color: #24292F">  </span><span style="color: #CF222E">var</span><span style="color: #24292F"> [ i ] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> [</span><span style="color: #0550AE">0</span><span style="color: #24292F">];</span></li><li value="11"><span style="color: #24292F">  {</span></li><li value="12"><span style="color: #24292F">    </span><span style="color: #0550AE">I</span><span style="color: #24292F">.i.</span><span style="color: #8250DF">set</span><span style="color: #24292F">(i);</span></li><li value="13"><span style="color: #24292F">  }</span></li><li value="14"><span style="color: #24292F">  </span><span style="color: #8250DF">invariant</span><span style="color: #24292F"> (</span><span style="color: #8250DF">balance</span><span style="color: #24292F">() </span><span style="color: #CF222E">==</span><span style="color: #24292F"> </span><span style="color: #0550AE">0</span><span style="color: #24292F">);</span></li><li value="15"><span style="color: #24292F">  </span><span style="color: #CF222E">while</span><span style="color: #24292F"> ( i </span><span style="color: #CF222E">&lt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">5</span><span style="color: #24292F"> ) {</span></li><li value="16"><span style="color: #24292F">    </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="17"></li><li value="18"><span style="color: #24292F">    </span><span style="color: #0550AE">A</span><span style="color: #24292F">.interact.</span><span style="color: #8250DF">observe</span><span style="color: #24292F">();</span></li><li value="19"><span style="color: #24292F">    </span><span style="color: #0550AE">A</span><span style="color: #24292F">.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">();</span></li><li value="20"></li><li value="21"><span style="color: #24292F">    i </span><span style="color: #CF222E">=</span><span style="color: #24292F"> i </span><span style="color: #CF222E">+</span><span style="color: #24292F"> </span><span style="color: #0550AE">1</span><span style="color: #24292F">;</span></li><li value="22"><span style="color: #24292F">    </span><span style="color: #CF222E">continue</span><span style="color: #24292F">;</span></li><li value="23"><span style="color: #24292F">  }</span></li><li value="24"></li><li value="25"><span style="color: #24292F">  </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></li><li value="26"><span style="color: #24292F">});</span></li></ol></pre>
 <p>
-  <i id="p_332" class="pid"></i>This change will ensure the <span class="snip"><span style="color: #24292F">View</span></span> <span class="snip"><span style="color: #0550AE">I</span><span style="color: #24292F">.i</span></span> is set to <span class="snip"><span style="color: #24292F">i</span></span> on every iteration of the
+  <i id="p_333" class="pid"></i>This change will ensure the <span class="snip"><span style="color: #24292F">View</span></span> <span class="snip"><span style="color: #0550AE">I</span><span style="color: #24292F">.i</span></span> is set to <span class="snip"><span style="color: #24292F">i</span></span> on every iteration of the
   loop. Additionally, the continuation of the loop will have <span class="snip"><span style="color: #0550AE">I</span><span style="color: #24292F">.i</span></span> set to the last value of
-  the loop variable <span class="snip"><span style="color: #24292F">i</span></span>.<a href="#p_332" class="pid">332</a>
+  the loop variable <span class="snip"><span style="color: #24292F">i</span></span>.<a href="#p_333" class="pid">333</a>
 </p>
 <h2 id="RI0000" class="refHeader">RI0000<a aria-hidden="true" tabindex="-1" href="#RI0000"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_333" class="pid"></i>This error indicates that <code>git clone</code> has failed when trying to download the dependencies
-  of your project. This error will tell you the issue that was encountered.<a href="#p_333" class="pid">333</a>
+  <i id="p_334" class="pid"></i>This error indicates that <code>git clone</code> has failed when trying to download the dependencies
+  of your project. This error will tell you the issue that was encountered.<a href="#p_334" class="pid">334</a>
 </p>
 <h2 id="RI0001" class="refHeader">RI0001<a aria-hidden="true" tabindex="-1" href="#RI0001"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_334" class="pid"></i>This error indicates that <code>git checkout</code> has failed when trying to checkout the specific
-  revision of your dependency. This error will tell you the issue that was encountered.<a href="#p_334" class="pid">334</a>
+  <i id="p_335" class="pid"></i>This error indicates that <code>git checkout</code> has failed when trying to checkout the specific
+  revision of your dependency. This error will tell you the issue that was encountered.<a href="#p_335" class="pid">335</a>
 </p>
 <h2 id="RI0002" class="refHeader">RI0002<a aria-hidden="true" tabindex="-1" href="#RI0002"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_335" class="pid"></i>This error indicates that the dependency required by your project does not contain either
-  the branch specified, or a <code>master/main</code> branch.<a href="#p_335" class="pid">335</a>
+  <i id="p_336" class="pid"></i>This error indicates that the dependency required by your project does not contain either
+  the branch specified, or a <code>master/main</code> branch.<a href="#p_336" class="pid">336</a>
 </p>
-<p><i id="p_336" class="pid"></i>Please ensure you have specified the correct import.<a href="#p_336" class="pid">336</a></p>
+<p><i id="p_337" class="pid"></i>Please ensure you have specified the correct import.<a href="#p_337" class="pid">337</a></p>
 <h2 id="RI0003" class="refHeader">RI0003<a aria-hidden="true" tabindex="-1" href="#RI0003"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_337" class="pid"></i>This error indicates that your project dependencies need to be retrieved but you did not specify
-  <span class="snip"><span style="color: #CF222E">--</span><span style="color: #24292F">install</span><span style="color: #CF222E">-</span><span style="color: #24292F">pkgs</span></span> with your <code>reach</code> command.<a href="#p_337" class="pid">337</a>
+  <i id="p_338" class="pid"></i>This error indicates that your project dependencies need to be retrieved but you did not specify
+  <span class="snip"><span style="color: #CF222E">--</span><span style="color: #24292F">install</span><span style="color: #CF222E">-</span><span style="color: #24292F">pkgs</span></span> with your <code>reach</code> command.<a href="#p_338" class="pid">338</a>
 </p>
-<p><i id="p_338" class="pid"></i>You can fix this by specifying the needed flag with your command.<a href="#p_338" class="pid">338</a></p>
+<p><i id="p_339" class="pid"></i>You can fix this by specifying the needed flag with your command.<a href="#p_339" class="pid">339</a></p>
 <h2 id="RI0004" class="refHeader">RI0004<a aria-hidden="true" tabindex="-1" href="#RI0004"><span class="icon icon-link"></span></a></h2>
-<p><i id="p_339" class="pid"></i>This error indicates that the syntax you used to specify your import is incorrect.<a href="#p_339" class="pid">339</a></p>
-<p><i id="p_340" class="pid"></i>You can fix this by using the correct syntax. Please view the documentation for package imports.<a href="#p_340" class="pid">340</a></p>
+<p><i id="p_340" class="pid"></i>This error indicates that the syntax you used to specify your import is incorrect.<a href="#p_340" class="pid">340</a></p>
+<p><i id="p_341" class="pid"></i>You can fix this by using the correct syntax. Please view the documentation for package imports.<a href="#p_341" class="pid">341</a></p>
 <h2 id="RL0000" class="refHeader">RL0000<a aria-hidden="true" tabindex="-1" href="#RL0000"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_341" class="pid"></i>This error indicates that the given code must not be reachable because it would
+  <i id="p_342" class="pid"></i>This error indicates that the given code must not be reachable because it would
   result in an error if reached. This error may be caused for different reasons,
-  which will be explained if encountered.<a href="#p_341" class="pid">341</a>
+  which will be explained if encountered.<a href="#p_342" class="pid">342</a>
 </p>
 <p>
-  <i id="p_342" class="pid"></i>One reason this code could be encountered is if there is a branch within a <span class="snip"><span style="color: #CF222E">while</span></span>
+  <i id="p_343" class="pid"></i>One reason this code could be encountered is if there is a branch within a <span class="snip"><span style="color: #CF222E">while</span></span>
   loop, which does not contain a <span class="snip"><span style="color: #CF222E">continue</span></span> statement when it is expected.
   You can fix this by explicitly adding the <span class="snip"><span style="color: #CF222E">continue</span></span> statement to the erroneous block
-  of code.<a href="#p_342" class="pid">342</a>
+  of code.<a href="#p_343" class="pid">343</a>
 </p>
 <h2 id="RP0000" class="refHeader">RP0000<a aria-hidden="true" tabindex="-1" href="#RP0000"><span class="icon icon-link"></span></a></h2>
-<p><i id="p_343" class="pid"></i>This error indicates that there is a <a href="https://en.wikipedia.org/wiki/Circular_dependency">circular dependency</a> in the <span class="snip"><span style="color: #CF222E">import</span></span>s of your application.<a href="#p_343" class="pid">343</a></p>
-<p><i id="p_344" class="pid"></i>You can fix this by refactoring your code to remove the cyclic imports.<a href="#p_344" class="pid">344</a></p>
+<p><i id="p_344" class="pid"></i>This error indicates that there is a <a href="https://en.wikipedia.org/wiki/Circular_dependency">circular dependency</a> in the <span class="snip"><span style="color: #CF222E">import</span></span>s of your application.<a href="#p_344" class="pid">344</a></p>
+<p><i id="p_345" class="pid"></i>You can fix this by refactoring your code to remove the cyclic imports.<a href="#p_345" class="pid">345</a></p>
 <h2 id="RP0001" class="refHeader">RP0001<a aria-hidden="true" tabindex="-1" href="#RP0001"><span class="icon icon-link"></span></a></h2>
 <div class="note">
-  <p><i id="p_345" class="pid"></i>This error will not happen after version <code>v0.1</code>.<a href="#p_345" class="pid">345</a></p>
+  <p><i id="p_346" class="pid"></i>This error will not happen after version <code>v0.1</code>.<a href="#p_346" class="pid">346</a></p>
 </div>
-<p><i id="p_346" class="pid"></i>This error indicates that you have specified a function without an argument list.<a href="#p_346" class="pid">346</a></p>
-<p><i id="p_347" class="pid"></i>You can fix this by adding an argument list.<a href="#p_347" class="pid">347</a></p>
+<p><i id="p_347" class="pid"></i>This error indicates that you have specified a function without an argument list.<a href="#p_347" class="pid">347</a></p>
+<p><i id="p_348" class="pid"></i>You can fix this by adding an argument list.<a href="#p_348" class="pid">348</a></p>
 <h2 id="RP0002" class="refHeader">RP0002<a aria-hidden="true" tabindex="-1" href="#RP0002"><span class="icon icon-link"></span></a></h2>
 <div class="note">
-  <p><i id="p_348" class="pid"></i>This error will not happen after version <code>v0.1</code>.<a href="#p_348" class="pid">348</a></p>
+  <p><i id="p_349" class="pid"></i>This error will not happen after version <code>v0.1</code>.<a href="#p_349" class="pid">349</a></p>
 </div>
 <p>
-  <i id="p_349" class="pid"></i>This error indicates that an identifier was expected during parsing, but an expression
-  was received.<a href="#p_349" class="pid">349</a>
+  <i id="p_350" class="pid"></i>This error indicates that an identifier was expected during parsing, but an expression
+  was received.<a href="#p_350" class="pid">350</a>
 </p>
 <h2 id="RP0003" class="refHeader">RP0003<a aria-hidden="true" tabindex="-1" href="#RP0003"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_350" class="pid"></i>This error indicates that a key or a key/value pair was expected in a
-  destructuring assignment, but an object method was received.<a href="#p_350" class="pid">350</a>
+  <i id="p_351" class="pid"></i>This error indicates that a key or a key/value pair was expected in a
+  destructuring assignment, but an object method was received.<a href="#p_351" class="pid">351</a>
 </p>
-<p><i id="p_351" class="pid"></i>For example, the code below creates a method within a destructuring assignment:<a href="#p_351" class="pid">351</a></p>
+<p><i id="p_352" class="pid"></i>For example, the code below creates a method within a destructuring assignment:<a href="#p_352" class="pid">352</a></p>
 <pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="const {x() { return 1 }} = {x: 2};" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> {</span><span style="color: #0550AE">x</span><span style="color: #24292F">() { </span><span style="color: #0550AE">return</span><span style="color: #24292F"> 1 }} </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {x: </span><span style="color: #0550AE">2</span><span style="color: #24292F">};</span></li></ol></pre>
-<p><i id="p_352" class="pid"></i>You can fix this code by simply specifying <span class="snip"><span style="color: #24292F">x</span></span> in the assignment:<a href="#p_352" class="pid">352</a></p>
+<p><i id="p_353" class="pid"></i>You can fix this code by simply specifying <span class="snip"><span style="color: #24292F">x</span></span> in the assignment:<a href="#p_353" class="pid">353</a></p>
 <pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="const { x } = {x: 2};" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> { </span><span style="color: #0550AE">x</span><span style="color: #24292F"> } </span><span style="color: #CF222E">=</span><span style="color: #24292F"> {x: </span><span style="color: #0550AE">2</span><span style="color: #24292F">};</span></li></ol></pre>
 <h2 id="RP0004" class="refHeader">RP0004<a aria-hidden="true" tabindex="-1" href="#RP0004"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_353" class="pid"></i>This error indicates that an unsupported binary operator was encountered.
+  <i id="p_354" class="pid"></i>This error indicates that an unsupported binary operator was encountered.
   Reach is a subset of JavaScript and does not support all of the binary operators
-  JavaScript supports.<a href="#p_353" class="pid">353</a>
+  JavaScript supports.<a href="#p_354" class="pid">354</a>
 </p>
 <p>
-  <i id="p_354" class="pid"></i>You can fix this by utilizing different operators or functions depending
-  on the logic of your program.<a href="#p_354" class="pid">354</a>
+  <i id="p_355" class="pid"></i>You can fix this by utilizing different operators or functions depending
+  on the logic of your program.<a href="#p_355" class="pid">355</a>
 </p>
 <h2 id="RP0005" class="refHeader">RP0005<a aria-hidden="true" tabindex="-1" href="#RP0005"><span class="icon icon-link"></span></a></h2>
 <div class="note">
-  <p><i id="p_355" class="pid"></i>This error will not happen after version <code>v0.1</code>.<a href="#p_355" class="pid">355</a></p>
+  <p><i id="p_356" class="pid"></i>This error will not happen after version <code>v0.1</code>.<a href="#p_356" class="pid">356</a></p>
 </div>
 <p>
-  <i id="p_356" class="pid"></i>This error indicates that an unsupported literal was encountered.
+  <i id="p_357" class="pid"></i>This error indicates that an unsupported literal was encountered.
   Reach is a subset of JavaScript and does not support all of the literals that
-  JavaScript supports.<a href="#p_356" class="pid">356</a>
+  JavaScript supports.<a href="#p_357" class="pid">357</a>
 </p>
 <h2 id="RP0006" class="refHeader">RP0006<a aria-hidden="true" tabindex="-1" href="#RP0006"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_357" class="pid"></i>This error indicates that an unsupported unary operator was encountered.
+  <i id="p_358" class="pid"></i>This error indicates that an unsupported unary operator was encountered.
   Reach is a subset of JavaScript and does not support all of the unary operators
-  JavaScript supports.<a href="#p_357" class="pid">357</a>
+  JavaScript supports.<a href="#p_358" class="pid">358</a>
 </p>
 <p>
-  <i id="p_358" class="pid"></i>You can fix this by utilizing different operators or functions depending
-  on the logic of your program.<a href="#p_358" class="pid">358</a>
+  <i id="p_359" class="pid"></i>You can fix this by utilizing different operators or functions depending
+  on the logic of your program.<a href="#p_359" class="pid">359</a>
 </p>
 <h2 id="RP0007" class="refHeader">RP0007<a aria-hidden="true" tabindex="-1" href="#RP0007"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_359" class="pid"></i>This error indicates that you are attempting to <span class="snip"><span style="color: #CF222E">import</span></span> a file using an absolute
-  path which is not supported.<a href="#p_359" class="pid">359</a>
+  <i id="p_360" class="pid"></i>This error indicates that you are attempting to <span class="snip"><span style="color: #CF222E">import</span></span> a file using an absolute
+  path which is not supported.<a href="#p_360" class="pid">360</a>
 </p>
-<p><i id="p_360" class="pid"></i>You can fix this by using a relative path for your <span class="snip"><span style="color: #CF222E">import</span></span>.<a href="#p_360" class="pid">360</a></p>
+<p><i id="p_361" class="pid"></i>You can fix this by using a relative path for your <span class="snip"><span style="color: #CF222E">import</span></span>.<a href="#p_361" class="pid">361</a></p>
 <h2 id="RP0008" class="refHeader">RP0008<a aria-hidden="true" tabindex="-1" href="#RP0008"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_361" class="pid"></i>This error indicates that you are trying to <span class="snip"><span style="color: #CF222E">import</span></span> a path
+  <i id="p_362" class="pid"></i>This error indicates that you are trying to <span class="snip"><span style="color: #CF222E">import</span></span> a path
   that is accessing its parent directory via <span class="snip"><span style="color: #24292F">..</span></span>. This type of
-  import is not allowed. Please view the documentation for package imports.<a href="#p_361" class="pid">361</a>
+  import is not allowed. Please view the documentation for package imports.<a href="#p_362" class="pid">362</a>
 </p>
 <p>
-  <i id="p_362" class="pid"></i>For example, the code below erroneously <span class="snip"><span style="color: #CF222E">import</span></span>s a file from its parent
-  directory:<a href="#p_362" class="pid">362</a>
+  <i id="p_363" class="pid"></i>For example, the code below erroneously <span class="snip"><span style="color: #CF222E">import</span></span>s a file from its parent
+  directory:<a href="#p_363" class="pid">363</a>
 </p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="&quot;reach 0.1&quot;;
 import &quot;../a.rsh&quot;;" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #0A3069">"reach 0.1"</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #CF222E">import</span><span style="color: #24292F"> </span><span style="color: #0A3069">"../a.rsh"</span><span style="color: #24292F">;</span></li></ol></pre>
 <p>
-  <i id="p_363" class="pid"></i>You can fix this error by moving your file, <span class="snip"><span style="color: #0A3069">"../a.rsh"</span></span>, to the same
-  directory your program is in. Then, reference it using a relative import:<a href="#p_363" class="pid">363</a>
+  <i id="p_364" class="pid"></i>You can fix this error by moving your file, <span class="snip"><span style="color: #0A3069">"../a.rsh"</span></span>, to the same
+  directory your program is in. Then, reference it using a relative import:<a href="#p_364" class="pid">364</a>
 </p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="&quot;reach 0.1&quot;;
 import &quot;./a.rsh&quot;;" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #0A3069">"reach 0.1"</span><span style="color: #24292F">;</span></li><li value="2"><span style="color: #CF222E">import</span><span style="color: #24292F"> </span><span style="color: #0A3069">"./a.rsh"</span><span style="color: #24292F">;</span></li></ol></pre>
 <h2 id="RP0009" class="refHeader">RP0009<a aria-hidden="true" tabindex="-1" href="#RP0009"><span class="icon icon-link"></span></a></h2>
 <div class="note">
-  <p><i id="p_364" class="pid"></i>This error will not happen after version <code>v0.1</code>.<a href="#p_364" class="pid">364</a></p>
+  <p><i id="p_365" class="pid"></i>This error will not happen after version <code>v0.1</code>.<a href="#p_365" class="pid">365</a></p>
 </div>
-<p><i id="p_365" class="pid"></i>This error indicates that the Reach file could not be parsed as a module.<a href="#p_365" class="pid">365</a></p>
+<p><i id="p_366" class="pid"></i>This error indicates that the Reach file could not be parsed as a module.<a href="#p_366" class="pid">366</a></p>
 <h2 id="RP0010" class="refHeader">RP0010<a aria-hidden="true" tabindex="-1" href="#RP0010"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_366" class="pid"></i>This error indicates that a call-like expression was expected, but another
-  value was provided.<a href="#p_366" class="pid">366</a>
+  <i id="p_367" class="pid"></i>This error indicates that a call-like expression was expected, but another
+  value was provided.<a href="#p_367" class="pid">367</a>
 </p>
 <p>
-  <i id="p_367" class="pid"></i>For example, the code below erroneously passes <span class="snip"><span style="color: #24292F">_x</span></span>, a secret value of
-  <span class="snip"><span style="color: #24292F">Bob</span></span>, to <span class="snip"><span style="color: #24292F">unknowable</span></span>:<a href="#p_367" class="pid">367</a>
+  <i id="p_368" class="pid"></i>For example, the code below erroneously passes <span class="snip"><span style="color: #24292F">_x</span></span>, a secret value of
+  <span class="snip"><span style="color: #24292F">Bob</span></span>, to <span class="snip"><span style="color: #24292F">unknowable</span></span>:<a href="#p_368" class="pid">368</a>
 </p>
 <pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="unknowable(A, _x);" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #8250DF">unknowable</span><span style="color: #24292F">(</span><span style="color: #0550AE">A</span><span style="color: #24292F">, _x);</span></li></ol></pre>
-<p><i id="p_368" class="pid"></i>You can fix this by providing a call-like expression to the function:<a href="#p_368" class="pid">368</a></p>
+<p><i id="p_369" class="pid"></i>You can fix this by providing a call-like expression to the function:<a href="#p_369" class="pid">369</a></p>
 <pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="unknowable(A, B(_x));" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #8250DF">unknowable</span><span style="color: #24292F">(</span><span style="color: #0550AE">A</span><span style="color: #24292F">, </span><span style="color: #8250DF">B</span><span style="color: #24292F">(_x));</span></li></ol></pre>
 <h2 id="RP0011" class="refHeader">RP0011<a aria-hidden="true" tabindex="-1" href="#RP0011"><span class="icon icon-link"></span></a></h2>
 <div class="note">
-  <p><i id="p_369" class="pid"></i>This error will not happen after version <code>v0.1</code>.<a href="#p_369" class="pid">369</a></p>
+  <p><i id="p_370" class="pid"></i>This error will not happen after version <code>v0.1</code>.<a href="#p_370" class="pid">370</a></p>
 </div>
-<p><i id="p_370" class="pid"></i>This error indicates that Reach expected to parse an identifier, but none was given.<a href="#p_370" class="pid">370</a></p>
-<p><i id="p_371" class="pid"></i>You can fix this error by adding an identifier name to the erroneous location.<a href="#p_371" class="pid">371</a></p>
+<p><i id="p_371" class="pid"></i>This error indicates that Reach expected to parse an identifier, but none was given.<a href="#p_371" class="pid">371</a></p>
+<p><i id="p_372" class="pid"></i>You can fix this error by adding an identifier name to the erroneous location.<a href="#p_372" class="pid">372</a></p>
 <h2 id="RX0000" class="refHeader">RX0000<a aria-hidden="true" tabindex="-1" href="#RX0000"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_372" class="pid"></i>This error indicates that you are trying to inspect or use the value produced from <span class="snip"><span style="color: #24292F">forall</span></span>
-  outside of an <span class="snip"><span style="color: #24292F">assert</span></span>.<a href="#p_372" class="pid">372</a>
+  <i id="p_373" class="pid"></i>This error indicates that you are trying to inspect or use the value produced from <span class="snip"><span style="color: #24292F">forall</span></span>
+  outside of an <span class="snip"><span style="color: #24292F">assert</span></span>.<a href="#p_373" class="pid">373</a>
 </p>
 <p>
-  <i id="p_373" class="pid"></i>For example, the code below attempts to verify that all <span class="snip"><span style="color: #24292F">UInt</span></span>s are greater than or
-  equal to zero via a <span class="snip"><span style="color: #24292F">require</span></span>:<a href="#p_373" class="pid">373</a>
+  <i id="p_374" class="pid"></i>For example, the code below attempts to verify that all <span class="snip"><span style="color: #24292F">UInt</span></span>s are greater than or
+  equal to zero via a <span class="snip"><span style="color: #24292F">require</span></span>:<a href="#p_374" class="pid">374</a>
 </p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="const x = forall(UInt);
 require(x >= 0);" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">forall</span><span style="color: #24292F">(UInt);</span></li><li value="2"><span style="color: #0550AE">require</span><span style="color: #24292F">(x </span><span style="color: #CF222E">&gt;=</span><span style="color: #24292F"> </span><span style="color: #0550AE">0</span><span style="color: #24292F">);</span></li></ol></pre>
 <p>
-  <i id="p_374" class="pid"></i>This is invalid because the result of <span class="snip"><span style="color: #24292F">forall</span></span> is an abstract value, which cannot exist
-  at runtime. You can fix this code by verifying the claim via an <span class="snip"><span style="color: #24292F">assert</span></span>:<a href="#p_374" class="pid">374</a>
+  <i id="p_375" class="pid"></i>This is invalid because the result of <span class="snip"><span style="color: #24292F">forall</span></span> is an abstract value, which cannot exist
+  at runtime. You can fix this code by verifying the claim via an <span class="snip"><span style="color: #24292F">assert</span></span>:<a href="#p_375" class="pid">375</a>
 </p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="const x = forall(UInt);
 assert(x >= 0);" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">x</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #8250DF">forall</span><span style="color: #24292F">(UInt);</span></li><li value="2"><span style="color: #8250DF">assert</span><span style="color: #24292F">(x </span><span style="color: #CF222E">&gt;=</span><span style="color: #24292F"> </span><span style="color: #0550AE">0</span><span style="color: #24292F">);</span></li></ol></pre>
 <h2 id="RAPI0000" class="refHeader">RAPI0000<a aria-hidden="true" tabindex="-1" href="#RAPI0000"><span class="icon icon-link"></span></a></h2>
-<p><i id="p_375" class="pid"></i>This error means that you defined an API but did not actually use it in your prorgam.<a href="#p_375" class="pid">375</a></p>
+<p><i id="p_376" class="pid"></i>This error means that you defined an API but did not actually use it in your prorgam.<a href="#p_376" class="pid">376</a></p>
 <h2 id="RAPI0001" class="refHeader">RAPI0001<a aria-hidden="true" tabindex="-1" href="#RAPI0001"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_376" class="pid"></i>This error means that you returned the result to an API without calling it.
-  This is generally not possible unless you directly use the internal representation of APIs.<a href="#p_376" class="pid">376</a>
+  <i id="p_377" class="pid"></i>This error means that you returned the result to an API without calling it.
+  This is generally not possible unless you directly use the internal representation of APIs.<a href="#p_377" class="pid">377</a>
 </p>
 <h2 id="RAPI0002" class="refHeader">RAPI0002<a aria-hidden="true" tabindex="-1" href="#RAPI0002"><span class="icon icon-link"></span></a></h2>
-<p><i id="p_377" class="pid"></i>The error means that you use an API in two places in your program, which is not allowed.<a href="#p_377" class="pid">377</a></p>
-<p><i id="p_378" class="pid"></i>This might look like the following in the <span class="snip"><span style="color: #0550AE">API_CONSENSUS_EXPR</span></span>:<a href="#p_378" class="pid">378</a></p>
+<p><i id="p_378" class="pid"></i>The error means that you use an API in two places in your program, which is not allowed.<a href="#p_378" class="pid">378</a></p>
+<p><i id="p_379" class="pid"></i>This might look like the following in the <span class="snip"><span style="color: #0550AE">API_CONSENSUS_EXPR</span></span>:<a href="#p_379" class="pid">379</a></p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text=".api(User.f, (x, ret) => {
   if (x > 5) {
     ret(true);
   }
   ret(false);
 })" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #24292F">.</span><span style="color: #8250DF">api</span><span style="color: #24292F">(User.f, (</span><span style="color: #953800">x</span><span style="color: #24292F">, </span><span style="color: #953800">ret</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #CF222E">if</span><span style="color: #24292F"> (x </span><span style="color: #CF222E">&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">5</span><span style="color: #24292F">) {</span></li><li value="3"><span style="color: #24292F">    </span><span style="color: #8250DF">ret</span><span style="color: #24292F">(</span><span style="color: #0550AE">true</span><span style="color: #24292F">);</span></li><li value="4"><span style="color: #24292F">  }</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #8250DF">ret</span><span style="color: #24292F">(</span><span style="color: #0550AE">false</span><span style="color: #24292F">);</span></li><li value="6"><span style="color: #24292F">})</span></li></ol></pre>
-<p><i id="p_379" class="pid"></i>You cannot return from an API call twice.<a href="#p_379" class="pid">379</a></p>
-<p><i id="p_380" class="pid"></i>Sometimes the second instance is a by-product of an effect duplicating a continuation, such as:<a href="#p_380" class="pid">380</a></p>
+<p><i id="p_380" class="pid"></i>You cannot return from an API call twice.<a href="#p_380" class="pid">380</a></p>
+<p><i id="p_381" class="pid"></i>Sometimes the second instance is a by-product of an effect duplicating a continuation, such as:<a href="#p_381" class="pid">381</a></p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text=".api(User.f, (x, ret) => {
   if (x > 5) {
     m[this] = x;
   }
   ret(false);
 })" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #24292F">.</span><span style="color: #8250DF">api</span><span style="color: #24292F">(User.f, (</span><span style="color: #953800">x</span><span style="color: #24292F">, </span><span style="color: #953800">ret</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #CF222E">if</span><span style="color: #24292F"> (x </span><span style="color: #CF222E">&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">5</span><span style="color: #24292F">) {</span></li><li value="3"><span style="color: #24292F">    m[</span><span style="color: #0550AE">this</span><span style="color: #24292F">] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> x;</span></li><li value="4"><span style="color: #24292F">  }</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #8250DF">ret</span><span style="color: #24292F">(</span><span style="color: #0550AE">false</span><span style="color: #24292F">);</span></li><li value="6"><span style="color: #24292F">})</span></li></ol></pre>
-<p><i id="p_381" class="pid"></i>This is because this is equivalent to:<a href="#p_381" class="pid">381</a></p>
+<p><i id="p_382" class="pid"></i>This is because this is equivalent to:<a href="#p_382" class="pid">382</a></p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text=".api(User.f, (x, ret) => {
   if (x > 5) {
     m[this] = x;
@@ -1994,7 +1996,7 @@ assert(x >= 0);" href="#"></a></div><ol class="snippet"><li value="1"><span styl
     ret(false);
   }
 })" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #24292F">.</span><span style="color: #8250DF">api</span><span style="color: #24292F">(User.f, (</span><span style="color: #953800">x</span><span style="color: #24292F">, </span><span style="color: #953800">ret</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #CF222E">if</span><span style="color: #24292F"> (x </span><span style="color: #CF222E">&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">5</span><span style="color: #24292F">) {</span></li><li value="3"><span style="color: #24292F">    m[</span><span style="color: #0550AE">this</span><span style="color: #24292F">] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> x;</span></li><li value="4"><span style="color: #24292F">    </span><span style="color: #8250DF">ret</span><span style="color: #24292F">(</span><span style="color: #0550AE">false</span><span style="color: #24292F">);</span></li><li value="5"><span style="color: #24292F">  } </span><span style="color: #CF222E">else</span><span style="color: #24292F"> {</span></li><li value="6"><span style="color: #24292F">    </span><span style="color: #8250DF">ret</span><span style="color: #24292F">(</span><span style="color: #0550AE">false</span><span style="color: #24292F">);</span></li><li value="7"><span style="color: #24292F">  }</span></li><li value="8"><span style="color: #24292F">})</span></li></ol></pre>
-<p><i id="p_382" class="pid"></i>Instead, the effect should happen after the return:<a href="#p_382" class="pid">382</a></p>
+<p><i id="p_383" class="pid"></i>Instead, the effect should happen after the return:<a href="#p_383" class="pid">383</a></p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text=".api(User.f, (x, ret) => {
   ret(false);
   if (x > 5) {
@@ -2002,35 +2004,41 @@ assert(x >= 0);" href="#"></a></div><ol class="snippet"><li value="1"><span styl
   }
 })" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #24292F">.</span><span style="color: #8250DF">api</span><span style="color: #24292F">(User.f, (</span><span style="color: #953800">x</span><span style="color: #24292F">, </span><span style="color: #953800">ret</span><span style="color: #24292F">) </span><span style="color: #CF222E">=&gt;</span><span style="color: #24292F"> {</span></li><li value="2"><span style="color: #24292F">  </span><span style="color: #8250DF">ret</span><span style="color: #24292F">(</span><span style="color: #0550AE">false</span><span style="color: #24292F">);</span></li><li value="3"><span style="color: #24292F">  </span><span style="color: #CF222E">if</span><span style="color: #24292F"> (x </span><span style="color: #CF222E">&gt;</span><span style="color: #24292F"> </span><span style="color: #0550AE">5</span><span style="color: #24292F">) {</span></li><li value="4"><span style="color: #24292F">    m[</span><span style="color: #0550AE">this</span><span style="color: #24292F">] </span><span style="color: #CF222E">=</span><span style="color: #24292F"> x;</span></li><li value="5"><span style="color: #24292F">  }</span></li><li value="6"><span style="color: #24292F">})</span></li></ol></pre>
 <h2 id="RAPI0003" class="refHeader">RAPI0003<a aria-hidden="true" tabindex="-1" href="#RAPI0003"><span class="icon icon-link"></span></a></h2>
-<p><i id="p_383" class="pid"></i>This error means that you did not return a result from an API call.<a href="#p_383" class="pid">383</a></p>
+<p><i id="p_384" class="pid"></i>This error means that you did not return a result from an API call.<a href="#p_384" class="pid">384</a></p>
+<h2 id="RAPI0004" class="refHeader">RAPI0004<a aria-hidden="true" tabindex="-1" href="#RAPI0004"><span class="icon icon-link"></span></a></h2>
+<p>
+  <i id="p_385" class="pid"></i>This error means that an API caller relies on non-consensus state to operate.
+  Typically, this is because the <span class="snip"><span style="color: #24292F">assume</span></span> uses a value not needed by the consensus.
+  This is likely a sign of a bigger error, because a <span class="snip"><span style="color: #24292F">assume</span></span> that does not have a "matching" <span class="snip"><span style="color: #24292F">require</span></span> in the consensus is not useful.<a href="#p_385" class="pid">385</a>
+</p>
 <h2 id="RW0000" class="refHeader">RW0000<a aria-hidden="true" tabindex="-1" href="#RW0000"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_384" class="pid"></i>This warning means the syntax or function you are trying to use is deprecated. It is still supported
-  by the Reach compiler, but future versions of Reach may stop supporting it.<a href="#p_384" class="pid">384</a>
+  <i id="p_386" class="pid"></i>This warning means the syntax or function you are trying to use is deprecated. It is still supported
+  by the Reach compiler, but future versions of Reach may stop supporting it.<a href="#p_386" class="pid">386</a>
 </p>
-<p><i id="p_385" class="pid"></i>You can fix this warning by using the new syntax or function the message suggests.<a href="#p_385" class="pid">385</a></p>
+<p><i id="p_387" class="pid"></i>You can fix this warning by using the new syntax or function the message suggests.<a href="#p_387" class="pid">387</a></p>
 <h2 id="RW0001" class="refHeader">RW0001<a aria-hidden="true" tabindex="-1" href="#RW0001"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_386" class="pid"></i>This warning indicates there is an issue with the Solidity compiler. The message provided can
-  be reported to Solidity.<a href="#p_386" class="pid">386</a>
+  <i id="p_388" class="pid"></i>This warning indicates there is an issue with the Solidity compiler. The message provided can
+  be reported to Solidity.<a href="#p_388" class="pid">388</a>
 </p>
 <h2 id="RW0002" class="refHeader">RW0002<a aria-hidden="true" tabindex="-1" href="#RW0002"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_387" class="pid"></i>This warning indicates that your program either uses a feature that is not yet supported on Algorand
-  or surpasses Algorand's limit on resources.<a href="#p_387" class="pid">387</a>
+  <i id="p_389" class="pid"></i>This warning indicates that your program either uses a feature that is not yet supported on Algorand
+  or surpasses Algorand's limit on resources.<a href="#p_389" class="pid">389</a>
 </p>
 <h2 id="RW0003" class="refHeader">RW0003<a aria-hidden="true" tabindex="-1" href="#RW0003"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_388" class="pid"></i>This warning indicates your program will not run on Algorand for the listed reasons. These
-  reasons include a limit on the total computation cost.<a href="#p_388" class="pid">388</a>
+  <i id="p_390" class="pid"></i>This warning indicates your program will not run on Algorand for the listed reasons. These
+  reasons include a limit on the total computation cost.<a href="#p_390" class="pid">390</a>
 </p>
 <h2 id="RW0004" class="refHeader">RW0004<a aria-hidden="true" tabindex="-1" href="#RW0004"><span class="icon icon-link"></span></a></h2>
-<p><i id="p_389" class="pid"></i>This warning indicates that your program does not contain any publications.<a href="#p_389" class="pid">389</a></p>
-<p><i id="p_390" class="pid"></i>You can fix this issue by making sure at least one <span class="snip"><span style="color: #24292F">Participant</span></span> performs a <span class="snip"><span style="color: #24292F">publish</span></span>.<a href="#p_390" class="pid">390</a></p>
+<p><i id="p_391" class="pid"></i>This warning indicates that your program does not contain any publications.<a href="#p_391" class="pid">391</a></p>
+<p><i id="p_392" class="pid"></i>You can fix this issue by making sure at least one <span class="snip"><span style="color: #24292F">Participant</span></span> performs a <span class="snip"><span style="color: #24292F">publish</span></span>.<a href="#p_392" class="pid">392</a></p>
 <h2 id="RW0005" class="refHeader">RW0005<a aria-hidden="true" tabindex="-1" href="#RW0005"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_391" class="pid"></i>This warning indicates that a <span class="snip"><span style="color: #24292F">View</span></span> or <span class="snip"><span style="color: #0550AE">API</span></span> produces or consumes an <span class="snip"><span style="color: #0550AE">Object</span></span>,
+  <i id="p_393" class="pid"></i>This warning indicates that a <span class="snip"><span style="color: #24292F">View</span></span> or <span class="snip"><span style="color: #0550AE">API</span></span> produces or consumes an <span class="snip"><span style="color: #0550AE">Object</span></span>,
   which is a type internal to Reach.
-  It has an opaque and unspecified representation that can only be consumed by other Reach programs, so it is probably a bad choice for general purpose interfaces.<a href="#p_391" class="pid">391</a>
+  It has an opaque and unspecified representation that can only be consumed by other Reach programs, so it is probably a bad choice for general purpose interfaces.<a href="#p_393" class="pid">393</a>
 </p>
-<p><i id="p_392" class="pid"></i>You can fix this issue by using a <span class="snip"><span style="color: #24292F">Struct</span></span> instead of the <span class="snip"><span style="color: #0550AE">Object</span></span>.<a href="#p_392" class="pid">392</a></p>
+<p><i id="p_394" class="pid"></i>You can fix this issue by using a <span class="snip"><span style="color: #24292F">Struct</span></span> instead of the <span class="snip"><span style="color: #0550AE">Object</span></span>.<a href="#p_394" class="pid">394</a></p>
