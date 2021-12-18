@@ -3,7 +3,7 @@ SHELL=/bin/bash
 
 .PHONY: build
 build: installed
-	set -o pipefail ; (. $(ROOT)/VERSION && export VERSION && NODE_ENV=production node generator.js 2>&1) | tee log
+	set -o pipefail ; (. $(ROOT)/VERSION && export VERSION MAJOR MINOR PATCH DRAFT && NODE_ENV=production node generator.js 2>&1) | tee log
 
 .PHONY: profile
 profile: installed

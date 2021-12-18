@@ -8,8 +8,9 @@ A Reach @{defn("source file")} is a textual file which specifies a Reach module.
 It is traditionally given the file extension `rsh`,
 e.g. `dao.rsh`.
 
-A @{defn("module")} starts with `{!rsh} 'reach reach-short-vers';`
+A @{defn("module")} starts with `{!rsh} 'reach @{MAJOR}.@{MINOR}';`
 followed by a sequence of imports and identifier definitions.
+
 :::note
 See [the guide section on versions](##guide-versions) to understand how Reach uses version numbers like this.
 :::

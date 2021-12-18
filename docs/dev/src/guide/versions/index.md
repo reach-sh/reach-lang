@@ -17,7 +17,7 @@ However, the major version `0.y.z` is pre-stability and makes no promises about 
 Reach source code starts with
 
 ```reach
-'reach reach-short-vers';
+'reach @{MAJOR}.@{MINOR}';
 ```
 
 
