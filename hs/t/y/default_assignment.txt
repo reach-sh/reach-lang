@@ -9,5 +9,5 @@ warning[RW0004]: There are no publications in the application.
 
   4|   Reach.App({}, [], () => {
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0004.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0004
 

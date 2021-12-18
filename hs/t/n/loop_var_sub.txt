@@ -9,10 +9,10 @@ Verification failed:
   // Violation Witness
 
   const x/52 = <loop variable>;
-  //    ^ could = [38, false ]
+  //    ^ could = [0, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
   const balance(0)/55 = <loop variable>;
-  //    ^ could = 38
+  //    ^ could = 0
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization
@@ -30,10 +30,10 @@ Verification failed:
   // Violation Witness
 
   const x/52 = <loop variable>;
-  //    ^ could = [38, false ]
+  //    ^ could = [0, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
   const balance(0)/55 = <loop variable>;
-  //    ^ could = 38
+  //    ^ could = 0
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization
@@ -51,10 +51,10 @@ Verification failed:
   // Violation Witness
 
   const x/52 = <loop variable>;
-  //    ^ could = [38, false ]
+  //    ^ could = [0, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
   const balance(0)/55 = <loop variable>;
-  //    ^ could = 38
+  //    ^ could = 0
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization
@@ -72,10 +72,10 @@ Verification failed:
   // Violation Witness
 
   const x/52 = <loop variable>;
-  //    ^ could = [38, false ]
+  //    ^ could = [0, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
   const balance(0)/55 = <loop variable>;
-  //    ^ could = 38
+  //    ^ could = 0
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization

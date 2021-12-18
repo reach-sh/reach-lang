@@ -16,7 +16,7 @@ warning[RW0004]: There are no publications in the application.
 
   4|   Reach.App({}, [Participant('Alice', { f: Fun([UInt], Null) })], (A) => f(A));
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0004.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0004
 
 warning[RW0004]: There are no publications in the application.
 
@@ -24,5 +24,5 @@ warning[RW0004]: There are no publications in the application.
 
   4|   Reach.App({}, [Participant('Alice', { f: Fun([UInt], Null) })], (A) => f(A));
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0004.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0004
 

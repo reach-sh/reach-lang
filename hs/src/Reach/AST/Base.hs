@@ -118,7 +118,7 @@ getSrcLine rowNum fl =
 
 errorCodeDocUrl :: HasErrorCode a => a -> String
 errorCodeDocUrl e =
-  "https://docs.reach.sh/" <> errCode e <> ".html"
+  "https://docs.reach.sh/rsh/errors/#" <> errCode e
 
 
 getErrorMessage :: (HasErrorCode a, Show a, Foldable t) => t [SLCtxtFrame] -> SrcLoc -> Bool -> a -> String

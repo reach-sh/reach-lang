@@ -4,5 +4,5 @@ reachc: error[RE0014]: Invalid value for app option, verifyArithmetic: expected 
 
   4|   { verifyArithmetic: 5 },
 
-For further explanation of this error, see: https://docs.reach.sh/RE0014.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0014
 

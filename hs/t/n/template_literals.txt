@@ -7,5 +7,5 @@ reachc: error[RE0033]: Invalid Reach expression syntax: JSTemplateLiteral
 Trace:
   in [unknown function] from (./template_literals.rsh:7:17:function exp) at (./template_literals.rsh:7:13:application)
 
-For further explanation of this error, see: https://docs.reach.sh/RE0033.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0033
 

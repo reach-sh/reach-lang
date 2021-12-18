@@ -11,5 +11,5 @@ reachc: error[RAPI0002]: API "Writer_f" occurs multiple times in program
 
   21|     .api(U.f, (k) => {
 
-For further explanation of this error, see: https://docs.reach.sh/RAPI0002.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RAPI0002
 

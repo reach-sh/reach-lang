@@ -8,5 +8,5 @@ Trace:
   in "sqrt" from (reach standard library:214:28:function exp) at (./Err_Prim_InvalidArg_Dynamic.rsh:9:20:application)
   in [unknown function] from (./Err_Prim_InvalidArg_Dynamic.rsh:8:17:function exp) at (./Err_Prim_InvalidArg_Dynamic.rsh:8:13:application)
 
-For further explanation of this error, see: https://docs.reach.sh/RE0054.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0054
 

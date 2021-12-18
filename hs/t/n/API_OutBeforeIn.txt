@@ -11,5 +11,5 @@ reachc: error[RAPI0001]: API "Writer_f" calls interact.out() before interact.in(
 
   1| 'reach 0.1';
 
-For further explanation of this error, see: https://docs.reach.sh/RAPI0001.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RAPI0001
 

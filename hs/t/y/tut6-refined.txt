@@ -11,7 +11,7 @@ warning[RW0000]: Using a bare value as a time argument is now deprecated. Please
 
   79|           .timeout(DEADLINE, () => closeTo(B, informTimeout));
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
 
@@ -19,7 +19,7 @@ warning[RW0000]: Using a bare value as a time argument is now deprecated. Please
 
   72|           .timeout(DEADLINE, () => closeTo(A, informTimeout));
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
 
@@ -27,7 +27,7 @@ warning[RW0000]: Using a bare value as a time argument is now deprecated. Please
 
   65|           .timeout(DEADLINE, () => closeTo(B, informTimeout));
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
 
@@ -35,5 +35,5 @@ warning[RW0000]: Using a bare value as a time argument is now deprecated. Please
 
   53|         .timeout(DEADLINE, () => closeTo(A, informTimeout));
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 

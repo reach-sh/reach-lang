@@ -4,5 +4,5 @@ reachc: error[RE0099]: Strict mode expects conditional values to be of type `Boo
 
   9|       const x = 1 ? 2 : 3;
 
-For further explanation of this error, see: https://docs.reach.sh/RE0099.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0099
 

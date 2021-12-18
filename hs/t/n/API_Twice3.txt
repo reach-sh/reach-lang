@@ -11,5 +11,5 @@ reachc: error[RAPI0002]: API "P_get" occurs multiple times in program
 
   10|     .api(P.get, (apiReturn) => {
 
-For further explanation of this error, see: https://docs.reach.sh/RAPI0002.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RAPI0002
 

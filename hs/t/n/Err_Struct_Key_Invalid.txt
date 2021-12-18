@@ -4,5 +4,5 @@ reachc: error[RE0096]: Struct key `$x ` is of the wrong format. A struct key sho
 
   8|       const s = Struct([["$x ", UInt]]);
 
-For further explanation of this error, see: https://docs.reach.sh/RE0096.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0096
 

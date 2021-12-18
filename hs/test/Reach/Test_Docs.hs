@@ -17,7 +17,7 @@ import           Reach.Connector.ALGO         (AlgoError(..))
 import Reach.Warning (Warning (W_ExternalObject))
 
 docName :: String
-docName = "../docs/scrbl/ref-error-codes.scrbl"
+docName = "../docs/dev/src/rsh/errors/index.md"
 
 -- For each type of Error:
 --  Get the error code prefix (use random constructor)
@@ -40,7 +40,7 @@ getCodes :: String -> Int -> [T.Text]
 getCodes pre num =
   map (go . makeErrCode pre) [0 .. (num-1)]
   where
-    go x = "@error{" <> T.pack x <> "}"
+    go x = "## {#" <> T.pack x <> "}"
 
 missingDocs :: IO [T.Text]
 missingDocs = do

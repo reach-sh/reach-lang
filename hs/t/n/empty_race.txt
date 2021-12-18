@@ -4,5 +4,5 @@ reachc: error[RE0080]: Cannot optionally transition to consensus or have an empt
 
   11|       race().publish();
 
-For further explanation of this error, see: https://docs.reach.sh/RE0080.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0080
 

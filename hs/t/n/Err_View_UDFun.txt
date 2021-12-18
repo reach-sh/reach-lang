@@ -4,5 +4,5 @@ reachc: error[RE0108]: View functions cannot have unconstrained domains.
 
   6|   const V = View('Test', {
 
-For further explanation of this error, see: https://docs.reach.sh/RE0108.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0108
 

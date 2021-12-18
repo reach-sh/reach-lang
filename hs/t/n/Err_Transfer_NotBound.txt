@@ -4,5 +4,5 @@ reachc: error[RE0064]: Cannot transfer to unbound participant, Bob
 
   8|   transfer(100).to(Bob);
 
-For further explanation of this error, see: https://docs.reach.sh/RE0064.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0064
 

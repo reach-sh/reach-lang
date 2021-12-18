@@ -10,5 +10,5 @@ reachc: error[REP0000]: `continue` must be dominated by communication
 
   18|     continue;
 
-For further explanation of this error, see: https://docs.reach.sh/REP0000.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#REP0000
 

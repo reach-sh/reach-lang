@@ -4,5 +4,5 @@ reachc: error[RE0033]: Invalid Reach expression syntax: JSYieldExpression
 
   5|     yield 1;
 
-For further explanation of this error, see: https://docs.reach.sh/RE0033.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0033
 

@@ -4,5 +4,5 @@ reachc: error[RE0114]: Expected a `Type`, but received <primitive: SLPrim_Array>
 
   8|     Some: Array,
 
-For further explanation of this error, see: https://docs.reach.sh/RE0114.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0114
 

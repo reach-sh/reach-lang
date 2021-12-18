@@ -10,7 +10,7 @@ warning[RW0000]: `parallel_reduce` is now deprecated. It has been renamed from s
 
   11|         parallel_reduce([ 0 ])
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
 
@@ -18,5 +18,5 @@ warning[RW0000]: Using a bare value as a time argument is now deprecated. Please
 
   19|           .timeout(1, () => {
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 

@@ -4,5 +4,5 @@ reachc: error[RE0022]: Invalid Reach declaration; expected exactly one declarati
 
   3| const x = 1, y = 2;
 
-For further explanation of this error, see: https://docs.reach.sh/RE0022.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0022
 

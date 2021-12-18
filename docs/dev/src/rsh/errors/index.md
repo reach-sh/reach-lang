@@ -1,15 +1,7 @@
-
-
-
-
-
 # {#ref-error-codes} Error Codes
 
 This section provides an in depth explanation of the error codes produced from
 the Reach compiler.
-See the list on the left bar.
-
-
 
 ## {#RA0000} RA0000
 

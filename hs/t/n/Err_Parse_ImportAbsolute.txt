@@ -4,5 +4,5 @@ reachc: error[RP0007]: Invalid import: absolute path imports are not supported: 
 
   3| import '/tmp/blah.rsh'
 
-For further explanation of this error, see: https://docs.reach.sh/RP0007.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RP0007
 

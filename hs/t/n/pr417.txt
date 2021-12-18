@@ -4,5 +4,5 @@ reachc: error[RE0104]: Token reference based on dynamic computation, which Reach
 
   18|     x.match({
 
-For further explanation of this error, see: https://docs.reach.sh/RE0104.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0104
 

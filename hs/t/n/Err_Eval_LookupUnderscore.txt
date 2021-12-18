@@ -4,5 +4,5 @@ reachc: error[RE0069]: Invalid identifier reference. The _ identifier may never 
 
   6|     const y = _;
 
-For further explanation of this error, see: https://docs.reach.sh/RE0069.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0069
 

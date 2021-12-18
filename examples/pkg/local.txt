@@ -4,5 +4,5 @@ reachc: error[RI0003]: Cannot install packages; did you mean to run with `--inst
 
   3| import { bestNumber } from '@reach-sh/reach-example-package';
 
-For further explanation of this error, see: https://docs.reach.sh/RI0003.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RI0003
 

@@ -4,5 +4,5 @@ reachc: error[RE0001]: Invalid assignment
 
   4|   {}, [], () => { x *= 0; }
 
-For further explanation of this error, see: https://docs.reach.sh/RE0001.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0001
 

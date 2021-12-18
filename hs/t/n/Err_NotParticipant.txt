@@ -4,5 +4,5 @@ reachc: error[RE0063]: Expected a participant as an argument, instead got Bool
 
   9|     unknowable(false, A(_x));
 
-For further explanation of this error, see: https://docs.reach.sh/RE0063.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0063
 

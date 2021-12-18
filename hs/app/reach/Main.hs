@@ -243,8 +243,7 @@ dieConnectorModeNotSpecified = connectorMode <$> asks e_var >>= \case
     $ "Missing `REACH_CONNECTOR_MODE` environment variable - must be one of:"
     : L.sort s
    <> [ "Reach recommends adding this variable to your shell's profile settings by running `reach config`. See:"
-      , " - https://docs.reach.sh/ref-usage.html#(part._ref-usage-config)"
-      , " - https://docs.reach.sh/ref-usage.html#%28env._.R.E.A.C.H_.C.O.N.N.E.C.T.O.R_.M.O.D.E%29"
+      , " - https://docs.reach.sh/tool/usage/#ref-usage-config"
       ]
  where
   s = [ " * " <> packs c | c <- [ minBound .. maxBound :: Connector ]]

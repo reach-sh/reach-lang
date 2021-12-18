@@ -11,5 +11,5 @@ warning[RW0000]: Using a bare value as a time argument is now deprecated. Please
 
   31|                 .timeout(1000, () => {
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 

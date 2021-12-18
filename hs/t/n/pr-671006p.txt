@@ -8,14 +8,16 @@ Verification failed:
 
   // Violation Witness
 
+  const UInt.max = 1;
+
   const sum/167 = <loop variable>;
-  //    ^ could = 0
+  //    ^ could = 1
   //      from: ./pr-671006p.rsh:31:37:while
   const balance(0)/170 = <loop variable>;
-  //    ^ could = 0
+  //    ^ could = 1
   //      from: ./pr-671006p.rsh:31:37:while
   const v214 = <map reduction>;
-  //    ^ could = 1
+  //    ^ could = 0
   //      from: reach standard library:143:18:application
 
   // Theorem Formalization
@@ -34,5 +36,5 @@ warning[RW0000]: Using a bare value as a time argument is now deprecated. Please
 
   45|     .timeout(p.duration, () => {
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 

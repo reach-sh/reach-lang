@@ -4,5 +4,5 @@ reachc: error[RE0042]: Invalid unbound identifier in export: x. Did you mean: ["
 
   8| export {x};
 
-For further explanation of this error, see: https://docs.reach.sh/RE0042.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0042
 

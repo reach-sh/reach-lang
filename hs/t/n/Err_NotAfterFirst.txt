@@ -7,5 +7,5 @@ reachc: error[RE0119]: Cannot inspect publication details until after first publ
 Trace:
   in [unknown function] from (./Err_NotAfterFirst.rsh:6:13:function exp) at (./Err_NotAfterFirst.rsh:6:9:application)
 
-For further explanation of this error, see: https://docs.reach.sh/RE0119.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0119
 

@@ -4,5 +4,5 @@ reachc: error[RE0113]: `define` expects an argument of the form: `() => DEFINE_B
 
   13|       .define(5)
 
-For further explanation of this error, see: https://docs.reach.sh/RE0113.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0113
 

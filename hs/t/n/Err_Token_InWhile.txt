@@ -4,5 +4,5 @@ reachc: error[RE0103]: Token published within while, which Reach cannot track, y
 
   20|         A.publish(tok, amt)
 
-For further explanation of this error, see: https://docs.reach.sh/RE0103.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0103
 

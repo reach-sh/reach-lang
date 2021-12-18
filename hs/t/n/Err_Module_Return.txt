@@ -4,5 +4,5 @@ reachc: error[RE0034]: Nowhere to return to
 
   3| return 0;
 
-For further explanation of this error, see: https://docs.reach.sh/RE0034.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0034
 

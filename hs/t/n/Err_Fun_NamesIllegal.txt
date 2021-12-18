@@ -4,5 +4,5 @@ reachc: error[RE0045]: Invalid function expression. Anonymous functions must not
 
   7|   x.map(function m(i){ return i + 1; });
 
-For further explanation of this error, see: https://docs.reach.sh/RE0045.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0045
 

@@ -4,5 +4,5 @@ reachc: error[RP0010]: Expected a call-like expression, got something else.
 
   6|     unknowable(A, false);
 
-For further explanation of this error, see: https://docs.reach.sh/RP0010.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RP0010
 

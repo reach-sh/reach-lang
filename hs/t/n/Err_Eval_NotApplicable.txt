@@ -4,5 +4,5 @@ reachc: error[RE0035]: Invalid function application. Cannot apply: UInt
 
   5|     return 0();
 
-For further explanation of this error, see: https://docs.reach.sh/RE0035.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0035
 

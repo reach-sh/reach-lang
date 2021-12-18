@@ -4,7 +4,7 @@ warning[RW0000]: Declaring Participants with a tuple is now deprecated. Please u
 
   12|       ['A', { amts: Array(UInt, N), shouldPay: Fun([], Bool) }],
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
 reachc: error[RE0042]: Invalid unbound identifier in expression: interact. Did you mean: ["Contract","interval","intervalGt","intervalLt","Interval"]
 
@@ -15,5 +15,5 @@ reachc: error[RE0042]: Invalid unbound identifier in expression: interact. Did y
 Trace:
   in "publishE" from (./pay_multiple_currency.rsh:18:27:function exp) at (./pay_multiple_currency.rsh:32:20:application)
 
-For further explanation of this error, see: https://docs.reach.sh/RE0042.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0042
 

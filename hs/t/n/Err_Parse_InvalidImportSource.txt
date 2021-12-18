@@ -7,5 +7,5 @@ expecting "/" or valid git account character (alphanumeric, -, _, .)
 
   3| import '@bork';
 
-For further explanation of this error, see: https://docs.reach.sh/RI0004.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RI0004
 
