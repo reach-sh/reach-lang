@@ -156,12 +156,6 @@ load: /examples/rps-1-setup/index.mjs
 ```
 
 
-:::note
-Did you notice that `{!js} parseCurrency`, `{!js} newTestAccount`, `{!js} deploy`, and so on are links?
-In JavaScript code samples, you can click on the names of standard library functions to be brought to their documentation.
-:::
-
-
 This JavaScript code is similarly schematic and will be consistent across all of your test programs.
 
 + Line 1 imports the Reach standard library loader.
@@ -878,6 +872,13 @@ Line 21 allows each participant's Reach code to generate random numbers as neces
 These two changes might look identical, but they mean very different things.
 The first, line 21 in the Reach program, adds `{!rsh} hasRandom` to the interface that the backend expects the frontend to provide.
 The second, line 21 in the JavaScript, adds `{!rsh} hasRandom` to the implementation that the frontend provides to the backend.
+
+Next, we'll create the Reach app and the participant interact interface for Alice and Bob. Nothing here is new.
+
+```
+load: /examples/rps-5-trust/index.rsh
+range: 26-35
+```
 
 We're now at the crucial juncture where we will implement the actual application and ensure that Alice's hand is protected until after Bob reveals his hand.
 The simplest thing would be to have Alice just publish the wager, but this, of course, would just leave Bob vulnerable.
