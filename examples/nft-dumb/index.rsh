@@ -7,9 +7,9 @@ export const main =
     const Creator = Participant('Creator', {
         getId: Fun([], UInt) });
 
-    const Owner = ParticipantClass('Owner', {
-        newOwner: Fun([], Address),
-        showOwner: Fun([UInt, Address], Null) });
+    const Owner = API('Owner', {
+        newOwner: Fun([Address], Null),
+        showOwner: Fun([], Tuple(UInt, Address)) });
 
     const vNFT = View('NFT', {
         owner: Address });
@@ -26,28 +26,20 @@ export const main =
     while ( true ) {
       commit();
 
-      Owner.only(() => {
-        interact.showOwner(id, owner);
-        const amOwner = this == owner;
-        const newOwner =
-          amOwner ? declassify(interact.newOwner()) : this; });
-      Owner.publish(newOwner)
-        .when(amOwner)
-        .timeout(false);
-      require(this == owner);
-      // We could add a pay above and transfer(fee).to(Creator) below to
-      // implement a basic royalty.
-      //
-      // Rather than the owner just doing a transfer, we could have the owner
-      // start an auction, and encode the logic of the auction here and the
-      // creator could get a cut.
-      //
-      // We could change from a straight transfer to the creator and instead
-      // manage a royalty fund with its own shares
+      const [ [], returningA] = call(Owner.showOwner).throwTimeout(false);
+      returningA([id, owner]);
+
+      commit();
+      
+      const [[n], returningB] = call(Owner.newOwner).throwTimeout(false);
+      returningB(null)
+      const amOwner = this == owner;
+      const newOwner = amOwner ? n : owner;
+
+
       owner = newOwner;
       continue;
     }
     commit();
 
-    assert(false);
   });
