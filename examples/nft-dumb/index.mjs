@@ -2,17 +2,32 @@ import * as loader from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
 (async () => {
-  const stdlib = await loader.loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
 
-  const accAlice = await stdlib.newTestAccount(startingBalance);
-  const accBob = await stdlib.newTestAccount(startingBalance);
-  const accClaire = await stdlib.newTestAccount(startingBalance);
+  const [ accAlice, accBob, accClaire, accEve ] = await stdlib.newTestAccount(startingBalance);
 
-  const ctcAlice = accAlice.deploy(backend);
+  const ctcAlice = accAlice.contract(backend);
 
-  const accEve = await stdlib.newTestAccount(startingBalance);
-  const ctcEve = accEve.attach(backend, ctcAlice.getInfo());
+  const user = async(uid) => {
+    const acc = await stdlib.newTestAccount(startingBalance);
+    acc.setDebugLabel(uid);
+    return async () => {
+      const ctcEve = acc.contract(backend, ctcAlice.getInfo());
+      
+      const call = async (f) => {
+        let res = undefined;
+        try {
+          res = await f();
+        } catch (e) {
+          res = [`err`, e]
+        }
+        console.log(`res`, res);
+      }
+
+      await call(() => ctcEve.Owner.newOwner(accEve.getInfo()));
+    }
+  }
+
   const externalViewer = async () => {
     console.log(`Eve sees who the owner is...`);
     const owner = await ctcEve.v.NFT.owner();
@@ -29,7 +44,7 @@ import * as backend from './build/index.main.mjs';
 
   let trades = 3;
   const makeOwner = (acc, who) => {
-    const ctc = acc.attach(backend, ctcAlice.getInfo());
+    const ctc = acc.contract(backend, ctcAlice.getInfo());
     const others = everyone.filter(x => x[0] !== who);
     return backend.Owner(ctc, {
       newOwner: (async () => {
@@ -53,6 +68,10 @@ import * as backend from './build/index.main.mjs';
     });
   };
 
+  await call(() => ctcAlice.Owner.makeOwner(accAlice , ' Alice'));
+  await call(() => ctcAlice.Owner.showOwner(accBob   , '   Bob'));
+  await call(() => ctcAlice.Owner.showOwner(accClaire, 'Claire'));
+
   await Promise.all([
     backend.Creator(
       ctcAlice,
@@ -62,8 +81,5 @@ import * as backend from './build/index.main.mjs';
         return id; }
       },
     ),
-    makeOwner(accAlice , ' Alice'),
-    makeOwner(accBob   , '   Bob'),
-    makeOwner(accClaire, 'Claire'),
   ]);
 })();
