@@ -1625,12 +1625,7 @@ evalForm f args = do
           let msg = map (jse_expect_id at) args
           go $ p { slptc_msg = Just msg }
         Just TCM_Pay -> do
-          (x, my) <- case args of
-            [x] -> return (x, Nothing)
-            [x, y] -> do
-              return $ (x, Just y)
-            -- This error can be refactored
-            _ -> expect_ $ Err_ToConsensus_Args TCM_Pay args
+          (x, my) <- one_mtwo_args
           go $ p { slptc_amte = Just x, slptc_amt_req = my }
         Just TCM_When -> do
           x <- one_arg
@@ -1782,10 +1777,10 @@ evalForm f args = do
     one_arg = case args of
       [x] -> return $ x
       _ -> illegal_args 1
-    -- one_mtwo_args = case args of
-    --   [x]    -> return $ (x, Nothing)
-    --   [x, y] -> return $ (x, Just y)
-    --   _ -> illegal_args 1
+    one_mtwo_args = case args of
+      [x]    -> return $ (x, Nothing)
+      [x, y] -> return $ (x, Just y)
+      _ -> illegal_args 1
     two_args = case args of
       [x, y] -> return $ (x, y)
       _ -> illegal_args 2
