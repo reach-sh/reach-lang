@@ -12,8 +12,9 @@ import Data.Bits
 import Data.Aeson
 import GHC.Generics
 import qualified GHC.Stack as G
+import Data.Maybe (fromMaybe)
 
-data Identity = Consensus | Participant Participant
+data SimIdentity = Consensus | Participant Participant
   deriving (Eq,Ord,Show,Generic)
 
 type Participant = String
@@ -22,7 +23,15 @@ type ActorId = Int
 type PhaseId = Integer
 type AccountId = Int
 
-data MessageInfo = NotFixedYet (M.Map ActorId Store) | Fixed (ActorId,Store)
+data Message = Message
+  { m_store :: Store
+  , m_pay :: DLPayAmt
+  } deriving (Show,Generic)
+
+instance ToJSON Message where
+  toJSON (Message _ _) = "Message"
+
+data MessageInfo = NotFixedYet (M.Map ActorId Message) | Fixed (ActorId,Message)
   deriving (Show, Generic)
 
 instance ToJSON MessageInfo
@@ -180,12 +189,9 @@ ledgerNewToken acc tk = do
   (e, _) <- getState
   let ledger = e_ledger e
   let token_id = e_next_token e
-  supply' <- interp (dtn_supply tk)
-  case supply' of
-    V_UInt supply -> do
-      let new_nw_ledger = M.insert acc (M.singleton token_id supply) ledger
-      setGlobal $ e { e_ledger = new_nw_ledger, e_next_token = token_id + 1 }
-    _ -> impossible "expression interpreter"
+  supply <- vUInt <$> interp (dtn_supply tk)
+  let new_nw_ledger = M.insert acc (M.singleton token_id supply) ledger
+  setGlobal $ e { e_ledger = new_nw_ledger, e_next_token = token_id + 1 }
 
 data Action
   = A_TieBreak PhaseId [String]
@@ -237,11 +243,11 @@ addToStore x v = do
       setLocal $ l {l_locals = M.insert consensusId cslst' $ M.insert aid lst' locals}
     _ -> impossible "consensus store must exist"
 
-fixMessageInRecord :: PhaseId -> ActorId -> Store -> App ()
-fixMessageInRecord phId actId sto = do
+fixMessageInRecord :: PhaseId -> ActorId -> Store -> DLPayAmt -> App ()
+fixMessageInRecord phId actId sto pay = do
   (g, _) <- getState
   let msgs = e_messages g
-  let msgs' = M.insert phId (Fixed (actId,sto)) msgs
+  let msgs' = M.insert phId (Fixed (actId,Message {m_store = sto, m_pay = pay} )) msgs
   setGlobal $ g {e_messages = msgs'}
 
 incrNWtime :: Integer -> App ()
@@ -439,28 +445,19 @@ instance Interp DLExpr where
                   transferLedger simContract acc nwToken n
                   return V_Null
                 Just tok -> do
-                  ev <- interp tok
-                  case ev of
-                    V_UInt tok' -> do
-                      transferLedger simContract acc tok' n
-                      return V_Null
-                    _ -> impossible "unexpected error"
+                  ev <- vUInt <$> interp tok
+                  transferLedger simContract acc ev n
+                  return V_Null
             _ -> impossible "expression interpreter"
     DLE_TokenInit _at _dlarg -> return V_Null
     DLE_CheckPay _at _slcxtframes _dlarg _maybe_dlarg -> return $ V_Null
     DLE_Wait _at dltimearg -> case dltimearg of
       Left dlarg -> do
-        ev <- interp dlarg
-        case ev of
-          V_UInt n -> do
-            suspend $ PS_Suspend (A_AdvanceTime n)
-          _ -> impossible "unexpected error"
+        ev <- vUInt <$> interp dlarg
+        suspend $ PS_Suspend (A_AdvanceTime ev)
       Right dlarg -> do
-        ev <- interp dlarg
-        case ev of
-          V_UInt n -> do
-            suspend $ PS_Suspend (A_AdvanceSeconds n)
-          _ -> impossible "unexpected error"
+        ev <- vUInt <$> interp dlarg
+        suspend $ PS_Suspend (A_AdvanceSeconds ev)
     DLE_PartSet _at _slpart dlarg -> interp dlarg
     DLE_MapRef _at dlmvar dlarg -> do
       (g, _) <- getState
@@ -500,16 +497,13 @@ instance Interp DLExpr where
           return V_Null
         _ -> impossible "expression interpreter"
     DLE_TokenDestroy _at dlarg -> do
-      ev <- interp dlarg
-      case ev of
-        V_UInt tok -> do
-          (e, _) <- getState
-          let map_ledger = e_ledger e
-          let m = saferMapRef "DLE_TokenDestroy" $ M.lookup 0 map_ledger
-          let new_nw_ledger = M.insert 0 (M.delete tok m) map_ledger
-          setGlobal $ e {e_ledger = new_nw_ledger }
-          return V_Null
-        _ -> impossible "expression interpreter"
+      ev <- vUInt <$> interp dlarg
+      (e, _) <- getState
+      let map_ledger = e_ledger e
+      let m = saferMapRef "DLE_TokenDestroy" $ M.lookup 0 map_ledger
+      let new_nw_ledger = M.insert 0 (M.delete ev m) map_ledger
+      setGlobal $ e {e_ledger = new_nw_ledger }
+      return V_Null
     -- TODO: new stuff
     DLE_TimeOrder _at _assoc_maybe_arg_vars -> return V_Null
     DLE_GetContract _at -> impossible "undefined"
@@ -652,12 +646,7 @@ instance Interp LLStep where
       (g, l) <- getState
       let actId = l_curr_actor_id l
       phId <- getPhaseId actId
-      msgs' <- case M.lookup phId $ e_messages g of
-            Just m -> return m
-            Nothing -> do
-              let msg = NotFixedYet mempty
-              setGlobal g { e_messages = M.insert phId msg $ e_messages g }
-              return msg
+      let msgs' = fromMaybe (NotFixedYet mempty) $ M.lookup phId $ e_messages g
       let sends = M.mapKeys bunpack tc_send
       incrPhaseId
       isTheTimePast tc_mtime >>= \case
@@ -670,23 +659,22 @@ instance Interp LLStep where
                   case msgs' of
                     NotFixedYet _msgs'' -> do
                       _ <- suspend $ PS_Suspend (A_Contest phId)
-                      winner dlr actId phId
-                      interp $ dr_k
+                      (actId',_) <- poll phId
+                      runWithWinner dlr actId' phId
                     Fixed (actId',_msg) -> do
-                      winner dlr actId' phId
-                      interp $ dr_k
+                      runWithWinner dlr actId' phId
                 Just (DLSend {..}) -> do
                   case msgs' of
                     NotFixedYet msgs'' -> do
                       ds_msg' <- mapM interp ds_msg
                       let sto = M.fromList $ zip dr_msg ds_msg'
-                      setGlobal g { e_messages = M.insert phId (NotFixedYet $ M.insert actId sto msgs'') (e_messages g) }
+                      let m = Message {m_store = sto, m_pay = ds_pay}
+                      setGlobal g { e_messages = M.insert phId (NotFixedYet $ M.insert actId m msgs'') (e_messages g) }
                       _ <- suspend $ PS_Suspend (A_Contest phId)
-                      winner dlr actId phId
-                      interp $ dr_k
+                      (actId',_) <- poll phId
+                      runWithWinner dlr actId' phId
                     Fixed (actId',_msg) -> do
-                      winner dlr actId' phId
-                      interp $ dr_k
+                      runWithWinner dlr actId' phId
             Consensus -> do
               v <- suspend $ PS_Suspend (A_TieBreak phId $ M.keys sends)
               let actId' = fromIntegral $ vUInt v
@@ -696,15 +684,26 @@ instance Interp LLStep where
               m' <- saferMapRef ("LLS_ToCon") <$> M.lookup phId <$> e_messages <$> getGlobal
               let msgs = unfixedMsgs $ m'
               let winningMsg = saferMapRef ("Message not yet seen") $ M.lookup actId' msgs
-              _ <- fixMessageInRecord phId (fromIntegral actId') $ winningMsg
+              _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg) (m_pay winningMsg)
               winner dlr actId' phId
               consensusPayout accId (ds_pay dls)
               interp $ dr_k
 
+poll :: PhaseId -> App (ActorId,Store)
+poll phId = do
+  (g,l) <- getState
+  who <- show <$> whoIs (l_curr_actor_id l)
+  return $ fixedMsg $ saferMapRef ("early poll for " ++ who) $ M.lookup phId $ e_messages g
+
+runWithWinner :: DLRecv LLConsensus -> ActorId -> PhaseId -> App DLVal
+runWithWinner dlr actId phId = do
+  winner dlr actId phId
+  interp $ (dr_k dlr)
+
 winner :: DLRecv LLConsensus -> ActorId -> PhaseId -> App ()
 winner dlr actId phId = do
   g <- getGlobal
-  let winningMsg = fixedMsg $ saferMapRef "winner" $ M.lookup phId $ e_messages g
+  let (_,winningMsg) = fixedMsg $ saferMapRef "winner" $ M.lookup phId $ e_messages g
   accId <- getAccId actId
   bindConsensusMeta dlr actId accId
   let (xs,vs) = unzip $ M.toList winningMsg
@@ -820,15 +819,15 @@ vUInt :: G.HasCallStack => DLVal -> Integer
 vUInt (V_UInt n) = n
 vUInt _ = impossible "unexpected error: expected integer"
 
-unfixedMsgs :: G.HasCallStack => MessageInfo -> M.Map ActorId Store
+unfixedMsgs :: G.HasCallStack => MessageInfo -> M.Map ActorId Message
 unfixedMsgs (NotFixedYet m) = m
 unfixedMsgs _ = possible "unexpected error: expected unfixed message"
 
-fixedMsg :: G.HasCallStack => MessageInfo -> Store
-fixedMsg (Fixed (_,m)) = m
+fixedMsg :: G.HasCallStack => MessageInfo -> (ActorId,Store)
+fixedMsg (Fixed (a,m)) = (a,m_store m)
 fixedMsg _ = possible "unexpected error: expected fixed message"
 
-whoAmI :: App Identity
+whoAmI :: App SimIdentity
 whoAmI = do
   l <- getLocal
   let actId = l_curr_actor_id l
@@ -839,7 +838,7 @@ whoAmI = do
     Nothing -> return Consensus
     Just p -> return $ Participant p
 
-whoIs :: ActorId -> App Identity
+whoIs :: ActorId -> App SimIdentity
 whoIs actId = do
   l <- getLocal
   let locals = l_locals l
@@ -849,6 +848,6 @@ whoIs actId = do
     Nothing -> return Consensus
     Just p -> return $ Participant p
 
-partName :: Identity -> Participant
+partName :: SimIdentity -> Participant
 partName (Participant p) =  p
 partName _ = possible "expected participant"

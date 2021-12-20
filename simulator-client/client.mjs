@@ -59,20 +59,15 @@ const init = async () => {
   return r
 }
 
-const respondWithVal = async (s,a,v) => {
-  const r = await interact('POST', `${address}/states/${s}/actions/${a}/?data=${v}`, {})
+const respondWithVal = async (s,a,v,w=false) => {
+  const who = (w || w === 0) ? `&who=${w}` : ``
+  const r = await interact('POST', `${address}/states/${s}/actions/${a}/?data=${v}${who}`, {})
   console.log(r)
   return r
 }
 
 const initFor = async (s,a) => {
   const r = await interact('POST', `${address}/init/${a}/${s}`, {})
-  console.log(r)
-  return r
-}
-
-const changeActor = async (s) => {
-  const r = await interact('POST', `${address}/change_actor/${s}`, {})
   console.log(r)
   return r
 }
@@ -92,6 +87,5 @@ export {
   respondWithVal,
   ping,
   waitForPort,
-  changeActor,
   initFor
 };

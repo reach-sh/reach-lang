@@ -65,7 +65,7 @@ initSession = Session
   , e_nsid = 0
   , e_naid = 0
   , e_ids_actions = mempty
-  , e_actor_id = fromIntegral C.consensusId
+  , e_actor_id = C.consensusId
   , e_graph = mempty
   , e_src = Nothing
   , e_status = Initial
@@ -177,8 +177,8 @@ getProgState sid = do
     Just st -> return $ Just st
 
 changeActor :: C.ActorId -> WebM ()
-changeActor actid = do
-  modify $ \ st -> st {e_actor_id = actid}
+changeActor actId = do
+  modify $ \ st -> st {e_actor_id = actId}
 
 computeActions :: StateId -> WebM [C.Action]
 computeActions sid = do
@@ -268,15 +268,17 @@ app p = do
     as <- webM $ computeActions s
     json as
 
-  post "/change_actor/:s" $ do
-    s <- param "s"
-    _ <- webM $ changeActor s
-    json ("OK" :: String)
-
   post "/states/:s/actions/:a/" $ do
     s <- param "s"
     a <- param "a"
     v :: Integer <- param "data"
+    ps <- M.fromList <$> params
+    case M.lookup "who" ps of
+      Nothing -> return ()
+      Just prm -> do
+        case (parseParam prm) :: Either Text C.ActorId of
+          Left e -> possible $ show e
+          Right w -> webM $ changeActor $ fromIntegral w
     webM $ unblockProg s a $ C.V_UInt v
     json ("OK" :: String)
 

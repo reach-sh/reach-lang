@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "@reach-sh/simulator-client": "0.0.2"
+    "@reach-sh/simulator-client": "0.0.3"
   }
 }
