@@ -1614,7 +1614,7 @@ evalForm f args = do
         go p' = retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial $ p' { slpr_mode = Nothing }
         makeTimeoutArgs mode aa = Just (mode, fst aa, snd aa)
         retTimeout prm aa = go $ p { slpr_mtime = makeTimeoutArgs prm aa }
-    SLForm_Part_ToConsensus p@(ToConsensusRec {..}) -> do
+    SLForm_Part_ToConsensus p@(ToConsensusRec {..}) ->
       case slptc_mode of
         Just TCM_Publish -> do
           at <- withAt id
@@ -1634,15 +1634,15 @@ evalForm f args = do
           go $ p { slptc_api = True }
         Just TCM_Timeout -> do
           at <- withAt id
+          let proc = \case
+                JSExpressionParen _ e _ -> proc e
+                JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s ->
+                  return $ jsArrowBodyToBlock dt_s
+                _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
           x <-
             case args of
               [de] -> return $ (at, de, Nothing)
               [de, te] -> do
-                let proc = \case
-                      JSExpressionParen _ e _ -> proc e
-                      JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s ->
-                        return $ jsArrowBodyToBlock dt_s
-                      _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
                 te' <- proc te
                 return $ (at, de, Just te')
               _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
@@ -4532,6 +4532,11 @@ doForkAPI2Case args = do
     --- Delay error to next level
     ow -> return ow
 
+splitPayExpr :: JSAnnot -> JSExpression -> (JSExpression, JSExpression)
+splitPayExpr a = \case
+  JSArrayLiteral _ xs _ | x:y:_ <- jsa_flatten xs -> (x, y)
+  ow -> (ow, noop a 1)
+
 doFork :: [JSStatement] -> ForkRec -> App SLStmtRes
 doFork ks (ForkRec {..}) = locAt slf_at $ do
   let cases = slf_cases
@@ -4603,10 +4608,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   let go pcases = do
         let (ats, whos, who_es, before_es, paytup_es, after_es) =
               unzip6 $ map (\ForkCase {..} -> (fc_at, fc_who, fc_who_e, fc_before, fc_pay, fc_after)) pcases
-        let (pay_es, pay_reqs) = unzip $ map (\case
-              JSArrayLiteral _ xs _ | x:y:_ <- jsa_flatten xs -> (x, y)
-              ow -> (ow, jsArrowStmts a [JSIdentifier a "_"] [])
-              ) paytup_es
+        let (pay_es, pay_reqs) = unzip $ map (splitPayExpr a) paytup_es
         let who = hdDie whos
         let who_e = hdDie who_es
         let c_at = hdDie ats
@@ -4697,9 +4699,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let tc_head_e = fc_who_e
         let before_tc_ss = [makeOnly fc_who_e only_body]
         let pa = jsa fc_pay
-        let (fc_pay_e, fc_pay_req) = case fc_pay of
-              JSArrayLiteral _ xs _ | x:y:_ <- jsa_flatten xs -> (x, y)
-              ow -> (ow, jsArrowStmts a [JSIdentifier a "_"] [])
+        let (fc_pay_e, fc_pay_req) = splitPayExpr a fc_pay
         let pay_e = JSCallExpression fc_pay_e pa (JSLOne msg_e) pa
         let pay_req = jsArrowExpr pa [] $ jsCall pa fc_pay_req [msg_e]
         isApi <- is_api $ bpack fc_who
@@ -4894,11 +4894,6 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
 
 jsArrow :: JSAnnot -> [JSExpression] -> JSStatement -> JSExpression
 jsArrow a args s = JSArrowExpression args' a (jsStmtToConciseBody s)
-  where
-    args' = JSParenthesizedArrowParameterList a (toJSCL args) a
-
-jsArrowBlock :: JSAnnot -> [JSExpression] -> JSBlock -> JSExpression
-jsArrowBlock a args b = JSArrowExpression args' a (JSConciseFunBody b)
   where
     args' = JSParenthesizedArrowParameterList a (toJSCL args) a
 
