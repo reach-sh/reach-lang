@@ -8,15 +8,15 @@ Verification failed:
 
   // Violation Witness
 
-  const v21 = <function return>;
+  const v25 = <function return>;
   //    ^ could = 1
   //      from: ./pr175.rsh:5:22:block app
 
   // Theorem Formalization
 
-  const v22 = v21 == 0;
+  const v26 = v25 == 0;
   //    ^ would be false
-  assert(v22);
+  assert(v26);
 
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest

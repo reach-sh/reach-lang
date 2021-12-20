@@ -4,7 +4,7 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "Contributor" is honest
   Verifying when ONLY "Fundraiser" is honest
-Checked 53 theorems; No failures!
+Checked 54 theorems; No failures!
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
 
   ./pr-671006.rsh:45:13:application

@@ -1488,9 +1488,10 @@ compileTimeArg = \case
     expect_ Err_TimeArg_NotStatic
   v -> do
     f <- lookStdlib "relativeTime"
+    c <- lookStdlib "require"
     at <- withAt id
     liftIO $ emitWarning (Just at) $ W_Deprecated D_UntypedTimeArg
-    compileTimeArg =<< ensure_public =<< evalApplyVals' f [public v]
+    compileTimeArg =<< ensure_public =<< evalApplyVals' f [public v, public c]
   where
     correctData = (==) (dataTypeMap $ eitherT T_UInt T_UInt)
 
@@ -1708,8 +1709,8 @@ evalForm f args = do
     SLForm_wait -> do
       ensure_mode SLM_Step "wait"
       amt_e <- one_arg
-      amt_sv <- locStMode SLM_ConsensusPure $ evalExpr amt_e
-      amt_ta <- compileTimeArg =<< ensure_public amt_sv
+      amt_ta <- locStMode SLM_ConsensusPure $
+                  evalExpr amt_e >>= ensure_public >>= compileTimeArg
       doBaseWaitUpdate amt_ta
       at <- withAt id
       ctxt_lift_eff $ DLE_Wait at amt_ta
@@ -4360,7 +4361,7 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
             setSt k_st
             return $ (Nothing, k_cr)
           _ -> do
-            delay_ta <- compileTimeArg delay_sv
+            delay_ta <- locSt st_pure $ compileTimeArg delay_sv
             doBaseWaitUpdate delay_ta
             case mtimeb of
               Nothing ->
@@ -4698,9 +4699,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let pa = jsa fc_pay
         let (fc_pay_e, fc_pay_req) = case fc_pay of
               JSArrayLiteral _ xs _ | x:y:_ <- jsa_flatten xs -> (x, y)
-              ow -> (ow, jsArrowStmts a [] [])
-        liftIO $ putStrLn $ "fc_pay_e: " <> show (pretty fc_pay_e)
-        liftIO $ putStrLn $ "fc_pay_req: " <> show (pretty fc_pay_req)
+              ow -> (ow, jsArrowStmts a [JSIdentifier a "_"] [])
         let pay_e = JSCallExpression fc_pay_e pa (JSLOne msg_e) pa
         let pay_req = jsArrowExpr pa [] $ jsCall pa fc_pay_req [msg_e]
         isApi <- is_api $ bpack fc_who
