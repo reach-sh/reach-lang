@@ -16,6 +16,10 @@ for i in $LAYERS; do
 	CACHE_FROM="--cache-from=${IMAGE_NAME}:${i}-${CIRCLE_BRANCH} --cache-from=${IMAGE_NAME}:${i}-master ${CACHE_FROM}";
 done
 
+prepare_buildx () {
+    docker buildx create --use    
+}
+
 build_image () {
     LAYER=$1
     if [ "x${LAYER}" != "x" ]; then
@@ -26,8 +30,10 @@ build_image () {
         TARGET=""
     fi
 
-    docker build $TAG $TARGET $CACHE_FROM $ARGS --file $DOCKER_FILE .
+    docker buildx build --platform=linux/arm64,linux/amd64 -o type=image $TAG $TARGET $CACHE_FROM $ARGS --file $DOCKER_FILE .
 }
+
+prepare_buildx
 
 for i in $LAYERS; do
     build_image $i
