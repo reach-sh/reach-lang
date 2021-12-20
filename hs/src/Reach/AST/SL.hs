@@ -449,16 +449,6 @@ data ToConsensusMode
   | TCM_Api
   deriving (Eq, Generic, Show)
 
-instance Pretty ToConsensusMode where
-  pretty = \case
-    TCM_Publish -> "publish"
-    TCM_Pay -> "pay"
-    TCM_When -> "when"
-    TCM_Timeout -> "timeout"
-    TCM_ThrowTimeout -> "throwTimeout"
-    TCM_Fork -> "fork"
-    TCM_Api -> "api"
-
 data ForkMode
   = FM_Case
   | FM_API

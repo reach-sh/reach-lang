@@ -1614,11 +1614,6 @@ evalForm f args = do
         makeTimeoutArgs mode aa = Just (mode, fst aa, snd aa)
         retTimeout prm aa = go $ p { slpr_mtime = makeTimeoutArgs prm aa }
     SLForm_Part_ToConsensus p@(ToConsensusRec {..}) -> do
-      let proc tcm = \case
-            JSExpressionParen _ e _ -> proc tcm e
-            JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s ->
-              return $ jsArrowBodyToBlock dt_s
-            _ -> expect_ $ Err_ToConsensus_Args tcm args
       case slptc_mode of
         Just TCM_Publish -> do
           at <- withAt id
@@ -1642,9 +1637,14 @@ evalForm f args = do
             case args of
               [de] -> return $ (at, de, Nothing)
               [de, te] -> do
-                te' <- proc TCM_Timeout te
+                let proc = \case
+                      JSExpressionParen _ e _ -> proc e
+                      JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s ->
+                        return $ jsArrowBodyToBlock dt_s
+                      _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
+                te' <- proc te
                 return $ (at, de, Just te')
-              _ -> expect_ $ Err_ToConsensus_Args TCM_Timeout args
+              _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
           go $ p { slptc_timeout = Just x }
         Just TCM_ThrowTimeout -> do
           at <- withAt id
