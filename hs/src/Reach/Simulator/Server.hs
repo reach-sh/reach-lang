@@ -48,6 +48,7 @@ data Status = Initial | Running | Done
 instance ToJSON Status
 instance FromJSON Status
 
+-- TODO: improve actions API
 data Session = Session
   { e_states_actions :: M.Map StateId [ActionId]
   , e_nsid :: Int
