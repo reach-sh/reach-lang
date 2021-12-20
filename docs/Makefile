@@ -14,6 +14,7 @@ NAME=reach-docs
 .PHONY: serve-up
 serve-up: serve-down
 	docker run --name $(NAME) -v $$(pwd)/build:/usr/share/nginx/html:ro -d -p 8080:80 nginx:alpine
+	@echo The docs are available at: http://localhost:8080/
 
 .PHONY: serve-down
 serve-down:

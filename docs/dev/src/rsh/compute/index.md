@@ -12,7 +12,7 @@ This section describes the common features available in all Reach contexts.
 // single-line comment
 /* multi-line
  * comment
- */ 
+ */
 ```
 
 
@@ -30,7 +30,7 @@ It is invalid to nest a multi-line comment within a multi-line comment.
 { if ( x < y ) {
     return "Why";
   } else {
-    return "Ecks"; } } 
+    return "Ecks"; } }
 ```
 
 
@@ -118,7 +118,7 @@ Those values are available as their corresponding bound identifiers in the state
 @{ref("rsh", "function")}
 ```reach
 function randomBool() {
-  return (interact.random() % 2) == 0; }; 
+  return (interact.random() % 2) == 0; };
 ```
 
 
@@ -148,7 +148,7 @@ For example,
 
 ```reach
 const x = 3;
-const x = 4; 
+const x = 4;
 ```
 
 
@@ -160,7 +160,7 @@ only known to a single participant. For example,
 Alice.only(() => {
   const x = 3; });
 Bob.only(() => {
-  const x = 3; }); 
+  const x = 3; });
 ```
 
 
@@ -185,7 +185,7 @@ const [_, x, _] = [1, 2, 3];
 return 17;
 return 3 + 4;
 return f(2, false);
-return; 
+return;
 ```
 
 
@@ -199,7 +199,7 @@ For example,
 
 ```reach
 { return 1;
-  return 2; } 
+  return 2; }
 ```
 
 
@@ -214,7 +214,7 @@ Furthermore, a `{!rsh} return` must have an empty continuation (i.e. it must be 
 if ( 1 + 2 < 3 ) {
   return "Yes!";
 } else {
-  return "No, waaah!"; } 
+  return "No, waaah!"; }
 ```
 
 
@@ -232,7 +232,7 @@ if ( x < y ) {
   const z = 3; }
 else {
   const z = 4; }
-return z; 
+return z;
 ```
 
 
@@ -252,7 +252,7 @@ switch ( mi ) {
  case Some: return mi + 10; }
 switch ( mi ) {
  case None: return 8;
- default: return 41; } 
+ default: return 41; }
 ```
 
 
@@ -277,7 +277,7 @@ A @{defn("block statement")} is when a block occurs in a statement position, the
 
 ```reach
 const x = 4;
-return x; 
+return x;
 ```
 
 
@@ -285,7 +285,7 @@ evaluates to `{!rsh} 4`, but
 
 ```reach
 { const x = 4; }
-return x; 
+return x;
 ```
 
 
@@ -316,7 +316,7 @@ A `{!rsh} throw` must have an empty tail.
 
 ```reach
 4;
-f(2, true); 
+f(2, true);
 ```
 
 
@@ -333,7 +333,7 @@ The remainder of this section enumerates each kind of expression.
 
 @{ref("rsh", "'use strict'")}
 ```reach
-'use strict'; 
+'use strict';
 ```
 
 
@@ -349,7 +349,7 @@ const foo = (o) =>
   o ? o.b : false;
 
 void foo({ b: true });
-void foo(false); 
+void foo(false);
 ```
 
 
@@ -361,7 +361,7 @@ But, in strict mode, Reach will ensure that this program treats `{!rsh} o` as
 having a single type and detect an error in the program as follows:
 
 ```
-reachc: error: Invalid field access. Expected object, got: Bool 
+reachc: error: Invalid field access. Expected object, got: Bool
 ```
 
 
@@ -377,7 +377,7 @@ const foo = (mo) =>
   });
 
 void foo(MObj.Some({ b : true }));
-void foo(MObj.None()); 
+void foo(MObj.None());
 ```
 
 
@@ -402,7 +402,7 @@ can be useful when dealing with libraries that are written in strict mode.
 ```reach
 X
 Y
-Z 
+Z
 ```
 
 
@@ -418,7 +418,7 @@ assert( amount <= heap1 )
 step( moveA )
 digest( coinFlip )
 interact.random()
-declassify( _coinFlip ) 
+declassify( _coinFlip )
 ```
 
 
@@ -532,7 +532,7 @@ true
 false
 null
 "reality bytes"
-'it just does' 
+'it just does'
 ```
 
 
@@ -607,7 +607,7 @@ a !== b
 a > b
 a >= b
 a <= b
-a < b 
+a < b
 ```
 
 
@@ -678,7 +678,7 @@ If it is `{!rsh} false`, then the connector will ensure this dynamically.
 xor(false, false); // false
 xor(false, true);  // true
 xor(true, false);  // true
-xor(true, true);   // false 
+xor(true, true);   // false
 ```
 
 
@@ -705,7 +705,7 @@ A byte string extended in this way is called @{defn("padded")}, because it is ex
 ### Parenthesized expression
 
 ```reach
-(a + b) - c 
+(a + b) - c
 ```
 
 
@@ -715,7 +715,7 @@ An expression may be parenthesized, as in `{!rsh} (EXPR)`.
 
 ```reach
 [ ]
-[ 1, 2 + 3, 4 * 5 ] 
+[ 1, 2 + 3, 4 * 5 ]
 ```
 
 
@@ -727,7 +727,7 @@ A @{defn("tuple")} literal, written `{!rsh} [ EXPR_0, ..., EXPR_n ]`, is an expr
 
 @{ref("rsh", "array")}
 ```reach
-const x = array(UInt, [1, 2, 3]); 
+const x = array(UInt, [1, 2, 3]);
 ```
 
 
@@ -736,7 +736,7 @@ Converts a tuple of homogeneous values of the specific type into an @{defn("arra
 ### Element reference
 
 ```reach
-arr[3] 
+arr[3]
 ```
 
 
@@ -757,7 +757,7 @@ If `{!rsh} REF_EXPR` is a mapping and `{!rsh} IDX_EXPR` evaluates to an address,
 Tuple.length(tup);
 tup.length;
 Array.length(arr);
-arr.length; 
+arr.length;
 ```
 
 
@@ -774,7 +774,7 @@ Both may be abbreviated as `{!rsh} expr.length` where `{!rsh} expr` evaluates to
 Tuple.set(tup, idx, val);
 tup.set(idx, val);
 Array.set(arr, idx, val);
-arr.set(idx, val); 
+arr.set(idx, val);
 ```
 
 
@@ -791,7 +791,7 @@ Both may be abbreviated as `{!rsh} expr.set(idx, val)` where `{!rsh} expr` evalu
 @{ref("rsh", "elemType")}
 ```reach
 Array.elemType(arr)
-arr.elemType 
+arr.elemType
 ```
 
 
@@ -808,7 +808,7 @@ The following methods are available on any @{ref("rsh", "Foldable")}`{!rsh} Fold
 c.forEach(f)
 Foldable.forEach(c, f)
 Array.forEach(c, f)
-Map.forEach(c, f) 
+Map.forEach(c, f)
 ```
 
 
@@ -822,7 +822,7 @@ This may be abbreviated as `{!rsh} c.forEach(f)`.
 Foldable.all(c, f)
 Array.all(c, f)
 Map.all(c, f)
-c.all(f) 
+c.all(f)
 ```
 
 
@@ -836,7 +836,7 @@ by every element of the container, `c`.
 Foldable.any(c, f)
 Array.any(c, f)
 Map.any(c, f)
-c.any(f) 
+c.any(f)
 ```
 
 
@@ -850,7 +850,7 @@ by at least one element of the container, `c`.
 Foldable.or(c)
 Array.or(c)
 Map.or(c)
-c.or() 
+c.or()
 ```
 
 
@@ -863,7 +863,7 @@ c.or()
 Foldable.and(c)
 Array.and(c)
 Map.and(c)
-c.and() 
+c.and()
 ```
 
 
@@ -876,7 +876,7 @@ c.and()
 Foldable.includes(c, x)
 Array.includes(c, x)
 Map.includes(c, x)
-c.includes(x) 
+c.includes(x)
 ```
 
 
@@ -890,7 +890,7 @@ the element, `x`.
 Foldable.count(c, f)
 Array.count(c, f)
 Map.count(c, f)
-c.count(f) 
+c.count(f)
 ```
 
 
@@ -904,7 +904,7 @@ satisfy the predicate, `f`.
 Foldable.size(c)
 Array.size(c)
 Map.size(c)
-c.size() 
+c.size()
 ```
 
 
@@ -917,7 +917,7 @@ c.size()
 Foldable.min(c)
 Array.min(c)
 Map.min(c)
-c.min() 
+c.min()
 ```
 
 
@@ -930,7 +930,7 @@ c.min()
 Foldable.max(c)
 Array.max(c)
 Map.max(c)
-c.max() 
+c.max()
 ```
 
 
@@ -943,7 +943,7 @@ c.max()
 Foldable.sum(c)
 Array.sum(c)
 Map.sum(c)
-c.sum() 
+c.sum()
 ```
 
 
@@ -956,7 +956,7 @@ c.sum()
 Foldable.product(c)
 Array.product(c)
 Map.product(c)
-c.product() 
+c.product()
 ```
 
 
@@ -969,7 +969,7 @@ c.product()
 Foldable.average(c)
 Array.average(c)
 Map.average(c)
-c.average() 
+c.average()
 ```
 
 
@@ -984,7 +984,7 @@ following methods may be used with `{!rsh} Array`s.
 
 @{ref("rsh", "iota")}
 ```reach
-Array.iota(5) 
+Array.iota(5)
 ```
 
 
@@ -997,7 +997,7 @@ The given `{!rsh} len` must evaluate to an integer at compile-time.
 @{ref("rsh", "Array_replicate")}@{ref("rsh", "replicate")}
 ```reach
 Array.replicate(5, "five")
-Array_replicate(5, "five") 
+Array_replicate(5, "five")
 ```
 
 
@@ -1010,7 +1010,7 @@ The given `{!rsh} len` must evaluate to an integer at compile-time.
 @{ref("rsh", "concat")}
 ```reach
 Array.concat(x, y)
-x.concat(y) 
+x.concat(y)
 ```
 
 
@@ -1022,7 +1022,7 @@ This may be abbreviated as `{!rsh} x.concat(y)`.
 @{ref("rsh", "Array_empty")}@{ref("rsh", "empty")}
 ```reach
 Array_empty
-Array.empty 
+Array.empty
 ```
 
 
@@ -1035,7 +1035,7 @@ It may also be written `{!rsh} Array_empty`.
 @{ref("rsh", "zip")}
 ```reach
 Array.zip(x, y)
-x.zip(y) 
+x.zip(y)
 ```
 
 
@@ -1047,7 +1047,7 @@ This may be abbreviated as `{!rsh} x.zip(y)`.
 @{ref("rsh", "map")}
 ```reach
 Array.map(arr, f)
-arr.map(f) 
+arr.map(f)
 ```
 
 
@@ -1063,7 +1063,7 @@ For example, `{!rsh} Array.iota(4).map(Array.iota(4), add)` returns `{!rsh} [0, 
 @{ref("rsh", "mapWithIndex")}
 ```reach
 Array.mapWithIndex(arr, f)
-arr.mapWithIndex(f) 
+arr.mapWithIndex(f)
 ```
 
 
@@ -1076,7 +1076,7 @@ Unlike `{!rsh} Array.map`, this function is not generalized to an arbitrary numb
 @{ref("rsh", "reduce")}
 ```reach
 Array.reduce(arr, z, f)
-arr.reduce(z, f) 
+arr.reduce(z, f)
 ```
 
 
@@ -1092,7 +1092,7 @@ For example, `{!rsh} Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x 
 @{ref("rsh", "reduceWithIndex")}
 ```reach
 Array.reduceWithIndex(arr, z, f)
-arr.reduceWithIndex(z, f) 
+arr.reduceWithIndex(z, f)
 ```
 
 
@@ -1105,7 +1105,7 @@ Unlike `{!rsh} Array.reduce`, this function is not generalized to an arbitrary n
 @{ref("rsh", "indexOf")}
 ```reach
 Array.indexOf(arr, x)
-arr.indexOf(x) 
+arr.indexOf(x)
 ```
 
 
@@ -1118,7 +1118,7 @@ the value is not present in the array, `{!rsh} None` is returned.
 @{ref("rsh", "findIndex")}
 ```reach
 Array.findIndex(arr, f)
-arr.findIndex(f) 
+arr.findIndex(f)
 ```
 
 
@@ -1131,7 +1131,7 @@ no value in the array satisfies the predicate, `{!rsh} None` is returned.
 @{ref("rsh", "find")}
 ```reach
 Array.find(arr, f)
-arr.find(f) 
+arr.find(f)
 ```
 
 
@@ -1144,7 +1144,7 @@ array satisfies the predicate, `{!rsh} None` is returned.
 @{ref("rsh", "withIndex")}
 ```reach
 Array.withIndex(arr)
-arr.withIndex() 
+arr.withIndex()
 ```
 
 
@@ -1173,7 +1173,7 @@ operations and those of `{!rsh} Foldable` within the `{!rsh} invariant` of a `{!
 
 ```reach
 Map.reduce(map, z, f)
-map.reduce(z, f) 
+map.reduce(z, f)
 ```
 
 
@@ -1308,7 +1308,7 @@ const burger = Taste.Umami();
 const Shape = Data({ Circle: Object({r: UInt}),
                      Square: Object({s: UInt}),
                      Rect: Object({w: UInt, h: UInt}) });
-const nice = Shape.Circle({r: 5}); 
+const nice = Shape.Circle({r: 5});
 ```
 
 
@@ -1327,7 +1327,7 @@ const bidB = MayInt.None(null);
 
 const getBid = (m) => fromMaybe(m, (() => 0), ((x) => x));
 const bidSum = getBid(bidA) + getBid(bidB);
-assert(bidSum == 42); 
+assert(bidSum == 42);
 ```
 
 
@@ -1335,7 +1335,7 @@ assert(bidSum == 42);
 
 `{!rsh} Maybe` is defined by
 ```reach
-export const Maybe = (A) => Data({None: Null, Some: A}); 
+export const Maybe = (A) => Data({None: Null, Some: A});
 ```
 
 
@@ -1381,7 +1381,7 @@ either return the application of the function, `{!rsh} f`, to the `{!rsh} Some` 
 
 `{!rsh} Either` is defined by
 ```reach
-export const Either = (A, B) => Data({Left: A, Right: B}); 
+export const Either = (A, B) => Data({Left: A, Right: B});
 ```
 
 
@@ -1393,7 +1393,7 @@ carry additional information about the error.
 
 @{ref("rsh", "either")}
 ```reach
-either(e, onLeft, onRight) 
+either(e, onLeft, onRight)
 ```
 
 
@@ -1407,7 +1407,7 @@ const r = e.Right(true);
 isLeft(l);  // true
 isRight(l); // false
 const x = fromLeft(l, 0);      // x = 1
-const y = fromRight(l, false); // y = false 
+const y = fromRight(l, false); // y = false
 ```
 
 
@@ -1462,7 +1462,7 @@ its cases if it is within a consensus step.
 
 @{ref("rsh", "?")}
 ```reach
-choosesFirst ? [ heap1 - amount, heap2 ] : [ heap1, heap2 - amount ] 
+choosesFirst ? [ heap1 - amount, heap2 ] : [ heap1, heap2 - amount ]
 ```
 
 
@@ -1505,7 +1505,7 @@ Like function definitions, arrow expressions may use default argument notation a
 
 @{ref("rsh", "makeEnum")}
 ```reach
-const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3); 
+const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3);
 ```
 
 
@@ -1521,7 +1521,7 @@ and the next N values are distinct `{!rsh} UInt`s.
 
 @{ref("rsh", "assert")}
 ```reach
-assert( claim, [msg] ) 
+assert( claim, [msg] )
 ```
 
 
@@ -1544,7 +1544,7 @@ See [the guide section on verification](##guide-assert) to better understand how
 @{ref("rsh", "forall")}
 ```reach
 forall( Type )
-forall( Type, (var) => BLOCK ) 
+forall( Type, (var) => BLOCK )
 ```
 
 
@@ -1555,7 +1555,7 @@ The two argument version is an abbreviation of calling the second argument with 
 This is convenient for writing general claims about expressions, such as
 
 ```reach
-forall(UInt, (x) => assert(x == x)); 
+forall(UInt, (x) => assert(x == x));
 ```
 
 
@@ -1563,7 +1563,7 @@ forall(UInt, (x) => assert(x == x));
 
 @{ref("rsh", "possible")}
 ```reach
-possible( claim, [msg] ) 
+possible( claim, [msg] )
 ```
 
 
@@ -1574,7 +1574,7 @@ It accepts an optional bytes argument, which is included in any reported violati
 
 @{ref("rsh", "digest")}
 ```reach
-digest( arg_0, ..., arg_n ) 
+digest( arg_0, ..., arg_n )
 ```
 
 
@@ -1587,7 +1587,7 @@ The exact algorithm used depends on the connector.
 @{ref("rsh", "balance")}
 ```reach
 balance();
-balance(gil); 
+balance(gil);
 ```
 
 
@@ -1598,7 +1598,7 @@ It takes an optional non-network token value, in which case it returns the balan
 
 @{ref("rsh", "getContract")}
 ```reach
-getContract() 
+getContract()
 ```
 
 
@@ -1609,7 +1609,7 @@ This function may not be called until after the first publication (which creates
 
 @{ref("rsh", "getAddress")}
 ```reach
-getAddress() 
+getAddress()
 ```
 
 
@@ -1620,7 +1620,7 @@ This function may not be called until after the first publication (which creates
 
 @{ref("rsh", "lastConsensusTime")}
 ```reach
-lastConsensusTime() 
+lastConsensusTime()
 ```
 
 
@@ -1638,7 +1638,7 @@ This aides scalability, because it increases the number of times when an operati
 
 @{ref("rsh", "lastConsensusSecs")}
 ```reach
-lastConsensusSecs() 
+lastConsensusSecs()
 ```
 
 
@@ -1649,7 +1649,7 @@ lastConsensusSecs()
 @{ref("rsh", "baseWaitTime")}@{ref("rsh", "baseWaitSecs")}
 ```reach
 baseWaitTime()
-baseWaitSecs() 
+baseWaitSecs()
 ```
 
 
@@ -1660,14 +1660,17 @@ This is either the same as `{!rsh} lastConsensusTime` (`{!rsh} lastConsensusSecs
 
 @{ref("rsh", "relativeTime")}@{ref("rsh", "absoluteTime")}@{ref("rsh", "relativeSecs")}@{ref("rsh", "absoluteSecs")}
 ```reach
-relativeTime(amt)
-absoluteTime(time)
-relativeSecs(amt)
-absoluteSecs(secs)
+relativeTime(amt, ?claim)
+absoluteTime(time, ?claim)
+relativeSecs(amt, ?claim)
+absoluteSecs(secs, ?claim)
 ```
 
 
 These functions return @{defn("time arguments")}, which are instances of the type `{!rsh} Either(UInt, UInt)`, where `{!rsh} Left` variants refer to absolute network time and `{!rsh} Right` variants refer to absolute network seconds.
+
+These functions take an optional function argument, `claim`, which will be used to
+verify arithmetic when necessary. In most cases, one would pass `assume`, `require`, or `assert`. This argument is only needed when `verifyArithmetic` is enabled. The default value of this argument is a no-op.
 
 The `{!rsh} absoluteTime` and `{!rsh} absoluteSecs` are equivalent to `{!rsh} Left` and `{!rsh} Right` variant tags.
 
@@ -1675,11 +1678,33 @@ The `{!rsh} relativeTime` and `{!rsh} relativeSecs` functions add `{!rsh} baseWa
 
 If a time argument is required, an integer value is allowed and is interpreted as a `{!rsh} relativeTime`, but this behavior is deprecated and you will see a warning.
 
+### Time verification - `verifyRelativeTime`, `verifyAbsoluteTime`, `verifyRelativeSecs`, `verifyAbsoluteSecs`
+
+@{ref("rsh", "verifyRelativeTime")}@{ref("rsh", "verifyAbsoluteTime")}@{ref("rsh", "verifyRelativeSecs")}@{ref("rsh", "verifyAbsoluteSecs")}
+```reach
+verifyRelativeTime(amt, claim)
+verifyAbsoluteTime(time, claim)
+verifyRelativeSecs(amt, claim)
+verifyAbsoluteSecs(secs, claim)
+```
+
+When using `verifyArithmetic` and a dynamic timeout argument, it will be necessary to verify that the timeout calculation will not overflow. When producing the interact timeout value, you will want to use these functions to make `assume` and `require` claims about the value. For example:
+
+```reach
+A.only(() => {
+  const t = declassify(interact.getTimeout());
+  verifyAbsoluteTime(t, assume);
+});
+A.publish(t);
+verifyAbsoluteTime(t, require);
+// ...
+```
+
 ### `makeDeadline`
 
 @{ref("rsh", "makeDeadline")}
 ```reach
-const [ timeRemaining, keepGoing ] = makeDeadline(10); 
+const [ timeRemaining, keepGoing ] = makeDeadline(10);
 ```
 
 
@@ -1696,7 +1721,7 @@ const _ = parallelReduce(...)
   .invariant(...)
   .while( keepGoing() )
   .case(...)
-  .timeout( timeRemaining(), () => { ... }) 
+  .timeout( timeRemaining(), () => { ... })
 ```
 
 
@@ -1707,7 +1732,7 @@ This pattern is so common that it can be abbreviated as `{!rsh} .timeRemaining`.
 
 @{ref("rsh", "implies")}
 ```reach
-implies( x, y ) 
+implies( x, y )
 ```
 
 
@@ -1717,7 +1742,7 @@ implies( x, y )
 
 @{ref("rsh", "ensure")}
 ```reach
-ensure( pred, x ) 
+ensure( pred, x )
 ```
 
 
@@ -1727,7 +1752,7 @@ ensure( pred, x )
 
 @{ref("rsh", "hasRandom")}
 ```reach
-hasRandom 
+hasRandom
 ```
 
 
@@ -1737,7 +1762,7 @@ hasRandom
 
 @{ref("rsh", "hasConsoleLogger")}
 ```reach
-hasConsoleLogger 
+hasConsoleLogger
 ```
 
 
@@ -1747,7 +1772,7 @@ hasConsoleLogger
 
 @{ref("rsh", "compose")}
 ```reach
-compose(f, g) 
+compose(f, g)
 ```
 
 
@@ -1763,7 +1788,7 @@ Currently, wide arithmetic operations are only suported on Algorand.
 
 @{ref("rsh", "muldiv")}
 ```reach
-muldiv(a, b, c) 
+muldiv(a, b, c)
 ```
 
 
@@ -1775,7 +1800,7 @@ The resulting quotient must be less than `{!rsh} UInt.max`.
 
 @{ref("rsh", "sqrt")}
 ```reach
-sqrt(81, 10) 
+sqrt(81, 10)
 ```
 
 
@@ -1792,7 +1817,7 @@ square root up to `580` squared, or `336,400`.
 
 @{ref("rsh", "pow")}
 ```reach
-pow (2, 40, 10) // => 1,099,511,627,776 
+pow (2, 40, 10) // => 1,099,511,627,776
 ```
 
 
@@ -1808,7 +1833,7 @@ are used to represent `{!rsh} Int`s:
 
 :::note
 `Int` is represented as an object, as opposed to a scalar value, because some platforms
-that Reach targets do not provide native support for signed integers. 
+that Reach targets do not provide native support for signed integers.
 :::
 
 
@@ -1816,7 +1841,7 @@ that Reach targets do not provide native support for signed integers.
 ```reach
 const Int = { sign: Bool, i: UInt };
 const Pos = true;
-const Neg = false;  
+const Neg = false;
 ```
 
 
@@ -1829,7 +1854,7 @@ int(Pos, 4); // represents 4
 int(Neg, 4); // represents -4
 -4;          // represents -4
 +4;          // represents 4 : Int
- 4;          // represents 4 : UInt 
+ 4;          // represents 4 : UInt
 ```
 
 
@@ -1865,7 +1890,7 @@ int(Neg, 4); // represents -4
 
 @{ref("rsh", "FixedPoint")}
 ```reach
-export const FixedPoint = Object({ sign: bool, i: Object({ scale: UInt, i: UInt }) }); 
+export const FixedPoint = Object({ sign: bool, i: Object({ scale: UInt, i: UInt }) });
 ```
 
 
@@ -1881,7 +1906,7 @@ places of precision. Similarly, a scale factor of `100` would have 2 decimal pla
 ```reach
 const scale = 10;
 const i = 56;
-fx(scale)(Neg, i); // represents - 5.6 
+fx(scale)(Neg, i); // represents - 5.6
 ```
 
 
@@ -1891,7 +1916,7 @@ instantiate fixed point numbers with a particular scale factor.
 @{ref("rsh", "fxint")}
 ```reach
 const i = 4;
-fxint(-i); // represents - 4.0 
+fxint(-i); // represents - 4.0
 ```
 
 
@@ -1901,7 +1926,7 @@ number with a `scale` of 1.
 @{ref("rsh", "fxrescale")}
 ```reach
 const x = fx(1000)(Pos, 1234); // x = 1.234
-fxrescale(x, 100);    // => 1.23 
+fxrescale(x, 100);    // => 1.23
 ```
 
 
@@ -1912,7 +1937,7 @@ one scale to another. This operation can result in loss of precision, as demonst
 ```reach
 const x = fx(1000)(Pos, 824345); // x = 824.345
 const y = 45.67;
-fxunify(x, y);    // => [ 1000, 824.345, 45.670 ] 
+fxunify(x, y);    // => [ 1000, 824.345, 45.670 ]
 ```
 
 
@@ -1929,7 +1954,7 @@ of the common scale and the newly scaled values.
 @{ref("rsh", "fxdiv")}
 ```reach
 fxdiv(34.56, 1.234, 10)     // => 28
-fxdiv(34.56, 1.234, 100000) // => 28.0064 
+fxdiv(34.56, 1.234, 100000) // => 28.0064
 ```
 
 
@@ -2008,7 +2033,7 @@ An `{!rsh} Interval` is defined by
 
 @{ref("rsh", "Interval")}
 ```reach
-export const Interval = Tuple(IntervalType, Int, Int, IntervalType); 
+export const Interval = Tuple(IntervalType, Int, Int, IntervalType);
 ```
 
 
@@ -2017,7 +2042,7 @@ where `{!rsh} IntervalType` is defined by
 @{ref("rsh", "IntervalType")}
 ```reach
 export const [ isIntervalType, Closed, Open ] = mkEnum(2);
-export const IntervalType = Refine(UInt, isIntervalType);  
+export const IntervalType = Refine(UInt, isIntervalType);
 ```
 
 
@@ -2029,7 +2054,7 @@ An interval may be constructed with its tuple notation or by function:
 // Representing [-10, +10)
 const i1 = [Closed, -10, +10, Open];
 const i2 = interval(Closed, -10, +10, Open);
-const i3 = intervalCO(-10, +10); 
+const i3 = intervalCO(-10, +10);
 ```
 
 
@@ -2084,7 +2109,7 @@ Intervals may be compared with the following functions:
 ```reach
 const i1 = intervalOO(+3, +11); // (+3, +11)
 const i2 = intervalCC(+7, +9);  // [+7, +9]
-intervalIntersection(i1, i2);   // [+7, +11)  
+intervalIntersection(i1, i2);   // [+7, +11)
 ```
 
 
@@ -2094,7 +2119,7 @@ intervalIntersection(i1, i2);   // [+7, +11)
 ```reach
 const i1 = intervalOO(+3, +9);  // (+3, +9)
 const i2 = intervalCC(+7, +11); // [+7, +11]
-intervalUnion(i1, i2);          // (+3, +11]  
+intervalUnion(i1, i2);          // (+3, +11]
 ```
 
 
@@ -2102,7 +2127,7 @@ intervalUnion(i1, i2);          // (+3, +11]
 
 @{ref("rsh", "intervalWidth")}
 ```reach
-intervalWidth(intervalCC(+4, +45)); // +41 
+intervalWidth(intervalCC(+4, +45)); // +41
 ```
 
 
@@ -2110,7 +2135,7 @@ intervalWidth(intervalCC(+4, +45)); // +41
 
 @{ref("rsh", "intervalAbs")}
 ```reach
-intervalAbs(intervalCC(+1, +10)); // +10 
+intervalAbs(intervalCC(+1, +10)); // +10
 ```
 
 
