@@ -162,7 +162,7 @@ PART_EXPR.publish(ID_0, ..., ID_n)
 where `{!rsh} PART_EXPR` is an expression that evaluates to a participant or race expression,
 `{!rsh} ID_0` through `{!rsh} ID_n` are identifiers for `{!rsh} PART`'s public local state,
 `{!rsh} PAY_EXPR` is a public expression that either evaluates to a pay amount.
-`{!rsh} PAY_REQUIRE_EXPR` is an optional nullary function that can be used to make `require` claims about the `PAY_EXPR`.
+`{!rsh} PAY_REQUIRE_EXPR` is an optional nullary function that can be used to make `{!rsh} require` claims about the `PAY_EXPR`.
 `{!rsh} WHEN_EXPR` is a public expression evaluating to a boolean and determines if the consensus transfer takes place,
 `{!rsh} DELAY_EXPR` is a public expression that depends on only consensus state and evaluates to a time argument,
 `{!rsh} TIMEOUT_BLOCK` is a timeout block, which will be executed after the `{!rsh} DELAY_EXPR` time argument passes without `{!rsh} PART` executing this consensus transfer.
@@ -299,7 +299,7 @@ where:
 + `{!rsh} PART_EXPR` is an expression that evaluates to a participant;
 + `{!rsh} PUBLISH_EXPR` is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a `msg` field, which may be of any type, and a `when` field, which must be a boolean;
 + (optional) `{!rsh} PAY_EXPR` is an expression that evaluates to a function parameterized over the `msg` value and returns a pay amount; if this component is left-out, it is synthesized to zero;
-+ (optional) `{!rsh} PAY_REQUIRE_EXPR` is an expression that evaluates to a function parameterized over the `msg` value and returns `void`. It may be used to make `require` claims about the `msg` value. If this component is left-out, it is synthesized to a no-op function.
++ (optional) `{!rsh} PAY_REQUIRE_EXPR` is an expression that evaluates to a function parameterized over the `msg` value and returns `null`. It may be used to make `{!rsh} require` claims about the `msg` value. If this component is left-out, it is synthesized to a no-op function.
 + `{!rsh} CONSENSUS_EXPR` is a syntactic arrow expression parameterized over the `msg` value which is evaluated in a consensus step;
 + `{!rsh} API_EXPR` is an expression that evaluates to an API member function;
 + (optional) `{!rsh} API_ASSUME_EXPR` is a function parameterized over the input to the API member function which is evaluated for effect in a local step; thus it may be used to add `{!rsh} assume` constraints on the values given by the API; if this is absent, then it is synthesized to an empty function; if it is present, then `{!rsh} API_PAY_EXPR` must be included;

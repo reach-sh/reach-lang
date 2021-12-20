@@ -1669,8 +1669,10 @@ absoluteSecs(secs, ?claim)
 
 These functions return @{defn("time arguments")}, which are instances of the type `{!rsh} Either(UInt, UInt)`, where `{!rsh} Left` variants refer to absolute network time and `{!rsh} Right` variants refer to absolute network seconds.
 
-These functions take an optional function argument, `claim`, which will be used to
-verify arithmetic when necessary. In most cases, one would pass `assume`, `require`, or `assert`. This argument is only needed when `verifyArithmetic` is enabled. The default value of this argument is a no-op.
+These functions take an optional function argument, `claim`, which will be used to verify arithmetic when necessary.
+In most cases, one would pass `assume`, `require`, or `assert`.
+This argument is only needed when `verifyArithmetic` is enabled.
+The default value of this argument is a no-op.
 
 The `{!rsh} absoluteTime` and `{!rsh} absoluteSecs` are equivalent to `{!rsh} Left` and `{!rsh} Right` variant tags.
 
