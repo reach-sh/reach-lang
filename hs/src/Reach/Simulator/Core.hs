@@ -504,10 +504,9 @@ instance Interp DLExpr where
       let new_nw_ledger = M.insert 0 (M.delete ev m) map_ledger
       setGlobal $ e {e_ledger = new_nw_ledger }
       return V_Null
-    -- TODO: new stuff
     DLE_TimeOrder _at _assoc_maybe_arg_vars -> return V_Null
-    DLE_GetContract _at -> impossible "undefined"
-    DLE_GetAddress _at -> impossible "undefined"
+    DLE_GetContract _at -> V_Address <$> l_acct <$> getMyLocalInfo
+    DLE_GetAddress _at -> V_Address <$> l_acct <$> getMyLocalInfo
     DLE_EmitLog at _str _maybe_str dlvar -> interp $ DL_Var at dlvar
     DLE_setApiDetails _ _ _ _ _ -> return V_Null
 
@@ -723,6 +722,13 @@ getPhaseId actId = do
   let locals = l_locals l
   let lclsv = saferMapRef "getPhaseId" $ M.lookup (fromIntegral actId) locals
   return $ l_phase lclsv
+
+getMyLocalInfo :: App LocalInfo
+getMyLocalInfo = do
+  l <- getLocal
+  let actId = l_curr_actor_id l
+  let locals = l_locals l
+  return $ saferMapRef "getMyLocalInfo" $ M.lookup (fromIntegral actId) locals
 
 consensusPayout :: AccountId -> DLPayAmt -> App ()
 consensusPayout accId DLPayAmt {..} = do
