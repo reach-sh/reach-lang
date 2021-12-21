@@ -9,15 +9,15 @@ Verification failed:
 
   // Violation Witness
 
-  const v26 = protect<UInt>("A".interact.getX());
+  const v30 = protect<UInt>("A".interact.getX());
   //    ^ could = 0
   //      from: ./assert_gt.rsh:6:31:application
 
   // Theorem Formalization
 
-  const v27 = v26 > 0;
+  const v31 = v30 > 0;
   //    ^ would be false
-  assert(v27);
+  assert(v31);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
