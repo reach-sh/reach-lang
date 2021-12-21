@@ -150,7 +150,7 @@ instance Show EPPError where
       "`continue` must be dominated by communication"
     Err_ViewSetDomination v f ->
       let mvn = maybe "" (\v' -> show (pretty v') <> ".") v in
-      "Cannot set the view " <> mvn <> show (pretty f) <> " because it does not dominate any `commit`s"
+      "The value the view " <> mvn <> show (pretty f) <> " is set to will never be observable"
 
 type ViewSet = M.Map (Maybe SLPart, SLVar) (Bool, SrcLoc)
 

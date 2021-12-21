@@ -2365,8 +2365,8 @@ Note that the body of a `{!rsh} while` starts in a consensus step so you must fi
 
 ## {#REP0001} REP0001
 
-This error indicates that a `{!rsh} View` is set, but never [dominates](https://en.wikipedia.org/wiki/Dominator_(graph_theory)) any `{!rsh} commit`s.
-This means the value the `{!rsh} View` is set to will never be observable.
+This error indicates that the result of setting a `{!rsh} View` will never be observable.
+Either the set does not [dominate](https://en.wikipedia.org/wiki/Dominator_(graph_theory)) any `{!rsh} commit`s, or the program `{!rsh} exit`s in the next step.
 
 For example, the code below attempts to set a loop variable as the value of a `{!rsh} View`:
 
