@@ -1411,30 +1411,30 @@ Verification failed:
 
   // Violation Witness
 
-  const v71 = &quot;Alice&quot;.interact.wager;
+  const v75 = &quot;Alice&quot;.interact.wager;
   //    ^ could = 1
   //      from: ./index-bad.rsh:11:10:property binding
-  const v74 = protect<UInt>(&quot;Alice&quot;.interact.getHand());
+  const v78 = protect<UInt>(&quot;Alice&quot;.interact.getHand());
   //    ^ could = 0
   //      from: ./index-bad.rsh:21:50:application
-  const v84 = protect<UInt>(&quot;Bob&quot;.interact.getHand());
+  const v88 = protect<UInt>(&quot;Bob&quot;.interact.getHand());
   //    ^ could = 2
   //      from: ./index-bad.rsh:29:48:application
 
   // Theorem Formalization
 
-  const v93 = (v74 + (4 - v84)) % 3;
+  const v97 = (v78 + (4 - v88)) % 3;
   //    ^ would be 2
-  const v100 = (v93 == 2) ? [1, 0 ] : (v93 == 0) ? [0, 2 ] : [1, 1 ];
+  const v104 = (v97 == 2) ? [1, 0 ] : (v97 == 0) ? [0, 2 ] : [1, 1 ];
   //    ^ would be [1, 0 ]
-  const v114 = 0 == (((v71 + v71) - (v100[0] * v71)) - (v100[1] * v71));
+  const v118 = 0 == (((v75 + v75) - (v104[0] * v75)) - (v104[1] * v75));
   //    ^ would be false
-  assert(v114);
+  assert(v118);
 
   Verifying when NO participants are honest
   Verifying when ONLY &quot;Alice&quot; is honest
   Verifying when ONLY &quot;Bob&quot; is honest
-Checked 18 theorems; 4 failures (and 3 omitted repeats) :'(" href="#"></a></div><ol class="snippet"><li value="4">Verification failed:</li><li value="5">  when ALL participants are honest</li><li value="6">  of theorem: assert</li><li value="7">  msg: "balance zero at application exit"</li><li value="8">  at ./index-bad.rsh:8:30:compileDApp</li><li value="9"></li><li value="10">  // Violation Witness</li><li value="11"></li><li value="12">  const v71 = "Alice".interact.wager;</li><li value="13">  //    ^ could = 1</li><li value="14">  //      from: ./index-bad.rsh:11:10:property binding</li><li value="15">  const v74 = protect&lt;UInt&gt;("Alice".interact.getHand());</li><li value="16">  //    ^ could = 0</li><li value="17">  //      from: ./index-bad.rsh:21:50:application</li><li value="18">  const v84 = protect&lt;UInt&gt;("Bob".interact.getHand());</li><li value="19">  //    ^ could = 2</li><li value="20">  //      from: ./index-bad.rsh:29:48:application</li><li value="21"></li><li value="22">  // Theorem Formalization</li><li value="23"></li><li value="24">  const v93 = (v74 + (4 - v84)) % 3;</li><li value="25">  //    ^ would be 2</li><li value="26">  const v100 = (v93 == 2) ? [1, 0 ] : (v93 == 0) ? [0, 2 ] : [1, 1 ];</li><li value="27">  //    ^ would be [1, 0 ]</li><li value="28">  const v114 = 0 == (((v71 + v71) - (v100[0] * v71)) - (v100[1] * v71));</li><li value="29">  //    ^ would be false</li><li value="30">  assert(v114);</li><li value="31"></li></ol></pre>
+Checked 18 theorems; 4 failures (and 3 omitted repeats) :'(" href="#"></a></div><ol class="snippet"><li value="4">Verification failed:</li><li value="5">  when ALL participants are honest</li><li value="6">  of theorem: assert</li><li value="7">  msg: "balance zero at application exit"</li><li value="8">  at ./index-bad.rsh:8:30:compileDApp</li><li value="9"></li><li value="10">  // Violation Witness</li><li value="11"></li><li value="12">  const v75 = "Alice".interact.wager;</li><li value="13">  //    ^ could = 1</li><li value="14">  //      from: ./index-bad.rsh:11:10:property binding</li><li value="15">  const v78 = protect&lt;UInt&gt;("Alice".interact.getHand());</li><li value="16">  //    ^ could = 0</li><li value="17">  //      from: ./index-bad.rsh:21:50:application</li><li value="18">  const v88 = protect&lt;UInt&gt;("Bob".interact.getHand());</li><li value="19">  //    ^ could = 2</li><li value="20">  //      from: ./index-bad.rsh:29:48:application</li><li value="21"></li><li value="22">  // Theorem Formalization</li><li value="23"></li><li value="24">  const v97 = (v78 + (4 - v88)) % 3;</li><li value="25">  //    ^ would be 2</li><li value="26">  const v104 = (v97 == 2) ? [1, 0 ] : (v97 == 0) ? [0, 2 ] : [1, 1 ];</li><li value="27">  //    ^ would be [1, 0 ]</li><li value="28">  const v118 = 0 == (((v75 + v75) - (v104[0] * v75)) - (v104[1] * v75));</li><li value="29">  //    ^ would be false</li><li value="30">  assert(v118);</li><li value="31"></li></ol></pre>
 <p><i id="p_162" class="pid"></i>There's a lot of information in the compiler output that can help an experienced programmer track down the problem. But the most important parts are<a href="#p_162" class="pid">162</a></p>
 <ul>
   <li><i id="p_163" class="pid"></i>Line 7 says that this is an attempt to prove the theorem that the balance at the end of the program is zero, which means that no network tokens are sealed in the contract forever.<a href="#p_163" class="pid">163</a></li>
@@ -1506,17 +1506,17 @@ export const main = Reach.App(() => {
 <p><i id="p_171" class="pid"></i>When we run <code>./reach run</code>, it reports that this assertion is false:<a href="#p_171" class="pid">171</a></p>
 <pre class="snippet numbered"><div class="codeHeader"><a href="https://github.com/reach-sh/reach-lang/tree/master/examples/rps-4-attack/index-fails.txt">/examples/rps-4-attack/index-fails.txt</a><a class="far fa-copy copyBtn" data-clipboard-text="Verifying knowledge assertions
 Verification failed:
-  of theorem unknowable(&quot;Bob&quot;, handAlice/77)
+  of theorem unknowable(&quot;Bob&quot;, handAlice/81)
   at ./index-fails.rsh:27:13:application
 
-  Bob knows of handAlice/77 because it is published.
+  Bob knows of handAlice/81 because it is published.
 
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
   Verifying when ONLY &quot;Alice&quot; is honest
   Verifying when ONLY &quot;Bob&quot; is honest
-Checked 19 theorems; 1 failures :'(" href="#"></a></div><ol class="snippet"><li value="2">Verification failed:</li><li value="3">  of theorem unknowable("Bob", handAlice/77)</li><li value="4">  at ./index-fails.rsh:27:13:application</li><li value="5"></li><li value="6">  Bob knows of handAlice/77 because it is published.</li></ol></pre>
+Checked 19 theorems; 1 failures :'(" href="#"></a></div><ol class="snippet"><li value="2">Verification failed:</li><li value="3">  of theorem unknowable("Bob", handAlice/81)</li><li value="4">  at ./index-fails.rsh:27:13:application</li><li value="5"></li><li value="6">  Bob knows of handAlice/81 because it is published.</li></ol></pre>
 <p>
   <i id="p_172" class="pid"></i>It is not enough to correct failures and attacks when you discover them.
   You must <strong>always</strong> add an assertion to your program that would fail to hold if the attack or failure were present.

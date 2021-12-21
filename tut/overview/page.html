@@ -327,20 +327,20 @@ Verification failed:
 
   // Violation Witness
 
-  const v58 = &quot;Alice&quot;.interact.request;
+  const v62 = &quot;Alice&quot;.interact.request;
   //    ^ could = 1
   //      from: ./index-error.rsh:6:12:property binding
 
   // Theorem Formalization
 
-  const v87 = 0 == (v58 - (v58 - 1));
+  const v91 = 0 == (v62 - (v62 - 1));
   //    ^ would be false
-  assert(v87);
+  assert(v91);
 
   Verifying when NO participants are honest
   Verifying when ONLY &quot;Alice&quot; is honest
   Verifying when ONLY &quot;Bob&quot; is honest
-Checked 17 theorems; 4 failures (and 3 omitted repeats) :'(" href="#"></a></div><ol class="snippet"><li value="2">Verifying for generic connector</li><li value="3">  Verifying when ALL participants are honest</li><li value="4">Verification failed:</li><li value="5">  when ALL participants are honest</li><li value="6">  of theorem: assert</li><li value="7">  msg: "balance zero at application exit"</li><li value="8">  at ./index-error.rsh:33:7:application</li><li value="9"></li><li value="10">  // Violation Witness</li><li value="11"></li><li value="12">  const v58 = "Alice".interact.request;</li><li value="13">  //    ^ could = 1</li><li value="14">  //      from: ./index-error.rsh:6:12:property binding</li><li value="15"></li><li value="16">  // Theorem Formalization</li><li value="17"></li><li value="18">  const v87 = 0 == (v58 - (v58 - 1));</li><li value="19">  //    ^ would be false</li><li value="20">  assert(v87);</li><li value="21"></li><li value="22">  Verifying when NO participants are honest</li><li value="23">  Verifying when ONLY "Alice" is honest</li><li value="24">  Verifying when ONLY "Bob" is honest</li><li value="25">Checked 17 theorems; 4 failures (and 3 omitted repeats) :'(</li></ol></pre>
+Checked 17 theorems; 4 failures (and 3 omitted repeats) :'(" href="#"></a></div><ol class="snippet"><li value="2">Verifying for generic connector</li><li value="3">  Verifying when ALL participants are honest</li><li value="4">Verification failed:</li><li value="5">  when ALL participants are honest</li><li value="6">  of theorem: assert</li><li value="7">  msg: "balance zero at application exit"</li><li value="8">  at ./index-error.rsh:33:7:application</li><li value="9"></li><li value="10">  // Violation Witness</li><li value="11"></li><li value="12">  const v62 = "Alice".interact.request;</li><li value="13">  //    ^ could = 1</li><li value="14">  //      from: ./index-error.rsh:6:12:property binding</li><li value="15"></li><li value="16">  // Theorem Formalization</li><li value="17"></li><li value="18">  const v91 = 0 == (v62 - (v62 - 1));</li><li value="19">  //    ^ would be false</li><li value="20">  assert(v91);</li><li value="21"></li><li value="22">  Verifying when NO participants are honest</li><li value="23">  Verifying when ONLY "Alice" is honest</li><li value="24">  Verifying when ONLY "Bob" is honest</li><li value="25">Checked 17 theorems; 4 failures (and 3 omitted repeats) :'(</li></ol></pre>
 <p>
   <i id="p_48" class="pid"></i>Verification failures include a lot of information, such as a concrete counter-example showing values that could have been provided by frontends that would lead to the property failing to hold.
   In this case, it reports that if Alice were to pass an <span class="snip"><span style="color: #24292F">interact.request</span></span> over <span class="snip"><span style="color: #0550AE">1</span></span> at the start of the program on line 5, then the balance of the contract would not be provably <span class="snip"><span style="color: #0550AE">0</span></span> at the end of the program.<a href="#p_48" class="pid">48</a>
