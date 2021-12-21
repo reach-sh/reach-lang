@@ -56,6 +56,7 @@ data LocalInfo = LocalInfo
   , l_store :: Store
   , l_phase :: PhaseId
   , l_ks :: Maybe PartState
+  , l_livs :: LocalInteractEnv
   } deriving (Generic)
 
 type Locals = M.Map ActorId LocalInfo
@@ -90,7 +91,13 @@ initGlobal = Global
 initLocal :: Local
 initLocal = Local
   { l_locals = M.singleton consensusId LocalInfo
-      {l_acct = simContract, l_who = Nothing, l_store = mempty, l_phase = 0, l_ks = Nothing}
+      { l_acct = simContract
+      , l_who = Nothing
+      , l_store = mempty
+      , l_phase = 0
+      , l_ks = Nothing
+      , l_livs = mempty
+      }
   , l_curr_actor_id = consensusId
   }
 
@@ -168,6 +175,7 @@ initAppFromStep :: LLStep -> State -> PartState
 initAppFromStep step st = runApp st $ interp step
 
 type ConsensusEnv = M.Map DLVar DLVal
+type LocalInteractEnv = M.Map String DLVal
 type Store = ConsensusEnv
 type Balance = Integer
 type Token = Integer
@@ -198,7 +206,7 @@ data Action
   | A_None
   | A_AdvanceTime Integer
   | A_AdvanceSeconds Integer
-  | A_InteractV String String DLType --TODO either remove or add protection
+  | A_InteractV String String DLType
   | A_Interact SrcLoc [SLCtxtFrame] String String DLType [DLVal]
   | A_Contest PhaseId
   deriving (Generic)
@@ -350,7 +358,15 @@ instance Interp DLArg where
     DLA_Constant dlconst -> return $ conCons' dlconst
     DLA_Literal dllit -> interp dllit
     DLA_Interact slpart str dltype -> do
-      suspend $ PS_Suspend (A_InteractV (bunpack slpart) str dltype)
+      l <- getLocal
+      let actId = l_curr_actor_id l
+      v <- suspend $ PS_Suspend (A_InteractV (bunpack slpart) str dltype)
+      lcl <- getMyLocalInfo
+      let newliv = M.insertWith (\_ y -> y) str v (l_livs lcl)
+      let lcl' = lcl { l_livs = newliv }
+      let res = saferMapRef "DLA_Interact" $ M.lookup str newliv
+      setLocal $ l { l_locals = M.insert actId lcl' (l_locals l) }
+      return res
 
 instance Interp DLLiteral where
   interp = \case
@@ -752,6 +768,7 @@ bindConsensusMeta (DLRecv {..}) actorId accId = do
 
 instance Interp LLProg where
   interp (LLProg _at _llo slparts _dli _dex _dvs _apis step) = do
+    _ <- impossible (show slparts)
     registerParts $ M.keys $ sps_ies slparts
     interp step
 
@@ -795,6 +812,7 @@ registerPart (g,l) s = do
         , l_store = mempty
         , l_phase = 0
         , l_ks = Nothing
+        , l_livs = mempty
         }
   let locals' = M.insert actorId lcl locals
   let ledger = e_ledger g
