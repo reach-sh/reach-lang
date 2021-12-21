@@ -1,4 +1,4 @@
-import type { num, MaybeRep } from './shared_backend'; // =>
+import type { num, MaybeRep, MapOpts, LinearMap } from './shared_backend'; // =>
 import type { BigNumber } from 'ethers'; // =>
 
 // TODO better typing on these
@@ -36,7 +36,9 @@ export interface Stdlib_Backend_Shared extends Stdlib_Backend_Shared_User {
   checkedBigNumberify: (at: string, max: BigNumber, n: any) => BigNumber
   protect: (t: any, v: unknown, ai?: string) => unknown
   Array_zip: <A, B>(a1: A[], a2: B[]) => [A, B][]
-  mapRef: <A>(m: {[key: string]: A}, f: string) => MaybeRep<A>
+  newMap: <A>(opts: MapOpts) => LinearMap<A>
+  mapRef: <A>(m: LinearMap<A>, f: string) => MaybeRep<A>
+  mapSet: <A>(m: LinearMap<A>, f: string, v: A) => void
   simMapRef: (sim_r: unknown, mapi: number, f: string) => MaybeRep<unknown>
   simMapSet: (sim_r: unknown, mapi: number, f: string, v: unknown) => unknown
   simMapDupe: (sim_r: unknown, mapi: number, mapo: unknown) => void,

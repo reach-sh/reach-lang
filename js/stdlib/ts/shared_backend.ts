@@ -76,7 +76,21 @@ export function Array_set <T>(arr: Array<T>, idx: number, elem: T): Array<T> {
   arrp[idx] = elem;
   return arrp;
 }
-export const mapRef = <A>(m: {[key: string]: A}, f: string): MaybeRep<A> => {
+
+export type MapOpts = {
+  ctc: unknown,
+  ty: unknown,
+  isAPI: boolean,
+};
+export type LinearMap<A> = {[key: string]: A};
+export const newMap = <A>(opts: MapOpts): LinearMap<A> => {
+  void(opts);
+  return {};
+};
+export const mapSet = <A>(m: LinearMap<A>, f: string, v: A): void => {
+  m[f] = v;
+};
+export const mapRef = <A>(m: LinearMap<A>, f: string): MaybeRep<A> => {
   const v = m[f];
   // console.log(`Reading map ${JSON.stringify(m)} field ${JSON.stringify(f)} => ${JSON.stringify(v)}`);
   if ( v === undefined ) {

@@ -212,11 +212,15 @@ jsVar (DLVar _ _ _ n) = return $ "v" <> pretty n
 jsContinueVar :: AppT DLVar
 jsContinueVar dv = ("c" <>) <$> jsVar dv
 
+jsBool :: Bool -> Doc
+jsBool = \case
+  True -> "true"
+  False -> "false"
+
 jsCon :: AppT DLLiteral
 jsCon = \case
   DLL_Null -> return "null"
-  DLL_Bool True -> return "true"
-  DLL_Bool False -> return "false"
+  DLL_Bool b -> return $ jsBool b
   DLL_Int at i -> do
     uim <- jsArg (DLA_Constant $ DLC_UInt_max)
     return $ jsApply "stdlib.checkedBigNumberify" [jsAt at, uim, pretty i]
@@ -415,7 +419,7 @@ jsExpr = \case
       JM_Simulate ->
         return $ jsApply "stdlib.simMapSet" ["sim_r", jsMapIdx mpv, fa', na']
       JM_Backend ->
-        return $ jsMapVar mpv <> brackets fa' <+> "=" <+> na'
+        return $ jsApply "stdlib.mapSet" [jsMapVar mpv, fa', na' ]
       JM_View -> impossible "view mapset"
   DLE_Remote {} -> do
     return "undefined"
@@ -784,9 +788,10 @@ jsMapDefns varsHuh = do
   where
     go (mpv, mi) = do
       ctc <- jsContract $ dlmi_tym mi
+      ia <- ctxt_isAPI <$> ask
       return $ vsep $
-        (if varsHuh then [ "const" <+> jsMapVar mpv <+> "=" <+> "{};" ] else [])
-        <> [ "const" <+> jsMapVarCtc mpv <+> "=" <+> ctc <> ";" ]
+        [ "const" <+> jsMapVarCtc mpv <+> "=" <+> ctc <> ";" ]
+        <> (if varsHuh then [ "const" <+> jsMapVar mpv <+> "=" <+> jsApplyKws "stdlib.newMap" (M.fromList $ [ ("ctc", "ctc"), ("ty", jsMapVarCtc mpv), ("isAPI", jsBool ia) ]) <> ";" ] else [])
 
 jsError :: Doc -> Doc
 jsError err = "new Error(" <> err <> ")"
