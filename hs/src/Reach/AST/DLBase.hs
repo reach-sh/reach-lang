@@ -935,7 +935,7 @@ data DLPayAmt = DLPayAmt
   { pa_net :: DLArg
   , pa_ks :: [(DLArg, DLArg)]
   }
-  deriving (Eq, Generic, Ord)
+  deriving (Eq, Generic, Ord, Show)
 
 instance PrettySubst DLPayAmt where
   prettySubst (DLPayAmt {..}) = do

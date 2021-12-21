@@ -1,8 +1,17 @@
 import fetch from 'node-fetch';
+import waitPort from 'wait-port';
 
 const hostname = "http://localhost"
 const port = 3001
 const address = `${hostname}:${port}`
+
+const waitForPort = async () => {
+  const params = {
+    port: port
+  }
+  const r = await waitPort(params)
+  console.log(r)
+}
 
 const getStates = async () => {
   const r = await fetch(`${address}/states`)
@@ -50,8 +59,15 @@ const init = async () => {
   return r
 }
 
-const respondWithVal = async (s,a,v,t) => {
-  const r = await interact('POST', `${address}/states/${s}/actions/${a}/?data=${v}&type=${t}`, {})
+const respondWithVal = async (s,a,v,w=false) => {
+  const who = (w || w === 0) ? `&who=${w}` : ``
+  const r = await interact('POST', `${address}/states/${s}/actions/${a}/?data=${v}${who}`, {})
+  console.log(r)
+  return r
+}
+
+const initFor = async (s,a) => {
+  const r = await interact('POST', `${address}/init/${a}/${s}`, {})
   console.log(r)
   return r
 }
@@ -69,5 +85,7 @@ export {
   load,
   init,
   respondWithVal,
-  ping
+  ping,
+  waitForPort,
+  initFor
 };

@@ -49,12 +49,11 @@ instance ToJSON Status
 instance FromJSON Status
 
 data Session = Session
-  { e_states_actions :: M.Map StateId [ActionId]
+  { e_actors_actions :: M.Map C.ActorId [ActionId]
   , e_nsid :: Int
   , e_naid :: Int
   , e_ids_actions :: M.Map ActionId C.Action
-  , e_actors_states_ks :: M.Map C.ActorId (M.Map StateId C.PartState)
-  , e_actorid :: C.ActorId
+  , e_actor_id :: C.ActorId
   , e_graph :: Graph
   , e_src :: Maybe LLProg
   , e_status :: Status
@@ -62,12 +61,11 @@ data Session = Session
 
 initSession :: Session
 initSession = Session
-  { e_states_actions = mempty
+  { e_actors_actions = mempty
   , e_nsid = 0
   , e_naid = 0
   , e_ids_actions = mempty
-  , e_actors_states_ks = mempty
-  , e_actorid = fromIntegral C.consensusId
+  , e_actor_id = C.consensusId
   , e_graph = mempty
   , e_src = Nothing
   , e_status = Initial
@@ -76,81 +74,71 @@ initSession = Session
 processNewState :: C.PartState -> WebM ()
 processNewState ps = do
   sid <- gets e_nsid
+  actorId <- gets e_actor_id
   _ <- case ps of
     C.PS_Done _ _ -> do
       _ <- return $ putStrLn "EVAL DONE"
-      registerAction sid C.A_None
-    C.PS_Suspend a _ _ -> registerAction sid a
-  let (new_st, stat) =
+      registerAction actorId C.A_None
+    C.PS_Suspend a _ _ -> registerAction actorId a
+  let ((g,l), stat) =
         case ps of
           C.PS_Done s _ -> (s, Done)
           C.PS_Suspend _ s _ -> (s, Running)
   graph <- gets e_graph
-  astks <- gets e_actors_states_ks
-  actorId <- gets e_actorid
-  let sks = case M.lookup actorId astks of
-        Nothing -> mempty
-        Just m -> m
+  let locals = C.l_locals l
+  let lcl = saferMapRef "processNewState" $ M.lookup actorId locals
+  let lcl' = lcl { C.l_ks = Just ps }
+  let l' = l { C.l_locals = M.insert actorId lcl' locals }
   modify $ \ st -> st
     {e_nsid = sid + 1}
-    {e_actors_states_ks = M.insert actorId (M.insert sid ps sks) astks}
     {e_status = stat}
-    {e_graph = M.insert sid new_st graph}
+    {e_graph = M.insert sid (g,l') graph}
 
-registerAction :: StateId -> C.Action -> WebM ActionId
-registerAction sid act = do
+registerAction :: C.ActorId -> C.Action -> WebM ActionId
+registerAction actorId act = do
   aid <- gets e_naid
   modify $ \ st -> st {e_naid = aid + 1}
-  stacts <- gets e_states_actions
+  actacts <- gets e_actors_actions
   idacts <- gets e_ids_actions
   modify $ \ st -> st {e_ids_actions = M.insert aid act idacts}
-  case M.lookup sid stacts of
-    Nothing -> modify $ \ st -> st {e_states_actions = M.insert sid [aid] stacts }
-    Just acts -> modify $ \ st -> st {e_states_actions = M.insert sid (aid:acts) stacts }
+  case M.lookup actorId actacts of
+    Nothing -> modify $ \ st -> st {e_actors_actions = M.insert actorId [aid] actacts }
+    Just acts -> modify $ \ st -> st {e_actors_actions = M.insert actorId (aid:acts) actacts }
   return aid
 
 unblockProg :: StateId -> ActionId -> C.DLVal -> WebM ()
 unblockProg sid aid v = do
-  astks <- gets e_actors_states_ks
-  actorId <- gets e_actorid
+  graph <- gets e_graph
+  actorId <- gets e_actor_id
   avActions <- gets e_ids_actions
-  case M.lookup actorId astks of
+  case M.lookup sid graph of
     Nothing -> do
-      possible "actor states not found"
-    Just stks -> do
-      case M.lookup sid stks of
+      possible "previous state not found"
+    Just (g,l') -> do
+      let locals = C.l_locals l'
+      case C.l_ks <$> M.lookup actorId locals of
         Nothing -> do
-          possible "previous state not found"
-        Just (C.PS_Suspend _a (g,l) k) -> do
+          possible "actor not found"
+        Just Nothing -> do
+          possible ("partstate not found for actor in: " ++ (show $ M.keys locals))
+        Just (Just (C.PS_Suspend _a (_g,_l) k)) -> do
+          let l = l' {C.l_curr_actor_id = actorId}
           case M.lookup aid avActions of
-            Just (C.A_ChangeActor actor_id) -> do
-              let ps = k (g,l{C.e_curr_actorid = actor_id}) v
-              processNewState ps
             Just (C.A_Interact _at _slcxtframes _part _str _dltype _args) -> do
               let ps = k (g,l) v
               processNewState ps
             Just (C.A_InteractV _part _str _dltype) -> do
               let ps = k (g,l) v
               processNewState ps
+            Just (C.A_Contest _phid) -> do
+              let ps = k (g,l) v
+              processNewState ps
             Just (C.A_TieBreak _poolid _parts) -> do
-              let pacts = C.e_partacts g
-              case v of
-                C.V_Bytes s -> do
-                  case M.lookup s pacts of
-                    Nothing -> do
-                      possible $ "A_TieBreak: participant not found in " ++ show pacts
-                    Just actid -> do
-                      let ps = k (g,l) $ C.V_UInt $ fromIntegral actid
-                      processNewState ps
-                _ -> impossible "A_TieBreak: expected string value"
-            Just C.A_NewActor -> do
-              case v of
-                C.V_Bytes s -> do
-                  let (g',l') = C.registerPart (g,l) s
-                  let ps = k (g',l') v
-                  processNewState ps
-                _ -> possible "A_NewActor: expected string value"
-            Just C.A_None -> return ()
+              let ps = k (g,l) v
+              processNewState ps
+            Just C.A_None -> do
+              let ps = k (g,l) v
+              processNewState ps
             Just (C.A_AdvanceTime n)  -> do
               case ((C.e_nwtime g) < n) of
                 True -> do
@@ -168,7 +156,7 @@ unblockProg sid aid v = do
                   let ps = k (g,l) v
                   processNewState ps
             Nothing -> possible "action not found"
-        Just (C.PS_Done _ _) -> do
+        Just (Just (C.PS_Done _ _)) -> do
           possible "previous state already terminated"
 
 allStates :: WebM [StateId]
@@ -188,18 +176,30 @@ getProgState sid = do
     Nothing -> return Nothing
     Just st -> return $ Just st
 
-computeActions :: StateId -> WebM [C.Action]
-computeActions sid = do
-  stacts <- gets e_states_actions
+changeActor :: C.ActorId -> WebM ()
+changeActor actId = do
+  modify $ \ st -> st {e_actor_id = actId}
+
+computeActions :: WebM [C.Action]
+computeActions = do
+  actacts <- gets e_actors_actions
   idacts <- gets e_ids_actions
-  case M.lookup sid stacts of
-    Nothing -> return []
-    Just acts -> return $ map (\x -> saferMapRef "computeActions" $ M.lookup x idacts) acts
+  let acts = concat $ map (take 1) $ M.elems actacts
+  return $ map (\x -> saferMapRef "computeActions" $ M.lookup x idacts) acts
 
 initProgSim :: LLProg -> WebM ()
 initProgSim ll = do
   let initSt = C.initState
   ps <- return $ C.initApp ll initSt
+  processNewState ps
+
+initProgSimFor :: C.ActorId -> StateId -> LLProg -> WebM ()
+initProgSimFor actId sid (LLProg _ _ _ _ _ _ _ _ step) = do
+  graph <- gets e_graph
+  modify $ \ st -> st {e_actor_id = actId }
+  let (g,l) = saferMapRef "initProgSimFor" $ M.lookup sid graph
+  let l' = l { C.l_curr_actor_id = actId }
+  ps <- return $ C.initAppFromStep step (g,l')
   processNewState ps
 
 startServer :: LLProg -> IO ()
@@ -223,6 +223,16 @@ app p = do
       Nothing -> json $ ("No Program" :: String)
       Just ll' -> do
         webM $ initProgSim ll'
+        json $ ("OK" :: String)
+
+  post "/init/:a/:s" $ do
+    a <- param "a"
+    s <- param "s"
+    ll <- webM $ gets e_src
+    case ll of
+      Nothing -> json $ ("No Program" :: String)
+      Just ll' -> do
+        webM $ initProgSimFor a s ll'
         json $ ("OK" :: String)
 
   get "/states" $ do
@@ -252,23 +262,22 @@ app p = do
     ss <- webM $ allStates
     json (filter ((==) s) $ ss)
 
-  get "/states/:s/actions" $ do
-    s <- param "s"
-    as <- webM $ computeActions s
+  get "/actions" $ do
+    as <- webM $ computeActions
     json as
 
   post "/states/:s/actions/:a/" $ do
     s <- param "s"
     a <- param "a"
-    t :: String <- param "type"
-    case t of
-      "String" -> do
-        v :: String <- param "data"
-        webM $ unblockProg s a $ C.V_Bytes v
-      "Number" -> do
-        v :: Integer <- param "data"
-        webM $ unblockProg s a $ C.V_UInt v
-      _ -> impossible "unsupported type"
+    v :: Integer <- param "data"
+    ps <- M.fromList <$> params
+    case M.lookup "who" ps of
+      Nothing -> return ()
+      Just prm -> do
+        case (parseParam prm) :: Either Text C.ActorId of
+          Left e -> possible $ show e
+          Right w -> webM $ changeActor $ fromIntegral w
+    webM $ unblockProg s a $ C.V_UInt v
     json ("OK" :: String)
 
   get "/ping" $ do
