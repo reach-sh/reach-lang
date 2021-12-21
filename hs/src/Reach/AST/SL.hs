@@ -482,6 +482,7 @@ data ToConsensusRec = ToConsensusRec
   , slptc_mode :: Maybe ToConsensusMode
   , slptc_msg :: Maybe [SLVar]
   , slptc_amte :: Maybe JSExpression
+  , slptc_amt_req :: Maybe JSExpression
   , slptc_whene :: Maybe JSExpression
   , slptc_timeout :: Maybe (SrcLoc, JSExpression, Maybe JSBlock)
   , slptc_fork :: Bool
