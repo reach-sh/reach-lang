@@ -522,7 +522,31 @@ async function getCodeActions(diagnostics: Diagnostic[], textDocument: TextDocum
 			});
 		} else if (diagnostic.code === "RE0048") {
 			const title = "Add Reach program header.";
-			const newText: string = "'reach 0.1';\n\n";
+
+			// Extract the error message from Reach's
+			// compiler, from the diagnostic variable.
+			const { message } = diagnostic;
+
+			// This is a relatively robust regular
+			// expression. It'll find a match even if
+			// the compiler's error message changes to
+			// "reach 0.1";, 'reach 0.1', `reach 0.1`,
+			// or "reach 1001.74", for example.
+			const regEx: RegExp =
+				/('|"|`)reach \d+\.\d+\1;?/;
+			const regExMatch = message.match(regEx);
+
+			// If, for some reason, a match doesn't
+			// exist, which should never happen, use
+			// 'reach 0.1'; as fallback text.
+			let newText: string = "'reach 0.1';";
+			if (regExMatch) {
+				newText = regExMatch[0];
+				console.debug(newText, regExMatch);
+			}
+			// Add newlines to improve readability.
+			newText += "\n\n";
+
 			const textEdit: TextEdit = {
 				newText,
 				range
