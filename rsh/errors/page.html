@@ -1736,8 +1736,8 @@ while (true) {
 <p><i id="p_328" class="pid"></i>Note that the body of a <span class="snip"><span style="color: #CF222E">while</span></span> starts in a consensus step so you must first <span class="snip"><span style="color: #24292F">commit</span></span> before making a publication.<a href="#p_328" class="pid">328</a></p>
 <h2 id="REP0001" class="refHeader">REP0001<a aria-hidden="true" tabindex="-1" href="#REP0001"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_329" class="pid"></i>This error indicates that a <span class="snip"><span style="color: #24292F">View</span></span> is set, but never <a href="https://en.wikipedia.org/wiki/Dominator_(graph_theory)">dominates</a> any <span class="snip"><span style="color: #24292F">commit</span></span>s.
-  This means the value the <span class="snip"><span style="color: #24292F">View</span></span> is set to will never be observable.<a href="#p_329" class="pid">329</a>
+  <i id="p_329" class="pid"></i>This error indicates that the result of setting a <span class="snip"><span style="color: #24292F">View</span></span> will never be observable.
+  Either the set does not <a href="https://en.wikipedia.org/wiki/Dominator_(graph_theory)">dominate</a> any <span class="snip"><span style="color: #24292F">commit</span></span>s, or the program <span class="snip"><span style="color: #24292F">exit</span></span>s in the next step.<a href="#p_329" class="pid">329</a>
 </p>
 <p><i id="p_330" class="pid"></i>For example, the code below attempts to set a loop variable as the value of a <span class="snip"><span style="color: #24292F">View</span></span>:<a href="#p_330" class="pid">330</a></p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="export const main = Reach.App(() => {
