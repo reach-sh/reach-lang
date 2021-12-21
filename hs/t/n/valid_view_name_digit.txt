@@ -4,5 +4,5 @@ reachc: error[RE0017]: Invalid View name. View names must be of the format [a-zA
 
   4|   const v3 = View('2s', { owner: Address });
 
-For further explanation of this error, see: https://docs.reach.sh/RE0017.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0017
 

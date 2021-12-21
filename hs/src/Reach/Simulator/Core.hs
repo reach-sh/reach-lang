@@ -521,12 +521,16 @@ instance Interp DLExpr where
       setGlobal $ e {e_ledger = new_nw_ledger }
       return V_Null
     DLE_TimeOrder _at _assoc_maybe_arg_vars -> return V_Null
-    -- NOTE: Contracts are not necessarily addresses and it 
+    -- NOTE: Contracts are not necessarily addresses and it
     -- might be a good idea to introduce a new value, `V_Contract`,
     -- for them in the future to ensure that they can't be mixed at run time
     DLE_GetContract _at -> V_Address <$> l_acct <$> getMyLocalInfo
     DLE_GetAddress _at -> V_Address <$> l_acct <$> getMyLocalInfo
-    DLE_EmitLog at _str _maybe_str dlvar -> interp $ DL_Var at dlvar
+    DLE_EmitLog at (L_Api _) [dlvar] -> interp $ DL_Var at dlvar
+    DLE_EmitLog at L_Internal [dlvar] -> interp $ DL_Var at dlvar
+    -- events from Events are : [a] -> Null
+    DLE_EmitLog _ (L_Event {}) _ -> return V_Null
+    DLE_EmitLog {} -> impossible "DLE_EmitLog invariants not satisified"
     DLE_setApiDetails _ _ _ _ _ -> return V_Null
 
 instance Interp DLStmt where
@@ -770,8 +774,7 @@ bindConsensusMeta (DLRecv {..}) actorId accId = do
     False -> addToStore dr_didSend $ V_Bool False
 
 instance Interp LLProg where
-  interp (LLProg _at _llo slparts _dli _dex _dvs _apis step) = do
-    _ <- impossible (show slparts)
+  interp (LLProg _at _llo slparts _dli _dex _dvs _apis _evts step) = do
     registerParts $ M.keys $ sps_ies slparts
     interp step
 

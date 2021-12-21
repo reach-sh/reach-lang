@@ -12,7 +12,7 @@ warning[RW0000]: Declaring Participants with a tuple is now deprecated. Please u
 
   6|     [ ['Alice', {} ],
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
 warning[RW0000]: Declaring Participants with a tuple is now deprecated. Please use `Participant(name, interface)` or `ParticipantClass(name, interface)`
 
@@ -20,7 +20,7 @@ warning[RW0000]: Declaring Participants with a tuple is now deprecated. Please u
 
   7|       ['Bob', {} ],
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
 warning[RW0000]: Declaring Participants with a tuple is now deprecated. Please use `Participant(name, interface)` or `ParticipantClass(name, interface)`
 
@@ -28,5 +28,5 @@ warning[RW0000]: Declaring Participants with a tuple is now deprecated. Please u
 
   8|       ['class', 'CoolPeople', {} ],
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 

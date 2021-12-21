@@ -1,8 +1,8 @@
-reachc: error[RE0122]: The left hand side of an API call must be a pair consisting of the domain and return function.
+reachc: error[RE0094]: unused variable: k1 at ./Err_ApiCallAssign.rsh:15:9:id
 
-  ./Err_ApiCallAssign.rsh:15:3:const
+  ./Err_ApiCallAssign.rsh:15:9:id
 
   15|   const k1 =
 
-For further explanation of this error, see: https://docs.reach.sh/RE0122.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0094
 

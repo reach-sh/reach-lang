@@ -8,21 +8,23 @@ Verification failed:
 
   // Violation Witness
 
-  const x/120 = <loop variable>;
+  const UInt.max = 2;
+
+  const x/128 = <loop variable>;
   //    ^ could = 2
   //      from: ./smtSortEq.rsh:9:27:while
-  const balance(0)/123 = <loop variable>;
+  const balance(0)/131 = <loop variable>;
   //    ^ could = 0
   //      from: ./smtSortEq.rsh:9:27:while
-  const v149 = <map reduction>;
-  //    ^ could = 0
+  const v158 = <map reduction>;
+  //    ^ could = 3
   //      from: reach standard library:143:18:application
 
   // Theorem Formalization
 
-  const v157 = (balance(0)/123 == 0) ? (v149 == x/120) : false;
+  const v166 = (balance(0)/131 == 0) ? (v158 == x/128) : false;
   //    ^ would be false
-  assert(v157);
+  assert(v166);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest

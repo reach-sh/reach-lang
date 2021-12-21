@@ -1,11 +1,10 @@
 import { setTimeout } from 'timers/promises';
 import CleanCss from 'clean-css';
 import fs from 'fs-extra';
-import minify from 'minify';
+import * as htmlMinify from 'html-minifier';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import UglifyJS from 'uglify-js';
-import axios from 'axios';
 import shiki from 'shiki';
 import yaml from 'js-yaml';
 import rehypeFormat from 'rehype-format';
@@ -20,11 +19,15 @@ import remarkRehype from 'remark-rehype';
 import remarkSlug from 'remark-slug';
 import remarkToc from 'remark-toc';
 import remarkDirective from 'remark-directive';
-import {h} from 'hastscript';
+import { h } from 'hastscript';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { JSDOM } from 'jsdom';
+import githubSlugger from 'github-slugger';
+const slugify = githubSlugger.slug;
+const topDoc = new JSDOM("").window.document;
 
+const hh = (x) => x === '' ? '/' : `/${x}/`;
 const INTERNAL = [ 'base.html', 'config.json', 'index.md' ];
 
 const normalizeDir = (s) => {
@@ -36,8 +39,6 @@ const rootDir = path.dirname(__filename);
 const reachRoot = `${rootDir}/../../`;
 const cfgFile = "config.json";
 const repoBaseNice = "https://github.com/reach-sh/reach-lang/tree/master";
-const repoBase = "https://raw.githubusercontent.com/reach-sh/reach-lang/master";
-const repoSrcDir = "/docs/md/";
 const srcDir = normalizeDir(`${rootDir}/src`);
 const outDir = normalizeDir(`${rootDir}/build`);
 let forReal = false;
@@ -133,30 +134,39 @@ const copyFmToConfig = (configJson) => {
   }
 };
 
+// .use(inspect("beforeToc"), { here, what: "tut/rps" })
+const inspect = (when) => ({here, what}) => (tree) => {
+  if ( here.includes(what) ) {
+    console.log(`inspect`, when, JSON.stringify(tree));
+  }
+};
+
 const processXRefs = ({here}) => (tree) => {
+  const h = hh(here);
   visit(tree, (node) => {
     const d = node.data || (node.data = {});
     const hp = d.hProperties || (d.hProperties = {});
     if ( node.type === 'heading' ) {
       const cs = node.children;
-      if ( cs.length > 0 ) {
-        const c0v = cs[0].value;
-        if ( c0v && c0v.startsWith("{#") ) {
-          const cp = c0v.indexOf("} ", 2);
-          const t = c0v.slice(2, cp);
-          const v = c0v.slice(cp+2);
-          xrefPut('h', t, { title: v, path: `/${here}/#${t}` });
+      if ( cs.length === 0 ) { return; }
+      const c0v = cs[0].value;
 
-          d.id = hp.id = t;
-          if ( hp.class === undefined ) { hp.class = ''; }
-          hp.class = `${hp.class} refHeader`;
-
-          cs[0].value = v;
-        } else {
-          // XXX change to fail
-          warn(here, `missing xref on header`, c0v);
-        }
+      let v = c0v;
+      let t = slugify(cs.map((x) => x.value).join(' '));
+      if ( c0v && c0v.startsWith("{#") ) {
+        const cp = c0v.indexOf("} ", 2);
+        t = c0v.slice(2, cp);
+        v = c0v.slice(cp+2);
+        xrefPut('h', t, { title: v, path: `${h}#${t}` });
       }
+      if ( t === 'on-this-page' ) {
+        fail(here, 'uses reserved id', t);
+      }
+
+      d.id = hp.id = t;
+      cs[0].value = v;
+      if ( hp.class === undefined ) { hp.class = ''; }
+      hp.class = `${hp.class} refHeader`;
     } else if ( node.type === 'link' ) {
       const u = node.url;
       if ( u && u.startsWith("##") ) {
@@ -173,23 +183,7 @@ const writeFileMkdir = async (p, c) => {
   await fs.writeFile(p, c);
 };
 
-const remoteGet_ = async (url) => {
-  if ( url.startsWith(repoBase) ) {
-    const n = url.replace(repoBase, reachRoot);
-    return await fs.readFile(n, 'utf8');
-  }
-  console.log(`Downloading ${url}`);
-  return (await axios.get(url)).data;
-};
-const CACHE = {};
-const remoteGet = async (url) => {
-  if ( ! (url in CACHE) ) {
-    CACHE[url] = await remoteGet_(url);
-  }
-  return CACHE[url];
-};
-
-const shikiHighlighter =
+const sher =
   await shiki.getHighlighter({
     theme: 'github-light',
     langs: [
@@ -209,7 +203,12 @@ const shikiHighlighter =
     ],
   });
 const shikiHighlight = async (code, lang) => {
-  return shikiHighlighter.codeToHtml(code, lang);
+  const fc = sher.codeToHtml(code, lang);
+  return fc
+    .replace('<pre class="shiki" style="background-color: #ffffff"><code>', '')
+    .replaceAll('<span class="line">', '')
+    .replaceAll('</span></span>', '</span>')
+    .replace('</code></pre>', '');
 };
 
 // Library
@@ -217,7 +216,6 @@ const cleanCss = new CleanCss({level: 2});
 const processCss = async () => {
   const iPath = `${rootDir}/assets.in/styles.css`;
   const oPath = `${outDir}/assets/styles.min.css`;
-  //console.log(`Minifying ${iPath}`);
   const input = await fs.readFile(iPath, 'utf8');
   const output = cleanCss.minify(input);
   await writeFileMkdir(oPath, output.styles);
@@ -226,17 +224,45 @@ const processCss = async () => {
 const processBaseHtml = async () => {
   const iPath = `${srcDir}/base.html`;
   const oPath = `${outDir}/base.html`;
-  //console.log(`Minifying ${iPath}`);
-  const output = await minify(iPath, { html: {} });
+  const defaultOptions = {
+    removeComments: true,
+    removeCommentsFromCDATA: true,
+    removeCDATASectionsFromCDATA: true,
+    collapseWhitespace: true,
+    collapseBooleanAttributes: true,
+    removeAttributeQuotes: true,
+    removeRedundantAttributes: true,
+    useShortDoctype: true,
+    removeEmptyAttributes: true,
+    removeEmptyElements: false,
+    removeOptionalTags: true,
+    removeScriptTypeAttributes: true,
+    removeStyleLinkTypeAttributes: true,
+    minifyJS: true,
+    minifyCSS: true,
+  };
+  const xrefHref = (t) => {
+    const { path } = xrefGet('h', t);
+    return path;
+  };
+  const menuItem = (t, gtext = false) => {
+    const { title, path } = xrefGet('h', t);
+    const text = gtext || title;
+    return `<a class="nav-link follow" href="${path}">${text}</a>`;
+  };
+
+  const raw = await fs.readFile(iPath, 'utf8');
+  const expand = makeExpander('baseHtml', { menuItem, xrefHref });
+  const exp = await expand(raw)
+  const output = await htmlMinify.minify(exp, defaultOptions);
   await writeFileMkdir(oPath, output);
 };
 
 const processJs = async () => {
   const iPath = `${rootDir}/assets.in/scripts.js`;
   const oPath = `${outDir}/assets/scripts.min.js`;
-  //console.log(`Minifying ${iPath}`);
   const input = await fs.readFile(iPath, 'utf8');
-  const output = new UglifyJS.minify(input, {});
+  const output = false ? { code: input } : new UglifyJS.minify(input, {});
   if (output.error) throw output.error;
   await writeFileMkdir(oPath, output.code);
 }
@@ -278,6 +304,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   const pagePath = `${out_folder}/page.html`;
   const otpPath = `${out_folder}/otp.html`;
   const here = relDir;
+  const h = hh(here);
 
   // Create fresh config file with default values.
   const configJson = {
@@ -336,18 +363,23 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     const t = encodeURI(`term_${phrase}`);
     xrefPut('term', phrase, {
       title: `Term: ${phrase}`,
-      path: `/${here}/#${t}`,
+      path: `${h}#${t}`,
     });
-    return `<span id="${t}">${phrase}</span>`;
+    return `<span class="term" id="${t}">${phrase}</span>`;
   };
 
   const ref = (scope, symbol) => {
     const t = encodeURI(`${scope}_${symbol}`);
     xrefPut(scope, symbol, {
       title: `${scope}: ${symbol}`,
-      path: `/${here}/#${t}`,
+      path: `${h}#${t}`,
     });
-    return `<span id="${t}"></span>`;
+    const s = topDoc.createElement('span');
+    s.classList.add("ref");
+    s.id = t;
+    s.setAttribute("data-scope", scope);
+    s.setAttribute("data-symbol", symbol);
+    return s.outerHTML;
   };
 
   const directive_note = (node) => {
@@ -417,14 +449,28 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     })
   };
 
+  let paraN = 0;
+  const addParalinks = () => (tree) => {
+    visit(tree, (node) => {
+      if ( node.type === 'paragraph' ) {
+        const tcs = node.children.filter((x) => x.type === 'text');
+        if ( tcs.length > 0 ) {
+          const i = paraN++;
+          const is = i.toString();
+          const id = `p_${is}`;
+          node.children.unshift({type: 'html', value: `<i id="${id}" class="pid"></i>`});
+          node.children.push({type: 'html', value: `<a href="#${id}" class="pid">${is}</a>`});
+        }
+      }
+    })
+  };
+
   const expand = makeExpander(mdPath, { ...configJson, ...expanderEnv });
 
   const raw = await fs.readFile(mdPath, 'utf8');
   let md = await expand(raw);
 
-  // markdown-to-html pipeline.
   const output = await unified()
-    // Parse markdown to Markdown Abstract Syntax Tree (MDAST).
     .use(remarkParse)
     // Prepend YAML node with frontmatter.
     .use(remarkFrontmatter)
@@ -433,6 +479,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     .use(remarkDirective)
     .use(expanderDirective)
     .use(processXRefs, { here } )
+    .use(addParalinks)
     // Prepend Heading, level 6, value "toc".
     .use(prependTocNode)
     // Build toc list under the heading.
@@ -441,28 +488,23 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     .use(remarkSlug)
     // Normalize Github Flavored Markdown so it can be converted to html.
     .use(remarkGfm)
-    // Convert MDAST to html.
     .use(remarkRehype, { allowDangerousHtml: true })
-    // Copy over html embedded in markdown.
     .use(rehypeRaw)
     .use(rehypeAutolinkHeadings, {
       behavior: 'append',
     })
-    // Prettify html.
     .use(rehypeFormat)
-    // Serialize html.
     .use(rehypeStringify)
-    // Push the markdown through the pipeline.
     .process(md);
 
   const doc = new JSDOM(output).window.document;
 
   // Process OTP.
-  if (doc.getElementById('toc')) {
-    doc.getElementById('toc').remove();
+  const tocEl = doc.getElementById('toc');
+  if (tocEl) {
+    tocEl.remove();
     const otpEl = doc.querySelector('ul');
-    otpEl.querySelectorAll('li').forEach(el => el.classList.add('dynamic'));
-    otpEl.querySelectorAll('ul').forEach(el => el.classList.add('dynamic'));
+    otpEl.querySelectorAll('li, ul').forEach(el => el.classList.add('dynamic'));
     otpEl.querySelectorAll('p').forEach(el => {
       const p = el.parentNode;
       while (el.firstChild) { p.insertBefore(el.firstChild, el); }
@@ -475,35 +517,35 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   // Update config.json with title and pathname.
   const theader = doc.querySelector('h1');
   const title = theader.textContent;
-  theader.remove();
   configJson.title = title;
   configJson.titleId = theader.id;
   configJson.pathname = in_folder;
 
-  const bp = configJson.bookPath;
-  if ( bp ) {
-    if ( books[bp] === undefined ) { books[bp] = []; }
-    if ( ! configJson.bookHide ) {
-      books[bp].push({ here, title,
-        hidec: configJson.bookHideChildren,
-        path: here.split('/'),
+  if ( !forReal ) {
+    const bp = configJson.bookPath;
+    if ( bp !== undefined ) {
+      const ib = bp === here;
+      bookL.push({ here,
+        title: (ib ? configJson.bookTitle : title),
+        isBook: ib,
         rank: (configJson.bookRank || 0)});
     }
+    return;
   }
-
-  if ( !forReal ) { return; }
 
   // Adjust image urls.
   doc.querySelectorAll('img').forEach(img => {
     if ( ! img.src.startsWith("/") ) {
-      img.src = `/${here}/${img.src}`;
+      img.src = `${h}${img.src}`;
     }
   });
 
+  await gatherSearchData({doc, title, here});
+  theader.remove();
+
   // Process code snippets.
-  const preArray = doc.querySelectorAll('pre');
-  for (let i = 0; i < preArray.length; i++) {
-    const pre = preArray[i];
+  const mkEl = (s) => doc.createRange().createContextualFragment(s);
+  for (const pre of doc.querySelectorAll('pre') ) {
     const code = pre.querySelector('code');
     if (!code) { continue; }
 
@@ -529,9 +571,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     if (arr.length > 0) {
       const line1 = arr[0].replace(/\s+/g, '');
       if (line1.slice(0, 5) == 'load:') {
-        const url = line1.slice(5);
-        if (url.slice(0, 4) == 'http') { spec.url = url; }
-        else { spec.url = `${repoBase}${url}`; }
+        spec.load = line1.slice(5);
         if (arr.length > 1) {
           const line2 = arr[1].replace(/\s+/g, '');
           if (line2.slice(0, 6) == 'range:') {
@@ -542,24 +582,19 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     } }
 
     // Get remote content if specified.
-    if (spec.url) {
-      code.textContent = await remoteGet(spec.url);
-      spec.language = urlExtension(spec.url);
+    if (spec.load) {
+      code.textContent = await fs.readFile(`${reachRoot}${spec.load}`, 'utf8');
+      spec.language = urlExtension(spec.load);
     }
 
     code.textContent = code.textContent.trimEnd();
+    const rawCode = code.textContent;
 
     // Highlight the content if specified.
     // https://github.com/shikijs/shiki/blob/main/docs/themes.md
     // https://github.com/shikijs/shiki/blob/main/docs/languages.md
     if (spec.language) {
-      const hicode = await shikiHighlight(code.textContent, spec.language);
-      code.textContent = hicode
-        //.replace('<pre class="shiki" style="background-color: #282A36"><code>', '') // dracula
-        .replace('<pre class="shiki" style="background-color: #ffffff"><code>', '') // github-light
-        .replaceAll('<span class="line">', '')
-        .replaceAll('</span></span>', '</span>')
-        .replace('</code></pre>', '');
+      code.textContent = await shikiHighlight(rawCode, spec.language);
     }
 
     let firstLineIndex = null;
@@ -584,53 +619,85 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     }
     olStr += '</ol>';
     code.remove();
-    const olEl = doc.createRange().createContextualFragment(olStr);
-    pre.append(olEl);
+    const chEl = doc.createElement('div');
+    chEl.classList.add("codeHeader");
+    if ( spec.load ) {
+      chEl.appendChild(mkEl(`<a href="${repoBaseNice}${spec.load}">${spec.load}</a>`));
+    } else {
+      chEl.appendChild(mkEl(`&nbsp;`));
+    }
+    const cpEl = doc.createElement('a');
+    cpEl.classList.add("far", "fa-copy", "copyBtn");
+    cpEl.setAttribute("data-clipboard-text", rawCode);
+    cpEl.href = "#";
+    chEl.appendChild(cpEl);
+    pre.append(chEl);
+    pre.append(mkEl(olStr));
     pre.classList.add('snippet');
     const shouldNumber = spec.numbered && (arr.length != 1);
     pre.classList.add(shouldNumber ? 'numbered' : 'unnumbered');
   }
+  for (const c of doc.querySelectorAll('code') ) {
+    const rt = c.textContent.trimEnd();
+    if ( ! rt.startsWith('{!') ) { continue; }
+    const le = rt.indexOf('} ');
+    if ( ! le ) { continue; }
+    const lang = rt.slice(2, le);
+    const rc = rt.slice(le+2);
+    const hc = await shikiHighlight(rc, lang);
+    const s = doc.createElement('span');
+    s.classList.add('snip');
+    s.appendChild(mkEl(hc));
+    c.outerHTML = s.outerHTML;
+  }
 
   // Write files
+  const configJsonSaved = {};
+  for ( const k of ['bookPath', 'title', 'titleId', 'hasOtp', 'hasPageHeader'] ) {
+    configJsonSaved[k] = configJson[k];
+  }
   await Promise.all([
-    fs.writeFile(cfgPath, JSON.stringify(configJson, null, 2)),
+    fs.writeFile(cfgPath, JSON.stringify(configJsonSaved)),
     fs.writeFile(pagePath, doc.body.innerHTML.trim()),
   ]);
 };
 
-const books = {};
+const splitMt = (x) => x === "" ? [] : x.split('/');
+
+const bookL = [];
+const bookT = { path: [], children: {} };
+const generateBooksTree = () => {
+  for ( const c of bookL ) {
+    let ct = bookT;
+    let cp = [];
+    let p = splitMt(c.here);
+    while ( p.length !== 0 ) {
+      ct = ct.children;
+      const [ n, ...pn ] = p;
+      p = pn;
+      cp = [...cp, n];
+      if ( ! (n in ct) ) {
+        ct[n] = { path: cp, children: {} };
+      }
+      ct = ct[n];
+    }
+    Object.assign(ct, c);
+  }
+};
+const bookPipe = await unified()
+  .use(rehypeStringify);
 const generateBook = async (destp, bookp) => {
-  const cs = books[bookp] || [];
-  const treeify = (ct, cp, c) => {
-    const n = c.path.shift();
-    const cpn = [...cp, n];
-    if ( ! (n in ct) ) {
-      ct[n] = { path: cpn, children: {} };
-    }
-    const ctn = ct[n];
-    if ( c.path.length === 0 ) {
-      ctn.rank = c.rank;
-      ctn.here = c.here;
-      ctn.title = c.title;
-      ctn.hidec = c.hidec;
-    } else {
-      treeify(ctn.children, cpn, c);
-    }
-  };
+  console.log(`generateBook`, JSON.stringify(bookp));
   const compareNumbers = (a, b) => (a - b);
   const compareChapters = (x, y) => {
-    const pc = compareNumbers(x.path.length, y.path.length);
-    if ( pc === 0 ) {
-      const rc = compareNumbers(x.rank, y.rank);
-      return rc;
-    } else {
-      return pc;
-    }
+    const rc = compareNumbers(x.rank, y.rank);
+    if ( rc !== 0 ) { return rc; }
+    return x.title.localeCompare(y.title);
   };
   const hify = (ctc) => {
     const d = h('div', {class: "row chapter dynamic"});
     const cs = [];
-    if ( ctc.hidec || Object.keys(ctc.children).length === 0 ) {
+    if ( ctc.isBook || Object.keys(ctc.children).length === 0 ) {
       d.children.push(h('div', {class: "col-auto chapter-empty-col"}));
     } else {
       d.children.push(h('div', {class: "col-auto chapter-icon-col"}, [
@@ -641,32 +708,44 @@ const generateBook = async (destp, bookp) => {
       ));
     }
     if ( ctc.title === undefined ) {
-      // XXX fail
-      warn(`Missing chapter title`, ctc.path);
-      ctc.title = `XXX ${ctc.path}`;
+      fail(`Missing chapter title`, ctc.path);
     }
     d.children.push(h('div', {class: "col"}, [
-      h('a', {class: "chapter-title", href: `/${ctc.here}/`}, ctc.title),
+      h('a', {class: "chapter-title", href: hh(ctc.here)}, ctc.title),
       ...cs
     ]));
     return d;
   };
-  const hifyList = (ct) =>
-    Object.values(ct.children || {}).map(hify);
+  const hifyList = (ct) => {
+    const cs = Object.values(ct.children || {});
+    cs.sort(compareChapters);
+    return cs.map(hify);
+  }
   const hifyTop = (ct, p) => {
-    if ( p.length !== 0 ) {
-      const n = p.shift();
-      return hifyTop((ct[n] || {}), p);
-    } else {
-      return hifyList(ct);
+    console.log(`hifyTop`, JSON.stringify(p));
+    const bc = [];
+    const bcPush = () => {
+      bc.push(
+        h('div', {class: "row chapter dynamic"}, [
+          h('div', {class: "col-auto chapter-icon-col"}, [
+            h('i', {class: "fas fa-angle-down"})
+          ]),
+          h('div', {class: "col my-auto"}, [
+            h('a', {class: "book-title", href: hh(ct.here)}, ct.title)
+          ]),
+        ])
+      );
     }
+    bcPush();
+    for ( const n of p ) {
+      ct = ((ct.children || {})[n] || {});
+      bcPush();
+    }
+    const bcd = h('div', {class: "bookCrumbs dynamic"}, bc);
+    return [ bcd ].concat(hifyList(ct));
   };
-  const ct = { };
   const toc = { type: 'root', children: [] };
-  cs.forEach((c) => treeify(ct, [], c));
-  toc.children = hifyTop(ct, bookp.split('/'));
-  const bookPipe = await unified()
-    .use(rehypeStringify);
+  toc.children = hifyTop(bookT, splitMt(bookp));
   await fs.writeFile(destp, bookPipe.stringify(toc));
 };
 
@@ -713,30 +792,79 @@ const findAndProcessFolder = async (base_html, inputBaseConfig, folder) => {
 
 const generateRedirects = async () => {
   const rehtml = await fs.readFile('redirect.html', { encoding: 'utf8' });
-  const root = `${outDir}/redirects`;
-  await fs.mkdir(root);
-
   const ms = await fs.readFile('manifest.txt', { encoding: 'utf8' });
   const fl = ms.trimEnd().split('\n');
   await Promise.all(fl.map(async (f) => {
-    if ( f === 'google00951c88ddc5bd51' || f === 'index' ) { return; }
     const { path } = xrefGet('h', f);
     const expand = makeExpander('generateRedirects', { URL: path });
     const re_f = await expand(rehtml);
-    await fs.writeFile( `${root}/${f}.html`, re_f );
+    await fs.writeFile( `${outDir}/${f}.html`, re_f );
   }));
 };
 
-// Main
+const searchData = [];
+const [ sd_r, sd_t, sd_h, sd_p ] = [ 0, 1, 2, 3 ];
+const gatherSearchData = async ({doc, title, here}) => {
+  const h = hh(here);
+  const mini = (x) => x.replace(/\s+/g, ' ').trim();
+  doc.querySelectorAll('.ref').forEach((el) => {
+    searchData.push({
+      objectID: `${h}#${el.id}`,
+      pt: title,
+      t: sd_r,
+      s: el.getAttribute('data-scope'),
+      c: el.getAttribute('data-symbol'),
+    });
+  });
+  doc.querySelectorAll('.term').forEach((el) => {
+    searchData.push({
+      objectID: `${h}#${el.id}`,
+      pt: title,
+      t: sd_t,
+      c: mini(el.textContent),
+    });
+  });
+  doc.querySelectorAll('.refHeader').forEach((el) => {
+    searchData.push({
+      objectID: `${h}#${el.id}`,
+      pt: title,
+      t: sd_h,
+      c: mini(el.textContent),
+    });
+  });
+  doc.querySelectorAll('i.pid').forEach((el) => {
+    // XXX it would be cool to get the closest header, but .closest won't do
+    // it, because the header won't be a parent
+    searchData.push({
+      objectID: `${h}#${el.id}`,
+      pt: title,
+      t: sd_p,
+      c: mini(el.parentElement.textContent).replace(/\d+$/, ''),
+    });
+  });
+};
+const generateSearch = async () => {
+  await fs.writeFile(`${rootDir}/searchData.json`, JSON.stringify(searchData,null,2));
+};
 
+// Main
 await findAndProcessFolder(`base.html`, process.env, srcDir);
+console.log(JSON.stringify(bookL, null, 2));
+generateBooksTree();
+console.log(JSON.stringify(bookT, null, 2));
+
 forReal = true;
+// This depends on the xrefs being assembled
 await Promise.all([
   processCss(),
   processJs(),
   processBaseHtml(),
   findAndProcessFolder(`base.html`, process.env, srcDir),
   generateRedirects(),
+]);
+// This depends on the actual content being complete
+await Promise.all([
+  generateSearch(),
 ]);
 
 if ( hasError ) {

@@ -7,5 +7,5 @@ reachc: error[RE0088]: These types are mismatched: Address vs Data({"None": Null
 Trace:
   in [unknown function] from (./pr325.rsh:11:16:function exp) at (./pr325.rsh:11:12:application)
 
-For further explanation of this error, see: https://docs.reach.sh/RE0088.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0088
 

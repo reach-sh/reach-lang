@@ -194,7 +194,7 @@ initProgSim ll = do
   processNewState ps
 
 initProgSimFor :: C.ActorId -> StateId -> LLProg -> WebM ()
-initProgSimFor actId sid (LLProg _ _ _ _ _ _ _ step) = do
+initProgSimFor actId sid (LLProg _ _ _ _ _ _ _ _ step) = do
   graph <- gets e_graph
   modify $ \ st -> st {e_actor_id = actId }
   let (g,l) = saferMapRef "initProgSimFor" $ M.lookup sid graph

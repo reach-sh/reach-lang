@@ -4,5 +4,5 @@ reachc: error[RE0121]: API type not a function, "x" has type UInt
 
   7|   const U = API('User', {
 
-For further explanation of this error, see: https://docs.reach.sh/RE0121.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0121
 

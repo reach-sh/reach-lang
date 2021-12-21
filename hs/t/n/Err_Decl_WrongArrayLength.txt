@@ -4,5 +4,5 @@ reachc: error[RE0024]: Invalid array binding. Cannot unpack 1 variables from an 
 
   3| const [ x ] = [];
 
-For further explanation of this error, see: https://docs.reach.sh/RE0024.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0024
 

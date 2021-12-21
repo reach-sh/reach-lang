@@ -4,5 +4,5 @@ reachc: error[RE0089]: Must be in while invariant at Map.reduce
 
   9|       m.reduce(0, (acc, x) => acc + x);
 
-For further explanation of this error, see: https://docs.reach.sh/RE0089.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0089
 

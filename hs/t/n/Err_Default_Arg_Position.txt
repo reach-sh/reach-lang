@@ -4,5 +4,5 @@ reachc: error[RE0092]: Parameters with default arguments must come after all oth
 
   8|       const f = (a = 1, b) => a + b;
 
-For further explanation of this error, see: https://docs.reach.sh/RE0092.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0092
 

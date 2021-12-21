@@ -79,7 +79,7 @@ r () {
   export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
   REACH_CONNECTOR_MODE=ETH ${REACH} run
-  # REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  #REACH_CONNECTOR_MODE=ALGO ${REACH} run
   #REACH_CONNECTOR_MODE=CFX ${REACH} run
 
   # Ganache
@@ -118,7 +118,11 @@ checkteal () {
 
 #exit 0
 
-c users/berry.rsh
+#jb
+c hs/t/y/enthuGuy4.rsh
+c hs/t/y/enthuGuy3.rsh
+fc hs/t/n/API_NonCS.rsh
+r users/hamza1
 exit 0
 
 # (cd hs && mk hs-test)

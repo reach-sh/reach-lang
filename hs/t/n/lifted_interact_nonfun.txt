@@ -4,5 +4,5 @@ reachc: error[RE0085]: Value cannot exist at runtime: <form: SLForm_liftInteract
 
   8|       require(A.interact.x == 5);
 
-For further explanation of this error, see: https://docs.reach.sh/RE0085.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0085
 

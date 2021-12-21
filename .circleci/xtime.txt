@@ -6,3 +6,4 @@ ETH.cache-events
 # FIXME
 CFX.api-full
 CFX.cache-events
+CFX.rpc-api-full

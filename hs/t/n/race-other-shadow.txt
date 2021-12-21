@@ -4,5 +4,5 @@ reachc: error[RE0056]: Invalid name shadowing. Identifier 'x' is already bound a
 
   20|       race(Alice, Bob).publish(x);
 
-For further explanation of this error, see: https://docs.reach.sh/RE0056.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0056
 

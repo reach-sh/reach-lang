@@ -4,5 +4,5 @@ reachc: error[RE0097]: All Struct keys must be unique, but `x` is not. This Stru
 
   8|       const s = Struct([["x", UInt], ["y", UInt], ["x", UInt]]);
 
-For further explanation of this error, see: https://docs.reach.sh/RE0097.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0097
 

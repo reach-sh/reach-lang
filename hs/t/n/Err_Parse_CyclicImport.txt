@@ -4,5 +4,5 @@ reachc: error[RP0000]: Cyclic import! ./Err_Parse_CyclicImport.rsh
 
   3| import './Err_Parse_CyclicImport.rsh'
 
-For further explanation of this error, see: https://docs.reach.sh/RP0000.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RP0000
 

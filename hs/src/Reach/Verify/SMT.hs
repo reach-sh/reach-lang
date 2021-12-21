@@ -1061,7 +1061,8 @@ smt_e at_dv mdv de = do
           go n =<< smtPrimOp at ADD [o, w] [o', w']
     DLE_GetContract at -> unbound at
     DLE_GetAddress at -> unbound at
-    DLE_EmitLog at _ _ v -> bound at =<< smt_v at v
+    DLE_EmitLog at _ lv ->
+      mapM_ (bound at <=< smt_v at) lv
     DLE_setApiDetails {} -> mempty
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
@@ -1204,8 +1205,10 @@ smt_asn_def :: SrcLoc -> DLAssignment -> App ()
 smt_asn_def at asn = mapM_ def1 $ M.keys asnm
   where
     DLAssignment asnm = asn
-    def1 dv =
+    def1 dv = do
       pathAddUnbound at (Just dv) (Just $ SMTModel O_Assignment)
+      when (varType dv == T_UInt) $ do
+        smtAssert (smtApply "<=" [Atom $ getVarName dv, Atom $ smtConstant DLC_UInt_max])
 
 smt_alloc_id :: App Int
 smt_alloc_id = do
@@ -1508,7 +1511,7 @@ _verify_smt mc ctxt_vst smt lp = do
         case mc of
           Just c -> smt_lt at_de $ conCons c cn
           Nothing -> Atom $ smtConstant cn
-  let LLProg at (LLOpts {..}) (SLParts {..}) (DLInit {..}) dex _dvs _das s = lp
+  let LLProg at (LLOpts {..}) (SLParts {..}) (DLInit {..}) dex _dvs _das _devts s = lp
   let pies_m = sps_ies
   let initMapInfo mi = do
         sm_c <- liftIO $ newCounter 0

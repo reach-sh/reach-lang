@@ -4,5 +4,5 @@ reachc: error[RE0002]: Invalid statement
 
   3| class C {
 
-For further explanation of this error, see: https://docs.reach.sh/RE0002.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0002
 

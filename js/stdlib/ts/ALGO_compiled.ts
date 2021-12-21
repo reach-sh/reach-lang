@@ -47,6 +47,7 @@ export type ALGO_Ty<BV extends CBR_Val> = {
   netSize: number
   toNet(bv: BV): NV,
   fromNet(nv: NV): BV,
+  netName: string,
 }
 
 export const digest =
@@ -57,6 +58,7 @@ export const T_Null: ALGO_Ty<CBR_Null> = {
   netSize: 0,
   toNet: (bv: CBR_Null): NV => (void(bv), new Uint8Array([])),
   fromNet: (nv: NV): CBR_Null => (void(nv), null),
+  netName: 'null',
 }
 
 export const T_Bool: ALGO_Ty<CBR_Bool> = {
@@ -64,6 +66,7 @@ export const T_Bool: ALGO_Ty<CBR_Bool> = {
   netSize: 1,
   toNet: (bv: CBR_Bool): NV => new Uint8Array([bv ? 1 : 0]),
   fromNet: (nv: NV): CBR_Bool => nv[0] == 1,
+  netName: 'bool',
 }
 
 export const T_UInt: ALGO_Ty<CBR_UInt> = {
@@ -81,6 +84,7 @@ export const T_UInt: ALGO_Ty<CBR_UInt> = {
     // if (getDEBUG()) console.log(nv);
     return ethers.BigNumber.from(nv.slice(0, 8));
   },
+  netName: 'uint64',
 }
 
 /** @description For arbitrary utf8 strings */
@@ -107,12 +111,14 @@ export const T_Bytes = (len:number): ALGO_Ty<CBR_Bytes> => ({
   ...CBR.BT_Bytes(len),
   ...stringyNet(len),
   netSize: bigNumberToNumber(len),
+  netName: `byte[${len}]`,
 });
 
 export const T_Digest: ALGO_Ty<CBR_Digest> = {
   ...CBR.BT_Digest,
   ...bytestringyNet(32),
   netSize: 32,
+  netName: `digest`,
 };
 
 export const addressToHex = (x: string): string =>
@@ -153,7 +159,8 @@ export const T_Address: ALGO_Ty<CBR_Address> = {
     const hs = CBR.BT_Address.canonicalize(val || uv);
     // We are filling up with zeros if the address is less than 32 bytes
     return hs.padEnd(32*2+2, '0');
-  }
+  },
+  netName: `address`,
 };
 
 export const T_Contract: ALGO_Ty<Contract> = {
@@ -180,6 +187,7 @@ export const T_Array = (
     }
     return chunks;
   },
+  netName: `${co.netName}[${size}]`,
 });
 
 export const T_Tuple = (
@@ -207,6 +215,7 @@ export const T_Tuple = (
     }
     return chunks;
   },
+  netName: `(${cos.map(c => c.netName).join(',')})`,
 });
 
 export const T_Struct = (
@@ -231,6 +240,7 @@ export const T_Struct = (
     }
     return obj;
   },
+  netName: `(${cos.map(c => c[1].netName).join(',')})`,
 });
 
 export const T_Object = (
@@ -262,6 +272,7 @@ export const T_Object = (
       }
       return obj;
     },
+    netName: `(${cos.map(c => c.netName).join(',')})`,
   }
 };
 
@@ -297,6 +308,7 @@ export const T_Data = (
       const val = val_co.fromNet(rest.slice(0, sliceTo));
       return [label, val];
     },
+    netName: `(byte, byte[${valSize}])`,
   }
 }
 

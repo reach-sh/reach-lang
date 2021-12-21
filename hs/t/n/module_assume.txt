@@ -7,5 +7,5 @@ reachc: error[RE0031]: Invalid operation. `assert CT_Assume False` cannot be use
 Trace:
   in [unknown function] from (./module_assume.rsh:3:22:function exp) at (./module_assume.rsh:5:3:application)
 
-For further explanation of this error, see: https://docs.reach.sh/RE0031.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0031
 

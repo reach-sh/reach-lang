@@ -4,7 +4,7 @@ warning[RW0000]: Using a bare value as a time argument is now deprecated. Please
 
   131|         .timeout(DEADLINE, () => closeTo(A, informTimeout));
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
 reachc: error[RL0000]: code must not be reachable: Scope requires explicit return, but none given; typically this is a branch of a `while` body without a `continue` or `exit`
 
@@ -12,5 +12,5 @@ reachc: error[RL0000]: code must not be reachable: Scope requires explicit retur
 
   149|          if (gameOver(state2)) {
 
-For further explanation of this error, see: https://docs.reach.sh/RL0000.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RL0000
 

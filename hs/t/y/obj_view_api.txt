@@ -12,7 +12,7 @@ warning[RW0005]: The `Object` type is internal to Reach. Use `Struct` instead.
 
   7|   const V = View({ o1: Object({ a1: UInt }) });
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0005.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0005
 
 warning[RW0005]: The `Object` type is internal to Reach. Use `Struct` instead.
 
@@ -20,7 +20,7 @@ warning[RW0005]: The `Object` type is internal to Reach. Use `Struct` instead.
 
   8|   const A = API({ o2: Fun([Array(Object({ a2: UInt }), 2)], Null) });
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0005.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0005
 
 warning[RW0005]: The `Object` type is internal to Reach. Use `Struct` instead.
 
@@ -28,5 +28,5 @@ warning[RW0005]: The `Object` type is internal to Reach. Use `Struct` instead.
 
   9|   const B = API({ o3: Fun([], D) });
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0005.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0005
 

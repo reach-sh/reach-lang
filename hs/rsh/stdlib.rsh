@@ -579,17 +579,29 @@ export const Array_slice1 = (a) => (start, len) =>
   Array_slice(a, start, len);
 
 // Time helpers
-const makeTimeHelper = (time, relative) => (value) => {
+const verifyTime = (time, relative) => (value, claim) => {
+  const last = time ? baseWaitTime : baseWaitSecs;
+  const base = relative ? last() : 0;
+  claim(UInt.max - base - value >= 0);
+}
+
+const makeTimeHelper = (time, relative) => (value, claim = (_) => {}) => {
   const T = Either(UInt, UInt);
   const mk = time ? T.Left : T.Right;
   const last = time ? baseWaitTime : baseWaitSecs;
   const base = relative ? last() : 0;
+  verifyTime(time, relative)(value, claim);
   return mk(base + value);
 };
 export const relativeTime = makeTimeHelper(true, true);
 export const absoluteTime = makeTimeHelper(true, false);
 export const relativeSecs = makeTimeHelper(false, true);
 export const absoluteSecs = makeTimeHelper(false, false);
+
+export const verifyRelativeTime = verifyTime(true, true);
+export const verifyAbsoluteTime = verifyTime(true, false);
+export const verifyRelativeSecs = verifyTime(false, true);
+export const verifyAbsoluteSecs = verifyTime(false, false);
 
 export const makeDeadline = (deadline) => {
   const endTime = lastConsensusTime() + deadline;

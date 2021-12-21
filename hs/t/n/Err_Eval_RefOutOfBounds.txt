@@ -4,5 +4,5 @@ reachc: error[RE0041]: Invalid array index. Expected an index greater than or eq
 
   6|     return arr[9];
 
-For further explanation of this error, see: https://docs.reach.sh/RE0041.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0041
 

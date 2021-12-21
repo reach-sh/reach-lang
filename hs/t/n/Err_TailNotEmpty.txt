@@ -4,5 +4,5 @@ reachc: error[RE0057]: Invalid statement block. Expected empty tail, but found 1
 
   5|     exit();
 
-For further explanation of this error, see: https://docs.reach.sh/RE0057.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0057
 

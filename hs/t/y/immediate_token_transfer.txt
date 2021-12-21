@@ -11,5 +11,5 @@ WARNING: Compiler instructed to emit for Algorand, but we can statically determi
 
   9|   transfer(5, tok).to(Alice);
 
-For further explanation of this warning, see: https://docs.reach.sh/RA0000.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RA0000
 

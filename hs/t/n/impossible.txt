@@ -9,12 +9,12 @@ Verification failed:
 
   // Violation Witness
 
-  const v26 = protect<UInt>("A".interact.getX());
+  const v30 = protect<UInt>("A".interact.getX());
 
   // Theorem Formalization
 
-  const v27 = v26 < 0;
-  possible(v27);
+  const v31 = v30 < 0;
+  possible(v31);
 
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
@@ -25,5 +25,5 @@ warning[RW0004]: There are no publications in the application.
 
   3| export const main = Reach.App(
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0004.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0004
 

@@ -11,4 +11,10 @@ client/node_modules/**
 !client/node_modules/vscode-languageclient/**
 !client/node_modules/vscode-languageserver-protocol/**
 !client/node_modules/vscode-languageserver-types/**
-!client/node_modules/semver/**
+
+# It is really, really important to have these two
+# lines here. A version of this extension failed to
+# work because these two lines were not present. See
+# https://github.com/microsoft/vscode-extension-samples/issues/412
+!client/node_modules/{minimatch,brace-expansion,concat-map,balanced-match}/**
+!client/node_modules/{semver,lru-cache,yallist}/**

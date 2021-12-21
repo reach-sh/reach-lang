@@ -93,18 +93,24 @@ jobs:
     - srd_no
     - run: |
         (cd docs && make build)
-        mkdir -p /tmp/workspace/
+        mkdir -p /tmp/workspace/search
         cp -fr docs/build /tmp/workspace/docs
+        cp -f docs/search/index.json /tmp/workspace/search
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
           - docs
+          - search
     - slack_fail
   "docs-deploy":
     executor: fake
     steps:
     - checkout
     - workattach
+    - srd_no
+    - run: |
+        cp /tmp/workspace/search/* ./docs/search/
+        (cd docs && make update-search)
     - add_ssh_keys:
         fingerprints:
         - "83:23:9c:21:6a:74:61:48:20:da:a3:45:79:89:3e:86"
@@ -124,7 +130,7 @@ jobs:
     - slack_fail
     - run: |
         if [ -f .did_change ]; then
-          git diff --exit-code HEAD~ guide-changelog.html
+          git diff --exit-code HEAD~ changelog/page.html
         fi
     - slack/notify:
         event: fail
@@ -136,7 +142,7 @@ jobs:
               "type": "section",
               "text": {
                 "type": "mrkdwn",
-                "text": "<https://docs.reach.sh/guide-changelog.html|Changelog> has changed!"
+                "text": "<https://docs.reach.sh/changelog/|Changelog> has changed!"
               }
             }]
           }
@@ -159,7 +165,7 @@ jobs:
     - run:
         command: |
           mkdir -p hs/test-reports
-          docker run --rm -v $(pwd)/examples:/examples/ -v $(pwd)/docs/scrbl:/docs/scrbl/ -v $(pwd)/hs/t:/build/t -v $(pwd)/hs/test-reports:/build/test-reports -ti reachsh/haskell-build-artifacts make docker-test-xml
+          docker run --rm -v $(pwd)/examples:/examples/ -v $(pwd)/docs/dev:/docs/dev/ -v $(pwd)/hs/t:/build/t -v $(pwd)/hs/test-reports:/build/test-reports -ti reachsh/haskell-build-artifacts make docker-test-xml
         no_output_timeout: 30m
     - store_test_results:
         path: "hs/test-reports"

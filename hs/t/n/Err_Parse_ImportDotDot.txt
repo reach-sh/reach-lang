@@ -4,5 +4,5 @@ reachc: error[RP0008]: Invalid import: dotdot path imports are not supported: ..
 
   3| import '../blah.rsh'
 
-For further explanation of this error, see: https://docs.reach.sh/RP0008.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RP0008
 

@@ -4,5 +4,5 @@ reachc: error[RE0120]: A unique `Participant` must make the first publication
 
   8|   Betas.publish();
 
-For further explanation of this error, see: https://docs.reach.sh/RE0120.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0120
 

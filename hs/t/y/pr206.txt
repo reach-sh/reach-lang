@@ -6,12 +6,12 @@ Verifying for generic connector
   Verifying when ONLY "HandcraftedTaxAcct" is honest
   Verifying when ONLY "Merchant" is honest
   Verifying when ONLY "PotentialBuyer" is honest
-Checked 156 theorems; No failures!
+Checked 157 theorems; No failures!
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
 
   ./pr206.rsh:187:27:application
 
   187|                   .timeout(1000, () => {
 
-For further explanation of this warning, see: https://docs.reach.sh/RW0000.html
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 

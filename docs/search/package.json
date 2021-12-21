@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "algoliasearch": "^4.11.0"
+  }
+}

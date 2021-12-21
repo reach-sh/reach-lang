@@ -482,6 +482,7 @@ data ToConsensusRec = ToConsensusRec
   , slptc_mode :: Maybe ToConsensusMode
   , slptc_msg :: Maybe [SLVar]
   , slptc_amte :: Maybe JSExpression
+  , slptc_amt_req :: Maybe JSExpression
   , slptc_whene :: Maybe JSExpression
   , slptc_timeout :: Maybe (SrcLoc, JSExpression, Maybe JSBlock)
   , slptc_fork :: Bool
@@ -712,6 +713,8 @@ data SLPrimitive
   | SLPrim_getContract
   | SLPrim_getAddress
   | SLPrim_EmitLog
+  | SLPrim_Event
+  | SLPrim_event_is (Maybe SLPart) SLVar [SLType]
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

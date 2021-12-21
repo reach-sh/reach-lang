@@ -4,5 +4,5 @@ reachc: error[RE0125]: The b `API`(s) cannot explicitly make a publication.
 
   11|   B.b.publish()
 
-For further explanation of this error, see: https://docs.reach.sh/RE0125.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0125
 

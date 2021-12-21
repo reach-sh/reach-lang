@@ -4,5 +4,5 @@ reachc: error[RE0056]: Invalid name shadowing. Identifier 'x' is already bound a
 
   4| const x = 1;
 
-For further explanation of this error, see: https://docs.reach.sh/RE0056.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0056
 

@@ -7,5 +7,5 @@ reachc: error[RE0056]: Invalid name shadowing. Identifier 'UInt' is already boun
 Trace:
   in [unknown function] from (./UInt.rsh:8:17:function exp) at (./UInt.rsh:8:13:application)
 
-For further explanation of this error, see: https://docs.reach.sh/RE0056.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0056
 

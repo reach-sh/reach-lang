@@ -150,7 +150,6 @@ data EvalError
   | Err_Switch_UnreachableCase SrcLoc SLVar SrcLoc
   | Err_NotAfterFirst
   | Err_UniqueFirstPublish
-  | Err_ApiCallAssign
   | Err_DuplicateName String SrcLoc
   | Err_No_Participants
   | Err_Api_Publish (S.Set SLPart)
@@ -285,7 +284,6 @@ instance HasErrorCode EvalError where
     Err_NotAfterFirst -> 119
     Err_UniqueFirstPublish -> 120
     Err_API_NotFun {} -> 121
-    Err_ApiCallAssign {} -> 122
     Err_DuplicateName {} -> 123
     Err_No_Participants {} -> 124
     Err_Api_Publish {} -> 125
@@ -718,8 +716,6 @@ instance Show EvalError where
       "Cannot inspect publication details until after first publication"
     Err_UniqueFirstPublish ->
       "A unique `Participant` must make the first publication"
-    Err_ApiCallAssign ->
-      "The left hand side of an API call must be a pair consisting of the domain and return function."
     Err_DuplicateName s at ->
       "The name `" <> s <> "` has already been used by a Participant, View or API at: " <> show at
     Err_No_Participants ->

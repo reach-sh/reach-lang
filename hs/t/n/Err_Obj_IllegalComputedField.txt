@@ -4,5 +4,5 @@ reachc: error[RE0049]: Invalid computed field name. Fields must be bytes, but go
 
   3| const x = {[ 2+2 ]: "four"}
 
-For further explanation of this error, see: https://docs.reach.sh/RE0049.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0049
 

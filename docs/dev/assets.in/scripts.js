@@ -2,20 +2,17 @@ const axiosGetData = async (u) => {
   const c = await axios.get(u);
   return c.data;
 };
+const doc = window.document;
+const hh = (x) => x === '' ? '/' : `/${x}/`;
 
-import algoliasearch from 'https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.esm.browser.js';
 const searchClient = algoliasearch('M53HHHS0ZW', '0cfd8f1c1a0e3cb7b2abd77b831614dc');
-const searchIndex = searchClient.initIndex('rdp_en');
+const searchIndex = searchClient.initIndex('docs');
 
 const currentPage = {
   folder: null,
-  bookPath: null,
+  bookPath: undefined,
   hasOtp: false,
-  src: null
 };
-
-// XXX move into generator
-const github = 'https://github.com/reach-sh/reach-lang/tree/master/docs/dev/src';
 
 // let lang = window.navigator.language.split('-')[0];
 
@@ -32,9 +29,9 @@ const maxColWidth = '280px';
 let winWidth = getWinWidthStr();
 
 const establishDisplay = () => {
-  if (currentPage.bookPath) {
-    const bookCol = document.getElementById('book-col');
-    const bookBtn = document.querySelector('div.show-book-col');
+  const bookCol = doc.getElementById('book-col');
+  if (currentPage.bookPath !== undefined) {
+    const bookBtn = doc.querySelector('div.show-book-col');
     if (winWidth == 'xl' || winWidth == 'lg' || winWidth == 'md') {
       bookCol.style.maxWidth = maxColWidth;
       bookCol.style.display = 'block';
@@ -47,8 +44,8 @@ const establishDisplay = () => {
   }
 
   if (currentPage.hasOtp) {
-    const otpCol = document.getElementById('otp-col');
-    const otpBtn = document.querySelector('button.show-otp-col');
+    const otpCol = doc.getElementById('otp-col');
+    const otpBtn = doc.querySelector('button.show-otp-col');
     if (winWidth == 'xl' || winWidth == 'lg' || winWidth == 'md') {
       otpCol.style.maxWidth = maxColWidth;
       otpCol.style.display = 'block';
@@ -70,29 +67,32 @@ window.addEventListener('resize', () => {
 });
 
 const scrollHandler = (event) => {
-  if (document.querySelectorAll('#otp-col li.dynamic').length == false) {
+  if (doc.querySelectorAll('#otp-col li.dynamic').length == false) {
     event.target.onscroll = null;
   } else {
-    const arr = document.querySelectorAll('#page-col div.hh-viewer h1, #page-col div.hh-viewer h2');
-    if (arr.length) {
-      let t = 'on-this-page';
-      for (let i = arr.length - 1; i >= 0; i--) {
-        const rect = arr[i].getBoundingClientRect();
-        if (rect.y <= 80.0) {
-          t = arr[i].id;
-          break;
-        }
+    const a = doc.createElement('a');
+    const arr = doc.querySelectorAll('#otp-col a');
+    let t = 'on-this-page';
+    for (let i = arr.length - 1; i >= 0; i--) {
+      a.href = arr[i].href;
+      const h = a.hash;
+      const hid = h && h.substring(1);
+      const el = hid && doc.getElementById(hid);
+      const rect = el && el.getBoundingClientRect();
+      if (rect && rect.y <= 80.0) {
+        t = el.id;
+        break;
       }
-      gotoTarget(true, t, false);
     }
+    gotoTarget(false, t, false);
   }
 }
 
 const scrollPage = (id) => {
   if (id == 'on-this-page') {
-    document.getElementById('page-col').scrollTo(0, 0);
+    doc.getElementById('page-col').scrollTo(0, 0);
   } else {
-    const t = document.getElementById(id);
+    const t = doc.getElementById(id);
     if ( t ) { t.scrollIntoView(); }
   }
 };
@@ -105,18 +105,18 @@ const updateHistory = (id) => {
 
 const gotoTarget = async (shallUpdateHistory, t, shouldScroll = true) => {
   if ( shouldScroll ) { scrollPage(t); }
-  if (shallUpdateHistory) { updateHistory(t); }
+  if ( shallUpdateHistory ) { updateHistory(t); }
   setOtpItemToActive(t);
 };
 
 const setOtpItemToActive = (id) => {
+  const a = doc.querySelector('#otp-col a.active');
+  if ( a ) { a.classList.remove('active'); }
   const link =
     (id === 'on-this-page') ?
-      document.querySelector('#otp-col ul li a[href="#on-this-page"]') :
-      document.querySelector('#otp-col ul li a[href="' + "#" + id + '"]');
+      doc.querySelector('#otp-col a[href="#on-this-page"]') :
+      doc.querySelector('#otp-col a[href="' + "#" + id + '"]');
   if ( link && link.classList && link.classList.contains('active') === false) {
-    const a = document.querySelector('#otp-col a.active');
-    if ( a ) { a.classList.remove('active'); }
     link.classList.add('active');
   }
 };
@@ -131,18 +131,15 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   const configJson = await axiosGetData(`${url}config.json`);
 
   // Book or different book?
-  if (configJson.bookPath && configJson.bookPath !== currentPage.bookPath) {
-    const bookTitle_a = document.getElementById('about-this-book');
-    bookTitle_a.href = `/${configJson.bookPath}/`;
-    bookTitle_a.innerHTML = configJson.bookTitle;
-    let bookHtml = document.createRange().createContextualFragment((await axios.get(`${window.location.origin}/${configJson.bookPath}/book.html`)).data);
-    document.querySelectorAll('#book-col div.dynamic').forEach(n => n.remove());
-    document.querySelector('#book-col').append(bookHtml);
+  if (configJson.bookPath !== undefined && configJson.bookPath !== currentPage.bookPath) {
+    let bookHtml = doc.createRange().createContextualFragment(await axiosGetData(`${window.location.origin}${hh(configJson.bookPath)}book.html`));
+    doc.querySelectorAll('#book-col div.dynamic').forEach(n => n.remove());
+    doc.querySelector('#book-col').append(bookHtml);
 
     // On click chapter-icon.
-    document.querySelectorAll('#book-col i.chapter-icon').forEach(el => {
-      el.addEventListener('click', (event) => {
-        const item = event.target;
+    doc.querySelectorAll('#book-col i.chapter-icon').forEach(el => {
+      el.addEventListener('click', (evt) => {
+        const item = evt.target;
         const pages = item.closest('div.chapter').querySelector('div.pages');
         if (item.classList.contains('fa-angle-right')) {
           item.classList.remove('fa-angle-right');
@@ -160,59 +157,70 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
 
   // Write page title
   const ctitle = configJson.title;
-  const tspan = document.querySelector('div.hh-viewer-wrapper span.title');
+  const tspan = doc.querySelector('div#hh-viewer-wrapper span.title');
   tspan.id = configJson.titleId;
   tspan.textContent = ctitle;
-  document.title = `Reach > ${ctitle}`;
+  doc.title = `Reach > ${ctitle}`;
 
   // Update and show/hide edit btn.
-  document.getElementById('edit-btn').href = `${github}${folder}index.md`;
-
-  // Write author
-  document.querySelector('div.hh-viewer-wrapper span.author').innerHTML = configJson.author ? `By ${configJson.author}` : '';
-
-  // Write published data
-  document.querySelector('div.hh-viewer-wrapper span.published-date').innerHTML = configJson.publishedDate ? `Published on ${(new Date(configJson.publishedDate)).toLocaleDateString()}` : '';
+  // XXX move into generator
+  const github = 'https://github.com/reach-sh/reach-lang/tree/master/docs/dev/src';
+  doc.getElementById('edit-btn').href = `${github}${folder}index.md`;
 
   // Write page html
   const pageHtml = await pageHtmlP;
-  const pageDoc = document.createRange().createContextualFragment(pageHtml);
-  document.querySelector('div.hh-viewer-wrapper div.hh-viewer').textContent = '';
-  document.querySelector('div.hh-viewer-wrapper div.hh-viewer').append(pageDoc);
+  const pageDoc = doc.createRange().createContextualFragment(pageHtml);
+  doc.querySelector('div#hh-viewer-wrapper div#hh-viewer').textContent = '';
+  doc.querySelector('div#hh-viewer-wrapper div#hh-viewer').append(pageDoc);
 
   // If search page.
-  const searchInput = document.getElementById('search-input');
+  const searchInput = doc.getElementById('search-input');
   if (searchInput) {
+    currentPage.bookPath = undefined;
     searchInput.focus();
-    searchInput.addEventListener('keyup', function (event) {
-      searchIndex.search(searchInput.value).then(({ hits }) => {
-        if(hits.length) {
-          const searchResultsList = document.getElementById('search-results-list');
-          searchResultsList.innerHTML = '';
-          hits.forEach((el, index) => {
-            const a = document.createElement('a');
-            a.href = el.url;
-            const anchorTextSpan = document.createElement('span');
-            anchorTextSpan.innerHTML = el._highlightResult.title.value;
-            a.append(anchorTextSpan);
-            const summarySpan = document.createElement('span');
-            summarySpan.innerHTML = ` - ${el._highlightResult.summary.value}`;
-            const li = document.createElement('li');
-            li.append(a);
-            li.append(summarySpan);
-            searchResultsList.append(li);
-          });
+    const searchResultsList = doc.getElementById('search-results-list');
+    searchInput.addEventListener('keyup', async (evt) => {
+      const { hits } = await searchIndex.search(searchInput.value);
+      if ( ! hits.length ) { return; }
+      searchResultsList.innerHTML = '';
+      hits.forEach((hit) => {
+        const sdClasses = [ 'sdRef', 'sdTerm', 'sdHeader', 'sdPara' ];
+        const c = sdClasses[hit.t];
+        const e = doc.createElement('li');
+        e.classList.add(c);
+        const h = (cls, t) => {
+          const n = doc.createElement('span');
+          n.classList.add(cls);
+          n.innerText = t;
+          e.appendChild(n);
+        };
+        const a = doc.createElement('a');
+        a.classList.add('pt');
+        a.href = hit.objectID;
+        a.innerText = hit.pt;
+        e.appendChild(a);
+        if ( c === 'sdRef' ) {
+          h('symbol', hit.c);
+          h('scope', hit.s);
+        } else if ( c === 'sdTerm' ) {
+          h('term', hit.c);
+        } else if ( c === 'sdHeader' ) {
+          h('h', hit.c);
+        } else if ( c === 'sdPara' ) {
+          h('p', hit.c);
         }
+        searchResultsList.append(e);
       });
+      setClickFollowLink();
     });
   }
 
   // Write otp html.
   if (configJson.hasOtp) {
-    document.querySelectorAll('#otp-col ul ul.dynamic, #otp-col ul li.dynamic').forEach(n => { n.remove(); });
-    const otpUl = document.querySelector('#otp-col ul');
+    doc.querySelectorAll('#otp-col ul ul.dynamic, #otp-col ul li.dynamic').forEach(n => { n.remove(); });
+    const otpUl = doc.querySelector('#otp-col ul');
     const otpHtml = await otpHtmlP;
-    const otpDoc = document.createRange().createContextualFragment(otpHtml);
+    const otpDoc = doc.createRange().createContextualFragment(otpHtml);
     const oul = otpDoc.querySelector('ul');
     if ( oul ) {
       oul.querySelectorAll(':scope > li').forEach((el, index) => {
@@ -230,20 +238,18 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   currentPage.hasOtp = configJson.hasOtp;
 
   // Adjust active indicators.
-  document.querySelectorAll('a').forEach(el => {
+  doc.querySelectorAll('a').forEach(el => {
     el.classList.remove('active');
   });
 
-  // Adjust navbar active indicator.
-  if (configJson.menuItem) {
-    document.getElementById(configJson.menuItem).classList.add('active');
-  }
-
-  const el = document.querySelector(`a[href="${folder}"]`);
-  if (el) {
+  doc.querySelectorAll(`a[href="${folder}"]`).forEach((el) => {
     el.classList.add('active');
+  });
+
+  const el = doc.querySelector(`#book-col a[href="${folder}"]`);
+  if (el) {
     const chapter = el.closest('div.chapter');
-    const pages = chapter.querySelector('div.pages');
+    const pages = chapter && chapter.querySelector('div.pages');
     if (pages && pages.hasChildNodes()) {
       const icon = chapter.querySelector('i.chapter-icon');
       icon.classList.remove('fa-angle-right');
@@ -256,26 +262,26 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   establishDisplay();
 
   // Display book.
-  if (configJson.bookPath) {
-    document.getElementById('book-col').classList.remove('banish');
-    document.querySelector('div.show-book-col').classList.remove('banish');
+  if (currentPage.bookPath != undefined) {
+    doc.getElementById('book-col').classList.remove('banish');
+    doc.querySelector('div.show-book-col').classList.remove('banish');
   } else {
-    document.getElementById('book-col').classList.add('banish');
-    document.querySelector('div.show-book-col').classList.add('banish');
+    doc.getElementById('book-col').classList.add('banish');
+    doc.querySelector('div.show-book-col').classList.add('banish');
   }
 
   // Display page.
-  document.querySelector('div.hh-page-header').style.display = configJson.hasPageHeader ? 'block' : 'none';
+  doc.querySelector('div#hh-page-header').style.display = configJson.hasPageHeader ? 'block' : 'none';
 
-  document.getElementById('page-col').style.display = 'block';
+  doc.getElementById('page-col').style.display = 'block';
 
   // Display OTP.
   if (configJson.hasOtp) {
-    document.getElementById('otp-col').classList.remove('banish');
-    document.querySelector('button.show-otp-col').classList.remove('banish');
+    doc.getElementById('otp-col').classList.remove('banish');
+    doc.querySelector('button.show-otp-col').classList.remove('banish');
   } else {
-    document.getElementById('otp-col').classList.add('banish');
-    document.querySelector('button.show-otp-col').classList.add('banish');
+    doc.getElementById('otp-col').classList.add('banish');
+    doc.querySelector('button.show-otp-col').classList.add('banish');
   }
 
   // Scroll to proper place and update history
@@ -286,8 +292,14 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
 
 const clickFollowLink = async (evt) => {
   if ( evt.shiftKey || evt.ctrlKey ) { return; }
-  const href = evt.target.href;
-  const a = document.createElement('a');
+  const t = evt.target.closest('a');
+  if ( t.classList && t.classList.contains("copyBtn") ) {
+    evt.preventDefault();
+    await navigator.clipboard.writeText(t.getAttribute('data-clipboard-text'));
+    return;
+  }
+  const href = t.href;
+  const a = doc.createElement('a');
   a.href = href;
   if (a.hostname === window.location.hostname) {
     evt.preventDefault();
@@ -301,50 +313,38 @@ const clickFollowLink = async (evt) => {
 };
 
 const setClickFollowLink = () => {
-  document.querySelectorAll('a').forEach((el) => {
+  doc.querySelectorAll('a').forEach((el) => {
     el.addEventListener('click', clickFollowLink);
   });
 };
 
 window.onpopstate = function (event) {
-  const a = document.createElement('a');
-  a.href = document.location.href;
+  const a = doc.createElement('a');
+  a.href = doc.location.href;
   getWebpage(a.pathname, a.hash, false);
 };
 
-document.querySelector('button.hide-book-icon').addEventListener('click', (event) => {
-  if (winWidth == 'sm' || winWidth == 'xs') {
-    document.getElementById('page-col').style.display = 'block';
-  }
-  document.getElementById('book-col').style.display = 'none';
-  document.querySelector('div.show-book-col').style.display = 'block';
-});
+const makeShowHide = (hideQ, showQ, showId) => {
+  const f = (isHide) => {
+    const g = (b) => b ? 'block' : 'none';
+    const x = g(isHide); const y = g(! isHide);
+    const q = isHide ? hideQ : showQ;
+    doc.querySelector(q).addEventListener('click', (event) => {
+      if (winWidth == 'sm' || winWidth == 'xs') {
+        doc.getElementById('page-col').style.display = x;
+      }
+      doc.getElementById(showId).style.display = y;
+      doc.querySelector(showQ).style.display = x;
+    });
+  };
+  f(true);
+  f(false);
+};
 
-document.querySelector('button.show-book-col').addEventListener('click', (event) => {
-  if (winWidth == 'sm' || winWidth == 'xs') {
-    document.getElementById('page-col').style.display = 'none';
-  }
-  document.getElementById('book-col').style.display = 'block';
-  document.querySelector('div.show-book-col').style.display = 'none';
-});
+makeShowHide('button.hide-book-icon', 'div.show-book-col', 'book-col');
+makeShowHide('button.hide-otp-icon', 'button.show-otp-col', 'otp-col');
 
-document.querySelector('button.hide-otp-icon').addEventListener('click', (event) => {
-  if (winWidth == 'sm' || winWidth == 'xs') {
-    document.getElementById('page-col').style.display = 'block';
-  }
-  document.getElementById('otp-col').style.display = 'none';
-  document.querySelector('button.show-otp-col').style.display = 'block';
-});
-
-document.querySelector('button.show-otp-col').addEventListener('click', (event) => {
-  if (winWidth == 'sm' || winWidth == 'xs') {
-    document.getElementById('page-col').style.display = 'none';
-  }
-  document.getElementById('otp-col').style.display = 'block';
-  document.querySelector('button.show-otp-col').style.display = 'none';
-});
-
-document.getElementById('page-col').addEventListener('scroll', scrollHandler);
+doc.getElementById('page-col').addEventListener('scroll', scrollHandler);
 
 getWebpage(window.location.pathname, window.location.hash, true);
 

@@ -190,8 +190,8 @@ instance Unroll LLStep where
       LLS_ToConsensus at lct send <$> ul recv <*> ul mtime
 
 instance Unroll LLProg where
-  ul (LLProg at opts ps dli dex dvs das s) =
-    LLProg at opts ps dli <$> ul dex <*> pure dvs <*> pure das <*> ul s
+  ul (LLProg at opts ps dli dex dvs das devts s) =
+    LLProg at opts ps dli <$> ul dex <*> pure dvs <*> pure das <*> pure devts <*> ul s
 
 instance Unroll CTail where
   ul = \case
@@ -212,11 +212,11 @@ instance Unroll CHandlers where
   ul (CHandlers m) = CHandlers <$> ul m
 
 instance Unroll CPProg where
-  ul (CPProg at vi ai hs) =
+  ul (CPProg at vi ai devts hs) =
     -- Note: When views contain functions, if we had a network where we
     -- compiled the views to VM code, and had to unroll, then we'd need to
     -- unroll vi here.
-    CPProg at vi ai <$> ul hs
+    CPProg at vi ai devts <$> ul hs
 
 instance Unroll EPPs where
   ul (EPPs {..}) = EPPs <$> pure epps_apis <*> pure epps_m

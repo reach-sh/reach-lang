@@ -4,5 +4,5 @@ reachc: error[RE0025]: hello is not a field of Tuple(UInt, UInt, UInt). Did you 
 
   6|     return arr["hello"];
 
-For further explanation of this error, see: https://docs.reach.sh/RE0025.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0025
 

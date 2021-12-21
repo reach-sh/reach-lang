@@ -4,5 +4,5 @@ reachc: error[RE0042]: Invalid unbound identifier in expression: MintedToken. Di
 
   14|       MintedToken
 
-For further explanation of this error, see: https://docs.reach.sh/RE0042.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0042
 

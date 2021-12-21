@@ -10,5 +10,5 @@ reachc: error[RC0000]: integer literal out of range for ALGO: 184467440737095516
 
   11|     const y = 18446744073709551616;
 
-For further explanation of this error, see: https://docs.reach.sh/RC0000.html
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RC0000
 
