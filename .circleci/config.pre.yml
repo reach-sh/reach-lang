@@ -246,15 +246,15 @@ jobs:
     - workattach
     - and_restore_docker:
         deps: <<parameters.deps>>
-        #IMAGE="<<parameters.image>>"
-        #mkdir -p "/tmp/workspace/docker-${IMAGE}"
-        #cd .circleci && ./image.sh "${IMAGE}"
-        #docker tag reachsh/${IMAGE}:latest reachsh/${IMAGE}:${CIRCLE_BRANCH/\//-}
-        #docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
-        #$ROOT/scripts/cache-image.sh "${IMAGE}"
     - run: |
         ROOT=$(pwd)
         docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
+        IMAGE="<<parameters.image>>"
+        mkdir -p "/tmp/workspace/docker-${IMAGE}"
+        cd .circleci && ./image.sh "${IMAGE}"
+        docker tag reachsh/${IMAGE}:latest reachsh/${IMAGE}:${CIRCLE_BRANCH/\//-}
+        docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
+        $ROOT/scripts/cache-image.sh "${IMAGE}"
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
