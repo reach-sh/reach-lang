@@ -48,9 +48,8 @@ data Status = Initial | Running | Done
 instance ToJSON Status
 instance FromJSON Status
 
--- TODO: improve actions API
 data Session = Session
-  { e_states_actions :: M.Map StateId [ActionId]
+  { e_actors_actions :: M.Map C.ActorId [ActionId]
   , e_nsid :: Int
   , e_naid :: Int
   , e_ids_actions :: M.Map ActionId C.Action
@@ -62,7 +61,7 @@ data Session = Session
 
 initSession :: Session
 initSession = Session
-  { e_states_actions = mempty
+  { e_actors_actions = mempty
   , e_nsid = 0
   , e_naid = 0
   , e_ids_actions = mempty
@@ -75,17 +74,17 @@ initSession = Session
 processNewState :: C.PartState -> WebM ()
 processNewState ps = do
   sid <- gets e_nsid
+  actorId <- gets e_actor_id
   _ <- case ps of
     C.PS_Done _ _ -> do
       _ <- return $ putStrLn "EVAL DONE"
-      registerAction sid C.A_None
-    C.PS_Suspend a _ _ -> registerAction sid a
+      registerAction actorId C.A_None
+    C.PS_Suspend a _ _ -> registerAction actorId a
   let ((g,l), stat) =
         case ps of
           C.PS_Done s _ -> (s, Done)
           C.PS_Suspend _ s _ -> (s, Running)
   graph <- gets e_graph
-  actorId <- gets e_actor_id
   let locals = C.l_locals l
   let lcl = saferMapRef "processNewState" $ M.lookup actorId locals
   let lcl' = lcl { C.l_ks = Just ps }
@@ -95,16 +94,16 @@ processNewState ps = do
     {e_status = stat}
     {e_graph = M.insert sid (g,l') graph}
 
-registerAction :: StateId -> C.Action -> WebM ActionId
-registerAction sid act = do
+registerAction :: C.ActorId -> C.Action -> WebM ActionId
+registerAction actorId act = do
   aid <- gets e_naid
   modify $ \ st -> st {e_naid = aid + 1}
-  stacts <- gets e_states_actions
+  actacts <- gets e_actors_actions
   idacts <- gets e_ids_actions
   modify $ \ st -> st {e_ids_actions = M.insert aid act idacts}
-  case M.lookup sid stacts of
-    Nothing -> modify $ \ st -> st {e_states_actions = M.insert sid [aid] stacts }
-    Just acts -> modify $ \ st -> st {e_states_actions = M.insert sid (aid:acts) stacts }
+  case M.lookup actorId actacts of
+    Nothing -> modify $ \ st -> st {e_actors_actions = M.insert actorId [aid] actacts }
+    Just acts -> modify $ \ st -> st {e_actors_actions = M.insert actorId (aid:acts) actacts }
   return aid
 
 unblockProg :: StateId -> ActionId -> C.DLVal -> WebM ()
@@ -181,13 +180,12 @@ changeActor :: C.ActorId -> WebM ()
 changeActor actId = do
   modify $ \ st -> st {e_actor_id = actId}
 
-computeActions :: StateId -> WebM [C.Action]
-computeActions sid = do
-  stacts <- gets e_states_actions
+computeActions :: WebM [C.Action]
+computeActions = do
+  actacts <- gets e_actors_actions
   idacts <- gets e_ids_actions
-  case M.lookup sid stacts of
-    Nothing -> return []
-    Just acts -> return $ map (\x -> saferMapRef "computeActions" $ M.lookup x idacts) acts
+  let acts = concat $ map (take 1) $ M.elems actacts
+  return $ map (\x -> saferMapRef "computeActions" $ M.lookup x idacts) acts
 
 initProgSim :: LLProg -> WebM ()
 initProgSim ll = do
@@ -264,9 +262,8 @@ app p = do
     ss <- webM $ allStates
     json (filter ((==) s) $ ss)
 
-  get "/states/:s/actions" $ do
-    s <- param "s"
-    as <- webM $ computeActions s
+  get "/actions" $ do
+    as <- webM $ computeActions
     json as
 
   post "/states/:s/actions/:a/" $ do
