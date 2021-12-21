@@ -346,6 +346,7 @@ export const stdContract =
               theReject(err);
             }
           };
+          debug(`${bl}: start`, args);
           ab(ctcC, {
             "in": (() => {
               debug(`${bl}: in`, args);
@@ -399,8 +400,7 @@ export const stdContract =
     unsafeViews,
     apis, a: apis,
     safeApis,
-    e: events,
-    events
+    events, e: events,
   };
 };
 

@@ -1034,6 +1034,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const { getInfo: fake_getInfo } = setupViewArgs;
       let _theC: ContractHandler|undefined = undefined;
       return async (): Promise<ContractHandler> => {
+        debug(label, 'getC');
         if ( _theC ) { return _theC; }
         const ctcInfo = await fake_getInfo();
         const { ApplicationID, Deployer, startRound } =
@@ -1140,14 +1141,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return vvs;
     };
 
+    const didSet = new Signal();
+    let fake_info: ContractInfo|undefined = undefined;
     const _setup = (setupArgs: SetupArgs): SetupRes => {
       const { setInfo, getInfo, setTrustedVerifyResult } = setupArgs;
 
-      const didSet = new Signal();
-      let fake_info: ContractInfo|undefined = undefined;
       const fake_setInfo = (x:ContractInfo) => {
         fake_info = x;
         didSet.notify();
+        debug(label, 'fake_setInfo', 'notified');
       };
       const ctorRan = new Signal();
       ctorRan.wait().then(() => {
@@ -1159,7 +1161,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         if ( givenInfoP ) {
           return await getInfo();
         } else {
+          debug(label, 'fake_getInfo', 'wait');
           await didSet.wait();
+          debug(label, 'fake_getInfo', 'notified');
           if ( fake_info === undefined ) { throw Error(`impossible fake_info`); }
           return fake_info;
         }
@@ -1183,6 +1187,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
 
       const getState = async (vibne:BigNumber, vtys:AnyALGO_Ty[]): Promise<Array<any>> => {
+        debug('getState');
         return await getState_(getC, (vibna:BigNumber) => {
           if ( vibne.eq(vibna) ) { return vtys; }
           throw Error(`Expected state ${vibne}, got ${vibna}`);
