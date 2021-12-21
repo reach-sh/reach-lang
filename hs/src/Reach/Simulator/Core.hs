@@ -521,6 +521,9 @@ instance Interp DLExpr where
       setGlobal $ e {e_ledger = new_nw_ledger }
       return V_Null
     DLE_TimeOrder _at _assoc_maybe_arg_vars -> return V_Null
+    -- NOTE: Contracts are not necessarily addresses and it 
+    -- might be a good idea to introduce a new value, `V_Contract`,
+    -- for them in the future to ensure that they can't be mixed at run time
     DLE_GetContract _at -> V_Address <$> l_acct <$> getMyLocalInfo
     DLE_GetAddress _at -> V_Address <$> l_acct <$> getMyLocalInfo
     DLE_EmitLog at _str _maybe_str dlvar -> interp $ DL_Var at dlvar
