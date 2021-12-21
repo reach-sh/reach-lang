@@ -358,9 +358,9 @@ instance Interp DLArg where
     DLA_Constant dlconst -> return $ conCons' dlconst
     DLA_Literal dllit -> interp dllit
     DLA_Interact slpart str dltype -> do
+      v <- suspend $ PS_Suspend (A_InteractV (bunpack slpart) str dltype)
       l <- getLocal
       let actId = l_curr_actor_id l
-      v <- suspend $ PS_Suspend (A_InteractV (bunpack slpart) str dltype)
       lcl <- getMyLocalInfo
       let newliv = M.insertWith (\_ y -> y) str v (l_livs lcl)
       let lcl' = lcl { l_livs = newliv }
