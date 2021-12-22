@@ -118,7 +118,68 @@ export interface Stdlib_User_Base extends Stdlib_Backend_Shared_User, Stdlib_Use
 
 // TODO: types for
 type NetworkAccount = any
-type Acc = any
+type Acc = {
+  /**
+   * [`attach`](https://docs.reach.sh/frontend/#js_attach)
+   * is an abbreviation of
+   * `acc.contract(bin, info)`.
+   *
+   * ```typescript
+   * acc.attach(bin, info) => ctc
+   * ```
+   *
+   * @deprecated Use
+   * [`contract`](https://docs.reach.sh/frontend/#js_contract)
+   * instead.
+   */
+  attach: (bin: any, info: any) => any;
+  /**
+   * Returns a Reach contract handle based on the
+   * `bin` argument provided with access to the
+   * account `acc`. This `bin` argument is the
+   * `index.main.mjs` module produced by the
+   * JavaScript backend.
+   *
+   * If info is provided, it must be a `Contract`
+   * value, or a `Promise` that eventually yields a
+   * `Contract` value. Typically, the deployer of a
+   * contract will not provide `info`, while users of
+   * a contract will. In an automated, single instance
+   * program, `ctc.getInfo()` is typically used to
+   * acquire `info`; while in non-automated programs,
+   * an application uses out-of-band communication,
+   * such as an external database or user input,
+   * to acquire the `info` argument.
+   *
+   * The first publishing participant will attempt to
+   * deploy a contract for an application. If `info`
+   * was provided, an error will be thrown. This
+   * deployment can only happen one time, so
+   * subsequent attempts will fail with an error.
+   *
+   * [`contract`](https://docs.reach.sh/frontend/#js_contract)
+   * does not block.
+   *
+   * ```typescript
+   * acc.contract(bin, info?) => ctc
+   * ```
+   */
+  contract: (bin: any, info?: any) => any;
+  /**
+   * [`deploy`](https://docs.reach.sh/frontend/#js_deploy)
+   * is an abbreviation of
+   * `acc.contract(bin)`.
+   *
+   * ```typescript
+   * acc.deploy(bin) => ctc
+   * ```
+   *
+   * @deprecated Use
+   * [`contract`](https://docs.reach.sh/frontend/#js_contract)
+   * instead.
+   */
+  deploy: (bin: any) => any;
+};
 type Token = any // ETH/CFX: string, ALGO: num
 type CtcInfo = any
 type Backend = any
