@@ -2112,7 +2112,7 @@ export function formatAddress(acc: string|NetworkAccount|Account): string {
 
 export function unsafeGetMnemonic(acc: NetworkAccount|Account): string {
   // @ts-ignore
-  const networkAccount: NetworkAccount = acc.networkAccount | acc;
+  const networkAccount: NetworkAccount = acc.networkAccount || acc;
   if (!networkAccount.sk) { throw Error(`unsafeGetMnemonic: Secret key not accessible for account`); }
   return algosdk.secretKeyToMnemonic(networkAccount.sk);
 }
