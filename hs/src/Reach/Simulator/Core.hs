@@ -287,13 +287,12 @@ updateLedger acc tok f = do
   let m = saferMapRef "updateLedger" $ M.lookup acc map_ledger
   let prev_amt = saferMapRef "updateLedger1" $ M.lookup tok m
   let new_amt = f prev_amt
-  let q = saferMapRef "updateLedger2" $ M.lookup acc map_ledger
-  let new_nw_ledger = M.insert acc (M.insert tok new_amt q) map_ledger
+  let new_nw_ledger = M.insert acc (M.insert tok new_amt m) map_ledger
   setGlobal $ e { e_ledger = new_nw_ledger }
 
 transferLedger :: Account -> Account -> Token -> Integer -> App ()
 transferLedger fromAcc toAcc tok n = do
-  updateLedger fromAcc tok (n-)
+  updateLedger fromAcc tok (\x -> x - n)
   updateLedger toAcc tok (+n)
 
 -- ## INTERPRETER ## --
@@ -396,43 +395,29 @@ instance Interp DLExpr where
       evd_args <- mapM interp dlargs
       interpPrim (primop,evd_args)
     DLE_ArrayRef _at dlarg1 dlarg2 -> do
-      ev1 <- interp dlarg1
-      ev2 <- interp dlarg2
-      case (ev1,ev2) of
-        (V_Array arr, V_UInt n) -> return $ saferIndex (fromIntegral n) arr
-        _ -> impossible "expression interpreter"
+      arr <- vArray <$> interp dlarg1
+      n <- vUInt <$> interp dlarg2
+      return $ saferIndex (fromIntegral n) arr
     DLE_ArraySet _at dlarg1 dlarg2 dlarg3 -> do
-      ev1 <- interp dlarg1
-      ev2 <- interp dlarg2
+      arr <- vArray <$> interp dlarg1
+      n <- vUInt <$> interp dlarg2
       ev3 <- interp dlarg3
-      case (ev1,ev2) of
-        (V_Array arr, V_UInt n) -> do
-          let n' = fromIntegral n
-          return $ V_Array $ arraySet n' ev3 arr
-        _ -> impossible "expression interpreter"
+      let n' = fromIntegral n
+      return $ V_Array $ arraySet n' ev3 arr
     DLE_ArrayConcat _at dlarg1 dlarg2 -> do
-      ev1 <- interp dlarg1
-      ev2 <- interp dlarg2
-      case (ev1,ev2) of
-        (V_Array arr1, V_Array arr2) -> return $ V_Array $ arr1 <> arr2
-        _ -> impossible "expression interpreter"
+      arr1 <- vArray <$> interp dlarg1
+      arr2 <- vArray <$> interp dlarg2
+      return $ V_Array $ arr1 <> arr2
     DLE_ArrayZip _at dlarg1 dlarg2 -> do
-      ev1 <- interp dlarg1
-      ev2 <- interp dlarg2
-      case (ev1,ev2) of
-        (V_Array arr1, V_Array arr2) -> do
-          return $ V_Array $ map (\(l,r)-> V_Tuple $ [l,r]) $ zip arr1 arr2
-        _ -> impossible "expression interpreter"
+      arr1 <- vArray <$> interp dlarg1
+      arr2 <- vArray <$> interp dlarg2
+      return $ V_Array $ map (\(l,r)-> V_Tuple $ [l,r]) $ zip arr1 arr2
     DLE_TupleRef _at dlarg n -> do
-      ev <- interp dlarg
-      case ev of
-        V_Tuple arr -> return $ saferIndex (fromIntegral n) arr
-        _ -> impossible "expression interpreter"
+      arr <- vTuple <$> interp dlarg
+      return $ saferIndex (fromIntegral n) arr
     DLE_ObjectRef _at dlarg str -> do
-      ev <- interp dlarg
-      case ev of
-        V_Object obj -> return $ saferMapRef "DLE_ObjectRef" $ M.lookup str obj
-        _ -> impossible $ "expression interpreter"
+      obj <- vObject <$> interp dlarg
+      return $ saferMapRef "DLE_ObjectRef" $ M.lookup str obj
     DLE_Interact at slcxtframes slpart str dltype dlargs -> do
       args <- mapM interp dlargs
       suspend $ PS_Suspend (A_Interact at slcxtframes (bunpack slpart) str dltype args)
@@ -452,19 +437,16 @@ instance Interp DLExpr where
       case who of
         Participant _ -> return V_Null
         Consensus -> do
-          ev1 <- interp dlarg1
-          ev2 <- interp dlarg2
-          case (ev1,ev2) of
-            (V_Address acc, V_UInt n) -> do
-              case maybe_dlarg of
-                Nothing -> do
-                  transferLedger simContract acc nwToken n
-                  return V_Null
-                Just tok -> do
-                  ev <- vUInt <$> interp tok
-                  transferLedger simContract acc ev n
-                  return V_Null
-            _ -> impossible "expression interpreter"
+          acc <- vAddress <$> interp dlarg1
+          n <- vUInt <$> interp dlarg2
+          case maybe_dlarg of
+            Nothing -> do
+              transferLedger simContract acc nwToken n
+              return V_Null
+            Just tok -> do
+              ev <- vUInt <$> interp tok
+              transferLedger simContract acc ev n
+              return V_Null
     DLE_TokenInit _at _dlarg -> return V_Null
     DLE_CheckPay _at _slcxtframes _dlarg _maybe_dlarg -> return $ V_Null
     DLE_Wait _at dltimearg -> case dltimearg of
@@ -478,40 +460,32 @@ instance Interp DLExpr where
     DLE_MapRef _at dlmvar dlarg -> do
       (g, _) <- getState
       let linstate = e_linstate g
-      ev <- interp dlarg
-      case ev of
-        V_Address acc -> do
-          let m = saferMapRef "DLE_MapRef1" $ M.lookup dlmvar linstate
-          return $ saferMapRef "DLE_MapRef2" $ M.lookup acc m
-        _ -> impossible "unexpected error"
+      acc <- vAddress <$> interp dlarg
+      let m = saferMapRef "DLE_MapRef1" $ M.lookup dlmvar linstate
+      return $ saferMapRef "DLE_MapRef2" $ M.lookup acc m
     DLE_MapSet _at dlmvar dlarg maybe_dlarg -> do
       (e, _) <- getState
       let linst = e_linstate e
-      ev <- interp dlarg
-      case ev of
-        V_Address acc -> case maybe_dlarg of
-          Nothing -> do
-            let m = M.delete acc $ saferMapRef "DLE_MapSet1" $ M.lookup dlmvar linst
-            setGlobal $ e {e_linstate = M.insert dlmvar m linst}
-            return V_Null
-          Just dlarg' -> do
-            ev' <- interp dlarg'
-            let m = M.insert acc ev' $ saferMapRef "DLE_MapSet2" $ M.lookup dlmvar linst
-            setGlobal $ e {e_linstate = M.insert dlmvar m linst}
-            return V_Null
-        _ -> impossible "unexpected error"
+      acc <- vAddress <$> interp dlarg
+      case maybe_dlarg of
+        Nothing -> do
+          let m = M.delete acc $ saferMapRef "DLE_MapSet1" $ M.lookup dlmvar linst
+          setGlobal $ e {e_linstate = M.insert dlmvar m linst}
+          return V_Null
+        Just dlarg' -> do
+          ev' <- interp dlarg'
+          let m = M.insert acc ev' $ saferMapRef "DLE_MapSet2" $ M.lookup dlmvar linst
+          setGlobal $ e {e_linstate = M.insert dlmvar m linst}
+          return V_Null
     DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill -> impossible "undefined"
     DLE_TokenNew _at dltokennew -> do
       ledgerNewToken simContract dltokennew
       return V_Null
     DLE_TokenBurn _at dlarg1 dlarg2 -> do
-      ev1 <- interp dlarg1
-      ev2 <- interp dlarg2
-      case (ev1,ev2) of
-        (V_UInt tok, V_UInt burn_amt) -> do
-          updateLedger 0 tok (burn_amt-)
-          return V_Null
-        _ -> impossible "expression interpreter"
+      tok <- vUInt <$> interp dlarg1
+      burn_amt <- vUInt <$> interp dlarg2
+      updateLedger 0 tok (burn_amt-)
+      return V_Null
     DLE_TokenDestroy _at dlarg -> do
       ev <- vUInt <$> interp dlarg
       (e, _) <- getState
@@ -545,29 +519,23 @@ instance Interp DLStmt where
         addToStore var ev
         return V_Null
     DL_ArrayMap _at var1 arg var2 block -> do
-      arr <- interp arg
+      arr' <- vArray <$> interp arg
       let f = (\x val -> do
             addToStore x val
             interp block)
-      case arr of
-        V_Array arr' -> do
-          res <- V_Array <$> mapM (\val -> f var2 val) arr'
-          addToStore var1 res
-          return V_Null
-        _ -> impossible "statement interpreter"
+      res <- V_Array <$> mapM (\val -> f var2 val) arr'
+      addToStore var1 res
+      return V_Null
     DL_ArrayReduce _at var1 arg1 arg2 var2 var3 block -> do
       acc <- interp arg1
-      arr <- interp arg2
+      arr' <- vArray <$> interp arg2
       let f = (\a x b y -> do
             addToStore a x
             addToStore b y
             interp block)
-      case arr of
-        V_Array arr' -> do
-          res <- foldM (\x y -> f var2 x var3 y) acc arr'
-          addToStore var1 res
-          return V_Null
-        _ -> impossible "statement interpreter"
+      res <- foldM (\x y -> f var2 x var3 y) acc arr'
+      addToStore var1 res
+      return V_Null
     DL_Var _at _var -> return V_Null
     DL_Set _at var arg -> do
       ev <- interp arg
@@ -579,15 +547,12 @@ instance Interp DLStmt where
       case ev of
         V_Bool True -> interp tail1
         V_Bool False -> interp tail2
-        _ -> impossible "statement interpreter"
+        _ -> impossible "DL_LocalIf: statement interpreter"
     DL_LocalSwitch _at var cases -> do
-      ev <- interp (DLA_Var var)
-      case ev of
-        V_Data k v -> do
-          let (switch_binding,_,dltail) = saferMapRef "DL_LocalSwitch" $ M.lookup k cases
-          addToStore switch_binding v
-          interp dltail
-        _ -> impossible "unexpected error"
+      (k,v) <- vData <$> interp (DLA_Var var)
+      let (switch_binding,_,dltail) = saferMapRef "DL_LocalSwitch" $ M.lookup k cases
+      addToStore switch_binding v
+      interp dltail
     DL_Only _at either_part dltail -> do
       case either_part of
         Left slpart -> do
@@ -595,7 +560,7 @@ instance Interp DLStmt where
           case who == Participant (bunpack slpart) of
             False -> return V_Null
             True -> interp dltail
-        _ -> impossible "unexpected error"
+        _ -> impossible "DL_Only: unexpected error (Right)"
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
       accu <- interp arg
       (g, _) <- getState
@@ -634,13 +599,10 @@ instance Interp LLConsensus where
         V_Bool False -> interp cons2
         _ -> impossible "consensus interpreter"
     LLC_Switch _at var switch_cases -> do
-      ev <- interp (DLA_Var var)
-      case ev of
-        V_Data k v -> do
-          let (switch_binding,_, cons) = saferMapRef "LLC_Switch" $ M.lookup k switch_cases
-          addToStore switch_binding v
-          interp cons
-        _ -> impossible "unexpected error"
+      (k,v) <- vData <$> interp (DLA_Var var)
+      let (switch_binding,_, cons) = saferMapRef "LLC_Switch" $ M.lookup k switch_cases
+      addToStore switch_binding v
+      interp cons
     LLC_FromConsensus _at1 _at2 step -> do
       incrNWtime 1
       incrNWsecs 1
@@ -691,7 +653,8 @@ instance Interp LLStep where
                       ds_msg' <- mapM interp ds_msg
                       let sto = M.fromList $ zip dr_msg ds_msg'
                       let m = Message {m_store = sto, m_pay = ds_pay}
-                      setGlobal g { e_messages = M.insert phId (NotFixedYet $ M.insert actId m msgs'') (e_messages g) }
+                      let m' = M.insert phId (NotFixedYet $ M.insert actId m msgs'') (e_messages g)
+                      setGlobal g { e_messages = m' }
                       _ <- suspend $ PS_Suspend (A_Contest phId)
                       (actId',_) <- poll phId
                       runWithWinner dlr actId' phId
@@ -848,6 +811,26 @@ saferIndex n (_:xs) = saferIndex (n-1) xs
 vUInt :: G.HasCallStack => DLVal -> Integer
 vUInt (V_UInt n) = n
 vUInt _ = impossible "unexpected error: expected integer"
+
+vArray :: G.HasCallStack => DLVal -> [DLVal]
+vArray (V_Array a) = a
+vArray _ = impossible "unexpected error: expected array"
+
+vTuple :: G.HasCallStack => DLVal -> [DLVal]
+vTuple (V_Tuple a) = a
+vTuple _ = impossible "unexpected error: expected tuple"
+
+vObject :: G.HasCallStack => DLVal -> (M.Map SLVar DLVal)
+vObject (V_Object a) = a
+vObject _ = impossible "unexpected error: expected object"
+
+vData :: G.HasCallStack => DLVal -> (SLVar,DLVal)
+vData (V_Data a b) = (a,b)
+vData _ = impossible "unexpected error: expected data"
+
+vAddress :: G.HasCallStack => DLVal -> Account
+vAddress (V_Address a) = a
+vAddress _ = impossible "unexpected error: expected address"
 
 unfixedMsgs :: G.HasCallStack => MessageInfo -> M.Map ActorId Message
 unfixedMsgs (NotFixedYet m) = m
