@@ -45,6 +45,7 @@ export const {
   minimumBalance,
   formatCurrency,
   formatAddress,
+  unsafeGetMnemonic,
   launchToken,
   reachStdlib,
 } = ethLike;

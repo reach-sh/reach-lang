@@ -2110,6 +2110,13 @@ export function formatAddress(acc: string|NetworkAccount|Account): string {
   return addressFromHex(T_Address.canonicalize(acc));
 }
 
+export function unsafeGetMnemonic(acc: NetworkAccount|Account): string {
+  // @ts-ignore
+  const networkAccount: NetworkAccount = acc.networkAccount | acc;
+  if (!networkAccount.sk) { throw Error(`unsafeGetMnemonic: Secret key not accessible for account`); }
+  return algosdk.secretKeyToMnemonic(networkAccount.sk);
+}
+
 export async function launchToken (accCreator:Account, name:string, sym:string, opts:any = {}) {
   debug(`Launching token, ${name} (${sym})`);
   const addr = (acc:Account) => acc.networkAccount.addr;

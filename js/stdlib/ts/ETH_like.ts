@@ -88,6 +88,7 @@ type NetworkAccount = {
   getAddress?: () => Promise<Address>, // or this for receivers & deployers
   sendTransaction?: (...xs: any) => any, // required for senders
   getBalance?: (...xs: any) => any, // TODO: better type
+  _mnemonic?: () => {phrase: string},
 } | EthersLikeWallet | EthersLikeSigner; // required to deploy/attach
 
 type ContractInfo = Address;
@@ -96,7 +97,12 @@ type RecvArgs = IRecvArgs<AnyETH_Ty>;
 type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Address, Token, AnyETH_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
-  | any /* union in this field: { setGasLimit: (ngl:any) => void } */;
+  & {
+    setGasLimit?: (ngl:any) => void
+    getGasLimit?: any,
+    setStorageLimit?: any,
+    getStorageLimit?: any,
+  }
 type VerifyResult = {
   creation_block: number,
 };
@@ -107,6 +113,8 @@ type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyETH_Ty>;
 
 type AccountTransferable = Account | {
   networkAccount: NetworkAccount,
+  getGasLimit?: any,
+  getStorageLimit?: any,
 };
 
 // ****************************************************************************
@@ -1239,6 +1247,16 @@ async function launchToken (accCreator:Account, name:string, sym:string, opts:an
   return { name, sym, id, mint, optOut };
 };
 
+function unsafeGetMnemonic(acc: Account|NetworkAccount): string {
+  // @ts-ignore
+  const networkAccount: NetworkAccount = acc.networkAccount | acc;
+  if (networkAccount._mnemonic) {
+    return networkAccount._mnemonic().phrase;
+  } else {
+    throw Error(`unsafeGetMnemonic: Secret key not accessible for account`);
+  }
+}
+
 // TODO: restore type ann once types are in place
 // const ethLike: EthLike = {
 const ethLike = {
@@ -1275,6 +1293,7 @@ const ethLike = {
   minimumBalance,
   formatCurrency,
   formatAddress,
+  unsafeGetMnemonic,
   launchToken,
   reachStdlib,
 };

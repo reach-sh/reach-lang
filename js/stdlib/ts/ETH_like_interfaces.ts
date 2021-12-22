@@ -37,7 +37,16 @@ export interface EthLikeCompiled extends Stdlib_Impl_Shared {
 
 // EthersLike stuff .............................
 
-export interface EthersLikeSigner {
+// TODO: TypeScript is being dumb; improve this
+interface EthersLikeNetworkAccountIsh {
+  address?: any // This doesn't belong here but launchToken code wants it so here it is
+  getAddress?: any
+  getBalance?: any
+  sendTransaction?: any
+  _mnemonic?: () => {phrase: string},
+}
+
+export interface EthersLikeSigner extends EthersLikeNetworkAccountIsh {
   // TODO
   isSigner(...arg: any): boolean
 }
@@ -84,7 +93,7 @@ export interface EthersLike {
   providers: EthersLikeProviders
 }
 
-export interface EthersLikeWallet {
+export interface EthersLikeWallet extends EthersLikeNetworkAccountIsh {
   // TODO: type args
   connect(...args: any): this
 }
