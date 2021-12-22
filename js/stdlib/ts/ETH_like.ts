@@ -3,6 +3,7 @@ import { ethers as real_ethers } from 'ethers';
 import {
   assert,
 } from './shared_backend';
+import type { MaybeRep, MapRefT } from './shared_backend'; // =>
 import {
   replaceableThunk,
   debug,
@@ -68,8 +69,8 @@ type Log = real_ethers.providers.Log;
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-const reachBackendVersion = 6;
-const reachEthBackendVersion = 5;
+const reachBackendVersion = 7;
+const reachEthBackendVersion = 6;
 type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
   ABI: string,
@@ -600,6 +601,16 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         return await maybePayTok(0);
       };
 
+      const codec = real_ethers.utils.defaultAbiCoder;
+      const decodeEm = (ty:AnyETH_Ty, bs:any): any => {
+        const dhead = [label, 'decodeEm'];
+        debug(dhead, ty, bs);
+        const [ de ] = codec.decode([ty.paramType], bs);
+        debug(dhead, de);
+        const un = ty.unmunge(de);
+        debug(dhead, un);
+        return un;
+      };
       const getState = async (vibne:BigNumber, tys:Array<AnyETH_Ty>): Promise<Array<any>> => {
         const ethersC = await getC();
         const [ vibna, vsbs ] = await ethersC["_reachCurrentState"]();
@@ -607,9 +618,22 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         if ( ! vibne.eq(vibna) ) {
           throw Error(`expected state ${vibne}, got ${vibna}`);
         }
-        const codec = real_ethers.utils.defaultAbiCoder;
-        const res = codec.decode(tys.map((x:AnyETH_Ty) => x.paramType), vsbs);
+        const ty = T_Tuple(tys);
+        const res = decodeEm(ty, vsbs);
         debug(`getState`, res);
+        // @ts-ignore
+        return res;
+      };
+      const apiMapRef = (i:number, ty:AnyETH_Ty): MapRefT<any> => async (f:string): Promise<MaybeRep<any>> => {
+        const dhead = [label, 'apiMapRef'];
+        debug(dhead, {i, ty, f});
+        const ethersC = await getC();
+        const mf = `_reachMap${i}Ref`;
+        debug(dhead, mf);
+        const mfv = await ethersC[mf](f);
+        debug(dhead, { mfv });
+        const res = ty.unmunge(mfv);
+        debug(dhead, res);
         // @ts-ignore
         return res;
       };
@@ -821,7 +845,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       const getContractAddress = getInfo;
       const getContractInfo = getInfo;
 
-      return { getContractInfo, getContractAddress, sendrecv, recv, getState };
+      return { getContractInfo, getContractAddress, sendrecv, recv, getState, apiMapRef };
     };
 
     const setupView = (setupViewArgs: SetupViewArgs) => {

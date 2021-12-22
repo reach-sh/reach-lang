@@ -13,8 +13,8 @@ FROM reachsh/reach AS reach
 FROM $NODE_IMAGE AS prepare
 
 WORKDIR /stdlib
-COPY --from=js-deps /js-deps/node_modules ./node_modules
 RUN apk update && apk add git make python3 libc-dev gcc g++ curl bash
+COPY --from=js-deps /js-deps/node_modules ./node_modules
 COPY Makefile.docker ./Makefile
 COPY package.mo.json .
 COPY .docker-root ./.docker-root
@@ -46,10 +46,10 @@ RUN ./sbin/fix.sh
 RUN mv ./dist/mjs/* ./
 RUN rm ./sbin/fix.sh
 
-FROM $NODE_IMAGE 
+FROM $NODE_IMAGE
+RUN apk update && apk add git make python3 libc-dev gcc g++
 
 COPY --from=prepare /stdlib /stdlib
-RUN apk update && apk add git make python3 libc-dev gcc g++
 # XXX does this need to be uncommented?
 # RUN npm link
 

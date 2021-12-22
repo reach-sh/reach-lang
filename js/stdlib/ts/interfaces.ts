@@ -36,12 +36,12 @@ export interface Stdlib_Backend_Shared extends Stdlib_Backend_Shared_User {
   checkedBigNumberify: (at: string, max: BigNumber, n: any) => BigNumber
   protect: (t: any, v: unknown, ai?: string) => unknown
   Array_zip: <A, B>(a1: A[], a2: B[]) => [A, B][]
-  newMap: <A>(opts: MapOpts) => LinearMap<A>
-  mapRef: <A>(m: LinearMap<A>, f: string) => MaybeRep<A>
-  mapSet: <A>(m: LinearMap<A>, f: string, v: A) => void
-  simMapRef: (sim_r: unknown, mapi: number, f: string) => MaybeRep<unknown>
-  simMapSet: (sim_r: unknown, mapi: number, f: string, v: unknown) => unknown
-  simMapDupe: (sim_r: unknown, mapi: number, mapo: unknown) => void,
+  newMap: <A>(opts: MapOpts<A>) => LinearMap<A>
+  mapRef: <A>(m: LinearMap<A>, f: string) => Promise<MaybeRep<A>>
+  mapSet: <A>(m: LinearMap<A>, f: string, v: A) => Promise<void>
+  simMapRef: <A>(sim_r: unknown, mapi: number, f: string) => Promise<MaybeRep<A>>
+  simMapSet: <A>(sim_r: unknown, mapi: number, f: string, v: A) => Promise<void>,
+  simMapDupe: <A>(sim_r: unknown, mapi: number, mapo: LinearMap<A>) => void,
   simTokenNew: any, // XXX
   simTokenBurn: any, // XXX
   simTokenDestroy: any, // XXX

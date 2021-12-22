@@ -172,7 +172,7 @@ solMapVar :: DLMVar -> Doc
 solMapVar mpv = pretty mpv
 
 solMapRef :: DLMVar -> Doc
-solMapRef mpv = pretty mpv <> "_ref"
+solMapRef (DLMVar i) = "_reachMap" <> pretty i <> "Ref"
 
 solBlockTime :: Doc
 solBlockTime = "uint256(block.number)"
@@ -623,7 +623,7 @@ solExpr sp = \case
   DLE_PartSet _ _ a -> spa $ solArg a
   DLE_MapRef _ mpv fa -> do
     fa' <- solArg fa
-    return $ solApply (solMapRef mpv) [fa'] <> sp
+    return $ solApply ("this." <> solMapRef mpv) [fa'] <> sp
   DLE_MapSet _ mpv fa (Just na) -> do
     fa' <- solArg fa
     solLargeArg' (solArrayRef (solMapVar mpv) fa') nla
@@ -1430,7 +1430,7 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) ai _ hs)) = do
           let mt = dlmi_tym mi
           valTy <- solType mt
           let args = [solDecl "addr" keyTy]
-          let ret = "internal view returns (" <> valTy <> " memory res)"
+          let ret = "external view returns (" <> valTy <> " memory res)"
           let ref = (solArrayRef (solMapVar mpv) "addr")
           do_none <- solLargeArg' "res" $ DLLA_Data (dataTypeMap mt) "None" $ DLA_Literal DLL_Null
           let do_some = solSet "res" ref
@@ -1581,7 +1581,7 @@ try_compile_sol solf opt = do
         Right x -> return $ Right (me, x)
 
 reachEthBackendVersion :: Int
-reachEthBackendVersion = 5
+reachEthBackendVersion = 6
 
 compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorInfo
 compile_sol cinfo solf = do

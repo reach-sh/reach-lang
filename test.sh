@@ -119,8 +119,12 @@ checkteal () {
 #exit 0
 
 jb
-ci ALGO api-map
+# ci ALGO map-multi
+# ci ALGO view-map
 ci ETH api-map
+ci ALGO api-map
+ci ETH map-multi
+ci ETH view-map
 exit 0
 
 # (cd hs && mk hs-test)
