@@ -1873,18 +1873,23 @@ export const atomicUnit = 'μALGO';
 
 /**
  * @description  Parse currency by network
- * @param amt  value in the {@link standardUnit} for the network.
- * @returns  the amount in the {@link atomicUnit} of the network.
+ * @param amt  value in the {@link standardUnit} for the token.
+ * @returns  the amount in the {@link atomicUnit} of the token.
  * @example  parseCurrency(100).toString() // => '100000000'
+ * @example  parseCurrency(100, 3).toString() // => '100000'
  */
-export function parseCurrency(amt: CurrencyAmount): BigNumber {
+export function parseCurrency(amt: CurrencyAmount, decimals: number = 6): BigNumber {
+  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
+    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
+  }
   // @ts-ignore
   const numericAmt: number =
     isBigNumber(amt) ? amt.toNumber()
     : typeof amt === 'string' ? parseFloat(amt)
     : typeof amt === 'bigint' ? Number(amt)
     : amt;
-  return bigNumberify(algosdk.algosToMicroalgos(numericAmt));
+  const value = numericAmt * (10 ** decimals)
+  return bigNumberify(Math.floor(value))
 }
 
 export const minimumBalance: BigNumber =
@@ -1914,12 +1919,12 @@ function ldrop(str: string, char: string) {
 }
 
 /**
- * @description  Format currency by network
- * @param amt  the amount in the {@link atomicUnit} of the network.
+ * @description  Format currency by token
+ * @param amt  the amount in the {@link atomicUnit} of the token.
  * @param decimals  up to how many decimal places to display in the {@link standardUnit}.
  *   Trailing zeros will be omitted. Excess decimal places will be truncated (not rounded).
  *   This argument defaults to maximum precision.
- * @returns  a string representation of that amount in the {@link standardUnit} for that network.
+ * @returns  a string representation of that amount in the {@link standardUnit} for that token.
  * @example  formatCurrency(bigNumberify('100000000')); // => '100'
  * @example  formatCurrency(bigNumberify('9999998799987000')); // => '9999998799.987'
  */
@@ -1928,12 +1933,12 @@ export function formatCurrency(amt: any, decimals: number = 6): string {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
   const amtStr = bigNumberify(amt).toString();
-  const splitAt = Math.max(amtStr.length - 6, 0);
+  const splitAt = Math.max(amtStr.length - decimals, 0);
   const lPredropped = amtStr.slice(0, splitAt);
   const l = ldrop(lPredropped, '0') || '0';
   if (decimals === 0) { return l; }
 
-  const rPre = lpad(amtStr.slice(splitAt), '0', 6);
+  const rPre = lpad(amtStr.slice(splitAt), '0', decimals);
   const rSliced = rPre.slice(0, decimals);
   const r = rdrop(rSliced, '0');
 
