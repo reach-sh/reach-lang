@@ -31,6 +31,18 @@ async function getStateActions(s) {
   return r.json();
 }
 
+async function getStateGlobals(s) {
+  const r = await fetch(`${address}/global/${s}`)
+  console.log(r)
+  return r.json();
+}
+
+async function getStateLocals(s) {
+  const r = await fetch(`${address}/local/${s}`)
+  console.log(r)
+  return r.json();
+}
+
 async function interact(method = 'GET', url = '', data = {}) {
   const response = await fetch(url, {
     method: method,
@@ -87,5 +99,7 @@ export {
   respondWithVal,
   ping,
   waitForPort,
-  initFor
+  initFor,
+  getStateLocals,
+  getStateGlobals
 };

@@ -120,7 +120,10 @@ unblockProg sid aid v = do
         Nothing -> do
           possible "actor not found"
         Just Nothing -> do
-          possible ("partstate not found for actor in: " ++ (show $ M.keys locals))
+          possible $ "partstate not found for actor "
+            <> show actorId
+            <> " in: "
+            <> (show $ M.keys locals)
         Just (Just (C.PS_Suspend _a (_g,_l) k)) -> do
           let l = l' {C.l_curr_actor_id = actorId}
           case M.lookup aid avActions of
