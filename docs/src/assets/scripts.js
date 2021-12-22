@@ -164,7 +164,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
 
   // Update and show/hide edit btn.
   // XXX move into generator
-  const github = 'https://github.com/reach-sh/reach-lang/tree/master/docs/dev/src';
+  const github = 'https://github.com/reach-sh/reach-lang/tree/master/docs/src';
   doc.getElementById('edit-btn').href = `${github}${folder}index.md`;
 
   // Write page html
