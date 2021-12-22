@@ -7,15 +7,15 @@
 <ul>
   <li><i id="p_2" class="pid"></i>2021/12/21: The backend interface to deployed contracts was updated, so old contracts will not work with this version.<a href="#p_2" class="pid">2</a></li>
   <li><i id="p_3" class="pid"></i>2021/12/21: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.<a href="#p_3" class="pid">3</a></li>
-  <li><i id="p_4" class="pid"></i>2021/12/20: Added support for <span class="snip"><span style="color: #0550AE">PAY_REQUIRE_EXPR</span></span>, which allows <span class="snip"><span style="color: #24292F">require</span></span> claims to be made about payments.<a href="#p_4" class="pid">4</a></li>
-  <li><i id="p_5" class="pid"></i>2021/12/16: Added <span class="snip"><span style="color: #24292F">Events</span></span>.<a href="#p_5" class="pid">5</a></li>
+  <li><i id="p_4" class="pid"></i>2021/12/20: Added support for <span class="snip"><span style="color: #005CC5">PAY_REQUIRE_EXPR</span></span>, which allows <span class="snip"><span style="color: #24292E">require</span></span> claims to be made about payments.<a href="#p_4" class="pid">4</a></li>
+  <li><i id="p_5" class="pid"></i>2021/12/16: Added <span class="snip"><span style="color: #24292E">Events</span></span>.<a href="#p_5" class="pid">5</a></li>
   <li><i id="p_6" class="pid"></i>2021/12/16: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.<a href="#p_6" class="pid">6</a></li>
   <li><i id="p_7" class="pid"></i>2021/12/16: The backend interface to deployed contracts was updated, so old contracts will not work with this version.<a href="#p_7" class="pid">7</a></li>
   <li><i id="p_8" class="pid"></i>2021/12/10: Added support for using Reach on Apple Silicon.<a href="#p_8" class="pid">8</a></li>
   <li><i id="p_9" class="pid"></i>2021/11/25: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.<a href="#p_9" class="pid">9</a></li>
   <li><i id="p_10" class="pid"></i>2021/11/19: The backend interface to deployed contracts was updated, so old contracts will not work with this version.<a href="#p_10" class="pid">10</a></li>
   <li><i id="p_11" class="pid"></i>2021/11/19: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.<a href="#p_11" class="pid">11</a></li>
-  <li><i id="p_12" class="pid"></i>2021/11/17: Added <span class="snip"><span style="color: #24292F">ctc.unsafeViews</span></span> and <span class="snip"><span style="color: #24292F">ctc.safeApis</span></span>.<a href="#p_12" class="pid">12</a></li>
+  <li><i id="p_12" class="pid"></i>2021/11/17: Added <span class="snip"><span style="color: #24292E">ctc.unsafeViews</span></span> and <span class="snip"><span style="color: #24292E">ctc.safeApis</span></span>.<a href="#p_12" class="pid">12</a></li>
   <li>
     <i id="p_13" class="pid"></i>2021/11/15: Algorand connector now uses the application-controlled account for the escrow account.
     This means that some programs will no longer work, if they do certain things, like trying to transfer non-network tokens in the same step that they share them with the consensus, because the contract needs to opt-in.
@@ -26,7 +26,7 @@
 <h2 id="016-202110---202111" class="refHeader">0.1.6: 2021/10 - 2021/11<a aria-hidden="true" tabindex="-1" href="#016-202110---202111"><span class="icon icon-link"></span></a></h2>
 <p><i id="p_15" class="pid"></i>Version 0.1.6 is the current Reach release version.<a href="#p_15" class="pid">15</a></p>
 <ul>
-  <li><i id="p_16" class="pid"></i>2021/11/02: Allow <span class="snip"><span style="color: #0550AE">API</span></span>s and <span class="snip"><span style="color: #24292F">View</span></span>s to be specified without names.<a href="#p_16" class="pid">16</a></li>
+  <li><i id="p_16" class="pid"></i>2021/11/02: Allow <span class="snip"><span style="color: #005CC5">API</span></span>s and <span class="snip"><span style="color: #24292E">View</span></span>s to be specified without names.<a href="#p_16" class="pid">16</a></li>
   <li><i id="p_17" class="pid"></i>2021/10/28: <code>REACH_CONNECTOR_MODE</code> no longer defaults to <code>ETH</code> when unset.<a href="#p_17" class="pid">17</a></li>
 </ul>
 <p><i id="p_18" class="pid"></i>Users are instead encouraged to run <a href="/tool/usage/#ref-usage-config"><code>reach config</code></a> to set a persistent default in their shell or supply <code>REACH_CONNECTOR_MODE</code> explicitly at the command-line and in scripts.<a href="#p_18" class="pid">18</a></p>
@@ -35,8 +35,8 @@
   <li><i id="p_20" class="pid"></i>2021/10/28: Added <a href="/tool/usage/#ref-usage-config"><code>reach config</code> subcommand</a>.<a href="#p_20" class="pid">20</a></li>
   <li><i id="p_21" class="pid"></i>2021/10/28: The backend interface to deployed contracts was updated, so old contracts will not work with this version.<a href="#p_21" class="pid">21</a></li>
   <li><i id="p_22" class="pid"></i>2021/10/28: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.<a href="#p_22" class="pid">22</a></li>
-  <li><i id="p_23" class="pid"></i>2021/10/20: Added <span class="snip"><span style="color: #24292F">decimals</span></span> field for token minting.<a href="#p_23" class="pid">23</a></li>
-  <li><i id="p_24" class="pid"></i>2021/10/18: Added APIs via the <span class="snip"><span style="color: #0550AE">API</span></span> form.<a href="#p_24" class="pid">24</a></li>
+  <li><i id="p_23" class="pid"></i>2021/10/20: Added <span class="snip"><span style="color: #24292E">decimals</span></span> field for token minting.<a href="#p_23" class="pid">23</a></li>
+  <li><i id="p_24" class="pid"></i>2021/10/18: Added APIs via the <span class="snip"><span style="color: #005CC5">API</span></span> form.<a href="#p_24" class="pid">24</a></li>
   <li><i id="p_25" class="pid"></i>2021/10/15: The backend interface to deployed contracts was updated, so old contracts will not work with this version.<a href="#p_25" class="pid">25</a></li>
   <li><i id="p_26" class="pid"></i>2021/10/15: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.<a href="#p_26" class="pid">26</a></li>
   <li><i id="p_27" class="pid"></i>2021/10/15: Algorand devnet updated to versions 3.0.1 and 2.6.4<a href="#p_27" class="pid">27</a></li>
@@ -44,25 +44,25 @@
 <h2 id="015-202109---202110" class="refHeader">0.1.5: 2021/09 - 2021/10<a aria-hidden="true" tabindex="-1" href="#015-202109---202110"><span class="icon icon-link"></span></a></h2>
 <p><i id="p_28" class="pid"></i>Version 0.1.5 is the current Reach release version.<a href="#p_28" class="pid">28</a></p>
 <ul>
-  <li><i id="p_29" class="pid"></i>2021/10/15: Added <span class="snip"><span style="color: #24292F">setValidQueryWindow</span></span>.<a href="#p_29" class="pid">29</a></li>
+  <li><i id="p_29" class="pid"></i>2021/10/15: Added <span class="snip"><span style="color: #24292E">setValidQueryWindow</span></span>.<a href="#p_29" class="pid">29</a></li>
   <li><i id="p_30" class="pid"></i>2021/10/11: The Solidity compiler has been upgraded to 0.8.9.<a href="#p_30" class="pid">30</a></li>
   <li><i id="p_31" class="pid"></i>2021/10/08: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.<a href="#p_31" class="pid">31</a></li>
-  <li><i id="p_32" class="pid"></i>2021/10/08: <span class="snip"><span style="color: #24292F">parallelReduce</span></span> is more strict in checking that the <code>msg</code> argument is present in the parameter list of <span class="snip"><span style="color: #CF222E">case</span></span> components, even when it is is bound to a <span class="snip"><span style="color: #0550AE">null</span></span>.<a href="#p_32" class="pid">32</a></li>
-  <li><i id="p_33" class="pid"></i>2021/10/08: Added <span class="snip"><span style="color: #24292F">getContract</span></span> and <span class="snip"><span style="color: #24292F">getAddress</span></span>.<a href="#p_33" class="pid">33</a></li>
-  <li><i id="p_34" class="pid"></i>2021/10/08: Added <span class="snip"><span style="color: #24292F">ctc.getContractAddress</span></span>.<a href="#p_34" class="pid">34</a></li>
-  <li><i id="p_35" class="pid"></i>2021/10/05: Added <span class="snip"><span style="color: #24292F">Contract</span></span>. Updated <span class="snip"><span style="color: #24292F">ctc.getInfo</span></span> to return a <span class="snip"><span style="color: #24292F">Contract</span></span>.<a href="#p_35" class="pid">35</a></li>
-  <li><i id="p_36" class="pid"></i>2021/10/04: Added <span class="snip"><span style="color: #24292F">unstrict</span></span>.<a href="#p_36" class="pid">36</a></li>
+  <li><i id="p_32" class="pid"></i>2021/10/08: <span class="snip"><span style="color: #24292E">parallelReduce</span></span> is more strict in checking that the <code>msg</code> argument is present in the parameter list of <span class="snip"><span style="color: #D73A49">case</span></span> components, even when it is is bound to a <span class="snip"><span style="color: #005CC5">null</span></span>.<a href="#p_32" class="pid">32</a></li>
+  <li><i id="p_33" class="pid"></i>2021/10/08: Added <span class="snip"><span style="color: #24292E">getContract</span></span> and <span class="snip"><span style="color: #24292E">getAddress</span></span>.<a href="#p_33" class="pid">33</a></li>
+  <li><i id="p_34" class="pid"></i>2021/10/08: Added <span class="snip"><span style="color: #24292E">ctc.getContractAddress</span></span>.<a href="#p_34" class="pid">34</a></li>
+  <li><i id="p_35" class="pid"></i>2021/10/05: Added <span class="snip"><span style="color: #24292E">Contract</span></span>. Updated <span class="snip"><span style="color: #24292E">ctc.getInfo</span></span> to return a <span class="snip"><span style="color: #24292E">Contract</span></span>.<a href="#p_35" class="pid">35</a></li>
+  <li><i id="p_36" class="pid"></i>2021/10/04: Added <span class="snip"><span style="color: #24292E">unstrict</span></span>.<a href="#p_36" class="pid">36</a></li>
   <li>
     <i id="p_37" class="pid"></i>2021/09/25: Reach clients will detect that they are attempting to publish in a race that they cannot win and switch to listening for the publication of another.
     This has the impact of frontends not being asked to sign transactions that cannot possibly succeed.<a href="#p_37" class="pid">37</a>
   </li>
-  <li><i id="p_38" class="pid"></i>2021/09/25: Added <span class="snip"><span style="color: #8250DF">didPublish</span><span style="color: #24292F">()</span></span>.<a href="#p_38" class="pid">38</a></li>
+  <li><i id="p_38" class="pid"></i>2021/09/25: Added <span class="snip"><span style="color: #6F42C1">didPublish</span><span style="color: #24292E">()</span></span>.<a href="#p_38" class="pid">38</a></li>
   <li><i id="p_39" class="pid"></i>2021/09/24: Contracts do not store the Merkleization of the state, but store the state itself; this changes the interface to contracts, so this release cannot communicate with DApps compiled by older versions of Reach.<a href="#p_39" class="pid">39</a></li>
-  <li><i id="p_40" class="pid"></i>2021/09/16: Bare integers used as time arguments will throw a deprecation warning. Use <span class="snip"><span style="color: #24292F">relativeTime</span></span> instead.<a href="#p_40" class="pid">40</a></li>
+  <li><i id="p_40" class="pid"></i>2021/09/16: Bare integers used as time arguments will throw a deprecation warning. Use <span class="snip"><span style="color: #24292E">relativeTime</span></span> instead.<a href="#p_40" class="pid">40</a></li>
   <li><i id="p_41" class="pid"></i>2021/09/16: The concept of deployment modes has been removed and the only available behavior is what was previously the <code>firstMsg</code> deployment mode.<a href="#p_41" class="pid">41</a></li>
 </ul>
 <p>
-  <i id="p_42" class="pid"></i>If you would like the old behavior, then you'll want to create a new participant, perhaps called <code>Constructor</code>, that exists simply to run <span class="snip"><span style="color: #24292F">Constructor.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(); </span><span style="color: #8250DF">commit</span><span style="color: #24292F">();</span></span>, but we expect that almost no one actually wants the old behavior exactly.
+  <i id="p_42" class="pid"></i>If you would like the old behavior, then you'll want to create a new participant, perhaps called <code>Constructor</code>, that exists simply to run <span class="snip"><span style="color: #24292E">Constructor.</span><span style="color: #6F42C1">publish</span><span style="color: #24292E">(); </span><span style="color: #6F42C1">commit</span><span style="color: #24292E">();</span></span>, but we expect that almost no one actually wants the old behavior exactly.
   Instead, you probably want to select one of your existing participants and assign the first publication to them.<a href="#p_42" class="pid">42</a>
 </p>
 <ul>
@@ -72,9 +72,9 @@
 <h2 id="014-202109---202109" class="refHeader">0.1.4: 2021/09 - 2021/09<a aria-hidden="true" tabindex="-1" href="#014-202109---202109"><span class="icon icon-link"></span></a></h2>
 <p><i id="p_45" class="pid"></i>Version 0.1.4 is is an old Reach release version.<a href="#p_45" class="pid">45</a></p>
 <ul>
-  <li><i id="p_46" class="pid"></i>2021/09/15: <span class="snip"><span style="color: #24292F">muldiv</span></span> added.<a href="#p_46" class="pid">46</a></li>
+  <li><i id="p_46" class="pid"></i>2021/09/15: <span class="snip"><span style="color: #24292E">muldiv</span></span> added.<a href="#p_46" class="pid">46</a></li>
   <li><i id="p_47" class="pid"></i>2021/09/08: Add <code>--stop-after-eval</code> and <code>--verify-timeout</code> options to <code>reach compile</code>.<a href="#p_47" class="pid">47</a></li>
-  <li><i id="p_48" class="pid"></i>2021/08/31: Removed <span class="snip"><span style="color: #24292F">getSignStrategy</span></span> and <span class="snip"><span style="color: #24292F">setSignStrategy</span></span> in favor of <span class="snip"><span style="color: #24292F">setWalletFallBack</span></span> and <span class="snip"><span style="color: #24292F">walletFallback</span></span>.<a href="#p_48" class="pid">48</a></li>
+  <li><i id="p_48" class="pid"></i>2021/08/31: Removed <span class="snip"><span style="color: #24292E">getSignStrategy</span></span> and <span class="snip"><span style="color: #24292E">setSignStrategy</span></span> in favor of <span class="snip"><span style="color: #24292E">setWalletFallBack</span></span> and <span class="snip"><span style="color: #24292E">walletFallback</span></span>.<a href="#p_48" class="pid">48</a></li>
   <li><i id="p_49" class="pid"></i>2021/08/31: Algorand devnet updated to versions 2.9.1 and 2.6.1<a href="#p_49" class="pid">49</a></li>
   <li><i id="p_50" class="pid"></i>2021/08/31: The <code>reach</code> command-line has changed:<a href="#p_50" class="pid">50</a></li>
   <li><i id="p_51" class="pid"></i>All subcommands now support <code>-h</code>/<code>--help</code> switches, e.g. <code>reach compile --help</code>.<a href="#p_51" class="pid">51</a></li>
@@ -104,23 +104,23 @@
 <h2 id="013-202107---202108" class="refHeader">0.1.3: 2021/07 - 2021/08<a aria-hidden="true" tabindex="-1" href="#013-202107---202108"><span class="icon icon-link"></span></a></h2>
 <p><i id="p_61" class="pid"></i>Version 0.1.3 is an old Reach release version.<a href="#p_61" class="pid">61</a></p>
 <ul>
-  <li><i id="p_62" class="pid"></i>2021/08/31: Added <span class="snip"><span style="color: #24292F">acc.setStorageLimit</span></span> to JavaScript standard library for Conflux.<a href="#p_62" class="pid">62</a></li>
-  <li><i id="p_63" class="pid"></i>2021/08/16: Allow <span class="snip"><span style="color: #CF222E">continue</span></span> in step in some cases.<a href="#p_63" class="pid">63</a></li>
-  <li><i id="p_64" class="pid"></i>2021/07/31: Added <span class="snip"><span style="color: #24292F">newTestAccounts</span></span>, <span class="snip"><span style="color: #24292F">waitUntilSecs</span></span>, and <span class="snip"><span style="color: #24292F">getNetworkSecs</span></span> to JavaScript standard library.<a href="#p_64" class="pid">64</a></li>
-  <li><i id="p_65" class="pid"></i>2021/07/31: Updated <span class="snip"><span style="color: #24292F">onProgress</span></span> type in JavaScript standard library.<a href="#p_65" class="pid">65</a></li>
-  <li><i id="p_66" class="pid"></i>2021/07/31: Added <span class="snip"><span style="color: #24292F">relativeTime</span></span>, <span class="snip"><span style="color: #24292F">absoluteTime</span></span>, <span class="snip"><span style="color: #24292F">relativeSecs</span></span>, <span class="snip"><span style="color: #24292F">absoluteSecs</span></span>, <span class="snip"><span style="color: #24292F">baseWaitTime</span></span>, <span class="snip"><span style="color: #24292F">baseWaitSecs</span></span>, and <span class="snip"><span style="color: #24292F">lastConsensusSecs</span></span> to Reach, with support in <span class="snip"><span style="color: #24292F">wait</span></span> and <span class="snip"><span style="color: #24292F">.timeout</span></span>.<a href="#p_66" class="pid">66</a></li>
-  <li><i id="p_67" class="pid"></i>2021/07/22: <span class="snip"><span style="color: #8250DF">numberToFixedPoint</span><span style="color: #24292F">()</span></span> and <span class="snip"><span style="color: #8250DF">numberToInt</span><span style="color: #24292F">()</span></span> added.<a href="#p_67" class="pid">67</a></li>
+  <li><i id="p_62" class="pid"></i>2021/08/31: Added <span class="snip"><span style="color: #24292E">acc.setStorageLimit</span></span> to JavaScript standard library for Conflux.<a href="#p_62" class="pid">62</a></li>
+  <li><i id="p_63" class="pid"></i>2021/08/16: Allow <span class="snip"><span style="color: #D73A49">continue</span></span> in step in some cases.<a href="#p_63" class="pid">63</a></li>
+  <li><i id="p_64" class="pid"></i>2021/07/31: Added <span class="snip"><span style="color: #24292E">newTestAccounts</span></span>, <span class="snip"><span style="color: #24292E">waitUntilSecs</span></span>, and <span class="snip"><span style="color: #24292E">getNetworkSecs</span></span> to JavaScript standard library.<a href="#p_64" class="pid">64</a></li>
+  <li><i id="p_65" class="pid"></i>2021/07/31: Updated <span class="snip"><span style="color: #24292E">onProgress</span></span> type in JavaScript standard library.<a href="#p_65" class="pid">65</a></li>
+  <li><i id="p_66" class="pid"></i>2021/07/31: Added <span class="snip"><span style="color: #24292E">relativeTime</span></span>, <span class="snip"><span style="color: #24292E">absoluteTime</span></span>, <span class="snip"><span style="color: #24292E">relativeSecs</span></span>, <span class="snip"><span style="color: #24292E">absoluteSecs</span></span>, <span class="snip"><span style="color: #24292E">baseWaitTime</span></span>, <span class="snip"><span style="color: #24292E">baseWaitSecs</span></span>, and <span class="snip"><span style="color: #24292E">lastConsensusSecs</span></span> to Reach, with support in <span class="snip"><span style="color: #24292E">wait</span></span> and <span class="snip"><span style="color: #24292E">.timeout</span></span>.<a href="#p_66" class="pid">66</a></li>
+  <li><i id="p_67" class="pid"></i>2021/07/22: <span class="snip"><span style="color: #6F42C1">numberToFixedPoint</span><span style="color: #24292E">()</span></span> and <span class="snip"><span style="color: #6F42C1">numberToInt</span><span style="color: #24292E">()</span></span> added.<a href="#p_67" class="pid">67</a></li>
   <li><i id="p_68" class="pid"></i>2021/07/21: Renamed Ethereum devnet Docker image to <code>devnet-eth</code>.<a href="#p_68" class="pid">68</a></li>
   <li><i id="p_69" class="pid"></i>2021/07/21: Renamed connector modes to use naming convention <code>$NET-devnet</code>, rather than exposing implementation.<a href="#p_69" class="pid">69</a></li>
   <li><i id="p_70" class="pid"></i>2021/07/21: Ethereum contract bytecode verification changed to directly compare deployment data<a href="#p_70" class="pid">70</a></li>
-  <li><i id="p_71" class="pid"></i>2021/07/20: <span class="snip"><span style="color: #0550AE">Array</span><span style="color: #24292F">.</span><span style="color: #8250DF">slice</span><span style="color: #24292F">()</span></span> added.<a href="#p_71" class="pid">71</a></li>
-  <li><i id="p_72" class="pid"></i>2021/07/19: <span class="snip"><span style="color: #24292F">Token.</span><span style="color: #8250DF">destroyed</span><span style="color: #24292F">()</span></span> added.<a href="#p_72" class="pid">72</a></li>
-  <li><i id="p_73" class="pid"></i>2021/07/15: Ethereum contract info (i.e. <span class="snip"><span style="color: #24292F">ctc.</span><span style="color: #8250DF">getInfo</span><span style="color: #24292F">()</span></span>) reduced to address only.<a href="#p_73" class="pid">73</a></li>
-  <li><i id="p_74" class="pid"></i>2021/07/14: Algorand contract info (i.e. <span class="snip"><span style="color: #24292F">ctc.</span><span style="color: #8250DF">getInfo</span><span style="color: #24292F">()</span></span>) reduced to application id only.<a href="#p_74" class="pid">74</a></li>
+  <li><i id="p_71" class="pid"></i>2021/07/20: <span class="snip"><span style="color: #005CC5">Array</span><span style="color: #24292E">.</span><span style="color: #6F42C1">slice</span><span style="color: #24292E">()</span></span> added.<a href="#p_71" class="pid">71</a></li>
+  <li><i id="p_72" class="pid"></i>2021/07/19: <span class="snip"><span style="color: #24292E">Token.</span><span style="color: #6F42C1">destroyed</span><span style="color: #24292E">()</span></span> added.<a href="#p_72" class="pid">72</a></li>
+  <li><i id="p_73" class="pid"></i>2021/07/15: Ethereum contract info (i.e. <span class="snip"><span style="color: #24292E">ctc.</span><span style="color: #6F42C1">getInfo</span><span style="color: #24292E">()</span></span>) reduced to address only.<a href="#p_73" class="pid">73</a></li>
+  <li><i id="p_74" class="pid"></i>2021/07/14: Algorand contract info (i.e. <span class="snip"><span style="color: #24292E">ctc.</span><span style="color: #6F42C1">getInfo</span><span style="color: #24292E">()</span></span>) reduced to application id only.<a href="#p_74" class="pid">74</a></li>
   <li><i id="p_75" class="pid"></i>2021/07/14: Minted tokens must be destroyed by end of application.<a href="#p_75" class="pid">75</a></li>
   <li><i id="p_76" class="pid"></i>2021/07/14: Token minting support added to Algorand.<a href="#p_76" class="pid">76</a></li>
   <li><i id="p_77" class="pid"></i>2021/07/14: Token URL metadata increased to 96 bytes.<a href="#p_77" class="pid">77</a></li>
-  <li><i id="p_78" class="pid"></i>2021/07/14: Algorand <span class="snip"><span style="color: #24292F">digest</span></span> switched to SHA256 (to save compute cost).<a href="#p_78" class="pid">78</a></li>
+  <li><i id="p_78" class="pid"></i>2021/07/14: Algorand <span class="snip"><span style="color: #24292E">digest</span></span> switched to SHA256 (to save compute cost).<a href="#p_78" class="pid">78</a></li>
   <li><i id="p_79" class="pid"></i>2021/07/14: Algorand connector updated to AVM 0.9 (TEAL version 4)<a href="#p_79" class="pid">79</a></li>
   <li><i id="p_80" class="pid"></i>2021/07/14: Algorand devnet version updated to 2.7.1, plus <code>DevMode</code> patch<a href="#p_80" class="pid">80</a></li>
   <li><i id="p_81" class="pid"></i>2021/07/14: Algorand devnet image renamed to <code>devnet-algo</code><a href="#p_81" class="pid">81</a></li>
@@ -130,7 +130,7 @@
 <p><i id="p_83" class="pid"></i>Version 0.1.2 is an old Reach release version.<a href="#p_83" class="pid">83</a></p>
 <p><i id="p_84" class="pid"></i>It is the last version that supports Algorand using TEAL3; if you deployed a contract on Algorand using Reach version 0.1.2, you will need to continue accessing it via the 0.1.2 version of the Reach standard library.<a href="#p_84" class="pid">84</a></p>
 <ul>
-  <li><i id="p_85" class="pid"></i>2021/07/09: <span class="snip"><span style="color: #24292F">.define</span></span> component added to <span class="snip"><span style="color: #24292F">parallelReduce</span></span><a href="#p_85" class="pid">85</a></li>
+  <li><i id="p_85" class="pid"></i>2021/07/09: <span class="snip"><span style="color: #24292E">.define</span></span> component added to <span class="snip"><span style="color: #24292E">parallelReduce</span></span><a href="#p_85" class="pid">85</a></li>
   <li><i id="p_86" class="pid"></i>2021/07/08: <a href="/rsh/errors/#ref-error-codes">Error code reference</a> created<a href="#p_86" class="pid">86</a></li>
   <li><i id="p_87" class="pid"></i>2021/06/20: Token minting introduced, with implementation on ETH.<a href="#p_87" class="pid">87</a></li>
   <li><i id="p_88" class="pid"></i>... many interesting things ...<a href="#p_88" class="pid">88</a></li>

@@ -11,29 +11,29 @@
 </p>
 <h2 id="is-a-single-participant-responsible-for-the-transfer" class="refHeader">Is a single participant responsible for the transfer?<a aria-hidden="true" tabindex="-1" href="#is-a-single-participant-responsible-for-the-transfer"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_3" class="pid"></i>If the entire DApp is waiting for a single participant to act, such as when at a play the entire theatre waits in anticipation for the stage hands to draw the curtains, then you either need a <span class="snip"><span style="color: #24292F">pay</span></span> or <span class="snip"><span style="color: #24292F">publish</span></span>.
-  If the single participant is sharing information, then you need a <span class="snip"><span style="color: #24292F">publish</span></span>;
-  but if they are only paying a previously known amount, then you need a <span class="snip"><span style="color: #24292F">pay</span></span>.
+  <i id="p_3" class="pid"></i>If the entire DApp is waiting for a single participant to act, such as when at a play the entire theatre waits in anticipation for the stage hands to draw the curtains, then you either need a <span class="snip"><span style="color: #24292E">pay</span></span> or <span class="snip"><span style="color: #24292E">publish</span></span>.
+  If the single participant is sharing information, then you need a <span class="snip"><span style="color: #24292E">publish</span></span>;
+  but if they are only paying a previously known amount, then you need a <span class="snip"><span style="color: #24292E">pay</span></span>.
   This kind of transfer always explicitly names the party acting, as in:<a href="#p_3" class="pid">3</a>
 </p>
-<pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="Auctioneer.publish(openingBid);" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #24292F">Auctioneer.</span><span style="color: #8250DF">publish</span><span style="color: #24292F">(openingBid);</span></li></ol></pre>
-<p><i id="p_4" class="pid"></i><span class="snip"><span style="color: #24292F">pay</span></span> and <span class="snip"><span style="color: #24292F">publish</span></span> without a <span class="snip"><span style="color: #24292F">race</span></span> are for when one participant wants to do one thing.<a href="#p_4" class="pid">4</a></p>
+<pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="Auctioneer.publish(openingBid);" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #24292E">Auctioneer.</span><span style="color: #6F42C1">publish</span><span style="color: #24292E">(openingBid);</span></li></ol></pre>
+<p><i id="p_4" class="pid"></i><span class="snip"><span style="color: #24292E">pay</span></span> and <span class="snip"><span style="color: #24292E">publish</span></span> without a <span class="snip"><span style="color: #24292E">race</span></span> are for when one participant wants to do one thing.<a href="#p_4" class="pid">4</a></p>
 <h2 id="are-multiple-participants-able-to-cause-the-transfer-but-each-will-provide-different-data" class="refHeader">Are multiple participants able to cause the transfer, but each will provide different data?<a aria-hidden="true" tabindex="-1" href="#are-multiple-participants-able-to-cause-the-transfer-but-each-will-provide-different-data"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_5" class="pid"></i>If the entire DApp has a clear "next step", but multiple participants are able to provide the values used in that step, then you need a <span class="snip"><span style="color: #24292F">race</span></span> to determine the participant used for a <span class="snip"><span style="color: #24292F">publish</span></span> or <span class="snip"><span style="color: #24292F">pay</span></span>.
+  <i id="p_5" class="pid"></i>If the entire DApp has a clear "next step", but multiple participants are able to provide the values used in that step, then you need a <span class="snip"><span style="color: #24292E">race</span></span> to determine the participant used for a <span class="snip"><span style="color: #24292E">publish</span></span> or <span class="snip"><span style="color: #24292E">pay</span></span>.
   For example, in a radio call-in contest, there is one chance for a listener to call-in first and win the prize.
-  If a participant value is participant class, then all of its actions are <span class="snip"><span style="color: #24292F">race</span></span>s, because the Reach identifier does not represent a specific principal, but a member of a large class.<a href="#p_5" class="pid">5</a>
+  If a participant value is participant class, then all of its actions are <span class="snip"><span style="color: #24292E">race</span></span>s, because the Reach identifier does not represent a specific principal, but a member of a large class.<a href="#p_5" class="pid">5</a>
 </p>
-<p><i id="p_6" class="pid"></i><span class="snip"><span style="color: #24292F">race</span></span>, and participant classes are for when many participants want to do one thing.<a href="#p_6" class="pid">6</a></p>
+<p><i id="p_6" class="pid"></i><span class="snip"><span style="color: #24292E">race</span></span>, and participant classes are for when many participants want to do one thing.<a href="#p_6" class="pid">6</a></p>
 <h2 id="are-there-multiple-participants-that-each-want-to-do-different-things" class="refHeader">Are there multiple participants that each want to do different things?<a aria-hidden="true" tabindex="-1" href="#are-there-multiple-participants-that-each-want-to-do-different-things"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_7" class="pid"></i>If the DApp doesn't have a clear next step, but multiple participants each have a different option for what the next step should be, then you need a <span class="snip"><span style="color: #24292F">fork</span></span>.
+  <i id="p_7" class="pid"></i>If the DApp doesn't have a clear next step, but multiple participants each have a different option for what the next step should be, then you need a <span class="snip"><span style="color: #24292E">fork</span></span>.
   For example, a sale DApp might have a buy option and a bid option where the first immediately ends the computation, while the second moves it to an auction.<a href="#p_7" class="pid">7</a>
 </p>
-<p><i id="p_8" class="pid"></i><span class="snip"><span style="color: #24292F">fork</span></span> is for when many participants want to each do a different thing.<a href="#p_8" class="pid">8</a></p>
+<p><i id="p_8" class="pid"></i><span class="snip"><span style="color: #24292E">fork</span></span> is for when many participants want to each do a different thing.<a href="#p_8" class="pid">8</a></p>
 <h2 id="will-these-different-things-happen-over-and-over-until-some-condition-is-met" class="refHeader">Will these different things happen over and over until some condition is met?<a aria-hidden="true" tabindex="-1" href="#will-these-different-things-happen-over-and-over-until-some-condition-is-met"><span class="icon icon-link"></span></a></h2>
 <p>
-  <i id="p_9" class="pid"></i>If you are in a situation where a <span class="snip"><span style="color: #24292F">race</span></span> or <span class="snip"><span style="color: #24292F">fork</span></span> is needed, and the options are available repeatedly after small diversions, then you need a <span class="snip"><span style="color: #24292F">parallelReduce</span></span>.
+  <i id="p_9" class="pid"></i>If you are in a situation where a <span class="snip"><span style="color: #24292E">race</span></span> or <span class="snip"><span style="color: #24292E">fork</span></span> is needed, and the options are available repeatedly after small diversions, then you need a <span class="snip"><span style="color: #24292E">parallelReduce</span></span>.
   For example, in an auction, bidders repeatedly provide new bids as they compete to be the highest bidder before a time limit is reached.<a href="#p_9" class="pid">9</a>
 </p>
 <h2 id="summary" class="refHeader">Summary<a aria-hidden="true" tabindex="-1" href="#summary"><span class="icon icon-link"></span></a></h2>
@@ -44,15 +44,15 @@
   <li><i id="p_13" class="pid"></i>How many times can this be done? Once or many?<a href="#p_13" class="pid">13</a></li>
 </ul>
 <p>
-  <i id="p_14" class="pid"></i>If it happens many times, you want <span class="snip"><span style="color: #24292F">parallelReduce</span></span>.
-  If many things could happen, you want <span class="snip"><span style="color: #24292F">fork</span></span>.
-  If many participants can act, you want <span class="snip"><span style="color: #24292F">race</span></span>.
-  Otherwise, you want <span class="snip"><span style="color: #24292F">publish</span></span> or <span class="snip"><span style="color: #24292F">pay</span></span>.<a href="#p_14" class="pid">14</a>
+  <i id="p_14" class="pid"></i>If it happens many times, you want <span class="snip"><span style="color: #24292E">parallelReduce</span></span>.
+  If many things could happen, you want <span class="snip"><span style="color: #24292E">fork</span></span>.
+  If many participants can act, you want <span class="snip"><span style="color: #24292E">race</span></span>.
+  Otherwise, you want <span class="snip"><span style="color: #24292E">publish</span></span> or <span class="snip"><span style="color: #24292E">pay</span></span>.<a href="#p_14" class="pid">14</a>
 </p>
 <div class="note">
   <p>
-    <i id="p_15" class="pid"></i>The above article uses the word "need" when talking about <span class="snip"><span style="color: #24292F">fork</span></span> and <span class="snip"><span style="color: #24292F">parallelReduce</span></span>, but actually you never need these, because they are just abbreviations of particular patterns of using the other features.
-    <span class="snip"><span style="color: #24292F">fork</span></span> works by having each participant <span class="snip"><span style="color: #24292F">race</span></span> to provide a <span class="snip"><span style="color: #24292F">Data</span></span> instance, where the single consensus step does a case analysis on the <span class="snip"><span style="color: #24292F">Data</span></span> to determine which code to run.
-    Similarly, <span class="snip"><span style="color: #24292F">parallelReduce</span></span> is just an abbreviation of a <span class="snip"><span style="color: #24292F">fork</span></span> within a <span class="snip"><span style="color: #CF222E">while</span></span> loop.<a href="#p_15" class="pid">15</a>
+    <i id="p_15" class="pid"></i>The above article uses the word "need" when talking about <span class="snip"><span style="color: #24292E">fork</span></span> and <span class="snip"><span style="color: #24292E">parallelReduce</span></span>, but actually you never need these, because they are just abbreviations of particular patterns of using the other features.
+    <span class="snip"><span style="color: #24292E">fork</span></span> works by having each participant <span class="snip"><span style="color: #24292E">race</span></span> to provide a <span class="snip"><span style="color: #24292E">Data</span></span> instance, where the single consensus step does a case analysis on the <span class="snip"><span style="color: #24292E">Data</span></span> to determine which code to run.
+    Similarly, <span class="snip"><span style="color: #24292E">parallelReduce</span></span> is just an abbreviation of a <span class="snip"><span style="color: #24292E">fork</span></span> within a <span class="snip"><span style="color: #D73A49">while</span></span> loop.<a href="#p_15" class="pid">15</a>
   </p>
 </div>

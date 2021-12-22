@@ -15,22 +15,22 @@
 <hr>
 <p><i id="p_3" class="pid"></i>The Reach RPC Server supports the following <span class="term" id="term_RPC%20methods">RPC methods</span>:<a href="#p_3" class="pid">3</a></p>
 <ul>
-  <li><i id="p_4" class="pid"></i><code>/health</code> returns <span class="snip"><span style="color: #0550AE">true</span></span> to indicate the server is running properly.<a href="#p_4" class="pid">4</a></li>
+  <li><i id="p_4" class="pid"></i><code>/health</code> returns <span class="snip"><span style="color: #005CC5">true</span></span> to indicate the server is running properly.<a href="#p_4" class="pid">4</a></li>
   <li><i id="p_5" class="pid"></i><code>/stdlib/$METHOD</code> where <code>$METHOD</code> is a function of the <a href="/frontend/#ref-frontends-js">JavaScript standard library</a>.<a href="#p_5" class="pid">5</a></li>
 </ul>
 <p><i id="p_6" class="pid"></i>All <code>/stdlib</code> methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except those that produce or consume account representations.<a href="#p_6" class="pid">6</a></p>
 <p>
   <i id="p_7" class="pid"></i>Those methods instead accept and produce account RPC handles, which are random strings that represent the corresponding account representations.
-  For example, <code>/stdlib/newTestAccount</code> does not return an account like <span class="snip"><span style="color: #24292F">newTestAccount</span></span>, but instead returns an account RPC handle.<a href="#p_7" class="pid">7</a>
+  For example, <code>/stdlib/newTestAccount</code> does not return an account like <span class="snip"><span style="color: #24292E">newTestAccount</span></span>, but instead returns an account RPC handle.<a href="#p_7" class="pid">7</a>
 </p>
 <ul>
   <li><i id="p_8" class="pid"></i><code>/forget/acc</code> accepts an account RPC handle and deletes it from the Reach RPC Server's memory.<a href="#p_8" class="pid">8</a></li>
   <li><i id="p_9" class="pid"></i><code>/acc/$METHOD</code> where <code>$METHOD</code> is a method of an account representation of the <a href="/frontend/#ref-frontends-js">JavaScript standard library</a>.<a href="#p_9" class="pid">9</a></li>
 </ul>
-<p><i id="p_10" class="pid"></i>All <code>/acc</code> methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the account RPC handle returned by a prior RPC method invocation; and, a method that accepts a backend (like <code>/acc/attach</code> (i.e. <span class="snip"><span style="color: #24292F">acc.attach</span></span>) or <code>/acc/deploy</code> (i.e. <span class="snip"><span style="color: #24292F">acc.deploy</span></span>) does not accept a backend argument, but has it implicitly provided by the Reach RPC Server.<a href="#p_10" class="pid">10</a></p>
+<p><i id="p_10" class="pid"></i>All <code>/acc</code> methods are synchronous value RPC methods that accept and produce the same arguments and return values as the corresponding function, encoded as JSON objects, except they accept an additional first argument, which is the account RPC handle returned by a prior RPC method invocation; and, a method that accepts a backend (like <code>/acc/attach</code> (i.e. <span class="snip"><span style="color: #24292E">acc.attach</span></span>) or <code>/acc/deploy</code> (i.e. <span class="snip"><span style="color: #24292E">acc.deploy</span></span>) does not accept a backend argument, but has it implicitly provided by the Reach RPC Server.<a href="#p_10" class="pid">10</a></p>
 <p>
   <i id="p_11" class="pid"></i>Furthermore, those that produce contract representations instead produce contract RPC handles.
-  For example, <code>/acc/deploy</code> does not return a contract representation like <span class="snip"><span style="color: #24292F">acc.deploy</span></span>, but instead returns a contract RPC handle.<a href="#p_11" class="pid">11</a>
+  For example, <code>/acc/deploy</code> does not return a contract representation like <span class="snip"><span style="color: #24292E">acc.deploy</span></span>, but instead returns a contract RPC handle.<a href="#p_11" class="pid">11</a>
 </p>
 <ul>
   <li><i id="p_12" class="pid"></i><code>/forget/ctc</code> accepts a contract RPC handle and deletes it from the Reach RPC Server's memory.<a href="#p_12" class="pid">12</a></li>
@@ -49,9 +49,9 @@
 <ul>
   <li><i id="p_19" class="pid"></i><code>ctcId</code> --- A contract RPC handle to provide as the contract to the backend<a href="#p_19" class="pid">19</a></li>
   <li><i id="p_20" class="pid"></i><code>values</code> --- An object containing the non-function components of the participant interact interface of the backend.<a href="#p_20" class="pid">20</a></li>
-  <li><i id="p_21" class="pid"></i><code>methods</code> --- An object whose keys correspond to the function components of the participant interact interface of the backend, but whose values are <span class="snip"><span style="color: #0550AE">true</span></span>.<a href="#p_21" class="pid">21</a></li>
+  <li><i id="p_21" class="pid"></i><code>methods</code> --- An object whose keys correspond to the function components of the participant interact interface of the backend, but whose values are <span class="snip"><span style="color: #005CC5">true</span></span>.<a href="#p_21" class="pid">21</a></li>
 </ul>
-<p><i id="p_22" class="pid"></i>As a special case, if <code>values</code> contains <code>stdlib.hasRandom</code> bound to <span class="snip"><span style="color: #0550AE">true</span></span>, then the <a href="/frontend/#ref-frontends-js">JavaScript standard library</a>'s implementation of <span class="snip"><span style="color: #24292F">hasRandom</span></span> is provided to the backend.<a href="#p_22" class="pid">22</a></p>
+<p><i id="p_22" class="pid"></i>As a special case, if <code>values</code> contains <code>stdlib.hasRandom</code> bound to <span class="snip"><span style="color: #005CC5">true</span></span>, then the <a href="/frontend/#ref-frontends-js">JavaScript standard library</a>'s implementation of <span class="snip"><span style="color: #24292E">hasRandom</span></span> is provided to the backend.<a href="#p_22" class="pid">22</a></p>
 <p>
   <i id="p_23" class="pid"></i>As the backend executes, any of the components of <code>methods</code> invoked will be executed as interactive RPC callbacks as described by the <a href="/rpc/proto/#ref-backends-rpc-proto">Reach RPC Protocol Specification</a>.
   Reach RPC Client libraries <em>should</em> expose a function that hides the details of the construction of the <code>values</code> and <code>methods</code> objects and implements interactive RPC callback handlers automatically.<a href="#p_23" class="pid">23</a>

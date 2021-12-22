@@ -28,7 +28,7 @@
 </p>
 <p>
   <i id="p_5" class="pid"></i>Non-network tokens are compiled to <a href="https://developer.algorand.org/docs/features/asa/">Algorand Standard Assets</a> (ASAs).
-  Specifically, the <span class="snip"><span style="color: #24292F">Token</span></span> type refers to the id of the ASA.<a href="#p_5" class="pid">5</a>
+  Specifically, the <span class="snip"><span style="color: #24292E">Token</span></span> type refers to the id of the ASA.<a href="#p_5" class="pid">5</a>
 </p>
 <p>
   <i id="p_6" class="pid"></i>Token minting creates an ASA owned and managed by the contract account.
@@ -56,7 +56,7 @@
   This means that a network second-based deadline could be exceeded by the round time of the network, which is typically five seconds.)<a href="#p_9" class="pid">9</a>
 </p>
 <p>
-  <i id="p_10" class="pid"></i>The connector provides a binding named <span class="snip"><span style="color: #0550AE">ALGO</span></span> to
+  <i id="p_10" class="pid"></i>The connector provides a binding named <span class="snip"><span style="color: #005CC5">ALGO</span></span> to
   backends.<a href="#p_10" class="pid">10</a>
 </p>
 <p><i id="p_11" class="pid"></i>Backends must respect the following environment variables:<a href="#p_11" class="pid">11</a></p>
@@ -91,9 +91,9 @@
   <i id="p_23" class="pid"></i>You can add the following JavaScript near the beginning of your index.js or index.mjs file
   in order to run on Conflux TestNet:<a href="#p_23" class="pid">23</a>
 </p>
-<pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="reach.setProviderByName('TestNet');" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #24292F">reach.</span><span style="color: #8250DF">setProviderByName</span><span style="color: #24292F">(</span><span style="color: #0A3069">'TestNet'</span><span style="color: #24292F">);</span></li></ol></pre>
+<pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="reach.setProviderByName('TestNet');" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #24292E">reach.</span><span style="color: #6F42C1">setProviderByName</span><span style="color: #24292E">(</span><span style="color: #032F62">'TestNet'</span><span style="color: #24292E">);</span></li></ol></pre>
 <p><i id="p_24" class="pid"></i>Or this to run on Conflux MainNet:<a href="#p_24" class="pid">24</a></p>
-<pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="reach.setProviderByName('MainNet');" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #24292F">reach.</span><span style="color: #8250DF">setProviderByName</span><span style="color: #24292F">(</span><span style="color: #0A3069">'MainNet'</span><span style="color: #24292F">);</span></li></ol></pre>
+<pre class="snippet unnumbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="reach.setProviderByName('MainNet');" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #24292E">reach.</span><span style="color: #6F42C1">setProviderByName</span><span style="color: #24292E">(</span><span style="color: #032F62">'MainNet'</span><span style="color: #24292E">);</span></li></ol></pre>
 <h4 id="cfx-faq-cplocal" class="refHeader">How can I use ConfluxPortal with the Reach devnet?<a aria-hidden="true" tabindex="-1" href="#cfx-faq-cplocal"><span class="icon icon-link"></span></a></h4>
 <p>
   <i id="p_25" class="pid"></i>If you find that ConfluxPortal's Localhost 12537 default configuration does not work correctly with Reach apps,
@@ -142,7 +142,7 @@ const { Conflux } = require('js-conflux-sdk');
 // initialize a Conflux object
 const conflux = new Conflux({
   // some options
-});" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #6E7781">// import Conflux Class</span></li><li value="2"><span style="color: #CF222E">const</span><span style="color: #24292F"> { </span><span style="color: #0550AE">Conflux</span><span style="color: #24292F"> } </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #0550AE">require</span><span style="color: #24292F">(</span><span style="color: #0A3069">'js-conflux-sdk'</span><span style="color: #24292F">);</span></li><li value="3"><span style="color: #6E7781">// initialize a Conflux object</span></li><li value="4"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">conflux</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> </span><span style="color: #CF222E">new</span><span style="color: #24292F"> </span><span style="color: #8250DF">Conflux</span><span style="color: #24292F">({</span></li><li value="5"><span style="color: #24292F">  </span><span style="color: #6E7781">// some options</span></li><li value="6"><span style="color: #24292F">});</span></li></ol></pre>
+});" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #6A737D">// import Conflux Class</span></li><li value="2"><span style="color: #D73A49">const</span><span style="color: #24292E"> { </span><span style="color: #005CC5">Conflux</span><span style="color: #24292E"> } </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">require</span><span style="color: #24292E">(</span><span style="color: #032F62">'js-conflux-sdk'</span><span style="color: #24292E">);</span></li><li value="3"><span style="color: #6A737D">// initialize a Conflux object</span></li><li value="4"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">conflux</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #D73A49">new</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Conflux</span><span style="color: #24292E">({</span></li><li value="5"><span style="color: #24292E">  </span><span style="color: #6A737D">// some options</span></li><li value="6"><span style="color: #24292E">});</span></li></ol></pre>
 <p>
   <i id="p_40" class="pid"></i>Second, you must call the <code>addPrivilegeByAdmin</code> Conflux internal contract from the creator (i.e. deployer) of the smart contract.
   This function requires you to provide an address that is eligible for sponsorship.
@@ -152,8 +152,8 @@ const conflux = new Conflux({
 </p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="const sponsor_contract = conflux.InternalContract('SponsorWhitelistControl');
 await sponsor_contract.addPrivilegeByAdmin(contractAddress, [&quot;0x0000000000000000000000000000000000000000&quot;])
-  .sendTransaction({from: creatorAddress});" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">const</span><span style="color: #24292F"> </span><span style="color: #0550AE">sponsor_contract</span><span style="color: #24292F"> </span><span style="color: #CF222E">=</span><span style="color: #24292F"> conflux.</span><span style="color: #8250DF">InternalContract</span><span style="color: #24292F">(</span><span style="color: #0A3069">'SponsorWhitelistControl'</span><span style="color: #24292F">);</span></li><li value="2"><span style="color: #CF222E">await</span><span style="color: #24292F"> sponsor_contract.</span><span style="color: #8250DF">addPrivilegeByAdmin</span><span style="color: #24292F">(contractAddress, [</span><span style="color: #0A3069">"0x0000000000000000000000000000000000000000"</span><span style="color: #24292F">])</span></li><li value="3"><span style="color: #24292F">  .</span><span style="color: #8250DF">sendTransaction</span><span style="color: #24292F">({from: creatorAddress});</span></li></ol></pre>
-<p><i id="p_41" class="pid"></i>In this code sample, we assume that <span class="snip"><span style="color: #24292F">contractAddress</span></span> is the address of the Reach contract, which you might have acquired via <span class="snip"><span style="color: #CF222E">await</span><span style="color: #24292F"> ctc.</span><span style="color: #8250DF">getContractAddress</span><span style="color: #24292F">()</span></span> and <span class="snip"><span style="color: #24292F">creatorAddress</span></span> is the address of the creator of the Reach contract.<a href="#p_41" class="pid">41</a></p>
+  .sendTransaction({from: creatorAddress});" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">sponsor_contract</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> conflux.</span><span style="color: #6F42C1">InternalContract</span><span style="color: #24292E">(</span><span style="color: #032F62">'SponsorWhitelistControl'</span><span style="color: #24292E">);</span></li><li value="2"><span style="color: #D73A49">await</span><span style="color: #24292E"> sponsor_contract.</span><span style="color: #6F42C1">addPrivilegeByAdmin</span><span style="color: #24292E">(contractAddress, [</span><span style="color: #032F62">"0x0000000000000000000000000000000000000000"</span><span style="color: #24292E">])</span></li><li value="3"><span style="color: #24292E">  .</span><span style="color: #6F42C1">sendTransaction</span><span style="color: #24292E">({from: creatorAddress});</span></li></ol></pre>
+<p><i id="p_41" class="pid"></i>In this code sample, we assume that <span class="snip"><span style="color: #24292E">contractAddress</span></span> is the address of the Reach contract, which you might have acquired via <span class="snip"><span style="color: #D73A49">await</span><span style="color: #24292E"> ctc.</span><span style="color: #6F42C1">getContractAddress</span><span style="color: #24292E">()</span></span> and <span class="snip"><span style="color: #24292E">creatorAddress</span></span> is the address of the creator of the Reach contract.<a href="#p_41" class="pid">41</a></p>
 <p>
   <i id="p_42" class="pid"></i>Third, you have to provide a sponsoring account by calling <code>setSponsorForGas</code> (or <code>setSponsorForCollateral</code>) on the Conflux internal contract.
   This function must be called by the sponsoring account.
@@ -161,8 +161,8 @@ await sponsor_contract.addPrivilegeByAdmin(contractAddress, [&quot;0x00000000000
   The code will look something like:<a href="#p_42" class="pid">42</a>
 </p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="await sponsor_contract.setSponsorForGas(contractAddress, amount)
-  .sendTransaction({from: sponsorAddress});" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #CF222E">await</span><span style="color: #24292F"> sponsor_contract.</span><span style="color: #8250DF">setSponsorForGas</span><span style="color: #24292F">(contractAddress, amount)</span></li><li value="2"><span style="color: #24292F">  .</span><span style="color: #8250DF">sendTransaction</span><span style="color: #24292F">({from: sponsorAddress});</span></li></ol></pre>
-<p><i id="p_43" class="pid"></i>In this code sample, we assume that <span class="snip"><span style="color: #24292F">contractAddress</span></span> is the address of the Reach contract, which you might have acquired via <span class="snip"><span style="color: #CF222E">await</span><span style="color: #24292F"> ctc.</span><span style="color: #8250DF">getContractAddress</span><span style="color: #24292F">()</span></span>, <span class="snip"><span style="color: #24292F">amount</span></span> is the maximum amount the sponsor is willing to sponsor, and <span class="snip"><span style="color: #24292F">sponsorAddress</span></span> is the address of the sponsor.<a href="#p_43" class="pid">43</a></p>
+  .sendTransaction({from: sponsorAddress});" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #D73A49">await</span><span style="color: #24292E"> sponsor_contract.</span><span style="color: #6F42C1">setSponsorForGas</span><span style="color: #24292E">(contractAddress, amount)</span></li><li value="2"><span style="color: #24292E">  .</span><span style="color: #6F42C1">sendTransaction</span><span style="color: #24292E">({from: sponsorAddress});</span></li></ol></pre>
+<p><i id="p_43" class="pid"></i>In this code sample, we assume that <span class="snip"><span style="color: #24292E">contractAddress</span></span> is the address of the Reach contract, which you might have acquired via <span class="snip"><span style="color: #D73A49">await</span><span style="color: #24292E"> ctc.</span><span style="color: #6F42C1">getContractAddress</span><span style="color: #24292E">()</span></span>, <span class="snip"><span style="color: #24292E">amount</span></span> is the maximum amount the sponsor is willing to sponsor, and <span class="snip"><span style="color: #24292E">sponsorAddress</span></span> is the address of the sponsor.<a href="#p_43" class="pid">43</a></p>
 <hr>
 <p>
   <i id="p_44" class="pid"></i>If your application is made of equal peers, you may not want to enable the sponsorship feature.
@@ -186,7 +186,7 @@ await sponsor_contract.addPrivilegeByAdmin(contractAddress, [&quot;0x00000000000
 </p>
 <p>
   <i id="p_48" class="pid"></i>Non-network tokens are compiled to <a href="https://ethereum.org/en/developers/docs/standards/tokens/erc-20/">ERC-20</a> fungible tokens.
-  Specifically, the <span class="snip"><span style="color: #24292F">Token</span></span> type refers to the address of the ERC-20 contract.
+  Specifically, the <span class="snip"><span style="color: #24292E">Token</span></span> type refers to the address of the ERC-20 contract.
   Token minting launches a fresh ERC-20 contract based on the OpenZeppelin ERC-20 implementation, which stores additional metadata and allows the creator to burn tokens and destroy the token if there is no supply (i.e. it has all been burned).<a href="#p_48" class="pid">48</a>
 </p>
 <p>
@@ -197,7 +197,7 @@ await sponsor_contract.addPrivilegeByAdmin(contractAddress, [&quot;0x00000000000
 </p>
 <p><i id="p_50" class="pid"></i>In Ethereum, network time corresponds to block numbers and network seconds correspond to the Unix timestamp of the block.<a href="#p_50" class="pid">50</a></p>
 <p>
-  <i id="p_51" class="pid"></i>The connector provides a binding named <span class="snip"><span style="color: #0550AE">ETH</span></span> to
+  <i id="p_51" class="pid"></i>The connector provides a binding named <span class="snip"><span style="color: #005CC5">ETH</span></span> to
   backends.<a href="#p_51" class="pid">51</a>
 </p>
 <p>

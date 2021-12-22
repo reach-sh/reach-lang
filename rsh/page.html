@@ -29,7 +29,7 @@
 </p>
 <p>
   <i id="p_12" class="pid"></i>It is always invalid to use a value with an operation for which it is undefined.
-  For example, <span class="snip"><span style="color: #0550AE">1</span><span style="color: #24292F"> </span><span style="color: #CF222E">+</span><span style="color: #24292F"> </span><span style="color: #0550AE">true</span></span> is invalid.
+  For example, <span class="snip"><span style="color: #005CC5">1</span><span style="color: #24292E"> </span><span style="color: #D73A49">+</span><span style="color: #24292E"> </span><span style="color: #005CC5">true</span></span> is invalid.
   In other words, Reach enforces a static type discipline.<a href="#p_12" class="pid">12</a>
 </p>
 <h3 id="security-levels-and-scope" class="refHeader">Security levels and scope<a aria-hidden="true" tabindex="-1" href="#security-levels-and-scope"><span class="icon icon-link"></span></a></h3>
@@ -43,12 +43,12 @@
 <p>
   <i id="p_14" class="pid"></i>When secret values are bound to an identifier
   within a local step,
-  the identifier name MUST be prefixed by an underscore (<span class="snip"><span style="color: #24292F">_</span></span>).<a href="#p_14" class="pid">14</a>
+  the identifier name MUST be prefixed by an underscore (<span class="snip"><span style="color: #24292E">_</span></span>).<a href="#p_14" class="pid">14</a>
 </p>
 <p>
   <i id="p_15" class="pid"></i>When public values are bound to an identifier,
   regardless of context,
-  the identifier name MUST NOT be prefixed by an underscore (<span class="snip"><span style="color: #24292F">_</span></span>).<a href="#p_15" class="pid">15</a>
+  the identifier name MUST NOT be prefixed by an underscore (<span class="snip"><span style="color: #24292E">_</span></span>).<a href="#p_15" class="pid">15</a>
 </p>
 <p>
   <i id="p_16" class="pid"></i>Consequently, identifiers which appear inside of a
@@ -69,9 +69,9 @@ if ( p() ) {
 } else {
  h();
 }
-m();" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #8250DF">f</span><span style="color: #24292F">();</span></li><li value="2"><span style="color: #CF222E">if</span><span style="color: #24292F"> ( </span><span style="color: #8250DF">p</span><span style="color: #24292F">() ) {</span></li><li value="3"><span style="color: #24292F"> </span><span style="color: #8250DF">g</span><span style="color: #24292F">();</span></li><li value="4"><span style="color: #24292F">} </span><span style="color: #CF222E">else</span><span style="color: #24292F"> {</span></li><li value="5"><span style="color: #24292F"> </span><span style="color: #8250DF">h</span><span style="color: #24292F">();</span></li><li value="6"><span style="color: #24292F">}</span></li><li value="7"><span style="color: #8250DF">m</span><span style="color: #24292F">();</span></li></ol></pre>
+m();" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #6F42C1">f</span><span style="color: #24292E">();</span></li><li value="2"><span style="color: #D73A49">if</span><span style="color: #24292E"> ( </span><span style="color: #6F42C1">p</span><span style="color: #24292E">() ) {</span></li><li value="3"><span style="color: #24292E"> </span><span style="color: #6F42C1">g</span><span style="color: #24292E">();</span></li><li value="4"><span style="color: #24292E">} </span><span style="color: #D73A49">else</span><span style="color: #24292E"> {</span></li><li value="5"><span style="color: #24292E"> </span><span style="color: #6F42C1">h</span><span style="color: #24292E">();</span></li><li value="6"><span style="color: #24292E">}</span></li><li value="7"><span style="color: #6F42C1">m</span><span style="color: #24292E">();</span></li></ol></pre>
 <p>
-  <i id="p_19" class="pid"></i><span class="snip"><span style="color: #24292F">f</span></span> dominates <span class="snip"><span style="color: #24292F">p</span></span>, <span class="snip"><span style="color: #24292F">g</span></span>, <span class="snip"><span style="color: #24292F">h</span></span>, and <span class="snip"><span style="color: #24292F">m</span></span>.
+  <i id="p_19" class="pid"></i><span class="snip"><span style="color: #24292E">f</span></span> dominates <span class="snip"><span style="color: #24292E">p</span></span>, <span class="snip"><span style="color: #24292E">g</span></span>, <span class="snip"><span style="color: #24292E">h</span></span>, and <span class="snip"><span style="color: #24292E">m</span></span>.
   But no other term dominates any other term.
-  In particular, <span class="snip"><span style="color: #24292F">g</span></span> does not dominate <span class="snip"><span style="color: #24292F">m</span></span> because it is possible to reach <span class="snip"><span style="color: #24292F">m</span></span> without going through <span class="snip"><span style="color: #24292F">g</span></span>, such as when <span class="snip"><span style="color: #8250DF">p</span><span style="color: #24292F">()</span></span> is false.<a href="#p_19" class="pid">19</a>
+  In particular, <span class="snip"><span style="color: #24292E">g</span></span> does not dominate <span class="snip"><span style="color: #24292E">m</span></span> because it is possible to reach <span class="snip"><span style="color: #24292E">m</span></span> without going through <span class="snip"><span style="color: #24292E">g</span></span>, such as when <span class="snip"><span style="color: #6F42C1">p</span><span style="color: #24292E">()</span></span> is false.<a href="#p_19" class="pid">19</a>
 </p>
