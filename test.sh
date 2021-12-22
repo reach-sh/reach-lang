@@ -120,7 +120,9 @@ checkteal () {
 
 jb
 # ci ALGO map-multi
-# ci ALGO view-map
+ci ALGO view-map
+ci ETH view-map
+exit 0
 r users/core-917
 exit 0
 
