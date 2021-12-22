@@ -78,8 +78,8 @@ r () {
 
   export REACH_DEBUG=1
   # export REACH_ALGO_DEBUG=1
-  REACH_CONNECTOR_MODE=ETH ${REACH} run
-  #REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  #REACH_CONNECTOR_MODE=ETH ${REACH} run
+  REACH_CONNECTOR_MODE=ALGO ${REACH} run
   #REACH_CONNECTOR_MODE=CFX ${REACH} run
 
   # Ganache
@@ -121,10 +121,7 @@ checkteal () {
 jb
 # ci ALGO map-multi
 # ci ALGO view-map
-ci ETH api-map
-ci ALGO api-map
-ci ETH map-multi
-ci ETH view-map
+r users/core-917
 exit 0
 
 # (cd hs && mk hs-test)

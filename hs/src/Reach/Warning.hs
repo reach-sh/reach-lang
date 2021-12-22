@@ -74,7 +74,7 @@ instance Show Warning where
     W_ALGOConservative rs ->
       "Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:\n" <> (intercalate "\n" $ map (" * " <>) rs)
     W_NoPublish -> "There are no publications in the application."
-    W_ExternalObject -> "The `Object` type is internal to Reach. Use `Struct` instead."
+    W_ExternalObject -> "The `Object` type is internal to Reach. Use `Struct` instead for external interfaces."
 
 emitWarning :: Maybe SrcLoc -> Warning -> IO ()
 emitWarning at d = do
