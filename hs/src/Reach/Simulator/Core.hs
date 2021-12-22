@@ -411,7 +411,7 @@ instance Interp DLExpr where
     DLE_ArrayZip _at dlarg1 dlarg2 -> do
       arr1 <- vArray <$> interp dlarg1
       arr2 <- vArray <$> interp dlarg2
-      return $ V_Array $ map (\(l,r)-> V_Tuple $ [l,r]) $ zip arr1 arr2
+      return $ V_Array $ zipWith (\l r -> V_Tuple $ [l,r]) arr1 arr2
     DLE_TupleRef _at dlarg n -> do
       arr <- vTuple <$> interp dlarg
       return $ saferIndex (fromIntegral n) arr
@@ -467,16 +467,14 @@ instance Interp DLExpr where
       (e, _) <- getState
       let linst = e_linstate e
       acc <- vAddress <$> interp dlarg
-      case maybe_dlarg of
-        Nothing -> do
-          let m = M.delete acc $ saferMapRef "DLE_MapSet1" $ M.lookup dlmvar linst
-          setGlobal $ e {e_linstate = M.insert dlmvar m linst}
-          return V_Null
-        Just dlarg' -> do
-          ev' <- interp dlarg'
-          let m = M.insert acc ev' $ saferMapRef "DLE_MapSet2" $ M.lookup dlmvar linst
-          setGlobal $ e {e_linstate = M.insert dlmvar m linst}
-          return V_Null
+      f <- case maybe_dlarg of
+        Nothing -> return M.delete
+        Just a -> do
+         v <- interp a
+         return $ flip M.insert v
+      let m = f acc $ saferMapRef "DLE_MapSet" $ M.lookup dlmvar linst
+      setGlobal $ e {e_linstate = M.insert dlmvar m linst}
+      return V_Null
     DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill -> impossible "undefined"
     DLE_TokenNew _at dltokennew -> do
       ledgerNewToken simContract dltokennew
