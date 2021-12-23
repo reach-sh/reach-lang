@@ -280,6 +280,11 @@ smtDeclare_v v t l = do
   smtDeclare smt v (Atom s) l
   smtTypeInv t $ Atom v
 
+smtMulDiv :: [SExpr] -> App SExpr
+smtMulDiv = \case
+  [x, y, den] -> return $ smtApply "div" [ smtApply "*" [ x, y ], den ]
+  _ -> impossible "smtPrimOp: MUL_DIV args"
+
 smtPrimOp :: SrcLoc -> PrimOp -> [DLArg] -> [SExpr] -> App SExpr
 smtPrimOp at p dargs =
   case p of
@@ -305,10 +310,7 @@ smtPrimOp at p dargs =
     (BYTES_ZPAD xtra) -> \args -> do
       xtra' <- smt_la at $ bytesZeroLit xtra
       return $ smtApply "bytesAppend" (args <> [ xtra' ])
-    MUL_DIV ->
-      \case
-        [x, y, den] -> return $ smtApply "div" [ smtApply "*" [ x, y ], den ]
-        _ -> impossible "smtPrimOp: MUL_DIV args"
+    MUL_DIV -> smtMulDiv
     SELF_ADDRESS pn isClass _ ->
       case dargs of
         [] -> \_ ->
@@ -969,6 +971,11 @@ smt_e at_dv mdv de = do
     DLE_Arg at da -> bound at =<< smt_a at da
     DLE_LArg at dla -> bound at =<< smt_la at dla
     DLE_Impossible {} -> unbound at_dv
+    DLE_VerifyMuldiv at cl args _ -> do
+      args' <- mapM (smt_a at) args
+      md <- smtMulDiv args'
+      let lt = uint256_le md (Atom $ smtConstant DLC_UInt_max)
+      doClaim at [] cl lt Nothing
     DLE_PrimOp at cp args -> do
       let f = case cp of
                 SELF_ADDRESS {} -> \ se -> pathAddBound at mdv (Just $ SMTProgram de) se Witness

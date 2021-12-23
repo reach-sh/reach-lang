@@ -585,6 +585,7 @@ base_env =
     , ("setOptions", SLV_Prim SLPrim_setOptions)
     , (".adaptReachAppTupleArgs", SLV_Prim SLPrim_adaptReachAppTupleArgs)
     , ("muldiv", SLV_Prim $ SLPrim_op MUL_DIV)
+    , ("verifyMuldiv", SLV_Prim $ SLPrim_verifyMuldiv)
     , ("unstrict", SLV_Prim $ SLPrim_unstrict)
     , ("getContract", SLV_Prim $ SLPrim_getContract)
     , ("getAddress", SLV_Prim $ SLPrim_getAddress)
@@ -2811,7 +2812,7 @@ evalPrim p sargs =
           dt <- st2dte =<< expect_ty "forall" one
           at <- withAt id
           tag <- ctxt_alloc
-          dv <- ctxt_lift_expr (DLVar at Nothing dt) (DLE_Impossible at tag Err_Impossible_InspectForall)
+          dv <- ctxt_lift_expr (DLVar at Nothing dt) (DLE_Impossible at tag $ Err_Impossible_Inspect "forall")
           return $ (olvl, SLV_DLVar dv)
         [one, (tlvl, two)] -> do
           one' <- evalPrim SLPrim_forall [one]
@@ -3189,9 +3190,19 @@ evalPrim p sargs =
             x -> return x
       tvs' <- mapM go tvs
       return (lvl, SLV_Tuple tat tvs')
-    SLPrim_muldiv -> do
+    SLPrim_verifyMuldiv -> do
+      at <- withAt id
       (x, y, z) <- three_args
-      evalPrimOp MUL_DIV $ map (lvl, ) [x, y, z]
+      args' <- mapM (compileCheckType T_UInt) [x, y, z]
+      m <- readSt st_mode
+      cl <- case m of
+        mode
+          | isLocalStep mode -> return $ CT_Assume True
+          | isConsensusStep mode -> return $ CT_Require
+          | otherwise -> return $ CT_Assert
+      let err = Err_Impossible_Inspect "verifyMulDiv"
+      ctxt_lift_eff $ DLE_VerifyMuldiv at cl args' err
+      return (lvl, SLV_Null at "verifyMulDiv")
     SLPrim_didPublish -> do
       ensure_mode SLM_LocalStep "local"
       ensure_after_first

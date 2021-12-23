@@ -30,7 +30,7 @@ allErrorCodes =
   , (errPrefix (Linearize.Err_Unreachable ""), gconNum @Linearize.Error)
   , (errPrefix Err_Unauthorized, gconNum @PkgError)
   , (errPrefix Err_Parse_JSIdentNone, gconNum @ParserError)
-  , (errPrefix Err_Impossible_InspectForall, gconNum @ImpossibleError)
+  , (errPrefix (Err_Impossible_Inspect ""), gconNum @ImpossibleError)
   , (errPrefix Err_TransferNewToken, gconNum @AlgoError)
   , (errPrefix (API_NoIn ""), gconNum @APICutError)
   , (errPrefix W_ExternalObject, gconNum @Warning)

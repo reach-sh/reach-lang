@@ -129,6 +129,7 @@ instance Countable DLExpr where
     DLE_Arg _ a -> counts a
     DLE_LArg _ a -> counts a
     DLE_Impossible {} -> mempty
+    DLE_VerifyMuldiv _ _ as _ -> counts as
     DLE_PrimOp _ _ as -> counts as
     DLE_ArrayRef _ aa ea -> counts [aa, ea]
     DLE_ArraySet _ aa ia va -> counts [aa, ia, va]

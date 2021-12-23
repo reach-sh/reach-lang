@@ -706,7 +706,6 @@ data SLPrimitive
   | SLPrim_Token_burn
   | SLPrim_Token_destroy
   | SLPrim_Token_destroyed
-  | SLPrim_muldiv
   | SLPrim_didPublish
   | SLPrim_unstrict
   | SLPrim_polyNeq
@@ -715,6 +714,7 @@ data SLPrimitive
   | SLPrim_EmitLog
   | SLPrim_Event
   | SLPrim_event_is (Maybe SLPart) SLVar [SLType]
+  | SLPrim_verifyMuldiv
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where
