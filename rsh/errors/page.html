@@ -186,8 +186,8 @@ while (true) {
   .publish()
   .timeout(5, closeTo(Bob));" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #24292E">Alice</span></li><li value="2"><span style="color: #24292E">  .</span><span style="color: #6F42C1">publish</span><span style="color: #24292E">()</span></li><li value="3"><span style="color: #24292E">  .</span><span style="color: #6F42C1">timeout</span><span style="color: #24292E">(</span><span style="color: #005CC5">5</span><span style="color: #24292E">, </span><span style="color: #6F42C1">closeTo</span><span style="color: #24292E">(Bob));</span></li></ol></pre>
 <p>
-  <i id="p_33" class="pid"></i>However, the second argument of the <span class="snip"><span style="color: #24292E">timeout</span></span> branch must be a thunk. You can fix this by
-  wrapping <span class="snip"><span style="color: #6F42C1">closeTo</span><span style="color: #24292E">(Bob)</span></span> in an arrow expression:<a href="#p_33" class="pid">33</a>
+  <i id="p_33" class="pid"></i>However, the second argument of the <span class="snip"><span style="color: #24292E">timeout</span></span> branch must be a syntactic thunk.
+  You can fix this by wrapping <span class="snip"><span style="color: #6F42C1">closeTo</span><span style="color: #24292E">(Bob)</span></span> in an arrow expression:<a href="#p_33" class="pid">33</a>
 </p>
 <pre class="snippet numbered"><div class="codeHeader">&nbsp;<a class="far fa-copy copyBtn" data-clipboard-text="Alice
   .publish()
