@@ -1906,17 +1906,20 @@ function ldrop(str: string, char: string) {
  * @description  Format currency by network or token
  * @param amt  the amount in the {@link atomicUnit} of the network or token.
  * @param decimals  up to how many decimal places to display in the {@link standardUnit}.
+ * @param splitValue  where to split the numeric value.
  *   Trailing zeros will be omitted. Excess decimal places will be truncated (not rounded).
  *   This argument defaults to maximum precision.
  * @returns  a string representation of that amount in the {@link standardUnit} for that network or token.
  * @example  formatCurrency(bigNumberify('100000000')); // => '100'
  * @example  formatCurrency(bigNumberify('9999998799987000')); // => '9999998799.987'
  */
-function handleFormat(amt: any, decimals: number, isNetwork: boolean): string {
+function handleFormat(amt: any, decimals: number, splitValue: number = 6): string {
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
-  const splitValue = isNetwork ? 6 : decimals
+  if (!(Number.isInteger(splitValue) && 0 <= splitValue)) {
+    throw Error(`Expected split value to be a nonnegative integer, but got ${decimals}.`);
+  }
   const amtStr = bigNumberify(amt).toString();
   const splitAt = Math.max(amtStr.length - splitValue, 0);
   const lPredropped = amtStr.slice(0, splitAt);
@@ -1934,14 +1937,14 @@ function handleFormat(amt: any, decimals: number, isNetwork: boolean): string {
  * @description  Format currency by network
  */
 export function formatCurrency(amt: any, decimals: number = 6): string {
-  return handleFormat(amt, decimals, true)
+  return handleFormat(amt, decimals, 6)
 }
 
 /**
  * @description  Format currency based on token decimals
  */
 export function formatWithDecimals(amt: any, decimals: number): string {
-  return handleFormat(amt, decimals, false)
+  return handleFormat(amt, decimals, decimals)
 }
 
 export async function getDefaultAccount(): Promise<Account> {
