@@ -1912,7 +1912,10 @@ function ldrop(str: string, char: string) {
  * @example  formatCurrency(bigNumberify('100000000')); // => '100'
  * @example  formatCurrency(bigNumberify('9999998799987000')); // => '9999998799.987'
  */
-function handleFormat(amt: any, decimals: number, isNetwork: boolean) {
+function handleFormat(amt: any, decimals: number, isNetwork: boolean): string {
+  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
+    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
+  }
   const splitValue = isNetwork ? 6 : decimals
   const amtStr = bigNumberify(amt).toString();
   const splitAt = Math.max(amtStr.length - splitValue, 0);
@@ -1931,22 +1934,14 @@ function handleFormat(amt: any, decimals: number, isNetwork: boolean) {
  * @description  Format currency by network
  */
 export function formatCurrency(amt: any, decimals: number = 6): string {
-  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
-    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
-  }
-  const formattedValue = handleFormat(amt, decimals, true)
-  return formattedValue
+  return handleFormat(amt, decimals, true)
 }
 
 /**
  * @description  Format currency based on token decimals
  */
 export function formatWithDecimals(amt: any, decimals: number): string {
-  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
-    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
-  }
-  const formattedValue = handleFormat(amt, decimals, false)
-  return formattedValue
+  return handleFormat(amt, decimals, false)
 }
 
 export async function getDefaultAccount(): Promise<Account> {
