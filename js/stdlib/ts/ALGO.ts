@@ -1927,7 +1927,9 @@ function handleFormat(amt: any, decimals: number, isNetwork: boolean) {
   return r ? `${l}.${r}` : l;
 }
 
-
+/**
+ * @description  Format currency by network
+ */
 export function formatCurrency(amt: any, decimals: number = 6): string {
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
@@ -1936,6 +1938,9 @@ export function formatCurrency(amt: any, decimals: number = 6): string {
   return formattedValue
 }
 
+/**
+ * @description  Format currency based on token decimals
+ */
 export function formatWithDecimals(amt: any, decimals: number): string {
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
