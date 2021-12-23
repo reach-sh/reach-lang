@@ -366,6 +366,7 @@ instance DepthOf DLExpr where
     DLE_Arg _ a -> depthOf a
     DLE_LArg _ a -> depthOf a
     DLE_Impossible {} -> return 0
+    DLE_VerifyMuldiv {} -> return 0
     DLE_PrimOp _ _ as -> add1 $ depthOf as
     DLE_ArrayRef _ x y -> add1 $ depthOf [x, y]
     DLE_ArraySet _ x y z -> depthOf [x, y, z]
@@ -569,6 +570,8 @@ solExpr sp = \case
   DLE_LArg {} ->
     impossible "large arg"
   DLE_Impossible at _ err ->
+    expect_thrown at err
+  DLE_VerifyMuldiv at _ _ err ->
     expect_thrown at err
   DLE_PrimOp _ p args -> do
     args' <- mapM solArg args
