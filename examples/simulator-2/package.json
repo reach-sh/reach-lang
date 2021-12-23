@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "@reach-sh/simulator-client": "0.0.4"
+  },
+  "devDependencies": {
+    "webpack": "^5.65.0"
   }
 }
