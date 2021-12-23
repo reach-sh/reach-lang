@@ -7,7 +7,7 @@ Verifying for generic connector
   Verifying when ONLY "Merchant" is honest
   Verifying when ONLY "PotentialBuyer" is honest
 Checked 157 theorems; No failures!
-warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs.
 
   ./pr206.rsh:187:27:application
 
