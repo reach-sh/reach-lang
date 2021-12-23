@@ -1,6 +1,3 @@
-
-
-
 # {#ref-install} Installation
 
 Reach is designed to work on POSIX systems with [make](https://en.wikipedia.org/wiki/Make_(software)), [Docker](https://www.docker.com/get-started), and [Docker Compose](https://docs.docker.com/compose/install/) installed.
@@ -12,14 +9,11 @@ For example, OS X and many other POSIX systems come with `make`, but some versio
 If you're on Ubuntu, you can run `sudo apt install make` to get it.
 :::
 
-
 You can install Reach by running:
 
-
-```
+```cmd
 $ curl https://docs.reach.sh/reach -o reach ; chmod +x reach
 ```
-
 
 in your project repository.
 You can copy this file to other repositories or move it to a directory in your `PATH`, like `~/bin`.
@@ -28,5 +22,3 @@ You can copy this file to other repositories or move it to a directory in your `
 :::note
 If you're using Windows, consult [the guide to using Reach on Windows](##guide-windows).
 :::
-
-

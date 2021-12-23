@@ -14,7 +14,7 @@ export const main =
     const vNFT = View('NFT', {
         owner: Address });
 
-    deploy();
+    init();
 
     Creator.only(() => {
       const id = declassify(interact.getId()); });

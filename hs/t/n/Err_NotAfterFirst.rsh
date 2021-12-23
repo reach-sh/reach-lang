@@ -2,7 +2,7 @@
 
 export const main = Reach.App(() => {
   const A = Participant('A', { ...hasConsoleLogger });
-  deploy();
+  init();
   A.only(() => {
     interact.log(didPublish());
   });

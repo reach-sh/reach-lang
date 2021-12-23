@@ -8,7 +8,7 @@ export const main = Reach.App(() => {
   const U = API({
     add1: Fun([UInt], UInt),
   });
-  deploy();
+  init();
   A.publish();
   commit();
   const [ [x], k] = call(U.add1);

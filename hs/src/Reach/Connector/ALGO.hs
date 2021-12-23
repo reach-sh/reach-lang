@@ -1286,6 +1286,8 @@ ce = \case
   DLE_Arg _ a -> ca a
   DLE_LArg _ a -> cla a
   DLE_Impossible at _ err -> expect_thrown at err
+  DLE_VerifyMuldiv at _ _ err ->
+    expect_thrown at err
   DLE_PrimOp _ p args -> cprim p args
   DLE_ArrayRef at aa ia -> doArrayRef at aa True (Left ia)
   DLE_ArraySet at aa ia va -> do
@@ -1778,7 +1780,7 @@ ct = \case
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
-reachAlgoBackendVersion = 6
+reachAlgoBackendVersion = 7
 
 -- State:
 keyState :: B.ByteString
@@ -1900,10 +1902,6 @@ ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = record
   op "=="
   code "bz" [ afterLab ]
   op "pop" -- Get rid of the method id since it's us
-  -- NOTE: To implement ABIs we'll need to do something like this
-  -- clog $ [ DLA_Literal $ DLL_Int at $ fromIntegral which
-  --        , ArgMsg
-  --        ]
   comment "check step"
   cint $ fromIntegral prev
   gvLoad GV_currentStep
@@ -1926,6 +1924,7 @@ ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = record
         . bindFromSvs
         . (bindFromArg ArgMsg msg)
   bindVars $ do
+    clogEvent ("_reach_e" <> show which) msg
     when isCtor $ do
       ce $ DLE_CheckPay at [] (DLA_Literal $ minimumBalance_l) Nothing
     let checkTime1 :: LT.Text -> App () -> DLArg -> App ()

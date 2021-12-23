@@ -74,7 +74,7 @@ data AppInitSt
       { aisi_env :: IORef AppEnv
       , aisi_res :: IORef AppRes
       }
-  | AIS_Deployed
+  | AIS_Inited
       {aisd_env :: AppEnv}
 
 data Env = Env
@@ -111,7 +111,7 @@ e_app =
 aisd_ :: App (Maybe AppEnv)
 aisd_ =
   e_app >>= \case
-    Just (AIS_Deployed d) -> return $ Just d
+    Just (AIS_Inited d) -> return $ Just d
     _ -> return $ Nothing
 
 aisd :: HasCallStack => App AppEnv
@@ -192,7 +192,7 @@ readDlo f =
     Right r ->
       (liftIO $ readIORef r) >>= \case
         AIS_Init er _ -> f . ae_dlo <$> (liftIO $ readIORef er)
-        AIS_Deployed d -> return $ f (ae_dlo d)
+        AIS_Inited d -> return $ f (ae_dlo d)
 
 whenVerifyArithmetic :: App () -> App ()
 whenVerifyArithmetic m = do
@@ -580,10 +580,12 @@ base_env =
     , ("View", SLV_Prim SLPrim_View)
     , ("API", SLV_Prim SLPrim_API)
     , ("Events", SLV_Prim SLPrim_Event)
-    , ("deploy", SLV_Prim SLPrim_deploy)
+    , ("init", SLV_Prim SLPrim_init)
+    , ("deploy", SLV_Deprecated (D_Replaced "deploy" "init") $ SLV_Prim SLPrim_init)
     , ("setOptions", SLV_Prim SLPrim_setOptions)
     , (".adaptReachAppTupleArgs", SLV_Prim SLPrim_adaptReachAppTupleArgs)
     , ("muldiv", SLV_Prim $ SLPrim_op MUL_DIV)
+    , ("verifyMuldiv", SLV_Prim $ SLPrim_verifyMuldiv)
     , ("unstrict", SLV_Prim $ SLPrim_unstrict)
     , ("getContract", SLV_Prim $ SLPrim_getContract)
     , ("getAddress", SLV_Prim $ SLPrim_getAddress)
@@ -1008,7 +1010,7 @@ stMerge old new =
       -- can't rely on it being set. This probably will not matter, but it
       -- might. This is mainly here so that
       --
-      -- deploy();
+      -- init();
       -- A.publish();
       -- while (c) {
       --  f();
@@ -1462,7 +1464,7 @@ convertTernaryReachApp at a opte top_formals partse top_s = top_s'
     top_ss =
       [ JSExpressionStatement (JSCallExpression (JSIdentifier a "setOptions") a (JSLOne opte) a) sp
       , JSConstant a (JSLOne $ JSVarInitExpression lhs $ JSVarInit a rhs) sp
-      , JSExpressionStatement (JSCallExpression (JSIdentifier a "deploy") a JSLNil a) sp
+      , JSExpressionStatement (JSCallExpression (JSIdentifier a "init") a JSLNil a) sp
       , top_s
       ]
     top_s' = JSStatementBlock a top_ss a sp
@@ -2810,7 +2812,7 @@ evalPrim p sargs =
           dt <- st2dte =<< expect_ty "forall" one
           at <- withAt id
           tag <- ctxt_alloc
-          dv <- ctxt_lift_expr (DLVar at Nothing dt) (DLE_Impossible at tag Err_Impossible_InspectForall)
+          dv <- ctxt_lift_expr (DLVar at Nothing dt) (DLE_Impossible at tag $ Err_Impossible_Inspect "forall")
           return $ (olvl, SLV_DLVar dv)
         [one, (tlvl, two)] -> do
           one' <- evalPrim SLPrim_forall [one]
@@ -3154,10 +3156,10 @@ evalPrim p sargs =
           _ -> illegal_args
       saveLift $ DLS_ViewIs at vn vk mva
       return $ public $ SLV_Null at "viewis"
-    SLPrim_deploy -> do
+    SLPrim_init -> do
       zero_args
-      retV $ public $ SLV_Prim SLPrim_deployed
-    SLPrim_deployed -> illegal_args
+      retV $ public $ SLV_Prim SLPrim_inited
+    SLPrim_inited -> illegal_args
     SLPrim_setOptions -> do
       ensure_mode SLM_AppInit "setOptions"
       at <- withAt id
@@ -3188,9 +3190,19 @@ evalPrim p sargs =
             x -> return x
       tvs' <- mapM go tvs
       return (lvl, SLV_Tuple tat tvs')
-    SLPrim_muldiv -> do
+    SLPrim_verifyMuldiv -> do
+      at <- withAt id
       (x, y, z) <- three_args
-      evalPrimOp MUL_DIV $ map (lvl, ) [x, y, z]
+      args' <- mapM (compileCheckType T_UInt) [x, y, z]
+      m <- readSt st_mode
+      cl <- case m of
+        mode
+          | isLocalStep mode -> return $ CT_Assume True
+          | isConsensusStep mode -> return $ CT_Require
+          | otherwise -> return $ CT_Assert
+      let err = Err_Impossible_Inspect "verifyMulDiv"
+      ctxt_lift_eff $ DLE_VerifyMuldiv at cl args' err
+      return (lvl, SLV_Null at "verifyMulDiv")
     SLPrim_didPublish -> do
       ensure_mode SLM_LocalStep "local"
       ensure_after_first
@@ -4983,15 +4995,15 @@ findStmtTrampoline = \case
         locSco sco' $ evalStmt ks
     saveLift $ DLS_FromConsensus at steplifts
     return $ cr
-  SLV_Prim SLPrim_deployed -> Just $ \_ ks -> do
-    ensure_mode SLM_AppInit "deploy"
-    e_appR <- fromRight (impossible "deploy") . e_appr <$> ask
+  SLV_Prim SLPrim_inited -> Just $ \_ ks -> do
+    ensure_mode SLM_AppInit "init"
+    e_appR <- fromRight (impossible "init") . e_appr <$> ask
     env <-
       (liftIO $ readIORef e_appR) >>= \case
         AIS_Init {..} -> do
           liftIO $ readIORef aisi_env
-        _ -> impossible "deploy"
-    liftIO $ writeIORef e_appR $ AIS_Deployed env
+        _ -> impossible "init"
+    liftIO $ writeIORef e_appR $ AIS_Inited env
     st <- readSt id
     setSt $
       st

@@ -32,9 +32,9 @@ const runDemo = async (delayReceiver, delayFunder) => {
   const receiver = await stdlib.newTestAccount(startingBalance);
   const bystander = await stdlib.newTestAccount(startingBalance);
 
-  const ctcFunder = funder.deploy(backend);
-  const ctcReceiver = receiver.attach(backend, ctcFunder.getInfo());
-  const ctcBystander = bystander.attach(backend, ctcFunder.getInfo());
+  const ctcFunder = funder.contract(backend);
+  const ctcReceiver = receiver.contract(backend, ctcFunder.getInfo());
+  const ctcBystander = bystander.contract(backend, ctcFunder.getInfo());
 
   await Promise.all([
     backend.Funder(ctcFunder, {

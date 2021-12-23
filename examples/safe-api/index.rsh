@@ -7,7 +7,7 @@ export const main = Reach.App(() => {
   const B = API({
     go: Fun([], Bool),
   });
-  deploy();
+  init();
 
   A.publish();
   commit();

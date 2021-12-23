@@ -5,7 +5,7 @@ export const main = Reach.App(() => {
     ...hasConsoleLogger,
     t: UInt,
   });
-  deploy();
+  init();
 
   A.only(() => {
     const t = declassify(interact.t); });

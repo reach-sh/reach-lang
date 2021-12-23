@@ -2,7 +2,7 @@
 
 export const main = Reach.App(() => {
   const A = Participant('A', {});
-  deploy();
+  init();
   const x = Array.replicate(3, 0);
   assert(x[0] == 0);
   assert(x[1] == 0);

@@ -6,22 +6,25 @@
 
 The body of `{!rsh} Reach.app` is an @{defn("application initialization")}.
 It defines the various participants and views of the DApp, as well as sets compilation options.
-It is finalized with `{!rsh} deploy()` and then the application begins in a step.
+It is finalized with `{!rsh} init()` and then the application begins in a step.
 
 ## {#ref-programs-appinit-stmts} Statements
 
 Any statements valid for a [computation](##ref-programs-compute-stmts) are valid for application initialization.
 However, some additional statements are allowed.
 
-### `deploy`
+### `init`
 
-@{ref("rsh", "deploy")}
 ```reach
-deploy(); 
+init();
 ```
 
+@{ref("rsh", "init")}
+A @{defn("init statement")}, written `{!rsh} init();`, finalizes all of the available participants, views, and compilation options.
 
-A @{defn("deploy statement")}, written `{!rsh} deploy();`, deploys the DApp and finalizes all of the available participants, views, and compilation options.
+@{ref("rsh", "deploy")}
+In earlier versions of Reach, this was called `{!rsh} deploy()`, but it was
+changed because that name was misleading.
 
 Its continuation is a step, which means its content is specified by @{seclink("ref-programs-step")}.
 It represents the body of the DApp to be compiled.

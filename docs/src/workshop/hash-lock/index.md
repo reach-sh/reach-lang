@@ -258,10 +258,9 @@ We'll discuss that in the next section; don't worry!
 At this point, when we
 
 
-```
+```cmd
 $ ../reach compile
 ```
-
 
 We'll get a happy message that all our theorems are true.
 Great job!
@@ -301,14 +300,14 @@ In a real deployment, she might give Bob the password through some other channel
 With this testing frontend in place, we can run
 
 
-```
+```cmd
 $ ../reach run
 ```
 
 
 and see an example execution:
 
-```
+```cmd
 $ ../reach run
 Bob asked to give the preimage.
 Returning: 40816662354916515903581596667174503941307255426903039386763272451578996162763

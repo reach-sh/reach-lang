@@ -9,7 +9,7 @@ export const main = Reach.App(() => {
   };
   const A = Participant('Alice', common);
   const B = Participant('Bob', common);
-  deploy();
+  init();
 
   A.publish();
   const m = new Map(T);

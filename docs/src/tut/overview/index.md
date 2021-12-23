@@ -128,10 +128,9 @@ Reach programmers don't need to think about details like _contract storage_, _pr
 After a Reach programmer writes this application in a file like [`overview/index.rsh`](@{REPO}/examples/overview/index.rsh), they could run
 
 
-```
+```cmd
 $ reach compile overview/index.rsh
 ```
-
 
 and the `build` directory will contain a new file named [`index.main.mjs`](@{REPO}/examples/overview/build/index.main.mjs), which contains a JavaScript implementation of a backend for each participant, as well as the Ethereum bytecode for the contract.
 
@@ -169,10 +168,9 @@ range: 25-29
 And then run the compiler:
 
 
-```
+```cmd
 $ reach compile overview/index-error.rsh
 ```
-
 
 It will print out a detailed error message showing the violation.
 
@@ -261,7 +259,7 @@ This is a common practice, so Reach comes with a simple wrapper script to build 
 We just run:
 
 
-```
+```cmd
 $ reach run
 ```
 
@@ -282,7 +280,7 @@ Reach completely abstracts all the details of building and maintaining consensus
 In fact, Reach works for multiple networks, so if we instead run
 
 
-```
+```cmd
 $ REACH_CONNECTOR_MODE=ALGO reach run
 ```
 
@@ -293,7 +291,7 @@ The developer does not need to change anything about their program because Reach
 The same goes for Conflux:
 
 
-```
+```cmd
 $ REACH_CONNECTOR_MODE=CFX reach run
 ```
 
@@ -376,7 +374,7 @@ or for convenience, instead of setting up a React project,
 you can simply use the command
 
 
-```
+```cmd
 $ reach react
 ```
 
@@ -386,17 +384,17 @@ This command runs your DApp with the React development server in a Docker contai
 As before, you can use `REACH_CONNECTOR_MODE` to  choose your desired connector.
 
 
-```
+```cmd
 $ REACH_CONNECTOR_MODE=ETH reach react
 ```
 
 
-```
+```cmd
 $ REACH_CONNECTOR_MODE=ALGO reach react
 ```
 
 
-```
+```cmd
 $ REACH_CONNECTOR_MODE=CFX reach react
 ```
 

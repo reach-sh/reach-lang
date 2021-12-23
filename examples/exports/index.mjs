@@ -20,8 +20,8 @@ const equals = (a, b) => {
   const alice = await stdlib.newTestAccount(startingBalance);
   const bob = await stdlib.newTestAccount(startingBalance);
 
-  const ctcAlice = alice.deploy(backend);
-  const ctcBob = bob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = alice.contract(backend);
+  const ctcBob = bob.contract(backend, ctcAlice.getInfo());
 
   const exports = backend.getExports(stdlib);
 

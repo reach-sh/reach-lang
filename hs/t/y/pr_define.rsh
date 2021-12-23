@@ -4,7 +4,7 @@ export const main = Reach.App(() => {
   const Alice = Participant('Alice', {
     show: Fun([UInt], Null),
   });
-  deploy();
+  init();
 
   Alice.publish();
 

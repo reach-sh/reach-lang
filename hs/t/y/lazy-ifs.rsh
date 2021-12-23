@@ -7,7 +7,7 @@ export const main = Reach.App(() => {
     arr: Fun([], Array(UInt, N)),
     put: Fun(true, Null),
   });
-  deploy();
+  init();
 
   assert(1 < 2 ? true : false);
   assert(2 < 1 ? false : true);

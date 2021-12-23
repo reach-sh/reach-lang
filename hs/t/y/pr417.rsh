@@ -4,7 +4,7 @@ export const main = Reach.App(() => {
   const M = Data({S : UInt, T : UInt});
   const A = Participant('A', { tok: Token });
 
-  deploy();
+  init();
 
   A.only(() => { const tok = declassify(interact.tok); });
   A.publish(tok);

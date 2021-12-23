@@ -82,7 +82,7 @@ const bidderNames = ["Alice", "Bob", "Camus"];
 
   // Deploy
   console.log(`Auctioneer will deploy the Reach DApp.`);
-  const ctcAuctioneer = accAuctioneer.deploy(backend);
+  const ctcAuctioneer = accAuctioneer.contract(backend);
 
   const common = (who) => ({
     showOutcome: (outcome) => {
@@ -96,7 +96,7 @@ const bidderNames = ["Alice", "Bob", "Camus"];
   const bidderBackends = accBidders.map((accBidder, i) => {
     const who = bidderNames[i];
     console.log(`${who} attaches to the Reach DApp.`);
-    const ctcBidder = accBidder.attach(backend, ctcInfo);
+    const ctcBidder = accBidder.contract(backend, ctcInfo);
     return backend.Bidder(ctcBidder, {
       ...common(who),
       getBid: (cp) => {

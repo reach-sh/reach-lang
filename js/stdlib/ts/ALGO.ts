@@ -107,7 +107,7 @@ type ApiCall<T> = {
   do: () => Promise<T>,
 };
 type CompileResultBytes = {
-  src: String,
+  src: string,
   result: Uint8Array,
   hash: Address
 };
@@ -118,7 +118,7 @@ type NetworkAccount = {
 };
 
 const reachBackendVersion = 7;
-const reachAlgoBackendVersion = 6;
+const reachAlgoBackendVersion = 7;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
   appApproval: string,
@@ -234,12 +234,14 @@ const waitForConfirmation = async (txId: TxId, untilRound?: number|undefined): P
       debug(...dhead, 'confirmed');
       const dtxn = algosdk.Transaction.from_obj_for_encoding(info['txn']['txn']);
       debug(...dhead, 'confirmed', dtxn);
+      const uToS = (a: Uint8Array[]|undefined) => (a || []).map((x: Uint8Array)=> uint8ArrayToStr(x, 'base64'));
       return {
         'confirmed-round': cr,
-        'logs': l,
+        // @ts-ignore
+        'logs': uToS(l),
         'application-index': info['application-index'],
         'sender': txnFromAddress(dtxn),
-        'application-args': (dtxn.appArgs || []).map((x)=> uint8ArrayToStr(x, 'base64')),
+        'application-args': uToS(dtxn.appArgs),
       };
     } else if ( info['pool-error'] === '' ) {
       debug(...dhead, 'still in pool, trying again');
@@ -420,7 +422,7 @@ async function compileFor(bin: Backend): Promise<CompiledBackend> {
 
 const ui8h = (x:Uint8Array): string => Buffer.from(x).toString('hex');
 const base64ToUI8A = (x:string): Uint8Array => Uint8Array.from(Buffer.from(x, 'base64'));
-const base64ify = (x: any): String => Buffer.from(x).toString('base64');
+const base64ify = (x: any): string => Buffer.from(x).toString('base64');
 
 const format_failed_request = (e: any) => {
   const ep = JSON.parse(JSON.stringify(e));
@@ -966,14 +968,63 @@ export const transfer = async (
     txn);
 };
 
-// XXX need to make this a log
-const makeIsMethod = (i:number) => (txn:any): boolean => {
-  const act = txn['application-transaction']['application-args'][0];
-  const exp = base64ify([i]);
-  const r = act === exp;
-  //debug(`makeIsMethod`, {txn,i,act,exp,r});
-  return r;
-}
+interface LogRep {
+  checkFrom: (txn: any, which: ((round:number) => number)) => [number, number, string|undefined]
+  checkFromP: (txn: any, which: ((round:number) => number)) => boolean
+  checkFromA: (txn: any, which: ((round:number) => number)) => [number, number, string]
+  checkFromL: (txn: any, which: ((round:number) => number)) => string
+  parse: (log: any) => any[]
+};
+const makeLogRep = (evt:string, tys:AnyALGO_Ty[]): LogRep => {
+  const hLen = 4;
+  const tyns = tys.map(ty => ty.netName);
+  const sig = `${evt}(${tyns.join(',')})`;
+  const hp = base64ify(sha512_256(sig));
+  const trunc = (x: string): string => ui8h(base64ToUI8A(x).slice(0, hLen));
+  const hpb = trunc(hp);
+  debug(`logHashHeader`, { evt, tyns, sig, hp, hpb });
+
+  const checkFrom = (txn: any, which: ((round:number) => number)): [ number, number, string|undefined ] => {
+    const round = txn['confirmed-round'];
+    const logIdx = which(round);
+    const logs: string[] = (txn['logs'] || []).slice(logIdx);
+    const idx = logs.findIndex((l) => trunc(l) === hpb);
+    const log = idx === -1 ? undefined : logs[idx];
+    debug(`checkFrom`, { evt, round, logIdx, logs, idx, log });
+    return [ round, idx, log ];
+  };
+  const checkFromP = (txn: any, which: ((round:number) => number)): boolean => {
+    return checkFrom(txn, which)[2] !== undefined;
+  };
+  const checkFromA = (txn: any, which: ((round:number) => number)): [number, number, string] => {
+    const [r, i, l] = checkFrom(txn, which);
+    if ( l === undefined ) { throw Error(`impossible log`); }
+    return [r, i, l];
+  };
+  const checkFromL = (txn: any, which: ((round:number) => number)): string => {
+    return checkFromA(txn, which)[2];
+  };
+  const parse = (log:string): any[] => {
+    // @ts-ignore
+    const pd = T_Tuple([T_Bytes(hLen)].concat(tys)).fromNet(reNetify(log));
+    debug(`parse`, { log, pd });
+    pd.shift();
+    return pd;
+  };
+
+  return { checkFrom, checkFromP, checkFromA, checkFromL, parse };
+};
+
+const reachEvent = (i:number) => `_reach_e${i}`;
+const which0 = (round:number): number => {
+  void(round);
+  return 0;
+};
+const makeHasLogFor = (i:number, tys:AnyALGO_Ty[]) => {
+  debug(`hasLogFor`, i, tys);
+  const lr = makeLogRep(reachEvent(i), tys);
+  return ((txn:any) => lr.checkFromP(txn, which0));
+};
 
 /** @description base64->hex->arrayify */
 const reNetify = (x: string): NV => {
@@ -1510,7 +1561,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         txn: RecvTxn,
       };
       const recvFrom = async (rfargs:RecvFromArgs): Promise<Recv> => {
-        const { dhead, out_tys, didSend, txn } = rfargs;
+        const { dhead, funcNum, out_tys, didSend, txn } = rfargs;
         const { getLastRound, setLastRound } = await getC();
         debug(dhead, '--- txn =', txn);
         const theRound = txn['confirmed-round'];
@@ -1522,16 +1573,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         // ^ XXX it would be nice if Reach could support variables bound to
         // promises and then we wouldn't need to wait here.
 
-        // XXX need to move this to a log
-        const ctc_args_all = txn['application-args'];
-        debug(dhead, {ctc_args_all});
-        const argMsg = 2; // from ALGO.hs
-        const ctc_args_s: string = ctc_args_all[argMsg];
-
-        debug(dhead, 'out_tys', out_tys.map((x) => x.name));
-        const msgTy = T_Tuple(out_tys);
-        const ctc_args = msgTy.fromNet(reNetify(ctc_args_s));
-        debug(dhead, {ctc_args});
+        const lr = makeLogRep(reachEvent(funcNum), out_tys);
+        const log = lr.checkFromL(txn, which0);
+        const ctc_args = lr.parse(log);
+        debug(dhead, {log, ctc_args});
 
         const fromAddr = txn['sender'];
         const from = T_Address.canonicalize({addr: fromAddr});
@@ -1580,7 +1625,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const { ApplicationID, getLastRound, isIsolatedNetwork } = await getC();
 
         while ( true ) {
-          const correctStep = makeIsMethod(funcNum);
+          const correctStep = makeHasLogFor(funcNum, out_tys);
           const minRound = getLastRound() + fromBlock_summand;
           const res = await eventCache.query(dhead, ApplicationID, { minRound, timeoutAt }, correctStep);
           debug(`EventCache res: `, res);
@@ -1678,69 +1723,53 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const getC = makeGetC(a, eventCache, (cb: number) => {
         time = bigNumberify(cb);
       });
-      const createEventStream = (event: string, tys: AnyALGO_Ty[]) => {
+      const createEventStream = (evt: string, tys: AnyALGO_Ty[]) => {
         let logIndex: any = {};
-        let sig = `${event}(${tys.map(ty => ty.netName).join(',')})`;
-        debug(`createEventStream signature`, sig);
-        let hashPrefix = sha512_256(sig).substring(0, 4);
-        let base64Hash = replaceAll(base64ify(hashPrefix) as string, '=', '');
-        debug(`createEventStream hash`, base64Hash);
+        const lr = makeLogRep(evt, tys);
         let lastLog: any = undefined;
 
         const seek = (t: Time) => {
           debug("EventStream::seek", t);
           time = t;
           logIndex[time.toNumber()] = 0;
-        }
+        };
 
         const next = async () => {
           let dhead = "EventStream::next";
           const { ApplicationID } = await getC();
-          const pred = (txn: any) => {
-            const round = txn['confirmed-round'];
-            const logIdx = logIndex[round] || 0;
-            const logs: string[] = (txn['logs'] || []).slice(logIdx);
-            const good = logs.some((log) => log.startsWith(base64Hash));
-            return good;
-          };
+          const which = (round: number) => logIndex[round] || 0;
+          const pred = (txn: any) => lr.checkFromP(txn, which);
           let res: QueryResult = { succ: false, round: 0  };
           while (!res.succ) {
             res = await eventCache.query(dhead, ApplicationID, { minRound: time.toNumber(), isEventStream: true }, pred);
             if (!res.succ) { await Timeout.set(5000); }
           }
-          const round = res.txn['confirmed-round'];
-          const logIdx = logIndex[round] || 0;
-          const logs = res.txn.logs.slice(logIdx);
-          let log = logs.find((l: string, idx: number) => {
-            const matches = l.startsWith(base64Hash);
-            if (matches) { logIndex[round] = logIdx + idx + 1; }
-            return matches;
-          });
-          // @ts-ignore
-          const parsedLog = T_Tuple([T_Bytes(4)].concat(tys)).fromNet(reNetify(log));
+          const [ round, idx, log ] = lr.checkFromA(res.txn, which);
+          const logIdx = which(round);
+          logIndex[round] = logIdx + idx + 1;
+          const parsedLog = lr.parse(log);
           const blockTime = bigNumberify(round);
           time = blockTime;
           debug(dhead + ` parsed log`, parsedLog, blockTime);
-          parsedLog.shift(); // Remove tag
           lastLog = { when: blockTime, what: parsedLog };
           return lastLog;
-        }
+        };
 
         const seekNow = async () => {
           time = await getNetworkTime();
-        }
+        };
 
         const lastTime = async () => {
           const dhead = "EventStream::lastTime";
           debug(dhead, time);
           return lastLog?.when;
-        }
+        };
 
         const monitor = async (onEvent: (x: any) => void) => {
           while (true) {
             onEvent(await next());
           }
-        }
+        };
 
         return { lastTime, seek, seekNow, monitor, next };
       };
@@ -1873,18 +1902,23 @@ export const atomicUnit = 'μALGO';
 
 /**
  * @description  Parse currency by network
- * @param amt  value in the {@link standardUnit} for the network.
- * @returns  the amount in the {@link atomicUnit} of the network.
+ * @param amt  value in the {@link standardUnit} for the token.
+ * @returns  the amount in the {@link atomicUnit} of the token.
  * @example  parseCurrency(100).toString() // => '100000000'
+ * @example  parseCurrency(100, 3).toString() // => '100000'
  */
-export function parseCurrency(amt: CurrencyAmount): BigNumber {
+export function parseCurrency(amt: CurrencyAmount, decimals: number = 6): BigNumber {
+  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
+    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
+  }
   // @ts-ignore
   const numericAmt: number =
     isBigNumber(amt) ? amt.toNumber()
     : typeof amt === 'string' ? parseFloat(amt)
     : typeof amt === 'bigint' ? Number(amt)
     : amt;
-  return bigNumberify(algosdk.algosToMicroalgos(numericAmt));
+  const value = numericAmt * (10 ** decimals)
+  return bigNumberify(Math.floor(value))
 }
 
 export const minimumBalance: BigNumber =
@@ -1914,30 +1948,48 @@ function ldrop(str: string, char: string) {
 }
 
 /**
- * @description  Format currency by network
- * @param amt  the amount in the {@link atomicUnit} of the network.
+ * @description  Format currency by network or token
+ * @param amt  the amount in the {@link atomicUnit} of the network or token.
  * @param decimals  up to how many decimal places to display in the {@link standardUnit}.
+ * @param splitValue  where to split the numeric value.
  *   Trailing zeros will be omitted. Excess decimal places will be truncated (not rounded).
  *   This argument defaults to maximum precision.
- * @returns  a string representation of that amount in the {@link standardUnit} for that network.
+ * @returns  a string representation of that amount in the {@link standardUnit} for that network or token.
  * @example  formatCurrency(bigNumberify('100000000')); // => '100'
  * @example  formatCurrency(bigNumberify('9999998799987000')); // => '9999998799.987'
  */
-export function formatCurrency(amt: any, decimals: number = 6): string {
+function handleFormat(amt: any, decimals: number, splitValue: number = 6): string {
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
+  if (!(Number.isInteger(splitValue) && 0 <= splitValue)) {
+    throw Error(`Expected split value to be a nonnegative integer, but got ${decimals}.`);
+  }
   const amtStr = bigNumberify(amt).toString();
-  const splitAt = Math.max(amtStr.length - 6, 0);
+  const splitAt = Math.max(amtStr.length - splitValue, 0);
   const lPredropped = amtStr.slice(0, splitAt);
   const l = ldrop(lPredropped, '0') || '0';
   if (decimals === 0) { return l; }
 
-  const rPre = lpad(amtStr.slice(splitAt), '0', 6);
+  const rPre = lpad(amtStr.slice(splitAt), '0', splitValue);
   const rSliced = rPre.slice(0, decimals);
   const r = rdrop(rSliced, '0');
-
+  
   return r ? `${l}.${r}` : l;
+}
+
+/**
+ * @description  Format currency by network
+ */
+export function formatCurrency(amt: any, decimals: number = 6): string {
+  return handleFormat(amt, decimals, 6)
+}
+
+/**
+ * @description  Format currency based on token decimals
+ */
+export function formatWithDecimals(amt: any, decimals: number): string {
+  return handleFormat(amt, decimals, decimals)
 }
 
 export async function getDefaultAccount(): Promise<Account> {
@@ -2089,7 +2141,8 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
 
   // Next, we wait for the constructor call
   // XXX maybe don't care about this
-  const isCtor = makeIsMethod(0);
+  /*
+  const isCtor = makeHasLogFor(0);
   const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, { minRound: 0 }, isCtor);
   debug({icr});
   // @ts-ignore
@@ -2097,8 +2150,9 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   chk(ict, `Cannot query for constructor transaction`);
   debug({ict});
   const ctorRound = ict['confirmed-round']
+  */
 
-  return { compiled, ApplicationID, Deployer, startRound: ctorRound };
+  return { compiled, ApplicationID, Deployer, startRound: allocRound };
 };
 
 /**

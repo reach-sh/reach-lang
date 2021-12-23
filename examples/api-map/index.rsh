@@ -11,7 +11,7 @@ export const main = Reach.App(() => {
     get: Fun([UInt], UInt),
     done: Fun([], Null),
   });
-  deploy();
+  init();
 
   D.publish();
   const M = new Map(UInt);

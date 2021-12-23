@@ -2,7 +2,7 @@
 
 export const main = Reach.App(() => {
   const A = Participant('A', {});
-  deploy();
+  init();
   A.publish();
 
   var [] = [];

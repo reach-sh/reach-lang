@@ -5,7 +5,7 @@ export const main = Reach.App(() => {
   const A = ParticipantClass('A', {
     go: Fun([], Bool),
     ok: Fun([], Null) });
-  deploy();
+  init();
 
   C.publish();
   commit();

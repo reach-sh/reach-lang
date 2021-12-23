@@ -16,7 +16,7 @@ import { mkRPC } from '@reach-sh/rpc-client';
   const beforeAlice = await getBalance(accAlice);
   const beforeBob   = await getBalance(accBob);
 
-  const ctcAlice    = await rpc(`/acc/deploy`, accAlice);
+  const ctcAlice    = await rpc(`/acc/contract`, accAlice);
 
   const HAND        = ['Rock', 'Paper', 'Scissors'];
   const OUTCOME     = ['Bob wins', 'Draw', 'Alice wins'];
@@ -45,7 +45,7 @@ import { mkRPC } from '@reach-sh/rpc-client';
     }),
 
     rpc(`/ctc/getInfo`, ctcAlice).then(async (info) => {
-      const ctcBob = await rpc(`/acc/attach`, accBob, info);
+      const ctcBob = await rpc(`/acc/contract`, accBob, info);
       await rpcCallbacks(`/backend/Bob`, ctcBob, {
         ...Player('Bob'),
         acceptWager: async (amt) => {

@@ -118,11 +118,9 @@ checkteal () {
 #exit 0
 
 jb
+ci ALGO overview
 ci ALGO rps-7-loops
 ci ALGO event
-exit 0
-ci ETH rps-7-loops
-ci ETH event
 exit 0
 
 # (cd hs && mk hs-test)

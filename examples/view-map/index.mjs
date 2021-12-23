@@ -15,8 +15,8 @@ import * as backend from './build/index.main.mjs';
   ]);
   accAlice.setDebugLabel('Alice');
   accBob.setDebugLabel('Bob');
-  const ctcAlice = accAlice.deploy(backend);
-  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
 
   const checkView = async (x, who, fe, ge) => {
     console.log('checkView', x, who, stdlib.formatAddress(who), fe, ge);

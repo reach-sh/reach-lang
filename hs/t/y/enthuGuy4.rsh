@@ -2,7 +2,7 @@
 export const main = Reach.App(() => {
   const D = Participant('D', {});
   const P = API('P', { f: Fun([Address], Bool) });
-  deploy();
+  init();
   D.publish();
   const m = new Map(Struct([["p", Bool]]));
   const kg =

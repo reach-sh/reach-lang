@@ -15,7 +15,7 @@ export const main = Reach.App(() => {
     getWord: Fun([Array(Word, MAX)], Word),
   });
 
-  deploy();
+  init();
   Oracle.interact.log('Deploying...');
   Oracle.only(() => {
     const i = declassify(interact.i);

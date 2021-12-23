@@ -12,7 +12,7 @@ import * as backend from './build/index.main.mjs';
   const accBob    = await stdlib.newTestAccount(startingBalance);
   const accClaire = await stdlib.newTestAccount(startingBalance);
 
-  const ctcAlice = accAlice.deploy(backend);
+  const ctcAlice = accAlice.contract(backend);
 
   const everyone = [
     [' Alice', accAlice],
@@ -54,7 +54,7 @@ import * as backend from './build/index.main.mjs';
   };
 
   const makeOwner = (acc, who) => {
-    const ctc = acc.attach(backend, ctcAlice.getInfo());
+    const ctc = acc.contract(backend, ctcAlice.getInfo());
     const others = everyone.filter(x => x[0] !== who);
     return backend.Owner(ctc, {
       showOwner: ((id, owner) => {

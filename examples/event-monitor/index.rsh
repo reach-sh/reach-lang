@@ -10,7 +10,7 @@ export const main = Reach.App(() => {
   const Logger = Events({
     log: [E],
   });
-  deploy();
+  init();
 
   Alice.publish();
 

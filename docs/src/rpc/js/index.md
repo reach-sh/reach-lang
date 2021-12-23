@@ -4,14 +4,12 @@
 This frontend library relies on the [Reach RPC Server](##ref-backends-rpc).
 :::
 
-
 A [JavaScript](https://www.javascript.com) client library for the
 [Reach RPC protocol](##ref-backends-rpc) may be installed by running:
 
-```
+```cmd
 $ npm install --save @reach-sh/rpc-client
 ```
-
 
 Once installed, add the following import line to your JavaScript file which will
 connect to the [RPC server](##ref-backends-rpc):

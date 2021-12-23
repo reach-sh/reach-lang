@@ -215,7 +215,7 @@ load: /examples/workshop-fomo/index.mjs
 
 Let's see what it looks like when we run the program:
 
-```
+```cmd
 $ ../reach run
 Buyer 0 bought a ticket.
 Buyer 3 bought a ticket.

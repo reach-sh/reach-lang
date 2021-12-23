@@ -24,7 +24,8 @@ Each project contains a completed solution, so it is also a collection of recipe
 If you are looking for something specific, here are some places to look:
 
 + Try consulting the @{seclink("doc-index")} or the [Table of Contents](#toc).
-+ Start a discussion on [the Discord community](@{DISCORD}).
++ Start a discussion on [the Discord community](@{DISCORD}) or [GitHub
+  Discussions](https://github.com/reach-sh/reach-lang/discussions).
 + Report issues with the [GitHub issue tracker](https://github.com/reach-sh/reach-lang/issues).
 
 

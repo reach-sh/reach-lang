@@ -7,8 +7,11 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.7 is the current Reach release candidate version.
 
++ 2021/12/23: Algorand-only: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
++ 2021/12/23: Added `{!rsh} verifyMuldiv`.
++ 2021/12/23: `{!rsh} deploy` was renamed to `{!rsh} init`.
 + 2021/12/21: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
-+ 2021/12/21: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
++ 2021/12/21: EVM-only: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2021/12/20: Added support for `{!rsh} PAY_REQUIRE_EXPR`, which allows `{!rsh} require` claims to be made about payments.
 + 2021/12/16: Added `{!rsh} Events`.
 + 2021/12/16: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.

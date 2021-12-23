@@ -6,7 +6,7 @@ export const main = Reach.App(() => {
   const A = API('A', {
     f: Fun([UInt], UInt),
   });
-  deploy();
+  init();
   C.publish();
   var [] = [];
   invariant(balance() == 0);

@@ -2,7 +2,7 @@
 
 export const main = Reach.App(() => {
   const aA = [ Participant('A', { ...hasConsoleLogger }) ];
-  deploy();
+  init();
   aA[0].interact.log('Test');
   exit();
 });

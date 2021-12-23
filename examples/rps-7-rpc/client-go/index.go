@@ -34,7 +34,7 @@ func main() {
   beforeAlice     := getBalance(accAlice)
   beforeBob       := getBalance(accBob)
 
-  ctcAlice        := rpc("/acc/deploy",  accAlice).(string)
+  ctcAlice        := rpc("/acc/contract",  accAlice).(string)
 
   HAND            := [3]string{"Rock", "Paper", "Scissors"}
   OUTCOME         := [3]string{"Bob wins", "Draw", "Alice wins"}
@@ -87,7 +87,7 @@ func main() {
     }
 
     aliceInfo := rpc("/ctc/getInfo", ctcAlice).(interface{})
-    ctcBob := rpc("/acc/attach",  accBob, aliceInfo).(string)
+    ctcBob := rpc("/acc/contract",  accBob, aliceInfo).(string)
     rpcCallbacks("/backend/Bob", ctcBob, d)
     rpc("/forget/ctc", ctcBob)
   }

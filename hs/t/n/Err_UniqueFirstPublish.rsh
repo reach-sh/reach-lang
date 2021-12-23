@@ -3,7 +3,7 @@
 export const main = Reach.App(() => {
   const Sigma = Participant('Sigma', {});
   const Betas = ParticipantClass('Betas', {});
-  deploy();
+  init();
 
   Betas.publish();
   commit();

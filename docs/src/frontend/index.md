@@ -19,7 +19,7 @@ The Reach JavaScript standard library, @{ref("js", "stdlib")} `{!js} stdlib`, is
 
 These modules are available in the [`@reach-sh/stdlib`](https://www.npmjs.com/package/@reach-sh/stdlib) [`npm`](https://www.npmjs.com/) package, which you can install via:
 
-```
+```cmd
 $ npm install @reach-sh/stdlib
 ```
 
@@ -696,7 +696,7 @@ This default is usually fine, but on certain networks like Conflux,
 it can be very slow.
 You can use this function to tell Reach to only query from a given network time onwards,
 which can speed up event log querying significantly on Conflux.
-If you use the reach stdlib to `{!js} deploy` or `{!js} attach` to a contract,
+If you use the Reach standard library to `{!js} deploy` or `{!js} attach` to a contract,
 the specified lower bound must be no later than the time at which the contract was deployed.
 
 ---
@@ -1024,13 +1024,14 @@ Integer comparisons on `{!rsh} UInt`.
 ---
 The following exports are for dealing with network tokens.
 
-@{ref("js", "standardUnit")}@{ref("js", "atomicUnit")}@{ref("js", "minimumBalance")}@{ref("js", "parseCurrency")}@{ref("js", "formatCurrency")}
+@{ref("js", "standardUnit")}@{ref("js", "atomicUnit")}@{ref("js", "minimumBalance")}@{ref("js", "parseCurrency")}@{ref("js", "formatCurrency")}@{ref("js", "formatWithDecimals")}
 ```js
 standardUnit // string
 atomicUnit // string
 minimumBalance // atomicUnitAmount
-parseCurrency(standardUnitAmount) => atomicUnitAmount
+parseCurrency(standardUnitAmount, int) => atomicUnitAmount
 formatCurrency(atomicUnitAmount, int) => string  // display amount in standard unit
+formatWithDecimals(atomicUnitAmount, int, tokenDecimals: int) => string  // display amount in standard unit (decimal value) of a token
 ```
 
 

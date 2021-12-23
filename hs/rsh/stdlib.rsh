@@ -151,9 +151,9 @@ export const Foldable_includes1 =
 
 export const Array_indexOfAux =
   (arr, f) => {
-    const init = [Maybe(UInt).None(), 0];
+    const inita = [Maybe(UInt).None(), 0];
     const [res, _] =
-      arr.reduce(init, (acc, e) => {
+      arr.reduce(inita, (acc, e) => {
         const [foundIdx, idx] = acc;
         return foundIdx.match({
           Some: (_) => { return acc; },
@@ -562,11 +562,11 @@ export const Array_mapWithIndex = (a, f) =>
 export const Array_mapWithIndex1 = (a) => (f) =>
   Array_mapWithIndex(a, f);
 
-export const Array_reduceWithIndex = (a, init, f) =>
-  a.withIndex().reduce(init, (acc, [e, idx]) => f(acc, e, idx));
+export const Array_reduceWithIndex = (a, inita, f) =>
+  a.withIndex().reduce(inita, (acc, [e, idx]) => f(acc, e, idx));
 
-export const Array_reduceWithIndex1 = (a) => (init, f) =>
-  Array_reduceWithIndex(a, init, f);
+export const Array_reduceWithIndex1 = (a) => (inita, f) =>
+  Array_reduceWithIndex(a, inita, f);
 
 export const hasConsoleLogger = {
   log: Fun(true, Null)

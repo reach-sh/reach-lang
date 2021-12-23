@@ -3,7 +3,7 @@
 
 export const main = Reach.App(() => {
   const tA = [ Participant('A', {}) ];
-  deploy();
+  init();
 
   tA[0].publish();
   commit();

@@ -10,7 +10,7 @@ import * as backend from './build/index.main.mjs';
     stdlib.assert(exps === acts) };
   const startingBalance = stdlib.parseCurrency(100);
   const accAlice = await stdlib.newTestAccount(startingBalance);
-  const ctcAlice = accAlice.deploy(backend);
+  const ctcAlice = accAlice.contract(backend);
 
   const checkView = async (x, expected) => {
     console.log('checkView', x, expected);

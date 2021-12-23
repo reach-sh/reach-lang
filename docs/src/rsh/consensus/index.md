@@ -83,7 +83,7 @@ export const main = Reach.App(() => {
   const E = Events('Announcer', {
     announce: [UInt, Contract],
   });
-  deploy();
+  init();
 
   A.publish();
 

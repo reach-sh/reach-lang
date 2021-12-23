@@ -1,7 +1,7 @@
 'reach 0.1';
 export const main = Reach.App(() => {
   const Alice = Participant('Alice', { assertEq: Fun(true, Null) });
-  deploy();
+  init();
   function attempt() {
     if (true) { return 1; }
     return 0;

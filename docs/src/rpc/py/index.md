@@ -8,7 +8,7 @@ This frontend library relies on the [Reach RPC Server](##ref-backends-rpc).
 A [Python](https://www.python.org) client library for the
 [Reach RPC protocol](##ref-backends-rpc) may be installed by running:
 
-```
+```cmd
 $ pip install --upgrade reach-rpc-client
 ```
 

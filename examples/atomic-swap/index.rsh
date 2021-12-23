@@ -15,7 +15,7 @@ export const main = Reach.App(() => {
     ...Common,
     accSwap: Fun([Token, UInt, Token, UInt], Bool),
   });
-  deploy();
+  init();
 
   A.only(() => {
     const [ tokenA, amtA, tokenB, amtB, time ] = declassify(interact.getSwap());

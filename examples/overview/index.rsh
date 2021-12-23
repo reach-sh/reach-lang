@@ -10,7 +10,7 @@ export const main = Reach.App(() => {
     want: Fun([UInt], Null),
     got: Fun([Bytes(128)], Null),
   });
-  deploy();
+  init();
 
   A.only(() => {
     const request = declassify(interact.request); });

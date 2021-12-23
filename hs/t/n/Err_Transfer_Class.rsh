@@ -3,7 +3,7 @@
 export const main = Reach.App(() => {
   const Alice = Participant('Alice', {});
   const Bob   = ParticipantClass('Bob', {});
-  deploy();
+  init();
   Alice.publish().pay(100);
   transfer(100).to(Bob);
 });

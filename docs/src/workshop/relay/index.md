@@ -192,7 +192,7 @@ If instead you wrote it so that it ran interactively and had Bob paste in the in
 
 Let's see what it looks like when we run this program:
 
-```
+```cmd
 $ ../reach run
 Alice creates a Relay account.
 Bob waits for Alice to give him the information about the Relay account.

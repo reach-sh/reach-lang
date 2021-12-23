@@ -8,8 +8,8 @@ import rightpad from 'rightpad';
   const accAlice = await stdlib.newTestAccount(stdlib.parseCurrency(100));
   const accBob = await stdlib.newTestAccount(stdlib.parseCurrency(100));
 
-  const ctcAlice = accAlice.deploy(backend);
-  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
 
   await Promise.all([
     backend.Alice(ctcAlice, {

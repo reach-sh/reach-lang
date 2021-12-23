@@ -11,7 +11,7 @@ import * as backend from './build/index.main.mjs';
     stdlib.assert(exps === acts) };
   const startingBalance = stdlib.parseCurrency(100);
   const alice = await stdlib.newTestAccount(startingBalance);
-  const ctcAlice = alice.deploy(backend);
+  const ctcAlice = alice.contract(backend);
 
   const get = () => '';
   const put = (act, exp, rcmp) => {

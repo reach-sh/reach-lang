@@ -13,7 +13,7 @@ export const main = Reach.App(() => {
     hear: Fun([Addr], Null),
   });
 
-  deploy();
+  init();
 
   Constructor.publish();
   Constructor.interact.printInfo();

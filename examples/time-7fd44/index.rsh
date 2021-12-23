@@ -17,7 +17,7 @@ export const main = Reach.App(() => {
   const LCT = View('LCT', {
     current: UInt
   });
-  deploy();
+  init();
 
   A.publish();
   commit();

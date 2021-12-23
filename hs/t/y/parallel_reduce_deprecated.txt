@@ -4,7 +4,7 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
 Checked 25 theorems; No failures!
-warning[RW0000]: `parallel_reduce` is now deprecated. It has been renamed from snake case to camel case. Use `parallelReduce`
+warning[RW0000]: `parallel_reduce` is now deprecated. It has been renamed from snake case to camel case. Use `parallelReduce`.
 
   ./parallel_reduce_deprecated.rsh:11:9:id ref
 
@@ -12,7 +12,7 @@ warning[RW0000]: `parallel_reduce` is now deprecated. It has been renamed from s
 
 For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
-warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs.
 
   ./parallel_reduce_deprecated.rsh:19:19:application
 

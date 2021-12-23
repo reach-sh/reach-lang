@@ -6,7 +6,7 @@ export const main = Reach.App(() => {
     x: Fun([], UInt),
   });
   const B = API({ guess: Fun([UInt], Bool) });
-  deploy();
+  init();
 
   A.only(() => {
     const x = declassify(interact.x());
