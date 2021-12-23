@@ -119,6 +119,8 @@ checkteal () {
 #exit 0
 
 #jb
+ci ETH map-rwrw
+ci ETH api-map
 exit 0
 
 # (cd hs && mk hs-test)
