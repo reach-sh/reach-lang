@@ -288,7 +288,7 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
 };
 
 const clickFollowLink = async (evt) => {
-  if ( evt.shiftKey || evt.ctrlKey ) { return; }
+  if ( evt.shiftKey || evt.ctrlKey || evt.metaKey ) { return; }
   const t = evt.target.closest('a');
   if ( t.classList && t.classList.contains("copyBtn") ) {
     evt.preventDefault();
