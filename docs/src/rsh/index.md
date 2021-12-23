@@ -23,7 +23,7 @@ The rest of this section is structured according to the contexts of the differen
 
 The relationship between the modes of a Reach application is shown by this diagram:
 
-![](/images/reference/StepDiagram.png)
+![](StepDiagram.png)
 
 ## {#ref-programs-valid} Validity and other concepts
 

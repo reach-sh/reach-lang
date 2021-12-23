@@ -1790,7 +1790,7 @@ For example, when used with Ethereum, it can discover the currently-selected Met
 ### {#tut-9-ConnectAccount} Connect Account dialog
 
 When we combine the application component with the view ([rps-9-web/views/AppViews.js](@{REPO}/examples/rps-9-web/views/AppViews.js#L19-L28)) it will look like:
-![](/images/rps-9-web/ConnectAccount.png)
+![](./rps-9-web/ConnectAccount.png)
 
 ### {#tut-9-FundAccount} Fund Account dialog
 
@@ -1810,7 +1810,7 @@ which is to set the component state to display @{seclink("tut-9-DeployerOrAttach
 
 
 When we combine this with the view ([rps-9-web/views/AppViews.js](@{REPO}/examples/rps-9-web/views/AppViews.js#L30-L54)) it will look like:
-![](/images/rps-9-web/FundAccount.png)
+![](./rps-9-web/FundAccount.png)
 
 ### {#tut-9-DeployerOrAttacher} Choose Role
 
@@ -1824,7 +1824,7 @@ On lines 37 and 38, we set a sub-component
 based on whether the user clicks `Deployer` or `Attacher`.
 
 When we combine this with the view ([rps-9-web/views/AppViews.js](@{REPO}/examples/rps-9-web/views/AppViews.js#L56-L78)) it will look like:
-![](/images/rps-9-web/DeployerOrAttacher.png)
+![](./rps-9-web/DeployerOrAttacher.png)
 
 ### {#tut-9-Player} Player component
 
@@ -1863,22 +1863,22 @@ The `{!js} Promise` from line 45 is resolved.
 ### {#tut-9-GetHand} Get Hand dialog
 
 The dialog used to get a hand from the player ([rps-9-web/views/PlayerViews.js](@{REPO}/examples/rps-9-web/views/PlayerViews.js#L8-L32)) looks like:
-![](/images/rps-9-web/GetHand.png)
+![](./rps-9-web/GetHand.png)
 
 ### {#tut-9-WaitingForResults} Waiting for results display
 
 The dialog used to get a hand from the player ([rps-9-web/views/PlayerViews.js](@{REPO}/examples/rps-9-web/views/PlayerViews.js#L34-L42)) looks like:
-![](/images/rps-9-web/WaitingForResults.png)
+![](./rps-9-web/WaitingForResults.png)
 
 ### {#tut-9-Done} Done display
 
 The display when the player sees the end of the game ([rps-9-web/views/PlayerViews.js](@{REPO}/examples/rps-9-web/views/PlayerViews.js#L44-L54)) looks like:
-![](/images/rps-9-web/Done.png)
+![](./rps-9-web/Done.png)
 
 ### {#tut-9-Timeout} Timeout display
 
 The display when the player sees a timeout ([rps-9-web/views/PlayerViews.js](@{REPO}/examples/rps-9-web/views/PlayerViews.js#L56-L64)) looks like:
-![](/images/rps-9-web/Timeout.png)
+![](./rps-9-web/Timeout.png)
 
 ### {#tut-9-Deployer} Deployer component
 
@@ -1920,22 +1920,22 @@ which displays the deployed contract info as JSON.
 ### {#tut-9-SetWager} Set Wager dialog
 
 The dialog used to set the wager ([rps-9-web/views/DeployerViews.js](@{REPO}/examples/rps-9-web/views/DeployerViews.js#L20-L38)) looks like:
-![](/images/rps-9-web/SetWager.png)
+![](./rps-9-web/SetWager.png)
 
 ### {#tut-9-Deploy} Deploy dialog
 
 The dialog used to deploy ([rps-9-web/views/DeployerViews.js](@{REPO}/examples/rps-9-web/views/DeployerViews.js#L40-L53)) looks like:
-![](/images/rps-9-web/Deploy.png)
+![](./rps-9-web/Deploy.png)
 
 ### {#tut-9-Deploying} Deploying display
 
 The display shown while deploying ([rps-9-web/views/DeployerViews.js](@{REPO}/examples/rps-9-web/views/DeployerViews.js#L55-L61)) looks like:
-![](/images/rps-9-web/Deploying.png)
+![](./rps-9-web/Deploying.png)
 
 ### {#tut-9-WaitingForAttacher} Waiting for Attacher display
 
 The display shown while waiting for the attacher ([rps-9-web/views/DeployerViews.js](@{REPO}/examples/rps-9-web/views/DeployerViews.js#L63-L90)) looks like:
-![](/images/rps-9-web/WaitingForAttacher.png)
+![](./rps-9-web/WaitingForAttacher.png)
 
 ### {#tut-9-Attacher} Attacher component
 
@@ -1973,22 +1973,22 @@ the `{!js} Promise` from line 90 is resolved, and we set the component state to 
 ### {#tut-9-Attach} Attach dialog
 
 The dialog used to attach ([rps-9-web/views/AttacherViews.js](@{REPO}/examples/rps-9-web/views/AttacherViews.js#L18-L39)) looks like:
-![](/images/rps-9-web/Attach.png)
+![](./rps-9-web/Attach.png)
 
 ### {#tut-9-Attaching} Attaching display
 
 The display when attaching ([rps-9-web/views/AttacherViews.js](@{REPO}/examples/rps-9-web/views/AttacherViews.js#L41-L49)) looks like:
-![](/images/rps-9-web/Attaching.png)
+![](./rps-9-web/Attaching.png)
 
 ### {#tut-9-AcceptTerms} Accept Terms dialog
 
 The dialog used to accept the terms of the wager ([rps-9-web/views/AttacherViews.js](@{REPO}/examples/rps-9-web/views/AttacherViews.js#L51-L70)) looks like:
-![](/images/rps-9-web/AcceptTerms.png)
+![](./rps-9-web/AcceptTerms.png)
 
 ### {#tut-9-WaitingForTurn} Waiting for Turn display
 
 The display when waiting for a turn ([rps-9-web/views/AttacherViews.js](@{REPO}/examples/rps-9-web/views/AttacherViews.js#L72-L81)) looks like:
-![](/images/rps-9-web/WaitingForTurn.png)
+![](./rps-9-web/WaitingForTurn.png)
 
 ### {#tut-9-Final} Putting it all together
 
