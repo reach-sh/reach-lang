@@ -253,7 +253,7 @@ instance Optimize DLExpr where
     DLE_VerifyMuldiv at cl args err ->
       opt (DLE_PrimOp at MUL_DIV args) >>= \case
         DLE_PrimOp _ _ args' -> return $ DLE_VerifyMuldiv at cl args' err
-        _ -> impossible "opt: safeMulDiv"
+        _ -> impossible "opt: verifyMulDiv"
     DLE_PrimOp at p as -> do
       as' <- opt as
       let meh = return $ DLE_PrimOp at p as'
