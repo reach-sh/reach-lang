@@ -96,13 +96,35 @@ body, html {
 <body>
     <div id="output" width="20%"> $ welcome </div>
     <form>
-      <button type="button">Ping</button>
-      <button type="button">Load</button>
-      <button type="button">Init</button>
-      <button type="button">Respond</button>
-      <button type="button">Get Status</button>
-      <button type="button">Get States</button>
-      <button type="button">Get State Actions</button>
+      <button type="button" id="pingButton">Ping</button>
+      <button type="button" id="loadButton">Load</button>
+      <button type="button" id="initButton">Init</button>
+
+      <input type="text" id="initForActor">
+      <input type="text" id="initForState">
+      <button type="button" id="initForButton">Init For</button>
+
+      <input type="text" id="resForState">
+      <input type="text" id="resForAction">
+      <input type="text" id="resWithVal">
+      <input type="text" id="resForActor">
+      <button type="button" id="respondButton">Respond</button>
+
+      <input type="text" id="statusFor">
+      <button type="button" id="statusButton">Get Status</button>
+
+      <button type="button" id="statesButton">Get States</button>
+
+      <input type="text" id="stateActionsFor">
+      <button type="button" id="actionsButton">Get State Actions</button>
+
+      <input type="text" id="stateGlobalsFor">
+      <button type="button" id="globalsButton">Get State Globals</button>
+
+      <input type="text" id="stateLocalsFor">
+      <button type="button" id="localsButton">Get State Locals</button>
+
+      <button type="button" id="resetButton">Reset</button>
 
     </form>
     <script type="module" src="/index.js"></script>
