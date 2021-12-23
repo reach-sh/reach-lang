@@ -1903,30 +1903,45 @@ function ldrop(str: string, char: string) {
 }
 
 /**
- * @description  Format currency by token
- * @param amt  the amount in the {@link atomicUnit} of the token.
+ * @description  Format currency by network or token
+ * @param amt  the amount in the {@link atomicUnit} of the network or token.
  * @param decimals  up to how many decimal places to display in the {@link standardUnit}.
  *   Trailing zeros will be omitted. Excess decimal places will be truncated (not rounded).
  *   This argument defaults to maximum precision.
- * @returns  a string representation of that amount in the {@link standardUnit} for that token.
+ * @returns  a string representation of that amount in the {@link standardUnit} for that network or token.
  * @example  formatCurrency(bigNumberify('100000000')); // => '100'
  * @example  formatCurrency(bigNumberify('9999998799987000')); // => '9999998799.987'
  */
-export function formatCurrency(amt: any, decimals: number = 6): string {
-  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
-    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
-  }
+function handleFormat(amt: any, decimals: number, isNetwork: boolean) {
+  const splitValue = isNetwork ? 6 : decimals
   const amtStr = bigNumberify(amt).toString();
-  const splitAt = Math.max(amtStr.length - decimals, 0);
+  const splitAt = Math.max(amtStr.length - splitValue, 0);
   const lPredropped = amtStr.slice(0, splitAt);
   const l = ldrop(lPredropped, '0') || '0';
   if (decimals === 0) { return l; }
 
-  const rPre = lpad(amtStr.slice(splitAt), '0', decimals);
+  const rPre = lpad(amtStr.slice(splitAt), '0', splitValue);
   const rSliced = rPre.slice(0, decimals);
   const r = rdrop(rSliced, '0');
-
+  
   return r ? `${l}.${r}` : l;
+}
+
+
+export function formatCurrency(amt: any, decimals: number = 6): string {
+  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
+    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
+  }
+  const formattedValue = handleFormat(amt, decimals, true)
+  return formattedValue
+}
+
+export function formatWithDecimals(amt: any, decimals: number): string {
+  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
+    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
+  }
+  const formattedValue = handleFormat(amt, decimals, false)
+  return formattedValue
 }
 
 export async function getDefaultAccount(): Promise<Account> {
