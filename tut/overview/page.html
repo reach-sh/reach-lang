@@ -47,7 +47,7 @@ export const main = Reach.App(() => {
     want: Fun([UInt], Null),
     got: Fun([Bytes(128)], Null),
   });
-  deploy();
+  init();
 
   A.only(() => {
     const request = declassify(interact.request); });
@@ -68,7 +68,7 @@ export const main = Reach.App(() => {
   B.only(() => {
     interact.got(info); });
   exit();
-});" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #032F62">'reach 0.1'</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #032F62">'use strict'</span><span style="color: #24292E">;</span></li><li value="3"></li><li value="4"><span style="color: #D73A49">export</span><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">main</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> Reach.</span><span style="color: #6F42C1">App</span><span style="color: #24292E">(() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="5"><span style="color: #24292E">  </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">A</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Participant</span><span style="color: #24292E">(</span><span style="color: #032F62">'Alice'</span><span style="color: #24292E">, {</span></li><li value="6"><span style="color: #24292E">    request: UInt,</span></li><li value="7"><span style="color: #24292E">    info: </span><span style="color: #6F42C1">Bytes</span><span style="color: #24292E">(</span><span style="color: #005CC5">128</span><span style="color: #24292E">),</span></li><li value="8"><span style="color: #24292E">  });</span></li><li value="9"><span style="color: #24292E">  </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">B</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Participant</span><span style="color: #24292E">(</span><span style="color: #032F62">'Bob'</span><span style="color: #24292E">, {</span></li><li value="10"><span style="color: #24292E">    want: </span><span style="color: #6F42C1">Fun</span><span style="color: #24292E">([UInt], Null),</span></li><li value="11"><span style="color: #24292E">    got: </span><span style="color: #6F42C1">Fun</span><span style="color: #24292E">([</span><span style="color: #6F42C1">Bytes</span><span style="color: #24292E">(</span><span style="color: #005CC5">128</span><span style="color: #24292E">)], Null),</span></li><li value="12"><span style="color: #24292E">  });</span></li><li value="13"><span style="color: #24292E">  </span><span style="color: #6F42C1">deploy</span><span style="color: #24292E">();</span></li><li value="14"></li><li value="15"><span style="color: #24292E">  </span><span style="color: #005CC5">A</span><span style="color: #24292E">.</span><span style="color: #6F42C1">only</span><span style="color: #24292E">(() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li></ol></pre>
+});" href="#"></a></div><ol class="snippet"><li value="1"><span style="color: #032F62">'reach 0.1'</span><span style="color: #24292E">;</span></li><li value="2"><span style="color: #032F62">'use strict'</span><span style="color: #24292E">;</span></li><li value="3"></li><li value="4"><span style="color: #D73A49">export</span><span style="color: #24292E"> </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">main</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> Reach.</span><span style="color: #6F42C1">App</span><span style="color: #24292E">(() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li><li value="5"><span style="color: #24292E">  </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">A</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Participant</span><span style="color: #24292E">(</span><span style="color: #032F62">'Alice'</span><span style="color: #24292E">, {</span></li><li value="6"><span style="color: #24292E">    request: UInt,</span></li><li value="7"><span style="color: #24292E">    info: </span><span style="color: #6F42C1">Bytes</span><span style="color: #24292E">(</span><span style="color: #005CC5">128</span><span style="color: #24292E">),</span></li><li value="8"><span style="color: #24292E">  });</span></li><li value="9"><span style="color: #24292E">  </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">B</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #6F42C1">Participant</span><span style="color: #24292E">(</span><span style="color: #032F62">'Bob'</span><span style="color: #24292E">, {</span></li><li value="10"><span style="color: #24292E">    want: </span><span style="color: #6F42C1">Fun</span><span style="color: #24292E">([UInt], Null),</span></li><li value="11"><span style="color: #24292E">    got: </span><span style="color: #6F42C1">Fun</span><span style="color: #24292E">([</span><span style="color: #6F42C1">Bytes</span><span style="color: #24292E">(</span><span style="color: #005CC5">128</span><span style="color: #24292E">)], Null),</span></li><li value="12"><span style="color: #24292E">  });</span></li><li value="13"><span style="color: #24292E">  </span><span style="color: #6F42C1">init</span><span style="color: #24292E">();</span></li><li value="14"></li><li value="15"><span style="color: #24292E">  </span><span style="color: #005CC5">A</span><span style="color: #24292E">.</span><span style="color: #6F42C1">only</span><span style="color: #24292E">(() </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> {</span></li></ol></pre>
 <ul>
   <li><i id="p_13" class="pid"></i>Line 1 specifies that this is a Reach program.<a href="#p_13" class="pid">13</a></li>
   <li><i id="p_14" class="pid"></i>Line 2 specifies that this program will be compiled with strict mode, which enables unused variable checks.<a href="#p_14" class="pid">14</a></li>
@@ -93,7 +93,7 @@ export const main = Reach.App(() => {
     want: Fun([UInt], Null),
     got: Fun([Bytes(128)], Null),
   });
-  deploy();
+  init();
 
   A.only(() => {
     const request = declassify(interact.request); });
@@ -136,7 +136,7 @@ export const main = Reach.App(() => {
     want: Fun([UInt], Null),
     got: Fun([Bytes(128)], Null),
   });
-  deploy();
+  init();
 
   A.only(() => {
     const request = declassify(interact.request); });
@@ -179,7 +179,7 @@ export const main = Reach.App(() => {
     want: Fun([UInt], Null),
     got: Fun([Bytes(128)], Null),
   });
-  deploy();
+  init();
 
   A.only(() => {
     const request = declassify(interact.request); });
@@ -220,7 +220,7 @@ export const main = Reach.App(() => {
     want: Fun([UInt], Null),
     got: Fun([Bytes(128)], Null),
   });
-  deploy();
+  init();
 
   A.only(() => {
     const request = declassify(interact.request); });
@@ -291,7 +291,7 @@ export const main = Reach.App(() => {
     want: Fun([UInt], Null),
     got: Fun([Bytes(128)], Null),
   });
-  deploy();
+  init();
 
   A.only(() => {
     const request = declassify(interact.request); });
@@ -580,7 +580,7 @@ class Alice extends React.Component {
     this.state = { mode: 'Deploy'};
   }
   async deploy() { // from mode: Deploy
-    const ctc = this.props.acc.deploy(backend);
+    const ctc = this.props.acc.contract(backend);
     this.setState({mode: 'EnterInfo', ctc});
     const ctcInfoStr = JSON.stringify(await ctc.getInfo(), null, 2);
     this.setState({ctcInfoStr});
@@ -622,7 +622,7 @@ class Bob extends React.Component {
   }
   async runBackend(ctcInfoStr) { // from mode: RunBackend
     const ctcInfo = JSON.parse(ctcInfoStr);
-    const ctc = this.props.acc.attach(backend, ctcInfo);
+    const ctc = this.props.acc.contract(backend, ctcInfo);
     this.setState({mode: 'ApproveRequest'});
     const interact = {
       want: (request) => this.setState({mode: 'DisplayInfo', requestStandard: reach.formatCurrency(request, 4)}),
@@ -718,7 +718,7 @@ class Alice extends React.Component {
     this.state = { mode: 'Deploy'};
   }
   async deploy() { // from mode: Deploy
-    const ctc = this.props.acc.deploy(backend);
+    const ctc = this.props.acc.contract(backend);
     this.setState({mode: 'EnterInfo', ctc});
     const ctcInfoStr = JSON.stringify(await ctc.getInfo(), null, 2);
     this.setState({ctcInfoStr});
@@ -760,7 +760,7 @@ class Bob extends React.Component {
   }
   async runBackend(ctcInfoStr) { // from mode: RunBackend
     const ctcInfo = JSON.parse(ctcInfoStr);
-    const ctc = this.props.acc.attach(backend, ctcInfo);
+    const ctc = this.props.acc.contract(backend, ctcInfo);
     this.setState({mode: 'ApproveRequest'});
     const interact = {
       want: (request) => this.setState({mode: 'DisplayInfo', requestStandard: reach.formatCurrency(request, 4)}),
@@ -863,7 +863,7 @@ class Alice extends React.Component {
     this.state = { mode: 'Deploy'};
   }
   async deploy() { // from mode: Deploy
-    const ctc = this.props.acc.deploy(backend);
+    const ctc = this.props.acc.contract(backend);
     this.setState({mode: 'EnterInfo', ctc});
     const ctcInfoStr = JSON.stringify(await ctc.getInfo(), null, 2);
     this.setState({ctcInfoStr});
@@ -905,7 +905,7 @@ class Bob extends React.Component {
   }
   async runBackend(ctcInfoStr) { // from mode: RunBackend
     const ctcInfo = JSON.parse(ctcInfoStr);
-    const ctc = this.props.acc.attach(backend, ctcInfo);
+    const ctc = this.props.acc.contract(backend, ctcInfo);
     this.setState({mode: 'ApproveRequest'});
     const interact = {
       want: (request) => this.setState({mode: 'DisplayInfo', requestStandard: reach.formatCurrency(request, 4)}),
@@ -928,7 +928,7 @@ class Bob extends React.Component {
   }
 }
 
-renderDOM();" href="#"></a></div><ol class="snippet"><li value="71"><span style="color: #24292E">  </span><span style="color: #D73A49">async</span><span style="color: #24292E"> </span><span style="color: #6F42C1">deploy</span><span style="color: #24292E">() { </span><span style="color: #6A737D">// from mode: Deploy</span></li><li value="72"><span style="color: #24292E">    </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">ctc</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">this</span><span style="color: #24292E">.props.acc.</span><span style="color: #6F42C1">deploy</span><span style="color: #24292E">(backend);</span></li><li value="73"><span style="color: #24292E">    </span><span style="color: #005CC5">this</span><span style="color: #24292E">.</span><span style="color: #6F42C1">setState</span><span style="color: #24292E">({mode: </span><span style="color: #032F62">'EnterInfo'</span><span style="color: #24292E">, ctc});</span></li><li value="74"><span style="color: #24292E">    </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">ctcInfoStr</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">JSON</span><span style="color: #24292E">.</span><span style="color: #005CC5">stringify</span><span style="color: #24292E">(</span><span style="color: #D73A49">await</span><span style="color: #24292E"> ctc.</span><span style="color: #6F42C1">getInfo</span><span style="color: #24292E">(), </span><span style="color: #005CC5">null</span><span style="color: #24292E">, </span><span style="color: #005CC5">2</span><span style="color: #24292E">);</span></li><li value="75"><span style="color: #24292E">    </span><span style="color: #005CC5">this</span><span style="color: #24292E">.</span><span style="color: #6F42C1">setState</span><span style="color: #24292E">({ctcInfoStr});</span></li><li value="76"><span style="color: #24292E">  }</span></li></ol></pre>
+renderDOM();" href="#"></a></div><ol class="snippet"><li value="71"><span style="color: #24292E">  </span><span style="color: #D73A49">async</span><span style="color: #24292E"> </span><span style="color: #6F42C1">deploy</span><span style="color: #24292E">() { </span><span style="color: #6A737D">// from mode: Deploy</span></li><li value="72"><span style="color: #24292E">    </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">ctc</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">this</span><span style="color: #24292E">.props.acc.</span><span style="color: #6F42C1">contract</span><span style="color: #24292E">(backend);</span></li><li value="73"><span style="color: #24292E">    </span><span style="color: #005CC5">this</span><span style="color: #24292E">.</span><span style="color: #6F42C1">setState</span><span style="color: #24292E">({mode: </span><span style="color: #032F62">'EnterInfo'</span><span style="color: #24292E">, ctc});</span></li><li value="74"><span style="color: #24292E">    </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">ctcInfoStr</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">JSON</span><span style="color: #24292E">.</span><span style="color: #005CC5">stringify</span><span style="color: #24292E">(</span><span style="color: #D73A49">await</span><span style="color: #24292E"> ctc.</span><span style="color: #6F42C1">getInfo</span><span style="color: #24292E">(), </span><span style="color: #005CC5">null</span><span style="color: #24292E">, </span><span style="color: #005CC5">2</span><span style="color: #24292E">);</span></li><li value="75"><span style="color: #24292E">    </span><span style="color: #005CC5">this</span><span style="color: #24292E">.</span><span style="color: #6F42C1">setState</span><span style="color: #24292E">({ctcInfoStr});</span></li><li value="76"><span style="color: #24292E">  }</span></li></ol></pre>
 <p>
   <i id="p_84" class="pid"></i>Our React component has a method called <span class="snip"><span style="color: #24292E">deploy</span></span> that actually deploys the contract on the network, using the same calls as in the test deployment:
   on line 72 we call the <span class="snip"><span style="color: #24292E">acc.deploy</span></span> function,
@@ -1006,7 +1006,7 @@ class Alice extends React.Component {
     this.state = { mode: 'Deploy'};
   }
   async deploy() { // from mode: Deploy
-    const ctc = this.props.acc.deploy(backend);
+    const ctc = this.props.acc.contract(backend);
     this.setState({mode: 'EnterInfo', ctc});
     const ctcInfoStr = JSON.stringify(await ctc.getInfo(), null, 2);
     this.setState({ctcInfoStr});
@@ -1048,7 +1048,7 @@ class Bob extends React.Component {
   }
   async runBackend(ctcInfoStr) { // from mode: RunBackend
     const ctcInfo = JSON.parse(ctcInfoStr);
-    const ctc = this.props.acc.attach(backend, ctcInfo);
+    const ctc = this.props.acc.contract(backend, ctcInfo);
     this.setState({mode: 'ApproveRequest'});
     const interact = {
       want: (request) => this.setState({mode: 'DisplayInfo', requestStandard: reach.formatCurrency(request, 4)}),
@@ -1144,7 +1144,7 @@ class Alice extends React.Component {
     this.state = { mode: 'Deploy'};
   }
   async deploy() { // from mode: Deploy
-    const ctc = this.props.acc.deploy(backend);
+    const ctc = this.props.acc.contract(backend);
     this.setState({mode: 'EnterInfo', ctc});
     const ctcInfoStr = JSON.stringify(await ctc.getInfo(), null, 2);
     this.setState({ctcInfoStr});
@@ -1186,7 +1186,7 @@ class Bob extends React.Component {
   }
   async runBackend(ctcInfoStr) { // from mode: RunBackend
     const ctcInfo = JSON.parse(ctcInfoStr);
-    const ctc = this.props.acc.attach(backend, ctcInfo);
+    const ctc = this.props.acc.contract(backend, ctcInfo);
     this.setState({mode: 'ApproveRequest'});
     const interact = {
       want: (request) => this.setState({mode: 'DisplayInfo', requestStandard: reach.formatCurrency(request, 4)}),
@@ -1209,7 +1209,7 @@ class Bob extends React.Component {
   }
 }
 
-renderDOM();" href="#"></a></div><ol class="snippet"><li value="112"><span style="color: #24292E">  </span><span style="color: #D73A49">async</span><span style="color: #24292E"> </span><span style="color: #6F42C1">runBackend</span><span style="color: #24292E">(</span><span style="color: #E36209">ctcInfoStr</span><span style="color: #24292E">) { </span><span style="color: #6A737D">// from mode: RunBackend</span></li><li value="113"><span style="color: #24292E">    </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">ctcInfo</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">JSON</span><span style="color: #24292E">.</span><span style="color: #005CC5">parse</span><span style="color: #24292E">(ctcInfoStr);</span></li><li value="114"><span style="color: #24292E">    </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">ctc</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">this</span><span style="color: #24292E">.props.acc.</span><span style="color: #6F42C1">attach</span><span style="color: #24292E">(backend, ctcInfo);</span></li><li value="115"><span style="color: #24292E">    </span><span style="color: #005CC5">this</span><span style="color: #24292E">.</span><span style="color: #6F42C1">setState</span><span style="color: #24292E">({mode: </span><span style="color: #032F62">'ApproveRequest'</span><span style="color: #24292E">});</span></li><li value="116"><span style="color: #24292E">    </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">interact</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> {</span></li><li value="117"><span style="color: #24292E">      </span><span style="color: #6F42C1">want</span><span style="color: #24292E">: (</span><span style="color: #E36209">request</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> </span><span style="color: #005CC5">this</span><span style="color: #24292E">.</span><span style="color: #6F42C1">setState</span><span style="color: #24292E">({mode: </span><span style="color: #032F62">'DisplayInfo'</span><span style="color: #24292E">, requestStandard: reach.</span><span style="color: #6F42C1">formatCurrency</span><span style="color: #24292E">(request, </span><span style="color: #005CC5">4</span><span style="color: #24292E">)}),</span></li><li value="118"><span style="color: #24292E">      </span><span style="color: #6F42C1">got</span><span style="color: #24292E">: (</span><span style="color: #E36209">info</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> </span><span style="color: #005CC5">this</span><span style="color: #24292E">.</span><span style="color: #6F42C1">setState</span><span style="color: #24292E">({info}),</span></li><li value="119"><span style="color: #24292E">    };</span></li><li value="120"><span style="color: #24292E">    </span><span style="color: #D73A49">await</span><span style="color: #24292E"> backend.</span><span style="color: #6F42C1">Bob</span><span style="color: #24292E">(ctc, interact);</span></li><li value="121"><span style="color: #24292E">  }</span></li></ol></pre>
+renderDOM();" href="#"></a></div><ol class="snippet"><li value="112"><span style="color: #24292E">  </span><span style="color: #D73A49">async</span><span style="color: #24292E"> </span><span style="color: #6F42C1">runBackend</span><span style="color: #24292E">(</span><span style="color: #E36209">ctcInfoStr</span><span style="color: #24292E">) { </span><span style="color: #6A737D">// from mode: RunBackend</span></li><li value="113"><span style="color: #24292E">    </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">ctcInfo</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">JSON</span><span style="color: #24292E">.</span><span style="color: #005CC5">parse</span><span style="color: #24292E">(ctcInfoStr);</span></li><li value="114"><span style="color: #24292E">    </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">ctc</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> </span><span style="color: #005CC5">this</span><span style="color: #24292E">.props.acc.</span><span style="color: #6F42C1">contract</span><span style="color: #24292E">(backend, ctcInfo);</span></li><li value="115"><span style="color: #24292E">    </span><span style="color: #005CC5">this</span><span style="color: #24292E">.</span><span style="color: #6F42C1">setState</span><span style="color: #24292E">({mode: </span><span style="color: #032F62">'ApproveRequest'</span><span style="color: #24292E">});</span></li><li value="116"><span style="color: #24292E">    </span><span style="color: #D73A49">const</span><span style="color: #24292E"> </span><span style="color: #005CC5">interact</span><span style="color: #24292E"> </span><span style="color: #D73A49">=</span><span style="color: #24292E"> {</span></li><li value="117"><span style="color: #24292E">      </span><span style="color: #6F42C1">want</span><span style="color: #24292E">: (</span><span style="color: #E36209">request</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> </span><span style="color: #005CC5">this</span><span style="color: #24292E">.</span><span style="color: #6F42C1">setState</span><span style="color: #24292E">({mode: </span><span style="color: #032F62">'DisplayInfo'</span><span style="color: #24292E">, requestStandard: reach.</span><span style="color: #6F42C1">formatCurrency</span><span style="color: #24292E">(request, </span><span style="color: #005CC5">4</span><span style="color: #24292E">)}),</span></li><li value="118"><span style="color: #24292E">      </span><span style="color: #6F42C1">got</span><span style="color: #24292E">: (</span><span style="color: #E36209">info</span><span style="color: #24292E">) </span><span style="color: #D73A49">=&gt;</span><span style="color: #24292E"> </span><span style="color: #005CC5">this</span><span style="color: #24292E">.</span><span style="color: #6F42C1">setState</span><span style="color: #24292E">({info}),</span></li><li value="119"><span style="color: #24292E">    };</span></li><li value="120"><span style="color: #24292E">    </span><span style="color: #D73A49">await</span><span style="color: #24292E"> backend.</span><span style="color: #6F42C1">Bob</span><span style="color: #24292E">(ctc, interact);</span></li><li value="121"><span style="color: #24292E">  }</span></li></ol></pre>
 <p><i id="p_86" class="pid"></i>We implement a similar method in the <span class="snip"><span style="color: #24292E">Bob</span></span> component that runs the backend as Bob.<a href="#p_86" class="pid">86</a></p>
 <p>
   <i id="p_87" class="pid"></i>We specify Alice's and Bob's respective participant interact interfaces

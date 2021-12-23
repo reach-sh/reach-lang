@@ -103,7 +103,7 @@ def main():
     before_alice = get_balance(acc_alice)
     before_bob   = get_balance(acc_bob)
 
-    ctc_alice    = rpc('/acc/deploy', acc_alice)
+    ctc_alice    = rpc('/acc/contract', acc_alice)
 
     HAND         = ['Rock', 'Paper', 'Scissors']
     OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
@@ -140,7 +140,7 @@ def main():
         def acceptWager(amt):
             print('Bob accepts the wager of %s' % fmt(amt))
 
-        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        ctc_bob = rpc('/acc/contract', acc_bob, rpc('/ctc/getInfo', ctc_alice))
         rpc_callbacks(
             '/backend/Bob',
             ctc_bob,
@@ -274,7 +274,7 @@ def main():
     before_alice = get_balance(acc_alice)
     before_bob   = get_balance(acc_bob)
 
-    ctc_alice    = rpc('/acc/deploy', acc_alice)
+    ctc_alice    = rpc('/acc/contract', acc_alice)
 
     HAND         = ['Rock', 'Paper', 'Scissors']
     OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
@@ -311,7 +311,7 @@ def main():
         def acceptWager(amt):
             print('Bob accepts the wager of %s' % fmt(amt))
 
-        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        ctc_bob = rpc('/acc/contract', acc_bob, rpc('/ctc/getInfo', ctc_alice))
         rpc_callbacks(
             '/backend/Bob',
             ctc_bob,
@@ -432,7 +432,7 @@ def main():
     before_alice = get_balance(acc_alice)
     before_bob   = get_balance(acc_bob)
 
-    ctc_alice    = rpc('/acc/deploy', acc_alice)
+    ctc_alice    = rpc('/acc/contract', acc_alice)
 
     HAND         = ['Rock', 'Paper', 'Scissors']
     OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
@@ -469,7 +469,7 @@ def main():
         def acceptWager(amt):
             print('Bob accepts the wager of %s' % fmt(amt))
 
-        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        ctc_bob = rpc('/acc/contract', acc_bob, rpc('/ctc/getInfo', ctc_alice))
         rpc_callbacks(
             '/backend/Bob',
             ctc_bob,
@@ -580,7 +580,7 @@ def main():
     before_alice = get_balance(acc_alice)
     before_bob   = get_balance(acc_bob)
 
-    ctc_alice    = rpc('/acc/deploy', acc_alice)
+    ctc_alice    = rpc('/acc/contract', acc_alice)
 
     HAND         = ['Rock', 'Paper', 'Scissors']
     OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
@@ -617,7 +617,7 @@ def main():
         def acceptWager(amt):
             print('Bob accepts the wager of %s' % fmt(amt))
 
-        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        ctc_bob = rpc('/acc/contract', acc_bob, rpc('/ctc/getInfo', ctc_alice))
         rpc_callbacks(
             '/backend/Bob',
             ctc_bob,
@@ -641,7 +641,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()" href="#"></a></div><ol class="snippet"><li value="24"><span style="color: #24292E">    ctc_alice    </span><span style="color: #D73A49">=</span><span style="color: #24292E"> rpc(</span><span style="color: #032F62">'/acc/deploy'</span><span style="color: #24292E">, acc_alice)</span></li><li value="25"></li></ol></pre>
+    main()" href="#"></a></div><ol class="snippet"><li value="24"><span style="color: #24292E">    ctc_alice    </span><span style="color: #D73A49">=</span><span style="color: #24292E"> rpc(</span><span style="color: #032F62">'/acc/contract'</span><span style="color: #24292E">, acc_alice)</span></li><li value="25"></li></ol></pre>
 <p>
   <i id="p_11" class="pid"></i>As previously mentioned, it is the responsibility of the
   <a href="/rpc/#ref-backends-rpc">RPC Server</a> (rather than that of the frontend
@@ -742,7 +742,7 @@ def main():
     before_alice = get_balance(acc_alice)
     before_bob   = get_balance(acc_bob)
 
-    ctc_alice    = rpc('/acc/deploy', acc_alice)
+    ctc_alice    = rpc('/acc/contract', acc_alice)
 
     HAND         = ['Rock', 'Paper', 'Scissors']
     OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
@@ -779,7 +779,7 @@ def main():
         def acceptWager(amt):
             print('Bob accepts the wager of %s' % fmt(amt))
 
-        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        ctc_bob = rpc('/acc/contract', acc_bob, rpc('/ctc/getInfo', ctc_alice))
         rpc_callbacks(
             '/backend/Bob',
             ctc_bob,
@@ -890,7 +890,7 @@ def main():
     before_alice = get_balance(acc_alice)
     before_bob   = get_balance(acc_bob)
 
-    ctc_alice    = rpc('/acc/deploy', acc_alice)
+    ctc_alice    = rpc('/acc/contract', acc_alice)
 
     HAND         = ['Rock', 'Paper', 'Scissors']
     OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
@@ -927,7 +927,7 @@ def main():
         def acceptWager(amt):
             print('Bob accepts the wager of %s' % fmt(amt))
 
-        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        ctc_bob = rpc('/acc/contract', acc_bob, rpc('/ctc/getInfo', ctc_alice))
         rpc_callbacks(
             '/backend/Bob',
             ctc_bob,
@@ -1063,7 +1063,7 @@ def main():
     before_alice = get_balance(acc_alice)
     before_bob   = get_balance(acc_bob)
 
-    ctc_alice    = rpc('/acc/deploy', acc_alice)
+    ctc_alice    = rpc('/acc/contract', acc_alice)
 
     HAND         = ['Rock', 'Paper', 'Scissors']
     OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
@@ -1100,7 +1100,7 @@ def main():
         def acceptWager(amt):
             print('Bob accepts the wager of %s' % fmt(amt))
 
-        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        ctc_bob = rpc('/acc/contract', acc_bob, rpc('/ctc/getInfo', ctc_alice))
         rpc_callbacks(
             '/backend/Bob',
             ctc_bob,
@@ -1211,7 +1211,7 @@ def main():
     before_alice = get_balance(acc_alice)
     before_bob   = get_balance(acc_bob)
 
-    ctc_alice    = rpc('/acc/deploy', acc_alice)
+    ctc_alice    = rpc('/acc/contract', acc_alice)
 
     HAND         = ['Rock', 'Paper', 'Scissors']
     OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
@@ -1248,7 +1248,7 @@ def main():
         def acceptWager(amt):
             print('Bob accepts the wager of %s' % fmt(amt))
 
-        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        ctc_bob = rpc('/acc/contract', acc_bob, rpc('/ctc/getInfo', ctc_alice))
         rpc_callbacks(
             '/backend/Bob',
             ctc_bob,
@@ -1372,7 +1372,7 @@ def main():
     before_alice = get_balance(acc_alice)
     before_bob   = get_balance(acc_bob)
 
-    ctc_alice    = rpc('/acc/deploy', acc_alice)
+    ctc_alice    = rpc('/acc/contract', acc_alice)
 
     HAND         = ['Rock', 'Paper', 'Scissors']
     OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
@@ -1409,7 +1409,7 @@ def main():
         def acceptWager(amt):
             print('Bob accepts the wager of %s' % fmt(amt))
 
-        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        ctc_bob = rpc('/acc/contract', acc_bob, rpc('/ctc/getInfo', ctc_alice))
         rpc_callbacks(
             '/backend/Bob',
             ctc_bob,
@@ -1433,7 +1433,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()" href="#"></a></div><ol class="snippet"><li value="48"><span style="color: #24292E">    </span><span style="color: #D73A49">def</span><span style="color: #24292E"> </span><span style="color: #6F42C1">play_alice</span><span style="color: #24292E">():</span></li><li value="49"><span style="color: #24292E">        rpc_callbacks(</span></li><li value="50"><span style="color: #24292E">            </span><span style="color: #032F62">'/backend/Alice'</span><span style="color: #24292E">,</span></li><li value="51"><span style="color: #24292E">            ctc_alice,</span></li><li value="52"><span style="color: #24292E">            </span><span style="color: #005CC5">dict</span><span style="color: #24292E">(</span><span style="color: #E36209">wager</span><span style="color: #D73A49">=</span><span style="color: #24292E">rpc(</span><span style="color: #032F62">'/stdlib/parseCurrency'</span><span style="color: #24292E">, </span><span style="color: #005CC5">5</span><span style="color: #24292E">), </span><span style="color: #E36209">deadline</span><span style="color: #D73A49">=</span><span style="color: #005CC5">10</span><span style="color: #24292E">, </span><span style="color: #D73A49">**</span><span style="color: #24292E">player(</span><span style="color: #032F62">'Alice'</span><span style="color: #24292E">)))</span></li><li value="53"></li><li value="54"><span style="color: #24292E">    alice </span><span style="color: #D73A49">=</span><span style="color: #24292E"> Thread(</span><span style="color: #E36209">target</span><span style="color: #D73A49">=</span><span style="color: #24292E">play_alice)</span></li><li value="55"><span style="color: #24292E">    alice.start()</span></li><li value="56"></li><li value="57"><span style="color: #24292E">    </span><span style="color: #D73A49">def</span><span style="color: #24292E"> </span><span style="color: #6F42C1">play_bob</span><span style="color: #24292E">():</span></li><li value="58"><span style="color: #24292E">        </span><span style="color: #D73A49">def</span><span style="color: #24292E"> </span><span style="color: #6F42C1">acceptWager</span><span style="color: #24292E">(amt):</span></li><li value="59"><span style="color: #24292E">            </span><span style="color: #005CC5">print</span><span style="color: #24292E">(</span><span style="color: #032F62">'Bob accepts the wager of </span><span style="color: #005CC5">%s</span><span style="color: #032F62">'</span><span style="color: #24292E"> </span><span style="color: #D73A49">%</span><span style="color: #24292E"> fmt(amt))</span></li><li value="60"></li><li value="61"><span style="color: #24292E">        ctc_bob </span><span style="color: #D73A49">=</span><span style="color: #24292E"> rpc(</span><span style="color: #032F62">'/acc/attach'</span><span style="color: #24292E">, acc_bob, rpc(</span><span style="color: #032F62">'/ctc/getInfo'</span><span style="color: #24292E">, ctc_alice))</span></li><li value="62"><span style="color: #24292E">        rpc_callbacks(</span></li><li value="63"><span style="color: #24292E">            </span><span style="color: #032F62">'/backend/Bob'</span><span style="color: #24292E">,</span></li><li value="64"><span style="color: #24292E">            ctc_bob,</span></li><li value="65"><span style="color: #24292E">            </span><span style="color: #005CC5">dict</span><span style="color: #24292E">(</span><span style="color: #E36209">acceptWager</span><span style="color: #D73A49">=</span><span style="color: #24292E">acceptWager, </span><span style="color: #D73A49">**</span><span style="color: #24292E">player(</span><span style="color: #032F62">'Bob'</span><span style="color: #24292E">)))</span></li><li value="66"><span style="color: #24292E">        rpc(</span><span style="color: #032F62">'/forget/ctc'</span><span style="color: #24292E">, ctc_bob)</span></li><li value="67"></li><li value="68"><span style="color: #24292E">    bob </span><span style="color: #D73A49">=</span><span style="color: #24292E"> Thread(</span><span style="color: #E36209">target</span><span style="color: #D73A49">=</span><span style="color: #24292E">play_bob)</span></li><li value="69"><span style="color: #24292E">    bob.start()</span></li><li value="70"></li><li value="71"><span style="color: #24292E">    alice.join()</span></li><li value="72"><span style="color: #24292E">    bob.join()</span></li><li value="73"></li><li value="74"><span style="color: #24292E">    after_alice </span><span style="color: #D73A49">=</span><span style="color: #24292E"> get_balance(acc_alice)</span></li><li value="75"><span style="color: #24292E">    after_bob   </span><span style="color: #D73A49">=</span><span style="color: #24292E"> get_balance(acc_bob)</span></li><li value="76"></li><li value="77"><span style="color: #24292E">    </span><span style="color: #005CC5">print</span><span style="color: #24292E">(</span><span style="color: #032F62">'Alice went from </span><span style="color: #005CC5">%s</span><span style="color: #032F62"> to </span><span style="color: #005CC5">%s</span><span style="color: #032F62">'</span><span style="color: #24292E"> </span><span style="color: #D73A49">%</span><span style="color: #24292E"> (before_alice, after_alice))</span></li><li value="78"><span style="color: #24292E">    </span><span style="color: #005CC5">print</span><span style="color: #24292E">(</span><span style="color: #032F62">'  Bob went from </span><span style="color: #005CC5">%s</span><span style="color: #032F62"> to </span><span style="color: #005CC5">%s</span><span style="color: #032F62">'</span><span style="color: #24292E"> </span><span style="color: #D73A49">%</span><span style="color: #24292E"> (before_bob,   after_bob))</span></li><li value="79"></li><li value="80"><span style="color: #24292E">    rpc(</span><span style="color: #032F62">'/forget/acc'</span><span style="color: #24292E">, acc_alice, acc_bob)</span></li><li value="81"><span style="color: #24292E">    rpc(</span><span style="color: #032F62">'/forget/ctc'</span><span style="color: #24292E">, ctc_alice)</span></li><li value="82"></li><li value="83"></li><li value="84"><span style="color: #D73A49">if</span><span style="color: #24292E"> </span><span style="color: #005CC5">__name__</span><span style="color: #24292E"> </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #032F62">'__main__'</span><span style="color: #24292E">:</span></li><li value="85"><span style="color: #24292E">    main()</span></li></ol></pre>
+    main()" href="#"></a></div><ol class="snippet"><li value="48"><span style="color: #24292E">    </span><span style="color: #D73A49">def</span><span style="color: #24292E"> </span><span style="color: #6F42C1">play_alice</span><span style="color: #24292E">():</span></li><li value="49"><span style="color: #24292E">        rpc_callbacks(</span></li><li value="50"><span style="color: #24292E">            </span><span style="color: #032F62">'/backend/Alice'</span><span style="color: #24292E">,</span></li><li value="51"><span style="color: #24292E">            ctc_alice,</span></li><li value="52"><span style="color: #24292E">            </span><span style="color: #005CC5">dict</span><span style="color: #24292E">(</span><span style="color: #E36209">wager</span><span style="color: #D73A49">=</span><span style="color: #24292E">rpc(</span><span style="color: #032F62">'/stdlib/parseCurrency'</span><span style="color: #24292E">, </span><span style="color: #005CC5">5</span><span style="color: #24292E">), </span><span style="color: #E36209">deadline</span><span style="color: #D73A49">=</span><span style="color: #005CC5">10</span><span style="color: #24292E">, </span><span style="color: #D73A49">**</span><span style="color: #24292E">player(</span><span style="color: #032F62">'Alice'</span><span style="color: #24292E">)))</span></li><li value="53"></li><li value="54"><span style="color: #24292E">    alice </span><span style="color: #D73A49">=</span><span style="color: #24292E"> Thread(</span><span style="color: #E36209">target</span><span style="color: #D73A49">=</span><span style="color: #24292E">play_alice)</span></li><li value="55"><span style="color: #24292E">    alice.start()</span></li><li value="56"></li><li value="57"><span style="color: #24292E">    </span><span style="color: #D73A49">def</span><span style="color: #24292E"> </span><span style="color: #6F42C1">play_bob</span><span style="color: #24292E">():</span></li><li value="58"><span style="color: #24292E">        </span><span style="color: #D73A49">def</span><span style="color: #24292E"> </span><span style="color: #6F42C1">acceptWager</span><span style="color: #24292E">(amt):</span></li><li value="59"><span style="color: #24292E">            </span><span style="color: #005CC5">print</span><span style="color: #24292E">(</span><span style="color: #032F62">'Bob accepts the wager of </span><span style="color: #005CC5">%s</span><span style="color: #032F62">'</span><span style="color: #24292E"> </span><span style="color: #D73A49">%</span><span style="color: #24292E"> fmt(amt))</span></li><li value="60"></li><li value="61"><span style="color: #24292E">        ctc_bob </span><span style="color: #D73A49">=</span><span style="color: #24292E"> rpc(</span><span style="color: #032F62">'/acc/contract'</span><span style="color: #24292E">, acc_bob, rpc(</span><span style="color: #032F62">'/ctc/getInfo'</span><span style="color: #24292E">, ctc_alice))</span></li><li value="62"><span style="color: #24292E">        rpc_callbacks(</span></li><li value="63"><span style="color: #24292E">            </span><span style="color: #032F62">'/backend/Bob'</span><span style="color: #24292E">,</span></li><li value="64"><span style="color: #24292E">            ctc_bob,</span></li><li value="65"><span style="color: #24292E">            </span><span style="color: #005CC5">dict</span><span style="color: #24292E">(</span><span style="color: #E36209">acceptWager</span><span style="color: #D73A49">=</span><span style="color: #24292E">acceptWager, </span><span style="color: #D73A49">**</span><span style="color: #24292E">player(</span><span style="color: #032F62">'Bob'</span><span style="color: #24292E">)))</span></li><li value="66"><span style="color: #24292E">        rpc(</span><span style="color: #032F62">'/forget/ctc'</span><span style="color: #24292E">, ctc_bob)</span></li><li value="67"></li><li value="68"><span style="color: #24292E">    bob </span><span style="color: #D73A49">=</span><span style="color: #24292E"> Thread(</span><span style="color: #E36209">target</span><span style="color: #D73A49">=</span><span style="color: #24292E">play_bob)</span></li><li value="69"><span style="color: #24292E">    bob.start()</span></li><li value="70"></li><li value="71"><span style="color: #24292E">    alice.join()</span></li><li value="72"><span style="color: #24292E">    bob.join()</span></li><li value="73"></li><li value="74"><span style="color: #24292E">    after_alice </span><span style="color: #D73A49">=</span><span style="color: #24292E"> get_balance(acc_alice)</span></li><li value="75"><span style="color: #24292E">    after_bob   </span><span style="color: #D73A49">=</span><span style="color: #24292E"> get_balance(acc_bob)</span></li><li value="76"></li><li value="77"><span style="color: #24292E">    </span><span style="color: #005CC5">print</span><span style="color: #24292E">(</span><span style="color: #032F62">'Alice went from </span><span style="color: #005CC5">%s</span><span style="color: #032F62"> to </span><span style="color: #005CC5">%s</span><span style="color: #032F62">'</span><span style="color: #24292E"> </span><span style="color: #D73A49">%</span><span style="color: #24292E"> (before_alice, after_alice))</span></li><li value="78"><span style="color: #24292E">    </span><span style="color: #005CC5">print</span><span style="color: #24292E">(</span><span style="color: #032F62">'  Bob went from </span><span style="color: #005CC5">%s</span><span style="color: #032F62"> to </span><span style="color: #005CC5">%s</span><span style="color: #032F62">'</span><span style="color: #24292E"> </span><span style="color: #D73A49">%</span><span style="color: #24292E"> (before_bob,   after_bob))</span></li><li value="79"></li><li value="80"><span style="color: #24292E">    rpc(</span><span style="color: #032F62">'/forget/acc'</span><span style="color: #24292E">, acc_alice, acc_bob)</span></li><li value="81"><span style="color: #24292E">    rpc(</span><span style="color: #032F62">'/forget/ctc'</span><span style="color: #24292E">, ctc_alice)</span></li><li value="82"></li><li value="83"></li><li value="84"><span style="color: #D73A49">if</span><span style="color: #24292E"> </span><span style="color: #005CC5">__name__</span><span style="color: #24292E"> </span><span style="color: #D73A49">==</span><span style="color: #24292E"> </span><span style="color: #032F62">'__main__'</span><span style="color: #24292E">:</span></li><li value="85"><span style="color: #24292E">    main()</span></li></ol></pre>
 <p>
   <i id="p_23" class="pid"></i>In the Python version we create a function called <span class="snip"><span style="color: #24292E">play_alice</span></span> and spawn
   it as a concurrent thread, which begins running in the background on line 56.<a href="#p_23" class="pid">23</a>
