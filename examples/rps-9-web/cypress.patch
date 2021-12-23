@@ -1,0 +1,33 @@
+diff --git a/examples/rps-9-web/index.js b/examples/rps-9-web/index.js
+index 4b2705cea..72918d340 100644
+--- a/examples/rps-9-web/index.js
++++ b/examples/rps-9-web/index.js
+@@ -7,6 +7,7 @@ import './index.css';
+ import * as backend from './build/index.main.mjs';
+ import {loadStdlib} from '@reach-sh/stdlib';
+ const reach = loadStdlib(process.env);
++reach.setWalletFallback(reach.walletFallback({ }));
+ 
+ const handToInt = {'ROCK': 0, 'PAPER': 1, 'SCISSORS': 2};
+ const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];
+@@ -93,4 +94,19 @@ class Attacher extends Player {
+   render() { return renderView(this, AttacherViews); }
+ }
+ 
+-renderDOM(<App />);
++window.reach = reach;
++window.backend = backend;
++
++class AppButton extends React.Component {
++  render() {
++    const state = this.state || {};
++    const go = state.go || false;
++    if (go) {
++      return <App />;
++    } else {
++      return <button onClick={() => this.setState({go: true})}>Go</button>;
++    }
++  }
++}
++
++renderDOM(<AppButton />);
