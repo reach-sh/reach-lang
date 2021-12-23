@@ -126,9 +126,8 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   const url = `${window.location.origin}${folder}`;
   if ( ! folder || ! url ) { throw Error(`getWebpage on undefined`); }
 
-  const pageHtmlP = axiosGetData(`${url}page.html`);
-  const otpHtmlP = axiosGetData(`${url}otp.html`);
-  const configJson = await axiosGetData(`${url}config.json`);
+  const [ configJson, pageHtml, otpHtml ] =
+    await axiosGetData(`${url}index.md`);
 
   // Book or different book?
   if (configJson.bookPath !== undefined && configJson.bookPath !== currentPage.bookPath) {
@@ -168,7 +167,6 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   doc.getElementById('edit-btn').href = `${github}${folder}index.md`;
 
   // Write page html
-  const pageHtml = await pageHtmlP;
   const pageDoc = doc.createRange().createContextualFragment(pageHtml);
   doc.querySelector('div#hh-viewer-wrapper div#hh-viewer').textContent = '';
   doc.querySelector('div#hh-viewer-wrapper div#hh-viewer').append(pageDoc);
@@ -219,7 +217,6 @@ const getWebpage = async (folder, hash, shallUpdateHistory) => {
   if (configJson.hasOtp) {
     doc.querySelectorAll('#otp-col ul ul.dynamic, #otp-col ul li.dynamic').forEach(n => { n.remove(); });
     const otpUl = doc.querySelector('#otp-col ul');
-    const otpHtml = await otpHtmlP;
     const otpDoc = doc.createRange().createContextualFragment(otpHtml);
     const oul = otpDoc.querySelector('ul');
     if ( oul ) {

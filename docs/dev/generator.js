@@ -39,7 +39,6 @@ const normalizeDir = (x) => {
 const __filename = fileURLToPath(import.meta.url);
 const rootDir = path.dirname(__filename);
 const reachRoot = `${rootDir}/../../`;
-const cfgFile = "config.json";
 const repoBaseNice = "https://github.com/reach-sh/reach-lang/tree/master";
 const srcDir = normalizeDir(`${rootDir}/../src`);
 const outDir = normalizeDir(`${rootDir}/../build`);
@@ -294,11 +293,7 @@ const makeExpander = (msg, expandEnv) => {
   return expand;
 };
 
-const processMd = async ({baseConfig, relDir, in_folder, out_folder}) => {
-  const mdPath = `${in_folder}/index.md`;
-  const cfgPath = `${out_folder}/${cfgFile}`;
-  const pagePath = `${out_folder}/page.html`;
-  const otpPath = `${out_folder}/otp.html`;
+const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
   const here = relDir;
   const h = hh(here);
 
@@ -461,9 +456,9 @@ const processMd = async ({baseConfig, relDir, in_folder, out_folder}) => {
     })
   };
 
-  const expand = makeExpander(mdPath, { ...configJson, ...expanderEnv });
+  const expand = makeExpander(iPath, { ...configJson, ...expanderEnv });
 
-  const raw = await fs.readFile(mdPath, 'utf8');
+  const raw = await fs.readFile(iPath, 'utf8');
   let md = await expand(raw);
 
   const output = await unified()
@@ -496,6 +491,7 @@ const processMd = async ({baseConfig, relDir, in_folder, out_folder}) => {
   const doc = new JSDOM(output).window.document;
 
   // Process OTP.
+  let otpVal = undefined;
   const tocEl = doc.getElementById('toc');
   if (tocEl) {
     tocEl.remove();
@@ -506,7 +502,7 @@ const processMd = async ({baseConfig, relDir, in_folder, out_folder}) => {
       while (el.firstChild) { p.insertBefore(el.firstChild, el); }
       p.removeChild(el);
     })
-    await fs.writeFile(otpPath, `<ul>${otpEl.innerHTML.trim()}</ul>`);
+    otpVal = `<ul>${otpEl.innerHTML.trim()}</ul>`;
     otpEl.remove();
   }
 
@@ -652,10 +648,10 @@ const processMd = async ({baseConfig, relDir, in_folder, out_folder}) => {
   for ( const k of ['bookPath', 'title', 'titleId', 'hasOtp', 'hasPageHeader'] ) {
     configJsonSaved[k] = configJson[k];
   }
-  await Promise.all([
-    fs.writeFile(cfgPath, JSON.stringify(configJsonSaved)),
-    fs.writeFile(pagePath, doc.body.innerHTML.trim()),
-  ]);
+
+  const cfgVal = configJsonSaved;
+  const pageVal = doc.body.innerHTML.trim();
+  await fs.writeFile(oPath, JSON.stringify([ cfgVal, pageVal, otpVal ]));
 };
 
 const splitMt = (x) => x === "" ? [] : x.split('/');
@@ -750,6 +746,7 @@ const processAll = async (base_html, inputBaseConfig, folder) => {
   relDir = relDir.startsWith('/') ? relDir.slice(1) : relDir;
   const in_folder = `${srcDir}/${relDir}`;
 
+  const cfgFile = "config.json";
   const thisConfigP = `${in_folder}/${cfgFile}`;
   const thisConfig = (await fs.exists(thisConfigP)) ? (await fs.readJson(thisConfigP)) : {};
   const baseConfig = {
@@ -776,19 +773,19 @@ const processAll = async (base_html, inputBaseConfig, folder) => {
 
   const fileArr = await fs.readdir(folder);
   await Promise.all(fileArr.map(async (p) => {
+    const iPath = `${in_folder}/${p}`;
+    const oPath = `${out_folder}/${p}`;
+    const opts_p = { ...opts, iPath, oPath };
+    const e = urlExtension(p);
     const absolute = path.join(folder, p);
     const s = await fs.stat(absolute);
     if (s.isDirectory()) {
       return await processAll(`../${base_html}`, baseConfig, absolute);
     } else if ( ignored.includes(p) ) {
       return;
-    } else if ( p === 'index.md' ) {
-      return await processMd(opts);
+    } else if ( e === 'md' ) {
+      return await processMd(opts_p);
     } else if ( forReal ) {
-      const iPath = `${in_folder}/${p}`;
-      const oPath = `${out_folder}/${p}`;
-      const opts_p = { ...opts, iPath, oPath };
-      const e = urlExtension(p);
       if ( e === "css" ) {
         return await processCss(opts_p);
       } else if ( e === "html" ) {

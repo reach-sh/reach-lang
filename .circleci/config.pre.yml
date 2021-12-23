@@ -130,7 +130,7 @@ jobs:
     - slack_fail
     - run: |
         if [ -f .did_change ]; then
-          git diff --exit-code HEAD~ changelog/page.html
+          git diff --exit-code HEAD~ changelog/index.md
         fi
     - slack/notify:
         event: fail
