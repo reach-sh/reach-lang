@@ -1798,6 +1798,29 @@ muldiv(a, b, c)
 The intermediate value may be larger than `{!rsh} UInt.max` if the connector supports wide arithmetic operations.
 The resulting quotient must be less than `{!rsh} UInt.max`.
 
+### `verifyMuldiv`
+
+:::note
+`verifyMuldiv` is required to verify `{!rsh} muldiv` when using `verifyArithmetic`
+:::
+
+@{ref("rsh", "verifyMuldiv")}
+```reach
+A.only(() => {
+  const { x, y, z} = declassify(interact.params);
+  verifyMuldiv(x, y, z);
+});
+A.publish(x, y, z);
+verifyMuldiv(x, y, z);
+const r = muldiv(x, y, z);
+```
+
+ `{!rsh} verifyMuldiv` generates a claim that the result of applying the same arguments to `{!rsh} muldiv` will not overflow.
+When used inside of a local step, it will generate an `{!rsh} assume` claim.
+When used inside of a consensus step, it will generate a `{!rsh} require` claim.
+When used inside of any other step, it will generate an `{!rsh} assert` claim.
+
+
 ### `sqrt`
 
 @{ref("rsh", "sqrt")}
