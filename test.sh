@@ -117,13 +117,10 @@ checkteal () {
 
 #exit 0
 
-c hs/t/y/deploy.rsh
 jb
+ci ALGO overview
 ci ALGO rps-7-loops
 ci ALGO event
-exit 0
-ci ETH rps-7-loops
-ci ETH event
 exit 0
 
 # (cd hs && mk hs-test)
