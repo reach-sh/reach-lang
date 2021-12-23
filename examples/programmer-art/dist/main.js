@@ -3190,7 +3190,7 @@ const localsBtn = document.querySelector("#localsButton")
 const locals = async () => {
   let n = parseInt(document.querySelector("#stateLocalsFor").value)
   let r = await _reach_sh_simulator_client__WEBPACK_IMPORTED_MODULE_0__.getStateLocals(n)
-  appendToLog(r)
+  appendToLog(JSON.stringify(r,null,2))
 }
 localsBtn.addEventListener("click",locals)
 
@@ -3199,7 +3199,7 @@ const globalsBtn = document.querySelector("#globalsButton")
 const globals = async () => {
   let n = parseInt(document.querySelector("#stateGlobalsFor").value)
   let r = await _reach_sh_simulator_client__WEBPACK_IMPORTED_MODULE_0__.getStateGlobals(n)
-  appendToLog(r)
+  appendToLog(JSON.stringify(r,null,2))
 
 }
 globalsBtn.addEventListener("click",globals)
