@@ -203,7 +203,7 @@ export const Foldable_product1 = (c) => () =>
 
 export function closeTo(Who, after = (() => null), nonNetPayAmt = []) {
   // closeToks(Who, [], after); };
-  Who.publish();
+  Anybody.publish();
   transfer([ balance(), ...nonNetPayAmt ]).to(Who);
   commit();
   after();

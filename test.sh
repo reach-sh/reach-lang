@@ -118,7 +118,7 @@ checkteal () {
 #exit 0
 
 #jb
-r users/hamza2
+ci ALGO rps-6-timeouts
 exit 0
 
 # (cd hs && mk hs-test)

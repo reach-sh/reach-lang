@@ -459,19 +459,16 @@ It accepts an optional bytes argument, which is included in any reported violati
 
 ### `closeTo`
 
-@{ref("rsh", "closeTo")}
 ```reach
 closeTo( Who, after, nonNetPayAmt )
 ```
 
-
- Has participant `{!rsh} Who` make a publication, then transfer the `{!rsh} balance()` and the non-network pay amount to `{!rsh} Who` and end the DApp after executing the function `{!rsh} after` in a step.
+@{ref("rsh", "closeTo")} Has participant `{!rsh} Anybody` make a publication, then transfer the `{!rsh} balance()` and the non-network pay amount to `{!rsh} Who` and end the DApp after executing the function `{!rsh} after` in a step.
 The `{!rsh} nonNetPayAmt` parameter should be a pay amount. For example, when closing a program that uses a `{!rsh} Token` `{!rsh} token`, the argument would be `{!rsh} [ [balance(tok), tok] ]`.
 The `{!rsh} after` and `{!rsh} nonNetPayAmt` arguments are optional.
 
 ### `call`
 
-@{ref("rsh", "call")}
 ```reach
 const A = API('A', {
   isGt: Fun([UInt, UInt], Bool);
@@ -485,8 +482,7 @@ k(x > y);
 commit();
 ```
 
-
-A @{defn("call")} is written:
+@{ref("rsh", "call")} A @{defn("call")} is written:
 
 ```reach
 const [ DOMAIN, RET_FUN ] =

@@ -1132,7 +1132,7 @@ range: 61-64
 
 
 The timeout handler specifies that if Bob does not complete this action within a time delta of `{!rsh} deadline`, then the application transitions to the step given by the arrow expression.
-In this case, the timeout code is a call to `{!rsh} closeTo`, which is a Reach standard library function that has Alice send a message and transfer all of the funds in the contract to herself, then call the given function afterwards.
+In this case, the timeout code is a call to `{!rsh} closeTo`, which is a Reach standard library function that allows anyone to send a message and transfer all of the funds in the contract to Alice, then call the given function afterwards.
 This means that if Bob fails to publish his hand, then Alice will take her network tokens back.
 
 We will add a similar timeout handler to Alice's second message.
