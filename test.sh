@@ -76,10 +76,9 @@ r () {
 
   # jb
 
-  export REACH_DEBUG=1
-  # export REACH_ALGO_DEBUG=1
-  REACH_CONNECTOR_MODE=ETH ${REACH} run
-  #REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  #export REACH_DEBUG=1
+  #REACH_CONNECTOR_MODE=ETH ${REACH} run
+  REACH_CONNECTOR_MODE=ALGO ${REACH} run
   #REACH_CONNECTOR_MODE=CFX ${REACH} run
 
   # Ganache
@@ -118,11 +117,12 @@ checkteal () {
 
 #exit 0
 
-#jb
-c hs/t/y/enthuGuy4.rsh
-c hs/t/y/enthuGuy3.rsh
-fc hs/t/n/API_NonCS.rsh
-r users/hamza1
+jb
+ci ALGO rps-7-loops
+ci ALGO event
+exit 0
+ci ETH rps-7-loops
+ci ETH event
 exit 0
 
 # (cd hs && mk hs-test)

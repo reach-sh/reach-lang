@@ -64,6 +64,7 @@ import {
   typeDefs,
   extractAddr,
 } from './ALGO_compiled';
+import type { MapRefT, MaybeRep } from './shared_backend'; // =>
 import { window, process, Env } from './shim';
 import { sha512_256 } from 'js-sha512';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = stdlib;
@@ -116,7 +117,7 @@ type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 6;
+const reachBackendVersion = 7;
 const reachAlgoBackendVersion = 6;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
@@ -1021,7 +1022,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       Deployer: Address,
       getLastRound: (() => number),
       setLastRound: ((x:number) => void),
-      getLocalState: ((a:Address) => Promise<any>),
+      viewMapRef: (mapi:number, a:Address) => Promise<any>,
       ensureOptIn: (() => Promise<void>),
       getAppState: (() => Promise<any>),
       getGlobalState: ((appSt_g?:any) => Promise<GlobalState|undefined>),
@@ -1034,6 +1035,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const { getInfo: fake_getInfo } = setupViewArgs;
       let _theC: ContractHandler|undefined = undefined;
       return async (): Promise<ContractHandler> => {
+        debug(label, 'getC');
         if ( _theC ) { return _theC; }
         const ctcInfo = await fake_getInfo();
         const { ApplicationID, Deployer, startRound } =
@@ -1120,7 +1122,22 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const isin = (await getProvider()).isIsolatedNetwork;
         const isIsolatedNetwork = () => isin;
 
-        return (_theC = { ApplicationID, ctcAddr, Deployer, getLastRound, setLastRound, getLocalState, getAppState, getGlobalState, ensureOptIn, canIWin, isIsolatedNetwork });
+        const viewMapRef = async (mapi: number, a:any): Promise<any> => {
+          debug('viewMapRef', { mapi, a });
+          const ls = await getLocalState(cbr2algo_addr(a));
+          if ( ls === undefined ) { return ['None', null]; }
+          debug('viewMapRef', { ls });
+          const mbs = recoverSplitBytes('m', mapDataSize, mapDataKeys, ls);
+          debug('viewMapRef', { mbs });
+          const md = mapDataTy.fromNet(mbs);
+          debug('viewMapRef', { md });
+          // @ts-ignore
+          const mr = md[mapi];
+          assert(mr !== undefined, 'viewMapRef mr undefined');
+          return mr;
+        };
+
+        return (_theC = { ApplicationID, ctcAddr, Deployer, getLastRound, setLastRound, getAppState, getGlobalState, ensureOptIn, canIWin, isIsolatedNetwork, viewMapRef });
       };
     };
 
@@ -1140,14 +1157,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return vvs;
     };
 
+    const didSet = new Signal();
+    let fake_info: ContractInfo|undefined = undefined;
     const _setup = (setupArgs: SetupArgs): SetupRes => {
       const { setInfo, getInfo, setTrustedVerifyResult } = setupArgs;
 
-      const didSet = new Signal();
-      let fake_info: ContractInfo|undefined = undefined;
       const fake_setInfo = (x:ContractInfo) => {
         fake_info = x;
         didSet.notify();
+        debug(label, 'fake_setInfo', 'notified');
       };
       const ctorRan = new Signal();
       ctorRan.wait().then(() => {
@@ -1159,7 +1177,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         if ( givenInfoP ) {
           return await getInfo();
         } else {
+          debug(label, 'fake_getInfo', 'wait');
           await didSet.wait();
+          debug(label, 'fake_getInfo', 'notified');
           if ( fake_info === undefined ) { throw Error(`impossible fake_info`); }
           return fake_info;
         }
@@ -1183,10 +1203,17 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
 
       const getState = async (vibne:BigNumber, vtys:AnyALGO_Ty[]): Promise<Array<any>> => {
+        debug('getState');
         return await getState_(getC, (vibna:BigNumber) => {
           if ( vibne.eq(vibna) ) { return vtys; }
           throw Error(`Expected state ${vibne}, got ${vibna}`);
         });
+      };
+
+      const apiMapRef = (i:number, ty:any): MapRefT<any> => async (f:string): Promise<MaybeRep<any>> => {
+        void(ty);
+        const { viewMapRef } = await getC();
+        return await viewMapRef(i, f);
       };
 
       const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
@@ -1579,7 +1606,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
       };
 
-      return { getContractInfo, getContractAddress, getState, sendrecv, recv };
+      return { getContractInfo, getContractAddress, getState, sendrecv, recv, apiMapRef };
     };
 
     const readStateBytes = (prefix:string, key:number[], src:any): any => {
@@ -1614,19 +1641,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const getC = makeGetC(setupViewArgs, eventCache, () => {});
       const viewLib: IViewLib = {
         viewMapRef: async (mapi: number, a:any): Promise<any> => {
-          const { getLocalState } = await getC();
-          debug('viewMapRef', { mapi, a });
-          const ls = await getLocalState(cbr2algo_addr(a));
-          assert(ls !== undefined, 'viewMapRef ls undefined');
-          debug('viewMapRef', { ls });
-          const mbs = recoverSplitBytes('m', mapDataSize, mapDataKeys, ls);
-          debug('viewMapRef', { mbs });
-          const md = mapDataTy.fromNet(mbs);
-          debug('viewMapRef', { md });
-          // @ts-ignore
-          const mr = md[mapi];
-          assert(mr !== undefined, 'viewMapRef mr undefined');
-          return mr;
+          const { viewMapRef } = await getC();
+          return await viewMapRef(mapi, a);
         },
       };
       const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo, isSafe = true) =>
@@ -2115,6 +2131,13 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
  */
 export function formatAddress(acc: string|NetworkAccount|Account): string {
   return addressFromHex(T_Address.canonicalize(acc));
+}
+
+export function unsafeGetMnemonic(acc: NetworkAccount|Account): string {
+  // @ts-ignore
+  const networkAccount: NetworkAccount = acc.networkAccount || acc;
+  if (!networkAccount.sk) { throw Error(`unsafeGetMnemonic: Secret key not accessible for account`); }
+  return algosdk.secretKeyToMnemonic(networkAccount.sk);
 }
 
 export async function launchToken (accCreator:Account, name:string, sym:string, opts:any = {}) {

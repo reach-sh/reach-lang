@@ -212,11 +212,15 @@ jsVar (DLVar _ _ _ n) = return $ "v" <> pretty n
 jsContinueVar :: AppT DLVar
 jsContinueVar dv = ("c" <>) <$> jsVar dv
 
+jsBool :: Bool -> Doc
+jsBool = \case
+  True -> "true"
+  False -> "false"
+
 jsCon :: AppT DLLiteral
 jsCon = \case
   DLL_Null -> return "null"
-  DLL_Bool True -> return "true"
-  DLL_Bool False -> return "false"
+  DLL_Bool b -> return $ jsBool b
   DLL_Int at i -> do
     uim <- jsArg (DLA_Constant $ DLC_UInt_max)
     return $ jsApply "stdlib.checkedBigNumberify" [jsAt at, uim, pretty i]
@@ -402,8 +406,8 @@ jsExpr = \case
     fa' <- jsArg fa
     (f, args) <-
       (ctxt_mode <$> ask) >>= \case
-        JM_Simulate -> return $ ("stdlib.simMapRef", ["sim_r", jsMapIdx mpv])
-        JM_Backend -> return $ ("stdlib.mapRef", [jsMapVar mpv])
+        JM_Simulate -> return $ ("await stdlib.simMapRef", ["sim_r", jsMapIdx mpv])
+        JM_Backend -> return $ ("await stdlib.mapRef", [jsMapVar mpv])
         JM_View -> return $ ("await viewlib.viewMapRef", [jsMapIdx mpv])
     return $ jsProtect_ "null" ctc $ jsApply f $ args <> [fa']
   DLE_MapSet _ mpv fa mna -> do
@@ -413,9 +417,9 @@ jsExpr = \case
       Nothing -> return "undefined"
     (ctxt_mode <$> ask) >>= \case
       JM_Simulate ->
-        return $ jsApply "stdlib.simMapSet" ["sim_r", jsMapIdx mpv, fa', na']
+        return $ jsApply "await stdlib.simMapSet" ["sim_r", jsMapIdx mpv, fa', na']
       JM_Backend ->
-        return $ jsMapVar mpv <> brackets fa' <+> "=" <+> na'
+        return $ jsApply "await stdlib.mapSet" [jsMapVar mpv, fa', na' ]
       JM_View -> impossible "view mapset"
   DLE_Remote {} -> do
     return "undefined"
@@ -702,7 +706,7 @@ jsETail = \case
             dupeMaps <- mapM dupeMap =<< ((M.toAscList . ctxt_maps) <$> ask)
             let sim_body =
                   vsep
-                    [ "const sim_r = { txns: [], mapRefs: [], mapsPrev: [], mapsNext: [] };"
+                    [ "const sim_r = { txns: [], mapRefs: [], maps: [] };"
                     , vsep dupeMaps
                     , k_defp
                     , sim_body_core
@@ -784,9 +788,10 @@ jsMapDefns varsHuh = do
   where
     go (mpv, mi) = do
       ctc <- jsContract $ dlmi_tym mi
+      ia <- ctxt_isAPI <$> ask
       return $ vsep $
-        (if varsHuh then [ "const" <+> jsMapVar mpv <+> "=" <+> "{};" ] else [])
-        <> [ "const" <+> jsMapVarCtc mpv <+> "=" <+> ctc <> ";" ]
+        [ "const" <+> jsMapVarCtc mpv <+> "=" <+> ctc <> ";" ]
+        <> (if varsHuh then [ "const" <+> jsMapVar mpv <+> "=" <+> jsApplyKws "stdlib.newMap" (M.fromList $ [ ("idx", jsMapIdx mpv), ("ctc", "ctc"), ("ty", jsMapVarCtc mpv), ("isAPI", jsBool ia) ]) <> ";" ] else [])
 
 jsError :: Doc -> Doc
 jsError err = "new Error(" <> err <> ")"
@@ -966,7 +971,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 6
+reachBackendVersion = 7
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ devts _)) = do

@@ -14,6 +14,7 @@ import {
   checkedBigNumberify,
   bytesEq,
 } from './shared_backend';
+import type { MapRefT } from './shared_backend'; // =>
 import { process } from './shim';
 export {
   hexlify
@@ -161,6 +162,7 @@ export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy exten
   sendrecv: (args:ISendRecvArgs<RawAddress, Token, ConnectorTy>) => Promise<IRecv<RawAddress>>,
   recv: (args:IRecvArgs<ConnectorTy>) => Promise<IRecv<RawAddress>>,
   getState: (v:BigNumber, ctcs:Array<ConnectorTy>) => Promise<Array<any>>,
+  apiMapRef: (i:number, ty:ConnectorTy) => MapRefT<any>,
 };
 
 export type ISetupArgs<ContractInfo, VerifyResult> = {
@@ -175,7 +177,7 @@ export type ISetupViewArgs<ContractInfo, VerifyResult> =
 export type ISetupEventArgs<ContractInfo, VerifyResult> =
   Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
 
-export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
+export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState"|"apiMapRef")>;
 
 export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
@@ -183,7 +185,7 @@ export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, Conn
   setupEvents: ISetupEvent<ContractInfo, VerifyResult>,
   givenInfoP: (Promise<ContractInfo>|undefined)
   _setup: (args: ISetupArgs<ContractInfo, VerifyResult>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
-} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
+} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState"|"apiMapRef")>;
 
 export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
@@ -294,12 +296,14 @@ export const stdContract =
   const setupArgs = { ...viewArgs, setInfo };
 
   const _initialize = () => {
-    const { getContractInfo, getContractAddress, sendrecv, recv, getState } =
+    const { getContractInfo, getContractAddress,
+            sendrecv, recv, getState, apiMapRef } =
       _setup(setupArgs);
     return {
       selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
-      getContractInfo,
-      getContractAddress, sendrecv, recv, getState,
+      getContractInfo, getContractAddress,
+      sendrecv, recv,
+      getState, apiMapRef,
     };
   };
   const ctcC = { _initialize };
@@ -346,6 +350,7 @@ export const stdContract =
               theReject(err);
             }
           };
+          debug(`${bl}: start`, args);
           ab(ctcC, {
             "in": (() => {
               debug(`${bl}: in`, args);
@@ -399,8 +404,7 @@ export const stdContract =
     unsafeViews,
     apis, a: apis,
     safeApis,
-    e: events,
-    events
+    events, e: events,
   };
 };
 

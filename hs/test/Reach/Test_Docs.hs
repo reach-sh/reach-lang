@@ -17,7 +17,7 @@ import           Reach.Connector.ALGO         (AlgoError(..))
 import Reach.Warning (Warning (W_ExternalObject))
 
 docName :: String
-docName = "../docs/dev/src/rsh/errors/index.md"
+docName = "../docs/src/rsh/errors/index.md"
 
 -- For each type of Error:
 --  Get the error code prefix (use random constructor)

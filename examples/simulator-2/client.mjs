@@ -1,6 +1,14 @@
 const c = await import('@reach-sh/simulator-client');
 const assert = await import('assert');
 
+const log = async (n) => {
+  const r = await c.getStateGlobals(n)
+  console.log(`LOGGING STATE ${n}`)
+  console.log(r.e_ledger)
+  console.log(r.e_messages)
+  console.log("-------------------")
+}
+
 const main = async () => {
   console.log("Init Testing!")
   await c.waitForPort()
@@ -18,10 +26,14 @@ const main = async () => {
   await c.respondWithVal(8,8,1)
   await c.respondWithVal(9,9,1,-1)
   await c.respondWithVal(10,10,-99,0)
+  await log(10)
   await c.respondWithVal(11,11,-99,1)
   await c.respondWithVal(12,12,-99)
   const r = await c.getStatus()
   assert.equal(r,"Done");
+  const l = await c.getStateGlobals(13)
+  const amt = l.e_ledger["1"]["-1"]
+  assert.equal(amt,10);
   console.log("Testing Complete!")
 }
 

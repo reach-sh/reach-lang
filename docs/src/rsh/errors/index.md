@@ -249,8 +249,8 @@ Alice
 ```
 
 
-However, the second argument of the `{!rsh} timeout` branch must be a thunk. You can fix this by
-wrapping `{!rsh} closeTo(Bob)` in an arrow expression:
+However, the second argument of the `{!rsh} timeout` branch must be a syntactic thunk.
+You can fix this by wrapping `{!rsh} closeTo(Bob)` in an arrow expression:
 
 ```reach
 Alice

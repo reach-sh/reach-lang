@@ -3,6 +3,7 @@ import { ethers as real_ethers } from 'ethers';
 import {
   assert,
 } from './shared_backend';
+import type { MaybeRep, MapRefT } from './shared_backend'; // =>
 import {
   replaceableThunk,
   debug,
@@ -68,8 +69,8 @@ type Log = real_ethers.providers.Log;
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-const reachBackendVersion = 6;
-const reachEthBackendVersion = 5;
+const reachBackendVersion = 7;
+const reachEthBackendVersion = 6;
 type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
   ABI: string,
@@ -87,6 +88,7 @@ type NetworkAccount = {
   getAddress?: () => Promise<Address>, // or this for receivers & deployers
   sendTransaction?: (...xs: any) => any, // required for senders
   getBalance?: (...xs: any) => any, // TODO: better type
+  _mnemonic?: () => {phrase: string},
 } | EthersLikeWallet | EthersLikeSigner; // required to deploy/attach
 
 type ContractInfo = Address;
@@ -95,7 +97,12 @@ type RecvArgs = IRecvArgs<AnyETH_Ty>;
 type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Address, Token, AnyETH_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
-  | any /* union in this field: { setGasLimit: (ngl:any) => void } */;
+  & {
+    setGasLimit?: (ngl:any) => void
+    getGasLimit?: any,
+    setStorageLimit?: any,
+    getStorageLimit?: any,
+  }
 type VerifyResult = {
   creation_block: number,
 };
@@ -106,6 +113,8 @@ type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyETH_Ty>;
 
 type AccountTransferable = Account | {
   networkAccount: NetworkAccount,
+  getGasLimit?: any,
+  getStorageLimit?: any,
 };
 
 // ****************************************************************************
@@ -600,6 +609,16 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         return await maybePayTok(0);
       };
 
+      const codec = real_ethers.utils.defaultAbiCoder;
+      const decodeEm = (ty:AnyETH_Ty, bs:any): any => {
+        const dhead = [label, 'decodeEm'];
+        debug(dhead, ty, bs);
+        const [ de ] = codec.decode([ty.paramType], bs);
+        debug(dhead, de);
+        const un = ty.unmunge(de);
+        debug(dhead, un);
+        return un;
+      };
       const getState = async (vibne:BigNumber, tys:Array<AnyETH_Ty>): Promise<Array<any>> => {
         const ethersC = await getC();
         const [ vibna, vsbs ] = await ethersC["_reachCurrentState"]();
@@ -607,9 +626,22 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         if ( ! vibne.eq(vibna) ) {
           throw Error(`expected state ${vibne}, got ${vibna}`);
         }
-        const codec = real_ethers.utils.defaultAbiCoder;
-        const res = codec.decode(tys.map((x:AnyETH_Ty) => x.paramType), vsbs);
+        const ty = T_Tuple(tys);
+        const res = decodeEm(ty, vsbs);
         debug(`getState`, res);
+        // @ts-ignore
+        return res;
+      };
+      const apiMapRef = (i:number, ty:AnyETH_Ty): MapRefT<any> => async (f:string): Promise<MaybeRep<any>> => {
+        const dhead = [label, 'apiMapRef'];
+        debug(dhead, {i, ty, f});
+        const ethersC = await getC();
+        const mf = `_reachMap${i}Ref`;
+        debug(dhead, mf);
+        const mfv = await ethersC[mf](f);
+        debug(dhead, { mfv });
+        const res = ty.unmunge(mfv);
+        debug(dhead, res);
         // @ts-ignore
         return res;
       };
@@ -821,7 +853,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       const getContractAddress = getInfo;
       const getContractInfo = getInfo;
 
-      return { getContractInfo, getContractAddress, sendrecv, recv, getState };
+      return { getContractInfo, getContractAddress, sendrecv, recv, getState, apiMapRef };
     };
 
     const setupView = (setupViewArgs: SetupViewArgs) => {
@@ -1215,6 +1247,16 @@ async function launchToken (accCreator:Account, name:string, sym:string, opts:an
   return { name, sym, id, mint, optOut };
 };
 
+function unsafeGetMnemonic(acc: Account|NetworkAccount): string {
+  // @ts-ignore
+  const networkAccount: NetworkAccount = acc.networkAccount | acc;
+  if (networkAccount._mnemonic) {
+    return networkAccount._mnemonic().phrase;
+  } else {
+    throw Error(`unsafeGetMnemonic: Secret key not accessible for account`);
+  }
+}
+
 // TODO: restore type ann once types are in place
 // const ethLike: EthLike = {
 const ethLike = {
@@ -1251,6 +1293,7 @@ const ethLike = {
   minimumBalance,
   formatCurrency,
   formatAddress,
+  unsafeGetMnemonic,
   launchToken,
   reachStdlib,
 };
