@@ -212,15 +212,24 @@ startServer p = do
   putStrLn "Starting Sim Server..."
   scottyT portNumber runActionToIO (app p)
 
+setHeaders :: ActionT Text WebM ()
+setHeaders = do
+  setHeader "Access-Control-Allow-Origin" "*"
+  setHeader "Access-Control-Allow-Credentials" "true"
+  setHeader "Access-Control-Allow-Methods" "GET, POST, PUT"
+  setHeader "Access-Control-Allow-Headers" "Content-Type"
+
 app :: LLProg -> ScottyT Text WebM ()
 app p = do
   middleware logStdoutDev
 
   post "/load" $ do
+    setHeaders
     webM $ modify $ \ st -> st {e_src = Just p}
     json $ ("OK" :: String)
 
   post "/init" $ do
+    setHeaders
     ll <- webM $ gets e_src
     case ll of
       Nothing -> json $ ("No Program" :: String)
@@ -229,6 +238,7 @@ app p = do
         json $ ("OK" :: String)
 
   post "/init/:a/:s" $ do
+    setHeaders
     a <- param "a"
     s <- param "s"
     ll <- webM $ gets e_src
@@ -239,10 +249,12 @@ app p = do
         json $ ("OK" :: String)
 
   get "/states" $ do
+    setHeaders
     ss <- webM $ allStates
     json ss
 
   get "/global/:s" $ do
+    setHeaders
     s <- param "s"
     g' <- webM $ getProgState s
     case g' of
@@ -250,6 +262,7 @@ app p = do
       Just (g,_) -> json g
 
   get "/local/:s" $ do
+    setHeaders
     s <- param "s"
     l' <- webM $ getProgState s
     case l' of
@@ -257,19 +270,23 @@ app p = do
       Just (_,l) -> json l
 
   get "/status" $ do
+    setHeaders
     ss <- webM $ getStatus
     json ss
 
   get "/states/:s" $ do
+    setHeaders
     s <- param "s"
     ss <- webM $ allStates
     json (filter ((==) s) $ ss)
 
   get "/actions" $ do
+    setHeaders
     as <- webM $ computeActions
     json as
 
   post "/states/:s/actions/:a/" $ do
+    setHeaders
     s <- param "s"
     a <- param "a"
     v :: Integer <- param "data"
@@ -284,4 +301,9 @@ app p = do
     json ("OK" :: String)
 
   get "/ping" $ do
+    setHeaders
     json ("Hello World" :: String)
+
+  options (regex ".*") $ do
+    setHeaders
+    json ("OK" :: String)
