@@ -755,7 +755,9 @@ const processAll = async (base_html, inputBaseConfig, folder) => {
   const baseConfig = {
     ...inputBaseConfig,
     ...thisConfig,
+    ignored: [],
   };
+  const ignored = thisConfig.ignored || [];
 
   const out_folder = `${outDir}/${relDir}`;
   await fs.mkdir(out_folder, { recursive: true })
@@ -778,6 +780,8 @@ const processAll = async (base_html, inputBaseConfig, folder) => {
     const s = await fs.stat(absolute);
     if (s.isDirectory()) {
       return await processAll(`../${base_html}`, baseConfig, absolute);
+    } else if ( ignored.includes(p) ) {
+      return;
     } else if ( p === 'index.md' ) {
       return await processMd(opts);
     } else if ( forReal ) {
