@@ -1031,7 +1031,7 @@ atomicUnit // string
 minimumBalance // atomicUnitAmount
 parseCurrency(standardUnitAmount, int) => atomicUnitAmount
 formatCurrency(atomicUnitAmount, int) => string  // display amount in standard unit
-formatWithDecimals(atomicUnitAmount, int, tokenDecimals) => string  // display amount in standard unit (decimal value) of a token
+formatWithDecimals(atomicUnitAmount, int, tokenDecimals: int) => string  // display amount in standard unit (decimal value) of a token
 ```
 
 
