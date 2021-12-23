@@ -76,8 +76,7 @@ r () {
 
   # jb
 
-  export REACH_DEBUG=1
-  # export REACH_ALGO_DEBUG=1
+  #export REACH_DEBUG=1
   #REACH_CONNECTOR_MODE=ETH ${REACH} run
   REACH_CONNECTOR_MODE=ALGO ${REACH} run
   #REACH_CONNECTOR_MODE=CFX ${REACH} run
@@ -119,8 +118,7 @@ checkteal () {
 #exit 0
 
 #jb
-ci ETH map-rwrw
-ci ETH api-map
+r users/hamza2
 exit 0
 
 # (cd hs && mk hs-test)
