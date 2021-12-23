@@ -1024,13 +1024,14 @@ Integer comparisons on `{!rsh} UInt`.
 ---
 The following exports are for dealing with network tokens.
 
-@{ref("js", "standardUnit")}@{ref("js", "atomicUnit")}@{ref("js", "minimumBalance")}@{ref("js", "parseCurrency")}@{ref("js", "formatCurrency")}
+@{ref("js", "standardUnit")}@{ref("js", "atomicUnit")}@{ref("js", "minimumBalance")}@{ref("js", "parseCurrency")}@{ref("js", "formatCurrency")}@{ref("js", "formatWithDecimals")}
 ```js
 standardUnit // string
 atomicUnit // string
 minimumBalance // atomicUnitAmount
 parseCurrency(standardUnitAmount) => atomicUnitAmount
 formatCurrency(atomicUnitAmount, int) => string  // display amount in standard unit
+formatWithDecimals(atomicUnitAmount, int, tokenDecimals) => string  // display amount in standard unit (decimal value) of a token
 ```
 
 
