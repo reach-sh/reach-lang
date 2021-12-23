@@ -609,7 +609,7 @@ instance PrettySubst DLExpr where
     DLE_Impossible _ _ err -> return $ "impossible" <> parens (pretty err)
     DLE_VerifyMuldiv _ cl as _ -> do
       as' <- render_dasM as
-      return $ "safeMulDiv" <> parens (viaShow cl) <> parens as'
+      return $ "verifyMuldiv" <> parens (viaShow cl) <> parens as'
     DLE_PrimOp _ IF_THEN_ELSE [c, t, el] -> do
       c' <- prettySubst c
       t' <- prettySubst t
