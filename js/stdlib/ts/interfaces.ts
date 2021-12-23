@@ -179,6 +179,14 @@ type Acc = {
    * instead.
    */
   deploy: (bin: any) => any;
+  Account?: any;
+  getAddress: any;
+  networkAccount: any;
+  setDebugLabel: any;
+  stdlib: any;
+  tokenAccept: any;
+  tokenAccepted: any;
+  tokenMetadata: any;
 };
 type Token = any // ETH/CFX: string, ALGO: num
 type CtcInfo = any
