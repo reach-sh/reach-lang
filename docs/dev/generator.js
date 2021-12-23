@@ -620,7 +620,9 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     }
     const cpEl = doc.createElement('a');
     cpEl.classList.add("far", "fa-copy", "copyBtn");
-    cpEl.setAttribute("data-clipboard-text", rawCode);
+    const copyCode = ( spec.language === 'cmd' ) ?
+      rawCode.replace(/^\$ /, '') : rawCode;
+    cpEl.setAttribute("data-clipboard-text", copyCode);
     cpEl.href = "#";
     chEl.appendChild(cpEl);
     pre.append(chEl);

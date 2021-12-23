@@ -22,17 +22,17 @@ If you're on Ubuntu, you can run `sudo apt install make` to get it.
 You'll know that you have everything installed if you can run the following three commands without errors
 
 
-```
+```cmd
 $ make --version
 ```
 
 
-```
+```cmd
 $ docker --version
 ```
 
 
-```
+```cmd
 $ docker-compose --version
 ```
 
@@ -45,7 +45,7 @@ If you're using Windows, consult [the guide to using Reach on Windows](##guide-w
 Once you've confirmed that they are installed, choose a directory for this project. We recommend
 
 
-```
+```cmd
 $ mkdir -p ~/reach/tut && cd ~/reach/tut
 ```
 
@@ -53,7 +53,7 @@ $ mkdir -p ~/reach/tut && cd ~/reach/tut
 Next, download Reach by running
 
 
-```
+```cmd
 $ curl https://docs.reach.sh/reach -o reach ; chmod +x reach
 ```
 
@@ -61,7 +61,7 @@ $ curl https://docs.reach.sh/reach -o reach ; chmod +x reach
 You'll know that the download worked if you can run
 
 
-```
+```cmd
 $ ./reach version
 ```
 
@@ -69,7 +69,7 @@ $ ./reach version
 The recommended next step, although optional, is to set up your environment with
 
 
-```
+```cmd
 $ ./reach config
 ```
 
@@ -82,7 +82,7 @@ Since Reach is Dockerized, when you first use it, you'll need to download the im
 This will happen automatically when you first use it, but you can do it manually now by running
 
 
-```
+```cmd
 $ ./reach update
 ```
 
@@ -90,7 +90,7 @@ $ ./reach update
 You'll know that everything is in order if you can run
 
 
-```
+```cmd
 $ ./reach compile --help
 ```
 
@@ -180,7 +180,7 @@ The program defined in [`rps-1-setup/index.rsh`](@{REPO}/examples/rps-1-setup/in
 This is now enough for Reach to compile and run our program. Let's try by running
 
 
-```
+```cmd
 $ ./reach run
 ```
 
@@ -190,7 +190,7 @@ Since the application doesn't do anything, you'll just see a lot of diagnostic m
 
 :::note
 The entire process that we just went through can be automated by running 
-```
+```cmd
 $ ./reach init
 ```
  when you start your next project!
@@ -322,7 +322,7 @@ range: 31-33
 At this point, we can run the program and see its output by running
 
 
-```
+```cmd
 $ ./reach run
 ```
 
@@ -330,7 +330,7 @@ $ ./reach run
 Since the players act randomly, the results will be different every time.
 When I ran the program three times, this is the output I got:
 
-```
+```cmd
 $ ./reach run
 Alice played Scissors
 Bob played Paper
@@ -516,7 +516,7 @@ This transfer takes place from the contract to the participants, not from the pa
 At this point, we can run the program and see its output by running
 
 
-```
+```cmd
 $ ./reach run
 ```
 
@@ -524,7 +524,7 @@ $ ./reach run
 Since the players act randomly, the results will be different every time.
 When I ran the program three times, this is the output I got:
 
-```
+```cmd
 $ ./reach run
 Alice played Paper
 Bob accepts the wager of 5.
@@ -615,7 +615,7 @@ However, the version of the application we wrote has a fundamental flaw: Bob can
 How is that possible?
 We showed executions of the game where Alice won, like the following
 
-```
+```cmd
 $ ./reach run
 Alice played Rock
 Bob accepts the wager of 5.
@@ -642,7 +642,7 @@ then he will ignore the frontend and just compute the correct value.
 
 If we run this version of the program, we will see output like this:
 
-```
+```cmd
 $ ./reach run
 Alice played Scissors
 Bob accepts the wager of 5.
@@ -944,7 +944,7 @@ range: 63-74
 
 Since we didn't have to change the frontend in any meaningful way, the output of running `./reach run` is still the same as it ever was:
 
-```
+```cmd
 $ ./reach run
 Alice played Scissors
 Bob accepts the wager of 5.
@@ -1171,7 +1171,7 @@ We know that ten is the value of `{!js} deadline`, so this will cause a timeout.
 
 Let's run the program and see what happens:
 
-```
+```cmd
 $ ./reach run
 Alice played Rock
 Bob accepts the wager of 5.
@@ -1407,7 +1407,7 @@ range: 93-95
 
 Let's run the program and see what happens:
 
-```
+```cmd
 $ ./reach run
 Bob accepts the wager of 5.
 Alice played Paper
@@ -1584,7 +1584,7 @@ Lastly, we choose the appropriate backend function and await its completion.
 We can now run
 
 
-```
+```cmd
 $ ./reach run
 ```
 
@@ -1592,7 +1592,7 @@ $ ./reach run
 in one terminal in this directory to play as Alice and
 
 
-```
+```cmd
 $ ./reach run
 ```
 
@@ -1601,7 +1601,7 @@ in another terminal in this directory to play as Bob.
 
 Here's an example run:
 
-```
+```cmd
 $ ./reach run
 Are you Alice?
 y
@@ -1622,7 +1622,7 @@ Your balance is now 989.9999
 
 and
 
-```
+```cmd
 $ ./reach run
 Are you Alice?
 n
@@ -1651,7 +1651,7 @@ If your version isn't working, compare with [`rps-8-interact/index.rsh`](@{REPO}
 
 If we were to instead run
 
-```
+```cmd
 $ REACH_CONNECTOR_MODE=ALGO-devnet ./reach run
 ```
 
@@ -1659,7 +1659,7 @@ in two terminals we'd see equivalent output from running our application on a pr
 
 Connecting to live consensus networks is similarly easy:
 
-```
+```cmd
 $ REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI="http://some.node.fqdn:8545" ./reach run
 ```
 
@@ -2006,7 +2006,7 @@ As a convenience for running the React development server,
 you can call:
 
 
-```
+```cmd
 $ ./reach react
 ```
 
@@ -2017,7 +2017,7 @@ To run the React development server with Algorand,
 you can call:
 
 
-```
+```cmd
 $ REACH_CONNECTOR_MODE=ALGO ./reach react
 ```
 
@@ -2057,7 +2057,7 @@ Because these are fallbacks, you need to decide for your users which wallet they
 Similarly, to run with Conflux:
 
 
-```
+```cmd
 $ REACH_CONNECTOR_MODE=CFX ./reach react
 ```
 
@@ -2080,7 +2080,7 @@ If you'd like to instead use Reach in your own JavaScript project,
 you can call:
 
 
-```
+```cmd
 $ npm install @reach-sh/stdlib
 ```
 
@@ -2094,7 +2094,7 @@ If you are experiencing issues with the Node.js package, try updating!
 As usual, you can compile your Reach program `index.rsh` to the `{!js} backend` build artifact `build/index.main.mjs` with:
 
 
-```
+```cmd
 $ ./reach compile
 ```
 

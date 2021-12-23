@@ -19,7 +19,7 @@ The Reach JavaScript standard library, @{ref("js", "stdlib")} `{!js} stdlib`, is
 
 These modules are available in the [`@reach-sh/stdlib`](https://www.npmjs.com/package/@reach-sh/stdlib) [`npm`](https://www.npmjs.com/) package, which you can install via:
 
-```
+```cmd
 $ npm install @reach-sh/stdlib
 ```
 

@@ -265,7 +265,7 @@ into the directory where you saved `index.py`.
 Next, open a terminal in that directory and install the Reach Python RPC
 client:
 
-```
+```cmd
 $ ([ -d ./venv ] || python3 -m venv ./venv) && source ./venv/bin/activate
 ```
 
@@ -279,14 +279,14 @@ system directories.
 :::
 
 
-```
+```cmd
 $ pip install --upgrade reach-rpc-client
 ```
 
 
 Then use `./reach rpc-run` to play a game of _Rock, Paper, Scissors!_:
 
-```
+```cmd
 $ ./reach rpc-run python3 -u ./index.py
 ```
 

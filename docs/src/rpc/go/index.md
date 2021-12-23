@@ -8,10 +8,9 @@ This frontend library relies on the [Reach RPC Server](##ref-backends-rpc).
 A [Go](https://golang.org) client library for the
 [Reach RPC protocol](##ref-backends-rpc) may be installed by running:
 
-```
+```cmd
 $ go get github.com/reach-sh/reach-lang/rpc-client/go
 ```
-
 
 Once installed, add the following import line to your Go file which will connect
 to the [RPC server](##ref-backends-rpc):

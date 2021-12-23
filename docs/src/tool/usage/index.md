@@ -1,6 +1,3 @@
-
-
-
 # {#ref-usage} Usage
 
 Reach has a few sub-commands, each with their own options.
@@ -13,7 +10,7 @@ Although normally expressed in a [semantic versioning](##guide-versions)-friendl
 + Hashes such as [639fa565](https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore).
 
 Valid hashes may be obtained by running:
-```
+```cmd
 $ reach hashes
 reach: 8150e7e4
 reach-cli: 8150e7e4
@@ -43,11 +40,9 @@ In other words, `v0.1.6` is equivalent to `0.1.6`.
 
 You compile your Reach code by executing
 
-
-```
+```cmd
 $ reach compile SOURCE EXPORT ...
 ```
-
 
 where `SOURCE` is your source file,
 and each `EXPORT` is an exported Reach.App.
@@ -83,21 +78,17 @@ This debug information includes: the estimated cost of the contract on Algorand.
 
 You can create template `index.rsh` and `index.mjs` files for a simple Reach app by running
 
-
-```
+```cmd
 $ reach init
 ```
-
 
 ## {#ref-usage-run} `reach run`
 
 You can run a simple Reach application by executing
 
-
-```
+```cmd
 $ reach run [APP or DIR] [ARGS]
 ```
-
 
 `APP` represents a Reach module name without its extension (e.g. "index" by default).
 
@@ -145,21 +136,17 @@ The `Dockerfile` can be modified to introduce new dependencies, services, or fil
 
 You can halt all Dockerized Reach apps and devnets by running
 
-
-```
+```cmd
 $ reach down
 ```
-
 
 ## {#ref-usage-scaffold} `reach scaffold`
 
 You can create templated `Dockerfile` and `package.json` files for a simple Reach app by running
 
-
-```
+```cmd
 $ reach scaffold
 ```
-
 
 The files created are the same as those used temporarily by `reach run`.
 
@@ -167,11 +154,9 @@ The files created are the same as those used temporarily by `reach run`.
 
 You can run a simple React app by executing
 
-
-```
+```cmd
 $ reach react
 ```
-
 
 This assumes
 
@@ -217,11 +202,9 @@ may be used in any JavaScript project like any other JavaScript file and library
 
 You can run a private Reach devnet by executing
 
-
-```
+```cmd
 $ reach devnet
 ```
-
 
 `reach devnet` supports the following options:
 
@@ -239,11 +222,9 @@ The options are:
 
 The sub-command
 
-
-```
+```cmd
 $ reach rpc-server
 ```
-
 
 starts an instance of the [Reach RPC Server](##ref-backends-rpc) using all of the same options and defaults as `reach run`.
 
@@ -256,8 +237,7 @@ appear in the console stating that the development key is being used.
 In a production context this key must be kept secret, and it should be
 randomly generated with a suitably strong method, such as:
 
-
-```
+```cmd
 $ head -c 24 /dev/urandom | base64
 ```
 
@@ -275,11 +255,9 @@ It defaults to `rpc-demo`.
 
 The sub-command
 
-
-```
+```cmd
 $ reach rpc-run CMD
 ```
-
 
 is a convenient means of launching a pre-configured RPC server and
 frontend which are suitable for development purposes.
@@ -289,20 +267,17 @@ development API key), and sets `REACH_RPC_TLS_REJECT_UNVERIFIED` to
 
 Consider this example from the @{seclink("tut-7-rpc")} tutorial:
 
-```
+```cmd
 $ reach rpc-run python3 -u ./index.py
 ```
-
 
 ## {#ref-usage-docker-reset} `reach docker-reset`
 
 You can easily kill and remove all Docker containers by executing
 
-
-```
+```cmd
 $ reach docker-reset
 ```
-
 
 This can be a useful thing to try if your Docker containers stop responding to requests or otherwise misbehave, or if you have updated your Reach images (with `reach update`) but those changes are not taking effect.
 This command is a loose approximation of "turning Docker off and on again."
@@ -312,11 +287,9 @@ It will affect all Docker containers on your machine, not just those created by 
 
 You can upgrade your Reach installation by executing
 
-
-```
+```cmd
 $ reach upgrade
 ```
-
 
 This may change the default version used by `reach` commands.
 
@@ -324,11 +297,9 @@ This may change the default version used by `reach` commands.
 
 You can update the Docker images used by your Reach installation by executing
 
-
-```
+```cmd
 $ reach update
 ```
-
 
 This may change the patch version used by `reach` commands.
 
@@ -336,21 +307,17 @@ This may change the patch version used by `reach` commands.
 
 You can see what version of Reach you have installed by running
 
-
-```
+```cmd
 $ reach version
 ```
-
 
 ## {#ref-usage-hashes} `reach hashes`
 
 You can see which exact versions of Reach Docker images you are using by running
 
-
-```
+```cmd
 $ reach hashes
 ```
-
 
 This is more precise, but less readable, than `reach version`,
 in that each hash refers to the git commit used to build the image.
@@ -359,11 +326,9 @@ in that each hash refers to the git commit used to build the image.
 
 Reach recommends tuning your default workflow settings by executing
 
-
-```
+```cmd
 $ reach config
 ```
-
 
 Using `reach config` is advisable when running Reach for the first time since it will set the `REACH_CONNECTOR_MODE` environment variable, which is required when executing some other sub-commands (e.g. `reach run`).
 

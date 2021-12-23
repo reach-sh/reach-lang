@@ -12,7 +12,7 @@ First, you can run the Ganache desktop application and start a workspace, then c
 This requires specifying the node URI as well.
 For example, if you're running your Reach frontend from within Docker, and Ganache on your host machine, you might run:
 
-```
+```cmd
 $ REACH_CONNECTOR_MODE=ETH-live ETH_NODE_URI=http://host.docker.internal:7545 REACH_ISOLATED_NETWORK=1 reach run
 ```
 

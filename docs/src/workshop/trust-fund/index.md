@@ -188,7 +188,7 @@ The most interesting part of this program is on lines 20 through 23 when we opti
 
 Let's see what it looks like when we run this program:
 
-```
+```cmd
 $ ../reach run
 Begin demo with funder delay(0) and receiver delay(0).
 Receiver sees that the account is funded.

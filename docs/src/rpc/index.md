@@ -10,8 +10,8 @@ Reach provides client libraries for
 It is easy to [implement a client library yourself](##ref-backends-rpc-client).
 An example frontend written using the Reach RPC Server is shown in the [tutorial section on RPC-based frontends](##tut-7-rpc).
 
-The command 
-```
+The command
+```cmd
 $ reach rpc-server
 ```
  starts an instance of the Reach RPC Server.
