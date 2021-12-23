@@ -11,7 +11,7 @@ export const main = Reach.App(() => {
     show: Fun(true, Null),
   });
   setOptions({ verifyArithmetic: true });
-  deploy();
+  init();
 
   A.only(() => {
     const params = declassify(interact.params);
