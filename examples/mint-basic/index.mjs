@@ -20,8 +20,8 @@ import * as backend from './build/index.main.mjs';
     accAlice.setGasLimit(myGasLimit);
     accBob.setGasLimit(myGasLimit);
   }
-  const ctcAlice = accAlice.deploy(backend);
-  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
 
   const fmt = (x) => stdlib.formatCurrency(x, 4);
   const go = async ({me, role, ctc, acc, other}) => {

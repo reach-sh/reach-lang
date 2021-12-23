@@ -15,7 +15,7 @@ const numOfBuyers = 10;
     )
   );
 
-  const ctcFunder = accFunder.deploy(backend);
+  const ctcFunder = accFunder.contract(backend);
   const ctcInfo   = ctcFunder.getInfo();
 
   const funderParams = {
@@ -36,7 +36,7 @@ const numOfBuyers = 10;
     }),
   ].concat(
     accBuyerArray.map((accBuyer, i) => {
-      const ctcBuyer = accBuyer.attach(backend, ctcInfo);
+      const ctcBuyer = accBuyer.contract(backend, ctcInfo);
       const Who = `Buyer #${i}`;
       return backend.Buyer(ctcBuyer, {
         showOutcome: (outcome) =>

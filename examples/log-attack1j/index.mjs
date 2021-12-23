@@ -46,7 +46,7 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
   console.log(`Alice remote: deployed: ${remoteAddr}`);
 
   console.log(`Alice will deploy the Reach DApp.`);
-  const ctcAlice = accAlice.deploy(backend);
+  const ctcAlice = accAlice.contract(backend);
 
   const amt = stdlib.parseCurrency(0.1);
 

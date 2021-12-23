@@ -243,7 +243,7 @@ export const main = Reach.App(() => {
  const A = Participant("A", {
   displayResult: Fun(Int, Null),
  });
- deploy();
+ init();
 
  const result = 0;
  A.only(() => { interact.displayResult(result); });
@@ -281,7 +281,7 @@ This form was equivalent to
 Reach.App(() => {
  setOptions(options);
  [ applicationIds ] = applicationArgs;
- deploy();
+ init();
  body
 });
 ```

@@ -14,7 +14,7 @@ const numOfBuyers = 10;
     )
   );
 
-  const ctcFunder = accFunder.deploy(backend);
+  const ctcFunder = accFunder.contract(backend);
   const ctcInfo   = ctcFunder.getInfo();
 
   const funderParams = {
@@ -29,7 +29,7 @@ const numOfBuyers = 10;
     }),
   ].concat(
     accBuyerArray.map((accBuyer, i) => {
-      const ctcBuyer = accBuyer.attach(backend, ctcInfo);
+      const ctcBuyer = accBuyer.contract(backend, ctcInfo);
       return backend.Buyer(ctcBuyer, {
         showOutcome: (outcome) => {
           console.log(`Buyer ${i} saw they ${stdlib.addressEq(outcome, accBuyer) ? 'won' : 'lost'}.`);

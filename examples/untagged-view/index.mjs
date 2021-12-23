@@ -8,7 +8,7 @@ const stdlib = loadStdlib(process.env);
   const [ accAlice ] =
     await stdlib.newTestAccounts(1, startingBalance);
 
-  const ctcAlice = accAlice.deploy(backend);
+  const ctcAlice = accAlice.contract(backend);
 
   let lx = 0;
   await Promise.all([

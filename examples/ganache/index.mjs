@@ -19,7 +19,7 @@ import ganache from 'ganache-core';
   const startingBalance = stdlib.parseCurrency(50);
   const accAlice = await stdlib.newTestAccount(startingBalance)
 
-  const ctcAlice = accAlice.deploy(backend);
+  const ctcAlice = accAlice.contract(backend);
   await Promise.all([
     backend.Alice(ctcAlice, {
       ...stdlib.hasRandom,

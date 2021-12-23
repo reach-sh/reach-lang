@@ -20,7 +20,7 @@ public class Program {
     var beforeAlice = await getBalance(accAlice);
     var beforeBob = await getBalance(accBob);
 
-    var ctcAlice = await rpc.Call("/acc/deploy", accAlice);
+    var ctcAlice = await rpc.Call("/acc/contract", accAlice);
 
     string[] HAND = new string[3]{"Rock", "Paper", "Scissors"};
     string[] OUTCOME = new String[3]{"Win", "Lose", "Draw"};
@@ -62,7 +62,7 @@ public class Program {
     });
     var doBob = async () => {
         var info = await rpc.Call("/ctc/getInfo", ctcAlice);
-        var ctcBob = await rpc.Call("/acc/attach", accBob, info);
+        var ctcBob = await rpc.Call("/acc/contract", accBob, info);
         await rpc.Callbacks("/backend/Bob", ctcBob, bobCbs);
         await rpc.Call("/forget/ctc", ctcBob);
         return;

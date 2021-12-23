@@ -434,7 +434,7 @@ either making `{!rsh} x` a variable within Alice's scope inside the program:
 
 ```reach
 const Alice = Participant('Alice', {});
-deploy();
+init();
 Alice.only(() => {
   const x = 3;
 });
@@ -652,7 +652,7 @@ This situation is not allowed, because before the first publication, there is no
 ```reach
 export const main = Reach.App(() => {
   const A = Participant('Alice', {});
-  deploy();
+  init();
   wait(relativeTime(1));
 });
 ```
@@ -663,7 +663,7 @@ You can fix this by having a `{!rsh} Participant` `{!rsh} publish` first:
 ```reach
 export const main = Reach.App(() => {
   const A = Participant('Alice', {});
-  deploy();
+  init();
   A.publish();
   wait(relativeTime(1));
 });
@@ -1215,7 +1215,7 @@ For example, the code below erroneously attempts to transfer the `{!rsh} balance
 ```reach
 const Alice = Participant('Alice', {});
 const Bob   = ParticipantClass('Bob', {});
-deploy();
+init();
 Alice.publish().pay(100);
 transfer(100).to(Bob);
 ```
@@ -1227,7 +1227,7 @@ class could `{!rsh} race` to specify their own address:
 ```reach
 const Alice = Participant('Alice', {});
 const Bob   = ParticipantClass('Bob', {});
-deploy();
+init();
 Alice.publish().pay(100);
 commit();
 Bob.only(() => {
@@ -2255,7 +2255,7 @@ Additionally, you can create a new `{!rsh} Participant` to specifically perform 
 ```reach
 const Constructor = Participant('Constructor', {});
 // ...
-deploy();
+init();
 Constructor.publish();
 commit();
 // ...
@@ -2376,7 +2376,7 @@ export const main = Reach.App(() => {
     observe: Fun([], Null)
   });
   const I = View('I', { i: UInt });
-  deploy();
+  init();
 
   A.publish();
 
@@ -2414,7 +2414,7 @@ export const main = Reach.App(() => {
     observe: Fun([], Null)
   });
   const I = View('I', { i: UInt });
-  deploy();
+  init();
 
   A.publish();
 

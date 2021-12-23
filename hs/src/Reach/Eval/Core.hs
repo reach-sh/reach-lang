@@ -1009,7 +1009,7 @@ stMerge old new =
       -- can't rely on it being set. This probably will not matter, but it
       -- might. This is mainly here so that
       --
-      -- deploy();
+      -- init();
       -- A.publish();
       -- while (c) {
       --  f();
@@ -1463,7 +1463,7 @@ convertTernaryReachApp at a opte top_formals partse top_s = top_s'
     top_ss =
       [ JSExpressionStatement (JSCallExpression (JSIdentifier a "setOptions") a (JSLOne opte) a) sp
       , JSConstant a (JSLOne $ JSVarInitExpression lhs $ JSVarInit a rhs) sp
-      , JSExpressionStatement (JSCallExpression (JSIdentifier a "deploy") a JSLNil a) sp
+      , JSExpressionStatement (JSCallExpression (JSIdentifier a "init") a JSLNil a) sp
       , top_s
       ]
     top_s' = JSStatementBlock a top_ss a sp

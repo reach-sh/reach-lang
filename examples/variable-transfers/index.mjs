@@ -14,8 +14,8 @@ export const run = async (n) => {
   const beforeAlice = await getBalance(accAlice);
   const beforeBob = await getBalance(accBob);
 
-  const ctcAlice = accAlice.deploy(backend);
-  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
 
   await Promise.all([
     backend.A(ctcAlice, {

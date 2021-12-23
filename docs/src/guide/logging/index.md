@@ -44,7 +44,7 @@ export const main = Reach.App(() => {
     logBool: Fun([UBool], Null),
     logNumber: Fun([UInt], Null),
   });
-  deploy();
+  init();
   A.only(() => {
     interact.logBool(true);
     interact.logNumber(1); });
@@ -65,7 +65,7 @@ export const main = Reach.App(() => {
   const A = Participant('Alice', {
     log: Fun(true, Null),
   });
-  deploy();
+  init();
   A.interact.log(true);
   A.interact.log(1);
   // We can easily add more complex log entries as well.

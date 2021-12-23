@@ -42,8 +42,8 @@ import * as fs from 'fs';
   await contract.deployed();
   const remoteAddr = contract.address;
 
-  const ctcAlice = accAlice.deploy(backend);
-  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
   const amt = stdlib.parseCurrency(1);
   const exp = [ remoteAddr, amt ];
 

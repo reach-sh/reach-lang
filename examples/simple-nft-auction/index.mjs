@@ -23,7 +23,7 @@ const names = ["Creator", "Alice", "Bob", "Carla"];
     console.log(`${names[i]} has ${stdlib.formatCurrency(amt)} ${stdlib.standardUnit} and ${amtNFT} of the NFT`);
   };
 
-  const ctcCreator = accCreator.deploy(backend);
+  const ctcCreator = accCreator.contract(backend);
 
   await Promise.all([
     (async () => {
@@ -49,7 +49,7 @@ const names = ["Creator", "Alice", "Bob", "Carla"];
     ...accBidders.map(async (acc, i) => {
       await showBalance(acc, i+1);
       const n = names[i+1];
-      const ctc = acc.attach(backend, ctcCreator.getInfo());
+      const ctc = acc.contract(backend, ctcCreator.getInfo());
       const bid = stdlib.parseCurrency(Math.random() * 10);
       let IWon = false;
       console.log(`${n} decides to bid ${stdlib.formatCurrency(bid)}`);

@@ -23,7 +23,7 @@ console.log(`getting started...`);
   };
   const interact = {ask};
 
-  const ctc = acc.deploy(backend);
+  const ctc = acc.contract(backend);
   await backend.A(ctc, interact);
 
   const afterBal = await getBalance(acc);

@@ -15,7 +15,7 @@ const numOfBidders = 2;
       stdlib.newTestAccount(startingBalance)));
 
   const beforeSponsor = await getBalance(accSponsor);
-  const ctcSponsor = accSponsor.deploy(backend);
+  const ctcSponsor = accSponsor.contract(backend);
   const ctcInfo = ctcSponsor.getInfo();
 
   await Promise.all([
@@ -38,7 +38,7 @@ const numOfBidders = 2;
         accBidder.setGasLimit(5000000);
       }
       const before = await getBalance(accBidder);
-      const ctcBidder = accBidder.attach(backend, ctcInfo);
+      const ctcBidder = accBidder.contract(backend, ctcInfo);
       let value = undefined;
       return backend.Bidder(ctcBidder, {
         showWinner: (async (done, winner, winningBid) => {

@@ -13,7 +13,7 @@ import * as backend from './build/index.main.mjs';
   const beforeAlice = await getBalance(accAlice);
   const beforeBob = await getBalance(accBob);
 
-  const ctcAlice = accAlice.deploy(backend);
+  const ctcAlice = accAlice.contract(backend);
 
   let accRelayProvide = null;
   const accRelayP = new Promise((resolve, reject) => {
@@ -37,7 +37,7 @@ import * as backend from './build/index.main.mjs';
       console.log(`Bob deposits some funds into the Relay to use it.`);
       await stdlib.transfer(accBob, accRelay, stdlib.parseCurrency(10));
       console.log(`Bob attaches to the contract as the Relay.`);
-      const ctcRelay = accRelay.attach(backend, ctcAlice.getInfo());
+      const ctcRelay = accRelay.contract(backend, ctcAlice.getInfo());
       console.log(`Bob joins the application as the Relay.`);
       return backend.Relay(ctcRelay, {
         getBob: async () => {

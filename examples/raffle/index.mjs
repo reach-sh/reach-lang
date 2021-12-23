@@ -15,7 +15,7 @@ const numOfPlayers = 2;
     Array.from({ length: numOfPlayers }, () =>
       stdlib.newTestAccount(startingBalance)));
 
-  const ctcSponsor = accSponsor.deploy(backend);
+  const ctcSponsor = accSponsor.contract(backend);
   const ctcInfo = ctcSponsor.getInfo();
 
   await Promise.all([
@@ -39,7 +39,7 @@ const numOfPlayers = 2;
     await Promise.all(
     accPlayer_arr.map(async (accPlayer, i) => {
       const before = await getBalance(accPlayer);
-      const ctcPlayer = accPlayer.attach(backend, ctcInfo);
+      const ctcPlayer = accPlayer.contract(backend, ctcInfo);
       let bought = false;
       return backend.Player(ctcPlayer, {
         ...stdlib.hasRandom,

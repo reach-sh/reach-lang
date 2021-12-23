@@ -14,8 +14,8 @@ import * as backend from './build/index.main.mjs';
   const beforeAlice = await getBalance(accAlice);
   const beforeBob = await getBalance(accBob);
 
-  const ctcAlice = accAlice.deploy(backend);
-  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
 
   const thePass = stdlib.bigNumberify('31916810322672614595785596490503352186605157015187771518249890054489700143553');
 

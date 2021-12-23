@@ -13,7 +13,7 @@ import * as backend from './build/index.main.mjs';
     stdlib.newTestAccount(startingBalance),
   ]);
   accAlice.setDebugLabel('Alice');
-  const ctcAlice = accAlice.deploy(backend);
+  const ctcAlice = accAlice.contract(backend);
 
   const common = (Who) => ({
     get: (() => Who.length),

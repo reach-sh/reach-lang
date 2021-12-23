@@ -9,7 +9,7 @@ const stdlib = loadStdlib(process.env);
     await stdlib.newTestAccounts(1, startingBalance);
 
   console.log(`Deploying...`);
-  const ctcAlice = accAlice.deploy(backend);
+  const ctcAlice = accAlice.contract(backend);
 
   const x = stdlib.bigNumberify(9223372036854775807);
   const y = stdlib.bigNumberify(4);

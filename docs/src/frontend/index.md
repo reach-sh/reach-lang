@@ -696,7 +696,7 @@ This default is usually fine, but on certain networks like Conflux,
 it can be very slow.
 You can use this function to tell Reach to only query from a given network time onwards,
 which can speed up event log querying significantly on Conflux.
-If you use the reach stdlib to `{!js} deploy` or `{!js} attach` to a contract,
+If you use the Reach standard library to `{!js} deploy` or `{!js} attach` to a contract,
 the specified lower bound must be no later than the time at which the contract was deployed.
 
 ---
