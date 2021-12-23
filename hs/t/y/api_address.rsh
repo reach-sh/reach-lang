@@ -6,7 +6,7 @@ export const main = Reach.App(() => {
     x: Fun([], UInt),
   });
   const B = API({ pay: Fun([Address], Null) });
-  deploy();
+  init();
 
   A.only(() => {
     const x = declassify(interact.x());

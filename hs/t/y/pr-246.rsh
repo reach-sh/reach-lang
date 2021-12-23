@@ -5,7 +5,7 @@ const Command = Data({
 })
 
 export const main = Reach.App(() => {
-  deploy();
+  init();
   const x = Command.Deposit(1);
   // Test that `default` does not come first in macro expansion (maintains correct order)
   const y = x.match({

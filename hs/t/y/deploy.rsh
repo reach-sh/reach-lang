@@ -7,7 +7,7 @@ export const main = Reach.App(() => {
   const Bob   = Participant('Bob', {
    // Specify Bob's interact interface here
   });
-  init();
+  deploy();
   // write your program here
 
 });

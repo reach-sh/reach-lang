@@ -6,7 +6,7 @@ export const main = Reach.App(() => {
   const C = API('C', {
     f: Fun([], Bool)
   });
-  deploy();
+  init();
   A.publish();
   const [] = parallelReduce([])
   .invariant(balance() == 0)

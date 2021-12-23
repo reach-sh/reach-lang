@@ -6,7 +6,7 @@ export const main = Reach.App(() => {
   const U = API('Writer', {
     f: Fun([], Null),
   });
-  deploy();
+  init();
   A.publish();
 
   const x =

@@ -6,7 +6,7 @@ export const main = Reach.App(() => {
   const B = API('Bob', {
     checkEq: Fun([UInt, UInt], Bool),
   });
-  deploy();
+  init();
 
   A.publish();
   commit();

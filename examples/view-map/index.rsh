@@ -12,7 +12,7 @@ export const main = Reach.App(() => {
     f: Fun([Address], MUInt),
     g: Fun([Address], UInt),
   });
-  deploy();
+  init();
   A.publish(); commit();
 
   A.only(() => interact.checkView(0, this, MMUInt.None(), MUInt.None()));

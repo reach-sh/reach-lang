@@ -117,6 +117,8 @@ checkteal () {
 
 #exit 0
 
+c hs/t/y/deploy.rsh
+exit 0
 jb
 ci ALGO rps-7-loops
 ci ALGO event

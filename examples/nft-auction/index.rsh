@@ -22,7 +22,7 @@ export const main = Reach.App(() => {
 
     const Creator = Participant('Creator', CreatorInterface);
     const Owner = ParticipantClass('Owner', OwnerInterface);
-    deploy();
+    init();
 
     Creator.only(() => {
       const id = declassify(interact.getId());

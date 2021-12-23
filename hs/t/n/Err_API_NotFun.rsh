@@ -7,6 +7,6 @@ export const main = Reach.App(() => {
   const U = API('User', {
     x: UInt,
   });
-  deploy();
+  init();
   exit();
 });

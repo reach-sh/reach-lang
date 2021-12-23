@@ -11,7 +11,7 @@ export const main = Reach.App(() => {
     x: [UInt],
     y: [UInt, UInt],
   });
-  deploy();
+  init();
 
   A.publish();
 

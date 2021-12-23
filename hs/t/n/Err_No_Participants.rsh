@@ -2,7 +2,7 @@
 
 export const main = Reach.App(() => {
   const A = API({ b: Fun([], Null) });
-  deploy();
+  init();
 
   Anybody.publish();
   commit();

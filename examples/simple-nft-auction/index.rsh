@@ -18,7 +18,7 @@ export const main = Reach.App(() => {
     seeParams: Fun([Params], Null),
     getBid: Fun([UInt], MUInt),
   });
-  deploy();
+  init();
 
   Creator.only(() => {
     const [ nftId, reservePrice, lenInBlocks ] = declassify(interact.getSale());

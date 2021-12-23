@@ -14,7 +14,7 @@ export const main = Reach.App(() => {
 
   const V = View({ isDone: Bool });
 
-  deploy();
+  init();
 
   A.publish();
   V.isDone.set(false);

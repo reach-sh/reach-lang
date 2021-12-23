@@ -2,7 +2,7 @@
 
 export const main = Reach.App(() => {
   const Alice = Participant('Alice', { y: UInt });
-  deploy();
+  init();
   const x = 0;
   Alice.only(() => {
     const y = declassify(interact.y);

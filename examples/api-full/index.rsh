@@ -20,7 +20,7 @@ export const main = Reach.App(() => {
     writeX: Fun([UInt], State),
     end: Fun([], State),
   });
-  deploy();
+  init();
   A.only(() => {
     const [ tok, amt ] = declassify([ interact.tok, interact.amt ]);
   });

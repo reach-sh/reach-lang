@@ -5,7 +5,7 @@ export const main = Reach.App(() => {
     x: Token,
     y: Token,
   });
-  deploy();
+  init();
   A.only(() => {
     const x = declassify(interact.x);
     const y = declassify(interact.y);

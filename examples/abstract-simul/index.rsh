@@ -75,7 +75,7 @@ export const rps =
   Reach.App(() => {
     const A = Participant('Alice', Alice(UInt, UInt));
     const B = Participant('Bob', Bob(UInt, UInt));
-    deploy();
+    init();
     simultaneousLoop(
       A, B,
       10, isRPSOutcome, DRAW, ((o) => (o != DRAW)), winner,
@@ -90,7 +90,7 @@ export const rental =
   Reach.App(() => {
     const A = Participant('Landlord', Alice(Bool, UInt));
     const B = Participant('Tenant', Bob(Bool, UInt));
-    deploy();
+    init();
     simultaneousLoop(
       A, B,
       10, isRentalOutcome, NONE, ((o) => (o != NONE)),

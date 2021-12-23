@@ -7,7 +7,7 @@ export const main = Reach.App(() => {
   const V = View({ o1: Object({ a1: UInt }) });
   const A = API({ o2: Fun([Array(Object({ a2: UInt }), 2)], Null) });
   const B = API({ o3: Fun([], D) });
-  deploy();
+  init();
 
   P.publish();
   commit();

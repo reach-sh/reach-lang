@@ -6,7 +6,7 @@ export const main = Reach.App(() => {
       ['super', Address]
     ])),
     show: Fun([Address], Null) });
-  deploy();
+  init();
   A.only(() => {
     const o = declassify(interact.get());
     assume(o.super == A);

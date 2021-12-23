@@ -13,7 +13,7 @@ export const main = Reach.App(() => {
   const vD = View('Debug', {
     vals: Tuple(BA, B9, BA, Bool, Bool, Bool),
   });
-  deploy();
+  init();
   A.only(() => {
     const x = declassify(interact.getA());
     const y = declassify(interact.get9());

@@ -3,7 +3,7 @@
 export const main = Reach.App(() => {
   const A = Participant('A', { });
   const B = ParticipantClass('B', { });
-  deploy();
+  init();
   A.publish();
   const xM = new Map(UInt);
   const x = parallelReduce(0)

@@ -26,7 +26,7 @@ export const main = Reach.App(() => {
     acceptParams: Fun([ParamsType], Null),
   });
 
-  deploy();
+  init();
 
   const sendOutcome = (which) => {
     return (() => {

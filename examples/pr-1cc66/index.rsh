@@ -1,7 +1,7 @@
 'reach 0.1';
 export const main = Reach.App(() => {
   const Alice = Participant('Alice', { pmt: UInt });
-  deploy();
+  init();
   Alice.only(() => {
     const pmt = declassify(interact.pmt); });
   Alice.publish(pmt).pay(pmt);

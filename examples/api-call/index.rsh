@@ -8,7 +8,7 @@ export const main = Reach.App(() => {
     payMe: Fun([UInt], UInt),
     noop: Fun([], Bool),
   });
-  deploy();
+  init();
 
   A.publish();
   commit();

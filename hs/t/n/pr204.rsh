@@ -22,7 +22,7 @@ const OwnerInterface = {
 export const main = Reach.App(() => {
   const Owner = Participant("Owner", OwnerInterface);
   const Buyer = ParticipantClass("Buyer", BuyerProps);
-  deploy();
+  init();
 
   // Set up sale-item details
   Owner.only(() => {

@@ -18,7 +18,7 @@ export const main = Reach.App(() => {
     showBid: Fun([Bool, Maybe(UInt)], Null),
   });
 
-  deploy();
+  init();
 
   Auctioneer.only(() => {
     const [ tokA, amtA, tokB, reservePrice, timeout ] = declassify(interact.getSwap());

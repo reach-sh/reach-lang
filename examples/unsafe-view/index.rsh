@@ -8,7 +8,7 @@ export const main = Reach.App(() => {
     t: Tuple(UInt, Bool),
     u: Bool
   });
-  deploy();
+  init();
 
   A.publish();
   V.t.set([ 4, false ]);

@@ -7,7 +7,7 @@ export const main = Reach.App(() => {
   const V = View("V", {
     iV: UInt,
   });
-  deploy();
+  init();
 
   A.publish();
 

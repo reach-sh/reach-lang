@@ -6,7 +6,7 @@ export const main = Reach.App(() => {
     get: Fun([], UInt),
     put: Fun([UInt], Null),
   });
-  deploy();
+  init();
 
   A.only(() => {
     const x = declassify(interact.get());

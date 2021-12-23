@@ -7,7 +7,7 @@ export const main = Reach.App(() => {
   const A = API({
     f: Fun([UInt], Bool),
   });
-  deploy();
+  init();
 
   D.only(() => { const x = declassify(interact.x); });
   D.publish(x);

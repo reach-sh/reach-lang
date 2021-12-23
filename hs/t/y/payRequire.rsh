@@ -10,7 +10,7 @@ export const main = Reach.App(() => {
     z2: Fun([UInt], Null)
   });
   setOptions({ verifyArithmetic: true });
-  deploy();
+  init();
 
   A.only(() => {
     const x = declassify(interact.x());

@@ -697,8 +697,8 @@ data SLPrimitive
   | SLPrim_balance
   | SLPrim_Token_supply
   | SLPrim_viewis SrcLoc (Maybe SLPart) SLVar SLType
-  | SLPrim_deploy
-  | SLPrim_deployed
+  | SLPrim_init
+  | SLPrim_inited
   | SLPrim_setOptions
   | SLPrim_adaptReachAppTupleArgs
   | SLPrim_padTo Integer

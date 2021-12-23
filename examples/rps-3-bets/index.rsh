@@ -14,7 +14,7 @@ export const main = Reach.App(() => {
     ...Player,
     acceptWager: Fun([UInt], Null),
   });
-  deploy();
+  init();
 
   Alice.only(() => {
     const wager = declassify(interact.wager);

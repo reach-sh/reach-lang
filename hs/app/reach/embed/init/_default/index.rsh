@@ -7,7 +7,7 @@ export const main = Reach.App(() => {
   const B = Participant('Bob', {
     // Specify Bob's interact interface here
   });
-  deploy();
+  init();
   // The first one to publish deploys the contract
   A.publish();
   commit();

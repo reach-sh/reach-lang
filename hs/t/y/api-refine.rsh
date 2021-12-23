@@ -8,7 +8,7 @@ export const main = Reach.App(() => {
   const U = API('Writer', {
     f: Refine(Fun([UInt], UInt), (([x]) => x > 0), (([x], y) => y > x)),
   });
-  deploy();
+  init();
   A.publish();
 
   const [ x ] =

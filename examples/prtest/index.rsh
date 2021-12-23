@@ -7,7 +7,7 @@ const Part = {
 export const main = Reach.App(() => {
   const A = Participant('Alice', Part);
   const B = Participant('Bob', Part);
-  deploy();
+  init();
 
   A.publish();
   commit();

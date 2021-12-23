@@ -2,5 +2,5 @@
 
 export const main = Reach.App(() => {
   const v1 = View('', { owner: Address });
-  deploy();
+  init();
 });
