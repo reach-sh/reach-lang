@@ -117,10 +117,7 @@ checkteal () {
 
 #exit 0
 
-jb
-ci ALGO overview
-ci ALGO rps-7-loops
-ci ALGO event
+fc hs/t/n/dynHas.rsh
 exit 0
 
 # (cd hs && mk hs-test)

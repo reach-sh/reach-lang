@@ -1,0 +1,11 @@
+reachc: error[RE0049]: Invalid computed field name. It must be computable at compile time.
+
+  ./dynHas.rsh:10:25:application
+
+  10|     const o = Object.has({}, x);
+
+Trace:
+  in [unknown function] from (./dynHas.rsh:8:13:function exp) at (./dynHas.rsh:8:9:application)
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0049
+

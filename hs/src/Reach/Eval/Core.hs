@@ -2193,6 +2193,8 @@ doArrayBoundsCheck sz idxv = do
 mustBeBytes :: SLVal -> App B.ByteString
 mustBeBytes = \case
   SLV_Bytes _ x -> return $ x
+  v@(SLV_DLVar (DLVar _ _ (T_Bytes _) _)) ->
+    expect_t v $ Err_Obj_IllegalComputedField
   v -> expect_t v $ Err_Expected "bytes"
 
 mustBeTuple :: SLVal -> App [SLVal]
