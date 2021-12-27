@@ -1,5 +1,6 @@
 #!/bin/sh
 HERE=$(dirname "$0")
+# shellcheck source=/dev/null
 . "${HERE}"/../VERSION
 
 IMAGE="$1"
