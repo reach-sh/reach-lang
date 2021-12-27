@@ -118,6 +118,8 @@ checkteal () {
 #exit 0
 
 jb
+ci ALGO rps-3-bets
+exit 0
 ci ALGO overview
 ci ALGO rps-7-loops
 ci ALGO api-map

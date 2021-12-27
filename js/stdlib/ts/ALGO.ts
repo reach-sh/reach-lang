@@ -447,7 +447,7 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean
   debug(dhead, '--- QUERY =', query);
   let retries = 10;
   let res;
-  while ( retries > 0 ) {
+  while ( alwaysRetry || retries > 0 ) {
     try {
       res = await query.do();
       break;
