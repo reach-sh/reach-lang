@@ -34,6 +34,7 @@ sh-lint:
 	    $$(find . \
 	      -not \( -path '*openzeppelin*'         -prune \) \
 	      -not \( -path '*/node_modules/*'       -prune \) \
+	      -not \( -path '*users*'                -prune \) \
 	      -not \( -path '*forks*'                -prune \) \
 	      -not \( -path './hs/app/reach/embed/*' -prune \) \
 	      -name '*.sh') \

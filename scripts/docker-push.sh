@@ -5,7 +5,7 @@ HERE=$(dirname "$0")
 IMAGE="$1"
 LATEST_TAG="${IMAGE}:latest"
 REACH_GIT_HASH="$("${HERE}/git-hash.sh")"
-DATE="$(date '+%Y-%m-%d')"
+# DATE="$(date '+%Y-%m-%d')"
 
 tagpush() {
     docker tag "${LATEST_TAG}" "${IMAGE}:$1"
@@ -19,7 +19,7 @@ tagpush() {
 
 is_rc=$(echo ${VERSION} | grep -e '\-rc\.' > /dev/null ; echo $?)
 
-if [ $is_rc -eq 1 ] ; then
+if [ "${is_rc}" -eq 1 ] ; then
   tagpush "latest"
   tagpush "stable"
 fi

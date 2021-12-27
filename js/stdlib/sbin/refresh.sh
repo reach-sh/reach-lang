@@ -12,7 +12,7 @@ docker run --entrypoint /bin/sh --volume "$(pwd):/cwd" "$IMAGE" \
   -c 'cp /stdlib/*.mjs /stdlib/package.json /cwd/ && cp -r /stdlib/dist /cwd/dist && cp /stdlib/dist/types/* /cwd/'
 
 
-sudo chown -R $(whoami) ./*
+sudo chown -R "$(whoami)" ./*
 
 if [ -f ./version.mo.d.ts ]; then
   rm -f ./version.mo.d.ts
@@ -24,7 +24,7 @@ fi
 
 git diff --exit-code > /dev/null || CHANGES=$?
 
-if [ "${CHANGES}x" == "1x" ]; then
+if [ "${CHANGES}x" = "1x" ]; then
   git add .
   git config user.name "circleci"
   git config user.email "circleci@reach.com"
