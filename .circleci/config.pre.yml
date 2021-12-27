@@ -218,12 +218,7 @@ jobs:
     steps:
     - checkout
     - run: |
-        for IMAGE in haskell-build-artifacts reach reach-cli js-deps stdlib runner react-runner rpc-server devnet-eth devnet-algo devnet-cfx ; do
-          mkdir -p "/tmp/workspace/docker/${IMAGE}"
-          cd .circleci && ./image.sh "${IMAGE}"
-          echo "docker save reachsh/${IMAGE}:latest..."
-          docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker/${IMAGE}/${IMAGE}".tar.gz
-        done
+          cd .circleci && ./build.py
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
