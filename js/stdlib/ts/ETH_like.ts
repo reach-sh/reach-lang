@@ -1,7 +1,7 @@
 import Timeout from 'await-timeout';
 import { ethers as real_ethers } from 'ethers';
 import {
-  assert,
+  assert, protect,
 } from './shared_backend';
 import type { MaybeRep, MapRefT } from './shared_backend'; // =>
 import {
@@ -1105,7 +1105,7 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
   const dhead = [ 'verifyContract', label ];
   debug(dhead, {ctcInfo});
   const { ABI, Bytecode } = backend._Connectors.ETH;
-  const address = T_Contract.canonicalize(ctcInfo);
+  const address = protect(T_Contract, ctcInfo);
   const iface = new real_ethers.utils.Interface(ABI);
   debug(dhead, {address});
 

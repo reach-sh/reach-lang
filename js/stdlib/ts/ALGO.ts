@@ -2074,7 +2074,9 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
 
 const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, eventCache: EventCache): Promise<VerifyResult> => {
   const compiled = await compileFor(bin);
-  const ApplicationID = info;
+  // @ts-ignore
+  const ai_bn: BigNumber = protect(T_Contract, info);
+  const ApplicationID: number = bigNumberToNumber(ai_bn);
   const { appApproval, appClear } = compiled;
   const { mapDataKeys, stateKeys } = bin._Connectors.ALGO;
 

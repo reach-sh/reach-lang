@@ -275,7 +275,7 @@ export const stdContract =
       const _infoP: Promise<ContractInfo> = new Promise((resolve) => {
         _setInfo = (info:ContractInfo) => {
           if ( beenSet ) {
-            throw Error(`Cannot set info(${JSON.stringify(info)}) twice`);
+            throw Error(`Cannot set info(${JSON.stringify(info)}), i.e. deploy, twice`);
           }
           resolve(info);
           beenSet = true;

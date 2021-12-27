@@ -77,8 +77,8 @@ r () {
   # jb
 
   #export REACH_DEBUG=1
-  #REACH_CONNECTOR_MODE=ETH ${REACH} run
-  REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  REACH_CONNECTOR_MODE=ETH ${REACH} run
+  #REACH_CONNECTOR_MODE=ALGO ${REACH} run
   #REACH_CONNECTOR_MODE=CFX ${REACH} run
 
   # Ganache
@@ -117,7 +117,15 @@ checkteal () {
 
 #exit 0
 
-fc hs/t/n/dynHas.rsh
+jb
+
+r users/hamza2
+exit 0
+
+ci ALGO overview
+ci ALGO rps-7-loops
+ci ALGO api-map
+ci ALGO event
 exit 0
 
 # (cd hs && mk hs-test)
