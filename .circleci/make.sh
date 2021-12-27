@@ -13,8 +13,8 @@ cat >"${IEND}" </dev/null
 cat >>"${IEND}" <<END
     - "build-sink":
         requires:
+          - "hs-test"
 END
-#          - "hs-test"
 
 deps () {
   DEPS="$*"

@@ -10,9 +10,7 @@ FROM reachsh/reach AS reach
 
 # hadolint ignore=DL3006
 FROM $NODE_IMAGE AS prepare
-ARG REACH_VERSION
-ENV REACH_VERSION=${REACH_VERSION}
-RUN apk update; apk add bash curl
+
 WORKDIR /stdlib
 RUN apk update && apk add git make python3 libc-dev gcc g++ curl bash
 COPY --from=js-deps /js-deps/node_modules ./node_modules

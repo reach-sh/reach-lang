@@ -24,7 +24,7 @@ sol/stdlib.json: sol/stdlib.sol
 	solc --optimize --combined-json abi,bin $< > $@
 
 package.yaml: package.mo.yaml $(ROOT)/VERSION
-	(. $(ROOT)/VERSION && export HS_VERSION && mo $< > $@)
+	(. $(ROOT)/VERSION && export VERSION && mo $< > $@)
 
 src/Reach/Version.hs: src/Reach/Version.mo.hs $(ROOT)/VERSION $(ROOT)/DEPS
 	(. $(ROOT)/VERSION && export MAJOR MINOR PATCH && . $(ROOT)/DEPS && export SOLC_VERSION && mo $< > $@)

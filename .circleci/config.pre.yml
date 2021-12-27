@@ -74,50 +74,18 @@ commands:
         type: string
     steps:
       - run: |
-          source VERSION
+          source ./VERSION
+
           for IMG in <<parameters.deps>> ; do
             zcat /tmp/workspace/docker-${IMG}/${IMG}.tar.gz | docker load
-            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}  
+            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
+            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}.${MINOR}
+            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
           done
+
 jobs:
-  "create-tag-and-push":
+  "do-release":
     executor: fake
-    steps:
-    - checkout
-    - run: |
-        make prepare-rc-tag-and-push
-  "make-announcement":
-    executor: fake
-    steps:
-    - checkout
-    - run: |
-        set -a; source ./VERSION
-        export GIT_COMMIT_HASH=$CIRCLE_SHA1
-        sudo apt update -y; sudo apt install python3 python3-pip -y
-        pip3 install requests
-        cd scripts
-        python3 announcer.py
-  "deploy-stdlib":
-    executor:
-      name: fake
-      dlc: true
-    steps:
-    - checkout
-    - srd_yes
-    - attach_workspace:
-        at: /tmp/workspace
-    - and_restore_docker:
-        deps: "stdlib"
-    - run: |
-        sudo apt update -y
-        sudo apt install npm -y
-        cd js/stdlib
-        make refresh-js-stdlib
-        make bump-version-and-publish-js-stdlib 
-  "deploy-images":
-    executor:
-      name: fake
-      dlc: true
     steps:
     - checkout
     - srd_yes
@@ -125,11 +93,27 @@ jobs:
         at: /tmp/workspace
     - and_restore_docker:
         deps: "stdlib runner rpc-server reach reach-cli devnet-eth devnet-cfx devnet-algo"
+    # Publish images
     - run: |
         docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
         for IMG in stdlib runner rpc-server reach reach-cli devnet-algo devnet-eth devnet-cfx; do
           ./scripts/docker-push.sh reachsh/${IMG}
-        done 
+        done
+    # Publish stdlib
+    - run: |
+        sudo apt update -y
+        sudo apt install npm -y
+        cd js/stdlib
+        make refresh-js-stdlib
+        make bump-version-and-publish-js-stdlib
+    # Make the announcement
+    - run: |
+        set -a; source ./VERSION
+        export GIT_COMMIT_HASH=$CIRCLE_SHA1
+        sudo apt update -y; sudo apt install python3 python3-pip -y
+        pip3 install requests
+        cd scripts
+        python3 announcer.py
   "docs-render":
     executor: fake
     steps:
@@ -192,6 +176,7 @@ jobs:
               }
             }]
           }
+
   "sh-check":
     executor: fake
     steps:
@@ -216,9 +201,7 @@ jobs:
         path: "hs/test-reports"
     - slack_fail
   "hs-check":
-    executor:
-      name: fake
-      class: "medium"
+    executor: fake
     steps:
     - checkout
     - srd_no
@@ -243,12 +226,12 @@ jobs:
       name: <<parameters.exec>>
       dlc: true
     steps:
+    - checkout
     - when:
         condition:
           equal: [ fake, << parameters.exec >> ]
         steps:
           - srd_yes
-    - checkout
     - workattach
     - and_restore_docker:
         deps: <<parameters.deps>>
@@ -328,18 +311,11 @@ jobs:
     steps:
     - run: |
         echo Go team!
-  "build-sink-rc":
-    executor: fake
-    steps:
-    - run: |
-        echo "Building RC version"
+
 workflows:
   docs:
     jobs:
-    - "docs-render":
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*(-rc\.[0-9]*)?/
+    - "docs-render"
     - "docs-deploy":
        filters:
          branches:
@@ -348,10 +324,7 @@ workflows:
        - "docs-render"
   buildless:
     jobs:
-    - "sh-check":
-        filters:
-          tags:
-            only: /[0-9]*\.[0-9]*\.[0-9]*(-rc\.[0-9]*)?/
+    - "sh-check"
   build:
     jobs:
     - "hs-test":
@@ -360,46 +333,15 @@ workflows:
     - "hs-check":
         requires:
           - "build-haskell-build-artifacts"
-    - "deploy-images":
-        context:
-        - reachdevbot-on-dockerhub
-        requires:
-          - "RC-release"
-        filters:
-          branches:
-            only: automated_tagging
-    - "deploy-stdlib":
-        context:
-        - release-test
-        requires:
-          - "RC-release"
-        filters:
-          branches:
-            only: automated_tagging
-    - "create-tag-and-push":
+    - "do-release":
        requires:
-         - "deploy-images"
-         - "deploy-stdlib"
-       context:
-       - reachdevbot-on-dockerhub
-    - "make-announcement":
-       requires:
-         - "create-tag-and-push"
-       context:
-       - reachdevbot-on-dockerhub
-    - "RC-release":
+         - "approve-release"
+    - "approve-release":
         type: approval
         requires:
           - "build-sink"
         filters:
           branches:
-            only: automated_tagging
-    - "Release":
-        type: approval
-        filters:
-          tags: 
-            only: /[0-9]*\.[0-9]*\.[0-9]*-rc\.[0-9]*/
-          branches:
-            ignore: /.*/
+            only: master
 
     # Sink and examples follow

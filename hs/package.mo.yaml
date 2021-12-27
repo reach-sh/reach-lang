@@ -1,5 +1,5 @@
 name:                reach
-version:             {{HS_VERSION}}
+version:             {{VERSION}}
 github:              "reach-sh/reach-lang"
 license:             Apache-2.0
 author:              "Reach"

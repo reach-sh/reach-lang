@@ -53,7 +53,7 @@ js-mjs: expand
 .PHONY: clone-js-stdlib
 clone-js-stdlib:
 	rm -rf js-reach-stdlib
-	git clone -b CORE-171 https://github.com/reach-sh/js-reach-stdlib.git
+	git clone https://github.com/reach-sh/js-reach-stdlib.git
 	cp -r sbin js-reach-stdlib/sbin
 
 .PHONY: refresh-js-stdlib
@@ -61,11 +61,11 @@ refresh-js-stdlib: clone-js-stdlib
 	cd js-reach-stdlib && ./sbin/refresh.sh
 
 .PHONY: bump-version-and-publish-js-stdlib
-bump-version-and-publish-js-stdlib: 
+bump-version-and-publish-js-stdlib:
 	cd js-reach-stdlib ; \
 	echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc; \
 	npm publish --access=public --tag=rc; \
-	git tag $(VERSION); \
+	git tag $(RC_VERSION); \
 	git push; \
 	git push --tags
 
