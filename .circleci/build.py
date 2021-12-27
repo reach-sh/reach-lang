@@ -31,3 +31,4 @@ image("rpc-server", ["runner"])
 print(f"All scheduled...")
 for d in jobs:
     check(d)
+    subprocess.run(["./save-image.sh", d])

@@ -20,8 +20,5 @@ case "$WHICH" in
     ;;
 esac
 
-mkdir -p "/tmp/workspace/docker/${WHICH}"
 cd "${ROOT}/${DIR}" || exit 1
-make "${TARGET}"
-echo "docker save reachsh/${WHICH}:latest..."
-docker save "reachsh/${WHICH}:latest" | gzip > "/tmp/workspace/docker/${WHICH}/${WHICH}".tar.gz
+exec make "${TARGET}"
