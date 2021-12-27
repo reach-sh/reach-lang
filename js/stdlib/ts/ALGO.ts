@@ -40,7 +40,6 @@ import {
   make_waitUntilX,
   checkTimeout,
   truthyEnv,
-  Signal,
   Lock,
   retryLoop,
   Time,
@@ -537,10 +536,12 @@ class EventCache {
     const filterRound = minRound ?? specRound!;
     this.cache = this.cache.filter((txn) => {
       const notTooOld = txn['confirmed-round'] >= filterRound;
+      const appCreate =
+        txn['application-transaction']['application-id'] === 0;
       const emptyOptIn =
         (  (txn['application-transaction']['on-completion'] === 'optin')
         && (txn['application-transaction']['application-args'].length == 0));
-      return notTooOld && (! emptyOptIn);
+      return notTooOld && (! emptyOptIn) && (! appCreate);
     });
 
     // When checking predicate, only choose transactions that are below
@@ -1083,12 +1084,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const makeGetC = (setupViewArgs: SetupViewArgs, eventCache: EventCache, informCreationBlock: (cb: number) => void) => {
-      const { getInfo: fake_getInfo } = setupViewArgs;
+      const { getInfo } = setupViewArgs;
       let _theC: ContractHandler|undefined = undefined;
       return async (): Promise<ContractHandler> => {
         debug(label, 'getC');
         if ( _theC ) { return _theC; }
-        const ctcInfo = await fake_getInfo();
+        const ctcInfo = await getInfo();
         const { ApplicationID, Deployer, startRound } =
           await stdVerifyContract( setupViewArgs, (async () => {
             return await verifyContract_(label, ctcInfo, bin, eventCache);
@@ -1208,40 +1209,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return vvs;
     };
 
-    const didSet = new Signal();
-    let fake_info: ContractInfo|undefined = undefined;
     const _setup = (setupArgs: SetupArgs): SetupRes => {
-      const { setInfo, getInfo, setTrustedVerifyResult } = setupArgs;
-
-      const fake_setInfo = (x:ContractInfo) => {
-        fake_info = x;
-        didSet.notify();
-        debug(label, 'fake_setInfo', 'notified');
-      };
-      const ctorRan = new Signal();
-      ctorRan.wait().then(() => {
-        if ( fake_info !== undefined ) {
-          setInfo(fake_info);
-        }
-      });
-      const fake_getInfo = async (): Promise<ContractInfo> => {
-        if ( givenInfoP ) {
-          return await getInfo();
-        } else {
-          debug(label, 'fake_getInfo', 'wait');
-          await didSet.wait();
-          debug(label, 'fake_getInfo', 'notified');
-          if ( fake_info === undefined ) { throw Error(`impossible fake_info`); }
-          return fake_info;
-        }
-      };
+      const { setInfo, setTrustedVerifyResult } = setupArgs;
 
       const eventCache = new EventCache();
-      const fake_setupArgs = {
-        ...setupArgs,
-        getInfo: fake_getInfo,
-      };
-      const getC = makeGetC(fake_setupArgs, eventCache, () => {});
+      const getC = makeGetC(setupArgs, eventCache, () => {});
 
       // Returns address of a Reach contract
       const getContractAddress = async () => {
@@ -1284,16 +1256,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         const trustedRecv = async (txn:RecvTxn): Promise<Recv> => {
           const didSend = true;
-          if ( isCtor ) {
-            // If this is the constructor, then we are going to need to notify
-            // the ctorRan signal, but we can only do that once the constructor
-            // is visible on the indexer, thus we can't rely on a trusted
-            // receive. I originally thought we could do this in the
-            // background, but the ctorRan signal is representative of what
-            // could happen in a real non-test program, so we should really
-            // double check with the indexer in a real deployment too.
-            return await doRecv(didSend, false);
-          }
           return await recvFrom({dhead, out_tys, didSend, funcNum, txn});
         };
 
@@ -1333,7 +1295,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           // Once we make it so the allocation event is actually needed, then
           // we will modify this.
           setTrustedVerifyResult({ compiled, ApplicationID, Deployer, startRound: allocRound + 1 });
-          fake_setInfo(ctcInfo);
+          setInfo(ctcInfo);
         }
         const { ApplicationID, ctcAddr, Deployer, ensureOptIn, canIWin, isIsolatedNetwork } = await getC();
 
@@ -1642,9 +1604,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               await indexer_statusAfterBlock(currentRound + 1);
             }
             continue;
-          }
-          if ( isCtor ) {
-            ctorRan.notify();
           }
           const txn = indexerTxn2RecvTxn(res.txn);
           return await recvFrom({dhead, out_tys, didSend, funcNum, txn});

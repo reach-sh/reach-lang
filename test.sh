@@ -118,10 +118,6 @@ checkteal () {
 #exit 0
 
 jb
-
-r users/hamza2
-exit 0
-
 ci ALGO overview
 ci ALGO rps-7-loops
 ci ALGO api-map
