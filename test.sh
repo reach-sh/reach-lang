@@ -117,8 +117,8 @@ checkteal () {
 
 #exit 0
 
-jb
-ci ALGO api-call
+#jb
+c hs/t/y/transferPayAmt.rsh
 exit 0
 ci ALGO rps-3-bets
 ci ALGO overview

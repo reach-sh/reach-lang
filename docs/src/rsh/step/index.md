@@ -68,7 +68,7 @@ each([Alice, Bob], () => {
 An @{defn("each")} local step statement can be written as `{!rsh} each(PART_TUPLE () => BLOCK)`, where `{!rsh} PART_TUPLE` is a tuple of participants and `{!rsh} BLOCK` is a block.
 It is an abbreviation of many local step statements that could have been written with `{!rsh} only`.
 
-### Pay Amounts
+### {#payAmt} Pay Amounts
 
 A @{defn("pay amount")} is either:
 + An integer, denoting an amount of network tokens; or,

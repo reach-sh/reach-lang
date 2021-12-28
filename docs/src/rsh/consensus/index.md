@@ -374,23 +374,19 @@ This is useful when the consensus transfer was initiated by a `{!rsh} race` expr
 
 ### `transfer`
 
-@{ref("rsh", "transfer")}
 ```reach
 transfer(10).to(Alice);
-transfer(2, gil).to(Alice); 
+transfer(2, gil).to(Alice);
+transfer([1, [2, gil]]).to(Alice);
 ```
 
-
+@{ref("rsh", "transfer")}
 A @{defn("transfer expression")},
-written `{!rsh} transfer(AMOUNT_EXPR).to(ADDR_EXPR)`,
-where `{!rsh} AMOUNT_EXPR` is an expression that evaluates to an unsigned integer, and
+written `{!rsh} transfer(PAY_AMOUNT_EXPR).to(ADDR_EXPR)`,
+where `{!rsh} PAY_AMOUNT_EXPR` is an expression that evaluates to a [pay amount](##payAmt), and
 `{!rsh} ADDR_EXPR` evaluates to an address,
-performs a transfer of network tokens from the contract to the named participant.
-`{!rsh} AMOUNT_EXPR` must evaluate to less than or equal to the balance of network tokens in the contract account.
-
-A transfer expression may also be written `{!rsh} transfer(AMOUNT_EXPR, TOKEN_EXPR).to(ADDR_EXPR)`,
-where `{!rsh} TOKEN_EXPR` is a `{!rsh} Token`,
-which transfers non-network tokens of the specified type.
+performs a transfer of network tokens or non-network tokens from the contract to the named participant.
+The amount transfered must evaluate to less than or equal to the balance of the network and non-network tokens in the contract account.
 
 A transfer expression may only occur within a consensus step.
 
