@@ -3,6 +3,7 @@ exec docker run \
   --rm \
   -u "$(id -ru):$(id -rg)" \
   --volume "$PWD:/app" \
+  --volume "/tmp:/tmp" \
   --workdir /app \
   --entrypoint /bin/goal \
   reachsh/devnet-algo \

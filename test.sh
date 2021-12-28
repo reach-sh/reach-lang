@@ -117,6 +117,8 @@ checkteal () {
 
 #exit 0
 
+c hs/t/y/immediate_token_transfer.rsh
+exit 0
 jb
 ci ALGO overview
 ci ALGO rps-8-interact

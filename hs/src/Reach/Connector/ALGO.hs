@@ -665,7 +665,8 @@ bad lab = do
   Env {..} <- ask
   let Shared {..} = eShared
   liftIO $ bad_io sFailuresR lab
-  output $ comment_ $ "BAD " <> lab
+  let labl = LT.lines $ "BAD " <> lab
+  forM_ labl $ \x -> output $ comment_ x
 
 xxx :: LT.Text -> App ()
 xxx lab = bad $ "This program uses " <> lab
