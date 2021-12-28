@@ -77,7 +77,7 @@ commands:
           source ./VERSION
 
           for IMG in <<parameters.deps>> ; do
-            zcat /tmp/workspace/docker/${IMG}/${IMG}.tar.gz | docker load
+            zcat /tmp/workspace/docker-${IMG}/${IMG}.tar.gz | docker load
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}.${MINOR}
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
@@ -88,7 +88,7 @@ jobs:
     executor: fake
     steps:
     - checkout
-    - srd_no
+    - srd_yes
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
@@ -211,18 +211,40 @@ jobs:
     - run: |
         docker run --rm -ti reachsh/haskell-build-artifacts make docker-check
     - slack_fail
-  "build":
+  "build-image":
+    parameters:
+      image:
+        description: "which image"
+        type: string
+      exec:
+        description: "which executor"
+        type: string
+      deps:
+        description: "docker dependencies"
+        type: string
     executor:
-      name: real
+      name: <<parameters.exec>>
       dlc: true
     steps:
     - checkout
+    - when:
+        condition:
+          equal: [ fake, << parameters.exec >> ]
+        steps:
+          - srd_yes
+    - workattach
+    - and_restore_docker:
+        deps: <<parameters.deps>>
     - run: |
-          cd .circleci && ./build.py
+        IMAGE="<<parameters.image>>"
+        mkdir -p "/tmp/workspace/docker-${IMAGE}"
+        cd .circleci && ./image.sh "${IMAGE}"
+        echo "docker save reachsh/${IMAGE}:latest..."
+        docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
-          - docker
+          - docker-<<parameters.image>>
     - slack_fail
   "examples":
     parameters:
@@ -243,7 +265,7 @@ jobs:
     - checkout
     - workattach
     - and_restore_docker:
-        deps: reach reach-cli runner rpc-server <<parameters.deps>>
+        deps: <<parameters.deps>>
     - run: |
         mkdir -p /tmp/workspace/artifacts /tmp/workspace/record /tmp/artifacts
     - run:
@@ -284,6 +306,11 @@ jobs:
                 "text": {
                   "type": "mrkdwn",
                   "text": "${RECORD_MESSAGE}" }}]}
+  "build-sink":
+    executor: fake
+    steps:
+    - run: |
+        echo Go team!
 
 workflows:
   docs:
@@ -300,13 +327,12 @@ workflows:
     - "sh-check"
   build:
     jobs:
-    - "build"
     - "hs-test":
         requires:
-          - "build"
+          - "build-haskell-build-artifacts"
     - "hs-check":
         requires:
-          - "build"
+          - "build-haskell-build-artifacts"
     - "do-release":
        requires:
          - "approve-release"
@@ -315,7 +341,7 @@ workflows:
     - "approve-release":
         type: approval
         requires:
-          - "build"
+          - "build-sink"
         filters:
           branches:
             only: master

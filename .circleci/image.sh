@@ -19,6 +19,5 @@ case "$WHICH" in
     exit 1
     ;;
 esac
-
 cd "${ROOT}/${DIR}" || exit 1
 exec make "${TARGET}"
