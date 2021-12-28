@@ -456,7 +456,7 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean
         debug(dhead, 'NO CONNECTION');
       } else if ( looksLikeAccountingNotInitialized(e) ) {
         debug(dhead, 'ACCOUNTING NOT INITIALIZED');
-      } else if ( ! alwaysRetry || retries <= 0 ) {
+      } else if ( ! alwaysRetry && retries <= 0 ) {
         throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`); // `
       }
       debug(dhead, 'RETRYING', retries--, {e});
