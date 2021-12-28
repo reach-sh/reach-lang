@@ -20,6 +20,7 @@ image("devnet-algo", [])
 image("devnet-eth", [])
 image("devnet-cfx", [])
 image("haskell-build-artifacts", [])
+# XXX Put hs-check and hs-test here?
 image("js-deps", [])
 image("reach", ["haskell-build-artifacts"])
 image("reach-cli", ["haskell-build-artifacts"])
