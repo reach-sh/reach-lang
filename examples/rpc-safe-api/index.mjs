@@ -25,13 +25,10 @@ import { mkAssertEq } from './common.mjs';
 
   await Promise.all([
     rpcCallbacks('/backend/Alice', ctcAlice, {
-      go: async () => {
-        await user('Bob', [ 'None', null ]);
-        return false;
+      launchBob: async (i, exp) => {
+        await user(`Bob${i}`, exp);
       },
     }),
-
-    user('Carlos', [ 'Some', true ]),
   ]);
 
   await Promise.all([

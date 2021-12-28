@@ -30,7 +30,7 @@ jb () {
   #(cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
-  #(cd "$ROOT"/js/rpc-server && make build)
+  (cd "$ROOT"/js/rpc-server && make build)
   #(cd "$ROOT"/js/react-runner && make build)
   # (cd "$ROOT"/js && make build)
 }
@@ -117,11 +117,8 @@ checkteal () {
 
 #exit 0
 
-c hs/t/y/immediate_token_transfer.rsh
-exit 0
 jb
-ci ALGO overview
-ci ALGO rps-8-interact
+one ALGO rpc-safe-api
 exit 0
 ci ALGO rps-3-bets
 ci ALGO api-map
