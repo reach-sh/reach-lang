@@ -28,7 +28,6 @@ import Reach.AST.PL
 import Reach.Connector
 import Reach.Counter
 import Reach.EmbeddedFiles
-import Reach.Interference (colorProgram)
 import Reach.Texty
 import Reach.UnsafeUtil
 import Reach.Util
@@ -1658,8 +1657,6 @@ connect_eth _ = Connector {..}
       where
         go :: FilePath -> IO ConnectorInfo
         go solf = do
-          ig <- colorProgram pl
-          conShowP moutn "sol.colors" ig
           (cinfo, sol) <- solPLProg pl
           unless dontWriteSol $ do
             LTIO.writeFile solf $ render sol

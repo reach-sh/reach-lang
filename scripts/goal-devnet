@@ -1,9 +1,9 @@
 #!/bin/sh
 exec docker run \
-  -it --rm \
+  --rm \
   -u "$(id -ru):$(id -rg)" \
   --volume "$PWD:/app" \
   --workdir /app \
   --entrypoint /bin/goal \
-  reachsh/devnet-algo-goal \
+  reachsh/devnet-algo \
   "$@"

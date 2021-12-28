@@ -105,11 +105,6 @@ type TxId = string;
 type ApiCall<T> = {
   do: () => Promise<T>,
 };
-type CompileResultBytes = {
-  src: string,
-  result: Uint8Array,
-  hash: Address
-};
 
 type NetworkAccount = {
   addr: Address,
@@ -117,11 +112,12 @@ type NetworkAccount = {
 };
 
 const reachBackendVersion = 7;
-const reachAlgoBackendVersion = 7;
+const reachAlgoBackendVersion = 8;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
   appApproval: string,
   appClear: string,
+  extraPages: number,
   stateSize: number,
   stateKeys: number,
   mapDataSize: number,
@@ -130,11 +126,6 @@ type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
 }}};
 type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
-
-type CompiledBackend = {
-  appApproval: CompileResultBytes,
-  appClear: CompileResultBytes,
-};
 
 type ContractInfo = number;
 type SendRecvArgs = ISendRecvArgs<Address, Token, AnyALGO_Ty>;
@@ -322,28 +313,6 @@ const toWTxn = (t:Transaction): WalletTransaction => {
 };
 
 // Backend
-const compileTEAL = async (label: string, code: string): Promise<CompileResultBytes> => {
-  debug('compile', label);
-  let s, r;
-  try {
-    r = await (await getAlgodClient()).compile(code).do();
-    s = 200;
-  } catch (e:any) {
-    s = (e && typeof e === 'object') ? e.statusCode : 'not object';
-    r = e;
-  }
-
-  if ( s == 200 ) {
-    debug('compile',  label, 'succeeded:', r);
-    r.src = code;
-    r.result = base64ToUI8A(r.result);
-    // debug('compile transformed:', r);
-    return r;
-  } else {
-    throw Error(`compile ${label} failed: ${s}: ${JSON.stringify(r)}`);
-  }
-};
-
 const getTxnParams = async (): Promise<TxnParams> => {
   debug(`fillTxn: getting params`);
   const client = await getAlgodClient();
@@ -393,31 +362,8 @@ function must_be_supported(bin: Backend) {
 // Get these from stdlib
 // const MaxTxnLife = 1000;
 const MinTxnFee = 1000;
-const MaxAppProgramLen = 2048;
 const MaxAppTxnAccounts = 4;
-const MaxExtraAppProgramPages = 3;
 const MinBalance = 100000;
-
-async function compileFor(bin: Backend): Promise<CompiledBackend> {
-  must_be_supported(bin);
-  const { appApproval, appClear } = bin._Connectors.ALGO;
-
-  const checkLen = (label:string, actual:number, expected:number): void => {
-    debug(`checkLen`, {label, actual, expected});
-    if ( actual > expected ) {
-        throw Error(`This Reach application is not supported by Algorand: ${label} length is ${actual}, but should be less than ${expected}.`); } };
-
-  const appApproval_bin =
-    await compileTEAL('appApproval_subst', appApproval);
-  const appClear_bin =
-    await compileTEAL('appClear', appClear);
-  checkLen(`App Program Length`, (appClear_bin.result.length + appApproval_bin.result.length), (1 + MaxExtraAppProgramPages) * MaxAppProgramLen);
-
-  return {
-    appApproval: appApproval_bin,
-    appClear: appClear_bin,
-  };
-}
 
 const ui8h = (x:Uint8Array): string => Buffer.from(x).toString('hex');
 const base64ToUI8A = (x:string): Uint8Array => Uint8Array.from(Buffer.from(x, 'base64'));
@@ -1261,10 +1207,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         if ( isCtor ) {
           debug(label, 'deploy');
-          const compiled = await compileFor(bin);
-          const { appApproval, appClear } = compiled;
-          const extraPages =
-            Math.ceil((appClear.result.length + appApproval.result.length) / MaxAppProgramLen) - 1;
+          must_be_supported(bin);
+          const { appApproval, appClear, extraPages } = bin._Connectors.ALGO;
 
           debug(`deploy`, {extraPages});
           const Deployer = thisAcc.addr;
@@ -1275,8 +1219,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               toWTxn(algosdk.makeApplicationCreateTxn(
                 Deployer, await getTxnParams(),
                 algosdk.OnApplicationComplete.NoOpOC,
-                appApproval.result,
-                appClear.result,
+                base64ToUI8A(appApproval),
+                base64ToUI8A(appClear),
                 appLocalStateNumUInt, appLocalStateNumBytes + mapDataKeys,
                 appGlobalStateNumUInt, appGlobalStateNumBytes + stateKeys,
                 undefined, undefined, undefined, undefined,
@@ -1294,7 +1238,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           // eliminate the allocation from the event cache.
           // Once we make it so the allocation event is actually needed, then
           // we will modify this.
-          setTrustedVerifyResult({ compiled, ApplicationID, Deployer, startRound: allocRound + 1 });
+          setTrustedVerifyResult({ ApplicationID, Deployer, startRound: allocRound + 1 });
           setInfo(ctcInfo);
         }
         const { ApplicationID, ctcAddr, Deployer, ensureOptIn, canIWin, isIsolatedNetwork } = await getC();
@@ -2021,7 +1965,6 @@ const appGlobalStateNumUInt = 0;
 const appGlobalStateNumBytes = 1;
 
 type VerifyResult = {
-  compiled: CompiledBackend,
   ApplicationID: number,
   Deployer: Address,
   startRound: number,
@@ -2032,12 +1975,12 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
 }
 
 const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, eventCache: EventCache): Promise<VerifyResult> => {
-  const compiled = await compileFor(bin);
+  must_be_supported(bin);
   // @ts-ignore
   const ai_bn: BigNumber = protect(T_Contract, info);
   const ApplicationID: number = bigNumberToNumber(ai_bn);
-  const { appApproval, appClear } = compiled;
-  const { mapDataKeys, stateKeys } = bin._Connectors.ALGO;
+  const { appApproval, appClear, mapDataKeys, stateKeys } =
+    bin._Connectors.ALGO;
 
   let dhead = `${label}: verifyContract`;
 
@@ -2051,7 +1994,6 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
     const es = JSON.stringify(e);
     chk(as === es, `${msg}: expected ${es}, got ${as}`);
   };
-  const fmtp = (x: CompileResultBytes) => uint8ArrayToStr(x.result, 'base64');
 
   const client = await getAlgodClient();
   let appInfo; let err;
@@ -2066,8 +2008,8 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   const appInfo_p = appInfo['params'];
   debug(dhead, {appInfo_p});
   chk(appInfo_p, `Cannot lookup ApplicationId`);
-  chkeq(appInfo_p['approval-program'], fmtp(appApproval), `Approval program does not match Reach backend`);
-  chkeq(appInfo_p['clear-state-program'], fmtp(appClear), `ClearState program does not match Reach backend`);
+  chkeq(appInfo_p['approval-program'], appApproval, `Approval program does not match Reach backend`);
+  chkeq(appInfo_p['clear-state-program'], appClear, `ClearState program does not match Reach backend`);
   const Deployer = appInfo_p['creator'];
 
   const appInfo_LocalState = appInfo_p['local-state-schema'];
@@ -2113,7 +2055,7 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   const ctorRound = ict['confirmed-round']
   */
 
-  return { compiled, ApplicationID, Deployer, startRound: allocRound };
+  return { ApplicationID, Deployer, startRound: allocRound };
 };
 
 /**

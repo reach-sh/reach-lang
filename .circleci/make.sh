@@ -50,7 +50,7 @@ END
 END
 }
 
-image "real" "haskell-build-artifacts"
+image "real" "haskell-build-artifacts" "devnet-algo"
 image "fake" "reach" "haskell-build-artifacts"
 image "fake" "reach-cli" "haskell-build-artifacts"
 image "real" "js-deps"

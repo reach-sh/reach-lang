@@ -86,7 +86,7 @@ RUN apk add bash
 ENV ALGORAND_NETWORK=/var/lib/algorand_network
 ENV ALGORAND_DATA=${ALGORAND_NETWORK}/Primary
 
-COPY --from=builder /go/bin/algod /go/bin/algorand-indexer /bin/
+COPY --from=builder /go/bin/goal /go/bin/algod /go/bin/algorand-indexer /bin/
 COPY --from=prepare /var/lib/algorand_network/ /var/lib/algorand_network/
 
 ### Our stuff

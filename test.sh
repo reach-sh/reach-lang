@@ -77,8 +77,8 @@ r () {
   # jb
 
   #export REACH_DEBUG=1
-  REACH_CONNECTOR_MODE=ETH ${REACH} run
-  #REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  #REACH_CONNECTOR_MODE=ETH ${REACH} run
+  REACH_CONNECTOR_MODE=ALGO ${REACH} run
   #REACH_CONNECTOR_MODE=CFX ${REACH} run
 
   # Ganache
@@ -117,12 +117,11 @@ checkteal () {
 
 #exit 0
 
-#jb
-c hs/t/y/transferPayAmt.rsh
+jb
+ci ALGO overview
+ci ALGO rps-8-interact
 exit 0
 ci ALGO rps-3-bets
-ci ALGO overview
-ci ALGO rps-7-loops
 ci ALGO api-map
 ci ALGO event
 exit 0

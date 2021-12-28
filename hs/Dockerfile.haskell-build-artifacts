@@ -5,6 +5,8 @@ COPY Makefile.docker ./Makefile
 COPY sol/stdlib_reach.sol sol/stdlib_openzep.sol.sh ./sol/
 RUN make sol/stdlib.json
 
+FROM reachsh/devnet-algo:latest AS algo
+
 FROM alpine as z3
 RUN echo 'http://host.docker.internal:30000/' >> /etc/apk/repositories
 RUN apk update --allow-untrusted && apk add libgmpxx ca-certificates git
@@ -43,8 +45,8 @@ RUN set -o pipefail ; stack build 2>&1 | tee build-log.txt
 RUN mv "$(stack path --local-install-root)/bin" /build/bin/
 
 COPY --from=solc /usr/local/bin/solc /usr/bin/solc
-RUN chmod +x /usr/bin/solc
 COPY --from=solc /sol/stdlib.json .
 COPY --from=z3 /usr/bin/z3 /usr/bin/z3
+COPY --from=algo /bin/goal /usr/bin/goal
 
 COPY .stan.toml ./

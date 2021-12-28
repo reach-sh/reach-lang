@@ -66,6 +66,14 @@ int 8
 extract_uint64
 store 254
 pop
+byte base64(YWNkMQ==)
+load 255
+itob
+concat
+load 254
+itob
+concat
+log // 16
 // "CheckPay"
 // "./index.rsh:49:9:dot"
 // "[]"
@@ -230,6 +238,8 @@ int 0
 ==
 assert
 pop
+byte base64(OWE4Yg==)
+log // 0
 global Round
 load 252
 <
@@ -345,20 +355,15 @@ int 0
 ==
 assert
 pop
+byte base64(NDFiMQ==)
+log // 0
 global Round
 load 252
 >=
 assert
 // "CheckPay"
-// "reach standard library:206:7:dot"
+// "reach standard library:206:11:dot"
 // "[at ./index.rsh:57:51:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
-// Just "sender correct"
-// "reach standard library:206:7:dot"
-// "[at ./index.rsh:57:51:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
-load 255
-txn Sender
-==
-assert
 load 254
 dup
 bz l6_makeTxnK
@@ -449,6 +454,10 @@ assert
 dup
 store 249
 pop
+byte base64(MzhiMA==)
+load 249
+concat
+log // 32
 global Round
 load 250
 <
@@ -559,19 +568,25 @@ int 0
 ==
 assert
 pop
+byte base64(Y2M5OQ==)
+log // 0
 global Round
 load 250
 >=
 assert
 // "CheckPay"
-// "reach standard library:206:7:dot"
+// "reach standard library:206:11:dot"
 // "[at ./index.rsh:70:53:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
 // Just "sender correct"
-// "reach standard library:206:7:dot"
+// "reach standard library:206:11:dot"
 // "[at ./index.rsh:70:53:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
+load 255
+txn Sender
+==
 load 252
 txn Sender
 ==
+||
 assert
 load 251
 dup
@@ -669,6 +684,11 @@ dup
 btoi
 store 248
 pop
+byte base64(NzBlZA==)
+load 248
+itob
+concat
+log // 8
 global Round
 load 249
 <
@@ -788,19 +808,25 @@ int 0
 ==
 assert
 pop
+byte base64(ZTIxYg==)
+log // 0
 global Round
 load 249
 >=
 assert
 // "CheckPay"
-// "reach standard library:206:7:dot"
+// "reach standard library:206:11:dot"
 // "[at ./index.rsh:78:53:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
 // Just "sender correct"
-// "reach standard library:206:7:dot"
+// "reach standard library:206:11:dot"
 // "[at ./index.rsh:78:53:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
 load 255
 txn Sender
 ==
+load 252
+txn Sender
+==
+||
 assert
 load 251
 dup
@@ -907,6 +933,14 @@ int 8
 extract_uint64
 store 246
 pop
+byte base64(MzUxYQ==)
+load 247
+itob
+concat
+load 246
+itob
+concat
+log // 16
 global Round
 load 248
 <
@@ -1023,19 +1057,25 @@ int 0
 ==
 assert
 pop
+byte base64(YTIwNQ==)
+log // 0
 global Round
 load 248
 >=
 assert
 // "CheckPay"
-// "reach standard library:206:7:dot"
+// "reach standard library:206:11:dot"
 // "[at ./index.rsh:86:53:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
 // Just "sender correct"
-// "reach standard library:206:7:dot"
+// "reach standard library:206:11:dot"
 // "[at ./index.rsh:86:53:application call to \"closeTo\" (defined at: reach standard library:204:8:function exp)]"
+load 255
+txn Sender
+==
 load 252
 txn Sender
 ==
+||
 assert
 load 251
 dup
