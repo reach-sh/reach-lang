@@ -118,9 +118,7 @@ checkteal () {
 #exit 0
 
 jb
-one ALGO rpc-safe-api
-exit 0
-ci ALGO rps-3-bets
+ci ALGO rps-7-loops
 ci ALGO api-map
 ci ALGO event
 exit 0

@@ -2042,19 +2042,6 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   chkeq(iatat['approval-program'], appInfo_p['approval-program'], `ApprovalProgram unchanged since creation`);
   chkeq(iatat['clear-state-program'], appInfo_p['clear-state-program'], `ClearStateProgram unchanged since creation`);
 
-  // Next, we wait for the constructor call
-  // XXX maybe don't care about this
-  /*
-  const isCtor = makeHasLogFor(0);
-  const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, { minRound: 0 }, isCtor);
-  debug({icr});
-  // @ts-ignore
-  const ict = icr.txn;
-  chk(ict, `Cannot query for constructor transaction`);
-  debug({ict});
-  const ctorRound = ict['confirmed-round']
-  */
-
   return { ApplicationID, Deployer, startRound: allocRound };
 };
 
