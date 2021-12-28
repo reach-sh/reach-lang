@@ -2,7 +2,9 @@
 'use strict';
 
 export const main = Reach.App(() => {
-  const A = Participant('Alice', {});
+  const A = Participant('Alice', {
+    deployed: Fun([], Null),
+  });
   const B = API('Bob', {
     checkEq: Fun([UInt, UInt], Bool),
     payMe: Fun([UInt], UInt),
@@ -12,6 +14,7 @@ export const main = Reach.App(() => {
 
   A.publish();
   commit();
+  A.interact.deployed();
 
   // Call API with destructed arguments
   const [ [ x, r ], k1 ] =

@@ -10,11 +10,11 @@ const thread = async (f) => await f();
     await stdlib.newTestAccounts(1, startingBalance);
 
   const ctcAlice = accAlice.contract(backend);
-
-  const user = async (uid) => {
-    const acc = await stdlib.newTestAccount(startingBalance);
-    acc.setDebugLabel(uid);
-    return async () => {
+  await ctcAlice.p.Alice({
+    deployed: async () => {
+      const uid = 'Bob';
+      const acc = await stdlib.newTestAccount(startingBalance);
+      acc.setDebugLabel(uid);
       const ctc = acc.contract(backend, ctcAlice.getInfo());
       const bob = ctc.a.Bob;
 
@@ -31,12 +31,6 @@ const thread = async (f) => await f();
       await call(() => bob.checkEq(0, 0));
       await call(() => bob.payMe(10));
       await call(() => bob.noop());
-    };
-  };
-
-  await Promise.all([
-    backend.Alice(ctcAlice, {
-    }),
-    thread(await user('Bob')),
-  ]);
+    }
+  });
 })();

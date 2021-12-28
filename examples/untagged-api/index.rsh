@@ -1,7 +1,9 @@
 'reach 0.1';
 
 export const main = Reach.App(() => {
-  const A = Participant('Alice', {});
+  const A = Participant('Alice', {
+    deployed: Fun([], Null),
+  });
   const T = API('Bob', {
     add1: Fun([UInt], UInt),
   });
@@ -11,6 +13,7 @@ export const main = Reach.App(() => {
   init();
   A.publish();
   commit();
+  A.interact.deployed();
   const [ [x], k] = call(U.add1);
   k(x + 1);
   commit();

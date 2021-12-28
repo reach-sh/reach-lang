@@ -1,8 +1,9 @@
 'reach 0.1';
 
+const MBool = Maybe(Bool);
 export const main = Reach.App(() => {
   const A = Participant('Alice', {
-    go: Fun([], Bool),
+    launchBob: Fun([UInt, MBool], Null),
   });
   const B = API({
     go: Fun([], Bool),
@@ -11,14 +12,13 @@ export const main = Reach.App(() => {
 
   A.publish();
   commit();
+  A.interact.launchBob(0, MBool.Some(true));
 
   const [ [], k ] = call(B.go);
   k(true);
   commit();
 
-  A.only(() => {
-    const x = declassify(interact.go());
-  });
+  A.interact.launchBob(1, MBool.None());
   A.publish();
 
   commit();
