@@ -393,10 +393,6 @@ class EventCache {
   }
 }
 
-// ****************************************************************************
-// Common Interface Exports
-// ****************************************************************************
-
 const { randomUInt, hasRandom } = makeRandom(32);
 
 const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {

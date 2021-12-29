@@ -407,28 +407,22 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>): Promise<T> => {
   }
 };
 
-const [_getQueryLowerBound, _setQueryLowerBound] = replaceableThunk<number>(() => 0);
-const [getValidQueryWindow, _setValidQueryWindow] = replaceableThunk<number|true>(() => true);
-
-export {getValidQueryWindow};
+export function getValidQueryWindow(): number|true {
+  return true;
+}
 export function setValidQueryWindow(n: number|true): void {
   if (typeof n === 'number') {
-    // TODO?
     throw Error(`Only setValidQueryWindow(true) is supported on Algorand`);
   }
-  _setValidQueryWindow(n);
 }
-
 export function getQueryLowerBound(): BigNumber {
-  return bigNumberify(_getQueryLowerBound());
+  return bigNumberify(0);
 }
-
-export function setQueryLowerBound(networkTime: BigNumber|number): void {
-  networkTime = typeof networkTime === 'number' ? networkTime
-    : networkTime._isBigNumber ? networkTime.toNumber()
-    : networkTime;
-  if (!(typeof networkTime === 'number')) { throw Error(`Expected number or BigNumber, but got ${networkTime} : ${typeof networkTime}`);}
-  _setQueryLowerBound(networkTime);
+export function setQueryLowerBound(x: BigNumber|number): void {
+  const xx = bigNumberify(x);
+  if ( ! xx.eq(0) ) {
+    throw Error(`Only setQueryLowerBound(0) is supported on Algorand`);
+  }
 }
 
 type EQInitArgs = {
@@ -974,21 +968,20 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       ctcAddr: Address,
     };
 
-    const makeGetC = (setupViewArgs: SetupViewArgs, eq: EventQueue, informCreationBlock: (cb: number) => void) => {
+    const makeGetC = (setupViewArgs: SetupViewArgs, eq: EventQueue) => {
       const { getInfo } = setupViewArgs;
       let _theC: ContractHandler|undefined = undefined;
       return async (): Promise<ContractHandler> => {
         debug(label, 'getC');
         if ( _theC ) { return _theC; }
         const ctcInfo = await getInfo();
-        const { ApplicationID, Deployer, startRound } =
+        const { ApplicationID, Deployer } =
           await stdVerifyContract( setupViewArgs, (async () => {
             return await verifyContract_(label, ctcInfo, bin, eq);
           }));
         eq.init({ ApplicationID });
-        debug(label, 'getC', {ApplicationID, startRound} );
+        debug(label, 'getC', {ApplicationID} );
 
-        informCreationBlock(startRound);
         const ctcAddr = algosdk.getApplicationAddress(ApplicationID);
         debug(label, 'getC', { ctcAddr });
 
@@ -1102,7 +1095,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const { setInfo, setTrustedVerifyResult } = setupArgs;
 
       const eq = new EventQueue();
-      const getC = makeGetC(setupArgs, eq, () => {});
+      const getC = makeGetC(setupArgs, eq);
 
       // Returns address of a Reach contract
       const getContractAddress = async () => {
@@ -1170,7 +1163,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                 undefined, undefined, undefined, undefined,
                 NOTE_Reach, undefined, undefined, extraPages)));
 
-          const allocRound = createRes['confirmed-round'];
           const ApplicationID = createRes['application-index'];
           if ( ! ApplicationID ) {
             throw Error(`No application-index in ${JSON.stringify(createRes)}`);
@@ -1178,12 +1170,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(label, `created`, {ApplicationID});
           const ctcInfo = ApplicationID;
           eq.pushIgnore(isCreateTxn);
-          // We are adding one to the allocRound because we want querying to
-          // start at the first place it possibly could, which is going to
-          // eliminate the allocation from the event cache.
-          // Once we make it so the allocation event is actually needed, then
-          // we will modify this.
-          setTrustedVerifyResult({ ApplicationID, Deployer, startRound: allocRound + 1 });
+          setTrustedVerifyResult({ ApplicationID, Deployer });
           setInfo(ctcInfo);
         }
         const { ApplicationID, ctcAddr, Deployer, ensureOptIn, canIWin, isIsolatedNetwork } = await getC();
@@ -1520,7 +1507,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
     const setupView = (setupViewArgs: SetupViewArgs) => {
       const eq = new EventQueue();
-      const getC = makeGetC(setupViewArgs, eq, () => {});
+      const getC = makeGetC(setupViewArgs, eq);
       const viewLib: IViewLib = {
         viewMapRef: async (mapi: number, a:any): Promise<any> => {
           const { viewMapRef } = await getC();
@@ -1557,9 +1544,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const setupEvents = (a: SetupEventArgs) => {
       const eq = new EventQueue();
       let time = bigNumberify(0);
-      const getC = makeGetC(a, eq, (cb: number) => {
-        time = bigNumberify(cb);
-      });
+      const getC = makeGetC(a, eq);
       let logs: string[] = [];
       const createEventStream = (evt: string, tys: AnyALGO_Ty[]) => {
         const lr = makeLogRep(evt, tys);
@@ -1890,7 +1875,6 @@ const appGlobalStateNumBytes = 1;
 type VerifyResult = {
   ApplicationID: number,
   Deployer: Address,
-  startRound: number,
 };
 
 export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<VerifyResult> => {
@@ -1963,7 +1947,7 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   chkeq(iat['approval-program'], appInfo_p['approval-program'], `ApprovalProgram unchanged since creation`);
   chkeq(iat['clear-state-program'], appInfo_p['clear-state-program'], `ClearStateProgram unchanged since creation`);
 
-  return { ApplicationID, Deployer, startRound: allocRound };
+  return { ApplicationID, Deployer };
 };
 
 /**
