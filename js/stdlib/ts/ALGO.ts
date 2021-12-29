@@ -24,7 +24,6 @@ import {
   IAccount, IContract, IRecv,
   ISetupArgs, ISetupViewArgs, ISetupRes,
   // ISimRes,
-  TimeArg,
   ISimTxn,
   stdContract, stdVerifyContract,
   stdAccount,
@@ -34,8 +33,6 @@ import {
   replaceableThunk,
   ensureConnectorAvailable,
   bigNumberToBigInt,
-  argMax,
-  argMin,
   make_newTestAccounts,
   make_waitUntilX,
   checkTimeout,
@@ -100,6 +97,8 @@ type RecvTxn = {
   'application-args': Array<string>,
   'sender': Address,
   'logs': Array<string>,
+  'approval-program'?: string,
+  'clear-state-program'?: string,
 };
 type TxId = string;
 type ApiCall<T> = {
@@ -161,7 +160,26 @@ const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db
 const rawDefaultItoken = 'reach-devnet';
 
 type OrExn<X> = X | {exn:any};
-type IndexerTxn = any;
+type IndexerAppTxn = {
+  'approval-program'?: string,
+  'clear-state-program'?: string,
+  'application-id'?: number,
+  'application-args'?: Array<string>,
+  'on-completion'?: string,
+};
+type IndexerTxn = {
+  'confirmed-round': number,
+  'sender': Address,
+  'application-transaction'?: IndexerAppTxn,
+  'logs'?: Array<string>,
+};
+type IndexerQuery1Res = {
+  'transaction': IndexerTxn,
+};
+type IndexerQueryMRes = {
+  'current-round': number,
+  'transactions': Array<IndexerTxn>,
+};
 type AlgodTxn = {
   'application-index'?: number,
   'confirmed-round'?: number,
@@ -173,57 +191,43 @@ type AlgodTxn = {
   'pool-error': string,
 };
 
-const indexerTxn2RecvTxn = (txn:any) => {
-  const ait = txn['application-transaction'] || {};
+const indexerTxn2RecvTxn = (txn:IndexerTxn): RecvTxn => {
+  const ait: IndexerAppTxn = txn['application-transaction'] || {};
   const aargs = ait['application-args'] || [];
-  const aidx = ait['application-id'];
+  const aidx = ait['application-id'] || 0;
   return {
     'confirmed-round': txn['confirmed-round'],
     'sender': txn['sender'],
+    'approval-program': ait['approval-program'],
+    'clear-state-program': ait['clear-state-program'],
     'logs': (txn['logs'] || []),
     'application-args': aargs,
     'application-index': aidx,
   };
 };
 
-const waitForConfirmation = async (txId: TxId, untilRound?: number|undefined): Promise<RecvTxn> => {
+const waitForConfirmation = async (txId: TxId): Promise<RecvTxn> => {
   const doOrDie = async <X>(p: Promise<X>): Promise<OrExn<X>> => {
     try { return await p; }
     catch (e:any) { return { 'exn': e }; }
   };
-  const checkTooLate = async (lastLastRound: number): Promise<number> => {
-    const [ c, msg ] = lastLastRound > 0 ?
-      [ client.statusAfterBlock(lastLastRound),
-        `waiting until after ${lastLastRound}` ] :
-      [ client.status(),
-        `looking up current round` ];
-    debug(...dhead, msg);
-    const lastRound = (await c.do())['last-round'];
-    if ( untilRound && untilRound < lastRound ) {
-      throw Error(`waitForConfirmation: Too late: ${lastRound} > ${untilRound}`);
-    } else {
-      return lastRound;
-    }
-  };
-
-  const dhead = [ 'waitForConfirmation', txId ];
+  const dhead = `waitForConfirmation ${txId}`;
   const client = await getAlgodClient();
 
-  const checkAlgod = async (lastLastRound:number): Promise<RecvTxn> => {
-    const lastRound = await checkTooLate(lastLastRound);
+  const checkAlgod = async (): Promise<RecvTxn> => {
     const info =
       (await doOrDie(client.pendingTransactionInformation(txId).do())) as OrExn<AlgodTxn>;
-    debug(...dhead, 'info', info);
+    debug(dhead, 'info', info);
     if ( 'exn' in info ) {
-      debug(...dhead, 'switching to indexer on error');
-      return await checkIndexer(lastRound);
+      debug(dhead, 'switching to indexer on error');
+      return await checkIndexer();
     }
     const cr = info['confirmed-round'];
     if ( cr !== undefined && cr > 0 ) {
       const l = info['logs'] === undefined ? [] : info['logs'];
-      debug(...dhead, 'confirmed');
+      debug(dhead, 'confirmed');
       const dtxn = algosdk.Transaction.from_obj_for_encoding(info['txn']['txn']);
-      debug(...dhead, 'confirmed', dtxn);
+      debug(dhead, 'confirmed', dtxn);
       const uToS = (a: Uint8Array[]|undefined) => (a || []).map((x: Uint8Array)=> uint8ArrayToStr(x, 'base64'));
       return {
         'confirmed-round': cr,
@@ -234,28 +238,22 @@ const waitForConfirmation = async (txId: TxId, untilRound?: number|undefined): P
         'application-args': uToS(dtxn.appArgs),
       };
     } else if ( info['pool-error'] === '' ) {
-      debug(...dhead, 'still in pool, trying again');
-      return await checkAlgod(lastRound);
+      debug(dhead, 'still in pool, trying again');
+      return await checkAlgod();
     } else {
       throw Error(`waitForConfirmation: error confirming: ${JSON.stringify(info)}`);
     }
   };
 
-  const checkIndexer = async (lastLastRound: number): Promise<RecvTxn> => {
-    const lastRound = await checkTooLate(lastLastRound);
+  const checkIndexer = async (): Promise<RecvTxn> => {
     const indexer = await getIndexer();
     const q = indexer.lookupTransactionByID(txId);
-    const res = (await doOrDie(doQuery_(JSON.stringify(dhead), q))) as OrExn<IndexerTxn>;
-    debug(...dhead, 'indexer', res);
-    if ( 'exn' in res ) {
-      debug(...dhead, 'indexer failed, trying again');
-      return await checkIndexer(lastRound);
-    } else {
-      return indexerTxn2RecvTxn(res['transaction']);
-    }
+    const res = (await doQuery_(dhead, q)) as IndexerQuery1Res;
+    debug(dhead, 'indexer', res);
+    return indexerTxn2RecvTxn(res['transaction']);
   };
 
-  return await checkAlgod(0);
+  return await checkAlgod();
 };
 
 const decodeB64Txn = (ts:string): Transaction => {
@@ -295,7 +293,7 @@ const signSendAndConfirm = async (
   const N = txns.length - 1;
   const tN = decodeB64Txn(txns[N].txn);
   try {
-    return await waitForConfirmation(tN.txID(), tN.lastRound);
+    return await waitForConfirmation(tN.txID()); // tN.lastRound
   } catch (e) {
     throw { type: 'waitForConfirmation', e };
   }
@@ -313,16 +311,17 @@ const toWTxn = (t:Transaction): WalletTransaction => {
 };
 
 // Backend
-const getTxnParams = async (): Promise<TxnParams> => {
-  debug(`fillTxn: getting params`);
+const getTxnParams = async (label: any): Promise<TxnParams> => {
+  const dhead = `${label} fillTxn`;
+  debug(dhead, `getting params`);
   const client = await getAlgodClient();
   while (true) {
     const params = await client.getTransactionParams().do();
-    debug('fillTxn: got params:', params);
+    debug(dhead ,'got params:', params);
     if (params.firstRound !== 0) {
       return params;
     }
-    debug(`...but firstRound is 0, so let's wait and try again.`);
+    debug(dhead, `...but firstRound is 0, so let's wait and try again.`);
     await client.statusAfterBlock(1).do();
   }
 };
@@ -389,51 +388,24 @@ function looksLikeAccountingNotInitialized(e: any) {
   return msg.includes(`accounting not initialized`);
 }
 
-const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean = false): Promise<T> => {
-  debug(dhead, '--- QUERY =', query);
-  let retries = 10;
-  let res;
-  while ( alwaysRetry || retries > 0 ) {
+const doQuery_ = async <T>(dhead:string, query: ApiCall<T>): Promise<T> => {
+  debug(dhead, { query });
+  while ( true ) {
     try {
-      res = await query.do();
-      break;
+      const res = await query.do();
+      debug(dhead, 'RESULT', res);
+      return res;
     } catch (e:any) {
       if ( e?.errno === -111 || e?.code === "ECONNRESET") {
         debug(dhead, 'NO CONNECTION');
       } else if ( looksLikeAccountingNotInitialized(e) ) {
         debug(dhead, 'ACCOUNTING NOT INITIALIZED');
-      } else if ( ! alwaysRetry && retries <= 0 ) {
-        throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`); // `
       }
-      debug(dhead, 'RETRYING', retries--, {e});
-      await Timeout.set(500);
+      debug(dhead, 'RETRYING', {e});
+      await Timeout.set(5000);
     }
   }
-  if (!res) { throw Error(`impossible: query res is empty`); }
-  debug(dhead, 'RESULT', res);
-  return res;
 };
-
-type QueryResult =
-  | { succ: true, txn: any }
-  | { succ: false, round: number }
-
-// ****************************************************************************
-// Event Cache
-// ****************************************************************************
-
-const chooseMinRoundTxn = (ptxns: any[]) =>
-  argMin(ptxns, (x: any) => x['confirmed-round']);
-
-const chooseMaxRoundTxn = (ptxns: any[]) =>
-  argMax(ptxns, (x: any) => x['confirmed-round']);
-
-type QueryInfo = {
-  minRound?: number,
-  timeoutAt?: TimeArg,
-  specRound?: number,
-  isEventStream?: boolean,
-}
 
 const [_getQueryLowerBound, _setQueryLowerBound] = replaceableThunk<number>(() => 0);
 const [getValidQueryWindow, _setValidQueryWindow] = replaceableThunk<number|true>(() => true);
@@ -459,101 +431,98 @@ export function setQueryLowerBound(networkTime: BigNumber|number): void {
   _setQueryLowerBound(networkTime);
 }
 
-class EventCache {
-
-  cache: any[] = [];
-
-  currentRound: number;
-
+type EQInitArgs = {
+  ApplicationID: number,
+};
+type EQPeqResult =
+  | { timeout: true }
+  | { timeout: false, txn: RecvTxn }
+type DidTimeout = (round: number) => Promise<boolean>;
+const neverTimeout: DidTimeout = async (r:number) => (void(r), false);
+type IndexerTxnPred = (txn:IndexerTxn) => boolean;
+const isCreateTxn = (txn:IndexerTxn): boolean => {
+  const at = txn['application-transaction'];
+  return at ? at['application-id'] === 0 : false;
+};
+const emptyOptIn = (txn:IndexerTxn) => {
+  const at = txn['application-transaction'];
+  const ataa = at && at['application-args'] || [];
+  return at
+    && at['on-completion'] === 'optin'
+    && ataa.length == 0;
+};
+class EventQueue {
+  initArgs: EQInitArgs|undefined;
+  txns: Array<RecvTxn>;
+  round: number;
+  customIgnore: Array<IndexerTxnPred>;
   constructor() {
-    this.currentRound = _getQueryLowerBound();
-    this.cache = [];
+    this.initArgs = undefined;
+    this.txns = [];
+    this.round = 0;
+    this.customIgnore = [];
   }
-
-  async query(dhead: string, ApplicationID: number, queryInfo: QueryInfo, pred: ((x:any) => boolean), choose : (x: any[]) => any = chooseMinRoundTxn): Promise<QueryResult> {
-    const { minRound, timeoutAt, specRound, isEventStream = false } = queryInfo;
-    const h = (mode:string): (number | undefined) => timeoutAt && timeoutAt[0] === mode ? bigNumberToNumber(timeoutAt[1]) : undefined;
-    const maxRound = h('time');
-    const maxSecs = h('secs');
-    debug(dhead, `EventCache.query`, {ApplicationID, minRound, specRound, timeoutAt, maxRound, maxSecs}, this.currentRound);
-
-    // Clear cache of stale transactions.
-    // Cache's min bound will be `minRound || specRound`
-    const filterRound = minRound ?? specRound!;
-    this.cache = this.cache.filter((txn) => {
-      const notTooOld = txn['confirmed-round'] >= filterRound;
-      const appCreate =
-        txn['application-transaction']['application-id'] === 0;
-      const emptyOptIn =
-        (  (txn['application-transaction']['on-completion'] === 'optin')
-        && (txn['application-transaction']['application-args'].length == 0));
-      return notTooOld && (! emptyOptIn) && (! appCreate);
-    });
-
-    // When checking predicate, only choose transactions that are below
-    // max round, or the specific round we're looking for.
-    const filterFn = (x: any) => pred(x)
-      && (maxRound ? x['confirmed-round'] <= maxRound : true)
-      && (maxSecs ? x['round-time'] <= maxSecs : true)
-      && (specRound ? x['confirmed-round'] == specRound : true);
-
-    // Check to see if the transaction we want is in cache
-    const initPtxns = this.cache.filter(filterFn);
-
-    if (initPtxns.length != 0) {
-      debug(`Found transaction in Event Cache`);
-      const txn = choose(initPtxns)
-      return { succ: true, txn };
+  init(args:EQInitArgs) {
+    if ( this.initArgs === undefined ) {
+      this.initArgs = args;
+    } else if ( JSON.stringify(this.initArgs) !== JSON.stringify(args) ) {
+      debug('EventQueue.init', this.initArgs, args);
+      throw Error(`attempt to reset event queue args`);
     }
-    debug(`transaction not in event cache`);
-
-    const failed = (): {succ: false, round: number} => ({ succ: false, round: this.currentRound });
-    if ( this.cache.length != 0 && !isEventStream ) {
-      debug(`cache not empty, contains some other message from future, not querying...`, this.cache);
-      return failed();
-    }
-
-    debug(`querying network...`);
-    // If no results, then contact network
-    const indexer = await getIndexer();
-
-    let query =
-      indexer.searchForTransactions()
-        .applicationID(ApplicationID)
-        .txType('appl')
-
-    if (filterRound) {
-      // If cache has: [100, 200]
-      // & querying  : [150, 1000]
-      // We already searched cache for [150, 200] so query network for [201, 1000]
-      query = query.minRound(Math.max(this.currentRound + 1, filterRound));
-    }
-
-    const res: any = await doQuery_(dhead, query);
-    this.cache = res.transactions;
-
-    // Update current round
-    this.currentRound =
-      (res.transactions.length == 0)
-        ? (maxRound ? Math.min(res['current-round'], maxRound) : res['current-round'])
-        : chooseMaxRoundTxn(res.transactions)['confirmed-round'];
-
-    // Check for pred again
-    const ptxns = this.cache.filter(filterFn);
-
-    if ( ptxns.length == 0 ) {
-      return failed();
-    }
-
-    const txn = choose(ptxns);
-
-    return { succ: true, txn };
   }
-}
-
-// ****************************************************************************
-// Common Interface Exports
-// ****************************************************************************
+  pushIgnore(pred: IndexerTxnPred) {
+    this.customIgnore.push(pred);
+  }
+  async deq(dhead: string): Promise<RecvTxn> {
+    const r = await this.peq(dhead, neverTimeout);
+    if ( r.timeout ) { throw Error('impossible'); }
+    this.txns.shift();
+    return r.txn;
+  }
+  async peq(lab: string, didTimeout: DidTimeout): Promise<EQPeqResult> {
+    const dhead = `${lab} peq`;
+    if (this.initArgs === undefined) {
+      throw Error(`${dhead}: not initialized`); }
+    while ( this.txns.length === 0 ) {
+      const { ApplicationID } = this.initArgs;
+      const notIgnored = (txn:IndexerTxn) => (! emptyOptIn(txn));
+      const indexer = await getIndexer();
+      const query =
+        indexer.searchForTransactions()
+          .applicationID(ApplicationID)
+          .txType('appl')
+          .minRound(this.round + 1);
+      const res = (await doQuery_(dhead, query)) as IndexerQueryMRes;
+      let txns = res.transactions;
+      const cr = res['current-round'];
+      if ( txns.length === 0 ) { this.round = cr; }
+      const r = (x:IndexerTxn): number => {
+        const xr = x['confirmed-round'];
+        if ( this.round < xr ) { this.round = xr; }
+        return xr;
+      };
+      const cmpTxn = (x:IndexerTxn, y:IndexerTxn): number => r(x) - r(y);
+      txns.sort(cmpTxn);
+      if ( txns.length === 1 ) { r(txns[0]); }
+      txns = txns.filter(notIgnored);
+      const cis = this.customIgnore;
+      while ( txns.length > 0 && cis.length > 0 ) {
+        const ci = cis[0];
+        cis.shift();
+        const t = txns[0];
+        txns.shift();
+        if ( ! ci(t) ) {
+          throw Error(`customIgnore present, ${ci}, but top txn did not match ${JSON.stringify(t)}`);
+        }
+      }
+      if ( txns.length === 0 && await didTimeout(cr) ) {
+        return { timeout: true };
+      }
+      this.txns = txns.map(indexerTxn2RecvTxn);
+    }
+    return { timeout: false, txn: this.txns[0] };
+  }
+};
 
 export const { addressEq, tokenEq, digest } = stdlib;
 
@@ -906,7 +875,7 @@ export const transfer = async (
   const sender = from.networkAccount;
   const receiver = extractAddr(to);
   const valuebn = bigNumberify(value);
-  const ps = await getTxnParams();
+  const ps = await getTxnParams('transfer');
   const txn = toWTxn(makeTransferTxn(sender.addr, receiver, valuebn, token, ps, undefined, tag));
 
   return await sign_and_send_sync(
@@ -916,11 +885,9 @@ export const transfer = async (
 };
 
 interface LogRep {
-  checkFrom: (txn: any, which: ((round:number) => number)) => [number, number, string|undefined]
-  checkFromP: (txn: any, which: ((round:number) => number)) => boolean
-  checkFromA: (txn: any, which: ((round:number) => number)) => [number, number, string]
-  checkFromL: (txn: any, which: ((round:number) => number)) => string
-  parse: (log: any) => any[]
+  parse: (log: string) => (any[]|undefined),
+  parse0: (txn: RecvTxn) => (any[]|undefined),
+  parse0b: (txn: RecvTxn) => boolean,
 };
 const makeLogRep = (evt:string, tys:AnyALGO_Ty[]): LogRep => {
   const hLen = 4;
@@ -930,47 +897,27 @@ const makeLogRep = (evt:string, tys:AnyALGO_Ty[]): LogRep => {
   const trunc = (x: string): string => ui8h(base64ToUI8A(x).slice(0, hLen));
   const hpb = trunc(hp);
   debug(`logHashHeader`, { evt, tyns, sig, hp, hpb });
-
-  const checkFrom = (txn: any, which: ((round:number) => number)): [ number, number, string|undefined ] => {
-    const round = txn['confirmed-round'];
-    const logIdx = which(round);
-    const logs: string[] = (txn['logs'] || []).slice(logIdx);
-    const idx = logs.findIndex((l) => trunc(l) === hpb);
-    const log = idx === -1 ? undefined : logs[idx];
-    debug(`checkFrom`, { evt, round, logIdx, logs, idx, log });
-    return [ round, idx, log ];
-  };
-  const checkFromP = (txn: any, which: ((round:number) => number)): boolean => {
-    return checkFrom(txn, which)[2] !== undefined;
-  };
-  const checkFromA = (txn: any, which: ((round:number) => number)): [number, number, string] => {
-    const [r, i, l] = checkFrom(txn, which);
-    if ( l === undefined ) { throw Error(`impossible log`); }
-    return [r, i, l];
-  };
-  const checkFromL = (txn: any, which: ((round:number) => number)): string => {
-    return checkFromA(txn, which)[2];
-  };
-  const parse = (log:string): any[] => {
+  const parse = (log:string): (any[]|undefined) => {
+    if ( trunc(log) !== hpb ) { return undefined; }
     // @ts-ignore
-    const pd = T_Tuple([T_Bytes(hLen)].concat(tys)).fromNet(reNetify(log));
-    debug(`parse`, { log, pd });
-    pd.shift();
+    const [ logb, ...pd ] = T_Tuple([T_Bytes(hLen)].concat(tys)).fromNet(reNetify(log));
+    debug(`parse`, { log, logb, pd });
     return pd;
   };
-
-  return { checkFrom, checkFromP, checkFromA, checkFromL, parse };
+  const parse0 = (txn:RecvTxn): (any[]|undefined) => {
+    if ( txn.logs.length == 0 ) { return undefined; }
+    const log = txn.logs[0];
+    return parse(log);
+  };
+  const parse0b = (txn:RecvTxn) => parse0(txn) !== undefined;
+  return { parse, parse0, parse0b };
 };
 
 const reachEvent = (i:number) => `_reach_e${i}`;
-const which0 = (round:number): number => {
-  void(round);
-  return 0;
-};
 const makeHasLogFor = (i:number, tys:AnyALGO_Ty[]) => {
   debug(`hasLogFor`, i, tys);
   const lr = makeLogRep(reachEvent(i), tys);
-  return ((txn:any) => lr.checkFromP(txn, which0));
+  return lr.parse0b;
 };
 
 /** @description base64->hex->arrayify */
@@ -1018,8 +965,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     type ContractHandler = {
       ApplicationID: number,
       Deployer: Address,
-      getLastRound: (() => number),
-      setLastRound: ((x:number) => void),
       viewMapRef: (mapi:number, a:Address) => Promise<any>,
       ensureOptIn: (() => Promise<void>),
       getAppState: (() => Promise<any>),
@@ -1029,7 +974,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       ctcAddr: Address,
     };
 
-    const makeGetC = (setupViewArgs: SetupViewArgs, eventCache: EventCache, informCreationBlock: (cb: number) => void) => {
+    const makeGetC = (setupViewArgs: SetupViewArgs, eq: EventQueue, informCreationBlock: (cb: number) => void) => {
       const { getInfo } = setupViewArgs;
       let _theC: ContractHandler|undefined = undefined;
       return async (): Promise<ContractHandler> => {
@@ -1038,17 +983,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const ctcInfo = await getInfo();
         const { ApplicationID, Deployer, startRound } =
           await stdVerifyContract( setupViewArgs, (async () => {
-            return await verifyContract_(label, ctcInfo, bin, eventCache);
+            return await verifyContract_(label, ctcInfo, bin, eq);
           }));
+        eq.init({ ApplicationID });
         debug(label, 'getC', {ApplicationID, startRound} );
 
         informCreationBlock(startRound);
         const ctcAddr = algosdk.getApplicationAddress(ApplicationID);
         debug(label, 'getC', { ctcAddr });
-
-        let realLastRound = startRound;
-        const getLastRound = () => realLastRound;
-        const setLastRound = (x:number) => (realLastRound = x);
 
         // Read map data
         const getLocalState = async (a:Address): Promise<any> => {
@@ -1064,12 +1006,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const didOptIn = async (): Promise<boolean> =>
           ((await getLocalState(thisAcc.addr)) !== undefined);
         const doOptIn = async (): Promise<void> => {
-          debug(`doOptIn`);
+          const dhead = 'doOptIn';
+          debug(dhead);
           await sign_and_send_sync(
             'ApplicationOptIn',
             thisAcc,
             toWTxn(algosdk.makeApplicationOptInTxn(
-              thisAcc.addr, await getTxnParams(),
+              thisAcc.addr, await getTxnParams(dhead),
               ApplicationID,
               undefined, undefined, undefined, undefined,
               NOTE_Reach)));
@@ -1135,7 +1078,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           return mr;
         };
 
-        return (_theC = { ApplicationID, ctcAddr, Deployer, getLastRound, setLastRound, getAppState, getGlobalState, ensureOptIn, canIWin, isIsolatedNetwork, viewMapRef });
+        return (_theC = { ApplicationID, ctcAddr, Deployer, getAppState, getGlobalState, ensureOptIn, canIWin, isIsolatedNetwork, viewMapRef });
       };
     };
 
@@ -1158,8 +1101,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const _setup = (setupArgs: SetupArgs): SetupRes => {
       const { setInfo, setTrustedVerifyResult } = setupArgs;
 
-      const eventCache = new EventCache();
-      const getC = makeGetC(setupArgs, eventCache, () => {});
+      const eq = new EventQueue();
+      const getC = makeGetC(setupArgs, eq, () => {});
 
       // Returns address of a Reach contract
       const getContractAddress = async () => {
@@ -1202,22 +1145,23 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         const trustedRecv = async (txn:RecvTxn): Promise<Recv> => {
           const didSend = true;
+          const correctStep = makeHasLogFor(funcNum, out_tys);
+          eq.pushIgnore((x:IndexerTxn) => correctStep(indexerTxn2RecvTxn(x)));
           return await recvFrom({dhead, out_tys, didSend, funcNum, txn});
         };
 
         if ( isCtor ) {
-          debug(label, 'deploy');
+          debug(dhead, 'deploy');
           must_be_supported(bin);
           const { appApproval, appClear, extraPages } = bin._Connectors.ALGO;
-
-          debug(`deploy`, {extraPages});
+          debug(dhead, `deploy`, {extraPages});
           const Deployer = thisAcc.addr;
           const createRes =
             await sign_and_send_sync(
               'ApplicationCreate',
               thisAcc,
               toWTxn(algosdk.makeApplicationCreateTxn(
-                Deployer, await getTxnParams(),
+                Deployer, await getTxnParams(dhead),
                 algosdk.OnApplicationComplete.NoOpOC,
                 base64ToUI8A(appApproval),
                 base64ToUI8A(appClear),
@@ -1231,8 +1175,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           if ( ! ApplicationID ) {
             throw Error(`No application-index in ${JSON.stringify(createRes)}`);
           }
-          debug(`created`, {ApplicationID});
+          debug(label, `created`, {ApplicationID});
           const ctcInfo = ApplicationID;
+          eq.pushIgnore(isCreateTxn);
           // We are adding one to the allocRound because we want querying to
           // start at the first place it possibly could, which is going to
           // eliminate the allocation from the event cache.
@@ -1282,7 +1227,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const { mapRefs } = sim_r;
 
         while ( true ) {
-          const params = await getTxnParams();
+          const params = await getTxnParams(dhead);
           // We add one, because the firstRound field is actually the current
           // round, which we couldn't possibly be in, because it already
           // happened.
@@ -1468,8 +1413,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
       const recvFrom = async (rfargs:RecvFromArgs): Promise<Recv> => {
         const { dhead, funcNum, out_tys, didSend, txn } = rfargs;
-        const { getLastRound, setLastRound } = await getC();
-        debug(dhead, '--- txn =', txn);
+        debug(dhead, 'txn', txn);
         const theRound = txn['confirmed-round'];
         // const theSecs = txn['round-time'];
         // ^ The contract actually uses `global LatestTimestamp` which is the
@@ -1480,17 +1424,16 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         // promises and then we wouldn't need to wait here.
 
         const lr = makeLogRep(reachEvent(funcNum), out_tys);
-        const log = lr.checkFromL(txn, which0);
-        const ctc_args = lr.parse(log);
-        debug(dhead, {log, ctc_args});
+        const ctc_args = lr.parse0(txn);
+        debug(dhead, {ctc_args});
+        if ( ctc_args === undefined ) {
+          throw Error(`impossible: txn doesn't have right log as first`);
+        }
 
         const fromAddr = txn['sender'];
         const from = T_Address.canonicalize({addr: fromAddr});
         debug(dhead, { from, fromAddr });
 
-        const oldLastRound = getLastRound();
-        setLastRound(theRound);
-        debug(dhead, { oldLastRound, theRound });
         const getOutput = async (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
           debug(`getOutput`, {o_mode, o_lab, o_ctc, o_val});
           const f_ctc = T_Tuple([T_UInt, o_ctc]);
@@ -1513,44 +1456,35 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           didSend,
           didTimeout: false,
           data: ctc_args,
-          time: bigNumberify(getLastRound()),
+          time: bigNumberify(theRound),
           secs: bigNumberify(theSecs),
           from, getOutput,
         };
       };
 
       const recv = async (rargs:RecvArgs): Promise<Recv> => {
-        const { funcNum, out_tys, didSend, waitIfNotPresent, timeoutAt } = rargs;
-        const isCtor = (funcNum == 0);
-        const fromBlock_summand = isCtor ? 0 : 1;
-
+        const { funcNum, out_tys, didSend, timeoutAt } = rargs;
         const funcName = `m${funcNum}`;
         const dhead = `${label}: ${label} recv ${funcName} ${timeoutAt}`;
-        debug(dhead, '--- START');
-
-        const { ApplicationID, getLastRound, isIsolatedNetwork } = await getC();
-
-        while ( true ) {
-          const correctStep = makeHasLogFor(funcNum, out_tys);
-          const minRound = getLastRound() + fromBlock_summand;
-          const res = await eventCache.query(dhead, ApplicationID, { minRound, timeoutAt }, correctStep);
-          debug(`EventCache res: `, res);
-          if ( ! res.succ ) {
-            const currentRound = res.round;
-            debug(dhead, 'TIMECHECK', {timeoutAt, minRound, currentRound});
-            if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, currentRound+1) ) {
-              debug(dhead, 'TIMEOUT');
-              return { didTimeout: true };
-            }
-            if ( waitIfNotPresent ) {
-              await waitUntilTime(bigNumberify(currentRound + 1));
-            } else {
-              await indexer_statusAfterBlock(currentRound + 1);
-            }
-            continue;
-          }
-          const txn = indexerTxn2RecvTxn(res.txn);
+        debug(dhead, 'start');
+        const { isIsolatedNetwork } = await getC();
+        const didTimeout = async (currentRound: number): Promise<boolean> => {
+          debug(dhead, 'TIMECHECK', {timeoutAt, currentRound});
+          return await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, currentRound+1);
+        };
+        const res = await eq.peq(dhead, didTimeout);
+        debug(dhead, `res`, res);
+        const correctStep = makeHasLogFor(funcNum, out_tys);
+        const good = (! res.timeout) && correctStep(res.txn);
+        if ( good ) {
+          await eq.deq(dhead);
+          const txn = res.txn;
           return await recvFrom({dhead, out_tys, didSend, funcNum, txn});
+        } else if ( timeoutAt ) {
+          debug(dhead, `timeout`);
+          return { didTimeout: true };
+        } else {
+          throw Error(`impossible: not good, but no timeout`);
         }
       };
 
@@ -1585,8 +1519,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return bs;
     };
     const setupView = (setupViewArgs: SetupViewArgs) => {
-      const eventCache = new EventCache();
-      const getC = makeGetC(setupViewArgs, eventCache, () => {});
+      const eq = new EventQueue();
+      const getC = makeGetC(setupViewArgs, eq, () => {});
       const viewLib: IViewLib = {
         viewMapRef: async (mapi: number, a:any): Promise<any> => {
           const { viewMapRef } = await getC();
@@ -1621,59 +1555,48 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const setupEvents = (a: SetupEventArgs) => {
-      const eventCache = new EventCache();
+      const eq = new EventQueue();
       let time = bigNumberify(0);
-      const getC = makeGetC(a, eventCache, (cb: number) => {
+      const getC = makeGetC(a, eq, (cb: number) => {
         time = bigNumberify(cb);
       });
+      let logs: string[] = [];
       const createEventStream = (evt: string, tys: AnyALGO_Ty[]) => {
-        let logIndex: any = {};
         const lr = makeLogRep(evt, tys);
-        let lastLog: any = undefined;
-
         const seek = (t: Time) => {
+          assert(time < t, 'seek must seek future');
           debug("EventStream::seek", t);
           time = t;
-          logIndex[time.toNumber()] = 0;
+          logs = [];
         };
-
         const next = async () => {
+          const {} = await getC();
           let dhead = "EventStream::next";
-          const { ApplicationID } = await getC();
-          const which = (round: number) => logIndex[round] || 0;
-          const pred = (txn: any) => lr.checkFromP(txn, which);
-          let res: QueryResult = { succ: false, round: 0  };
-          while (!res.succ) {
-            res = await eventCache.query(dhead, ApplicationID, { minRound: time.toNumber(), isEventStream: true }, pred);
-            if (!res.succ) { await Timeout.set(5000); }
+          let parsedLog = undefined;
+          while ( parsedLog === undefined ) {
+            while ( logs.length === 0 ) {
+              const txn = await eq.deq(dhead);
+              debug(dhead, { txn });
+              const cr = bigNumberify(txn['confirmed-round']);
+              if ( cr.gte(time) ) {
+                time = cr;
+                logs = txn['logs'];
+                debug(dhead, { time, logs });
+              }
+            }
+            const l = logs[0];
+            logs.shift();
+            parsedLog = lr.parse(l);
+            debug(dhead, { parsedLog, l });
           }
-          const [ round, idx, log ] = lr.checkFromA(res.txn, which);
-          const logIdx = which(round);
-          logIndex[round] = logIdx + idx + 1;
-          const parsedLog = lr.parse(log);
-          const blockTime = bigNumberify(round);
-          time = blockTime;
-          debug(dhead + ` parsed log`, parsedLog, blockTime);
-          lastLog = { when: blockTime, what: parsedLog };
-          return lastLog;
+          debug(dhead, 'ret');
+          return { when: time, what: parsedLog };
         };
-
-        const seekNow = async () => {
-          time = await getNetworkTime();
-        };
-
-        const lastTime = async () => {
-          const dhead = "EventStream::lastTime";
-          debug(dhead, time);
-          return lastLog?.when;
-        };
-
+        const seekNow = async () => seek(await getNetworkTime());
+        const lastTime = async () => time;
         const monitor = async (onEvent: (x: any) => void) => {
-          while (true) {
-            onEvent(await next());
-          }
+          while (true) { onEvent(await next()); }
         };
-
         return { lastTime, seek, seekNow, monitor, next };
       };
       return { createEventStream };
@@ -1971,10 +1894,10 @@ type VerifyResult = {
 };
 
 export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<VerifyResult> => {
-  return verifyContract_('', info, bin, new EventCache());
+  return verifyContract_('', info, bin, new EventQueue());
 }
 
-const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, eventCache: EventCache): Promise<VerifyResult> => {
+const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, eq: EventQueue): Promise<VerifyResult> => {
   must_be_supported(bin);
   // @ts-ignore
   const ai_bn: BigNumber = protect(T_Contract, info);
@@ -2022,25 +1945,23 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
 
   const indexer = await getIndexer();
   const ilq = indexer.lookupApplications(ApplicationID).includeAll();
-  const ilr = await doQuery_(`${dhead} app lookup`, ilq, true);
+  const ilr = await doQuery_(`${dhead} app lookup`, ilq);
   debug(dhead, {ilr});
   const appInfo_i = ilr.application;
   debug(dhead, {appInfo_i});
   chkeq(appInfo_i['deleted'], false, `Application must not be deleted`);
   // First, we learn from the indexer when it was made
   const allocRound = appInfo_i['created-at-round'];
+  eq.init({ ApplicationID });
 
   // Next, we check that it was created with this program and wasn't created
   // with a different program first (which could have modified the state)
-  const iar = await eventCache.query(dhead, ApplicationID, { specRound: allocRound }, (_: any) => true);
-  // @ts-ignore
-  const iat = iar.txn;
-  chk(iat, `Cannot query for allocation transaction`);
+  const iat = await eq.deq(dhead);
   debug({iat});
-  const iatat = iat['application-transaction'];
-  debug({iatat});
-  chkeq(iatat['approval-program'], appInfo_p['approval-program'], `ApprovalProgram unchanged since creation`);
-  chkeq(iatat['clear-state-program'], appInfo_p['clear-state-program'], `ClearStateProgram unchanged since creation`);
+  chkeq(iat['application-index'], 0, 'app created');
+  chkeq(iat['confirmed-round'], allocRound, 'created on correct round');
+  chkeq(iat['approval-program'], appInfo_p['approval-program'], `ApprovalProgram unchanged since creation`);
+  chkeq(iat['clear-state-program'], appInfo_p['clear-state-program'], `ClearStateProgram unchanged since creation`);
 
   return { ApplicationID, Deployer, startRound: allocRound };
 };
@@ -2073,7 +1994,7 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
     if ( ! sk ) {
       throw new Error(`can only launchToken with account with secret key`);
     }
-    const params = await getTxnParams();
+    const params = await getTxnParams('launchToken');
     const t = mktxn(params);
     const s = t.signTxn(sk);
     const r = (await algod.sendRawTransaction(s).do());

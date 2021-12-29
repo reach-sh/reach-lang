@@ -118,9 +118,9 @@ checkteal () {
 #exit 0
 
 jb
+ci ALGO event
 ci ALGO rps-7-loops
 ci ALGO api-map
-ci ALGO event
 exit 0
 
 # (cd hs && mk hs-test)
