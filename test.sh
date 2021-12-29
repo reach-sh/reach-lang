@@ -118,8 +118,10 @@ checkteal () {
 #exit 0
 
 jb
-ci ALGO event
+ci CFX rps-7-loops
+exit 0
 ci ALGO rps-7-loops
+ci ALGO event
 ci ALGO api-map
 exit 0
 

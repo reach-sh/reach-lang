@@ -240,12 +240,12 @@ export class Contract implements IContract {
         // @ts-ignore
         const cfc = self._contract[fname].call(...argsConformed);
         debug(`cfxers:handler`, fname, `cfc`, cfc);
+        const {to, data} = cfc; // ('to' is just ctc address)
+        txn = { ...txn, to, data};
         // @ts-ignore
         txn = await addEstimates(this._wallet.provider.conflux, txn);
-        const {to, data} = cfc; // ('to' is just ctc address)
-        const txnDat = {...txn, to, data};
-        debug(`cfxers:handler`, fname, `txnDat`, txnDat);
-        const res = await _wallet.sendTransaction({...txnDat});
+        debug(`cfxers:handler`, fname, `txn`, txn);
+        const res = await _wallet.sendTransaction(txn);
         const {transactionHash} = await res.wait();
         // debug(`cfxers:handler`, fname, 'receipt');
         // debug(transactionReceipt);
