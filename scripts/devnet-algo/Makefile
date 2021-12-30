@@ -14,6 +14,9 @@ build:
 .PHONY: build-m1
 build-m1: build
 
+.PHONY: build-devnet-algo
+build-devnet-algo: build
+
 .PHONY: push
 push:
 	$(ROOT)/scripts/docker-push.sh $(IMAGE)

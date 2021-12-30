@@ -1,4 +1,4 @@
-FROM golang:1.14-alpine as builder
+FROM golang:1.14-alpine as build
 
 RUN apk add --no-cache \
   ca-certificates \
@@ -46,7 +46,7 @@ RUN make
 RUN cp cmd/algorand-indexer/algorand-indexer /go/bin
 
 FROM alpine as goal
-COPY --from=builder /go/bin/goal /bin/
+COPY --from=build /go/bin/goal /bin/
 
 FROM alpine:latest as prepare
 
@@ -56,7 +56,7 @@ RUN apk add --no-cache \
 WORKDIR /
 
 ### ALGOD & INDEXER
-COPY --from=builder /go/bin/algod /go/bin/algorand-indexer /go/bin/goal /go/bin/kmd /bin/
+COPY --from=build /go/bin/algod /go/bin/algorand-indexer /go/bin/goal /go/bin/kmd /bin/
 
 ### Setup
 ENV ALGORAND_NETWORK=/var/lib/algorand_network
@@ -71,7 +71,7 @@ COPY prime-algod.sh /
 RUN /prime-algod.sh
 
 FROM alpine:latest as generate
-COPY --from=builder /go/bin/goal /go/bin/algod /go/bin/kmd /bin/
+COPY --from=build /go/bin/goal /go/bin/algod /go/bin/kmd /bin/
 COPY network_template.json .
 COPY generate.sh .
 RUN ./generate.sh
@@ -86,7 +86,7 @@ RUN apk add bash
 ENV ALGORAND_NETWORK=/var/lib/algorand_network
 ENV ALGORAND_DATA=${ALGORAND_NETWORK}/Primary
 
-COPY --from=builder /go/bin/goal /go/bin/algod /go/bin/algorand-indexer /bin/
+COPY --from=build /go/bin/goal /go/bin/algod /go/bin/algorand-indexer /bin/
 COPY --from=prepare /var/lib/algorand_network/ /var/lib/algorand_network/
 
 ### Our stuff

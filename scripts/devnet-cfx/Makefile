@@ -10,6 +10,9 @@ build:
 .PHONY: build-m1
 build-m1: build
 
+.PHONY: build-devnet-cfx
+build-devnet-cfx: build
+
 .PHONY: push
 push:
 	$(ROOT)/scripts/docker-push.sh $(IMAGE)
