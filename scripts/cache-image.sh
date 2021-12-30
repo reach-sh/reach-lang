@@ -1,6 +1,5 @@
 #!/bin/sh -x
 IMAGE=$1
-images=$(docker image ls | grep "${IMAGE}:circleci" | awk '{print $1 ":" $2}')
-for i in ${images}; do
+for i in $(docker image ls --format "{{.Repository}}:{{.Tag}}" | grep "${IMAGE}:circleci") ; do
   docker push "$i"
 done
