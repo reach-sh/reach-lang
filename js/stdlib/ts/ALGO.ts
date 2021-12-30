@@ -1138,11 +1138,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
           return await recv({funcNum, evt_cnt, out_tys, didSend, waitIfNotPresent, timeoutAt});
         };
-        if ( ! onlyIf ) {
-          return await doRecv(false, true);
-        }
         const funcName = `m${funcNum}`;
         const dhead = `${label}: sendrecv ${funcName} ${timeoutAt}`;
+        if ( ! onlyIf ) {
+          debug(dhead, `onlyIf false`);
+          return await doRecv(false, true);
+        }
 
         const trustedRecv = async (txn:RecvTxn): Promise<Recv> => {
           const didSend = true;
@@ -1457,14 +1458,20 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
 
       const recv = async (rargs:RecvArgs): Promise<Recv> => {
-        const { funcNum, out_tys, didSend, timeoutAt } = rargs;
+        const { funcNum, out_tys, didSend, timeoutAt, waitIfNotPresent } = rargs;
         const funcName = `m${funcNum}`;
-        const dhead = `${label}: ${label} recv ${funcName} ${timeoutAt}`;
+        const dhead = `${label}: recv ${funcName} ${timeoutAt}`;
         debug(dhead, 'start');
         const { isIsolatedNetwork } = await getC();
         const didTimeout = async (currentRound: number): Promise<boolean> => {
           debug(dhead, 'TIMECHECK', {timeoutAt, currentRound});
-          return await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, currentRound+1);
+          const crp = currentRound + 1;
+          const r = await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, crp);
+          debug(dhead, 'TIMECHECK', {r, waitIfNotPresent});
+          if ( !r && waitIfNotPresent ) {
+            await waitUntilTime(bigNumberify(crp));
+          }
+          return r;
         };
         const res = await eq.peq(dhead, didTimeout);
         debug(dhead, `res`, res);

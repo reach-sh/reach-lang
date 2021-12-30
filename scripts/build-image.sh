@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash -xe
 IMAGE=$1
 FILE=$2
 shift 2

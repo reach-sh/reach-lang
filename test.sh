@@ -119,12 +119,8 @@ checkteal () {
 
 jb
 
-ci ALGO prtest
-ci ALGO prtest2
-ci ALGO prtest3
-ci ALGO view-steps
-exit 0
 ci ALGO raffle
+exit 0
 ci ALGO simple-nft-auction
 exit 0
 ci ALGO rps-7-loops
