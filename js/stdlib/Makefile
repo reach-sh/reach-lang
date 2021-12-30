@@ -1,10 +1,8 @@
+IMAGE=reachsh/stdlib
 ROOT=../..
 include $(ROOT)/VERSION
-include $(ROOT)/js/JS_IMAGES
-include $(ROOT)/DEPS
 include Makefile.docker
 
-IMAGE=$(STDLIB_IMAGE)
 JS-PACKAGE='@reach-sh/stdlib'
 
 $(ROOT)/hs/sol/stdlib.json:
@@ -20,11 +18,7 @@ expand: package.json ts/version.ts ts/stdlib_sol.ts
 build:
 	mkdir -p .docker-root
 	cp -f $(ROOT)/VERSION .docker-root/
-	docker build --tag=$(IMAGE) \
-	  --build-arg NODE_VERSION=$(NODE_VERSION) \
-	  --build-arg REACH_VERSION=$(VERSION) \
-	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
-	  .
+	$(ROOT)/scripts/build-image.sh $(IMAGE) Dockerfile
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: push

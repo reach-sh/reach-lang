@@ -4,7 +4,7 @@ include $(ROOT)/DEPS
 
 .PHONY: build
 build:
-	docker build --build-arg REACH_GIT_HASH="$$(../git-hash.sh)" --tag=$(IMAGE):latest .
+	$(ROOT)/scripts/build-image.sh $(IMAGE) Dockerfile
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: build-m1

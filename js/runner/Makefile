@@ -1,14 +1,7 @@
+IMAGE=reachsh/runner
 ROOT=../..
-include $(ROOT)/js/JS_IMAGES
-include $(ROOT)/DEPS
-
-IMAGE=$(RUNNER_IMAGE)
 
 .PHONY: build
 build:
-	docker build --tag=$(IMAGE):latest \
-	  --build-arg REACH_VERSION=$(REACH_VERSION) \
-	  --build-arg NODE_VERSION=$(NODE_VERSION) \
-	  --build-arg REACH_GIT_HASH=$(REACH_GIT_HASH) \
-	  .
+	$(ROOT)/scripts/build-image.sh $(IMAGE) Dockerfile
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)

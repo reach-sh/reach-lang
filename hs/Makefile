@@ -1,7 +1,6 @@
 IMG_HASKELL_BUILD_ARTIFACTS="reachsh/haskell-build-artifacts"
 IMG_REACHC="reachsh/reach"
 IMG_REACH_CLI="reachsh/reach-cli"
-ALPINE_VERSION="3.14.2"
 ROOT=..
 
 include $(ROOT)/VERSION
@@ -21,28 +20,18 @@ build-haskell-build-artifacts:
 	cp -f $(ROOT)/VERSION $(ROOT)/DEPS .docker-root/
 	docker container rm -f repo || true
 	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
-	docker build \
-	  --build-arg SOLC_VERSION=$(SOLC_VERSION) \
-	  --add-host host.docker.internal:172.17.0.1 \
-	  --tag=$(IMG_HASKELL_BUILD_ARTIFACTS):latest \
-	  -f Dockerfile.haskell-build-artifacts .
+	$(ROOT)/scripts/build-image.sh $(IMG_HASKELL_BUILD_ARTIFACTS) Dockerfile.haskell-build-artifacts \
+	  --add-host host.docker.internal:172.17.0.1
 	docker container rm -f repo
 
 .PHONY: build-reach-cli
 build-reach-cli:
-	docker build \
-	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \
-	  --tag=$(IMG_REACH_CLI):latest \
-	  -f Dockerfile.reach-cli .
+	$(ROOT)/scripts/build-image.sh $(IMG_REACH_CLI) Dockerfile.reach-cli
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
 
 .PHONY: build-reach
 build-reach:
-	docker build \
-	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
-	  --build-arg ALPINE_VERSION=$(ALPINE_VERSION) \
-	  --tag=$(IMG_REACHC):latest \
-	  -f Dockerfile.reachc .
+	$(ROOT)/scripts/build-image.sh $(IMG_REACHC) Dockerfile.reachc
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
 
 .PHONY: build

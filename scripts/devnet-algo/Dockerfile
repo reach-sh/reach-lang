@@ -45,9 +45,6 @@ RUN make
 #RUN make
 RUN cp cmd/algorand-indexer/algorand-indexer /go/bin
 
-FROM alpine as goal
-COPY --from=build /go/bin/goal /bin/
-
 FROM alpine:latest as prepare
 
 RUN apk add --no-cache \
@@ -76,7 +73,7 @@ COPY network_template.json .
 COPY generate.sh .
 RUN ./generate.sh
 
-FROM scratch as generate-out
+FROM scratch as ignore-generate-out
 COPY --from=generate /algorand_network /
 
 FROM alpine
