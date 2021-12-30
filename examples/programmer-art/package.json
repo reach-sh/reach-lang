@@ -12,7 +12,9 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@reach-sh/simulator-client": "0.0.6",
+    "@reach-sh/simulator-client": "0.0.7",
+    "cytoscape": "^3.20.0",
+    "cytoscape-klay": "^3.1.4",
     "net": "^1.0.2"
   },
   "devDependencies": {
