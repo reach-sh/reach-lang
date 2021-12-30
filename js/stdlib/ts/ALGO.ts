@@ -424,7 +424,7 @@ export function getQueryLowerBound(): BigNumber {
 export function setQueryLowerBound(x: BigNumber|number): void {
   const xx = bigNumberify(x);
   if ( ! xx.eq(0) ) {
-    throw Error(`Only setQueryLowerBound(0) is supported on Algorand`);
+    console.log(`WARNING: Only setQueryLowerBound(0) is supported on Algorand, given ${x}; this request has been ignored and logged for posterity`);
   }
 }
 
