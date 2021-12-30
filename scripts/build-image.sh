@@ -1,19 +1,19 @@
-#!/bin/sh
+#!/bin/bash
 IMAGE=$1
 FILE=$2
 shift 2
-ARGS="$*"
+ARGS=( "$@" )
 
 HERE=$(dirname "$0")
-ARGS="${ARGS} --build-arg REACH_GIT_HASH=$("${HERE}"/git-hash.sh)"
+ARGS+=( "--build-arg" "REACH_GIT_HASH=$("${HERE}"/git-hash.sh)" )
 # shellcheck source=/dev/null
-. "${HERE}"/VERSION
+. "${HERE}"/../VERSION
 # shellcheck source=/dev/null
-. "${HERE}"/DEPS
-ARGS="${ARGS} --build-arg SOLC_VERSION=${SOLC_VERSION}"
-ARGS="${ARGS} --build-arg ALPINE_VERSION=${ALPINE_VERSION}"
-ARGS="${ARGS} --build-arg NODE_VERSION=${NODE_VERSION}"
-ARGS="${ARGS} --build-arg REACH_VERSION=${VERSION}"
+. "${HERE}"/../DEPS
+ARGS+=( "--build-arg" "SOLC_VERSION=${SOLC_VERSION}" )
+ARGS+=( "--build-arg" "ALPINE_VERSION=${ALPINE_VERSION}" )
+ARGS+=( "--build-arg" "NODE_VERSION=${NODE_VERSION}" )
+ARGS+=( "--build-arg" "REACH_VERSION=${VERSION}" )
 
 LAYERS=$(grep -E 'FROM .* as' "${FILE}" | grep -v ignore | awk -F' as ' '{print $2}')
 
@@ -21,10 +21,10 @@ if [ "${CIRCLE_BRANCH}" = "" ] ; then
   CIRCLE_BRANCH=master
 fi
 
-CACHE_FROM=""
+CACHE_FROM=()
 dp () {
   docker pull "$1" || true
-  CACHE_FROM="${CACHE_FROM} --cache-from=${1}"
+  CACHE_FROM+=("--cache-from=${1}")
 }
 IMAGEC="${IMAGE}:circleci"
 dpb () {
@@ -43,14 +43,14 @@ docker buildx create --use
 
 build_image () {
     LAYER=$1
-    TARGET=""
+    TARGET=()
     TAG="--tag=${IMAGEC}-${LAYER}-${CIRCLE_BRANCH}"
     if [ "x${LAYER}" != "x" ]; then
-        TARGET="--target=${LAYER}"
+      TARGET+=("--target=${LAYER}")
     fi
 
     # linux/arm64
-    docker buildx build --platform=linux/amd64 -o type=image "$TAG" "$TARGET" "$CACHE_FROM" "$ARGS" --file "$FILE" .
+    docker buildx build --platform=linux/amd64 -o type=image "$TAG" "${TARGET[@]}" "${CACHE_FROM[@]}" "${ARGS[@]}" --file "$FILE" .
 }
 
 for i in $LAYERS; do
