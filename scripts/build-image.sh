@@ -59,5 +59,5 @@ for i in $LAYERS; do
     build_image "$i"
 done
 
-build_image
+build_image ""
 docker tag "${IMAGEC}--${CIRCLE_BRANCH}" "${IMAGE}:latest"
