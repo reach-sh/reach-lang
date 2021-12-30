@@ -33,6 +33,12 @@ const getStates = async () => {
   return r;
 }
 
+const getEdges = async () => {
+  const r = await interact(`GET`, `${address}/edges`)
+  console.log(r)
+  return r;
+}
+
 const getStatus = async () => {
   const r = await interact(`GET`, `${address}/status`)
   console.log(r)
@@ -99,5 +105,6 @@ export {
   waitForPort,
   initFor,
   getStateLocals,
-  getStateGlobals
+  getStateGlobals,
+  getEdges
 };

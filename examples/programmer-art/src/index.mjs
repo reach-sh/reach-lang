@@ -1,4 +1,48 @@
 import * as c from '@reach-sh/simulator-client';
+import cytoscape from 'cytoscape';
+import klay from 'cytoscape-klay';
+
+cytoscape.use( klay );
+
+const redraw = async () => {
+  let edges = await c.getEdges()
+  let states = await c.getStates()
+  let elements = []
+  for (const s of states) {
+    elements.push({data: {id: s}})
+  }
+  for (const [index, value] of edges.entries()) {
+    const from = value[0]
+    const to = value[1]
+    elements.push({data: { id: `edge-${index}`, source: from, target: to } })
+  }
+  let cy = cytoscape({
+    container: document.getElementById('cy'),
+    elements: elements,
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'background-color': '#666',
+          'label': 'data(id)'
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 3,
+          'line-color': '#ccc',
+          'target-arrow-color': '#ccc',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier'
+        }
+      }
+    ],
+    layout: {
+      name: 'klay'
+    }
+  });
+}
 
 const log = document.querySelector("#output")
 
@@ -57,6 +101,7 @@ const respond = async () => {
   let w = parseInt(document.querySelector("#resForActor").value)
   let r = await c.respondWithVal(s,a,v,w)
   appendToLog(r)
+  redraw()
 
 }
 respondBtn.addEventListener("click",respond)
@@ -68,6 +113,7 @@ const initFor = async () => {
   let a = parseInt(document.querySelector("#initForActor").value)
   let r = await c.initFor(s,a)
   appendToLog(r)
+  redraw()
 
 }
 initForBtn.addEventListener("click",initFor)
@@ -77,6 +123,7 @@ const initBtn = document.querySelector("#initButton")
 const init = async () => {
   let r = await c.init()
   appendToLog(r)
+  redraw()
 
 }
 initBtn.addEventListener("click",init)

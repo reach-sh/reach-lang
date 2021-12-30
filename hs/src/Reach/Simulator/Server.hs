@@ -57,6 +57,7 @@ data Session = Session
   , e_graph :: Graph
   , e_src :: Maybe LLProg
   , e_status :: Status
+  , e_edges :: [(StateId,StateId)]
   }
 
 initSession :: Session
@@ -69,12 +70,14 @@ initSession = Session
   , e_graph = mempty
   , e_src = Nothing
   , e_status = Initial
+  , e_edges = mempty
   }
 
-processNewState :: C.PartState -> WebM ()
-processNewState ps = do
+processNewState :: Maybe (StateId) -> C.PartState -> WebM ()
+processNewState psid ps = do
   sid <- gets e_nsid
   actorId <- gets e_actor_id
+  edges <- gets e_edges
   _ <- case ps of
     C.PS_Done _ _ -> do
       _ <- return $ putStrLn "EVAL DONE"
@@ -93,6 +96,10 @@ processNewState ps = do
     {e_nsid = sid + 1}
     {e_status = stat}
     {e_graph = M.insert sid (g,l') graph}
+  case psid of
+    Nothing -> return ()
+    Just psid' -> modify $ \ st -> st
+      {e_edges = (psid',sid):edges}
 
 registerAction :: C.ActorId -> C.Action -> WebM ActionId
 registerAction actorId act = do
@@ -129,35 +136,35 @@ unblockProg sid aid v = do
           case M.lookup aid avActions of
             Just (C.A_Interact _at _slcxtframes _part _str _dltype _args) -> do
               let ps = k (g,l) v
-              processNewState ps
+              processNewState (Just sid) ps
             Just (C.A_InteractV _part _str _dltype) -> do
               let ps = k (g,l) v
-              processNewState ps
+              processNewState (Just sid) ps
             Just (C.A_Contest _phid) -> do
               let ps = k (g,l) v
-              processNewState ps
+              processNewState (Just sid) ps
             Just (C.A_TieBreak _poolid _parts) -> do
               let ps = k (g,l) v
-              processNewState ps
+              processNewState (Just sid) ps
             Just C.A_None -> do
               let ps = k (g,l) v
-              processNewState ps
+              processNewState (Just sid) ps
             Just (C.A_AdvanceTime n)  -> do
               case ((C.e_nwtime g) < n) of
                 True -> do
                   let ps = k (g{C.e_nwtime = n},l) v
-                  processNewState ps
+                  processNewState (Just sid) ps
                 False -> do
                   let ps = k (g,l) v
-                  processNewState ps
+                  processNewState (Just sid) ps
             Just (C.A_AdvanceSeconds n)  -> do
               case ((C.e_nwsecs g) < n) of
                 True -> do
                   let ps = k (g{C.e_nwsecs = n},l) v
-                  processNewState ps
+                  processNewState (Just sid) ps
                 False -> do
                   let ps = k (g,l) v
-                  processNewState ps
+                  processNewState (Just sid) ps
             Nothing -> possible "action not found"
         Just (Just (C.PS_Done _ _)) -> do
           possible "previous state already terminated"
@@ -171,6 +178,11 @@ getStatus :: WebM Status
 getStatus = do
   s <- gets e_status
   return s
+
+getEdges :: WebM [(StateId,StateId)]
+getEdges = do
+  es <- gets e_edges
+  return es
 
 getProgState :: StateId -> WebM (Maybe C.State)
 getProgState sid = do
@@ -194,7 +206,7 @@ initProgSim :: LLProg -> WebM ()
 initProgSim ll = do
   let initSt = C.initState
   ps <- return $ C.initApp ll initSt
-  processNewState ps
+  processNewState Nothing ps
 
 initProgSimFor :: C.ActorId -> StateId -> LLProg -> WebM ()
 initProgSimFor actId sid (LLProg _ _ _ _ _ _ _ _ step) = do
@@ -203,7 +215,7 @@ initProgSimFor actId sid (LLProg _ _ _ _ _ _ _ _ step) = do
   let (g,l) = saferMapRef "initProgSimFor" $ M.lookup sid graph
   let l' = l { C.l_curr_actor_id = actId }
   ps <- return $ C.initAppFromStep step (g,l')
-  processNewState ps
+  processNewState (Just sid) ps
 
 startServer :: LLProg -> IO ()
 startServer p = do
@@ -252,6 +264,11 @@ app p = do
     setHeaders
     ss <- webM $ allStates
     json ss
+
+  get "/edges" $ do
+    setHeaders
+    es <- webM $ getEdges
+    json es
 
   get "/global/:s" $ do
     setHeaders
