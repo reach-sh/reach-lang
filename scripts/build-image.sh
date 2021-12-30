@@ -3,10 +3,13 @@ IMAGE=$1
 FILE=$2
 shift 2
 ARGS="$*"
-ARGS="${ARGS} --build-arg REACH_GIT_HASH=$(../git-hash.sh)"
 
-. ../VERSION
-. ../DEPS
+HERE=$(dirname "$0")
+ARGS="${ARGS} --build-arg REACH_GIT_HASH=$("${HERE}"/git-hash.sh)"
+# shellcheck source=/dev/null
+. "${HERE}"/VERSION
+# shellcheck source=/dev/null
+. "${HERE}"/DEPS
 ARGS="${ARGS} --build-arg SOLC_VERSION=${SOLC_VERSION}"
 ARGS="${ARGS} --build-arg ALPINE_VERSION=${ALPINE_VERSION}"
 ARGS="${ARGS} --build-arg NODE_VERSION=${NODE_VERSION}"

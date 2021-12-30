@@ -2,8 +2,8 @@ IMAGE=reachsh/devnet-eth
 ROOT=../..
 include $(ROOT)/DEPS
 
-.PHONY: build-devnet-eth
-build-devnet-eth:
+.PHONY: build
+build:
 	$(ROOT)/scripts/build-image.sh $(IMAGE) Dockerfile
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
