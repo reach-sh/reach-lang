@@ -51,7 +51,8 @@ build_image () {
     fi
 
     # linux/arm64
-    docker build --platform=linux/amd64 "$TAG" "${TARGET[@]}" "${CACHE_FROM[@]}" "${ARGS[@]}" --file "$FILE" .
+    docker build --platform=linux/amd64 "$TAG" "${TARGET[@]}" "${CACHE_FROM[@]}" "${ARGS[@]}" --file "$FILE" --build-arg BUILDKIT_INLINE_CACHE=1 .
+    # ^ that inline cache might be a bad idea for the "final" one
 }
 
 for i in $LAYERS; do
