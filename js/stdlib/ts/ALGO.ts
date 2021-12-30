@@ -388,9 +388,12 @@ function looksLikeAccountingNotInitialized(e: any) {
   return msg.includes(`accounting not initialized`);
 }
 
-const doQuery_ = async <T>(dhead:string, query: ApiCall<T>): Promise<T> => {
+const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0): Promise<T> => {
   debug(dhead, { query });
   while ( true ) {
+    if ( howMany > 0 ) {
+      await Timeout.set(1000);
+    }
     try {
       const res = await query.do();
       debug(dhead, 'RESULT', res);
@@ -402,7 +405,7 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>): Promise<T> => {
         debug(dhead, 'ACCOUNTING NOT INITIALIZED');
       }
       debug(dhead, 'RETRYING', {e});
-      await Timeout.set(5000);
+      howMany++;
     }
   }
 };
@@ -446,7 +449,7 @@ const emptyOptIn = (txn:IndexerTxn) => {
     && ataa.length == 0;
 };
 class EventQueue {
-  initArgs: EQInitArgs|undefined;
+  public initArgs: EQInitArgs|undefined;
   txns: Array<RecvTxn>;
   round: number;
   customIgnore: Array<IndexerTxnPred>;
@@ -457,14 +460,11 @@ class EventQueue {
     this.customIgnore = [];
   }
   init(args:EQInitArgs) {
-    if ( this.initArgs === undefined ) {
-      this.initArgs = args;
-    } else if ( JSON.stringify(this.initArgs) !== JSON.stringify(args) ) {
-      debug('EventQueue.init', this.initArgs, args);
-      throw Error(`attempt to reset event queue args`);
-    }
+    assert(this.initArgs === undefined, `init: must be uninitialized`);
+    this.initArgs = args;
   }
   pushIgnore(pred: IndexerTxnPred) {
+    assert(this.initArgs !== undefined, `pushIgnore: must be uninitialized`);
     this.customIgnore.push(pred);
   }
   async deq(dhead: string): Promise<RecvTxn> {
@@ -477,6 +477,7 @@ class EventQueue {
     const dhead = `${lab} peq`;
     if (this.initArgs === undefined) {
       throw Error(`${dhead}: not initialized`); }
+    let howMany = 0;
     while ( this.txns.length === 0 ) {
       const { ApplicationID } = this.initArgs;
       const notIgnored = (txn:IndexerTxn) => (! emptyOptIn(txn));
@@ -486,19 +487,21 @@ class EventQueue {
           .applicationID(ApplicationID)
           .txType('appl')
           .minRound(this.round + 1);
-      const res = (await doQuery_(dhead, query)) as IndexerQueryMRes;
+      const res = (await doQuery_(dhead, query, howMany++)) as IndexerQueryMRes;
       let txns = res.transactions;
       const cr = res['current-round'];
       if ( txns.length === 0 ) { this.round = cr; }
-      const r = (x:IndexerTxn): number => {
-        const xr = x['confirmed-round'];
-        if ( this.round < xr ) { this.round = xr; }
-        return xr;
-      };
-      const cmpTxn = (x:IndexerTxn, y:IndexerTxn): number => r(x) - r(y);
-      txns.sort(cmpTxn);
-      if ( txns.length === 1 ) { r(txns[0]); }
-      txns = txns.filter(notIgnored);
+      else {
+        const r = (x:IndexerTxn): number => {
+          const xr = x['confirmed-round'];
+          if ( this.round < xr ) { this.round = xr; }
+          return xr;
+        };
+        const cmpTxn = (x:IndexerTxn, y:IndexerTxn): number => r(x) - r(y);
+        txns.sort(cmpTxn);
+        if ( txns.length === 1 ) { r(txns[0]); }
+        txns = txns.filter(notIgnored);
+      }
       const cis = this.customIgnore;
       while ( txns.length > 0 && cis.length > 0 ) {
         const ci = cis[0];
@@ -506,7 +509,9 @@ class EventQueue {
         const t = txns[0];
         txns.shift();
         if ( ! ci(t) ) {
-          throw Error(`customIgnore present, ${ci}, but top txn did not match ${JSON.stringify(t)}`);
+          throw Error(`${dhead} customIgnore present, ${ci}, but top txn did not match ${JSON.stringify(t)}`);
+        } else {
+          debug(dhead, `ignored`, ci, t);
         }
       }
       if ( txns.length === 0 && await didTimeout(cr) ) {
@@ -979,7 +984,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           await stdVerifyContract( setupViewArgs, (async () => {
             return await verifyContract_(label, ctcInfo, bin, eq);
           }));
-        eq.init({ ApplicationID });
+        if ( eq.initArgs === undefined ) {
+          eq.init({ ApplicationID });
+          eq.pushIgnore(isCreateTxn);
+        }
         debug(label, 'getC', {ApplicationID} );
 
         const ctcAddr = algosdk.getApplicationAddress(ApplicationID);
@@ -1169,7 +1177,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
           debug(label, `created`, {ApplicationID});
           const ctcInfo = ApplicationID;
-          eq.pushIgnore(isCreateTxn);
           setTrustedVerifyResult({ ApplicationID, Deployer });
           setInfo(ctcInfo);
         }

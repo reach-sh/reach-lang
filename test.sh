@@ -30,7 +30,7 @@ jb () {
   #(cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
-  (cd "$ROOT"/js/rpc-server && make build)
+  #(cd "$ROOT"/js/rpc-server && make build)
   #(cd "$ROOT"/js/react-runner && make build)
   # (cd "$ROOT"/js && make build)
 }
@@ -118,10 +118,11 @@ checkteal () {
 #exit 0
 
 jb
+ci ALGO rps-7-loops
+exit 0
 ci ALGO atomic-swap
 exit 0
 ci ALGO event
-ci ALGO rps-7-loops
 ci ALGO api-map
 exit 0
 
