@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 IMAGE=$1
 FILE=$2
 shift 2
@@ -39,7 +39,8 @@ for i in $LAYERS; do
   dpb "$i"
 done
 
-docker buildx create --use
+DOCKER_BUILDKIT=1
+export DOCKER_BUILDKIT
 
 build_image () {
     LAYER=$1
@@ -50,7 +51,7 @@ build_image () {
     fi
 
     # linux/arm64
-    docker buildx build --platform=linux/amd64 -o type=image "$TAG" "${TARGET[@]}" "${CACHE_FROM[@]}" "${ARGS[@]}" --file "$FILE" .
+    docker build --platform=linux/amd64 "$TAG" "${TARGET[@]}" "${CACHE_FROM[@]}" "${ARGS[@]}" --file "$FILE" .
 }
 
 for i in $LAYERS; do
