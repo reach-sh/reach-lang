@@ -3,8 +3,6 @@ import * as backend from './build/index.main.mjs';
 
 (async () => {
   const stdlib = await loadStdlib();
-  const now = await stdlib.getNetworkTime();
-  stdlib.setQueryLowerBound(now);
   const assertEq = (expected, actual) => {
     const exps = JSON.stringify(expected);
     const acts = JSON.stringify(actual);

@@ -68,6 +68,8 @@ import { window, process, Env } from './shim';
 import { sha512_256 } from 'js-sha512';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = stdlib;
 export * from './shared_user';
+import { setQueryLowerBound, getQueryLowerBound } from './shared_impl';
+export { setQueryLowerBound, getQueryLowerBound };
 
 // Type Definitions
 
@@ -419,15 +421,6 @@ export function getValidQueryWindow(): number|true {
 export function setValidQueryWindow(n: number|true): void {
   if (typeof n === 'number') {
     throw Error(`Only setValidQueryWindow(true) is supported on Algorand`);
-  }
-}
-export function getQueryLowerBound(): BigNumber {
-  return bigNumberify(0);
-}
-export function setQueryLowerBound(x: BigNumber|number): void {
-  const xx = bigNumberify(x);
-  if ( ! xx.eq(0) ) {
-    console.log(`WARNING: Only setQueryLowerBound(0) is supported on Algorand, given ${x}; this request has been ignored and logged for posterity`);
   }
 }
 

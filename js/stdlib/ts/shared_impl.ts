@@ -823,6 +823,15 @@ export const makeEventStream = <EQInitArgs, RawTxn, ProcTxn, Log>(args:IMESArgs<
   return { lastTime, seek, seekNow, monitor, next };
 };
 
+export function getQueryLowerBound(): BigNumber {
+  console.log(`WARNING: getQueryLowerBound() is deprecated and does nothing.`);
+  return bigNumberify(0);
+};
+export function setQueryLowerBound(x: BigNumber|number): void {
+  void(x);
+  console.log(`WARNING: setQueryLowerBound() is deprecated and does nothing.`);
+};
+
 export class Signal {
   p: Promise<boolean>;
   r: (a:boolean) => void;

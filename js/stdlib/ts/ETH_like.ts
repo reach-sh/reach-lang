@@ -60,6 +60,8 @@ import type { // =>
 import type { // =>
   Stdlib_Backend
 } from './interfaces';
+import { setQueryLowerBound, getQueryLowerBound } from './shared_impl';
+export { setQueryLowerBound, getQueryLowerBound };
 
 // ****************************************************************************
 // Type Definitions
@@ -161,14 +163,6 @@ const {
   addressEq,
 } = stdlib;
 const reachStdlib: Stdlib_Backend<AnyETH_Ty> = stdlib;
-
-const [_getQueryLowerBound, _setQueryLowerBound] = replaceableThunk(() => 0);
-function getQueryLowerBound() {
-  return bigNumberify(_getQueryLowerBound());
-}
-function setQueryLowerBound(x: BigNumber|number) {
-  _setQueryLowerBound(bigNumberToNumber(x));
-}
 
 /** @description convenience function for drilling down to the actual address */
 const getAddr = async (acc: AccountTransferable): Promise<Address> => {

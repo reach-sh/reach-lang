@@ -683,30 +683,11 @@ Represents the `{!js} Connector` the `{!js} stdlib` uses.
 
 ---
 
-@{ref("js", "setQueryLowerBound")}
-```js
-setQueryLowerBound(networkTime) => void
-```
-
-
-Sets the lower bound on querying the network for events.
-The argument to this function is a network time.
-By default, Reach will query for events from time 0.
-This default is usually fine, but on certain networks like Conflux,
-it can be very slow.
-You can use this function to tell Reach to only query from a given network time onwards,
-which can speed up event log querying significantly on Conflux.
-If you use the Reach standard library to `{!js} deploy` or `{!js} attach` to a contract,
-the specified lower bound must be no later than the time at which the contract was deployed.
-
----
-
 @{ref("js", "setValidQueryWindow")}
 
 ```js
 setValidQueryWindow(width: number|true) => void
 ```
-
 
 Sets the maximum width of the query windows used to query the network for event logs.
 The value `{!js} true` indicates that no window size should be used, and queries may span arbitrarily large window sizes.
