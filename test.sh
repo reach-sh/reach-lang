@@ -119,13 +119,13 @@ checkteal () {
 
 jb
 
-ci ALGO raffle
-exit 0
-ci ALGO simple-nft-auction
-exit 0
 ci ALGO rps-7-loops
-ci ALGO event
-ci ALGO api-map
+exit 0
+ci ETH rps-7-loops
+exit 0
+ci ETH event
+ci ETH api-map
+ci ETH raffle
 exit 0
 
 # (cd hs && mk hs-test)

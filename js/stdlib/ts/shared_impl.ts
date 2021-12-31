@@ -13,6 +13,7 @@ import {
   AnyBackendTy,
   checkedBigNumberify,
   bytesEq,
+  assert,
 } from './shared_backend';
 import type { MapRefT } from './shared_backend'; // =>
 import { process } from './shim';
@@ -682,6 +683,94 @@ export const checkTimeout = async (runningIsolated:(() => boolean), getTimeSecs:
   } else {
     throw new Error(`invalid TimeArg mode`);
   }
+};
+
+type Pred<X> = (x:X) => boolean;
+type AsyncPred<X> = (x:X) => Promise<boolean>;
+const neverTrue = async <X>(r:X) => (void(r), false);
+type EQPeqResult<ProcTxn> =
+  | { timeout: true }
+  | { timeout: false, txn: ProcTxn };
+export interface IEventQueue<EQInitArgs, RawTxn, ProcTxn> {
+  isInited : () => boolean,
+  init: (args:EQInitArgs) => void,
+  pushIgnore: (pred: Pred<RawTxn>) => void,
+  peq: (lab: string, didTimeout: AsyncPred<BigNumber>) => Promise<EQPeqResult<ProcTxn>>,
+  deq: (dhead: string) => Promise<ProcTxn>,
+};
+export interface EQGetTxnsR<RawTxn> {
+  txns: Array<RawTxn>,
+  gtime: BigNumber,
+};
+export interface EQCtorArgs<EQInitArgs, RawTxn, ProcTxn> {
+  raw2proc: (t:RawTxn) => ProcTxn,
+  alwaysIgnored: Pred<RawTxn>,
+  getTxns: (dhead:string, initArgs:EQInitArgs, ctime: BigNumber, howMany: number) => Promise<EQGetTxnsR<RawTxn>>,
+  getTxnTime: (x:RawTxn) => BigNumber,
+};
+export const makeEventQueue= <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<EQInitArgs,RawTxn,ProcTxn>): IEventQueue<EQInitArgs, RawTxn, ProcTxn> => {
+  const { raw2proc, alwaysIgnored, getTxns, getTxnTime } = ctorArgs;
+  let initArgs: EQInitArgs|undefined = undefined;
+  let ptxns: Array<ProcTxn> = [];
+  let ctime: BigNumber = bigNumberify(0);
+  const customIgnore: Array<Pred<RawTxn>> = [];
+  const isInited = () => initArgs !== undefined;
+  const init = (args:EQInitArgs) => {
+    assert(initArgs === undefined, `init: must be uninitialized`);
+    initArgs = args;
+  };
+  const pushIgnore = (pred: Pred<RawTxn>) => {
+    assert(initArgs !== undefined, `pushIgnore: must be initialized`);
+    customIgnore.push(pred);
+  };
+  const notIgnored = (txn:RawTxn) => (! alwaysIgnored(txn));
+  const peq = async (lab: string, didTimeout: AsyncPred<BigNumber>): Promise<EQPeqResult<ProcTxn>> => {
+    const dhead = `${lab} peq`;
+    if (initArgs === undefined) {
+      throw Error(`${dhead}: not initialized`); }
+    let howMany = 0;
+    while ( ptxns.length === 0 ) {
+      let { txns, gtime } = await getTxns(dhead, initArgs, ctime, howMany++);
+      if ( txns.length === 0 ) { ctime = gtime; }
+      else {
+        const r = (x:RawTxn): BigNumber => {
+          const xr = getTxnTime(x);
+          if ( ctime.lt(xr) ) { ctime = xr; }
+          return xr;
+        };
+        const cmpTxn = (x:RawTxn, y:RawTxn): number =>
+          r(x).sub(r(y)).toNumber();
+        txns.sort(cmpTxn);
+        if ( txns.length === 1 ) { r(txns[0]); }
+        txns = txns.filter(notIgnored);
+      }
+      const cis = customIgnore;
+      while ( txns.length > 0 && cis.length > 0 ) {
+        const ci = cis[0];
+        cis.shift();
+        const t = txns[0];
+        txns.shift();
+        if ( ! ci(t) ) {
+          throw Error(`${dhead} customIgnore present, ${ci}, but top txn did not match ${JSON.stringify(t)}`);
+        } else {
+          debug(dhead, `ignored`, ci, t);
+        }
+      }
+      if ( txns.length === 0 && await didTimeout(ctime) ) {
+        return { timeout: true };
+      }
+      ptxns = txns.map(raw2proc);
+    }
+    return { timeout: false, txn: ptxns[0] };
+  };
+  const deq = async (dhead: string): Promise<ProcTxn> => {
+    const r = await peq(dhead, neverTrue);
+    if ( r.timeout ) { throw Error('impossible'); }
+    ptxns.shift();
+    return r.txn;
+  };
+
+  return { isInited, init, peq, deq, pushIgnore };
 };
 
 export class Signal {

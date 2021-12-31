@@ -41,6 +41,9 @@ import {
   retryLoop,
   Time,
   ISetupEventArgs,
+  IEventQueue,
+  EQGetTxnsR,
+  makeEventQueue,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -428,15 +431,6 @@ export function setQueryLowerBound(x: BigNumber|number): void {
   }
 }
 
-type EQInitArgs = {
-  ApplicationID: number,
-};
-type EQPeqResult =
-  | { timeout: true }
-  | { timeout: false, txn: RecvTxn }
-type DidTimeout = (round: number) => Promise<boolean>;
-const neverTimeout: DidTimeout = async (r:number) => (void(r), false);
-type IndexerTxnPred = (txn:IndexerTxn) => boolean;
 const isCreateTxn = (txn:IndexerTxn): boolean => {
   const at = txn['application-transaction'];
   return at ? at['application-id'] === 0 : false;
@@ -444,83 +438,34 @@ const isCreateTxn = (txn:IndexerTxn): boolean => {
 const emptyOptIn = (txn:IndexerTxn) => {
   const at = txn['application-transaction'];
   const ataa = at && at['application-args'] || [];
-  return at
-    && at['on-completion'] === 'optin'
-    && ataa.length == 0;
+  return at ?
+    (at['on-completion'] === 'optin' && ataa.length == 0)
+    : false;
 };
-class EventQueue {
-  public initArgs: EQInitArgs|undefined;
-  txns: Array<RecvTxn>;
-  round: number;
-  customIgnore: Array<IndexerTxnPred>;
-  constructor() {
-    this.initArgs = undefined;
-    this.txns = [];
-    this.round = 0;
-    this.customIgnore = [];
-  }
-  init(args:EQInitArgs) {
-    assert(this.initArgs === undefined, `init: must be uninitialized`);
-    this.initArgs = args;
-  }
-  pushIgnore(pred: IndexerTxnPred) {
-    assert(this.initArgs !== undefined, `pushIgnore: must be uninitialized`);
-    this.customIgnore.push(pred);
-  }
-  async deq(dhead: string): Promise<RecvTxn> {
-    const r = await this.peq(dhead, neverTimeout);
-    if ( r.timeout ) { throw Error('impossible'); }
-    this.txns.shift();
-    return r.txn;
-  }
-  async peq(lab: string, didTimeout: DidTimeout): Promise<EQPeqResult> {
-    const dhead = `${lab} peq`;
-    if (this.initArgs === undefined) {
-      throw Error(`${dhead}: not initialized`); }
-    let howMany = 0;
-    while ( this.txns.length === 0 ) {
-      const { ApplicationID } = this.initArgs;
-      const notIgnored = (txn:IndexerTxn) => (! emptyOptIn(txn));
-      const indexer = await getIndexer();
-      const query =
-        indexer.searchForTransactions()
-          .applicationID(ApplicationID)
-          .txType('appl')
-          .minRound(this.round + 1);
-      const res = (await doQuery_(dhead, query, howMany++)) as IndexerQueryMRes;
-      let txns = res.transactions;
-      const cr = res['current-round'];
-      if ( txns.length === 0 ) { this.round = cr; }
-      else {
-        const r = (x:IndexerTxn): number => {
-          const xr = x['confirmed-round'];
-          if ( this.round < xr ) { this.round = xr; }
-          return xr;
-        };
-        const cmpTxn = (x:IndexerTxn, y:IndexerTxn): number => r(x) - r(y);
-        txns.sort(cmpTxn);
-        if ( txns.length === 1 ) { r(txns[0]); }
-        txns = txns.filter(notIgnored);
-      }
-      const cis = this.customIgnore;
-      while ( txns.length > 0 && cis.length > 0 ) {
-        const ci = cis[0];
-        cis.shift();
-        const t = txns[0];
-        txns.shift();
-        if ( ! ci(t) ) {
-          throw Error(`${dhead} customIgnore present, ${ci}, but top txn did not match ${JSON.stringify(t)}`);
-        } else {
-          debug(dhead, `ignored`, ci, t);
-        }
-      }
-      if ( txns.length === 0 && await didTimeout(cr) ) {
-        return { timeout: true };
-      }
-      this.txns = txns.map(indexerTxn2RecvTxn);
-    }
-    return { timeout: false, txn: this.txns[0] };
-  }
+type EQInitArgs = {
+  ApplicationID: number,
+};
+type EventQueue = IEventQueue<EQInitArgs, IndexerTxn, RecvTxn>;
+const newEventQueue = (): EventQueue => {
+  const getTxns = async (dhead:string, initArgs:EQInitArgs, ctime: BigNumber, howMany: number): Promise<EQGetTxnsR<IndexerTxn>> => {
+    const { ApplicationID } = initArgs;
+    const indexer = await getIndexer();
+    const query =
+      indexer.searchForTransactions()
+        .applicationID(ApplicationID)
+        .txType('appl')
+        .minRound(bigNumberToNumber(ctime) + 1);
+    const res = (await doQuery_(dhead, query, howMany)) as IndexerQueryMRes;
+    const txns = res.transactions;
+    const gtime = bigNumberify(res['current-round']);
+    return { txns, gtime };
+  };
+  const getTxnTime = (x:IndexerTxn): BigNumber => bigNumberify(x['confirmed-round']);
+  return makeEventQueue<EQInitArgs, IndexerTxn, RecvTxn>({
+    raw2proc: indexerTxn2RecvTxn,
+    alwaysIgnored: emptyOptIn,
+    getTxns, getTxnTime,
+  });
 };
 
 export const { addressEq, tokenEq, digest } = stdlib;
@@ -984,7 +929,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           await stdVerifyContract( setupViewArgs, (async () => {
             return await verifyContract_(label, ctcInfo, bin, eq);
           }));
-        if ( eq.initArgs === undefined ) {
+        if ( ! eq.isInited() ) {
           eq.init({ ApplicationID });
           eq.pushIgnore(isCreateTxn);
         }
@@ -1102,7 +1047,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const _setup = (setupArgs: SetupArgs): SetupRes => {
       const { setInfo, setTrustedVerifyResult } = setupArgs;
 
-      const eq = new EventQueue();
+      const eq = newEventQueue();
       const getC = makeGetC(setupArgs, eq);
 
       // Returns address of a Reach contract
@@ -1463,9 +1408,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const dhead = `${label}: recv ${funcName} ${timeoutAt}`;
         debug(dhead, 'start');
         const { isIsolatedNetwork } = await getC();
-        const didTimeout = async (currentRound: number): Promise<boolean> => {
-          debug(dhead, 'TIMECHECK', {timeoutAt, currentRound});
-          const crp = currentRound + 1;
+        const didTimeout = async (cr_bn: BigNumber): Promise<boolean> => {
+          const cr = bigNumberToNumber(cr_bn);
+          debug(dhead, 'TIMECHECK', {timeoutAt, cr_bn, cr});
+          const crp = cr + 1;
           const r = await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, crp);
           debug(dhead, 'TIMECHECK', {r, waitIfNotPresent});
           if ( !r && waitIfNotPresent ) {
@@ -1520,7 +1466,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return bs;
     };
     const setupView = (setupViewArgs: SetupViewArgs) => {
-      const eq = new EventQueue();
+      const eq = newEventQueue();
       const getC = makeGetC(setupViewArgs, eq);
       const viewLib: IViewLib = {
         viewMapRef: async (mapi: number, a:any): Promise<any> => {
@@ -1556,7 +1502,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const setupEvents = (a: SetupEventArgs) => {
-      const eq = new EventQueue();
+      const eq = newEventQueue();
       let time = bigNumberify(0);
       const getC = makeGetC(a, eq);
       let logs: string[] = [];
@@ -1892,7 +1838,7 @@ type VerifyResult = {
 };
 
 export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<VerifyResult> => {
-  return verifyContract_('', info, bin, new EventQueue());
+  return verifyContract_('', info, bin, newEventQueue());
 }
 
 const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, eq: EventQueue): Promise<VerifyResult> => {
