@@ -840,7 +840,7 @@ const makeLogRep = (evt:string, tys:AnyALGO_Ty[]): LogRep => {
   const hp = base64ify(sha512_256(sig));
   const trunc = (x: string): string => ui8h(base64ToUI8A(x).slice(0, hLen));
   const hpb = trunc(hp);
-  debug(`logHashHeader`, { evt, tyns, sig, hp, hpb });
+  debug(`makeLogRep`, { evt, tyns, sig, hp, hpb });
   const parse = (log:string): (any[]|undefined) => {
     if ( trunc(log) !== hpb ) { return undefined; }
     // @ts-ignore
@@ -1501,10 +1501,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return { getView1, viewLib };
     };
 
-    const setupEvents = (a: SetupEventArgs) => {
+    const setupEvents = (setupArgs: SetupEventArgs) => {
       const createEventStream = (evt: string, tys: AnyALGO_Ty[]) => {
         const eq = newEventQueue();
-        const getC = makeGetC(a, eq);
+        const getC = makeGetC(setupArgs, eq);
         const getTxnTime = (r:RecvTxn) => bigNumberify(r['confirmed-round']);
         const sync = async () => {
           const {} = await getC();

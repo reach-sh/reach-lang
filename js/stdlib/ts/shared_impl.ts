@@ -708,7 +708,7 @@ export interface EQCtorArgs<EQInitArgs, RawTxn, ProcTxn> {
   getTxns: (dhead:string, initArgs:EQInitArgs, ctime: Time, howMany: number) => Promise<EQGetTxnsR<RawTxn>>,
   getTxnTime: (x:RawTxn) => Time,
 };
-export const makeEventQueue= <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<EQInitArgs,RawTxn,ProcTxn>): IEventQueue<EQInitArgs, RawTxn, ProcTxn> => {
+export const makeEventQueue = <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<EQInitArgs,RawTxn,ProcTxn>): IEventQueue<EQInitArgs, RawTxn, ProcTxn> => {
   const { raw2proc, alwaysIgnored, getTxns, getTxnTime } = ctorArgs;
   let initArgs: EQInitArgs|undefined = undefined;
   let ptxns: Array<ProcTxn> = [];

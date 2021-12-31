@@ -119,13 +119,12 @@ checkteal () {
 
 jb
 
-ci ALGO event
+exit 0
 exit 0
 ci ETH rps-7-loops
-exit 0
+ci ETH mint-basic
 ci ETH event
 ci ETH api-map
 ci ETH raffle
-exit 0
 
 # (cd hs && mk hs-test)
