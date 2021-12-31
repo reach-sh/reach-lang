@@ -689,13 +689,13 @@ type Pred<X> = (x:X) => boolean;
 type AsyncPred<X> = (x:X) => Promise<boolean>;
 const neverTrue = async <X>(r:X) => (void(r), false);
 type EQPeqResult<ProcTxn> =
-  | { timeout: true }
+  | { timeout: true, time: Time }
   | { timeout: false, txn: ProcTxn };
 export interface IEventQueue<EQInitArgs, RawTxn, ProcTxn> {
   isInited : () => boolean,
   init: (args:EQInitArgs) => void,
   pushIgnore: (pred: Pred<RawTxn>) => void,
-  peq: (lab: string, didTimeout: AsyncPred<BigNumber>) => Promise<EQPeqResult<ProcTxn>>,
+  peq: (lab: string, didTimeout: AsyncPred<Time>) => Promise<EQPeqResult<ProcTxn>>,
   deq: (dhead: string) => Promise<ProcTxn>,
 };
 export interface EQGetTxnsR<RawTxn> {
@@ -705,14 +705,14 @@ export interface EQGetTxnsR<RawTxn> {
 export interface EQCtorArgs<EQInitArgs, RawTxn, ProcTxn> {
   raw2proc: (t:RawTxn) => ProcTxn,
   alwaysIgnored: Pred<RawTxn>,
-  getTxns: (dhead:string, initArgs:EQInitArgs, ctime: BigNumber, howMany: number) => Promise<EQGetTxnsR<RawTxn>>,
-  getTxnTime: (x:RawTxn) => BigNumber,
+  getTxns: (dhead:string, initArgs:EQInitArgs, ctime: Time, howMany: number) => Promise<EQGetTxnsR<RawTxn>>,
+  getTxnTime: (x:RawTxn) => Time,
 };
 export const makeEventQueue= <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<EQInitArgs,RawTxn,ProcTxn>): IEventQueue<EQInitArgs, RawTxn, ProcTxn> => {
   const { raw2proc, alwaysIgnored, getTxns, getTxnTime } = ctorArgs;
   let initArgs: EQInitArgs|undefined = undefined;
   let ptxns: Array<ProcTxn> = [];
-  let ctime: BigNumber = bigNumberify(0);
+  let ctime: Time = bigNumberify(0);
   const customIgnore: Array<Pred<RawTxn>> = [];
   const isInited = () => initArgs !== undefined;
   const init = (args:EQInitArgs) => {
@@ -724,7 +724,7 @@ export const makeEventQueue= <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<E
     customIgnore.push(pred);
   };
   const notIgnored = (txn:RawTxn) => (! alwaysIgnored(txn));
-  const peq = async (lab: string, didTimeout: AsyncPred<BigNumber>): Promise<EQPeqResult<ProcTxn>> => {
+  const peq = async (lab: string, didTimeout: AsyncPred<Time>): Promise<EQPeqResult<ProcTxn>> => {
     const dhead = `${lab} peq`;
     if (initArgs === undefined) {
       throw Error(`${dhead}: not initialized`); }
@@ -733,7 +733,7 @@ export const makeEventQueue= <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<E
       let { txns, gtime } = await getTxns(dhead, initArgs, ctime, howMany++);
       if ( txns.length === 0 ) { ctime = gtime; }
       else {
-        const r = (x:RawTxn): BigNumber => {
+        const r = (x:RawTxn): Time => {
           const xr = getTxnTime(x);
           if ( ctime.lt(xr) ) { ctime = xr; }
           return xr;
@@ -757,7 +757,7 @@ export const makeEventQueue= <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<E
         }
       }
       if ( txns.length === 0 && await didTimeout(ctime) ) {
-        return { timeout: true };
+        return { timeout: true, time: ctime };
       }
       ptxns = txns.map(raw2proc);
     }
@@ -771,6 +771,56 @@ export const makeEventQueue= <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<E
   };
 
   return { isInited, init, peq, deq, pushIgnore };
+};
+
+export interface IMESArgs<EQInitArgs, RawTxn, ProcTxn, Log> {
+  eq: IEventQueue<EQInitArgs, RawTxn, ProcTxn>
+  getTxnTime: (x:ProcTxn) => Time,
+  sync: () => Promise<void>,
+  getNetworkTime: () => Promise<Time>,
+  getLogs: (t:ProcTxn) => Array<Log>,
+  parseLog: (l:Log) => (any[]|undefined),
+};
+export const makeEventStream = <EQInitArgs, RawTxn, ProcTxn, Log>(args:IMESArgs<EQInitArgs, RawTxn, ProcTxn, Log>) => {
+  const { eq, getTxnTime, sync, getNetworkTime, getLogs, parseLog } = args;
+
+  let time = bigNumberify(0);
+  let logs: Log[] = [];
+  const seek = (t: Time) => {
+    assert(time.lt(t), 'seek must seek future');
+    debug("EventStream::seek", t);
+    time = t;
+    logs = [];
+  };
+  const next = async () => {
+    await sync();
+    let dhead = "EventStream::next";
+    let parsedLog = undefined;
+    while ( parsedLog === undefined ) {
+      while ( logs.length === 0 ) {
+        const txn = await eq.deq(dhead);
+        debug(dhead, { txn });
+        const cr = getTxnTime(txn);
+        if ( cr.gte(time) ) {
+          time = cr;
+          logs = getLogs(txn)
+          debug(dhead, { time, logs });
+        }
+      }
+      const l = logs[0];
+      logs.shift();
+      parsedLog = parseLog(l);
+      debug(dhead, { parsedLog, l });
+    }
+    debug(dhead, 'ret');
+    return { when: time, what: parsedLog };
+  };
+  const seekNow = async () => seek(await getNetworkTime());
+  const lastTime = async () => time;
+  const monitor = async (onEvent: (x: any) => void) => {
+    while (true) { onEvent(await next()); }
+  };
+  return { lastTime, seek, seekNow, monitor, next };
 };
 
 export class Signal {

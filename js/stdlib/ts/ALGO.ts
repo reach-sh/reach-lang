@@ -39,11 +39,11 @@ import {
   truthyEnv,
   Lock,
   retryLoop,
-  Time,
   ISetupEventArgs,
   IEventQueue,
   EQGetTxnsR,
   makeEventQueue,
+  makeEventStream,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -1502,50 +1502,23 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const setupEvents = (a: SetupEventArgs) => {
-      const eq = newEventQueue();
-      let time = bigNumberify(0);
-      const getC = makeGetC(a, eq);
-      let logs: string[] = [];
       const createEventStream = (evt: string, tys: AnyALGO_Ty[]) => {
-        const lr = makeLogRep(evt, tys);
-        const seek = (t: Time) => {
-          assert(time < t, 'seek must seek future');
-          debug("EventStream::seek", t);
-          time = t;
-          logs = [];
-        };
-        const next = async () => {
+        const eq = newEventQueue();
+        const getC = makeGetC(a, eq);
+        const getTxnTime = (r:RecvTxn) => bigNumberify(r['confirmed-round']);
+        const sync = async () => {
           const {} = await getC();
-          let dhead = "EventStream::next";
-          let parsedLog = undefined;
-          while ( parsedLog === undefined ) {
-            while ( logs.length === 0 ) {
-              const txn = await eq.deq(dhead);
-              debug(dhead, { txn });
-              const cr = bigNumberify(txn['confirmed-round']);
-              if ( cr.gte(time) ) {
-                time = cr;
-                logs = txn['logs'];
-                debug(dhead, { time, logs });
-              }
-            }
-            const l = logs[0];
-            logs.shift();
-            parsedLog = lr.parse(l);
-            debug(dhead, { parsedLog, l });
-          }
-          debug(dhead, 'ret');
-          return { when: time, what: parsedLog };
+          return;
         };
-        const seekNow = async () => seek(await getNetworkTime());
-        const lastTime = async () => time;
-        const monitor = async (onEvent: (x: any) => void) => {
-          while (true) { onEvent(await next()); }
-        };
-        return { lastTime, seek, seekNow, monitor, next };
+        const getLogs = (r:RecvTxn) => r['logs'];
+        const lr = makeLogRep(evt, tys);
+        const parseLog = lr.parse;
+        return makeEventStream<EQInitArgs, IndexerTxn, RecvTxn, string>({
+          eq, getTxnTime, sync, getNetworkTime, getLogs, parseLog,
+        });
       };
       return { createEventStream };
-    }
+    };
 
     return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
   };

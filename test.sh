@@ -119,7 +119,7 @@ checkteal () {
 
 jb
 
-ci ALGO rps-7-loops
+ci ALGO event
 exit 0
 ci ETH rps-7-loops
 exit 0
