@@ -7,6 +7,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.7 is the current Reach release candidate version.
 
++ 2021/12/31: `{!js} setQueryLowerBound` is deprecated.
 + 2021/12/28: Algorand-only: The backend interface to compiled contract objects was updated, so you'll need to recompile for this release.
 + 2021/12/23: Algorand-only: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
 + 2021/12/23: Added `{!rsh} verifyMuldiv`.
