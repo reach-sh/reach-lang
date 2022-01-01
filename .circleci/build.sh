@@ -1,5 +1,5 @@
 #!/bin/bash
-KIDS=0
+# KIDS=0
 
 WORKSPACE="/tmp/workspace/docker"
 DONE="/tmp/done"
@@ -9,7 +9,7 @@ mkdir -p "${WORKSPACE}" "${DONE}" "${ARTS}"
 imagek () {
   IMAGE="$1"
   shift 1
-  DEPS=( "$@" )
+  # DEPS=( "$@" )
   echo "Scheduling ${IMAGE}"
 
   # for DEP in "${DEPS[@]}" ; do
