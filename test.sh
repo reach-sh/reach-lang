@@ -119,8 +119,8 @@ checkteal () {
 
 jb
 
-ci CFX rps-7-loops
 exit 0
+ci CFX rps-3-bets
 ci ETH remote-api
 one ETH rpc-view-map
 exit 0

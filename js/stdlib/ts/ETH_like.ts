@@ -233,16 +233,28 @@ const newEventQueue = (): EventQueue => {
     const qw = getValidQueryWindow();
     debug(dhead, { address, fromBlock, qw, howMany });
     if ( howMany > 0 ) { await Timeout.set(1000); }
-    let toBlock = await getNetworkTime();
+    let toBlock: BigNumber|undefined = await getNetworkTime();
     if ( qw !== true ) { toBlock = bnMin(toBlock, fromBlock.add(qw)); }
     const toBlock_act = bnMax(fromBlock, toBlock);
     const provider = await getProvider();
     debug(dhead, { toBlock, toBlock_act });
-    const logs = await provider.getLogs({
-      fromBlock: bigNumberToNumber(fromBlock),
-      toBlock: bigNumberToNumber(toBlock_act),
-      address
-    });
+    let logs = [];
+    try {
+      logs = await provider.getLogs({
+        fromBlock: bigNumberToNumber(fromBlock),
+        toBlock: bigNumberToNumber(toBlock_act),
+        address
+      });
+    } catch (e) {
+      const es = `${e}`;
+      debug(dhead, `err`, e, es);
+      if ( es.includes('Unable to find block hash') ) {
+        debug(dhead, 'ignore');
+        toBlock = undefined;
+      } else {
+        throw e;
+      }
+    }
     debug(dhead, {logs});
     const logs0 = logs.filter((x:Log) => x.logIndex === 0);
     debug(dhead, {logs0});

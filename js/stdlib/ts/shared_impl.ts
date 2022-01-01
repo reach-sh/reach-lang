@@ -700,7 +700,7 @@ export interface IEventQueue<EQInitArgs, RawTxn, ProcTxn> {
 };
 export interface EQGetTxnsR<RawTxn> {
   txns: Array<RawTxn>,
-  gtime: BigNumber,
+  gtime: BigNumber|undefined,
 };
 export interface EQCtorArgs<EQInitArgs, RawTxn, ProcTxn> {
   raw2proc: (t:RawTxn) => ProcTxn,
@@ -731,7 +731,7 @@ export const makeEventQueue = <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<
     let howMany = 0;
     while ( ptxns.length === 0 ) {
       let { txns, gtime } = await getTxns(dhead, initArgs, ctime, howMany++);
-      if ( txns.length === 0 ) { ctime = gtime; }
+      if ( txns.length === 0 && gtime ) { ctime = gtime; }
       else {
         const r = (x:RawTxn): Time => {
           const xr = getTxnTime(x);
