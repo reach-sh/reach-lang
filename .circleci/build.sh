@@ -14,7 +14,8 @@ imagek () {
 
   for DEP in "${DEPS[@]}" ; do
     while [ ! -f "${DONE}/${DEP}" ] ; do
-      sleep 1
+      echo "${IMAGE} waits for ${DEP}"
+      sleep 10
     done
     echo "${IMAGE} sees ${DEP} is done"
   done
@@ -22,9 +23,10 @@ imagek () {
   echo "Building ${IMAGE}"
   ./image.sh "${IMAGE}" >>"${ARTS}/${IMAGE}" 2>&1
   touch "${DONE}/${IMAGE}"
-
+  echo "Saving ${IMAGE}"
   docker save "reachsh/${IMAGE}:latest" | gzip > "${WORKSPACE}/${IMAGE}".tar.gz
-  ../scripts/cache-image.sh "${IMAGE}"
+  echo "Caching ${IMAGE}"
+  ../scripts/cache-image.sh "${IMAGE}" >>"${ARTS}/${IMAGE}" 2>&1
 }
 
 image () {

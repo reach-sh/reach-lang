@@ -190,7 +190,6 @@ jobs:
     steps:
     - checkout
     - run: |
-        ROOT=$(pwd)
         docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
         cd .circleci && ./build.sh
     - store_artifacts:
