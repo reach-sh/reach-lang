@@ -74,20 +74,17 @@ for CONN in ETH ALGO CFX ; do
   esac
   image "${EXEC}" "${IMAGE}"
   SIZE=$(((TOTAL + (PER - 1)) / PER))
-  for RANK in $(seq 0 $((SIZE - 1))) ; do
-    NAME="examples.${CONN}.${RANK}"
-    cat >>"${MID}" <<END
+  NAME="examples.${CONN}"
+  cat >>"${MID}" <<END
     - "examples":
         name: "${NAME}"
         connector: "${CONN}"
-        size: "${SIZE}"
-        rank: "${RANK}"
+        size: ${SIZE}
 END
-    deps "reach" "reach-cli" "runner" "rpc-server" "${IMAGE}"
-    cat >>"${END}" <<END
+  deps "reach" "reach-cli" "runner" "rpc-server" "${IMAGE}"
+  cat >>"${END}" <<END
           - "${NAME}"
 END
-  done
 done
 
 cat "${PRE}" "${MID}" "${END}" "${IEND}" > config.gen.yml

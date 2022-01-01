@@ -243,14 +243,12 @@ jobs:
         type: string
       size:
         description: "parallel size"
-        type: string
-      rank:
-        description: "parallel rank"
-        type: string
+        type: integer
       deps:
         description: "docker dependencies"
         type: string
     executor: real
+    parallelism: <<parameters.size>>
     steps:
     - checkout
     - workattach
@@ -260,7 +258,7 @@ jobs:
         mkdir -p /tmp/workspace/artifacts /tmp/workspace/record /tmp/artifacts
     - run:
         command: |
-          cd .circleci && ./example.sh <<parameters.connector>> <<parameters.size>> <<parameters.rank>>
+          cd .circleci && ./example.sh <<parameters.connector>> "${CIRCLE_NODE_TOTAL}" "${CIRCLE_NODE_INDEX}"
         no_output_timeout: 20m
     - store_artifacts:
         path: /tmp/artifacts
@@ -268,7 +266,7 @@ jobs:
         CIRCLE_ARTIFACTS_URL=$(curl -X GET "https://circleci.com/api/v2/project/github/reach-sh/reach-lang/${CIRCLE_BUILD_NUM}/artifacts" \
           -H "Accept: application/json" \
           -u "${CIRCLE_API_TOKEN}:")
-        echo "${CIRCLE_ARTIFACTS_URL}" > /tmp/workspace/artifacts/<<parameters.connector>>.<<parameters.rank>>
+        echo "${CIRCLE_ARTIFACTS_URL}" > /tmp/workspace/artifacts/<<parameters.connector>>."${CIRCLE_NODE_INDEX}"
     - persist_to_workspace:
         root: /tmp/workspace
         paths:
