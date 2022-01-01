@@ -25,10 +25,11 @@
   },
   "dependencies": {
     "@msgpack/msgpack": "^2.5.1",
-    "algosdk": "^1.12.0",
     "@randlabs/myalgo-connect": "^1.1.1",
+    "@types/spdy": "^3.4.5",
     "@walletconnect/client": "^1.6.5",
     "algorand-walletconnect-qrcode-modal": "^1.6.1",
+    "algosdk": "^1.12.0",
     "await-timeout": "^0.6.0",
     "ethers": "^5.4.7",
     "express": "^4.17.1",
@@ -39,6 +40,7 @@
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-scripts": "^4.0.3",
+    "spdy": "^4.0.2",
     "wait-port": "^0.2.9"
   },
   "author": "reach.sh",

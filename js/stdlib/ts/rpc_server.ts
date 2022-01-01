@@ -1,4 +1,4 @@
-import { createSecureServer       } from 'http2';
+import spdy from 'spdy';
 import { randomBytes              } from 'crypto';
 import { readFileSync, existsSync } from 'fs';
 import { resolve                  } from 'path';
@@ -446,7 +446,7 @@ export const serveRpc = async (backend: any) => {
     Object.assign(opts, { passphrase });
 
   // @ts-ignore
-  createSecureServer(opts, app)
+  spdy.createServer(opts, app)
     .listen(process.env.REACH_RPC_PORT, () =>
-      debug(`I am alive`));
+      debug(`I am alive (with spdy)`));
 };
