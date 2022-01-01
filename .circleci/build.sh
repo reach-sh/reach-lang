@@ -2,9 +2,9 @@
 KIDS=0
 
 WORKSPACE="/tmp/workspace/docker"
-mkdir -p "${WORKSPACE}"
 DONE="/tmp/done"
-mkdir -p "${DONE}"
+ARTS="/tmp/artifacts"
+mkdir -p "${WORKSPACE}" "${DONE}" "${ARTS}"
 
 imagek () {
   IMAGE="$1"
@@ -20,11 +20,11 @@ imagek () {
   done
 
   echo "Building ${IMAGE}"
-  ./image.sh "${IMAGE}" >>"/tmp/artifacts/${IMAGE}" 2>&1
+  ./image.sh "${IMAGE}" >>"${ARTS}/${IMAGE}" 2>&1
   touch "${DONE}/${IMAGE}"
 
   docker save "reachsh/${IMAGE}:latest" | gzip > "${WORKSPACE}/${IMAGE}".tar.gz
-  "${ROOT}/scripts/cache-image.sh" "${IMAGE}"
+  ../scripts/cache-image.sh "${IMAGE}"
 }
 
 image () {
