@@ -12,26 +12,26 @@ imagek () {
   DEPS=( "$@" )
   echo "Scheduling ${IMAGE}"
 
-  for DEP in "${DEPS[@]}" ; do
-    while [ ! -f "${DONE}/${DEP}" ] ; do
-      echo "${IMAGE} waits for ${DEP}"
-      sleep 10
-    done
-    echo "${IMAGE} sees ${DEP} is done"
-  done
+  # for DEP in "${DEPS[@]}" ; do
+  #   while [ ! -f "${DONE}/${DEP}" ] ; do
+  #     echo "${IMAGE} waits for ${DEP}"
+  #     sleep 10
+  #   done
+  #   echo "${IMAGE} sees ${DEP} is done"
+  # done
 
   echo "Building ${IMAGE}"
-  ./image.sh "${IMAGE}" >>"${ARTS}/${IMAGE}" 2>&1
+  ./image.sh "${IMAGE}" # >>"${ARTS}/${IMAGE}" 2>&1
   touch "${DONE}/${IMAGE}"
   echo "Saving ${IMAGE}"
   docker save "reachsh/${IMAGE}:latest" | gzip > "${WORKSPACE}/${IMAGE}".tar.gz
   echo "Caching ${IMAGE}"
-  ../scripts/cache-image.sh "${IMAGE}" >>"${ARTS}/${IMAGE}" 2>&1
+  ../scripts/cache-image.sh "${IMAGE}" # >>"${ARTS}/${IMAGE}" 2>&1
 }
 
 image () {
-  KIDS=$((KIDS + 1))
-  imagek "$@" &
+  #KIDS=$((KIDS + 1))
+  imagek "$@" #&
 }
 
 image "devnet-eth"
@@ -46,10 +46,10 @@ image "runner" "stdlib"
 image "react-runner" "stdlib" "js-deps"
 image "rpc-server" "runner"
 
-while true; do
-  wait -n || true
-  KIDS=$((KIDS - 1))
-  if [ $KIDS -eq 0 ]; then break; fi
-done
+# while true; do
+#   wait -n || true
+#   KIDS=$((KIDS - 1))
+#   if [ $KIDS -eq 0 ]; then break; fi
+# done
 
-wait
+# wait
