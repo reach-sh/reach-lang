@@ -30,6 +30,7 @@ imagek () {
 
   echo "Building ${IMAGE}"
   ./image.sh "${IMAGE}" >>"${ARTS}/${IMAGE}" 2>&1
+  echo "Done with ${IMAGE}"
   touch "${DONE}/${IMAGE}"
 }
 
