@@ -1,10 +1,8 @@
 // lightly adapted from @conflux-dev/conflux-address-js@1.0.0
-// @ts-nocheck
-
 import JSBI from 'jsbi';
 const ALPHABET = 'ABCDEFGHJKMNPRSTUVWXYZ0123456789'
 
-const ALPHABET_MAP = {}
+const ALPHABET_MAP: {[key: string]: number} = {}
 for (let z = 0; z < ALPHABET.length; z++) {
   const x = ALPHABET.charAt(z)
   if (ALPHABET_MAP[x] !== undefined) {
@@ -30,7 +28,7 @@ const BIGINT_0XF33E5FB3C4 = JSBI.BigInt(0xf33e5fb3c4)
 const BIGINT_0XAE2EABE2A8 = JSBI.BigInt(0xae2eabe2a8)
 const BIGINT_0X1E4F43E470 = JSBI.BigInt(0x1e4f43e470)
 
-function convertBit (buffer, inBits, outBits, pad) {
+function convertBit (buffer: number[], inBits: number, outBits: number, pad: boolean = false): number[] {
   const mask = (1 << outBits) - 1
   const array = []
 
@@ -58,7 +56,7 @@ function convertBit (buffer, inBits, outBits, pad) {
   return array
 }
 
-function polyMod (buffer) {
+function polyMod (buffer: number[]): JSBI {
   let checksumBigInt = BIGINT_1
   for (const byte of buffer) {
     // c0 = c >> 35;
