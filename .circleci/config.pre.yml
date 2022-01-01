@@ -65,7 +65,6 @@ commands:
     steps:
       - run: |
           source ./VERSION
-
           for IMG in <<parameters.deps>> ; do
             zcat /tmp/workspace/docker-${IMG}/${IMG}.tar.gz | docker load
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
@@ -166,7 +165,6 @@ jobs:
               }
             }]
           }
-
   "sh-check":
     executor: fake
     steps:
@@ -319,5 +317,4 @@ workflows:
         filters:
           branches:
             only: master
-
     # Sink and examples follow
