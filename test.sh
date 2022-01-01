@@ -119,7 +119,10 @@ checkteal () {
 
 jb
 
+ci CFX rps-7-loops
 exit 0
+ci ETH remote-api
+one ETH rpc-view-map
 exit 0
 ci ETH rps-7-loops
 ci ETH mint-basic

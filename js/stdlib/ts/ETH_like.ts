@@ -220,6 +220,8 @@ type EventQueue = IEventQueue<EQInitArgs, TransactionReceipt, TransactionReceipt
 
 const bnMax = (x:BigNumber, y:BigNumber): BigNumber =>
   x.lt(y) ? y : x;
+const bnMin = (x:BigNumber, y:BigNumber): BigNumber =>
+  x.lt(y) ? x : y;
 
 const getTxnTime = (x:{ blockNumber: number }): BigNumber => bigNumberify(x.blockNumber);
 
@@ -231,7 +233,8 @@ const newEventQueue = (): EventQueue => {
     const qw = getValidQueryWindow();
     debug(dhead, { address, fromBlock, qw, howMany });
     if ( howMany > 0 ) { await Timeout.set(1000); }
-    const toBlock = qw === true ? await getNetworkTime() : fromBlock.add(qw);
+    let toBlock = await getNetworkTime();
+    if ( qw !== true ) { toBlock = bnMin(toBlock, fromBlock.add(qw)); }
     const toBlock_act = bnMax(fromBlock, toBlock);
     const provider = await getProvider();
     debug(dhead, { toBlock, toBlock_act });
