@@ -301,11 +301,9 @@ workflows:
            only: master
        requires:
        - "docs-render"
-  buildless:
-    jobs:
-    - "sh-check"
   build:
     jobs:
+    - "sh-check"
     - "hs-test":
         requires:
           - "build-haskell-build-artifacts"
