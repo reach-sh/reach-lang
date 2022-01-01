@@ -182,6 +182,8 @@ jobs:
     - workattach
     - and_restore_docker:
         deps: "haskell-build-artifacts"
+    - run: |
+        docker run --rm -ti reachsh/haskell-build-artifacts make docker-check
     - run:
         command: |
           mkdir -p hs/test-reports
@@ -189,17 +191,6 @@ jobs:
         no_output_timeout: 30m
     - store_test_results:
         path: "hs/test-reports"
-    - slack_fail
-  "hs-check":
-    executor: fake
-    steps:
-    - checkout
-    - srd_no
-    - workattach
-    - and_restore_docker:
-        deps: "haskell-build-artifacts"
-    - run: |
-        docker run --rm -ti reachsh/haskell-build-artifacts make docker-check
     - slack_fail
   "build-image":
     parameters:
@@ -316,9 +307,6 @@ workflows:
   build:
     jobs:
     - "hs-test":
-        requires:
-          - "build-haskell-build-artifacts"
-    - "hs-check":
         requires:
           - "build-haskell-build-artifacts"
     - "do-release":
