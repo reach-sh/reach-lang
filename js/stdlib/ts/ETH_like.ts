@@ -865,7 +865,7 @@ const createAccount = async () => {
 const fundFromFaucet = async (account: AccountTransferable, value: any) => {
   const f = await _specialFundFromFaucet();
   if (f) {
-    return await f(account, value);
+    return await f({account, value, transfer, getFaucet});
   } else {
     const faucet = await getFaucet();
     await transfer(faucet, account, value);

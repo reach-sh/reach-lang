@@ -119,7 +119,7 @@ checkteal () {
 
 jb
 
-ci CFX rps-3-bets
+ci CFX atomic-swap
 exit 0
 one ETH rpc-view-map
 exit 0

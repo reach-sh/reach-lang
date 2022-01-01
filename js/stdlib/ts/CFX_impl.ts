@@ -1,4 +1,5 @@
 import * as cfxers from './cfxers';
+import { SFFFArgs } from './ETH_like_interfaces';
 import * as ethLikeCompiled from './CFX_compiled';
 import {
   debug,
@@ -75,7 +76,8 @@ function toHexAddr(cfxAddr: string) {
   ).toString('hex').toLowerCase();
 }
 
-async function _fundOnCfxTestNet(to: any, amt: any) {
+async function _fundOnCfxTestNet(args:SFFFArgs) {
+  let {account: to, value: amt} = args;
   // XXX TestNet faucet only gives out 100 CFX at a time
   // Should we throw an error if amt !== 100 CFX?
   void(amt)
@@ -95,12 +97,30 @@ export async function canFundFromFaucet() {
   return netId == 0x1 || netId == 999;
 }
 
+async function _retryingFaucetFund(args:SFFFArgs) {
+  const {account, value, transfer, getFaucet} = args;
+  const faucet = await getFaucet();
+  while ( true ) {
+    try {
+      return await transfer(faucet, account, value);
+    } catch (e:any) {
+      const es = JSON.stringify(e);
+      if ( es.includes('stale nonce') || es.includes('same nonce') || es.includes('tx already exists') ) {
+        debug(`retryingFaucetFund nonce error`, e);
+        continue;
+      } else {
+        throw e;
+      }
+    }
+  }
+};
+
 export async function _specialFundFromFaucet() {
   debug(`_specialFundFromFaucet`);
   if (ethLikeCompiled.getNetworkId() == 0x1) {
     return _fundOnCfxTestNet;
   } else {
-    return null;
+    return _retryingFaucetFund;
   }
 }
 

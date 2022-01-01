@@ -104,6 +104,15 @@ export interface EthersLikeWalletClass {
   createRandom(): EthersLikeWallet
 }
 
+export interface SFFFArgs {
+  account: any,
+  value: any,
+  transfer: (to:any, from:any, amt:any) => Promise<any>
+  getFaucet: () => Promise<any>
+};
+type SFFFRes = (args:SFFFArgs) => Promise<any>;
+type SFFFT = () => Promise<SFFFRes|undefined>;
+
 export interface EthLikeArgs {
   ethLikeCompiled: EthLikeCompiled
   ethers: EthersLike
@@ -114,7 +123,7 @@ export interface EthLikeArgs {
   canGetDefaultAccount(): boolean
   _getDefaultNetworkAccount(): any
   _getDefaultFaucetNetworkAccount(): any
-  _specialFundFromFaucet?: () => Promise<null | ((acc: any, val: any) => Promise<any>)>
+  _specialFundFromFaucet?: SFFFT
   _warnTxNoBlockNumber?: boolean
   canFundFromFaucet: () => Promise<boolean>
   standardUnit: string
