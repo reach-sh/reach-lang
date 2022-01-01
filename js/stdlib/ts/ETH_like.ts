@@ -256,9 +256,11 @@ const newEventQueue = (): EventQueue => {
       }
     }
     debug(dhead, {logs});
-    const logs0 = logs.filter((x:Log) => x.logIndex === 0);
-    debug(dhead, {logs0});
-    const txns: Array<TransactionReceipt> = await Promise.all(logs0.map((x:Log): Promise<TransactionReceipt> => provider.getTransactionReceipt(x.transactionHash)));
+    const txn_hm: {[key: string]: boolean} = {};
+    logs.forEach((x:Log) => { txn_hm[x.transactionHash] = true; });
+    const txn_hs = Object.keys(txn_hm);
+    debug(dhead, {txn_hs});
+    const txns: Array<TransactionReceipt> = await Promise.all(txn_hs.map((x:string): Promise<TransactionReceipt> => provider.getTransactionReceipt(x)));
     debug(dhead, {txns});
     return { txns, gtime: toBlock };
   };
@@ -271,8 +273,8 @@ const newEventQueue = (): EventQueue => {
 
 interface LogRep {
   parse: (log: Log) => (any[]|undefined),
-  parse0: (txn: TransactionReceipt) => (any[]|undefined),
-  parse0b: (txn: TransactionReceipt) => boolean,
+  parseA: (txn: TransactionReceipt) => (any[]|undefined),
+  parseAb: (txn: TransactionReceipt) => boolean,
 };
 const makeLogRep = ( getCtcAddress: (() => Address), iface:Interface, evt:string, tys?:AnyETH_Ty[]|undefined): LogRep => {
   debug(`makeLogRep`, { evt, tys });
@@ -289,13 +291,16 @@ const makeLogRep = ( getCtcAddress: (() => Address), iface:Interface, evt:string
     debug(`parse`, { unargs });
     return unargs;
   };
-  const parse0 = (txn:TransactionReceipt): (any[]|undefined) => {
-    if ( txn.logs.length == 0 ) { return undefined; }
-    const log = txn.logs[0];
-    return parse(log);
+  const parseA = (txn:TransactionReceipt): (any[]|undefined) => {
+    for ( const l of txn.logs ) {
+      const p = parse(l);
+      debug(`parseA`, { l, p });
+      if ( p ) { return p; }
+    }
+    return undefined;
   };
-  const parse0b = (txn:TransactionReceipt) => parse0(txn) !== undefined;
-  return { parse, parse0, parse0b };
+  const parseAb = (txn:TransactionReceipt) => parseA(txn) !== undefined;
+  return { parse, parseA, parseAb };
 };
 const makeLogRepFor = ( getCtcAddress: (() => Address), iface:Interface, i:number, tys:AnyETH_Ty[]) => {
   debug(`hasLogFor`, i, tys);
@@ -304,7 +309,7 @@ const makeLogRepFor = ( getCtcAddress: (() => Address), iface:Interface, i:numbe
   ]);
 };
 const makeHasLogFor = ( getCtcAddress: (() => Address), iface:Interface, i:number, tys:AnyETH_Ty[]) => {
-  return makeLogRepFor(getCtcAddress, iface, i, tys).parse0b;
+  return makeLogRepFor(getCtcAddress, iface, i, tys).parseAb;
 };
 
 const { randomUInt, hasRandom } = makeRandom(32);
@@ -653,7 +658,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         debug(dhead, `AT`, theBlock);
         const ethersC = await getC();
         const getCtcAddress = () => ethersC.address;
-        const ep = makeLogRepFor(getCtcAddress, iface, funcNum, out_tys).parse0(ok_r);
+        const ep = makeLogRepFor(getCtcAddress, iface, funcNum, out_tys).parseA(ok_r);
         if ( ! ep ) { throw Error(`no event log`); }
         const data = ep[0][1];
 
@@ -972,7 +977,7 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eq: Even
   }
   const e0rec = r0.txn;
   const lr = makeLogRep(() => ctcAddress, iface, reachEvent(0));
-  const ctorArg = lr.parse0(e0rec);
+  const ctorArg = lr.parseA(e0rec);
   debug(dhead, {e0rec, ctorArg});
   if ( ! ctorArg ) {
     chk(false, `Contract deployment doesn't have first event`);
