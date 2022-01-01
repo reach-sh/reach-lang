@@ -46,6 +46,11 @@ commands:
                   "text": {
                     "type": "mrkdwn",
                     "text": "*FAIL* ${CIRCLE_USERNAME}/${CIRCLE_BRANCH} > ${CIRCLE_JOB} <${CIRCLE_BUILD_URL}|more...>" }}]}
+  srd_yes:
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+          version: '20.10.6'
   srd_no:
     steps:
       - setup_remote_docker:
@@ -61,7 +66,7 @@ commands:
       - run: |
           source ./VERSION
           for IMG in <<parameters.deps>> ; do
-            zcat /tmp/workspace/docker/${IMG}.tar.gz | docker load
+            zcat /tmp/workspace/docker-${IMG}/${IMG}.tar.gz | docker load
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}.${MINOR}
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
@@ -72,7 +77,7 @@ jobs:
     executor: fake
     steps:
     - checkout
-    - srd_no
+    - srd_yes
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
@@ -185,19 +190,40 @@ jobs:
     - store_test_results:
         path: "hs/test-reports"
     - slack_fail
-  "build":
-    executor: real
+  "build-image":
+    parameters:
+      image:
+        description: "which image"
+        type: string
+      exec:
+        description: "which executor"
+        type: string
+      deps:
+        description: "docker dependencies"
+        type: string
+    executor: <<parameters.exec>>
     steps:
     - checkout
+    - when:
+        condition:
+          equal: [ fake, << parameters.exec >> ]
+        steps:
+          - srd_no
+    - workattach
+    - and_restore_docker:
+        deps: <<parameters.deps>>
     - run: |
+        ROOT=$(pwd)
         docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
-        cd .circleci && ./build.sh
-    - store_artifacts:
-        path: /tmp/artifacts
+        IMAGE="<<parameters.image>>"
+        mkdir -p "/tmp/workspace/docker-${IMAGE}"
+        cd .circleci && ./image.sh "${IMAGE}"
+        docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
+        "${ROOT}/scripts/cache-image.sh" "${IMAGE}"
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
-          - docker
+          - docker-<<parameters.image>>
     - slack_fail
   "examples":
     parameters:
@@ -216,7 +242,7 @@ jobs:
     - checkout
     - workattach
     - and_restore_docker:
-        deps: reach reach-cli runner rpc-server <<parameters.deps>>
+        deps: <<parameters.deps>>
     - run: |
         mkdir -p /tmp/workspace/artifacts /tmp/workspace/record /tmp/artifacts
     - run:
@@ -257,6 +283,11 @@ jobs:
                 "text": {
                   "type": "mrkdwn",
                   "text": "${RECORD_MESSAGE}" }}]}
+  "build-sink":
+    executor: fake
+    steps:
+    - run: |
+        echo Go team!
 
 workflows:
   docs:
@@ -271,10 +302,9 @@ workflows:
   build:
     jobs:
     - "sh-check"
-    - "build"
     - "hs-test":
         requires:
-          - "build"
+          - "build-haskell-build-artifacts"
     - "do-release":
        requires:
          - "approve-release"
@@ -283,7 +313,7 @@ workflows:
     - "approve-release":
         type: approval
         requires:
-          - "build"
+          - "build-sink"
         filters:
           branches:
             only: master
