@@ -1400,7 +1400,7 @@ range: 93-95
 
 
 + Line 93 asserts that the outcome is never draw, which is trivially true because otherwise the `{!rsh} while` loop would not have exited.
-+ Line 104 transfers the funds to the winner.
++ Line 94 transfers the funds to the winner.
 
 
 ---
