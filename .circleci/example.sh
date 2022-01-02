@@ -56,17 +56,15 @@ go() {
  <testcase name="${WHICH}" time="${DURATION}">
 END
   if [ "${STATUS}" != "pass" ] ; then
+    KIND="failure"
+    if [ "${STATUS}" = "fail-time" ] ; then
+      KIND="error"
+    fi
     cat >>"${THIS_TR}" <<END
-  <error message="${STATUS}">${MSG}</error>
+  <${KIND} message="${STATUS}">${MSG}</${KIND}>
 END
   fi
   cat >>"${THIS_TR}" <<END
-  <system-out>
-END
-  echo -n
-  cat >>"${THIS_TR}" <"${THIS_ART}"
-  cat >>"${THIS_TR}" <<END
-  </system-out>
  </testcase>
 </testsuite>
 END
