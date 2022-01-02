@@ -1,4 +1,7 @@
 #!/bin/sh
+TOTALP1=$(find ../examples -maxdepth 1 -type d | wc -l)
+TOTAL=$((TOTALP1 - 1))
+
 PRE=config.pre.yml
 MID=config.mid.yml
 END=config.end.yml
@@ -61,9 +64,9 @@ cat >>"${END}" <<END
         requires:
 END
 
-examples () {
-  CONN="$1"
-  EXEC="$2"
+conn () {
+  EXEC="$1"
+  CONN="$2"
   SIZE="$3"
 
   CONNlc=$(echo "${CONN}" | tr '[:upper:]' '[:lower:]')
@@ -82,8 +85,13 @@ END
 END
 }
 
-examples ETH fake 1
-examples ALGO fake 1
-examples CFX real 1
+per () {
+  PER="$1"
+  echo $(((TOTAL + (PER - 1)) / PER))
+}
+
+conn fake ETH "$(per 32)"
+conn fake ALGO "$(per 16)"
+conn fake CFX "$(per 16)"
 
 cat "${PRE}" "${MID}" "${END}" "${IEND}" > config.gen.yml
