@@ -105,7 +105,7 @@ async function _retryingFaucetFund(args:SFFFArgs) {
       return await transfer(faucet, account, value);
     } catch (e:any) {
       const es = JSON.stringify(e);
-      if ( es.includes('stale nonce') || es.includes('same nonce') || es.includes('tx already exist') ) {
+      if ( es.includes('stale nonce') || es.includes('same nonce') || es.includes('tx already exists') ) {
         debug(`retryingFaucetFund nonce error`, e);
         continue;
       } else {
