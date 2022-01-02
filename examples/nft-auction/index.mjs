@@ -8,9 +8,8 @@ import * as backend from './build/index.main.mjs';
   const fmt = (x) => stdlib.formatCurrency(x, 4);
   const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
 
-  const accAlice  = await stdlib.newTestAccount(startingBalance);
-  const accBob    = await stdlib.newTestAccount(startingBalance);
-  const accClaire = await stdlib.newTestAccount(startingBalance);
+  const [ accAlice, accBob, accClaire ] =
+    await stdlib.newTestAccounts(3, startingBalance);
 
   const ctcAlice = accAlice.contract(backend);
 
@@ -19,6 +18,10 @@ import * as backend from './build/index.main.mjs';
     ['   Bob', accBob],
     ['Claire', accClaire],
   ];
+  for ( const [ lab, acc ] of everyone ) {
+    acc.setDebugLabel(lab);
+  }
+
   const randomArrayRef = (arr) =>
     arr[Math.floor(Math.random() * arr.length)];
 
@@ -56,7 +59,7 @@ import * as backend from './build/index.main.mjs';
   const makeOwner = (acc, who) => {
     const ctc = acc.contract(backend, ctcAlice.getInfo());
     const others = everyone.filter(x => x[0] !== who);
-    return backend.Owner(ctc, {
+    return ctc.p.Owner({
       showOwner: ((id, owner) => {
         if ( stdlib.addressEq(owner, acc) ) {
           console.log(`\n${who} owns it\n`);
@@ -85,14 +88,12 @@ import * as backend from './build/index.main.mjs';
   };
 
   await Promise.all([
-    backend.Creator(
-      ctcAlice,
-      { getId: () => {
+    ctcAlice.p.Creator({
+      getId: () => {
         const id = stdlib.randomUInt();
         console.log(` Alice makes id #${id}`);
         return id; }
-      },
-    ),
+    }),
     makeOwner(accAlice , ' Alice'),
     makeOwner(accBob   , '   Bob'),
     makeOwner(accClaire, 'Claire'),
