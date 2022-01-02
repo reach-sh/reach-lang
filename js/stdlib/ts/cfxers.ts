@@ -603,7 +603,7 @@ export class Wallet implements IWallet {
       } catch (e:any) {
         const es = JSON.stringify(e);
         debug(dhead, `err`, { e, es });
-        if ( es.includes("stale nonce") || es.includes("same nonce") ) {
+        if ( es.includes("stale nonce") || es.includes("same nonce") || es.includes('tx already exist') ) {
           debug(dhead, `nonce error`);
         } else {
           throw e;
