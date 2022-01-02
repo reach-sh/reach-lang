@@ -251,6 +251,8 @@ jobs:
         no_output_timeout: 20m
     - store_artifacts:
         path: /tmp/artifacts
+    - store_artifacts:
+        path: /tmp/test_results
     - store_test_results:
         path: /tmp/test_results
     - run: |
