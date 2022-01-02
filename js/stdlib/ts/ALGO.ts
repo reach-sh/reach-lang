@@ -1424,7 +1424,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(dhead, `timeout`);
           return { didTimeout: true };
         } else {
-          throw Error(`impossible: not good, but no timeout`);
+          throw Error(`${dhead}: impossible: not good, but no timeout`);
         }
       };
 
