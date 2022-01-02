@@ -22,8 +22,8 @@ go() {
   echo "$2 ${WHICH}..."
   THIS="${CONN}.${WHICH}"
   THIS_ART="/tmp/artifacts/${THIS}"
-  THIS_TR="/tmp/test_results/${WHICH}"
-  touch "${THIS_ART}"
+  THIS_TR="/tmp/test_results/${WHICH}.xml"
+  touch "${THIS_ART}" "${THIS_TR}"
   BEFORE=$(date +%s)
   ./one.sh clean "${WHICH}" >>"${THIS_ART}"
   STATUS="fail"
