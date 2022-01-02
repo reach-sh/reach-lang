@@ -577,7 +577,6 @@ export class Wallet implements IWallet {
   }
 
   async sendTransaction(txn: any): Promise<TransactionResponse> {
-    const dhead = `sendTransaction`;
     this._requireConnected();
     const provider = this.provider;
     if (!provider) throw Error(`Impossible: provider is undefined`);
@@ -588,14 +587,28 @@ export class Wallet implements IWallet {
     if (txn.to instanceof Promise) {
        txn.to = await txn.to;
     }
-    debug(dhead, `attempt`, txn);
-    // Note: {...txn} because conflux is going to mutate it >=[
-    const txnMut = {...txn};
-    const transactionHash = await provider.conflux.sendTransaction(txnMut);
-    debug(dhead, `sent`, {txn, txnMut, transactionHash});
-    return {
-      transactionHash,
-      wait: () => waitReceipt(provider, transactionHash)
+    const dhead = `retryingSendTxn`;
+    let howMany = 0;
+    while ( true ) {
+      try {
+        debug(dhead, `attempt`, howMany++, txn);
+        // Note: {...txn} because conflux is going to mutate it >=[
+        const txnMut = {...txn};
+        const transactionHash = await provider.conflux.sendTransaction(txnMut);
+        debug(dhead, `sent`, {txn, txnMut, transactionHash});
+        return {
+          transactionHash,
+          wait: () => waitReceipt(provider, transactionHash)
+        }
+      } catch (e:any) {
+        const es = JSON.stringify(e);
+        debug(dhead, `err`, { e, es });
+        if ( es.includes("stale nonce") || es.includes("same nonce") ) {
+          debug(dhead, `nonce error`);
+        } else {
+          throw e;
+        }
+      }
     }
   }
   static createRandom(): Wallet {
