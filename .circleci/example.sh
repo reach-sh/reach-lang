@@ -1,6 +1,6 @@
 #!/bin/bash
 CONN="$1"
-SIZE="$2"
+# SIZE="$2"
 RANK="$3"
 KIDS=0
 
@@ -56,12 +56,8 @@ go() {
  <testcase name="${WHICH}" time="${DURATION}">
 END
   if [ "${STATUS}" != "pass" ] ; then
-    KIND="failure"
-    if [ "${STATUS}" = "fail-time" ] ; then
-      KIND="error"
-    fi
     cat >>"${THIS_TR}" <<END
-  <${KIND} message="${STATUS}">${MSG}</${KIND}>
+  <failure message="${STATUS}">${MSG}</failure>
 END
   fi
   cat >>"${THIS_TR}" <<END
@@ -73,7 +69,7 @@ END
   echo "[ \"${STATUS}\", \"${CONN}.${RANK}\" ]" >/tmp/workspace/record/"${THIS}"
 }
 
-EXS="$(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | tail -n +2 | awk "NR % ${SIZE} == ${RANK}")"
+EXS="$(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | tail -n +2 | circleci tests split --split-by=timings)"
 
 for WHICH in $EXS; do
   KIDS=$((KIDS + 1))
