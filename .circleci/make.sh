@@ -1,7 +1,4 @@
 #!/bin/sh
-TOTALP1=$(find ../examples -maxdepth 1 -type d | wc -l)
-TOTAL=$((TOTALP1 - 1))
-
 PRE=config.pre.yml
 MID=config.mid.yml
 END=config.end.yml
@@ -64,16 +61,14 @@ cat >>"${END}" <<END
         requires:
 END
 
-for CONN in ETH ALGO CFX ; do
+examples () {
+  CONN="$1"
+  EXEC="$2"
+  SIZE="$3"
+
   CONNlc=$(echo "${CONN}" | tr '[:upper:]' '[:lower:]')
   IMAGE="devnet-${CONNlc}"
-  case "${CONN}" in
-    ALGO) PER=8 EXEC="fake";;
-    CFX) PER=8 EXEC="real";;
-    ETH) PER=16 EXEC="fake";;
-  esac
   image "${EXEC}" "${IMAGE}"
-  SIZE=$(((TOTAL + (PER - 1)) / PER))
   NAME="examples.${CONN}"
   cat >>"${MID}" <<END
     - "examples":
@@ -85,6 +80,10 @@ END
   cat >>"${END}" <<END
           - "${NAME}"
 END
-done
+}
+
+examples ETH fake 1
+examples ALGO fake 1
+examples CFX real 1
 
 cat "${PRE}" "${MID}" "${END}" "${IEND}" > config.gen.yml
