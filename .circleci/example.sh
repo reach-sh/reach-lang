@@ -69,7 +69,7 @@ END
   echo "[ \"${STATUS}\", \"${CONN}.${RANK}\" ]" >/tmp/workspace/record/"${THIS}"
 }
 
-EXS="$(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | tail -n +2 | circleci tests split --split-by=timings)"
+EXS="$(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | tail -n +2 | circleci tests split --split-by=timings --timings-type=testname)"
 
 for WHICH in $EXS; do
   KIDS=$((KIDS + 1))
