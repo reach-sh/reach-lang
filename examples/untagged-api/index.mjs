@@ -10,11 +10,10 @@ const thread = async (f) => await f();
     await stdlib.newTestAccounts(1, startingBalance);
 
   const ctcAlice = accAlice.contract(backend);
-
-  const callAPIs = async () => {
-    const acc = await stdlib.newTestAccount(startingBalance);
-    acc.setDebugLabel(`API`);
-    return async () => {
+  await ctcAlice.p.Alice({
+    deployed: async () => {
+      const acc = await stdlib.newTestAccount(startingBalance);
+      acc.setDebugLabel(`API`);
       const ctc = acc.contract(backend, ctcAlice.getInfo());
       const bob = ctc.a.Bob;
       const add1 = ctc.a.add1;
@@ -32,12 +31,6 @@ const thread = async (f) => await f();
 
       await call(() => add1(10), 11);
       await call(() => bob.add1(0), 1);
-    };
-  };
-
-  await Promise.all([
-    backend.Alice(ctcAlice, {
-    }),
-    thread(await callAPIs()),
-  ]);
+    },
+  });
 })();

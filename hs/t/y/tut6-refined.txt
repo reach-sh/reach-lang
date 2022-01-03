@@ -4,8 +4,8 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
   Verifying when ONLY "Bob" is honest
-Checked 105 theorems; No failures!
-warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+Checked 144 theorems; No failures!
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs.
 
   ./tut6-refined.rsh:79:19:application
 
@@ -13,7 +13,7 @@ warning[RW0000]: Using a bare value as a time argument is now deprecated. Please
 
 For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
-warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs.
 
   ./tut6-refined.rsh:72:19:application
 
@@ -21,7 +21,7 @@ warning[RW0000]: Using a bare value as a time argument is now deprecated. Please
 
 For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
-warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs.
 
   ./tut6-refined.rsh:65:19:application
 
@@ -29,7 +29,7 @@ warning[RW0000]: Using a bare value as a time argument is now deprecated. Please
 
 For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0000
 
-warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs.
 
   ./tut6-refined.rsh:53:17:application
 

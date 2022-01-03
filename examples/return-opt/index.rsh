@@ -12,7 +12,7 @@ export const main = Reach.App(() => {
   const Bob   = Participant('Bob', {
     acceptWager: Fun([UInt], Null),
   });
-  deploy();
+  init();
 
   Alice.only(() => {
     const wager = declassify( f(interact.wager));

@@ -4,7 +4,7 @@ export const main = Reach.App(() => {
   const A = Participant('A', {
     tokens: Tuple(Token, Token),
   });
-  deploy();
+  init();
 
   A.only(() => {
     const [tokA, tokB] = declassify(interact.tokens);

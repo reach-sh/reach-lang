@@ -13,7 +13,9 @@ import {
   AnyBackendTy,
   checkedBigNumberify,
   bytesEq,
+  assert,
 } from './shared_backend';
+import type { MapRefT } from './shared_backend'; // =>
 import { process } from './shim';
 export {
   hexlify
@@ -161,6 +163,7 @@ export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy exten
   sendrecv: (args:ISendRecvArgs<RawAddress, Token, ConnectorTy>) => Promise<IRecv<RawAddress>>,
   recv: (args:IRecvArgs<ConnectorTy>) => Promise<IRecv<RawAddress>>,
   getState: (v:BigNumber, ctcs:Array<ConnectorTy>) => Promise<Array<any>>,
+  apiMapRef: (i:number, ty:ConnectorTy) => MapRefT<any>,
 };
 
 export type ISetupArgs<ContractInfo, VerifyResult> = {
@@ -175,7 +178,7 @@ export type ISetupViewArgs<ContractInfo, VerifyResult> =
 export type ISetupEventArgs<ContractInfo, VerifyResult> =
   Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
 
-export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
+export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState"|"apiMapRef")>;
 
 export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
@@ -183,7 +186,7 @@ export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, Conn
   setupEvents: ISetupEvent<ContractInfo, VerifyResult>,
   givenInfoP: (Promise<ContractInfo>|undefined)
   _setup: (args: ISetupArgs<ContractInfo, VerifyResult>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
-} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState")>;
+} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState"|"apiMapRef")>;
 
 export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
@@ -273,7 +276,7 @@ export const stdContract =
       const _infoP: Promise<ContractInfo> = new Promise((resolve) => {
         _setInfo = (info:ContractInfo) => {
           if ( beenSet ) {
-            throw Error(`Cannot set info(${JSON.stringify(info)}) twice`);
+            throw Error(`Cannot set info(${JSON.stringify(info)}), i.e. deploy, twice`);
           }
           resolve(info);
           beenSet = true;
@@ -294,12 +297,14 @@ export const stdContract =
   const setupArgs = { ...viewArgs, setInfo };
 
   const _initialize = () => {
-    const { getContractInfo, getContractAddress, sendrecv, recv, getState } =
+    const { getContractInfo, getContractAddress,
+            sendrecv, recv, getState, apiMapRef } =
       _setup(setupArgs);
     return {
       selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
-      getContractInfo,
-      getContractAddress, sendrecv, recv, getState,
+      getContractInfo, getContractAddress,
+      sendrecv, recv,
+      getState, apiMapRef,
     };
   };
   const ctcC = { _initialize };
@@ -346,6 +351,7 @@ export const stdContract =
               theReject(err);
             }
           };
+          debug(`${bl}: start`, args);
           ab(ctcC, {
             "in": (() => {
               debug(`${bl}: in`, args);
@@ -399,8 +405,7 @@ export const stdContract =
     unsafeViews,
     apis, a: apis,
     safeApis,
-    e: events,
-    events
+    events, e: events,
   };
 };
 
@@ -678,6 +683,153 @@ export const checkTimeout = async (runningIsolated:(() => boolean), getTimeSecs:
   } else {
     throw new Error(`invalid TimeArg mode`);
   }
+};
+
+type Pred<X> = (x:X) => boolean;
+type AsyncPred<X> = (x:X) => Promise<boolean>;
+const neverTrue = async <X>(r:X) => (void(r), false);
+type EQPeqResult<ProcTxn> =
+  | { timeout: true, time: Time }
+  | { timeout: false, txn: ProcTxn };
+export interface IEventQueue<EQInitArgs, RawTxn, ProcTxn> {
+  isInited : () => boolean,
+  init: (args:EQInitArgs) => void,
+  pushIgnore: (pred: Pred<RawTxn>) => void,
+  peq: (lab: string, didTimeout: AsyncPred<Time>) => Promise<EQPeqResult<ProcTxn>>,
+  deq: (dhead: string) => Promise<ProcTxn>,
+};
+export interface EQGetTxnsR<RawTxn> {
+  txns: Array<RawTxn>,
+  gtime: BigNumber|undefined,
+};
+export interface EQCtorArgs<EQInitArgs, RawTxn, ProcTxn> {
+  raw2proc: (t:RawTxn) => ProcTxn,
+  alwaysIgnored: Pred<RawTxn>,
+  getTxns: (dhead:string, initArgs:EQInitArgs, ctime: Time, howMany: number) => Promise<EQGetTxnsR<RawTxn>>,
+  getTxnTime: (x:RawTxn) => Time,
+};
+export const makeEventQueue = <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<EQInitArgs,RawTxn,ProcTxn>): IEventQueue<EQInitArgs, RawTxn, ProcTxn> => {
+  const { raw2proc, alwaysIgnored, getTxns, getTxnTime } = ctorArgs;
+  let initArgs: EQInitArgs|undefined = undefined;
+  let ptxns: Array<ProcTxn> = [];
+  let ctime: Time = bigNumberify(0);
+  const customIgnore: Array<Pred<RawTxn>> = [];
+  const isInited = () => initArgs !== undefined;
+  const init = (args:EQInitArgs) => {
+    assert(initArgs === undefined, `init: must be uninitialized`);
+    initArgs = args;
+  };
+  const pushIgnore = (pred: Pred<RawTxn>) => {
+    assert(initArgs !== undefined, `pushIgnore: must be initialized`);
+    customIgnore.push(pred);
+  };
+  const notIgnored = (txn:RawTxn) => (! alwaysIgnored(txn));
+  const peq = async (lab: string, didTimeout: AsyncPred<Time>): Promise<EQPeqResult<ProcTxn>> => {
+    const dhead = `${lab} peq`;
+    if (initArgs === undefined) {
+      throw Error(`${dhead}: not initialized`); }
+    let howMany = 0;
+    while ( ptxns.length === 0 ) {
+      let { txns, gtime } = await getTxns(dhead, initArgs, ctime, howMany++);
+      if ( txns.length === 0 && gtime ) { ctime = gtime; }
+      else {
+        const r = (x:RawTxn): Time => {
+          const xr = getTxnTime(x);
+          if ( ctime.lt(xr) ) { ctime = xr; }
+          return xr;
+        };
+        const cmpTxn = (x:RawTxn, y:RawTxn): number =>
+          r(x).sub(r(y)).toNumber();
+        txns.sort(cmpTxn);
+        if ( txns.length === 1 ) { r(txns[0]); }
+        txns = txns.filter(notIgnored);
+      }
+      const cis = customIgnore;
+      while ( txns.length > 0 && cis.length > 0 ) {
+        const ci = cis[0];
+        cis.shift();
+        const t = txns[0];
+        txns.shift();
+        if ( ! ci(t) ) {
+          throw Error(`${dhead} customIgnore present, ${ci}, but top txn did not match ${JSON.stringify(t)}`);
+        } else {
+          debug(dhead, `ignored`, ci, t);
+        }
+      }
+      if ( txns.length === 0 && await didTimeout(ctime) ) {
+        return { timeout: true, time: ctime };
+      }
+      ptxns = txns.map(raw2proc);
+    }
+    return { timeout: false, txn: ptxns[0] };
+  };
+  const deq = async (dhead: string): Promise<ProcTxn> => {
+    const r = await peq(dhead, neverTrue);
+    if ( r.timeout ) { throw Error('impossible'); }
+    ptxns.shift();
+    return r.txn;
+  };
+
+  return { isInited, init, peq, deq, pushIgnore };
+};
+
+export interface IMESArgs<EQInitArgs, RawTxn, ProcTxn, Log> {
+  eq: IEventQueue<EQInitArgs, RawTxn, ProcTxn>
+  getTxnTime: (x:ProcTxn) => Time,
+  sync: () => Promise<void>,
+  getNetworkTime: () => Promise<Time>,
+  getLogs: (t:ProcTxn) => Array<Log>,
+  parseLog: (l:Log) => (any[]|undefined),
+};
+export const makeEventStream = <EQInitArgs, RawTxn, ProcTxn, Log>(args:IMESArgs<EQInitArgs, RawTxn, ProcTxn, Log>) => {
+  const { eq, getTxnTime, sync, getNetworkTime, getLogs, parseLog } = args;
+
+  let time = bigNumberify(0);
+  let logs: Log[] = [];
+  const seek = (t: Time) => {
+    assert(time.lt(t), 'seek must seek future');
+    debug("EventStream::seek", t);
+    time = t;
+    logs = [];
+  };
+  const next = async () => {
+    await sync();
+    let dhead = "EventStream::next";
+    let parsedLog = undefined;
+    while ( parsedLog === undefined ) {
+      while ( logs.length === 0 ) {
+        const txn = await eq.deq(dhead);
+        debug(dhead, { txn });
+        const cr = getTxnTime(txn);
+        if ( cr.gte(time) ) {
+          time = cr;
+          logs = getLogs(txn)
+          debug(dhead, { time, logs });
+        }
+      }
+      const l = logs[0];
+      logs.shift();
+      parsedLog = parseLog(l);
+      debug(dhead, { parsedLog, l });
+    }
+    debug(dhead, 'ret');
+    return { when: time, what: parsedLog };
+  };
+  const seekNow = async () => seek(await getNetworkTime());
+  const lastTime = async () => time;
+  const monitor = async (onEvent: (x: any) => void) => {
+    while (true) { onEvent(await next()); }
+  };
+  return { lastTime, seek, seekNow, monitor, next };
+};
+
+export function getQueryLowerBound(): BigNumber {
+  console.log(`WARNING: getQueryLowerBound() is deprecated and does nothing.`);
+  return bigNumberify(0);
+};
+export function setQueryLowerBound(x: BigNumber|number): void {
+  void(x);
+  console.log(`WARNING: setQueryLowerBound() is deprecated and does nothing.`);
 };
 
 export class Signal {

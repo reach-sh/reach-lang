@@ -1,6 +1,5 @@
 IMAGE=reachsh/devnet-algo
 ROOT=../..
-include $(ROOT)/DEPS
 
 .PHONY: build
 build:
@@ -8,15 +7,14 @@ build:
 		echo 'Please run `make generate-network` first' ; \
 		exit 1 ; \
 	fi
-	docker build --build-arg REACH_GIT_HASH="$$(../git-hash.sh)" --tag=$(IMAGE):latest .
+	$(ROOT)/scripts/build-image.sh $(IMAGE) Dockerfile
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: build-m1
 build-m1: build
 
-.PHONY: goal-image
-goal-image:
-	docker build --build-arg REACH_GIT_HASH="$$(../git-hash.sh)" --target=goal --tag=$(IMAGE)-goal:latest .
+.PHONY: build-devnet-algo
+build-devnet-algo: build
 
 .PHONY: push
 push:
@@ -45,7 +43,7 @@ index-status:
 
 .PHONY: generate-network
 generate-network:
-	DOCKER_BUILDKIT=1 docker build --target generate-out -o out .
+	DOCKER_BUILDKIT=1 docker build --target ignore-generate-out -o out .
 	rsync -a --progress out/ algorand_network/
 
 .PHONY: clean-network

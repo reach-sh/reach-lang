@@ -47,7 +47,7 @@ export const main = Reach.App(() => {
     status: UInt,
   });
 
-  deploy();
+  init();
 
   // 1. Primary publishes contract
   Primary.only(() => {

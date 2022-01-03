@@ -24,7 +24,6 @@ import {
   IAccount, IContract, IRecv,
   ISetupArgs, ISetupViewArgs, ISetupRes,
   // ISimRes,
-  TimeArg,
   ISimTxn,
   stdContract, stdVerifyContract,
   stdAccount,
@@ -34,17 +33,17 @@ import {
   replaceableThunk,
   ensureConnectorAvailable,
   bigNumberToBigInt,
-  argMax,
-  argMin,
   make_newTestAccounts,
   make_waitUntilX,
   checkTimeout,
   truthyEnv,
-  Signal,
   Lock,
   retryLoop,
-  Time,
   ISetupEventArgs,
+  IEventQueue,
+  EQGetTxnsR,
+  makeEventQueue,
+  makeEventStream,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -64,10 +63,13 @@ import {
   typeDefs,
   extractAddr,
 } from './ALGO_compiled';
+import type { MapRefT, MaybeRep } from './shared_backend'; // =>
 import { window, process, Env } from './shim';
 import { sha512_256 } from 'js-sha512';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = stdlib;
 export * from './shared_user';
+import { setQueryLowerBound, getQueryLowerBound } from './shared_impl';
+export { setQueryLowerBound, getQueryLowerBound };
 
 // Type Definitions
 
@@ -100,15 +102,12 @@ type RecvTxn = {
   'application-args': Array<string>,
   'sender': Address,
   'logs': Array<string>,
+  'approval-program'?: string,
+  'clear-state-program'?: string,
 };
 type TxId = string;
 type ApiCall<T> = {
   do: () => Promise<T>,
-};
-type CompileResultBytes = {
-  src: String,
-  result: Uint8Array,
-  hash: Address
 };
 
 type NetworkAccount = {
@@ -116,12 +115,13 @@ type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 6;
-const reachAlgoBackendVersion = 6;
+const reachBackendVersion = 7;
+const reachAlgoBackendVersion = 8;
 type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
   appApproval: string,
   appClear: string,
+  extraPages: number,
   stateSize: number,
   stateKeys: number,
   mapDataSize: number,
@@ -130,11 +130,6 @@ type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
 }}};
 type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
-
-type CompiledBackend = {
-  appApproval: CompileResultBytes,
-  appClear: CompileResultBytes,
-};
 
 type ContractInfo = number;
 type SendRecvArgs = ISendRecvArgs<Address, Token, AnyALGO_Ty>;
@@ -170,7 +165,26 @@ const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db
 const rawDefaultItoken = 'reach-devnet';
 
 type OrExn<X> = X | {exn:any};
-type IndexerTxn = any;
+type IndexerAppTxn = {
+  'approval-program'?: string,
+  'clear-state-program'?: string,
+  'application-id'?: number,
+  'application-args'?: Array<string>,
+  'on-completion'?: string,
+};
+type IndexerTxn = {
+  'confirmed-round': number,
+  'sender': Address,
+  'application-transaction'?: IndexerAppTxn,
+  'logs'?: Array<string>,
+};
+type IndexerQuery1Res = {
+  'transaction': IndexerTxn,
+};
+type IndexerQueryMRes = {
+  'current-round': number,
+  'transactions': Array<IndexerTxn>,
+};
 type AlgodTxn = {
   'application-index'?: number,
   'confirmed-round'?: number,
@@ -182,87 +196,69 @@ type AlgodTxn = {
   'pool-error': string,
 };
 
-const indexerTxn2RecvTxn = (txn:any) => {
-  const ait = txn['application-transaction'] || {};
+const indexerTxn2RecvTxn = (txn:IndexerTxn): RecvTxn => {
+  const ait: IndexerAppTxn = txn['application-transaction'] || {};
   const aargs = ait['application-args'] || [];
-  const aidx = ait['application-id'];
+  const aidx = ait['application-id'] || 0;
   return {
     'confirmed-round': txn['confirmed-round'],
     'sender': txn['sender'],
+    'approval-program': ait['approval-program'],
+    'clear-state-program': ait['clear-state-program'],
     'logs': (txn['logs'] || []),
     'application-args': aargs,
     'application-index': aidx,
   };
 };
 
-const waitForConfirmation = async (txId: TxId, untilRound?: number|undefined): Promise<RecvTxn> => {
+const waitForConfirmation = async (txId: TxId): Promise<RecvTxn> => {
   const doOrDie = async <X>(p: Promise<X>): Promise<OrExn<X>> => {
     try { return await p; }
     catch (e:any) { return { 'exn': e }; }
   };
-  const checkTooLate = async (lastLastRound: number): Promise<number> => {
-    const [ c, msg ] = lastLastRound > 0 ?
-      [ client.statusAfterBlock(lastLastRound),
-        `waiting until after ${lastLastRound}` ] :
-      [ client.status(),
-        `looking up current round` ];
-    debug(...dhead, msg);
-    const lastRound = (await c.do())['last-round'];
-    if ( untilRound && untilRound < lastRound ) {
-      throw Error(`waitForConfirmation: Too late: ${lastRound} > ${untilRound}`);
-    } else {
-      return lastRound;
-    }
-  };
-
-  const dhead = [ 'waitForConfirmation', txId ];
+  const dhead = `waitForConfirmation ${txId}`;
   const client = await getAlgodClient();
 
-  const checkAlgod = async (lastLastRound:number): Promise<RecvTxn> => {
-    const lastRound = await checkTooLate(lastLastRound);
+  const checkAlgod = async (): Promise<RecvTxn> => {
     const info =
       (await doOrDie(client.pendingTransactionInformation(txId).do())) as OrExn<AlgodTxn>;
-    debug(...dhead, 'info', info);
+    debug(dhead, 'info', info);
     if ( 'exn' in info ) {
-      debug(...dhead, 'switching to indexer on error');
-      return await checkIndexer(lastRound);
+      debug(dhead, 'switching to indexer on error');
+      return await checkIndexer();
     }
     const cr = info['confirmed-round'];
     if ( cr !== undefined && cr > 0 ) {
       const l = info['logs'] === undefined ? [] : info['logs'];
-      debug(...dhead, 'confirmed');
+      debug(dhead, 'confirmed');
       const dtxn = algosdk.Transaction.from_obj_for_encoding(info['txn']['txn']);
-      debug(...dhead, 'confirmed', dtxn);
+      debug(dhead, 'confirmed', dtxn);
+      const uToS = (a: Uint8Array[]|undefined) => (a || []).map((x: Uint8Array)=> uint8ArrayToStr(x, 'base64'));
       return {
         'confirmed-round': cr,
-        'logs': l,
+        // @ts-ignore
+        'logs': uToS(l),
         'application-index': info['application-index'],
         'sender': txnFromAddress(dtxn),
-        'application-args': (dtxn.appArgs || []).map((x)=> uint8ArrayToStr(x, 'base64')),
+        'application-args': uToS(dtxn.appArgs),
       };
     } else if ( info['pool-error'] === '' ) {
-      debug(...dhead, 'still in pool, trying again');
-      return await checkAlgod(lastRound);
+      debug(dhead, 'still in pool, trying again');
+      return await checkAlgod();
     } else {
       throw Error(`waitForConfirmation: error confirming: ${JSON.stringify(info)}`);
     }
   };
 
-  const checkIndexer = async (lastLastRound: number): Promise<RecvTxn> => {
-    const lastRound = await checkTooLate(lastLastRound);
+  const checkIndexer = async (): Promise<RecvTxn> => {
     const indexer = await getIndexer();
     const q = indexer.lookupTransactionByID(txId);
-    const res = (await doOrDie(doQuery_(JSON.stringify(dhead), q))) as OrExn<IndexerTxn>;
-    debug(...dhead, 'indexer', res);
-    if ( 'exn' in res ) {
-      debug(...dhead, 'indexer failed, trying again');
-      return await checkIndexer(lastRound);
-    } else {
-      return indexerTxn2RecvTxn(res['transaction']);
-    }
+    const res = (await doQuery_(dhead, q)) as IndexerQuery1Res;
+    debug(dhead, 'indexer', res);
+    return indexerTxn2RecvTxn(res['transaction']);
   };
 
-  return await checkAlgod(0);
+  return await checkAlgod();
 };
 
 const decodeB64Txn = (ts:string): Transaction => {
@@ -302,7 +298,7 @@ const signSendAndConfirm = async (
   const N = txns.length - 1;
   const tN = decodeB64Txn(txns[N].txn);
   try {
-    return await waitForConfirmation(tN.txID(), tN.lastRound);
+    return await waitForConfirmation(tN.txID()); // tN.lastRound
   } catch (e) {
     throw { type: 'waitForConfirmation', e };
   }
@@ -320,38 +316,17 @@ const toWTxn = (t:Transaction): WalletTransaction => {
 };
 
 // Backend
-const compileTEAL = async (label: string, code: string): Promise<CompileResultBytes> => {
-  debug('compile', label);
-  let s, r;
-  try {
-    r = await (await getAlgodClient()).compile(code).do();
-    s = 200;
-  } catch (e:any) {
-    s = (e && typeof e === 'object') ? e.statusCode : 'not object';
-    r = e;
-  }
-
-  if ( s == 200 ) {
-    debug('compile',  label, 'succeeded:', r);
-    r.src = code;
-    r.result = base64ToUI8A(r.result);
-    // debug('compile transformed:', r);
-    return r;
-  } else {
-    throw Error(`compile ${label} failed: ${s}: ${JSON.stringify(r)}`);
-  }
-};
-
-const getTxnParams = async (): Promise<TxnParams> => {
-  debug(`fillTxn: getting params`);
+const getTxnParams = async (label: any): Promise<TxnParams> => {
+  const dhead = `${label} fillTxn`;
+  debug(dhead, `getting params`);
   const client = await getAlgodClient();
   while (true) {
     const params = await client.getTransactionParams().do();
-    debug('fillTxn: got params:', params);
+    debug(dhead ,'got params:', params);
     if (params.firstRound !== 0) {
       return params;
     }
-    debug(`...but firstRound is 0, so let's wait and try again.`);
+    debug(dhead, `...but firstRound is 0, so let's wait and try again.`);
     await client.statusAfterBlock(1).do();
   }
 };
@@ -391,35 +366,12 @@ function must_be_supported(bin: Backend) {
 // Get these from stdlib
 // const MaxTxnLife = 1000;
 const MinTxnFee = 1000;
-const MaxAppProgramLen = 2048;
 const MaxAppTxnAccounts = 4;
-const MaxExtraAppProgramPages = 3;
 const MinBalance = 100000;
-
-async function compileFor(bin: Backend): Promise<CompiledBackend> {
-  must_be_supported(bin);
-  const { appApproval, appClear } = bin._Connectors.ALGO;
-
-  const checkLen = (label:string, actual:number, expected:number): void => {
-    debug(`checkLen`, {label, actual, expected});
-    if ( actual > expected ) {
-        throw Error(`This Reach application is not supported by Algorand: ${label} length is ${actual}, but should be less than ${expected}.`); } };
-
-  const appApproval_bin =
-    await compileTEAL('appApproval_subst', appApproval);
-  const appClear_bin =
-    await compileTEAL('appClear', appClear);
-  checkLen(`App Program Length`, (appClear_bin.result.length + appApproval_bin.result.length), (1 + MaxExtraAppProgramPages) * MaxAppProgramLen);
-
-  return {
-    appApproval: appApproval_bin,
-    appClear: appClear_bin,
-  };
-}
 
 const ui8h = (x:Uint8Array): string => Buffer.from(x).toString('hex');
 const base64ToUI8A = (x:string): Uint8Array => Uint8Array.from(Buffer.from(x, 'base64'));
-const base64ify = (x: any): String => Buffer.from(x).toString('base64');
+const base64ify = (x: any): string => Buffer.from(x).toString('base64');
 
 const format_failed_request = (e: any) => {
   const ep = JSON.parse(JSON.stringify(e));
@@ -441,169 +393,73 @@ function looksLikeAccountingNotInitialized(e: any) {
   return msg.includes(`accounting not initialized`);
 }
 
-const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, alwaysRetry: boolean = false): Promise<T> => {
-  debug(dhead, '--- QUERY =', query);
-  let retries = 10;
-  let res;
-  while ( retries > 0 ) {
+const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0): Promise<T> => {
+  debug(dhead, { query });
+  while ( true ) {
+    if ( howMany > 0 ) {
+      await Timeout.set(1000);
+    }
     try {
-      res = await query.do();
-      break;
+      const res = await query.do();
+      debug(dhead, 'RESULT', res);
+      return res;
     } catch (e:any) {
       if ( e?.errno === -111 || e?.code === "ECONNRESET") {
         debug(dhead, 'NO CONNECTION');
       } else if ( looksLikeAccountingNotInitialized(e) ) {
         debug(dhead, 'ACCOUNTING NOT INITIALIZED');
-      } else if ( ! alwaysRetry || retries <= 0 ) {
-        throw Error(`${dhead} --- QUERY FAIL: ${JSON.stringify(e)}`); // `
       }
-      debug(dhead, 'RETRYING', retries--, {e});
-      await Timeout.set(500);
+      debug(dhead, 'RETRYING', {e});
+      howMany++;
     }
   }
-  if (!res) { throw Error(`impossible: query res is empty`); }
-  debug(dhead, 'RESULT', res);
-  return res;
 };
 
-type QueryResult =
-  | { succ: true, txn: any }
-  | { succ: false, round: number }
-
-// ****************************************************************************
-// Event Cache
-// ****************************************************************************
-
-const chooseMinRoundTxn = (ptxns: any[]) =>
-  argMin(ptxns, (x: any) => x['confirmed-round']);
-
-const chooseMaxRoundTxn = (ptxns: any[]) =>
-  argMax(ptxns, (x: any) => x['confirmed-round']);
-
-type QueryInfo = {
-  minRound?: number,
-  timeoutAt?: TimeArg,
-  specRound?: number,
-  isEventStream?: boolean,
+export function getValidQueryWindow(): number|true {
+  return true;
 }
-
-const [_getQueryLowerBound, _setQueryLowerBound] = replaceableThunk<number>(() => 0);
-const [getValidQueryWindow, _setValidQueryWindow] = replaceableThunk<number|true>(() => true);
-
-export {getValidQueryWindow};
 export function setValidQueryWindow(n: number|true): void {
   if (typeof n === 'number') {
-    // TODO?
     throw Error(`Only setValidQueryWindow(true) is supported on Algorand`);
   }
-  _setValidQueryWindow(n);
 }
 
-export function getQueryLowerBound(): BigNumber {
-  return bigNumberify(_getQueryLowerBound());
-}
-
-export function setQueryLowerBound(networkTime: BigNumber|number): void {
-  networkTime = typeof networkTime === 'number' ? networkTime
-    : networkTime._isBigNumber ? networkTime.toNumber()
-    : networkTime;
-  if (!(typeof networkTime === 'number')) { throw Error(`Expected number or BigNumber, but got ${networkTime} : ${typeof networkTime}`);}
-  _setQueryLowerBound(networkTime);
-}
-
-class EventCache {
-
-  cache: any[] = [];
-
-  currentRound: number;
-
-  constructor() {
-    this.currentRound = _getQueryLowerBound();
-    this.cache = [];
-  }
-
-  async query(dhead: string, ApplicationID: number, queryInfo: QueryInfo, pred: ((x:any) => boolean), choose : (x: any[]) => any = chooseMinRoundTxn): Promise<QueryResult> {
-    const { minRound, timeoutAt, specRound, isEventStream = false } = queryInfo;
-    const h = (mode:string): (number | undefined) => timeoutAt && timeoutAt[0] === mode ? bigNumberToNumber(timeoutAt[1]) : undefined;
-    const maxRound = h('time');
-    const maxSecs = h('secs');
-    debug(dhead, `EventCache.query`, {ApplicationID, minRound, specRound, timeoutAt, maxRound, maxSecs}, this.currentRound);
-
-    // Clear cache of stale transactions.
-    // Cache's min bound will be `minRound || specRound`
-    const filterRound = minRound ?? specRound!;
-    this.cache = this.cache.filter((txn) => {
-      const notTooOld = txn['confirmed-round'] >= filterRound;
-      const emptyOptIn =
-        (  (txn['application-transaction']['on-completion'] === 'optin')
-        && (txn['application-transaction']['application-args'].length == 0));
-      return notTooOld && (! emptyOptIn);
-    });
-
-    // When checking predicate, only choose transactions that are below
-    // max round, or the specific round we're looking for.
-    const filterFn = (x: any) => pred(x)
-      && (maxRound ? x['confirmed-round'] <= maxRound : true)
-      && (maxSecs ? x['round-time'] <= maxSecs : true)
-      && (specRound ? x['confirmed-round'] == specRound : true);
-
-    // Check to see if the transaction we want is in cache
-    const initPtxns = this.cache.filter(filterFn);
-
-    if (initPtxns.length != 0) {
-      debug(`Found transaction in Event Cache`);
-      const txn = choose(initPtxns)
-      return { succ: true, txn };
-    }
-    debug(`transaction not in event cache`);
-
-    const failed = (): {succ: false, round: number} => ({ succ: false, round: this.currentRound });
-    if ( this.cache.length != 0 && !isEventStream ) {
-      debug(`cache not empty, contains some other message from future, not querying...`, this.cache);
-      return failed();
-    }
-
-    debug(`querying network...`);
-    // If no results, then contact network
+const isCreateTxn = (txn:IndexerTxn): boolean => {
+  const at = txn['application-transaction'];
+  return at ? at['application-id'] === 0 : false;
+};
+const emptyOptIn = (txn:IndexerTxn) => {
+  const at = txn['application-transaction'];
+  const ataa = at && at['application-args'] || [];
+  return at ?
+    (at['on-completion'] === 'optin' && ataa.length == 0)
+    : false;
+};
+type EQInitArgs = {
+  ApplicationID: number,
+};
+type EventQueue = IEventQueue<EQInitArgs, IndexerTxn, RecvTxn>;
+const newEventQueue = (): EventQueue => {
+  const getTxns = async (dhead:string, initArgs:EQInitArgs, ctime: BigNumber, howMany: number): Promise<EQGetTxnsR<IndexerTxn>> => {
+    const { ApplicationID } = initArgs;
     const indexer = await getIndexer();
-
-    let query =
+    const query =
       indexer.searchForTransactions()
         .applicationID(ApplicationID)
         .txType('appl')
-
-    if (filterRound) {
-      // If cache has: [100, 200]
-      // & querying  : [150, 1000]
-      // We already searched cache for [150, 200] so query network for [201, 1000]
-      query = query.minRound(Math.max(this.currentRound + 1, filterRound));
-    }
-
-    const res: any = await doQuery_(dhead, query);
-    this.cache = res.transactions;
-
-    // Update current round
-    this.currentRound =
-      (res.transactions.length == 0)
-        ? (maxRound ? Math.min(res['current-round'], maxRound) : res['current-round'])
-        : chooseMaxRoundTxn(res.transactions)['confirmed-round'];
-
-    // Check for pred again
-    const ptxns = this.cache.filter(filterFn);
-
-    if ( ptxns.length == 0 ) {
-      return failed();
-    }
-
-    const txn = choose(ptxns);
-
-    return { succ: true, txn };
-  }
-}
-
-// ****************************************************************************
-// Common Interface Exports
-// ****************************************************************************
+        .minRound(bigNumberToNumber(ctime) + 1);
+    const res = (await doQuery_(dhead, query, howMany)) as IndexerQueryMRes;
+    const txns = res.transactions;
+    const gtime = bigNumberify(res['current-round']);
+    return { txns, gtime };
+  };
+  const getTxnTime = (x:IndexerTxn): BigNumber => bigNumberify(x['confirmed-round']);
+  return makeEventQueue<EQInitArgs, IndexerTxn, RecvTxn>({
+    raw2proc: indexerTxn2RecvTxn,
+    alwaysIgnored: emptyOptIn,
+    getTxns, getTxnTime,
+  });
+};
 
 export const { addressEq, tokenEq, digest } = stdlib;
 
@@ -956,7 +812,7 @@ export const transfer = async (
   const sender = from.networkAccount;
   const receiver = extractAddr(to);
   const valuebn = bigNumberify(value);
-  const ps = await getTxnParams();
+  const ps = await getTxnParams('transfer');
   const txn = toWTxn(makeTransferTxn(sender.addr, receiver, valuebn, token, ps, undefined, tag));
 
   return await sign_and_send_sync(
@@ -965,14 +821,41 @@ export const transfer = async (
     txn);
 };
 
-// XXX need to make this a log
-const makeIsMethod = (i:number) => (txn:any): boolean => {
-  const act = txn['application-transaction']['application-args'][0];
-  const exp = base64ify([i]);
-  const r = act === exp;
-  //debug(`makeIsMethod`, {txn,i,act,exp,r});
-  return r;
-}
+interface LogRep {
+  parse: (log: string) => (any[]|undefined),
+  parse0: (txn: RecvTxn) => (any[]|undefined),
+  parse0b: (txn: RecvTxn) => boolean,
+};
+const makeLogRep = (evt:string, tys:AnyALGO_Ty[]): LogRep => {
+  const hLen = 4;
+  const tyns = tys.map(ty => ty.netName);
+  const sig = `${evt}(${tyns.join(',')})`;
+  const hp = base64ify(sha512_256(sig));
+  const trunc = (x: string): string => ui8h(base64ToUI8A(x).slice(0, hLen));
+  const hpb = trunc(hp);
+  debug(`makeLogRep`, { evt, tyns, sig, hp, hpb });
+  const parse = (log:string): (any[]|undefined) => {
+    if ( trunc(log) !== hpb ) { return undefined; }
+    // @ts-ignore
+    const [ logb, ...pd ] = T_Tuple([T_Bytes(hLen)].concat(tys)).fromNet(reNetify(log));
+    debug(`parse`, { log, logb, pd });
+    return pd;
+  };
+  const parse0 = (txn:RecvTxn): (any[]|undefined) => {
+    if ( txn.logs.length == 0 ) { return undefined; }
+    const log = txn.logs[0];
+    return parse(log);
+  };
+  const parse0b = (txn:RecvTxn) => parse0(txn) !== undefined;
+  return { parse, parse0, parse0b };
+};
+
+const reachEvent = (i:number) => `_reach_e${i}`;
+const makeHasLogFor = (i:number, tys:AnyALGO_Ty[]) => {
+  debug(`hasLogFor`, i, tys);
+  const lr = makeLogRep(reachEvent(i), tys);
+  return lr.parse0b;
+};
 
 /** @description base64->hex->arrayify */
 const reNetify = (x: string): NV => {
@@ -1019,9 +902,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     type ContractHandler = {
       ApplicationID: number,
       Deployer: Address,
-      getLastRound: (() => number),
-      setLastRound: ((x:number) => void),
-      getLocalState: ((a:Address) => Promise<any>),
+      viewMapRef: (mapi:number, a:Address) => Promise<any>,
       ensureOptIn: (() => Promise<void>),
       getAppState: (() => Promise<any>),
       getGlobalState: ((appSt_g?:any) => Promise<GlobalState|undefined>),
@@ -1030,25 +911,25 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       ctcAddr: Address,
     };
 
-    const makeGetC = (setupViewArgs: SetupViewArgs, eventCache: EventCache, informCreationBlock: (cb: number) => void) => {
-      const { getInfo: fake_getInfo } = setupViewArgs;
+    const makeGetC = (setupViewArgs: SetupViewArgs, eq: EventQueue) => {
+      const { getInfo } = setupViewArgs;
       let _theC: ContractHandler|undefined = undefined;
       return async (): Promise<ContractHandler> => {
+        debug(label, 'getC');
         if ( _theC ) { return _theC; }
-        const ctcInfo = await fake_getInfo();
-        const { ApplicationID, Deployer, startRound } =
+        const ctcInfo = await getInfo();
+        const { ApplicationID, Deployer } =
           await stdVerifyContract( setupViewArgs, (async () => {
-            return await verifyContract_(label, ctcInfo, bin, eventCache);
+            return await verifyContract_(label, ctcInfo, bin, eq);
           }));
-        debug(label, 'getC', {ApplicationID, startRound} );
+        if ( ! eq.isInited() ) {
+          eq.init({ ApplicationID });
+          eq.pushIgnore(isCreateTxn);
+        }
+        debug(label, 'getC', {ApplicationID} );
 
-        informCreationBlock(startRound);
         const ctcAddr = algosdk.getApplicationAddress(ApplicationID);
         debug(label, 'getC', { ctcAddr });
-
-        let realLastRound = startRound;
-        const getLastRound = () => realLastRound;
-        const setLastRound = (x:number) => (realLastRound = x);
 
         // Read map data
         const getLocalState = async (a:Address): Promise<any> => {
@@ -1064,12 +945,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const didOptIn = async (): Promise<boolean> =>
           ((await getLocalState(thisAcc.addr)) !== undefined);
         const doOptIn = async (): Promise<void> => {
-          debug(`doOptIn`);
+          const dhead = 'doOptIn';
+          debug(dhead);
           await sign_and_send_sync(
             'ApplicationOptIn',
             thisAcc,
             toWTxn(algosdk.makeApplicationOptInTxn(
-              thisAcc.addr, await getTxnParams(),
+              thisAcc.addr, await getTxnParams(dhead),
               ApplicationID,
               undefined, undefined, undefined, undefined,
               NOTE_Reach)));
@@ -1120,7 +1002,22 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const isin = (await getProvider()).isIsolatedNetwork;
         const isIsolatedNetwork = () => isin;
 
-        return (_theC = { ApplicationID, ctcAddr, Deployer, getLastRound, setLastRound, getLocalState, getAppState, getGlobalState, ensureOptIn, canIWin, isIsolatedNetwork });
+        const viewMapRef = async (mapi: number, a:any): Promise<any> => {
+          debug('viewMapRef', { mapi, a });
+          const ls = await getLocalState(cbr2algo_addr(a));
+          if ( ls === undefined ) { return ['None', null]; }
+          debug('viewMapRef', { ls });
+          const mbs = recoverSplitBytes('m', mapDataSize, mapDataKeys, ls);
+          debug('viewMapRef', { mbs });
+          const md = mapDataTy.fromNet(mbs);
+          debug('viewMapRef', { md });
+          // @ts-ignore
+          const mr = md[mapi];
+          assert(mr !== undefined, 'viewMapRef mr undefined');
+          return mr;
+        };
+
+        return (_theC = { ApplicationID, ctcAddr, Deployer, getAppState, getGlobalState, ensureOptIn, canIWin, isIsolatedNetwork, viewMapRef });
       };
     };
 
@@ -1141,36 +1038,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const _setup = (setupArgs: SetupArgs): SetupRes => {
-      const { setInfo, getInfo, setTrustedVerifyResult } = setupArgs;
+      const { setInfo, setTrustedVerifyResult } = setupArgs;
 
-      const didSet = new Signal();
-      let fake_info: ContractInfo|undefined = undefined;
-      const fake_setInfo = (x:ContractInfo) => {
-        fake_info = x;
-        didSet.notify();
-      };
-      const ctorRan = new Signal();
-      ctorRan.wait().then(() => {
-        if ( fake_info !== undefined ) {
-          setInfo(fake_info);
-        }
-      });
-      const fake_getInfo = async (): Promise<ContractInfo> => {
-        if ( givenInfoP ) {
-          return await getInfo();
-        } else {
-          await didSet.wait();
-          if ( fake_info === undefined ) { throw Error(`impossible fake_info`); }
-          return fake_info;
-        }
-      };
-
-      const eventCache = new EventCache();
-      const fake_setupArgs = {
-        ...setupArgs,
-        getInfo: fake_getInfo,
-      };
-      const getC = makeGetC(fake_setupArgs, eventCache, () => {});
+      const eq = newEventQueue();
+      const getC = makeGetC(setupArgs, eq);
 
       // Returns address of a Reach contract
       const getContractAddress = async () => {
@@ -1183,10 +1054,17 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
 
       const getState = async (vibne:BigNumber, vtys:AnyALGO_Ty[]): Promise<Array<any>> => {
+        debug('getState');
         return await getState_(getC, (vibna:BigNumber) => {
           if ( vibne.eq(vibna) ) { return vtys; }
           throw Error(`Expected state ${vibne}, got ${vibna}`);
         });
+      };
+
+      const apiMapRef = (i:number, ty:any): MapRefT<any> => async (f:string): Promise<MaybeRep<any>> => {
+        void(ty);
+        const { viewMapRef } = await getC();
+        return await viewMapRef(i, f);
       };
 
       const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
@@ -1198,64 +1076,48 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
           return await recv({funcNum, evt_cnt, out_tys, didSend, waitIfNotPresent, timeoutAt});
         };
-        if ( ! onlyIf ) {
-          return await doRecv(false, true);
-        }
         const funcName = `m${funcNum}`;
         const dhead = `${label}: sendrecv ${funcName} ${timeoutAt}`;
+        if ( ! onlyIf ) {
+          debug(dhead, `onlyIf false`);
+          return await doRecv(false, true);
+        }
 
         const trustedRecv = async (txn:RecvTxn): Promise<Recv> => {
           const didSend = true;
-          if ( isCtor ) {
-            // If this is the constructor, then we are going to need to notify
-            // the ctorRan signal, but we can only do that once the constructor
-            // is visible on the indexer, thus we can't rely on a trusted
-            // receive. I originally thought we could do this in the
-            // background, but the ctorRan signal is representative of what
-            // could happen in a real non-test program, so we should really
-            // double check with the indexer in a real deployment too.
-            return await doRecv(didSend, false);
-          }
+          const correctStep = makeHasLogFor(funcNum, out_tys);
+          eq.pushIgnore((x:IndexerTxn) => correctStep(indexerTxn2RecvTxn(x)));
           return await recvFrom({dhead, out_tys, didSend, funcNum, txn});
         };
 
         if ( isCtor ) {
-          debug(label, 'deploy');
-          const compiled = await compileFor(bin);
-          const { appApproval, appClear } = compiled;
-          const extraPages =
-            Math.ceil((appClear.result.length + appApproval.result.length) / MaxAppProgramLen) - 1;
-
-          debug(`deploy`, {extraPages});
+          debug(dhead, 'deploy');
+          must_be_supported(bin);
+          const { appApproval, appClear, extraPages } = bin._Connectors.ALGO;
+          debug(dhead, `deploy`, {extraPages});
           const Deployer = thisAcc.addr;
           const createRes =
             await sign_and_send_sync(
               'ApplicationCreate',
               thisAcc,
               toWTxn(algosdk.makeApplicationCreateTxn(
-                Deployer, await getTxnParams(),
+                Deployer, await getTxnParams(dhead),
                 algosdk.OnApplicationComplete.NoOpOC,
-                appApproval.result,
-                appClear.result,
+                base64ToUI8A(appApproval),
+                base64ToUI8A(appClear),
                 appLocalStateNumUInt, appLocalStateNumBytes + mapDataKeys,
                 appGlobalStateNumUInt, appGlobalStateNumBytes + stateKeys,
                 undefined, undefined, undefined, undefined,
                 NOTE_Reach, undefined, undefined, extraPages)));
 
-          const allocRound = createRes['confirmed-round'];
           const ApplicationID = createRes['application-index'];
           if ( ! ApplicationID ) {
             throw Error(`No application-index in ${JSON.stringify(createRes)}`);
           }
-          debug(`created`, {ApplicationID});
+          debug(label, `created`, {ApplicationID});
           const ctcInfo = ApplicationID;
-          // We are adding one to the allocRound because we want querying to
-          // start at the first place it possibly could, which is going to
-          // eliminate the allocation from the event cache.
-          // Once we make it so the allocation event is actually needed, then
-          // we will modify this.
-          setTrustedVerifyResult({ compiled, ApplicationID, Deployer, startRound: allocRound + 1 });
-          fake_setInfo(ctcInfo);
+          setTrustedVerifyResult({ ApplicationID, Deployer });
+          setInfo(ctcInfo);
         }
         const { ApplicationID, ctcAddr, Deployer, ensureOptIn, canIWin, isIsolatedNetwork } = await getC();
 
@@ -1298,7 +1160,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const { mapRefs } = sim_r;
 
         while ( true ) {
-          const params = await getTxnParams();
+          const params = await getTxnParams(dhead);
           // We add one, because the firstRound field is actually the current
           // round, which we couldn't possibly be in, because it already
           // happened.
@@ -1483,9 +1345,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         txn: RecvTxn,
       };
       const recvFrom = async (rfargs:RecvFromArgs): Promise<Recv> => {
-        const { dhead, out_tys, didSend, txn } = rfargs;
-        const { getLastRound, setLastRound } = await getC();
-        debug(dhead, '--- txn =', txn);
+        const { dhead, funcNum, out_tys, didSend, txn } = rfargs;
+        debug(dhead, 'txn', txn);
         const theRound = txn['confirmed-round'];
         // const theSecs = txn['round-time'];
         // ^ The contract actually uses `global LatestTimestamp` which is the
@@ -1495,24 +1356,17 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         // ^ XXX it would be nice if Reach could support variables bound to
         // promises and then we wouldn't need to wait here.
 
-        // XXX need to move this to a log
-        const ctc_args_all = txn['application-args'];
-        debug(dhead, {ctc_args_all});
-        const argMsg = 2; // from ALGO.hs
-        const ctc_args_s: string = ctc_args_all[argMsg];
-
-        debug(dhead, 'out_tys', out_tys.map((x) => x.name));
-        const msgTy = T_Tuple(out_tys);
-        const ctc_args = msgTy.fromNet(reNetify(ctc_args_s));
+        const lr = makeLogRep(reachEvent(funcNum), out_tys);
+        const ctc_args = lr.parse0(txn);
         debug(dhead, {ctc_args});
+        if ( ctc_args === undefined ) {
+          throw Error(`impossible: txn doesn't have right log as first`);
+        }
 
         const fromAddr = txn['sender'];
         const from = T_Address.canonicalize({addr: fromAddr});
         debug(dhead, { from, fromAddr });
 
-        const oldLastRound = getLastRound();
-        setLastRound(theRound);
-        debug(dhead, { oldLastRound, theRound });
         const getOutput = async (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
           debug(`getOutput`, {o_mode, o_lab, o_ctc, o_val});
           const f_ctc = T_Tuple([T_UInt, o_ctc]);
@@ -1535,51 +1389,46 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           didSend,
           didTimeout: false,
           data: ctc_args,
-          time: bigNumberify(getLastRound()),
+          time: bigNumberify(theRound),
           secs: bigNumberify(theSecs),
           from, getOutput,
         };
       };
 
       const recv = async (rargs:RecvArgs): Promise<Recv> => {
-        const { funcNum, out_tys, didSend, waitIfNotPresent, timeoutAt } = rargs;
-        const isCtor = (funcNum == 0);
-        const fromBlock_summand = isCtor ? 0 : 1;
-
+        const { funcNum, out_tys, didSend, timeoutAt, waitIfNotPresent } = rargs;
         const funcName = `m${funcNum}`;
-        const dhead = `${label}: ${label} recv ${funcName} ${timeoutAt}`;
-        debug(dhead, '--- START');
-
-        const { ApplicationID, getLastRound, isIsolatedNetwork } = await getC();
-
-        while ( true ) {
-          const correctStep = makeIsMethod(funcNum);
-          const minRound = getLastRound() + fromBlock_summand;
-          const res = await eventCache.query(dhead, ApplicationID, { minRound, timeoutAt }, correctStep);
-          debug(`EventCache res: `, res);
-          if ( ! res.succ ) {
-            const currentRound = res.round;
-            debug(dhead, 'TIMECHECK', {timeoutAt, minRound, currentRound});
-            if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, currentRound+1) ) {
-              debug(dhead, 'TIMEOUT');
-              return { didTimeout: true };
-            }
-            if ( waitIfNotPresent ) {
-              await waitUntilTime(bigNumberify(currentRound + 1));
-            } else {
-              await indexer_statusAfterBlock(currentRound + 1);
-            }
-            continue;
+        const dhead = `${label}: recv ${funcName} ${timeoutAt}`;
+        debug(dhead, 'start');
+        const { isIsolatedNetwork } = await getC();
+        const didTimeout = async (cr_bn: BigNumber): Promise<boolean> => {
+          const cr = bigNumberToNumber(cr_bn);
+          debug(dhead, 'TIMECHECK', {timeoutAt, cr_bn, cr});
+          const crp = cr + 1;
+          const r = await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, crp);
+          debug(dhead, 'TIMECHECK', {r, waitIfNotPresent});
+          if ( !r && waitIfNotPresent ) {
+            await waitUntilTime(bigNumberify(crp));
           }
-          if ( isCtor ) {
-            ctorRan.notify();
-          }
-          const txn = indexerTxn2RecvTxn(res.txn);
+          return r;
+        };
+        const res = await eq.peq(dhead, didTimeout);
+        debug(dhead, `res`, res);
+        const correctStep = makeHasLogFor(funcNum, out_tys);
+        const good = (! res.timeout) && correctStep(res.txn);
+        if ( good ) {
+          await eq.deq(dhead);
+          const txn = res.txn;
           return await recvFrom({dhead, out_tys, didSend, funcNum, txn});
+        } else if ( timeoutAt ) {
+          debug(dhead, `timeout`);
+          return { didTimeout: true };
+        } else {
+          throw Error(`${dhead}: impossible: not good, but no timeout`);
         }
       };
 
-      return { getContractInfo, getContractAddress, getState, sendrecv, recv };
+      return { getContractInfo, getContractAddress, getState, sendrecv, recv, apiMapRef };
     };
 
     const readStateBytes = (prefix:string, key:number[], src:any): any => {
@@ -1610,23 +1459,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return bs;
     };
     const setupView = (setupViewArgs: SetupViewArgs) => {
-      const eventCache = new EventCache();
-      const getC = makeGetC(setupViewArgs, eventCache, () => {});
+      const eq = newEventQueue();
+      const getC = makeGetC(setupViewArgs, eq);
       const viewLib: IViewLib = {
         viewMapRef: async (mapi: number, a:any): Promise<any> => {
-          const { getLocalState } = await getC();
-          debug('viewMapRef', { mapi, a });
-          const ls = await getLocalState(cbr2algo_addr(a));
-          assert(ls !== undefined, 'viewMapRef ls undefined');
-          debug('viewMapRef', { ls });
-          const mbs = recoverSplitBytes('m', mapDataSize, mapDataKeys, ls);
-          debug('viewMapRef', { mbs });
-          const md = mapDataTy.fromNet(mbs);
-          debug('viewMapRef', { md });
-          // @ts-ignore
-          const mr = md[mapi];
-          assert(mr !== undefined, 'viewMapRef mr undefined');
-          return mr;
+          const { viewMapRef } = await getC();
+          return await viewMapRef(mapi, a);
         },
       };
       const getView1 = (vs:BackendViewsInfo, v:string, k:string|undefined, vim: BackendViewInfo, isSafe = true) =>
@@ -1656,80 +1494,24 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return { getView1, viewLib };
     };
 
-    const setupEvents = (a: SetupEventArgs) => {
-      const eventCache = new EventCache();
-      let time = bigNumberify(0);
-      const getC = makeGetC(a, eventCache, (cb: number) => {
-        time = bigNumberify(cb);
-      });
-      const createEventStream = (event: string, tys: AnyALGO_Ty[]) => {
-        let logIndex: any = {};
-        let sig = `${event}(${tys.map(ty => ty.netName).join(',')})`;
-        debug(`createEventStream signature`, sig);
-        let hashPrefix = sha512_256(sig).substring(0, 4);
-        let base64Hash = replaceAll(base64ify(hashPrefix) as string, '=', '');
-        debug(`createEventStream hash`, base64Hash);
-        let lastLog: any = undefined;
-
-        const seek = (t: Time) => {
-          debug("EventStream::seek", t);
-          time = t;
-          logIndex[time.toNumber()] = 0;
-        }
-
-        const next = async () => {
-          let dhead = "EventStream::next";
-          const { ApplicationID } = await getC();
-          const pred = (txn: any) => {
-            const round = txn['confirmed-round'];
-            const logIdx = logIndex[round] || 0;
-            const logs: string[] = (txn['logs'] || []).slice(logIdx);
-            const good = logs.some((log) => log.startsWith(base64Hash));
-            return good;
-          };
-          let res: QueryResult = { succ: false, round: 0  };
-          while (!res.succ) {
-            res = await eventCache.query(dhead, ApplicationID, { minRound: time.toNumber(), isEventStream: true }, pred);
-            if (!res.succ) { await Timeout.set(5000); }
-          }
-          const round = res.txn['confirmed-round'];
-          const logIdx = logIndex[round] || 0;
-          const logs = res.txn.logs.slice(logIdx);
-          let log = logs.find((l: string, idx: number) => {
-            const matches = l.startsWith(base64Hash);
-            if (matches) { logIndex[round] = logIdx + idx + 1; }
-            return matches;
-          });
-          // @ts-ignore
-          const parsedLog = T_Tuple([T_Bytes(4)].concat(tys)).fromNet(reNetify(log));
-          const blockTime = bigNumberify(round);
-          time = blockTime;
-          debug(dhead + ` parsed log`, parsedLog, blockTime);
-          parsedLog.shift(); // Remove tag
-          lastLog = { when: blockTime, what: parsedLog };
-          return lastLog;
-        }
-
-        const seekNow = async () => {
-          time = await getNetworkTime();
-        }
-
-        const lastTime = async () => {
-          const dhead = "EventStream::lastTime";
-          debug(dhead, time);
-          return lastLog?.when;
-        }
-
-        const monitor = async (onEvent: (x: any) => void) => {
-          while (true) {
-            onEvent(await next());
-          }
-        }
-
-        return { lastTime, seek, seekNow, monitor, next };
+    const setupEvents = (setupArgs: SetupEventArgs) => {
+      const createEventStream = (evt: string, tys: AnyALGO_Ty[]) => {
+        const eq = newEventQueue();
+        const getC = makeGetC(setupArgs, eq);
+        const getTxnTime = (r:RecvTxn) => bigNumberify(r['confirmed-round']);
+        const sync = async () => {
+          const {} = await getC();
+          return;
+        };
+        const getLogs = (r:RecvTxn) => r['logs'];
+        const lr = makeLogRep(evt, tys);
+        const parseLog = lr.parse;
+        return makeEventStream<EQInitArgs, IndexerTxn, RecvTxn, string>({
+          eq, getTxnTime, sync, getNetworkTime, getLogs, parseLog,
+        });
       };
       return { createEventStream };
-    }
+    };
 
     return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
   };
@@ -1857,18 +1639,23 @@ export const atomicUnit = 'μALGO';
 
 /**
  * @description  Parse currency by network
- * @param amt  value in the {@link standardUnit} for the network.
- * @returns  the amount in the {@link atomicUnit} of the network.
+ * @param amt  value in the {@link standardUnit} for the token.
+ * @returns  the amount in the {@link atomicUnit} of the token.
  * @example  parseCurrency(100).toString() // => '100000000'
+ * @example  parseCurrency(100, 3).toString() // => '100000'
  */
-export function parseCurrency(amt: CurrencyAmount): BigNumber {
+export function parseCurrency(amt: CurrencyAmount, decimals: number = 6): BigNumber {
+  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
+    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
+  }
   // @ts-ignore
   const numericAmt: number =
     isBigNumber(amt) ? amt.toNumber()
     : typeof amt === 'string' ? parseFloat(amt)
     : typeof amt === 'bigint' ? Number(amt)
     : amt;
-  return bigNumberify(algosdk.algosToMicroalgos(numericAmt));
+  const value = numericAmt * (10 ** decimals)
+  return bigNumberify(Math.floor(value))
 }
 
 export const minimumBalance: BigNumber =
@@ -1898,30 +1685,48 @@ function ldrop(str: string, char: string) {
 }
 
 /**
- * @description  Format currency by network
- * @param amt  the amount in the {@link atomicUnit} of the network.
+ * @description  Format currency by network or token
+ * @param amt  the amount in the {@link atomicUnit} of the network or token.
  * @param decimals  up to how many decimal places to display in the {@link standardUnit}.
+ * @param splitValue  where to split the numeric value.
  *   Trailing zeros will be omitted. Excess decimal places will be truncated (not rounded).
  *   This argument defaults to maximum precision.
- * @returns  a string representation of that amount in the {@link standardUnit} for that network.
+ * @returns  a string representation of that amount in the {@link standardUnit} for that network or token.
  * @example  formatCurrency(bigNumberify('100000000')); // => '100'
  * @example  formatCurrency(bigNumberify('9999998799987000')); // => '9999998799.987'
  */
-export function formatCurrency(amt: any, decimals: number = 6): string {
+function handleFormat(amt: any, decimals: number, splitValue: number = 6): string {
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
+  if (!(Number.isInteger(splitValue) && 0 <= splitValue)) {
+    throw Error(`Expected split value to be a nonnegative integer, but got ${decimals}.`);
+  }
   const amtStr = bigNumberify(amt).toString();
-  const splitAt = Math.max(amtStr.length - 6, 0);
+  const splitAt = Math.max(amtStr.length - splitValue, 0);
   const lPredropped = amtStr.slice(0, splitAt);
   const l = ldrop(lPredropped, '0') || '0';
   if (decimals === 0) { return l; }
 
-  const rPre = lpad(amtStr.slice(splitAt), '0', 6);
+  const rPre = lpad(amtStr.slice(splitAt), '0', splitValue);
   const rSliced = rPre.slice(0, decimals);
   const r = rdrop(rSliced, '0');
-
+  
   return r ? `${l}.${r}` : l;
+}
+
+/**
+ * @description  Format currency by network
+ */
+export function formatCurrency(amt: any, decimals: number = 6): string {
+  return handleFormat(amt, decimals, 6)
+}
+
+/**
+ * @description  Format currency based on token decimals
+ */
+export function formatWithDecimals(amt: any, decimals: number): string {
+  return handleFormat(amt, decimals, decimals)
 }
 
 export async function getDefaultAccount(): Promise<Account> {
@@ -1994,21 +1799,21 @@ const appGlobalStateNumUInt = 0;
 const appGlobalStateNumBytes = 1;
 
 type VerifyResult = {
-  compiled: CompiledBackend,
   ApplicationID: number,
   Deployer: Address,
-  startRound: number,
 };
 
 export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<VerifyResult> => {
-  return verifyContract_('', info, bin, new EventCache());
+  return verifyContract_('', info, bin, newEventQueue());
 }
 
-const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, eventCache: EventCache): Promise<VerifyResult> => {
-  const compiled = await compileFor(bin);
-  const ApplicationID = info;
-  const { appApproval, appClear } = compiled;
-  const { mapDataKeys, stateKeys } = bin._Connectors.ALGO;
+const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, eq: EventQueue): Promise<VerifyResult> => {
+  must_be_supported(bin);
+  // @ts-ignore
+  const ai_bn: BigNumber = protect(T_Contract, info);
+  const ApplicationID: number = bigNumberToNumber(ai_bn);
+  const { appApproval, appClear, mapDataKeys, stateKeys } =
+    bin._Connectors.ALGO;
 
   let dhead = `${label}: verifyContract`;
 
@@ -2022,7 +1827,6 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
     const es = JSON.stringify(e);
     chk(as === es, `${msg}: expected ${es}, got ${as}`);
   };
-  const fmtp = (x: CompileResultBytes) => uint8ArrayToStr(x.result, 'base64');
 
   const client = await getAlgodClient();
   let appInfo; let err;
@@ -2037,8 +1841,8 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   const appInfo_p = appInfo['params'];
   debug(dhead, {appInfo_p});
   chk(appInfo_p, `Cannot lookup ApplicationId`);
-  chkeq(appInfo_p['approval-program'], fmtp(appApproval), `Approval program does not match Reach backend`);
-  chkeq(appInfo_p['clear-state-program'], fmtp(appClear), `ClearState program does not match Reach backend`);
+  chkeq(appInfo_p['approval-program'], appApproval, `Approval program does not match Reach backend`);
+  chkeq(appInfo_p['clear-state-program'], appClear, `ClearState program does not match Reach backend`);
   const Deployer = appInfo_p['creator'];
 
   const appInfo_LocalState = appInfo_p['local-state-schema'];
@@ -2051,38 +1855,25 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
 
   const indexer = await getIndexer();
   const ilq = indexer.lookupApplications(ApplicationID).includeAll();
-  const ilr = await doQuery_(`${dhead} app lookup`, ilq, true);
+  const ilr = await doQuery_(`${dhead} app lookup`, ilq);
   debug(dhead, {ilr});
   const appInfo_i = ilr.application;
   debug(dhead, {appInfo_i});
   chkeq(appInfo_i['deleted'], false, `Application must not be deleted`);
   // First, we learn from the indexer when it was made
   const allocRound = appInfo_i['created-at-round'];
+  eq.init({ ApplicationID });
 
   // Next, we check that it was created with this program and wasn't created
   // with a different program first (which could have modified the state)
-  const iar = await eventCache.query(dhead, ApplicationID, { specRound: allocRound }, (_: any) => true);
-  // @ts-ignore
-  const iat = iar.txn;
-  chk(iat, `Cannot query for allocation transaction`);
+  const iat = await eq.deq(dhead);
   debug({iat});
-  const iatat = iat['application-transaction'];
-  debug({iatat});
-  chkeq(iatat['approval-program'], appInfo_p['approval-program'], `ApprovalProgram unchanged since creation`);
-  chkeq(iatat['clear-state-program'], appInfo_p['clear-state-program'], `ClearStateProgram unchanged since creation`);
+  chkeq(iat['application-index'], 0, 'app created');
+  chkeq(iat['confirmed-round'], allocRound, 'created on correct round');
+  chkeq(iat['approval-program'], appInfo_p['approval-program'], `ApprovalProgram unchanged since creation`);
+  chkeq(iat['clear-state-program'], appInfo_p['clear-state-program'], `ClearStateProgram unchanged since creation`);
 
-  // Next, we wait for the constructor call
-  // XXX maybe don't care about this
-  const isCtor = makeIsMethod(0);
-  const icr = await eventCache.query(`${dhead} ctor`, ApplicationID, { minRound: 0 }, isCtor);
-  debug({icr});
-  // @ts-ignore
-  const ict = icr.txn;
-  chk(ict, `Cannot query for constructor transaction`);
-  debug({ict});
-  const ctorRound = ict['confirmed-round']
-
-  return { compiled, ApplicationID, Deployer, startRound: ctorRound };
+  return { ApplicationID, Deployer };
 };
 
 /**
@@ -2092,6 +1883,13 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
  */
 export function formatAddress(acc: string|NetworkAccount|Account): string {
   return addressFromHex(T_Address.canonicalize(acc));
+}
+
+export function unsafeGetMnemonic(acc: NetworkAccount|Account): string {
+  // @ts-ignore
+  const networkAccount: NetworkAccount = acc.networkAccount || acc;
+  if (!networkAccount.sk) { throw Error(`unsafeGetMnemonic: Secret key not accessible for account`); }
+  return algosdk.secretKeyToMnemonic(networkAccount.sk);
 }
 
 export async function launchToken (accCreator:Account, name:string, sym:string, opts:any = {}) {
@@ -2106,7 +1904,7 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
     if ( ! sk ) {
       throw new Error(`can only launchToken with account with secret key`);
     }
-    const params = await getTxnParams();
+    const params = await getTxnParams('launchToken');
     const t = mktxn(params);
     const s = t.signTxn(sk);
     const r = (await algod.sendRawTransaction(s).do());

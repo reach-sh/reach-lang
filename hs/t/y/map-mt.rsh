@@ -3,7 +3,7 @@
 const MUInt = Maybe(UInt);
 export const main = Reach.App(() => {
   const A = Participant('Alice', {});
-  deploy();
+  init();
 
   A.publish();
   const m = new Map(UInt);

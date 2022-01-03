@@ -12,7 +12,6 @@ case "$WHICH" in
     ;;
   devnet-*)
     DIR="scripts/${WHICH}"
-    TARGET="build"
     ;;
   *)
     echo "No image: ${WHICH}"

@@ -34,7 +34,7 @@ export const main = Reach.App(() => {
     ...Player,
     acceptWager: Fun([UInt], Null),
   });
-  deploy();
+  init();
 
   const informTimeout = () => {
     each([Alice, Bob], () => {

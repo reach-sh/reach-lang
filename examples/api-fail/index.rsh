@@ -16,7 +16,7 @@ export const main = Reach.App(() => {
     writeC: Fun([UInt], UInt),
     stop: Fun([], UInt),
   });
-  deploy();
+  init();
   A.publish();
   A.interact.launched();
   commit();

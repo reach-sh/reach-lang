@@ -11,6 +11,13 @@ void(debug);
 type BigNumber = ethers.BigNumber;
 export type num = BigNumber | number
 export type MaybeRep<A> = ['Some', A] | [ 'None', null ]
+export const asMaybe = <A>(v:A|undefined): MaybeRep<A> => {
+  if ( v === undefined ) {
+    return ['None', null];
+  } else {
+    return ['Some', v];
+  }
+};
 
 export interface AnyBackendTy {
   name: string,
@@ -37,8 +44,7 @@ export function protect (ctc: AnyBackendTy, v: unknown, ai: unknown = null) {
   try {
     return ctc.canonicalize(v);
   } catch (e) {
-    console.log(`Protect failed: expected `, ctc.name, ` but got `, v, ` `, ai);
-    throw e;
+    throw Error(`Protect failed: expected ${ctc.name} but got ${v}; ${JSON.stringify(ai)}:\n${JSON.stringify(e)}`);
   }
 };
 
@@ -76,36 +82,82 @@ export function Array_set <T>(arr: Array<T>, idx: number, elem: T): Array<T> {
   arrp[idx] = elem;
   return arrp;
 }
-export const mapRef = <A>(m: {[key: string]: A}, f: string): MaybeRep<A> => {
-  const v = m[f];
-  // console.log(`Reading map ${JSON.stringify(m)} field ${JSON.stringify(f)} => ${JSON.stringify(v)}`);
-  if ( v === undefined ) {
-    return ['None', null];
+
+export type MapRefT<A> = (f:string) => Promise<MaybeRep<A>>;
+export interface MapOpts<A> {
+  ctc: {
+    apiMapRef: (i:number, ty: unknown) => MapRefT<A>
+  },
+  ty: unknown,
+  isAPI: boolean,
+  idx: number,
+};
+export interface LinearMap<A> {
+  ref: MapRefT<A>,
+  set: (f:string, v:A|undefined) => Promise<void>,
+};
+
+const basicMap = <A>(): LinearMap<A> => {
+  const m: {[key: string]: A|undefined} = {};
+  const basicSet = async (f:string, v:A|undefined): Promise<void> => {
+    m[f] = v;
+  };
+  const basicRef = async (f:string): Promise<MaybeRep<A>> => {
+    return asMaybe<A>(m[f]);
+  };
+  return { ref: basicRef, set: basicSet };
+};
+const copyMap = <A>(or: MapRefT<A>): LinearMap<A> => {
+  const m: LinearMap<A> = basicMap();
+  const seen: {[key: string]: boolean} = {};
+  const copySet = async (f:string, v:A|undefined): Promise<void> => {
+    seen[f] = true;
+    await mapSet(m, f, v);
+  };
+  const copyRef = async (f:string): Promise<MaybeRep<A>> => {
+    if ( ! seen[f] ) {
+      const mv = await or(f);
+      await copySet(f, mv[0] === 'Some' ? mv[1] : undefined);
+    }
+    return await mapRef(m, f);
+  };
+  return { ref: copyRef, set: copySet };
+};
+
+// dupe: () => {[key: string]: A},
+export const newMap = <A>(opts: MapOpts<A>): LinearMap<A> => {
+  if ( opts.isAPI ) {
+    return copyMap(opts.ctc.apiMapRef(opts.idx, opts.ty));
   } else {
-    return ['Some', v];
+    return basicMap();
   }
+};
+export const mapSet = async <A>(m: LinearMap<A>, f: string, v: A|undefined): Promise<void> => {
+  await m.set(f, v);
+};
+export const mapRef = async <A>(m: LinearMap<A>, f: string): Promise<MaybeRep<A>> => {
+  return await m.ref(f);
 };
 
 export const Array_zip = <X,Y>(x: Array<X>, y: Array<Y>): Array<[X, Y]> =>
   x.map((e, i): [X, Y] => [e, y[i]]);
 
-export const simMapDupe = (sim_r:any, mapi:number, mapo:any): void => {
-  sim_r.mapsPrev[mapi] = { ...mapo };
-  sim_r.mapsNext[mapi] = { ...mapo };
+export const simMapDupe = <A>(sim_r:any, mapi:number, mapo:LinearMap<A>): void => {
+  sim_r.maps[mapi] = copyMap(mapo.ref);
 };
 
-const simMapLog = (sim_r:any, f: any): void => {
+const simMapLog = (sim_r:any, f: string): void => {
   sim_r.mapRefs.push(f);
 };
 
-export const simMapRef = (sim_r:any, mapi:number, f: any): any => {
+export const simMapRef = async <A>(sim_r:any, mapi:number, f: string): Promise<MaybeRep<A>> => {
   simMapLog(sim_r, f);
-  return mapRef(sim_r.mapsNext[mapi], f);
+  return await mapRef(sim_r.maps[mapi], f);
 };
 
-export const simMapSet = (sim_r:any, mapi:number, f: any, nv: any): void => {
+export const simMapSet = async <A>(sim_r:any, mapi:number, f: string, nv: A): Promise<void> => {
   simMapLog(sim_r, f);
-  sim_r.mapsNext[mapi][f] = nv;
+  return await mapSet(sim_r.maps[mapi], f, nv);
 };
 
 export const simTokenNew = (sim_r:any, n:any, s:any, u:any, m:any, p:any, d:any): any => {

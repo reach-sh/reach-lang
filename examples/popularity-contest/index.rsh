@@ -29,7 +29,7 @@ export const main =
         shouldVote: Fun([], Bool),
       });
 
-    deploy();
+    init();
 
     const showOutcome = (which, forA, forB) => () => {
       each([Pollster, Voter], () =>

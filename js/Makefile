@@ -1,7 +1,6 @@
 .DEFAULT_GOAL := build
 
 ROOT=..
-include $(ROOT)/js/JS_IMAGES
 include $(ROOT)/DEPS
 
 .PHONY: build-js-deps
@@ -41,6 +40,6 @@ test: build
 # No need to push js-deps or stdlib
 .PHONY: push
 push:
-	$(ROOT)/scripts/docker-push.sh $(RUNNER_IMAGE)
-	$(ROOT)/scripts/docker-push.sh $(REACT_RUNNER_IMAGE)
-	$(ROOT)/scripts/docker-push.sh $(RPC_SERVER_IMAGE)
+	$(ROOT)/scripts/docker-push.sh reachsh/runner
+	$(ROOT)/scripts/docker-push.sh reachsh/react-runner
+	$(ROOT)/scripts/docker-push.sh reachsh/rpc-server

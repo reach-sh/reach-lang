@@ -6,7 +6,7 @@ export const main = Reach.App(() => {
     keepGoing: Fun([], Tuple(Bool, UInt))
   });
   const V = View({ currentInt: UInt });
-  deploy();
+  init();
 
   A.publish();
   V.currentInt.set(1);

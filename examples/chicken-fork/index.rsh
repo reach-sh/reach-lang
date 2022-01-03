@@ -21,7 +21,7 @@ export const main = Reach.App(() => {
     ...Common,
     confirmWager: Fun([UInt], Null),
   });
-  deploy();
+  init();
 
   const showOutcome = (which) => () => {
     each([Alice, Bob], () =>

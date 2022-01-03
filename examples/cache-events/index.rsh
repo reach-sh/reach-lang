@@ -8,7 +8,7 @@ export const main = Reach.App(() => {
   const B = Participant('B', {
 
   });
-  deploy();
+  init();
 
   A.publish();
 

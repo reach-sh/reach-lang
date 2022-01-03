@@ -3,7 +3,7 @@
 
 export const main = Reach.App(() => {
   const User = Participant('User', hasConsoleLogger);
-  deploy();
+  init();
   User.publish();
   commit();
   const mAddress = Maybe(Address);

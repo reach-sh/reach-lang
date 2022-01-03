@@ -69,7 +69,7 @@ class Alice extends React.Component {
     this.state = { mode: 'Deploy'};
   }
   async deploy() { // from mode: Deploy
-    const ctc = this.props.acc.deploy(backend);
+    const ctc = this.props.acc.contract(backend);
     this.setState({mode: 'EnterInfo', ctc});
     const ctcInfoStr = JSON.stringify(await ctc.getInfo(), null, 2);
     this.setState({ctcInfoStr});
@@ -111,7 +111,7 @@ class Bob extends React.Component {
   }
   async runBackend(ctcInfoStr) { // from mode: RunBackend
     const ctcInfo = JSON.parse(ctcInfoStr);
-    const ctc = this.props.acc.attach(backend, ctcInfo);
+    const ctc = this.props.acc.contract(backend, ctcInfo);
     this.setState({mode: 'ApproveRequest'});
     const interact = {
       want: (request) => this.setState({mode: 'DisplayInfo', requestStandard: reach.formatCurrency(request, 4)}),

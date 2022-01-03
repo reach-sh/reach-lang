@@ -28,19 +28,20 @@ const slugify = githubSlugger.slug;
 const topDoc = new JSDOM("").window.document;
 
 const hh = (x) => x === '' ? '/' : `/${x}/`;
-const INTERNAL = [ 'base.html', 'config.json', 'index.md' ];
+const INTERNAL = [ 'config.json' ];
 
-const normalizeDir = (s) => {
-  return s.endsWith('/') ? s.slice(0, -1) : s;
+const normalizeDir = (x) => {
+  const s = path.normalize(x);
+  const y = s.endsWith('/') ? s.slice(0, -1) : s;
+  return y === "." ? "" : y;
 }
 
 const __filename = fileURLToPath(import.meta.url);
 const rootDir = path.dirname(__filename);
 const reachRoot = `${rootDir}/../../`;
-const cfgFile = "config.json";
 const repoBaseNice = "https://github.com/reach-sh/reach-lang/tree/master";
-const srcDir = normalizeDir(`${rootDir}/src`);
-const outDir = normalizeDir(`${rootDir}/build`);
+const srcDir = normalizeDir(`${rootDir}/../src`);
+const outDir = normalizeDir(`${rootDir}/../build`);
 let forReal = false;
 let hasError = false;
 
@@ -213,17 +214,13 @@ const shikiHighlight = async (code, lang) => {
 
 // Library
 const cleanCss = new CleanCss({level: 2});
-const processCss = async () => {
-  const iPath = `${rootDir}/assets.in/styles.css`;
-  const oPath = `${outDir}/assets/styles.min.css`;
+const processCss = async ({iPath, oPath}) => {
   const input = await fs.readFile(iPath, 'utf8');
   const output = cleanCss.minify(input);
   await writeFileMkdir(oPath, output.styles);
 };
 
-const processBaseHtml = async () => {
-  const iPath = `${srcDir}/base.html`;
-  const oPath = `${outDir}/base.html`;
+const processHtml = async ({iPath, oPath}) => {
   const defaultOptions = {
     removeComments: true,
     removeCommentsFromCDATA: true,
@@ -258,9 +255,7 @@ const processBaseHtml = async () => {
   await writeFileMkdir(oPath, output);
 };
 
-const processJs = async () => {
-  const iPath = `${rootDir}/assets.in/scripts.js`;
-  const oPath = `${outDir}/assets/scripts.min.js`;
+const processJs = async ({iPath, oPath}) => {
   const input = await fs.readFile(iPath, 'utf8');
   const output = false ? { code: input } : new UglifyJS.minify(input, {});
   if (output.error) throw output.error;
@@ -298,11 +293,7 @@ const makeExpander = (msg, expandEnv) => {
   return expand;
 };
 
-const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
-  const mdPath = `${in_folder}/index.md`;
-  const cfgPath = `${out_folder}/${cfgFile}`;
-  const pagePath = `${out_folder}/page.html`;
-  const otpPath = `${out_folder}/otp.html`;
+const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
   const here = relDir;
   const h = hh(here);
 
@@ -465,9 +456,9 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     })
   };
 
-  const expand = makeExpander(mdPath, { ...configJson, ...expanderEnv });
+  const expand = makeExpander(iPath, { ...configJson, ...expanderEnv });
 
-  const raw = await fs.readFile(mdPath, 'utf8');
+  const raw = await fs.readFile(iPath, 'utf8');
   let md = await expand(raw);
 
   const output = await unified()
@@ -500,6 +491,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   const doc = new JSDOM(output).window.document;
 
   // Process OTP.
+  let otpVal = undefined;
   const tocEl = doc.getElementById('toc');
   if (tocEl) {
     tocEl.remove();
@@ -510,7 +502,7 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
       while (el.firstChild) { p.insertBefore(el.firstChild, el); }
       p.removeChild(el);
     })
-    await fs.writeFile(otpPath, `<ul>${otpEl.innerHTML.trim()}</ul>`);
+    otpVal = `<ul>${otpEl.innerHTML.trim()}</ul>`;
     otpEl.remove();
   }
 
@@ -628,7 +620,9 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
     }
     const cpEl = doc.createElement('a');
     cpEl.classList.add("far", "fa-copy", "copyBtn");
-    cpEl.setAttribute("data-clipboard-text", rawCode);
+    const copyCode = ( spec.language === 'cmd' ) ?
+      rawCode.replace(/^\$ /, '') : rawCode;
+    cpEl.setAttribute("data-clipboard-text", copyCode);
     cpEl.href = "#";
     chEl.appendChild(cpEl);
     pre.append(chEl);
@@ -656,10 +650,10 @@ const processFolder = async ({baseConfig, relDir, in_folder, out_folder}) => {
   for ( const k of ['bookPath', 'title', 'titleId', 'hasOtp', 'hasPageHeader'] ) {
     configJsonSaved[k] = configJson[k];
   }
-  await Promise.all([
-    fs.writeFile(cfgPath, JSON.stringify(configJsonSaved)),
-    fs.writeFile(pagePath, doc.body.innerHTML.trim()),
-  ]);
+
+  const cfgVal = configJsonSaved;
+  const pageVal = doc.body.innerHTML.trim();
+  await fs.writeFile(oPath, JSON.stringify([ cfgVal, pageVal, otpVal ]));
 };
 
 const splitMt = (x) => x === "" ? [] : x.split('/');
@@ -687,7 +681,7 @@ const generateBooksTree = () => {
 const bookPipe = await unified()
   .use(rehypeStringify);
 const generateBook = async (destp, bookp) => {
-  console.log(`generateBook`, JSON.stringify(bookp));
+  //console.log(`generateBook`, JSON.stringify(bookp));
   const compareNumbers = (a, b) => (a - b);
   const compareChapters = (x, y) => {
     const rc = compareNumbers(x.rank, y.rank);
@@ -722,7 +716,7 @@ const generateBook = async (destp, bookp) => {
     return cs.map(hify);
   }
   const hifyTop = (ct, p) => {
-    console.log(`hifyTop`, JSON.stringify(p));
+    //console.log(`hifyTop`, JSON.stringify(p));
     const bc = [];
     const bcPush = () => {
       bc.push(
@@ -749,17 +743,20 @@ const generateBook = async (destp, bookp) => {
   await fs.writeFile(destp, bookPipe.stringify(toc));
 };
 
-const findAndProcessFolder = async (base_html, inputBaseConfig, folder) => {
+const processAll = async (base_html, inputBaseConfig, folder) => {
   let relDir = normalizeDir(folder.replace(srcDir, ''));
   relDir = relDir.startsWith('/') ? relDir.slice(1) : relDir;
   const in_folder = `${srcDir}/${relDir}`;
 
+  const cfgFile = "config.json";
   const thisConfigP = `${in_folder}/${cfgFile}`;
   const thisConfig = (await fs.exists(thisConfigP)) ? (await fs.readJson(thisConfigP)) : {};
   const baseConfig = {
     ...inputBaseConfig,
     ...thisConfig,
+    ignored: [],
   };
+  const ignored = thisConfig.ignored || [];
 
   const out_folder = `${outDir}/${relDir}`;
   await fs.mkdir(out_folder, { recursive: true })
@@ -774,16 +771,30 @@ const findAndProcessFolder = async (base_html, inputBaseConfig, folder) => {
     }
   }
 
+  const opts = {baseConfig, relDir, in_folder, out_folder};
+
   const fileArr = await fs.readdir(folder);
   await Promise.all(fileArr.map(async (p) => {
-    if ( p === 'index.md' ) {
-      return await processFolder({baseConfig, relDir, in_folder, out_folder});
-    } else {
-      const absolute = path.join(folder, p);
-      const s = await fs.stat(absolute);
-      if (s.isDirectory()) {
-        return await findAndProcessFolder(`../${base_html}`, baseConfig, absolute);
-      } else if ( ! INTERNAL.includes(p) && forReal ) {
+    const iPath = `${in_folder}/${p}`;
+    const oPath = `${out_folder}/${p}`;
+    const opts_p = { ...opts, iPath, oPath };
+    const e = urlExtension(p);
+    const absolute = path.join(folder, p);
+    const s = await fs.stat(absolute);
+    if (s.isDirectory()) {
+      return await processAll(`../${base_html}`, baseConfig, absolute);
+    } else if ( ignored.includes(p) ) {
+      return;
+    } else if ( e === 'md' ) {
+      return await processMd(opts_p);
+    } else if ( forReal ) {
+      if ( e === "css" ) {
+        return await processCss(opts_p);
+      } else if ( e === "html" ) {
+        return await processHtml(opts_p);
+      } else if ( e === "js" ) {
+        return await processJs(opts_p);
+      } else if ( ! INTERNAL.includes(p) ) {
         return await fs.copyFile(path.join(in_folder, p), path.join(out_folder, p));
       }
     }
@@ -847,8 +858,11 @@ const generateSearch = async () => {
   await fs.writeFile(`${rootDir}/searchData.json`, JSON.stringify(searchData,null,2));
 };
 
+const doTop = () =>
+  processAll(`base.html`, process.env, srcDir);
+
 // Main
-await findAndProcessFolder(`base.html`, process.env, srcDir);
+await doTop();
 console.log(JSON.stringify(bookL, null, 2));
 generateBooksTree();
 console.log(JSON.stringify(bookT, null, 2));
@@ -856,10 +870,7 @@ console.log(JSON.stringify(bookT, null, 2));
 forReal = true;
 // This depends on the xrefs being assembled
 await Promise.all([
-  processCss(),
-  processJs(),
-  processBaseHtml(),
-  findAndProcessFolder(`base.html`, process.env, srcDir),
+  doTop(),
   generateRedirects(),
 ]);
 // This depends on the actual content being complete

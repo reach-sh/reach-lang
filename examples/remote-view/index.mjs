@@ -37,7 +37,9 @@ const stdlib = loadStdlib(process.env);
       keepGoing: async () => {
         const kg = count < 5;
         const ctcAddr = await ctcAlice.getContractAddress();
-        const x = await contract.callStatic["callView"](ctcAddr);
+        const xr = await contract["callView"](ctcAddr);
+        console.log(`keepGoing`, xr);
+        const x = xr.value;
         console.log(`Compare: `, x.toNumber(), count);
         console.assert(x == count, "x == count");
         count = count + 1;

@@ -8,7 +8,7 @@ export const main = Reach.App(() => {
   const Bob = Participant('Bob', {
     noticeBob: Fun([], Null),
   });
-  deploy();
+  init();
   const arr = array(UInt, [0, 1, 2, 3, 4]);
 
   Alice.publish();

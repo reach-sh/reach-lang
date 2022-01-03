@@ -2,7 +2,7 @@
 
 export const main = Reach.App(() => {
   const Alice = Participant('Alice', {});
-  deploy();
+  init();
   const x = array(UInt, [0, 1, 2]);
   x.map(function m(i){ return i + 1; });
 });

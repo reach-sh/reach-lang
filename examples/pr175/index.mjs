@@ -4,7 +4,7 @@ import * as backend from './build/index.main.mjs';
   const stdlib = await loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
   const accAlice = await stdlib.newTestAccount(startingBalance);
-  const ctcAlice = accAlice.deploy(backend);
+  const ctcAlice = accAlice.contract(backend);
   const assertEq = (expected, actual) => {
     const exps = JSON.stringify(expected);
     const acts = JSON.stringify(actual);

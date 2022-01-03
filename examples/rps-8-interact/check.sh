@@ -11,7 +11,9 @@ REACH="../../reach"
 rm -f Alice.in Alice.out Bob.in Bob.out
 mkfifo Alice.in Alice.out Bob.in Bob.out || exit 1
 
-"${REACH}" devnet --await-background
+if [ "${CIRCLECI}" != "true" ] ; then
+  "${REACH}" devnet --await-background
+fi
 "${REACH}" run index alice < Alice.in > Alice.out &
 "${REACH}" run index bob   < Bob.in   > Bob.out   &
 

@@ -16,7 +16,7 @@ export const main =
       { ...Common,
         getBid: Fun([UInt, UInt, UInt], UInt),
       });
-    deploy();
+    init();
 
     Sponsor.publish();
     commit();

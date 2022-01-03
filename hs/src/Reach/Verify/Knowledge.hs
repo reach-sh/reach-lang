@@ -193,6 +193,7 @@ kgq_e ctxt mv = \case
   DLE_Arg _ a -> kgq_a_onlym ctxt mv a
   DLE_LArg _ la -> kgq_la ctxt mv la
   DLE_Impossible {} -> mempty
+  DLE_VerifyMuldiv {} -> mempty
   DLE_PrimOp _ _ as -> kgq_la ctxt mv (DLLA_Tuple as)
   DLE_ArrayRef _ a e -> kgq_la ctxt mv (DLLA_Tuple [a, e])
   DLE_ArraySet _ a e n -> kgq_la ctxt mv (DLLA_Tuple [a, e, n])

@@ -8,7 +8,7 @@ export const main = Reach.App(() => {
       x: UInt,
     })),
   });
-  deploy();
+  init();
 
   A.only(() => {
     const { ctcInfo, x } = declassify(interact.get()); });

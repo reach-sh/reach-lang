@@ -15,7 +15,7 @@ const myFromMaybe = (amt) => fromMaybe(amt, (() => 0), ((x) => x));
 export const main = Reach.App(() => {
   const F = Participant('Fundraiser', fundraiserApi);
   const C = ParticipantClass('Contributor', contributorApi);
-  deploy();
+  init();
 
   F.only(() => {
     const p = {

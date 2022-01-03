@@ -17,7 +17,7 @@ export const main = Reach.App(() => {
   const B = Participant('Bob', {
     ...shared,
   });
-  deploy();
+  init();
 
   A.only(() => {
     const { name, symbol, url, metadata, supply, amt } = declassify(interact.getParams());

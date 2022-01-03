@@ -2,7 +2,7 @@
 
 export const main = Reach.App(() => {
   const Admin = Participant('Administrator', {});
-  deploy();
+  init();
 
   Admin.publish();
   commit();

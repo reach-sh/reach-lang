@@ -10,7 +10,7 @@ import * as backend from './build/index.main.mjs';
   accAlice.setDebugLabel('Alice');
   accBob.setDebugLabel('Bob');
 
-  const ctcAlice = accAlice.deploy(backend);
+  const ctcAlice = accAlice.contract(backend);
 
   let i = 0;
   await Promise.all([ backend.A(ctcAlice, {
@@ -21,7 +21,7 @@ import * as backend from './build/index.main.mjs';
     },
     spawn: () => {
       console.log(`Alice spawns Bob`);
-      const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+      const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
       Promise.all([ backend.B(ctcBob, {}) ]);
     }
   }) ]);

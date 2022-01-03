@@ -9,7 +9,7 @@ export const main = Reach.App(() => {
   const Bob = Participant('Bob', {
     check: Fun([UInt], Null),
   });
-  deploy();
+  init();
   Alice.publish();
   commit();
   Alice.only(() => {

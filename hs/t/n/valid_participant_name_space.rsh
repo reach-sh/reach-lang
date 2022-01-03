@@ -2,5 +2,5 @@
 
 export const main = Reach.App(() => {
   const A = Participant(' ', {});
-  deploy();
+  init();
 });

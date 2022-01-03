@@ -9,7 +9,7 @@ export const main = Reach.App(() => {
     request: Fun([], Bool),
     notify: Fun([Address, Bool], Null),
   });
-  deploy();
+  init();
 
   Admin.only(() => {
     const meta = declassify(interact.meta); });

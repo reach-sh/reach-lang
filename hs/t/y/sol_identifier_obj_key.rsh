@@ -8,7 +8,7 @@ export const main = Reach.App(() => {
   const A = Participant('A', {
     get: Fun([], TypeWithSolKwd),
     show: Fun([Address], Null) });
-  deploy();
+  init();
   A.only(() => {
     const o = declassify(interact.get());
     assume(o.address == A);

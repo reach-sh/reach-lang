@@ -28,7 +28,6 @@ import Reach.AST.PL
 import Reach.Connector
 import Reach.Counter
 import Reach.EmbeddedFiles
-import Reach.Interference (colorProgram)
 import Reach.Texty
 import Reach.UnsafeUtil
 import Reach.Util
@@ -171,8 +170,10 @@ solLoop_fun i = "l" <> pretty i
 solMapVar :: DLMVar -> Doc
 solMapVar mpv = pretty mpv
 
-solMapRef :: DLMVar -> Doc
-solMapRef mpv = pretty mpv <> "_ref"
+solMapRefExt :: DLMVar -> Doc
+solMapRefExt (DLMVar i) = "_reachMap" <> pretty i <> "Ref"
+solMapRefInt :: DLMVar -> Doc
+solMapRefInt mv = "_" <> solMapRefExt mv
 
 solBlockTime :: Doc
 solBlockTime = "uint256(block.number)"
@@ -364,6 +365,7 @@ instance DepthOf DLExpr where
     DLE_Arg _ a -> depthOf a
     DLE_LArg _ a -> depthOf a
     DLE_Impossible {} -> return 0
+    DLE_VerifyMuldiv {} -> return 0
     DLE_PrimOp _ _ as -> add1 $ depthOf as
     DLE_ArrayRef _ x y -> add1 $ depthOf [x, y]
     DLE_ArraySet _ x y z -> depthOf [x, y, z]
@@ -568,6 +570,8 @@ solExpr sp = \case
     impossible "large arg"
   DLE_Impossible at _ err ->
     expect_thrown at err
+  DLE_VerifyMuldiv at _ _ err ->
+    expect_thrown at err
   DLE_PrimOp _ p args -> do
     args' <- mapM solArg args
     spa $ solPrimApply p args'
@@ -623,7 +627,7 @@ solExpr sp = \case
   DLE_PartSet _ _ a -> spa $ solArg a
   DLE_MapRef _ mpv fa -> do
     fa' <- solArg fa
-    return $ solApply (solMapRef mpv) [fa'] <> sp
+    return $ solApply (solMapRefInt mpv) [fa'] <> sp
   DLE_MapSet _ mpv fa (Just na) -> do
     fa' <- solArg fa
     solLargeArg' (solArrayRef (solMapVar mpv) fa') nla
@@ -1430,17 +1434,24 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) ai _ hs)) = do
           let mt = dlmi_tym mi
           valTy <- solType mt
           let args = [solDecl "addr" keyTy]
-          let ret = "internal view returns (" <> valTy <> " memory res)"
+          let ret = "view returns (" <> valTy <> " memory res)"
+          let ext_ret = "external " <> ret
+          let int_ret = "internal " <> ret
           let ref = (solArrayRef (solMapVar mpv) "addr")
           do_none <- solLargeArg' "res" $ DLLA_Data (dataTypeMap mt) "None" $ DLA_Literal DLL_Null
           let do_some = solSet "res" ref
           eq <- solEq (ref <> ".which") (solVariant valTy "Some")
-          let body = solIf eq do_some do_none
-          let ref_defn = solFunction (solMapRef mpv) args ret body
+          let int_defn =
+                solFunction (solMapRefInt mpv) args int_ret $
+                  solIf eq do_some do_none
+          let ext_defn =
+                solFunction (solMapRefExt mpv) args ext_ret $
+                  solSet "res" (solApply (solMapRefInt mpv) ["addr"])
           return $
             vsep $
               [ "mapping (" <> keyTy <> " => " <> valTy <> ") " <> solMapVar mpv <> semi
-              , ref_defn
+              , int_defn
+              , ext_defn
               ]
     map_defns <- mapM map_defn (M.toList dli_maps)
     let tgo :: Maybe SLPart -> (SLVar, IType) -> App ((T.Text, Aeson.Value), Doc)
@@ -1581,7 +1592,7 @@ try_compile_sol solf opt = do
         Right x -> return $ Right (me, x)
 
 reachEthBackendVersion :: Int
-reachEthBackendVersion = 5
+reachEthBackendVersion = 6
 
 compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorInfo
 compile_sol cinfo solf = do
@@ -1646,8 +1657,6 @@ connect_eth _ = Connector {..}
       where
         go :: FilePath -> IO ConnectorInfo
         go solf = do
-          ig <- colorProgram pl
-          conShowP moutn "sol.colors" ig
           (cinfo, sol) <- solPLProg pl
           unless dontWriteSol $ do
             LTIO.writeFile solf $ render sol

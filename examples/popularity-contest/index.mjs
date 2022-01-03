@@ -17,7 +17,7 @@ import * as backend from './build/index.main.mjs';
   const beforeAlice = await getBalance(accAlice);
   const beforeBob = await getBalance(accBob);
 
-  const ctcPollster = accPollster.deploy(backend);
+  const ctcPollster = accPollster.contract(backend);
   const ctcInfo = ctcPollster.getInfo();
 
   const OUTCOME = ['Alice wins', 'Bob wins', 'Timeout'];
@@ -42,7 +42,7 @@ import * as backend from './build/index.main.mjs';
     }),
   ].concat(
     accVoter_arr.map((accVoter, i) => {
-      const ctcVoter = accVoter.attach(backend, ctcInfo);
+      const ctcVoter = accVoter.contract(backend, ctcInfo);
       const Who = `Voter #${i}`;
       const vote = Math.random() < 0.5;
       let voted = false;

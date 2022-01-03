@@ -5,7 +5,7 @@ export const main = Reach.App(() => {
     checkDecimals: Fun(true, Null),
     decimals: UInt,
   });
-  deploy();
+  init();
 
   A.only(() => {
     const decimals = declassify(interact.decimals);

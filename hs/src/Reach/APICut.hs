@@ -223,7 +223,12 @@ slurp = \case
         (liftIO $ readIORef eSeenOutR) >>= \case
           False -> liftIO $ writeIORef eSeenOutR True
           True -> err at API_Twice
-        local (\e -> e { eSeenOut = True }) m
+        local (\e -> e { eSeenOut = True }) $
+          -- We only keep reading the program because we need to grab the tail
+          -- for simulation. It would be better if (a) Algorand didn't need
+          -- that, or (b) if we had the simulation separate from the end-point
+          -- path and put it somewhere else
+          m
   ET_Stop _ -> return Nothing
   ET_If at c t f -> do
     t' <- slurp t

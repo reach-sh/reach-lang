@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programmer Art UI</title>
+
+
+<style type="text/css">
+body         { background-color: #FFFFFF;
+               font-family: Optima, Palatino, Arial, sans-serif, Helvetica;
+	       padding:0ex 0ex 0ex 0ex ;
+	       margin: 0ex 0ex 0ex 0ex ;
+}
+hr {
+  border: 0;
+  width: 90%;
+  height: 2px;
+  color: #e3e7ef;
+  background-color: #e3e7ef;
+  margin:3ex 2ex 0ex 0ex ;
+}
+h1 {
+  font-family: Optima,Segoe,Segoe UI,Candara,Calibri,Arial,sans-serif;
+  color:#333333;
+  font-size:3.7em;
+  letter-spacing:-2px;
+}
+h2 {
+  font-family: Optima,Segoe,Segoe UI,Candara,Calibri,Arial,sans-serif;
+  color:#333333;
+  padding: 0.5em;
+}
+
+h3 {
+  font-family: Optima,Segoe,Segoe UI,Candara,Calibri,Arial,sans-serif;
+  color:#444444;
+}
+
+h4 {
+  font-family: Optima,Segoe,Segoe UI,Candara,Calibri,Arial,sans-serif;
+  color:#777777;
+  padding: 0.5em;
+}
+big {
+  font-size:1.3em;
+}
+spam {
+  color:#ffffff;
+}
+
+a {
+  padding: .2em;
+}
+
+html { font-size: 22px !important }
+
+@media (pointer: coarse) {
+   a {
+    padding: .4em;
+  }
+}
+img {
+max-width: 300px;
+}
+a:link {
+  color:#444444;
+  text-decoration: underline;
+}
+a:visited {
+  color:#444444;
+}
+a:hover {
+  color:#222222;
+  text-decoration:none;
+}
+a:active {
+  color:#000000;
+}
+p.small {
+    font-variant: small-caps;
+}
+
+body, html {
+  height: 100%;
+}
+
+#output {
+  height: 30%;
+  background-color: black;
+  color: white;
+}
+
+#cy {
+  width: 300px;
+  height: 300px;
+  display: block;
+}
+
+</style>
+
+</head>
+<body>
+
+
+<div id="output" width="20%" style="overflow-y:auto;"> $ welcome </div>
+
+<button type="button" id="pingButton">Ping</button>
+<button type="button" id="loadButton">Load</button>
+<button type="button" id="initButton">Init</button>
+
+<div>
+<input type="text" id="initForActor" placeholder="Actor">
+<input type="text" id="initForState" placeholder="State">
+<button type="button" id="initForButton">Init For</button>
+</div>
+
+<div>
+<input type="text" id="resForState" placeholder="State">
+<input type="text" id="resForAction" placeholder="Action">
+<input type="text" id="resForVal" placeholder="Value">
+<input type="text" id="resForActor" placeholder="Actor">
+<button type="button" id="respondButton">Respond</button>
+</div>
+
+<div>
+<input type="text" id="statusFor" placeholder="State">
+<button type="button" id="statusButton">Get Status</button>
+</div>
+
+<button type="button" id="statesButton">Get States</button>
+
+<div>
+<input type="text" id="stateActionsFor"  placeholder="State">
+<button type="button" id="actionsButton">Get State Actions</button>
+</div>
+
+<div>
+<input type="text" id="stateGlobalsFor" placeholder="State">
+<button type="button" id="globalsButton">Get State Globals</button>
+</div>
+
+<div>
+<input type="text" id="stateLocalsFor" placeholder="State">
+<button type="button" id="localsButton">Get State Locals</button>
+</div>
+
+<button type="button" id="resetButton">Reset</button>
+
+<div id="cy"> </div>
+
+<script type="module" src="main.js"></script>
+
+
+</body>
+</html>

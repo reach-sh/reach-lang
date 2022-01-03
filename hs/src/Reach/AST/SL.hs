@@ -697,8 +697,8 @@ data SLPrimitive
   | SLPrim_balance
   | SLPrim_Token_supply
   | SLPrim_viewis SrcLoc (Maybe SLPart) SLVar SLType
-  | SLPrim_deploy
-  | SLPrim_deployed
+  | SLPrim_init
+  | SLPrim_inited
   | SLPrim_setOptions
   | SLPrim_adaptReachAppTupleArgs
   | SLPrim_padTo Integer
@@ -706,7 +706,6 @@ data SLPrimitive
   | SLPrim_Token_burn
   | SLPrim_Token_destroy
   | SLPrim_Token_destroyed
-  | SLPrim_muldiv
   | SLPrim_didPublish
   | SLPrim_unstrict
   | SLPrim_polyNeq
@@ -715,6 +714,7 @@ data SLPrimitive
   | SLPrim_EmitLog
   | SLPrim_Event
   | SLPrim_event_is (Maybe SLPart) SLVar [SLType]
+  | SLPrim_verifyMuldiv
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

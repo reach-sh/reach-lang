@@ -6,9 +6,9 @@ ARG STDLIB_IMAGE=reachsh/stdlib:$REACH_VERSION
 FROM $STDLIB_IMAGE AS stdlib
 
 FROM node:$NODE_VERSION as stage
-COPY --from=stdlib /stdlib /stdlib
-
 RUN apk update && apk add git make python3 libc-dev gcc g++
+
+COPY --from=stdlib /stdlib /stdlib
 
 WORKDIR /stdlib
 RUN npm link

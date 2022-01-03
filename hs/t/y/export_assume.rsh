@@ -10,7 +10,7 @@ export const myDiv = is(
 
 export const main = Reach.App(() => {
   const A = Participant('A', { x: UInt, y: UInt });
-  deploy();
+  init();
   A.only(() => {
     const x = declassify(interact.x);
     const y = declassify(interact.y);

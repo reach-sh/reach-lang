@@ -1,27 +1,32 @@
 'reach 0.1';
 
-const MMUInt = Maybe(Maybe(UInt));
+const MUInt = Maybe(UInt);
+const MMUInt = Maybe(MUInt);
 
 export const main = Reach.App(() => {
   const A = Participant('Alice', {
-    checkView: Fun([UInt, Address, MMUInt], Null),
+    checkView: Fun([UInt, Address, MMUInt, MUInt], Null),
   });
   const B = Participant('Bob', {});
   const vMain = View('Main', {
-    f: Fun([Address], Maybe(UInt)),
+    f: Fun([Address], MUInt),
+    g: Fun([Address], UInt),
   });
-  deploy();
+  init();
   A.publish(); commit();
 
-  A.only(() => interact.checkView(0, this, MMUInt.None()));
+  A.only(() => interact.checkView(0, this, MMUInt.None(), MUInt.None()));
 
   A.publish();
   const intM = new Map(UInt);
   vMain.f.set((a) => intM[a]);
-  const doCheck = (x, who) =>
-    A.only(() => interact.checkView(x, who, MMUInt.Some(intM[who])));
+  vMain.g.set((a) => fromSome(intM[a], 0));
+  const doCheck = (x, who) => {
+    const z = intM[who];
+    A.interact.checkView(x, who, MMUInt.Some(z), MUInt.Some(fromSome(z, 0)));
+  };
   const failCheck = (x, who) =>
-    A.only(() => interact.checkView(x, who, MMUInt.None()));
+    A.interact.checkView(x, who, MMUInt.None(), MUInt.None());
   doCheck(1, A);
   commit();
 

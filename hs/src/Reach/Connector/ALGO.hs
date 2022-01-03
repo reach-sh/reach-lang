@@ -5,6 +5,7 @@ import Control.Monad.Reader
 import qualified Data.Aeson as Aeson
 import Data.ByteString.Base64 (encodeBase64', decodeBase64)
 import Data.ByteString.Builder
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Internal as BI
 import qualified Data.ByteString.Lazy as LB
@@ -38,6 +39,10 @@ import Generics.Deriving ( Generic )
 import Reach.CommandLine
 import Data.List (intercalate)
 import Crypto.Hash
+import System.Exit
+import System.Process.ByteString
+import System.FilePath
+import System.IO.Temp
 
 -- import Debug.Trace
 
@@ -165,6 +170,14 @@ algoMaxAppProgramCost = 700
 -- We're making up this name. It is not in consensus.go, but only in the docs
 algoMaxLogLen :: Integer
 algoMaxLogLen = 1024
+
+algoMaxAppProgramLen :: Integer
+algoMaxAppProgramLen = 2048
+algoMaxExtraAppProgramPages :: Integer
+algoMaxExtraAppProgramPages = 3
+
+algoMaxAppProgramLen_really :: Integer
+algoMaxAppProgramLen_really = (1 + algoMaxExtraAppProgramPages) * algoMaxAppProgramLen
 
 minimumBalance_l :: DLLiteral
 minimumBalance_l = DLL_Int sb algoMinimumBalance
@@ -550,7 +563,7 @@ addResourceCheck = do
   c <- (liftIO . readIORef) =<< asks eResources
   updateResources $ \r t ->
     t { cr_n = max (snd $ c M.! r) (cr_n t) }
-checkResources :: (LT.Text -> IO ()) -> ResourceGraph -> IO ()
+checkResources :: Bad' -> ResourceGraph -> IO ()
 checkResources bad' rg = do
   let one emit r = do
         let maxc = maxOf r
@@ -643,7 +656,8 @@ checkLease = do
   czaddr
   asserteq
 
-bad_io :: IORef (S.Set LT.Text) -> LT.Text -> IO ()
+type Bad' = LT.Text -> IO ()
+bad_io :: IORef (S.Set LT.Text) -> Bad'
 bad_io x = modifyIORef x . S.insert
 
 bad :: LT.Text -> App ()
@@ -651,7 +665,8 @@ bad lab = do
   Env {..} <- ask
   let Shared {..} = eShared
   liftIO $ bad_io sFailuresR lab
-  output $ comment_ $ "BAD " <> lab
+  let labl = LT.lines $ "BAD " <> lab
+  forM_ labl $ \x -> output $ comment_ x
 
 xxx :: LT.Text -> App ()
 xxx lab = bad $ "This program uses " <> lab
@@ -1286,6 +1301,8 @@ ce = \case
   DLE_Arg _ a -> ca a
   DLE_LArg _ a -> cla a
   DLE_Impossible at _ err -> expect_thrown at err
+  DLE_VerifyMuldiv at _ _ err ->
+    expect_thrown at err
   DLE_PrimOp _ p args -> cprim p args
   DLE_ArrayRef at aa ia -> doArrayRef at aa True (Left ia)
   DLE_ArraySet at aa ia va -> do
@@ -1778,7 +1795,7 @@ ct = \case
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
-reachAlgoBackendVersion = 6
+reachAlgoBackendVersion = 8
 
 -- State:
 keyState :: B.ByteString
@@ -1900,10 +1917,6 @@ ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = record
   op "=="
   code "bz" [ afterLab ]
   op "pop" -- Get rid of the method id since it's us
-  -- NOTE: To implement ABIs we'll need to do something like this
-  -- clog $ [ DLA_Literal $ DLL_Int at $ fromIntegral which
-  --        , ArgMsg
-  --        ]
   comment "check step"
   cint $ fromIntegral prev
   gvLoad GV_currentStep
@@ -1926,6 +1939,7 @@ ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = record
         . bindFromSvs
         . (bindFromArg ArgMsg msg)
   bindVars $ do
+    clogEvent ("_reach_e" <> show which) msg
     when isCtor $ do
       ce $ DLE_CheckPay at [] (DLA_Literal $ minimumBalance_l) Nothing
     let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
@@ -1971,13 +1985,21 @@ mapDataTy m = T_Tuple $ map (dlmi_tym . snd) $ M.toAscList m
 getMapDataTy :: App DLType
 getMapDataTy = (sMapDataTy . eShared) <$> ask
 
-type Disp = String -> T.Text -> IO ()
+type Disp = String -> T.Text -> IO String
 
 cStateSlice :: SrcLoc -> Integer -> Word8 -> App ()
 cStateSlice at size iw = do
   let i = fromIntegral iw
   let k = algoMaxAppBytesValueLen_usable
   csubstring at (k * i) (min size $ k * (i + 1))
+
+compileTEAL :: String -> IO BS.ByteString
+compileTEAL tealf = do
+  (ec, stdout, stderr) <- readProcessWithExitCode "goal" ["clerk", "compile", tealf, "-o", "-"] mempty
+  case ec of
+    ExitFailure _ ->
+      impossible $ "The TEAL compiler failed with the message:\n" <> show stderr
+    ExitSuccess -> return stdout
 
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
@@ -2023,6 +2045,7 @@ compile_algo env disp pl = do
         flip runReaderT (Env {..}) m
         readIORef eOutputR
   let bad' = bad_io sFailuresR
+  totalLenR <- newIORef (0 :: Integer)
   let addProg lab showCost m = do
         ts <- run m
         let tsl = DL.toList ts
@@ -2031,8 +2054,11 @@ compile_algo env disp pl = do
         let lts = tealVersionPragma : (map LT.unwords tsl')
         let lt = LT.unlines lts
         let t = LT.toStrict lt
-        modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String t
-        disp lab t
+        tf <- disp lab t
+        tbs <- compileTEAL tf
+        modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
+        let tc = LT.toStrict $ encodeBase64 tbs
+        modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String tc
   addProg "appApproval" (cte_REACH_DEBUG env) $ do
     checkRekeyTo
     checkLease
@@ -2117,6 +2143,13 @@ compile_algo env disp pl = do
   checkResources bad' =<< readIORef sResources
   stateSize <- readIORef sStateSizeR
   void $ recordSizeAndKeys "state" stateSize algoMaxGlobalSchemaEntries_usable
+  totalLen <- readIORef totalLenR
+  unless (totalLen <= algoMaxAppProgramLen_really) $ do
+    bad' $ texty $ "The program is too long; its length is " <> show totalLen <> ", but the maximum possible length is " <> show algoMaxAppProgramLen_really
+  let extraPages :: Integer = ceiling ((fromIntegral totalLen :: Double) / fromIntegral algoMaxAppProgramLen) - 1
+  modifyIORef resr $
+    M.insert "extraPages" $
+      Aeson.Number $ fromIntegral $ extraPages
   sFailures <- readIORef sFailuresR
   modifyIORef resr $
     M.insert "unsupported" $
@@ -2135,5 +2168,17 @@ connect_algo env = Connector {..}
   where
     conName = conName'
     conCons = conCons'
-    conGen moutn = compile_algo env (disp . T.pack)
-      where disp which = conWrite moutn (which <> ".teal")
+    conGen moutn pl = case moutn of
+      Nothing -> withSystemTempDirectory "reachc-algo" $ \d ->
+                    go (\w -> d </> T.unpack w) pl
+      Just outn -> go outn pl
+    go :: (T.Text -> String) -> PLProg -> IO ConnectorInfo
+    go outn = compile_algo env disp
+      where
+        disp :: String -> T.Text -> IO String
+        disp which c = do
+          let oi = which <> ".teal"
+          let oit = T.pack oi
+          let f = outn oit
+          conWrite (Just outn) oit c
+          return f

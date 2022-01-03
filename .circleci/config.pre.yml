@@ -11,10 +11,6 @@ executors:
         description: "resource class"
         default: "small"
         type: string
-      dlc:
-        description: "docker layer caching (ignored)"
-        default: false
-        type: boolean
     docker:
     - image: "cimg/base:stable"
       auth:
@@ -24,14 +20,8 @@ executors:
     environment:
       LC_ALL: "en_US.UTF-8"
   real:
-    parameters:
-      dlc:
-        description: "docker layer caching"
-        default: false
-        type: boolean
     machine:
       image: "ubuntu-2004:202107-02"
-      docker_layer_caching: << parameters.dlc >>
     resource_class: "medium"
     environment:
       LC_ALL: "en_US.UTF-8"
@@ -75,7 +65,6 @@ commands:
     steps:
       - run: |
           source ./VERSION
-
           for IMG in <<parameters.deps>> ; do
             zcat /tmp/workspace/docker-${IMG}/${IMG}.tar.gz | docker load
             docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
@@ -84,6 +73,36 @@ commands:
           done
 
 jobs:
+  "do-release":
+    executor: fake
+    steps:
+    - checkout
+    - srd_yes
+    - attach_workspace:
+        at: /tmp/workspace
+    - and_restore_docker:
+        deps: "stdlib runner rpc-server reach reach-cli devnet-eth devnet-cfx devnet-algo"
+    # Publish images
+    - run: |
+        docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
+        for IMG in stdlib runner rpc-server reach reach-cli devnet-algo devnet-eth devnet-cfx; do
+          ./scripts/docker-push.sh reachsh/${IMG}
+        done
+    # Publish stdlib
+    - run: |
+        sudo apt update -y
+        sudo apt install npm -y
+        cd js/stdlib
+        make refresh-js-stdlib
+        make bump-version-and-publish-js-stdlib
+    # Make the announcement
+    - run: |
+        set -a; source ./VERSION
+        export GIT_COMMIT_HASH=$CIRCLE_SHA1
+        sudo apt update -y; sudo apt install python3 python3-pip -y
+        pip3 install requests
+        cd scripts
+        python3 announcer.py
   "docs-render":
     executor: fake
     steps:
@@ -130,7 +149,7 @@ jobs:
     - slack_fail
     - run: |
         if [ -f .did_change ]; then
-          git diff --exit-code HEAD~ changelog/page.html
+          git diff --exit-code HEAD~ changelog/index.md
         fi
     - slack/notify:
         event: fail
@@ -146,7 +165,6 @@ jobs:
               }
             }]
           }
-
   "sh-check":
     executor: fake
     steps:
@@ -162,24 +180,15 @@ jobs:
     - workattach
     - and_restore_docker:
         deps: "haskell-build-artifacts"
+    - run: |
+        docker run --rm -ti reachsh/haskell-build-artifacts make docker-check
     - run:
         command: |
           mkdir -p hs/test-reports
-          docker run --rm -v $(pwd)/examples:/examples/ -v $(pwd)/docs/dev:/docs/dev/ -v $(pwd)/hs/t:/build/t -v $(pwd)/hs/test-reports:/build/test-reports -ti reachsh/haskell-build-artifacts make docker-test-xml
+          docker run --rm -v $(pwd)/examples:/examples/ -v $(pwd)/docs/src:/docs/src/ -v $(pwd)/hs/t:/build/t -v $(pwd)/hs/test-reports:/build/test-reports -ti reachsh/haskell-build-artifacts make docker-test-xml
         no_output_timeout: 30m
     - store_test_results:
         path: "hs/test-reports"
-    - slack_fail
-  "hs-check":
-    executor: fake
-    steps:
-    - checkout
-    - srd_no
-    - workattach
-    - and_restore_docker:
-        deps: "haskell-build-artifacts"
-    - run: |
-        docker run --rm -ti reachsh/haskell-build-artifacts make docker-check
     - slack_fail
   "build-image":
     parameters:
@@ -192,25 +201,25 @@ jobs:
       deps:
         description: "docker dependencies"
         type: string
-    executor:
-      name: <<parameters.exec>>
-      dlc: true
+    executor: <<parameters.exec>>
     steps:
     - checkout
     - when:
         condition:
           equal: [ fake, << parameters.exec >> ]
         steps:
-          - srd_yes
+          - srd_no
     - workattach
     - and_restore_docker:
         deps: <<parameters.deps>>
     - run: |
+        ROOT=$(pwd)
+        docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
         IMAGE="<<parameters.image>>"
         mkdir -p "/tmp/workspace/docker-${IMAGE}"
         cd .circleci && ./image.sh "${IMAGE}"
-        echo "docker save reachsh/${IMAGE}:latest..."
         docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
+        "${ROOT}/scripts/cache-image.sh" "${IMAGE}"
     - persist_to_workspace:
         root: /tmp/workspace/
         paths:
@@ -223,32 +232,34 @@ jobs:
         type: string
       size:
         description: "parallel size"
-        type: string
-      rank:
-        description: "parallel rank"
-        type: string
+        type: integer
       deps:
         description: "docker dependencies"
         type: string
     executor: real
+    parallelism: <<parameters.size>>
     steps:
     - checkout
     - workattach
     - and_restore_docker:
         deps: <<parameters.deps>>
     - run: |
-        mkdir -p /tmp/workspace/artifacts /tmp/workspace/record /tmp/artifacts
+        mkdir -p /tmp/workspace/artifacts /tmp/test_results /tmp/workspace/record /tmp/artifacts
     - run:
         command: |
-          cd .circleci && ./example.sh <<parameters.connector>> <<parameters.size>> <<parameters.rank>>
+          cd .circleci && ./example.sh <<parameters.connector>> "${CIRCLE_NODE_TOTAL}" "${CIRCLE_NODE_INDEX}"
         no_output_timeout: 20m
     - store_artifacts:
         path: /tmp/artifacts
+    - store_artifacts:
+        path: /tmp/test_results
+    - store_test_results:
+        path: /tmp/test_results
     - run: |
         CIRCLE_ARTIFACTS_URL=$(curl -X GET "https://circleci.com/api/v2/project/github/reach-sh/reach-lang/${CIRCLE_BUILD_NUM}/artifacts" \
           -H "Accept: application/json" \
           -u "${CIRCLE_API_TOKEN}:")
-        echo "${CIRCLE_ARTIFACTS_URL}" > /tmp/workspace/artifacts/<<parameters.connector>>.<<parameters.rank>>
+        echo "${CIRCLE_ARTIFACTS_URL}" > /tmp/workspace/artifacts/<<parameters.connector>>."${CIRCLE_NODE_INDEX}"
     - persist_to_workspace:
         root: /tmp/workspace
         paths:
@@ -292,15 +303,22 @@ workflows:
            only: master
        requires:
        - "docs-render"
-  buildless:
-    jobs:
-    - "sh-check"
   build:
     jobs:
+    - "sh-check"
     - "hs-test":
         requires:
           - "build-haskell-build-artifacts"
-    - "hs-check":
+    - "do-release":
+       requires:
+         - "approve-release"
+       context:
+         - reachdevbot-on-dockerhub
+    - "approve-release":
+        type: approval
         requires:
-          - "build-haskell-build-artifacts"
+          - "build-sink"
+        filters:
+          branches:
+            only: master
     # Sink and examples follow

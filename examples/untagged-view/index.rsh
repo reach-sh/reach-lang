@@ -7,7 +7,7 @@ export const main = Reach.App(() => {
   });
   const VU = View({ xv: UInt });
   const VT = View('V', { xv: UInt });
-  deploy();
+  init();
 
   A.only(() => {
     const x = declassify(interact.x());

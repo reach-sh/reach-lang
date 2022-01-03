@@ -1,22 +1,154 @@
+// This file immitates the ethers.js API
 import cfxsdk from 'js-conflux-sdk';
+import Timeout from 'await-timeout';
 const { format } = cfxsdk;
 import { ethers } from 'ethers';
-import * as providers from './cfxers_providers';
 import { ParamType } from '@ethersproject/abi';
 const { BigNumber, utils } = ethers;
-export { BigNumber, utils, providers }
-import { address_cfxStandardize } from './CFX_util';
-import Timeout from 'await-timeout';
+export { BigNumber, utils };
+import { address_cfxStandardize, defaultEpochTag } from './CFX_util';
 import { debug } from './shared_impl';
 
-// XXX Convenience export, may want to rethink
-export { cfxsdk };
+type BigNumber = ethers.BigNumber;
+type EpochNumber = cfxsdk.EpochNumber;
+type Conflux = cfxsdk.Conflux;
+export type TransactionReceipt = any; // TODO
+export type Log = any; // TODO
 
-// This file immitates the ethers.js API
-const waitMs = 25;
+export type TransactionResponse = {
+  transactionHash: string,
+  wait: () => Promise<TransactionReceipt>,
+};
+
+const attachBlockNumbers = async (conflux: Conflux, xs: any[]): Promise<any[]> => {
+  const actuallyLookup = async (blockHash: string): Promise<string> => {
+    debug(`actuallyLookup`, {blockHash});
+    const block = await conflux.getBlockByHash(blockHash);
+    debug(`actuallyLookup`, {blockHash}, 'res', block);
+    // @ts-ignore // XXX requires an update to js-conflux-sdk types
+    return parseInt(block.blockNumber);
+  };
+  const cache: {[blockHash: string]: string} = {};
+  const lookup = async (blockHash: string): Promise<string> => {
+    if (!(blockHash in cache)) { cache[blockHash] = await actuallyLookup(blockHash); }
+    return cache[blockHash];
+  }
+  const attachBlockNumber = async (x: any): Promise<object> => {
+    if (x.blockNumber) {
+      return x;
+    } else if (x.blockHash) {
+      const blockHash: string = x.blockHash;
+      const blockNumber = await lookup(blockHash);
+      return {...x, blockNumber};
+    } else {
+      throw Error(`No blockNumber or blockHash on log: ${Object.keys(x)}`);
+    }
+  }
+  const out: any[] = [];
+  // reduce the # of requests by doing them serially rather than in parallel
+  for (const i in xs) { out[i] = await attachBlockNumber(xs[i]); }
+  return out;
+};
+
+const ethifyOkReceipt = (receipt: any): any => {
+  if (receipt.outcomeStatus !== 0) {
+    throw Error(`Receipt outcomeStatus is nonzero: ${receipt.outcomeStatus}`);
+  }
+  return {
+    status: 'ok',
+    ...receipt,
+  }
+};
+
+const ethifyTxn = (txn: any): any => {
+  if (txn.status !== 0) {
+    throw Error(`Txn status is not 0: ${txn.status}`);
+  }
+  // It would appear that no eth-ification is actully necessary at this moment.
+  // It might be nice to have blockNumber on here,
+  // but it's not required.
+  // Accomplishing that would require another API call...
+  return txn;
+};
+
+export namespace providers {
+
+// XXX bi: BigInt
+const bi2bn = (bi: any): BigNumber => {
+  return ethers.BigNumber.from(bi.toString());
+}
+
+export class Provider {
+  conflux: Conflux;
+  constructor(conflux: Conflux) {
+    this.conflux = conflux;
+  }
+
+  async getBalance(address: string, epochNumber?: EpochNumber): Promise<BigNumber> {
+    return bi2bn(await this.conflux.getBalance(address, epochNumber));
+  }
+
+  async getBlockNumber(): Promise<number> {
+    const epochNumber = await this.conflux.getEpochNumber(defaultEpochTag);
+    const block = await this.conflux.getBlockByEpochNumber(epochNumber, true);
+    // @ts-ignore
+    debug('getBlockNumber', epochNumber, block.epochNumber, block.blockNumber);
+    // @ts-ignore
+    return parseInt(block.blockNumber);
+  }
+
+  async getBlock(which: number): Promise<any> {
+    debug(`getBlock`, which);
+    // @ts-ignore
+    return await this.conflux.getBlockByBlockNumber(which, true);
+  }
+
+  async getTransactionReceipt(transactionHash: string): Promise<TransactionReceipt> {
+    const r = await this.conflux.getTransactionReceipt(transactionHash);
+    if (!r) return r;
+    const [rbn] = await attachBlockNumbers(this.conflux, [r]);
+    return ethifyOkReceipt(rbn);
+  }
+
+  async getCode(address: string, defaultEpoch: EpochNumber | undefined = undefined): Promise<string> {
+    return await this.conflux.getCode(address, defaultEpoch);
+  };
+
+  on(...argz: any) {
+    void(argz);
+    throw Error(`on not yet implemented`);
+    // XXX
+  }
+
+  off(...argz: any) {
+    void(argz);
+    throw Error(`off not yet implemented`);
+    // XXX
+  }
+
+  async getLogs(opts: {fromBlock: number, toBlock: number, address: string, topics: string[]}): Promise<any[]> {
+    debug(`getLogs`, `opts`, opts);
+    if ( opts.fromBlock == 0 ) {
+      opts.fromBlock = 1;
+      debug(`getLogs`, `opts`, opts);
+    }
+    const logs = await this.conflux.getLogs(opts);
+    debug(`getLogs`, `result`, logs);
+    const alogs = await attachBlockNumbers(this.conflux, logs);
+    debug(`getLogs`, `aresult`, alogs);
+    return alogs;
+  }
+
+  async getTransaction(txnHash: string): Promise<any> {
+    // @ts-ignore
+    return ethifyTxn(await this.conflux.getTransactionByHash(txnHash));
+  }
+}
+
+};
 
 // Recursively stringify BigNumbers
-function unbn(arg: any): any {
+const unbn = (arg: any): any => {
   if (!arg) return arg;
   if (arg._isBigNumber) return arg.toString();
   if (Array.isArray(arg)) return arg.map(unbn);
@@ -31,7 +163,7 @@ function unbn(arg: any): any {
   return arg;
 }
 
-function booleanize(arg: any): boolean {
+const booleanize = (arg: any): boolean => {
   if (typeof arg === 'boolean') return arg;
   if (typeof arg === 'number') return arg !== 0;
 
@@ -42,7 +174,7 @@ function booleanize(arg: any): boolean {
   throw Error(`don't know how to booleanize '${arg}': ${typeof arg}`);
 }
 
-function conform(args: any[], tys: ParamType[]): any[] {
+const conform = (args: any[], tys: ParamType[]): any[] => {
   // XXX find a better way to do this stuff.
   args = unbn(args);
   if (Array.isArray(args)) {
@@ -64,7 +196,7 @@ function conform(args: any[], tys: ParamType[]): any[] {
   return args;
 }
 
-function prepForConfluxPortal(txnOrig: any): any {
+const prepForConfluxPortal = (txnOrig: any): any => {
   const hexStringify = (n: any) => '0x' + BigInt(n || '0').toString(16);
   const txn = {...txnOrig};
 
@@ -149,24 +281,9 @@ export class Contract implements IContract {
   _receiptP?: Promise<any>
   _contract: cfxsdk.Contract
   address?: string
-  deployTransaction: {
-    hash?: string,
-    wait: () => Promise<{
-      blockNumber: number,
-      transactionHash: string,
-    }>,
-  }
-
-  // const ok_args_abi = ethersC.interface.getEvent(ok_evt).inputs;
-  // const { args } = ethersC.interface.parseLog(ok_e);
-  // return ok_args_abi.map((a: any) => args[a.name]);
+  deployTransaction: TransactionResponse
   interface: ethers.utils.Interface
-  // {
-  //   getEventTopic: (name: string) => string, // ?
-  //   getEvent: (name: string) => {inputs: {name: string}[]},
-  //   parseLog: (log: Log) => {args: {[k: string]: any}},
-  // }
-  constructor(address: string|null|undefined, abi: string|any[], wallet: IWallet, receiptP?: Promise<any>, hash?: string) {
+  constructor(address: string|null|undefined, abi: string|any[], wallet: IWallet, receiptP?: Promise<any>, transactionHash?: string) {
     this.address = address || undefined;
     const blacklist = Object.keys(this).filter((s) => s[0] === '_');
     this._abi = (typeof abi === 'string') ? JSON.parse(abi) : abi;
@@ -178,26 +295,29 @@ export class Contract implements IContract {
     });
     const self = this;
     this.deployTransaction = {
-      hash,
+      // @ts-ignore
+      transactionHash,
       wait: async () => {
         debug(`cfxers:Contract.wait`, `start`);
         if (!receiptP) {
           throw Error(`No receipt promise to wait on`);
         }
-        const receipt = await self._receiptP;
-        debug(`cfxers:Contract.wait`, `got receipt`, receipt);
-        const rcc = address_cfxStandardize(receipt.contractCreated);
+        const r = await self._receiptP;
+        debug(`cfxers:Contract.wait`, `got receipt`, r);
+        const rcc = address_cfxStandardize(r.contractCreated);
         if (self.address && self.address !== rcc) {
           throw Error(`Impossible: ctc addresses don't match: ${self.address} vs ${rcc}`);
         }
         self.address = self.address || rcc;
-        if (self.deployTransaction.hash && self.deployTransaction.hash !== receipt.transactionHash) {
-          throw Error(`Impossible: txn hashes don't match: ${self.deployTransaction.hash} vs ${receipt.transactionHash}`);
+        const rth = r.transactionHash;
+        const dt = self.deployTransaction;
+        if (dt.transactionHash && dt.transactionHash !== rth) {
+          throw Error(`Impossible: txn hashes don't match: ${dt.transactionHash} vs ${rth}`);
         }
-        self.deployTransaction.hash = self.deployTransaction.hash || receipt.transactionHash;
-        return providers.ethifyOkReceipt(receipt);
+        dt.transactionHash = rth;
+        return ethifyOkReceipt(r);
       },
-    }
+    };
     this.interface = new ethers.utils.Interface(this._abi);
     for (const item of this._abi) {
       if (item.type === 'function') {
@@ -240,16 +360,13 @@ export class Contract implements IContract {
         // @ts-ignore
         const cfc = self._contract[fname].call(...argsConformed);
         debug(`cfxers:handler`, fname, `cfc`, cfc);
+        const {to, data} = cfc; // ('to' is just ctc address)
+        txn = { ...txn, to, data};
         // @ts-ignore
         txn = await addEstimates(this._wallet.provider.conflux, txn);
-        const {to, data} = cfc; // ('to' is just ctc address)
-        const txnDat = {...txn, to, data};
-        debug(`cfxers:handler`, fname, `txnDat`, txnDat);
-        const res = await _wallet.sendTransaction({...txnDat});
+        debug(`cfxers:handler`, fname, `txn`, txn);
+        const res = await _wallet.sendTransaction(txn);
         const {transactionHash} = await res.wait();
-        // debug(`cfxers:handler`, fname, 'receipt');
-        // debug(transactionReceipt);
-        // const { transactionHash } = transactionReceipt;
         return {
           // XXX not sure what the distinction is supposed to be here
           wait: async () => {
@@ -269,6 +386,24 @@ export class Contract implements IContract {
     }
   }
 }
+
+const waitReceipt = async (provider: providers.Provider, txnHash: string): Promise<TransactionReceipt> => {
+  const dhead = `waitReceipt`;
+  let r: any = undefined;
+  let howMany = 0;
+  while (! r) {
+    if ( howMany++ > 0 ) {
+      await Timeout.set(500);
+    }
+    debug(dhead, txnHash);
+    r = await provider.getTransactionReceipt(txnHash);
+    debug(dhead, txnHash, r);
+  }
+  if (r.outcomeStatus !== 0) {
+    throw Error(`Transaction failed, outcomeStatus: ${r.outcomeStatus}`);
+  }
+  return r;
+};
 
 export class ContractFactory {
   abi: any[]
@@ -347,10 +482,7 @@ export interface IWallet {
   provider?: providers.Provider
   connect: (provider: providers.Provider) => this
   getAddress(): string
-  sendTransaction(txn: any): Promise<{
-    transactionHash: string,
-    wait: () => Promise<{transactionHash: string}>,
-  }>
+  sendTransaction(txn: any): Promise<TransactionResponse>
 }
 
 export interface CP {
@@ -385,37 +517,22 @@ export class BrowserWallet implements IWallet {
 
   getAddress(): string { return this.address; }
 
-  async sendTransaction(txnOrig: any): Promise<{
-    transactionHash: string,
-    wait: () => Promise<{transactionHash: string}>,
-  }> {
+  async sendTransaction(txnOrig: any): Promise<TransactionResponse> {
     this._requireConnected();
     const {provider, address: from} = this;
     if (!provider) throw Error(`Impossible: provider is undefined`);
     const txn = prepForConfluxPortal({...txnOrig, from});
-    const {value} = txn;
-    return await new Promise((resolve, reject) => {
-      this.cp.sendAsync({
-        method: 'cfx_sendTransaction',
-        params: [txn],
-        from,
-        value,
-      }, (err: any, data: any) => {
-        if (err) {
-          reject(err);
-        } else {
-          const transactionHash = data.result;
-          resolve({
-            transactionHash,
-            wait: async () => {
-              await waitReceipt(provider, transactionHash)
-              // XXX return the whole receipt?
-              return {transactionHash};
-            }
-          });
-        };
-      });
+    const { value } = txn;
+    const data = await this.cp.sendAsync({
+      from, value,
+      method: 'cfx_sendTransaction',
+      params: [txn],
     });
+    const transactionHash = data.result;
+    return {
+      transactionHash,
+      wait: () => waitReceipt(provider, transactionHash)
+    };
   }
 }
 
@@ -459,20 +576,40 @@ export class Wallet implements IWallet {
     return address_cfxStandardize(this.account.toString());
   }
 
-  async sendTransaction(txn: any): Promise<{
-    transactionHash: string,
-    wait: () => Promise<{transactionHash: string}>,
-  }> {
+  async sendTransaction(txn: any): Promise<TransactionResponse> {
     this._requireConnected();
-    if (!this.provider) throw Error(`Impossible: provider is undefined`);
+    const provider = this.provider;
+    if (!provider) throw Error(`Impossible: provider is undefined`);
     const from = this.getAddress();
     txn = {from, ...txn, value: (txn.value || '0').toString()};
-    txn = await addEstimates(this.provider.conflux, txn);
+    txn = await addEstimates(provider.conflux, txn);
     // This is weird but whatever
     if (txn.to instanceof Promise) {
        txn.to = await txn.to;
     }
-    return _retryingSendTxn(this.provider, txn);
+    const dhead = `retryingSendTxn`;
+    let howMany = 0;
+    while ( true ) {
+      try {
+        debug(dhead, `attempt`, howMany++, txn);
+        // Note: {...txn} because conflux is going to mutate it >=[
+        const txnMut = {...txn};
+        const transactionHash = await provider.conflux.sendTransaction(txnMut);
+        debug(dhead, `sent`, {txn, txnMut, transactionHash});
+        return {
+          transactionHash,
+          wait: () => waitReceipt(provider, transactionHash)
+        }
+      } catch (e:any) {
+        const es = JSON.stringify(e);
+        debug(dhead, `err`, { e, es });
+        if ( es.includes("stale nonce") || es.includes("same nonce") || es.includes('tx already exist') ) {
+          debug(dhead, `nonce error`);
+        } else {
+          throw e;
+        }
+      }
+    }
   }
   static createRandom(): Wallet {
     return new Wallet();
@@ -482,123 +619,4 @@ export class Wallet implements IWallet {
     const sk = ethers.Wallet.fromMnemonic(mnemonic)._signingKey().privateKey;
     return new Wallet(sk, provider);
   }
-}
-
-// XXX This is nutty
-// Remember the last epoch that a given sender has sent
-// and don't try to send again until it is later than that epoch.
-// Note: requires addrs to be canonicalized first.
-const lastEpochSent: Record<string, number> = {};
-const epochWaitLock: Record<string, boolean> = {};
-
-// XXX implement a queue, maybe?
-function tryGetLock(obj: Record<string, boolean>, k: string): boolean {
-  if (!obj[k]) {
-    // XXX is this actually threadsafe?
-    obj[k] = true;
-    return true;
-  }
-  return false;
-}
-
-function releaseLock(obj: Record<string, boolean>, k: string): void {
-  obj[k] = false;
-}
-
-function getLastSentAt(addr: string): number {
-  return lastEpochSent[addr] || -1;
-}
-
-function updateSentAt(addr: string, epoch: number) {
-  lastEpochSent[addr] = Math.max(getLastSentAt(addr), epoch);
-}
-
-// Note: this relies on epochs moving on their own
-// If there's ever a devnet where this is not the case,
-// this will need to be adjusted.
-const waitUntilSendableEpoch = async (provider: providers.Provider, addr: string): Promise<void> => {
-  while (!tryGetLock(epochWaitLock, addr)) {
-    // XXX fail after waiting too long?
-    await Timeout.set(waitMs);
-  }
-  let current: number;
-  // XXX fail after waiting too long?
-  while ((current = await provider.getBlockNumber()) <= getLastSentAt(addr)) {
-    await Timeout.set(waitMs);
-  }
-  updateSentAt(addr, current);
-  releaseLock(epochWaitLock, addr);
-}
-
-async function _retryingSendTxn(provider: providers.Provider, txnOrig: object): Promise<{
-  transactionHash: string,
-  wait: () => Promise<{transactionHash: string}>,
-}> {
-  const max_tries = 2;
-  const addr = (txnOrig as any).from as string; // XXX typing
-  let err: Error|null = null;
-  let txnMut: any = {...txnOrig};
-  for (let tries = 1; tries <= max_tries; tries++) {
-    await waitUntilSendableEpoch(provider, addr);
-    if (err) {
-      // XXX is this still needed?
-      await Timeout.set(waitMs);
-    }
-    try {
-      // Note: {...txn} because conflux is going to mutate it >=[
-      txnMut = {...txnOrig};
-      debug(`_retryingSendTxn attempt`, txnOrig);
-      const transactionHashP = provider.conflux.sendTransaction(txnMut);
-      const transactionHash = await transactionHashP;
-      debug(`_retryingSendTxn sent`, {txnOrig, txnMut, transactionHash});
-      updateSentAt(addr, txnMut.epochHeight);
-      return {
-        transactionHash,
-        wait: async () => {
-          // see: https://github.com/Conflux-Chain/js-conflux-sdk/blob/master/docs/how_to_send_tx.md#transactions-stage
-          try {
-            // @ts-ignore
-            const r = await transactionHashP.confirmed({ delta: 1000, timeout: 60 * 1000});
-            debug(`_retryingSendTxn receipt good`, r);
-            return { transactionHash };
-          } catch (e) {
-            const r: any = await provider.conflux.getTransactionReceipt(transactionHash);
-            debug(`_retryingSendTxn receipt bad`, r);
-            throw e;
-          }
-        },
-      }
-    } catch (e:any) {
-      err = e;
-      const es = JSON.stringify(e);
-      if ( es.includes("stale nonce") || es.includes("same nonce") ) {
-        debug(`_retryingSendTxn: nonce error, giving more tries`);
-        tries--;
-      }
-      debug(`_retryingSendTxn fail`, {
-        txnOrig, txnMut,
-        e, tries, max_tries
-      });
-      continue;
-    }
-  }
-  if (!err) throw Error(`impossible: no error to throw after ${max_tries} failed attempts.`);
-  throw err;
-}
-
-async function waitReceipt(provider: providers.Provider, txnHash: string): Promise<object> {
-  // XXX is 20s enough time on testnet/mainnet?
-  // js-conflux-sdk is willing to wait up to 5 mins before timing out, which seems a bit ridiculous
-  const maxTries = 800; // * 25ms = 20s
-  for (let tries = 1; tries <= maxTries; tries++) {
-    const r: any = await provider.getTransactionReceipt(txnHash);
-    if (r) {
-      if (r.outcomeStatus !== 0) {
-        throw Error(`Transaction failed, outcomeStatus: ${r.outcomeStatus}`);
-      }
-      return r;
-    }
-    await Timeout.set(waitMs);
-  }
-  throw Error(`Transaction timed out after ${maxTries * waitMs} ms`);
-}
+};

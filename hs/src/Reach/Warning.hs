@@ -28,6 +28,7 @@ data Deprecation
   | D_SnakeToCamelCase String
   | D_ReachAppArgs
   | D_UntypedTimeArg
+  | D_Replaced String String
   deriving (Eq)
 
 data Warning
@@ -53,16 +54,18 @@ instance Show Deprecation where
   show = \case
     D_ParticipantTuples ->
       "Declaring Participants with a tuple is now deprecated. "
-        <> "Please use `Participant(name, interface)` or `ParticipantClass(name, interface)`"
+        <> "Please use `Participant(name, interface)` or `ParticipantClass(name, interface)`."
     D_SnakeToCamelCase name ->
       let name' = case splitOn "_" name of
             [] -> name
             h : t -> camlCase h t
-       in "`" <> name <> "` is now deprecated. It has been renamed from snake case to camel case. Use `" <> name' <> "`"
+       in "`" <> name <> "` is now deprecated. It has been renamed from snake case to camel case. Use `" <> name' <> "`."
     D_ReachAppArgs ->
-      "Declaring a `Reach.App` with 3 arguments is now deprecated. Please specify one thunk"
+      "Declaring a `Reach.App` with 3 arguments is now deprecated. Please specify one thunk."
     D_UntypedTimeArg ->
-      "Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs"
+      "Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs."
+    D_Replaced o n ->
+       "`" <> o <> "` is now deprecated. Use `" <> n <> "`."
 
 instance Show Warning where
   show = \case
@@ -74,7 +77,7 @@ instance Show Warning where
     W_ALGOConservative rs ->
       "Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:\n" <> (intercalate "\n" $ map (" * " <>) rs)
     W_NoPublish -> "There are no publications in the application."
-    W_ExternalObject -> "The `Object` type is internal to Reach. Use `Struct` instead."
+    W_ExternalObject -> "The `Object` type is internal to Reach. Use `Struct` instead for external interfaces."
 
 emitWarning :: Maybe SrcLoc -> Warning -> IO ()
 emitWarning at d = do

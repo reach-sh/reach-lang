@@ -86,7 +86,7 @@ export const main =
   Reach.App(() => {
     const A = Participant('A', Alice);
     const B = Participant('B', Bob);
-    deploy();
+    init();
 
     A.only(() => {
       const wagerAmount = declassify(interact.getWager());

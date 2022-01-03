@@ -4,13 +4,10 @@ import { mkAssertEq } from './common.mjs';
 (async () => {
   const { rpc, rpcCallbacks } = await mkRPC();
 
-  const now      = await rpc('/stdlib/getNetworkTime');
   const startBal = await rpc('/stdlib/parseCurrency', 200);
   const accAlice = await rpc('/stdlib/newTestAccount', startBal);
   const accBob   = await rpc('/stdlib/newTestAccount', startBal);
   const ctcs     = [];
-
-  await rpc('/stdlib/setQueryLowerBound', now);
 
   const run = async (p, whosBob) => {
     const ctcAlice = await rpc('/acc/contract', accAlice);

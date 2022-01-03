@@ -1,4 +1,4 @@
-warning[RW0000]: Declaring Participants with a tuple is now deprecated. Please use `Participant(name, interface)` or `ParticipantClass(name, interface)`
+warning[RW0000]: Declaring Participants with a tuple is now deprecated. Please use `Participant(name, interface)` or `ParticipantClass(name, interface)`.
 
   ./pay_multiple_currency.rsh:12:7:tuple
 

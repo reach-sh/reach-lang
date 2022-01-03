@@ -8,9 +8,6 @@ const assertEq = (expected, actual) => {
   stdlib.assert(exps === acts, msg); };
 
 (async () => {
-  const now = await stdlib.getNetworkTime();
-  stdlib.setQueryLowerBound(now);
-
   const [ accAlice, accBob ] =
     await stdlib.newTestAccounts(2, stdlib.parseCurrency(100));
   accAlice.setDebugLabel('Alice');

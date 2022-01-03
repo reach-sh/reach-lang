@@ -21,7 +21,7 @@ def main():
     before_alice = get_balance(acc_alice)
     before_bob   = get_balance(acc_bob)
 
-    ctc_alice    = rpc('/acc/deploy', acc_alice)
+    ctc_alice    = rpc('/acc/contract', acc_alice)
 
     HAND         = ['Rock', 'Paper', 'Scissors']
     OUTCOME      = ['Bob wins', 'Draw', 'Alice wins']
@@ -58,7 +58,7 @@ def main():
         def acceptWager(amt):
             print('Bob accepts the wager of %s' % fmt(amt))
 
-        ctc_bob = rpc('/acc/attach', acc_bob, rpc('/ctc/getInfo', ctc_alice))
+        ctc_bob = rpc('/acc/contract', acc_bob, rpc('/ctc/getInfo', ctc_alice))
         rpc_callbacks(
             '/backend/Bob',
             ctc_bob,

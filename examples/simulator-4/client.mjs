@@ -1,28 +1,31 @@
 const c = await import('@reach-sh/simulator-client');
 const assert = await import('assert');
-const waitPort = await import('wait-port');
 
 const main = async () => {
-  const port = 3001
   console.log("Init Testing!")
-  const params = {
-    port: port
-  };
-  await waitPort(params)
+  await c.waitForPort()
   await c.ping()
   await c.load()
   await c.init()
-  await c.respondWithVal(0,0,10,"Number")
-  await c.respondWithVal(1,1,1,"Number")
-  await c.respondWithVal(2,2,7,"Number")
-  await c.respondWithVal(3,3,70,"Number")
-  await c.respondWithVal(4,4,"Alice","String")
-  await c.respondWithVal(5,5,0,"Number")
-  await c.respondWithVal(6,6,2,"Number")
-  await c.respondWithVal(7,7,"Bob","String")
-  await c.respondWithVal(8,8,"Alice","String")
-  await c.respondWithVal(9,9,0,"Number")
-  await c.respondWithVal(10,10,0,"Number")
+  await c.initFor(0,0)
+  await c.initFor(1,1)
+  await c.respondWithVal(2,2,10,0)
+  await c.respondWithVal(3,3,0)
+  await c.respondWithVal(4,4,4444)
+  await c.respondWithVal(5,5,4444)
+  await c.respondWithVal(6,6,0,-1)
+  await c.respondWithVal(7,7,-99,0)
+  await c.respondWithVal(8,8,-99,1)
+  await c.respondWithVal(9,9,-99)
+  await c.respondWithVal(10,10,1)
+  await c.respondWithVal(11,11,1,-1)
+  await c.respondWithVal(12,12,1,0)
+  await c.respondWithVal(13,13,1,1)
+  await c.respondWithVal(14,14,0,-1)
+  await c.respondWithVal(15,15,-99,0)
+  await c.respondWithVal(16,16,-99,1)
+  await c.respondWithVal(17,17,-99,0)
+  await c.respondWithVal(18,18,-99,1)
   const r = await c.getStatus()
   assert.equal(r,"Done");
   console.log("Testing Complete!")

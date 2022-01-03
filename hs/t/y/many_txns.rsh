@@ -6,7 +6,7 @@ export const main = Reach.App(() => {
   const A = Participant('Alice', {
     x: UInt,
   });
-  deploy();
+  init();
 
   A.only(() => {
     const x = declassify(interact.x); });

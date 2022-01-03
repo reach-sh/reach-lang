@@ -50,7 +50,7 @@ END
 END
 }
 
-image "real" "haskell-build-artifacts"
+image "real" "haskell-build-artifacts" "devnet-algo"
 image "fake" "reach" "haskell-build-artifacts"
 image "fake" "reach-cli" "haskell-build-artifacts"
 image "real" "js-deps"
@@ -64,30 +64,34 @@ cat >>"${END}" <<END
         requires:
 END
 
-for CONN in ETH ALGO CFX ; do
+conn () {
+  EXEC="$1"
+  CONN="$2"
+  SIZE="$3"
+
   CONNlc=$(echo "${CONN}" | tr '[:upper:]' '[:lower:]')
   IMAGE="devnet-${CONNlc}"
-  case "${CONN}" in
-    ALGO) PER=8 EXEC="fake";;
-    CFX) PER=8 EXEC="real";;
-    ETH) PER=16 EXEC="fake";;
-  esac
   image "${EXEC}" "${IMAGE}"
-  SIZE=$(((TOTAL + (PER - 1)) / PER))
-  for RANK in $(seq 0 $((SIZE - 1))) ; do
-    NAME="examples.${CONN}.${RANK}"
-    cat >>"${MID}" <<END
+  NAME="examples.${CONN}"
+  cat >>"${MID}" <<END
     - "examples":
         name: "${NAME}"
         connector: "${CONN}"
-        size: "${SIZE}"
-        rank: "${RANK}"
+        size: ${SIZE}
 END
-    deps "reach" "reach-cli" "runner" "rpc-server" "${IMAGE}"
-    cat >>"${END}" <<END
+  deps "reach" "reach-cli" "runner" "rpc-server" "${IMAGE}"
+  cat >>"${END}" <<END
           - "${NAME}"
 END
-  done
-done
+}
+
+per () {
+  PER="$1"
+  echo $(((TOTAL + (PER - 1)) / PER))
+}
+
+conn fake ETH "$(per 32)"
+conn fake ALGO "$(per 16)"
+conn fake CFX "$(per 16)"
 
 cat "${PRE}" "${MID}" "${END}" "${IEND}" > config.gen.yml

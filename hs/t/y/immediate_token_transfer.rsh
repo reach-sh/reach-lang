@@ -2,7 +2,7 @@
 
 export const main = Reach.App(() => {
   const Alice = Participant('Alice', {});
-  deploy();
+  init();
 
   Alice.publish();
   const tok = new Token({ supply: 5 });

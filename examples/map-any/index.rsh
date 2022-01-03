@@ -8,7 +8,7 @@ export const main = Reach.App(() => {
   };
   const A = Participant('Alice', common);
   const B = Participant('Bob', common);
-  deploy();
+  init();
 
   A.only(() => { const a = declassify(interact.get()); });
   A.publish(a);

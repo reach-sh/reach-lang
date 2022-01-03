@@ -60,7 +60,7 @@ class Deployer extends Player {
   }
   setWager(wager) { this.setState({view: 'Deploy', wager}); }
   async deploy() {
-    const ctc = this.props.acc.deploy(backend);
+    const ctc = this.props.acc.contract(backend);
     this.setState({view: 'Deploying', ctc});
     this.wager = reach.parseCurrency(this.state.wager); // UInt
     this.deadline = {ETH: 10, ALGO: 100, CFX: 1000}[reach.connector]; // UInt
@@ -76,7 +76,7 @@ class Attacher extends Player {
     this.state = {view: 'Attach'};
   }
   attach(ctcInfoStr) {
-    const ctc = this.props.acc.attach(backend, JSON.parse(ctcInfoStr));
+    const ctc = this.props.acc.contract(backend, JSON.parse(ctcInfoStr));
     this.setState({view: 'Attaching'});
     backend.Bob(ctc, this);
   }

@@ -132,13 +132,13 @@ const extractAddrM = (x: any): string|false => {
     x && x.networkAccount && x.networkAccount.addr
     || x && x.addr
     || typeof x === 'string' && x;
-  debug(`extractAddrM`, {x, addr});
+  //debug(`extractAddrM`, {x, addr});
   return addr;
 };
 
 export const extractAddr = (x:any): string => {
   const a = extractAddrM(x);
-  debug(`extractAddr`, {x, a});
+  //debug(`extractAddr`, {x, a});
   if ( a === false ) { throw Error(`Expected address, got ${x}`); }
   return a;
 };

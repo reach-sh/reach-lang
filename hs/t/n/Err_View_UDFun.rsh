@@ -6,7 +6,7 @@ export const main = Reach.App(() => {
   const V = View('Test', {
     log: Fun(true, Null),
   });
-  deploy();
+  init();
 
   exit();
 });

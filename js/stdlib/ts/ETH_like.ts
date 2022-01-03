@@ -1,8 +1,9 @@
 import Timeout from 'await-timeout';
 import { ethers as real_ethers } from 'ethers';
 import {
-  assert,
+  assert, protect,
 } from './shared_backend';
+import type { MaybeRep, MapRefT } from './shared_backend'; // =>
 import {
   replaceableThunk,
   debug,
@@ -14,8 +15,11 @@ import {
   make_newTestAccounts,
   make_waitUntilX,
   checkTimeout,
-  Time,
   ISetupEventArgs,
+  IEventQueue,
+  EQGetTxnsR,
+  makeEventQueue,
+  makeEventStream,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -25,7 +29,8 @@ import ETHstdlib from './stdlib_sol';
 
 // Types-only imports
 import type { // =>
-  BigNumber } from 'ethers';
+  BigNumber,
+} from 'ethers';
 import type { // =>
   CurrencyAmount,
   IAccount,
@@ -37,7 +42,6 @@ import type { // =>
   ISetupArgs, ISetupRes, ISetupViewArgs,
   IRecvArgs, ISendRecvArgs,
   IRecv,
-  TimeArg,
   OnProgress,
 } from './shared_impl';
 import type { // =>
@@ -56,6 +60,8 @@ import type { // =>
 import type { // =>
   Stdlib_Backend
 } from './interfaces';
+import { setQueryLowerBound, getQueryLowerBound } from './shared_impl';
+export { setQueryLowerBound, getQueryLowerBound };
 
 // ****************************************************************************
 // Type Definitions
@@ -63,13 +69,14 @@ import type { // =>
 
 type TransactionReceipt = real_ethers.providers.TransactionReceipt;
 type Log = real_ethers.providers.Log;
+type Interface = real_ethers.utils.Interface;
 
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-const reachBackendVersion = 6;
-const reachEthBackendVersion = 5;
+const reachBackendVersion = 7;
+const reachEthBackendVersion = 6;
 type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
   ABI: string,
@@ -87,6 +94,7 @@ type NetworkAccount = {
   getAddress?: () => Promise<Address>, // or this for receivers & deployers
   sendTransaction?: (...xs: any) => any, // required for senders
   getBalance?: (...xs: any) => any, // TODO: better type
+  _mnemonic?: () => {phrase: string},
 } | EthersLikeWallet | EthersLikeSigner; // required to deploy/attach
 
 type ContractInfo = Address;
@@ -95,10 +103,13 @@ type RecvArgs = IRecvArgs<AnyETH_Ty>;
 type Recv = IRecv<Address>
 type Contract = IContract<ContractInfo, Address, Token, AnyETH_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
-  | any /* union in this field: { setGasLimit: (ngl:any) => void } */;
-type VerifyResult = {
-  creation_block: number,
-};
+  & {
+    setGasLimit?: (ngl:any) => void
+    getGasLimit?: any,
+    setStorageLimit?: any,
+    getStorageLimit?: any,
+  }
+type VerifyResult = { creationBlock: BigNumber };
 type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
 type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
 type SetupEventArgs = ISetupEventArgs<ContractInfo, VerifyResult>;
@@ -106,6 +117,8 @@ type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyETH_Ty>;
 
 type AccountTransferable = Account | {
   networkAccount: NetworkAccount,
+  getGasLimit?: any,
+  getStorageLimit?: any,
 };
 
 // ****************************************************************************
@@ -151,14 +164,6 @@ const {
 } = stdlib;
 const reachStdlib: Stdlib_Backend<AnyETH_Ty> = stdlib;
 
-const [_getQueryLowerBound, _setQueryLowerBound] = replaceableThunk(() => 0);
-function getQueryLowerBound() {
-  return bigNumberify(_getQueryLowerBound());
-}
-function setQueryLowerBound(x: BigNumber|number) {
-  _setQueryLowerBound(bigNumberToNumber(x));
-}
-
 /** @description convenience function for drilling down to the actual address */
 const getAddr = async (acc: AccountTransferable): Promise<Address> => {
   if ( typeof acc === 'string' ) { return acc; }
@@ -186,7 +191,7 @@ const rejectInvalidReceiptFor = async (txHash: Hash, r: TransactionReceipt|undef
     !r.status ? reject(`Transaction: ${txHash} was reverted by EVM\n${r}`) :
     resolve(r));
 
-const fetchAndRejectInvalidReceiptFor = async (txHash: Hash) => {
+const fetchAndRejectInvalidReceiptFor = async (txHash: Hash): Promise<TransactionReceipt> => {
   const provider = await getProvider();
   const r = await provider.getTransactionReceipt(txHash);
   return await rejectInvalidReceiptFor(txHash, r);
@@ -207,186 +212,105 @@ const sendRecv_prepArg = (lct:BigNumber, args:Array<any>, tys:Array<any>, evt_cn
   return arg_ty.munge([lct, args_msg]);
 };
 
-// ****************************************************************************
-// Event Cache
-// ****************************************************************************
+type EQInitArgs = {
+  ctcAddress: Address,
+  creationBlock: BigNumber,
+};
+type EventQueue = IEventQueue<EQInitArgs, TransactionReceipt, TransactionReceipt>;
 
-const getMinBlockWithLogIndex = (logIndex: any) => (allLogs: any[]) => {
-  const logs = allLogs.filter(log => log.logIndex > (logIndex[log.blockNumber] || 0) );
-  return logs.reduce((acc: Log, x: Log) =>
-    (x.blockNumber == acc.blockNumber)
-      ? (x.logIndex > (logIndex[x.blockNumber] || 0) && x.logIndex < acc.logIndex ? x : acc)
-      : (x.blockNumber.toString() < acc.blockNumber.toString() ? x : acc), logs[0]);
-}
+const bnMax = (x:BigNumber, y:BigNumber): BigNumber =>
+  x.lt(y) ? y : x;
+const bnMin = (x:BigNumber, y:BigNumber): BigNumber =>
+  x.lt(y) ? x : y;
 
-const getMinBlock = (logs: any[]) =>
-  logs.reduce((acc: Log, x: Log) =>
-    (x.blockNumber == acc.blockNumber)
-      ? (x.logIndex < acc.logIndex ? x : acc)
-      : (x.blockNumber.toString() < acc.blockNumber.toString() ? x : acc), logs[0]);
+const getTxnTime = (x:{ blockNumber: number }): BigNumber => bigNumberify(x.blockNumber);
 
-const getMaxBlock = (logs: any[]) =>
-  logs.reduce((acc: Log, x: Log) =>
-    (x.blockNumber == acc.blockNumber)
-      ? (x.logIndex > acc.logIndex ? x : acc)
-      : (x.blockNumber.toString() > acc.blockNumber.toString() ? x : acc), logs[0]);
-
-type QueryResult =
-  | { succ: true, evt: any }
-  | { succ: false, block: number }
-
-type QueryInfo = {
-  fromBlock: number,
-  timeoutAt?: TimeArg,
-  isEventStream?: boolean,
-}
-
-class EventCache {
-  cache: any[] = [];
-
-  theAddress: string|undefined;
-  public currentBlock: number;
-  lastQueryTime: number = 0;
-
-  constructor() {
-    this.currentBlock = _getQueryLowerBound();
-    this.cache = [];
-    this.theAddress = undefined;
-  }
-
-  checkAddress(address: string) {
-    if ( this.theAddress !== undefined ) {
-      assert(address == this.theAddress, `address must match: ${address} != ${this.theAddress}`);
-    } else {
-      this.theAddress = address;
-    }
-  }
-
-  async query(dhead:any, getC: () => Promise<EthersLikeContract>, evt: string, queryInfo: QueryInfo, f = getMinBlock) {
-    const ethersC = await getC();
-    return await this.queryContract(dhead, ethersC.address, ethersC.interface, evt, queryInfo, f);
-  }
-
-  async queryContract(dhead:any, address:string, iface:any, evt: string, queryInfo: QueryInfo, f = getMinBlock) {
-    const topic = iface.getEventTopic(evt);
-    this.checkAddress(address);
-    return await this.query_(dhead, topic, queryInfo, f);
-  }
-
-  async query_(dhead:any, topic: string, queryInfo: QueryInfo, f: ((logs: any[]) => any|undefined)): Promise<QueryResult> {
-    const lab = `EventCache.query`;
-    const { fromBlock, timeoutAt, isEventStream = false } = queryInfo;
-    debug(dhead, lab, { fromBlock, timeoutAt, isEventStream, topic });
-
-    const h = (mode:string): (number | undefined) => timeoutAt && timeoutAt[0] === mode ? bigNumberToNumber(timeoutAt[1]) : undefined;
-    const maxTime = h('time');
-    const maxSecs = h('secs');
-    debug(dhead, lab, { maxTime, maxSecs });
-
-    // Clear cache of stale transactions
-    // Cache's min bound will be `fromBlock`
-    const showCache = (when:string) => {
-      debug(dhead, lab, { when, current: this.currentBlock, len: this.cache.length});
-    };
-    showCache(`pre from`);
-    this.cache = this.cache.filter((x) => x.blockNumber >= fromBlock);
-    showCache(`post from`);
-
-    // Search for target
-    const searchLogs = async (source: any): Promise<any[]> => {
-      const res = [];
-      for ( const x of source ) {
-        const block = x.blockNumber;
-        if ( x.topics.includes(topic.toString())
-            && (maxTime ? block <= maxTime : true)
-            && (maxSecs ? (await getTimeSecs(block)).lte(maxSecs) : true) ) {
-            res.push(x);
-        }
-      }
-      return res;
-    };
-
-    const initLogs = await searchLogs(this.cache);
-    if(initLogs.length > 0) {
-      debug(dhead, lab, `in cache`);
-      const evt = f(initLogs);
-      if (evt !== undefined) {
-        return { succ: true, evt };
-      }
-    }
-    debug(dhead, lab, `not in cache`);
-
-    const failed = (): {succ: false, block: number} => ({ succ: false, block: this.currentBlock });
-    if ( this.cache.length != 0 && !isEventStream ) {
-      debug(`cache not empty, contains some other message from future, not querying...`, this.cache);
-      return failed();
-    }
-
-    // If no results, then contact network
-    debug(dhead, lab, `querying`);
-
-    const leftOver = this.lastQueryTime + 1000 - Date.now();
-    if ( leftOver > 0 ) {
-      debug(dhead, lab, `waiting...`, leftOver);
-      await Timeout.set(leftOver);
-    }
-    this.lastQueryTime = Date.now();
-
+const newEventQueue = (): EventQueue => {
+  const getTxns = async (lab:string, initArgs:EQInitArgs, ctime: BigNumber, howMany: number): Promise<EQGetTxnsR<TransactionReceipt>> => {
+    const dhead = `${lab} getTxns`;
+    const { ctcAddress: address, creationBlock } = initArgs;
+    const fromBlock = ctime.eq(0) ? creationBlock : ctime.add(1);
+    const qw = getValidQueryWindow();
+    debug(dhead, { address, fromBlock, qw, howMany });
+    if ( howMany > 0 ) { await Timeout.set(1000); }
+    let toBlock: BigNumber|undefined = await getNetworkTime();
+    if ( qw !== true ) { toBlock = bnMin(toBlock, fromBlock.add(qw)); }
+    const toBlock_act = bnMax(fromBlock, toBlock);
     const provider = await getProvider();
-    const fromBlock_act = Math.max(fromBlock, this.currentBlock);
-    const currentTime = await getNetworkTimeNumber();
-    debug(dhead, lab, { fromBlock_act, currentTime });
-    if ( fromBlock_act > currentTime ) {
-      debug(dhead, lab, `no contact, from block in future`);
-      return failed();
-    }
-
-    const validQueryWindow = getValidQueryWindow();
-    const toBlock =
-      validQueryWindow === true
-      ? currentTime
-      : Math.min(currentTime, fromBlock_act + validQueryWindow);
-    debug(dhead, lab, { fromBlock_act, currentTime, toBlock });
-    assert(fromBlock <= toBlock, "from <= to");
-
-    let res = [];
+    debug(dhead, { toBlock, toBlock_act });
+    let logs = [];
     try {
-      res = await provider.getLogs({
-        fromBlock: fromBlock_act,
-        toBlock,
-        address: this.theAddress
+      logs = await provider.getLogs({
+        fromBlock: bigNumberToNumber(fromBlock),
+        toBlock: bigNumberToNumber(toBlock_act),
+        address
       });
     } catch (e) {
-      debug(dhead, lab, 'getLogs err', e);
-      return failed();
-    }
-
-    debug(dhead, lab, 'getLogs succ', res);
-    this.cache = res;
-    this.currentBlock =
-      (this.cache.length == 0)
-        ? toBlock
-        : getMaxBlock(this.cache).blockNumber;
-    debug(dhead, lab, 'got network', this.currentBlock);
-
-    // Check for pred again
-    const foundLogs = await searchLogs(this.cache);
-    if ( foundLogs.length > 0 ) {
-      debug(dhead, lab, `in network`);
-      const evt = f(foundLogs);
-      if (evt !== undefined) {
-        return { succ: true, evt };
+      const es = `${e}`;
+      debug(dhead, `err`, e, es);
+      if ( es.includes('Unable to find block hash') ) {
+        debug(dhead, 'ignore');
+        toBlock = undefined;
+      } else {
+        throw e;
       }
     }
+    debug(dhead, {logs});
+    const txn_hm: {[key: string]: boolean} = {};
+    logs.forEach((x:Log) => { txn_hm[x.transactionHash] = true; });
+    const txn_hs = Object.keys(txn_hm);
+    debug(dhead, {txn_hs});
+    const txns: Array<TransactionReceipt> = await Promise.all(txn_hs.map((x:string): Promise<TransactionReceipt> => provider.getTransactionReceipt(x)));
+    debug(dhead, {txns});
+    return { txns, gtime: toBlock };
+  };
+  return makeEventQueue<EQInitArgs, TransactionReceipt, TransactionReceipt>({
+    raw2proc: ((x) => x),
+    alwaysIgnored: (x) => (void(x), false),
+    getTxns, getTxnTime,
+  });
+};
 
-    debug(dhead, lab, `not in network`);
-    return failed();
-  }
-}
-
-// ****************************************************************************
-// Common Interface Exports
-// ****************************************************************************
+interface LogRep {
+  parse: (log: Log) => (any[]|undefined),
+  parseA: (txn: TransactionReceipt) => (any[]|undefined),
+  parseAb: (txn: TransactionReceipt) => boolean,
+};
+const makeLogRep = ( getCtcAddress: (() => Address), iface:Interface, evt:string, tys?:AnyETH_Ty[]|undefined): LogRep => {
+  debug(`makeLogRep`, { evt, tys });
+  const parse = (log:Log): (any[]|undefined) => {
+    const { address } = log;
+    const ctcAddress = getCtcAddress();
+    debug(`parse`, { evt, log, ctcAddress, address });
+    if ( ! addressEq(address, ctcAddress) ) { return undefined; }
+    const { name, args} = iface.parseLog(log);
+    debug(`parse`, {  name, args });
+    if ( name !== evt ) { return undefined; }
+    if ( tys === undefined ) { return args as any[]; }
+    const unargs = tys.map((ty, i) => ty.unmunge(args[i]));
+    debug(`parse`, { unargs });
+    return unargs;
+  };
+  const parseA = (txn:TransactionReceipt): (any[]|undefined) => {
+    for ( const l of txn.logs ) {
+      const p = parse(l);
+      debug(`parseA`, { l, p });
+      if ( p ) { return p; }
+    }
+    return undefined;
+  };
+  const parseAb = (txn:TransactionReceipt) => parseA(txn) !== undefined;
+  return { parse, parseA, parseAb };
+};
+const makeLogRepFor = ( getCtcAddress: (() => Address), iface:Interface, i:number, tys:AnyETH_Ty[]) => {
+  debug(`hasLogFor`, i, tys);
+  return makeLogRep( getCtcAddress, iface, reachEvent(i), [
+    T_Tuple([T_UInt, T_Tuple(tys)])
+  ]);
+};
+const makeHasLogFor = ( getCtcAddress: (() => Address), iface:Interface, i:number, tys:AnyETH_Ty[]) => {
+  return makeLogRepFor(getCtcAddress, iface, i, tys).parseAb;
+};
 
 const { randomUInt, hasRandom } = makeRandom(32);
 
@@ -421,31 +345,31 @@ const balanceOf_token = async (networkAccount: NetworkAccount, address: Address,
 };
 
 const doTxn = async (
-  dhead: any,
+  dhead: string,
   tp: Promise<any>,
-): Promise<any> => {
-  debug({...dhead, step: `pre call`});
+): Promise<TransactionReceipt> => {
+  debug(dhead, { step: `pre call`});
   const rt = await tp;
-  debug({...dhead, rt, step: `pre wait`});
+  debug(dhead, {rt, step: `pre wait`});
   const rm = await rt.wait();
-  debug({...dhead, rt, rm, step: `pre receipt`});
+  debug(dhead, {rt, rm, step: `pre receipt`});
   assert(rm !== null, `receipt wait null`);
   const ro = await fetchAndRejectInvalidReceiptFor(rm.transactionHash);
-  debug({...dhead, rt, rm, ro, step: `post receipt`});
+  debug(dhead, {rt, rm, ro, step: `post receipt`});
   return ro;
 };
 
 const doCall = async (
-  dhead: any,
+  dhead: string,
   ctc: EthersLikeContract,
   funcName: string,
   args: Array<any>,
   value: BigNumber,
   gasLimit: BigNumber|undefined,
   storageLimit: BigNumber|undefined,
-): Promise<any> => {
-  const dpre = { ...dhead, funcName, args, value };
-  debug({...dpre, step: `pre call`});
+): Promise<TransactionReceipt> => {
+  const dpre = `${dhead} call ${funcName}`;
+  debug(dpre, {args, value, step: `pre call`});
   let tx: any = { value, gasLimit };
   if (storageLimit !== undefined) { tx = { ...tx, storageLimit }; }
   return await doTxn(
@@ -459,12 +383,12 @@ const transfer = async (
   to: AccountTransferable,
   value: any,
   token: Token|false = false,
-): Promise<any> => {
+): Promise<TransactionReceipt> => {
   const sender = from.networkAccount;
   const receiver = await getAddr(to);
   const valueb = bigNumberify(value);
 
-  const dhead = {kind:'transfer'};
+  const dhead = 'transfer';
   if ( ! token ) {
     const txn = { to: receiver, value: valueb };
     debug('sender.sendTransaction(', txn, ')');
@@ -517,73 +441,51 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     givenInfoP?: Promise<ContractInfo>,
   ): Contract => {
     ensureConnectorAvailable(bin, 'ETH', reachBackendVersion, reachEthBackendVersion);
+    const ABI = JSON.parse(bin._Connectors.ETH.ABI);
+    const iface = new real_ethers.utils.Interface(ABI);
 
-    const makeGetC = (setupViewArgs:SetupViewArgs, eventCache: EventCache, informCreationBlock: ((cb:number) => void)) => {
+    const makeGetC = (setupViewArgs:SetupViewArgs, eq: EventQueue) => {
       const { getInfo } = setupViewArgs;
       let _ethersC: EthersLikeContract | null = null;
       return async (): Promise<EthersLikeContract> => {
         if (_ethersC) { return _ethersC; }
         const info = await getInfo();
-        const { creation_block } =
+        const { creationBlock } =
           await stdVerifyContract( setupViewArgs, (async () => {
-            return await verifyContract_(info, bin, eventCache, label);
+            return await verifyContract_(info, bin, eq, label);
           }));
-        informCreationBlock(creation_block);
-        const address = info;
+        const ctcAddress = info;
+        if ( ! eq.isInited() ) {
+          eq.init({ ctcAddress, creationBlock });
+        }
         debug(label, `contract verified`);
-        const ABI = JSON.parse(bin._Connectors.ETH.ABI);
-        return (_ethersC = new ethers.Contract(address, ABI, networkAccount) as EthersLikeContract);
+        return (_ethersC = new ethers.Contract(ctcAddress, ABI, networkAccount) as EthersLikeContract);
       };
     };
 
     const _setup = (setupArgs: SetupArgs): SetupRes => {
       const { setInfo, getInfo, setTrustedVerifyResult } = setupArgs;
-
-      const eventCache = new EventCache();
+      const eq = newEventQueue();
 
       // Attached state
-      const {getLastBlock, setLastBlock} = (() => {
-        let lastBlock: number | null = null;
-        const setLastBlock = (n: number): void => {
-          if (typeof n !== 'number') { throw Error(`Expected lastBlock number, got ${lastBlock}: ${typeof lastBlock}`) }
-          debug(label, `lastBlock from`, lastBlock, `to`, n);
-          lastBlock = n;
-        };
-        const getLastBlock = async (): Promise<number> => {
-          if (typeof lastBlock === 'number') { return lastBlock; }
-          // This causes lastBlock to be set
-          await getC();
-          return await getLastBlock();
-        }
-        return {getLastBlock, setLastBlock};
-      })();
-
-      const updateLast = (o: {blockNumber?: number}): void => {
-        if (!o.blockNumber) {
-          console.log(o);
-          throw Error(`Expected blockNumber in ${Object.keys(o)}`);
-        }
-        setLastBlock(o.blockNumber);
-      };
-
-      const getC = makeGetC(setupArgs, eventCache, setLastBlock);
+      const getC = makeGetC(setupArgs, eq);
 
       const callC = async (
         dhead: any, funcName: string, arg: any, pay: PayAmt,
-      ): Promise<any> => {
+      ): Promise<TransactionReceipt> => {
         const [ value, toks ] = pay;
         const ethersC = await getC();
         const zero = bigNumberify(0);
         const actualCall = async () =>
-          await doCall({...dhead, kind:'reach'}, ethersC, funcName, [arg], value, gasLimit, storageLimit);
+          await doCall(`${dhead} callC::reach`, ethersC, funcName, [arg], value, gasLimit, storageLimit);
         const callTok = async (tok:Token, amt:BigNumber) => {
           const tokBalance = await balanceOf_token(networkAccount, address, tok);
           debug({...dhead, kind:'token'}, 'balanceOf', tokBalance);
           assert(tokBalance.gte(amt), `local account token balance is insufficient: ${tokBalance} < ${amt}`);
           // @ts-ignore
           const tokCtc = new ethers.Contract(tok, ERC20_ABI, networkAccount);
-          await doCall({...dhead, kind:'token'}, tokCtc, "approve", [ethersC.address, amt], zero, gasLimit, storageLimit); }
-        const maybePayTok = async (i:number): Promise<any> => {
+          await doCall(`${dhead} callC::token`, tokCtc, "approve", [ethersC.address, amt], zero, gasLimit, storageLimit); }
+        const maybePayTok = async (i:number): Promise<TransactionReceipt> => {
           if ( i < toks.length ) {
             const [amt, tok] = toks[i];
             await callTok(tok, amt);
@@ -600,6 +502,16 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         return await maybePayTok(0);
       };
 
+      const codec = real_ethers.utils.defaultAbiCoder;
+      const decodeEm = (ty:AnyETH_Ty, bs:any): any => {
+        const dhead = [label, 'decodeEm'];
+        debug(dhead, ty, bs);
+        const [ de ] = codec.decode([ty.paramType], bs);
+        debug(dhead, de);
+        const un = ty.unmunge(de);
+        debug(dhead, un);
+        return un;
+      };
       const getState = async (vibne:BigNumber, tys:Array<AnyETH_Ty>): Promise<Array<any>> => {
         const ethersC = await getC();
         const [ vibna, vsbs ] = await ethersC["_reachCurrentState"]();
@@ -607,9 +519,22 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         if ( ! vibne.eq(vibna) ) {
           throw Error(`expected state ${vibne}, got ${vibna}`);
         }
-        const codec = real_ethers.utils.defaultAbiCoder;
-        const res = codec.decode(tys.map((x:AnyETH_Ty) => x.paramType), vsbs);
+        const ty = T_Tuple(tys);
+        const res = decodeEm(ty, vsbs);
         debug(`getState`, res);
+        // @ts-ignore
+        return res;
+      };
+      const apiMapRef = (i:number, ty:AnyETH_Ty): MapRefT<any> => async (f:string): Promise<MaybeRep<any>> => {
+        const dhead = [label, 'apiMapRef'];
+        debug(dhead, {i, ty, f});
+        const ethersC = await getC();
+        const mf = `_reachMap${i}Ref`;
+        debug(dhead, mf);
+        const mfv = await ethersC[mf](f);
+        debug(dhead, { mfv });
+        const res = ty.unmunge(mfv);
+        debug(dhead, res);
         // @ts-ignore
         return res;
       };
@@ -642,19 +567,22 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         }
 
         const funcName = reachPublish(funcNum);
-        const dhead = [label, 'send', funcName, timeoutAt, 'SEND'];
-        const trustedRecv = async (ok_r:any): Promise<Recv> => {
+        const dhead = `${label} send ${funcName} ${timeoutAt}`;
+        const trustedRecv = async (ok_r:TransactionReceipt): Promise<Recv> => {
           const didSend = true;
+          const ethersC = await getC();
+          const correctStep = makeHasLogFor((() => ethersC.address), iface, funcNum, out_tys);
+          eq.pushIgnore(correctStep);
           return await recvFrom({dhead, out_tys, didSend, funcNum, ok_r});
         };
 
-        debug(...dhead, 'ARGS', args);
+        debug(dhead, 'ARGS', args);
         const arg = sendRecv_prepArg(lct, args, tys, evt_cnt);
-        debug(...dhead, 'START', arg);
+        debug(dhead, 'START', arg);
 
         if ( funcNum == 0 ) {
-          debug(...dhead, "deploying");
-          const { ABI, Bytecode } = bin._Connectors.ETH;
+          debug(dhead, "deploying");
+          const { Bytecode } = bin._Connectors.ETH;
           debug(label, 'making contract factory');
           const factory = new ethers.ContractFactory(ABI, Bytecode, networkAccount);
           debug(label, `deploying factory`);
@@ -668,12 +596,12 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           const contract = await factory.deploy(arg, overrides);
           debug(label, `waiting for receipt:`, contract.deployTransaction.hash);
           const deploy_r = await contract.deployTransaction.wait();
-          const info: ContractInfo = contract.address;
-          debug(label, `deploying factory; done:`, info);
-          const creation_block = deploy_r.blockNumber;
-          debug(label, `got receipt;`, creation_block);
-          setTrustedVerifyResult({ creation_block });
-          setInfo(info);
+          const ctcAddress: ContractInfo = contract.address;
+          const creationBlock = bigNumberify(deploy_r.blockNumber);
+          debug(label, `deployed`, { ctcAddress, creationBlock });
+          eq.init({ ctcAddress, creationBlock });
+          setTrustedVerifyResult({ creationBlock });
+          setInfo(ctcAddress);
           return await trustedRecv(deploy_r);
         }
 
@@ -688,23 +616,23 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             return await doRecv(false, false);
           }
           if ( ! soloSend && ! await canIWin(lct) ) {
-            debug(...dhead, `CANNOT WIN`);
+            debug(dhead, `CANNOT WIN`);
             return await doRecv(false, false);
           }
           let ok_r;
           try {
-            debug(...dhead, 'ARG', arg, pay);
+            debug(dhead, 'ARG', arg, pay);
             ok_r = await callC(dhead, funcName, arg, pay);
           } catch (e:any) {
-            debug(...dhead, `ERROR`, { stack: e.stack }, e);
+            debug(dhead, `ERROR`, { stack: e.stack }, e);
             if ( ! soloSend ) {
-              debug(...dhead, `LOST`);
+              debug(dhead, `LOST`);
               return await doRecv(false, false);
             }
 
             if ( timeoutAt ) {
               // If there can be a timeout, then keep waiting for it
-              debug(...dhead, `CONTINUE`);
+              debug(dhead, `CONTINUE`);
               continue;
             } else {
               // Otherwise, something bad is happening
@@ -712,51 +640,27 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             }
           }
 
-          debug(...dhead, 'SUCC');
+          debug(dhead, 'SUCC');
           return await trustedRecv(ok_r);
         }
       };
 
       type RecvFromArgs = {
-        dhead: any,
+        dhead: string,
         out_tys: Array<ConnectorTy>,
         didSend: boolean,
         funcNum: number,
-        ok_r: any,
+        ok_r: TransactionReceipt,
       };
       const recvFrom = async (rfargs:RecvFromArgs): Promise<Recv> => {
         const { dhead, out_tys, didSend, funcNum, ok_r } = rfargs;
-        const ok_evt = reachEvent(funcNum);
         const theBlock = ok_r.blockNumber;
         debug(dhead, `AT`, theBlock);
-        updateLast(ok_r);
         const ethersC = await getC();
-        const getLog = async (l_evt:string, l_ctc:any, fiddle: ((x:any) => any)): Promise<any> => {
-          debug(dhead, `getLog`, { l_evt, l_ctc });
-          const l_args_abi = ethersC.interface.getEvent(l_evt).inputs;
-          const addr_e = ethersC.address;
-          for ( const l of ok_r.logs ) {
-            const addr_a = l.address;
-            if ( ! addressEq(addr_a, addr_e) ) {
-              debug(dhead, 'getLog', 'skip', { addr_a, addr_e });
-              continue;
-            }
-            const { name, args } = ethersC.interface.parseLog(l);
-            debug(dhead, `getLog`, { name });
-            if ( name === l_evt ) {
-              const l_edl = l_args_abi.map(a => args[a.name]);
-              const l_edp = l_edl[0];
-              const l_ed = fiddle(l_edp);
-              debug(dhead, `getLog`, { l_edl, l_edp, l_ed });
-              const l_edu = l_ctc.unmunge(l_ed);
-              debug(dhead, `getLog`, { l_edu });
-              return l_edu;
-            }
-          }
-          throw Error(`no log for ${l_evt}`);
-        };
-
-        const data = await getLog(ok_evt, T_Tuple(out_tys), ((x:any) => x[1]));
+        const getCtcAddress = () => ethersC.address;
+        const ep = makeLogRepFor(getCtcAddress, iface, funcNum, out_tys).parseA(ok_r);
+        if ( ! ep ) { throw Error(`no event log`); }
+        const data = ep[0][1];
 
         debug(dhead, `OKAY`, data);
         const theBlockBN = bigNumberify(theBlock);
@@ -766,7 +670,14 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const getOutput = async (o_mode:string, o_lab:string, l_ctc:any, o_val:any): Promise<any> => {
           void(o_mode);
           void(o_val);
-          return await getLog(reachOutputEvent(o_lab), l_ctc, ((x:any) => x));
+          const l_evt = reachOutputEvent(o_lab);
+          const lr = makeLogRep(getCtcAddress, iface, l_evt, [ l_ctc ]);
+          for ( const l of ok_r.logs ) {
+            const r = lr.parse(l);
+            debug(dhead, 'getOutput', l_evt, r);
+            if ( r ) { return r[0]; }
+          }
+          throw Error(`no log for ${l_evt}`);
         };
         return {
           data, getOutput, from, didSend,
@@ -776,44 +687,37 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         };
       };
 
+      // XXX stupidly the same as ALGO.ts's version
       const recv = async (rargs:RecvArgs): Promise<Recv> => {
-        const { funcNum, out_tys, didSend, waitIfNotPresent, timeoutAt } = rargs;
-        const isCtor = (funcNum == 0)
-        const lastBlock = await getLastBlock();
-        const ok_evt = reachEvent(funcNum);
-        const dhead = { t: 'recv', label, ok_evt };
-        debug(dhead, `START`);
-
-        // look after the last block
-        const fromBlock: number =
-          lastBlock + (isCtor ? 0 : 1);
-        while ( true ) {
-          const res = await eventCache.query(dhead, getC, ok_evt, { fromBlock, timeoutAt });
-          if ( ! res.succ ) {
-            const currentTime = res.block;
-            debug(dhead, 'TIMECHECK', {timeoutAt, currentTime});
-            if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, currentTime + 1) ) {
-              debug(dhead, 'TIMEOUT');
-              return { didTimeout: true };
-            }
-            if ( waitIfNotPresent ) {
-              await waitUntilTime(bigNumberify(currentTime + 1));
-            } else {
-              // Ideally we'd wait until after time has advanced
-              await Timeout.set(500);
-            }
-            continue;
-          } else {
-            const ok_e = res.evt;
-            debug(dhead, `OKAY`);
-            const txnHash = ok_e.transactionHash;
-            const ok_r = await fetchAndRejectInvalidReceiptFor(txnHash);
-            debug(dhead, 'ok_r', ok_r);
-            const ok_t = await (await getProvider()).getTransaction(txnHash);
-            debug(dhead, 'ok_t', ok_t);
-
-            return await recvFrom({dhead, out_tys, didSend, funcNum, ok_r});
+        const { funcNum, out_tys, didSend, timeoutAt, waitIfNotPresent } = rargs;
+        const funcName = `m${funcNum}`;
+        const dhead = `${label}: recv ${funcName} ${timeoutAt}`;
+        debug(dhead, 'start');
+        const ethersC = await getC();
+        const didTimeout = async (cr_bn: BigNumber): Promise<boolean> => {
+          const cr = bigNumberToNumber(cr_bn);
+          debug(dhead, 'TIMECHECK', {timeoutAt, cr_bn, cr});
+          const crp = cr + 1;
+          const r = await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, crp);
+          debug(dhead, 'TIMECHECK', {r, waitIfNotPresent});
+          if ( !r && waitIfNotPresent ) {
+            await waitUntilTime(bigNumberify(crp));
           }
+          return r;
+        };
+        const res = await eq.peq(dhead, didTimeout);
+        debug(dhead, `res`, res);
+        const correctStep = makeHasLogFor((() => ethersC.address), iface, funcNum, out_tys);
+        const good = (! res.timeout) && correctStep(res.txn);
+        if ( good ) {
+          await eq.deq(dhead);
+          const txn = res.txn;
+          return await recvFrom({dhead, out_tys, didSend, funcNum, ok_r: txn});
+        } else if ( timeoutAt ) {
+          debug(dhead, `timeout`);
+          return { didTimeout: true };
+        } else {
+          throw Error(`impossible: not good, but no timeout`);
         }
       };
 
@@ -821,12 +725,12 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       const getContractAddress = getInfo;
       const getContractInfo = getInfo;
 
-      return { getContractInfo, getContractAddress, sendrecv, recv, getState };
+      return { getContractInfo, getContractAddress, sendrecv, recv, getState, apiMapRef };
     };
 
     const setupView = (setupViewArgs: SetupViewArgs) => {
-      const eventCache = new EventCache();
-      const getC = makeGetC(setupViewArgs, eventCache, ((cb) => { void(cb); }));
+      const eq = newEventQueue();
+      const getC = makeGetC(setupViewArgs, eq);
       const viewLib: IViewLib = {
         viewMapRef: async (...args: any): Promise<any> => {
           void(args);
@@ -859,63 +763,24 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     };
 
     const setupEvents = (setupArgs: SetupEventArgs) => {
-      const eventCache = new EventCache(); // shared across getEvents
-      let time = bigNumberify(0);
-      const getC = makeGetC(setupArgs, eventCache, (cb) => {
-        time = bigNumberify(cb);
-      });
-      const createEventStream = (event: string, tys: any[]) => {
-        void tys;
-        let logIndex: any = {};
-        let lastLog: any = undefined;
-
-        const seek = (t: Time) => {
-          debug("EventStream::seek", t);
-          time = t;
-          logIndex[time.toNumber()] = 0;
-        }
-
-        const next = async () => {
-          const dhead = "EventStream::next";
-          debug(dhead, time);
-          const ctc = await getC();
-          let res: QueryResult = { succ: false, block: 0 } ;
-          while (!res.succ) {
-            res = await eventCache.query(dhead, getC, event, { fromBlock: time.toNumber(), isEventStream: true }, getMinBlockWithLogIndex(logIndex));
-            if (!res.succ) { await Timeout.set(5000); }
-          }
-          const { evt } = res;
-          const blockTime = bigNumberify(evt.blockNumber);
-          const blockLogIdx = evt.logIndex;
-          logIndex[blockTime.toNumber()] = blockLogIdx;
-          const { args } = ctc.interface.parseLog(evt);
-          const thisArgs = tys.map((ty, i) => ty.unmunge(args[i]));
-          debug(dhead + ` parsed log`, thisArgs, blockTime);
-          lastLog = { when: blockTime, what: thisArgs };
-          return lastLog;
-        }
-
-        const seekNow = async () => {
-          time = await getNetworkTime();
-        }
-
-        const lastTime = async () => {
-          const dhead = "EventStream::lastTime";
-          debug(dhead, time);
-          return lastLog?.when;
-        }
-
-        const monitor = async (onEvent: (x: any) => void) => {
-          while (true) {
-            onEvent(await next());
-          }
-        }
-
-        return { lastTime, seek, seekNow, monitor, next };
+      const createEventStream = (evt: string, tys: AnyETH_Ty[]) => {
+        const eq = newEventQueue();
+        const getC = makeGetC(setupArgs, eq);
+        let ca: Address = '';
+        const sync = async () => {
+          const c = await getC();
+          ca = c.address;
+          return;
+        };
+        const getLogs = (r:TransactionReceipt) => r.logs;
+        const lr = makeLogRep( (() => ca), iface, evt, tys);
+        const parseLog = lr.parse;
+        return makeEventStream<EQInitArgs, TransactionReceipt, TransactionReceipt, Log>({
+          eq, getTxnTime, sync, getNetworkTime, getLogs, parseLog,
+        });
       };
-
       return { createEventStream };
-    }
+    };
 
     return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
   };
@@ -1067,15 +932,15 @@ const wait = async (delta: BigNumber, onProgress?: OnProgress): Promise<BigNumbe
 // Verify that:
 // * it matches the bytecode you are expecting.
 const verifyContract = async (ctcInfo: ContractInfo, backend: Backend): Promise<VerifyResult> => {
-  return await verifyContract_(ctcInfo, backend, new EventCache(), 'stdlib');
+  return await verifyContract_(ctcInfo, backend, newEventQueue(), 'stdlib');
 }
-const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCache: EventCache, label: string): Promise<VerifyResult> => {
-  const dhead = [ 'verifyContract', label ];
+const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eq: EventQueue, label: string): Promise<VerifyResult> => {
+  const dhead = `${label}: verifyContract`;
   debug(dhead, {ctcInfo});
   const { ABI, Bytecode } = backend._Connectors.ETH;
-  const address = T_Contract.canonicalize(ctcInfo);
+  const ctcAddress = protect(T_Contract, ctcInfo);
   const iface = new real_ethers.utils.Interface(ABI);
-  debug(dhead, {address});
+  debug(dhead, {ctcAddress});
 
   const chk = (p: boolean, msg: string) => {
     if ( !p ) {
@@ -1086,16 +951,17 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
   // A Reach contract will have a view `_reachCreationTime`
   // where we can see it's creation block. Use this information
   // for querying the contract.
-  let creation_block = 0;
+  let creationBlock:BigNumber = bigNumberify(0);
   try {
     const tmpAccount: Account = await createAccount();
-    const ctc = new ethers.Contract(address, ABI, tmpAccount.networkAccount);
+    const ctc = new ethers.Contract(ctcAddress, ABI, tmpAccount.networkAccount);
     const creation_time_raw = await ctc["_reachCreationTime"]();
     const creation_time = T_UInt.unmunge(creation_time_raw);
-    creation_block = bigNumberify(creation_time).toNumber();
+    creationBlock = bigNumberify(creation_time);
   } catch (e) {
-    chk(false, `Failed to call the '_reachCreationTime' method on the contract ${address} during contract bytecode verification. This could mean that there is a general network fault, or it could mean that the given address is not a Reach contract and does not provide this function. The internal error we caught is: ${e}`);
+    chk(false, `Failed to call the '_reachCreationTime' method on the contract ${ctcAddress} during contract bytecode verification. This could mean that there is a general network fault, or it could mean that the given address is not a Reach contract and does not provide this function. The internal error we caught is: ${e}`);
   }
+  eq.init({ ctcAddress, creationBlock });
 
   const chkeq = (a: any, e:any, msg:string) => {
     const as = JSON.stringify(a);
@@ -1103,30 +969,25 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
     chk(as === es, `${msg}: expected ${es}, got ${as}`);
   };
 
-  const provider = await getProvider();
-  const now = await getNetworkTimeNumber();
-  const lookupLog = async (event:string): Promise<any> => {
-    debug(dhead, 'lookupLog', {event, now});
-    while ( eventCache.currentBlock <= now ) {
-      const res = await eventCache.queryContract(dhead, address, iface, event, { fromBlock: creation_block, timeoutAt: [ 'time', bigNumberify(now) ] });
-      if ( ! res.succ ) { continue; }
-      return res.evt;
-    }
-    chk(false, `Contract was claimed to be deployed, but the current block is ${now} (cached @ ${eventCache.currentBlock}) and it hasn't been deployed yet.`);
-  };
-  const e0log = await lookupLog(reachEvent(0));
-
-  debug(dhead, `checking code...`);
-  const dt = await provider.getTransaction( e0log.transactionHash );
-  debug(dhead, 'dt', dt);
-
-  const e0p = iface.parseLog(e0log);
-  debug(dhead, {e0p});
-  const ctorArg = e0p.args;
-  debug(dhead, {ctorArg});
+  const r0 = await eq.peq(dhead, (async (bn:BigNumber) => bn.gt(creationBlock)));
+  debug(dhead, {r0});
+  if ( r0.timeout ) {
+    chk(false, `Contract was claimed to be deployed, but the current block is ${r0.time} and it hasn't been deployed yet.`);
+    throw Error(`impossible`);
+  }
+  const e0rec = r0.txn;
+  const lr = makeLogRep(() => ctcAddress, iface, reachEvent(0));
+  const ctorArg = lr.parseA(e0rec);
+  debug(dhead, {e0rec, ctorArg});
+  if ( ! ctorArg ) {
+    chk(false, `Contract deployment doesn't have first event`);
+  }
 
   // We don't actually check the live contract code, but instead compare what
   // we would have done to deploy it with how it was actually deployed.
+  const provider = await getProvider();
+  const dt = await provider.getTransaction(e0rec.transactionHash);
+  debug(dhead, {dt});
   const actual = dt.data;
   const expected = Bytecode + iface.encodeDeploy(ctorArg).slice(2);
   chkeq(actual, expected, `Contract bytecode does not match expected bytecode.`);
@@ -1135,7 +996,7 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eventCac
   // that the code is correct and we know that the code mandates the way that
   // those things are initialized
 
-  return { creation_block };
+  return { creationBlock };
 };
 
 /**
@@ -1215,6 +1076,16 @@ async function launchToken (accCreator:Account, name:string, sym:string, opts:an
   return { name, sym, id, mint, optOut };
 };
 
+function unsafeGetMnemonic(acc: Account|NetworkAccount): string {
+  // @ts-ignore
+  const networkAccount: NetworkAccount = acc.networkAccount | acc;
+  if (networkAccount._mnemonic) {
+    return networkAccount._mnemonic().phrase;
+  } else {
+    throw Error(`unsafeGetMnemonic: Secret key not accessible for account`);
+  }
+}
+
 // TODO: restore type ann once types are in place
 // const ethLike: EthLike = {
 const ethLike = {
@@ -1251,6 +1122,7 @@ const ethLike = {
   minimumBalance,
   formatCurrency,
   formatAddress,
+  unsafeGetMnemonic,
   launchToken,
   reachStdlib,
 };

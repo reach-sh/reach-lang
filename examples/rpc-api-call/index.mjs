@@ -6,7 +6,9 @@ import { mkAssertEq } from './common.mjs';
 
   const sbal         = await rpc('/stdlib/parseCurrency', 100);
   const [ accAlice ] = await rpc('/stdlib/newTestAccounts', 1, sbal);
+  console.log({accAlice});
   const ctcAlice     = await rpc('/acc/contract', accAlice);
+  console.log({ctcAlice});
   const accs         = [ accAlice ];
   const ctcs         = [ ctcAlice ];
   const assertEq     = mkAssertEq(rpc);
@@ -36,8 +38,11 @@ import { mkAssertEq } from './common.mjs';
   };
 
   await Promise.all([
-    rpcCallbacks('/backend/Alice', ctcAlice, {}),
-    user('Bob'),
+    rpcCallbacks('/backend/Alice', ctcAlice, {
+      deployed: async () => {
+        await user('Bob');
+      },
+    }),
   ]);
 
   await Promise.all([

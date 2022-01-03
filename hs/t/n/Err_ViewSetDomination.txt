@@ -4,7 +4,7 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "A" is honest
 Checked 15 theorems; No failures!
-reachc: error[REP0001]: Cannot set the view "V".iV because it does not dominate any `commit`s
+reachc: error[REP0001]: The value the view "V".iV is set to will never be observable
 
   ./Err_ViewSetDomination.rsh:20:13:application
 

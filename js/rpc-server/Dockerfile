@@ -1,7 +1,7 @@
 ARG        RUNNER_VERSION
 
 # hadolint ignore=DL3006
-FROM       $RUNNER_VERSION
+FROM reachsh/runner:latest
 
 RUN apk add make curl bash
 COPY Makefile.docker ./Makefile

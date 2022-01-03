@@ -10,12 +10,12 @@ const numOfPlayers = 2;
   const fmt = (x) => stdlib.formatCurrency(x, 4);
   const getBalance = async (who) => fmt(await stdlib.balanceOf(who));
 
-  const accSponsor = await stdlib.newTestAccount(startingBalance);
-  const accPlayer_arr = await Promise.all(
-    Array.from({ length: numOfPlayers }, () =>
-      stdlib.newTestAccount(startingBalance)));
+  const [ accSponsor, ...accPlayer_arr ] =
+    await stdlib.newTestAccounts(numOfPlayers+1, startingBalance);
+  accSponsor.setDebugLabel('Sponsor');
+  accPlayer_arr.forEach((acc, idx) => acc.setDebugLabel(`Player${idx}`));
 
-  const ctcSponsor = accSponsor.deploy(backend);
+  const ctcSponsor = accSponsor.contract(backend);
   const ctcInfo = ctcSponsor.getInfo();
 
   await Promise.all([
@@ -39,27 +39,27 @@ const numOfPlayers = 2;
     await Promise.all(
     accPlayer_arr.map(async (accPlayer, i) => {
       const before = await getBalance(accPlayer);
-      const ctcPlayer = accPlayer.attach(backend, ctcInfo);
+      const ctcPlayer = accPlayer.contract(backend, ctcInfo);
       let bought = false;
       return backend.Player(ctcPlayer, {
         ...stdlib.hasRandom,
         showOutcome: (async (addr) => {
           const after = await getBalance(accPlayer);
-          console.log(`Player ${i} saw they ${stdlib.addressEq(addr, accPlayer) ? 'won' : 'lost'}; balance: ${before} => ${after}`);
+          console.log(`Player${i} saw they ${stdlib.addressEq(addr, accPlayer) ? 'won' : 'lost'}; balance: ${before} => ${after}`);
         }),
         showWinner: (async (ticket) =>
           void(ticket)),
         shouldBuy: (async (ticketPrice, ticketr) => {
           if ( bought ) { return false; }
-          console.log(`Player ${i} trying to buy a ticket for ${fmt(ticketPrice)}`);
+          console.log(`Player${i} trying to buy a ticket for ${fmt(ticketPrice)}`);
           return true;
         }),
         didBuy: (async () => {
-          console.log(`Player ${i} bought a ticket`);
+          console.log(`Player${i} bought a ticket`);
           bought = true;
         }),
         didReturn: (async (ticket) => {
-          console.log(`Player ${i} returned and revealed ticket #${ticket}`);
+          console.log(`Player${i} returned and revealed ticket #${ticket}`);
         }),
       });
     })

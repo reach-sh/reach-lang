@@ -2,7 +2,7 @@
 
 export const main = Reach.App(() => {
   const A = Participant('Alice', { ...hasConsoleLogger });
-  deploy();
+  init();
 
   const o = Data({
     Some: Array,

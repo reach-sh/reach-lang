@@ -7,7 +7,7 @@ import * as backend from './build/index.main.mjs';
   const smallest = stdlib.parseCurrency(1);
 
   const parent = await stdlib.newTestAccount(startingBalance);
-  const parentCtc = parent.deploy(backend);
+  const parentCtc = parent.contract(backend);
   console.log(`Parent deploys the contract.`);
   const parentInteract = {
     allowance: () => {
@@ -24,7 +24,7 @@ import * as backend from './build/index.main.mjs';
   const parentP = backend.Parent(parentCtc, parentInteract);
 
   const child = await stdlib.newTestAccount(startingBalance);
-  const childCtc = child.attach(backend, parentCtc.getInfo());
+  const childCtc = child.contract(backend, parentCtc.getInfo());
   const childInteract = {
     request: (balance) => {
       const mid =

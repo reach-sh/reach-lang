@@ -79,9 +79,9 @@ const shouldFail = async (fp) => {
       await stdlib.transfer(accBob, accAlice, amtB, tokenB.id);
     } else {
       console.log(`Alice will deploy the Reach DApp.`);
-      const ctcAlice = accAlice.deploy(backend);
+      const ctcAlice = accAlice.contract(backend);
       console.log(`Bob attaches to the Reach DApp.`);
-      const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+      const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
 
       let succ = undefined;
       const Common = (who) => ({

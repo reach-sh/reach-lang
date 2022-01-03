@@ -13,8 +13,8 @@ import * as backend from './build/index.main.mjs';
     stdlib.newTestAccount(startingBalance),
     stdlib.newTestAccount(startingBalance),
   ]);
-  const ctcAlice = accAlice.deploy(backend);
-  const ctcBob = accBob.attach(backend, ctcAlice.getInfo());
+  const ctcAlice = accAlice.contract(backend);
+  const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
 
   const common = (Who) => ({
     get: (() => Who.length),

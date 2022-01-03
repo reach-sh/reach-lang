@@ -12,7 +12,7 @@ export const main = Reach.App(() => {
   const Bob   = Participant('Bob', {
     ...Player,
   });
-  deploy();
+  init();
 
   Alice.only(() => {
     const handAlice = declassify(interact.getHand());

@@ -2,7 +2,7 @@
 export const main = Reach.App(() => {
   const A = Participant('A', {});
   const P = API('P', { get: Fun([], UInt) });
-  deploy();
+  init();
   A.publish();
   const [x] = parallelReduce([0])
     .invariant(balance() == 0)

@@ -10,7 +10,7 @@ export const main =
   Reach.App(() => {
     const A = makePart();
     const B = Participant('B', {});
-    deploy();
+    init();
     A.only(() => {
       const x = declassify(interact.x);
       assume(x > 0);

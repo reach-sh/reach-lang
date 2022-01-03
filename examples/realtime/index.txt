@@ -4,7 +4,7 @@ Verifying for generic connector
   Verifying when NO participants are honest
   Verifying when ONLY "Alice" is honest
 Checked 22 theorems; No failures!
-warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs
+warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs.
 
   ./index.rsh:21:9:application
 
