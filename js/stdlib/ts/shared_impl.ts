@@ -639,9 +639,23 @@ export const argMax = (xs: any[], f: (_:any) => any) =>
 export const argMin = (xs: any[], f: (_:any) => any) =>
   argHelper(xs, f, (a, b) => a < b);
 
-export const make_newTestAccounts = <X>(newTestAccount: (bal:any) => Promise<X>): ((k:number, bal:any) => Promise<Array<X>>) =>
-  (k:number, bal:any): Promise<Array<X>> =>
-    Promise.all((new Array(k)).fill(1).map((_:any): Promise<X> => newTestAccount(bal)));
+type NewTestAccounts<X> = (k:number, bal:any) => Promise<Array<X>>;
+export const make_newTestAccounts = <X>(newTestAccount: (bal:any) => Promise<X>): {
+  parallel: NewTestAccounts<X>,
+  serial: NewTestAccounts<X>
+} => {
+  const makeArr = (k:number): Array<number> => (new Array(k)).fill(1);
+  const parallel: NewTestAccounts<X> = (k, bal) =>
+    Promise.all(makeArr(k).map((_:any): Promise<X> => newTestAccount(bal)));
+  const serial: NewTestAccounts<X> = async (k, bal) => {
+    const arr = [];
+    for ( let i = 0; i < k; i++ ) {
+      arr.push(await newTestAccount(bal));
+    }
+    return arr;
+  };
+  return { parallel, serial };
+};
 
 export const make_waitUntilX = (label: string, getCurrent: () => Promise<BigNumber>, step: (target:BigNumber) => Promise<BigNumber>) => async (target: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const onProg = onProgress || (() => {});

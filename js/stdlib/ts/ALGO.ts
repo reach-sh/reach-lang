@@ -1629,7 +1629,7 @@ export const newTestAccount = async (startingBalance: any) => {
   return account;
 };
 
-export const newTestAccounts = make_newTestAccounts(newTestAccount);
+export const newTestAccounts = make_newTestAccounts(newTestAccount).parallel;
 
 /** @description the display name of the standard unit of currency for the network */
 export const standardUnit = 'ALGO';

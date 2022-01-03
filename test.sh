@@ -118,7 +118,7 @@ checkteal () {
 #exit 0
 
 jb
-ci CFX ctc-address
+ci CFX cfx-bomb
 exit 0
 ci ALGO nft-auction
 exit 0

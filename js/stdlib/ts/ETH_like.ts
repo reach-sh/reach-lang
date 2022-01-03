@@ -889,7 +889,7 @@ const newTestAccount = async (startingBalance: any): Promise<Account> => {
   }
   return acc;
 };
-const newTestAccounts = make_newTestAccounts(newTestAccount);
+const newTestAccounts = make_newTestAccounts(newTestAccount).serial;
 
 const getNetworkTime = async (): Promise<BigNumber> => {
   return bigNumberify(await getNetworkTimeNumber());
