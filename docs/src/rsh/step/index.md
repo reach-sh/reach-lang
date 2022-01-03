@@ -463,22 +463,22 @@ It accepts an optional bytes argument, which is included in any reported violati
 closeTo( Who, after, nonNetPayAmt )
 ```
 
-@{ref("rsh", "closeTo")} Has participant `{!rsh} Anybody` make a publication, then transfer the `{!rsh} balance()` and the non-network pay amount to `{!rsh} Who` and end the DApp after executing the function `{!rsh} after` in a step.
+@{ref("rsh", "closeTo")} Has participant `{!rsh} Anybody` make a publication, then transfer the `{!rsh} balance()` and the non-network pay amount to `{!rsh} Who` and end the dApp after executing the function `{!rsh} after` in a step.
 
 As an example, codifying the prose above would look like:
 
 ```reach
-// Has participant Who make a publication
-  Who.publish();
-// transfer the balance() and the non-network pay amount to Who
-  transfer([ balance(), ...nonNetPayAmt ]).to(Who);
-  commit();
-// end the DApp after executing the function after in a step
-  after();
-  exit();
+// Has participant `{!rsh} Anybody` make a publication
+Anybody.publish();
+// transfer the balance() and the non-network payment amount to `{!rsh} Who`
+transfer([ balance(), ...nonNetPayAmt ]).to(Who);
+commit();
+// end the dApp after executing the function `after` in a step
+after();
+exit();
 ```
 
-By comparing this example to `closeTo`, you can see that using `closeTo` helps to save additional lines of code.
+By comparing this example to `{!rsh} closeTo`, you can see that using this Reach standard library function helps save thinking, as well as, additional lines of code, reducing the chances of introducing new errors.
 
 The `{!rsh} nonNetPayAmt` parameter should be a pay amount. For example, when closing a program that uses a `{!rsh} Token` `{!rsh} token`, the argument would be `{!rsh} [ [balance(tok), tok] ]`.
 The `{!rsh} after` and `{!rsh} nonNetPayAmt` arguments are optional.
