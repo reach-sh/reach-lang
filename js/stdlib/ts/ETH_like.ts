@@ -67,6 +67,7 @@ export { setQueryLowerBound, getQueryLowerBound };
 // Type Definitions
 // ****************************************************************************
 
+type TransactionResponse = real_ethers.providers.TransactionResponse;
 type TransactionReceipt = real_ethers.providers.TransactionReceipt;
 type Log = real_ethers.providers.Log;
 type Interface = real_ethers.utils.Interface;
@@ -92,7 +93,7 @@ type Address = string;
 type NetworkAccount = {
   address?: Address, // required for receivers & deployers
   getAddress?: () => Promise<Address>, // or this for receivers & deployers
-  sendTransaction?: (...xs: any) => any, // required for senders
+  sendTransaction?: (...xs: any) => Promise<TransactionResponse>, // required for senders
   getBalance?: (...xs: any) => any, // TODO: better type
   _mnemonic?: () => {phrase: string},
 } | EthersLikeWallet | EthersLikeSigner; // required to deploy/attach
@@ -345,7 +346,7 @@ const balanceOf_token = async (networkAccount: NetworkAccount, address: Address,
 
 const doTxn = async (
   dhead: string,
-  tp: Promise<any>,
+  tp: Promise<TransactionResponse>,
 ): Promise<TransactionReceipt> => {
   debug(dhead, { step: `pre call`});
   const rt = await tp;
