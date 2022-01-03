@@ -590,10 +590,13 @@ export class Wallet implements IWallet {
     const dhead = `retryingSendTxn`;
     let howMany = 0;
     while ( true ) {
+      if ( howMany++ > 0 ) {
+        await Timeout.set(500);
+      }
+      debug(dhead, `attempt`, howMany, txn);
+      // Note: {...txn} because conflux is going to mutate it >=[
+      const txnMut = {...txn};
       try {
-        debug(dhead, `attempt`, howMany++, txn);
-        // Note: {...txn} because conflux is going to mutate it >=[
-        const txnMut = {...txn};
         const transactionHash = await provider.conflux.sendTransaction(txnMut);
         debug(dhead, `sent`, {txn, txnMut, transactionHash});
         return {
