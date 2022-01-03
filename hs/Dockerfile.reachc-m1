@@ -97,6 +97,8 @@ RUN chmod +x /usr/bin/solc
 COPY --from=solc /sol/stdlib.json /stdlib_sol.json
 RUN cp /root/.local/bin/reachc /usr/bin/reachc && chmod +x /usr/bin/reachc
 
+# this particular goal binary needs musl
+RUN apt-get update && apt-get install -y musl
 COPY --from=algo /bin/goal /usr/bin/goal
 
 # mostly copied from Dockerfile.reachc
