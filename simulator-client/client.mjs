@@ -88,10 +88,47 @@ const initFor = async (s,a) => {
   return r
 }
 
+const resetServer = async () => {
+  const r = await interact('POST', `${address}/reset`)
+  console.log(r)
+  return r
+}
+
 const ping = async () => {
   const r = await interact(`GET`, `${address}/ping`)
   console.log(r)
   return r;
+}
+
+const clientMethods = {
+  "getStates" : getStates,
+  "getStatus" : getStatus,
+  "getStateActions" : getStateActions,
+  "load" : load,
+  "init" : init,
+  "respondWithVal" : respondWithVal,
+  "ping" : ping,
+  "waitForPort" : waitForPort,
+  "initFor" : initFor,
+  "getStateLocals" : getStateLocals,
+  "getStateGlobals" : getStateGlobals,
+  "getEdges" : getEdges,
+  "resetServer" : resetServer,
+}
+
+const interpCommand = async (comm) => {
+  const fnstring = comm[0];
+  const fnparams = comm.slice(1);
+  const fn = clientMethods[fnstring];
+  const r = await fn.apply(null, fnparams);
+  console.log(r)
+  return r;
+}
+
+const interp = async (comms) => {
+  for (const co of comms) {
+    await interpCommand(co);
+  }
 }
 
 export {
@@ -106,5 +143,8 @@ export {
   initFor,
   getStateLocals,
   getStateGlobals,
-  getEdges
+  getEdges,
+  resetServer,
+  interpCommand,
+  interp,
 };

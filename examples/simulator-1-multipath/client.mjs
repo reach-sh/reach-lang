@@ -40,8 +40,6 @@ const main = async () => {
   r = await c.getStatus()
   assert.equal(r,"Done");
 
-  r = await c.getStatus()
-  assert.equal(r,"Done");
   console.log("Testing Complete!")
 }
 

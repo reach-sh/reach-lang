@@ -184,6 +184,10 @@ getEdges = do
   es <- gets e_edges
   return es
 
+resetServer :: WebM ()
+resetServer = do
+  modify $ \ _ -> initSession
+
 getProgState :: StateId -> WebM (Maybe C.State)
 getProgState sid = do
   s <- gets e_graph
@@ -301,6 +305,11 @@ app p = do
     setHeaders
     as <- webM $ computeActions
     json as
+
+  post "/reset" $ do
+    setHeaders
+    _ <- webM $ resetServer
+    json ("OK" :: String)
 
   post "/states/:s/actions/:a/" $ do
     setHeaders
