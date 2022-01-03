@@ -45,7 +45,7 @@ const redraw = async () => {
 }
 
 const log = document.querySelector("#output")
-var jsonLog = []
+let jsonLog = []
 
 const localsBtn = document.querySelector("#localsButton")
 const locals = async () => {
