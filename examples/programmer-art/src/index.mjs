@@ -45,12 +45,14 @@ const redraw = async () => {
 }
 
 const log = document.querySelector("#output")
+let jsonLog = []
 
 const localsBtn = document.querySelector("#localsButton")
 const locals = async () => {
   let n = parseInt(document.querySelector("#stateLocalsFor").value)
   let r = await c.getStateLocals(n)
   appendToLog(JSON.stringify(r,null,2))
+  jsonLog.push(["getStateLocals",n])
 }
 localsBtn.addEventListener("click",locals)
 
@@ -60,7 +62,7 @@ const globals = async () => {
   let n = parseInt(document.querySelector("#stateGlobalsFor").value)
   let r = await c.getStateGlobals(n)
   appendToLog(JSON.stringify(r,null,2))
-
+  jsonLog.push(["getStateGlobals",n])
 }
 globalsBtn.addEventListener("click",globals)
 
@@ -70,7 +72,7 @@ const actions = async () => {
   let n = parseInt(document.querySelector("#stateActionsFor").value)
   let r = await c.getStateActions(n)
   appendToLog(r)
-
+  jsonLog.push(["getStateActions",n])
 }
 actionsBtn.addEventListener("click",actions)
 
@@ -79,7 +81,7 @@ const statesBtn = document.querySelector("#statesButton")
 const states = async () => {
   let r = await c.getStates()
   appendToLog(r)
-
+  jsonLog.push(["getStates"])
 }
 statesBtn.addEventListener("click",states)
 
@@ -88,7 +90,7 @@ const statusBtn = document.querySelector("#statusButton")
 const status = async () => {
   let r = await c.getStatus()
   appendToLog(r)
-
+  jsonLog.push(["getStatus"])
 }
 statusBtn.addEventListener("click",status)
 
@@ -102,7 +104,7 @@ const respond = async () => {
   let r = await c.respondWithVal(s,a,v,w)
   appendToLog(r)
   redraw()
-
+  jsonLog.push(["respondWithVal",s,a,v,w])
 }
 respondBtn.addEventListener("click",respond)
 
@@ -114,7 +116,7 @@ const initFor = async () => {
   let r = await c.initFor(s,a)
   appendToLog(r)
   redraw()
-
+  jsonLog.push(["initFor",s,a])
 }
 initForBtn.addEventListener("click",initFor)
 
@@ -124,7 +126,7 @@ const init = async () => {
   let r = await c.init()
   appendToLog(r)
   redraw()
-
+  jsonLog.push(["init"])
 }
 initBtn.addEventListener("click",init)
 
@@ -133,7 +135,7 @@ const loadBtn = document.querySelector("#loadButton")
 const load = async () => {
   let r = await c.load()
   appendToLog(r)
-
+  jsonLog.push(["load"])
 }
 loadBtn.addEventListener("click",load)
 
@@ -142,10 +144,27 @@ const pingBtn = document.querySelector("#pingButton")
 const ping = async () => {
   let r = await c.ping()
   appendToLog(r)
+  jsonLog.push(["ping"])
+
 }
 pingBtn.addEventListener("click",ping)
+
+const resetBtn = document.querySelector("#resetButton")
+const reset = async () => {
+  let r = await c.resetServer()
+  appendToLog(r)
+  jsonLog.push(["reset"])
+}
+resetBtn.addEventListener("click",reset)
 
 const appendToLog = (r) => {
   let x = log.innerHTML
   log.innerHTML = x + '<br>' + r
 }
+
+const printBtn = document.querySelector("#printButton")
+const printLog = () => {
+  console.log(jsonLog);
+  console.log(JSON.stringify(jsonLog));
+}
+printBtn.addEventListener("click",printLog)
