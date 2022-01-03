@@ -463,17 +463,17 @@ It accepts an optional bytes argument, which is included in any reported violati
 closeTo( Who, after, nonNetPayAmt )
 ```
 
-@{ref("rsh", "closeTo")} Has participant `{!rsh} Anybody` make a publication, then transfer the `{!rsh} balance()` and the non-network pay amount to `{!rsh} Who` and end the dApp after executing the function `{!rsh} after` in a step.
+@{ref("rsh", "closeTo")} Has participant `{!rsh} Anybody` make a publication, then transfer the `{!rsh} balance()` and the non-network pay amount to `{!rsh} Who` and end the DApp after executing the function `{!rsh} after` in a step.
 
 As an example, codifying the prose above would look like:
 
 ```reach
-// Has participant `{!rsh} Anybody` make a publication
+// Has participant 'Anybody' make a publication
 Anybody.publish();
-// transfer the balance() and the non-network payment amount to `{!rsh} Who`
+// Transfer the balance() and the non-network payment amount to 'Who'
 transfer([ balance(), ...nonNetPayAmt ]).to(Who);
 commit();
-// end the dApp after executing the function `after` in a step
+// End the DApp after executing the function 'after' in a step
 after();
 exit();
 ```
