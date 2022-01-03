@@ -118,6 +118,8 @@ checkteal () {
 #exit 0
 
 jb
+ci CFX ctc-address
+exit 0
 ci ALGO nft-auction
 exit 0
 

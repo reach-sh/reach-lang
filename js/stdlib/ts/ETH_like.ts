@@ -182,19 +182,18 @@ const getAddr = async (acc: AccountTransferable): Promise<Address> => {
 
 // Helpers for sendrecv and recv
 
-type Hash = string;
-
-const rejectInvalidReceiptFor = async (txHash: Hash, r: TransactionReceipt|undefined): Promise<TransactionReceipt> =>
-  new Promise((resolve, reject) =>
-    !r ? reject(`No receipt for txHash: ${txHash}`) :
-    r.transactionHash !== txHash ? reject(`Bad txHash; ${txHash} !== ${r.transactionHash}`) :
-    !r.status ? reject(`Transaction: ${txHash} was reverted by EVM\n${r}`) :
-    resolve(r));
-
-const fetchAndRejectInvalidReceiptFor = async (txHash: Hash): Promise<TransactionReceipt> => {
+const fetchAndRejectInvalidReceiptFor = async (txHash: string): Promise<TransactionReceipt> => {
   const provider = await getProvider();
   const r = await provider.getTransactionReceipt(txHash);
-  return await rejectInvalidReceiptFor(txHash, r);
+  const reject = (x:string) => { throw Error(x) };
+  if ( !r ) { reject(`No receipt for txHash: ${txHash}`); }
+  if ( r.transactionHash !== txHash ) {
+    reject(`Bad txHash; ${txHash} !== ${r.transactionHash}`);
+  }
+  if ( !r.status ) {
+    reject(`Transaction: ${txHash} was reverted by EVM\n${r}`);
+  }
+  return r;
 };
 
 const getNetworkTimeNumber = async (): Promise<number> => {
