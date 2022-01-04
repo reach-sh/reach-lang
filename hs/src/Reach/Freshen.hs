@@ -110,7 +110,7 @@ instance Freshen DLExpr where
     DLE_Arg at a -> DLE_Arg at <$> fu a
     DLE_LArg at a -> DLE_LArg at <$> fu a
     e@(DLE_Impossible {}) -> return $ e
-    DLE_VerifyMuldiv at cl as err -> DLE_VerifyMuldiv at cl <$> fu as <*> pure err
+    DLE_VerifyMuldiv at f cl as err -> DLE_VerifyMuldiv at f cl <$> fu as <*> pure err
     DLE_PrimOp at p as -> DLE_PrimOp at p <$> fu as
     DLE_ArrayRef at a b -> DLE_ArrayRef at <$> fu a <*> fu b
     DLE_ArraySet at a b c -> DLE_ArraySet at <$> fu a <*> fu b <*> fu c

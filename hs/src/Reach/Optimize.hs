@@ -250,9 +250,9 @@ instance Optimize DLExpr where
     DLE_LArg at a -> DLE_LArg at <$> opt a
     DLE_Impossible at tag lab ->
       return $ DLE_Impossible at tag lab
-    DLE_VerifyMuldiv at cl args err ->
+    DLE_VerifyMuldiv at f cl args err ->
       opt (DLE_PrimOp at MUL_DIV args) >>= \case
-        DLE_PrimOp _ _ args' -> return $ DLE_VerifyMuldiv at cl args' err
+        DLE_PrimOp _ _ args' -> return $ DLE_VerifyMuldiv at f cl args' err
         ow -> return ow
     DLE_PrimOp at p as -> do
       as' <- opt as
