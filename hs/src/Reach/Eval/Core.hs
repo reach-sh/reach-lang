@@ -4127,14 +4127,14 @@ doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg) = do
 
 doOnly :: SLScope -> ((SLPart, Maybe SLVar), SrcLoc, SLCloEnv, JSExpression) -> App SLScope
 doOnly sco ((who, vas), only_at, only_cloenv, only_synarg) = locAt only_at $ do
-  (alifts, (penv', only_ty, only_v)) <-
+  (alifts, (penv', only_ty, _)) <-
     captureLifts $
       doOnlyExpr ((who, vas), only_at, only_cloenv, only_synarg)
   case only_ty of
     T_Null -> do
       saveLift $ DLS_Only only_at who alifts
       return $ sco {sco_penvs = M.insert who penv' $ sco_penvs sco}
-    ty -> locAt (srclocOf only_v) $ expect_ $ Err_Block_NotNull ty
+    ty -> locAt only_at $ expect_ $ Err_Block_NotNull ty
 
 doGetSelfAddress :: SLPart -> App DLVar
 doGetSelfAddress who = do

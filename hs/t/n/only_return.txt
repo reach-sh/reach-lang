@@ -1,8 +1,8 @@
 reachc: error[RE0003]: Invalid block result type. Expected Null, got UInt
 
-  ./Err_Block_NotNull.rsh:5:11:application
+  ./only_return.rsh:8:17:application
 
-  5|     A.only(() => {
+  8|   Depositor.only(() => {
 
 For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0003
 
