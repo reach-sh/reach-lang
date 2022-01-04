@@ -539,7 +539,7 @@ data DLExpr
   = DLE_Arg SrcLoc DLArg
   | DLE_LArg SrcLoc DLLargeArg
   | DLE_Impossible SrcLoc Int ImpossibleError
-  | DLE_VerifyMuldiv SrcLoc ClaimType [DLArg] ImpossibleError
+  | DLE_VerifyMuldiv SrcLoc [SLCtxtFrame] ClaimType [DLArg] ImpossibleError
   | DLE_PrimOp SrcLoc PrimOp [DLArg]
   | DLE_ArrayRef SrcLoc DLArg DLArg
   | DLE_ArraySet SrcLoc DLArg DLArg DLArg
@@ -607,7 +607,7 @@ instance PrettySubst DLExpr where
     DLE_Arg _ a -> prettySubst a
     DLE_LArg _ a -> prettySubst a
     DLE_Impossible _ _ err -> return $ "impossible" <> parens (pretty err)
-    DLE_VerifyMuldiv _ cl as _ -> do
+    DLE_VerifyMuldiv _ _ cl as _ -> do
       as' <- render_dasM as
       return $ "verifyMuldiv" <> parens (viaShow cl) <> parens as'
     DLE_PrimOp _ IF_THEN_ELSE [c, t, el] -> do

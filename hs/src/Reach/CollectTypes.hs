@@ -108,7 +108,7 @@ instance CollectsTypes DLExpr where
     DLE_Arg _ a -> cts a
     DLE_LArg _ la -> cts $ largeArgTypeOf la
     DLE_Impossible {} -> mempty
-    DLE_VerifyMuldiv _ _ as _ -> cts as
+    DLE_VerifyMuldiv _ _ _ as _ -> cts as
     DLE_PrimOp _ p as -> cts p <> cts as
     DLE_ArrayRef _ a i -> cts a <> cts i
     DLE_ArraySet _ a i v -> cts a <> cts i <> cts v

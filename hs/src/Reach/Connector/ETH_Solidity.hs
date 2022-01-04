@@ -570,7 +570,7 @@ solExpr sp = \case
     impossible "large arg"
   DLE_Impossible at _ err ->
     expect_thrown at err
-  DLE_VerifyMuldiv at _ _ err ->
+  DLE_VerifyMuldiv at _ _ _ err ->
     expect_thrown at err
   DLE_PrimOp _ p args -> do
     args' <- mapM solArg args

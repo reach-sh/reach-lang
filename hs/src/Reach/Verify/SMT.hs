@@ -971,11 +971,11 @@ smt_e at_dv mdv de = do
     DLE_Arg at da -> bound at =<< smt_a at da
     DLE_LArg at dla -> bound at =<< smt_la at dla
     DLE_Impossible {} -> unbound at_dv
-    DLE_VerifyMuldiv at cl args _ -> do
+    DLE_VerifyMuldiv at f cl args _ -> do
       args' <- mapM (smt_a at) args
       md <- smtMulDiv args'
       let lt = uint256_le md (Atom $ smtConstant DLC_UInt_max)
-      doClaim at [] cl lt Nothing
+      doClaim at f cl lt Nothing
     DLE_PrimOp at cp args -> do
       let f = case cp of
                 SELF_ADDRESS {} -> \ se -> pathAddBound at mdv (Just $ SMTProgram de) se Witness

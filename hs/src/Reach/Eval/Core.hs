@@ -3198,12 +3198,14 @@ evalPrim p sargs =
       args' <- mapM (compileCheckType T_UInt) [x, y, z]
       m <- readSt st_mode
       cl <- case m of
+        SLM_Export -> return $ CT_Assume True
         mode
           | isLocalStep mode -> return $ CT_Assume True
           | isConsensusStep mode -> return $ CT_Require
           | otherwise -> return $ CT_Assert
       let err = Err_Impossible_Inspect "verifyMulDiv"
-      ctxt_lift_eff $ DLE_VerifyMuldiv at cl args' err
+      fs <- asks e_stack
+      ctxt_lift_eff $ DLE_VerifyMuldiv at fs cl args' err
       return (lvl, SLV_Null at "verifyMulDiv")
     SLPrim_didPublish -> do
       ensure_mode SLM_LocalStep "local"
