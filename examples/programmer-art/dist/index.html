@@ -3,82 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Programmer Art UI</title>
-
+    <title>Programmer Art</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200&family=Source+Sans+Pro:wght@200&family=Source+Serif+Pro:wght@200&display=swap" rel="stylesheet">
 
 <style type="text/css">
-body         { background-color: #FFFFFF;
-               font-family: Optima, Palatino, Arial, sans-serif, Helvetica;
-	       padding:0ex 0ex 0ex 0ex ;
-	       margin: 0ex 0ex 0ex 0ex ;
-}
-hr {
-  border: 0;
-  width: 90%;
-  height: 2px;
-  color: #e3e7ef;
-  background-color: #e3e7ef;
-  margin:3ex 2ex 0ex 0ex ;
-}
-h1 {
-  font-family: Optima,Segoe,Segoe UI,Candara,Calibri,Arial,sans-serif;
-  color:#333333;
-  font-size:3.7em;
-  letter-spacing:-2px;
-}
-h2 {
-  font-family: Optima,Segoe,Segoe UI,Candara,Calibri,Arial,sans-serif;
-  color:#333333;
-  padding: 0.5em;
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Source Serif Pro', serif;
 }
 
-h3 {
-  font-family: Optima,Segoe,Segoe UI,Candara,Calibri,Arial,sans-serif;
-  color:#444444;
-}
-
-h4 {
-  font-family: Optima,Segoe,Segoe UI,Candara,Calibri,Arial,sans-serif;
-  color:#777777;
-  padding: 0.5em;
-}
-big {
-  font-size:1.3em;
-}
-spam {
-  color:#ffffff;
-}
-
-a {
-  padding: .2em;
-}
-
-html { font-size: 22px !important }
-
-@media (pointer: coarse) {
-   a {
-    padding: .4em;
-  }
-}
-img {
-max-width: 300px;
-}
-a:link {
-  color:#444444;
-  text-decoration: underline;
-}
-a:visited {
-  color:#444444;
-}
-a:hover {
-  color:#222222;
-  text-decoration:none;
-}
-a:active {
-  color:#000000;
-}
-p.small {
-    font-variant: small-caps;
+body :not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
+  font-family: 'Source Sans Pro', sans-serif;
 }
 
 body, html {
@@ -87,8 +29,9 @@ body, html {
 
 #output {
   height: 30%;
-  background-color: black;
-  color: white;
+  background-color: #f6f6f6;
+  color: #555;
+  font-family: 'Inconsolata', monospace;
 }
 
 #cy {
@@ -105,9 +48,15 @@ body, html {
 
 <div id="output" width="20%" style="overflow-y:auto;"> $ welcome </div>
 
+<br>
+<br>
+
 <button type="button" id="pingButton">Ping</button>
 <button type="button" id="loadButton">Load</button>
 <button type="button" id="initButton">Init</button>
+<button type="button" id="statesButton">Get States</button>
+<button type="button" id="resetButton">Reset</button>
+<button type="button" id="printButton">Print Log To Console</button>
 
 <div>
 <input type="text" id="initForActor" placeholder="Actor">
@@ -128,7 +77,6 @@ body, html {
 <button type="button" id="statusButton">Get Status</button>
 </div>
 
-<button type="button" id="statesButton">Get States</button>
 
 <div>
 <input type="text" id="stateActionsFor"  placeholder="State">
@@ -145,8 +93,6 @@ body, html {
 <button type="button" id="localsButton">Get State Locals</button>
 </div>
 
-<button type="button" id="resetButton">Reset</button>
-<button type="button" id="printButton">Print Log To Console</button>
 
 <div id="cy"> </div>
 

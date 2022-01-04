@@ -477,6 +477,14 @@ instance Interp DLExpr where
       setGlobal $ e {e_linstate = M.insert dlmvar m linst}
       return V_Null
     DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill -> impossible "undefined"
+    --
+    --
+    -- contract type
+    -- fn name
+    -- how much to transfer to contr (network token) 
+    -- args to fn
+    -- how much expected back
+    -- result is a tuple: value returned, how much money you got back
     DLE_TokenNew _at dltokennew -> do
       ledgerNewToken simContract dltokennew
       return V_Null

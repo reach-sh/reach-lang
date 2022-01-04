@@ -1,0 +1,14 @@
+$font-family-sans-serif: 'Source Sans Pro', sans-serif;
+$font-family-monospace:  'Inconsolata', monospace;
+$font-family-base: 'Source Serif Pro', serif;
+$font-family-code:  'Inconsolata', monospace;
+$btn-font-family: 'Source Serif Pro', serif;
+$input-font-family: 'Source Serif Pro', serif;
+$body-bg: #f6f6f6;
+$body-color: #555;
+
+@import "../node_modules/bootstrap/scss/bootstrap";
+
+body > * {
+  margin: 1%;
+}
