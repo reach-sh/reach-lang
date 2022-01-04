@@ -8,93 +8,69 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200&family=Source+Sans+Pro:wght@200&family=Source+Serif+Pro:wght@200&display=swap" rel="stylesheet">
 
-<style type="text/css">
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: 'Source Serif Pro', serif;
-}
-
-body :not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
-  font-family: 'Source Sans Pro', sans-serif;
-}
-
-body, html {
-  height: 100%;
-}
-
-#output {
-  height: 30%;
-  background-color: #f6f6f6;
-  color: #555;
-  font-family: 'Inconsolata', monospace;
-}
-
-#cy {
-  width: 300px;
-  height: 300px;
-  display: block;
-}
-
-</style>
-
 </head>
 <body>
 
+<div class="container-fluid">
 
-<div id="output" width="20%" style="overflow-y:auto;"> $ welcome </div>
+<div id="output"> $ welcome </div>
 
-<br>
-<br>
+<button type="button" id="pingButton" class="btn btn-outline-dark btn-sm">Ping</button>
+<button type="button" id="loadButton" class="btn btn-outline-dark btn-sm">Load</button>
+<button type="button" id="initButton" class="btn btn-outline-dark btn-sm">Init</button>
+<button type="button" id="statesButton" class="btn btn-outline-dark btn-sm">Get States</button>
+<button type="button" id="resetButton" class="btn btn-outline-dark btn-sm">Reset</button>
+<button type="button" id="printButton" class="btn btn-outline-dark btn-sm">Print Log To Console</button>
 
-<button type="button" id="pingButton">Ping</button>
-<button type="button" id="loadButton">Load</button>
-<button type="button" id="initButton">Init</button>
-<button type="button" id="statesButton">Get States</button>
-<button type="button" id="resetButton">Reset</button>
-<button type="button" id="printButton">Print Log To Console</button>
-
-<div>
-<input type="text" id="initForActor" placeholder="Actor">
-<input type="text" id="initForState" placeholder="State">
-<button type="button" id="initForButton">Init For</button>
+<div class="row">
+  <div class="col-4 bordered d-flex justify-content-center">
+    <input type="text" id="initForActor" class="form-control form-control-sm" placeholder="Actor">
+    <input type="text" id="initForState" class="form-control form-control-sm" placeholder="State">
+    <button type="button" id="initForButton" class="btn btn-outline-dark btn-sm">Init For</button>
+  </div>
 </div>
 
-<div>
-<input type="text" id="resForState" placeholder="State">
-<input type="text" id="resForAction" placeholder="Action">
-<input type="text" id="resForVal" placeholder="Value">
-<input type="text" id="resForActor" placeholder="Actor">
-<button type="button" id="respondButton">Respond</button>
+<div class="row">
+  <div class="col-4 bordered d-flex justify-content-center">
+    <input type="text" id="resForState" class="form-control form-control-sm" placeholder="State">
+    <input type="text" id="resForAction" class="form-control form-control-sm" placeholder="Action">
+    <input type="text" id="resForVal" class="form-control form-control-sm" placeholder="Value">
+    <input type="text" id="resForActor" class="form-control form-control-sm" placeholder="Actor">
+    <button type="button" id="respondButton" class="btn btn-outline-dark btn-sm">Respond</button>
+  </div>
 </div>
 
-<div>
-<input type="text" id="statusFor" placeholder="State">
-<button type="button" id="statusButton">Get Status</button>
+<div class="row">
+  <div class="col-4 bordered d-flex justify-content-center">
+    <input type="text" id="statusFor" class="form-control form-control-sm" placeholder="State">
+    <button type="button" id="statusButton" class="btn btn-outline-dark btn-sm">Get Status</button>
+  </div>
 </div>
 
-
-<div>
-<input type="text" id="stateActionsFor"  placeholder="State">
-<button type="button" id="actionsButton">Get State Actions</button>
+<div class="row">
+  <div class="col-4 bordered d-flex justify-content-center">
+    <input type="text" id="stateActionsFor" class="form-control form-control-sm" placeholder="State">
+    <button type="button" id="actionsButton" class="btn btn-outline-dark btn-sm">Get State Actions</button>
+  </div>
 </div>
 
-<div>
-<input type="text" id="stateGlobalsFor" placeholder="State">
-<button type="button" id="globalsButton">Get State Globals</button>
+<div class="row">
+  <div class="col-4 bordered d-flex justify-content-center">
+    <input type="text" id="stateGlobalsFor" class="form-control form-control-sm" placeholder="State">
+    <button type="button" id="globalsButton" class="btn btn-outline-dark btn-sm">Get State Globals</button>
+  </div>
 </div>
 
-<div>
-<input type="text" id="stateLocalsFor" placeholder="State">
-<button type="button" id="localsButton">Get State Locals</button>
+<div class="row">
+  <div class="col-4 bordered d-flex justify-content-center">
+    <input type="text" id="stateLocalsFor" class="form-control form-control-sm" placeholder="State">
+    <button type="button" id="localsButton" class="btn btn-outline-dark btn-sm">Get State Locals</button>
+  </div>
 </div>
-
 
 <div id="cy"> </div>
+
+</div>
 
 <script type="module" src="main.js"></script>
 

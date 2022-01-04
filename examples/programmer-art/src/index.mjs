@@ -160,7 +160,7 @@ resetBtn.addEventListener("click",reset)
 
 const appendToLog = (r) => {
   let x = log.innerHTML
-  log.innerHTML = x + '<br>' + r
+  log.innerHTML = x + '<br>' + '$ ' + r
 }
 
 const printBtn = document.querySelector("#printButton")

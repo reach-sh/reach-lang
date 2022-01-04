@@ -4,11 +4,56 @@ $font-family-base: 'Source Serif Pro', serif;
 $font-family-code:  'Inconsolata', monospace;
 $btn-font-family: 'Source Serif Pro', serif;
 $input-font-family: 'Source Serif Pro', serif;
+
 $body-bg: #f6f6f6;
 $body-color: #555;
 
+$input-border-radius: 0.2rem;
+$input-border-color: #212529;
+$input-bg: #dcdcdc;
+
 @import "../node_modules/bootstrap/scss/bootstrap";
 
-body > * {
+div > * {
   margin: 1%;
+  padding: 1%;
+}
+
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Source Serif Pro', serif;
+}
+
+body :not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
+  font-family: 'Source Sans Pro', sans-serif;
+}
+
+body, html, .container-fluid {
+  height: 100%;
+}
+
+#output {
+  height: 25%;
+  background-color: #f6f6f6;
+  color: #555;
+  font-family: 'Inconsolata', monospace;
+  overflow-y: scroll;
+  border-radius: 0.2rem;
+  border: 1px solid #212529;
+}
+
+#cy {
+  width: 300px;
+  height: 300px;
+  display: block;
+}
+
+.bordered {
+  border-radius: 0.2rem;
+  border: 1px solid #212529;
 }
