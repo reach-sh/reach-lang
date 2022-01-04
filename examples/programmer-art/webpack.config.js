@@ -14,4 +14,33 @@ module.exports = {
       'process.platform': JSON.stringify('linux')
     })
   ],
+  module: {
+    rules: [
+      {
+        test: /\.(scss)$/,
+        use: [{
+          // inject CSS to page
+          loader: 'style-loader'
+        }, {
+          // translates CSS into CommonJS modules
+          loader: 'css-loader'
+        }, {
+          // Run postcss actions
+          loader: 'postcss-loader',
+          options: {
+            postcssOptions: {
+              plugins: function () {
+                return [
+                  require('autoprefixer')
+                ];
+              }
+            }
+          }
+        }, {
+          // compiles Sass to CSS
+          loader: 'sass-loader'
+        }]
+      }
+    ]
+  }
 };

@@ -1,6 +1,7 @@
 import * as c from '@reach-sh/simulator-client';
 import cytoscape from 'cytoscape';
 import klay from 'cytoscape-klay';
+import "../scss/custom.scss";
 
 cytoscape.use( klay );
 
@@ -45,7 +46,7 @@ const redraw = async () => {
 }
 
 const log = document.querySelector("#output")
-let jsonLog = []
+const jsonLog = []
 
 const localsBtn = document.querySelector("#localsButton")
 const locals = async () => {
@@ -159,7 +160,7 @@ resetBtn.addEventListener("click",reset)
 
 const appendToLog = (r) => {
   let x = log.innerHTML
-  log.innerHTML = x + '<br>' + r
+  log.innerHTML = x + '<br>' + '$ ' + r
 }
 
 const printBtn = document.querySelector("#printButton")
