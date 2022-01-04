@@ -7,70 +7,83 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200&family=Source+Sans+Pro:wght@200&family=Source+Serif+Pro:wght@200&display=swap" rel="stylesheet">
-
+<link href="prism-material-oceanic.css" rel="stylesheet" />
 </head>
 <body>
 
 <div class="container-fluid">
 
-<div id="output"> $ welcome </div>
-
-<button type="button" id="pingButton" class="btn btn-outline-dark btn-sm">Ping</button>
-<button type="button" id="loadButton" class="btn btn-outline-dark btn-sm">Load</button>
-<button type="button" id="initButton" class="btn btn-outline-dark btn-sm">Init</button>
-<button type="button" id="statesButton" class="btn btn-outline-dark btn-sm">Get States</button>
-<button type="button" id="resetButton" class="btn btn-outline-dark btn-sm">Reset</button>
-<button type="button" id="printButton" class="btn btn-outline-dark btn-sm">Print Log To Console</button>
-
-<div class="row">
-  <div class="col-4 bordered d-flex justify-content-center">
-    <input type="text" id="initForActor" class="form-control form-control-sm" placeholder="Actor">
-    <input type="text" id="initForState" class="form-control form-control-sm" placeholder="State">
-    <button type="button" id="initForButton" class="btn btn-outline-dark btn-sm">Init For</button>
+<div class="row first-row">
+  <div class="col-4">
+    <pre><code id="cx" class="language-javascript"></code></pre>
+  </div>
+  <div class="col-7">
+    <div id="cy"> </div>
   </div>
 </div>
 
 <div class="row">
-  <div class="col-4 bordered d-flex justify-content-center">
-    <input type="text" id="resForState" class="form-control form-control-sm" placeholder="State">
-    <input type="text" id="resForAction" class="form-control form-control-sm" placeholder="Action">
-    <input type="text" id="resForVal" class="form-control form-control-sm" placeholder="Value">
-    <input type="text" id="resForActor" class="form-control form-control-sm" placeholder="Actor">
-    <button type="button" id="respondButton" class="btn btn-outline-dark btn-sm">Respond</button>
+  <div class="col-8"> <!-- begin form -->
+    <button type="button" id="pingButton" class="btn btn-outline-dark btn-sm">Ping</button>
+    <button type="button" id="loadButton" class="btn btn-outline-dark btn-sm">Load</button>
+    <button type="button" id="initButton" class="btn btn-outline-dark btn-sm">Init</button>
+    <button type="button" id="statesButton" class="btn btn-outline-dark btn-sm">Get States</button>
+    <button type="button" id="resetButton" class="btn btn-outline-dark btn-sm">Reset</button>
+    <button type="button" id="printButton" class="btn btn-outline-dark btn-sm">Print Log To Console</button>
+
+    <div class="row">
+      <div class="col-8 bordered d-flex justify-content-center">
+        <input type="text" id="initForActor" class="form-control form-control-sm" placeholder="Actor">
+        <input type="text" id="initForState" class="form-control form-control-sm" placeholder="State">
+        <button type="button" id="initForButton" class="btn btn-outline-dark btn-sm">Init For</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-8 bordered d-flex justify-content-center">
+        <input type="text" id="resForState" class="form-control form-control-sm" placeholder="State">
+        <input type="text" id="resForAction" class="form-control form-control-sm" placeholder="Action">
+        <input type="text" id="resForVal" class="form-control form-control-sm" placeholder="Value">
+        <input type="text" id="resForActor" class="form-control form-control-sm" placeholder="Actor">
+        <button type="button" id="respondButton" class="btn btn-outline-dark btn-sm">Respond</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-8 bordered d-flex justify-content-center">
+        <input type="text" id="statusFor" class="form-control form-control-sm" placeholder="State">
+        <button type="button" id="statusButton" class="btn btn-outline-dark btn-sm">Get Status</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-8 bordered d-flex justify-content-center">
+        <input type="text" id="stateActionsFor" class="form-control form-control-sm" placeholder="State">
+        <button type="button" id="actionsButton" class="btn btn-outline-dark btn-sm">Get State Actions</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-8 bordered d-flex justify-content-center">
+        <input type="text" id="stateGlobalsFor" class="form-control form-control-sm" placeholder="State">
+        <button type="button" id="globalsButton" class="btn btn-outline-dark btn-sm">Get State Globals</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-8 bordered d-flex justify-content-center">
+        <input type="text" id="stateLocalsFor" class="form-control form-control-sm" placeholder="State">
+        <button type="button" id="localsButton" class="btn btn-outline-dark btn-sm">Get State Locals</button>
+      </div>
+    </div>
+    <!-- end form -->
   </div>
-</div>
-
-<div class="row">
-  <div class="col-4 bordered d-flex justify-content-center">
-    <input type="text" id="statusFor" class="form-control form-control-sm" placeholder="State">
-    <button type="button" id="statusButton" class="btn btn-outline-dark btn-sm">Get Status</button>
+  <div class="col-3">
+    <div id="output"> $ welcome </div>
   </div>
-</div>
+</div> <!-- end 2nd row -->
 
-<div class="row">
-  <div class="col-4 bordered d-flex justify-content-center">
-    <input type="text" id="stateActionsFor" class="form-control form-control-sm" placeholder="State">
-    <button type="button" id="actionsButton" class="btn btn-outline-dark btn-sm">Get State Actions</button>
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-4 bordered d-flex justify-content-center">
-    <input type="text" id="stateGlobalsFor" class="form-control form-control-sm" placeholder="State">
-    <button type="button" id="globalsButton" class="btn btn-outline-dark btn-sm">Get State Globals</button>
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-4 bordered d-flex justify-content-center">
-    <input type="text" id="stateLocalsFor" class="form-control form-control-sm" placeholder="State">
-    <button type="button" id="localsButton" class="btn btn-outline-dark btn-sm">Get State Locals</button>
-  </div>
-</div>
-
-<div id="cy"> </div>
-
-</div>
+</div> <!-- container -->
 
 <script type="module" src="main.js"></script>
 
