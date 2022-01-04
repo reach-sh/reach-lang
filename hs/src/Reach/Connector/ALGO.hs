@@ -1301,7 +1301,7 @@ ce = \case
   DLE_Arg _ a -> ca a
   DLE_LArg _ a -> cla a
   DLE_Impossible at _ err -> expect_thrown at err
-  DLE_VerifyMuldiv at _ _ err ->
+  DLE_VerifyMuldiv at _ _ _ err ->
     expect_thrown at err
   DLE_PrimOp _ p args -> cprim p args
   DLE_ArrayRef at aa ia -> doArrayRef at aa True (Left ia)

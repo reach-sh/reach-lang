@@ -1816,7 +1816,7 @@ const r = muldiv(x, y, z);
 ```
 
  `{!rsh} verifyMuldiv` generates a claim that the result of applying the same arguments to `{!rsh} muldiv` will not overflow.
-When used inside of a local step, it will generate an `{!rsh} assume` claim.
+When used inside of a local step or export, it will generate an `{!rsh} assume` claim.
 When used inside of a consensus step, it will generate a `{!rsh} require` claim.
 When used inside of any other step, it will generate an `{!rsh} assert` claim.
 

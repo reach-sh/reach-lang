@@ -305,7 +305,7 @@ jsExpr = \case
     jsLargeArg la
   DLE_Impossible at _ err ->
     expect_thrown at err
-  DLE_VerifyMuldiv at _ _ err ->
+  DLE_VerifyMuldiv at _ _ _ err ->
     expect_thrown at err
   DLE_PrimOp _ p as ->
     jsPrimApply p <$> mapM jsArg as

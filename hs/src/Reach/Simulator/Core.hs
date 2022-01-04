@@ -391,7 +391,7 @@ instance Interp DLExpr where
     DLE_Arg _at dlarg -> interp dlarg
     DLE_LArg _at dllargearg -> interp dllargearg
     DLE_Impossible at _int err -> expect_thrown at err
-    DLE_VerifyMuldiv at _ _ err -> expect_thrown at err
+    DLE_VerifyMuldiv at _ _ _ err -> expect_thrown at err
     DLE_PrimOp _at primop dlargs -> do
       evd_args <- mapM interp dlargs
       interpPrim (primop,evd_args)
