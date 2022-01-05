@@ -570,10 +570,15 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const dhead = `${label} send ${funcName} ${timeoutAt}`;
         const trustedRecv = async (ok_r:TransactionReceipt): Promise<Recv> => {
           const didSend = true;
-          const ethersC = await getC();
-          const correctStep = makeHasLogFor((() => ethersC.address), iface, funcNum, out_tys);
-          eq.pushIgnore(correctStep);
-          return await recvFrom({dhead, out_tys, didSend, funcNum, ok_r});
+          // See https://reachsh.atlassian.net/browse/CORE-959
+          if ( true ) {
+            return await doRecv(didSend, false);
+          } else {
+            const ethersC = await getC();
+            const correctStep = makeHasLogFor((() => ethersC.address), iface, funcNum, out_tys);
+            eq.pushIgnore(correctStep);
+            return await recvFrom({dhead, out_tys, didSend, funcNum, ok_r});
+          }
         };
 
         debug(dhead, 'ARGS', args);

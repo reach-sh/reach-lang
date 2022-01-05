@@ -118,7 +118,7 @@ checkteal () {
 #exit 0
 
 jb
-ci ALGO view-steps
+ci ETH event-monitor
 exit 0
 ci ALGO nft-auction
 exit 0
