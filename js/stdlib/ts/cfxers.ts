@@ -8,6 +8,7 @@ const { BigNumber, utils } = ethers;
 export { BigNumber, utils };
 import { address_cfxStandardize, defaultEpochTag } from './CFX_util';
 import { debug } from './shared_impl';
+import { T_Address } from './CFX_compiled_impl';
 
 type BigNumber = ethers.BigNumber;
 type EpochNumber = cfxsdk.EpochNumber;
@@ -183,13 +184,16 @@ const conform = (args: any[], tys: ParamType[]): any[] => {
       throw Error(`impossible: number of args (${args.length}) does not match number of tys (${tys.length})`);
     }
     for (const i in tys) {
-      if (tys[i].type === 'tuple') {
+      const ty = tys[i].type;
+      if (ty === 'tuple') {
         args[i] = conform(args[i], tys[i].components);
-      } else if (tys[i].type === 'bool') {
+      } else if (ty === 'bool') {
         args[i] = booleanize(args[i]);
+      } else if (ty === 'address') {
+        args[i] = T_Address.munge(T_Address.canonicalize(args[i]));
       } else {
         // XXX handle more stuff
-        // debug(`conform untouched:`, args[i], tys[i])
+        debug(`conform untouched:`, args[i], tys[i])
       }
     }
   }
@@ -360,26 +364,17 @@ export class Contract implements IContract {
         // @ts-ignore
         const cfc = self._contract[fname].call(...argsConformed);
         debug(`cfxers:handler`, fname, `cfc`, cfc);
-        const {to, data} = cfc; // ('to' is just ctc address)
+        let {to, data} = cfc; // ('to' is just ctc address)
+        to = to || self.address;
         txn = { ...txn, to, data};
         // @ts-ignore
         txn = await addEstimates(this._wallet.provider.conflux, txn);
         debug(`cfxers:handler`, fname, `txn`, txn);
-        const res = await _wallet.sendTransaction(txn);
-        const {transactionHash} = await res.wait();
-        return {
-          // XXX not sure what the distinction is supposed to be here
-          wait: async () => {
-            debug('cfxers:handler', fname, 'wait');
-            return {
-              transactionHash
-            };
-          }
-        };
+        return await _wallet.sendTransaction(txn);
       } else {
         debug(`cfxers:handler`, fname, 'view')
-        // XXX in this case it doesn't return something with `wait`,
-        // it just returns the result. Weird design choice, ethers. =/
+        // In this case it doesn't return something with `wait`, it just
+        // returns the result. Weird design choice, ethers. =/
         // @ts-ignore
         return await self._contract[fname].call(...argsConformed);
       }
@@ -528,6 +523,7 @@ export class BrowserWallet implements IWallet {
       method: 'cfx_sendTransaction',
       params: [txn],
     });
+    debug('sendTransaction', { txn, data });
     const transactionHash = data.result;
     return {
       transactionHash,
@@ -599,7 +595,7 @@ export class Wallet implements IWallet {
       try {
         const th = await p.conflux.sendTransaction(txnMut);
         debug(dhead, `sent`, {txn, txnMut, th});
-        let got: any = undefined;
+        let got: {blockHash?: string}|null = null;
         let howMany = 0;
         while ( ! ( got && got.blockHash ) ) {
           if ( howMany++ > 2 * 60 * 5 ) {
@@ -610,6 +606,7 @@ export class Wallet implements IWallet {
           got = await p.conflux.getTransactionByHash(th);
         }
         return {
+          ...got,
           transactionHash: th,
           wait: () => waitReceipt(p, th)
         }

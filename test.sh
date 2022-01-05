@@ -118,7 +118,8 @@ checkteal () {
 #exit 0
 
 jb
-ci ETH event-monitor
+ci ETH remote-view
+ci CFX remote-view
 exit 0
 ci ALGO nft-auction
 exit 0
