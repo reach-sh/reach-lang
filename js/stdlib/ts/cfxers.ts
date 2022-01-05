@@ -605,7 +605,7 @@ export class Wallet implements IWallet {
           if ( howMany++ > 2 * 60 * 5 ) {
             throw Error(`${dhead} timeout in mining ${th}`);
           }
-          debug(dhead, 'get', howMany, got);
+          debug(dhead, 'get', howMany, th);
           await Timeout.set(500);
           got = await p.conflux.getTransactionByHash(th);
         }

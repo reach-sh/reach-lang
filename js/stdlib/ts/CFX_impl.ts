@@ -7,6 +7,9 @@ import {
   replaceableThunk,
   truthyEnv,
 } from './shared_impl';
+import {
+  bigNumberify,
+} from './shared_user';
 import type { Env } from './shim'; // =>
 import { process, window } from './shim';
 import waitPort from './waitPort';
@@ -81,11 +84,12 @@ const makeURLFunder = (url: string) => async (to:any, amt:any): Promise<void> =>
   debug(dhead, to);
   const toHex = toHexAddr(to);
   let u = `${url}?address=${toHex}`;
-  if ( amt ) { u = `${u}&amount=${amt}`; }
+  if ( amt ) { u = `${u}&amount=${bigNumberify(amt)}`; }
   debug(dhead, { toHex, u });
   const res = await window.fetch(u);
   const resJson = await res.json();
   debug(dhead, { resJson });
+  if ( ! res.ok ) { throw resJson; }
 };
 
 export async function canFundFromFaucet() {
