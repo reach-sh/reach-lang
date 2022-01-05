@@ -512,7 +512,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         debug(dhead, un);
         return un;
       };
+      let isAPI = false;
       const getState = async (vibne:BigNumber, tys:Array<AnyETH_Ty>): Promise<Array<any>> => {
+        isAPI = true;
         const ethersC = await getC();
         const [ vibna, vsbs ] = await ethersC["_reachCurrentState"]();
         debug(`getState`, { vibne, vibna, vsbs });
@@ -571,7 +573,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const trustedRecv = async (ok_r:TransactionReceipt): Promise<Recv> => {
           const didSend = true;
           // See https://reachsh.atlassian.net/browse/CORE-959
-          if ( true ) {
+          //
+          // APIs can't do this, because they would see everything from the
+          // beginning, which isn't what they're expecting.
+          if ( ! isAPI ) {
             return await doRecv(didSend, false);
           } else {
             const ethersC = await getC();
