@@ -9,28 +9,29 @@ import * as backend from './build/index.main.mjs';
     console.log('assertEq', {expected, actual}, {exps, acts});
     stdlib.assert(exps === acts) };
   const startingBalance = stdlib.parseCurrency(200);
-  const accAlice = await stdlib.newTestAccount(startingBalance);
-  const accBob = await stdlib.newTestAccount(startingBalance);
+  const [ accA, accB ] = await stdlib.newTestAccounts(2, startingBalance);
+  accA.setDebugLabel('Alice');
+  accB.setDebugLabel('Bob');
 
   const run = async (whosBob) => {
-    const ctcAlice = accAlice.contract(backend);
-    const ctcBob = whosBob.contract(backend, ctcAlice.getInfo());
+    const ctcA = accA.contract(backend);
+    const ctcB = whosBob.contract(backend, ctcA.getInfo());
 
     const checkView = async (expected) => {
       console.log('checkView', expected);
       assertEq(expected, [
-        await ctcAlice.v.Main.last(),
-        await ctcAlice.v.Main.i(),
+        await ctcA.v.Main.last(),
+        await ctcA.v.Main.i(),
       ]) };
 
     await Promise.all([
-      ctcAlice.p.Alice({ checkView }),
-      ctcBob.p.Bob({}),
+      ctcA.p.Alice({ checkView }),
+      ctcB.p.Bob({}),
     ]);
   };
 
   console.log(`Run w/ Bob`);
-  await run(accBob);
+  await run(accB);
   console.log(`Run w/ Alice`);
-  await run(accAlice);
+  await run(accA);
 })();

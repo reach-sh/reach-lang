@@ -740,18 +740,21 @@ export const makeEventQueue = <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<
   const notIgnored = (txn:RawTxn) => (! alwaysIgnored(txn));
   const peq = async (lab: string, didTimeout: AsyncPred<Time>): Promise<EQPeqResult<ProcTxn>> => {
     const dhead = `${lab} peq`;
+    const updateCtime = (ntime:Time): Time => {
+      if ( ctime.lt(ntime) ) {
+        debug(dhead, 'updating ctime', { ctime, ntime });
+        ctime = ntime;
+      }
+      return ntime;
+    };
     if (initArgs === undefined) {
       throw Error(`${dhead}: not initialized`); }
     let howMany = 0;
     while ( ptxns.length === 0 ) {
       let { txns, gtime } = await getTxns(dhead, initArgs, ctime, howMany++);
-      if ( txns.length === 0 && gtime ) { ctime = gtime; }
+      if ( txns.length === 0 && gtime ) { updateCtime(gtime); }
       else {
-        const r = (x:RawTxn): Time => {
-          const xr = getTxnTime(x);
-          if ( ctime.lt(xr) ) { ctime = xr; }
-          return xr;
-        };
+        const r = (x:RawTxn): Time => updateCtime(getTxnTime(x));
         const cmpTxn = (x:RawTxn, y:RawTxn): number =>
           r(x).sub(r(y)).toNumber();
         txns.sort(cmpTxn);

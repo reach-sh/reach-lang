@@ -107,6 +107,7 @@ type RecvTxn = {
 };
 type TxId = string;
 type ApiCall<T> = {
+  query: object,
   do: () => Promise<T>,
 };
 
@@ -394,7 +395,7 @@ function looksLikeAccountingNotInitialized(e: any) {
 }
 
 const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0): Promise<T> => {
-  debug(dhead, { query });
+  debug(dhead, query.query);
   while ( true ) {
     if ( howMany > 0 ) {
       await Timeout.set(1000);
@@ -443,11 +444,13 @@ const newEventQueue = (): EventQueue => {
   const getTxns = async (dhead:string, initArgs:EQInitArgs, ctime: BigNumber, howMany: number): Promise<EQGetTxnsR<IndexerTxn>> => {
     const { ApplicationID } = initArgs;
     const indexer = await getIndexer();
+    const mtime = bigNumberToNumber(ctime) + 1;
+    debug(dhead, { ctime, mtime });
     const query =
       indexer.searchForTransactions()
         .applicationID(ApplicationID)
         .txType('appl')
-        .minRound(bigNumberToNumber(ctime) + 1);
+        .minRound(mtime);
     const res = (await doQuery_(dhead, query, howMany)) as IndexerQueryMRes;
     const txns = res.transactions;
     const gtime = bigNumberify(res['current-round']);
@@ -1760,7 +1763,7 @@ const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
   try {
     const client = await getAlgodClient();
     const binfo = await client.block(now).do();
-    debug(`getTimeSecs`, `node`, binfo);
+    //debug(`getTimeSecs`, `node`, binfo);
     return bigNumberify(binfo.block.ts);
   } catch (e:any) {
     debug(`getTimeSecs`, `node failed`, e);
