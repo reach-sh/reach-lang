@@ -38,7 +38,7 @@ body, html, .container-fluid {
 }
 
 #output {
-  height: 25%;
+  height: 50%;
   background-color: #f6f6f6;
   color: #555;
   font-family: 'Inconsolata', monospace;
@@ -48,12 +48,25 @@ body, html, .container-fluid {
 }
 
 #cy {
-  width: 300px;
-  height: 300px;
+  width: 100%;
+  height: 100%;
   display: block;
 }
 
 .bordered {
   border-radius: 0.2rem;
   border: 1px solid #212529;
+}
+
+.first-row {
+  height: 50%;
+}
+
+.first-row > * {
+  height: 100%;
+}
+
+pre[class*="language-"] {
+  height: 100%;
+  overflow-y: scroll !important;
 }
