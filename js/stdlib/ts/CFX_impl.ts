@@ -95,12 +95,13 @@ export async function canFundFromFaucet() {
 }
 
 export async function _specialFundFromFaucet() {
-  debug(`_specialFundFromFaucet`);
-  if (ethLikeCompiled.getNetworkId() == 0x1) {
+  const ni = ethLikeCompiled.getNetworkId();
+  debug(`_specialFundFromFaucet`, {ni});
+  if (ni == 0x1) {
     // XXX TestNet faucet only gives out 100 CFX at a time
     // Should we throw an error if amt !== 100 CFX?
     return makeURLFunder(`http://test-faucet.confluxnetwork.org:18088/dev/ask`);
-  } else if (ethLikeCompiled.getNetworkId() == 999) {
+  } else if (ni == 999) {
     const env = getProviderEnv();
     const k = 'CFX_NODE_URI';
     const base = k in env ? env[k] : DEFAULT_CFX_NODE_URI;
@@ -117,46 +118,35 @@ async function waitCaughtUp(provider: Provider, env: ProviderEnv): Promise<void>
   if ('CFX_NODE_URI' in env && env.CFX_NODE_URI && truthyEnv(env.REACH_DO_WAIT_PORT)) {
     await waitPort(env.CFX_NODE_URI);
   }
-  if (isIsolatedNetwork()) {
+  // This is false, because it competes for nonces with the faucet server and
+  // causes it to fail; I've just moved the loop into when we actually send and
+  // will remove this later
+  if (false && isIsolatedNetwork()) {
     // XXX this doesn't work with setFaucet; requires the default faucet to be used
     // But we can't call getFaucet() or _getDefaultFaucetNetworkAccount() here because
     // those (if left to defaults) call getProvider which calls this fn (waitCaughtUp).
     // TODO: disentangle
     if (!defaultFaucetWallet.provider) defaultFaucetWallet.connect(provider);
-    const maxTries = 20;
-    const waitMs = 1000;
-    let err: Error|null = null;
-    for (let tries = 0; tries < maxTries; tries++) {
-      if (err) {
-        debug(`waitCaughtUp: waiting some more`, {waitMs, tries, maxTries, err});
-        await Timeout.set(waitMs); // wait 1s between tries
-      }
+    const w = cfxers.Wallet.createRandom().connect(provider);
+    const txn = {to: w.getAddress(), value: '1'};
+    const dhead = 'waitCaughtUp';
+    while ( true ) {
       try {
-        const faddr = defaultFaucetWallet.getAddress();
-        const fbal = await defaultFaucetWallet.provider?.conflux.getBalance(faddr);
-        debug(`Faucet bal`, fbal);
-        // @ts-ignore
-        if (fbal == 0) {
-          const failMsg = `Faucet balance is 0 (${faddr})`;
-          debug(failMsg);
-          throw Error(failMsg);
-        }
-        const w = cfxers.Wallet.createRandom().connect(provider);
-        const txn = {to: w.getAddress(), value: '1'};
-        debug(`sending dummy txn`, txn);
+        debug(dhead, 'try', txn);
         const t = await defaultFaucetWallet.sendTransaction(txn);
         await t.wait();
         return;
       } catch (e:any) {
-        // TODO: only loop again if we detect that it's the "not caught up yet" error
-        //   err: RPCError: Request rejected due to still in the catch up mode.
-        //   { code: -32077 }
-        err = e;
+        debug(dhead, 'err', e);
+        if ( e.code === -32077 ) {
+          await Timeout.set(500);
+          continue;
+        }
+        break;
       }
     }
-    if (err) throw err;
   }
-}
+};
 
 const [getProvider, _setProvider] = replaceableThunk<Promise<Provider>|Provider>(async (): Promise<Provider> => {
   const fullEnv = getProviderEnv();

@@ -578,11 +578,11 @@ export class Wallet implements IWallet {
 
   async sendTransaction(txn: any): Promise<TransactionResponse> {
     this._requireConnected();
-    const provider = this.provider;
-    if (!provider) throw Error(`Impossible: provider is undefined`);
+    const p = this.provider;
+    if (!p) throw Error(`Impossible: provider is undefined`);
     const from = this.getAddress();
     txn = {from, ...txn, value: (txn.value || '0').toString()};
-    txn = await addEstimates(provider.conflux, txn);
+    txn = await addEstimates(p.conflux, txn);
     // This is weird but whatever
     if (txn.to instanceof Promise) {
        txn.to = await txn.to;
@@ -597,20 +597,32 @@ export class Wallet implements IWallet {
       // Note: {...txn} because conflux is going to mutate it >=[
       const txnMut = {...txn};
       try {
-        const transactionHash = await provider.conflux.sendTransaction(txnMut);
-        debug(dhead, `sent`, {txn, txnMut, transactionHash});
+        const th = await p.conflux.sendTransaction(txnMut);
+        debug(dhead, `sent`, {txn, txnMut, th});
+        let got: any = undefined;
+        let howMany = 0;
+        while ( ! ( got && got.blockHash ) ) {
+          if ( howMany++ > 2 * 60 * 5 ) {
+            throw Error(`${dhead} timeout in mining ${th}`);
+          }
+          debug(dhead, 'get', howMany, got);
+          await Timeout.set(500);
+          got = await p.conflux.getTransactionByHash(th);
+        }
         return {
-          transactionHash,
-          wait: () => waitReceipt(provider, transactionHash)
+          transactionHash: th,
+          wait: () => waitReceipt(p, th)
         }
       } catch (e:any) {
         const es = JSON.stringify(e);
         debug(dhead, `err`, { txn, e, es });
         //if ( es.includes("stale nonce") || es.includes("same nonce") || es.includes('tx already exist') ) {
         //  debug(dhead, `nonce error`);
-        //} else {
+        if ( e.code === -32077 ) {
+          debug(dhead, 'catchingUp');
+        } else {
           throw e;
-        //}
+        }
       }
     }
   }

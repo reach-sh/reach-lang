@@ -118,6 +118,10 @@ checkteal () {
 #exit 0
 
 jb
+ci ALGO transfer-from-zero
+ci ETH transfer-from-zero
+ci CFX transfer-from-zero
+exit 0
 ci CFX rps-3-bets
 exit 0
 one CFX cfx-bomb
