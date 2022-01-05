@@ -137,6 +137,9 @@ unblockProg sid aid v = do
             Just (C.A_Interact _at _slcxtframes _part _str _dltype _args) -> do
               let ps = k (g,l) v
               processNewState (Just sid) ps
+            Just (C.A_Remote _at _slcxtframes _str _args1 _args2) -> do
+              let ps = k (g,l) v
+              processNewState (Just sid) ps
             Just (C.A_InteractV _part _str _dltype) -> do
               let ps = k (g,l) v
               processNewState (Just sid) ps

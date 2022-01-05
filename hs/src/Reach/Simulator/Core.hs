@@ -209,6 +209,7 @@ data Action
   | A_InteractV String String DLType
   | A_Interact SrcLoc [SLCtxtFrame] String String DLType [DLVal]
   | A_Contest PhaseId
+  | A_Remote SrcLoc [SLCtxtFrame] String [DLVal] [DLVal]
   deriving (Generic)
 
 instance ToJSON Action
@@ -476,15 +477,13 @@ instance Interp DLExpr where
       let m = f acc $ saferMapRef "DLE_MapSet" $ M.lookup dlmvar linst
       setGlobal $ e {e_linstate = M.insert dlmvar m linst}
       return V_Null
-    DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill -> impossible "undefined"
-    --
-    --
-    -- contract type
-    -- fn name
-    -- how much to transfer to contr (network token) 
-    -- args to fn
-    -- how much expected back
-    -- result is a tuple: value returned, how much money you got back
+    DLE_Remote at slcxtframes dlarg str dlPayAmnt dlargs _dlWithBill@DLWithBill {..} -> do
+      acc <- fromIntegral <$> vUInt <$> interp dlarg
+      tok_billed <- mapM interp dwb_tok_billed
+      args <- mapM interp dlargs
+      v <- suspend $ PS_Suspend (A_Remote at slcxtframes str args tok_billed)
+      consensusPayout acc dlPayAmnt
+      return v
     DLE_TokenNew _at dltokennew -> do
       ledgerNewToken simContract dltokennew
       return V_Null
