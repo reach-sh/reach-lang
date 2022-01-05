@@ -7,4 +7,3 @@ CFX.rpc-view-steps
 # FIXME - known & released as of 0.1.6-rc.5 (2021-11-08)
 CFX.remote-view
 CFX.remote-api
-CFX.transfer-from-zero
