@@ -1472,6 +1472,16 @@ ce = \case
         L_Api {} -> True
         _ -> False
   DLE_setApiDetails {} -> return ()
+  DLE_GetActualBalance _ mtok -> do
+    _after_lab <- freshLabel "getActualBalance"
+    maybe cContractAddr ca mtok
+    op "balance"
+    -- op "dup"
+    -- code "bz" [after_lab]
+    -- maybe cContractAddr ca mtok
+    -- op "min_balance"
+    -- op "-"
+    -- label after_lab
   where
     show_stack msg at fs = do
       comment $ texty msg

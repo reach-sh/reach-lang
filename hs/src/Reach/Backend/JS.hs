@@ -473,6 +473,8 @@ jsExpr = \case
       (L_Api s, [dv]) -> go s dv
       (_, _) -> return $ "null"
   DLE_setApiDetails {} -> return "undefined"
+  DLE_GetActualBalance {} -> return "0"
+
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
   ov' <- jsVar ov
