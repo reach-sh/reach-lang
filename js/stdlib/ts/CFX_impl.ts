@@ -75,19 +75,18 @@ function toHexAddr(cfxAddr: string) {
   ).toString('hex').toLowerCase();
 }
 
-async function _fundOnCfxTestNet(to: any, amt: any) {
-  // XXX TestNet faucet only gives out 100 CFX at a time
-  // Should we throw an error if amt !== 100 CFX?
-  void(amt)
-  const method = '_fundOnCfxTestNet';
+const makeURLFunder = (url: string) => async (to:any, amt:any): Promise<void> => {
+  const dhead = 'doURLFunder';
   to = to.getAddress ? await to.getAddress() : to;
-  debug({method, to});
+  debug(dhead, to);
   const toHex = toHexAddr(to);
-  debug({method, message: 'requesting from testnet faucet', toHex});
-  const res = await window.fetch(`http://test-faucet.confluxnetwork.org:18088/dev/ask?address=${toHex}`);
+  let u = `${url}?address=${toHex}`;
+  if ( amt ) { u = `${u}&amount=${amt}`; }
+  debug(dhead, { toHex, u });
+  const res = await window.fetch(u);
   const resJson = await res.json();
-  debug({method, message: 'got response from testnet faucet', resJson});
-}
+  debug(dhead, { resJson });
+};
 
 export async function canFundFromFaucet() {
   debug('canFundFromFaucet');
@@ -98,7 +97,17 @@ export async function canFundFromFaucet() {
 export async function _specialFundFromFaucet() {
   debug(`_specialFundFromFaucet`);
   if (ethLikeCompiled.getNetworkId() == 0x1) {
-    return _fundOnCfxTestNet;
+    // XXX TestNet faucet only gives out 100 CFX at a time
+    // Should we throw an error if amt !== 100 CFX?
+    return makeURLFunder(`http://test-faucet.confluxnetwork.org:18088/dev/ask`);
+  } else if (ethLikeCompiled.getNetworkId() == 999) {
+    const env = getProviderEnv();
+    const k = 'CFX_NODE_URI';
+    const base = k in env ? env[k] : DEFAULT_CFX_NODE_URI;
+    const coms = base.split(':');
+    coms.pop();
+    const uri = coms.join(':');
+    return makeURLFunder(`${uri}:1337/faucet`);
   } else {
     return null;
   }

@@ -118,6 +118,8 @@ checkteal () {
 #exit 0
 
 jb
+ci CFX rps-3-bets
+exit 0
 one CFX cfx-bomb
 exit 0
 ci ALGO nft-auction

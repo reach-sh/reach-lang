@@ -13,10 +13,15 @@ COPY patch ./patch
 RUN patch -d /conflux-rust/core/src/spec/ < patch/genesis-$CFX_VERSION.patch
 RUN /root/.cargo/bin/cargo build --release
 
-
-FROM debian:buster-slim
+FROM node:buster-slim
 
 RUN apt-get update; apt-get install curl -y; apt-get clean
+
+RUN mkdir /faucet
+COPY faucet/package.json /faucet
+RUN cd /faucet && npm install
+COPY faucet/index.mjs /faucet
+
 COPY --from=build /conflux-rust/target/release/conflux /
 COPY log.yaml default.toml genesis_secret.txt run.sh /
 
