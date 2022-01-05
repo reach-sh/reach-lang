@@ -1,9 +1,20 @@
 const c = await import('@reach-sh/simulator-client');
 const assert = await import('assert');
 
+const getVar = async (v,n,aid) => {
+  const x = await c.getStateLocals(n)
+  return x.l_locals[aid].l_store.find(el => el[0] == v)
+}
+
+const assertVar = (y,t,v) => {
+  assert.equal(y[1].tag,t);
+  assert.equal(y[1].contents,v);
+}
+
 const main = async () => {
   console.log("Init Testing!")
   await c.waitForPort()
+  await c.resetServer()
   await c.ping()
   await c.load()
   await c.init()

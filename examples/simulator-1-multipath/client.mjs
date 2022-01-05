@@ -8,6 +8,7 @@ const main = async () => {
     port: port
   };
   await c.waitForPort(params)
+  await c.resetServer()
   await c.load()
   await c.init()
   await c.initFor(0,0)
