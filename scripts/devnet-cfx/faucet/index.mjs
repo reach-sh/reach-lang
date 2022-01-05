@@ -23,7 +23,7 @@ const conflux = new cfxsdk.Conflux({
 const faucet = conflux.wallet.addPrivateKey(mining_key);
 debug({ conflux, faucet });
 const fund = new Channel();
-fund.consume(async ({to, value, done}) => {
+fund.consume(async ({to, value, res}) => {
   let r;
   try {
     while ( !r ) {
@@ -60,18 +60,19 @@ fund.consume(async ({to, value, done}) => {
         r = undefined;
       }
     }
+    debug({r});
+    res.send(r);
   } catch (e) {
-    r = e;
+    debug({e});
+    res.status(500).send(e);
   }
-  debug({r});
-  done(r);
 });
 
 const app = express();
 app.use(express.json());
 app.get('*', (req, res, next) => {
   const { address: to, amount: value } = req.query;
-  fund.put({to, value, done: (x) => res.send(x)});
+  fund.put({to, value, res});
 });
 
 const opts = {
