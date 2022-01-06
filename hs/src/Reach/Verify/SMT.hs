@@ -1570,7 +1570,7 @@ _verify_smt mc ctxt_vst smt lp = do
           local (\e -> e {ctxt_modem = Just mode}) $ do
             forM_ dex smt_eb
             ctxtNewScope $ freshAddrs $ smt_s s
-    let ms = VM_Honest : (map VM_Dishonest (RoleContract : (map RolePart $ M.keys pies_m)))
+    let ms = [ VM_Honest, VM_Dishonest RoleContract ] -- <> (map (VM_Dishonest . RolePart) $ M.keys pies_m)
     mapM_ smt_s_top ms
 
 hPutStrLn' :: Handle -> String -> IO ()

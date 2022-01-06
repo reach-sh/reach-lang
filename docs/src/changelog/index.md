@@ -7,6 +7,9 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.8 is the current Reach release candidate version.
 
++ 2022/01/06: Verification of only-one-honest participant is disabled.
+  This proves nothing that wasn't verified already by the other two cases and
+  just takes more time.
 + 2022/01/05: Conflux devnet has been upgraded to 0.1.7.
 
 ## 0.1.7: 2021/11 - 2021/12

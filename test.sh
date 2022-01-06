@@ -27,7 +27,7 @@ err () {
 }
 
 jb () {
-  #(cd "$ROOT"/js/js-deps && make build)
+  (cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
@@ -118,8 +118,9 @@ checkteal () {
 #exit 0
 
 jb
-ci ETH rps-3-bets
-ci CFX rps-3-bets
+export REACH_DEBUG=Y
+c users/duoswap-core/index.rsh
+
 exit 0
 
 exit 0
