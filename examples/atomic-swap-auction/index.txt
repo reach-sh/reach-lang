@@ -2,6 +2,4 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-  Verifying when ONLY "Auctioneer" is honest
-  Verifying when ONLY "Bidder" is honest
-Checked 133 theorems; No failures!
+Checked 83 theorems; No failures!

@@ -22,6 +22,4 @@ Verification failed:
   require(v65);
 
   Verifying when NO participants are honest
-  Verifying when ONLY "C" is honest
-  Verifying when ONLY "Constructor" is honest
-Checked 14 theorems; 1 failures :'(
+Checked 12 theorems; 1 failures :'(

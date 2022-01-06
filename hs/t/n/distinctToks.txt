@@ -23,5 +23,4 @@ Verification failed:
   require(v61);
 
   Verifying when NO participants are honest
-  Verifying when ONLY "A" is honest
-Checked 15 theorems; 1 failures :'(
+Checked 12 theorems; 1 failures :'(

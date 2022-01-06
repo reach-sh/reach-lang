@@ -2,9 +2,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-  Verifying when ONLY "A" is honest
-  Verifying when ONLY "B" is honest
-Checked 4 theorems; No failures!
+Checked 2 theorems; No failures!
 warning[RW0004]: There are no publications in the application.
 
   ./participant_entities.rsh:9:12:application
