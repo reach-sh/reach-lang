@@ -32,7 +32,6 @@ import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Warning
 import Safe (atMay)
-import Text.Read
 import Generics.Deriving ( Generic )
 import Reach.CommandLine
 import Data.List (intercalate)
@@ -215,19 +214,23 @@ data TEAL
   | TInt Integer
   | TConst LT.Text
   | TBytes B.ByteString
+  | TExtract Word8 Word8
+  | TSubstring Word8 Word8
   | TComment LT.Text
   | TLabel Label
 type TEALt = [LT.Text]
 type TEALs = DL.DList TEAL
 
 builtin :: S.Set TealOp
-builtin = S.fromList [ "byte", "int" ]
+builtin = S.fromList [ "byte", "int", "substring", "extract" ]
 
 render :: TEAL -> TEALt
 render = \case
   TInt x -> ["int", texty x]
   TConst x -> ["int", x]
   TBytes bs -> ["byte", "base64(" <> encodeBase64 bs <> ")" ]
+  TExtract x y -> ["extract", texty x, texty y]
+  TSubstring x y -> ["substring", texty x, texty y]
   TCode f args ->
     case S.member f builtin of
       True -> impossible $ show $ "cannot use " <> f <> " directly"
@@ -266,13 +269,11 @@ opt_b1 = \case
   (TBytes x) : (TBytes y) : (TCode "concat" []) : l ->
     opt_b1 $ (TBytes $ x <> y) : l
   (TCode "b" [x]) : b@(TLabel y) : l | x == y -> b : l
-  (TCode "btoi" []) : (TCode "itob" ["// bool"]) : (TCode "substring" ["7", "8"]) : l -> l
+  (TCode "btoi" []) : (TCode "itob" ["// bool"]) : (TSubstring 7 8) : l -> l
   (TCode "btoi" []) : (TCode "itob" []) : l -> l
   (TCode "itob" []) : (TCode "btoi" []) : l -> l
-  a@(TCode "extract" [x, "8"]) : b@(TCode "btoi" []) : l ->
-    case parse x of
-      Just xn -> (TInt xn) : (TCode "extract_uint64" []) : l
-      Nothing -> a : b : l
+  (TExtract x 8) : (TCode "btoi" []) : l ->
+    (TInt $ fromIntegral x) : (TCode "extract_uint64" []) : l
   a@(TCode "load" [x]) : (TCode "load" [y]) : l
     | x == y ->
       -- This misses if there is ANOTHER load of the same thing
@@ -280,44 +281,30 @@ opt_b1 = \case
   a@(TCode "store" [x]) : (TCode "load" [y]) : l
     | x == y ->
       (TCode "dup" []) : a : l
-  a@(TCode "substring" [s0, _]) : b@(TInt xn) : c@(TCode "getbyte" []) : l ->
-    case mse of
-      Just (s0x, s0xp1) ->
-        opt_b1 $ (TCode "substring" [s0x, s0xp1]) : (TCode "btoi" []) : l
-      Nothing ->
-        a : b : c : l
+  a@(TSubstring s0w _) : b@(TInt xn) : c@(TCode "getbyte" []) : l ->
+    case xn < 256 && s0xnp1 < 256 of
+      True -> opt_b1 $ (TSubstring (fromIntegral s0xn) (fromIntegral s0xnp1)) : (TCode "btoi" []) : l
+      False -> a : b : c : l
     where
-      mse = do
-        s0n <- parse s0
-        let s0xn = s0n + xn
-        let s0xp1n = s0xn + 1
-        case s0xn < 256 && s0xp1n < 256 of
-          True -> return (texty s0xn, texty s0xp1n)
-          False -> mempty
-  a@(TCode "substring" [s0, _]) : b@(TCode "substring" [s1, e1]) : l ->
-    case mse of
-      Just (s2, e2) ->
-        opt_b1 $ (TCode "substring" [s2, e2]) : l
-      Nothing ->
-        a : b : l
+      s0xn :: Integer
+      s0xn = (fromIntegral s0w) + xn
+      s0xnp1 :: Integer
+      s0xnp1 = s0xn + 1
+  a@(TSubstring s0w _) : b@(TSubstring s1w e1w) : l ->
+    case s2n < 256 && e2n < 256 of
+      True -> opt_b1 $ (TSubstring (fromIntegral s2n) (fromIntegral e2n)) : l
+      False -> a : b : l
     where
-      mse = do
-        s0n <- parse s0
-        s1n <- parse s1
-        e1n <- parse e1
-        let s2n = s0n + s1n
-        let e2n = s0n + e1n
-        case s2n < 256 && e2n < 256 of
-          True -> return $ (texty s2n, texty e2n)
-          False -> mempty
+      s0n = fromIntegral s0w
+      s2n :: Integer
+      s2n = s0n + (fromIntegral s1w)
+      e2n :: Integer
+      e2n = s0n + (fromIntegral e1w)
   (TInt x) : (TCode "itob" []) : l ->
     opt_b1 $ (TBytes xbs) : l
     where
       xbs = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
   x : l -> x : l
-  where
-    parse :: LT.Text -> Maybe Integer
-    parse = readMaybe . LT.unpack
 
 checkCost :: Bool -> [TEAL] -> IO ()
 checkCost alwaysShow ts = do
@@ -377,6 +364,8 @@ checkCost alwaysShow ts = do
     TBytes _ -> recCost 1
     TConst _ -> recCost 1
     TInt _ -> recCost 1
+    TExtract {} -> recCost 1
+    TSubstring {} -> recCost 1
     TCode f _ ->
       case f of
         "sha256" -> recCost 35
@@ -731,7 +720,7 @@ sallocLet dv cgen km = do
 ctobs :: DLType -> App ()
 ctobs = \case
   T_UInt -> op "itob"
-  T_Bool -> code "itob" ["// bool"] >> code "substring" ["7", "8"]
+  T_Bool -> code "itob" ["// bool"] >> output (TSubstring 7 8)
   T_Null -> nop
   T_Bytes _ -> nop
   T_Digest -> nop
@@ -769,9 +758,6 @@ ctzero = \case
 
 chkint :: SrcLoc -> Integer -> Integer
 chkint at i = checkIntLiteralC at conName' conCons' i
-
-tint :: SrcLoc -> Integer -> LT.Text
-tint at i = texty $ chkint at i
 
 cint_ :: SrcLoc -> Integer -> App ()
 cint_ at i = output $ TInt $ chkint at i
@@ -925,32 +911,32 @@ check_concat_len totlen =
 cdigest :: [(DLType, App ())] -> App ()
 cdigest l = cconcatbs l >> op "sha256"
 
-cextract :: SrcLoc -> Integer -> Integer -> App ()
-cextract _at _s 0 = do
+cextract :: Integer -> Integer -> App ()
+cextract _s 0 = do
   op "pop"
   padding 0
-cextract at s l =
+cextract s l =
   case s < 256 && l < 256 && l /= 0 of
     True -> do
-      code "extract" [tint at s, tint at l]
+      output $ TExtract (fromIntegral s) (fromIntegral l)
     False -> do
       cint s
       cint l
       op "extract3"
 
-csubstring :: SrcLoc -> Integer -> Integer -> App ()
-csubstring at s e = cextract at s (e - s)
+csubstring :: Integer -> Integer -> App ()
+csubstring s e = cextract s (e - s)
 
-computeSplice :: SrcLoc -> Integer -> Integer -> Integer -> (App (), App ())
-computeSplice at start end tot = (before, after)
+computeSplice :: Integer -> Integer -> Integer -> (App (), App ())
+computeSplice start end tot = (before, after)
   where
     -- XXX If start == 0, then we could remove before and have another version
     -- of the callers of computeSplice
-    before = cextract at 0 start
-    after = cextract at end (tot - end)
+    before = cextract 0 start
+    after = cextract end (tot - end)
 
 csplice :: SrcLoc -> Integer -> Integer -> Integer -> App ()
-csplice at b c e = do
+csplice _at b c e = do
   -- [ Bytes  = X b Y c Z e , NewBytes = Y' ]
   let len = c - b
   case len == 1 of
@@ -962,7 +948,7 @@ csplice at b c e = do
       -- [ Bytes, Offset, NewByte ]
       op "setbyte"
     False -> salloc_ $ \store_new load_new -> do
-      let (cbefore, cafter) = computeSplice at b c e
+      let (cbefore, cafter) = computeSplice b c e
       -- [ Big, New ]
       store_new
       -- [ Big ]
@@ -998,12 +984,12 @@ csplice3 (Just cbig) cbefore cafter cnew = do
   op "concat"
 
 cArraySet :: SrcLoc -> (DLType, Integer) -> Maybe (App ()) -> Either Integer (App ()) -> App () -> App ()
-cArraySet at (t, alen) mcbig eidx cnew = do
+cArraySet _at (t, alen) mcbig eidx cnew = do
   let tsz = typeSizeOf t
   let (cbefore, cafter) =
         case eidx of
           Left ii ->
-            computeSplice at start end tot
+            computeSplice start end tot
             where
               start = ii * tsz
               end = start + tsz
@@ -1067,7 +1053,7 @@ doArrayRef at aa frombs ie = do
   cArrayRef at t frombs ie
 
 cArrayRef :: SrcLoc -> DLType -> Bool -> Either DLArg (App ()) -> App ()
-cArrayRef at t frombs ie = do
+cArrayRef _at t frombs ie = do
   let tsz = typeSizeOf t
   let ie' =
         case ie of
@@ -1084,7 +1070,7 @@ cArrayRef at t frombs ie = do
       case ie of
         Left (DLA_Literal (DLL_Int _ ii)) -> do
           let start = ii * tsz
-          cextract at start tsz
+          cextract start tsz
         _ -> do
           cint tsz
           ie'
@@ -1129,7 +1115,7 @@ cbs :: B.ByteString -> App ()
 cbs = output . TBytes
 
 cTupleRef :: SrcLoc -> DLType -> Integer -> App ()
-cTupleRef at tt idx = do
+cTupleRef _at tt idx = do
   -- [ Tuple ]
   let ts = tupleTypes tt
   let (t, start, sz) = computeExtract ts idx
@@ -1137,7 +1123,7 @@ cTupleRef at tt idx = do
     ([ _ ], 0) ->
       return ()
     _ -> do
-      cextract at start sz
+      cextract start sz
   -- [ ValueBs ]
   cfrombs t
   -- [ Value ]
@@ -1187,7 +1173,7 @@ cMapLoad = do
   return ()
 
 cMapStore :: SrcLoc -> App ()
-cMapStore at = do
+cMapStore _at = do
   Shared {..} <- eShared <$> ask
   -- [ Address, MapData' ]
   forM_ sMapKeysl $ \mi -> do
@@ -1198,7 +1184,7 @@ cMapStore at = do
     -- [ Address, MapData', Address, Key ]
     code "dig" ["2"]
     -- [ Address, MapData', Address, Key, MapData' ]
-    cStateSlice at sMapDataSize mi
+    cStateSlice sMapDataSize mi
     -- [ Address, MapData', Address, Key, Value ]
     op "app_local_put"
     -- [ Address, MapData' ]
@@ -1243,7 +1229,7 @@ cSvsLoad size = do
       return ()
 
 cSvsSave :: SrcLoc -> [DLArg] -> App ()
-cSvsSave at svs = do
+cSvsSave _at svs = do
   let la = DLLA_Tuple svs
   let lat = largeArgTypeOf la
   let size = typeSizeOf lat
@@ -1259,7 +1245,7 @@ cSvsSave at svs = do
     -- [ SvsData, Key ]
     code "dig" [ "1" ]
     -- [ SvsData, Key, SvsData ]
-    cStateSlice at size vi
+    cStateSlice size vi
     -- [ SvsData, Key, ViewData' ]
     op "app_global_put"
     -- [ SvsData ]
@@ -1326,12 +1312,12 @@ ce = \case
   DLE_TupleRef at ta idx -> do
     ca ta
     cTupleRef at (argTypeOf ta) idx
-  DLE_ObjectRef at oa f -> do
+  DLE_ObjectRef _at oa f -> do
     let fts = argObjstrTypes oa
     let fidx = fromIntegral $ fromMaybe (impossible "field") $ List.findIndex ((== f) . fst) fts
     let (t, start, sz) = computeExtract (map snd fts) fidx
     ca oa
-    cextract at start sz
+    cextract start sz
     cfrombs t
   DLE_Interact {} -> impossible "consensus interact"
   DLE_Digest _ args -> cdigest $ map go args
@@ -1615,7 +1601,7 @@ makeTxn (MakeTxn {..}) = when (mt_always || not (staticZero mt_amt) ) $ do
   op "pop" -- if !always & zero then pop amt ; else pop 0
 
 doSwitch :: (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
-doSwitch ck at dv csm = do
+doSwitch ck _at dv csm = do
   end_lab <- freshLabel "switchK"
   let cm1 ((vn, (vv, vu, k)), vi) = do
         next_lab <- freshLabel $ "switchAfter" <> vn
@@ -1635,7 +1621,7 @@ doSwitch ck at dv csm = do
                 True -> padding 0
                 False -> do
                   ca $ DLA_Var dv
-                  cextract at 1 sz
+                  cextract 1 sz
                   cfrombs vt
         label next_lab
   mapM_ cm1 $ zip (M.toAscList csm) [0 ..]
@@ -1972,11 +1958,11 @@ getMapDataTy = (sMapDataTy . eShared) <$> ask
 
 type Disp = String -> T.Text -> IO String
 
-cStateSlice :: SrcLoc -> Integer -> Word8 -> App ()
-cStateSlice at size iw = do
+cStateSlice :: Integer -> Word8 -> App ()
+cStateSlice size iw = do
   let i = fromIntegral iw
   let k = algoMaxAppBytesValueLen_usable
-  csubstring at (k * i) (min size $ k * (i + 1))
+  csubstring (k * i) (min size $ k * (i + 1))
 
 compileTEAL :: String -> IO BS.ByteString
 compileTEAL tealf = do
