@@ -63,16 +63,17 @@ instance Show AlgoError where
 
 -- General tools that could be elsewhere
 
-type LPGraph a = M.Map a (M.Map a Int)
-type LPPath a = ([(a, Int)], Int)
-type LPInt a = M.Map a ([(a, Int)], Int)
-longestPathBetween :: forall a . (Ord a, Show a) => LPGraph a -> a -> a -> IO (LPPath a)
+type LPGraph a = M.Map a (M.Map a Integer)
+type LPPath a = ([(a, Integer)], Integer)
+type LPInt a = M.Map a ([(a, Integer)], Integer)
+longestPathBetween :: forall a . (Ord a, Monoid a, Show a) => LPGraph a -> a -> a -> IO (LPPath a)
 longestPathBetween g f _d = do
   when False $ do
     putStrLn $ "digraph {"
     forM_ (M.toAscList g) $ \(from, cs) -> do
       forM_ (M.toAscList cs) $ \(to, c) -> do
-        putStrLn $ show from <> " -> " <> show to <> " [label=\"" <> show c <> "\"]"
+        unless (from == mempty) $
+          putStrLn $ show from <> " -> " <> show to <> " [label=\"" <> show c <> "\"]"
     putStrLn $ "}"
   let r x y = fromMaybe ([], 0) $ M.lookup x y
   ps <- fixedPoint $ \(m::LPInt a) -> do
@@ -315,18 +316,18 @@ checkCost alwaysShow ts = do
   let lTop = "TOP"
   let lBot = "BOT"
   (labr :: IORef String) <- newIORef $ lTop
-  (cost_r :: IORef Int) <- newIORef $ 0
-  (logLen_r :: IORef Int) <- newIORef $ 0
-  hasForR <- newIORef $ False
+  (cost_r :: IORef Integer) <- newIORef $ 0
+  (logLen_r :: IORef Integer) <- newIORef $ 0
   let l2s = LT.unpack
   let rec_ r c = modifyIORef r (c +)
   let recCost = rec_ cost_r
   let recLogLen = rec_ logLen_r
-  let jump_ t = do
+  let jump_ :: String -> Integer -> IO ()
+      jump_ t k = do
         lab <- readIORef labr
         let updateGraph cr cgr = do
               c <- readIORef cr
-              let ff = max c
+              let ff = max (c * k)
               let fg = Just . ff . fromMaybe 0
               let f = M.alter fg t
               let g = Just . f . fromMaybe mempty
@@ -337,11 +338,11 @@ checkCost alwaysShow ts = do
         writeIORef labr t
         writeIORef cost_r 0
         writeIORef logLen_r 0
-  let jump t = recCost 1 >> jump_ (l2s t)
+  let jumpK k t = recCost 1 >> jump_ (l2s t) k
+  let jump = jumpK 1
   forM_ ts $ \case
-    TCode "bnz" [lab', "//", _] -> do
-      writeIORef hasForR True
-      jump lab'
+    TCode "bnz" [_, "//", cnt, lab'] -> do
+      jumpK (read $ LT.unpack cnt) lab'
     TCode "bnz" [lab'] -> jump lab'
     TCode "bz" [lab'] -> jump lab'
     TCode "b" [lab'] -> do
@@ -359,7 +360,7 @@ checkCost alwaysShow ts = do
     TComment _ -> return ()
     TLabel lab' -> do
       let lab'' = l2s lab'
-      jump_ lab''
+      jump_ lab'' 1
       switch lab''
     TBytes _ -> recCost 1
     TConst _ -> recCost 1
@@ -399,14 +400,9 @@ checkCost alwaysShow ts = do
         let tooMuch = fromIntegral c > algoMax
         let cs = (whenl tooMuch $ msg <> ", but the limit is " <> show algoMax <> ": " <> show p <> "\n")
         return (msg, tooMuch, cs)
-  hasFor <- readIORef hasForR
   (showCost, exceedsCost, csCost) <- analyze cost_gr "units of cost" algoMaxAppProgramCost
   (showLogLen, exceedsLogLen, csLogLen) <- analyze logLen_gr "bytes of logs" algoMaxLogLen
-  let cs = []
-        <> (whenl hasFor $
-              "This program contains a loop, which cannot be tracked accurately for cost or log bytes.\n")
-        <> csCost
-        <> csLogLen
+  let cs = csCost <> csLogLen
   unless (null cs) $
     emitWarning Nothing $ W_ALGOConservative cs
   let exceeds = exceedsCost || exceedsLogLen
@@ -1030,6 +1026,7 @@ cfor 1 body = body (cint 0)
 cfor maxi body = do
   when (maxi < 2) $ impossible "cfor maxi=0"
   top_lab <- freshLabel "forTop"
+  end_lab <- freshLabel "forEnd"
   salloc_ $ \store_idx load_idx -> do
     cint 0
     store_idx
@@ -1042,7 +1039,8 @@ cfor maxi body = do
     store_idx
     cint maxi
     op "<"
-    code "bnz" [top_lab, "//", texty maxi]
+    code "bnz" [top_lab, "//", texty maxi, end_lab]
+  label end_lab
   return ()
 
 doArrayRef :: SrcLoc -> DLArg -> Bool -> Either DLArg (App ()) -> App ()
