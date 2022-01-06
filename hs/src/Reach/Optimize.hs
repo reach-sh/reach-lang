@@ -4,6 +4,7 @@ import Control.Monad.Reader
 import Data.IORef
 import qualified Data.Set as S
 import qualified Data.Map.Strict as M
+import Data.Maybe
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
@@ -16,11 +17,16 @@ import Reach.Util
 import Safe (atMay)
 
 type App = ReaderT Env IO
+type ConstApp = ReaderT ConstEnv IO
 
 type AppT a = a -> App a
+type ConstT a = a -> ConstApp ()
 
 class Optimize a where
   opt :: AppT a
+  gcs :: ConstT a
+  gcsWorthIt :: a -> Bool
+  gcsWorthIt = const False
 
 data Focus
   = F_Ctor
@@ -61,6 +67,10 @@ data Env = Env
   , eEnvsR :: IORef (M.Map Focus CommonEnv)
   , eCounter :: Counter
   , eConst :: S.Set DLVar
+  }
+
+data ConstEnv = ConstEnv
+  { eConstR :: IORef (M.Map DLVar Integer)
   }
 
 focus :: Focus -> App a -> App a
@@ -195,23 +205,31 @@ opt_v2a v = snd <$> opt_v2p v
 
 instance (Traversable t, Optimize a) => Optimize (t a) where
   opt = traverse opt
+  gcs = mapM_ gcs
 
 instance {-# OVERLAPS #-} (Optimize a, Optimize b) => Optimize (a, b) where
   opt (x, y) = (,) <$> opt x <*> opt y
+  gcs (x, y) = gcs x >> gcs y
 
 instance {-# OVERLAPS #-} (Optimize a, Optimize b) => Optimize (Either a b) where
   opt = \case
     Left x -> Left <$> opt x
     Right x -> Right <$> opt x
+  gcs = \case
+    Left x -> gcs x
+    Right x -> gcs x
 
 instance Optimize IType where
   opt = return
+  gcs _ = return ()
 
 instance Optimize DLVar where
   opt = opt_v2v
+  gcs _ = return ()
 
 instance Optimize Bool where
   opt = return
+  gcs _ = return ()
 
 instance Optimize DLArg where
   opt = \case
@@ -219,6 +237,7 @@ instance Optimize DLArg where
     DLA_Constant c -> return $ DLA_Constant c
     DLA_Literal c -> return $ DLA_Literal c
     DLA_Interact p m t -> return $ DLA_Interact p m t
+  gcs _ = return ()
 
 instance Optimize DLLargeArg where
   opt = \case
@@ -230,6 +249,7 @@ instance Optimize DLLargeArg where
     DLLA_Bytes b -> return $ DLLA_Bytes b
     where
       go (k, v) = (,) k <$> opt v
+  gcs _ = return ()
 
 instance Optimize DLTokenNew where
   opt (DLTokenNew {..}) = DLTokenNew
@@ -239,10 +259,12 @@ instance Optimize DLTokenNew where
     <*> opt dtn_metadata
     <*> opt dtn_supply
     <*> opt dtn_decimals
+  gcs _ = return ()
 
 instance Optimize DLWithBill where
   opt (DLWithBill y z) =
     DLWithBill <$> opt y <*> opt z
+  gcs _ = return ()
 
 unsafeAt :: [a] -> Int -> a
 unsafeAt l i =
@@ -351,9 +373,11 @@ instance Optimize DLExpr where
     DLE_GetUntrackedFunds at mt tb -> DLE_GetUntrackedFunds at <$> opt mt <*> opt tb
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
+  gcs _ = return ()
 
 instance Optimize DLAssignment where
   opt (DLAssignment m) = DLAssignment <$> opt m
+  gcs _ = return ()
 
 class Extract a where
   extract :: a -> Maybe DLVar
@@ -378,6 +402,9 @@ optIf mkDo mkIf at c t f =
               return $ mkIf at c'' f' t'
             Nothing ->
               return $ mkIf at c' t' f'
+
+gcsSwitch :: Optimize k => ConstT (SwitchCases k)
+gcsSwitch = mapM_ (\(_, _, n) -> gcs n)
 
 optSwitch :: Optimize k => (k -> r) -> (DLStmt -> k -> k) -> (SrcLoc -> DLVar -> SwitchCases k -> r) -> SrcLoc -> DLVar -> SwitchCases k -> App r
 optSwitch mkDo mkLet mkSwitch at ov csm = do
@@ -487,20 +514,40 @@ instance Optimize DLStmt where
                 return t'
               _ -> def
           _ -> def
+  gcs = \case
+    DL_Nop {} -> return ()
+    DL_Let {} -> return ()
+    DL_Var {} -> return ()
+    DL_Set _ v _ -> do
+      cr <- asks eConstR
+      let f = Just . (+) 1 . fromMaybe 0
+      liftIO $ modifyIORef cr $ M.alter f v
+    DL_LocalIf _ _ t f -> gcs t >> gcs f
+    DL_LocalSwitch _ _ csm -> gcsSwitch csm
+    DL_ArrayMap _ _ _ _ f -> gcs f
+    DL_ArrayReduce _ _ _ _ _ _ f -> gcs f
+    DL_MapReduce _ _ _ _ _ _ _ f -> gcs f
+    DL_Only _ _ l -> gcs l
+    DL_LocalDo _ t -> gcs t
 
 instance Optimize DLTail where
   opt = \case
     DT_Return at -> return $ DT_Return at
     DT_Com m k -> mkCom DT_Com <$> opt m <*> opt k
+  gcs = \case
+    DT_Return _ -> return ()
+    DT_Com m k -> gcs m >> gcs k
 
 instance Optimize DLBlock where
   opt (DLBlock at fs b a) =
     -- newScope $
     DLBlock at fs <$> opt b <*> opt a
+  gcs (DLBlock _ _ b _) = gcs b
 
 instance {-# OVERLAPPING #-} Optimize a => Optimize (DLinExportBlock a) where
   opt (DLinExportBlock at vs b) =
     newScope $ DLinExportBlock at vs <$> opt b
+  gcs (DLinExportBlock _ _ b) = gcs b
 
 instance Optimize LLConsensus where
   opt = \case
@@ -518,6 +565,14 @@ instance Optimize LLConsensus where
       LLC_FromConsensus at1 at2 <$> (focus_all $ opt s)
     LLC_ViewIs at vn vk a k ->
       LLC_ViewIs at vn vk <$> opt a <*> opt k
+  gcs = \case
+    LLC_Com m k -> gcs m >> gcs k
+    LLC_If _ _ t f -> gcs t >> gcs f
+    LLC_Switch _ _ csm -> gcsSwitch csm
+    LLC_While _ _ _ cond body k -> gcs cond >> gcs body >> gcs k
+    LLC_Continue {} -> return ()
+    LLC_FromConsensus _ _ s -> gcs s
+    LLC_ViewIs _ _ _ _ k -> gcs k
 
 _opt_dbg :: Show a => App a -> App a
 _opt_dbg m = do
@@ -537,8 +592,14 @@ opt_mtime = \case
   Nothing -> pure $ Nothing
   Just (d, s) -> Just <$> (pure (,) <*> (focus_con $ opt d) <*> (newScope $ opt s))
 
+gcs_mtime :: (Optimize b) => ConstT (Maybe (a, b))
+gcs_mtime = \case
+  Nothing -> return ()
+  Just (_, s) -> gcs s
+
 instance Optimize DLPayAmt where
   opt (DLPayAmt {..}) = DLPayAmt <$> opt pa_net <*> opt pa_ks
+  gcs _ = return ()
 
 opt_send :: AppT (SLPart, DLSend)
 opt_send (p, DLSend isClass args amta whena) =
@@ -556,6 +617,10 @@ instance Optimize LLStep where
         k' = newScope $ focus_con $ opt $ dr_k recv
         recv' = (\k -> recv {dr_k = k}) <$> k'
         mtime' = opt_mtime mtime
+  gcs = \case
+    LLS_Com m k -> gcs m >> gcs k
+    LLS_Stop _ -> return ()
+    LLS_ToConsensus _ _ _ recv mtime -> gcs (dr_k recv) >> gcs_mtime mtime
 
 instance Optimize DLInit where
   opt (DLInit {..}) = do
@@ -563,6 +628,7 @@ instance Optimize DLInit where
       DLInit
         { dli_maps = dli_maps
         }
+  gcs _ = return ()
 
 instance Optimize LLProg where
   opt (LLProg at opts ps dli dex dvs das devts s) = do
@@ -573,6 +639,8 @@ instance Optimize LLProg where
     local (const env0) $
       focus_ctor $
         LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> pure das <*> pure devts <*> opt s
+  gcs (LLProg _ _ _ _ _ _ _ _ s) = gcs s
+  gcsWorthIt _ = True
 
 -- This is a bit of a hack...
 
@@ -588,9 +656,11 @@ instance Optimize FromInfo where
   opt = \case
     FI_Continue svs -> FI_Continue <$> opt_svs svs
     FI_Halt toks -> FI_Halt <$> opt toks
+  gcs _ = return ()
 
 instance {-# OVERLAPPING #-} (Optimize a, Optimize b, Optimize c, Optimize d, Optimize e) => Optimize (a, b, c, d, e) where
   opt (a, b, c, d, e) = (,,,,) <$> opt a <*> opt b <*> opt c <*> opt d <*> opt e
+  gcs (a, b, c, d, e) = gcs a >> gcs b >> gcs c >> gcs d >> gcs e
 
 instance Optimize ETail where
   opt = \case
@@ -606,6 +676,15 @@ instance Optimize ETail where
       ET_ToConsensus et_tc_at et_tc_from et_tc_prev <$> opt et_tc_lct <*> pure et_tc_which <*> opt et_tc_from_me <*> pure et_tc_from_msg <*> pure et_tc_from_out <*> pure et_tc_from_timev <*> pure et_tc_from_secsv <*> pure et_tc_from_didSendv <*> opt_mtime et_tc_from_mtime <*> opt et_tc_cons
     ET_While at asn cond body k -> optWhile (ET_While at) asn cond body k
     ET_Continue at asn -> ET_Continue at <$> opt asn
+  gcs = \case
+    ET_Com m k -> gcs m >> gcs k
+    ET_Stop _ -> return ()
+    ET_If _ _ t f -> gcs t >> gcs f
+    ET_Switch _ _ csm -> gcsSwitch csm
+    ET_FromConsensus _ _ _ k -> gcs k
+    ET_ToConsensus {..} -> gcs et_tc_cons >> gcs_mtime et_tc_from_mtime
+    ET_While _ _ cond body k -> gcs cond >> gcs body >> gcs k
+    ET_Continue {} -> return ()
 
 instance Optimize CTail where
   opt = \case
@@ -618,6 +697,12 @@ instance Optimize CTail where
       CT_From at w <$> opt fi
     CT_Jump at which vs asn ->
       CT_Jump at which <$> opt vs <*> opt asn
+  gcs = \case
+    CT_Com m k -> gcs m >> gcs k
+    CT_If _ _ t f -> gcs t >> gcs f
+    CT_Switch _ _ csm -> gcsSwitch csm
+    CT_From {} -> return ()
+    CT_Jump {} -> return ()
 
 instance Optimize CHandler where
   opt = \case
@@ -625,29 +710,47 @@ instance Optimize CHandler where
       C_Handler ch_at ch_int ch_from ch_last ch_svs ch_msg ch_timev ch_secsv <$> opt ch_body
     C_Loop {..} -> do
       C_Loop cl_at cl_svs cl_vars <$> opt cl_body
+  gcs = \case
+    C_Handler {..} -> gcs ch_body
+    C_Loop {..} -> gcs cl_body
 
 instance Optimize ViewInfo where
   opt (ViewInfo vs vi) = ViewInfo vs <$> (newScope $ opt vi)
+  gcs _ = return ()
 
 instance Optimize CPProg where
   opt (CPProg at vi ai devts (CHandlers hs)) =
     CPProg at <$> (newScope $ opt vi) <*> pure ai <*> pure devts <*> (CHandlers <$> mapM (newScope . opt) hs)
+  gcs (CPProg _ _ _ _ (CHandlers hs)) = gcs hs
 
 instance Optimize EPProg where
   opt (EPProg at x ie et) = newScope $ EPProg at x ie <$> opt et
+  gcs (EPProg _ _ _ et) = gcs et
 
 instance Optimize EPPs where
   opt (EPPs {..}) = EPPs epps_apis <$> opt epps_m
+  gcs (EPPs {..}) = gcs epps_m
 
 instance Optimize PLProg where
   opt (PLProg at plo dli dex epps cp) =
     PLProg at plo dli <$> opt dex <*> opt epps <*> opt cp
+  gcs (PLProg _ _ _ _ epps cp) = gcs epps >> gcs cp
 
-optimize_ :: (Eq a, Optimize a) => Counter -> a -> IO a
-optimize_ c = flip fixedPoint_ $ \_i t -> do
-  env0 <- mkEnv0 c mempty []
-  flip runReaderT env0 $
-    opt t
+optimize_ :: forall a . (Eq a, Optimize a) => Counter -> a -> IO a
+optimize_ c t0 =
+  case gcsWorthIt t0 of
+    True -> fixedPoint_ t0 rec
+    False -> rec 0 t0
+  where
+    rec :: Integer -> a -> IO a
+    rec _i t = do
+      eConstR <- newIORef $ mempty
+      flip runReaderT (ConstEnv {..}) $ gcs t
+      cs <- readIORef eConstR
+      let csvs = M.keysSet $ M.filter (\x -> x < 2) cs
+      env0 <- mkEnv0 c csvs []
+      flip runReaderT env0 $
+        opt t
 
 optimize :: (HasCounter a, Eq a, Optimize a) => a -> IO a
 optimize t = optimize_ (getCounter t) t
