@@ -3,14 +3,13 @@ module Reach.Connector.ALGO (connect_algo, AlgoError(..)) where
 import Control.Monad.Extra
 import Control.Monad.Reader
 import qualified Data.Aeson as Aeson
-import Data.ByteString.Base64 (encodeBase64', decodeBase64)
+import Data.ByteString.Base64 (encodeBase64')
 import Data.ByteString.Builder
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Internal as BI
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.DList as DL
-import Data.Either
 import Data.Function
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
@@ -210,16 +209,25 @@ type ScratchSlot = Word8
 
 type TealOp = LT.Text
 type TealArg = LT.Text
+type Label = LT.Text
 data TEAL
   = TCode TealOp [ TealArg ]
+  | TBytes B.ByteString
   | TComment LT.Text
-  | TLabel LT.Text
+  | TLabel Label
 type TEALt = [LT.Text]
 type TEALs = DL.DList TEAL
 
+builtin :: S.Set TealOp
+builtin = S.fromList [ "byte" ]
+
 render :: TEAL -> TEALt
 render = \case
-  TCode f args -> f : args
+  TBytes bs -> ["byte", "base64(" <> encodeBase64 bs <> ")" ]
+  TCode f args ->
+    case S.member f builtin of
+      True -> impossible $ show $ "cannot use " <> f <> " directly"
+      False -> f : args
   TComment t -> [ "//", t ]
   TLabel lab -> [ lab <> ":" ]
 
@@ -233,9 +241,9 @@ optimize ts0 = tsN
 opt_bs :: [TEAL] -> [TEAL]
 opt_bs = \case
   [] -> []
-  (TCode "byte" [x]) : l | isBase64_zeros x ->
-    case B.length $ base64u x of
-      0 -> (TCode "byte" [x]) : opt_bs l
+  (TBytes x) : l | B.all (== '\0') x ->
+    case B.length x of
+      0 -> (TBytes mempty) : opt_bs l
       32 -> opt_bs $ (TCode "global" ["ZeroAddress"]) : l
       len -> opt_bs $ (TCode "int" [texty len]) : (TCode "bzero" []) : l
   x : l -> x : opt_bs l
@@ -249,10 +257,10 @@ opt_b1 = \case
   [(TCode "return" [])] -> []
   -- This relies on knowing what "done" is
   (TCode "assert" []) : (TCode "b" ["done"]) : x -> (TCode "return" []) : x
-  (TCode "byte" ["base64()"]) : (TCode "concat" []) : l -> l
-  (TCode "byte" ["base64()"]) : b@(TCode "load" [_]) : (TCode "concat" []) : l -> opt_b1 $ b : l
-  (TCode "byte" [x]) : (TCode "byte" [y]) : (TCode "concat" []) : l | isBase64 x && isBase64 y ->
-    opt_b1 $ (TCode "byte" [(base64d $ base64u x <> base64u y)]) : l
+  (TBytes "") : (TCode "concat" []) : l -> l
+  (TBytes "") : b@(TCode "load" [_]) : (TCode "concat" []) : l -> opt_b1 $ b : l
+  (TBytes x) : (TBytes y) : (TCode "concat" []) : l ->
+    opt_b1 $ (TBytes $ x <> y) : l
   (TCode "b" [x]) : b@(TLabel y) : l | x == y -> b : l
   (TCode "btoi" []) : (TCode "itob" ["// bool"]) : (TCode "substring" ["7", "8"]) : l -> l
   (TCode "btoi" []) : (TCode "itob" []) : l -> l
@@ -301,16 +309,15 @@ opt_b1 = \case
       Nothing ->
         a : b : l
       Just xbs ->
-        opt_b1 $ (TCode "byte" [xbs]) : l
+        opt_b1 $ (TBytes xbs) : l
   x : l -> x : l
   where
     parse :: LT.Text -> Maybe Integer
     parse = readMaybe . LT.unpack
-    itob :: LT.Text -> Maybe LT.Text
+    itob :: LT.Text -> Maybe B.ByteString
     itob x_lt = do
       x <- parse x_lt
-      let x_bs = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
-      return $ base64d x_bs
+      return $ LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
 
 checkCost :: Bool -> [TEAL] -> IO ()
 checkCost alwaysShow ts = do
@@ -367,6 +374,7 @@ checkCost alwaysShow ts = do
       let lab'' = l2s lab'
       jump_ lab''
       switch lab''
+    TBytes _ -> recCost 1
     TCode f _ ->
       case f of
         "sha256" -> recCost 35
@@ -760,26 +768,6 @@ ctzero = \case
 tint :: SrcLoc -> Integer -> LT.Text
 tint at i = texty $ checkIntLiteralC at conName' conCons' i
 
-base64d :: B.ByteString -> LT.Text
-base64d bs = "base64(" <> encodeBase64 bs <> ")"
-
-decodeBase64' :: B.ByteString -> B.ByteString
-decodeBase64' = fromRight (impossible "isBase64") . decodeBase64
-
-base64u :: LT.Text -> B.ByteString
-base64u x0 = x3
-  where
-    x1 = f $ LT.stripPrefix "base64(" x0
-    x2 = f $ LT.stripSuffix ")" x1
-    x3 = decodeBase64' $ bpack $ LT.unpack x2
-    f = fromMaybe (impossible "isBase64")
-
-isBase64 :: LT.Text -> Bool
-isBase64 = LT.isPrefixOf "base64("
-
-isBase64_zeros :: LT.Text -> Bool
-isBase64_zeros t = isBase64 t && B.all (== '\0') (base64u t)
-
 cint_ :: SrcLoc -> Integer -> App ()
 cint_ at i = code "int" [tint at i]
 
@@ -1133,7 +1121,7 @@ cla = \case
   DLLA_Bytes bs -> cbs bs
 
 cbs :: B.ByteString -> App ()
-cbs bs = code "byte" [base64d bs]
+cbs = output . TBytes
 
 cTupleRef :: SrcLoc -> DLType -> Integer -> App ()
 cTupleRef at tt idx = do
