@@ -1,7 +1,8 @@
 import {loadStdlib} from '@reach-sh/stdlib';
-// import * as ask from '@reach-sh/stdlib/ask.mjs';
 import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib(process.env);
+
+const approx = (x, n) => x > (n - 3) && x < n;
 
 (async () => {
   const startingBalance = stdlib.parseCurrency(100);
@@ -31,9 +32,8 @@ const stdlib = loadStdlib(process.env);
     }),
     backend.Bob(ctcBob, {
       gimmeSomeDough: async (address) => {
-        // const _ = await ask.ask('Continue? (y/n)', ask.yesno);
         const addrObj = (stdlib.connector === 'ALGO')
-                          ? { addr: stdlib.cbr2algo_addr(address) }
+                          ? { addr: stdlib.addressFromHex(address) }
                           : { address };
         await stdlib.transfer(accAlice, { networkAccount: addrObj }, stdlib.parseCurrency(50));
         console.log(`Sent some dough to:`, address, addrObj);
@@ -44,5 +44,9 @@ const stdlib = loadStdlib(process.env);
 
   console.log('Program finished:');
   await logBalances();
+  const aliceBal = await getBalance(accAlice);
+  const bobBal   = await getBalance(accBob);
+  stdlib.assert(approx(aliceBal, 100));
+  stdlib.assert(approx(bobBal, 100));
 
 })();

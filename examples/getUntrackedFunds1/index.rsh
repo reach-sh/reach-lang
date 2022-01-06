@@ -5,7 +5,7 @@ export const main = Reach.App(() => {
   const B = Participant('Bob', {
     gimmeSomeDough: Fun([Address], Null),
   });
-  deploy();
+  init();
 
   A.publish();
   const x1 = getUntrackedFunds();

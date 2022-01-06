@@ -156,7 +156,7 @@ instance Countable DLExpr where
     DLE_GetAddress _ -> mempty
     DLE_EmitLog _ _ a -> counts a
     DLE_setApiDetails {} -> mempty
-    DLE_GetActualBalance _ mt -> counts mt
+    DLE_GetActualBalance _ mt tb -> counts mt <> counts tb
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m

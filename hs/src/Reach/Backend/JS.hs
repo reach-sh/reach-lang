@@ -473,7 +473,19 @@ jsExpr = \case
       (L_Api s, [dv]) -> go s dv
       (_, _) -> return $ "null"
   DLE_setApiDetails {} -> return "undefined"
-  DLE_GetActualBalance {} -> return "0"
+  DLE_GetActualBalance at mtok tb -> do
+    tok <- maybe (return "") jsArg mtok
+    tb' <- jsArg tb
+    zero <- jsArg $ DLA_Literal $ DLL_Int at 0
+    let bal = "await" <+> jsApply "ctc.getBalance" [tok]
+    asks ctxt_mode >>= \case
+      JM_Simulate -> return $ jsPrimApply SUB [bal, tb']
+      _ ->
+        return $ jsPrimApply IF_THEN_ELSE [
+            jsPrimApply PEQ [bal, zero],
+            zero,
+            jsPrimApply SUB [bal, tb']
+          ]
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do

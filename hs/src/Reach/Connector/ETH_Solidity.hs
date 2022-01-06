@@ -397,7 +397,7 @@ instance DepthOf DLExpr where
     DLE_GetAddress {} -> return 1
     DLE_EmitLog _ _ a -> add1 $ depthOf a
     DLE_setApiDetails {} -> return 0
-    DLE_GetActualBalance _ mt -> depthOf mt
+    DLE_GetActualBalance _ mt tb -> max <$> depthOf mt <*> depthOf tb
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])
@@ -657,12 +657,14 @@ solExpr sp = \case
   DLE_TokenDestroy _ ta -> do
     ta' <- solArg ta
     return $ solApply "safeReachTokenDestroy" [ ta' ] <> sp
-  DLE_GetActualBalance _ mtok ->
-    case mtok of
-      Nothing -> return "address(this).balance"
-      Just tok -> do
-        tok' <- solArg tok
-        return $ solApply "tokenBalanceOf" [tok', "address(this)"]
+  DLE_GetActualBalance _ mtok tb -> do
+    tb' <- solArg tb
+    bal <- case mtok of
+          Nothing -> return "address(this).balance"
+          Just tok -> do
+            tok' <- solArg tok
+            return $ solApply "tokenBalanceOf" [tok', "address(this)"]
+    solPrimApply SUB [bal, tb']
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract {} -> return $ "payable(address(this))"
   DLE_GetAddress {} -> return $ "payable(address(this))"

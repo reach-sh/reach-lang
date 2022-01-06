@@ -741,8 +741,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       // Returns address of a Reach contract
       const getContractAddress = getInfo;
       const getContractInfo = getInfo;
+      const getBalance = (mtok: Token|false = false) => {
+        return balanceOfNetworkAccount(networkAccount, mtok);
+      }
 
-      return { getContractInfo, getContractAddress, sendrecv, recv, getState, apiMapRef };
+      return { getContractInfo, getContractAddress, getBalance, sendrecv, recv, getState, apiMapRef };
     };
 
     const setupView = (setupViewArgs: SetupViewArgs) => {

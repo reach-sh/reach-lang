@@ -2,6 +2,8 @@ import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib(process.env);
 
+const approx = (x, n) => x > (n - 3) && x < n;
+
 (async () => {
   const startingBalance = stdlib.parseCurrency(100);
 
@@ -39,5 +41,9 @@ const stdlib = loadStdlib(process.env);
 
   console.log('Program finished:');
   await logBalances();
+  const aliceBal = await getBalance(accAlice);
+  const bobBal   = await getBalance(accBob);
+  stdlib.assert(approx(aliceBal, 50));
+  stdlib.assert(approx(bobBal, 150));
 
 })();

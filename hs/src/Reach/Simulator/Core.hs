@@ -512,7 +512,7 @@ instance Interp DLExpr where
     DLE_EmitLog _ (L_Event {}) _ -> return V_Null
     DLE_EmitLog {} -> impossible "DLE_EmitLog invariants not satisified"
     DLE_setApiDetails _ _ _ _ _ -> return V_Null
-    DLE_GetActualBalance _ mtokA -> do
+    DLE_GetActualBalance _ mtokA _ -> do
       (e, _) <- getState
       tok <- maybe (return nwToken) (fmap vUInt . interp) mtokA
       let bal = saferMapRef "getActualBalance1" $ M.lookup tok $

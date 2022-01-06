@@ -7,7 +7,7 @@ export const main = Reach.App(() => {
   const B = Participant('Bob', {
     gimmeSomeDough: Fun([Address], Null),
   });
-  deploy();
+  init();
 
   A.only(() => {
     const cost = declassify(interact.cost) });
@@ -24,11 +24,6 @@ export const main = Reach.App(() => {
   transfer(x).to(A);
   transfer(cost).to(A);
   commit();
-
-  // A.publish();
-  // transfer(cost).to(A);
-
-  // commit();
 
   exit();
 });

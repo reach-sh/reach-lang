@@ -576,7 +576,7 @@ data DLExpr
     sad_dom :: [DLType],
     sad_mcase_id :: Maybe String,
     sad_compile :: ApiInfoCompilation }
-  | DLE_GetActualBalance SrcLoc (Maybe DLArg)
+  | DLE_GetActualBalance SrcLoc (Maybe DLArg) DLArg
   deriving (Eq, Ord, Generic)
 
 data LogKind
@@ -706,7 +706,7 @@ instance PrettySubst DLExpr where
       return $ "emitLog" <> parens (pretty lk) <> parens (pretty vs)
     DLE_setApiDetails _ p d mc f ->
       return $ "setApiDetails" <> parens (render_das [pretty p, pretty d, pretty mc, pretty f])
-    DLE_GetActualBalance _ mtok ->
+    DLE_GetActualBalance _ mtok _ ->
       return $ "getActualBalance" <> parens (pretty mtok)
 
 instance PrettySubst LogKind where

@@ -3271,12 +3271,12 @@ evalPrim p sargs =
         return da
       at <- withAt id
       let mdv = DLVar at Nothing T_UInt
-      actualBal <- ctxt_lift_expr mdv $ DLE_GetActualBalance at mtok
       fvBal <- lookupBalanceFV FV_balance mtok
       trackedBal <- doFluidRef_da fvBal
-      dv <- ctxt_lift_expr mdv $ DLE_PrimOp at SUB [DLA_Var actualBal, trackedBal]
-      doFluidSet fvBal $ public $ SLV_DLVar actualBal
-      return (lvl, SLV_DLVar dv)
+      untrackedFunds <- ctxt_lift_expr mdv $ DLE_GetActualBalance at mtok trackedBal
+      dv <- ctxt_lift_expr mdv $ DLE_PrimOp at ADD [DLA_Var untrackedFunds, trackedBal]
+      doFluidSet fvBal $ public $ SLV_DLVar dv
+      return (lvl, SLV_DLVar untrackedFunds)
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
