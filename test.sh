@@ -117,13 +117,8 @@ checkteal () {
 
 #exit 0
 
-jb
+# jb
 export REACH_DEBUG=Y
-c examples/nim-abstract/index.rsh
-exit 0
-ci ALGO nim-abstract
-exit 0
-
 (cd examples/rps-8-interact && c index.rsh)
 c users/duoswap-core/index.rsh
 exit 0

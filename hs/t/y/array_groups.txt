@@ -4,5 +4,5 @@ Verifying for generic connector
   Verifying when NO participants are honest
 Checked 10 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
- * This program contains a loop, which cannot be tracked accurately for cost or log bytes.
+ * This program could use 3318 units of cost, but the limit is 700: [("preamble",27),("l1_checkTxnK",107),("l2_forTop",5),("l3_forEnd",672),("l4_forTop",4),("l6_forTop",5),("l7_forEnd",910),("l5_forEnd",840),("l8_forTop",4),("l9_forEnd",700),("updateState",19),("checkSize",7),("done",16),("BOT",2)]
 
