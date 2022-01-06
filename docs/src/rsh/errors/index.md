@@ -2329,6 +2329,12 @@ An API may only make a publication through a `{!rsh} fork`, `{!rsh} parallelRedu
 Depending on your program, you can fix this error by performing a `{!rsh} call` or adding an `{!rsh} .api`
 case to your `{!rsh} fork` or `{!rsh} parallelReduce` statement.
 
+## {#RE0126} RE0126
+
+This error indicates that there is a `{!rsh} fork` or `{!rsh} parallelReduce` in the program that does not specify a `{!rsh} .case` or `{!rsh} .api` component.
+At least one of these components must be specified.
+
+You can fix this error by adding a `{!rsh} .case` or `{!rsh} .api` component to your statement.
 
 ## {#REP0000} REP0000
 

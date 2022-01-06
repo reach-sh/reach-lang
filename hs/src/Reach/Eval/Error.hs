@@ -153,6 +153,7 @@ data EvalError
   | Err_DuplicateName String SrcLoc
   | Err_No_Participants
   | Err_Api_Publish (S.Set SLPart)
+  | Err_ForkNoCases
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -287,6 +288,7 @@ instance HasErrorCode EvalError where
     Err_DuplicateName {} -> 123
     Err_No_Participants {} -> 124
     Err_Api_Publish {} -> 125
+    Err_ForkNoCases {} -> 126
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -722,5 +724,7 @@ instance Show EvalError where
       "There are no `Participant`s in the program."
     Err_Api_Publish apis ->
       "The " <> intercalate ", " (map bunpack $ S.toList apis) <> " `API`(s) cannot explicitly make a publication."
+    Err_ForkNoCases ->
+      "A `fork`/`parallelReduce` statement must include a `.case` or `.api` component"
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf
