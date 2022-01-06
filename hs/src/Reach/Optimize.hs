@@ -9,6 +9,7 @@ import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
 import Reach.Counter
+import Reach.FixedPoint
 import Reach.Sanitize
 import Reach.UnrollLoops
 import Reach.Util
@@ -642,11 +643,11 @@ instance Optimize PLProg where
   opt (PLProg at plo dli dex epps cp) =
     PLProg at plo dli <$> opt dex <*> opt epps <*> opt cp
 
-optimize_ :: Optimize a => Counter -> a -> IO a
-optimize_ c t = do
+optimize_ :: (Eq a, Optimize a) => Counter -> a -> IO a
+optimize_ c = flip fixedPoint_ $ \_i t -> do
   env0 <- mkEnv0 c mempty []
   flip runReaderT env0 $
     opt t
 
-optimize :: (HasCounter a, Optimize a) => a -> IO a
+optimize :: (HasCounter a, Eq a, Optimize a) => a -> IO a
 optimize t = optimize_ (getCounter t) t
