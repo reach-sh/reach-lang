@@ -77,12 +77,12 @@ nxftc = len(nxft)
 ftc = len(fail.union(time))
 xftc = ftc - nxftc
 
-SYM = "OKAY"
+SYM = ":jayparfait: OKAY"
 PRE = f"{total} passed!"
 POST = ""
 
 if ftc > 0:
-    SYM = "FAIL"
+    SYM = ":warning: FAIL"
     PRE = f"{ftc} of {total} failed!"
     if xftc > 0:
         PRE += f" ({xftc} expected)"
@@ -108,7 +108,7 @@ for c in conns:
 EXIT = 0
 POST += "\\n*"
 if nxftc > 0:
-    POST += f":warning: DO NOT "
+    POST += f":warning: POSSIBLE REGRESSIONS UPON "
     EXIT = 1
 else:
     POST += f":pizza: "
