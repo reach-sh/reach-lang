@@ -218,7 +218,8 @@ const prepForConfluxPortal = (txnOrig: any): any => {
 }
 
 const addEstimates = async (cfx:any, txn:any): Promise<any> => {
-  debug(`addEstimates 1: start:`, txn);
+  const dhead = 'addEstimates';
+  debug(dhead, `1: start:`, txn);
   type stringy = {toString: () => string} | undefined;
   type Num = BigInt;
   const numy = (n: stringy): Num => BigInt(n?.toString() || '0');
@@ -229,37 +230,44 @@ const addEstimates = async (cfx:any, txn:any): Promise<any> => {
   };
   let gas: Num = f("gas");
   let storage: Num = f("storageLimit");
-  debug(`addEstimates 2:  orig:`, { gas, storage });
+  debug(dhead, `2:  orig:`, { gas, storage });
 
   let est: {gasUsed?: stringy, storageCollateralized?: stringy} | undefined = undefined;
   let est_err = undefined;
+  try {
+    const n = await cfx.getNextNonce(txn.from);
+    txn.nonce = n;
+    debug(dhead, `n: nonce:`, {n});
+  } catch (e) {
+    debug(dhead, `n: nonce:`, {e});
+  }
   try {
     est = await cfx.estimateGasAndCollateral(txn);
   } catch (e) {
     est_err = e;
   }
-  debug(`addEstimates 3:   est:`, { est, est_err });
+  debug(dhead, `3:   est:`, { est, est_err });
   if ( est ) {
     const g = (x:any, y:any) => ((y > x) ? y : x);
     gas = g(gas, numy(est?.gasUsed));
     storage = g(storage, numy(est?.storageCollateralized));
   }
-  debug(`addEstimates 4: eused:`, { gas, storage });
+  debug(dhead, `4: eused:`, { gas, storage });
   if ( storage === undefined || storage === numy(0) ) {
     storage = numy(2048);
   }
-  debug(`addEstimates 5:  non0:`, { gas, storage });
+  debug(dhead, `5:  non0:`, { gas, storage });
 
   const h = (x:any, y:any) => numy(format.big(x).times(y).toFixed(0));
   gas = h(gas, cfx.defaultGasRatio);
   storage = h(storage, cfx.defaultStorageRatio);
-  debug(`addEstimates 6: ratio:`, { gas, storage });
+  debug(dhead, `6: ratio:`, { gas, storage });
 
   let gasu: Num | undefined = gas;
   if ( gas === numy('0') ) {
     gasu = undefined;
   }
-  debug(`addEstimates 7:   und:`, { gasu, storage });
+  debug(dhead, `7:   und:`, { gasu, storage });
 
   txn.gas = gasu?.toString();
   txn.storageLimit = storage.toString();
