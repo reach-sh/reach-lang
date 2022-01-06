@@ -11,7 +11,7 @@
  * ------------------------------------------------------------------------------------------ */
 
 import * as path from 'path';
-import { workspace, ExtensionContext, commands, window, env, ViewColumn, Uri, WorkspaceFolder } from 'vscode';
+import { workspace, ExtensionContext, commands, window, env, Uri } from 'vscode';
 import { exec } from 'child_process';
 import { initButtons } from './buttons';
 
