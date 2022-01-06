@@ -2166,3 +2166,17 @@ intervalAbs(intervalCC(+1, +10)); // +10
 
  `{!rsh} intervalAbs(i)` returns the absolute value of an interval.
 
+### `getUntrackedFunds`
+
+@{ref("rsh", "getUntrackedFunds")}
+```reach
+const f1 = getUntrackedFunds();
+transfer(f1).to(Alice);
+const f2 = getUntrackedFunds(tok);
+transfer(f2, tok).to(Alice);
+```
+
+ `{!rsh} getUntrackedFunds(?token)` takes an optional `{!rsh} Token` argument and returns the difference between the actual balance of the contract and Reach's expectation of the balance for the given token, or network token if no argument is provided.
+For example, if funds were externally sent to the contract or rewards were earned, this function gives you access to them.
+Once this function is called, the amount returned is incorporated into Reach's expectation of the balance.
+So, the amount returned must eventually be transferred out of the contract to satisfy the token linearity property.

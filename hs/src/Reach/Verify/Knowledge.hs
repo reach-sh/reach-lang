@@ -250,6 +250,7 @@ kgq_e ctxt mv = \case
   DLE_EmitLog _ _ lv ->
     mapM_ (kgq_a_onlym ctxt mv . DLA_Var) lv
   DLE_setApiDetails {} -> mempty
+  DLE_GetUntrackedFunds _ mt _ -> kgq_a_all ctxt mt
 
 kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case

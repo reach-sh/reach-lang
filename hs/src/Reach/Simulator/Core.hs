@@ -512,6 +512,13 @@ instance Interp DLExpr where
     DLE_EmitLog _ (L_Event {}) _ -> return V_Null
     DLE_EmitLog {} -> impossible "DLE_EmitLog invariants not satisified"
     DLE_setApiDetails _ _ _ _ _ -> return V_Null
+    DLE_GetUntrackedFunds _ mtokA _ -> do
+      (e, _) <- getState
+      tok <- maybe (return nwToken) (fmap vUInt . interp) mtokA
+      let bal = saferMapRef "getActualBalance1" $ M.lookup tok $
+                  saferMapRef "getActualBalance" $ M.lookup simContract $ e_ledger e
+      return $ V_UInt bal
+
 
 instance Interp DLStmt where
   interp = \case

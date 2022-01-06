@@ -314,15 +314,21 @@ const makeHasLogFor = ( getCtcAddress: (() => Address), iface:Interface, i:numbe
 
 const { randomUInt, hasRandom } = makeRandom(32);
 
-const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
-  const { networkAccount } = acc;
-  if (!networkAccount) {
-    throw Error(`acc.networkAccount missing. Got: ${acc}`);
+const balanceOf = async (acc: Account | Address, token: Token|false = false): Promise<BigNumber> => {
+  let addressable = (typeof acc == 'string') ? acc : acc.networkAccount;
+  if (!addressable) {
+    throw Error(`Cannot get the address of: ${acc}`);
   }
+  return balanceOfNetworkAccount(addressable, token);
+}
+
+const balanceOfNetworkAccount = async (networkAccount: any, token: Token|false = false) => {
   if ( ! token && networkAccount.getBalance ) {
     return bigNumberify(await networkAccount.getBalance());
   }
-  const addr = await getAddr(acc);
+  const addr = (typeof networkAccount == 'string')
+                  ? networkAccount
+                  : await getAddr({networkAccount});
   if (! addr) {
     throw Error(`address missing. Got: ${networkAccount}`);
   }
@@ -385,7 +391,7 @@ const transfer = async (
   token: Token|false = false,
 ): Promise<TransactionReceipt> => {
   const sender = from.networkAccount;
-  const receiver = await getAddr(to);
+  const receiver = (typeof to == 'string') ? to : await getAddr(to);
   const valueb = bigNumberify(value);
 
   const dhead = 'transfer';
@@ -734,8 +740,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       // Returns address of a Reach contract
       const getContractAddress = getInfo;
       const getContractInfo = getInfo;
+      const getBalance = (mtok: Token|false = false) => {
+        return balanceOfNetworkAccount(networkAccount, mtok);
+      }
 
-      return { getContractInfo, getContractAddress, sendrecv, recv, getState, apiMapRef };
+      return { getContractInfo, getContractAddress, getBalance, sendrecv, recv, getState, apiMapRef };
     };
 
     const setupView = (setupViewArgs: SetupViewArgs) => {

@@ -155,6 +155,7 @@ export type EventMap = { [key: string]: any }
 export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getContractInfo: () => Promise<ContractInfo>,
   getContractAddress: () => Promise<CBR_Address>,
+  getBalance: () => Promise<BigNumber>,
   waitUntilTime: (v:BigNumber) => Promise<BigNumber>,
   waitUntilSecs: (v:BigNumber) => Promise<BigNumber>,
   selfAddress: () => CBR_Address, // Not RawAddress!
@@ -178,7 +179,7 @@ export type ISetupViewArgs<ContractInfo, VerifyResult> =
 export type ISetupEventArgs<ContractInfo, VerifyResult> =
   Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
 
-export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState"|"apiMapRef")>;
+export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"getBalance"|"sendrecv"|"recv"|"getState"|"apiMapRef")>;
 
 export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
@@ -186,7 +187,7 @@ export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, Conn
   setupEvents: ISetupEvent<ContractInfo, VerifyResult>,
   givenInfoP: (Promise<ContractInfo>|undefined)
   _setup: (args: ISetupArgs<ContractInfo, VerifyResult>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
-} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState"|"apiMapRef")>;
+} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"getBalance"|"sendrecv"|"recv"|"getState"|"apiMapRef")>;
 
 export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
@@ -297,12 +298,12 @@ export const stdContract =
   const setupArgs = { ...viewArgs, setInfo };
 
   const _initialize = () => {
-    const { getContractInfo, getContractAddress,
+    const { getContractInfo, getContractAddress, getBalance,
             sendrecv, recv, getState, apiMapRef } =
       _setup(setupArgs);
     return {
       selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
-      getContractInfo, getContractAddress,
+      getContractInfo, getContractAddress, getBalance,
       sendrecv, recv,
       getState, apiMapRef,
     };

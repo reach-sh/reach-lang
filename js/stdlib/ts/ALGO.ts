@@ -69,7 +69,7 @@ import { sha512_256 } from 'js-sha512';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = stdlib;
 export * from './shared_user';
 import { setQueryLowerBound, getQueryLowerBound } from './shared_impl';
-export { setQueryLowerBound, getQueryLowerBound };
+export { setQueryLowerBound, getQueryLowerBound, addressFromHex };
 
 // Type Definitions
 
@@ -1432,7 +1432,18 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
       };
 
-      return { getContractInfo, getContractAddress, getState, sendrecv, recv, apiMapRef };
+      const getBalance = async (mtok: Token|false = false) => {
+        const { ctcAddr } = await getC();
+        // @ts-ignore
+        const bal = await balanceOf({ addr: ctcAddr }, mtok);
+        // XXX May be wrong sometimes. Accurate minimumBalance requires this change:
+        //     https://github.com/algorand/go-algorand/pull/3287
+        const result = bal.eq(0) ? bal : bal.sub(minimumBalance);
+        debug(`Balance of contract:`, result);
+        return result;
+      }
+
+      return { getContractInfo, getContractAddress, getBalance, getState, sendrecv, recv, apiMapRef };
     };
 
     const readStateBytes = (prefix:string, key:number[], src:any): any => {
@@ -1715,7 +1726,7 @@ function handleFormat(amt: any, decimals: number, splitValue: number = 6): strin
   const rPre = lpad(amtStr.slice(splitAt), '0', splitValue);
   const rSliced = rPre.slice(0, decimals);
   const r = rdrop(rSliced, '0');
-  
+
   return r ? `${l}.${r}` : l;
 }
 

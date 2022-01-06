@@ -592,6 +592,7 @@ base_env =
     , (".emitLog", SLV_Prim $ SLPrim_EmitLog)
     , ("call", SLV_Form $ SLForm_apiCall)
     , (".setApiDetails", SLV_Form $ SLForm_setApiDetails)
+    , ("getUntrackedFunds", SLV_Prim $ SLPrim_getUntrackedFunds)
     , ( "Reach"
       , (SLV_Object srcloc_builtin (Just $ "Reach") $
            m_fromList_public_builtin
@@ -3262,6 +3263,20 @@ evalPrim p sargs =
           (snd <$> evalPrim SLPrim_is [public arg, public $ SLV_Type ty])
       void $ doEmitLog False (Just $ (eventLabel, which)) Nothing vs
       return $ public $ SLV_Null at "event_is"
+    SLPrim_getUntrackedFunds -> do
+      marg <- mone_arg
+      mtok <- flip mapM marg $ \ arg -> do
+        (ty, da) <- compileTypeOf arg
+        void $ mustBeToken ty
+        return da
+      at <- withAt id
+      let mdv = DLVar at Nothing T_UInt
+      fvBal <- lookupBalanceFV FV_balance mtok
+      trackedBal <- doFluidRef_da fvBal
+      untrackedFunds <- ctxt_lift_expr mdv $ DLE_GetUntrackedFunds at mtok trackedBal
+      dv <- ctxt_lift_expr mdv $ DLE_PrimOp at ADD [DLA_Var untrackedFunds, trackedBal]
+      doFluidSet fvBal $ public $ SLV_DLVar dv
+      return (lvl, SLV_DLVar untrackedFunds)
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -3285,6 +3300,10 @@ evalPrim p sargs =
     one_arg = case args of
       [x] -> return $ x
       _ -> illegal_args
+    mone_arg = case args of
+      []  -> return Nothing
+      [x] -> return $ Just x
+      _ -> illegal_args
     two_args = case args of
       [x, y] -> return $ (x, y)
       _ -> illegal_args
@@ -3301,6 +3320,9 @@ evalPrim p sargs =
       _ -> illegal_args
     mustBeArray = \case
       T_Array ty sz -> return $ (ty, sz)
+      _ -> illegal_args
+    mustBeToken = \case
+      T_Token -> return $ T_Token
       _ -> illegal_args
     make_dlvar at' ty = do
       dv <- ctxt_mkvar $ DLVar at' Nothing ty

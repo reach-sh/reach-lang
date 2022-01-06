@@ -88,6 +88,7 @@ instance Sanitize DLExpr where
     DLE_GetAddress _ -> DLE_GetAddress sb
     DLE_EmitLog _ k a -> DLE_EmitLog sb k (sani a)
     DLE_setApiDetails _ w d c f -> DLE_setApiDetails sb w d c f
+    DLE_GetUntrackedFunds _ mt tb -> DLE_GetUntrackedFunds sb (sani mt) (sani tb)
 
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m
