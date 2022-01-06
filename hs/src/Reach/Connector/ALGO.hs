@@ -182,7 +182,6 @@ typeSig x =
   where
     array sz = "[" <> show sz <> "]"
 
-
 typeSizeOf :: DLType -> Integer
 typeSizeOf = \case
   T_Null -> 0
@@ -209,27 +208,29 @@ texty x = LT.pack $ show x
 
 type ScratchSlot = Word8
 
-type TEAL = [LT.Text]
-
-code_ :: LT.Text -> [LT.Text] -> TEAL
-code_ fun args = fun : args
-
-label_ :: LT.Text -> TEAL
-label_ lab = [lab <> ":"]
-
-comment_ :: LT.Text -> TEAL
-comment_ t = ["//", t]
-
+type TealOp = LT.Text
+type TealArg = LT.Text
+data TEAL
+  = TOp TealOp [ TealArg ]
+  | TComment LT.Text
+  | TLabel LT.Text
+type TEALt = [LT.Text]
 type TEALs = DL.DList TEAL
 
-optimize :: [TEAL] -> [TEAL]
+render :: TEAL -> TEALt
+render = \case
+  TOp f args -> f : args
+  TComment t -> [ "//", t ]
+  TLabel lab -> [ lab <> ":" ]
+
+optimize :: [TEALt] -> [TEALt]
 optimize ts0 = tsN
   where
     ts1 = opt_b ts0
     ts2 = opt_bs ts1
     tsN = ts2
 
-opt_bs :: [TEAL] -> [TEAL]
+opt_bs :: [TEALt] -> [TEALt]
 opt_bs = \case
   [] -> []
   ["byte", x] : l | isBase64_zeros x ->
@@ -239,10 +240,10 @@ opt_bs = \case
       len -> opt_bs $ ["int", texty len] : ["bzero"] : l
   x : l -> x : opt_bs l
 
-opt_b :: [TEAL] -> [TEAL]
+opt_b :: [TEALt] -> [TEALt]
 opt_b = foldr (\a b -> opt_b1 $ a : b) mempty
 
-opt_b1 :: [TEAL] -> [TEAL]
+opt_b1 :: [TEALt] -> [TEALt]
 opt_b1 = \case
   [] -> []
   [["return"]] -> []
@@ -313,7 +314,7 @@ opt_b1 = \case
       let x_bs = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
       return $ base64d x_bs
 
-checkCost :: Bool -> [TEAL] -> IO ()
+checkCost :: Bool -> [TEALt] -> IO ()
 checkCost alwaysShow ts = do
   let mkg :: IO (IORef (LPGraph String))
       mkg = newIORef mempty
@@ -415,6 +416,17 @@ checkCost alwaysShow ts = do
     putStrLn $ "Conservative analysis on Algorand found:"
     putStrLn $ " * " <> showCost <> "."
     putStrLn $ " * " <> showLogLen <> "."
+
+optimizeAndRender :: Bool -> TEALs -> IO T.Text
+optimizeAndRender showCost ts = do
+  let tscl = DL.toList ts
+  let tsl = map render tscl
+  let tsl' = optimize tsl
+  checkCost showCost tsl'
+  let lts = tealVersionPragma : (map LT.unwords tsl')
+  let lt = LT.unlines lts
+  let t = LT.toStrict lt
+  return t
 
 data Shared = Shared
   { sFailuresR :: IORef (S.Set LT.Text)
@@ -585,13 +597,13 @@ output t = do
   liftIO $ modifyIORef eOutputR (flip DL.snoc t)
 
 code :: LT.Text -> [LT.Text] -> App ()
-code f args = output $ code_ f args
+code f args = output $ TOp f args
 
 label :: LT.Text -> App ()
-label = output . label_
+label = output . TLabel
 
 comment :: LT.Text -> App ()
-comment = output . comment_
+comment = output . TComment
 
 assert :: App ()
 assert = op "assert"
@@ -599,7 +611,7 @@ assert = op "assert"
 asserteq :: App ()
 asserteq = op "==" >> assert
 
-op :: LT.Text -> App ()
+op :: TealOp -> App ()
 op = flip code []
 
 nop :: App ()
@@ -635,8 +647,7 @@ bad lab = do
   Env {..} <- ask
   let Shared {..} = eShared
   liftIO $ bad_io sFailuresR lab
-  let labl = LT.lines $ "BAD " <> lab
-  forM_ labl $ \x -> output $ comment_ x
+  mapM_ comment $ LT.lines $ "BAD " <> lab
 
 xxx :: LT.Text -> App ()
 xxx lab = bad $ "This program uses " <> lab
@@ -2030,12 +2041,7 @@ compile_algo env disp pl = do
   totalLenR <- newIORef (0 :: Integer)
   let addProg lab showCost m = do
         ts <- run m
-        let tsl = DL.toList ts
-        let tsl' = optimize tsl
-        checkCost showCost tsl'
-        let lts = tealVersionPragma : (map LT.unwords tsl')
-        let lt = LT.unlines lts
-        let t = LT.toStrict lt
+        t <- optimizeAndRender showCost ts
         tf <- disp lab t
         tbs <- compileTEAL tf
         modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)

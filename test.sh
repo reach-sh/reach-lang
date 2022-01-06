@@ -118,6 +118,8 @@ checkteal () {
 #exit 0
 
 jb
+(cd examples/rps-8-interact && c index.rsh)
+exit 0
 ci ALGO rps-7-loops
 exit 0
 export REACH_DEBUG=Y
