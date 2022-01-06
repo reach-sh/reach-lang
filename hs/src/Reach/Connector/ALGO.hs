@@ -76,7 +76,7 @@ longestPathBetween g f _d = do
           putStrLn $ show from <> " -> " <> show to <> " [label=\"" <> show c <> "\"]"
     putStrLn $ "}"
   let r x y = fromMaybe ([], 0) $ M.lookup x y
-  ps <- fixedPoint $ \(m::LPInt a) -> do
+  ps <- fixedPoint $ \_ (m::LPInt a) -> do
     flip mapWithKeyM g $ \n cs -> do
       cs' <- flip mapM (M.toAscList cs) $ \(t, c) -> do
         let (p, pc) = r t m

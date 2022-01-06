@@ -102,8 +102,8 @@ solve :: FlowInput -> IO FlowOutput
 solve fi = do
   let mtrace m = when shouldTrace $ putStrLn m
   mtrace $ "\nflow input:" <> show (pretty fi) <> "\n"
-  fixedPoint $ \fo -> do
-    mtrace $ "\nflow output:" <> show (pretty fo) <> "\n"
+  fixedPoint $ \i fo -> do
+    mtrace $ "\nflow " <> show i <> "output:" <> show (pretty fo) <> "\n"
     flip mapWithKeyM fi $ \me (FlowInputData {..}) -> do
       let foread n = fromMaybe mempty $ M.lookup n fo
       let unionmap f s = S.unions $ map f $ S.toList s
@@ -111,7 +111,7 @@ solve fi = do
       let saves = unionmap (fod_save . foread) fid_saves
       -- We use what our saves need and what we actually use
       let use_ = S.union fid_uses saves
-      (use, defs) <- fixedPoint_ (use_, fid_defns) $ \in0 -> do
+      (use, defs) <- fixedPoint_ (use_, fid_defns) $ \j in0 -> do
         let (use0, defs0) = in0
         let used_edge = flip $ const $ flip S.member use0
         let edges = M.filterWithKey used_edge fid_edges
@@ -121,7 +121,7 @@ solve fi = do
         let use1 = S.union use0 edge_use
         let defs1 = S.union defs0 edge_defs
         let out1 = (use1, defs1)
-        mtrace $ "\ncloseEdges" <> show me <> ":\n" <> show (pretty in0) <> "\n->:\n" <> show (pretty out1) <> "\n"
+        mtrace $ "\ncloseEdges " <> show j <> " " <> show me <> ":\n" <> show (pretty in0) <> "\n->:\n" <> show (pretty out1) <> "\n"
         return out1
       -- We need what we save & use, minus what we define
       let need = S.difference use defs
