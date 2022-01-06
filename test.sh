@@ -119,9 +119,9 @@ checkteal () {
 
 # jb
 export REACH_DEBUG=Y
-(cd examples/rps-8-interact && c index.rsh)
 c users/duoswap-core/index.rsh
 exit 0
+(cd examples/rps-8-interact && c index.rsh)
 ci ALGO rps-7-loops
 exit 0
 
