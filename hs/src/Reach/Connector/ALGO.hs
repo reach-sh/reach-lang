@@ -211,7 +211,7 @@ type ScratchSlot = Word8
 type TealOp = LT.Text
 type TealArg = LT.Text
 data TEAL
-  = TOp TealOp [ TealArg ]
+  = TCode TealOp [ TealArg ]
   | TComment LT.Text
   | TLabel LT.Text
 type TEALt = [LT.Text]
@@ -219,7 +219,7 @@ type TEALs = DL.DList TEAL
 
 render :: TEAL -> TEALt
 render = \case
-  TOp f args -> f : args
+  TCode f args -> f : args
   TComment t -> [ "//", t ]
   TLabel lab -> [ lab <> ":" ]
 
@@ -597,7 +597,7 @@ output t = do
   liftIO $ modifyIORef eOutputR (flip DL.snoc t)
 
 code :: LT.Text -> [LT.Text] -> App ()
-code f args = output $ TOp f args
+code f args = output $ TCode f args
 
 label :: LT.Text -> App ()
 label = output . TLabel
