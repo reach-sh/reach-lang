@@ -144,6 +144,24 @@ export class Provider {
     // @ts-ignore
     return ethifyTxn(await this.conflux.getTransactionByHash(txnHash));
   }
+
+  async waitForTransaction(txnHash: string): Promise<TransactionReceipt> {
+    const dhead = `waitForTransaction`;
+    let r: any = undefined;
+    let howMany = 0;
+    while (! r) {
+      if ( howMany++ > 0 ) {
+        await Timeout.set(500);
+      }
+      debug(dhead, txnHash);
+      r = await this.getTransactionReceipt(txnHash);
+      debug(dhead, txnHash, r);
+    }
+    if (r.outcomeStatus !== 0) {
+      throw Error(`Transaction failed, outcomeStatus: ${r.outcomeStatus}`);
+    }
+    return r;
+  }
 }
 
 };
@@ -390,24 +408,6 @@ export class Contract implements IContract {
   }
 }
 
-const waitReceipt = async (provider: providers.Provider, txnHash: string): Promise<TransactionReceipt> => {
-  const dhead = `waitReceipt`;
-  let r: any = undefined;
-  let howMany = 0;
-  while (! r) {
-    if ( howMany++ > 0 ) {
-      await Timeout.set(500);
-    }
-    debug(dhead, txnHash);
-    r = await provider.getTransactionReceipt(txnHash);
-    debug(dhead, txnHash, r);
-  }
-  if (r.outcomeStatus !== 0) {
-    throw Error(`Transaction failed, outcomeStatus: ${r.outcomeStatus}`);
-  }
-  return r;
-};
-
 export class ContractFactory {
   abi: any[]
   bytecode: string
@@ -435,7 +435,7 @@ export class ContractFactory {
     const deployTxn = this.getDeployTransaction(...args);
     const resultP = wallet.sendTransaction(deployTxn);
     const hash = (await resultP).transactionHash;
-    const receiptP = waitReceipt(wallet.provider, hash);
+    const receiptP = wallet.provider.waitForTransaction(hash);
 
     const txnRes = await conflux.getTransactionByHash(hash);
     debug(`deploy result`, {hash, txnRes});
@@ -535,7 +535,7 @@ export class BrowserWallet implements IWallet {
     const transactionHash = data.result;
     return {
       transactionHash,
-      wait: () => waitReceipt(provider, transactionHash)
+      wait: () => provider.waitForTransaction(transactionHash)
     };
   }
 }
@@ -616,7 +616,7 @@ export class Wallet implements IWallet {
         return {
           ...got,
           transactionHash: th,
-          wait: () => waitReceipt(p, th)
+          wait: () => p.waitForTransaction(th)
         }
       } catch (e:any) {
         const es = JSON.stringify(e);

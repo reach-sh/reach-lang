@@ -118,10 +118,10 @@ checkteal () {
 #exit 0
 
 jb
-ci ALGO rps-3-bets
+ci ETH rps-3-bets
+ci CFX rps-3-bets
 exit 0
 
-ci CFX rps-3-bets
 exit 0
 one ETH rpc-view-map
 exit 0

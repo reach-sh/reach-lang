@@ -260,7 +260,7 @@ const newEventQueue = (): EventQueue => {
     logs.forEach((x:Log) => { txn_hm[x.transactionHash] = true; });
     const txn_hs = Object.keys(txn_hm);
     debug(dhead, {txn_hs});
-    const txns: Array<TransactionReceipt> = await Promise.all(txn_hs.map((x:string): Promise<TransactionReceipt> => provider.getTransactionReceipt(x)));
+    const txns: Array<TransactionReceipt> = await Promise.all(txn_hs.map((x:string): Promise<TransactionReceipt> => provider.waitForTransaction(x)));
     debug(dhead, {txns});
     return { txns, gtime: toBlock };
   };
