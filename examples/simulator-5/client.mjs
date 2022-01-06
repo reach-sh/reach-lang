@@ -8,7 +8,7 @@ const getVar = async (v,n,aid) => {
 
 const assertVar = (y,t,v) => {
   assert.equal(y[1].tag,t);
-  assert.equal(y[1].contents,v);
+  assert.equal(JSON.stringify(y[1].contents),JSON.stringify(v));
 }
 
 const main = async () => {
