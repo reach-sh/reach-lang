@@ -7,6 +7,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.8 is the current Reach release candidate version.
 
++ 2021/01/06: The analysis of cost on Algorand is more precise in the presence
+  of array operations.
 + 2022/01/06: Verification of only-one-honest participant is disabled.
   This proves nothing that wasn't verified already by the other two cases and
   just takes more time.
