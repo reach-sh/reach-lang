@@ -576,7 +576,7 @@ data DLExpr
     sad_dom :: [DLType],
     sad_mcase_id :: Maybe String,
     sad_compile :: ApiInfoCompilation }
-  | DLE_GetActualBalance SrcLoc (Maybe DLArg) DLArg
+  | DLE_GetUntrackedFunds SrcLoc (Maybe DLArg) DLArg
   deriving (Eq, Ord, Generic)
 
 data LogKind
@@ -706,7 +706,7 @@ instance PrettySubst DLExpr where
       return $ "emitLog" <> parens (pretty lk) <> parens (pretty vs)
     DLE_setApiDetails _ p d mc f ->
       return $ "setApiDetails" <> parens (render_das [pretty p, pretty d, pretty mc, pretty f])
-    DLE_GetActualBalance _ mtok _ ->
+    DLE_GetUntrackedFunds _ mtok _ ->
       return $ "getActualBalance" <> parens (pretty mtok)
 
 instance PrettySubst LogKind where
@@ -758,7 +758,7 @@ instance IsPure DLExpr where
     DLE_TimeOrder {} -> False
     DLE_EmitLog {} -> False
     DLE_setApiDetails {} -> False
-    DLE_GetActualBalance {} -> False
+    DLE_GetUntrackedFunds {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -792,7 +792,7 @@ instance IsLocal DLExpr where
     DLE_GetAddress {} -> True
     DLE_EmitLog {} -> False
     DLE_setApiDetails {} -> False
-    DLE_GetActualBalance {} -> False
+    DLE_GetUntrackedFunds {} -> False
 
 instance CanDupe DLExpr where
   canDupe e =

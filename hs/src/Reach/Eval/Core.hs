@@ -3273,7 +3273,7 @@ evalPrim p sargs =
       let mdv = DLVar at Nothing T_UInt
       fvBal <- lookupBalanceFV FV_balance mtok
       trackedBal <- doFluidRef_da fvBal
-      untrackedFunds <- ctxt_lift_expr mdv $ DLE_GetActualBalance at mtok trackedBal
+      untrackedFunds <- ctxt_lift_expr mdv $ DLE_GetUntrackedFunds at mtok trackedBal
       dv <- ctxt_lift_expr mdv $ DLE_PrimOp at ADD [DLA_Var untrackedFunds, trackedBal]
       doFluidSet fvBal $ public $ SLV_DLVar dv
       return (lvl, SLV_DLVar untrackedFunds)

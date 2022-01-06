@@ -1071,7 +1071,7 @@ smt_e at_dv mdv de = do
     DLE_EmitLog at _ lv ->
       mapM_ (bound at <=< smt_v at) lv
     DLE_setApiDetails {} -> mempty
-    DLE_GetActualBalance at _ _ -> unbound at
+    DLE_GetUntrackedFunds at _ _ -> unbound at
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)

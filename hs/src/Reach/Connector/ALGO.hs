@@ -1472,7 +1472,7 @@ ce = \case
         L_Api {} -> True
         _ -> False
   DLE_setApiDetails {} -> return ()
-  DLE_GetActualBalance _ mtok tb -> do
+  DLE_GetUntrackedFunds _ mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
     maybe cContractAddr ca mtok
     op "balance"

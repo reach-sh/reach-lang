@@ -473,7 +473,7 @@ jsExpr = \case
       (L_Api s, [dv]) -> go s dv
       (_, _) -> return $ "null"
   DLE_setApiDetails {} -> return "undefined"
-  DLE_GetActualBalance at mtok tb -> do
+  DLE_GetUntrackedFunds at mtok tb -> do
     tok <- maybe (return "") jsArg mtok
     tb' <- jsArg tb
     zero <- jsArg $ DLA_Literal $ DLL_Int at 0

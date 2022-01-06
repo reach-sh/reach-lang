@@ -103,7 +103,7 @@ instance Subst DLExpr where
     DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at lk x -> DLE_EmitLog at lk <$> subst x
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
-    DLE_GetActualBalance at mtok tb -> DLE_GetActualBalance at <$> subst mtok <*> subst tb
+    DLE_GetUntrackedFunds at mtok tb -> DLE_GetUntrackedFunds at <$> subst mtok <*> subst tb
 
 instance Subst DLStmt where
   subst = \case

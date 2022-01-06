@@ -342,7 +342,7 @@ instance Optimize DLExpr where
     DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at k a -> DLE_EmitLog at k <$> opt a
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
-    DLE_GetActualBalance at mt tb -> DLE_GetActualBalance at <$> opt mt <*> opt tb
+    DLE_GetUntrackedFunds at mt tb -> DLE_GetUntrackedFunds at <$> opt mt <*> opt tb
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
 
