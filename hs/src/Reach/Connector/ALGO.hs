@@ -187,12 +187,6 @@ tealVersionPragma = "#pragma version 5"
 
 -- Algo specific stuff
 
-_udiv :: Integer -> Integer -> Integer
-_udiv x y = z
-  where
-    (q, d) = quotRem x y
-    z = if d == 0 then q else q + 1
-
 typeSig :: DLType -> String
 typeSig x =
   case x of
