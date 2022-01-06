@@ -178,6 +178,7 @@ type IndexerTxn = {
   'sender': Address,
   'application-transaction'?: IndexerAppTxn,
   'logs'?: Array<string>,
+  'tx-type': string,
 };
 type IndexerQuery1Res = {
   'transaction': IndexerTxn,
@@ -449,10 +450,10 @@ const newEventQueue = (): EventQueue => {
     const query =
       indexer.searchForTransactions()
         .applicationID(ApplicationID)
-        .txType('appl')
+        //.txType('appl')
         .minRound(mtime);
     const res = (await doQuery_(dhead, query, howMany)) as IndexerQueryMRes;
-    const txns = res.transactions;
+    const txns = res.transactions.filter((x:IndexerTxn) => x['tx-type'] === 'appl');
     const gtime = bigNumberify(res['current-round']);
     return { txns, gtime };
   };
