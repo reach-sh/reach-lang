@@ -1582,7 +1582,7 @@ const balanceOfM = async (acc: Account, token: Token|false = false): Promise<Big
   } else {
     for ( const ai of info.assets ) {
       if ( bigNumberify(token).eq(ai['asset-id']) ) {
-        return ai['amount'];
+        return bigNumberify(ai['amount']);
       }
     }
     return false;
