@@ -212,6 +212,8 @@ type TealArg = LT.Text
 type Label = LT.Text
 data TEAL
   = TCode TealOp [ TealArg ]
+  | TInt Integer
+  | TConst LT.Text
   | TBytes B.ByteString
   | TComment LT.Text
   | TLabel Label
@@ -219,10 +221,12 @@ type TEALt = [LT.Text]
 type TEALs = DL.DList TEAL
 
 builtin :: S.Set TealOp
-builtin = S.fromList [ "byte" ]
+builtin = S.fromList [ "byte", "int" ]
 
 render :: TEAL -> TEALt
 render = \case
+  TInt x -> ["int", texty x]
+  TConst x -> ["int", x]
   TBytes bs -> ["byte", "base64(" <> encodeBase64 bs <> ")" ]
   TCode f args ->
     case S.member f builtin of
@@ -245,7 +249,7 @@ opt_bs = \case
     case B.length x of
       0 -> (TBytes mempty) : opt_bs l
       32 -> opt_bs $ (TCode "global" ["ZeroAddress"]) : l
-      len -> opt_bs $ (TCode "int" [texty len]) : (TCode "bzero" []) : l
+      len -> opt_bs $ (TInt $ fromIntegral len) : (TCode "bzero" []) : l
   x : l -> x : opt_bs l
 
 opt_b :: [TEAL] -> [TEAL]
@@ -265,7 +269,10 @@ opt_b1 = \case
   (TCode "btoi" []) : (TCode "itob" ["// bool"]) : (TCode "substring" ["7", "8"]) : l -> l
   (TCode "btoi" []) : (TCode "itob" []) : l -> l
   (TCode "itob" []) : (TCode "btoi" []) : l -> l
-  (TCode "extract" [x, "8"]) : (TCode "btoi" []) : l -> (TCode "int" [x]) : (TCode "extract_uint64" []) : l
+  a@(TCode "extract" [x, "8"]) : b@(TCode "btoi" []) : l ->
+    case parse x of
+      Just xn -> (TInt xn) : (TCode "extract_uint64" []) : l
+      Nothing -> a : b : l
   a@(TCode "load" [x]) : (TCode "load" [y]) : l
     | x == y ->
       -- This misses if there is ANOTHER load of the same thing
@@ -273,7 +280,7 @@ opt_b1 = \case
   a@(TCode "store" [x]) : (TCode "load" [y]) : l
     | x == y ->
       (TCode "dup" []) : a : l
-  a@(TCode "substring" [s0, _]) : b@(TCode "int" [x]) : c@(TCode "getbyte" []) : l ->
+  a@(TCode "substring" [s0, _]) : b@(TInt xn) : c@(TCode "getbyte" []) : l ->
     case mse of
       Just (s0x, s0xp1) ->
         opt_b1 $ (TCode "substring" [s0x, s0xp1]) : (TCode "btoi" []) : l
@@ -282,7 +289,6 @@ opt_b1 = \case
     where
       mse = do
         s0n <- parse s0
-        xn <- parse x
         let s0xn = s0n + xn
         let s0xp1n = s0xn + 1
         case s0xn < 256 && s0xp1n < 256 of
@@ -304,20 +310,14 @@ opt_b1 = \case
         case s2n < 256 && e2n < 256 of
           True -> return $ (texty s2n, texty e2n)
           False -> mempty
-  a@(TCode "int" [x]) : b@(TCode "itob" []) : l ->
-    case itob x of
-      Nothing ->
-        a : b : l
-      Just xbs ->
-        opt_b1 $ (TBytes xbs) : l
+  (TInt x) : (TCode "itob" []) : l ->
+    opt_b1 $ (TBytes xbs) : l
+    where
+      xbs = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
   x : l -> x : l
   where
     parse :: LT.Text -> Maybe Integer
     parse = readMaybe . LT.unpack
-    itob :: LT.Text -> Maybe B.ByteString
-    itob x_lt = do
-      x <- parse x_lt
-      return $ LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
 
 checkCost :: Bool -> [TEAL] -> IO ()
 checkCost alwaysShow ts = do
@@ -375,6 +375,8 @@ checkCost alwaysShow ts = do
       jump_ lab''
       switch lab''
     TBytes _ -> recCost 1
+    TConst _ -> recCost 1
+    TInt _ -> recCost 1
     TCode f _ ->
       case f of
         "sha256" -> recCost 35
@@ -765,11 +767,14 @@ ctzero = \case
     padding $ typeSizeOf t
     cfrombs t
 
+chkint :: SrcLoc -> Integer -> Integer
+chkint at i = checkIntLiteralC at conName' conCons' i
+
 tint :: SrcLoc -> Integer -> LT.Text
-tint at i = texty $ checkIntLiteralC at conName' conCons' i
+tint at i = texty $ chkint at i
 
 cint_ :: SrcLoc -> Integer -> App ()
-cint_ at i = code "int" [tint at i]
+cint_ at i = output $ TInt $ chkint at i
 
 cint :: Integer -> App ()
 cint = cint_ sb
@@ -1389,7 +1394,7 @@ ce = \case
     checkTxn $ CheckTxn {..}
     op "itxn_begin"
     let vTypeEnum = "acfg"
-    code "int" [vTypeEnum]
+    output $ TConst vTypeEnum
     makeTxn1 "TypeEnum"
     ca dtn_supply >> makeTxn1 "ConfigAssetTotal"
     maybe (cint_ at 6) ca dtn_decimals >> makeTxn1 "ConfigAssetDecimals"
@@ -1408,7 +1413,7 @@ ce = \case
   DLE_TokenDestroy _at aida -> do
     op "itxn_begin"
     let vTypeEnum = "acfg"
-    code "int" [vTypeEnum]
+    output $ TConst vTypeEnum
     makeTxn1 "TypeEnum"
     incResourceL aida R_Asset
     ca aida
@@ -1503,7 +1508,7 @@ makeTxn1 f = code "itxn_field" [f]
 checkTxnInit :: LT.Text -> App ()
 checkTxnInit vTypeEnum = do
   -- [ txn ]
-  code "int" [vTypeEnum]
+  output $ TConst vTypeEnum
   checkTxn1 "TypeEnum"
   cint 0
   checkTxn1 "Fee"
@@ -1589,7 +1594,7 @@ makeTxn (MakeTxn {..}) = when (mt_always || not (staticZero mt_amt) ) $ do
     code "bz" [after_lab]
   op "itxn_begin"
   makeTxn1 fAmount
-  code "int" [vTypeEnum]
+  output $ TConst vTypeEnum
   makeTxn1 "TypeEnum"
   whenJust mt_mcclose $ \cclose -> do
     cclose
@@ -1766,7 +1771,7 @@ ct = \case
           gvStore GV_currentTime
           return False
     code "txn" ["OnCompletion"]
-    code "int" [ if isHalt then "DeleteApplication" else "NoOp" ]
+    output $ TConst $ if isHalt then "DeleteApplication" else "NoOp"
     asserteq
     code "b" ["updateState"]
     addResourceCheck
@@ -2052,7 +2057,7 @@ compile_algo env disp pl = do
     unless (null sMapKeysl) $ do
       -- NOTE We could allow an OptIn if we are not going to halt
       code "txn" ["OnCompletion"]
-      code "int" ["OptIn"]
+      output $ TConst "OptIn"
       op "=="
       code "bz" ["normal"]
       code "txn" ["Sender"]
@@ -2106,7 +2111,7 @@ compile_algo env disp pl = do
     defn_done
     label "alloc"
     code "txn" ["OnCompletion"]
-    code "int" ["NoOp"]
+    output $ TConst "NoOp"
     asserteq
     forM_ keyState_gvs $ \gv -> do
       ctzero $ gvType gv
