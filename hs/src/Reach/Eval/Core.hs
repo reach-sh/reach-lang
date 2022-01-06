@@ -4578,6 +4578,8 @@ splitPayExpr a = \case
 doFork :: [JSStatement] -> ForkRec -> App SLStmtRes
 doFork ks (ForkRec {..}) = locAt slf_at $ do
   let cases = slf_cases
+  when (null cases) $
+    expect_ $ Err_ForkNoCases
   let mtime = slf_mtime
   idx <- ctxt_alloc
   let fid x = ".fork" <> (show idx) <> "." <> x
