@@ -337,7 +337,7 @@ checkCost alwaysShow ts = do
         writeIORef labr t
         writeIORef cost_r 0
         writeIORef logLen_r 0
-  let jump t = recCost 1 >> jump_ (l2s t ++ ":")
+  let jump t = recCost 1 >> jump_ (l2s t)
   forM_ ts $ \case
     TCode "bnz" [lab'] -> jump lab'
     TCode "bz" [lab'] -> jump lab'
