@@ -223,54 +223,52 @@ render = \case
   TComment t -> [ "//", t ]
   TLabel lab -> [ lab <> ":" ]
 
-optimize :: [TEALt] -> [TEALt]
+optimize :: [TEAL] -> [TEAL]
 optimize ts0 = tsN
   where
     ts1 = opt_b ts0
     ts2 = opt_bs ts1
     tsN = ts2
 
-opt_bs :: [TEALt] -> [TEALt]
+opt_bs :: [TEAL] -> [TEAL]
 opt_bs = \case
   [] -> []
-  ["byte", x] : l | isBase64_zeros x ->
+  (TCode "byte" [x]) : l | isBase64_zeros x ->
     case B.length $ base64u x of
-      0 -> ["byte", x] : opt_bs l
-      32 -> opt_bs $ ["global", "ZeroAddress"] : l
-      len -> opt_bs $ ["int", texty len] : ["bzero"] : l
+      0 -> (TCode "byte" [x]) : opt_bs l
+      32 -> opt_bs $ (TCode "global" ["ZeroAddress"]) : l
+      len -> opt_bs $ (TCode "int" [texty len]) : (TCode "bzero" []) : l
   x : l -> x : opt_bs l
 
-opt_b :: [TEALt] -> [TEALt]
+opt_b :: [TEAL] -> [TEAL]
 opt_b = foldr (\a b -> opt_b1 $ a : b) mempty
 
-opt_b1 :: [TEALt] -> [TEALt]
+opt_b1 :: [TEAL] -> [TEAL]
 opt_b1 = \case
   [] -> []
-  [["return"]] -> []
+  [(TCode "return" [])] -> []
   -- This relies on knowing what "done" is
-  ["assert"] : ["b", "done"] : x -> ["return"] : x
-  ["byte", "base64()"] : ["concat"] : l -> l
-  ["byte", "base64()"] : b@["load", _] : ["concat"] : l -> opt_b1 $ b : l
-  ["byte", x] : ["byte", y] : ["concat"] : l | isBase64 x && isBase64 y ->
-    opt_b1 $ [ "byte", (base64d $ base64u x <> base64u y) ] : l
-  ["b", x] : b@[y] : l | y == (x <> ":") -> b : l
-  ["btoi"] : ["itob", "// bool"] : ["substring", "7", "8"] : l -> l
-  ["btoi"] : ["itob"] : l -> l
-  ["itob"] : ["btoi"] : l -> l
-  ["extract", x, "8"] : ["btoi"] : l -> ["int",x] : ["extract_uint64"] : l
-  -- Not actually an optimization:
-  -- ["extract", x, "1"] : l -> ["int", x] : ["getbyte"] : ["itob"] : l
-  a@["load", x] : ["load", y] : l
+  (TCode "assert" []) : (TCode "b" ["done"]) : x -> (TCode "return" []) : x
+  (TCode "byte" ["base64()"]) : (TCode "concat" []) : l -> l
+  (TCode "byte" ["base64()"]) : b@(TCode "load" [_]) : (TCode "concat" []) : l -> opt_b1 $ b : l
+  (TCode "byte" [x]) : (TCode "byte" [y]) : (TCode "concat" []) : l | isBase64 x && isBase64 y ->
+    opt_b1 $ (TCode "byte" [(base64d $ base64u x <> base64u y)]) : l
+  (TCode "b" [x]) : b@(TLabel y) : l | x == y -> b : l
+  (TCode "btoi" []) : (TCode "itob" ["// bool"]) : (TCode "substring" ["7", "8"]) : l -> l
+  (TCode "btoi" []) : (TCode "itob" []) : l -> l
+  (TCode "itob" []) : (TCode "btoi" []) : l -> l
+  (TCode "extract" [x, "8"]) : (TCode "btoi" []) : l -> (TCode "int" [x]) : (TCode "extract_uint64" []) : l
+  a@(TCode "load" [x]) : (TCode "load" [y]) : l
     | x == y ->
       -- This misses if there is ANOTHER load of the same thing
-      a : ["dup"] : l
-  a@["store", x] : ["load", y] : l
+      a : (TCode "dup" []) : l
+  a@(TCode "store" [x]) : (TCode "load" [y]) : l
     | x == y ->
-      ["dup"] : a : l
-  a@["substring", s0, _] : b@["int", x] : c@["getbyte"] : l ->
+      (TCode "dup" []) : a : l
+  a@(TCode "substring" [s0, _]) : b@(TCode "int" [x]) : c@(TCode "getbyte" []) : l ->
     case mse of
       Just (s0x, s0xp1) ->
-        opt_b1 $ ["substring", s0x, s0xp1] : ["btoi"] : l
+        opt_b1 $ (TCode "substring" [s0x, s0xp1]) : (TCode "btoi" []) : l
       Nothing ->
         a : b : c : l
     where
@@ -282,10 +280,10 @@ opt_b1 = \case
         case s0xn < 256 && s0xp1n < 256 of
           True -> return (texty s0xn, texty s0xp1n)
           False -> mempty
-  a@["substring", s0, _] : b@["substring", s1, e1] : l ->
+  a@(TCode "substring" [s0, _]) : b@(TCode "substring" [s1, e1]) : l ->
     case mse of
       Just (s2, e2) ->
-        opt_b1 $ ["substring", s2, e2] : l
+        opt_b1 $ (TCode "substring" [s2, e2]) : l
       Nothing ->
         a : b : l
     where
@@ -298,12 +296,12 @@ opt_b1 = \case
         case s2n < 256 && e2n < 256 of
           True -> return $ (texty s2n, texty e2n)
           False -> mempty
-  a@["int", x] : b@["itob"] : l ->
+  a@(TCode "int" [x]) : b@(TCode "itob" []) : l ->
     case itob x of
       Nothing ->
         a : b : l
       Just xbs ->
-        opt_b1 $ ["byte", xbs] : l
+        opt_b1 $ (TCode "byte" [xbs]) : l
   x : l -> x : l
   where
     parse :: LT.Text -> Maybe Integer
@@ -314,7 +312,7 @@ opt_b1 = \case
       let x_bs = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
       return $ base64d x_bs
 
-checkCost :: Bool -> [TEALt] -> IO ()
+checkCost :: Bool -> [TEAL] -> IO ()
 checkCost alwaysShow ts = do
   let mkg :: IO (IORef (LPGraph String))
       mkg = newIORef mempty
@@ -347,49 +345,50 @@ checkCost alwaysShow ts = do
         writeIORef logLen_r 0
   let jump t = recCost 1 >> jump_ (l2s t ++ ":")
   forM_ ts $ \case
-    ["sha256"] -> recCost 35
-    ["keccak256"] -> recCost 130
-    ["sha512_256"] -> recCost 45
-    ["ed25519verify"] -> recCost 1900
-    ["ecdsa_verify", _] -> recCost 1700
-    ["ecdsa_pk_decompress",_] -> recCost 650
-    ["ecdsa_pk_recover", _] -> recCost 2000
-    ["divmodw"] -> recCost 20
-    ["sqrt"] -> recCost 4
-    ["expw"] -> recCost 10
-    ["b+"] -> recCost 10
-    ["b-"] -> recCost 10
-    ["b/"] -> recCost 20
-    ["b*"] -> recCost 20
-    ["b%"] -> recCost 20
-    ["b|"] -> recCost 6
-    ["b&"] -> recCost 6
-    ["b^"] -> recCost 6
-    ["b~"] -> recCost 4
-    ["b|"] -> recCost 6
-    ["bnz", lab'] -> jump lab'
-    ["bz", lab'] -> jump lab'
-    ["b", lab'] -> do
+    TCode "bnz" [lab'] -> jump lab'
+    TCode "bz" [lab'] -> jump lab'
+    TCode "b" [lab'] -> do
       jump lab'
       switch ""
-    ["return"] -> do
+    TCode "return" [] -> do
       jump lBot
       switch ""
-    ["callsub", _lab'] ->
+    TCode "callsub" [_lab'] ->
       impossible "callsub"
-    ["log", "//", len'] -> do
+    TCode "log" ["//", len'] -> do
       -- Note: We don't check MaxLogCalls, because it is not actually checked
       recLogLen (read $ LT.unpack len')
       recCost 1
-    [ "//", com ] -> do
+    TComment com -> do
       when (com == "<for>") $ do
         writeIORef hasForR True
       return ()
-    [lab'] | LT.isSuffixOf ":" lab' -> do
+    TLabel lab' -> do
       let lab'' = l2s lab'
       jump_ lab''
       switch lab''
-    _ -> recCost 1
+    TCode f _ ->
+      case f of
+        "sha256" -> recCost 35
+        "keccak256" -> recCost 130
+        "sha512_256" -> recCost 45
+        "ed25519verify" -> recCost 1900
+        "ecdsa_verify" -> recCost 1700
+        "ecdsa_pk_decompress" -> recCost 650
+        "ecdsa_pk_recover" -> recCost 2000
+        "divmodw" -> recCost 20
+        "sqrt" -> recCost 4
+        "expw" -> recCost 10
+        "b+" -> recCost 10
+        "b-" -> recCost 10
+        "b/" -> recCost 20
+        "b*" -> recCost 20
+        "b%" -> recCost 20
+        "b|" -> recCost 6
+        "b&" -> recCost 6
+        "b^" -> recCost 6
+        "b~" -> recCost 4
+        _ -> recCost 1
   let whenl x e =
         case x of
           True -> [ e ]
@@ -420,9 +419,9 @@ checkCost alwaysShow ts = do
 optimizeAndRender :: Bool -> TEALs -> IO T.Text
 optimizeAndRender showCost ts = do
   let tscl = DL.toList ts
-  let tsl = map render tscl
-  let tsl' = optimize tsl
-  checkCost showCost tsl'
+  let tscl' = optimize tscl
+  checkCost showCost tscl'
+  let tsl' = map render tscl'
   let lts = tealVersionPragma : (map LT.unwords tsl')
   let lt = LT.unlines lts
   let t = LT.toStrict lt
