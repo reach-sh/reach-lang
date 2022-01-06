@@ -237,9 +237,9 @@ const addEstimates = async (cfx:any, txn:any): Promise<any> => {
   try {
     const n = await cfx.getNextNonce(txn.from);
     txn.nonce = n;
-    debug(dhead, `n: nonce:`, {n});
+    debug(dhead, `n:nonce:`, {n});
   } catch (e) {
-    debug(dhead, `n: nonce:`, {e});
+    debug(dhead, `n:nonce:`, {e});
   }
   try {
     est = await cfx.estimateGasAndCollateral(txn);

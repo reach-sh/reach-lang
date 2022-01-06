@@ -1,5 +1,1 @@
 # These are allowed to fail and we still release
-
-# FIXME
-CFX.view-steps
-CFX.rpc-view-steps

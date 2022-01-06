@@ -118,9 +118,7 @@ checkteal () {
 #exit 0
 
 jb
-ci CFX view-steps
-exit 0
-ci ALGO nft-auction
+ci ALGO rps-3-bets
 exit 0
 
 ci CFX rps-3-bets
