@@ -118,48 +118,12 @@ export async function _specialFundFromFaucet() {
   }
 }
 
-async function waitCaughtUp(provider: Provider, env: ProviderEnv): Promise<void> {
+const [getProvider, _setProvider] = replaceableThunk<Promise<Provider>|Provider>(async (): Promise<Provider> => {
+  const env = getProviderEnv();
+  const provider = await waitProviderFromEnv(env);
   if ('CFX_NODE_URI' in env && env.CFX_NODE_URI && truthyEnv(env.REACH_DO_WAIT_PORT)) {
     await waitPort(env.CFX_NODE_URI);
   }
-  // This is false, because it competes for nonces with the faucet server and
-  // causes it to fail; I've just moved the loop into when we actually send and
-  // will remove this later
-  if (false && isIsolatedNetwork()) {
-    // XXX this doesn't work with setFaucet; requires the default faucet to be used
-    // But we can't call getFaucet() or _getDefaultFaucetNetworkAccount() here because
-    // those (if left to defaults) call getProvider which calls this fn (waitCaughtUp).
-    // TODO: disentangle
-    if (!defaultFaucetWallet.provider) defaultFaucetWallet.connect(provider);
-    const w = cfxers.Wallet.createRandom().connect(provider);
-    const txn = {to: w.getAddress(), value: '1'};
-    const dhead = 'waitCaughtUp';
-    while ( true ) {
-      try {
-        debug(dhead, 'try', txn);
-        const t = await defaultFaucetWallet.sendTransaction(txn);
-        await t.wait();
-        return;
-      } catch (e:any) {
-        debug(dhead, 'err', e);
-        if ( e.code === -32077 ) {
-          await Timeout.set(500);
-          continue;
-        }
-        break;
-      }
-    }
-  }
-};
-
-const [getProvider, _setProvider] = replaceableThunk<Promise<Provider>|Provider>(async (): Promise<Provider> => {
-  const fullEnv = getProviderEnv();
-  const provider = await waitProviderFromEnv(fullEnv);
-  // XXX disentangle the places where we waitProvider vs waitCaughtUp
-
-  // XXX is there a better place to wait for this
-  // such that toying with things at the repl doesn't hang if no connection is available?
-  await waitCaughtUp(provider, fullEnv);
   return provider;
 });
 export function setProvider(provider: Provider|Promise<Provider>): void {
