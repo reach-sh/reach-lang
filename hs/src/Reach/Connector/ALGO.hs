@@ -393,12 +393,17 @@ checkCost alwaysShow ts = do
         case x of
           True -> [ e ]
           False -> []
+  let showNice x = "TOP" <> h x
+        where
+          h = \case
+            [] -> ""
+            (l, c) : r -> " --" <> show c <> "--> " <> l <> h r
   let analyze cgr units algoMax = do
         cg <- readIORef cgr
         (p, c) <- longestPathBetween cg lTop (l2s lBot)
         let msg = "This program could use " <> show c <> " " <> units
         let tooMuch = fromIntegral c > algoMax
-        let cs = (whenl tooMuch $ msg <> ", but the limit is " <> show algoMax <> ": " <> show p <> "\n")
+        let cs = (whenl tooMuch $ msg <> ", but the limit is " <> show algoMax <> ": " <> showNice p <> "\n")
         return (msg, tooMuch, cs)
   (showCost, exceedsCost, csCost) <- analyze cost_gr "units of cost" algoMaxAppProgramCost
   (showLogLen, exceedsLogLen, csLogLen) <- analyze logLen_gr "bytes of logs" algoMaxLogLen
