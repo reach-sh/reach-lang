@@ -339,6 +339,9 @@ checkCost alwaysShow ts = do
         writeIORef logLen_r 0
   let jump t = recCost 1 >> jump_ (l2s t)
   forM_ ts $ \case
+    TCode "bnz" [lab', "//", _] -> do
+      writeIORef hasForR True
+      jump lab'
     TCode "bnz" [lab'] -> jump lab'
     TCode "bz" [lab'] -> jump lab'
     TCode "b" [lab'] -> do
@@ -353,10 +356,7 @@ checkCost alwaysShow ts = do
       -- Note: We don't check MaxLogCalls, because it is not actually checked
       recLogLen (read $ LT.unpack len')
       recCost 1
-    TComment com -> do
-      when (com == "<for>") $ do
-        writeIORef hasForR True
-      return ()
+    TComment _ -> return ()
     TLabel lab' -> do
       let lab'' = l2s lab'
       jump_ lab''
@@ -1025,26 +1025,25 @@ computeExtract ts idx = (t, start, sz)
         Just x -> x
 
 cfor :: Integer -> (App () -> App ()) -> App ()
+cfor 0 _ = return ()
+cfor 1 body = body (cint 0)
 cfor maxi body = do
+  when (maxi < 2) $ impossible "cfor maxi=0"
   top_lab <- freshLabel "forTop"
-  end_lab <- freshLabel "forK"
   salloc_ $ \store_idx load_idx -> do
     cint 0
     store_idx
-    comment $ "<for>"
     label top_lab
-    load_idx
-    cint maxi
-    op "<"
-    code "bz" [end_lab]
     body load_idx
     load_idx
     cint 1
     op "+"
+    op "dup"
     store_idx
-    code "b" [top_lab]
-  comment "</for>"
-  label end_lab
+    cint maxi
+    op "<"
+    code "bnz" [top_lab, "//", texty maxi]
+  return ()
 
 doArrayRef :: SrcLoc -> DLArg -> Bool -> Either DLArg (App ()) -> App ()
 doArrayRef at aa frombs ie = do

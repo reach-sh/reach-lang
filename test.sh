@@ -27,7 +27,7 @@ err () {
 }
 
 jb () {
-  (cd "$ROOT"/js/js-deps && make build)
+  #(cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
@@ -118,8 +118,13 @@ checkteal () {
 #exit 0
 
 jb
-(cd examples/rps-8-interact && c index.rsh)
 export REACH_DEBUG=Y
+c examples/nim-abstract/index.rsh
+exit 0
+ci ALGO nim-abstract
+exit 0
+
+(cd examples/rps-8-interact && c index.rsh)
 c users/duoswap-core/index.rsh
 exit 0
 ci ALGO rps-7-loops
