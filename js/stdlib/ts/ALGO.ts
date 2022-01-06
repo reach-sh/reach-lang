@@ -147,7 +147,7 @@ type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyALGO_Ty>;
 // Helpers
 
 // Parse CBR into Public Key
-export const cbr2algo_addr = (x:string): Address =>
+const cbr2algo_addr = (x:string): Address =>
   algosdk.encodeAddress(Buffer.from(x.slice(2), 'hex'));
 
 const txnFromAddress = (t:Transaction): Address =>

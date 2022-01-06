@@ -316,7 +316,6 @@ const { randomUInt, hasRandom } = makeRandom(32);
 
 const balanceOf = async (acc: Account | Address, token: Token|false = false): Promise<BigNumber> => {
   let addressable = (typeof acc == 'string') ? acc : acc.networkAccount;
-  // const { networkAccount } = acc;
   if (!addressable) {
     throw Error(`Cannot get the address of: ${acc}`);
   }
