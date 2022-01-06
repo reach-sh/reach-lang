@@ -22,7 +22,6 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Vector as Vector
 import Data.Word
-import GHC.Stack (HasCallStack)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
@@ -43,8 +42,6 @@ import System.Exit
 import System.Process.ByteString
 import System.FilePath
 import System.IO.Temp
-
--- import Debug.Trace
 
 -- Errors for ALGO
 
@@ -94,27 +91,6 @@ longestPathBetween g f _d = do
 
 aarray :: [Aeson.Value] -> Aeson.Value
 aarray = Aeson.Array . Vector.fromList
-
-sb :: SrcLoc
-sb = srcloc_builtin
-
-typeArray :: HasCallStack => DLArg -> (DLType, Integer)
-typeArray a =
-  case argTypeOf a of
-    T_Array t sz -> (t, sz)
-    _ -> impossible $ "should be array"
-
-typeTupleTypes :: HasCallStack => DLType -> [DLType]
-typeTupleTypes = \case
-  T_Tuple ts -> ts
-  _ -> impossible $ "should be tuple"
-
-typeObjectTypes :: HasCallStack => DLArg -> [(SLVar, DLType)]
-typeObjectTypes a =
-  case argTypeOf a of
-    T_Object m -> M.toAscList m
-    T_Struct ts -> ts
-    _ -> impossible $ "should be obj"
 
 -- Algorand constants
 
@@ -1083,7 +1059,7 @@ cfor maxi body = do
 
 doArrayRef :: SrcLoc -> DLArg -> Bool -> Either DLArg (App ()) -> App ()
 doArrayRef at aa frombs ie = do
-  let (t, _) = typeArray aa
+  let (t, _) = argArrTypeLen aa
   ca aa
   cArrayRef at t frombs ie
 
@@ -1152,7 +1128,7 @@ cbs bs = code "byte" [base64d bs]
 cTupleRef :: SrcLoc -> DLType -> Integer -> App ()
 cTupleRef at tt idx = do
   -- [ Tuple ]
-  let ts = typeTupleTypes tt
+  let ts = tupleTypes tt
   let (t, start, sz) = computeExtract ts idx
   case (ts, idx) of
     ([ _ ], 0) ->
@@ -1173,7 +1149,7 @@ cTupleSet :: SrcLoc -> DLType -> Integer -> App ()
 cTupleSet at tt idx = do
   -- [ Tuple, Value' ]
   let tot = typeSizeOf tt
-  let ts = typeTupleTypes tt
+  let ts = tupleTypes tt
   let (t, start, end) = computeSubstring ts idx
   ctobs t
   -- [ Tuple, Value'Bs ]
@@ -1300,7 +1276,7 @@ ce = \case
   DLE_PrimOp _ p args -> cprim p args
   DLE_ArrayRef at aa ia -> doArrayRef at aa True (Left ia)
   DLE_ArraySet at aa ia va -> do
-    let (t, alen) = typeArray aa
+    let (t, alen) = argArrTypeLen aa
     case t of
       T_Bool -> do
         ca aa
@@ -1322,8 +1298,8 @@ ce = \case
                 _ -> Right $ ca ia
         cArraySet at (t, alen) mcbig eidx cnew
   DLE_ArrayConcat _ x y -> do
-    let (xt, xlen) = typeArray x
-    let (_, ylen) = typeArray y
+    let (xt, xlen) = argArrTypeLen x
+    let (_, ylen) = argArrTypeLen y
     ca x
     ca y
     check_concat_len $ (xlen + ylen) * typeSizeOf xt
@@ -1331,7 +1307,7 @@ ce = \case
   DLE_ArrayZip at x y -> do
     let xsz = typeSizeOf $ argTypeOf x
     let ysz = typeSizeOf $ argTypeOf y
-    let (_, xlen) = typeArray x
+    let (_, xlen) = argArrTypeLen x
     check_concat_len $ xsz + ysz
     salloc_ $ \store_ans load_ans -> do
       cbs ""
@@ -1348,7 +1324,7 @@ ce = \case
     ca ta
     cTupleRef at (argTypeOf ta) idx
   DLE_ObjectRef at oa f -> do
-    let fts = typeObjectTypes oa
+    let fts = argObjstrTypes oa
     let fidx = fromIntegral $ fromMaybe (impossible "field") $ List.findIndex ((== f) . fst) fts
     let (t, start, sz) = computeExtract (map snd fts) fidx
     ca oa
@@ -1690,7 +1666,7 @@ cm km = \case
         sallocLet dv (ce de) km
   DL_ArrayMap at ansv aa lv (DLBlock _ _ body ra) -> do
     let anssz = typeSizeOf $ argTypeOf $ DLA_Var ansv
-    let (_, xlen) = typeArray aa
+    let (_, xlen) = argArrTypeLen aa
     check_concat_len anssz
     salloc_ $ \store_ans load_ans -> do
       cbs ""
@@ -1704,7 +1680,7 @@ cm km = \case
         store_ans
       store_let ansv True load_ans km
   DL_ArrayReduce at ansv aa za av lv (DLBlock _ _ body ra) -> do
-    let (_, xlen) = typeArray aa
+    let (_, xlen) = argArrTypeLen aa
     salloc_ $ \store_ans load_ans -> do
       ca za
       store_ans

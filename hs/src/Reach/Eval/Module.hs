@@ -138,7 +138,7 @@ evalLib cns (src, body) libm = do
         M.union base_env $
           M.mapKeys T.unpack $
             M.mapWithKey
-              (\k _ -> SLSSVal srcloc_builtin Public $ SLV_Connector k)
+              (\k _ -> SLSSVal sb Public $ SLV_Connector k)
               cns
   let stdlib_env =
         case src of

@@ -190,6 +190,9 @@ getStackTraceMessage (SLC_CloApp call_at clo_at name) =
 srcloc_builtin :: SrcLoc
 srcloc_builtin = SrcLoc (Just "<builtin>") Nothing Nothing
 
+sb :: SrcLoc
+sb = srcloc_builtin
+
 srcloc_top :: SrcLoc
 srcloc_top = SrcLoc (Just "<top level>") Nothing Nothing
 
@@ -218,7 +221,7 @@ srclocOf_ :: SrcLocOf a => SrcLoc -> a -> SrcLoc
 srclocOf_ def v = a'
   where
     a = srclocOf v
-    a' = if a == srcloc_builtin then def else a
+    a' = if a == sb then def else a
 
 --- Security Levels
 data SecurityLevel

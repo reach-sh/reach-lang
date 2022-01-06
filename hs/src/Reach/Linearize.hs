@@ -137,8 +137,8 @@ dk1 k s =
             case cs0 of
               -- We are forcing an initial switch to be in CPS, assuming that
               -- this is a fork and that this is a good idea
-              ((Seq.:<|) (DLS_Prompt pa pb pc ((Seq.:<|) (DLS_Switch sa sb sc sd) Seq.Empty)) r) ->
-                ((Seq.<|) (DLS_Prompt pa pb (go pc) ((Seq.<|) (DLS_Switch sa sb (go sc) sd) Seq.empty)) r)
+              ((Seq.:<|) (DLS_Prompt pa pb pc ((Seq.:<|) (DLS_Switch sa swb sc sd) Seq.Empty)) r) ->
+                ((Seq.<|) (DLS_Prompt pa pb (go pc) ((Seq.<|) (DLS_Switch sa swb (go sc) sd) Seq.empty)) r)
                 where
                   go x = x { sa_local = False }
               _ -> cs0
@@ -438,7 +438,7 @@ df_con = \case
           case r of
             Nothing -> return $ Nothing
             Just _ -> do
-              dv <- DLVar at (Just (srcloc_builtin, show $ pretty fv)) (fluidVarType fv) <$> df_allocVar
+              dv <- DLVar at (Just (sb, show $ pretty fv)) (fluidVarType fv) <$> df_allocVar
               return $ Just (fv, dv)
     fvm <- M.fromList <$> catMaybes <$> mapM go fvs
     let body_fvs' = df_con =<< unpackFVMap at body

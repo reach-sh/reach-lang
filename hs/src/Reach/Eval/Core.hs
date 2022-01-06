@@ -305,10 +305,10 @@ type SLMod = (ReachSource, [JSModuleItem])
 
 defaultApp :: SLSSVal
 defaultApp =
-  SLSSVal srcloc_builtin Public $
+  SLSSVal sb Public $
     SLV_Prim $
       SLPrim_App_Delay
-        srcloc_builtin
+        sb
         (JSStatementBlock JSNoAnnot [] JSNoAnnot JSSemiAuto)
         (mempty, False)
 
@@ -517,7 +517,7 @@ isKwd (SLSSVal _ _ (SLV_Kwd _)) = True
 isKwd _ = False
 
 m_fromList_public_builtin :: [(SLVar, SLVal)] -> SLEnv
-m_fromList_public_builtin = m_fromList_public srcloc_builtin
+m_fromList_public_builtin = m_fromList_public sb
 
 base_env :: SLEnv
 base_env =
@@ -594,7 +594,7 @@ base_env =
     , (".setApiDetails", SLV_Form $ SLForm_setApiDetails)
     , ("getUntrackedFunds", SLV_Prim $ SLPrim_getUntrackedFunds)
     , ( "Reach"
-      , (SLV_Object srcloc_builtin (Just $ "Reach") $
+      , (SLV_Object sb (Just $ "Reach") $
            m_fromList_public_builtin
              [("App", SLV_Form SLForm_App)])
       )
@@ -672,7 +672,7 @@ slToDLV = \case
   SLV_Bool at b -> lit at $ DLL_Bool b
   SLV_Int at i -> lit at $ DLL_Int at i
   SLV_Bytes at bs -> return $ Just $ DLV_Bytes at bs
-  SLV_DLC c -> arg srcloc_builtin $ DLA_Constant c
+  SLV_DLC c -> arg sb $ DLA_Constant c
   SLV_DLVar dv -> arg (srclocOf dv) $ DLA_Var dv
   SLV_Array at dt vs -> do
     fmap (DLV_Array at dt) . all_just <$> recs vs
@@ -1138,7 +1138,7 @@ evalAsEnv obj = case obj of
     case S.toList ps of
       [] -> expect_ $ Err_No_Participants
       [h] -> evalAsEnv $ SLV_Participant at h Nothing Nothing
-      _ -> evalAsEnv $ SLV_RaceParticipant srcloc_builtin ps
+      _ -> evalAsEnv $ SLV_RaceParticipant sb ps
   SLV_RaceParticipant _ whos ->
     return $
       M.fromList
@@ -1852,7 +1852,7 @@ evalPolyEq lvl x y =
         (T_Address, T_Address) -> make_var ADDRESS_EQ
         (T_Token, T_Token) -> make_var TOKEN_EQ
         (T_Bool, T_Bool) -> do
-          notR <- evalPrimOp IF_THEN_ELSE [(lvl, r), public $ SLV_Bool srcloc_builtin False, public $ SLV_Bool srcloc_builtin True]
+          notR <- evalPrimOp IF_THEN_ELSE [(lvl, r), public $ SLV_Bool sb False, public $ SLV_Bool sb True]
           evalPrimOp IF_THEN_ELSE [(lvl, l), (lvl, r), notR]
         _ ->
           case typeEqb lty rty of
@@ -1861,7 +1861,7 @@ evalPolyEq lvl x y =
   where
     andMapEq ls rs = do
       xs <- zipWithM (\l r -> snd <$> evalPolyEq lvl l r) ls rs
-      foldrM evalAnd (SLV_Bool srcloc_builtin True) xs
+      foldrM evalAnd (SLV_Bool sb True) xs
     -- Logical and for SL bool values
     hashAndCmp :: SLSVal -> SLSVal -> App SLSVal
     hashAndCmp l r = do
@@ -1885,7 +1885,7 @@ evalAnd l r =
     (SLV_Bool bAt lb, SLV_Bool _ rb) ->
       return $ SLV_Bool bAt $ lb && rb
     (SLV_DLVar {}, SLV_DLVar {}) ->
-      snd <$> evalPrimOp IF_THEN_ELSE [(Public, l), (Public, r), public $ SLV_Bool srcloc_builtin False]
+      snd <$> evalPrimOp IF_THEN_ELSE [(Public, l), (Public, r), public $ SLV_Bool sb False]
     (SLV_Bool bAt False, _) -> return $ SLV_Bool bAt False
     (SLV_Bool _ True, SLV_DLVar {}) -> return $ r
     (SLV_DLVar _, SLV_Bool {}) -> evalAnd r l
@@ -1893,7 +1893,7 @@ evalAnd l r =
 
 evalAndMap :: (SLVal -> App SLVal) -> [SLVal] -> App SLVal
 evalAndMap f = \case
-  [] -> return $ SLV_Bool srcloc_builtin True
+  [] -> return $ SLV_Bool sb True
   h : t -> do
     h' <- f h
     t' <- evalAndMap f t
@@ -1917,7 +1917,7 @@ evalITE lvl c t f = do
 evalNeg :: SLVal -> App SLSVal
 evalNeg v = evalITE Public v (b False) (b True)
   where
-    b = SLV_Bool srcloc_builtin
+    b = SLV_Bool sb
 
 evalPrimOp :: PrimOp -> [SLSVal] -> App SLSVal
 evalPrimOp p sargs = do
@@ -2030,7 +2030,7 @@ evalPrimOp p sargs = do
       dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_PrimOp at p dargs)
       let da = DLA_Var dv
       let chkDiv denom = do
-            ca <- doCmp PGT [denom, DLA_Literal $ DLL_Int srcloc_builtin 0]
+            ca <- doCmp PGT [denom, DLA_Literal $ DLL_Int sb 0]
             dopClaim ca "div by zero"
       let chkMul = do
             ca <- doCmp PLE [da, lim_maxUInt_a]
@@ -2779,7 +2779,7 @@ evalPrim p sargs =
       return $
         public $
           SLV_Object at (Just "transfer") $
-            M.fromList [("to", SLSSVal srcloc_builtin Public transferToPrim)]
+            M.fromList [("to", SLSSVal sb Public transferToPrim)]
     SLPrim_transfer_amt_to pay_sv -> do
       at <- withAt id
       ensure_mode SLM_ConsensusStep "transfer"
@@ -5428,7 +5428,7 @@ evalStmt = \case
         case de_val of
           SLV_Data _ t vn vv -> do
             let (at_c, shouldBind, body) = (casesm M.! vn)
-            whenUsingStrict $ ignoreAll $ select_all (SLV_DLVar $ DLVar srcloc_builtin Nothing (T_Data t) 0)
+            whenUsingStrict $ ignoreAll $ select_all (SLV_DLVar $ DLVar sb Nothing (T_Data t) 0)
             select at_c shouldBind body vv
           SLV_DLVar {} -> select_all de_val
           _ -> impossible "switch mvar"

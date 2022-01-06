@@ -118,6 +118,8 @@ checkteal () {
 #exit 0
 
 jb
+ci ALGO rps-7-loops
+exit 0
 export REACH_DEBUG=Y
 c users/duoswap-core/index.rsh
 

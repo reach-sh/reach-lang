@@ -400,20 +400,18 @@ instance SrcLocOf SLVal where
     SLV_Struct a _ -> a
     SLV_Clo a _ _ -> a
     SLV_Data a _ _ _ -> a
-    SLV_DLC _ -> def
+    SLV_DLC _ -> sb
     SLV_DLVar (DLVar a _ _ _) -> a
-    SLV_Type {} -> def
-    SLV_Connector _ -> def
+    SLV_Type {} -> sb
+    SLV_Connector _ -> sb
     SLV_Participant a _ _ _ -> a
     SLV_RaceParticipant a _ -> a
-    SLV_Anybody -> def
-    SLV_Prim _ -> def
-    SLV_Form _ -> def
-    SLV_Kwd _ -> def
-    SLV_Map _ -> def
+    SLV_Anybody -> sb
+    SLV_Prim _ -> sb
+    SLV_Form _ -> sb
+    SLV_Kwd _ -> sb
+    SLV_Map _ -> sb
     SLV_Deprecated _ v -> srclocOf v
-    where
-      def = srcloc_builtin
 
 isLiteralArray :: SLVal -> Bool
 isLiteralArray (SLV_Array {}) = True

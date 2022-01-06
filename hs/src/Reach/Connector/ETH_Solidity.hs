@@ -59,9 +59,6 @@ conName' = "ETH"
 conCons' :: DLConstant -> DLLiteral
 conCons' DLC_UInt_max = DLL_Int sb $ 2 ^ (256 :: Integer) - 1
 
-sb :: SrcLoc
-sb = srcloc_builtin
-
 solString :: String -> Doc
 solString s = squotes $ pretty s
 
@@ -648,7 +645,7 @@ solExpr sp = \case
     u' <- go dtn_url
     m' <- go dtn_metadata
     p' <- solArg dtn_supply
-    d' <- maybe (return $ solLit $ DLL_Int srcloc_builtin 18) solArg dtn_decimals
+    d' <- maybe (return $ solLit $ DLL_Int sb 18) solArg dtn_decimals
     return $ solApply "payable" [ solApply "address" [ "new" <+> solApply "ReachToken" [ n', s', u', m', p', d' ] ] ]
   DLE_TokenBurn _ ta aa -> do
     ta' <- solArg ta

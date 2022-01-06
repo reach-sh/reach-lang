@@ -22,13 +22,6 @@ import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Version
 
--- import Debug.Trace
-
---- Pretty helpers
-
-sb :: SrcLoc
-sb = srcloc_builtin
-
 --- JS Helpers
 
 jsMapIdx :: DLMVar -> Doc

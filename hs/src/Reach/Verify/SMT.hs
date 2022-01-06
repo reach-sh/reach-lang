@@ -1419,7 +1419,7 @@ _smtDefineTypes smt ts = do
             let z = "z_" ++ n
             void $ SMT.declare smt z $ Atom n
             let idxs = [0 .. (sz -1)]
-            let idxses = map (smt_lt srcloc_builtin . DLL_Int srcloc_builtin) idxs
+            let idxses = map (smt_lt sb . DLL_Int sb) idxs
             let cons_vars = map (("e" ++) . show) idxs
             let cons_params = map (\x -> (x, Atom tn)) cons_vars
             let defn1 arrse (idxse, var) = smtApply "store" [arrse, idxse, Atom var]

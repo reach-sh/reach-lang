@@ -78,10 +78,21 @@ arrTypeLen = \case
 arrType :: DLType -> DLType
 arrType = fst . arrTypeLen
 
+tupleTypes :: DLType -> [DLType]
+tupleTypes = \case
+  T_Tuple ts -> ts
+  _ -> impossible $ "should be tuple"
+
 bytesTypeLen :: DLType -> Integer
 bytesTypeLen = \case
   T_Bytes l -> l
   _ -> impossible "no bytes"
+
+objstrTypes :: DLType -> [(SLVar, DLType)]
+objstrTypes = \case
+  T_Object m -> M.toAscList m
+  T_Struct ts -> ts
+  _ -> impossible $ "should be obj"
 
 showTys :: Show a => [a] -> String
 showTys = List.intercalate ", " . map show
@@ -312,6 +323,12 @@ argTypeOf = \case
   DLA_Constant c -> conTypeOf c
   DLA_Literal c -> litTypeOf c
   DLA_Interact _ _ t -> t
+
+argArrTypeLen :: DLArg -> (DLType, Integer)
+argArrTypeLen = arrTypeLen . argTypeOf
+
+argObjstrTypes :: DLArg -> [(SLVar, DLType)]
+argObjstrTypes = objstrTypes . argTypeOf
 
 data DLLargeArg
   = DLLA_Array DLType [DLArg]

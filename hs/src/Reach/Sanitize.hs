@@ -12,9 +12,6 @@ import Reach.AST.PL
 class Sanitize a where
   sani :: a -> a
 
-sb :: SrcLoc
-sb = srcloc_builtin
-
 instance (Functor f, Sanitize a) => Sanitize (f a) where
   sani = fmap sani
 
