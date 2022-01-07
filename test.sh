@@ -119,9 +119,6 @@ checkteal () {
 
 # jb
 export REACH_DEBUG=Y
-c hs/t/y/payRequire.rsh
-exit 0
-# rm -fr users/duoswap-core/.reach
 c users/duoswap-core/index.rsh
 exit 0
 (cd examples/rps-8-interact && c index.rsh)
