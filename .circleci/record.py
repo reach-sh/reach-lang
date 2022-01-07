@@ -108,7 +108,7 @@ for c in conns:
 EXIT = 0
 POST += "\\n*"
 if nxftc > 0:
-    POST += f":warning: POSSIBLE REGRESSIONS UPON "
+    POST += f":warning: DANGER "
     EXIT = 1
 else:
     POST += f":pizza: "
