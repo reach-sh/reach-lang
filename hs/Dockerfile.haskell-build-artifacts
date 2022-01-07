@@ -7,6 +7,7 @@ RUN make sol/stdlib.json
 
 FROM reachsh/devnet-algo:latest AS algo
 
+ARG Z3_VERSION
 FROM alpine as z3
 ARG Z3_VERSION
 ENV Z3_VERSION=${Z3_VERSION}

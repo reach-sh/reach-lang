@@ -119,7 +119,7 @@ checkteal () {
 
 # jb
 export REACH_DEBUG=Y
-c users/duoswap-core/index.rsh
+one ALGO timeoutception
 exit 0
 (cd examples/rps-8-interact && c index.rsh)
 ci ALGO rps-7-loops
