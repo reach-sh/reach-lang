@@ -44,7 +44,7 @@ build-m1:
 	cp -f $(ROOT)/VERSION $(ROOT)/DEPS .docker-root/
 	docker build \
 	  --platform linux/arm64 \
-	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
+	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \
 	  --build-arg SOLC_VERSION=$(SOLC_VERSION) \
           --build-arg Z3_VERSION=$(Z3_VERSION) \
 	  --tag=$(IMG_REACHC):latest \

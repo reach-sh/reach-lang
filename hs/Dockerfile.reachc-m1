@@ -105,9 +105,8 @@ COPY --from=algo /bin/goal /usr/bin/goal
 # mostly copied from Dockerfile.reachc
 WORKDIR /app
 ENTRYPOINT ["/usr/bin/reachc"]
-ARG REACHC_HASH
-ENV REACHC_HASH="${REACHC_HASH}"
-ENV REACH_GIT_HASH="${REACHC_HASH}"
+ARG REACH_GIT_HASH
+ENV REACH_GIT_HASH="${REACH_GIT_HASH}"
+ENV REACHC_HASH="${REACH_GIT_HASH}"
 
 # TODO: cut down image size
-# TODO: solc
