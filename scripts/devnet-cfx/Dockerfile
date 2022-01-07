@@ -17,7 +17,8 @@ RUN /root/.cargo/bin/cargo build --release
 
 FROM node:buster-slim
 
-RUN apt-get update; apt-get install curl -y; apt-get clean
+# Some of these are weirdly needed to npm install on m1
+RUN apt-get update; apt-get install curl make python3 libc-dev gcc g++ -y; apt-get clean
 
 RUN mkdir /faucet
 COPY faucet/package.json /faucet
