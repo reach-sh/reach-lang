@@ -20,7 +20,6 @@ import Reach.EPP
 import Reach.EraseLogic
 import Reach.Eval
 import Reach.Linearize
-import Reach.Optimize
 import Reach.Parser (gatherDeps_top)
 import Reach.Simulator.Server
 import Reach.Texty
@@ -67,7 +66,7 @@ compile env (CompilerOpts {..}) = do
       showp "dl" dl
       unless co_stopAfterEval $ do
         ll <- linearize showp dl
-        ol <- optimize ll
+        ol <- bigopt (showp, "ol") ll
         showp "ol" ol
         let vo_out = woutnMay
         let vo_mvcs = doIf connectors dlo_verifyPerConnector

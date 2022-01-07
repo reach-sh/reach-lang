@@ -10,7 +10,6 @@ import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
 import Reach.Counter
-import Reach.FixedPoint
 import Reach.Sanitize
 import Reach.UnrollLoops
 import Reach.Util
@@ -25,8 +24,6 @@ type ConstT a = a -> ConstApp ()
 class Optimize a where
   opt :: AppT a
   gcs :: ConstT a
-  gcsWorthIt :: a -> Bool
-  gcsWorthIt = const False
 
 data Focus
   = F_Ctor
@@ -640,7 +637,6 @@ instance Optimize LLProg where
       focus_ctor $
         LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> pure das <*> pure devts <*> opt s
   gcs (LLProg _ _ _ _ _ _ _ _ s) = gcs s
-  gcsWorthIt _ = True
 
 -- This is a bit of a hack...
 
@@ -736,21 +732,15 @@ instance Optimize PLProg where
     PLProg at plo dli <$> opt dex <*> opt epps <*> opt cp
   gcs (PLProg _ _ _ _ epps cp) = gcs epps >> gcs cp
 
-optimize_ :: forall a . (Eq a, Optimize a) => Counter -> a -> IO a
-optimize_ c t0 =
-  case gcsWorthIt t0 of
-    True -> fixedPoint_ t0 rec
-    False -> rec 0 t0
-  where
-    rec :: Integer -> a -> IO a
-    rec _i t = do
-      eConstR <- newIORef $ mempty
-      flip runReaderT (ConstEnv {..}) $ gcs t
-      cs <- readIORef eConstR
-      let csvs = M.keysSet $ M.filter (\x -> x < 2) cs
-      env0 <- mkEnv0 c csvs []
-      flip runReaderT env0 $
-        opt t
+optimize_ :: (Optimize a) => Counter -> a -> IO a
+optimize_ c t = do
+  eConstR <- newIORef $ mempty
+  flip runReaderT (ConstEnv {..}) $ gcs t
+  cs <- readIORef eConstR
+  let csvs = M.keysSet $ M.filter (\x -> x < 2) cs
+  env0 <- mkEnv0 c csvs []
+  flip runReaderT env0 $
+    opt t
 
-optimize :: (HasCounter a, Eq a, Optimize a) => a -> IO a
+optimize :: (HasCounter a, Optimize a) => a -> IO a
 optimize t = optimize_ (getCounter t) t

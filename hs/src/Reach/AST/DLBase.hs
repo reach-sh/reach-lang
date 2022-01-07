@@ -744,7 +744,7 @@ instance IsPure DLExpr where
     DLE_Arg {} -> True
     DLE_LArg {} -> True
     DLE_Impossible {} -> True
-    DLE_VerifyMuldiv {} -> True
+    DLE_VerifyMuldiv {} -> False
     DLE_PrimOp {} -> True
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True
