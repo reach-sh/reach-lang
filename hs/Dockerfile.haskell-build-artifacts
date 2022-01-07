@@ -1,5 +1,4 @@
 ARG SOLC_VERSION
-ARG Z3_VERSION
 FROM ethereum/solc:${SOLC_VERSION}-alpine AS solc
 RUN apk add make curl bash
 COPY Makefile.docker ./Makefile
@@ -8,6 +7,7 @@ RUN make sol/stdlib.json
 
 FROM reachsh/devnet-algo:latest AS algo
 
+ARG Z3_VERSION
 ENV Z3_VERSION=${Z3_VERSION}
 FROM alpine as z3
 RUN echo 'http://host.docker.internal:30000/' >> /etc/apk/repositories
