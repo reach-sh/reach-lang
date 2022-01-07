@@ -286,6 +286,24 @@ jobs:
     steps:
     - run: |
         echo Go team!
+  "browser-tests":
+    executor: fake
+    steps:
+    - checkout
+    - workattach
+    - and_restore_docker:
+        deps: "react-runner devnet-algo reach-cli reach"
+    - run: |
+        cd examples/rps-9-web/
+        patch index.js cypress.patch
+    - run: |
+        (cd examples/rps-9-web && REACH_CONNECTOR_MODE=ALGO ../../reach react) &
+        (cd js/browser-tests && make build)
+        sleep 60  # give the react server lots of time to start up
+        (cd js/browser-tests && make run)
+    - store_artifacts:
+        path: js/browser-tests/cypress/videos
+    - slack_fail
 
 workflows:
   docs:
@@ -312,7 +330,14 @@ workflows:
         type: approval
         requires:
           - "build-sink"
+          - "browser-tests"
         filters:
           branches:
             only: master
+    - "browser-tests":
+        requires:
+          - "build-react-runner"
+          - "build-devnet-algo"
+          - "build-reach-cli"
+          - "build-reach"
     # Sink and examples follow
