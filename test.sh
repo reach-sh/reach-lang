@@ -117,23 +117,9 @@ checkteal () {
 
 #exit 0
 
-# jb
-export REACH_DEBUG=Y
-one ALGO timeoutception
-exit 0
-(cd examples/rps-8-interact && c index.rsh)
+jb
+ci ALGO mint-basic
 ci ALGO rps-7-loops
 exit 0
-
-exit 0
-
-exit 0
-one ETH rpc-view-map
-exit 0
-ci ETH rps-7-loops
-ci ETH mint-basic
-ci ETH event
-ci ETH api-map
-ci ETH raffle
 
 # (cd hs && mk hs-test)

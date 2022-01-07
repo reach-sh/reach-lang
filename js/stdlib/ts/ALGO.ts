@@ -318,6 +318,8 @@ const toWTxn = (t:Transaction): WalletTransaction => {
 };
 
 // Backend
+const stdWait = () => Timeout.set(1000);
+
 const getTxnParams = async (label: any): Promise<TxnParams> => {
   const dhead = `${label} fillTxn`;
   debug(dhead, `getting params`);
@@ -329,7 +331,7 @@ const getTxnParams = async (label: any): Promise<TxnParams> => {
       return params;
     }
     debug(dhead, `...but firstRound is 0, so let's wait and try again.`);
-    await client.statusAfterBlock(1).do();
+    await stdWait();
   }
 };
 
@@ -399,7 +401,7 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0)
   debug(dhead, query.query);
   while ( true ) {
     if ( howMany > 0 ) {
-      await Timeout.set(1000);
+      await stdWait();
     }
     try {
       const res = await query.do();
@@ -482,25 +484,6 @@ async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<algosdk.Algodv2
   await waitPort(ALGO_SERVER, ALGO_PORT);
   return new algosdk.Algodv2(ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
 }
-
-// This function should be provided by the indexer, but it isn't so we simulate
-// something decent. This function is allowed to "fail" by not really waiting
-// until the round
-const indexer_statusAfterBlock = async (round: number): Promise<BigNumber> => {
-  debug('indexer_statusAfterBlock', {round});
-  const client = await getAlgodClient();
-  let now = bigNumberify(0);
-  // When we're isolated, sometimes we wait for blocks that will never happen.
-  // This is a protection against that.
-  let tries = 0;
-  while ( (tries++ < 10) && (now = await getNetworkTime()).lt(round) ) {
-    debug('indexer_statusAfterBlock', {round, now});
-    await client.statusAfterBlock(round);
-    // XXX Get the indexer to index one and wait
-    await Timeout.set(500);
-  }
-  return now;
-};
 
 interface Provider {
   algodClient: algosdk.Algodv2,
@@ -1616,9 +1599,9 @@ export const createAccount = async (): Promise<Account> => {
 
 export const canFundFromFaucet = async (): Promise<boolean> => {
   const faucet = await getFaucet();
-  const algodClient = await getAlgodClient();
+  const client = await getAlgodClient();
   debug('ALGO:canFundFromFaucet: check genesis');
-  const txnParams = await algodClient.getTransactionParams().do();
+  const txnParams = await client.getTransactionParams().do();
   const act = txnParams.genesisID;
   const exp = 'devnet-v1';
   if (act !== exp) {
@@ -1789,10 +1772,16 @@ export const getNetworkSecs = async (): Promise<BigNumber> =>
   await getTimeSecs(await getNetworkTime());
 
 const stepTime = async (target: BigNumber): Promise<BigNumber> => {
-  if ( (await getProvider()).isIsolatedNetwork ) {
-    await fundFromFaucet(await getFaucet(), 0);
+  while ( true ) {
+    const now = await getNetworkTime();
+    debug(`stepTime`, {target, now});
+    if ( target.lte(now) ) { return now; }
+    if ( (await getProvider()).isIsolatedNetwork ) {
+      await fundFromFaucet(await getFaucet(), 0);
+    } else {
+      await stdWait();
+    }
   }
-  return await indexer_statusAfterBlock(bigNumberToNumber(target));
 };
 export const waitUntilTime = make_waitUntilX('time', getNetworkTime, stepTime);
 
@@ -1913,7 +1902,7 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
   const caddr = addr(accCreator);
   const zaddr = caddr;
   // ^ XXX should be nothing; docs say can be "", but doesn't actually work
-  const algod = await getAlgodClient();
+  const client = await getAlgodClient();
   const dotxn = async (mktxn:(params:TxnParams) => Transaction, acc:Account = accCreator) => {
     const sk = acc.networkAccount.sk;
     if ( ! sk ) {
@@ -1922,9 +1911,9 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
     const params = await getTxnParams('launchToken');
     const t = mktxn(params);
     const s = t.signTxn(sk);
-    const r = (await algod.sendRawTransaction(s).do());
+    const r = (await client.sendRawTransaction(s).do());
     await waitForConfirmation(r.txId);
-    return await algod.pendingTransactionInformation(r.txId).do();
+    return await client.pendingTransactionInformation(r.txId).do();
   };
   const supply = (opts.supply && bigNumberify(opts.supply)) || bigNumberify(2).pow(64).sub(1);
   const decimals = opts.decimals !== undefined ? opts.decimals : 6;
