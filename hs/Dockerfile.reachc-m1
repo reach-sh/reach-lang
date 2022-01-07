@@ -1,4 +1,5 @@
 ARG SOLC_VERSION
+ARG Z3_VERSION
 FROM ethereum/solc:${SOLC_VERSION}-alpine as solc
 RUN apk add make curl bash
 COPY Makefile.docker ./Makefile
@@ -76,7 +77,7 @@ RUN apt-get install -y \
   clang
 
 WORKDIR /tmp_z3
-ENV Z3_VER 4.8.12
+ENV Z3_VER=${Z3_VERSION}
 # ENV Z3_SYS x64-glibc-2.31
 # RUN wget -O /tmp/z3.zip \
 #      https://github.com/Z3Prover/z3/releases/download/z3-${Z3_VER}/z3-${Z3_VER}-${Z3_SYS}.zip \
