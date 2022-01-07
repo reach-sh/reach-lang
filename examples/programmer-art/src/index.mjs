@@ -211,3 +211,12 @@ const printLog = () => {
   console.log(JSON.stringify(jsonLog));
 }
 printBtn.addEventListener("click",printLog)
+
+const jsonBtn = document.querySelector("#inputJsonButton")
+const runJsonScript = async () => {
+  let j = document.querySelector("#inputJsonScript").value
+  await c.resetServer()
+  await c.interp(JSON.parse(j))
+  redraw()
+}
+jsonBtn.addEventListener("click",runJsonScript)

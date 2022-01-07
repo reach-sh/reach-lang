@@ -23,7 +23,7 @@
 </div>
 
 <div class="row">
-  <div class="col-8"> <!-- begin form -->
+  <div class="col-5"> <!-- begin form -->
     <button type="button" id="pingButton" class="btn btn-outline-dark btn-sm">Ping</button>
     <button type="button" id="loadButton" class="btn btn-outline-dark btn-sm">Load</button>
     <button type="button" id="initButton" class="btn btn-outline-dark btn-sm">Init</button>
@@ -77,6 +77,13 @@
       </div>
     </div>
     <!-- end form -->
+  </div>
+  <div class="col-3">
+    <div id="input">
+      <label for="inputJsonScript" class="form-label">Input JSON script here:</label>
+      <textarea class="form-control" id="inputJsonScript" rows="10"></textarea>
+      <button type="button" id="inputJsonButton" class="btn btn-outline-dark btn-sm">Run Script</button>
+    </div>
   </div>
   <div class="col-3">
     <div id="output"> $ welcome </div>
