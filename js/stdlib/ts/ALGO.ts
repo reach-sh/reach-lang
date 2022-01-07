@@ -98,6 +98,8 @@ type TxnParams = {
 }
 type RecvTxn = {
   'confirmed-round': number,
+  'created-asset-index'?: number,
+  'created-application-index'?: number,
   'application-index'?: number,
   'application-args': Array<string>,
   'sender': Address,
@@ -176,6 +178,8 @@ type IndexerAppTxn = {
 type IndexerTxn = {
   'confirmed-round': number,
   'sender': Address,
+  'created-asset-index'?: number,
+  'created-application-index'?: number,
   'application-transaction'?: IndexerAppTxn,
   'logs'?: Array<string>,
   'tx-type': string,
@@ -188,6 +192,7 @@ type IndexerQueryMRes = {
   'transactions': Array<IndexerTxn>,
 };
 type AlgodTxn = {
+  'asset-index'?: number,
   'application-index'?: number,
   'confirmed-round'?: number,
   'logs'?: Array<string>,
@@ -210,6 +215,8 @@ const indexerTxn2RecvTxn = (txn:IndexerTxn): RecvTxn => {
     'logs': (txn['logs'] || []),
     'application-args': aargs,
     'application-index': aidx,
+    'created-application-index': txn['created-application-index'],
+    'created-asset-index': txn['created-asset-index'],
   };
 };
 
@@ -238,9 +245,10 @@ const waitForConfirmation = async (txId: TxId): Promise<RecvTxn> => {
       const uToS = (a: Uint8Array[]|undefined) => (a || []).map((x: Uint8Array)=> uint8ArrayToStr(x, 'base64'));
       return {
         'confirmed-round': cr,
+        'created-asset-index': info['asset-index'],
         // @ts-ignore
         'logs': uToS(l),
-        'application-index': info['application-index'],
+        'created-application-index': info['application-index'],
         'sender': txnFromAddress(dtxn),
         'application-args': uToS(dtxn.appArgs),
       };
@@ -260,6 +268,9 @@ const waitForConfirmation = async (txId: TxId): Promise<RecvTxn> => {
     return indexerTxn2RecvTxn(res['transaction']);
   };
 
+  // AlgoExplorer will NOT support this query, but I believe it will fail and
+  // then fall back to the Indexer, which does work, so we're keeping it in for
+  // optimization on local cases
   return await checkAlgod();
 };
 
@@ -413,6 +424,7 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0)
       } else if ( looksLikeAccountingNotInitialized(e) ) {
         debug(dhead, 'ACCOUNTING NOT INITIALIZED');
       }
+      if ( e?.response?.text ) { e = e.response.text; }
       debug(dhead, 'RETRYING', {e});
       howMany++;
     }
@@ -1097,9 +1109,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                 undefined, undefined, undefined, undefined,
                 NOTE_Reach, undefined, undefined, extraPages)));
 
-          const ApplicationID = createRes['application-index'];
+          const ApplicationID = createRes['created-application-index'];
           if ( ! ApplicationID ) {
-            throw Error(`No application-index in ${JSON.stringify(createRes)}`);
+            throw Error(`No created-application-index in ${JSON.stringify(createRes)}`);
           }
           debug(label, `created`, {ApplicationID});
           const ctcInfo = ApplicationID;
@@ -1872,6 +1884,7 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   // with a different program first (which could have modified the state)
   const iat = await eq.deq(dhead);
   debug({iat});
+  chkeq(iat['created-application-index'], ApplicationID, 'app created');
   chkeq(iat['application-index'], 0, 'app created');
   chkeq(iat['confirmed-round'], allocRound, 'created on correct round');
   chkeq(iat['approval-program'], appInfo_p['approval-program'], `ApprovalProgram unchanged since creation`);
@@ -1912,8 +1925,7 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
     const t = mktxn(params);
     const s = t.signTxn(sk);
     const r = (await client.sendRawTransaction(s).do());
-    await waitForConfirmation(r.txId);
-    return await client.pendingTransactionInformation(r.txId).do();
+    return await waitForConfirmation(r.txId);
   };
   const supply = (opts.supply && bigNumberify(opts.supply)) || bigNumberify(2).pow(64).sub(1);
   const decimals = opts.decimals !== undefined ? opts.decimals : 6;
@@ -1924,7 +1936,9 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
       false, zaddr, zaddr, zaddr, zaddr,
       sym, name, '', '', params,
     ));
-  const id = ctxn_p["asset-index"];
+  const idn = ctxn_p['created-asset-index'];
+  if ( ! idn ) { throw Error(`${sym} no asset-index!`); }
+  const id = bigNumberify(idn);
   debug(`${sym}: asset is ${id}`);
 
   const mint = async (accTo:Account, amt:any) => {
@@ -1936,7 +1950,7 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
       (params) =>
       algosdk.makeAssetTransferTxnWithSuggestedParams(
         addr(accFrom), addr(accTo), addr(accTo), undefined,
-        0, undefined, id, params
+        0, undefined, idn, params
       ), accFrom);
   };
   return { name, sym, id, mint, optOut };
