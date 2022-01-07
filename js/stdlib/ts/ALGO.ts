@@ -1611,18 +1611,18 @@ export const createAccount = async (): Promise<Account> => {
 
 export const canFundFromFaucet = async (): Promise<boolean> => {
   const faucet = await getFaucet();
-  const client = await getAlgodClient();
-  debug('ALGO:canFundFromFaucet: check genesis');
-  const txnParams = await client.getTransactionParams().do();
+  const dhead = 'canFundFromFaucet';
+  debug(dhead, 'check genesis');
+  const txnParams = await getTxnParams(dhead);
   const act = txnParams.genesisID;
   const exp = 'devnet-v1';
   if (act !== exp) {
-    debug(`ALGO:canFundFromFaucet: expected '${exp}' !== actual '${act}'`);
+    debug(dhead, `expected '${exp}' !== actual '${act}'`);
     return false;
   }
-  debug('ALGO:canFundFromFaucet: check balance');
+  debug(dhead, 'check balance');
   const fbal = await balanceOf(faucet);
-  debug(`ALGO:canFundFromFaucet: faucet balance = ${formatCurrency(fbal, 4)} ${standardUnit}`);
+  debug(dhead, `faucet balance = ${formatCurrency(fbal, 4)} ${standardUnit}`);
   return gt(fbal, 0);
 };
 

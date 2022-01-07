@@ -118,7 +118,7 @@ checkteal () {
 #exit 0
 
 jb
-ci ALGO atomic-swap
+#ci ALGO atomic-swap
 ci ALGO rps-7-loops
 exit 0
 
