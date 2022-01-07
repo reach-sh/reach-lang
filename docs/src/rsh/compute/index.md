@@ -1702,6 +1702,8 @@ verifyAbsoluteTime(t, require);
 // ...
 ```
 
+Use the identity function as the `claim` for use inside of invariants.
+
 ### `makeDeadline`
 
 @{ref("rsh", "makeDeadline")}

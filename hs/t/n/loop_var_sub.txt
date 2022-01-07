@@ -17,9 +17,9 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v93 = (balance(0)/59 + 1) == [(x/56[0] + 2), x/56[1] ][0];
+  const v92 = (balance(0)/59 + 1) == [(x/56[0] + 2), x/56[1] ][0];
   //    ^ would be false
-  assert(v93);
+  assert(v92);
 
   Verifying when NO participants are honest
 Verification failed:
@@ -38,8 +38,8 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v112 = (balance(0)/59 + 1) == [(x/56[0] + 2), x/56[1] ][0];
+  const v110 = (balance(0)/59 + 1) == [(x/56[0] + 2), x/56[1] ][0];
   //    ^ would be false
-  assert(v112);
+  assert(v110);
 
 Checked 12 theorems; 2 failures :'(

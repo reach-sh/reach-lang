@@ -16,9 +16,9 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v33 = v29 > 0;
+  const v32 = v29 > 0;
   //    ^ would be false
-  assert(v33);
+  assert(v32);
 
   Verifying when NO participants are honest
 Checked 3 theorems; 1 failures :'(

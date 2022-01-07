@@ -243,6 +243,9 @@ smtConstant :: DLConstant -> String
 smtConstant = \case
   DLC_UInt_max -> "dlc_UInt_max"
 
+smt_c :: SrcLoc -> DLConstant -> App SExpr
+smt_c at c = smt_a at $ DLA_Constant c
+
 getVarName :: DLVar -> String
 getVarName (DLVar _ _ _ i) = "v" ++ show i
 
@@ -415,7 +418,7 @@ parseVal env t v = do
             _ -> impossible $ "parseVal: Bool: " <> show v
         T_UInt -> do
           let err = impossible $ "parseVal: UInt: " <> show v
-          let readInt i = fromMaybe err (readMaybe i :: Maybe Int)
+          let readInt i = fromMaybe err (readMaybe i :: Maybe Integer)
           case v of
             Atom i -> return $ SMV_Int $ readInt i
             -- SMT can produce negative values when dealing with unsafe arithmetic (sub wraparound etc.)
@@ -438,7 +441,7 @@ parseVal env t v = do
           let err = impossible $ "parseVal: Address: " <> show v
           case v of
             Atom i -> return $ SMV_Address $
-              fromMaybe err (readMaybe $ dropWhile (not . isDigit) i :: Maybe Int)
+              fromMaybe err (readMaybe $ dropWhile (not . isDigit) i :: Maybe Integer)
             _ -> err
         T_Bytes _ -> do
           case v of
@@ -974,7 +977,8 @@ smt_e at_dv mdv de = do
     DLE_VerifyMuldiv at f cl args _ -> do
       args' <- mapM (smt_a at) args
       md <- smtMulDiv args'
-      let lt = uint256_le md (Atom $ smtConstant DLC_UInt_max)
+      rhs <- smt_c at DLC_UInt_max
+      let lt = uint256_le md rhs
       doClaim at f cl lt Nothing
     DLE_PrimOp at cp args -> do
       let f = case cp of
@@ -1216,7 +1220,8 @@ smt_asn_def at asn = mapM_ def1 $ M.keys asnm
     def1 dv = do
       pathAddUnbound at (Just dv) (Just $ SMTModel O_Assignment)
       when (varType dv == T_UInt) $ do
-        smtAssert (smtApply "<=" [Atom $ getVarName dv, Atom $ smtConstant DLC_UInt_max])
+        rhs <- smt_c at DLC_UInt_max
+        smtAssert (smtApply "<=" [Atom $ getVarName dv, rhs])
 
 smt_alloc_id :: App Int
 smt_alloc_id = do

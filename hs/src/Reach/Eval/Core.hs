@@ -2027,14 +2027,9 @@ evalPrimOp p sargs = do
       let doOp t cp cargs = DLA_Var <$> (ctxt_lift_expr (mkvar t) $ DLE_PrimOp at cp cargs)
       let doCmp = doOp T_Bool
       let lim_maxUInt_a = DLA_Constant DLC_UInt_max
-      dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_PrimOp at p dargs)
-      let da = DLA_Var dv
       let chkDiv denom = do
             ca <- doCmp PGT [denom, DLA_Literal $ DLL_Int sb 0]
             dopClaim ca "div by zero"
-      let chkMul = do
-            ca <- doCmp PLE [da, lim_maxUInt_a]
-            dopClaim ca "mul overflow"
       whenVerifyArithmetic $
         case p of
           ADD -> do
@@ -2055,12 +2050,20 @@ evalPrimOp p sargs = do
             chkDiv $ case dargs of
                   [_, b] -> b
                   _ -> impossible "mod args"
-          MUL -> chkMul
           MUL_DIV -> do
             chkDiv $ case dargs of
                   [_, _, b] -> b
                   _ -> impossible "muldiv args"
-            chkMul
+          _ -> return $ mempty
+      dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_PrimOp at p dargs)
+      let da = DLA_Var dv
+      let chkMul = do
+            ca <- doCmp PLE [da, lim_maxUInt_a]
+            dopClaim ca "mul overflow"
+      whenVerifyArithmetic $
+        case p of
+          MUL -> chkMul
+          MUL_DIV -> chkMul
           _ -> return $ mempty
       return $ (lvl, SLV_DLVar dv)
 

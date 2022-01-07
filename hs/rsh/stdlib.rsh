@@ -582,7 +582,7 @@ export const Array_slice1 = (a) => (start, len) =>
 const verifyTime = (time, relative) => (value, claim) => {
   const last = time ? baseWaitTime : baseWaitSecs;
   const base = relative ? last() : 0;
-  claim(UInt.max - base - value >= 0);
+  return claim(UInt.max - base - value >= 0);
 }
 
 const makeTimeHelper = (time, relative) => (value, claim = (_) => {}) => {

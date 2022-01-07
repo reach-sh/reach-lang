@@ -13,10 +13,10 @@ Verification failed:
   //    ^ could = 1
   //      from: ./index-bad.rsh:11:10:property binding
   const v78 = protect<UInt>("Alice".interact.getHand());
-  //    ^ could = 0
+  //    ^ could = 8
   //      from: ./index-bad.rsh:21:50:application
   const v88 = protect<UInt>("Bob".interact.getHand());
-  //    ^ could = 2
+  //    ^ could = 4
   //      from: ./index-bad.rsh:29:48:application
 
   // Theorem Formalization

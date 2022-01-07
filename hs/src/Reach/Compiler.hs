@@ -11,6 +11,7 @@ import qualified Filesystem.Path.CurrentOS as FP
 import Reach.AST.DL
 import Reach.APICut
 import Reach.Backend.JS
+--import Reach.Optimize
 import Reach.BigOpt
 import Reach.CommandLine
 import Reach.Connector
@@ -67,6 +68,7 @@ compile env (CompilerOpts {..}) = do
       unless co_stopAfterEval $ do
         ll <- linearize showp dl
         ol <- bigopt (showp, "ol") ll
+        -- ol <- optimize ll
         showp "ol" ol
         let vo_out = woutnMay
         let vo_mvcs = doIf connectors dlo_verifyPerConnector
@@ -78,11 +80,13 @@ compile env (CompilerOpts {..}) = do
         unless (not co_sim) $ do
           startServer el
         eol <- bigopt (showp, "eol") el
+        showp "eol" eol
         pil <- epp eol
         showp "pil" pil
         apc <- apicut pil
         showp "apc" apc
         pl <- bigopt (showp, "pl") apc
+        showp "pl" pl
         let runConnector c = (,) (conName c) <$> conGen c woutnMay pl
         crs <- HM.fromList <$> mapM runConnector connectors
         backend_js woutn crs pl
