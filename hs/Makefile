@@ -46,6 +46,7 @@ build-m1:
 	  --platform linux/arm64 \
 	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
 	  --build-arg SOLC_VERSION=$(SOLC_VERSION) \
+          --build-arg Z3_VERSION=$(Z3_VERSION) \
 	  --tag=$(IMG_REACHC):latest \
 	  -f Dockerfile.reachc-m1 .
 	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
