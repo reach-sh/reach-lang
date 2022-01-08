@@ -127,9 +127,11 @@ export class Provider {
     // XXX
   }
 
-  async getLogs(opts: {fromBlock: number, toBlock: number, address: string, topics: string[]}): Promise<any[]> {
+  async getLogs(iopts: object): Promise<any[]> {
+    const opts = iopts as {fromBlock: number};
+    // {fromBlock: number, toBlock: number, address: string, topics: string[]}
     debug(`getLogs`, `opts`, opts);
-    if ( opts.fromBlock == 0 ) {
+    if ( opts.fromBlock === 0 ) {
       opts.fromBlock = 1;
       debug(`getLogs`, `opts`, opts);
     }

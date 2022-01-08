@@ -49,13 +49,22 @@ import type { // =>
   Token,
   PayAmt,
 } from './ETH_like_compiled';
+export type { Token } from './ETH_like_compiled';
+export type Ty = AnyETH_Ty;
 type ConnectorTy = AnyETH_Ty;
 import type { // =>
   EthersLikeContract,
   EthersLikeSigner,
   EthersLikeWallet,
+  EthersLikeProvider,
   EthLikeArgs,
+  TransactionReceipt,
+  Log,
+  Address,
   // EthLike, // TODO: use this once types are in place
+} from './ETH_like_interfaces';
+export type {
+  Address,
 } from './ETH_like_interfaces';
 import type { // =>
   Stdlib_Backend
@@ -68,8 +77,6 @@ export { setQueryLowerBound, getQueryLowerBound };
 // ****************************************************************************
 
 type TransactionResponse = real_ethers.providers.TransactionResponse;
-type TransactionReceipt = real_ethers.providers.TransactionReceipt;
-type Log = real_ethers.providers.Log;
 type Interface = real_ethers.utils.Interface;
 
 // Note: if you want your programs to exit fail
@@ -78,7 +85,7 @@ type Interface = real_ethers.utils.Interface;
 
 const reachBackendVersion = 7;
 const reachEthBackendVersion = 6;
-type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
+export type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
   ABI: string,
   Bytecode: string,
@@ -88,9 +95,8 @@ type BackendViewsInfo = IBackendViewsInfo<AnyETH_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyETH_Ty>;
 
 // TODO: a wrapper obj with smart constructor?
-type Address = string;
 
-type NetworkAccount = {
+export type NetworkAccount = {
   address?: Address, // required for receivers & deployers
   getAddress?: () => Promise<Address>, // or this for receivers & deployers
   sendTransaction?: (...xs: any) => Promise<TransactionResponse>, // required for senders
@@ -98,11 +104,11 @@ type NetworkAccount = {
   _mnemonic?: () => {phrase: string},
 } | EthersLikeWallet | EthersLikeSigner; // required to deploy/attach
 
-type ContractInfo = Address;
+export type ContractInfo = Address;
 type SendRecvArgs = ISendRecvArgs<Address, Token, AnyETH_Ty>;
 type RecvArgs = IRecvArgs<AnyETH_Ty>;
 type Recv = IRecv<Address>
-type Contract = IContract<ContractInfo, Address, Token, AnyETH_Ty>;
+export type Contract = IContract<ContractInfo, Address, Token, AnyETH_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
   & {
     setGasLimit?: (ngl:any) => void
@@ -122,16 +128,12 @@ type AccountTransferable = Account | {
   getStorageLimit?: any,
 };
 
-// ****************************************************************************
-// Helpers
-// ****************************************************************************
-
 const reachPublish = (m: string | number) => `_reach_m${m}`
 const reachEvent = (e: string | number) => `_reach_e${e}`
 const reachOutputEvent = (e: string | number) => `_reach_oe_${e}`;
 
 // TODO: add return type once types are in place
-export function makeEthLike(ethLikeArgs: EthLikeArgs) {
+export function makeEthLike<Provider extends EthersLikeProvider, ProviderEnv, ProviderName>(ethLikeArgs: EthLikeArgs<Provider, ProviderEnv, ProviderName>) {
 // ...............................................
 const {
   ethLikeCompiled,
@@ -238,7 +240,7 @@ const newEventQueue = (): EventQueue => {
     const toBlock_act = bnMax(fromBlock, toBlock);
     const provider = await getProvider();
     debug(dhead, { toBlock, toBlock_act });
-    let logs = [];
+    let logs: Array<Log> = [];
     try {
       logs = await provider.getLogs({
         fromBlock: bigNumberToNumber(fromBlock),

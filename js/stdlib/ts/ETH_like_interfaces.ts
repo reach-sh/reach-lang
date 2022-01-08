@@ -6,11 +6,19 @@ import type { // =>
   Stdlib_Impl_Shared,
 } from './interfaces';
 import type { // =>
-  ethers
+  ethers,
+  BigNumber,
 } from 'ethers';
 import type { // =>
   CBR_Val
 } from './CBR';
+
+export type Address = string;
+
+export type TransactionReceipt = ethers.providers.TransactionReceipt;
+export type Block = ethers.providers.Block;
+export type Log = ethers.providers.Log;
+export type TransactionResponse = ethers.providers.TransactionResponse;
 
 // BV = backend value
 // NV = net value
@@ -28,11 +36,11 @@ export type ETH_Ty<BV extends CBR_Val, NV> =  {
   paramType: string,
 }
 
-export type AnyETH_Ty = ETH_Ty<CBR_Val, any>;
+export type AnyETH_Ty = ETH_Ty<any, any>;
 
 export interface EthLikeCompiled extends Stdlib_Impl_Shared {
   stdlib: Stdlib_Backend_Base<AnyETH_Ty>
-  typeDefs: TypeDefs
+  typeDefs: TypeDefs<AnyETH_Ty>
 }
 
 // EthersLike stuff .............................
@@ -60,6 +68,16 @@ export interface EthersLikeContract {
   [key: string]: any
 
   interface: ethers.utils.Interface
+}
+
+export interface EthersLikeProvider {
+  getTransactionReceipt: (h: string) => Promise<TransactionReceipt>
+  getBalance: (a:Address) => Promise<BigNumber>
+  getBlock: (n: number) => Promise<Block>
+  getBlockNumber: () => Promise<number>
+  getLogs: (q: object) => Promise<Array<Log>>
+  getTransaction: (h: string) => Promise<TransactionResponse>
+  waitForTransaction: (h: string) => Promise<TransactionReceipt>
 }
 
 // like ethers.providers
@@ -104,11 +122,11 @@ export interface EthersLikeWalletClass {
   createRandom(): EthersLikeWallet
 }
 
-export interface EthLikeArgs {
+export interface EthLikeArgs<Provider, ProviderEnv, ProviderName> {
   ethLikeCompiled: EthLikeCompiled
   ethers: EthersLike
   standardDigits?: number
-  providerLib: ProviderLib
+  providerLib: ProviderLib<Provider, ProviderEnv, ProviderName>
   isIsolatedNetwork(): boolean
   isWindowProvider(): boolean
   canGetDefaultAccount(): boolean

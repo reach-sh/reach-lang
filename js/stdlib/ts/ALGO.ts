@@ -45,6 +45,7 @@ import {
   makeEventQueue,
   makeEventStream,
   TokenMetadata,
+  LaunchTokenOpts,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -64,6 +65,7 @@ import {
   typeDefs,
   extractAddr,
 } from './ALGO_compiled';
+export type { Token } from './ALGO_compiled';
 import type { MapRefT, MaybeRep } from './shared_backend'; // =>
 import { window, process, Env } from './shim';
 import { sha512_256 } from 'js-sha512';
@@ -78,6 +80,7 @@ type BigNumber = ethers.BigNumber;
 
 type AnyALGO_Ty = ALGO_Ty<CBR_Val>;
 type ConnectorTy= AnyALGO_Ty;
+export type Ty = AnyALGO_Ty;
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
@@ -85,7 +88,7 @@ type ConnectorTy= AnyALGO_Ty;
 // XXX Copy/pasted type defs from types/algosdk
 // This is so that this module can be exported without our custom types/algosdk
 // The unused ones are commented out
-type Address = string
+export type Address = string
 // type RawAddress = Uint8Array;
 type SecretKey = Uint8Array; // length 64
 
@@ -114,14 +117,14 @@ type ApiCall<T> = {
   do: () => Promise<T>,
 };
 
-type NetworkAccount = {
+export type NetworkAccount = {
   addr: Address,
   sk?: SecretKey
 };
 
 const reachBackendVersion = 7;
 const reachAlgoBackendVersion = 8;
-type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
+export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
   appApproval: string,
   appClear: string,
@@ -135,12 +138,12 @@ type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
 type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
 
-type ContractInfo = number;
+export type ContractInfo = number;
 type SendRecvArgs = ISendRecvArgs<Address, Token, AnyALGO_Ty>;
 type RecvArgs = IRecvArgs<AnyALGO_Ty>;
 type Recv = IRecv<Address>
-type Contract = IContract<ContractInfo, Address, Token, AnyALGO_Ty>;
-type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
+export type Contract = IContract<ContractInfo, Address, Token, AnyALGO_Ty>;
+export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
 type SimTxn = ISimTxn<Token>
 type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
 type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
@@ -585,7 +588,7 @@ async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<algosdk.Algodv2
   return new algosdk.Algodv2(ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
 }
 
-interface Provider {
+export interface Provider {
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
   getDefaultAddress: () => Promise<Address>,
@@ -836,8 +839,9 @@ function randlabsProviderEnv(net: string): ProviderEnv {
   }
 }
 
-export function providerEnvByName(providerName: string): ProviderEnv {
-  switch (providerName) {
+export type ProviderName = string;
+export function providerEnvByName(pn: ProviderName): ProviderEnv {
+  switch (pn) {
     case 'MainNet': return randlabsProviderEnv('MainNet');
     case 'TestNet': return randlabsProviderEnv('TestNet');
     case 'BetaNet': return randlabsProviderEnv('BetaNet');
@@ -845,12 +849,12 @@ export function providerEnvByName(providerName: string): ProviderEnv {
     case 'randlabs/TestNet': return randlabsProviderEnv('TestNet');
     case 'randlabs/BetaNet': return randlabsProviderEnv('BetaNet');
     case 'LocalHost': return localhostProviderEnv;
-    default: throw Error(`Unrecognized provider name: ${providerName}`);
+    default: throw Error(`Unrecognized provider name: ${pn}`);
   }
 }
 
-export function setProviderByName(providerName: string): void {
-  return setProviderByEnv(providerEnvByName(providerName));
+export function setProviderByName(pn: ProviderName): void {
+  return setProviderByEnv(providerEnvByName(pn));
 }
 
 // eslint-disable-next-line max-len
@@ -2017,10 +2021,6 @@ export function unsafeGetMnemonic(acc: NetworkAccount|Account): string {
   return algosdk.secretKeyToMnemonic(networkAccount.sk);
 }
 
-type LaunchTokenOpts = {
-  'decimals'?: number,
-  'supply'?: unknown,
-};
 export async function launchToken (accCreator:Account, name:string, sym:string, opts:LaunchTokenOpts = {}) {
   debug(`Launching token, ${name} (${sym})`);
   const addr = (acc:Account) => acc.networkAccount.addr;

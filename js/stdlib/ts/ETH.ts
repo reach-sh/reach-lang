@@ -1,5 +1,7 @@
 import { makeEthLike } from './ETH_like'
 import * as ethImpl from './ETH_impl';
+export type { Provider, ProviderEnv, ProviderName } from './ETH_impl';
+export type { Token, ContractInfo, Address, NetworkAccount, Ty, Backend, Account } from './ETH_like';
 
 export * from './ETH_compiled';
 export const connector = 'ETH';

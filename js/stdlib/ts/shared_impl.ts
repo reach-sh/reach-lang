@@ -418,10 +418,24 @@ export type TokenMetadata = {
   supply: BigNumber,
   decimals: BigNumber,
 };
+export type LaunchTokenOpts = {
+  'decimals'?: number,
+  'supply'?: unknown,
+};
 
 export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   networkAccount: NetworkAccount,
+  /**
+   * @deprecated Use
+   * [`contract`](https://docs.reach.sh/frontend/#js_contract)
+   * instead.
+   */
   deploy: (bin: Backend) => Contract,
+  /**
+   * @deprecated Use
+   * [`contract`](https://docs.reach.sh/frontend/#js_contract)
+   * instead.
+   */
   attach: (bin: Backend, ctcInfoP: Promise<ContractInfo>) => Contract,
   contract: (bin: Backend, ctcInfoP?: Promise<ContractInfo>) => Contract,
   stdlib: Object,
