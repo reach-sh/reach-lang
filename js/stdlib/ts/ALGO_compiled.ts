@@ -51,7 +51,7 @@ export type ALGO_Ty<BV extends CBR_Val> = {
 }
 
 export const digest =
-  makeDigest('sha256', (t:ALGO_Ty<any>, v:any) => t.toNet(v));
+  makeDigest('sha256', <X extends CBR_Val>(t:ALGO_Ty<X>, v:X) => t.toNet(v));
 
 export const T_Null: ALGO_Ty<CBR_Null> = {
   ...CBR.BT_Null,
@@ -129,9 +129,9 @@ export const addressFromHex = (hexAddr: string): string =>
 
 const extractAddrM = (x: any): string|false => {
   const addr: string|false =
-    x && x.networkAccount && x.networkAccount.addr
-    || x && x.addr
-    || typeof x === 'string' && x;
+    (x && x.networkAccount && x.networkAccount.addr)
+    || (x && x.addr)
+    || (typeof x === 'string' && x);
   //debug(`extractAddrM`, {x, addr});
   return addr;
 };

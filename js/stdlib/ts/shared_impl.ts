@@ -410,6 +410,15 @@ export const stdContract =
   };
 };
 
+export type TokenMetadata = {
+  name: string,
+  symbol: string,
+  url: string,
+  metadata: string,
+  supply: BigNumber,
+  decimals: BigNumber,
+};
+
 export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   networkAccount: NetworkAccount,
   deploy: (bin: Backend) => Contract,
@@ -420,7 +429,7 @@ export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   setDebugLabel: (lab: string) => IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>,
   tokenAccept: (token: Token) => Promise<void>,
   tokenAccepted: (token: Token) => Promise<boolean>,
-  tokenMetadata: (token: Token) => Promise<any>,
+  tokenMetadata: (token: Token) => Promise<TokenMetadata>,
 };
 
 export const stdAccount =

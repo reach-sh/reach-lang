@@ -4,7 +4,7 @@ import algosdk from 'algosdk';
 import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
-import type { Transaction } from 'algosdk'; // =>
+import type { Transaction, EncodedTransaction } from 'algosdk'; // =>
 import type {
   ARC11_Wallet,
   WalletTransaction,
@@ -44,6 +44,7 @@ import {
   EQGetTxnsR,
   makeEventQueue,
   makeEventStream,
+  TokenMetadata,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -251,7 +252,7 @@ type AlgodTxn = {
   'logs'?: Array<string>,
   'txn': {
     'sig': Uint8Array,
-    'txn': any,
+    'txn': EncodedTransaction,
   },
   'pool-error': string,
 };
@@ -462,9 +463,9 @@ const MinBalance = 100000;
 
 const ui8h = (x:Uint8Array): string => Buffer.from(x).toString('hex');
 const base64ToUI8A = (x:string): Uint8Array => Uint8Array.from(Buffer.from(x, 'base64'));
-const base64ify = (x: any): string => Buffer.from(x).toString('base64');
+const base64ify = (x: WithImplicitCoercion<string>|Uint8Array): string => Buffer.from(x).toString('base64');
 
-const format_failed_request = (e: any) => {
+const format_failed_request = (e:any) => {
   const ep = JSON.parse(JSON.stringify(e));
   const db64 =
     ep.req ?
@@ -589,7 +590,7 @@ interface Provider {
   indexer: algosdk.Indexer,
   getDefaultAddress: () => Promise<Address>,
   isIsolatedNetwork: boolean,
-  signAndPostTxns: (txns:WalletTransaction[], opts?: any) => Promise<any>,
+  signAndPostTxns: (txns:WalletTransaction[], opts?: object) => Promise<unknown>,
 };
 
 const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
@@ -626,12 +627,12 @@ const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
   return { algodClient, indexer, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
 };
 
-export const setWalletFallback = (wf:() => any) => {
+export const setWalletFallback = (wf:() => unknown) => {
   if ( ! window.algorand ) { window.algorand = wf(); }
 };
 const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
   let p: Provider|undefined = undefined;
-  const enableNetwork = async (eopts?:any) => {
+  const enableNetwork = async (eopts?:object) => {
     void(eopts);
     const base = opts['providerEnv'];
     let baseEnv: Env = process.env;
@@ -646,12 +647,12 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     p = await makeProviderByEnv(baseEnv);
     return {};
   };
-  const enableAccounts = async (eopts?:any) => {
+  const enableAccounts = async (eopts?:object) => {
     void(eopts);
     const addr = await getAddr();
     return { accounts: [ addr ] };
   };
-  const enable = async (eopts?:any) => {
+  const enable = async (eopts?:object) => {
     await enableNetwork(eopts);
     return await enableAccounts(eopts);
   };
@@ -663,7 +664,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     if ( !p ) { throw new Error(`must call enable`) };
     return p.indexer;
   };
-  const signAndPostTxns = async (txns:WalletTransaction[], sopts?:any) => {
+  const signAndPostTxns = async (txns:WalletTransaction[], sopts?:object) => {
     if ( !p ) { throw new Error(`must call enable`) };
     void(sopts);
     debug(`fallBack: signAndPostTxns`, {txns});
@@ -689,7 +690,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
   };
   return { enable, enableNetwork, enableAccounts, getAlgodv2, getIndexer, signAndPostTxns };
 };
-const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
+const walletFallback_mnemonic = (opts:object) => (): ARC11_Wallet => {
   debug(`using mnemonic wallet fallback`);
   const getAddr = async (): Promise<string> => {
     return window.prompt(`Please paste the address of your account:`);
@@ -705,7 +706,7 @@ const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
   };
   return doWalletFallback_signOnly(opts, getAddr, signTxns);
 };
-const walletFallback_MyAlgoWallet = (MyAlgoConnect:any, opts:any) => (): ARC11_Wallet => {
+const walletFallback_MyAlgoWallet = (MyAlgoConnect:any, opts:object) => (): ARC11_Wallet => {
   debug(`using MyAlgoWallet wallet fallback`);
   // @ts-ignore
   const mac = new MyAlgoConnect();
@@ -730,7 +731,7 @@ const walletFallback_MyAlgoWallet = (MyAlgoConnect:any, opts:any) => (): ARC11_W
   };
   return doWalletFallback_signOnly(opts, getAddr, signTxns);
 };
-const walletFallback_WalletConnect = (WalletConnect:any, opts:any) => (): ARC11_Wallet => {
+const walletFallback_WalletConnect = (WalletConnect:any, opts:object) => (): ARC11_Wallet => {
   debug(`using WalletConnect wallet fallback`);
   const wc = new WalletConnect();
   return doWalletFallback_signOnly(opts, (() => wc.getAddr()), ((ts) => wc.signTxns(ts)));
@@ -805,7 +806,7 @@ async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<Provider> {
   const getDefaultAddress = async (): Promise<Address> => {
     throw new Error(`${lab} do not have default addresses`);
   };
-  const signAndPostTxns = async (txns:WalletTransaction[], opts?:any) => {
+  const signAndPostTxns = async (txns:WalletTransaction[], opts?:object) => {
     void(opts);
     const stxns = txns.map((txn) => {
       if ( txn.stxn ) { return txn.stxn; }
@@ -864,7 +865,7 @@ export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account
 const str2note = (x:string) => new Uint8Array(Buffer.from(x));
 const NOTE_Reach_str = `Reach ${VERSION}`;
 const NOTE_Reach = str2note(NOTE_Reach_str);
-const NOTE_Reach_tag = (tag:any) => tag ? str2note(NOTE_Reach_str + ` ${tag})`) : NOTE_Reach;
+const NOTE_Reach_tag = (tag:number|undefined) => tag ? str2note(NOTE_Reach_str + ` ${tag})`) : NOTE_Reach;
 
 const makeTransferTxn = (
   from: Address,
@@ -891,7 +892,7 @@ const makeTransferTxn = (
 export const transfer = async (
   from: Account,
   to: Account,
-  value: any,
+  value: unknown,
   token: Token|undefined = undefined,
   tag: number|undefined = undefined,
 ): Promise<RecvTxn> => {
@@ -1018,11 +1019,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       viewMapRef: (mapi:number, a:Address) => Promise<any>,
       ensureOptIn: (() => Promise<void>),
       getAppState: (() => Promise<AppStateKVs|undefined>),
-      getGlobalState: ((appSt_g?:any) => Promise<GlobalState|undefined>),
+      getGlobalState: ((appSt_g?:AppStateKVs|undefined) => Promise<GlobalState|undefined>),
       canIWin: ((lct:BigNumber) => Promise<boolean>),
       isIsolatedNetwork: (() => boolean),
       ctcAddr: Address,
     };
+    type GetC = () => Promise<ContractHandler>;
 
     const makeGetC = (setupViewArgs: SetupViewArgs, eq: EventQueue) => {
       const { getInfo } = setupViewArgs;
@@ -1049,7 +1051,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const ai = await getAccountInfo(a);
           debug(`getLocalState`, ai);
           const alss = ai['apps-local-state'] || [];
-          const als = alss.find((x:any) => (x.id === ApplicationID));
+          const als = alss.find((x) => (x.id === ApplicationID));
           debug(`getLocalState`, als);
           return als ? als['key-value'] : undefined;
         };
@@ -1092,7 +1094,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug(lab, {appSt});
           return appSt;
         };
-        const getGlobalState = async (appSt_g?:any): Promise<GlobalState|undefined> => {
+        const getGlobalState = async (appSt_g?:AppStateKVs|undefined): Promise<GlobalState|undefined> => {
           const appSt = appSt_g || await getAppState();
           if ( !appSt ) { return undefined; }
           const gsbs = readStateBytes('', [], appSt);
@@ -1113,13 +1115,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const isin = (await getProvider()).isIsolatedNetwork;
         const isIsolatedNetwork = () => isin;
 
-        const viewMapRef = async (mapi: number, a:any): Promise<any> => {
+        const viewMapRef = async (mapi: number, a:Address): Promise<any> => {
           debug('viewMapRef', { mapi, a });
           const ls = await getLocalState(cbr2algo_addr(a));
           if ( ls === undefined ) { return ['None', null]; }
           debug('viewMapRef', { ls });
           const mbs = recoverSplitBytes('m', mapDataSize, mapDataKeys, ls);
           debug('viewMapRef', { mbs });
+          if ( mbs === undefined ) { return ['None', null]; }
           const md = mapDataTy.fromNet(mbs);
           debug('viewMapRef', { md });
           // @ts-ignore
@@ -1132,7 +1135,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
     };
 
-    const getState_ = async (getC:any, lookup:((vibna:BigNumber) => AnyALGO_Ty[])): Promise<Array<any>> => {
+    const getState_ = async (getC:GetC, lookup:((vibna:BigNumber) => AnyALGO_Ty[])): Promise<Array<any>> => {
       const { getAppState, getGlobalState } = await getC();
       const appSt = await getAppState();
       if ( !appSt ) { throw Error(`getState: no appSt`); }
@@ -1172,7 +1175,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         });
       };
 
-      const apiMapRef = (i:number, ty:any): MapRefT<any> => async (f:string): Promise<MaybeRep<any>> => {
+      const apiMapRef = (i:number, ty:AnyALGO_Ty): MapRefT<any> => async (f:string): Promise<MaybeRep<any>> => {
         void(ty);
         const { viewMapRef } = await getC();
         return await viewMapRef(i, f);
@@ -1248,7 +1251,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           secs: bigNumberify(0), // This should not be read.
           value: value,
           from: pks,
-          getOutput: (async (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
+          getOutput: (async <X extends CBR_Val>(o_mode:string, o_lab:string, o_ctc:ALGO_Ty<X>, o_val:X): Promise<X> => {
             void(o_mode);
             void(o_lab);
             void(o_ctc);
@@ -1449,7 +1452,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
 
       type RecvFromArgs = {
-        dhead: any,
+        dhead: string,
         out_tys: Array<ConnectorTy>,
         didSend: boolean,
         funcNum: number,
@@ -1478,7 +1481,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const from = T_Address.canonicalize({addr: fromAddr});
         debug(dhead, { from, fromAddr });
 
-        const getOutput = async (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
+        const getOutput = async <X extends CBR_Val>(o_mode:string, o_lab:string, o_ctc:ALGO_Ty<X>, o_val:X): Promise<X> => {
           debug(`getOutput`, {o_mode, o_lab, o_ctc, o_val});
           const f_ctc = T_Tuple([T_UInt, o_ctc]);
           for ( const l of txn['logs'] ) {
@@ -1488,7 +1491,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             debug(`getOutput`, {l, lb, ln, ls});
             if ( ls === o_lab ) {
               const ld = f_ctc.fromNet(lb);
-              const o = ld[1];
+              const o = ld[1] as X;
               debug(`getOutput`, {ld, o});
               return o;
             }
@@ -1553,26 +1556,26 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return { getContractInfo, getContractAddress, getBalance, getState, sendrecv, recv, apiMapRef };
     };
 
-    const readStateBytes = (prefix:string, key:number[], src:AppStateKVs): any => {
+    const readStateBytes = (prefix:string, key:number[], src:AppStateKVs): (Uint8Array|undefined) => {
       debug({prefix, key});
       const ik = base64ify(new Uint8Array(key));
       debug({ik});
-      const ste = src.find((x:any) => x.key === ik);
+      const ste = src.find((x) => x.key === ik);
       debug({ste});
-      if ( ste === undefined ) { return []; };
+      if ( ste === undefined ) { return undefined; };
       const st = ste.value;
       debug({st});
-      if ( st.bytes === undefined ) { return []; };
+      if ( st.bytes === undefined ) { return undefined; };
       const bsi = base64ToUI8A(st.bytes);
       debug({bsi});
       return bsi;
     };
-    const recoverSplitBytes = (prefix:string, size:number, howMany:number, src:AppStateKVs): any => {
+    const recoverSplitBytes = (prefix:string, size:number, howMany:number, src:AppStateKVs): (Uint8Array|undefined) => {
       const bs = new Uint8Array(size);
       let offset = 0;
       for ( let i = 0; i < howMany; i++ ) {
         const bsi = readStateBytes(prefix, [i], src);
-        if ( bsi.length == 0 ) {
+        if ( !bsi || bsi.length == 0 ) {
           return undefined;
         }
         bs.set(bsi, offset);
@@ -1584,7 +1587,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const eq = newEventQueue();
       const getC = makeGetC(setupViewArgs, eq);
       const viewLib: IViewLib = {
-        viewMapRef: async (mapi: number, a:any): Promise<any> => {
+        viewMapRef: async (mapi: number, a:Address): Promise<any> => {
           const { viewMapRef } = await getC();
           return await viewMapRef(mapi, a);
         },
@@ -1658,7 +1661,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       await transfer(me_na, me_na, 0, token);
     }
   };
-  const tokenMetadata = async (token:Token): Promise<any> => {
+  const tokenMetadata = async (token:Token): Promise<TokenMetadata> => {
     debug(`tokenMetadata`, token);
     const tokenRes = await getAssetInfo(bigNumberToNumber(token));
     debug({tokenRes});
@@ -1736,14 +1739,14 @@ export const canFundFromFaucet = async (): Promise<boolean> => {
   return gt(fbal, 0);
 };
 
-export const fundFromFaucet = async (account: Account, value: any) => {
+export const fundFromFaucet = async (account: Account, value: unknown) => {
   const faucet = await getFaucet();
   debug('fundFromFaucet');
   const tag = Math.round(Math.random() * (2 ** 32));
   await transfer(faucet, account, value, undefined, tag);
 };
 
-export const newTestAccount = async (startingBalance: any) => {
+export const newTestAccount = async (startingBalance: unknown) => {
   const account = await createAccount();
   await fundFromFaucet(account, startingBalance);
   return account;
@@ -1815,7 +1818,7 @@ function ldrop(str: string, char: string) {
  * @example  formatCurrency(bigNumberify('100000000')); // => '100'
  * @example  formatCurrency(bigNumberify('9999998799987000')); // => '9999998799.987'
  */
-function handleFormat(amt: any, decimals: number, splitValue: number = 6): string {
+function handleFormat(amt: unknown, decimals: number, splitValue: number = 6): string {
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
@@ -1838,14 +1841,14 @@ function handleFormat(amt: any, decimals: number, splitValue: number = 6): strin
 /**
  * @description  Format currency by network
  */
-export function formatCurrency(amt: any, decimals: number = 6): string {
+export function formatCurrency(amt: unknown, decimals: number = 6): string {
   return handleFormat(amt, decimals, 6)
 }
 
 /**
  * @description  Format currency based on token decimals
  */
-export function formatWithDecimals(amt: any, decimals: number): string {
+export function formatWithDecimals(amt: unknown, decimals: number): string {
   return handleFormat(amt, decimals, decimals)
 }
 
@@ -1948,7 +1951,7 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
       throw Error(`${dhead} failed: ${msg}`);
     }
   };
-  const chkeq = (a: any, e:any, msg:string) => {
+  const chkeq = (a: unknown, e:unknown, msg:string) => {
     const as = JSON.stringify(a);
     const es = JSON.stringify(e);
     chk(as === es, `${msg}: expected ${es}, got ${as}`);
@@ -2014,7 +2017,11 @@ export function unsafeGetMnemonic(acc: NetworkAccount|Account): string {
   return algosdk.secretKeyToMnemonic(networkAccount.sk);
 }
 
-export async function launchToken (accCreator:Account, name:string, sym:string, opts:any = {}) {
+type LaunchTokenOpts = {
+  'decimals'?: number,
+  'supply'?: unknown,
+};
+export async function launchToken (accCreator:Account, name:string, sym:string, opts:LaunchTokenOpts = {}) {
   debug(`Launching token, ${name} (${sym})`);
   const addr = (acc:Account) => acc.networkAccount.addr;
   const caddr = addr(accCreator);
@@ -2032,7 +2039,7 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
     const r = (await client.sendRawTransaction(s).do());
     return await waitForConfirmation(r.txId);
   };
-  const supply = (opts.supply && bigNumberify(opts.supply)) || bigNumberify(2).pow(64).sub(1);
+  const supply = opts.supply ? bigNumberify(opts.supply) : bigNumberify(2).pow(64).sub(1);
   const decimals = opts.decimals !== undefined ? opts.decimals : 6;
   const ctxn_p = await dotxn(
     (params:TxnParams) =>
@@ -2046,7 +2053,7 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
   const id = bigNumberify(idn);
   debug(`${sym}: asset is ${id}`);
 
-  const mint = async (accTo:Account, amt:any) => {
+  const mint = async (accTo:Account, amt:unknown) => {
     debug(`${sym}: transferring ${amt} ${sym} for ${addr(accTo)}`);
     await transfer(accCreator, accTo, amt, id);
   };
