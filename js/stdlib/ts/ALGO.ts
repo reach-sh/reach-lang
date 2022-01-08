@@ -219,7 +219,7 @@ type IndexerAssetInfoRes = {
   'asset': AssetInfo,
 };
 
-type OrExn<X> = X | {exn:any};
+type OrExn<X> = { val: X } | {exn:any};
 type IndexerAppTxn = {
   'approval-program'?: string,
   'clear-state-program'?: string,
@@ -297,20 +297,21 @@ const indexerTxn2RecvTxn = (txn:IndexerTxn): RecvTxn => {
 
 const waitForConfirmation = async (txId: TxId): Promise<RecvTxn> => {
   const doOrDie = async <X>(p: Promise<X>): Promise<OrExn<X>> => {
-    try { return await p; }
+    try { return { val: await p }; }
     catch (e:any) { return { 'exn': e }; }
   };
   const dhead = `waitForConfirmation ${txId}`;
   const client = await getAlgodClient();
 
   const checkAlgod = async (): Promise<RecvTxn> => {
-    const info =
-      (await doOrDie(client.pendingTransactionInformation(txId).do())) as OrExn<AlgodTxn>;
-    debug(dhead, 'info', info);
-    if ( 'exn' in info ) {
+    const q = client.pendingTransactionInformation(txId).do() as unknown as Promise<AlgodTxn>;
+    const infoM = await doOrDie(q);
+    debug(dhead, 'info', infoM);
+    if ( 'exn' in infoM ) {
       debug(dhead, 'switching to indexer on error');
       return await checkIndexer();
     }
+    const info = infoM.val;
     const cr = info['confirmed-round'];
     if ( cr !== undefined && cr > 0 ) {
       const l = info['logs'] === undefined ? [] : info['logs'];
@@ -337,8 +338,8 @@ const waitForConfirmation = async (txId: TxId): Promise<RecvTxn> => {
 
   const checkIndexer = async (): Promise<RecvTxn> => {
     const indexer = await getIndexer();
-    const q = indexer.lookupTransactionByID(txId);
-    const res = (await doQuery_(dhead, q)) as IndexerQuery1Res;
+    const q = indexer.lookupTransactionByID(txId) as unknown as ApiCall<IndexerQuery1Res>;
+    const res = await doQuery_(dhead, q);
     debug(dhead, 'indexer', res);
     return indexerTxn2RecvTxn(res['transaction']);
   };
@@ -406,7 +407,7 @@ const toWTxn = (t:Transaction): WalletTransaction => {
 // Backend
 const stdWait = () => Timeout.set(1000);
 
-const getTxnParams = async (label: any): Promise<TxnParams> => {
+const getTxnParams = async (label: string): Promise<TxnParams> => {
   const dhead = `${label} fillTxn`;
   debug(dhead, `getting params`);
   const client = await getAlgodClient();
@@ -483,17 +484,25 @@ function looksLikeAccountingNotInitialized(e: any) {
   return msg.includes(`accounting not initialized`);
 }
 
+const doQueryM_ = async <T>(dhead:string, query: ApiCall<T>): Promise<OrExn<T>> => {
+  try {
+    const val = await query.do();
+    debug(dhead, 'RESULT', val);
+    return { val };
+  } catch (exn:any) {
+    return { exn };
+  }
+};
+
 const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0): Promise<T> => {
   debug(dhead, query.query);
   while ( true ) {
     if ( howMany > 0 ) {
       await stdWait();
     }
-    try {
-      const res = await query.do();
-      debug(dhead, 'RESULT', res);
-      return res;
-    } catch (e:any) {
+    const res = await doQueryM_(dhead, query);
+    if ( 'exn' in res ) {
+      let e = res.exn;
       if ( e?.errno === -111 || e?.code === "ECONNRESET") {
         debug(dhead, 'NO CONNECTION');
       } else if ( looksLikeAccountingNotInitialized(e) ) {
@@ -502,6 +511,8 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0)
       if ( e?.response?.text ) { e = e.response.text; }
       debug(dhead, 'RETRYING', {e});
       howMany++;
+    } else {
+      return res.val;
     }
   }
 };
@@ -541,7 +552,8 @@ const newEventQueue = (): EventQueue => {
         .applicationID(ApplicationID)
         //.txType('appl')
         .minRound(mtime);
-    const res = (await doQuery_(dhead, query, howMany)) as IndexerQueryMRes;
+    const q = query as unknown as ApiCall<IndexerQueryMRes>
+    const res = await doQuery_(dhead, q, howMany);
     const txns = res.transactions.filter((x:IndexerTxn) => x['tx-type'] === 'appl');
     const gtime = bigNumberify(res['current-round']);
     return { txns, gtime };
@@ -940,8 +952,8 @@ const reNetify = (x: string): NV => {
 const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
   const dhead = 'getAccountInfo';
   const indexer = await getIndexer();
-  const q = indexer.lookupAccountByID(a);
-  const res = (await doQuery_(dhead, q)) as IndexerAccountInfoRes;
+  const q = indexer.lookupAccountByID(a) as unknown as ApiCall<IndexerAccountInfoRes>;
+  const res = await doQuery_(dhead, q);
   debug(dhead, res);
   return res.account;
 };
@@ -949,20 +961,19 @@ const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
 const getAssetInfo = async (a:number): Promise<AssetInfo> => {
   const dhead = 'getAssetInfo';
   const indexer = await getIndexer();
-  const q = indexer.lookupAssetByID(a);
-  const res = (await doQuery_(dhead, q)) as IndexerAssetInfoRes;
+  const q = indexer.lookupAssetByID(a) as unknown as ApiCall<IndexerAssetInfoRes>;
+  const res = await doQuery_(dhead, q);
   debug(dhead, res);
   return res.asset;
 };
 
-// XXX do OrExn
 const getApplicationInfoM = async (id:number): Promise<OrExn<AppInfo>> => {
   const dhead = 'getApplicationInfo';
   const indexer = await getIndexer();
-  const q = indexer.lookupApplications(id);
-  const res = (await doQuery_(dhead, q)) as IndexerAppInfoRes;
+  const q = indexer.lookupApplications(id) as unknown as ApiCall<IndexerAppInfoRes>;
+  const res = await doQueryM_(dhead, q);
   debug(dhead, res);
-  return res.application;
+  return 'exn' in res ? res : { val: res.val.application };
 };
 
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
@@ -1071,11 +1082,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         const getAppState = async (): Promise<AppStateKVs|undefined> => {
           const lab = `getAppState`;
-          const appInfo = await getApplicationInfoM(ApplicationID);
-          if ( 'exn' in appInfo ) {
-            debug(lab, {e: appInfo.exn});
+          const appInfoM = await getApplicationInfoM(ApplicationID);
+          if ( 'exn' in appInfoM ) {
+            debug(lab, {e: appInfoM.exn});
             return undefined;
           }
+          const appInfo = appInfoM.val;
           const appSt = appInfo['params']['global-state'];
           debug(lab, {appSt});
           return appSt;
@@ -1942,10 +1954,11 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
     chk(as === es, `${msg}: expected ${es}, got ${as}`);
   };
 
-  const appInfo = await getApplicationInfoM(ApplicationID);
-  if ( 'exn' in appInfo ) {
-    throw Error(`${dhead} failed: failed to lookup application (${ApplicationID}): ${JSON.stringify(appInfo.exn)}`);
+  const appInfoM = await getApplicationInfoM(ApplicationID);
+  if ( 'exn' in appInfoM ) {
+    throw Error(`${dhead} failed: failed to lookup application (${ApplicationID}): ${JSON.stringify(appInfoM.exn)}`);
   }
+  const appInfo = appInfoM.val;
   const appInfo_p = appInfo['params'];
   debug(dhead, {appInfo_p});
   chk(appInfo_p !== undefined, `Cannot lookup ApplicationId`);
