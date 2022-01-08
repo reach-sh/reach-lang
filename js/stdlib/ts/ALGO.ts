@@ -146,26 +146,27 @@ type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
 type SetupEventArgs = ISetupEventArgs<ContractInfo, VerifyResult>;
 type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyALGO_Ty>;
 
-// Helpers
-
-// Parse CBR into Public Key
-const cbr2algo_addr = (x:string): Address =>
-  algosdk.encodeAddress(Buffer.from(x.slice(2), 'hex'));
-
-const txnFromAddress = (t:Transaction): Address =>
-  algosdk.encodeAddress(t.from.publicKey);
-
-function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
-  if (!(a instanceof Uint8Array)) {
-    console.log(a);
-    throw Error(`Expected Uint8Array, got ${a}`);
-  }
-  return Buffer.from(a).toString(enc);
-}
-
-// TODO: read token from scripts/devnet-algo/algorand_data/algod.token
-const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
-const rawDefaultItoken = 'reach-devnet';
+type AccountAssetInfo = {
+  'asset-id': number,
+  'amount': number,
+};
+type AppStateVal = {
+  'bytes'?: string,
+};
+type AppStateKV = {
+  'key': string,
+  'value': AppStateVal,
+};
+type AppStateKVs = Array<AppStateKV>;
+type AppState = {
+  'id': number,
+  'key-value': AppStateKVs,
+};
+type AccountInfo = {
+  'assets': Array<AccountAssetInfo>,
+  'amount': number,
+  'apps-local-state': Array<AppState>
+};
 
 type OrExn<X> = X | {exn:any};
 type IndexerAppTxn = {
@@ -202,6 +203,28 @@ type AlgodTxn = {
   },
   'pool-error': string,
 };
+
+// Helpers
+
+// Parse CBR into Public Key
+const cbr2algo_addr = (x:string): Address =>
+  algosdk.encodeAddress(Buffer.from(x.slice(2), 'hex'));
+
+const txnFromAddress = (t:Transaction): Address =>
+  algosdk.encodeAddress(t.from.publicKey);
+
+function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
+  if (!(a instanceof Uint8Array)) {
+    console.log(a);
+    throw Error(`Expected Uint8Array, got ${a}`);
+  }
+  return Buffer.from(a).toString(enc);
+}
+
+// TODO: read token from scripts/devnet-algo/algorand_data/algod.token
+const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
+const rawDefaultItoken = 'reach-devnet';
+
 
 const indexerTxn2RecvTxn = (txn:IndexerTxn): RecvTxn => {
   const ait: IndexerAppTxn = txn['application-transaction'] || {};
@@ -862,6 +885,12 @@ const reNetify = (x: string): NV => {
   return ethers.utils.arrayify('0x' + s);
 };
 
+const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
+  const client = await getAlgodClient();
+  const ai = await client.accountInformation(a).do();
+  return (ai as AccountInfo);
+};
+
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   const thisAcc = networkAccount;
   let label = thisAcc.addr.substring(2, 6);
@@ -903,7 +932,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       Deployer: Address,
       viewMapRef: (mapi:number, a:Address) => Promise<any>,
       ensureOptIn: (() => Promise<void>),
-      getAppState: (() => Promise<any>),
+      getAppState: (() => Promise<AppStateKVs|undefined>),
       getGlobalState: ((appSt_g?:any) => Promise<GlobalState|undefined>),
       canIWin: ((lct:BigNumber) => Promise<boolean>),
       isIsolatedNetwork: (() => boolean),
@@ -931,9 +960,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         debug(label, 'getC', { ctcAddr });
 
         // Read map data
-        const getLocalState = async (a:Address): Promise<any> => {
-          const client = await getAlgodClient();
-          const ai = await client.accountInformation(a).do();
+        const getLocalState = async (a:Address): Promise<AppStateKVs|undefined> => {
+          const ai = await getAccountInfo(a);
           debug(`getLocalState`, ai);
           const als = ai['apps-local-state'].find((x:any) => (x.id === ApplicationID));
           debug(`getLocalState`, als);
@@ -966,7 +994,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
         };
 
-        const getAppState = async (): Promise<any> => {
+        const getAppState = async (): Promise<AppStateKVs|undefined> => {
           const lab = `getAppState`;
           const client = await getAlgodClient();
           let appInfo;
@@ -1441,7 +1469,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return { getContractInfo, getContractAddress, getBalance, getState, sendrecv, recv, apiMapRef };
     };
 
-    const readStateBytes = (prefix:string, key:number[], src:any): any => {
+    const readStateBytes = (prefix:string, key:number[], src:AppStateKVs): any => {
       debug({prefix, key});
       const ik = base64ify(new Uint8Array(key));
       debug({ik});
@@ -1455,7 +1483,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       debug({bsi});
       return bsi;
     };
-    const recoverSplitBytes = (prefix:string, size:number, howMany:number, src:any): any => {
+    const recoverSplitBytes = (prefix:string, size:number, howMany:number, src:AppStateKVs): any => {
       const bs = new Uint8Array(size);
       let offset = 0;
       for ( let i = 0; i < howMany; i++ ) {
@@ -1581,8 +1609,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
 const balanceOfM = async (acc: Account, token: Token|false = false): Promise<BigNumber|false> => {
   const addr = extractAddr(acc);
-  const client = await getAlgodClient();
-  const info = await client.accountInformation(addr).do();
+  const info = await getAccountInfo(addr);
   debug(`balanceOf`, info);
   if ( ! token ) {
     return bigNumberify(info.amount);

@@ -118,8 +118,15 @@ checkteal () {
 #exit 0
 
 jb
-#ci ALGO atomic-swap
-ci ALGO rps-7-loops
+ci ALGO atomic-swap
+#ci ALGO js-tests
+ci ALGO api-map
+
+exit 0
+
+export REACH_DEBUG=Y
+c users/xbacked-contracts/src/master_vault.rsh
+
 exit 0
 
 # (cd hs && mk hs-test)
