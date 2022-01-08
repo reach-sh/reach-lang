@@ -163,9 +163,13 @@ type AppState = {
   'key-value': AppStateKVs,
 };
 type AccountInfo = {
-  'assets': Array<AccountAssetInfo>,
+  'assets'?: Array<AccountAssetInfo>,
   'amount': number,
-  'apps-local-state': Array<AppState>
+  'apps-local-state'?: Array<AppState>
+};
+type IndexerAccountInfoRes = {
+  'current-round': number,
+  'account': AccountInfo,
 };
 
 type OrExn<X> = X | {exn:any};
@@ -186,6 +190,7 @@ type IndexerTxn = {
   'tx-type': string,
 };
 type IndexerQuery1Res = {
+  'current-round': number,
   'transaction': IndexerTxn,
 };
 type IndexerQueryMRes = {
@@ -886,9 +891,12 @@ const reNetify = (x: string): NV => {
 };
 
 const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
-  const client = await getAlgodClient();
-  const ai = await client.accountInformation(a).do();
-  return (ai as AccountInfo);
+  const dhead = 'getAccountInfo';
+  const indexer = await getIndexer();
+  const q = indexer.lookupAccountByID(a);
+  const res = (await doQuery_(dhead, q)) as IndexerAccountInfoRes;
+  debug(dhead, res);
+  return res.account;
 };
 
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
@@ -963,7 +971,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const getLocalState = async (a:Address): Promise<AppStateKVs|undefined> => {
           const ai = await getAccountInfo(a);
           debug(`getLocalState`, ai);
-          const als = ai['apps-local-state'].find((x:any) => (x.id === ApplicationID));
+          const alss = ai['apps-local-state'] || [];
+          const als = alss.find((x:any) => (x.id === ApplicationID));
           debug(`getLocalState`, als);
           return als ? als['key-value'] : undefined;
         };
@@ -1614,7 +1623,7 @@ const balanceOfM = async (acc: Account, token: Token|false = false): Promise<Big
   if ( ! token ) {
     return bigNumberify(info.amount);
   } else {
-    for ( const ai of info.assets ) {
+    for ( const ai of (info.assets || []) ) {
       if ( bigNumberify(token).eq(ai['asset-id']) ) {
         return bigNumberify(ai['amount']);
       }
