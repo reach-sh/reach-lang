@@ -172,6 +172,28 @@ type IndexerAccountInfoRes = {
   'account': AccountInfo,
 };
 
+type AppStateSchema = {
+  'num-uint': number,
+  'num-byte-slice': number,
+};
+type AppInfo = {
+  'id': number,
+  'created-at-round': number,
+  'params': {
+    'creator': string,
+    'approval-program': string,
+    'clear-state-program': string,
+    'global-state': AppStateKVs,
+    'extra-program-pages': number,
+    'local-state-schema': AppStateSchema,
+    'global-state-schema': AppStateSchema,
+  },
+};
+type IndexerAppInfoRes = {
+  'current-round': number,
+  'application': AppInfo,
+};
+
 type OrExn<X> = X | {exn:any};
 type IndexerAppTxn = {
   'approval-program'?: string,
@@ -899,6 +921,15 @@ const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
   return res.account;
 };
 
+const getApplicationInfoM = async (id:number): Promise<OrExn<AppInfo>> => {
+  const dhead = 'getApplicationInfo';
+  const indexer = await getIndexer();
+  const q = indexer.lookupApplications(id);
+  const res = (await doQuery_(dhead, q)) as IndexerAppInfoRes;
+  debug(dhead, res);
+  return res.application;
+};
+
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   const thisAcc = networkAccount;
   let label = thisAcc.addr.substring(2, 6);
@@ -1005,12 +1036,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
         const getAppState = async (): Promise<AppStateKVs|undefined> => {
           const lab = `getAppState`;
-          const client = await getAlgodClient();
-          let appInfo;
-          try {
-            appInfo = await client.getApplicationByID(ApplicationID).do();
-          } catch (e) {
-            debug(lab, {e});
+          const appInfo = await getApplicationInfoM(ApplicationID);
+          if ( 'exn' in appInfo ) {
+            debug(lab, {e: appInfo.exn});
             return undefined;
           }
           const appSt = appInfo['params']['global-state'];
@@ -1880,19 +1908,13 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
     chk(as === es, `${msg}: expected ${es}, got ${as}`);
   };
 
-  const client = await getAlgodClient();
-  let appInfo; let err;
-  try {
-    appInfo = await client.getApplicationByID(ApplicationID).do();
-  } catch (e) {
-    err = e;
-  }
-  if ( appInfo === undefined ) {
-    throw Error(`${dhead} failed: failed to lookup application (${ApplicationID}): ${JSON.stringify(err)}`);
+  const appInfo = await getApplicationInfoM(ApplicationID);
+  if ( 'exn' in appInfo ) {
+    throw Error(`${dhead} failed: failed to lookup application (${ApplicationID}): ${JSON.stringify(appInfo.exn)}`);
   }
   const appInfo_p = appInfo['params'];
   debug(dhead, {appInfo_p});
-  chk(appInfo_p, `Cannot lookup ApplicationId`);
+  chk(appInfo_p !== undefined, `Cannot lookup ApplicationId`);
   chkeq(appInfo_p['approval-program'], appApproval, `Approval program does not match Reach backend`);
   chkeq(appInfo_p['clear-state-program'], appClear, `ClearState program does not match Reach backend`);
   const Deployer = appInfo_p['creator'];
