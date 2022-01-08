@@ -194,6 +194,31 @@ type IndexerAppInfoRes = {
   'application': AppInfo,
 };
 
+type AssetInfo = {
+  'index': number,
+  'params': {
+    'clawback': string,
+    'creator': string,
+    'decimals': number,
+    'default-frozen': boolean,
+    'freeze': string,
+    'manager': string,
+    'metadata-hash': string,
+    'name': string,
+    'name-b64': string,
+    'reserve': string,
+    'total': number,
+    'unit-name': string,
+    'unit-name-b64': string,
+    'url': string,
+    'url-b64': string,
+  },
+};
+type IndexerAssetInfoRes = {
+  'current-round': number,
+  'asset': AssetInfo,
+};
+
 type OrExn<X> = X | {exn:any};
 type IndexerAppTxn = {
   'approval-program'?: string,
@@ -921,6 +946,16 @@ const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
   return res.account;
 };
 
+const getAssetInfo = async (a:number): Promise<AssetInfo> => {
+  const dhead = 'getAssetInfo';
+  const indexer = await getIndexer();
+  const q = indexer.lookupAssetByID(a);
+  const res = (await doQuery_(dhead, q)) as IndexerAssetInfoRes;
+  debug(dhead, res);
+  return res.asset;
+};
+
+// XXX do OrExn
 const getApplicationInfoM = async (id:number): Promise<OrExn<AppInfo>> => {
   const dhead = 'getApplicationInfo';
   const indexer = await getIndexer();
@@ -1613,8 +1648,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   };
   const tokenMetadata = async (token:Token): Promise<any> => {
     debug(`tokenMetadata`, token);
-    const client = await getAlgodClient();
-    const tokenRes = await client.getAssetByID(bigNumberToNumber(token)).do();
+    const tokenRes = await getAssetInfo(bigNumberToNumber(token));
     debug({tokenRes});
     const tokenInfo = tokenRes['params'];
     debug({tokenInfo});
