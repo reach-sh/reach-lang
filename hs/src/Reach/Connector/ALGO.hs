@@ -1828,11 +1828,17 @@ keyState_gvs = [GV_currentStep, GV_currentTime]
 keyState_ty :: DLType
 keyState_ty = T_Tuple $ map gvType keyState_gvs
 
-defn_done :: App ()
-defn_done = do
-  label "done"
-  cint 1
+defn_fixed :: Label -> Bool -> App ()
+defn_fixed l b = do
+  label l
+  cl $ DLL_Bool b
   op "return"
+
+defn_done :: App ()
+defn_done = defn_fixed "done" True
+
+defn_fail :: App ()
+defn_fail = defn_fixed "fail" False
 
 cRound :: App ()
 cRound = code "global" ["Round"]
@@ -2066,8 +2072,7 @@ compile_algo env disp pl = do
       afterLab <- freshLabel $ "afterHandler" <> show hi
       ch afterLab hi hh
       label afterLab
-    cl $ DLL_Bool False
-    assert
+    code "b" [ "fail" ]
     forM_ (M.toAscList hm) $ \(hi, hh) ->
       cloop hi hh
     label "updateState"
@@ -2097,6 +2102,7 @@ compile_algo env disp pl = do
     assert
     code "b" [ "done" ]
     defn_done
+    defn_fail
     label "alloc"
     code "txn" ["OnCompletion"]
     output $ TConst "NoOp"

@@ -183,6 +183,7 @@ type AppStateSchema = {
 type AppInfo = {
   'id': number,
   'created-at-round': number,
+  'deleted': boolean,
   'params': {
     'creator': string,
     'approval-program': string,
@@ -974,10 +975,18 @@ const getAssetInfo = async (a:number): Promise<AssetInfo> => {
 
 const getApplicationInfoM = async (id:number): Promise<OrExn<AppInfo>> => {
   const dhead = 'getApplicationInfo';
+  try {
+    const client = await getAlgodClient();
+    const res = (await client.getApplicationByID(id).do()) as AppInfo;
+    debug(dhead, 'node', res);
+    return { val: res };
+  } catch (e:any) {
+    debug(dhead, 'node err', e);
+  }
   const indexer = await getIndexer();
   const q = indexer.lookupApplications(id) as unknown as ApiCall<IndexerAppInfoRes>;
   const res = await doQueryM_(dhead, q);
-  debug(dhead, res);
+  debug(dhead, 'indexer', res);
   return 'exn' in res ? res : { val: res.val.application };
 };
 
@@ -1981,15 +1990,7 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   chkeq(appInfo_GlobalState['num-byte-slice'], appGlobalStateNumBytes + stateKeys, `Num of byte-slices in global state schema does not match Reach backend`);
   chkeq(appInfo_GlobalState['num-uint'], appGlobalStateNumUInt, `Num of uints in global state schema does not match Reach backend`);
 
-  const indexer = await getIndexer();
-  const ilq = indexer.lookupApplications(ApplicationID).includeAll();
-  const ilr = await doQuery_(`${dhead} app lookup`, ilq);
-  debug(dhead, {ilr});
-  const appInfo_i = ilr.application;
-  debug(dhead, {appInfo_i});
-  chkeq(appInfo_i['deleted'], false, `Application must not be deleted`);
-  // First, we learn from the indexer when it was made
-  const allocRound = appInfo_i['created-at-round'];
+  chkeq(appInfo['deleted'] === true, false, `Application must not be deleted`);
   eq.init({ ApplicationID });
 
   // Next, we check that it was created with this program and wasn't created
@@ -1998,7 +1999,10 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   debug({iat});
   chkeq(iat['created-application-index'], ApplicationID, 'app created');
   chkeq(iat['application-index'], 0, 'app created');
-  chkeq(iat['confirmed-round'], allocRound, 'created on correct round');
+  const allocRound = appInfo['created-at-round'];
+  if ( allocRound ) {
+    chkeq(iat['confirmed-round'], allocRound, 'created on correct round');
+  }
   chkeq(iat['approval-program'], appInfo_p['approval-program'], `ApprovalProgram unchanged since creation`);
   chkeq(iat['clear-state-program'], appInfo_p['clear-state-program'], `ClearStateProgram unchanged since creation`);
 

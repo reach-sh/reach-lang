@@ -116,17 +116,18 @@ checkteal () {
 #######
 
 #exit 0
-
-export REACH_DEBUG=Y
-c users/xbacked-contracts/src/master_vault.rsh
-exit 0
-
 jb
+ci ALGO atomic-swap
 exit 0
 ci ALGO mint-basic
-ci ALGO atomic-swap
 #ci ALGO js-tests
 ci ALGO api-map
 exit 0
+
+export REACH_DEBUG=Y
+c users/duowap-core/index.rsh
+c users/xbacked-contracts/src/master_vault.rsh
+exit 0
+
 
 # (cd hs && mk hs-test)
