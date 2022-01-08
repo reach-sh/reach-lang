@@ -7,6 +7,10 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.8 is the current Reach release candidate version.
 
++ 2021/01/08: The Algorand connector does not rely on an Algorand Node for any
+  information available through an Algorand Indexer.
+  This is compatible with some Algorand network providers that restrict the API
+  on Algorand Nodes.
 + 2021/01/06: The analysis of cost on Algorand is more precise in the presence
   of array operations.
 + 2022/01/06: Verification of only-one-honest participant is disabled.
