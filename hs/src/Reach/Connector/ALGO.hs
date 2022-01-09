@@ -1872,26 +1872,28 @@ cloop which (C_Loop at svs vars body) = recordWhich which $ do
   bindVars $ ct body
 
 cblt :: String -> (Int -> a -> App ()) -> BLT Int a -> App ()
-cblt lab go = \case
-  Empty -> code "b" ["fail"]
-  Branch rv l r -> do
-    op "dup"
-    cint $ fromIntegral rv
-    op "<"
-    llab <- freshLabel $ lab <> "_lt_" <> show rv
-    code "bnz" [ llab ]
-    rec r
-    label llab
-    rec l
-  Leaf which h -> do
-    -- XXX It is possible that we just check it was < 1, so we know this is 0
-    -- XXX In general, we could store the valid range if it is a singleton, not
-    -- do this check.
-    cint $ fromIntegral which
-    asserteq
-    go which h
+cblt lab go t = do
+  -- liftIO $ putStrLn $ show t
+  rec 0 Nothing t
   where
-    rec = cblt lab go
+    rec low mhi = \case
+      Empty -> code "b" ["fail"]
+      Branch rv l r -> do
+        op "dup"
+        cint $ fromIntegral rv
+        op "<"
+        llab <- freshLabel $ lab <> "_lt_" <> show rv
+        code "bnz" [ llab ]
+        rec rv mhi r
+        label llab
+        rec low (Just $ rv - 1) l
+      Leaf which h -> do
+        case (which == low && mhi == Just which) of
+          True -> op "pop"
+          False -> do
+            cint $ fromIntegral which
+            asserteq
+        go which h
 
 ch :: Int -> CHandler -> App ()
 ch _ (C_Loop {}) = return ()

@@ -158,9 +158,7 @@ int DeleteApplication
 assert
 b updateState
 l3_preamble_lt_9:
-int 8
-==
-assert
+pop
 publish8:
 // check step
 int 9
@@ -288,9 +286,7 @@ itob
 concat
 b loopBody3
 l2_preamble_lt_8:
-int 7
-==
-assert
+pop
 publish7:
 // check step
 int 7
@@ -403,9 +399,7 @@ dup
 int 6
 <
 bnz l8_preamble_lt_6
-int 6
-==
-assert
+pop
 publish6:
 // check step
 int 7
@@ -528,9 +522,7 @@ int NoOp
 assert
 b updateState
 l8_preamble_lt_6:
-int 5
-==
-assert
+pop
 publish5:
 // check step
 int 5
@@ -645,9 +637,7 @@ dup
 int 4
 <
 bnz l13_preamble_lt_4
-int 4
-==
-assert
+pop
 publish4:
 // check step
 int 5
@@ -759,13 +749,9 @@ int NoOp
 assert
 b updateState
 l13_preamble_lt_4:
-int 3
-==
-assert
+pop
 l12_preamble_lt_3:
-int 2
-==
-assert
+pop
 publish2:
 // check step
 int 1
@@ -854,9 +840,7 @@ dup
 int 1
 <
 bnz l16_preamble_lt_1
-int 1
-==
-assert
+pop
 publish1:
 // check step
 int 1
@@ -969,9 +953,7 @@ itob
 concat
 b loopBody3
 l16_preamble_lt_1:
-int 0
-==
-assert
+pop
 publish0:
 // check step
 int 0

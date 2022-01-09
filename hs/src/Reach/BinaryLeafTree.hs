@@ -12,6 +12,12 @@ data BLT i a
   | Leaf i a
   | Branch i (BLT i a) (BLT i a)
 
+instance Show i => Show (BLT i a) where
+  show = \case
+    Empty -> "."
+    Leaf i _ -> show i
+    Branch i l r -> "(" <> show l <> ") " <> show i <> " (" <> show r <> ")"
+
 bltM :: Integral i => M.Map i a -> BLT i a
 bltM = bltL . M.toAscList
 
