@@ -115,6 +115,12 @@ checkteal () {
 
 #######
 
+export REACH_DEBUG=Y
+#c users/duoswap-core/index.rsh
+c users/xbacked-contracts/src/master_vault.rsh
+exit 0
+
+
 #exit 0
 jb
 ci ALGO map-any
@@ -122,11 +128,6 @@ exit 0
 ci ALGO atomic-swap
 ci ALGO mint-basic
 #ci ALGO js-tests
-exit 0
-
-export REACH_DEBUG=Y
-#c users/duoswap-core/index.rsh
-c users/xbacked-contracts/src/master_vault.rsh
 exit 0
 
 
