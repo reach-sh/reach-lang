@@ -4,5 +4,5 @@ Verifying for generic connector
   Verifying when NO participants are honest
 Checked 10 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
- * This program could use 3318 units of cost, but the limit is 700: TOP --27--> preamble --107--> l1_checkTxnK --5--> l2_forTop --672--> l3_forEnd --4--> l4_forTop --5--> l6_forTop --910--> l7_forEnd --840--> l5_forEnd --4--> l8_forTop --700--> l9_forEnd --19--> updateState --7--> checkSize --16--> done --2--> BOT
+ * This program could use 3319 units of cost, but the limit is 700: TOP --27--> preamble --4--> l0_preamble_lt_1 --3--> publish0 --102--> l2_checkTxnK --5--> l3_forTop --672--> l4_forEnd --4--> l5_forTop --5--> l7_forTop --910--> l8_forEnd --840--> l6_forEnd --4--> l9_forTop --700--> l10_forEnd --18--> updateState --7--> checkSize --16--> done --2--> BOT
 

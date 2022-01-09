@@ -24,6 +24,7 @@ import Data.Word
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
+import Reach.BinaryLeafTree
 import Reach.Connector
 import Reach.Counter
 import Reach.FixedPoint
@@ -1602,17 +1603,11 @@ makeTxn (MakeTxn {..}) = when (mt_always || not (staticZero mt_amt) ) $ do
   label after_lab
   op "pop" -- if !always & zero then pop amt ; else pop 0
 
-doSwitch :: (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
-doSwitch ck _at dv csm = do
-  end_lab <- freshLabel "switchK"
-  let cm1 ((vn, (vv, vu, k)), vi) = do
-        next_lab <- freshLabel $ "switchAfter" <> vn
-        ca $ DLA_Var dv
-        cint 0
-        op "getbyte"
-        cint vi
-        op "=="
-        code "bz" [next_lab]
+doSwitch :: String -> (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
+doSwitch lab ck _at dv csm = do
+  let cm1 _vi (vn, (vv, vu, k)) = do
+        l <- freshLabel $ lab <> "_" <> vn
+        label l
         case vu of
           False -> ck k
           True -> do
@@ -1625,9 +1620,10 @@ doSwitch ck _at dv csm = do
                   ca $ DLA_Var dv
                   cextract 1 sz
                   cfrombs vt
-        label next_lab
-  mapM_ cm1 $ zip (M.toAscList csm) [0 ..]
-  label end_lab
+  ca $ DLA_Var dv
+  cint 0
+  op "getbyte"
+  cblt lab cm1 $ bltL $ zip [0..] (M.toAscList csm)
 
 cm :: App () -> DLStmt -> App ()
 cm km = \case
@@ -1704,7 +1700,9 @@ cm km = \case
     label join_lab
     km
   DL_LocalSwitch at dv csm -> do
-    doSwitch (cp (return ())) at dv csm
+    end_lab <- freshLabel $ "LocalSwitchK"
+    doSwitch "LocalSwitch" (cp (code "b" [ end_lab ])) at dv csm
+    label end_lab
     km
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
@@ -1728,7 +1726,7 @@ ct = \case
     label false_lab
     nct ft
   CT_Switch at dv csm ->
-    doSwitch nct at dv csm
+    doSwitch "Switch" nct at dv csm
   CT_Jump _at which svs (DLAssignment msgm) -> do
     cla $ DLLA_Tuple $ map DLA_Var svs
     cla $ DLLA_Tuple $ map snd $ M.toAscList msgm
@@ -1873,9 +1871,31 @@ cloop which (C_Loop at svs vars body) = recordWhich which $ do
         . (bindFromTuple at svs)
   bindVars $ ct body
 
-ch :: LT.Text -> Int -> CHandler -> App ()
-ch _ _ (C_Loop {}) = return ()
-ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = recordWhich which $ do
+cblt :: String -> (Int -> a -> App ()) -> BLT Int a -> App ()
+cblt lab go = \case
+  Empty -> code "b" ["fail"]
+  Branch rv l r -> do
+    op "dup"
+    cint $ fromIntegral rv
+    op "<"
+    llab <- freshLabel $ lab <> "_lt_" <> show rv
+    code "bnz" [ llab ]
+    rec r
+    label llab
+    rec l
+  Leaf which h -> do
+    -- XXX It is possible that we just check it was < 1, so we know this is 0
+    -- XXX In general, we could store the valid range if it is a singleton, not
+    -- do this check.
+    cint $ fromIntegral which
+    asserteq
+    go which h
+  where
+    rec = cblt lab go
+
+ch :: Int -> CHandler -> App ()
+ch _ (C_Loop {}) = return ()
+ch which (C_Handler at int from prev svs msg timev secsv body) = recordWhich which $ do
   let isCtor = which == 0
   let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ msg)
   when (argSize > algoMaxAppTotalArgLen) $
@@ -1890,12 +1910,7 @@ ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = record
   let bindFromSvs m = do
         cSvsLoad $ typeSizeOf $ T_Tuple $ map varType svs
         bindFromTuple at svs m
-  comment ("Handler " <> texty which)
-  op "dup" -- We assume the method id is on the stack
-  cint $ fromIntegral $ which
-  op "=="
-  code "bz" [ afterLab ]
-  op "pop" -- Get rid of the method id since it's us
+  label ("publish" <> texty which)
   comment "check step"
   cint $ fromIntegral prev
   gvLoad GV_currentStep
@@ -2066,13 +2081,8 @@ compile_algo env disp pl = do
     argLoad ArgMethod
     cfrombs T_UInt
     label "preamble"
-    -- NOTE This could be compiled to a jump table if that were possible or to
-    -- a tree to be O(log n) rather than O(n)
-    forM_ (M.toAscList hm) $ \(hi, hh) -> do
-      afterLab <- freshLabel $ "afterHandler" <> show hi
-      ch afterLab hi hh
-      label afterLab
-    code "b" [ "fail" ]
+    -- NOTE This could be compiled to a jump table if that were possible
+    cblt "preamble" ch $ bltM hm
     forM_ (M.toAscList hm) $ \(hi, hh) ->
       cloop hi hh
     label "updateState"
