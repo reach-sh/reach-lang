@@ -957,6 +957,14 @@ const reNetify = (x: string): NV => {
 
 const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
   const dhead = 'getAccountInfo';
+  try {
+    const client = await getAlgodClient();
+    const res = (await client.accountInformation(a).do()) as AccountInfo;
+    debug(dhead, 'node', res);
+    return res;
+  } catch (e:any) {
+    debug(dhead, 'node err', e);
+  }
   const indexer = await getIndexer();
   const q = indexer.lookupAccountByID(a) as unknown as ApiCall<IndexerAccountInfoRes>;
   const res = await doQuery_(dhead, q);
@@ -1076,14 +1084,16 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const dhead = 'doOptIn';
           debug(dhead);
           await sign_and_send_sync(
-            'ApplicationOptIn',
+            dhead,
             thisAcc,
             toWTxn(algosdk.makeApplicationOptInTxn(
               thisAcc.addr, await getTxnParams(dhead),
               ApplicationID,
               undefined, undefined, undefined, undefined,
               NOTE_Reach)));
-          assert(await didOptIn(), `didOptIn after doOptIn`);
+          // We are commenting this out because the above ^ might not be
+          // propagated to Indexer on the CI fast enough.
+          // assert(await didOptIn(), `didOptIn after doOptIn`);
         };
         let ensuredOptIn: boolean = false;
         const ensureOptIn = async (): Promise<void> => {
