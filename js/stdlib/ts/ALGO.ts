@@ -990,6 +990,9 @@ const getApplicationInfoM = async (id:number): Promise<OrExn<AppInfo>> => {
     return { val: res };
   } catch (e:any) {
     debug(dhead, 'node err', e);
+    if ( e?.response?.body?.message === 'application does not exist' ) {
+      return { exn: e };
+    }
   }
   const indexer = await getIndexer();
   const q = indexer.lookupApplications(id) as unknown as ApiCall<IndexerAppInfoRes>;
