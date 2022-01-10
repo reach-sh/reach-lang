@@ -7,6 +7,13 @@ HERE=.
 DATEVER="$1"
 HASHVER="$2"
 
+
+source ../../VERSION
+if [ "$VERSION" -neq "$(tail -n1 versions.txt)" ]; then
+  echo 'Error: versions.txt is out of date'
+  exit 1
+fi
+
 for VER in $(cat "$HERE/versions.txt") "$DATEVER" "$HASHVER" ; do
   ./manifest.sh "$VER" latest-amd64 latest-arm64
   ./mpush.sh "$VER"
