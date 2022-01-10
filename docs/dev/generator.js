@@ -617,7 +617,7 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     const [ olStrMid, hasSome ] =
       splitRange(
         code.textContent,
-        (i, l) => `<li value="${i + 1}">${l}</li>`)
+        (i, l) => `<li value="${i}">${l}</li>`)
     const olStr = `<ol class="snippet">${olStrMid}</ol>`;
     code.remove();
     const chEl = doc.createElement('div');
