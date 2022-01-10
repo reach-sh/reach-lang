@@ -7,9 +7,9 @@ HERE=.
 DATEVER="$1"
 HASHVER="$2"
 
-
-source ../../VERSION
-if [ "$VERSION" -neq "$(tail -n1 versions.txt)" ]; then
+# shellcheck source=/dev/null
+. ../../VERSION
+if [ "$VERSION" != "$(tail -n1 versions.txt)" ]; then
   echo 'Error: versions.txt is out of date'
   exit 1
 fi
