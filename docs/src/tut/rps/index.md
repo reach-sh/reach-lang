@@ -710,7 +710,7 @@ Let's start by undoing the changes we made earlier by changing
 
 ```
 load: /examples/rps-4-attack/index.rsh
-range: 29-29
+range: 28-30
 ```
 
 
@@ -718,7 +718,7 @@ back to
 
 ```
 load: /examples/rps-4-attack/index-bad.rsh
-range: 29-29
+range: 28-30
 ```
 
 
