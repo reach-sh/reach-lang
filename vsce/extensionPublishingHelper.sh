@@ -1,3 +1,8 @@
+#!/bin/sh
+# ^-- SC2148: Tips depend on target
+# shell and yours is unknown. Add a
+# shebang or a 'shell' directive.
+
 echo "Building Docker image to publish"
 echo "version $VER of our extension..."
 # Give the new image a tag of "img".
