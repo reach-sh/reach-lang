@@ -17,9 +17,9 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v93 = (balance(0)/59 + 1) == [(x/56[0] + 2), x/56[1] ][0];
+  const v92 = (balance(0)/59 + 1) == [(x/56[0] + 2), x/56[1] ][0];
   //    ^ would be false
-  assert(v93);
+  assert(v92);
 
   Verifying when NO participants are honest
 Verification failed:
@@ -38,50 +38,8 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v112 = (balance(0)/59 + 1) == [(x/56[0] + 2), x/56[1] ][0];
+  const v110 = (balance(0)/59 + 1) == [(x/56[0] + 2), x/56[1] ][0];
   //    ^ would be false
-  assert(v112);
+  assert(v110);
 
-  Verifying when ONLY "A" is honest
-Verification failed:
-  when ONLY "A" is honest
-  of theorem: while invariant after loop
-  at ./loop_var_sub.rsh:13:7:invariant
-
-  // Violation Witness
-
-  const x/56 = <loop variable>;
-  //    ^ could = [0, false ]
-  //      from: ./loop_var_sub.rsh:14:7:while
-  const balance(0)/59 = <loop variable>;
-  //    ^ could = 0
-  //      from: ./loop_var_sub.rsh:14:7:while
-
-  // Theorem Formalization
-
-  const v131 = (balance(0)/59 + 1) == [(x/56[0] + 2), x/56[1] ][0];
-  //    ^ would be false
-  assert(v131);
-
-  Verifying when ONLY "B" is honest
-Verification failed:
-  when ONLY "B" is honest
-  of theorem: while invariant after loop
-  at ./loop_var_sub.rsh:13:7:invariant
-
-  // Violation Witness
-
-  const x/56 = <loop variable>;
-  //    ^ could = [0, false ]
-  //      from: ./loop_var_sub.rsh:14:7:while
-  const balance(0)/59 = <loop variable>;
-  //    ^ could = 0
-  //      from: ./loop_var_sub.rsh:14:7:while
-
-  // Theorem Formalization
-
-  const v150 = (balance(0)/59 + 1) == [(x/56[0] + 2), x/56[1] ][0];
-  //    ^ would be false
-  assert(v150);
-
-Checked 18 theorems; 4 failures :'(
+Checked 12 theorems; 2 failures :'(

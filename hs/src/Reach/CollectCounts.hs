@@ -129,7 +129,7 @@ instance Countable DLExpr where
     DLE_Arg _ a -> counts a
     DLE_LArg _ a -> counts a
     DLE_Impossible {} -> mempty
-    DLE_VerifyMuldiv _ _ as _ -> counts as
+    DLE_VerifyMuldiv _ _ _ as _ -> counts as
     DLE_PrimOp _ _ as -> counts as
     DLE_ArrayRef _ aa ea -> counts [aa, ea]
     DLE_ArraySet _ aa ia va -> counts [aa, ia, va]
@@ -156,6 +156,7 @@ instance Countable DLExpr where
     DLE_GetAddress _ -> mempty
     DLE_EmitLog _ _ a -> counts a
     DLE_setApiDetails {} -> mempty
+    DLE_GetUntrackedFunds _ mt tb -> counts mt <> counts tb
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m

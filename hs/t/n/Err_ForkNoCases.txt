@@ -1,0 +1,8 @@
+reachc: error[RE0126]: A `fork`/`parallelReduce` statement must include a `.case` or `.api` component
+
+  ./Err_ForkNoCases.rsh:7:29:application
+
+  7|   const [x] = parallelReduce([0])
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0126
+

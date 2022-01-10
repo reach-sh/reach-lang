@@ -18,5 +18,4 @@ Verification failed:
   assert(didPublish/23);
 
   Verifying when NO participants are honest
-  Verifying when ONLY "A" is honest
-Checked 8 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 6 theorems; 1 failures :'(

@@ -7,7 +7,7 @@ const [ isOutcome, A_TIMEOUT, B_TIMEOUT, A_WON, B_WON ] = makeEnum(4);
 
 const Player =
       { ...hasRandom,
-        getMove: Fun([Array(UInt, 2)], Tuple(UInt, UInt)),
+        getMove: Fun([Array(UInt, howMany)], Tuple(UInt, UInt)),
         showOutcome: Fun([UInt], Null) };
 const Alice =
       { ...Player,

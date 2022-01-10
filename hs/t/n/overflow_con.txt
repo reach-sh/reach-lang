@@ -17,10 +17,9 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v53 = v43 <= (UInt.max - 1);
+  const v52 = v43 <= (UInt.max - 1);
   //    ^ would be false
-  assert(v53);
+  assert(v52);
 
   Verifying when NO participants are honest
-  Verifying when ONLY "A" is honest
-Checked 10 theorems; 3 failures (and 2 omitted repeats) :'(
+Checked 8 theorems; 2 failures (and 1 omitted repeats) :'(

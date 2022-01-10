@@ -580,7 +580,7 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     }
 
     code.textContent = code.textContent.trimEnd();
-    const rawCode = code.textContent;
+    let rawCode = code.textContent;
 
     // Highlight the content if specified.
     // https://github.com/shikijs/shiki/blob/main/docs/themes.md
@@ -589,27 +589,36 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
       code.textContent = await shikiHighlight(rawCode, spec.language);
     }
 
-    let firstLineIndex = null;
-    let lastLineIndex = null;
-    if (spec.range) {
-      const rangeArr = spec.range.split('-');
-      firstLineIndex = rangeArr[0] - 1;
-      if (rangeArr.length > 1) {
-        lastLineIndex = rangeArr[1] - 1;
+    const splitRange = (input, f) => {
+      const in_arr = input.split(/\r?\n/g);
+      let firstLineIndex = null;
+      let lastLineIndex = null;
+      if (spec.range) {
+        const rangeArr = spec.range.split('-');
+        firstLineIndex = rangeArr[0] - 1;
+        if (rangeArr.length > 1) {
+          lastLineIndex = rangeArr[1] - 1;
+        }
       }
-    }
+      const out_arr = [];
+      let i = 0;
+      for ( const l of in_arr ) {
+        i++;
+        if (firstLineIndex && i < firstLineIndex) {
+          continue;
+        } else if (lastLineIndex && lastLineIndex < i) {
+          break;
+        }
+        out_arr.push(f(i, l));
+      }
+      return [ out_arr.join(''), in_arr.length != 1 ];
+    };
 
-    const arr = code.textContent.split(/\r?\n/g);
-    let olStr = '<ol class="snippet">';
-    for (let i = 0; i < arr.length; i++) {
-      if (firstLineIndex && i < firstLineIndex) {
-        continue;
-      } else if (lastLineIndex && lastLineIndex < i) {
-        break;
-      }
-      olStr += `<li value="${i + 1}">${arr[i]}</li>`;
-    }
-    olStr += '</ol>';
+    const [ olStrMid, hasSome ] =
+      splitRange(
+        code.textContent,
+        (i, l) => `<li value="${i + 1}">${l}</li>`)
+    const olStr = `<ol class="snippet">${olStrMid}</ol>`;
     code.remove();
     const chEl = doc.createElement('div');
     chEl.classList.add("codeHeader");
@@ -622,13 +631,14 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     cpEl.classList.add("far", "fa-copy", "copyBtn");
     const copyCode = ( spec.language === 'cmd' ) ?
       rawCode.replace(/^\$ /, '') : rawCode;
-    cpEl.setAttribute("data-clipboard-text", copyCode);
+    cpEl.setAttribute("data-clipboard-text",
+      splitRange(copyCode, (i, l) => `${l}\n`)[0].trimEnd());
     cpEl.href = "#";
     chEl.appendChild(cpEl);
     pre.append(chEl);
     pre.append(mkEl(olStr));
     pre.classList.add('snippet');
-    const shouldNumber = spec.numbered && (arr.length != 1);
+    const shouldNumber = spec.numbered && hasSome;
     pre.classList.add(shouldNumber ? 'numbered' : 'unnumbered');
   }
   for (const c of doc.querySelectorAll('code') ) {

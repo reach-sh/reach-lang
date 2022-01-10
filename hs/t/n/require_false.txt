@@ -9,5 +9,4 @@ Verification failed:
   require(false);
 
   Verifying when NO participants are honest
-  Verifying when ONLY "A" is honest
-Checked 8 theorems; 1 failures :'(
+Checked 7 theorems; 1 failures :'(

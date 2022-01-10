@@ -1,7 +1,3 @@
-// ****************************************************************************
-// standard library needed at runtime by compiled Reach programs
-// ****************************************************************************
-
 import { ethers } from 'ethers';
 import * as shared_backend from './shared_backend';
 import * as CBR from './CBR';
@@ -382,7 +378,7 @@ const digestEq = shared_backend.eq;
 const T_Token = T_Address;
 const tokenEq = addressEq;
 
-const typeDefs: TypeDefs = {
+const typeDefs: TypeDefs<AnyETH_Ty> = {
   T_Null,
   T_Bool,
   T_UInt,

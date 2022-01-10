@@ -110,7 +110,7 @@ instance Freshen DLExpr where
     DLE_Arg at a -> DLE_Arg at <$> fu a
     DLE_LArg at a -> DLE_LArg at <$> fu a
     e@(DLE_Impossible {}) -> return $ e
-    DLE_VerifyMuldiv at cl as err -> DLE_VerifyMuldiv at cl <$> fu as <*> pure err
+    DLE_VerifyMuldiv at f cl as err -> DLE_VerifyMuldiv at f cl <$> fu as <*> pure err
     DLE_PrimOp at p as -> DLE_PrimOp at p <$> fu as
     DLE_ArrayRef at a b -> DLE_ArrayRef at <$> fu a <*> fu b
     DLE_ArraySet at a b c -> DLE_ArraySet at <$> fu a <*> fu b <*> fu c
@@ -137,6 +137,7 @@ instance Freshen DLExpr where
     DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at k a -> DLE_EmitLog at k <$> fu a
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
+    DLE_GetUntrackedFunds at mt tb -> DLE_GetUntrackedFunds at <$> fu mt <*> fu tb
 
 instance {-# OVERLAPS #-} Freshen k => Freshen (SwitchCases k) where
   fu = mapM (\(vn, vnu, k) -> (,,) <$> fu_v vn <*> pure vnu <*> fu k)

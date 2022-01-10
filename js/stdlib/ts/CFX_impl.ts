@@ -7,6 +7,9 @@ import {
   replaceableThunk,
   truthyEnv,
 } from './shared_impl';
+import {
+  bigNumberify,
+} from './shared_user';
 import type { Env } from './shim'; // =>
 import { process, window } from './shim';
 import waitPort from './waitPort';
@@ -18,7 +21,7 @@ const { Buffer } = buffer;
 const { Conflux } = cfxsdk;
 
 type NetworkAccount = cfxers.IWallet; // XXX or other things
-type Provider = cfxers.providers.Provider;
+export type Provider = cfxers.providers.Provider;
 
 function notYetSupported(label: string): any {
   throw Error(`${label} not yet supported on CFX`);
@@ -75,19 +78,19 @@ function toHexAddr(cfxAddr: string) {
   ).toString('hex').toLowerCase();
 }
 
-async function _fundOnCfxTestNet(to: any, amt: any) {
-  // XXX TestNet faucet only gives out 100 CFX at a time
-  // Should we throw an error if amt !== 100 CFX?
-  void(amt)
-  const method = '_fundOnCfxTestNet';
+const makeURLFunder = (url: string) => async (to:any, amt:any): Promise<void> => {
+  const dhead = 'doURLFunder';
   to = to.getAddress ? await to.getAddress() : to;
-  debug({method, to});
+  debug(dhead, to);
   const toHex = toHexAddr(to);
-  debug({method, message: 'requesting from testnet faucet', toHex});
-  const res = await window.fetch(`http://test-faucet.confluxnetwork.org:18088/dev/ask?address=${toHex}`);
+  let u = `${url}?address=${toHex}`;
+  if ( amt ) { u = `${u}&amount=${bigNumberify(amt)}`; }
+  debug(dhead, { toHex, u });
+  const res = await window.fetch(u);
   const resJson = await res.json();
-  debug({method, message: 'got response from testnet faucet', resJson});
-}
+  debug(dhead, { resJson });
+  if ( ! res.ok ) { throw resJson; }
+};
 
 export async function canFundFromFaucet() {
   debug('canFundFromFaucet');
@@ -96,70 +99,34 @@ export async function canFundFromFaucet() {
 }
 
 export async function _specialFundFromFaucet() {
-  debug(`_specialFundFromFaucet`);
-  if (ethLikeCompiled.getNetworkId() == 0x1) {
-    return _fundOnCfxTestNet;
+  const ni = ethLikeCompiled.getNetworkId();
+  debug(`_specialFundFromFaucet`, {ni});
+  if (ni == 0x1) {
+    // XXX TestNet faucet only gives out 100 CFX at a time
+    // Should we throw an error if amt !== 100 CFX?
+    return makeURLFunder(`http://test-faucet.confluxnetwork.org:18088/dev/ask`);
+  } else if (ni == 999) {
+    const env = getProviderEnv();
+    const k = 'CFX_NODE_URI';
+    const base = k in env ? env[k] : DEFAULT_CFX_NODE_URI;
+    const coms = base.split(':');
+    coms.pop();
+    const uri = coms.join(':');
+    return makeURLFunder(`${uri}:1337/faucet`);
   } else {
     return null;
   }
 }
 
-async function waitCaughtUp(provider: Provider, env: ProviderEnv): Promise<void> {
+const [getProvider, _setProvider] = replaceableThunk<Promise<Provider>>(async (): Promise<Provider> => {
+  const env = getProviderEnv();
+  const provider = await waitProviderFromEnv(env);
   if ('CFX_NODE_URI' in env && env.CFX_NODE_URI && truthyEnv(env.REACH_DO_WAIT_PORT)) {
     await waitPort(env.CFX_NODE_URI);
   }
-  if (isIsolatedNetwork()) {
-    // XXX this doesn't work with setFaucet; requires the default faucet to be used
-    // But we can't call getFaucet() or _getDefaultFaucetNetworkAccount() here because
-    // those (if left to defaults) call getProvider which calls this fn (waitCaughtUp).
-    // TODO: disentangle
-    if (!defaultFaucetWallet.provider) defaultFaucetWallet.connect(provider);
-    const maxTries = 20;
-    const waitMs = 1000;
-    let err: Error|null = null;
-    for (let tries = 0; tries < maxTries; tries++) {
-      if (err) {
-        debug(`waitCaughtUp: waiting some more`, {waitMs, tries, maxTries, err});
-        await Timeout.set(waitMs); // wait 1s between tries
-      }
-      try {
-        const faddr = defaultFaucetWallet.getAddress();
-        const fbal = await defaultFaucetWallet.provider?.conflux.getBalance(faddr);
-        debug(`Faucet bal`, fbal);
-        // @ts-ignore
-        if (fbal == 0) {
-          const failMsg = `Faucet balance is 0 (${faddr})`;
-          debug(failMsg);
-          throw Error(failMsg);
-        }
-        const w = cfxers.Wallet.createRandom().connect(provider);
-        const txn = {to: w.getAddress(), value: '1'};
-        debug(`sending dummy txn`, txn);
-        const t = await defaultFaucetWallet.sendTransaction(txn);
-        await t.wait();
-        return;
-      } catch (e:any) {
-        // TODO: only loop again if we detect that it's the "not caught up yet" error
-        //   err: RPCError: Request rejected due to still in the catch up mode.
-        //   { code: -32077 }
-        err = e;
-      }
-    }
-    if (err) throw err;
-  }
-}
-
-const [getProvider, _setProvider] = replaceableThunk<Promise<Provider>|Provider>(async (): Promise<Provider> => {
-  const fullEnv = getProviderEnv();
-  const provider = await waitProviderFromEnv(fullEnv);
-  // XXX disentangle the places where we waitProvider vs waitCaughtUp
-
-  // XXX is there a better place to wait for this
-  // such that toying with things at the repl doesn't hang if no connection is available?
-  await waitCaughtUp(provider, fullEnv);
   return provider;
 });
-export function setProvider(provider: Provider|Promise<Provider>): void {
+export function setProvider(provider: Promise<Provider>): void {
   _setProvider(provider);
   if (!_providerEnv) {
     // this circumstance is weird and maybe we should handle it better
@@ -309,8 +276,8 @@ function setProviderByEnv(env: any): void {
   setProvider(waitProviderFromEnv(fullEnv));
 }
 
-function setProviderByName(providerName: ProviderName): void {
-  const env = providerEnvByName(providerName)
+function setProviderByName(pn: ProviderName): void {
+  const env = providerEnvByName(pn)
   setProviderByEnv(env);
 }
 
@@ -322,15 +289,15 @@ const localhostProviderEnv: ProviderByURI = {
   REACH_ISOLATED_NETWORK: 'yes',
 }
 
-function providerEnvByName(providerName: ProviderName): ProviderEnv {
-  switch (providerName) {
+function providerEnvByName(pn: ProviderName): ProviderEnv {
+  switch (pn) {
   case 'LocalHost': return localhostProviderEnv;
   case 'window': return notYetSupported(`providerEnvByName('window')`);
   case 'MainNet': return providerEnvByName('tethys');
   case 'TestNet': return cfxProviderEnv('TestNet');
   case 'tethys': return cfxProviderEnv('tethys');
   case 'BlockNumber': return cfxProviderEnv('BlockNumber'); // XXX temporary
-  default: throw Error(`Unrecognized provider name: ${providerName}`);
+  default: throw Error(`Unrecognized provider name: ${pn}`);
   }
 }
 

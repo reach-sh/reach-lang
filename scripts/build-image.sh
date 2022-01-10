@@ -14,6 +14,7 @@ ARGS+=( "--build-arg" "SOLC_VERSION=${SOLC_VERSION}" )
 ARGS+=( "--build-arg" "ALPINE_VERSION=${ALPINE_VERSION}" )
 ARGS+=( "--build-arg" "NODE_VERSION=${NODE_VERSION}" )
 ARGS+=( "--build-arg" "REACH_VERSION=${VERSION}" )
+ARGS+=( "--build-arg" "Z3_VERSION=${Z3_VERSION}" )
 
 LAYERS=$(grep -E 'FROM .* as' "${FILE}" | grep -v ignore | awk -F' as ' '{print $2}')
 
@@ -51,7 +52,8 @@ build_image () {
     fi
 
     # linux/arm64
-    docker build --platform=linux/amd64 "$TAG" "${TARGET[@]}" "${CACHE_FROM[@]}" "${ARGS[@]}" --file "$FILE" --build-arg BUILDKIT_INLINE_CACHE=1 .
+    # docker build --platform=linux/amd64 "$TAG" "${TARGET[@]}" "${CACHE_FROM[@]}" "${ARGS[@]}" --file "$FILE" --build-arg BUILDKIT_INLINE_CACHE=1 .
+    docker build "$TAG" "${TARGET[@]}" "${CACHE_FROM[@]}" "${ARGS[@]}" --file "$FILE" --build-arg BUILDKIT_INLINE_CACHE=1 .
     # ^ that inline cache might be a bad idea for the "final" one
 }
 

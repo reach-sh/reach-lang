@@ -1,6 +1,15 @@
 All "local hs build" make targets are prefixed with "hs-".
 These require that `stack` and `mo` is installed on your local machine.
 
+# Pretend like you have goal installed locally
+
+For whatever PROJ and BIN dirs you prefer:
+
+```bash
+(cd $PROJ/reach-lang/scripts/devnet-algo && make build)
+ln -s $PROJ/reach-lang/scripts/goal-devnet $BIN/goal
+```
+
 # Build source
 
 ```bash

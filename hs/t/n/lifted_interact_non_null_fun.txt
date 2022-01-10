@@ -1,6 +1,6 @@
 reachc: error[RE0003]: Invalid block result type. Expected Null, got UInt
 
-  ./lifted_interact_non_null_fun.rsh:1:39:application
+  ./lifted_interact_non_null_fun.rsh:1:21:application
 
   1| 'reach 0.1';
 

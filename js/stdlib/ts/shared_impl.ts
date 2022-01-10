@@ -155,6 +155,7 @@ export type EventMap = { [key: string]: any }
 export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getContractInfo: () => Promise<ContractInfo>,
   getContractAddress: () => Promise<CBR_Address>,
+  getBalance: () => Promise<BigNumber>,
   waitUntilTime: (v:BigNumber) => Promise<BigNumber>,
   waitUntilSecs: (v:BigNumber) => Promise<BigNumber>,
   selfAddress: () => CBR_Address, // Not RawAddress!
@@ -178,7 +179,7 @@ export type ISetupViewArgs<ContractInfo, VerifyResult> =
 export type ISetupEventArgs<ContractInfo, VerifyResult> =
   Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
 
-export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState"|"apiMapRef")>;
+export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"getBalance"|"sendrecv"|"recv"|"getState"|"apiMapRef")>;
 
 export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
@@ -186,7 +187,7 @@ export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, Conn
   setupEvents: ISetupEvent<ContractInfo, VerifyResult>,
   givenInfoP: (Promise<ContractInfo>|undefined)
   _setup: (args: ISetupArgs<ContractInfo, VerifyResult>) => ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy>,
-} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"sendrecv"|"recv"|"getState"|"apiMapRef")>;
+} & Omit<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, ("getContractInfo"|"getContractAddress"|"getBalance"|"sendrecv"|"recv"|"getState"|"apiMapRef")>;
 
 export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   getInfo: () => Promise<ContractInfo>,
@@ -297,12 +298,12 @@ export const stdContract =
   const setupArgs = { ...viewArgs, setInfo };
 
   const _initialize = () => {
-    const { getContractInfo, getContractAddress,
+    const { getContractInfo, getContractAddress, getBalance,
             sendrecv, recv, getState, apiMapRef } =
       _setup(setupArgs);
     return {
       selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
-      getContractInfo, getContractAddress,
+      getContractInfo, getContractAddress, getBalance,
       sendrecv, recv,
       getState, apiMapRef,
     };
@@ -409,9 +410,32 @@ export const stdContract =
   };
 };
 
+export type TokenMetadata = {
+  name: string,
+  symbol: string,
+  url: string,
+  metadata: string,
+  supply: BigNumber,
+  decimals: BigNumber,
+};
+export type LaunchTokenOpts = {
+  'decimals'?: number,
+  'supply'?: unknown,
+};
+
 export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   networkAccount: NetworkAccount,
+  /**
+   * @deprecated Use
+   * [`contract`](https://docs.reach.sh/frontend/#js_contract)
+   * instead.
+   */
   deploy: (bin: Backend) => Contract,
+  /**
+   * @deprecated Use
+   * [`contract`](https://docs.reach.sh/frontend/#js_contract)
+   * instead.
+   */
   attach: (bin: Backend, ctcInfoP: Promise<ContractInfo>) => Contract,
   contract: (bin: Backend, ctcInfoP?: Promise<ContractInfo>) => Contract,
   stdlib: Object,
@@ -419,7 +443,7 @@ export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   setDebugLabel: (lab: string) => IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>,
   tokenAccept: (token: Token) => Promise<void>,
   tokenAccepted: (token: Token) => Promise<boolean>,
-  tokenMetadata: (token: Token) => Promise<any>,
+  tokenMetadata: (token: Token) => Promise<TokenMetadata>,
 };
 
 export const stdAccount =
@@ -639,9 +663,23 @@ export const argMax = (xs: any[], f: (_:any) => any) =>
 export const argMin = (xs: any[], f: (_:any) => any) =>
   argHelper(xs, f, (a, b) => a < b);
 
-export const make_newTestAccounts = <X>(newTestAccount: (bal:any) => Promise<X>): ((k:number, bal:any) => Promise<Array<X>>) =>
-  (k:number, bal:any): Promise<Array<X>> =>
-    Promise.all((new Array(k)).fill(1).map((_:any): Promise<X> => newTestAccount(bal)));
+type NewTestAccounts<X> = (k:number, bal:any) => Promise<Array<X>>;
+export const make_newTestAccounts = <X>(newTestAccount: (bal:any) => Promise<X>): {
+  parallel: NewTestAccounts<X>,
+  serial: NewTestAccounts<X>
+} => {
+  const makeArr = (k:number): Array<number> => (new Array(k)).fill(1);
+  const parallel: NewTestAccounts<X> = (k, bal) =>
+    Promise.all(makeArr(k).map((_:any): Promise<X> => newTestAccount(bal)));
+  const serial: NewTestAccounts<X> = async (k, bal) => {
+    const arr = [];
+    for ( let i = 0; i < k; i++ ) {
+      arr.push(await newTestAccount(bal));
+    }
+    return arr;
+  };
+  return { parallel, serial };
+};
 
 export const make_waitUntilX = (label: string, getCurrent: () => Promise<BigNumber>, step: (target:BigNumber) => Promise<BigNumber>) => async (target: BigNumber, onProgress?: OnProgress): Promise<BigNumber> => {
   const onProg = onProgress || (() => {});
@@ -726,18 +764,21 @@ export const makeEventQueue = <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<
   const notIgnored = (txn:RawTxn) => (! alwaysIgnored(txn));
   const peq = async (lab: string, didTimeout: AsyncPred<Time>): Promise<EQPeqResult<ProcTxn>> => {
     const dhead = `${lab} peq`;
+    const updateCtime = (ntime:Time): Time => {
+      if ( ctime.lt(ntime) ) {
+        debug(dhead, 'updating ctime', { ctime, ntime });
+        ctime = ntime;
+      }
+      return ntime;
+    };
     if (initArgs === undefined) {
       throw Error(`${dhead}: not initialized`); }
     let howMany = 0;
     while ( ptxns.length === 0 ) {
       let { txns, gtime } = await getTxns(dhead, initArgs, ctime, howMany++);
-      if ( txns.length === 0 && gtime ) { ctime = gtime; }
+      if ( txns.length === 0 && gtime ) { updateCtime(gtime); }
       else {
-        const r = (x:RawTxn): Time => {
-          const xr = getTxnTime(x);
-          if ( ctime.lt(xr) ) { ctime = xr; }
-          return xr;
-        };
+        const r = (x:RawTxn): Time => updateCtime(getTxnTime(x));
         const cmpTxn = (x:RawTxn, y:RawTxn): number =>
           r(x).sub(r(y)).toNumber();
         txns.sort(cmpTxn);

@@ -37,11 +37,17 @@ const stdlib = loadStdlib(process.env);
       keepGoing: async () => {
         const kg = count < 5;
         const ctcAddr = await ctcAlice.getContractAddress();
-        const xr = await contract["callView"](ctcAddr);
-        console.log(`keepGoing`, xr);
-        const x = xr.value;
+        const xt = await contract["callView"](ctcAddr);
+        const xr = await xt.wait();
+        const ls = xr.logs;
+        const l = ls[0];
+        console.log(`keepGoing r`, { xt, xr, ls });
+        stdlib.assert(l, 'log');
+        const { name, args } = contract.interface.parseLog(l);
+        console.log(`keepGoing`, name, args);
+        const x = args[0];
         console.log(`Compare: `, x.toNumber(), count);
-        console.assert(x == count, "x == count");
+        stdlib.assert(x == count, "x == count");
         count = count + 1;
         return [kg, count];
       }

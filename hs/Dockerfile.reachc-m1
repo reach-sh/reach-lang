@@ -5,6 +5,8 @@ COPY Makefile.docker ./Makefile
 COPY sol/stdlib_reach.sol sol/stdlib_openzep.sol.sh ./sol/
 RUN make sol/stdlib.json
 
+FROM reachsh/devnet-algo:latest AS algo
+
 FROM ubuntu:latest
 
 RUN set -e
@@ -74,7 +76,8 @@ RUN apt-get install -y \
   clang
 
 WORKDIR /tmp_z3
-ENV Z3_VER 4.8.12
+ARG Z3_VERSION
+ENV Z3_VER=${Z3_VERSION}
 # ENV Z3_SYS x64-glibc-2.31
 # RUN wget -O /tmp/z3.zip \
 #      https://github.com/Z3Prover/z3/releases/download/z3-${Z3_VER}/z3-${Z3_VER}-${Z3_SYS}.zip \
@@ -95,12 +98,15 @@ RUN chmod +x /usr/bin/solc
 COPY --from=solc /sol/stdlib.json /stdlib_sol.json
 RUN cp /root/.local/bin/reachc /usr/bin/reachc && chmod +x /usr/bin/reachc
 
+# this particular goal binary needs musl
+RUN apt-get update && apt-get install -y musl
+COPY --from=algo /bin/goal /usr/bin/goal
+
 # mostly copied from Dockerfile.reachc
 WORKDIR /app
 ENTRYPOINT ["/usr/bin/reachc"]
-ARG REACHC_HASH
-ENV REACHC_HASH="${REACHC_HASH}"
-ENV REACH_GIT_HASH="${REACHC_HASH}"
+ARG REACH_GIT_HASH
+ENV REACH_GIT_HASH="${REACH_GIT_HASH}"
+ENV REACHC_HASH="${REACH_GIT_HASH}"
 
 # TODO: cut down image size
-# TODO: solc

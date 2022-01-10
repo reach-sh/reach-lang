@@ -4,7 +4,7 @@ import algosdk from 'algosdk';
 import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
-import type { Transaction } from 'algosdk'; // =>
+import type { Transaction, EncodedTransaction } from 'algosdk'; // =>
 import type {
   ARC11_Wallet,
   WalletTransaction,
@@ -44,6 +44,8 @@ import {
   EQGetTxnsR,
   makeEventQueue,
   makeEventStream,
+  TokenMetadata,
+  LaunchTokenOpts,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -63,13 +65,14 @@ import {
   typeDefs,
   extractAddr,
 } from './ALGO_compiled';
+export type { Token } from './ALGO_compiled';
 import type { MapRefT, MaybeRep } from './shared_backend'; // =>
 import { window, process, Env } from './shim';
 import { sha512_256 } from 'js-sha512';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = stdlib;
 export * from './shared_user';
 import { setQueryLowerBound, getQueryLowerBound } from './shared_impl';
-export { setQueryLowerBound, getQueryLowerBound };
+export { setQueryLowerBound, getQueryLowerBound, addressFromHex };
 
 // Type Definitions
 
@@ -77,6 +80,7 @@ type BigNumber = ethers.BigNumber;
 
 type AnyALGO_Ty = ALGO_Ty<CBR_Val>;
 type ConnectorTy= AnyALGO_Ty;
+export type Ty = AnyALGO_Ty;
 // Note: if you want your programs to exit fail
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
@@ -84,7 +88,7 @@ type ConnectorTy= AnyALGO_Ty;
 // XXX Copy/pasted type defs from types/algosdk
 // This is so that this module can be exported without our custom types/algosdk
 // The unused ones are commented out
-type Address = string
+export type Address = string
 // type RawAddress = Uint8Array;
 type SecretKey = Uint8Array; // length 64
 
@@ -98,6 +102,8 @@ type TxnParams = {
 }
 type RecvTxn = {
   'confirmed-round': number,
+  'created-asset-index'?: number,
+  'created-application-index'?: number,
   'application-index'?: number,
   'application-args': Array<string>,
   'sender': Address,
@@ -107,17 +113,18 @@ type RecvTxn = {
 };
 type TxId = string;
 type ApiCall<T> = {
+  query: object,
   do: () => Promise<T>,
 };
 
-type NetworkAccount = {
+export type NetworkAccount = {
   addr: Address,
   sk?: SecretKey
 };
 
 const reachBackendVersion = 7;
 const reachAlgoBackendVersion = 8;
-type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
+export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
   appApproval: string,
   appClear: string,
@@ -131,17 +138,128 @@ type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
 type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
 
-type ContractInfo = number;
+export type ContractInfo = number;
 type SendRecvArgs = ISendRecvArgs<Address, Token, AnyALGO_Ty>;
 type RecvArgs = IRecvArgs<AnyALGO_Ty>;
 type Recv = IRecv<Address>
-type Contract = IContract<ContractInfo, Address, Token, AnyALGO_Ty>;
-type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
+export type Contract = IContract<ContractInfo, Address, Token, AnyALGO_Ty>;
+export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
 type SimTxn = ISimTxn<Token>
 type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
 type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
 type SetupEventArgs = ISetupEventArgs<ContractInfo, VerifyResult>;
 type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyALGO_Ty>;
+
+type AccountAssetInfo = {
+  'asset-id': number,
+  'amount': number,
+};
+type AppStateVal = {
+  'bytes'?: string,
+};
+type AppStateKV = {
+  'key': string,
+  'value': AppStateVal,
+};
+type AppStateKVs = Array<AppStateKV>;
+type AppState = {
+  'id': number,
+  'key-value': AppStateKVs,
+};
+type AccountInfo = {
+  'assets'?: Array<AccountAssetInfo>,
+  'amount': number,
+  'apps-local-state'?: Array<AppState>
+};
+type IndexerAccountInfoRes = {
+  'current-round': number,
+  'account': AccountInfo,
+};
+
+type AppStateSchema = {
+  'num-uint': number,
+  'num-byte-slice': number,
+};
+type AppInfo = {
+  'id': number,
+  'created-at-round': number,
+  'deleted': boolean,
+  'params': {
+    'creator': string,
+    'approval-program': string,
+    'clear-state-program': string,
+    'global-state': AppStateKVs,
+    'extra-program-pages': number,
+    'local-state-schema': AppStateSchema,
+    'global-state-schema': AppStateSchema,
+  },
+};
+type IndexerAppInfoRes = {
+  'current-round': number,
+  'application': AppInfo,
+};
+
+type AssetInfo = {
+  'index': number,
+  'params': {
+    'clawback': string,
+    'creator': string,
+    'decimals': number,
+    'default-frozen': boolean,
+    'freeze': string,
+    'manager': string,
+    'metadata-hash': string,
+    'name': string,
+    'name-b64': string,
+    'reserve': string,
+    'total': number,
+    'unit-name': string,
+    'unit-name-b64': string,
+    'url': string,
+    'url-b64': string,
+  },
+};
+type IndexerAssetInfoRes = {
+  'current-round': number,
+  'asset': AssetInfo,
+};
+
+type OrExn<X> = { val: X } | {exn:any};
+type IndexerAppTxn = {
+  'approval-program'?: string,
+  'clear-state-program'?: string,
+  'application-id'?: number,
+  'application-args'?: Array<string>,
+  'on-completion'?: string,
+};
+type IndexerTxn = {
+  'confirmed-round': number,
+  'sender': Address,
+  'created-asset-index'?: number,
+  'created-application-index'?: number,
+  'application-transaction'?: IndexerAppTxn,
+  'logs'?: Array<string>,
+  'tx-type': string,
+};
+type IndexerQuery1Res = {
+  'current-round': number,
+  'transaction': IndexerTxn,
+};
+type IndexerQueryMRes = {
+  'current-round': number,
+  'transactions': Array<IndexerTxn>,
+};
+type AlgodTxn = {
+  'asset-index'?: number,
+  'application-index'?: number,
+  'confirmed-round'?: number,
+  'logs'?: Array<string>,
+  'txn': {
+    'sig': Uint8Array,
+    'txn': EncodedTransaction,
+  },
+  'pool-error': string,
+};
 
 // Helpers
 
@@ -164,37 +282,6 @@ function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
 const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
 const rawDefaultItoken = 'reach-devnet';
 
-type OrExn<X> = X | {exn:any};
-type IndexerAppTxn = {
-  'approval-program'?: string,
-  'clear-state-program'?: string,
-  'application-id'?: number,
-  'application-args'?: Array<string>,
-  'on-completion'?: string,
-};
-type IndexerTxn = {
-  'confirmed-round': number,
-  'sender': Address,
-  'application-transaction'?: IndexerAppTxn,
-  'logs'?: Array<string>,
-};
-type IndexerQuery1Res = {
-  'transaction': IndexerTxn,
-};
-type IndexerQueryMRes = {
-  'current-round': number,
-  'transactions': Array<IndexerTxn>,
-};
-type AlgodTxn = {
-  'application-index'?: number,
-  'confirmed-round'?: number,
-  'logs'?: Array<string>,
-  'txn': {
-    'sig': Uint8Array,
-    'txn': any,
-  },
-  'pool-error': string,
-};
 
 const indexerTxn2RecvTxn = (txn:IndexerTxn): RecvTxn => {
   const ait: IndexerAppTxn = txn['application-transaction'] || {};
@@ -208,25 +295,28 @@ const indexerTxn2RecvTxn = (txn:IndexerTxn): RecvTxn => {
     'logs': (txn['logs'] || []),
     'application-args': aargs,
     'application-index': aidx,
+    'created-application-index': txn['created-application-index'],
+    'created-asset-index': txn['created-asset-index'],
   };
 };
 
 const waitForConfirmation = async (txId: TxId): Promise<RecvTxn> => {
   const doOrDie = async <X>(p: Promise<X>): Promise<OrExn<X>> => {
-    try { return await p; }
+    try { return { val: await p }; }
     catch (e:any) { return { 'exn': e }; }
   };
   const dhead = `waitForConfirmation ${txId}`;
   const client = await getAlgodClient();
 
   const checkAlgod = async (): Promise<RecvTxn> => {
-    const info =
-      (await doOrDie(client.pendingTransactionInformation(txId).do())) as OrExn<AlgodTxn>;
-    debug(dhead, 'info', info);
-    if ( 'exn' in info ) {
+    const q = client.pendingTransactionInformation(txId).do() as unknown as Promise<AlgodTxn>;
+    const infoM = await doOrDie(q);
+    debug(dhead, 'info', infoM);
+    if ( 'exn' in infoM ) {
       debug(dhead, 'switching to indexer on error');
       return await checkIndexer();
     }
+    const info = infoM.val;
     const cr = info['confirmed-round'];
     if ( cr !== undefined && cr > 0 ) {
       const l = info['logs'] === undefined ? [] : info['logs'];
@@ -236,9 +326,10 @@ const waitForConfirmation = async (txId: TxId): Promise<RecvTxn> => {
       const uToS = (a: Uint8Array[]|undefined) => (a || []).map((x: Uint8Array)=> uint8ArrayToStr(x, 'base64'));
       return {
         'confirmed-round': cr,
+        'created-asset-index': info['asset-index'],
         // @ts-ignore
         'logs': uToS(l),
-        'application-index': info['application-index'],
+        'created-application-index': info['application-index'],
         'sender': txnFromAddress(dtxn),
         'application-args': uToS(dtxn.appArgs),
       };
@@ -252,12 +343,15 @@ const waitForConfirmation = async (txId: TxId): Promise<RecvTxn> => {
 
   const checkIndexer = async (): Promise<RecvTxn> => {
     const indexer = await getIndexer();
-    const q = indexer.lookupTransactionByID(txId);
-    const res = (await doQuery_(dhead, q)) as IndexerQuery1Res;
+    const q = indexer.lookupTransactionByID(txId) as unknown as ApiCall<IndexerQuery1Res>;
+    const res = await doQuery_(dhead, q);
     debug(dhead, 'indexer', res);
     return indexerTxn2RecvTxn(res['transaction']);
   };
 
+  // AlgoExplorer will NOT support this query, but I believe it will fail and
+  // then fall back to the Indexer, which does work, so we're keeping it in for
+  // optimization on local cases
   return await checkAlgod();
 };
 
@@ -316,7 +410,9 @@ const toWTxn = (t:Transaction): WalletTransaction => {
 };
 
 // Backend
-const getTxnParams = async (label: any): Promise<TxnParams> => {
+const stdWait = () => Timeout.set(1000);
+
+const getTxnParams = async (label: string): Promise<TxnParams> => {
   const dhead = `${label} fillTxn`;
   debug(dhead, `getting params`);
   const client = await getAlgodClient();
@@ -327,7 +423,7 @@ const getTxnParams = async (label: any): Promise<TxnParams> => {
       return params;
     }
     debug(dhead, `...but firstRound is 0, so let's wait and try again.`);
-    await client.statusAfterBlock(1).do();
+    await stdWait();
   }
 };
 
@@ -371,9 +467,9 @@ const MinBalance = 100000;
 
 const ui8h = (x:Uint8Array): string => Buffer.from(x).toString('hex');
 const base64ToUI8A = (x:string): Uint8Array => Uint8Array.from(Buffer.from(x, 'base64'));
-const base64ify = (x: any): string => Buffer.from(x).toString('base64');
+const base64ify = (x: WithImplicitCoercion<string>|Uint8Array): string => Buffer.from(x).toString('base64');
 
-const format_failed_request = (e: any) => {
+const format_failed_request = (e:any) => {
   const ep = JSON.parse(JSON.stringify(e));
   const db64 =
     ep.req ?
@@ -393,24 +489,35 @@ function looksLikeAccountingNotInitialized(e: any) {
   return msg.includes(`accounting not initialized`);
 }
 
+const doQueryM_ = async <T>(dhead:string, query: ApiCall<T>): Promise<OrExn<T>> => {
+  try {
+    const val = await query.do();
+    debug(dhead, 'RESULT', val);
+    return { val };
+  } catch (exn:any) {
+    return { exn };
+  }
+};
+
 const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0): Promise<T> => {
-  debug(dhead, { query });
+  debug(dhead, query.query);
   while ( true ) {
     if ( howMany > 0 ) {
-      await Timeout.set(1000);
+      await stdWait();
     }
-    try {
-      const res = await query.do();
-      debug(dhead, 'RESULT', res);
-      return res;
-    } catch (e:any) {
+    const res = await doQueryM_(dhead, query);
+    if ( 'exn' in res ) {
+      let e = res.exn;
       if ( e?.errno === -111 || e?.code === "ECONNRESET") {
         debug(dhead, 'NO CONNECTION');
       } else if ( looksLikeAccountingNotInitialized(e) ) {
         debug(dhead, 'ACCOUNTING NOT INITIALIZED');
       }
+      if ( e?.response?.text ) { e = e.response.text; }
       debug(dhead, 'RETRYING', {e});
       howMany++;
+    } else {
+      return res.val;
     }
   }
 };
@@ -443,13 +550,16 @@ const newEventQueue = (): EventQueue => {
   const getTxns = async (dhead:string, initArgs:EQInitArgs, ctime: BigNumber, howMany: number): Promise<EQGetTxnsR<IndexerTxn>> => {
     const { ApplicationID } = initArgs;
     const indexer = await getIndexer();
+    const mtime = bigNumberToNumber(ctime) + 1;
+    debug(dhead, { ctime, mtime });
     const query =
       indexer.searchForTransactions()
         .applicationID(ApplicationID)
-        .txType('appl')
-        .minRound(bigNumberToNumber(ctime) + 1);
-    const res = (await doQuery_(dhead, query, howMany)) as IndexerQueryMRes;
-    const txns = res.transactions;
+        //.txType('appl')
+        .minRound(mtime);
+    const q = query as unknown as ApiCall<IndexerQueryMRes>
+    const res = await doQuery_(dhead, q, howMany);
+    const txns = res.transactions.filter((x:IndexerTxn) => x['tx-type'] === 'appl');
     const gtime = bigNumberify(res['current-round']);
     return { txns, gtime };
   };
@@ -479,31 +589,12 @@ async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<algosdk.Algodv2
   return new algosdk.Algodv2(ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
 }
 
-// This function should be provided by the indexer, but it isn't so we simulate
-// something decent. This function is allowed to "fail" by not really waiting
-// until the round
-const indexer_statusAfterBlock = async (round: number): Promise<BigNumber> => {
-  debug('indexer_statusAfterBlock', {round});
-  const client = await getAlgodClient();
-  let now = bigNumberify(0);
-  // When we're isolated, sometimes we wait for blocks that will never happen.
-  // This is a protection against that.
-  let tries = 0;
-  while ( (tries++ < 10) && (now = await getNetworkTime()).lt(round) ) {
-    debug('indexer_statusAfterBlock', {round, now});
-    await client.statusAfterBlock(round);
-    // XXX Get the indexer to index one and wait
-    await Timeout.set(500);
-  }
-  return now;
-};
-
-interface Provider {
+export interface Provider {
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
   getDefaultAddress: () => Promise<Address>,
   isIsolatedNetwork: boolean,
-  signAndPostTxns: (txns:WalletTransaction[], opts?: any) => Promise<any>,
+  signAndPostTxns: (txns:WalletTransaction[], opts?: object) => Promise<unknown>,
 };
 
 const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
@@ -540,12 +631,12 @@ const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
   return { algodClient, indexer, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
 };
 
-export const setWalletFallback = (wf:() => any) => {
+export const setWalletFallback = (wf:() => unknown) => {
   if ( ! window.algorand ) { window.algorand = wf(); }
 };
 const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
   let p: Provider|undefined = undefined;
-  const enableNetwork = async (eopts?:any) => {
+  const enableNetwork = async (eopts?:object) => {
     void(eopts);
     const base = opts['providerEnv'];
     let baseEnv: Env = process.env;
@@ -560,12 +651,12 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     p = await makeProviderByEnv(baseEnv);
     return {};
   };
-  const enableAccounts = async (eopts?:any) => {
+  const enableAccounts = async (eopts?:object) => {
     void(eopts);
     const addr = await getAddr();
     return { accounts: [ addr ] };
   };
-  const enable = async (eopts?:any) => {
+  const enable = async (eopts?:object) => {
     await enableNetwork(eopts);
     return await enableAccounts(eopts);
   };
@@ -577,7 +668,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     if ( !p ) { throw new Error(`must call enable`) };
     return p.indexer;
   };
-  const signAndPostTxns = async (txns:WalletTransaction[], sopts?:any) => {
+  const signAndPostTxns = async (txns:WalletTransaction[], sopts?:object) => {
     if ( !p ) { throw new Error(`must call enable`) };
     void(sopts);
     debug(`fallBack: signAndPostTxns`, {txns});
@@ -603,7 +694,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
   };
   return { enable, enableNetwork, enableAccounts, getAlgodv2, getIndexer, signAndPostTxns };
 };
-const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
+const walletFallback_mnemonic = (opts:object) => (): ARC11_Wallet => {
   debug(`using mnemonic wallet fallback`);
   const getAddr = async (): Promise<string> => {
     return window.prompt(`Please paste the address of your account:`);
@@ -619,7 +710,7 @@ const walletFallback_mnemonic = (opts:any) => (): ARC11_Wallet => {
   };
   return doWalletFallback_signOnly(opts, getAddr, signTxns);
 };
-const walletFallback_MyAlgoWallet = (MyAlgoConnect:any, opts:any) => (): ARC11_Wallet => {
+const walletFallback_MyAlgoWallet = (MyAlgoConnect:any, opts:object) => (): ARC11_Wallet => {
   debug(`using MyAlgoWallet wallet fallback`);
   // @ts-ignore
   const mac = new MyAlgoConnect();
@@ -644,7 +735,7 @@ const walletFallback_MyAlgoWallet = (MyAlgoConnect:any, opts:any) => (): ARC11_W
   };
   return doWalletFallback_signOnly(opts, getAddr, signTxns);
 };
-const walletFallback_WalletConnect = (WalletConnect:any, opts:any) => (): ARC11_Wallet => {
+const walletFallback_WalletConnect = (WalletConnect:any, opts:object) => (): ARC11_Wallet => {
   debug(`using WalletConnect wallet fallback`);
   const wc = new WalletConnect();
   return doWalletFallback_signOnly(opts, (() => wc.getAddr()), ((ts) => wc.signTxns(ts)));
@@ -719,7 +810,7 @@ async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<Provider> {
   const getDefaultAddress = async (): Promise<Address> => {
     throw new Error(`${lab} do not have default addresses`);
   };
-  const signAndPostTxns = async (txns:WalletTransaction[], opts?:any) => {
+  const signAndPostTxns = async (txns:WalletTransaction[], opts?:object) => {
     void(opts);
     const stxns = txns.map((txn) => {
       if ( txn.stxn ) { return txn.stxn; }
@@ -749,8 +840,9 @@ function randlabsProviderEnv(net: string): ProviderEnv {
   }
 }
 
-export function providerEnvByName(providerName: string): ProviderEnv {
-  switch (providerName) {
+export type ProviderName = string;
+export function providerEnvByName(pn: ProviderName): ProviderEnv {
+  switch (pn) {
     case 'MainNet': return randlabsProviderEnv('MainNet');
     case 'TestNet': return randlabsProviderEnv('TestNet');
     case 'BetaNet': return randlabsProviderEnv('BetaNet');
@@ -758,12 +850,12 @@ export function providerEnvByName(providerName: string): ProviderEnv {
     case 'randlabs/TestNet': return randlabsProviderEnv('TestNet');
     case 'randlabs/BetaNet': return randlabsProviderEnv('BetaNet');
     case 'LocalHost': return localhostProviderEnv;
-    default: throw Error(`Unrecognized provider name: ${providerName}`);
+    default: throw Error(`Unrecognized provider name: ${pn}`);
   }
 }
 
-export function setProviderByName(providerName: string): void {
-  return setProviderByEnv(providerEnvByName(providerName));
+export function setProviderByName(pn: ProviderName): void {
+  return setProviderByEnv(providerEnvByName(pn));
 }
 
 // eslint-disable-next-line max-len
@@ -778,7 +870,7 @@ export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account
 const str2note = (x:string) => new Uint8Array(Buffer.from(x));
 const NOTE_Reach_str = `Reach ${VERSION}`;
 const NOTE_Reach = str2note(NOTE_Reach_str);
-const NOTE_Reach_tag = (tag:any) => tag ? str2note(NOTE_Reach_str + ` ${tag})`) : NOTE_Reach;
+const NOTE_Reach_tag = (tag:number|undefined) => tag ? str2note(NOTE_Reach_str + ` ${tag})`) : NOTE_Reach;
 
 const makeTransferTxn = (
   from: Address,
@@ -805,7 +897,7 @@ const makeTransferTxn = (
 export const transfer = async (
   from: Account,
   to: Account,
-  value: any,
+  value: unknown,
   token: Token|undefined = undefined,
   tag: number|undefined = undefined,
 ): Promise<RecvTxn> => {
@@ -863,6 +955,52 @@ const reNetify = (x: string): NV => {
   return ethers.utils.arrayify('0x' + s);
 };
 
+const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
+  const dhead = 'getAccountInfo';
+  try {
+    const client = await getAlgodClient();
+    const res = (await client.accountInformation(a).do()) as AccountInfo;
+    debug(dhead, 'node', res);
+    return res;
+  } catch (e:any) {
+    debug(dhead, 'node err', e);
+  }
+  const indexer = await getIndexer();
+  const q = indexer.lookupAccountByID(a) as unknown as ApiCall<IndexerAccountInfoRes>;
+  const res = await doQuery_(dhead, q);
+  debug(dhead, res);
+  return res.account;
+};
+
+const getAssetInfo = async (a:number): Promise<AssetInfo> => {
+  const dhead = 'getAssetInfo';
+  const indexer = await getIndexer();
+  const q = indexer.lookupAssetByID(a) as unknown as ApiCall<IndexerAssetInfoRes>;
+  const res = await doQuery_(dhead, q);
+  debug(dhead, res);
+  return res.asset;
+};
+
+const getApplicationInfoM = async (id:number): Promise<OrExn<AppInfo>> => {
+  const dhead = 'getApplicationInfo';
+  try {
+    const client = await getAlgodClient();
+    const res = (await client.getApplicationByID(id).do()) as AppInfo;
+    debug(dhead, 'node', res);
+    return { val: res };
+  } catch (e:any) {
+    debug(dhead, 'node err', e);
+    if ( e?.response?.body?.message === 'application does not exist' ) {
+      return { exn: e };
+    }
+  }
+  const indexer = await getIndexer();
+  const q = indexer.lookupApplications(id) as unknown as ApiCall<IndexerAppInfoRes>;
+  const res = await doQueryM_(dhead, q);
+  debug(dhead, 'indexer', res);
+  return 'exn' in res ? res : { val: res.val.application };
+};
+
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   const thisAcc = networkAccount;
   let label = thisAcc.addr.substring(2, 6);
@@ -904,12 +1042,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       Deployer: Address,
       viewMapRef: (mapi:number, a:Address) => Promise<any>,
       ensureOptIn: (() => Promise<void>),
-      getAppState: (() => Promise<any>),
-      getGlobalState: ((appSt_g?:any) => Promise<GlobalState|undefined>),
+      getAppState: (() => Promise<AppStateKVs|undefined>),
+      getGlobalState: ((appSt_g?:AppStateKVs|undefined) => Promise<GlobalState|undefined>),
       canIWin: ((lct:BigNumber) => Promise<boolean>),
       isIsolatedNetwork: (() => boolean),
       ctcAddr: Address,
     };
+    type GetC = () => Promise<ContractHandler>;
 
     const makeGetC = (setupViewArgs: SetupViewArgs, eq: EventQueue) => {
       const { getInfo } = setupViewArgs;
@@ -932,11 +1071,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         debug(label, 'getC', { ctcAddr });
 
         // Read map data
-        const getLocalState = async (a:Address): Promise<any> => {
-          const client = await getAlgodClient();
-          const ai = await client.accountInformation(a).do();
+        const getLocalState = async (a:Address): Promise<AppStateKVs|undefined> => {
+          const ai = await getAccountInfo(a);
           debug(`getLocalState`, ai);
-          const als = ai['apps-local-state'].find((x:any) => (x.id === ApplicationID));
+          const alss = ai['apps-local-state'] || [];
+          const als = alss.find((x) => (x.id === ApplicationID));
           debug(`getLocalState`, als);
           return als ? als['key-value'] : undefined;
         };
@@ -948,14 +1087,16 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const dhead = 'doOptIn';
           debug(dhead);
           await sign_and_send_sync(
-            'ApplicationOptIn',
+            dhead,
             thisAcc,
             toWTxn(algosdk.makeApplicationOptInTxn(
               thisAcc.addr, await getTxnParams(dhead),
               ApplicationID,
               undefined, undefined, undefined, undefined,
               NOTE_Reach)));
-          assert(await didOptIn(), `didOptIn after doOptIn`);
+          // We are commenting this out because the above ^ might not be
+          // propagated to Indexer on the CI fast enough.
+          // assert(await didOptIn(), `didOptIn after doOptIn`);
         };
         let ensuredOptIn: boolean = false;
         const ensureOptIn = async (): Promise<void> => {
@@ -967,21 +1108,19 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
         };
 
-        const getAppState = async (): Promise<any> => {
+        const getAppState = async (): Promise<AppStateKVs|undefined> => {
           const lab = `getAppState`;
-          const client = await getAlgodClient();
-          let appInfo;
-          try {
-            appInfo = await client.getApplicationByID(ApplicationID).do();
-          } catch (e) {
-            debug(lab, {e});
+          const appInfoM = await getApplicationInfoM(ApplicationID);
+          if ( 'exn' in appInfoM ) {
+            debug(lab, {e: appInfoM.exn});
             return undefined;
           }
+          const appInfo = appInfoM.val;
           const appSt = appInfo['params']['global-state'];
           debug(lab, {appSt});
           return appSt;
         };
-        const getGlobalState = async (appSt_g?:any): Promise<GlobalState|undefined> => {
+        const getGlobalState = async (appSt_g?:AppStateKVs|undefined): Promise<GlobalState|undefined> => {
           const appSt = appSt_g || await getAppState();
           if ( !appSt ) { return undefined; }
           const gsbs = readStateBytes('', [], appSt);
@@ -1002,13 +1141,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const isin = (await getProvider()).isIsolatedNetwork;
         const isIsolatedNetwork = () => isin;
 
-        const viewMapRef = async (mapi: number, a:any): Promise<any> => {
+        const viewMapRef = async (mapi: number, a:Address): Promise<any> => {
           debug('viewMapRef', { mapi, a });
           const ls = await getLocalState(cbr2algo_addr(a));
           if ( ls === undefined ) { return ['None', null]; }
           debug('viewMapRef', { ls });
           const mbs = recoverSplitBytes('m', mapDataSize, mapDataKeys, ls);
           debug('viewMapRef', { mbs });
+          if ( mbs === undefined ) { return ['None', null]; }
           const md = mapDataTy.fromNet(mbs);
           debug('viewMapRef', { md });
           // @ts-ignore
@@ -1021,7 +1161,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
     };
 
-    const getState_ = async (getC:any, lookup:((vibna:BigNumber) => AnyALGO_Ty[])): Promise<Array<any>> => {
+    const getState_ = async (getC:GetC, lookup:((vibna:BigNumber) => AnyALGO_Ty[])): Promise<Array<any>> => {
       const { getAppState, getGlobalState } = await getC();
       const appSt = await getAppState();
       if ( !appSt ) { throw Error(`getState: no appSt`); }
@@ -1061,7 +1201,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         });
       };
 
-      const apiMapRef = (i:number, ty:any): MapRefT<any> => async (f:string): Promise<MaybeRep<any>> => {
+      const apiMapRef = (i:number, ty:AnyALGO_Ty): MapRefT<any> => async (f:string): Promise<MaybeRep<any>> => {
         void(ty);
         const { viewMapRef } = await getC();
         return await viewMapRef(i, f);
@@ -1110,9 +1250,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                 undefined, undefined, undefined, undefined,
                 NOTE_Reach, undefined, undefined, extraPages)));
 
-          const ApplicationID = createRes['application-index'];
+          const ApplicationID = createRes['created-application-index'];
           if ( ! ApplicationID ) {
-            throw Error(`No application-index in ${JSON.stringify(createRes)}`);
+            throw Error(`No created-application-index in ${JSON.stringify(createRes)}`);
           }
           debug(label, `created`, {ApplicationID});
           const ctcInfo = ApplicationID;
@@ -1137,7 +1277,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           secs: bigNumberify(0), // This should not be read.
           value: value,
           from: pks,
-          getOutput: (async (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
+          getOutput: (async <X extends CBR_Val>(o_mode:string, o_lab:string, o_ctc:ALGO_Ty<X>, o_val:X): Promise<X> => {
             void(o_mode);
             void(o_lab);
             void(o_ctc);
@@ -1338,7 +1478,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
 
       type RecvFromArgs = {
-        dhead: any,
+        dhead: string,
         out_tys: Array<ConnectorTy>,
         didSend: boolean,
         funcNum: number,
@@ -1367,7 +1507,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const from = T_Address.canonicalize({addr: fromAddr});
         debug(dhead, { from, fromAddr });
 
-        const getOutput = async (o_mode:string, o_lab:string, o_ctc:any, o_val:any): Promise<any> => {
+        const getOutput = async <X extends CBR_Val>(o_mode:string, o_lab:string, o_ctc:ALGO_Ty<X>, o_val:X): Promise<X> => {
           debug(`getOutput`, {o_mode, o_lab, o_ctc, o_val});
           const f_ctc = T_Tuple([T_UInt, o_ctc]);
           for ( const l of txn['logs'] ) {
@@ -1377,7 +1517,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             debug(`getOutput`, {l, lb, ln, ls});
             if ( ls === o_lab ) {
               const ld = f_ctc.fromNet(lb);
-              const o = ld[1];
+              const o = ld[1] as X;
               debug(`getOutput`, {ld, o});
               return o;
             }
@@ -1428,29 +1568,40 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
       };
 
-      return { getContractInfo, getContractAddress, getState, sendrecv, recv, apiMapRef };
+      const getBalance = async (mtok: Token|false = false) => {
+        const { ctcAddr } = await getC();
+        // @ts-ignore
+        const bal = await balanceOf({ addr: ctcAddr }, mtok);
+        // XXX May be wrong sometimes. Accurate minimumBalance requires this change:
+        //     https://github.com/algorand/go-algorand/pull/3287
+        const result = bal.eq(0) ? bal : bal.sub(minimumBalance);
+        debug(`Balance of contract:`, result);
+        return result;
+      }
+
+      return { getContractInfo, getContractAddress, getBalance, getState, sendrecv, recv, apiMapRef };
     };
 
-    const readStateBytes = (prefix:string, key:number[], src:any): any => {
+    const readStateBytes = (prefix:string, key:number[], src:AppStateKVs): (Uint8Array|undefined) => {
       debug({prefix, key});
       const ik = base64ify(new Uint8Array(key));
       debug({ik});
-      const ste = src.find((x:any) => x.key === ik);
+      const ste = src.find((x) => x.key === ik);
       debug({ste});
-      if ( ste === undefined ) { return []; };
+      if ( ste === undefined ) { return undefined; };
       const st = ste.value;
       debug({st});
-      if ( st.bytes === undefined ) { return []; };
+      if ( st.bytes === undefined ) { return undefined; };
       const bsi = base64ToUI8A(st.bytes);
       debug({bsi});
       return bsi;
     };
-    const recoverSplitBytes = (prefix:string, size:number, howMany:number, src:any): any => {
+    const recoverSplitBytes = (prefix:string, size:number, howMany:number, src:AppStateKVs): (Uint8Array|undefined) => {
       const bs = new Uint8Array(size);
       let offset = 0;
       for ( let i = 0; i < howMany; i++ ) {
         const bsi = readStateBytes(prefix, [i], src);
-        if ( bsi.length == 0 ) {
+        if ( !bsi || bsi.length == 0 ) {
           return undefined;
         }
         bs.set(bsi, offset);
@@ -1462,7 +1613,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const eq = newEventQueue();
       const getC = makeGetC(setupViewArgs, eq);
       const viewLib: IViewLib = {
-        viewMapRef: async (mapi: number, a:any): Promise<any> => {
+        viewMapRef: async (mapi: number, a:Address): Promise<any> => {
           const { viewMapRef } = await getC();
           return await viewMapRef(mapi, a);
         },
@@ -1536,10 +1687,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       await transfer(me_na, me_na, 0, token);
     }
   };
-  const tokenMetadata = async (token:Token): Promise<any> => {
+  const tokenMetadata = async (token:Token): Promise<TokenMetadata> => {
     debug(`tokenMetadata`, token);
-    const client = await getAlgodClient();
-    const tokenRes = await client.getAssetByID(bigNumberToNumber(token)).do();
+    const tokenRes = await getAssetInfo(bigNumberToNumber(token));
     debug({tokenRes});
     const tokenInfo = tokenRes['params'];
     debug({tokenInfo});
@@ -1571,15 +1721,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
 const balanceOfM = async (acc: Account, token: Token|false = false): Promise<BigNumber|false> => {
   const addr = extractAddr(acc);
-  const client = await getAlgodClient();
-  const info = await client.accountInformation(addr).do();
+  const info = await getAccountInfo(addr);
   debug(`balanceOf`, info);
   if ( ! token ) {
     return bigNumberify(info.amount);
   } else {
-    for ( const ai of info.assets ) {
+    for ( const ai of (info.assets || []) ) {
       if ( bigNumberify(token).eq(ai['asset-id']) ) {
-        return ai['amount'];
+        return bigNumberify(ai['amount']);
       }
     }
     return false;
@@ -1601,35 +1750,35 @@ export const createAccount = async (): Promise<Account> => {
 
 export const canFundFromFaucet = async (): Promise<boolean> => {
   const faucet = await getFaucet();
-  const algodClient = await getAlgodClient();
-  debug('ALGO:canFundFromFaucet: check genesis');
-  const txnParams = await algodClient.getTransactionParams().do();
+  const dhead = 'canFundFromFaucet';
+  debug(dhead, 'check genesis');
+  const txnParams = await getTxnParams(dhead);
   const act = txnParams.genesisID;
   const exp = 'devnet-v1';
   if (act !== exp) {
-    debug(`ALGO:canFundFromFaucet: expected '${exp}' !== actual '${act}'`);
+    debug(dhead, `expected '${exp}' !== actual '${act}'`);
     return false;
   }
-  debug('ALGO:canFundFromFaucet: check balance');
+  debug(dhead, 'check balance');
   const fbal = await balanceOf(faucet);
-  debug(`ALGO:canFundFromFaucet: faucet balance = ${formatCurrency(fbal, 4)} ${standardUnit}`);
+  debug(dhead, `faucet balance = ${formatCurrency(fbal, 4)} ${standardUnit}`);
   return gt(fbal, 0);
 };
 
-export const fundFromFaucet = async (account: Account, value: any) => {
+export const fundFromFaucet = async (account: Account, value: unknown) => {
   const faucet = await getFaucet();
   debug('fundFromFaucet');
   const tag = Math.round(Math.random() * (2 ** 32));
   await transfer(faucet, account, value, undefined, tag);
 };
 
-export const newTestAccount = async (startingBalance: any) => {
+export const newTestAccount = async (startingBalance: unknown) => {
   const account = await createAccount();
   await fundFromFaucet(account, startingBalance);
   return account;
 };
 
-export const newTestAccounts = make_newTestAccounts(newTestAccount);
+export const newTestAccounts = make_newTestAccounts(newTestAccount).parallel;
 
 /** @description the display name of the standard unit of currency for the network */
 export const standardUnit = 'ALGO';
@@ -1695,7 +1844,7 @@ function ldrop(str: string, char: string) {
  * @example  formatCurrency(bigNumberify('100000000')); // => '100'
  * @example  formatCurrency(bigNumberify('9999998799987000')); // => '9999998799.987'
  */
-function handleFormat(amt: any, decimals: number, splitValue: number = 6): string {
+function handleFormat(amt: unknown, decimals: number, splitValue: number = 6): string {
   if (!(Number.isInteger(decimals) && 0 <= decimals)) {
     throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
   }
@@ -1711,21 +1860,21 @@ function handleFormat(amt: any, decimals: number, splitValue: number = 6): strin
   const rPre = lpad(amtStr.slice(splitAt), '0', splitValue);
   const rSliced = rPre.slice(0, decimals);
   const r = rdrop(rSliced, '0');
-  
+
   return r ? `${l}.${r}` : l;
 }
 
 /**
  * @description  Format currency by network
  */
-export function formatCurrency(amt: any, decimals: number = 6): string {
+export function formatCurrency(amt: unknown, decimals: number = 6): string {
   return handleFormat(amt, decimals, 6)
 }
 
 /**
  * @description  Format currency based on token decimals
  */
-export function formatWithDecimals(amt: any, decimals: number): string {
+export function formatWithDecimals(amt: unknown, decimals: number): string {
   return handleFormat(amt, decimals, decimals)
 }
 
@@ -1760,7 +1909,7 @@ const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
   try {
     const client = await getAlgodClient();
     const binfo = await client.block(now).do();
-    debug(`getTimeSecs`, `node`, binfo);
+    //debug(`getTimeSecs`, `node`, binfo);
     return bigNumberify(binfo.block.ts);
   } catch (e:any) {
     debug(`getTimeSecs`, `node failed`, e);
@@ -1774,10 +1923,16 @@ export const getNetworkSecs = async (): Promise<BigNumber> =>
   await getTimeSecs(await getNetworkTime());
 
 const stepTime = async (target: BigNumber): Promise<BigNumber> => {
-  if ( (await getProvider()).isIsolatedNetwork ) {
-    await fundFromFaucet(await getFaucet(), 0);
+  while ( true ) {
+    const now = await getNetworkTime();
+    debug(`stepTime`, {target, now});
+    if ( target.lte(now) ) { return now; }
+    if ( (await getProvider()).isIsolatedNetwork ) {
+      await fundFromFaucet(await getFaucet(), 0);
+    } else {
+      await stdWait();
+    }
   }
-  return await indexer_statusAfterBlock(bigNumberToNumber(target));
 };
 export const waitUntilTime = make_waitUntilX('time', getNetworkTime, stepTime);
 
@@ -1822,25 +1977,20 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
       throw Error(`${dhead} failed: ${msg}`);
     }
   };
-  const chkeq = (a: any, e:any, msg:string) => {
+  const chkeq = (a: unknown, e:unknown, msg:string) => {
     const as = JSON.stringify(a);
     const es = JSON.stringify(e);
     chk(as === es, `${msg}: expected ${es}, got ${as}`);
   };
 
-  const client = await getAlgodClient();
-  let appInfo; let err;
-  try {
-    appInfo = await client.getApplicationByID(ApplicationID).do();
-  } catch (e) {
-    err = e;
+  const appInfoM = await getApplicationInfoM(ApplicationID);
+  if ( 'exn' in appInfoM ) {
+    throw Error(`${dhead} failed: failed to lookup application (${ApplicationID}): ${JSON.stringify(appInfoM.exn)}`);
   }
-  if ( appInfo === undefined ) {
-    throw Error(`${dhead} failed: failed to lookup application (${ApplicationID}): ${JSON.stringify(err)}`);
-  }
+  const appInfo = appInfoM.val;
   const appInfo_p = appInfo['params'];
   debug(dhead, {appInfo_p});
-  chk(appInfo_p, `Cannot lookup ApplicationId`);
+  chk(appInfo_p !== undefined, `Cannot lookup ApplicationId`);
   chkeq(appInfo_p['approval-program'], appApproval, `Approval program does not match Reach backend`);
   chkeq(appInfo_p['clear-state-program'], appClear, `ClearState program does not match Reach backend`);
   const Deployer = appInfo_p['creator'];
@@ -1853,23 +2003,19 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   chkeq(appInfo_GlobalState['num-byte-slice'], appGlobalStateNumBytes + stateKeys, `Num of byte-slices in global state schema does not match Reach backend`);
   chkeq(appInfo_GlobalState['num-uint'], appGlobalStateNumUInt, `Num of uints in global state schema does not match Reach backend`);
 
-  const indexer = await getIndexer();
-  const ilq = indexer.lookupApplications(ApplicationID).includeAll();
-  const ilr = await doQuery_(`${dhead} app lookup`, ilq);
-  debug(dhead, {ilr});
-  const appInfo_i = ilr.application;
-  debug(dhead, {appInfo_i});
-  chkeq(appInfo_i['deleted'], false, `Application must not be deleted`);
-  // First, we learn from the indexer when it was made
-  const allocRound = appInfo_i['created-at-round'];
+  chkeq(appInfo['deleted'] === true, false, `Application must not be deleted`);
   eq.init({ ApplicationID });
 
   // Next, we check that it was created with this program and wasn't created
   // with a different program first (which could have modified the state)
   const iat = await eq.deq(dhead);
   debug({iat});
+  chkeq(iat['created-application-index'], ApplicationID, 'app created');
   chkeq(iat['application-index'], 0, 'app created');
-  chkeq(iat['confirmed-round'], allocRound, 'created on correct round');
+  const allocRound = appInfo['created-at-round'];
+  if ( allocRound ) {
+    chkeq(iat['confirmed-round'], allocRound, 'created on correct round');
+  }
   chkeq(iat['approval-program'], appInfo_p['approval-program'], `ApprovalProgram unchanged since creation`);
   chkeq(iat['clear-state-program'], appInfo_p['clear-state-program'], `ClearStateProgram unchanged since creation`);
 
@@ -1892,13 +2038,13 @@ export function unsafeGetMnemonic(acc: NetworkAccount|Account): string {
   return algosdk.secretKeyToMnemonic(networkAccount.sk);
 }
 
-export async function launchToken (accCreator:Account, name:string, sym:string, opts:any = {}) {
+export async function launchToken (accCreator:Account, name:string, sym:string, opts:LaunchTokenOpts = {}) {
   debug(`Launching token, ${name} (${sym})`);
   const addr = (acc:Account) => acc.networkAccount.addr;
   const caddr = addr(accCreator);
   const zaddr = caddr;
   // ^ XXX should be nothing; docs say can be "", but doesn't actually work
-  const algod = await getAlgodClient();
+  const client = await getAlgodClient();
   const dotxn = async (mktxn:(params:TxnParams) => Transaction, acc:Account = accCreator) => {
     const sk = acc.networkAccount.sk;
     if ( ! sk ) {
@@ -1907,11 +2053,10 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
     const params = await getTxnParams('launchToken');
     const t = mktxn(params);
     const s = t.signTxn(sk);
-    const r = (await algod.sendRawTransaction(s).do());
-    await waitForConfirmation(r.txId);
-    return await algod.pendingTransactionInformation(r.txId).do();
+    const r = (await client.sendRawTransaction(s).do());
+    return await waitForConfirmation(r.txId);
   };
-  const supply = (opts.supply && bigNumberify(opts.supply)) || bigNumberify(2).pow(64).sub(1);
+  const supply = opts.supply ? bigNumberify(opts.supply) : bigNumberify(2).pow(64).sub(1);
   const decimals = opts.decimals !== undefined ? opts.decimals : 6;
   const ctxn_p = await dotxn(
     (params:TxnParams) =>
@@ -1920,10 +2065,12 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
       false, zaddr, zaddr, zaddr, zaddr,
       sym, name, '', '', params,
     ));
-  const id = ctxn_p["asset-index"];
+  const idn = ctxn_p['created-asset-index'];
+  if ( ! idn ) { throw Error(`${sym} no asset-index!`); }
+  const id = bigNumberify(idn);
   debug(`${sym}: asset is ${id}`);
 
-  const mint = async (accTo:Account, amt:any) => {
+  const mint = async (accTo:Account, amt:unknown) => {
     debug(`${sym}: transferring ${amt} ${sym} for ${addr(accTo)}`);
     await transfer(accCreator, accTo, amt, id);
   };
@@ -1932,7 +2079,7 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
       (params) =>
       algosdk.makeAssetTransferTxnWithSuggestedParams(
         addr(accFrom), addr(accTo), addr(accTo), undefined,
-        0, undefined, id, params
+        0, undefined, idn, params
       ), accFrom);
   };
   return { name, sym, id, mint, optOut };

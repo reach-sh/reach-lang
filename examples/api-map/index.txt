@@ -2,8 +2,4 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-  Verifying when ONLY "D" is honest
-  Verifying when ONLY "P_done" is honest
-  Verifying when ONLY "P_get" is honest
-  Verifying when ONLY "P_put" is honest
-Checked 103 theorems; No failures!
+Checked 47 theorems; No failures!

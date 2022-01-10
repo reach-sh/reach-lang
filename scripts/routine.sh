@@ -15,6 +15,13 @@ else
   exit 1
 fi
 
+
+(cd scripts/devnet-algo && go) &
+ALGO=$!
+
+# XXX hs relies on devnet-algo, so this has to be done first
+wait $ALGO
+
 (cd hs && go) &
 HS=$!
 
@@ -23,8 +30,6 @@ wait $HS
 
 (cd js && go) &
 JS=$!
-(cd scripts/devnet-algo && go) &
-ALGO=$!
 (cd scripts/devnet-eth && go) &
 ETH=$!
 (cd scripts/devnet-cfx && go) &

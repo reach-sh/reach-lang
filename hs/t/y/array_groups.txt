@@ -2,8 +2,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-  Verifying when ONLY "A" is honest
-Checked 11 theorems; No failures!
+Checked 10 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
- * This program contains a loop, which cannot be tracked accurately for cost or log bytes.
+ * This program could use 3317 units of cost, but the limit is 700: TOP --27--> preamble --4--> l0_preamble_lt_1 --1--> publish0 --102--> l2_checkTxnK --5--> l3_forTop --672--> l4_forEnd --4--> l5_forTop --5--> l7_forTop --910--> l8_forEnd --840--> l6_forEnd --4--> l9_forTop --700--> l10_forEnd --18--> updateState --7--> checkSize --16--> done --2--> BOT
 

@@ -376,7 +376,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 
 	function addDiagnostic(element: ErrorLocation, message: string, details: string, severity: DiagnosticSeverity, code: string | undefined, suggestions: string[], source: string) {
-		const href = `https://docs.reach.sh/${code}.html`;
+		const href = `https://docs.reach.sh/rsh/errors/#${code}`;
 		let diagnostic: Diagnostic = {
 			severity: severity,
 			range: element.range,
@@ -407,7 +407,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 connection.onDidChangeWatchedFiles(_change => {
 	// Monitored files have change in VSCode
-	connection.console.log('We received an file change event');
+	connection.console.log('We received a file change event.');
 });
 
 export interface ErrorLocation {

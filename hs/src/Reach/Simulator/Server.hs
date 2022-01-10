@@ -137,6 +137,9 @@ unblockProg sid aid v = do
             Just (C.A_Interact _at _slcxtframes _part _str _dltype _args) -> do
               let ps = k (g,l) v
               processNewState (Just sid) ps
+            Just (C.A_Remote _at _slcxtframes _str _args1 _args2) -> do
+              let ps = k (g,l) v
+              processNewState (Just sid) ps
             Just (C.A_InteractV _part _str _dltype) -> do
               let ps = k (g,l) v
               processNewState (Just sid) ps
@@ -183,6 +186,10 @@ getEdges :: WebM [(StateId,StateId)]
 getEdges = do
   es <- gets e_edges
   return es
+
+resetServer :: WebM ()
+resetServer = do
+  modify $ \ _ -> initSession
 
 getProgState :: StateId -> WebM (Maybe C.State)
 getProgState sid = do
@@ -301,6 +308,11 @@ app p = do
     setHeaders
     as <- webM $ computeActions
     json as
+
+  post "/reset" $ do
+    setHeaders
+    _ <- webM $ resetServer
+    json ("OK" :: String)
 
   post "/states/:s/actions/:a/" $ do
     setHeaders

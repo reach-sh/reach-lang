@@ -12,9 +12,6 @@ import Reach.AST.PL
 class Sanitize a where
   sani :: a -> a
 
-sb :: SrcLoc
-sb = srcloc_builtin
-
 instance (Functor f, Sanitize a) => Sanitize (f a) where
   sani = fmap sani
 
@@ -61,7 +58,7 @@ instance Sanitize DLExpr where
     DLE_Arg _ a -> DLE_Arg sb $ sani a
     DLE_LArg _ a -> DLE_LArg sb $ sani a
     DLE_Impossible _ t m -> DLE_Impossible sb t m
-    DLE_VerifyMuldiv _ cl as err -> DLE_VerifyMuldiv sb cl (sani as) err
+    DLE_VerifyMuldiv _ f cl as err -> DLE_VerifyMuldiv sb f cl (sani as) err
     DLE_PrimOp _ f as -> DLE_PrimOp sb f (sani as)
     DLE_ArrayRef _ a i -> DLE_ArrayRef sb (sani a) (sani i)
     DLE_ArraySet _ a i v -> DLE_ArraySet sb (sani a) (sani i) (sani v)
@@ -88,6 +85,7 @@ instance Sanitize DLExpr where
     DLE_GetAddress _ -> DLE_GetAddress sb
     DLE_EmitLog _ k a -> DLE_EmitLog sb k (sani a)
     DLE_setApiDetails _ w d c f -> DLE_setApiDetails sb w d c f
+    DLE_GetUntrackedFunds _ mt tb -> DLE_GetUntrackedFunds sb (sani mt) (sani tb)
 
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m

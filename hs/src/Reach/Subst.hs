@@ -76,7 +76,7 @@ instance Subst DLExpr where
     DLE_Arg at a -> DLE_Arg at <$> subst a
     DLE_LArg at a -> DLE_LArg at <$> subst a
     e@(DLE_Impossible {}) -> return $ e
-    DLE_VerifyMuldiv at cl as err -> DLE_VerifyMuldiv at cl <$> subst as <*> pure err
+    DLE_VerifyMuldiv at f cl as err -> DLE_VerifyMuldiv at f cl <$> subst as <*> pure err
     DLE_PrimOp at p as -> DLE_PrimOp at p <$> subst as
     DLE_ArrayRef at a b -> DLE_ArrayRef at <$> subst a <*> subst b
     DLE_ArraySet at a b c -> DLE_ArraySet at <$> subst a <*> subst b <*> subst c
@@ -103,6 +103,7 @@ instance Subst DLExpr where
     DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at lk x -> DLE_EmitLog at lk <$> subst x
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
+    DLE_GetUntrackedFunds at mtok tb -> DLE_GetUntrackedFunds at <$> subst mtok <*> subst tb
 
 instance Subst DLStmt where
   subst = \case

@@ -1,8 +1,8 @@
 Verifying knowledge assertions
-Verifying for generic connector
+Verifying for ALGO connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-  Verifying when ONLY "A" is honest
-  Verifying when ONLY "B_z" is honest
-  Verifying when ONLY "B_z2" is honest
-Checked 484 theorems; No failures!
+Verifying for ETH connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 476 theorems; No failures!

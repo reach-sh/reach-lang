@@ -243,6 +243,9 @@ smtConstant :: DLConstant -> String
 smtConstant = \case
   DLC_UInt_max -> "dlc_UInt_max"
 
+smt_c :: SrcLoc -> DLConstant -> App SExpr
+smt_c at c = smt_a at $ DLA_Constant c
+
 getVarName :: DLVar -> String
 getVarName (DLVar _ _ _ i) = "v" ++ show i
 
@@ -415,7 +418,7 @@ parseVal env t v = do
             _ -> impossible $ "parseVal: Bool: " <> show v
         T_UInt -> do
           let err = impossible $ "parseVal: UInt: " <> show v
-          let readInt i = fromMaybe err (readMaybe i :: Maybe Int)
+          let readInt i = fromMaybe err (readMaybe i :: Maybe Integer)
           case v of
             Atom i -> return $ SMV_Int $ readInt i
             -- SMT can produce negative values when dealing with unsafe arithmetic (sub wraparound etc.)
@@ -438,7 +441,7 @@ parseVal env t v = do
           let err = impossible $ "parseVal: Address: " <> show v
           case v of
             Atom i -> return $ SMV_Address $
-              fromMaybe err (readMaybe $ dropWhile (not . isDigit) i :: Maybe Int)
+              fromMaybe err (readMaybe $ dropWhile (not . isDigit) i :: Maybe Integer)
             _ -> err
         T_Bytes _ -> do
           case v of
@@ -971,11 +974,12 @@ smt_e at_dv mdv de = do
     DLE_Arg at da -> bound at =<< smt_a at da
     DLE_LArg at dla -> bound at =<< smt_la at dla
     DLE_Impossible {} -> unbound at_dv
-    DLE_VerifyMuldiv at cl args _ -> do
+    DLE_VerifyMuldiv at f cl args _ -> do
       args' <- mapM (smt_a at) args
       md <- smtMulDiv args'
-      let lt = uint256_le md (Atom $ smtConstant DLC_UInt_max)
-      doClaim at [] cl lt Nothing
+      rhs <- smt_c at DLC_UInt_max
+      let lt = uint256_le md rhs
+      doClaim at f cl lt Nothing
     DLE_PrimOp at cp args -> do
       let f = case cp of
                 SELF_ADDRESS {} -> \ se -> pathAddBound at mdv (Just $ SMTProgram de) se Witness
@@ -1071,6 +1075,7 @@ smt_e at_dv mdv de = do
     DLE_EmitLog at _ lv ->
       mapM_ (bound at <=< smt_v at) lv
     DLE_setApiDetails {} -> mempty
+    DLE_GetUntrackedFunds at _ _ -> unbound at
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)
@@ -1215,7 +1220,8 @@ smt_asn_def at asn = mapM_ def1 $ M.keys asnm
     def1 dv = do
       pathAddUnbound at (Just dv) (Just $ SMTModel O_Assignment)
       when (varType dv == T_UInt) $ do
-        smtAssert (smtApply "<=" [Atom $ getVarName dv, Atom $ smtConstant DLC_UInt_max])
+        rhs <- smt_c at DLC_UInt_max
+        smtAssert (smtApply "<=" [Atom $ getVarName dv, rhs])
 
 smt_alloc_id :: App Int
 smt_alloc_id = do
@@ -1418,7 +1424,7 @@ _smtDefineTypes smt ts = do
             let z = "z_" ++ n
             void $ SMT.declare smt z $ Atom n
             let idxs = [0 .. (sz -1)]
-            let idxses = map (smt_lt srcloc_builtin . DLL_Int srcloc_builtin) idxs
+            let idxses = map (smt_lt sb . DLL_Int sb) idxs
             let cons_vars = map (("e" ++) . show) idxs
             let cons_params = map (\x -> (x, Atom tn)) cons_vars
             let defn1 arrse (idxse, var) = smtApply "store" [arrse, idxse, Atom var]
@@ -1569,7 +1575,7 @@ _verify_smt mc ctxt_vst smt lp = do
           local (\e -> e {ctxt_modem = Just mode}) $ do
             forM_ dex smt_eb
             ctxtNewScope $ freshAddrs $ smt_s s
-    let ms = VM_Honest : (map VM_Dishonest (RoleContract : (map RolePart $ M.keys pies_m)))
+    let ms = [ VM_Honest, VM_Dishonest RoleContract ] -- <> (map (VM_Dishonest . RolePart) $ M.keys pies_m)
     mapM_ smt_s_top ms
 
 hPutStrLn' :: Handle -> String -> IO ()

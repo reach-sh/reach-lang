@@ -1,22 +1,30 @@
 FROM debian:buster-slim as build
-ARG CFX_VERSION="v1.1.5-testnet"
 
 RUN apt-get update; apt-get install clang libsqlite3-dev pkg-config libssl-dev cmake curl git openssl -y
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > /rustup.sh
 RUN chmod +x /rustup.sh
 RUN /rustup.sh -y
 RUN /root/.cargo/bin/rustup install 1.47.0
-RUN git clone https://github.com/Conflux-Chain/conflux-rust
+
+RUN apt-get install wget
+ARG CFX_VERSION="1.1.7"
+RUN wget --quiet https://github.com/Conflux-Chain/conflux-rust/archive/refs/tags/v${CFX_VERSION}.tar.gz && tar -xvf v${CFX_VERSION}.tar.gz
+RUN mv conflux-rust-${CFX_VERSION} conflux-rust
 WORKDIR conflux-rust
-RUN git checkout $CFX_VERSION
 COPY patch ./patch
-RUN patch -d /conflux-rust/core/src/spec/ < patch/genesis-$CFX_VERSION.patch
+RUN patch -d ./core/src/spec/ < patch/genesis.patch
 RUN /root/.cargo/bin/cargo build --release
 
+FROM node:buster-slim
 
-FROM debian:buster-slim
+# Some of these are weirdly needed to npm install on m1
+RUN apt-get update; apt-get install curl make python3 libc-dev gcc g++ -y; apt-get clean
 
-RUN apt-get update; apt-get install curl -y; apt-get clean
+RUN mkdir /faucet
+COPY faucet/package.json /faucet
+RUN cd /faucet && npm install
+COPY faucet/index.mjs /faucet
+
 COPY --from=build /conflux-rust/target/release/conflux /
 COPY log.yaml default.toml genesis_secret.txt run.sh /
 

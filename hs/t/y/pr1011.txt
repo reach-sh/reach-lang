@@ -2,12 +2,10 @@ Verifying knowledge assertions
 Verifying for ALGO connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-  Verifying when ONLY "Alice" is honest
 Verifying for ETH connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-  Verifying when ONLY "Alice" is honest
-Checked 6 theorems; No failures!
+Checked 4 theorems; No failures!
 warning[RW0004]: There are no publications in the application.
 
   ./pr1011.rsh:8:30:application

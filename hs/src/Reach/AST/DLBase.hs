@@ -78,10 +78,21 @@ arrTypeLen = \case
 arrType :: DLType -> DLType
 arrType = fst . arrTypeLen
 
+tupleTypes :: DLType -> [DLType]
+tupleTypes = \case
+  T_Tuple ts -> ts
+  _ -> impossible $ "should be tuple"
+
 bytesTypeLen :: DLType -> Integer
 bytesTypeLen = \case
   T_Bytes l -> l
   _ -> impossible "no bytes"
+
+objstrTypes :: DLType -> [(SLVar, DLType)]
+objstrTypes = \case
+  T_Object m -> M.toAscList m
+  T_Struct ts -> ts
+  _ -> impossible $ "should be obj"
 
 showTys :: Show a => [a] -> String
 showTys = List.intercalate ", " . map show
@@ -211,7 +222,9 @@ data DLVar = DLVar SrcLoc (Maybe (SrcLoc, SLVar)) DLType Int
 instance ToJSONKey DLVar
 
 instance ToJSON DLVar where
-  toEncoding = genericToEncoding defaultOptions
+  toJSON (DLVar _at mlocvar _typ int) = case mlocvar of
+    Nothing -> toJSON int
+    Just (_,sl) -> toJSON sl
 
 instance FromJSON DLVar
 
@@ -310,6 +323,12 @@ argTypeOf = \case
   DLA_Constant c -> conTypeOf c
   DLA_Literal c -> litTypeOf c
   DLA_Interact _ _ t -> t
+
+argArrTypeLen :: DLArg -> (DLType, Integer)
+argArrTypeLen = arrTypeLen . argTypeOf
+
+argObjstrTypes :: DLArg -> [(SLVar, DLType)]
+argObjstrTypes = objstrTypes . argTypeOf
 
 data DLLargeArg
   = DLLA_Array DLType [DLArg]
@@ -539,7 +558,7 @@ data DLExpr
   = DLE_Arg SrcLoc DLArg
   | DLE_LArg SrcLoc DLLargeArg
   | DLE_Impossible SrcLoc Int ImpossibleError
-  | DLE_VerifyMuldiv SrcLoc ClaimType [DLArg] ImpossibleError
+  | DLE_VerifyMuldiv SrcLoc [SLCtxtFrame] ClaimType [DLArg] ImpossibleError
   | DLE_PrimOp SrcLoc PrimOp [DLArg]
   | DLE_ArrayRef SrcLoc DLArg DLArg
   | DLE_ArraySet SrcLoc DLArg DLArg DLArg
@@ -574,6 +593,7 @@ data DLExpr
     sad_dom :: [DLType],
     sad_mcase_id :: Maybe String,
     sad_compile :: ApiInfoCompilation }
+  | DLE_GetUntrackedFunds SrcLoc (Maybe DLArg) DLArg
   deriving (Eq, Ord, Generic)
 
 data LogKind
@@ -607,7 +627,7 @@ instance PrettySubst DLExpr where
     DLE_Arg _ a -> prettySubst a
     DLE_LArg _ a -> prettySubst a
     DLE_Impossible _ _ err -> return $ "impossible" <> parens (pretty err)
-    DLE_VerifyMuldiv _ cl as _ -> do
+    DLE_VerifyMuldiv _ _ cl as _ -> do
       as' <- render_dasM as
       return $ "verifyMuldiv" <> parens (viaShow cl) <> parens as'
     DLE_PrimOp _ IF_THEN_ELSE [c, t, el] -> do
@@ -703,6 +723,8 @@ instance PrettySubst DLExpr where
       return $ "emitLog" <> parens (pretty lk) <> parens (pretty vs)
     DLE_setApiDetails _ p d mc f ->
       return $ "setApiDetails" <> parens (render_das [pretty p, pretty d, pretty mc, pretty f])
+    DLE_GetUntrackedFunds _ mtok _ ->
+      return $ "getActualBalance" <> parens (pretty mtok)
 
 instance PrettySubst LogKind where
   prettySubst = \case
@@ -722,7 +744,7 @@ instance IsPure DLExpr where
     DLE_Arg {} -> True
     DLE_LArg {} -> True
     DLE_Impossible {} -> True
-    DLE_VerifyMuldiv {} -> True
+    DLE_VerifyMuldiv {} -> False
     DLE_PrimOp {} -> True
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True
@@ -753,6 +775,7 @@ instance IsPure DLExpr where
     DLE_TimeOrder {} -> False
     DLE_EmitLog {} -> False
     DLE_setApiDetails {} -> False
+    DLE_GetUntrackedFunds {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -786,6 +809,7 @@ instance IsLocal DLExpr where
     DLE_GetAddress {} -> True
     DLE_EmitLog {} -> False
     DLE_setApiDetails {} -> False
+    DLE_GetUntrackedFunds {} -> False
 
 instance CanDupe DLExpr where
   canDupe e =

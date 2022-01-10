@@ -28,6 +28,4 @@ Verification failed:
   assert(false);
 
   Verifying when NO participants are honest
-  Verifying when ONLY "Alice" is honest
-  Verifying when ONLY "Bob" is honest
-Checked 62 theorems; 8 failures (and 6 omitted repeats) :'(
+Checked 42 theorems; 4 failures (and 2 omitted repeats) :'(

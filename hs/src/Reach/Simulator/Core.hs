@@ -209,6 +209,7 @@ data Action
   | A_InteractV String String DLType
   | A_Interact SrcLoc [SLCtxtFrame] String String DLType [DLVal]
   | A_Contest PhaseId
+  | A_Remote SrcLoc [SLCtxtFrame] String [DLVal] [DLVal]
   deriving (Generic)
 
 instance ToJSON Action
@@ -391,7 +392,7 @@ instance Interp DLExpr where
     DLE_Arg _at dlarg -> interp dlarg
     DLE_LArg _at dllargearg -> interp dllargearg
     DLE_Impossible at _int err -> expect_thrown at err
-    DLE_VerifyMuldiv at _ _ err -> expect_thrown at err
+    DLE_VerifyMuldiv at _ _ _ err -> expect_thrown at err
     DLE_PrimOp _at primop dlargs -> do
       evd_args <- mapM interp dlargs
       interpPrim (primop,evd_args)
@@ -476,7 +477,13 @@ instance Interp DLExpr where
       let m = f acc $ saferMapRef "DLE_MapSet" $ M.lookup dlmvar linst
       setGlobal $ e {e_linstate = M.insert dlmvar m linst}
       return V_Null
-    DLE_Remote _at _slcxtframes _dlarg _string _dlpayamnt _dlargs _dlwithbill -> impossible "undefined"
+    DLE_Remote at slcxtframes dlarg str dlPayAmnt dlargs _dlWithBill@DLWithBill {..} -> do
+      acc <- fromIntegral <$> vUInt <$> interp dlarg
+      tok_billed <- mapM interp dwb_tok_billed
+      args <- mapM interp dlargs
+      v <- suspend $ PS_Suspend (A_Remote at slcxtframes str args tok_billed)
+      consensusPayout acc dlPayAmnt
+      return v
     DLE_TokenNew _at dltokennew -> do
       ledgerNewToken simContract dltokennew
       return V_Null
@@ -505,6 +512,13 @@ instance Interp DLExpr where
     DLE_EmitLog _ (L_Event {}) _ -> return V_Null
     DLE_EmitLog {} -> impossible "DLE_EmitLog invariants not satisified"
     DLE_setApiDetails _ _ _ _ _ -> return V_Null
+    DLE_GetUntrackedFunds _ mtokA _ -> do
+      (e, _) <- getState
+      tok <- maybe (return nwToken) (fmap vUInt . interp) mtokA
+      let bal = saferMapRef "getActualBalance1" $ M.lookup tok $
+                  saferMapRef "getActualBalance" $ M.lookup simContract $ e_ledger e
+      return $ V_UInt bal
+
 
 instance Interp DLStmt where
   interp = \case

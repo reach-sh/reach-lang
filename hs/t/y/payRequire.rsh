@@ -9,7 +9,10 @@ export const main = Reach.App(() => {
     z: Fun([UInt], Null),
     z2: Fun([UInt], Null)
   });
-  setOptions({ verifyArithmetic: true });
+  setOptions({
+    verifyArithmetic: true,
+    verifyPerConnector: true,
+  });
   init();
 
   A.only(() => {
@@ -47,10 +50,9 @@ export const main = Reach.App(() => {
       [ (msg) => msg, (msg) => { require(msg == 1); } ],
       (_, k) => {
         k(null);
+        commit();
 
-        const keepGoing = parallelReduce(true)
-          .while(keepGoing)
-          .invariant(balance() == 1)
+        fork()
           .case(A,
             () => {
               const y = declassify(interact.y);
@@ -60,7 +62,6 @@ export const main = Reach.App(() => {
             [ (msg) => msg, (msg) => { require(msg == 1); } ],
             (_) => {
               transfer(1).to(A);
-              return false;
             })
           .case(A,
             () => {
@@ -71,7 +72,6 @@ export const main = Reach.App(() => {
             [ (msg) => msg, (msg) => { require(msg == 1); } ],
             (_) => {
               transfer(1).to(A);
-              return false;
             })
           .api(B.z2,
             (msg) => { assume(msg == 1); },
@@ -79,12 +79,7 @@ export const main = Reach.App(() => {
             (_, k2) => {
               k2(null);
               transfer(1).to(A);
-              return false;
             })
-          .timeout(relativeSecs(10), () => {
-            Anybody.publish();
-            return false;
-          });
       });
 
   transfer(1).to(A);

@@ -11,7 +11,7 @@ Read the [documentation](https://docs.reach.sh).
 
 If you want to work on the Reach compiler, you'll need:
 - stack v2.7.1
-- z3 v4.8.12
+- z3 v4.8.13
 - solidity v0.8.9
 - [mo](https://github.com/tests-always-included/mo) v2.2.0
 

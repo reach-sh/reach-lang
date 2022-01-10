@@ -116,19 +116,21 @@ checkteal () {
 #######
 
 #exit 0
-
 jb
-ci ALGO nft-auction
+ci ALGO js-tests
+exit 0
+ci ALGO atomic-swap
+ci ALGO mint-basic
+#ci ALGO js-tests
 exit 0
 
-ci CFX rps-3-bets
+export REACH_DEBUG=Y
+#c users/duoswap-core/index.rsh
+c users/xbacked-contracts/src/master_vault.rsh
 exit 0
-one ETH rpc-view-map
-exit 0
-ci ETH rps-7-loops
-ci ETH mint-basic
-ci ETH event
-ci ETH api-map
-ci ETH raffle
+
+
+
+
 
 # (cd hs && mk hs-test)

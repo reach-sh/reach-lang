@@ -22,7 +22,6 @@ import Reach.Util (impossible)
 import Data.Maybe
 import Reach.UnsafeUtil
 
-
 data BindingOrigin
   = O_Join SLPart Bool
   | O_ClassJoin SLPart
@@ -246,8 +245,8 @@ instance PrettySubst SMTTrace where
 
 data SMTVal
   = SMV_Bool Bool
-  | SMV_Int Int
-  | SMV_Address Int
+  | SMV_Int Integer
+  | SMV_Address Integer
   | SMV_Digest String
   | SMV_Null
   | SMV_Bytes B.ByteString

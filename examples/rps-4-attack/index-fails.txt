@@ -8,6 +8,4 @@ Verification failed:
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-  Verifying when ONLY "Alice" is honest
-  Verifying when ONLY "Bob" is honest
-Checked 19 theorems; 1 failures :'(
+Checked 13 theorems; 1 failures :'(

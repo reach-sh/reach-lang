@@ -8,6 +8,7 @@ const { BigNumber, utils } = ethers;
 export { BigNumber, utils };
 import { address_cfxStandardize, defaultEpochTag } from './CFX_util';
 import { debug } from './shared_impl';
+import { T_Address } from './CFX_compiled_impl';
 
 type BigNumber = ethers.BigNumber;
 type EpochNumber = cfxsdk.EpochNumber;
@@ -126,9 +127,11 @@ export class Provider {
     // XXX
   }
 
-  async getLogs(opts: {fromBlock: number, toBlock: number, address: string, topics: string[]}): Promise<any[]> {
+  async getLogs(iopts: object): Promise<any[]> {
+    const opts = iopts as {fromBlock: number};
+    // {fromBlock: number, toBlock: number, address: string, topics: string[]}
     debug(`getLogs`, `opts`, opts);
-    if ( opts.fromBlock == 0 ) {
+    if ( opts.fromBlock === 0 ) {
       opts.fromBlock = 1;
       debug(`getLogs`, `opts`, opts);
     }
@@ -142,6 +145,24 @@ export class Provider {
   async getTransaction(txnHash: string): Promise<any> {
     // @ts-ignore
     return ethifyTxn(await this.conflux.getTransactionByHash(txnHash));
+  }
+
+  async waitForTransaction(txnHash: string): Promise<TransactionReceipt> {
+    const dhead = `waitForTransaction`;
+    let r: any = undefined;
+    let howMany = 0;
+    while (! r) {
+      if ( howMany++ > 0 ) {
+        await Timeout.set(500);
+      }
+      debug(dhead, txnHash);
+      r = await this.getTransactionReceipt(txnHash);
+      debug(dhead, txnHash, r);
+    }
+    if (r.outcomeStatus !== 0) {
+      throw Error(`Transaction failed, outcomeStatus: ${r.outcomeStatus}`);
+    }
+    return r;
   }
 }
 
@@ -183,13 +204,16 @@ const conform = (args: any[], tys: ParamType[]): any[] => {
       throw Error(`impossible: number of args (${args.length}) does not match number of tys (${tys.length})`);
     }
     for (const i in tys) {
-      if (tys[i].type === 'tuple') {
+      const ty = tys[i].type;
+      if (ty === 'tuple') {
         args[i] = conform(args[i], tys[i].components);
-      } else if (tys[i].type === 'bool') {
+      } else if (ty === 'bool') {
         args[i] = booleanize(args[i]);
+      } else if (ty === 'address') {
+        args[i] = T_Address.munge(T_Address.canonicalize(args[i]));
       } else {
         // XXX handle more stuff
-        // debug(`conform untouched:`, args[i], tys[i])
+        debug(`conform untouched:`, args[i], tys[i])
       }
     }
   }
@@ -214,7 +238,8 @@ const prepForConfluxPortal = (txnOrig: any): any => {
 }
 
 const addEstimates = async (cfx:any, txn:any): Promise<any> => {
-  debug(`addEstimates 1: start:`, txn);
+  const dhead = 'addEstimates';
+  debug(dhead, `1: start:`, txn);
   type stringy = {toString: () => string} | undefined;
   type Num = BigInt;
   const numy = (n: stringy): Num => BigInt(n?.toString() || '0');
@@ -225,37 +250,44 @@ const addEstimates = async (cfx:any, txn:any): Promise<any> => {
   };
   let gas: Num = f("gas");
   let storage: Num = f("storageLimit");
-  debug(`addEstimates 2:  orig:`, { gas, storage });
+  debug(dhead, `2:  orig:`, { gas, storage });
 
   let est: {gasUsed?: stringy, storageCollateralized?: stringy} | undefined = undefined;
   let est_err = undefined;
+  try {
+    const n = await cfx.getNextNonce(txn.from);
+    txn.nonce = n;
+    debug(dhead, `n:nonce:`, {n});
+  } catch (e) {
+    debug(dhead, `n:nonce:`, {e});
+  }
   try {
     est = await cfx.estimateGasAndCollateral(txn);
   } catch (e) {
     est_err = e;
   }
-  debug(`addEstimates 3:   est:`, { est, est_err });
+  debug(dhead, `3:   est:`, { est, est_err });
   if ( est ) {
     const g = (x:any, y:any) => ((y > x) ? y : x);
     gas = g(gas, numy(est?.gasUsed));
     storage = g(storage, numy(est?.storageCollateralized));
   }
-  debug(`addEstimates 4: eused:`, { gas, storage });
+  debug(dhead, `4: eused:`, { gas, storage });
   if ( storage === undefined || storage === numy(0) ) {
     storage = numy(2048);
   }
-  debug(`addEstimates 5:  non0:`, { gas, storage });
+  debug(dhead, `5:  non0:`, { gas, storage });
 
   const h = (x:any, y:any) => numy(format.big(x).times(y).toFixed(0));
   gas = h(gas, cfx.defaultGasRatio);
   storage = h(storage, cfx.defaultStorageRatio);
-  debug(`addEstimates 6: ratio:`, { gas, storage });
+  debug(dhead, `6: ratio:`, { gas, storage });
 
   let gasu: Num | undefined = gas;
   if ( gas === numy('0') ) {
     gasu = undefined;
   }
-  debug(`addEstimates 7:   und:`, { gasu, storage });
+  debug(dhead, `7:   und:`, { gasu, storage });
 
   txn.gas = gasu?.toString();
   txn.storageLimit = storage.toString();
@@ -360,50 +392,23 @@ export class Contract implements IContract {
         // @ts-ignore
         const cfc = self._contract[fname].call(...argsConformed);
         debug(`cfxers:handler`, fname, `cfc`, cfc);
-        const {to, data} = cfc; // ('to' is just ctc address)
+        let {to, data} = cfc; // ('to' is just ctc address)
+        to = to || self.address;
         txn = { ...txn, to, data};
         // @ts-ignore
         txn = await addEstimates(this._wallet.provider.conflux, txn);
         debug(`cfxers:handler`, fname, `txn`, txn);
-        const res = await _wallet.sendTransaction(txn);
-        const {transactionHash} = await res.wait();
-        return {
-          // XXX not sure what the distinction is supposed to be here
-          wait: async () => {
-            debug('cfxers:handler', fname, 'wait');
-            return {
-              transactionHash
-            };
-          }
-        };
+        return await _wallet.sendTransaction(txn);
       } else {
         debug(`cfxers:handler`, fname, 'view')
-        // XXX in this case it doesn't return something with `wait`,
-        // it just returns the result. Weird design choice, ethers. =/
+        // In this case it doesn't return something with `wait`, it just
+        // returns the result. Weird design choice, ethers. =/
         // @ts-ignore
         return await self._contract[fname].call(...argsConformed);
       }
     }
   }
 }
-
-const waitReceipt = async (provider: providers.Provider, txnHash: string): Promise<TransactionReceipt> => {
-  const dhead = `waitReceipt`;
-  let r: any = undefined;
-  let howMany = 0;
-  while (! r) {
-    if ( howMany++ > 0 ) {
-      await Timeout.set(500);
-    }
-    debug(dhead, txnHash);
-    r = await provider.getTransactionReceipt(txnHash);
-    debug(dhead, txnHash, r);
-  }
-  if (r.outcomeStatus !== 0) {
-    throw Error(`Transaction failed, outcomeStatus: ${r.outcomeStatus}`);
-  }
-  return r;
-};
 
 export class ContractFactory {
   abi: any[]
@@ -432,7 +437,7 @@ export class ContractFactory {
     const deployTxn = this.getDeployTransaction(...args);
     const resultP = wallet.sendTransaction(deployTxn);
     const hash = (await resultP).transactionHash;
-    const receiptP = waitReceipt(wallet.provider, hash);
+    const receiptP = wallet.provider.waitForTransaction(hash);
 
     const txnRes = await conflux.getTransactionByHash(hash);
     debug(`deploy result`, {hash, txnRes});
@@ -528,10 +533,11 @@ export class BrowserWallet implements IWallet {
       method: 'cfx_sendTransaction',
       params: [txn],
     });
+    debug('sendTransaction', { txn, data });
     const transactionHash = data.result;
     return {
       transactionHash,
-      wait: () => waitReceipt(provider, transactionHash)
+      wait: () => provider.waitForTransaction(transactionHash)
     };
   }
 }
@@ -578,11 +584,11 @@ export class Wallet implements IWallet {
 
   async sendTransaction(txn: any): Promise<TransactionResponse> {
     this._requireConnected();
-    const provider = this.provider;
-    if (!provider) throw Error(`Impossible: provider is undefined`);
+    const p = this.provider;
+    if (!p) throw Error(`Impossible: provider is undefined`);
     const from = this.getAddress();
     txn = {from, ...txn, value: (txn.value || '0').toString()};
-    txn = await addEstimates(provider.conflux, txn);
+    txn = await addEstimates(p.conflux, txn);
     // This is weird but whatever
     if (txn.to instanceof Promise) {
        txn.to = await txn.to;
@@ -590,21 +596,37 @@ export class Wallet implements IWallet {
     const dhead = `retryingSendTxn`;
     let howMany = 0;
     while ( true ) {
+      if ( howMany++ > 0 ) {
+        await Timeout.set(500);
+      }
+      debug(dhead, `attempt`, howMany, txn);
+      // Note: {...txn} because conflux is going to mutate it >=[
+      const txnMut = {...txn};
       try {
-        debug(dhead, `attempt`, howMany++, txn);
-        // Note: {...txn} because conflux is going to mutate it >=[
-        const txnMut = {...txn};
-        const transactionHash = await provider.conflux.sendTransaction(txnMut);
-        debug(dhead, `sent`, {txn, txnMut, transactionHash});
+        const th = await p.conflux.sendTransaction(txnMut);
+        debug(dhead, `sent`, {txn, txnMut, th});
+        let got: {blockHash?: string}|null = null;
+        let howMany = 0;
+        while ( ! ( got && got.blockHash ) ) {
+          if ( howMany++ > 2 * 60 * 5 ) {
+            throw Error(`${dhead} timeout in mining ${th}`);
+          }
+          debug(dhead, 'get', howMany, th);
+          await Timeout.set(500);
+          got = await p.conflux.getTransactionByHash(th);
+        }
         return {
-          transactionHash,
-          wait: () => waitReceipt(provider, transactionHash)
+          ...got,
+          transactionHash: th,
+          wait: () => p.waitForTransaction(th)
         }
       } catch (e:any) {
         const es = JSON.stringify(e);
-        debug(dhead, `err`, { e, es });
-        if ( es.includes("stale nonce") || es.includes("same nonce") || es.includes('tx already exist') ) {
-          debug(dhead, `nonce error`);
+        debug(dhead, `err`, { txn, e, es });
+        //if ( es.includes("stale nonce") || es.includes("same nonce") || es.includes('tx already exist') ) {
+        //  debug(dhead, `nonce error`);
+        if ( e.code === -32077 ) {
+          debug(dhead, 'catchingUp');
         } else {
           throw e;
         }

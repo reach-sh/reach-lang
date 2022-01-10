@@ -2,9 +2,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-  Verifying when ONLY "Alice" is honest
-  Verifying when ONLY "Bob" is honest
-Checked 4 theorems; No failures!
+Checked 2 theorems; No failures!
 warning[RW0000]: `deploy` is now deprecated. Use `init`.
 
   ./deploy.rsh:10:3:id ref

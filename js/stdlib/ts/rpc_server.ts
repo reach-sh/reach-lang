@@ -36,7 +36,7 @@ export const mkKont = () => {
   let   i: number = 0;
 
   const mkWas = (m: string) => (e: Error): boolean =>
-    !!(e.message
+    !!(e.message && e.message
       .substr(0, m.length)
       .match(`^${m}$`));
 

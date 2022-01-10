@@ -59,9 +59,6 @@ conName' = "ETH"
 conCons' :: DLConstant -> DLLiteral
 conCons' DLC_UInt_max = DLL_Int sb $ 2 ^ (256 :: Integer) - 1
 
-sb :: SrcLoc
-sb = srcloc_builtin
-
 solString :: String -> Doc
 solString s = squotes $ pretty s
 
@@ -397,6 +394,7 @@ instance DepthOf DLExpr where
     DLE_GetAddress {} -> return 1
     DLE_EmitLog _ _ a -> add1 $ depthOf a
     DLE_setApiDetails {} -> return 0
+    DLE_GetUntrackedFunds _ mt tb -> max <$> depthOf mt <*> depthOf tb
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])
@@ -570,7 +568,7 @@ solExpr sp = \case
     impossible "large arg"
   DLE_Impossible at _ err ->
     expect_thrown at err
-  DLE_VerifyMuldiv at _ _ err ->
+  DLE_VerifyMuldiv at _ _ _ err ->
     expect_thrown at err
   DLE_PrimOp _ p args -> do
     args' <- mapM solArg args
@@ -647,7 +645,7 @@ solExpr sp = \case
     u' <- go dtn_url
     m' <- go dtn_metadata
     p' <- solArg dtn_supply
-    d' <- maybe (return $ solLit $ DLL_Int srcloc_builtin 18) solArg dtn_decimals
+    d' <- maybe (return $ solLit $ DLL_Int sb 18) solArg dtn_decimals
     return $ solApply "payable" [ solApply "address" [ "new" <+> solApply "ReachToken" [ n', s', u', m', p', d' ] ] ]
   DLE_TokenBurn _ ta aa -> do
     ta' <- solArg ta
@@ -656,6 +654,14 @@ solExpr sp = \case
   DLE_TokenDestroy _ ta -> do
     ta' <- solArg ta
     return $ solApply "safeReachTokenDestroy" [ ta' ] <> sp
+  DLE_GetUntrackedFunds _ mtok tb -> do
+    tb' <- solArg tb
+    bal <- case mtok of
+          Nothing -> return "address(this).balance"
+          Just tok -> do
+            tok' <- solArg tok
+            return $ solApply "tokenBalanceOf" [tok', "address(this)"]
+    solPrimApply SUB [bal, tb']
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract {} -> return $ "payable(address(this))"
   DLE_GetAddress {} -> return $ "payable(address(this))"
