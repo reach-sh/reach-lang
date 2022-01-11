@@ -603,12 +603,13 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
       const out_arr = [];
       let i = 0;
       for ( const l of in_arr ) {
-        i++;
         if (firstLineIndex && i < firstLineIndex) {
+          i++;
           continue;
         } else if (lastLineIndex && lastLineIndex < i) {
           break;
         }
+        i++;
         out_arr.push(f(i, l));
       }
       return [ out_arr.join(''), in_arr.length != 1 ];
