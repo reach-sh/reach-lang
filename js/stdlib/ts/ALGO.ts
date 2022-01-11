@@ -436,7 +436,9 @@ const sign_and_send_sync = async (
     return await signSendAndConfirm(acc, [txn]);
   } catch (e) {
     console.log(e);
-    throw Error(`${label} txn failed:\n${JSON.stringify(txn)}\nwith:\n${JSON.stringify(e)}`);
+    let es = JSON.stringify(e);
+    if ( es === '{}' ) { es = `${e}`; };
+    throw Error(`${label} txn failed:\n${JSON.stringify(txn)}\nwith:\n${es}`);
   }
 };
 
