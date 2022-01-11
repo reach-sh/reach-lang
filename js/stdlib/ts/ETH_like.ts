@@ -566,14 +566,15 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
       const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
         const { funcNum, evt_cnt, lct, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt } = srargs;
-        const doRecv = async (didSend: boolean, waitIfNotPresent: boolean): Promise<Recv> => {
+        const doRecv = async (didSend: boolean, waitIfNotPresent: boolean, msg: string): Promise<Recv> => {
+          debug(dhead, `doRecv`, msg);
           if ( ! didSend && lct.eq(0) ) {
-            throw new Error(`API call failed`);
+            throw new Error(`API call failed: ${msg}`);
           }
           return await recv({funcNum, evt_cnt, out_tys, didSend, waitIfNotPresent, timeoutAt});
         };
         if ( ! onlyIf ) {
-          return await doRecv(false, true);
+          return await doRecv(false, true, `onlyIf false`);
         }
 
         const funcName = reachPublish(funcNum);
@@ -585,7 +586,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           // APIs can't do this, because they would see everything from the
           // beginning, which isn't what they're expecting.
           if ( ! isAPI ) {
-            return await doRecv(didSend, false);
+            return await doRecv(didSend, false, `succeeded`);
           } else {
             const ethersC = await getC();
             const correctStep = makeHasLogFor((() => ethersC.address), iface, funcNum, out_tys);
@@ -631,11 +632,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           debug(dhead, 'TIMECHECK', { timeoutAt });
           if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, await getNetworkTimeNumber() + 1) ) {
             debug(dhead, 'FAIL/TIMEOUT');
-            return await doRecv(false, false);
+            return await doRecv(false, false, `timeout`);
           }
           if ( ! soloSend && ! await canIWin(lct) ) {
             debug(dhead, `CANNOT WIN`);
-            return await doRecv(false, false);
+            return await doRecv(false, false, `cannot win ${lct}`);
           }
           let ok_r;
           try {
@@ -643,9 +644,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             ok_r = await callC(dhead, funcName, arg, pay);
           } catch (e:any) {
             debug(dhead, `ERROR`, { stack: e.stack }, e);
+            const jes = JSON.stringify(e);
             if ( ! soloSend ) {
               debug(dhead, `LOST`);
-              return await doRecv(false, false);
+              return await doRecv(false, false, jes);
             }
 
             if ( timeoutAt ) {
@@ -654,7 +656,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               continue;
             } else {
               // Otherwise, something bad is happening
-              throw Error(`${label} failed to call ${funcName}: ${JSON.stringify(e)}`);
+              throw Error(`${label} failed to call ${funcName}: ${jes}`);
             }
           }
 

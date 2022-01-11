@@ -1210,17 +1210,17 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
         const { funcNum, evt_cnt, lct, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt, sim_p } = srargs;
         const isCtor = (funcNum === 0);
-        const doRecv = async (didSend: boolean, waitIfNotPresent: boolean): Promise<Recv> => {
+        const doRecv = async (didSend: boolean, waitIfNotPresent: boolean, msg: string): Promise<Recv> => {
+          debug(dhead, `doRecv`, msg);
           if ( ! didSend && lct.eq(0) ) {
-            throw new Error(`API call failed`);
+            throw new Error(`API call failed: ${msg}`);
           }
           return await recv({funcNum, evt_cnt, out_tys, didSend, waitIfNotPresent, timeoutAt});
         };
         const funcName = `m${funcNum}`;
         const dhead = `${label}: sendrecv ${funcName} ${timeoutAt}`;
         if ( ! onlyIf ) {
-          debug(dhead, `onlyIf false`);
-          return await doRecv(false, true);
+          return await doRecv(false, true, `onlyIf false`);
         }
 
         const trustedRecv = async (txn:RecvTxn): Promise<Recv> => {
@@ -1306,12 +1306,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           // happened.
           debug(dhead, '--- TIMECHECK', { params, timeoutAt });
           if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, params.firstRound + 1) ) {
-            debug(dhead, '--- FAIL/TIMEOUT');
-            return await doRecv(false, false);
+            return await doRecv(false, false, `timeout`);
           }
           if ( ! soloSend && ! await canIWin(lct) ) {
-            debug(dhead, `CANNOT WIN`);
-            return await doRecv(false, false);
+            return await doRecv(false, false, `cannot win ${lct}`);
           }
 
           debug(dhead, '--- ASSEMBLE w/', params);
@@ -1454,12 +1452,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             const es = ( e.type === 'sendRawTransaction' ) ?
               format_failed_request(e?.e) : e;
             debug(dhead, '--- FAIL:', es);
+            const jes = JSON.stringify(es);
 
             if ( ! soloSend ) {
               // If there is no soloSend, then someone else "won", so let's
               // listen for their message
               debug(dhead, 'LOST');
-              return await doRecv(false, false);
+              return await doRecv(false, false, jes);
             }
 
             if ( timeoutAt ) {
@@ -1468,7 +1467,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               continue;
             } else {
               // Otherwise, something bad is happening
-              throw Error(`${label} failed to call ${funcName}: ${JSON.stringify(es)}`);
+              throw Error(`${label} failed to call ${funcName}: ${jes}`);
             }
           }
 

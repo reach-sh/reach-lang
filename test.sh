@@ -117,7 +117,7 @@ checkteal () {
 
 #exit 0
 jb
-ci ALGO js-tests
+ci ALGO api-fail
 exit 0
 ci ALGO atomic-swap
 ci ALGO mint-basic
