@@ -14,11 +14,14 @@
 <div class="container-fluid">
 
 <div class="row first-row">
-  <div class="col-4">
+  <div class="col-3">
     <pre><code id="cx" class="language-javascript"></code></pre>
   </div>
-  <div class="col-7">
-    <div id="cy"> </div>
+  <div class="col-4">
+    <div id="cy" class="bordered"> </div>
+  </div>
+  <div class="col-4">
+    <div id="spa" class="bordered"> </div>
   </div>
 </div>
 
@@ -29,7 +32,7 @@
     <button type="button" id="initButton" class="btn btn-outline-dark btn-sm">Init</button>
     <button type="button" id="statesButton" class="btn btn-outline-dark btn-sm">Get States</button>
     <button type="button" id="resetButton" class="btn btn-outline-dark btn-sm">Reset</button>
-    <button type="button" id="printButton" class="btn btn-outline-dark btn-sm">Print Log To Console</button>
+    <button type="button" id="printButton" class="btn btn-outline-dark btn-sm">Print Log</button>
 
     <div class="row">
       <div class="col-8 bordered d-flex justify-content-center">
@@ -80,8 +83,7 @@
   </div>
   <div class="col-3">
     <div id="input">
-      <label for="inputJsonScript" class="form-label">Input JSON script here:</label>
-      <textarea class="form-control" id="inputJsonScript" rows="10"></textarea>
+      <textarea class="form-control" id="inputJsonScript" rows="10" placeholder="Input JSON script here"></textarea>
       <button type="button" id="inputJsonButton" class="btn btn-outline-dark btn-sm">Run Script</button>
     </div>
   </div>

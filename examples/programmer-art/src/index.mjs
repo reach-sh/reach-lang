@@ -47,6 +47,38 @@ const srcHtml = Prism.highlight(rsh, Prism.languages.javascript, 'javascript');
 const prism = document.querySelector("#cx")
 prism.innerHTML = srcHtml
 
+const spa = document.querySelector("#spa")
+
+const renderObjects = async (nodeId) => {
+  const r = await c.getStateLocals(nodeId)
+  let obs = ``
+  for (const [k,v] of Object.entries(r.l_locals)) {
+    console.log(k, v);
+    let who = v.l_who ? v.l_who : 'Consensus'
+    let status = 'Initial'
+    switch (v.l_ks) {
+      case 'PS_Suspend':
+        status = 'Running'
+        break;
+      case 'PS_Done':
+        status = 'Done'
+        break;
+    }
+    obs = obs + `
+      <button type="button"
+      class="list-group-item list-group-item-action">
+      ${who}
+      <span class="badge bg-secondary">${status}</span>
+      </button> `
+  }
+  console.log(r)
+  spa.innerHTML = `
+  <ul class="list-group list-group-flush">
+    ${obs}
+  </ul>
+  `
+}
+
 const redraw = async () => {
   let edges = await c.getEdges()
   let states = await c.getStates()
@@ -84,6 +116,10 @@ const redraw = async () => {
     layout: {
       name: 'klay'
     }
+  });
+  cy.bind('click', 'node', function(evt) {
+    const nodeId = evt.target.id()
+    renderObjects(nodeId)
   });
 }
 
