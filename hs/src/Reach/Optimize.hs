@@ -276,9 +276,7 @@ instance Optimize DLExpr where
     DLE_Impossible at tag lab ->
       return $ DLE_Impossible at tag lab
     DLE_VerifyMuldiv at f cl args err ->
-      opt (DLE_PrimOp at MUL_DIV args) >>= \case
-        DLE_PrimOp _ _ args' -> return $ DLE_VerifyMuldiv at f cl args' err
-        ow -> return ow
+      DLE_VerifyMuldiv at f cl <$> opt args <*> pure err
     DLE_PrimOp at p as -> do
       as' <- opt as
       let meh = return $ DLE_PrimOp at p as'
