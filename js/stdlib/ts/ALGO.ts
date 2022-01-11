@@ -387,14 +387,16 @@ const signSendAndConfirm = async (
   try {
     await p.signAndPostTxns(txns);
   } catch (e) {
-    throw { type: 'signAndPost', e };
+    const es = `${e}`;
+    throw { type: 'signAndPost', e, es };
   }
   const N = txns.length - 1;
   const tN = decodeB64Txn(txns[N].txn);
   try {
     return await waitForConfirmation(tN.txID()); // tN.lastRound
   } catch (e) {
-    throw { type: 'waitForConfirmation', e };
+    const es = `${e}`;
+    throw { type: 'waitForConfirmation', e, es };
   }
 };
 
