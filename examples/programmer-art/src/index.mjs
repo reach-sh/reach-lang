@@ -49,11 +49,12 @@ prism.innerHTML = srcHtml
 
 const spa = document.querySelector("#spa")
 
+let objectsHTML = null;
+
 const renderObjects = async (nodeId) => {
   const r = await c.getStateLocals(nodeId)
   let obs = ``
   for (const [k,v] of Object.entries(r.l_locals)) {
-    console.log(k, v);
     let who = v.l_who ? v.l_who : 'Consensus'
     let status = 'Initial'
     switch (v.l_ks) {
@@ -66,17 +67,70 @@ const renderObjects = async (nodeId) => {
     }
     obs = obs + `
       <button type="button"
-      class="list-group-item list-group-item-action">
+      class="list-group-item list-group-item-action object-button"
+      data-actor-id="${k}"
+      data-node-id="${nodeId}">
       ${who}
       <span class="badge bg-secondary">${status}</span>
       </button> `
   }
-  console.log(r)
   spa.innerHTML = `
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item active" aria-current="page">Objects</li>
+    </ol>
+  </nav>
   <ul class="list-group list-group-flush">
     ${obs}
   </ul>
   `
+  objectDetails()
+}
+
+const objectDetails = async () => {
+  let objectBtns = document.querySelector(".object-button")
+  const renderObjectDetails = async (evt) => {
+    objectsHTML = spa.innerHTML
+    const tgt = evt.target.closest(".object-button")
+    const nodeId = tgt.dataset.nodeId
+    const actorId = parseInt(tgt.dataset.actorId)
+    const r = await c.getStateLocals(nodeId)
+    const detsj = r.l_locals[actorId]
+    let dets = ``
+    for (const [varName,varDetails] of detsj.l_store) {
+      const typing = varDetails.tag
+      const varValue = varDetails.contents
+      dets = dets + `
+        <button type="button"
+        class="list-group-item list-group-item-action object-button"
+        >
+        ${varName} := ${varValue}
+        <span class="badge bg-secondary">${typing}</span>
+        </button> `
+    }
+    spa.innerHTML = `
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Object Details</li>
+      </ol>
+    </nav>
+    <ul class="list-group list-group-flush">
+      ${dets}
+    </ul>
+    `
+    const objectsLink = document.querySelector("#return-to-objects")
+    const backtrackToObjects = () => {
+      if (objectsHTML) {
+        spa.innerHTML = objectsHTML
+        objectsHTML = null;
+        objectBtns = document.querySelector(".object-button")
+        objectBtns.addEventListener("click",renderObjectDetails)
+      }
+    }
+    objectsLink.addEventListener("click",backtrackToObjects)
+  }
+  objectBtns.addEventListener("click",renderObjectDetails)
 }
 
 const redraw = async () => {
