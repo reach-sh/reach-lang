@@ -1,6 +1,7 @@
 export const connector = 'ALGO';
 
 import algosdk from 'algosdk';
+export { default as algosdk } from 'algosdk';
 import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
@@ -369,7 +370,7 @@ const doSignTxn = (ts:string, sk:SecretKey): string => {
   return doSignTxnToB64(decodeB64Txn(ts), sk);
 };
 
-const signSendAndConfirm = async (
+export const signSendAndConfirm = async (
   acc: NetworkAccount,
   txns: Array<WalletTransaction>,
 ): Promise<RecvTxn> => {
@@ -404,7 +405,7 @@ const encodeUnsignedTransaction = (t:Transaction): string => {
   return Buffer.from(algosdk.encodeUnsignedTransaction(t)).toString('base64');
 };
 
-const toWTxn = (t:Transaction): WalletTransaction => {
+export const toWTxn = (t:Transaction): WalletTransaction => {
   return {
     txn: encodeUnsignedTransaction(t),
     signers: [ txnFromAddress(t) ],
@@ -414,7 +415,7 @@ const toWTxn = (t:Transaction): WalletTransaction => {
 // Backend
 const stdWait = () => Timeout.set(1000);
 
-const getTxnParams = async (label: string): Promise<TxnParams> => {
+export const getTxnParams = async (label: string): Promise<TxnParams> => {
   const dhead = `${label} fillTxn`;
   debug(dhead, `getting params`);
   const client = await getAlgodClient();
@@ -876,7 +877,7 @@ const NOTE_Reach_str = `Reach ${VERSION}`;
 const NOTE_Reach = str2note(NOTE_Reach_str);
 const NOTE_Reach_tag = (tag:number|undefined) => tag ? str2note(NOTE_Reach_str + ` ${tag})`) : NOTE_Reach;
 
-const makeTransferTxn = (
+export const makeTransferTxn = (
   from: Address,
   to: Address,
   value: BigNumber,
