@@ -562,12 +562,12 @@ bidders.member(Alice); // false
 ```
 
 
-A `{!rsh} Set` is another container for linear state. It is simply a type alias of `{!rsh} Map(Null)`;
-it is only useful for tracking `{!rsh} Address`es. Because a `{!rsh} Set` is internally a `{!rsh} Map`, it may
-only be constructed in a consensus step.
+A `{!rsh} Set` is another container for linear state. It is simply a type alias of `{!rsh} Map(Null)`; it is only useful for tracking `{!rsh} Address`es. Because a `{!rsh} Set` is internally a `{!rsh} Map`, it may only be constructed in a consensus step.
 
-A `{!rsh} Set` may be modified by writing `{!rsh} s.insert(ADDRESS)` to install `{!rsh} ADDRESS` in the
-set, `{!rsh} s`, or `{!rsh} s.remove(ADDRESS)` to remove the `{!rsh} ADDRESS` from the set.
-Such modifications may only occur in a consensus step.
+As a use case example, a `{!rsh} Set` can whitelist an unbounded amount of addresses after the contract exits. Alternatively, an [array](https://docs.reach.sh/rsh/compute/#ref-programs-arrays) stores a maximum of 256 addresses (roughly 8k worth of data).
+
+One consideration when using `{!rsh} Set` is that address owners pay for storage. Participants are given the opportunity to opt-in or decline before payments are extracted.
+
+A `{!rsh} Set` may be modified by writing `{!rsh} s.insert(ADDRESS)` to install `{!rsh} ADDRESS` in the set, `{!rsh} s`, or `{!rsh} s.remove(ADDRESS)` to remove the `{!rsh} ADDRESS` from the set. Such modifications may only occur in a consensus step.
 
 `{!rsh} s.member(ADDRESS)` will return a `{!rsh} Bool` representing whether the address is in the set.
