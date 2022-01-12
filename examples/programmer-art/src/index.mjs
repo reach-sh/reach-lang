@@ -55,7 +55,7 @@ const renderObjects = async (nodeId) => {
   const r = await c.getStateLocals(nodeId)
   let obs = ``
   for (const [k,v] of Object.entries(r.l_locals)) {
-    let who = v.l_who ? v.l_who : 'Consensus'
+    const who = v.l_who ? v.l_who : 'Consensus'
     let status = 'Initial'
     switch (v.l_ks) {
       case 'PS_Suspend':
@@ -95,8 +95,36 @@ const objectDetails = async () => {
     const nodeId = tgt.dataset.nodeId
     const actorId = parseInt(tgt.dataset.actorId)
     const r = await c.getStateLocals(nodeId)
+    const g = await c.getStateGlobals(nodeId)
     const detsj = r.l_locals[actorId]
+    const ledger = g.e_ledger
     let dets = ``
+    let status = 'Initial'
+    switch (detsj.l_ks) {
+      case 'PS_Suspend':
+        status = 'Running'
+        break;
+      case 'PS_Done':
+        status = 'Done'
+        break;
+    }
+    dets = dets + `
+      <button type="button"
+      class="list-group-item list-group-item-action object-button"
+      >
+      <div class="badge bg-secondary">Status</div>
+      <div> ${status} </div>
+      </button> `
+    const who = detsj.l_who ? detsj.l_who : 'Consensus'
+    for (const [k,v] of Object.entries(ledger[actorId])) {
+      dets = dets + `
+        <button type="button"
+        class="list-group-item list-group-item-action object-button"
+        >
+        <div class="badge bg-secondary">Funds</div>
+        <div> ${v} (Token ID: ${k}) </div>
+        </button> `
+    }
     for (const [varName,varDetails] of detsj.l_store) {
       const typing = varDetails.tag
       const varValue = varDetails.contents
@@ -104,15 +132,15 @@ const objectDetails = async () => {
         <button type="button"
         class="list-group-item list-group-item-action object-button"
         >
-        ${varName} := ${varValue}
-        <span class="badge bg-secondary">${typing}</span>
+        <div class="badge bg-secondary">${typing.slice(2)}</div>
+        <div> ${varName} := ${varValue} </div>
         </button> `
     }
     spa.innerHTML = `
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Object Details</li>
+        <li class="breadcrumb-item active" aria-current="page">Object Details (${who})</li>
       </ol>
     </nav>
     <ul class="list-group list-group-flush">
