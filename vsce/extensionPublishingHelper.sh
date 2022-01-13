@@ -22,6 +22,6 @@ docker build -t img .
 # organization's name.
 echo "Running Docker image to publish"
 echo "version $VER of our extension..."
+docker run img publish "$VER" -p "$KEY"
 # ^--^ SC2086: Double quote to prevent
 # globbing and word splitting.
-docker run img publish "$VER" -p "$KEY"
