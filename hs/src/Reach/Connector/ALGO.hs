@@ -1158,51 +1158,70 @@ cTupleSet at tt idx = do
 cMapLoad :: App ()
 cMapLoad = do
   Shared {..} <- eShared <$> ask
-  -- [ Address ]
-  -- [ Address, MapData_0? ]
-  forM_ (zip sMapKeysl $ False : repeat True) $ \(mi, doConcat) -> do
-    -- [ Address, MapData_N? ]
-    case doConcat of
-      True -> code "dig" [ "1" ]
-      False -> op "dup"
-    -- [ Address, MapData_N?, Address ]
-    cbs $ keyVary mi
-    -- [ Address, MapData_N?, Address, Key ]
-    op "app_local_get"
-    -- [ Address, MapData_N?, NewPiece ]
-    case doConcat of
-      True -> op "concat"
-      False -> nop
-    -- [ Address, MapData_N+1 ]
-    return ()
-  -- [ Address, MapData_k ]
-  op "swap"
-  op "pop"
-  -- [ MapData ]
-  return ()
+  let getOne mi = do
+        -- [ Address ]
+        cbs $ keyVary mi
+        -- [ Address, Key ]
+        op "app_local_get"
+        -- [ MapData ]
+        return ()
+  case sMapKeysl of
+    -- Special case one key:
+    [ 0 ] -> getOne 0
+    _ -> do
+      -- [ Address ]
+      -- [ Address, MapData_0? ]
+      forM_ (zip sMapKeysl $ False : repeat True) $ \(mi, doConcat) -> do
+        -- [ Address, MapData_N? ]
+        case doConcat of
+          True -> code "dig" [ "1" ]
+          False -> op "dup"
+        -- [ Address, MapData_N?, Address ]
+        getOne mi
+        -- [ Address, MapData_N?, NewPiece ]
+        case doConcat of
+          True -> op "concat"
+          False -> nop
+        -- [ Address, MapData_N+1 ]
+        return ()
+      -- [ Address, MapData_k ]
+      op "swap"
+      op "pop"
+      -- [ MapData ]
+      return ()
 
 cMapStore :: SrcLoc -> App ()
 cMapStore _at = do
   Shared {..} <- eShared <$> ask
   -- [ Address, MapData' ]
-  forM_ sMapKeysl $ \mi -> do
-    -- [ Address, MapData' ]
-    code "dig" ["1"]
-    -- [ Address, MapData', Address ]
-    cbs $ keyVary mi
-    -- [ Address, MapData', Address, Key ]
-    code "dig" ["2"]
-    -- [ Address, MapData', Address, Key, MapData' ]
-    cStateSlice sMapDataSize mi
-    -- [ Address, MapData', Address, Key, Value ]
-    op "app_local_put"
-    -- [ Address, MapData' ]
-    return ()
-  -- [ Address, MapData' ]
-  op "pop"
-  op "pop"
-  -- [ ]
-  return ()
+  case sMapKeysl of
+    -- Special case one key:
+    [ 0 ] -> do
+      -- [ Address, MapData' ]
+      cbs $ keyVary 0
+      -- [ Address, MapData', Key ]
+      op "swap"
+      -- [ Address, Key, Value ]
+      op "app_local_put"
+    _ -> do
+      forM_ sMapKeysl $ \mi -> do
+        -- [ Address, MapData' ]
+        code "dig" ["1"]
+        -- [ Address, MapData', Address ]
+        cbs $ keyVary mi
+        -- [ Address, MapData', Address, Key ]
+        code "dig" ["2"]
+        -- [ Address, MapData', Address, Key, MapData' ]
+        cStateSlice sMapDataSize mi
+        -- [ Address, MapData', Address, Key, Value ]
+        op "app_local_put"
+        -- [ Address, MapData' ]
+        return ()
+      -- [ Address, MapData' ]
+      op "pop"
+      op "pop"
+      -- [ ]
+      return ()
 
 divup :: Integer -> Integer -> Integer
 divup x y = ceiling $ (fromIntegral x :: Double) / (fromIntegral y)
@@ -1373,14 +1392,23 @@ ce = \case
     cTupleRef sb mdt $ fromIntegral i
   DLE_MapSet at mpv@(DLMVar i) fa mva -> do
     incResourceL fa R_Account
-    ca fa
-    op "dup"
-    cMapLoad
-    mdt <- getMapDataTy
-    mt <- getMapTy mpv
-    cla $ mdaToMaybeLA mt mva
-    cTupleSet at mdt $ fromIntegral i
-    cMapStore at
+    Shared {..} <- eShared <$> ask
+    case sMapKeysl of
+      -- Special case one key:
+      [ 0 ] -> do
+        ca fa
+        mt <- getMapTy mpv
+        cla $ mdaToMaybeLA mt mva
+        cMapStore at
+      _ -> do
+        ca fa
+        op "dup"
+        cMapLoad
+        mdt <- getMapDataTy
+        mt <- getMapTy mpv
+        cla $ mdaToMaybeLA mt mva
+        cTupleSet at mdt $ fromIntegral i
+        cMapStore at
   DLE_Remote {} -> xxx "remote objects"
   DLE_TokenNew at (DLTokenNew {..}) -> do
     let ct_at = at
