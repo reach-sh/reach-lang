@@ -65,17 +65,10 @@ instance Show AlgoError where
 -- General tools that could be elsewhere
 
 type LPGraph a = M.Map a (M.Map a Integer)
-type LPPath a = ([(a, Integer)], Integer)
+type LPPath a = (String, [(a, Integer)], Integer)
 type LPInt a = M.Map a ([(a, Integer)], Integer)
 longestPathBetween :: forall a . (Ord a, Monoid a, Show a) => LPGraph a -> a -> a -> IO (LPPath a)
 longestPathBetween g f _d = do
-  when False $ do
-    putStrLn $ "digraph {"
-    forM_ (M.toAscList g) $ \(from, cs) -> do
-      forM_ (M.toAscList cs) $ \(to, c) -> do
-        unless (from == mempty) $
-          putStrLn $ show from <> " -> " <> show to <> " [label=\"" <> show c <> "\"]"
-    putStrLn $ "}"
   let r x y = fromMaybe ([], 0) $ M.lookup x y
   ps <- fixedPoint $ \_ (m::LPInt a) -> do
     flip mapWithKeyM g $ \n cs -> do
@@ -87,7 +80,20 @@ longestPathBetween g f _d = do
           True -> return (p, -1)
           False -> return (p', c')
       return $ List.maximumBy (compare `on` snd) cs'
-  return $ r f ps
+  let (p, pc) = r f ps
+  let mkEdges s from = \case
+        [] -> s
+        (to, _) : m -> mkEdges (S.insert (from, to) s) to m
+  let edges = mkEdges mempty f p
+  let edge = flip S.member edges
+  let gs_body =
+        flip concatMap (M.toAscList g) $ \(from, cs) ->
+          flip concatMap (M.toAscList cs) $ \(to, c) ->
+            case (from == mempty) of
+              True -> ""
+              False -> show from <> " -> " <> show to <> " [label=\"" <> show c <> "\"" <> (if edge (from, to) then ",color=red" else "") <> "];\n"
+  let gs = "digraph {\n" <> gs_body <> "}"
+  return $ (gs, p, pc)
 
 aarray :: [Aeson.Value] -> Aeson.Value
 aarray = Aeson.Array . Vector.fromList
@@ -394,17 +400,17 @@ checkCost alwaysShow ts = do
         case x of
           True -> [ e ]
           False -> []
-  let showNice x = "TOP" <> h x
+  let showNice x = lTop <> h x
         where
           h = \case
             [] -> ""
             (l, c) : r -> " --" <> show c <> "--> " <> l <> h r
   let analyze cgr units algoMax = do
         cg <- readIORef cgr
-        (p, c) <- longestPathBetween cg lTop (l2s lBot)
+        (gs, p, c) <- longestPathBetween cg lTop (l2s lBot)
         let msg = "This program could use " <> show c <> " " <> units
         let tooMuch = fromIntegral c > algoMax
-        let cs = (whenl tooMuch $ msg <> ", but the limit is " <> show algoMax <> ": " <> showNice p <> "\n")
+        let cs = (whenl tooMuch $ msg <> ", but the limit is " <> show algoMax <> ".\n   Copy this into a Graphviz engine, such as https://dreampuf.github.io/GraphvizOnline ---\n\n" <> gs <> "\n\n   to see the path:\n     " <> showNice p <> "\n")
         return (msg, tooMuch, cs)
   (showCost, exceedsCost, csCost) <- analyze cost_gr "units of cost" algoMaxAppProgramCost
   (showLogLen, exceedsLogLen, csLogLen) <- analyze logLen_gr "bytes of logs" algoMaxLogLen
