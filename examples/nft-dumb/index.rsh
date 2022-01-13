@@ -17,29 +17,31 @@ export const main =
     deploy();
 
     Creator.only(() => {
-      const id = declassify(interact.getId()); });
-    Creator.publish(id);
-
-    var owner = Creator;
-    { vNFT.owner.set(owner); };
-    invariant(balance() == 0);
-    while ( true ) {
-      commit();
-
-      const [ [], returningA] = call(Owner.showOwner).throwTimeout(false);
-      returningA([id, owner]);
-
-      commit();
-      
-      const [[n], returningB] = call(Owner.newOwner).throwTimeout(false);
-      returningB(null)
-      const amOwner = this == owner;
-      const newOwner = amOwner ? n : owner;
-
-
-      owner = newOwner;
-      continue;
-    }
+      const id = declassify(interact.getId()); 
+      const originalCreator = this;
+      });
+    Creator.publish(id, originalCreator);
+ 
+    const [owner] = parallelReduce([originalCreator
+    ]).define(()=>{
+        vNFT.owner.set(owner); 
+    }).invariant(balance() == 0)
+    .while(true)
+    .api(Owner.showOwner, (returnFunc) => {
+        returnFunc([id, owner]);
+        return [owner]
+    }).api(Owner.newOwner,
+    (_) => {
+        assume(this == owner )
+    }, (_) =>{
+        return 0
+    }, (newOwnerAdress, returnFunc)=>{
+        require(this == owner);
+        returnFunc(null);
+        return[newOwnerAdress]
+    }).timeout(relativeTime(10), () => {
+      Anybody.publish();
+      return [owner];
+    });;
     commit();
-
   });
