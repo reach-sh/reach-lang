@@ -466,7 +466,7 @@ function must_be_supported(bin: Backend) {
 
 // Get these from stdlib
 // const MaxTxnLife = 1000;
-const MinTxnFee = 1000;
+export const MinTxnFee = 1000;
 const MaxAppTxnAccounts = 4;
 const MinBalance = 100000;
 
@@ -1667,7 +1667,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
       return { createEventStream };
     };
-    const getABI = () => {
+    const getABI = (isFull?:boolean) => {
+      void(isFull);
       throw Error('XXX getABI not implemented on Algorand');
     };
 

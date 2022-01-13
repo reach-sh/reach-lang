@@ -454,10 +454,12 @@ ctc.getContractAddress() => Promise<Address>
 ---
 @{ref("js", "ctc.getABI")}
 ```js
-ctc.getABI() => any
+ctc.getABI(showFull?: boolean) => any
 ```
 
 Returns the ABI to the contract in a connector-specific format.
+When the `{!js} showFull` argument is not `{!js} true`, internal implementation
+details are omitted.
 
 #### `ctc.participants`, `ctc.p`
 

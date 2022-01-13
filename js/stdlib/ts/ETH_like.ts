@@ -804,7 +804,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       };
       return { createEventStream };
     };
-    const getABI = () => ABI.filter((x:any) => {
+    const getABI = (isFull?:boolean) => isFull ? ABI : ABI.filter((x:any) => {
       if ( x.name && x.name.startsWith('_reach') ) { return false; }
       return true;
     });

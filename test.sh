@@ -118,6 +118,9 @@ checkteal () {
 #exit 0
 jb
 ci ETH api-raw
+ci ALGO api-raw
+exit 0
+ci ETH api-raw
 exit 0
 ci ALGO atomic-swap
 ci ALGO mint-basic

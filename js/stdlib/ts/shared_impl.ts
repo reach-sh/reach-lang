@@ -185,7 +185,7 @@ export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
 
 export type IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
   bin: IBackend<ConnectorTy>,
-  getABI: () => unknown,
+  getABI: (x?:boolean) => unknown,
   setupView: ISetupView<ContractInfo, VerifyResult, ConnectorTy>,
   setupEvents: ISetupEvent<ContractInfo, VerifyResult>,
   givenInfoP: (Promise<ContractInfo>|undefined)
@@ -197,7 +197,7 @@ export type IContract<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBa
   getViews: () => ViewMap,
   getContractAddress: () => Promise<CBR_Address>,
   // backend-specific
-  getABI: () => unknown,
+  getABI: (x?:boolean) => unknown,
   participants: ParticipantMap,
   p: ParticipantMap
   views: ViewMap,
