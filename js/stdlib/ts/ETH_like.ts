@@ -8,6 +8,7 @@ import {
   replaceableThunk,
   debug,
   stdContract, stdVerifyContract,
+  stdGetABI,
   stdAccount,
   makeRandom,
   argsSplit,
@@ -804,10 +805,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       };
       return { createEventStream };
     };
-    const getABI = (isFull?:boolean) => isFull ? ABI : ABI.filter((x:any) => {
-      if ( x.name && x.name.startsWith('_reach') ) { return false; }
-      return true;
-    });
+    const getABI = stdGetABI(ABI);
 
     return stdContract({ bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
   };

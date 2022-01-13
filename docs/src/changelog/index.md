@@ -7,7 +7,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.8 is the current Reach release candidate version.
 
-+ 2022/01/13: EVM-only: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
++ 2022/01/13: Algorand-only: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
++ 2022/01/13: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/01/13: Added `{!js} ctc.getABI`.
 + 2022/01/08: The Algorand connector does not rely on an Algorand Node for any
   information available through an Algorand Indexer.

@@ -27,6 +27,7 @@ import {
   // ISimRes,
   ISimTxn,
   stdContract, stdVerifyContract,
+  stdGetABI,
   stdAccount,
   debug, envDefault,
   argsSplit,
@@ -124,9 +125,10 @@ export type NetworkAccount = {
 };
 
 const reachBackendVersion = 7;
-const reachAlgoBackendVersion = 8;
+const reachAlgoBackendVersion = 9;
 export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
+  ABI: any,
   appApproval: string,
   appClear: string,
   extraPages: number,
@@ -1031,7 +1033,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     ensureConnectorAvailable(bin, 'ALGO', reachBackendVersion, reachAlgoBackendVersion);
     must_be_supported(bin);
 
-    const { stateSize, stateKeys, mapDataKeys, mapDataSize } = bin._Connectors.ALGO;
+    const { stateSize, stateKeys, mapDataKeys, mapDataSize, ABI } = bin._Connectors.ALGO;
     const hasMaps = mapDataKeys > 0;
     const { mapDataTy } = bin._getMaps({reachStdlib: stdlib});
     const emptyMapDataTy = T_Bytes(mapDataTy.netSize);
@@ -1667,10 +1669,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
       return { createEventStream };
     };
-    const getABI = (isFull?:boolean) => {
-      void(isFull);
-      throw Error('XXX getABI not implemented on Algorand');
-    };
+
+    const ABIp = ABI.map(algosdk.ABIMethod.fromSignature);
+    const getABI = stdGetABI(ABIp);
 
     return stdContract({ bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
   };

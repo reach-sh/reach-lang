@@ -259,6 +259,12 @@ export const stdVerifyContract =
     return r;
   };
 
+export const stdGetABI = (ABI:any) => (isFull?:boolean) =>
+  isFull ? ABI : ABI.filter((x:any) => {
+    if ( x.name && x.name.startsWith('_reach') ) { return false; }
+    return true;
+  });
+
 export const stdContract =
   <ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy extends AnyBackendTy>(
     stdContractArgs: IStdContractArgs<ContractInfo, VerifyResult, RawAddress, Token, ConnectorTy>):

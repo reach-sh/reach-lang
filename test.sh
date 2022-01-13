@@ -27,7 +27,7 @@ err () {
 }
 
 jb () {
-  #(cd "$ROOT"/js/js-deps && make build)
+  (cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
@@ -117,8 +117,8 @@ checkteal () {
 
 #exit 0
 jb
-ci ETH api-raw
 ci ALGO api-raw
+ci ETH api-raw
 exit 0
 ci ETH api-raw
 exit 0

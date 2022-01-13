@@ -183,7 +183,7 @@ typeSig x =
   T_Array  t sz -> typeSig t <> array sz
   T_Tuple ts -> "(" <> intercalate "," (map typeSig ts) <> ")"
   T_Object m -> typeSig $ T_Tuple $ M.elems m
-  T_Data m -> "(byte, byte" <> array (maximum $ map typeSizeOf $ M.elems m) <> ")"
+  T_Data m -> "(byte,byte" <> array (maximum $ map typeSizeOf $ M.elems m) <> ")"
   T_Struct ts -> typeSig $ T_Tuple $ map snd ts
   where
     array sz = "[" <> show sz <> "]"
@@ -446,6 +446,7 @@ data Shared = Shared
   }
 
 type Lets = M.Map DLVar (App ())
+type ApiRngs = M.Map SLPart DLType
 data Env = Env
   { eShared :: Shared
   , eWhich :: Int
@@ -459,6 +460,7 @@ data Env = Env
   , eResources :: ResourceCounters
   , eNewToks :: IORef (S.Set DLArg)
   , eInitToks :: IORef (S.Set DLArg)
+  , eApiRngsR :: IORef ApiRngs
   }
 
 type App = ReaderT Env IO
@@ -1446,26 +1448,29 @@ ce = \case
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract _ -> code "txn" ["ApplicationID"]
   DLE_GetAddress _ -> cContractAddr
-  DLE_EmitLog at k vs
-    | isInternalLog k -> do
-      (v, n) <- case vs of
-          [v'@(DLVar _ _ _ n')] -> return (v', n')
-          _ -> impossible "algo ce: Expected one value"
-      clog $
-        [ DLA_Literal (DLL_Int at $ fromIntegral n)
-        , DLA_Var v
-        ]
-      cv v
-    | L_Event ml en <- k -> do
-      let name = maybe en (\l -> bunpack l <> "_" <> en) ml
-      clogEvent name vs
-      cl DLL_Null
-    | otherwise -> impossible "algo: emitLog"
-    where
-      isInternalLog = \case
-        L_Internal -> True
-        L_Api {} -> True
-        _ -> False
+  DLE_EmitLog at k vs -> do
+    let internal = do
+          (v, n) <- case vs of
+              [v'@(DLVar _ _ _ n')] -> return (v', n')
+              _ -> impossible "algo ce: Expected one value"
+          clog $
+            [ DLA_Literal (DLL_Int at $ fromIntegral n)
+            , DLA_Var v
+            ]
+          cv v
+          return v
+    case k of
+      L_Internal -> void $ internal
+      L_Api f -> do
+        v <- internal
+        let ty = varType v
+        addApiRng (bpack f) ty
+        op "dup"
+        gvStore GV_apiRet
+      L_Event ml en -> do
+        let name = maybe en (\l -> bunpack l <> "_" <> en) ml
+        clogEvent name vs
+        cl DLL_Null
   DLE_setApiDetails {} -> return ()
   DLE_GetUntrackedFunds _ mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
@@ -1485,11 +1490,22 @@ ce = \case
       comment $ texty $ unsafeRedactAbsStr $ show at
       comment $ texty $ unsafeRedactAbsStr $ show fs
 
+signatureStr :: String -> [DLType] -> Maybe DLType -> String
+signatureStr f args mret = sig
+  where
+    rets = fromMaybe "" $ fmap typeSig mret
+    sig = f <> "(" <> intercalate "," (map typeSig args) <> ")" <> rets
+
+signatureBytes :: String -> [DLType] -> Maybe DLType -> BS.ByteString
+signatureBytes f args mret = shabs
+  where
+    sig = signatureStr f args mret
+    shas = show . hashWith SHA512t_256 $ bpack sig
+    shabs = bpack . take 4 $ shas
+
 clogEvent :: String -> [DLVar] -> ReaderT Env IO ()
 clogEvent eventName vs = do
-  let signature = eventName <> "(" <> intercalate "," (map (typeSig . varType) vs) <> ")"
-  let shaString = show . hashWith SHA512t_256 $ bpack signature
-  let shaBytes = bpack . take 4 $ shaString
+  let shaBytes = signatureBytes eventName (map varType vs) Nothing
   let as = map DLA_Var vs
   cconcatbs $ (T_Bytes 4, cbs shaBytes) : map (\a -> (argTypeOf a, ca a)) as
   code "log" [ "//", texty $ typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as ]
@@ -1799,7 +1815,7 @@ ct = \case
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
-reachAlgoBackendVersion = 8
+reachAlgoBackendVersion = 9
 
 -- State:
 keyState :: B.ByteString
@@ -1836,6 +1852,7 @@ data GlobalVar
   = GV_txnCounter
   | GV_currentStep
   | GV_currentTime
+  | GV_apiRet
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 gvSlot :: GlobalVar -> ScratchSlot
@@ -1852,6 +1869,7 @@ gvType = \case
   GV_txnCounter -> T_UInt
   GV_currentStep -> T_UInt
   GV_currentTime -> T_UInt
+  GV_apiRet -> impossible "GV_apiRet"
 
 keyState_gvs :: [GlobalVar]
 keyState_gvs = [GV_currentStep, GV_currentTime]
@@ -2030,10 +2048,37 @@ compileTEAL tealf = do
       impossible $ "The TEAL compiler failed with the message:\n" <> show stderr
     ExitSuccess -> return stdout
 
+addApiRng :: SLPart -> DLType -> App ()
+addApiRng who ret = do
+  Env {..} <- ask
+  liftIO $ modifyIORef eApiRngsR $ M.insert who ret
+
+apiSig :: ApiRngs -> SLPart -> ApiInfo -> String
+apiSig apiRngs who (ApiInfo {..}) = signatureStr f args mret
+  where
+    f = bunpack who
+    imp = impossible "apiSig"
+    args =
+      case ai_compile of
+        AIC_SpreadArg ->
+          case ai_msg_tys of
+            [T_Tuple ts] -> ts
+            _ -> imp
+        AIC_Case ->
+          case ai_msg_tys of
+            [T_Data env] ->
+              case M.lookup c_id_s env of
+                Just (T_Tuple ts) -> ts
+                _ -> imp
+            _ -> imp
+    c_id_s = fromMaybe imp ai_mcase_id
+    ret = fromMaybe imp $ M.lookup who apiRngs
+    mret = Just $ ret
+
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
   let PLProg _at plo dli _ _ cpp = pl
-  let CPProg at _ _ai _ (CHandlers hm) = cpp
+  let CPProg at _ ai _ (CHandlers hm) = cpp
   let sMaps = dli_maps dli
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty
@@ -2057,6 +2102,7 @@ compile_algo env disp pl = do
         return $ keysl
   sMapKeysl <- recordSizeAndKeys "mapData" sMapDataSize algoMaxLocalSchemaEntries_usable
   sStateSizeR <- newIORef 0
+  eApiRngsR <- newIORef mempty
   let eShared = Shared {..}
   let run :: App () -> IO TEALs
       run m = do
@@ -2084,6 +2130,8 @@ compile_algo env disp pl = do
         let tc = LT.toStrict $ encodeBase64 tbs
         modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String tc
   addProg "appApproval" (cte_REACH_DEBUG env) $ do
+    -- XXX: We could remove both of these, because they don't actually
+    -- interfere with our operation
     checkRekeyTo
     checkLease
     cint 0
@@ -2110,9 +2158,13 @@ compile_algo env disp pl = do
       code "b" ["checkSize"]
       -- The NON-OptIn case:
       label "normal"
-    code "txn" ["NumAppArgs"]
-    cint argCount
-    asserteq
+    -- NOTE: We don't actually care about this, because there will be a
+    -- different failure if there are too few and if there are too few, who
+    -- cares?
+    when False $ do
+      code "txn" ["NumAppArgs"]
+      cint argCount
+      asserteq
     argLoad ArgMethod
     cfrombs T_UInt
     label "preamble"
@@ -2140,6 +2192,8 @@ compile_algo env disp pl = do
     -- We're last
     code "txn" ["GroupIndex"]
     asserteq
+    -- XXX: Consider removing this, because if the fee is too low, it will be
+    -- rejected anyways
     cint algoMinTxnFee
     op "*"
     code "txn" ["Fee"]
@@ -2176,6 +2230,10 @@ compile_algo env disp pl = do
         S.toList $ S.map (Aeson.String . LT.toStrict) sFailures
   unless (null sFailures) $ do
     emitWarning Nothing $ W_ALGOUnsupported $ S.toList $ S.map LT.unpack sFailures
+  apiRngs <- readIORef eApiRngsR
+  let apiSigs = map (uncurry $ apiSig apiRngs) $ M.toAscList ai
+  modifyIORef resr $
+    M.insert "ABI" $ aarray $ map (Aeson.String . s2t) apiSigs
   modifyIORef resr $
     M.insert "version" $
       Aeson.Number $ fromIntegral $ reachAlgoBackendVersion

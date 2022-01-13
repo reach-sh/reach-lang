@@ -31,22 +31,23 @@ const run = async ({which, isRaw}) => {
       const [ fn, args, exp_res ] =
         which ? [ 'f', [ x, bn(3) ], true ] : [ 'g', [ x ], x.add(x) ];
       exp = [ x, ...args ];
+      const P_fn = `P_${fn}`;
 
       const ctcInfo = await ctcA.getInfo();
       const ctc = accB.contract(backend, ctcInfo);
-      const abi = ctc.getABI(true);
-      console.log(abi);
+      const ABI = ctc.getABI(true);
+      console.log(ABI);
       let res;
       if ( ! isRaw ) {
         res = await ctc.a.P[fn](...args);
       } else if ( conn === 'ETH' || conn === 'CFX' ) {
         const { ethers } = stdlib;
-        const ctcRaw = new ethers.Contract(ctcInfo, abi, accB.networkAccount);
+        const ctcRaw = new ethers.Contract(ctcInfo, ABI, accB.networkAccount);
         const iface = ctcRaw.interface;
-        const t = await ctcRaw[`P_${fn}`](...args, { value: x });
-        console.log('t', t);
+        const t = await ctcRaw[P_fn](...args, { value: x });
+        console.log({t});
         const tr = await t.wait();
-        console.log('tr', tr);
+        console.log({tr});
         [ res ] = iface.parseLog(tr.logs[1]).args;
       } else if ( conn === 'ALGO' ) {
         const ALGO = stdlib;
@@ -57,7 +58,15 @@ const run = async ({which, isRaw}) => {
         const params = await ALGO.getTxnParams('raw');
         const txnPay = ALGO.makeTransferTxn(from, ctcAddr, x, null, params);
         txnPay.fee = 0;
-        const txnApp = algosdk.makeApplicationNoOpTxn(from, params, ctcInfo, args);
+        const meth = ABI.find((x) => x.name === P_fn);
+        console.log({meth});
+        const bigNumberToBigInt = (x) => BigInt(x.toHexString());
+        const margs = args.map(bigNumberToBigInt);
+        const eargs = meth.args.map((a, i) => a.type.encode(margs[i]));
+        console.log({eargs});
+        const aargs = [ meth.getSelector(), ...eargs ];
+        console.log({aargs});
+        const txnApp = algosdk.makeApplicationNoOpTxn(from, params, ctcInfo, aargs);
         txnApp.fee = ALGO.MinTxnFee * 2;
         const rtxns = [ txnPay, txnApp ];
         algosdk.assignGroupID(rtxns);
