@@ -1393,19 +1393,18 @@ ce = \case
   DLE_MapSet at mpv@(DLMVar i) fa mva -> do
     incResourceL fa R_Account
     Shared {..} <- eShared <$> ask
-    case sMapKeysl of
-      -- Special case one key:
-      [ 0 ] -> do
+    mdt <- getMapDataTy
+    mt <- getMapTy mpv
+    case (length sMapKeysl) == 1 && (M.size sMaps) == 1 of
+      -- Special case one key and one map
+      True -> do
         ca fa
-        mt <- getMapTy mpv
         cla $ mdaToMaybeLA mt mva
         cMapStore at
       _ -> do
         ca fa
         op "dup"
         cMapLoad
-        mdt <- getMapDataTy
-        mt <- getMapTy mpv
         cla $ mdaToMaybeLA mt mva
         cTupleSet at mdt $ fromIntegral i
         cMapStore at
