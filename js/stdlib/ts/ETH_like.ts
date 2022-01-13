@@ -804,8 +804,12 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       };
       return { createEventStream };
     };
+    const getABI = () => ABI.filter((x:any) => {
+      if ( x.name && x.name.startsWith('_reach') ) { return false; }
+      return true;
+    });
 
-    return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
+    return stdContract({ bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
   };
 
   function setDebugLabel(newLabel: string): Account {

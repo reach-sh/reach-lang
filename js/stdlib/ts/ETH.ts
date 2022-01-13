@@ -5,6 +5,7 @@ export type { Token, ContractInfo, Address, NetworkAccount, Ty, Backend, Account
 
 export * from './ETH_compiled';
 export const connector = 'ETH';
+export * as ethers from 'ethers';
 
 const ethLike = makeEthLike(ethImpl);
 // The following should be identical to CFX.ts

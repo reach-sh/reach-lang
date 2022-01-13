@@ -1667,8 +1667,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
       return { createEventStream };
     };
+    const getABI = () => {
+      throw Error('XXX getABI not implemented on Algorand');
+    };
 
-    return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
+    return stdContract({ bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
   };
 
   function setDebugLabel(newLabel: string): Account {

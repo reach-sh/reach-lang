@@ -3,6 +3,7 @@ export type { Provider, ProviderEnv, ProviderName } from './CFX_impl';
 import { makeEthLike } from './ETH_like';
 export type { Token, ContractInfo, Address, NetworkAccount, Ty, Backend, Account } from './ETH_like';
 
+export * as ethers from './cfxers';
 export * from './CFX_compiled';
 export const connector = 'CFX';
 

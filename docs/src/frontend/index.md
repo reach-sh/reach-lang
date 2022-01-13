@@ -435,7 +435,6 @@ This deprecated function is an abbreviation of `{!js} acc.contract(bin, info)`.
 ctc.getInfo() => Promise<ctcInfo> 
 ```
 
-
  Returns a Promise for a `{!rsh} Contract` value that may be given to `{!js} contract` to construct a Reach contract handle for this contract.
 This object may be stringified with `{!js} JSON.stringify` for printing and parsed again with `{!js} JSON.parse` without any loss of information.
 
@@ -447,13 +446,18 @@ It is safer to make an `{!rsh} interact` function that receives `{!rsh} getContr
 ---
 @{ref("js", "getContractAddress")}
 ```js
-ctc.getContractAddress() => Promise<Address> 
+ctc.getContractAddress() => Promise<Address>
 ```
-
 
  Returns a Promise for the `{!js} Address` of the connected Reach contract.
 
 ---
+@{ref("js", "ctc.getABI")}
+```js
+ctc.getABI() => any
+```
+
+Returns the ABI to the contract in a connector-specific format.
 
 #### `ctc.participants`, `ctc.p`
 
@@ -465,9 +469,6 @@ ctc.p
 
 ctc.p.Alice(interact)
 ```
-
-
-
 
 An object where the keys are the participant names and the values are functions that accept an interact object and return a Promise that completes when the participant ends.
 

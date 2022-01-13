@@ -117,10 +117,7 @@ checkteal () {
 
 #exit 0
 jb
-ci ALGO raffle
-ci ALGO map-simpl
-ci ALGO map-multi
-#ci ALGO api-fail
+ci ETH api-raw
 exit 0
 ci ALGO atomic-swap
 ci ALGO mint-basic

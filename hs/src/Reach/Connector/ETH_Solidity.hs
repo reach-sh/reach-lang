@@ -1286,7 +1286,7 @@ apiDef who ApiInfo{..} = do
             t' <- solType_ t
             return $ t' <+> withArgLoc t
           Nothing -> impossible "apiDef: return type not found"
-  let ret = "external returns"<+> parens ret_ty
+  let ret = "external payable returns"<+> parens ret_ty
   return $ solFunction (pretty who_s) argDefns ret body
 
 apiDefs :: ApiInfos -> App Doc
