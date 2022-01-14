@@ -431,7 +431,7 @@ type TagRaw = Text
 
 data ImageThirdParty
   = Postgres
-  deriving (Eq, Ord, Show)
+  deriving (Eq, Ord, Show, Enum, Bounded)
 
 -- TODO devise solution to "double update" problem if new Reach release
 -- includes third-party tag changes
@@ -1704,11 +1704,12 @@ remoteDockerAssocFor imgs = do
     exitWith $ ExitFailure 1
   pure . L.foldl' M.union mempty $ rights ts
 
--- TODO third-party images
 versionCompare :: Subcommand
 versionCompare = command "version-compare" $ info f mempty where
-  q = T.intercalate " && " $ (rights $ imagesAll) <&> \i ->
-    "docker image ls -a --digests --format '{{json .}}' reachsh/" <> i
+  t = mappend "docker image ls -a --digests --format '{{json .}}' "
+  q = T.intercalate " && "
+    $ (t <$> ("reachsh/" <>) <$> rights imagesAll)
+   <> (t <$> (T.toLower . packs) <$> [ minBound .. maxBound :: ImageThirdParty ])
 
   f = pure . scriptWithConnectorModeOptional $ do
     Var {..} <- asks e_var
