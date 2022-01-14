@@ -8,14 +8,9 @@ WORKDIR /extension-publishing-helper-dir
 # copy current directory to image
 COPY . .
 
-# this is to avoid sh: 1: tsc: not found
-# DO NOT do "RUN npm install"! This
-# installs ALL dependencies, instead of
-# just the bare minimum necessary to
-# publish the extension. This could
-# easily increase the build time of this
-# step anywhere from 10x to 20x.
-RUN npm install -g typescript
+# Install all of the dependencies necessary
+# to bundle our extension using Webpack.
+RUN npm install
 
 # install tool for extension publishing
 RUN npm install -g vsce

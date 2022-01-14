@@ -301,19 +301,26 @@
         ]
     },
     "scripts": {
-        "vscode:prepublish": "npm run compile",
+        "clean": "rimraf client/out && rimraf server/out",
         "compile": "tsc -b",
         "watch": "tsc -b -w",
         "postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
         "reinstall": "rm -rf ./node_modules && rm -rf ./server/node_modules && rm -rf ./client/node_modules && npm install",
-        "test": "sh ./scripts/e2e.sh"
+        "test": "sh ./scripts/e2e.sh",
+        "vscode:prepublish": "npm run webpack",
+        "webpack": "npm run clean && webpack --mode production --config ./client/webpack.config.js && webpack --mode production --config ./server/webpack.config.js",
+        "webpack:dev": "npm run clean && webpack --mode none --config ./client/webpack.config.js && webpack --mode none --config ./server/webpack.config.js"
     },
     "devDependencies": {
         "@types/mocha": "^5.2.7",
         "@types/node": "^12.12.0",
         "@typescript-eslint/parser": "^2.3.0",
         "eslint": "^8.6.0",
+        "merge-options": "^3.0.4",
         "mocha": "^9.1.3",
-        "typescript": "^4.5.3"
+        "ts-loader": "^9.2.6",
+        "typescript": "^4.5.3",
+        "webpack": "^5.66.0",
+        "webpack-cli": "^4.9.1"
     }
 }
