@@ -59,7 +59,7 @@ export const T_Null: ALGO_Ty<CBR_Null> = {
   netSize: 0,
   toNet: (bv: CBR_Null): NV => (void(bv), new Uint8Array([])),
   fromNet: (nv: NV): CBR_Null => (void(nv), null),
-  netName: 'null',
+  netName: 'byte[0]',
 }
 
 export const T_Bool: ALGO_Ty<CBR_Bool> = {

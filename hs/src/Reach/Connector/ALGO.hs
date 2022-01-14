@@ -183,7 +183,7 @@ maxTypeSize m =
 typeSig :: DLType -> String
 typeSig x =
   case x of
-  T_Null -> "null"
+  T_Null -> "byte[0]"
   T_Bool -> "byte" -- "bool"
   T_UInt -> "uint64"
   T_Bytes sz -> "byte" <> array sz

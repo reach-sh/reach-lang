@@ -1685,9 +1685,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     };
 
     const { sigs: ABI_sigs } = ABI;
-    const ABI_meths = ABI_sigs.map(algosdk.ABIMethod.fromSignature);
     const getABI = (isFull?:boolean) => ({
-      methods: (isFull ? ABI_meths : stdABIFilter(ABI_meths)),
       sigs: (isFull ? ABI_sigs : ABI_sigs.map((name:string) => ({name})).filter(stdABIFilter).map(({name}:{name: string}) => name)),
     });
 

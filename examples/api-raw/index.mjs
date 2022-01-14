@@ -76,7 +76,8 @@ const run = async ({fn, isRaw}) => {
         const params = await ALGO.getTxnParams('raw');
         const txnPay = ALGO.makeTransferTxn(from, ctcAddr, x, null, params);
         txnPay.fee = 0;
-        const { methods } = ABI;
+        const { sigs } = ABI;
+        const methods = sigs.map(algosdk.ABIMethod.fromSignature);
         const meth = methods.find((x) => x.name === P_fn);
         const t2a = (x) => {
           if ( x._isBigNumber ) {
