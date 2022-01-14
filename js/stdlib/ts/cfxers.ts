@@ -230,7 +230,7 @@ const prepForConfluxPortal = (txnOrig: any): any => {
   // These fields are transformed if present
   // TODO: is it safe just to turn all number fields into hex strings?
   // Where is the "real" Conflux Portal source code to check this?
-  for (const field of ['storageLimit', 'gas']) {
+  for (const field of ['storageLimit', 'gas', 'nonce']) {
     if (txn[field] !== undefined) txn[field] = hexStringify(txnOrig[field]);
   }
 
