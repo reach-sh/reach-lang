@@ -2133,10 +2133,6 @@ capi sigi (CApi who sig which tys doWrap) = do
   comment $ texty $ who
   comment $ texty $ " bs: " <> (show $ sigStrToBytes sig)
   comment $ texty $ " ui: " <> show sigi
-  cint 0
-  gvStore GV_argTime
-  cbool True
-  gvStore GV_wasApi
   let f :: DLType -> Integer -> (DLType, App ())
       f t i = (t, code "txna" [ "ApplicationArgs", texty i ])
   cconcatbs_ (const $ return ()) $ zipWith f tys [1..]
@@ -2242,6 +2238,11 @@ compile_algo env disp pl = do
     label "preamble"
     op "dup"
     code "bz" [ "publish" ]
+    label "api"
+    cint 0
+    gvStore GV_argTime
+    cbool True
+    gvStore GV_wasApi
     cblt "api" capi $ bltM ai_im
     label "publish"
     argLoad ArgPublish
@@ -2263,6 +2264,7 @@ compile_algo env disp pl = do
     op "app_global_put"
     gvLoad GV_wasApi
     code "bz" [ "checkSize" ]
+    label "apiReturn"
     -- SHA-512/256("return")[0..4] = 0x151f7c75
     cbs $ BS.pack [ 0x15, 0x1f, 0x7c, 0x75 ]
     gvLoad GV_apiRet

@@ -118,6 +118,7 @@ checkteal () {
 export REACH_DEBUG=Y
 #c users/duoswap-core/index.rsh
 c users/xbacked-contracts/src/master_vault.rsh
+dot -Tpng -O users/xbacked-contracts/src/build/master_vault.main.appApproval.cost.dot
 exit 0
 
 jb
