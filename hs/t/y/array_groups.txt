@@ -4,17 +4,17 @@ Verifying for generic connector
   Verifying when NO participants are honest
 Checked 10 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
- * This program could use 3317 units of cost, but the limit is 700.
+ * This program could use 3313 units of cost, but the limit is 700.
    Copy this into a Graphviz engine, such as https://dreampuf.github.io/GraphvizOnline ---
 
 digraph {
-"TOP" -> "alloc" [label="12"];
-"TOP" -> "preamble" [label="27",color=red];
+"TOP" -> "alloc" [label="4"];
+"TOP" -> "preamble" [label="15",color=red];
 "alloc" -> "updateState" [label="9"];
-"checkSize" -> "done" [label="16",color=red];
+"checkSize" -> "done" [label="10",color=red];
 "done" -> "BOT" [label="2",color=red];
 "fail" -> "BOT" [label="2"];
-"l0_preamble_lt_1" -> "publish0" [label="1",color=red];
+"l0_publish_lt_1" -> "publish0" [label="1",color=red];
 "l10_forEnd" -> "updateState" [label="18",color=red];
 "l1_makeTxnK" -> "updateState" [label="6"];
 "l2_checkTxnK" -> "l3_forTop" [label="5",color=red];
@@ -25,13 +25,15 @@ digraph {
 "l7_forTop" -> "l8_forEnd" [label="910",color=red];
 "l8_forEnd" -> "l6_forEnd" [label="840",color=red];
 "l9_forTop" -> "l10_forEnd" [label="700",color=red];
-"preamble" -> "l0_preamble_lt_1" [label="4",color=red];
-"preamble" -> "publish1" [label="7"];
-"publish0" -> "l2_checkTxnK" [label="102",color=red];
-"publish1" -> "l1_makeTxnK" [label="59"];
-"updateState" -> "checkSize" [label="7",color=red];
+"preamble" -> "fail" [label="3"];
+"preamble" -> "publish" [label="2",color=red];
+"publish" -> "l0_publish_lt_1" [label="11",color=red];
+"publish" -> "publish1" [label="14"];
+"publish0" -> "l2_checkTxnK" [label="101",color=red];
+"publish1" -> "l1_makeTxnK" [label="58"];
+"updateState" -> "checkSize" [label="13",color=red];
 }
 
    to see the path:
-     TOP --27--> preamble --4--> l0_preamble_lt_1 --1--> publish0 --102--> l2_checkTxnK --5--> l3_forTop --672--> l4_forEnd --4--> l5_forTop --5--> l7_forTop --910--> l8_forEnd --840--> l6_forEnd --4--> l9_forTop --700--> l10_forEnd --18--> updateState --7--> checkSize --16--> done --2--> BOT
+     TOP --15--> preamble --2--> publish --11--> l0_publish_lt_1 --1--> publish0 --101--> l2_checkTxnK --5--> l3_forTop --672--> l4_forEnd --4--> l5_forTop --5--> l7_forTop --910--> l8_forEnd --840--> l6_forEnd --4--> l9_forTop --700--> l10_forEnd --18--> updateState --13--> checkSize --10--> done --2--> BOT
 

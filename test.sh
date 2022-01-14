@@ -115,6 +115,9 @@ checkteal () {
 
 #######
 
+fc hs/t/n/API_NoOut.rsh
+exit 0
+
 export REACH_DEBUG=Y
 c users/duoswap-core/index.rsh
 exit 0

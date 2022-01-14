@@ -367,7 +367,7 @@ be_m = \case
       DLE_setApiDetails _ p tys mc isf -> do
         BEnv {..} <- ask
         rets <- liftIO $ readIORef be_api_rets
-        let ret = fromMaybe (impossible "api") $ M.lookup p rets
+        let ret = fromMaybe T_Null $ M.lookup p rets
         liftIO $ modifyIORef be_api_info $
           M.insert p $ ApiInfo tys mc be_which isf ret
       _ -> return ()
