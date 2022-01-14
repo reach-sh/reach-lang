@@ -1405,7 +1405,7 @@ config = command "config" $ info f d where
   d = progDesc "Configure default Reach settings"
   f = go <$> switch (short 'v' <> long "verbose" <> help "Print additional config info to `stdout`")
   nets = zip [0..] $ Nothing : (Just <$> [ ALGO, CFX, ETH ])
-  maxNet = length . show . maximum . fmap fst $ nets
+  maxNet = length . show . maybe 0 id . maximumMay . fmap fst $ nets
   lpad (i :: Int) = replicate (maxNet - (length $ show i)) ' ' <> show i
   go v' = do
     Var {..} <- asks e_var
@@ -1851,8 +1851,10 @@ versionCompare2 = command "version-compare2" $ info f mempty where
         exitWith $ ExitFailure 0
 
       else do
-        let m = maximum $ (\(x, _, _) -> T.length $ lefty x) <$> newDAs <> newTags <> newCAs
         let s = T.take 8 . T.drop 7
+        let m = maybe 0 id . maximumMay $ (\(x, _, _) -> T.length $ lefty x)
+              <$> newDAs <> newTags <> newCAs <> synced
+
         let p x = lefty x <> T.replicate (m - T.length (lefty x)) " "
         let n a = when (any ((> 0) . length) a) $ putStrLn ""
 
