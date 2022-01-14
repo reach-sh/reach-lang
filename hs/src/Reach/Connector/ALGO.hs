@@ -174,6 +174,12 @@ tealVersionPragma = "#pragma version 5"
 
 -- Algo specific stuff
 
+maxTypeSize :: M.Map a DLType -> Integer
+maxTypeSize m =
+  case M.null m of
+    True -> 0
+    False -> maximum $ map typeSizeOf $ M.elems m
+
 typeSig :: DLType -> String
 typeSig x =
   case x of
@@ -188,7 +194,7 @@ typeSig x =
   T_Array  t sz -> typeSig t <> array sz
   T_Tuple ts -> "(" <> intercalate "," (map typeSig ts) <> ")"
   T_Object m -> typeSig $ T_Tuple $ M.elems m
-  T_Data m -> "(byte,byte" <> array (maximum $ map typeSizeOf $ M.elems m) <> ")"
+  T_Data m -> "(byte,byte" <> array (maxTypeSize m) <> ")"
   T_Struct ts -> typeSig $ T_Tuple $ map snd ts
   where
     array sz = "[" <> show sz <> "]"
@@ -206,7 +212,7 @@ typeSizeOf = \case
   T_Array t sz -> sz * typeSizeOf t
   T_Tuple ts -> sum $ map typeSizeOf ts
   T_Object m -> sum $ map typeSizeOf $ M.elems m
-  T_Data m -> 1 + (maximum $ map typeSizeOf $ M.elems m)
+  T_Data m -> 1 + maxTypeSize m
   T_Struct ts -> sum $ map (typeSizeOf . snd) ts
   where
     word = 8
@@ -2141,7 +2147,7 @@ compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
   let PLProg _at plo dli _ _ cpp = pl
   let CPProg at _ ai _ (CHandlers hm) = cpp
-  let maxApiRetSize = maximum $ map (typeSizeOf . ai_ret_ty) $ M.elems ai
+  let maxApiRetSize = maxTypeSize $ M.map ai_ret_ty ai
   let ai_sm = M.fromList $ map apiSig $ M.toAscList ai
   let ai_im = M.mapKeys sigStrToInt ai_sm
   let sMaps = dli_maps dli
