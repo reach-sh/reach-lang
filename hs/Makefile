@@ -140,3 +140,9 @@ watch-reach-cli: expand
 .PHONY: watch-reachc
 watch-reachc: expand
 	@ghcid --target=reach:exe:reachc
+
+.PHONY: repl-reach-cli
+repl-reach-cli: expand
+	@stack ghci app/reach/Main.hs \
+	  --package pretty-simple \
+	  --ghci-options "-interactive-print=Text.Pretty.Simple.pPrint"
