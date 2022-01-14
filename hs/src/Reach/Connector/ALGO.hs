@@ -331,8 +331,8 @@ itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
 btoi :: BS.ByteString -> Integer
 btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
 
-checkCost :: Bool -> [TEAL] -> IO ()
-checkCost alwaysShow ts = do
+checkCost :: Disp -> Bool -> [TEAL] -> IO ()
+checkCost disp alwaysShow ts = do
   let mkg :: IO (IORef (LPGraph String))
       mkg = newIORef mempty
   cost_gr <- mkg
@@ -422,15 +422,16 @@ checkCost alwaysShow ts = do
           h = \case
             [] -> ""
             (l, c) : r -> " --" <> show c <> "--> " <> l <> h r
-  let analyze cgr units algoMax = do
+  let analyze lab cgr units algoMax = do
         cg <- readIORef cgr
         (gs, p, c) <- longestPathBetween cg lTop (l2s lBot)
         let msg = "This program could use " <> show c <> " " <> units
         let tooMuch = fromIntegral c > algoMax
-        let cs = (whenl tooMuch $ msg <> ", but the limit is " <> show algoMax <> ".\n   Copy this into a Graphviz engine, such as https://dreampuf.github.io/GraphvizOnline ---\n\n" <> gs <> "\n\n   to see the path:\n     " <> showNice p <> "\n")
+        let cs = (whenl tooMuch $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n")
+        void $ disp ("." <> lab <> ".dot") $ s2t $ "// This file is in the DOT file format. Upload or copy it into a Graphviz engine, such as https://dreampuf.github.io/GraphvizOnline\n" <> gs
         return (msg, tooMuch, cs)
-  (showCost, exceedsCost, csCost) <- analyze cost_gr "units of cost" algoMaxAppProgramCost
-  (showLogLen, exceedsLogLen, csLogLen) <- analyze logLen_gr "bytes of logs" algoMaxLogLen
+  (showCost, exceedsCost, csCost) <- analyze "cost" cost_gr "units of cost" algoMaxAppProgramCost
+  (showLogLen, exceedsLogLen, csLogLen) <- analyze "log" logLen_gr "bytes of logs" algoMaxLogLen
   let cs = csCost <> csLogLen
   unless (null cs) $
     emitWarning Nothing $ W_ALGOConservative cs
@@ -440,11 +441,11 @@ checkCost alwaysShow ts = do
     putStrLn $ " * " <> showCost <> "."
     putStrLn $ " * " <> showLogLen <> "."
 
-optimizeAndRender :: Bool -> TEALs -> IO T.Text
-optimizeAndRender showCost ts = do
+optimizeAndRender :: Disp -> Bool -> TEALs -> IO T.Text
+optimizeAndRender disp showCost ts = do
   let tscl = DL.toList ts
   let tscl' = optimize tscl
-  checkCost showCost tscl'
+  checkCost disp showCost tscl'
   let tsl' = map render tscl'
   let lts = tealVersionPragma : (map LT.unwords tsl')
   let lt = LT.unlines lts
@@ -2193,8 +2194,9 @@ compile_algo env disp pl = do
   totalLenR <- newIORef (0 :: Integer)
   let addProg lab showCost m = do
         ts <- run m
-        t <- optimizeAndRender showCost ts
-        tf <- disp lab t
+        let disp' = disp . (lab <>)
+        t <- optimizeAndRender disp' showCost ts
+        tf <- disp (lab <> ".teal") t
         tbs <- compileTEAL tf
         modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
         let tc = LT.toStrict $ encodeBase64 tbs
@@ -2344,7 +2346,7 @@ connect_algo env = Connector {..}
       where
         disp :: String -> T.Text -> IO String
         disp which c = do
-          let oi = which <> ".teal"
+          let oi = which
           let oit = T.pack oi
           let f = outn oit
           conWrite (Just outn) oit c

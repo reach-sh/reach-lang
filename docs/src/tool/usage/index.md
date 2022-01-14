@@ -57,21 +57,27 @@ named `default`.
 `reach compile` supports the following options:
 
 + `-o`/`--output` `OUTPUT` --- Writes compiler output files to `OUTPUT`, which defaults to a directory named `build` in the same directory as `SOURCE`.
+
 + `--intermediate-files` --- Write intermediate files, which may be interesting for debugging compilation failures or using in other contexts.
+
 + `--install-pkgs` --- Allows Reach to fetch remote package imports and stop after doing so.
 
-Reach will fail with an error message if package imports have not yet been fetched and this flag is not activated.
+  Reach will fail with an error message if package imports have not yet been fetched and this flag is not activated.
 
-Using this flag will create a `.reach` directory for your project.
-This directory stores your project's @{defn("lockfile")}, which is how Reach pins remote packages to specific versions.
-It is recommended that you commit the `.reach` directory to source control.
-Deleting this directory is also safe; it can easily be rebuilt by using the `--install-pkgs` flag again; in fact, this is the best way to upgrade your packages.
+  Using this flag will create a `.reach` directory for your project.
+  This directory stores your project's @{defn("lockfile")}, which is how Reach pins remote packages to specific versions.
+  It is recommended that you commit the `.reach` directory to source control.
+  Deleting this directory is also safe; it can easily be rebuilt by using the `--install-pkgs` flag again; in fact, this is the best way to upgrade your packages.
+
 + `--stop-after-eval` --- Stops the compilation process before verification and producing output files.
-This might be useful for performing syntax and type checking quickly.
+  This might be useful for performing syntax and type checking quickly.
+
 + `--verify-timeout` `TIMEOUT-MS` --- Sets the timeout of individual verification theorems, in milliseconds.
-The default value is 2 minutes.
+  The default value is 2 minutes.
+
 + The environment variable `REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach compiler, which will appear in the console.
-This debug information includes: the estimated cost of the contract on Algorand.
+  This debug information includes: the estimated cost of the contract on Algorand.
+  This variable automatically enabled `--intermediate-files`.
 
 
 ## {#ref-usage-init} `reach init`
