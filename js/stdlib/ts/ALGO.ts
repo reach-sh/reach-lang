@@ -27,7 +27,7 @@ import {
   // ISimRes,
   ISimTxn,
   stdContract, stdVerifyContract,
-  stdGetABI,
+  stdABIFilter,
   stdAccount,
   debug, envDefault,
   argsSplit,
@@ -1673,8 +1673,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return { createEventStream };
     };
 
-    const ABIp = ABI.map(algosdk.ABIMethod.fromSignature);
-    const getABI = stdGetABI(ABIp);
+    const { sigs: ABI_sigs } = ABI;
+    const ABI_meths = ABI_sigs.map(algosdk.ABIMethod.fromSignature);
+    const getABI = (isFull?:boolean) => ({
+      methods: (isFull ? ABI_meths : stdABIFilter(ABI_meths)),
+      sigs: (isFull ? ABI_sigs : ABI_sigs.map((name:string) => ({name})).filter(stdABIFilter).map(({name}:{name: string}) => name)),
+    });
 
     return stdContract({ bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
   };

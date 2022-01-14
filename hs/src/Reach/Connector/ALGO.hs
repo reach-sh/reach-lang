@@ -100,6 +100,9 @@ longestPathBetween g f _d = do
 aarray :: [Aeson.Value] -> Aeson.Value
 aarray = Aeson.Array . Vector.fromList
 
+aobject :: M.Map T.Text Aeson.Value -> Aeson.Value
+aobject = Aeson.Object . HM.fromList . M.toList
+
 -- Algorand constants
 
 conName' :: T.Text
@@ -2311,12 +2314,15 @@ compile_algo env disp pl = do
     emitWarning Nothing $ W_ALGOUnsupported $ S.toList $ S.map LT.unpack sFailures
   let apiSigs = M.keys ai_sm
   modifyIORef resr $
-    M.insert "ABI" $ aarray $ map (Aeson.String . s2t) apiSigs
+    M.insert "ABI" $
+      aobject $ M.fromList $ [
+        ("sigs", aarray $ map (Aeson.String . s2t) apiSigs)
+      ]
   modifyIORef resr $
     M.insert "version" $
       Aeson.Number $ fromIntegral $ reachAlgoBackendVersion
   res <- readIORef resr
-  return $ Aeson.Object $ HM.fromList $ M.toList res
+  return $ aobject res
 
 connect_algo :: CompilerToolEnv -> Connector
 connect_algo env = Connector {..}
