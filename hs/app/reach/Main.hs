@@ -1653,7 +1653,7 @@ remoteDockerAssocFor' tmpC tmpH img h = go where
     Just $ M.insertWith (<>) d t a
 
   uDockerHub = parseRequest_
-    $ "https://hub.docker.com/v2/repositories/" <> img' <> "/tags?page_size=100"
+    $ "https://hub.docker.com/v2/repositories/" <> img' <> "/tags?page_size=100&ordering=last_updated"
 
   assoc f = either (pure . Left) $ pure . Right . M.singleton img'' . L.foldl' f mempty
 
