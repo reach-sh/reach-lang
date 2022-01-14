@@ -390,8 +390,19 @@ export const signSendAndConfirm = async (
   const p = await getProvider();
   try {
     await p.signAndPostTxns(txns);
-  } catch (e) {
+  } catch (e:any) {
     const es = `${e}`;
+    if ( 'response' in e ) {
+      const r = e.response;
+      if ( 'body' in r ) {
+        e.response = r.body;
+      } else if ( 'text' in r ) {
+        e.response = r.text;
+      } else {
+        delete r.request;
+        delete r.req;
+      }
+    }
     throw { type: 'signAndPost', e, es };
   }
   const N = txns.length - 1;

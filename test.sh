@@ -27,7 +27,7 @@ err () {
 }
 
 jb () {
-  (cd "$ROOT"/js/js-deps && make build)
+  #(cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
@@ -115,18 +115,10 @@ checkteal () {
 
 #######
 
-fc hs/t/n/API_NoOut.rsh
-exit 0
-
-export REACH_DEBUG=Y
-c users/duoswap-core/index.rsh
-exit 0
-
-#exit 0
 jb
-ci ALGO api-raw
-exit 0
 ci ETH api-raw
+exit 0
+ci ALGO api-raw
 exit 0
 ci ALGO atomic-swap
 ci ALGO mint-basic
