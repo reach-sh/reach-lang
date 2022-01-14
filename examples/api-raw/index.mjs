@@ -59,19 +59,24 @@ const run = async ({which, isRaw}) => {
         const txnPay = ALGO.makeTransferTxn(from, ctcAddr, x, null, params);
         txnPay.fee = 0;
         const meth = ABI.find((x) => x.name === P_fn);
-        console.log({meth});
         const bigNumberToBigInt = (x) => BigInt(x.toHexString());
         const margs = args.map(bigNumberToBigInt);
         const eargs = meth.args.map((a, i) => a.type.encode(margs[i]));
-        console.log({eargs});
-        const aargs = [ meth.getSelector(), ...eargs ];
-        console.log({aargs});
+        const sel = meth.getSelector();
+        const aargs = [ sel, ...eargs ];
         const txnApp = algosdk.makeApplicationNoOpTxn(from, params, ctcInfo, aargs);
         txnApp.fee = ALGO.MinTxnFee * 2;
         const rtxns = [ txnPay, txnApp ];
         algosdk.assignGroupID(rtxns);
         const wtxns = rtxns.map(ALGO.toWTxn);
-        res = await ALGO.signSendAndConfirm( thisAcc, wtxns );
+        const tr = await ALGO.signSendAndConfirm( thisAcc, wtxns );
+        console.log({tr});
+        const rlog = tr.logs.pop();
+        console.log({rlog});
+        const rlog_ui = Uint8Array.from(Buffer.from(rlog, 'base64'));
+        const res_ui = rlog_ui.slice(4);
+        console.log({res_ui});
+        res = meth.returns.type.decode(res_ui);
       } else {
         throw Error(`No raw mode for ${conn}`);
       }

@@ -98,7 +98,9 @@ const stringyNet = (len:number) => ({
 });
 
 /** @description For hex strings representing bytes */
-const bytestringyNet = (len:number) => ({
+export const bytestringyNet = (len:number) => ({
+  netSize: len,
+  netName: `byte[${len}]`,
   toNet: (bv: string): NV => {
     return ethers.utils.arrayify(bv);
   },
@@ -117,7 +119,6 @@ export const T_Bytes = (len:number): ALGO_Ty<CBR_Bytes> => ({
 export const T_Digest: ALGO_Ty<CBR_Digest> = {
   ...CBR.BT_Digest,
   ...bytestringyNet(32),
-  netSize: 32,
   netName: `digest`,
 };
 

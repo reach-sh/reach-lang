@@ -118,7 +118,6 @@ checkteal () {
 #exit 0
 jb
 ci ALGO api-raw
-ci ETH api-raw
 exit 0
 ci ETH api-raw
 exit 0

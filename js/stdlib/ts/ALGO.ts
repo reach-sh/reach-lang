@@ -66,6 +66,7 @@ import {
   stdlib,
   typeDefs,
   extractAddr,
+  bytestringyNet,
 } from './ALGO_compiled';
 export type { Token } from './ALGO_compiled';
 import type { MapRefT, MaybeRep } from './shared_backend'; // =>
@@ -929,15 +930,16 @@ const makeLogRep = (evt:string, tys:AnyALGO_Ty[]): LogRep => {
   const hLen = 4;
   const tyns = tys.map(ty => ty.netName);
   const sig = `${evt}(${tyns.join(',')})`;
-  const hp = base64ify(sha512_256(sig));
+  const hu = sha512_256(sig);
+  const hpb = hu.slice(0, hLen*2); // hu is hex nibbles
   const trunc = (x: string): string => ui8h(base64ToUI8A(x).slice(0, hLen));
-  const hpb = trunc(hp);
-  debug(`makeLogRep`, { evt, tyns, sig, hp, hpb });
+  debug(`makeLogRep`, { evt, tyns, sig, hu, hpb });
   const parse = (log:string): (any[]|undefined) => {
     if ( trunc(log) !== hpb ) { return undefined; }
+    debug(`parse`, { log });
     // @ts-ignore
-    const [ logb, ...pd ] = T_Tuple([T_Bytes(hLen)].concat(tys)).fromNet(reNetify(log));
-    debug(`parse`, { log, logb, pd });
+    const [ logb, ...pd ] = T_Tuple([bytestringyNet(hLen), ...tys]).fromNet(reNetify(log));
+    debug(`parse`, { logb, pd });
     return pd;
   };
   const parse0 = (txn:RecvTxn): (any[]|undefined) => {
@@ -1427,6 +1429,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             // @ts-ignore
             (m, i) => actual_tys[i].toNet(m));
           safe_args.unshift(new Uint8Array([funcNum]));
+          safe_args.unshift(new Uint8Array([0]));
           safe_args.forEach((x) => {
             if (! ( x instanceof Uint8Array ) ) {
               // The types say this is impossible now,

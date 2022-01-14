@@ -173,6 +173,7 @@ data BEnv = BEnv
   , be_counter :: Counter
   , be_which :: Int
   , be_api_info :: IORef (M.Map SLPart ApiInfo)
+  , be_api_rets :: IORef (M.Map SLPart DLType)
   }
 
 type BApp = ReaderT BEnv IO
@@ -351,11 +352,24 @@ be_m = \case
   DL_Let at mdv de -> do
     case de of
       DLE_Remote {} -> recordOutputVar mdv
-      DLE_EmitLog {} -> fg_use de
+      DLE_EmitLog _ l vs -> do
+        fg_use de
+        case l of
+          L_Api p -> do
+            BEnv {..} <- ask
+            case vs of
+              [v] -> do
+                let ty = varType v
+                liftIO $ modifyIORef be_api_rets $
+                  M.insert p ty
+              _ -> impossible "api"
+          _ -> return ()
       DLE_setApiDetails _ p tys mc isf -> do
-        which <- asks be_which
-        api_info <- asks be_api_info
-        liftIO $ modifyIORef api_info $ M.insert p $ ApiInfo tys mc which isf
+        BEnv {..} <- ask
+        rets <- liftIO $ readIORef be_api_rets
+        let ret = fromMaybe (impossible "api") $ M.lookup p rets
+        liftIO $ modifyIORef be_api_info $
+          M.insert p $ ApiInfo tys mc be_which isf ret
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
@@ -679,6 +693,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das devts s) = do
   let be_which = 0
   let be_prevs = mempty
   be_api_info <- newIORef mempty
+  be_api_rets <- newIORef mempty
   let be_interval = default_interval
   be_output_vs <- newIORef mempty
   let be_toks = mempty

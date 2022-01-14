@@ -541,18 +541,21 @@ data ApiInfo = ApiInfo
   { ai_msg_tys :: [DLType]
   , ai_mcase_id :: Maybe String
   , ai_which :: Int
-  , ai_compile :: ApiInfoCompilation }
+  , ai_compile :: ApiInfoCompilation
+  , ai_ret_ty :: DLType
+  }
   deriving (Eq)
 
 instance Pretty ApiInfo where
-  pretty = \case
-    ApiInfo mtys mci which ac ->
-      braces $ hardline <> vsep [
-        "msg_tys :" <+> pretty mtys
-      , "mcase_id:" <+> pretty mci
-      , "which:" <+> pretty which
-      , "compile:" <+> pretty ac
-      ]
+  pretty (ApiInfo {..}) =
+    render_obj $
+      M.fromList
+        [ ("msg_tys"::String, pretty ai_msg_tys)
+        , ("mcase_id", pretty ai_mcase_id)
+        , ("which", pretty ai_which)
+        , ("compile", pretty ai_compile)
+        , ("ret", pretty ai_ret_ty)
+        ]
 
 data DLExpr
   = DLE_Arg SrcLoc DLArg
@@ -597,7 +600,7 @@ data DLExpr
   deriving (Eq, Ord, Generic)
 
 data LogKind
-  = L_Api String
+  = L_Api SLPart
   | L_Event (Maybe SLPart) String
   | L_Internal
   deriving (Eq, Ord, Show)

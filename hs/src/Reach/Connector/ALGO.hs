@@ -3,8 +3,10 @@ module Reach.Connector.ALGO (connect_algo, AlgoError(..)) where
 import Control.Monad.Extra
 import Control.Monad.Reader
 import qualified Data.Aeson as Aeson
+import Data.Bits (shiftL, (.|.))
 import Data.ByteString.Base64 (encodeBase64')
 import Data.ByteString.Builder
+import qualified Data.ByteArray as BA
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Internal as BI
@@ -309,10 +311,16 @@ opt_b1 = \case
       e2n :: Integer
       e2n = s0n + (fromIntegral e1w)
   (TInt x) : (TCode "itob" []) : l ->
-    opt_b1 $ (TBytes xbs) : l
-    where
-      xbs = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
+    opt_b1 $ (TBytes $ itob x) : l
+  (TBytes xbs) : (TCode "btoi" []) : l ->
+    opt_b1 $ (TInt $ btoi xbs) : l
   x : l -> x : l
+
+itob :: Integral a => a -> BS.ByteString
+itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
+
+btoi :: BS.ByteString -> Integer
+btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
 
 checkCost :: Bool -> [TEAL] -> IO ()
 checkCost alwaysShow ts = do
@@ -446,7 +454,6 @@ data Shared = Shared
   }
 
 type Lets = M.Map DLVar (App ())
-type ApiRngs = M.Map SLPart DLType
 data Env = Env
   { eShared :: Shared
   , eWhich :: Int
@@ -460,7 +467,6 @@ data Env = Env
   , eResources :: ResourceCounters
   , eNewToks :: IORef (S.Set DLArg)
   , eInitToks :: IORef (S.Set DLArg)
-  , eApiRngsR :: IORef ApiRngs
   }
 
 type App = ReaderT Env IO
@@ -781,6 +787,9 @@ cl = \case
   DLL_Bool b -> cint $ if b then 1 else 0
   DLL_Int at i -> cint_ at i
 
+cbool :: Bool -> App ()
+cbool = cl . DLL_Bool
+
 ca_boolb :: DLArg -> Maybe B.ByteString
 ca_boolb = \case
   DLA_Literal (DLL_Bool b) ->
@@ -898,15 +907,18 @@ cprim = \case
       forM_ args ca
       op o
 
-cconcatbs :: [(DLType, App ())] -> App ()
-cconcatbs l = do
+cconcatbs_ :: (DLType -> App ()) -> [(DLType, App ())] -> App ()
+cconcatbs_ f l = do
   let totlen = typeSizeOf $ T_Tuple $ map fst l
   check_concat_len totlen
   case l of
     [] -> padding 0
     _ -> do
       forM_ (zip l dont_concat_first) $ \((t, m), a) ->
-        m >> ctobs t >> a
+        m >> f t >> a
+
+cconcatbs :: [(DLType, App ())] -> App ()
+cconcatbs = cconcatbs_ ctobs
 
 check_concat_len :: Integer -> App ()
 check_concat_len totlen =
@@ -1458,14 +1470,13 @@ ce = \case
             , DLA_Var v
             ]
           cv v
-          return v
+          return $ v
     case k of
       L_Internal -> void $ internal
-      L_Api f -> do
+      L_Api {} -> do
         v <- internal
-        let ty = varType v
-        addApiRng (bpack f) ty
         op "dup"
+        ctobs $ varType v
         gvStore GV_apiRet
       L_Event ml en -> do
         let name = maybe en (\l -> bunpack l <> "_" <> en) ml
@@ -1496,25 +1507,33 @@ signatureStr f args mret = sig
     rets = fromMaybe "" $ fmap typeSig mret
     sig = f <> "(" <> intercalate "," (map typeSig args) <> ")" <> rets
 
-signatureBytes :: String -> [DLType] -> Maybe DLType -> BS.ByteString
-signatureBytes f args mret = shabs
+sigStrToBytes :: String -> BS.ByteString
+sigStrToBytes sig = shabs
   where
-    sig = signatureStr f args mret
-    shas = show . hashWith SHA512t_256 $ bpack sig
-    shabs = bpack . take 4 $ shas
+    sha = hashWith SHA512t_256 $ bpack sig
+    shabs = BS.take 4 $ BA.convert sha
 
-clogEvent :: String -> [DLVar] -> ReaderT Env IO ()
+sigStrToInt :: String -> Int
+sigStrToInt = fromIntegral . btoi . sigStrToBytes
+
+signatureBytes :: String -> [DLType] -> Maybe DLType -> BS.ByteString
+signatureBytes f args mret = sigStrToBytes $ signatureStr f args mret
+
+clogEvent :: String -> [DLVar] -> App ()
 clogEvent eventName vs = do
   let shaBytes = signatureBytes eventName (map varType vs) Nothing
   let as = map DLA_Var vs
   cconcatbs $ (T_Bytes 4, cbs shaBytes) : map (\a -> (argTypeOf a, ca a)) as
-  code "log" [ "//", texty $ typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as ]
+  clog_ $ typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as
+
+clog_ :: Integer -> App ()
+clog_ sz = code "log" [ "//", texty sz ]
 
 clog :: [DLArg] -> App ()
 clog as = do
   let la = DLLA_Tuple as
   cla la
-  code "log" [ "//", texty $ typeSizeOf $ largeArgTypeOf la ]
+  clog_ $ typeSizeOf $ largeArgTypeOf la
 
 staticZero :: DLArg -> Bool
 staticZero = \case
@@ -1835,6 +1854,7 @@ etexty = texty . fromEnum
 
 data ArgId
   = ArgMethod
+  | ArgPublish
   | ArgTime
   | ArgMsg
   deriving (Eq, Ord, Show, Enum, Bounded)
@@ -1852,6 +1872,9 @@ data GlobalVar
   = GV_txnCounter
   | GV_currentStep
   | GV_currentTime
+  | GV_argTime
+  | GV_argMsg
+  | GV_wasApi
   | GV_apiRet
   deriving (Eq, Ord, Show, Enum, Bounded)
 
@@ -1869,6 +1892,9 @@ gvType = \case
   GV_txnCounter -> T_UInt
   GV_currentStep -> T_UInt
   GV_currentTime -> T_UInt
+  GV_argTime -> T_UInt
+  GV_argMsg -> impossible "GV_argMsg"
+  GV_wasApi -> T_Bool
   GV_apiRet -> impossible "GV_apiRet"
 
 keyState_gvs :: [GlobalVar]
@@ -1880,7 +1906,7 @@ keyState_ty = T_Tuple $ map gvType keyState_gvs
 defn_fixed :: Label -> Bool -> App ()
 defn_fixed l b = do
   label l
-  cl $ DLL_Bool b
+  cbool b
   op "return"
 
 defn_done :: App ()
@@ -1922,6 +1948,7 @@ cloop which (C_Loop at svs vars body) = recordWhich which $ do
         . (bindFromTuple at svs)
   bindVars $ ct body
 
+-- NOTE This could be compiled to a jump table if that were possible with TEAL
 cblt :: String -> (Int -> a -> App ()) -> BLT Int a -> App ()
 cblt lab go t = do
   -- liftIO $ putStrLn $ show t
@@ -1946,6 +1973,9 @@ cblt lab go t = do
             asserteq
         go which h
 
+handlerLabel :: Int -> Label
+handlerLabel w = "publish" <> texty w
+
 ch :: Int -> CHandler -> App ()
 ch _ (C_Loop {}) = return ()
 ch which (C_Handler at int from prev svs msg timev secsv body) = recordWhich which $ do
@@ -1953,8 +1983,8 @@ ch which (C_Handler at int from prev svs msg timev secsv body) = recordWhich whi
   let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ msg)
   when (argSize > algoMaxAppTotalArgLen) $
     xxx $ texty $ "Step " <> show which <> "'s argument length is " <> show argSize <> ", but the maximum is " <> show algoMaxAppTotalArgLen
-  let bindFromArg ai vs m = do
-        argLoad ai
+  let bindFromMsg vs m = do
+        gvLoad GV_argMsg
         op "dup"
         op "len"
         cint $ typeSizeOf $ (T_Tuple $ map varType vs)
@@ -1963,14 +1993,13 @@ ch which (C_Handler at int from prev svs msg timev secsv body) = recordWhich whi
   let bindFromSvs m = do
         cSvsLoad $ typeSizeOf $ T_Tuple $ map varType svs
         bindFromTuple at svs m
-  label ("publish" <> texty which)
+  label (handlerLabel which)
   comment "check step"
   cint $ fromIntegral prev
   gvLoad GV_currentStep
   asserteq
   comment "check time"
-  argLoad ArgTime
-  cfrombs T_UInt
+  gvLoad GV_argTime
   op "dup"
   cint 0
   op "=="
@@ -1984,7 +2013,7 @@ ch which (C_Handler at int from prev svs msg timev secsv body) = recordWhich whi
         . (bindTime timev)
         . (bindSecs secsv)
         . bindFromSvs
-        . (bindFromArg ArgMsg msg)
+        . (bindFromMsg msg)
   bindVars $ do
     clogEvent ("_reach_e" <> show which) msg
     when isCtor $ do
@@ -2048,37 +2077,68 @@ compileTEAL tealf = do
       impossible $ "The TEAL compiler failed with the message:\n" <> show stderr
     ExitSuccess -> return stdout
 
-addApiRng :: SLPart -> DLType -> App ()
-addApiRng who ret = do
-  Env {..} <- ask
-  liftIO $ modifyIORef eApiRngsR $ M.insert who ret
-
-apiSig :: ApiRngs -> SLPart -> ApiInfo -> String
-apiSig apiRngs who (ApiInfo {..}) = signatureStr f args mret
+data CApi = CApi
+  { capi_who :: SLPart
+  , capi_sig :: String
+  , capi_which :: Int
+  , capi_arg_tys :: [DLType]
+  , capi_doWrap :: App ()
+  }
+apiSig :: (SLPart, ApiInfo) -> (String, CApi)
+apiSig (who, (ApiInfo {..})) = (sig, c)
   where
+    c = CApi who sig ai_which args doWrap
+    sig = signatureStr f args mret
     f = bunpack who
     imp = impossible "apiSig"
-    args =
+    (args, doWrap) =
       case ai_compile of
         AIC_SpreadArg ->
           case ai_msg_tys of
-            [T_Tuple ts] -> ts
+            [T_Tuple ts] -> (ts, return ())
             _ -> imp
         AIC_Case ->
           case ai_msg_tys of
-            [T_Data env] ->
-              case M.lookup c_id_s env of
-                Just (T_Tuple ts) -> ts
+            [T_Data tm] ->
+              case M.lookup cid tm of
+                Just (T_Tuple ts) -> (ts, doWrapData ts $ cla . DLLA_Data tm cid)
                 _ -> imp
             _ -> imp
-    c_id_s = fromMaybe imp ai_mcase_id
-    ret = fromMaybe imp $ M.lookup who apiRngs
+    cid = fromMaybe imp ai_mcase_id
+    ret = ai_ret_ty
     mret = Just $ ret
+
+doWrapData :: [DLType] -> (DLArg -> App ()) -> App ()
+doWrapData tys mk = do
+  -- Tuple of tys is on stack
+  av <- allocDLVar sb $ T_Tuple tys
+  sallocLet av (return ()) $ mk (DLA_Var av)
+  -- Data of tys is on stack
+
+capi :: Int -> CApi -> App ()
+capi sigi (CApi who sig which tys doWrap) = do
+  comment $ texty $ "API: " <> sig
+  comment $ texty $ who
+  comment $ texty $ " bs: " <> (show $ sigStrToBytes sig)
+  comment $ texty $ " ui: " <> show sigi
+  cint 0
+  gvStore GV_argTime
+  cbool True
+  gvStore GV_wasApi
+  let f :: DLType -> Integer -> (DLType, App ())
+      f t i = (t, code "txna" [ "ApplicationArgs", texty i ])
+  cconcatbs_ (const $ return ()) $ zipWith f tys [1..]
+  doWrap
+  gvStore GV_argMsg
+  code "b" [handlerLabel which]
 
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
   let PLProg _at plo dli _ _ cpp = pl
   let CPProg at _ ai _ (CHandlers hm) = cpp
+  let maxApiRetSize = maximum $ map (typeSizeOf . ai_ret_ty) $ M.elems ai
+  let ai_sm = M.fromList $ map apiSig $ M.toAscList ai
+  let ai_im = M.mapKeys sigStrToInt ai_sm
   let sMaps = dli_maps dli
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty
@@ -2102,7 +2162,6 @@ compile_algo env disp pl = do
         return $ keysl
   sMapKeysl <- recordSizeAndKeys "mapData" sMapDataSize algoMaxLocalSchemaEntries_usable
   sStateSizeR <- newIORef 0
-  eApiRngsR <- newIORef mempty
   let eShared = Shared {..}
   let run :: App () -> IO TEALs
       run m = do
@@ -2130,10 +2189,10 @@ compile_algo env disp pl = do
         let tc = LT.toStrict $ encodeBase64 tbs
         modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String tc
   addProg "appApproval" (cte_REACH_DEBUG env) $ do
-    -- XXX: We could remove both of these, because they don't actually
-    -- interfere with our operation
-    checkRekeyTo
-    checkLease
+    when False $ do
+      -- We don't check these, because they don't interfere with how we work.
+      checkRekeyTo
+      checkLease
     cint 0
     gvStore GV_txnCounter
     code "txn" ["ApplicationID"]
@@ -2158,18 +2217,28 @@ compile_algo env disp pl = do
       code "b" ["checkSize"]
       -- The NON-OptIn case:
       label "normal"
-    -- NOTE: We don't actually care about this, because there will be a
-    -- different failure if there are too few and if there are too few, who
-    -- cares?
     when False $ do
+      -- NOTE: We don't actually care about this, because there will be a
+      -- different failure if there are too few and if there are too few, who
+      -- cares?
       code "txn" ["NumAppArgs"]
       cint argCount
       asserteq
     argLoad ArgMethod
     cfrombs T_UInt
     label "preamble"
-    -- NOTE This could be compiled to a jump table if that were possible
-    cblt "preamble" ch $ bltM hm
+    op "dup"
+    code "bz" [ "publish" ]
+    cblt "api" capi $ bltM ai_im
+    label "publish"
+    argLoad ArgPublish
+    cfrombs T_UInt
+    argLoad ArgTime
+    cfrombs T_UInt
+    gvStore GV_argTime
+    argLoad ArgMsg
+    gvStore GV_argMsg
+    cblt "publish" ch $ bltM hm
     forM_ (M.toAscList hm) $ \(hi, hh) ->
       cloop hi hh
     label "updateState"
@@ -2179,10 +2248,16 @@ compile_algo env disp pl = do
       ctobs $ gvType gv
     forM_ (tail keyState_gvs) $ const $ op "concat"
     op "app_global_put"
+    gvLoad GV_wasApi
+    code "bz" [ "checkSize" ]
+    -- SHA-512/256("return")[0..4] = 0x151f7c75
+    cbs $ BS.pack [ 0x15, 0x1f, 0x7c, 0x75 ]
+    gvLoad GV_apiRet
+    op "concat"
+    clog_ $ 4 + maxApiRetSize
     code "b" [ "checkSize" ]
     label "checkSize"
     gvLoad GV_txnCounter
-    op "dup"
     op "dup"
     -- The size is correct
     cint 1
@@ -2192,13 +2267,15 @@ compile_algo env disp pl = do
     -- We're last
     code "txn" ["GroupIndex"]
     asserteq
-    -- XXX: Consider removing this, because if the fee is too low, it will be
-    -- rejected anyways
-    cint algoMinTxnFee
-    op "*"
-    code "txn" ["Fee"]
-    op "<="
-    assert
+    when False $ do
+      -- There's no point to checking this, because if the fee is too much,
+      -- there's no harm and if it is too low, the network will reject it
+      -- anyways
+      cint algoMinTxnFee
+      op "*"
+      code "txn" ["Fee"]
+      op "<="
+      assert
     code "b" [ "done" ]
     defn_done
     defn_fail
@@ -2212,7 +2289,7 @@ compile_algo env disp pl = do
     code "b" [ "updateState" ]
   -- Clear state is never allowed
   addProg "appClear" False $ do
-    cl $ DLL_Bool False
+    cbool False
   checkResources bad' =<< readIORef sResources
   stateSize <- readIORef sStateSizeR
   void $ recordSizeAndKeys "state" stateSize algoMaxGlobalSchemaEntries_usable
@@ -2230,8 +2307,7 @@ compile_algo env disp pl = do
         S.toList $ S.map (Aeson.String . LT.toStrict) sFailures
   unless (null sFailures) $ do
     emitWarning Nothing $ W_ALGOUnsupported $ S.toList $ S.map LT.unpack sFailures
-  apiRngs <- readIORef eApiRngsR
-  let apiSigs = map (uncurry $ apiSig apiRngs) $ M.toAscList ai
+  let apiSigs = M.keys ai_sm
   modifyIORef resr $
     M.insert "ABI" $ aarray $ map (Aeson.String . s2t) apiSigs
   modifyIORef resr $

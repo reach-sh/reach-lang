@@ -3228,7 +3228,7 @@ evalPrim p sargs =
     SLPrim_getAddress -> getContractInfo T_Address
     SLPrim_EmitLog -> do
       (x, y) <- two_args
-      let ma = expectString y
+      ma <- mustBeBytes y
       public <$> doInternalLog (Just ma) x
     SLPrim_Event -> do
       ensure_mode SLM_AppInit "Event"
@@ -3404,17 +3404,17 @@ doInteractiveCall sargs iat estf mode lab ct mkexpr = do
   check_post rng_v
   return rng_v
 
-doInternalLog :: Maybe String -> SLVal -> App SLVal
+doInternalLog :: Maybe SLPart -> SLVal -> App SLVal
 doInternalLog ma x = doEmitLog True Nothing ma [x]
 
-doInternalLog_ :: Maybe String -> DLVar -> App DLVar
+doInternalLog_ :: Maybe SLPart -> DLVar -> App DLVar
 doInternalLog_ ma x = expectDLVar <$> doEmitLog_ True Nothing ma [x]
 
-doEmitLog :: Bool -> Maybe (Maybe SLPart, String) -> Maybe String ->  [SLVal] -> App SLVal
+doEmitLog :: Bool -> Maybe (Maybe SLPart, String) -> Maybe SLPart ->  [SLVal] -> App SLVal
 doEmitLog isInternal ml ma vs =
   doEmitLog_ isInternal ml ma =<< mapM compileToVar vs
 
-doEmitLog_ :: Bool -> Maybe (Maybe SLPart, String) -> Maybe String -> [DLVar] -> App SLVal
+doEmitLog_ :: Bool -> Maybe (Maybe SLPart, String) -> Maybe SLPart -> [DLVar] -> App SLVal
 doEmitLog_ isInternal ml ma dvs = do
   ensure_mode SLM_ConsensusStep "emitLog"
   at <- withAt id
@@ -4516,7 +4516,7 @@ doApiCall lhs (ApiCallRec{..}) = do
                     [ jsConst a returnLVal doLog, callOnly [ jsThunkStmts a [es interactOut] ] ]
   let assignLhs = jsConst a lhs $ jsArrayLiteral a [ dom, apiReturn ]
   let setDetails = jsCall a (jid ".setApiDetails") [slac_who, dom]
-  let ss = [callOnly [onlyThunk], es pub4, es setDetails, assignLhs]
+  let ss = [callOnly [onlyThunk], es pub4, assignLhs, es setDetails ]
   return ss
 
 doForkAPI2Case :: [JSExpression] -> App [JSExpression]
