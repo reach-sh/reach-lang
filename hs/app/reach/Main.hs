@@ -1826,7 +1826,7 @@ versionCompare2 = command "version-compare2" $ info f mempty where
             -- `q` for highest numeric branch satisfying major + minor predicates:
             q mj mn = maybe v majMinPat . lastMay $ L.sort ns where
               ns = [ n | TFReach (RVWithMaj n@RVNumeric{rvEnvNumeric = RVEnvNumeric{..}})
-                     <- L.nub $ M.foldl' (\a b -> a <> L.concat (M.elems b)) [] assocR
+                     <- L.nubOrd $ M.foldl' (\a b -> a <> L.concat (M.elems b)) [] assocR
                      , maybe True (== rvEnvNumericMajor) mj
                      , maybe True ((== rvEnvNumericMinor) . Just) mn
                    ]
