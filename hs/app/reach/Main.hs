@@ -1555,23 +1555,15 @@ config = command "config" $ info f d where
 data ImageHostAPIDockerHubResultImage = ImageHostAPIDockerHubResultImage
   { dhri_architecture :: String
   , dhri_digest :: Maybe Text
-  , dhri_os :: Text
-  , dhri_size :: Int
-  , dhri_last_pushed :: Maybe UTCTime
-  , dhri_status :: Text
   } deriving (Show, Generic, Eq)
 
 data ImageHostAPIDockerHubResult = ImageHostAPIDockerHubResult
-  { dhr_last_updated :: Maybe UTCTime
-  , dhr_last_updater_username :: Text
-  , dhr_name :: Text -- Tags e.g. "latest" or "0.1.7"
-  , dhr_tag_last_pushed :: Maybe UTCTime
+  { dhr_name :: Text -- Tags e.g. "latest" or "0.1.7"
   , dhr_images :: [ImageHostAPIDockerHubResultImage]
   } deriving (Show, Generic)
 
 data ImageHostAPIDockerHub = ImageHostAPIDockerHub
-  { dh_count :: Int
-  , dh_next :: Maybe String
+  { dh_next :: Maybe String
   , dh_results :: [ImageHostAPIDockerHubResult]
   } deriving (Show, Generic)
 
