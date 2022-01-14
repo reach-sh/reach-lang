@@ -17,7 +17,6 @@ import Data.List.Extra (mconcatMap, splitOn)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
-import Data.Sequence (mapWithIndex)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -4215,10 +4214,10 @@ compilePayAmt tt v = do
                         when (token_a `elem` sks) $ do
                           locAt v_at $ expect_ $ Err_Transfer_DoubleToken tt
                         let sks' = token_a : sks
-                        return $ ((seenNet, sks'), (DLPayAmt nts $ ((amt_a, token_a) : tks)))
+                        return $ ((seenNet, sks'), (DLPayAmt nts $ tks <> [(amt_a, token_a)]))
                       _ -> locAt v_at $ expect_ $ Err_Token_DynamicRef
                   _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
-          snd <$> (foldM go ((False, []), DLPayAmt (DLA_Literal $ DLL_Int at 0) []) $ zip ts aes)
+          snd <$> (foldlM go ((False, []), DLPayAmt (DLA_Literal $ DLL_Int at 0) []) $ zip ts aes)
         _ -> locAt v_at $ expect_ $ Err_Token_DynamicRef
     _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
 
@@ -4774,37 +4773,23 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
       Just (JSArrayLiteral aa ts _) -> do
         let network_pay_var = jid "networkTokenPay"
         let nnts = map (jse_expect_id at) $ jsa_flatten ts
-        let nnts_js =
-              map
-                (\i ->
-                   JSArrayLiteral aa [JSArrayElement (jid $ "amt" <> show i), JSArrayElement (jid $ "nntok" <> show i)] aa)
-                [0 .. length nnts - 1]
-        let nnts_ret =
-              toList $
-                mapWithIndex
-                  (\i nnt ->
-                     JSArrayLiteral
-                       aa
-                       [ JSArrayElement (jid $ "amt" <> show i)
-                       , JSArrayElement (jid $ show $ pretty nnt)
-                       ]
-                       aa)
-                  (Seq.fromList nnts)
-        let verifyPaySpec =
-              toList $
-                mapWithIndex
-                  (\i nnt ->
-                     JSExpressionStatement
-                       (JSCallExpression
-                          (jid "assert")
-                          aa
-                          (toJSCL
-                             [ JSExpressionBinary (jid ("nntok" <> show i)) (JSBinOpEq aa) (jid nnt)
-                             , JSStringLiteral aa ("'Expected the non-network token at position " <> show (i + 1) <> " in `case` payment to be equal to " <> show (pretty nnt) <> " as specified in `.paySpec`'")
-                             ])
-                          aa)
-                       sp)
-                  (Seq.fromList nnts)
+        let mkint :: SLVar -> Integer -> (JSExpression, JSExpression, JSStatement)
+            mkint nnt i = (js, ret, vps)
+              where
+                amt = jid $ "amt" <> show i
+                nntok = jid $ "nntok" <> show i
+                nnt' = jid nnt
+                js = jsArrayLiteral aa [amt, nntok]
+                ret = jsArrayLiteral aa [amt, nnt']
+                vps =
+                  JSExpressionStatement
+                   (jsCall aa (jid "assert")
+                     [ JSExpressionBinary nntok (JSBinOpEq aa) (jid nnt)
+                     , JSStringLiteral aa ("'Expected the non-network token at position " <> show (i + 1) <> " in `case` payment to be equal to " <> show (pretty nnt) <> " as specified in `.paySpec`'")
+                     ])
+                   sp
+        let nnts_int = zipWith mkint nnts [0..]
+        let (nnts_js, nnts_ret, verifyPaySpec) = unzip3 nnts_int
         let pay_var tl = JSArrayLiteral aa (intercalate [JSArrayComma aa] $ map ((: []) . JSArrayElement) $ network_pay_var : tl) aa
         let pay_ss = [JSConstant aa (JSLOne $ JSVarInitExpression (pay_var nnts_js) $ JSVarInit aa pay_e) sp] <> verifyPaySpec <> [JSReturn aa (Just (pay_var nnts_ret)) sp]
         let pay_call = jsCallThunk aa $ jsThunkStmts aa pay_ss
