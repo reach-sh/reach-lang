@@ -1853,27 +1853,30 @@ versionCompare2 = command "version-compare2" $ info f mempty where
         let m = maximum $ (\(x, _, _) -> T.length $ lefty x) <$> newDAs <> newTags <> newCAs
         let s = T.take 8 . T.drop 7
         let p x = lefty x <> T.replicate (m - T.length (lefty x)) " "
+        let n a = when (any ((> 0) . length) a) $ putStrLn ""
+
+        let say = mapM_ $ \(x, y, z) -> T.putStrLn
+              $ " * " <> p x <> "  " <> s y <> ":  "
+             <> T.intercalate ", " (tagFor <$> L.sort z)
 
         when (length newDAs > 0) $ do
-          putStrLn "New Docker images are available for:"
-          forM_ newDAs $ \(x, y, z) -> T.putStrLn
-            $ " * " <> p x <> "  " <> s y <> ":  "
-           <> T.intercalate ", " (tagFor <$> L.sort z)
-          when (length newTags > 0 || length newCAs > 0) $ putStrLn ""
+          putStrLn "New images are available for:"
+          say newDAs
+          n [ newTags, newCAs, synced ]
 
         when (length newTags > 0) $ do
-          putStrLn "New Docker tags are available for:"
-          forM_ newTags $ \(x, y, z) -> T.putStrLn
-            $ " * " <> p x <> "  " <> s y <> ":  "
-           <> T.intercalate ", " (tagFor <$> L.sort z)
-          when (length newCAs > 0) $ putStrLn ""
+          putStrLn "New tags are available for:"
+          say newTags
+          n [ newCAs, synced ]
 
-        -- TODO group by connector (e.g. devnet-algo + postgres = ALGO)
         when (length newCAs > 0) $ do
-          putStrLn "New Reach connector images are available for:"
-          forM_ newCAs $ \(x, y, z) -> T.putStrLn
-            $ " * " <> p x <> "  " <> s y <> ":  "
-           <> T.intercalate ", " (tagFor <$> L.sort z)
+          putStrLn "New connectors are available:"
+          say newCAs
+          n [ synced ]
+
+        when (length synced > 0) $ do
+          putStrLn "The following images are fully synchronized:"
+          say synced
 
         exitWith $ ExitFailure 60
 
