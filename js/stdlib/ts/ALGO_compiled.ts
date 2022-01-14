@@ -9,7 +9,8 @@ import {
   makeArith,
 } from './shared_impl';
 import {
-  bigNumberToNumber
+  bigNumberToNumber,
+  bigNumberify,
 } from './shared_user';
 import algosdk from 'algosdk';
 import buffer from 'buffer';
@@ -66,7 +67,7 @@ export const T_Bool: ALGO_Ty<CBR_Bool> = {
   netSize: 1,
   toNet: (bv: CBR_Bool): NV => new Uint8Array([bv ? 1 : 0]),
   fromNet: (nv: NV): CBR_Bool => nv[0] == 1,
-  netName: 'bool',
+  netName: 'byte', // XXX 'bool'
 }
 
 export const T_UInt: ALGO_Ty<CBR_UInt> = {
@@ -171,25 +172,19 @@ export const T_Contract: ALGO_Ty<Contract> = {
 
 export const T_Array = (
   co: ALGO_Ty<CBR_Val>,
-  size: number,
-): ALGO_Ty<CBR_Array> => ({
-  ...CBR.BT_Array(co, size),
-  netSize: size * co.netSize,
-  toNet: (bv: CBR_Array): NV => {
-    return ethers.utils.concat(bv.map((v) => co.toNet(v)));
-  },
-  fromNet: (nv: NV): CBR_Array => {
-    // TODO: assert nv.size = len * size
-    const len = co.netSize;
-    const chunks = new Array(size).fill(null);
-    for (let i = 0; i < size; i++) {
-      const start = i * len;
-      chunks[i] = co.fromNet(nv.slice(start, start + len));
-    }
-    return chunks;
-  },
-  netName: `${co.netName}[${size}]`,
-});
+  size_u: unknown,
+): ALGO_Ty<CBR_Array> => {
+  const size = bigNumberToNumber(bigNumberify(size_u));
+  debug('T_Array', co, size);
+  const asTuple = T_Tuple(new Array(size).fill(co));
+  debug('T_Array', asTuple);
+  const { netSize, toNet, fromNet } = asTuple;
+  return {
+    ...CBR.BT_Array(co, size),
+    netSize, toNet, fromNet,
+    netName: `${co.netName}[${size}]`,
+  };
+};
 
 export const T_Tuple = (
   cos: Array<ALGO_Ty<CBR_Val>>,
@@ -284,9 +279,10 @@ export const T_Data = (
   coMap: {[key: string]: ALGO_Ty<CBR_Val>}
 ): ALGO_Ty<CBR_Data> => {
   const cos = Object.values(coMap);
-  const valSize =
-    Math.max(...cos.map((co) => co.netSize))
+  const cosSizes = cos.map((co) => co.netSize);
+  const valSize = Math.max(...cosSizes);
   const netSize = valSize + 1;
+  debug(`T_Data`, { cos, cosSizes, valSize, netSize });
   const {ascLabels, labelMap} = labelMaps(coMap);
   return {
     ...CBR.BT_Data(coMap),
@@ -309,7 +305,7 @@ export const T_Data = (
       const val = val_co.fromNet(rest.slice(0, sliceTo));
       return [label, val];
     },
-    netName: `(byte, byte[${valSize}])`,
+    netName: `(byte,byte[${valSize}])`,
   }
 }
 

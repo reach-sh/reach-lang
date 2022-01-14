@@ -175,7 +175,7 @@ typeSig :: DLType -> String
 typeSig x =
   case x of
   T_Null -> "null"
-  T_Bool -> "bool"
+  T_Bool -> "byte" -- "bool"
   T_UInt -> "uint64"
   T_Bytes sz -> "byte" <> array sz
   T_Digest -> "digest"
@@ -1521,10 +1521,12 @@ signatureBytes f args mret = sigStrToBytes $ signatureStr f args mret
 
 clogEvent :: String -> [DLVar] -> App ()
 clogEvent eventName vs = do
-  let shaBytes = signatureBytes eventName (map varType vs) Nothing
+  let shaStr = signatureStr eventName (map varType vs) Nothing
+  let shaBytes = sigStrToBytes shaStr
   let as = map DLA_Var vs
   cconcatbs $ (T_Bytes 4, cbs shaBytes) : map (\a -> (argTypeOf a, ca a)) as
-  clog_ $ typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as
+  comment $ texty shaStr
+  clog_ $ 4 + (typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as)
 
 clog_ :: Integer -> App ()
 clog_ sz = code "log" [ "//", texty sz ]

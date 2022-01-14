@@ -931,11 +931,11 @@ const makeLogRep = (evt:string, tys:AnyALGO_Ty[]): LogRep => {
   const tyns = tys.map(ty => ty.netName);
   const sig = `${evt}(${tyns.join(',')})`;
   const hu = sha512_256(sig);
-  const hpb = hu.slice(0, hLen*2); // hu is hex nibbles
+  const hp = hu.slice(0, hLen*2); // hu is hex nibbles
   const trunc = (x: string): string => ui8h(base64ToUI8A(x).slice(0, hLen));
-  debug(`makeLogRep`, { evt, tyns, sig, hu, hpb });
+  debug(`makeLogRep`, { evt, tyns, sig, hu, hp });
   const parse = (log:string): (any[]|undefined) => {
-    if ( trunc(log) !== hpb ) { return undefined; }
+    if ( trunc(log) !== hp ) { return undefined; }
     debug(`parse`, { log });
     // @ts-ignore
     const [ logb, ...pd ] = T_Tuple([bytestringyNet(hLen), ...tys]).fromNet(reNetify(log));
