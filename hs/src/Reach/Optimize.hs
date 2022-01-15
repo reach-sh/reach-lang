@@ -389,6 +389,14 @@ class Extract a where
 instance Extract (Maybe DLVar) where
   extract = id
 
+allTheSame :: (Eq a, Sanitize a) => [a] -> Maybe a
+allTheSame xs =
+  case and $ map (== top) (tail xs') of
+    True -> Just top
+    False -> Nothing
+  where xs' = map sani xs
+        top = head xs'
+
 optIf :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (SrcLoc -> DLArg -> k -> k -> r) -> SrcLoc -> DLArg -> k -> k -> App r
 optIf mkDo mkIf at c t f =
   opt c >>= \case
@@ -398,9 +406,9 @@ optIf mkDo mkIf at c t f =
       -- XXX We could see if c' is something like `DLVar x == DLArg y` and add x -> y to the optimization environment
       t' <- newScope $ opt t
       f' <- newScope $ opt f
-      case sani t' == sani f' of
-        True -> return $ mkDo t'
-        False ->
+      case allTheSame [t', f'] of
+        Just s -> return $ mkDo s
+        Nothing ->
           optNotHuh c' >>= \case
             Just c'' ->
               return $ mkIf at c'' f' t'
@@ -410,7 +418,7 @@ optIf mkDo mkIf at c t f =
 gcsSwitch :: Optimize k => ConstT (SwitchCases k)
 gcsSwitch = mapM_ (\(_, _, n) -> gcs n)
 
-optSwitch :: Optimize k => (k -> r) -> (DLStmt -> k -> k) -> (SrcLoc -> DLVar -> SwitchCases k -> r) -> SrcLoc -> DLVar -> SwitchCases k -> App r
+optSwitch :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (DLStmt -> k -> k) -> (SrcLoc -> DLVar -> SwitchCases k -> r) -> SrcLoc -> DLVar -> SwitchCases k -> App r
 optSwitch mkDo mkLet mkSwitch at ov csm = do
   ov' <- opt ov
   optKnownVariant ov' >>= \case
@@ -420,7 +428,11 @@ optSwitch mkDo mkLet mkSwitch at ov csm = do
       newScope $ mkDo <$> opt var_k'
     Nothing -> do
       let cm1 k (v_v, vnu, n) = (,,) v_v vnu <$> (newScope $ recordKnownVariant ov' k (DLA_Var v_v) >> opt n)
-      mkSwitch at ov' <$> mapWithKeyM cm1 csm
+      csm' <- mapWithKeyM cm1 csm
+      let csm'kl = map (\(_k, (_v_v, _vnu, n)) -> n) $ M.toAscList csm'
+      case allTheSame csm'kl of
+        Just s -> return $ mkDo s
+        Nothing -> return $ mkSwitch at ov' csm'
 
 optWhile :: Optimize a => (DLAssignment -> DLBlock -> a -> a -> a) -> DLAssignment -> DLBlock -> a -> a -> App a
 optWhile mk asn cond body k = do

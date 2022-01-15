@@ -16,6 +16,9 @@ export const main = Reach.App(() => {
   assert(x == MUI.Some(0));
   const y = M[A];
   assert(y == MUI.Some(0));
+  const xs = fromSome(x, 15);
+  const ys = fromSome(y, 15);
+  assert(xs == ys);
   M[A] = 1;
   const z = M[A];
   assert(z == MUI.Some(1));
