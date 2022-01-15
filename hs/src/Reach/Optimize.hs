@@ -38,7 +38,6 @@ data CommonEnv = CommonEnv
   { ceReplaced :: M.Map DLVar (DLVar, Maybe DLArg)
   , cePrev :: M.Map DLExpr RepeatedT
   , ceNots :: M.Map DLVar DLArg
-  , ceKnownVariants :: M.Map DLVar (SLVar, DLArg)
   , ceKnownLargeArgs :: M.Map DLVar DLLargeArg
   }
 
@@ -51,14 +50,13 @@ instance Semigroup CommonEnv where
       { ceReplaced = g ceReplaced
       , cePrev = g cePrev
       , ceNots = g ceNots
-      , ceKnownVariants = g ceKnownVariants
       , ceKnownLargeArgs = g ceKnownLargeArgs
       }
     where
       g f = f x <> f y
 
 instance Monoid CommonEnv where
-  mempty = CommonEnv mempty mempty mempty mempty mempty
+  mempty = CommonEnv mempty mempty mempty mempty
 
 data Env = Env
   { eFocus :: Focus
@@ -135,11 +133,11 @@ recordNotHuh = \case
            })
 
 optKnownVariant :: DLVar -> App (Maybe (SLVar, DLArg))
-optKnownVariant = lookupCommon ceKnownVariants
-
-recordKnownVariant :: DLVar -> SLVar -> DLArg -> App ()
-recordKnownVariant dv k va =
-  updateLookup (\e -> e { ceKnownVariants = M.insert dv (k, va) $ ceKnownVariants e })
+optKnownVariant v = do
+  optKnownLargeArg v >>= \case
+    Nothing -> return $ Nothing
+    Just (DLLA_Data _ k va) -> return $ Just (k, va)
+    Just _ -> impossible "optKnownVariant"
 
 optKnownLargeArg :: DLVar -> App (Maybe DLLargeArg)
 optKnownLargeArg = lookupCommon ceKnownLargeArgs
@@ -427,7 +425,9 @@ optSwitch mkDo mkLet mkSwitch at ov csm = do
       let var_k' = mkLet (DL_Let at (DLV_Let DVC_Many var_var) (DLE_Arg at var_val)) var_k
       newScope $ mkDo <$> opt var_k'
     Nothing -> do
-      let cm1 k (v_v, vnu, n) = (,,) v_v vnu <$> (newScope $ recordKnownVariant ov' k (DLA_Var v_v) >> opt n)
+      let tm = dataTypeMap $ varType ov
+      let rkv dv k va = recordKnownLargeArg dv $ DLLA_Data tm k va
+      let cm1 k (v_v, vnu, n) = (,,) v_v vnu <$> (newScope $ rkv ov' k (DLA_Var v_v) >> opt n)
       csm' <- mapWithKeyM cm1 csm
       let csm'kl = map (\(_k, (_v_v, _vnu, n)) -> n) $ M.toAscList csm'
       case allTheSame csm'kl of

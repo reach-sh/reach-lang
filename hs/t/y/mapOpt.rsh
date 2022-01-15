@@ -29,10 +29,10 @@ export const main = Reach.App(() => {
   assert(v == MUI.Some(i < 10 ? 2 : 1));
   commit();
   A.only(() => {
-    const [ va, xa, ya, za ] = [ v, x, y, z ];
+    const [ xsa, ysa, va, xa, ya, za ] = [ xs, ys, v, x, y, z ];
   });
-  A.publish(va, xa, ya, za);
-  require(va == v && xa == x && ya == y && za == z);
+  A.publish(xsa, ysa, va, xa, ya, za);
+  require(xsa == xs && ysa == ys && va == v && xa == x && ya == y && za == z);
   delete M[A];
   const u = M[A];
   assert(u == MUI.None());
