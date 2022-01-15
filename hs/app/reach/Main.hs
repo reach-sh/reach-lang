@@ -1695,7 +1695,7 @@ remoteDockerAssocFor imgs = do
       let li = L.foldl' max 0 [ T.length i | (i, _) <- rs ]
       let ln = L.foldl' max 0 [ T.length n | (_, n) <- rs ]
       let p l x = T.replicate (l - T.length x) " "
-      mapM_ T.putStrLn [ " * reachsh/" <> i <> p li i
+      mapM_ T.putStrLn [ " * " <> i <> p li i
         <> " after " <> p ln n <> n <> " attempts." | (i, n) <- rs ]
     when (length us > 0) $ do
       mapM_ T.putStrLn us
