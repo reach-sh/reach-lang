@@ -820,7 +820,6 @@ instance CanDupe DLExpr where
     where
       x =
         case e of
-          DLE_MapRef {} -> False
           DLE_Remote {} -> False
           DLE_TokenNew {} -> False
           DLE_TokenBurn {} -> False

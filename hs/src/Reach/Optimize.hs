@@ -32,9 +32,11 @@ data Focus
   | F_Consensus
   deriving (Eq, Ord, Show)
 
+type RepeatedT = Either DLArg DLLargeArg
+
 data CommonEnv = CommonEnv
   { ceReplaced :: M.Map DLVar (DLVar, Maybe DLArg)
-  , cePrev :: M.Map DLExpr DLVar
+  , cePrev :: M.Map DLExpr RepeatedT
   , ceNots :: M.Map DLVar DLArg
   , ceKnownVariants :: M.Map DLVar (SLVar, DLArg)
   , ceKnownLargeArgs :: M.Map DLVar DLLargeArg
@@ -64,7 +66,13 @@ data Env = Env
   , eEnvsR :: IORef (M.Map Focus CommonEnv)
   , eCounter :: Counter
   , eConst :: S.Set DLVar
+  , eMaps :: DLMapInfos
   }
+
+getMapTy :: DLMVar -> App (Maybe DLType)
+getMapTy mpv = do
+  ms <- asks eMaps
+  return $ fmap dlmi_ty $ M.lookup mpv ms
 
 data ConstEnv = ConstEnv
   { eConstR :: IORef (M.Map DLVar Integer)
@@ -105,9 +113,10 @@ lookupCommon dict obj = do
 rewrittenp :: DLVar -> App (Maybe (DLVar, Maybe DLArg))
 rewrittenp = lookupCommon ceReplaced
 
-repeated :: DLExpr -> App (Maybe DLVar)
+repeated :: DLExpr -> App (Maybe RepeatedT)
 repeated = \case
-  DLE_Arg _ (DLA_Var dv') -> return $ Just dv'
+  DLE_Arg _ a -> return $ Just $ Left a
+  DLE_LArg _ a -> return $ Just $ Right a
   e -> lookupCommon cePrev e
 
 optNotHuh :: DLArg -> App (Maybe DLArg)
@@ -145,7 +154,7 @@ remember_ always v e =
   where
     up prev =
       case always || not (M.member e prev) of
-        True -> M.insert e v prev
+        True -> M.insert e (Left $ DLA_Var v) prev
         False -> prev
 
 remember :: DLVar -> DLExpr -> App ()
@@ -176,8 +185,8 @@ updateLookup up = do
   let update = M.fromList . (map update1) . M.toList
   liftIO $ modifyIORef eEnvsR update
 
-mkEnv0 :: Counter -> S.Set DLVar -> [SLPart] -> IO Env
-mkEnv0 eCounter eConst eParts = do
+mkEnv0 :: Counter -> S.Set DLVar -> [SLPart] -> DLMapInfos -> IO Env
+mkEnv0 eCounter eConst eParts eMaps = do
   let eFocus = F_Ctor
   let eEnvs =
         M.fromList $
@@ -434,31 +443,50 @@ optLet :: SrcLoc -> DLLetVar -> DLExpr -> App DLStmt
 optLet at x e = do
   e' <- opt e
   let meh = return $ DL_Let at x e'
-  case (extract x, isPure e && canDupe e) of
-    (Just dv, True) ->
-      case e' of
-        DLE_LArg _ a' | canDupe a' -> do
-          recordKnownLargeArg dv a'
-          meh
-        DLE_Arg _ a' | canDupe a' -> do
-          rewrite dv (dv, Just a')
-          mremember dv (sani e')
-          meh
-        _ -> do
-          let e'' = sani e'
-          common <- repeated e''
-          case common of
-            Just rt -> do
-              rewrite dv (rt, Nothing)
-              return $ DL_Nop at
-            Nothing -> do
-              remember dv e''
-              case e' of
-                DLE_PrimOp _ IF_THEN_ELSE [c, DLA_Literal (DLL_Bool False), DLA_Literal (DLL_Bool True)] -> do
-                  recordNotHuh x c
-                _ ->
-                  return ()
-              meh
+  let argCase dv at' a' = do
+        rewrite dv (dv, Just a')
+        mremember dv (sani e')
+        return $ DL_Let at x (DLE_Arg at' a')
+  let largCase dv at' a' = do
+        recordKnownLargeArg dv a'
+        return $ DL_Let at x (DLE_LArg at' a')
+  let doit dv = do
+        case e' of
+          DLE_LArg at' a' | canDupe a' ->
+            largCase dv at' a'
+          DLE_Arg at' a' | canDupe a' ->
+            argCase dv at' a'
+          _ -> do
+            let e'' = sani e'
+            common <- repeated e''
+            case common of
+              Just (Left (DLA_Var rt)) -> do
+                rewrite dv (rt, Nothing)
+                return $ DL_Nop at
+              Just (Left a') | canDupe a' ->
+                argCase dv at a'
+              Just (Right a') | canDupe a' ->
+                largCase dv at a'
+              _ -> do
+                remember dv e''
+                case e' of
+                  DLE_PrimOp _ IF_THEN_ELSE [c, DLA_Literal (DLL_Bool False), DLA_Literal (DLL_Bool True)] -> do
+                    recordNotHuh x c
+                  _ ->
+                    return ()
+                meh
+  case (extract x, (isPure e && canDupe e), e) of
+    (Just dv, True, _) -> doit dv
+    (_, _, DLE_MapSet _ mv fa nva) -> do
+      let ref = DLE_MapRef sb mv fa
+      mmt <- getMapTy mv
+      let upf =
+            case mmt of
+              Nothing -> M.delete ref
+              Just mt -> M.insert ref $ Right $ mdaToMaybeLA mt nva
+      let up ce = ce { cePrev = upf $ cePrev ce }
+      updateLookup up
+      meh
     _ -> meh
 
 instance Optimize DLStmt where
@@ -630,7 +658,8 @@ instance Optimize LLProg where
     let SLParts {..} = ps
     let psl = M.keys sps_ies
     cs <- asks eConst
-    env0 <- liftIO $ mkEnv0 (getCounter opts) cs psl
+    let mis = dli_maps dli
+    env0 <- liftIO $ mkEnv0 (getCounter opts) cs psl mis
     local (const env0) $
       focus_ctor $
         LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> pure das <*> pure devts <*> opt s
@@ -736,7 +765,7 @@ optimize_ c t = do
   flip runReaderT (ConstEnv {..}) $ gcs t
   cs <- readIORef eConstR
   let csvs = M.keysSet $ M.filter (\x -> x < 2) cs
-  env0 <- mkEnv0 c csvs []
+  env0 <- mkEnv0 c csvs [] mempty
   flip runReaderT env0 $
     opt t
 
