@@ -45,8 +45,8 @@ const getStatus = async () => {
   return r;
 }
 
-async function getStateActions(s) {
-  const r = await interact(`GET`, `${address}/states/${s}/actions`)
+async function getActions() {
+  const r = await interact(`GET`, `${address}/actions`)
   console.log(r)
   return r;
 }
@@ -103,7 +103,7 @@ const ping = async () => {
 const clientMethods = {
   "getStates" : getStates,
   "getStatus" : getStatus,
-  "getStateActions" : getStateActions,
+  "getActions" : getActions,
   "load" : load,
   "init" : init,
   "respondWithVal" : respondWithVal,
@@ -134,7 +134,7 @@ const interp = async (comms) => {
 export {
   getStates,
   getStatus,
-  getStateActions,
+  getActions,
   load,
   init,
   respondWithVal,

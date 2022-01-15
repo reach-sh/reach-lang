@@ -19,6 +19,7 @@
 ["respondWithVal", 15, 15, 0],
 ["respondWithVal", 16, 16, 1, -1],
 ["respondWithVal", 17, 17, -99, 0],
-["respondWithVal", 18, 18, -99, 1],
-["respondWithVal", 19, 19, -99]
+["respondWithVal", 18, 18, -99, 0],
+["respondWithVal", 19, 19, -99, 1],
+["respondWithVal", 20, 20, -99]
 ]

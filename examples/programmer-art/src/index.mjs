@@ -43,6 +43,7 @@ export const main = Reach.App(() => {
 
 cytoscape.use( klay );
 
+Prism.line_numbers = true;
 const srcHtml = Prism.highlight(rsh, Prism.languages.javascript, 'javascript');
 const prism = document.querySelector("#cx")
 prism.innerHTML = srcHtml
@@ -59,10 +60,10 @@ const renderObjects = async (nodeId) => {
     let status = 'Initial'
     switch (v.l_ks) {
       case 'PS_Suspend':
-        status = 'Running'
+        status = 'Program Running'
         break;
       case 'PS_Done':
-        status = 'Done'
+        status = 'Program Done'
         break;
     }
     obs = obs + `
@@ -87,8 +88,15 @@ const renderObjects = async (nodeId) => {
   objectDetails()
 }
 
+
+
 const objectDetails = async () => {
-  let objectBtns = document.querySelector(".object-button")
+  const bindObjDetailsEvents = () => {
+    const objectBtns = document.querySelectorAll(".object-button")
+    objectBtns.forEach((item, i) => {
+      item.addEventListener("click",renderObjectDetails)
+    });
+  }
   const renderObjectDetails = async (evt) => {
     objectsHTML = spa.innerHTML
     const tgt = evt.target.closest(".object-button")
@@ -140,25 +148,24 @@ const objectDetails = async () => {
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Object Details (${who})</li>
+        <li class="breadcrumb-item active" aria-current="page">Details (${who})</li>
       </ol>
     </nav>
     <ul class="list-group list-group-flush">
       ${dets}
     </ul>
     `
-    const objectsLink = document.querySelector("#return-to-objects")
+    const objectsRetLink = document.querySelector("#return-to-objects")
     const backtrackToObjects = () => {
       if (objectsHTML) {
         spa.innerHTML = objectsHTML
         objectsHTML = null;
-        objectBtns = document.querySelector(".object-button")
-        objectBtns.addEventListener("click",renderObjectDetails)
+        bindObjDetailsEvents();
       }
     }
-    objectsLink.addEventListener("click",backtrackToObjects)
+    objectsRetLink.addEventListener("click",backtrackToObjects)
   }
-  objectBtns.addEventListener("click",renderObjectDetails)
+  bindObjDetailsEvents();
 }
 
 const redraw = async () => {
@@ -230,10 +237,9 @@ globalsBtn.addEventListener("click",globals)
 
 const actionsBtn = document.querySelector("#actionsButton")
 const actions = async () => {
-  let n = parseInt(document.querySelector("#stateActionsFor").value)
-  let r = await c.getStateActions(n)
-  appendToLog(r)
-  jsonLog.push(["getStateActions",n])
+  let r = await c.getActions()
+  appendToLog(JSON.stringify(r,null,2))
+  jsonLog.push(["getActions"])
 }
 actionsBtn.addEventListener("click",actions)
 

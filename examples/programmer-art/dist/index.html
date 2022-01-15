@@ -9,11 +9,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200&family=Source+Sans+Pro:wght@200&family=Source+Serif+Pro:wght@200&display=swap" rel="stylesheet">
 <link href="prism-material-oceanic.css" rel="stylesheet" />
 </head>
-<body>
+<body class="line-numbers">
 
 <div class="container-fluid">
 
-<div class="row first-row">
+<div class="row half-row">
   <div class="col-3">
     <pre><code id="cx" class="language-javascript"></code></pre>
   </div>
@@ -25,12 +25,13 @@
   </div>
 </div>
 
-<div class="row">
+<div class="row half-row">
   <div class="col-5"> <!-- begin form -->
     <button type="button" id="pingButton" class="btn btn-outline-dark btn-sm">Ping</button>
     <button type="button" id="loadButton" class="btn btn-outline-dark btn-sm">Load</button>
     <button type="button" id="initButton" class="btn btn-outline-dark btn-sm">Init</button>
     <button type="button" id="statesButton" class="btn btn-outline-dark btn-sm">Get States</button>
+    <button type="button" id="actionsButton" class="btn btn-outline-dark btn-sm">Get Actions</button>
     <button type="button" id="resetButton" class="btn btn-outline-dark btn-sm">Reset</button>
     <button type="button" id="printButton" class="btn btn-outline-dark btn-sm">Print Log</button>
 
@@ -59,12 +60,12 @@
       </div>
     </div>
 
-    <div class="row">
+    <!-- <div class="row">
       <div class="col-8 bordered d-flex justify-content-center">
         <input type="text" id="stateActionsFor" class="form-control form-control-sm" placeholder="State">
         <button type="button" id="actionsButton" class="btn btn-outline-dark btn-sm">Get State Actions</button>
       </div>
-    </div>
+    </div> -->
 
     <div class="row">
       <div class="col-8 bordered d-flex justify-content-center">
