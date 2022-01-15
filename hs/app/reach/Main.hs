@@ -1680,7 +1680,6 @@ remoteDockerAssocFor' tmpC tmpH img h = go where
         maybe (pure $ Right []) (fetch c t fqdn nextPage results . parseRequest_) (nextPage r')
           >>= either (pure . Left) (pure . Right . (results r' <>))
 
--- TODO verify only a single "manager" is used
 -- TODO allow early escape from de-pagination when query match is found
 remoteDockerAssocFor :: [Image] -> AppT DockerAssoc
 remoteDockerAssocFor imgs = do
