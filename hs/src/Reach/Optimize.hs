@@ -114,7 +114,10 @@ rewrittenp = lookupCommon ceReplaced
 repeated :: DLExpr -> App (Maybe RepeatedT)
 repeated = \case
   DLE_Arg _ a -> return $ Just $ Left a
-  DLE_LArg _ a -> return $ Just $ Right a
+  e@(DLE_LArg _ a) ->
+    lookupCommon cePrev e >>= \case
+      Nothing -> return $ Just $ Right a
+      Just x -> return $ Just $ x
   e -> lookupCommon cePrev e
 
 optNotHuh :: DLArg -> App (Maybe DLArg)
@@ -457,15 +460,16 @@ optLet at x e = do
   let meh = return $ DL_Let at x e'
   let argCase dv at' a' = do
         rewrite dv (dv, Just a')
-        mremember dv (sani e')
-        return $ DL_Let at x (DLE_Arg at' a')
+        let e'' = DLE_Arg at' a'
+        mremember dv (sani e'')
+        return $ DL_Let at x e''
   let largCase dv at' a' = do
         recordKnownLargeArg dv a'
-        return $ DL_Let at x (DLE_LArg at' a')
+        let e'' = (DLE_LArg at' a')
+        mremember dv (sani e'')
+        return $ DL_Let at x e''
   let doit dv = do
         case e' of
-          DLE_LArg at' a' | canDupe a' ->
-            largCase dv at' a'
           DLE_Arg at' a' | canDupe a' ->
             argCase dv at' a'
           _ -> do
