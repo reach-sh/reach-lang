@@ -28,7 +28,6 @@ div > * {
   padding: 1%;
 }
 
-
 h1,
 h2,
 h3,
@@ -44,6 +43,10 @@ body :not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
 
 body, html, .container-fluid {
   height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 .col-3 {
@@ -92,6 +95,7 @@ body, html, .container-fluid {
   height: 100%;
   overflow-y: scroll !important;
   padding: 0%;
+  scroll-behavior: smooth;
 }
 
 pre[class*="language-"] {

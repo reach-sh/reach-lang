@@ -222,6 +222,9 @@ const clickNode = async (evt) => {
     sheet.insertRule(`.hljs-ln-line[data-line-number="${n}"] {
       background-color: silver;
     }`);
+    const poi = document.querySelector(`.hljs-ln-line[data-line-number="${n}"`);
+    const topPos = poi.offsetTop;
+    document.querySelector('.code-container').scrollTop = topPos;
   }
   console.log(at)
   renderObjects(nodeId)
