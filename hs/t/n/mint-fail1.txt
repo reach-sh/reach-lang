@@ -28,4 +28,4 @@ Verification failed:
   assert(false);
 
   Verifying when NO participants are honest
-Checked 42 theorems; 4 failures (and 2 omitted repeats) :'(
+Checked 40 theorems; 4 failures (and 2 omitted repeats) :'(

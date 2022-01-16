@@ -20,7 +20,7 @@ Verification failed:
   assert(v31);
 
   Verifying when NO participants are honest
-Checked 3 theorems; 1 failures :'(
+Checked 1 theorems; 1 failures :'(
 warning[RW0004]: There are no publications in the application.
 
   ./assert_gt.rsh:3:30:application

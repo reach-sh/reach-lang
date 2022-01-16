@@ -23,4 +23,4 @@ Verification failed:
   require(v61);
 
   Verifying when NO participants are honest
-Checked 12 theorems; 1 failures :'(
+Checked 6 theorems; 1 failures :'(

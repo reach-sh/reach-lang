@@ -279,6 +279,14 @@ unsafeAt l i =
     Nothing -> impossible "unsafeMay"
     Just x -> x
 
+isAnEqual :: PrimOp -> Bool
+isAnEqual = \case
+  PEQ -> True
+  DIGEST_EQ -> True
+  ADDRESS_EQ -> True
+  TOKEN_EQ -> True
+  _ -> False
+
 instance Optimize DLExpr where
   opt = \case
     DLE_Arg at a -> DLE_Arg at <$> opt a
@@ -330,6 +338,8 @@ instance Optimize DLExpr where
             Nothing -> meh
             Just c' ->
               return $ DLE_PrimOp at IF_THEN_ELSE [c', f, t]
+        (aneq, [lhs, rhs]) | isAnEqual aneq && sani lhs == sani rhs ->
+          return $ DLE_Arg at $ DLA_Literal $ DLL_Bool True
         _ -> meh
     DLE_ArrayRef at a i -> DLE_ArrayRef at <$> opt a <*> opt i
     DLE_ArraySet at a i v -> DLE_ArraySet at <$> opt a <*> opt i <*> opt v
@@ -405,8 +415,13 @@ optIf mkDo mkIf at c t f =
     DLA_Literal (DLL_Bool False) -> mkDo <$> opt f
     c' -> do
       -- XXX We could see if c' is something like `DLVar x == DLArg y` and add x -> y to the optimization environment
-      t' <- newScope $ opt t
-      f' <- newScope $ opt f
+      let learnC b =
+            case c' of
+              DLA_Var v ->
+                void $ rememberVarIsArg at v $ DLA_Literal $ DLL_Bool b
+              _ -> return ()
+      t' <- newScope $ learnC True >> opt t
+      f' <- newScope $ learnC False >> opt f
       case allTheSame [t', f'] of
         Just s -> return $ mkDo s
         Nothing ->
@@ -454,14 +469,19 @@ optWhile mk asn cond body k = do
   k' <- newScope $ mca False $ opt k
   return $ mk asn' cond' body' k'
 
+rememberVarIsArg :: SrcLoc -> DLVar -> DLArg -> App DLExpr
+rememberVarIsArg at dv a = do
+  rewrite dv (dv, Just a)
+  let e = DLE_Arg at a
+  mremember dv (sani e)
+  return e
+
 optLet :: SrcLoc -> DLLetVar -> DLExpr -> App DLStmt
 optLet at x e = do
   e' <- opt e
   let meh = return $ DL_Let at x e'
   let argCase dv at' a' = do
-        rewrite dv (dv, Just a')
-        let e'' = DLE_Arg at' a'
-        mremember dv (sani e'')
+        e'' <- rememberVarIsArg at' dv a'
         return $ DL_Let at x e''
   let largCase dv at' a' = do
         recordKnownLargeArg dv a'
