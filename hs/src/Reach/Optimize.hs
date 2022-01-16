@@ -177,7 +177,7 @@ updateLookup up = do
             case f of
               F_Ctor -> True
               F_All -> True -- False
-              F_Consensus -> True -- False
+              F_Consensus -> False -- True -- False
               F_One _ -> True
           F_All -> True
           F_Consensus -> True
@@ -496,11 +496,15 @@ optLet at x e = do
     (_, _, DLE_MapSet _ mv fa nva) -> do
       let ref = DLE_MapRef sb mv fa
       mmt <- getMapTy mv
+      let clear = M.filterWithKey $ \k _ ->
+            case k of
+              DLE_MapRef _ mv_ _ -> mv /= mv_
+              _ -> True
       let upf =
             case mmt of
-              Nothing -> M.delete ref
+              Nothing -> id
               Just mt -> M.insert ref $ Right $ mdaToMaybeLA mt nva
-      let up ce = ce { cePrev = upf $ cePrev ce }
+      let up ce = ce { cePrev = (upf . clear) $ cePrev ce }
       updateLookup up
       meh
     _ -> meh

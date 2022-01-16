@@ -116,7 +116,9 @@ checkteal () {
 #######
 
 export REACH_DEBUG=Y
+fc hs/t/n/map-dset.rsh
 c hs/t/y/mapOpt.rsh
+c examples/ttt/index.rsh
 exit 0
 
 export REACH_DEBUG=Y
