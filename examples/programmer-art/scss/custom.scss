@@ -88,7 +88,21 @@ body, html, .container-fluid {
   height: 100%;
 }
 
-div[class*="language-"] {
+.code-container {
   height: 100%;
   overflow-y: scroll !important;
+  padding: 0%;
+}
+
+pre[class*="language-"] {
+  padding: 0%;
+  margin: 0%;
+}
+
+.hljs-ln-numbers {
+  padding-left: 2% !important;
+}
+
+.hljs-ln-code {
+  padding-left: 8% !important;
 }

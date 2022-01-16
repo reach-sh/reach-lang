@@ -2,11 +2,6 @@ import * as c from '@reach-sh/simulator-client';
 import cytoscape from 'cytoscape';
 import klay from 'cytoscape-klay';
 import "../scss/custom.scss";
-import hljs from 'highlight.js/lib/core';
-import javascript from 'highlight.js/lib/languages/javascript';
-import 'highlight.js/styles/grayscale.css';
-
-hljs.registerLanguage('javascript', javascript);
 
 // NOTE: placeholder
 const rsh = `'reach 0.1';
@@ -47,9 +42,19 @@ export const main = Reach.App(() => {
 
 cytoscape.use( klay );
 
-const srcHtml = hljs.highlight(rsh, {language: 'javascript'}).value
+const sheet = (function() {
+	const style = document.createElement("style");
+	style.appendChild(document.createTextNode(""));
+	document.head.appendChild(style);
+	return style.sheet;
+})();
+
+sheet.insertRule(`.hljs-ln-line[data-line-number="9"] {
+  background-color: silver;
+}`);
+
 const codeDiv = document.querySelector("#cx")
-codeDiv.innerHTML = srcHtml
+codeDiv.innerHTML = rsh
 
 const spa = document.querySelector("#spa")
 

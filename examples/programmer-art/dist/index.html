@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200&family=Source+Sans+Pro:wght@200&family=Source+Serif+Pro:wght@200&display=swap" rel="stylesheet">
-<link href="grayscale.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/styles/grayscale.min.css" integrity="sha512-l1aMiXy5BTqq3S5n9RlJZzuCPA9VV2DOxkbW8eOErdvJhTdhkKVnuJd+tjY0FA5HXrYHao64+234j2Iuuzjceg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
 
@@ -15,8 +15,8 @@
 
 <div class="row half-row">
   <div class="col-3">
-    <div class="bordered code-container language-javascript">
-      <pre><code id="cx"></code></pre>
+    <div class="bordered code-container">
+      <pre class="language-javascript"><code id="cx"></code></pre>
     </div>
   </div>
   <div class="col-4">
@@ -99,6 +99,14 @@
 
 <script type="module" src="main.js"></script>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/languages/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
+
+<script type="module">
+hljs.highlightAll();
+hljs.initLineNumbersOnLoad();
+</script>
 
 </body>
 </html>
