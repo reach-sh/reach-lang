@@ -2,12 +2,13 @@
 
 const MUI = Maybe(UInt);
 export const main = Reach.App(() => {
-  const A = Participant('A', {});
+  const A = Participant('A', { who: Address });
   init();
   A.only(() => {
     const i = 1;
+    const who = declassify(interact.who);
   });
-  A.publish(i);
+  A.publish(i, who);
   const M = new Map(UInt);
   M[A] = 0;
   commit();
@@ -19,6 +20,14 @@ export const main = Reach.App(() => {
   const xs = fromSome(x, 15);
   const ys = fromSome(y, 15);
   assert(xs == ys);
+  
+  const wx = M[who];
+  const wy = M[who];
+  assert(wy == wx);
+  const wxs = fromSome(wx, 15);
+  const wys = fromSome(wy, 15);
+  assert(wxs == wys);
+
   M[A] = 1;
   const z = M[A];
   assert(z == MUI.Some(1));
