@@ -127,9 +127,11 @@ export class Provider {
     // XXX
   }
 
-  async getLogs(opts: {fromBlock: number, toBlock: number, address: string, topics: string[]}): Promise<any[]> {
+  async getLogs(iopts: object): Promise<any[]> {
+    const opts = iopts as {fromBlock: number};
+    // {fromBlock: number, toBlock: number, address: string, topics: string[]}
     debug(`getLogs`, `opts`, opts);
-    if ( opts.fromBlock == 0 ) {
+    if ( opts.fromBlock === 0 ) {
       opts.fromBlock = 1;
       debug(`getLogs`, `opts`, opts);
     }
@@ -228,7 +230,7 @@ const prepForConfluxPortal = (txnOrig: any): any => {
   // These fields are transformed if present
   // TODO: is it safe just to turn all number fields into hex strings?
   // Where is the "real" Conflux Portal source code to check this?
-  for (const field of ['storageLimit', 'gas']) {
+  for (const field of ['storageLimit', 'gas', 'nonce']) {
     if (txn[field] !== undefined) txn[field] = hexStringify(txnOrig[field]);
   }
 
@@ -526,12 +528,15 @@ export class BrowserWallet implements IWallet {
     if (!provider) throw Error(`Impossible: provider is undefined`);
     const txn = prepForConfluxPortal({...txnOrig, from});
     const { value } = txn;
-    const data = await this.cp.sendAsync({
+    const data: {result: string} = await new Promise((resolve, reject) => this.cp.sendAsync({
       from, value,
       method: 'cfx_sendTransaction',
       params: [txn],
-    });
+    }, (err: unknown, data: {result: string}) => {
+      if (err) reject(err); else resolve(data);
+    }));
     debug('sendTransaction', { txn, data });
+    if (!data) { throw Error(`No data returned from ConfluxPortal.sendAsync`); }
     const transactionHash = data.result;
     return {
       transactionHash,

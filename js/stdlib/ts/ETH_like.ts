@@ -8,6 +8,7 @@ import {
   replaceableThunk,
   debug,
   stdContract, stdVerifyContract,
+  stdGetABI,
   stdAccount,
   makeRandom,
   argsSplit,
@@ -49,13 +50,22 @@ import type { // =>
   Token,
   PayAmt,
 } from './ETH_like_compiled';
+export type { Token } from './ETH_like_compiled';
+export type Ty = AnyETH_Ty;
 type ConnectorTy = AnyETH_Ty;
 import type { // =>
   EthersLikeContract,
   EthersLikeSigner,
   EthersLikeWallet,
+  EthersLikeProvider,
   EthLikeArgs,
+  TransactionReceipt,
+  Log,
+  Address,
   // EthLike, // TODO: use this once types are in place
+} from './ETH_like_interfaces';
+export type {
+  Address,
 } from './ETH_like_interfaces';
 import type { // =>
   Stdlib_Backend
@@ -68,8 +78,6 @@ export { setQueryLowerBound, getQueryLowerBound };
 // ****************************************************************************
 
 type TransactionResponse = real_ethers.providers.TransactionResponse;
-type TransactionReceipt = real_ethers.providers.TransactionReceipt;
-type Log = real_ethers.providers.Log;
 type Interface = real_ethers.utils.Interface;
 
 // Note: if you want your programs to exit fail
@@ -78,7 +86,7 @@ type Interface = real_ethers.utils.Interface;
 
 const reachBackendVersion = 7;
 const reachEthBackendVersion = 6;
-type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
+export type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
   ABI: string,
   Bytecode: string,
@@ -88,9 +96,8 @@ type BackendViewsInfo = IBackendViewsInfo<AnyETH_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyETH_Ty>;
 
 // TODO: a wrapper obj with smart constructor?
-type Address = string;
 
-type NetworkAccount = {
+export type NetworkAccount = {
   address?: Address, // required for receivers & deployers
   getAddress?: () => Promise<Address>, // or this for receivers & deployers
   sendTransaction?: (...xs: any) => Promise<TransactionResponse>, // required for senders
@@ -98,11 +105,11 @@ type NetworkAccount = {
   _mnemonic?: () => {phrase: string},
 } | EthersLikeWallet | EthersLikeSigner; // required to deploy/attach
 
-type ContractInfo = Address;
+export type ContractInfo = Address;
 type SendRecvArgs = ISendRecvArgs<Address, Token, AnyETH_Ty>;
 type RecvArgs = IRecvArgs<AnyETH_Ty>;
 type Recv = IRecv<Address>
-type Contract = IContract<ContractInfo, Address, Token, AnyETH_Ty>;
+export type Contract = IContract<ContractInfo, Address, Token, AnyETH_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
   & {
     setGasLimit?: (ngl:any) => void
@@ -122,16 +129,12 @@ type AccountTransferable = Account | {
   getStorageLimit?: any,
 };
 
-// ****************************************************************************
-// Helpers
-// ****************************************************************************
-
 const reachPublish = (m: string | number) => `_reach_m${m}`
 const reachEvent = (e: string | number) => `_reach_e${e}`
 const reachOutputEvent = (e: string | number) => `_reach_oe_${e}`;
 
 // TODO: add return type once types are in place
-export function makeEthLike(ethLikeArgs: EthLikeArgs) {
+export function makeEthLike<Provider extends EthersLikeProvider, ProviderEnv, ProviderName>(ethLikeArgs: EthLikeArgs<Provider, ProviderEnv, ProviderName>) {
 // ...............................................
 const {
   ethLikeCompiled,
@@ -238,7 +241,7 @@ const newEventQueue = (): EventQueue => {
     const toBlock_act = bnMax(fromBlock, toBlock);
     const provider = await getProvider();
     debug(dhead, { toBlock, toBlock_act });
-    let logs = [];
+    let logs: Array<Log> = [];
     try {
       logs = await provider.getLogs({
         fromBlock: bigNumberToNumber(fromBlock),
@@ -564,14 +567,15 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
       const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
         const { funcNum, evt_cnt, lct, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt } = srargs;
-        const doRecv = async (didSend: boolean, waitIfNotPresent: boolean): Promise<Recv> => {
+        const doRecv = async (didSend: boolean, waitIfNotPresent: boolean, msg: string): Promise<Recv> => {
+          debug(dhead, `doRecv`, msg);
           if ( ! didSend && lct.eq(0) ) {
-            throw new Error(`API call failed`);
+            throw new Error(`API call failed: ${msg}`);
           }
           return await recv({funcNum, evt_cnt, out_tys, didSend, waitIfNotPresent, timeoutAt});
         };
         if ( ! onlyIf ) {
-          return await doRecv(false, true);
+          return await doRecv(false, true, `onlyIf false`);
         }
 
         const funcName = reachPublish(funcNum);
@@ -583,7 +587,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           // APIs can't do this, because they would see everything from the
           // beginning, which isn't what they're expecting.
           if ( ! isAPI ) {
-            return await doRecv(didSend, false);
+            return await doRecv(didSend, false, `succeeded`);
           } else {
             const ethersC = await getC();
             const correctStep = makeHasLogFor((() => ethersC.address), iface, funcNum, out_tys);
@@ -629,11 +633,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           debug(dhead, 'TIMECHECK', { timeoutAt });
           if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, await getNetworkTimeNumber() + 1) ) {
             debug(dhead, 'FAIL/TIMEOUT');
-            return await doRecv(false, false);
+            return await doRecv(false, false, `timeout`);
           }
           if ( ! soloSend && ! await canIWin(lct) ) {
             debug(dhead, `CANNOT WIN`);
-            return await doRecv(false, false);
+            return await doRecv(false, false, `cannot win ${lct}`);
           }
           let ok_r;
           try {
@@ -641,9 +645,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             ok_r = await callC(dhead, funcName, arg, pay);
           } catch (e:any) {
             debug(dhead, `ERROR`, { stack: e.stack }, e);
+            const jes = JSON.stringify(e);
             if ( ! soloSend ) {
               debug(dhead, `LOST`);
-              return await doRecv(false, false);
+              return await doRecv(false, false, jes);
             }
 
             if ( timeoutAt ) {
@@ -652,7 +657,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
               continue;
             } else {
               // Otherwise, something bad is happening
-              throw Error(`${label} failed to call ${funcName}: ${JSON.stringify(e)}`);
+              throw Error(`${label} failed to call ${funcName}: ${jes}`);
             }
           }
 
@@ -800,8 +805,9 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       };
       return { createEventStream };
     };
+    const getABI = stdGetABI(ABI);
 
-    return stdContract({ bin, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
+    return stdContract({ bin, getABI, waitUntilTime, waitUntilSecs, selfAddress, iam, stdlib, setupView, setupEvents, _setup, givenInfoP });
   };
 
   function setDebugLabel(newLabel: string): Account {

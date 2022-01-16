@@ -1,7 +1,3 @@
-// ****************************************************************************
-// standard library needed at runtime by compiled Reach programs
-// ****************************************************************************
-
 import { ethers } from 'ethers';
 import * as shared_backend from './shared_backend';
 import * as CBR from './CBR';
@@ -176,26 +172,29 @@ const V_Digest = (s: string): CBR_Digest => {
 
 const T_Array = <T>(
   ctc: ETH_Ty<CBR_Val, T>,
-  size: number,
-): ETH_Ty<CBR_Array, Array<T>> => ({
-  ...CBR.BT_Array(ctc, size),
-  defaultValue: Array(size).fill(ctc.defaultValue),
-  munge: (bv: CBR_Array): any => {
-    if ( size == 0 ) {
-      return false;
-    } else {
-      return bv.map((arg: CBR_Val) => ctc.munge(arg));
-    }
-  },
-  unmunge: (nv: Array<T>): CBR_Array => {
-    if ( size == 0 ) {
-      return [];
-    } else {
-      return V_Array(ctc, size)(nv.map((arg: T) => ctc.unmunge(arg)));
-    }
-  },
-  paramType: `${ctc.paramType}[${size}]`,
-});
+  size_i: unknown,
+): ETH_Ty<CBR_Array, Array<T>> => {
+  const size = bigNumberToNumber(bigNumberify(size_i));
+  return {
+    ...CBR.BT_Array(ctc, size),
+    defaultValue: Array(size).fill(ctc.defaultValue),
+    munge: (bv: CBR_Array): any => {
+      if ( size == 0 ) {
+        return false;
+      } else {
+        return bv.map((arg: CBR_Val) => ctc.munge(arg));
+      }
+    },
+    unmunge: (nv: Array<T>): CBR_Array => {
+      if ( size == 0 ) {
+        return [];
+      } else {
+        return V_Array(ctc, size)(nv.map((arg: T) => ctc.unmunge(arg)));
+      }
+    },
+    paramType: `${ctc.paramType}[${size}]`,
+  };
+};
 
 const V_Array = <T>(
   ctc: ETH_Ty<CBR_Val, T>,
@@ -382,7 +381,7 @@ const digestEq = shared_backend.eq;
 const T_Token = T_Address;
 const tokenEq = addressEq;
 
-const typeDefs: TypeDefs = {
+const typeDefs: TypeDefs<AnyETH_Ty> = {
   T_Null,
   T_Bool,
   T_UInt,

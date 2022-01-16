@@ -9,7 +9,8 @@ import {
   makeArith,
 } from './shared_impl';
 import {
-  bigNumberToNumber
+  bigNumberToNumber,
+  bigNumberify,
 } from './shared_user';
 import algosdk from 'algosdk';
 import buffer from 'buffer';
@@ -51,14 +52,14 @@ export type ALGO_Ty<BV extends CBR_Val> = {
 }
 
 export const digest =
-  makeDigest('sha256', (t:ALGO_Ty<any>, v:any) => t.toNet(v));
+  makeDigest('sha256', <X extends CBR_Val>(t:ALGO_Ty<X>, v:X) => t.toNet(v));
 
 export const T_Null: ALGO_Ty<CBR_Null> = {
   ...CBR.BT_Null,
   netSize: 0,
   toNet: (bv: CBR_Null): NV => (void(bv), new Uint8Array([])),
   fromNet: (nv: NV): CBR_Null => (void(nv), null),
-  netName: 'null',
+  netName: 'byte[0]',
 }
 
 export const T_Bool: ALGO_Ty<CBR_Bool> = {
@@ -66,7 +67,7 @@ export const T_Bool: ALGO_Ty<CBR_Bool> = {
   netSize: 1,
   toNet: (bv: CBR_Bool): NV => new Uint8Array([bv ? 1 : 0]),
   fromNet: (nv: NV): CBR_Bool => nv[0] == 1,
-  netName: 'bool',
+  netName: 'byte', // XXX 'bool'
 }
 
 export const T_UInt: ALGO_Ty<CBR_UInt> = {
@@ -98,7 +99,9 @@ const stringyNet = (len:number) => ({
 });
 
 /** @description For hex strings representing bytes */
-const bytestringyNet = (len:number) => ({
+export const bytestringyNet = (len:number) => ({
+  netSize: len,
+  netName: `byte[${len}]`,
   toNet: (bv: string): NV => {
     return ethers.utils.arrayify(bv);
   },
@@ -117,7 +120,6 @@ export const T_Bytes = (len:number): ALGO_Ty<CBR_Bytes> => ({
 export const T_Digest: ALGO_Ty<CBR_Digest> = {
   ...CBR.BT_Digest,
   ...bytestringyNet(32),
-  netSize: 32,
   netName: `digest`,
 };
 
@@ -129,9 +131,9 @@ export const addressFromHex = (hexAddr: string): string =>
 
 const extractAddrM = (x: any): string|false => {
   const addr: string|false =
-    x && x.networkAccount && x.networkAccount.addr
-    || x && x.addr
-    || typeof x === 'string' && x;
+    (x && x.networkAccount && x.networkAccount.addr)
+    || (x && x.addr)
+    || (typeof x === 'string' && x);
   //debug(`extractAddrM`, {x, addr});
   return addr;
 };
@@ -170,25 +172,19 @@ export const T_Contract: ALGO_Ty<Contract> = {
 
 export const T_Array = (
   co: ALGO_Ty<CBR_Val>,
-  size: number,
-): ALGO_Ty<CBR_Array> => ({
-  ...CBR.BT_Array(co, size),
-  netSize: size * co.netSize,
-  toNet: (bv: CBR_Array): NV => {
-    return ethers.utils.concat(bv.map((v) => co.toNet(v)));
-  },
-  fromNet: (nv: NV): CBR_Array => {
-    // TODO: assert nv.size = len * size
-    const len = co.netSize;
-    const chunks = new Array(size).fill(null);
-    for (let i = 0; i < size; i++) {
-      const start = i * len;
-      chunks[i] = co.fromNet(nv.slice(start, start + len));
-    }
-    return chunks;
-  },
-  netName: `${co.netName}[${size}]`,
-});
+  size_u: unknown,
+): ALGO_Ty<CBR_Array> => {
+  const size = bigNumberToNumber(bigNumberify(size_u));
+  debug('T_Array', co, size);
+  const asTuple = T_Tuple(new Array(size).fill(co));
+  debug('T_Array', asTuple);
+  const { netSize, toNet, fromNet } = asTuple;
+  return {
+    ...CBR.BT_Array(co, size),
+    netSize, toNet, fromNet,
+    netName: `${co.netName}[${size}]`,
+  };
+};
 
 export const T_Tuple = (
   cos: Array<ALGO_Ty<CBR_Val>>,
@@ -283,9 +279,10 @@ export const T_Data = (
   coMap: {[key: string]: ALGO_Ty<CBR_Val>}
 ): ALGO_Ty<CBR_Data> => {
   const cos = Object.values(coMap);
-  const valSize =
-    Math.max(...cos.map((co) => co.netSize))
+  const cosSizes = cos.map((co) => co.netSize);
+  const valSize = Math.max(...cosSizes);
   const netSize = valSize + 1;
+  debug(`T_Data`, { cos, cosSizes, valSize, netSize });
   const {ascLabels, labelMap} = labelMaps(coMap);
   return {
     ...CBR.BT_Data(coMap),
@@ -308,7 +305,7 @@ export const T_Data = (
       const val = val_co.fromNet(rest.slice(0, sliceTo));
       return [label, val];
     },
-    netName: `(byte, byte[${valSize}])`,
+    netName: `(byte,byte[${valSize}])`,
   }
 }
 

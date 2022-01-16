@@ -13,7 +13,7 @@ import {
 import { process, window } from './shim';
 import waitPort from './waitPort';
 
-type Provider = ethers.providers.Provider;
+export type Provider = ethers.providers.Provider;
 type NetworkAccount = any // XXX
 
 // We don't ever do waitPort for these so it's not an option.
@@ -118,14 +118,14 @@ function waitProviderFromEnv(env: ProviderEnv): Promise<Provider> {
   }
 }
 
-function setProviderByEnv(env: Partial<ProviderByName & ProviderByURI>): void {
+function setProviderByEnv(env: ProviderEnv): void {
   const fullEnv = envDefaultsETH(env);
   setProviderEnv(fullEnv);
   setProvider(waitProviderFromEnv(fullEnv));
 }
 
-export function setProviderByName(providerName: ProviderName): void  {
-  const env = providerEnvByName(providerName);
+export function setProviderByName(pn: ProviderName): void  {
+  const env = providerEnvByName(pn);
   setProviderByEnv(env);
 }
 
@@ -152,15 +152,15 @@ function ethersProviderEnv(network: WhichNetExternal): ProviderByName {
   }
 }
 
-function providerEnvByName(providerName: ProviderName): ProviderEnv {
-  switch (providerName) {
+function providerEnvByName(pn: ProviderName): ProviderEnv {
+  switch (pn) {
   case 'LocalHost': return localhostProviderEnv;
   case 'window': return windowProviderEnv();
   case 'MainNet': return providerEnvByName('homestead');
   case 'TestNet': return providerEnvByName('ropsten');
   case 'homestead': return ethersProviderEnv('homestead');
   case 'ropsten': return ethersProviderEnv('ropsten');
-  default: throw Error(`Unrecognized provider name: ${providerName}`);
+  default: throw Error(`Unrecognized provider name: ${pn}`);
   }
 }
 
@@ -242,12 +242,12 @@ function envDefaultsETH(env: Partial<ProviderByName & ProviderByURI>): ProviderE
   }
 }
 
-const [getProvider, _setProvider] = replaceableThunk<Promise<Provider>|Provider>(async (): Promise<Provider> => {
+const [getProvider, _setProvider] = replaceableThunk<Promise<Provider>>(async (): Promise<Provider> => {
   const fullEnv = getProviderEnv();
   return await waitProviderFromEnv(fullEnv);
 });
 export {getProvider};
-export function setProvider(provider: Provider|Promise<Provider>): void {
+export function setProvider(provider: Promise<Provider>): void {
   // TODO: define ETHProvider to be {provider: Provider, isolated: boolean} ?
   // Maybe also {window: boolean}
   _setProvider(provider);

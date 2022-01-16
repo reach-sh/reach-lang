@@ -463,7 +463,7 @@ jsExpr = \case
           return $ "await" <+> txn' <> "." <> jsApply "getOutput" [squotes (pretty mode), squotes dv', dvt', dv']
     case (kind, dvs) of
       (L_Internal, [dv]) -> go "internal" dv
-      (L_Api s, [dv]) -> go s dv
+      (L_Api p, [dv]) -> go (bunpack p) dv
       (_, _) -> return $ "null"
   DLE_setApiDetails {} -> return "undefined"
   DLE_GetUntrackedFunds at mtok tb -> do

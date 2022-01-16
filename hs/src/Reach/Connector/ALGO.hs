@@ -3,8 +3,10 @@ module Reach.Connector.ALGO (connect_algo, AlgoError(..)) where
 import Control.Monad.Extra
 import Control.Monad.Reader
 import qualified Data.Aeson as Aeson
+import Data.Bits (shiftL, (.|.))
 import Data.ByteString.Base64 (encodeBase64')
 import Data.ByteString.Builder
+import qualified Data.ByteArray as BA
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Internal as BI
@@ -24,6 +26,7 @@ import Data.Word
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
+import Reach.BinaryLeafTree
 import Reach.Connector
 import Reach.Counter
 import Reach.FixedPoint
@@ -64,17 +67,10 @@ instance Show AlgoError where
 -- General tools that could be elsewhere
 
 type LPGraph a = M.Map a (M.Map a Integer)
-type LPPath a = ([(a, Integer)], Integer)
+type LPPath a = (String, [(a, Integer)], Integer)
 type LPInt a = M.Map a ([(a, Integer)], Integer)
 longestPathBetween :: forall a . (Ord a, Monoid a, Show a) => LPGraph a -> a -> a -> IO (LPPath a)
 longestPathBetween g f _d = do
-  when False $ do
-    putStrLn $ "digraph {"
-    forM_ (M.toAscList g) $ \(from, cs) -> do
-      forM_ (M.toAscList cs) $ \(to, c) -> do
-        unless (from == mempty) $
-          putStrLn $ show from <> " -> " <> show to <> " [label=\"" <> show c <> "\"]"
-    putStrLn $ "}"
   let r x y = fromMaybe ([], 0) $ M.lookup x y
   ps <- fixedPoint $ \_ (m::LPInt a) -> do
     flip mapWithKeyM g $ \n cs -> do
@@ -86,10 +82,26 @@ longestPathBetween g f _d = do
           True -> return (p, -1)
           False -> return (p', c')
       return $ List.maximumBy (compare `on` snd) cs'
-  return $ r f ps
+  let (p, pc) = r f ps
+  let mkEdges s from = \case
+        [] -> s
+        (to, _) : m -> mkEdges (S.insert (from, to) s) to m
+  let edges = mkEdges mempty f p
+  let edge = flip S.member edges
+  let gs_body =
+        flip concatMap (M.toAscList g) $ \(from, cs) ->
+          flip concatMap (M.toAscList cs) $ \(to, c) ->
+            case (from == mempty) of
+              True -> ""
+              False -> show from <> " -> " <> show to <> " [label=\"" <> show c <> "\"" <> (if edge (from, to) then ",color=red" else "") <> "];\n"
+  let gs = "digraph {\n" <> gs_body <> "}"
+  return $ (gs, p, pc)
 
 aarray :: [Aeson.Value] -> Aeson.Value
 aarray = Aeson.Array . Vector.fromList
+
+aobject :: M.Map T.Text Aeson.Value -> Aeson.Value
+aobject = Aeson.Object . HM.fromList . M.toList
 
 -- Algorand constants
 
@@ -162,11 +174,17 @@ tealVersionPragma = "#pragma version 5"
 
 -- Algo specific stuff
 
+maxTypeSize :: M.Map a DLType -> Integer
+maxTypeSize m =
+  case M.null m of
+    True -> 0
+    False -> maximum $ map typeSizeOf $ M.elems m
+
 typeSig :: DLType -> String
 typeSig x =
   case x of
-  T_Null -> "null"
-  T_Bool -> "bool"
+  T_Null -> "byte[0]"
+  T_Bool -> "byte" -- "bool"
   T_UInt -> "uint64"
   T_Bytes sz -> "byte" <> array sz
   T_Digest -> "digest"
@@ -176,7 +194,7 @@ typeSig x =
   T_Array  t sz -> typeSig t <> array sz
   T_Tuple ts -> "(" <> intercalate "," (map typeSig ts) <> ")"
   T_Object m -> typeSig $ T_Tuple $ M.elems m
-  T_Data m -> "(byte, byte" <> array (maximum $ map typeSizeOf $ M.elems m) <> ")"
+  T_Data m -> "(byte,byte" <> array (maxTypeSize m) <> ")"
   T_Struct ts -> typeSig $ T_Tuple $ map snd ts
   where
     array sz = "[" <> show sz <> "]"
@@ -194,7 +212,7 @@ typeSizeOf = \case
   T_Array t sz -> sz * typeSizeOf t
   T_Tuple ts -> sum $ map typeSizeOf ts
   T_Object m -> sum $ map typeSizeOf $ M.elems m
-  T_Data m -> 1 + (maximum $ map typeSizeOf $ M.elems m)
+  T_Data m -> 1 + maxTypeSize m
   T_Struct ts -> sum $ map (typeSizeOf . snd) ts
   where
     word = 8
@@ -302,13 +320,19 @@ opt_b1 = \case
       e2n :: Integer
       e2n = s0n + (fromIntegral e1w)
   (TInt x) : (TCode "itob" []) : l ->
-    opt_b1 $ (TBytes xbs) : l
-    where
-      xbs = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
+    opt_b1 $ (TBytes $ itob x) : l
+  (TBytes xbs) : (TCode "btoi" []) : l ->
+    opt_b1 $ (TInt $ btoi xbs) : l
   x : l -> x : l
 
-checkCost :: Bool -> [TEAL] -> IO ()
-checkCost alwaysShow ts = do
+itob :: Integral a => a -> BS.ByteString
+itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
+
+btoi :: BS.ByteString -> Integer
+btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
+
+checkCost :: Disp -> Bool -> [TEAL] -> IO ()
+checkCost disp alwaysShow ts = do
   let mkg :: IO (IORef (LPGraph String))
       mkg = newIORef mempty
   cost_gr <- mkg
@@ -393,20 +417,21 @@ checkCost alwaysShow ts = do
         case x of
           True -> [ e ]
           False -> []
-  let showNice x = "TOP" <> h x
+  let showNice x = lTop <> h x
         where
           h = \case
             [] -> ""
             (l, c) : r -> " --" <> show c <> "--> " <> l <> h r
-  let analyze cgr units algoMax = do
+  let analyze lab cgr units algoMax = do
         cg <- readIORef cgr
-        (p, c) <- longestPathBetween cg lTop (l2s lBot)
+        (gs, p, c) <- longestPathBetween cg lTop (l2s lBot)
         let msg = "This program could use " <> show c <> " " <> units
         let tooMuch = fromIntegral c > algoMax
-        let cs = (whenl tooMuch $ msg <> ", but the limit is " <> show algoMax <> ": " <> showNice p <> "\n")
+        let cs = (whenl tooMuch $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n")
+        void $ disp ("." <> lab <> ".dot") $ s2t $ "// This file is in the DOT file format. Upload or copy it into a Graphviz engine, such as https://dreampuf.github.io/GraphvizOnline\n" <> gs
         return (msg, tooMuch, cs)
-  (showCost, exceedsCost, csCost) <- analyze cost_gr "units of cost" algoMaxAppProgramCost
-  (showLogLen, exceedsLogLen, csLogLen) <- analyze logLen_gr "bytes of logs" algoMaxLogLen
+  (showCost, exceedsCost, csCost) <- analyze "cost" cost_gr "units of cost" algoMaxAppProgramCost
+  (showLogLen, exceedsLogLen, csLogLen) <- analyze "log" logLen_gr "bytes of logs" algoMaxLogLen
   let cs = csCost <> csLogLen
   unless (null cs) $
     emitWarning Nothing $ W_ALGOConservative cs
@@ -416,11 +441,11 @@ checkCost alwaysShow ts = do
     putStrLn $ " * " <> showCost <> "."
     putStrLn $ " * " <> showLogLen <> "."
 
-optimizeAndRender :: Bool -> TEALs -> IO T.Text
-optimizeAndRender showCost ts = do
+optimizeAndRender :: Disp -> Bool -> TEALs -> IO T.Text
+optimizeAndRender disp showCost ts = do
   let tscl = DL.toList ts
   let tscl' = optimize tscl
-  checkCost showCost tscl'
+  checkCost disp showCost tscl'
   let tsl' = map render tscl'
   let lts = tealVersionPragma : (map LT.unwords tsl')
   let lt = LT.unlines lts
@@ -772,6 +797,9 @@ cl = \case
   DLL_Bool b -> cint $ if b then 1 else 0
   DLL_Int at i -> cint_ at i
 
+cbool :: Bool -> App ()
+cbool = cl . DLL_Bool
+
 ca_boolb :: DLArg -> Maybe B.ByteString
 ca_boolb = \case
   DLA_Literal (DLL_Bool b) ->
@@ -889,15 +917,18 @@ cprim = \case
       forM_ args ca
       op o
 
-cconcatbs :: [(DLType, App ())] -> App ()
-cconcatbs l = do
+cconcatbs_ :: (DLType -> App ()) -> [(DLType, App ())] -> App ()
+cconcatbs_ f l = do
   let totlen = typeSizeOf $ T_Tuple $ map fst l
   check_concat_len totlen
   case l of
     [] -> padding 0
     _ -> do
       forM_ (zip l dont_concat_first) $ \((t, m), a) ->
-        m >> ctobs t >> a
+        m >> f t >> a
+
+cconcatbs :: [(DLType, App ())] -> App ()
+cconcatbs = cconcatbs_ ctobs
 
 check_concat_len :: Integer -> App ()
 check_concat_len totlen =
@@ -1151,51 +1182,70 @@ cTupleSet at tt idx = do
 cMapLoad :: App ()
 cMapLoad = do
   Shared {..} <- eShared <$> ask
-  -- [ Address ]
-  -- [ Address, MapData_0? ]
-  forM_ (zip sMapKeysl $ False : repeat True) $ \(mi, doConcat) -> do
-    -- [ Address, MapData_N? ]
-    case doConcat of
-      True -> code "dig" [ "1" ]
-      False -> op "dup"
-    -- [ Address, MapData_N?, Address ]
-    cbs $ keyVary mi
-    -- [ Address, MapData_N?, Address, Key ]
-    op "app_local_get"
-    -- [ Address, MapData_N?, NewPiece ]
-    case doConcat of
-      True -> op "concat"
-      False -> nop
-    -- [ Address, MapData_N+1 ]
-    return ()
-  -- [ Address, MapData_k ]
-  op "swap"
-  op "pop"
-  -- [ MapData ]
-  return ()
+  let getOne mi = do
+        -- [ Address ]
+        cbs $ keyVary mi
+        -- [ Address, Key ]
+        op "app_local_get"
+        -- [ MapData ]
+        return ()
+  case sMapKeysl of
+    -- Special case one key:
+    [ 0 ] -> getOne 0
+    _ -> do
+      -- [ Address ]
+      -- [ Address, MapData_0? ]
+      forM_ (zip sMapKeysl $ False : repeat True) $ \(mi, doConcat) -> do
+        -- [ Address, MapData_N? ]
+        case doConcat of
+          True -> code "dig" [ "1" ]
+          False -> op "dup"
+        -- [ Address, MapData_N?, Address ]
+        getOne mi
+        -- [ Address, MapData_N?, NewPiece ]
+        case doConcat of
+          True -> op "concat"
+          False -> nop
+        -- [ Address, MapData_N+1 ]
+        return ()
+      -- [ Address, MapData_k ]
+      op "swap"
+      op "pop"
+      -- [ MapData ]
+      return ()
 
 cMapStore :: SrcLoc -> App ()
 cMapStore _at = do
   Shared {..} <- eShared <$> ask
   -- [ Address, MapData' ]
-  forM_ sMapKeysl $ \mi -> do
-    -- [ Address, MapData' ]
-    code "dig" ["1"]
-    -- [ Address, MapData', Address ]
-    cbs $ keyVary mi
-    -- [ Address, MapData', Address, Key ]
-    code "dig" ["2"]
-    -- [ Address, MapData', Address, Key, MapData' ]
-    cStateSlice sMapDataSize mi
-    -- [ Address, MapData', Address, Key, Value ]
-    op "app_local_put"
-    -- [ Address, MapData' ]
-    return ()
-  -- [ Address, MapData' ]
-  op "pop"
-  op "pop"
-  -- [ ]
-  return ()
+  case sMapKeysl of
+    -- Special case one key:
+    [ 0 ] -> do
+      -- [ Address, MapData' ]
+      cbs $ keyVary 0
+      -- [ Address, MapData', Key ]
+      op "swap"
+      -- [ Address, Key, Value ]
+      op "app_local_put"
+    _ -> do
+      forM_ sMapKeysl $ \mi -> do
+        -- [ Address, MapData' ]
+        code "dig" ["1"]
+        -- [ Address, MapData', Address ]
+        cbs $ keyVary mi
+        -- [ Address, MapData', Address, Key ]
+        code "dig" ["2"]
+        -- [ Address, MapData', Address, Key, MapData' ]
+        cStateSlice sMapDataSize mi
+        -- [ Address, MapData', Address, Key, Value ]
+        op "app_local_put"
+        -- [ Address, MapData' ]
+        return ()
+      -- [ Address, MapData' ]
+      op "pop"
+      op "pop"
+      -- [ ]
+      return ()
 
 divup :: Integer -> Integer -> Integer
 divup x y = ceiling $ (fromIntegral x :: Double) / (fromIntegral y)
@@ -1366,14 +1416,22 @@ ce = \case
     cTupleRef sb mdt $ fromIntegral i
   DLE_MapSet at mpv@(DLMVar i) fa mva -> do
     incResourceL fa R_Account
-    ca fa
-    op "dup"
-    cMapLoad
+    Shared {..} <- eShared <$> ask
     mdt <- getMapDataTy
     mt <- getMapTy mpv
-    cla $ mdaToMaybeLA mt mva
-    cTupleSet at mdt $ fromIntegral i
-    cMapStore at
+    case (length sMapKeysl) == 1 && (M.size sMaps) == 1 of
+      -- Special case one key and one map
+      True -> do
+        ca fa
+        cla $ mdaToMaybeLA mt mva
+        cMapStore at
+      _ -> do
+        ca fa
+        op "dup"
+        cMapLoad
+        cla $ mdaToMaybeLA mt mva
+        cTupleSet at mdt $ fromIntegral i
+        cMapStore at
   DLE_Remote {} -> xxx "remote objects"
   DLE_TokenNew at (DLTokenNew {..}) -> do
     let ct_at = at
@@ -1412,26 +1470,28 @@ ce = \case
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract _ -> code "txn" ["ApplicationID"]
   DLE_GetAddress _ -> cContractAddr
-  DLE_EmitLog at k vs
-    | isInternalLog k -> do
-      (v, n) <- case vs of
-          [v'@(DLVar _ _ _ n')] -> return (v', n')
-          _ -> impossible "algo ce: Expected one value"
-      clog $
-        [ DLA_Literal (DLL_Int at $ fromIntegral n)
-        , DLA_Var v
-        ]
-      cv v
-    | L_Event ml en <- k -> do
-      let name = maybe en (\l -> bunpack l <> "_" <> en) ml
-      clogEvent name vs
-      cl DLL_Null
-    | otherwise -> impossible "algo: emitLog"
-    where
-      isInternalLog = \case
-        L_Internal -> True
-        L_Api {} -> True
-        _ -> False
+  DLE_EmitLog at k vs -> do
+    let internal = do
+          (v, n) <- case vs of
+              [v'@(DLVar _ _ _ n')] -> return (v', n')
+              _ -> impossible "algo ce: Expected one value"
+          clog $
+            [ DLA_Literal (DLL_Int at $ fromIntegral n)
+            , DLA_Var v
+            ]
+          cv v
+          return $ v
+    case k of
+      L_Internal -> void $ internal
+      L_Api {} -> do
+        v <- internal
+        op "dup"
+        ctobs $ varType v
+        gvStore GV_apiRet
+      L_Event ml en -> do
+        let name = maybe en (\l -> bunpack l <> "_" <> en) ml
+        clogEvent name vs
+        cl DLL_Null
   DLE_setApiDetails {} -> return ()
   DLE_GetUntrackedFunds _ mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
@@ -1451,20 +1511,41 @@ ce = \case
       comment $ texty $ unsafeRedactAbsStr $ show at
       comment $ texty $ unsafeRedactAbsStr $ show fs
 
-clogEvent :: String -> [DLVar] -> ReaderT Env IO ()
+signatureStr :: String -> [DLType] -> Maybe DLType -> String
+signatureStr f args mret = sig
+  where
+    rets = fromMaybe "" $ fmap typeSig mret
+    sig = f <> "(" <> intercalate "," (map typeSig args) <> ")" <> rets
+
+sigStrToBytes :: String -> BS.ByteString
+sigStrToBytes sig = shabs
+  where
+    sha = hashWith SHA512t_256 $ bpack sig
+    shabs = BS.take 4 $ BA.convert sha
+
+sigStrToInt :: String -> Int
+sigStrToInt = fromIntegral . btoi . sigStrToBytes
+
+signatureBytes :: String -> [DLType] -> Maybe DLType -> BS.ByteString
+signatureBytes f args mret = sigStrToBytes $ signatureStr f args mret
+
+clogEvent :: String -> [DLVar] -> App ()
 clogEvent eventName vs = do
-  let signature = eventName <> "(" <> intercalate "," (map (typeSig . varType) vs) <> ")"
-  let shaString = show . hashWith SHA512t_256 $ bpack signature
-  let shaBytes = bpack . take 4 $ shaString
+  let shaStr = signatureStr eventName (map varType vs) Nothing
+  let shaBytes = sigStrToBytes shaStr
   let as = map DLA_Var vs
   cconcatbs $ (T_Bytes 4, cbs shaBytes) : map (\a -> (argTypeOf a, ca a)) as
-  code "log" [ "//", texty $ typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as ]
+  comment $ texty shaStr
+  clog_ $ 4 + (typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as)
+
+clog_ :: Integer -> App ()
+clog_ sz = code "log" [ "//", texty sz ]
 
 clog :: [DLArg] -> App ()
 clog as = do
   let la = DLLA_Tuple as
   cla la
-  code "log" [ "//", texty $ typeSizeOf $ largeArgTypeOf la ]
+  clog_ $ typeSizeOf $ largeArgTypeOf la
 
 staticZero :: DLArg -> Bool
 staticZero = \case
@@ -1602,17 +1683,11 @@ makeTxn (MakeTxn {..}) = when (mt_always || not (staticZero mt_amt) ) $ do
   label after_lab
   op "pop" -- if !always & zero then pop amt ; else pop 0
 
-doSwitch :: (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
-doSwitch ck _at dv csm = do
-  end_lab <- freshLabel "switchK"
-  let cm1 ((vn, (vv, vu, k)), vi) = do
-        next_lab <- freshLabel $ "switchAfter" <> vn
-        ca $ DLA_Var dv
-        cint 0
-        op "getbyte"
-        cint vi
-        op "=="
-        code "bz" [next_lab]
+doSwitch :: String -> (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
+doSwitch lab ck _at dv csm = do
+  let cm1 _vi (vn, (vv, vu, k)) = do
+        l <- freshLabel $ lab <> "_" <> vn
+        label l
         case vu of
           False -> ck k
           True -> do
@@ -1625,9 +1700,10 @@ doSwitch ck _at dv csm = do
                   ca $ DLA_Var dv
                   cextract 1 sz
                   cfrombs vt
-        label next_lab
-  mapM_ cm1 $ zip (M.toAscList csm) [0 ..]
-  label end_lab
+  ca $ DLA_Var dv
+  cint 0
+  op "getbyte"
+  cblt lab cm1 $ bltL $ zip [0..] (M.toAscList csm)
 
 cm :: App () -> DLStmt -> App ()
 cm km = \case
@@ -1704,7 +1780,9 @@ cm km = \case
     label join_lab
     km
   DL_LocalSwitch at dv csm -> do
-    doSwitch (cp (return ())) at dv csm
+    end_lab <- freshLabel $ "LocalSwitchK"
+    doSwitch "LocalSwitch" (cp (code "b" [ end_lab ])) at dv csm
+    label end_lab
     km
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
@@ -1728,7 +1806,7 @@ ct = \case
     label false_lab
     nct ft
   CT_Switch at dv csm ->
-    doSwitch nct at dv csm
+    doSwitch "Switch" nct at dv csm
   CT_Jump _at which svs (DLAssignment msgm) -> do
     cla $ DLLA_Tuple $ map DLA_Var svs
     cla $ DLLA_Tuple $ map snd $ M.toAscList msgm
@@ -1768,7 +1846,7 @@ ct = \case
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
-reachAlgoBackendVersion = 8
+reachAlgoBackendVersion = 9
 
 -- State:
 keyState :: B.ByteString
@@ -1788,6 +1866,7 @@ etexty = texty . fromEnum
 
 data ArgId
   = ArgMethod
+  | ArgPublish
   | ArgTime
   | ArgMsg
   deriving (Eq, Ord, Show, Enum, Bounded)
@@ -1805,6 +1884,10 @@ data GlobalVar
   = GV_txnCounter
   | GV_currentStep
   | GV_currentTime
+  | GV_argTime
+  | GV_argMsg
+  | GV_wasApi
+  | GV_apiRet
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 gvSlot :: GlobalVar -> ScratchSlot
@@ -1821,6 +1904,10 @@ gvType = \case
   GV_txnCounter -> T_UInt
   GV_currentStep -> T_UInt
   GV_currentTime -> T_UInt
+  GV_argTime -> T_UInt
+  GV_argMsg -> impossible "GV_argMsg"
+  GV_wasApi -> T_Bool
+  GV_apiRet -> impossible "GV_apiRet"
 
 keyState_gvs :: [GlobalVar]
 keyState_gvs = [GV_currentStep, GV_currentTime]
@@ -1828,11 +1915,17 @@ keyState_gvs = [GV_currentStep, GV_currentTime]
 keyState_ty :: DLType
 keyState_ty = T_Tuple $ map gvType keyState_gvs
 
-defn_done :: App ()
-defn_done = do
-  label "done"
-  cint 1
+defn_fixed :: Label -> Bool -> App ()
+defn_fixed l b = do
+  label l
+  cbool b
   op "return"
+
+defn_done :: App ()
+defn_done = defn_fixed "done" True
+
+defn_fail :: App ()
+defn_fail = defn_fixed "fail" False
 
 cRound :: App ()
 cRound = code "global" ["Round"]
@@ -1867,15 +1960,43 @@ cloop which (C_Loop at svs vars body) = recordWhich which $ do
         . (bindFromTuple at svs)
   bindVars $ ct body
 
-ch :: LT.Text -> Int -> CHandler -> App ()
-ch _ _ (C_Loop {}) = return ()
-ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = recordWhich which $ do
+-- NOTE This could be compiled to a jump table if that were possible with TEAL
+cblt :: String -> (Int -> a -> App ()) -> BLT Int a -> App ()
+cblt lab go t = do
+  -- liftIO $ putStrLn $ show t
+  rec 0 Nothing t
+  where
+    rec low mhi = \case
+      Empty -> code "b" ["fail"]
+      Branch rv l r -> do
+        op "dup"
+        cint $ fromIntegral rv
+        op "<"
+        llab <- freshLabel $ lab <> "_lt_" <> show rv
+        code "bnz" [ llab ]
+        rec rv mhi r
+        label llab
+        rec low (Just $ rv - 1) l
+      Leaf which h -> do
+        case (which == low && mhi == Just which) of
+          True -> op "pop"
+          False -> do
+            cint $ fromIntegral which
+            asserteq
+        go which h
+
+handlerLabel :: Int -> Label
+handlerLabel w = "publish" <> texty w
+
+ch :: Int -> CHandler -> App ()
+ch _ (C_Loop {}) = return ()
+ch which (C_Handler at int from prev svs msg timev secsv body) = recordWhich which $ do
   let isCtor = which == 0
   let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ msg)
   when (argSize > algoMaxAppTotalArgLen) $
     xxx $ texty $ "Step " <> show which <> "'s argument length is " <> show argSize <> ", but the maximum is " <> show algoMaxAppTotalArgLen
-  let bindFromArg ai vs m = do
-        argLoad ai
+  let bindFromMsg vs m = do
+        gvLoad GV_argMsg
         op "dup"
         op "len"
         cint $ typeSizeOf $ (T_Tuple $ map varType vs)
@@ -1884,19 +2005,13 @@ ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = record
   let bindFromSvs m = do
         cSvsLoad $ typeSizeOf $ T_Tuple $ map varType svs
         bindFromTuple at svs m
-  comment ("Handler " <> texty which)
-  op "dup" -- We assume the method id is on the stack
-  cint $ fromIntegral $ which
-  op "=="
-  code "bz" [ afterLab ]
-  op "pop" -- Get rid of the method id since it's us
+  label (handlerLabel which)
   comment "check step"
   cint $ fromIntegral prev
   gvLoad GV_currentStep
   asserteq
   comment "check time"
-  argLoad ArgTime
-  cfrombs T_UInt
+  gvLoad GV_argTime
   op "dup"
   cint 0
   op "=="
@@ -1910,7 +2025,7 @@ ch afterLab which (C_Handler at int from prev svs msg timev secsv body) = record
         . (bindTime timev)
         . (bindSecs secsv)
         . bindFromSvs
-        . (bindFromArg ArgMsg msg)
+        . (bindFromMsg msg)
   bindVars $ do
     clogEvent ("_reach_e" <> show which) msg
     when isCtor $ do
@@ -1974,10 +2089,64 @@ compileTEAL tealf = do
       impossible $ "The TEAL compiler failed with the message:\n" <> show stderr
     ExitSuccess -> return stdout
 
+data CApi = CApi
+  { capi_who :: SLPart
+  , capi_sig :: String
+  , capi_which :: Int
+  , capi_arg_tys :: [DLType]
+  , capi_doWrap :: App ()
+  }
+apiSig :: (SLPart, ApiInfo) -> (String, CApi)
+apiSig (who, (ApiInfo {..})) = (sig, c)
+  where
+    c = CApi who sig ai_which args doWrap
+    sig = signatureStr f args mret
+    f = bunpack who
+    imp = impossible "apiSig"
+    (args, doWrap) =
+      case ai_compile of
+        AIC_SpreadArg ->
+          case ai_msg_tys of
+            [T_Tuple ts] -> (ts, return ())
+            _ -> imp
+        AIC_Case ->
+          case ai_msg_tys of
+            [T_Data tm] ->
+              case M.lookup cid tm of
+                Just (T_Tuple ts) -> (ts, doWrapData ts $ cla . DLLA_Data tm cid)
+                _ -> imp
+            _ -> imp
+    cid = fromMaybe imp ai_mcase_id
+    ret = ai_ret_ty
+    mret = Just $ ret
+
+doWrapData :: [DLType] -> (DLArg -> App ()) -> App ()
+doWrapData tys mk = do
+  -- Tuple of tys is on stack
+  av <- allocDLVar sb $ T_Tuple tys
+  sallocLet av (return ()) $ mk (DLA_Var av)
+  -- Data of tys is on stack
+
+capi :: Int -> CApi -> App ()
+capi sigi (CApi who sig which tys doWrap) = do
+  comment $ texty $ "API: " <> sig
+  comment $ texty $ who
+  comment $ texty $ " bs: " <> (show $ sigStrToBytes sig)
+  comment $ texty $ " ui: " <> show sigi
+  let f :: DLType -> Integer -> (DLType, App ())
+      f t i = (t, code "txna" [ "ApplicationArgs", texty i ])
+  cconcatbs_ (const $ return ()) $ zipWith f tys [1..]
+  doWrap
+  gvStore GV_argMsg
+  code "b" [handlerLabel which]
+
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
   let PLProg _at plo dli _ _ cpp = pl
-  let CPProg at _ _ai _ (CHandlers hm) = cpp
+  let CPProg at _ ai _ (CHandlers hm) = cpp
+  let maxApiRetSize = maxTypeSize $ M.map ai_ret_ty ai
+  let ai_sm = M.fromList $ map apiSig $ M.toAscList ai
+  let ai_im = M.mapKeys sigStrToInt ai_sm
   let sMaps = dli_maps dli
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty
@@ -2021,15 +2190,18 @@ compile_algo env disp pl = do
   totalLenR <- newIORef (0 :: Integer)
   let addProg lab showCost m = do
         ts <- run m
-        t <- optimizeAndRender showCost ts
-        tf <- disp lab t
+        let disp' = disp . (lab <>)
+        t <- optimizeAndRender disp' showCost ts
+        tf <- disp (lab <> ".teal") t
         tbs <- compileTEAL tf
         modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
         let tc = LT.toStrict $ encodeBase64 tbs
         modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String tc
   addProg "appApproval" (cte_REACH_DEBUG env) $ do
-    checkRekeyTo
-    checkLease
+    when False $ do
+      -- We don't check these, because they don't interfere with how we work.
+      checkRekeyTo
+      checkLease
     cint 0
     gvStore GV_txnCounter
     code "txn" ["ApplicationID"]
@@ -2054,20 +2226,33 @@ compile_algo env disp pl = do
       code "b" ["checkSize"]
       -- The NON-OptIn case:
       label "normal"
-    code "txn" ["NumAppArgs"]
-    cint argCount
-    asserteq
+    when False $ do
+      -- NOTE: We don't actually care about this, because there will be a
+      -- different failure if there are too few and if there are too few, who
+      -- cares?
+      code "txn" ["NumAppArgs"]
+      cint argCount
+      asserteq
     argLoad ArgMethod
     cfrombs T_UInt
     label "preamble"
-    -- NOTE This could be compiled to a jump table if that were possible or to
-    -- a tree to be O(log n) rather than O(n)
-    forM_ (M.toAscList hm) $ \(hi, hh) -> do
-      afterLab <- freshLabel $ "afterHandler" <> show hi
-      ch afterLab hi hh
-      label afterLab
-    cl $ DLL_Bool False
-    assert
+    op "dup"
+    code "bz" [ "publish" ]
+    label "api"
+    cint 0
+    gvStore GV_argTime
+    cbool True
+    gvStore GV_wasApi
+    cblt "api" capi $ bltM ai_im
+    label "publish"
+    argLoad ArgPublish
+    cfrombs T_UInt
+    argLoad ArgTime
+    cfrombs T_UInt
+    gvStore GV_argTime
+    argLoad ArgMsg
+    gvStore GV_argMsg
+    cblt "publish" ch $ bltM hm
     forM_ (M.toAscList hm) $ \(hi, hh) ->
       cloop hi hh
     label "updateState"
@@ -2077,10 +2262,17 @@ compile_algo env disp pl = do
       ctobs $ gvType gv
     forM_ (tail keyState_gvs) $ const $ op "concat"
     op "app_global_put"
+    gvLoad GV_wasApi
+    code "bz" [ "checkSize" ]
+    label "apiReturn"
+    -- SHA-512/256("return")[0..4] = 0x151f7c75
+    cbs $ BS.pack [ 0x15, 0x1f, 0x7c, 0x75 ]
+    gvLoad GV_apiRet
+    op "concat"
+    clog_ $ 4 + maxApiRetSize
     code "b" [ "checkSize" ]
     label "checkSize"
     gvLoad GV_txnCounter
-    op "dup"
     op "dup"
     -- The size is correct
     cint 1
@@ -2090,13 +2282,18 @@ compile_algo env disp pl = do
     -- We're last
     code "txn" ["GroupIndex"]
     asserteq
-    cint algoMinTxnFee
-    op "*"
-    code "txn" ["Fee"]
-    op "<="
-    assert
+    when False $ do
+      -- There's no point to checking this, because if the fee is too much,
+      -- there's no harm and if it is too low, the network will reject it
+      -- anyways
+      cint algoMinTxnFee
+      op "*"
+      code "txn" ["Fee"]
+      op "<="
+      assert
     code "b" [ "done" ]
     defn_done
+    defn_fail
     label "alloc"
     code "txn" ["OnCompletion"]
     output $ TConst "NoOp"
@@ -2107,7 +2304,7 @@ compile_algo env disp pl = do
     code "b" [ "updateState" ]
   -- Clear state is never allowed
   addProg "appClear" False $ do
-    cl $ DLL_Bool False
+    cbool False
   checkResources bad' =<< readIORef sResources
   stateSize <- readIORef sStateSizeR
   void $ recordSizeAndKeys "state" stateSize algoMaxGlobalSchemaEntries_usable
@@ -2125,11 +2322,17 @@ compile_algo env disp pl = do
         S.toList $ S.map (Aeson.String . LT.toStrict) sFailures
   unless (null sFailures) $ do
     emitWarning Nothing $ W_ALGOUnsupported $ S.toList $ S.map LT.unpack sFailures
+  let apiSigs = M.keys ai_sm
+  modifyIORef resr $
+    M.insert "ABI" $
+      aobject $ M.fromList $ [
+        ("sigs", aarray $ map (Aeson.String . s2t) apiSigs)
+      ]
   modifyIORef resr $
     M.insert "version" $
       Aeson.Number $ fromIntegral $ reachAlgoBackendVersion
   res <- readIORef resr
-  return $ Aeson.Object $ HM.fromList $ M.toList res
+  return $ aobject res
 
 connect_algo :: CompilerToolEnv -> Connector
 connect_algo env = Connector {..}
@@ -2145,7 +2348,7 @@ connect_algo env = Connector {..}
       where
         disp :: String -> T.Text -> IO String
         disp which c = do
-          let oi = which <> ".teal"
+          let oi = which
           let oit = T.pack oi
           let f = outn oit
           conWrite (Just outn) oit c

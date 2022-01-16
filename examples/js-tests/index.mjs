@@ -278,7 +278,11 @@ const mkCommon = async (lib, extra) => {
 
 
   await describe('exposes a `newTestAccount` function which', async () => {
-    const balance = minimumBalance + Math.floor(Math.random() * 10000000);
+    // XXX These tests are not valid on Algorand, unless the node is completely
+    // isolated, because the network automatically gives rewards and they may
+    // be disbursed in the round this happens. Maybe it will be less likely if
+    // the amount is super low.
+    const balance = minimumBalance + Math.floor(Math.random() * 10);
 
     await describe('accepts numeric arguments of type', async () => {
       await it('`BigNumber`', async () => {

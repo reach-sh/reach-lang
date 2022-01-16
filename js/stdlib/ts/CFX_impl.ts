@@ -21,7 +21,7 @@ const { Buffer } = buffer;
 const { Conflux } = cfxsdk;
 
 type NetworkAccount = cfxers.IWallet; // XXX or other things
-type Provider = cfxers.providers.Provider;
+export type Provider = cfxers.providers.Provider;
 
 function notYetSupported(label: string): any {
   throw Error(`${label} not yet supported on CFX`);
@@ -118,7 +118,7 @@ export async function _specialFundFromFaucet() {
   }
 }
 
-const [getProvider, _setProvider] = replaceableThunk<Promise<Provider>|Provider>(async (): Promise<Provider> => {
+const [getProvider, _setProvider] = replaceableThunk<Promise<Provider>>(async (): Promise<Provider> => {
   const env = getProviderEnv();
   const provider = await waitProviderFromEnv(env);
   if ('CFX_NODE_URI' in env && env.CFX_NODE_URI && truthyEnv(env.REACH_DO_WAIT_PORT)) {
@@ -126,7 +126,7 @@ const [getProvider, _setProvider] = replaceableThunk<Promise<Provider>|Provider>
   }
   return provider;
 });
-export function setProvider(provider: Provider|Promise<Provider>): void {
+export function setProvider(provider: Promise<Provider>): void {
   _setProvider(provider);
   if (!_providerEnv) {
     // this circumstance is weird and maybe we should handle it better
@@ -276,8 +276,8 @@ function setProviderByEnv(env: any): void {
   setProvider(waitProviderFromEnv(fullEnv));
 }
 
-function setProviderByName(providerName: ProviderName): void {
-  const env = providerEnvByName(providerName)
+function setProviderByName(pn: ProviderName): void {
+  const env = providerEnvByName(pn)
   setProviderByEnv(env);
 }
 
@@ -289,15 +289,15 @@ const localhostProviderEnv: ProviderByURI = {
   REACH_ISOLATED_NETWORK: 'yes',
 }
 
-function providerEnvByName(providerName: ProviderName): ProviderEnv {
-  switch (providerName) {
+function providerEnvByName(pn: ProviderName): ProviderEnv {
+  switch (pn) {
   case 'LocalHost': return localhostProviderEnv;
   case 'window': return notYetSupported(`providerEnvByName('window')`);
   case 'MainNet': return providerEnvByName('tethys');
   case 'TestNet': return cfxProviderEnv('TestNet');
   case 'tethys': return cfxProviderEnv('tethys');
   case 'BlockNumber': return cfxProviderEnv('BlockNumber'); // XXX temporary
-  default: throw Error(`Unrecognized provider name: ${providerName}`);
+  default: throw Error(`Unrecognized provider name: ${pn}`);
   }
 }
 

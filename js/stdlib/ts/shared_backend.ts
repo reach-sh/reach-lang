@@ -44,7 +44,11 @@ export function protect (ctc: AnyBackendTy, v: unknown, ai: unknown = null) {
   try {
     return ctc.canonicalize(v);
   } catch (e) {
-    throw Error(`Protect failed: expected ${ctc.name} but got ${v}; ${JSON.stringify(ai)}:\n${JSON.stringify(e)}`);
+    let vs = `${v}`;
+    if ( vs === '{}' || vs === '[object Object]' ) {
+      vs = JSON.stringify(v);
+    }
+    throw Error(`Protect failed: expected ${ctc.name} but got ${vs}; ${JSON.stringify(ai)}:\n${JSON.stringify(e)}`);
   }
 };
 

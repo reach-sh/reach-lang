@@ -32,11 +32,12 @@ data Focus
   | F_Consensus
   deriving (Eq, Ord, Show)
 
+type RepeatedT = Either DLArg DLLargeArg
+
 data CommonEnv = CommonEnv
   { ceReplaced :: M.Map DLVar (DLVar, Maybe DLArg)
-  , cePrev :: M.Map DLExpr DLVar
+  , cePrev :: M.Map DLExpr RepeatedT
   , ceNots :: M.Map DLVar DLArg
-  , ceKnownVariants :: M.Map DLVar (SLVar, DLArg)
   , ceKnownLargeArgs :: M.Map DLVar DLLargeArg
   }
 
@@ -49,14 +50,13 @@ instance Semigroup CommonEnv where
       { ceReplaced = g ceReplaced
       , cePrev = g cePrev
       , ceNots = g ceNots
-      , ceKnownVariants = g ceKnownVariants
       , ceKnownLargeArgs = g ceKnownLargeArgs
       }
     where
       g f = f x <> f y
 
 instance Monoid CommonEnv where
-  mempty = CommonEnv mempty mempty mempty mempty mempty
+  mempty = CommonEnv mempty mempty mempty mempty
 
 data Env = Env
   { eFocus :: Focus
@@ -64,7 +64,13 @@ data Env = Env
   , eEnvsR :: IORef (M.Map Focus CommonEnv)
   , eCounter :: Counter
   , eConst :: S.Set DLVar
+  , eMaps :: DLMapInfos
   }
+
+getMapTy :: DLMVar -> App (Maybe DLType)
+getMapTy mpv = do
+  ms <- asks eMaps
+  return $ fmap dlmi_ty $ M.lookup mpv ms
 
 data ConstEnv = ConstEnv
   { eConstR :: IORef (M.Map DLVar Integer)
@@ -105,9 +111,13 @@ lookupCommon dict obj = do
 rewrittenp :: DLVar -> App (Maybe (DLVar, Maybe DLArg))
 rewrittenp = lookupCommon ceReplaced
 
-repeated :: DLExpr -> App (Maybe DLVar)
+repeated :: DLExpr -> App (Maybe RepeatedT)
 repeated = \case
-  DLE_Arg _ (DLA_Var dv') -> return $ Just dv'
+  DLE_Arg _ a -> return $ Just $ Left a
+  e@(DLE_LArg _ a) ->
+    lookupCommon cePrev e >>= \case
+      Nothing -> return $ Just $ Right a
+      Just x -> return $ Just $ x
   e -> lookupCommon cePrev e
 
 optNotHuh :: DLArg -> App (Maybe DLArg)
@@ -126,11 +136,11 @@ recordNotHuh = \case
            })
 
 optKnownVariant :: DLVar -> App (Maybe (SLVar, DLArg))
-optKnownVariant = lookupCommon ceKnownVariants
-
-recordKnownVariant :: DLVar -> SLVar -> DLArg -> App ()
-recordKnownVariant dv k va =
-  updateLookup (\e -> e { ceKnownVariants = M.insert dv (k, va) $ ceKnownVariants e })
+optKnownVariant v = do
+  optKnownLargeArg v >>= \case
+    Nothing -> return $ Nothing
+    Just (DLLA_Data _ k va) -> return $ Just (k, va)
+    Just _ -> impossible "optKnownVariant"
 
 optKnownLargeArg :: DLVar -> App (Maybe DLLargeArg)
 optKnownLargeArg = lookupCommon ceKnownLargeArgs
@@ -145,7 +155,7 @@ remember_ always v e =
   where
     up prev =
       case always || not (M.member e prev) of
-        True -> M.insert e v prev
+        True -> M.insert e (Left $ DLA_Var v) prev
         False -> prev
 
 remember :: DLVar -> DLExpr -> App ()
@@ -167,7 +177,7 @@ updateLookup up = do
             case f of
               F_Ctor -> True
               F_All -> True -- False
-              F_Consensus -> True -- False
+              F_Consensus -> False -- True -- False
               F_One _ -> True
           F_All -> True
           F_Consensus -> True
@@ -176,8 +186,8 @@ updateLookup up = do
   let update = M.fromList . (map update1) . M.toList
   liftIO $ modifyIORef eEnvsR update
 
-mkEnv0 :: Counter -> S.Set DLVar -> [SLPart] -> IO Env
-mkEnv0 eCounter eConst eParts = do
+mkEnv0 :: Counter -> S.Set DLVar -> [SLPart] -> DLMapInfos -> IO Env
+mkEnv0 eCounter eConst eParts eMaps = do
   let eFocus = F_Ctor
   let eEnvs =
         M.fromList $
@@ -276,9 +286,7 @@ instance Optimize DLExpr where
     DLE_Impossible at tag lab ->
       return $ DLE_Impossible at tag lab
     DLE_VerifyMuldiv at f cl args err ->
-      opt (DLE_PrimOp at MUL_DIV args) >>= \case
-        DLE_PrimOp _ _ args' -> return $ DLE_VerifyMuldiv at f cl args' err
-        ow -> return ow
+      DLE_VerifyMuldiv at f cl <$> opt args <*> pure err
     DLE_PrimOp at p as -> do
       as' <- opt as
       let meh = return $ DLE_PrimOp at p as'
@@ -382,6 +390,14 @@ class Extract a where
 instance Extract (Maybe DLVar) where
   extract = id
 
+allTheSame :: (Eq a, Sanitize a) => [a] -> Maybe a
+allTheSame xs =
+  case and $ map (== top) (tail xs') of
+    True -> Just top
+    False -> Nothing
+  where xs' = map sani xs
+        top = head xs'
+
 optIf :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (SrcLoc -> DLArg -> k -> k -> r) -> SrcLoc -> DLArg -> k -> k -> App r
 optIf mkDo mkIf at c t f =
   opt c >>= \case
@@ -391,9 +407,9 @@ optIf mkDo mkIf at c t f =
       -- XXX We could see if c' is something like `DLVar x == DLArg y` and add x -> y to the optimization environment
       t' <- newScope $ opt t
       f' <- newScope $ opt f
-      case sani t' == sani f' of
-        True -> return $ mkDo t'
-        False ->
+      case allTheSame [t', f'] of
+        Just s -> return $ mkDo s
+        Nothing ->
           optNotHuh c' >>= \case
             Just c'' ->
               return $ mkIf at c'' f' t'
@@ -403,7 +419,7 @@ optIf mkDo mkIf at c t f =
 gcsSwitch :: Optimize k => ConstT (SwitchCases k)
 gcsSwitch = mapM_ (\(_, _, n) -> gcs n)
 
-optSwitch :: Optimize k => (k -> r) -> (DLStmt -> k -> k) -> (SrcLoc -> DLVar -> SwitchCases k -> r) -> SrcLoc -> DLVar -> SwitchCases k -> App r
+optSwitch :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (DLStmt -> k -> k) -> (SrcLoc -> DLVar -> SwitchCases k -> r) -> SrcLoc -> DLVar -> SwitchCases k -> App r
 optSwitch mkDo mkLet mkSwitch at ov csm = do
   ov' <- opt ov
   optKnownVariant ov' >>= \case
@@ -412,8 +428,14 @@ optSwitch mkDo mkLet mkSwitch at ov csm = do
       let var_k' = mkLet (DL_Let at (DLV_Let DVC_Many var_var) (DLE_Arg at var_val)) var_k
       newScope $ mkDo <$> opt var_k'
     Nothing -> do
-      let cm1 k (v_v, vnu, n) = (,,) v_v vnu <$> (newScope $ recordKnownVariant ov' k (DLA_Var v_v) >> opt n)
-      mkSwitch at ov' <$> mapWithKeyM cm1 csm
+      let tm = dataTypeMap $ varType ov
+      let rkv dv k va = recordKnownLargeArg dv $ DLLA_Data tm k va
+      let cm1 k (v_v, vnu, n) = (,,) v_v vnu <$> (newScope $ rkv ov' k (DLA_Var v_v) >> opt n)
+      csm' <- mapWithKeyM cm1 csm
+      let csm'kl = map (\(_k, (_v_v, _vnu, n)) -> n) $ M.toAscList csm'
+      case allTheSame csm'kl of
+        Just s -> return $ mkDo s
+        Nothing -> return $ mkSwitch at ov' csm'
 
 optWhile :: Optimize a => (DLAssignment -> DLBlock -> a -> a -> a) -> DLAssignment -> DLBlock -> a -> a -> App a
 optWhile mk asn cond body k = do
@@ -436,31 +458,55 @@ optLet :: SrcLoc -> DLLetVar -> DLExpr -> App DLStmt
 optLet at x e = do
   e' <- opt e
   let meh = return $ DL_Let at x e'
-  case (extract x, isPure e && canDupe e) of
-    (Just dv, True) ->
-      case e' of
-        DLE_LArg _ a' | canDupe a' -> do
-          recordKnownLargeArg dv a'
-          meh
-        DLE_Arg _ a' | canDupe a' -> do
-          rewrite dv (dv, Just a')
-          mremember dv (sani e')
-          meh
-        _ -> do
-          let e'' = sani e'
-          common <- repeated e''
-          case common of
-            Just rt -> do
-              rewrite dv (rt, Nothing)
-              return $ DL_Nop at
-            Nothing -> do
-              remember dv e''
-              case e' of
-                DLE_PrimOp _ IF_THEN_ELSE [c, DLA_Literal (DLL_Bool False), DLA_Literal (DLL_Bool True)] -> do
-                  recordNotHuh x c
-                _ ->
-                  return ()
-              meh
+  let argCase dv at' a' = do
+        rewrite dv (dv, Just a')
+        let e'' = DLE_Arg at' a'
+        mremember dv (sani e'')
+        return $ DL_Let at x e''
+  let largCase dv at' a' = do
+        recordKnownLargeArg dv a'
+        let e'' = (DLE_LArg at' a')
+        mremember dv (sani e'')
+        return $ DL_Let at x e''
+  let doit dv = do
+        case e' of
+          DLE_Arg at' a' | canDupe a' ->
+            argCase dv at' a'
+          _ -> do
+            let e'' = sani e'
+            common <- repeated e''
+            case common of
+              Just (Left (DLA_Var rt)) -> do
+                rewrite dv (rt, Nothing)
+                return $ DL_Nop at
+              Just (Left a') | canDupe a' ->
+                argCase dv at a'
+              Just (Right a') | canDupe a' ->
+                largCase dv at a'
+              _ -> do
+                remember dv e''
+                case e' of
+                  DLE_PrimOp _ IF_THEN_ELSE [c, DLA_Literal (DLL_Bool False), DLA_Literal (DLL_Bool True)] -> do
+                    recordNotHuh x c
+                  _ ->
+                    return ()
+                meh
+  case (extract x, (isPure e && canDupe e), e) of
+    (Just dv, True, _) -> doit dv
+    (_, _, DLE_MapSet _ mv fa nva) -> do
+      let ref = DLE_MapRef sb mv fa
+      mmt <- getMapTy mv
+      let clear = M.filterWithKey $ \k _ ->
+            case k of
+              DLE_MapRef _ mv_ _ -> mv /= mv_
+              _ -> True
+      let upf =
+            case mmt of
+              Nothing -> id
+              Just mt -> M.insert ref $ Right $ mdaToMaybeLA mt nva
+      let up ce = ce { cePrev = (upf . clear) $ cePrev ce }
+      updateLookup up
+      meh
     _ -> meh
 
 instance Optimize DLStmt where
@@ -632,7 +678,8 @@ instance Optimize LLProg where
     let SLParts {..} = ps
     let psl = M.keys sps_ies
     cs <- asks eConst
-    env0 <- liftIO $ mkEnv0 (getCounter opts) cs psl
+    let mis = dli_maps dli
+    env0 <- liftIO $ mkEnv0 (getCounter opts) cs psl mis
     local (const env0) $
       focus_ctor $
         LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> pure das <*> pure devts <*> opt s
@@ -738,7 +785,7 @@ optimize_ c t = do
   flip runReaderT (ConstEnv {..}) $ gcs t
   cs <- readIORef eConstR
   let csvs = M.keysSet $ M.filter (\x -> x < 2) cs
-  env0 <- mkEnv0 c csvs []
+  env0 <- mkEnv0 c csvs [] mempty
   flip runReaderT env0 $
     opt t
 

@@ -115,25 +115,25 @@ checkteal () {
 
 #######
 
-#exit 0
-
-# jb
 export REACH_DEBUG=Y
-one ALGO timeoutception
-exit 0
-(cd examples/rps-8-interact && c index.rsh)
-ci ALGO rps-7-loops
-exit 0
-
+fc hs/t/n/map-dset.rsh
+c hs/t/y/mapOpt.rsh
+c examples/ttt/index.rsh
 exit 0
 
+export REACH_DEBUG=Y
+#c users/duoswap-core/index.rsh
+c users/xbacked-contracts/src/master_vault.rsh
+dot -Tpng -O users/xbacked-contracts/src/build/master_vault.main.appApproval.cost.dot
 exit 0
-one ETH rpc-view-map
+
+jb
+ci ALGO api-raw
+ci ALGO api-map
 exit 0
-ci ETH rps-7-loops
-ci ETH mint-basic
-ci ETH event
-ci ETH api-map
-ci ETH raffle
+ci ALGO atomic-swap
+ci ALGO mint-basic
+#ci ALGO js-tests
+exit 0
 
 # (cd hs && mk hs-test)

@@ -16,7 +16,7 @@ import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import Data.List (intersperse)
 import qualified Data.Map.Strict as M
-import Data.Maybe (fromMaybe, isJust)
+import Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 import Data.String (IsString)
 import qualified Data.Text as T
@@ -244,8 +244,8 @@ data SolCtxt = SolCtxt
   , ctxt_outputs :: IORef (M.Map String Doc)
   , ctxt_tlfuns :: IORef (M.Map String Doc)
   , ctxt_requireMsg :: Counter
-  , ctxt_api_rngs :: IORef (Maybe (M.Map String DLType))
   , ctxt_which_msg :: IORef (M.Map Int [DLVar])
+  , ctxt_uses_apis :: Bool
   }
 
 readCtxtIO :: (SolCtxt -> IORef a) -> App a
@@ -767,11 +767,6 @@ doConcat dv x y = do
   y' <- copy y (arraySize x)
   return $ vsep [x', y']
 
-addApiRng :: String -> DLType -> App ()
-addApiRng f ty = do
-  api_rngs <- asks ctxt_api_rngs
-  liftIO $ modifyIORef api_rngs $ fmap $ M.insert f ty
-
 solCom :: AppT DLStmt
 solCom = \case
   DL_Nop _ -> mempty
@@ -899,11 +894,10 @@ solCom = \case
     modifyCtxtIO ctxt_outputs $ M.insert (show oe) ed
     let emitVars = map (mempty,) lvs'
     let emitl = "emit" <+> go id emitVars
-    asn <- case (lk, lv_tys, lvs') of
-            (L_Api f, [ty], [v]) -> do
-              addApiRng f ty
-              return $ solSet (apiRetMemVar f) v
-            (_, _, _) -> return ""
+    asn <- case (lk, lvs') of
+            (L_Api p, [v]) -> do
+              return $ solSet (apiRetMemVar $ bunpack p) v
+            (_, _) -> return ""
     case pv of
       DLV_Eff -> do
         return $ vsep [ emitl, asn ]
@@ -1157,7 +1151,7 @@ solHandler which h = freshVarMap $
       timeoutCheck <- vsep <$> ((<>) <$> checkTime PGE ifrom <*> checkTime PLT ito)
       let body = vsep $ hashCheck <> lock <> svs_init <> [ frameDecl, timeoutCheck, ctp]
       let mkFun args b =  solFunctionLike sfl args ret b
-      uses_apis <- fmap isJust . liftIO . readIORef =<< asks ctxt_api_rngs
+      uses_apis <- asks ctxt_uses_apis
       funDefs <-
             case (uses_apis, sfl) of
               (True, SFL_Function _ name) -> do
@@ -1280,13 +1274,9 @@ apiDef who ApiInfo{..} = do
                     , solApply mf ["_t", "_r" ] <> semi
                     , pretty ("return _r." <> who_s) <> semi
                     ]
-  api_rngs <- fmap (fromMaybe mempty) . liftIO . readIORef =<< asks ctxt_api_rngs
-  ret_ty <- case M.lookup (bunpack who) api_rngs of
-          Just t -> do
-            t' <- solType_ t
-            return $ t' <+> withArgLoc t
-          Nothing -> impossible "apiDef: return type not found"
-  let ret = "external returns"<+> parens ret_ty
+  ret_ty' <- solType_ ai_ret_ty
+  let ret_ty'' = ret_ty' <+> withArgLoc ai_ret_ty
+  let ret = "external payable returns"<+> parens ret_ty''
   return $ solFunction (pretty who_s) argDefns ret body
 
 apiDefs :: ApiInfos -> App Doc
@@ -1397,12 +1387,13 @@ solEB args (DLinExportBlock _ mfargs (DLBlock _ _ t r)) = do
   r' <- solArg r
   return $ vsep [t', "return" <+> r' <> semi]
 
-createAPIRng :: Maybe (M.Map String DLType) -> App Doc
-createAPIRng = \case
-  Nothing -> return ""
-  Just env -> do
-    fields <- mapM (\ (k, v) -> (pretty k, ) <$> solType_ v) $ M.toList env
-    return $ fromMaybe (impossible "createAPIRng") $ solStruct "ApiRng" fields
+createAPIRng :: M.Map SLPart DLType -> App Doc
+createAPIRng env =
+  case M.null env of
+    True -> return ""
+    False -> do
+      fields <- mapM (\ (k, v) -> (pretty (bunpack k), ) <$> solType_ v) $ M.toAscList env
+      return $ fromMaybe (impossible "createAPIRng") $ solStruct "ApiRng" fields
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
 solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) ai _ hs)) = do
@@ -1431,9 +1422,9 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) ai _ hs)) = do
   ctxt_ints <- newIORef mempty
   ctxt_outputs <- newIORef mempty
   ctxt_tlfuns <- newIORef mempty
-  ctxt_api_rngs <- newIORef $ if M.null ai then Nothing else Just mempty
   ctxt_which_msg <- newIORef mempty
   let ctxt_plo = plo
+  let ctxt_uses_apis = not $ M.null ai
   flip runReaderT (SolCtxt {..}) $ do
     let map_defn (mpv, mi) = do
           keyTy <- solType_ T_Address
@@ -1529,7 +1520,7 @@ solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) ai _ hs)) = do
     intsp <- getm ctxt_ints
     outputsp <- getm ctxt_outputs
     tlfunsp <- getm ctxt_tlfuns
-    api_rng <- (liftIO $ readIORef ctxt_api_rngs) >>= createAPIRng
+    api_rng <- createAPIRng $ M.map ai_ret_ty ai
     let defp = vsep $
           [ "receive () external payable {}"
           , "fallback () external payable {}" ]

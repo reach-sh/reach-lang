@@ -1,8 +1,7 @@
 ROOT = ..
 
-# We can derive Reach's Visual Studio Code extension's
-# version using the VERSION file, which can be found
-# in the root directory.
+# We can derive the extension's version number using
+# the VERSION file from the appropriate directory.
 include $(ROOT)/VERSION
 
 # the next line is so this Makefile can do arithmetic
@@ -13,6 +12,9 @@ SHELL=/bin/bash
 # See https://stackoverflow.com/a/15978322.
 VSCE_VER := $$(($$(($$(($(MAJOR)+1))*1000)) + $(MINOR))).$(PATCH).$(DRAFT)
 
+# We don't need this next part for extension publishing!
+# This is just to build package.json after getting files
+# from the compiler.
 package.json: base.package.json
 # Replace base.package.json with package.json, first, in
 # case we updated package.json since we last made
@@ -22,5 +24,9 @@ package.json: base.package.json
 
 publish:
 	@echo "Now attempting to publish version $(VSCE_VER)"
-	@echo "of Reach's Visual Studio Code extension."
-	vsce publish $(VSCE_VER)
+	@echo "of our extension..."
+# Give the extension version to the script, so it can,
+# in turn, give the appropriate version number to Docker.
+# This is easier than passing the VERSION file from this
+# directory's parent directory to Docker.
+	VER=$(VSCE_VER) ./extensionPublishingHelper.sh

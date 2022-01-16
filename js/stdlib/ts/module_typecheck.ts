@@ -15,6 +15,9 @@ import * as shared_user from './shared_user';
 import { ethers } from 'ethers';
 
 import {
+  AnyBackendTy,
+} from './shared_backend';
+import {
   Stdlib_User,
   Stdlib_User_Shared,
   Stdlib_Backend_Shared,
@@ -24,7 +27,7 @@ import {
   EthLikeCompiled, EthLikeCompiledArgs
 } from './ETH_like_interfaces';
 
-const _shared_backend: Stdlib_Backend_Shared = shared_backend;
+const _shared_backend: Stdlib_Backend_Shared<AnyBackendTy> = shared_backend;
 void(_shared_backend);
 
 const _shared_user: Stdlib_User_Shared = shared_user;
@@ -36,13 +39,16 @@ void(_ETH_compiled);
 const _CFX_compiled: EthLikeCompiled = CFX_compiled;
 void(_CFX_compiled);
 
-const _ETH: Stdlib_User<any> = ETH;
+type ETH_Stdlib_User = Stdlib_User<ETH.Provider, ETH.ProviderEnv, ETH.ProviderName, ETH.Token, ETH.ContractInfo, ETH.Address, ETH.NetworkAccount, ETH.Ty, ETH.Backend, ETH.Account>;
+const _ETH: ETH_Stdlib_User = ETH;
 void(_ETH);
 
-const _CFX: Stdlib_User<any> = CFX;
+type CFX_Stdlib_User = Stdlib_User<CFX.Provider, CFX.ProviderEnv, CFX.ProviderName, CFX.Token, CFX.ContractInfo, CFX.Address, CFX.NetworkAccount, CFX.Ty, CFX.Backend, CFX.Account>;
+const _CFX: CFX_Stdlib_User = CFX;
 void(_CFX);
 
-const _ALGO: Stdlib_User<any> = ALGO;
+type ALGO_Stdlib_User = Stdlib_User<ALGO.Provider, ALGO.ProviderEnv, ALGO.ProviderName, ALGO.Token, ALGO.ContractInfo, ALGO.Address, ALGO.NetworkAccount, ALGO.Ty, ALGO.Backend, ALGO.Account>;
+const _ALGO: ALGO_Stdlib_User = ALGO;
 void(_ALGO)
 
 const _ethers: EthersLike = ethers;
@@ -51,10 +57,10 @@ void(_ethers);
 const _cfxers: EthersLike = cfxers;
 void(_cfxers);
 
-const _ETH_impl: EthLikeArgs = ETH_impl;
+const _ETH_impl: EthLikeArgs<ETH.Provider, ETH.ProviderEnv, ETH.ProviderName> = ETH_impl;
 void(_ETH_impl);
 
-const _CFX_impl: EthLikeArgs = CFX_impl;
+const _CFX_impl: EthLikeArgs<CFX.Provider, CFX.ProviderEnv, CFX.ProviderName> = CFX_impl;
 void(_CFX_impl);
 
 const _ETH_compiled_impl: EthLikeCompiledArgs = ETH_compiled_impl;
