@@ -402,11 +402,12 @@ instance Extract (Maybe DLVar) where
 
 allTheSame :: (Eq a, Sanitize a) => [a] -> Maybe a
 allTheSame xs =
-  case and $ map (== top) (tail xs') of
-    True -> Just top
-    False -> Nothing
-  where xs' = map sani xs
-        top = head xs'
+  case map sani xs of
+    [] -> Nothing
+    top : rest ->
+      case and $ map (== top) rest of
+        True -> Just top
+        False -> Nothing
 
 optIf :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (SrcLoc -> DLArg -> k -> k -> r) -> SrcLoc -> DLArg -> k -> k -> App r
 optIf mkDo mkIf at c t f =
