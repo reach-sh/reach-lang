@@ -42,7 +42,8 @@ instance ToJSON TokenPosn
 instance FromJSON ReachSource
 instance ToJSON ReachSource
 
-instance ToJSON SrcLoc
+instance ToJSON SrcLoc where
+  toJSON v = toJSON $ show v
 instance FromJSON SrcLoc
 
 -- This is a "defaulting" instance where the left info is preferred,

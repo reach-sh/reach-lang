@@ -8,6 +8,7 @@ module Reach.Simulator.Server where
 
 import Reach.AST.LL
 import Reach.Util
+import Reach.AST.Base
 import Control.Monad.Reader
 import qualified Reach.Simulator.Core as C
 import Control.Concurrent.STM
@@ -58,6 +59,7 @@ data Session = Session
   , e_src :: Maybe LLProg
   , e_status :: Status
   , e_edges :: [(StateId,StateId)]
+  , e_locs :: M.Map StateId (Maybe SrcLoc)
   }
 
 initSession :: Session
@@ -71,6 +73,7 @@ initSession = Session
   , e_src = Nothing
   , e_status = Initial
   , e_edges = mempty
+  , e_locs = mempty
   }
 
 processNewState :: Maybe (StateId) -> C.PartState -> WebM ()
@@ -82,12 +85,15 @@ processNewState psid ps = do
     C.PS_Done _ _ -> do
       _ <- return $ putStrLn "EVAL DONE"
       registerAction actorId C.A_None
-    C.PS_Suspend a _ _ -> registerAction actorId a
-  let ((g,l), stat) =
+    C.PS_Suspend _ a _ _ -> registerAction actorId a
+  let ((g,l), stat, loc) =
         case ps of
-          C.PS_Done s _ -> (s, Done)
-          C.PS_Suspend _ s _ -> (s, Running)
+          C.PS_Done s _ -> do
+            (s, Done, Nothing)
+          C.PS_Suspend at _ s _ -> do
+            (s, Running, at)
   graph <- gets e_graph
+  locs <- gets e_locs
   let locals = C.l_locals l
   let lcl = saferMapRef "processNewState" $ M.lookup actorId locals
   let lcl' = lcl { C.l_ks = Just ps }
@@ -96,6 +102,7 @@ processNewState psid ps = do
     {e_nsid = sid + 1}
     {e_status = stat}
     {e_graph = M.insert sid (g,l') graph}
+    {e_locs = M.insert sid loc locs}
   case psid of
     Nothing -> return ()
     Just psid' -> modify $ \ st -> st
@@ -131,13 +138,13 @@ unblockProg sid aid v = do
             <> show actorId
             <> " in: "
             <> (show $ M.keys locals)
-        Just (Just (C.PS_Suspend _a (_g,_l) k)) -> do
+        Just (Just (C.PS_Suspend _ _a (_g,_l) k)) -> do
           let l = l' {C.l_curr_actor_id = actorId}
           case M.lookup aid avActions of
-            Just (C.A_Interact _at _slcxtframes _part _str _dltype _args) -> do
+            Just (C.A_Interact _slcxtframes _part _str _dltype _args) -> do
               let ps = k (g,l) v
               processNewState (Just sid) ps
-            Just (C.A_Remote _at _slcxtframes _str _args1 _args2) -> do
+            Just (C.A_Remote _slcxtframes _str _args1 _args2) -> do
               let ps = k (g,l) v
               processNewState (Just sid) ps
             Just (C.A_InteractV _part _str _dltype) -> do
@@ -197,6 +204,11 @@ getProgState sid = do
   case M.lookup sid s of
     Nothing -> return Nothing
     Just st -> return $ Just st
+
+getLoc :: StateId -> WebM (Maybe SrcLoc)
+getLoc sid = do
+  locs <- gets e_locs
+  return $ join $ M.lookup sid locs
 
 changeActor :: C.ActorId -> WebM ()
 changeActor actId = do
@@ -292,6 +304,12 @@ app p = do
     case l' of
       Nothing -> json $ ("Not Found" :: String)
       Just (_,l) -> json l
+
+  get "/locs/:s" $ do
+    setHeaders
+    s <- param "s"
+    loc <- webM $ getLoc s
+    json loc
 
   get "/status" $ do
     setHeaders

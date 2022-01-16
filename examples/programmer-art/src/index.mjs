@@ -49,10 +49,6 @@ const sheet = (function() {
 	return style.sheet;
 })();
 
-sheet.insertRule(`.hljs-ln-line[data-line-number="9"] {
-  background-color: silver;
-}`);
-
 const codeDiv = document.querySelector("#cx")
 codeDiv.innerHTML = rsh
 
@@ -212,10 +208,23 @@ const redraw = async () => {
       name: 'klay'
     }
   });
-  cy.bind('click', 'node', function(evt) {
-    const nodeId = evt.target.id()
-    renderObjects(nodeId)
-  });
+  cy.bind('click', 'node', clickNode);
+}
+
+const clickNode = async (evt) => {
+  const nodeId = evt.target.id()
+  const at = await c.getLoc(nodeId)
+  if (sheet.cssRules.length > 0) {
+    sheet.deleteRule(0);
+  }
+  if (at) {
+    const n = at.split(':')[1]
+    sheet.insertRule(`.hljs-ln-line[data-line-number="${n}"] {
+      background-color: silver;
+    }`);
+  }
+  console.log(at)
+  renderObjects(nodeId)
 }
 
 const log = document.querySelector("#output")

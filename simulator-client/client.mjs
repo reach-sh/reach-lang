@@ -22,7 +22,6 @@ async function interact(method = 'GET', url = '', data = {}) {
     },
     redirect: 'follow',
     referrerPolicy: 'no-referrer'
-    // body: JSON.stringify(data)
   });
   return response.json();
 }
@@ -59,6 +58,12 @@ async function getStateGlobals(s) {
 
 async function getStateLocals(s) {
   const r = await interact(`GET`, `${address}/local/${s}`)
+  console.log(r)
+  return r;
+}
+
+async function getLoc(s) {
+  const r = await interact(`GET`, `${address}/locs/${s}`)
   console.log(r)
   return r;
 }
@@ -147,4 +152,5 @@ export {
   resetServer,
   interpCommand,
   interp,
+  getLoc,
 };

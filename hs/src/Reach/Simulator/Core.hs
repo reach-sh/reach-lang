@@ -105,12 +105,12 @@ type PartCont = State -> DLVal -> PartState
 
 data PartState
   = PS_Done State DLVal
-  | PS_Suspend Action State PartCont
+  | PS_Suspend (Maybe SrcLoc) Action State PartCont
   deriving (Generic)
 
 instance ToJSON PartState where
   toJSON (PS_Done _ _) = "PS_Done"
-  toJSON (PS_Suspend _ _ _) = "PS_Suspend"
+  toJSON (PS_Suspend _ _ _ _) = "PS_Suspend"
 
 initPartState :: PartState
 initPartState = PS_Done initState V_Null
@@ -207,9 +207,9 @@ data Action
   | A_AdvanceTime Integer
   | A_AdvanceSeconds Integer
   | A_InteractV String String DLType
-  | A_Interact SrcLoc [SLCtxtFrame] String String DLType [DLVal]
+  | A_Interact [SLCtxtFrame] String String DLType [DLVal]
   | A_Contest PhaseId
-  | A_Remote SrcLoc [SLCtxtFrame] String [DLVal] [DLVal]
+  | A_Remote [SLCtxtFrame] String [DLVal] [DLVal]
   deriving (Generic)
 
 instance ToJSON Action
@@ -358,7 +358,7 @@ instance Interp DLArg where
     DLA_Constant dlconst -> return $ conCons' dlconst
     DLA_Literal dllit -> interp dllit
     DLA_Interact slpart str dltype -> do
-      v <- suspend $ PS_Suspend (A_InteractV (bunpack slpart) str dltype)
+      v <- suspend $ PS_Suspend Nothing (A_InteractV (bunpack slpart) str dltype)
       l <- getLocal
       let actId = l_curr_actor_id l
       lcl <- getMyLocalInfo
@@ -422,7 +422,7 @@ instance Interp DLExpr where
       return $ saferMapRef "DLE_ObjectRef" $ M.lookup str obj
     DLE_Interact at slcxtframes slpart str dltype dlargs -> do
       args <- mapM interp dlargs
-      suspend $ PS_Suspend (A_Interact at slcxtframes (bunpack slpart) str dltype args)
+      suspend $ PS_Suspend (Just at) (A_Interact slcxtframes (bunpack slpart) str dltype args)
     DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
       CT_Assert -> interp dlarg
@@ -451,13 +451,13 @@ instance Interp DLExpr where
               return V_Null
     DLE_TokenInit _at _dlarg -> return V_Null
     DLE_CheckPay _at _slcxtframes _dlarg _maybe_dlarg -> return $ V_Null
-    DLE_Wait _at dltimearg -> case dltimearg of
+    DLE_Wait at dltimearg -> case dltimearg of
       Left dlarg -> do
         ev <- vUInt <$> interp dlarg
-        suspend $ PS_Suspend (A_AdvanceTime ev)
+        suspend $ PS_Suspend (Just at) (A_AdvanceTime ev)
       Right dlarg -> do
         ev <- vUInt <$> interp dlarg
-        suspend $ PS_Suspend (A_AdvanceSeconds ev)
+        suspend $ PS_Suspend (Just at) (A_AdvanceSeconds ev)
     DLE_PartSet _at _slpart dlarg -> interp dlarg
     DLE_MapRef _at dlmvar dlarg -> do
       (g, _) <- getState
@@ -481,7 +481,7 @@ instance Interp DLExpr where
       acc <- fromIntegral <$> vUInt <$> interp dlarg
       tok_billed <- mapM interp dwb_tok_billed
       args <- mapM interp dlargs
-      v <- suspend $ PS_Suspend (A_Remote at slcxtframes str args tok_billed)
+      v <- suspend $ PS_Suspend (Just at) (A_Remote slcxtframes str args tok_billed)
       consensusPayout acc dlPayAmnt
       return v
     DLE_TokenNew _at dltokennew -> do
@@ -639,7 +639,7 @@ instance Interp LLStep where
       _ <- interp stmt
       interp step
     LLS_Stop _at -> return V_Null
-    LLS_ToConsensus _at _lct tc_send dlr@(DLRecv {..}) tc_mtime -> do
+    LLS_ToConsensus at _lct tc_send dlr@(DLRecv {..}) tc_mtime -> do
       (g, l) <- getState
       let actId = l_curr_actor_id l
       phId <- getPhaseId actId
@@ -655,7 +655,7 @@ instance Interp LLStep where
                 Nothing -> do
                   case msgs' of
                     NotFixedYet _msgs'' -> do
-                      _ <- suspend $ PS_Suspend (A_Contest phId)
+                      _ <- suspend $ PS_Suspend (Just at) (A_Contest phId)
                       (actId',_) <- poll phId
                       runWithWinner dlr actId' phId
                     Fixed (actId',_msg) -> do
@@ -668,13 +668,13 @@ instance Interp LLStep where
                       let m = Message {m_store = sto, m_pay = ds_pay}
                       let m' = M.insert phId (NotFixedYet $ M.insert actId m msgs'') (e_messages g)
                       setGlobal g { e_messages = m' }
-                      _ <- suspend $ PS_Suspend (A_Contest phId)
+                      _ <- suspend $ PS_Suspend (Just at) (A_Contest phId)
                       (actId',_) <- poll phId
                       runWithWinner dlr actId' phId
                     Fixed (actId',_msg) -> do
                       runWithWinner dlr actId' phId
             Consensus -> do
-              v <- suspend $ PS_Suspend (A_TieBreak phId $ M.keys sends)
+              v <- suspend $ PS_Suspend (Just at) (A_TieBreak phId $ M.keys sends)
               let actId' = fromIntegral $ vUInt v
               part <- partName <$> whoIs actId'
               let dls = saferMapRef "LLS_ToConsensus1" $ M.lookup part sends
