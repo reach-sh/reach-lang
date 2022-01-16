@@ -1,8 +1,12 @@
 import * as c from '@reach-sh/simulator-client';
 import cytoscape from 'cytoscape';
 import klay from 'cytoscape-klay';
-import Prism from 'prismjs';
 import "../scss/custom.scss";
+import hljs from 'highlight.js/lib/core';
+import javascript from 'highlight.js/lib/languages/javascript';
+import 'highlight.js/styles/grayscale.css';
+
+hljs.registerLanguage('javascript', javascript);
 
 // NOTE: placeholder
 const rsh = `'reach 0.1';
@@ -43,10 +47,9 @@ export const main = Reach.App(() => {
 
 cytoscape.use( klay );
 
-Prism.line_numbers = true;
-const srcHtml = Prism.highlight(rsh, Prism.languages.javascript, 'javascript');
-const prism = document.querySelector("#cx")
-prism.innerHTML = srcHtml
+const srcHtml = hljs.highlight(rsh, {language: 'javascript'}).value
+const codeDiv = document.querySelector("#cx")
+codeDiv.innerHTML = srcHtml
 
 const spa = document.querySelector("#spa")
 
@@ -87,8 +90,6 @@ const renderObjects = async (nodeId) => {
   `
   objectDetails()
 }
-
-
 
 const objectDetails = async () => {
   const bindObjDetailsEvents = () => {
