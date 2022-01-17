@@ -725,13 +725,22 @@ instance PrettySubst DLExpr where
     DLE_GetContract {} -> return $ "getContract()"
     DLE_GetAddress {} -> return $ "getAddress()"
     DLE_EmitLog _ lk vs -> do
-      return $ "emitLog" <> parens (pretty lk) <> parens (pretty vs)
-    DLE_setApiDetails _ p d mc f ->
-      return $ "setApiDetails" <> parens (render_das [pretty p, pretty d, pretty mc, pretty f])
-    DLE_GetUntrackedFunds _ mtok _ ->
-      return $ "getActualBalance" <> parens (pretty mtok)
-    DLE_FromSome _ mo da ->
-      return $ "fromSome" <> parens (render_das [pretty mo, pretty da])
+      lk' <- prettySubst lk
+      vs' <- render_dasM $ map DLA_Var vs
+      return $ "emitLog" <> parens lk' <> parens vs'
+    DLE_setApiDetails _ p d mc f -> do
+      let p' = pretty p
+      let d' = pretty d
+      mc' <- prettySubst mc
+      let f' = pretty f
+      return $ "setApiDetails" <> parens (render_das [p', d', mc', f'])
+    DLE_GetUntrackedFunds _ mtok _ -> do
+      mtok' <- prettySubst mtok
+      return $ "getActualBalance" <> parens mtok'
+    DLE_FromSome _ mo da -> do
+      mo' <- prettySubst mo
+      da' <- prettySubst da
+      return $ "fromSome" <> parens (render_das [mo', da'])
 
 instance PrettySubst LogKind where
   prettySubst = \case

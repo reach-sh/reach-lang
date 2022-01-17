@@ -117,6 +117,9 @@ checkteal () {
 
 jb
 export REACH_DEBUG=Y
+c examples/mapOpt/index.rsh
+exit 0
+
 ci ALGO mapOpt
 ci ETH mapOpt
 exit 0

@@ -11,8 +11,10 @@ export const main = Reach.App(() => {
     const i = 1;
     const who1 = declassify(interact.who1);
     const who2 = declassify(interact.who2);
+    assume(A != who2);
   });
   A.publish(i, who1, who2);
+  require(A != who2);
   const M = new Map(UInt);
   M[A] = 0;
   commit();

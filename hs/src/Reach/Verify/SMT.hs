@@ -1085,7 +1085,8 @@ smt_e at_dv mdv de = do
       let somev = Atom $ someCtor <> "_pv"
       let somep = List [ Atom someCtor, somev ]
       let somec = List [ somep, somev ]
-      let nonep = List [ Atom noneCtor ]
+      let nonev = Atom $ noneCtor <> "_pv"
+      let nonep = List [ Atom noneCtor, nonev ]
       let nonec = List [ nonep, da' ]
       bound at $ smtApply "match" [mo', List [ nonec, somec ]]
   where
