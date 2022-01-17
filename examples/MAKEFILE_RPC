@@ -58,7 +58,7 @@ Dockerfile: ../crpc-Dockerfile
 package.json: ../crpc-package.json
 	@cat ../crpc-package.json | sed 's/{{CNAME}}/$(CNAME)/' > ./package.json
 
-$(RSHES): $(shell find ../$(BASE) -name \*.rsh)
+$(RSHES): $(shell [ -d ../$(BASE) ] && find ../$(BASE) -name \*.rsh)
 	@mkdir -p "$$(dirname $@)"
 	@cp -vu ../$(BASE)/$@ ./$@
 
