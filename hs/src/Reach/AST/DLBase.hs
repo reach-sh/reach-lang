@@ -1,27 +1,27 @@
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 module Reach.AST.DLBase where
 
+import Control.Monad.Identity
+import Control.Monad.Reader
 import Data.Aeson
 import qualified Data.ByteString.Char8 as B
+import Data.Functor ((<&>))
 import qualified Data.List as List
 import Data.List.Extra
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
-import qualified Data.Set as S
 import qualified Data.Sequence as Seq
+import qualified Data.Set as S
 import GHC.Generics
 import Reach.AST.Base
 import Reach.Counter
 import Reach.Pretty
 import Reach.Texty
 import Reach.Util
-import Control.Monad.Identity
-import Control.Monad.Reader
-import Data.Functor ((<&>))
 
 type PrettySubstEnv = M.Map DLVar Doc
 
@@ -37,7 +37,8 @@ instance (PrettySubst a, PrettySubst b) => PrettySubst (Either a b) where
   prettySubst = \case
     Left x -> f "Left" x
     Right x -> f "Right" x
-    where f l x = (l <+>) <$> prettySubst x
+    where
+      f l x = (l <+>) <$> prettySubst x
 
 -- DL types only describe data, and explicitly do not describe functions
 data DLType
@@ -57,6 +58,7 @@ data DLType
   deriving (Eq, Generic, Ord)
 
 instance FromJSON DLType
+
 instance ToJSON DLType
 
 maybeT :: DLType -> DLType
@@ -185,6 +187,7 @@ data DLConstant
   deriving (Eq, Generic, Show, Ord)
 
 instance ToJSON DLConstant
+
 instance FromJSON DLConstant
 
 instance Pretty DLConstant where
@@ -202,6 +205,7 @@ data DLLiteral
   deriving (Eq, Generic, Show, Ord)
 
 instance ToJSON DLLiteral
+
 instance FromJSON DLLiteral
 
 instance Pretty DLLiteral where
@@ -224,7 +228,7 @@ instance ToJSONKey DLVar
 instance ToJSON DLVar where
   toJSON (DLVar _at mlocvar _typ int) = case mlocvar of
     Nothing -> toJSON int
-    Just (_,sl) -> toJSON sl
+    Just (_, sl) -> toJSON sl
 
 instance FromJSON DLVar
 
@@ -248,9 +252,10 @@ instance Show DLVar where
 
 showErr :: DLVar -> String
 showErr v@(DLVar a b _ _) = show v <> " from " <> show at
-  where at = case b of
-               Nothing -> a
-               Just (c, _) -> c
+  where
+    at = case b of
+      Nothing -> a
+      Just (c, _) -> c
 
 dvdelete :: DLVar -> [DLVar] -> [DLVar]
 dvdelete x = filter (x /=)
@@ -270,6 +275,7 @@ newtype DLMVar = DLMVar Int
   deriving (Eq, Ord, Generic)
 
 instance ToJSONKey DLMVar
+
 instance ToJSON DLMVar
 
 instance Pretty DLMVar where
@@ -388,7 +394,7 @@ instance PrettySubst DLLargeArg where
     DLLA_Tuple as -> render_dasM as <&> brackets
     DLLA_Obj env -> render_objM env
     DLLA_Data _ vn vv -> do
-      v' <-  prettySubst vv
+      v' <- prettySubst vv
       return $ "<" <> pretty vn <> " " <> v' <> ">"
     DLLA_Struct kvs -> do
       kvs' <- render_dasM kvs
@@ -491,18 +497,22 @@ instance PrettySubst DLWithBill where
   prettySubst (DLWithBill y z) = do
     y' <- render_dasM y
     z' <- render_dasM z
-    return $ render_obj $
-      M.fromList $
-        [ ("billed"::String, parens y')
-        , ("notBilled", parens z')
-        ]
+    return $
+      render_obj $
+        M.fromList $
+          [ ("billed" :: String, parens y')
+          , ("notBilled", parens z')
+          ]
 
 tokenNameLen :: Integer
 tokenNameLen = 32
+
 tokenSymLen :: Integer
 tokenSymLen = 8
+
 tokenURLLen :: Integer
 tokenURLLen = 96
+
 tokenMetadataLen :: Integer
 tokenMetadataLen = 32
 
@@ -512,18 +522,21 @@ data DLTokenNew = DLTokenNew
   , dtn_url :: DLArg
   , dtn_metadata :: DLArg
   , dtn_supply :: DLArg
-  , dtn_decimals :: Maybe DLArg }
+  , dtn_decimals :: Maybe DLArg
+  }
   deriving (Eq, Ord, Show)
 
 instance PrettySubst DLTokenNew where
   prettySubst (DLTokenNew {..}) =
-    render_objM $ M.fromList $
-      [ (("name"::String), dtn_name)
-      , ("sym", dtn_sym)
-      , ("url", dtn_url)
-      , ("metadata", dtn_metadata)
-      , ("supply", dtn_supply)
-      , ("decimals", fromMaybe (DLA_Literal DLL_Null) dtn_decimals) ]
+    render_objM $
+      M.fromList $
+        [ (("name" :: String), dtn_name)
+        , ("sym", dtn_sym)
+        , ("url", dtn_url)
+        , ("metadata", dtn_metadata)
+        , ("supply", dtn_supply)
+        , ("decimals", fromMaybe (DLA_Literal DLL_Null) dtn_decimals)
+        ]
 
 type DLTimeArg = Either DLArg DLArg
 
@@ -550,7 +563,7 @@ instance Pretty ApiInfo where
   pretty (ApiInfo {..}) =
     render_obj $
       M.fromList
-        [ ("msg_tys"::String, pretty ai_msg_tys)
+        [ ("msg_tys" :: String, pretty ai_msg_tys)
         , ("mcase_id", pretty ai_mcase_id)
         , ("which", pretty ai_which)
         , ("compile", pretty ai_compile)
@@ -586,16 +599,17 @@ data DLExpr
   | DLE_TimeOrder SrcLoc [(Maybe DLArg, DLVar)]
   | DLE_GetContract SrcLoc
   | DLE_GetAddress SrcLoc
-  -- | DLE_EmitLog SrcLoc LogKind [DLVar]
-  -- * the LogKind specifies whether the log generated from an API, Events, or is internal
-  -- * the [DLVar] are the values to log
-  | DLE_EmitLog SrcLoc LogKind [DLVar]
-  | DLE_setApiDetails {
-    sad_at :: SrcLoc,
-    sad_who :: SLPart,
-    sad_dom :: [DLType],
-    sad_mcase_id :: Maybe String,
-    sad_compile :: ApiInfoCompilation }
+  | -- | DLE_EmitLog SrcLoc LogKind [DLVar]
+    -- * the LogKind specifies whether the log generated from an API, Events, or is internal
+    -- * the [DLVar] are the values to log
+    DLE_EmitLog SrcLoc LogKind [DLVar]
+  | DLE_setApiDetails
+      { sad_at :: SrcLoc
+      , sad_who :: SLPart
+      , sad_dom :: [DLType]
+      , sad_mcase_id :: Maybe String
+      , sad_compile :: ApiInfoCompilation
+      }
   | DLE_GetUntrackedFunds SrcLoc (Maybe DLArg) DLArg
   | DLE_FromSome SrcLoc DLArg DLArg
   -- Maybe try to generalize FromSome into a Match
@@ -655,7 +669,7 @@ instance PrettySubst DLExpr where
       o' <- prettySubst o
       return $ a' <> brackets o'
     DLE_ArraySet _ a i v -> do
-      as' <- render_dasM [a,i,v]
+      as' <- render_dasM [a, i, v]
       return $ "Array.set" <> parens as'
     DLE_ArrayConcat _ x y -> do
       as' <- render_dasM [x, y]
@@ -705,10 +719,11 @@ instance PrettySubst DLExpr where
       amta' <- prettySubst amta
       as' <- render_dasM as
       wb' <- prettySubst wb
-      return $ "remote(" <> av' <> ")." <> viaShow m <> ".pay" <> parens amta'
-        <> parens as'
-        <> ".withBill"
-        <> parens wb'
+      return $
+        "remote(" <> av' <> ")." <> viaShow m <> ".pay" <> parens amta'
+          <> parens as'
+          <> ".withBill"
+          <> parens wb'
     DLE_TokenNew _ tns -> do
       tns' <- prettySubst tns
       return $ "new Token" <> parens tns'
@@ -1090,7 +1105,7 @@ allFluidVars bals =
     <> map FV_supply all_toks
     <> map FV_destroyed all_toks
   where
-    all_toks = [0 .. (bals+1)]
+    all_toks = [0 .. (bals + 1)]
 
 class HasCounter a where
   getCounter :: a -> Counter

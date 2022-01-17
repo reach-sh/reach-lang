@@ -1,4 +1,4 @@
-module Reach.AddCounts (add_counts, AC(..), ac_vdef, ac_visit) where
+module Reach.AddCounts (add_counts, AC (..), ac_vdef, ac_visit) where
 
 import Control.Monad.Reader
 import Data.IORef
@@ -139,9 +139,10 @@ instance AC DLBlock where
 instance {-# OVERLAPS #-} AC a => AC (SwitchCases a) where
   ac = mapM $ \(v, _, k) -> do
     k' <- ac k
-    vu' <- ac_vdef True (DLV_Let DVC_Many v) >>= \case
-      DLV_Eff -> return False
-      _ -> return True
+    vu' <-
+      ac_vdef True (DLV_Let DVC_Many v) >>= \case
+        DLV_Eff -> return False
+        _ -> return True
     return $ (v, vu', k')
 
 instance AC ETail where
@@ -262,20 +263,28 @@ instance AC LLConsensus where
           -- and then combine them into one thing.
           -- 2. We need to be able to float a localswitch up past other
           -- expressions until it touches another and this applies
-          (LLC_Com (DL_Var at_v1 dv_v1)
-           (LLC_Com (DL_LocalSwitch at_s1 dv_s1 csm_s1)
-            (LLC_Com (DL_Var at_v2 dv_v2)
-             (LLC_Com (DL_LocalSwitch at_s2 dv_s2 csm_s2)
-                       k)))) | False && dv_s1 == dv_s2 -> do
-            let combine :: SLVar -> (DLVar, Bool, DLTail) -> (DLVar, Bool, DLTail)
-                combine vn (vv1, vb1, vk1) = (vv1, vb', vk')
-                  where
-                    (vv2, vb2, vk2) = csm_s2 M.! vn
-                    vb' = vb1 || vb2
-                    vk2' = DT_Com (DL_Let at_s2 (DLV_Let DVC_Many vv2) (DLE_Arg at_s2 $ DLA_Var vv1)) vk2
-                    vk' = dtReplace DT_Com vk2' vk1
-            let csm_s12 = M.mapWithKey combine csm_s1
-            return $ LLC_Com (DL_Var at_v1 dv_v1) $ LLC_Com (DL_Var at_v2 dv_v2) $ LLC_Com (DL_LocalSwitch at_s1 dv_s1 csm_s12) k
+          ( LLC_Com
+              (DL_Var at_v1 dv_v1)
+              ( LLC_Com
+                  (DL_LocalSwitch at_s1 dv_s1 csm_s1)
+                  ( LLC_Com
+                      (DL_Var at_v2 dv_v2)
+                      ( LLC_Com
+                          (DL_LocalSwitch at_s2 dv_s2 csm_s2)
+                          k
+                        )
+                    )
+                )
+            ) | False && dv_s1 == dv_s2 -> do
+              let combine :: SLVar -> (DLVar, Bool, DLTail) -> (DLVar, Bool, DLTail)
+                  combine vn (vv1, vb1, vk1) = (vv1, vb', vk')
+                    where
+                      (vv2, vb2, vk2) = csm_s2 M.! vn
+                      vb' = vb1 || vb2
+                      vk2' = DT_Com (DL_Let at_s2 (DLV_Let DVC_Many vv2) (DLE_Arg at_s2 $ DLA_Var vv1)) vk2
+                      vk' = dtReplace DT_Com vk2' vk1
+              let csm_s12 = M.mapWithKey combine csm_s1
+              return $ LLC_Com (DL_Var at_v1 dv_v1) $ LLC_Com (DL_Var at_v2 dv_v2) $ LLC_Com (DL_LocalSwitch at_s1 dv_s1 csm_s12) k
           _ ->
             return c'
       return $ mkCom LLC_Com m' c''

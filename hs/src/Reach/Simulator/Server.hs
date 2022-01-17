@@ -1,28 +1,27 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
-
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
 module Reach.Simulator.Server where
 
-import Reach.AST.LL
-import Reach.Util
-import Control.Monad.Reader
-import qualified Reach.Simulator.Core as C
 import Control.Concurrent.STM
-import Data.Default.Class
-import Data.Text.Lazy (Text)
-import Network.Wai.Middleware.RequestLogger
-import Web.Scotty.Trans
-import qualified Data.Map.Strict as M
-import GHC.Generics
+import Control.Monad.Reader
 import Data.Aeson (FromJSON, ToJSON)
+import Data.Default.Class
+import qualified Data.Map.Strict as M
+import Data.Text.Lazy (Text)
+import GHC.Generics
+import Network.Wai.Middleware.RequestLogger
+import Reach.AST.LL
+import qualified Reach.Simulator.Core as C
+import Reach.Util
+import Web.Scotty.Trans
 
 instance Default Session where
   def = initSession
 
-newtype WebM a = WebM { runWebM :: ReaderT (TVar Session) IO a }
+newtype WebM a = WebM {runWebM :: ReaderT (TVar Session) IO a}
   deriving newtype (Applicative, Functor, Monad, MonadIO, MonadReader (TVar Session))
 
 webM :: MonadTrans t => WebM a -> t WebM a
@@ -35,6 +34,7 @@ modify :: (Session -> Session) -> WebM ()
 modify f = ask >>= liftIO . atomically . flip modifyTVar' f
 
 type StateId = Int
+
 type ActionId = Int
 
 portNumber :: Int
@@ -46,6 +46,7 @@ data Status = Initial | Running | Done
   deriving (Show, Generic)
 
 instance ToJSON Status
+
 instance FromJSON Status
 
 data Session = Session
@@ -57,21 +58,22 @@ data Session = Session
   , e_graph :: Graph
   , e_src :: Maybe LLProg
   , e_status :: Status
-  , e_edges :: [(StateId,StateId)]
+  , e_edges :: [(StateId, StateId)]
   }
 
 initSession :: Session
-initSession = Session
-  { e_actors_actions = mempty
-  , e_nsid = 0
-  , e_naid = 0
-  , e_ids_actions = mempty
-  , e_actor_id = C.consensusId
-  , e_graph = mempty
-  , e_src = Nothing
-  , e_status = Initial
-  , e_edges = mempty
-  }
+initSession =
+  Session
+    { e_actors_actions = mempty
+    , e_nsid = 0
+    , e_naid = 0
+    , e_ids_actions = mempty
+    , e_actor_id = C.consensusId
+    , e_graph = mempty
+    , e_src = Nothing
+    , e_status = Initial
+    , e_edges = mempty
+    }
 
 processNewState :: Maybe (StateId) -> C.PartState -> WebM ()
 processNewState psid ps = do
@@ -83,34 +85,40 @@ processNewState psid ps = do
       _ <- return $ putStrLn "EVAL DONE"
       registerAction actorId C.A_None
     C.PS_Suspend a _ _ -> registerAction actorId a
-  let ((g,l), stat) =
+  let ((g, l), stat) =
         case ps of
           C.PS_Done s _ -> (s, Done)
           C.PS_Suspend _ s _ -> (s, Running)
   graph <- gets e_graph
   let locals = C.l_locals l
   let lcl = saferMapRef "processNewState" $ M.lookup actorId locals
-  let lcl' = lcl { C.l_ks = Just ps }
-  let l' = l { C.l_locals = M.insert actorId lcl' locals }
-  modify $ \ st -> st
-    {e_nsid = sid + 1}
-    {e_status = stat}
-    {e_graph = M.insert sid (g,l') graph}
+  let lcl' = lcl {C.l_ks = Just ps}
+  let l' = l {C.l_locals = M.insert actorId lcl' locals}
+  modify $ \st ->
+    st
+      { e_nsid = sid + 1
+      }
+      { e_status = stat
+      }
+      { e_graph = M.insert sid (g, l') graph
+      }
   case psid of
     Nothing -> return ()
-    Just psid' -> modify $ \ st -> st
-      {e_edges = (psid',sid):edges}
+    Just psid' -> modify $ \st ->
+      st
+        { e_edges = (psid', sid) : edges
+        }
 
 registerAction :: C.ActorId -> C.Action -> WebM ActionId
 registerAction actorId act = do
   aid <- gets e_naid
-  modify $ \ st -> st {e_naid = aid + 1}
+  modify $ \st -> st {e_naid = aid + 1}
   actacts <- gets e_actors_actions
   idacts <- gets e_ids_actions
-  modify $ \ st -> st {e_ids_actions = M.insert aid act idacts}
+  modify $ \st -> st {e_ids_actions = M.insert aid act idacts}
   case M.lookup actorId actacts of
-    Nothing -> modify $ \ st -> st {e_actors_actions = M.insert actorId [aid] actacts }
-    Just acts -> modify $ \ st -> st {e_actors_actions = M.insert actorId (aid:acts) actacts }
+    Nothing -> modify $ \st -> st {e_actors_actions = M.insert actorId [aid] actacts}
+    Just acts -> modify $ \st -> st {e_actors_actions = M.insert actorId (aid : acts) actacts}
   return aid
 
 unblockProg :: StateId -> ActionId -> C.DLVal -> WebM ()
@@ -121,52 +129,53 @@ unblockProg sid aid v = do
   case M.lookup sid graph of
     Nothing -> do
       possible "previous state not found"
-    Just (g,l') -> do
+    Just (g, l') -> do
       let locals = C.l_locals l'
       case C.l_ks <$> M.lookup actorId locals of
         Nothing -> do
           possible "actor not found"
         Just Nothing -> do
-          possible $ "partstate not found for actor "
-            <> show actorId
-            <> " in: "
-            <> (show $ M.keys locals)
-        Just (Just (C.PS_Suspend _a (_g,_l) k)) -> do
+          possible $
+            "partstate not found for actor "
+              <> show actorId
+              <> " in: "
+              <> (show $ M.keys locals)
+        Just (Just (C.PS_Suspend _a (_g, _l) k)) -> do
           let l = l' {C.l_curr_actor_id = actorId}
           case M.lookup aid avActions of
             Just (C.A_Interact _at _slcxtframes _part _str _dltype _args) -> do
-              let ps = k (g,l) v
+              let ps = k (g, l) v
               processNewState (Just sid) ps
             Just (C.A_Remote _at _slcxtframes _str _args1 _args2) -> do
-              let ps = k (g,l) v
+              let ps = k (g, l) v
               processNewState (Just sid) ps
             Just (C.A_InteractV _part _str _dltype) -> do
-              let ps = k (g,l) v
+              let ps = k (g, l) v
               processNewState (Just sid) ps
             Just (C.A_Contest _phid) -> do
-              let ps = k (g,l) v
+              let ps = k (g, l) v
               processNewState (Just sid) ps
             Just (C.A_TieBreak _poolid _parts) -> do
-              let ps = k (g,l) v
+              let ps = k (g, l) v
               processNewState (Just sid) ps
             Just C.A_None -> do
-              let ps = k (g,l) v
+              let ps = k (g, l) v
               processNewState (Just sid) ps
-            Just (C.A_AdvanceTime n)  -> do
+            Just (C.A_AdvanceTime n) -> do
               case ((C.e_nwtime g) < n) of
                 True -> do
-                  let ps = k (g{C.e_nwtime = n},l) v
+                  let ps = k (g {C.e_nwtime = n}, l) v
                   processNewState (Just sid) ps
                 False -> do
-                  let ps = k (g,l) v
+                  let ps = k (g, l) v
                   processNewState (Just sid) ps
-            Just (C.A_AdvanceSeconds n)  -> do
+            Just (C.A_AdvanceSeconds n) -> do
               case ((C.e_nwsecs g) < n) of
                 True -> do
-                  let ps = k (g{C.e_nwsecs = n},l) v
+                  let ps = k (g {C.e_nwsecs = n}, l) v
                   processNewState (Just sid) ps
                 False -> do
-                  let ps = k (g,l) v
+                  let ps = k (g, l) v
                   processNewState (Just sid) ps
             Nothing -> possible "action not found"
         Just (Just (C.PS_Done _ _)) -> do
@@ -175,21 +184,21 @@ unblockProg sid aid v = do
 allStates :: WebM [StateId]
 allStates = do
   a <- gets e_nsid
-  return [0..(a-1)]
+  return [0 .. (a -1)]
 
 getStatus :: WebM Status
 getStatus = do
   s <- gets e_status
   return s
 
-getEdges :: WebM [(StateId,StateId)]
+getEdges :: WebM [(StateId, StateId)]
 getEdges = do
   es <- gets e_edges
   return es
 
 resetServer :: WebM ()
 resetServer = do
-  modify $ \ _ -> initSession
+  modify $ \_ -> initSession
 
 getProgState :: StateId -> WebM (Maybe C.State)
 getProgState sid = do
@@ -200,7 +209,7 @@ getProgState sid = do
 
 changeActor :: C.ActorId -> WebM ()
 changeActor actId = do
-  modify $ \ st -> st {e_actor_id = actId}
+  modify $ \st -> st {e_actor_id = actId}
 
 computeActions :: WebM [C.Action]
 computeActions = do
@@ -218,10 +227,10 @@ initProgSim ll = do
 initProgSimFor :: C.ActorId -> StateId -> LLProg -> WebM ()
 initProgSimFor actId sid (LLProg _ _ _ _ _ _ _ _ step) = do
   graph <- gets e_graph
-  modify $ \ st -> st {e_actor_id = actId }
-  let (g,l) = saferMapRef "initProgSimFor" $ M.lookup sid graph
-  let l' = l { C.l_curr_actor_id = actId }
-  ps <- return $ C.initAppFromStep step (g,l')
+  modify $ \st -> st {e_actor_id = actId}
+  let (g, l) = saferMapRef "initProgSimFor" $ M.lookup sid graph
+  let l' = l {C.l_curr_actor_id = actId}
+  ps <- return $ C.initAppFromStep step (g, l')
   processNewState (Just sid) ps
 
 startServer :: LLProg -> IO ()
@@ -244,7 +253,7 @@ app p = do
 
   post "/load" $ do
     setHeaders
-    webM $ modify $ \ st -> st {e_src = Just p}
+    webM $ modify $ \st -> st {e_src = Just p}
     json $ ("OK" :: String)
 
   post "/init" $ do
@@ -283,7 +292,7 @@ app p = do
     g' <- webM $ getProgState s
     case g' of
       Nothing -> json $ ("Not Found" :: String)
-      Just (g,_) -> json g
+      Just (g, _) -> json g
 
   get "/local/:s" $ do
     setHeaders
@@ -291,7 +300,7 @@ app p = do
     l' <- webM $ getProgState s
     case l' of
       Nothing -> json $ ("Not Found" :: String)
-      Just (_,l) -> json l
+      Just (_, l) -> json l
 
   get "/status" $ do
     setHeaders

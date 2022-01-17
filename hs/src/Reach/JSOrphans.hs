@@ -3,10 +3,10 @@
 
 module Reach.JSOrphans () where
 
+import qualified Data.Text.Lazy as T
 import Language.JavaScript.Parser
 import Language.JavaScript.Parser.Lexer
 import Reach.Texty
-import qualified Data.Text.Lazy as T
 
 instance Ord TokenPosn where
   compare (TokenPn x_a x_l x_c) (TokenPn y_a y_l y_c) =

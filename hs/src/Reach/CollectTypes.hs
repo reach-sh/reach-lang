@@ -90,10 +90,10 @@ instance CollectsTypes DLLargeArg where
 instance CollectsTypes DLTokenNew where
   cts (DLTokenNew {..}) =
     cts dtn_name
-    <> cts dtn_sym
-    <> cts dtn_url
-    <> cts dtn_metadata
-    <> cts dtn_supply
+      <> cts dtn_sym
+      <> cts dtn_url
+      <> cts dtn_metadata
+      <> cts dtn_supply
 
 instance CollectsTypes DLWithBill where
   cts (DLWithBill y z) = cts y <> cts z
@@ -128,7 +128,7 @@ instance CollectsTypes DLExpr where
     DLE_MapSet _ _ fa na -> cts fa <> cts na
     DLE_Remote _ _ av _ pamt as y -> cts (av : as) <> cts pamt <> cts y
     DLE_TokenNew _ tns -> cts tns
-    DLE_TokenBurn _ a b -> cts [ a, b ]
+    DLE_TokenBurn _ a b -> cts [a, b]
     DLE_TokenDestroy _ a -> cts a
     DLE_TimeOrder _ tos -> cts tos
     DLE_GetContract _ -> mempty

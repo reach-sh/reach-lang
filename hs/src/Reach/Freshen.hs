@@ -89,13 +89,14 @@ instance Freshen DLLargeArg where
       go (k, v) = (,) k <$> fu v
 
 instance Freshen DLTokenNew where
-  fu (DLTokenNew {..}) = DLTokenNew
-    <$> fu dtn_name
-    <*> fu dtn_sym
-    <*> fu dtn_url
-    <*> fu dtn_metadata
-    <*> fu dtn_supply
-    <*> fu dtn_decimals
+  fu (DLTokenNew {..}) =
+    DLTokenNew
+      <$> fu dtn_name
+      <*> fu dtn_sym
+      <*> fu dtn_url
+      <*> fu dtn_metadata
+      <*> fu dtn_supply
+      <*> fu dtn_decimals
 
 instance Freshen ClaimType where
   fu = \case
@@ -195,12 +196,14 @@ instance Freshen DLBlock where
 instance Freshen DLAssignment where
   fu (DLAssignment m) =
     DLAssignment <$> (M.fromList <$> (mapM go $ M.toList m))
-    where go (v, a) = (,) <$> fu v <*> fu a
+    where
+      go (v, a) = (,) <$> fu v <*> fu a
 
 instance FreshenV DLAssignment where
   fu_v (DLAssignment m) =
     DLAssignment <$> (M.fromList <$> (mapM go $ M.toList m))
-    where go (v, a) = (,) <$> fu_v v <*> fu a
+    where
+      go (v, a) = (,) <$> fu_v v <*> fu a
 
 instance Freshen k => Freshen (DLinExportBlock k) where
   fu (DLinExportBlock at mvs k) =

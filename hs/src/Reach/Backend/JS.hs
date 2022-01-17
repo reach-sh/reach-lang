@@ -48,7 +48,7 @@ jsApply :: Doc -> [Doc] -> Doc
 jsApply f args = f <> parens (hcat $ punctuate (comma <> space) args)
 
 jsApplyKws :: Doc -> M.Map String Doc -> Doc
-jsApplyKws f m = jsApply f [ jsObject m ]
+jsApplyKws f m = jsApply f [jsObject m]
 
 jsFunction_ :: Doc -> [Doc] -> Doc -> Doc
 jsFunction_ name args body =
@@ -283,7 +283,7 @@ jsPrimApply = \case
   DIGEST_EQ -> jsApply "stdlib.digestEq"
   ADDRESS_EQ -> jsApply "stdlib.addressEq"
   TOKEN_EQ -> jsApply "stdlib.tokenEq"
-  BYTES_ZPAD xtra -> \args -> jsApply "stdlib.bytesConcat" (args <> [ jsBytes $ bytesZero xtra ])
+  BYTES_ZPAD xtra -> \args -> jsApply "stdlib.bytesConcat" (args <> [jsBytes $ bytesZero xtra])
 
 jsArg_m :: AppT (Maybe DLArg)
 jsArg_m = \case
@@ -381,8 +381,8 @@ jsExpr = \case
             ]
   DLE_Wait _ amtt -> do
     let (which, amt) = case amtt of
-                         Left t -> ("waitUntilTime", t)
-                         Right t -> ("waitUntilSecs", t)
+          Left t -> ("waitUntilTime", t)
+          Right t -> ("waitUntilSecs", t)
     amt' <- jsArg amt
     (ctxt_mode <$> ask) >>= \case
       JM_Simulate -> return $ jsApply "void" [amt']
@@ -414,7 +414,7 @@ jsExpr = \case
       JM_Simulate ->
         return $ jsApply "await stdlib.simMapSet" ["sim_r", jsMapIdx mpv, fa', na']
       JM_Backend ->
-        return $ jsApply "await stdlib.mapSet" [jsMapVar mpv, fa', na' ]
+        return $ jsApply "await stdlib.mapSet" [jsMapVar mpv, fa', na']
       JM_View -> impossible "view mapset"
   DLE_Remote {} -> do
     return "undefined"
@@ -430,7 +430,7 @@ jsExpr = \case
         m' <- jsArg dtn_metadata
         p' <- jsArg dtn_supply
         d' <- maybe (return "undefined") jsArg dtn_decimals
-        return $ jsApply "stdlib.simTokenNew" [ "sim_r", n', s', u', m', p', d' ]
+        return $ jsApply "stdlib.simTokenNew" ["sim_r", n', s', u', m', p', d']
   DLE_TokenBurn _ ta aa ->
     (ctxt_mode <$> ask) >>= \case
       JM_Simulate -> do
@@ -474,15 +474,17 @@ jsExpr = \case
     asks ctxt_mode >>= \case
       JM_Simulate -> return $ jsPrimApply SUB [bal, tb']
       _ ->
-        return $ jsPrimApply IF_THEN_ELSE [
-            jsPrimApply PEQ [bal, zero],
-            zero,
-            jsPrimApply SUB [bal, tb']
-          ]
+        return $
+          jsPrimApply
+            IF_THEN_ELSE
+            [ jsPrimApply PEQ [bal, zero]
+            , zero
+            , jsPrimApply SUB [bal, tb']
+            ]
   DLE_FromSome _at mo da -> do
     mo' <- jsArg mo
     da' <- jsArg da
-    return $ jsApply "stdlib.fromSome" [ mo', da' ]
+    return $ jsApply "stdlib.fromSome" [mo', da']
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
@@ -612,10 +614,10 @@ jsSimTxn kind kvs =
 jsTimeArg :: AppT DLTimeArg
 jsTimeArg ta = do
   let (lab, a) = case ta of
-                   Left x -> ("time", x)
-                   Right x -> ("secs", x)
+        Left x -> ("time", x)
+        Right x -> ("secs", x)
   a' <- jsArg a
-  return $ jsArray $ [ jsString lab, a' ]
+  return $ jsArray $ [jsString lab, a']
 
 jsETail :: AppT ETail
 jsETail = \case
@@ -640,10 +642,10 @@ jsETail = \case
                   vs' <- mapM jsVar vs
                   ctcs <- jsArray <$> (mapM jsContract $ map varType vs)
                   w' <- jsCon $ DLL_Int sb $ fromIntegral which
-                  let getState = jsApply ("await ctc.getState") [ w', ctcs ]
-                  return [ "const" <+> jsArray vs' <+> "=" <+> getState <> semi ]
-        k' <- local (\e -> e { ctxt_isAPI = False }) $ jsETail k
-        return $ vsep $ more <> [ k' ]
+                  let getState = jsApply ("await ctc.getState") [w', ctcs]
+                  return ["const" <+> jsArray vs' <+> "=" <+> getState <> semi]
+        k' <- local (\e -> e {ctxt_isAPI = False}) $ jsETail k
+        return $ vsep $ more <> [k']
       JM_View -> impossible "view from"
       JM_Simulate -> do
         let common extra isHalt' =
@@ -666,7 +668,7 @@ jsETail = \case
   ET_ToConsensus _at fs_ok _prev lct_v which from_me msg_vs _out timev secsv didSendv mto k_ok -> do
     msg_ctcs <- mapM (jsContract . argTypeOf) $ map DLA_Var msg_vs
     msg_vs' <- mapM jsVar msg_vs
-    let withCtxt = local (\e -> e { ctxt_txn = (ctxt_txn e) + 1 })
+    let withCtxt = local (\e -> e {ctxt_txn = (ctxt_txn e) + 1})
     txn <- withCtxt jsTxn
     timev' <- jsVar timev
     secsv' <- jsVar secsv
@@ -688,28 +690,31 @@ jsETail = \case
         Just (delays, k_to) -> do
           k_top <- withCtxt $ jsETail k_to
           delays' <- case delays of
-                      Nothing -> return "undefined"
-                      Just x -> jsTimeArg x
+            Nothing -> return "undefined"
+            Just x -> jsTimeArg x
           timef <- withCtxt $ (<> ".didTimeout") <$> jsTxn
           return (delays', jsIf timef k_top k_okp)
     let a_funcNum = pretty which
     let a_evt_cnt = pretty $ length msg_vs
     let a_out_tys = jsArray msg_ctcs
     let a_timeout_delay = delayp
-    let recvp = jsApplyKws "ctc.recv" $ M.fromList $
-          [ ("funcNum", a_funcNum)
-          , ("evt_cnt", a_evt_cnt)
-          , ("out_tys", a_out_tys)
-          , ("didSend", "false")
-          , ("waitIfNotPresent", "false")
-          , ("timeoutAt", a_timeout_delay) ]
+    let recvp =
+          jsApplyKws "ctc.recv" $
+            M.fromList $
+              [ ("funcNum", a_funcNum)
+              , ("evt_cnt", a_evt_cnt)
+              , ("out_tys", a_out_tys)
+              , ("didSend", "false")
+              , ("waitIfNotPresent", "false")
+              , ("timeoutAt", a_timeout_delay)
+              ]
     callp <-
       withCtxt $
         case from_me of
           Just (args, amt, whena, svs, soloSend) -> do
             let svs_as = map DLA_Var svs
             amtp <- jsPayAmt amt
-            let withSim = local (\e -> e {ctxt_mode = JM_Simulate })
+            let withSim = local (\e -> e {ctxt_mode = JM_Simulate})
             sim_body_core <- withSim $ jsETail k_ok
             let dupeMap (mpv, _) = do
                   return $
@@ -727,25 +732,28 @@ jsETail = \case
                     ]
             vs <- jsArray <$> ((++) <$> mapM jsVar svs <*> mapM jsArg args)
             lct_v' <- case lct_v of
-                        Just x -> jsArg x
-                        Nothing -> jsCon $ DLL_Int sb 0
+              Just x -> jsArg x
+              Nothing -> jsCon $ DLL_Int sb 0
             whena' <- jsArg whena
             soloSend' <- jsCon (DLL_Bool soloSend)
             msgts <- mapM (jsContract . argTypeOf) $ svs_as ++ args
             let a_sim_p = parens $ "async" <+> "(" <> txn <> ") => " <> jsBraces sim_body
-            let sendp = jsApplyKws "ctc.sendrecv" $ M.fromList $
-                  [ ("funcNum", a_funcNum)
-                  , ("lct", lct_v')
-                  , ("evt_cnt", a_evt_cnt)
-                  , ("tys", jsArray msgts)
-                  , ("args", vs)
-                  , ("pay", amtp)
-                  , ("out_tys", a_out_tys)
-                  , ("onlyIf", whena')
-                  , ("soloSend", soloSend')
-                  , ("waitIfNotPresent", "false")
-                  , ("timeoutAt", a_timeout_delay)
-                  , ("sim_p", a_sim_p) ]
+            let sendp =
+                  jsApplyKws "ctc.sendrecv" $
+                    M.fromList $
+                      [ ("funcNum", a_funcNum)
+                      , ("lct", lct_v')
+                      , ("evt_cnt", a_evt_cnt)
+                      , ("tys", jsArray msgts)
+                      , ("args", vs)
+                      , ("pay", amtp)
+                      , ("out_tys", a_out_tys)
+                      , ("onlyIf", whena')
+                      , ("soloSend", soloSend')
+                      , ("waitIfNotPresent", "false")
+                      , ("timeoutAt", a_timeout_delay)
+                      , ("sim_p", a_sim_p)
+                      ]
             return sendp
           Nothing ->
             return recvp
@@ -802,9 +810,10 @@ jsMapDefns varsHuh = do
     go (mpv, mi) = do
       ctc <- jsContract $ dlmi_tym mi
       ia <- ctxt_isAPI <$> ask
-      return $ vsep $
-        [ "const" <+> jsMapVarCtc mpv <+> "=" <+> ctc <> ";" ]
-        <> (if varsHuh then [ "const" <+> jsMapVar mpv <+> "=" <+> jsApplyKws "stdlib.newMap" (M.fromList $ [ ("idx", jsMapIdx mpv), ("ctc", "ctc"), ("ty", jsMapVarCtc mpv), ("isAPI", jsBool ia) ]) <> ";" ] else [])
+      return $
+        vsep $
+          ["const" <+> jsMapVarCtc mpv <+> "=" <+> ctc <> ";"]
+            <> (if varsHuh then ["const" <+> jsMapVar mpv <+> "=" <+> jsApplyKws "stdlib.newMap" (M.fromList $ [("idx", jsMapIdx mpv), ("ctc", "ctc"), ("ty", jsMapVarCtc mpv), ("isAPI", jsBool ia)]) <> ";"] else [])
 
 jsError :: Doc -> Doc
 jsError err = "new Error(" <> err <> ")"
@@ -906,68 +915,77 @@ jsExports exports =
 jsEvents :: DLEvents -> App Doc
 jsEvents events = do
   jsFunctionWStdlib "_getEvents" [] $ do
-    devts <- foldM (\ acc (mk, m) -> do
-            dv <- mapM (\ts -> jsArray <$> mapM jsContract ts) m
-            case mk of
-              Just k -> do
-                return $ M.insert (bunpack k) (jsObject dv) acc
-              Nothing -> return $ M.union acc dv
-          ) mempty $ M.toList events
+    devts <-
+      foldM
+        (\acc (mk, m) -> do
+           dv <- mapM (\ts -> jsArray <$> mapM jsContract ts) m
+           case mk of
+             Just k -> do
+               return $ M.insert (bunpack k) (jsObject dv) acc
+             Nothing -> return $ M.union acc dv)
+        mempty
+        $ M.toList events
     return $ jsReturn $ jsObject devts
 
 jsViews :: (CPViews, ViewInfos) -> App Doc
 jsViews (cvs, vis) = do
-  let menv e = e { ctxt_mode = JM_View }
-  jsFunctionWStdlib "_getViews" ["viewlib"] $ local menv $ do
-    let toObj fv o = jsObject <$> mapWithKeyM fv o
-    let enView _ (ViewInfo vs _) =
-          jsArray <$> (mapM jsContract $ map varType vs)
-    views <- toObj enView vis
-    let illegal = jsApply "stdlib.assert" ["false", jsString "illegal view"]
-    let enDecode v k vi (ViewInfo vs vim) = do
-          vs' <- mapM jsVar vs
-          vi' <- jsCon $ DLL_Int sb $ fromIntegral vi
-          let c = jsPrimApply PEQ ["i", vi']
-          let let' = "const" <+> jsArray vs' <+> "=" <+> "svs" <> semi
-          ret' <-
-            case M.lookup k (fromMaybe mempty $ M.lookup v vim) of
-              Just eb -> do
-                eb' <- jsExportBlock True $ dlebEnsureFun eb
-                let eb'call = jsApply ("await" <+> parens eb') ["...args"]
-                return $ jsReturn $ parens eb'call
-              Nothing -> return $ illegal
-          return $ jsWhen c $ vsep [let', ret']
-    let enInfo' :: Maybe SLPart -> SLVar -> IType -> App Doc
-        enInfo' v k vt = do
-          let (_, rng) = itype2arr vt
-          rng' <- jsContract rng
-          body <- (vsep . M.elems) <$> mapWithKeyM (enDecode v k) vis
-          let body' = vsep [body, illegal]
-          let decode' = jsApply "async " ["i", "svs", "args"] <+> "=>" <+> jsBraces body'
-          return $
+  let menv e = e {ctxt_mode = JM_View}
+  jsFunctionWStdlib "_getViews" ["viewlib"] $
+    local menv $ do
+      let toObj fv o = jsObject <$> mapWithKeyM fv o
+      let enView _ (ViewInfo vs _) =
+            jsArray <$> (mapM jsContract $ map varType vs)
+      views <- toObj enView vis
+      let illegal = jsApply "stdlib.assert" ["false", jsString "illegal view"]
+      let enDecode v k vi (ViewInfo vs vim) = do
+            vs' <- mapM jsVar vs
+            vi' <- jsCon $ DLL_Int sb $ fromIntegral vi
+            let c = jsPrimApply PEQ ["i", vi']
+            let let' = "const" <+> jsArray vs' <+> "=" <+> "svs" <> semi
+            ret' <-
+              case M.lookup k (fromMaybe mempty $ M.lookup v vim) of
+                Just eb -> do
+                  eb' <- jsExportBlock True $ dlebEnsureFun eb
+                  let eb'call = jsApply ("await" <+> parens eb') ["...args"]
+                  return $ jsReturn $ parens eb'call
+                Nothing -> return $ illegal
+            return $ jsWhen c $ vsep [let', ret']
+      let enInfo' :: Maybe SLPart -> SLVar -> IType -> App Doc
+          enInfo' v k vt = do
+            let (_, rng) = itype2arr vt
+            rng' <- jsContract rng
+            body <- (vsep . M.elems) <$> mapWithKeyM (enDecode v k) vis
+            let body' = vsep [body, illegal]
+            let decode' = jsApply "async " ["i", "svs", "args"] <+> "=>" <+> jsBraces body'
+            return $
+              jsObject $
+                M.fromList $
+                  [ ("ty" :: String, rng')
+                  , ("decode", decode')
+                  ]
+      let enInfo k v = mapWithKeyM (enInfo' k) v
+      infos' <- mapWithKeyM enInfo cvs
+      -- Lift untagged views to same level as tagged views
+      let infos =
             jsObject $
-              M.fromList $
-                [ ("ty" :: String, rng')
-                , ("decode", decode')
-                ]
-    let enInfo k v = mapWithKeyM (enInfo' k) v
-    infos' <- mapWithKeyM enInfo cvs
-    -- Lift untagged views to same level as tagged views
-    let infos = jsObject $ M.foldrWithKey (\ mk ->
-          case mk of
-            Just k -> M.insert (bunpack k) . jsObject
-            Nothing -> M.union
-          ) mempty infos'
-    maps_defn <- jsMapDefns False
-    return $ vsep $
-      [ maps_defn
-      , jsReturn $
-          jsObject $
-            M.fromList $
-              [ ("views" :: String, views)
-              , ("infos", infos)
-              ]
-      ]
+              M.foldrWithKey
+                (\mk ->
+                   case mk of
+                     Just k -> M.insert (bunpack k) . jsObject
+                     Nothing -> M.union)
+                mempty
+                infos'
+      maps_defn <- jsMapDefns False
+      return $
+        vsep $
+          [ maps_defn
+          , jsReturn $
+              jsObject $
+                M.fromList $
+                  [ ("views" :: String, views)
+                  , ("infos", infos)
+                  ]
+          ]
 
 -- XXX copied from ALGO.hs
 mapDataTy :: DLMapInfos -> DLType
@@ -993,8 +1011,8 @@ jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ devts _)) = do
         vsep
           [ pretty $ "// Automatically generated with Reach " ++ versionHashStr
           , "/* eslint-disable */"
-          -- XXX make these a `_metadata` object (cleaner on TS side)
-          , "export const _version =" <+> jsString versionStr <> semi
+          , -- XXX make these a `_metadata` object (cleaner on TS side)
+            "export const _version =" <+> jsString versionStr <> semi
           , "export const _versionHash =" <+> jsString versionHashStr <> semi
           , "export const _backendVersion =" <+> pretty reachBackendVersion <> semi
           ]
@@ -1007,14 +1025,17 @@ jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ devts _)) = do
       jsViews vi
   mapsp <- jsMaps dli_maps
   let partMap = flip M.mapWithKey epps_m $ \p _ -> pretty $ bunpack p
-  let apiMap = M.foldrWithKey (\ k ->
-          case k of
-            Just k' -> M.insert (bunpack k') . jsObject
-            Nothing -> M.union
-          . M.map (\(p,_) -> pretty $ bunpack p)
-        ) mempty epps_apis
+  let apiMap =
+        M.foldrWithKey
+          (\k ->
+             case k of
+               Just k' -> M.insert (bunpack k') . jsObject
+               Nothing -> M.union
+               . M.map (\(p, _) -> pretty $ bunpack p))
+          mempty
+          epps_apis
   eventsp <- jsEvents devts
-  return $ vsep $ [ preamble, exportsp, eventsp, viewsp, mapsp] <> partsp <> cnpsp <> [jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
+  return $ vsep $ [preamble, exportsp, eventsp, viewsp, mapsp] <> partsp <> cnpsp <> [jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
 
 backend_js :: Backend
 backend_js outn crs pl = do

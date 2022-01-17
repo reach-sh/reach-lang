@@ -1,7 +1,8 @@
 module Reach.Verify.Shared
   ( VerifySt (..)
   , VerifyOpts (..)
-  ) where
+  )
+where
 
 import qualified Data.Text as T
 import Reach.Connector

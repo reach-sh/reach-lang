@@ -1,7 +1,8 @@
 module Reach.Verify
   ( verify
-  , VerifyOpts(..)
-  ) where
+  , VerifyOpts (..)
+  )
+where
 
 import Control.Monad
 import GHC.Conc (numCapabilities)

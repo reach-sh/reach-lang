@@ -6,12 +6,13 @@ module Reach.CommandLine
   , getCompilerArgs
   , getCompilerEnv
   , truthyEnv
-  ) where
+  )
+where
 
-import Options.Applicative
-import System.Environment
 import Data.Char
 import Data.Maybe (isJust)
+import Options.Applicative
+import System.Environment
 
 data CompilerToolArgs = CompilerToolArgs
   { cta_disableReporting :: Bool
@@ -37,38 +38,41 @@ compiler =
     <$> (switch (long "disable-reporting" <> internal))
     <*> (switch (long "error-format-json" <> internal))
     <*> (CompilerOpts
-    <$> (optional
-          (strOption
-            (long "output"
-              <> short 'o'
-              <> metavar "DIR"
-              <> help "Directory for output files"
-              <> showDefault)))
-    <*> (strArgument ((metavar "SOURCE") <> value ("index.rsh")))
-    <*> (many (strArgument (metavar "EXPORTS...")))
-    <*> (switch (long "intermediate-files"
-          <> help "Store intermediate files in output DIR"))
-    <*> (optional
-          (strOption
-            (long "dir-dot-reach"
-              <> metavar "DIR-DOT-REACH"
-              <> help "Package imports cache+lock directory"
-              <> internal
-              <> showDefault)))
-    <*> (switch (long "install-pkgs"
-          <> help "Allow Reach to fetch remote package imports"))
-    <*> (switch (long "stop-after-eval"
-          <> help "Stop compilation process after evaluation"))
-    <*> (option
-          auto
-          ((metavar "TIMEOUT-MS")
-            <> long "verify-timeout"
-            <> value (1000 * 60 * 2)
-            <> help "Timeout per verification theorem in milliseconds"
-            <> showDefault))
-    <*> (switch (long "sim"
-          <> help "Run Simulator"))
-    )
+           <$> (optional
+                  (strOption
+                     (long "output"
+                        <> short 'o'
+                        <> metavar "DIR"
+                        <> help "Directory for output files"
+                        <> showDefault)))
+           <*> (strArgument ((metavar "SOURCE") <> value ("index.rsh")))
+           <*> (many (strArgument (metavar "EXPORTS...")))
+           <*> (switch
+                  (long "intermediate-files"
+                     <> help "Store intermediate files in output DIR"))
+           <*> (optional
+                  (strOption
+                     (long "dir-dot-reach"
+                        <> metavar "DIR-DOT-REACH"
+                        <> help "Package imports cache+lock directory"
+                        <> internal
+                        <> showDefault)))
+           <*> (switch
+                  (long "install-pkgs"
+                     <> help "Allow Reach to fetch remote package imports"))
+           <*> (switch
+                  (long "stop-after-eval"
+                     <> help "Stop compilation process after evaluation"))
+           <*> (option
+                  auto
+                  ((metavar "TIMEOUT-MS")
+                     <> long "verify-timeout"
+                     <> value (1000 * 60 * 2)
+                     <> help "Timeout per verification theorem in milliseconds"
+                     <> showDefault))
+           <*> (switch
+                  (long "sim"
+                     <> help "Run Simulator")))
 
 getCompilerArgs :: String -> IO CompilerToolArgs
 getCompilerArgs versionCliDisp = do
@@ -79,7 +83,6 @@ getCompilerArgs versionCliDisp = do
              <> progDesc "verify and compile an Reach program"
              <> header versionCliDisp)
   execParser opts
-
 
 data CompilerToolEnv = CompilerToolEnv
   { cte_REACHC_ID :: Maybe String
@@ -103,4 +106,4 @@ getCompilerEnv = do
 truthyEnv :: Maybe String -> Bool
 truthyEnv = \case
   Nothing -> False
-  Just s -> not $ elem (map toLower s) [ "", "0", "false", "f", "#f", "no", "off", "n" ]
+  Just s -> not $ elem (map toLower s) ["", "0", "false", "f", "#f", "no", "off", "n"]

@@ -151,10 +151,10 @@ instance AllPoints DLArg where
 instance AllPoints DLTokenNew where
   all_points (DLTokenNew {..}) =
     all_points dtn_name
-    <> all_points dtn_sym
-    <> all_points dtn_url
-    <> all_points dtn_metadata
-    <> all_points dtn_supply
+      <> all_points dtn_sym
+      <> all_points dtn_url
+      <> all_points dtn_metadata
+      <> all_points dtn_supply
 
 kgq_a_all :: AllPoints a => KCtxt -> a -> IO ()
 kgq_a_all ctxt a =

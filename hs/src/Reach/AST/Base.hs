@@ -10,18 +10,18 @@ import qualified Data.ByteString.Char8 as B
 import Data.ByteString.Internal (w2c)
 import qualified Data.ByteString.Lazy as LB
 import qualified Data.List as List
+import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import GHC.Generics
 import GHC.Stack (HasCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
-import Reach.Texty
 import Reach.Pretty
+import Reach.Texty
 import Reach.UnsafeUtil
-import qualified System.Console.Pretty as TC
-import Safe (atMay)
-import Data.Maybe (fromMaybe)
 import Reach.Util (makeErrCode)
+import Safe (atMay)
+import qualified System.Console.Pretty as TC
 
 --- Source Information
 data ReachSource
@@ -37,12 +37,15 @@ data SrcLoc = SrcLoc (Maybe String) (Maybe TokenPosn) (Maybe ReachSource)
   deriving (Eq, Generic, NFData, Ord)
 
 instance FromJSON TokenPosn
+
 instance ToJSON TokenPosn
 
 instance FromJSON ReachSource
+
 instance ToJSON ReachSource
 
 instance ToJSON SrcLoc
+
 instance FromJSON SrcLoc
 
 -- This is a "defaulting" instance where the left info is preferred,
@@ -76,6 +79,7 @@ data ImpossibleError
 
 instance HasErrorCode ImpossibleError where
   errPrefix = const "RX"
+
   -- These indices are part of an external interface; they
   -- are used in the documentation of Error Codes.
   -- If you delete a constructor, do NOT re-allocate the number.
@@ -114,12 +118,11 @@ srcloc_line_col _ = []
 
 getSrcLine :: Maybe Int -> [String] -> Maybe String
 getSrcLine rowNum fl =
-  rowNum >>= (\ r -> atMay fl $  r - 1)
+  rowNum >>= (\r -> atMay fl $ r - 1)
 
 errorCodeDocUrl :: HasErrorCode a => a -> String
 errorCodeDocUrl e =
   "https://docs.reach.sh/rsh/errors/#" <> errCode e
-
 
 getErrorMessage :: (HasErrorCode a, Show a, Foldable t) => t [SLCtxtFrame] -> SrcLoc -> Bool -> a -> String
 getErrorMessage mCtx src isWarning ce = do
@@ -130,12 +133,13 @@ getErrorMessage mCtx src isWarning ce = do
       style s = if hasColor then TC.style s else id
   let fileLines = srcloc_file src >>= Just . unsafeReadFile
   let rowNum = case srcloc_line_col src of
-                [l, _] -> Just l
-                _ -> Nothing
+        [l, _] -> Just l
+        _ -> Nothing
   let rowNumStr = pretty $ maybe "" (style TC.Bold . color TC.Cyan . show) rowNum
-  let fileLine = maybe "" (\ l -> rowNumStr <> "|" <+> (pretty $ style TC.Faint l))
-                    $ getSrcLine rowNum (fromMaybe [] fileLines)
-  let errType  = if isWarning then "warning" else "error"
+  let fileLine =
+        maybe "" (\l -> rowNumStr <> "|" <+> (pretty $ style TC.Faint l)) $
+          getSrcLine rowNum (fromMaybe [] fileLines)
+  let errType = if isWarning then "warning" else "error"
   let errColor = if isWarning then color TC.Yellow else color TC.Red
   let errDesc = pretty (style TC.Bold $ errColor errType) <> brackets (pretty $ style TC.Bold $ errCode ce) <> ":" <+> (pretty $ take 512 $ show ce)
   let srcCodeAt = nest $ hardline <> pretty (style TC.Bold (show src))
@@ -143,16 +147,20 @@ getErrorMessage mCtx src isWarning ce = do
   let stackTrace =
         case concat mCtx of
           [] -> ""
-          ctx -> hardline <> (pretty $ style TC.Bold "Trace") <> ":" <> hardline <>
-                  concatWith (surround hardline) (map pretty $ topOfStackTrace ctx) <> hardline
+          ctx ->
+            hardline <> (pretty $ style TC.Bold "Trace") <> ":" <> hardline
+              <> concatWith (surround hardline) (map pretty $ topOfStackTrace ctx)
+              <> hardline
   let docsUrl = "For further explanation of this " <> pretty errType <> ", see: " <> pretty (style TC.Underline $ errorCodeDocUrl ce) <> hardline
   T.unpack . unsafeRedactAbs . T.pack . show $
-    errDesc <> hardline <>
-    srcCodeAt <> hardline <>
-    srcCodeLine <> hardline <>
-    stackTrace <> hardline <>
-    docsUrl
-
+    errDesc <> hardline
+      <> srcCodeAt
+      <> hardline
+      <> srcCodeLine
+      <> hardline
+      <> stackTrace
+      <> hardline
+      <> docsUrl
 
 expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =
@@ -300,7 +308,7 @@ instance Pretty PrimOp where
     DIGEST_EQ -> "=="
     ADDRESS_EQ -> "=="
     TOKEN_EQ -> "=="
-    SELF_ADDRESS x y z -> "selfAddress" <> parens (render_das [ pretty x, pretty y, pretty z ])
+    SELF_ADDRESS x y z -> "selfAddress" <> parens (render_das [pretty x, pretty y, pretty z])
     LSH -> "<<"
     RSH -> ">>"
     BAND -> "&"
@@ -314,6 +322,7 @@ data SLCtxtFrame
   deriving (Eq, Ord, Generic, NFData)
 
 instance FromJSON SLCtxtFrame
+
 instance ToJSON SLCtxtFrame
 
 instance Show SLCtxtFrame where

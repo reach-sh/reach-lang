@@ -8,12 +8,12 @@ where
 import Data.Char (toLower, toUpper)
 import Data.List (intercalate)
 import Data.List.Extra (splitOn)
-import Reach.AST.Base (SrcLoc, getErrorMessage, HasErrorCode(..))
-import System.IO (hPutStrLn)
-import System.IO.Extra (stderr)
 import GHC.Generics
+import Reach.AST.Base (HasErrorCode (..), SrcLoc, getErrorMessage)
 import Reach.UnsafeUtil (unsafeTermSupportsColor)
 import qualified System.Console.Pretty as TC
+import System.IO (hPutStrLn)
+import System.IO.Extra (stderr)
 
 capitalized :: String -> String
 capitalized [] = []
@@ -65,7 +65,7 @@ instance Show Deprecation where
     D_UntypedTimeArg ->
       "Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs."
     D_Replaced o n ->
-       "`" <> o <> "` is now deprecated. Use `" <> n <> "`."
+      "`" <> o <> "` is now deprecated. Use `" <> n <> "`."
 
 instance Show Warning where
   show = \case

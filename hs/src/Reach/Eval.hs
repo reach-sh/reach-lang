@@ -68,10 +68,11 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
   unless (didPublish || null top_ss) $
     liftIO . emitWarning (Just at) $ W_NoPublish
   let final = shared_lifts <> these_lifts
-  let final_dlo' = final_dlo
-        { dlo_bals = 1 + length fin_toks
-        , dlo_droppedAsserts = e_droppedAsserts'
-        }
+  let final_dlo' =
+        final_dlo
+          { dlo_bals = 1 + length fin_toks
+          , dlo_droppedAsserts = e_droppedAsserts'
+          }
   AppRes {..} <- liftIO $ readIORef resr
   dli_maps <- liftIO $ readIORef $ me_ms mape
   let dli = DLInit {..}

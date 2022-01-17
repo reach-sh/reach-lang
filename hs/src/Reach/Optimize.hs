@@ -2,9 +2,9 @@ module Reach.Optimize (optimize_, optimize, Optimize) where
 
 import Control.Monad.Reader
 import Data.IORef
-import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import qualified Data.Set as S
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
@@ -16,9 +16,11 @@ import Reach.Util
 import Safe (atMay)
 
 type App = ReaderT Env IO
+
 type ConstApp = ReaderT ConstEnv IO
 
 type AppT a = a -> App a
+
 type ConstT a = a -> ConstApp ()
 
 class Optimize a where
@@ -148,7 +150,7 @@ optKnownLargeArg = lookupCommon ceKnownLargeArgs
 
 recordKnownLargeArg :: DLVar -> DLLargeArg -> App ()
 recordKnownLargeArg dv v =
-  updateLookup (\e -> e { ceKnownLargeArgs = M.insert dv v $ ceKnownLargeArgs e })
+  updateLookup (\e -> e {ceKnownLargeArgs = M.insert dv v $ ceKnownLargeArgs e})
 
 remember_ :: Bool -> DLVar -> DLExpr -> App ()
 remember_ always v e =
@@ -260,13 +262,14 @@ instance Optimize DLLargeArg where
   gcs _ = return ()
 
 instance Optimize DLTokenNew where
-  opt (DLTokenNew {..}) = DLTokenNew
-    <$> opt dtn_name
-    <*> opt dtn_sym
-    <*> opt dtn_url
-    <*> opt dtn_metadata
-    <*> opt dtn_supply
-    <*> opt dtn_decimals
+  opt (DLTokenNew {..}) =
+    DLTokenNew
+      <$> opt dtn_name
+      <*> opt dtn_sym
+      <*> opt dtn_url
+      <*> opt dtn_metadata
+      <*> opt dtn_supply
+      <*> opt dtn_decimals
   gcs _ = return ()
 
 instance Optimize DLWithBill where
@@ -321,11 +324,11 @@ instance Optimize DLExpr where
           | l == d -> return $ DLE_Arg at r
           | r == d -> return $ DLE_Arg at l
         (MUL_DIV, [l, r, DLA_Literal (DLL_Int _ 1)]) ->
-            opt $ DLE_PrimOp at MUL [l, r]
+          opt $ DLE_PrimOp at MUL [l, r]
         (MUL_DIV, [DLA_Literal (DLL_Int _ 1), r, d]) ->
-            opt $ DLE_PrimOp at DIV [r, d]
+          opt $ DLE_PrimOp at DIV [r, d]
         (MUL_DIV, [l, DLA_Literal (DLL_Int _ 1), d]) ->
-            opt $ DLE_PrimOp at DIV [l, d]
+          opt $ DLE_PrimOp at DIV [l, d]
         (MUL_DIV, [DLA_Literal (DLL_Int _ 0), _, _]) ->
           return $ DLE_Arg at zero
         (MUL_DIV, [_, DLA_Literal (DLL_Int _ 0), _, _]) ->
@@ -339,8 +342,9 @@ instance Optimize DLExpr where
             Nothing -> meh
             Just c' ->
               return $ DLE_PrimOp at IF_THEN_ELSE [c', f, t]
-        (aneq, [lhs, rhs]) | isAnEqual aneq && sani lhs == sani rhs ->
-          return $ DLE_Arg at $ DLA_Literal $ DLL_Bool True
+        (aneq, [lhs, rhs])
+          | isAnEqual aneq && sani lhs == sani rhs ->
+            return $ DLE_Arg at $ DLA_Literal $ DLL_Bool True
         _ -> meh
     DLE_ArrayRef at a i -> DLE_ArrayRef at <$> opt a <*> opt i
     DLE_ArraySet at a i v -> DLE_ArraySet at <$> opt a <*> opt i <*> opt v
@@ -476,14 +480,14 @@ optWhile mk asn cond body k = do
   asn' <- opt asn
   cond'@(DLBlock _ _ _ ca) <- newScope $ opt cond
   let mca b m = case ca of
-                  DLA_Var dv -> do
-                    rewrite dv (dv, Just (DLA_Literal $ DLL_Bool b))
-                    optNotHuh ca >>= \case
-                      Just (DLA_Var dv') -> do
-                        rewrite dv' (dv', Just (DLA_Literal $ DLL_Bool $ not b))
-                      _ -> return ()
-                    m
-                  _ -> m
+        DLA_Var dv -> do
+          rewrite dv (dv, Just (DLA_Literal $ DLL_Bool b))
+          optNotHuh ca >>= \case
+            Just (DLA_Var dv') -> do
+              rewrite dv' (dv', Just (DLA_Literal $ DLL_Bool $ not b))
+            _ -> return ()
+          m
+        _ -> m
   body' <- newScope $ mca True $ opt body
   k' <- newScope $ mca False $ opt k
   return $ mk asn' cond' body' k'
@@ -509,8 +513,9 @@ optLet at x e = do
         return $ DL_Let at x e''
   let doit dv = do
         case e' of
-          DLE_Arg at' a' | canDupe a' ->
-            argCase dv at' a'
+          DLE_Arg at' a'
+            | canDupe a' ->
+              argCase dv at' a'
           _ -> do
             let e'' = sani e'
             common <- repeated e''
@@ -518,10 +523,12 @@ optLet at x e = do
               Just (Left (DLA_Var rt)) -> do
                 rewrite dv (rt, Nothing)
                 return $ DL_Nop at
-              Just (Left a') | canDupe a' ->
-                argCase dv at a'
-              Just (Right a') | canDupe a' ->
-                largCase dv at a'
+              Just (Left a')
+                | canDupe a' ->
+                  argCase dv at a'
+              Just (Right a')
+                | canDupe a' ->
+                  largCase dv at a'
               _ -> do
                 remember dv e''
                 case e' of
@@ -543,7 +550,7 @@ optLet at x e = do
             case mmt of
               Nothing -> id
               Just mt -> M.insert ref $ Right $ mdaToMaybeLA mt nva
-      let up ce = ce { cePrev = (upf . clear) $ cePrev ce }
+      let up ce = ce {cePrev = (upf . clear) $ cePrev ce}
       updateLookup up
       meh
     _ -> meh
@@ -564,8 +571,9 @@ instance Optimize DLStmt where
       optIf (DL_LocalDo at) DL_LocalIf at c t f
     DL_LocalSwitch at ov csm ->
       optSwitch (DL_LocalDo at) DT_Com DL_LocalSwitch at ov csm
-    s@(DL_ArrayMap at ans x a f) -> maybeUnroll s x $
-      DL_ArrayMap at ans <$> opt x <*> (pure a) <*> opt f
+    s@(DL_ArrayMap at ans x a f) ->
+      maybeUnroll s x $
+        DL_ArrayMap at ans <$> opt x <*> (pure a) <*> opt f
     s@(DL_ArrayReduce at ans x z b a f) -> maybeUnroll s x $ do
       DL_ArrayReduce at ans <$> opt x <*> opt z <*> (pure b) <*> (pure a) <*> opt f
     DL_MapReduce at mri ans x z b a f -> do

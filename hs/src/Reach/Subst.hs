@@ -59,13 +59,14 @@ instance Subst DLPayAmt where
         <*> mapM (\(amt, ty) -> (,) <$> subst amt <*> subst ty) ks
 
 instance Subst DLTokenNew where
-  subst (DLTokenNew {..}) = DLTokenNew
-    <$> subst dtn_name
-    <*> subst dtn_sym
-    <*> subst dtn_url
-    <*> subst dtn_metadata
-    <*> subst dtn_supply
-    <*> subst dtn_decimals
+  subst (DLTokenNew {..}) =
+    DLTokenNew
+      <$> subst dtn_name
+      <*> subst dtn_sym
+      <*> subst dtn_url
+      <*> subst dtn_metadata
+      <*> subst dtn_supply
+      <*> subst dtn_decimals
 
 instance Subst DLWithBill where
   subst (DLWithBill y z) =

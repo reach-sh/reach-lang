@@ -1,7 +1,8 @@
 module Reach.FixedPoint
   ( fixedPoint
   , fixedPoint_
-  ) where
+  )
+where
 
 fixedPoint_ :: forall a. Eq a => a -> (Integer -> a -> IO a) -> IO a
 fixedPoint_ x0 f = h 0 x0

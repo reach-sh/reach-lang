@@ -1,6 +1,8 @@
-module Reach.EPP (epp, EPPError(..)) where
+module Reach.EPP (epp, EPPError (..)) where
 
 import Control.Monad.Reader
+import Data.Bifunctor
+import Data.Bool
 import Data.Foldable
 import Data.IORef
 import Data.List.Extra (mconcatMap)
@@ -20,8 +22,6 @@ import Reach.FixedPoint
 import Reach.Optimize
 import Reach.Texty
 import Reach.Util
-import Data.Bifunctor
-import Data.Bool
 
 shouldTrace :: Bool
 shouldTrace = False
@@ -136,6 +136,7 @@ data EPPError
 
 instance HasErrorCode EPPError where
   errPrefix = const "REP"
+
   -- These indices are part of an external interface; they
   -- are used in the documentation of Error Codes.
   -- If you delete a constructor, do NOT re-allocate the number.
@@ -149,8 +150,8 @@ instance Show EPPError where
     Err_ContinueDomination ->
       "`continue` must be dominated by communication"
     Err_ViewSetDomination v f ->
-      let mvn = maybe "" (\v' -> show (pretty v') <> ".") v in
-      "The value the view " <> mvn <> show (pretty f) <> " is set to will never be observable"
+      let mvn = maybe "" (\v' -> show (pretty v') <> ".") v
+       in "The value the view " <> mvn <> show (pretty f) <> " is set to will never be observable"
 
 type ViewSet = M.Map (Maybe SLPart, SLVar) (Bool, SrcLoc)
 
@@ -236,10 +237,12 @@ captureViewSets :: ViewSet -> BApp a -> BApp (ViewSet, a)
 captureViewSets extra m = do
   vsr <- asks be_view_setsr
   vs <- liftIO $ readIORef vsr
-  tmpr <- liftIO $ newIORef
-            $ M.unionWith view_set_combine extra
-              $ M.filter fst vs
-  x <- local (\ e -> e { be_view_setsr = tmpr }) m
+  tmpr <-
+    liftIO $
+      newIORef $
+        M.unionWith view_set_combine extra $
+          M.filter fst vs
+  x <- local (\e -> e {be_view_setsr = tmpr}) m
   a <- liftIO $ readIORef tmpr
   return (a, x)
 
@@ -247,7 +250,8 @@ withViewSets :: ViewSet -> BApp b -> BApp b
 withViewSets extra m = do
   vsr <- asks be_view_setsr
   (tmp, x) <- captureViewSets extra m
-  liftIO $ modifyIORef vsr $
+  liftIO $
+    modifyIORef vsr $
       M.unionWith view_set_combine tmp
   return x
 
@@ -360,16 +364,18 @@ be_m = \case
             case vs of
               [v] -> do
                 let ty = varType v
-                liftIO $ modifyIORef be_api_rets $
-                  M.insert p ty
+                liftIO $
+                  modifyIORef be_api_rets $
+                    M.insert p ty
               _ -> impossible "api"
           _ -> return ()
       DLE_setApiDetails _ p tys mc isf -> do
         BEnv {..} <- ask
         rets <- liftIO $ readIORef be_api_rets
         let ret = fromMaybe T_Null $ M.lookup p rets
-        liftIO $ modifyIORef be_api_info $
-          M.insert p $ ApiInfo tys mc be_which isf ret
+        liftIO $
+          modifyIORef be_api_info $
+            M.insert p $ ApiInfo tys mc be_which isf ret
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
@@ -482,8 +488,9 @@ check_view_sets vs = do
 mark_view_sets :: BApp ()
 mark_view_sets = do
   vsr <- asks be_view_setsr
-  liftIO $ modifyIORef vsr $
-    M.map $ bimap (const True) id
+  liftIO $
+    modifyIORef vsr $
+      M.map $ bimap (const True) id
 
 view_set_combine :: (Bool, b) -> (Bool, b) -> (Bool, b)
 view_set_combine (l, l_at) (r, r_at) =
@@ -493,8 +500,9 @@ be_c :: LLConsensus -> BApp (CApp CTail, EApp ETail)
 be_c = \case
   LLC_ViewIs at v f ma k -> do
     vsr <- asks be_view_setsr
-    liftIO $ modifyIORef vsr $
-      M.insertWith view_set_combine (v, f) (False, at)
+    liftIO $
+      modifyIORef vsr $
+        M.insertWith view_set_combine (v, f) (False, at)
     local (\e -> e {be_views = modv $ be_views e}) $
       be_c k
     where
@@ -537,11 +545,16 @@ be_c = \case
     (more, s'l) <-
       withViewSets mempty $
         captureMore $
-          local (\e -> e { be_interval = default_interval
-                         , be_prev = this
-                         , be_prevs = S.singleton this }) $ do
-            fg_use views
-            be_s s
+          local
+            (\e ->
+               e
+                 { be_interval = default_interval
+                 , be_prev = this
+                 , be_prevs = S.singleton this
+                 })
+            $ do
+              fg_use views
+              be_s s
     when more $ mark_view_sets
     toks <- asks be_toks
     case more of
@@ -564,8 +577,12 @@ be_c = \case
     this_loopj <- newHandler "While"
     this_loopsp <- newSavePoint "While"
     let inBlock the_prev the_prevs =
-          local (\e -> e { be_prev = the_prev
-                         , be_prevs = S.union (be_prevs e) the_prevs })
+          local
+            (\e ->
+               e
+                 { be_prev = the_prev
+                 , be_prevs = S.union (be_prevs e) the_prevs
+                 })
     let inLoop = inBlock this_loopsp (S.singleton this_loopsp)
     (k_vs, (goto_kont, k'l)) <-
       captureViewSets mempty $
@@ -580,7 +597,7 @@ be_c = \case
     (body'c, body'l) <-
       withViewSets k_vs $
         inLoop $
-          local (\e -> e {be_loop = Just (this_loopj, this_loopsp) }) $
+          local (\e -> e {be_loop = Just (this_loopj, this_loopsp)}) $
             be_c body
     let loop_if = CT_If cond_at cond_a <$> body'c <*> goto_kont
     let loop_top = dtReplace CT_Com <$> loop_if <*> cond_l'c
@@ -637,7 +654,7 @@ be_s = \case
           let int_to = interval_add_from int ta
           let delay_as = interval_from int_to
           to_s'm <-
-            local (\e -> e { be_interval = int_to }) $
+            local (\e -> e {be_interval = int_to}) $
               be_s to_s
           let mtime'm = Just . (,) delay_as <$> to_s'm
           return $ (int_ok, mtime'm)
@@ -709,7 +726,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das devts s) = do
   -- Step 2: Solve the flow graph
   flowi <- readIORef be_flowr
   last_save <- readCounter be_savec
-  let flowi' = M.fromList $ zip [0..last_save] $ repeat mempty
+  let flowi' = M.fromList $ zip [0 .. last_save] $ repeat mempty
   flow <- solve $ flowi <> flowi'
   -- Step 3: Turn the blocks into handlers
   let mkh m = do

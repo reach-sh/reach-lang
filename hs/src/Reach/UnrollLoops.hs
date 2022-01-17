@@ -1,4 +1,4 @@
-module Reach.UnrollLoops (UnrollWrapper(..), unrollLoops) where
+module Reach.UnrollLoops (UnrollWrapper (..), unrollLoops) where
 
 import Control.Monad.Reader
 import Data.Foldable

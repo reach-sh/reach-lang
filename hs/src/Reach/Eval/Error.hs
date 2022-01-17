@@ -5,7 +5,7 @@ module Reach.Eval.Error
   )
 where
 
-import Data.List (intercalate, sortBy, isPrefixOf)
+import Data.List (intercalate, isPrefixOf, sortBy)
 import qualified Data.Map.Strict as M
 import Data.Ord (comparing)
 import qualified Data.Set as S
@@ -158,6 +158,7 @@ data EvalError
 
 instance HasErrorCode EvalError where
   errPrefix = const "RE"
+
   -- These indices are part of an external interface; they
   -- are used in the documentation of Error Codes.
   -- If you delete a constructor, do NOT re-allocate the number.
@@ -365,26 +366,26 @@ showStateDiff x y =
       y
       st_pdvs
       (\xs ys ->
-          "The active participants vary between states: " <> showM xs <> " vs " <> showM ys <> ". Ensure all needed participants have been set before the branch. Perhaps move the first `publish` of the missing participant before the branch?")
+         "The active participants vary between states: " <> showM xs <> " vs " <> showM ys <> ". Ensure all needed participants have been set before the branch. Perhaps move the first `publish` of the missing participant before the branch?")
     <> showDiff
-        x
-        y
-        st_toks
-        (\xs ys ->
-          "The non-network tokens vary between states: " <> showL xs <> " vs " <> showL ys <> ". Ensure all needed tokens are available before the branch.")
+      x
+      y
+      st_toks
+      (\xs ys ->
+         "The non-network tokens vary between states: " <> showL xs <> " vs " <> showL ys <> ". Ensure all needed tokens are available before the branch.")
     <> showDiff
-        x
-        y
-        st_toks_c
-        (\xs ys ->
-          "The created non-network tokens vary between states: " <> showS xs <> " vs " <> showS ys <> ". Ensure all needed tokens created before the branch.")
-    where
-      showM :: Show k => M.Map k v -> String
-      showM = showL . M.keys
-      showS :: Show v => S.Set v -> String
-      showS = showL . S.toAscList
-      showL :: Show v => [v] -> String
-      showL = intercalate ", " . map show
+      x
+      y
+      st_toks_c
+      (\xs ys ->
+         "The created non-network tokens vary between states: " <> showS xs <> " vs " <> showS ys <> ". Ensure all needed tokens created before the branch.")
+  where
+    showM :: Show k => M.Map k v -> String
+    showM = showL . M.keys
+    showS :: Show v => S.Set v -> String
+    showS = showL . S.toAscList
+    showL :: Show v => [v] -> String
+    showL = intercalate ", " . map show
 
 instance ErrorMessageForJson EvalError where
   errorMessageForJson = \case

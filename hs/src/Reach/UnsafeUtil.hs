@@ -10,16 +10,17 @@ module Reach.UnsafeUtil
   , unsafeTermSupportsColor
   , unsafeReadFile
   , unsafeHashStr
-  ) where
+  )
+where
 
 import Data.Text (Text)
 import qualified Data.Text as T
 import Reach.CommandLine (CompilerToolArgs (cta_errorFormatJson), getCompilerArgs)
 import Reach.Util
+import System.Console.Pretty (supportsPretty)
 import System.Directory
 import System.Environment
 import System.IO.Unsafe
-import System.Console.Pretty (supportsPretty)
 
 -- | s/${pwd}/./g
 unsafeRedactAbs :: Text -> Text
@@ -47,8 +48,9 @@ unsafeReadFile s = lines . unsafePerformIO $ readFile s
 
 unsafeHashStr :: String
 unsafeHashStr = unsafePerformIO $ do
-  let try e fk = lookupEnv e >>= \case
-        Just hash -> return $ " (" <> hash <> ")"
-        Nothing -> fk
+  let try e fk =
+        lookupEnv e >>= \case
+          Just hash -> return $ " (" <> hash <> ")"
+          Nothing -> fk
   try "REACHC_HASH" (try "REACH_GIT_HASH" $ return "")
 {-# NOINLINE unsafeHashStr #-}
