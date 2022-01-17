@@ -31,7 +31,7 @@ jb () {
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
-  #(cd "$ROOT"/js/react-runner && make build)
+  (cd "$ROOT"/js/react-runner && make build)
   # (cd "$ROOT"/js && make build)
 }
 
