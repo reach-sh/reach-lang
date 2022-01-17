@@ -63,6 +63,7 @@ data Env = Env
   , eParts :: [SLPart]
   , eEnvsR :: IORef (M.Map Focus CommonEnv)
   , eCounter :: Counter
+  , eDroppedAsserts :: Counter
   , eConst :: S.Set DLVar
   , eMaps :: DLMapInfos
   }
@@ -186,8 +187,8 @@ updateLookup up = do
   let update = M.fromList . (map update1) . M.toList
   liftIO $ modifyIORef eEnvsR update
 
-mkEnv0 :: Counter -> S.Set DLVar -> [SLPart] -> DLMapInfos -> IO Env
-mkEnv0 eCounter eConst eParts eMaps = do
+mkEnv0 :: Counter -> Counter -> S.Set DLVar -> [SLPart] -> DLMapInfos -> IO Env
+mkEnv0 eCounter eDroppedAsserts eConst eParts eMaps = do
   let eFocus = F_Ctor
   let eEnvs =
         M.fromList $
@@ -361,9 +362,13 @@ instance Optimize DLExpr where
     DLE_Claim at fs t a m -> do
       a' <- opt a
       case a' of
-        DLA_Literal (DLL_Bool True) -> nop at
-        _ ->
-          return $ DLE_Claim at fs t a' m
+        DLA_Literal (DLL_Bool True) -> do
+          Env {..} <- ask
+          void $ liftIO $ incCounter eDroppedAsserts
+          nop at
+        -- XXX We should record that if a' is a variable then after it, it is
+        -- True
+        _ -> return $ DLE_Claim at fs t a' m
     DLE_Transfer at t a m -> do
       a' <- opt a
       case a' of
@@ -700,7 +705,7 @@ instance Optimize LLProg where
     let psl = M.keys sps_ies
     cs <- asks eConst
     let mis = dli_maps dli
-    env0 <- liftIO $ mkEnv0 (getCounter opts) cs psl mis
+    env0 <- liftIO $ mkEnv0 (getCounter opts) (llo_droppedAsserts opts) cs psl mis
     local (const env0) $
       focus_ctor $
         LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> pure das <*> pure devts <*> opt s
@@ -806,7 +811,8 @@ optimize_ c t = do
   flip runReaderT (ConstEnv {..}) $ gcs t
   cs <- readIORef eConstR
   let csvs = M.keysSet $ M.filter (\x -> x < 2) cs
-  env0 <- mkEnv0 c csvs [] mempty
+  dac <- newCounter 0
+  env0 <- mkEnv0 c dac csvs [] mempty
   flip runReaderT env0 $
     opt t
 

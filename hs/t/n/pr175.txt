@@ -16,7 +16,7 @@ Verification failed:
   assert(v26);
 
   Verifying when NO participants are honest
-Checked 2 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 3 theorems; 2 failures (and 1 omitted repeats) :'(
 warning[RW0004]: There are no publications in the application.
 
   ./pr175.rsh:2:30:application

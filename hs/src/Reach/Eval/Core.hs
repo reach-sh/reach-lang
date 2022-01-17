@@ -311,15 +311,15 @@ defaultApp =
         (JSStatementBlock JSNoAnnot [] JSNoAnnot JSSemiAuto)
         (mempty, False)
 
-app_default_opts :: Counter -> [T.Text] -> DLOpts
-app_default_opts idxr cns =
+app_default_opts :: Counter -> Counter -> [T.Text] -> DLOpts
+app_default_opts idxr dar cns =
   DLOpts
     { dlo_verifyArithmetic = False
     , dlo_verifyPerConnector = False
     , dlo_connectors = cns
     , dlo_counter = idxr
     , dlo_bals = 1
-    , dlo_droppedAsserts = 0
+    , dlo_droppedAsserts = dar
     }
 
 app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)

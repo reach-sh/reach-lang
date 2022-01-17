@@ -17,7 +17,7 @@ Verification failed:
   possible(v31);
 
   Verifying when NO participants are honest
-Checked 1 theorems; 1 failures :'(
+Checked 2 theorems; 1 failures :'(
 warning[RW0004]: There are no publications in the application.
 
   ./impossible.rsh:3:30:application

@@ -255,7 +255,7 @@ data DLOpts = DLOpts
   , dlo_connectors :: [T.Text]
   , dlo_counter :: Counter
   , dlo_bals :: Int
-  , dlo_droppedAsserts :: Int
+  , dlo_droppedAsserts :: Counter
   }
   deriving (Eq, Generic)
 

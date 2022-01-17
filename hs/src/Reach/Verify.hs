@@ -45,7 +45,8 @@ verify vst_vo lp@(LLProg _ llo _ _ _ _ _ _ _) = do
   --   -- - doesn't support declare-datatypes
   --   smt "boolector" ["--smt2"]
   ss0 <- readCounter vst_res_succ
-  let ss = ss0 + (llo_droppedAsserts llo)
+  das <- readCounter $ llo_droppedAsserts llo
+  let ss = ss0 + das
   fs <- readCounter vst_res_fail
   ts <- readCounter vst_res_time
   rs <- readCounter vst_res_reps
