@@ -27,7 +27,7 @@ err () {
 }
 
 jb () {
-  #(cd "$ROOT"/js/js-deps && make build)
+  (cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
@@ -116,12 +116,6 @@ checkteal () {
 #######
 
 jb
-export REACH_DEBUG=Y
-c examples/mapOpt/index.rsh
-exit 0
-
-ci ALGO mapOpt
-ci ETH mapOpt
 exit 0
 
 export REACH_DEBUG=Y
