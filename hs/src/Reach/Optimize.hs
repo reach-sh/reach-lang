@@ -420,7 +420,7 @@ optIf mkDo mkIf at c t f =
     DLA_Literal (DLL_Bool True) -> mkDo <$> opt t
     DLA_Literal (DLL_Bool False) -> mkDo <$> opt f
     c' -> do
-      -- XXX We could see if c' is something like `DLVar x == DLArg y` and add x -> y to the optimization environment
+      -- XXX We could see if c' is something like `DLVar x == DLArg y` and add x -> y to the optimization environment. A general way to do this would be to have something that says "If this variable were True, you'd know _this_. So `z = x && y` would say `z => x` and `z => y`. And `x == y` would say `x = y`.
       let learnC b =
             case c' of
               DLA_Var v ->
