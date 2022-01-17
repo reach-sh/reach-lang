@@ -714,6 +714,7 @@ data SLPrimitive
   | SLPrim_event_is (Maybe SLPart) SLVar [SLType]
   | SLPrim_verifyMuldiv
   | SLPrim_getUntrackedFunds
+  | SLPrim_fromSome
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

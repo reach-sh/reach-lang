@@ -138,6 +138,7 @@ instance Freshen DLExpr where
     DLE_EmitLog at k a -> DLE_EmitLog at k <$> fu a
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mt tb -> DLE_GetUntrackedFunds at <$> fu mt <*> fu tb
+    DLE_FromSome at mo da -> DLE_FromSome at <$> fu mo <*> fu da
 
 instance {-# OVERLAPS #-} Freshen k => Freshen (SwitchCases k) where
   fu = mapM (\(vn, vnu, k) -> (,,) <$> fu_v vn <*> pure vnu <*> fu k)

@@ -479,6 +479,10 @@ jsExpr = \case
             zero,
             jsPrimApply SUB [bal, tb']
           ]
+  DLE_FromSome _at mo da -> do
+    mo' <- jsArg mo
+    da' <- jsArg da
+    return $ jsApply "stdlib.fromSome" [ mo', da' ]
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do
@@ -980,7 +984,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 7
+reachBackendVersion = 8
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ devts _)) = do

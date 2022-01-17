@@ -1076,6 +1076,18 @@ smt_e at_dv mdv de = do
       mapM_ (bound at <=< smt_v at) lv
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds at _ _ -> unbound at
+    DLE_FromSome at mo da -> do
+      mo' <- smt_a at mo
+      da' <- smt_a at da
+      n <- smtTypeSort $ argTypeOf mo
+      let someCtor = n <> "_Some"
+      let noneCtor = n <> "_None"
+      let somev = Atom $ someCtor <> "_pv"
+      let somep = List [ Atom someCtor, somev ]
+      let somec = List [ somep, somev ]
+      let nonep = List [ Atom noneCtor ]
+      let nonec = List [ nonep, da' ]
+      bound at $ smtApply "match" [mo', List [ nonec, somec ]]
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)

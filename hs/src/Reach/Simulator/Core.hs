@@ -518,7 +518,11 @@ instance Interp DLExpr where
       let bal = saferMapRef "getActualBalance1" $ M.lookup tok $
                   saferMapRef "getActualBalance" $ M.lookup simContract $ e_ledger e
       return $ V_UInt bal
-
+    DLE_FromSome _ mo da -> do
+      (k, v) <- vData <$> interp mo
+      case k of
+        "Some" -> return v
+        _ -> interp da
 
 instance Interp DLStmt where
   interp = \case

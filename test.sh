@@ -115,8 +115,10 @@ checkteal () {
 
 #######
 
+jb
 export REACH_DEBUG=Y
-c hs/t/y/mapOpt.rsh
+ci ALGO mapOpt
+ci ETH mapOpt
 exit 0
 
 export REACH_DEBUG=Y

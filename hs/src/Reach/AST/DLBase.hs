@@ -597,6 +597,8 @@ data DLExpr
     sad_mcase_id :: Maybe String,
     sad_compile :: ApiInfoCompilation }
   | DLE_GetUntrackedFunds SrcLoc (Maybe DLArg) DLArg
+  | DLE_FromSome SrcLoc DLArg DLArg
+  -- Maybe try to generalize FromSome into a Match
   deriving (Eq, Ord, Generic)
 
 data LogKind
@@ -728,6 +730,8 @@ instance PrettySubst DLExpr where
       return $ "setApiDetails" <> parens (render_das [pretty p, pretty d, pretty mc, pretty f])
     DLE_GetUntrackedFunds _ mtok _ ->
       return $ "getActualBalance" <> parens (pretty mtok)
+    DLE_FromSome _ mo da ->
+      return $ "fromSome" <> parens (render_das [pretty mo, pretty da])
 
 instance PrettySubst LogKind where
   prettySubst = \case
@@ -779,6 +783,7 @@ instance IsPure DLExpr where
     DLE_EmitLog {} -> False
     DLE_setApiDetails {} -> False
     DLE_GetUntrackedFunds {} -> False
+    DLE_FromSome {} -> True
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -813,6 +818,7 @@ instance IsLocal DLExpr where
     DLE_EmitLog {} -> False
     DLE_setApiDetails {} -> False
     DLE_GetUntrackedFunds {} -> False
+    DLE_FromSome {} -> True
 
 instance CanDupe DLExpr where
   canDupe e =

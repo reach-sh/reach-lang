@@ -592,6 +592,7 @@ base_env =
     , ("call", SLV_Form $ SLForm_apiCall)
     , (".setApiDetails", SLV_Form $ SLForm_setApiDetails)
     , ("getUntrackedFunds", SLV_Prim $ SLPrim_getUntrackedFunds)
+    , ("fromSome", SLV_Prim $ SLPrim_fromSome)
     , ( "Reach"
       , (SLV_Object sb (Just $ "Reach") $
            m_fromList_public_builtin
@@ -3279,6 +3280,29 @@ evalPrim p sargs =
       dv <- ctxt_lift_expr mdv $ DLE_PrimOp at ADD [DLA_Var untrackedFunds, trackedBal]
       doFluidSet fvBal $ public $ SLV_DLVar dv
       return (lvl, SLV_DLVar untrackedFunds)
+    SLPrim_fromSome -> do
+      (mv, dv) <- two_args
+      at <- withAt id
+      case mv of
+        SLV_Data _ _ vn vv ->
+          case vn of
+            "Some" -> return (lvl, vv)
+            -- XXX Maybe be better in strict mode?
+            _ -> return (lvl, dv)
+        _ -> do
+          (mvt, ma) <- compileTypeOf mv
+          mvt_tm <- mustBeDataTy Err_Switch_NotData mvt
+          case M.toAscList mvt_tm of
+            [ ("None", T_Null), ("Some", st) ] -> do
+              da <- compileCheckType st dv
+              let mkv = DLVar at Nothing st
+              let e = DLE_FromSome at ma da
+              fsv <- ctxt_lift_expr mkv e
+              return (lvl, SLV_DLVar fsv)
+            cs -> do
+              expect_ $ Err_Switch_MissingCases $
+                S.toList $ S.delete "Some" $ S.delete "None" $
+                  S.fromList $ map fst cs
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs

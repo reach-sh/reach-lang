@@ -35,13 +35,9 @@ export const fromMaybe = (v, onNull, onSome) => {
   case None: return onNull();
   case Some: return onSome(v); } };
 
-export const isSome = m => m.match({
-  Some: (_) => { return true; },
-  None: (_) => { return false; } });
-
-export const isNone = m => m.match({
-  Some: (_) => { return false; },
-  None: (_) => { return true; } });
+export const isSome = m => fromMaybe(m, () => false, (_) => true);
+export const isNone = m => fromMaybe(m, () => true, (_) => false);
+export const maybe = (m, def, f) => fromMaybe(m, (() => def), f);
 
 export function implies (x, y) {
   return (not(x) || y); }
@@ -538,10 +534,6 @@ void intervalOpAux;
 export const intervalMul = (x, y) => intervalOpAux(x, y, imul);
 
 export const intervalDiv = (x, y) => intervalOpAux(x, y, idiv);
-
-export const maybe = (m, def, f) => fromMaybe(m, (() => def), f);
-
-export const fromSome = (m, def) => maybe(m, def, ((x) => x));
 
 export const Array_find = (a, p) =>
   Array.reduce(a, Maybe(a.elemType).None(), (acc, e) =>

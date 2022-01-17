@@ -323,7 +323,12 @@ opt_b1 = \case
     opt_b1 $ (TBytes $ itob x) : l
   (TBytes xbs) : (TCode "btoi" []) : l ->
     opt_b1 $ (TInt $ btoi xbs) : l
+  (TBytes xbs) : (TCode "sha256" []) : l ->
+    opt_b1 $ (TBytes $ sha256bs xbs) : l
   x : l -> x : l
+
+sha256bs :: BS.ByteString -> BS.ByteString
+sha256bs = BA.convert . hashWith SHA256
 
 itob :: Integral a => a -> BS.ByteString
 itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
@@ -1182,6 +1187,18 @@ cTupleSet at tt idx = do
 cMapLoad :: App ()
 cMapLoad = do
   Shared {..} <- eShared <$> ask
+  labK <- freshLabel "mapLoadK"
+  labReal <- freshLabel "mapLoadDo"
+  labDef <- freshLabel "mapLoadDef"
+  op "dup"
+  code "txn" ["ApplicationID"]
+  op "app_opted_in"
+  code "bnz" [ labReal ]
+  label labDef
+  op "pop"
+  padding sMapDataSize
+  code "b" [ labK ]
+  label labReal
   let getOne mi = do
         -- [ Address ]
         cbs $ keyVary mi
@@ -1213,6 +1230,7 @@ cMapLoad = do
       op "pop"
       -- [ MapData ]
       return ()
+  label labK
 
 cMapStore :: SrcLoc -> App ()
 cMapStore _at = do
@@ -1505,6 +1523,18 @@ ce = \case
     ca tb
     op "-"
     label after_lab
+  DLE_FromSome _ mo da -> do
+    ca da
+    ca mo
+    salloc_ $ \cstore cload -> do
+      cstore
+      cextractDataOf cload da
+      cload
+      cint 0
+      op "getbyte"
+    -- [ Default, Object, Tag ]
+    -- [ False, True, Cond ]
+    op "select"
   where
     show_stack msg at fs = do
       comment $ texty msg
@@ -1525,9 +1555,6 @@ sigStrToBytes sig = shabs
 
 sigStrToInt :: String -> Int
 sigStrToInt = fromIntegral . btoi . sigStrToBytes
-
-signatureBytes :: String -> [DLType] -> Maybe DLType -> BS.ByteString
-signatureBytes f args mret = sigStrToBytes $ signatureStr f args mret
 
 clogEvent :: String -> [DLVar] -> App ()
 clogEvent eventName vs = do
@@ -1683,27 +1710,34 @@ makeTxn (MakeTxn {..}) = when (mt_always || not (staticZero mt_amt) ) $ do
   label after_lab
   op "pop" -- if !always & zero then pop amt ; else pop 0
 
+cextractDataOf :: App () -> DLArg -> App ()
+cextractDataOf cd va = do
+  let vt = argTypeOf va
+  let sz = typeSizeOf vt
+  case sz == 0 of
+    True -> padding 0
+    False -> do
+      cd
+      cextract 1 sz
+      cfrombs vt
+
 doSwitch :: String -> (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
 doSwitch lab ck _at dv csm = do
-  let cm1 _vi (vn, (vv, vu, k)) = do
-        l <- freshLabel $ lab <> "_" <> vn
-        label l
-        case vu of
-          False -> ck k
-          True -> do
-            flip (sallocLet vv) (ck k) $ do
-              let vt = argTypeOf $ DLA_Var vv
-              let sz = typeSizeOf vt
-              case sz == 0 of
-                True -> padding 0
-                False -> do
-                  ca $ DLA_Var dv
-                  cextract 1 sz
-                  cfrombs vt
-  ca $ DLA_Var dv
-  cint 0
-  op "getbyte"
-  cblt lab cm1 $ bltL $ zip [0..] (M.toAscList csm)
+  salloc_ $ \cstore cload -> do
+    ca $ DLA_Var dv
+    cstore
+    let cm1 _vi (vn, (vv, vu, k)) = do
+          l <- freshLabel $ lab <> "_" <> vn
+          label l
+          case vu of
+            False -> ck k
+            True -> do
+              flip (sallocLet vv) (ck k) $ do
+                cextractDataOf cload (DLA_Var vv)
+    cload
+    cint 0
+    op "getbyte"
+    cblt lab cm1 $ bltL $ zip [0..] (M.toAscList csm)
 
 cm :: App () -> DLStmt -> App ()
 cm km = \case
@@ -2097,13 +2131,15 @@ data CApi = CApi
   , capi_doWrap :: App ()
   }
 apiSig :: (SLPart, ApiInfo) -> (String, CApi)
-apiSig (who, (ApiInfo {..})) = (sig, c)
+apiSig (who, (ApiInfo {..})) = (capi_sig, c)
   where
-    c = CApi who sig ai_which args doWrap
-    sig = signatureStr f args mret
+    c = CApi {..}
+    capi_who = who
+    capi_which = ai_which
+    capi_sig = signatureStr f capi_arg_tys mret
     f = bunpack who
     imp = impossible "apiSig"
-    (args, doWrap) =
+    (capi_arg_tys, capi_doWrap) =
       case ai_compile of
         AIC_SpreadArg ->
           case ai_msg_tys of

@@ -391,6 +391,19 @@ instance Optimize DLExpr where
     DLE_EmitLog at k a -> DLE_EmitLog at k <$> opt a
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mt tb -> DLE_GetUntrackedFunds at <$> opt mt <*> opt tb
+    DLE_FromSome at mo da -> do
+      mo' <- opt mo
+      da' <- opt da
+      let meh = return $ DLE_FromSome at mo' da'
+      case mo' of
+        DLA_Var mv ->
+          optKnownLargeArg mv >>= \case
+            Just (DLLA_Data _ vn a) ->
+              case vn of
+                "Some" -> return $ DLE_Arg at $ a
+                _ -> return $ DLE_Arg at da'
+            _ -> meh
+        _ -> meh
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
   gcs _ = return ()

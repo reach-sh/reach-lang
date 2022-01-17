@@ -395,6 +395,7 @@ instance DepthOf DLExpr where
     DLE_EmitLog _ _ a -> add1 $ depthOf a
     DLE_setApiDetails {} -> return 0
     DLE_GetUntrackedFunds _ mt tb -> max <$> depthOf mt <*> depthOf tb
+    DLE_FromSome _ mo da -> add1 $ depthOf [mo, da]
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])
@@ -465,7 +466,7 @@ solArgLoc = \case
 
 solLit :: DLLiteral -> Doc
 solLit = \case
-  DLL_Null -> "true"
+  DLL_Null -> "false"
   DLL_Bool True -> "true"
   DLL_Bool False -> "false"
   DLL_Int at i -> solNum $ checkIntLiteralC at conName' conCons' i
@@ -667,6 +668,14 @@ solExpr sp = \case
   DLE_GetAddress {} -> return $ "payable(address(this))"
   DLE_EmitLog {} -> impossible "emitLog"
   DLE_setApiDetails {} -> impossible "setApiDetails"
+  DLE_FromSome _ mo da -> do
+    mo' <- solArg mo
+    da' <- solArg da
+    t <- solType $ argTypeOf mo
+    let vn = "Some"
+    c <- solEq (mo' <> ".which") (solVariant t vn)
+    return $ parens $ c <+> "?" <+> (mo' <> "._" <> pretty vn) <+> ":" <+> da'
+
   where
     spa m = (<> sp) <$> m
 
