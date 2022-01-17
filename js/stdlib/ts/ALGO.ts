@@ -849,7 +849,7 @@ function randlabsProviderEnv(net: string): ProviderEnv {
   const prefix = net === 'MainNet' ? '' : `${net.toLowerCase()}.`;
   const RANDLABS_BASE = `${prefix}algoexplorerapi.io`;
   return {
-    ALGO_SERVER: `https://${RANDLABS_BASE}`,
+    ALGO_SERVER: `https://node.${RANDLABS_BASE}`,
     ALGO_PORT: '',
     ALGO_TOKEN: '',
     ALGO_INDEXER_SERVER: `https://algoindexer.${RANDLABS_BASE}`,
