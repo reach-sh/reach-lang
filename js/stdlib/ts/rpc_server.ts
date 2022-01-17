@@ -180,7 +180,7 @@ export const serveRpc = async (backend: any) => {
       await account.id(id).setGasLimit(...args),
 
     setDebugLabel: async (id: string, l: string) =>
-      account.id(id).setDebugLabel(l),
+      account.id(id).setDebugLabel(l) && id,
 
     tokenAccept: async (acc: string, tok: string) => {
       const t = token.id(tok);
