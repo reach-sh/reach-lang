@@ -229,6 +229,12 @@ encodeBase64 bs = LT.pack $ B.unpack $ encodeBase64' bs
 texty :: Show a => a -> LT.Text
 texty x = LT.pack $ show x
 
+textyt :: Show a => a -> DLType -> LT.Text
+textyt x ty = texty x <> " :: " <> texty ty
+
+textyv :: DLVar -> LT.Text
+textyv v = textyt v (varType v)
+
 type ScratchSlot = Word8
 
 type TealOp = LT.Text
@@ -248,13 +254,15 @@ data TEAL
   | TLabel Label
   | TFor_bnz Label Integer Label
   | TLog Integer
+  | TStore ScratchSlot LT.Text
+  | TLoad ScratchSlot LT.Text
 
 type TEALt = [LT.Text]
 
 type TEALs = DL.DList TEAL
 
 builtin :: S.Set TealOp
-builtin = S.fromList ["byte", "int", "substring", "extract", "log"]
+builtin = S.fromList ["byte", "int", "substring", "extract", "log", "store", "load"]
 
 render :: TEAL -> TEALt
 render = \case
@@ -273,6 +281,8 @@ render = \case
     ["bnz", top_lab, ("// for runs " <> texty maxi <> " times")]
   TLog sz ->
     ["log", ("// up to " <> texty sz <> " bytes")]
+  TStore sl lab -> ["store", texty sl, ("// " <> lab)]
+  TLoad sl lab -> ["load", texty sl, ("// " <> lab)]
 
 optimize :: [TEAL] -> [TEAL]
 optimize ts0 = tsN
@@ -301,7 +311,7 @@ opt_b1 = \case
   -- This relies on knowing what "done" is
   (TCode "assert" []) : (TCode "b" ["done"]) : x -> (TCode "return" []) : x
   (TBytes "") : (TCode "concat" []) : l -> l
-  (TBytes "") : b@(TCode "load" [_]) : (TCode "concat" []) : l -> opt_b1 $ b : l
+  (TBytes "") : b@(TLoad {}) : (TCode "concat" []) : l -> opt_b1 $ b : l
   (TBytes x) : (TBytes y) : (TCode "concat" []) : l ->
     opt_b1 $ (TBytes $ x <> y) : l
   (TCode "b" [x]) : b@(TLabel y) : l | x == y -> b : l
@@ -310,11 +320,11 @@ opt_b1 = \case
   (TCode "itob" []) : (TCode "btoi" []) : l -> l
   (TExtract x 8) : (TCode "btoi" []) : l ->
     (TInt $ fromIntegral x) : (TCode "extract_uint64" []) : l
-  a@(TCode "load" [x]) : (TCode "load" [y]) : l
+  a@(TLoad x _) : (TLoad y _) : l
     | x == y ->
       -- This misses if there is ANOTHER load of the same thing
       a : (TCode "dup" []) : l
-  a@(TCode "store" [x]) : (TCode "load" [y]) : l
+  a@(TStore x _) : (TLoad y _) : l
     | x == y ->
       (TCode "dup" []) : a : l
   a@(TSubstring s0w _) : b@(TInt xn) : c@(TCode "getbyte" []) : l ->
@@ -409,6 +419,8 @@ checkCost disp alwaysShow ts = do
       switch lab''
     TBytes _ -> recCost 1
     TConst _ -> recCost 1
+    TStore {} -> recCost 1
+    TLoad {} -> recCost 1
     TInt _ -> recCost 1
     TExtract {} -> recCost 1
     TSubstring {} -> recCost 1
@@ -769,15 +781,14 @@ salloc fm = do
   local (\e -> e {eSP = eSP'}) $
     fm eSP
 
-salloc_ :: (App () -> App () -> App a) -> App a
-salloc_ fm =
+salloc_ :: LT.Text -> (App () -> App () -> App a) -> App a
+salloc_ lab fm =
   salloc $ \loc -> do
-    let loct = texty loc
-    fm (code "store" [loct]) (code "load" [loct])
+    fm (output $ TStore loc lab) (output $ TLoad loc lab)
 
 sallocLet :: DLVar -> App () -> App a -> App a
 sallocLet dv cgen km = do
-  salloc_ $ \cstore cload -> do
+  salloc_ (textyv dv) $ \cstore cload -> do
     cgen
     cstore
     store_let dv True cload km
@@ -1018,7 +1029,7 @@ csplice _at b c e = do
       op "swap"
       -- [ Bytes, Offset, NewByte ]
       op "setbyte"
-    False -> salloc_ $ \store_new load_new -> do
+    False -> salloc_ "spliceNew" $ \store_new load_new -> do
       let (cbefore, cafter) = computeSplice b c e
       -- [ Big, New ]
       store_new
@@ -1102,7 +1113,7 @@ cfor maxi body = do
   when (maxi < 2) $ impossible "cfor maxi=0"
   top_lab <- freshLabel "forTop"
   end_lab <- freshLabel "forEnd"
-  salloc_ $ \store_idx load_idx -> do
+  salloc_ (top_lab <> "Idx") $ \store_idx load_idx -> do
     cint 0
     store_idx
     label top_lab
@@ -1403,7 +1414,7 @@ ce = \case
     let ysz = typeSizeOf $ argTypeOf y
     let (_, xlen) = argArrTypeLen x
     check_concat_len $ xsz + ysz
-    salloc_ $ \store_ans load_ans -> do
+    salloc_ "arrayZip" $ \store_ans load_ans -> do
       cbs ""
       store_ans
       cfor xlen $ \load_idx -> do
@@ -1450,15 +1461,14 @@ ce = \case
     show_stack ("CheckPay" :: String) ct_at fs
     checkTxn $ CheckTxn {..}
   DLE_Claim at fs t a mmsg -> do
-    show_stack mmsg at fs
+    let check = ca a >> assert
     case t of
       CT_Assert -> impossible "assert"
       CT_Assume _ -> check
       CT_Require -> check
       CT_Possible -> impossible "possible"
       CT_Unknowable {} -> impossible "unknowable"
-    where
-      check = ca a >> assert
+    show_stack mmsg at fs
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
   DLE_MapRef _ (DLMVar i) fa -> do
@@ -1561,7 +1571,7 @@ ce = \case
   DLE_FromSome _ mo da -> do
     ca da
     ca mo
-    salloc_ $ \cstore cload -> do
+    salloc_ "fromSome object" $ \cstore cload -> do
       cstore
       cextractDataOf cload da
       cload
@@ -1761,7 +1771,7 @@ cextractDataOf cd va = do
 
 doSwitch :: String -> (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
 doSwitch lab ck _at dv csm = do
-  salloc_ $ \cstore cload -> do
+  salloc_ (textyv dv <> " for switch") $ \cstore cload -> do
     ca $ DLA_Var dv
     cstore
     let cm1 _vi (vn, (vv, vu, k)) = do
@@ -1807,7 +1817,7 @@ cm km = \case
     let anssz = typeSizeOf $ argTypeOf $ DLA_Var ansv
     let (_, xlen) = argArrTypeLen aa
     check_concat_len anssz
-    salloc_ $ \store_ans load_ans -> do
+    salloc_ (textyv ansv) $ \store_ans load_ans -> do
       cbs ""
       store_ans
       cfor xlen $ \load_idx -> do
@@ -1820,7 +1830,7 @@ cm km = \case
       store_let ansv True load_ans km
   DL_ArrayReduce at ansv aa za av lv (DLBlock _ _ body ra) -> do
     let (_, xlen) = argArrTypeLen aa
-    salloc_ $ \store_ans load_ans -> do
+    salloc_ (textyv ansv) $ \store_ans load_ans -> do
       ca za
       store_ans
       store_let av True load_ans $ do
@@ -1833,12 +1843,12 @@ cm km = \case
   DL_Var _ dv ->
     salloc $ \loc -> do
       store_var dv loc $
-        store_let dv True (code "load" [texty loc]) $
+        store_let dv True (output $ TLoad loc (textyv dv)) $
           km
   DL_Set _ dv da -> do
     loc <- lookup_var dv
     ca da
-    code "store" [texty loc]
+    output $ TStore loc (textyv dv)
     km
   DL_LocalIf _ a tp fp -> do
     ca a
@@ -1967,11 +1977,14 @@ data GlobalVar
 gvSlot :: GlobalVar -> ScratchSlot
 gvSlot ai = fromIntegral $ fromEnum ai
 
+gvOutput :: (ScratchSlot -> LT.Text -> TEAL) -> GlobalVar -> App ()
+gvOutput f gv = output $ f (gvSlot gv) (textyt gv (gvType gv))
+
 gvStore :: GlobalVar -> App ()
-gvStore gv = code "store" [texty $ gvSlot gv]
+gvStore = gvOutput TStore
 
 gvLoad :: GlobalVar -> App ()
-gvLoad gv = code "load" [texty $ gvSlot gv]
+gvLoad = gvOutput TLoad
 
 gvType :: GlobalVar -> DLType
 gvType = \case
@@ -1979,9 +1992,9 @@ gvType = \case
   GV_currentStep -> T_UInt
   GV_currentTime -> T_UInt
   GV_argTime -> T_UInt
-  GV_argMsg -> impossible "GV_argMsg"
+  GV_argMsg -> T_Null
   GV_wasApi -> T_Bool
-  GV_apiRet -> impossible "GV_apiRet"
+  GV_apiRet -> T_Null
 
 keyState_gvs :: [GlobalVar]
 keyState_gvs = [GV_currentStep, GV_currentTime]
