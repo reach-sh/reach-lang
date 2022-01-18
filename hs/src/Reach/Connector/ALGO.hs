@@ -369,10 +369,19 @@ opt_b1 = \case
     opt_b1 $ (TInt $ btoi xbs) : l
   (TBytes xbs) : (TCode "sha256" []) : l ->
     opt_b1 $ (TBytes $ sha256bs xbs) : l
+  (TBytes xbs) : (TCode "sha512_256" []) : l ->
+    opt_b1 $ (TBytes $ sha512_256bs xbs) : l
+  (TBytes xbs) : (TSubstring s e) : l ->
+    opt_b1 $ (TBytes $ bsSubstring xbs (fromIntegral s) (fromIntegral e)) : l
   x : l -> x : l
 
 sha256bs :: BS.ByteString -> BS.ByteString
 sha256bs = BA.convert . hashWith SHA256
+sha512_256bs :: BS.ByteString -> BS.ByteString
+sha512_256bs = BA.convert . hashWith SHA512t_256
+
+bsSubstring :: BS.ByteString -> Int -> Int -> BS.ByteString
+bsSubstring bs s e = BS.take e $ BS.drop s bs
 
 itob :: Integral a => a -> BS.ByteString
 itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
@@ -1641,10 +1650,9 @@ sigStrToInt = fromIntegral . btoi . sigStrToBytes
 clogEvent :: String -> [DLVar] -> App ()
 clogEvent eventName vs = do
   let sigStr = signatureStr eventName (map varType vs) Nothing
-  let shaBytes = sigStrToBytes sigStr
   let as = map DLA_Var vs
-  cconcatbs $ (T_Bytes 4, cbs shaBytes) : map (\a -> (argTypeOf a, ca a)) as
-  comment $ texty shaStr
+  let cheader = cbs (bpack sigStr) >> op "sha512_256" >> output (TSubstring 0 4)
+  cconcatbs $ (T_Bytes 4, cheader) : map (\a -> (argTypeOf a, ca a)) as
   clog_ $ 4 + (typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as)
 
 clog_ :: Integer -> App ()
@@ -2263,9 +2271,8 @@ doWrapData tys mk = do
 
 capi :: Int -> CApi -> App ()
 capi sigi (CApi who sig which tys doWrap) = do
-  block_ (LT.pack $ "API: " <> sig) $ do
-    comment $ LT.pack $ bunpack $ who
-    comment $ LT.pack $ " bs: " <> (show $ sigStrToBytes sig)
+  block_ (LT.pack $ bunpack who) $ do
+    comment $ LT.pack $ "API: " <> sig
     comment $ LT.pack $ " ui: " <> show sigi
     let f :: DLType -> Integer -> (DLType, App ())
         f t i = (t, code "txna" ["ApplicationArgs", texty i])
