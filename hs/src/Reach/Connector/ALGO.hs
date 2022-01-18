@@ -1458,8 +1458,8 @@ ce = \case
     checkTxn $ CheckTxn {..}
     makeTxn $ MakeTxn {..}
   DLE_CheckPay ct_at fs ct_amt ct_mtok -> do
-    show_stack ("CheckPay" :: String) ct_at fs
     checkTxn $ CheckTxn {..}
+    show_stack "CheckPay" Nothing ct_at fs
   DLE_Claim at fs t a mmsg -> do
     let check = ca a >> assert
     case t of
@@ -1468,7 +1468,7 @@ ce = \case
       CT_Require -> check
       CT_Possible -> impossible "possible"
       CT_Unknowable {} -> impossible "unknowable"
-    show_stack mmsg at fs
+    show_stack "Claim" mmsg at fs
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
   DLE_MapRef _ (DLMVar i) fa -> do
@@ -1581,10 +1581,16 @@ ce = \case
     -- [ False, True, Cond ]
     op "select"
   where
-    show_stack msg at fs = do
-      comment $ texty msg
-      comment $ texty $ unsafeRedactAbsStr $ show at
-      comment $ texty $ unsafeRedactAbsStr $ show fs
+    show_stack :: String -> Maybe BS.ByteString -> SrcLoc -> [SLCtxtFrame] -> App ()
+    show_stack what msg at fs = do
+      let msg' =
+            case msg of
+              Nothing -> ""
+              Just x -> ": " <> x
+      comment $ LT.pack $ "^ " <> what <> (bunpack msg')
+      comment $ LT.pack $ "at " <> (unsafeRedactAbsStr $ show at)
+      forM_ fs $ \f ->
+        comment $ LT.pack $ unsafeRedactAbsStr $ show f
 
 signatureStr :: String -> [DLType] -> Maybe DLType -> String
 signatureStr f args mret = sig
