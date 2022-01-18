@@ -16,7 +16,6 @@ The Reach JavaScript standard library, @{ref("js", "stdlib")} `{!js} stdlib`, is
 + the module `@reach-sh/stdlib/ALGO.mjs`;
 + the `{!js} async` function `{!js} loadStdlib` from `@reach-sh/stdlib/loader.mjs`.
 
-
 These modules are available in the [`@reach-sh/stdlib`](https://www.npmjs.com/package/@reach-sh/stdlib) [`npm`](https://www.npmjs.com/) package, which you can install via:
 
 ```cmd
@@ -36,7 +35,6 @@ These libraries provide a standard interface that support developing frontends i
 + @{seclink("ref-frontends-js-types")} discusses the way that JavaScript values are used to represent Reach values.
 + @{seclink("ref-frontends-js-utils")} discusses some utility functions for working with JavaScript-represented Reach values.
 + @{seclink("ref-frontends-js-ask")} discusses a helper library for building text-based UIs.
-
 
 ### {#ref-frontends-js-types} Types
 
@@ -59,7 +57,6 @@ Data      => ['variant', value]
 Struct    => object
 ```
 
-
 For example, the Reach type `{!rsh} MInt = Data({None: Null, Some: UInt})` inhabitant `{!rsh} MInt.Some(42)` is represented as `{!rsh} ['Some', 42]` in JavaScript.
 
 ---
@@ -68,10 +65,8 @@ For example, the Reach type `{!rsh} MInt = Data({None: Null, Some: UInt})` inhab
 type Connector = 'ETH' | 'ALGO' | 'CFX'
 ```
 
-
 A `{!rsh} Connector` is the abbreviated name of the network
 being connected to.
-
 
 ### {#ref-frontends-js-loader} `loader.mjs`
 
@@ -84,7 +79,6 @@ that might help you write code that is portable to multiple consensus networks.
 canonicalizeConnectorMode(string) => string
 ```
 
-
 Expands a connector mode prefix
 to its full, canonical name. The canonical connector modes are:
 
@@ -95,13 +89,11 @@ to its full, canonical name. The canonical connector modes are:
 + `ALGO-browser`
 + `ALGO-devnet`, for `{!js} 'ALGO'`.
 
-
 ---
 @{ref("js", "getConnectorMode")}
 ```js
 getConnectorMode() => string
 ```
-
 
 Returns the canonicalized connector mode, based on the
 `{!js} process.env.REACH_CONNECTOR_MODE` environment variable.
@@ -113,7 +105,6 @@ If the variable is missing or empty, it will return the canonicalized form of `{
 getConnector() => Connector
 ```
 
-
 Returns the first piece of `{!js} getConnectorMode()`.
 
 ---
@@ -122,8 +113,7 @@ Returns the first piece of `{!js} getConnectorMode()`.
 loadStdlib(env) => Promise<stdlib>
 ```
 
-
- Returns a Promise for a standard library based on the provided `{!js} env` string or map.
+Returns a Promise for a standard library based on the provided `{!js} env` string or map.
 In environments where the Reach standard library has implicit access to `{!js} process.env`,
 you may omit the `{!js} env` argument, in which case `{!js} process.env` will be used.
 
@@ -135,7 +125,6 @@ In such scenarios, we recommend that you call this function like so:
 ```js
 const reach = await loadStdlib(process.env);
 ```
-
 
 Or construct a custom object that has all of the environment keys and fields you need.
 
@@ -154,8 +143,7 @@ To bypass this restriction, use `{!js} unsafeAllowMultipleStdlibs`.
 unsafeAllowMultipleStdlibs() => null
 ```
 
-
- Calling this function will lift the restriction that
+Calling this function will lift the restriction that
 `{!js} loadStdlib` imposes on loading multiple standard libraries.
 
 ### {#ref-frontends-js-acc} Account Handles
@@ -167,7 +155,6 @@ These functions create and interact with account representations.
 ```js
 getDefaultAccount() => Promise<acc> 
 ```
-
 
 Returns a Promise for a Reach account abstraction for a "default" account on the consensus network.
 The meaning of "default account" varies between contexts.
@@ -182,10 +169,8 @@ This promise will be rejected with an exception if no sensible default account c
 newAccountFromSecret(secret: string) => Promise<acc> 
 ```
 
-
 Returns a Promise for a Reach account abstraction for an account on the consensus network specified by the given secret.
 The details of the secret encoding are specified uniquely to the consensus network.
-
 
 ---
 @{ref("js", "newAccountFromMnemonic")}
@@ -193,17 +178,14 @@ The details of the secret encoding are specified uniquely to the consensus netwo
 newAccountFromMnemonic(phrase: string) => Promise<acc> 
 ```
 
-
 Returns a Promise for a Reach account abstraction for an account on the consensus network specified by the given mnemonic phrase.
 The details of the mnemonic phrase encoding are specified uniquely to the consensus network.
-
 
 ---
 @{ref("js", "newTestAccount")}
 ```js
 newTestAccount(balance) => Promise<acc> 
 ```
-
 
 Returns a Promise for a Reach account abstraction for a new account on the consensus network with a given balance of network tokens. This can only be used in private testing scenarios, as it uses a private faucet to issue network tokens.
 
@@ -215,7 +197,6 @@ Returns a Promise for a Reach account abstraction for a new account on the conse
 newTestAccounts(howMany, balance) => Promise<Array<acc>> 
 ```
 
-
 Returns a Promise for an array of `{!js} howMany` test accounts, using `{!js} newTestAccount`.
 
 ---
@@ -224,7 +205,6 @@ Returns a Promise for an array of `{!js} howMany` test accounts, using `{!js} ne
 createAccount() => Promise<acc> 
 ```
 
-
 Returns a Promise for a Reach account abstraction for a new account on the consensus network. The account will have an empty balance of network tokens.
 
 ---
@@ -232,7 +212,6 @@ Returns a Promise for a Reach account abstraction for a new account on the conse
 ```js
 fundFromFaucet(account, balance) => Promise<void>
 ```
-
 
 Adds the given balance of network tokens to a Reach account abstraction.
 This can only be used in private testing scenarios,
@@ -248,7 +227,6 @@ You can use `{!js} canFundFromFaucet` to check if `{!js} fundFromFaucet` can be 
 canFundFromFaucet() => Promise<boolean>
 ```
 
-
 A Promise that resolves to `{!js} true` if `{!js} fundFromFaucet` can be used, `{!js} false` if not.
 
 ---
@@ -256,7 +234,6 @@ A Promise that resolves to `{!js} true` if `{!js} fundFromFaucet` can be used, `
 ```js
 connectAccount(networkAccount) => Promise<acc> 
 ```
-
 
 Returns a Promise for a Reach account abstraction for an existing account for the consensus network based on the connector-specific account specification provided by the `{!js} networkAccount` argument.
 
@@ -266,15 +243,13 @@ ETH        => ethers.Wallet
 ALGO       => {addr: string, sk: UInt8Array(64)}
 ```
 
-
 ---
 @{ref("js", "networkAccount")}
 ```js
 acc.networkAccount => networkAccount 
 ```
 
-
- Returns the connector-specific account specification of a Reach account abstraction.
+Returns the connector-specific account specification of a Reach account abstraction.
 
 ---
 @{ref("js", "getAddress")}
@@ -282,8 +257,7 @@ acc.networkAccount => networkAccount
 acc.getAddress() => string
 ```
 
-
- Returns the account's address as a string. The format of this string varies across connectors.
+Returns the account's address as a string. The format of this string varies across connectors.
 
 ---
 @{ref("js", "setDebugLabel")}
@@ -291,8 +265,7 @@ acc.getAddress() => string
 acc.setDebugLabel(string) => acc 
 ```
 
-
- An account may set a distinguishing label to use in debug logs. If no label is provided, then the first four digits of the account address will be used.
+An account may set a distinguishing label to use in debug logs. If no label is provided, then the first four digits of the account address will be used.
 
 ---
 @{ref("js", "tokenAccept")}
@@ -300,8 +273,7 @@ acc.setDebugLabel(string) => acc
 acc.tokenAccept(token) => Promise<void>
 ```
 
-
- Returns a Promise that completes when the Reach account abstraction is ready to accept non-network tokens specified by the `{!js} token`.
+Returns a Promise that completes when the Reach account abstraction is ready to accept non-network tokens specified by the `{!js} token`.
 This does nothing on some consensus networks, but should always be used to ensure your frontend is blockchain agnostic.
 
 ---
@@ -310,8 +282,7 @@ This does nothing on some consensus networks, but should always be used to ensur
 acc.tokenAccepted(token) => Promise<boolean>
 ```
 
-
- Returns a Promise that returns if an account may accept a given token.
+Returns a Promise that returns if an account may accept a given token.
 This does nothing on some consensus networks, but should always be used to ensure your frontend is blockchain agnostic.
 
 ---
@@ -320,15 +291,13 @@ This does nothing on some consensus networks, but should always be used to ensur
 acc.tokenMetadata(token) => Promise<object>
 ```
 
-
- Returns a Promise of the metadata for a non-network token specified by the `{!js} token`.
+Returns a Promise of the metadata for a non-network token specified by the `{!js} token`.
 
 ---
 @{ref("js", "balanceOf")}
 ```js
 balanceOf(acc, token?) => Promise<amount> 
 ```
-
 
 Returns a Promise for the balance of network tokens (or non-network tokens if `{!js} token` is provided) held by the account given by a Reach account abstraction provided by the `{!js} acc` argument.
 
@@ -337,7 +306,6 @@ Returns a Promise for the balance of network tokens (or non-network tokens if `{
 ```js
 transfer(from:acc, to:acc, amount, token?) => Promise<void> 
 ```
-
 
 Performs a transfer of `{!js} amount` from `{!js} from` to `{!js} to`,
 which are accounts, such as those returned by `{!js} connectAccount`.
@@ -357,8 +325,7 @@ When connected to an EVM-based consensus network, the standard library provides 
 acc.setGasLimit(n) => void 
 ```
 
-
- Modifies the gas limit for each transaction originating from the given account for the rest of the program.
+Modifies the gas limit for each transaction originating from the given account for the rest of the program.
 `{!js} n` must be a value that `{!js} bigNumberify` will accept.
 
 On EVM-based consensus networks, the Reach standard library will automatically estimate the required gas necessary to execute transactions, i.e. make publications.
@@ -377,8 +344,7 @@ When connected to the Conflux consensus network, the standard library provides a
 acc.setStorageLimit(n) => void 
 ```
 
-
- Modifies the storage limit for each transaction originating from the given account for the rest of the program.
+Modifies the storage limit for each transaction originating from the given account for the rest of the program.
 `{!js} n` must be a value that `{!js} bigNumberify` will accept.
 
 On the Conflux consensus networks, the Reach standard library will automatically use a storage limit of 2024 to execute transactions, i.e. make publications.
@@ -395,8 +361,7 @@ In order to interact with a deployed contract, you must construct a contract han
 acc.contract(bin, ?info) => ctc 
 ```
 
-
- Returns a Reach contract handle based on the `{!js} bin` argument provided with access to the account `{!js} acc`.
+Returns a Reach contract handle based on the `{!js} bin` argument provided with access to the account `{!js} acc`.
 This `{!js} bin` argument is the `index.main.mjs` module produced by the JavaScript backend.
 
 If `{!js} info` is provided, it must be a `{!rsh} Contract` value, or a `{!js} Promise` that eventually yields a `{!rsh} Contract` value.
@@ -416,16 +381,12 @@ This function does not block.
 acc.deploy(bin) => ctc
 ```
 
-
-
 This deprecated function is an abbreviation of `{!js} acc.contract(bin)`.
 
 @{ref("js", "attach")}
 ```js
 acc.attach(bin, info) => ctc 
 ```
-
-
 
 This deprecated function is an abbreviation of `{!js} acc.contract(bin, info)`.
 
@@ -435,7 +396,7 @@ This deprecated function is an abbreviation of `{!js} acc.contract(bin, info)`.
 ctc.getInfo() => Promise<ctcInfo> 
 ```
 
- Returns a Promise for a `{!rsh} Contract` value that may be given to `{!js} contract` to construct a Reach contract handle for this contract.
+Returns a Promise for a `{!rsh} Contract` value that may be given to `{!js} contract` to construct a Reach contract handle for this contract.
 This object may be stringified with `{!js} JSON.stringify` for printing and parsed again with `{!js} JSON.parse` without any loss of information.
 
 If `{!js} ctc` will deploy the program, then the Promise will only be resolved after the contract is actually deployed on the network,
@@ -449,7 +410,7 @@ It is safer to make an `{!rsh} interact` function that receives `{!rsh} getContr
 ctc.getContractAddress() => Promise<Address>
 ```
 
- Returns a Promise for the `{!js} Address` of the connected Reach contract.
+Returns a Promise for the `{!js} Address` of the connected Reach contract.
 
 ---
 @{ref("js", "ctc.getABI")}
@@ -486,9 +447,6 @@ ctc.a
 ctc.a.Voter.cast("Pedro")
 ```
 
-
-
-
 An object that mirrors the API hierarchy, so if `X.Y` is an API, then `{!js} ctc.apis.X.Y` is an @{defn("API function")}.
 An API function accepts the arguments of the API and returns a `{!js} Promise` that results in the value of the API.
 This function may throw an error if the API is not available.
@@ -499,15 +457,12 @@ If an API was specified without an `{!rsh} apiName`, for example `{!rsh} API({ c
 ctc.a.cast("Pedro");
 ```
 
-
 #### `ctc.safeApis`
 
 ```js
 ctc.safeApis
 ctc.safeApis.Voter.cast("Pedro")
 ```
-
-
 
 This object is the same as `{!js} ctc.apis` except the API functions return a `{!rsh} Maybe` value.
 If the call fails, then `{!js} ['None', null]` will be returned. If the call succeeds, the return value will
@@ -519,7 +474,6 @@ be wrapped with `{!js} Some`, e.g. `{!js} ['Some', 4]`.
 Views are [defined in application initialization](##ref-programs-appinit-view) and then they are [set in consensus steps](##ref-programs-consensus-view). Both of these steps are in Reach. This section is about accessing them in JavaScript frontends.
 :::
 
-
 ```js
 ctc.views // {[name: string]: {[fun:string]: (...args) => Promise<res>}}
 ctc.views // {[name: string]: (...args) => Promise<res>}
@@ -527,9 +481,6 @@ ctc.v
 
 ctc.v.NFT.owner()
 ```
-
-
-
 
 An object that mirrors the view hierarchy, so if `X.Y` is a view, then `{!js} ctc.views.X.Y` is a @{defn("view function")}.
 A view function accepts the arguments of the view and returns a `{!js} Promise` that results in the value of the view wrapped in a `{!rsh} Maybe` type (because the view may not be bound).
@@ -541,7 +492,6 @@ If a View was specified without a `{!rsh} viewName`, for example `{!rsh} View({ 
 ctc.v.owner();
 ```
 
-
 #### `ctc.events`, `ctc.e`
 
 ```js
@@ -550,9 +500,6 @@ ctc.e      // { [name: string]: EventStream }
 
 await ctc.e.log.next();
 ```
-
-
-
 
 An object that mirrors the event hierarchy, so if `X.Y` is an event, then `{!js} ctc.events.X.Y` is an @{defn("EventStream")}.
 An EventStream supports the following operations for a given `{!rsh} Event`:
@@ -568,14 +515,12 @@ EventStream<T> : {
 }
 ```
 
-
 where
 
 @{ref("js", "Event")}
 ```js
 Event<T> : { when: Time, what: T }
 ```
-
 
 An `{!js} Event` is instantiated with it's corresponding type declared in Reach.
 
@@ -600,8 +545,6 @@ called whenever the `{!rsh} Event` occurs.
 ctc.getViews() => Object 
 ```
 
-
-
 This deprecated function is an abbreviation of `{!js} ctc.views`.
 
 #### `ctc.unsafeViews`
@@ -625,7 +568,6 @@ These functions interact with the consensus network itself.
 getNetworkTime() => Promise<time>
 ```
 
-
 Returns a Promise for the current consensus network time,
 represented as a `BigNumber`.
 
@@ -634,7 +576,6 @@ represented as a `BigNumber`.
 ```js
 waitUntilTime(time, onProgress?) => Promise<time>
 ```
-
 
 Returns a Promise that will only be resolved after the specified consensus network time.
 In isolated testing modes, this will also force time to pass on the network, usually by sending trivial transactions.
@@ -651,7 +592,6 @@ It will receive an object with keys `{!js} current` and `{!js} target`,
 getNetworkSecs() => Promise<secs>
 ```
 
-
 Like `{!js} getNetworkTime`, but returns a network seconds Promise.
 
 ---
@@ -660,7 +600,6 @@ Like `{!js} getNetworkTime`, but returns a network seconds Promise.
 waitUntilSecs(secs, onProgress?) => Promise<secs>
 ```
 
-
 Like `{!js} waitUntilSecs`, but waits for a certain network seconds deadline.
 
 ---
@@ -668,7 +607,6 @@ Like `{!js} waitUntilSecs`, but waits for a certain network seconds deadline.
 ```js
 wait(timedelta, onProgress?) => Promise<networkTime>
 ```
-
 
 Returns a Promise that will only be resolved after the specified time delta has elapsed.
 The expression `{!js} await wait(delta, onProgress)` is the same as
@@ -680,7 +618,6 @@ As with `{!js} waitUntilTime`, the `{!js} onProgress` callback is optional.
 ```js
 connector : Connector 
 ```
-
 
 Represents the `{!js} Connector` the `{!js} stdlib` uses.
 
@@ -706,7 +643,6 @@ These functions allow you to choose which particular consensus network API provi
 setProviderByName(string) => void 
 ```
 
-
 Supported provider names are: `{!js} 'MainNet'`, `{!js} 'TestNet'`, and `{!js} 'LocalHost'`.
 
 On Ethereum, `{!js} 'MainNet'` will connect to homestead, and `{!js} 'TestNet'` to ropsten.
@@ -721,7 +657,6 @@ The free RandLabs API provider is used ([https://algoexplorerapi.io](https://alg
 providerEnvByName(string) => env 
 ```
 
-
 Retrieve configuration information about providers by name.
 
 ---
@@ -729,7 +664,6 @@ Retrieve configuration information about providers by name.
 ```js
 setProviderByEnv(env) => void 
 ```
-
 
 Select an API provider by supplying information about it.
 
@@ -749,7 +683,6 @@ On Algorand, `{!js} env` may include keys:
 setProvider(provider): void 
 ```
 
-
 Select an API provider by providing an object satisfying its interface.
 
 This function's API is considered unstable.
@@ -768,7 +701,6 @@ interface Provider {
 };
 ```
 
-
 The `{!js} algodClient` and `{!js} indexer` values are as specified by the [Algorand JS SDK](https://algorand.github.io/js-algorand-sdk/).
 The `{!js} signAndPostTxns` function obeys [ARC-0008](https://github.com/reach-sh/ARCs/blob/reach-wallet/ARCs/arc-0008.md).
 
@@ -777,7 +709,6 @@ The `{!js} signAndPostTxns` function obeys [ARC-0008](https://github.com/reach-s
 ```js
 setWalletFallback(make: () => wallet): void
 ```
-
 
 When you call this function, if no browser wallet is available, then `{!js} make` will be called to construct one.
 The value that `{!js} make` should return differs between connectors.
@@ -791,7 +722,6 @@ On Algorand, it must match the [ARC-0011](https://github.com/algorandfoundation/
 ```js
 walletFallback(opts: object): () => wallet
 ```
-
 
 This function returns a value that may be passed to `{!js} setWalletFallback` to synthesize a wallet for use in browsers that do not supply a compliant wallet.
 Its customization options, `{!js} opts`, depend on the connector.
@@ -810,7 +740,6 @@ stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', MyAlgoConnect }));
 ```
 
-
 If the key `WalletConnect` is provided, and bound to the export of `@reach-sh/stdlib/ALGO_WalletConnect`, then [WalletConnect](https://walletconnect.com/) is used to connect to the [Algorand Wallet](https://algorandwallet.com/) for signing.
 For example, this sets the wallet fallback to be WalletConnect and the Algorand TestNet:
 ```js
@@ -818,7 +747,6 @@ import WalletConnect from '@reach-sh/stdlib/ALGO_WalletConnect';
 stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', WalletConnect }));
 ```
-
 
 Because these are fallbacks, you need to decide for your users which wallet they'll use, or make a user interface element to let them select which wallet fallback to use.
 
@@ -831,7 +759,6 @@ These functions operate on JavaScript representations of Reach values.
 ```js
 protect(t, x) => x 
 ```
-
 
 Asserts that value `{!js} x` has Reach type `{!js} t`. An exception is thrown if this is not the case.
 
@@ -850,7 +777,6 @@ T_Object({Key: ReachType ...}) => ReachType
 T_Data({Variant: ReachType ...}) => ReachType
 ```
 
-
 Each of these represent the corresponding Reach type.
 
 ---
@@ -859,7 +785,6 @@ Each of these represent the corresponding Reach type.
 assert(p) 
 ```
 
-
 Throws an exception if not given `{!js} true`.
 
 ---
@@ -867,7 +792,6 @@ Throws an exception if not given `{!js} true`.
 ```js
 Array_set(arr, idx, val) 
 ```
-
 
 Returns a new array identical to `{!js} arr`, except that index `{!js} idx` is `{!js} val`.
 
@@ -878,7 +802,6 @@ bigNumberify(x) => UInt
 isBigNumber(x) => bool
 bigNumberToNumber(x) => number
 ```
-
 
 @{defn("bigNumberify")} converts a JavaScript number to a BigNumber,
 the JavaScript representation of Reach's `{!rsh} UInt`.
@@ -901,7 +824,6 @@ digestEq(Digest, Digest) => bool
 addressEq(Address, Address) => bool
 ```
 
-
 These are additional conversion and comparison utilities.
 
 ---
@@ -909,7 +831,6 @@ These are additional conversion and comparison utilities.
 ```js
 digest(ty:Type, x:ty) => Digest
 ```
-
 
 Hashes the value.
 
@@ -919,7 +840,6 @@ Hashes the value.
 randomUInt() => UInt
 ```
 
-
 Generates random bits as a `{!rsh} UInt`.
 The number of bits generated depends on the particular consensus network.
 
@@ -927,7 +847,6 @@ The number of bits generated depends on the particular consensus network.
 ```js
 hasRandom
 ```
-
 
 @{defn("hasRandom (Frontend)")} A value suitable for use as a participant interact interface requiring a `random` function, such as `{!rsh} hasRandom`.
 Reach does not natively support randomness and leaves random number generation to the frontend implementation.
@@ -937,7 +856,6 @@ This value is provided out of convenience; it is not mandatory to use this imple
 ```js
 hasConsoleLogger
 ```
-
 
 @{defn("hasConsoleLogger (Frontend)")} A value suitable for use as a participant interact interface requiring a `log` function, such as `{!rsh} hasConsoleLogger`.
 The `{!js} log` function provided takes an arbitrary amount of elements and prints them to stdout.
@@ -949,7 +867,6 @@ This value is provided out of convenience; it is not mandatory to use this imple
 parseFixedPoint(FixedPoint) => number
 ```
 
-
 Parses a `{!rsh} FixedPoint` number into a JavaScript number.
 
 ---
@@ -957,7 +874,6 @@ Parses a `{!rsh} FixedPoint` number into a JavaScript number.
 ```js
 numberToFixedPoint(number) => FixedPoint
 ```
-
 
 Parses a JavaScript number into a `{!rsh} FixedPoint`.
 
@@ -967,7 +883,6 @@ Parses a JavaScript number into a `{!rsh} FixedPoint`.
 parseInt(Int) => number
 ```
 
-
 Parses a signed `{!rsh} Int` into a JavaScript number.
 
 ---
@@ -975,7 +890,6 @@ Parses a signed `{!rsh} Int` into a JavaScript number.
 ```js
 numberToInt(number) => Int
 ```
-
 
 Parses a JavaScript number into an `{!rsh} Int`.
 
@@ -989,7 +903,6 @@ mul(UInt, UInt) => UInt
 div(UInt, UInt) => UInt 
 ```
 
-
 Integer arithmetic on `{!rsh} UInt`.
 
 ---
@@ -1001,7 +914,6 @@ gt(UInt, UInt) => bool
 le(UInt, UInt) => bool
 lt(UInt, UInt) => bool
 ```
-
 
 Integer comparisons on `{!rsh} UInt`.
 
@@ -1017,7 +929,6 @@ parseCurrency(standardUnitAmount, int) => atomicUnitAmount
 formatCurrency(atomicUnitAmount, int) => string  // display amount in standard unit
 formatWithDecimals(atomicUnitAmount, int, tokenDecimals: int) => string  // display amount in standard unit (decimal value) of a token
 ```
-
 
 These functions handle amounts in a network's standard unit and its atomic unit.
 A @{defn("standard unit")} is the network token unit most commonly associated with a network.
@@ -1045,7 +956,6 @@ Formats the address in the way the user would expect to see it.
 + On Ethereum, it is a hex-encoded string starting with `{!js} '0x'`.
 + On Algorand, it is a base32-encoded string, ending with the checksum.
 
-
 There is no corresponding `{!js} parseAddress` function because
 the user-friendly form is also accepted from the frontend
 in all places that Reach expects an address.
@@ -1059,7 +969,6 @@ The Reach JavaScript standard library also provides the helper module `@reach-sh
 import * as ask from '@reach-sh/stdlib/ask.mjs';
 ```
 
-
 It provides the following exports:
 
 @{ref("js", "ask")}@{ref("js", "yesno")}@{ref("js", "done")}
@@ -1068,7 +977,6 @@ ask(string, (string => result)) => Promise<result>
 yesno(string) => boolean
 done() => null
 ```
-
 
 `{!js} ask` is an asynchronous function that asks a question on the console and returns a Promise for the first result that its second argument does not error on.
 
