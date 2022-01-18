@@ -113,15 +113,17 @@ checkteal () {
 
 # tealcount
 
+cdot () {
+  export REACH_DEBUG=Y
+  c "$1"
+  dot -Tpng -O "$(dirname "$1")"/build/"$(basename "$1" .rsh).main.appApproval.cost.dot"
+}
+
 #######
 
-jb
+cdot users/duoswap-core/index.rsh
 exit 0
-
-export REACH_DEBUG=Y
-#c users/duoswap-core/index.rsh
-c users/xbacked-contracts/src/master_vault.rsh
-dot -Tpng -O users/xbacked-contracts/src/build/master_vault.main.appApproval.cost.dot
+cdot users/xbacked-contracts/src/master_vault.rsh
 exit 0
 
 jb

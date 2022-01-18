@@ -246,6 +246,7 @@ data TEAL
   | TSubstring Word8 Word8
   | TComment LT.Text
   | TLabel Label
+  | TFor_bnz Label Integer Label
 
 type TEALt = [LT.Text]
 
@@ -267,6 +268,8 @@ render = \case
       False -> f : args
   TComment t -> ["//", t]
   TLabel lab -> [lab <> ":"]
+  TFor_bnz top_lab maxi _ ->
+    ["bnz", top_lab, ("// for runs " <> texty maxi <> " times")]
 
 optimize :: [TEAL] -> [TEAL]
 optimize ts0 = tsN
@@ -381,8 +384,7 @@ checkCost disp alwaysShow ts = do
   let jumpK k t = recCost 1 >> jump_ (l2s t) k
   let jump = jumpK 1
   forM_ ts $ \case
-    TCode "bnz" [_, "//", cnt, lab'] -> do
-      jumpK (read $ LT.unpack cnt) lab'
+    TFor_bnz _ cnt lab' -> jumpK cnt lab'
     TCode "bnz" [lab'] -> jump lab'
     TCode "bz" [lab'] -> jump lab'
     TCode "b" [lab'] -> do
@@ -1109,7 +1111,7 @@ cfor maxi body = do
     store_idx
     cint maxi
     op "<"
-    code "bnz" [top_lab, "//", texty maxi, end_lab]
+    output $ TFor_bnz top_lab maxi end_lab
   label end_lab
   return ()
 
