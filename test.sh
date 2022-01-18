@@ -116,7 +116,7 @@ checkteal () {
 cdot () {
   export REACH_DEBUG=Y
   c "$1"
-  dot -Tpng -O "$(dirname "$1")"/build/"$(basename "$1" .rsh).main.appApproval.cost.dot"
+  dot -Tpng -O "$(dirname "$1")/build/$(basename "$1" .rsh).main.appApproval.cost.dot"
 }
 
 #######
