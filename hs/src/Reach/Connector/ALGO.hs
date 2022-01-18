@@ -243,6 +243,11 @@ type TealArg = LT.Text
 
 type Label = LT.Text
 
+data IndentDir
+  = INo
+  | IUp
+  | IDo
+
 data TEAL
   = TCode TealOp [TealArg]
   | TInt Integer
@@ -250,7 +255,7 @@ data TEAL
   | TBytes B.ByteString
   | TExtract Word8 Word8
   | TSubstring Word8 Word8
-  | TComment LT.Text
+  | TComment IndentDir LT.Text
   | TLabel Label
   | TFor_bnz Label Integer Label
   | TLog Integer
@@ -264,25 +269,37 @@ type TEALs = DL.DList TEAL
 builtin :: S.Set TealOp
 builtin = S.fromList ["byte", "int", "substring", "extract", "log", "store", "load"]
 
-render :: TEAL -> TEALt
-render = \case
-  TInt x -> ["int", texty x]
-  TConst x -> ["int", x]
-  TBytes bs -> ["byte", "base64(" <> encodeBase64 bs <> ")"]
-  TExtract x y -> ["extract", texty x, texty y]
-  TSubstring x y -> ["substring", texty x, texty y]
+render :: IORef Int -> TEAL -> IO TEALt
+render ilvlr = \case
+  TInt x -> r ["int", texty x]
+  TConst x -> r ["int", x]
+  TBytes bs -> r ["byte", "base64(" <> encodeBase64 bs <> ")"]
+  TExtract x y -> r ["extract", texty x, texty y]
+  TSubstring x y -> r ["substring", texty x, texty y]
   TCode f args ->
     case S.member f builtin of
       True -> impossible $ show $ "cannot use " <> f <> " directly"
-      False -> f : args
-  TComment t -> ["//", t]
-  TLabel lab -> [lab <> ":"]
+      False -> r $ f : args
+  TComment il t -> do
+    case il of
+      INo -> return ()
+      IUp -> modifyIORef ilvlr $ \x -> x + 1
+      IDo -> modifyIORef ilvlr $ \x -> x - 1
+    case t of
+      "" -> return []
+      _ -> r ["//", t]
+  TLabel lab -> r [lab <> ":"]
   TFor_bnz top_lab maxi _ ->
-    ["bnz", top_lab, ("// for runs " <> texty maxi <> " times")]
+    r ["bnz", top_lab, ("// for runs " <> texty maxi <> " times")]
   TLog sz ->
-    ["log", ("// up to " <> texty sz <> " bytes")]
-  TStore sl lab -> ["store", texty sl, ("// " <> lab)]
-  TLoad sl lab -> ["load", texty sl, ("// " <> lab)]
+    r ["log", ("// up to " <> texty sz <> " bytes")]
+  TStore sl lab -> r ["store", texty sl, ("// " <> lab)]
+  TLoad sl lab -> r ["load", texty sl, ("// " <> lab)]
+  where
+    r l = do
+      i <- readIORef ilvlr
+      let i' = replicate i " "
+      return $ i' <> l
 
 optimize :: [TEAL] -> [TEAL]
 optimize ts0 = tsN
@@ -412,7 +429,7 @@ checkCost disp alwaysShow ts = do
       -- Note: We don't check MaxLogCalls, because it is not actually checked
       recLogLen len
       recCost 1
-    TComment _ -> return ()
+    TComment {} -> return ()
     TLabel lab' -> do
       let lab'' = l2s lab'
       jump_ lab'' 1
@@ -479,7 +496,8 @@ optimizeAndRender disp showCost ts = do
   let tscl = DL.toList ts
   let tscl' = optimize tscl
   checkCost disp showCost tscl'
-  let tsl' = map render tscl'
+  ilvlr <- newIORef $ 0
+  tsl' <- mapM (render ilvlr) tscl'
   let lts = tealVersionPragma : (map LT.unwords tsl')
   let lt = LT.unlines lts
   let t = LT.toStrict lt
@@ -677,7 +695,18 @@ label :: LT.Text -> App ()
 label = output . TLabel
 
 comment :: LT.Text -> App ()
-comment = output . TComment
+comment = output . TComment INo
+
+block_ :: LT.Text -> App () -> App ()
+block_ lab m = do
+  output $ TComment IUp $ ""
+  output $ TComment INo $ "{ " <> lab
+  m
+  output $ TComment INo $ lab <> " }"
+  output $ TComment IDo $ ""
+
+block :: Label -> App () -> App ()
+block lab m = block_ lab $ label lab >> m
 
 assert :: App ()
 assert = op "assert"
@@ -1113,21 +1142,22 @@ cfor maxi body = do
   when (maxi < 2) $ impossible "cfor maxi=0"
   top_lab <- freshLabel "forTop"
   end_lab <- freshLabel "forEnd"
-  salloc_ (top_lab <> "Idx") $ \store_idx load_idx -> do
-    cint 0
-    store_idx
-    label top_lab
-    body load_idx
-    load_idx
-    cint 1
-    op "+"
-    op "dup"
-    store_idx
-    cint maxi
-    op "<"
-    output $ TFor_bnz top_lab maxi end_lab
-  label end_lab
-  return ()
+  block_ top_lab $ do
+    salloc_ (top_lab <> "Idx") $ \store_idx load_idx -> do
+      cint 0
+      store_idx
+      label top_lab
+      body load_idx
+      load_idx
+      cint 1
+      op "+"
+      op "dup"
+      store_idx
+      cint maxi
+      op "<"
+      output $ TFor_bnz top_lab maxi end_lab
+    label end_lab
+    return ()
 
 doArrayRef :: SrcLoc -> DLArg -> Bool -> Either DLArg (App ()) -> App ()
 doArrayRef at aa frombs ie = do
@@ -1445,18 +1475,18 @@ ce = \case
     let mt_mcclose = Nothing
     makeTxn $ MakeTxn {..}
   DLE_TokenInit mt_at tok -> do
-    comment $ "Initializing token"
-    let mt_always = True
-    let mt_mtok = Just tok
-    let mt_amt = DLA_Literal $ DLL_Int sb 0
-    let mt_mrecv = Nothing
-    let mt_mcclose = Nothing
-    let ct_at = mt_at
-    let ct_mtok = Nothing
-    let ct_amt = DLA_Literal $ minimumBalance_l
-    addInitTok tok
-    checkTxn $ CheckTxn {..}
-    makeTxn $ MakeTxn {..}
+    block_ "TokenInit" $ do
+      let mt_always = True
+      let mt_mtok = Just tok
+      let mt_amt = DLA_Literal $ DLL_Int sb 0
+      let mt_mrecv = Nothing
+      let mt_mcclose = Nothing
+      let ct_at = mt_at
+      let ct_mtok = Nothing
+      let ct_amt = DLA_Literal $ minimumBalance_l
+      addInitTok tok
+      checkTxn $ CheckTxn {..}
+      makeTxn $ MakeTxn {..}
   DLE_CheckPay ct_at fs ct_amt ct_mtok -> do
     checkTxn $ CheckTxn {..}
     show_stack "CheckPay" Nothing ct_at fs
@@ -1497,24 +1527,25 @@ ce = \case
         cMapStore at
   DLE_Remote {} -> xxx "remote objects"
   DLE_TokenNew at (DLTokenNew {..}) -> do
-    let ct_at = at
-    let ct_mtok = Nothing
-    let ct_amt = DLA_Literal $ minimumBalance_l
-    checkTxn $ CheckTxn {..}
-    op "itxn_begin"
-    let vTypeEnum = "acfg"
-    output $ TConst vTypeEnum
-    makeTxn1 "TypeEnum"
-    ca dtn_supply >> makeTxn1 "ConfigAssetTotal"
-    maybe (cint_ at 6) ca dtn_decimals >> makeTxn1 "ConfigAssetDecimals"
-    ca dtn_sym >> makeTxn1 "ConfigAssetUnitName"
-    ca dtn_name >> makeTxn1 "ConfigAssetName"
-    ca dtn_url >> makeTxn1 "ConfigAssetURL"
-    ca dtn_metadata >> makeTxn1 "ConfigAssetMetadataHash"
-    cContractAddr >> makeTxn1 "ConfigAssetManager"
-    incResource R_InnerTxn
-    op "itxn_submit"
-    code "itxn" ["CreatedAssetID"]
+    block_ "TokenNew" $ do
+      let ct_at = at
+      let ct_mtok = Nothing
+      let ct_amt = DLA_Literal $ minimumBalance_l
+      checkTxn $ CheckTxn {..}
+      op "itxn_begin"
+      let vTypeEnum = "acfg"
+      output $ TConst vTypeEnum
+      makeTxn1 "TypeEnum"
+      ca dtn_supply >> makeTxn1 "ConfigAssetTotal"
+      maybe (cint_ at 6) ca dtn_decimals >> makeTxn1 "ConfigAssetDecimals"
+      ca dtn_sym >> makeTxn1 "ConfigAssetUnitName"
+      ca dtn_name >> makeTxn1 "ConfigAssetName"
+      ca dtn_url >> makeTxn1 "ConfigAssetURL"
+      ca dtn_metadata >> makeTxn1 "ConfigAssetMetadataHash"
+      cContractAddr >> makeTxn1 "ConfigAssetManager"
+      incResource R_InnerTxn
+      op "itxn_submit"
+      code "itxn" ["CreatedAssetID"]
   DLE_TokenBurn {} ->
     -- Burning does nothing on Algorand, because we already own it and we're
     -- the creator, and that's the rule for being able to destroy
@@ -1609,8 +1640,8 @@ sigStrToInt = fromIntegral . btoi . sigStrToBytes
 
 clogEvent :: String -> [DLVar] -> App ()
 clogEvent eventName vs = do
-  let shaStr = signatureStr eventName (map varType vs) Nothing
-  let shaBytes = sigStrToBytes shaStr
+  let sigStr = signatureStr eventName (map varType vs) Nothing
+  let shaBytes = sigStrToBytes sigStr
   let as = map DLA_Var vs
   cconcatbs $ (T_Bytes 4, cbs shaBytes) : map (\a -> (argTypeOf a, ca a)) as
   comment $ texty shaStr
@@ -1691,78 +1722,80 @@ tokFields = ("axfer", "AssetReceiver", "AssetAmount", "AssetCloseTo")
 
 checkTxn :: CheckTxn -> App ()
 checkTxn (CheckTxn {..}) = when (not (staticZero ct_amt)) $ do
-  let check1 = checkTxn1
-  let ((vTypeEnum, fReceiver, fAmount, _fCloseTo), extra) =
-        case ct_mtok of
-          Nothing ->
-            (ntokFields, return ())
-          Just tok ->
-            (tokFields, textra)
-            where
-              textra = ca tok >> check1 "XferAsset"
-  checkTxnUsage ct_at ct_mtok
   after_lab <- freshLabel "checkTxnK"
-  ca ct_amt
-  op "dup"
-  code "bz" [after_lab]
-  incResource R_Txn
-  gvLoad GV_txnCounter
-  op "dup"
-  cint 1
-  op "+"
-  gvStore GV_txnCounter
-  -- [ amt, id ]
-  op "swap"
-  -- [ id, amt ]
-  check1 fAmount
-  extra
-  checkTxnInit vTypeEnum
-  cContractAddr
-  cfrombs T_Address
-  check1 fReceiver
-  label after_lab
-  op "pop" -- if !always & zero then pop amt ; else pop id
+  block_ after_lab $ do
+    let check1 = checkTxn1
+    let ((vTypeEnum, fReceiver, fAmount, _fCloseTo), extra) =
+          case ct_mtok of
+            Nothing ->
+              (ntokFields, return ())
+            Just tok ->
+              (tokFields, textra)
+              where
+                textra = ca tok >> check1 "XferAsset"
+    checkTxnUsage ct_at ct_mtok
+    ca ct_amt
+    op "dup"
+    code "bz" [after_lab]
+    incResource R_Txn
+    gvLoad GV_txnCounter
+    op "dup"
+    cint 1
+    op "+"
+    gvStore GV_txnCounter
+    -- [ amt, id ]
+    op "swap"
+    -- [ id, amt ]
+    check1 fAmount
+    extra
+    checkTxnInit vTypeEnum
+    cContractAddr
+    cfrombs T_Address
+    check1 fReceiver
+    label after_lab
+    op "pop" -- if !always & zero then pop amt ; else pop id
 
 makeTxn :: MakeTxn -> App ()
 makeTxn (MakeTxn {..}) = when (mt_always || not (staticZero mt_amt)) $ do
-  let ((vTypeEnum, fReceiver, fAmount, fCloseTo), extra) =
-        case mt_mtok of
-          Nothing ->
-            (ntokFields, return ())
-          Just tok ->
-            (tokFields, textra)
-            where
-              textra = do
-                incResourceL tok R_Asset
-                ca tok
-                makeTxn1 "XferAsset"
-  makeTxnUsage mt_at mt_mtok
   after_lab <- freshLabel "makeTxnK"
-  ca mt_amt
-  unless mt_always $ do
-    op "dup"
-    code "bz" [after_lab]
-  op "itxn_begin"
-  makeTxn1 fAmount
-  output $ TConst vTypeEnum
-  makeTxn1 "TypeEnum"
-  whenJust mt_mcclose $ \cclose -> do
-    cclose
+  block_ after_lab $ do
+    let ((vTypeEnum, fReceiver, fAmount, fCloseTo), extra) =
+          case mt_mtok of
+            Nothing ->
+              (ntokFields, return ())
+            Just tok ->
+              (tokFields, textra)
+              where
+                textra = do
+                  incResourceL tok R_Asset
+                  ca tok
+                  makeTxn1 "XferAsset"
+    makeTxnUsage mt_at mt_mtok
+    ca mt_amt
+    unless mt_always $ do
+      op "dup"
+      code "bz" [after_lab]
+    op "itxn_begin"
+    makeTxn1 fAmount
+    output $ TConst vTypeEnum
+    makeTxn1 "TypeEnum"
+    whenJust mt_mcclose $ \cclose -> do
+      cclose
+      cfrombs T_Address
+      makeTxn1 fCloseTo
+    case mt_mrecv of
+      Nothing -> cContractAddr
+      Just a -> do
+        incResourceL a R_Account
+        ca a
     cfrombs T_Address
-    makeTxn1 fCloseTo
-  case mt_mrecv of
-    Nothing -> cContractAddr
-    Just a -> do
-      incResourceL a R_Account
-      ca a
-  cfrombs T_Address
-  makeTxn1 fReceiver
-  extra
-  op "itxn_submit"
-  incResource R_InnerTxn
-  cint 0
-  label after_lab
-  op "pop" -- if !always & zero then pop amt ; else pop 0
+    makeTxn1 fReceiver
+    extra
+    op "itxn_submit"
+    incResource R_InnerTxn
+    cint 0
+    label after_lab
+    op "pop" -- if !always & zero then pop amt ; else pop 0
 
 cextractDataOf :: App () -> DLArg -> App ()
 cextractDataOf cd va = do
@@ -1782,12 +1815,12 @@ doSwitch lab ck _at dv csm = do
     cstore
     let cm1 _vi (vn, (vv, vu, k)) = do
           l <- freshLabel $ lab <> "_" <> vn
-          label l
-          case vu of
-            False -> ck k
-            True -> do
-              flip (sallocLet vv) (ck k) $ do
-                cextractDataOf cload (DLA_Var vv)
+          block l $
+            case vu of
+              False -> ck k
+              True -> do
+                flip (sallocLet vv) (ck k) $ do
+                  cextractDataOf cload (DLA_Var vv)
     cload
     cint 0
     op "getbyte"
@@ -2048,13 +2081,13 @@ bindFromTuple at vs m = do
 cloop :: Int -> CHandler -> App ()
 cloop _ (C_Handler {}) = return ()
 cloop which (C_Loop at svs vars body) = recordWhich which $ do
-  label $ loopLabel which
-  -- [ svs, vars ]
-  let bindVars =
-        id
-          . (bindFromTuple at vars)
-          . (bindFromTuple at svs)
-  bindVars $ ct body
+  block (loopLabel which) $ do
+    -- [ svs, vars ]
+    let bindVars =
+          id
+            . (bindFromTuple at vars)
+            . (bindFromTuple at svs)
+    bindVars $ ct body
 
 -- NOTE This could be compiled to a jump table if that were possible with TEAL
 cblt :: String -> (Int -> a -> App ()) -> BLT Int a -> App ()
@@ -2101,60 +2134,60 @@ ch which (C_Handler at int from prev svs msg timev secsv body) = recordWhich whi
   let bindFromSvs m = do
         cSvsLoad $ typeSizeOf $ T_Tuple $ map varType svs
         bindFromTuple at svs m
-  label (handlerLabel which)
-  comment "check step"
-  cint $ fromIntegral prev
-  gvLoad GV_currentStep
-  asserteq
-  comment "check time"
-  gvLoad GV_argTime
-  op "dup"
-  cint 0
-  op "=="
-  op "swap"
-  gvLoad GV_currentTime
-  op "=="
-  op "||"
-  assert
-  let bindVars =
-        id
-          . (store_let from True (code "txn" ["Sender"]))
-          . (bindTime timev)
-          . (bindSecs secsv)
-          . bindFromSvs
-          . (bindFromMsg msg)
-  bindVars $ do
-    clogEvent ("_reach_e" <> show which) msg
-    when isCtor $ do
-      ce $ DLE_CheckPay at [] (DLA_Literal $ minimumBalance_l) Nothing
-    let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
-        checkTime1 cmp clhs rhsa = do
-          clhs
-          ca rhsa
-          op cmp
-          assert
-    let checkFrom_ = checkTime1 ">="
-    let checkTo_ = checkTime1 "<"
-    let makeCheck check_ = \case
-          Left x -> check_ (cv timev) x
-          Right x -> check_ (cv secsv) x
-    let checkFrom = makeCheck checkFrom_
-    let checkTo = makeCheck checkTo_
-    let checkBoth v xx yy = do
-          cv v
-          checkFrom_ (op "dup") xx
-          checkTo_ (return ()) yy
-    let CBetween ifrom ito = int
-    case (ifrom, ito) of
-      (Nothing, Nothing) -> return ()
-      (Just x, Nothing) -> checkFrom x
-      (Nothing, Just y) -> checkTo y
-      (Just x, Just y) ->
-        case (x, y) of
-          (Left xx, Left yy) -> checkBoth timev xx yy
-          (Right xx, Right yy) -> checkBoth secsv xx yy
-          (_, _) -> checkFrom x >> checkFrom y
-    ct body
+  block (handlerLabel which) $ do
+    comment "check step"
+    cint $ fromIntegral prev
+    gvLoad GV_currentStep
+    asserteq
+    comment "check time"
+    gvLoad GV_argTime
+    op "dup"
+    cint 0
+    op "=="
+    op "swap"
+    gvLoad GV_currentTime
+    op "=="
+    op "||"
+    assert
+    let bindVars =
+          id
+            . (store_let from True (code "txn" ["Sender"]))
+            . (bindTime timev)
+            . (bindSecs secsv)
+            . bindFromSvs
+            . (bindFromMsg msg)
+    bindVars $ do
+      clogEvent ("_reach_e" <> show which) msg
+      when isCtor $ do
+        ce $ DLE_CheckPay at [] (DLA_Literal $ minimumBalance_l) Nothing
+      let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
+          checkTime1 cmp clhs rhsa = do
+            clhs
+            ca rhsa
+            op cmp
+            assert
+      let checkFrom_ = checkTime1 ">="
+      let checkTo_ = checkTime1 "<"
+      let makeCheck check_ = \case
+            Left x -> check_ (cv timev) x
+            Right x -> check_ (cv secsv) x
+      let checkFrom = makeCheck checkFrom_
+      let checkTo = makeCheck checkTo_
+      let checkBoth v xx yy = do
+            cv v
+            checkFrom_ (op "dup") xx
+            checkTo_ (return ()) yy
+      let CBetween ifrom ito = int
+      case (ifrom, ito) of
+        (Nothing, Nothing) -> return ()
+        (Just x, Nothing) -> checkFrom x
+        (Nothing, Just y) -> checkTo y
+        (Just x, Just y) ->
+          case (x, y) of
+            (Left xx, Left yy) -> checkBoth timev xx yy
+            (Right xx, Right yy) -> checkBoth secsv xx yy
+            (_, _) -> checkFrom x >> checkFrom y
+      ct body
 
 getMapTy :: DLMVar -> App DLType
 getMapTy mpv = do
@@ -2230,16 +2263,16 @@ doWrapData tys mk = do
 
 capi :: Int -> CApi -> App ()
 capi sigi (CApi who sig which tys doWrap) = do
-  comment $ texty $ "API: " <> sig
-  comment $ texty $ who
-  comment $ texty $ " bs: " <> (show $ sigStrToBytes sig)
-  comment $ texty $ " ui: " <> show sigi
-  let f :: DLType -> Integer -> (DLType, App ())
-      f t i = (t, code "txna" ["ApplicationArgs", texty i])
-  cconcatbs_ (const $ return ()) $ zipWith f tys [1 ..]
-  doWrap
-  gvStore GV_argMsg
-  code "b" [handlerLabel which]
+  block_ (LT.pack $ "API: " <> sig) $ do
+    comment $ LT.pack $ bunpack $ who
+    comment $ LT.pack $ " bs: " <> (show $ sigStrToBytes sig)
+    comment $ LT.pack $ " ui: " <> show sigi
+    let f :: DLType -> Integer -> (DLType, App ())
+        f t i = (t, code "txna" ["ApplicationArgs", texty i])
+    cconcatbs_ (const $ return ()) $ zipWith f tys [1 ..]
+    doWrap
+    gvStore GV_argMsg
+    code "b" [handlerLabel which]
 
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
