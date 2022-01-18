@@ -247,13 +247,14 @@ data TEAL
   | TComment LT.Text
   | TLabel Label
   | TFor_bnz Label Integer Label
+  | TLog Integer
 
 type TEALt = [LT.Text]
 
 type TEALs = DL.DList TEAL
 
 builtin :: S.Set TealOp
-builtin = S.fromList ["byte", "int", "substring", "extract"]
+builtin = S.fromList ["byte", "int", "substring", "extract", "log"]
 
 render :: TEAL -> TEALt
 render = \case
@@ -270,6 +271,8 @@ render = \case
   TLabel lab -> [lab <> ":"]
   TFor_bnz top_lab maxi _ ->
     ["bnz", top_lab, ("// for runs " <> texty maxi <> " times")]
+  TLog sz ->
+    ["log", ("// up to " <> texty sz <> " bytes")]
 
 optimize :: [TEAL] -> [TEAL]
 optimize ts0 = tsN
@@ -395,9 +398,9 @@ checkCost disp alwaysShow ts = do
       switch ""
     TCode "callsub" [_lab'] ->
       impossible "callsub"
-    TCode "log" ["//", len'] -> do
+    TLog len -> do
       -- Note: We don't check MaxLogCalls, because it is not actually checked
-      recLogLen (read $ LT.unpack len')
+      recLogLen len
       recCost 1
     TComment _ -> return ()
     TLabel lab' -> do
@@ -1598,7 +1601,7 @@ clogEvent eventName vs = do
   clog_ $ 4 + (typeSizeOf $ largeArgTypeOf $ DLLA_Tuple as)
 
 clog_ :: Integer -> App ()
-clog_ sz = code "log" ["//", texty sz]
+clog_ = output . TLog
 
 clog :: [DLArg] -> App ()
 clog as = do
