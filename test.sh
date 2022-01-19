@@ -27,11 +27,11 @@ err () {
 }
 
 jb () {
-  (cd "$ROOT"/js/js-deps && make build)
+  #(cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
-  (cd "$ROOT"/js/react-runner && make build)
+  #(cd "$ROOT"/js/react-runner && make build)
   # (cd "$ROOT"/js && make build)
 }
 
@@ -120,6 +120,10 @@ cdot () {
 }
 
 #######
+
+#jb
+./scripts/algo-txns/index.sh
+exit 0
 
 cdot examples/overview/index.rsh
 cdot examples/rps-8-interact/index.rsh
