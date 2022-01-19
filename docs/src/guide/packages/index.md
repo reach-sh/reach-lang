@@ -1,6 +1,3 @@
-
-
-
 # {#guide-packages} Sharing and discovering shared Reach packages
 
 Reach makes library packaging very easy: simply push your code to

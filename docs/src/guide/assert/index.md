@@ -1,6 +1,3 @@
-
-
-
 # {#guide-assert} How and what to verify
 
 Reach's verification engine ensures that invariants about the state of a program assumed by programmers are held by all possible executions of the program.

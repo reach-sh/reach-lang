@@ -1,6 +1,3 @@
-
-
-
 # {#guide-nntoks} How do network and non-network tokens differ?
 
 Reach assumes that network tokens and non-network tokens behave identically on consensus networks, but this is not the case in practice.
@@ -56,7 +53,6 @@ In particular, it tries to prove two theorems:
 + **Honesty**: Honest participants will not submit transactions that will be rejected.
 + **Progress**: If honest participants submit transactions, the program will finish.
 
-
 If a program contains an operation such as "Transfer 10 tokens to John", then there are certain pre-conditions that must be true for this operation to succeed, such as "The contract holds at least 10 tokens".
 Reach will guarantee that every pre-condition in the program is entailed by the earlier parts of the program.
 When pre-conditions depend on user input, it will ensure that honest participants check that input before submitting the transaction.
@@ -86,4 +82,3 @@ This means that you need to audit its code, or configuration, and decide if you 
 Second, if your token requires pre-authorization of receipt, and if this pre-authorization can be revoked, you need to remove atomic simultaneous transfers of non-network tokens from your program and replace them with phases where each party can receive their tokens individually, so that one party cannot maliciously opt-out to prevent the other party from receiving their funds.
 
 Finally, you can advocate, perhaps with your money and support, that consensus networks pursue giving non-network tokens feature parity with network tokens so that there will be a consensus network that can faithfully implement the token semantics users expect.
-
