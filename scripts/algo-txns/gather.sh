@@ -1,4 +1,5 @@
 #!/bin/bash
+WHICH="$1"
 
 month () {
   Y="$1"
@@ -9,7 +10,7 @@ month () {
     ((Yp = Y + 1))
     Mp=1
   fi
-  ./index.sh "${Y}-${M}-01" "${Yp}-${Mp}-01" >> data.csv
+  ./index.sh "${WHICH}" "${Y}-${M}-01" "${Yp}-${Mp}-01" >> "data-${WHICH}.csv"
 }
 
 year () {

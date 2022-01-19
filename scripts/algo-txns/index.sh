@@ -2,9 +2,11 @@
 HERE="$(dirname "$0")"
 cd "$HERE"
 
-FROM="$1"
-TO="$2"
+WHICH="$1"
+FROM="$2"
+TO="$3"
 
+HOST="reach-algo-${WHICH}"
 REACH_ONLY="txn->'txn'->>'note' LIKE 'UmVhY2gg%'"
 IS_CREATION="txn->'txn' ? 'apap'"
 
@@ -31,5 +33,5 @@ RSH_CTOR=\$(${PSQL[@]} -c "\${HEAD} AND ${IS_CREATION} AND ${REACH_ONLY} \${TAIL
 echo "${FROM},\${FROM_ROUND},${TO},\${TO_ROUND},\${RSH_TXNS},\${ALL_TXNS},\${RSH_CTOR},\${ALL_CTOR}"
 END
 chmod +x go.sh
-scp -q go.sh reach-algo-test:
-ssh reach-algo-test ./go.sh
+scp -q go.sh "${HOST}:"
+ssh "${HOST}" ./go.sh

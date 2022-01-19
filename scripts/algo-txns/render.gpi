@@ -1,5 +1,5 @@
 set datafile separator ","
-set title "Algorand TestNet"
+set title "Algorand ".algoNet
 set ylabel "%"
 set yrange [0:35]
 set xlabel "Month"
