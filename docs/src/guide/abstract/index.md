@@ -1,6 +1,3 @@
-
-
-
 # {#guide-abstract} Building decentralized abstractions
 
 Many decentralized applications have the same structure, similar to how there are many games that can be categorized as [combinatorial games](https://en.wikipedia.org/wiki/Combinatorial_game_theory) or [simultaneous games](https://en.wikipedia.org/wiki/Simultaneous_game).
@@ -14,4 +11,3 @@ Often, this means the abstraction must set up a protocol to communicate with its
 :::note
 See [the abstraction workshop](##workshop-abstract-simul) for a walkthrough of building such an abstraction.
 :::
-

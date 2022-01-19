@@ -1,6 +1,3 @@
-
-
-
 # {#guide-determ} Determinism, simultaneity, and choice in decentralized applications
 
 The structure of a Reach computation is deterministic, because at each point in a computation, all participants agree on which publication is the next one in the computation.
@@ -32,4 +29,3 @@ This is an example of the Pareto improvements that are possible in decentralized
 :::note
 See [rental workshop](##workshop-rental) for a discussion of this example in further detail.
 :::
-

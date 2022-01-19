@@ -1,6 +1,3 @@
-
-
-
 # {#guide-race} Racing non-determinism in decentralized applications
 
 As discussed [earlier in the guide](##guide-determ), Reach computations have a deterministic structure, but non-deterministic values.
@@ -28,8 +25,6 @@ race(Alice, Bob).publish(aliceGoesFirst);
 // They play the game, taking turns
 ```
 
-
-
 where a `{!rsh} race` determines the first player.
 
 This use-case demonstrates a major problem with `{!rsh} race`s though.
@@ -55,7 +50,6 @@ race(Alice, Bob).publish(aliceGoesFirst);
 // They play the game, taking turns
 ```
 
-
 However, even this strategy is dangerous, because it just creates an arms race between Alice and Bob to acquire more computational and network resources to guarantee that they are the first one, because whoever is first is the actual winner of the game, whatever happens next.
 A classic example of a situation like this was the [Fomo3D winner](https://medium.com/coinmonks/how-the-winner-got-fomo3d-prize-a-detailed-explanation-b30a69b7813f), who used their capital to acquire millions in ETH in 2018.
 
@@ -68,4 +62,3 @@ It is only safe and acceptable if who the winner is has no bearing on the ultima
 We can express this condition formally by saying that if `{!rsh} A` and `{!rsh} B` compete to provide value `{!rsh} a` and `{!rsh} b` respectively, then the computation should provide an opportunity for the first loser to provide their value later, such that it doesn't matter what order they are provided.
 Mathematically, we could say that the program should not be a one-parameter function `f`, where the computation is either `f(a)` or `f(b)`.
 Instead, it should be a two-parameter function `g`, such that `g(a, b) = g(b, a)` (i.e. a [commutative](https://en.wikipedia.org/wiki/Commutative_property) function).
-
