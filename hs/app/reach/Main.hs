@@ -826,6 +826,10 @@ switchQuiet =
     long "quiet"
       <> help "Withhold progress messages"
 
+switchNonInteractiveAUs :: Parser Bool
+switchNonInteractiveAUs = switch $ long "non-interactive" <> help
+  "Report available updates and immediately exit"
+
 recursiveDisableReporting :: Bool -> Text
 recursiveDisableReporting d = if d then " --disable-reporting" else ""
 
@@ -1862,27 +1866,32 @@ remoteDockerAssocFor imgs = do
 versionCompare :: Subcommand
 versionCompare = command "version-compare" $ info f mempty
   where
-    t = mappend "docker image ls -a --digests --format '{{json .}}' "
+    t = mappend ("docker image ls --digests --format "
+      <> "'{ \"Digest\": \"{{.Digest}}\", \"Repository\": \"{{.Repository}}\", \"Tag\": \"{{.Tag}}\" }' ")
     q =
       T.intercalate " && " $
         (t <$> ("reachsh/" <>) <$> rights imagesAll)
           <> (t <$> (T.toLower . packs) <$> [minBound .. maxBound :: ImageThirdParty])
 
-    f = pure . scriptWithConnectorModeOptional $ do
+    f = g <$> switchNonInteractiveAUs
+
+    g i' = scriptWithConnectorModeOptional $ do
       Var {..} <- asks e_var
-      write
-        [N.text|
-      Q=$$($q) # Capture errors and exit early
-      Q=$$(printf '[ %s ]' "$$Q" | tr '\n' ', ')
-      $reachEx version-compare2 --assocL="$$Q"
-    |]
+      let i = if i' then " --non-interactive" else ""
+      write [N.text|
+        Q=$$($q) # Capture errors and exit early
+        Q=$$(printf '[ %s ]' "$$Q" | tr '\n' ', ')
+        $reachEx version-compare2$i --assocL="$$Q"
+      |]
 
 -- TODO `reach-cli` only cares about `latest`
 versionCompare2 :: Subcommand
 versionCompare2 = command "version-compare2" $ info f mempty
   where
-    f = g <$> strOption (long "assocL" <> internal)
-    g l = do
+    f = g
+      <$> switchNonInteractiveAUs
+      <*> strOption (long "assocL" <> internal)
+    g ni l = do
       Env {e_var = Var {..}, ..} <- ask
       assocL <- case A.eitherDecode' l of
         Left e -> liftIO $ do
@@ -2005,37 +2014,38 @@ versionCompare2 = command "version-compare2" $ info f mempty
       let newTags = [(x, y, z) | DAQNewTags x y z <- both]
       let newCAs = [(x, y, z) | DAQNewConnectorAvailable x y z <- both]
 
-      liftIO $ do
-        if length uImgs > 0
-          then do
-            forM_ uImgs $ \a -> T.putStrLn $ "Unknown image: " <> lefty a <> "."
-            T.putStrLn $ "Please open an issue at " <> uriIssues <> " including the failures listed above."
-            exitWith $ ExitFailure 1
-          else
-            if length uTags > 0
-              then do
-                forM_ uTags $ \(x, y) -> T.putStrLn $ "Unknown tag: " <> y <> " for image: " <> lefty x <> "."
-                exitWith $ ExitFailure 1
-              else
-                if length (synced <> newCAs) >= length both
-                  then do
-                    putStrLn "Reach is up-to-date."
-                    exitWith $ ExitFailure 0
-                  else do
-                    let s = T.take 8 . T.drop 7
-                    let m =
-                          maybe 0 id . maximumMay $
-                            (\(x, _, _) -> T.length $ lefty x)
-                              <$> newDAs <> newTags <> newCAs <> synced
+      if length uImgs > 0
+        then liftIO $ do
+          forM_ uImgs $ \a -> T.putStrLn $ "Unknown image: " <> lefty a <> "."
+          T.putStrLn $ "Please open an issue at " <> uriIssues <> " including the failures listed above."
+          exitWith $ ExitFailure 1
+        else
+          if length uTags > 0
+            then liftIO $ do
+              forM_ uTags $ \(x, y) -> T.putStrLn $ "Unknown tag: " <> y <> " for image: " <> lefty x <> "."
+              exitWith $ ExitFailure 1
+            else
+              if length (synced <> newCAs) >= length both
+                then liftIO $ do
+                  -- TODO list available connectors
+                  putStrLn "Reach is up-to-date."
+                  exitWith ExitSuccess
+                else do
+                  let s = T.take 8 . T.drop 7
+                  let m =
+                        maybe 0 id . maximumMay $
+                          (\(x, _, _) -> T.length $ lefty x)
+                            <$> newDAs <> newTags <> newCAs <> synced
 
-                    let p x = lefty x <> T.replicate (m - T.length (lefty x)) " "
-                    let n a = when (any ((> 0) . length) a) $ putStrLn ""
+                  let p x = lefty x <> T.replicate (m - T.length (lefty x)) " "
+                  let n a = when (any ((> 0) . length) a) $ putStrLn ""
 
-                    let say = mapM_ $ \(x, y, z) ->
-                          T.putStrLn $
-                            " * " <> p x <> "  " <> s y <> ":  "
-                              <> T.intercalate ", " (tagFor <$> L.sort z)
+                  let say = mapM_ $ \(x, y, z) ->
+                        T.putStrLn $
+                          " * " <> p x <> "  " <> s y <> ":  "
+                            <> T.intercalate ", " (tagFor <$> L.sort z)
 
+                  liftIO $ do
                     when (length newDAs > 0) $ do
                       putStrLn "New images are available for:"
                       say newDAs
@@ -2055,7 +2065,27 @@ versionCompare2 = command "version-compare2" $ info f mempty
                       putStrLn "The following images are fully synchronized:"
                       say synced
 
-                    exitWith $ ExitFailure 60
+                  if ni
+                    then liftIO . exitWith $ ExitFailure 60
+                    else do
+                      liftIO $ putStr "\nWould you like to perform an update? (Enter 'y' for yes): "
+                        >> hFlush stdout >> getLine >>= \case
+                          z | L.upper z == "Y" -> pure ()
+                          _ -> exitWith ExitSuccess
+
+                      scriptWithConnectorModeOptional $ do
+                        forM_ newDAs $ \(x', y, zs) -> do
+                          let x = lefty x'
+                          write [N.text| docker pull $x@$y |]
+                          forM_ zs $ \z' -> do
+                            let z = tagFor z'
+                            write [N.text| docker tag $x@$y $x:$z |]
+
+                        forM_ newTags $ \(x', y, zs) -> do
+                          let x = lefty x'
+                          forM_ zs $ \z' -> do
+                            let z = tagFor z'
+                            write [N.text| docker tag $x@$y $x:$z |]
 
 whoami' :: Text
 whoami' = "docker info --format '{{.ID}}' 2>/dev/null"
