@@ -9,7 +9,7 @@ HASHVER="$2"
 
 # shellcheck source=/dev/null
 . ../../VERSION
-if [ "$VERSION" != "$(tail -n1 versions.txt)" ]; then
+if [ "$(printf "$VERSION\n$RC_VERSION")" != "$(tail -n2 versions.txt)" ]; then
   echo 'Error: versions.txt is out of date'
   exit 1
 fi
