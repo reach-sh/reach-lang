@@ -312,11 +312,11 @@ const renderAction = (actObj,nodeId,actorId,who) => {
         </button> `
     case 'A_TieBreak':
       return `
-        ${common}${act.tag.slice(2)}</div>
+        ${common}${act.tag.slice(2)} Phase Id: ${act.contents[0]}, Actors: ${act.contents[1].join(',')} </div>
         </button> `
     case 'A_InteractV':
       return `
-        ${common}${act.tag.slice(2)}</div>
+        ${common}${act.tag.slice(2)} ${act.contents[0]},${act.contents[1]}</div>
         </button> `
     case 'A_Remote':
       return `
@@ -324,15 +324,15 @@ const renderAction = (actObj,nodeId,actorId,who) => {
         </button> `
     case 'A_Contest':
       return `
-        ${common}${act.tag.slice(2)}</div>
+        ${common}${act.tag.slice(2)} Phase Id: ${act.contents}</div>
         </button> `
     case 'A_AdvanceTime':
       return `
-        ${common}${act.tag.slice(2)}</div>
+        ${common}${act.tag.slice(2)} Time: ${act.contents}</div>
         </button> `
     case 'A_AdvanceSeconds':
       return `
-        ${common}${act.tag.slice(2)}</div>
+        ${common}${act.tag.slice(2)} Seconds: ${act.contents}</div>
         </button> `
     case 'A_None':
       return `
