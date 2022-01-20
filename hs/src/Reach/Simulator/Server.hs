@@ -6,6 +6,9 @@
 module Reach.Simulator.Server where
 
 import Reach.AST.Base
+import Reach.AST.LL
+import Reach.Util
+import qualified Reach.Simulator.Core as C
 import Control.Concurrent.STM
 import Control.Monad.Reader
 import Data.Aeson (FromJSON, ToJSON)
@@ -14,9 +17,6 @@ import qualified Data.Map.Strict as M
 import Data.Text.Lazy (Text)
 import GHC.Generics
 import Network.Wai.Middleware.RequestLogger
-import Reach.AST.LL
-import qualified Reach.Simulator.Core as C
-import Reach.Util
 import Web.Scotty.Trans
 
 instance Default Session where

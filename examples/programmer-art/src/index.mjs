@@ -119,16 +119,17 @@ const objectDetails = async () => {
         status = 'Done'
         break;
     }
+    const who = detsj.l_who ? detsj.l_who : 'Consensus'
     dets = dets + `
       <button type="button"
       class="list-group-item list-group-item-action
       object-button status-panel"
       data-actor-id="${actorId}"
-      data-node-id="${nodeId}">
+      data-node-id="${nodeId}"
+      data-who="${who}">
       <div class="badge bg-secondary">Status</div>
       <div> ${status} </div>
       </button> `
-    const who = detsj.l_who ? detsj.l_who : 'Consensus'
     for (const [k,v] of Object.entries(ledger[actorId])) {
       dets = dets + `
         <button type="button"
@@ -184,8 +185,81 @@ const detailActions = async (evt) => {
   const tgt = evt.target.closest(".status-panel")
   const nodeId = tgt.dataset.nodeId
   const actorId = parseInt(tgt.dataset.actorId)
+  const who = tgt.dataset.who
   const act = await c.getActions(nodeId,actorId)
   console.log(act)
+  let acts = ``
+  acts = acts + renderAction(act)
+  spa.innerHTML = `
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects</a></li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-details">Details (${who})</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Actions</li>
+    </ol>
+  </nav>
+  <ul class="list-group list-group-flush">
+    ${acts}
+  </ul>
+  `
+}
+
+// TODO: refactor/template
+const renderAction = (act) => {
+  switch (act.tag) {
+    case 'A_Interact':
+      return `
+        <button type="button"
+        class="list-group-item list-group-item-action action-button">
+        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        <div> ${act.contents[2]} : ${act.contents[4][0].tag.slice(2)} &#8594; ${act.contents[3].tag.slice(2)} </div>
+        </button> `
+    case 'A_TieBreak':
+      return `
+        <button type="button"
+        class="list-group-item list-group-item-action action-button">
+        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        </button> `
+    case 'A_InteractV':
+      return `
+        <button type="button"
+        class="list-group-item list-group-item-action action-button">
+        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        </button> `
+    case 'A_Remote':
+      return `
+        <button type="button"
+        class="list-group-item list-group-item-action action-button">
+        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        </button> `
+    case 'A_Contest':
+      return `
+        <button type="button"
+        class="list-group-item list-group-item-action action-button">
+        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        </button> `
+    case 'A_AdvanceTime':
+      return `
+        <button type="button"
+        class="list-group-item list-group-item-action action-button">
+        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        </button> `
+    case 'A_AdvanceSeconds':
+      return `
+        <button type="button"
+        class="list-group-item list-group-item-action action-button">
+        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        </button> `
+    case 'A_None':
+      return `
+        <button type="button"
+        class="list-group-item list-group-item-action action-button">
+        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        </button> `
+    default:
+      console.log("Unexpected Action Encountered")
+  }
+
 }
 
 const redraw = async () => {
