@@ -17,7 +17,6 @@ connect to the [RPC server](##ref-backends-rpc):
 import { mkRPC } from '@reach-sh/rpc-client';
 ```
 
-
 The library provides the following bindings:
 
 ---
@@ -25,7 +24,6 @@ The library provides the following bindings:
 ```js
 const { rpc, rpcCallbacks } = await mkRPC(opts);
 ```
-
 
 `{!js} mkRPC` accepts the @{seclink("ref-backends-rpc-opts")} as an object and returns a Promise of an object with two fields, `{!js} rpc` and `{!js} rpcCallbacks`.
 
@@ -39,7 +37,6 @@ For example,
 ```js
 await rpc(`/stdlib/formatCurrency`, i, 4);
 ```
-
 
 calls `{!js} formatCurrency` with some value `{!js} i` and `{!js} 4`.
 
@@ -65,4 +62,3 @@ await rpcCallbacks(`/backend/Alice`, ctc, ms)
 
 
 calls a backend named `Alice` with the contract `{!js} ctc` and a value named `price` and a method named `showX` that prints out a result from the Reach backend.
-

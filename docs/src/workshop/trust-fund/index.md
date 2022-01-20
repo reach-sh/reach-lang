@@ -15,13 +15,11 @@ The overall purpose of this application is so that:
 + The Funder will know the identity of the Receiver at the beginning.
 + Whomever ultimately receives the funds transfers it to themselves.
 
-
 With this in mind, let's answer the questions:
 + What are the participants of the application?
 + What information do they know at the start of the program?
 + What information are they going to discover and use in the program?
 + What funds change ownership during the application and how?
-
 
 **Write down the problem analysis of this program as a comment.**
 
@@ -31,7 +29,6 @@ Let's see how your answers compare to our answers:
 + The Funder knows the identity of the Receiver, the amount, as well as the maturity of the fund, and the delays before which it will be declared dormant or forsook.
 + The Receiver and the Bystander don't learn or provide anything, aside from the existence of the fund and its maturity.
 + The funds start with the Funder and then move to either the Receiver, the Funder, or the Bystander, depending on when they are claimed.
-
 
 ## {#workshop-trust-fund-dd} Data Definition
 
@@ -56,7 +53,6 @@ load: /examples/workshop-trust-fund/index.rsh
 range: 1-21
 ```
 
-
 We've represented most values as `{!rsh} UInt` fields, and created a "common" interface that has a series of signals for the different phases of the application: one for when the account is `{!rsh} funded`, one for when the particular participant is `{!rsh} ready` to extract the funds, and finally one for when they have successfuly `{!rsh} recvd` (received) them.
 
 ## {#workshop-trust-fund-cc} Communication Construction
@@ -75,7 +71,6 @@ Here's what we wrote:
 // 5. The Funder may extract the funds with a deadline of `dormant`.
 // 6. The Bystander may extract the funds with no deadline.
 ```
-
 
 The next step is to convert this pattern into actual program code using `{!rsh} publish`, `{!rsh} pay`, and `{!rsh} commit`.
 However, this program gives us the opportunity to look at a few more features of Reach.
@@ -129,11 +124,9 @@ commit();
 exit();
 ```
 
-
 :::note
 If you'd like to see how you might contain the repetition into a function, keep reading!
 :::
-
 
 ## {#workshop-trust-fund-ai} Assertion Insertion
 
@@ -154,11 +147,9 @@ Let's look at our whole program now:
 load: /examples/workshop-trust-fund/index.rsh
 ```
 
-
 + Lines 33 and 34 use `{!rsh} each` to run the same code block `{!rsh} only` in each of the given participants.
 + Lines 51 through 59 abstract the duplicate copied repeated structure of the program into three calls to the same function.
 + Lines 37 through 49 define this function as one that abstracts over who is permitted to extract the funds and whether there is a deadline.
-
 
 This program demonstrates some of the remarkable features of Reach: we were able to abstract away a pattern of communication into a function and use it repeatedly and in different ways.
 Behind the scenes, when Reach compiles this program into a contract, it will derive a four step protocol with implicit state to check that the appropriate participant takes their action only when allowed.
@@ -182,7 +173,6 @@ Here's the JavaScript frontend we wrote:
 ```
 load: /examples/workshop-trust-fund/index.mjs
 ```
-
 
 The most interesting part of this program is on lines 20 through 23 when we optionally cause a delay in the participant after they receive the signal that the account is funded.
 
@@ -226,7 +216,6 @@ Funder has a balance of 89.99921581
 Receiver has a balance of 100.0
 Bystander has a balance of 109.999956956
 ```
-
 
 ## {#workshop-trust-fund-dns} Discussion and Next Steps
 

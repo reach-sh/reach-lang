@@ -17,7 +17,6 @@ In this case, let's ask the questions:
 + What information are they going to discover and use in the program?
 + What funds change ownership during the application and how?
 
-
 You should write your answers in your Reach program (`index.rsh`) using a comment.
 `{!rsh} /* Remember comments are written like this. */`
 
@@ -32,7 +31,6 @@ You might like to use other names, like 'Sender' and 'Receiver'.
 + Bob starts off like Jon Snow and knows nothing.
 + Alice doesn't learn anything during the execution of the program, but Bob learns the password.
 + Alice transfers funds at the beginning of the program and Bob receives those funds at the end, after he learns the password.
-
 
 It's okay if your answers are different than ours.
 Problem analysis is a "loose" process that is more like creative artistry than it is like rote calculation.
@@ -57,12 +55,10 @@ So, for this program, we should decide:
 Refer to @{seclink("ref-programs-types")} for a reminder of what data types are available in Reach.
 :::
 
-
 After deciding those things, you should think about how the program will be provided these values.
 In other words:
 
 + What participant interact interface will each participant use?
-
 
 You should look back at your problem analysis to do this step.
 Whenever a participant starts off knowing something, then it is a field in the `{!rsh} interact` object.
@@ -78,7 +74,6 @@ Let's compare notes again.
 + We will represent the password as another unsigned integer (`{!rsh} UInt`) named `{!rsh} pass`.
 + These two values are the only fields of Alice's interface, but Bob will have a function named `{!rsh} getPass` that will return the password that he knows.
 
-
 We wrote this in our program as:
 
 ```reach
@@ -86,7 +81,6 @@ We wrote this in our program as:
              pass: UInt }),
  Participant('Bob', { getPass: Fun([], UInt) }) ],
 ```
-
 
 It would be very surprising if you choose the exact same names as us in your code, but did you choose the same types?
 We expect that many of you might have chosen to represent the password by a string of bytes using the Reach type, `{!rsh} Bytes`.
@@ -114,7 +108,6 @@ For example, for the [tutorial](##tut) version of _Rock, Paper, Scissors!_, we m
 // The consensus pays out the wager
 ```
 
-
 You should do this now, in your Reach program (`index.rsh`).
 
 **Write down the communication pattern for this program as comments.**
@@ -127,7 +120,6 @@ Here's what we wrote:
 // The consensus ensures it's the right password and pays Bob
 ```
 
-
 However, looking at this pattern reveals a subtlety in this application:
 how can the consensus ensure that Bob publishes the correct password?
 The only way is for Alice to publish something first that can be checked by the consensus.
@@ -138,7 +130,6 @@ For example, we could use the pattern:
 // The consensus ensures it's the right password and pays Bob
 ```
 
-
 However, this is definitely wrong, because Alice doesn't want to share her password with the world across the network, she only wants to share it with Bob, potentially at some later moment.
 So, she should not publish the password, but instead, publish a digest of the password, that can be checked against the actual password later.
 In other words, we should use a pattern like:
@@ -147,7 +138,6 @@ In other words, we should use a pattern like:
 // Bob publishes the password
 // The consensus ensures it's the right password and pays Bob
 ```
-
 
 It is cheaper to go through this iteration process in the human-centered design phase than in the code-centered programming phase, even when you're using a high-level language like Reach for programming.
 
@@ -170,7 +160,6 @@ transfer(amt).to(Bob);
 commit();
 ```
 
-
 We can now move on to the next part of designing a decentralized application: verification.
 
 ## {#workshop-hash-lock-ai} Assertion Insertion
@@ -188,7 +177,6 @@ There are three main assumptions we came up with for this program:
 + Before Bob publishes the password, it is unknowable by him and everyone else except Alice.
 + Bob assumes that the password digest published by Alice matches the digest of the password he's publishing.
 + The consensus requires that Alice's digest and the digest of Bob's password match.
-
 
 We expect that the third of these is the least controversial and the most obvious property, but the others are important too.
 The first property essentially guarantees that the erroneous version of the application we contemplated, where Alice directly sent her password over the network, is disallowed.
@@ -217,11 +205,9 @@ transfer(amt).to(Bob);
 commit();
 ```
 
-
 + First, we assert that Bob can't know Alice's password, _based on what the Reach program does_.
 + Next, we assert that Bob believes his password is correct (and that an honest Bob will check it.)
 + Finally, we assert that the consensus can only continue if this is the case.
-
 
 At this point, we are almost ready to complete our program and make it so that we can run it.
 You've probably noticed that in our samples, the variables `{!rsh} pass`, `{!rsh} amt`, and `{!rsh} passDigest` are undefined.
@@ -244,19 +230,15 @@ Here's what we did:
 load: /examples/workshop-hash-lock/index.rsh
 ```
 
-
 + Lines 11-14 have Alice declassify some of her values.
 + Line 21 has Bob provide his password.
-
 
 :::note
 Did you notice that we didn't mention what line 5 is for?
 We'll discuss that in the next section; don't worry!
 :::
 
-
 At this point, when we
-
 
 ```cmd
 $ ../reach compile
@@ -285,7 +267,6 @@ If you want to do something _like this_, then continue to the [next workshop ](#
 If you want to do exactly this, then stay tuned for a more complex zero-knowledge version.
 :::
 
-
 Next, we'll settle for a simple testing program for now to show the application, and let the rest of our full stack team deal with actually building the interface.
 Here's the JavaScript frontend we wrote:
 
@@ -293,17 +274,14 @@ Here's the JavaScript frontend we wrote:
 load: /examples/workshop-hash-lock/index.mjs
 ```
 
-
 In this case, Bob learns the password outside of the Reach program by directly sharing memory with Alice.
 In a real deployment, she might give Bob the password through some other channel, like an encrypted email message, or a calligraphic scroll delivered by raven or intoned from Himalayan cliffs.
 
 With this testing frontend in place, we can run
 
-
 ```cmd
 $ ../reach run
 ```
-
 
 and see an example execution:
 
@@ -314,7 +292,6 @@ Returning: 408166623549165159035815966671745039413072554269030393867632724515789
 Alice went from 100.0 to 74.999999999999823944.
 Bob went from 100.0 to 124.999999999999978599.
 ```
-
 
 ## {#workshop-hash-lock-dns} Discussion
 
@@ -331,4 +308,3 @@ If you found this workshop rewarding, please let us know on [the Discord communi
 
 If you want to know what to do next, a natural extension of the concepts in this workshop is a [relay account](##workshop-relay).
 Why don't you check it out?
-

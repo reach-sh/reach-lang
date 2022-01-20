@@ -1,11 +1,4 @@
-
-
-
 # {#tut-7-rpc} Rock, Paper, Scissors in Python
-
-
-
-
 
 The main sequence of the tutorial uses the
 [JavaScript frontend support library](##ref-frontends-js) to implement
@@ -37,7 +30,6 @@ load: /examples/rps-7-rpc/client-py/index.py
 range: 1-10
 ```
 
-
 Rather than importing `{!js} loadStdlib` and `{!js} backend` as with the
 JavaScript version, the Python frontend instead plucks `{!py} mk_rpc` from its
 supporting `{!py} reach_rpc` library.
@@ -55,7 +47,6 @@ These two functions are the only tools we will need to communicate with the
 RPC server.
 See @{seclink("ref-frontends-rpc-py")} for more details on how they work.
 
-
 ---
 
 Next, we define our Alice and Bob accounts and pre-fund them each with a
@@ -70,7 +61,6 @@ range: 6-9
 load: /examples/rps-7-rpc/client-py/index.py
 range: 11-14
 ```
-
 
 Translating code which uses the
 [JavaScript frontend support library](##ref-frontends-js) to its
@@ -92,7 +82,6 @@ load: /examples/rps-7-rpc/client-py/index.py
 range: 15-23
 ```
 
-
 ---
 
 Deploying and attaching to contracts works slightly differently over RPC:
@@ -106,7 +95,6 @@ range: 15-17
 load: /examples/rps-7-rpc/client-py/index.py
 range: 24-25
 ```
-
 
 As previously mentioned, it is the responsibility of the
 [RPC Server](##ref-backends-rpc) (rather than that of the frontend
@@ -133,7 +121,6 @@ load: /examples/rps-7-rpc/client-py/index.py
 range: 26-28
 ```
 
-
 ---
 
 Even participant interact interface definitions remain largely the same:
@@ -147,7 +134,6 @@ range: 20-32
 load: /examples/rps-7-rpc/client-py/index.py
 range: 29-34
 ```
-
 
 Here, both the JavaScript and Python frontends begin declaring a
 reusable "player constructor".
@@ -182,7 +168,6 @@ load: /examples/rps-7-rpc/client-py/index.py
 range: 35-37
 ```
 
-
 ---
 
 <a name="py-return"></a>
@@ -197,7 +182,6 @@ range: 33-35
 load: /examples/rps-7-rpc/client-py/index.py
 range: 38-47
 ```
-
 
 At the end of the Python code we return a `{!py} dict` that represents those
 fields which are common to both Alice and Bob's
@@ -221,7 +205,6 @@ range: 41-60
 load: /examples/rps-7-rpc/client-py/index.py
 range: 48-85
 ```
-
 
 In the Python version we create a function called `{!py} play_alice` and spawn
 it as a concurrent thread, which begins running in the background on line 56.
@@ -278,11 +261,9 @@ is a "virtual environment" that sandboxes dependencies to avoid cluttering your
 system directories.
 :::
 
-
 ```cmd
 $ pip install --upgrade reach-rpc-client
 ```
-
 
 Then use `./reach rpc-run` to play a game of _Rock, Paper, Scissors!_:
 
@@ -290,12 +271,10 @@ Then use `./reach rpc-run` to play a game of _Rock, Paper, Scissors!_:
 $ ./reach rpc-run python3 -u ./index.py
 ```
 
-
 :::note
 Consult the [command-line](##ref-usage-rpc-run) reference section for more details on
 how this sub-command works.
 :::
-
 
 Its output will be the same as the [final tutorial](##tut-7) version of the frontend:
 
@@ -309,7 +288,6 @@ Alice went from 10 to 4.9999
   Bob went from 10 to 14.9999
 ```
 
-
 This will launch an RPC server using the development API key
 `"opensesame"` and a TLS certificate designed for testing.
 :::note
@@ -321,7 +299,6 @@ certificate authority such as
 Users who are ready to go live should consult the [RPC Server command-line](##ref-usage-rpc-server)
 reference section for configuration details.
 :::
-
 
 When you are done, type `deactivate` to exit your `venv`.
 

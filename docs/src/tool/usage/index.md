@@ -31,10 +31,8 @@ Tip: try entering your desired year in the filter box to skip other tag types.
 
 Reach will interpret this to mean the most recent stable [major](##guide-versions) version.
 
-
 When using the semantic versioning form of `REACH_VERSION` the preceding `v` character is optional.
 In other words, `v0.1.6` is equivalent to `0.1.6`.
-
 
 ## {#ref-usage-compile} `reach compile`
 
@@ -79,7 +77,6 @@ named `default`.
   This debug information includes: the estimated cost of the contract on Algorand.
   This variable automatically enabled `--intermediate-files`.
 
-
 ## {#ref-usage-init} `reach init`
 
 You can create template `index.rsh` and `index.mjs` files for a simple Reach app by running
@@ -110,13 +107,11 @@ This assumes
 + You are using the JavaScript backend and your frontend is named `APP.mjs`.
 It also assumes the backend is located at `DIR/build/APP.main.mjs`, and only depends on the Reach standard library.
 
-
 It then
 
 + Compiles your program with Reach.
 + Builds a Docker image named `reachsh/reach-app-APP:latest` that depends on the Reach JavaScript standard library.
 + Executes a container based upon that image while connected to the network determined by `REACH_CONNECTOR_MODE`.
-
 
 `reach run` supports the following options:
 
@@ -131,7 +126,6 @@ The options are:
 + `ALGO-devnet`, which uses a Dockerized private Algorand network.
 
 + The environment variable `REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the console.
-
 
 `reach run` can be further specialized via the presence of a `Dockerfile` and `package.json` file.
 If either are absent, `reach run` assumes a default behavior (which may be persisted with `reach scaffold`).
@@ -169,13 +163,11 @@ This assumes
 + Your Reach program is named `index.rsh`
 + Your frontend React program is named `index.js`
 
-
 It then
 
 + Compiles your program with Reach
 + Runs the appropriate devnet based on `REACH_CONNECTOR_MODE`
 + Mounts the current directory into `/app/src/` in the `reachsh/react-runner` Docker image and runs it.
-
 
 `reach react` supports the following options:
 
@@ -186,7 +178,6 @@ The options are:
 + `ALGO`, which runs a Dockerized private Algorand network which may be used. (Support for using any Algorand network is forthcoming with TEAL 3.)
 
 + The environment variable `REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the browser console.
-
 
 When using `{!js} loadStdlib` in conjunction with `reach react`,
 be sure to pass in `{!js} process.env` as its argument.
@@ -223,7 +214,6 @@ The options are:
 
 + The environment variable `REACH_DEBUG` enables some additional debugging information for the Algorand devnet, which is accessible via http://localhost:9392
 
-
 ## {#ref-usage-rpc-server} `reach rpc-server`
 
 The sub-command
@@ -255,7 +245,6 @@ It defaults to `reach-server.key`.
 It defaults to `reach-server.crt`.
 + The environment variable `REACH_RPC_TLS_PASSPHRASE` is used to determine the TLS passphrase.
 It defaults to `rpc-demo`.
-
 
 ## {#ref-usage-rpc-run} `reach rpc-run`
 

@@ -1,7 +1,3 @@
-
-
-
-
 # {#ref-programs-local} Local Steps
 
 A Reach local step occurs in the body of `{!rsh} only` or `{!rsh} each` statements.
@@ -30,7 +26,6 @@ interact.notify(handA, handB)
 interact.chooseAmount(heap1, heap2) 
 ```
 
-
 An @{defn("interaction expression")}, written `{!rsh} interact.METHOD(EXPR_0, ..., EXPR_n)`, where `{!rsh} METHOD` is an identifier bound in the participant interact interface to a function type, and `{!rsh} EXPR_0` through `{!rsh} EXPR_n` are expressions that evaluate to the result of an interaction with a frontend that receives the evaluation of the `{!rsh} n` expressions and sends a value.
 
 An interaction expression may also be written `{!rsh} interact.KEY`, where `{!rsh} KEY` is bound in the participant interact interface to a non-function type.
@@ -44,8 +39,7 @@ An interaction expression may only occur in a local step.
 assume( claim, [msg] ) 
 ```
 
-
- An assumption where `{!rsh} claim` evaluates to `{!rsh} true` with honest frontends.
+An assumption where `{!rsh} claim` evaluates to `{!rsh} true` with honest frontends.
 This may only appear in a local step.
 It accepts an optional bytes argument, which is included in any reported violation.
 
@@ -56,8 +50,7 @@ It accepts an optional bytes argument, which is included in any reported violati
 fail() 
 ```
 
-
- is a convenience method equivalent to `{!rsh} assume(false)`. This may only appear in a local step.
+is a convenience method equivalent to `{!rsh} assume(false)`. This may only appear in a local step.
 
 ### `declassify`
 
@@ -65,7 +58,6 @@ fail()
 ```reach
 declassify( arg ) 
 ```
-
 
 The @{defn("declassify")} primitive performs a declassification of the given argument.
 
@@ -76,8 +68,7 @@ The @{defn("declassify")} primitive performs a declassification of the given arg
 makeCommitment( interact, x ) 
 ```
 
-
- Returns two values, `{!rsh} [ commitment, salt ]`, where `{!rsh} salt` is the result of calling `{!rsh} interact.random()`, and
+Returns two values, `{!rsh} [ commitment, salt ]`, where `{!rsh} salt` is the result of calling `{!rsh} interact.random()`, and
 `{!rsh} commitment` is the digest of `{!rsh} salt` and `{!rsh} x`.
 This is used in a local step before `{!rsh} checkCommitment` is used in a consensus step.
 
@@ -87,6 +78,5 @@ This is used in a local step before `{!rsh} checkCommitment` is used in a consen
 ```reach
 didPublish() 
 ```
-
 
  Returns a boolean that indicates whether the last publication was made by this principal.

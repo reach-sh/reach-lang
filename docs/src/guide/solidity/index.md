@@ -1,6 +1,3 @@
-
-
-
 # {#guide-solidity} How does Reach development compare to Solidity development?
 
 The Reach documentation is written from the perspective of a developer who has never done any DApp development of any kind before starting to use Reach.
@@ -13,7 +10,6 @@ For the rest of this article, when we use the term "Solidity development", we're
 For example, "Solidity development" includes [Vyper](https://github.com/vyperlang/vyper) developers, as well as users of tools like [Truffle Suite](https://www.trufflesuite.com), [web3.js](https://web3js.readthedocs.io/), and so on.
 We're talking about a paradigm of DApp programming and not a specific tool.
 :::
-
 
 ## Solidity Development
 
@@ -35,7 +31,6 @@ This same testing environment may be used to back a sample version of the fronte
 There are a wide variety of tools and companies that provide this kind of verification as a service and the best DApps are not deployed until they pass these tests, sometimes multiple of them.
 Verification typically involves only the smart contract and the best versions often require a mechanical representation of the protocol design to analyze the behavior of the DApp across all its workflows.
 7. **Deployment** --- Once the DApp is ready to be released, it will either be embedded in the frontend, if users are expected to launch their own independent instances of the smart contract, or it is launched a single time (perhaps as a contract factory) at a well-publicized address that might be embedded in the frontend.
-
 
 Obviously, we've left out a lot of details, but this is a sketch of the typical components of Solidity-style development.
 There are a huge number of options and techniques for almost all of these components, with some being dropped or minimized depending on the needs of the particular application.
@@ -69,7 +64,6 @@ Furthermore, it verifies bespoke properties that are unique to the particular DA
 7. **Deployment** --- Some aspects of deployment decisions are embedded inside of Reach programs, such as whether to use a contract factory or whether to have each instance of the DApp use an independent smart contract deployed by one of the participants.
 Other aspects are part of the configuration of the Reach compiler, such as which consensus network will be targeted.
 Still others are part of the configuration of the Reach standard library and testing infrastructure, like which wallet the middleware should connect to or which kind of development node should be launched and managed by Reach.
-
 
 ## Conclusion
 

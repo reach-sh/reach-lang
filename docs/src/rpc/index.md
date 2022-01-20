@@ -14,7 +14,7 @@ The command
 ```cmd
 $ reach rpc-server
 ```
- starts an instance of the Reach RPC Server.
+starts an instance of the Reach RPC Server.
 
 ---
 
@@ -71,13 +71,11 @@ RPC /backend/getExports/a/0/2      # A deeply-nested element of an array
 RPC /backend/getExports/add 2 3    # 5; i.e. `add(2, 3)`
 ```
 
-
 Requests for non-existent exports and non-existent nested fields or elements always return `null`.
 + `/kont` handles interactive RPC continuation completion during an interactive RPC method.
 It should not be invoked directly by frontends.
 
 + `/stop` quits the server.
-
 
 ## {#ref-backends-rpc-opts} Reach RPC Client Standard Options
 
@@ -97,7 +95,3 @@ If it is not present, the client library must default to the value of the enviro
 If that is not present, it must default to 5 seconds.
 + `key` --- This value sets the API key for the Reach RPC Server instance.
 If it is not present, the client library must default to the value of the environment variable `REACH_RPC_KEY`.
-
-
-
-
