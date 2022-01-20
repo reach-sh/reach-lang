@@ -13,10 +13,26 @@ const ask_ = async (q: string): Promise<string> => {
   });
 };
 
-// The validator arg should:
-// * return anything but `undefined` on success.
-// * throw an Error on failure
-// The validator's output will be returned.
+/**
+ * is an asynchronous function that asks a question on the
+ * console.
+ *
+ * @param {string} question presented to user on console
+ * @param {function=} validator should
+ * - return anything but `undefined` on success.
+ * - return an `Error` on failure.
+ * @returns a `Promise` for the first result `validator`
+ * done not error on.
+ * @example
+ * ```ts
+ * const isAisha = await ask(
+ *  'Are you Aisha?',
+ *  validator
+ * );
+ * const person = isAisha ? 'Aisha' : 'Benjamin';
+ * ```
+ * @see https://docs.reach.sh/frontend/#p_153
+ */
 export const ask = async <T>(question: string, validator?: ((s: string) => T)): Promise<T> => {
   // Not sure how to require T=string if validator is undefined.
   // This is not type safe.
