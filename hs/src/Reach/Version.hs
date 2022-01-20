@@ -9,8 +9,7 @@ module Reach.Version
   , minor
   , patch
   , solcVersionStr
-  )
-where
+  ) where
 
 import Data.Version (Version (..), makeVersion, showVersion)
 import Reach.UnsafeUtil

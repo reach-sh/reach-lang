@@ -121,8 +121,7 @@ cdot () {
 
 #######
 
-c examples/zbeq/index.rsh
-c hs/t/y/check.rsh
+c hs/t/y/reqOpt.rsh
 exit 0
 
 #jb

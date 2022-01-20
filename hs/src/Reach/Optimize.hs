@@ -365,14 +365,17 @@ instance Optimize DLExpr where
     DLE_Digest at as -> DLE_Digest at <$> opt as
     DLE_Claim at fs t a m -> do
       a' <- opt a
-      case a' of
-        DLA_Literal (DLL_Bool True) -> do
+      let meh = return $ DLE_Claim at fs t a' m
+      case (t, a') of
+        (CT_Possible, _) -> meh
+        (_, DLA_Literal (DLL_Bool True)) -> do
           Env {..} <- ask
           void $ liftIO $ incCounter eDroppedAsserts
           nop at
-        -- XXX We should record that if a' is a variable then after it, it is
-        -- True
-        _ -> return $ DLE_Claim at fs t a' m
+        (_, DLA_Var dv) -> do
+          void $ rememberVarIsArg at dv $ DLA_Literal $ DLL_Bool True
+          meh
+        _ -> meh
     DLE_Transfer at t a m -> do
       a' <- opt a
       case a' of
