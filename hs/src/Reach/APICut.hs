@@ -1,19 +1,20 @@
 module Reach.APICut
   ( apicut
-  , APICutError(..)
-  ) where
+  , APICutError (..)
+  )
+where
 
 import Control.Monad.Reader
 import Data.IORef
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
-import Generics.Deriving ( Generic )
+import Generics.Deriving (Generic)
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
-import Reach.Counter
 import Reach.CollectCounts
+import Reach.Counter
 import Reach.Freshen
 import Reach.Texty
 import Reach.Util
@@ -77,6 +78,7 @@ instance Show APICutError where
     API_NonCS vs p -> p <> "refers to non-consensus state: " <> (show $ pretty $ map showErr vs)
 
 type App = ReaderT Env IO
+
 data Env = Env
   { eWho :: SLPart
   , eSeenOut :: Bool
@@ -125,6 +127,7 @@ interactX t = \case
 
 interactIn :: DLExpr -> Bool
 interactIn = interactX "in"
+
 interactOut :: DLExpr -> Bool
 interactOut = interactX "out"
 
@@ -184,10 +187,11 @@ seek = \case
   ET_ToConsensus {..} ->
     many seek $ et_tc_cons : fmap snd (maybeToList et_tc_from_mtime)
   ET_While {..} -> do
-    b' <- local (\e -> e { eWhile = Just (et_w_cond, et_w_body, et_w_k) }) $
-      seek et_w_body
+    b' <-
+      local (\e -> e {eWhile = Just (et_w_cond, et_w_body, et_w_k)}) $
+        seek et_w_body
     k' <- seek et_w_k
-    return $ many_ [ b', k' ]
+    return $ many_ [b', k']
   ET_Continue {} -> return Nothing
   where
     isCut = \case
@@ -223,7 +227,7 @@ slurp = \case
         (liftIO $ readIORef eSeenOutR) >>= \case
           False -> liftIO $ writeIORef eSeenOutR True
           True -> err at API_Twice
-        local (\e -> e { eSeenOut = True }) $
+        local (\e -> e {eSeenOut = True}) $
           -- We only keep reading the program because we need to grab the tail
           -- for simulation. It would be better if (a) Algorand didn't need
           -- that, or (b) if we had the simulation separate from the end-point
@@ -276,9 +280,10 @@ slurp = \case
       let m = doWhile_ at asn cb b k
       asks eSeenOut >>= \case
         True -> m
-        False -> m >>= \case
-          Nothing -> return $ Nothing
-          Just _ -> err at API_NoOut
+        False ->
+          m >>= \case
+            Nothing -> return $ Nothing
+            Just _ -> err at API_NoOut
     doWhile_ at (DLAssignment m) (DLBlock _ _ ct c) b k = do
       let ml = M.toAscList m
       let (mvs, mas) = unzip ml

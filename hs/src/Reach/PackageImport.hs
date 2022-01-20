@@ -1,4 +1,4 @@
-module Reach.PackageImport (packageImport, PkgError(..)) where
+module Reach.PackageImport (packageImport, PkgError (..)) where
 
 import Control.Monad.Extra
 import Control.Monad.Reader
@@ -39,6 +39,7 @@ data PkgError
 
 instance HasErrorCode PkgError where
   errPrefix = const "RI"
+
   -- These indices are part of an external interface; they
   -- are used in the documentation of Error Codes.
   -- If you delete a constructor, do NOT re-allocate the number.

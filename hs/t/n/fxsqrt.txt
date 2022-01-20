@@ -5,14 +5,14 @@ Verification failed:
   when ALL participants are honest
   of theorem: assert
   msg: "fxsqrt: Cannot find the square root of a negative number."
-  at reach standard library:333:9:application
-  at ./fxsqrt.rsh:10:30:application call to "fxsqrt" (defined at: reach standard library:332:30:function exp)
+  at reach standard library:329:9:application
+  at ./fxsqrt.rsh:10:30:application call to "fxsqrt" (defined at: reach standard library:328:30:function exp)
   at ./fxsqrt.rsh:9:13:application call to [unknown function] (defined at: ./fxsqrt.rsh:9:17:function exp)
 
   assert(false);
 
   Verifying when NO participants are honest
-Checked 3 theorems; 1 failures :'(
+Checked 2 theorems; 1 failures :'(
 warning[RW0004]: There are no publications in the application.
 
   ./fxsqrt.rsh:5:12:application

@@ -69,15 +69,16 @@ jsFlattenLHS e =
     JSArrayLiteral _ as _ -> concatMap jsFlattenLHS $ jsa_flatten as
     JSAssignExpression lhs _ _ -> [lhs]
     JSObjectLiteral _ ps _ ->
-      concatMap (\case
-      JSPropertyNameandValue jpn _ _ ->
-        case jpn of
-          JSPropertyIdent ja s -> [JSIdentifier ja s]
-          _ -> []
-      JSPropertyIdentRef ja s -> [JSIdentifier ja s]
-      JSObjectMethod _ -> []
-      JSObjectSpread _ je -> jsFlattenLHS je
-      ) $ jso_flatten ps
+      concatMap
+        (\case
+           JSPropertyNameandValue jpn _ _ ->
+             case jpn of
+               JSPropertyIdent ja s -> [JSIdentifier ja s]
+               _ -> []
+           JSPropertyIdentRef ja s -> [JSIdentifier ja s]
+           JSObjectMethod _ -> []
+           JSObjectSpread _ je -> jsFlattenLHS je)
+        $ jso_flatten ps
     _ -> []
 
 toJSArray :: [JSExpression] -> [JSArrayElement]
@@ -88,13 +89,15 @@ toJSArray a = concatMap f a
 jsArrowBodyToRetBlock :: JSConciseBody -> JSBlock
 jsArrowBodyToRetBlock = \case
   JSConciseExprBody e -> JSBlock a [JSReturn a (Just e) (JSSemi a)] a
-    where a = jsa e
+    where
+      a = jsa e
   JSConciseFunBody b -> b
 
 jsArrowBodyToBlock :: JSConciseBody -> JSBlock
 jsArrowBodyToBlock = \case
   JSConciseExprBody e -> JSBlock a [JSExpressionStatement e (JSSemi a)] a
-    where a = jsa e
+    where
+      a = jsa e
   JSConciseFunBody b -> b
 
 jsArrowBodyToStmt :: JSConciseBody -> JSStatement
@@ -106,7 +109,8 @@ jsStmtToBlock :: JSStatement -> JSBlock
 jsStmtToBlock = \case
   JSStatementBlock ba bodyss aa _ -> JSBlock ba bodyss aa
   bodys -> JSBlock a [bodys] a
-    where a = jsa bodys
+    where
+      a = jsa bodys
 
 jsStmtToConciseBody :: JSStatement -> JSConciseBody
 jsStmtToConciseBody = \case
@@ -319,7 +323,7 @@ instance HasJSAnnot JSStatement where
 jsaList :: HasJSAnnot a => JSAnnot -> [a] -> JSAnnot
 jsaList def = \case
   [] -> def
-  h:_ -> jsa h
+  h : _ -> jsa h
 
 jsString :: JSAnnot -> String -> JSExpression
 jsString a s = JSStringLiteral a $ "'" <> s <> "'"

@@ -59,13 +59,14 @@ instance Subst DLPayAmt where
         <*> mapM (\(amt, ty) -> (,) <$> subst amt <*> subst ty) ks
 
 instance Subst DLTokenNew where
-  subst (DLTokenNew {..}) = DLTokenNew
-    <$> subst dtn_name
-    <*> subst dtn_sym
-    <*> subst dtn_url
-    <*> subst dtn_metadata
-    <*> subst dtn_supply
-    <*> subst dtn_decimals
+  subst (DLTokenNew {..}) =
+    DLTokenNew
+      <$> subst dtn_name
+      <*> subst dtn_sym
+      <*> subst dtn_url
+      <*> subst dtn_metadata
+      <*> subst dtn_supply
+      <*> subst dtn_decimals
 
 instance Subst DLWithBill where
   subst (DLWithBill y z) =
@@ -104,6 +105,7 @@ instance Subst DLExpr where
     DLE_EmitLog at lk x -> DLE_EmitLog at lk <$> subst x
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mtok tb -> DLE_GetUntrackedFunds at <$> subst mtok <*> subst tb
+    DLE_FromSome at mo da -> DLE_FromSome at <$> subst mo <*> subst da
 
 instance Subst DLStmt where
   subst = \case

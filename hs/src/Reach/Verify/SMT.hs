@@ -1,24 +1,30 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Reach.Verify.SMT (verify_smt) where
 
 import Codec.Compression.GZip
 import qualified Control.Exception as Exn
 import Control.Monad
 import Control.Monad.Reader
-import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.ByteString.Char8 as B
+import qualified Data.ByteString.Lazy.Char8 as BL
+import Data.Char (isDigit)
+import Data.Containers.ListUtils (nubOrd)
 import Data.Digest.CRC32
 import Data.Foldable
+import Data.Functor
 import Data.IORef
+import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe, isJust)
-import qualified Data.Set as S
 import qualified Data.Sequence as Seq
+import qualified Data.Set as S
 import qualified Data.Text as T
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
+import Reach.AddCounts (add_counts)
 import Reach.CollectTypes
 import Reach.Connector
 import Reach.Counter
@@ -27,24 +33,19 @@ import Reach.Freshen
 import Reach.Pretty
 import Reach.Texty
 import Reach.UnrollLoops
+import Reach.UnsafeUtil (unsafeTermSupportsColor)
 import Reach.Util
+import Reach.Verify.SMTAst
 import Reach.Verify.SMTParser
 import Reach.Verify.Shared
+import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver (..))
 import qualified SimpleSMT as SMT
-import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver(..))
+import qualified System.Console.Pretty as TC
 import System.Directory
 import System.Exit
 import System.FilePath
 import System.IO
-import Reach.Verify.SMTAst
-import Reach.AddCounts (add_counts)
-import qualified Data.List as List
-import Data.Functor
-import Data.Char (isDigit)
-import Data.Containers.ListUtils (nubOrd)
 import Text.Read (readMaybe)
-import Reach.UnsafeUtil (unsafeTermSupportsColor)
-import qualified System.Console.Pretty as TC
 
 --- SMT Helpers
 
@@ -273,7 +274,7 @@ smtTypeInv t se = do
 smtDeclare :: Solver -> String -> SExpr -> Maybe SMTLet -> App ()
 smtDeclare smt v s ml = do
   smt_trace_r <- asks ctxt_smt_trace
-  liftIO $ modifyIORef smt_trace_r (\ st -> maybe st (: st) ml)
+  liftIO $ modifyIORef smt_trace_r (\st -> maybe st (: st) ml)
   liftIO $ void $ SMT.declare smt v s
 
 smtDeclare_v :: String -> DLType -> Maybe SMTLet -> App ()
@@ -285,7 +286,7 @@ smtDeclare_v v t l = do
 
 smtMulDiv :: [SExpr] -> App SExpr
 smtMulDiv = \case
-  [x, y, den] -> return $ smtApply "div" [ smtApply "*" [ x, y ], den ]
+  [x, y, den] -> return $ smtApply "div" [smtApply "*" [x, y], den]
   _ -> impossible "smtPrimOp: MUL_DIV args"
 
 smtPrimOp :: SrcLoc -> PrimOp -> [DLArg] -> [SExpr] -> App SExpr
@@ -312,25 +313,25 @@ smtPrimOp at p dargs =
     TOKEN_EQ -> app "="
     (BYTES_ZPAD xtra) -> \args -> do
       xtra' <- smt_la at $ bytesZeroLit xtra
-      return $ smtApply "bytesAppend" (args <> [ xtra' ])
+      return $ smtApply "bytesAppend" (args <> [xtra'])
     MUL_DIV -> smtMulDiv
     SELF_ADDRESS pn isClass _ ->
       case dargs of
         [] -> \_ ->
-            case isClass of
-              False ->
-                return $ Atom $ smtAddress pn
-              True -> do
-                shouldSimulate pn >>= \case
-                  True ->
-                    Atom <$> smtCurrentAddress pn
-                  False -> do
-                    ai <- smt_alloc_id
-                    let av = "classAddr" <> show ai
-                    let dv = DLVar at Nothing T_Address ai
-                    let smlet = SMTLet at dv (DLV_Let DVC_Once dv) Witness (SMTProgram $ DLE_PrimOp at p dargs)
-                    smtDeclare_v av T_Address $ Just smlet
-                    return $ Atom av
+          case isClass of
+            False ->
+              return $ Atom $ smtAddress pn
+            True -> do
+              shouldSimulate pn >>= \case
+                True ->
+                  Atom <$> smtCurrentAddress pn
+                False -> do
+                  ai <- smt_alloc_id
+                  let av = "classAddr" <> show ai
+                  let dv = DLVar at Nothing T_Address ai
+                  let smlet = SMTLet at dv (DLV_Let DVC_Once dv) Witness (SMTProgram $ DLE_PrimOp at p dargs)
+                  smtDeclare_v av T_Address $ Just smlet
+                  return $ Atom av
         se -> impossible $ "self address " <> show se
   where
     cant = impossible $ "Int doesn't support " ++ show p
@@ -363,9 +364,10 @@ smtDigestCombine at args =
 
 --- Verifier
 data ResultDesc
-  -- = RD_UnsatCore [String]
-  = RD_Model SExpr
+  = -- = RD_UnsatCore [String]
+    RD_Model SExpr
   deriving (Show, Read)
+
 type SResult = (SMT.Result, Maybe ResultDesc)
 
 -- A computation is first stored into an unamed var, then `const`
@@ -375,12 +377,12 @@ type SResult = (SMT.Result, Maybe ResultDesc)
 -- If the list is empty, it is an "unbound" var like an interact field.
 sv2dv :: String -> App (Maybe DLVar)
 sv2dv v = do
-  v2dv <- (liftIO. readIORef) =<< asks ctxt_v_to_dv
+  v2dv <- (liftIO . readIORef) =<< asks ctxt_v_to_dv
   case reverse . nubOrd <$> M.lookup v v2dv of
-    Just (dv:_) -> return $ Just dv
+    Just (dv : _) -> return $ Just dv
     _ -> return Nothing
 
-parseType :: SExpr ->App DLType
+parseType :: SExpr -> App DLType
 parseType ty = do
   case ty of
     Atom "Int" -> return T_UInt
@@ -390,20 +392,24 @@ parseType ty = do
       case M.lookup t typem of
         Just dt -> return dt
         Nothing -> impossible $ "parseType: Atom: " <> show ty
-    List (Atom "Array":rs) -> do
+    List (Atom "Array" : rs) -> do
       rs' <- mapM parseType rs
       return $ T_Array (T_Tuple rs') (fromIntegral $ length rs)
-    _ ->  impossible $ "parseType: " <> show ty
+    _ -> impossible $ "parseType: " <> show ty
 
 parseVal :: M.Map SExpr SExpr -> DLType -> SExpr -> App SMTVal
 parseVal env t v = do
   case v of
     -- Parse let bindings and add them to the subst env
     List [Atom "let", List envs, e] -> do
-          let env' = M.fromList $ map (\case
-                List [k, v'] -> (k, v')
-                _ -> impossible "parseVal: encountered non-pair let binding") envs
-          parseVal (M.union env' env) t e
+      let env' =
+            M.fromList $
+              map
+                (\case
+                   List [k, v'] -> (k, v')
+                   _ -> impossible "parseVal: encountered non-pair let binding")
+                envs
+      parseVal (M.union env' env) t e
     -- Sub var if encountered
     Atom ident
       | M.member (Atom ident) env -> do
@@ -413,7 +419,7 @@ parseVal env t v = do
       case t of
         T_Bool -> do
           case v of
-            Atom "true"  -> return $ SMV_Bool True
+            Atom "true" -> return $ SMV_Bool True
             Atom "false" -> return $ SMV_Bool False
             _ -> impossible $ "parseVal: Bool: " <> show v
         T_UInt -> do
@@ -440,8 +446,10 @@ parseVal env t v = do
         T_Address -> do
           let err = impossible $ "parseVal: Address: " <> show v
           case v of
-            Atom i -> return $ SMV_Address $
-              fromMaybe err (readMaybe $ dropWhile (not . isDigit) i :: Maybe Integer)
+            Atom i ->
+              return $
+                SMV_Address $
+                  fromMaybe err (readMaybe $ dropWhile (not . isDigit) i :: Maybe Integer)
             _ -> err
         T_Bytes _ -> do
           case v of
@@ -457,7 +465,7 @@ parseVal env t v = do
             _ -> impossible $ "parseVal: Array(" <> show v <> ")"
         T_Array ty sz ->
           case v of
-            List [ List (Atom "as":Atom "const":_), e ] ->
+            List [List (Atom "as" : Atom "const" : _), e] ->
               SMV_Array ty . replicate (fromIntegral sz) <$> parseVal env ty e
             List vs -> do
               elems' <- parseArray env ty (List vs)
@@ -469,32 +477,32 @@ parseVal env t v = do
             _ -> impossible $ "parseVal: Tuple mt " <> show v
         T_Tuple ts ->
           case v of
-            List (_:vs) -> do
+            List (_ : vs) -> do
               SMV_Tuple <$> zipWithM (parseVal env) ts vs
             _ -> impossible $ "parseVal: Tuple " <> show v
         T_Object ts ->
           case v of
-            List (_:vs) -> do
-              fields <- mapM (\ ((s, vt), mv) -> parseVal env vt mv <&> (s, ) ) $ zip (M.toAscList ts) vs
+            List (_ : vs) -> do
+              fields <- mapM (\((s, vt), mv) -> parseVal env vt mv <&> (s,)) $ zip (M.toAscList ts) vs
               return $ SMV_Object $ M.fromList fields
             Atom _ ->
               return $ SMV_Object $ mempty
             _ -> impossible $ "parseVal: Object " <> show v
         T_Struct ts ->
           case v of
-            List (_:vs) -> do
-              fields <- mapM (\ ((s, vt), mv) -> parseVal env vt mv <&> (s, ) ) $ zip ts vs
+            List (_ : vs) -> do
+              fields <- mapM (\((s, vt), mv) -> parseVal env vt mv <&> (s,)) $ zip ts vs
               return $ SMV_Struct $ fields
             _ -> impossible $ "parseVal: Struct " <> show v
         T_Data ts ->
           case v of
             List [Atom con, vv] -> do
               let c = case dropWhile (/= '_') con of
-                        _:c' -> c'
-                        _ -> impossible "parseType: Data: Constructor name"
+                    _ : c' -> c'
+                    _ -> impossible "parseType: Data: Constructor name"
               v' <- case M.lookup c ts of
-                      Just vt -> parseVal env vt vv
-                      Nothing -> impossible $ "parseType: Data: Constructor type"
+                Just vt -> parseVal env vt vv
+                Nothing -> impossible $ "parseType: Data: Constructor type"
               return $ SMV_Data c [v']
             _ -> impossible $ "parseVal: Data " <> show v
       where
@@ -510,7 +518,6 @@ parseVal env t v = do
                 vs <- parseVal env' t x
                 return [vs]
               _ -> return []
-
 
 parseModel2 :: SMTModel -> App (M.Map String SMTVal)
 parseModel2 pm = M.fromList <$> aux (M.toList pm)
@@ -536,7 +543,7 @@ recoverBindingInfo = \case
     let hasBindingInfo (DLVar _ mb _ _) = isJust mb
     let dvs = maybe [] (reverse . filter hasBindingInfo) $ M.lookup ("v" <> show i) v2dv
     case dvs of
-      (dv:_) -> return $ SMTLet at dv lv c e
+      (dv : _) -> return $ SMTLet at dv lv c e
       _ -> return ow
   ow -> return ow
 
@@ -576,11 +583,15 @@ display_fail tat f tk mmsg mrd mdv timeout = do
       lets <- (liftIO . readIORef) =<< asks ctxt_smt_trace
       lets' <- reverse . nubOrd . dropConstants pm_str_val <$> mapM recoverBindingInfo lets
       smtTrace <- liftIO $ add_counts $ SMTTrace lets' tk dv
-      pm_dv_val <- M.fromList <$> foldM (\ acc (k, v) -> do
-            sv2dv k <&> \case
-              Just dv'' -> (dv'', v) : acc
-              Nothing -> acc
-            ) [] (M.toList pm_str_val)
+      pm_dv_val <-
+        M.fromList
+          <$> foldM
+            (\acc (k, v) -> do
+               sv2dv k <&> \case
+                 Just dv'' -> (dv'', v) : acc
+                 Nothing -> acc)
+            []
+            (M.toList pm_str_val)
       iputStrLn $ show $ showTrace pm_dv_val smtTrace
 
 dropConstants :: M.Map String SMTVal -> [SMTLet] -> [SMTLet]
@@ -633,12 +644,13 @@ toSExpr :: Show a => a -> SExpr
 toSExpr = Atom . show
 
 deriving instance Read Result
+
 deriving instance Read SExpr
 
 checkUsing :: TheoremKind -> App SResult
 checkUsing tk = do
   smt <- ctxt_smt <$> ask
-  fromSExpr <$> (liftIO $ SMT.command smt $ List [ Atom "reachCheckUsing", toSExpr $ isPossible tk ])
+  fromSExpr <$> (liftIO $ SMT.command smt $ List [Atom "reachCheckUsing", toSExpr $ isPossible tk])
 
 verify1 :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> SExpr -> Maybe B.ByteString -> App ()
 verify1 at mf tk se mmsg = smtNewScope $ do
@@ -698,7 +710,7 @@ pathAddUnbound at_dv (Just dv) msmte = do
   let smlet = Just . SMTLet at_dv dv (DLV_Let DVC_Once dv) Witness =<< msmte
   pathAddUnbound_v v t smlet
 
-pathAddBound :: SrcLoc -> Maybe DLVar -> Maybe SMTExpr -> SExpr-> SMTCat -> App ()
+pathAddBound :: SrcLoc -> Maybe DLVar -> Maybe SMTExpr -> SExpr -> SMTCat -> App ()
 pathAddBound _ Nothing _ _ _ = mempty
 pathAddBound at_dv (Just dv) de se sc = do
   let DLVar _ _ t _ = dv
@@ -744,14 +756,14 @@ smtMapDeclare at mpv mi se = do
   t <- smtMapSort mpv
   smt <- asks ctxt_smt
   dv <- do
-      newId <- smt_alloc_id
-      let dv = DLVar at (Just (at, mv)) T_Null newId
-      v2dv <- asks ctxt_v_to_dv
-      liftIO $ modifyIORef v2dv (M.insertWith (<>) mv [dv])
-      return dv
+    newId <- smt_alloc_id
+    let dv = DLVar at (Just (at, mv)) T_Null newId
+    v2dv <- asks ctxt_v_to_dv
+    liftIO $ modifyIORef v2dv (M.insertWith (<>) mv [dv])
+    return dv
   let cat = case se of
-              SMTMapFresh _ -> Witness
-              _ -> Context
+        SMTMapFresh _ -> Witness
+        _ -> Context
   let l = SMTLet at dv (DLV_Let DVC_Once dv) cat $ SMTSynth se
   smtDeclare smt mv t $ Just l
 
@@ -777,9 +789,10 @@ smtMapUpdate at mpv fa mna = do
   fa' <- smt_a at fa
   na' <- smtMapMkMaybe at mpv mna
   SMTMapInfo {..} <- smtMapLookupC mpv
-  mdv <- smtMapLookup mpv >>= \case
-              (_, Just dv) -> return dv
-              (_, Nothing) -> impossible $ "smtMapLookup: " <> show (pretty mpv)
+  mdv <-
+    smtMapLookup mpv >>= \case
+      (_, Just dv) -> return dv
+      (_, Nothing) -> impossible $ "smtMapLookup: " <> show (pretty mpv)
   mi' <- liftIO $ incCounter sm_c
   let mi = mi' - 1
   let mv = smtMapVar mpv mi
@@ -982,8 +995,8 @@ smt_e at_dv mdv de = do
       doClaim at f cl lt Nothing
     DLE_PrimOp at cp args -> do
       let f = case cp of
-                SELF_ADDRESS {} -> \ se -> pathAddBound at mdv (Just $ SMTProgram de) se Witness
-                _ -> bound at
+            SELF_ADDRESS {} -> \se -> pathAddBound at mdv (Just $ SMTProgram de) se Witness
+            _ -> bound at
       args' <- mapM (smt_a at) args
       f =<< smtPrimOp at cp args args'
     DLE_ArrayRef at arr_da idx_da -> do
@@ -1076,6 +1089,19 @@ smt_e at_dv mdv de = do
       mapM_ (bound at <=< smt_v at) lv
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds at _ _ -> unbound at
+    DLE_FromSome at mo da -> do
+      mo' <- smt_a at mo
+      da' <- smt_a at da
+      n <- smtTypeSort $ argTypeOf mo
+      let someCtor = n <> "_Some"
+      let noneCtor = n <> "_None"
+      let somev = Atom $ someCtor <> "_pv"
+      let somep = List [Atom someCtor, somev]
+      let somec = List [somep, somev]
+      let nonev = Atom $ noneCtor <> "_pv"
+      let nonep = List [Atom noneCtor, nonev]
+      let nonec = List [nonep, da']
+      bound at $ smtApply "match" [mo', List [nonec, somec]]
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)
@@ -1504,11 +1530,12 @@ _smtDefineTypes smt ts = do
   readIORef tmr
 
 smt_eb :: DLExportBlock -> App ()
-smt_eb (DLinExportBlock at margs b) = ctxtNewScope $ freshAddrs $ do
-  let args = fromMaybe [] margs
-  forM_ args $ \ arg ->
-    pathAddUnbound at (Just arg) (Just $ SMTModel O_ExportArg)
-  void $ smt_block b
+smt_eb (DLinExportBlock at margs b) = ctxtNewScope $
+  freshAddrs $ do
+    let args = fromMaybe [] margs
+    forM_ args $ \arg ->
+      pathAddUnbound at (Just arg) (Just $ SMTModel O_ExportArg)
+    void $ smt_block b
 
 _verify_smt :: Maybe Connector -> VerifySt -> Solver -> LLProg -> IO ()
 _verify_smt mc ctxt_vst smt lp = do
@@ -1519,7 +1546,7 @@ _verify_smt mc ctxt_vst smt lp = do
   ctxt_displayed <- newIORef mempty
   ctxt_v_to_dv <- newIORef mempty
   ctxt_typem <- _smtDefineTypes smt (cts lp)
-  let ctxt_smt_typem = M.fromList $ map (\ (k, (v, _)) -> (v, k)) $ M.toList ctxt_typem
+  let ctxt_smt_typem = M.fromList $ map (\(k, (v, _)) -> (v, k)) $ M.toList ctxt_typem
   let ctxt_smt_con at_de cn =
         case mc of
           Just c -> smt_lt at_de $ conCons c cn
@@ -1575,7 +1602,7 @@ _verify_smt mc ctxt_vst smt lp = do
           local (\e -> e {ctxt_modem = Just mode}) $ do
             forM_ dex smt_eb
             ctxtNewScope $ freshAddrs $ smt_s s
-    let ms = [ VM_Honest, VM_Dishonest RoleContract ] -- <> (map (VM_Dishonest . RolePart) $ M.keys pies_m)
+    let ms = [VM_Honest, VM_Dishonest RoleContract] -- <> (map (VM_Dishonest . RolePart) $ M.keys pies_m)
     mapM_ smt_s_top ms
 
 hPutStrLn' :: Handle -> String -> IO ()
@@ -1635,7 +1662,7 @@ newSolverSet :: VerifyOpts -> String -> [String] -> (String -> IO (IO (), Maybe 
 newSolverSet (VerifyOpts {..}) p a mkl = do
   let short_a = Atom $ "10"
   let long_a = Atom $ show $ vo_timeout
-  let t_bin o x y = List [ Atom o, x, y ]
+  let t_bin o x y = List [Atom o, x, y]
   let t_timeout = t_bin "try-for"
   let our_tactic = t_timeout (Atom "default")
   let reachCheckUsing t = List [Atom "check-sat-using", our_tactic t]
@@ -1643,13 +1670,13 @@ newSolverSet (VerifyOpts {..}) p a mkl = do
   rib <- newIORef (return mempty :: Seq.Seq (Seq.Seq SExpr))
   let doClose :: IO () -> IO a -> IO a
       doClose l e = do
-       x <- e
-       l
-       return x
+        x <- e
+        l
+        return x
   (tlc, tl) <- mkl ""
   Solver tc te <- SMT.newSolver p a tl
   let c = \case
-        List [ Atom "reachCheckUsing", iptks ] -> do
+        List [Atom "reachCheckUsing", iptks] -> do
           let iptk :: Bool = fromSExpr iptks
           let after_ ac rs = do
                 let r =
@@ -1658,7 +1685,7 @@ newSolverSet (VerifyOpts {..}) p a mkl = do
                         Atom "unsat" -> Unsat
                         Atom "unknown" -> Unknown
                         _ -> impossible $ "reachCheckUsing " <> show rs
-                let f x y = (Just . x) <$> (ac $ List [ Atom y ])
+                let f x y = (Just . x) <$> (ac $ List [Atom y])
                 mrd <-
                   case (iptk, r) of
                     -- (True, Unsat) -> f RD_UnsatCore "get-unsat-core"
@@ -1673,7 +1700,7 @@ newSolverSet (VerifyOpts {..}) p a mkl = do
               let doSS f = do
                     traverse_ (traverse_ f) ss
                     f (reachCheckUsing long_a)
-              hr <- newIORef $ crc32 (""::B.ByteString)
+              hr <- newIORef $ crc32 ("" :: B.ByteString)
               doSS $ \s -> do
                 modifyIORef hr $ flip crc32Update (bpack $ show s)
               h <- readIORef hr
@@ -1694,10 +1721,10 @@ newSolverSet (VerifyOpts {..}) p a mkl = do
                   writeFile cfile $ (w compress) x
                   after__ x
             r -> after tc r
-        s@(List [ Atom "push", Atom "1" ]) -> do
+        s@(List [Atom "push", Atom "1"]) -> do
           modifyIORef rib $ seqPush mempty
           tc s
-        s@(List [ Atom "pop", Atom "1" ]) -> do
+        s@(List [Atom "pop", Atom "1"]) -> do
           modifyIORef rib $ seqPop
           tc s
         s -> do

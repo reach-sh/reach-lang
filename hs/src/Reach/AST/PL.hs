@@ -254,10 +254,12 @@ data CPProg
 
 instance Pretty CPProg where
   pretty (CPProg _ vis ai devts chs) =
-    "views:" <+> pretty vis <> hardline <>
-    "apiInfo:" <+> pretty ai <> hardline <>
-    "events:" <+> pretty devts <> hardline <>
-    pretty chs
+    "views:" <+> pretty vis <> hardline
+      <> "apiInfo:" <+> pretty ai
+      <> hardline
+      <> "events:" <+> pretty devts
+      <> hardline
+      <> pretty chs
 
 data EPPs = EPPs
   { epps_apis :: DLAPIs
@@ -274,10 +276,10 @@ instance Semigroup EPPs where
 instance Pretty EPPs where
   pretty (EPPs {..}) =
     "APIs:"
-    <> pretty epps_apis
-    <> hardline
-    <> render_obj epps_m
-    <> hardline
+      <> pretty epps_apis
+      <> hardline
+      <> render_obj epps_m
+      <> hardline
 
 data PLOpts = PLOpts
   { plo_verifyArithmetic :: Bool

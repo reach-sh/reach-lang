@@ -1,6 +1,3 @@
-
-
-
 # {#guide-logging} How do I add tracing logs to my Reach program?
 
 Sometimes it is useful to add "tracing logs" to your program so you can see the values of variables and computations as the program is running.
@@ -32,7 +29,6 @@ Starting to compute Fibonacci
 9 13 21
 ```
 
-
 How can we do something like this in Reach?
 
 The key is to use participant interact interfaces to share arbitrary information with the frontend,
@@ -51,7 +47,6 @@ export const main = Reach.App(() => {
   exit();
 });
 ```
-
 
 However, as this example shows, it can be inconvenient to use this pattern, because `{!rsh} Fun` types constrain their domains to particular input data types, but we may need to log different kinds of data at different points in the program.
 Similarly, it is inconvenient to use an entire `{!rsh} only` block for a simple log.
@@ -79,7 +74,6 @@ export const main = Reach.App(() => {
 });
 ```
 
-
 Then, a JavaScript frontend can simply use `{!js} console.log` as the value of the `log` function.
 
 Reach provides `{!rsh} hasConsoleLogger` and hasConsoleLogger (Frontend) in the standard library
@@ -89,7 +83,6 @@ for default implementations of logging to stdout. It can be used in Reach with:
 const A = Participant('Alice', { ...hasConsoleLogger })
 ```
 
-
 and in the JavaScript frontend with:
 
 ```js
@@ -98,6 +91,5 @@ backend.Alice(
    { ...stdlib.hasConsoleLogger },
  ),
 ```
-
 
 The Reach development repository contains an example of this pattern: [log/index.rsh](@{REPO}/examples/log/index.rsh) and [log/index.mjs](@{REPO}/examples/log/index.mjs).

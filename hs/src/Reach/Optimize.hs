@@ -2,9 +2,9 @@ module Reach.Optimize (optimize_, optimize, Optimize) where
 
 import Control.Monad.Reader
 import Data.IORef
-import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import qualified Data.Set as S
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
@@ -16,9 +16,11 @@ import Reach.Util
 import Safe (atMay)
 
 type App = ReaderT Env IO
+
 type ConstApp = ReaderT ConstEnv IO
 
 type AppT a = a -> App a
+
 type ConstT a = a -> ConstApp ()
 
 class Optimize a where
@@ -63,6 +65,7 @@ data Env = Env
   , eParts :: [SLPart]
   , eEnvsR :: IORef (M.Map Focus CommonEnv)
   , eCounter :: Counter
+  , eDroppedAsserts :: Counter
   , eConst :: S.Set DLVar
   , eMaps :: DLMapInfos
   }
@@ -147,7 +150,7 @@ optKnownLargeArg = lookupCommon ceKnownLargeArgs
 
 recordKnownLargeArg :: DLVar -> DLLargeArg -> App ()
 recordKnownLargeArg dv v =
-  updateLookup (\e -> e { ceKnownLargeArgs = M.insert dv v $ ceKnownLargeArgs e })
+  updateLookup (\e -> e {ceKnownLargeArgs = M.insert dv v $ ceKnownLargeArgs e})
 
 remember_ :: Bool -> DLVar -> DLExpr -> App ()
 remember_ always v e =
@@ -186,8 +189,8 @@ updateLookup up = do
   let update = M.fromList . (map update1) . M.toList
   liftIO $ modifyIORef eEnvsR update
 
-mkEnv0 :: Counter -> S.Set DLVar -> [SLPart] -> DLMapInfos -> IO Env
-mkEnv0 eCounter eConst eParts eMaps = do
+mkEnv0 :: Counter -> Counter -> S.Set DLVar -> [SLPart] -> DLMapInfos -> IO Env
+mkEnv0 eCounter eDroppedAsserts eConst eParts eMaps = do
   let eFocus = F_Ctor
   let eEnvs =
         M.fromList $
@@ -259,13 +262,14 @@ instance Optimize DLLargeArg where
   gcs _ = return ()
 
 instance Optimize DLTokenNew where
-  opt (DLTokenNew {..}) = DLTokenNew
-    <$> opt dtn_name
-    <*> opt dtn_sym
-    <*> opt dtn_url
-    <*> opt dtn_metadata
-    <*> opt dtn_supply
-    <*> opt dtn_decimals
+  opt (DLTokenNew {..}) =
+    DLTokenNew
+      <$> opt dtn_name
+      <*> opt dtn_sym
+      <*> opt dtn_url
+      <*> opt dtn_metadata
+      <*> opt dtn_supply
+      <*> opt dtn_decimals
   gcs _ = return ()
 
 instance Optimize DLWithBill where
@@ -278,6 +282,14 @@ unsafeAt l i =
   case atMay l i of
     Nothing -> impossible "unsafeMay"
     Just x -> x
+
+isAnEqual :: PrimOp -> Bool
+isAnEqual = \case
+  PEQ -> True
+  DIGEST_EQ -> True
+  ADDRESS_EQ -> True
+  TOKEN_EQ -> True
+  _ -> False
 
 instance Optimize DLExpr where
   opt = \case
@@ -312,11 +324,11 @@ instance Optimize DLExpr where
           | l == d -> return $ DLE_Arg at r
           | r == d -> return $ DLE_Arg at l
         (MUL_DIV, [l, r, DLA_Literal (DLL_Int _ 1)]) ->
-            opt $ DLE_PrimOp at MUL [l, r]
+          opt $ DLE_PrimOp at MUL [l, r]
         (MUL_DIV, [DLA_Literal (DLL_Int _ 1), r, d]) ->
-            opt $ DLE_PrimOp at DIV [r, d]
+          opt $ DLE_PrimOp at DIV [r, d]
         (MUL_DIV, [l, DLA_Literal (DLL_Int _ 1), d]) ->
-            opt $ DLE_PrimOp at DIV [l, d]
+          opt $ DLE_PrimOp at DIV [l, d]
         (MUL_DIV, [DLA_Literal (DLL_Int _ 0), _, _]) ->
           return $ DLE_Arg at zero
         (MUL_DIV, [_, DLA_Literal (DLL_Int _ 0), _, _]) ->
@@ -330,6 +342,9 @@ instance Optimize DLExpr where
             Nothing -> meh
             Just c' ->
               return $ DLE_PrimOp at IF_THEN_ELSE [c', f, t]
+        (aneq, [lhs, rhs])
+          | isAnEqual aneq && sani lhs == sani rhs ->
+            return $ DLE_Arg at $ DLA_Literal $ DLL_Bool True
         _ -> meh
     DLE_ArrayRef at a i -> DLE_ArrayRef at <$> opt a <*> opt i
     DLE_ArraySet at a i v -> DLE_ArraySet at <$> opt a <*> opt i <*> opt v
@@ -351,9 +366,13 @@ instance Optimize DLExpr where
     DLE_Claim at fs t a m -> do
       a' <- opt a
       case a' of
-        DLA_Literal (DLL_Bool True) -> nop at
-        _ ->
-          return $ DLE_Claim at fs t a' m
+        DLA_Literal (DLL_Bool True) -> do
+          Env {..} <- ask
+          void $ liftIO $ incCounter eDroppedAsserts
+          nop at
+        -- XXX We should record that if a' is a variable then after it, it is
+        -- True
+        _ -> return $ DLE_Claim at fs t a' m
     DLE_Transfer at t a m -> do
       a' <- opt a
       case a' of
@@ -376,6 +395,19 @@ instance Optimize DLExpr where
     DLE_EmitLog at k a -> DLE_EmitLog at k <$> opt a
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mt tb -> DLE_GetUntrackedFunds at <$> opt mt <*> opt tb
+    DLE_FromSome at mo da -> do
+      mo' <- opt mo
+      da' <- opt da
+      let meh = return $ DLE_FromSome at mo' da'
+      case mo' of
+        DLA_Var mv ->
+          optKnownLargeArg mv >>= \case
+            Just (DLLA_Data _ vn a) ->
+              case vn of
+                "Some" -> return $ DLE_Arg at $ a
+                _ -> return $ DLE_Arg at da'
+            _ -> meh
+        _ -> meh
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
   gcs _ = return ()
@@ -392,11 +424,12 @@ instance Extract (Maybe DLVar) where
 
 allTheSame :: (Eq a, Sanitize a) => [a] -> Maybe a
 allTheSame xs =
-  case and $ map (== top) (tail xs') of
-    True -> Just top
-    False -> Nothing
-  where xs' = map sani xs
-        top = head xs'
+  case map sani xs of
+    [] -> Nothing
+    top : rest ->
+      case and $ map (== top) rest of
+        True -> Just top
+        False -> Nothing
 
 optIf :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (SrcLoc -> DLArg -> k -> k -> r) -> SrcLoc -> DLArg -> k -> k -> App r
 optIf mkDo mkIf at c t f =
@@ -404,9 +437,14 @@ optIf mkDo mkIf at c t f =
     DLA_Literal (DLL_Bool True) -> mkDo <$> opt t
     DLA_Literal (DLL_Bool False) -> mkDo <$> opt f
     c' -> do
-      -- XXX We could see if c' is something like `DLVar x == DLArg y` and add x -> y to the optimization environment
-      t' <- newScope $ opt t
-      f' <- newScope $ opt f
+      -- XXX We could see if c' is something like `DLVar x == DLArg y` and add x -> y to the optimization environment. A general way to do this would be to have something that says "If this variable were True, you'd know _this_. So `z = x && y` would say `z => x` and `z => y`. And `x == y` would say `x = y`.
+      let learnC b =
+            case c' of
+              DLA_Var v ->
+                void $ rememberVarIsArg at v $ DLA_Literal $ DLL_Bool b
+              _ -> return ()
+      t' <- newScope $ learnC True >> opt t
+      f' <- newScope $ learnC False >> opt f
       case allTheSame [t', f'] of
         Just s -> return $ mkDo s
         Nothing ->
@@ -442,26 +480,31 @@ optWhile mk asn cond body k = do
   asn' <- opt asn
   cond'@(DLBlock _ _ _ ca) <- newScope $ opt cond
   let mca b m = case ca of
-                  DLA_Var dv -> do
-                    rewrite dv (dv, Just (DLA_Literal $ DLL_Bool b))
-                    optNotHuh ca >>= \case
-                      Just (DLA_Var dv') -> do
-                        rewrite dv' (dv', Just (DLA_Literal $ DLL_Bool $ not b))
-                      _ -> return ()
-                    m
-                  _ -> m
+        DLA_Var dv -> do
+          rewrite dv (dv, Just (DLA_Literal $ DLL_Bool b))
+          optNotHuh ca >>= \case
+            Just (DLA_Var dv') -> do
+              rewrite dv' (dv', Just (DLA_Literal $ DLL_Bool $ not b))
+            _ -> return ()
+          m
+        _ -> m
   body' <- newScope $ mca True $ opt body
   k' <- newScope $ mca False $ opt k
   return $ mk asn' cond' body' k'
+
+rememberVarIsArg :: SrcLoc -> DLVar -> DLArg -> App DLExpr
+rememberVarIsArg at dv a = do
+  rewrite dv (dv, Just a)
+  let e = DLE_Arg at a
+  mremember dv (sani e)
+  return e
 
 optLet :: SrcLoc -> DLLetVar -> DLExpr -> App DLStmt
 optLet at x e = do
   e' <- opt e
   let meh = return $ DL_Let at x e'
   let argCase dv at' a' = do
-        rewrite dv (dv, Just a')
-        let e'' = DLE_Arg at' a'
-        mremember dv (sani e'')
+        e'' <- rememberVarIsArg at' dv a'
         return $ DL_Let at x e''
   let largCase dv at' a' = do
         recordKnownLargeArg dv a'
@@ -470,8 +513,9 @@ optLet at x e = do
         return $ DL_Let at x e''
   let doit dv = do
         case e' of
-          DLE_Arg at' a' | canDupe a' ->
-            argCase dv at' a'
+          DLE_Arg at' a'
+            | canDupe a' ->
+              argCase dv at' a'
           _ -> do
             let e'' = sani e'
             common <- repeated e''
@@ -479,10 +523,12 @@ optLet at x e = do
               Just (Left (DLA_Var rt)) -> do
                 rewrite dv (rt, Nothing)
                 return $ DL_Nop at
-              Just (Left a') | canDupe a' ->
-                argCase dv at a'
-              Just (Right a') | canDupe a' ->
-                largCase dv at a'
+              Just (Left a')
+                | canDupe a' ->
+                  argCase dv at a'
+              Just (Right a')
+                | canDupe a' ->
+                  largCase dv at a'
               _ -> do
                 remember dv e''
                 case e' of
@@ -504,7 +550,7 @@ optLet at x e = do
             case mmt of
               Nothing -> id
               Just mt -> M.insert ref $ Right $ mdaToMaybeLA mt nva
-      let up ce = ce { cePrev = (upf . clear) $ cePrev ce }
+      let up ce = ce {cePrev = (upf . clear) $ cePrev ce}
       updateLookup up
       meh
     _ -> meh
@@ -525,8 +571,9 @@ instance Optimize DLStmt where
       optIf (DL_LocalDo at) DL_LocalIf at c t f
     DL_LocalSwitch at ov csm ->
       optSwitch (DL_LocalDo at) DT_Com DL_LocalSwitch at ov csm
-    s@(DL_ArrayMap at ans x a f) -> maybeUnroll s x $
-      DL_ArrayMap at ans <$> opt x <*> (pure a) <*> opt f
+    s@(DL_ArrayMap at ans x a f) ->
+      maybeUnroll s x $
+        DL_ArrayMap at ans <$> opt x <*> (pure a) <*> opt f
     s@(DL_ArrayReduce at ans x z b a f) -> maybeUnroll s x $ do
       DL_ArrayReduce at ans <$> opt x <*> opt z <*> (pure b) <*> (pure a) <*> opt f
     DL_MapReduce at mri ans x z b a f -> do
@@ -679,7 +726,7 @@ instance Optimize LLProg where
     let psl = M.keys sps_ies
     cs <- asks eConst
     let mis = dli_maps dli
-    env0 <- liftIO $ mkEnv0 (getCounter opts) cs psl mis
+    env0 <- liftIO $ mkEnv0 (getCounter opts) (llo_droppedAsserts opts) cs psl mis
     local (const env0) $
       focus_ctor $
         LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> pure das <*> pure devts <*> opt s
@@ -785,7 +832,8 @@ optimize_ c t = do
   flip runReaderT (ConstEnv {..}) $ gcs t
   cs <- readIORef eConstR
   let csvs = M.keysSet $ M.filter (\x -> x < 2) cs
-  env0 <- mkEnv0 c csvs [] mempty
+  dac <- newCounter 0
+  env0 <- mkEnv0 c dac csvs [] mempty
   flip runReaderT env0 $
     opt t
 

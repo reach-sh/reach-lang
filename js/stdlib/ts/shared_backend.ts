@@ -19,6 +19,14 @@ export const asMaybe = <A>(v:A|undefined): MaybeRep<A> => {
   }
 };
 
+export const fromSome = <A>(mo:MaybeRep<A>, da:A): A => {
+  if ( mo[0] === 'Some' ) {
+    return mo[1];
+  } else {
+    return da;
+  }
+};
+
 export interface AnyBackendTy {
   name: string,
   canonicalize: (x: any) => any,

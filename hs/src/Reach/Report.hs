@@ -10,9 +10,9 @@ import Network.HTTP.Client.Conduit (httpNoBody)
 import Network.HTTP.Client.TLS
 import Network.HTTP.Conduit
 import Network.HTTP.Simple (setRequestBodyJSON, setRequestMethod)
-import System.Environment
 import Reach.CommandLine
 import Reach.Version
+import System.Environment
 
 --- TODO maybe have each part collect some information and report it back through a (Map String String)
 type Report = Either SomeException ()

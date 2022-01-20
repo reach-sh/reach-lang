@@ -24,4 +24,4 @@ Verification failed:
   assert(v313);
 
   Verifying when NO participants are honest
-Checked 44 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 47 theorems; 2 failures (and 1 omitted repeats) :'(

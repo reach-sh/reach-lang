@@ -21,7 +21,7 @@ Verification failed:
   assert(v32);
 
   Verifying when NO participants are honest
-Checked 3 theorems; 1 failures :'(
+Checked 2 theorems; 1 failures :'(
 warning[RW0004]: There are no publications in the application.
 
   ./div_by_zero.rsh:4:12:application

@@ -62,7 +62,7 @@ instance Pretty LLStep where
 data LLOpts = LLOpts
   { llo_verifyArithmetic :: Bool
   , llo_counter :: Counter
-  , llo_droppedAsserts :: Int
+  , llo_droppedAsserts :: Counter
   }
   deriving (Generic, Eq)
 

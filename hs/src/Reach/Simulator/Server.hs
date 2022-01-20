@@ -1,29 +1,28 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
-
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
 module Reach.Simulator.Server where
 
-import Reach.AST.LL
-import Reach.Util
 import Reach.AST.Base
-import Control.Monad.Reader
-import qualified Reach.Simulator.Core as C
 import Control.Concurrent.STM
-import Data.Default.Class
-import Data.Text.Lazy (Text)
-import Network.Wai.Middleware.RequestLogger
-import Web.Scotty.Trans
-import qualified Data.Map.Strict as M
-import GHC.Generics
+import Control.Monad.Reader
 import Data.Aeson (FromJSON, ToJSON)
+import Data.Default.Class
+import qualified Data.Map.Strict as M
+import Data.Text.Lazy (Text)
+import GHC.Generics
+import Network.Wai.Middleware.RequestLogger
+import Reach.AST.LL
+import qualified Reach.Simulator.Core as C
+import Reach.Util
+import Web.Scotty.Trans
 
 instance Default Session where
   def = initSession
 
-newtype WebM a = WebM { runWebM :: ReaderT (TVar Session) IO a }
+newtype WebM a = WebM {runWebM :: ReaderT (TVar Session) IO a}
   deriving newtype (Applicative, Functor, Monad, MonadIO, MonadReader (TVar Session))
 
 webM :: MonadTrans t => WebM a -> t WebM a
@@ -36,6 +35,7 @@ modify :: (Session -> Session) -> WebM ()
 modify f = ask >>= liftIO . atomically . flip modifyTVar' f
 
 type StateId = Int
+
 type ActionId = Int
 
 portNumber :: Int
@@ -47,6 +47,7 @@ data Status = Initial | Running | Done
   deriving (Show, Generic)
 
 instance ToJSON Status
+
 instance FromJSON Status
 
 data Session = Session
@@ -105,8 +106,10 @@ processNewState psid ps = do
     {e_locs = M.insert sid loc locs}
   case psid of
     Nothing -> return ()
-    Just psid' -> modify $ \ st -> st
-      {e_edges = (psid',sid):edges}
+    Just psid' -> modify $ \st ->
+      st
+        { e_edges = (psid', sid) : edges
+        }
 
 registerAction :: StateId -> C.ActorId -> C.Action -> WebM ActionId
 registerAction sid actorId act = do
@@ -128,7 +131,7 @@ unblockProg sid aid v = do
   case M.lookup sid graph of
     Nothing -> do
       possible "previous state not found"
-    Just (g,l') -> do
+    Just (g, l') -> do
       let locals = C.l_locals l'
       case C.l_ks <$> M.lookup actorId locals of
         Nothing -> do
@@ -148,32 +151,32 @@ unblockProg sid aid v = do
               let ps = k (g,l) v
               processNewState (Just sid) ps
             Just (C.A_InteractV _part _str _dltype) -> do
-              let ps = k (g,l) v
+              let ps = k (g, l) v
               processNewState (Just sid) ps
             Just (C.A_Contest _phid) -> do
-              let ps = k (g,l) v
+              let ps = k (g, l) v
               processNewState (Just sid) ps
             Just (C.A_TieBreak _poolid _parts) -> do
-              let ps = k (g,l) v
+              let ps = k (g, l) v
               processNewState (Just sid) ps
             Just C.A_None -> do
-              let ps = k (g,l) v
+              let ps = k (g, l) v
               processNewState (Just sid) ps
-            Just (C.A_AdvanceTime n)  -> do
+            Just (C.A_AdvanceTime n) -> do
               case ((C.e_nwtime g) < n) of
                 True -> do
-                  let ps = k (g{C.e_nwtime = n},l) v
+                  let ps = k (g {C.e_nwtime = n}, l) v
                   processNewState (Just sid) ps
                 False -> do
-                  let ps = k (g,l) v
+                  let ps = k (g, l) v
                   processNewState (Just sid) ps
-            Just (C.A_AdvanceSeconds n)  -> do
+            Just (C.A_AdvanceSeconds n) -> do
               case ((C.e_nwsecs g) < n) of
                 True -> do
-                  let ps = k (g{C.e_nwsecs = n},l) v
+                  let ps = k (g {C.e_nwsecs = n}, l) v
                   processNewState (Just sid) ps
                 False -> do
-                  let ps = k (g,l) v
+                  let ps = k (g, l) v
                   processNewState (Just sid) ps
             Nothing -> possible "action not found"
         Just (Just (C.PS_Done _ _)) -> do
@@ -182,21 +185,21 @@ unblockProg sid aid v = do
 allStates :: WebM [StateId]
 allStates = do
   a <- gets e_nsid
-  return [0..(a-1)]
+  return [0 .. (a -1)]
 
 getStatus :: WebM Status
 getStatus = do
   s <- gets e_status
   return s
 
-getEdges :: WebM [(StateId,StateId)]
+getEdges :: WebM [(StateId, StateId)]
 getEdges = do
   es <- gets e_edges
   return es
 
 resetServer :: WebM ()
 resetServer = do
-  modify $ \ _ -> initSession
+  modify $ \_ -> initSession
 
 getProgState :: StateId -> WebM (Maybe C.State)
 getProgState sid = do
@@ -212,7 +215,7 @@ getLoc sid = do
 
 changeActor :: C.ActorId -> WebM ()
 changeActor actId = do
-  modify $ \ st -> st {e_actor_id = actId}
+  modify $ \st -> st {e_actor_id = actId}
 
 computeActions :: StateId -> C.ActorId -> WebM C.Action
 computeActions sid actorId = do
@@ -231,10 +234,10 @@ initProgSim ll = do
 initProgSimFor :: C.ActorId -> StateId -> LLProg -> WebM ()
 initProgSimFor actId sid (LLProg _ _ _ _ _ _ _ _ step) = do
   graph <- gets e_graph
-  modify $ \ st -> st {e_actor_id = actId }
-  let (g,l) = saferMapRef "initProgSimFor" $ M.lookup sid graph
-  let l' = l { C.l_curr_actor_id = actId }
-  ps <- return $ C.initAppFromStep step (g,l')
+  modify $ \st -> st {e_actor_id = actId}
+  let (g, l) = saferMapRef "initProgSimFor" $ M.lookup sid graph
+  let l' = l {C.l_curr_actor_id = actId}
+  ps <- return $ C.initAppFromStep step (g, l')
   processNewState (Just sid) ps
 
 startServer :: LLProg -> IO ()
@@ -257,7 +260,7 @@ app p = do
 
   post "/load" $ do
     setHeaders
-    webM $ modify $ \ st -> st {e_src = Just p}
+    webM $ modify $ \st -> st {e_src = Just p}
     json $ ("OK" :: String)
 
   post "/init" $ do
@@ -296,7 +299,7 @@ app p = do
     g' <- webM $ getProgState s
     case g' of
       Nothing -> json $ ("Not Found" :: String)
-      Just (g,_) -> json g
+      Just (g, _) -> json g
 
   get "/local/:s" $ do
     setHeaders
@@ -304,7 +307,7 @@ app p = do
     l' <- webM $ getProgState s
     case l' of
       Nothing -> json $ ("Not Found" :: String)
-      Just (_,l) -> json l
+      Just (_, l) -> json l
 
   get "/locs/:s" $ do
     setHeaders

@@ -127,7 +127,7 @@ hs-format: expand
 	  --ghc-opt -XBangPatterns \
 	  --ghc-opt -XCPP \
 	  --ghc-opt -XTypeApplications \
-	  --mode inplace $$(find . -name '*.hs')
+	  --mode inplace $$(find . -name '*.hs' | grep -v '.mo')
 
 .PHONY: watch
 watch: expand

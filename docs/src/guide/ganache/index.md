@@ -1,6 +1,3 @@
-
-
-
 # {#guide-ganache} How to use Ganache with Reach
 
 [Ganache](https://www.trufflesuite.com/ganache) is a very popular Ethereum personal blockchain for quick application development, deployment, and testing with a replica of the Ethereum mainnet.
@@ -31,13 +28,11 @@ load: /examples/ganache/index.mjs
 range: 3-4
 ```
 
-
 Next, you need to actually create the Ganache-based provider and connect it to Reach:
 ```
 load: /examples/ganache/index.mjs
 range: 9-13
 ```
-
 
 This will work, but Reach will not consider the network to be "isolated", which means that it won't be able to fund test accounts.
 You can enable this by setting the Reach faucet:
@@ -45,6 +40,5 @@ You can enable this by setting the Reach faucet:
 load: /examples/ganache/index.mjs
 range: 15-16
 ```
-
 
 If you want to use some of the interesting customizations that Ganache provides, then refer to [their documentation](https://github.com/trufflesuite/ganache/tree/master#options) about what `{!js} ganacheOptions` may be set to.

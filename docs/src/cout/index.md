@@ -15,7 +15,6 @@ This will normally be imported by writing:
 import * as backend from './build/index.main.mjs';
 ```
 
-
 This module exports an asynchronous function for each participant.
 For example, if a Reach program contains a participant named `{!rsh} 'A'` in the `{!rsh} Reach.App`, then the JavaScript backend will include a function named `{!js} A` (i.e. `{!js} backend.A`).
 The `{!js} Promise` returned by these functions is resolved when the Reach program terminates (i.e. reaches `{!rsh} exit();`).
@@ -38,7 +37,6 @@ This function receives the standard library as an argument and returns an object
 It's possible to expose bindings from other modules to `{!js} getExports` by re-exporting them in your "top-level" module.
 :::
 
-
 For example, if a Reach program
 exported a variable `x`, i.e. `{!rsh} export const x = 5`, the frontend could access the value in the following manner:
 
@@ -46,7 +44,6 @@ exported a variable `x`, i.e. `{!rsh} export const x = 5`, the frontend could ac
 const stdlib = await loadStdlib();
 backend.getExports(stdlib).x; // 5
 ```
-
 
 Finally, the backend provides a value, `{!js} _Connectors`, which is an opaque object representing the connectors the app was compiled for.
 
@@ -73,7 +70,6 @@ Reach.App( {},
   commit(); });
 ```
 
-
 is given the `{!js} interact` object,
 
 ```js
@@ -82,7 +78,5 @@ const x = "A string";
   give: (str) => x === str } 
 ```
 
-
 then it is not guaranteed that `{!rsh} A` will publish `{!rsh} true`, because the `{!js} str` given to `{!js} give` may not be identical to `{!js} x`.
 (However, they are `{!js} bytesEq`.)
-

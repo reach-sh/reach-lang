@@ -283,22 +283,27 @@ const mkCommon = async (lib, extra) => {
     // be disbursed in the round this happens. Maybe it will be less likely if
     // the amount is super low.
     const balance = minimumBalance + Math.floor(Math.random() * 10);
+    const balanceCheck = (b) => {
+      if (lib.connector === 'ALGO') {
+        // An inexact comparison. b can be >= balance, but only by up to a certain amount
+        expect(bigNumberify(b).gte(balance)).toBe(true);
+        expect(bigNumberify(b).sub(balance).lte(1)).toBe(true);
+      } else {
+        expect(b).toEq(balance);
+      }
+    }
 
     await describe('accepts numeric arguments of type', async () => {
       await it('`BigNumber`', async () => {
         const a = await newTestAccount(bigNumberify(balance));
         const b = await balanceOf(a);
-
-        expect(balance)
-          .toEq(b);
+        balanceCheck(b);
       });
 
       await it('raw JavaScript `Number`', async () => {
         const a = await newTestAccount(balance);
         const b = await balanceOf(a);
-
-        expect(balance)
-          .toEq(b);
+        balanceCheck(b);
       });
     });
   });

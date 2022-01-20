@@ -8,8 +8,8 @@ import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
 import qualified Filesystem.Path.CurrentOS as FP
-import Reach.AST.DL
 import Reach.APICut
+import Reach.AST.DL
 import Reach.Backend.JS
 --import Reach.Optimize
 import Reach.BigOpt

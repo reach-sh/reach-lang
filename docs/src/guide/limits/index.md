@@ -1,6 +1,3 @@
-
-
-
 # {#guide-limits} What are Reach's limitations?
 
 Today, Reach is a powerful language for building decentralized applications, as demonstrated in [the overview](##overview), [the tutorial](##tut), and the [workshop series](##workshop).

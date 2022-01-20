@@ -18,7 +18,9 @@ import Test.Tasty
 import Test.Tasty.Golden
 
 type Output = BS.ByteString
+
 type CompileOutput = Either Output Output
+
 type Expect = CompileOutput -> IO Output
 
 -- | Replace all instances of findThis in inThis with replaceWithThis
@@ -84,14 +86,15 @@ test_no = goldenTests "t/n" (const testFail)
 test_examples :: IO TestTree
 test_examples = goldenTests "../examples" f
   where
-    fails = S.fromList $
-      [ "./pkg/index.rsh"
-      , "./pkg/local.rsh"
-      , "./pkg/index-master.rsh"
-      , "./rps-4-attack/index-bad.rsh"
-      , "./rps-4-attack/index-fails.rsh"
-      , "./overview/index-error.rsh"
-      ]
+    fails =
+      S.fromList $
+        [ "./pkg/index.rsh"
+        , "./pkg/local.rsh"
+        , "./pkg/index-master.rsh"
+        , "./rps-4-attack/index-bad.rsh"
+        , "./rps-4-attack/index-fails.rsh"
+        , "./overview/index-error.rsh"
+        ]
     f fp =
       case S.member fp fails of
         True -> testFail

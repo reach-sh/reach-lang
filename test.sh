@@ -27,11 +27,11 @@ err () {
 }
 
 jb () {
-  #(cd "$ROOT"/js/js-deps && make build)
+  (cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
-  #(cd "$ROOT"/js/react-runner && make build)
+  (cd "$ROOT"/js/react-runner && make build)
   # (cd "$ROOT"/js && make build)
 }
 
@@ -113,18 +113,19 @@ checkteal () {
 
 # tealcount
 
+cdot () {
+  export REACH_DEBUG=Y
+  c "$1"
+  dot -Tpng -O "$(dirname "$1")/build/$(basename "$1" .rsh).main.appApproval.cost.dot"
+}
+
 #######
 
-export REACH_DEBUG=Y
-fc hs/t/n/map-dset.rsh
-c hs/t/y/mapOpt.rsh
-c examples/ttt/index.rsh
+cdot examples/overview/index.rsh
+cdot examples/rps-8-interact/index.rsh
+cdot users/duoswap-core/index.rsh
 exit 0
-
-export REACH_DEBUG=Y
-#c users/duoswap-core/index.rsh
-c users/xbacked-contracts/src/master_vault.rsh
-dot -Tpng -O users/xbacked-contracts/src/build/master_vault.main.appApproval.cost.dot
+cdot users/xbacked-contracts/src/master_vault.rsh
 exit 0
 
 jb

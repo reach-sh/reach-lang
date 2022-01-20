@@ -66,7 +66,6 @@ Attempting to `reach run|react|rpc-server|rpc-run|devnet` without setting `REACH
 + 2021/10/15: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2021/10/15: Algorand devnet updated to versions 3.0.1 and 2.6.4
 
-
 ## 0.1.5: 2021/09 - 2021/10
 
 Version 0.1.5 is the current Reach release version.
@@ -90,7 +89,6 @@ If you would like the old behavior, then you'll want to create a new participant
 Instead, you probably want to select one of your existing participants and assign the first publication to them.
 + 2021/09/16: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
 + 2021/09/16: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
-
 
 ## 0.1.4: 2021/09 - 2021/09
 
@@ -116,8 +114,6 @@ The `-y` or `--even-non-reach` flags may be appended for non-interactive executi
 + The `reach` script has been simplified such that `Makefile` and `docker-compose.yml` files are no longer integral to its function.
 Accordingly, these files have been removed from @{seclink("ref-usage-scaffold")}'s output.
 Authors of existing projects which contain unmodified `Makefile` or `docker-compose.yml` files are encouraged to remove them.
-
-
 
 ## 0.1.3: 2021/07 - 2021/08
 
@@ -145,7 +141,6 @@ Version 0.1.3 is an old Reach release version.
 + 2021/07/14: Algorand devnet image renamed to `devnet-algo`
 + 2021/07/14: version tagged
 
-
 ## 0.1.2: 2020/09 - 2021/07
 
 Version 0.1.2 is an old Reach release version.
@@ -157,7 +152,6 @@ It is the last version that supports Algorand using TEAL3; if you deployed a con
 + 2021/06/20: Token minting introduced, with implementation on ETH.
 + ... many interesting things ...
 + 2020/09/01: version tagged
-
 
 ## 0.1.1: 2019/09 - 2020/09
 

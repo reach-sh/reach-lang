@@ -115,10 +115,10 @@ instance Countable DLLargeArg where
 instance Countable DLTokenNew where
   counts (DLTokenNew {..}) =
     counts dtn_name
-    <> counts dtn_sym
-    <> counts dtn_url
-    <> counts dtn_metadata
-    <> counts dtn_supply
+      <> counts dtn_sym
+      <> counts dtn_url
+      <> counts dtn_metadata
+      <> counts dtn_supply
 
 instance Countable DLWithBill where
   counts (DLWithBill y z) =
@@ -149,7 +149,7 @@ instance Countable DLExpr where
     DLE_MapSet _ _ fa na -> counts fa <> counts na
     DLE_Remote _ _ av _ pamt as y -> counts (av : as) <> counts pamt <> counts y
     DLE_TokenNew _ tns -> counts tns
-    DLE_TokenBurn _ tok amt -> counts [ tok, amt ]
+    DLE_TokenBurn _ tok amt -> counts [tok, amt]
     DLE_TokenDestroy _ tok -> counts tok
     DLE_TimeOrder _ tos -> counts tos
     DLE_GetContract _ -> mempty
@@ -157,6 +157,7 @@ instance Countable DLExpr where
     DLE_EmitLog _ _ a -> counts a
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ mt tb -> counts mt <> counts tb
+    DLE_FromSome _ mo da -> counts mo <> counts da
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m
@@ -230,11 +231,11 @@ instance Countable ETail where
   counts = \case
     ET_Com s k -> countsk (counts k) s
     ET_Stop _ -> mempty
-    ET_If _ c t f -> counts c <> counts [ t, f ]
+    ET_If _ c t f -> counts c <> counts [t, f]
     ET_Switch _ o csm -> counts o <> counts csm
     ET_FromConsensus _ _ fi k -> countsk (counts k) fi
     ET_ToConsensus {..} ->
       count_rms (et_tc_from_msg <> et_tc_from_out <> [et_tc_from, et_tc_from_timev, et_tc_from_secsv, et_tc_from_didSendv]) (counts et_tc_lct <> counts et_tc_from_me <> counts et_tc_cons) <> counts et_tc_from_mtime
     ET_While {..} ->
-      countsk (counts et_w_cond <> counts [ et_w_body, et_w_k ]) et_w_asn
+      countsk (counts et_w_cond <> counts [et_w_body, et_w_k]) et_w_asn
     ET_Continue _ asn -> counts asn

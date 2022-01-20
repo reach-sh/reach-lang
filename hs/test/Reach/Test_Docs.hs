@@ -1,20 +1,20 @@
-module Reach.Test_Docs ( spec_errorCodes ) where
+module Reach.Test_Docs (spec_errorCodes) where
 
-import           Generic.Data
-import           Reach.AST.Base               (ImpossibleError (..), errPrefix)
-import           Reach.APICut                 (APICutError (..))
-import           Reach.Connector              (ConnectorError (..))
-import           Reach.EPP                    (EPPError (..))
-import           Reach.Eval.Error             (EvalError (..))
-import qualified Reach.Linearize              as Linearize
-import           Reach.PackageImport          (PkgError (..))
-import           Reach.Parser                 (ParserError (..))
-import           Reach.Util
-import           Test.Hspec
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
-import           Reach.Connector.ALGO         (AlgoError(..))
+import Generic.Data
+import Reach.APICut (APICutError (..))
+import Reach.AST.Base (ImpossibleError (..), errPrefix)
+import Reach.Connector (ConnectorError (..))
+import Reach.Connector.ALGO (AlgoError (..))
+import Reach.EPP (EPPError (..))
+import Reach.Eval.Error (EvalError (..))
+import qualified Reach.Linearize as Linearize
+import Reach.PackageImport (PkgError (..))
+import Reach.Parser (ParserError (..))
+import Reach.Util
 import Reach.Warning (Warning (W_ExternalObject))
+import Test.Hspec
 
 docName :: String
 docName = "../docs/src/rsh/errors/index.md"
@@ -38,7 +38,7 @@ allErrorCodes =
 
 getCodes :: String -> Int -> [T.Text]
 getCodes pre num =
-  map (go . makeErrCode pre) [0 .. (num-1)]
+  map (go . makeErrCode pre) [0 .. (num -1)]
   where
     go x = "## {#" <> T.pack x <> "}"
 

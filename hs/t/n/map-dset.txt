@@ -27,4 +27,4 @@ Verification failed:
   require(v100);
 
   Verifying when NO participants are honest
-Checked 15 theorems; 1 failures :'(
+Checked 14 theorems; 1 failures :'(

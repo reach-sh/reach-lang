@@ -8,9 +8,9 @@ where
 import Data.List ((\\))
 import Data.Proxy
 import Generics.Deriving
+import Reach.APICut
 import Reach.Eval.Error
 import Reach.Parser
-import Reach.APICut
 import System.Directory
 import System.FilePath
 import Test.Hspec

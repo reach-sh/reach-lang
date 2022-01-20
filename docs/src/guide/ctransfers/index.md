@@ -1,6 +1,3 @@
-
-
-
 # {#guide-ctransfers} What do the different kinds of consensus transfers mean? `publish`, `pay`, `race`, `fork`, `parallelReduce`?
 
 A fundamental concept in Reach is that the application starts in a detached birds-eye perspective called a step where each of the participants are acting completely independently.
@@ -8,7 +5,6 @@ These independent steps are punctuated by consensus transfers which cause all of
 :::note
 These consensus steps are what happen "on-chain" and are executed by a so-called "smart contract".
 :::
-
 
 There are many ways to perform a consensus transfer in Reach and each is used for different reasons.
 The variety can feel a bit bewildering for new users, but here is an intuitive guide to help you decide which you need for any given situation.
@@ -22,7 +18,6 @@ This kind of transfer always explicitly names the party acting, as in:
 ```reach
 Auctioneer.publish(openingBid);
 ```
-
 
 `{!rsh} pay` and `{!rsh} publish` without a `{!rsh} race` are for when one participant wants to do one thing.
 
@@ -53,7 +48,6 @@ The main questions are:
 + How many things can be done? One or many?
 + How many times can this be done? Once or many?
 
-
 If it happens many times, you want `{!rsh} parallelReduce`.
 If many things could happen, you want `{!rsh} fork`.
 If many participants can act, you want `{!rsh} race`.
@@ -64,4 +58,3 @@ The above article uses the word "need" when talking about `{!rsh} fork` and `{!r
 `{!rsh} fork` works by having each participant `{!rsh} race` to provide a `{!rsh} Data` instance, where the single consensus step does a case analysis on the `{!rsh} Data` to determine which code to run.
 Similarly, `{!rsh} parallelReduce` is just an abbreviation of a `{!rsh} fork` within a `{!rsh} while` loop.
 :::
-

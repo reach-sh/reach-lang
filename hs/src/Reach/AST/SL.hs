@@ -15,7 +15,7 @@ import Reach.AST.DLBase
 import Reach.JSOrphans ()
 import Reach.Texty
 import Reach.Util
-import Reach.Warning (Deprecation(..))
+import Reach.Warning (Deprecation (..))
 
 -- SL types are a superset of DL types.
 -- We copy/paste constructors instead of using `ST_Val DLType`
@@ -178,9 +178,8 @@ instance NewerVar SLVal where
     (SLV_Tuple _ vs) -> containsVarNewerThan ret vs
     (SLV_Struct _ vs) -> containsVarNewerThan ret $ map snd vs
     (SLV_Data _ _ _ v) -> containsVarNewerThan ret v
-    (SLV_Deprecated _ v ) -> containsVarNewerThan ret v
+    (SLV_Deprecated _ v) -> containsVarNewerThan ret v
     _ -> False
-
 
 -- | Equivalence operation on flattened or simplified structures.
 class (Eq a) => Equiv a where
@@ -214,7 +213,7 @@ instance Equiv Bool where
   equiv = (==)
 
 instance (Equiv a, Equiv b) => Equiv (Either a b) where
-  equiv x y = case (x,y) of
+  equiv x y = case (x, y) of
     (Left a, Left b) -> equiv a b
     (Right a, Right b) -> equiv a b
     _ -> False
@@ -229,7 +228,7 @@ instance Equiv FluidVar where
   equiv = (==)
 
 instance Equiv DLArg where
-  equiv a b = case (a,b) of
+  equiv a b = case (a, b) of
     (DLA_Var v1, DLA_Var v2) -> equiv v1 v2
     (DLA_Constant c1, DLA_Constant c2) -> equiv c1 c2
     (DLA_Literal lit1, DLA_Literal lit2) -> equiv lit1 lit2
@@ -237,7 +236,7 @@ instance Equiv DLArg where
     _ -> False
 
 instance Equiv DLLiteral where
-  equiv a b = case (a,b) of
+  equiv a b = case (a, b) of
     (DLL_Null, DLL_Null) -> True
     (DLL_Bool b1, DLL_Bool b2) -> equiv b1 b2
     (DLL_Int _ x, DLL_Int _ y) -> equiv x y
@@ -248,27 +247,26 @@ instance Equiv SLTypeFun where
     equiv pre1 pre2 && equiv post1 post2
 
 instance Equiv SLSSVal where
-  equiv (SLSSVal {sss_val = v1}) (SLSSVal { sss_val = v2}) = equiv v1 v2
+  equiv (SLSSVal {sss_val = v1}) (SLSSVal {sss_val = v2}) = equiv v1 v2
 
 instance Equiv DLMVar where
   equiv (DLMVar a) (DLMVar b) = equiv a b
 
 instance (Equiv a) => Equiv [a] where
-  equiv xs ys = all (\(x,y) -> equiv x y) $ zip xs ys
+  equiv xs ys = all (\(x, y) -> equiv x y) $ zip xs ys
 
 instance (Equiv b, Equiv a) => Equiv (M.Map a b) where
   equiv m1 m2 = equiv (M.toList m1) (M.toList m2)
 
 instance (Equiv a, Equiv b) => Equiv (a, b) where
-  equiv (a,b) (a2,b2) = equiv a a2 && equiv b b2
+  equiv (a, b) (a2, b2) = equiv a a2 && equiv b b2
 
 instance Equiv DLType where
   -- this is safe to use Eq with
   equiv = (==)
 
-
 instance Equiv ClaimType where
-  equiv a b = case (a,b) of
+  equiv a b = case (a, b) of
     (CT_Assert, CT_Assert) -> True
     (CT_Assume b1, CT_Assume b2) -> equiv b1 b2
     (CT_Require, CT_Require) -> True
@@ -277,15 +275,15 @@ instance Equiv ClaimType where
     _ -> False
 
 instance Equiv Deprecation where
-  equiv a b = case (a,b) of
+  equiv a b = case (a, b) of
     (D_ParticipantTuples, D_ParticipantTuples) -> True
-    (D_SnakeToCamelCase _, D_SnakeToCamelCase _ ) -> True
+    (D_SnakeToCamelCase _, D_SnakeToCamelCase _) -> True
     (D_ReachAppArgs, D_ReachAppArgs) -> True
     (D_UntypedTimeArg, D_UntypedTimeArg) -> True
     _ -> False
 
 instance Equiv SLForm where
-  equiv a b = case (a,b) of
+  equiv a b = case (a, b) of
     (SLForm_App, SLForm_App) -> True
     (SLForm_each, SLForm_each) -> True
     ((SLForm_EachAns parts _ _ _), (SLForm_EachAns parts2 _ _ _)) -> equiv parts parts2
@@ -299,7 +297,7 @@ instance Equiv SLForm where
     _ -> False
 
 instance Equiv SLType where
-  equiv a b = case (a,b) of
+  equiv a b = case (a, b) of
     (ST_Null, ST_Null) -> True
     (ST_Bool, ST_Bool) -> True
     (ST_UInt, ST_UInt) -> True
@@ -326,7 +324,7 @@ instance Equiv DLConstant where
   equiv DLC_UInt_max DLC_UInt_max = True
 
 instance Equiv SLVal where
-  equiv a b = case (a,b) of
+  equiv a b = case (a, b) of
     ((SLV_Null _ _), (SLV_Null _ _)) -> True
     ((SLV_Bool _ b1), (SLV_Bool _ b2)) -> equiv b1 b2
     ((SLV_Int _ i1), (SLV_Int _ i2)) -> equiv i1 i2
@@ -338,7 +336,7 @@ instance Equiv SLVal where
     ((SLV_DLVar d1), (SLV_DLVar d2)) -> equiv d1 d2
     ((SLV_Connector t1), (SLV_Connector t2)) -> equiv t1 t2
     ((SLV_Prim p1), (SLV_Prim p2)) -> equiv p1 p2
-    ((SLV_Kwd k1), (SLV_Kwd k2))  -> equiv k1 k2
+    ((SLV_Kwd k1), (SLV_Kwd k2)) -> equiv k1 k2
     ((SLV_Deprecated d1 _), (SLV_Deprecated d2 _)) -> equiv d1 d2
     (SLV_Anybody, SLV_Anybody) -> True
     ((SLV_Participant _ s sl dl), (SLV_Participant _ s2 sl2 dl2)) -> equiv s s2 && equiv sl sl2 && equiv dl dl2
@@ -714,10 +712,11 @@ data SLPrimitive
   | SLPrim_event_is (Maybe SLPart) SLVar [SLType]
   | SLPrim_verifyMuldiv
   | SLPrim_getUntrackedFunds
+  | SLPrim_fromSome
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where
-  equiv a b = case (a,b) of
+  equiv a b = case (a, b) of
     -- Ignore every SLPrim except ops
     (SLPrim_op p1, SLPrim_op p2) -> equiv p1 p2
     _ -> False

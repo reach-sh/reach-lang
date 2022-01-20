@@ -51,6 +51,7 @@ export interface Stdlib_Backend_Shared<Ty> extends Stdlib_Backend_Shared_User<Ty
   simTokenBurn: any, // XXX
   simTokenDestroy: any, // XXX
   bytesConcat: (b1: string, b2: string) => string
+  fromSome: <A>(mo:MaybeRep<A>, da:A) => A
 };
 
 export interface Arith {

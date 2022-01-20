@@ -1,8 +1,9 @@
 module Reach.BinaryLeafTree
   ( bltM
   , bltL
-  , BLT(..)
-  ) where
+  , BLT (..)
+  )
+where
 
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as S
@@ -24,7 +25,7 @@ bltM = bltL . M.toAscList
 bltL :: Integral i => [(i, a)] -> BLT i a
 bltL = blt . S.fromList
 
-blt :: Integral i => S.Seq (i, a)  -> BLT i a
+blt :: Integral i => S.Seq (i, a) -> BLT i a
 blt s =
   case len <= 1 of
     True ->
@@ -36,10 +37,9 @@ blt s =
           (l, r) = S.splitAt midl s
           cl = blt l
           cr = blt r
-      in
-        case r of
-          S.Empty -> cl
-          (midv, _) S.:<| _ ->
-            Branch midv cl cr
+       in case r of
+            S.Empty -> cl
+            (midv, _) S.:<| _ ->
+              Branch midv cl cr
   where
     len = S.length s

@@ -1,8 +1,8 @@
 module Reach.BigOpt (bigopt) where
 
 import qualified Data.Text as T
-import Reach.AddCounts
 import Reach.AST.DLBase
+import Reach.AddCounts
 import Reach.FixedPoint
 import Reach.Optimize
 import Reach.Util

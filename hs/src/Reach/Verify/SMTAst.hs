@@ -1,26 +1,28 @@
-module Reach.Verify.SMTAst (
-  SMTTrace(..),
-  BindingOrigin(..),
-  TheoremKind(..),
-  SMTLet(..),
-  SMTExpr(..),
-  SynthExpr(..),
-  SMTCat(..),
-  SMTVal(..)) where
+module Reach.Verify.SMTAst
+  ( SMTTrace (..)
+  , BindingOrigin (..)
+  , TheoremKind (..)
+  , SMTLet (..)
+  , SMTExpr (..)
+  , SynthExpr (..)
+  , SMTCat (..)
+  , SMTVal (..)
+  )
+where
 
-import Reach.AST.Base
-import Reach.AST.DLBase
-import Reach.Texty
-import Reach.AddCounts
-import Reach.CollectCounts
-import qualified Data.ByteString as B
 import Control.Monad.Identity
 import Control.Monad.Reader
-import qualified Data.Map as M
+import qualified Data.ByteString as B
 import Data.List (partition)
-import Reach.Util (impossible)
+import qualified Data.Map as M
 import Data.Maybe
+import Reach.AST.Base
+import Reach.AST.DLBase
+import Reach.AddCounts
+import Reach.CollectCounts
+import Reach.Texty
 import Reach.UnsafeUtil
+import Reach.Util (impossible)
 
 data BindingOrigin
   = O_Join SLPart Bool
@@ -84,10 +86,10 @@ instance Pretty SMTCat where
   pretty = viaShow
 
 data SynthExpr
-  = SMTMapNew                           -- Context
-  | SMTMapFresh DLVar                   -- Witness
+  = SMTMapNew -- Context
+  | SMTMapFresh DLVar -- Witness
   | SMTMapSet DLVar DLArg (Maybe DLArg) -- Context
-  | SMTMapRef DLVar DLArg               -- Context
+  | SMTMapRef DLVar DLArg -- Context
   deriving (Eq, Show)
 
 instance PrettySubst SynthExpr where
@@ -116,7 +118,7 @@ instance PrettySubst SMTExpr where
     SMTModel bo -> do
       b' <- prettySubst bo
       return $ "<" <> b' <> ">"
-    SMTProgram de ->  prettySubst de
+    SMTProgram de -> prettySubst de
     SMTSynth se -> prettySubst se
 
 instance Show SMTExpr where
@@ -203,13 +205,13 @@ instance PrettySubst [SMTLet] where
     SMTLet at dv _ Witness se : tl -> do
       env <- ask
       se' <- prettySubst se
-      let wouldBe x = hardline <> "  //    ^ could = " <> x <> hardline <>
-                                  "  //      from:" <+> pretty (unsafeRedactAbsStr $ show at)
+      let wouldBe x =
+            hardline <> "  //    ^ could = " <> x <> hardline
+              <> "  //      from:" <+> pretty (unsafeRedactAbsStr $ show at)
       let info = maybe "" wouldBe (M.lookup dv env)
       let msg = "  const" <+> viaShow dv <+> "=" <+> se' <> ";" <> info
       return $ msg <> hardline <> prettySubstWith (M.delete dv env) tl
     _ : tl -> prettySubst tl
-
 
 data SMTTrace
   = SMTTrace [SMTLet] TheoremKind DLVar
@@ -227,14 +229,21 @@ instance PrettySubst SMTTrace where
     let env' = foldr M.delete env witnessVars
     let c_lets' = prettySubstWith env' c_lets
     return $
-      "  // Violation Witness" <> hardline <> hardline <> w_lets' <> hardline <>
-      "  // Theorem Formalization" <> hardline <> hardline <> c_lets' <>
-      "  " <> tk' <> parens (viaShow dv) <> ";" <> hardline
+      "  // Violation Witness" <> hardline <> hardline <> w_lets' <> hardline
+        <> "  // Theorem Formalization"
+        <> hardline
+        <> hardline
+        <> c_lets'
+        <> "  "
+        <> tk'
+        <> parens (viaShow dv)
+        <> ";"
+        <> hardline
     where
       tk' = case tk of
-              TClaim c -> pretty c
-              TInvariant _ -> "assert"
-              TWhen -> "analyze"
+        TClaim c -> pretty c
+        TInvariant _ -> "assert"
+        TWhen -> "analyze"
       isWitness = \case
         SMTLet _ _ _ Witness _ -> True
         SMTCon {} -> True
@@ -272,8 +281,8 @@ instance Pretty SMTVal where
     SMV_Bytes b -> pretty b
     SMV_Array t xs -> "array" <> parens (hsep $ punctuate comma [pretty t, brackets $ hsep $ punctuate comma $ map pretty xs])
     SMV_Tuple xs -> brackets $ hsep $ punctuate comma $ map pretty xs
-    SMV_Object ts -> braces $ hsep $ punctuate comma $ map (\ (k, v) -> pretty k <> ":" <+> pretty v) (M.toAscList ts)
-    SMV_Struct ts -> braces $ hsep $ punctuate comma $ map (\ (k, v) -> pretty k <> ":" <+> pretty v) ts
+    SMV_Object ts -> braces $ hsep $ punctuate comma $ map (\(k, v) -> pretty k <> ":" <+> pretty v) (M.toAscList ts)
+    SMV_Struct ts -> braces $ hsep $ punctuate comma $ map (\(k, v) -> pretty k <> ":" <+> pretty v) ts
     SMV_Data c xs -> pretty c <> parens (hsep $ punctuate comma $ map pretty xs)
     SMV_Map -> "<map>"
 

@@ -1,6 +1,3 @@
-
-
-
 # {#guide-loop-invs} Finding and using loop invariants
 
 Reach requires that `{!rsh} while` loops are annotated with [loop invariants](https://en.wikipedia.org/wiki/Loop_invariant).
@@ -20,13 +17,11 @@ while ( COND ) {
 assert(P); 
 ```
 
-
 We can summarize the properties that must be true about this code as follows:
 
 + `{!rsh} before` and `{!rsh} V = INIT` implies `{!rsh} INV` --- The earlier part of the program must establish `{!rsh} INV`.
 + If `{!rsh} COND` and `{!rsh} INV`, then `{!rsh} body` and `{!rsh} V = NEXT` implies `{!rsh} INV` --- The loop body can make use of the truth of the condition and the invariant to re-establish the invariant after `{!rsh} V` is mutated to `{!rsh} NEXT`.
 + `{!rsh} ! COND` and `{!rsh} INV` and `{!rsh} after` implies `{!rsh} P` --- The later part of the program can make use of the negation of the condition and the invariant to establish any future assertions.
-
 
 Loop invariants only need to mention values that can vary because of the execution of the loop.
 In Reach, all bindings are immutable, except for those bound by `{!rsh} while`, so they never need to be mentioned.

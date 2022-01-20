@@ -64,15 +64,15 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
           flip when doExit =<< readSt st_live
           readDlo id
   fin_toks <- readSt st_toks
-  fin_droppedAsserts <- liftIO $ readCounter e_droppedAsserts'
   didPublish <- readSt st_after_first
   unless (didPublish || null top_ss) $
     liftIO . emitWarning (Just at) $ W_NoPublish
   let final = shared_lifts <> these_lifts
-  let final_dlo' = final_dlo
-        { dlo_bals = 1 + length fin_toks
-        , dlo_droppedAsserts = fin_droppedAsserts
-        }
+  let final_dlo' =
+        final_dlo
+          { dlo_bals = 1 + length fin_toks
+          , dlo_droppedAsserts = e_droppedAsserts'
+          }
   AppRes {..} <- liftIO $ readIORef resr
   dli_maps <- liftIO $ readIORef $ me_ms mape
   let dli = DLInit {..}
@@ -129,8 +129,8 @@ makeEnv cns = do
   -- XXX revise
   e_exn <- newIORef $ ExnEnv False Nothing Nothing SLM_Module
   e_mape <- makeMapEnv
-  let e_appr = Left $ app_default_opts e_id $ M.keys cns
   e_droppedAsserts <- newCounter 0
+  let e_appr = Left $ app_default_opts e_id e_droppedAsserts $ M.keys cns
   return (Env {..})
 
 withUnusedVars :: App a -> App a

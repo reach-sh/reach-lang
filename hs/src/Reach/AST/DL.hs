@@ -3,8 +3,8 @@
 module Reach.AST.DL where
 
 import qualified Data.Map.Strict as M
-import qualified Data.Set as S
 import qualified Data.Sequence as Seq
+import qualified Data.Set as S
 import qualified Data.Text as T
 import GHC.Generics
 import Reach.AST.Base
@@ -140,7 +140,7 @@ instance Pretty DLSStmt where
       DLS_Only _ who onlys ->
         prettyOnly who (ns onlys)
       DLS_ToConsensus {..} ->
-        prettyToConsensus__ ("?"::String) dls_tc_send dls_tc_recv dls_tc_mtime
+        prettyToConsensus__ ("?" :: String) dls_tc_send dls_tc_recv dls_tc_mtime
       DLS_FromConsensus _ more ->
         prettyCommit <> hardline <> render_dls more
       DLS_While _ asn inv cond body ->
@@ -255,7 +255,7 @@ data DLOpts = DLOpts
   , dlo_connectors :: [T.Text]
   , dlo_counter :: Counter
   , dlo_bals :: Int
-  , dlo_droppedAsserts :: Int
+  , dlo_droppedAsserts :: Counter
   }
   deriving (Eq, Generic)
 

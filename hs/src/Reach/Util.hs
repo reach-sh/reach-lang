@@ -82,7 +82,6 @@ impossible msg =
       <> "Please report this error, along with the pertinent program, to the Reach team as soon as possible "
       <> "so we can fix it.\n\nOpen an issue at: https://github.com/reach-sh/reach-lang/issues\n"
 
-
 possible :: HasCallStack => String -> b
 possible msg =
   error $

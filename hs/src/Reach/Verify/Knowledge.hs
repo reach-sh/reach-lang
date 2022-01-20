@@ -151,10 +151,10 @@ instance AllPoints DLArg where
 instance AllPoints DLTokenNew where
   all_points (DLTokenNew {..}) =
     all_points dtn_name
-    <> all_points dtn_sym
-    <> all_points dtn_url
-    <> all_points dtn_metadata
-    <> all_points dtn_supply
+      <> all_points dtn_sym
+      <> all_points dtn_url
+      <> all_points dtn_metadata
+      <> all_points dtn_supply
 
 kgq_a_all :: AllPoints a => KCtxt -> a -> IO ()
 kgq_a_all ctxt a =
@@ -251,6 +251,9 @@ kgq_e ctxt mv = \case
     mapM_ (kgq_a_onlym ctxt mv . DLA_Var) lv
   DLE_setApiDetails {} -> mempty
   DLE_GetUntrackedFunds _ mt _ -> kgq_a_all ctxt mt
+  DLE_FromSome _ mo da -> do
+    kgq_a_all ctxt mo
+    kgq_a_all ctxt da
 
 kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case

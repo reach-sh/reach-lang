@@ -4,16 +4,17 @@
 # level deep under examples/; path resolution will otherwise fail
 .DEFAULT_GOAL := build
 
-PORT_RPC_UNSAFE_VIEW = 3101
-PORT_RPC_VIEW_BYTES  = 3102
-PORT_RPC_VIEW_FUN    = 3103
-PORT_RPC_VIEW_MAP    = 3104
-PORT_RPC_VIEW_MAYBE  = 3105
-PORT_RPC_EXPORTS     = 3106
-PORT_RPC_SAFE_API    = 3107
-PORT_RPC_API_CALL    = 3108
-PORT_RPC_API_FULL    = 3109
-PORT_RPC_VIEW_STEPS  = 3110
+PORT_RPC_UNSAFE_VIEW     = 3101
+PORT_RPC_VIEW_BYTES      = 3102
+PORT_RPC_VIEW_FUN        = 3103
+PORT_RPC_VIEW_MAP        = 3104
+PORT_RPC_VIEW_MAYBE      = 3105
+PORT_RPC_EXPORTS         = 3106
+PORT_RPC_SAFE_API        = 3107
+PORT_RPC_API_CALL        = 3108
+PORT_RPC_API_FULL        = 3109
+PORT_RPC_VIEW_STEPS      = 3110
+PORT_RPC_SET_DEBUG_LABEL = 3111
 
 ROOT = ../..
 include $(ROOT)/DEPS
@@ -58,7 +59,7 @@ Dockerfile: ../crpc-Dockerfile
 package.json: ../crpc-package.json
 	@cat ../crpc-package.json | sed 's/{{CNAME}}/$(CNAME)/' > ./package.json
 
-$(RSHES): $(shell find ../$(BASE) -name \*.rsh)
+$(RSHES): $(shell [ -d ../$(BASE) ] && find ../$(BASE) -name \*.rsh)
 	@mkdir -p "$$(dirname $@)"
 	@cp -vu ../$(BASE)/$@ ./$@
 

@@ -1,13 +1,13 @@
-module Reach.Linearize (linearize, Error(..)) where
+module Reach.Linearize (linearize, Error (..)) where
 
 import Control.Monad.Reader
 import Data.IORef
-import qualified Data.Text as T
 import Data.List.Extra
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
 import qualified Data.Sequence as Seq
+import qualified Data.Text as T
 import GHC.Stack (HasCallStack)
 import Generics.Deriving (Generic)
 import Reach.AST.Base
@@ -26,6 +26,7 @@ data Error
 
 instance HasErrorCode Error where
   errPrefix = const "RL"
+
   -- These indices are part of an external interface; they
   -- are used in the documentation of Error Codes.
   -- If you delete a constructor, do NOT re-allocate the number.
@@ -45,6 +46,7 @@ allocVar ef = asks ef >>= (liftIO . incCounter)
 type DKApp = ReaderT DKEnv IO
 
 type LLRetRHS = (DLVar, Bool, DKTail)
+
 type LLRet = (Int, LLRetRHS)
 
 data Handler = Handler
@@ -58,7 +60,7 @@ data DKEnv = DKEnv
   }
 
 withReturn :: Int -> LLRetRHS -> DKApp a -> DKApp a
-withReturn rv rvv = local (\e -> e { eRet = Just (rv, rvv) })
+withReturn rv rvv = local (\e -> e {eRet = Just (rv, rvv)})
 
 data DKBranchMode
   = DKBM_Con
@@ -93,17 +95,19 @@ dk1 k s =
       let con = DK_If at c
       let loc t' f' = DK_Com (DKC_LocalIf at c t' f') k
       let mt = DK_Stop at
-      (mk, k') <- getDKBM s >>= \case
-        DKBM_Con -> return $ (con, k)
-        DKBM_Do -> return $ (loc, mt)
+      (mk, k') <-
+        getDKBM s >>= \case
+          DKBM_Con -> return $ (con, k)
+          DKBM_Do -> return $ (loc, mt)
       mk <$> dk_ k' t <*> dk_ k' f
     DLS_Switch at v _ csm -> do
       let con = DK_Switch at v
       let loc csm' = DK_Com (DKC_LocalSwitch at v csm') k
       let mt = DK_Stop at
-      (mk, k') <- getDKBM s >>= \case
-        DKBM_Con -> return $ (con, k)
-        DKBM_Do -> return $ (loc, mt)
+      (mk, k') <-
+        getDKBM s >>= \case
+          DKBM_Con -> return $ (con, k)
+          DKBM_Do -> return $ (loc, mt)
       let cm1 (dv', b, l) = (,,) dv' b <$> dk_ k' l
       mk <$> mapM cm1 csm
     DLS_Return at ret da ->
@@ -140,7 +144,7 @@ dk1 k s =
               ((Seq.:<|) (DLS_Prompt pa pb pc ((Seq.:<|) (DLS_Switch sa swb sc sd) Seq.Empty)) r) ->
                 ((Seq.<|) (DLS_Prompt pa pb (go pc) ((Seq.<|) (DLS_Switch sa swb (go sc) sd) Seq.empty)) r)
                 where
-                  go x = x { sa_local = False }
+                  go x = x {sa_local = False}
               _ -> cs0
       cs' <- dk_ k cs
       let recv' = recv {dr_k = cs'}
@@ -192,7 +196,7 @@ dk_eb (DLinExportBlock at vs b) =
   resetDK $ DLinExportBlock at vs <$> dk_block at b
 
 resetDK :: DKApp a -> DKApp a
-resetDK = local (\e -> e { eRet = Nothing, eExnHandler = Nothing })
+resetDK = local (\e -> e {eRet = Nothing, eExnHandler = Nothing})
 
 dekont :: DLProg -> IO DKProg
 dekont (DLProg at opts sps dli dex dvs das devts ss) = do
@@ -220,7 +224,8 @@ instance CanLift DLExpr where
 
 instance CanLift a => CanLift (SwitchCases a) where
   canLift = getAll . mconcatMap (All . go) . M.toList
-    where go (_,(_, _, k)) = canLift k
+    where
+      go (_, (_, _, k)) = canLift k
 
 instance CanLift DKTail where
   canLift = \case
@@ -282,7 +287,7 @@ instance LiftCon z => LiftCon (DLRecv z) where
   lc r = (\z' -> r {dr_k = z'}) <$> lc (dr_k r)
 
 instance LiftCon a => LiftCon (SwitchCases a) where
-  lc = mapM (\(a,b,c) -> (,,) a b <$> lc c)
+  lc = mapM (\(a, b, c) -> (,,) a b <$> lc c)
 
 instance LiftCon DKBlock where
   lc (DKBlock at sf b a) =
@@ -478,9 +483,10 @@ df_step = \case
     let tt = dr_time recv
     ls <- fmap snd <$> fluidRefm FV_thisConsensusSecs
     let ts = dr_secs recv
-    k' <- df_con $
-      DK_Com (DKC_Let at DLV_Eff (DLE_TimeOrder at [(lt, tt), (ls, ts)])) $
-        dr_k recv
+    k' <-
+      df_con $
+        DK_Com (DKC_Let at DLV_Eff (DLE_TimeOrder at [(lt, tt), (ls, ts)])) $
+          dr_k recv
     let recv' = recv {dr_k = k'}
     mtime' <-
       case mtime of
