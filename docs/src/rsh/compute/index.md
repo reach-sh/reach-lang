@@ -1538,6 +1538,15 @@ It accepts an optional bytes argument, which is included in any reported violati
 See [the guide section on verification](##guide-assert) to better understand how and what to verify in your program.
 :::
 
+### `check`
+
+@{ref("rsh", "check")}
+```reach
+check( claim, [msg] )
+```
+
+A dynamic assertion that `{!rsh} claim` evaluates to `{!rsh} true`, which expands to either a `{!rsh} require` or `{!rsh} assume` depending on where it is used in a program.
+It accepts an optional bytes argument, which is included in any reported violation.
 
 ### `forall`
 

@@ -530,6 +530,7 @@ base_env =
     , ("assume", SLV_Prim $ SLPrim_claim $ CT_Assume False)
     , ("require", SLV_Prim $ SLPrim_claim CT_Require)
     , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
+    , ("check", SLV_Prim $ SLPrim_check)
     , ("unknowable", SLV_Form $ SLForm_unknowable)
     , ("balance", SLV_Prim $ SLPrim_balance)
     , ("lastConsensusTime", SLV_Prim $ SLPrim_fluid_read_canWait FV_lastConsensusTime)
@@ -2782,6 +2783,21 @@ evalPrim p sargs =
       at <- withAt id
       dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_Digest at dargs)
       return $ (lvl, SLV_DLVar dv)
+    SLPrim_check -> do
+      am <- readSt st_mode
+      let ass = CT_Assume False
+      let req = CT_Require
+      let other = CT_Assume True
+      let ct = case am of
+            SLM_Module -> other
+            SLM_AppInit -> other
+            SLM_Step -> other
+            SLM_LocalStep -> ass
+            SLM_LocalPure -> other
+            SLM_ConsensusStep -> req
+            SLM_ConsensusPure -> req
+            SLM_Export -> ass
+      evalPrim (SLPrim_claim ct) sargs
     SLPrim_claim ct -> do
       let barg = compileCheckType T_Bool
       (dargm, mmsg) <- case map snd sargs of
@@ -3650,27 +3666,9 @@ evalApply rator rands =
   where
     vals = evalApplyVals' rator =<< evalExprs rands
 
-getKwdOrPrim :: Ord k => k -> M.Map k SLSSVal -> Maybe SLSSVal
-getKwdOrPrim ident env =
-  case M.lookup ident env of
-    -- Hack: Allow `default` to be used as object property name for `match`
-    -- expr. Keywords are allowed as property names in JS anyway, *shrug*
-    Just (SLSSVal _ _ (SLV_Kwd SLK_default)) -> Nothing
-    -- Allow `new` to be used as object property name for `Set`.
-    Just (SLSSVal _ _ (SLV_Kwd SLK_new)) -> Nothing
-    Just s@(SLSSVal _ _ (SLV_Kwd _)) -> Just s
-    Just s@(SLSSVal _ _ (SLV_Prim _)) -> Just s
-    _ -> Nothing
-
 evalPropertyName :: JSPropertyName -> App (SecurityLevel, String)
 evalPropertyName = \case
-  JSPropertyIdent an s -> do
-    dummy_at <- withAt $ \at -> SLSSVal at Public $ SLV_Null at ""
-    locAtf (srcloc_jsa "field" an) $
-      -- Do not allow keywords or primitives to be used as property names
-      case getKwdOrPrim s base_env of
-        Just s' -> expect_ $ Err_Shadowed s s' dummy_at
-        _ -> return $ public s
+  JSPropertyIdent _ s -> return $ public s
   JSPropertyString _ s -> return $ public $ trimQuotes s
   pn@(JSPropertyNumber an _) ->
     locAtf (srcloc_jsa "number" an) $

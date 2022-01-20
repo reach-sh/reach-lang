@@ -17,7 +17,7 @@ export const main = Reach.App(() => {
     const n0 = declassify(interact.get()); });
   A.publish(a0, n0);
 
-  const check = (n) => {
+  const chk = (n) => {
     const a1 = (n0 < a0.length) ? a0.set(n0, 1) : a0;
     assert(a1[0] == a0[0] || a1[0] == 1);
     assert(n0 == 0 ? a1[0] == 1 : true);
@@ -35,9 +35,9 @@ export const main = Reach.App(() => {
     return [a0, a1, a2];
   };
 
-  const x0 = check(n0);
-  const x1 = check(0);
-  const x2 = check(N - 2);
+  const x0 = chk(n0);
+  const x1 = chk(0);
+  const x2 = chk(N - 2);
 
   commit();
 

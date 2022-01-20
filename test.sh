@@ -121,7 +121,8 @@ cdot () {
 
 #######
 
-cdot users/xbacked-contracts/src/master_vault.rsh
+c examples/zbeq/index.rsh
+c hs/t/y/check.rsh
 exit 0
 
 #jb

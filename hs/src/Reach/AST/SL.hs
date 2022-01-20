@@ -713,6 +713,7 @@ data SLPrimitive
   | SLPrim_verifyMuldiv
   | SLPrim_getUntrackedFunds
   | SLPrim_fromSome
+  | SLPrim_check
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where
