@@ -99,94 +99,111 @@ const renderObjects = async (nodeId) => {
     ${obs}
   </ul>
   `
-  objectDetails()
+  bindObjDetailsEvents();
 }
 
-const objectDetails = async () => {
-  const bindObjDetailsEvents = () => {
-    const objectBtns = document.querySelectorAll(".object-button")
-    objectBtns.forEach((item, i) => {
-      item.addEventListener("click",renderObjectDetails)
-    });
+const bindObjDetailsEvents = () => {
+  const objectBtns = document.querySelectorAll(".object-button")
+  objectBtns.forEach((item, i) => {
+    item.addEventListener("click",renderObjectDetails)
+  });
+}
+
+const renderObjectDetails = async (evt) => {
+  objectsHTML = spa.innerHTML
+  const tgt = evt.target.closest(".object-button")
+  const nodeId = tgt.dataset.nodeId
+  const actorId = parseInt(tgt.dataset.actorId)
+  const r = await c.getStateLocals(nodeId)
+  const g = await c.getStateGlobals(nodeId)
+  const detsj = r.l_locals[actorId]
+  const ledger = g.e_ledger
+  let dets = ``
+  let status = 'Initial'
+  switch (detsj.l_ks) {
+    case 'PS_Suspend':
+      status = 'Running'
+      break;
+    case 'PS_Done':
+      status = 'Done'
+      break;
   }
-  const renderObjectDetails = async (evt) => {
-    objectsHTML = spa.innerHTML
-    const tgt = evt.target.closest(".object-button")
-    const nodeId = tgt.dataset.nodeId
-    const actorId = parseInt(tgt.dataset.actorId)
-    const r = await c.getStateLocals(nodeId)
-    const g = await c.getStateGlobals(nodeId)
-    const detsj = r.l_locals[actorId]
-    const ledger = g.e_ledger
-    let dets = ``
-    let status = 'Initial'
-    switch (detsj.l_ks) {
-      case 'PS_Suspend':
-        status = 'Running'
-        break;
-      case 'PS_Done':
-        status = 'Done'
-        break;
-    }
-    const who = detsj.l_who ? detsj.l_who : 'Consensus'
+  const who = detsj.l_who ? detsj.l_who : 'Consensus'
+  dets = dets + `
+    <button type="button"
+    class="list-group-item list-group-item-action
+    object-button status-panel"
+    data-actor-id="${actorId}"
+    data-node-id="${nodeId}"
+    data-who="${who}">
+    <div class="badge bg-secondary">Status</div>
+    <div> ${status} </div>
+    </button> `
+  for (const [k,v] of Object.entries(ledger[actorId])) {
     dets = dets + `
       <button type="button"
-      class="list-group-item list-group-item-action
-      object-button status-panel"
-      data-actor-id="${actorId}"
-      data-node-id="${nodeId}"
-      data-who="${who}">
-      <div class="badge bg-secondary">Status</div>
-      <div> ${status} </div>
+      class="list-group-item list-group-item-action object-button"
+      >
+      <div class="badge bg-secondary">Funds</div>
+      <div> ${v} (Token ID: ${k}) </div>
       </button> `
-    for (const [k,v] of Object.entries(ledger[actorId])) {
-      dets = dets + `
-        <button type="button"
-        class="list-group-item list-group-item-action object-button"
-        >
-        <div class="badge bg-secondary">Funds</div>
-        <div> ${v} (Token ID: ${k}) </div>
-        </button> `
-    }
-    for (const [varName,varDetails] of detsj.l_store) {
-      const typing = varDetails.tag
-      const varValue = varDetails.contents
-      dets = dets + `
-        <button type="button"
-        class="list-group-item list-group-item-action object-button"
-        >
-        <div class="badge bg-secondary">${typing.slice(2)}</div>
-        <div> ${varName} := ${varValue} </div>
-        </button> `
-    }
-    spa.innerHTML = `
-    <nav aria-label="breadcrumb">
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Details (${who})</li>
-      </ol>
-    </nav>
-    <ul class="list-group list-group-flush">
-      ${dets}
-    </ul>
-    `
-    const statusPanel = document.querySelectorAll(".status-panel")
-    statusPanel.forEach((item, i) => {
-      item.addEventListener("click",detailActions)
-    });
-
-    const objectsRetLink = document.querySelector("#return-to-objects")
-    const backtrackToObjects = () => {
-      if (objectsHTML) {
-        spa.innerHTML = objectsHTML
-        objectsHTML = null;
-        bindObjDetailsEvents();
-      }
-    }
-    objectsRetLink.addEventListener("click",backtrackToObjects)
   }
-  bindObjDetailsEvents();
+  for (const [varName,varDetails] of detsj.l_store) {
+    const typing = varDetails.tag
+    const varValue = varDetails.contents
+    dets = dets + `
+      <button type="button"
+      class="list-group-item list-group-item-action object-button"
+      >
+      <div class="badge bg-secondary">${typing.slice(2)}</div>
+      <div> ${varName} := ${varValue} </div>
+      </button> `
+  }
+  spa.innerHTML = `
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Details (${who})</li>
+    </ol>
+  </nav>
+  <ul class="list-group list-group-flush">
+    ${dets}
+  </ul>
+  `
+  bindObjDetailsActionsEvents()
+  setupReturnToObjects()
+}
 
+const bindObjDetailsActionsEvents = () => {
+  const statusPanel = document.querySelectorAll(".status-panel")
+  statusPanel.forEach((item, i) => {
+    item.addEventListener("click",detailActions)
+  });
+}
+
+const setupReturnToObjects = () => {
+  const objectsRetLink = document.querySelector("#return-to-objects")
+  const backtrackToObjects = () => {
+    if (objectsHTML) {
+      spa.innerHTML = objectsHTML
+      objectsHTML = null;
+      bindObjDetailsEvents();
+    }
+  }
+  objectsRetLink.addEventListener("click",backtrackToObjects)
+}
+
+const setupReturnToObjectsDetails = () => {
+  const detsRetLink = document.querySelector("#return-to-details")
+  const backtrackToDetails = () => {
+    if (detailsHTML) {
+      spa.innerHTML = detailsHTML
+      detailsHTML = null;
+      bindObjDetailsActionsEvents()
+      setupReturnToObjects()
+    }
+  }
+  detsRetLink.addEventListener("click",backtrackToDetails)
 }
 
 const detailActions = async (evt) => {
@@ -211,11 +228,18 @@ const detailActions = async (evt) => {
     ${acts}
   </ul>
   `
+  bindObjDetailsActionsResponseEvents()
+  setupReturnToObjects()
+  setupReturnToObjectsDetails()
+}
+
+const bindObjDetailsActionsResponseEvents = () => {
   const actionsPanel = document.querySelectorAll(".action-button")
   actionsPanel.forEach((item, i) => {
     item.addEventListener("click",respondToActions)
   });
 }
+
 
 const respondToActions = async (evt) => {
   actionsHTML = spa.innerHTML
@@ -247,6 +271,24 @@ const respondToActions = async (evt) => {
     jsonLog.push(["respondWithVal",nodeId,actId,v,actorId])
   }
   spaRespondBtn.addEventListener("click",respondSpa)
+
+  setupReturnToObjects()
+  setupReturnToObjectsDetails()
+  setupReturnToActions()
+}
+
+const setupReturnToActions = () => {
+  const actionsRetLink = document.querySelector("#return-to-actions")
+  const backtrackToActions = () => {
+    if (actionsHTML) {
+      spa.innerHTML = actionsHTML
+      actionsHTML = null;
+      bindObjDetailsActionsEvents();
+      setupReturnToObjects()
+      setupReturnToObjectsDetails()
+    }
+  }
+  actionsRetLink.addEventListener("click",backtrackToActions)
 }
 
 const renderAction = (actObj,nodeId,actorId,who) => {
