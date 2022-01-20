@@ -44,8 +44,8 @@ const getStatus = async () => {
   return r;
 }
 
-async function getActions() {
-  const r = await interact(`GET`, `${address}/actions`)
+async function getActions(s,a) {
+  const r = await interact(`GET`, `${address}/actions/${s}/${a}`)
   console.log(r)
   return r;
 }

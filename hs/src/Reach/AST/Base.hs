@@ -315,7 +315,8 @@ data SLCtxtFrame
   deriving (Eq, Ord, Generic, NFData)
 
 instance FromJSON SLCtxtFrame
-instance ToJSON SLCtxtFrame
+instance ToJSON SLCtxtFrame where
+  toJSON v = toJSON $ show v
 
 instance Show SLCtxtFrame where
   show (SLC_CloApp call_at clo_at mname) =

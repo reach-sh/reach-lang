@@ -55,6 +55,7 @@ codeDiv.innerHTML = rsh
 const spa = document.querySelector("#spa")
 
 let objectsHTML = null;
+let detailsHTML = null;
 
 const renderObjects = async (nodeId) => {
   const r = await c.getStateLocals(nodeId)
@@ -120,8 +121,10 @@ const objectDetails = async () => {
     }
     dets = dets + `
       <button type="button"
-      class="list-group-item list-group-item-action object-button"
-      >
+      class="list-group-item list-group-item-action
+      object-button status-panel"
+      data-actor-id="${actorId}"
+      data-node-id="${nodeId}">
       <div class="badge bg-secondary">Status</div>
       <div> ${status} </div>
       </button> `
@@ -157,6 +160,11 @@ const objectDetails = async () => {
       ${dets}
     </ul>
     `
+    const statusPanel = document.querySelectorAll(".status-panel")
+    statusPanel.forEach((item, i) => {
+      item.addEventListener("click",detailActions)
+    });
+
     const objectsRetLink = document.querySelector("#return-to-objects")
     const backtrackToObjects = () => {
       if (objectsHTML) {
@@ -168,6 +176,16 @@ const objectDetails = async () => {
     objectsRetLink.addEventListener("click",backtrackToObjects)
   }
   bindObjDetailsEvents();
+
+}
+
+const detailActions = async (evt) => {
+  detailsHTML = spa.innerHTML
+  const tgt = evt.target.closest(".status-panel")
+  const nodeId = tgt.dataset.nodeId
+  const actorId = parseInt(tgt.dataset.actorId)
+  const act = await c.getActions(nodeId,actorId)
+  console.log(act)
 }
 
 const redraw = async () => {
@@ -190,7 +208,8 @@ const redraw = async () => {
         selector: 'node',
         style: {
           'background-color': '#666',
-          'label': 'data(id)'
+          'label': 'data(id)',
+          'visibility': 'hidden'
         }
       },
       {
@@ -200,7 +219,8 @@ const redraw = async () => {
           'line-color': '#ccc',
           'target-arrow-color': '#ccc',
           'target-arrow-shape': 'triangle',
-          'curve-style': 'bezier'
+          'curve-style': 'bezier',
+          'visibility': 'hidden'
         }
       }
     ],
@@ -209,6 +229,63 @@ const redraw = async () => {
     }
   });
   cy.bind('click', 'node', clickNode);
+  const eles = cy.filter(function(element, i){
+    return true;
+  });
+  // citation: animation adapted from https://gist.github.com/maxkfranz/aedff159b0df05ccfaa5
+  // and https://stackoverflow.com/questions/40096407/animate-building-a-graph-in-cytoscape-js
+  const animateGraph = (nodes) => {
+    var delay = 0;
+    var size = nodes.length;
+    var duration = (1000 / size);
+    var visitedMap = {};
+
+    for(var index = 0; index < size; ++index){
+      visitedMap[nodes[index].data('id')] = 0;
+    }
+    var nodesCopy = nodes.clone();
+
+    for( var i = 0; i < nodes.length; ++i ){
+      var cNode = nodes[i];
+      var nextNodes = cNode.connectedEdges(
+        function(o){
+          return o.source().same(cNode);
+        }
+      ).targets();
+      const move = (nextNode,currentNode,copyNode,ifCurr) => {
+        const position = nextNode.renderedPosition();
+        nextNode.renderedPosition(copyNode.renderedPosition());
+        nextNode.delay(delay, function(){
+          if (ifCurr) {
+            currentNode.style("visibility", "visible");
+          }
+          nextNode.style('visibility', 'visible');
+          nextNode.connectedEdges().style("visibility", "visible");
+        } ).animate({
+              renderedPosition: position,
+            }, {
+              duration: duration,
+              complete: function(){}
+          }
+        );
+      }
+      for (var index = 0; index < nextNodes.length; ++index){
+        var nNode = nextNodes[index];
+        (function(currentNode, x, copyNode, nextNode){
+          if(nextNode != null && x != 0 && visitedMap[nextNode.data('id')] < 1){
+            ++visitedMap[nextNode.data('id')];
+            console.log('currentNode: ' + currentNode.data('id')+ ', x: ' + x + ', nextNode: ' + nextNode.data('id') );
+            move(nextNode,currentNode,copyNode,false)
+          } else if (nextNode != null && visitedMap[nextNode.data('id')] < 1){
+            ++visitedMap[nextNode.data('id')];
+            move(nextNode,currentNode,copyNode,true)
+          }
+          delay += duration;
+          })(cNode, i, nodesCopy[i], nNode);
+      }
+    }
+  };
+  animateGraph(eles)
 }
 
 const clickNode = async (evt) => {
@@ -255,9 +332,11 @@ globalsBtn.addEventListener("click",globals)
 
 const actionsBtn = document.querySelector("#actionsButton")
 const actions = async () => {
-  let r = await c.getActions()
+  let s = parseInt(document.querySelector("#actionsForState").value)
+  let a = parseInt(document.querySelector("#actionsForActor").value)
+  let r = await c.getActions(s,a)
   appendToLog(JSON.stringify(r,null,2))
-  jsonLog.push(["getActions"])
+  jsonLog.push(["getActions",s,a])
 }
 actionsBtn.addEventListener("click",actions)
 
