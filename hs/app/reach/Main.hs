@@ -2024,27 +2024,57 @@ versionCompare2 = command "version-compare2" $ info f mempty
             then liftIO $ do
               forM_ uTags $ \(x, y) -> T.putStrLn $ "Unknown tag: " <> y <> " for image: " <> lefty x <> "."
               exitWith $ ExitFailure 1
-            else
+            else do
+              let prompt' p n y = (liftIO $ putStr ("\n" <> p <> " (Enter 'y' for yes): ")
+                    >> hFlush stdout >> getLine) >>= \case
+                      z | L.upper z == "Y" -> y
+                      _ -> n
+
+              let prompt p y = prompt' p (liftIO $ exitWith ExitSuccess) y
+
+              let s = T.take 8 . T.drop 7
+              let m =
+                    maybe 0 id . maximumMay $
+                      (\(x, _, _) -> T.length $ lefty x)
+                        <$> newDAs <> newTags <> newCAs <> synced
+
+              let p x = lefty x <> T.replicate (m - T.length (lefty x)) " "
+              let n a = when (any ((> 0) . length) a) $ putStrLn ""
+
+              let r = flip either (const "") $ \x ->
+                    let rs = rights . concat . L.filter (Left x `elem`)
+                          $ fmap (fmap ("reachsh/" <>)) . imagesFor <$> [minBound .. maxBound]
+                    in " (required by: " <> T.intercalate ", " rs <> ")"
+
+              let say = mapM_ $ \(x, y, z) ->
+                    T.putStrLn $
+                      " * " <> p x <> "  " <> s y <> ":  "
+                        <> T.intercalate ", " (tagFor <$> L.sort z)
+                        <> r x
+
+              let ancas (x', y, zs) = "\n" <> a <> "\n" <> T.intercalate "\n" b where
+                    x = lefty x'
+                    a = [N.text| docker pull $x@$y |]
+                    b = zs <&> \z' -> let z = tagFor z' in [N.text| docker tag $x@$y $x:$z |]
+
+              let addNewCAs = T.intercalate "\n" $ ancas <$> newCAs
+
               if length (synced <> newCAs) >= length both
-                then liftIO $ do
-                  -- TODO list available connectors
-                  putStrLn "Reach is up-to-date."
-                  exitWith ExitSuccess
+                then do
+                  let exitUTD = liftIO $ do
+                        putStrLn "Reach is up-to-date."
+                        exitWith ExitSuccess
+
+                  if length newCAs == 0 then exitUTD
+                  else do
+                    liftIO $ do
+                      putStrLn "Reach is up-to-date but the following (optional) connectors are also available:"
+                      say newCAs
+                    if ni then exitUTD
+                    else prompt "Would you like to add them?" . scriptWithConnectorModeOptional
+                      $ write addNewCAs
+
                 else do
-                  let s = T.take 8 . T.drop 7
-                  let m =
-                        maybe 0 id . maximumMay $
-                          (\(x, _, _) -> T.length $ lefty x)
-                            <$> newDAs <> newTags <> newCAs <> synced
-
-                  let p x = lefty x <> T.replicate (m - T.length (lefty x)) " "
-                  let n a = when (any ((> 0) . length) a) $ putStrLn ""
-
-                  let say = mapM_ $ \(x, y, z) ->
-                        T.putStrLn $
-                          " * " <> p x <> "  " <> s y <> ":  "
-                            <> T.intercalate ", " (tagFor <$> L.sort z)
-
                   liftIO $ do
                     when (length newDAs > 0) $ do
                       putStrLn "New images are available for:"
@@ -2057,7 +2087,7 @@ versionCompare2 = command "version-compare2" $ info f mempty
                       n [newCAs, synced]
 
                     when (length newCAs > 0) $ do
-                      putStrLn "New connectors are available:"
+                      putStrLn "New (optional) connectors are available:"
                       say newCAs
                       n [synced]
 
@@ -2068,12 +2098,12 @@ versionCompare2 = command "version-compare2" $ info f mempty
                   if ni
                     then liftIO . exitWith $ ExitFailure 60
                     else do
-                      liftIO $ putStr "\nWould you like to perform an update? (Enter 'y' for yes): "
-                        >> hFlush stdout >> getLine >>= \case
-                          z | L.upper z == "Y" -> pure ()
-                          _ -> exitWith ExitSuccess
+                      prompt "Would you like to perform an update?" . scriptWithConnectorModeOptional $ do
+                        when (length newCAs > 0)
+                          . prompt' "Would you like to add the new connectors listed above?" (pure ())
+                            . write $ "echo\n" <> addNewCAs
 
-                      scriptWithConnectorModeOptional $ do
+                        when (length newDAs > 0) $ write "echo"
                         forM_ newDAs $ \(x', y, zs) -> do
                           let x = lefty x'
                           write [N.text| docker pull $x@$y |]
