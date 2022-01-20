@@ -121,6 +121,9 @@ cdot () {
 
 #######
 
+cdot users/xbacked-contracts/src/master_vault.rsh
+exit 0
+
 #jb
 ./scripts/algo-txns/index.sh
 exit 0
@@ -128,8 +131,6 @@ exit 0
 cdot examples/overview/index.rsh
 cdot examples/rps-8-interact/index.rsh
 cdot users/duoswap-core/index.rsh
-exit 0
-cdot users/xbacked-contracts/src/master_vault.rsh
 exit 0
 
 jb
