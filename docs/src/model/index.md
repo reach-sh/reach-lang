@@ -10,7 +10,6 @@ Furthermore, it is not an introduction to consensus networks or "blockchain".
 If you would like to read such an introduction, we recommend the [Wikipedia article on consensus](https://en.wikipedia.org/wiki/Consensus_(computer_science)) and the [Wikipedia article on blockchains](https://en.wikipedia.org/wiki/Blockchain).
 :::
 
-
 ## {#ref-model-eval} Evaluation Model
 
 Reach programs specify a decentralized application (@{defn("DApp")}), which is a distributed computation involving many participants and utilizing one contract on one consensus network for reaching agreement on the intermediate values of the computation.
@@ -124,7 +123,6 @@ These conditions are summarized thus:
 + **Local, private**: The initial state.
 + **Local, public**: The result of `{!rsh} declassify`.
 + **Consensus**: The result of `{!rsh} publish`.
-
 
 ## {#ref-model-compile} Compilation Model
 

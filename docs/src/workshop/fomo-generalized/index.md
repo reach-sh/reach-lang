@@ -18,13 +18,11 @@ except for one difference:
 
 + What funds change ownership during the application and how?
 
-
 **Write down the problem analysis of this program as a comment.**
 
 Let's compare answers for how funds should change ownership in this generalized version:
 
 + Buyers continually add funds to the balance during execution until the last `N` Buyers, and potentially the Funder, split the balance.
-
 
 ## {#workshop-fomo-generalized-dd} Data Definition
 
@@ -34,7 +32,6 @@ regular Fear of Missing Out program. However, instead of tracking the latest Buy
 :::note
 Refer to @{seclink("ref-programs-types")} for a reminder of what data types are available in Reach.
 :::
-
 
 You should take the time now to fill out the interaction interface for the participants.
 
@@ -49,16 +46,13 @@ However, we can still write a program that is generic in the size of the array, 
 specialize it when we compile.
 :::
 
-
 ```
 load: /examples/workshop-fomo-generalized/index.rsh
 range: 5-23
 ```
 
-
 At this point, you can modify your JavaScript file (`index.mjs`) to contain definitions of these values, although you may want to use placeholders for the actual values.
 When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the participant interact interface.
-
 
 ## {#workshop-fomo-generalized-cc} Communication Construction
 
@@ -74,7 +68,6 @@ in our program to serve as an outline and guide us in implementation. In our ori
 // 3. Transfer the balance to the last person who bought a ticket
 ```
 
-
 This outline will need to be updated for our generalized version. You should do this now, in your Reach program (`index.rsh`).
 
 **Write down the communication pattern for this program as comments.**
@@ -88,7 +81,6 @@ Here's what we wrote for our outline:
 // 3. Divide the balance evenly amongst the winners.
 // 4. Transfer the reward to each winner.
 ```
-
 
 Now, this outline needs to be converted to a real program.
 
@@ -135,7 +127,6 @@ winners.forEach(winner =>
 commit();
 ```
 
-
 Extending this program to track an array of `{!rsh} Address`es, as opposed to a single
 `{!rsh} Address` is fairly straightforward. We maintain an array of size `NUM_OF_WINNERS`
 and implement a ring buffer to keep it up to date with the most recent `N` winners, as
@@ -171,7 +162,6 @@ Let's look at our whole program now:
 load: /examples/workshop-fomo-generalized/index.rsh
 ```
 
-
 ## {#workshop-fomo-generalized-de} Deployment Decisions
 
 Next, it is time to test our program. As usual, we'll present a completely
@@ -188,7 +178,6 @@ Here's the JavaScript frontend we wrote:
 ```
 load: /examples/workshop-fomo-generalized/index.mjs
 ```
-
 
 Let's see what it looks like when we run the program:
 
@@ -215,7 +204,6 @@ Buyer #3 saw they won
 Buyer #4 saw they lost
 ```
 
-
 ## {#workshop-fomo-generalized-dns} Discussion and Next Steps
 
 Great job!
@@ -227,6 +215,4 @@ this application with additional features such as:
 + Introducing a small payout system (dividends) to Buyers as the game progresses.
 e.g. every time the ring buffer is filled.
 
-
 If you found this workshop rewarding, please let us know on [the Discord community](@{DISCORD})!
-

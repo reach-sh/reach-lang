@@ -9,7 +9,6 @@ and the standards of valid programs.
 Get language support for Reach in your editor by visiting @{seclink("guide-editor-support")}.
 :::
 
-
 The rest of this section is structured according to the contexts of the different parts of a Reach program, as follows:
 
 + @{seclink("ref-programs-valid")} describes what is meant by the term valid in Reach.
@@ -19,7 +18,6 @@ The rest of this section is structured according to the contexts of the differen
 + @{seclink("ref-programs-local")} describes the structure of Reach local steps.
 + @{seclink("ref-programs-consensus")} describes the structure of Reach consensus steps.
 + @{seclink("ref-programs-compute")} describes the common structure of Reach computations shared by all contexts.
-
 
 The relationship between the modes of a Reach application is shown by this diagram:
 
@@ -74,14 +72,6 @@ if ( p() ) {
 m();
 ```
 
-
 `{!rsh} f` dominates `{!rsh} p`, `{!rsh} g`, `{!rsh} h`, and `{!rsh} m`.
 But no other term dominates any other term.
 In particular, `{!rsh} g` does not dominate `{!rsh} m` because it is possible to reach `{!rsh} m` without going through `{!rsh} g`, such as when `{!rsh} p()` is false.
-
-
-
-
-
-
-

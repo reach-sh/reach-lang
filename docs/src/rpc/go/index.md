@@ -4,7 +4,6 @@
 This frontend library relies on the [Reach RPC Server](##ref-backends-rpc).
 :::
 
-
 A [Go](https://golang.org) client library for the
 [Reach RPC protocol](##ref-backends-rpc) may be installed by running:
 
@@ -18,7 +17,6 @@ to the [RPC server](##ref-backends-rpc):
 import reachrpc "github.com/reach-sh/reach-lang/rpc-client/go"
 ```
 
-
 The library provides the following bindings:
 
 ---
@@ -26,7 +24,6 @@ The library provides the following bindings:
 ```go
 rpc, rpcCallbacks := reachrpc.Mk(opts)
 ```
-
 
 `{!go} reachrpc.Mk` accepts the @{seclink("ref-backends-rpc-opts")} as a `{!go} map`
 and returns two functions, traditionally called `{!go} rpc` and
@@ -42,7 +39,6 @@ For example,
 ```go
 rpc("/stdlib/formatCurrency", i, 4).(string)
 ```
-
 
 calls `{!js} formatCurrency` with some value `{!go} i` and `{!go} 4` and returns the result as a string.
 
@@ -66,6 +62,4 @@ ms := map[string]interface{} {
 rpcCallbacks("/backend/Alice", ctc, ms)
 ```
 
-
 calls a backend named `Alice` with the contract `{!go} ctc` and a value named `price` and a method named `showX` that prints out a result from the Reach backend.
-

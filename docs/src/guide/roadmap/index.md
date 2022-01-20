@@ -1,6 +1,3 @@
-
-
-
 # {#guide-roadmap} Reach's Roadmap
 
 This section describes in a vague way some of the bigger future plans for Reach's development.
@@ -26,7 +23,6 @@ Last updated: 2021/09/01
 + Networks - Interface constraints
 + General - Reach debugger
 
-
 **Medium term**:
 + IDE - Language Server Protocol implementation
 + Language - threading / futures
@@ -39,7 +35,6 @@ Last updated: 2021/09/01
 + Verification - `{!rsh} exit()` reachability
 + Verification - network analysis
 + Language - Dynamic token tracking
-
 
 **Long term**:
 + Language - [substructural types](https://en.wikipedia.org/wiki/Substructural_type_system) to allow mutation

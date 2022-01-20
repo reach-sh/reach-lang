@@ -4,7 +4,6 @@
 This frontend library relies on the [Reach RPC Server](##ref-backends-rpc).
 :::
 
-
 A [Python](https://www.python.org) client library for the
 [Reach RPC protocol](##ref-backends-rpc) may be installed by running:
 
@@ -12,13 +11,11 @@ A [Python](https://www.python.org) client library for the
 $ pip install --upgrade reach-rpc-client
 ```
 
-
 Once installed, add the following import line to your Python file which will
 connect to the [RPC server](##ref-backends-rpc):
 ```py
 from reach_rpc import mk_rpc
 ```
-
 
 The library provides the following bindings:
 
@@ -27,7 +24,6 @@ The library provides the following bindings:
 ```py
 rpc, rpc_callbacks = mk_rpc(opts)
 ```
-
 
 `{!py} mk_rpc` accepts the @{seclink("ref-backends-rpc-opts")} as a dictionary and returns two functions, traditionally called `{!py} rpc` and `{!py} rpc_callbacks`.
 
@@ -41,7 +37,6 @@ For example,
 ```py
 rpc('/stdlib/formatCurrency', i, 4)
 ```
-
 
 calls `{!js} formatCurrency` with some value `{!py} i` and `{!py} 4`.
 
@@ -67,6 +62,4 @@ ms = { 'price': 10,
 rpc_callbacks("/backend/Alice", ctc, ms)
 ```
 
-
 calls a backend named `Alice` with the contract `{!py} ctc` and a value named `price` and a method named `showX` that prints out a result from the Reach backend.
-

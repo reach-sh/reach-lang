@@ -14,7 +14,6 @@ This will help us improve the language, our developer tools, and the project mat
 The best way is through the [GitHub issue tracker](https://github.com/reach-sh/reach-lang/issues) or by messaging `@team` in [the Discord community](@{DISCORD}).
 :::
 
-
 We highly recommend going through [the overview](##overview) and [the tutorial](##tut) before continuing through the workshop.
 However, you can do most workshops in any order.
 If there's a pre-requisite, it will be explicitly mentioned.
@@ -48,15 +47,6 @@ Here are the current workshops, in the order we recommend doing them:
 + @{seclink("workshop-oracle")}
 + @{seclink("workshop-auction-te")}
 + @{seclink("workshop-crowdfund")}
-
-
-
-
-
-
-
-
-
 
 ## {#workshop-rps-fair} Fair Rock-Paper-Scissors
 
@@ -176,7 +166,6 @@ It is easy to model this scenario using only network tokens, but it would be use
 However, many consensus networks also support custom fungible assets that are like tokens.
 If this is the case, then a secured loan will typically have different assets as the loan amount and the collateral amount.
 Thus, the interest rate for the loan is essentially the Lender's prediction of the movement of the exchange rate between the two currencies over the lifetime of the loan. In this workshop, the Borrower pledges non-network tokens as collateral for the loan.
-
 
 @{workshopWIP("secured-loan")}
 
@@ -304,4 +293,3 @@ This demonstrates the use of collective operations in Reach with finite state.
 In this workshop, we implement a [crowdfunding campaign](https://en.wikipedia.org/wiki/Crowdfunding) wherein a Fundraiser requests a funding amount, which is provided by Donors if a reserve is reached before the funding window closes, after which it is either disbursed to the Fundraiser, or returned to the Donors.
 
 @{workshopWIP()}
-

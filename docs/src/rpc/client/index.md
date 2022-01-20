@@ -5,8 +5,6 @@ This document walks through the implementation of an RPC client in [Python](http
 An example use of this library is shown in the [tutorial section on RPC-based frontends](##tut-7-rpc).
 The entire library is 80 lines of code.
 
-
-
 The library uses a few standard Python libraries for interacting with JSON,
 HTTP servers, and networking:
 
@@ -15,12 +13,10 @@ load: /rpc-client/py/src/reach_rpc/__init__.py
 range: 1-9
 ```
 
-
 ```
 load: /rpc-client/py/src/reach_rpc/__init__.py
 range: 11-27
 ```
-
 
 The library provides a single function, `{!py} mk_rpc`, that accepts the @{seclink("ref-backends-rpc-opts")}.
 
@@ -28,7 +24,6 @@ The library provides a single function, `{!py} mk_rpc`, that accepts the @{secli
 load: /rpc-client/py/src/reach_rpc/__init__.py
 range: 28-34
 ```
-
 
 It starts by observing the `verify` option and informing the Python library it uses for HTTPS interaction to turn off warnings.
 It displays a warning to users that they should be nervous about using this setting.
@@ -38,14 +33,12 @@ load: /rpc-client/py/src/reach_rpc/__init__.py
 range: 35-47
 ```
 
-
 Next, it attempts to connect to the Reach RPC Server and throws an error if it does not respond quickly enough.
 
 ```
 load: /rpc-client/py/src/reach_rpc/__init__.py
 range: 52-62
 ```
-
 
 It defines a function, `{!py} rpc`, which will be returned later on, that
 implements the protocol for synchronous value RPC methods.
@@ -56,7 +49,6 @@ It prints debugging information for convenience.
 load: /rpc-client/py/src/reach_rpc/__init__.py
 range: 63-79
 ```
-
 
 It defines a function, `{!py} rpc_callbacks`, which will be returned later on, that
 implements the protocol for interactive RPC methods.
@@ -76,6 +68,5 @@ It replaces the `{!py} p` value with the result of that continuation invocation 
 load: /rpc-client/py/src/reach_rpc/__init__.py
 range: 80-80
 ```
-
 
 Finally, it returns `{!py} rpc` and `{!py} rpc_callbacks` to the user.

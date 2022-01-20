@@ -1,7 +1,3 @@
-
-
-
-
 # {#ref-programs-step} Steps
 
 A Reach step occurs in the continuation of a init statement or commit statement.
@@ -20,7 +16,6 @@ Alice.only(() => {
   const pretzel = interact.random(); });
 ```
 
-
 A local step statement is written `{!rsh} PART.only(() => BLOCK)`, where `{!rsh} PART` is a participant identifier and `{!rsh} BLOCK` is a block.
 Within `{!rsh} BLOCK`, `{!rsh} PART` is bound to the address of the participant.
 Any bindings defined within the block of a local step are available in the statement's tail as new local state.
@@ -33,7 +28,6 @@ Alice.only(() => {
   const y = x + 1; });
 ```
 
-
 is a valid program where `{!rsh} Alice`'s local state includes the private values `{!rsh} x` (bound to `{!rsh} 3`) and `{!rsh} y` (bound to `{!rsh} 4`). However, such bindings are _not_ consensus state, so they are purely local state. For example,
 
 ```reach
@@ -42,7 +36,6 @@ Alice.only(() => {
 Bob.only(() => {
   const y = x + 1; });
 ```
-
 
 is an invalid program, because `{!rsh} Bob` does not know `{!rsh} x`.
 
@@ -55,7 +48,6 @@ function `{!rsh} log` in the participant interact interface of `{!rsh} Alice` ma
 Alice.interact.log(x);
 ```
 
-
 ---
 
 @{ref("rsh", "each")}
@@ -63,7 +55,6 @@ Alice.interact.log(x);
 each([Alice, Bob], () => {
   const pretzel = interact.random(); });
 ```
-
 
 An @{defn("each")} local step statement can be written as `{!rsh} each(PART_TUPLE () => BLOCK)`, where `{!rsh} PART_TUPLE` is a tuple of participants and `{!rsh} BLOCK` is a block.
 It is an abbreviation of many local step statements that could have been written with `{!rsh} only`.
@@ -74,11 +65,9 @@ A @{defn("pay amount")} is either:
 + An integer, denoting an amount of network tokens; or,
 + A tuple of token amounts.
 
-
 A @{defn("token amount")} is either:
 + An integer, denoting an amount of network tokens; or,
 + A tuple with two elements, where the first is an integer, denoting an amount of non-network tokens, and the second is `{!rsh} Token`, specifying a particular non-network token.
-
 
 For example, these are all pay amounts:
 ```reach
@@ -90,7 +79,6 @@ For example, these are all pay amounts:
 [ 5, [ 2, gil ], [ 8, zorkmids ] ]
 ```
 
-
 It is invalid for a pay amount to specify an amount of tokens multiple times.
 For example, these are invalid pay amounts:
 ```reach
@@ -98,13 +86,11 @@ For example, these are invalid pay amounts:
 [ [2, gil], [1, gil] ]
 ```
 
-
 The ordering of a pay amount is only significant when used within a fork statement or parallel reduce statement that specifies a `{!rsh} paySpec`.
 In this case, payments are expected to be a tuple where the first element is an integer pay amount, and the rest of the elements are token amount tuples. The ordering of the token amount elements should match the ordering in `{!rsh} paySpec`. For example,
 ```reach
 .paySpec([tokA, tokB])
 ```
-
 
 will indicate that `{!rsh} fork` payments should be of the format:
 
@@ -112,11 +98,9 @@ will indicate that `{!rsh} fork` payments should be of the format:
 [ NETWORK_TOKEN_AMT, [ amtA, tokA ], [ amtB, tokB ] ]
 ```
 
-
 :::note
 Reach assumes that network tokens and non-network tokens behave identically, but often they do not; [this article](##guide-nntoks) discusses the causes and consequences of this.
 :::
-
 
 ### `publish`, `pay`, `when`, and `timeout`
 
@@ -142,11 +126,9 @@ Alice.publish(wagerAmount)
      .timeout(false);
 ```
 
-
 :::note
 If you're unsure of what kind of consensus transfer to use, you may want to read the [explanation of the differences](##guide-ctransfers) in the Guide.
 :::
-
 
 A consensus transfer is written
 ```reach
@@ -178,7 +160,6 @@ The continuation of a timeout block is the same as the continuation of the funct
 See [the guide section on non-participation](##guide-timeout) to understand when to use timeouts and how to use them most effectively.
 :::
 
-
 The `{!rsh} publish` component exclusive-or the `{!rsh} pay` component may be omitted, if either there is no publication or no transfer of network tokens to accompany this consensus transfer.
 The `{!rsh} when` component may always be omitted, in which case it is assumed to be `{!rsh} true`.
 `{!rsh} publish` or `{!rsh} pay` must occur first, after which components may occur in any order.
@@ -203,7 +184,6 @@ Alice.pay(penaltyAmount)
 Alice.publish(bid).when(wantsToBid);
 
 ```
-
 
 The `{!rsh} timeout` component must be included if `{!rsh} when` is not statically `{!rsh} true`.
 This ensures that your clients will eventually complete the program.
@@ -230,7 +210,6 @@ Claire.only(() => {
 race(Alice, Bob).publish(x);
 commit();
 ```
-
 
 because `{!rsh} Claire` is not included in the `{!rsh} race`.
 However, if we were to rename `{!rsh} Claire`'s `{!rsh} x` into `{!rsh} y`, then it would be valid, because although `{!rsh} Alice` and `{!rsh} Bob` both bind `{!rsh} x`, they participate in the `{!rsh} race`, so it is allowed.
@@ -390,7 +369,6 @@ race(Alice, Bob)
  }
 ```
 
-
 This pattern is tedious to write and error-prone, so the `{!rsh} fork` statement abbreviates it for Reach programmers.
 When a participant specifies multiple cases, the `msg` field of the participant will be wrapped with an additional
 variant signifying what case was chosen.
@@ -402,7 +380,6 @@ variant signifying what case was chosen.
 wait(TIME);
 ```
 
-
 A @{defn("wait statement")}, written `{!rsh} wait(TIME);`, delays the computation until the `{!rsh} TIME` time argument passes.
 `{!rsh} TIME` must be pure and only reference values known by the consensus state.
 It may only occur in a step.
@@ -413,7 +390,6 @@ It may only occur in a step.
 ```reach
 exit();
 ```
-
 
 An @{defn("exit statement")}, written `{!rsh} exit();`, halts the computation.
 It is a terminator statement, so it must have an empty tail.
@@ -431,11 +407,9 @@ However, some additional expressions are allowed.
 race(Alice, Bob).publish(bet);
 ```
 
-
 :::note
 If you're unsure of what kind of consensus transfer to use, you may want to read the [explanation of the differences](##guide-ctransfers) in the Guide.
 :::
-
 
 A @{defn("race expression")}, written `{!rsh} race(PARTICIPANT_0, ..., PARTICIPANT_n);`, constructs a participant that may be used in a consensus transfer statement, such as `{!rsh} publish` or `{!rsh} pay`, where the various participants race to be the first one to perform the consensus transfer.
 
@@ -445,7 +419,6 @@ Reach provides a shorthand, `{!rsh} Anybody`, which serves as a `{!rsh} race` be
 See [the guide section on races](##guide-race) to understand the benefits and dangers of using `{!rsh} race`.
 :::
 
-
 ### `unknowable`
 
 @{ref("rsh", "unknowable")}
@@ -453,8 +426,7 @@ See [the guide section on races](##guide-race) to understand the benefits and da
 unknowable( Notter, Knower(var_0, ..., var_N), [msg] )
 ```
 
-
- A knowledge assertion that the participant `{!rsh} Notter` _does not_ know the results of the variables `{!rsh} var_0` through `{!rsh} var_N`, but that the participant `{!rsh} Knower` _does_ know those values.
+A knowledge assertion that the participant `{!rsh} Notter` _does not_ know the results of the variables `{!rsh} var_0` through `{!rsh} var_N`, but that the participant `{!rsh} Knower` _does_ know those values.
 It accepts an optional bytes argument, which is included in any reported violation.
 
 ### `closeTo`
@@ -508,14 +480,12 @@ const [ DOMAIN, RET_FUN ] =
     .throwTimeout(DELAY_EXPR, THROW_EXPR)
 ```
 
-
 where:
 + `DOMAIN` is the the domain of the API member function.
 + `RET_FUN` is a function that returns a value to the API call. This function must be called.
 + `API_EXPR` is an expression that evaluates to an API member function.
 + `API_PAY_EXPR`, `API_ASSUME_EXPR`, and `{!rsh} throwTimeout` are like the corresponding parts in a `{!rsh} fork` statement.
 They are optional.
-
 
  `{!rsh} call` will call the given API member function, returning a pair, `{!rsh} [DOMAIN, RET_FUN]`.
 `{!rsh} call` will publish the domain of the API member function, transferring the program from

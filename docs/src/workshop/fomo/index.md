@@ -29,7 +29,6 @@ Reach program (`index.rsh`) using a comment.
 in the program?
 + What funds change ownership during the application and how?
 
-
 **Write down the problem analysis of this program as a comment.**
 
 Let's see how your answers compare to ours:
@@ -43,7 +42,6 @@ start of the application.
 + The Buyers learn of the ticket price and deadline during the
 program execution.
 + Buyers continually add funds to the balance during execution until one Buyer wins the entire balance.
-
 
 It's okay if some of your answers differ from ours!
 
@@ -59,12 +57,10 @@ in the program:
 Refer to @{seclink("ref-programs-types")} for a reminder of what data types are available in Reach.
 :::
 
-
 Now that we've decided what data types to use, we need to determine how the programs will obtain this information. We need to outline the participant interact interface for each participant.
 
 + What participant interact interface will Funder use?
 + What participant interact interface will Buyer use?
-
 
 Revisit the problem analysis section when completing this section. Whenever
 a participant starts off with some knowledge, that will be a field in the
@@ -83,15 +79,12 @@ a relative time delta signifying a change in block numbers.
 + The `ticketPrice` will be represented with a `{!rsh} UInt`
 + The decision to buy a ticket will be represented by a function `{!rsh} Fun([UInt], Bool)`
 
-
 Our participant interact interface, with the addition of some handy logging functions, looks like this so far:
 
 ```
 load: /examples/workshop-fomo/index.rsh
 range: 4-22
 ```
-
-
 
 At this point, you can modify your JavaScript file (`index.mjs`) to contain definitions of these values, although you may want to use placeholders for the actual values.
 When you're writing a Reach program, especially in the early phases, you should have these two files open side-by-side and update them in tandem as you're deciding the participant interact interface.
@@ -113,7 +106,6 @@ For example, for the [tutorial](##tut) version of _Rock, Paper, Scissors!_, we m
 // The consensus pays out the wager
 ```
 
-
 You should do this now, in your Reach program (`index.rsh`).
 
 **Write down the communication pattern for this program as comments.**
@@ -126,7 +118,6 @@ Here's what we wrote for our outline:
 //     2b. Keep track of last Buyer
 // 3. Transfer the balance to the last person who bought a ticket
 ```
-
 
 Now, this outline needs to be converted to a real program.
 
@@ -166,7 +157,6 @@ transfer(balance()).to(winner);
 commit();
 ```
 
-
 We use `{!rsh} parallelReduce` to allow Buyers to purchase tickets until
 the deadline passes and accumulate the current winner. We maintain the invariant
 that the balance must be equal to the number of tickets sold multiplied by the
@@ -180,7 +170,6 @@ only property of interest is the `{!rsh} parallelReduce` invariant
 which states that the balance must be equal to the number of tickets
 sold multiplied by the ticket price.
 
-
 ## {#workshop-fomo-ii} Interaction Introduction
 
 Next, we need to insert the appropriate calls to `{!rsh} interact`.
@@ -193,7 +182,6 @@ Let's look at our whole program now:
 ```
 load: /examples/workshop-fomo/index.rsh
 ```
-
 
 ## {#workshop-fomo-de} Deployment Decisions
 
@@ -211,7 +199,6 @@ Here's the JavaScript frontend we wrote:
 ```
 load: /examples/workshop-fomo/index.mjs
 ```
-
 
 Let's see what it looks like when we run the program:
 
@@ -236,7 +223,6 @@ Buyer 3 saw they lost.
 Buyer 9 saw they lost.
 ```
 
-
 ## {#workshop-fomo-dns} Discussion and Next Steps
 
 Great job!
@@ -247,4 +233,3 @@ If you'd like to make this application a little more interesting, maybe you'd li
 to extend this program to make the last `N` buyers split the winnings. Check out
 [Fear of Missing Out Generalized](##workshop-fomo-generalized) for
 our solution!
-

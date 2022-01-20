@@ -1,7 +1,3 @@
-
-
-
-
 # {#ref-programs-appinit} Application Initialization
 
 The body of `{!rsh} Reach.app` is an @{defn("application initialization")}.
@@ -37,7 +33,6 @@ setOptions({ verifyArithmetic: true });
 setOptions({}); 
 ```
 
-
 The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} setOptions(OBJ_EXPR);` where `{!rsh} OBJ_EXPR` is an object with the following keys and values:
 
 + @{ref("rsh", "verifyArithmetic")} `{!rsh} verifyArithmetic`
@@ -62,7 +57,6 @@ This concretization of these constants can induce performance degradation in the
 A tuple of the connectors that the application should be compiled for.
 By default, all available connectors are chosen.
 
-
 ## {#ref-programs-appinit-exprs} Expressions
 
 Any expressions valid for a [computation](##ref-programs-appinit-exprs) are valid for application initialization.
@@ -77,14 +71,12 @@ A participant and participant class may be declared with
 Participant(participantName, participantInteractInterface)
 ```
 
-
 and
 
 @{ref("rsh", "ParticipantClass")}
 ```reach
 ParticipantClass(participantName, participantInteractInterface)
 ```
-
 
 respectively.
 
@@ -102,7 +94,6 @@ API('Voter', { vote: Fun([Address], UInt) })
 API({ vote: Fun([Address], UInt) })
 ```
 
-
 An API is defined with `{!rsh} API(apiName, apiInterface)` or `{!rsh} API(apiInterface)`, where `{!rsh} apiName` is a string that labels the API and `{!rsh} apiInterface` is an object where each field indicates the type of a function provided by the contract as an API.
 These APIs are available in frontends via the `{!js} ctc.apis` object, wherein fields are the members of `{!rsh} apiInterface` and may be used in `{!rsh} .api` components of `{!rsh} fork` and `{!rsh} parallelReduce` to specify the behavior of the corresponding call.
 These are called @{defn("API member function")}s.
@@ -114,14 +105,12 @@ Each function must occur exactly once in the entire program.
 This section is about defining views during application initialization. Views are [set in consensus steps](##ref-programs-consensus-view), in your Reach program. But, they are [accessed by frontends](##ref-frontends-js-ctc) by using the Reach standard library of the frontend language, such as JavaScript.
 :::
 
-
 @{ref("rsh", "View")}
 ```reach
 View('NFT', { owner: Address })
 // or
 View({ owner: Address })
 ```
-
 
 A view is defined with `{!rsh} View(viewName, viewInterface)` or `{!rsh} View(viewInterface)`, where `{!rsh} viewName` is a string that labels the view and `{!rsh} viewInterface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp.
 These views are available in frontends via the `{!js} ctc.views` object.
@@ -139,7 +128,6 @@ Events({
   log: [UInt, Byte(64)]
 })
 ```
-
 
 An event is defined with `{!rsh} Events(eventName, eventInterface)` or `{!rsh} Events(eventInterface)`, where `{!rsh} eventName` is a string that labels the event and `{!rsh} eventInterface` is an object where each field is a `{!rsh} Tuple` of `{!rsh} Type`s, representing the type of values that an event will emit.
 These events are available in the frontends via the `{!js} ctc.events` object.

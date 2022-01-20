@@ -1,7 +1,3 @@
-
-
-
-
 # {#overview} Overview
 
 This is an informal overview of Reach and the structure of a Reach program.
@@ -13,7 +9,6 @@ If you have experience with blockchain development using existing tools, we reco
 :::note
 A recording of a live workshop that goes over this material is [available on YouTube](https://www.youtube.com/watch?v=1jmi8XdOvD4).
 :::
-
 
 ## {#over-model} Decentralized applications
 
@@ -28,7 +23,6 @@ A single Reach program incorporates all aspects of a DApp:
 + Participant backends are the agents acting on behalf of the principals.
 + Frontends are the technical representation of the interface between the participants and the principals.
 + A contract enforces the rules of the program, including the order of operation.
-
 
 In Reach, a programmer only needs to specify the actions of participants---what they do individually and what they do in unison.
 The Reach compiler automatically derives a contract for the consensus network via a connector that enforces these rules.
@@ -45,14 +39,12 @@ You can look at the entire example program by visiting [overview/index.rsh](@{RE
 Get language support for Reach in your editor by visiting [the guide on editor support](##guide-editor-support).
 :::
 
-
 The main part of the program looks like this:
 
 ```
 load: /examples/overview/index.rsh
 range: 1-15
 ```
-
 
 + Line 1 specifies that this is a Reach program.
 + Line 2 specifies that this program will be compiled with strict mode, which enables unused variable checks.
@@ -64,7 +56,6 @@ range: 1-15
 + Lines 10 and 11 specify the interface for Bob, which includes a function named `want`, that takes a number and returns `{!rsh} null`, as well as a function named `got`, that receives the information.
 + Finally, line 13, deploys the DApp.
 
-
 The elided lines, 14 through 34, contain the body of the application, which we can divide into four parts.
 
 ```
@@ -72,12 +63,10 @@ load: /examples/overview/index.rsh
 range: 15-18
 ```
 
-
 + Lines 15 and 16 specify that Alice takes a local step where she declassifies the amount of tokens requested.
 In Reach, all values from the frontend are secret until explicitly made public with declassify.
 + Line 17 has Alice join the application by publishing that value, and the logic of the program transitions to specifying what the contract does.
 + Line 18 has the contract commit to these values and continue the rest of the program.
-
 
 At this point, Bob's backend has learned the value of `{!rsh} request` and can deliver it to Bob's frontend for his approval. This happens next.
 
@@ -86,12 +75,10 @@ load: /examples/overview/index.rsh
 range: 20-23
 ```
 
-
 + Lines 20 and 21 have Bob perform that delivery.
 `{!rsh} interact.want` doesn't explicitly return a boolean because the frontend cannot return if Bob doesn't want to continue.
 A better version of this program might return `{!rsh} false` and have that communicated to Alice.
 + Lines 22 and 23 have Bob join the application and submit a payment matching the appropriate amount, and then the contract commits.
-
 
 It's now Alice's turn again:
 
@@ -100,12 +87,10 @@ load: /examples/overview/index.rsh
 range: 25-29
 ```
 
-
 + Lines 25 and 26 specify that Alice declassifies the information.
 + Line 27 has her publish it.
 + Line 28 has the contract transfer the requested amount to her.
 + Line 29 commits the transactions on the consensus network.
-
 
 The only thing left is for Bob's backend to deliver the information to his frontend.
 
@@ -114,10 +99,8 @@ load: /examples/overview/index.rsh
 range: 31-33
 ```
 
-
 + Line 31 and 32 use an interaction expression to transfer the information to the frontend.
 + Line 33 exits the program.
-
 
 ---
 
@@ -126,7 +109,6 @@ Reach programmers don't need to think about details like _contract storage_, _pr
 ## {#over-compile} Compile
 
 After a Reach programmer writes this application in a file like [`overview/index.rsh`](@{REPO}/examples/overview/index.rsh), they could run
-
 
 ```cmd
 $ reach compile overview/index.rsh
@@ -139,7 +121,6 @@ If you are curious, you can take a look at this file by going to [overview/build
 The Ethereum bytecode is not readable, but if you understand Solidity, you may want to look at [overview/build/index.main.sol](@{REPO}/examples/overview/build/index.main.sol) to see the original Solidity source that it is compiled from.
 Reach can leave files like these in place when run with `--intermediate-files`.
 :::
-
 
 For this thirty line application, the Reach compiler generated hundreds of lines of JavaScript code in two functions, one for Alice and one for Bob.
 Separately, it generated hundreds more lines of Solidity code to implement the contract.
@@ -164,9 +145,7 @@ load: /examples/overview/index-error.rsh
 range: 25-29
 ```
 
-
 And then run the compiler:
-
 
 ```cmd
 $ reach compile overview/index-error.rsh
@@ -178,7 +157,6 @@ It will print out a detailed error message showing the violation.
 load: /examples/overview/index-error.txt
 range: 2-28
 ```
-
 
 Verification failures include a lot of information, such as a concrete counter-example showing values that could have been provided by frontends that would lead to the property failing to hold.
 In this case, it reports that if Alice were to pass an `{!rsh} interact.request` over `{!rsh} 1` at the start of the program on line 5, then the balance of the contract would not be provably `{!rsh} 0` at the end of the program.
@@ -199,13 +177,11 @@ Let's look at a simple command-line version that demonstrates how it would work 
 You can look at the entire example interface program by visiting [overview/index.mjs](@{REPO}/examples/overview/index.mjs).
 :::
 
-
 The program is just a few dozen lines long and the shell of it is quite simple:
 
 ```
 load: /examples/overview/index.mjs
 ```
-
 
 + Lines 1 and 2 import the Reach standard library loader and the compiled app backend.
 + Line 5 dynamically loads the appropriate network-specific Reach standard library,
@@ -217,7 +193,6 @@ All of Reach's network-specific standard libraries adhere to a common interface 
 The value `{!js} ctcAlice` contains no secret information and could easily be printed out and shared with Bob outside of the consensus network.
 + Lines 13 through 22 launch the backends and wait for their completion. We'll look at the details in a moment.
 
-
 This code, similar for all test programs, demonstrates how straightforward it is to scaffold a Reach application for testing.
 
 Let's look at initializing and interfacing each participant, starting with Alice.
@@ -227,11 +202,9 @@ load: /examples/overview/index.mjs
 range: 14-17
 ```
 
-
 + Line 14 uses the contract handle associated with Alice's account to run the Alice participant backend, passing an object which holds the interact functions.
 + Line 15 provides the `{!rsh} request` value.
 + Line 16 provides the `{!rsh} info` value.
-
 
 Let's look at Bob next.
 
@@ -240,11 +213,9 @@ load: /examples/overview/index.mjs
 range: 18-21
 ```
 
-
 + Line 18 initializes Bob just like Alice, although we use the `{!js} p` short-hand.
 + Line 19 provides his `{!rsh} want` function, which produces a log message and always accepts.
 + Line 20 provides his `{!rsh} got` function, which displays the secret on the console as well.
-
 
 ---
 
@@ -258,11 +229,9 @@ In this case, we've set up our application simply: there's one Reach file for th
 This is a common practice, so Reach comes with a simple wrapper script to build and execute such applications.
 We just run:
 
-
 ```cmd
 $ reach run
 ```
-
 
 And then Reach
 
@@ -271,7 +240,6 @@ And then Reach
 + builds a Docker image based on Reach's standard image for the package; and,
 + runs the application connected to Reach's standard private Ethereum devnet image.
 
-
 On typical developer laptops, this entire process takes seconds and can be completely integrated into existing development IDEs, like VSCode, so Reach developers can compile, verify, build, launch, and test their Reach app with a single command.
 
 ---
@@ -279,22 +247,18 @@ On typical developer laptops, this entire process takes seconds and can be compl
 Reach completely abstracts all the details of building and maintaining consensus network test environments and build scripts from the programmer, so they can focus exclusively on the business logic of their application.
 In fact, Reach works for multiple networks, so if we instead run
 
-
 ```cmd
 $ REACH_CONNECTOR_MODE=ALGO reach run
 ```
-
 
 then Reach will start up a private Algorand devnet and use the Algorand connector.
 The developer does not need to change anything about their program because Reach is entirely agnostic to the consensus network choice during deployment.
 
 The same goes for Conflux:
 
-
 ```cmd
 $ REACH_CONNECTOR_MODE=CFX reach run
 ```
-
 
 ## {#over-react} Web app
 
@@ -303,7 +267,6 @@ You can [watch a 7-minute video](https://www.youtube.com/watch?v=jHEKIMNvs-o) on
 which demonstrates this section's code in action
 and provides a brief explanation of how it works.
 :::
-
 
 The previous section uses Node.js to perform a test run at the command line.
 However, most Reach developers deploy their DApps via a Web application, as we describe below.
@@ -318,14 +281,12 @@ load: /examples/overview-react/index.js
 range: 7-9
 ```
 
-
 At the top of the file, we import the Reach-generated backend as `{!js} backend` and we load the standard library as `{!js} reach`.
 
 ```
 load: /examples/overview-react/index.js
 range: 27-28
 ```
-
 
 We hook into the App [component](https://reactjs.org/docs/react-component.html)'s [lifecycle event](https://projects.wojtekmaj.pl/react-lifecycle-methods-diagram/) `{!js} componentDidMount`
 in order to fetch the user's account.
@@ -339,7 +300,6 @@ load: /examples/overview-react/index.js
 range: 71-76
 ```
 
-
 Our React component has a method called `{!js} deploy` that actually deploys the contract on the network, using the same calls as in the test deployment:
 on line 72 we call the `{!js} acc.deploy` function,
 and on line 74, we call the `{!js} ctc.getInfo` function;
@@ -350,14 +310,12 @@ load: /examples/overview-react/index.js
 range: 79-85
 ```
 
-
 Similarly, we implement a `{!js} runBackend` method that executes the Reach program as Alice using information gathered from the React UI.
 
 ```
 load: /examples/overview-react/index.js
 range: 112-121
 ```
-
 
 We implement a similar method in the `{!js} Bob` component that runs the backend as Bob.
 
@@ -373,31 +331,25 @@ into your React project,
 or for convenience, instead of setting up a React project,
 you can simply use the command
 
-
 ```cmd
 $ reach react
 ```
-
 
 This command runs your DApp with the React development server in a Docker container which has Reach and React JavaScript dependencies pre-installed, so it starts up much faster than building them yourself.
 
 As before, you can use `REACH_CONNECTOR_MODE` to  choose your desired connector.
 
-
 ```cmd
 $ REACH_CONNECTOR_MODE=ETH reach react
 ```
-
 
 ```cmd
 $ REACH_CONNECTOR_MODE=ALGO reach react
 ```
 
-
 ```cmd
 $ REACH_CONNECTOR_MODE=CFX reach react
 ```
-
 
 ## {#over-next} Next steps
 
@@ -415,13 +367,10 @@ In the rest of [the guide](##guide), we discuss design issues like this. For exa
 + Fortifying your application against [non-participation](##guide-timeout);
 + Building [interaction abstractions](##guide-abstract) for related applications.
 
-
 However, unless you're ready to dive deep now, the next steps for you are to:
 
 + [Install Reach](##ref-install);
 + Work through the [tutorial](##tut);
 + Join [the Discord community](@{DISCORD}).
 
-
 Thanks for being part of Reach!
-

@@ -60,7 +60,6 @@ Backends must respect the following environment variables:
 + `ALGO_FAUCET_PASSPHRASE` is used as the mnemonic for the faucet of your network.
 This is useful if you are running your own testing network.
 
-
 ## {#ref-network-cfx} Conflux
 
 The [Conflux](https://confluxnetwork.org/) Reach connector works almost identically to the [Ethereum connector](##ref-network-eth), except that it behaves differently at runtime: using, for example, [Conflux Portal](https://portal.confluxnetwork.org/) rather than [MetaMask](https://metamask.io/), and connecting to Conflux nodes.
@@ -71,7 +70,6 @@ Backends must respect the following environment variables:
 It defaults to `http://localhost:12537`.
 + `CFX_NETWORK_ID` is used to determine the Conflux network id.
 It defaults to `999`.
-
 
 ### {#cfx-faq} FAQ
 
@@ -84,13 +82,11 @@ in order to run on Conflux TestNet:
 reach.setProviderByName('TestNet');
 ```
 
-
 Or this to run on Conflux MainNet:
 
 ```js
 reach.setProviderByName('MainNet');
 ```
-
 
 #### {#cfx-faq-cplocal} How can I use ConfluxPortal with the Reach devnet?
 
@@ -101,7 +97,6 @@ you can try configuring ConfluxPortal to use a custom RPC endpoint:
 + Select: Custom RPC
 + Use RPC url: http://127.0.0.1:12537
 
-
 If your locally-running Conflux devnet restarts,
 you may find that you need to reset ConfluxPortal's account history,
 which you can do like so:
@@ -111,7 +106,6 @@ which you can do like so:
 + Click Settings > Advanced > Reset Account > (confirm) Reset
 + Switch to a different network and back
 + CTRL+SHIFT+R to hard-reset the webpage.
-
 
 #### {#cfx-faq-sponsor} How can I use gas and storage sponsorship?
 
@@ -142,7 +136,6 @@ const conflux = new Conflux({
   // some options
 });
 ```
-
 
 Second, you must call the `addPrivilegeByAdmin` Conflux internal contract from the creator (i.e. deployer) of the smart contract.
 This function requires you to provide an address that is eligible for sponsorship.
@@ -214,4 +207,3 @@ Backends must respect the following environment variables:
 It defaults to `http://localhost:8545`.
 + `ETH_NODE_NETWORK` is used to name the Ethereum network.
 It defaults to `unspecified`.
-

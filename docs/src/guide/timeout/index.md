@@ -1,6 +1,3 @@
-
-
-
 # {#guide-timeout} Non-participation: What it is and how to protect against it
 
 Non-participation refers to the act of one party ceasing to continue playing their role in an application.

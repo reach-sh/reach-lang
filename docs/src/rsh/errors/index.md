@@ -19,7 +19,6 @@ transfer(5, tok).to(Alice);
 commit();
 ```
 
-
 This can be fixed by performing a `{!rsh} commit` after creating the token and transferring the
 token in the next consensus step:
 
@@ -32,7 +31,6 @@ Alice.publish();
 transfer(5, tok).to(Alice);
 commit();
 ```
-
 
 The frontend can have `{!rsh} Alice` opt-in to the token in `{!rsh} informOfTokenId` by utilizing
 `{!js} acc.tokenAccept()`.
@@ -50,7 +48,6 @@ Alice.publish(tok).pay([[5, tok]]);
 commit();
 ```
 
-
 This can be fixed by performing the `{!rsh} publish` and `{!rsh} pay` in two steps:
 token in the next consensus step:
 
@@ -60,7 +57,6 @@ commit();
 Alice.pay([[5, tok]]);
 commit();
 ```
-
 
 ## {#RC0000} RC0000
 
@@ -72,7 +68,6 @@ For example, the code below uses a value too large for the `{!rsh} ALGO` connect
 ```reach
 const y = 18446744073709551616;
 ```
-
 
 You can fix this error by having your frontend provide the value and accessing it
 via the participant interact interface:
@@ -86,7 +81,6 @@ A.only(() => {
   const y = declassify(interact.y);
 });
 ```
-
 
 Alternatively, you can fix this by not compiling to the given connector, in which
 case, your application will no longer be blockchain agnostic.
@@ -102,14 +96,12 @@ const f = () => { return 3 };
 const x = f(5);
 ```
 
-
 You can fix this by providing the same amount of arguments expected:
 
 ```reach
 const f = () => { return 3 };
 const x = f();
 ```
-
 
 ## {#RE0001} RE0001
 
@@ -125,7 +117,6 @@ x *= 2;
 continue;
 ```
 
-
 You can fix this by explicitly writing out the operation on the right hand
 side of `{!rsh} =`:
 
@@ -133,7 +124,6 @@ side of `{!rsh} =`:
 x = x * 2;
 continue;
 ```
-
 
 Keep in mind, that the assignment operator is a form of mutation and is only allowed
 immediately before a `{!rsh} continue`.
@@ -154,7 +144,6 @@ for (let i = 0; i < arr.length; i++) {
 }
 ```
 
-
 You can fix this by either using a `{!rsh} while` loop or a combination of
 `{!rsh} Array.iota` and `{!rsh} Array.map/Array.forEach`:
 
@@ -163,7 +152,6 @@ Array.iota(arr.length).map((i) => {
   // ...
 });
 ```
-
 
 ## {#RE0003} RE0003
 
@@ -185,7 +173,6 @@ if (iAmLegend) {
 }
 ```
 
-
 You can fix this by using `{!rsh} const` and either creating fresh variables or collapsing the logic if simple enough:
 
 ```reach
@@ -194,7 +181,6 @@ const xPrime = iAmLegend ? 5 : x
 // or
 const x = iAmLegend ? 5 : 0;
 ```
-
 
 ## {#RE0005} RE0005
 
@@ -212,7 +198,6 @@ while (true) {
 }
 ```
 
-
 Reach requires the `{!rsh} invariant` to reason about the `{!rsh} while` loop during verification. You
 can fix this by adding a `{!rsh} var` and `{!rsh} invariant` declaration before the loop:
 
@@ -226,7 +211,6 @@ while (true) {
   continue;
 }
 ```
-
 
 ## {#RE0006} RE0006
 
@@ -248,7 +232,6 @@ Alice
   .timeout(5, closeTo(Bob));
 ```
 
-
 However, the second argument of the `{!rsh} timeout` branch must be a syntactic thunk.
 You can fix this by wrapping `{!rsh} closeTo(Bob)` in an arrow expression:
 
@@ -257,7 +240,6 @@ Alice
   .publish()
   .timeout(5, () => closeTo(Bob));
 ```
-
 
 ## {#RE0008} RE0008
 
@@ -273,7 +255,6 @@ A.pay(0)
  .timeout(1);
 ```
 
-
 You can fix this by providing a function as a second argument to `{!rsh} timeout`:
 
 ```reach
@@ -282,7 +263,6 @@ A.pay(0)
     // ...
   });
 ```
-
 
 ## {#RE0009} RE0009
 
@@ -296,13 +276,11 @@ which are both interpreted as the amount of network tokens to pay:
 A.pay([ amt, amt, [ amt, tok ]]);
 ```
 
-
 You can fix this by deleting one of the atomic values:
 
 ```reach
 A.pay([ amt, [ amt, tok ]]);
 ```
-
 
 ## {#RE0010} RE0010
 
@@ -316,13 +294,11 @@ both of which specify the amount of the same token:
 A.pay([ amt, [amt, tok ], [ amt, tok ] ]);
 ```
 
-
 You can fix this by deleting one of the tuples:
 
 ```reach
 A.pay([ amt, [amt, tok ] ]);
 ```
-
 
 ## {#RE0011} RE0011
 
@@ -336,7 +312,6 @@ tuple:
 A.pay([ amt, [ amt ] ];)
 ```
 
-
 However, a tuple in a pay amount must specify the amount and the `{!rsh} Token`. You can fix this
 by adding the `{!rsh} Token` to the tuple:
 
@@ -344,7 +319,6 @@ by adding the `{!rsh} Token` to the tuple:
 // tok : Token
 A.pay([ amt, [ amt, tok ] ];)
 ```
-
 
 ## {#RE0012} RE0012
 
@@ -359,7 +333,6 @@ const A = Participant('A', {
 });
 ```
 
-
 the frontend may look like this:
 
 ```js
@@ -369,7 +342,6 @@ await Promise.all([
   })
 ]);
 ```
-
 
 You can fix this by decoupling the functions and calling them sequentially. This technique requires
 changes to the frontend as well since we are changing the signature:
@@ -386,7 +358,6 @@ A.only(() => {
 });
 ```
 
-
 the frontend may look like this:
 
 ```js
@@ -398,7 +369,6 @@ await Promise.all([
   })
 ]);
 ```
-
 
 ## {#RE0013} RE0013
 
@@ -428,7 +398,6 @@ const Alice = Participant('Alice', {
 });
 ```
 
-
 However, the interact interface specifies the type of values that will be provided at runtime. You can fix this by
 either making `{!rsh} x` a variable within Alice's scope inside the program:
 
@@ -440,7 +409,6 @@ Alice.only(() => {
 });
 ```
 
-
 or by putting `{!rsh} 3` as the value of `{!rsh} x` in your frontend and adjusting the
 participant interact interface to list the type:
 
@@ -449,8 +417,6 @@ const Alice = Participant('Alice', {
   'x': UInt,
 });
 ```
-
-
 
 ## {#RE0016} RE0016
 
@@ -465,7 +431,6 @@ export const main = Reach.App({}, () => {
 });
 ```
 
-
 You can fix this by ensuring only one argument is passed to `{!rsh} Reach.App`,
 which is a function with no arguments:
 
@@ -473,7 +438,6 @@ which is a function with no arguments:
 export const main = Reach.App(() => {
 });
 ```
-
 
 ## {#RE0017} RE0017
 
@@ -486,13 +450,11 @@ For example, the code below provides a Participant name that is unsatisfactory:
 const P = Participant('Part 4!', {});
 ```
 
-
 You can fix this by removing any illegal characters and replacing spaces with underscores:
 
 ```reach
 const P = Participant('Part_4', {});
 ```
-
 
 ## {#RE0018} RE0018
 
@@ -506,14 +468,12 @@ side of an assignment:
 const (f + 1) = 10;
 ```
 
-
 You can fix this by moving all the arithmetic to the right hand side, leaving only the variable
 on the left:
 
 ```reach
 const f = 10 - 1;
 ```
-
 
 ## {#RE0019} RE0019
 
@@ -528,13 +488,11 @@ and the remaining elements into `{!rsh} x`:
 const {...x, y} = {x: 1, y: 2, z: 3};
 ```
 
-
 You can fix this by moving `{!rsh} ...x` to the last position:
 
 ```reach
 const {y, ...x} = {x: 1, y: 2, z: 3};
 ```
-
 
 ## {#RE0020} RE0020
 
@@ -549,13 +507,11 @@ and the remaining elements into `{!rsh} x`:
 const [...x, y] = [1, 2, 3];
 ```
 
-
 You can fix this by moving `{!rsh} ...x` to the last position:
 
 ```reach
 const [y, ...x] = [1, 2, 3];
 ```
-
 
 ## {#RE0021} RE0021
 
@@ -572,7 +528,6 @@ Maybe(UInt).None().match({
 });
 ```
 
-
 You can fix this by wrapping the value `{!rsh} 0` in an arrow expression because
 `{!rsh} match` expects all cases to be bound to closures:
 
@@ -582,7 +537,6 @@ Maybe(UInt).None().match({
   Some: (x) => x
 });
 ```
-
 
 ## {#RE0022} RE0022
 
@@ -596,14 +550,12 @@ within one `{!rsh} const` assignment:
 const x = 1, y = 2;
 ```
 
-
 You can fix this by breaking apart the declarations into two `{!rsh} const` statements:
 
 ```reach
 const x = 1;
 const y = 2;
 ```
-
 
 ## {#RE0023} RE0023
 
@@ -623,14 +575,11 @@ For example, the code below erroneously tries to unpack an `{!rsh} array` of 3 v
 const [ x, y ] = [ 1, 2, 3 ];
 ```
 
-
 You can fix this by either binding or ignoring, via `{!rsh} _`, the last element of the `{!rsh} array`:
 
 ```reach
 const [ x, y, _ ] = [ 1, 2, 3 ];
 ```
-
-
 
 ## {#RE0025} RE0025
 
@@ -657,7 +606,6 @@ export const main = Reach.App(() => {
 });
 ```
 
-
 You can fix this by having a `{!rsh} Participant` `{!rsh} publish` first:
 
 ```reach
@@ -668,7 +616,6 @@ export const main = Reach.App(() => {
   wait(relativeTime(1));
 });
 ```
-
 
 ## {#RE0028} RE0028
 
@@ -688,7 +635,6 @@ while(x < 2) {
 }
 ```
 
-
 You can fix this by either deleting `{!rsh} y` or adding it to the variable list:
 
 ```reach
@@ -699,8 +645,6 @@ while(x < 2) {
   continue;
 }
 ```
-
-
 
 ## {#RE0029} RE0029
 
@@ -716,7 +660,6 @@ const C = ParticipantClass('C', {});
 C.set(addr);
 ```
 
-
 You can fix this by using a `{!rsh} Participant`, which may be associated with a single address:
 
 ```reach
@@ -724,7 +667,6 @@ const C = Participant('C', {});
 // ...
 C.set(addr);
 ```
-
 
 ## {#RE0030} RE0030
 
@@ -740,7 +682,6 @@ Bob.publish();
 // ...
 Bob.set(addr);
 ```
-
 
 You can fix this by deleting one of the statements (depending on the logic of your application).
 
@@ -770,7 +711,6 @@ while (true) {
 }
 ```
 
-
 You can fix this issue by moving the mutation directly before the `{!rsh} continue`:
 
 ```reach
@@ -783,7 +723,6 @@ while (true) {
   continue;
 }
 ```
-
 
 ## {#RE0033} RE0033
 
@@ -806,7 +745,6 @@ const f = () => {
 };
 ```
 
-
 You can fix this by removing the second `{!rsh} return` which is dead code:
 
 ```reach
@@ -814,7 +752,6 @@ const f = () => {
   return 0;
 }
 ```
-
 
 ## {#RE0035} RE0035
 
@@ -830,7 +767,6 @@ const g = 2;
 const h = g();
 ```
 
-
 `{!rsh} g` is being applied as if it were a function, although we really intended
 on calling `{!rsh} f`. This can be fixed by ensuring we call a function:
 
@@ -839,7 +775,6 @@ const f = () => 2;
 const g = 2;
 const h = f();
 ```
-
 
 ## {#RE0036} RE0036
 
@@ -853,13 +788,11 @@ size as `{!rsh} arr`, but filled with `{!rsh} 1`:
 const a = arr.map(1);
 ```
 
-
 You can fix this code by providing a function to `{!rsh} Array.map`:
 
 ```reach
 const a = arr.map((_) => 1);
 ```
-
 
 ## {#RE0037} RE0037
 
@@ -906,7 +839,6 @@ const f = () => {
 const y = x;
 ```
 
-
 You can fix this issue by returning the value of `{!rsh} x` from the function:
 
 ```reach
@@ -916,7 +848,6 @@ const f = () => {
 }
 const y = f();
 ```
-
 
 If you are attempting to use a value from a library, simply add the necessary `{!rsh} import` to the top
 of the Reach file.
@@ -936,7 +867,6 @@ A.only(() => {
 });
 ```
 
-
 You can fix this issue by simply assigning `{!rsh} y` to `{!rsh} x`.
 
 ## {#RE0044} RE0044
@@ -955,14 +885,12 @@ const x = array(UInt, [0, 1, 2]);
 const y = x.map(function m(i){ return i + 1; });
 ```
 
-
 You can fix this by removing the function name:
 
 ```reach
 const x = array(UInt, [0, 1, 2]);
 const y = x.map(function (i){ return i + 1; });
 ```
-
 
 ## {#RE0046} RE0046
 
@@ -975,20 +903,17 @@ For example, the code below erroneously performs a default `{!rsh} import`:
 import blah from 'sample_lib.rsh';
 ```
 
-
 You can fix this code by explicitly importing the bindings you want:
 
 ```reach
 import {a,b,c} from 'sample_lib.rsh';
 ```
 
-
 or by binding all the exports to an identifier:
 
 ```reach
 import * as lib from 'sample_lib.rsh';
 ```
-
 
 ## {#RE0047} RE0047
 
@@ -1010,7 +935,6 @@ without specifying what version of Reach it uses:
 export const main = Reach.App(() => {});
 ```
 
-
 Fix this by adding a header to the file:
 
 ```reach
@@ -1018,7 +942,6 @@ Fix this by adding a header to the file:
 
 export const main = Reach.App(() => {});
 ```
-
 
 ## {#RE0049} RE0049
 
@@ -1036,7 +959,6 @@ const o = {
   [x]: 4,
 };
 ```
-
 
 You can fix this by using a static string as the key.
 
@@ -1062,7 +984,6 @@ const o = {
 };
 ```
 
-
 You can fix this by using the following arrow expression syntax:
 
 ```reach
@@ -1070,8 +991,6 @@ const o = {
   f: () => { return 1; }
 }
 ```
-
-
 
 ## {#RE0052} RE0052
 
@@ -1085,7 +1004,6 @@ You can fix this issue by replacing the erroneous key with a static string.
 
 This error indicates that you are attempting to spread a value that is not
 an object. This issue is most likely caused by a typo in your program.
-
 
 ## {#RE0054} RE0054
 
@@ -1114,7 +1032,6 @@ This error indicates that the compiler expected the tail of a statement block
 to be empty, but it wasn't. This issue may arise if there are statements beyond
 a `{!rsh} return` or `{!rsh} exit` statement. These statements are dead code
 and you can fix this issue by deleting them.
-
 
 ## {#RE0058} RE0058
 
@@ -1170,7 +1087,6 @@ A.only(() => {
 unknowable(false, A(_x));
 ```
 
-
 You can fix this by passing a `{!rsh} Participant` as the first argument to `{!rsh} unknowable`:
 
 ```reach
@@ -1179,7 +1095,6 @@ A.only(() => {
 });
 unknowable(B, A(_x));
 ```
-
 
 ## {#RE0064} RE0064
 
@@ -1193,7 +1108,6 @@ Alice.publish().pay(100);
 transfer(100).to(Bob);
 ```
 
-
 You can fix this by using `{!rsh} Participant.set` first or having `{!rsh} Bob` publish before the
 `{!rsh} transfer`:
 
@@ -1203,7 +1117,6 @@ commit();
 Alice.publish().pay(100);
 transfer(100).to(Bob);
 ```
-
 
 ## {#RE0065} RE0065
 
@@ -1219,7 +1132,6 @@ init();
 Alice.publish().pay(100);
 transfer(100).to(Bob);
 ```
-
 
 You can fix this code by specifying a specific `{!rsh} Address` to use. For example, the
 class could `{!rsh} race` to specify their own address:
@@ -1237,7 +1149,6 @@ Bob.publish(b);
 transfer(100).to(b);
 commit();
 ```
-
 
 ## {#RE0066} RE0066
 
@@ -1265,7 +1176,6 @@ A.only(() => {
 });
 ```
 
-
 You can fix this by either changing the identifier to start with `{!rsh} _` or using `{!rsh} declassify`
 to make the value public:
 
@@ -1279,7 +1189,6 @@ A.only(() => {
 });
 ```
 
-
 ## {#RE0068} RE0068
 
 This error indicates that you are attempting to bind a public value to an identifier
@@ -1291,13 +1200,11 @@ For example, the code below erroneously assigns a public value to a secret ident
 const _x = 1;
 ```
 
-
 You can fix this by removing the `{!rsh} _` prefix:
 
 ```reach
 const x = 1;
 ```
-
 
 ## {#RE0069} RE0069
 
@@ -1320,7 +1227,6 @@ const xa = [2, 3];
 add(1, ...xi);
 ```
 
-
 You can fix this code by spreading a tuple-like value for the second argument of `{!rsh} add`:
 
 ```reach
@@ -1328,7 +1234,6 @@ const xi = 1;
 const xa = [2, 3];
 add(1, ...xa);
 ```
-
 
 ## {#RE0071} RE0071
 
@@ -1354,7 +1259,6 @@ const f = (mx) => {
 f(1);
 ```
 
-
 You can fix this code by providing a value with the correct `{!rsh} Type` to the `{!rsh} switch` statement:
 
 ```reach
@@ -1367,7 +1271,6 @@ const f = (mx) => {
 
 f(Maybe(UInt).Some(1));
 ```
-
 
 ## {#RE0073} RE0073
 
@@ -1402,14 +1305,12 @@ For example, the code below erroneously provides a number as the second argument
 assert(2 == 2, 5);
 ```
 
-
 However, the second argument of `{!rsh} assert` is expected to be of type `{!rsh} Bytes`.
 You can fix this issue by providing a value of the correct type:
 
 ```reach
 assert(2 == 2, "5th assertion")
 ```
-
 
 ## {#RE0077} RE0077
 
@@ -1433,7 +1334,6 @@ Alice.publish();
 commit();
 ```
 
-
 You can fix this code by wrapping the `{!rsh} exit` in a conditional:
 
 ```reach
@@ -1444,7 +1344,6 @@ if (/* ... */) {
 Alice.publish();
 commit();
 ```
-
 
 ## {#RE0079} RE0079
 
@@ -1475,7 +1374,6 @@ A.publish(x)
 commit();
 ```
 
-
 You can fix this issue by providing a `{!rsh} timeout` case for
 
 ```reach
@@ -1487,7 +1385,6 @@ A.publish(x)
  .timeout(deadline, () => closeTo(Bob));
 commit();
 ```
-
 
 ## {#RE0081} RE0081
 
@@ -1509,7 +1406,6 @@ parallelReduce(/* ... */)
   )
 ```
 
-
 This code can be fixed by using an `{!rsh} Object` and assigning the value to be published to
 the `{!rsh} msg` field of the object:
 
@@ -1526,7 +1422,6 @@ parallelReduce(/* ... */)
   // ...
   )
 ```
-
 
 ## {#RE0082} RE0082
 
@@ -1551,7 +1446,6 @@ parallelReduce(/* ... */)
   )
 ```
 
-
 You can fix this code by changing the arrow expression to accept one parameter. You can
 either destructure the argument with a `{!rsh} const` assignment or as part of the function
 syntax:
@@ -1569,7 +1463,6 @@ parallelReduce(/* ... */)
     })
   )
 ```
-
 
 ## {#RE0083} RE0083
 
@@ -1599,7 +1492,6 @@ parallelReduce([ 0 ])
   .timeRemaining(1, () => {});
 ```
 
-
 However, `{!rsh} timeRemaining` is a shorthand for a timeout which automatically publishes and returns the
 `{!rsh} parallelReduce` accumulator. The component only expects one argument. You can fix this code by removing
 the second argument supplied.
@@ -1619,7 +1511,6 @@ Alice.only(() => {
 Alice.publish(aInteract);
 ```
 
-
 You can fix this code by specifying a specific field of `{!rsh} Alice`'s interact interface to `{!rsh} publish`:
 
 ```reach
@@ -1628,7 +1519,6 @@ Alice.only(() => {
 });
 Alice.publish(aX);
 ```
-
 
 ## {#RE0086} RE0086
 
@@ -1659,7 +1549,6 @@ export const f =
      Fun([UInt], UInt));
 ```
 
-
 You can fix this code by returning a `{!rsh} UInt` from the function or changing the return type of the function.
 
 This error may be caused by using a value of the incorrect type in an operation. The code below erroneously uses
@@ -1674,7 +1563,6 @@ A.only(() => {
     default: return mi+1; } })(); });
 ```
 
-
 In this code, `{!rsh} mi` is still of `{!rsh} Maybe` type. You can fix this code by changing `{!rsh} default`
 to `{!rsh} case Some`, which will re-bind `{!rsh} mi` to the value contained within `{!rsh} Some`:
 
@@ -1686,7 +1574,6 @@ A.only(() => {
     case None: return 42;
     case Some: return mi+1; } })(); });
 ```
-
 
 ## {#RE0089} RE0089
 
@@ -1709,7 +1596,6 @@ while (keepGoing) {
 }
 ```
 
-
 You can fix this code by moving any `{!rsh} Map` reductions to inside the `{!rsh} invariant`:
 
 ```reach
@@ -1725,7 +1611,6 @@ while (keepGoing) {
   continue;
 }
 ```
-
 
 ## {#RE0090} RE0090
 
@@ -1744,7 +1629,6 @@ For example, the code below erroneously tries to create a `{!rsh} Foldable` valu
 const container = Foldable();
 ```
 
-
 You can fix this code by instead creating a `{!rsh} Map` or an `{!rsh} Array`.
 
 ## {#RE0092} RE0092
@@ -1760,7 +1644,6 @@ const f = (name = "Reach", msg) => {
 }
 ```
 
-
 You can fix this error by rearranging the parameters so that the ones with default arguments are last:
 
 ```reach
@@ -1768,7 +1651,6 @@ const f = (msg, name = "Reach") => {
   // ...
 }
 ```
-
 
 ## {#RE0093} RE0093
 
@@ -1782,7 +1664,6 @@ closeTo(Bob,
     interact.showResult(5); }));
 ```
 
-
 The result of `{!rsh} each` cannot be bound as a function argument. You can fix this code by
 wrapping the statement in an arrow expression:
 
@@ -1791,7 +1672,6 @@ closeTo(Bob, () => {
   each([Alice, Bob], () => {
     interact.showResult(5); })});
 ```
-
 
 ## {#RE0094} RE0094
 
@@ -1818,13 +1698,11 @@ For example, the code below provides an erroneous key value:
 const s = Struct([["$x ", UInt]]);
 ```
 
-
 You can fix this by removing any illegal characters:
 
 ```reach
 const s = Struct([["x", UInt]]);
 ```
-
 
 ## {#RE0097} RE0097
 
@@ -1837,13 +1715,11 @@ For example, the code below erroneously uses the same key twice:
 const s = Struct([["x", UInt], ["y", UInt], ["x", UInt]]);
 ```
 
-
 You can fix this by renaming one of the `{!rsh} "x"` fields:
 
 ```reach
 const s = Struct([["x", UInt], ["y", UInt], ["x2", UInt]]);
 ```
-
 
 ## {#RE0098} RE0098
 
@@ -1857,7 +1733,6 @@ Therefore, you cannot export a `{!rsh} Participant` named `{!rsh} getExports` as
 ```reach
 const P = Participant('getExports', {});
 ```
-
 
 You can fix this error by choosing a different name.
 
@@ -1873,7 +1748,6 @@ const y = declassify(interact.getInt());
 const x = y ? 2 : 3;
 ```
 
-
 You can fix this code by using a `{!rsh} Bool` instead. The following code will consider
 any number that is not `{!rsh} 0` `{!rsh} true`:
 
@@ -1881,7 +1755,6 @@ any number that is not `{!rsh} 0` `{!rsh} true`:
 const y = declassify(interact.getInt());
 const x = (y != 0) ? 2 : 3;
 ```
-
 
 ## {#RE0100} RE0100
 
@@ -1914,7 +1787,6 @@ try {
 }
 ```
 
-
 You can fix this code by abstracting the `{!rsh} Type`s of values thrown into a new `{!rsh} Data` type:
 
 ```reach
@@ -1945,7 +1817,6 @@ try {
   }
 }
 ```
-
 
 ## {#RE0101} RE0101
 
@@ -1983,7 +1854,6 @@ while ( true ) {
 }
 ```
 
-
 You can fix this code by publishing `{!rsh} tok` before the loop:
 
 ```reach
@@ -2003,7 +1873,6 @@ while ( true ) {
 }
 ```
 
-
 ## {#RE0104} RE0104
 
 This error indicates that you are attempting to reference a `{!rsh} Token` that
@@ -2017,14 +1886,12 @@ const allTokens = array(Token, toks);
 Foldable_forEach(allTokens, (tok) => transfer(balance(tok), tok).to(Who));
 ```
 
-
 You can work around this issue by writing out the `{!rsh} Token` values explicitly:
 
 ```reach
 const nonNetPayAmt = [ [balance(tok), tok], [balance(tok2), tok2] ];
 transfer([ balance(), ...nonNetPayAmt ]).to(Who);
 ```
-
 
 ## {#RE0105} RE0105
 
@@ -2040,14 +1907,12 @@ const [ returned, [gilRecv, zmdRecv], randomValue ] =
   randomOracle.getRandom.pay(stipend).withBill(gil, zmd)();
 ```
 
-
 You can fix this by wrapping all the arguments into a single `{!rsh} Tuple`:
 
 ```reach
 const [ returned, [gilRecv, zmdRecv], randomValue ] =
   randomOracle.getRandom.pay(stipend).withBill([gil, zmd])();
 ```
-
 
 ## {#RE0106} RE0106
 
@@ -2094,7 +1959,6 @@ const A = Participant('A', {
 });
 ```
 
-
 You can fix this by renaming the erroneous field names:
 
 ```reach
@@ -2104,7 +1968,6 @@ const A = Participant('A', {
   ]))
 });
 ```
-
 
 ## {#RE0111} RE0111
 
@@ -2139,7 +2002,6 @@ const Person = Object({
 });
 ```
 
-
 This code is incorrect because `{!rsh} Bytes` is not a type; it is a function that accepts a `{!rsh} UInt` and returns
 a `{!rsh} Type`. This code can be fixed by providing an argument to `{!rsh} Bytes` that represents the length:
 
@@ -2148,7 +2010,6 @@ const Person = Object({
   name: Bytes(32)
 });
 ```
-
 
 For more information about data types, visit @{seclink("ref-programs-types")}.
 
@@ -2161,7 +2022,6 @@ For example, if `{!rsh} x` is not known at compile-time, then
 ```reach
 wait(x ? relativeTime(10) : relativeSecs(10));
 ```
-
 
 results in this error.
 
@@ -2182,7 +2042,6 @@ const f = (x) => {
 };
 ```
 
-
 The third `{!rsh} return` can never be reached, so the way to correct the program is to remove it.
 
 ## {#RE0117} RE0117
@@ -2200,7 +2059,6 @@ const f = (x) => {
 };
 ```
 
-
 It should be corrected by moving the tail of the `{!rsh} if` into the `{!rsh} else` branch:
 
 ```reach
@@ -2212,7 +2070,6 @@ const f = (x) => {
   }
 };
 ```
-
 
 ## {#RE0118} RE0118
 
@@ -2228,7 +2085,6 @@ Maybe(UInt).Some(5).match({
 });
 ```
 
-
 This error can be corrected by either removing the `{!rsh} Some` case or placing it before the `{!rsh} default` case:
 
 ```reach
@@ -2237,7 +2093,6 @@ Maybe(UInt).Some(5).match({
   default: (() => 0),
 });
 ```
-
 
 ## {#RE0119} RE0119
 
@@ -2261,7 +2116,6 @@ commit();
 // ...
 ```
 
-
 ## {#RE0121} RE0121
 
 This error indicates that one of an API's interface members is not a function.
@@ -2272,7 +2126,6 @@ const A = API('api', {
   tastiness: UInt,
 });
 ```
-
 
 ## {#RE0122} RE0122
 
@@ -2288,7 +2141,6 @@ For example:
 const x = call(Voter.vote);
 ```
 
-
 ## {#RE0123} RE0123
 
 This error indicates that the name provided to a `{!rsh} Participant`, `{!rsh} ParticipantClass`, `{!rsh} API`, or `{!rsh} View` is already in use.
@@ -2301,7 +2153,6 @@ const A = Participant('Flower_girl', {});
 const B = API('Flower', { girl: Fun([UInt], Null) });
 ```
 
-
 `{!rsh} 'Flower_girl'` is used multiple times because every method of an `{!rsh} API` will
 introduce a binding, of the format: `<API name>_<method name>`, into the namespace.
 
@@ -2311,7 +2162,6 @@ You can fix this error by using different names:
 const A = Participant('Flower_girl', {});
 const B = API('Flower', { girl2: Fun([UInt], Null) });
 ```
-
 
 ## {#RE0124} RE0124
 
@@ -2352,7 +2202,6 @@ while (true) {
 }
 ```
 
-
 You can fix this code by making a publication within the `{!rsh} loop`:
 
 ```reach
@@ -2365,7 +2214,6 @@ while (true) {
   continue;
 }
 ```
-
 
 Note that the body of a `{!rsh} while` starts in a consensus step so you must first `{!rsh} commit` before making a publication.
 
@@ -2405,7 +2253,6 @@ export const main = Reach.App(() => {
 });
 ```
 
-
 The effect of `{!rsh} I.i.set(i)` is only observable after the next `{!rsh} commit` in its scope.
 Since, there are no `{!rsh} commit`s between `{!rsh} I.i.set(i)` and `{!rsh} continue`, which is the end of the lexical scope, there is no
 way to observe the effect of setting `{!rsh} I.i`.
@@ -2442,7 +2289,6 @@ export const main = Reach.App(() => {
   commit();
 });
 ```
-
 
 This change will ensure the `{!rsh} View` `{!rsh} I.i` is set to `{!rsh} i` on every iteration of the
 loop. Additionally, the continuation of the loop will have `{!rsh} I.i` set to the last value of
@@ -2521,13 +2367,11 @@ For example, the code below creates a method within a destructuring assignment:
 const {x() { return 1 }} = {x: 2};
 ```
 
-
 You can fix this code by simply specifying `{!rsh} x` in the assignment:
 
 ```reach
 const { x } = {x: 2};
 ```
-
 
 ## {#RP0004} RP0004
 
@@ -2576,7 +2420,6 @@ directory:
 import "../a.rsh";
 ```
 
-
 You can fix this error by moving your file, `{!rsh} "../a.rsh"`, to the same
 directory your program is in. Then, reference it using a relative import:
 
@@ -2584,7 +2427,6 @@ directory your program is in. Then, reference it using a relative import:
 "reach 0.1";
 import "./a.rsh";
 ```
-
 
 ## {#RP0009} RP0009
 
@@ -2604,13 +2446,11 @@ For example, the code below erroneously passes `{!rsh} _x`, a secret value of
 unknowable(A, _x);
 ```
 
-
 You can fix this by providing a call-like expression to the function:
 
 ```reach
 unknowable(A, B(_x));
 ```
-
 
 ## {#RP0011} RP0011
 
@@ -2633,7 +2473,6 @@ const x = forall(UInt);
 require(x >= 0);
 ```
 
-
 This is invalid because the result of `{!rsh} forall` is an abstract value, which cannot exist
 at runtime. You can fix this code by verifying the claim via an `{!rsh} assert`:
 
@@ -2641,7 +2480,6 @@ at runtime. You can fix this code by verifying the claim via an `{!rsh} assert`:
 const x = forall(UInt);
 assert(x >= 0);
 ```
-
 
 ## {#RAPI0000} RAPI0000
 
@@ -2665,7 +2503,6 @@ This might look like the following in the `{!rsh} API_CONSENSUS_EXPR`:
   ret(false);
 })
 ```
-
 
 You cannot return from an API call twice.
 
@@ -2700,7 +2537,6 @@ Instead, the effect should happen after the return:
   }
 })
 ```
-
 
 ## {#RAPI0003} RAPI0003
 

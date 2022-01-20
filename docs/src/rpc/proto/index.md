@@ -43,7 +43,6 @@ A call to `{!js} formatCurrency("19283.1035819471", 4)` would be represented by 
 - "19283.1035"
 ```
 
-
 ---
 
 @{defn("Interactive RPC methods")} consume arguments, including a specification of interactive RPC callbacks, and produce an interactive RPC continuation.
@@ -53,7 +52,6 @@ An @{defn("interactive RPC callback")} is a key of a JSON object, bound to `{!js
 An @{defn("interactive RPC continuation")} is a JSON object that matches either:
 + `{!js} {t: "Done", ans}`, where `{!js} ans` is the final result of the original interactive RPC method.
 + `{!js} {t: "Kont", kid, m, args}`, where `{!js} kid` is an RPC handle, `{!js} m` is a string naming one of the interactive RPC callback methods, and `{!js} args` is an array of the arguments to that method.
-
 
 When a `{!js} `Kont`` value is produced, then the interactive RPC method is suspended until the `/kont` RPC method is invoked with the continuation RPC handle and the return value of the interactive RPC callback.
 The result of the `/kont` RPC method is another interactive RPC continuation.
@@ -100,5 +98,3 @@ An example interaction might be represented by the following HTTP session, with 
 - { t: "Done", ans: null }
 
 ```
-
-

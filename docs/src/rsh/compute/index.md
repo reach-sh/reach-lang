@@ -1,7 +1,3 @@
-
-
-
-
 # {#ref-programs-compute} Computations
 
 This section describes the common features available in all Reach contexts.
@@ -14,7 +10,6 @@ This section describes the common features available in all Reach contexts.
  * comment
  */
 ```
-
 
 Comments are text that is ignored by the compiler.
 Text starting with `//` up until the end of the line forms a @{defn("single-line comment")}.
@@ -32,7 +27,6 @@ It is invalid to nest a multi-line comment within a multi-line comment.
   } else {
     return "Ecks"; } }
 ```
-
 
 A @{defn("block")} is a sequence of statements surrounded by braces, i.e. `{` and `}`.
 
@@ -76,7 +70,6 @@ or `{!rsh} _` or `{!rsh} $`,
 but may not begin with a digit.
 :::
 
-
 A @{defn("value definition")} is written `{!rsh} const LHS = RHS;`.
 
 `{!rsh} LHS` must obey the grammar:
@@ -106,7 +99,6 @@ propertyName =
   | "[" expr "]"
 ```
 
-
 `{!rsh} RHS` must be compatible with the given `{!rsh} LHS`.
 That is, if a `{!rsh} LHS` is an `LHS-tuple-seq`, then the corresponding `{!rsh} RHS` must be a tuple with the correct number of elements.
 If a `{!rsh} LHS` is an `LHS-obj-seq`, then the corresponding `{!rsh} RHS` must be an object with the correct fields.
@@ -121,7 +113,6 @@ function randomBool() {
   return (interact.random() % 2) == 0; };
 ```
 
-
 A @{defn("function definition")}, written `{!rsh} function FUN(LHS_0, ..., LHS_n) BLOCK;`, defines `{!rsh} FUN` as a function which abstracts its @{defn("function body")}, the block `{!rsh} BLOCK`, over the left-hand sides `{!rsh} LHS_0` through `{!rsh} LHS_n`.
 
 Function parameters may specify default arguments. The expressions used to instantiate these parameters
@@ -133,7 +124,6 @@ Parameters with default arguments must come after all other parameters.
 function f(a, b, c = a + 1, d = b + c) =>
   a + b + c + d;
 ```
-
 
 The last parameter of a function may be a @{defn("rest parameter")}, which allows the function to be called
 with an arbitrary number of arguments. A rest parameter is specified via `{!rsh} ...IDENT`, where
@@ -151,7 +141,6 @@ const x = 3;
 const x = 4;
 ```
 
-
 is invalid.
 This restriction is independent of whether a binding is
 only known to a single participant. For example,
@@ -162,7 +151,6 @@ Alice.only(() => {
 Bob.only(() => {
   const x = 3; });
 ```
-
 
 is invalid.
 
@@ -177,7 +165,6 @@ This may be useful for ignoring unwanted values, for example:
 const [_, x, _] = [1, 2, 3];
 ```
 
-
 ### `return`
 
 @{ref("rsh", "return")}
@@ -187,7 +174,6 @@ return 3 + 4;
 return f(2, false);
 return;
 ```
-
 
 A @{defn("return statement")}, written `{!rsh} return EXPR;`, where `{!rsh} EXPR` is an expression, evaluates to the same value as `{!rsh} EXPR`.
 As a special case, `{!rsh} return;` is interpreted the same as `{!rsh} return null;`.
@@ -202,7 +188,6 @@ For example,
   return 2; }
 ```
 
-
 is invalid, because the first `{!rsh} return`'s tail is not empty.
 
 Furthermore, a `{!rsh} return` must have an empty continuation (i.e. it must be in @{defn("tail position")}.)
@@ -216,7 +201,6 @@ if ( 1 + 2 < 3 ) {
 } else {
   return "No, waaah!"; }
 ```
-
 
 A @{defn("conditional statement")},
 written `{!rsh} if (COND) NOT_FALSE else FALSE`,
@@ -234,7 +218,6 @@ else {
   const z = 4; }
 return z;
 ```
-
 
 is erroneous, because the identifier `{!rsh} z` is not bound outside the conditional statement.
 
@@ -254,7 +237,6 @@ switch ( mi ) {
  case None: return 8;
  default: return 41; }
 ```
-
 
 A @{defn("switch statement")},
 written `{!rsh} switch (VAR) { CASE ... }`,
@@ -280,14 +262,12 @@ const x = 4;
 return x;
 ```
 
-
 evaluates to `{!rsh} 4`, but
 
 ```reach
 { const x = 4; }
 return x;
 ```
-
 
 is erroneous, because the identifier `{!rsh} x` is not bound outside the block statement.
 
@@ -299,7 +279,6 @@ try {
 } catch (v) {
   transfer(v).to(A); }
 ```
-
 
 A @{defn("try statement")}, written `{!rsh} try BLOCK catch (VAR) BLOCK`, allows a block
 of code to execute with a specified handler should an exception be thrown.
@@ -319,7 +298,6 @@ A `{!rsh} throw` must have an empty tail.
 f(2, true);
 ```
 
-
 An expression, `{!rsh} E`, in a statement position is equivalent to the block statement `{!rsh} { return E; }`.
 
 ## {#ref-programs-compute-exprs} Expressions
@@ -336,7 +314,6 @@ The remainder of this section enumerates each kind of expression.
 'use strict';
 ```
 
-
  `{!rsh} 'use strict'` enables unused variables checks for all subsequent
 declarations within the current scope. If a variable is declared, but never used, there will
 be an error emitted at compile time.
@@ -352,7 +329,6 @@ void foo({ b: true });
 void foo(false);
 ```
 
-
 Reach allows `{!rsh} o` to be either an object with a `{!rsh} b` field or `{!rsh} false` because it
 partially evaluates the program at compile time. So, without `{!rsh} 'use strict'`, Reach will not evaluate
 `{!rsh} o.b` when `{!rsh} o = false` and this code will compile successfully.
@@ -363,7 +339,6 @@ having a single type and detect an error in the program as follows:
 ```
 reachc: error: Invalid field access. Expected object, got: Bool
 ```
-
 
 The correct way to write a program like this in strict mode is to use `{!rsh} Maybe`. Like this:
 
@@ -380,7 +355,6 @@ void foo(MObj.Some({ b : true }));
 void foo(MObj.None());
 ```
 
-
 ### `unstrict`
 
 @{ref("rsh", "unstrict")}
@@ -392,10 +366,8 @@ assert(unstrict(() => {
 }));
 ```
 
-
  `{!rsh} unstrict` applies a thunk, ignoring any usage of strict mode. This
 can be useful when dealing with libraries that are written in strict mode.
-
 
 ### Identifier reference
 
@@ -404,7 +376,6 @@ X
 Y
 Z
 ```
-
 
 An identifier, written `{!rsh} ID`, is an expression that evaluates to the value of the bound identifier.
 
@@ -420,7 +391,6 @@ digest( coinFlip )
 interact.random()
 declassify( _coinFlip )
 ```
-
 
 A @{defn("function application")}, written `{!rsh} EXPR_rator(EXPR_rand_0, ..., EXPR_rand_n)`, is an expression where `{!rsh} EXPR_rator` and `{!rsh} EXPR_rand_0` through `{!rsh} EXPR_rand_n` are expressions that evaluate to one value.
 `{!rsh} EXPR_rator` must evaluate to an abstraction over `{!rsh} n` values or a primitive of arity `{!rsh} n`.
@@ -496,7 +466,6 @@ The first message will be displayed when the precondition fails verification and
 
 For example, `{!rsh} Refine(Fun([UInt, UInt], UInt), ([x, y] => x < y), (([x, y], z) => x + y < z))` is a function that requires its second argument to be larger than its first and its result to be larger than its input.
 
-
 `{!rsh} Object` and `{!rsh} Data` are commonly used to implemented [algebraic data types](https://en.wikipedia.org/wiki/Algebraic_data_type) in Reach.
 
 @{ref("rsh", "typeOf")}@{ref("rsh", "isType")}@{ref("rsh", "is")}
@@ -505,7 +474,6 @@ typeOf(x) // type
 isType(t) // Bool
 is(x, t) // t
 ```
-
 
 The `{!rsh} typeOf` primitive function is the same as `{!rsh} typeof`:
 it returns the type of its argument.
@@ -534,7 +502,6 @@ null
 "reality bytes"
 'it just does'
 ```
-
 
 A @{defn("literal value")},
 written `{!rsh} VALUE`,
@@ -571,7 +538,6 @@ which is either a unary operator, or a binary operator.
 typeof a
 void a
 ```
-
 
 A @{defn("unary expression")}, written `{!rsh} UNAOP EXPR_rhs`, where `{!rsh} EXPR_rhs` is an expression and `{!rsh} UNAOP` is one of the @{defn("unary operator")}s: `! - + typeof void`. All the unary operators, besides `{!rsh} typeof`, have a
 corresponding named version in the standard library.
@@ -610,11 +576,9 @@ a <= b
 a < b
 ```
 
-
 :::note
 Bitwise operations are not supported by all consensus networks and greatly decrease the efficiency of verification.
 :::
-
 
 A @{defn("binary expression")} is written `{!rsh} EXPR_lhs BINOP EXPR_rhs`, where `{!rsh} EXPR_lhs` and `{!rsh} EXPR_rhs` are expressions and `{!rsh} BINOP` is one of the @{defn("binary operator")}s: `&& || + - * / % | & ^ << >> == != === !== > >= <= <`.
 Numeric operations, like `{!rsh} +` and `{!rsh} >`, only operate on numbers.
@@ -644,7 +608,6 @@ polyEq(a, b)  // ==, ===
 polyNeq(a, b) // !=, !==
 ```
 
-
 All binary expression operators have a corresponding named function in the standard library.
 While `{!rsh} &&` and `{!rsh} ||` may not evaluate their second argument,
 their corresponding named functions `{!rsh} and` and `{!rsh} or`, always do.
@@ -660,7 +623,6 @@ addressEq(a, b) // eq on Addresses
 fxeq(a, b)      // eq on FixedPoint
 ieq(a, b)       // eq on Int
 ```
-
 
 Equality functions, like `{!rsh} ==`, `{!rsh} ===`, `{!rsh} !=`, and `{!rsh} !==`, operate on all types.
 However, values with different types are always not equal.
@@ -681,8 +643,7 @@ xor(true, false);  // true
 xor(true, true);   // false
 ```
 
-
- `{!rsh} xor(Bool, Bool)` returns `{!rsh} true` only when the inputs differ in value.
+`{!rsh} xor(Bool, Bool)` returns `{!rsh} true` only when the inputs differ in value.
 
 ### Padding
 
@@ -690,7 +651,6 @@ xor(true, true);   // false
 ```reach
 Bytes(16).pad('abc');
 ```
-
 
 `{!rsh} Bytes` are like `{!rsh} Array`s in that they are fixed and exactly sized.
 This means that two `{!rsh} Bytes` of different lengths are not interchangeable.
@@ -708,7 +668,6 @@ A byte string extended in this way is called @{defn("padded")}, because it is ex
 (a + b) - c
 ```
 
-
 An expression may be parenthesized, as in `{!rsh} (EXPR)`.
 
 ### {#ref-programs-tuples} Tuples
@@ -717,7 +676,6 @@ An expression may be parenthesized, as in `{!rsh} (EXPR)`.
 [ ]
 [ 1, 2 + 3, 4 * 5 ]
 ```
-
 
 A @{defn("tuple")} literal, written `{!rsh} [ EXPR_0, ..., EXPR_n ]`, is an expression which evaluates to a tuple of `{!rsh} n` values, where `{!rsh} EXPR_0` through `{!rsh} EXPR_n` are expressions.
 
@@ -730,7 +688,6 @@ A @{defn("tuple")} literal, written `{!rsh} [ EXPR_0, ..., EXPR_n ]`, is an expr
 const x = array(UInt, [1, 2, 3]);
 ```
 
-
 Converts a tuple of homogeneous values of the specific type into an @{defn("array")}.
 
 ### Element reference
@@ -738,7 +695,6 @@ Converts a tuple of homogeneous values of the specific type into an @{defn("arra
 ```reach
 arr[3]
 ```
-
 
 A @{defn("reference")}, written `{!rsh} REF_EXPR[IDX_EXPR]`,
 where `{!rsh} REF_EXPR` is an expression that evaluates to an array, a tuple, or a struct
@@ -760,7 +716,6 @@ Array.length(arr);
 arr.length;
 ```
 
-
  `{!rsh} Tuple.length` Returns the length of the given tuple.
 
  `{!rsh} Array.length` Returns the length of the given array.
@@ -776,7 +731,6 @@ tup.set(idx, val);
 Array.set(arr, idx, val);
 arr.set(idx, val);
 ```
-
 
  `{!rsh} Tuple.set` Returns a new tuple identical to `{!rsh} tup`,
 except that index `{!rsh} idx` is replaced with `{!rsh} val`.
@@ -794,7 +748,6 @@ Array.elemType(arr)
 arr.elemType
 ```
 
-
  `{!rsh} Array.elemType` Returns the `{!rsh} Type` of elements that the array contains.
 
 ### Foldable operations
@@ -811,7 +764,6 @@ Array.forEach(c, f)
 Map.forEach(c, f)
 ```
 
-
  `{!rsh} Foldable.forEach(c, f)` iterates the function `{!rsh} f` over the elements of a container `{!rsh} c`, discarding the result.
 This may be abbreviated as `{!rsh} c.forEach(f)`.
 
@@ -824,7 +776,6 @@ Array.all(c, f)
 Map.all(c, f)
 c.all(f)
 ```
-
 
  `{!rsh} Foldable.all(c, f)` determines whether the predicate, `f`, is satisfied
 by every element of the container, `c`.
@@ -839,7 +790,6 @@ Map.any(c, f)
 c.any(f)
 ```
 
-
  `{!rsh} Foldable.any(c, f)` determines whether the predicate, `f`, is satisfied
 by at least one element of the container, `c`.
 
@@ -853,7 +803,6 @@ Map.or(c)
 c.or()
 ```
 
-
  `{!rsh} Foldable.or(c)` returns the disjunction of a container of `{!rsh} Bool`s.
 
 #### `Foldable.and` && `.and`
@@ -866,7 +815,6 @@ Map.and(c)
 c.and()
 ```
 
-
  `{!rsh} Foldable.and(c)` returns the conjunction of a container of `{!rsh} Bool`s.
 
 #### `Foldable.includes` && `.includes`
@@ -878,7 +826,6 @@ Array.includes(c, x)
 Map.includes(c, x)
 c.includes(x)
 ```
-
 
  `{!rsh} Foldable.includes(c, x)` determines whether the container includes
 the element, `x`.
@@ -893,7 +840,6 @@ Map.count(c, f)
 c.count(f)
 ```
 
-
  `{!rsh} Foldable.count(c, f)` returns the number of elements in `c` that
 satisfy the predicate, `f`.
 
@@ -907,7 +853,6 @@ Map.size(c)
 c.size()
 ```
 
-
  `{!rsh} Foldable.size(c)` returns the number of elements in `c`.
 
 #### `Foldable.min` && `.min`
@@ -919,7 +864,6 @@ Array.min(c)
 Map.min(c)
 c.min()
 ```
-
 
  `{!rsh} Foldable.min(c)` returns the lowest number in a container of `UInt`s.
 
@@ -933,7 +877,6 @@ Map.max(c)
 c.max()
 ```
 
-
  `{!rsh} Foldable.max(c)` returns the largest number in a container of `UInt`s.
 
 #### `Foldable.sum` && `.sum`
@@ -945,7 +888,6 @@ Array.sum(c)
 Map.sum(c)
 c.sum()
 ```
-
 
  `{!rsh} Foldable.sum(c)` returns the sum of a container of `UInt`s.
 
@@ -959,7 +901,6 @@ Map.product(c)
 c.product()
 ```
 
-
  `{!rsh} Foldable.product(c)` returns the product of a container of `UInt`s.
 
 #### `Foldable.average` && `.average`
@@ -971,7 +912,6 @@ Array.average(c)
 Map.average(c)
 c.average()
 ```
-
 
  `{!rsh} Foldable.average(c)` returns the mean of a container of `UInt`s.
 
@@ -987,7 +927,6 @@ following methods may be used with `{!rsh} Array`s.
 Array.iota(5)
 ```
 
-
  `{!rsh} Array.iota(len)` returns an array of length `{!rsh} len`, where each element is the same as its index.
 For example, `{!rsh} Array.iota(4)` returns `{!rsh} [0, 1, 2, 3]`.
 The given `{!rsh} len` must evaluate to an integer at compile-time.
@@ -999,7 +938,6 @@ The given `{!rsh} len` must evaluate to an integer at compile-time.
 Array.replicate(5, "five")
 Array_replicate(5, "five")
 ```
-
 
  `{!rsh} Array.replicate(len, val)` returns an array of length `{!rsh} len`, where each element is `{!rsh} val`.
 For example, `{!rsh} Array.replicate(4, "four")` returns `{!rsh} ["four", "four", "four", "four"]`.
@@ -1013,7 +951,6 @@ Array.concat(x, y)
 x.concat(y)
 ```
 
-
  `{!rsh} Array.concat(x, y)` concatenates the two arrays `{!rsh} x` and `{!rsh} y`.
 This may be abbreviated as `{!rsh} x.concat(y)`.
 
@@ -1024,7 +961,6 @@ This may be abbreviated as `{!rsh} x.concat(y)`.
 Array_empty
 Array.empty
 ```
-
 
  `{!rsh} Array.empty` is an array with no elements.
 It is the identity element of `{!rsh} Array.concat`.
@@ -1038,7 +974,6 @@ Array.zip(x, y)
 x.zip(y)
 ```
 
-
  `{!rsh} Array.zip(x, y)` returns a new array the same size as `{!rsh} x` and `{!rsh} y` (which must be the same size) whose elements are tuples of the elements of `{!rsh} x` and `{!rsh} y`.
 This may be abbreviated as `{!rsh} x.zip(y)`.
 
@@ -1049,7 +984,6 @@ This may be abbreviated as `{!rsh} x.zip(y)`.
 Array.map(arr, f)
 arr.map(f)
 ```
-
 
  `{!rsh} Array.map(arr, f)` returns a new array, `{!rsh} arr_mapped`, the same size as `{!rsh} arr`, where `{!rsh} arr_mapped[i] = f(arr[i])` for all `{!rsh} i`.
 For example, `{!rsh} Array.iota(4).map(x => x+1)` returns `{!rsh} [1, 2, 3, 4]`.
@@ -1066,7 +1000,6 @@ Array.mapWithIndex(arr, f)
 arr.mapWithIndex(f)
 ```
 
-
  `{!rsh} Array.mapWithIndex(arr, f)` is similar to `{!rsh} Array.map`, except it
 provides `{!rsh} f` with an additional argument, which is the index of the current element in `{!rsh} arr`.
 Unlike `{!rsh} Array.map`, this function is not generalized to an arbitrary number of arrays; it only accepts one array.
@@ -1078,7 +1011,6 @@ Unlike `{!rsh} Array.map`, this function is not generalized to an arbitrary numb
 Array.reduce(arr, z, f)
 arr.reduce(z, f)
 ```
-
 
  `{!rsh} Array.reduce(arr, z, f)` returns the [left fold](https://en.wikipedia.org/wiki/Fold_(higher-order_function)) of the function `{!rsh} f` over the given array with the initial value `{!rsh} z`.
 For example, `{!rsh} Array.iota(4).reduce(0, add)` returns `{!rsh} ((0 + 1) + 2) + 3 = 6`.
@@ -1095,7 +1027,6 @@ Array.reduceWithIndex(arr, z, f)
 arr.reduceWithIndex(z, f)
 ```
 
-
  `{!rsh} Array.reduceWithIndex(arr, z, f)` is similar to `{!rsh} Array.reduce`, except it
 provides `{!rsh} f` with an additional argument, which is the index of the current element in `{!rsh} arr`.
 Unlike `{!rsh} Array.reduce`, this function is not generalized to an arbitrary number of arrays; it only accepts one array.
@@ -1107,7 +1038,6 @@ Unlike `{!rsh} Array.reduce`, this function is not generalized to an arbitrary n
 Array.indexOf(arr, x)
 arr.indexOf(x)
 ```
-
 
  `{!rsh} Array.indexOf(arr, x)` returns the index of the first element
 in the given array that is equal to `x`. The return value is of type `{!rsh} Maybe(UInt)`. If
@@ -1121,7 +1051,6 @@ Array.findIndex(arr, f)
 arr.findIndex(f)
 ```
 
-
  `{!rsh} Array.findIndex(arr, f)` returns the index of the first element
 in the given array that satisfies the predicate `f`. The return value is of type `{!rsh} Maybe(UInt)`. If
 no value in the array satisfies the predicate, `{!rsh} None` is returned.
@@ -1133,7 +1062,6 @@ no value in the array satisfies the predicate, `{!rsh} None` is returned.
 Array.find(arr, f)
 arr.find(f)
 ```
-
 
  `{!rsh} Array.find(arr, f)` returns the first element in the array, `{!rsh} arr`,
 that satisfies the predicate `{!rsh} f`. The return value is of type `{!rsh} Maybe`. If no value in the
@@ -1147,7 +1075,6 @@ Array.withIndex(arr)
 arr.withIndex()
 ```
 
-
  `{!rsh} Array.withIndex(arr)` returns an array where every element of `{!rsh} arr`
 is paired with its index. For example, `{!rsh} array(Bool, [false, true]).withIndex()` returns
 `{!rsh} array(Tuple(Bool, UInt), [[false, 0], [true, 1]])`.
@@ -1159,7 +1086,6 @@ is paired with its index. For example, `{!rsh} array(Bool, [false, true]).withIn
 Array.slice(arr, start, length)
 arr.slice(start, length)
 ```
-
 
  `{!rsh} Array.slice(arr, start, length)` returns a portion of `{!rsh} arr`, starting from
 the `{!rsh} start` index, up to the `{!rsh} start + length` index.
@@ -1176,7 +1102,6 @@ Map.reduce(map, z, f)
 map.reduce(z, f)
 ```
 
-
  `{!rsh} Map.reduce(map, z, f)` returns the [left fold](https://en.wikipedia.org/wiki/Fold_(higher-order_function)) of the function `{!rsh} f` over the given mapping with the initial value `{!rsh} z`.
 For example, `{!rsh} m.reduce(0, add)` sums the elements of the mapping.
 This may be abbreviated as `{!rsh} map.reduce(z, f)`.
@@ -1191,7 +1116,6 @@ The function `{!rsh} f` must satisfy the property, for all `{!rsh} z`, `{!rsh} a
 { [1 < 2 ? "one" : "two"]: 5 }
 ```
 
-
 An @{defn("object")},
 typically written `{!rsh} { KEY_0: EXPR_0, ..., KEY_n: EXPR_n }`,
 where `{!rsh} KEY_0` through `{!rsh} KEY_n` are identifiers or string literals
@@ -1205,7 +1129,6 @@ Additional object literal syntax exists for convenience, such as:
 { ...obj, z: 5 }
 ```
 
-
 An @{defn("object splice")},
 where all fields from `{!rsh} obj` are copied into the object;
 these fields may be accompanied by additional fields specified afterwards.
@@ -1213,7 +1136,6 @@ these fields may be accompanied by additional fields specified afterwards.
 ```reach
 { x, z: 5 }
 ```
-
 
 Shorthand for `{!rsh} { x: x, z: 5}`, where `{!rsh} x` is any bound identifier.
 
@@ -1225,18 +1147,13 @@ const p1 = Posn.fromObject({x: 1, y: 2});
 const p2 = Posn.fromTuple([1, 2]);
 ```
 
-
 A @{defn("struct")} is a combination of a tuple and an object.
 It has named elements, like an object, but is ordered like a tuple, so its elements may be accessed by either name or position.
 Structs exist for interfacing with non-Reach remote objects, where both parties must agree to the runtime representation of the values.
 
-
 A struct instance may be constructed by calling the `{!rsh} fromTuple` method of a struct type instance (like `{!rsh} Posn`) with a tuple of the appropriate length.
 
-
 A struct instance may be constructed by calling the `{!rsh} fromObject` method of a struct type instance (like `{!rsh} Posn`) with an object with the appropriate fields.
-
-
 
 Structs may be converted into a corresponding tuple or object via the `{!rsh} toTuple` and `{!rsh} toObject` methods on the `{!rsh} Struct` value (as well as struct type instances, like `{!rsh} Posn` in the example above):
 
@@ -1245,7 +1162,6 @@ assert(Posn.toTuple(p1)[0] == 1);
 assert(Struct.toObject(p2).y == 2);
 ```
 
-
 The names of elements may be restricted to avoid conflicting with reserved words of the specified connectors.
 
 ### Field reference
@@ -1253,7 +1169,6 @@ The names of elements may be restricted to avoid conflicting with reserved words
 ```reach
 obj.x
 ```
-
 
 An @{defn("object reference")},
 written `{!rsh} OBJ.FIELD`,
@@ -1270,7 +1185,6 @@ Object_set(obj, fld, val);
 { ...obj, [fld]: val };
 ```
 
-
  Returns a new object identical to `{!rsh} obj`,
 except that field `{!rsh} fld` is replaced with `{!rsh} val`.
 
@@ -1282,7 +1196,6 @@ Object.setIfUnset(obj, fld, val);
 Object_setIfUnset(obj, fld, val);
 ```
 
-
  Returns a new object identical to `{!rsh} obj`,
 except that field `{!rsh} fld` is `{!rsh} val` if `{!rsh} fld` is not already present in `{!rsh} obj`.
 
@@ -1291,7 +1204,6 @@ except that field `{!rsh} fld` is `{!rsh} val` if `{!rsh} fld` is not already pr
 ```reach
 Object.has(obj, fld);
 ```
-
 
  Returns a boolean indicating whether the object has the field `{!rsh} fld`.
 This is statically known.
@@ -1311,7 +1223,6 @@ const Shape = Data({ Circle: Object({r: UInt}),
 const nice = Shape.Circle({r: 5});
 ```
 
-
 A @{defn("data instance")} is written `{!rsh} DATA.VARIANT(VALUE)`, where `{!rsh} DATA` is `{!rsh} Data` type, `{!rsh} VARIANT` is the name of one of `{!rsh} DATA`'s variants, and `{!rsh} VALUE` is a value matching the type of the variant.
 As a special case, when the type of a variant is `{!rsh} Null`, the `{!rsh} VALUE` may be omitted, as shown in the definition of `{!rsh} burger` in the same above.
 
@@ -1330,14 +1241,12 @@ const bidSum = getBid(bidA) + getBid(bidB);
 assert(bidSum == 42);
 ```
 
-
 [Option types](https://en.wikipedia.org/wiki/Option_type) are represented in Reach through the built-in `{!rsh} Data` type, `{!rsh} Maybe`, which has two variants: `{!rsh} Some` and `{!rsh} None`.
 
 `{!rsh} Maybe` is defined by
 ```reach
 export const Maybe = (A) => Data({None: Null, Some: A});
 ```
-
 
 This means it is a function that returns a `{!rsh} Data` type specialized to a particular type in the `{!rsh} Some` variant.
 
@@ -1350,18 +1259,15 @@ isNone(m); // false
 isSome(m); // true
 ```
 
-
  `{!rsh} isNone` is a convenience method that determines whether the variant is `{!rsh} None`.
 
  `{!rsh} isSome` is a convenience method that determines whether the variant is `{!rsh} Some`.
-
 
 @{ref("rsh", "fromSome")}
 ```reach
 fromSome(Maybe(UInt).Some(1), 0); // 1
 fromSome(Maybe(UInt).None(), 0);  // 0
 ```
-
 
  `{!rsh} fromSome` receives a `{!rsh} Maybe` value and a default value as arguments and will return the value inside
 of the `{!rsh} Some` variant or the default value otherwise.
@@ -1373,7 +1279,6 @@ maybe(Maybe(UInt).Some(1), 0, add1); // 2
 maybe(Maybe(UInt).None(), 0, add1);  // 0
 ```
 
-
  `{!rsh} maybe(m, defaultVal, f)` receives a `{!rsh} Maybe` value, a default value, and a unary function as arguments. The function will
 either return the application of the function, `{!rsh} f`, to the `{!rsh} Some` value or return the default value provided.
 
@@ -1383,7 +1288,6 @@ either return the application of the function, `{!rsh} f`, to the `{!rsh} Some` 
 ```reach
 export const Either = (A, B) => Data({Left: A, Right: B});
 ```
-
 
 `{!rsh} Either` can be used to represent values with two possible types.
 
@@ -1395,7 +1299,6 @@ carry additional information about the error.
 ```reach
 either(e, onLeft, onRight)
 ```
-
 
  `{!rsh} either(e, onLeft, onRight)` will either apply the function `onLeft` or `onRight` depending on `e`.
 
@@ -1409,7 +1312,6 @@ isRight(l); // false
 const x = fromLeft(l, 0);      // x = 1
 const y = fromRight(l, false); // y = false
 ```
-
 
  `{!rsh} isLeft` is a convenience method that determines whether the variant is `Left`.
 
@@ -1443,7 +1345,6 @@ const Value = Data({
  assert(isTruthy(v2));
 ```
 
-
 A @{defn("match expression")}, written `{!rsh} VAR.match({ CASE ... })`, where `VAR` is a variable
 bound to a data instance and `CASE` is `VARIANT: FUNCTION`, where `VARIANT` is a
 variant or `{!rsh} default`, and `FUNCTION` is a function that takes the same arguments as the
@@ -1465,14 +1366,12 @@ its cases if it is within a consensus step.
 choosesFirst ? [ heap1 - amount, heap2 ] : [ heap1, heap2 - amount ]
 ```
 
-
 A @{defn("conditional expression")}, written `{!rsh} COND_E ? NOT_FALSE_E : FALSE_E`, where `{!rsh} COND_E`, `{!rsh} NOT_FALSE_E`, and `{!rsh} FALSE_E` are expressions, selects between the values which `{!rsh} NOT_FALSE_E` and `{!rsh} FALSE_E` evaluate to based on whether `{!rsh} COND_E` evaluates to `{!rsh} false`.
 
 @{ref("rsh", "ite")}
 ```reach
 ite(choosesFirst, [heap1 - amount, heap2], [heap1, heap2 - amount])
 ```
-
 
 Conditional expressions may also be written with the `{!rsh} ite` function,
 however, note that this function always evaluates both of its branches,
@@ -1497,7 +1396,6 @@ while the regular conditional expression only evaluates one branch.
 ((...xs) => Foldable.sum(xs))(1, 2, 3)
 ```
 
-
 An @{defn("arrow expression")}, written `{!rsh} (LHS_0, ..., LHS_n) => EXPR`, where `{!rsh} LHS_0` through `{!rsh} LHS_n` are left-hand sides and `{!rsh} EXPR` is an expression, evaluates to a function which is an abstraction of `{!rsh} EXPR` over `{!rsh} n` values compatible with the respective left-hand side.
 Like function definitions, arrow expressions may use default argument notation and rest parameters.
 
@@ -1507,7 +1405,6 @@ Like function definitions, arrow expressions may use default argument notation a
 ```reach
 const [ isHand, ROCK, PAPER, SCISSORS ] = makeEnum(3);
 ```
-
 
 An @{defn("enumeration")} (or @{defn("enum")}, for short),
 can be created by calling the `{!rsh} makeEnum` function, as in `{!rsh} makeEnum(N)`,
@@ -1523,7 +1420,6 @@ and the next N values are distinct `{!rsh} UInt`s.
 ```reach
 assert( claim, [msg] )
 ```
-
 
  A static assertion which is only valid if `{!rsh} claim` always evaluates to `{!rsh} true`.
 :::note
@@ -1556,7 +1452,6 @@ forall( Type )
 forall( Type, (var) => BLOCK )
 ```
 
-
  The single argument version returns an abstract value of the given type.
 It may only be referenced inside of assertions; any other reference is invalid.
 
@@ -1567,14 +1462,12 @@ This is convenient for writing general claims about expressions, such as
 forall(UInt, (x) => assert(x == x));
 ```
 
-
 ### `possible`
 
 @{ref("rsh", "possible")}
 ```reach
 possible( claim, [msg] )
 ```
-
 
  A possibility assertion which is only valid if it is possible for `{!rsh} claim` to evaluate to `{!rsh} true` with honest frontends and participants.
 It accepts an optional bytes argument, which is included in any reported violation.
@@ -1585,7 +1478,6 @@ It accepts an optional bytes argument, which is included in any reported violati
 ```reach
 digest( arg_0, ..., arg_n )
 ```
-
 
 The digest primitive performs a [cryptographic hash](https://en.wikipedia.org/wiki/Cryptographic_hash_function) of the binary encoding of the given arguments.
 This returns a `{!rsh} Digest` value.
@@ -1599,7 +1491,6 @@ balance();
 balance(gil);
 ```
 
-
 The @{defn("balance")} primitive returns the balance of the contract account for the DApp.
 It takes an optional non-network token value, in which case it returns the balance of the given token.
 
@@ -1609,7 +1500,6 @@ It takes an optional non-network token value, in which case it returns the balan
 ```reach
 getContract()
 ```
-
 
 The @{defn("getContract")} primitive returns the `{!rsh} Contract` value for the deployed contract.
 This function may not be called until after the first publication (which creates the contract).
@@ -1621,7 +1511,6 @@ This function may not be called until after the first publication (which creates
 getAddress()
 ```
 
-
 The @{defn("getAddress")} primitive returns the `{!rsh} Address` value of the deployed contract's account.
 This function may not be called until after the first publication (which creates the contract).
 
@@ -1632,7 +1521,6 @@ This function may not be called until after the first publication (which creates
 lastConsensusTime()
 ```
 
-
 The @{defn("lastConsensusTime")} primitive returns the network time of the last publication of the DApp.
 This may not be available if there was no such previous publication, such as at the beginning of an application before the first publication.
 
@@ -1642,14 +1530,12 @@ Some networks do not support observing the time of a consensus operation until a
 This aides scalability, because it increases the number of times when an operation could be finalized.
 :::
 
-
 ---
 
 @{ref("rsh", "lastConsensusSecs")}
 ```reach
 lastConsensusSecs()
 ```
-
 
 @{defn("lastConsensusSecs")} is like lastConsensusTime, except it returns the network seconds.
 
@@ -1660,7 +1546,6 @@ lastConsensusSecs()
 baseWaitTime()
 baseWaitSecs()
 ```
-
 
 These primitives return the network time (network seconds) that a relative time argument refers to.
 This is either the same as `{!rsh} lastConsensusTime` (`{!rsh} lastConsensusSecs`) or the deadline of the previous `{!rsh} wait` or `{!rsh} .timeout`.
@@ -1674,7 +1559,6 @@ absoluteTime(time, ?claim)
 relativeSecs(amt, ?claim)
 absoluteSecs(secs, ?claim)
 ```
-
 
 These functions return @{defn("time arguments")}, which are instances of the type `{!rsh} Either(UInt, UInt)`, where `{!rsh} Left` variants refer to absolute network time and `{!rsh} Right` variants refer to absolute network seconds.
 
@@ -1720,7 +1604,6 @@ Use the identity function as the `claim` for use inside of invariants.
 const [ timeRemaining, keepGoing ] = makeDeadline(10);
 ```
 
-
  `{!rsh} makeDeadline(deadline)` takes a `{!rsh} UInt` as an argument and returns a pair of functions
 that can be used for dealing with absolute deadlines. It internally determines the end time based off of the deadline
 and the last consensus time—at the time of calling `{!rsh} makeDeadline`. `timeRemaining` will calculate the difference
@@ -1737,7 +1620,6 @@ const _ = parallelReduce(...)
   .timeout( timeRemaining(), () => { ... })
 ```
 
-
 This pattern is so common that it can be abbreviated as `{!rsh} .timeRemaining`.
 
 
@@ -1748,7 +1630,6 @@ This pattern is so common that it can be abbreviated as `{!rsh} .timeRemaining`.
 implies( x, y )
 ```
 
-
  Returns `{!rsh} true` if `{!rsh} x` is `{!rsh} false` or `{!rsh} y` is `{!rsh} true`.
 
 ### `ensure`
@@ -1757,7 +1638,6 @@ implies( x, y )
 ```reach
 ensure( pred, x )
 ```
-
 
  Makes a static assertion that `{!rsh} pred(x)` is `{!rsh} true` and returns `{!rsh} x`.
 
@@ -1768,7 +1648,6 @@ ensure( pred, x )
 hasRandom
 ```
 
-
  A participant interact interface which specifies `random` as a function that takes no arguments and returns an unsigned integer of bit width bits. Reach provides a default frontend implementation via hasRandom (Frontend).
 
 ### `hasConsoleLogger`
@@ -1777,7 +1656,6 @@ hasRandom
 ```reach
 hasConsoleLogger
 ```
-
 
  A participant interact interface which specifies `log` with an unconstrained domain function type that returns `{!rsh} Null`. Reach provides a default frontend implementation via hasConsoleLogger (Frontend).
 
@@ -1788,7 +1666,6 @@ hasConsoleLogger
 compose(f, g)
 ```
 
-
  Creates a new function that applies its argument to `g`, then pipes the result to the function `f`.
 The argument type of `f` must be the return type of `g`.
 
@@ -1798,12 +1675,10 @@ The argument type of `f` must be the return type of `g`.
 Currently, wide arithmetic operations are only suported on Algorand.
 :::
 
-
 @{ref("rsh", "muldiv")}
 ```reach
 muldiv(a, b, c)
 ```
-
 
  Multiplies `{!rsh} a` by `{!rsh} b`, then immediately divides the product by `{!rsh} c`.
 The intermediate value may be larger than `{!rsh} UInt.max` if the connector supports wide arithmetic operations.
@@ -1839,7 +1714,6 @@ When used inside of any other step, it will generate an `{!rsh} assert` claim.
 sqrt(81, 10)
 ```
 
-
  Calculates an approximate square root of the first argument. This method utilizes
 the [Babylonian Method](https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method) for computing
 the square root. The second argument must be a `{!rsh} UInt` whose value is known at compile time, which represents the number
@@ -1855,7 +1729,6 @@ square root up to `580` squared, or `336,400`.
 ```reach
 pow (2, 40, 10) // => 1,099,511,627,776
 ```
-
 
  `{!rsh} pow(base, power, precision)` calculates the approximate value of raising base to power.
 The third argument must be a `{!rsh} UInt` whose value is known at compile time, which represents the number
@@ -1880,7 +1753,6 @@ const Pos = true;
 const Neg = false;
 ```
 
-
  `{!rsh} int(Bool, UInt)` is shorthand for defining an `{!rsh} Int` record. You may also
 use the `{!rsh} +` and `{!rsh} -` unary operators to declare integers instead of `{!rsh} UInt`s.
 
@@ -1892,7 +1764,6 @@ int(Neg, 4); // represents -4
 +4;          // represents 4 : Int
  4;          // represents 4 : UInt
 ```
-
 
  `{!rsh} iadd(x, y)` adds the `{!rsh} Int` `x` and the `{!rsh} Int` `y`.
 
@@ -1929,7 +1800,6 @@ int(Neg, 4); // represents -4
 export const FixedPoint = Object({ sign: bool, i: Object({ scale: UInt, i: UInt }) });
 ```
 
-
 `{!rsh} FixedPoint` can be used to represent numbers with a fixed number of digits after the decimal point.
 They are handy for representing fractional values, especially in base 10. The value of a fixed point number is determined
 by dividing the underlying integer value, `i`, by its scale factor, `scale`. For example, we could
@@ -1945,7 +1815,6 @@ const i = 56;
 fx(scale)(Neg, i); // represents - 5.6
 ```
 
-
  `{!rsh} fx(scale)(i)` will return a function that can be used to
 instantiate fixed point numbers with a particular scale factor.
 
@@ -1954,7 +1823,6 @@ instantiate fixed point numbers with a particular scale factor.
 const i = 4;
 fxint(-i); // represents - 4.0
 ```
-
 
  `{!rsh} fxint(Int)` will cast the `{!rsh} Int` arg as a `{!rsh} FixedPoint`
 number with a `scale` of 1.
@@ -1965,7 +1833,6 @@ const x = fx(1000)(Pos, 1234); // x = 1.234
 fxrescale(x, 100);    // => 1.23
 ```
 
-
  `{!rsh} fxrescale(x, scale)` will convert a fixed point number from using
 one scale to another. This operation can result in loss of precision, as demonstrated in the above example.
 
@@ -1975,7 +1842,6 @@ const x = fx(1000)(Pos, 824345); // x = 824.345
 const y = 45.67;
 fxunify(x, y);    // => [ 1000, 824.345, 45.670 ]
 ```
-
 
  `{!rsh} fxunify(x, y)` will convert the fixed point numbers
 to use the same scale. The larger scale of the two arguments will be chosen. The function will return a `3-tuple` consisting
@@ -1992,7 +1858,6 @@ of the common scale and the newly scaled values.
 fxdiv(34.56, 1.234, 10)     // => 28
 fxdiv(34.56, 1.234, 100000) // => 28.0064
 ```
-
 
  `{!rsh} fxdiv(x, y, scale_factor)` divides two fixed point numbers. The numerator, `x`,
 will be multiplied by the scale factor to provide a more precise answer. For example,
@@ -2053,7 +1918,6 @@ There are convenience methods defined for comparing fixed point numbers:
 Anybody.publish(); // race(...Participants).publish()
 ```
 
-
  Reach provides a shorthand, `{!rsh} Anybody`, which serves as a
 `{!rsh} race` between all participants.
 This shorthand can be useful for situations where
@@ -2072,7 +1936,6 @@ An `{!rsh} Interval` is defined by
 export const Interval = Tuple(IntervalType, Int, Int, IntervalType);
 ```
 
-
 where `{!rsh} IntervalType` is defined by
 
 @{ref("rsh", "IntervalType")}
@@ -2080,7 +1943,6 @@ where `{!rsh} IntervalType` is defined by
 export const [ isIntervalType, Closed, Open ] = mkEnum(2);
 export const IntervalType = Refine(UInt, isIntervalType);
 ```
-
 
 #### Constructors
 
@@ -2092,7 +1954,6 @@ const i1 = [Closed, -10, +10, Open];
 const i2 = interval(Closed, -10, +10, Open);
 const i3 = intervalCO(-10, +10);
 ```
-
 
 For convenience, Reach provides a number of functions for constructing intervals:
 
@@ -2148,7 +2009,6 @@ const i2 = intervalCC(+7, +9);  // [+7, +9]
 intervalIntersection(i1, i2);   // [+7, +11)
 ```
 
-
  `{!rsh} intervalIntersection(x, y)` returns the intersection of two intervals.
 
 @{ref("rsh", "intervalUnion")}
@@ -2158,7 +2018,6 @@ const i2 = intervalCC(+7, +11); // [+7, +11]
 intervalUnion(i1, i2);          // (+3, +11]
 ```
 
-
  `{!rsh} intervalUnion(x, y)` returns the union of two intervals.
 
 @{ref("rsh", "intervalWidth")}
@@ -2166,14 +2025,12 @@ intervalUnion(i1, i2);          // (+3, +11]
 intervalWidth(intervalCC(+4, +45)); // +41
 ```
 
-
  `{!rsh} intervalWidth(i)` returns the width of an interval.
 
 @{ref("rsh", "intervalAbs")}
 ```reach
 intervalAbs(intervalCC(+1, +10)); // +10
 ```
-
 
  `{!rsh} intervalAbs(i)` returns the absolute value of an interval.
 

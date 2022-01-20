@@ -1,7 +1,3 @@
-
-
-
-
 # {#ref-programs-module} Modules
 
 A Reach @{defn("source file")} is a textual file which specifies a Reach module.
@@ -14,7 +10,6 @@ followed by a sequence of imports and identifier definitions.
 :::note
 See [the guide section on versions](##guide-versions) to understand how Reach uses version numbers like this.
 :::
-
 
 ## {#ref-programs-module-stmts} Statements
 
@@ -43,7 +38,6 @@ const z = 0;
 export {w, z as zero};
 ```
 
-
 Identifiers from other modules may be re-exported (and renamed),
 even if they are not imported in the current module.
 For example:
@@ -51,7 +45,6 @@ For example:
 ```reach
 export {u, x as other_x} from './other-module.rsh';
 ```
-
 
 An exported identifier in a given module may be imported by other modules.
 
@@ -69,7 +62,6 @@ from external sources such as [GitHub](https://github.com).
 Read [the guide section on packages](##guide-packages) for more details.
 :::
 
-
 Package imports are easily distinguished from local imports by a
 mandatory `@` character at the beginning of the path string.
 
@@ -77,7 +69,6 @@ mandatory `@` character at the beginning of the path string.
 ```reach
 import 'games-of-chance.rsh';
 ```
-
 
 When a module, `X`, contains a @{defn("local import")},
 written `{!rsh} import "LIB.rsh";`,
@@ -89,13 +80,11 @@ The exports from the module defined by `LIB.rsh` are included in the set of boun
 import {flipCoin, rollDice as d6} from 'games-of-chance.rsh';
 ```
 
-
 Import statements may limit or rename the imported identifiers.
 
 ```reach
 import * as gamesOfChance from 'games-of-chance.rsh';
 ```
-
 
 Imports may instead bind the entire module to a single identifier,
 which is an object with fields corresponding to that module's exports.
@@ -115,7 +104,6 @@ import * as func from
 import * as func from
   '@github.com:reach-sh/reach-example-package#main:src/func.rsh';
 ```
-
 
 @{defn("Package imports")} obey the same rules as local imports but
 support an extended path syntax which allows Reach programmers to seamlessly
@@ -150,7 +138,6 @@ branch once more.
 [here](https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefrefaref).
 :::
 
-
 **It is highly advisable that package authors use `git tags` to denote
 version "releases", e.g. `v0.2.1`, and that consuming code target the
 desired `git tag` rather than a branch name.**
@@ -159,7 +146,6 @@ Read
 [this guide](https://git-scm.com/book/en/v2/Git-Basics-Tagging)
 to learn more about how `git tags` work.
 :::
-
 
 This component must be preceded by a `#` character.
 
@@ -223,7 +209,6 @@ expressions:
 
 ```
 
-
 ---
 
 Since `git` repositories evolve and change over time, Reach takes extra
@@ -252,7 +237,6 @@ export const main = Reach.App(() => {
 });
 ```
 
-
 @{defn("Reach.App")} accepts a no-argument function that specifies a DApp.
 This function is applied during compilation as an application initialization.
 It specifies the entire DApp in its body.
@@ -270,7 +254,6 @@ export const main =
   });
 ```
 
-
 Previous versions of Reach only allowed a form of Reach.App which accepted three arguments:
 an `{!rsh} options` object,
 an `{!rsh} applicationArgs` tuple,
@@ -286,8 +269,6 @@ Reach.App(() => {
 });
 ```
 
-
 The current version of Reach will automatically transform these "ternary" `{!rsh} Reach.App` instances into the above form.
 
 Future versions of Reach will deprecate this transform and such programs will be invalid.
-

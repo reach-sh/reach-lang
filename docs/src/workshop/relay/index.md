@@ -17,7 +17,6 @@ The overall purpose of this application is so that:
 We call this person, Bob.
 + Bob can transfer the funds to wherever he'd like.
 
-
 In @{seclink("workshop-hash-lock")}, we designed the application so that the "secret" was a special number that the contract compared against a known digest to release the funds.
 This approach was flawed, because when Bob used the secret to gain access, it was possible for anyone else to see the transaction and attempt to play it themselves.
 
@@ -35,7 +34,6 @@ With this in mind, let's answer the questions:
 + What information are they going to discover and use in the program?
 + What funds change ownership during the application and how?
 
-
 **Write down the problem analysis of this program as a comment.**
 
 Let's see how your answers compare to our answers:
@@ -45,7 +43,6 @@ Let's see how your answers compare to our answers:
 + Alice starts knowing the amount she wants to transfer.
 + Alice creates the Relay account, while the Relay account learns the address of Bob, who will receive the funds.
 + The funds start with Alice and then move to Bob under the instruction of the Relay.
-
 
 The most surprising thing about this application is that Bob is not one of the participants in the application!
 Of course, the Relay will actually run under the auspices of Bob, after Alice shares the account credentials with him, but there is a distinction in the program between Bob's identity and the Relay's.
@@ -61,7 +58,6 @@ Finally, how should the Relay account information and Bob's identity be represen
 Refer to @{seclink("ref-programs-types")} for a reminder of what data types are available in Reach.
 :::
 
-
 **Write down the data definitions for this program as definitions.**
 
 Let's compare notes again.
@@ -71,7 +67,6 @@ Here's what we wrote in our program:
 load: /examples/workshop-relay/index.rsh
 range: 6-8
 ```
-
 
 We chose to represent the amount as a `{!rsh} UInt` field, which should be unsurprising.
 We then have two functions that take no arguments and return an `{!rsh} Address` which respectively return the Relay identity and the Bob identity.
@@ -91,7 +86,6 @@ Here's what we wrote:
 // 3. The Relay publishes who Bob is.
 // 4. The consensus pays Bob.
 ```
-
 
 We assume that most of you found it natural to think of steps one, three, and four, but found step two to be a strange addition.
 Perhaps you felt that step two is implied by step one, where Alice says who the Relay is.
@@ -124,7 +118,6 @@ transfer(amt).to(bob);
 commit();
 ```
 
-
 We expect that for most of you, the coding of step four is also a bit strange, because we've never seen an example where the destination of a transfer is not a participant.
 You may have thought that the `{!rsh} to` position in a `{!rsh} transfer` must be a participant, but actually it can be any address.
 Participants, however, can be used as addresses if they are bound.
@@ -135,7 +128,6 @@ You'll find that Reach rejects this program because Bob is not bound.
 You can correct this by adding `{!rsh} Bob.set(bob)` after the Relay publishes Bob's address.
 There's nothing better about this version of the program, but it is unneccessary to have a participant like Bob that performs no part in the computation.
 :::
-
 
 ## {#workshop-relay-ai} Assertion Insertion
 
@@ -161,7 +153,6 @@ Let's look at our whole program now:
 load: /examples/workshop-relay/index.rsh
 ```
 
-
 ## {#workshop-relay-de} Deployment Decisions
 
 This program is a bit odd to test, because it relies on Alice creating a temporary account and then sharing its information with Bob.
@@ -178,13 +169,11 @@ Here's the JavaScript frontend we wrote:
 load: /examples/workshop-relay/index.mjs
 ```
 
-
 We do a few sneaky things in this program:
 + Lines 18 through 21 create a JavaScript [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) that will be filled in later by Alice.
 + Alice's `{!rsh} getRelay` function (lines 26 through 32) creates the new account and communicates it "outside of the network" through the aforementioned Promise.
 + Bob's thread (lines 34 through 48) waits for the Promise to resolve and then connects to the application with this new account.
 + The Relay's `{!rsh} getBob` function (lines 43 through 46) returns his own address to receive the funds.
-
 
 If this program is scary for you, don't worry!
 It uses some fairly esoteric JavaScript features to make a completely automated test of this program.
@@ -204,7 +193,6 @@ Bob, acting as the Relay, gives his information.
 Alice went from 100.0 to 74.999999999999804065.
 Bob went from 100.0 to 123.999999999999979.
 ```
-
 
 ## {#workshop-relay-dns} Discussion and Next Steps
 
