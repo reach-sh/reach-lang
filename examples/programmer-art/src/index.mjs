@@ -214,6 +214,9 @@ const detailActions = async (evt) => {
   const who = tgt.dataset.who
   const act = await c.getActions(nodeId,actorId)
   console.log(act)
+  if (!act) {
+    return false
+  }
   let acts = ``
   acts = acts + renderAction(act,nodeId,actorId,who)
   spa.innerHTML = `
@@ -305,18 +308,24 @@ const renderAction = (actObj,nodeId,actorId,who) => {
   `
   switch (act.tag) {
     case 'A_Interact':
+      let domain = `Null`
+      if (act.contents[4].length != 0) {
+        domain = act.contents[4].map(x => x.tag.slice(2)).join(',')
+      }
       return `
         ${common}
         ${act.tag.slice(2)}</div>
-        <div> ${act.contents[2]} : ${act.contents[4][0].tag.slice(2)} &#8594; ${act.contents[3].tag.slice(2)} </div>
+        <div> ${act.contents[2]} : ${domain} &#8594; ${act.contents[3].tag.slice(2)} </div>
         </button> `
     case 'A_TieBreak':
       return `
-        ${common}${act.tag.slice(2)} Phase Id: ${act.contents[0]}, Actors: ${act.contents[1].join(',')} </div>
+        ${common}${act.tag.slice(2)}</div>
+        <div> Phase Id: ${act.contents[0]}, Actors: ${act.contents[1].join(',')} </div>
         </button> `
     case 'A_InteractV':
       return `
-        ${common}${act.tag.slice(2)} ${act.contents[0]},${act.contents[1]}</div>
+        ${common}${act.tag.slice(2)}</div>
+        <div> ${act.contents[0]},${act.contents[1]}</div>
         </button> `
     case 'A_Remote':
       return `
@@ -324,15 +333,18 @@ const renderAction = (actObj,nodeId,actorId,who) => {
         </button> `
     case 'A_Contest':
       return `
-        ${common}${act.tag.slice(2)} Phase Id: ${act.contents}</div>
+        ${common}${act.tag.slice(2)}</div>
+        <div> Phase Id: ${act.contents}</div>
         </button> `
     case 'A_AdvanceTime':
       return `
-        ${common}${act.tag.slice(2)} Time: ${act.contents}</div>
+        ${common}${act.tag.slice(2)}</div>
+        <div> Time: ${act.contents}</div>
         </button> `
     case 'A_AdvanceSeconds':
       return `
-        ${common}${act.tag.slice(2)} Seconds: ${act.contents}</div>
+        ${common}${act.tag.slice(2)}</div>
+        <div> Seconds: ${act.contents}</div>
         </button> `
     case 'A_None':
       return `

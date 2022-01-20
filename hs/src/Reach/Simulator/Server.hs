@@ -217,14 +217,18 @@ changeActor :: C.ActorId -> WebM ()
 changeActor actId = do
   modify $ \st -> st {e_actor_id = actId}
 
-computeActions :: StateId -> C.ActorId -> WebM (ActionId,C.Action)
+computeActions :: StateId -> C.ActorId -> WebM (Maybe (ActionId,C.Action))
 computeActions sid actorId = do
   actacts <- gets e_actors_actions
   idacts <- gets e_ids_actions
-  let acts = saferMapRef "computeActions actorId" $ M.lookup actorId actacts
-  let actId = saferMapRef "computeActions sid" $ M.lookup sid acts
-  let act = saferMapRef "computeActions actId" $ M.lookup actId idacts
-  return (actId,act)
+  case M.lookup actorId actacts of
+    Nothing -> return Nothing
+    Just acts -> do
+      case M.lookup sid acts of
+        Nothing -> return Nothing
+        Just actId -> do
+          let act = saferMapRef "computeActions actId" $ M.lookup actId idacts
+          return $ Just (actId,act)
 
 initProgSim :: LLProg -> WebM ()
 initProgSim ll = do
