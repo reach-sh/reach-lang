@@ -3,6 +3,14 @@ import cytoscape from 'cytoscape';
 import klay from 'cytoscape-klay';
 import "../scss/custom.scss";
 
+const log = document.querySelector("#output")
+const jsonLog = []
+
+const appendToLog = (r) => {
+  let x = log.innerHTML
+  log.innerHTML = x + '<br>' + '$ ' + r
+}
+
 // NOTE: placeholder
 const rsh = `'reach 0.1';
 
@@ -56,6 +64,7 @@ const spa = document.querySelector("#spa")
 
 let objectsHTML = null;
 let detailsHTML = null;
+let actionsHTML = null;
 
 const renderObjects = async (nodeId) => {
   const r = await c.getStateLocals(nodeId)
@@ -189,7 +198,7 @@ const detailActions = async (evt) => {
   const act = await c.getActions(nodeId,actorId)
   console.log(act)
   let acts = ``
-  acts = acts + renderAction(act)
+  acts = acts + renderAction(act,nodeId,actorId,who)
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -202,59 +211,90 @@ const detailActions = async (evt) => {
     ${acts}
   </ul>
   `
+  const actionsPanel = document.querySelectorAll(".action-button")
+  actionsPanel.forEach((item, i) => {
+    item.addEventListener("click",respondToActions)
+  });
 }
 
-// TODO: refactor/template
-const renderAction = (act) => {
+const respondToActions = async (evt) => {
+  actionsHTML = spa.innerHTML
+  const tgt = evt.target.closest(".action-button")
+  const nodeId = tgt.dataset.nodeId
+  const actorId = parseInt(tgt.dataset.actorId)
+  const actId = parseInt(tgt.dataset.actId)
+  const who = tgt.dataset.who
+  spa.innerHTML = `
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects</a></li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-details">Details (${who})</a></li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-actions">Actions</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Response</li>
+    </ol>
+  </nav>
+  <div class="bordered d-flex justify-content-center">
+    <input type="text" id="spa-response" class="form-control form-control-sm" placeholder="Value">
+    <button type="button" id="spa-res-button" class="btn btn-outline-dark btn-sm">Respond</button>
+  </div>
+  `
+  const spaRespondBtn = document.querySelector("#spa-res-button")
+  const respondSpa = async () => {
+    let v = parseInt(document.querySelector("#spa-response").value)
+    let r = await c.respondWithVal(nodeId,actId,v,actorId)
+    appendToLog(r)
+    redraw()
+    jsonLog.push(["respondWithVal",nodeId,actId,v,actorId])
+  }
+  spaRespondBtn.addEventListener("click",respondSpa)
+}
+
+const renderAction = (actObj,nodeId,actorId,who) => {
+  const act = actObj[1]
+  const actId = actObj[0]
+  const common = `
+  <button type="button"
+  class="list-group-item list-group-item-action action-button"
+  data-act-id="${actId}"
+  data-actor-id="${actorId}"
+  data-node-id="${nodeId}"
+  data-who="${who}">
+  <div class="badge bg-secondary">
+  `
   switch (act.tag) {
     case 'A_Interact':
       return `
-        <button type="button"
-        class="list-group-item list-group-item-action action-button">
-        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        ${common}
+        ${act.tag.slice(2)}</div>
         <div> ${act.contents[2]} : ${act.contents[4][0].tag.slice(2)} &#8594; ${act.contents[3].tag.slice(2)} </div>
         </button> `
     case 'A_TieBreak':
       return `
-        <button type="button"
-        class="list-group-item list-group-item-action action-button">
-        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        ${common}${act.tag.slice(2)}</div>
         </button> `
     case 'A_InteractV':
       return `
-        <button type="button"
-        class="list-group-item list-group-item-action action-button">
-        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        ${common}${act.tag.slice(2)}</div>
         </button> `
     case 'A_Remote':
       return `
-        <button type="button"
-        class="list-group-item list-group-item-action action-button">
-        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        ${common}${act.tag.slice(2)}</div>
         </button> `
     case 'A_Contest':
       return `
-        <button type="button"
-        class="list-group-item list-group-item-action action-button">
-        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        ${common}${act.tag.slice(2)}</div>
         </button> `
     case 'A_AdvanceTime':
       return `
-        <button type="button"
-        class="list-group-item list-group-item-action action-button">
-        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        ${common}${act.tag.slice(2)}</div>
         </button> `
     case 'A_AdvanceSeconds':
       return `
-        <button type="button"
-        class="list-group-item list-group-item-action action-button">
-        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        ${common}${act.tag.slice(2)}</div>
         </button> `
     case 'A_None':
       return `
-        <button type="button"
-        class="list-group-item list-group-item-action action-button">
-        <div class="badge bg-secondary">${act.tag.slice(2)}</div>
+        ${common}${act.tag.slice(2)}</div>
         </button> `
     default:
       console.log("Unexpected Action Encountered")
@@ -381,8 +421,7 @@ const clickNode = async (evt) => {
   renderObjects(nodeId)
 }
 
-const log = document.querySelector("#output")
-const jsonLog = []
+
 
 const localsBtn = document.querySelector("#localsButton")
 const locals = async () => {
@@ -494,11 +533,6 @@ const reset = async () => {
   jsonLog.push(["reset"])
 }
 resetBtn.addEventListener("click",reset)
-
-const appendToLog = (r) => {
-  let x = log.innerHTML
-  log.innerHTML = x + '<br>' + '$ ' + r
-}
 
 const printBtn = document.querySelector("#printButton")
 const printLog = () => {
