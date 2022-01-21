@@ -1,4 +1,4 @@
-import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
+import * as stdlib_loader from '@reach-sh/stdlib';
 import * as NIM from './build/index.main.mjs';
 
 (async () => {
