@@ -1769,11 +1769,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 export const minBalance = async (acc: Account): Promise<BigNumber> => {
   const addr = extractAddr(acc);
   const ai = await getAccountInfo(addr);
-  let createdApps = ai['created-apps']??[]
-  let numByteSlice = (ai['apps-total-schema']??{})['num-byte-slice']??0
-  let numUInt = (ai['apps-total-schema']??{})['num-uint']??0
-  let assets = ai.assets??[]
-  let mBal = assets.length * 100000
+  const createdApps = ai['created-apps']??[]
+  const numByteSlice = (ai['apps-total-schema']??{})['num-byte-slice']??0
+  const numUInt = (ai['apps-total-schema']??{})['num-uint']??0
+  const assets = ai.assets??[]
+  const mBal = assets.length * 100000
     + (25000 + 3500) * numUInt
     + (25000 + 25000) * numByteSlice
     + (100000) * createdApps.length
