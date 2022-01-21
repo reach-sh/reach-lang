@@ -22,6 +22,7 @@ module.exports = {
       http: require.resolve('stream-http'),
       stream: require.resolve('stream-browserify'),
       process: require.resolve('process/browser'),
+      path: require.resolve("path-browserify"),
     },
     // explicitly disabling these
     alias: {
