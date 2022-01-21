@@ -11,42 +11,23 @@ const appendToLog = (r) => {
   log.innerHTML = x + '<br>' + '$ ' + r
 }
 
-// NOTE: placeholder
-const rsh = `'reach 0.1';
+const rsh = await c.load()
+const hlns1 = document.createElement('script');
+const hlns2 = document.createElement('script');
+const hlns3 = document.createElement('script');
+hlns1.src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/highlight.min.js"
+hlns1.async = false
+hlns2.src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/languages/javascript.min.js"
+hlns2.async = false
+hlns3.src = "https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js";
+document.getElementsByTagName('head')[0].appendChild(hlns1);
+document.getElementsByTagName('head')[0].appendChild(hlns2);
+document.getElementsByTagName('head')[0].appendChild(hlns3);
 
-const Player = {
-  getHand: Fun([], UInt),
-  seeOutcome: Fun([UInt], Null),
+hlns3.onload = function() {
+  hljs.highlightAll();
+  hljs.initLineNumbersOnLoad();
 };
-
-export const main = Reach.App(() => {
-  const Alice = Participant('Alice', {
-    ...Player,
-  });
-  const Bob   = Participant('Bob', {
-    ...Player,
-  });
-  deploy();
-
-  Alice.only(() => {
-    const handAlice = declassify(interact.getHand());
-  });
-  Alice.publish(handAlice);
-  commit();
-
-  Bob.only(() => {
-    const handBob = declassify(interact.getHand());
-  });
-  Bob.publish(handBob);
-
-  const outcome = (handAlice + (4 - handBob)) % 3;
-  commit();
-
-  each([Alice, Bob], () => {
-    interact.seeOutcome(outcome);
-  });
-});
-`
 
 cytoscape.use( klay );
 

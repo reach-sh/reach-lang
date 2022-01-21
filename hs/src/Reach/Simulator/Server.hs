@@ -61,6 +61,7 @@ data Session = Session
   , e_status :: Status
   , e_edges :: [(StateId,StateId)]
   , e_locs :: M.Map StateId (Maybe SrcLoc)
+  , e_src_txt :: String
   }
 
 initSession :: Session
@@ -75,6 +76,7 @@ initSession = Session
   , e_status = Initial
   , e_edges = mempty
   , e_locs = mempty
+  , e_src_txt = mempty
   }
 
 processNewState :: Maybe (StateId) -> C.PartState -> WebM ()
@@ -245,12 +247,12 @@ initProgSimFor actId sid (LLProg _ _ _ _ _ _ _ _ step) = do
   ps <- return $ C.initAppFromStep step (g, l')
   processNewState (Just sid) ps
 
-startServer :: LLProg -> IO ()
-startServer p = do
+startServer :: LLProg -> String -> IO ()
+startServer p srcTxt = do
   sync <- newTVarIO def
   let runActionToIO m = runReaderT (runWebM m) sync
   putStrLn "Starting Sim Server..."
-  scottyT portNumber runActionToIO (app p)
+  scottyT portNumber runActionToIO (app p srcTxt)
 
 setHeaders :: ActionT Text WebM ()
 setHeaders = do
@@ -259,14 +261,14 @@ setHeaders = do
   setHeader "Access-Control-Allow-Methods" "GET, POST, PUT"
   setHeader "Access-Control-Allow-Headers" "Content-Type"
 
-app :: LLProg -> ScottyT Text WebM ()
-app p = do
+app :: LLProg -> String -> ScottyT Text WebM ()
+app p srcTxt = do
   middleware logStdoutDev
 
   post "/load" $ do
     setHeaders
-    webM $ modify $ \st -> st {e_src = Just p}
-    json $ ("OK" :: String)
+    webM $ modify $ \st -> st {e_src = Just p, e_src_txt = srcTxt}
+    json srcTxt
 
   post "/init" $ do
     setHeaders
