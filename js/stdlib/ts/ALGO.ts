@@ -495,6 +495,12 @@ export const MinTxnFee = 1000;
 const MaxAppTxnAccounts = 4;
 const MinBalance = 100000;
 
+const SchemaMinBalancePerEntry = 25000
+const SchemaBytesMinBalance = 25000
+const SchemaUintMinBalance = 3500
+const AppFlatParamsMinBalance = 100000
+const AppFlatOptInMinBalance = 100000
+
 const ui8h = (x:Uint8Array): string => Buffer.from(x).toString('hex');
 const base64ToUI8A = (x:string): Uint8Array => Uint8Array.from(Buffer.from(x, 'base64'));
 const base64ify = (x: WithImplicitCoercion<string>|Uint8Array): string => Buffer.from(x).toString('base64');
@@ -1767,23 +1773,24 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 };
 
 export const minBalance = async (acc: Account): Promise<BigNumber> => {
-  const SchemaMinBalancePerEntry: BigNumber = 25000
-  const SchemaBytesMinBalance: BigNumber = 25000
-  const SchemaUintMinBalance: BigNumber = 3500
-  const AppFlatParamsMinBalance: BigNumber = 100000
-  const AppFlatOptInMinBalance: BigNumber = 100000
-  const MinBalance: BigNumber = 100000
   const addr = extractAddr(acc);
   const ai = await getAccountInfo(addr);
-  const createdApps = ai['created-apps']??[] // between 0 and 50
-  const numByteSlice = (ai['apps-total-schema']??{})['num-byte-slice']??0 // depends
-  const numUInt = (ai['apps-total-schema']??{})['num-uint']??0 // depends
-  const assets = ai.assets??[] // between 0 and 1000
-  const accMinBalance: BigNumber = assets.length * AppFlatOptInMinBalance
-    + (SchemaMinBalancePerEntry + SchemaUintMinBalance) * numUInt
-    + (SchemaMinBalancePerEntry + SchemaBytesMinBalance) * numByteSlice
-    + (AppFlatParamsMinBalance) * createdApps.length
-    + MinBalance
+  const createdAppCount: BigNumber = bigNumberify((ai['created-apps']??[]).length) // between 0 and 50
+  const numByteSlice: BigNumber = bigNumberify((ai['apps-total-schema']??{})['num-byte-slice']??0) // depends
+  const numUInt: BigNumber = bigNumberify((ai['apps-total-schema']??{})['num-uint']??0) // depends
+  const assetCount:BigNumber = bigNumberify((ai.assets??[]).length) // between 0 and 1000
+  /*
+  accMinBalance = assets.length * AppFlatOptInMinBalance
+  + (SchemaMinBalancePerEntry + SchemaUintMinBalance) * numUInt
+  + (SchemaMinBalancePerEntry + SchemaBytesMinBalance) * numByteSlice
+  + (AppFlatParamsMinBalance) * createdApps.length
+  + MinBalance
+  */
+  const accMinBalance: BigNumber = assetCount.mul(appFlatOptInMinBalance)
+    .add(schemaMinBalancePerEntry.add(schemaUintMinBalance).mul(numUInt))
+    .add(schemaMinBalancePerEntry.add(schemaBytesMinBalance).mul(numByteSlice))
+    .add(appFlatParamsMinBalance.mul(createdAppCount))
+    .add(minimumBalance)
     debug(`minBalance`, accMinBalance)
     return accMinBalance
 }
@@ -1878,6 +1885,12 @@ export function parseCurrency(amt: CurrencyAmount, decimals: number = 6): BigNum
 
 export const minimumBalance: BigNumber =
   bigNumberify(MinBalance);
+
+const schemaMinBalancePerEntry: BigNumber = bigNumberify(SchemaMinBalancePerEntry)
+const schemaBytesMinBalance: BigNumber = bigNumberify(SchemaBytesMinBalance)
+const schemaUintMinBalance: BigNumber = bigNumberify(SchemaUintMinBalance)
+const appFlatParamsMinBalance: BigNumber = bigNumberify(AppFlatParamsMinBalance)
+const appFlatOptInMinBalance: BigNumber = bigNumberify(AppFlatOptInMinBalance)
 
 // lol I am not importing leftpad for this
 /** @example lpad('asdf', '0', 6); // => '00asdf' */
