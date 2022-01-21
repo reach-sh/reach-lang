@@ -5,7 +5,7 @@ import { resolve                  } from 'path';
 
 import express, { Request, Response, NextFunction } from 'express';
 
-import { loadStdlib } from './loader';
+import { loadStdlib } from './'; // TODO(Dan): export this module from the root; tie the knot?
 import { debug      } from './shared_impl';
 
 const withApiKey = () => {
