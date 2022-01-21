@@ -1798,8 +1798,6 @@ const balanceOfM = async (acc: Account, token: Token|false = false): Promise<Big
   }
 };
 
-
-
 export const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
   const r = await balanceOfM(acc, token);
   if ( r === false ) {
