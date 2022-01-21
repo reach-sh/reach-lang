@@ -9,6 +9,9 @@ module.exports = {
   },
   mode: 'none',
   devtool: "source-map",
+  experiments: {
+    topLevelAwait: true
+  },
   plugins: [
     new webpack.DefinePlugin({
       'process.platform': JSON.stringify('linux')
@@ -16,6 +19,7 @@ module.exports = {
   ],
   module: {
     rules: [
+      { test: /\.css$/, use: 'css-loader' },
       {
         test: /\.(scss)$/,
         use: [{

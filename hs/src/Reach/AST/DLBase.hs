@@ -226,9 +226,7 @@ data DLVar = DLVar SrcLoc (Maybe (SrcLoc, SLVar)) DLType Int
 instance ToJSONKey DLVar
 
 instance ToJSON DLVar where
-  toJSON (DLVar _at mlocvar _typ int) = case mlocvar of
-    Nothing -> toJSON int
-    Just (_, sl) -> toJSON sl
+  toJSON v = toJSON $ show v
 
 instance FromJSON DLVar
 

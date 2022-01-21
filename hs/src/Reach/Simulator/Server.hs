@@ -5,6 +5,10 @@
 
 module Reach.Simulator.Server where
 
+import Reach.AST.Base
+import Reach.AST.LL
+import Reach.Util
+import qualified Reach.Simulator.Core as C
 import Control.Concurrent.STM
 import Control.Monad.Reader
 import Data.Aeson (FromJSON, ToJSON)
@@ -13,9 +17,6 @@ import qualified Data.Map.Strict as M
 import Data.Text.Lazy (Text)
 import GHC.Generics
 import Network.Wai.Middleware.RequestLogger
-import Reach.AST.LL
-import qualified Reach.Simulator.Core as C
-import Reach.Util
 import Web.Scotty.Trans
 
 instance Default Session where
@@ -50,7 +51,7 @@ instance ToJSON Status
 instance FromJSON Status
 
 data Session = Session
-  { e_actors_actions :: M.Map C.ActorId [ActionId]
+  { e_actors_actions :: M.Map C.ActorId (M.Map StateId ActionId)
   , e_nsid :: Int
   , e_naid :: Int
   , e_ids_actions :: M.Map ActionId C.Action
@@ -58,22 +59,25 @@ data Session = Session
   , e_graph :: Graph
   , e_src :: Maybe LLProg
   , e_status :: Status
-  , e_edges :: [(StateId, StateId)]
+  , e_edges :: [(StateId,StateId)]
+  , e_locs :: M.Map StateId (Maybe SrcLoc)
+  , e_src_txt :: String
   }
 
 initSession :: Session
-initSession =
-  Session
-    { e_actors_actions = mempty
-    , e_nsid = 0
-    , e_naid = 0
-    , e_ids_actions = mempty
-    , e_actor_id = C.consensusId
-    , e_graph = mempty
-    , e_src = Nothing
-    , e_status = Initial
-    , e_edges = mempty
-    }
+initSession = Session
+  { e_actors_actions = mempty
+  , e_nsid = 0
+  , e_naid = 0
+  , e_ids_actions = mempty
+  , e_actor_id = C.consensusId
+  , e_graph = mempty
+  , e_src = Nothing
+  , e_status = Initial
+  , e_edges = mempty
+  , e_locs = mempty
+  , e_src_txt = mempty
+  }
 
 processNewState :: Maybe (StateId) -> C.PartState -> WebM ()
 processNewState psid ps = do
@@ -83,25 +87,25 @@ processNewState psid ps = do
   _ <- case ps of
     C.PS_Done _ _ -> do
       _ <- return $ putStrLn "EVAL DONE"
-      registerAction actorId C.A_None
-    C.PS_Suspend a _ _ -> registerAction actorId a
-  let ((g, l), stat) =
+      registerAction sid actorId C.A_None
+    C.PS_Suspend _ a _ _ -> registerAction sid actorId a
+  let ((g,l), stat, loc) =
         case ps of
-          C.PS_Done s _ -> (s, Done)
-          C.PS_Suspend _ s _ -> (s, Running)
+          C.PS_Done s _ -> do
+            (s, Done, Nothing)
+          C.PS_Suspend at _ s _ -> do
+            (s, Running, at)
   graph <- gets e_graph
+  locs <- gets e_locs
   let locals = C.l_locals l
   let lcl = saferMapRef "processNewState" $ M.lookup actorId locals
-  let lcl' = lcl {C.l_ks = Just ps}
-  let l' = l {C.l_locals = M.insert actorId lcl' locals}
-  modify $ \st ->
-    st
-      { e_nsid = sid + 1
-      }
-      { e_status = stat
-      }
-      { e_graph = M.insert sid (g, l') graph
-      }
+  let lcl' = lcl { C.l_ks = Just ps }
+  let l' = l { C.l_locals = M.insert actorId lcl' locals }
+  modify $ \ st -> st
+    {e_nsid = sid + 1}
+    {e_status = stat}
+    {e_graph = M.insert sid (g,l') graph}
+    {e_locs = M.insert sid loc locs}
   case psid of
     Nothing -> return ()
     Just psid' -> modify $ \st ->
@@ -109,17 +113,17 @@ processNewState psid ps = do
         { e_edges = (psid', sid) : edges
         }
 
-registerAction :: C.ActorId -> C.Action -> WebM ActionId
-registerAction actorId act = do
-  aid <- gets e_naid
-  modify $ \st -> st {e_naid = aid + 1}
+registerAction :: StateId -> C.ActorId -> C.Action -> WebM ActionId
+registerAction sid actorId act = do
+  actId <- gets e_naid
+  modify $ \ st -> st {e_naid = actId + 1}
   actacts <- gets e_actors_actions
   idacts <- gets e_ids_actions
-  modify $ \st -> st {e_ids_actions = M.insert aid act idacts}
+  modify $ \ st -> st {e_ids_actions = M.insert actId act idacts}
   case M.lookup actorId actacts of
-    Nothing -> modify $ \st -> st {e_actors_actions = M.insert actorId [aid] actacts}
-    Just acts -> modify $ \st -> st {e_actors_actions = M.insert actorId (aid : acts) actacts}
-  return aid
+    Nothing -> modify $ \ st -> st {e_actors_actions = M.insert actorId (M.singleton sid actId) actacts }
+    Just acts -> modify $ \ st -> st {e_actors_actions = M.insert actorId (M.insert sid actId acts) actacts }
+  return actId
 
 unblockProg :: StateId -> ActionId -> C.DLVal -> WebM ()
 unblockProg sid aid v = do
@@ -135,19 +139,18 @@ unblockProg sid aid v = do
         Nothing -> do
           possible "actor not found"
         Just Nothing -> do
-          possible $
-            "partstate not found for actor "
-              <> show actorId
-              <> " in: "
-              <> (show $ M.keys locals)
-        Just (Just (C.PS_Suspend _a (_g, _l) k)) -> do
+          possible $ "partstate not found for actor "
+            <> show actorId
+            <> " in: "
+            <> (show $ M.keys locals)
+        Just (Just (C.PS_Suspend _ _a (_g,_l) k)) -> do
           let l = l' {C.l_curr_actor_id = actorId}
           case M.lookup aid avActions of
-            Just (C.A_Interact _at _slcxtframes _part _str _dltype _args) -> do
-              let ps = k (g, l) v
+            Just (C.A_Interact _slcxtframes _part _str _dltype _args) -> do
+              let ps = k (g,l) v
               processNewState (Just sid) ps
-            Just (C.A_Remote _at _slcxtframes _str _args1 _args2) -> do
-              let ps = k (g, l) v
+            Just (C.A_Remote _slcxtframes _str _args1 _args2) -> do
+              let ps = k (g,l) v
               processNewState (Just sid) ps
             Just (C.A_InteractV _part _str _dltype) -> do
               let ps = k (g, l) v
@@ -207,16 +210,27 @@ getProgState sid = do
     Nothing -> return Nothing
     Just st -> return $ Just st
 
+getLoc :: StateId -> WebM (Maybe SrcLoc)
+getLoc sid = do
+  locs <- gets e_locs
+  return $ join $ M.lookup sid locs
+
 changeActor :: C.ActorId -> WebM ()
 changeActor actId = do
   modify $ \st -> st {e_actor_id = actId}
 
-computeActions :: WebM [C.Action]
-computeActions = do
+computeActions :: StateId -> C.ActorId -> WebM (Maybe (ActionId,C.Action))
+computeActions sid actorId = do
   actacts <- gets e_actors_actions
   idacts <- gets e_ids_actions
-  let acts = concat $ map (take 1) $ M.elems actacts
-  return $ map (\x -> saferMapRef "computeActions" $ M.lookup x idacts) acts
+  case M.lookup actorId actacts of
+    Nothing -> return Nothing
+    Just acts -> do
+      case M.lookup sid acts of
+        Nothing -> return Nothing
+        Just actId -> do
+          let act = saferMapRef "computeActions actId" $ M.lookup actId idacts
+          return $ Just (actId,act)
 
 initProgSim :: LLProg -> WebM ()
 initProgSim ll = do
@@ -233,12 +247,12 @@ initProgSimFor actId sid (LLProg _ _ _ _ _ _ _ _ step) = do
   ps <- return $ C.initAppFromStep step (g, l')
   processNewState (Just sid) ps
 
-startServer :: LLProg -> IO ()
-startServer p = do
+startServer :: LLProg -> String -> IO ()
+startServer p srcTxt = do
   sync <- newTVarIO def
   let runActionToIO m = runReaderT (runWebM m) sync
   putStrLn "Starting Sim Server..."
-  scottyT portNumber runActionToIO (app p)
+  scottyT portNumber runActionToIO (app p srcTxt)
 
 setHeaders :: ActionT Text WebM ()
 setHeaders = do
@@ -247,14 +261,14 @@ setHeaders = do
   setHeader "Access-Control-Allow-Methods" "GET, POST, PUT"
   setHeader "Access-Control-Allow-Headers" "Content-Type"
 
-app :: LLProg -> ScottyT Text WebM ()
-app p = do
+app :: LLProg -> String -> ScottyT Text WebM ()
+app p srcTxt = do
   middleware logStdoutDev
 
   post "/load" $ do
     setHeaders
-    webM $ modify $ \st -> st {e_src = Just p}
-    json $ ("OK" :: String)
+    webM $ modify $ \st -> st {e_src = Just p, e_src_txt = srcTxt}
+    json srcTxt
 
   post "/init" $ do
     setHeaders
@@ -302,6 +316,12 @@ app p = do
       Nothing -> json $ ("Not Found" :: String)
       Just (_, l) -> json l
 
+  get "/locs/:s" $ do
+    setHeaders
+    s <- param "s"
+    loc <- webM $ getLoc s
+    json loc
+
   get "/status" $ do
     setHeaders
     ss <- webM $ getStatus
@@ -313,9 +333,11 @@ app p = do
     ss <- webM $ allStates
     json (filter ((==) s) $ ss)
 
-  get "/actions" $ do
+  get "/actions/:s/:a/" $ do
     setHeaders
-    as <- webM $ computeActions
+    s <- param "s"
+    a <- param "a"
+    as <- webM $ computeActions s a
     json as
 
   post "/reset" $ do

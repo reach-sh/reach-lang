@@ -22,7 +22,6 @@ async function interact(method = 'GET', url = '', data = {}) {
     },
     redirect: 'follow',
     referrerPolicy: 'no-referrer'
-    // body: JSON.stringify(data)
   });
   return response.json();
 }
@@ -45,8 +44,8 @@ const getStatus = async () => {
   return r;
 }
 
-async function getStateActions(s) {
-  const r = await interact(`GET`, `${address}/states/${s}/actions`)
+async function getActions(s,a) {
+  const r = await interact(`GET`, `${address}/actions/${s}/${a}`)
   console.log(r)
   return r;
 }
@@ -59,6 +58,12 @@ async function getStateGlobals(s) {
 
 async function getStateLocals(s) {
   const r = await interact(`GET`, `${address}/local/${s}`)
+  console.log(r)
+  return r;
+}
+
+async function getLoc(s) {
+  const r = await interact(`GET`, `${address}/locs/${s}`)
   console.log(r)
   return r;
 }
@@ -103,7 +108,7 @@ const ping = async () => {
 const clientMethods = {
   "getStates" : getStates,
   "getStatus" : getStatus,
-  "getStateActions" : getStateActions,
+  "getActions" : getActions,
   "load" : load,
   "init" : init,
   "respondWithVal" : respondWithVal,
@@ -134,7 +139,7 @@ const interp = async (comms) => {
 export {
   getStates,
   getStatus,
-  getStateActions,
+  getActions,
   load,
   init,
   respondWithVal,
@@ -147,4 +152,5 @@ export {
   resetServer,
   interpCommand,
   interp,
+  getLoc,
 };

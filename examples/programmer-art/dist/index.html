@@ -7,35 +7,40 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200&family=Source+Sans+Pro:wght@200&family=Source+Serif+Pro:wght@200&display=swap" rel="stylesheet">
-<link href="prism-material-oceanic.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/styles/grayscale.min.css" integrity="sha512-l1aMiXy5BTqq3S5n9RlJZzuCPA9VV2DOxkbW8eOErdvJhTdhkKVnuJd+tjY0FA5HXrYHao64+234j2Iuuzjceg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
 
 <div class="container-fluid">
 
-<div class="row first-row">
-  <div class="col-4">
-    <pre><code id="cx" class="language-javascript"></code></pre>
+<div class="row half-row">
+  <div class="col-3">
+    <div class="bordered code-container">
+      <pre class="language-javascript"><code id="cx"></code></pre>
+    </div>
   </div>
-  <div class="col-7">
-    <div id="cy"> </div>
+  <div class="col-4">
+    <div id="cy" class="bordered"> </div>
+  </div>
+  <div class="col-4">
+    <div id="spa" class="bordered"> </div>
   </div>
 </div>
 
-<div class="row">
-  <div class="col-8"> <!-- begin form -->
-    <button type="button" id="pingButton" class="btn btn-outline-dark btn-sm">Ping</button>
-    <button type="button" id="loadButton" class="btn btn-outline-dark btn-sm">Load</button>
-    <button type="button" id="initButton" class="btn btn-outline-dark btn-sm">Init</button>
-    <button type="button" id="statesButton" class="btn btn-outline-dark btn-sm">Get States</button>
-    <button type="button" id="resetButton" class="btn btn-outline-dark btn-sm">Reset</button>
-    <button type="button" id="printButton" class="btn btn-outline-dark btn-sm">Print Log To Console</button>
+<div class="row half-row">
+  <div class="col-5"> <!-- begin form -->
+    <button type="button" id="pingButton" class="btn btn-outline-secondary btn-sm">Ping</button>
+    <button type="button" id="loadButton" class="btn btn-outline-secondary btn-sm">Load</button>
+    <button type="button" id="initButton" class="btn btn-outline-secondary btn-sm">Init</button>
+    <button type="button" id="statesButton" class="btn btn-outline-secondary btn-sm">Get States</button>
+    <button type="button" id="resetButton" class="btn btn-outline-secondary btn-sm">Reset</button>
+    <button type="button" id="printButton" class="btn btn-outline-secondary btn-sm">Print Log</button>
 
     <div class="row">
       <div class="col-8 bordered d-flex justify-content-center">
         <input type="text" id="initForActor" class="form-control form-control-sm" placeholder="Actor">
         <input type="text" id="initForState" class="form-control form-control-sm" placeholder="State">
-        <button type="button" id="initForButton" class="btn btn-outline-dark btn-sm">Init For</button>
+        <button type="button" id="initForButton" class="btn btn-outline-secondary btn-sm">Init For</button>
       </div>
     </div>
 
@@ -45,38 +50,45 @@
         <input type="text" id="resForAction" class="form-control form-control-sm" placeholder="Action">
         <input type="text" id="resForVal" class="form-control form-control-sm" placeholder="Value">
         <input type="text" id="resForActor" class="form-control form-control-sm" placeholder="Actor">
-        <button type="button" id="respondButton" class="btn btn-outline-dark btn-sm">Respond</button>
+        <button type="button" id="respondButton" class="btn btn-outline-secondary btn-sm">Respond</button>
       </div>
     </div>
 
     <div class="row">
       <div class="col-8 bordered d-flex justify-content-center">
         <input type="text" id="statusFor" class="form-control form-control-sm" placeholder="State">
-        <button type="button" id="statusButton" class="btn btn-outline-dark btn-sm">Get Status</button>
+        <button type="button" id="statusButton" class="btn btn-outline-secondary btn-sm">Get Status</button>
       </div>
     </div>
 
     <div class="row">
       <div class="col-8 bordered d-flex justify-content-center">
-        <input type="text" id="stateActionsFor" class="form-control form-control-sm" placeholder="State">
-        <button type="button" id="actionsButton" class="btn btn-outline-dark btn-sm">Get State Actions</button>
+        <input type="text" id="actionsForState" class="form-control form-control-sm" placeholder="State">
+        <input type="text" id="actionsForActor" class="form-control form-control-sm" placeholder="Actor">
+        <button type="button" id="actionsButton" class="btn btn-outline-secondary btn-sm">Get Actions</button>
       </div>
     </div>
 
     <div class="row">
       <div class="col-8 bordered d-flex justify-content-center">
         <input type="text" id="stateGlobalsFor" class="form-control form-control-sm" placeholder="State">
-        <button type="button" id="globalsButton" class="btn btn-outline-dark btn-sm">Get State Globals</button>
+        <button type="button" id="globalsButton" class="btn btn-outline-secondary btn-sm">Get State Globals</button>
       </div>
     </div>
 
     <div class="row">
       <div class="col-8 bordered d-flex justify-content-center">
         <input type="text" id="stateLocalsFor" class="form-control form-control-sm" placeholder="State">
-        <button type="button" id="localsButton" class="btn btn-outline-dark btn-sm">Get State Locals</button>
+        <button type="button" id="localsButton" class="btn btn-outline-secondary btn-sm">Get State Locals</button>
       </div>
     </div>
     <!-- end form -->
+  </div>
+  <div class="col-3">
+    <div id="input">
+      <textarea class="form-control" id="inputJsonScript" rows="10" placeholder="Input JSON script here"></textarea>
+      <button type="button" id="inputJsonButton" class="btn btn-outline-secondary btn-sm">Run Script</button>
+    </div>
   </div>
   <div class="col-3">
     <div id="output"> $ welcome </div>
@@ -84,6 +96,7 @@
 </div> <!-- end 2nd row -->
 
 </div> <!-- container -->
+
 
 <script type="module" src="main.js"></script>
 

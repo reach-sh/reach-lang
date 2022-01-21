@@ -44,8 +44,8 @@ instance FromJSON ReachSource
 
 instance ToJSON ReachSource
 
-instance ToJSON SrcLoc
-
+instance ToJSON SrcLoc where
+  toJSON v = toJSON $ show v
 instance FromJSON SrcLoc
 
 -- This is a "defaulting" instance where the left info is preferred,
@@ -322,8 +322,8 @@ data SLCtxtFrame
   deriving (Eq, Ord, Generic, NFData)
 
 instance FromJSON SLCtxtFrame
-
-instance ToJSON SLCtxtFrame
+instance ToJSON SLCtxtFrame where
+  toJSON v = toJSON $ show v
 
 instance Show SLCtxtFrame where
   show (SLC_CloApp call_at clo_at mname) =

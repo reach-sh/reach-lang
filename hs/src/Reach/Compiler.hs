@@ -78,7 +78,8 @@ compile env (CompilerOpts {..}) = do
         el <- erase_logic ol
         showp "el" el
         unless (not co_sim) $ do
-          startServer el
+          src <- readFile co_source
+          startServer el src
         eol <- bigopt (showp, "eol") el
         showp "eol" eol
         pil <- epp eol
