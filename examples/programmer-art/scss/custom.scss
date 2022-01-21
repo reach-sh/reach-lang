@@ -16,7 +16,7 @@ $list-group-color: #555;
 $list-group-bg: #f6f6f6;
 $list-group-border-color: #212529;
 $list-group-border-radius: 0.2rem;
-$list-group-hover-bg: #000000;
+$list-group-hover-bg: #343a40;
 $list-group-action-hover-color: #FFFFFF;
 
 $breadcrumb-divider: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E");
@@ -103,10 +103,18 @@ pre[class*="language-"] {
   margin: 0%;
 }
 
+.btn:hover {
+  background-color: #495057 !important;
+}
+
 .hljs-ln-numbers {
   padding-left: 2% !important;
 }
 
 .hljs-ln-code {
   padding-left: 8% !important;
+}
+
+a {
+  color: #343a40;
 }

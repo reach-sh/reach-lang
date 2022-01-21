@@ -262,7 +262,7 @@ const respondToActions = async (evt) => {
   </nav>
   <div class="bordered d-flex justify-content-center">
     <input type="text" id="spa-response" class="form-control form-control-sm" placeholder="Value">
-    <button type="button" id="spa-res-button" class="btn btn-outline-dark btn-sm">Respond</button>
+    <button type="button" id="spa-res-button" class="btn btn-outline-secondary btn-sm">Respond</button>
   </div>
   `
   const spaRespondBtn = document.querySelector("#spa-res-button")
