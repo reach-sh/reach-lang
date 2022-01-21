@@ -11,7 +11,15 @@
  * ------------------------------------------------------------------------------------------ */
 
 import * as path from 'path';
-import { workspace, ExtensionContext, commands, window, env, Uri } from 'vscode';
+import {
+	commands,
+	env,
+	ExtensionContext,
+	Terminal,
+	Uri,
+	window,
+	workspace,
+} from 'vscode';
 import { exec } from 'child_process';
 import { initButtons } from './buttons';
 
@@ -28,7 +36,7 @@ const COMMANDS = require('../../data/commands.json');
 
 let client: LanguageClient;
 
-var terminal;
+var terminal: Terminal;
 
 const fs = require('fs');
 const url = require('url');
