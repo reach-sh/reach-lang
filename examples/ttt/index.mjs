@@ -1,4 +1,4 @@
-import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
+import * as stdlib_loader from '@reach-sh/stdlib';
 import * as TTT from './build/index.main.mjs';
 
 function render(st) {

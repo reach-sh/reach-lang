@@ -1,4 +1,4 @@
-import * as stdlibLoader from '@reach-sh/stdlib/loader.mjs';
+import * as stdlibLoader from '@reach-sh/stdlib';
 // import * as backend from './build/index.main.mjs';
 
 (async () => {

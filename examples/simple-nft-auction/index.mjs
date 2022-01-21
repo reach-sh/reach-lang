@@ -1,4 +1,4 @@
-import { loadStdlib } from '@reach-sh/stdlib/loader.mjs';
+import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
 const N = 3;
