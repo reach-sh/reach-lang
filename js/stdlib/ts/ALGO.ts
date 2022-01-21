@@ -13,6 +13,9 @@ import type {
   EnableNetworkResult,
   EnableAccountsResult,
 } from './ALGO_ARC11'; // =>
+import * as RHC from './ALGO_ReachHTTPClient';
+// @ts-ignore // XXX Dan FIXME pls
+import * as UTBC from './ALGO_UTBC';
 
 const {Buffer} = buffer;
 
@@ -272,6 +275,46 @@ type AlgodTxn = {
   },
   'pool-error': string,
 };
+
+// module-wide config
+export var customHttpEventHandler: (e: RHC.Event) => Promise<unknown> = async () => null
+/**
+ * @description client-side rate limiting.
+ *  Setting this to any positive number will also prevent requests from being sent in parallel.
+ *  Rate limiting is applied to all outgoing http requests, even if they are to different servers.
+ */
+export var minMillisBetweenRequests: number = 0;
+const reqLock = new Lock();
+var currentReqNum: number | undefined = undefined;
+var currentReqLabel: string | undefined = undefined;
+var lastReqSentAt: number | undefined = undefined; // ms
+
+async function httpEventHandler(e: RHC.Event): Promise<void> {
+  const en = e.eventName;
+  if (minMillisBetweenRequests > 0) {
+    if (en === 'before') {
+      await reqLock.acquire();
+      if (lastReqSentAt) {
+        const waitMs = Math.max(0, lastReqSentAt + minMillisBetweenRequests - Date.now());
+        debug(`waiting ${waitMs}ms due to minMillisBetweenRequests=${minMillisBetweenRequests}`);
+        await Timeout.set(waitMs);
+      }
+      lastReqSentAt = Date.now();
+      currentReqNum = e.reqNum;
+      currentReqLabel = e.label;
+    }
+    if (en === 'success' || en === 'error') {
+      if (currentReqNum === e.reqNum && currentReqLabel == e.label){
+        currentReqNum = undefined;
+        currentReqLabel = undefined;
+        reqLock.release();
+      } else {
+        throw Error('impossible: multiple requests in flight');
+      }
+    }
+  }
+  await customHttpEventHandler(e);
+}
 
 // Helpers
 
@@ -616,13 +659,19 @@ export const { randomUInt, hasRandom } = makeRandom(8);
 async function waitIndexerFromEnv(env: ProviderEnv): Promise<algosdk.Indexer> {
   const { ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT, ALGO_INDEXER_TOKEN } = env;
   await waitPort(ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
-  return new algosdk.Indexer(ALGO_INDEXER_TOKEN, ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
+  const port = ALGO_INDEXER_PORT || undefined; // UTBC checks for undefined
+  const utbc = new UTBC.URLTokenBaseHTTPClient({'X-Indexer-API-Token': ALGO_INDEXER_TOKEN}, ALGO_INDEXER_SERVER, port);
+  const rhc = new RHC.ReachHTTPClient(utbc, 'indexer', httpEventHandler);
+  return new algosdk.Indexer(rhc);
 }
 
 async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<algosdk.Algodv2> {
   const { ALGO_SERVER, ALGO_PORT, ALGO_TOKEN } = env;
   await waitPort(ALGO_SERVER, ALGO_PORT);
-  return new algosdk.Algodv2(ALGO_TOKEN, ALGO_SERVER, ALGO_PORT);
+  const port = ALGO_PORT || undefined;  // UTBC checks for undefiend
+  const utbc = new UTBC.URLTokenBaseHTTPClient({'X-Algo-API-Token': ALGO_TOKEN}, ALGO_SERVER, port);
+  const rhc = new RHC.ReachHTTPClient(utbc, 'algodv2', httpEventHandler);
+  return new algosdk.Algodv2(rhc);
 }
 
 export interface Provider {
