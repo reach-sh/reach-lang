@@ -1767,19 +1767,25 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 };
 
 export const minBalance = async (acc: Account): Promise<BigNumber> => {
+  const SchemaMinBalancePerEntry: BigNumber = 25000
+  const SchemaBytesMinBalance: BigNumber = 25000
+  const SchemaUintMinBalance: BigNumber = 3500
+  const AppFlatParamsMinBalance: BigNumber = 100000
+  const AppFlatOptInMinBalance: BigNumber = 100000
+  const MinBalance: BigNumber = 100000
   const addr = extractAddr(acc);
   const ai = await getAccountInfo(addr);
-  const createdApps = ai['created-apps']??[]
-  const numByteSlice = (ai['apps-total-schema']??{})['num-byte-slice']??0
-  const numUInt = (ai['apps-total-schema']??{})['num-uint']??0
-  const assets = ai.assets??[]
-  const mBal = assets.length * 100000
-    + (25000 + 3500) * numUInt
-    + (25000 + 25000) * numByteSlice
-    + (100000) * createdApps.length
-    + 100000
-    debug(`minBalance`, mBal)
-    return bigNumberify(mBal)
+  const createdApps = ai['created-apps']??[] // between 0 and 50
+  const numByteSlice = (ai['apps-total-schema']??{})['num-byte-slice']??0 // depends
+  const numUInt = (ai['apps-total-schema']??{})['num-uint']??0 // depends
+  const assets = ai.assets??[] // between 0 and 1000
+  const accMinBalance: BigNumber = assets.length * AppFlatOptInMinBalance
+    + (SchemaMinBalancePerEntry + SchemaUintMinBalance) * numUInt
+    + (SchemaMinBalancePerEntry + SchemaBytesMinBalance) * numByteSlice
+    + (AppFlatParamsMinBalance) * createdApps.length
+    + MinBalance
+    debug(`minBalance`, accMinBalance)
+    return accMinBalance
 }
 
 const balanceOfM = async (acc: Account, token: Token|false = false): Promise<BigNumber|false> => {
