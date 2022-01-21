@@ -50,6 +50,11 @@ let actionsHTML = null;
 const renderObjects = async (nodeId) => {
   const r = await c.getStateLocals(nodeId)
   let obs = ``
+  let actorSet = {}
+  for (const [k,v] of Object.entries(r.l_locals)) {
+    const who = v.l_who ? v.l_who : 'Consensus'
+    actorSet[k] = who
+  }
   for (const [k,v] of Object.entries(r.l_locals)) {
     const who = v.l_who ? v.l_who : 'Consensus'
     let status = 'Initial'
@@ -65,7 +70,8 @@ const renderObjects = async (nodeId) => {
       <button type="button"
       class="list-group-item list-group-item-action object-button"
       data-actor-id="${k}"
-      data-node-id="${nodeId}">
+      data-node-id="${nodeId}"
+      data-actor-set='${JSON.stringify(actorSet)}'>
       ${who}
       <span class="badge bg-secondary">${status}</span>
       </button> `
@@ -95,6 +101,7 @@ const renderObjectDetails = async (evt) => {
   const tgt = evt.target.closest(".object-button")
   const nodeId = tgt.dataset.nodeId
   const actorId = parseInt(tgt.dataset.actorId)
+  const actorSet = tgt.dataset.actorSet
   const r = await c.getStateLocals(nodeId)
   const g = await c.getStateGlobals(nodeId)
   const detsj = r.l_locals[actorId]
@@ -116,6 +123,7 @@ const renderObjectDetails = async (evt) => {
     object-button status-panel"
     data-actor-id="${actorId}"
     data-node-id="${nodeId}"
+    data-actor-set='${actorSet}'
     data-who="${who}">
     <div class="badge bg-secondary">Status</div>
     <div> ${status} </div>
@@ -192,6 +200,7 @@ const detailActions = async (evt) => {
   const tgt = evt.target.closest(".status-panel")
   const nodeId = tgt.dataset.nodeId
   const actorId = parseInt(tgt.dataset.actorId)
+  const actorSet = tgt.dataset.actorSet
   const who = tgt.dataset.who
   const act = await c.getActions(nodeId,actorId)
   console.log(act)
@@ -199,7 +208,7 @@ const detailActions = async (evt) => {
     return false
   }
   let acts = ``
-  acts = acts + renderAction(act,nodeId,actorId,who)
+  acts = acts + renderAction(act,nodeId,actorId,who,actorSet)
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -232,6 +241,11 @@ const respondToActions = async (evt) => {
   const actorId = parseInt(tgt.dataset.actorId)
   const actId = parseInt(tgt.dataset.actId)
   const who = tgt.dataset.who
+  const actorSet = JSON.parse(tgt.dataset.actorSet)
+  let actors = `<option value="">Unchanged</option>`
+  for (const [k,v] of Object.entries(actorSet)) {
+    actors = actors + `<option value="${k}">${v}</option>`
+  }
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -243,13 +257,22 @@ const respondToActions = async (evt) => {
   </nav>
   <div class="bordered d-flex justify-content-center">
     <input type="text" id="spa-response" class="form-control form-control-sm" placeholder="Value">
+    <select name="actors" id="actors-spa-select">
+    ${actors}
+    </select>
     <button type="button" id="spa-res-button" class="btn btn-outline-secondary btn-sm">Respond</button>
   </div>
   `
   const spaRespondBtn = document.querySelector("#spa-res-button")
   const respondSpa = async () => {
     let v = parseInt(document.querySelector("#spa-response").value)
-    let r = await c.respondWithVal(nodeId,actId,v,actorId)
+    let e = document.querySelector("#actors-spa-select");
+    let selectedActorId = e.value;
+    let aid = actorId
+    if (selectedActorId) {
+      aid = parseInt(selectedActorId)
+    }
+    let r = await c.respondWithVal(nodeId,actId,v,aid)
     appendToLog(r)
     redraw()
     jsonLog.push(["respondWithVal",nodeId,actId,v,actorId])
@@ -275,7 +298,7 @@ const setupReturnToActions = () => {
   actionsRetLink.addEventListener("click",backtrackToActions)
 }
 
-const renderAction = (actObj,nodeId,actorId,who) => {
+const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
   const act = actObj[1]
   const actId = actObj[0]
   const common = `
@@ -284,6 +307,7 @@ const renderAction = (actObj,nodeId,actorId,who) => {
   data-act-id="${actId}"
   data-actor-id="${actorId}"
   data-node-id="${nodeId}"
+  data-actor-set='${actorSet}'
   data-who="${who}">
   <div class="badge bg-secondary">
   `
