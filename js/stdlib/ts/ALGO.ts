@@ -177,11 +177,11 @@ type AppSchema = {
   "num-uint": number
 }
 type AccountInfo = {
-  'assets': Array<AccountAssetInfo>,
   'amount': number,
-  'apps-local-state': Array<AppState>
-  'apps-total-schema': AppSchema,
-  'created-apps': Array<AppInfo>
+  'assets'?: Array<AccountAssetInfo>,
+  'apps-local-state'?: Array<AppState>
+  'apps-total-schema'?: AppSchema,
+  'created-apps'?: Array<AppInfo>
 };
 type IndexerAccountInfoRes = {
   'current-round': number,
@@ -1769,10 +1769,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 export const minBalance = async (acc: Account): Promise<BigNumber> => {
   const addr = extractAddr(acc);
   const ai = await getAccountInfo(addr);
-  let createdApps = ai['created-apps']
-  let numByteSlice = ai['apps-total-schema']['num-byte-slice']
-  let numUInt = ai['apps-total-schema']['num-uint']
-  let assets = ai.assets
+  let createdApps = ai['created-apps']??[]
+  let numByteSlice = (ai['apps-total-schema']??{})['num-byte-slice']??0
+  let numUInt = (ai['apps-total-schema']??{})['num-uint']??0
+  let assets = ai.assets??[]
   let mBal = assets.length * 100000
     + (25000 + 3500) * numUInt
     + (25000 + 25000) * numByteSlice
