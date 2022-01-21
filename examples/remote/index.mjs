@@ -1,4 +1,4 @@
-import * as stdlib_loader from '@reach-sh/stdlib/loader.mjs';
+import * as stdlib_loader from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 import real_ethers from 'ethers';
 import * as cfxers from '@reach-sh/stdlib/cfxers.mjs';
