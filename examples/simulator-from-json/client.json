@@ -1,4 +1,5 @@
 [
+["resetServer"],
 ["load"],
 ["init"],
 ["initFor", 0, 0],
