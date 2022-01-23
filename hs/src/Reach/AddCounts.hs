@@ -3,11 +3,13 @@ module Reach.AddCounts (add_counts, AC (..), ac_vdef, ac_visit) where
 import Control.Monad.Reader
 import Data.IORef
 import qualified Data.Map.Strict as M
+import qualified Data.Set as S
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.LL
 import Reach.AST.PL
 import Reach.CollectCounts
+import Reach.AnalyzeVars
 import Reach.Util
 
 data Env = Env
@@ -181,12 +183,51 @@ instance AC ETail where
       ac_visit asn
       return $ ET_Continue at asn
 
+-- XXX Make a type class for this stupid thing
+comSeq :: CTail -> ([DLStmt], CTail)
+comSeq = \case
+  CT_Com m c -> (m : ms, c')
+    where
+      (ms, c') = comSeq c
+  c -> ([], c)
+
+condBlock :: CTail -> Maybe (DLStmt, CTail)
+condBlock c =
+  case (vs, ms') of
+    ([], _) -> Nothing
+    (_, c'@(DL_LocalIf {}) : ms'') -> good c' ms''
+    (_, c'@(DL_LocalSwitch {}) : ms'') -> good c' ms''
+    _ -> Nothing
+  where
+    at = srclocOf c
+    (ms, k) = comSeq c
+    isVar = \case
+      DL_Var {} -> True
+      _ -> False
+    (vs, ms') = span isVar ms
+    good c' ms'' = Just (DL_LocalDo at dt, k')
+      where
+        dt = dtList at (vs <> [c'])
+        k' = dtReplace CT_Com k (dtList at ms'')
+
 instance AC CTail where
   ac = \case
     CT_Com m k -> do
       k' <- ac k
       m' <- ac m
-      return $ mkCom CT_Com m' k'
+      let mk = mkCom CT_Com
+      let meh = return $ mk m' k'
+      -- XXX This optimization would be better in `LLConsensus` or even better
+      -- as part of mkCom
+      case condBlock k' of
+        Nothing -> meh
+        Just (dt, k'') -> do
+          -- I want to do this, but it is too inefficient
+          let _freeNotInBound = not $ S.isSubsetOf (freeVars dt) (boundVars m')
+          let canFloat = False
+          case canFloat of
+            True -> return $ mk dt $ mk m' k''
+            False -> meh
     CT_If at c t f -> do
       f' <- ac f
       t' <- ac t

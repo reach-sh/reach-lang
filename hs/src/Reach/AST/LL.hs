@@ -27,6 +27,16 @@ data LLConsensus
   | LLC_ViewIs SrcLoc (Maybe SLPart) SLVar (Maybe DLExportBlock) LLConsensus
   deriving (Eq)
 
+instance SrcLocOf LLConsensus where
+  srclocOf = \case
+    LLC_Com s _ -> srclocOf s
+    LLC_If a _ _ _ -> a
+    LLC_Switch a _ _ -> a
+    LLC_FromConsensus a _ _ -> a
+    LLC_While {..} -> llc_w_at
+    LLC_Continue a _ -> a
+    LLC_ViewIs a _ _ _ _ -> a
+
 instance Pretty LLConsensus where
   pretty = \case
     LLC_Com x k -> prettyCom x k

@@ -963,6 +963,11 @@ dtReplace mkk nk = \case
   DT_Return _ -> nk
   DT_Com m k -> (mkCom mkk) m $ dtReplace mkk nk k
 
+dtList :: SrcLoc -> [DLStmt] -> DLTail
+dtList at = \case
+  [] -> DT_Return at
+  m : ms -> DT_Com m $ dtList at ms
+
 data DLBlock
   = DLBlock SrcLoc [SLCtxtFrame] DLTail DLArg
   deriving (Eq)

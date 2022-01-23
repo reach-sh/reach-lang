@@ -3,6 +3,7 @@ module Reach.CollectCounts
   , Counts (..)
   , Countable
   , counts
+  , countsk
   , countsl
   , countsS
   , get_count
@@ -53,6 +54,9 @@ countsS = S.fromList . countsl
 
 class Countable a where
   counts :: a -> Counts
+
+instance Countable Counts where
+  counts = id
 
 instance Countable Bool where
   counts = const mempty
@@ -239,3 +243,11 @@ instance Countable ETail where
     ET_While {..} ->
       countsk (counts et_w_cond <> counts [et_w_body, et_w_k]) et_w_asn
     ET_Continue _ asn -> counts asn
+
+instance Countable CTail where
+  counts = \case
+    CT_Com s k -> countsk (counts k) s
+    CT_If _ c t f -> counts c <> counts [t, f]
+    CT_Switch _ o csm -> counts o <> counts csm
+    CT_From _ _ fi -> countsk mempty fi
+    CT_Jump _ _ svs asn -> counts svs <> counts asn

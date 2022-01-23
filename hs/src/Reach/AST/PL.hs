@@ -144,6 +144,14 @@ data CTail
   | CT_Jump SrcLoc Int [DLVar] DLAssignment
   deriving (Eq)
 
+instance SrcLocOf CTail where
+  srclocOf = \case
+    CT_Com s _ -> srclocOf s
+    CT_If a _ _ _ -> a
+    CT_Switch a _ _ -> a
+    CT_From a _ _ -> a
+    CT_Jump a _ _ _ -> a
+
 instance Pretty CTail where
   pretty = \case
     CT_Com e k -> pretty e <> hardline <> pretty k
