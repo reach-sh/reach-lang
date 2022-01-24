@@ -76,6 +76,12 @@ html {
   height: 100%;
   display: block;
   overflow-y: scroll;
+  padding: 0%;
+}
+
+.list-group-flush {
+  margin: 0%;
+  padding: 0%;
 }
 
 .bordered {
