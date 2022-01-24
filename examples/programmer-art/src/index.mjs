@@ -11,6 +11,14 @@ const appendToLog = (r) => {
   log.innerHTML = x + '<br>' + '$ ' + r
 }
 
+const noop = () => {
+ appendToLog('No-Op');
+}
+
+const noOpHandler = (evt) => {
+  noop();
+}
+
 const rsh = await c.load()
 const hlns1 = document.createElement('script');
 const hlns2 = document.createElement('script');
@@ -135,7 +143,7 @@ const renderObjectDetails = async (evt) => {
   for (const [k,v] of Object.entries(ledger[actorId])) {
     dets = dets + `
       <button type="button"
-      class="list-group-item list-group-item-action object-button"
+      class="list-group-item list-group-item-action object-button no-op"
       >
       <div class="badge bg-secondary">Funds</div>
       <div> ${v} (Token ID: ${k}) </div>
@@ -146,7 +154,7 @@ const renderObjectDetails = async (evt) => {
     const varValue = varDetails.contents
     dets = dets + `
       <button type="button"
-      class="list-group-item list-group-item-action object-button"
+      class="list-group-item list-group-item-action object-button no-op"
       >
       <div class="badge bg-secondary">${typing.slice(2)}</div>
       <div> ${varName} := ${varValue} </div>
@@ -171,6 +179,10 @@ const bindObjDetailsActionsEvents = () => {
   const statusPanel = document.querySelectorAll(".status-panel")
   statusPanel.forEach((item, i) => {
     item.addEventListener("click",detailActions)
+  });
+  const noOps = document.querySelectorAll(".no-op")
+  noOps.forEach((item, i) => {
+    item.addEventListener("click",noOpHandler)
   });
 }
 
@@ -209,6 +221,7 @@ const detailActions = async (evt) => {
   const act = await c.getActions(nodeId,actorId)
   console.log(act)
   if (!act) {
+    noop();
     return false
   }
   let acts = ``
@@ -236,7 +249,6 @@ const bindObjDetailsActionsResponseEvents = () => {
     item.addEventListener("click",respondToActions)
   });
 }
-
 
 const respondToActions = async (evt) => {
   actionsHTML = spa.innerHTML
