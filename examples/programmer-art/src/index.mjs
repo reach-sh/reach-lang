@@ -20,14 +20,18 @@ hlns1.async = false
 hlns2.src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/languages/javascript.min.js"
 hlns2.async = false
 hlns3.src = "https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js";
-document.getElementsByTagName('head')[0].appendChild(hlns1);
-document.getElementsByTagName('head')[0].appendChild(hlns2);
-document.getElementsByTagName('head')[0].appendChild(hlns3);
-
+hlns3.async = false
+hlns1.onload = function() {
+  document.getElementsByTagName('head')[0].appendChild(hlns2);
+};
+hlns2.onload = function() {
+  document.getElementsByTagName('head')[0].appendChild(hlns3);
+};
 hlns3.onload = function() {
   hljs.highlightAll();
   hljs.initLineNumbersOnLoad();
 };
+document.getElementsByTagName('head')[0].appendChild(hlns1);
 
 cytoscape.use( klay );
 
