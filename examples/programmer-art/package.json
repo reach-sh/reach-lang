@@ -19,6 +19,7 @@
     "net": "^1.0.2"
   },
   "devDependencies": {
+    "copy-webpack-plugin": "^10.2.1",
     "css-loader": "^6.5.1",
     "postcss": "^8.4.5",
     "postcss-loader": "^6.2.1",
