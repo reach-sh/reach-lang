@@ -1,3 +1,4 @@
+{-# LANGUAGE MagicHash, UnboxedTuples                 #-}
 module Reach.AnalyzeVars
   ( freeVars
   , boundVars
@@ -13,6 +14,50 @@ import Reach.AST.DLBase
 -- bound variables/etc in a field and then update it.
 
 -- https://reachsh.slack.com/archives/C01769UAGTZ/p1642849017019300
+
+import GHC.Exts
+import GHC.Types
+import System.IO.Unsafe
+import Data.IORef
+import Reach.Texty
+
+type UAddr = Ptr ()
+type MMap a = IORef (M.Map UAddr a)
+
+anyToPtr :: a -> IO (Ptr ())
+anyToPtr x =
+  IO (\s -> case anyToAddr# x s of
+              (# s', addr #) -> (# s', Ptr addr #)) :: IO (Ptr ())
+
+bvMap :: MMap (S.Set DLVar)
+bvMap = unsafePerformIO $ newIORef $ mempty
+{-# NOINLINE bvMap #-}
+
+fvMap :: MMap (S.Set DLVar)
+fvMap = unsafePerformIO $ newIORef $ mempty
+{-# NOINLINE fvMap #-}
+
+readMMap :: Pretty a => MMap b -> (a -> b) -> a -> b
+readMMap mr f x = unsafePerformIO $ do
+  k <- anyToPtr x
+  m <- readIORef mr
+  case M.lookup k m of
+    Just y -> do
+      putStrLn $ "hit " <> show k
+      return y
+    Nothing -> do
+      let !y = f x
+      putStrLn $ "miss " <> show k <> " => " <> (take 64 $ show $ pretty x)
+      modifyIORef mr $ M.insert k y
+      return y
+{-# NOINLINE readMMap #-}
+
+boundVarsMM :: (Pretty a, BoundVars a) => a -> S.Set DLVar
+boundVarsMM = readMMap bvMap boundVars
+freeVarsMM :: (Pretty a, FreeVars a) => a -> S.Set DLVar
+freeVarsMM = readMMap fvMap freeVars
+
+-- </XXX>
 
 class FreeVars a where
   freeVars :: a -> S.Set DLVar
@@ -65,7 +110,7 @@ instance FreeVars DLTokenNew where
   freeVars (DLTokenNew a b c d e f) = freeVars [a, b, c, d, e] <> freeVars f
 
 instance FreeVars DLExpr where
-  freeVars = \case
+  freeVars = readMMap fvMap $ \case
     DLE_Arg _ a -> freeVars a
     DLE_LArg _ a -> freeVars a
     DLE_Impossible {} -> mempty
@@ -122,11 +167,12 @@ bindsFor :: (FreeVars a, BoundVars a, FreeVars b) => a -> b -> S.Set DLVar
 bindsFor o i = S.difference (freeVars i) (boundVars o) <> freeVars o
 
 instance FreeVars DLTail where
-  freeVars = \case
+  freeVars = readMMap fvMap $ \case
     DT_Return {} -> mempty
     DT_Com m t -> bindsFor m t
+
 instance BoundVars DLTail where
-  boundVars = \case
+  boundVars = readMMap bvMap $ \case
     DT_Return {} -> mempty
     DT_Com m t -> boundVars m <> boundVars t
 
@@ -136,7 +182,7 @@ instance BoundVars DLBlock where
   boundVars (DLBlock _ _ t _) = boundVars t
 
 instance FreeVars DLStmt where
-  freeVars = \case
+  freeVars = readMMap fvMap $ \case
     DL_Nop {} -> mempty
     DL_Let _ _ e -> freeVars e
     DL_ArrayMap _ _ x a f -> freeVars [x] <> bindsFor a f
@@ -150,7 +196,7 @@ instance FreeVars DLStmt where
     DL_LocalDo _ t -> freeVars t
 
 instance BoundVars DLStmt where
-  boundVars = \case
+  boundVars = readMMap bvMap $ \case
     DL_Nop {} -> mempty
     DL_Let _ lv _ -> boundVars lv
     DL_ArrayMap _ ans _ a f -> boundVars [ans, a] <> boundVars f

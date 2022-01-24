@@ -32,6 +32,7 @@ dependencies:
 - file-embed >= 0.0.9
 - filepath
 - generic-deriving
+- ghc-prim
 - hexstring
 - hspec
 - hspec-smallcheck
