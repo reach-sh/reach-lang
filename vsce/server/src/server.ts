@@ -1,5 +1,3 @@
-import { stringify } from 'querystring';
-import { Url } from 'url';
 /* --------------------------------------------------------------------------------------------
  * Copyright for portions from https://github.com/microsoft/vscode-extension-samples/tree/master/lsp-sample
  * are held by (c) Microsoft Corporation. All rights reserved.
