@@ -223,8 +223,8 @@ instance AC CTail where
         Nothing -> meh
         Just (dt, k'') -> do
           -- I want to do this, but it is too inefficient
-          let freeNotInBound = not $ S.isSubsetOf (freeVars dt) (boundVars m')
-          let canFloat = freeNotInBound
+          let _freeNotInBound = not $ S.isSubsetOf (freeVars dt) (boundVars m')
+          let canFloat = False -- freeNotInBound
           case canFloat of
             True -> return $ mk dt $ mk m' k''
             False -> meh

@@ -15,19 +15,11 @@ import Reach.AST.DLBase
 
 -- https://reachsh.slack.com/archives/C01769UAGTZ/p1642849017019300
 
-import GHC.Exts
-import GHC.Types
 import System.IO.Unsafe
 import Data.IORef
 import Reach.Texty
 
-type UAddr = Ptr ()
-type MMap a = IORef (M.Map UAddr a)
-
-anyToPtr :: a -> IO (Ptr ())
-anyToPtr x =
-  IO (\s -> case anyToAddr# x s of
-              (# s', addr #) -> (# s', Ptr addr #)) :: IO (Ptr ())
+type MMap a = IORef (M.Map String a)
 
 bvMap :: MMap (S.Set DLVar)
 bvMap = unsafePerformIO $ newIORef $ mempty
@@ -37,25 +29,20 @@ fvMap :: MMap (S.Set DLVar)
 fvMap = unsafePerformIO $ newIORef $ mempty
 {-# NOINLINE fvMap #-}
 
-readMMap :: Pretty a => MMap b -> (a -> b) -> a -> b
+readMMap :: (Pretty a) => MMap b -> (a -> b) -> a -> b
 readMMap mr f x = unsafePerformIO $ do
-  k <- anyToPtr x
   m <- readIORef mr
+  let k = show $ pretty x
   case M.lookup k m of
     Just y -> do
-      putStrLn $ "hit " <> show k
+      --putStrLn $ "hit " <> (take 64 $ k)
       return y
     Nothing -> do
       let !y = f x
-      putStrLn $ "miss " <> show k <> " => " <> (take 64 $ show $ pretty x)
+      putStrLn $ "miss " <> (take 64 $ k)
       modifyIORef mr $ M.insert k y
       return y
 {-# NOINLINE readMMap #-}
-
-boundVarsMM :: (Pretty a, BoundVars a) => a -> S.Set DLVar
-boundVarsMM = readMMap bvMap boundVars
-freeVarsMM :: (Pretty a, FreeVars a) => a -> S.Set DLVar
-freeVarsMM = readMMap fvMap freeVars
 
 -- </XXX>
 
@@ -110,7 +97,7 @@ instance FreeVars DLTokenNew where
   freeVars (DLTokenNew a b c d e f) = freeVars [a, b, c, d, e] <> freeVars f
 
 instance FreeVars DLExpr where
-  freeVars = readMMap fvMap $ \case
+  freeVars = \case
     DLE_Arg _ a -> freeVars a
     DLE_LArg _ a -> freeVars a
     DLE_Impossible {} -> mempty
@@ -167,12 +154,12 @@ bindsFor :: (FreeVars a, BoundVars a, FreeVars b) => a -> b -> S.Set DLVar
 bindsFor o i = S.difference (freeVars i) (boundVars o) <> freeVars o
 
 instance FreeVars DLTail where
-  freeVars = readMMap fvMap $ \case
+  freeVars = \case
     DT_Return {} -> mempty
     DT_Com m t -> bindsFor m t
 
 instance BoundVars DLTail where
-  boundVars = readMMap bvMap $ \case
+  boundVars = \case
     DT_Return {} -> mempty
     DT_Com m t -> boundVars m <> boundVars t
 
