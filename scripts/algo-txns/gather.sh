@@ -20,9 +20,5 @@ year () {
   done
 }
 
-month 2020 8
-month 2020 9
-month 2020 10
-month 2020 11
-month 2020 12
+year 2020
 year 2021

@@ -121,6 +121,8 @@ cdot () {
 
 #######
 
+c hs/t/y/array_stdlib.rsh
+exit 0
 c hs/t/y/floatOpt.rsh
 exit 0
 

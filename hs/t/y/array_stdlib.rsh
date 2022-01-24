@@ -20,6 +20,9 @@ export const main =
         assert(a.includes(2));
         assert(!a.includes(322));
         assert(a.mapWithIndex((x, i) => x - i).all(x => x == 0));
+        a.forEachWithIndex((x, i) => {
+          assert(a[i] == x);
+        });
         assert(a.elemType == UInt);
         assert(Array.find(a, (p) => p > 5) == Maybe(UInt).None());
         assert(a.find((p) => p > 0) == Maybe(UInt).Some(1));

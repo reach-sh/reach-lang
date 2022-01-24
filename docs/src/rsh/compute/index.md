@@ -1004,6 +1004,18 @@ arr.mapWithIndex(f)
 provides `{!rsh} f` with an additional argument, which is the index of the current element in `{!rsh} arr`.
 Unlike `{!rsh} Array.map`, this function is not generalized to an arbitrary number of arrays; it only accepts one array.
 
+#### `Array.forEachWithIndex` && `.forEachWithIndex`
+
+@{ref("rsh", "forEachWithIndex")}
+```reach
+Array.forEachWithIndex(arr, f)
+arr.forEachWithIndex(f)
+```
+
+ `{!rsh} Array.forEachWithIndex(arr, f)` is similar to `{!rsh} Array.forEach`, except it
+provides `{!rsh} f` with an additional argument, which is the index of the current element in `{!rsh} arr`.
+Unlike `{!rsh} Array.forEach`, this function is not generalized to an arbitrary number of arrays; it only accepts one array.
+
 #### `Array.reduce` && `.reduce`
 
 @{ref("rsh", "reduce")}

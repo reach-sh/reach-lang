@@ -14,6 +14,7 @@ PSQL=(psql --host=127.0.0.1 -d ledgerdb -U ledgerdb -qtA)
 
 cat >go.sh <<END
 #!/bin/sh -e
+export PGPASSWORD="${PGPASSWORD}"
 getRound () {
   ${PSQL[@]} -c "SELECT round FROM block_header WHERE realtime >= '\$1' ORDER BY realtime ASC LIMIT 1;"
 }

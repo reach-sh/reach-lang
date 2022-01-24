@@ -555,10 +555,19 @@ export const Array_mapWithIndex1 = (a) => (f) =>
   Array_mapWithIndex(a, f);
 
 export const Array_reduceWithIndex = (a, inita, f) =>
-  a.withIndex().reduce(inita, (acc, [e, idx]) => f(acc, e, idx));
+  a.reduce([inita, 0], ([acc, idx], e) => [f(acc, e, idx), idx+1])[0];
 
 export const Array_reduceWithIndex1 = (a) => (inita, f) =>
   Array_reduceWithIndex(a, inita, f);
+
+export const Array_forEachWithIndex = (a, f) =>
+  Array_reduceWithIndex(a, null, (acc, e, idx) => {
+    f(e, idx);
+    return acc;
+  });
+
+export const Array_forEachWithIndex1 = (a) => (f) =>
+  Array_forEachWithIndex(a, f);
 
 export const hasConsoleLogger = {
   log: Fun(true, Null)
