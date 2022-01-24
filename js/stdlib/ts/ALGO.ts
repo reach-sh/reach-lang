@@ -1079,7 +1079,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       let _theC: ContractHandler|undefined = undefined;
       return async (): Promise<ContractHandler> => {
         debug(label, 'getC');
-        if ( _theC ) { return _theC; }
+        if ( _theC ) {
+          debug(label, 'getC', 'ret');
+          return _theC;
+        }
+        debug(label, 'getC', 'wait');
         const ctcInfo = await getInfo();
         const { ApplicationID, Deployer } =
           await stdVerifyContract( setupViewArgs, (async () => {
@@ -1621,12 +1625,16 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       return bsi;
     };
     const recoverSplitBytes = (prefix:string, size:number, howMany:number, src:AppStateKVs): (Uint8Array|undefined) => {
+      debug('recoverSplitBytes', {prefix, size, howMany, src});
       const bs = new Uint8Array(size);
       let offset = 0;
       for ( let i = 0; i < howMany; i++ ) {
         const bsi = readStateBytes(prefix, [i], src);
         if ( !bsi || bsi.length == 0 ) {
-          return undefined;
+          // We are at a state where we don't need all the keys, so they
+          // haven't all been set, bs is initialized to 0, so this should be
+          // fine.
+          return bs;
         }
         bs.set(bsi, offset);
         offset += bsi.length;
