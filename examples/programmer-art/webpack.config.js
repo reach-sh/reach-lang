@@ -1,5 +1,6 @@
 const path = require('path');
 var webpack = require('webpack');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: './src/index.mjs',
@@ -15,6 +16,11 @@ module.exports = {
   plugins: [
     new webpack.DefinePlugin({
       'process.platform': JSON.stringify('linux')
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+       { from: './static/favicon.ico' },
+      ]
     })
   ],
   module: {
