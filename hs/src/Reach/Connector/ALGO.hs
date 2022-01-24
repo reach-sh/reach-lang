@@ -16,7 +16,7 @@ import qualified Data.DList as DL
 import Data.Function
 import qualified Data.HashMap.Strict as HM
 import Data.IORef
-import Data.List (intercalate)
+import Data.List (intercalate, foldl')
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -1937,8 +1937,10 @@ ct = \case
   CT_Switch at dv csm ->
     doSwitch "Switch" nct at dv csm
   CT_Jump _at which svs (DLAssignment msgm) -> do
-    cla $ DLLA_Tuple $ map DLA_Var svs
-    cla $ DLLA_Tuple $ map snd $ M.toAscList msgm
+    -- NOTE: I considered statically assigning these to heap pointers and
+    -- limiting the total memory available (we can't assign them to where they
+    -- will end up, because this tail might be using the same things)
+    mapM_ ca $ (map DLA_Var svs) <> map snd (M.toAscList msgm)
     addResourceEdge which
     code "b" [loopLabel which]
   CT_From at which msvs -> do
@@ -2086,15 +2088,20 @@ bindFromTuple at vs m = do
   store_let av True (op "dup") $
     go $ zip vs [0 ..]
 
+bindFromStack :: SrcLoc -> [DLVar] -> App a -> App a
+bindFromStack _at vs m = do
+  -- STACK: [ ...vs ] TOP on right
+  let go m' v = sallocLet v (return ()) m'
+  -- The 'l' is important here because it means we're nesting the computation
+  -- from the left, so the bindings match the (reverse) push order
+  foldl' go m vs
+
 cloop :: Int -> CHandler -> App ()
 cloop _ (C_Handler {}) = return ()
 cloop which (C_Loop at svs vars body) = recordWhich which $ do
   block (loopLabel which) $ do
-    -- [ svs, vars ]
-    let bindVars =
-          id
-            . (bindFromTuple at vars)
-            . (bindFromTuple at svs)
+    -- STACK: [ ...svs, ...vars ] TOP on right
+    let bindVars = bindFromStack at $ svs <> vars
     bindVars $ ct body
 
 -- NOTE This could be compiled to a jump table if that were possible with TEAL

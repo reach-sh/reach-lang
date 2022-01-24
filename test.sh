@@ -121,7 +121,12 @@ cdot () {
 
 #######
 
-jb
+#jb
+#ci ALGO rps-7-loops
+#exit 0
+c --install-pkgs users/xbacked-contracts/src/master_vault.rsh
+REACH_DEBUG=Y c users/xbacked-contracts/src/master_vault.rsh
+exit 0
 c hs/t/y/floatOpt.rsh
 exit 0
 
