@@ -7,7 +7,8 @@ To declare an API role, use `API(name, interface) => API_Participant` function
 
 e.g. `const Spectator = API('Spectator', { rate: Fun([UInt], Bool) })`
 
-Each function in the API interface is declared so that domain is provided by API and return value is the response of the contract. In this case by calling `Spectator.rate`, API will send an unsigned integer to the contract and receive a boolean.
+Each function in the API interface is declared so that domain is provided by API and return value is the response of the contract. 
+In this case by calling `Spectator.rate`, API will send an unsigned integer to the contract and receive a boolean.
 
 There are two ways to call an API function:
 1. `call()` function
@@ -72,7 +73,8 @@ commit();
  
 ## `.api()`
 
-`.api()` can be appended to any fork statement to declare a case for API call. The syntax is
+`.api()` can be appended to any fork statement to declare a case for API call.
+The syntax is
 
 ```reach
 fork() // or parallelReduce(INIT_EXPR)
