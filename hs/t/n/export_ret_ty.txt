@@ -1,4 +1,6 @@
-reachc: error[RE0088]: These types are mismatched: Bool vs UInt
+reachc: error[RE0088]: These types are mismatched:
+  expected: UInt
+       got: Bool
 
   <top level>
 

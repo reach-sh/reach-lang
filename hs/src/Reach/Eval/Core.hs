@@ -621,9 +621,9 @@ typeEqb :: DLType -> DLType -> Bool
 typeEqb = (==)
 
 typeEq :: DLType -> DLType -> App ()
-typeEq x y = do
-  unless (typeEqb x y) $
-    expect_ $ Err_Type_Mismatch x y
+typeEq e a = do
+  unless (typeEqb e a) $
+    expect_ $ Err_Type_Mismatch e a
 
 typeEqs :: [DLType] -> App DLType
 typeEqs = \case
@@ -735,7 +735,7 @@ typeOf v =
 typeCheck_d :: DLType -> SLVal -> App DLArgExpr
 typeCheck_d ty val = do
   (val_ty, res) <- typeOf val
-  typeEq val_ty ty
+  typeEq ty val_ty
   return res
 
 applyRefinement :: ClaimType -> SLVal -> [SLVal] -> Maybe SLVal -> App ()
@@ -2838,7 +2838,7 @@ evalPrim p sargs =
       part <- one_arg
       who_a <-
         typeOfM part >>= \case
-          Just (ty, res) -> typeEq ty T_Address >> compileArgExpr res
+          Just (ty, res) -> typeEq T_Address ty >> compileArgExpr res
           Nothing ->
             case part of
               SLV_Participant _ who _ _ ->

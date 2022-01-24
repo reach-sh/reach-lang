@@ -654,7 +654,7 @@ instance Show EvalError where
     Err_Type_NotApplicable ty ->
       "Cannot apply this like a function: " <> show ty
     Err_Type_Mismatch t1 t2 ->
-      "These types are mismatched: " <> (show t1 <> " vs " <> show t2)
+      "These types are mismatched:\n  expected: " <> show t1 <> "\n       got: " <> show t2
     Err_Expected_Map v ->
       "Expected map, got: " <> show_sv v
     Err_Prim_Foldable ->

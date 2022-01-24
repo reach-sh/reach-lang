@@ -1,4 +1,6 @@
-reachc: error[RE0088]: These types are mismatched: Address vs Data({"None": Null, "Some": Address})
+reachc: error[RE0088]: These types are mismatched:
+  expected: Data({"None": Null, "Some": Address})
+       got: Address
 
   ./pr325.rsh:13:23:application
 
