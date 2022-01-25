@@ -1693,20 +1693,6 @@ checkTxn1 f = do
 makeTxn1 :: LT.Text -> App ()
 makeTxn1 f = code "itxn_field" [f]
 
-checkTxnInit :: LT.Text -> App ()
-checkTxnInit vTypeEnum = do
-  -- [ txn ]
-  output $ TConst vTypeEnum
-  checkTxn1 "TypeEnum"
-  cint 0
-  checkTxn1 "Fee"
-  czaddr
-  checkTxn1 "Lease"
-  czaddr
-  checkTxn1 "RekeyTo"
-  -- [ txn ]
-  return ()
-
 checkTxnUsage_ :: (DLArg -> App Bool) -> AlgoError -> SrcLoc -> Maybe DLArg -> App ()
 checkTxnUsage_ isXTok err at mtok = do
   case mtok of
@@ -1756,7 +1742,17 @@ checkTxn (CheckTxn {..}) = when (not (staticZero ct_amt)) $ do
     -- [ id, amt ]
     check1 fAmount
     extra
-    checkTxnInit vTypeEnum
+    output $ TConst vTypeEnum
+    checkTxn1 "TypeEnum"
+    when False $ do
+      -- NOTE: We don't actually care about these... it's not our problem if the
+      -- user does these things.
+      cint 0
+      checkTxn1 "Fee"
+      czaddr
+      checkTxn1 "Lease"
+      czaddr
+      checkTxn1 "RekeyTo"
     cContractAddr
     cfrombs T_Address
     check1 fReceiver
