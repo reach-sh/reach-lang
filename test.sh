@@ -121,33 +121,15 @@ cdot () {
 
 #######
 
-REACH_DEBUG=Y c hs/t/y/structObj.rsh
-exit 0
-REACH_DEBUG=Y c users/algo-govt/index.rsh
-exit 0
-c hs/t/y/floatOpt.rsh
+jb
+ci ALGO view-diff
 exit 0
 
-#jb
-./scripts/algo-txns/index.sh
+c hs/t/y/floatOpt.rsh
 exit 0
 
 c --install-pkgs users/xbacked-contracts/src/master_vault.rsh
 REACH_DEBUG=Y c users/xbacked-contracts/src/master_vault.rsh
-exit 0
-
-cdot examples/overview/index.rsh
-cdot examples/rps-8-interact/index.rsh
-cdot users/duoswap-core/index.rsh
-exit 0
-
-jb
-ci ALGO api-raw
-ci ALGO api-map
-exit 0
-ci ALGO atomic-swap
-ci ALGO mint-basic
-#ci ALGO js-tests
 exit 0
 
 # (cd hs && mk hs-test)
