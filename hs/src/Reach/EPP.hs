@@ -10,6 +10,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
 import qualified Data.Set as S
+import qualified Data.Sequence as Seq
 import Debug.Trace
 import Generics.Deriving (Generic)
 import Reach.AST.Base
@@ -175,6 +176,7 @@ data BEnv = BEnv
   , be_which :: Int
   , be_api_info :: IORef (M.Map SLPart ApiInfo)
   , be_api_rets :: IORef (M.Map SLPart DLType)
+  , be_ms :: Seq.Seq DLStmt
   }
 
 type BApp = ReaderT BEnv IO
@@ -496,6 +498,19 @@ view_set_combine :: (Bool, b) -> (Bool, b) -> (Bool, b)
 view_set_combine (l, l_at) (r, r_at) =
   (l || r, bool l_at r_at l)
 
+be_c_top :: DLStmt -> LLConsensus -> BApp (CApp CTail, EApp ETail)
+be_c_top m c = do
+  (cc, lc) <- be_c c
+  (cm, _) <- withConsensus True $ be_m m
+  let cc' = backwards (mkCom CT_Com) cm cc
+  return (cc', lc)
+
+backwards :: Monad m => (a -> b -> c) -> m a -> m b -> m c
+backwards f xm ym = do
+  y <- ym
+  x <- xm
+  return $ f x y
+
 be_c :: LLConsensus -> BApp (CApp CTail, EApp ETail)
 be_c = \case
   LLC_ViewIs at v f ma k -> do
@@ -519,10 +534,6 @@ be_c = \case
     let remember_toks = local (\e -> e {be_toks = toks <> be_toks e})
     (k'c, k'l) <- remember_toks $ be_c k
     (c'c, c'l) <- withConsensus True $ be_m c
-    let backwards f xm ym = do
-          y <- ym
-          x <- xm
-          return $ f x y
     return $ (,) (backwards (mkCom CT_Com) c'c k'c) (backwards (mkCom ET_Com) c'l k'l)
   LLC_If at c t f -> do
     (t'c, t'l) <- be_c t
@@ -626,14 +637,19 @@ be_c = \case
     return $ (,) cm lm
 
 be_s :: LLStep -> BApp (EApp ETail)
-be_s = \case
+be_s s = local (\e -> e { be_ms = mempty }) $ be_s_ s
+
+be_s_ :: LLStep -> BApp (EApp ETail)
+be_s_ = \case
   LLS_Com c k -> do
     int <- be_interval <$> ask
     let int' =
           case c of
             (DL_Let _ _ (DLE_Wait _ ta)) -> interval_add_from int ta
             _ -> int
-    k' <- local (\e -> e {be_interval = int'}) $ be_s k
+    k' <- local (\e -> e
+      { be_interval = int'
+      , be_ms = (be_ms e) Seq.|> c }) $ rec k
     c'e <- withConsensus False $ ee_m c
     return $ mkCom ET_Com <$> c'e <*> k'
   LLS_Stop at ->
@@ -655,7 +671,7 @@ be_s = \case
           let delay_as = interval_from int_to
           to_s'm <-
             local (\e -> e {be_interval = int_to}) $
-              be_s to_s
+              rec to_s
           let mtime'm = Just . (,) delay_as <$> to_s'm
           return $ (int_ok, mtime'm)
     (out_vs, (ok_c'm, ok_l'm)) <-
@@ -667,9 +683,12 @@ be_s = \case
                , be_which = this_h
                })
           $ do
+            ms <- asks be_ms
+            let mst = dtList at (toList ms)
+            let mss = DL_LocalDo at mst
             fg_use $ int_ok
             fg_defn $ from_v : time_v : secs_v : msg_vs
-            be_c ok_c
+            be_c_top mss $ ok_c
     setHandler this_h $ do
       svs <- ce_readSave prev
       ok_c'' <- addVars at =<< ok_c'm
@@ -690,6 +709,8 @@ be_s = \case
           mtime' <- mtime'm
           return $ ET_ToConsensus at from_v prev (Just lct_v) this_h mfrom msg_vs out_vs time_v secs_v didSend_v mtime' ok_l'
     return $ ok_l''m
+  where
+    rec = be_s_
 
 mk_eb :: DLExportBlock -> BApp DLExportBlock
 mk_eb (DLinExportBlock at vs (DLBlock bat sf ll a)) = do
@@ -718,6 +739,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das devts s) = do
   let be_views = mempty
   be_view_setsr <- newIORef mempty
   let be_inConsensus = False
+  let be_ms = mempty
   mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
   api_info <- liftIO $ readIORef be_api_info
   check_view_sets =<< readIORef be_view_setsr
