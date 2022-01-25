@@ -121,6 +121,8 @@ cdot () {
 
 #######
 
+REACH_DEBUG=Y c examples/rps-7-array/index.rsh
+exit 0
 REACH_DEBUG=Y c users/algo-govt/index.rsh
 exit 0
 c hs/t/y/floatOpt.rsh

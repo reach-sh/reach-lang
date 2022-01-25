@@ -2582,7 +2582,7 @@ evalPrim p sargs =
               (ans_dv, ans_dsv) <- make_dlvar at t
               let f_bl = DLSBlock at [] f_lifts f_da
               saveLift $ DLS_ArrayMap at ans_dv x_da a_dv i_dv f_bl
-              return $ (lvl, ans_dsv)
+              return $ (f_lvl, ans_dsv)
         x : y : args' -> do
           let mindex = case withIndex of
                          True -> ",i"
