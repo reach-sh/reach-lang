@@ -684,8 +684,8 @@ slToDLV = \case
     let env'' = all_just $ map (\(k, v) -> (,) k <$> v) $ M.toList env'
     return $ DLV_Obj at . M.fromList <$> env''
   SLV_Struct at vs -> do
-    mds <- mapM slToDLV $ M.fromList vs
-    let mds' = all_just $ map (\(k, v) -> (,) k <$> v) $ M.toList mds
+    mds <- mapM (\(k, v) -> (,) k <$> slToDLV v) vs
+    let mds' = all_just $ map (\(k, v) -> (,) k <$> v) mds
     return $ DLV_Struct at <$> mds'
   SLV_Data at dt vn sv -> do
     msv <- slToDLV sv

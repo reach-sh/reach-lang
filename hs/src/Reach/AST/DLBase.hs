@@ -414,6 +414,7 @@ data DLArgExpr
   | DLAE_Data (M.Map SLVar DLType) String DLArgExpr
   | DLAE_Struct [(SLVar, DLArgExpr)]
   | DLAE_Bytes B.ByteString
+  deriving (Show)
 
 argExprToArgs :: DLArgExpr -> [DLArg]
 argExprToArgs = \case

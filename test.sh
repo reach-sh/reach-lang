@@ -121,7 +121,7 @@ cdot () {
 
 #######
 
-REACH_DEBUG=Y c examples/rps-7-array/index.rsh
+REACH_DEBUG=Y c hs/t/y/structObj.rsh
 exit 0
 REACH_DEBUG=Y c users/algo-govt/index.rsh
 exit 0
