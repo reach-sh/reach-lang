@@ -411,9 +411,11 @@ instance SrcLocOf SLVal where
     SLV_Map _ -> sb
     SLV_Deprecated _ v -> srclocOf v
 
-isLiteralArray :: SLVal -> Bool
-isLiteralArray (SLV_Array {}) = True
-isLiteralArray _ = False
+isSmallLiteralArray :: SLVal -> Bool
+isSmallLiteralArray (SLV_Array _ _ l) =
+  -- Why this number!?
+  length l <= 2
+isSmallLiteralArray _ = False
 
 newtype SLInterface = SLInterface (M.Map SLVar (SrcLoc, SLType))
   deriving (Eq, Generic)
@@ -653,7 +655,7 @@ data SLPrimitive
   | SLPrim_array_length
   | SLPrim_array_set
   | SLPrim_array_concat
-  | SLPrim_array_map
+  | SLPrim_array_map Bool
   | SLPrim_array_reduce
   | SLPrim_array_zip
   | SLPrim_Struct

@@ -543,16 +543,10 @@ export const Array_find1 = (a) => (p) =>
   Array_find(a, p);
 
 export const Array_withIndex = (a) =>
-  Array.zip(a, Array.iota(a.length));
+  Array.mapWithIndex(a, (e, i) => [e, i]);
 
 export const Array_withIndex1 = (a) => () =>
   Array_withIndex(a);
-
-export const Array_mapWithIndex = (a, f) =>
-  a.withIndex().map(([e, idx]) => f(e, idx));
-
-export const Array_mapWithIndex1 = (a) => (f) =>
-  Array_mapWithIndex(a, f);
 
 export const Array_reduceWithIndex = (a, inita, f) =>
   a.reduce([inita, 0], ([acc, idx], e) => [f(acc, e, idx), idx+1])[0];

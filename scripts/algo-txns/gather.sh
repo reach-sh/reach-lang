@@ -20,5 +20,5 @@ year () {
   done
 }
 
-year 2020
-year 2021
+month 2021 11
+month 2021 12

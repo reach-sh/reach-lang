@@ -119,9 +119,9 @@ instance Unroll DLStmt where
     DL_Set at v a -> return $ DL_Set at v a
     DL_LocalIf at c t f -> DL_LocalIf at c <$> ul t <*> ul f
     DL_LocalSwitch at ov csm -> DL_LocalSwitch at ov <$> ul csm
-    DL_ArrayMap at ans x a fb -> do
+    DL_ArrayMap at ans x a i fb -> do
       (_, x') <- ul_explode at x
-      r' <- mapM (\xa -> fu_ fb [(a, xa)]) x'
+      r' <- zipWithM (\xa iv -> fu_ fb [(a, xa), (i, (DLA_Literal $ DLL_Int at iv))]) x' [0..]
       let r_ty = arrType $ varType ans
       return $ DL_Let at (DLV_Let DVC_Many ans) (DLE_LArg at $ DLLA_Array r_ty r')
     DL_ArrayReduce at ans x z b a fb -> do

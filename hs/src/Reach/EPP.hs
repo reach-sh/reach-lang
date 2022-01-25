@@ -379,13 +379,13 @@ be_m = \case
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
-  DL_ArrayMap at ans x a f -> do
-    fg_defn $ [ans, a]
+  DL_ArrayMap at ans x a i f -> do
+    fg_defn $ [ans, a, i]
     fg_use $ x
     be_bl f
       >>= retb
         (\f' ->
-           return $ DL_ArrayMap at ans x a f')
+           return $ DL_ArrayMap at ans x a i f')
   DL_ArrayReduce at ans x z b a f -> do
     fg_defn $ [ans, b, a]
     fg_use $ [x, z]

@@ -564,14 +564,14 @@ instance Interp DLStmt where
         ev <- interp expr
         addToStore var ev
         return V_Null
-    DL_ArrayMap _at var1 arg var2 block -> do
-      arr' <- vArray <$> interp arg
-      let f =
-            (\x val -> do
-               addToStore x val
-               interp block)
-      res <- V_Array <$> mapM (\val -> f var2 val) arr'
-      addToStore var1 res
+    DL_ArrayMap _at ans x a i f -> do
+      arr' <- vArray <$> interp x
+      let f' av iv = do
+            addToStore a av
+            addToStore i $ V_UInt iv
+            interp f
+      res <- V_Array <$> zipWithM f' arr' [0..]
+      addToStore ans res
       return V_Null
     DL_ArrayReduce _at var1 arg1 arg2 var2 var3 block -> do
       acc <- interp arg1

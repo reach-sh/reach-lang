@@ -95,8 +95,8 @@ instance Sanitize DLStmt where
   sani = \case
     DL_Nop _ -> DL_Nop sb
     DL_Let _ x e -> DL_Let sb (sani x) (sani e)
-    DL_ArrayMap _ a b c d ->
-      DL_ArrayMap sb a (sani b) c (sani d)
+    DL_ArrayMap _ a b c d e ->
+      DL_ArrayMap sb a (sani b) c d (sani e)
     DL_ArrayReduce _ a b c d e f ->
       DL_ArrayReduce sb a (sani b) (sani c) d e (sani f)
     DL_Var _ v -> DL_Var sb v

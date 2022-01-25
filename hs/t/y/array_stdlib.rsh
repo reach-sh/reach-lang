@@ -19,6 +19,7 @@ export const main =
         assert(Array.or(array(Bool, [true, false])));
         assert(a.includes(2));
         assert(!a.includes(322));
+        assert(a.mapWithIndex(a, a, (x, y, z, i) => x + y - z - i).all(x => x == 0));
         assert(a.mapWithIndex((x, i) => x - i).all(x => x == 0));
         a.forEachWithIndex((x, i) => {
           assert(a[i] == x);

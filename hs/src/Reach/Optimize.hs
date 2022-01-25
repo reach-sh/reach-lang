@@ -574,9 +574,9 @@ instance Optimize DLStmt where
       optIf (DL_LocalDo at) DL_LocalIf at c t f
     DL_LocalSwitch at ov csm ->
       optSwitch (DL_LocalDo at) DT_Com DL_LocalSwitch at ov csm
-    s@(DL_ArrayMap at ans x a f) ->
+    s@(DL_ArrayMap at ans x a i f) ->
       maybeUnroll s x $
-        DL_ArrayMap at ans <$> opt x <*> (pure a) <*> opt f
+        DL_ArrayMap at ans <$> opt x <*> pure a <*> pure i <*> opt f
     s@(DL_ArrayReduce at ans x z b a f) -> maybeUnroll s x $ do
       DL_ArrayReduce at ans <$> opt x <*> opt z <*> (pure b) <*> (pure a) <*> opt f
     DL_MapReduce at mri ans x z b a f -> do
@@ -617,7 +617,7 @@ instance Optimize DLStmt where
       liftIO $ modifyIORef cr $ M.alter f v
     DL_LocalIf _ _ t f -> gcs t >> gcs f
     DL_LocalSwitch _ _ csm -> gcsSwitch csm
-    DL_ArrayMap _ _ _ _ f -> gcs f
+    DL_ArrayMap _ _ _ _ _ f -> gcs f
     DL_ArrayReduce _ _ _ _ _ _ f -> gcs f
     DL_MapReduce _ _ _ _ _ _ _ f -> gcs f
     DL_Only _ _ l -> gcs l

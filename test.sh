@@ -121,7 +121,7 @@ cdot () {
 
 #######
 
-c hs/t/y/array_stdlib.rsh
+REACH_DEBUG=Y c users/algo-govt/index.rsh
 exit 0
 c hs/t/y/floatOpt.rsh
 exit 0

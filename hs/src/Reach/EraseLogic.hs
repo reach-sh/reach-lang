@@ -76,10 +76,10 @@ instance Erase DLStmt where
               isUsed mdv >>= \case
                 False -> skip at
                 True -> keep
-    DL_ArrayMap at ans x a f ->
+    DL_ArrayMap at ans x a i f ->
       isUsedv ans >>= \case
         False -> skip at
-        True -> DL_ArrayMap at ans <$> el x <*> pure a <*> el f
+        True -> DL_ArrayMap at ans <$> el x <*> pure a <*> pure i <*> el f
     DL_ArrayReduce at ans x z b a f ->
       isUsedv ans >>= \case
         False -> skip at

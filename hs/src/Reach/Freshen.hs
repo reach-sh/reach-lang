@@ -156,12 +156,13 @@ instance Freshen DLStmt where
     DL_LocalSwitch at ov csm ->
       DL_LocalSwitch at <$> fu ov <*> fu csm
     DL_Only at who b -> DL_Only at who <$> fu b
-    DL_ArrayMap at ans x a fb -> do
+    DL_ArrayMap at ans x a i fb -> do
       x' <- fu x
       a' <- fu_v a
+      i' <- fu_v i
       fb' <- fu fb
       ans' <- fu_v ans
-      return $ DL_ArrayMap at ans' x' a' fb'
+      return $ DL_ArrayMap at ans' x' a' i' fb'
     DL_ArrayReduce at ans x z b a fb -> do
       ans' <- fu_v ans
       x' <- fu x

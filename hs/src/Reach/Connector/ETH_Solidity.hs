@@ -981,22 +981,24 @@ solCom = \case
     solIf <$> solArg ca <*> solPLTail t <*> solPLTail f
   DL_LocalSwitch at ov csm -> solSwitch solPLTail at ov csm
   DL_Only {} -> impossible $ "only in CT"
-  DL_ArrayMap _ ans x a (DLBlock _ _ f r) -> do
+  DL_ArrayMap _ ans x a i (DLBlock _ _ f r) -> do
     addMemVars $ [ans, a]
     let sz = arraySize x
     ans' <- solVar ans
     x' <- solArg x
     a' <- solVar a
+    let i' = solRawVar i
+    extendVarMap $ M.singleton i i'
     f' <- solPLTail f
     r' <- solArg r
     return $
       vsep
-        [ "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++")
+        [ "for" <+> parens ("uint256 " <> i' <> " = 0" <> semi <+> i' <> " <" <+> (pretty sz) <> semi <+> i' <> "++")
             <> solBraces
               (vsep
-                 [ a' <+> "=" <+> (solArrayRef x' "i") <> semi
+                 [ a' <+> "=" <+> (solArrayRef x' i') <> semi
                  , f'
-                 , (solArrayRef ans' "i") <+> "=" <+> r' <> semi
+                 , (solArrayRef ans' i') <+> "=" <+> r' <> semi
                  ])
         ]
   DL_ArrayReduce _ ans x z b a (DLBlock _ _ f r) -> do

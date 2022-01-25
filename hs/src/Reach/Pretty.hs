@@ -53,9 +53,9 @@ prettyContinue cont_da =
 prettyStop :: Doc
 prettyStop = "exit" <> parens (emptyDoc) <> semi
 
-prettyMap :: Pretty a => Pretty b => Pretty c => a -> b -> a -> c -> Doc
-prettyMap ans x a f =
-  "map" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty a <+> "in" <+> pretty x)
+prettyMap :: (Pretty a, Pretty b, Pretty c, Pretty d) => a -> b -> a -> c -> d -> Doc
+prettyMap ans x a i f =
+  "map" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty a <> "," <> pretty i <+> "in" <+> pretty x)
     <+> braces (nest $ hardline <> pretty f)
 
 prettyReduce :: (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f) => a -> b -> c -> d -> e -> f -> Doc

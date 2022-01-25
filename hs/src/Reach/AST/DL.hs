@@ -85,7 +85,7 @@ mkAnnot a = StmtAnnot {..}
 
 data DLSStmt
   = DLS_Let SrcLoc DLLetVar DLExpr
-  | DLS_ArrayMap SrcLoc DLVar DLArg DLVar DLSBlock
+  | DLS_ArrayMap SrcLoc DLVar DLArg DLVar DLVar DLSBlock
   | DLS_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLSBlock
   | DLS_If SrcLoc DLArg StmtAnnot DLStmts DLStmts
   | DLS_Switch SrcLoc DLVar StmtAnnot (SwitchCases DLStmts)
@@ -123,7 +123,7 @@ instance Pretty DLSStmt where
       DLS_Let _ DLV_Eff e -> pretty e <> semi
       DLS_Let _ (DLV_Let _ v) e ->
         "const" <+> pretty v <+> "=" <+> pretty e <> semi
-      DLS_ArrayMap _ ans x a f -> prettyMap ans x a f
+      DLS_ArrayMap _ ans x a i f -> prettyMap ans x a i f
       DLS_ArrayReduce _ ans x z b a f -> prettyReduce ans x z b a f
       DLS_If _ ca sa ts fs ->
         prettyIf (pretty ca <+> braces (pretty sa)) (render_dls ts) (render_dls fs)
@@ -164,7 +164,7 @@ render_dls ss = concatWith (surround hardline) $ fmap pretty ss
 instance SrcLocOf DLSStmt where
   srclocOf = \case
     DLS_Let a _ _ -> a
-    DLS_ArrayMap a _ _ _ _ -> a
+    DLS_ArrayMap a _ _ _ _ _ -> a
     DLS_ArrayReduce a _ _ _ _ _ _ -> a
     DLS_If a _ _ _ _ -> a
     DLS_Switch a _ _ _ -> a

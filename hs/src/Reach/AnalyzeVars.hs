@@ -172,7 +172,7 @@ instance FreeVars DLStmt where
   freeVars = readMMap fvMap $ \case
     DL_Nop {} -> mempty
     DL_Let _ _ e -> freeVars e
-    DL_ArrayMap _ _ x a f -> freeVars [x] <> bindsFor a f
+    DL_ArrayMap _ _ x a i f -> freeVars [x] <> bindsFor [a, i] f
     DL_ArrayReduce _ _ x z a b f -> freeVars [x, z] <> bindsFor [a, b] f
     DL_Var {} -> mempty
     DL_Set _ v a -> freeVars v <> freeVars a
@@ -186,7 +186,7 @@ instance BoundVars DLStmt where
   boundVars = readMMap bvMap $ \case
     DL_Nop {} -> mempty
     DL_Let _ lv _ -> boundVars lv
-    DL_ArrayMap _ ans _ a f -> boundVars [ans, a] <> boundVars f
+    DL_ArrayMap _ ans _ a i f -> boundVars [ans, a, i] <> boundVars f
     DL_ArrayReduce _ ans _ _ a b f -> boundVars [ans, a, b] <> boundVars f
     DL_Var _ v -> boundVars v
     DL_Set {} -> mempty

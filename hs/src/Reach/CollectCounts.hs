@@ -214,8 +214,8 @@ instance CountableK DLStmt where
   countsk kcs = \case
     DL_Nop {} -> kcs
     DL_Let _ lv e -> countsk (counts e <> kcs) lv
-    DL_ArrayMap _ ans x a f ->
-      count_rms [ans, a] (counts f <> kcs) <> counts x
+    DL_ArrayMap _ ans x a i f ->
+      count_rms [ans, a, i] (counts f <> kcs) <> counts x
     DL_ArrayReduce _ ans x z b a f ->
       count_rms [ans, b, a] (counts f <> kcs) <> counts [x, z]
     DL_Var _ v -> count_rms [v] kcs

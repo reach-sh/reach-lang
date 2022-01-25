@@ -1860,7 +1860,7 @@ cm km = \case
         store_let dv True (ce de) km
       False ->
         sallocLet dv (ce de) km
-  DL_ArrayMap at ansv aa lv (DLBlock _ _ body ra) -> do
+  DL_ArrayMap at ansv aa lv iv (DLBlock _ _ body ra) -> do
     let anssz = typeSizeOf $ argTypeOf $ DLA_Var ansv
     let (_, xlen) = argArrTypeLen aa
     check_concat_len anssz
@@ -1870,8 +1870,9 @@ cm km = \case
       cfor xlen $ \load_idx -> do
         load_ans
         doArrayRef at aa True $ Right load_idx
-        sallocLet lv (return ()) $ do
-          cp (ca ra) body
+        sallocLet lv (return ()) $
+          store_let iv True load_idx $ do
+            cp (ca ra) body
         op "concat"
         store_ans
       store_let ansv True load_ans km

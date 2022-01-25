@@ -522,13 +522,14 @@ jsCom = \case
     return $ jsIf c' t' f'
   DL_LocalSwitch at ov csm ->
     jsEmitSwitch jsPLTail at ov csm
-  DL_ArrayMap _ ans x a (DLBlock _ _ f r) -> do
+  DL_ArrayMap _ ans x a i (DLBlock _ _ f r) -> do
     ans' <- jsVar ans
     x' <- jsArg x
     a' <- jsArg $ DLA_Var a
+    i' <- jsArg $ DLA_Var i
     f' <- jsPLTail f
     r' <- jsArg r
-    return $ "const" <+> ans' <+> "=" <+> x' <> "." <> jsApply "map" [(jsApply "" [a'] <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r'))]
+    return $ "const" <+> ans' <+> "=" <+> x' <> "." <> jsApply "map" [(jsApply "" [a', i'] <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r'))]
   DL_ArrayReduce _ ans x z b a (DLBlock _ _ f r) -> do
     ans' <- jsVar ans
     x' <- jsArg x

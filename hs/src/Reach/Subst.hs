@@ -111,10 +111,10 @@ instance Subst DLStmt where
   subst = \case
     DL_Nop at -> return $ DL_Nop at
     DL_Let at v de -> DL_Let at v <$> subst de
-    DL_ArrayMap at x a v bl ->
-      DL_ArrayMap at x <$> subst a <*> pure v <*> subst bl
-    DL_ArrayReduce at x a b u v bl ->
-      DL_ArrayReduce at x <$> subst a <*> subst b <*> pure u <*> pure v <*> subst bl
+    DL_ArrayMap at ans x a i f ->
+      DL_ArrayMap at ans <$> subst x <*> pure a <*> pure i <*> subst f
+    DL_ArrayReduce at ans x z b a f ->
+      DL_ArrayReduce at ans <$> subst x <*> subst z <*> pure b <*> pure a <*> subst f
     DL_Var at v -> return $ DL_Var at v
     DL_Set at v a -> DL_Set at v <$> subst a
     DL_LocalIf at c t f -> DL_LocalIf at <$> subst c <*> subst t <*> subst f
