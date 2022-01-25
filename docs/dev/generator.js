@@ -53,10 +53,43 @@ const fail = (...args) => {
   if ( forReal ) { hasError = true; }
 };
 
+
+const languages = [
+  ...shiki.BUNDLED_LANGUAGES.map((l) => {
+    if ( l.id === 'javascript' ) {
+      l.aliases.push('mjs');
+    }
+    return l;
+  }),
+  {
+    id: 'reach',
+    scopeName: 'source.js',
+    // XXX customize this
+    path: 'languages/javascript.tmLanguage.json',
+    aliases: ['rsh'],
+  },
+];
+const languageNormalizeDict = {};
+for (const l of languages) {
+  languageNormalizeDict[l.id] = l.id;
+  for (const alias of (l.aliases || [])) {
+    languageNormalizeDict[alias] = l.id;
+  }
+}
+const documentScopes = ['h', 'term'];
+const normalizeScope = (s) => {
+  const ns = (documentScopes.includes(s) && s) || languageNormalizeDict[s];
+  if (!ns) {
+    fail(`Bad xref scope:`, s);
+  }
+  return ns;
+};
+
 const xrefs = {};
 const xrefPut = (s, t, v) => {
-  if ( ! xrefs[s] ) { xrefs[s] = {}; }
-  const e = xrefs[s][t];
+  const ns = normalizeScope(s);
+  if ( ! xrefs[ns] ) { xrefs[ns] = {}; }
+  const e = xrefs[ns][t];
   if ( e !== undefined ) {
     const es = JSON.stringify(e);
     const vs = JSON.stringify(v);
@@ -64,10 +97,14 @@ const xrefPut = (s, t, v) => {
       fail(`Duplicated xref`, s, t, e, v);
     }
   }
-  xrefs[s][t] = v;
+  xrefs[ns][t] = v;
+};
+const xrefGetMaybe = (s, t) => {
+  const ns = normalizeScope(s);
+  return (xrefs[ns] || {})[t];
 };
 const xrefGet = (s, t) => {
-  const r = (xrefs[s] || {})[t];
+  const r = xrefGetMaybe(s, t);
   if ( r === undefined ) {
     fail(`Missing xref:`, t);
     return { title: t, path: t };
@@ -187,21 +224,7 @@ const writeFileMkdir = async (p, c) => {
 const sher =
   await shiki.getHighlighter({
     theme: 'github-light',
-    langs: [
-      ...shiki.BUNDLED_LANGUAGES.map((l) => {
-        if ( l.id === 'javascript' ) {
-          l.aliases.push('mjs');
-        }
-        return l;
-      }),
-      {
-        id: 'reach',
-        scopeName: 'source.js',
-        // XXX customize this
-        path: 'languages/javascript.tmLanguage.json',
-        aliases: ['rsh'],
-      },
-    ],
+    langs: languages,
   });
 const shikiHighlight = async (code, lang) => {
   const fc = sher.codeToHtml(code, lang);
@@ -536,6 +559,22 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
   theader.remove();
 
   // Process code snippets.
+  const linkifySpans = (elem, language) => {
+    const linkifySpan = (s, language) => {
+      const text = s.textContent
+      const ref = xrefGetMaybe(language, text);
+      if (ref !== undefined) {
+        const a = doc.createElement('a');
+        a.href = ref.path;
+        a.title = ref.title;
+        a.innerHTML = s.outerHTML;
+        s.outerHTML = a.outerHTML;
+      }
+    }
+    for (const s of elem.querySelectorAll('span')) {
+      linkifySpan(s, language);
+    }
+  }
   const mkEl = (s) => doc.createRange().createContextualFragment(s);
   for (const pre of doc.querySelectorAll('pre') ) {
     const code = pre.querySelector('code');
@@ -641,6 +680,7 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     pre.classList.add('snippet');
     const shouldNumber = spec.numbered && hasSome;
     pre.classList.add(shouldNumber ? 'numbered' : 'unnumbered');
+    linkifySpans(pre, spec.language);
   }
   for (const c of doc.querySelectorAll('code') ) {
     const rt = c.textContent.trimEnd();
@@ -653,6 +693,7 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     const s = doc.createElement('span');
     s.classList.add('snip');
     s.appendChild(mkEl(hc));
+    linkifySpans(s, lang);
     c.outerHTML = s.outerHTML;
   }
 
