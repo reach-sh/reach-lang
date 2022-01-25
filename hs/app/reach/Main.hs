@@ -11,6 +11,7 @@ import Data.Aeson (FromJSON)
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A
 import Data.Bits
+import qualified Data.ByteString.Lazy as BSL
 import Data.Char
 import Data.Either
 import Data.Functor
@@ -1524,6 +1525,9 @@ hashes = command "hashes" $ info f d
       fi
     |]
 
+zulu :: AppT String
+zulu = formatShow iso8601Format <$> liftIO getCurrentTime
+
 config :: Subcommand
 config = command "config" $ info f d
   where
@@ -1538,7 +1542,7 @@ config = command "config" $ info f d
       efh <- envFileHost
       dcc <- asks e_dirConfigContainer
       dch <- asks e_dirConfigHost
-      now <- pack . formatShow iso8601Format <$> liftIO getCurrentTime
+      now <- pack <$> zulu
 
       envExists <-
         (liftIO $ doesFileExist efc) >>= \case
@@ -1868,20 +1872,30 @@ versionCompare = command "version-compare" $ info f mempty
   where
     t = mappend ("docker image ls --digests --format "
       <> "'{ \"Digest\": \"{{.Digest}}\", \"Repository\": \"{{.Repository}}\", \"Tag\": \"{{.Tag}}\" }' ")
-    q =
-      T.intercalate " && " $
-        (t <$> ("reachsh/" <>) <$> rights imagesAll)
-          <> (t <$> (T.toLower . packs) <$> [minBound .. maxBound :: ImageThirdParty])
+
+    q = T.intercalate " && \\\n" $ (t <$> ("reachsh/" <>) <$> rights imagesAll)
+      <> (t <$> (T.toLower . packs) <$> [minBound .. maxBound :: ImageThirdParty])
 
     f = g <$> switchNonInteractiveAUs
 
     g i' = scriptWithConnectorModeOptional $ do
-      Var {..} <- asks e_var
+      now <- zulu
+      Env {e_var = Var {..}, ..} <- ask
       let i = if i' then " --non-interactive" else ""
+      let confE = "_docker" </> "ils-" <> now <> ".json"
+      let confC = pack $ e_dirConfigContainer </> confE
+      let confH = pack $ e_dirConfigHost </> confE
       write [N.text|
-        Q=$$($q) # Capture errors and exit early
-        Q=$$(printf '[ %s ]' "$$Q" | tr '\n' ', ')
-        $reachEx version-compare2$i --assocL="$$Q"
+        f () {
+          $q
+        }
+
+        mkdir -p "$$(dirname $confH)"
+        echo '['  > $confH
+        f | paste -s -d ' ' - | sed 's/} {/},\n{/g' >> $confH
+        echo ']' >> $confH
+
+        $reachEx version-compare2$i --ils="$confC"
       |]
 
 -- TODO `reach-cli` only cares about `latest`
@@ -1890,14 +1904,15 @@ versionCompare2 = command "version-compare2" $ info f mempty
   where
     f = g
       <$> switchNonInteractiveAUs
-      <*> strOption (long "assocL" <> internal)
+      <*> strOption (long "ils" <> internal)
     g ni l = do
       Env {e_var = Var {..}, ..} <- ask
-      assocL <- case A.eitherDecode' l of
+      assocL <- (liftIO $ A.eitherDecodeFileStrict' l) >>= \case
         Left e -> liftIO $ do
+          u <- liftIO $ BSL.readFile l
           let x = "docker-digests-parse-fail.txt"
           T.writeFile (e_dirTmpContainer </> x) . toStrict $
-            "Unparsed input: " <> decodeUtf8 l <> "\n" <> pShowNoColor e
+            "Unparsed input: " <> decodeUtf8 u <> "\n" <> pShowNoColor e
           putStrLn "Failed to parse local Docker image digests."
           T.putStrLn $
             "Please open an issue at " <> uriIssues
@@ -1926,6 +1941,7 @@ versionCompare2 = command "version-compare2" $ info f mempty
                 _ -> Nothing
               Just (dr, dils_Digest, dt dils_Tag)
 
+      liftIO $ removeFile l
       assocR <- remoteDockerAssocFor imagesAll
 
       -- Treat remote tags as unique and authoritative, but local tags might be
