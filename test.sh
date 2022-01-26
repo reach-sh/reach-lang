@@ -121,12 +121,8 @@ cdot () {
 
 #######
 
-REACH_DEBUG=Y c users/algo-govt/index.rsh
-exit 0
-
 jb
-ci ALGO ttt
-ci ALGO rps-7-array
+ci ALGO algo-try-csp
 exit 0
 
 c hs/t/y/floatOpt.rsh
