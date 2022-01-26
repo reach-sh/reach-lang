@@ -251,6 +251,7 @@ instance Pretty DLSBlock where
 
 data DLOpts = DLOpts
   { dlo_verifyArithmetic :: Bool
+  , dlo_untrustworthyMaps :: Bool
   , dlo_verifyPerConnector :: Bool
   , dlo_connectors :: [T.Text]
   , dlo_counter :: Counter

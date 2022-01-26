@@ -68,7 +68,11 @@ data Env = Env
   , eDroppedAsserts :: Counter
   , eConst :: S.Set DLVar
   , eMaps :: DLMapInfos
+  , eClearMaps :: Bool
   }
+
+updateClearMaps :: Bool -> Env -> Env
+updateClearMaps b e = e { eClearMaps = b }
 
 getMapTy :: DLMVar -> App (Maybe DLType)
 getMapTy mpv = do
@@ -171,6 +175,13 @@ rewrite :: DLVar -> (DLVar, Maybe DLArg) -> App ()
 rewrite v r = do
   updateLookup (\cenv -> cenv {ceReplaced = M.insert v r (ceReplaced cenv)})
 
+updateLookupWhen :: (Focus -> Bool) -> (CommonEnv -> CommonEnv) -> App ()
+updateLookupWhen writeHuh up = do
+  Env {..} <- ask
+  let update1 (f, cenv) = (f, (if writeHuh f then up else id) cenv)
+  let update = M.fromList . (map update1) . M.toList
+  liftIO $ modifyIORef eEnvsR update
+
 updateLookup :: (CommonEnv -> CommonEnv) -> App ()
 updateLookup up = do
   Env {..} <- ask
@@ -185,18 +196,29 @@ updateLookup up = do
           F_All -> True
           F_Consensus -> True
           F_One _ -> f == eFocus
-  let update1 (f, cenv) = (f, (if writeHuh f then up else id) cenv)
-  let update = M.fromList . (map update1) . M.toList
-  liftIO $ modifyIORef eEnvsR update
+  updateLookupWhen writeHuh up
 
 mkEnv0 :: Counter -> Counter -> S.Set DLVar -> [SLPart] -> DLMapInfos -> IO Env
 mkEnv0 eCounter eDroppedAsserts eConst eParts eMaps = do
   let eFocus = F_Ctor
+  let eClearMaps = False
   let eEnvs =
         M.fromList $
           map (\x -> (x, mempty)) $ F_Ctor : F_All : F_Consensus : map F_One eParts
   eEnvsR <- liftIO $ newIORef eEnvs
   return $ Env {..}
+
+maybeClearMaps :: App a -> App a
+maybeClearMaps m = do
+  cm <- asks eClearMaps
+  when cm $ do
+    let clear = M.filterWithKey $ \k _ ->
+          case k of
+            DLE_MapRef {} -> False
+            _ -> True
+    updateLookupWhen (const True) $ \ce ->
+        ce {cePrev = clear $ cePrev ce}
+  m
 
 opt_v2p :: DLVar -> App (DLVar, DLArg)
 opt_v2p v = do
@@ -658,7 +680,7 @@ instance Optimize LLConsensus where
     LLC_Continue at asn ->
       LLC_Continue at <$> opt asn
     LLC_FromConsensus at1 at2 s ->
-      LLC_FromConsensus at1 at2 <$> (focus_all $ opt s)
+      LLC_FromConsensus at1 at2 <$> (maybeClearMaps $ focus_all $ opt s)
     LLC_ViewIs at vn vk a k ->
       LLC_ViewIs at vn vk <$> opt a <*> opt k
   gcs = \case
@@ -733,7 +755,7 @@ instance Optimize LLProg where
     cs <- asks eConst
     let mis = dli_maps dli
     env0 <- liftIO $ mkEnv0 (getCounter opts) (llo_droppedAsserts opts) cs psl mis
-    local (const env0) $
+    local (const env0) $ local (updateClearMaps $ llo_untrustworthyMaps opts) $
       focus_ctor $
         LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> pure das <*> pure devts <*> opt s
   gcs (LLProg _ _ _ _ _ _ _ _ s) = gcs s
@@ -767,7 +789,7 @@ instance Optimize ETail where
     ET_Switch at ov csm ->
       optSwitch id ET_Com ET_Switch at ov csm
     ET_FromConsensus at vi fi k ->
-      ET_FromConsensus at vi fi <$> opt k
+      ET_FromConsensus at vi fi <$> (maybeClearMaps $ opt k)
     ET_ToConsensus {..} -> do
       ET_ToConsensus et_tc_at et_tc_from et_tc_prev <$> opt et_tc_lct <*> pure et_tc_which <*> opt et_tc_from_me <*> pure et_tc_from_msg <*> pure et_tc_from_out <*> pure et_tc_from_timev <*> pure et_tc_from_secsv <*> pure et_tc_from_didSendv <*> opt_mtime et_tc_from_mtime <*> opt et_tc_cons
     ET_While at asn cond body k -> optWhile (ET_While at) asn cond body k
@@ -828,8 +850,9 @@ instance Optimize EPPs where
   gcs (EPPs {..}) = gcs epps_m
 
 instance Optimize PLProg where
-  opt (PLProg at plo dli dex epps cp) =
-    PLProg at plo dli <$> opt dex <*> opt epps <*> opt cp
+  opt (PLProg at plo dli dex epps cp) = do
+    local (updateClearMaps $ plo_untrustworthyMaps plo) $
+      PLProg at plo dli <$> opt dex <*> opt epps <*> opt cp
   gcs (PLProg _ _ _ _ epps cp) = gcs epps >> gcs cp
 
 optimize_ :: (Optimize a) => Counter -> a -> IO a

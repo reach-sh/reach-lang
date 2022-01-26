@@ -505,6 +505,7 @@ df_eb (DLinExportBlock at vs b) =
 defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli dex dvs das devts k) = do
   let llo_verifyArithmetic = dlo_verifyArithmetic
+  let llo_untrustworthyMaps = dlo_untrustworthyMaps
   let llo_counter = dlo_counter
   let llo_droppedAsserts = dlo_droppedAsserts
   let opts' = LLOpts {..}

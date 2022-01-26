@@ -67,6 +67,7 @@ compile env (CompilerOpts {..}) = do
       showp "dl" dl
       unless co_stopAfterEval $ do
         ll <- linearize showp dl
+        showp "ll" ll
         ol <- bigopt (showp, "ol") ll
         -- ol <- optimize ll
         showp "ol" ol

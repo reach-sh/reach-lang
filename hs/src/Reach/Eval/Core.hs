@@ -315,6 +315,7 @@ app_default_opts :: Counter -> Counter -> [T.Text] -> DLOpts
 app_default_opts idxr dar cns =
   DLOpts
     { dlo_verifyArithmetic = False
+    , dlo_untrustworthyMaps = False
     , dlo_verifyPerConnector = False
     , dlo_connectors = cns
     , dlo_counter = idxr
@@ -326,6 +327,7 @@ app_options :: M.Map SLVar (DLOpts -> SLVal -> Either String DLOpts)
 app_options =
   M.fromList
     [ ("verifyArithmetic", opt_bool (\opts b -> opts {dlo_verifyArithmetic = b}))
+    , ("untrustworthyMaps", opt_bool (\opts b -> opts {dlo_untrustworthyMaps = b}))
     , ("verifyPerConnector", opt_bool (\opts b -> opts {dlo_verifyPerConnector = b}))
     , ("connectors", opt_connectors)
     ]

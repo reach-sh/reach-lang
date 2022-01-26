@@ -291,6 +291,7 @@ instance Pretty EPPs where
 
 data PLOpts = PLOpts
   { plo_verifyArithmetic :: Bool
+  , plo_untrustworthyMaps :: Bool
   , plo_counter :: Counter
   }
   deriving (Generic, Eq)

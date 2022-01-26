@@ -121,6 +121,30 @@ cdot () {
 
 #######
 
+c examples/algo-try-csp/index.rsh
+c examples/api-map/index.rsh
+c examples/map-any/index.rsh
+c examples/map-big/index.rsh
+c examples/map-multi/index.rsh
+c examples/map-rwrw/index.rsh
+c examples/map-sender/index.rsh
+c examples/map-simpl/index.rsh
+c examples/map-vary/index.rsh
+c examples/mapOpt/index.rsh
+c examples/raffle/index.rsh
+c examples/rent-seeking/index.rsh
+c examples/view-map/index.rsh
+fc hs/t/n/Err_App_InvalidOption.rsh
+c hs/t/y/algorealm2.rsh
+c hs/t/y/enthuGuy4.rsh
+c hs/t/y/indexer.rsh
+c hs/t/y/map-mt.rsh
+c hs/t/y/merit-badge.rsh
+c hs/t/y/pr-671006.rsh
+c hs/t/y/pr138.rsh
+exit 0
+
+REACH_DEBUG=Y c examples/algo-try-csp/index.rsh
 jb
 ci ALGO algo-try-csp
 exit 0

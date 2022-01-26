@@ -1,7 +1,8 @@
 'reach 0.1';
 
 const MUInt = Maybe(UInt);
-export const main = Reach.App(() => {
+const makeMain = (untrustworthyMaps) => Reach.App(() => {
+  setOptions({ untrustworthyMaps });
   const common = {
     get: Fun([UInt], UInt),
   };
@@ -25,9 +26,19 @@ export const main = Reach.App(() => {
     const b = declassify(interact.get(2));
   });
   A.publish(b);
-  require(m[A] == MUInt.Some(ap));
+  if ( untrustworthyMaps ) {
+    possible(m[A] == MUInt.None(), "m[A] is unknown");
+    possible(m[A] == MUInt.Some(forall(UInt)), "m[A] is unknown");
+    possible(m[A] == MUInt.Some(ap), "m[A] is unknown");
+  } else {
+    assert(! isNone(m[A]), "m[A] isn't None");
+    assert(m[A] == MUInt.Some(ap), "m[A] is Some(ap)");
+  }
   delete m[A];
   commit();
 
   exit();
 });
+
+export const main = makeMain(true);
+export const highTrust = makeMain(false);

@@ -773,5 +773,6 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das devts s) = do
   pps <- EPPs das <$> mapWithKeyM mkep sps_ies
   -- Step 4: Generate the final PLProg
   let plo_verifyArithmetic = llo_verifyArithmetic
+  let plo_untrustworthyMaps = llo_untrustworthyMaps
   let plo_counter = llo_counter
   return $ PLProg at (PLOpts {..}) dli dex' pps cp

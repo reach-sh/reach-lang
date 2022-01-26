@@ -169,6 +169,7 @@ instance Pretty SMTMapRecordUpdate where
 
 data SMTCtxt = SMTCtxt
   { ctxt_smt :: Solver
+  , ctxt_untrustworthyMaps :: Bool
   , ctxt_idx :: Counter
   , ctxt_smt_con :: SrcLoc -> DLConstant -> SExpr
   , ctxt_typem :: SMTTypeMap
@@ -1286,7 +1287,10 @@ smt_n = \case
     mapM_ (ctxtNewScope . go) [(True, t), (False, f)]
   LLC_Switch at ov csm ->
     smtSwitch SM_Consensus at ov csm smt_n
-  LLC_FromConsensus _ _ s -> smt_s s
+  LLC_FromConsensus at _ s -> do
+    um <- asks ctxt_untrustworthyMaps
+    when um $ smtMapRefresh at
+    smt_s s
   LLC_While at asn inv cond body k ->
     mapM_ ctxtNewScope [before_m, loop_m, after_m]
     where
@@ -1567,6 +1571,7 @@ _verify_smt mc ctxt_vst smt lp = do
   let ctxt_modem = Nothing
   let ctxt_smt = smt
   let ctxt_idx = llo_counter
+  let ctxt_untrustworthyMaps = llo_untrustworthyMaps
   let ctxt_pay_amt = Nothing
   ctxt_smt_trace <- newIORef mempty
   flip runReaderT (SMTCtxt {..}) $ do

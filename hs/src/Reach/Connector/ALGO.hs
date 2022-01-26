@@ -2332,6 +2332,8 @@ compile_algo env disp pl = do
         readIORef eOutputR
   let bad' = bad_io sFailuresR
   let warn' = bad_io sWarningsR
+  unless (plo_untrustworthyMaps || null sMapKeysl) $ do
+    warn' $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
   totalLenR <- newIORef (0 :: Integer)
   let addProg lab showCost m = do
         ts <- run m

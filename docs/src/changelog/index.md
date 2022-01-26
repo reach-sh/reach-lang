@@ -7,6 +7,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.8 is the current Reach release candidate version.
 
++ 2022/01/26: Add `{!rsh} untrustworthyMaps}` option to `{!rsh} setOptions`.
 + 2022/01/25: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/01/24: Added `{!rsh} Array.forEachWithIndex`.
 + 2022/01/20: Added `{!rsh} check`.
