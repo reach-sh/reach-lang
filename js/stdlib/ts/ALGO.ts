@@ -139,6 +139,7 @@ export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   mapDataSize: number,
   mapDataKeys: number,
   unsupported: Array<string>,
+  warnings: Array<string>,
 }}};
 type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
@@ -472,10 +473,13 @@ const replaceAll = (orig: string, what: string, whatp: string): string => {
 
 function must_be_supported(bin: Backend) {
   const algob = bin._Connectors.ALGO;
-  const { unsupported } = algob;
+  const { unsupported, warnings } = algob;
+  const render = (x: string[]) => x.map(s => ` * ${s}`).join('\n');
+  if ( warnings.length > 0 ) {
+    console.error(`This Reach application is dangerous to run on Algorand for the following reasons:\n${render(warnings)}`);
+  }
   if ( unsupported.length > 0 ) {
-    const reasons = unsupported.map(s => ` * ${s}`).join('\n');
-    throw Error(`This Reach application is not supported on Algorand for the following reasons:\n${reasons}`);
+    throw Error(`This Reach application is not supported on Algorand for the following reasons:\n${render(unsupported)}`);
   }
 }
 

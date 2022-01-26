@@ -389,8 +389,10 @@ itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
 btoi :: BS.ByteString -> Integer
 btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
 
-checkCost :: Disp -> Bool -> [TEAL] -> IO ()
-checkCost disp alwaysShow ts = do
+type Warn = LT.Text -> IO ()
+
+checkCost :: Warn -> Disp -> Bool -> [TEAL] -> IO ()
+checkCost warning disp alwaysShow ts = do
   let mkg :: IO (IORef (LPGraph String))
       mkg = newIORef mempty
   cost_gr <- mkg
@@ -472,10 +474,6 @@ checkCost disp alwaysShow ts = do
         "b^" -> recCost 6
         "b~" -> recCost 4
         _ -> recCost 1
-  let whenl x e =
-        case x of
-          True -> [e]
-          False -> []
   let showNice x = lTop <> h x
         where
           h = \case
@@ -486,25 +484,23 @@ checkCost disp alwaysShow ts = do
         (gs, p, c) <- longestPathBetween cg lTop (l2s lBot)
         let msg = "This program could use " <> show c <> " " <> units
         let tooMuch = fromIntegral c > algoMax
-        let cs = (whenl tooMuch $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n")
+        when tooMuch $
+          warning $ LT.pack $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n"
         void $ disp ("." <> lab <> ".dot") $ s2t $ "// This file is in the DOT file format. Upload or copy it into a Graphviz engine, such as https://dreampuf.github.io/GraphvizOnline\n" <> gs
-        return (msg, tooMuch, cs)
-  (showCost, exceedsCost, csCost) <- analyze "cost" cost_gr "units of cost" algoMaxAppProgramCost
-  (showLogLen, exceedsLogLen, csLogLen) <- analyze "log" logLen_gr "bytes of logs" algoMaxLogLen
-  let cs = csCost <> csLogLen
-  unless (null cs) $
-    emitWarning Nothing $ W_ALGOConservative cs
+        return (msg, tooMuch)
+  (showCost, exceedsCost) <- analyze "cost" cost_gr "units of cost" algoMaxAppProgramCost
+  (showLogLen, exceedsLogLen) <- analyze "log" logLen_gr "bytes of logs" algoMaxLogLen
   let exceeds = exceedsCost || exceedsLogLen
   when (alwaysShow && not exceeds) $ do
     putStrLn $ "Conservative analysis on Algorand found:"
     putStrLn $ " * " <> showCost <> "."
     putStrLn $ " * " <> showLogLen <> "."
 
-optimizeAndRender :: Disp -> Bool -> TEALs -> IO T.Text
-optimizeAndRender disp showCost ts = do
+optimizeAndRender :: Warn -> Disp -> Bool -> TEALs -> IO T.Text
+optimizeAndRender warning disp showCost ts = do
   let tscl = DL.toList ts
   let tscl' = optimize tscl
-  checkCost disp showCost tscl'
+  checkCost warning disp showCost tscl'
   ilvlr <- newIORef $ 0
   tsl' <- mapM (render ilvlr) tscl'
   let lts = tealVersionPragma : (map LT.unwords tsl')
@@ -514,6 +510,7 @@ optimizeAndRender disp showCost ts = do
 
 data Shared = Shared
   { sFailuresR :: IORef (S.Set LT.Text)
+  , sWarningsR :: IORef (S.Set LT.Text)
   , sCounter :: Counter
   , sStateSizeR :: IORef Integer
   , sMaps :: DLMapInfos
@@ -2296,6 +2293,7 @@ compile_algo env disp pl = do
   let sMaps = dli_maps dli
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty
+  sWarningsR <- newIORef mempty
   sResources <- newResourceGraph
   let sMapDataTy = mapDataTy sMaps
   let sMapDataSize = typeSizeOf sMapDataTy
@@ -2333,11 +2331,12 @@ compile_algo env disp pl = do
         flip runReaderT (Env {..}) m
         readIORef eOutputR
   let bad' = bad_io sFailuresR
+  let warn' = bad_io sWarningsR
   totalLenR <- newIORef (0 :: Integer)
   let addProg lab showCost m = do
         ts <- run m
         let disp' = disp . (lab <>)
-        t <- optimizeAndRender disp' showCost ts
+        t <- optimizeAndRender warn' disp' showCost ts
         tf <- disp (lab <> ".teal") t
         tbs <- compileTEAL tf
         modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
@@ -2450,7 +2449,7 @@ compile_algo env disp pl = do
     code "b" ["updateState"]
   -- Clear state is never allowed
   addProg "appClear" False $ do
-    cbool False
+    return ()
   checkResources bad' =<< readIORef sResources
   stateSize <- readIORef sStateSizeR
   void $ recordSizeAndKeys "state" stateSize algoMaxGlobalSchemaEntries_usable
@@ -2462,12 +2461,14 @@ compile_algo env disp pl = do
     M.insert "extraPages" $
       Aeson.Number $ fromIntegral $ extraPages
   sFailures <- readIORef sFailuresR
-  modifyIORef resr $
-    M.insert "unsupported" $
-      aarray $
-        S.toList $ S.map (Aeson.String . LT.toStrict) sFailures
-  unless (null sFailures) $ do
-    emitWarning Nothing $ W_ALGOUnsupported $ S.toList $ S.map LT.unpack sFailures
+  sWarnings <- readIORef sWarningsR
+  let wss w lab ss = do
+        unless (null ss) $
+          emitWarning Nothing $ w $ S.toList $ S.map LT.unpack ss
+        modifyIORef resr $ M.insert lab $
+          aarray $ S.toList $ S.map (Aeson.String . LT.toStrict) ss
+  wss W_ALGOUnsupported "unsupported" sFailures
+  wss W_ALGOConservative "warnings" sWarnings
   let apiSigs = M.keys ai_sm
   modifyIORef resr $
     M.insert "ABI" $
