@@ -99,7 +99,7 @@ const renderObjects = async (nodeId) => {
     ${obs}
     <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals</button>
     <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals</button>
-    <li></li> 
+    <li></li>
   </ul>
   `
   bindObjDetailsEvents();
@@ -525,24 +525,24 @@ const clickNode = async (evt) => {
   renderObjects(nodeId)
 }
 
-const actionsBtn = document.querySelector("#actionsButton")
-const actions = async () => {
-  let s = parseInt(document.querySelector("#actionsForState").value)
-  let a = parseInt(document.querySelector("#actionsForActor").value)
-  let r = await c.getActions(s,a)
-  appendToLog(JSON.stringify(r,null,2))
-  jsonLog.push(["getActions",s,a])
-}
-actionsBtn.addEventListener("click",actions)
+// const actionsBtn = document.querySelector("#actionsButton")
+// const actions = async () => {
+//   let s = parseInt(document.querySelector("#actionsForState").value)
+//   let a = parseInt(document.querySelector("#actionsForActor").value)
+//   let r = await c.getActions(s,a)
+//   appendToLog(JSON.stringify(r,null,2))
+//   jsonLog.push(["getActions",s,a])
+// }
+// actionsBtn.addEventListener("click",actions)
 
 
-const statesBtn = document.querySelector("#statesButton")
-const states = async () => {
-  let r = await c.getStates()
-  appendToLog(r)
-  jsonLog.push(["getStates"])
-}
-statesBtn.addEventListener("click",states)
+// const statesBtn = document.querySelector("#statesButton")
+// const states = async () => {
+//   let r = await c.getStates()
+//   appendToLog(r)
+//   jsonLog.push(["getStates"])
+// }
+// statesBtn.addEventListener("click",states)
 
 
 // const statusBtn = document.querySelector("#statusButton")
@@ -554,18 +554,18 @@ statesBtn.addEventListener("click",states)
 // statusBtn.addEventListener("click",status)
 
 
-const respondBtn = document.querySelector("#respondButton")
-const respond = async () => {
-  let s = parseInt(document.querySelector("#resForState").value)
-  let a = parseInt(document.querySelector("#resForAction").value)
-  let v = parseInt(document.querySelector("#resForVal").value)
-  let w = parseInt(document.querySelector("#resForActor").value)
-  let r = await c.respondWithVal(s,a,v,w)
-  appendToLog(r)
-  redraw()
-  jsonLog.push(["respondWithVal",s,a,v,w])
-}
-respondBtn.addEventListener("click",respond)
+// const respondBtn = document.querySelector("#respondButton")
+// const respond = async () => {
+//   let s = parseInt(document.querySelector("#resForState").value)
+//   let a = parseInt(document.querySelector("#resForAction").value)
+//   let v = parseInt(document.querySelector("#resForVal").value)
+//   let w = parseInt(document.querySelector("#resForActor").value)
+//   let r = await c.respondWithVal(s,a,v,w)
+//   appendToLog(r)
+//   redraw()
+//   jsonLog.push(["respondWithVal",s,a,v,w])
+// }
+// respondBtn.addEventListener("click",respond)
 
 
 const initForBtn = document.querySelector("#initForButton")
