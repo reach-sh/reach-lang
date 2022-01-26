@@ -68,6 +68,10 @@ const renderObjects = async (nodeId) => {
     const who = v.l_who ? v.l_who : 'Consensus'
     actorSet[k] = who
   }
+  let actors = ``
+  for (const [k,v] of Object.entries(actorSet)) {
+    actors = actors + `<option value="${k}">${v}</option>`
+  }
   for (const [k,v] of Object.entries(r.l_locals)) {
     const who = v.l_who ? v.l_who : 'Consensus'
     let status = 'Initial'
@@ -99,6 +103,12 @@ const renderObjects = async (nodeId) => {
     ${obs}
     <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals</button>
     <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals</button>
+    <div class="d-flex justify-content-center">
+      <select name="actors" id="actors-spa-select">
+        ${actors}
+      </select>
+      <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Init For Actor</button>
+    </div>
     <li></li>
   </ul>
   `
@@ -129,6 +139,19 @@ const bindObjDetailsEvents = () => {
     jsonLog.push(["getStateGlobals",nodeId])
   }
   globalsBtn.addEventListener("click",globals)
+
+  const initForBtn = document.querySelector("#initForButton")
+  const initFor = async (evt) => {
+    const tgt = evt.target.closest("#initForButton")
+    const nodeId = tgt.dataset.nodeId
+    let e = document.querySelector("#actors-spa-select");
+    let selectedActorId = e.value;
+    let r = await c.initFor(nodeId,selectedActorId)
+    appendToLog(r)
+    redraw()
+    jsonLog.push(["initFor",nodeId,selectedActorId])
+  }
+  initForBtn.addEventListener("click",initFor)
 }
 
 const renderObjectDetails = async (evt) => {
@@ -525,61 +548,6 @@ const clickNode = async (evt) => {
   renderObjects(nodeId)
 }
 
-// const actionsBtn = document.querySelector("#actionsButton")
-// const actions = async () => {
-//   let s = parseInt(document.querySelector("#actionsForState").value)
-//   let a = parseInt(document.querySelector("#actionsForActor").value)
-//   let r = await c.getActions(s,a)
-//   appendToLog(JSON.stringify(r,null,2))
-//   jsonLog.push(["getActions",s,a])
-// }
-// actionsBtn.addEventListener("click",actions)
-
-
-// const statesBtn = document.querySelector("#statesButton")
-// const states = async () => {
-//   let r = await c.getStates()
-//   appendToLog(r)
-//   jsonLog.push(["getStates"])
-// }
-// statesBtn.addEventListener("click",states)
-
-
-// const statusBtn = document.querySelector("#statusButton")
-// const status = async () => {
-//   let r = await c.getStatus()
-//   appendToLog(r)
-//   jsonLog.push(["getStatus"])
-// }
-// statusBtn.addEventListener("click",status)
-
-
-// const respondBtn = document.querySelector("#respondButton")
-// const respond = async () => {
-//   let s = parseInt(document.querySelector("#resForState").value)
-//   let a = parseInt(document.querySelector("#resForAction").value)
-//   let v = parseInt(document.querySelector("#resForVal").value)
-//   let w = parseInt(document.querySelector("#resForActor").value)
-//   let r = await c.respondWithVal(s,a,v,w)
-//   appendToLog(r)
-//   redraw()
-//   jsonLog.push(["respondWithVal",s,a,v,w])
-// }
-// respondBtn.addEventListener("click",respond)
-
-
-const initForBtn = document.querySelector("#initForButton")
-const initFor = async () => {
-  let s = parseInt(document.querySelector("#initForState").value)
-  let a = parseInt(document.querySelector("#initForActor").value)
-  let r = await c.initFor(s,a)
-  appendToLog(r)
-  redraw()
-  jsonLog.push(["initFor",s,a])
-}
-initForBtn.addEventListener("click",initFor)
-
-
 const initBtn = document.querySelector("#initButton")
 const init = async () => {
   let r = await c.init()
@@ -589,32 +557,6 @@ const init = async () => {
 }
 initBtn.addEventListener("click",init)
 
-//
-// const loadBtn = document.querySelector("#loadButton")
-// const load = async () => {
-//   let r = await c.load()
-//   appendToLog(r)
-//   jsonLog.push(["load"])
-// }
-// loadBtn.addEventListener("click",load)
-
-
-// const pingBtn = document.querySelector("#pingButton")
-// const ping = async () => {
-//   let r = await c.ping()
-//   appendToLog(r)
-//   jsonLog.push(["ping"])
-//
-// }
-// pingBtn.addEventListener("click",ping)
-
-// const resetBtn = document.querySelector("#resetButton")
-// const reset = async () => {
-//   let r = await c.resetServer()
-//   appendToLog(r)
-//   jsonLog.push(["reset"])
-// }
-// resetBtn.addEventListener("click",reset)
 
 const printBtn = document.querySelector("#printButton")
 const printLog = () => {
@@ -626,7 +568,6 @@ printBtn.addEventListener("click",printLog)
 const jsonBtn = document.querySelector("#inputJsonButton")
 const runJsonScript = async () => {
   let j = document.querySelector("#inputJsonScript").value
-  // await c.resetServer()
   await c.interp(JSON.parse(j))
   redraw()
 }
