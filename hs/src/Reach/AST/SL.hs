@@ -412,9 +412,10 @@ instance SrcLocOf SLVal where
     SLV_Deprecated _ v -> srclocOf v
 
 isSmallLiteralArray :: SLVal -> Bool
-isSmallLiteralArray (SLV_Array _ _ l) =
+isSmallLiteralArray (SLV_Array _ _ _l) =
+  True
   -- Why this number!?
-  length l <= 2
+  -- length l <= 2
 isSmallLiteralArray _ = False
 
 newtype SLInterface = SLInterface (M.Map SLVar (SrcLoc, SLType))
