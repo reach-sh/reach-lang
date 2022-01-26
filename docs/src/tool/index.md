@@ -2,9 +2,6 @@
 
 This document describes the `reach` tool: how to install it and how to use it.
 
-+ @{seclink("ref-install")}
-+ @{seclink("ref-usage")}
-
 # {#ref-install} Installation
 
 Reach is designed to work on POSIX systems with [make](https://en.wikipedia.org/wiki/Make_(software)), [Docker](https://www.docker.com/get-started), and [Docker Compose](https://docs.docker.com/compose/install/) installed.
@@ -30,7 +27,7 @@ You can copy this file to other repositories or move it to a directory in your `
 If you're using Windows, consult [the guide to using Reach on Windows](##guide-windows).
 :::
 
-# {#ref-usage} Usage
+# {#ref-usage} Select a version
 
 Reach has a few sub-commands, each with their own options.
 
@@ -66,7 +63,7 @@ Reach will interpret this to mean the most recent stable [major](##guide-version
 When using the semantic versioning form of `REACH_VERSION` the preceding `v` character is optional.
 In other words, `v0.1.6` is equivalent to `0.1.6`.
 
-## {#ref-usage-compile} `reach compile`
+# {#ref-usage-compile} `reach compile`
 
 You compile your Reach code by executing
 
@@ -117,7 +114,7 @@ You can create template `index.rsh` and `index.mjs` files for a simple Reach app
 $ reach init
 ```
 
-## {#ref-usage-run} `reach run`
+# {#ref-usage-run} `reach run`
 
 You can run a simple Reach application by executing
 
@@ -164,7 +161,7 @@ If either are absent, `reach run` assumes a default behavior (which may be persi
 
 The `Dockerfile` can be modified to introduce new dependencies, services, or filesystem prerequisites into your app's containerized environment, and the `package.json` file may likewise be extended to include additional libraries or make configuration changes to the resultant Node.js package.
 
-## {#ref-usage-down} `reach down`
+# {#ref-usage-down} `reach down`
 
 You can halt all Dockerized Reach apps and devnets by running
 
@@ -172,7 +169,7 @@ You can halt all Dockerized Reach apps and devnets by running
 $ reach down
 ```
 
-## {#ref-usage-scaffold} `reach scaffold`
+# {#ref-usage-scaffold} `reach scaffold`
 
 You can create templated `Dockerfile` and `package.json` files for a simple Reach app by running
 
@@ -182,7 +179,7 @@ $ reach scaffold
 
 The files created are the same as those used temporarily by `reach run`.
 
-## {#ref-usage-react} `reach react`
+# {#ref-usage-react} `reach react`
 
 You can run a simple React app by executing
 
@@ -227,7 +224,7 @@ The compiled `build/index.main.mjs` JavaScript file
 and the `'@reach-sh/stdlib'` JavaScript library
 may be used in any JavaScript project like any other JavaScript file and library, respectively.
 
-## {#ref-usage-devnet} `reach devnet`
+# {#ref-usage-devnet} `reach devnet`
 
 You can run a private Reach devnet by executing
 
@@ -246,7 +243,7 @@ The options are:
 
 + The environment variable `REACH_DEBUG` enables some additional debugging information for the Algorand devnet, which is accessible via http://localhost:9392
 
-## {#ref-usage-rpc-server} `reach rpc-server`
+# {#ref-usage-rpc-server} `reach rpc-server`
 
 The sub-command
 
@@ -278,7 +275,7 @@ It defaults to `reach-server.crt`.
 + The environment variable `REACH_RPC_TLS_PASSPHRASE` is used to determine the TLS passphrase.
 It defaults to `rpc-demo`.
 
-## {#ref-usage-rpc-run} `reach rpc-run`
+# {#ref-usage-rpc-run} `reach rpc-run`
 
 The sub-command
 
@@ -298,7 +295,7 @@ Consider this example from the @{seclink("tut-7-rpc")} tutorial:
 $ reach rpc-run python3 -u ./index.py
 ```
 
-## {#ref-usage-docker-reset} `reach docker-reset`
+# {#ref-usage-docker-reset} `reach docker-reset`
 
 You can easily kill and remove all Docker containers by executing
 
@@ -310,7 +307,7 @@ This can be a useful thing to try if your Docker containers stop responding to r
 This command is a loose approximation of "turning Docker off and on again."
 It will affect all Docker containers on your machine, not just those created by Reach.
 
-## {#ref-usage-upgrade} `reach upgrade`
+# {#ref-usage-upgrade} `reach upgrade`
 
 You can upgrade your Reach installation by executing
 
@@ -320,7 +317,7 @@ $ reach upgrade
 
 This may change the default version used by `reach` commands.
 
-## {#ref-usage-update} `reach update`
+# {#ref-usage-update} `reach update`
 
 You can update the Docker images used by your Reach installation by executing
 
@@ -330,7 +327,7 @@ $ reach update
 
 This may change the patch version used by `reach` commands.
 
-## {#ref-usage-version} `reach version`
+# {#ref-usage-version} `reach version`
 
 You can see what version of Reach you have installed by running
 
@@ -338,7 +335,7 @@ You can see what version of Reach you have installed by running
 $ reach version
 ```
 
-## {#ref-usage-hashes} `reach hashes`
+# {#ref-usage-hashes} `reach hashes`
 
 You can see which exact versions of Reach Docker images you are using by running
 
@@ -349,7 +346,7 @@ $ reach hashes
 This is more precise, but less readable, than `reach version`,
 in that each hash refers to the git commit used to build the image.
 
-## {#ref-usage-config} `reach config`
+# {#ref-usage-config} `reach config`
 
 Reach recommends tuning your default workflow settings by executing
 
