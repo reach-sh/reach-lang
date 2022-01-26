@@ -277,13 +277,19 @@ type AlgodTxn = {
 };
 
 // module-wide config
-export var customHttpEventHandler: (e: RHC.Event) => Promise<unknown> = async () => null
+let customHttpEventHandler: (e: RHC.Event) => Promise<void> = async () => undefined;
+export function setCustomHttpEventHandler(h: (e: RHC.Event) => Promise<void>): void {
+  customHttpEventHandler = h;
+}
 /**
  * @description client-side rate limiting.
  *  Setting this to any positive number will also prevent requests from being sent in parallel.
  *  Rate limiting is applied to all outgoing http requests, even if they are to different servers.
  */
-export var minMillisBetweenRequests: number = 0;
+let minMillisBetweenRequests: number = 0;
+export function setMinMillisBetweenRequests(n: number): void {
+  minMillisBetweenRequests = n;
+}
 const reqLock = new Lock();
 var currentReqNum: number | undefined = undefined;
 var currentReqLabel: string | undefined = undefined;

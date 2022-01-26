@@ -1115,6 +1115,14 @@ function unsafeGetMnemonic(acc: Account|NetworkAccount): string {
   }
 }
 
+function setMinMillisBetweenRequests() {
+  console.warn(`setMinMillisBetweenRequests is not yet implemented on this connector`);
+}
+
+function setCustomHttpEventHandler() {
+  console.warn(`setCustomHttpEventHandler is not yet implemented on this connector`);
+}
+
 // TODO: restore type ann once types are in place
 // const ethLike: EthLike = {
 const ethLike = {
@@ -1155,6 +1163,8 @@ const ethLike = {
   unsafeGetMnemonic,
   launchToken,
   reachStdlib,
+  setMinMillisBetweenRequests,
+  setCustomHttpEventHandler,
 };
 return ethLike;
 }

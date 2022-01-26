@@ -157,4 +157,6 @@ export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, Contrac
   unsafeGetMnemonic: (acc: Account) => string
   launchToken: (acc: Account, name: string, sym: string, opts?:LaunchTokenOpts) => any
   reachStdlib: Stdlib_Backend<Ty>
+  setMinMillisBetweenRequests: (n: number) => void
+  setCustomHttpEventHandler: (h: (e: any) => Promise<void>) => void
 }
