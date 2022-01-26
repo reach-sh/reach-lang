@@ -10,8 +10,8 @@ const mmbrTestEnabled = stdlib.connector === 'ALGO';
 
 if (mmbrTestEnabled) {
   console.log('mmbr test enabled');
-  stdlib.minMillisBetweenRequests = mmbr;
-  stdlib.customHttpEventHandler = (e) => {
+  stdlib.setMinMillisBetweenRequests(mmbr);
+  stdlib.setCustomHttpEventHandler((e) => {
     const now = new Date();
     console.log(now, [
       e.label,
@@ -21,7 +21,7 @@ if (mmbrTestEnabled) {
       // e.relativePath,
     ]);
     if (e.eventName === 'before') reqCount++;
-  }
+  });
 }
 
 (async () => {
