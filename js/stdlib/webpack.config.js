@@ -30,6 +30,7 @@ module.exports = {
       util: false,
       url: false,
       net: false,
+      './rpc_server': false,
     }
   },
   // More browser stuff
