@@ -126,7 +126,7 @@ export type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 8;
+const reachBackendVersion = 9;
 const reachAlgoBackendVersion = 9;
 export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,

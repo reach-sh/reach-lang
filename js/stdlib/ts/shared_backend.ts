@@ -151,6 +151,16 @@ export const mapRef = async <A>(m: LinearMap<A>, f: string): Promise<MaybeRep<A>
   return await m.ref(f);
 };
 
+export const Array_asyncMap = <A, B>(a: A[], f:((x:A, i:number) => Promise<B>)): Promise<B[]> => Promise.all(a.map(f));
+
+export const Array_asyncReduce = async <A, B>(a: A[], b:B, f:((y:B, x:A) => Promise<B>)): Promise<B> => {
+  let y = b;
+  for ( const x of a ) {
+    y = await f(y, x);
+  }
+  return y;
+};
+
 export const Array_zip = <X,Y>(x: Array<X>, y: Array<Y>): Array<[X, Y]> =>
   x.map((e, i): [X, Y] => [e, y[i]]);
 

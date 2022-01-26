@@ -529,7 +529,7 @@ jsCom = \case
     i' <- jsArg $ DLA_Var i
     f' <- jsPLTail f
     r' <- jsArg r
-    return $ "const" <+> ans' <+> "=" <+> x' <> "." <> jsApply "map" [(jsApply "" [a', i'] <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r'))]
+    return $ "const" <+> ans' <+> "=" <+> "await" <+> jsApply "stdlib.Array_asyncMap" [ x', (jsApply "async" [a', i'] <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r')) ]
   DL_ArrayReduce _ ans x z b a (DLBlock _ _ f r) -> do
     ans' <- jsVar ans
     x' <- jsArg x
@@ -538,7 +538,7 @@ jsCom = \case
     b' <- jsArg $ DLA_Var b
     f' <- jsPLTail f
     r' <- jsArg r
-    return $ "const" <+> ans' <+> "=" <+> x' <> "." <> jsApply "reduce" [(jsApply "" [b', a']) <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r'), z']
+    return $ "const" <+> ans' <+> "=" <+> "await" <+> jsApply "stdlib.Array_asyncReduce" [ x', z', (jsApply "async" [b', a']) <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r') ]
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
   DL_Only _at (Right c) l -> do
@@ -1003,7 +1003,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 8
+reachBackendVersion = 9
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ devts _)) = do

@@ -2541,6 +2541,11 @@ evalPrim p sargs =
       unless (x_sz == y_sz) $ do
         expect_ $ Err_Zip_ArraysNotEqualLength x_sz y_sz
       let sz' = x_sz
+      -- XXX this, and other uses of isSmallLiteralArray, should be revised to
+      -- do something like "try it out and see if the result is 'small'". For
+      -- example, if we have a literal array of 12 elements and we're going to
+      -- do Array.iota(12).map((_) => false), then we should unroll it (ttt
+      -- does this)
       case isSmallLiteralArray x && isSmallLiteralArray y of
         True -> do
           x_vs <- explodeTupleLike "zip" x

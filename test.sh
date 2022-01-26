@@ -122,7 +122,8 @@ cdot () {
 #######
 
 jb
-ci ALGO view-diff
+ci ALGO ttt
+ci ALGO rps-7-array
 exit 0
 
 c hs/t/y/floatOpt.rsh

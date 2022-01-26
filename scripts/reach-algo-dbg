@@ -20,6 +20,6 @@ else
   # cat "${TMP}" | jq .globals
   # cat "${TMP}" | jq .scratch
   cat "${TMP}" | jq .txngroup
-  jq -r .disasm "${TMP}" | bat -n --highlight-line "${line}"
+  jq -r .disasm "${TMP}" | bat -n --highlight-line "${line}" --pager "less -FR +${line}"
   cat "${TMP}" | jq .stack
 fi
