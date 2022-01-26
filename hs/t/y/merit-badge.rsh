@@ -1,6 +1,7 @@
 'reach 0.1';
 
 export const main = Reach.App(() => {
+  setOptions({ untrustworthyMaps: true });
   const Admin = Participant('Admin', {
     meta: Bytes(256),
     approve: Fun([Address], Bool),

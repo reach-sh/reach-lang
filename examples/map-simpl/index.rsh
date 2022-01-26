@@ -2,6 +2,7 @@
 
 const MUInt = Maybe(UInt);
 export const main = Reach.App(() => {
+  setOptions({ untrustworthyMaps: true });
   const common = {
     get: Fun([], UInt),
     check: Fun([MUInt, MUInt], Null),

@@ -5,9 +5,10 @@ const IAdministrator = {
     getNewEntry: Fun([],Address),
 }
 
-export const main = Reach.App({},
-    [ Participant('Administrator', IAdministrator) ],
-     (Admin) => {
+export const main = Reach.App(() => {
+  setOptions({ untrustworthyMaps: true });
+  const Admin = Participant('Administrator', IAdministrator);
+  init();
         Admin.publish();
 
         const registry = new Set()

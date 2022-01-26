@@ -7,25 +7,23 @@ const Common = {
   showOutcome: Fun([Address], Null),
 };
 
-export const main =
-  Reach.App(
-    {},
-    [Participant('Sponsor',
+export const main = Reach.App(() => {
+  setOptions({ untrustworthyMaps: true });
+  const Sponsor = Participant('Sponsor',
       { ...Common,
         getParams: Fun([], Object({ ticketPrice: UInt,
                                     deadline: UInt })),
         showOpen: Fun([], Null),
         showReturning: Fun([UInt], Null),
         showReturned: Fun([UInt], Null),
-      }),
-      ParticipantClass('Player',
+      });
+  const Player = ParticipantClass('Player',
       { ...Common,
         shouldBuy: Fun([UInt], Bool),
         didBuy: Fun([], Null),
         didReturn: Fun([UInt], Null),
-      }),
-    ],
-    (Sponsor, Player) => {
+      });
+  init();
       Sponsor.publish();
       commit();
       Sponsor.only(() => {

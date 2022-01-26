@@ -4,6 +4,7 @@ const MUInt = Maybe(UInt);
 const MMUInt = Maybe(MUInt);
 
 export const main = Reach.App(() => {
+  setOptions({ untrustworthyMaps: true });
   const A = Participant('Alice', {
     checkView: Fun([UInt, Address, MMUInt, MUInt], Null),
   });

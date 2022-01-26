@@ -1,5 +1,6 @@
 'reach 0.1';
 export const main = Reach.App(() => {
+  setOptions({ untrustworthyMaps: true });
   const D = Participant('D', {});
   const P = API('P', { f: Fun([Address], Bool) });
   init();

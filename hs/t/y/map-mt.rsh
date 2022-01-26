@@ -2,6 +2,7 @@
 
 const MUInt = Maybe(UInt);
 export const main = Reach.App(() => {
+  setOptions({ untrustworthyMaps: true });
   const A = Participant('Alice', {});
   init();
 

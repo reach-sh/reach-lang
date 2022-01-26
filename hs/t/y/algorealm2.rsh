@@ -1,16 +1,15 @@
 'reach 0.1';
 'use strict';
 
-export const main = Reach.App(
-  {},
-  [ Participant('Creator', {
+export const main = Reach.App(() => {
+  setOptions({ untrustworthyMaps: true });
+  const Creator = Participant('Creator', {
       benefactor: Address,
-    }),
-    ParticipantClass('Owner', {
+    });
+  const Owner = ParticipantClass('Owner', {
       claim: Fun([Address, UInt, UInt], UInt),
-    }),
-  ],
-  (Creator, Owner) => {
+    });
+  init();
     Creator.only(() => {
       const benefactor = declassify(interact.benefactor); });
     Creator.publish(benefactor);

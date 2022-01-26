@@ -3,6 +3,7 @@
 const T = Bytes(72); // should be 2 ALGO pages
 const MT = Maybe(T);
 export const main = Reach.App(() => {
+  setOptions({ untrustworthyMaps: true });
   const common = {
     get: Fun([], T),
     check: Fun(true, Null),

@@ -10,12 +10,11 @@ const ManagerI = {
   ...CommonI,
   fee: UInt };
 
-export const main = Reach.App(
-  {},
-  [ Participant('Manager', ManagerI),
-    ParticipantClass('User', UserI),
-  ],
-  (Manager, User) => {
+export const main = Reach.App(() => {
+  setOptions({ untrustworthyMaps: true });
+  const Manager = Participant('Manager', ManagerI);
+  const User = ParticipantClass('User', UserI);
+  init();
     Manager.only(() => {
       const fee = declassify(interact.fee); });
     Manager.publish(fee);
