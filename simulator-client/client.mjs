@@ -80,9 +80,9 @@ const init = async () => {
   return r
 }
 
-const respondWithVal = async (s,a,v,w=false) => {
+const respondWithVal = async (s,a,v,w=false,t='number') => {
   const who = (w || w === 0) ? `&who=${w}` : ``
-  const r = await interact('POST', `${address}/states/${s}/actions/${a}/?data=${v}${who}`)
+  const r = await interact('POST', `${address}/states/${s}/actions/${a}/?data=${v}${who}&type=${t}`)
   console.log(r)
   return r
 }

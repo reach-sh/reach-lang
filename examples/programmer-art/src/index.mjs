@@ -19,6 +19,7 @@ const noOpHandler = (evt) => {
   noop();
 }
 
+await c.resetServer()
 const rsh = await c.load()
 const hlns1 = document.createElement('script');
 const hlns2 = document.createElement('script');
@@ -96,6 +97,9 @@ const renderObjects = async (nodeId) => {
   </nav>
   <ul class="list-group list-group-flush">
     ${obs}
+    <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals</button>
+    <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals</button>
+    <li></li> 
   </ul>
   `
   bindObjDetailsEvents();
@@ -106,6 +110,25 @@ const bindObjDetailsEvents = () => {
   objectBtns.forEach((item, i) => {
     item.addEventListener("click",renderObjectDetails)
   });
+  const localsBtn = document.querySelector("#localsButton")
+  const locals = async (evt) => {
+    const tgt = evt.target.closest("#localsButton")
+    const nodeId = tgt.dataset.nodeId
+    let r = await c.getStateLocals(nodeId)
+    appendToLog(JSON.stringify(r,null,2))
+    jsonLog.push(["getStateLocals",nodeId])
+  }
+  localsBtn.addEventListener("click",locals)
+
+  const globalsBtn = document.querySelector("#globalsButton")
+  const globals = async (evt) => {
+    const tgt = evt.target.closest("#globalsButton")
+    const nodeId = tgt.dataset.nodeId
+    let r = await c.getStateGlobals(nodeId)
+    appendToLog(JSON.stringify(r,null,2))
+    jsonLog.push(["getStateGlobals",nodeId])
+  }
+  globalsBtn.addEventListener("click",globals)
 }
 
 const renderObjectDetails = async (evt) => {
@@ -429,6 +452,12 @@ const redraw = async () => {
     var duration = (1000 / size);
     var visitedMap = {};
 
+    if (size == 1) {
+      // single "frame", cancel animation
+      nodes[0].style('visibility', 'visible')
+      return;
+    }
+
     for(var index = 0; index < size; ++index){
       visitedMap[nodes[index].data('id')] = 0;
     }
@@ -496,28 +525,6 @@ const clickNode = async (evt) => {
   renderObjects(nodeId)
 }
 
-
-
-const localsBtn = document.querySelector("#localsButton")
-const locals = async () => {
-  let n = parseInt(document.querySelector("#stateLocalsFor").value)
-  let r = await c.getStateLocals(n)
-  appendToLog(JSON.stringify(r,null,2))
-  jsonLog.push(["getStateLocals",n])
-}
-localsBtn.addEventListener("click",locals)
-
-
-const globalsBtn = document.querySelector("#globalsButton")
-const globals = async () => {
-  let n = parseInt(document.querySelector("#stateGlobalsFor").value)
-  let r = await c.getStateGlobals(n)
-  appendToLog(JSON.stringify(r,null,2))
-  jsonLog.push(["getStateGlobals",n])
-}
-globalsBtn.addEventListener("click",globals)
-
-
 const actionsBtn = document.querySelector("#actionsButton")
 const actions = async () => {
   let s = parseInt(document.querySelector("#actionsForState").value)
@@ -538,13 +545,13 @@ const states = async () => {
 statesBtn.addEventListener("click",states)
 
 
-const statusBtn = document.querySelector("#statusButton")
-const status = async () => {
-  let r = await c.getStatus()
-  appendToLog(r)
-  jsonLog.push(["getStatus"])
-}
-statusBtn.addEventListener("click",status)
+// const statusBtn = document.querySelector("#statusButton")
+// const status = async () => {
+//   let r = await c.getStatus()
+//   appendToLog(r)
+//   jsonLog.push(["getStatus"])
+// }
+// statusBtn.addEventListener("click",status)
 
 
 const respondBtn = document.querySelector("#respondButton")
@@ -582,32 +589,32 @@ const init = async () => {
 }
 initBtn.addEventListener("click",init)
 
+//
+// const loadBtn = document.querySelector("#loadButton")
+// const load = async () => {
+//   let r = await c.load()
+//   appendToLog(r)
+//   jsonLog.push(["load"])
+// }
+// loadBtn.addEventListener("click",load)
 
-const loadBtn = document.querySelector("#loadButton")
-const load = async () => {
-  let r = await c.load()
-  appendToLog(r)
-  jsonLog.push(["load"])
-}
-loadBtn.addEventListener("click",load)
 
+// const pingBtn = document.querySelector("#pingButton")
+// const ping = async () => {
+//   let r = await c.ping()
+//   appendToLog(r)
+//   jsonLog.push(["ping"])
+//
+// }
+// pingBtn.addEventListener("click",ping)
 
-const pingBtn = document.querySelector("#pingButton")
-const ping = async () => {
-  let r = await c.ping()
-  appendToLog(r)
-  jsonLog.push(["ping"])
-
-}
-pingBtn.addEventListener("click",ping)
-
-const resetBtn = document.querySelector("#resetButton")
-const reset = async () => {
-  let r = await c.resetServer()
-  appendToLog(r)
-  jsonLog.push(["reset"])
-}
-resetBtn.addEventListener("click",reset)
+// const resetBtn = document.querySelector("#resetButton")
+// const reset = async () => {
+//   let r = await c.resetServer()
+//   appendToLog(r)
+//   jsonLog.push(["reset"])
+// }
+// resetBtn.addEventListener("click",reset)
 
 const printBtn = document.querySelector("#printButton")
 const printLog = () => {
@@ -619,7 +626,7 @@ printBtn.addEventListener("click",printLog)
 const jsonBtn = document.querySelector("#inputJsonButton")
 const runJsonScript = async () => {
   let j = document.querySelector("#inputJsonScript").value
-  await c.resetServer()
+  // await c.resetServer()
   await c.interp(JSON.parse(j))
   redraw()
 }

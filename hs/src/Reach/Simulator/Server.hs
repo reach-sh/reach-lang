@@ -349,7 +349,7 @@ app p srcTxt = do
     setHeaders
     s <- param "s"
     a <- param "a"
-    v :: Integer <- param "data"
+    t :: String <- param "type"
     ps <- M.fromList <$> params
     case M.lookup "who" ps of
       Nothing -> return ()
@@ -357,7 +357,14 @@ app p srcTxt = do
         case (parseParam prm) :: Either Text C.ActorId of
           Left e -> possible $ show e
           Right w -> webM $ changeActor $ fromIntegral w
-    webM $ unblockProg s a $ C.V_UInt v
+    case t of
+      "number" -> do
+        v :: Integer <- param "data"
+        webM $ unblockProg s a $ C.V_UInt v
+      "string" -> do
+        v :: String <- param "data"
+        webM $ unblockProg s a $ C.V_Bytes v
+      _ -> possible "Unexpected value type"
     json ("OK" :: String)
 
   get "/ping" $ do
