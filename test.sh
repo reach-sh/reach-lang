@@ -121,6 +121,9 @@ cdot () {
 
 #######
 
+REACH_DEBUG=Y c users/algo-govt/index.rsh
+exit 0
+
 jb
 ci ALGO ttt
 ci ALGO rps-7-array

@@ -180,7 +180,7 @@ updateLookup up = do
             case f of
               F_Ctor -> True
               F_All -> True -- False
-              F_Consensus -> False -- True -- False
+              F_Consensus -> True -- False
               F_One _ -> True
           F_All -> True
           F_Consensus -> True
@@ -519,6 +519,9 @@ optLet at x e = do
           DLE_Arg at' a'
             | canDupe a' ->
               argCase dv at' a'
+          -- DLE_LArg at' a'
+          --   | canDupe a' ->
+          --     largCase dv at' a'
           _ -> do
             let e'' = sani e'
             common <- repeated e''

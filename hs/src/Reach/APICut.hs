@@ -6,7 +6,9 @@ where
 
 import Control.Monad.Reader
 import Data.IORef
+import qualified Data.Sequence as Seq
 import qualified Data.Map.Strict as M
+import Data.Foldable
 import Data.Maybe
 import Data.Monoid
 import Generics.Deriving (Generic)
@@ -86,6 +88,8 @@ data Env = Env
   , eSeenInR :: IORef Bool
   , eWhile :: Maybe (DLBlock, ETail, ETail)
   , eCounter :: Counter
+  , eBeforeFirstTC :: Bool
+  , eConsts :: Seq.Seq DLStmt
   }
 
 class Contains a where
@@ -143,16 +147,24 @@ seek = \case
     let at = srclocOf c
     when (has interactOut c) $
       err at API_OutBeforeIn
+    Env {..} <- ask
     case has interactIn c of
-      False -> seek k
+      False -> do
+        let m = seek k
+        case eBeforeFirstTC of
+          True -> local (\e -> e { eConsts = eConsts Seq.|> c }) m
+          False -> m
       True -> do
-        Env {..} <- ask
         (liftIO $ readIORef eSeenInR) >>= \case
           False -> liftIO $ writeIORef eSeenInR True
           True -> err at API_Twice
         slurp k >>= \case
           Nothing -> err at API_NoOut
-          Just k' -> return $ Just $ ET_Com c k'
+          Just k' -> do
+            let ms = eConsts
+            let mst = dtList at (toList $ ms Seq.|> c)
+            let c' = DL_LocalDo at mst
+            return $ Just $ mkCom ET_Com c' k'
   ET_Stop _ -> return Nothing
   ET_If at c t f -> do
     t' <- seek t
@@ -184,8 +196,9 @@ seek = \case
       Nothing -> return $ Nothing
       Just t | isCut t -> return $ Just t
       Just k' -> return $ Just $ ET_FromConsensus x y z k'
-  ET_ToConsensus {..} ->
-    many seek $ et_tc_cons : fmap snd (maybeToList et_tc_from_mtime)
+  ET_ToConsensus {..} -> do
+    let noMore = local (\e -> e { eBeforeFirstTC = False })
+    many_ <$> ((:) <$> noMore (seek et_tc_cons) <*> (mapM seek $ fmap snd (maybeToList et_tc_from_mtime)))
   ET_While {..} -> do
     b' <-
       local (\e -> e {eWhile = Just (et_w_cond, et_w_body, et_w_k)}) $
@@ -310,6 +323,8 @@ apc hc eWho = \case
     eSeenOutR <- newIORef False
     let eWhile = Nothing
     let eCounter = getCounter hc
+    let eBeforeFirstTC = True
+    let eConsts = mempty
     let env0 = Env {..}
     et' <- flip runReaderT env0 $ do
       seek et >>= \case
