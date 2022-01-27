@@ -15,9 +15,6 @@
   "scripts": {
     "start": "GENERATE_SOURCEMAP=false react-scripts --max_old_space_size=4096 start"
   },
-  "eslintConfig": {
-    "extends": "react-app"
-  },
   "browserslist": {
     "production": [
       ">0.2%",
