@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200&family=Source+Sans+Pro:wght@200&family=Source+Serif+Pro:wght@200&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/styles/grayscale.min.css" integrity="sha512-l1aMiXy5BTqq3S5n9RlJZzuCPA9VV2DOxkbW8eOErdvJhTdhkKVnuJd+tjY0FA5HXrYHao64+234j2Iuuzjceg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
 </head>
 <body>
 
@@ -32,12 +33,9 @@
     <div class="row half-row">
       <div class="col-4">
         <div id="input">
-          <textarea class="form-control" id="inputJsonScript" rows="6" placeholder="Input JSON script here"></textarea>
-          <button type="button" id="inputJsonButton" class="btn btn-outline-secondary btn-sm">Run Script</button>
+          <button type="button" id="load-script" class="btn btn-outline-secondary btn-sm">Load Script <i class="bi bi-play-circle"></i></button>
+          <button type="button" id="save-script" class="btn btn-outline-secondary btn-sm">Save Script <i class="bi bi-clipboard"></i></button>
         </div>
-      </div>
-      <div class="col-4">
-        <button type="button" id="getLog" class="btn btn-outline-secondary btn-sm">Get Log</button>
       </div>
     </div>
 
