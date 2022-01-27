@@ -172,10 +172,16 @@ type AppState = {
   'id': number,
   'key-value': AppStateKVs,
 };
+type AppSchema = {
+  "num-byte-slice": number,
+  "num-uint": number
+}
 type AccountInfo = {
-  'assets'?: Array<AccountAssetInfo>,
+  'assets': Array<AccountAssetInfo>,
   'amount': number,
-  'apps-local-state'?: Array<AppState>
+  'apps-local-state': Array<AppState>
+  'apps-total-schema': AppSchema,
+  'created-apps': Array<AppInfo>
 };
 type IndexerAccountInfoRes = {
   'current-round': number,
@@ -1760,6 +1766,22 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   return stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract });
 };
 
+export const minBalance = async (acc: Account): Promise<BigNumber> => {
+  const addr = extractAddr(acc);
+  const ai = await getAccountInfo(addr);
+  let createdApps = ai['created-apps']
+  let numByteSlice = ai['apps-total-schema']['num-byte-slice']
+  let numUInt = ai['apps-total-schema']['num-uint']
+  let assets = ai.assets
+  let mBal = assets.length * 100000
+    + (25000 + 3500) * numUInt
+    + (25000 + 25000) * numByteSlice
+    + (100000) * createdApps.length
+    + 100000
+    debug(`minBalance`, mBal)
+    return bigNumberify(mBal)
+}
+
 const balanceOfM = async (acc: Account, token: Token|false = false): Promise<BigNumber|false> => {
   const addr = extractAddr(acc);
   const info = await getAccountInfo(addr);
@@ -1775,6 +1797,8 @@ const balanceOfM = async (acc: Account, token: Token|false = false): Promise<Big
     return false;
   }
 };
+
+
 
 export const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
   const r = await balanceOfM(acc, token);

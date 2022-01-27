@@ -26,13 +26,29 @@ err () {
   fc "hs/t/n/$1.rsh"
 }
 
+jbi() {
+  local i="${1}"
+  test ! -d "'${ROOT}'${i}" || {
+    (cd "${_}" && make build)
+  }
+}
+
 jb () {
+<<<<<<< HEAD
   #(cd "$ROOT"/js/js-deps && make build)
   (cd "$ROOT"/js/stdlib && make build)
   (cd "$ROOT"/js/runner && make build)
   #(cd "$ROOT"/js/rpc-server && make build)
   #(cd "$ROOT"/js/react-runner && make build)
   # (cd "$ROOT"/js && make build)
+=======
+  jbi /js/js-deps
+  jbi /js/stdlib
+  jbi /js/runner
+  #jbi /js/rpc-server
+  jbi /js/react-runner
+  #jbi /js
+>>>>>>> 60cce754d (add min balance func)
 }
 
 one () {
@@ -52,7 +68,6 @@ ci () {
   WHICH="$2"
   printf "\nCI %s %s\n" "$MODE" "$WHICH"
   (cd "examples/$WHICH"
-
   ${REACH} clean
   ${REACH} compile --intermediate-files
   make build
@@ -122,9 +137,14 @@ cdot () {
 #######
 
 #jb
-
 c users/duoswap-core/index.rsh
 c users/algo-govt/index.rsh
+jb; ci ALGO minBalance; exit 0
+cdot examples/overview/index.rsh
+cdot examples/rps-8-interact/index.rsh
+cdot users/duoswap-core/index.rsh
+exit 0
+cdot users/xbacked-contracts/src/master_vault.rsh
 exit 0
 
 c --install-pkgs users/xbacked-contracts/src/master_vault.rsh
