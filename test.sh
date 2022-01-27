@@ -69,6 +69,7 @@ ci () {
   printf "\nCI %s %s\n" "$MODE" "$WHICH"
   (cd "examples/$WHICH"
   ${REACH} clean
+  ${REACH} compile --install-pkgs
   ${REACH} compile --intermediate-files
   make build
   REACH_DEBUG=1 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
