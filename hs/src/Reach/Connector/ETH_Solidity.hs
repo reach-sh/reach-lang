@@ -666,6 +666,9 @@ solExpr sp = \case
         tok' <- solArg tok
         return $ solApply "tokenBalanceOf" [tok', "address(this)"]
     solPrimApply SUB [bal, tb']
+    -- XXX WARNING, because of evil tokens, this may fail. We could return 0
+    -- instead, but this would be a sign that we have less money than we really
+    -- do.
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract {} -> return $ "payable(address(this))"
   DLE_GetAddress {} -> return $ "payable(address(this))"

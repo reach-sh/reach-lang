@@ -1597,15 +1597,42 @@ ce = \case
   DLE_setApiDetails {} -> return ()
   DLE_GetUntrackedFunds _ mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
-    maybe cContractAddr ca mtok
-    op "balance"
-    op "dup"
-    code "bz" [after_lab]
-    maybe cContractAddr ca mtok
-    op "min_balance"
-    op "-"
-    ca tb
-    op "-"
+    case mtok of
+      Nothing -> do
+        -- []
+        cContractAddr
+        op "balance"
+        -- [ bal ]
+        cContractAddr
+        op "min_balance"
+        -- [ bal, min_bal ]
+        op "-"
+        -- [ eff_bal ]
+        ca tb
+        -- [ eff_bal, rsh_bal ]
+        op "-"
+        -- [ extra ]
+        return ()
+      Just tok -> do
+        -- XXX We have to call checkTxnUsage to make sure we are opted in
+        -- XXX We have to leave residue in the simulator (with JS.hs) so that
+        -- we can add this asset to the Assets array (in case it is not also in
+        -- the pay list)
+        when False $ do
+          cContractAddr
+          ca tok
+          code "asset_holding_get" [ "AssetBalance" ]
+          -- [ bal ]
+          ca tb
+          -- [ bal, rsh_bal ]
+          op "-"
+          -- XXX WARNING, because of Clawback, this^ may fail
+          -- What to do? Return 0? Fail? Change the interface of this so that
+          -- instead it returns a new amount (that we know nothing about)? Add
+          -- untrustworthyTokens?
+          -- [ extra ]
+          return ()
+        bad $ "GetUntrackedFunds on token"
     label after_lab
   DLE_FromSome _ mo da -> do
     ca da
