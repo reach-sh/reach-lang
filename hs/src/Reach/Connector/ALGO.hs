@@ -315,7 +315,7 @@ opt_bs = \case
     case B.length bs of
       0 -> (TBytes mempty) : opt_bs l
       32 -> opt_bs $ (TCode "global" ["ZeroAddress"]) : l
-      -- Cost is more important space
+      -- Cost is more important than space
       -- len -> opt_bs $ (TInt $ fromIntegral len) : (TCode "bzero" []) : l
       _ -> x : opt_bs l
   x : l -> x : opt_bs l
