@@ -14,39 +14,35 @@
 
 <div class="container-fluid">
 
-<div class="row half-row">
-  <div class="col-3">
+<div class="row">
+  <div class="col-4">
     <div class="bordered code-container">
       <pre class="language-javascript"><code id="cx"></code></pre>
     </div>
   </div>
-  <div class="col-4">
-    <div id="cy" class="bordered"> </div>
+  <div class="col-7">
+    <div class="row half-row">
+      <div class="col-6">
+        <div id="cy" class="bordered"> </div>
+      </div>
+      <div class="col-5">
+        <div id="spa" class="bordered"> </div>
+      </div>
+    </div>
+    <div class="row half-row">
+      <div class="col-4">
+        <div id="input">
+          <textarea class="form-control" id="inputJsonScript" rows="6" placeholder="Input JSON script here"></textarea>
+          <button type="button" id="inputJsonButton" class="btn btn-outline-secondary btn-sm">Run Script</button>
+        </div>
+      </div>
+    </div>
+
   </div>
-  <div class="col-4">
-    <div id="spa" class="bordered"> </div>
-  </div>
+
 </div>
 
-<div class="row half-row">
-  <div class="col-5"> <!-- begin form -->
-    <button type="button" id="initButton" class="btn btn-outline-secondary btn-sm">Init</button>
-    <button type="button" id="printButton" class="btn btn-outline-secondary btn-sm">Print Log</button>
-
-    <!-- end form -->
-  </div>
-  <div class="col-3">
-    <div id="input">
-      <textarea class="form-control" id="inputJsonScript" rows="10" placeholder="Input JSON script here"></textarea>
-      <button type="button" id="inputJsonButton" class="btn btn-outline-secondary btn-sm">Run Script</button>
-    </div>
-  </div>
-  <div class="col-3">
-    <div id="output"> $ welcome </div>
-  </div>
-</div> <!-- end 2nd row -->
-
-</div> <!-- container -->
+</div>
 
 
 <script type="module" src="main.js"></script>
