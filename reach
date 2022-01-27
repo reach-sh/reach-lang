@@ -66,7 +66,11 @@ fi
 
 run_d "$@"
 case "$?" in
-  42) run_s && rm -r "$TMP" ;;
+  42) run_s; case "$?" in
+    60) rm -r "$TMP" && exit 60 ;; # Updates available
+     0) rm -r "$TMP" ;;
+    esac
+    ;;
   50) docker pull "$IMG" && curl https://docs.reach.sh/reach -o "$0" && chmod +x "$0" && rm -r "$TMP" && exit 0 ;;
   60) rm -r "$TMP" && exit 60 ;; # Updates available
    0) rm -r "$TMP" ;;

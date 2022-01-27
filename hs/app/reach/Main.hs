@@ -20,6 +20,7 @@ import qualified Data.List.Extra as L
 import Data.Map.Strict ((!?))
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.String
 import Data.Text (Text, intercalate, pack, stripEnd, unpack)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -55,6 +56,9 @@ import Text.Pretty.Simple
 
 uriIssues :: Text
 uriIssues = "https://github.com/reach-sh/reach-lang/issues"
+
+uriReachScript :: IsString a => a
+uriReachScript = "https://docs.reach.sh/reach"
 
 data Effect
   = Script Text
@@ -427,7 +431,7 @@ scriptWithConnectorMode wrapped = do
 
 scriptWithConnectorModeOptional :: App -> App
 scriptWithConnectorModeOptional wrapped = do
-  rcm <- asks (connectorMode . e_var) >>= pure . maybe "" packs
+  rcm <- maybe "" packs <$> asks (connectorMode . e_var)
   mkScript rcm wrapped
 
 script :: App -> App
@@ -1780,8 +1784,8 @@ arch' = case arch of
   "x86_64" -> "amd64"
   a -> a
 
-remoteDockerAssocFor' :: FilePath -> FilePath -> Image -> ImageHost -> IO (Either ImageHostAPIFail DockerAssoc)
-remoteDockerAssocFor' tmpC tmpH img h = go
+remoteDockerAssocFor :: FilePath -> FilePath -> Image -> ImageHost -> IO (Either ImageHostAPIFail DockerAssoc)
+remoteDockerAssocFor tmpC tmpH img h = go
   where
     (go, itp) = case h of
       DockerHub ->
@@ -1836,11 +1840,27 @@ remoteDockerAssocFor' tmpC tmpH img h = go
               >>= either (pure . Left) (pure . Right . (results r' <>))
 
 -- TODO allow early escape from de-pagination when query match is found
-remoteDockerAssocFor :: [Image] -> AppT DockerAssoc
-remoteDockerAssocFor imgs = do
+remoteUpdates :: [Image] -> AppT (Text, DockerAssoc)
+remoteUpdates imgs = do
   Env {..} <- ask
-  ts <- liftIO . forConcurrently imgs $ \i ->
-    remoteDockerAssocFor' e_dirTmpContainer e_dirTmpHost i $ imageHost e_var
+  (sh, ts) <- liftIO . concurrently (httpLBS uriReachScript)
+    $ forConcurrently imgs $ \i ->
+      remoteDockerAssocFor e_dirTmpContainer e_dirTmpHost i $ imageHost e_var
+
+  let rn = "reach.new"
+  liftIO $ case getResponseStatusCode sh of
+    200 -> BSL.writeFile (e_dirTmpContainer </> rn) $ getResponseBody sh
+    _ -> do
+      let x = "reach-script-new-fail.txt"
+      T.writeFile (e_dirTmpContainer </> x) . toStrict $ pShowNoColor sh
+      putStrLn $ "Received unexpected response while fetching " <> uriReachScript <> "."
+      putStrLn $ "Please open an issue at "
+        <> unpack uriIssues
+        <> " including the contents of "
+        <> e_dirTmpHost </> x
+        <> "."
+      exitWith $ ExitFailure 1
+
   unless (all isRight ts) . liftIO $ do
     let us = [t | IHAFUnexpectedResponse t <- lefts ts]
     let rs = [(i, packs n) | (IHAFRetriesExhausted i n) <- lefts ts]
@@ -1865,7 +1885,7 @@ remoteDockerAssocFor imgs = do
           <> uriIssues
           <> " including the contents of the files listed above."
     exitWith $ ExitFailure 1
-  pure . L.foldl' M.union mempty $ rights ts
+  pure (pack $ e_dirTmpHost </> rn, L.foldl' M.union mempty $ rights ts)
 
 versionCompare :: Subcommand
 versionCompare = command "version-compare" $ info f mempty
@@ -1942,7 +1962,7 @@ versionCompare2 = command "version-compare2" $ info f mempty
               Just (dr, dils_Digest, dt dils_Tag)
 
       liftIO $ removeFile l
-      assocR <- remoteDockerAssocFor imagesAll
+      (latestScript, assocR) <- remoteUpdates imagesAll
 
       -- Treat remote tags as unique and authoritative, but local tags might be
       -- repeated due to Docker manifest strangeness
@@ -2040,13 +2060,11 @@ versionCompare2 = command "version-compare2" $ info f mempty
             then liftIO $ do
               forM_ uTags $ \(x, y) -> T.putStrLn $ "Unknown tag: " <> y <> " for image: " <> lefty x <> "."
               exitWith $ ExitFailure 1
-            else do
+            else scriptWithConnectorModeOptional $ do
               let prompt' p n y = (liftIO $ putStr ("\n" <> p <> " (Enter 'y' for yes): ")
                     >> hFlush stdout >> getLine) >>= \case
                       z | L.upper z == "Y" -> y
                       _ -> n
-
-              let prompt p y = prompt' p (liftIO $ exitWith ExitSuccess) y
 
               let s = T.take 8 . T.drop 7
               let m =
@@ -2075,20 +2093,63 @@ versionCompare2 = command "version-compare2" $ info f mempty
 
               let addNewCAs = T.intercalate "\n" $ ancas <$> newCAs
 
+              let dch = pack e_dirConfigHost
+              now <- pack <$> zulu
+
+              let andTheScript' ec = case ni of
+                    True -> [N.text| exit 60 |]
+                    False -> [N.text|
+                      printf "Type 'y' to update it; anything else aborts: "; read -r x
+                      case "$$x" in
+                        y|Y) mkdir -p "$dch/_backup"
+                             cp $reachEx "$dch/_backup/reach-$now"
+                             echo
+                             echo "Backed up $reachEx to $dch/_backup/reach-$now."
+                             cp $latestScript $reachEx \
+                               && chmod +x $reachEx \
+                               && echo "Replaced $reachEx with latest version." \
+                               && rm -r "$$TMP" \
+                               && exit $ec
+                             ;;
+                          *) echo
+                             echo "Problems may arise when the script is out of sync with Reach's Docker images."
+                             echo "Update your script by rerunning or following the instructions at https://docs.reach.sh/tool/#ref-install."
+                             exit 60
+                             ;;
+                      esac
+                    |]
+
+              let andTheScript ec = write [N.text|
+                if ! command -v diff >/dev/null; then
+                  echo
+                  echo "A newer version of the \`reach\` script may be available."
+                  echo "Please install \`diff\` and retry or manually compare with $uriReachScript."
+                elif [ -f $latestScript ] && ! diff $reachEx $latestScript >/dev/null; then
+                  echo
+                  echo "There's a newer version of the \`reach\` script available."
+                  $ats
+                fi
+
+                exit $ec
+              |] where ats = andTheScript' ec
+
+              let prompt ec p' y = prompt' p' (andTheScript ec) y
+
+              let utd = "Reach's Docker images are up-to-date"
               if length (synced <> newCAs) >= length both
                 then do
-                  let exitUTD = liftIO $ do
-                        putStrLn "Reach is up-to-date."
-                        exitWith ExitSuccess
+                  if length newCAs == 0 then do
+                    liftIO . putStrLn $ utd <> "."
+                    andTheScript "0"
 
-                  if length newCAs == 0 then exitUTD
                   else do
                     liftIO $ do
-                      putStrLn "Reach is up-to-date but the following (optional) connectors are also available:"
+                      putStrLn $ utd <> " but the following (optional) connectors are also available:"
                       say newCAs
-                    if ni then exitUTD
-                    else prompt "Would you like to add them?" . scriptWithConnectorModeOptional
-                      $ write addNewCAs
+                    if ni then andTheScript "0"
+                    else prompt "0" "Would you like to add them?" $ do
+                      write addNewCAs
+                      andTheScript "0"
 
                 else do
                   liftIO $ do
@@ -2112,9 +2173,9 @@ versionCompare2 = command "version-compare2" $ info f mempty
                       say synced
 
                   if ni
-                    then liftIO . exitWith $ ExitFailure 60
+                    then andTheScript "60"
                     else do
-                      prompt "Would you like to perform an update?" . scriptWithConnectorModeOptional $ do
+                      prompt "60" "Would you like to perform an update?" $ do
                         when (length newCAs > 0)
                           . prompt' "Would you like to add the new connectors listed above?" (pure ())
                             . write $ "echo\n" <> addNewCAs
@@ -2132,6 +2193,8 @@ versionCompare2 = command "version-compare2" $ info f mempty
                           forM_ zs $ \z' -> do
                             let z = tagFor z'
                             write [N.text| docker tag $x@$y $x:$z |]
+
+                        andTheScript "0"
 
 whoami' :: Text
 whoami' = "docker info --format '{{.ID}}' 2>/dev/null"
