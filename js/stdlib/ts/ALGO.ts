@@ -1776,6 +1776,7 @@ export const minBalance = async (acc: Account): Promise<BigNumber> => {
   const addr = extractAddr(acc);
   const ai = await getAccountInfo(addr);
   const createdAppCount: BigNumber = bigNumberify((ai['created-apps']??[]).length) // between 0 and 50
+  const optinAppCount: BigNumber = bigNumberify((ai['apps-local-state']??[]).length) // between 0 and 50
   const numByteSlice: BigNumber = bigNumberify((ai['apps-total-schema']??{})['num-byte-slice']??0) // depends
   const numUInt: BigNumber = bigNumberify((ai['apps-total-schema']??{})['num-uint']??0) // depends
   const assetCount:BigNumber = bigNumberify((ai.assets??[]).length) // between 0 and 1000
@@ -1783,13 +1784,15 @@ export const minBalance = async (acc: Account): Promise<BigNumber> => {
   accMinBalance = assets.length * AppFlatOptInMinBalance
   + (SchemaMinBalancePerEntry + SchemaUintMinBalance) * numUInt
   + (SchemaMinBalancePerEntry + SchemaBytesMinBalance) * numByteSlice
-  + (AppFlatParamsMinBalance) * createdApps.length
+  + (AppFlatParamsMinBalance) * createdAppCount
+  + (AppFlatOptInMinBalance) * optinAppCount
   + MinBalance
   */
   const accMinBalance: BigNumber = assetCount.mul(appFlatOptInMinBalance)
     .add(schemaMinBalancePerEntry.add(schemaUintMinBalance).mul(numUInt))
     .add(schemaMinBalancePerEntry.add(schemaBytesMinBalance).mul(numByteSlice))
     .add(appFlatParamsMinBalance.mul(createdAppCount))
+    .add(appFlatOptInMinBalance.mul(optinAppCount))
     .add(minimumBalance)
     debug(`minBalance`, accMinBalance)
     return accMinBalance
