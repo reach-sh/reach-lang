@@ -312,8 +312,8 @@ slurp = \case
 many_ :: [Maybe a] -> Maybe a
 many_ = getFirst . mconcat . map First
 
-many :: (a -> App (Maybe a)) -> [a] -> App (Maybe a)
-many f l = many_ <$> mapM f l
+_many :: (a -> App (Maybe a)) -> [a] -> App (Maybe a)
+_many f l = many_ <$> mapM f l
 
 apc :: HasCounter a => a -> SLPart -> EPProg -> IO EPProg
 apc hc eWho = \case
