@@ -296,10 +296,21 @@ Returns a Promise of the metadata for a non-network token specified by the `{!js
 ---
 @{ref("js", "balanceOf")}
 ```js
-balanceOf(acc, token?) => Promise<amount> 
+balanceOf(acc, token?) => Promise<BigNumber>
 ```
 
-Returns a Promise for the balance of network tokens (or non-network tokens if `{!js} token` is provided) held by the account given by a Reach account abstraction provided by the `{!js} acc` argument.
+Promises the balance of network tokens (or non-network tokens if `{!js} token` is provided) held by the account given by a Reach account abstraction provided by the `{!js} acc` argument.
+
+---
+@{ref("js", "minimumBalanceOf")}
+```js
+minimumBalanceOf(acc) => Promise<BigNumber>
+```
+
+Promises the portion of `{!js} balanceOf(acc)` which may not be transferred by
+the given account.
+Some networks restrict the usage of an account's funds.
+On networks that do not, this will always return zero.
 
 ---
 @{ref("js", "transfer")}

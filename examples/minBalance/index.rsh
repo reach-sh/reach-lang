@@ -1,11 +1,24 @@
 'reach 0.1';
 
-import { useConstructor } from '@nash-protocol/starter-kit:util.rsh'
-import { 
-  Participants as AppParticipants,
-  Views as AppViews, 
-  Api as AppApi, 
-  App 
-} from '@nash-protocol/voting:interface.rsh'
-export const main = Reach.App(() => 
-  App(useConstructor(AppParticipants, AppViews, AppApi)));
+export const main = Reach.App(() => {
+  const A = Participant('A', {
+    mid: Fun([], Null),
+  });
+  const B = Participant('B', {});
+  setOptions({untrustworthyMaps: true});
+  init();
+  A.publish();
+  const m = new Map(UInt);
+  m[A] = 1;
+  commit();
+  B.publish();
+  m[A] = 2;
+  m[B] = 3;
+  commit();
+  A.interact.mid();
+  A.publish();
+  m[A] = 4;
+  m[B] = 5;
+  commit();
+  exit();
+});

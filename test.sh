@@ -29,7 +29,7 @@ err () {
 jbi() {
   WHICH="${1}"
   DIR="${ROOT}${WHICH}"
-  cd "${DIR}" && make build
+  (cd "${DIR}" && make build)
 }
 
 jb () {
@@ -129,6 +129,7 @@ cdot () {
 
 jb
 ci ALGO minBalance
+ci ETH minBalance
 exit 0
 
 #jb

@@ -126,6 +126,10 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
       return await lib.balanceOf(account.id(id), t);
     },
 
+    minimumBalanceOf: async (id: string) => {
+      return await lib.miniumBalanceOf(account.id(id));
+    },
+
     transfer: async (from: string, to: string, bal: any) =>
       lib.transfer(account.id(from), account.id(to), bal),
 

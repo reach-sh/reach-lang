@@ -1,93 +1,33 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import launchToken from '@reach-sh/stdlib/launchToken.mjs';
-import assert from 'assert';
+import * as backend from './build/index.main.mjs';
 
-const [, , infile] = process.argv;
+const stdlib = await loadStdlib();
+const startingBalance = stdlib.parseCurrency(100);
 
-(async () => {
+const [ accA, accB, accC ] = await stdlib.newTestAccounts(3, startingBalance);
+const accD = await stdlib.createAccount();
 
-    console.log("START")
+let code = 0;
+const check = async (who, acc, expected) => {
+  if ( stdlib.connector !== 'ALGO' ) { expected = '0'; }
+  const actual = stdlib.formatCurrency(await stdlib.minimumBalanceOf(acc));
+  console.log({who, expected, actual});
+  if ( actual !== expected ) { code = 1; }
+};
 
-    const backend = await import(`./build/index.main.mjs`);
-    const stdlib = await loadStdlib();
-    const startingBalance = stdlib.parseCurrency(100);
+const zorkmid = await launchToken(stdlib, accA, "zorkmid", "ZMD");
+const ctcA = accA.contract(backend);
+const ctcB = accB.contract(backend, ctcA.getInfo());
+await Promise.all([
+  ctcA.p.A({
+    mid: () => check('Amid', accA, '0.55')
+  }),
+  ctcB.p.B({}),
+]);
 
-    const accAlice = await stdlib.newTestAccount(startingBalance);
-    const accBob = await stdlib.newTestAccount(startingBalance);
-    const accEve = await stdlib.newTestAccount(startingBalance);
-
-    const zorkmid = await launchToken(stdlib, accAlice, "zorkmid", "ZMD");
-
-    const getBalance = async (who) =>
-        stdlib.formatCurrency(await stdlib.balanceOf(who), 4);
-
-    const getMinBalance = async (who) =>
-        stdlib.formatCurrency(await stdlib.minBalance(who))
-
-    const beforeAlice = await getBalance(accAlice);
-    const beforeBob = await getBalance(accBob);
-    const beforeEve = await getBalance(accEve);
-
-    const getParams = (addr) => ({
-        addr,
-        addr2: addr,
-        addr3: addr,
-        addr4: addr,
-        addr5: addr,
-        amt: stdlib.parseCurrency(1),
-        tok: zorkmid.id,
-        token_name: "",
-        token_symbol: "",
-        secs: 0,
-        secs2: 0,
-    });
-
-    // (1) alice and bob tie vote
-    console.log("ALICE AND BOB WAIT IN LINE TO VOTE");
-    await (async (acc, acc2) => {
-        let addr = acc.networkAccount.addr
-        let ctc = acc.contract(backend)
-        Promise.all([
-            backend.Constructor(ctc, {
-                getParams: () => getParams(addr),
-                signal: () => { }
-            }),
-        ])
-        let appId = await ctc.getInfo();
-        console.log(appId)
-        let ctc2 = acc2.contract(backend, appId);
-        Promise.all([
-            backend.Contractee(ctc2, {})
-        ])
-        await stdlib.wait(20)
-    })(accAlice, accBob)
-
-    const afterAlice = await getBalance(accAlice);
-    const afterBob = await getBalance(accBob);
-    const afterEve = await getBalance(accEve);
-
-    const diffAlice = Math.round(afterAlice - beforeAlice)
-    const diffBob = Math.round(afterBob - beforeBob)
-    const diffEve = Math.round(afterEve - beforeEve)
-
-    console.log(`Alice went from ${beforeAlice} to ${afterAlice} (${diffAlice}).`);
-    console.log(`Bob went from ${beforeBob} to ${afterBob} (${diffBob}).`);
-
-    const minBalanceAlice = await getMinBalance(accAlice)
-    const minBalanceBob = await getMinBalance(accBob)
-    const minBalanceEve = await getMinBalance(accEve)
-    console.log({
-        minBalanceAlice,
-        minBalanceBob,
-        minBalanceEve
-    })
-
-    assert.equal(diffAlice, 1)
-    assert.equal(diffBob, -1)
-    assert.equal(minBalanceAlice, '0.55')
-    assert.equal(minBalanceBob, '0.25')
-    assert.equal(minBalanceEve, '0.1')
-
-    process.exit()
-
-})();
+await check('Aafter', accA, '0.35');
+await check('B', accB, '0.25');
+await check('C', accC, '0.1');
+await check('D', accD, '0');
+process.exit(code);

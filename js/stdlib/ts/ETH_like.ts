@@ -323,7 +323,12 @@ const balanceOf = async (acc: Account | Address, token: Token|false = false): Pr
     throw Error(`Cannot get the address of: ${acc}`);
   }
   return balanceOfNetworkAccount(addressable, token);
-}
+};
+
+const minimumBalanceOf = async (acc: Account | Address): Promise<BigNumber> => {
+  void acc;
+  return zeroBn;
+};
 
 const balanceOfNetworkAccount = async (networkAccount: any, token: Token|false = false) => {
   if ( ! token && networkAccount.getBalance ) {
@@ -406,7 +411,7 @@ const transfer = async (
     const tokCtc = new ethers.Contract(token, ERC20_ABI, sender);
     const gl = from.getGasLimit ? from.getGasLimit() : undefined;
     const sl = from.getStorageLimit ? from.getStorageLimit() : undefined;
-    return await doCall(dhead, tokCtc, "transfer", [receiver, valueb], bigNumberify(0), gl, sl);
+    return await doCall(dhead, tokCtc, "transfer", [receiver, valueb], zeroBn, gl, sl);
   }
 };
 
@@ -484,7 +489,6 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       ): Promise<TransactionReceipt> => {
         const [ value, toks ] = pay;
         const ethersC = await getC();
-        const zero = bigNumberify(0);
         const actualCall = async () =>
           await doCall(`${dhead} callC::reach`, ethersC, funcName, [arg], value, gasLimit, storageLimit);
         const callTok = async (tok:Token, amt:BigNumber) => {
@@ -493,7 +497,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
           assert(tokBalance.gte(amt), `local account token balance is insufficient: ${tokBalance} < ${amt}`);
           // @ts-ignore
           const tokCtc = new ethers.Contract(tok, ERC20_ABI, networkAccount);
-          await doCall(`${dhead} callC::token`, tokCtc, "approve", [ethersC.address, amt], zero, gasLimit, storageLimit); }
+          await doCall(`${dhead} callC::token`, tokCtc, "approve", [ethersC.address, amt], zeroBn, gasLimit, storageLimit); }
         const maybePayTok = async (i:number): Promise<TransactionReceipt> => {
           if ( i < toks.length ) {
             const [amt, tok] = toks[i];
@@ -501,7 +505,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             try {
               return await maybePayTok(i+1);
             } catch (e) {
-              await callTok(tok, zero);
+              await callTok(tok, zeroBn);
               throw e;
             }
           } else {
@@ -902,7 +906,7 @@ const newTestAccount = async (startingBalance: any): Promise<Account> => {
   const acc = await createAccount();
   const to = await getAddr(acc);
 
-  if (bigNumberify(0).lt(startingBalance)) {
+  if (zeroBn.lt(startingBalance)) {
     try {
       debug('newTestAccount awaiting transfer:', to);
       await fundFromFaucet(acc, startingBalance);
@@ -976,7 +980,7 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eq: Even
   // A Reach contract will have a view `_reachCreationTime`
   // where we can see it's creation block. Use this information
   // for querying the contract.
-  let creationBlock:BigNumber = bigNumberify(0);
+  let creationBlock:BigNumber = zeroBn;
   try {
     const tmpAccount: Account = await createAccount();
     const ctc = new ethers.Contract(ctcAddress, ABI, tmpAccount.networkAccount);
@@ -1034,9 +1038,9 @@ function parseCurrency(amt: CurrencyAmount): BigNumber {
   return bigNumberify(real_ethers.utils.parseUnits(amt.toString(), standardDigits));
 }
 
-const minimumBalance: BigNumber =
-  parseCurrency(0);
+const zeroBn = bigNumberify(0);
 
+const minimumBalance: BigNumber = zeroBn;
 
 /**
  * @description  Format currency by network
@@ -1125,6 +1129,7 @@ const ethLike = {
   randomUInt,
   hasRandom,
   balanceOf,
+  minimumBalanceOf,
   transfer,
   connectAccount,
   newAccountFromSecret,

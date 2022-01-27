@@ -1772,31 +1772,28 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   return stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract });
 };
 
-export const minBalance = async (acc: Account): Promise<BigNumber> => {
+export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
   const addr = extractAddr(acc);
   const ai = await getAccountInfo(addr);
-  const createdAppCount: BigNumber = bigNumberify((ai['created-apps']??[]).length) // between 0 and 50
-  const optinAppCount: BigNumber = bigNumberify((ai['apps-local-state']??[]).length) // between 0 and 50
-  const numByteSlice: BigNumber = bigNumberify((ai['apps-total-schema']??{})['num-byte-slice']??0) // depends
-  const numUInt: BigNumber = bigNumberify((ai['apps-total-schema']??{})['num-uint']??0) // depends
-  const assetCount:BigNumber = bigNumberify((ai.assets??[]).length) // between 0 and 1000
-  /*
-  accMinBalance = assets.length * AppFlatOptInMinBalance
-  + (SchemaMinBalancePerEntry + SchemaUintMinBalance) * numUInt
-  + (SchemaMinBalancePerEntry + SchemaBytesMinBalance) * numByteSlice
-  + (AppFlatParamsMinBalance) * createdAppCount
-  + (AppFlatOptInMinBalance) * optinAppCount
-  + MinBalance
-  */
-  const accMinBalance: BigNumber = assetCount.mul(appFlatOptInMinBalance)
+  if ( ai.amount === 0 ) { return bigNumberify(0); }
+  // between 0 and 50
+  const createdAppCount = bigNumberify((ai['created-apps']??[]).length);
+  // between 0 and 50
+  const optinAppCount = bigNumberify((ai['apps-local-state']??[]).length);
+  const numByteSlice = bigNumberify((ai['apps-total-schema']??{})['num-byte-slice']??0);
+  const numUInt = bigNumberify((ai['apps-total-schema']??{})['num-uint']??0);
+  // between 0 and 1000
+  const assetCount = bigNumberify((ai.assets??[]).length)
+  const accMinBalance = bigNumberify(0)
+    .add(assetCount.mul(appFlatOptInMinBalance))
     .add(schemaMinBalancePerEntry.add(schemaUintMinBalance).mul(numUInt))
     .add(schemaMinBalancePerEntry.add(schemaBytesMinBalance).mul(numByteSlice))
     .add(appFlatParamsMinBalance.mul(createdAppCount))
     .add(appFlatOptInMinBalance.mul(optinAppCount))
-    .add(minimumBalance)
-    debug(`minBalance`, accMinBalance)
-    return accMinBalance
-}
+    .add(minimumBalance);
+  debug(`minBalance`, accMinBalance);
+  return accMinBalance;
+};
 
 const balanceOfM = async (acc: Account, token: Token|false = false): Promise<BigNumber|false> => {
   const addr = extractAddr(acc);

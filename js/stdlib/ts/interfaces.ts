@@ -128,6 +128,7 @@ export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, Contrac
   hasRandom: { random: () => BigNumber }
   hasConsoleLogger: { log: (...a: any) => void }
   balanceOf: (acc: Account, token?: Token) => Promise<BigNumber>
+  minimumBalanceOf: (acc:Account) => Promise<BigNumber>
   transfer: (from: Account, to: Account, val?: BigNumber, token?: Token) => Promise<unknown>
   connectAccount: (networkAccount: NetworkAccount) => Promise<Account>
   newAccountFromSecret: (secret: string) => Promise<Account>

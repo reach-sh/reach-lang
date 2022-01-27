@@ -24,6 +24,7 @@ export const {
   setWalletFallback,
   walletFallback,
   balanceOf,
+  minimumBalanceOf,
   transfer,
   connectAccount,
   newAccountFromSecret,
