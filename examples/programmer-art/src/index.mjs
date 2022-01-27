@@ -21,6 +21,8 @@ const noOpHandler = (evt) => {
 
 await c.resetServer()
 const rsh = await c.load()
+await c.init()
+
 const hlns1 = document.createElement('script');
 const hlns2 = document.createElement('script');
 const hlns3 = document.createElement('script');
@@ -103,7 +105,7 @@ const renderObjects = async (nodeId) => {
     ${obs}
     <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals</button>
     <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals</button>
-    <div class="d-flex justify-content-center">
+    <div class="pad-me d-flex justify-content-center">
       <select name="actors" id="actors-spa-select">
         ${actors}
       </select>
@@ -529,6 +531,8 @@ const redraw = async () => {
   animateGraph(eles)
 }
 
+redraw();
+
 const clickNode = async (evt) => {
   const nodeId = evt.target.id()
   const at = await c.getLoc(nodeId)
@@ -548,22 +552,12 @@ const clickNode = async (evt) => {
   renderObjects(nodeId)
 }
 
-const initBtn = document.querySelector("#initButton")
-const init = async () => {
-  let r = await c.init()
-  appendToLog(r)
-  redraw()
-  jsonLog.push(["init"])
-}
-initBtn.addEventListener("click",init)
-
-
-const printBtn = document.querySelector("#printButton")
-const printLog = () => {
-  console.log(jsonLog);
-  console.log(JSON.stringify(jsonLog));
-}
-printBtn.addEventListener("click",printLog)
+// const printBtn = document.querySelector("#printButton")
+// const printLog = () => {
+//   console.log(jsonLog);
+//   console.log(JSON.stringify(jsonLog));
+// }
+// printBtn.addEventListener("click",printLog)
 
 const jsonBtn = document.querySelector("#inputJsonButton")
 const runJsonScript = async () => {
