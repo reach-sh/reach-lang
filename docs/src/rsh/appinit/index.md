@@ -35,27 +35,40 @@ setOptions({});
 
 The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} setOptions(OBJ_EXPR);` where `{!rsh} OBJ_EXPR` is an object with the following keys and values:
 
++ @{ref("rsh", "untrustworthyMaps")} `{!rsh} untrustworthyMaps`
+
+  `{!rsh} true` or `{!rsh} false` (default)
+
+  Determines whether mappings are treated as trustworthy.
+  A mapping is trustworthy if its values are guaranteed to be preserved across interactions.
+  When this is `{!rsh} true`, the verifier will enforce that your program does not rely on values being preserved.
+
+  Reach cannot provide trustworthy mappings with some connectors; therefore it is dangerous to not set this to `{!rsh} true` on such connectors.
+  Reach will emit a warning during compilation if you do such a dangerous thing.
+
 + @{ref("rsh", "verifyArithmetic")} `{!rsh} verifyArithmetic`
 
-`{!rsh} true` or `{!rsh} false` (default)
+  `{!rsh} true` or `{!rsh} false` (default)
 
-Determines whether arithmetic operations automatically introduce static assertions that they do not overflow beyond `{!rsh} UInt.max`.
-This defaults to `{!rsh} false`, because it is onerous to verify.
-We recommend turning it on before final deployment, but leaving it off during development.
-When it is `{!rsh} false`, connectors will ensure that overflows do not actually occur on the network.
+  Determines whether arithmetic operations automatically introduce static assertions that they do not overflow beyond `{!rsh} UInt.max`.
+  This defaults to `{!rsh} false`, because it is onerous to verify.
+  We recommend turning it on before final deployment, but leaving it off during development.
+  When it is `{!rsh} false`, connectors will ensure that overflows do not actually occur on the network.
+
 + @{ref("rsh", "verifyPerConnector")} `{!rsh} verifyPerConnector`
 
-`{!rsh} true` or `{!rsh} false` (default)
+  `{!rsh} true` or `{!rsh} false` (default)
 
-Determines whether verification is done per connector, or once for a generic connector.
-When this is `{!rsh} true`, then connector-specific constants, like `{!rsh} UInt.max`, will be instantiated to literal numbers.
-This concretization of these constants can induce performance degradation in the verifier.
+  Determines whether verification is done per connector, or once for a generic connector.
+  When this is `{!rsh} true`, then connector-specific constants, like `{!rsh} UInt.max`, will be instantiated to literal numbers.
+  This concretization of these constants can induce performance degradation in the verifier.
+
 + @{ref("rsh", "connectors")} `{!rsh} connectors`
 
-@{ref("rsh", "ETH")}@{ref("rsh", "ALGO")} `{!rsh} [ETH, ALGO]` (default)
+  @{ref("rsh", "ETH")}@{ref("rsh", "ALGO")} `{!rsh} [ETH, ALGO]` (default)
 
-A tuple of the connectors that the application should be compiled for.
-By default, all available connectors are chosen.
+  A tuple of the connectors that the application should be compiled for.
+  By default, all available connectors are chosen.
 
 ## {#ref-programs-appinit-exprs} Expressions
 
