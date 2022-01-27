@@ -20,7 +20,7 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v239 = (balance(0)/182 == sum/179) ? (sum/179 == v231) : false;
+  const v239 = ((balance(0)/182 == sum/179) ? (sum/179 == v231) : false);
   //    ^ would be false
   assert(v239);
 

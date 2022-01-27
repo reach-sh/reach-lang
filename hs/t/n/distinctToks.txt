@@ -18,7 +18,7 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v61 = (v48 == v47) ? false : true;
+  const v61 = ((v48 == v47) ? false : true);
   //    ^ would be false
   require(v61);
 

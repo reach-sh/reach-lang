@@ -22,7 +22,7 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v166 = (balance(0)/131 == 0) ? (v158 == x/128) : false;
+  const v166 = ((balance(0)/131 == 0) ? (v158 == x/128) : false);
   //    ^ would be false
   assert(v166);
 

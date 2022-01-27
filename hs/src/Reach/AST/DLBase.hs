@@ -652,7 +652,7 @@ instance PrettySubst DLExpr where
       c' <- prettySubst c
       t' <- prettySubst t
       e' <- prettySubst el
-      return $ c' <> " ? " <> t' <> " : " <> e'
+      return $ parens $ c' <> " ? " <> t' <> " : " <> e'
     DLE_PrimOp _ o [a] -> do
       a' <- prettySubst a
       return $ pretty o <> a'
