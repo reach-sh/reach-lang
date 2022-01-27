@@ -3,12 +3,10 @@ import cytoscape from 'cytoscape';
 import klay from 'cytoscape-klay';
 import "../scss/custom.scss";
 
-const log = document.querySelector("#output")
 const jsonLog = []
 
 const appendToLog = (r) => {
-  let x = log.innerHTML
-  log.innerHTML = x + '<br>' + '$ ' + r
+  console.log(r)
 }
 
 const noop = () => {
@@ -548,16 +546,9 @@ const clickNode = async (evt) => {
     const topPos = poi.offsetTop;
     document.querySelector('.code-container').scrollTop = topPos;
   }
-  console.log(at)
+  // console.log(at)
   renderObjects(nodeId)
 }
-
-// const printBtn = document.querySelector("#printButton")
-// const printLog = () => {
-//   console.log(jsonLog);
-//   console.log(JSON.stringify(jsonLog));
-// }
-// printBtn.addEventListener("click",printLog)
 
 const jsonBtn = document.querySelector("#inputJsonButton")
 const runJsonScript = async () => {
