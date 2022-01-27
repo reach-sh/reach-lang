@@ -191,8 +191,15 @@ const renderObjectDetails = async (evt) => {
       break;
   }
   const who = detsj.l_who ? detsj.l_who : 'Consensus'
+  const act = await c.getActions(nodeId,actorId)
+  let disableActorDets = ``
+  if (!act) {
+    disableActorDets = `disabled`
+  }
+
   dets = dets + `
     <button type="button"
+    ${disableActorDets}
     class="list-group-item list-group-item-action
     object-button status-panel"
     data-actor-id="${actorId}"
@@ -205,6 +212,7 @@ const renderObjectDetails = async (evt) => {
   for (const [k,v] of Object.entries(ledger[actorId])) {
     dets = dets + `
       <button type="button"
+      disabled
       class="list-group-item list-group-item-action object-button no-op"
       >
       <div class="badge bg-secondary">Funds</div>
@@ -216,6 +224,7 @@ const renderObjectDetails = async (evt) => {
     const varValue = varDetails.contents
     dets = dets + `
       <button type="button"
+      disabled
       class="list-group-item list-group-item-action object-button no-op"
       >
       <div class="badge bg-secondary">${typing.slice(2)}</div>
