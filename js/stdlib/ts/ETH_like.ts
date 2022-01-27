@@ -1116,11 +1116,11 @@ function unsafeGetMnemonic(acc: Account|NetworkAccount): string {
 }
 
 function setMinMillisBetweenRequests() {
-  console.warn(`setMinMillisBetweenRequests is not yet implemented on this connector`);
+  console.warn(`setMinMillisBetweenRequests is not supported on this connector`);
 }
 
 function setCustomHttpEventHandler() {
-  console.warn(`setCustomHttpEventHandler is not yet implemented on this connector`);
+  console.warn(`setCustomHttpEventHandler is not supported on this connector`);
 }
 
 // TODO: restore type ann once types are in place
