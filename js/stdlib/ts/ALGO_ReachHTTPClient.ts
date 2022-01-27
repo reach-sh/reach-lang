@@ -2,21 +2,24 @@ import type { BaseHTTPClient, BaseHTTPClientError, BaseHTTPClientResponse } from
 import type { Query } from "algosdk/dist/types/src/client/baseHTTPClient";
 
 export type Method = 'get' | 'post' | 'delete';
-export type EventName = 'before' | 'success' | 'error';
 export type EventDetails = {
+  label: string,
+  reqNum: number,
   method: Method,
   relativePath: string,
   data?: Uint8Array,
   query?: Query<string>,
   requestHeaders?: Record<string,string>,
-  response?: BaseHTTPClientResponse,
-  err?: BaseHTTPClientError | any,
 }
-export type Event = {
-  eventName: EventName,
-  reqNum: number,
-  label: string,
-} & EventDetails
+export type Event = ({
+  eventName: 'before',
+} | {
+  eventName: 'success',
+  response: BaseHTTPClientResponse,
+} | {
+  eventName: 'error',
+  err: BaseHTTPClientError | any,
+}) & EventDetails
 export type EventHandler = (event: Event) => Promise<unknown>
 
 export class ReachHTTPClient implements BaseHTTPClient {
@@ -32,16 +35,28 @@ export class ReachHTTPClient implements BaseHTTPClient {
     this.reqNum = 0;
   }
 
-  async _doTheThing(eventDetails: EventDetails, go: () => Promise<BaseHTTPClientResponse>): Promise<BaseHTTPClientResponse> {
+  async _doTheThing(
+    method: Method,
+    relativePath: string,
+    dataMay: [ Uint8Array | undefined ] | [],
+    query: Query<string> | undefined,
+    requestHeaders: Record<string,string> | undefined,
+  ): Promise<BaseHTTPClientResponse> {
     const { eh, reqNum, label } = this;
+    const eventDetails: EventDetails = {
+      label, reqNum, method, relativePath, data: dataMay[0], query,
+    };
     this.reqNum = reqNum + 1;
-    await eh({eventName: 'before', reqNum, label, ...eventDetails});
+    await eh({eventName: 'before', ...eventDetails});
     try {
-      const response = await go();
-      await eh({eventName: 'success', reqNum, label, response, ...eventDetails});
+      const response = await this.bc[method](
+        // @ts-ignore
+        relativePath, ...dataMay, query, requestHeaders,
+      );
+      await eh({eventName: 'success', response, ...eventDetails});
       return response;
     } catch (err) {
-      await eh({eventName: 'error', reqNum, label, err, ...eventDetails});
+      await eh({eventName: 'error', err, ...eventDetails});
       throw err;
     }
   }
@@ -51,9 +66,7 @@ export class ReachHTTPClient implements BaseHTTPClient {
     query?: Query<string>,
     requestHeaders?: Record<string, string>
     ): Promise<BaseHTTPClientResponse> {
-    const method = 'get';
-    const eventDetails: EventDetails = { method, relativePath, query, requestHeaders};
-    return await this._doTheThing(eventDetails, async () => await this.bc.get(relativePath, query, requestHeaders));
+    return await this._doTheThing('get', relativePath, [], query, requestHeaders);
   }
 
   async post(
@@ -62,9 +75,7 @@ export class ReachHTTPClient implements BaseHTTPClient {
     query?: Query<string>,
     requestHeaders?: Record<string, string>
     ): Promise<BaseHTTPClientResponse> {
-    const method = 'post';
-    const eventDetails: EventDetails = { method, relativePath, data, query, requestHeaders }
-    return await this._doTheThing(eventDetails, async () => await this.bc.post(relativePath, data, query, requestHeaders));
+    return await this._doTheThing('post', relativePath, [data], query, requestHeaders);
   }
 
   async delete(
@@ -73,8 +84,6 @@ export class ReachHTTPClient implements BaseHTTPClient {
     query?: Query<string>,
     requestHeaders?: Record<string, string>
     ): Promise<BaseHTTPClientResponse> {
-    const method = 'delete';
-    const eventDetails: EventDetails = { method, relativePath, data, query, requestHeaders }
-    return await this._doTheThing(eventDetails, async () => await this.bc.delete(relativePath, data, query, requestHeaders));
+      return await this._doTheThing('delete', relativePath, [data], query, requestHeaders);
   }
 }
