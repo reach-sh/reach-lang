@@ -291,9 +291,9 @@ export function setMinMillisBetweenRequests(n: number): void {
   minMillisBetweenRequests = n;
 }
 const reqLock = new Lock();
-var currentReqNum: number | undefined = undefined;
-var currentReqLabel: string | undefined = undefined;
-var lastReqSentAt: number | undefined = undefined; // ms
+let currentReqNum: number | undefined = undefined;
+let currentReqLabel: string | undefined = undefined;
+let lastReqSentAt: number | undefined = undefined; // ms
 
 async function httpEventHandler(e: RHC.Event): Promise<void> {
   const en = e.eventName;

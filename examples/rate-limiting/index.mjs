@@ -3,7 +3,7 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib(process.env);
 
-var reqCount = 0;
+let reqCount = 0;
 const mmbr = 500;
 // XXX enable for ETH and CFX when this is implemented for them
 const mmbrTestEnabled = stdlib.connector === 'ALGO';
