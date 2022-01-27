@@ -5,7 +5,6 @@ const stdlib = loadStdlib(process.env);
 
 let reqCount = 0;
 const mmbr = 500;
-// XXX enable for ETH and CFX when this is implemented for them
 const mmbrTestEnabled = stdlib.connector === 'ALGO';
 
 if (mmbrTestEnabled) {
