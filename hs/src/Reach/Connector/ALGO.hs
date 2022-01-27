@@ -311,11 +311,13 @@ optimize ts0 = tsN
 opt_bs :: [TEAL] -> [TEAL]
 opt_bs = \case
   [] -> []
-  (TBytes x) : l | B.all (== '\0') x ->
-    case B.length x of
+  x@(TBytes bs) : l | B.all (== '\0') bs ->
+    case B.length bs of
       0 -> (TBytes mempty) : opt_bs l
       32 -> opt_bs $ (TCode "global" ["ZeroAddress"]) : l
-      len -> opt_bs $ (TInt $ fromIntegral len) : (TCode "bzero" []) : l
+      -- Cost is more important space
+      -- len -> opt_bs $ (TInt $ fromIntegral len) : (TCode "bzero" []) : l
+      _ -> x : opt_bs l
   x : l -> x : opt_bs l
 
 opt_b :: [TEAL] -> [TEAL]
