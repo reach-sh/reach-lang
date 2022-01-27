@@ -13,7 +13,7 @@
     "react-scripts": "5.0.0"
   },
   "scripts": {
-    "start": "GENERATE_SOURCEMAP=false react-scripts --max_old_space_size=4096 start"
+    "start": "DISABLE_ESLINT_PLUGIN=true GENERATE_SOURCEMAP=false react-scripts --max_old_space_size=4096 start"
   },
   "browserslist": {
     "production": [
