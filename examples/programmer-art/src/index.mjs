@@ -101,8 +101,8 @@ const renderObjects = async (nodeId) => {
   </nav>
   <ul class="list-group list-group-flush">
     ${obs}
-    <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals</button>
-    <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals</button>
+    <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals <i class="bi bi-clipboard"></i></button>
+    <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals <i class="bi bi-clipboard"></i></button>
     <div class="pad-me d-flex justify-content-center">
       <select name="actors" id="actors-spa-select">
         ${actors}
@@ -125,8 +125,16 @@ const bindObjDetailsEvents = () => {
     const tgt = evt.target.closest("#localsButton")
     const nodeId = tgt.dataset.nodeId
     let r = await c.getStateLocals(nodeId)
-    appendToLog(JSON.stringify(r,null,2))
-    jsonLog.push(["getStateLocals",nodeId])
+    let fr = JSON.stringify(r,null,2)
+    let icon = evt.target.querySelector('.bi')
+    icon.classList.remove('bi-clipboard')
+    icon.classList.add('bi-check2')
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    await navigator.clipboard.writeText(fr)
+    icon.classList.remove('bi-check2')
+    icon.classList.add('bi-clipboard')
+    console.log("logged local state")
+    appendToLog(fr)
   }
   localsBtn.addEventListener("click",locals)
 
@@ -135,8 +143,16 @@ const bindObjDetailsEvents = () => {
     const tgt = evt.target.closest("#globalsButton")
     const nodeId = tgt.dataset.nodeId
     let r = await c.getStateGlobals(nodeId)
-    appendToLog(JSON.stringify(r,null,2))
-    jsonLog.push(["getStateGlobals",nodeId])
+    let fr = JSON.stringify(r,null,2)
+    let icon = evt.target.querySelector('.bi')
+    icon.classList.remove('bi-clipboard')
+    icon.classList.add('bi-check2')
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    await navigator.clipboard.writeText(fr)
+    icon.classList.remove('bi-check2')
+    icon.classList.add('bi-clipboard')
+    console.log("logged global state")
+    appendToLog(fr)
   }
   globalsBtn.addEventListener("click",globals)
 
@@ -546,14 +562,32 @@ const clickNode = async (evt) => {
     const topPos = poi.offsetTop;
     document.querySelector('.code-container').scrollTop = topPos;
   }
-  // console.log(at)
   renderObjects(nodeId)
 }
 
-const jsonBtn = document.querySelector("#inputJsonButton")
-const runJsonScript = async () => {
-  let j = document.querySelector("#inputJsonScript").value
+const loadScriptBtn = document.querySelector("#load-script")
+const loadScript = async (evt) => {
+  let icon = evt.target.querySelector('.bi')
+  icon.classList.remove('bi-play-circle')
+  icon.classList.add('bi-check2')
+  await new Promise(resolve => setTimeout(resolve, 1000))
+  let j = await navigator.clipboard.readText()
   await c.interp(JSON.parse(j))
   redraw()
+  icon.classList.remove('bi-check2')
+  icon.classList.add('bi-play-circle')
 }
-jsonBtn.addEventListener("click",runJsonScript)
+loadScriptBtn.addEventListener("click",loadScript)
+
+const saveScriptBtn = document.querySelector("#save-script")
+const saveScript = async (evt) => {
+  let icon = evt.target.querySelector('.bi')
+  icon.classList.remove('bi-clipboard')
+  icon.classList.add('bi-check2')
+  await new Promise(resolve => setTimeout(resolve, 1000))
+  let r = JSON.stringify(jsonLog,null,2)
+  await navigator.clipboard.writeText(r)
+  icon.classList.remove('bi-check2')
+  icon.classList.add('bi-clipboard')
+}
+saveScriptBtn.addEventListener("click",saveScript)
