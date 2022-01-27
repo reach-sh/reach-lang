@@ -27,28 +27,18 @@ err () {
 }
 
 jbi() {
-  local i="${1}"
-  test ! -d "'${ROOT}'${i}" || {
-    (cd "${_}" && make build)
-  }
+  WHICH="${1}"
+  DIR="${ROOT}${WHICH}"
+  cd "${DIR}" && make build
 }
 
 jb () {
-<<<<<<< HEAD
-  #(cd "$ROOT"/js/js-deps && make build)
-  (cd "$ROOT"/js/stdlib && make build)
-  (cd "$ROOT"/js/runner && make build)
-  #(cd "$ROOT"/js/rpc-server && make build)
-  #(cd "$ROOT"/js/react-runner && make build)
-  # (cd "$ROOT"/js && make build)
-=======
-  jbi /js/js-deps
+  #jbi /js/js-deps
   jbi /js/stdlib
   jbi /js/runner
   #jbi /js/rpc-server
-  jbi /js/react-runner
+  #jbi /js/react-runner
   #jbi /js
->>>>>>> 60cce754d (add min balance func)
 }
 
 one () {
@@ -137,10 +127,13 @@ cdot () {
 
 #######
 
+jb
+ci ALGO minBalance
+exit 0
+
 #jb
 c users/duoswap-core/index.rsh
 c users/algo-govt/index.rsh
-jb; ci ALGO minBalance; exit 0
 cdot examples/overview/index.rsh
 cdot examples/rps-8-interact/index.rsh
 cdot users/duoswap-core/index.rsh

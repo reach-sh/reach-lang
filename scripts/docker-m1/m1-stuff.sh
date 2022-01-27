@@ -5,8 +5,8 @@
 DATEVER="$1"
 HASHVER="$2"
 
-if [ "x$DATEVER" = "x" ] ; then echo DATEVER required; exit 1; fi;
-if [ "x$HASHVER" = "x" ] ; then echo HASHVER required; exit 1; fi;
+if [ "$DATEVER" = "" ] ; then echo DATEVER required; exit 1; fi;
+if [ "$HASHVER" = "" ] ; then echo HASHVER required; exit 1; fi;
 
 # run this after building all images so that 'latest' is the m1 stuff
 ./retag.sh latest latest-arm64
