@@ -644,7 +644,7 @@ Sets the maximum width of the query windows used to query the network for event 
 The value `{!js} true` indicates that no window size should be used, and queries may span arbitrarily large window sizes.
 While each connector has a default value that works for most common cases, tweaking this setting may be useful when dealing with layer two networks or custom endpoints that are more restrictive than normal nodes on the network.
 
-### {#ref-frontends-js-provider} Provider Selection
+### {#ref-frontends-js-provider} Provider Selection and Utilities
 
 These functions allow you to choose which particular consensus network API provider to connect to.
 
@@ -760,6 +760,32 @@ stdlib.setWalletFallback(stdlib.walletFallback({
 ```
 
 Because these are fallbacks, you need to decide for your users which wallet they'll use, or make a user interface element to let them select which wallet fallback to use.
+
+---
+@{ref("js", "setMinMillisBetweenRequests")}
+```js
+setMinMillisBetweenRequests(ms: number): void
+```
+
+Setting this to a positive number forces outgoing requests to occur one at a time,
+and limits them to occur no more frequently than one request every `ms` milliseconds.
+This is only supported with certain connectors (currently: ALGO),
+and applies to all Providers created by the Reach JavaScript stdlib.
+
+---
+@{ref("js", "setCustomHttpEventHandler")}
+```js
+setCustomHttpEventHandler(h: (e: any) => Promise<void>): void
+```
+
+Allows for the installation of a custom hook to observe outgoing HTTP requests.
+The handler `h` will be called before and after every request.
+The handler will be called with one argument: an object `e`.
+Inspection of `e`'s fields should be considered an unstable API that may change over time.
+Currently, it has a field `eventName` which may be `'before'`, `'success'`, or `'error'`,
+as well as various other fields describing the HTTP event.
+This is only supported with certain networks (currently: ALGO),
+and applies to all Providers created by the Reach JavaScript stdlib.
 
 ### {#ref-frontends-js-utils} Utilities
 
