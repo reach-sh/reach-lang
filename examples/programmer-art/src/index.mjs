@@ -104,19 +104,19 @@ const renderObjects = async (nodeId) => {
     <button type="button" id="newAccButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Account <i class="bi bi-plus-lg"></i></button>
     <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals <i class="bi bi-clipboard"></i></button>
     <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals <i class="bi bi-clipboard"></i></button>
-    <div class="pad-me d-flex justify-content-center">
+    <div class="pad-me d-flex justify-content-center shrink-text">
       <select name="actors" id="actors-spa-select">
         ${actors}
       </select>
-      <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Init For Actor</button>
+      <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Init For</button>
     </div>
     <hr>
-    <div class="pad-me d-flex justify-content-center">
-      Fr:
+    <div class="pad-me d-flex justify-content-center shrink-text">
+      SND:
       <select name="actors-transfer-from" id="actors-spa-select-transfer-from">
         ${actors}
       </select>
-      To:
+      RCV:
       <select name="actors-transfer-to" id="actors-spa-select-transfer-to">
         ${actors}
       </select>
