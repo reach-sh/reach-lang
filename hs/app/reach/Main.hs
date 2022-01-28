@@ -1737,11 +1737,13 @@ instance FromJSON DockerILS where parseJSON = parseJSON' 5
 data TagFor
   = TFReach ReachVersionOf
   | TFThirdParty TagRaw
+  | TFReachCLI
   deriving (Eq, Ord, Show)
 
 tagFor :: TagFor -> Text
 tagFor = \case
   TFThirdParty t -> t
+  TFReachCLI -> "latest"
   TFReach (RVDate t) -> packs t
   TFReach (RVHash t) -> t
   TFReach (RVWithMaj RVDefault) -> "stable"
@@ -1795,6 +1797,7 @@ remoteDockerAssocFor tmpC tmpH img h = go
 
     mkTag t = case img of
       Left p -> Just $ if t == imageThirdPartyTagRaw p then [TFThirdParty t] else []
+      Right "reach-cli" -> Just $ if t == tagFor TFReachCLI then [TFReachCLI] else []
       Right _ -> either (const Nothing) (\a -> Just [TFReach a]) $ mkReachVersionOf' t
 
     (img', img'') = case img of
@@ -1918,7 +1921,6 @@ versionCompare = command "version-compare" $ info f mempty
         $reachEx version-compare2$i --ils="$confC"
       |]
 
--- TODO `reach-cli` only cares about `latest`
 versionCompare2 :: Subcommand
 versionCompare2 = command "version-compare2" $ info f mempty
   where
@@ -1954,7 +1956,10 @@ versionCompare2 = command "version-compare2" $ info f mempty
             ils'' = flip mapMaybe ils' $ \DockerILS {..} -> do
               guard $ dils_Digest /= "<none>"
               let ir = dils_Repository `elem` (("reachsh/" <>) <$> rights imagesAll)
-              let dt = if ir then t' else \z -> [TFThirdParty z]
+              let dt = case dils_Repository of
+                    "reachsh/reach-cli" | dils_Tag == tagFor TFReachCLI -> const [TFReachCLI]
+                    _ | ir -> t'
+                    _ -> \z -> [TFThirdParty z]
               dr <- case dils_Repository of
                 "postgres" -> Just $ Left Postgres
                 _ | ir -> Just $ Right dils_Repository
@@ -1970,11 +1975,13 @@ versionCompare2 = command "version-compare2" $ info f mempty
 
       let tfThirdParty i t (d, ts) = isR i d && TFThirdParty t `elem` ts
       let tfReach i t (d, ts) = isR i d && (TFReach <$> mkReachVersionOf' t) `elem` (Right <$> ts)
+      let tfReachCLI i (d, ts) = isR i d && TFReachCLI `elem` ts
 
       let mkQ mi mt m a i t = case a !? i of
             Nothing -> mi i t
             Just i' -> case i of
               Left _ -> maybe' $ tfThirdParty i t
+              Right "reachsh/reach-cli" -> maybe' $ tfReachCLI i
               Right _ -> maybe' $ tfReach i t
               where
                 maybe' x =

@@ -69,6 +69,7 @@ case "$?" in
   42) run_s; case "$?" in
     60) rm -r "$TMP" && exit 60 ;; # Updates available
      0) rm -r "$TMP" ;;
+     *) [ -z "$(ls -A "$TMP")" ] && rm -r "$TMP"; exit 1 ;;
     esac
     ;;
   50) docker pull "$IMG" && curl https://docs.reach.sh/reach -o "$0" && chmod +x "$0" && rm -r "$TMP" && exit 0 ;;
