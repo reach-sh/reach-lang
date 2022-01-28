@@ -110,7 +110,6 @@ const renderObjects = async (nodeId) => {
       </select>
       <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Init For Actor</button>
     </div>
-    <li></li>
     <hr>
     <div class="pad-me d-flex justify-content-center">
       Fr:
@@ -217,6 +216,11 @@ const bindObjDetailsEvents = () => {
   }
   initForBtn.addEventListener("click",initFor)
 
+  let toSelLen = document.querySelector("#actors-spa-select-transfer-to").children.length
+  if (toSelLen > 1) {
+    let secondOpt = document.querySelector("#actors-spa-select-transfer-to").children[1]
+    secondOpt.setAttribute('selected','')
+  }
   const transferBtn = document.querySelector("#transferButton")
   const transfer = async (evt) => {
     const tgt = evt.target.closest("#transferButton")
