@@ -101,6 +101,7 @@ const renderObjects = async (nodeId) => {
   </nav>
   <ul class="list-group list-group-flush">
     ${obs}
+    <button type="button" id="newAccButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Account <i class="bi bi-plus-lg"></i></button>
     <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals <i class="bi bi-clipboard"></i></button>
     <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals <i class="bi bi-clipboard"></i></button>
     <div class="pad-me d-flex justify-content-center">
@@ -120,6 +121,25 @@ const bindObjDetailsEvents = () => {
   objectBtns.forEach((item, i) => {
     item.addEventListener("click",renderObjectDetails)
   });
+
+  const newAccBtn = document.querySelector("#newAccButton")
+  const newAccHandler = async (evt) => {
+    const tgt = evt.target.closest("#newAccButton")
+    const nodeId = tgt.dataset.nodeId
+    let r = await c.newAccount(nodeId)
+    let fr = JSON.stringify(r,null,2)
+    let icon = evt.target.querySelector('.bi')
+    icon.classList.remove('bi-plus-lg')
+    icon.classList.add('bi-check2')
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    await navigator.clipboard.writeText(fr)
+    icon.classList.remove('bi-check2')
+    icon.classList.add('bi-plus-lg')
+    console.log(`added new Account id: ${r}`)
+    appendToLog(fr)
+  }
+  newAccBtn.addEventListener("click",newAccHandler)
+
   const localsBtn = document.querySelector("#localsButton")
   const locals = async (evt) => {
     const tgt = evt.target.closest("#localsButton")

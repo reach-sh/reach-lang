@@ -125,6 +125,20 @@ registerAction sid actorId act = do
     Just acts -> modify $ \ st -> st {e_actors_actions = M.insert actorId (M.insert sid actId acts) actacts }
   return actId
 
+newAccount :: StateId -> WebM (C.AccountId)
+newAccount sid = do
+  graph <- gets e_graph
+  case M.lookup sid graph of
+    Nothing -> do
+      possible "newAccount: state not found"
+    Just (g, l) -> do
+      let aid = C.e_naccid g
+      let newAccId = aid + 1
+      let g' = g { C.e_naccid = newAccId }
+      let graph' = M.insert sid (g',l) graph
+      modify $ \ st -> st {e_graph = graph'}
+      return newAccId
+
 unblockProg :: StateId -> ActionId -> C.DLVal -> WebM ()
 unblockProg sid aid v = do
   graph <- gets e_graph
@@ -344,6 +358,12 @@ app p srcTxt = do
     setHeaders
     _ <- webM $ resetServer
     json ("OK" :: String)
+
+  post "/accounts/new/:s" $ do
+    setHeaders
+    s <- param "s"
+    accId <- webM $ newAccount s
+    json accId
 
   post "/states/:s/actions/:a/" $ do
     setHeaders

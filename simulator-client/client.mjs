@@ -93,6 +93,12 @@ const initFor = async (s,a) => {
   return r
 }
 
+const newAccount = async (s) => {
+  const r = await interact('POST', `${address}/accounts/new/${s}`)
+  console.log(r)
+  return r
+}
+
 const resetServer = async () => {
   const r = await interact('POST', `${address}/reset`)
   console.log(r)
@@ -153,4 +159,5 @@ export {
   interpCommand,
   interp,
   getLoc,
+  newAccount
 };
