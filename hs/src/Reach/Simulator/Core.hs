@@ -25,6 +25,8 @@ type PhaseId = Integer
 
 type AccountId = Int
 
+type Ledger = M.Map Account (M.Map Token Balance)
+
 data Message = Message
   { m_store :: Store
   , m_pay :: DLPayAmt
@@ -40,7 +42,7 @@ data MessageInfo = NotFixedYet (M.Map ActorId Message) | Fixed (ActorId, Message
 instance ToJSON MessageInfo
 
 data Global = Global
-  { e_ledger :: M.Map Account (M.Map Token Balance)
+  { e_ledger :: Ledger
   , e_next_token :: Token
   , e_linstate :: LinearState
   , e_nwtime :: Integer

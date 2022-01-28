@@ -111,6 +111,25 @@ const renderObjects = async (nodeId) => {
       <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Init For Actor</button>
     </div>
     <li></li>
+    <hr>
+    <div class="pad-me d-flex justify-content-center">
+      Fr:
+      <select name="actors-transfer-from" id="actors-spa-select-transfer-from">
+        ${actors}
+      </select>
+      To:
+      <select name="actors-transfer-to" id="actors-spa-select-transfer-to">
+        ${actors}
+      </select>
+    </div>
+    <div class="pad-me d-flex justify-content-center">
+      <input type="text" id="token-id" class="form-control form-control-sm" placeholder="Token Id">
+      <input type="text" id="transfer-amount" class="form-control form-control-sm" placeholder="Amount">
+
+      <button type="button" id="transferButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Transfer  <i class="bi bi-arrow-right-circle"></i></button>
+
+    </div>
+
   </ul>
   `
   bindObjDetailsEvents();
@@ -129,6 +148,9 @@ const bindObjDetailsEvents = () => {
     let r = await c.newAccount(nodeId)
     let fr = JSON.stringify(r,null,2)
     let icon = evt.target.querySelector('.bi')
+    if (!icon) {
+      icon = evt.target
+    }
     icon.classList.remove('bi-plus-lg')
     icon.classList.add('bi-check2')
     await new Promise(resolve => setTimeout(resolve, 1000))
@@ -147,6 +169,9 @@ const bindObjDetailsEvents = () => {
     let r = await c.getStateLocals(nodeId)
     let fr = JSON.stringify(r,null,2)
     let icon = evt.target.querySelector('.bi')
+    if (!icon) {
+      icon = evt.target
+    }
     icon.classList.remove('bi-clipboard')
     icon.classList.add('bi-check2')
     await new Promise(resolve => setTimeout(resolve, 1000))
@@ -165,6 +190,9 @@ const bindObjDetailsEvents = () => {
     let r = await c.getStateGlobals(nodeId)
     let fr = JSON.stringify(r,null,2)
     let icon = evt.target.querySelector('.bi')
+    if (!icon) {
+      icon = evt.target
+    }
     icon.classList.remove('bi-clipboard')
     icon.classList.add('bi-check2')
     await new Promise(resolve => setTimeout(resolve, 1000))
@@ -188,6 +216,34 @@ const bindObjDetailsEvents = () => {
     jsonLog.push(["initFor",nodeId,selectedActorId])
   }
   initForBtn.addEventListener("click",initFor)
+
+  const transferBtn = document.querySelector("#transferButton")
+  const transfer = async (evt) => {
+    const tgt = evt.target.closest("#transferButton")
+    const nodeId = tgt.dataset.nodeId
+    let frSelect = document.querySelector("#actors-spa-select-transfer-from");
+    let frActorId = frSelect.value;
+    let toSelect = document.querySelector("#actors-spa-select-transfer-to");
+    let toActorId = toSelect.value;
+    let tokId = parseInt(document.querySelector("#token-id").value)
+    let amount = parseInt(document.querySelector("#transfer-amount").value)
+    let icon = evt.target.querySelector('.bi')
+    if (!icon) {
+      icon = evt.target
+    }
+    icon.classList.remove('bi-arrow-right-circle')
+    icon.classList.add('bi-check2')
+    let r = await c.transfer(nodeId,frActorId,toActorId,tokId,amount)
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    let fr = JSON.stringify(r,null,2)
+    await navigator.clipboard.writeText(fr)
+    icon.classList.remove('bi-check2')
+    icon.classList.add('bi-arrow-right-circle')
+    appendToLog(r)
+    redraw()
+    jsonLog.push(["transfer",nodeId,frActorId,toActorId,tokId,amount])
+  }
+  transferBtn.addEventListener("click",transfer)
 }
 
 const renderObjectDetails = async (evt) => {
@@ -597,6 +653,9 @@ const clickNode = async (evt) => {
 const loadScriptBtn = document.querySelector("#load-script")
 const loadScript = async (evt) => {
   let icon = evt.target.querySelector('.bi')
+  if (!icon) {
+    icon = evt.target
+  }
   icon.classList.remove('bi-play-circle')
   icon.classList.add('bi-check2')
   await new Promise(resolve => setTimeout(resolve, 1000))
@@ -611,6 +670,9 @@ loadScriptBtn.addEventListener("click",loadScript)
 const saveScriptBtn = document.querySelector("#save-script")
 const saveScript = async (evt) => {
   let icon = evt.target.querySelector('.bi')
+  if (!icon) {
+    icon = evt.target
+  }
   icon.classList.remove('bi-clipboard')
   icon.classList.add('bi-check2')
   await new Promise(resolve => setTimeout(resolve, 1000))
