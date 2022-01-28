@@ -151,6 +151,5 @@ const run = async ({fn, isRaw}) => {
 const first = true;
 for ( const fn of [ 'v', 'h1', 'h2', 'f', 'g' ] ) {
 for ( const isRaw of [ first, !first ] ) {
-  if ( fn !== 'v' ) { continue; }
     await run({fn, isRaw});
 }}
