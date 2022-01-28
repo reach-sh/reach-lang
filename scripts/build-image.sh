@@ -63,4 +63,4 @@ done
 
 build_image ""
 docker tag "${IMAGEC}--${CIRCLE_BRANCH}" "${IMAGE}:latest"
-docker tag "${IMAGEC}--${CIRCLE_BRANCH}" "${IMAGE}:${CIRCLE_SHA1}"
+docker tag "${IMAGEC}--${CIRCLE_BRANCH}" "${IMAGE}:circleci-${CIRCLE_SHA1}"
