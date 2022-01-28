@@ -64,8 +64,12 @@ commands:
         type: string
     steps:
       - run: |
-          docker pull reachsh/<<parameters.deps>>:circleci--${CIRCLE_BRANCH}
-          docker tag reachsh/<<parameters.deps>>:circleci--${CIRCLE_BRANCH} reachsh/<<parameters.deps>>:latest
+          for img in << parameters.deps >>; do
+            if [ $img != "" ]; then
+              docker pull reachsh/$img:circleci--${CIRCLE_BRANCH}
+              docker tag reachsh/$img:circleci--${CIRCLE_BRANCH} reachsh/$img:latest
+            fi
+          done
       #- run: |
       #    source ./VERSION
       #    for IMG in <<parameters.deps>> ; do
@@ -221,8 +225,8 @@ jobs:
         IMAGE="<<parameters.image>>"
         mkdir -p "/tmp/workspace/docker-${IMAGE}"
         cd .circleci && ./image.sh "${IMAGE}"
-        docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
         "${ROOT}/scripts/cache-image.sh" "${IMAGE}"
+    #    docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
     #- persist_to_workspace:
     #    root: /tmp/workspace/
     #    paths:
