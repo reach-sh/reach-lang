@@ -139,6 +139,28 @@ newAccount sid = do
       modify $ \ st -> st {e_graph = graph'}
       return newAccId
 
+updateLedger :: C.Ledger -> C.Account -> C.Token -> (Integer -> Integer) -> C.Ledger
+updateLedger map_ledger acc tok f = do
+  let m = saferMapRef "updateLedger" $ M.lookup acc map_ledger
+  let prev_amt = saferMapRef "updateLedger1" $ M.lookup tok m
+  let new_amt = f prev_amt
+  M.insert acc (M.insert tok new_amt m) map_ledger
+
+transfer :: StateId -> C.Account -> C.Account -> C.Token -> Integer -> WebM ()
+transfer sid fromAcc toAcc tok amt = do
+  graph <- gets e_graph
+  case M.lookup sid graph of
+    Nothing -> do
+      possible "newAccount: state not found"
+    Just (g, l) -> do
+      let ledger = C.e_ledger g
+      let ledger' = updateLedger ledger fromAcc tok (\x -> x - amt)
+      let ledger'' = updateLedger ledger' toAcc tok (+amt)
+      let g' = g { C.e_ledger = ledger'' }
+      let graph' = M.insert sid (g',l) graph
+      modify $ \ st -> st {e_graph = graph'}
+      return ()
+
 unblockProg :: StateId -> ActionId -> C.DLVal -> WebM ()
 unblockProg sid aid v = do
   graph <- gets e_graph
@@ -364,6 +386,16 @@ app p srcTxt = do
     s <- param "s"
     accId <- webM $ newAccount s
     json accId
+
+  post "/transfer/:s" $ do
+    setHeaders
+    s <- param "s"
+    fAcc <- param "from"
+    tAcc <- param "to"
+    token <- param "token"
+    amount <- param "amount"
+    webM $ transfer s fAcc tAcc token amount
+    json ("OK" :: String)
 
   post "/states/:s/actions/:a/" $ do
     setHeaders
