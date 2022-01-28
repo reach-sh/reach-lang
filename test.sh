@@ -127,9 +127,11 @@ cdot () {
 
 #######
 
-jb
-ci ALGO minBalance
-ci ETH minBalance
+#jb
+cdot examples/api-raw/index.rsh
+ci ALGO api-raw
+ci ETH api-raw
+cdot users/duoswap-core/index.rsh
 exit 0
 
 #jb

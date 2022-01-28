@@ -1114,8 +1114,18 @@ allFluidVars bals =
 class HasCounter a where
   getCounter :: a -> Counter
 
-type DLViews = M.Map (Maybe SLPart) (M.Map SLVar IType)
+type InterfaceLikeMap a = M.Map (Maybe SLPart) (M.Map SLVar a)
 
-type DLAPIs = M.Map (Maybe SLPart) (M.Map SLVar (SLPart, IType))
+flattenInterfaceLikeMap :: forall a . InterfaceLikeMap a -> M.Map SLPart a
+flattenInterfaceLikeMap = M.fromList . concatMap go . M.toList
+  where
+    go :: (Maybe SLPart, (M.Map SLVar a)) -> [(SLPart, a)]
+    go (mp, m) = map (go' mp) $ M.toList m
+    go' :: Maybe SLPart -> (SLVar, a) -> (SLPart, a)
+    go' mp (v, x) = (fromMaybe "" (fmap (flip (<>) "_") mp) <> bpack v, x)
 
-type DLEvents = M.Map (Maybe SLPart) (M.Map SLVar [DLType])
+type DLViews = InterfaceLikeMap IType
+
+type DLAPIs = InterfaceLikeMap (SLPart, IType)
+
+type DLEvents = InterfaceLikeMap [DLType]

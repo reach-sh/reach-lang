@@ -25,6 +25,7 @@ const run = async ({fn, isRaw}) => {
   const ctcA = accA.contract(backend);
   const x = pc(2);
   let exp;
+  try {
   await ctcA.p.A({
     x,
     ready: async () => {
@@ -42,14 +43,15 @@ const run = async ({fn, isRaw}) => {
         /**/  false, true, false, false, true, true, false, false
         ////     0     1      0    0  1   1  0  0
       ];
-      const [ args, exp_res ] =
-        ({ 'f': [ [x, bn(3)], true ],
-           'g': [ [x], x.add(x) ],
-           'h1': [ [x, b13], [true, bn(7), b13] ],
-           'h2': [ [x, b7, b8], [true, bn(7), b7, b8] ],
+      const [ isView, args, exp_res ] =
+        ({ 'f': [ false, [x, bn(3)], true ],
+           'g': [ false, [x], x.add(x) ],
+           'h1': [ false, [x, b13], [true, bn(7), b13] ],
+           'h2': [ false, [x, b7, b8], [true, bn(7), b7, b8] ],
+           'v': [ true, [bn(10), bn(11)], bn(10+11).add(x) ],
         })[fn];
       exp = [ x, ...args ];
-      const P_fn = `P_${fn}`;
+      const fnM = `${isView ? 'V' : 'P'}_${fn}`;
 
       const ctcInfo = await ctcA.getInfo();
       const ctc = accB.contract(backend, ctcInfo);
@@ -57,16 +59,21 @@ const run = async ({fn, isRaw}) => {
       console.log(ABI);
       let res;
       if ( ! isRaw ) {
-        res = await ctc.a.P[fn](...args);
+        const pfn = isView ? ctc.unsafeViews.V[fn] : ctc.a.P[fn];
+        res = await pfn(...args);
       } else if ( conn === 'ETH' || conn === 'CFX' ) {
         const { ethers } = stdlib;
         const ctcRaw = new ethers.Contract(ctcInfo, ABI, accB.networkAccount);
         const iface = ctcRaw.interface;
-        const t = await ctcRaw[P_fn](...args, { value: x });
+        const t = await ctcRaw[fnM](...args, (isView ? {} : { value: x }));
         console.log({t});
-        const tr = await t.wait();
-        console.log({tr});
-        [ res ] = iface.parseLog(tr.logs[1]).args;
+        if ( isView ) {
+          res = t;
+        } else {
+          const tr = await t.wait();
+          console.log({tr});
+          [ res ] = iface.parseLog(tr.logs[1]).args;
+        }
       } else if ( conn === 'ALGO' ) {
         const ALGO = stdlib;
         const { algosdk } = ALGO;
@@ -78,7 +85,8 @@ const run = async ({fn, isRaw}) => {
         txnPay.fee = 0;
         const { sigs } = ABI;
         const methods = sigs.map(algosdk.ABIMethod.fromSignature);
-        const meth = methods.find((x) => x.name === P_fn);
+        const meth = methods.find((x) => x.name === fnM);
+        stdlib.assert(meth !== undefined, `no ${fnM} method exists`);
         const t2a = (x) => {
           if ( x._isBigNumber ) {
             return BigInt(x.toHexString());
@@ -99,7 +107,8 @@ const run = async ({fn, isRaw}) => {
         stuff = { ...stuff, eargs, sel, aargs };
         const txnApp = algosdk.makeApplicationNoOpTxn(from, params, ctcInfo, aargs);
         txnApp.fee = ALGO.MinTxnFee * 2;
-        const rtxns = [ txnPay, txnApp ];
+        const txnPays = isView ? [] : [txnPay];
+        const rtxns = [ ...txnPays, txnApp ];
         algosdk.assignGroupID(rtxns);
         const wtxns = rtxns.map(ALGO.toWTxn);
         console.log(stuff);
@@ -128,13 +137,20 @@ const run = async ({fn, isRaw}) => {
         throw Error(`No raw mode for ${conn}`);
       }
       assertEq(res, exp_res);
+      if ( isView ) { throw 'View'; }
     },
     check: (act) => assertEq(act, exp),
   });
+  } catch (e) {
+    if ( e !== 'View' ) {
+      throw e;
+    }
+  }
 };
 
 const first = true;
-for ( const fn of [ 'h1', 'h2', 'f', 'g' ] ) {
+for ( const fn of [ 'v', 'h1', 'h2', 'f', 'g' ] ) {
 for ( const isRaw of [ first, !first ] ) {
+  if ( fn !== 'v' ) { continue; }
     await run({fn, isRaw});
 }}

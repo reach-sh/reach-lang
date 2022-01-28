@@ -10,6 +10,9 @@ export const main = Reach.App(() => {
     ready: Fun([], Null),
     check: Fun(true, Null),
   });
+  const V = View('V', {
+    v: Fun([UInt, UInt], UInt),
+  });
   const P = API('P', {
     f: Fun([UInt, UInt], Bool),
     g: Fun([UInt], UInt),
@@ -22,6 +25,7 @@ export const main = Reach.App(() => {
     const x = declassify(interact.x);
   });
   A.publish(x);
+  V.v.set((a, b) => a + b + x);
   commit();
   A.interact.ready();
 

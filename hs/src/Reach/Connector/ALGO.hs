@@ -1092,7 +1092,8 @@ csplice3 Nothing cbefore cafter cnew = do
   cafter
   -- [ Mid', After ]
   op "concat"
--- [ Big' ]
+  -- [ Big' ]
+  return ()
 csplice3 (Just cbig) cbefore cafter cnew = do
   cbig
   cbefore
@@ -2043,7 +2044,7 @@ data GlobalVar
   | GV_currentTime
   | GV_argTime
   | GV_argMsg
-  | GV_wasApi
+  | GV_wasMeth
   | GV_apiRet
   deriving (Eq, Ord, Show, Enum, Bounded)
 
@@ -2066,7 +2067,7 @@ gvType = \case
   GV_currentTime -> T_UInt
   GV_argTime -> T_UInt
   GV_argMsg -> T_Null
-  GV_wasApi -> T_Bool
+  GV_wasMeth -> T_Bool
   GV_apiRet -> T_Null
 
 keyState_gvs :: [GlobalVar]
@@ -2083,9 +2084,6 @@ defn_fixed l b = do
 
 defn_done :: App ()
 defn_done = defn_fixed "done" True
-
-defn_fail :: App ()
-defn_fail = defn_fixed "fail" False
 
 cRound :: App ()
 cRound = code "global" ["Round"]
@@ -2135,7 +2133,7 @@ cblt lab go t = do
   rec 0 Nothing t
   where
     rec low mhi = \case
-      Empty -> code "b" ["fail"]
+      Empty -> op "err"
       Branch rv l r -> do
         op "dup"
         cint $ fromIntegral rv
@@ -2156,6 +2154,11 @@ cblt lab go t = do
 handlerLabel :: Int -> Label
 handlerLabel w = "publish" <> texty w
 
+bindFromSvs_ :: SrcLoc -> [DLVar] -> App a -> App a
+bindFromSvs_ at svs m = do
+  cSvsLoad $ typeSizeOf $ T_Tuple $ map varType svs
+  bindFromTuple at svs m
+
 ch :: Int -> CHandler -> App ()
 ch _ (C_Loop {}) = return ()
 ch which (C_Handler at int from prev svs msg timev secsv body) = recordWhich which $ do
@@ -2170,9 +2173,7 @@ ch which (C_Handler at int from prev svs msg timev secsv body) = recordWhich whi
         cint $ typeSizeOf $ (T_Tuple $ map varType vs)
         asserteq
         bindFromTuple at vs m
-  let bindFromSvs m = do
-        cSvsLoad $ typeSizeOf $ T_Tuple $ map varType svs
-        bindFromTuple at svs m
+  let bindFromSvs = bindFromSvs_ at svs
   block (handlerLabel which) $ do
     comment "check step"
     cint $ fromIntegral prev
@@ -2258,16 +2259,39 @@ compileTEAL tealf = do
       impossible $ "The TEAL compiler failed with the message:\n" <> show stderr
     ExitSuccess -> return stdout
 
-data CApi = CApi
-  { capi_who :: SLPart
-  , capi_sig :: String
-  , capi_which :: Int
-  , capi_arg_tys :: [DLType]
-  , capi_doWrap :: App ()
-  }
+data CMeth
+  = CApi
+    { capi_who :: SLPart
+    , capi_sig :: String
+    , capi_ret_ty :: DLType
+    , capi_which :: Int
+    , capi_arg_tys :: [DLType]
+    , capi_doWrap :: App ()
+    }
+  | CView
+    { cview_who :: SLPart
+    , cview_sig :: String
+    , cview_ret_ty :: DLType
+    , cview_hs :: VSIHandler
+    }
 
-apiSig :: (SLPart, ApiInfo) -> (String, CApi)
-apiSig (who, (ApiInfo {..})) = (capi_sig, c)
+cmethRetTy :: CMeth -> DLType
+cmethRetTy = \case
+  CApi {..} -> capi_ret_ty
+  CView {..} -> cview_ret_ty
+
+cmethIsApi :: CMeth -> Bool
+cmethIsApi = \case
+  CApi {} -> True
+  CView {} -> False
+
+cmethIsView :: CMeth -> Bool
+cmethIsView = \case
+  CApi {} -> False
+  CView {} -> True
+
+capi :: (SLPart, ApiInfo) -> (String, CMeth)
+capi (who, (ApiInfo {..})) = (capi_sig, c)
   where
     c = CApi {..}
     capi_who = who
@@ -2289,36 +2313,95 @@ apiSig (who, (ApiInfo {..})) = (capi_sig, c)
                 _ -> imp
             _ -> imp
     cid = fromMaybe imp ai_mcase_id
-    ret = ai_ret_ty
-    mret = Just $ ret
+    capi_ret_ty = ai_ret_ty
+    mret = Just $ capi_ret_ty
+
+cview :: (SLPart, VSITopInfo) -> (String, CMeth)
+cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs) = (cview_sig, c)
+  where
+    cview_who = who
+    f = bunpack who
+    cview_sig = signatureStr f cview_arg_tys $ Just cview_ret_ty
+    c = CView {..}
 
 doWrapData :: [DLType] -> (DLArg -> App ()) -> App ()
 doWrapData tys mk = do
   -- Tuple of tys is on stack
   av <- allocDLVar sb $ T_Tuple tys
   sallocLet av (return ()) $ mk (DLA_Var av)
+  -- Data of tys is on stack
+  return ()
 
--- Data of tys is on stack
+cmeth :: Int -> CMeth -> App ()
+cmeth sigi = \case
+  CApi who sig _ which tys doWrap -> do
+    block_ (LT.pack $ bunpack who) $ do
+      comment $ LT.pack $ "API: " <> sig
+      comment $ LT.pack $ " ui: " <> show sigi
+      let f :: DLType -> Integer -> (DLType, App ())
+          f t i = (t, code "txna" ["ApplicationArgs", texty i])
+      cconcatbs_ (const $ return ()) $ zipWith f tys [1 ..]
+      doWrap
+      gvStore GV_argMsg
+      code "b" [handlerLabel which]
+  CView who sig _ hs -> do
+    block_ (LT.pack $ bunpack who) $ do
+      comment $ LT.pack $ "View: " <> sig
+      comment $ LT.pack $ "  ui: " <> show sigi
+      gvLoad GV_currentStep
+      flip (cblt "viewStep") (bltM hs) $ \hi vbvs -> do
+        let VSIBlockVS svs deb = vbvs
+        let (DLinExportBlock _ mfargs (DLBlock at _ t r)) = deb
+        let fargs = fromMaybe mempty mfargs
+        block_ (LT.pack $ bunpack who <> "_" <> show hi) $
+          bindFromArgs fargs $ bindFromSvs_ at svs $
+            flip cp t $ do
+              ca r
+              ctobs $ argTypeOf r
+              gvStore GV_apiRet
+              code "b" [ "apiReturn" ]
 
-capi :: Int -> CApi -> App ()
-capi sigi (CApi who sig which tys doWrap) = do
-  block_ (LT.pack $ bunpack who) $ do
-    comment $ LT.pack $ "API: " <> sig
-    comment $ LT.pack $ " ui: " <> show sigi
-    let f :: DLType -> Integer -> (DLType, App ())
-        f t i = (t, code "txna" ["ApplicationArgs", texty i])
-    cconcatbs_ (const $ return ()) $ zipWith f tys [1 ..]
-    doWrap
-    gvStore GV_argMsg
-    code "b" [handlerLabel which]
+bindFromArgs :: [DLVar] -> App a -> App a
+bindFromArgs vs m = do
+  -- XXX deal with >15 args
+  let go (v, i) = sallocLet v (code "txna" ["ApplicationArgs", texty i] >> cfrombs (varType v))
+  foldl' (flip go) m (zip vs [(1::Integer) ..])
+
+data VSIBlockVS = VSIBlockVS [DLVar] DLExportBlock
+type VSIHandler = M.Map Int VSIBlockVS
+data VSITopInfo = VSITopInfo [DLType] DLType VSIHandler
+type VSITop = M.Map SLPart VSITopInfo
+
+selectFromM :: Ord b => (x -> c -> d) -> b -> M.Map a (x, M.Map b c) -> M.Map a d
+selectFromM f k m = M.mapMaybe go m
+  where
+    go (x, m') = f x <$> M.lookup k m'
+
+analyzeViews :: (CPViews, ViewInfos) -> VSITop
+analyzeViews (vs, vis) = vsit
+  where
+    vsit = M.mapWithKey got $ flattenInterfaceLikeMap vs
+    got who it = VSITopInfo args ret hs
+      where
+        hs = selectFromM VSIBlockVS who vsih
+        (args, ret) =
+          case it of
+            IT_Val t -> ([], t)
+            IT_Fun d r -> (d, r)
+            IT_UDFun _ -> impossible $ "udview " <> bunpack who
+    vsih = M.map goh vis
+    goh (ViewInfo svs vi) = (svs, flattenInterfaceLikeMap vi)
 
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
   let PLProg _at plo dli _ _ cpp = pl
-  let CPProg at _ ai _ (CHandlers hm) = cpp
-  let maxApiRetSize = maxTypeSize $ M.map ai_ret_ty ai
-  let ai_sm = M.fromList $ map apiSig $ M.toAscList ai
-  let ai_im = M.mapKeys sigStrToInt ai_sm
+  let CPProg at vsi ai _ (CHandlers hm) = cpp
+  let ai_sm = M.fromList $ map capi $ M.toAscList ai
+  let vsiTop = analyzeViews vsi
+  let vsi_sm = M.fromList $ map cview $ M.toAscList vsiTop
+  let meth_sm = M.union ai_sm vsi_sm
+  let maxApiRetSize = maxTypeSize $ M.map cmethRetTy meth_sm
+  let meth_im = M.mapKeys sigStrToInt meth_sm
   let sMaps = dli_maps dli
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty
@@ -2418,8 +2501,8 @@ compile_algo env disp pl = do
     cint 0
     gvStore GV_argTime
     cbool True
-    gvStore GV_wasApi
-    cblt "api" capi $ bltM ai_im
+    gvStore GV_wasMeth
+    cblt "method" cmeth $ bltM meth_im
     label "publish"
     argLoad ArgPublish
     cfrombs T_UInt
@@ -2438,7 +2521,7 @@ compile_algo env disp pl = do
       ctobs $ gvType gv
     forM_ (tail keyState_gvs) $ const $ op "concat"
     op "app_global_put"
-    gvLoad GV_wasApi
+    gvLoad GV_wasMeth
     code "bz" ["checkSize"]
     label "apiReturn"
     -- SHA-512/256("return")[0..4] = 0x151f7c75
@@ -2469,7 +2552,6 @@ compile_algo env disp pl = do
       assert
     code "b" ["done"]
     defn_done
-    defn_fail
     label "alloc"
     code "txn" ["OnCompletion"]
     output $ TConst "NoOp"
@@ -2500,12 +2582,14 @@ compile_algo env disp pl = do
           aarray $ S.toList $ S.map (Aeson.String . LT.toStrict) ss
   wss W_ALGOUnsupported "unsupported" sFailures
   wss W_ALGOConservative "warnings" sWarnings
-  let apiSigs = M.keys ai_sm
+  let apiEntry lab f = (lab, aarray $ map (Aeson.String . s2t) $ M.keys $ M.filter f meth_sm)
   modifyIORef resr $
     M.insert "ABI" $
       aobject $
         M.fromList $
-          [ ("sigs", aarray $ map (Aeson.String . s2t) apiSigs)
+          [ apiEntry "sigs" (const True)
+          , apiEntry "impure" cmethIsApi
+          , apiEntry "pure" cmethIsView
           ]
   modifyIORef resr $
     M.insert "version" $
