@@ -210,8 +210,8 @@ jobs:
         steps:
           - srd_no
     - workattach
-    - and_restore_docker:
-        deps: <<parameters.deps>>
+    #- and_restore_docker:
+    #    deps: <<parameters.deps>>
     - run: |
         ROOT=$(pwd)
         docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
