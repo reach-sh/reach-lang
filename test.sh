@@ -127,6 +127,9 @@ cdot () {
 
 #######
 
+ci CFX api-raw
+exit 0
+
 #jb
 cdot examples/api-raw/index.rsh
 ci ALGO api-raw

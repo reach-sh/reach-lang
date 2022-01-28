@@ -74,6 +74,9 @@ const run = async ({fn, isRaw}) => {
           console.log({tr});
           [ res ] = iface.parseLog(tr.logs[1]).args;
         }
+        if ( exp_res._isBigNumber ) {
+          res = stdlib.bigNumberify(res);
+        }
       } else if ( conn === 'ALGO' ) {
         const ALGO = stdlib;
         const { algosdk } = ALGO;
