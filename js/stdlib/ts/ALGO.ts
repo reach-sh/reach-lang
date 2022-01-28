@@ -52,6 +52,7 @@ import {
   makeEventStream,
   TokenMetadata,
   LaunchTokenOpts,
+  makeSigningMonitor,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -81,8 +82,10 @@ export * from './shared_user';
 import { setQueryLowerBound, getQueryLowerBound } from './shared_impl';
 export { setQueryLowerBound, getQueryLowerBound, addressFromHex };
 
-// Type Definitions
+const [ setSigningMonitor, notifySend ] = makeSigningMonitor();
+export { setSigningMonitor };
 
+// Type Definitions
 type BigNumber = ethers.BigNumber;
 
 type AnyALGO_Ty = ALGO_Ty<CBR_Val>;
@@ -445,8 +448,10 @@ export const signSendAndConfirm = async (
     });
   }
   const p = await getProvider();
+  let sapt_res: any;
+  let notifyComplete: any;
   try {
-    await p.signAndPostTxns(txns);
+    [ sapt_res, notifyComplete ] = await notifySend(txns, p.signAndPostTxns(txns));
   } catch (e:any) {
     const es = `${e}`;
     if ( 'response' in e ) {
@@ -462,10 +467,11 @@ export const signSendAndConfirm = async (
     }
     throw { type: 'signAndPost', e, es };
   }
+  debug({sapt_res});
   const N = txns.length - 1;
   const tN = decodeB64Txn(txns[N].txn);
   try {
-    return await waitForConfirmation(tN.txID()); // tN.lastRound
+    return await notifyComplete(waitForConfirmation(tN.txID())); // tN.lastRound
   } catch (e) {
     const es = `${e}`;
     throw { type: 'waitForConfirmation', e, es };
@@ -1183,7 +1189,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const didOptIn = async (): Promise<boolean> =>
           ((await getLocalState(thisAcc.addr)) !== undefined);
         const doOptIn = async (): Promise<void> => {
-          const dhead = 'doOptIn';
+          const dhead = `${label} doOptIn`;
           debug(dhead);
           await sign_and_send_sync(
             dhead,

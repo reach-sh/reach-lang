@@ -7,6 +7,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.8 is the current Reach release candidate version.
 
++ 2022/01/28: Added `{!js} setSigningMonitor`.
 + 2022/01/27: Added `{!js} setMinMillisBetweenRequests`.
 + 2022/01/27: Added `{!js} setCustomHttpEventHandler`.
 + 2022/01/27: Added `{!js} minimumBalanceOf`.

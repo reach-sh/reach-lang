@@ -127,7 +127,8 @@ cdot () {
 
 #######
 
-ci CFX api-raw
+jb
+ci ETH signingMonitor
 exit 0
 
 #jb

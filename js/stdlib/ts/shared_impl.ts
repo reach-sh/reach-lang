@@ -885,14 +885,18 @@ export function setQueryLowerBound(x: BigNumber|number): void {
   console.log(`WARNING: setQueryLowerBound() is deprecated and does nothing.`);
 };
 
+const makePromise = <A>(): [Promise<A>, (a:A) => any] => {
+  let r = (a:A): any => { void(a); throw new Error(`promise never initialized`); };
+  const p: Promise<A> = new Promise((resolve) => { r = resolve; });
+  return [ p, r ];
+};
+
 export class Signal {
   p: Promise<boolean>;
   r: (a:boolean) => void;
 
   constructor() {
-    this.r = (a) => { void(a); throw new Error(`signal never initialized`); };
-    const me = this;
-    this.p = new Promise((resolve) => { me.r = resolve; });
+    [ this.p, this.r ] = makePromise();
   }
   wait() { return this.p; }
   notify() { this.r(true); }
@@ -955,4 +959,32 @@ export const retryLoop = async <T>(lab: any, f: (() => Promise<T>)) => {
       retries++;
     }
   }
+};
+
+
+type SigningMonitor = (e:any, pre:Promise<any>, post:Promise<any>) => void;
+export type SetSigningMonitor = (h: SigningMonitor) => void;
+type NotifyComplete<A> = (post:Promise<A>) => Promise<A>;
+export type NotifySend<A, B> = (e: any, pre:Promise<A>) => Promise<[A, NotifyComplete<B>]>;
+
+export const makeSigningMonitor = <A,B>(): [SetSigningMonitor, NotifySend<A,B>] => {
+  let mon: SigningMonitor|undefined = undefined;
+  const setSigningMonitor: SetSigningMonitor = (h) => {
+    mon = h;
+  };
+  const notifySend: NotifySend<A,B> = async (e:any, pre:Promise<A>) => {
+    if ( mon ) {
+      const [ post, postr ] = makePromise<B>();
+      mon(e, pre, post);
+      const notifyComplete: NotifyComplete<B> = async (pb:Promise<B>) => {
+        const b = await pb;
+        postr(b);
+        return b;
+      };
+      return [ await pre, notifyComplete ];
+    } else {
+      return [ await pre, (x:Promise<B>) => x ];
+    }
+  };
+  return [ setSigningMonitor, notifySend ];
 };

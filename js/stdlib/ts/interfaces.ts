@@ -7,6 +7,7 @@ import {
   LaunchTokenOpts,
   IContract,
   IBackend,
+  SetSigningMonitor,
 } from './shared_impl';
 
 export interface TypeDefs<Ty> {
@@ -159,4 +160,5 @@ export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, Contrac
   reachStdlib: Stdlib_Backend<Ty>
   setMinMillisBetweenRequests: (n: number) => void
   setCustomHttpEventHandler: (h: (e: any) => Promise<void>) => void
+  setSigningMonitor: SetSigningMonitor
 }

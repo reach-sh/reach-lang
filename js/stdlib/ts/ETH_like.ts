@@ -21,6 +21,8 @@ import {
   EQGetTxnsR,
   makeEventQueue,
   makeEventStream,
+  makeSigningMonitor,
+  NotifySend,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -358,14 +360,17 @@ const balanceOf_token = async (networkAccount: NetworkAccount, address: Address,
   return bigNumberify(await tokCtc["balanceOf"](address));
 };
 
+const [ setSigningMonitor, notifySend ] = makeSigningMonitor();
+
 const doTxn = async (
   dhead: string,
   tp: Promise<TransactionResponse>,
 ): Promise<TransactionReceipt> => {
   debug(dhead, { step: `pre call`});
-  const rt = await tp;
+  const notifySendp = notifySend as NotifySend<TransactionResponse, TransactionReceipt>;
+  const [ rt, notifyComplete ] = await notifySendp(dhead, tp);
   debug(dhead, {rt, step: `pre wait`});
-  const rm = await rt.wait();
+  const rm = await notifyComplete(rt.wait());
   debug(dhead, {rt, rm, step: `pre receipt`});
   assert(rm !== null, `receipt wait null`);
   const ro = await fetchAndRejectInvalidReceiptFor(rm.transactionHash);
@@ -617,9 +622,10 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             // @ts-ignore
             overrides.storageLimit = storageLimit;
           }
-          const contract = await factory.deploy(arg, overrides);
+          const notifySendp = notifySend as NotifySend<EthersLikeContract, TransactionReceipt>;
+          const [ contract, notifyComplete ] = await notifySendp(`${dhead} deploy`, factory.deploy(arg, overrides));
           debug(label, `waiting for receipt:`, contract.deployTransaction.hash);
-          const deploy_r = await contract.deployTransaction.wait();
+          const deploy_r = await notifyComplete(contract.deployTransaction.wait());
           const ctcAddress: ContractInfo = contract.address;
           const creationBlock = bigNumberify(deploy_r.blockNumber);
           debug(label, `deployed`, { ctcAddress, creationBlock });
@@ -1165,6 +1171,7 @@ const ethLike = {
   reachStdlib,
   setMinMillisBetweenRequests,
   setCustomHttpEventHandler,
+  setSigningMonitor,
 };
 return ethLike;
 }

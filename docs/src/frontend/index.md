@@ -787,6 +787,18 @@ as well as various other fields describing the HTTP event.
 This is only supported with certain connectors,
 and applies to all Providers created by the Reach standard library.
 
+---
+@{ref("js", "setSigningMonitor")}
+```js
+setSigningMonitor(h: (evt: any, pre:Promise<any>, post:Promise<any>) => void): void
+```
+
+Allows for the installation of a custom hook to observe signing requests.
+The handler `h` will be called on every request.
+The `evt` argument is an unstable object that describes the request.
+The `pre` argument is a Promise of an unstable object with details about the request, available after the request has been made.
+The `post` argument is a Promise of an unstable object with details about the completed request, available after the request has been completed.
+
 ### {#ref-frontends-js-utils} Utilities
 
 These functions operate on JavaScript representations of Reach values.
