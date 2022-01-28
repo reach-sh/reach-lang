@@ -72,15 +72,6 @@ commands:
               docker tag reachsh/$img:circleci--${CIRCLE_BRANCH} reachsh/$img:$VERSION
             fi
           done
-      #- run: |
-      #    source ./VERSION
-      #    for IMG in <<parameters.deps>> ; do
-      #      zcat /tmp/workspace/docker-${IMG}/${IMG}.tar.gz | docker load
-      #      docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
-      #      docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}.${MINOR}
-      #      docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
-      #    done
-
 jobs:
   "do-release":
     executor: fake
@@ -228,11 +219,6 @@ jobs:
         mkdir -p "/tmp/workspace/docker-${IMAGE}"
         cd .circleci && ./image.sh "${IMAGE}"
         "${ROOT}/scripts/cache-image.sh" "${IMAGE}"
-    #    docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
-    #- persist_to_workspace:
-    #    root: /tmp/workspace/
-    #    paths:
-    #      - docker-<<parameters.image>>
     - slack_fail
   "examples":
     parameters:
