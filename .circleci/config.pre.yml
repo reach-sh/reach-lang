@@ -64,13 +64,16 @@ commands:
         type: string
     steps:
       - run: |
-          source ./VERSION
-          for IMG in <<parameters.deps>> ; do
-            zcat /tmp/workspace/docker-${IMG}/${IMG}.tar.gz | docker load
-            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
-            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}.${MINOR}
-            docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
-          done
+          docker pull reachsh/<<parameters.deps>>:circleci--${CIRCLE_BRANCH}
+          docker tag reachsh/<<parameters.deps>>:circleci--${CIRCLE_BRANCH} reachsh/<<parameters.deps>>:latest
+      #- run: |
+      #    source ./VERSION
+      #    for IMG in <<parameters.deps>> ; do
+      #      zcat /tmp/workspace/docker-${IMG}/${IMG}.tar.gz | docker load
+      #      docker tag reachsh/${IMG}:latest reachsh/${IMG}:${VERSION}
+      #      docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}.${MINOR}
+      #      docker tag reachsh/${IMG}:latest reachsh/${IMG}:${MAJOR}
+      #    done
 
 jobs:
   "do-release":
@@ -210,8 +213,8 @@ jobs:
         steps:
           - srd_no
     - workattach
-    #- and_restore_docker:
-    #    deps: <<parameters.deps>>
+    - and_restore_docker:
+        deps: <<parameters.deps>>
     - run: |
         ROOT=$(pwd)
         docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
@@ -220,10 +223,10 @@ jobs:
         cd .circleci && ./image.sh "${IMAGE}"
         docker save "reachsh/${IMAGE}:latest" | gzip > "/tmp/workspace/docker-${IMAGE}/${IMAGE}".tar.gz
         "${ROOT}/scripts/cache-image.sh" "${IMAGE}"
-    - persist_to_workspace:
-        root: /tmp/workspace/
-        paths:
-          - docker-<<parameters.image>>
+    #- persist_to_workspace:
+    #    root: /tmp/workspace/
+    #    paths:
+    #      - docker-<<parameters.image>>
     - slack_fail
   "examples":
     parameters:
