@@ -64,10 +64,12 @@ commands:
         type: string
     steps:
       - run: |
+          source ./VERSION
           for img in << parameters.deps >>; do
             if [ $img != "" ]; then
               docker pull reachsh/$img:circleci--${CIRCLE_BRANCH}
               docker tag reachsh/$img:circleci--${CIRCLE_BRANCH} reachsh/$img:latest
+              docker tag reachsh/$img:circleci--${CIRCLE_BRANCH} reachsh/$img:$VERSION
             fi
           done
       #- run: |
