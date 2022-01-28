@@ -67,9 +67,9 @@ commands:
           source ./VERSION
           for img in << parameters.deps >>; do
             if [ $img != "" ]; then
-              docker pull reachsh/$img:$CIRCLE_SHA1
-              docker tag reachsh/$img:$CIRCLE_SHA1 reachsh/$img:latest
-              docker tag reachsh/$img:$CIRCLE_SHA1 reachsh/$img:$VERSION
+              docker pull reachsh/$img:circleci-$CIRCLE_SHA1
+              docker tag reachsh/$img:circleci-$CIRCLE_SHA1 reachsh/$img:latest
+              docker tag reachsh/$img:circleci-$CIRCLE_SHA1 reachsh/$img:$VERSION
             fi
           done
 jobs:
