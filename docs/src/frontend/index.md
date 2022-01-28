@@ -769,8 +769,8 @@ setMinMillisBetweenRequests(ms: number): void
 
 Setting this to a positive number forces outgoing requests to occur one at a time,
 and limits them to occur no more frequently than one request every `ms` milliseconds.
-This is only supported with certain connectors (currently: ALGO),
-and applies to all Providers created by the Reach JavaScript stdlib.
+This is only supported with certain connectors,
+and applies to all Providers created by the Reach standard library.
 
 ---
 @{ref("js", "setCustomHttpEventHandler")}
@@ -784,8 +784,8 @@ The handler will be called with one argument: an object `e`.
 Inspection of `e`'s fields should be considered an unstable API that may change over time.
 Currently, it has a field `eventName` which may be `'before'`, `'success'`, or `'error'`,
 as well as various other fields describing the HTTP event.
-This is only supported with certain networks (currently: ALGO),
-and applies to all Providers created by the Reach JavaScript stdlib.
+This is only supported with certain connectors,
+and applies to all Providers created by the Reach standard library.
 
 ### {#ref-frontends-js-utils} Utilities
 
