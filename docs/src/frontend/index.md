@@ -686,7 +686,7 @@ On Ethereum, `{!js} env` may include keys:
 `{!js} 'ETH_NODE_URI'`
 
 On Algorand, `{!js} env` may include keys:
-`{!js} 'ALGO_SERVER'`, `{!js} 'ALGO_PORT'`, `{!js} 'ALGO_TOKEN'`, `{!js} 'ALGO_INDEXER_SERVER'`, `{!js} 'ALGO_INDEXER_PORT'`, `{!js} 'ALGO_INDEXER_TOKEN'`.
+`{!cmd} 'ALGO_SERVER'`, `{!cmd} 'ALGO_PORT'`, `{!cmd} 'ALGO_TOKEN'`, `{!cmd} 'ALGO_INDEXER_SERVER'`, `{!cmd} 'ALGO_INDEXER_PORT'`, `{!cmd} 'ALGO_INDEXER_TOKEN'`, `{!cmd} ALGO_NODE_WRITE_ONLY`.
 
 ---
 @{ref("js", "setProvider")}

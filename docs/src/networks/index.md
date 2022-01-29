@@ -57,8 +57,10 @@ Backends must respect the following environment variables:
 + `ALGO_INDEXER_TOKEN` is used as the API token for your `indexer`.
 + `ALGO_INDEXER_SERVER` is used as the address of your `indexer`.
 + `ALGO_INDEXER_PORT` is used as the port of your `indexer`.
++ `ALGO_NODE_WRITE_ONLY` specifies if your `algod` will handle read requests,
+  or just writes.
 + `ALGO_FAUCET_PASSPHRASE` is used as the mnemonic for the faucet of your network.
-This is useful if you are running your own testing network.
+  This is useful if you are running your own testing network.
 
 ## {#ref-network-cfx} Conflux
 

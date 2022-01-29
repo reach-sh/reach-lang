@@ -75,7 +75,7 @@ import {
 } from './ALGO_compiled';
 export type { Token } from './ALGO_compiled';
 import type { MapRefT, MaybeRep } from './shared_backend'; // =>
-import { window, process, Env } from './shim';
+import { window, process, updateProcessEnv } from './shim';
 import { sha512_256 } from 'js-sha512';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = stdlib;
 export * from './shared_user';
@@ -413,10 +413,11 @@ const waitForConfirmation = async (txId: TxId): Promise<RecvTxn> => {
     return indexerTxn2RecvTxn(res['transaction']);
   };
 
-  // AlgoExplorer will NOT support this query, but I believe it will fail and
-  // then fall back to the Indexer, which does work, so we're keeping it in for
-  // optimization on local cases
-  return await checkAlgod();
+  if ( await nodeCanRead() ) {
+    return await checkAlgod();
+  } else {
+    return await checkIndexer();
+  }
 };
 
 const decodeB64Txn = (ts:string): Transaction => {
@@ -689,6 +690,7 @@ async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<algosdk.Algodv2
 export interface Provider {
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
+  nodeWriteOnly: boolean,
   getDefaultAddress: () => Promise<Address>,
   isIsolatedNetwork: boolean,
   signAndPostTxns: (txns:WalletTransaction[], opts?: object) => Promise<unknown>,
@@ -725,7 +727,8 @@ const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
   };
   const signAndPostTxns = wallet.signAndPostTxns;
   const isIsolatedNetwork = truthyEnv(process.env['REACH_ISOLATED_NETWORK']);
-  return { algodClient, indexer, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
+  const nodeWriteOnly = truthyEnv(process.env.ALGO_NODE_WRITE_ONLY);
+  return { algodClient, indexer, nodeWriteOnly, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
 };
 
 export const setWalletFallback = (wf:() => unknown) => {
@@ -736,16 +739,17 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
   const enableNetwork = async (eopts?:object) => {
     void(eopts);
     const base = opts['providerEnv'];
-    let baseEnv: Env = process.env;
     if ( base ) {
+      // XXX Is it a bad idea to update the process.env? This is to get
+      // ALGO_NODE_WRITE_ONLY from here to makeProviderByWallet
       if ( typeof base === 'string' ) {
         // @ts-ignore
-        baseEnv = await providerEnvByName(base);
+        updateProcessEnv(await providerEnvByName(base));
       } else {
-        baseEnv = base;
+        updateProcessEnv(base);
       }
     }
-    p = await makeProviderByEnv(baseEnv);
+    p = await makeProviderByEnv(process.env);
     return {};
   };
   const enableAccounts = async (eopts?:object) => {
@@ -867,6 +871,9 @@ export const [getProvider, setProvider] = replaceableThunk(async () => {
 });
 const getAlgodClient = async () => (await getProvider()).algodClient;
 const getIndexer = async () => (await getProvider()).indexer;
+const nodeCanRead = async () => ((await getProvider()).nodeWriteOnly === false);
+const ensureNodeCanRead = async () =>
+  assert(await nodeCanRead(), "node can read" );
 
 export interface ProviderEnv {
   ALGO_SERVER: string
@@ -876,6 +883,7 @@ export interface ProviderEnv {
   ALGO_INDEXER_PORT: string
   ALGO_INDEXER_TOKEN: string
   REACH_ISOLATED_NETWORK: string // preferably: 'yes' | 'no'
+  ALGO_NODE_WRITE_ONLY: string // preferably: 'yes' | 'no'
 }
 
 const localhostProviderEnv: ProviderEnv = {
@@ -886,13 +894,14 @@ const localhostProviderEnv: ProviderEnv = {
   ALGO_INDEXER_PORT: '8980',
   ALGO_INDEXER_TOKEN: rawDefaultItoken,
   REACH_ISOLATED_NETWORK: 'yes',
+  ALGO_NODE_WRITE_ONLY: 'no',
 }
 
 function envDefaultsALGO(env: Partial<ProviderEnv>): ProviderEnv {
   const denv = localhostProviderEnv;
   // @ts-ignore
   const ret: ProviderEnv = {};
-  for ( const f of ['ALGO_SERVER', 'ALGO_PORT', 'ALGO_TOKEN', 'ALGO_INDEXER_SERVER', 'ALGO_INDEXER_PORT', 'ALGO_INDEXER_TOKEN', 'REACH_ISOLATED_NETWORK'] ) {
+  for ( const f of ['ALGO_SERVER', 'ALGO_PORT', 'ALGO_TOKEN', 'ALGO_INDEXER_SERVER', 'ALGO_INDEXER_PORT', 'ALGO_INDEXER_TOKEN', 'REACH_ISOLATED_NETWORK', 'ALGO_NODE_WRITE_ONLY'] ) {
     // @ts-ignore
     ret[f] = envDefault(env[f], denv[f]);
   }
@@ -906,6 +915,7 @@ async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<Provider> {
   const algodClient = await waitAlgodClientFromEnv(fullEnv);
   const indexer = await waitIndexerFromEnv(fullEnv);
   const isIsolatedNetwork = truthyEnv(fullEnv.REACH_ISOLATED_NETWORK);
+  const nodeWriteOnly = truthyEnv(fullEnv.ALGO_NODE_WRITE_ONLY);
   const lab = `Providers created by environment`;
   const getDefaultAddress = async (): Promise<Address> => {
     throw new Error(`${lab} do not have default addresses`);
@@ -920,7 +930,7 @@ async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<Provider> {
     debug(`signAndPostTxns`, bs);
     await algodClient.sendRawTransaction(bs).do();
   };
-  return { algodClient, indexer, isIsolatedNetwork, getDefaultAddress, signAndPostTxns };
+  return { algodClient, indexer, nodeWriteOnly, isIsolatedNetwork, getDefaultAddress, signAndPostTxns };
 };
 export function setProviderByEnv(env: Partial<ProviderEnv>): void {
   setProvider(makeProviderByEnv(env));
@@ -937,6 +947,7 @@ function randlabsProviderEnv(net: string): ProviderEnv {
     ALGO_INDEXER_PORT: '',
     ALGO_INDEXER_TOKEN: '',
     REACH_ISOLATED_NETWORK: 'no',
+    ALGO_NODE_WRITE_ONLY: 'yes',
   }
 }
 
@@ -1059,6 +1070,7 @@ const reNetify = (x: string): NV => {
 const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
   const dhead = 'getAccountInfo';
   try {
+    await ensureNodeCanRead();
     const client = await getAlgodClient();
     const res = (await client.accountInformation(a).do()) as AccountInfo;
     debug(dhead, 'node', res);
@@ -1085,6 +1097,7 @@ const getAssetInfo = async (a:number): Promise<AssetInfo> => {
 const getApplicationInfoM = async (id:number): Promise<OrExn<AppInfo>> => {
   const dhead = 'getApplicationInfo';
   try {
+    await ensureNodeCanRead();
     const client = await getAlgodClient();
     const res = (await client.getApplicationByID(id).do()) as AppInfo;
     debug(dhead, 'node', res);
@@ -2050,6 +2063,7 @@ export const getNetworkTime = async (): Promise<BigNumber> => {
 const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
   const now = bigNumberToNumber(now_bn);
   try {
+    await ensureNodeCanRead();
     const client = await getAlgodClient();
     const binfo = await client.block(now).do();
     //debug(`getTimeSecs`, `node`, binfo);

@@ -676,6 +676,7 @@ withCompose DockerMeta {..} wrapped = do
         - ALGO_PORT=4180
         - ALGO_INDEXER_SERVER=http://reach-devnet-algo
         - ALGO_INDEXER_PORT=8980
+        - ALGO_NODE_WRITE_ONLY=no
       |]
   let devnetCFX =
         [N.text|
