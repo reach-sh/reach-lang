@@ -39,7 +39,7 @@ const main = async () => {
   // init Bob
   await c.initFor(1,1)
   // A interact
-  await c.respondWithVal(2,2,0,0)
+  await c.respondWithVal(2,2,0,0,'string')
   await c.respondWithVal(3,3,0,0)
   // A publish
   await c.respondWithVal(4,4,0,-1)
