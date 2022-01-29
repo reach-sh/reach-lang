@@ -685,7 +685,8 @@ instance Interp LLStep where
       let sends = M.mapKeys bunpack tc_send
       incrPhaseId
       isTheTimePast tc_mtime >>= \case
-        Just sk -> interp sk
+        Just sk -> do
+          interp sk
         Nothing -> do
           whoAmI >>= \case
             Participant who -> do
@@ -717,7 +718,7 @@ instance Interp LLStep where
               part <- partName <$> whoIs actId'
               let dls = saferMapRef "LLS_ToConsensus1" $ M.lookup part sends
               accId <- getAccId actId'
-              m' <- saferMapRef ("LLS_ToCon") <$> M.lookup phId <$> e_messages <$> getGlobal
+              m' <- saferMapRef ("Phase not yet seen") <$> M.lookup phId <$> e_messages <$> getGlobal
               let msgs = unfixedMsgs $ m'
               let winningMsg = saferMapRef ("Message not yet seen") $ M.lookup actId' msgs
               _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg) (m_pay winningMsg)
