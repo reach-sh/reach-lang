@@ -31,6 +31,7 @@ module.exports = {
       url: false,
       net: false,
       './rpc_server': false,
+      './ask': false,
     }
   },
   // More browser stuff
