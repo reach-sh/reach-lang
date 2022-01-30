@@ -106,6 +106,7 @@ const renderObjects = async (nodeId) => {
   <ul class="list-group list-group-flush">
     ${obs}
     <button type="button" id="newAccButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Account <i class="bi bi-plus-lg"></i></button>
+    <button type="button" id="newTokButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Token <i class="bi bi-plus-lg"></i></button>
     <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals <i class="bi bi-clipboard"></i></button>
     <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals <i class="bi bi-clipboard"></i></button>
     <div class="pad-me d-flex justify-content-center shrink-text">
@@ -164,6 +165,27 @@ const bindObjDetailsEvents = () => {
     appendToLog(fr)
   }
   newAccBtn.addEventListener("click",newAccHandler)
+
+  const newTokBtn = document.querySelector("#newTokButton")
+  const newTokHandler = async (evt) => {
+    const tgt = evt.target.closest("#newTokButton")
+    const nodeId = tgt.dataset.nodeId
+    let r = await c.newToken(nodeId)
+    let fr = JSON.stringify(r,null,2)
+    let icon = evt.target.querySelector('.bi')
+    if (!icon) {
+      icon = evt.target
+    }
+    icon.classList.remove('bi-plus-lg')
+    icon.classList.add('bi-check2')
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    await navigator.clipboard.writeText(fr)
+    icon.classList.remove('bi-check2')
+    icon.classList.add('bi-plus-lg')
+    console.log(`added new Token id: ${r}`)
+    appendToLog(fr)
+  }
+  newTokBtn.addEventListener("click",newTokHandler)
 
   const localsBtn = document.querySelector("#localsButton")
   const locals = async (evt) => {

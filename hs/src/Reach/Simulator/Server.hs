@@ -143,6 +143,20 @@ newAccount sid = do
       modify $ \ st -> st {e_graph = graph'}
       return newAccId
 
+newTok :: StateId -> WebM (C.Token)
+newTok sid = do
+  graph <- gets e_graph
+  case M.lookup sid graph of
+    Nothing -> do
+      possible "newTok: state not found"
+    Just (g, l) -> do
+      let tokId = C.e_ntok g
+      let nTokId = tokId + 1
+      let g' = g { C.e_ntok = nTokId }
+      let graph' = M.insert sid (g',l) graph
+      modify $ \ st -> st {e_graph = graph'}
+      return tokId
+
 updateLedger :: C.Ledger -> C.Account -> C.Token -> (Integer -> Integer) -> C.Ledger
 updateLedger map_ledger acc tok f = do
   let m = saferMapRef "updateLedger" $ M.lookup acc map_ledger
@@ -391,6 +405,12 @@ app p srcTxt = do
     s <- param "s"
     accId <- webM $ newAccount s
     json accId
+
+  post "/tokens/new/:s" $ do
+    setHeaders
+    s <- param "s"
+    tokId <- webM $ newTok s
+    json tokId
 
   post "/transfer/:s" $ do
     setHeaders
