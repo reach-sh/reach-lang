@@ -413,10 +413,12 @@ const respondToActions = async (evt) => {
   const actId = parseInt(tgt.dataset.actId)
   const who = tgt.dataset.who
   const actorSet = JSON.parse(tgt.dataset.actorSet)
+  const act = tgt.dataset.act
   let actors = `<option value="">Unchanged</option>`
   for (const [k,v] of Object.entries(actorSet)) {
     actors = actors + `<option value="${k}">${v}</option>`
   }
+  const respTempl = renderResponsePanel(nodeId,act,actors,actorId,actId)
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -426,29 +428,10 @@ const respondToActions = async (evt) => {
       <li class="breadcrumb-item active" aria-current="page">Response</li>
     </ol>
   </nav>
-  <div class="bordered d-flex justify-content-center">
-    <input type="text" id="spa-response" class="form-control form-control-sm" placeholder="Value">
-    <select name="actors" id="actors-spa-select">
-    ${actors}
-    </select>
-    <button type="button" id="spa-res-button" class="btn btn-outline-secondary btn-sm">Respond</button>
-  </div>
+  ${respTempl[0]}
   `
   const spaRespondBtn = document.querySelector("#spa-res-button")
-  const respondSpa = async () => {
-    let v = parseInt(document.querySelector("#spa-response").value)
-    let e = document.querySelector("#actors-spa-select");
-    let selectedActorId = e.value;
-    let aid = actorId
-    if (selectedActorId) {
-      aid = parseInt(selectedActorId)
-    }
-    let r = await c.respondWithVal(nodeId,actId,v,aid)
-    appendToLog(r)
-    redraw()
-    jsonLog.push(["respondWithVal",nodeId,actId,v,actorId])
-  }
-  spaRespondBtn.addEventListener("click",respondSpa)
+  spaRespondBtn.addEventListener("click",respTempl[1])
 
   setupReturnToObjects()
   setupReturnToObjectsDetails()
@@ -469,6 +452,55 @@ const setupReturnToActions = () => {
   actionsRetLink.addEventListener("click",backtrackToActions)
 }
 
+const renderResponsePanel = (nodeId,act,actors,actorId,actId) => {
+  switch (act.tag) {
+    case 'A_Interact':
+    case 'A_TieBreak':
+    case 'A_InteractV':
+    case 'A_Remote':
+    case 'A_Contest':
+    case 'A_AdvanceTime':
+    case 'A_AdvanceSeconds':
+    case 'A_None':
+    default:
+      const respondSpa = async () => {
+        let v = parseInt(document.querySelector("#spa-response").value)
+        let e = document.querySelector("#actors-spa-select");
+        let t = document.querySelector("#typing-spa-select").value;
+        let selectedActorId = e.value;
+        let aid = actorId
+        if (selectedActorId) {
+          aid = parseInt(selectedActorId)
+        }
+        let r = await c.respondWithVal(nodeId,actId,v,aid,t)
+        appendToLog(r)
+        redraw()
+        jsonLog.push(["respondWithVal",nodeId,actId,v,aid,t])
+      }
+      return [
+        `  <div class="bordered d-flex justify-content-center pad-me extra-margin">
+            <input type="text" id="spa-response" class="form-control form-control-sm" placeholder="Value">
+
+            <div>
+              <select name="actors" id="actors-spa-select">
+              ${actors}
+              </select>
+              <select name="typing" id="typing-spa-select">
+                <option value="number">Number</option>
+                <option value="string">String</option>
+              </select>
+            </div>
+
+            <div>
+              <button type="button" id="spa-res-button" class="btn btn-outline-secondary btn-sm">Respond</button>
+            </div>
+          </div>`,
+          respondSpa
+      ]
+
+  }
+}
+
 const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
   const act = actObj[1]
   const actId = actObj[0]
@@ -479,7 +511,8 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
   data-actor-id="${actorId}"
   data-node-id="${nodeId}"
   data-actor-set='${actorSet}'
-  data-who="${who}">
+  data-who="${who}"
+  data-act="${act.tag}">
   <div class="badge bg-secondary">
   `
   switch (act.tag) {
