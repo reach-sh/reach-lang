@@ -99,6 +99,12 @@ const newAccount = async (s) => {
   return r
 }
 
+const newToken = async (s) => {
+  const r = await interact('POST', `${address}/tokens/new/${s}`)
+  console.log(r)
+  return r
+}
+
 const transfer = async (s,fr,to,tok,amt) => {
   const r = await interact('POST', `${address}/transfer/${s}/?from=${fr}&to=${to}&token=${tok}&amount=${amt}`)
   console.log(r)
@@ -166,5 +172,6 @@ export {
   interp,
   getLoc,
   newAccount,
-  transfer
+  transfer,
+  newToken
 };

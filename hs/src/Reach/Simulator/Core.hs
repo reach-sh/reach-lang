@@ -43,7 +43,7 @@ instance ToJSON MessageInfo
 
 data Global = Global
   { e_ledger :: Ledger
-  , e_next_token :: Token
+  , e_ntok :: Token
   , e_linstate :: LinearState
   , e_nwtime :: Integer
   , e_nwsecs :: Integer
@@ -87,7 +87,7 @@ initGlobal :: Global
 initGlobal =
   Global
     { e_ledger = M.singleton simContract (M.singleton nwToken simContractAmt)
-    , e_next_token = 0
+    , e_ntok = 0
     , e_linstate = mempty
     , e_nwtime = 0
     , e_nwsecs = 0
@@ -221,10 +221,10 @@ ledgerNewToken :: Account -> DLTokenNew -> App ()
 ledgerNewToken acc tk = do
   (e, _) <- getState
   let ledger = e_ledger e
-  let token_id = e_next_token e
+  let tokId = e_ntok e
   supply <- vUInt <$> interp (dtn_supply tk)
-  let new_nw_ledger = M.insert acc (M.singleton token_id supply) ledger
-  setGlobal $ e {e_ledger = new_nw_ledger, e_next_token = token_id + 1}
+  let new_nw_ledger = M.insert acc (M.singleton tokId supply) ledger
+  setGlobal $ e {e_ledger = new_nw_ledger, e_ntok = tokId + 1}
 
 data Action
   = A_TieBreak PhaseId [String]
