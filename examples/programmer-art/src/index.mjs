@@ -100,7 +100,7 @@ const renderObjects = async (nodeId) => {
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item active" aria-current="page">Objects</li>
+      <li class="breadcrumb-item active" aria-current="page">Objects (${nodeId})</li>
     </ol>
   </nav>
   <ul class="list-group list-group-flush">
@@ -297,7 +297,7 @@ const renderObjectDetails = async (evt) => {
       break;
   }
   const who = detsj.l_who ? detsj.l_who : 'Consensus'
-  const act = await c.getActions(actorId)
+  const act = await c.getActions(nodeId,actorId)
   let disableActorDets = ``
   if (!act) {
     disableActorDets = `disabled`
@@ -395,7 +395,7 @@ const detailActions = async (evt) => {
   const actorId = parseInt(tgt.dataset.actorId)
   const actorSet = tgt.dataset.actorSet
   const who = tgt.dataset.who
-  const act = await c.getActions(actorId)
+  const act = await c.getActions(nodeId,actorId)
   console.log(act)
   if (!act) {
     noop();
@@ -435,12 +435,13 @@ const respondToActions = async (evt) => {
   const actId = parseInt(tgt.dataset.actId)
   const who = tgt.dataset.who
   const actorSet = JSON.parse(tgt.dataset.actorSet)
+  const tiebreakers = JSON.parse(tgt.dataset.tiebreakers)
   const act = tgt.dataset.act
   let actors = `<option value="">Unchanged</option>`
   for (const [k,v] of Object.entries(actorSet)) {
     actors = actors + `<option value="${k}">${v}</option>`
   }
-  const respTempl = renderResponsePanel(nodeId,act,actors,actorId,actId)
+  const respTempl = renderResponsePanel(nodeId,act,actors,actorId,actId,tiebreakers)
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -451,6 +452,9 @@ const respondToActions = async (evt) => {
     </ol>
   </nav>
   ${respTempl[0]}
+  <div>
+    <button type="button" id="spa-res-button" class="btn btn-outline-secondary btn-sm">Respond</button>
+  </div>
   `
   const spaRespondBtn = document.querySelector("#spa-res-button")
   spaRespondBtn.addEventListener("click",respTempl[1])
@@ -466,7 +470,7 @@ const setupReturnToActions = () => {
     if (actionsHTML) {
       spa.innerHTML = actionsHTML
       actionsHTML = null;
-      bindObjDetailsActionsEvents();
+      bindObjDetailsActionsResponseEvents();
       setupReturnToObjects()
       setupReturnToObjectsDetails()
     }
@@ -474,22 +478,49 @@ const setupReturnToActions = () => {
   actionsRetLink.addEventListener("click",backtrackToActions)
 }
 
-const renderResponsePanel = (nodeId,act,actors,actorId,actId) => {
-  switch (act.tag) {
+const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
+  switch (act) {
     case 'A_Interact':
     case 'A_TieBreak':
+      let tbOpts = ``
+      for (const [k,v] of Object.entries(tiebreakers)) {
+        tbOpts = tbOpts + `<option value="${k}">${v}</option>`
+      }
+      const respondSpaTieBreak = async () => {
+        let tiebreakerId = document.querySelector("#tiebreakers-spa-select").value;
+        let r = await c.respondWithVal(nodeId,actId,tiebreakerId,actorId)
+        appendToLog(r)
+        redraw()
+        jsonLog.push(["respondWithVal",nodeId,actId,tiebreakerId,actorId])
+      }
+      return [
+        `<select name="tiebreakers" id="tiebreakers-spa-select">
+          ${tbOpts}
+          </select>
+        `,
+        respondSpaTieBreak
+      ]
     case 'A_InteractV':
     case 'A_Remote':
     case 'A_Contest':
+      const respondSpaContest = async () => {
+        let r = await c.respondWithVal(nodeId,actId,0,actorId)
+        appendToLog(r)
+        redraw()
+        jsonLog.push(["respondWithVal",nodeId,actId,0,actorId])
+      }
+      return [
+        ``,
+        respondSpaContest
+      ]
     case 'A_AdvanceTime':
     case 'A_AdvanceSeconds':
     case 'A_None':
     default:
-      const respondSpa = async () => {
+      const respondSpaDefault = async () => {
         let v = parseInt(document.querySelector("#spa-response").value)
-        let e = document.querySelector("#actors-spa-select");
+        let selectedActorId = document.querySelector("#actors-spa-select").value;
         let t = document.querySelector("#typing-spa-select").value;
-        let selectedActorId = e.value;
         let aid = actorId
         if (selectedActorId) {
           aid = parseInt(selectedActorId)
@@ -513,11 +544,8 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId) => {
               </select>
             </div>
 
-            <div>
-              <button type="button" id="spa-res-button" class="btn btn-outline-secondary btn-sm">Respond</button>
-            </div>
           </div>`,
-          respondSpa
+          respondSpaDefault
       ]
 
   }
@@ -526,6 +554,15 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId) => {
 const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
   const act = actObj[1]
   const actId = actObj[0]
+  let tiebreakers = {}
+  let tbList = act.contents[1]
+  if (act.tag == 'A_TieBreak') {
+    for (const [k,v] of Object.entries(JSON.parse(actorSet))) {
+      if (tbList.includes(v)) {
+        tiebreakers[k] = v
+      }
+    }
+  }
   const common = `
   <button type="button"
   class="list-group-item list-group-item-action action-button"
@@ -534,7 +571,8 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
   data-node-id="${nodeId}"
   data-actor-set='${actorSet}'
   data-who="${who}"
-  data-act="${act.tag}">
+  data-act="${act.tag}"
+  data-tiebreakers='${JSON.stringify(tiebreakers)}'>
   <div class="badge bg-secondary">
   `
   switch (act.tag) {
@@ -556,7 +594,7 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
     case 'A_InteractV':
       return `
         ${common}${act.tag.slice(2)}</div>
-        <div> ${act.contents[0]} <div class="badge bg-light text-dark"> ${act.contents[1]}</div></div>
+        <div> ${act.contents[0]}: <b>${act.contents[1]}</b</div>
         </button> `
     case 'A_Remote':
       return `

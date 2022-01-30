@@ -52,7 +52,6 @@ instance FromJSON Status
 
 data Session = Session
   { e_actors_actions :: M.Map C.ActorId (M.Map StateId ActionId)
-  , e_last_acts :: M.Map C.ActorId StateId
   , e_nsid :: Int
   , e_naid :: Int
   , e_ids_actions :: M.Map ActionId C.Action
@@ -68,7 +67,6 @@ data Session = Session
 initSession :: Session
 initSession = Session
   { e_actors_actions = mempty
-  , e_last_acts = mempty
   , e_nsid = 0
   , e_naid = 0
   , e_ids_actions = mempty
@@ -98,7 +96,6 @@ processNewState psid ps = do
           C.PS_Suspend at _ s _ -> do
             (s, Running, at)
   graph <- gets e_graph
-  last_acts <- gets e_last_acts
   locs <- gets e_locs
   let locals = C.l_locals l
   let lcl = saferMapRef "processNewState" $ M.lookup actorId locals
@@ -109,7 +106,6 @@ processNewState psid ps = do
     {e_status = stat}
     {e_graph = M.insert sid (g,l') graph}
     {e_locs = M.insert sid loc locs}
-    {e_last_acts = M.insert actorId sid last_acts}
   case psid of
     Nothing -> return ()
     Just psid' -> modify $ \st ->
@@ -273,20 +269,21 @@ changeActor :: C.ActorId -> WebM ()
 changeActor actId = do
   modify $ \st -> st {e_actor_id = actId}
 
-computeActions :: C.ActorId -> WebM (Maybe (ActionId,C.Action))
-computeActions actorId = do
-  actacts <- gets e_actors_actions
-  idacts <- gets e_ids_actions
-  last_acts <- gets e_last_acts
-  case (M.lookup actorId actacts, M.lookup actorId last_acts)  of
-    (Nothing, _) -> return Nothing
-    (_, Nothing) -> return Nothing
-    (Just acts, Just sid) -> do
-      case M.lookup sid acts of
+computeActions :: StateId -> C.ActorId -> WebM (Maybe (ActionId,C.Action))
+computeActions sid actorId = do
+  case sid of
+    -1 -> return Nothing
+    _  -> do
+      actacts <- gets e_actors_actions
+      idacts <- gets e_ids_actions
+      case M.lookup actorId actacts of
         Nothing -> return Nothing
-        Just actId -> do
-          let act = saferMapRef "computeActions actId" $ M.lookup actId idacts
-          return $ Just (actId,act)
+        Just acts -> do
+          case M.lookup sid acts of
+            Nothing -> computeActions (sid - 1) actorId
+            Just actId -> do
+              let act = saferMapRef "computeActions actId" $ M.lookup actId idacts
+              return $ Just (actId,act)
 
 initProgSim :: LLProg -> WebM ()
 initProgSim ll = do
@@ -389,10 +386,11 @@ app p srcTxt = do
     ss <- webM $ allStates
     json (filter ((==) s) $ ss)
 
-  get "/actions/:a/" $ do
+  get "/actions/:s/:a/" $ do
     setHeaders
+    s <- param "s"
     a <- param "a"
-    act <- webM $ computeActions a
+    act <- webM $ computeActions s a
     json act
 
   post "/reset" $ do
