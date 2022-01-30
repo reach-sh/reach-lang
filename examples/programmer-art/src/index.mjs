@@ -3,7 +3,11 @@ import cytoscape from 'cytoscape';
 import klay from 'cytoscape-klay';
 import "../scss/custom.scss";
 
-const jsonLog = []
+const jsonLog = [
+  ["resetServer"],
+  ["load"],
+  ["init"]
+]
 
 const appendToLog = (r) => {
   console.log(r)
@@ -206,9 +210,9 @@ const bindObjDetailsEvents = () => {
   const initForBtn = document.querySelector("#initForButton")
   const initFor = async (evt) => {
     const tgt = evt.target.closest("#initForButton")
-    const nodeId = tgt.dataset.nodeId
+    const nodeId = parseInt(tgt.dataset.nodeId)
     let e = document.querySelector("#actors-spa-select");
-    let selectedActorId = e.value;
+    let selectedActorId = parseInt(e.value);
     let r = await c.initFor(nodeId,selectedActorId)
     appendToLog(r)
     redraw()
@@ -271,7 +275,7 @@ const renderObjectDetails = async (evt) => {
       break;
   }
   const who = detsj.l_who ? detsj.l_who : 'Consensus'
-  const act = await c.getActions(nodeId,actorId)
+  const act = await c.getActions(actorId)
   let disableActorDets = ``
   if (!act) {
     disableActorDets = `disabled`
@@ -369,7 +373,7 @@ const detailActions = async (evt) => {
   const actorId = parseInt(tgt.dataset.actorId)
   const actorSet = tgt.dataset.actorSet
   const who = tgt.dataset.who
-  const act = await c.getActions(nodeId,actorId)
+  const act = await c.getActions(actorId)
   console.log(act)
   if (!act) {
     noop();
@@ -404,7 +408,7 @@ const bindObjDetailsActionsResponseEvents = () => {
 const respondToActions = async (evt) => {
   actionsHTML = spa.innerHTML
   const tgt = evt.target.closest(".action-button")
-  const nodeId = tgt.dataset.nodeId
+  const nodeId = parseInt(tgt.dataset.nodeId)
   const actorId = parseInt(tgt.dataset.actorId)
   const actId = parseInt(tgt.dataset.actId)
   const who = tgt.dataset.who
@@ -497,7 +501,7 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
     case 'A_InteractV':
       return `
         ${common}${act.tag.slice(2)}</div>
-        <div> ${act.contents[0]},${act.contents[1]}</div>
+        <div> ${act.contents[0]} <div class="badge bg-light text-dark"> ${act.contents[1]}</div></div>
         </button> `
     case 'A_Remote':
       return `

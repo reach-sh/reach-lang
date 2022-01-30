@@ -9,12 +9,8 @@ const script = JSON.parse(
 );
 
 const main = async () => {
-  const port = 3001
   console.log("Init Testing!")
-  const params = {
-    port: port
-  };
-  await c.waitForPort(params)
+  await c.waitForPort()
   await c.interp(script)
   const r = await c.getStatus()
   assert.equal(r,"Done");
