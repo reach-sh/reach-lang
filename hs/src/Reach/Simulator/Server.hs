@@ -52,6 +52,7 @@ instance FromJSON Status
 
 data Session = Session
   { e_actors_actions :: M.Map C.ActorId (M.Map StateId ActionId)
+  , e_last_acts :: M.Map C.ActorId StateId
   , e_nsid :: Int
   , e_naid :: Int
   , e_ids_actions :: M.Map ActionId C.Action
@@ -67,6 +68,7 @@ data Session = Session
 initSession :: Session
 initSession = Session
   { e_actors_actions = mempty
+  , e_last_acts = mempty
   , e_nsid = 0
   , e_naid = 0
   , e_ids_actions = mempty
@@ -96,6 +98,7 @@ processNewState psid ps = do
           C.PS_Suspend at _ s _ -> do
             (s, Running, at)
   graph <- gets e_graph
+  last_acts <- gets e_last_acts
   locs <- gets e_locs
   let locals = C.l_locals l
   let lcl = saferMapRef "processNewState" $ M.lookup actorId locals
@@ -106,6 +109,7 @@ processNewState psid ps = do
     {e_status = stat}
     {e_graph = M.insert sid (g,l') graph}
     {e_locs = M.insert sid loc locs}
+    {e_last_acts = M.insert actorId sid last_acts}
   case psid of
     Nothing -> return ()
     Just psid' -> modify $ \st ->
@@ -255,13 +259,15 @@ changeActor :: C.ActorId -> WebM ()
 changeActor actId = do
   modify $ \st -> st {e_actor_id = actId}
 
-computeActions :: StateId -> C.ActorId -> WebM (Maybe (ActionId,C.Action))
-computeActions sid actorId = do
+computeActions :: C.ActorId -> WebM (Maybe (ActionId,C.Action))
+computeActions actorId = do
   actacts <- gets e_actors_actions
   idacts <- gets e_ids_actions
-  case M.lookup actorId actacts of
-    Nothing -> return Nothing
-    Just acts -> do
+  last_acts <- gets e_last_acts
+  case (M.lookup actorId actacts, M.lookup actorId last_acts)  of
+    (Nothing, _) -> return Nothing
+    (_, Nothing) -> return Nothing
+    (Just acts, Just sid) -> do
       case M.lookup sid acts of
         Nothing -> return Nothing
         Just actId -> do
@@ -369,12 +375,11 @@ app p srcTxt = do
     ss <- webM $ allStates
     json (filter ((==) s) $ ss)
 
-  get "/actions/:s/:a/" $ do
+  get "/actions/:a/" $ do
     setHeaders
-    s <- param "s"
     a <- param "a"
-    as <- webM $ computeActions s a
-    json as
+    act <- webM $ computeActions a
+    json act
 
   post "/reset" $ do
     setHeaders
