@@ -9,9 +9,10 @@ import Reach.AST.Base
 import Reach.AST.LL
 import Reach.Util
 import qualified Reach.Simulator.Core as C
+import qualified Data.ByteString.Lazy as LB
 import Control.Concurrent.STM
 import Control.Monad.Reader
-import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson (FromJSON, ToJSON, decode)
 import Data.Default.Class
 import qualified Data.Map.Strict as M
 import Data.Text.Lazy (Text)
@@ -212,9 +213,6 @@ unblockProg sid aid v = do
             Just (C.A_Remote _slcxtframes _str _args1 _args2) -> do
               let ps = k (g,l) v
               processNewState (Just sid) ps
-            Just (C.A_InteractV _part _str _dltype) -> do
-              let ps = k (g, l) v
-              processNewState (Just sid) ps
             Just (C.A_Contest _phid) -> do
               let ps = k (g, l) v
               processNewState (Just sid) ps
@@ -309,12 +307,16 @@ initProgSim ll = do
   ps <- return $ C.initApp ll initSt
   processNewState Nothing ps
 
-initProgSimFor :: C.ActorId -> StateId -> LLProg -> WebM ()
-initProgSimFor actId sid (LLProg _ _ _ _ _ _ _ _ step) = do
+initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> LLProg -> WebM ()
+initProgSimFor actId sid liv (LLProg _ _ _ _ _ _ _ _ step) = do
   graph <- gets e_graph
   modify $ \st -> st {e_actor_id = actId}
   let (g, l) = saferMapRef "initProgSimFor" $ M.lookup sid graph
-  let l' = l {C.l_curr_actor_id = actId}
+  let locals = C.l_locals l
+  let lcl = saferMapRef "initProgSimFor1" $ M.lookup actId locals
+  let lcl' = lcl { C.l_livs = liv }
+  let locals' = M.insert actId lcl' locals
+  let l' = l {C.l_curr_actor_id = actId, C.l_locals = locals'}
   ps <- return $ C.initAppFromStep step (g, l')
   processNewState (Just sid) ps
 
@@ -354,12 +356,19 @@ app p srcTxt = do
     setHeaders
     a <- param "a"
     s <- param "s"
+    liv :: LB.ByteString <- param "liv"
     ll <- webM $ gets e_src
-    case ll of
-      Nothing -> json $ ("No Program" :: String)
-      Just ll' -> do
-        webM $ initProgSimFor a s ll'
-        json $ ("OK" :: String)
+    -- _ <- possible $ show $ encode $ (M.empty :: C.LocalInteractEnv)
+
+    let liv' :: Maybe C.LocalInteractEnv = decode liv
+    case liv' of
+      Nothing -> possible "Init Parse Failure"
+      Just liv'' -> do
+        case ll of
+          Nothing -> json $ ("No Program" :: String)
+          Just ll' -> do
+            webM $ initProgSimFor a s liv'' ll'
+            json $ ("OK" :: String)
 
   get "/states" $ do
     setHeaders

@@ -480,7 +480,7 @@ const setupReturnToActions = () => {
 
 const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
   switch (act) {
-    case 'A_Interact':
+    // case 'A_Interact':
     case 'A_TieBreak':
       let tbOpts = ``
       for (const [k,v] of Object.entries(tiebreakers)) {
@@ -494,13 +494,15 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
         jsonLog.push(["respondWithVal",nodeId,actId,tiebreakerId,actorId])
       }
       return [
-        `<select name="tiebreakers" id="tiebreakers-spa-select">
+        `
+          <div>
+          <select name="tiebreakers" id="tiebreakers-spa-select">
           ${tbOpts}
           </select>
+          </div>
         `,
         respondSpaTieBreak
       ]
-    case 'A_InteractV':
     case 'A_Remote':
     case 'A_Contest':
       const respondSpaContest = async () => {
@@ -758,9 +760,9 @@ const clickNode = async (evt) => {
   sheet.insertRule(`${cssClasses} {
     background-color: silver;
   }`);
-  const at = ats[-1]
+  const at = ats.at(-1)
   if (at) {
-    const poi = document.querySelector(`.hljs-ln-line[data-line-number="${n}"`);
+    const poi = document.querySelector(`.hljs-ln-line[data-line-number="${at}"`);
     const topPos = poi.offsetTop;
     document.querySelector('.code-container').scrollTop = topPos;
   }
