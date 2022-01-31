@@ -7,11 +7,12 @@ import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Monad.Extra
 import Control.Monad.Reader
-import Data.Aeson (FromJSON)
+import Data.Aeson (ToJSON, FromJSON, Value(..), toJSON, encode, parseJSON, withText)
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A
 import Data.Bits
 import qualified Data.ByteString.Lazy as BSL
+import qualified Data.ByteString.Lazy.Char8 as BSLC8
 import Data.Char
 import Data.Either
 import Data.Functor
@@ -467,6 +468,15 @@ data ImageThirdParty
   = Postgres
   deriving (Eq, Ord, Show, Enum, Bounded)
 
+instance ToJSON ImageThirdParty where
+  toJSON = \case
+    Postgres -> String "postgres"
+
+instance FromJSON ImageThirdParty where
+  parseJSON = withText "ImageThirdParty" $ \case
+    "postgres" -> pure Postgres
+    v -> fail $ "Invalid `ImageThirdParty` \"" <> unpack v <> "\""
+
 -- TODO devise solution to "double update" problem if new Reach release
 -- includes third-party tag changes
 imageThirdPartyTagRaw :: ImageThirdParty -> TagRaw
@@ -478,6 +488,16 @@ imageThirdPartyDockerHubRoot = \case
   Postgres -> "library" -- https://hub.docker.com/_/postgres?tab=tags
 
 type Image = Either ImageThirdParty Text
+
+newtype Image' = Image' Image
+  deriving (Show, Eq)
+
+instance ToJSON Image' where toJSON (Image' i) = either toJSON toJSON i
+
+instance FromJSON Image' where
+  parseJSON = withText "Image'" $ \case
+    i | i `elem` (("reachsh/" <>) <$> rights imagesAll) -> pure . Image' $ Right i
+    i -> Image' . Left <$> parseJSON (String i)
 
 imagesCommon :: [Image]
 imagesCommon =
@@ -834,6 +854,10 @@ switchQuiet =
 switchNonInteractiveAUs :: Parser Bool
 switchNonInteractiveAUs = switch $ long "non-interactive" <> help
   "Report available updates and immediately exit"
+
+switchJSONAUs :: Parser Bool
+switchJSONAUs = switch $ long "json" <> help
+  "Report available updates in JSON format (implies --non-interactive)"
 
 recursiveDisableReporting :: Bool -> Text
 recursiveDisableReporting d = if d then " --disable-reporting" else ""
@@ -1726,6 +1750,9 @@ data DockerILS = DockerILS -- `docker image ls`
 parseJSON' :: (Generic a, A.GFromJSON A.Zero (Rep a)) => Int -> A.Value -> A.Parser a
 parseJSON' i = A.genericParseJSON A.defaultOptions {A.fieldLabelModifier = drop i}
 
+toEncoding' :: (Generic a, A.GToJSON' A.Encoding A.Zero (Rep a)) => Int -> a -> A.Encoding
+toEncoding' i = A.genericToEncoding A.defaultOptions {A.fieldLabelModifier = drop i}
+
 instance FromJSON ImageHostAPIDockerHubResultImage where parseJSON = parseJSON' 5
 
 instance FromJSON ImageHostAPIDockerHubResult where parseJSON = parseJSON' 4
@@ -1753,6 +1780,14 @@ tagFor = \case
   where
     d = maybe "" (("." <>) . packs)
 
+instance ToJSON TagFor where toJSON = String . tagFor
+
+instance FromJSON TagFor where
+  parseJSON = withText "TagFor" $ \case
+    "latest" -> pure TFReachCLI -- NB this is incidentally true today, but may not always be
+    "" -> fail "Invalid `TagFor` \"\""
+    t -> pure . either (const $ TFThirdParty t) TFReach $ mkReachVersionOf' t
+
 type DockerAssoc = M.Map Image (M.Map Digest [TagFor])
 
 data ImageHostAPIFail
@@ -1779,6 +1814,25 @@ data DockerAssocQuery
   | DAQUnknownImg Image TagRaw
   | DAQUnknownTag Image TagRaw
   deriving (Show)
+
+data VersionCompareIDTs = VersionCompareIDTs
+  { vc_image :: Image'
+  , vc_digest :: Digest
+  , vc_tags :: [TagFor]
+  } deriving (Show, Eq, Generic)
+
+data VersionCompare = VersionCompare
+  { vc_synced :: [VersionCompareIDTs]
+  , vc_newDigest :: [VersionCompareIDTs]
+  , vc_newTag :: [VersionCompareIDTs]
+  , vc_newConnector :: [VersionCompareIDTs]
+  } deriving (Show, Eq, Generic)
+
+instance ToJSON VersionCompareIDTs where toEncoding = toEncoding' 3
+instance ToJSON VersionCompare where toEncoding = toEncoding' 3
+
+instance FromJSON VersionCompareIDTs where parseJSON = parseJSON' 3
+instance FromJSON VersionCompare where parseJSON = parseJSON' 3
 
 arch' :: String
 arch' = case arch of
@@ -1899,12 +1953,13 @@ versionCompare = command "version-compare" $ info f mempty
     q = T.intercalate " && \\\n" $ (t <$> ("reachsh/" <>) <$> rights imagesAll)
       <> (t <$> (T.toLower . packs) <$> [minBound .. maxBound :: ImageThirdParty])
 
-    f = g <$> switchNonInteractiveAUs
+    f = g <$> switchNonInteractiveAUs <*> switchJSONAUs
 
-    g i' = scriptWithConnectorModeOptional $ do
+    g i' j' = scriptWithConnectorModeOptional $ do
       now <- zulu
       Env {e_var = Var {..}, ..} <- ask
       let i = if i' then " --non-interactive" else ""
+      let j = if j' then " --json" else ""
       let confE = "_docker" </> "ils-" <> now <> ".json"
       let confC = pack $ e_dirConfigContainer </> confE
       let confH = pack $ e_dirConfigHost </> confE
@@ -1918,7 +1973,7 @@ versionCompare = command "version-compare" $ info f mempty
         f | paste -s -d ' ' - | sed 's/} {/},\n{/g' >> $confH
         echo ']' >> $confH
 
-        $reachEx version-compare2$i --ils="$confC"
+        $reachEx version-compare2$i$j --ils="$confC"
       |]
 
 versionCompare2 :: Subcommand
@@ -1926,8 +1981,9 @@ versionCompare2 = command "version-compare2" $ info f mempty
   where
     f = g
       <$> switchNonInteractiveAUs
+      <*> switchJSONAUs
       <*> strOption (long "ils" <> internal)
-    g ni l = do
+    g ni j l = do
       Env {e_var = Var {..}, ..} <- ask
       assocL <- (liftIO $ A.eitherDecodeFileStrict' l) >>= \case
         Left e -> liftIO $ do
@@ -2048,14 +2104,16 @@ versionCompare2 = command "version-compare2" $ info f mempty
       let reaches = query t . Right . ("reachsh/" <>) <$> rights imagesAll
       let others = lefts imagesAll <&> \o -> query (imageThirdPartyTagRaw o) $ Left o
       let both = reaches <> others
-      let lefty = either (T.toLower . packs) id
+      let lefty (Image' x) = either (T.toLower . packs) id x
 
-      let uImgs = [a | DAQUnknownImg a _ <- both]
-      let uTags = [(x, y) | DAQUnknownTag x y <- both]
-      let synced = [(x, y, z) | DAQSync x y z <- both]
-      let newDAs = [(x, y, z) | DAQNewDigestAvailable x y z <- both]
-      let newTags = [(x, y, z) | DAQNewTags x y z <- both]
-      let newCAs = [(x, y, z) | DAQNewConnectorAvailable x y z <- both]
+      let uImgs = [Image' a | DAQUnknownImg a _ <- both]
+      let uTags = [(Image' x, y) | DAQUnknownTag x y <- both]
+
+      let vc@VersionCompare{..} = VersionCompare
+            [VersionCompareIDTs (Image' x) y z | DAQSync x y z <- both]
+            [VersionCompareIDTs (Image' x) y z | DAQNewDigestAvailable x y z <- both]
+            [VersionCompareIDTs (Image' x) y z | DAQNewTags x y z <- both]
+            [VersionCompareIDTs (Image' x) y z | DAQNewConnectorAvailable x y z <- both]
 
       if length uImgs > 0
         then liftIO $ do
@@ -2067,6 +2125,32 @@ versionCompare2 = command "version-compare2" $ info f mempty
             then liftIO $ do
               forM_ uTags $ \(x, y) -> T.putStrLn $ "Unknown tag: " <> y <> " for image: " <> lefty x <> "."
               exitWith $ ExitFailure 1
+
+            -- non-interactive JSON mode
+            else if j then scriptWithConnectorModeOptional $ do
+              now <- zulu
+              let confE = "_docker" </> "vc-" <> now <> ".json"
+              let confC = e_dirConfigContainer </> confE
+              let confH = pack $ e_dirConfigHost </> confE
+              let ec = if length (vc_synced <> vc_newConnector) >= length both then "0" else "60"
+
+              liftIO $ do
+                createDirectoryIfMissing True $ takeDirectory confC
+                BSLC8.writeFile confC $ encode vc
+
+              write [N.text|
+                if ! command -v diff >/dev/null; then
+                  echo '{ "noDiff": true, "script": false, "docker": "$confH" }'
+                  exit $ec
+                elif [ -f $latestScript ] && ! diff $reachEx $latestScript >/dev/null; then
+                  echo '{ "noDiff": false, "script": true, "docker": "$confH" }'
+                  exit 60
+                else
+                  echo '{ "noDiff": false, "script": false, "docker": "$confH" }'
+                  exit $ec
+                fi
+              |]
+
             else scriptWithConnectorModeOptional $ do
               let prompt' p n y = (liftIO $ putStr ("\n" <> p <> " (Enter 'y' for yes): ")
                     >> hFlush stdout >> getLine) >>= \case
@@ -2074,10 +2158,8 @@ versionCompare2 = command "version-compare2" $ info f mempty
                       _ -> n
 
               let s = T.take 8 . T.drop 7
-              let m =
-                    maybe 0 id . maximumMay $
-                      (\(x, _, _) -> T.length $ lefty x)
-                        <$> newDAs <> newTags <> newCAs <> synced
+              let m = maybe 0 id . maximumMay $ (\(VersionCompareIDTs x _ _) -> T.length $ lefty x)
+                    <$> vc_newDigest <> vc_newTag <> vc_newConnector <> vc_synced
 
               let p x = lefty x <> T.replicate (m - T.length (lefty x)) " "
               let n a = when (any ((> 0) . length) a) $ putStrLn ""
@@ -2087,18 +2169,18 @@ versionCompare2 = command "version-compare2" $ info f mempty
                           $ fmap (fmap ("reachsh/" <>)) . imagesFor <$> [minBound .. maxBound]
                     in " (required by: " <> T.intercalate ", " rs <> ")"
 
-              let say = mapM_ $ \(x, y, z) ->
+              let say = mapM_ $ \(VersionCompareIDTs x@(Image' x') y z) ->
                     T.putStrLn $
                       " * " <> p x <> "  " <> s y <> ":  "
                         <> T.intercalate ", " (tagFor <$> L.sort z)
-                        <> r x
+                        <> r x'
 
-              let ancas (x', y, zs) = "\n" <> a <> "\n" <> T.intercalate "\n" b where
+              let ancas (VersionCompareIDTs x' y zs) = "\n" <> a <> "\n" <> T.intercalate "\n" b where
                     x = lefty x'
                     a = [N.text| docker pull $x@$y |]
                     b = zs <&> \z' -> let z = tagFor z' in [N.text| docker tag $x@$y $x:$z |]
 
-              let addNewCAs = T.intercalate "\n" $ ancas <$> newCAs
+              let addNewCAs = T.intercalate "\n" $ ancas <$> vc_newConnector
 
               let dch = pack e_dirConfigHost
               now <- pack <$> zulu
@@ -2143,16 +2225,16 @@ versionCompare2 = command "version-compare2" $ info f mempty
               let prompt ec p' y = prompt' p' (andTheScript ec) y
 
               let utd = "Reach's Docker images are up-to-date"
-              if length (synced <> newCAs) >= length both
+              if length (vc_synced <> vc_newConnector) >= length both
                 then do
-                  if length newCAs == 0 then do
+                  if length vc_newConnector == 0 then do
                     liftIO . putStrLn $ utd <> "."
                     andTheScript "0"
 
                   else do
                     liftIO $ do
                       putStrLn $ utd <> " but the following (optional) connectors are also available:"
-                      say newCAs
+                      say vc_newConnector
                     if ni then andTheScript "0"
                     else prompt "0" "Would you like to add them?" $ do
                       write addNewCAs
@@ -2160,42 +2242,42 @@ versionCompare2 = command "version-compare2" $ info f mempty
 
                 else do
                   liftIO $ do
-                    when (length newDAs > 0) $ do
+                    when (length vc_newDigest > 0) $ do
                       putStrLn "New images are available for:"
-                      say newDAs
-                      n [newTags, newCAs, synced]
+                      say vc_newDigest
+                      n [vc_newTag, vc_newConnector, vc_synced]
 
-                    when (length newTags > 0) $ do
+                    when (length vc_newTag > 0) $ do
                       putStrLn "New tags are available for:"
-                      say newTags
-                      n [newCAs, synced]
+                      say vc_newTag
+                      n [vc_newConnector, vc_synced]
 
-                    when (length newCAs > 0) $ do
+                    when (length vc_newConnector > 0) $ do
                       putStrLn "New (optional) connectors are available:"
-                      say newCAs
-                      n [synced]
+                      say vc_newConnector
+                      n [vc_synced]
 
-                    when (length synced > 0) $ do
+                    when (length vc_synced > 0) $ do
                       putStrLn "The following images are fully synchronized:"
-                      say synced
+                      say vc_synced
 
                   if ni
                     then andTheScript "60"
                     else do
                       prompt "60" "Would you like to perform an update?" $ do
-                        when (length newCAs > 0)
+                        when (length vc_newConnector > 0)
                           . prompt' "Would you like to add the new connectors listed above?" (pure ())
                             . write $ "echo\n" <> addNewCAs
 
-                        when (length newDAs > 0) $ write "echo"
-                        forM_ newDAs $ \(x', y, zs) -> do
+                        when (length vc_newDigest > 0) $ write "echo"
+                        forM_ vc_newDigest $ \(VersionCompareIDTs x' y zs) -> do
                           let x = lefty x'
                           write [N.text| docker pull $x@$y |]
                           forM_ zs $ \z' -> do
                             let z = tagFor z'
                             write [N.text| docker tag $x@$y $x:$z |]
 
-                        forM_ newTags $ \(x', y, zs) -> do
+                        forM_ vc_newTag $ \(VersionCompareIDTs x' y zs) -> do
                           let x = lefty x'
                           forM_ zs $ \z' -> do
                             let z = tagFor z'
