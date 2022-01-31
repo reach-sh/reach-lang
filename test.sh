@@ -128,6 +128,10 @@ cdot () {
 #######
 
 jb
+ci ALGO minBalance
+exit 
+
+jb
 ci ALGO signingMonitor
 exit 0
 
