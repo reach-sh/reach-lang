@@ -87,8 +87,8 @@ const respondWithVal = async (s,a,v,w=false,t='number') => {
   return r
 }
 
-const initFor = async (s,a) => {
-  const r = await interact('POST', `${address}/init/${a}/${s}`)
+const initFor = async (s,a,liv="{}") => {
+  const r = await interact('POST', `${address}/init/${a}/${s}/?liv=${liv}`)
   console.log(r)
   return r
 }
