@@ -3,10 +3,13 @@
 Reach makes DApp development safer, faster, and more secure.
 This guide offers a real example of the advantages of using Reach.
 
-Here's an example provided by Austin Wilshire at [xBacked](https://twitter.com/xbacked). Follow Austin on Twitter [@awoldes](https://twitter.com/awoldes).
+Here's an example provided by Austin Wilshire at [xBacked](https://twitter.com/xbacked). 
+Follow Austin on Twitter [@awoldes](https://twitter.com/awoldes).
 
 Imagine you want to stake a token and at a later date unstake it with all the rewards.
-Let's look at a snippet from the perspective of a Deployer. As the deployer, you want to set the reward rate, ASA ID of the token being stakes, the ASA ID of the rewarded token, and the initial supply of the reward token.
+Let's look at a snippet from the perspective of a Deployer. 
+
+As the deployer, you want to set the reward rate, ASA ID of the token being stakes, the ASA ID of the rewarded token, and the initial supply of the reward token.
 
 ``` rsh
 // Initiate the Deployer's local state
@@ -30,7 +33,8 @@ Deployer.publish(
 );
 ``` 
 
-The configurable contract is deployed. The next step is to enable users to interact with it. In Reach, the solution is to add an API call so that when the user calls the function, they will pay `{!rsh} tokenAmt` of the `{!rsh} stakeToken` in the Deployer set. 
+The configurable contract is deployed. The next step is to enable users to interact with it. 
+In Reach, the solution is to add an API call so that when the user calls the function, they will pay `{!rsh} tokenAmt` of the `{!rsh} stakeToken` in the Deployer set. 
 
 ``` rsh
 .api(User.stakeTokens,
