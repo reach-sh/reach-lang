@@ -111,7 +111,10 @@ export function activate(context: ExtensionContext) {
 	window.registerTreeDataProvider('reach-docs', new DocumentationTreeDataProvider());
 }
 
-const commandHelper = (context, reachPath) => (label) => {
+const commandHelper = (
+	context: ExtensionContext,
+	reachPath: string
+) => (label: string) => {
 	const disposable = commands.registerCommand(`reach.${label}`, () => {
 		terminal.show();
 		terminal.sendText(`${reachPath} ${label}`);
@@ -119,7 +122,11 @@ const commandHelper = (context, reachPath) => (label) => {
 	context.subscriptions.push(disposable);
 };
 
-const urlHelper = (context, label, url) => {
+const urlHelper = (
+	context: ExtensionContext,
+	label: string,
+	url: string
+) => {
 	const disposable = commands.registerCommand(`reach.${label}`, () => {
 		env.openExternal(Uri.parse(url));
 	});
