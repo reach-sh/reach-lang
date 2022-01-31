@@ -62,8 +62,8 @@ async function getStateLocals(s) {
   return r;
 }
 
-async function getLoc(s) {
-  const r = await interact(`GET`, `${address}/locs/${s}`)
+async function getLoc(s,a) {
+  const r = await interact(`GET`, `${address}/locs/${s}/${a}`)
   console.log(r)
   return r;
 }

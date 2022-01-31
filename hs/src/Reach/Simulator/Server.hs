@@ -60,7 +60,7 @@ data Session = Session
   , e_src :: Maybe LLProg
   , e_status :: Status
   , e_edges :: [(StateId,StateId)]
-  , e_locs :: M.Map StateId (Maybe SrcLoc)
+  , e_locs :: M.Map C.ActorId (M.Map StateId SrcLoc)
   , e_src_txt :: String
   }
 
@@ -86,17 +86,20 @@ processNewState psid ps = do
   edges <- gets e_edges
   _ <- case ps of
     C.PS_Done _ _ -> do
-      _ <- return $ putStrLn "EVAL DONE"
       registerAction sid actorId C.A_None
-    C.PS_Suspend _ a _ _ -> registerAction sid actorId a
-  let ((g,l), stat, loc) =
+    C.PS_Suspend at a _ _ -> do
+      registerAction sid actorId a
+      case at of
+        Nothing -> return ()
+        Just at' -> do
+          registerLoc sid actorId at'
+  let ((g,l), stat) =
         case ps of
           C.PS_Done s _ -> do
-            (s, Done, Nothing)
-          C.PS_Suspend at _ s _ -> do
-            (s, Running, at)
+            (s, Done)
+          C.PS_Suspend _ _ s _ -> do
+            (s, Running)
   graph <- gets e_graph
-  locs <- gets e_locs
   let locals = C.l_locals l
   let lcl = saferMapRef "processNewState" $ M.lookup actorId locals
   let lcl' = lcl { C.l_ks = Just ps }
@@ -105,7 +108,6 @@ processNewState psid ps = do
     {e_nsid = sid + 1}
     {e_status = stat}
     {e_graph = M.insert sid (g,l') graph}
-    {e_locs = M.insert sid loc locs}
   case psid of
     Nothing -> return ()
     Just psid' -> modify $ \st ->
@@ -113,7 +115,15 @@ processNewState psid ps = do
         { e_edges = (psid', sid) : edges
         }
 
-registerAction :: StateId -> C.ActorId -> C.Action -> WebM ActionId
+registerLoc :: StateId -> C.ActorId -> SrcLoc -> WebM ()
+registerLoc sid actorId at = do
+  locs <- gets e_locs
+  case M.lookup actorId locs of
+    Nothing -> modify $ \ st -> st {e_locs = M.insert actorId (M.singleton sid at) locs }
+    Just locs' -> modify $ \ st -> st {e_locs = M.insert actorId (M.insert sid at locs') locs }
+  return ()
+
+registerAction :: StateId -> C.ActorId -> C.Action -> WebM ()
 registerAction sid actorId act = do
   actId <- gets e_naid
   modify $ \ st -> st {e_naid = actId + 1}
@@ -123,7 +133,7 @@ registerAction sid actorId act = do
   case M.lookup actorId actacts of
     Nothing -> modify $ \ st -> st {e_actors_actions = M.insert actorId (M.singleton sid actId) actacts }
     Just acts -> modify $ \ st -> st {e_actors_actions = M.insert actorId (M.insert sid actId acts) actacts }
-  return actId
+  return ()
 
 newAccount :: StateId -> WebM (C.AccountId)
 newAccount sid = do
@@ -260,10 +270,18 @@ getProgState sid = do
     Nothing -> return Nothing
     Just st -> return $ Just st
 
-getLoc :: StateId -> WebM (Maybe SrcLoc)
-getLoc sid = do
-  locs <- gets e_locs
-  return $ join $ M.lookup sid locs
+getLoc :: StateId -> C.ActorId -> WebM (Maybe SrcLoc)
+getLoc sid actorId = do
+  case sid of
+    -1 -> return Nothing
+    _  -> do
+      locs <- gets e_locs
+      case M.lookup actorId locs of
+        Nothing -> return Nothing
+        Just locs' -> do
+          case M.lookup sid locs' of
+            Nothing -> getLoc (sid - 1) actorId
+            Just loc -> return $ Just loc
 
 changeActor :: C.ActorId -> WebM ()
 changeActor actId = do
@@ -369,10 +387,11 @@ app p srcTxt = do
       Nothing -> json $ ("Not Found" :: String)
       Just (_, l) -> json l
 
-  get "/locs/:s" $ do
+  get "/locs/:s/:a/" $ do
     setHeaders
     s <- param "s"
-    loc <- webM $ getLoc s
+    a <- param "a"
+    loc <- webM $ getLoc s a
     json loc
 
   get "/status" $ do
