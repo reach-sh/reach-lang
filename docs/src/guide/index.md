@@ -18,6 +18,7 @@ The following guides are available:
 + @{seclink("guide-determ")}
 + @{seclink("guide-race")}
 + @{seclink("guide-abstract")}
++ @{seclink("guide-staking")}
 + @{seclink("guide-ganache")}
 + @{seclink("guide-editor-support")}
 + @{seclink("guide-packages")}
