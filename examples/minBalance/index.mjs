@@ -5,9 +5,6 @@ import * as backend from './build/index.main.mjs';
 const stdlib = await loadStdlib();
 const startingBalance = stdlib.parseCurrency(100);
 
-const [ accA, accB, accC ] = await stdlib.newTestAccounts(3, startingBalance);
-const accD = await stdlib.createAccount();
-
 let code = 0;
 const check = async (who, acc, expected) => {
   if ( stdlib.connector !== 'ALGO' ) { expected = '0'; }
@@ -16,7 +13,18 @@ const check = async (who, acc, expected) => {
   if ( actual !== expected ) { code = 1; }
 };
 
+const [ accA, accB, accC ] = await stdlib.newTestAccounts(3, startingBalance);
+const accD = await stdlib.createAccount();
+
+await check('A', accA, '0.1');
+await check('B', accB, '0.1');
+await check('C', accC, '0.1');
+await check('D', accD, '0');
+
 const zorkmid = await launchToken(stdlib, accA, "zorkmid", "ZMD");
+
+await check('A', accA, '0.2'); 
+
 const ctcA = accA.contract(backend);
 const ctcB = accB.contract(backend, ctcA.getInfo());
 await Promise.all([
@@ -26,7 +34,7 @@ await Promise.all([
   ctcB.p.B({}),
 ]);
 
-await check('Aafter', accA, '0.35');
+await check('A', accA, '0.35');
 await check('B', accB, '0.25');
 await check('C', accC, '0.1');
 await check('D', accD, '0');
