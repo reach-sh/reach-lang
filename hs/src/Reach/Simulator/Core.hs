@@ -231,7 +231,7 @@ data Action
   | A_None
   | A_AdvanceTime Integer
   | A_AdvanceSeconds Integer
-  | A_InteractV String String DLType
+  -- | A_InteractV String String DLType
   | A_Interact [SLCtxtFrame] String String DLType [DLVal]
   | A_Contest PhaseId
   | A_Remote [SLCtxtFrame] String [DLVal] [DLVal]
@@ -387,15 +387,18 @@ instance Interp DLArg where
     DLA_Constant dlconst -> return $ conCons' dlconst
     DLA_Literal dllit -> interp dllit
     DLA_Interact slpart str dltype -> do
-      v <- suspend $ PS_Suspend Nothing (A_InteractV (bunpack slpart) str dltype)
+      -- v <- suspend $ PS_Suspend Nothing (A_InteractV (bunpack slpart) str dltype)
       l <- getLocal
-      let actId = l_curr_actor_id l
-      lcl <- getMyLocalInfo
-      let newliv = M.insertWith (\_ y -> y) str v (l_livs lcl)
-      let lcl' = lcl {l_livs = newliv}
-      let res = saferMapRef "DLA_Interact" $ M.lookup str newliv
-      setLocal $ l {l_locals = M.insert actId lcl' (l_locals l)}
-      return res
+      let livs = l_livs $ l_locals l
+      let v = saferMapRef "DLA_Interact" $ M.lookup str livs
+      return v
+      -- let actId = l_curr_actor_id l
+      -- lcl <- getMyLocalInfo
+      -- let newliv = M.insertWith (\_ y -> y) str v (l_livs lcl)
+      -- let lcl' = lcl {l_livs = newliv}
+      -- let res = saferMapRef "DLA_Interact" $ M.lookup str newliv
+      -- setLocal $ l {l_locals = M.insert actId lcl' (l_locals l)}
+      -- return res
 
 instance Interp DLLiteral where
   interp = \case
