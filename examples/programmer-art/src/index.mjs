@@ -735,15 +735,31 @@ redraw();
 
 const clickNode = async (evt) => {
   const nodeId = evt.target.id()
-  const at = await c.getLoc(nodeId)
-  if (sheet.cssRules.length > 0) {
-    sheet.deleteRule(0);
+  const r = await c.getStateLocals(nodeId)
+  let actors = []
+  for (const [k,v] of Object.entries(r.l_locals)) {
+    actors.push(k)
   }
+  // actors = [-1]
+  const atsList = await Promise.all(actors.map(async (actorId) => {
+  	let x = await c.getLoc(nodeId,actorId)
+    return x
+  }));
+  let ats = atsList
+    .filter(at => at)
+    .map(at => at.split(':')[1]);
+  if (sheet.cssRules.length > 0) {
+    [...Array(sheet.cssRules.length).keys()].forEach((item, i) => {
+      sheet.deleteRule(i);
+    });
+  }
+  ats = [...new Set(ats)]
+  const cssClasses = ats.map(at => `.hljs-ln-line[data-line-number="${at}"]`).join(', ')
+  sheet.insertRule(`${cssClasses} {
+    background-color: silver;
+  }`);
+  const at = ats[-1]
   if (at) {
-    const n = at.split(':')[1]
-    sheet.insertRule(`.hljs-ln-line[data-line-number="${n}"] {
-      background-color: silver;
-    }`);
     const poi = document.querySelector(`.hljs-ln-line[data-line-number="${n}"`);
     const topPos = poi.offsetTop;
     document.querySelector('.code-container').scrollTop = topPos;
