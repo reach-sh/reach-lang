@@ -358,8 +358,6 @@ app p srcTxt = do
     s <- param "s"
     liv :: LB.ByteString <- param "liv"
     ll <- webM $ gets e_src
-    -- _ <- possible $ show $ encode $ (M.empty :: C.LocalInteractEnv)
-
     let liv' :: Maybe C.LocalInteractEnv = decode liv
     case liv' of
       Nothing -> possible "Init Parse Failure"
