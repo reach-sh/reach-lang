@@ -39,7 +39,7 @@ let client: LanguageClient;
 var terminal: Terminal;
 
 const fs = require('fs');
-const url = require('url');
+import * as url from 'url';
 
 var rootFolder: string;
 
