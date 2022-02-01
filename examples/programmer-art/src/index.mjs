@@ -100,6 +100,8 @@ const renderObjects = async (nodeId) => {
       <span class="badge bg-secondary">${status}</span>
       </button> `
   }
+  // <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals <i class="bi bi-clipboard"></i></button>
+  // <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals <i class="bi bi-clipboard"></i></button>
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -110,8 +112,7 @@ const renderObjects = async (nodeId) => {
     ${obs}
     <button type="button" id="newAccButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Account <i class="bi bi-plus-lg"></i></button>
     <button type="button" id="newTokButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Token <i class="bi bi-plus-lg"></i></button>
-    <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals <i class="bi bi-clipboard"></i></button>
-    <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals <i class="bi bi-clipboard"></i></button>
+
     <div class="pad-me d-flex justify-content-center shrink-text">
       <select name="init-actors" id="init-actors-spa-select">
         ${actors}
@@ -210,47 +211,47 @@ const bindObjDetailsEvents = () => {
   }
   newTokBtn.addEventListener("click",newTokHandler)
 
-  const localsBtn = document.querySelector("#localsButton")
-  const locals = async (evt) => {
-    const tgt = evt.target.closest("#localsButton")
-    const nodeId = tgt.dataset.nodeId
-    let r = await c.getStateLocals(nodeId)
-    let fr = JSON.stringify(r,null,2)
-    let icon = evt.target.querySelector('.bi')
-    if (!icon) {
-      icon = evt.target
-    }
-    icon.classList.remove('bi-clipboard')
-    icon.classList.add('bi-check2')
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    await navigator.clipboard.writeText(fr)
-    icon.classList.remove('bi-check2')
-    icon.classList.add('bi-clipboard')
-    console.log("logged local state")
-    appendToLog(fr)
-  }
-  localsBtn.addEventListener("click",locals)
-
-  const globalsBtn = document.querySelector("#globalsButton")
-  const globals = async (evt) => {
-    const tgt = evt.target.closest("#globalsButton")
-    const nodeId = tgt.dataset.nodeId
-    let r = await c.getStateGlobals(nodeId)
-    let fr = JSON.stringify(r,null,2)
-    let icon = evt.target.querySelector('.bi')
-    if (!icon) {
-      icon = evt.target
-    }
-    icon.classList.remove('bi-clipboard')
-    icon.classList.add('bi-check2')
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    await navigator.clipboard.writeText(fr)
-    icon.classList.remove('bi-check2')
-    icon.classList.add('bi-clipboard')
-    console.log("logged global state")
-    appendToLog(fr)
-  }
-  globalsBtn.addEventListener("click",globals)
+  // const localsBtn = document.querySelector("#localsButton")
+  // const locals = async (evt) => {
+  //   const tgt = evt.target.closest("#localsButton")
+  //   const nodeId = tgt.dataset.nodeId
+  //   let r = await c.getStateLocals(nodeId)
+  //   let fr = JSON.stringify(r,null,2)
+  //   let icon = evt.target.querySelector('.bi')
+  //   if (!icon) {
+  //     icon = evt.target
+  //   }
+  //   icon.classList.remove('bi-clipboard')
+  //   icon.classList.add('bi-check2')
+  //   await new Promise(resolve => setTimeout(resolve, 1000))
+  //   await navigator.clipboard.writeText(fr)
+  //   icon.classList.remove('bi-check2')
+  //   icon.classList.add('bi-clipboard')
+  //   console.log("logged local state")
+  //   appendToLog(fr)
+  // }
+  // localsBtn.addEventListener("click",locals)
+  //
+  // const globalsBtn = document.querySelector("#globalsButton")
+  // const globals = async (evt) => {
+  //   const tgt = evt.target.closest("#globalsButton")
+  //   const nodeId = tgt.dataset.nodeId
+  //   let r = await c.getStateGlobals(nodeId)
+  //   let fr = JSON.stringify(r,null,2)
+  //   let icon = evt.target.querySelector('.bi')
+  //   if (!icon) {
+  //     icon = evt.target
+  //   }
+  //   icon.classList.remove('bi-clipboard')
+  //   icon.classList.add('bi-check2')
+  //   await new Promise(resolve => setTimeout(resolve, 1000))
+  //   await navigator.clipboard.writeText(fr)
+  //   icon.classList.remove('bi-check2')
+  //   icon.classList.add('bi-clipboard')
+  //   console.log("logged global state")
+  //   appendToLog(fr)
+  // }
+  // globalsBtn.addEventListener("click",globals)
 
   const initActorSlct = document.querySelector("#init-actors-spa-select")
   const initActorDets = async (evt) => {
@@ -267,7 +268,6 @@ const bindObjDetailsEvents = () => {
     const dets = document.querySelectorAll(".init-detail")
     const liv = {}
     for (const det of dets) {
-      // {"info":{"tag":"V_Bytes","contents":"10"},"request":{"tag":"V_UInt","contents":1}}
       let type = `V_Bytes`
       let enter = det.value
       if (det.dataset.initType == 'UInt') {
