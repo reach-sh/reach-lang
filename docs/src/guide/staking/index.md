@@ -97,22 +97,30 @@ Unstaking is similar in structure.
 
 ## Connect to View
 
-Now for the cool part: Use your contract to hook to your website.
+Now for the cool part: Use your contract to hook to your website. To accomplish this, we connect to the [contract](##js_contract), deine the User's [API](##rsh_API) calls and a [view](##rsh_View)
 
 ``` rsh
 // connect to the contract
 const ctcInfo = account.contract(backend, CONTRACT_INFO);
 // defines all User api calls (stakeTokens, unstaketokens)
 const userApi = contract.a.User;
-// this is a [view](##rsh_View)
+// defines the view
 const userView = contract.v.read;
+```
 
+Next, we get the users state by reading the [address](##term_address).
+
+``` rsh
 useEffect(async() => {
     // get users local state from application
     const userState = await userView.read(account.addr);
     setUserState(userState);
 }, []);
+```
 
+Then create an event listener that connects to the wallet.
+
+``` rsh
 <div>
   {/* On button clicks, these functions will trigger the wallet */}
   <button onClick={async () => await userApi.stakeTokens(amt)}>
