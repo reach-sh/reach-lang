@@ -118,7 +118,7 @@ useEffect(async() => {
 }, []);
 ```
 
-Then create an event listener that connects to the wallet.
+Then, create an event listener that connects to the wallet.
 
 ``` rsh
 <div>
@@ -139,6 +139,3 @@ This demonstrates the essential (but not quite complete) elements of implementin
 There's no magic involved, but it definitely feels like there is when you're building a Reach application. 
 As a developer, you don't need to think about forming transaction groups, SDK calls, or opting in. 
 Reach handles `{!rsh} Token` IDs and Application opt-ins, on networks that require opt-ins. You focus on the business logic of your DApp and plug into the consensus network of your choice.
-
-In addition to all of this, Reach also provides formal verification and cross chain compatability. 
-In short, Reach allows developers to build decentralized apps on multiple blockchains faster and safer. 
