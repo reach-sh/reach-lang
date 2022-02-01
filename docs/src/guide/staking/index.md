@@ -97,14 +97,14 @@ Unstaking is similar in structure.
 
 ## Connect to View
 
-Now for the cool part: Use your contract to hook to your website. To accomplish this, we connect to the [contract](##ref-frontends-js-ctc), deine the User's [API](##ref-programs-appinit-api) calls and a [view](##ref-programs-appinit-view).
+Now for the cool part: Use your contract to hook to your website. To accomplish this, we connect to the [contract](##ref-frontends-js-ctc), deine the User's [API](##ref-programs-appinit-api) calls and a [View](##ref-programs-appinit-view).
 
 ``` rsh
 // connect to the contract
 const ctcInfo = account.contract(backend, CONTRACT_INFO);
 // defines all User api calls (stakeTokens, unstaketokens)
 const userApi = contract.a.User;
-// defines the view
+// defines the View
 const userView = contract.v.read;
 ```
 
