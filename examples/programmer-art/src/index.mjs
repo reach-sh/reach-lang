@@ -73,7 +73,10 @@ const renderObjects = async (nodeId) => {
     actorSet[k] = who
   }
   let actors = ``
-  for (const [k,v] of Object.entries(actorSet)) {
+  const actorEntries = Object.entries(actorSet)
+  // NOTE: assumption: there is at least one non-consensus actor
+  const firstActorId = actorEntries[0][0]
+  for (const [k,v] of actorEntries) {
     actors = actors + `<option value="${k}">${v}</option>`
   }
   for (const [k,v] of Object.entries(r.l_locals)) {
@@ -110,11 +113,15 @@ const renderObjects = async (nodeId) => {
     <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals <i class="bi bi-clipboard"></i></button>
     <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals <i class="bi bi-clipboard"></i></button>
     <div class="pad-me d-flex justify-content-center shrink-text">
-      <select name="actors" id="actors-spa-select">
+      <select name="init-actors" id="init-actors-spa-select">
         ${actors}
       </select>
       <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Init For</button>
     </div>
+    <div id="initDetailsPanel" class="pad-me d-flex justify-content-center shrink-text">
+
+    </div>
+
     <hr>
     <div class="pad-me d-flex justify-content-center shrink-text">
       SND:
@@ -136,7 +143,23 @@ const renderObjects = async (nodeId) => {
 
   </ul>
   `
+  initActorDetsHelper(firstActorId);
   bindObjDetailsEvents();
+}
+
+const initActorDetsHelper = async (a) => {
+  const initPanel = document.querySelector("#initDetailsPanel")
+  const dets = await c.initDetails(a)
+  let initHtml = ``
+  for (const [k,v] of Object.entries(dets)) {
+    initHtml = initHtml + `
+    <div class="pad-me d-flex justify-content-center shrink-text">
+      <div class="pad-me d-flex justify-content-center"> ${k} : ${v.slice(7)} </div>
+      <input type="text" data-init-val="${k}" data-init-type="${v.slice(7)}" class="form-control form-control-sm init-detail" placeholder="Value">
+    </div>`
+  }
+  initPanel.innerHTML = initHtml
+  console.log(dets)
 }
 
 const bindObjDetailsEvents = () => {
@@ -229,13 +252,36 @@ const bindObjDetailsEvents = () => {
   }
   globalsBtn.addEventListener("click",globals)
 
+  const initActorSlct = document.querySelector("#init-actors-spa-select")
+  const initActorDets = async (evt) => {
+    initActorDetsHelper(evt.target.value)
+  }
+  initActorSlct.addEventListener("change",initActorDets)
+
   const initForBtn = document.querySelector("#initForButton")
   const initFor = async (evt) => {
     const tgt = evt.target.closest("#initForButton")
     const nodeId = parseInt(tgt.dataset.nodeId)
-    let e = document.querySelector("#actors-spa-select");
+    let e = document.querySelector("#init-actors-spa-select");
     let selectedActorId = parseInt(e.value);
-    let r = await c.initFor(nodeId,selectedActorId)
+    const dets = document.querySelectorAll(".init-detail")
+    const liv = {}
+    for (const det of dets) {
+      // {"info":{"tag":"V_Bytes","contents":"10"},"request":{"tag":"V_UInt","contents":1}}
+      let type = `V_Bytes`
+      let enter = det.value
+      if (det.dataset.initType == 'UInt') {
+        type = 'V_UInt'
+        enter = parseInt(enter)
+
+      }
+      console.log(det.dataset.initVal)
+      console.log(det.value)
+      console.log(det.dataset.initType)
+
+      liv[det.dataset.initVal] = {"tag": type, "contents": enter}
+    }
+    let r = await c.initFor(nodeId,selectedActorId,JSON.stringify(liv))
     appendToLog(r)
     redraw()
     jsonLog.push(["initFor",nodeId,selectedActorId])

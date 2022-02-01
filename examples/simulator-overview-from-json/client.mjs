@@ -5,7 +5,7 @@ import { readFile } from 'fs/promises';
 
 const script = JSON.parse(
   await readFile(
-    // script: AACABBCABCBBA
+    // 
     // produced by the simulator ui 0.2
     new URL('./client.json', import.meta.url)
   )

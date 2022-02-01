@@ -38,8 +38,6 @@ const main = async () => {
     'deadline':{'tag':'V_UInt','contents':999}}
   ))
   await c.initFor(1,1)
-  // await c.respondWithVal(2,2,999,0) // deadline
-  // await c.respondWithVal(3,3,10) // wager
   await c.respondWithVal(2,2,0,0) // hand
   await c.respondWithVal(3,3,4444) // salt
   await c.respondWithVal(4,4,0,-1)
