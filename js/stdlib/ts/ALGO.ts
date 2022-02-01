@@ -1850,13 +1850,10 @@ export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
   const addr = extractAddr(acc);
   const ai = await getAccountInfo(addr);
   if ( ai.amount === 0 ) { return bigNumberify(0); }
-  // between 0 and 50
   const createdAppCount = bigNumberify((ai['created-apps']??[]).length);
-  // between 0 and 50
   const optinAppCount = bigNumberify((ai['apps-local-state']??[]).length);
   const numByteSlice = bigNumberify((ai['apps-total-schema']??{})['num-byte-slice']??0);
   const numUInt = bigNumberify((ai['apps-total-schema']??{})['num-uint']??0);
-  // between 0 and 1000
   const assetCount = bigNumberify((ai.assets??[]).length)
   const accMinBalance = bigNumberify(0)
     .add(assetCount.mul(appFlatOptInMinBalance))
