@@ -97,7 +97,7 @@ Unstaking is similar in structure.
 
 ## Connect to View
 
-Now for the cool part: Use your contract to hook to your website. To accomplish this, we connect to the [contract](##js_contract), deine the User's [API](##rsh_API) calls and a [view](##rsh_View)
+Now for the cool part: Use your contract to hook to your website. To accomplish this, we connect to the [contract](/frontend/##js_contract), deine the User's [API](##/rsh/appinit/rsh_API) calls and a [view](##/rsh/appinit/##rsh_View).
 
 ``` rsh
 // connect to the contract
