@@ -63,6 +63,7 @@ data LocalInfo = LocalInfo
   , l_phase :: PhaseId
   , l_ks :: Maybe PartState
   , l_livs :: LocalInteractEnv
+  , l_ivd :: InteractEnv
   }
   deriving (Generic)
 
@@ -110,6 +111,7 @@ initLocal =
             , l_phase = 0
             , l_ks = Nothing
             , l_livs = mempty
+            , l_ivd = mempty
             }
     , l_curr_actor_id = consensusId
     }
@@ -786,7 +788,7 @@ bindConsensusMeta (DLRecv {..}) actorId accId = do
 
 instance Interp LLProg where
   interp (LLProg _at _llo slparts _dli _dex _dvs _apis _evts step) = do
-    registerParts $ M.keys $ sps_ies slparts
+    registerParts $ M.toList $ sps_ies slparts
     interp step
 
 isTheTimePast :: Maybe (DLTimeArg, LLStep) -> App (Maybe LLStep)
@@ -808,17 +810,17 @@ isTheTimePast tc_mtime = do
           False -> return $ Just step
     Nothing -> return $ Nothing
 
-registerParts :: [SLPart] -> App ()
+registerParts :: [(SLPart, InteractEnv)] -> App ()
 registerParts [] = return ()
-registerParts (p : ps) = do
+registerParts ((p, iv) : ps) = do
   s <- getState
-  let (g, l) = registerPart s (bunpack p)
+  let (g, l) = registerPart s (bunpack p) iv
   setGlobal g
   setLocal l
   registerParts ps
 
-registerPart :: State -> String -> State
-registerPart (g, l) s = do
+registerPart :: State -> String -> InteractEnv -> State
+registerPart (g, l) s iv = do
   let actorId = e_nactorid g
   let pacts = e_partacts g
   let aid = e_naccid g
@@ -831,6 +833,7 @@ registerPart (g, l) s = do
           , l_phase = 0
           , l_ks = Nothing
           , l_livs = mempty
+          , l_ivd = iv
           }
   let locals' = M.insert actorId lcl locals
   let ledger = e_ledger g

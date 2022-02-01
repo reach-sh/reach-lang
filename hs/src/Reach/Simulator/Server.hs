@@ -5,6 +5,7 @@
 
 module Reach.Simulator.Server where
 
+import Reach.AST.DLBase
 import Reach.AST.Base
 import Reach.AST.LL
 import Reach.Util
@@ -16,6 +17,7 @@ import Data.Aeson (FromJSON, ToJSON, decode)
 import Data.Default.Class
 import qualified Data.Map.Strict as M
 import Data.Text.Lazy (Text)
+import Data.Maybe (fromMaybe)
 import GHC.Generics
 import Network.Wai.Middleware.RequestLogger
 import Web.Scotty.Trans
@@ -268,6 +270,25 @@ getProgState sid = do
     Nothing -> return Nothing
     Just st -> return $ Just st
 
+checkIfValIType :: IType -> Bool
+checkIfValIType = \case
+  IT_Val _ -> True
+  IT_Fun _ _ -> False
+  IT_UDFun _ -> False
+
+initVals :: InteractEnv -> WebM (M.Map String String)
+initVals (InteractEnv iv'') = do
+  let iv' = M.toList iv''
+  let iv = filter (\(_,itype) -> checkIfValIType itype) iv'
+  return $ M.fromList $ map (\(var,itype) -> (var, show itype)) iv
+
+initDetails :: C.ActorId -> WebM (M.Map String String)
+initDetails actorId = do
+  (_,l) <- fromMaybe (possible "initDetails: state not founds") <$> getProgState 0
+  case M.lookup actorId (C.l_locals l) of
+    Nothing -> possible "initDetails: actor not found"
+    Just lcl -> initVals $ C.l_ivd lcl
+
 getLoc :: StateId -> C.ActorId -> WebM (Maybe SrcLoc)
 getLoc sid actorId = do
   case sid of
@@ -367,6 +388,12 @@ app p srcTxt = do
           Just ll' -> do
             webM $ initProgSimFor a s liv'' ll'
             json $ ("OK" :: String)
+
+  get "/init_details/:a" $ do
+    setHeaders
+    a <- param "a"
+    dets <- webM $ initDetails a
+    json dets
 
   get "/states" $ do
     setHeaders

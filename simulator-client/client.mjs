@@ -101,6 +101,12 @@ const initFor = async (s,a,liv="{}") => {
   return r
 }
 
+const initDetails = async (a) => {
+  const r = await interact('GET', `${address}/init_details/${a}`)
+  console.log(r)
+  return r
+}
+
 const newAccount = async (s) => {
   const r = await interact('POST', `${address}/accounts/new/${s}`)
   console.log(r)
@@ -181,5 +187,6 @@ export {
   getLoc,
   newAccount,
   transfer,
-  newToken
+  newToken,
+  initDetails
 };
