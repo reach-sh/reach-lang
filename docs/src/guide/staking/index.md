@@ -9,7 +9,7 @@ Follow Austin on Twitter [@awoldes](https://twitter.com/awoldes).
 Imagine you want to stake a token and at a later date unstake it with all the rewards.
 Let's look at a snippet from the perspective of a Deployer. 
 
-As the deployer, you want to set the reward rate, ASA ID of the token being stakes, the ASA ID of the rewarded token, and the initial supply of the reward token.
+As the deployer, you want to set the reward rate, `{!rsh} Token` ID of the token being staked, the `{!rsh} Token` ID of the rewarded token, and the initial supply of the reward token.
 
 ``` rsh
 // Initiate the Deployer's local state
@@ -45,7 +45,7 @@ In Reach, the solution is to add an API call so that when the user calls the fun
   },
   (tokenAmt) => {
       //looks unintuitive, but this means the user will
-      // pay 0 algos, and pay tokenAmt in rewardTokens
+      // pay 0 network tokens, and pay tokenAmt in rewardTokens
       return [0, [tokenAmt, stakeToken]]
   },
   (tokenAmt, apiReturn) => {
@@ -101,10 +101,10 @@ Now for the cool part: Use your contract to hook to your website.
 
 ``` rsh
 // connect to the contract
-const application = account.contract(backend, APPLICATION_ID);
+const ctcInfo = account.contract(backend, CONTRACT_INFO);
 // defines all User api calls (stakeTokens, unstaketokens)
 const userApi = contract.a.User;
-// this is a view; read the reach docs at docs.reach.sh
+// this is a [view](##rsh_View)
 const userView = contract.v.read;
 
 useEffect(async() => {
@@ -114,7 +114,7 @@ useEffect(async() => {
 }, []);
 
 <div>
-  {/* On button clicks, these functions will trigger MyAlgo */}
+  {/* On button clicks, these functions will trigger the wallet */}
   <button onClick={async () => await userApi.stakeTokens(amt)}>
     Stake Tokens
   </button>
@@ -130,7 +130,7 @@ useEffect(async() => {
 This demonstrates the essential (but not quite complete) elements of implementing a contract in Reach.
 There's no magic involved, but it definitely feels like there is when you're building a Reach application. 
 As a developer, you don't need to think about forming transaction groups, SDK calls, or opting in. 
-That's right, Reach handles ASA and Application opt-ins. You focus on the business logic of your DApp and plug into the consensus network of your choice.
+Reach handles `{!rsh} Token` IDs and Application opt-ins, on networks that require opt-ins. You focus on the business logic of your DApp and plug into the consensus network of your choice.
 
 In addition to all of this, Reach also provides formal verification and cross chain compatability. 
-At the time of this writing, Reach currently supports contract deployment on EVM (Ethereum Virtual Machine), AVM (Algorand Virtual Machine), and Conflux consensus networks.
+In short, Reach allows developers to build decentralized apps on multiple blockchains faster and safer. 
