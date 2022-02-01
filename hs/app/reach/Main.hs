@@ -1944,6 +1944,9 @@ remoteUpdates imgs = do
     exitWith $ ExitFailure 1
   pure (pack $ e_dirTmpHost </> rn, L.foldl' M.union mempty $ rights ts)
 
+imgTxt :: Image' -> Text
+imgTxt (Image' x) = either (T.toLower . packs) id x
+
 versionCompare :: Subcommand
 versionCompare = command "version-compare" $ info f mempty
   where
@@ -2104,7 +2107,6 @@ versionCompare2 = command "version-compare2" $ info f mempty
       let reaches = query t . Right . ("reachsh/" <>) <$> rights imagesAll
       let others = lefts imagesAll <&> \o -> query (imageThirdPartyTagRaw o) $ Left o
       let both = reaches <> others
-      let lefty (Image' x) = either (T.toLower . packs) id x
 
       let uImgs = [Image' a | DAQUnknownImg a _ <- both]
       let uTags = [(Image' x, y) | DAQUnknownTag x y <- both]
@@ -2117,36 +2119,37 @@ versionCompare2 = command "version-compare2" $ info f mempty
 
       if length uImgs > 0
         then liftIO $ do
-          forM_ uImgs $ \a -> T.putStrLn $ "Unknown image: " <> lefty a <> "."
+          forM_ uImgs $ \a -> T.putStrLn $ "Unknown image: " <> imgTxt a <> "."
           T.putStrLn $ "Please open an issue at " <> uriIssues <> " including the failures listed above."
           exitWith $ ExitFailure 1
         else
           if length uTags > 0
             then liftIO $ do
-              forM_ uTags $ \(x, y) -> T.putStrLn $ "Unknown tag: " <> y <> " for image: " <> lefty x <> "."
+              forM_ uTags $ \(x, y) -> T.putStrLn $ "Unknown tag: " <> y <> " for image: " <> imgTxt x <> "."
               exitWith $ ExitFailure 1
 
             -- non-interactive JSON mode
             else if j then scriptWithConnectorModeOptional $ do
               now <- zulu
               let confE = "_docker" </> "vc-" <> now <> ".json"
-              let confC = e_dirConfigContainer </> confE
+              let confF = e_dirConfigContainer </> confE
+              let confC = pack confF
               let confH = pack $ e_dirConfigHost </> confE
               let ec = if length (vc_synced <> vc_newConnector) >= length both then "0" else "60"
 
               liftIO $ do
-                createDirectoryIfMissing True $ takeDirectory confC
-                BSLC8.writeFile confC $ encode vc
+                createDirectoryIfMissing True $ takeDirectory confF
+                BSLC8.writeFile confF $ encode vc
 
               write [N.text|
                 if ! command -v diff >/dev/null; then
-                  echo '{ "noDiff": true, "script": false, "docker": "$confH" }'
+                  echo '{ "noDiff": true, "script": false, "dockerH": "$confH", "dockerC": "$confC" }'
                   exit $ec
                 elif [ -f $latestScript ] && ! diff $reachEx $latestScript >/dev/null; then
-                  echo '{ "noDiff": false, "script": true, "docker": "$confH" }'
+                  echo '{ "noDiff": false, "script": true, "dockerH": "$confH", "dockerC": "$confC"}'
                   exit 60
                 else
-                  echo '{ "noDiff": false, "script": false, "docker": "$confH" }'
+                  echo '{ "noDiff": false, "script": false, "dockerH": "$confH", "dockerC": "$confC"}'
                   exit $ec
                 fi
               |]
@@ -2158,10 +2161,10 @@ versionCompare2 = command "version-compare2" $ info f mempty
                       _ -> n
 
               let s = T.take 8 . T.drop 7
-              let m = maybe 0 id . maximumMay $ (\(VersionCompareIDTs x _ _) -> T.length $ lefty x)
+              let m = maybe 0 id . maximumMay $ (\(VersionCompareIDTs x _ _) -> T.length $ imgTxt x)
                     <$> vc_newDigest <> vc_newTag <> vc_newConnector <> vc_synced
 
-              let p x = lefty x <> T.replicate (m - T.length (lefty x)) " "
+              let p x = imgTxt x <> T.replicate (m - T.length (imgTxt x)) " "
               let n a = when (any ((> 0) . length) a) $ putStrLn ""
 
               let r = flip either (const "") $ \x ->
@@ -2176,7 +2179,7 @@ versionCompare2 = command "version-compare2" $ info f mempty
                         <> r x'
 
               let ancas (VersionCompareIDTs x' y zs) = "\n" <> a <> "\n" <> T.intercalate "\n" b where
-                    x = lefty x'
+                    x = imgTxt x'
                     a = [N.text| docker pull $x@$y |]
                     b = zs <&> \z' -> let z = tagFor z' in [N.text| docker tag $x@$y $x:$z |]
 
@@ -2271,19 +2274,60 @@ versionCompare2 = command "version-compare2" $ info f mempty
 
                         when (length vc_newDigest > 0) $ write "echo"
                         forM_ vc_newDigest $ \(VersionCompareIDTs x' y zs) -> do
-                          let x = lefty x'
+                          let x = imgTxt x'
                           write [N.text| docker pull $x@$y |]
                           forM_ zs $ \z' -> do
                             let z = tagFor z'
                             write [N.text| docker tag $x@$y $x:$z |]
 
                         forM_ vc_newTag $ \(VersionCompareIDTs x' y zs) -> do
-                          let x = lefty x'
+                          let x = imgTxt x'
                           forM_ zs $ \z' -> do
                             let z = tagFor z'
                             write [N.text| docker tag $x@$y $x:$z |]
 
                         andTheScript "0"
+
+updateIDE :: Subcommand
+updateIDE = command "update-ide" $ info f mempty where
+  f = g
+    <$> switch (long "script")
+    <*> switch (long "rm-json") -- Delete input JSON once it's served its purpose
+    <*> strOption (long "json")
+  g s r j = scriptWithConnectorModeOptional $ do
+    VersionCompare {..} <- liftIO $ A.eitherDecodeFileStrict j
+      >>= either (\e -> putStrLn e >> exitWith (ExitFailure 1)) pure
+
+    when r . liftIO $ removeFile j
+
+    forM_ vc_newDigest $ \(VersionCompareIDTs x' y zs) -> do
+      let x = imgTxt x'
+      write [N.text| docker pull $x@$y |]
+      forM_ zs $ \z' -> do
+        let z = tagFor z'
+        write [N.text| docker tag $x@$y $x:$z |]
+
+    forM_ vc_newTag $ \(VersionCompareIDTs x' y zs) -> do
+      let x = imgTxt x'
+      forM_ zs $ \z' -> do
+        let z = tagFor z'
+        write [N.text| docker tag $x@$y $x:$z |]
+
+    when s $ do
+      Env {e_var = Var{..}, ..} <- ask
+      now <- pack <$> zulu
+      let dch = pack e_dirConfigHost
+      write [N.text|
+        mkdir -p "$dch/_backup"
+        cp $reachEx "$dch/_backup/reach-$now"
+        echo
+        echo "Backed up $reachEx to $dch/_backup/reach-$now."
+        curl -o $reachEx https://docs.reach.sh/reach \
+          && chmod +x $reachEx \
+          && echo "Replaced $reachEx with latest version." \
+          && rm -r "$$TMP" \
+          && exit 0
+      |]
 
 whoami' :: Text
 whoami' = "docker info --format '{{.ID}}' 2>/dev/null"
@@ -2366,8 +2410,11 @@ main = do
           <> unscaffold
           <> whoami
           <> log'
-          <> versionCompare -- Don't expose this to users yet
+
+          -- Don't expose these to users yet
+          <> versionCompare
           <> versionCompare2
+          <> updateIDE
   let cli =
         Cli
           <$> env
