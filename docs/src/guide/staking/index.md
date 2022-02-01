@@ -97,7 +97,7 @@ Unstaking is similar in structure.
 
 ## Connect to View
 
-Now for the cool part: Use your contract to hook to your website. To accomplish this, we connect to the [contract](##js_contract), deine the User's [API](##rsh_API) calls and a [view](##rsh_View)
+N
 
 ``` rsh
 // connect to the contract
@@ -108,7 +108,7 @@ const userApi = contract.a.User;
 const userView = contract.v.read;
 ```
 
-Next, we get the users state by reading the [address](##term_address).
+.
 
 ``` rsh
 useEffect(async() => {
