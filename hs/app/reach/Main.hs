@@ -1840,8 +1840,8 @@ arch' = case arch of
   "x86_64" -> "amd64"
   a -> a
 
-remoteDockerAssocFor :: FilePath -> FilePath -> Image -> ImageHost -> IO (Either ImageHostAPIFail DockerAssoc)
-remoteDockerAssocFor tmpC tmpH img h = go
+remoteDockerAssocFor :: FilePath -> FilePath -> Image -> Maybe String -> ImageHost -> IO (Either ImageHostAPIFail DockerAssoc)
+remoteDockerAssocFor tmpC tmpH img mtag h = go
   where
     (go, itp) = case h of
       DockerHub ->
@@ -1864,9 +1864,10 @@ remoteDockerAssocFor tmpC tmpH img h = go
       guard $ d /= "" && t /= []
       Just $ M.insertWith (<>) d t a
 
-    uDockerHub =
-      parseRequest_ $
-        "https://hub.docker.com/v2/repositories/" <> img' <> "/tags?page_size=100&ordering=last_updated"
+
+    uDockerHub = parseRequest_
+      $ "https://hub.docker.com/v2/repositories/" <> img' <> "/tags?page_size=100&ordering=last_updated"
+     <> maybe "" ("&name=" <>) mtag
 
     assoc f = either (pure . Left) $ pure . Right . M.singleton img'' . L.foldl' f mempty
 
@@ -1896,13 +1897,18 @@ remoteDockerAssocFor tmpC tmpH img h = go
             maybe (pure $ Right []) (fetch c t fqdn nextPage results . parseRequest_) (nextPage r')
               >>= either (pure . Left) (pure . Right . (results r' <>))
 
--- TODO allow early escape from de-pagination when query match is found
 remoteUpdates :: [Image] -> AppT (Text, DockerAssoc)
 remoteUpdates imgs = do
   Env {..} <- ask
+
+  let mtag = \case
+        Left i -> Just . unpack $ imageThirdPartyTagRaw i
+        Right "reach-cli" -> Just . unpack $ tagFor TFReachCLI
+        _ -> Nothing
+
   (sh, ts) <- liftIO . concurrently (httpLBS uriReachScript)
     $ forConcurrently imgs $ \i ->
-      remoteDockerAssocFor e_dirTmpContainer e_dirTmpHost i $ imageHost e_var
+      remoteDockerAssocFor e_dirTmpContainer e_dirTmpHost i (mtag i) $ imageHost e_var
 
   let rn = "reach.new"
   liftIO $ case getResponseStatusCode sh of
