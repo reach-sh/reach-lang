@@ -266,6 +266,7 @@ instance Optimize Bool where
 instance Optimize DLArg where
   opt = \case
     DLA_Var v -> opt_v2a v
+    DLA_Tok (DLToken v _) -> opt $ DLA_Var v
     DLA_Constant c -> return $ DLA_Constant c
     DLA_Literal c -> return $ DLA_Literal c
     DLA_Interact p m t -> return $ DLA_Interact p m t

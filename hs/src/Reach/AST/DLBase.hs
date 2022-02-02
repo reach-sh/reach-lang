@@ -224,6 +224,23 @@ litTypeOf = \case
   DLL_Bool _ -> T_Bool
   DLL_Int {} -> T_UInt
 
+data DLToken = DLToken DLVar Int
+  deriving (Generic, Show)
+
+instance Eq DLToken where
+  DLToken _ l == DLToken _ r = l == r
+
+instance Ord DLToken where
+  DLToken _ l <= DLToken _ r = l <= r
+
+instance Pretty DLToken where
+  pretty (DLToken d i) = pretty d <> "/" <> pretty i
+
+instance PrettySubst DLToken where
+  prettySubst (DLToken d i) = do
+    d' <- prettySubst $ DLA_Var d
+    return $ d'<> "/" <> pretty i
+
 data DLVar = DLVar SrcLoc (Maybe (SrcLoc, SLVar)) DLType Int
   deriving (Generic)
 
@@ -297,6 +314,7 @@ dlmi_tym = maybeT . dlmi_ty
 
 data DLArg
   = DLA_Var DLVar
+  | DLA_Tok DLToken
   | DLA_Constant DLConstant
   | DLA_Literal DLLiteral
   | DLA_Interact SLPart String DLType
@@ -311,6 +329,9 @@ instance PrettySubst DLArg where
       return $ pretty who <> ".interact." <> pretty m
     DLA_Constant x -> return $ pretty x
     DLA_Literal x -> return $ pretty x
+    DLA_Tok dt -> do
+      dt' <- prettySubst dt
+      return $ "Token" <> parens dt'
 
 asnLike :: [DLVar] -> [(DLVar, DLArg)]
 asnLike = map (\x -> (x, DLA_Var x))
@@ -321,6 +342,7 @@ class CanDupe a where
 instance CanDupe DLArg where
   canDupe = \case
     DLA_Var {} -> True
+    DLA_Tok {} -> True
     DLA_Constant {} -> True
     DLA_Literal {} -> True
     DLA_Interact {} -> False
@@ -328,6 +350,7 @@ instance CanDupe DLArg where
 argTypeOf :: DLArg -> DLType
 argTypeOf = \case
   DLA_Var (DLVar _ _ t _) -> t
+  DLA_Tok {} -> T_Token
   DLA_Constant c -> conTypeOf c
   DLA_Literal c -> litTypeOf c
   DLA_Interact _ _ t -> t

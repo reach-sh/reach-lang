@@ -75,9 +75,14 @@ instance Freshen DLVar where
     rho <- liftIO $ readIORef fRho
     return $ fromMaybe v $ M.lookup v rho
 
+instance Freshen DLToken where
+  fu (DLToken v i) =
+    DLToken <$> fu v <*> pure i
+
 instance Freshen DLArg where
   fu = \case
     DLA_Var v -> DLA_Var <$> fu v
+    DLA_Tok v -> DLA_Tok <$> fu v
     x -> return x
 
 instance Freshen DLLargeArg where
