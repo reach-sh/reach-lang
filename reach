@@ -68,7 +68,7 @@ run_d "$@"
 case "$?" in
   42) run_s; case "$?" in
     60) rm -r "$TMP" && exit 60 ;; # Updates available
-     0) rm -r "$TMP" ;;
+     0) [ -d "$TMP" ] && rm -r "$TMP"; exit 0 ;;
      *) [ -z "$(ls -A "$TMP")" ] && rm -r "$TMP"; exit 1 ;;
     esac
     ;;
