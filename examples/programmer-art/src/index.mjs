@@ -153,10 +153,14 @@ const initActorDetsHelper = async (a) => {
   const dets = await c.initDetails(a)
   let initHtml = ``
   for (const [k,v] of Object.entries(dets)) {
+    let vDisplay = v.slice(7)
+    if (vDisplay.startsWith('Bytes')) {
+      vDisplay = 'Bytes'
+    }
     initHtml = initHtml + `
     <div class="pad-me d-flex justify-content-center shrink-text">
-      <div class="pad-me d-flex justify-content-center"> ${k} : ${v.slice(7)} </div>
-      <input type="text" data-init-val="${k}" data-init-type="${v.slice(7)}" class="form-control form-control-sm init-detail" placeholder="Value">
+      <div class="pad-me d-flex justify-content-center"> ${k} : ${vDisplay} </div>
+      <input type="text" data-init-val="${k}" data-init-type="${vDisplay}" class="form-control form-control-sm init-detail" placeholder="Value">
     </div>`
   }
   initPanel.innerHTML = initHtml
@@ -275,10 +279,6 @@ const bindObjDetailsEvents = () => {
         enter = parseInt(enter)
 
       }
-      console.log(det.dataset.initVal)
-      console.log(det.value)
-      console.log(det.dataset.initType)
-
       liv[det.dataset.initVal] = {"tag": type, "contents": enter}
     }
     let r = await c.initFor(nodeId,selectedActorId,JSON.stringify(liv))
