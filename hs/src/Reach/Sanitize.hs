@@ -32,6 +32,7 @@ instance Sanitize DLArg where
   sani a =
     case a of
       DLA_Var {} -> a
+      DLA_Tok {} -> a
       DLA_Constant {} -> a
       DLA_Literal l -> DLA_Literal $ sani l
       DLA_Interact {} -> a

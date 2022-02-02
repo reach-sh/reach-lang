@@ -103,9 +103,13 @@ instance Countable DLLetVar where
     DLV_Eff -> mempty
     DLV_Let _ v -> counts v
 
+instance Countable DLToken where
+  counts (DLToken d _) = counts d
+
 instance Countable DLArg where
   counts = \case
     DLA_Var v -> counts v
+    DLA_Tok v -> counts v
     DLA_Constant {} -> mempty
     DLA_Literal {} -> mempty
     DLA_Interact {} -> mempty

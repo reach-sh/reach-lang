@@ -411,6 +411,7 @@ conCons' DLC_UInt_max = V_UInt $ 2 ^ (64 :: Integer) - 1
 
 instance Interp DLArg where
   interp = \case
+    DLA_Tok (DLToken dv _) -> interp $ DLA_Var dv
     DLA_Var dlvar -> do
       (_, l) <- getState
       let locals = l_locals l

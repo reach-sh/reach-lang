@@ -989,6 +989,7 @@ smt_v _at_de dv = Atom <$> smtVar dv
 smt_a :: SrcLoc -> DLArg -> App SExpr
 smt_a at_de = \case
   DLA_Var dv -> smt_v at_de dv
+  DLA_Tok (DLToken dv _) -> smt_v at_de dv
   DLA_Constant c -> do
     smt_con <- ctxt_smt_con <$> ask
     return $ smt_con at_de c

@@ -144,6 +144,7 @@ instance (Foldable f, AllPoints a) => AllPoints (f a) where
 instance AllPoints DLArg where
   all_points = \case
     DLA_Var v -> S.singleton $ P_Var v
+    DLA_Tok (DLToken v _) -> S.singleton $ P_Var v
     DLA_Constant _ -> S.singleton $ P_Con
     DLA_Literal _ -> S.singleton $ P_Con
     DLA_Interact who what _ -> S.singleton $ P_Interact who what
