@@ -1,6 +1,10 @@
 # {#ref} Tool
 
-This document describes the `reach` tool: how to install it and how to use it.
+This document describes the `reach` tool: how to install it and how to use it. All commands on this page assume that Reach is installed in your project repository, but if it is installed in your `PATH`, remove <b>./</b> in front of the reach commands as in the following:
+
+```cmd
+$ reach update
+```
 
 # {#ref-install} Installation
 
@@ -10,7 +14,7 @@ The best way to install Docker on Mac and Windows is with [Docker Desktop](https
 :::note
 You probably already have `make` installed.
 For example, OS X and many other POSIX systems come with `make`, but some versions of Linux do not include it by default and will require you to install it.
-If you're on Ubuntu, you can run `sudo apt install make` to get it.
+If you are on Ubuntu, you can run `sudo apt install make` to get it.
 :::
 
 You can install Reach by running:
@@ -65,10 +69,10 @@ In other words, `v0.1.6` is equivalent to `0.1.6`.
 
 # {#ref-usage-compile} `reach compile`
 
-You compile your Reach code by executing
+Compile the Reach code by executing
 
 ```cmd
-$ reach compile SOURCE EXPORT ...
+$ ./reach compile SOURCE EXPORT ...
 ```
 
 where `SOURCE` is your source file,
@@ -105,24 +109,30 @@ named `default`.
 + The environment variable `REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach compiler, which will appear in the console.
   This debug information includes: the estimated cost of the contract on Algorand.
   This variable automatically enabled `--intermediate-files`.
+  
+  A `reach compile` usage example is available in [Overview](##over-compile). 
 
-## {#ref-usage-init} `reach init`
+# {#ref-usage-init} `reach init`
 
-You can create template `index.rsh` and `index.mjs` files for a simple Reach app by running
+Running `reach init` creates the `index.rsh` and `index.mjs` template files required for a basic Reach DApp. This allows you to open the files and start writing code. The `index.rsh` file is the DApp and is written in Reach, and the `index.mjs` file is the frontend of the DApp and is written in JavaScript.
+
+To run `reach init`, use the following command: 
 
 ```cmd
-$ reach init
+$ ./reach init
 ```
 
 # {#ref-usage-run} `reach run`
 
-You can run a simple Reach application by executing
+The `reach run` command with no argumenst starts the `index` application in the current directory by default, but you can set a different directory, application name, or both.
+
+The `reach run` command uses the following syntax:
 
 ```cmd
-$ reach run [APP or DIR] [ARGS]
+$ ./reach run [APP or DIR] [ARGS]
 ```
 
-`APP` represents a Reach module name without its extension (e.g. "index" by default).
+`APP` represents a Reach module name without its extension (e.g. "index" by default). 
 
 If no `APP` or `DIR` is provided then `index` in the current working directory is assumed.
 
@@ -166,7 +176,7 @@ The `Dockerfile` can be modified to introduce new dependencies, services, or fil
 You can halt all Dockerized Reach apps and devnets by running
 
 ```cmd
-$ reach down
+$ ./reach down
 ```
 
 # {#ref-usage-scaffold} `reach scaffold`
@@ -174,7 +184,7 @@ $ reach down
 You can create templated `Dockerfile` and `package.json` files for a simple Reach app by running
 
 ```cmd
-$ reach scaffold
+$ ./reach scaffold
 ```
 
 The files created are the same as those used temporarily by `reach run`.
@@ -184,7 +194,7 @@ The files created are the same as those used temporarily by `reach run`.
 You can run a simple React app by executing
 
 ```cmd
-$ reach react
+$ ./reach react
 ```
 
 This assumes
@@ -226,20 +236,39 @@ may be used in any JavaScript project like any other JavaScript file and library
 
 # {#ref-usage-devnet} `reach devnet`
 
-You can run a private Reach devnet by executing
+You can run a private Reach devnet by executing the following command:
 
 ```cmd
-$ reach devnet
+$ ./reach devnet
+```
+
+:::note
+If running `reach devnet`, it is recommended to permanently set `REACH_CONNECTOR_MODE` to the desired consensus network. If you did not set this when you originally ran `reach config`, then you can run `reach devnet` with the argument`REACH_CONNECTOR_MODE=[OPTION]` as in the following command.
+:::
+
+```cmd
+$ REACH_CONNECTOR_MODE=ALGO ./reach devnet
 ```
 
 `reach devnet` supports the following options:
 
-+ `--await-background` --- Run in background and await availability.
-+ The mandatory environment variable `REACH_CONNECTOR_MODE` specifies which devnet to run.
++ `--await-background` --- Run in the background and await availability.
+
+  The mandatory environment variable `REACH_CONNECTOR_MODE` specifies which devnet to run.
 The options are:
 
 + `ETH`, which runs an Ethereum devnet on `localhost:8545`
++ `ETH-browser`, which runs an Ethereum devnet on `localhost:8545`
++ `ETH-devnet`, which runs an Ethereum devnet on `localhost:8545`
++ `ETH-live`, which runs an Ethereum devnet on `localhost:8545`
 + `ALGO`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
++ `ALGO-browser`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
++ `ALGO-devnet`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
++ `ALGO-live`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
++ `CFX`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
++ `CFX-browser`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
++ `CFX-devnet`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
++ `CFX-live`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
 
 + The environment variable `REACH_DEBUG` enables some additional debugging information for the Algorand devnet, which is accessible via http://localhost:9392
 
@@ -248,7 +277,7 @@ The options are:
 The sub-command
 
 ```cmd
-$ reach rpc-server
+$ ./reach rpc-server
 ```
 
 starts an instance of the [Reach RPC Server](##ref-backends-rpc) using all of the same options and defaults as `reach run`.
@@ -277,10 +306,10 @@ It defaults to `rpc-demo`.
 
 # {#ref-usage-rpc-run} `reach rpc-run`
 
-The sub-command
+The following sub-command
 
 ```cmd
-$ reach rpc-run CMD
+$ ./reach rpc-run CMD
 ```
 
 is a convenient means of launching a pre-configured RPC server and
@@ -292,55 +321,56 @@ development API key), and sets `REACH_RPC_TLS_REJECT_UNVERIFIED` to
 Consider this example from the @{seclink("tut-7-rpc")} tutorial:
 
 ```cmd
-$ reach rpc-run python3 -u ./index.py
+$ ./reach rpc-run python3 -u ./index.py
 ```
 
 # {#ref-usage-docker-reset} `reach docker-reset`
 
-You can easily kill and remove all Docker containers by executing
+This command removes all containers and volumes from Docker. If you have any personal containers, those containers will also be removed. Containers can then be restarted in your Docker Images list. It does not uninstall any Docker images.
 
 ```cmd
-$ reach docker-reset
+$ ./reach docker-reset
 ```
 
 This can be a useful thing to try if your Docker containers stop responding to requests or otherwise misbehave, or if you have updated your Reach images (with `reach update`) but those changes are not taking effect.
-This command is a loose approximation of "turning Docker off and on again."
 It will affect all Docker containers on your machine, not just those created by Reach.
 
 # {#ref-usage-upgrade} `reach upgrade`
 
-You can upgrade your Reach installation by executing
+This command downloads the most recent `reachsh/reach-cli` Docker image only.
 
 ```cmd
-$ reach upgrade
+$ ./reach upgrade
 ```
 
-This may change the default version used by `reach` commands.
+This might change the default version used by `reach` commands.
 
 # {#ref-usage-update} `reach update`
 
-You can update the Docker images used by your Reach installation by executing
+This command downloads and installs the most recent versions of the Reach Docker image. It does not start the Docker images once installed.
 
 ```cmd
-$ reach update
+$ ./reach update
 ```
 
-This may change the patch version used by `reach` commands.
+This might change the patch version used by `reach` commands.
 
 # {#ref-usage-version} `reach version`
 
-You can see what version of Reach you have installed by running
+Check which version of the Reach command-line tool is currently installed. This returns both the semantic version (such as `0.1.7`) and the hashes version (such as [639fa565](https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore)). This is helpful when making sure an upgrade to a new version is complete.
 
 ```cmd
-$ reach version
+$ ./reach version
 ```
+
+This is less precise than `reach hashes`, but gives you an idea of which features are, or are not, available in your build version.
 
 # {#ref-usage-hashes} `reach hashes`
 
-You can see which exact versions of Reach Docker images you are using by running
+Check which version of each Reach Docker image is installed. This command returns the hash version of each image in an 8 digit alpha-numeric code (such as [639fa565](https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore)). 
 
 ```cmd
-$ reach hashes
+$ ./reach hashes
 ```
 
 This is more precise, but less readable, than `reach version`,
@@ -351,7 +381,7 @@ in that each hash refers to the git commit used to build the image.
 Reach recommends tuning your default workflow settings by executing
 
 ```cmd
-$ reach config
+$ ./reach config
 ```
 
 Using `reach config` is advisable when running Reach for the first time since it will set the `REACH_CONNECTOR_MODE` environment variable, which is required when executing some other sub-commands (e.g. `reach run`).
@@ -359,4 +389,4 @@ Using `reach config` is advisable when running Reach for the first time since it
 `reach config` presents users with a guided menu which automatically creates an `env` file and suggests subsequent steps to activate and make it permanent.
 This `env` file exports environment variable settings and is intended to be `source`d by users' shells.
 
-If an `env` file already exists, `reach config` will offer to back it up before proceeding.
+If an `env` file already exists, `reach config` offers to back it up before proceeding.
