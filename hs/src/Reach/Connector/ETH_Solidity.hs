@@ -342,6 +342,7 @@ instance DepthOf DLVar where
 instance DepthOf DLArg where
   depthOf = \case
     DLA_Var v -> depthOf v
+    DLA_Tok (DLToken v _) -> depthOf v
     DLA_Constant {} -> return 0
     DLA_Literal {} -> return 0
     DLA_Interact {} -> return 0
@@ -476,6 +477,7 @@ solLit = \case
 solArg :: AppT DLArg
 solArg = \case
   DLA_Var v -> solVar v
+  DLA_Tok (DLToken v _) -> solVar v
   DLA_Constant c -> return $ solLit $ conCons' c
   DLA_Literal c -> return $ solLit c
   DLA_Interact {} -> impossible "consensus interact"

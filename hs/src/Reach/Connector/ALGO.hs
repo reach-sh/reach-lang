@@ -941,6 +941,7 @@ cv = lookup_let
 ca :: DLArg -> App ()
 ca = \case
   DLA_Var v -> cv v
+  DLA_Tok (DLToken v _) -> ca $ DLA_Var v
   DLA_Constant c -> cl $ conCons' c
   DLA_Literal c -> cl c
   DLA_Interact {} -> impossible "consensus interact"
@@ -948,6 +949,7 @@ ca = \case
 argSmall :: DLArg -> App Bool
 argSmall = \case
   DLA_Var v -> letSmall v
+  DLA_Tok (DLToken v _) -> argSmall $ DLA_Var v
   DLA_Constant {} -> return True
   DLA_Literal {} -> return True
   DLA_Interact {} -> impossible "consensus interact"

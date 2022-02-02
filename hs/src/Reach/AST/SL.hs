@@ -145,6 +145,7 @@ data SLVal
   | SLV_Data SrcLoc (M.Map SLVar DLType) SLVar SLVal
   | SLV_DLC DLConstant
   | SLV_DLVar DLVar
+  | SLV_DLTok DLToken
   | SLV_Type SLType
   | SLV_Connector T.Text
   | -- I really want to remove these two Maybes, but it is hard.
@@ -385,6 +386,7 @@ instance Pretty SLVal where
     SLV_Map mv -> "<map: " <> pretty mv <> ">"
     SLV_Anybody -> "Anybody"
     SLV_Deprecated d s -> "<deprecated: " <> viaShow d <> ">(" <> pretty s <> ")"
+    SLV_DLTok t -> pretty t
 
 instance SrcLocOf SLVal where
   srclocOf = \case
@@ -410,6 +412,7 @@ instance SrcLocOf SLVal where
     SLV_Kwd _ -> sb
     SLV_Map _ -> sb
     SLV_Deprecated _ v -> srclocOf v
+    SLV_DLTok {} -> sb
 
 isSmallLiteralArray :: SLVal -> Bool
 isSmallLiteralArray (SLV_Array _ _ _l) =

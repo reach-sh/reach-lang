@@ -221,6 +221,7 @@ jsCon = \case
 jsArg :: AppT DLArg
 jsArg = \case
   DLA_Var v -> jsVar v
+  DLA_Tok (DLToken v _) -> jsArg $ DLA_Var v
   DLA_Constant c ->
     case c of
       DLC_UInt_max ->
