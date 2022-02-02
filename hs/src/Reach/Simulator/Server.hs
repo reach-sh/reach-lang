@@ -63,6 +63,7 @@ data Session = Session
   , e_src :: Maybe LLProg
   , e_status :: Status
   , e_edges :: [(StateId,StateId)]
+  , e_parents :: [(StateId,StateId)]
   , e_locs :: M.Map C.ActorId (M.Map StateId SrcLoc)
   , e_src_txt :: String
   }
@@ -78,6 +79,7 @@ initSession = Session
   , e_src = Nothing
   , e_status = Initial
   , e_edges = mempty
+  , e_parents = mempty
   , e_locs = mempty
   , e_src_txt = mempty
   }
@@ -87,6 +89,7 @@ processNewState psid ps = do
   sid <- gets e_nsid
   actorId <- gets e_actor_id
   edges <- gets e_edges
+  parents <- gets e_parents
   _ <- case ps of
     C.PS_Done _ _ -> do
       registerAction sid actorId C.A_None
@@ -116,6 +119,7 @@ processNewState psid ps = do
     Just psid' -> modify $ \st ->
       st
         { e_edges = (psid', sid) : edges
+        , e_parents = (sid, psid') : parents
         }
 
 registerLoc :: StateId -> C.ActorId -> SrcLoc -> WebM ()
@@ -289,16 +293,18 @@ initDetails actorId = do
 
 getLoc :: StateId -> C.ActorId -> WebM (Maybe SrcLoc)
 getLoc sid actorId = do
-  case sid of
-    -1 -> return Nothing
-    _  -> do
-      locs <- gets e_locs
-      case M.lookup actorId locs of
-        Nothing -> return Nothing
-        Just locs' -> do
-          case M.lookup sid locs' of
-            Nothing -> getLoc (sid - 1) actorId
-            Just loc -> return $ Just loc
+  locs <- gets e_locs
+  parents <- M.fromList <$> gets e_parents
+  case M.lookup actorId locs of
+    Nothing -> return Nothing
+    Just locs' -> do
+      case M.lookup sid locs' of
+        Nothing -> do
+          case M.lookup sid parents of
+            Nothing -> return Nothing
+            Just parent -> do
+              getLoc parent actorId
+        Just loc -> return $ Just loc
 
 changeActor :: C.ActorId -> WebM ()
 changeActor actId = do
@@ -306,19 +312,21 @@ changeActor actId = do
 
 computeActions :: StateId -> C.ActorId -> WebM (Maybe (ActionId,C.Action))
 computeActions sid actorId = do
-  case sid of
-    -1 -> return Nothing
-    _  -> do
-      actacts <- gets e_actors_actions
-      idacts <- gets e_ids_actions
-      case M.lookup actorId actacts of
-        Nothing -> return Nothing
-        Just acts -> do
-          case M.lookup sid acts of
-            Nothing -> computeActions (sid - 1) actorId
-            Just actId -> do
-              let act = saferMapRef "computeActions actId" $ M.lookup actId idacts
-              return $ Just (actId,act)
+  actacts <- gets e_actors_actions
+  idacts <- gets e_ids_actions
+  parents <- M.fromList <$> gets e_parents
+  case M.lookup actorId actacts of
+    Nothing -> return Nothing
+    Just acts -> do
+      case M.lookup sid acts of
+        Nothing -> do
+          case M.lookup sid parents of
+            Nothing -> return Nothing
+            Just parent -> do
+              computeActions parent actorId
+        Just actId -> do
+          let act = saferMapRef "computeActions actId" $ M.lookup actId idacts
+          return $ Just (actId,act)
 
 initProgSim :: LLProg -> WebM ()
 initProgSim ll = do
