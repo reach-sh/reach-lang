@@ -300,6 +300,12 @@ jobs:
         (cd examples/rps-9-web && REACH_CONNECTOR_MODE=ALGO ../../reach react) &
         (cd js/browser-tests && make build)
         sleep 60  # give the react server lots of time to start up
+
+        # XXX this is weird. Working around issue:
+        # "_XSERVTransMakeAllCOTSServerListeners: server already running"
+        # https://github.com/cypress-io/cypress/issues/5110#issuecomment-431683691
+        ps -ef | grep Xvfb | grep -v grep | awk '{print $2}' | sudo xargs kill -9
+
         (cd js/browser-tests && make run)
     - store_artifacts:
         path: js/browser-tests/cypress/videos
