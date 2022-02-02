@@ -13,6 +13,7 @@ import type {
   EnableNetworkResult,
   EnableAccountsResult,
 } from './ALGO_ARC11'; // =>
+import type { BaseHTTPClient } from 'algosdk';
 import * as RHC from './ALGO_ReachHTTPClient';
 // @ts-ignore // XXX Dan FIXME pls
 import * as UTBC from './ALGO_UTBC';
@@ -669,25 +670,27 @@ export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Contract, T_Object, T
 
 export const { randomUInt, hasRandom } = makeRandom(8);
 
-async function waitIndexerFromEnv(env: ProviderEnv): Promise<algosdk.Indexer> {
+async function waitIndexerFromEnv(env: ProviderEnv): Promise<[BaseHTTPClient, algosdk.Indexer]> {
   const { ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT, ALGO_INDEXER_TOKEN } = env;
   await waitPort(ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
   const port = ALGO_INDEXER_PORT || undefined; // UTBC checks for undefined
   const utbc = new UTBC.URLTokenBaseHTTPClient({'X-Indexer-API-Token': ALGO_INDEXER_TOKEN}, ALGO_INDEXER_SERVER, port);
   const rhc = new RHC.ReachHTTPClient(utbc, 'indexer', httpEventHandler);
-  return new algosdk.Indexer(rhc);
+  return [rhc, new algosdk.Indexer(rhc)];
 }
 
-async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<algosdk.Algodv2> {
+async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<[BaseHTTPClient, algosdk.Algodv2]> {
   const { ALGO_SERVER, ALGO_PORT, ALGO_TOKEN } = env;
   await waitPort(ALGO_SERVER, ALGO_PORT);
   const port = ALGO_PORT || undefined;  // UTBC checks for undefiend
   const utbc = new UTBC.URLTokenBaseHTTPClient({'X-Algo-API-Token': ALGO_TOKEN}, ALGO_SERVER, port);
   const rhc = new RHC.ReachHTTPClient(utbc, 'algodv2', httpEventHandler);
-  return new algosdk.Algodv2(rhc);
+  return [rhc, new algosdk.Algodv2(rhc)];
 }
 
 export interface Provider {
+  algod_bc: BaseHTTPClient,
+  indexer_bc: BaseHTTPClient,
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
   nodeWriteOnly: boolean,
@@ -711,8 +714,10 @@ const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
     enabledNetwork = await wallet.enableNetwork(walletOpts);
   }
   void enabledNetwork;
-  const algodClient = await wallet.getAlgodv2();
-  const indexer = await wallet.getIndexer();
+  const algod_bc = await wallet.getAlgodv2Client();
+  const indexer_bc = await wallet.getIndexerClient();
+  const algodClient = new algosdk.Algodv2(algod_bc);
+  const indexer = new algosdk.Indexer(indexer_bc);
   const getDefaultAddress = async (): Promise<Address> => {
     if ( enabledAccounts === undefined ) {
       if ( wallet.enableAccounts === undefined ) {
@@ -728,7 +733,7 @@ const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
   const signAndPostTxns = wallet.signAndPostTxns;
   const isIsolatedNetwork = truthyEnv(process.env['REACH_ISOLATED_NETWORK']);
   const nodeWriteOnly = truthyEnv(process.env.ALGO_NODE_WRITE_ONLY);
-  return { algodClient, indexer, nodeWriteOnly, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
+  return { algod_bc, indexer_bc, indexer, algodClient, nodeWriteOnly, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
 };
 
 export const setWalletFallback = (wf:() => unknown) => {
@@ -761,14 +766,14 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     await enableNetwork(eopts);
     return await enableAccounts(eopts);
   };
-  const getAlgodv2 = async () => {
+  const getAlgodv2Client = async () => {
     if ( !p ) { throw new Error(`must call enable`) };
-    return p.algodClient;
-  };
-  const getIndexer = async () => {
+    return p.algod_bc;
+  }
+  const getIndexerClient = async () => {
     if ( !p ) { throw new Error(`must call enable`) };
-    return p.indexer;
-  };
+    return p.indexer_bc;
+  }
   const signAndPostTxns = async (txns:WalletTransaction[], sopts?:object) => {
     if ( !p ) { throw new Error(`must call enable`) };
     void(sopts);
@@ -793,7 +798,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     await p.algodClient.sendRawTransaction(bs).do();
     return {};
   };
-  return { enable, enableNetwork, enableAccounts, getAlgodv2, getIndexer, signAndPostTxns };
+  return { enable, enableNetwork, enableAccounts, getAlgodv2Client, getIndexerClient, signAndPostTxns };
 };
 const walletFallback_mnemonic = (opts:object) => (): ARC11_Wallet => {
   debug(`using mnemonic wallet fallback`);
@@ -912,8 +917,8 @@ async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<Provider> {
   debug(`makeProviderByEnv`, env);
   const fullEnv = envDefaultsALGO(env);
   debug(`makeProviderByEnv defaulted`, fullEnv);
-  const algodClient = await waitAlgodClientFromEnv(fullEnv);
-  const indexer = await waitIndexerFromEnv(fullEnv);
+  const [algod_bc, algodClient] = await waitAlgodClientFromEnv(fullEnv);
+  const [indexer_bc, indexer] = await waitIndexerFromEnv(fullEnv);
   const isIsolatedNetwork = truthyEnv(fullEnv.REACH_ISOLATED_NETWORK);
   const nodeWriteOnly = truthyEnv(fullEnv.ALGO_NODE_WRITE_ONLY);
   const lab = `Providers created by environment`;
@@ -930,7 +935,7 @@ async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<Provider> {
     debug(`signAndPostTxns`, bs);
     await algodClient.sendRawTransaction(bs).do();
   };
-  return { algodClient, indexer, nodeWriteOnly, isIsolatedNetwork, getDefaultAddress, signAndPostTxns };
+  return { algod_bc, indexer_bc, algodClient, indexer, nodeWriteOnly, isIsolatedNetwork, getDefaultAddress, signAndPostTxns };
 };
 export function setProviderByEnv(env: Partial<ProviderEnv>): void {
   setProvider(makeProviderByEnv(env));
