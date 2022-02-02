@@ -408,7 +408,7 @@ instance Interp DLLargeArg where
       return $ V_Data string evd_arg
     DLLA_Struct assoc_slvars_dlargs -> do
       evd_args <- mapM (\arg -> interp arg) $ M.fromList assoc_slvars_dlargs
-      return $ V_Struct $ M.toList evd_args
+      return $ V_Struct $ M.toAscList evd_args
     DLLA_Bytes _ -> impossible "undefined"
 
 instance Interp DLExpr where
@@ -656,13 +656,13 @@ instance Interp LLConsensus where
     LLC_While at asn _inv cond body k -> do
       case asn of
         DLAssignment asn' -> do
-          _ <- mapM (\(var, val) -> interp $ DL_Set at var val) $ M.toList asn'
+          _ <- mapM (\(var, val) -> interp $ DL_Set at var val) $ M.toAscList asn'
           _ <- while cond body
           interp k
     LLC_Continue at asn -> do
       case asn of
         DLAssignment asn' -> do
-          _ <- mapM (\(k, v) -> interp $ DL_Set at k v) $ M.toList asn'
+          _ <- mapM (\(k, v) -> interp $ DL_Set at k v) $ M.toAscList asn'
           return V_Null
     LLC_ViewIs _at _part _var _export cons -> interp cons
 
@@ -738,7 +738,7 @@ winner dlr actId phId = do
   let (_, winningMsg) = fixedMsg $ saferMapRef "winner" $ M.lookup phId $ e_messages g
   accId <- getAccId actId
   bindConsensusMeta dlr actId accId
-  let (xs, vs) = unzip $ M.toList winningMsg
+  let (xs, vs) = unzip $ M.toAscList winningMsg
   _ <- zipWithM addToStore xs vs
   return ()
 
@@ -788,7 +788,7 @@ bindConsensusMeta (DLRecv {..}) actorId accId = do
 
 instance Interp LLProg where
   interp (LLProg _at _llo slparts _dli _dex _dvs _apis _evts step) = do
-    registerParts $ M.toList $ sps_ies slparts
+    registerParts $ M.toAscList $ sps_ies slparts
     interp step
 
 isTheTimePast :: Maybe (DLTimeArg, LLStep) -> App (Maybe LLStep)

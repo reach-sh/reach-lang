@@ -278,9 +278,7 @@ checkIfValIType = \case
 
 initVals :: InteractEnv -> WebM (M.Map String String)
 initVals (InteractEnv iv'') = do
-  let iv' = M.toList iv''
-  let iv = filter (\(_,itype) -> checkIfValIType itype) iv'
-  return $ M.fromList $ map (\(var,itype) -> (var, show itype)) iv
+  return $ M.map show $ M.filter checkIfValIType iv''
 
 initDetails :: C.ActorId -> WebM (M.Map String String)
 initDetails actorId = do
