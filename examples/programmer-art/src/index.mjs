@@ -68,7 +68,7 @@ const renderObjects = async (nodeId) => {
   const r = await c.getStateLocals(nodeId)
   let obs = ``
   let actorSet = {}
-  for (let [k,v] of Object.entries(r.l_locals)) {
+  for (const [k,v] of Object.entries(r.l_locals)) {
     const who = v.l_who ? v.l_who : 'Consensus'
     actorSet[k] = who
   }
@@ -76,10 +76,10 @@ const renderObjects = async (nodeId) => {
   const actorEntries = Object.entries(actorSet)
   // NOTE: assumption: there is at least one non-consensus actor
   const firstActorId = actorEntries[0][0]
-  for (let [k,v] of actorEntries) {
+  for (const [k,v] of actorEntries) {
     actors = actors + `<option value="${k}">${v}</option>`
   }
-  for (let [k,v] of Object.entries(r.l_locals)) {
+  for (const [k,v] of Object.entries(r.l_locals)) {
     const who = v.l_who ? v.l_who : 'Consensus'
     let status = 'Initial'
     switch (v.l_ks) {
@@ -152,7 +152,7 @@ const initActorDetsHelper = async (a) => {
   const initPanel = document.querySelector("#initDetailsPanel")
   const dets = await c.initDetails(a)
   let initHtml = ``
-  for (let [k,v] of Object.entries(dets)) {
+  for (const [k,v] of Object.entries(dets)) {
     let vDisplay = v.slice(7)
     if (vDisplay.startsWith('Bytes')) {
       vDisplay = 'Bytes'
@@ -271,7 +271,7 @@ const bindObjDetailsEvents = () => {
     let selectedActorId = parseInt(e.value);
     const dets = document.querySelectorAll(".init-detail")
     const liv = {}
-    for (let det of dets) {
+    for (const det of dets) {
       let type = `V_Bytes`
       let enter = det.value
       if (det.dataset.initType == 'UInt') {
@@ -361,7 +361,7 @@ const renderObjectDetails = async (evt) => {
     <div class="badge bg-secondary">Status</div>
     <div> ${status} </div>
     </button> `
-  for (let [k,v] of Object.entries(ledger[actorId])) {
+  for (const [k,v] of Object.entries(ledger[actorId])) {
     dets = dets + `
       <button type="button"
       disabled
@@ -371,7 +371,7 @@ const renderObjectDetails = async (evt) => {
       <div> ${v} (Token ID: ${k}) </div>
       </button> `
   }
-  for (let [varName,varDetails] of detsj.l_store) {
+  for (const [varName,varDetails] of detsj.l_store) {
     const typing = varDetails.tag
     const varValue = varDetails.contents
     dets = dets + `
@@ -484,7 +484,7 @@ const respondToActions = async (evt) => {
   const tiebreakers = JSON.parse(tgt.dataset.tiebreakers)
   const act = tgt.dataset.act
   let actors = `<option value="">Unchanged</option>`
-  for (let [k,v] of Object.entries(actorSet)) {
+  for (const [k,v] of Object.entries(actorSet)) {
     actors = actors + `<option value="${k}">${v}</option>`
   }
   const respTempl = renderResponsePanel(nodeId,act,actors,actorId,actId,tiebreakers)
@@ -529,7 +529,7 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
     // case 'A_Interact':
     case 'A_TieBreak':
       let tbOpts = ``
-      for (let [k,v] of Object.entries(tiebreakers)) {
+      for (const [k,v] of Object.entries(tiebreakers)) {
         tbOpts = tbOpts + `<option value="${k}">${v}</option>`
       }
       const respondSpaTieBreak = async () => {
@@ -605,7 +605,7 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
   let tiebreakers = {}
   let tbList = act.contents[1]
   if (act.tag == 'A_TieBreak') {
-    for (let [k,v] of Object.entries(JSON.parse(actorSet))) {
+    for (const [k,v] of Object.entries(JSON.parse(actorSet))) {
       if (tbList.includes(v)) {
         tiebreakers[k] = v
       }
@@ -672,7 +672,7 @@ const redraw = async () => {
   let edges = await c.getEdges()
   let states = await c.getStates()
   let elements = []
-  for (let [s, dets] of Object.entries(states)) {
+  for (const [s, dets] of Object.entries(states)) {
     elements.push(
       {
         data:
@@ -682,7 +682,7 @@ const redraw = async () => {
       }
     )
   }
-  for (let [index, value] of edges.entries()) {
+  for (const [index, value] of edges.entries()) {
     const from = value[0]
     const to = value[1]
     elements.push({data: { id: `edge-${index}`, source: from, target: to } })
@@ -709,8 +709,6 @@ const redraw = async () => {
           'text-halign': 'center',
           'border-width': 1.5,
           'border-color': '#555',
-          // 'text-opacity': 1,
-          // 'opacity': 1,
         }
       },
       {
@@ -801,7 +799,7 @@ const clickNode = async (evt) => {
   const nodeId = evt.target.id()
   const r = await c.getStateLocals(nodeId)
   let actors = []
-  for (let [k,v] of Object.entries(r.l_locals)) {
+  for (const [k,v] of Object.entries(r.l_locals)) {
     actors.push(k)
   }
   const atsList = await Promise.all(actors.map(async (actorId) => {
