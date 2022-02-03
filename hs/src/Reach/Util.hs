@@ -7,7 +7,7 @@ module Reach.Util
   , s2t
   , impossible
   , possible
-  , saferMapRef
+  , saferMaybe
   , trimQuotes
   , fromIntegerMay
   , maybeDie
@@ -87,8 +87,8 @@ possible msg =
   error $
     "The compiler has encountered an internal error:\n\n  " <> msg <> "\n\n"
 
-saferMapRef :: String -> Maybe b -> b
-saferMapRef s m = (fromMaybe (possible s) m)
+saferMaybe :: String -> Maybe b -> b
+saferMaybe s m = (fromMaybe (possible s) m)
 
 -- Note: drop 1 is safer than init/tail on empty strings
 trimQuotes :: String -> String
