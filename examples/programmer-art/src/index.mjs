@@ -639,11 +639,6 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
         ${common}${act.tag.slice(2)}</div>
         <div> Phase Id: ${act.contents[0]}, Actors: ${act.contents[1].join(',')} </div>
         </button> `
-    case 'A_InteractV':
-      return `
-        ${common}${act.tag.slice(2)}</div>
-        <div> ${act.contents[0]}: <b>${act.contents[1]}</b</div>
-        </button> `
     case 'A_Remote':
       return `
         ${common}${act.tag.slice(2)}</div>
@@ -677,8 +672,15 @@ const redraw = async () => {
   let edges = await c.getEdges()
   let states = await c.getStates()
   let elements = []
-  for (let s of states) {
-    elements.push({data: {id: s}})
+  for (let [s, dets] of Object.entries(states)) {
+    elements.push(
+      {
+        data:
+          { id: s,
+            label: dets[1].tag.slice(2)
+          }
+      }
+    )
   }
   for (let [index, value] of edges.entries()) {
     const from = value[0]
@@ -696,12 +698,12 @@ const redraw = async () => {
           'label': 'data(id)',
           'visibility': 'hidden',
           'shape': 'round-rectangle',
-          'content': 'data(id)',
+          'content': 'data(label)',
           'font-family': 'Inconsolata, monospace',
           'background-color': '#f6f6f6',
           'color': '#555',
           // 'font-size': 10,
-          // 'width': '5%',
+          'width': '80%',
           // 'height': '5%',
           'text-valign': 'center',
           'text-halign': 'center',
