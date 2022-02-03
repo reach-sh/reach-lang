@@ -788,7 +788,6 @@ const clickNode = async (evt) => {
   for (const [k,v] of Object.entries(r.l_locals)) {
     actors.push(k)
   }
-  // actors = [-1]
   const atsList = await Promise.all(actors.map(async (actorId) => {
   	let x = await c.getLoc(nodeId,actorId)
     return x
@@ -801,11 +800,28 @@ const clickNode = async (evt) => {
       sheet.deleteRule(i);
     });
   }
+  const singleColors = ['#6699CC','#a7a6ba']
+  const multiColor = '#90917E'
+  const dupls = ats.filter((e, index, arr) => arr.indexOf(e) !== index)
+  const dups = [...new Set(dupls)]
   ats = [...new Set(ats)]
-  const cssClasses = ats.map(at => `.hljs-ln-line[data-line-number="${at}"]`).join(', ')
-  sheet.insertRule(`${cssClasses} {
-    background-color: silver;
-  }`);
+  const diff = ats.filter(x => !dups.includes(x));
+  const singles = diff.map(at => `.hljs-ln-line[data-line-number="${at}"]`)
+  const multiples = dups.map(at => `.hljs-ln-line[data-line-number="${at}"]`)
+
+  singles.forEach((clss, i) => {
+    sheet.insertRule(`${clss} {
+      background-color: ${singleColors[i]};
+    }`);
+  });
+
+  multiples.forEach((clss, i) => {
+    sheet.insertRule(`${clss} {
+      background-color: ${multiColor};
+    }`);
+  });
+
+
   const at = ats.at(-1)
   if (at) {
     const poi = document.querySelector(`.hljs-ln-line[data-line-number="${at}"`);
