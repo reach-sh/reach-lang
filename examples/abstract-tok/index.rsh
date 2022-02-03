@@ -1,6 +1,6 @@
 'reach 0.1';
 
-const MT = Maybe(Token);
+const MT = Maybe(Array(Token, 2));
 const MS = MT.Some
 
 const mkPayAmt = (tok) => [ balance(tok), tok ];
@@ -8,6 +8,7 @@ const mkPayAmt = (tok) => [ balance(tok), tok ];
 export const main = Reach.App(() => {
   const A = Participant('Alice', {
     params  : Tuple(Token, Token, UInt),
+    token3  : Token,
     checkBal: Fun(true, Null)
   });
   init();
@@ -29,16 +30,32 @@ export const main = Reach.App(() => {
 
   chkBal(0);
 
+  const getTok = (a) => (a > 0) ? token1 : token2;
+
   const go = (mtok) => {
-    const payAmt = fromMaybe(mtok, balance, mkPayAmt);
-    transfer(...payAmt).to(A);
+    mtok.match({
+      Some: ([ t1, t2 ]) => {
+        transfer(balance(t1), t1).to(A);
+      },
+      None: () => {}
+    });
   }
 
-  go(MS(token1));
+  const ta = array(Token, [ getTok(4), token2 ]);
+  go(MS(ta));
 
   chkBal(1);
 
   transfer(balance(token2), token2).to(A);
 
   commit();
+
+  A.only(() => {
+    const token3 = declassify(interact.token3);
+    assume(token3 != token1 && token3 != token2);
+  });
+  A.publish(token3);
+  require(token3 != token1 && token3 != token2);
+  commit();
+
 });
