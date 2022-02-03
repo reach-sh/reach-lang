@@ -386,7 +386,7 @@ const renderObjectDetails = async (evt) => {
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects</a></li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects (${nodeId})</a></li>
       <li class="breadcrumb-item active" aria-current="page">Details (${who})</li>
     </ol>
   </nav>
@@ -452,7 +452,7 @@ const detailActions = async (evt) => {
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects</a></li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects (${nodeId})</a></li>
       <li class="breadcrumb-item"><a href="#" id="return-to-details">Details (${who})</a></li>
       <li class="breadcrumb-item active" aria-current="page">Actions</li>
     </ol>
@@ -491,7 +491,7 @@ const respondToActions = async (evt) => {
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects</a></li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects (${nodeId})</a></li>
       <li class="breadcrumb-item"><a href="#" id="return-to-details">Details (${who})</a></li>
       <li class="breadcrumb-item"><a href="#" id="return-to-actions">Actions</a></li>
       <li class="breadcrumb-item active" aria-current="page">Response</li>
