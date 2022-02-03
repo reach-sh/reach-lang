@@ -5,7 +5,7 @@ HERE=$(dirname "$0")
 
 IMAGE="$1"
 LATEST_TAG="${IMAGE}:latest"
-REACH_GIT_HASH="$("${HERE}/git-hash.sh")"
+REACH_GIT_HASH=$("${HERE}/git-hash.sh")
 DATE="$(date '+%Y-%m-%d')"
 
 tagpush() {

@@ -43,6 +43,8 @@ image () {
         name: "${NAME}"
         image: "${IMAGE}"
         exec: "${EXEC}"
+        context:
+         - reachdevbot-on-dockerhub
 END
   deps "$@"
   cat >>"${IEND}" <<END
@@ -78,6 +80,8 @@ conn () {
         name: "${NAME}"
         connector: "${CONN}"
         size: ${SIZE}
+        context:
+          - reachdevbot-on-dockerhub
 END
   deps "reach" "reach-cli" "runner" "rpc-server" "${IMAGE}"
   cat >>"${END}" <<END

@@ -1,4 +1,4 @@
-IMAGE=reachsh/devnet-algo
+IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/devnet-algo"
 ROOT=../..
 
 .PHONY: build
@@ -8,7 +8,7 @@ build:
 		exit 1 ; \
 	fi
 	$(ROOT)/scripts/build-image.sh $(IMAGE) Dockerfile
-	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
+#	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: build-m1
 build-m1: build

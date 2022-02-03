@@ -1,5 +1,5 @@
 ARG ALPINE_VERSION
-FROM reachsh/haskell-build-artifacts AS build
+FROM reachsh/haskell-build-artifacts as build
 
 FROM alpine:$ALPINE_VERSION
 RUN apk add gmp libgmpxx git

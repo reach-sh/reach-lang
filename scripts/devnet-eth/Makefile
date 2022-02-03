@@ -1,11 +1,11 @@
-IMAGE=reachsh/devnet-eth
+IMAGE="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/devnet-eth"
 ROOT=../..
 include $(ROOT)/DEPS
 
 .PHONY: build
 build:
 	$(ROOT)/scripts/build-image.sh $(IMAGE) Dockerfile
-	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
+#	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: build-m1
 build-m1: build

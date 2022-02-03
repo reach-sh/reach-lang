@@ -1,6 +1,6 @@
-IMG_HASKELL_BUILD_ARTIFACTS="reachsh/haskell-build-artifacts"
-IMG_REACHC="reachsh/reach"
-IMG_REACH_CLI="reachsh/reach-cli"
+IMG_HASKELL_BUILD_ARTIFACTS="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/haskell-build-artifacts"
+IMG_REACHC="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/reach"
+IMG_REACH_CLI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/reach-cli"
 ROOT=..
 
 include $(ROOT)/VERSION
@@ -20,7 +20,7 @@ build-haskell-build-artifacts:
 	cp -f $(ROOT)/VERSION $(ROOT)/DEPS .docker-root/
 	docker container rm -f repo || true
 	docker image rm -f reachsh/repository:latest || true
-	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
+	docker run --rm --name repo -p 30000:80 -d "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/repository:latest"
 	$(ROOT)/scripts/build-image.sh $(IMG_HASKELL_BUILD_ARTIFACTS) Dockerfile.haskell-build-artifacts \
 	  --add-host host.docker.internal:172.17.0.1
 	docker container rm -f repo
@@ -28,12 +28,12 @@ build-haskell-build-artifacts:
 .PHONY: build-reach-cli
 build-reach-cli:
 	$(ROOT)/scripts/build-image.sh $(IMG_REACH_CLI) Dockerfile.reach-cli
-	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
+#	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
 
 .PHONY: build-reach
 build-reach:
 	$(ROOT)/scripts/build-image.sh $(IMG_REACHC) Dockerfile.reachc
-	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
+#	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
 
 .PHONY: build
 build: build-haskell-build-artifacts build-reach-cli build-reach
@@ -49,13 +49,13 @@ build-m1:
 	  --build-arg Z3_VERSION="$(Z3_VERSION)" \
 	  --tag=$(IMG_REACHC):latest \
 	  -f Dockerfile.reachc-m1 .
-	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
+#	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
 	docker build \
 	  --platform linux/arm64 \
 	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \
 	  --tag=$(IMG_REACH_CLI):latest \
 	  -f Dockerfile.reach-cli-m1 .
-	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
+#	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
 
 .PHONY: push
 push:

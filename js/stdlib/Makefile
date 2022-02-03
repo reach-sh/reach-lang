@@ -1,4 +1,4 @@
-IMAGE=reachsh/stdlib
+IMAGE=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/stdlib
 ROOT=../..
 include $(ROOT)/VERSION
 include Makefile.docker
@@ -19,7 +19,7 @@ build:
 	mkdir -p .docker-root
 	cp -f $(ROOT)/VERSION .docker-root/
 	$(ROOT)/scripts/build-image.sh $(IMAGE) Dockerfile
-	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
+#	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: push
 push:
