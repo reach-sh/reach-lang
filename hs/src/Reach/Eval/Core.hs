@@ -3177,7 +3177,9 @@ evalPrim p sargs =
             jsClo at "post" (postArg <> " => post(dom, rng)") $
               M.fromList [("post", postv)]
       let stf' = SLTypeFun dom rng' pre post' pre_msg post_msg
-      allTokens <- fmap DLA_Var <$> readSt st_toks
+      all_toks <- readSt st_toks
+      let all_toks_idx = zip all_toks [1 :: Int .. ]
+      let allTokens = map (\ (dv, i) -> DLA_Tok $ DLToken dv i) all_toks_idx
       let nnToksNotBilled = allTokens \\ nnToksBilledRecv
       let withBill = DLWithBill (if shouldRetNNToks then nnToksBilledRecv else []) nnToksNotBilled
       res'' <-
