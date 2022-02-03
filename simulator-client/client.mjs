@@ -87,8 +87,22 @@ const respondWithVal = async (s,a,v,w=false,t='number') => {
   return r
 }
 
-const initFor = async (s,a) => {
-  const r = await interact('POST', `${address}/init/${a}/${s}`)
+const initFor = async (s,a,liv="{}") => {
+  let livS = liv
+  if (
+    typeof liv === 'object' &&
+    !Array.isArray(liv) &&
+    liv !== null
+  ) {
+    livS = JSON.stringify(liv)
+  }
+  const r = await interact('POST', `${address}/init/${a}/${s}/?liv=${livS}`)
+  console.log(r)
+  return r
+}
+
+const initDetails = async (a) => {
+  const r = await interact('GET', `${address}/init_details/${a}`)
   console.log(r)
   return r
 }
@@ -173,5 +187,6 @@ export {
   getLoc,
   newAccount,
   transfer,
-  newToken
+  newToken,
+  initDetails
 };

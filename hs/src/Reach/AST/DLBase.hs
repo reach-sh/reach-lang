@@ -135,6 +135,8 @@ data IType
   | IT_UDFun DLType
   deriving (Eq, Ord, Generic, Show)
 
+instance ToJSON IType
+
 itype2arr :: IType -> ([DLType], DLType)
 itype2arr = \case
   IT_Val t -> ([], t)
@@ -148,6 +150,8 @@ newtype InteractEnv
   = InteractEnv (M.Map SLVar IType)
   deriving (Eq, Generic, Show)
   deriving newtype (Monoid, Semigroup)
+
+instance ToJSON InteractEnv
 
 instance Pretty InteractEnv where
   pretty (InteractEnv m) = "interact" <+> render_obj m

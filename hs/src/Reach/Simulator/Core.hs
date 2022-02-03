@@ -63,6 +63,7 @@ data LocalInfo = LocalInfo
   , l_phase :: PhaseId
   , l_ks :: Maybe PartState
   , l_livs :: LocalInteractEnv
+  , l_ivd :: InteractEnv
   }
   deriving (Generic)
 
@@ -110,6 +111,7 @@ initLocal =
             , l_phase = 0
             , l_ks = Nothing
             , l_livs = mempty
+            , l_ivd = mempty
             }
     , l_curr_actor_id = consensusId
     }
@@ -231,7 +233,6 @@ data Action
   | A_None
   | A_AdvanceTime Integer
   | A_AdvanceSeconds Integer
-  | A_InteractV String String DLType
   | A_Interact [SLCtxtFrame] String String DLType [DLVal]
   | A_Contest PhaseId
   | A_Remote [SLCtxtFrame] String [DLVal] [DLVal]
@@ -386,16 +387,10 @@ instance Interp DLArg where
             Just a -> return a
     DLA_Constant dlconst -> return $ conCons' dlconst
     DLA_Literal dllit -> interp dllit
-    DLA_Interact slpart str dltype -> do
-      v <- suspend $ PS_Suspend Nothing (A_InteractV (bunpack slpart) str dltype)
-      l <- getLocal
-      let actId = l_curr_actor_id l
-      lcl <- getMyLocalInfo
-      let newliv = M.insertWith (\_ y -> y) str v (l_livs lcl)
-      let lcl' = lcl {l_livs = newliv}
-      let res = saferMapRef "DLA_Interact" $ M.lookup str newliv
-      setLocal $ l {l_locals = M.insert actId lcl' (l_locals l)}
-      return res
+    DLA_Interact _slpart str _dltype -> do
+      livs <- l_livs <$> getMyLocalInfo
+      let v = saferMapRef "DLA_Interact" $ M.lookup str livs
+      return v
 
 instance Interp DLLiteral where
   interp = \case
@@ -413,7 +408,7 @@ instance Interp DLLargeArg where
       return $ V_Data string evd_arg
     DLLA_Struct assoc_slvars_dlargs -> do
       evd_args <- mapM (\arg -> interp arg) $ M.fromList assoc_slvars_dlargs
-      return $ V_Struct $ M.toList evd_args
+      return $ V_Struct $ M.toAscList evd_args
     DLLA_Bytes _ -> impossible "undefined"
 
 instance Interp DLExpr where
@@ -661,13 +656,13 @@ instance Interp LLConsensus where
     LLC_While at asn _inv cond body k -> do
       case asn of
         DLAssignment asn' -> do
-          _ <- mapM (\(var, val) -> interp $ DL_Set at var val) $ M.toList asn'
+          _ <- mapM (\(var, val) -> interp $ DL_Set at var val) $ M.toAscList asn'
           _ <- while cond body
           interp k
     LLC_Continue at asn -> do
       case asn of
         DLAssignment asn' -> do
-          _ <- mapM (\(k, v) -> interp $ DL_Set at k v) $ M.toList asn'
+          _ <- mapM (\(k, v) -> interp $ DL_Set at k v) $ M.toAscList asn'
           return V_Null
     LLC_ViewIs _at _part _var _export cons -> interp cons
 
@@ -743,7 +738,7 @@ winner dlr actId phId = do
   let (_, winningMsg) = fixedMsg $ saferMapRef "winner" $ M.lookup phId $ e_messages g
   accId <- getAccId actId
   bindConsensusMeta dlr actId accId
-  let (xs, vs) = unzip $ M.toList winningMsg
+  let (xs, vs) = unzip $ M.toAscList winningMsg
   _ <- zipWithM addToStore xs vs
   return ()
 
@@ -793,7 +788,7 @@ bindConsensusMeta (DLRecv {..}) actorId accId = do
 
 instance Interp LLProg where
   interp (LLProg _at _llo slparts _dli _dex _dvs _apis _evts step) = do
-    registerParts $ M.keys $ sps_ies slparts
+    registerParts $ M.toAscList $ sps_ies slparts
     interp step
 
 isTheTimePast :: Maybe (DLTimeArg, LLStep) -> App (Maybe LLStep)
@@ -815,17 +810,17 @@ isTheTimePast tc_mtime = do
           False -> return $ Just step
     Nothing -> return $ Nothing
 
-registerParts :: [SLPart] -> App ()
+registerParts :: [(SLPart, InteractEnv)] -> App ()
 registerParts [] = return ()
-registerParts (p : ps) = do
+registerParts ((p, iv) : ps) = do
   s <- getState
-  let (g, l) = registerPart s (bunpack p)
+  let (g, l) = registerPart s (bunpack p) iv
   setGlobal g
   setLocal l
   registerParts ps
 
-registerPart :: State -> String -> State
-registerPart (g, l) s = do
+registerPart :: State -> String -> InteractEnv -> State
+registerPart (g, l) s iv = do
   let actorId = e_nactorid g
   let pacts = e_partacts g
   let aid = e_naccid g
@@ -838,6 +833,7 @@ registerPart (g, l) s = do
           , l_phase = 0
           , l_ks = Nothing
           , l_livs = mempty
+          , l_ivd = iv
           }
   let locals' = M.insert actorId lcl locals
   let ledger = e_ledger g

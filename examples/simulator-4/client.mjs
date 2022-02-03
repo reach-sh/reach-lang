@@ -18,7 +18,7 @@ const logLocal = async (n) => {
 
 const getVar = async (v,n,aid) => {
   const x = await c.getStateLocals(n)
-  return x.l_locals[aid].l_store.find(el => el[0] == v)
+  return x.l_locals[aid].l_store.find(el => el[0].startsWith(v))
 }
 
 const assertVar = (y,t,v) => {
@@ -33,18 +33,19 @@ const main = async () => {
   await c.ping()
   await c.load()
   await c.init()
-  await c.initFor(0,0)
+  await c.initFor(0,0,JSON.stringify(
+    {'wager':{'tag':'V_UInt','contents':10},
+    'deadline':{'tag':'V_UInt','contents':999}}
+  ))
   await c.initFor(1,1)
-  await c.respondWithVal(2,2,999,0) // deadline
-  await c.respondWithVal(3,3,10) // wager
-  await c.respondWithVal(4,4,0) // hand
-  await c.respondWithVal(5,5,4444) // salt
-  await c.respondWithVal(6,6,0,-1)
-  await c.respondWithVal(7,7,-99,0)
+  await c.respondWithVal(2,2,0,0) // hand
+  await c.respondWithVal(3,3,4444) // salt
+  await c.respondWithVal(4,4,0,-1)
+  await c.respondWithVal(5,5,-99,0)
   // Alice sees her own publish
-  let y = await getVar('commitAlice',8,0)
-  let z = await getVar('wager',8,0)
-  let m = await getVar('deadline',8,0)
+  let y = await getVar('commitAlice',6,0)
+  let z = await getVar('wager',6,0)
+  let m = await getVar('deadline',6,0)
   const a = {
     tag: 'V_Tuple',
     contents: [
@@ -57,41 +58,41 @@ const main = async () => {
   assertVar(y, 'V_Digest', a)
   assertVar(z,'V_UInt',10)
   assertVar(m,'V_UInt',999)
-  await c.respondWithVal(8,8,-99,1)
+  await c.respondWithVal(6,6,-99,1)
   // Bob sees Alice's publish
-  y = await getVar('commitAlice',9,1)
-  z = await getVar('wager',9,1)
-  m = await getVar('deadline',9,1)
+  y = await getVar('commitAlice',7,1)
+  z = await getVar('wager',7,1)
+  m = await getVar('deadline',7,1)
   assertVar(y, 'V_Digest', a)
   assertVar(z,'V_UInt',10)
   assertVar(m,'V_UInt',999)
-  await c.respondWithVal(9,9,-99)
-  await c.respondWithVal(10,10,1)
-  await c.respondWithVal(11,11,1,-1)
-  await c.respondWithVal(12,12,-99,0)
+  await c.respondWithVal(7,7,-99)
+  await c.respondWithVal(8,8,1)
+  await c.respondWithVal(9,9,1,-1)
+  await c.respondWithVal(10,10,-99,0)
   // Alice sees Bob's publish
-  y = await getVar('handBob',13,0)
+  y = await getVar('handBob',11,0)
   assertVar(y, 'V_UInt',1)
-  await c.respondWithVal(13,13,-99,1)
+  await c.respondWithVal(11,11,-99,1)
   // Bob sees his own publish
-  y = await getVar('handBob',14,1)
+  y = await getVar('handBob',12,1)
   assertVar(y,'V_UInt',1)
-  await c.respondWithVal(14,14,0,-1)
-  await c.respondWithVal(15,15,-99,0)
+  await c.respondWithVal(12,12,0,-1)
+  await c.respondWithVal(13,13,-99,0)
   // Alice sees her 2nd publish
-  y = await getVar('saltAlice',16,0)
-  z = await getVar('handAlice',16,0)
+  y = await getVar('saltAlice',14,0)
+  z = await getVar('handAlice',14,0)
   assertVar(y, 'V_UInt', 4444)
   assertVar(z,'V_UInt',0)
-  await c.respondWithVal(16,16,-99,1)
+  await c.respondWithVal(14,14,-99,1)
   // Bob sees Alice's 2nd publish
-  y = await getVar('saltAlice',17,1)
-  z = await getVar('handAlice',17,1)
+  y = await getVar('saltAlice',15,1)
+  z = await getVar('handAlice',15,1)
   assertVar(y, 'V_UInt', 4444)
   assertVar(z,'V_UInt',0)
-  await c.respondWithVal(17,17,-99,0)
-  await c.respondWithVal(18,18,-99,1)
-  const l = await c.getStateGlobals(19)
+  await c.respondWithVal(15,15,-99,0)
+  await c.respondWithVal(16,16,-99,1)
+  const l = await c.getStateGlobals(17)
   const amt = l.e_ledger["1"]["-1"]
   // Bob wins
   assert.equal(amt,10);

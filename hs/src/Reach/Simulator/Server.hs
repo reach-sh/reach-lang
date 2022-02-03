@@ -5,16 +5,19 @@
 
 module Reach.Simulator.Server where
 
+import Reach.AST.DLBase
 import Reach.AST.Base
 import Reach.AST.LL
 import Reach.Util
 import qualified Reach.Simulator.Core as C
+import qualified Data.ByteString.Lazy as LB
 import Control.Concurrent.STM
 import Control.Monad.Reader
-import Data.Aeson (FromJSON, ToJSON)
+import Data.Aeson (FromJSON, ToJSON, decode)
 import Data.Default.Class
 import qualified Data.Map.Strict as M
 import Data.Text.Lazy (Text)
+import Data.Maybe (fromMaybe)
 import GHC.Generics
 import Network.Wai.Middleware.RequestLogger
 import Web.Scotty.Trans
@@ -60,6 +63,7 @@ data Session = Session
   , e_src :: Maybe LLProg
   , e_status :: Status
   , e_edges :: [(StateId,StateId)]
+  , e_parents :: [(StateId,StateId)]
   , e_locs :: M.Map C.ActorId (M.Map StateId SrcLoc)
   , e_src_txt :: String
   }
@@ -75,6 +79,7 @@ initSession = Session
   , e_src = Nothing
   , e_status = Initial
   , e_edges = mempty
+  , e_parents = mempty
   , e_locs = mempty
   , e_src_txt = mempty
   }
@@ -84,6 +89,7 @@ processNewState psid ps = do
   sid <- gets e_nsid
   actorId <- gets e_actor_id
   edges <- gets e_edges
+  parents <- gets e_parents
   _ <- case ps of
     C.PS_Done _ _ -> do
       registerAction sid actorId C.A_None
@@ -113,6 +119,7 @@ processNewState psid ps = do
     Just psid' -> modify $ \st ->
       st
         { e_edges = (psid', sid) : edges
+        , e_parents = (sid, psid') : parents
         }
 
 registerLoc :: StateId -> C.ActorId -> SrcLoc -> WebM ()
@@ -212,9 +219,6 @@ unblockProg sid aid v = do
             Just (C.A_Remote _slcxtframes _str _args1 _args2) -> do
               let ps = k (g,l) v
               processNewState (Just sid) ps
-            Just (C.A_InteractV _part _str _dltype) -> do
-              let ps = k (g, l) v
-              processNewState (Just sid) ps
             Just (C.A_Contest _phid) -> do
               let ps = k (g, l) v
               processNewState (Just sid) ps
@@ -270,18 +274,37 @@ getProgState sid = do
     Nothing -> return Nothing
     Just st -> return $ Just st
 
+checkIfValIType :: IType -> Bool
+checkIfValIType = \case
+  IT_Val _ -> True
+  IT_Fun _ _ -> False
+  IT_UDFun _ -> False
+
+initVals :: InteractEnv -> WebM (M.Map String String)
+initVals (InteractEnv iv'') = do
+  return $ M.map show $ M.filter checkIfValIType iv''
+
+initDetails :: C.ActorId -> WebM (M.Map String String)
+initDetails actorId = do
+  (_,l) <- fromMaybe (possible "initDetails: state not founds") <$> getProgState 0
+  case M.lookup actorId (C.l_locals l) of
+    Nothing -> possible "initDetails: actor not found"
+    Just lcl -> initVals $ C.l_ivd lcl
+
 getLoc :: StateId -> C.ActorId -> WebM (Maybe SrcLoc)
 getLoc sid actorId = do
-  case sid of
-    -1 -> return Nothing
-    _  -> do
-      locs <- gets e_locs
-      case M.lookup actorId locs of
-        Nothing -> return Nothing
-        Just locs' -> do
-          case M.lookup sid locs' of
-            Nothing -> getLoc (sid - 1) actorId
-            Just loc -> return $ Just loc
+  locs <- gets e_locs
+  parents <- M.fromList <$> gets e_parents
+  case M.lookup actorId locs of
+    Nothing -> return Nothing
+    Just locs' -> do
+      case M.lookup sid locs' of
+        Nothing -> do
+          case M.lookup sid parents of
+            Nothing -> return Nothing
+            Just parent -> do
+              getLoc parent actorId
+        Just loc -> return $ Just loc
 
 changeActor :: C.ActorId -> WebM ()
 changeActor actId = do
@@ -289,19 +312,21 @@ changeActor actId = do
 
 computeActions :: StateId -> C.ActorId -> WebM (Maybe (ActionId,C.Action))
 computeActions sid actorId = do
-  case sid of
-    -1 -> return Nothing
-    _  -> do
-      actacts <- gets e_actors_actions
-      idacts <- gets e_ids_actions
-      case M.lookup actorId actacts of
-        Nothing -> return Nothing
-        Just acts -> do
-          case M.lookup sid acts of
-            Nothing -> computeActions (sid - 1) actorId
-            Just actId -> do
-              let act = saferMapRef "computeActions actId" $ M.lookup actId idacts
-              return $ Just (actId,act)
+  actacts <- gets e_actors_actions
+  idacts <- gets e_ids_actions
+  parents <- M.fromList <$> gets e_parents
+  case M.lookup actorId actacts of
+    Nothing -> return Nothing
+    Just acts -> do
+      case M.lookup sid acts of
+        Nothing -> do
+          case M.lookup sid parents of
+            Nothing -> return Nothing
+            Just parent -> do
+              computeActions parent actorId
+        Just actId -> do
+          let act = saferMapRef "computeActions actId" $ M.lookup actId idacts
+          return $ Just (actId,act)
 
 initProgSim :: LLProg -> WebM ()
 initProgSim ll = do
@@ -309,12 +334,16 @@ initProgSim ll = do
   ps <- return $ C.initApp ll initSt
   processNewState Nothing ps
 
-initProgSimFor :: C.ActorId -> StateId -> LLProg -> WebM ()
-initProgSimFor actId sid (LLProg _ _ _ _ _ _ _ _ step) = do
+initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> LLProg -> WebM ()
+initProgSimFor actId sid liv (LLProg _ _ _ _ _ _ _ _ step) = do
   graph <- gets e_graph
   modify $ \st -> st {e_actor_id = actId}
   let (g, l) = saferMapRef "initProgSimFor" $ M.lookup sid graph
-  let l' = l {C.l_curr_actor_id = actId}
+  let locals = C.l_locals l
+  let lcl = saferMapRef "initProgSimFor1" $ M.lookup actId locals
+  let lcl' = lcl { C.l_livs = liv }
+  let locals' = M.insert actId lcl' locals
+  let l' = l {C.l_curr_actor_id = actId, C.l_locals = locals'}
   ps <- return $ C.initAppFromStep step (g, l')
   processNewState (Just sid) ps
 
@@ -354,12 +383,23 @@ app p srcTxt = do
     setHeaders
     a <- param "a"
     s <- param "s"
+    liv :: LB.ByteString <- param "liv"
     ll <- webM $ gets e_src
-    case ll of
-      Nothing -> json $ ("No Program" :: String)
-      Just ll' -> do
-        webM $ initProgSimFor a s ll'
-        json $ ("OK" :: String)
+    let liv' :: Maybe C.LocalInteractEnv = decode liv
+    case liv' of
+      Nothing -> possible "Init Parse Failure"
+      Just liv'' -> do
+        case ll of
+          Nothing -> json $ ("No Program" :: String)
+          Just ll' -> do
+            webM $ initProgSimFor a s liv'' ll'
+            json $ ("OK" :: String)
+
+  get "/init_details/:a" $ do
+    setHeaders
+    a <- param "a"
+    dets <- webM $ initDetails a
+    json dets
 
   get "/states" $ do
     setHeaders

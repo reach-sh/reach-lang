@@ -22,19 +22,19 @@
     </div>
   </div>
   <div class="col-7">
-    <div class="row half-row">
-      <div class="col-6">
-        <div id="cy" class="bordered"> </div>
-      </div>
+    <div class="row half-row d-flex flex-row-reverse">
       <div class="col-5">
         <div id="spa" class="bordered"> </div>
       </div>
+      <div class="col-6">
+        <div id="cy" class="bordered"> </div>
+      </div>
     </div>
-    <div class="row half-row">
+    <div class="row half-row d-flex flex-row-reverse">
       <div class="col-4">
-        <div id="input">
-          <button type="button" id="load-script" class="btn btn-outline-secondary btn-sm">Load Script <i class="bi bi-play-circle"></i></button>
-          <button type="button" id="save-script" class="btn btn-outline-secondary btn-sm">Save Script <i class="bi bi-clipboard"></i></button>
+        <div class="d-flex flex-row-reverse">
+          <button type="button" id="load-script" class="btn btn-outline-secondary btn-sm">Load Session <i class="bi bi-play-circle"></i></button>
+          <button type="button" id="save-script" class="btn btn-outline-secondary btn-sm">Save Session <i class="bi bi-clipboard"></i></button>
         </div>
       </div>
     </div>
@@ -48,6 +48,6 @@
 
 <script type="module" src="main.js"></script>
 
-<footer>v0.2</footer>
+<footer>v0.3</footer>
 </body>
 </html>

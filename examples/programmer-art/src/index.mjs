@@ -73,7 +73,10 @@ const renderObjects = async (nodeId) => {
     actorSet[k] = who
   }
   let actors = ``
-  for (const [k,v] of Object.entries(actorSet)) {
+  const actorEntries = Object.entries(actorSet)
+  // NOTE: assumption: there is at least one non-consensus actor
+  const firstActorId = actorEntries[0][0]
+  for (const [k,v] of actorEntries) {
     actors = actors + `<option value="${k}">${v}</option>`
   }
   for (const [k,v] of Object.entries(r.l_locals)) {
@@ -97,6 +100,8 @@ const renderObjects = async (nodeId) => {
       <span class="badge bg-secondary">${status}</span>
       </button> `
   }
+  // <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals <i class="bi bi-clipboard"></i></button>
+  // <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals <i class="bi bi-clipboard"></i></button>
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -107,14 +112,17 @@ const renderObjects = async (nodeId) => {
     ${obs}
     <button type="button" id="newAccButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Account <i class="bi bi-plus-lg"></i></button>
     <button type="button" id="newTokButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Token <i class="bi bi-plus-lg"></i></button>
-    <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals <i class="bi bi-clipboard"></i></button>
-    <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals <i class="bi bi-clipboard"></i></button>
+
     <div class="pad-me d-flex justify-content-center shrink-text">
-      <select name="actors" id="actors-spa-select">
+      <select name="init-actors" id="init-actors-spa-select">
         ${actors}
       </select>
       <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Init For</button>
     </div>
+    <div id="initDetailsPanel" class="pad-me d-flex justify-content-center shrink-text">
+
+    </div>
+
     <hr>
     <div class="pad-me d-flex justify-content-center shrink-text">
       SND:
@@ -136,7 +144,27 @@ const renderObjects = async (nodeId) => {
 
   </ul>
   `
+  initActorDetsHelper(firstActorId);
   bindObjDetailsEvents();
+}
+
+const initActorDetsHelper = async (a) => {
+  const initPanel = document.querySelector("#initDetailsPanel")
+  const dets = await c.initDetails(a)
+  let initHtml = ``
+  for (const [k,v] of Object.entries(dets)) {
+    let vDisplay = v.slice(7)
+    if (vDisplay.startsWith('Bytes')) {
+      vDisplay = 'Bytes'
+    }
+    initHtml = initHtml + `
+    <div class="pad-me d-flex justify-content-center shrink-text">
+      <div class="pad-me d-flex justify-content-center"> ${k} : ${vDisplay} </div>
+      <input type="text" data-init-val="${k}" data-init-type="${vDisplay}" class="form-control form-control-sm init-detail" placeholder="Value">
+    </div>`
+  }
+  initPanel.innerHTML = initHtml
+  console.log(dets)
 }
 
 const bindObjDetailsEvents = () => {
@@ -187,55 +215,73 @@ const bindObjDetailsEvents = () => {
   }
   newTokBtn.addEventListener("click",newTokHandler)
 
-  const localsBtn = document.querySelector("#localsButton")
-  const locals = async (evt) => {
-    const tgt = evt.target.closest("#localsButton")
-    const nodeId = tgt.dataset.nodeId
-    let r = await c.getStateLocals(nodeId)
-    let fr = JSON.stringify(r,null,2)
-    let icon = evt.target.querySelector('.bi')
-    if (!icon) {
-      icon = evt.target
-    }
-    icon.classList.remove('bi-clipboard')
-    icon.classList.add('bi-check2')
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    await navigator.clipboard.writeText(fr)
-    icon.classList.remove('bi-check2')
-    icon.classList.add('bi-clipboard')
-    console.log("logged local state")
-    appendToLog(fr)
-  }
-  localsBtn.addEventListener("click",locals)
+  // const localsBtn = document.querySelector("#localsButton")
+  // const locals = async (evt) => {
+  //   const tgt = evt.target.closest("#localsButton")
+  //   const nodeId = tgt.dataset.nodeId
+  //   let r = await c.getStateLocals(nodeId)
+  //   let fr = JSON.stringify(r,null,2)
+  //   let icon = evt.target.querySelector('.bi')
+  //   if (!icon) {
+  //     icon = evt.target
+  //   }
+  //   icon.classList.remove('bi-clipboard')
+  //   icon.classList.add('bi-check2')
+  //   await new Promise(resolve => setTimeout(resolve, 1000))
+  //   await navigator.clipboard.writeText(fr)
+  //   icon.classList.remove('bi-check2')
+  //   icon.classList.add('bi-clipboard')
+  //   console.log("logged local state")
+  //   appendToLog(fr)
+  // }
+  // localsBtn.addEventListener("click",locals)
+  //
+  // const globalsBtn = document.querySelector("#globalsButton")
+  // const globals = async (evt) => {
+  //   const tgt = evt.target.closest("#globalsButton")
+  //   const nodeId = tgt.dataset.nodeId
+  //   let r = await c.getStateGlobals(nodeId)
+  //   let fr = JSON.stringify(r,null,2)
+  //   let icon = evt.target.querySelector('.bi')
+  //   if (!icon) {
+  //     icon = evt.target
+  //   }
+  //   icon.classList.remove('bi-clipboard')
+  //   icon.classList.add('bi-check2')
+  //   await new Promise(resolve => setTimeout(resolve, 1000))
+  //   await navigator.clipboard.writeText(fr)
+  //   icon.classList.remove('bi-check2')
+  //   icon.classList.add('bi-clipboard')
+  //   console.log("logged global state")
+  //   appendToLog(fr)
+  // }
+  // globalsBtn.addEventListener("click",globals)
 
-  const globalsBtn = document.querySelector("#globalsButton")
-  const globals = async (evt) => {
-    const tgt = evt.target.closest("#globalsButton")
-    const nodeId = tgt.dataset.nodeId
-    let r = await c.getStateGlobals(nodeId)
-    let fr = JSON.stringify(r,null,2)
-    let icon = evt.target.querySelector('.bi')
-    if (!icon) {
-      icon = evt.target
-    }
-    icon.classList.remove('bi-clipboard')
-    icon.classList.add('bi-check2')
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    await navigator.clipboard.writeText(fr)
-    icon.classList.remove('bi-check2')
-    icon.classList.add('bi-clipboard')
-    console.log("logged global state")
-    appendToLog(fr)
+  const initActorSlct = document.querySelector("#init-actors-spa-select")
+  const initActorDets = async (evt) => {
+    initActorDetsHelper(evt.target.value)
   }
-  globalsBtn.addEventListener("click",globals)
+  initActorSlct.addEventListener("change",initActorDets)
 
   const initForBtn = document.querySelector("#initForButton")
   const initFor = async (evt) => {
     const tgt = evt.target.closest("#initForButton")
     const nodeId = parseInt(tgt.dataset.nodeId)
-    let e = document.querySelector("#actors-spa-select");
+    let e = document.querySelector("#init-actors-spa-select");
     let selectedActorId = parseInt(e.value);
-    let r = await c.initFor(nodeId,selectedActorId)
+    const dets = document.querySelectorAll(".init-detail")
+    const liv = {}
+    for (const det of dets) {
+      let type = `V_Bytes`
+      let enter = det.value
+      if (det.dataset.initType == 'UInt') {
+        type = 'V_UInt'
+        enter = parseInt(enter)
+
+      }
+      liv[det.dataset.initVal] = {"tag": type, "contents": enter}
+    }
+    let r = await c.initFor(nodeId,selectedActorId,JSON.stringify(liv))
     appendToLog(r)
     redraw()
     jsonLog.push(["initFor",nodeId,selectedActorId])
@@ -480,7 +526,7 @@ const setupReturnToActions = () => {
 
 const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
   switch (act) {
-    case 'A_Interact':
+    // case 'A_Interact':
     case 'A_TieBreak':
       let tbOpts = ``
       for (const [k,v] of Object.entries(tiebreakers)) {
@@ -494,13 +540,15 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
         jsonLog.push(["respondWithVal",nodeId,actId,tiebreakerId,actorId])
       }
       return [
-        `<select name="tiebreakers" id="tiebreakers-spa-select">
+        `
+          <div>
+          <select name="tiebreakers" id="tiebreakers-spa-select">
           ${tbOpts}
           </select>
+          </div>
         `,
         respondSpaTieBreak
       ]
-    case 'A_InteractV':
     case 'A_Remote':
     case 'A_Contest':
       const respondSpaContest = async () => {
@@ -758,9 +806,9 @@ const clickNode = async (evt) => {
   sheet.insertRule(`${cssClasses} {
     background-color: silver;
   }`);
-  const at = ats[-1]
+  const at = ats.at(-1)
   if (at) {
-    const poi = document.querySelector(`.hljs-ln-line[data-line-number="${n}"`);
+    const poi = document.querySelector(`.hljs-ln-line[data-line-number="${at}"`);
     const topPos = poi.offsetTop;
     document.querySelector('.code-container').scrollTop = topPos;
   }
