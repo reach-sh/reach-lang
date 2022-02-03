@@ -68,7 +68,7 @@ const renderObjects = async (nodeId) => {
   const r = await c.getStateLocals(nodeId)
   let obs = ``
   let actorSet = {}
-  for (const [k,v] of Object.entries(r.l_locals)) {
+  for (let [k,v] of Object.entries(r.l_locals)) {
     const who = v.l_who ? v.l_who : 'Consensus'
     actorSet[k] = who
   }
@@ -76,10 +76,10 @@ const renderObjects = async (nodeId) => {
   const actorEntries = Object.entries(actorSet)
   // NOTE: assumption: there is at least one non-consensus actor
   const firstActorId = actorEntries[0][0]
-  for (const [k,v] of actorEntries) {
+  for (let [k,v] of actorEntries) {
     actors = actors + `<option value="${k}">${v}</option>`
   }
-  for (const [k,v] of Object.entries(r.l_locals)) {
+  for (let [k,v] of Object.entries(r.l_locals)) {
     const who = v.l_who ? v.l_who : 'Consensus'
     let status = 'Initial'
     switch (v.l_ks) {
@@ -152,7 +152,7 @@ const initActorDetsHelper = async (a) => {
   const initPanel = document.querySelector("#initDetailsPanel")
   const dets = await c.initDetails(a)
   let initHtml = ``
-  for (const [k,v] of Object.entries(dets)) {
+  for (let [k,v] of Object.entries(dets)) {
     let vDisplay = v.slice(7)
     if (vDisplay.startsWith('Bytes')) {
       vDisplay = 'Bytes'
@@ -271,7 +271,7 @@ const bindObjDetailsEvents = () => {
     let selectedActorId = parseInt(e.value);
     const dets = document.querySelectorAll(".init-detail")
     const liv = {}
-    for (const det of dets) {
+    for (let det of dets) {
       let type = `V_Bytes`
       let enter = det.value
       if (det.dataset.initType == 'UInt') {
@@ -361,7 +361,7 @@ const renderObjectDetails = async (evt) => {
     <div class="badge bg-secondary">Status</div>
     <div> ${status} </div>
     </button> `
-  for (const [k,v] of Object.entries(ledger[actorId])) {
+  for (let [k,v] of Object.entries(ledger[actorId])) {
     dets = dets + `
       <button type="button"
       disabled
@@ -371,7 +371,7 @@ const renderObjectDetails = async (evt) => {
       <div> ${v} (Token ID: ${k}) </div>
       </button> `
   }
-  for (const [varName,varDetails] of detsj.l_store) {
+  for (let [varName,varDetails] of detsj.l_store) {
     const typing = varDetails.tag
     const varValue = varDetails.contents
     dets = dets + `
@@ -484,7 +484,7 @@ const respondToActions = async (evt) => {
   const tiebreakers = JSON.parse(tgt.dataset.tiebreakers)
   const act = tgt.dataset.act
   let actors = `<option value="">Unchanged</option>`
-  for (const [k,v] of Object.entries(actorSet)) {
+  for (let [k,v] of Object.entries(actorSet)) {
     actors = actors + `<option value="${k}">${v}</option>`
   }
   const respTempl = renderResponsePanel(nodeId,act,actors,actorId,actId,tiebreakers)
@@ -529,7 +529,7 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
     // case 'A_Interact':
     case 'A_TieBreak':
       let tbOpts = ``
-      for (const [k,v] of Object.entries(tiebreakers)) {
+      for (let [k,v] of Object.entries(tiebreakers)) {
         tbOpts = tbOpts + `<option value="${k}">${v}</option>`
       }
       const respondSpaTieBreak = async () => {
@@ -605,7 +605,7 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
   let tiebreakers = {}
   let tbList = act.contents[1]
   if (act.tag == 'A_TieBreak') {
-    for (const [k,v] of Object.entries(JSON.parse(actorSet))) {
+    for (let [k,v] of Object.entries(JSON.parse(actorSet))) {
       if (tbList.includes(v)) {
         tiebreakers[k] = v
       }
@@ -677,10 +677,10 @@ const redraw = async () => {
   let edges = await c.getEdges()
   let states = await c.getStates()
   let elements = []
-  for (const s of states) {
+  for (let s of states) {
     elements.push({data: {id: s}})
   }
-  for (const [index, value] of edges.entries()) {
+  for (let [index, value] of edges.entries()) {
     const from = value[0]
     const to = value[1]
     elements.push({data: { id: `edge-${index}`, source: from, target: to } })
@@ -694,7 +694,21 @@ const redraw = async () => {
         style: {
           'background-color': '#666',
           'label': 'data(id)',
-          'visibility': 'hidden'
+          'visibility': 'hidden',
+          'shape': 'round-rectangle',
+          'content': 'data(id)',
+          'font-family': 'Inconsolata, monospace',
+          'background-color': '#f6f6f6',
+          'color': '#555',
+          // 'font-size': 10,
+          // 'width': '5%',
+          // 'height': '5%',
+          'text-valign': 'center',
+          'text-halign': 'center',
+          'border-width': 1.5,
+          'border-color': '#555',
+          // 'text-opacity': 1,
+          // 'opacity': 1,
         }
       },
       {
@@ -720,10 +734,10 @@ const redraw = async () => {
   // citation: animation adapted from https://gist.github.com/maxkfranz/aedff159b0df05ccfaa5
   // and https://stackoverflow.com/questions/40096407/animate-building-a-graph-in-cytoscape-js
   const animateGraph = (nodes) => {
-    var delay = 0;
-    var size = nodes.length;
-    var duration = (1000 / size);
-    var visitedMap = {};
+    let delay = 0;
+    let size = nodes.length;
+    let duration = (1000 / size);
+    const visitedMap = {};
 
     if (size == 1) {
       // single "frame", cancel animation
@@ -731,14 +745,14 @@ const redraw = async () => {
       return;
     }
 
-    for(var index = 0; index < size; ++index){
+    for (let index = 0; index < size; ++index){
       visitedMap[nodes[index].data('id')] = 0;
     }
     var nodesCopy = nodes.clone();
 
-    for( var i = 0; i < nodes.length; ++i ){
-      var cNode = nodes[i];
-      var nextNodes = cNode.connectedEdges(
+    for (let i = 0; i < nodes.length; ++i ){
+      const cNode = nodes[i];
+      const nextNodes = cNode.connectedEdges(
         function(o){
           return o.source().same(cNode);
         }
@@ -760,8 +774,8 @@ const redraw = async () => {
           }
         );
       }
-      for (var index = 0; index < nextNodes.length; ++index){
-        var nNode = nextNodes[index];
+      for (let index = 0; index < nextNodes.length; ++index){
+        const nNode = nextNodes[index];
         (function(currentNode, x, copyNode, nextNode){
           if(nextNode != null && x != 0 && visitedMap[nextNode.data('id')] < 1){
             ++visitedMap[nextNode.data('id')];
@@ -785,7 +799,7 @@ const clickNode = async (evt) => {
   const nodeId = evt.target.id()
   const r = await c.getStateLocals(nodeId)
   let actors = []
-  for (const [k,v] of Object.entries(r.l_locals)) {
+  for (let [k,v] of Object.entries(r.l_locals)) {
     actors.push(k)
   }
   const atsList = await Promise.all(actors.map(async (actorId) => {
