@@ -795,12 +795,10 @@ const clickNode = async (evt) => {
   let ats = atsList
     .filter(at => at)
     .map(at => at.split(':')[1]);
-  if (sheet.cssRules.length > 0) {
-    [...Array(sheet.cssRules.length).keys()].forEach((item, i) => {
-      sheet.deleteRule(i);
-    });
+  while (sheet.cssRules.length > 0) {
+    sheet.deleteRule(sheet.cssRules.length - 1);
   }
-  const singleColors = ['#6699CC','#a7a6ba']
+  const singleColors = ['#6699CC','#a7a6ba','#C0C0C0']
   const multiColor = '#90917E'
   const dupls = ats.filter((e, index, arr) => arr.indexOf(e) !== index)
   const dups = [...new Set(dupls)]
@@ -811,7 +809,7 @@ const clickNode = async (evt) => {
 
   singles.forEach((clss, i) => {
     sheet.insertRule(`${clss} {
-      background-color: ${singleColors[i]};
+      background-color: ${singleColors[i % singleColors.length]};
     }`);
   });
 
