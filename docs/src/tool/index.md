@@ -1,6 +1,6 @@
 # {#ref} Tool
 
-This document describes the `reach` tool: how to install it and how to use it. 
+This document describes the `reach` tool: how to install it and how to use it.
 
 # {#ref-install} Installation
 
@@ -76,10 +76,9 @@ and each `EXPORT` is an exported Reach.App.
 
 If no `SOURCE` is provided, then `index.rsh` is used.
 
-If no `EXPORT` is provided, then all the exported Reach.Apps will be compiled. If there are no
-Reach.Apps exported, then the program will be compiled as a library, where its exports are available
-to other Reach programs and frontends. The output name of a library is the same as if it exported a Reach.App
-named `default`.
+If no `EXPORT` is provided, then all the exported Reach.Apps will be compiled.
+If there are no Reach.Apps exported, then the program will be compiled as a library, where its exports are available to other Reach programs and frontends.
+The output name of a library is the same as if it exported a Reach.Appnamed `default`.
 
 `reach compile` supports the following options:
 
@@ -106,12 +105,12 @@ named `default`.
   This debug information includes: the estimated cost of the contract on Algorand.
   This variable automatically enabled `--intermediate-files`.
   
-  A `reach compile` usage example is available in [Overview](##over-compile). 
+A `reach compile` usage example is available in [Overview](##over-compile).
 
 # {#ref-usage-init} `reach init`
 
-This creates the `index.rsh` and `index.mjs` template files required for a basic Reach DApp. 
-It allows you to open the files and start writing code. 
+This creates the `index.rsh` and `index.mjs` template files required for a basic Reach DApp.
+It allows you to open the files and start writing code.
 The `index.rsh` file is the DApp and is written in Reach, and the `index.mjs` file is the frontend of the DApp and is written in JavaScript.
 
 ```cmd
@@ -247,9 +246,29 @@ If you did not set this when you originally ran `reach config`, then you can run
 $ REACH_CONNECTOR_MODE=ALGO ./reach devnet
 ```
 
-For more information on devnet options, refer to [Algorand](##ref-network-algo), [Conflux](##ref-network-cfx), or [Ethereum](##ref-network-eth).
+`reach devnet` supports the following options:
+
++ `--await-background` --- Run in the background and await availability.
+
+  The mandatory environment variable `REACH_CONNECTOR_MODE` specifies which devnet to run.
+The options are:
+
++ `ETH`, which runs an Ethereum devnet on `localhost:8545`
++ `ETH-browser`, which runs an Ethereum devnet on `localhost:8545`
++ `ETH-devnet`, which runs an Ethereum devnet on `localhost:8545`
++ `ETH-live`, which runs an Ethereum devnet on `localhost:8545`
++ `ALGO`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
++ `ALGO-browser`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
++ `ALGO-devnet`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
++ `ALGO-live`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
++ `CFX`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
++ `CFX-browser`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
++ `CFX-devnet`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
++ `CFX-live`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
 
 + The environment variable `REACH_DEBUG` enables some additional debugging information for the Algorand devnet, which is accessible via http://localhost:9392
+
+For more information on devnet options, refer to [Networks](##ref-networks)
 
 # {#ref-usage-rpc-server} `reach rpc-server`
 
@@ -305,7 +324,9 @@ $ reach rpc-run python3 -u ./index.py
 
 # {#ref-usage-docker-reset} `reach docker-reset`
 
-This command removes all containers and volumes from Docker. If you have any personal containers, those containers will also be removed. Containers can then be restarted. It does not remove any Docker images.
+This command removes all containers and volumes from Docker.
+If you have any personal containers, those containers will also be removed.
+Containers can then be restarted in your Docker Images list. It does not uninstall any Docker images.
 
 ```cmd
 $ reach docker-reset
@@ -336,7 +357,9 @@ This might change the patch version used by `reach` commands.
 
 # {#ref-usage-version} `reach version`
 
-Check which version of the Reach command-line tool is currently installed. This returns the semantic version (such as `0.1.7`).
+Check which version of the Reach command-line tool is currently installed.
+This returns both the semantic version (such as `0.1.7`) and the hashes version (such as [639fa565](https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore)).
+This is helpful when making sure an upgrade to a new version is complete.
 
 ```cmd
 $ reach version
@@ -346,7 +369,8 @@ This is less precise than `reach hashes`, but gives you an idea of which feature
 
 # {#ref-usage-hashes} `reach hashes`
 
-Check which version of each Reach Docker image is installed. This command returns the hash version of each image in an 8 digit alpha-numeric code (such as [639fa565](https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore)). 
+Check which version of each Reach Docker image is installed.
+This command returns the hash version of each image in an 8 digit alpha-numeric code (such as [639fa565](https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore)).
 
 ```cmd
 $ reach hashes
