@@ -111,7 +111,7 @@ const renderObjects = async (nodeId) => {
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item active" aria-current="page">Objects (${nodeId})</li>
+      <li class="breadcrumb-item active" aria-current="page"><span class="omph">Objects (${nodeId})</span></li>
     </ol>
   </nav>
   <ul class="list-group list-group-flush">
@@ -119,37 +119,44 @@ const renderObjects = async (nodeId) => {
     <button type="button" id="newAccButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Account <i class="bi bi-plus-lg"></i></button>
     <button type="button" id="newTokButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Token <i class="bi bi-plus-lg"></i></button>
 
-    <div class="pad-me d-flex justify-content-center">
-      <div>
-        <select name="init-actors" id="init-actors-spa-select">
-          ${actorsNoCons}
-        </select>
-      </div>
-      <div id="initDetailsPanel" class="pad-me d-flex justify-content-center">
+    <div>
+      <h4>Actor Initialization</h4>
+      <div class="pad-me d-flex justify-content-center">
+        <div>
+          <select name="init-actors" id="init-actors-spa-select">
+            ${actorsNoCons}
+          </select>
+        </div>
+        <div id="initDetailsPanel" class="pad-me d-flex justify-content-center">
 
-      </div>
-      <div>
-        <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Init Actor</button>
+        </div>
+        <div>
+          <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Init Actor</button>
+        </div>
       </div>
     </div>
 
     <hr>
-    <div class="pad-me d-flex justify-content-center shrink-text">
-      SND:
-      <select name="actors-transfer-from" id="actors-spa-select-transfer-from">
-        ${actors}
-      </select>
-      RCV:
-      <select name="actors-transfer-to" id="actors-spa-select-transfer-to">
-        ${actors}
-      </select>
-    </div>
-    <div class="pad-me d-flex justify-content-center">
-      <input type="text" id="token-id" class="form-control form-control-sm" placeholder="Token Id">
-      <input type="text" id="transfer-amount" class="form-control form-control-sm" placeholder="Amount">
+    <div>
+      <h4>Transfer Funds</h4>
 
-      <button type="button" id="transferButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Transfer  <i class="bi bi-arrow-right-circle"></i></button>
+      <div class="pad-me d-flex justify-content-center shrink-text">
+        SND:
+        <select name="actors-transfer-from" id="actors-spa-select-transfer-from">
+          ${actors}
+        </select>
+        RCV:
+        <select name="actors-transfer-to" id="actors-spa-select-transfer-to">
+          ${actors}
+        </select>
+      </div>
+      <div class="pad-me d-flex justify-content-center">
+        <input type="text" id="token-id" class="form-control form-control-sm" placeholder="Token Id">
+        <input type="text" id="transfer-amount" class="form-control form-control-sm" placeholder="Amount">
 
+        <button type="button" id="transferButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Transfer  <i class="bi bi-arrow-right-circle"></i></button>
+
+      </div>
     </div>
 
   </ul>
@@ -397,8 +404,8 @@ const renderObjectDetails = async (evt) => {
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects (${nodeId})</a></li>
-      <li class="breadcrumb-item active" aria-current="page">Details (${who})</li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-objects"><span class="omph">Objects (${nodeId})</span></a></li>
+      <li class="breadcrumb-item active" aria-current="page"><span class="omph">Details (${who})</span></li>
     </ol>
   </nav>
   <ul class="list-group list-group-flush">
@@ -463,9 +470,9 @@ const detailActions = async (evt) => {
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects (${nodeId})</a></li>
-      <li class="breadcrumb-item"><a href="#" id="return-to-details">Details (${who})</a></li>
-      <li class="breadcrumb-item active" aria-current="page">Actions</li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-objects"><span class="omph">Objects (${nodeId})</span></a></li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-details"><span class="omph">Details (${who})</span></a></li>
+      <li class="breadcrumb-item active" aria-current="page"><span class="omph">Actions</span></li>
     </ol>
   </nav>
   <ul class="list-group list-group-flush">
@@ -502,10 +509,10 @@ const respondToActions = async (evt) => {
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects (${nodeId})</a></li>
-      <li class="breadcrumb-item"><a href="#" id="return-to-details">Details (${who})</a></li>
-      <li class="breadcrumb-item"><a href="#" id="return-to-actions">Actions</a></li>
-      <li class="breadcrumb-item active" aria-current="page">Response</li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-objects"><span class="omph">Objects (${nodeId})</span></a></li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-details"><span class="omph">Details (${who})</span></a></li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-actions"><span class="omph">Actions</span></a></li>
+      <li class="breadcrumb-item active" aria-current="page"><span class="omph">Response</span></li>
     </ol>
   </nav>
   ${respTempl[0]}
