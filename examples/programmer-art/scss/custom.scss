@@ -41,7 +41,7 @@ body :not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
   font-family: 'Source Sans Pro', sans-serif;
 }
 
-body, html, .container-fluid {
+body, html, .container-fluid, .top-level-row, .top-level-div {
   height: 100%;
 }
 
@@ -103,7 +103,7 @@ html {
 }
 
 .code-container {
-  height: 80%;
+  height: 100%;
   overflow-y: scroll !important;
   padding: 0%;
   scroll-behavior: smooth;
@@ -144,4 +144,8 @@ select {
 
 .extra-margin {
   margin: 3%;
+}
+
+.quite-margin {
+  margin: 80%;
 }
