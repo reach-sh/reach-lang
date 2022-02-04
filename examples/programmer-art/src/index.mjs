@@ -561,7 +561,7 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
         respondSpaTieBreak
       ]
     case 'A_Remote':
-    case 'A_Contest':
+    case 'A_Receive':
       const respondSpaContest = async () => {
         let r = await c.respondWithVal(nodeId,actId,0,actorId)
         appendToLog(r)
@@ -654,7 +654,7 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
       return `
         ${common}${act.tag.slice(2)}</div>
         </button> `
-    case 'A_Contest':
+    case 'A_Receive':
       return `
         ${common}${act.tag.slice(2)}</div>
         <div> Phase Id: ${act.contents}</div>

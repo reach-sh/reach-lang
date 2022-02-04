@@ -219,7 +219,7 @@ unblockProg sid aid v = do
             Just (C.A_Remote _slcxtframes _str _args1 _args2) -> do
               let ps = k (g,l) v
               processNewState (Just sid) ps
-            Just (C.A_Contest _phid) -> do
+            Just (C.A_Receive _phid) -> do
               let ps = k (g, l) v
               processNewState (Just sid) ps
             Just (C.A_TieBreak _poolid _parts) -> do

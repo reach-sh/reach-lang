@@ -234,7 +234,7 @@ data Action
   | A_AdvanceTime Integer
   | A_AdvanceSeconds Integer
   | A_Interact [SLCtxtFrame] String String DLType [DLVal]
-  | A_Contest PhaseId
+  | A_Receive PhaseId
   | A_Remote [SLCtxtFrame] String [DLVal] [DLVal]
   deriving (Generic)
 
@@ -689,7 +689,7 @@ instance Interp LLStep where
                 Nothing -> do
                   case msgs' of
                     NotFixedYet _msgs'' -> do
-                      _ <- suspend $ PS_Suspend (Just at) (A_Contest phId)
+                      _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
                       (actId',_) <- poll phId
                       runWithWinner dlr actId' phId
                     Fixed (actId', _msg) -> do
@@ -702,7 +702,7 @@ instance Interp LLStep where
                       let m = Message {m_store = sto, m_pay = ds_pay}
                       let m' = M.insert phId (NotFixedYet $ M.insert actId m msgs'') (e_messages g)
                       setGlobal g { e_messages = m' }
-                      _ <- suspend $ PS_Suspend (Just at) (A_Contest phId)
+                      _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
                       (actId',_) <- poll phId
                       runWithWinner dlr actId' phId
                     Fixed (actId', _msg) -> do
