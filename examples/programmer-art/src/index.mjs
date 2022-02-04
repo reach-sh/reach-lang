@@ -73,11 +73,17 @@ const renderObjects = async (nodeId) => {
     actorSet[k] = who
   }
   let actors = ``
+  let actorsNoCons = ``
   const actorEntries = Object.entries(actorSet)
   // NOTE: assumption: there is at least one non-consensus actor
   const firstActorId = actorEntries[0][0]
   for (const [k,v] of actorEntries) {
     actors = actors + `<option value="${k}">${v}</option>`
+  }
+  for (const [k,v] of actorEntries) {
+    if (parseInt(k) != -1 ) {
+      actorsNoCons = actorsNoCons + `<option value="${k}">${v}</option>`
+    }
   }
   for (const [k,v] of Object.entries(r.l_locals)) {
     const who = v.l_who ? v.l_who : 'Consensus'
@@ -113,14 +119,18 @@ const renderObjects = async (nodeId) => {
     <button type="button" id="newAccButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Account <i class="bi bi-plus-lg"></i></button>
     <button type="button" id="newTokButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Token <i class="bi bi-plus-lg"></i></button>
 
-    <div class="pad-me d-flex justify-content-center shrink-text">
-      <select name="init-actors" id="init-actors-spa-select">
-        ${actors}
-      </select>
-      <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Init For</button>
-    </div>
-    <div id="initDetailsPanel" class="pad-me d-flex justify-content-center shrink-text">
+    <div class="pad-me d-flex justify-content-center">
+      <div>
+        <select name="init-actors" id="init-actors-spa-select">
+          ${actorsNoCons}
+        </select>
+      </div>
+      <div id="initDetailsPanel" class="pad-me d-flex justify-content-center">
 
+      </div>
+      <div>
+        <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Init Actor</button>
+      </div>
     </div>
 
     <hr>
@@ -159,12 +169,11 @@ const initActorDetsHelper = async (a) => {
     }
     initHtml = initHtml + `
     <div class="pad-me d-flex justify-content-center shrink-text">
-      <div class="pad-me d-flex justify-content-center"> ${k} : ${vDisplay} </div>
+      <div class="pad-me"> ${k} <span class="badge bg-secondary"> ${vDisplay} </span> </div>
       <input type="text" data-init-val="${k}" data-init-type="${vDisplay}" class="form-control form-control-sm init-detail" placeholder="Value">
     </div>`
   }
   initPanel.innerHTML = initHtml
-  console.log(dets)
 }
 
 const bindObjDetailsEvents = () => {
@@ -187,6 +196,7 @@ const bindObjDetailsEvents = () => {
     icon.classList.add('bi-check2')
     await new Promise(resolve => setTimeout(resolve, 1000))
     await navigator.clipboard.writeText(fr)
+    alert(`New Account (ID: ${fr}) created `);
     icon.classList.remove('bi-check2')
     icon.classList.add('bi-plus-lg')
     console.log(`added new Account id: ${r}`)
@@ -208,6 +218,7 @@ const bindObjDetailsEvents = () => {
     icon.classList.add('bi-check2')
     await new Promise(resolve => setTimeout(resolve, 1000))
     await navigator.clipboard.writeText(fr)
+    alert(`New Token (ID: ${fr}) created `);
     icon.classList.remove('bi-check2')
     icon.classList.add('bi-plus-lg')
     console.log(`added new Token id: ${r}`)
@@ -673,11 +684,15 @@ const redraw = async () => {
   let states = await c.getStates()
   let elements = []
   for (const [s, dets] of Object.entries(states)) {
+    let displayLabel = dets[1].tag.slice(2)
+    if (displayLabel != 'None') {
+      displayLabel = displayLabel + '?'
+    }
     elements.push(
       {
         data:
           { id: s,
-            label: dets[1].tag.slice(2)
+            label: displayLabel
           }
       }
     )
