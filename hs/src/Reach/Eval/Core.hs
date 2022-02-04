@@ -5496,12 +5496,13 @@ evalStmt = \case
       let select_one vn (at_c, shouldBind, body) = do
             let vt = varm M.! vn
             dv' <- ctxt_mkvar $ DLVar at_c (Just (at_c, de_v)) vt
-            let vv = case vt of
-                  T_Null -> SLV_Null at_c "case"
+            vv <- case vt of
+                  T_Null -> return $ SLV_Null at_c "case"
                   T_Token -> case de_val of
-                      SLV_Data _ _ _ (SLV_DLTok (DLToken _ i)) -> SLV_DLTok (DLToken dv' i)
-                      ow -> impossible $ "select_one: T_Token: " <> show ow
-                  _ -> SLV_DLVar dv'
+                      SLV_Data _ _ _ (SLV_DLTok (DLToken _ i)) ->
+                        return $ SLV_DLTok (DLToken dv' i)
+                      _ -> locAt (srclocOf de_val) $ expect_ $ Err_InspectAbstractToken
+                  _ -> return $ SLV_DLVar dv'
             return $ (dv', at_c, select at_c shouldBind body vv)
       let select_all sv = do
             dv <- case sv of
