@@ -81,7 +81,7 @@ const renderObjects = async (nodeId) => {
     actors = actors + `<option value="${k}">${v}</option>`
   }
   for (const [k,v] of actorEntries) {
-    if (parseInt(k) != -1 ) {
+    if (parseInt(k) !== -1 ) {
       actorsNoCons = actorsNoCons + `<option value="${k}">${v}</option>`
     }
   }
@@ -116,7 +116,12 @@ const renderObjects = async (nodeId) => {
   </nav>
   <ul class="list-group list-group-flush">
     ${obs}
-    <button type="button" id="newAccButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Account <i class="bi bi-plus-lg"></i></button>
+
+    <div class="extra-margin-bottom">
+      <h4>Accounts/Tokens</h4>
+    </div>
+
+    <button type="button" id="newAccButton" data-node-id="${nodeId}" class="top list-group-item list-group-item-action">New Account <i class="bi bi-plus-lg"></i></button>
     <button type="button" id="newTokButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Token <i class="bi bi-plus-lg"></i></button>
 
     <div>
@@ -292,7 +297,7 @@ const bindObjDetailsEvents = () => {
     for (const det of dets) {
       let type = `V_Bytes`
       let enter = det.value
-      if (det.dataset.initType == 'UInt') {
+      if (det.dataset.initType === 'UInt') {
         type = 'V_UInt'
         enter = parseInt(enter)
 
@@ -622,7 +627,7 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
   const actId = actObj[0]
   let tiebreakers = {}
   let tbList = act.contents[1]
-  if (act.tag == 'A_TieBreak') {
+  if (act.tag === 'A_TieBreak') {
     for (const [k,v] of Object.entries(JSON.parse(actorSet))) {
       if (tbList.includes(v)) {
         tiebreakers[k] = v
@@ -644,7 +649,7 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
   switch (act.tag) {
     case 'A_Interact':
       let domain = `Null`
-      if (act.contents[4].length != 0) {
+      if (act.contents[4].length !== 0) {
         domain = act.contents[4].map(x => x.tag.slice(2)).join(',')
       }
       return `
@@ -692,7 +697,7 @@ const redraw = async () => {
   let elements = []
   for (const [s, dets] of Object.entries(states)) {
     let displayLabel = dets[1].tag.slice(2)
-    if (displayLabel != 'None') {
+    if (displayLabel !== 'None') {
       displayLabel = displayLabel + '?'
     }
     elements.push(
@@ -761,7 +766,7 @@ const redraw = async () => {
     let duration = (1000 / size);
     const visitedMap = {};
 
-    if (size == 1) {
+    if (size === 1) {
       // single "frame", cancel animation
       nodes[0].style('visibility', 'visible')
       return;
@@ -799,11 +804,11 @@ const redraw = async () => {
       for (let index = 0; index < nextNodes.length; ++index){
         const nNode = nextNodes[index];
         (function(currentNode, x, copyNode, nextNode){
-          if(nextNode != null && x != 0 && visitedMap[nextNode.data('id')] < 1){
+          if(nextNode !== null && x !== 0 && visitedMap[nextNode.data('id')] < 1){
             ++visitedMap[nextNode.data('id')];
             console.log('currentNode: ' + currentNode.data('id')+ ', x: ' + x + ', nextNode: ' + nextNode.data('id') );
             move(nextNode,currentNode,copyNode,false)
-          } else if (nextNode != null && visitedMap[nextNode.data('id')] < 1){
+          } else if (nextNode !== null && visitedMap[nextNode.data('id')] < 1){
             ++visitedMap[nextNode.data('id')];
             move(nextNode,currentNode,copyNode,true)
           }

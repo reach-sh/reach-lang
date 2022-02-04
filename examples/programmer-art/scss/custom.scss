@@ -146,6 +146,10 @@ select {
   margin: 3%;
 }
 
+.extra-margin-bottom {
+  margin-bottom: 3%;
+}
+
 .quite-margin {
   margin: 80%;
 }
@@ -154,4 +158,8 @@ select {
   font-size: calc(1.275rem + 0.3vw);
   font-weight: 500;
   line-height: 1.2;
+}
+
+.top {
+  border-top-width: 1px !important;
 }
