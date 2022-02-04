@@ -1339,9 +1339,9 @@ load: /examples/rps-8-interact/index.mjs
 range: 1-6
 ```
 
-+ Lines 1, 2, and 4 are the same as before: importing the standard library and the backend.
-+ Line 3 is new and imports a helpful library for simple console applications called `ask.mjs` from the Reach standard library.
-We'll see how these three functions are used below.
++ Line 1 has been updated to import the `ask` object of `@reach-sh/stdlib`, the Reach standard library.
+We'll see how `ask` is used below.
++ Lines 2, and 3 are the same as before: importing the standard library and the backend. 
 
 ```
 load: /examples/rps-8-interact/index.mjs
