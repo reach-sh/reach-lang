@@ -41,7 +41,7 @@ body :not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
   font-family: 'Source Sans Pro', sans-serif;
 }
 
-body, html, .container-fluid {
+body, html, .container-fluid, .top-level-row, .top-level-div {
   height: 100%;
 }
 
@@ -103,7 +103,7 @@ html {
 }
 
 .code-container {
-  height: 80%;
+  height: 100%;
   overflow-y: scroll !important;
   padding: 0%;
   scroll-behavior: smooth;
@@ -144,4 +144,22 @@ select {
 
 .extra-margin {
   margin: 3%;
+}
+
+.extra-margin-bottom {
+  margin-bottom: 3%;
+}
+
+.quite-margin {
+  margin: 80%;
+}
+
+.omph {
+  font-size: calc(1.275rem + 0.3vw);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.top {
+  border-top-width: 1px !important;
 }
