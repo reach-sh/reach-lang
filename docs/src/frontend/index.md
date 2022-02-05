@@ -1009,26 +1009,41 @@ There is no corresponding `{!js} parseAddress` function because
 the user-friendly form is also accepted from the frontend
 in all places that Reach expects an address.
 
-### {#ref-frontends-js-ask} `ask.mjs`
+### {#ref-frontends-js-ask} `ask`
 
-The Reach JavaScript standard library also provides the helper module `@reach-sh/stdlib/ask.mjs` for constructing console interfaces to your frontends.
+The Reach JavaScript standard library provides the `ask` object for constructing console interfaces to your frontends. 
 
 @{ref("js", "ask")}
 ```js
-import * as ask from '@reach-sh/stdlib/ask.mjs';
+import {ask} from '@reach-sh/stdlib';
 ```
 
 It provides the following exports:
 
 @{ref("js", "ask")}@{ref("js", "yesno")}@{ref("js", "done")}
 ```js
-ask(string, (string => result)) => Promise<result>
-yesno(string) => boolean
-done() => null
+ask.ask(string, (string => result)) => Promise<result>
+ask.yesno(string) => boolean
+ask.done() => null
 ```
 
-`{!js} ask` is an asynchronous function that asks a question on the console and returns a Promise for the first result that its second argument does not error on.
+`{!js} ask.ask` is an asynchronous function that asks a question on the console and returns a Promise for the first result that its second argument does not error on.
 
-`{!js} yesno` is an argument appropriate to give as the second argument to `{!js} ask` that parses "Yes"/"No" answers.
+`{!js} ask.yesno` is an argument appropriate to give as the second argument to `{!js} ask.ask` that parses "Yes"/"No" answers.
 
-`{!js} done` indicates that no more questions will be asked.
+`{!js} ask.done` indicates that no more questions will be asked.
+
+``` rsh
+(async () => {
+  const isAlice = await ask.ask(
+      `Are you Alice?`,
+      ask.yesno
+    );
+    
+    // Do something
+
+  ask.done();
+})();
+```
+
+View [Interaction and Independence](##tut-8) in the Rock, Paper, Scissors tutorial for a longer use case example of the `{!rsh} ask` object.
