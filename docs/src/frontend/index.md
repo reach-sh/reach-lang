@@ -1011,7 +1011,7 @@ in all places that Reach expects an address.
 
 ### {#ref-frontends-js-ask} `ask`
 
-The Reach JavaScript standard library provides the `ask` object for constructing console interfaces to your frontends. 
+The Reach JavaScript standard library provides the `ask` object for constructing console interfaces to your frontends.
 
 @{ref("js", "ask")}
 ```js
@@ -1020,20 +1020,22 @@ import {ask} from '@reach-sh/stdlib';
 
 It provides the following exports:
 
-@{ref("js", "ask")}@{ref("js", "yesno")}@{ref("js", "done")}
 ```js
 ask.ask(string, (string => result)) => Promise<result>
 ask.yesno(string) => boolean
 ask.done() => null
 ```
 
+@{ref("js", "ask.ask")}
 `{!js} ask.ask` is an asynchronous function that asks a question on the console and returns a Promise for the first result that its second argument does not error on.
 
+@{ref("js", "ask.yesno")}
 `{!js} ask.yesno` is an argument appropriate to give as the second argument to `{!js} ask.ask` that parses "Yes"/"No" answers.
 
+@{ref("js", "ask.done")}
 `{!js} ask.done` indicates that no more questions will be asked.
 
-``` rsh
+```js
 (async () => {
   const isAlice = await ask.ask(
       `Are you Alice?`,
@@ -1046,4 +1048,4 @@ ask.done() => null
 })();
 ```
 
-View [Interaction and Independence](##tut-8) in the Rock, Paper, Scissors tutorial for a longer use case example of the `{!rsh} ask` object.
+Read the [Interaction and Independence](##tut-8) section the Rock, Paper, Scissors tutorial for a longer use case example of the `{!js} ask` object.
