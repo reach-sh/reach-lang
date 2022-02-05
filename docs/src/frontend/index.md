@@ -1011,13 +1011,11 @@ in all places that Reach expects an address.
 
 ### {#ref-frontends-js-ask} `ask`
 
-The Reach JavaScript standard library provides the `ask` object for constructing console interfaces to your frontends.
-
-Use `ask` to allow participants to interact with 
+The Reach JavaScript standard library provides the `ask` object for constructing console interfaces to your frontends. 
 
 @{ref("js", "ask")}
 ```js
-import * as ask from '@reach-sh/stdlib/ask.mjs';
+import {ask} from '@reach-sh/stdlib';
 ```
 
 It provides the following exports:
