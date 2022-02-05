@@ -1,26 +1,25 @@
-import { loadStdlib } from '@reach-sh/stdlib';
+import { loadStdlib, ask } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
-import { ask, yesno, done } from '@reach-sh/stdlib/ask.mjs';
 const stdlib = loadStdlib(process.env);
 
 (async () => {
-  const isAlice = await ask(
+  const isAlice = await ask.ask(
     `Are you Alice?`,
-    yesno
+    ask.yesno
   );
   const who = isAlice ? 'Alice' : 'Bob';
 
   console.log(`Starting Rock, Paper, Scissors! as ${who}`);
 
   let acc = null;
-  const createAcc = await ask(
+  const createAcc = await ask.ask(
     `Would you like to create an account? (only possible on devnet)`,
-    yesno
+    ask.yesno
   );
   if (createAcc) {
     acc = await stdlib.newTestAccount(stdlib.parseCurrency(1000));
   } else {
-    const secret = await ask(
+    const secret = await ask.ask(
       `What is your account secret?`,
       (x => x)
     );
@@ -33,7 +32,7 @@ const stdlib = loadStdlib(process.env);
     ctc.getInfo().then((info) => {
       console.log(`The contract is deployed as = ${JSON.stringify(info)}`); });
   } else {
-    const info = await ask(
+    const info = await ask.ask(
       `Please paste the contract information:`,
       JSON.parse
     );
@@ -54,7 +53,7 @@ const stdlib = loadStdlib(process.env);
   };
 
   if (isAlice) {
-    const amt = await ask(
+    const amt = await ask.ask(
       `How much do you want to wager?`,
       stdlib.parseCurrency
     );
@@ -62,9 +61,9 @@ const stdlib = loadStdlib(process.env);
     interact.deadline = { ETH: 100, ALGO: 100, CFX: 1000 }[stdlib.connector];
   } else {
     interact.acceptWager = async (amt) => {
-      const accepted = await ask(
+      const accepted = await ask.ask(
         `Do you accept the wager of ${fmt(amt)}?`,
-        yesno
+        ask.yesno
       );
       if (!accepted) {
         process.exit(0);
@@ -80,7 +79,7 @@ const stdlib = loadStdlib(process.env);
   };
 
   interact.getHand = async () => {
-    const hand = await ask(`What hand will you play?`, (x) => {
+    const hand = await ask.ask(`What hand will you play?`, (x) => {
       const hand = HANDS[x];
       if ( hand == null ) {
         throw Error(`Not a valid hand ${hand}`);
@@ -102,5 +101,5 @@ const stdlib = loadStdlib(process.env);
   const after = await getBalance();
   console.log(`Your balance is now ${after}`);
 
-  done();
+  ask.done();
 })();
