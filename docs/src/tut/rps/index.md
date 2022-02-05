@@ -1349,8 +1349,8 @@ range: 7-12
 ```
 
 + Lines 7 through 10 ask the question whether they are playing as Alice and expect a "Yes" or "No" answer.
-`{!js} ask` presents a prompt and collects a line of input until its argument does not error.
-`{!js} yesno` errors if it is not given "y" or "n".
+`{!js} ask.ask` presents a prompt and collects a line of input until its argument does not error.
+`{!js} ask.yesno` errors if it is not given "y" or "n".
 
 ```
 load: /examples/rps-8-interact/index.mjs
