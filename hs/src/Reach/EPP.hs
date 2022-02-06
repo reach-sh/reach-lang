@@ -1,8 +1,6 @@
 module Reach.EPP (epp, EPPError (..)) where
 
 import Control.Monad.Reader
-import Data.Bifunctor
-import Data.Bool
 import Data.Foldable
 import Data.IORef
 import Data.List.Extra (mconcatMap)
@@ -151,10 +149,10 @@ instance Show EPPError where
     Err_ContinueDomination ->
       "`continue` must be dominated by communication"
     Err_ViewSetDomination v f ->
-      let mvn = maybe "" (\v' -> show (pretty v') <> ".") v
-       in "The value the view " <> mvn <> show (pretty f) <> " is set to will never be observable"
+      let mvn = maybe "" (\v' -> bunpack v' <> ".") v
+       in "The value that the view `" <> mvn <> show (pretty f) <> "` is set to will never be observable"
 
-type ViewSet = M.Map (Maybe SLPart, SLVar) (Bool, SrcLoc)
+type ViewSet = M.Map (SrcLoc, Maybe SLPart, SLVar) (IORef Bool)
 
 data BEnv = BEnv
   { be_prev :: Int
@@ -170,6 +168,7 @@ data BEnv = BEnv
   , be_toks :: [DLArg]
   , be_viewr :: IORef (M.Map Int ([DLVar] -> ViewInfo))
   , be_views :: ViewsInfo
+  , be_view_sets :: ViewSet
   , be_view_setsr :: IORef ViewSet
   , be_inConsensus :: Bool
   , be_counter :: Counter
@@ -234,28 +233,6 @@ captureOutputVars m = do
   x <- local (\e -> e {be_output_vs = vsr}) m
   a <- liftIO $ readIORef vsr
   return (a, x)
-
-captureViewSets :: ViewSet -> BApp a -> BApp (ViewSet, a)
-captureViewSets extra m = do
-  vsr <- asks be_view_setsr
-  vs <- liftIO $ readIORef vsr
-  tmpr <-
-    liftIO $
-      newIORef $
-        M.unionWith view_set_combine extra $
-          M.filter fst vs
-  x <- local (\e -> e {be_view_setsr = tmpr}) m
-  a <- liftIO $ readIORef tmpr
-  return (a, x)
-
-withViewSets :: ViewSet -> BApp b -> BApp b
-withViewSets extra m = do
-  vsr <- asks be_view_setsr
-  (tmp, x) <- captureViewSets extra m
-  liftIO $
-    modifyIORef vsr $
-      M.unionWith view_set_combine tmp
-  return x
 
 fg_record :: (FlowInputData -> FlowInputData) -> BApp ()
 fg_record fidm = do
@@ -480,23 +457,18 @@ be_bl (DLBlock at fs t a) = do
       (\t' ->
          return $ DLBlock at fs t' a)
 
-check_view_sets :: Monad m => ViewSet -> m ()
-check_view_sets vs = do
-  case find (not . fst . snd) (M.toList vs) of
-    Nothing -> return ()
-    Just ((v, f), (_, at)) ->
+check_view_sets :: ViewSet -> IO ()
+check_view_sets vs = forM_ (M.toAscList vs) $ \((at, v, f), obvr) -> do
+  readIORef obvr >>= \case
+    True -> return ()
+    False -> do
       expect_thrown at $ Err_ViewSetDomination v f
 
 mark_view_sets :: BApp ()
 mark_view_sets = do
-  vsr <- asks be_view_setsr
-  liftIO $
-    modifyIORef vsr $
-      M.map $ bimap (const True) id
-
-view_set_combine :: (Bool, b) -> (Bool, b) -> (Bool, b)
-view_set_combine (l, l_at) (r, r_at) =
-  (l || r, bool l_at r_at l)
+  vs <- asks be_view_sets
+  forM_ (M.toAscList vs) $ \((_, _, _), obvr) -> do
+    liftIO $ writeIORef obvr True
 
 be_c_top :: DLStmt -> LLConsensus -> BApp (CApp CTail, EApp ETail)
 be_c_top m c = do
@@ -514,11 +486,16 @@ backwards f xm ym = do
 be_c :: LLConsensus -> BApp (CApp CTail, EApp ETail)
 be_c = \case
   LLC_ViewIs at v f ma k -> do
-    vsr <- asks be_view_setsr
-    liftIO $
-      modifyIORef vsr $
-        M.insertWith view_set_combine (v, f) (False, at)
-    local (\e -> e {be_views = modv $ be_views e}) $
+    vr <- asks be_view_setsr
+    vs <- liftIO $ readIORef vr
+    let vk = (at, v, f)
+    obvr <- case M.lookup vk vs of
+              Nothing -> liftIO $ newIORef False
+              Just o -> return o
+    let add_vs1 = M.insert vk obvr
+    liftIO $ modifyIORef vr $ add_vs1
+    local (\e -> e { be_views = modv $ be_views e
+                   , be_view_sets = add_vs1 $ be_view_sets e }) $
       be_c k
     where
       modv = mAdjust mempty v modf
@@ -554,24 +531,24 @@ be_c = \case
     this <- newSavePoint "fromConsensus"
     views <- asks be_views
     (more, s'l) <-
-      withViewSets mempty $
-        captureMore $
-          local
-            (\e ->
-               e
-                 { be_interval = default_interval
-                 , be_prev = this
-                 , be_prevs = S.singleton this
-                 })
-            $ do
-              fg_use views
-              be_s s
-    when more $ mark_view_sets
+      captureMore $
+        local
+          (\e ->
+             e
+               { be_interval = default_interval
+               , be_prev = this
+               , be_prevs = S.singleton this
+               , be_view_sets = mempty
+               })
+          $ do
+            fg_use views
+            be_s s
     toks <- asks be_toks
     case more of
       True -> do
         viewr <- asks be_viewr
         liftIO $ modifyIORef viewr $ M.insert this $ flip ViewInfo views
+        mark_view_sets
       False -> do
         fg_use toks
     let mkfrom_info do_read = do
@@ -595,9 +572,8 @@ be_c = \case
                  , be_prevs = S.union (be_prevs e) the_prevs
                  })
     let inLoop = inBlock this_loopsp (S.singleton this_loopsp)
-    (k_vs, (goto_kont, k'l)) <-
-      captureViewSets mempty $
-        inLoop $ be_c k
+    (goto_kont, k'l) <-
+      inLoop $ be_c k
     fg_use $ asn
     let loop_vars = assignment_vars asn
     fg_defn $ loop_vars
@@ -606,10 +582,9 @@ be_c = \case
       fg_use cond_a
       be_t cond_l
     (body'c, body'l) <-
-      withViewSets k_vs $
-        inLoop $
-          local (\e -> e {be_loop = Just (this_loopj, this_loopsp)}) $
-            be_c body
+      inLoop $
+        local (\e -> e {be_loop = Just (this_loopj, this_loopsp)}) $
+          be_c body
     let loop_if = CT_If cond_at cond_a <$> body'c <*> goto_kont
     let loop_top = dtReplace CT_Com <$> loop_if <*> cond_l'c
     cnt <- asks be_counter
@@ -631,7 +606,6 @@ be_c = \case
     when (S.member this_loopsp prevs) $
       expect_thrown at Err_ContinueDomination
     fg_saves $ this_loopsp
-    check_view_sets =<< (liftIO . readIORef) =<< asks be_view_setsr
     let cm = CT_Jump at this_loopj <$> ce_readSave this_loopsp <*> pure asn
     let lm = return $ ET_Continue at asn
     return $ (,) cm lm
@@ -652,7 +626,7 @@ be_s_ = \case
       , be_ms = (be_ms e) Seq.|> c }) $ rec k
     c'e <- withConsensus False $ ee_m c
     return $ mkCom ET_Com <$> c'e <*> k'
-  LLS_Stop at ->
+  LLS_Stop at -> do
     return $ (return $ ET_Stop at)
   LLS_ToConsensus at lct_v send recv mtime -> do
     let DLRecv from_v msg_vs time_v secs_v didSend_v ok_c = recv
@@ -738,11 +712,12 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das devts s) = do
   be_viewr <- newIORef mempty
   let be_views = mempty
   be_view_setsr <- newIORef mempty
+  let be_view_sets = mempty
   let be_inConsensus = False
   let be_ms = mempty
   mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
-  api_info <- liftIO $ readIORef be_api_info
   check_view_sets =<< readIORef be_view_setsr
+  api_info <- liftIO $ readIORef be_api_info
   hs <- readIORef be_handlers
   mkvm <- readIORef be_viewr
   -- Step 2: Solve the flow graph

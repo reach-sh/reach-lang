@@ -127,9 +127,12 @@ cdot () {
 
 #######
 
-jb
-ci ALGO minBalance
-exit 
+c examples/view-maybe/index.rsh
+c examples/remote-api/index.rsh
+c examples/remote-view/index.rsh
+fc hs/t/n/Err_ViewSetDomination.rsh
+(cd users/algo-govt && touch index.rsh && ./test.sh)
+exit 0
 
 jb
 ci ALGO signingMonitor

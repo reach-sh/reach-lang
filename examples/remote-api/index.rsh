@@ -53,7 +53,7 @@ export const main = Reach.App(() => {
   const isCorrect = r.guess(g);
   A.interact.log("Guess correct: ", isCorrect);
 
-  V.isDone.set(true);
+  // V.isDone.set(true);
   commit();
 
   exit();
