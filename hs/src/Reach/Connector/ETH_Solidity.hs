@@ -1095,13 +1095,13 @@ solFrame i sim = do
       let frame_declp = (framei <+> "memory _f") <> semi
       return $ (frame_defp, frame_declp)
 
-solCTail_top :: Int -> (DLVar -> Doc) -> [DLVar] -> [DLVar] -> Maybe [DLVar] -> CTail -> App (Doc, Doc, Doc)
-solCTail_top which svar svs msg mmsg ct = do
-  let svsm = M.fromList $ map (\v -> (v, svar v)) svs
-  let msgm = M.fromList $ map (\v -> (v, solArgMsgVar v)) msg
-  let emitp = case mmsg of
-        Just _ -> solEventEmit which
-        Nothing -> emptyDoc
+solCTail_top :: Int -> (DLVar -> Doc) -> [DLVarLet] -> [DLVarLet] -> Bool -> CTail -> App (Doc, Doc, Doc)
+solCTail_top which svar svs msg shouldEmit ct = do
+  let svsm = M.fromList $ map (\v -> (v, svar v)) $ map varLetVar svs
+  let msgm = M.fromList $ map (\v -> (v, solArgMsgVar v)) $ map varLetVar msg
+  let emitp = case shouldEmit of
+        True -> solEventEmit which
+        False -> emptyDoc
   extendVarMap $ svsm <> msgm
   ct' <- local (\e -> e {ctxt_handler_num = which}) $ do
     solCTail ct
@@ -1130,14 +1130,16 @@ solArgDefn = solArgDefn_ "_a"
 solHandler :: Int -> CHandler -> App Doc
 solHandler which h = freshVarMap $
   case h of
-    C_Handler at interval from prev svs msg timev secsv ct -> do
+    C_Handler at interval from prev svsl msgl timev secsv ct -> do
+      let svs = map varLetVar svsl
+      let msg = map varLetVar msgl
       which_msg_r <- asks ctxt_which_msg
       liftIO $ modifyIORef which_msg_r $ M.insert which msg
       let checkMsg s = s <> " check at " <> show at
       let fromm = M.singleton from "payable(msg.sender)"
       let given_mm = M.fromList [(timev, solBlockTime), (secsv, solBlockSecs)]
       extendVarMap $ given_mm <> fromm
-      (frameDefn, frameDecl, ctp) <- solCTail_top which solSVSVar svs msg (Just msg) ct
+      (frameDefn, frameDecl, ctp) <- solCTail_top which solSVSVar svsl msgl True ct
       evtDefn <- solEvent which msg
       let ret = "payable"
       (hc_reqs, svs_init, am, sfl) <-
@@ -1189,10 +1191,11 @@ solHandler which h = freshVarMap $
           _ ->
             return [mkFun [argDefn] body]
       return $ vsep $ [evtDefn, frameDefn] <> funDefs
-    C_Loop _at svs lcmsg ct -> do
-      let msg = lcmsg
-      (frameDefn, frameDecl, ctp) <- solCTail_top which solArgSVSVar svs msg Nothing ct
-      argDefn <- solArgDefn AM_Memory (Just svs) msg
+    C_Loop _at svsl msgl ct -> do
+      let svs = map varLetVar svsl
+      let msg = map varLetVar msgl
+      (frameDefn, frameDecl, ctp) <- solCTail_top which solArgSVSVar svsl msgl False ct
+      argDefn <- solArgDefn AM_Memory (Just $ svs) msg
       let ret = "internal"
       let body = vsep [frameDecl, ctp]
       let funDefn = solFunction (solLoop_fun which) [argDefn] ret body
@@ -1408,8 +1411,8 @@ ensureTypeDefined :: DLType -> App ()
 ensureTypeDefined = mkEnsureTypeDefined solDefineType ctxt_typem
 
 solEB :: [DLVar] -> AppT DLExportBlock
-solEB args (DLinExportBlock _ mfargs (DLBlock _ _ t r)) = do
-  let fargs = fromMaybe mempty mfargs
+solEB args (DLinExportBlock _ mfargls (DLBlock _ _ t r)) = do
+  let fargs = map varLetVar $ fromMaybe mempty mfargls
   let go a fa = do
         a' <- solVar a
         return $ (fa, a')

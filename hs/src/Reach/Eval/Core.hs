@@ -655,7 +655,7 @@ slToDLExportVal v = slToDLV v >>= maybe (return Nothing) (dlvToEV >=> (return . 
 dlvToEV :: DLValue -> App DLSExportBlock
 dlvToEV = \case
   DLV_Fun at vs b ->
-    return $ DLinExportBlock at (Just vs) b
+    return $ DLinExportBlock at (Just $ map v2vl vs) b
   ow ->
     case dlvToDL ow of
       Nothing -> impossible "dlvToEV"

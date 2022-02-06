@@ -26,6 +26,7 @@ import qualified Data.Text.Lazy as LT
 import qualified Data.Vector as Vector
 import Data.Word
 import Generics.Deriving (Generic)
+import Reach.AddCounts
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
@@ -829,6 +830,17 @@ sallocLet dv cgen km = do
     cgen
     cstore
     store_let dv True cload km
+
+sallocVarLet :: DLVarLet -> Bool -> App () -> App a -> App a
+sallocVarLet (DLVarLet mvc dv) sm cgen km = do
+  let once = store_let dv sm cgen km
+  case mvc of
+    Nothing -> km
+    Just DVC_Once -> once
+    Just DVC_Many ->
+      case sm of
+        True -> once
+        False -> sallocLet dv cgen km
 
 ctobs :: DLType -> App ()
 ctobs = \case
@@ -1860,10 +1872,7 @@ cm km = \case
   DL_Let _ DLV_Eff de ->
     -- XXX this could leave something on the stack
     ce de >> km
-  DL_Let _ (DLV_Let DVC_Once dv) de -> do
-    sm <- exprSmall de
-    store_let dv sm (ce de) km
-  DL_Let _ (DLV_Let DVC_Many dv) de -> do
+  DL_Let _ (DLV_Let vc dv) de -> do
     sm <- exprSmall de
     recordNew <-
       case de of
@@ -1875,11 +1884,7 @@ cm km = \case
           return False
     when recordNew $
       addNewTok $ DLA_Var dv
-    case sm of
-      True ->
-        store_let dv True (ce de) km
-      False ->
-        sallocLet dv (ce de) km
+    sallocVarLet (DLVarLet (Just vc) dv) sm (ce de) km
   DL_ArrayMap at ansv aa lv iv (DLBlock _ _ body ra) -> do
     let anssz = typeSizeOf $ argTypeOf $ DLA_Var ansv
     let (_, xlen) = argArrTypeLen aa
@@ -2098,33 +2103,31 @@ allocDLVar :: SrcLoc -> DLType -> App DLVar
 allocDLVar at t =
   DLVar at Nothing t <$> ((liftIO . incCounter) =<< ((sCounter . eShared) <$> ask))
 
-bindFromGV :: GlobalVar -> App () -> SrcLoc -> [DLVar] -> App a -> App a
-bindFromGV gv ensure at vs m = do
-  let mkArgVar l = allocDLVar at $ T_Tuple $ map varType l
-  av <- mkArgVar vs
-  case vs of
-    [] -> m
-    [ x ] -> do
+bindFromGV :: GlobalVar -> App () -> SrcLoc -> [DLVarLet] -> App a -> App a
+bindFromGV gv ensure at vls m = do
+  let notNothing = \case
+        DLVarLet (Just _) _ -> True
+        _ -> False
+  case any notNothing vls of
+    False -> m
+    True -> do
+      av <- allocDLVar at $ T_Tuple $ map varLetType vls
       ensure
-      store_let x True (gvLoad gv) m
-    _ -> do
-      ensure
-      gvLoad gv
       let go = \case
-            [] -> op "pop" >> m
-            (dv, i) : more -> sallocLet dv cgen $ go more
+            [] -> m
+            (dv, i) : more -> sallocVarLet dv False cgen $ go more
               where
                 cgen = ce $ DLE_TupleRef at (DLA_Var av) i
-      store_let av True (op "dup") $
-        go $ zip vs [0 ..]
+      store_let av True (gvLoad gv) $
+        go $ zip vls [0 ..]
 
-bindFromStack :: SrcLoc -> [DLVar] -> App a -> App a
-bindFromStack _at vs m = do
+bindFromStack :: SrcLoc -> [DLVarLet] -> App a -> App a
+bindFromStack _at vsl m = do
   -- STACK: [ ...vs ] TOP on right
   let go m' v = sallocLet v (return ()) m'
   -- The 'l' is important here because it means we're nesting the computation
   -- from the left, so the bindings match the (reverse) push order
-  foldl' go m vs
+  foldl' go m $ map varLetVar vsl
 
 cloop :: Int -> CHandler -> App ()
 cloop _ (C_Handler {}) = return ()
@@ -2162,20 +2165,21 @@ cblt lab go t = do
 handlerLabel :: Int -> Label
 handlerLabel w = "publish" <> texty w
 
-bindFromSvs_ :: SrcLoc -> [DLVar] -> App a -> App a
+bindFromSvs_ :: SrcLoc -> [DLVarLet] -> App a -> App a
 bindFromSvs_ at svs m = do
-  let ensure = cSvsLoad $ typeSizeOf $ T_Tuple $ map varType svs
+  let ensure = cSvsLoad $ typeSizeOf $ T_Tuple $ map varLetType svs
   bindFromGV GV_svs ensure at svs m
 
 ch :: Int -> CHandler -> App ()
 ch _ (C_Loop {}) = return ()
-ch which (C_Handler at int from prev svs msg timev secsv body) = recordWhich which $ do
+ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich which $ do
+  let msg = map varLetVar msgl
   let isCtor = which == 0
   let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ msg)
   when (argSize > algoMaxAppTotalArgLen) $
     xxx $ texty $ "Step " <> show which <> "'s argument length is " <> show argSize <> ", but the maximum is " <> show algoMaxAppTotalArgLen
   let bindFromMsg = bindFromGV GV_argMsg (return ()) at
-  let bindFromSvs = bindFromSvs_ at svs
+  let bindFromSvs = bindFromSvs_ at svsl
   block (handlerLabel which) $ do
     comment "check step"
     cint $ fromIntegral prev
@@ -2197,7 +2201,7 @@ ch which (C_Handler at int from prev svs msg timev secsv body) = recordWhich whi
             . (bindTime timev)
             . (bindSecs secsv)
             . bindFromSvs
-            . (bindFromMsg msg)
+            . (bindFromMsg $ map v2vl msg)
     bindVars $ do
       clogEvent ("_reach_e" <> show which) msg
       when isCtor $ do
@@ -2352,27 +2356,34 @@ cmeth sigi = \case
       comment $ LT.pack $ "  ui: " <> show sigi
       gvLoad GV_currentStep
       flip (cblt "viewStep") (bltM hs) $ \hi vbvs -> do
-        let VSIBlockVS svs deb = vbvs
+        vbvs' <- liftIO $ add_counts vbvs
+        let VSIBlockVS svsl deb = vbvs'
         let (DLinExportBlock _ mfargs (DLBlock at _ t r)) = deb
         let fargs = fromMaybe mempty mfargs
         block_ (LT.pack $ bunpack who <> "_" <> show hi) $
-          bindFromArgs fargs $ bindFromSvs_ at svs $
+          bindFromArgs fargs $ bindFromSvs_ at svsl $
             flip cp t $ do
               ca r
               ctobs $ argTypeOf r
               gvStore GV_apiRet
               code "b" [ "apiReturn" ]
 
-bindFromArgs :: [DLVar] -> App a -> App a
+bindFromArgs :: [DLVarLet] -> App a -> App a
 bindFromArgs vs m = do
   -- XXX deal with >15 args
-  let go (v, i) = sallocLet v (code "txna" ["ApplicationArgs", texty i] >> cfrombs (varType v))
+  let go (v, i) = sallocVarLet v False (code "txna" ["ApplicationArgs", texty i] >> cfrombs (varLetType v))
   foldl' (flip go) m (zip vs [(1::Integer) ..])
 
-data VSIBlockVS = VSIBlockVS [DLVar] DLExportBlock
+data VSIBlockVS = VSIBlockVS [DLVarLet] DLExportBlock
 type VSIHandler = M.Map Int VSIBlockVS
 data VSITopInfo = VSITopInfo [DLType] DLType VSIHandler
 type VSITop = M.Map SLPart VSITopInfo
+
+instance AC VSIBlockVS where
+  ac (VSIBlockVS svs eb) = do
+    eb' <- ac eb
+    svs' <- ac_vls svs
+    return $ VSIBlockVS svs' eb'
 
 selectFromM :: Ord b => (x -> c -> d) -> b -> M.Map a (x, M.Map b c) -> M.Map a d
 selectFromM f k m = M.mapMaybe go m
@@ -2392,7 +2403,7 @@ analyzeViews (vs, vis) = vsit
             IT_Fun d r -> (d, r)
             IT_UDFun _ -> impossible $ "udview " <> bunpack who
     vsih = M.map goh vis
-    goh (ViewInfo svs vi) = (svs, flattenInterfaceLikeMap vi)
+    goh (ViewInfo svs vi) = (map v2vl svs, flattenInterfaceLikeMap vi)
 
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do

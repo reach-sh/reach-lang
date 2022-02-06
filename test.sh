@@ -127,7 +127,7 @@ cdot () {
 
 #######
 
-c examples/view-steps/index.rsh
+c examples/rps-8-interact/index.rsh
 exit 0
 
 (cd users/algo-govt && touch index.rsh && ./test.sh)

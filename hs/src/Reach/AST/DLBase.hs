@@ -900,6 +900,23 @@ lv2mdv = \case
   DLV_Eff -> Nothing
   DLV_Let _ v -> Just v
 
+data DLVarLet = DLVarLet (Maybe DLVarCat) DLVar
+  deriving (Eq, Show)
+
+instance Pretty DLVarLet where
+  pretty (DLVarLet mvc x) = pretty x <> mvc'
+    where
+      mvc' = case mvc of
+               Nothing -> "#"
+               Just vc -> pretty vc
+
+varLetVar :: DLVarLet -> DLVar
+varLetVar (DLVarLet _ v) = v
+varLetType :: DLVarLet -> DLType
+varLetType = varType . varLetVar
+v2vl :: DLVar -> DLVarLet
+v2vl = DLVarLet (Just DVC_Many)
+
 type SwitchCases a = M.Map SLVar (DLVar, Bool, a)
 
 data DLStmt
@@ -981,7 +998,7 @@ instance Pretty DLBlock where
   pretty (DLBlock _ _ ts ta) = prettyBlockP ts ta
 
 data DLinExportBlock a
-  = DLinExportBlock SrcLoc (Maybe [DLVar]) a
+  = DLinExportBlock SrcLoc (Maybe [DLVarLet]) a
   deriving (Eq)
 
 instance SrcLocOf (DLinExportBlock a) where

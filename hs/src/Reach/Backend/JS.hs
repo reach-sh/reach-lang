@@ -874,7 +874,8 @@ jsObjectDef v m = "export const" <+> v <+> "=" <+> jsObject m <> semi
 jsExportBlock :: Bool -> DLExportBlock -> App Doc
 jsExportBlock isAsync (DLinExportBlock _ margs b) = do
   (tl, ret) <- jsBlock b
-  let args = fromMaybe [] margs
+  let argls = fromMaybe [] margs
+  let args = map varLetVar argls
   (argDefs, tmps) <-
     unzip
       <$> mapM

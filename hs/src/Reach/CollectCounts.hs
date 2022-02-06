@@ -95,6 +95,9 @@ instance {-# OVERLAPS #-} Countable k => Countable (SwitchCases k) where
 instance Countable DLVar where
   counts dv = Counts $ M.singleton dv DVC_Once
 
+instance Countable DLVarLet where
+  counts (DLVarLet _ v) = counts v
+
 instance Countable DLLetVar where
   counts = \case
     DLV_Eff -> mempty

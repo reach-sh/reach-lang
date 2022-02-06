@@ -19,18 +19,18 @@ dup
 bz publish
 api:
 int 0
-store 3 // GV_argTime :: UInt
+store 4 // GV_argTime :: UInt
 int 1
-store 5 // GV_wasApi :: Bool
-b fail
+store 6 // GV_wasMeth :: Bool
+err
 publish:
 txna ApplicationArgs 1
 btoi
 txna ApplicationArgs 2
 btoi
-store 3 // GV_argTime :: UInt
+store 4 // GV_argTime :: UInt
 txna ApplicationArgs 3
-store 4 // GV_argMsg :: Null
+store 5 // GV_argMsg :: Null
 dup
 int 5
 <
@@ -59,7 +59,7 @@ assert
   ==
   assert
   // check time
-  load 3 // GV_argTime :: UInt
+  load 4 // GV_argTime :: UInt
   dup
   int 0
   ==
@@ -68,62 +68,31 @@ assert
   ==
   ||
   assert
-  int 1
-  bzero
+  byte base64(AA==)
   app_global_get
   byte base64(AQ==)
   app_global_get
   concat
   dup
-  extract 0 32
-  store 255 // v303 :: Address
-  dup
-  int 32
-  extract_uint64
-  store 254 // wager/304 :: UInt
-  dup
-  int 40
-  extract_uint64
-  store 253 // deadline/305 :: UInt
-  dup
+  store 3 // GV_svs :: Null
   extract 48 32
-  store 252 // v320 :: Address
-  dup
-  int 80
-  extract_uint64
-  store 251 // balance(0)/332 :: UInt
-  dup
-  extract 88 32
-  store 250 // commitAlice/356 :: Digest
-  dup
-  int 120
-  extract_uint64
-  store 249 // handBob/373 :: UInt
-  dup
-  int 128
-  extract_uint64
-  store 248 // v384 :: UInt
-  pop
-  load 4 // GV_argMsg :: Null
-  dup
-  len
-  int 0
-  ==
-  assert
-  pop
+  store 255 // v320 :: Address
   byte base64(ogVmjg==)
   log // up to 4 bytes
   global Round
-  load 248 // v384 :: UInt
+  load 3 // GV_svs :: Null
+  int 128
+  extract_uint64
   >=
   assert
   // ^ CheckPay
   // at reach standard library:202:11:dot
   // at ./examples/rps-8-interact/index.rsh:86:53:application call to "closeTo" (defined at: reach standard library:200:8:function exp)
-  load 255 // v303 :: Address
+  load 3 // GV_svs :: Null
+  extract 0 32
   txn Sender
   ==
-  load 252 // v320 :: Address
+  load 255 // v320 :: Address
   txn Sender
   ==
   ||
@@ -133,14 +102,16 @@ assert
   // at ./examples/rps-8-interact/index.rsh:86:53:application call to "closeTo" (defined at: reach standard library:200:8:function exp)
 
     // { l4_makeTxnK
-    load 251 // balance(0)/332 :: UInt
+    load 3 // GV_svs :: Null
+    int 80
+    extract_uint64
     dup
     bz l4_makeTxnK
     itxn_begin
     itxn_field Amount
     int pay
     itxn_field TypeEnum
-    load 252 // v320 :: Address
+    load 255 // v320 :: Address
     itxn_field Receiver
     itxn_submit
     int 0
@@ -183,7 +154,7 @@ pop
   ==
   assert
   // check time
-  load 3 // GV_argTime :: UInt
+  load 4 // GV_argTime :: UInt
   dup
   int 0
   ==
@@ -192,67 +163,35 @@ pop
   ==
   ||
   assert
-  int 1
-  bzero
+  byte base64(AA==)
   app_global_get
   byte base64(AQ==)
   app_global_get
   concat
   dup
+  store 3 // GV_svs :: Null
   extract 0 32
   store 255 // v303 :: Address
-  dup
-  int 32
-  extract_uint64
-  store 254 // wager/304 :: UInt
-  dup
-  int 40
-  extract_uint64
-  store 253 // deadline/305 :: UInt
-  dup
-  extract 48 32
-  store 252 // v320 :: Address
-  dup
-  int 80
-  extract_uint64
-  store 251 // balance(0)/332 :: UInt
-  dup
-  extract 88 32
-  store 250 // commitAlice/356 :: Digest
-  dup
-  int 120
-  extract_uint64
-  store 249 // handBob/373 :: UInt
-  dup
-  int 128
-  extract_uint64
-  store 248 // v384 :: UInt
-  pop
-  load 4 // GV_argMsg :: Null
-  dup
-  len
-  int 16
-  ==
-  assert
-  dup
+  load 5 // GV_argMsg :: Null
   int 0
   extract_uint64
-  store 247 // saltAlice/389 :: UInt
-  dup
+  store 254 // saltAlice/389 :: UInt
+  load 5 // GV_argMsg :: Null
   int 8
   extract_uint64
-  store 246 // handAlice/390 :: UInt
-  pop
+  store 253 // handAlice/390 :: UInt
   byte base64(NRoq0A==)
-  load 247 // saltAlice/389 :: UInt
+  load 254 // saltAlice/389 :: UInt
   itob
   concat
-  load 246 // handAlice/390 :: UInt
+  load 253 // handAlice/390 :: UInt
   itob
   concat
   log // up to 20 bytes
   global Round
-  load 248 // v384 :: UInt
+  load 3 // GV_svs :: Null
+  int 128
+  extract_uint64
   <
   assert
   // ^ CheckPay
@@ -263,10 +202,11 @@ pop
   assert
   // ^ Claim: sender correct
   // at ./examples/rps-8-interact/index.rsh:85:11:dot
-  load 250 // commitAlice/356 :: Digest
-  load 247 // saltAlice/389 :: UInt
+  load 3 // GV_svs :: Null
+  extract 88 32
+  load 254 // saltAlice/389 :: UInt
   itob
-  load 246 // handAlice/390 :: UInt
+  load 253 // handAlice/390 :: UInt
   itob
   concat
   sha256
@@ -276,28 +216,27 @@ pop
   // at reach standard library:58:17:application
   // at ./examples/rps-8-interact/index.rsh:87:20:application call to "checkCommitment" (defined at: reach standard library:57:8:function exp)
   load 255 // v303 :: Address
-  load 254 // wager/304 :: UInt
-  itob
-  concat
-  load 253 // deadline/305 :: UInt
-  itob
-  concat
-  load 252 // v320 :: Address
-  concat
-  load 246 // handAlice/390 :: UInt
+  load 3 // GV_svs :: Null
+  int 32
+  extract_uint64
+  load 3 // GV_svs :: Null
+  int 40
+  extract_uint64
+  load 3 // GV_svs :: Null
+  extract 48 32
+  load 253 // handAlice/390 :: UInt
   int 4
-  load 249 // handBob/373 :: UInt
+  load 3 // GV_svs :: Null
+  int 120
+  extract_uint64
   -
   +
   int 3
   %
-  itob
   global Round
-  itob
-  concat
-  load 251 // balance(0)/332 :: UInt
-  itob
-  concat
+  load 3 // GV_svs :: Null
+  int 80
+  extract_uint64
   b loopBody3
   // publish8 }
 
@@ -312,7 +251,7 @@ pop
   ==
   assert
   // check time
-  load 3 // GV_argTime :: UInt
+  load 4 // GV_argTime :: UInt
   dup
   int 0
   ==
@@ -321,49 +260,21 @@ pop
   ==
   ||
   assert
-  int 1
-  bzero
+  byte base64(AA==)
   app_global_get
   byte base64(AQ==)
   app_global_get
   concat
   dup
+  store 3 // GV_svs :: Null
   extract 0 32
   store 255 // v303 :: Address
-  dup
-  int 32
-  extract_uint64
-  store 254 // wager/304 :: UInt
-  dup
-  int 40
-  extract_uint64
-  store 253 // deadline/305 :: UInt
-  dup
-  extract 48 32
-  store 252 // v320 :: Address
-  dup
-  int 80
-  extract_uint64
-  store 251 // balance(0)/332 :: UInt
-  dup
-  extract 88 32
-  store 250 // commitAlice/356 :: Digest
-  dup
-  int 120
-  extract_uint64
-  store 249 // v367 :: UInt
-  pop
-  load 4 // GV_argMsg :: Null
-  dup
-  len
-  int 0
-  ==
-  assert
-  pop
   byte base64(4huzqQ==)
   log // up to 4 bytes
   global Round
-  load 249 // v367 :: UInt
+  load 3 // GV_svs :: Null
+  int 120
+  extract_uint64
   >=
   assert
   // ^ CheckPay
@@ -372,7 +283,8 @@ pop
   load 255 // v303 :: Address
   txn Sender
   ==
-  load 252 // v320 :: Address
+  load 3 // GV_svs :: Null
+  extract 48 32
   txn Sender
   ==
   ||
@@ -382,7 +294,9 @@ pop
   // at ./examples/rps-8-interact/index.rsh:78:53:application call to "closeTo" (defined at: reach standard library:200:8:function exp)
 
     // { l6_makeTxnK
-    load 251 // balance(0)/332 :: UInt
+    load 3 // GV_svs :: Null
+    int 80
+    extract_uint64
     dup
     bz l6_makeTxnK
     itxn_begin
@@ -436,7 +350,7 @@ pop
   ==
   assert
   // check time
-  load 3 // GV_argTime :: UInt
+  load 4 // GV_argTime :: UInt
   dup
   int 0
   ==
@@ -445,55 +359,45 @@ pop
   ==
   ||
   assert
-  int 1
-  bzero
+  byte base64(AA==)
   app_global_get
   byte base64(AQ==)
   app_global_get
   concat
   dup
+  store 3 // GV_svs :: Null
   extract 0 32
   store 255 // v303 :: Address
-  dup
+  load 3 // GV_svs :: Null
   int 32
   extract_uint64
   store 254 // wager/304 :: UInt
-  dup
+  load 3 // GV_svs :: Null
   int 40
   extract_uint64
   store 253 // deadline/305 :: UInt
-  dup
+  load 3 // GV_svs :: Null
   extract 48 32
   store 252 // v320 :: Address
-  dup
+  load 3 // GV_svs :: Null
   int 80
   extract_uint64
   store 251 // balance(0)/332 :: UInt
-  dup
+  load 3 // GV_svs :: Null
   extract 88 32
   store 250 // commitAlice/356 :: Digest
-  dup
-  int 120
-  extract_uint64
-  store 249 // v367 :: UInt
-  pop
-  load 4 // GV_argMsg :: Null
-  dup
-  len
-  int 8
-  ==
-  assert
-  dup
+  load 5 // GV_argMsg :: Null
   btoi
-  store 248 // handBob/373 :: UInt
-  pop
+  store 249 // handBob/373 :: UInt
   byte base64(cO3veg==)
-  load 248 // handBob/373 :: UInt
+  load 249 // handBob/373 :: UInt
   itob
   concat
   log // up to 12 bytes
   global Round
-  load 249 // v367 :: UInt
+  load 3 // GV_svs :: Null
+  int 120
+  extract_uint64
   <
   assert
   // ^ CheckPay
@@ -507,7 +411,7 @@ pop
   global Round
   load 253 // deadline/305 :: UInt
   +
-  store 247 // v384 :: UInt
+  store 248 // v384 :: UInt
   load 255 // v303 :: Address
   load 254 // wager/304 :: UInt
   itob
@@ -522,14 +426,13 @@ pop
   concat
   load 250 // commitAlice/356 :: Digest
   concat
-  load 248 // handBob/373 :: UInt
+  load 249 // handBob/373 :: UInt
   itob
   concat
-  load 247 // v384 :: UInt
+  load 248 // v384 :: UInt
   itob
   concat
-  int 1
-  bzero
+  byte base64(AA==)
   dig 1
   extract 0 127
   app_global_put
@@ -560,7 +463,7 @@ pop
   ==
   assert
   // check time
-  load 3 // GV_argTime :: UInt
+  load 4 // GV_argTime :: UInt
   dup
   int 0
   ==
@@ -569,52 +472,28 @@ pop
   ==
   ||
   assert
-  int 1
-  bzero
+  byte base64(AA==)
   app_global_get
   dup
-  extract 0 32
-  store 255 // v303 :: Address
-  dup
-  int 32
-  extract_uint64
-  store 254 // wager/304 :: UInt
-  dup
-  int 40
-  extract_uint64
-  store 253 // deadline/305 :: UInt
-  dup
+  store 3 // GV_svs :: Null
   extract 48 32
-  store 252 // v320 :: Address
-  dup
-  int 80
-  extract_uint64
-  store 251 // balance(0)/332 :: UInt
-  dup
-  int 88
-  extract_uint64
-  store 250 // v347 :: UInt
-  pop
-  load 4 // GV_argMsg :: Null
-  dup
-  len
-  int 0
-  ==
-  assert
-  pop
+  store 255 // v320 :: Address
   byte base64(zJmSXA==)
   log // up to 4 bytes
   global Round
-  load 250 // v347 :: UInt
+  load 3 // GV_svs :: Null
+  int 88
+  extract_uint64
   >=
   assert
   // ^ CheckPay
   // at reach standard library:202:11:dot
   // at ./examples/rps-8-interact/index.rsh:70:53:application call to "closeTo" (defined at: reach standard library:200:8:function exp)
-  load 255 // v303 :: Address
+  load 3 // GV_svs :: Null
+  extract 0 32
   txn Sender
   ==
-  load 252 // v320 :: Address
+  load 255 // v320 :: Address
   txn Sender
   ==
   ||
@@ -624,14 +503,16 @@ pop
   // at ./examples/rps-8-interact/index.rsh:70:53:application call to "closeTo" (defined at: reach standard library:200:8:function exp)
 
     // { l9_makeTxnK
-    load 251 // balance(0)/332 :: UInt
+    load 3 // GV_svs :: Null
+    int 80
+    extract_uint64
     dup
     bz l9_makeTxnK
     itxn_begin
     itxn_field Amount
     int pay
     itxn_field TypeEnum
-    load 252 // v320 :: Address
+    load 255 // v320 :: Address
     itxn_field Receiver
     itxn_submit
     int 0
@@ -686,7 +567,7 @@ pop
   ==
   assert
   // check time
-  load 3 // GV_argTime :: UInt
+  load 4 // GV_argTime :: UInt
   dup
   int 0
   ==
@@ -695,47 +576,37 @@ pop
   ==
   ||
   assert
-  int 1
-  bzero
+  byte base64(AA==)
   app_global_get
   dup
+  store 3 // GV_svs :: Null
   extract 0 32
   store 255 // v303 :: Address
-  dup
+  load 3 // GV_svs :: Null
   int 32
   extract_uint64
   store 254 // wager/304 :: UInt
-  dup
+  load 3 // GV_svs :: Null
   int 40
   extract_uint64
   store 253 // deadline/305 :: UInt
-  dup
+  load 3 // GV_svs :: Null
   extract 48 32
   store 252 // v320 :: Address
-  dup
+  load 3 // GV_svs :: Null
   int 80
   extract_uint64
   store 251 // balance(0)/332 :: UInt
-  dup
-  int 88
-  extract_uint64
-  store 250 // v347 :: UInt
-  pop
-  load 4 // GV_argMsg :: Null
-  dup
-  len
-  int 32
-  ==
-  assert
-  dup
-  store 249 // commitAlice/356 :: Digest
-  pop
+  load 5 // GV_argMsg :: Null
+  store 250 // commitAlice/356 :: Digest
   byte base64(OLAjLQ==)
-  load 249 // commitAlice/356 :: Digest
+  load 250 // commitAlice/356 :: Digest
   concat
   log // up to 36 bytes
   global Round
-  load 250 // v347 :: UInt
+  load 3 // GV_svs :: Null
+  int 88
+  extract_uint64
   <
   assert
   // ^ CheckPay
@@ -749,7 +620,7 @@ pop
   global Round
   load 253 // deadline/305 :: UInt
   +
-  store 248 // v367 :: UInt
+  store 249 // v367 :: UInt
   load 255 // v303 :: Address
   load 254 // wager/304 :: UInt
   itob
@@ -762,13 +633,12 @@ pop
   load 251 // balance(0)/332 :: UInt
   itob
   concat
-  load 249 // commitAlice/356 :: Digest
+  load 250 // commitAlice/356 :: Digest
   concat
-  load 248 // v367 :: UInt
+  load 249 // v367 :: UInt
   itob
   concat
-  int 1
-  bzero
+  byte base64(AA==)
   dig 1
   extract 0 127
   app_global_put
@@ -801,7 +671,7 @@ pop
   ==
   assert
   // check time
-  load 3 // GV_argTime :: UInt
+  load 4 // GV_argTime :: UInt
   dup
   int 0
   ==
@@ -810,36 +680,15 @@ pop
   ==
   ||
   assert
-  int 1
-  bzero
+  byte base64(AA==)
   app_global_get
-  dup
-  extract 0 32
-  store 255 // v303 :: Address
-  dup
-  int 32
-  extract_uint64
-  store 254 // wager/304 :: UInt
-  dup
-  int 40
-  extract_uint64
-  store 253 // deadline/305 :: UInt
-  dup
-  int 48
-  extract_uint64
-  store 252 // v316 :: UInt
-  pop
-  load 4 // GV_argMsg :: Null
-  dup
-  len
-  int 0
-  ==
-  assert
-  pop
+  store 3 // GV_svs :: Null
   byte base64(QbFATQ==)
   log // up to 4 bytes
   global Round
-  load 252 // v316 :: UInt
+  load 3 // GV_svs :: Null
+  int 48
+  extract_uint64
   >=
   assert
   // ^ CheckPay
@@ -847,14 +696,17 @@ pop
   // at ./examples/rps-8-interact/index.rsh:57:51:application call to "closeTo" (defined at: reach standard library:200:8:function exp)
 
     // { l14_makeTxnK
-    load 254 // wager/304 :: UInt
+    load 3 // GV_svs :: Null
+    int 32
+    extract_uint64
     dup
     bz l14_makeTxnK
     itxn_begin
     itxn_field Amount
     int pay
     itxn_field TypeEnum
-    load 255 // v303 :: Address
+    load 3 // GV_svs :: Null
+    extract 0 32
     itxn_field Receiver
     itxn_submit
     int 0
@@ -901,7 +753,7 @@ pop
   ==
   assert
   // check time
-  load 3 // GV_argTime :: UInt
+  load 4 // GV_argTime :: UInt
   dup
   int 0
   ==
@@ -910,41 +762,24 @@ pop
   ==
   ||
   assert
-  int 1
-  bzero
+  byte base64(AA==)
   app_global_get
   dup
-  extract 0 32
-  store 255 // v303 :: Address
-  dup
+  store 3 // GV_svs :: Null
   int 32
   extract_uint64
-  store 254 // wager/304 :: UInt
-  dup
-  int 40
-  extract_uint64
-  store 253 // deadline/305 :: UInt
-  dup
-  int 48
-  extract_uint64
-  store 252 // v316 :: UInt
-  pop
-  load 4 // GV_argMsg :: Null
-  dup
-  len
-  int 0
-  ==
-  assert
-  pop
+  store 255 // wager/304 :: UInt
   byte base64(mouRdA==)
   log // up to 4 bytes
   global Round
-  load 252 // v316 :: UInt
+  load 3 // GV_svs :: Null
+  int 48
+  extract_uint64
   <
   assert
 
     // { l17_checkTxnK
-    load 254 // wager/304 :: UInt
+    load 255 // wager/304 :: UInt
     dup
     bz l17_checkTxnK
     load 0 // GV_txnCounter :: UInt
@@ -962,21 +797,6 @@ pop
     gtxns TypeEnum
     ==
     assert
-    int 0
-    dig 1
-    gtxns Fee
-    ==
-    assert
-    global ZeroAddress
-    dig 1
-    gtxns Lease
-    ==
-    assert
-    global ZeroAddress
-    dig 1
-    gtxns RekeyTo
-    ==
-    assert
     global CurrentApplicationAddress
     dig 1
     gtxns Receiver
@@ -988,24 +808,18 @@ pop
 
   // ^ CheckPay
   // at ./examples/rps-8-interact/index.rsh:56:7:dot
-  load 255 // v303 :: Address
-  load 254 // wager/304 :: UInt
-  itob
-  concat
-  load 253 // deadline/305 :: UInt
-  itob
-  concat
+  load 3 // GV_svs :: Null
+  extract 0 32
+  load 255 // wager/304 :: UInt
+  load 3 // GV_svs :: Null
+  int 40
+  extract_uint64
   txn Sender
-  concat
-  byte base64(AAAAAAAAAAE=)
+  int 1
   global Round
-  itob
-  concat
-  load 254 // wager/304 :: UInt
+  load 255 // wager/304 :: UInt
   dup
   +
-  itob
-  concat
   b loopBody3
   // publish1 }
 
@@ -1020,7 +834,7 @@ pop
   ==
   assert
   // check time
-  load 3 // GV_argTime :: UInt
+  load 4 // GV_argTime :: UInt
   dup
   int 0
   ==
@@ -1029,23 +843,14 @@ pop
   ==
   ||
   assert
-  byte base64()
-  pop
-  load 4 // GV_argMsg :: Null
-  dup
-  len
-  int 16
-  ==
-  assert
-  dup
+  load 5 // GV_argMsg :: Null
   int 0
   extract_uint64
   store 255 // wager/304 :: UInt
-  dup
+  load 5 // GV_argMsg :: Null
   int 8
   extract_uint64
   store 254 // deadline/305 :: UInt
-  pop
   byte base64(rNEfww==)
   load 255 // wager/304 :: UInt
   itob
@@ -1072,21 +877,6 @@ pop
     int pay
     dig 1
     gtxns TypeEnum
-    ==
-    assert
-    int 0
-    dig 1
-    gtxns Fee
-    ==
-    assert
-    global ZeroAddress
-    dig 1
-    gtxns Lease
-    ==
-    assert
-    global ZeroAddress
-    dig 1
-    gtxns RekeyTo
     ==
     assert
     global CurrentApplicationAddress
@@ -1120,21 +910,6 @@ pop
     gtxns TypeEnum
     ==
     assert
-    int 0
-    dig 1
-    gtxns Fee
-    ==
-    assert
-    global ZeroAddress
-    dig 1
-    gtxns Lease
-    ==
-    assert
-    global ZeroAddress
-    dig 1
-    gtxns RekeyTo
-    ==
-    assert
     global CurrentApplicationAddress
     dig 1
     gtxns Receiver
@@ -1160,8 +935,7 @@ pop
   load 253 // v316 :: UInt
   itob
   concat
-  int 1
-  bzero
+  byte base64(AA==)
   dig 1
   extract 0 56
   app_global_put
@@ -1180,59 +954,37 @@ pop
 
   // { loopBody3
   loopBody3:
-  dup
-  int 0
-  extract_uint64
-  store 255 // outcome/325 :: UInt
-  dup
-  int 8
-  extract_uint64
+  store 255 // balance(0)/332 :: UInt
   store 254 // thisConsensusTime/326 :: UInt
-  dup
-  int 16
-  extract_uint64
-  store 253 // balance(0)/332 :: UInt
-  pop
-  dup
-  extract 0 32
-  store 252 // v303 :: Address
-  dup
-  int 32
-  extract_uint64
-  store 251 // wager/304 :: UInt
-  dup
-  int 40
-  extract_uint64
-  store 250 // deadline/305 :: UInt
-  dup
-  extract 48 32
-  store 249 // v320 :: Address
-  pop
-  load 255 // outcome/325 :: UInt
+  store 253 // outcome/325 :: UInt
+  store 252 // v320 :: Address
+  store 251 // deadline/305 :: UInt
+  store 250 // wager/304 :: UInt
+  store 249 // v303 :: Address
+  load 253 // outcome/325 :: UInt
   int 1
   ==
   bz l20_ifF
   load 254 // thisConsensusTime/326 :: UInt
-  load 250 // deadline/305 :: UInt
+  load 251 // deadline/305 :: UInt
   +
   store 248 // v347 :: UInt
-  load 252 // v303 :: Address
-  load 251 // wager/304 :: UInt
+  load 249 // v303 :: Address
+  load 250 // wager/304 :: UInt
   itob
   concat
-  load 250 // deadline/305 :: UInt
+  load 251 // deadline/305 :: UInt
   itob
   concat
-  load 249 // v320 :: Address
+  load 252 // v320 :: Address
   concat
-  load 253 // balance(0)/332 :: UInt
+  load 255 // balance(0)/332 :: UInt
   itob
   concat
   load 248 // v347 :: UInt
   itob
   concat
-  int 1
-  bzero
+  byte base64(AA==)
   dig 1
   extract 0 96
   app_global_put
@@ -1250,7 +1002,7 @@ pop
 
     // { l21_makeTxnK
     int 2
-    load 251 // wager/304 :: UInt
+    load 250 // wager/304 :: UInt
     *
     dup
     bz l21_makeTxnK
@@ -1258,9 +1010,9 @@ pop
     itxn_field Amount
     int pay
     itxn_field TypeEnum
-    load 249 // v320 :: Address
-    load 252 // v303 :: Address
-    load 255 // outcome/325 :: UInt
+    load 252 // v320 :: Address
+    load 249 // v303 :: Address
+    load 253 // outcome/325 :: UInt
     int 2
     ==
     select
@@ -1303,11 +1055,11 @@ load 2 // GV_currentTime :: UInt
 itob
 concat
 app_global_put
-load 5 // GV_wasApi :: Bool
+load 6 // GV_wasMeth :: Bool
 bz checkSize
 apiReturn:
 byte base64(FR98dQ==)
-load 6 // GV_apiRet :: Null
+load 7 // GV_apiRet :: Null
 concat
 log // up to 4 bytes
 checkSize:
@@ -1323,9 +1075,6 @@ txn GroupIndex
 assert
 done:
 int 1
-return
-fail:
-int 0
 return
 alloc:
 txn OnCompletion

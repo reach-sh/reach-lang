@@ -591,7 +591,7 @@ be_c = \case
     setHandler this_loopj $ do
       loop_svs <- ce_readSave this_loopsp
       loopc <- (liftIO . optimize_ cnt) =<< addVars at =<< loop_top
-      return $ C_Loop at loop_svs loop_vars loopc
+      return $ C_Loop at (map v2vl loop_svs) (map v2vl loop_vars) loopc
     fg_saves $ this_loopsp
     let cm = CT_Jump at this_loopj <$> ce_readSave this_loopsp <*> pure asn
     let cond'l = DLBlock cond_at cond_fs <$> cond_l'l <*> pure cond_a
@@ -666,7 +666,7 @@ be_s_ = \case
     setHandler this_h $ do
       svs <- ce_readSave prev
       ok_c'' <- addVars at =<< ok_c'm
-      return $ C_Handler at int_ok from_v prev svs msg_vs time_v secs_v ok_c''
+      return $ C_Handler at int_ok from_v prev (map v2vl svs) (map v2vl msg_vs) time_v secs_v ok_c''
     -- It is only a solo send if we are the only sender AND we are not a
     -- class
     let soloSend0 = (M.size send) == 1

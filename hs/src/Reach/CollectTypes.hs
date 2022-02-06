@@ -81,6 +81,9 @@ instance CollectsTypes SLParts where
 instance CollectsTypes DLVar where
   cts (DLVar _ _ t _) = cts t
 
+instance CollectsTypes DLVarLet where
+  cts (DLVarLet _ v) = cts v
+
 instance CollectsTypes DLArg where
   cts a = cts (argTypeOf a)
 

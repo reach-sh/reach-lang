@@ -38,6 +38,9 @@ instance FreshenV DLVar where
     liftIO $ modifyIORef fRho (M.insert v v')
     return $ v'
 
+instance FreshenV DLVarLet where
+  fu_v (DLVarLet c v) = DLVarLet c <$> fu_v v
+
 instance FreshenV DLLetVar where
   fu_v = \case
     DLV_Eff -> return $ DLV_Eff

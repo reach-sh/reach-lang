@@ -1536,7 +1536,7 @@ _smtDefineTypes smt ts = do
 smt_eb :: DLExportBlock -> App ()
 smt_eb (DLinExportBlock at margs b) = ctxtNewScope $
   freshAddrs $ do
-    let args = fromMaybe [] margs
+    let args = map varLetVar $ fromMaybe [] margs
     forM_ args $ \arg ->
       pathAddUnbound at (Just arg) (Just $ SMTModel O_ExportArg)
     void $ smt_block b
