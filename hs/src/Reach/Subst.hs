@@ -113,8 +113,8 @@ instance Subst DLStmt where
     DL_Let at v de -> DL_Let at v <$> subst de
     DL_ArrayMap at ans x a i f ->
       DL_ArrayMap at ans <$> subst x <*> pure a <*> pure i <*> subst f
-    DL_ArrayReduce at ans x z b a f ->
-      DL_ArrayReduce at ans <$> subst x <*> subst z <*> pure b <*> pure a <*> subst f
+    DL_ArrayReduce at ans x z b a i f ->
+      DL_ArrayReduce at ans <$> subst x <*> subst z <*> pure b <*> pure a <*> pure i <*> subst f
     DL_Var at v -> return $ DL_Var at v
     DL_Set at v a -> DL_Set at v <$> subst a
     DL_LocalIf at c t f -> DL_LocalIf at <$> subst c <*> subst t <*> subst f

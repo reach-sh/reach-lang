@@ -1293,7 +1293,6 @@ evalAsEnv obj = case obj of
         , ("find", retStdLib "Array_find")
         , ("withIndex", retStdLib "Array_withIndex")
         , ("forEachWithIndex", retStdLib "Array_forEachWithIndex")
-        , ("reduceWithIndex", retStdLib "Array_reduceWithIndex")
         , ("indexOf", retStdLib "Array_indexOf")
         , ("replicate", retStdLib "Array_replicate")
         , ("slice", retStdLib "Array_slice")
@@ -1304,7 +1303,8 @@ evalAsEnv obj = case obj of
         , ("concat", retV $ public $ SLV_Prim $ SLPrim_array_concat)
         , ("map", retV $ public $ SLV_Prim $ SLPrim_array_map False)
         , ("mapWithIndex", retV $ public $ SLV_Prim $ SLPrim_array_map True)
-        , ("reduce", retV $ public $ SLV_Prim $ SLPrim_array_reduce)
+        , ("reduce", retV $ public $ SLV_Prim $ SLPrim_array_reduce False)
+        , ("reduceWithIndex", retV $ public $ SLV_Prim $ SLPrim_array_reduce True)
         , ("zip", retV $ public $ SLV_Prim $ SLPrim_array_zip)
         ]
           <> foldableValueEnv
@@ -1373,11 +1373,11 @@ evalAsEnv obj = case obj of
              , ("find", delayStdlib "Array_find1")
              , ("withIndex", delayStdlib "Array_withIndex1")
              , ("forEachWithIndex", delayStdlib "Array_forEachWithIndex1")
-             , ("reduceWithIndex", delayStdlib "Array_reduceWithIndex1")
              , ("slice", delayStdlib "Array_slice1")
              , ("map", delayCall $ SLPrim_array_map False)
              , ("mapWithIndex", delayCall $ SLPrim_array_map True)
-             , ("reduce", delayCall SLPrim_array_reduce)
+             , ("reduce", delayCall $ SLPrim_array_reduce False)
+             , ("reduceWithIndex", delayCall $ SLPrim_array_reduce True)
              , ("zip", delayCall SLPrim_array_zip)
              ]
     structValueEnv :: SLObjEnv
@@ -2601,7 +2601,7 @@ evalPrim p sargs =
           let clo_args = concatMap ((",c" <>) . show) [0 .. (length more - 1)]
           f' <- withAt $ \at -> jsClo at "zip" ("(ab" <> clo_args <> mindex <> ") => f(ab[0], ab[1]" <> clo_args <> mindex <> ")") (M.fromList [("f", f)])
           evalApplyVals' (SLV_Prim $ SLPrim_array_map withIndex) (xy_v : (map public $ more ++ [f']))
-    SLPrim_array_reduce ->
+    SLPrim_array_reduce withIndex ->
       case args of
         [] -> illegal_args
         [_] -> illegal_args
@@ -2610,15 +2610,16 @@ evalPrim p sargs =
           at <- withAt id
           (xt, x_da) <- compileTypeOf x
           (x_ty, _) <- mustBeArray xt
-          let f' b a = evalApplyVals' f [(lvl, b), (lvl, a)]
+          let f' b a i = evalApplyVals' f $ [(lvl, b), (lvl, a)] <> (if withIndex then [(lvl, i)] else [])
           (z_ty, z_da) <- compileTypeOf z
           (b_dv, b_dsv) <- make_dlvar at z_ty
           (a_dv, a_dsv) <- make_dlvar at x_ty
+          (i_dv, i_dsv) <- make_dlvar at T_UInt
           -- We ignore the state because if it is impure, then we will unroll
           -- anyways
           SLRes f_lifts _ f_da <-
             captureRes $ do
-              (f_lvl, f_v) <- f' b_dsv a_dsv
+              (f_lvl, f_v) <- f' b_dsv a_dsv i_dsv
               ensure_level lvl f_lvl
               (f_ty, f_da) <- compileTypeOf f_v
               typeEq z_ty f_ty
@@ -2627,29 +2628,33 @@ evalPrim p sargs =
           case shouldUnroll of
             True -> do
               x_vs <- explodeTupleLike "reduce" x
-              let evalem :: SLSVal -> SLVal -> App SLSVal
-                  evalem prev_z xv = do
-                    xv_v' <- f' (snd prev_z) xv
+              let evalem :: SLSVal -> (SLVal, Integer) -> App SLSVal
+                  evalem prev_z (xv, i) = do
+                    let iv = SLV_Int at i
+                    xv_v' <- f' (snd prev_z) xv iv
                     --- Note: We are artificially restricting reduce
                     --- to be parameteric in the state. We also ensure
                     --- that they type is the same as the anonymous
                     --- version.
                     _ <- typeCheck_d z_ty (snd xv_v')
                     return $ xv_v'
-              foldM evalem (lvl, z) x_vs
+              foldM evalem (lvl, z) $ zip x_vs [0..]
             False -> do
               (ans_dv, ans_dsv) <- make_dlvar at z_ty
               let f_bl = DLSBlock at [] f_lifts f_da
-              saveLift $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv f_bl
+              saveLift $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv i_dv f_bl
               return $ (lvl, ans_dsv)
         x : y : args' -> do
+          let mindex = case withIndex of
+                         True -> ",i"
+                         False -> ""
           let (f, z, more) = case reverse args' of
                 f_ : z_ : rmore -> (f_, z_, reverse rmore)
                 _ -> impossible "array_reduce"
           xy_v <- evalApplyVals' (SLV_Prim $ SLPrim_array_zip) $ map public [x, y]
           let clo_args = concatMap ((",c" <>) . show) [0 .. (length more - 1)]
-          f' <- withAt $ \at -> jsClo at "zip" ("(z,ab" <> clo_args <> ") => f(z, ab[0], ab[1]" <> clo_args <> ")") (M.fromList [("f", f)])
-          evalApplyVals' (SLV_Prim $ SLPrim_array_reduce) (xy_v : (map public $ more ++ [z, f']))
+          f' <- withAt $ \at -> jsClo at "zip" ("(z,ab" <> clo_args <> mindex <> ") => f(z, ab[0], ab[1]" <> clo_args <> mindex <> ")") (M.fromList [("f", f)])
+          evalApplyVals' (SLV_Prim $ SLPrim_array_reduce withIndex) (xy_v : (map public $ more ++ [z, f']))
     SLPrim_array_set ->
       case map snd sargs of
         [arrv, idxv, valv] -> do

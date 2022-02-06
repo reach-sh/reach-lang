@@ -127,10 +127,8 @@ cdot () {
 
 #######
 
-c examples/view-maybe/index.rsh
-c examples/remote-api/index.rsh
-c examples/remote-view/index.rsh
-fc hs/t/n/Err_ViewSetDomination.rsh
+c hs/t/y/array_stdlib.rsh
+jb
 (cd users/algo-govt && touch index.rsh && ./test.sh)
 exit 0
 

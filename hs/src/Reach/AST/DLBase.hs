@@ -906,7 +906,7 @@ data DLStmt
   = DL_Nop SrcLoc
   | DL_Let SrcLoc DLLetVar DLExpr
   | DL_ArrayMap SrcLoc DLVar DLArg DLVar DLVar DLBlock
-  | DL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLBlock
+  | DL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLVar DLBlock
   | DL_Var SrcLoc DLVar
   | DL_Set SrcLoc DLVar DLArg
   | DL_LocalDo SrcLoc DLTail
@@ -921,7 +921,7 @@ instance SrcLocOf DLStmt where
     DL_Nop a -> a
     DL_Let a _ _ -> a
     DL_ArrayMap a _ _ _ _ _ -> a
-    DL_ArrayReduce a _ _ _ _ _ _ -> a
+    DL_ArrayReduce a _ _ _ _ _ _ _ -> a
     DL_Var a _ -> a
     DL_Set a _ _ -> a
     DL_LocalDo a _ -> a
@@ -936,14 +936,14 @@ instance Pretty DLStmt where
     DL_Let _ DLV_Eff de -> pretty de <> semi
     DL_Let _ x de -> "const" <+> pretty x <+> "=" <+> pretty de <> semi
     DL_ArrayMap _ ans x a i f -> prettyMap ans x a i f
-    DL_ArrayReduce _ ans x z b a f -> prettyReduce ans x z b a f
+    DL_ArrayReduce _ ans x z b a i f -> prettyReduce ans x z b a i f
     DL_Var _at dv -> "let" <+> pretty dv <> semi
     DL_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
     DL_LocalDo _at k -> "do" <+> braces (pretty k) <> semi
     DL_LocalIf _at ca t f -> "local" <+> prettyIfp ca t f
     DL_LocalSwitch _at ov csm -> "local" <+> prettySwitch ov csm
     DL_Only _at who b -> prettyOnly who b
-    DL_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a f
+    DL_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a () f
 
 mkCom :: (DLStmt -> k -> k) -> DLStmt -> k -> k
 mkCom mk m k =

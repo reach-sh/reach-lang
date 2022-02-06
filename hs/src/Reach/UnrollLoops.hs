@@ -124,9 +124,10 @@ instance Unroll DLStmt where
       r' <- zipWithM (\xa iv -> fu_ fb [(a, xa), (i, (DLA_Literal $ DLL_Int at iv))]) x' [0..]
       let r_ty = arrType $ varType ans
       return $ DL_Let at (DLV_Let DVC_Many ans) (DLE_LArg at $ DLLA_Array r_ty r')
-    DL_ArrayReduce at ans x z b a fb -> do
+    DL_ArrayReduce at ans x z b a i fb -> do
       (_, x') <- ul_explode at x
-      r' <- foldlM (\za xa -> fu_ fb [(b, za), (a, xa)]) z x'
+      let x'i = zip x' $ map (DLA_Literal . DLL_Int at) [0..]
+      r' <- foldlM (\za (xa, ia) -> fu_ fb [(b, za), (a, xa), (i, ia)]) z x'i
       return $ DL_Let at (DLV_Let DVC_Many ans) (DLE_Arg at r')
     DL_MapReduce at mri ans x z b a fb ->
       DL_MapReduce at mri ans x z b a <$> ul fb

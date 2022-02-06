@@ -548,14 +548,8 @@ export const Array_withIndex = (a) =>
 export const Array_withIndex1 = (a) => () =>
   Array_withIndex(a);
 
-export const Array_reduceWithIndex = (a, inita, f) =>
-  a.reduce([inita, 0], ([acc, idx], e) => [f(acc, e, idx), idx+1])[0];
-
-export const Array_reduceWithIndex1 = (a) => (inita, f) =>
-  Array_reduceWithIndex(a, inita, f);
-
 export const Array_forEachWithIndex = (a, f) =>
-  Array_reduceWithIndex(a, null, (acc, e, idx) => {
+  a.reduceWithIndex(null, (acc, e, idx) => {
     f(e, idx);
     return acc;
   });

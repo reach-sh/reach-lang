@@ -216,8 +216,8 @@ instance CountableK DLStmt where
     DL_Let _ lv e -> countsk (counts e <> kcs) lv
     DL_ArrayMap _ ans x a i f ->
       count_rms [ans, a, i] (counts f <> kcs) <> counts x
-    DL_ArrayReduce _ ans x z b a f ->
-      count_rms [ans, b, a] (counts f <> kcs) <> counts [x, z]
+    DL_ArrayReduce _ ans x z b a i f ->
+      count_rms [ans, b, a, i] (counts f <> kcs) <> counts [x, z]
     DL_Var _ v -> count_rms [v] kcs
     DL_Set _ v a -> counts v <> counts a <> kcs
     DL_LocalIf _ c t f -> counts c <> counts [t, f] <> kcs

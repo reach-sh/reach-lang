@@ -88,11 +88,11 @@ instance AC DLStmt where
       f' <- ac f
       ac_visit $ x
       return $ DL_ArrayMap at ans x a i f'
-    DL_ArrayReduce at ans x z b a f -> do
+    DL_ArrayReduce at ans x z b a i f -> do
       -- XXX remove if ans not used
       f' <- ac f
       ac_visit $ [x, z]
-      return $ DL_ArrayReduce at ans x z b a f'
+      return $ DL_ArrayReduce at ans x z b a i f'
     DL_Var at dv ->
       ac_getCount dv >>= \case
         Nothing -> skip at

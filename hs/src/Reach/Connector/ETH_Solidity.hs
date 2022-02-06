@@ -1004,7 +1004,7 @@ solCom = \case
                  , (solArrayRef ans' i') <+> "=" <+> r' <> semi
                  ])
         ]
-  DL_ArrayReduce _ ans x z b a (DLBlock _ _ f r) -> do
+  DL_ArrayReduce _ ans x z b a i (DLBlock _ _ f r) -> do
     addMemVars $ [ans, b, a]
     let sz = arraySize x
     ans' <- solVar ans
@@ -1012,15 +1012,17 @@ solCom = \case
     z' <- solArg z
     a' <- solVar a
     b' <- solVar b
+    let i' = solRawVar i
+    extendVarMap $ M.singleton i i'
     f' <- solPLTail f
     r' <- solArg r
     return $
       vsep
         [ b' <+> "=" <+> z' <> semi
-        , "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++")
+        , "for" <+> parens ("uint256 " <> i' <> " = 0" <> semi <+> i' <> " <" <+> (pretty sz) <> semi <+> i' <> "++")
             <> solBraces
               (vsep
-                 [ a' <+> "=" <+> (solArrayRef x' "i") <> semi
+                 [ a' <+> "=" <+> (solArrayRef x' i') <> semi
                  , f'
                  , b' <+> "=" <+> r' <> semi
                  ])

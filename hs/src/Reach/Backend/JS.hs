@@ -530,15 +530,16 @@ jsCom = \case
     f' <- jsPLTail f
     r' <- jsArg r
     return $ "const" <+> ans' <+> "=" <+> "await" <+> jsApply "stdlib.Array_asyncMap" [ x', (jsApply "async" [a', i'] <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r')) ]
-  DL_ArrayReduce _ ans x z b a (DLBlock _ _ f r) -> do
+  DL_ArrayReduce _ ans x z b a i (DLBlock _ _ f r) -> do
     ans' <- jsVar ans
     x' <- jsArg x
     z' <- jsArg z
     a' <- jsArg $ DLA_Var a
     b' <- jsArg $ DLA_Var b
+    i' <- jsArg $ DLA_Var i
     f' <- jsPLTail f
     r' <- jsArg r
-    return $ "const" <+> ans' <+> "=" <+> "await" <+> jsApply "stdlib.Array_asyncReduce" [ x', z', (jsApply "async" [b', a']) <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r') ]
+    return $ "const" <+> ans' <+> "=" <+> "await" <+> jsApply "stdlib.Array_asyncReduce" [ x', z', (jsApply "async" [b', a', i']) <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r') ]
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
   DL_Only _at (Right c) l -> do

@@ -657,7 +657,7 @@ data SLPrimitive
   | SLPrim_array_set
   | SLPrim_array_concat
   | SLPrim_array_map Bool
-  | SLPrim_array_reduce
+  | SLPrim_array_reduce Bool
   | SLPrim_array_zip
   | SLPrim_Struct
   | SLPrim_Struct_fromTuple [(SLVar, SLType)]

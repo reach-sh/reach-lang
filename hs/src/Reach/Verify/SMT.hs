@@ -153,7 +153,7 @@ data SMTMapRecordReduce = SMR_Reduce
 instance Pretty SMTMapRecordReduce where
   pretty = \case
     SMR_Reduce _mri ans z b a f ->
-      prettyReduce ans ("map" :: String) z b a f
+      prettyReduce ans ("map" :: String) z b a () f
 
 data SMTMapRecordUpdate
   = SMR_Update SExpr SExpr SExpr SMTMapRecordUpdate

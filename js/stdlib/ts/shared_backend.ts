@@ -153,10 +153,11 @@ export const mapRef = async <A>(m: LinearMap<A>, f: string): Promise<MaybeRep<A>
 
 export const Array_asyncMap = <A, B>(a: A[], f:((x:A, i:number) => Promise<B>)): Promise<B[]> => Promise.all(a.map(f));
 
-export const Array_asyncReduce = async <A, B>(a: A[], b:B, f:((y:B, x:A) => Promise<B>)): Promise<B> => {
+export const Array_asyncReduce = async <A, B>(a: A[], b:B, f:((y:B, x:A, i:number) => Promise<B>)): Promise<B> => {
   let y = b;
+  let i = 0;
   for ( const x of a ) {
-    y = await f(y, x);
+    y = await f(y, x, i++);
   }
   return y;
 };

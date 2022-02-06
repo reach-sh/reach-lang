@@ -97,8 +97,8 @@ instance Sanitize DLStmt where
     DL_Let _ x e -> DL_Let sb (sani x) (sani e)
     DL_ArrayMap _ a b c d e ->
       DL_ArrayMap sb a (sani b) c d (sani e)
-    DL_ArrayReduce _ a b c d e f ->
-      DL_ArrayReduce sb a (sani b) (sani c) d e (sani f)
+    DL_ArrayReduce _ a b c d e f g ->
+      DL_ArrayReduce sb a (sani b) (sani c) d e f (sani g)
     DL_Var _ v -> DL_Var sb v
     DL_Set _ v a -> DL_Set sb v (sani a)
     DL_LocalIf _ a b c -> DL_LocalIf sb (sani a) (sani b) (sani c)

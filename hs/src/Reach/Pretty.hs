@@ -58,9 +58,9 @@ prettyMap ans x a i f =
   "map" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty a <> "," <> pretty i <+> "in" <+> pretty x)
     <+> braces (nest $ hardline <> pretty f)
 
-prettyReduce :: (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f) => a -> b -> c -> d -> e -> f -> Doc
-prettyReduce ans x z b a f =
-  "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <+> "in" <+> pretty x)
+prettyReduce :: (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f, Pretty g) => a -> b -> c -> d -> e -> f -> g -> Doc
+prettyReduce ans x z b a i f =
+  "reduce" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty b <+> "=" <+> pretty z <> semi <+> pretty a <> "," <> pretty i <+> "in" <+> pretty x)
     <+> braces (nest $ hardline <> pretty f)
 
 prettyToConsensus__ :: (Pretty a, Pretty b, Pretty c, Pretty s, Pretty d, Pretty k2) => c -> M.Map s a -> b -> Maybe (d, k2) -> Doc

@@ -1900,7 +1900,7 @@ cm km = \case
         op "concat"
         store_ans
       store_let ansv True load_ans km
-  DL_ArrayReduce at ansv aa za av lv (DLBlock _ _ body ra) -> do
+  DL_ArrayReduce at ansv aa za av lv iv (DLBlock _ _ body ra) -> do
     let (_, xlen) = argArrTypeLen aa
     salloc_ (textyv ansv) $ \store_ans load_ans -> do
       ca za
@@ -1909,7 +1909,8 @@ cm km = \case
         cfor xlen $ \load_idx -> do
           doArrayRef at aa True $ Right load_idx
           sallocLet lv (return ()) $ do
-            cp (ca ra) body
+            store_let iv True load_idx $ do
+              cp (ca ra) body
           store_ans
         store_let ansv True load_ans km
   DL_Var _ dv ->

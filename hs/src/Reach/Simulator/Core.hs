@@ -570,16 +570,16 @@ instance Interp DLStmt where
       res <- V_Array <$> zipWithM f' arr' [0..]
       addToStore ans res
       return V_Null
-    DL_ArrayReduce _at var1 arg1 arg2 var2 var3 block -> do
-      acc <- interp arg1
-      arr' <- vArray <$> interp arg2
-      let f =
-            (\a x b y -> do
-               addToStore a x
-               addToStore b y
-               interp block)
-      res <- foldM (\x y -> f var2 x var3 y) acc arr'
-      addToStore var1 res
+    DL_ArrayReduce _at ans x z b a i f -> do
+      acc <- interp z
+      arr' <- vArray <$> interp x
+      let f' acc_v (elem_v, iv) = do
+             addToStore a elem_v
+             addToStore b acc_v
+             addToStore i $ V_UInt iv
+             interp f
+      res <- foldM f' acc $ zip arr' [0..]
+      addToStore ans res
       return V_Null
     DL_Var _at _var -> return V_Null
     DL_Set _at var arg -> do

@@ -86,7 +86,7 @@ mkAnnot a = StmtAnnot {..}
 data DLSStmt
   = DLS_Let SrcLoc DLLetVar DLExpr
   | DLS_ArrayMap SrcLoc DLVar DLArg DLVar DLVar DLSBlock
-  | DLS_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLSBlock
+  | DLS_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLVar DLSBlock
   | DLS_If SrcLoc DLArg StmtAnnot DLStmts DLStmts
   | DLS_Switch SrcLoc DLVar StmtAnnot (SwitchCases DLStmts)
   | DLS_Return SrcLoc Int DLArg
@@ -124,7 +124,7 @@ instance Pretty DLSStmt where
       DLS_Let _ (DLV_Let _ v) e ->
         "const" <+> pretty v <+> "=" <+> pretty e <> semi
       DLS_ArrayMap _ ans x a i f -> prettyMap ans x a i f
-      DLS_ArrayReduce _ ans x z b a f -> prettyReduce ans x z b a f
+      DLS_ArrayReduce _ ans x z b a i f -> prettyReduce ans x z b a i f
       DLS_If _ ca sa ts fs ->
         prettyIf (pretty ca <+> braces (pretty sa)) (render_dls ts) (render_dls fs)
       DLS_Switch _ ov sa csm ->
@@ -151,7 +151,7 @@ instance Pretty DLSStmt where
         "fluid" <+> pretty fv <+> ":=" <+> pretty da
       DLS_FluidRef _ dv fv ->
         pretty dv <+> "<-" <+> "fluid" <+> pretty fv
-      DLS_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a f
+      DLS_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a () f
       DLS_Throw _ dv local -> if local then "local" else "nonlocal" <+> "throw" <+> pretty dv
       DLS_Try _ e hv hs -> "try" <+> ns e <+> "catch" <+> parens (pretty hv) <+> ns hs
       DLS_ViewIs _ v k a -> prettyViewIs v k a
@@ -165,7 +165,7 @@ instance SrcLocOf DLSStmt where
   srclocOf = \case
     DLS_Let a _ _ -> a
     DLS_ArrayMap a _ _ _ _ _ -> a
-    DLS_ArrayReduce a _ _ _ _ _ _ -> a
+    DLS_ArrayReduce a _ _ _ _ _ _ _ -> a
     DLS_If a _ _ _ _ -> a
     DLS_Switch a _ _ _ -> a
     DLS_Return a _ _ -> a

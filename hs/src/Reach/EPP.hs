@@ -365,13 +365,13 @@ be_m = \case
       >>= retb
         (\f' ->
            return $ DL_ArrayMap at ans x a i f')
-  DL_ArrayReduce at ans x z b a f -> do
-    fg_defn $ [ans, b, a]
+  DL_ArrayReduce at ans x z b a i f -> do
+    fg_defn $ [ans, b, a, i]
     fg_use $ [x, z]
     be_bl f
       >>= retb
         (\f' ->
-           return $ DL_ArrayReduce at ans x z b a f')
+           return $ DL_ArrayReduce at ans x z b a i f')
   DL_Var at v -> do
     fg_defn $ v
     let mkt _ = return $ DL_Var at v
