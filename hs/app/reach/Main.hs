@@ -2145,15 +2145,21 @@ main = do
           <$> env
           <*> (hsubparser cs <|> hsubparser hs <**> helper)
   customExecParser (prefs showHelpOnError) (info cli (header header' <> fullDesc))
-    >>= \Cli {..} ->
-      do
-        failNonAbsPaths c_env
-        runReaderT c_cmd c_env
-        >> readIORef eff
-        >>= \case
-          InProcess -> pure ()
-          Script t -> case e_emitRaw c_env of
-            True -> T.putStrLn t
-            False -> do
-              T.writeFile (e_dirTmpContainer c_env </> "out.sh") t
-              exitWith $ ExitFailure 42
+    >>= \(Cli cenv_ ccmd) -> do
+      cc <- lookupEnv "CIRCLECI"
+      rd <- lookupEnv "REACH_DOCKER"
+      let cenv_no = cenv_ { e_disableReporting = True }
+      let cenv =
+            case (cc, rd) of
+              (Just "true", _) -> cenv_no
+              (_, Just "0") -> cenv_no
+              _ -> cenv_
+      failNonAbsPaths cenv
+      runReaderT ccmd cenv
+      readIORef eff >>= \case
+        InProcess -> pure ()
+        Script t -> case e_emitRaw cenv of
+          True -> T.putStrLn t
+          False -> do
+            T.writeFile (e_dirTmpContainer cenv </> "out.sh") t
+            exitWith $ ExitFailure 42
