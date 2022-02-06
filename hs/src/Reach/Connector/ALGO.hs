@@ -34,6 +34,7 @@ import Reach.BinaryLeafTree
 import Reach.CommandLine
 import Reach.Connector
 import Reach.Counter
+import Reach.Dotty
 import Reach.FixedPoint
 import Reach.Texty (pretty)
 import Reach.UnsafeUtil
@@ -69,11 +70,11 @@ instance Show AlgoError where
 
 type LPGraph a = M.Map a (M.Map a Integer)
 
-type LPPath a = (String, [(a, Integer)], Integer)
+type LPPath a = (DotGraph, [(a, Integer)], Integer)
 
 type LPInt a = M.Map a ([(a, Integer)], Integer)
 
-longestPathBetween :: forall a. (Ord a, Monoid a, Show a) => LPGraph a -> a -> a -> IO (LPPath a)
+longestPathBetween :: LPGraph String -> String -> String -> IO (LPPath String)
 longestPathBetween g f _d = do
   let r x y = fromMaybe ([], 0) $ M.lookup x y
   ps <- fixedPoint $ \_ (m :: LPInt a) -> do
@@ -92,13 +93,12 @@ longestPathBetween g f _d = do
         (to, _) : m -> mkEdges (S.insert (from, to) s) to m
   let edges = mkEdges mempty f p
   let edge = flip S.member edges
-  let gs_body =
+  let gs :: DotGraph =
         flip concatMap (M.toAscList g) $ \(from, cs) ->
           flip concatMap (M.toAscList cs) $ \(to, c) ->
             case (from == mempty) of
-              True -> ""
-              False -> show from <> " -> " <> show to <> " [label=\"" <> show c <> "\"" <> (if edge (from, to) then ",color=red" else "") <> "];\n"
-  let gs = "digraph {\n" <> gs_body <> "}"
+              True -> []
+              False -> [(from, to, (M.fromList $ [("label", show c)] <> (if edge (from, to) then [("color","red")] else [])))]
   return $ (gs, p, pc)
 
 aarray :: [Aeson.Value] -> Aeson.Value
@@ -489,7 +489,7 @@ checkCost warning disp alwaysShow ts = do
         let tooMuch = fromIntegral c > algoMax
         when tooMuch $
           warning $ LT.pack $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n"
-        void $ disp ("." <> lab <> ".dot") $ s2t $ "// This file is in the DOT file format. Upload or copy it into a Graphviz engine, such as https://dreampuf.github.io/GraphvizOnline\n" <> gs
+        void $ disp ("." <> lab <> ".dot") $ s2t $ dotty gs
         return (msg, tooMuch)
   (showCost, exceedsCost) <- analyze "cost" cost_gr "units of cost" algoMaxAppProgramCost
   (showLogLen, exceedsLogLen) <- analyze "log" logLen_gr "bytes of logs" algoMaxLogLen
