@@ -11,7 +11,6 @@ import qualified Filesystem.Path.CurrentOS as FP
 import Reach.APICut
 import Reach.AST.DL
 import Reach.Backend.JS
---import Reach.Optimize
 import Reach.BigOpt
 import Reach.CommandLine
 import Reach.Connector
@@ -23,6 +22,7 @@ import Reach.Eval
 import Reach.Linearize
 import Reach.Parser (gatherDeps_top)
 import Reach.Simulator.Server
+import Reach.StateDiagram
 import Reach.Texty
 import Reach.Util
 import Reach.Verify
@@ -84,6 +84,7 @@ compile env (CompilerOpts {..}) = do
         eol <- bigopt (showp, "eol") el
         showp "eol" eol
         pil <- epp eol
+        showp "state.dot" $ stateDiagram pil
         showp "pil" pil
         apc <- apicut pil
         showp "apc" apc
