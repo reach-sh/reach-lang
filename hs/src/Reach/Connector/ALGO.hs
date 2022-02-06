@@ -1364,24 +1364,21 @@ computeStateSizeAndKeys badx prefix size limit = do
 cSvsLoad :: Integer -> App ()
 cSvsLoad size = do
   (_, keysl) <- computeStateSizeAndKeys bad "svs" size algoMaxGlobalSchemaEntries_usable
-  case null keysl of
-    True -> do
-      padding 0
-    False -> do
-      -- [ SvsData_0? ]
-      forM_ (zip keysl $ False : repeat True) $ \(mi, doConcat) -> do
-        -- [ SvsData_N? ]
-        cbs $ keyVary mi
-        -- [ SvsData_N?, Key ]
-        op "app_global_get"
-        -- [ SvsData_N?, NewPiece ]
-        case doConcat of
-          True -> op "concat"
-          False -> nop
-        -- [ SvsData_N+1 ]
-        return ()
-      -- [ SvsData_k ]
+  unless (null keysl) $ do
+    -- [ SvsData_0? ]
+    forM_ (zip keysl $ False : repeat True) $ \(mi, doConcat) -> do
+      -- [ SvsData_N? ]
+      cbs $ keyVary mi
+      -- [ SvsData_N?, Key ]
+      op "app_global_get"
+      -- [ SvsData_N?, NewPiece ]
+      case doConcat of
+        True -> op "concat"
+        False -> nop
+      -- [ SvsData_N+1 ]
       return ()
+    -- [ SvsData_k ]
+    gvStore GV_svs
 
 cSvsSave :: SrcLoc -> [DLArg] -> App ()
 cSvsSave _at svs = do
@@ -2043,6 +2040,7 @@ data GlobalVar
   = GV_txnCounter
   | GV_currentStep
   | GV_currentTime
+  | GV_svs
   | GV_argTime
   | GV_argMsg
   | GV_wasMeth
@@ -2066,6 +2064,7 @@ gvType = \case
   GV_txnCounter -> T_UInt
   GV_currentStep -> T_UInt
   GV_currentTime -> T_UInt
+  GV_svs -> T_Null
   GV_argTime -> T_UInt
   GV_argMsg -> T_Null
   GV_wasMeth -> T_Bool
@@ -2099,17 +2098,25 @@ allocDLVar :: SrcLoc -> DLType -> App DLVar
 allocDLVar at t =
   DLVar at Nothing t <$> ((liftIO . incCounter) =<< ((sCounter . eShared) <$> ask))
 
-bindFromTuple :: SrcLoc -> [DLVar] -> App a -> App a
-bindFromTuple at vs m = do
+bindFromGV :: GlobalVar -> App () -> SrcLoc -> [DLVar] -> App a -> App a
+bindFromGV gv ensure at vs m = do
   let mkArgVar l = allocDLVar at $ T_Tuple $ map varType l
   av <- mkArgVar vs
-  let go = \case
-        [] -> op "pop" >> m
-        (dv, i) : more -> sallocLet dv cgen $ go more
-          where
-            cgen = ce $ DLE_TupleRef at (DLA_Var av) i
-  store_let av True (op "dup") $
-    go $ zip vs [0 ..]
+  case vs of
+    [] -> m
+    [ x ] -> do
+      ensure
+      store_let x True (gvLoad gv) m
+    _ -> do
+      ensure
+      gvLoad gv
+      let go = \case
+            [] -> op "pop" >> m
+            (dv, i) : more -> sallocLet dv cgen $ go more
+              where
+                cgen = ce $ DLE_TupleRef at (DLA_Var av) i
+      store_let av True (op "dup") $
+        go $ zip vs [0 ..]
 
 bindFromStack :: SrcLoc -> [DLVar] -> App a -> App a
 bindFromStack _at vs m = do
@@ -2157,8 +2164,8 @@ handlerLabel w = "publish" <> texty w
 
 bindFromSvs_ :: SrcLoc -> [DLVar] -> App a -> App a
 bindFromSvs_ at svs m = do
-  cSvsLoad $ typeSizeOf $ T_Tuple $ map varType svs
-  bindFromTuple at svs m
+  let ensure = cSvsLoad $ typeSizeOf $ T_Tuple $ map varType svs
+  bindFromGV GV_svs ensure at svs m
 
 ch :: Int -> CHandler -> App ()
 ch _ (C_Loop {}) = return ()
@@ -2167,9 +2174,7 @@ ch which (C_Handler at int from prev svs msg timev secsv body) = recordWhich whi
   let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ msg)
   when (argSize > algoMaxAppTotalArgLen) $
     xxx $ texty $ "Step " <> show which <> "'s argument length is " <> show argSize <> ", but the maximum is " <> show algoMaxAppTotalArgLen
-  let bindFromMsg vs m = do
-        gvLoad GV_argMsg
-        bindFromTuple at vs m
+  let bindFromMsg = bindFromGV GV_argMsg (return ()) at
   let bindFromSvs = bindFromSvs_ at svs
   block (handlerLabel which) $ do
     comment "check step"
