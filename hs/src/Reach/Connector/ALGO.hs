@@ -2169,10 +2169,6 @@ ch which (C_Handler at int from prev svs msg timev secsv body) = recordWhich whi
     xxx $ texty $ "Step " <> show which <> "'s argument length is " <> show argSize <> ", but the maximum is " <> show algoMaxAppTotalArgLen
   let bindFromMsg vs m = do
         gvLoad GV_argMsg
-        op "dup"
-        op "len"
-        cint $ typeSizeOf $ (T_Tuple $ map varType vs)
-        asserteq
         bindFromTuple at vs m
   let bindFromSvs = bindFromSvs_ at svs
   block (handlerLabel which) $ do

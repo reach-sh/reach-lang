@@ -127,8 +127,9 @@ cdot () {
 
 #######
 
-c hs/t/y/array_stdlib.rsh
-jb
+c examples/view-steps/index.rsh
+exit 0
+
 (cd users/algo-govt && touch index.rsh && ./test.sh)
 exit 0
 
