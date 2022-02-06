@@ -36,6 +36,7 @@ import Reach.Connector
 import Reach.Counter
 import Reach.Dotty
 import Reach.FixedPoint
+import qualified Reach.Texty as T
 import Reach.Texty (pretty)
 import Reach.UnsafeUtil
 import Reach.Util
@@ -489,7 +490,7 @@ checkCost warning disp alwaysShow ts = do
         let tooMuch = fromIntegral c > algoMax
         when tooMuch $
           warning $ LT.pack $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n"
-        void $ disp ("." <> lab <> ".dot") $ s2t $ dotty gs
+        void $ disp ("." <> lab <> ".dot") $ LT.toStrict $ T.render $ dotty gs
         return (msg, tooMuch)
   (showCost, exceedsCost) <- analyze "cost" cost_gr "units of cost" algoMaxAppProgramCost
   (showLogLen, exceedsLogLen) <- analyze "log" logLen_gr "bytes of logs" algoMaxLogLen
