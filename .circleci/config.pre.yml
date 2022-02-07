@@ -358,6 +358,8 @@ workflows:
           branches:
             only: master
     - "browser-tests":
+        context:
+          - reachdevbot-on-dockerhub
         requires:
           - "build-react-runner"
           - "build-devnet-algo"
