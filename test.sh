@@ -128,10 +128,7 @@ cdot () {
 
 #######
 
-cdot examples/rps-8-interact/index.rsh
-exit 0
-
-(cd users/algo-govt && touch index.rsh && ./test.sh)
+(cd users/algo-govt && ./test.sh)
 exit 0
 
 jb
