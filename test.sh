@@ -128,6 +128,10 @@ cdot () {
 
 #######
 
+
+c hs/t/y/array_stdlib.rsh
+exit 0
+
 (cd users/algo-govt && ./test.sh)
 exit 0
 

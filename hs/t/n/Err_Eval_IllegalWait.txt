@@ -1,11 +1,11 @@
 reachc: error[RE0027]: Cannot inspect consensus time until after first publication
 
-  reach standard library:581:31:application
+  reach standard library:568:31:application
 
   
 
 Trace:
-  in "relativeTime" from (reach standard library:577:71:function exp) at (./Err_Eval_IllegalWait.rsh:7:22:application)
+  in "relativeTime" from (reach standard library:564:71:function exp) at (./Err_Eval_IllegalWait.rsh:7:22:application)
 
 For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0027
 
