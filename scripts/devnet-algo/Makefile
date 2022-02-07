@@ -8,7 +8,6 @@ build:
 		exit 1 ; \
 	fi
 	$(ROOT)/scripts/build-image.sh $(IMAGE) Dockerfile
-#	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
 .PHONY: build-m1
 build-m1: build

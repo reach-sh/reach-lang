@@ -28,12 +28,10 @@ build-haskell-build-artifacts:
 .PHONY: build-reach-cli
 build-reach-cli:
 	$(ROOT)/scripts/build-image.sh $(IMG_REACH_CLI) Dockerfile.reach-cli
-#	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
 
 .PHONY: build-reach
 build-reach:
 	$(ROOT)/scripts/build-image.sh $(IMG_REACHC) Dockerfile.reachc
-#	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
 
 .PHONY: build
 build: build-haskell-build-artifacts build-reach-cli build-reach
@@ -49,13 +47,11 @@ build-m1:
 	  --build-arg Z3_VERSION="$(Z3_VERSION)" \
 	  --tag=$(IMG_REACHC):latest \
 	  -f Dockerfile.reachc-m1 .
-#	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACHC)
 	docker build \
 	  --platform linux/arm64 \
 	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \
 	  --tag=$(IMG_REACH_CLI):latest \
 	  -f Dockerfile.reach-cli-m1 .
-#	TAG_ONLY=1 ../scripts/docker-push.sh $(IMG_REACH_CLI)
 
 .PHONY: push
 push:
