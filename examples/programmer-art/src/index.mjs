@@ -557,10 +557,10 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
       }
       const respondSpaTieBreak = async () => {
         let tiebreakerId = document.querySelector("#tiebreakers-spa-select").value;
-        let r = await c.respondWithVal(nodeId,actId,tiebreakerId,actorId)
+        let r = await c.respondWithVal(nodeId,actId,parseInt(tiebreakerId),actorId)
         appendToLog(r)
         redraw()
-        jsonLog.push(["respondWithVal",nodeId,actId,tiebreakerId,actorId])
+        jsonLog.push(["respondWithVal",nodeId,actId,parseInt(tiebreakerId),actorId])
       }
       return [
         `
@@ -612,6 +612,8 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
               <select name="typing" id="typing-spa-select">
                 <option value="number">Number</option>
                 <option value="string">String</option>
+                <option value="contract">Contract</option>
+                <option value="address">Address</option>
               </select>
             </div>
 
@@ -824,6 +826,7 @@ redraw();
 
 const clickNode = async (evt) => {
   const nodeId = evt.target.id()
+  debugger
   const r = await c.getStateLocals(nodeId)
   let actors = []
   for (const [k,v] of Object.entries(r.l_locals)) {
@@ -839,7 +842,7 @@ const clickNode = async (evt) => {
   while (sheet.cssRules.length > 0) {
     sheet.deleteRule(sheet.cssRules.length - 1);
   }
-  const singleColors = ['#6699CC','#a7a6ba','#C0C0C0']
+  const singleColors = ['#a7a6ba','#6699CC','#C0C0C0']
   const multiColor = '#90917E'
   const dupls = ats.filter((e, index, arr) => arr.indexOf(e) !== index)
   const dups = [...new Set(dupls)]
@@ -859,7 +862,6 @@ const clickNode = async (evt) => {
       background-color: ${multiColor};
     }`);
   });
-
 
   const at = ats.at(-1)
   if (at) {

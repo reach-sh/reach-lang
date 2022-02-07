@@ -506,6 +506,12 @@ app p srcTxt = do
       "string" -> do
         v :: String <- param "data"
         webM $ unblockProg s a $ C.V_Bytes v
+      "contract" -> do
+        v :: C.Account <- param "data"
+        webM $ unblockProg s a $ C.V_Contract v
+      "address" -> do
+        v :: C.Account <- param "data"
+        webM $ unblockProg s a $ C.V_Address v
       _ -> possible "Unexpected value type"
     json ("OK" :: String)
 
