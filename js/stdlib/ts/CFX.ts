@@ -24,6 +24,7 @@ export const {
   setWalletFallback,
   walletFallback,
   balanceOf,
+  balancesOf,
   minimumBalanceOf,
   transfer,
   connectAccount,

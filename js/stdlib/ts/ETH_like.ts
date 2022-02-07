@@ -319,18 +319,39 @@ const makeHasLogFor = ( getCtcAddress: (() => Address), iface:Interface, i:numbe
 
 const { randomUInt, hasRandom } = makeRandom(32);
 
-const balanceOf = async (acc: Account | Address, token: Token|false = false): Promise<BigNumber> => {
-  let addressable = (typeof acc == 'string') ? acc : acc.networkAccount;
-  if (!addressable) {
-    throw Error(`Cannot get the address of: ${acc}`);
-  }
-  return balanceOfNetworkAccount(addressable, token);
-};
-
 const minimumBalanceOf = async (acc: Account | Address): Promise<BigNumber> => {
   void acc;
   return zeroBn;
 };
+
+const balanceOf = async (acc: Account | Address, token?: Token): Promise<BigNumber> => {
+  return (await balancesOf(acc, [token || null]))[0];
+};
+
+const balancesOf = async (acc: Account | Address, tokens: Array<Token|null>): Promise<Array<BigNumber>> => {
+  // Implementation stolen from old balanceOf and balanceOfNetworkAccount
+
+  // Address = string. If given an Address, use it as the address and networkAccount.
+  // If given an Account, extract the address and networkAccount from it.
+  const [address, networkAccount] = (typeof acc == 'string')
+                                  ? [acc, { address: acc }]
+                                  : [await getAddr(acc), acc.networkAccount];
+
+  const balanceOfSingleToken = async (token: Token | null) => {
+    if (token) {
+      return await balanceOf_token(networkAccount, address, token);
+    } else {
+      if (networkAccount.getBalance) {
+        return bigNumberify(await networkAccount.getBalance());
+      } else {
+        const provider = await getProvider();
+        return bigNumberify(await provider.getBalance(address));
+      }
+    }
+  };
+
+  return await Promise.all(tokens.map(balanceOfSingleToken));
+}
 
 const balanceOfNetworkAccount = async (networkAccount: any, token: Token|false = false) => {
   if ( ! token && networkAccount.getBalance ) {
@@ -1143,6 +1164,7 @@ const ethLike = {
   randomUInt,
   hasRandom,
   balanceOf,
+  balancesOf,
   minimumBalanceOf,
   transfer,
   connectAccount,
