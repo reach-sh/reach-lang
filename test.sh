@@ -128,6 +128,9 @@ cdot () {
 
 #######
 
+c --install-pkgs users/xbacked-contracts/src/master_vault.rsh
+REACH_DEBUG=Y c users/xbacked-contracts/src/master_vault.rsh
+exit 0
 
 c hs/t/y/array_stdlib.rsh
 exit 0
@@ -156,8 +159,5 @@ exit 0
 cdot users/xbacked-contracts/src/master_vault.rsh
 exit 0
 
-c --install-pkgs users/xbacked-contracts/src/master_vault.rsh
-REACH_DEBUG=Y c users/xbacked-contracts/src/master_vault.rsh
-exit 0
 
 # (cd hs && mk hs-test)

@@ -154,7 +154,7 @@ export const Array_findIndex1 =
   (arr) => (f) => Array_findIndex(arr, f);
 
 export const Array_indexOf =
-  (arr, x) => Array_findIndex(arr, (el) => (el == x));
+  (arr, x) => Array_findIndex(arr, (el) => (x == el));
 export const Array_indexOf1 =
   (arr) => (x) => Array_indexOf(arr, x);
 
