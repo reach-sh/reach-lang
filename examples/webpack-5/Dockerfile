@@ -1,4 +1,4 @@
-FROM reachsh/runner:0.1
+FROM reachsh/runner:latest
 
 RUN apk --no-cache add make
 

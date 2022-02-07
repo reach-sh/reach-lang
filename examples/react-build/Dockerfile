@@ -1,4 +1,4 @@
-FROM reachsh/react-runner:0.1
+FROM reachsh/react-runner:latest
 
 RUN apk --no-cache add make
 
