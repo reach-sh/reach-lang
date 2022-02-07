@@ -72,13 +72,13 @@ $ reach compile SOURCE EXPORT ...
 ```
 
 where `SOURCE` is your source file,
-and each `EXPORT` is an exported Reach.App.
+and each `EXPORT` is an exported `{!rsh} Reach.App`.
 
 If no `SOURCE` is provided, then `index.rsh` is used.
 
-If no `EXPORT` is provided, then all the exported Reach.Apps will be compiled.
-If there are no Reach.Apps exported, then the program will be compiled as a library, where its exports are available to other Reach programs and frontends.
-The output name of a library is the same as if it exported a Reach.Appnamed `default`.
+If no `EXPORT` is provided, then all the exported `{!rsh} Reach.Apps` will be compiled.
+If there are no `{!rsh} Reach.Apps` exported, then the program will be compiled as a library, where its exports are available to other Reach programs and frontends.
+The output name of a library is the same as if it exported a `{!rsh} Reach.App` named `default`.
 
 `reach compile` supports the following options:
 
@@ -250,7 +250,7 @@ $ REACH_CONNECTOR_MODE=ALGO ./reach devnet
 
 + `--await-background` --- Run in the background and await availability.
 
-  The mandatory environment variable `REACH_CONNECTOR_MODE` specifies which devnet to run.
+The mandatory environment variable `REACH_CONNECTOR_MODE` specifies which devnet to run.
 The options are:
 
 + `ETH`, which runs an Ethereum devnet on `localhost:8545`
@@ -268,7 +268,7 @@ The options are:
 
 + The environment variable `REACH_DEBUG` enables some additional debugging information for the Algorand devnet, which is accessible via http://localhost:9392
 
-For more information on devnet options, refer to [Networks](##ref-networks)
+For more information on devnet options, refer to [Networks](##ref-networks).
 
 # {#ref-usage-rpc-server} `reach rpc-server`
 
