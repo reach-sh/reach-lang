@@ -749,7 +749,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
       // ALGO_NODE_WRITE_ONLY from here to makeProviderByWallet
       if ( typeof base === 'string' ) {
         // @ts-ignore
-        updateProcessEnv(await providerEnvByName(base));
+        updateProcessEnv(providerEnvByName(base));
       } else {
         updateProcessEnv(base);
       }
@@ -1808,9 +1808,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   const me_na = { networkAccount };
   const tokenAccepted = async (token:Token): Promise<boolean> => {
     debug(`tokenAccepted`, token);
-    // @ts-ignore
-    const r = await balanceOfM(me_na, token);
-    return ( r !== false );
+    const addr = extractAddr(me_na);
+    const accountInfo = await getAccountInfo(addr);
+    const tokenId = bigNumberify(token);
+    const accountAssets = accountInfo.assets || [];
+    return accountAssets.some(asset => tokenId.eq(asset['asset-id']));
   };
   const tokenAccept = async (token:Token): Promise<void> => {
     if ( ! (await tokenAccepted(token)) ) {
@@ -1871,29 +1873,33 @@ export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
   return accMinBalance;
 };
 
-const balanceOfM = async (acc: Account, token: Token|false = false): Promise<BigNumber|false> => {
-  const addr = extractAddr(acc);
-  const info = await getAccountInfo(addr);
-  debug(`balanceOf`, info);
-  if ( ! token ) {
-    return bigNumberify(info.amount);
-  } else {
-    for ( const ai of (info.assets || []) ) {
-      if ( bigNumberify(token).eq(ai['asset-id']) ) {
-        return bigNumberify(ai['amount']);
-      }
-    }
-    return false;
-  }
+export const balanceOf = async (acc: Account, token?: Token): Promise<BigNumber> => {
+  return (await balancesOf(acc, [token || null]))[0];
 };
 
-export const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
-  const r = await balanceOfM(acc, token);
-  if ( r === false ) {
-    return bigNumberify(0);
-  }
-  return r;
-};
+export const balancesOf = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber>> => {
+  // Implementation stolen from balanceOfM
+
+  const addr = extractAddr(acc);
+  const accountInfo = await getAccountInfo(addr);
+
+  const balanceOfSingleToken = (token: Token | null) => {
+    if (token) {
+      const tokenId = bigNumberify(token);
+      const accountAssets = accountInfo.assets || [];
+      for (const asset of accountAssets) {
+        if (tokenId.eq(asset['asset-id'])) {
+          return bigNumberify(asset['amount']);
+        }
+      }
+      return bigNumberify(0);
+    } else {
+      return bigNumberify(accountInfo.amount);
+    }
+  };
+
+  return tokens.map(balanceOfSingleToken);
+}
 
 export const createAccount = async (): Promise<Account> => {
   const networkAccount = algosdk.generateAccount();
