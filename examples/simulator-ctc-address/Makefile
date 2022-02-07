@@ -5,7 +5,7 @@ NPM = npm
 .PHONY: build
 build:
 	$(NPM) install
-	cp ../overview/index.rsh .
+	cp ../ctc-address/index.rsh .
 
 .PHONY: run
 run:
