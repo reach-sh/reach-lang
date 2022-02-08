@@ -1,5 +1,5 @@
-const c = await import('@reach-sh/simulator-client');
-const assert = await import('assert');
+import * as c from '@reach-sh/simulator-client';
+import * as  assert from 'assert';
 
 const main = async () => {
   const port = 3001
