@@ -1,5 +1,4 @@
 import { loadStdlib } from '@reach-sh/stdlib';
-import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 import * as backend from './build/index.main.mjs';
 
 const stdlib = loadStdlib();
@@ -21,7 +20,7 @@ await check('B', accB, '0.1');
 await check('C', accC, '0.1');
 await check('D', accD, '0');
 
-const zorkmid = await launchToken(stdlib, accA, "zorkmid", "ZMD");
+const zorkmid = await stdlib.launchToken(accA, "zorkmid", "ZMD");
 
 await check('A', accA, '0.2'); 
 
