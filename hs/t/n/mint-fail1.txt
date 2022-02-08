@@ -9,15 +9,15 @@ Verification failed:
 
   // Violation Witness
 
-  const v180 = protect<Object({"amt": UInt, "doEarlyTransfer": Bool, "metadata": Bytes(32), "name": Bytes(32), "supply": UInt, "symbol": Bytes(8), "url": Bytes(96)})>("Alice".interact.getParams());
+  const v257 = protect<Object({"amt": UInt, "doEarlyTransfer": Bool, "metadata": Bytes(32), "name": Bytes(32), "supply": UInt, "symbol": Bytes(8), "url": Bytes(96)})>("Alice".interact.getParams());
   //    ^ could = {amt: 0, doEarlyTransfer: false, metadata: "Bytes!val!0", name: "Bytes!val!1", supply: 1, symbol: "Bytes!val!2", url: "Bytes!val!3" }
   //      from: ./mint-fail1.rsh:24:104:application
 
   // Theorem Formalization
 
-  const v258 = 0 == v180.supply;
+  const v362 = 0 == v257.supply;
   //    ^ would be false
-  assert(v258);
+  assert(v362);
 
 Verification failed:
   when ALL participants are honest
@@ -28,4 +28,4 @@ Verification failed:
   assert(false);
 
   Verifying when NO participants are honest
-Checked 43 theorems; 4 failures (and 2 omitted repeats) :'(
+Checked 69 theorems; 4 failures (and 2 omitted repeats) :'(

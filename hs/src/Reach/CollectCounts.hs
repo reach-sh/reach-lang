@@ -109,7 +109,6 @@ instance Countable DLToken where
 instance Countable DLArg where
   counts = \case
     DLA_Var v -> counts v
-    DLA_Tok v -> counts v
     DLA_Constant {} -> mempty
     DLA_Literal {} -> mempty
     DLA_Interact {} -> mempty
@@ -165,6 +164,7 @@ instance Countable DLExpr where
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ mt tb -> counts mt <> counts tb
     DLE_FromSome _ mo da -> counts mo <> counts da
+    DLE_BalanceInit _ a -> counts a
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m

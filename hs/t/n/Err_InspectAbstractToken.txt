@@ -1,12 +1,13 @@
-reachc: error[RE0127]: Cannot inspect `Token` that was published inside of a container.
+reachc: error[RE0088]: These types are mismatched:
+  expected: UInt
+       got: Tuple(UInt, Token)
 
-  ./hs/t/n/abs_tok_pub_maybe.rsh:12:5:dot
+  reach standard library:33:49:block app
 
-  12|   A.publish(mt);
+  
 
 Trace:
-  in "fromMaybe" from (reach standard library:33:46:function exp) at (reach standard library:40:46:application)
-  in "maybe" from (reach standard library:40:34:function exp) at (./hs/t/n/abs_tok_pub_maybe.rsh:15:16:application)
+  in "maybe" from (reach standard library:40:34:function exp) at (./Err_InspectAbstractToken.rsh:15:16:application)
 
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0127
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0088
 

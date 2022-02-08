@@ -113,6 +113,7 @@ dt2st = \case
   T_Object tyMap -> ST_Object $ M.map dt2st tyMap
   T_Data tyMap -> ST_Data $ M.map dt2st tyMap
   T_Struct tys -> ST_Struct $ map (\(k, t) -> (k, dt2st t)) tys
+  T_TokenBalances {} -> impossible "dt2st: T_TokenBalances"
 
 st2it :: SLType -> Maybe IType
 st2it t = case t of
@@ -145,7 +146,6 @@ data SLVal
   | SLV_Data SrcLoc (M.Map SLVar DLType) SLVar SLVal
   | SLV_DLC DLConstant
   | SLV_DLVar DLVar
-  | SLV_DLTok DLToken
   | SLV_Type SLType
   | SLV_Connector T.Text
   | -- I really want to remove these two Maybes, but it is hard.
@@ -386,7 +386,6 @@ instance Pretty SLVal where
     SLV_Map mv -> "<map: " <> pretty mv <> ">"
     SLV_Anybody -> "Anybody"
     SLV_Deprecated d s -> "<deprecated: " <> viaShow d <> ">(" <> pretty s <> ")"
-    SLV_DLTok t -> pretty t
 
 instance SrcLocOf SLVal where
   srclocOf = \case
@@ -412,7 +411,6 @@ instance SrcLocOf SLVal where
     SLV_Kwd _ -> sb
     SLV_Map _ -> sb
     SLV_Deprecated _ v -> srclocOf v
-    SLV_DLTok {} -> sb
 
 isSmallLiteralArray :: SLVal -> Bool
 isSmallLiteralArray (SLV_Array _ _ _l) =

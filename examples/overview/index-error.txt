@@ -9,15 +9,21 @@ Verification failed:
 
   // Violation Witness
 
-  const v62 = "Alice".interact.request;
+  const v81 = "Alice".interact.request;
   //    ^ could = 1
   //      from: ./index-error.rsh:6:12:property binding
 
   // Theorem Formalization
 
-  const v91 = 0 == (v62 - (v62 - 1));
+  const v82 = <None null>;
+  //    ^ would be None(null )
+  const v84 = array(Tuple(Data({"None": Null, "Some": Token}), UInt), [[v82, 0 ] ]);
+  //    ^ would be array(Tuple(Data({"None": Null, "Some": Token}), UInt), [] )
+  const v103 = Array.set(v84, 0, [v82, (v84[0][1] + v81) ] );
+  //    ^ would be array(Tuple(Data({"None": Null, "Some": Token}), UInt), [[None(null ), 1 ] ] )
+  const v127 = 0 == Array.set(v103, 0, [v82, (v103[0][1] - (v81 - 1)) ] )[0][1];
   //    ^ would be false
-  assert(v91);
+  assert(v127);
 
   Verifying when NO participants are honest
-Checked 13 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 19 theorems; 2 failures (and 1 omitted repeats) :'(

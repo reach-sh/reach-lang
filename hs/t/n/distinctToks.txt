@@ -9,18 +9,18 @@ Verification failed:
 
   // Violation Witness
 
-  const v47 = "A".interact.x;
+  const v64 = "A".interact.x;
   //    ^ could = Token!val!0
   //      from: ./distinctToks.rsh:5:6:property binding
-  const v48 = "A".interact.y;
+  const v65 = "A".interact.y;
   //    ^ could = Token!val!0
   //      from: ./distinctToks.rsh:6:6:property binding
 
   // Theorem Formalization
 
-  const v61 = ((v48 == v47) ? false : true);
+  const v84 = ((v65 == v64) ? false : true);
   //    ^ would be false
-  require(v61);
+  require(v84);
 
   Verifying when NO participants are honest
-Checked 9 theorems; 1 failures :'(
+Checked 17 theorems; 1 failures :'(

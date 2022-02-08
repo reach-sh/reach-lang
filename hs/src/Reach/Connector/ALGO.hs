@@ -214,6 +214,7 @@ typeSig x =
     T_Object m -> typeSig $ T_Tuple $ M.elems m
     T_Data m -> "(byte,byte" <> array (maxTypeSize m) <> ")"
     T_Struct ts -> typeSig $ T_Tuple $ map snd ts
+    T_TokenBalances {} -> impossible "typeSig: T_TokenBalances"
   where
     array sz = "[" <> show sz <> "]"
 
@@ -232,6 +233,7 @@ typeSizeOf = \case
   T_Object m -> sum $ map typeSizeOf $ M.elems m
   T_Data m -> 1 + maxTypeSize m
   T_Struct ts -> sum $ map (typeSizeOf . snd) ts
+  T_TokenBalances {} -> impossible "typeSizeOf: T_TokenBalances"
   where
     word = 8
 
@@ -884,6 +886,7 @@ ctobs = \case
   T_Object {} -> nop
   T_Data {} -> nop
   T_Struct {} -> nop
+  T_TokenBalances {} -> impossible "ctobs: T_TokenBalances"
 
 cfrombs :: DLType -> App ()
 cfrombs = \case
@@ -900,6 +903,7 @@ cfrombs = \case
   T_Object {} -> nop
   T_Data {} -> nop
   T_Struct {} -> nop
+  T_TokenBalances {} -> impossible "cfrombs: T_TokenBalances"
 
 ctzero :: DLType -> App ()
 ctzero = \case
@@ -941,7 +945,6 @@ cv = lookup_let
 ca :: DLArg -> App ()
 ca = \case
   DLA_Var v -> cv v
-  DLA_Tok (DLToken v _) -> ca $ DLA_Var v
   DLA_Constant c -> cl $ conCons' c
   DLA_Literal c -> cl c
   DLA_Interact {} -> impossible "consensus interact"
@@ -949,7 +952,6 @@ ca = \case
 argSmall :: DLArg -> App Bool
 argSmall = \case
   DLA_Var v -> letSmall v
-  DLA_Tok (DLToken v _) -> argSmall $ DLA_Var v
   DLA_Constant {} -> return True
   DLA_Literal {} -> return True
   DLA_Interact {} -> impossible "consensus interact"
@@ -1695,6 +1697,7 @@ ce = \case
     -- [ Default, Object, Tag ]
     -- [ False, True, Cond ]
     op "select"
+  DLE_BalanceInit {} -> impossible "ce: DLE_BalanceInit"
   where
     show_stack :: String -> Maybe BS.ByteString -> SrcLoc -> [SLCtxtFrame] -> App ()
     show_stack what msg at fs = do

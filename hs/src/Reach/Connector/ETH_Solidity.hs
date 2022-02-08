@@ -342,7 +342,6 @@ instance DepthOf DLVar where
 instance DepthOf DLArg where
   depthOf = \case
     DLA_Var v -> depthOf v
-    DLA_Tok (DLToken v _) -> depthOf v
     DLA_Constant {} -> return 0
     DLA_Literal {} -> return 0
     DLA_Interact {} -> return 0
@@ -399,6 +398,7 @@ instance DepthOf DLExpr where
     DLE_setApiDetails {} -> return 0
     DLE_GetUntrackedFunds _ mt tb -> max <$> depthOf mt <*> depthOf tb
     DLE_FromSome _ mo da -> add1 $ depthOf [mo, da]
+    DLE_BalanceInit {} -> impossible "depthOf: DLE_BalanceInit"
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])
@@ -445,6 +445,7 @@ mustBeMem = \case
   T_Object {} -> True
   T_Data {} -> True
   T_Struct {} -> True
+  T_TokenBalances {} -> impossible "mustBeMem: T_TokenBalances"
 
 mayMemSol :: Doc -> Doc
 mayMemSol x =
@@ -477,7 +478,6 @@ solLit = \case
 solArg :: AppT DLArg
 solArg = \case
   DLA_Var v -> solVar v
-  DLA_Tok (DLToken v _) -> solVar v
   DLA_Constant c -> return $ solLit $ conCons' c
   DLA_Literal c -> return $ solLit c
   DLA_Interact {} -> impossible "consensus interact"
@@ -673,6 +673,7 @@ solExpr sp = \case
     c <- solEq (mo' <> ".which") (solVariant t vn)
     return $ parens $ c <+> "?" <+> (mo' <> "._" <> pretty vn) <+> ":" <+> da'
   DLE_GetUntrackedFunds {} -> impossible "getUntrackedFunds"
+  DLE_BalanceInit {} -> impossible "solExpr: DLE_BalanceInit"
   where
     spa m = (<> sp) <$> m
 
@@ -1383,6 +1384,7 @@ solDefineType t = case t of
     let structp = fromMaybe (impossible "T_Data") $ solStruct name $ ("which", enumn) : map (\(k, kt) -> (pretty ("_" <> k), kt)) (M.toAscList tmn)
     addDef i $ vsep [enump, structp]
   T_Struct ats -> void $ doStruct ats
+  T_TokenBalances {} -> impossible "solDefineType: T_TokenBalances"
   where
     base = impossible "base"
     addMap d = modifyCtxtIO ctxt_typem $ M.insert t d

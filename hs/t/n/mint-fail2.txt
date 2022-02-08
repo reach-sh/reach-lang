@@ -11,17 +11,59 @@ Verification failed:
 
   const UInt.max = 35424;
 
-  const v190 = protect<Object({"amt": UInt, "doEarlyTransfer": Bool, "metadata": Bytes(32), "name": Bytes(32), "supply": UInt, "symbol": Bytes(8), "url": Bytes(96)})>("Alice".interact.getParams());
+  const v276 = protect<Object({"amt": UInt, "doEarlyTransfer": Bool, "metadata": Bytes(32), "name": Bytes(32), "supply": UInt, "symbol": Bytes(8), "url": Bytes(96)})>("Alice".interact.getParams());
   //    ^ could = {amt: 8856, doEarlyTransfer: false, metadata: "Bytes!val!0", name: "Bytes!val!1", supply: 35424, symbol: "Bytes!val!2", url: "Bytes!val!3" }
   //      from: ./mint-fail2.rsh:24:104:application
+  const v302 = new Token({
+  decimals = null,
+  metadata = "Bytes!val!0",
+  name = "Bytes!val!1",
+  supply = 35424,
+  sym = "Bytes!val!2",
+  url = "Bytes!val!3"});
+  //    ^ could = Token!val!4
+  //      from: ./mint-fail2.rsh:33:25:application
+  const v398 = new Token({
+  decimals = null,
+  metadata = "Bytes!val!3",
+  name = "Bytes!val!1",
+  supply = UInt.max,
+  sym = "Bytes!val!2",
+  url = "Bytes!val!3"});
+  //    ^ could = Token!val!3
+  //      from: ./mint-fail2.rsh:69:25:application
 
   // Theorem Formalization
 
-  const v232 = 2 * v190.amt;
+  const v272 = [<None null>, 0 ];
+  //    ^ would be [None(null ), 0 ]
+  const v303 = emitLog(internal)(v302 );
+  //    ^ would be Token!val!4
+  const v305 = <Some v303>;
+  //    ^ would be Some(Token!val!4 )
+  const v307 = Array.set(array(Tuple(Data({"None": Null, "Some": Token}), UInt), [v272, v272, v272 ]), 1, [v305, v276.supply ] );
+  //    ^ would be array(Tuple(Data({"None": Null, "Some": Token}), UInt), [[Some(Token!val!4 ), 35424 ] ] )
+  const v319 = 2 * v276.amt;
   //    ^ would be 17712
-  const v313 = 0 == (UInt.max - ((UInt.max - v232) - v232));
+  const v331 = Array.set(v307, 1, [v305, (v307[1][1] - v319) ] );
+  //    ^ would be array(Tuple(Data({"None": Null, "Some": Token}), UInt), [[Some(Token!val!4 ), 17712 ] ] )
+  const v346 = Array.set(v331, 1, [v305, (v331[1][1] - v319) ] );
+  //    ^ would be array(Tuple(Data({"None": Null, "Some": Token}), UInt), [[Some(Token!val!4 ), 0 ] ] )
+  const v362 = Array.set(v346, 1, [v305, (v346[1][1] + v319) ] );
+  //    ^ would be array(Tuple(Data({"None": Null, "Some": Token}), UInt), [[Some(Token!val!4 ), 17712 ] ] )
+  const v376 = Array.set(v362, 1, [v305, (v362[1][1] + v319) ] );
+  //    ^ would be array(Tuple(Data({"None": Null, "Some": Token}), UInt), [[Some(Token!val!4 ), 35424 ] ] )
+  const v399 = emitLog(internal)(v398 );
+  //    ^ would be Token!val!3
+  const v401 = <Some v399>;
+  //    ^ would be Some(Token!val!3 )
+  const v403 = Array.set(Array.set(v376, 1, [v305, (v376[1][1] - v276.supply) ] ), 2, [v401, UInt.max ] );
+  //    ^ would be array(Tuple(Data({"None": Null, "Some": Token}), UInt), [[Some(Token!val!4 ), 0 ], [Some(Token!val!3 ), 35424 ] ] )
+  const v424 = Array.set(v403, 2, [v401, (v403[2][1] - v319) ] );
+  //    ^ would be array(Tuple(Data({"None": Null, "Some": Token}), UInt), [[Some(Token!val!4 ), 0 ], [Some(Token!val!3 ), 17712 ] ] )
+  const v463 = 0 == (UInt.max - Array.set(v424, 2, [v401, (v424[2][1] - v319) ] )[2][1]);
   //    ^ would be false
-  assert(v313);
+  assert(v463);
 
   Verifying when NO participants are honest
-Checked 47 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 76 theorems; 2 failures (and 1 omitted repeats) :'(

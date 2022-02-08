@@ -11,12 +11,12 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v26 = 1 == 0;
+  const v34 = 1 == 0;
   //    ^ would be false
-  assert(v26);
+  assert(v34);
 
   Verifying when NO participants are honest
-Checked 3 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 5 theorems; 2 failures (and 1 omitted repeats) :'(
 warning[RW0004]: There are no publications in the application.
 
   ./pr175.rsh:2:30:application
