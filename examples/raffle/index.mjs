@@ -4,7 +4,7 @@ import * as backend from './build/index.main.mjs';
 const numOfPlayers = 2;
 
 (async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
 
   const fmt = (x) => stdlib.formatCurrency(x, 4);

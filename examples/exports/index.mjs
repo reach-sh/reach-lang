@@ -14,7 +14,7 @@ const equals = (a, b) => {
 };
 
 (async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
 
   const alice = await stdlib.newTestAccount(startingBalance);

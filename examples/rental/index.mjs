@@ -1,6 +1,6 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 
 (async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
   console.log(`Compile-only demo`);
 })();

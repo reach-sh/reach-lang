@@ -5,7 +5,7 @@ const assertEq = (l, r) =>
   console.assert(JSON.stringify(l) === JSON.stringify(r));
 
 (async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
   const { winnerIs, ROCK, PAPER, SCISSORS, B_WINS, A_WINS } = backend.getExports(stdlib);
 
   assertEq(winnerIs(ROCK, PAPER), B_WINS);

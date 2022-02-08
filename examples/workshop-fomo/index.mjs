@@ -4,7 +4,7 @@ import * as backend from './build/index.main.mjs';
 const numOfBuyers = 10;
 
 (async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
 
   const accFunder = await stdlib.newTestAccount(startingBalance);

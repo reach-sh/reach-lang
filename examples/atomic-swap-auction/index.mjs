@@ -20,7 +20,7 @@ const N = 3;
 const bidderNames = ["Alice", "Bob", "Camus"];
 
 (async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
 
   const timeout = stdlib.connector === 'CFX' ? 25 : N * 3;
 
