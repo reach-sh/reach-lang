@@ -9,15 +9,15 @@ Verification failed:
 
   // Violation Witness
 
-  const v30 = protect<UInt>("A".interact.getX());
+  const v38 = protect<UInt>("A".interact.getX());
 
   // Theorem Formalization
 
-  const v31 = v30 < 0;
-  possible(v31);
+  const v39 = v38 < 0;
+  possible(v39);
 
   Verifying when NO participants are honest
-Checked 2 theorems; 1 failures :'(
+Checked 4 theorems; 1 failures :'(
 warning[RW0004]: There are no publications in the application.
 
   ./impossible.rsh:3:30:application

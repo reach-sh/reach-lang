@@ -11,15 +11,15 @@ Verification failed:
 
   const UInt.max = 1;
 
-  const v43 = protect<UInt>("A".interact.get());
+  const v50 = protect<UInt>("A".interact.get());
   //    ^ could = 1
   //      from: ./overflow_con.rsh:9:40:application
 
   // Theorem Formalization
 
-  const v52 = v43 <= (UInt.max - 1);
+  const v58 = v50 <= (UInt.max - 1);
   //    ^ would be false
-  assert(v52);
+  assert(v58);
 
   Verifying when NO participants are honest
-Checked 7 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 9 theorems; 2 failures (and 1 omitted repeats) :'(

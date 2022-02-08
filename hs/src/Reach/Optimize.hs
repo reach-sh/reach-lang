@@ -266,7 +266,6 @@ instance Optimize Bool where
 instance Optimize DLArg where
   opt = \case
     DLA_Var v -> opt_v2a v
-    DLA_Tok (DLToken v _) -> opt $ DLA_Var v
     DLA_Constant c -> return $ DLA_Constant c
     DLA_Literal c -> return $ DLA_Literal c
     DLA_Interact p m t -> return $ DLA_Interact p m t
@@ -434,6 +433,7 @@ instance Optimize DLExpr where
                 _ -> return $ DLE_Arg at da'
             _ -> meh
         _ -> meh
+    DLE_BalanceInit i v -> DLE_BalanceInit i <$> opt v
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
   gcs _ = return ()

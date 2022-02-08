@@ -9,7 +9,7 @@ Verification failed:
   assert(false);
 
   Verifying when NO participants are honest
-Checked 5 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 7 theorems; 2 failures (and 1 omitted repeats) :'(
 warning[RW0004]: There are no publications in the application.
 
   ./assert_false.rsh:3:30:application

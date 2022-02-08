@@ -144,7 +144,6 @@ instance (Foldable f, AllPoints a) => AllPoints (f a) where
 instance AllPoints DLArg where
   all_points = \case
     DLA_Var v -> S.singleton $ P_Var v
-    DLA_Tok (DLToken v _) -> S.singleton $ P_Var v
     DLA_Constant _ -> S.singleton $ P_Con
     DLA_Literal _ -> S.singleton $ P_Con
     DLA_Interact who what _ -> S.singleton $ P_Interact who what
@@ -255,6 +254,7 @@ kgq_e ctxt mv = \case
   DLE_FromSome _ mo da -> do
     kgq_a_all ctxt mo
     kgq_a_all ctxt da
+  DLE_BalanceInit {} -> impossible "kgq_e: DLE_BalanceInit"
 
 kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case

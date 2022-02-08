@@ -2,8 +2,8 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 7 theorems; No failures!
-reachc: error[RAPI0004]: API "f" refers to non-consensus state: [x/58 from ./API_NonCS.rsh:12:24:id]
+Checked 9 theorems; No failures!
+reachc: error[RAPI0004]: API "f" refers to non-consensus state: [x/64 from ./API_NonCS.rsh:12:24:id]
 
   ./API_NonCS.rsh:3:30:application
 

@@ -68,6 +68,7 @@ data SLState = SLState
     st_pdvs :: SLPartDVars
   , st_toks :: [DLVar]
   , st_toks_c :: S.Set DLVar
+  , st_tok_pos :: M.Map DLArg Int
   }
   deriving (Eq, Show)
 

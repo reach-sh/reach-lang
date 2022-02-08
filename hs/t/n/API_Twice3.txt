@@ -2,7 +2,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 21 theorems; No failures!
+Checked 24 theorems; No failures!
 reachc: error[RAPI0002]: API "P_get" occurs multiple times in program
 
   ./API_Twice3.rsh:10:10:application

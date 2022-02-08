@@ -9,25 +9,35 @@ Verification failed:
 
   // Violation Witness
 
-  const v75 = "Alice".interact.wager;
+  const v112 = "Alice".interact.wager;
   //    ^ could = 1
   //      from: ./index-bad.rsh:11:10:property binding
-  const v78 = protect<UInt>("Alice".interact.getHand());
-  //    ^ could = 8
+  const v118 = protect<UInt>("Alice".interact.getHand());
+  //    ^ could = 0
   //      from: ./index-bad.rsh:21:50:application
-  const v88 = protect<UInt>("Bob".interact.getHand());
-  //    ^ could = 4
+  const v134 = protect<UInt>("Bob".interact.getHand());
+  //    ^ could = 2
   //      from: ./index-bad.rsh:29:48:application
 
   // Theorem Formalization
 
-  const v97 = (v78 + (4 - v88)) % 3;
+  const v113 = <None null>;
+  //    ^ would be None(null )
+  const v115 = array(Tuple(Data({"None": Null, "Some": Token}), UInt), [[v113, 0 ] ]);
+  //    ^ would be array(Tuple(Data({"None": Null, "Some": Token}), UInt), [] )
+  const v131 = Array.set(v115, 0, [v113, (v115[0][1] + v112) ] );
+  //    ^ would be array(Tuple(Data({"None": Null, "Some": Token}), UInt), [[None(null ), 1 ] ] )
+  const v146 = Array.set(v131, 0, [v113, (v131[0][1] + v112) ] );
+  //    ^ would be array(Tuple(Data({"None": Null, "Some": Token}), UInt), [[None(null ), 2 ] ] )
+  const v149 = (v118 + (4 - v134)) % 3;
   //    ^ would be 2
-  const v104 = ((v97 == 2) ? [1, 0 ] : ((v97 == 0) ? [0, 2 ] : [1, 1 ]));
+  const v156 = ((v149 == 2) ? [1, 0 ] : ((v149 == 0) ? [0, 2 ] : [1, 1 ]));
   //    ^ would be [1, 0 ]
-  const v118 = 0 == (((v75 + v75) - (v104[0] * v75)) - (v104[1] * v75));
+  const v171 = Array.set(v146, 0, [v113, (v146[0][1] - (v156[0] * v112)) ] );
+  //    ^ would be array(Tuple(Data({"None": Null, "Some": Token}), UInt), [[None(null ), 1 ] ] )
+  const v188 = 0 == Array.set(v171, 0, [v113, (v171[0][1] - (v156[1] * v112)) ] )[0][1];
   //    ^ would be false
-  assert(v118);
+  assert(v188);
 
   Verifying when NO participants are honest
-Checked 12 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 23 theorems; 2 failures (and 1 omitted repeats) :'(

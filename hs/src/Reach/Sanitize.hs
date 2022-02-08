@@ -32,7 +32,6 @@ instance Sanitize DLArg where
   sani a =
     case a of
       DLA_Var {} -> a
-      DLA_Tok {} -> a
       DLA_Constant {} -> a
       DLA_Literal l -> DLA_Literal $ sani l
       DLA_Interact {} -> a
@@ -88,6 +87,7 @@ instance Sanitize DLExpr where
     DLE_setApiDetails _ w d c f -> DLE_setApiDetails sb w d c f
     DLE_GetUntrackedFunds _ mt tb -> DLE_GetUntrackedFunds sb (sani mt) (sani tb)
     DLE_FromSome _ mo da -> DLE_FromSome sb (sani mo) (sani da)
+    DLE_BalanceInit i v -> DLE_BalanceInit i (sani v)
 
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m

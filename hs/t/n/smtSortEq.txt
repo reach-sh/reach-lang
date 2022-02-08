@@ -10,21 +10,21 @@ Verification failed:
 
   const UInt.max = 2;
 
-  const x/128 = <loop variable>;
+  const x/136 = <loop variable>;
   //    ^ could = 2
   //      from: ./smtSortEq.rsh:9:27:while
-  const balance(0)/131 = <loop variable>;
-  //    ^ could = 0
+  const balances[1]/139 = <loop variable>;
+  //    ^ could = array(Tuple(Data({"None": Null, "Some": Token}), UInt), [] )
   //      from: ./smtSortEq.rsh:9:27:while
-  const v158 = <map reduction>;
+  const v169 = <map reduction>;
   //    ^ could = 3
   //      from: reach standard library:139:18:application
 
   // Theorem Formalization
 
-  const v166 = ((balance(0)/131 == 0) ? (v158 == x/128) : false);
+  const v177 = ((balances[1]/139[0][1] == 0) ? (v169 == x/136) : false);
   //    ^ would be false
-  assert(v166);
+  assert(v177);
 
   Verifying when NO participants are honest
-Checked 19 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 22 theorems; 2 failures (and 1 omitted repeats) :'(

@@ -9,21 +9,21 @@ Verification failed:
 
   // Violation Witness
 
-  const v33 = protect<UInt>("A".interact.getX());
+  const v41 = protect<UInt>("A".interact.getX());
   //    ^ could = 1
   //      from: ./assert_more_expr.rsh:8:32:application
-  const v34 = protect<UInt>("A".interact.getX());
+  const v42 = protect<UInt>("A".interact.getX());
   //    ^ could = 0
   //      from: ./assert_more_expr.rsh:9:32:application
 
   // Theorem Formalization
 
-  const v37 = (v33 + v34) == (v33 * 2);
+  const v45 = (v41 + v42) == (v41 * 2);
   //    ^ would be false
-  assert(v37);
+  assert(v45);
 
   Verifying when NO participants are honest
-Checked 2 theorems; 1 failures :'(
+Checked 4 theorems; 1 failures :'(
 warning[RW0004]: There are no publications in the application.
 
   ./assert_more_expr.rsh:3:30:application
