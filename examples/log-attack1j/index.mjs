@@ -2,7 +2,6 @@ import * as stdlib_loader from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 import ethers from 'ethers';
 import * as fs from 'fs';
-import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
 (async () => {
   const stdlib = await stdlib_loader.loadStdlib();

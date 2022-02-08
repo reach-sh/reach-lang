@@ -1,5 +1,4 @@
 import { loadStdlib } from '@reach-sh/stdlib';
-import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 import * as backend from './build/index.main.mjs';
 
 const stdlib = loadStdlib();
@@ -13,7 +12,7 @@ const accB = await stdlib.newTestAccount(startingBalance);
 const accC = await stdlib.newTestAccount(startingBalance);
 const accD = await stdlib.createAccount();
 
-const zorkmid = await launchToken(stdlib, accA, "zorkmid", "ZMD");
+const zorkmid = await stdlib.launchToken(accA, "zorkmid", "ZMD");
 const ctcA = accA.contract(backend);
 const ctcB = accB.contract(backend, ctcA.getInfo());
 await Promise.all([

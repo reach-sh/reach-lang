@@ -1,6 +1,5 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
-import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
 const shouldFail = async (fp) => {
   let worked = undefined;
@@ -23,8 +22,8 @@ const shouldFail = async (fp) => {
 
   const startingBalance = stdlib.parseCurrency(100);
   const accCreator = await stdlib.newTestAccount(startingBalance);
-  const zorkmid = await launchToken(stdlib, accCreator, "zorkmid", "ZMD");
-  const gil = await launchToken(stdlib, accCreator, "gil", "GIL");
+  const zorkmid = await stdlib.launchToken(accCreator, "zorkmid", "ZMD");
+  const gil = await stdlib.launchToken(accCreator, "gil", "GIL");
 
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);

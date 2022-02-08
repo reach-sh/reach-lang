@@ -3,7 +3,6 @@ import * as backend from './build/index.main.mjs';
 import real_ethers from 'ethers';
 import * as cfxers from '@reach-sh/stdlib/cfxers.mjs';
 import * as fs from 'fs';
-import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
 (async () => {
   const stdlib = await stdlib_loader.loadStdlib();
@@ -18,11 +17,11 @@ import launchToken from '@reach-sh/stdlib/launchToken.mjs';
   accBob.setDebugLabel('Bob').setGasLimit(myGasLimit);
   accCreator.setDebugLabel('Creator').setGasLimit(myGasLimit);
 
-  const gil = await launchToken(stdlib, accCreator, "gil", "GIL");
+  const gil = await stdlib.launchToken(accCreator, "gil", "GIL");
   await gil.mint(accAlice, startingBalance);
   await gil.mint(accAlice, startingBalance);
 
-  const zorkmid = await launchToken(stdlib, accCreator, "zorkmid", "ZMD");
+  const zorkmid = await stdlib.launchToken(accCreator, "zorkmid", "ZMD");
   await zorkmid.mint(accAlice, startingBalance);
   await zorkmid.mint(accAlice, startingBalance);
 
