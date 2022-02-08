@@ -17,7 +17,7 @@ const shouldFail = async (fp) => {
 };
 
 (async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
 
   const time = stdlib.connector === 'CFX' ? 50 : 10;
 

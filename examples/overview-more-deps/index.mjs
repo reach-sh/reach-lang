@@ -3,7 +3,7 @@ import * as backend from './build/index.main.mjs';
 import rightpad from 'rightpad';
 
 (async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
 
   const accAlice = await stdlib.newTestAccount(stdlib.parseCurrency(100));
   const accBob = await stdlib.newTestAccount(stdlib.parseCurrency(100));

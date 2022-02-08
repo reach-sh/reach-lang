@@ -2,7 +2,7 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 import * as backend from './build/index.main.mjs';
 
-const stdlib = await loadStdlib();
+const stdlib = loadStdlib();
 const startingBalance = stdlib.parseCurrency(100);
 
 let code = 0;
