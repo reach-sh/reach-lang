@@ -8,24 +8,24 @@ Verification failed:
 
   // Violation Witness
 
-  const sum/179 = <loop variable>;
+  const sum/214 = <loop variable>;
   //    ^ could = 0
   //      from: ./pr-671006p.rsh:31:37:while
-  const balance(0)/182 = <loop variable>;
-  //    ^ could = 0
+  const balances[1]/217 = <loop variable>;
+  //    ^ could = array(Tuple(Data({"None": Null, "Some": Token}), UInt), [] )
   //      from: ./pr-671006p.rsh:31:37:while
-  const v231 = <map reduction>;
+  const v277 = <map reduction>;
   //    ^ could = 1
   //      from: reach standard library:139:18:application
 
   // Theorem Formalization
 
-  const v239 = ((balance(0)/182 == sum/179) ? (sum/179 == v231) : false);
+  const v285 = ((balances[1]/217[0][1] == sum/214) ? (sum/214 == v277) : false);
   //    ^ would be false
-  assert(v239);
+  assert(v285);
 
   Verifying when NO participants are honest
-Checked 34 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 46 theorems; 2 failures (and 1 omitted repeats) :'(
 warning[RW0000]: Using a bare value as a time argument is now deprecated. Please use relativeTime, absoluteTime, relativeSecs, or absoluteSecs.
 
   ./pr-671006p.rsh:45:13:application

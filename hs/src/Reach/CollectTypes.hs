@@ -65,6 +65,7 @@ instance CollectsTypes DLType where
         T_Object m -> cts m
         T_Data m -> cts m
         T_Struct elems -> cts $ map snd elems
+        T_TokenBalances _ -> mempty
 
 instance CollectsTypes IType where
   cts = \case
@@ -140,6 +141,7 @@ instance CollectsTypes DLExpr where
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ mt tb -> cts mt <> cts tb
     DLE_FromSome _ mo da -> cts mo <> cts da
+    DLE_BalanceInit _ a -> cts a
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m

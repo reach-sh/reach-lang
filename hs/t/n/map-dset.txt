@@ -9,10 +9,10 @@ Verification failed:
 
   // Violation Witness
 
-  const v72 = protect<UInt>("Alice".interact.get());
+  const v75 = protect<UInt>("Alice".interact.get());
   //    ^ could = 38
   //      from: ./map-dset.rsh:16:51:application
-  const v81 = protect<UInt>("Bob".interact.get());
+  const v83 = protect<UInt>("Bob".interact.get());
   //    ^ could = 0
   //      from: ./map-dset.rsh:21:51:application
 
@@ -27,4 +27,4 @@ Verification failed:
   require(v100);
 
   Verifying when NO participants are honest
-Checked 14 theorems; 1 failures :'(
+Checked 16 theorems; 1 failures :'(

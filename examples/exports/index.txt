@@ -2,7 +2,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 14 theorems; No failures!
+Checked 16 theorems; No failures!
 warning[RW0004]: There are no publications in the application.
 
   ./index.rsh:38:30:application

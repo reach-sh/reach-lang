@@ -2,7 +2,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 4 theorems; No failures!
+Checked 6 theorems; No failures!
 reachc: error[RAPI0001]: API "Writer_f" calls interact.out() before interact.in()
 
   ./API_OutBeforeIn.rsh:1:21:application

@@ -55,11 +55,15 @@ data DLType
   | T_Object (M.Map SLVar DLType)
   | T_Data (M.Map SLVar DLType)
   | T_Struct [(SLVar, DLType)]
+  | T_TokenBalances Integer
   deriving (Eq, Generic, Ord)
 
 instance FromJSON DLType
 
 instance ToJSON DLType
+
+balanceElemTy :: DLType
+balanceElemTy = T_Tuple [T_Data maybeTokenMap, T_UInt]
 
 maybeT :: DLType -> DLType
 maybeT t = T_Data $ M.fromList $ [("None", T_Null), ("Some", t)]
@@ -124,6 +128,7 @@ instance Show DLType where
     (T_Object tyMap) -> "Object({" <> showTyMap tyMap <> "})"
     (T_Data tyMap) -> "Data({" <> showTyMap tyMap <> "})"
     (T_Struct tys) -> "Struct([" <> showTyList tys <> "])"
+    T_TokenBalances i -> "TokenBalances(" <> show i <> ")"
 
 instance Pretty DLType where
   pretty = viaShow
@@ -261,7 +266,7 @@ instance Ord DLVar where
   (DLVar _ _ _ x) <= (DLVar _ _ _ y) = x <= y
 
 instance Pretty DLVar where
-  pretty (DLVar _ _ _ i) = "v" <> viaShow i
+  pretty (DLVar _ _ t i) = ("v" <> viaShow i <> " : " <> viaShow t )
 
 instance Show DLVar where
   show (DLVar _ b _ i) =
@@ -314,7 +319,6 @@ dlmi_tym = maybeT . dlmi_ty
 
 data DLArg
   = DLA_Var DLVar
-  | DLA_Tok DLToken
   | DLA_Constant DLConstant
   | DLA_Literal DLLiteral
   | DLA_Interact SLPart String DLType
@@ -329,9 +333,6 @@ instance PrettySubst DLArg where
       return $ pretty who <> ".interact." <> pretty m
     DLA_Constant x -> return $ pretty x
     DLA_Literal x -> return $ pretty x
-    DLA_Tok dt -> do
-      dt' <- prettySubst dt
-      return $ "Token" <> parens dt'
 
 asnLike :: [DLVar] -> [(DLVar, DLArg)]
 asnLike = map (\x -> (x, DLA_Var x))
@@ -342,7 +343,6 @@ class CanDupe a where
 instance CanDupe DLArg where
   canDupe = \case
     DLA_Var {} -> True
-    DLA_Tok {} -> True
     DLA_Constant {} -> True
     DLA_Literal {} -> True
     DLA_Interact {} -> False
@@ -350,7 +350,6 @@ instance CanDupe DLArg where
 argTypeOf :: DLArg -> DLType
 argTypeOf = \case
   DLA_Var (DLVar _ _ t _) -> t
-  DLA_Tok {} -> T_Token
   DLA_Constant c -> conTypeOf c
   DLA_Literal c -> litTypeOf c
   DLA_Interact _ _ t -> t
@@ -639,6 +638,7 @@ data DLExpr
   | DLE_GetUntrackedFunds SrcLoc (Maybe DLArg) DLArg
   | DLE_FromSome SrcLoc DLArg DLArg
   -- Maybe try to generalize FromSome into a Match
+  | DLE_BalanceInit Int DLVar
   deriving (Eq, Ord, Generic)
 
 data LogKind
@@ -646,6 +646,10 @@ data LogKind
   | L_Event (Maybe SLPart) String
   | L_Internal
   deriving (Eq, Ord, Show)
+
+initBalanceToLArg :: Int -> DLVar -> DLLargeArg
+initBalanceToLArg i v =
+  DLLA_Array balanceElemTy $ (map DLA_Var $ take i $ repeat v)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
 prettyClaim ct a m = do
@@ -783,6 +787,7 @@ instance PrettySubst DLExpr where
       mo' <- prettySubst mo
       da' <- prettySubst da
       return $ "fromSome" <> parens (render_das [mo', da'])
+    DLE_BalanceInit i v -> return $ "balanceInit" <> parens (pretty i <> ", " <> pretty v)
 
 instance PrettySubst LogKind where
   prettySubst = \case
@@ -835,6 +840,7 @@ instance IsPure DLExpr where
     DLE_setApiDetails {} -> False
     DLE_GetUntrackedFunds {} -> False
     DLE_FromSome {} -> True
+    DLE_BalanceInit {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -870,6 +876,7 @@ instance IsLocal DLExpr where
     DLE_setApiDetails {} -> False
     DLE_GetUntrackedFunds {} -> True
     DLE_FromSome {} -> True
+    DLE_BalanceInit {} -> False
 
 instance CanDupe DLExpr where
   canDupe e =
@@ -1099,7 +1106,7 @@ instance Pretty a => Pretty (DLRecv a) where
       <> render_nest (pretty dr_k)
 
 data FluidVar
-  = FV_balance Int
+  = FV_balances Integer (M.Map DLArg Int)
   | FV_supply Int
   | FV_destroyed Int
   | FV_thisConsensusTime
@@ -1113,7 +1120,7 @@ data FluidVar
 
 instance Pretty FluidVar where
   pretty = \case
-    FV_balance i -> "balance" <> parens (pretty i)
+    FV_balances i _ -> "balances" <> brackets (pretty i)
     FV_supply i -> "supply" <> parens (pretty i)
     FV_destroyed i -> "destroyed" <> parens (pretty i)
     FV_thisConsensusTime -> "thisConsensusTime"
@@ -1124,9 +1131,12 @@ instance Pretty FluidVar where
     FV_baseWaitSecs -> "baseWaitSecs"
     FV_didSend -> "didPublish"
 
+maybeTokenMap :: M.Map SLVar DLType
+maybeTokenMap = M.fromList [("None", T_Null), ("Some", T_Token)]
+
 fluidVarType :: FluidVar -> DLType
 fluidVarType = \case
-  FV_balance _ -> T_UInt
+  FV_balances i _ -> T_TokenBalances (i + 1)
   FV_supply _ -> T_UInt
   FV_destroyed _ -> T_Bool
   FV_thisConsensusTime -> T_UInt
@@ -1145,12 +1155,12 @@ allFluidVars bals =
   , FV_thisConsensusSecs
   , FV_lastConsensusSecs
   , FV_baseWaitSecs
+  , FV_balances (toInteger bals + 1) mempty
   -- This function is not really to get all of them, but just to
   -- get the ones that must be saved for a loop. didSend is only used locally,
   -- so it doesn't need to be saved.
   --, FV_didSend
   ]
-    <> map FV_balance all_toks
     <> map FV_supply all_toks
     <> map FV_destroyed all_toks
   where

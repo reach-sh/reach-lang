@@ -153,6 +153,7 @@ jsContract_ = \case
           return $ jsArray [jsString k, t']
     as' <- mapM go as
     return $ jsApply ("stdlib.T_Struct") $ [jsArray as']
+  T_TokenBalances {} -> impossible "T_TokenBalances"
 
 jsContract :: DLType -> App Doc
 jsContract t = do
@@ -221,7 +222,6 @@ jsCon = \case
 jsArg :: AppT DLArg
 jsArg = \case
   DLA_Var v -> jsVar v
-  DLA_Tok (DLToken v _) -> jsArg $ DLA_Var v
   DLA_Constant c ->
     case c of
       DLC_UInt_max ->
@@ -472,6 +472,7 @@ jsExpr = \case
     mo' <- jsArg mo
     da' <- jsArg da
     return $ jsApply "stdlib.fromSome" [mo', da']
+  DLE_BalanceInit {} -> impossible "jsExpr: DLE_BalanceInit"
 
 jsEmitSwitch :: AppT k -> SrcLoc -> DLVar -> SwitchCases k -> App Doc
 jsEmitSwitch iter _at ov csm = do

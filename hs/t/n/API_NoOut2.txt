@@ -2,7 +2,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 19 theorems; No failures!
+Checked 22 theorems; No failures!
 reachc: error[RAPI0003]: API "C_f" does not return result in same consensus step
 
   ./API_NoOut2.rsh:17:7:while

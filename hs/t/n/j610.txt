@@ -9,13 +9,13 @@ Verification failed:
 
   // Violation Witness
 
-  const didPublish/23 = <a publication>;
+  const didPublish/25 = <a publication>;
   //    ^ could = false
   //      from: ./j610.rsh:6:5:dot
 
   // Theorem Formalization
 
-  assert(didPublish/23);
+  assert(didPublish/25);
 
   Verifying when NO participants are honest
-Checked 5 theorems; 1 failures :'(
+Checked 7 theorems; 1 failures :'(

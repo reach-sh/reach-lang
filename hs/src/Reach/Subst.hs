@@ -106,6 +106,7 @@ instance Subst DLExpr where
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mtok tb -> DLE_GetUntrackedFunds at <$> subst mtok <*> subst tb
     DLE_FromSome at mo da -> DLE_FromSome at <$> subst mo <*> subst da
+    DLE_BalanceInit i v -> DLE_BalanceInit i <$> subst v
 
 instance Subst DLStmt where
   subst = \case

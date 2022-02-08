@@ -9,7 +9,7 @@ Verification failed:
   possible(false);
 
   Verifying when NO participants are honest
-Checked 5 theorems; 4 failures (and 3 omitted repeats) :'(
+Checked 7 theorems; 4 failures (and 3 omitted repeats) :'(
 warning[RW0004]: There are no publications in the application.
 
   ./possible_false.rsh:3:30:application

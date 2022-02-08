@@ -12,7 +12,7 @@ Verification failed:
   assert(false);
 
   Verifying when NO participants are honest
-Checked 2 theorems; 1 failures :'(
+Checked 4 theorems; 1 failures :'(
 warning[RW0004]: There are no publications in the application.
 
   ./fxsqrt.rsh:5:12:application

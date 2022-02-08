@@ -2,7 +2,7 @@ reachc: error[RE0054]: Invalid arg for Array_iota. The argument must be computab
 
   reach standard library:198:13:application
 
-  
+
 
 Trace:
   in "sqrt" from (reach standard library:197:28:function exp) at (./Err_Prim_InvalidArg_Dynamic.rsh:9:20:application)

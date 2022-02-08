@@ -2,7 +2,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 10 theorems; No failures!
+Checked 12 theorems; No failures!
 warning[RW0005]: The `Object` type is internal to Reach. Use `Struct` instead for external interfaces.
 
   ./obj_view_api.rsh:7:17:application
