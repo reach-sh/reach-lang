@@ -1,7 +1,6 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-(async () => {
   const stdlib = loadStdlib();
   const startingBalance = stdlib.parseCurrency(10 * 25);
 
@@ -29,4 +28,3 @@ import * as backend from './build/index.main.mjs';
   console.log(`Done`);
   process.exit();
 
-})();

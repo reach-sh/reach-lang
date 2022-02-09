@@ -10,7 +10,6 @@ const assertEq = (a, b) => {
   }
 }
 
-(async () => {
   const startingBalance = stdlib.parseCurrency(100);
 
   const [ accAlice ] =
@@ -45,4 +44,3 @@ const assertEq = (a, b) => {
   await Promise.all([
     backend.Alice(ctcAlice, {}),
   ]);
-})();

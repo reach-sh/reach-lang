@@ -2,7 +2,6 @@ import { mkRPC }      from '@reach-sh/rpc-client';
 import { mkAssertEq } from './common.mjs';
 import chalk          from 'chalk';
 
-(async () => {
   const { rpc } = await mkRPC();
 
   const startingBalance      = await rpc('/stdlib/parseCurrency', 100);
@@ -26,4 +25,3 @@ import chalk          from 'chalk';
   assertEq(`/acc/setDebugLabel [ accBob, 'Bob' ]`,     accBob,   lBob);
 
   rpc('/forget/acc', accAlice, accBob);
-})();

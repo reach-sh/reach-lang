@@ -2,7 +2,6 @@ import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 import assert from 'assert';
 
-(async () => {
   const stdlib = loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
 
@@ -28,4 +27,3 @@ import assert from 'assert';
       },
     }),
   ]);
-})();

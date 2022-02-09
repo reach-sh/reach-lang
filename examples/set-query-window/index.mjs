@@ -2,7 +2,6 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib(process.env);
 
-(async () => {
   // This is just a lightly modified tut-3
   stdlib.setValidQueryWindow({
     CFX: 900, ETH: 900,
@@ -36,4 +35,3 @@ const stdlib = loadStdlib(process.env);
       ...Player('Bob'),
     }),
   ]);
-})();

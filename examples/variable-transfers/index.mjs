@@ -40,8 +40,6 @@ export const run = async (n) => {
   console.log(`Bob from ${beforeBob} to ${afterBob}`);
 };
 
-(async () => {
   await run(0);
   await run(1);
   await run(2);
-})();

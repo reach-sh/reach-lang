@@ -13,7 +13,6 @@ const equals = (a, b) => {
   return keys.every(k => equals(a[k], b[k]));
 };
 
-(async () => {
   const stdlib = loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
 
@@ -50,4 +49,3 @@ const equals = (a, b) => {
     }),
   ]);
 
-})();

@@ -15,7 +15,6 @@ const shouldFail = async (fp) => {
   }
 };
 
-(async () => {
   const stdlib = loadStdlib();
 
   const time = stdlib.connector === 'CFX' ? 50 : 10;
@@ -122,4 +121,3 @@ const shouldFail = async (fp) => {
   if ( ! await doSwap(zorkmid, amtA, gil, amtB, false) ) { return; }
   if ( ! await doSwap(gil, amtB, zorkmid, amtA, false) ) { return; }
   await doSwap(zorkmid, amtA, gil, amtB, true);
-})();

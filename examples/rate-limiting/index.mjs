@@ -23,7 +23,6 @@ if (mmbrTestEnabled) {
   });
 }
 
-(async () => {
   const startMs = Date.now();
   const startingBalance = stdlib.parseCurrency(100);
   const accAlice = await stdlib.newTestAccount(startingBalance);
@@ -80,4 +79,3 @@ if (mmbrTestEnabled) {
       throw Error(`The total runtime was too short.`);
     }
   }
-})();

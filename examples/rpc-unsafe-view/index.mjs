@@ -1,7 +1,6 @@
 import { mkRPC }      from '@reach-sh/rpc-client';
 import { mkAssertEq } from './common.mjs';
 
-(async () => {
   const { rpc, rpcCallbacks } = await mkRPC();
 
   const assertEq = mkAssertEq(rpc);
@@ -35,4 +34,3 @@ import { mkAssertEq } from './common.mjs';
     rpc('/forget/ctc', ctcAlice),
     rpc('/forget/acc', accAlice),
   ]);
-})();

@@ -1,9 +1,8 @@
-import * as stdlib_loader from '@reach-sh/stdlib';
+import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
+const stdlib = loadStdlib();
 
 const demo = async (x) => {
-  const stdlib = await stdlib_loader.loadStdlib();
-
   const startingBalance = stdlib.parseCurrency(100);
   const alice = await stdlib.newTestAccount(startingBalance);
   const bob = await stdlib.newTestAccount(startingBalance);
@@ -61,7 +60,5 @@ const demo = async (x) => {
   console.log('Alice and Bob are done.');
 };
 
-(async () => {
-  await demo(1);
-  await demo(null);
-})();
+await demo(1);
+await demo(null);

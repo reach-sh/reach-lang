@@ -170,10 +170,10 @@ load: /examples/workshop-relay/index.mjs
 ```
 
 We do a few sneaky things in this program:
-+ Lines 18 through 21 create a JavaScript [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) that will be filled in later by Alice.
-+ Alice's `{!rsh} getRelay` function (lines 26 through 32) creates the new account and communicates it "outside of the network" through the aforementioned Promise.
-+ Bob's thread (lines 34 through 48) waits for the Promise to resolve and then connects to the application with this new account.
-+ The Relay's `{!rsh} getBob` function (lines 43 through 46) returns his own address to receive the funds.
++ Lines 17 through 20 create a JavaScript [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) that will be filled in later by Alice.
++ Alice's `{!rsh} getRelay` function (lines 25 through 31) creates the new account and communicates it "outside of the network" through the aforementioned Promise.
++ Bob's thread (lines 33 through 47) waits for the Promise to resolve and then connects to the application with this new account.
++ The Relay's `{!rsh} getBob` function (lines 42 through 45) returns his own address to receive the funds.
 
 If this program is scary for you, don't worry!
 It uses some fairly esoteric JavaScript features to make a completely automated test of this program.
