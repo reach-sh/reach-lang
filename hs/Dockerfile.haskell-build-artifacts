@@ -7,13 +7,24 @@ RUN make sol/stdlib.json
 
 FROM reachsh/devnet-algo:latest AS algo
 
-ARG Z3_VERSION
 FROM alpine as z3
+ARG Z3_VERSION
 ENV Z3_VERSION=${Z3_VERSION}
-RUN echo 'http://host.docker.internal:30000/' >> /etc/apk/repositories
-RUN apk update --allow-untrusted && apk add libgmpxx ca-certificates git
-RUN apk add --allow-untrusted --repository="http://host.docker.internal:30000/" z3="4.8.13-r0" z3-dev="4.8.13-r0"
-RUN chmod +x /usr/bin/z3
+RUN apk update && apk add git cmake python3 make gcc g++
+RUN wget https://github.com/Z3Prover/z3/archive/refs/tags/z3-${Z3_VERSION}.tar.gz && \
+    tar -xzf z3-${Z3_VERSION}.tar.gz && \
+    cd z3-z3-${Z3_VERSION} && \
+    mkdir build
+WORKDIR z3-z3-${Z3_VERSION}
+RUN cmake -B build \
+		-DZ3_BUILD_PYTHON_BINDINGS=True \
+		-DZ3_INSTALL_PYTHON_BINDINGS=True \
+		-DPYTHON_EXECUTABLE=/usr/bin/python3 \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DBUILD_SHARED_LIBS=True \
+		-DCMAKE_BUILD_TYPE=Release
+RUN	cmake --build build && cmake --install build
 
 FROM alpine
 RUN apk update
