@@ -1,12 +1,19 @@
 import readline from 'readline';
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+let _rl: readline.Interface | null = null;
+function getRl(): readline.Interface {
+  if (!_rl) {
+    _rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+  }
+  return _rl;
+}
 
 const ask_ = async (q: string): Promise<string> => {
   return new Promise((resolve) => {
+    const rl = getRl();
     rl.question(q + '\n', (ans) => {
       resolve(ans);
     });
@@ -36,7 +43,7 @@ export const ask = async <T>(question: string, validator?: ((s: string) => T)): 
 };
 
 export const done = (): void => {
-  rl.close();
+  getRl().close();
 };
 
 // The answer arg be 'y' (true) or 'n' (false)
