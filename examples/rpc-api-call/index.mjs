@@ -1,7 +1,6 @@
 import { mkRPC }      from '@reach-sh/rpc-client';
 import { mkAssertEq } from './common.mjs';
 
-(async () => {
   const { rpc, rpcCallbacks } = await mkRPC();
 
   const sbal         = await rpc('/stdlib/parseCurrency', 100);
@@ -49,4 +48,3 @@ import { mkAssertEq } from './common.mjs';
     ...ctcs.map(c => rpc('/forget/ctc', c)),
     ...accs.map(a => rpc('/forget/acc', a)),
   ]);
-})();

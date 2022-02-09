@@ -218,7 +218,7 @@ This overwriting applies even if `{!rsh} Alice` wins and `{!rsh} Alice` is a par
 
 ### `fork`
 
-@{ref("rsh", "fork")}@{ref("rsh", "paySpec")}
+@{ref("rsh", "fork")}@{ref("rsh", "fork.case")}@{ref("rsh", "paySpec")}
 ```reach
 fork()
 .case(Alice, (() => ({

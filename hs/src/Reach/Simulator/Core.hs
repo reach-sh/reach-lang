@@ -254,6 +254,7 @@ data DLVal
   | V_Bytes String
   | V_Digest DLVal
   | V_Address Account
+  | V_Contract Account
   | V_Array [DLVal]
   | V_Tuple [DLVal]
   | V_Object (M.Map SLVar DLVal)
@@ -450,9 +451,7 @@ instance Interp DLExpr where
     DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
       CT_Assert -> interp dlarg
-      CT_Assume bool -> case bool of
-        True -> interp dlarg
-        False -> error "CT_Assume error"
+      CT_Assume _bool -> interp dlarg
       CT_Require -> interp dlarg
       CT_Possible -> interp dlarg
       CT_Unknowable _slpart dlargs -> do
@@ -525,10 +524,7 @@ instance Interp DLExpr where
       setGlobal $ e {e_ledger = new_nw_ledger}
       return V_Null
     DLE_TimeOrder _at _assoc_maybe_arg_vars -> return V_Null
-    -- NOTE: Contracts are not necessarily addresses and it
-    -- might be a good idea to introduce a new value, `V_Contract`,
-    -- for them in the future to ensure that they can't be mixed at run time
-    DLE_GetContract _at -> V_Address <$> l_acct <$> getMyLocalInfo
+    DLE_GetContract _at -> V_Contract <$> l_acct <$> getMyLocalInfo
     DLE_GetAddress _at -> V_Address <$> l_acct <$> getMyLocalInfo
     DLE_EmitLog at (L_Api _) [dlvar] -> interp $ DL_Var at dlvar
     DLE_EmitLog at L_Internal [dlvar] -> interp $ DL_Var at dlvar

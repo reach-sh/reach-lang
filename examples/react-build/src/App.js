@@ -3,7 +3,6 @@ import './App.css';
 import * as reachsdk from '@reach-sh/stdlib';
 const reach = reachsdk.loadStdlib({REACH_CONNECTOR_MODE: 'ETH'});
 const rand = reach.randomUInt().toString();
-// import * as reach from '@reach-sh/stdlib/ETH';
 
 function App() {
   return (

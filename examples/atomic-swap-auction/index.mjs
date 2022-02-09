@@ -1,6 +1,5 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
-import launchToken from '@reach-sh/stdlib/launchToken.mjs';
 
 const shouldFail = async (fp) => {
   let worked = undefined;
@@ -19,15 +18,14 @@ const shouldFail = async (fp) => {
 const N = 3;
 const bidderNames = ["Alice", "Bob", "Camus"];
 
-(async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
 
   const timeout = stdlib.connector === 'CFX' ? 25 : N * 3;
 
   const startingBalance = stdlib.parseCurrency(100);
   const accCreator = await stdlib.newTestAccount(startingBalance);
-  const zorkmid = await launchToken(stdlib, accCreator, "zorkmid", "ZMD");
-  const gil = await launchToken(stdlib, accCreator, "gil", "GIL");
+  const zorkmid = await stdlib.launchToken(accCreator, "zorkmid", "ZMD");
+  const gil = await stdlib.launchToken(accCreator, "gil", "GIL");
 
   const accAuctioneer = (await stdlib.newTestAccount(startingBalance)).setDebugLabel("Auctioneer");
   const accBidders = await Promise.all(
@@ -128,4 +126,3 @@ const bidderNames = ["Alice", "Bob", "Camus"];
     console.log(`${who} went from ${biddersBalances[i].before} to ${biddersBalances[i].after}`);
   }
 
-})();

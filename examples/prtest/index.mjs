@@ -1,13 +1,12 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
-const stdlib = loadStdlib(process.env);
+const stdlib = loadStdlib();
 const assertEq = (expected, actual) => {
   const exps = JSON.stringify(expected);
   const acts = JSON.stringify(actual);
   const msg = JSON.stringify(['assertEq', {expected, actual}, {exps, acts}]);
   stdlib.assert(exps === acts, msg); };
 
-(async () => {
   const [ accAlice, accBob ] =
     await stdlib.newTestAccounts(2, stdlib.parseCurrency(100));
   const ctcAlice = accAlice.contract(backend);
@@ -50,4 +49,3 @@ const assertEq = (expected, actual) => {
   ]);
   checkLog('Alice');
   checkLog('Bob');
-})();

@@ -1,11 +1,11 @@
-const c = await import('@reach-sh/simulator-client');
-const assert = await import('assert');
-const pj = await import('prettyjson')
+import * as c from '@reach-sh/simulator-client';
+import * as  assert from 'assert';
+import * as pj from 'prettyjson';
 import { readFile } from 'fs/promises';
 
 const script = JSON.parse(
   await readFile(
-    // 
+    //
     // produced by the simulator ui 0.2
     new URL('./client.json', import.meta.url)
   )

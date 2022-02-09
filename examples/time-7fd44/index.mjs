@@ -6,7 +6,6 @@ const sleepSecs = async (x) => {
   await new Promise(res => setTimeout(res, x * 1000));
 };
 
-(async () => {
   const startingBalance = stdlib.parseCurrency(100);
   const [accAlice, accBob] =
     await stdlib.newTestAccounts(2, startingBalance);
@@ -42,4 +41,3 @@ const sleepSecs = async (x) => {
       }
     }),
   ]);
-})();

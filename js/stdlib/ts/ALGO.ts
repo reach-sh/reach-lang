@@ -749,7 +749,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
       // ALGO_NODE_WRITE_ONLY from here to makeProviderByWallet
       if ( typeof base === 'string' ) {
         // @ts-ignore
-        updateProcessEnv(await providerEnvByName(base));
+        updateProcessEnv(providerEnvByName(base));
       } else {
         updateProcessEnv(base);
       }
@@ -1871,28 +1871,40 @@ export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
   return accMinBalance;
 };
 
-const balanceOfM = async (acc: Account, token: Token|false = false): Promise<BigNumber|false> => {
+const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber|false>> => {
   const addr = extractAddr(acc);
-  const info = await getAccountInfo(addr);
-  debug(`balanceOf`, info);
-  if ( ! token ) {
-    return bigNumberify(info.amount);
-  } else {
-    for ( const ai of (info.assets || []) ) {
-      if ( bigNumberify(token).eq(ai['asset-id']) ) {
-        return bigNumberify(ai['amount']);
-      }
+  const accountInfo = await getAccountInfo(addr);
+  const accountAssets = accountInfo.assets || [];
+
+  const balanceOfSingleToken = (token: Token | null) => {
+    if (token) {
+      const tokenId = bigNumberify(token);
+      const tokenAsset = accountAssets.find(asset => tokenId.eq(asset['asset-id']));
+      return tokenAsset ? bigNumberify(tokenAsset['amount']) : false;
+    } else {
+      return bigNumberify(accountInfo.amount);
     }
-    return false;
-  }
+  };
+
+  return tokens.map(balanceOfSingleToken);
 };
 
-export const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
-  const r = await balanceOfM(acc, token);
-  if ( r === false ) {
-    return bigNumberify(0);
-  }
-  return r;
+export const balancesOf = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber>> => {
+  return (await balancesOfM(acc, tokens)).map(bal => {
+    if (bal === false) {
+      return bigNumberify(0);
+    } else {
+      return bal;
+    }
+  });
+};
+
+const balanceOfM = async (acc: Account, token?: Token): Promise<BigNumber | false> => {
+  return (await balancesOfM(acc, [token || null]))[0];
+}
+
+export const balanceOf = async (acc: Account, token?: Token): Promise<BigNumber> => {
+  return (await balancesOf(acc, [token || null]))[0];
 };
 
 export const createAccount = async (): Promise<Account> => {

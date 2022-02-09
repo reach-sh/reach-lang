@@ -319,17 +319,21 @@ const makeHasLogFor = ( getCtcAddress: (() => Address), iface:Interface, i:numbe
 
 const { randomUInt, hasRandom } = makeRandom(32);
 
+const minimumBalanceOf = async (acc: Account | Address): Promise<BigNumber> => {
+  void acc;
+  return zeroBn;
+};
+
+const balancesOf = async (acc: Account | Address, tokens: Array<Token|null>): Promise<Array<BigNumber>> => {
+  return Promise.all(tokens.map(tok => balanceOf(acc, tok ?? false)));
+}
+
 const balanceOf = async (acc: Account | Address, token: Token|false = false): Promise<BigNumber> => {
   let addressable = (typeof acc == 'string') ? acc : acc.networkAccount;
   if (!addressable) {
     throw Error(`Cannot get the address of: ${acc}`);
   }
   return balanceOfNetworkAccount(addressable, token);
-};
-
-const minimumBalanceOf = async (acc: Account | Address): Promise<BigNumber> => {
-  void acc;
-  return zeroBn;
 };
 
 const balanceOfNetworkAccount = async (networkAccount: any, token: Token|false = false) => {
@@ -1143,6 +1147,7 @@ const ethLike = {
   randomUInt,
   hasRandom,
   balanceOf,
+  balancesOf,
   minimumBalanceOf,
   transfer,
   connectAccount,
