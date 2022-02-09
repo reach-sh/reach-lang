@@ -53,3 +53,4 @@ e 60 new-images:rpc-server#new-tags:reach-cli+devnet-cfx
 e 60 new-tags:reach+react-runner
 e  0 fully-synchronized
 e  0 connector-avail:eth+cfx
+e  0 connector-avail-3rd-party:image-not-present
