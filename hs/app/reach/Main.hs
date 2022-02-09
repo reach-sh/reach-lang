@@ -468,14 +468,23 @@ data ImageThirdParty
   = Postgres
   deriving (Eq, Ord, Show, Enum, Bounded)
 
+itpT :: ImageThirdParty -> Text
+itpT = \case
+  Postgres -> "postgres"
+
+itpF :: Text -> A.Parser ImageThirdParty
+itpF = \case
+  "postgres" -> pure Postgres
+  v -> fail $ "Invalid `ImageThirdParty` \"" <> unpack v <> "\""
+
 instance ToJSON ImageThirdParty where
-  toJSON = \case
-    Postgres -> String "postgres"
+  toJSON = String . itpT
 
 instance FromJSON ImageThirdParty where
-  parseJSON = withText "ImageThirdParty" $ \case
-    "postgres" -> pure Postgres
-    v -> fail $ "Invalid `ImageThirdParty` \"" <> unpack v <> "\""
+  parseJSON = withText "ImageThirdParty" itpF
+
+instance A.FromJSONKey ImageThirdParty where
+  fromJSONKey = A.FromJSONKeyTextParser itpF
 
 -- TODO devise solution to "double update" problem if new Reach release
 -- includes third-party tag changes
@@ -488,6 +497,13 @@ imageThirdPartyDockerHubRoot = \case
   Postgres -> "library" -- https://hub.docker.com/_/postgres?tab=tags
 
 type Image = Either ImageThirdParty Text
+
+instance A.ToJSONKey Image where
+  toJSONKey = A.toJSONKeyText $ either itpT id
+
+instance A.FromJSONKey Image where
+  fromJSONKey = A.FromJSONKeyTextParser $ \j ->
+    (Left <$> itpF j) <|> pure (Right j)
 
 newtype Image' = Image' Image
   deriving (Show, Eq)
@@ -1982,7 +1998,7 @@ versionCompare = command "version-compare" $ info f mempty
         f | paste -s -d ' ' - | sed 's/} {/},\n{/g' >> $confH
         echo ']' >> $confH
 
-        $reachEx version-compare2$i$j --ils="$confC"
+        $reachEx version-compare2$i$j --rm-ils --ils="$confC"
       |]
 
 versionCompare2 :: Subcommand
@@ -1991,8 +2007,11 @@ versionCompare2 = command "version-compare2" $ info f mempty
     f = g
       <$> switchNonInteractiveAUs
       <*> switchJSONAUs
-      <*> strOption (long "ils" <> internal)
-    g ni j l = do
+      <*> strOption (long "ils")
+      <*> switch (long "rm-ils")
+      <*> strOption (long "stub-remote" <> value "")
+      <*> strOption (long "stub-script" <> value "")
+    g ni j l rl mr ms = do
       Env {e_var = Var {..}, ..} <- ask
       assocL <- (liftIO $ A.eitherDecodeFileStrict' l) >>= \case
         Left e -> liftIO $ do
@@ -2031,8 +2050,11 @@ versionCompare2 = command "version-compare2" $ info f mempty
                 _ -> Nothing
               Just (dr, dils_Digest, dt dils_Tag)
 
-      liftIO $ removeFile l
-      (latestScript, assocR) <- remoteUpdates imagesAll
+      when rl . liftIO $ removeFile l
+
+      (latestScript, assocR) <- case (ms, mr) of
+        _ | ms /= "" && mr /= "" -> (pack ms, ) . maybe mempty id <$> (liftIO $ A.decodeFileStrict' mr)
+        _ -> remoteUpdates imagesAll
 
       -- Treat remote tags as unique and authoritative, but local tags might be
       -- repeated due to Docker manifest strangeness
@@ -2123,176 +2145,177 @@ versionCompare2 = command "version-compare2" $ info f mempty
             [VersionCompareIDTs (Image' x) y z | DAQNewTags x y z <- both]
             [VersionCompareIDTs (Image' x) y z | DAQNewConnectorAvailable x y z <- both]
 
-      if length uImgs > 0
-        then liftIO $ do
+      case (length uImgs > 0, length uTags > 0, j) of
+        (True, _, _) -> liftIO $ do
           forM_ uImgs $ \a -> T.putStrLn $ "Unknown image: " <> imgTxt a <> "."
           T.putStrLn $ "Please open an issue at " <> uriIssues <> " including the failures listed above."
           exitWith $ ExitFailure 1
-        else
-          if length uTags > 0
-            then liftIO $ do
-              forM_ uTags $ \(x, y) -> T.putStrLn $ "Unknown tag: " <> y <> " for image: " <> imgTxt x <> "."
-              exitWith $ ExitFailure 1
 
-            -- non-interactive JSON mode
-            else if j then scriptWithConnectorModeOptional $ do
-              now <- zulu
-              let confE = "_docker" </> "vc-" <> now <> ".json"
-              let confF = e_dirConfigContainer </> confE
-              let confC = pack confF
-              let confH = pack $ e_dirConfigHost </> confE
-              let ec = if length (vc_synced <> vc_newConnector) >= length both then "0" else "60"
+        (_, True, _) -> liftIO $ do
+          forM_ uTags $ \(x, y) -> T.putStrLn $ "Unknown tag: " <> y <> " for image: " <> imgTxt x <> "."
+          exitWith $ ExitFailure 1
 
-              liftIO $ do
-                createDirectoryIfMissing True $ takeDirectory confF
-                BSLC8.writeFile confF $ encode vc
+        -- non-interactive JSON mode
+        (_, _, True) -> scriptWithConnectorModeOptional $ do
+          now <- zulu
+          let confE = "_docker" </> "vc-" <> now <> ".json"
+          let confF = e_dirConfigContainer </> confE
+          let confC = pack confF
+          let confH = pack $ e_dirConfigHost </> confE
+          let ec = if length (vc_synced <> vc_newConnector) >= length both then "0" else "60"
 
-              write [N.text|
-                if ! command -v diff >/dev/null; then
-                  echo '{ "noDiff": true, "script": false, "dockerH": "$confH", "dockerC": "$confC" }'
-                  exit $ec
-                elif [ -f $latestScript ] && ! diff $reachEx $latestScript >/dev/null; then
-                  echo '{ "noDiff": false, "script": true, "dockerH": "$confH", "dockerC": "$confC"}'
-                  exit 60
-                else
-                  echo '{ "noDiff": false, "script": false, "dockerH": "$confH", "dockerC": "$confC"}'
-                  exit $ec
-                fi
-              |]
+          liftIO $ do
+            createDirectoryIfMissing True $ takeDirectory confF
+            BSLC8.writeFile confF $ encode vc
 
-            else scriptWithConnectorModeOptional $ do
-              let prompt' p n y = (liftIO $ putStr ("\n" <> p <> " (Enter 'y' for yes): ")
-                    >> hFlush stdout >> getLine) >>= \case
-                      z | L.upper z == "Y" -> y
-                      _ -> n
+          write [N.text|
+            if ! command -v diff >/dev/null; then
+              echo '{ "noDiff": true, "script": false, "dockerH": "$confH", "dockerC": "$confC" }'
+              exit $ec
+            elif [ -f $latestScript ] && ! diff $reachEx $latestScript >/dev/null; then
+              echo '{ "noDiff": false, "script": true, "dockerH": "$confH", "dockerC": "$confC"}'
+              exit 60
+            else
+              echo '{ "noDiff": false, "script": false, "dockerH": "$confH", "dockerC": "$confC"}'
+              exit $ec
+            fi
+          |]
 
-              let s = T.take 8 . T.drop 7
-              let m = maybe 0 id . maximumMay $ (\(VersionCompareIDTs x _ _) -> T.length $ imgTxt x)
-                    <$> vc_newDigest <> vc_newTag <> vc_newConnector <> vc_synced
+        -- plaintext modes
+        _ -> scriptWithConnectorModeOptional $ do
+          let prompt' p n y = (liftIO $ putStr ("\n" <> p <> " (Enter 'y' for yes): ")
+                >> hFlush stdout >> getLine) >>= \case
+                  z | L.upper z == "Y" -> y
+                  _ -> n
 
-              let p x = imgTxt x <> T.replicate (m - T.length (imgTxt x)) " "
-              let n a = when (any ((> 0) . length) a) $ putStrLn ""
+          let s = T.take 8 . T.drop 7
+          let m = maybe 0 id . maximumMay $ (\(VersionCompareIDTs x _ _) -> T.length $ imgTxt x)
+                <$> vc_newDigest <> vc_newTag <> vc_newConnector <> vc_synced
 
-              let r = flip either (const "") $ \x ->
-                    let rs = rights . concat . L.filter (Left x `elem`)
-                          $ fmap (fmap ("reachsh/" <>)) . imagesFor <$> [minBound .. maxBound]
-                    in " (required by: " <> T.intercalate ", " rs <> ")"
+          let p x = imgTxt x <> T.replicate (m - T.length (imgTxt x)) " "
+          let n a = when (any ((> 0) . length) a) $ putStrLn ""
 
-              let say = mapM_ $ \(VersionCompareIDTs x@(Image' x') y z) ->
-                    T.putStrLn $
-                      " * " <> p x <> "  " <> s y <> ":  "
-                        <> T.intercalate ", " (tagFor <$> L.sort z)
-                        <> r x'
+          let r = flip either (const "") $ \x ->
+                let rs = rights . concat . L.filter (Left x `elem`)
+                      $ fmap (fmap ("reachsh/" <>)) . imagesFor <$> [minBound .. maxBound]
+                in " (required by: " <> T.intercalate ", " rs <> ")"
 
-              let ancas (VersionCompareIDTs x' y zs) = "\n" <> a <> "\n" <> T.intercalate "\n" b where
-                    x = imgTxt x'
-                    a = [N.text| docker pull $x@$y |]
-                    b = zs <&> \z' -> let z = tagFor z' in [N.text| docker tag $x@$y $x:$z |]
+          let say = mapM_ $ \(VersionCompareIDTs x@(Image' x') y z) ->
+                T.putStrLn $
+                  " * " <> p x <> "  " <> s y <> ":  "
+                    <> T.intercalate ", " (tagFor <$> L.sort z)
+                    <> r x'
 
-              let addNewCAs = T.intercalate "\n" $ ancas <$> vc_newConnector
+          let ancas (VersionCompareIDTs x' y zs) = "\n" <> a <> "\n" <> T.intercalate "\n" b where
+                x = imgTxt x'
+                a = [N.text| docker pull $x@$y |]
+                b = zs <&> \z' -> let z = tagFor z' in [N.text| docker tag $x@$y $x:$z |]
 
-              let dch = pack e_dirConfigHost
-              now <- pack <$> zulu
+          let addNewCAs = T.intercalate "\n" $ ancas <$> vc_newConnector
 
-              let andTheScript' ec = case ni of
-                    True -> [N.text| exit 60 |]
-                    False -> [N.text|
-                      printf "Type 'y' to update it; anything else aborts: "; read -r x
-                      case "$$x" in
-                        y|Y) mkdir -p "$dch/_backup"
-                             cp $reachEx "$dch/_backup/reach-$now"
-                             echo
-                             echo "Backed up $reachEx to $dch/_backup/reach-$now."
-                             cp $latestScript $reachEx \
-                               && chmod +x $reachEx \
-                               && echo "Replaced $reachEx with latest version." \
-                               && rm -r "$$TMP" \
-                               && exit $ec
-                             ;;
-                          *) echo
-                             echo "Problems may arise when the script is out of sync with Reach's Docker images."
-                             echo "Update your script by rerunning or following the instructions at https://docs.reach.sh/tool/#ref-install."
-                             exit 60
-                             ;;
-                      esac
-                    |]
+          let dch = pack e_dirConfigHost
+          now <- pack <$> zulu
 
-              let andTheScript ec = write [N.text|
-                if ! command -v diff >/dev/null; then
-                  echo
-                  echo "A newer version of the \`reach\` script may be available."
-                  echo "Please install \`diff\` and retry or manually compare with $uriReachScript."
-                elif [ -f $latestScript ] && ! diff $reachEx $latestScript >/dev/null; then
-                  echo
-                  echo "There's a newer version of the \`reach\` script available."
-                  $ats
-                fi
+          let andTheScript' ec = case ni of
+                True -> [N.text| exit 60 |]
+                False -> [N.text|
+                  printf "Type 'y' to update it; anything else aborts: "; read -r x
+                  case "$$x" in
+                    y|Y) mkdir -p "$dch/_backup"
+                         cp $reachEx "$dch/_backup/reach-$now"
+                         echo
+                         echo "Backed up $reachEx to $dch/_backup/reach-$now."
+                         cp $latestScript $reachEx \
+                           && chmod +x $reachEx \
+                           && echo "Replaced $reachEx with latest version." \
+                           && rm -r "$$TMP" \
+                           && exit $ec
+                         ;;
+                      *) echo
+                         echo "Problems may arise when the script is out of sync with Reach's Docker images."
+                         echo "Update your script by rerunning or following the instructions at https://docs.reach.sh/tool/#ref-install."
+                         exit 60
+                         ;;
+                  esac
+                |]
 
-                exit $ec
-              |] where ats = andTheScript' ec
+          let andTheScript ec = write [N.text|
+            if ! command -v diff >/dev/null; then
+              echo
+              echo "A newer version of the \`reach\` script may be available."
+              echo "Please install \`diff\` and retry or manually compare with $uriReachScript."
+            elif [ -f $latestScript ] && ! diff $reachEx $latestScript >/dev/null; then
+              echo
+              echo "There's a newer version of the \`reach\` script available."
+              $ats
+            fi
 
-              let prompt ec p' y = prompt' p' (andTheScript ec) y
+            exit $ec
+          |] where ats = andTheScript' ec
 
-              let utd = "Reach's Docker images are up-to-date"
-              if length (vc_synced <> vc_newConnector) >= length both
-                then do
-                  if length vc_newConnector == 0 then do
-                    liftIO . putStrLn $ utd <> "."
+          let prompt ec p' y = prompt' p' (andTheScript ec) y
+
+          let utd = "Reach's Docker images are up-to-date"
+          case length (vc_synced <> vc_newConnector) >= length both of
+            True -> case length vc_newConnector == 0 of
+              True -> do
+                liftIO . putStrLn $ utd <> "."
+                andTheScript "0"
+
+              False -> do
+                liftIO $ do
+                  putStrLn $ utd <> " but the following (optional) connectors are also available:"
+                  say vc_newConnector
+                case ni of
+                  True -> andTheScript "0"
+                  False -> prompt "0" "Would you like to add them?" $ do
+                    write addNewCAs
                     andTheScript "0"
 
-                  else do
-                    liftIO $ do
-                      putStrLn $ utd <> " but the following (optional) connectors are also available:"
-                      say vc_newConnector
-                    if ni then andTheScript "0"
-                    else prompt "0" "Would you like to add them?" $ do
-                      write addNewCAs
-                      andTheScript "0"
+            False -> do
+              liftIO $ do
+                when (length vc_newDigest > 0) $ do
+                  putStrLn "New images are available for:"
+                  say vc_newDigest
+                  n [vc_newTag, vc_newConnector, vc_synced]
 
-                else do
-                  liftIO $ do
-                    when (length vc_newDigest > 0) $ do
-                      putStrLn "New images are available for:"
-                      say vc_newDigest
-                      n [vc_newTag, vc_newConnector, vc_synced]
+                when (length vc_newTag > 0) $ do
+                  putStrLn "New tags are available for:"
+                  say vc_newTag
+                  n [vc_newConnector, vc_synced]
 
-                    when (length vc_newTag > 0) $ do
-                      putStrLn "New tags are available for:"
-                      say vc_newTag
-                      n [vc_newConnector, vc_synced]
+                when (length vc_newConnector > 0) $ do
+                  putStrLn "New (optional) connectors are available:"
+                  say vc_newConnector
+                  n [vc_synced]
 
-                    when (length vc_newConnector > 0) $ do
-                      putStrLn "New (optional) connectors are available:"
-                      say vc_newConnector
-                      n [vc_synced]
+                when (length vc_synced > 0) $ do
+                  putStrLn "The following images are fully synchronized:"
+                  say vc_synced
 
-                    when (length vc_synced > 0) $ do
-                      putStrLn "The following images are fully synchronized:"
-                      say vc_synced
+              case ni of
+                True -> andTheScript "60"
+                False -> do
+                  prompt "60" "Would you like to perform an update?" $ do
+                    when (length vc_newConnector > 0)
+                      . prompt' "Would you like to add the new connectors listed above?" (pure ())
+                        . write $ "echo\n" <> addNewCAs
 
-                  if ni
-                    then andTheScript "60"
-                    else do
-                      prompt "60" "Would you like to perform an update?" $ do
-                        when (length vc_newConnector > 0)
-                          . prompt' "Would you like to add the new connectors listed above?" (pure ())
-                            . write $ "echo\n" <> addNewCAs
+                    when (length vc_newDigest > 0) $ write "echo"
+                    forM_ vc_newDigest $ \(VersionCompareIDTs x' y zs) -> do
+                      let x = imgTxt x'
+                      write [N.text| docker pull $x@$y |]
+                      forM_ zs $ \z' -> do
+                        let z = tagFor z'
+                        write [N.text| docker tag $x@$y $x:$z |]
 
-                        when (length vc_newDigest > 0) $ write "echo"
-                        forM_ vc_newDigest $ \(VersionCompareIDTs x' y zs) -> do
-                          let x = imgTxt x'
-                          write [N.text| docker pull $x@$y |]
-                          forM_ zs $ \z' -> do
-                            let z = tagFor z'
-                            write [N.text| docker tag $x@$y $x:$z |]
+                    forM_ vc_newTag $ \(VersionCompareIDTs x' y zs) -> do
+                      let x = imgTxt x'
+                      forM_ zs $ \z' -> do
+                        let z = tagFor z'
+                        write [N.text| docker tag $x@$y $x:$z |]
 
-                        forM_ vc_newTag $ \(VersionCompareIDTs x' y zs) -> do
-                          let x = imgTxt x'
-                          forM_ zs $ \z' -> do
-                            let z = tagFor z'
-                            write [N.text| docker tag $x@$y $x:$z |]
-
-                        andTheScript "0"
+                    andTheScript "0"
 
 updateIDE :: Subcommand
 updateIDE = command "update-ide" $ info f mempty where
@@ -2301,7 +2324,7 @@ updateIDE = command "update-ide" $ info f mempty where
     <*> switch (long "rm-json") -- Delete input JSON once it's served its purpose
     <*> strOption (long "json")
   g s r j = scriptWithConnectorModeOptional $ do
-    VersionCompare {..} <- liftIO $ A.eitherDecodeFileStrict j
+    VersionCompare {..} <- liftIO $ A.eitherDecodeFileStrict' j
       >>= either (\e -> putStrLn e >> exitWith (ExitFailure 1)) pure
 
     when r . liftIO $ removeFile j
