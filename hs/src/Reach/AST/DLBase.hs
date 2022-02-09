@@ -274,7 +274,7 @@ varType :: DLVar -> DLType
 varType (DLVar _ _ t _) = t
 
 newtype DLMVar = DLMVar Int
-  deriving (Eq, Ord, Generic)
+  deriving (Show, Eq, Ord, Generic)
 
 instance ToJSONKey DLMVar
 
