@@ -1,11 +1,11 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
-import ethers from 'ethers';
 import * as fs from 'fs';
 
 const stdlib = loadStdlib();
 
 if ( stdlib.connector !== 'ETH' ) { process.exit(0); }
+const { ethers } = stdlib;
 const assertEq = (expected, actual) => {
   const exps = JSON.stringify(expected);
   const acts = JSON.stringify(actual);
