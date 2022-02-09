@@ -4,7 +4,7 @@ import ethers from 'ethers';
 import ganache from 'ganache-core';
 
 const stdlib = loadStdlib(process.env);
-if ( stdlib.connector !== 'ETH' ) { return; }
+if ( stdlib.connector !== 'ETH' ) { process.exit(0); }
 
 const ganacheOptions = {};
 const ganacheProvider =

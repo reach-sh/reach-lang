@@ -5,7 +5,7 @@ import * as fs from 'fs';
 
 const stdlib = loadStdlib();
 
-if ( stdlib.connector !== 'ETH' ) { return; }
+if ( stdlib.connector !== 'ETH' ) { process.exit(0); }
 const assertEq = (expected, actual) => {
   const exps = JSON.stringify(expected);
   const acts = JSON.stringify(actual);

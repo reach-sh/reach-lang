@@ -6,7 +6,7 @@ import * as fs from 'fs';
 
 const stdlib = loadStdlib();
 
-if ( stdlib.connector === 'ALGO' ) { return; }
+if ( stdlib.connector === 'ALGO' ) { process.exit(0); }
 const ethers = stdlib.connector === 'CFX' ? cfxers : real_ethers;
 
 const startingBalance = stdlib.parseCurrency(100);
