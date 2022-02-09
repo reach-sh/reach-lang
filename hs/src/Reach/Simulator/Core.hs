@@ -599,7 +599,7 @@ instance Interp DLExpr where
       case k of
         "Some" -> return v
         _ -> interp da
-    DLE_BalanceInit i v -> interp $ initBalanceToLArg i v
+    DLE_BalanceInit {} -> impossible "interp: DLE_BalanceInit"
 
 instance Interp DLStmt where
   interp = \case

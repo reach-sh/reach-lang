@@ -2253,7 +2253,7 @@ getBalanceIndex mtok = do
             return r
     Just ow -> impossible $ "getBalanceIndex: tsv received: " <> show ow
 
-setBalance :: Maybe DLArg -> DLArg -> ReaderT Env IO DLArg
+setBalance :: Maybe DLArg -> DLArg -> App DLArg
 setBalance mtok amta = do
   at  <- withAt id
   -- Update the value associated with key `mtok` to `amta`
@@ -2286,7 +2286,7 @@ doBalanceInit mtok = do
     Nothing -> do
       nv <- compileToVar $ SLV_Tuple at [networkBal at, SLV_Int at 0]
       let mkdv = DLVar at Nothing $ T_TokenBalances 1
-      dv <- ctxt_lift_expr mkdv $ DLE_BalanceInit 1 nv
+      dv <- ctxt_lift_expr mkdv $ DLE_BalanceInit nv
       doFluidSet_ (FV_balances 0 mempty) $ DLA_Var dv
     _ -> doBalanceInitBal mtok (DLA_Literal $ DLL_Int at 0)
 

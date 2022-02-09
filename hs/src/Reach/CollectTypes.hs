@@ -141,7 +141,7 @@ instance CollectsTypes DLExpr where
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ mt tb -> cts mt <> cts tb
     DLE_FromSome _ mo da -> cts mo <> cts da
-    DLE_BalanceInit _ a -> cts a
+    DLE_BalanceInit a -> cts a
 
 instance CollectsTypes DLAssignment where
   cts (DLAssignment m) = cts m

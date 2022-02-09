@@ -433,7 +433,7 @@ instance Optimize DLExpr where
                 _ -> return $ DLE_Arg at da'
             _ -> meh
         _ -> meh
-    DLE_BalanceInit i v -> DLE_BalanceInit i <$> opt v
+    DLE_BalanceInit v -> DLE_BalanceInit <$> opt v
     where
       nop at = return $ DLE_Arg at $ DLA_Literal $ DLL_Null
   gcs _ = return ()
