@@ -229,23 +229,6 @@ litTypeOf = \case
   DLL_Bool _ -> T_Bool
   DLL_Int {} -> T_UInt
 
-data DLToken = DLToken DLVar Int
-  deriving (Generic, Show)
-
-instance Eq DLToken where
-  DLToken _ l == DLToken _ r = l == r
-
-instance Ord DLToken where
-  DLToken _ l <= DLToken _ r = l <= r
-
-instance Pretty DLToken where
-  pretty (DLToken d i) = pretty d <> "/" <> pretty i
-
-instance PrettySubst DLToken where
-  prettySubst (DLToken d i) = do
-    d' <- prettySubst $ DLA_Var d
-    return $ d'<> "/" <> pretty i
-
 data DLVar = DLVar SrcLoc (Maybe (SrcLoc, SLVar)) DLType Int
   deriving (Generic)
 
@@ -638,7 +621,7 @@ data DLExpr
   | DLE_GetUntrackedFunds SrcLoc (Maybe DLArg) DLArg
   | DLE_FromSome SrcLoc DLArg DLArg
   -- Maybe try to generalize FromSome into a Match
-  | DLE_BalanceInit Int DLVar
+  | DLE_BalanceInit DLVar
   deriving (Eq, Ord, Generic)
 
 data LogKind
@@ -787,7 +770,7 @@ instance PrettySubst DLExpr where
       mo' <- prettySubst mo
       da' <- prettySubst da
       return $ "fromSome" <> parens (render_das [mo', da'])
-    DLE_BalanceInit i v -> return $ "balanceInit" <> parens (pretty i <> ", " <> pretty v)
+    DLE_BalanceInit v -> return $ "balanceInit" <> parens (pretty v)
 
 instance PrettySubst LogKind where
   prettySubst = \case

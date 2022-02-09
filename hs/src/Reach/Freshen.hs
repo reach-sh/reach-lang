@@ -75,10 +75,6 @@ instance Freshen DLVar where
     rho <- liftIO $ readIORef fRho
     return $ fromMaybe v $ M.lookup v rho
 
-instance Freshen DLToken where
-  fu (DLToken v i) =
-    DLToken <$> fu v <*> pure i
-
 instance Freshen DLArg where
   fu = \case
     DLA_Var v -> DLA_Var <$> fu v
@@ -147,7 +143,7 @@ instance Freshen DLExpr where
     DLE_setApiDetails s p ts mc f -> return $ DLE_setApiDetails s p ts mc f
     DLE_GetUntrackedFunds at mt tb -> DLE_GetUntrackedFunds at <$> fu mt <*> fu tb
     DLE_FromSome at mo da -> DLE_FromSome at <$> fu mo <*> fu da
-    DLE_BalanceInit i v -> DLE_BalanceInit i <$> fu v
+    DLE_BalanceInit v -> DLE_BalanceInit <$> fu v
 
 instance {-# OVERLAPS #-} Freshen k => Freshen (SwitchCases k) where
   fu = mapM (\(vn, vnu, k) -> (,,) <$> fu_v vn <*> pure vnu <*> fu k)

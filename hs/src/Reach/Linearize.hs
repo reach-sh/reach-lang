@@ -422,7 +422,7 @@ df_com mkk back = \case
   DK_Com m k -> do
     m' <-
       case m of
-        DKC_Let a b (DLE_BalanceInit _ v) -> do
+        DKC_Let a b (DLE_BalanceInit v) -> do
           eBals <- asks eBals
           b' <- fixFluidRefType b
           return $ DL_Let a b' $ DLE_LArg a $ initBalanceToLArg (fromIntegral eBals) v
