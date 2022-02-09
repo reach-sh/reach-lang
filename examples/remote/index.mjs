@@ -1,12 +1,10 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
-import real_ethers from 'ethers';
-import * as cfxers from '@reach-sh/stdlib/cfxers.mjs';
 import * as fs from 'fs';
 const stdlib = loadStdlib();
 
 if ( stdlib.connector === 'ALGO' ) { process.exit(0); }
-const ethers = stdlib.connector === 'CFX' ? cfxers : real_ethers;
+const { ethers } = stdlib;
 
 const startingBalance = stdlib.parseCurrency(100);
 const [ accAlice, accBob, accCreator ] = await stdlib.newTestAccounts(3, startingBalance);
