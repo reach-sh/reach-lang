@@ -260,11 +260,19 @@ data DLVal
   | V_Object (M.Map SLVar DLVal)
   | V_Data SLVar DLVal
   | V_Struct [(SLVar, DLVal)]
+  | V_Maybe DLMaybeVal
   deriving (Eq, Ord, Show, Generic)
 
 instance ToJSON DLVal
-
 instance FromJSON DLVal
+
+data DLMaybeVal
+  = V_Nothing
+  | V_Just DLVal
+  deriving (Eq, Ord, Show, Generic)
+
+instance ToJSON DLMaybeVal
+instance FromJSON DLMaybeVal
 
 addToStore :: DLVar -> DLVal -> App ()
 addToStore x v = do
@@ -486,8 +494,12 @@ instance Interp DLExpr where
       (g, _) <- getState
       let linstate = e_linstate g
       acc <- vAddress <$> interp dlarg
-      let m = saferMaybe "DLE_MapRef1" $ M.lookup dlmvar linstate
-      return $ saferMaybe "DLE_MapRef2" $ M.lookup acc m
+      case M.lookup dlmvar linstate of
+        Nothing -> return $ V_Maybe V_Nothing
+        Just m -> do
+          case M.lookup acc m of
+            Nothing -> return $ V_Maybe V_Nothing
+            Just m' -> return $ V_Maybe $ V_Just m'
     DLE_MapSet _at dlmvar dlarg maybe_dlarg -> do
       (e, _) <- getState
       let linst = e_linstate e
@@ -497,7 +509,10 @@ instance Interp DLExpr where
         Just a -> do
           v <- interp a
           return $ flip M.insert v
-      let m = f acc $ saferMaybe "DLE_MapSet" $ M.lookup dlmvar linst
+      let m'' = case M.lookup dlmvar linst of
+            Nothing -> M.empty
+            Just m' -> m'
+      let m = f acc m''
       setGlobal $ e {e_linstate = M.insert dlmvar m linst}
       return V_Null
     DLE_Remote at slcxtframes dlarg str dlPayAmnt dlargs _dlWithBill@DLWithBill {..} -> do
