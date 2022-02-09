@@ -1808,11 +1808,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
   const me_na = { networkAccount };
   const tokenAccepted = async (token:Token): Promise<boolean> => {
     debug(`tokenAccepted`, token);
-    const addr = extractAddr(me_na);
-    const accountInfo = await getAccountInfo(addr);
-    const tokenId = bigNumberify(token);
-    const accountAssets = accountInfo.assets || [];
-    return accountAssets.some(asset => tokenId.eq(asset['asset-id']));
+    // @ts-ignore
+    const r = await balanceOfM(me_na, token);
+    return ( r !== false );
   };
   const tokenAccept = async (token:Token): Promise<void> => {
     if ( ! (await tokenAccepted(token)) ) {
@@ -1873,33 +1871,41 @@ export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
   return accMinBalance;
 };
 
-export const balanceOf = async (acc: Account, token?: Token): Promise<BigNumber> => {
-  return (await balancesOf(acc, [token || null]))[0];
-};
-
-export const balancesOf = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber>> => {
-  // Implementation stolen from balanceOfM
-
+const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber|false>> => {
   const addr = extractAddr(acc);
   const accountInfo = await getAccountInfo(addr);
+  const accountAssets = accountInfo.assets || [];
 
   const balanceOfSingleToken = (token: Token | null) => {
     if (token) {
       const tokenId = bigNumberify(token);
-      const accountAssets = accountInfo.assets || [];
-      for (const asset of accountAssets) {
-        if (tokenId.eq(asset['asset-id'])) {
-          return bigNumberify(asset['amount']);
-        }
-      }
-      return bigNumberify(0);
+      const tokenAsset = accountAssets.find(asset => tokenId.eq(asset['asset-id']));
+      return tokenAsset ? bigNumberify(tokenAsset['amount']) : false;
     } else {
       return bigNumberify(accountInfo.amount);
     }
   };
 
   return tokens.map(balanceOfSingleToken);
+};
+
+export const balancesOf = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber>> => {
+  return (await balancesOfM(acc, tokens)).map(bal => {
+    if (bal === false) {
+      return bigNumberify(0);
+    } else {
+      return bal;
+    }
+  });
+};
+
+const balanceOfM = async (acc: Account, token?: Token): Promise<BigNumber | false> => {
+  return (await balancesOfM(acc, [token || null]))[0];
 }
+
+export const balanceOf = async (acc: Account, token?: Token): Promise<BigNumber> => {
+  return (await balancesOf(acc, [token || null]))[0];
+};
 
 export const createAccount = async (): Promise<Account> => {
   const networkAccount = algosdk.generateAccount();
