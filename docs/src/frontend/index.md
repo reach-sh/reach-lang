@@ -304,14 +304,13 @@ Promises the balance of network tokens (or non-network tokens if `{!js} token` i
 ---
 @{ref("js", "balancesOf")}
 ```js
-balancesOf(acc, tokens) => Promise<Array<BigNumber>>
+balancesOf(acc: Account, tokens: Array<Token | null>) => Promise<Array<BigNumber>>
 ```
 Promises an array of balances that corresponds with the provided array of tokens, `{!js} tokens`,
-for a given account `{!js} acc`. If `{!js} tokens` contains a `{!js} null`, the corresponding position in the output
-array will contain the account's balance of network tokens.
-
-This function is more efficient for getting multiple token balances than repeated calls to
-`{!js} balanceOf`.
+for a given account `{!js} acc`.
+If `{!js} tokens` contains a `{!js} null`,
+the corresponding position in the output array will contain the account's balance of network tokens.
+This function is more efficient for getting multiple token balances than repeated calls to `{!js} balanceOf`.
 
 ---
 @{ref("js", "minimumBalanceOf")}
