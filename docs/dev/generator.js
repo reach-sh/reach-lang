@@ -86,10 +86,11 @@ const normalizeScope = (s) => {
 };
 
 const xrefs = {};
+const freshXrefScopeDict = () => ({"xrefs": {}, "prefixes": {}});
 const xrefPut = (s, t, v) => {
   const ns = normalizeScope(s);
-  if ( ! xrefs[ns] ) { xrefs[ns] = {}; }
-  const e = xrefs[ns][t];
+  if ( ! xrefs[ns] ) { xrefs[ns] = freshXrefScopeDict(); }
+  const e = xrefs[ns].xrefs[t];
   if ( e !== undefined ) {
     const es = JSON.stringify(e);
     const vs = JSON.stringify(v);
@@ -97,12 +98,19 @@ const xrefPut = (s, t, v) => {
       fail(`Duplicated xref`, s, t, e, v);
     }
   }
-  xrefs[ns][t] = v;
+  const parts = t.split(".");
+  for (let i = 1; i < parts.length; i++){
+    const prefix = parts.slice(0,i).join(".");
+    xrefs[ns].prefixes[prefix] = true;
+  }
+  xrefs[ns]["xrefs"][t] = v;
 };
-const xrefGetMaybe = (s, t) => {
+const xrefGetInfo = (xrefsOrPrefixes, s, t) => {
   const ns = normalizeScope(s);
-  return (xrefs[ns] || {})[t];
+  return (xrefs[ns] || freshXrefScopeDict())[xrefsOrPrefixes][t];
 };
+const xrefGetIsPrefix = (s, t) => xrefGetInfo("prefixes", s, t);
+const xrefGetMaybe = (s, t) => xrefGetInfo("xrefs", s, t);
 const xrefGet = (s, t) => {
   const r = xrefGetMaybe(s, t);
   if ( r === undefined ) {
@@ -560,9 +568,13 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
 
   // Process code snippets.
   const linkifySpans = (elem, language) => {
+    const activePrefixes = [];
     const linkifySpan = (s, language) => {
-      const text = s.textContent
-      const ref = xrefGetMaybe(language, text);
+      const text = s.textContent;
+      const prefixedTexts = activePrefixes.map((p) => p + "." + text);
+      prefixedTexts.push(text);
+      const refs = prefixedTexts.map((t) => xrefGetMaybe(language, t));
+      const ref = refs.find((r) => r)
       if (ref !== undefined) {
         const a = doc.createElement('a');
         a.href = ref.path;
@@ -570,6 +582,12 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
         a.innerHTML = s.outerHTML;
         s.outerHTML = a.outerHTML;
       }
+      for (const t of prefixedTexts) {
+        if (xrefGetIsPrefix(language, t) && ! activePrefixes.includes(t)) {
+          activePrefixes.push(t);
+        }
+      }
+
     }
     for (const s of elem.querySelectorAll('span')) {
       linkifySpan(s, language);
