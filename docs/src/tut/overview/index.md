@@ -124,7 +124,7 @@ Reach can leave files like these in place when run with `--intermediate-files`.
 
 :::note
 The command line snippets in this overview make no assumption about where Reach is installed on your machine. 
-If Reach is installed in a subdirectory, point to it with `./reach`, if in a parent directory use `../reach`. 
+If Reach is installed in the directory you're working in, point to it with `./reach`; if it is in a parent directory use `../reach`; if you installed it into your `{!cmd} PATH`, just type `reach`.
 Learn more about installing Reach in the [Tools documentation](##ref-install) or in our [Tutorial](##tut). 
 :::
 
