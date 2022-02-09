@@ -681,7 +681,7 @@ A @{defn("tuple")} literal, written `{!rsh} [ EXPR_0, ..., EXPR_n ]`, is an expr
 
 `{!rsh} ...expr` may appear inside tuple expressions, in which case the spreaded expression must evaluate to a tuple or array, which is spliced in place.
 
-### {#ref-programs-arrays} `array`
+### {#ref-programs-arrays} Arrays
 
 @{ref("rsh", "array")}
 ```reach
