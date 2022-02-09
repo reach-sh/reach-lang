@@ -54,3 +54,7 @@ e 60 new-tags:reach+react-runner
 e  0 fully-synchronized
 e  0 connector-avail:eth+cfx
 e  0 connector-avail-3rd-party:image-not-present
+
+# CORE-1104
+# e  0 connector-avail-3rd-party:image-present-tag-not # ✗ New tags are available for
+# e  0 connector-avail-3rd-party:image-present-sha-not # ✗ New images are available for
