@@ -52,7 +52,7 @@ common.mjs: ../crpc-common.mjs
 
 Dockerfile: ../crpc-Dockerfile
 	@cat ../crpc-Dockerfile \
-	  | sed 's/{{NODE_VERSION}}/$(NODE_VERSION)/' \
+	  | sed 's/{{NODE_IMAGE}}/$(NODE_IMAGE)/' \
 	  | sed 's/{{PORT}}/$(PORT)/' \
 	  > ./Dockerfile
 
@@ -70,6 +70,7 @@ build/index.main.mjs: $(RSHES) $(shell find . -name \*.rsh)
 	@$(REACH) compile index.rsh
 
 build: common.mjs Dockerfile package.json client-lib-js build/index.main.mjs
+
 	@docker build --tag=$(CIMG) .
 
 .PHONY: run

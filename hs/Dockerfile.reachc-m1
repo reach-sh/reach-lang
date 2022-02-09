@@ -1,5 +1,6 @@
-ARG SOLC_VERSION
-FROM ethereum/solc:${SOLC_VERSION}-alpine as solc
+ARG UBUNTU_IMAGE
+ARG SOLC_IMAGE
+FROM $SOLC_IMAGE as solc
 RUN apk add make curl bash
 COPY Makefile.docker ./Makefile
 COPY sol/stdlib_reach.sol sol/stdlib_openzep.sol.sh ./sol/
@@ -8,7 +9,7 @@ RUN make ROOT=.docker-root sol/stdlib.json
 
 FROM reachsh/devnet-algo:latest AS algo
 
-FROM ubuntu:latest
+FROM $UBUNTU_IMAGE
 
 RUN set -e
 RUN apt-get update \
