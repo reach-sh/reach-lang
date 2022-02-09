@@ -103,9 +103,6 @@ instance Countable DLLetVar where
     DLV_Eff -> mempty
     DLV_Let _ v -> counts v
 
-instance Countable DLToken where
-  counts (DLToken d _) = counts d
-
 instance Countable DLArg where
   counts = \case
     DLA_Var v -> counts v
@@ -164,7 +161,7 @@ instance Countable DLExpr where
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ mt tb -> counts mt <> counts tb
     DLE_FromSome _ mo da -> counts mo <> counts da
-    DLE_BalanceInit _ a -> counts a
+    DLE_BalanceInit a -> counts a
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m
