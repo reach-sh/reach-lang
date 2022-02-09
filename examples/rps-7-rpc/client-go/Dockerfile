@@ -1,4 +1,4 @@
-FROM    golang:1.15-alpine
+FROM    {{GOLANG_IMAGE}}
 WORKDIR /app
 COPY    index.go /app/
 

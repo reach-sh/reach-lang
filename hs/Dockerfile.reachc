@@ -1,7 +1,7 @@
-ARG ALPINE_VERSION
+ARG ALPINE_IMAGE
 FROM reachsh/haskell-build-artifacts AS build
 
-FROM alpine:$ALPINE_VERSION
+FROM $ALPINE_IMAGE
 RUN apk add gmp libgmpxx git
 
 COPY --from=build /usr/bin/solc /usr/bin/solc

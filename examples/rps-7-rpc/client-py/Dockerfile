@@ -1,4 +1,4 @@
-FROM       python:3.8-alpine
+FROM       {{PYTHON_IMAGE}}
 WORKDIR    /app
 ARG        VERSION
 

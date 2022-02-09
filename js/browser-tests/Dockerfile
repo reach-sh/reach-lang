@@ -1,5 +1,6 @@
 # TODO: pull version from DEPS
-FROM cypress/base:14.17.0
+ARG CYPRESS_IMAGE
+FROM $CYPRESS_IMAGE
 
 WORKDIR /test
 COPY package.json yarn.lock ./

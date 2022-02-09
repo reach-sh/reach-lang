@@ -1,7 +1,11 @@
+ROOT=..
+include $(ROOT)/DEPS
+
 .PHONY: build
 build:
 	DOCKER_BUILDKIT=1 docker build \
 	  --build-arg REACHC_HASH="$$(../scripts/git-hash.sh)" \
+	  --build-arg DOCS_IMAGE=${DOCS_IMAGE} \
 	  -o $$(pwd) \
 	  -f Dockerfile ..
 

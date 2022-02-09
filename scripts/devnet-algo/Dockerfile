@@ -1,4 +1,6 @@
-FROM golang:1.14-alpine as build
+ARG GOLANG_IMAGE
+ARG ALPINE_IMAGE
+FROM $GOLANG_IMAGE as build
 
 RUN apk add --no-cache \
   ca-certificates \
@@ -45,7 +47,7 @@ RUN make
 #RUN make
 RUN cp cmd/algorand-indexer/algorand-indexer /go/bin
 
-FROM alpine:latest as prepare
+FROM $ALPINE_IMAGE as prepare
 
 RUN apk add --no-cache \
   bash
@@ -67,7 +69,7 @@ RUN chmod -R 700 ${ALGORAND_DATA}/kmd*
 COPY prime-algod.sh /
 RUN /prime-algod.sh
 
-FROM alpine:latest as generate
+FROM $ALPINE_IMAGE as generate
 COPY --from=build /go/bin/goal /go/bin/algod /go/bin/kmd /bin/
 COPY network_template.json .
 COPY generate.sh .
@@ -76,7 +78,7 @@ RUN ./generate.sh
 FROM scratch as ignore-generate-out
 COPY --from=generate /algorand_network /
 
-FROM alpine
+FROM $ALPINE_IMAGE
 
 RUN apk add bash
 

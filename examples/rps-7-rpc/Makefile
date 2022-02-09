@@ -49,7 +49,7 @@ client-lib-cs: clean-client-lib-cs
 .PHONY: build-js
 build-js: server/build/index.main.mjs client-lib-js
 	cd client-js && docker build --tag=reachsh/reach-app-tut-7-rpc-client-js:latest \
-	  --build-arg NODE_VERSION=$(NODE_VERSION) \
+	  --build-arg NODE_IMAGE=$(NODE_IMAGE) \
 	  .
 
 .PHONY: build-py

@@ -1,4 +1,7 @@
-FROM debian:buster-slim as build
+ARG DEBIAN_NODE_IMAGE
+ARG DEBIAN_IMAGE
+
+FROM $DEBIAN_IMAGE as build
 
 RUN apt-get update; apt-get install clang libsqlite3-dev pkg-config libssl-dev cmake curl git openssl -y
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > /rustup.sh
@@ -15,7 +18,7 @@ COPY patch ./patch
 RUN patch -d ./core/src/spec/ < patch/genesis.patch
 RUN /root/.cargo/bin/cargo build --release
 
-FROM node:buster-slim
+FROM $DEBIAN_NODE_IMAGE
 
 # Some of these are weirdly needed to npm install on m1
 RUN apt-get update; apt-get install curl make python3 libc-dev gcc g++ -y; apt-get clean
