@@ -2449,17 +2449,17 @@ main = do
           <$> env
           <*> (hsubparser cs <|> hsubparser hs <**> helper)
   customExecParser (prefs showHelpOnError) (info cli (header header' <> fullDesc))
-    >>= \(Cli cenv_ ccmd) -> do
+    >>= \Cli {..} -> do
       cc <- lookupEnv "CIRCLECI"
       rd <- lookupEnv "REACH_DOCKER"
-      let cenv_no = cenv_ { e_disableReporting = True }
+      let cenv_no = c_env { e_disableReporting = True }
       let cenv =
             case (cc, rd) of
               (Just "true", _) -> cenv_no
               (_, Just "0") -> cenv_no
-              _ -> cenv_
+              _ -> c_env
       failNonAbsPaths cenv
-      runReaderT ccmd cenv
+      runReaderT c_cmd cenv
       readIORef eff >>= \case
         InProcess -> pure ()
         Script t -> case e_emitRaw cenv of
