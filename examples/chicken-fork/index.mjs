@@ -1,7 +1,6 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-(async () => {
   const stdlib = loadStdlib();
   const howManyRounds = stdlib.connector === 'ALGO' ? 3 : 10;
   const startingBalance = stdlib.parseCurrency(100);
@@ -58,4 +57,3 @@ import * as backend from './build/index.main.mjs';
   console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
   console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
 
-})();

@@ -2,7 +2,6 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 import rightpad from 'rightpad';
 
-(async () => {
   const stdlib = loadStdlib();
 
   const accAlice = await stdlib.newTestAccount(stdlib.parseCurrency(100));
@@ -25,4 +24,3 @@ import rightpad from 'rightpad';
   // Note: rightpad is not in the default set of node deps.
   // This is just a trivial example of using more node deps.
   console.log(rightpad('123', 6) + '!')
-})();

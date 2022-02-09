@@ -2,7 +2,6 @@ import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/${APP}.main.mjs';
 const stdlib = loadStdlib(process.env);
 
-(async () => {
   const startingBalance = stdlib.parseCurrency(100);
 
   const [ accAlice, accBob ] =
@@ -26,4 +25,3 @@ const stdlib = loadStdlib(process.env);
   ]);
 
   console.log('Goodbye, Alice and Bob!');
-})();

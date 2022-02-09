@@ -1,7 +1,6 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-(async () => {
   const stdlib = loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
   const accAlice = await stdlib.newTestAccount(startingBalance);
@@ -68,4 +67,3 @@ import * as backend from './build/index.main.mjs';
   console.log(`Alice went from ${beforeAlice} to ${afterAlice}.`);
   console.log(`Bob went from ${beforeBob} to ${afterBob}.`);
 
-})();

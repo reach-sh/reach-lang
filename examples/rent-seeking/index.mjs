@@ -3,7 +3,6 @@ import * as backend from './build/index.main.mjs';
 
 const numOfBidders = 2;
 
-(async () => {
   const stdlib = loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
   const fmt = (x) => stdlib.formatCurrency(x, 4);
@@ -67,4 +66,3 @@ const numOfBidders = 2;
       });
     })
     )));
-})();

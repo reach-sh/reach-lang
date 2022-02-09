@@ -18,7 +18,6 @@ const shouldFail = async (fp) => {
 const N = 3;
 const bidderNames = ["Alice", "Bob", "Camus"];
 
-(async () => {
   const stdlib = loadStdlib();
 
   const timeout = stdlib.connector === 'CFX' ? 25 : N * 3;
@@ -127,4 +126,3 @@ const bidderNames = ["Alice", "Bob", "Camus"];
     console.log(`${who} went from ${biddersBalances[i].before} to ${biddersBalances[i].after}`);
   }
 
-})();

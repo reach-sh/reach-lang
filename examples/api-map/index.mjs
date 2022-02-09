@@ -11,7 +11,6 @@ export class Signal {
   notify() { this.r(true); }
 };
 
-(async () => {
   const startingBalance = stdlib.parseCurrency(100);
 
   const [ accA, accB, accC ] =
@@ -53,4 +52,3 @@ export class Signal {
   await ctcC.a.P.get(10);
 
   await aP;
-})();

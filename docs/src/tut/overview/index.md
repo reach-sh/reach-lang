@@ -184,14 +184,14 @@ load: /examples/overview/index.mjs
 ```
 
 + Lines 1 and 2 import the Reach standard library loader and the compiled app backend.
-+ Line 5 dynamically loads the appropriate network-specific Reach standard library,
++ Line 4 dynamically loads the appropriate network-specific Reach standard library,
 based on the `REACH_CONNECTOR_MODE` environment variable.
 All of Reach's network-specific standard libraries adhere to a common interface allowing you to write programs that are network-agnostic.
-+ Lines 7 and 8 initialize new test accounts for Alice and Bob.
-+ Line 10 has Alice deploy the contract on the consensus network.
-+ Line 11 has Bob attach to the contract.
++ Lines 6 and 7 initialize new test accounts for Alice and Bob.
++ Line 9 has Alice deploy the contract on the consensus network.
++ Line 10 has Bob attach to the contract.
 The value `{!js} ctcAlice` contains no secret information and could easily be printed out and shared with Bob outside of the consensus network.
-+ Lines 13 through 22 launch the backends and wait for their completion. We'll look at the details in a moment.
++ Lines 12 through 21 launch the backends and wait for their completion. We'll look at the details in a moment.
 
 This code, similar for all test programs, demonstrates how straightforward it is to scaffold a Reach application for testing.
 
@@ -199,23 +199,23 @@ Let's look at initializing and interfacing each participant, starting with Alice
 
 ```
 load: /examples/overview/index.mjs
-range: 14-17
+range: 13-16
 ```
 
-+ Line 14 uses the contract handle associated with Alice's account to run the Alice participant backend, passing an object which holds the interact functions.
-+ Line 15 provides the `{!rsh} request` value.
-+ Line 16 provides the `{!rsh} info` value.
++ Line 13 uses the contract handle associated with Alice's account to run the Alice participant backend, passing an object which holds the interact functions.
++ Line 14 provides the `{!rsh} request` value.
++ Line 15 provides the `{!rsh} info` value.
 
 Let's look at Bob next.
 
 ```
 load: /examples/overview/index.mjs
-range: 18-21
+range: 17-20
 ```
 
-+ Line 18 initializes Bob just like Alice, although we use the `{!js} p` short-hand.
-+ Line 19 provides his `{!rsh} want` function, which produces a log message and always accepts.
-+ Line 20 provides his `{!rsh} got` function, which displays the secret on the console as well.
++ Line 17 initializes Bob just like Alice, although we use the `{!js} p` short-hand.
++ Line 18 provides his `{!rsh} want` function, which produces a log message and always accepts.
++ Line 19 provides his `{!rsh} got` function, which displays the secret on the console as well.
 
 ---
 

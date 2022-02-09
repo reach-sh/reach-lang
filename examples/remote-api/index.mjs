@@ -7,7 +7,6 @@ import * as fs from 'fs';
 
 const stdlib = loadStdlib(process.env);
 
-(async () => {
   if ( stdlib.connector === 'ALGO' ) { return; }
   const ethers = stdlib.connector === 'CFX' ? cfxers : real_ethers;
 
@@ -55,4 +54,3 @@ const stdlib = loadStdlib(process.env);
       getGuess: () => v,
     }),
   ]);
-})();

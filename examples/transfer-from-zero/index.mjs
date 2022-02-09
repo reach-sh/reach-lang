@@ -2,7 +2,6 @@ import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib(process.env);
 
-(async () => {
   const startingBalance = stdlib.parseCurrency(0);
   const [ accAlice, accBob ] =
     await stdlib.newTestAccounts(2, startingBalance);
@@ -19,4 +18,3 @@ const stdlib = loadStdlib(process.env);
     return;
   }
   throw Error('Expected exn, but none thrown.');
-})();

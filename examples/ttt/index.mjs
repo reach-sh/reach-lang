@@ -1,5 +1,5 @@
-import * as stdlib_loader from '@reach-sh/stdlib';
-import * as TTT from './build/index.main.mjs';
+import { loadStdlib } from '@reach-sh/stdlib';
+import * as backend from './build/index.main.mjs';
 
 function render(st) {
   let o = '\n\t';
@@ -13,55 +13,50 @@ function render(st) {
   return o;
 }
 
-(async () => {
-  const stdlib = await stdlib_loader.loadStdlib();
-  const startingBalance = stdlib.parseCurrency(100);
-  const wagerAmount = stdlib.parseCurrency(5);
-  const dispAmt = (x) => `${stdlib.formatCurrency(x)} ${stdlib.standardUnit}`;
+const stdlib = loadStdlib();
+const startingBalance = stdlib.parseCurrency(100);
+const wagerAmount = stdlib.parseCurrency(5);
+const dispAmt = (x) => `${stdlib.formatCurrency(x)} ${stdlib.standardUnit}`;
 
-  console.log(`\nMaking accounts\n`);
+console.log(`\nMaking accounts\n`);
 
-  const alice = await stdlib.newTestAccount(startingBalance);
-  const bob = await stdlib.newTestAccount(startingBalance);
+const alice = await stdlib.newTestAccount(startingBalance);
+const bob = await stdlib.newTestAccount(startingBalance);
 
-  console.log(`\nDeploying and attaching\n`);
+console.log(`\nDeploying and attaching\n`);
 
-  const ctcAlice = alice.contract(TTT);
-  const ctcBob = bob.contract(TTT, ctcAlice.getInfo());
+const ctcAlice = alice.contract(backend);
+const ctcBob = bob.contract(backend, ctcAlice.getInfo());
 
-  console.log(`\nRunning a random game\n`);
+console.log(`\nRunning a random game\n`);
 
-  const interactWith = (name) => ({
-    ...stdlib.hasRandom,
-    getWager: () => {
-      console.log(`${name} publishes parameters of game: wager of ${dispAmt(wagerAmount)}`);
-      return wagerAmount;
-    },
-    acceptWager: (givenWagerAmount) => {
-      console.log(`${name} accepts parameters of game: wager of ${dispAmt(givenWagerAmount)}`);
-    },
-    getMove: (state) => {
-      console.log(`${name} chooses a move from the state:${render(state)}`);
-      const xs = state.xs;
-      const os = state.os;
-      while ( xs && os ) {
-        const i = Math.floor( Math.random() * 9 );
-        if ( ! ( xs[i] || os[i] ) ) {
-          return i;
-        }
+const interactWith = (name) => ({
+  ...stdlib.hasRandom,
+  getWager: () => {
+    console.log(`${name} publishes parameters of game: wager of ${dispAmt(wagerAmount)}`);
+    return wagerAmount;
+  },
+  acceptWager: (givenWagerAmount) => {
+    console.log(`${name} accepts parameters of game: wager of ${dispAmt(givenWagerAmount)}`);
+  },
+  getMove: (state) => {
+    console.log(`${name} chooses a move from the state:${render(state)}`);
+    const xs = state.xs;
+    const os = state.os;
+    while ( xs && os ) {
+      const i = Math.floor( Math.random() * 9 );
+      if ( ! ( xs[i] || os[i] ) ) {
+        return i;
       }
-      throw Error(`impossible to make a move`);
-    },
-    endsWith: (state) => {
-      console.log(`${name} sees the final state: ${render(state)}`);
-    },
-  });
+    }
+    throw Error(`impossible to make a move`);
+  },
+  endsWith: (state) => {
+    console.log(`${name} sees the final state: ${render(state)}`);
+  },
+});
 
-  await Promise.all([
-    TTT.A(ctcAlice, interactWith('Alice')),
-    TTT.B(ctcBob, interactWith('Bob')),
-  ]);
-
-  console.log(`Done!`);
-  process.exit(0);
-})();
+await Promise.all([
+  backend.A(ctcAlice, interactWith('Alice')),
+  backend.B(ctcBob, interactWith('Bob')),
+]);

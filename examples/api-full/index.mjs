@@ -12,7 +12,6 @@ export class Signal {
   notify() { this.r(true); }
 };
 
-(async () => {
   const stdlib = loadStdlib();
   const amt_ = stdlib.parseCurrency(2);
   const bal = stdlib.parseCurrency(100);
@@ -85,4 +84,3 @@ export class Signal {
     }),
   ]);
   await showAdminBal('end');
-})();

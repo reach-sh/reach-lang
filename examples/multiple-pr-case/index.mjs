@@ -52,6 +52,4 @@ export const run = async (n) => {
   console.log(`Bob went from ${beforeB} to ${afterB}`);
 };
 
-(async () => {
   await run();
-})();
