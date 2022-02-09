@@ -36,7 +36,6 @@ COPY tsconfig*.json \
      webpack.config.js \
      index.ts \
      .eslintrc.yaml .eslintignore .gitignore \
-     launchToken.mjs \
      /stdlib/
 COPY sbin/fix.sh /stdlib/sbin/fix.sh
 
