@@ -122,12 +122,18 @@ The Ethereum bytecode is not readable, but if you understand Solidity, you may w
 Reach can leave files like these in place when run with `--intermediate-files`.
 :::
 
+:::note
+The command line snippets in this overview make no assumption about where Reach is installed on your machine. 
+If Reach is installed in a subdirectory, point to it with `./reach`, if in a parent directory use `../reach`. 
+Learn more about installing Reach in the [Tools documentation](##ref-install) or in our [Tutorial](##tut). 
+:::
+
 For this thirty line application, the Reach compiler generated hundreds of lines of JavaScript code in two functions, one for Alice and one for Bob.
 Separately, it generated hundreds more lines of Solidity code to implement the contract.
 If a programmer wasn't using Reach, they would have to write all this code in these three modules individually and keep them synchronized at every step of the development process.
 
-Moreover, Reach doesn't only work for Ethereum: it is blockchain agnostic and can be easily configured to use a different connector to target a different consensus network, like Algorand.
-Nor is Reach tied to JavaScript: it can be configured to target other backend languages, like Go.
+Moreover, Reach doesn't only work for Ethereum: it is blockchain agnostic and can be easily configured to use a different connector to target a different [consensus network](##ref-networks), like Algorand.
+Nor is Reach tied to JavaScript: it can be configured to target other [backend languages](##ref-backends-rpc), like Go, Python, and C#.
 
 ## {#over-verify} Verify
 
@@ -227,7 +233,14 @@ Reach allows programmers to focus on the business logic of their application at 
 It's now time to execute this test program and ensure that everything is working correctly.
 In this case, we've set up our application simply: there's one Reach file for the application and one JavaScript file for the interface.
 This is a common practice, so Reach comes with a simple wrapper script to build and execute such applications.
-We just run:
+
+First, we connect Reach to a consensus network. We can connect to Ethereum's test environment by running:
+
+```cmd
+$ export REACH_CONNECTOR_MODE=ETH
+```
+
+Then, we just run:
 
 ```cmd
 $ reach run
@@ -238,9 +251,9 @@ And then Reach
 + compiles [overview/index.rsh](@{REPO}/examples/overview/index.rsh);
 + creates a temporary Node.js package;
 + builds a Docker image based on Reach's standard image for the package; and,
-+ runs the application connected to Reach's standard private Ethereum devnet image.
++ runs the application connected to the specified consensus network's devnet image.
 
-On typical developer laptops, this entire process takes seconds and can be completely integrated into existing development IDEs, like VSCode, so Reach developers can compile, verify, build, launch, and test their Reach app with a single command.
+On typical developer laptops, this entire process takes seconds and can be completely integrated into existing development [IDEs](##guide-editor-support), like VSCode, so Reach developers can compile, verify, build, launch, and test their Reach app with a single command.
 
 ---
 
