@@ -128,13 +128,6 @@ cdot () {
 
 #######
 
-fc users/asolpshinning-redpm2.rsh
-fc users/asolpshinning-redpm.rsh
-c users/asolpshinning-redf.rsh
-c users/asolpshinning-redpb.rsh
-c users/asolpshinning-red.rsh
-exit 0
-
 c --install-pkgs users/xbacked-contracts/src/master_vault.rsh
 REACH_DEBUG=Y cdot users/xbacked-contracts/src/master_vault.rsh
 exit 0

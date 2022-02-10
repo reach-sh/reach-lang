@@ -5,14 +5,8 @@
 # --> show step
 # Some day, make this interactive and imitate
 # https://justine.lol/blinkenlights/index.html
-CONT="reach-devnet-algo"
-STEP="$1"
-if [ "x${STEP}" = "x" ] ; then
-  docker container exec "${CONT}" ls -1 /dbg | sort -t - -k1,1n -k2,2n
-  docker container exec "${CONT}" du -hac /dbg | tail -1
-else
-  TMP=/tmp/algodbg.json
-  docker container cp "${CONT}":/dbg/"${STEP}".json "${TMP}"
+TMP=/tmp/algodbg.json
+show() {
   sed -i -E 's/^( +)([0-9]+):/\1"\2":/g' "${TMP}"
   line=$(jq .line "${TMP}")
   ((line = line + 1))
@@ -22,4 +16,29 @@ else
   cat "${TMP}" | jq .txngroup
   jq -r .disasm "${TMP}" | bat -n --highlight-line "${line}" --pager "less -FR +${line}"
   cat "${TMP}" | jq .stack
+}
+list() {
+  "${DIR_PRE[@]}" ls -1 "${DIR}" | sort -t - -k1,1n -k2,2n
+  "${DIR_PRE[@]}" du -hac "${DIR}" | tail -1
+}
+CONT="reach-devnet-algo"
+if [ "x${1}" = "x" ] ; then
+  DIR="/dbg"
+  DIR_PRE=(docker container exec "${CONT}")
+  list
+elif [ "x${2}" = "x" ] ; then
+  if [ -d "${1}" ] ; then
+    DIR="${1}"
+    DIR_PRE=()
+    list
+  else
+    STEP="${1}"
+    docker container cp "${CONT}":/dbg/"${STEP}".json "${TMP}"
+    show
+  fi
+else
+  DIR="${1}"
+  STEP="${2}"
+  cp -f "${DIR}"/"${STEP}".json "${TMP}"
+  show
 fi
