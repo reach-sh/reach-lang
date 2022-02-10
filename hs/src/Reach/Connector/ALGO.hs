@@ -262,6 +262,7 @@ data IndentDir
 
 data TEAL
   = TCode TealOp [TealArg]
+  | Titob Bool
   | TInt Integer
   | TConst LT.Text
   | TBytes B.ByteString
@@ -280,7 +281,7 @@ type TEALt = [LT.Text]
 type TEALs = DL.DList TEAL
 
 builtin :: S.Set TealOp
-builtin = S.fromList ["byte", "int", "substring", "extract", "log", "store", "load"]
+builtin = S.fromList ["byte", "int", "substring", "extract", "log", "store", "load", "itob"]
 
 render :: IORef Int -> TEAL -> IO TEALt
 render ilvlr = \case
@@ -289,6 +290,7 @@ render ilvlr = \case
   TBytes bs -> r ["byte", "base64(" <> encodeBase64 bs <> ")"]
   TExtract x y -> r ["extract", texty x, texty y]
   TSubstring x y -> r ["substring", texty x, texty y]
+  Titob _ -> r ["itob"]
   TCode f args ->
     case S.member f builtin of
       True -> impossible $ show $ "cannot use " <> f <> " directly"
@@ -349,9 +351,9 @@ opt_b1 = \case
   (TBytes x) : (TBytes y) : (TCode "concat" []) : l ->
     opt_b1 $ (TBytes $ x <> y) : l
   (TCode "b" [x]) : b@(TLabel y) : l | x == y -> b : l
-  (TCode "btoi" []) : (TCode "itob" ["// bool"]) : (TSubstring 7 8) : l -> l
-  (TCode "btoi" []) : (TCode "itob" []) : l -> l
-  (TCode "itob" []) : (TCode "btoi" []) : l -> l
+  (TCode "btoi" []) : (Titob True) : (TSubstring 7 8) : l -> l
+  (TCode "btoi" []) : (Titob _) : l -> l
+  (Titob _) : (TCode "btoi" []) : l -> l
   (TCode "==" []) : (TCode "!" []) : l -> (TCode "!=" []) : l
   (TInt 0) : (TCode "!=" []) : (TCode "assert" []) : l ->
     (TCode "assert" []) : l
@@ -383,7 +385,7 @@ opt_b1 = \case
       s2n = s0n + (fromIntegral s1w)
       e2n :: Integer
       e2n = s0n + (fromIntegral e1w)
-  (TInt x) : (TCode "itob" []) : l ->
+  (TInt x) : (Titob _) : l ->
     opt_b1 $ (TBytes $ itob x) : l
   (TBytes xbs) : (TCode "btoi" []) : l ->
     opt_b1 $ (TInt $ btoi xbs) : l
@@ -480,6 +482,7 @@ checkCost warning disp alwaysShow ts = do
     TInt _ -> recCost 1
     TExtract {} -> recCost 1
     TSubstring {} -> recCost 1
+    Titob {} -> recCost 1
     TCode f _ ->
       case f of
         "sha256" -> recCost 35
@@ -868,8 +871,8 @@ sallocVarLet (DLVarLet mvc dv) sm cgen km = do
 
 ctobs :: DLType -> App ()
 ctobs = \case
-  T_UInt -> op "itob"
-  T_Bool -> code "itob" ["// bool"] >> output (TSubstring 7 8)
+  T_UInt -> output (Titob False)
+  T_Bool -> output (Titob True) >> output (TSubstring 7 8)
   T_Null -> nop
   T_Bytes _ -> nop
   T_Digest -> nop
@@ -1622,13 +1625,13 @@ ce = \case
       L_Internal -> void $ internal
       L_Api {} -> do
         v <- internal
-        op "dup"
+        --op "dup" -- API log values are never used
         ctobs $ varType v
         gvStore GV_apiRet
       L_Event ml en -> do
         let name = maybe en (\l -> bunpack l <> "_" <> en) ml
         clogEvent name vs
-        cl DLL_Null
+        --cl DLL_Null -- Event log values are never used
   DLE_setApiDetails {} -> return ()
   DLE_GetUntrackedFunds _ mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
