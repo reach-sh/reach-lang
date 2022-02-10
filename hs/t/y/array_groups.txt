@@ -4,6 +4,6 @@ Verifying for generic connector
   Verifying when NO participants are honest
 Checked 9 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
- * This program could use 3297 units of cost, but the limit is 700; longest path:
-     TOP --15--> preamble --2--> api --5--> publish --11--> l0_publish_lt_1 --1--> publish0 --77--> l2_checkTxnK --5--> l3_forTop --640--> l4_forEnd --4--> l5_forTop --5--> l7_forTop --910--> l8_forEnd --875--> l6_forEnd --4--> l9_forTop --700--> l10_forEnd --18--> updateState --9--> apiReturn --4--> checkSize --10--> done --2--> BOT
+ * This program could use 34445 units of cost, but the limit is 700; longest path:
+     TOP --> preamble --> api --> publish --> l0_publish_lt_1 --> publish0 --> l2_checkTxnK --> l3_forTop --> l4_forEnd --> l5_forTop --> l7_forTop --> l8_forEnd --> l6_forEnd --> l9_forTop --> l10_forEnd --> updateState --> apiReturn --> checkSize --> done --> BOT
 

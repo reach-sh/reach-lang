@@ -5,5 +5,5 @@ Verifying for generic connector
 Checked 170 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
  * This program could use 1168 bytes of logs, but the limit is 1024; longest path:
-     TOP --0--> preamble --0--> publish --0--> l28_publish_lt_5 --0--> l41_publish_lt_3 --0--> l40_publish_lt_2 --0--> l45_publish_lt_1 --0--> publish0 --652--> l46_checkTxnK --0--> l47_checkTxnK --0--> updateState --0--> apiReturn --516--> checkSize --0--> done --0--> BOT
+     TOP --> preamble --> publish --> l28_publish_lt_5 --> l41_publish_lt_3 --> l40_publish_lt_2 --> l45_publish_lt_1 --> publish0 --> l46_checkTxnK --> l47_checkTxnK --> updateState --> apiReturn --> checkSize --> done --> BOT
 
