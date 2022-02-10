@@ -3635,7 +3635,8 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
       let all_same = all (equiv xv) mvs
       case not (containsVarNewerThan ret xv) && all_same of
         -- only remove the prompt if there was a single return
-        True -> promptAndStatic mt (lvl, xv)
+        True -> do
+          promptAndStatic mt (lvl, xv)
         False -> do
           let go (r_at, mrty, (_, v), _) =
                 case mrty of
@@ -4899,8 +4900,8 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   let tc_e = tc_fork_e
   let tc_ss = [JSExpressionStatement tc_e sp]
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
-  -- liftIO $ putStrLn $ "Fork Output"
-  -- liftIO $ putStrLn $ show $ pretty exp_ss
+  --liftIO $ putStrLn $ "Fork Output"
+  --liftIO $ putStrLn $ show $ pretty exp_ss
   evalStmt $ exp_ss <> ks
 
 modifyLastM :: Monad m => (a -> m a) -> [a] -> m [a]

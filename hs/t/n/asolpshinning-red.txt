@@ -1,0 +1,10 @@
+reachc: error[RE0088]: These types are mismatched:
+  expected: Tuple(UInt, Tuple(UInt, Token))
+       got: Tuple(UInt)
+
+  ./asolpshinning-red.rsh:11:27:block app
+
+  11|   const x = parallelReduce(0)
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0088
+

@@ -1,0 +1,10 @@
+reachc: error[RE0088]: These types are mismatched:
+  expected: Tuple(UInt, Tuple(UInt, Token))
+       got: Tuple(UInt)
+
+  ./asolpshinning-redpb.rsh:12:32:block app
+
+  12|   C.publish(y, z).pay(((zz) => {
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0088
+
