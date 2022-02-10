@@ -440,8 +440,8 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
   const generateIndex = () => {
     const r = [];
     for ( const s in xrefs ) {
-      for ( const t in xrefs[s] ) {
-        const { title, path } = xrefs[s][t];
+      for ( const t in xrefs[s].xrefs ) {
+        const { title, path } = xrefs[s].xrefs[t];
         r.push(`1. [${title}](${path})`);
       }
     }
