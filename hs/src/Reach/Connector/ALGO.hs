@@ -1887,7 +1887,15 @@ doSwitch lab ck _at dv csm = do
         cload
         cint 0
         op "getbyte"
-        cblt lab cm1 $ bltL $ zip [0 ..] (M.toAscList csm)
+        let csml = zip [0 ..] (M.toAscList csm)
+        case csml of
+          [ (0, x), (1, y) ] -> do
+            y_lab <- freshLabel $ lab <> "_" <> "nz"
+            code "bnz" [ y_lab ]
+            cm1 x x
+            label y_lab
+            cm1 y y
+          _ -> cblt lab cm1 $ bltL csml
   letSmall dv >>= \case
     True -> go (ca $ DLA_Var dv)
     False -> do
