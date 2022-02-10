@@ -1,6 +1,6 @@
 # `cli-version-compare`
 
-This test suite pairs flat JSON stub inputs with the hidden [`version-compare2` CLI subcommand](blob/master/hs/app/reach/Main.hs). 
+This test suite pairs flat JSON stub inputs with the hidden [`version-compare2` CLI subcommand](../../hs/app/reach/Main.hs).
 
 ## `run.sh` target conventions
 
