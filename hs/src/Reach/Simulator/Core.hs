@@ -260,19 +260,10 @@ data DLVal
   | V_Object (M.Map SLVar DLVal)
   | V_Data SLVar DLVal
   | V_Struct [(SLVar, DLVal)]
-  | V_Maybe DLMaybeVal
   deriving (Eq, Ord, Show, Generic)
 
 instance ToJSON DLVal
 instance FromJSON DLVal
-
-data DLMaybeVal
-  = V_Nothing
-  | V_Just DLVal
-  deriving (Eq, Ord, Show, Generic)
-
-instance ToJSON DLMaybeVal
-instance FromJSON DLMaybeVal
 
 addToStore :: DLVar -> DLVal -> App ()
 addToStore x v = do
@@ -495,11 +486,11 @@ instance Interp DLExpr where
       let linstate = e_linstate g
       acc <- vAddress <$> interp dlarg
       case M.lookup dlmvar linstate of
-        Nothing -> return $ V_Maybe V_Nothing
+        Nothing -> return $ V_Data "None" V_Null
         Just m -> do
           case M.lookup acc m of
-            Nothing -> return $ V_Maybe V_Nothing
-            Just m' -> return $ V_Maybe $ V_Just m'
+            Nothing -> return $ V_Data "None" V_Null
+            Just m' -> return $ V_Data "Some" m'
     DLE_MapSet _at dlmvar dlarg maybe_dlarg -> do
       (e, _) <- getState
       let linst = e_linstate e
