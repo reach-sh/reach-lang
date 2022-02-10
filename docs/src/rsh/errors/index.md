@@ -1893,6 +1893,9 @@ const nonNetPayAmt = [ [balance(tok), tok], [balance(tok2), tok2] ];
 transfer([ balance(), ...nonNetPayAmt ]).to(Who);
 ```
 
+Sometimes this is caused when you did not include `{!rsh} paySpec` in a use of
+`{!rsh} fork` or `{!rsh} parallelReduce`.
+
 ## {#RE0105} RE0105
 
 This error indicates that the incorrect arguments were supplied to `{!rsh} withBill`.

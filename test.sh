@@ -128,6 +128,9 @@ cdot () {
 
 #######
 
+c users/asolpshinning.rsh
+exit 0
+
 #c --install-pkgs users/xbacked-contracts/src/master_vault.rsh
 REACH_DEBUG=Y cdot users/xbacked-contracts/src/master_vault.rsh
 exit 0
@@ -136,7 +139,6 @@ exit 0
 
 (cd users/algo-govt && ./test.sh)
 exit 0
-
 
 jb
 ci ALGO signingMonitor
