@@ -53,6 +53,7 @@ const sheet = (function() {
 	style.appendChild(document.createTextNode(""));
 	document.head.appendChild(style);
 	return style.sheet;
+})();
 
 const codeDiv = document.querySelector("#cx")
 codeDiv.innerHTML = rsh
