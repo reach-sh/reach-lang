@@ -1,5 +1,3 @@
-REACH = ../../reach
-NODE = node
 NPM = npm
 
 .PHONY: build
