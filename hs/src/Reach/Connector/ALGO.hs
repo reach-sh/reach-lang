@@ -1875,21 +1875,26 @@ cextractDataOf cd va = do
 
 doSwitch :: String -> (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
 doSwitch lab ck _at dv csm = do
-  salloc_ (textyv dv <> " for switch") $ \cstore cload -> do
-    ca $ DLA_Var dv
-    cstore
-    let cm1 _vi (vn, (vv, vu, k)) = do
-          l <- freshLabel $ lab <> "_" <> vn
-          block l $
-            case vu of
-              False -> ck k
-              True -> do
-                flip (sallocLet vv) (ck k) $ do
-                  cextractDataOf cload (DLA_Var vv)
-    cload
-    cint 0
-    op "getbyte"
-    cblt lab cm1 $ bltL $ zip [0 ..] (M.toAscList csm)
+  let go cload = do
+        let cm1 _vi (vn, (vv, vu, k)) = do
+              l <- freshLabel $ lab <> "_" <> vn
+              block l $
+                case vu of
+                  False -> ck k
+                  True -> do
+                    flip (sallocLet vv) (ck k) $ do
+                      cextractDataOf cload (DLA_Var vv)
+        cload
+        cint 0
+        op "getbyte"
+        cblt lab cm1 $ bltL $ zip [0 ..] (M.toAscList csm)
+  letSmall dv >>= \case
+    True -> go (ca $ DLA_Var dv)
+    False -> do
+      salloc_ (textyv dv <> " for switch") $ \cstore cload -> do
+        ca $ DLA_Var dv
+        cstore
+        go cload
 
 cm :: App () -> DLStmt -> App ()
 cm km = \case
