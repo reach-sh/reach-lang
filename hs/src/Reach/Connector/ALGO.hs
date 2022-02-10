@@ -352,6 +352,9 @@ opt_b1 = \case
   (TCode "btoi" []) : (TCode "itob" ["// bool"]) : (TSubstring 7 8) : l -> l
   (TCode "btoi" []) : (TCode "itob" []) : l -> l
   (TCode "itob" []) : (TCode "btoi" []) : l -> l
+  (TCode "==" []) : (TCode "!" []) : l -> (TCode "!=" []) : l
+  (TInt 0) : (TCode "!=" []) : (TCode "assert" []) : l ->
+    (TCode "assert" []) : l
   (TExtract x 8) : (TCode "btoi" []) : l ->
     (TInt $ fromIntegral x) : (TCode "extract_uint64" []) : l
   a@(TLoad x _) : (TLoad y _) : l

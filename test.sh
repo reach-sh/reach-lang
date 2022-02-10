@@ -128,7 +128,6 @@ cdot () {
 
 #######
 
-REACH_DEBUG=Y cdot examples/rps-7-array/index.rsh
 #c --install-pkgs users/xbacked-contracts/src/master_vault.rsh
 REACH_DEBUG=Y cdot users/xbacked-contracts/src/master_vault.rsh
 exit 0
