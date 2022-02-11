@@ -399,7 +399,7 @@ fixFluidRefType_ :: DLVar -> DFApp DLVar
 fixFluidRefType_ = \case
   DLVar a b T_Balances i -> do
     eBals <- asks eBals
-    return $ DLVar a b (T_Array balanceElemTy eBals) i
+    return $ DLVar a b (T_Array tokenInfoElemTy eBals) i
   ow -> return ow
 
 fixFluidRefType :: DLLetVar -> DFApp DLLetVar
@@ -421,33 +421,46 @@ df_com mkk back = \case
     (at', da) <- fluidRef at fv
     dv' <- fixFluidRefType_ dv
     mkk <$> (pure $ DL_Let at (DLV_Let DVC_Many dv') (DLE_Arg at' da)) <*> back k
-  DK_Com (DKC_TokenMetaGet fv at res _ mpos) k -> do
+  DK_Com (DKC_TokenMetaGet tm at res _ mpos) k -> do
     let asn = assign at
-    (_, bals) <- fluidRef at fv
+    (_, bals) <- fluidRef at FV_tokens
     let idx = case mpos of
               Just i -> DLA_Literal $ DLL_Int at $ fromIntegral i
               Nothing -> impossible "Dynamic token computation"
-    val  <- mkVar at balanceElemTy
+    let tmIdx = fromIntegral $ fromEnum tm + 1 -- idx 0 is token key
+    val  <- mkVar at tokenInfoElemTy
     let c1 = asn val $ DLE_ArrayRef at bals idx
-    let c2 = asn res $ DLE_TupleRef at (DLA_Var val) 1
+    let c2 = asn res $ DLE_TupleRef at (DLA_Var val) tmIdx
     mkk c1 <$> mkk c2 <$> back k
-  DK_Com (DKC_TokenMetaSet fv at _ newBal mp) k -> do
+  DK_Com (DKC_TokenMetaSet tm at _ newVal mp) k -> do
     let asn = assign at
-    (_, bals) <- fluidRef at fv
+    (_, bals) <- fluidRef at FV_tokens
     let idx = case mp of
               Just i -> DLA_Literal $ DLL_Int at $ fromIntegral i
               Nothing -> impossible "Dynamic token computation"
-    tup   <- mkVar at balanceElemTy
+    tup   <- mkVar at tokenInfoElemTy
     bals' <- mkVar at T_Balances
-    tup'  <- mkVar at balanceElemTy
+    tup'  <- mkVar at tokenInfoElemTy
     tok   <- mkVar at T_Token
+    bal   <- mkVar at $ T_UInt
+    supply <- mkVar at $ T_UInt
+    destroyed <- mkVar at $ T_Bool
     let c1 = asn tup $ DLE_ArrayRef at bals idx
-    -- XXX Make DLE_TupleSet? This will get gross when tuple holds supply,destroyed...
-    let c2 = asn tok $ DLE_TupleRef at (DLA_Var tup) 0
-    let c3 = asn tup' $ DLE_LArg at $ DLLA_Tuple [ DLA_Var tok, newBal ]
-    let c4 = asn bals' $ DLE_ArraySet at bals idx (DLA_Var tup')
-    let c5 = DKC_FluidSet at FV_balances $ DLA_Var bals'
-    mkk c1 <$> mkk c2 <$> mkk c3 <$> mkk c4 <$> df_com mkk back (DK_Com c5 k)
+    -- XXX Make DLE_TupleSet? This is kind of gross
+    let get = DLE_TupleRef at (DLA_Var tup)
+    let get0 = asn tok $ get 0
+    let get1 = asn bal $ get 1
+    let get2 = asn supply $ get 2
+    let get3 = asn destroyed $ get 3
+    let c2 = asn tup' $ DLE_LArg at $ DLLA_Tuple [
+          DLA_Var tok,
+          if tm == TM_Balance   then newVal else DLA_Var bal,
+          if tm == TM_Supply    then newVal else DLA_Var supply,
+          if tm == TM_Destroyed then newVal else DLA_Var destroyed
+          ]
+    let c3 = asn bals' $ DLE_ArraySet at bals idx (DLA_Var tup')
+    let c4 = DKC_FluidSet at FV_tokens $ DLA_Var bals'
+    mkk c1 <$> mkk get0 <$> mkk get1 <$> mkk get2 <$> mkk get3 <$> mkk c2 <$> mkk c3 <$> df_com mkk back (DK_Com c4 k)
   DK_Com m k -> do
     m' <-
       case m of
@@ -564,11 +577,13 @@ df_eb (DLinExportBlock at vs b) =
 df_init :: DKTail -> DFApp DKTail
 df_init k = do
   dv <- fixFluidRefType_ =<< DLVar sb Nothing T_Balances <$> df_allocVar
-  nv <- DLVar sb Nothing balanceElemTy <$> df_allocVar
+  nv <- DLVar sb Nothing tokenInfoElemTy <$> df_allocVar
   let lv = DLV_Let DVC_Many dv
-  let c1 = DKC_Let sb (DLV_Let DVC_Many nv) $ DLE_LArg sb $ DLLA_Tuple [DLA_Constant DLC_Zero_addr, DLA_Literal $ DLL_Int sb 0]
+  let false = DLA_Literal $ DLL_Bool False
+  let zero = DLA_Literal $ DLL_Int sb 0
+  let c1 = DKC_Let sb (DLV_Let DVC_Many nv) $ DLE_LArg sb $ DLLA_Tuple [DLA_Constant DLC_Zero_addr, zero, zero, false]
   let c2 = DKC_Let sb lv $ DLE_BalanceInit nv
-  let c3 = DKC_FluidSet sb FV_balances $ DLA_Var dv
+  let c3 = DKC_FluidSet sb FV_tokens $ DLA_Var dv
   return $ DK_Com c1 (DK_Com c2 (DK_Com c3 k))
 
 defluid :: DKProg -> IO LLProg
