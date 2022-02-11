@@ -136,7 +136,7 @@ const renderObjects = async (nodeId) => {
 
         </div>
         <div>
-          <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Init Actor</button>
+          <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-light btn-sm">Init Actor</button>
         </div>
       </div>
     </div>
@@ -159,7 +159,7 @@ const renderObjects = async (nodeId) => {
         <input type="text" id="token-id" class="form-control form-control-sm" placeholder="Token Id">
         <input type="text" id="transfer-amount" class="form-control form-control-sm" placeholder="Amount">
 
-        <button type="button" id="transferButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Transfer  <i class="bi bi-arrow-right-circle"></i></button>
+        <button type="button" id="transferButton" data-node-id="${nodeId}" class="btn btn-outline-light btn-sm">Transfer  <i class="bi bi-arrow-right-circle"></i></button>
 
       </div>
     </div>
@@ -522,7 +522,7 @@ const respondToActions = async (evt) => {
   </nav>
   ${respTempl[0]}
   <div>
-    <button type="button" id="spa-res-button" class="btn btn-outline-secondary btn-sm">Respond</button>
+    <button type="button" id="spa-res-button" class="btn btn-outline-light btn-sm">Respond</button>
   </div>
   `
   const spaRespondBtn = document.querySelector("#spa-res-button")
@@ -842,8 +842,8 @@ const clickNode = async (evt) => {
   while (sheet.cssRules.length > 0) {
     sheet.deleteRule(sheet.cssRules.length - 1);
   }
-  const singleColors = ['#a7a6ba','#6699CC','#C0C0C0']
-  const multiColor = '#90917E'
+  const singleColors = ['#0f4539','#2f3b22','#052d0a','#001f24']
+  const multiColor = '#152d32'
   const dupls = ats.filter((e, index, arr) => arr.indexOf(e) !== index)
   const dups = [...new Set(dupls)]
   ats = [...new Set(ats)]
