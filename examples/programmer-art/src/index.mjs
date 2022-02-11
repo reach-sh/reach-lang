@@ -723,14 +723,14 @@ const redraw = async () => {
       {
         selector: 'node',
         style: {
-          'background-color': '#666',
+          'background-color': '#f6f6f6',
           'label': 'data(id)',
           'visibility': 'hidden',
           'shape': 'round-rectangle',
           'content': 'data(label)',
           'font-family': 'Inconsolata, monospace',
           'background-color': '#f6f6f6',
-          'color': '#555',
+          'color': '#2e3440',
           // 'font-size': 10,
           'width': '80%',
           // 'height': '5%',
@@ -757,6 +757,19 @@ const redraw = async () => {
     }
   });
   cy.bind('click', 'node', clickNode);
+  let allNodes = cy.filter(function(element, i){
+    return element.isNode();
+  });
+  cy.on('click', 'node', function(evt){
+    allNodes.style({
+      'background-color': '#f6f6f6',
+      'color': '#2e3440',
+    })
+    evt.target.style({
+      'background-color': '#2e3440',
+      'color': '#f6f6f6',
+    })
+  });
   const eles = cy.filter(function(element, i){
     return true;
   });
