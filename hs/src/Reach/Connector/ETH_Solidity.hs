@@ -57,7 +57,9 @@ conName' :: T.Text
 conName' = "ETH"
 
 conCons' :: DLConstant -> DLLiteral
-conCons' DLC_UInt_max = DLL_Int sb $ 2 ^ (256 :: Integer) - 1
+conCons' = \case
+  DLC_UInt_max  -> DLL_Int sb $ 2 ^ (256 :: Integer) - 1
+  DLC_Zero_addr -> impossible "ETH conCons': zero_addr"
 
 solString :: String -> Doc
 solString s = squotes $ pretty s
@@ -445,7 +447,7 @@ mustBeMem = \case
   T_Object {} -> True
   T_Data {} -> True
   T_Struct {} -> True
-  T_TokenBalances {} -> impossible "mustBeMem: T_TokenBalances"
+  T_Balances {} -> impossible "mustBeMem: T_Balances"
 
 mayMemSol :: Doc -> Doc
 mayMemSol x =
@@ -478,6 +480,7 @@ solLit = \case
 solArg :: AppT DLArg
 solArg = \case
   DLA_Var v -> solVar v
+  DLA_Constant DLC_Zero_addr -> return "payable(address(0))"
   DLA_Constant c -> return $ solLit $ conCons' c
   DLA_Literal c -> return $ solLit c
   DLA_Interact {} -> impossible "consensus interact"
@@ -1384,7 +1387,7 @@ solDefineType t = case t of
     let structp = fromMaybe (impossible "T_Data") $ solStruct name $ ("which", enumn) : map (\(k, kt) -> (pretty ("_" <> k), kt)) (M.toAscList tmn)
     addDef i $ vsep [enump, structp]
   T_Struct ats -> void $ doStruct ats
-  T_TokenBalances {} -> impossible "solDefineType: T_TokenBalances"
+  T_Balances {} -> impossible "solDefineType: T_Balances"
   where
     base = impossible "base"
     addMap d = modifyCtxtIO ctxt_typem $ M.insert t d

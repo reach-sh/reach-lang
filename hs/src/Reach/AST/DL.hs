@@ -115,6 +115,8 @@ data DLSStmt
   | DLS_Throw SrcLoc DLArg Bool
   | DLS_Try SrcLoc DLStmts DLVar DLStmts
   | DLS_ViewIs SrcLoc (Maybe SLPart) SLVar (Maybe DLSExportBlock)
+  | DLS_TokenMetaGet FluidVar SrcLoc DLVar DLArg (Maybe Int)
+  | DLS_TokenMetaSet FluidVar SrcLoc DLArg DLArg (Maybe Int)
   deriving (Eq, Generic)
 
 instance Pretty DLSStmt where
@@ -155,6 +157,8 @@ instance Pretty DLSStmt where
       DLS_Throw _ dv local -> if local then "local" else "nonlocal" <+> "throw" <+> pretty dv
       DLS_Try _ e hv hs -> "try" <+> ns e <+> "catch" <+> parens (pretty hv) <+> ns hs
       DLS_ViewIs _ v k a -> prettyViewIs v k a
+      DLS_TokenMetaGet ty _ dv tok mp -> "tokenMetaGet" <> parens (comma_sep [viaShow ty, pretty dv, pretty tok, pretty mp])
+      DLS_TokenMetaSet ty _ tok val mp -> "tokenMetaSet" <> parens (comma_sep [viaShow ty, pretty tok, pretty val, pretty mp])
     where
       ns x = render_nest $ render_dls x
 
@@ -183,6 +187,8 @@ instance SrcLocOf DLSStmt where
     DLS_Throw a _ _ -> a
     DLS_Try a _ _ _ -> a
     DLS_ViewIs a _ _ _ -> a
+    DLS_TokenMetaGet _ a _ _ _ -> a
+    DLS_TokenMetaSet _ a _ _ _ -> a
 
 instance HasPurity DLSStmt where
   hasPurity = \case
@@ -206,6 +212,8 @@ instance HasPurity DLSStmt where
     DLS_Throw {} -> fb False
     DLS_Try _ b _ h -> hasPurity b <> hasPurity h
     DLS_ViewIs {} -> fb False
+    DLS_TokenMetaGet {} -> fb True
+    DLS_TokenMetaSet {} -> fb False
     where
       rm r = \case
         ImpureUnless rs -> impureUnless $ S.delete r rs
@@ -236,6 +244,8 @@ instance IsLocal DLSStmt where
     DLS_Throw _ _ local -> local
     DLS_Try _ b _ h -> isLocal b && isLocal h
     DLS_ViewIs {} -> False
+    DLS_TokenMetaGet {} -> True
+    DLS_TokenMetaSet {} -> False
 
 type DLStmts = Seq.Seq DLSStmt
 
