@@ -23,9 +23,31 @@ type ActorId = Int
 
 type PhaseId = Integer
 
-type AccountId = Int
+type ConsensusEnv = M.Map DLVar DLVal
 
-type Ledger = M.Map Account (M.Map Token Balance)
+type LocalInteractEnv = M.Map String DLVal
+
+type Store = ConsensusEnv
+
+type Balance = Integer
+
+type Token = Integer
+
+consensusId :: ActorId
+consensusId = -1
+
+nwToken :: Token
+nwToken = -1
+
+simContract :: Account
+simContract = fromIntegral consensusId
+
+simContractAmt :: Balance
+simContractAmt = 0
+
+type Wallet = M.Map Token Balance
+
+type Ledger = M.Map Account Wallet
 
 data Message = Message
   { m_store :: Store
@@ -48,7 +70,7 @@ data Global = Global
   , e_nwtime :: Integer
   , e_nwsecs :: Integer
   , e_nactorid :: ActorId
-  , e_naccid :: AccountId
+  , e_naccid :: Account
   , e_partacts :: M.Map Participant ActorId
   , e_messages :: M.Map PhaseId MessageInfo
   }
@@ -197,28 +219,6 @@ initApp p st = runApp st $ interp p
 initAppFromStep :: LLStep -> State -> PartState
 initAppFromStep step st = runApp st $ interp step
 
-type ConsensusEnv = M.Map DLVar DLVal
-
-type LocalInteractEnv = M.Map String DLVal
-
-type Store = ConsensusEnv
-
-type Balance = Integer
-
-type Token = Integer
-
-consensusId :: ActorId
-consensusId = -1
-
-nwToken :: Token
-nwToken = -1
-
-simContract :: Account
-simContract = fromIntegral consensusId
-
-simContractAmt :: Balance
-simContractAmt = 0
-
 ledgerNewToken :: Account -> DLTokenNew -> App ()
 ledgerNewToken acc tk = do
   (e, _) <- getState
@@ -313,8 +313,8 @@ updateLedger :: Account -> Token -> (Integer -> Integer) -> App ()
 updateLedger acc tok f = do
   (e, _) <- getState
   let map_ledger = e_ledger e
-  let m = saferMaybe "updateLedger" $ M.lookup acc map_ledger
-  let prev_amt = saferMaybe "updateLedger1" $ M.lookup tok m
+  let m = saferMaybe "updateLedger: account not found" $ M.lookup acc map_ledger
+  let prev_amt = saferMaybe "updateLedger: token not found" $ M.lookup tok m
   let new_amt = f prev_amt
   let new_nw_ledger = M.insert acc (M.insert tok new_amt m) map_ledger
   setGlobal $ e {e_ledger = new_nw_ledger}
@@ -468,7 +468,7 @@ instance Interp DLExpr where
               transferLedger simContract acc nwToken n
               return V_Null
             Just tok -> do
-              ev <- vUInt <$> interp tok
+              ev <- vTok <$> interp tok
               transferLedger simContract acc ev n
               return V_Null
     DLE_TokenInit _at _dlarg -> return V_Null
@@ -744,7 +744,7 @@ winner dlr actId phId = do
   _ <- zipWithM addToStore xs vs
   return ()
 
-getAccId :: ActorId -> App AccountId
+getAccId :: ActorId -> App Account
 getAccId actId = do
   l <- getLocal
   let locals = l_locals l
@@ -765,19 +765,19 @@ getMyLocalInfo = do
   let locals = l_locals l
   return $ saferMaybe "getMyLocalInfo" $ M.lookup (fromIntegral actId) locals
 
-consensusPayout :: AccountId -> DLPayAmt -> App ()
+consensusPayout :: Account -> DLPayAmt -> App ()
 consensusPayout accId DLPayAmt {..} = do
   _ <-
     mapM
       (\(a, b) -> do
-         b' <- vUInt <$> (interp b)
+         b' <- vTok <$> (interp b)
          a' <- vUInt <$> (interp a)
          transferLedger (fromIntegral accId) simContract b' a')
       pa_ks
   net <- vUInt <$> interp pa_net
   transferLedger (fromIntegral accId) simContract nwToken net
 
-bindConsensusMeta :: DLRecv LLConsensus -> ActorId -> AccountId -> App ()
+bindConsensusMeta :: DLRecv LLConsensus -> ActorId -> Account -> App ()
 bindConsensusMeta (DLRecv {..}) actorId accId = do
   (g, l) <- getState
   addToStore dr_time $ V_UInt (e_nwtime g)
@@ -869,13 +869,17 @@ vUInt :: G.HasCallStack => DLVal -> Integer
 vUInt (V_UInt n) = n
 vUInt _ = impossible "unexpected error: expected integer"
 
+vTok :: G.HasCallStack => DLVal -> Integer
+vTok (V_Token n) = fromIntegral n
+vTok _ = impossible "unexpected error: expected token integer"
+
 vArray :: G.HasCallStack => DLVal -> [DLVal]
 vArray (V_Array a) = a
 vArray _ = impossible "unexpected error: expected array"
 
 vTuple :: G.HasCallStack => DLVal -> [DLVal]
 vTuple (V_Tuple a) = a
-vTuple _ = impossible "unexpected error: expected tuple"
+vTuple b = impossible ("unexpected error: expected tuple: received " ++ show b)
 
 vObject :: G.HasCallStack => DLVal -> (M.Map SLVar DLVal)
 vObject (V_Object a) = a

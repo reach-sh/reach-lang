@@ -151,6 +151,8 @@ const clientMethods = {
   "getStateGlobals" : getStateGlobals,
   "getEdges" : getEdges,
   "resetServer" : resetServer,
+  "newAccount" : newAccount,
+  "newToken" : newToken
 }
 
 const interpCommand = async (comm) => {
