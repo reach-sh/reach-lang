@@ -232,7 +232,13 @@ If you're unsure of what kind of consensus transfer to use, you may want to read
 
 A @{defn("parallel reduce statement")} is written:
 
-@{ref("rsh", "define")}
+@{ref("rsh", "parallelReduce.define")}
+@{ref("rsh", "parallelReduce.invariant")}
+@{ref("rsh", "parallelReduce.while")}
+@{ref("rsh", "parallelReduce.paySpec")}
+@{ref("rsh", "parallelReduce.case")}
+@{ref("rsh", "parallelReduce.api")}
+@{ref("rsh", "parallelReduce.timeout")}
 ```reach
 const LHS =
   parallelReduce(INIT_EXPR)
@@ -268,7 +274,7 @@ When dealing with absolute deadlines in `{!rsh} parallelReduce`, there is a comm
 `{!rsh} TIMEOUT_BLOCK` to have participants `{!rsh} race` to `{!rsh} publish` and return the accumulator.
 There is a shorthand, `{!rsh} .timeRemaining`, available for this situation:
 
-@{ref("rsh", "timeRemaining")}
+@{ref("rsh", "parallelReduce.timeRemaining")}
 ```reach
 const [ timeRemaining, keepGoing ] = makeDeadline(deadline);
 const [ x, y, z ] =
@@ -291,7 +297,7 @@ which will expand to:
 `{!rsh} .throwTimeout` is a shorthand that will throw the accumulator as an exception when a timeout occurs.
 Therefore, a `{!rsh} parallelReduce` that uses this branch must be inside of a try statement. For example,
 
-@{ref("rsh", "throwTimeout")}
+@{ref("rsh", "parallelReduce.throwTimeout")}
 ```reach
 try {
   const [ x, y, z ] =
@@ -351,6 +357,7 @@ transfer([1, [2, gil]]).to(Alice);
 ```
 
 @{ref("rsh", "transfer")}
+@{ref("rsh", "transfer.to")}
 A @{defn("transfer expression")},
 written `{!rsh} transfer(PAY_AMOUNT_EXPR).to(ADDR_EXPR)`,
 where `{!rsh} PAY_AMOUNT_EXPR` is an expression that evaluates to a [pay amount](##payAmt), and

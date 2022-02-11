@@ -647,7 +647,7 @@ xor(true, true);   // false
 
 ### Padding
 
-@{ref("rsh", "pad")}
+@{ref("rsh", "Bytes.pad")}
 ```reach
 Bytes(16).pad('abc');
 ```
@@ -708,6 +708,8 @@ If `{!rsh} REF_EXPR` is a mapping and `{!rsh} IDX_EXPR` evaluates to an address,
 
 ### Array & tuple length: `Tuple.length`, `Array.length`, and `.length`
 
+@{ref("rsh", "Tuple.length")}
+@{ref("rsh", "Array.length")}
 @{ref("rsh", "length")}
 ```reach
 Tuple.length(tup);
@@ -724,6 +726,8 @@ Both may be abbreviated as `{!rsh} expr.length` where `{!rsh} expr` evaluates to
 
 ### Array & tuple update: `Tuple.set`, `Array.set`, and `.set`
 
+@{ref("rsh", "Tuple.set")}
+@{ref("rsh", "Array.set")}
 @{ref("rsh", "set")}
 ```reach
 Tuple.set(tup, idx, val);
@@ -742,6 +746,7 @@ Both may be abbreviated as `{!rsh} expr.set(idx, val)` where `{!rsh} expr` evalu
 
 ### Array element type: `Array.elemType` and `.elemType`
 
+@{ref("rsh", "Array.elemType")}
 @{ref("rsh", "elemType")}
 ```reach
 Array.elemType(arr)
@@ -756,6 +761,7 @@ The following methods are available on any @{ref("rsh", "Foldable")}`{!rsh} Fold
 
 ####  `Foldable.forEach` && `.forEach`
 
+@{ref("rsh", "Foldable.forEach")}
 @{ref("rsh", "forEach")}
 ```reach
 c.forEach(f)
@@ -769,6 +775,7 @@ This may be abbreviated as `{!rsh} c.forEach(f)`.
 
 #### `Foldable.all` && `.all`
 
+@{ref("rsh", "Foldable.all")}
 @{ref("rsh", "all")}
 ```reach
 Foldable.all(c, f)
@@ -782,6 +789,7 @@ by every element of the container, `c`.
 
 #### `Foldable.any` && `.any`
 
+@{ref("rsh", "Foldable.any")}
 @{ref("rsh", "any")}
 ```reach
 Foldable.any(c, f)
@@ -795,6 +803,7 @@ by at least one element of the container, `c`.
 
 #### `Foldable.or` && `.or`
 
+@{ref("rsh", "Foldable.or")}
 @{ref("rsh", "or")}
 ```reach
 Foldable.or(c)
@@ -807,6 +816,7 @@ c.or()
 
 #### `Foldable.and` && `.and`
 
+@{ref("rsh", "Foldable.and")}
 @{ref("rsh", "and")}
 ```reach
 Foldable.and(c)
@@ -819,6 +829,7 @@ c.and()
 
 #### `Foldable.includes` && `.includes`
 
+@{ref("rsh", "Foldable.includes")}
 @{ref("rsh", "includes")}
 ```reach
 Foldable.includes(c, x)
@@ -832,6 +843,7 @@ the element, `x`.
 
 #### `Foldable.count` && `.count`
 
+@{ref("rsh", "Foldable.count")}
 @{ref("rsh", "count")}
 ```reach
 Foldable.count(c, f)
@@ -845,6 +857,7 @@ satisfy the predicate, `f`.
 
 #### `Foldable.size` && `.size`
 
+@{ref("rsh", "Foldable.size")}
 @{ref("rsh", "size")}
 ```reach
 Foldable.size(c)
@@ -857,6 +870,7 @@ c.size()
 
 #### `Foldable.min` && `.min`
 
+@{ref("rsh", "Foldable.min")}
 @{ref("rsh", "min")}
 ```reach
 Foldable.min(c)
@@ -869,6 +883,7 @@ c.min()
 
 #### `Foldable.max` && `.max`
 
+@{ref("rsh", "Foldable.max")}
 @{ref("rsh", "max")}
 ```reach
 Foldable.max(c)
@@ -881,6 +896,7 @@ c.max()
 
 #### `Foldable.sum` && `.sum`
 
+@{ref("rsh", "Foldable.sum")}
 @{ref("rsh", "sum")}
 ```reach
 Foldable.sum(c)
@@ -893,6 +909,7 @@ c.sum()
 
 #### `Foldable.product` && `.product`
 
+@{ref("rsh", "Foldable.product")}
 @{ref("rsh", "product")}
 ```reach
 Foldable.product(c)
@@ -905,6 +922,7 @@ c.product()
 
 #### `Foldable.average` && `.average`
 
+@{ref("rsh", "Foldable.average")}
 @{ref("rsh", "average")}
 ```reach
 Foldable.average(c)
@@ -922,7 +940,7 @@ following methods may be used with `{!rsh} Array`s.
 
 #### `Array.iota`
 
-@{ref("rsh", "iota")}
+@{ref("rsh", "Array.iota")}
 ```reach
 Array.iota(5)
 ```
@@ -931,9 +949,9 @@ Array.iota(5)
 For example, `{!rsh} Array.iota(4)` returns `{!rsh} [0, 1, 2, 3]`.
 The given `{!rsh} len` must evaluate to an integer at compile-time.
 
-#### `Array.replicate` && `.replicate`
+#### `Array.replicate`
 
-@{ref("rsh", "Array_replicate")}@{ref("rsh", "replicate")}
+@{ref("rsh", "Array_replicate")}@{ref("rsh", "Array.replicate")}
 ```reach
 Array.replicate(5, "five")
 Array_replicate(5, "five")
@@ -945,6 +963,7 @@ The given `{!rsh} len` must evaluate to an integer at compile-time.
 
 #### `Array.concat` && `.concat`
 
+@{ref("rsh", "Array.concat")}
 @{ref("rsh", "concat")}
 ```reach
 Array.concat(x, y)
@@ -956,7 +975,7 @@ This may be abbreviated as `{!rsh} x.concat(y)`.
 
 #### `Array.empty`
 
-@{ref("rsh", "Array_empty")}@{ref("rsh", "empty")}
+@{ref("rsh", "Array_empty")}@{ref("rsh", "Array.empty")}
 ```reach
 Array_empty
 Array.empty
@@ -968,6 +987,7 @@ It may also be written `{!rsh} Array_empty`.
 
 #### `Array.zip` && `.zip`
 
+@{ref("rsh", "Array.zip")}
 @{ref("rsh", "zip")}
 ```reach
 Array.zip(x, y)
@@ -979,6 +999,7 @@ This may be abbreviated as `{!rsh} x.zip(y)`.
 
 #### `Array.map` && `.map`
 
+@{ref("rsh", "Array.map")}
 @{ref("rsh", "map")}
 ```reach
 Array.map(arr, f)
@@ -994,6 +1015,7 @@ For example, `{!rsh} Array.iota(4).map(Array.iota(4), add)` returns `{!rsh} [0, 
 
 #### `Array.mapWithIndex` && `.mapWithIndex`
 
+@{ref("rsh", "Array.mapWithIndex")}
 @{ref("rsh", "mapWithIndex")}
 ```reach
 Array.mapWithIndex(arr, f)
@@ -1006,6 +1028,7 @@ Unlike `{!rsh} Array.map`, this function is not generalized to an arbitrary numb
 
 #### `Array.forEachWithIndex` && `.forEachWithIndex`
 
+@{ref("rsh", "Array.forEachWithIndex")}
 @{ref("rsh", "forEachWithIndex")}
 ```reach
 Array.forEachWithIndex(arr, f)
@@ -1018,6 +1041,7 @@ Unlike `{!rsh} Array.forEach`, this function is not generalized to an arbitrary 
 
 #### `Array.reduce` && `.reduce`
 
+@{ref("rsh", "Array.reduce")}
 @{ref("rsh", "reduce")}
 ```reach
 Array.reduce(arr, z, f)
@@ -1033,6 +1057,7 @@ For example, `{!rsh} Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x 
 
 #### `Array.reduceWithIndex` && `.reduceWithIndex`
 
+@{ref("rsh", "Array.reduceWithIndex")}
 @{ref("rsh", "reduceWithIndex")}
 ```reach
 Array.reduceWithIndex(arr, z, f)
@@ -1045,6 +1070,7 @@ Unlike `{!rsh} Array.reduce`, this function is not generalized to an arbitrary n
 
 #### `Array.indexOf` && `.indexOf`
 
+@{ref("rsh", "Array.indexOf")}
 @{ref("rsh", "indexOf")}
 ```reach
 Array.indexOf(arr, x)
@@ -1057,6 +1083,7 @@ the value is not present in the array, `{!rsh} None` is returned.
 
 #### `Array.findIndex` && `.findIndex`
 
+@{ref("rsh", "Array.findIndex")}
 @{ref("rsh", "findIndex")}
 ```reach
 Array.findIndex(arr, f)
@@ -1069,6 +1096,7 @@ no value in the array satisfies the predicate, `{!rsh} None` is returned.
 
 #### `Array.find` && `.find`
 
+@{ref("rsh", "Array.find")}
 @{ref("rsh", "find")}
 ```reach
 Array.find(arr, f)
@@ -1081,6 +1109,7 @@ array satisfies the predicate, `{!rsh} None` is returned.
 
 #### `Array.withIndex` && `.withIndex`
 
+@{ref("rsh", "Array.withIndex")}
 @{ref("rsh", "withIndex")}
 ```reach
 Array.withIndex(arr)
@@ -1093,6 +1122,7 @@ is paired with its index. For example, `{!rsh} array(Bool, [false, true]).withIn
 
 #### `Array.slice` && `.slice`
 
+@{ref("rsh", "Array.slice")}
 @{ref("rsh", "slice")}
 ```reach
 Array.slice(arr, start, length)
@@ -1109,6 +1139,7 @@ operations and those of `{!rsh} Foldable` within the `{!rsh} invariant` of a `{!
 
 #### `Map.reduce` && `.reduce`
 
+@{ref("rsh", "Map.reduce")}
 ```reach
 Map.reduce(map, z, f)
 map.reduce(z, f)
@@ -1190,6 +1221,7 @@ accesses the `FIELD` @{defn("field")} of object OBJ.
 
 ### `Object.set`
 
+@{ref("rsh", "Object.set")}
 @{ref("rsh", "Object_set")}
 ```reach
 Object.set(obj, fld, val);
@@ -1202,6 +1234,7 @@ except that field `{!rsh} fld` is replaced with `{!rsh} val`.
 
 ### `Object.setIfUnset`
 
+@{ref("rsh", "Object.setIfUnset")}
 @{ref("rsh", "Object_setIfUnset")}
 ```reach
 Object.setIfUnset(obj, fld, val);
@@ -1213,6 +1246,7 @@ except that field `{!rsh} fld` is `{!rsh} val` if `{!rsh} fld` is not already pr
 
 ### `Object.has`
 
+@{ref("rsh", "Object.has")}
 ```reach
 Object.has(obj, fld);
 ```
@@ -1242,7 +1276,7 @@ Data instances are consumed by `{!rsh} switch` statements and `{!rsh} match` exp
 
 ### `Maybe`
 
-@{ref("rsh", "Maybe")}@{ref("rsh", "Some")}@{ref("rsh", "None")}@{ref("rsh", "fromMaybe")}
+@{ref("rsh", "Maybe")}@{ref("rsh", "Maybe.Some")}@{ref("rsh", "Maybe.None")}@{ref("rsh", "fromMaybe")}
 ```reach
 const MayInt = Maybe(UInt);
 const bidA = MayInt.Some(42);
@@ -1296,6 +1330,9 @@ either return the application of the function, `{!rsh} f`, to the `{!rsh} Some` 
 
 ### `Either`
 
+@{ref("rsh", "Either")}
+@{ref("rsh", "Either.Left")}
+@{ref("rsh", "Either.Right")}
 `{!rsh} Either` is defined by
 ```reach
 export const Either = (A, B) => Data({Left: A, Right: B});
@@ -1944,6 +1981,9 @@ In an application without any participant classes, `{!rsh} Anybody` instead woul
 An `{!rsh} Interval` is defined by
 
 @{ref("rsh", "Interval")}
+@{ref("rsh", "isInterval")}
+@{ref("rsh", "Closed")}
+@{ref("rsh", "Open")}
 ```reach
 export const Interval = Tuple(IntervalType, Int, Int, IntervalType);
 ```
@@ -1969,6 +2009,11 @@ const i3 = intervalCO(-10, +10);
 
 For convenience, Reach provides a number of functions for constructing intervals:
 
+@{ref("rsh", "interval")}
+@{ref("rsh", "intervalCC")}
+@{ref("rsh", "intervalCO")}
+@{ref("rsh", "intervalOC")}
+@{ref("rsh", "intervalOO")}
  `{!rsh} interval(IntervalType, Int, Int, IntervalType)` constructs an interval where the first and second argument
 represent the left endpoint and whether it's open or closed; the third and fourth argument represent the right endpoint and whether it's open or closed.
 
@@ -1982,12 +2027,20 @@ represent the left endpoint and whether it's open or closed; the third and fourt
 
 #### Accessors
 
+@{ref("rsh", "leftEndpoint")}
+@{ref("rsh", "rightEndpoint")}
  `{!rsh} leftEndpoint(i)` will return the `{!rsh} Int` that represents the left endpoint of an interval.
 
  `{!rsh} rightEndpoint(i)` will return the `{!rsh} Int` that represents the right endpoint of an interval.
 
 #### Relational Operations
 
+@{ref("rsh", "intervalEq")}
+@{ref("rsh", "intervalNe")}
+@{ref("rsh", "intervalLt")}
+@{ref("rsh", "intervalLte")}
+@{ref("rsh", "intervalGt")}
+@{ref("rsh", "intervalGte")}
 Intervals may be compared with the following functions:
 
  `{!rsh} intervalEq(l, r)` tests whether the intervals are equal.
@@ -2004,6 +2057,10 @@ Intervals may be compared with the following functions:
 
 #### Arithmetic Operations
 
+@{ref("rsh", "intervalAdd")}
+@{ref("rsh", "intervalSub")}
+@{ref("rsh", "intervalMul")}
+@{ref("rsh", "intervalDiv")}
  `{!rsh} intervalAdd(l, r)` adds the two intervals.
 
  `{!rsh} intervalSub(l, r)` subtracts the two intervals.

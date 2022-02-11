@@ -218,7 +218,7 @@ This overwriting applies even if `{!rsh} Alice` wins and `{!rsh} Alice` is a par
 
 ### `fork`
 
-@{ref("rsh", "fork")}@{ref("rsh", "fork.case")}@{ref("rsh", "paySpec")}
+@{ref("rsh", "fork")}@{ref("rsh", "fork.case")}@{ref("rsh", "paySpec")}@{ref("rsh", "fork.paySpec")}@{ref("rsh", "fork.api")}@{ref("rsh", "fork.timeout")}@{ref("rsh", "fork.throwTimeout")}
 ```reach
 fork()
 .case(Alice, (() => ({
@@ -470,7 +470,11 @@ k(x > y);
 commit();
 ```
 
-@{ref("rsh", "call")} A @{defn("call")} is written:
+@{ref("rsh", "call")}
+@{ref("rsh", "call.pay")}
+@{ref("rsh", "call.assume")}
+@{ref("rsh", "call.throwTimeout")}
+A @{defn("call")} is written:
 
 ```reach
 const [ DOMAIN, RET_FUN ] =
