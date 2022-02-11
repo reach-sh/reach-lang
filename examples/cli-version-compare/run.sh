@@ -16,7 +16,7 @@ e () {
       --non-interactive \
       --ils="$ROOT/$2/l.json" \
       --stub-remote="$ROOT/$2/r.json" \
-      --stub-script="TODO")
+      --stub-script="./$2/reach") # skip $ROOT because `diff` is evaluated outside of Docker
   c=$?
   set -e
 
@@ -54,6 +54,7 @@ e 60 new-tags:reach+react-runner
 e  0 fully-synchronized
 e  0 connector-avail:eth+cfx
 e  0 connector-avail-3rd-party:image-not-present
+e 60 script#new-images:devnet-algo+postgres
 
 # CORE-1104
 # e  0 connector-avail-3rd-party:image-present-tag-not # ✗ New tags are available for
