@@ -55,7 +55,7 @@ data DLType
   | T_Object (M.Map SLVar DLType)
   | T_Data (M.Map SLVar DLType)
   | T_Struct [(SLVar, DLType)]
-  | T_TokenBalances Integer
+  | T_Balances
   deriving (Eq, Generic, Ord)
 
 instance FromJSON DLType
@@ -63,7 +63,7 @@ instance FromJSON DLType
 instance ToJSON DLType
 
 balanceElemTy :: DLType
-balanceElemTy = T_Tuple [T_Data maybeTokenMap, T_UInt]
+balanceElemTy = T_Tuple [T_Token, T_UInt]
 
 maybeT :: DLType -> DLType
 maybeT t = T_Data $ M.fromList $ [("None", T_Null), ("Some", t)]
@@ -128,7 +128,7 @@ instance Show DLType where
     (T_Object tyMap) -> "Object({" <> showTyMap tyMap <> "})"
     (T_Data tyMap) -> "Data({" <> showTyMap tyMap <> "})"
     (T_Struct tys) -> "Struct([" <> showTyList tys <> "])"
-    T_TokenBalances i -> "TokenBalances(" <> show i <> ")"
+    T_Balances -> "TokenBalances"
 
 instance Pretty DLType where
   pretty = viaShow
@@ -193,7 +193,11 @@ instance Pretty DLInit where
 
 data DLConstant
   = DLC_UInt_max
-  deriving (Eq, Generic, Show, Ord)
+  | DLC_Zero_addr
+  deriving (Bounded, Enum, Eq, Generic, Show, Ord)
+
+allConstants :: [DLConstant]
+allConstants = enumFrom minBound
 
 instance ToJSON DLConstant
 
@@ -201,11 +205,14 @@ instance FromJSON DLConstant
 
 instance Pretty DLConstant where
   pretty = \case
-    DLC_UInt_max -> "UInt.max"
+    DLC_UInt_max  -> "UInt.max"
+    DLC_Zero_addr -> "Address.zero"
 
 conTypeOf :: DLConstant -> DLType
 conTypeOf = \case
-  DLC_UInt_max -> T_UInt
+  DLC_UInt_max  -> T_UInt
+  -- XXX Maybe this should be Address and have a Token(Addr) cast
+  DLC_Zero_addr -> T_Token
 
 data DLLiteral
   = DLL_Null
@@ -1089,7 +1096,8 @@ instance Pretty a => Pretty (DLRecv a) where
       <> render_nest (pretty dr_k)
 
 data FluidVar
-  = FV_balances Integer (M.Map DLArg Int)
+  = FV_balances
+  | FV_netBalance
   | FV_supply Int
   | FV_destroyed Int
   | FV_thisConsensusTime
@@ -1103,7 +1111,8 @@ data FluidVar
 
 instance Pretty FluidVar where
   pretty = \case
-    FV_balances i _ -> "balances" <> brackets (pretty i)
+    FV_balances -> "balances"
+    FV_netBalance -> "netBalance"
     FV_supply i -> "supply" <> parens (pretty i)
     FV_destroyed i -> "destroyed" <> parens (pretty i)
     FV_thisConsensusTime -> "thisConsensusTime"
@@ -1114,12 +1123,10 @@ instance Pretty FluidVar where
     FV_baseWaitSecs -> "baseWaitSecs"
     FV_didSend -> "didPublish"
 
-maybeTokenMap :: M.Map SLVar DLType
-maybeTokenMap = M.fromList [("None", T_Null), ("Some", T_Token)]
-
 fluidVarType :: FluidVar -> DLType
 fluidVarType = \case
-  FV_balances i _ -> T_TokenBalances (i + 1)
+  FV_balances -> T_Balances
+  FV_netBalance -> T_UInt
   FV_supply _ -> T_UInt
   FV_destroyed _ -> T_Bool
   FV_thisConsensusTime -> T_UInt
@@ -1138,7 +1145,8 @@ allFluidVars bals =
   , FV_thisConsensusSecs
   , FV_lastConsensusSecs
   , FV_baseWaitSecs
-  , FV_balances (toInteger bals + 1) mempty
+  , FV_balances
+  , FV_netBalance
   -- This function is not really to get all of them, but just to
   -- get the ones that must be saved for a loop. didSend is only used locally,
   -- so it doesn't need to be saved.

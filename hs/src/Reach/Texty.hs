@@ -26,6 +26,7 @@ module Reach.Texty
   , comma
   , space
   , render_obj
+  , comma_sep
   )
 where
 
@@ -218,3 +219,6 @@ comma = ","
 
 space :: Doc
 space = " "
+
+comma_sep :: [Doc] -> Doc
+comma_sep = hcat . punctuate (comma <> space)

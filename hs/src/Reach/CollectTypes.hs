@@ -65,7 +65,7 @@ instance CollectsTypes DLType where
         T_Object m -> cts m
         T_Data m -> cts m
         T_Struct elems -> cts $ map snd elems
-        T_TokenBalances _ -> mempty
+        T_Balances {} -> mempty
 
 instance CollectsTypes IType where
   cts = \case

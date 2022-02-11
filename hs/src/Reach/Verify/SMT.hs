@@ -243,7 +243,8 @@ smtAddress who = "address_" <> bunpack who
 
 smtConstant :: DLConstant -> String
 smtConstant = \case
-  DLC_UInt_max -> "dlc_UInt_max"
+  DLC_UInt_max  -> "dlc_UInt_max"
+  DLC_Zero_addr -> "dlc_Address_zero"
 
 smt_c :: SrcLoc -> DLConstant -> App SExpr
 smt_c at c = smt_a at $ DLA_Constant c
@@ -1547,7 +1548,7 @@ _smtDefineTypes smt ts = do
                   let invarg ((argn, _), arg_inv) = arg_inv $ smtApply argn [se]
                   smtAndAll $ map invarg args
             return inv
-          T_TokenBalances {} -> impossible "_smtDefineTypes: T_TokenBalances"
+          T_Balances {} -> impossible "_smtDefineTypes: T_Balances"
       type_name :: DLType -> IO (String, SMTTypeInv)
       type_name t = do
         tm <- readIORef tmr
@@ -1626,9 +1627,10 @@ _verify_smt mc ctxt_vst smt lp = do
     case mc of
       Just _ -> mempty
       Nothing -> do
-        let con = smtConstant DLC_UInt_max
-        let smlet = Just $ SMTCon con Nothing $ SMTProgram $ DLE_Arg at $ DLA_Constant $ DLC_UInt_max
-        pathAddUnbound_v con T_UInt smlet
+        flip mapM_ allConstants $ \ c -> do
+              let con = smtConstant c
+              let smlet = Just $ SMTCon con Nothing $ SMTProgram $ DLE_Arg at $ DLA_Constant c
+              pathAddUnbound_v con (conTypeOf c) smlet
     -- FIXME it might make sense to assert that UInt_max is no less than
     -- something reasonable, like 64-bit?
     let defineIE who (v, it) =

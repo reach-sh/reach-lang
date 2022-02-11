@@ -2190,11 +2190,6 @@ doBalanceInit_ fv mtok amta = do
   b <- lookupBalanceFV_ fv mtok
   doFluidSet_ b amta
 
-lookupBalances :: App FluidVar
-lookupBalances = do
-  all_toks <- readSt st_toks
-  tok_pos  <- readSt st_tok_pos
-  return $ FV_balances (fromIntegral $ length all_toks) tok_pos
 
 getBalanceOf :: Maybe DLArg -> App SLSVal
 getBalanceOf mtok = do
@@ -2202,93 +2197,33 @@ getBalanceOf mtok = do
   return $ public $ SLV_DLVar bv
 
 getBalanceOf' :: Maybe DLArg -> App DLVar
-getBalanceOf' mtok = do
-  b  <- lookupBalances
-  at <- withAt id
-  bv <- doFluidRef b
-  let env = getBalsEnv b
-  idx <- case join $ fmap (flip M.lookup env) mtok of
-          Just idx -> return (SLV_Int at $ fromIntegral idx)
-          Nothing  -> snd <$> getBalanceIndex mtok
-  tup <- doArrRef_ (snd bv) idx
-  bal <- doArrRef_ tup (SLV_Int at 1)
-  compileToVar bal
+getBalanceOf' = \case
+  Nothing -> do
+    v <- doFluidRef FV_netBalance
+    compileToVar $ snd v
+  Just tok -> do
+    at <- withAt id
+    dv <- ctxt_mkvar (DLVar at Nothing T_UInt)
+    mi <- M.lookup tok <$> getBalsEnv
+    saveLift $ DLS_TokenMetaGet FV_balances at dv tok mi
+    return dv
 
-getBalsEnv :: FluidVar -> M.Map DLArg Int
-getBalsEnv = \case
-  FV_balances _ m -> m
-  _ -> impossible "getBalsEnv: Expected FV_balances"
+getBalsEnv :: App (M.Map DLArg Int)
+getBalsEnv = readSt st_tok_pos
 
-networkBal :: SrcLoc -> SLVal
-networkBal at = SLV_Data at maybeTokenMap "None" $ SLV_Null at "networkBalance"
-
-getBalanceKey :: Maybe DLArg -> App SLSVal
-getBalanceKey mtok = do
-  at <- withAt id
+setBalance :: Maybe DLArg -> DLArg -> App ()
+setBalance mtok amta =
   case mtok of
-    Just (DLA_Var dv) -> return $ public $ SLV_Data at maybeTokenMap "Some" $ SLV_DLVar dv
-    Nothing -> return $ public $ networkBal at
-    _ -> impossible "getBalanceKey"
-
-getBalanceIndex :: Maybe DLArg -> App SLSVal
-getBalanceIndex mtok = do
-  at <- withAt id
-  bals <- lookupBalances
-  case mtok of
-    Nothing -> do
-      return $ public $ SLV_Int at 0
-    Just (DLA_Var dv) -> do
-        let env = getBalsEnv bals
-        case join $ fmap (flip M.lookup env) mtok of
-          Just i -> return $ public $ SLV_Int at $ fromIntegral i
-          Nothing -> do
-            b <- doFluidRef bals
-            checkKey <- evalExpr $ readJsExpr "(exp) => (act) => act[0] == exp"
-            indexOf <- lookStdlib "Array_findIndex"
-            let v = public $ SLV_Data at maybeTokenMap "Some" $ SLV_DLVar dv
-            checkKeyF <- evalApplyVals' (snd checkKey) [v]
-            mIdx <- evalApplyVals' indexOf $ [b, checkKeyF]
-            fromSome <- lookStdlib "fromSome"
-            r <- evalApplyVals' fromSome $ [mIdx, public $ SLV_Int at 0]
-            return r
-    Just ow -> impossible $ "getBalanceIndex: tsv received: " <> show ow
-
-setBalance :: Maybe DLArg -> DLArg -> App DLArg
-setBalance mtok amta = do
-  at  <- withAt id
-  -- Update the value associated with key `mtok` to `amta`
-  tv  <- getBalanceKey mtok
-  idx <- getBalanceIndex mtok
-  arrSet <- lookStdlib "Array_set"
-  let amtv = case amta of
-        DLA_Var dv -> public $ SLV_DLVar dv
-        DLA_Literal (DLL_Int a i) -> public $ SLV_Int a i
-        DLA_Constant c -> public $ SLV_DLC c
-        ow -> impossible $ "setBalance: amtsv received: " <> show ow
-  let nv = public $ SLV_Tuple at $ map snd $ [tv, amtv]
-  bfv <- lookupBalances
-  b   <- doFluidRef bfv
-  res <- evalApplyVals' arrSet [b, idx, nv]
-  case snd res of
-    SLV_DLVar dv -> return $ DLA_Var dv
-    ow -> impossible $ "setBalance: return: " <> show ow
-
-doBalanceInitBal :: Maybe DLArg -> DLArg -> App ()
-doBalanceInitBal mtok amta = do
-  b  <- lookupBalances
-  b' <- setBalance mtok amta
-  doFluidSet_ b b'
+    Nothing -> doFluidSet_ FV_netBalance amta
+    Just tok -> do
+      at <- withAt id
+      mi <- M.lookup tok <$> getBalsEnv
+      saveLift $ DLS_TokenMetaSet FV_balances at tok amta mi
 
 doBalanceInit :: Maybe DLArg -> App ()
 doBalanceInit mtok = do
   at <- withAt id
-  case mtok of
-    Nothing -> do
-      nv <- compileToVar $ SLV_Tuple at [networkBal at, SLV_Int at 0]
-      let mkdv = DLVar at Nothing $ T_TokenBalances 1
-      dv <- ctxt_lift_expr mkdv $ DLE_BalanceInit nv
-      doFluidSet_ (FV_balances 0 mempty) $ DLA_Var dv
-    _ -> doBalanceInitBal mtok (DLA_Literal $ DLL_Int at 0)
+  setBalance mtok $ DLA_Literal $ DLL_Int at 0
 
 doBalanceAssert :: Maybe DLArg -> SLVal -> PrimOp -> B.ByteString -> App ()
 doBalanceAssert mtok lhs op msg = do
@@ -2300,7 +2235,6 @@ doBalanceAssert mtok lhs op msg = do
   void $
     evalApplyVals' ass_rator $
       [cmp_v, public $ SLV_Bytes at msg]
-
 
 doBalanceAssert_ :: (Int -> FluidVar) -> Maybe DLArg -> SLVal -> PrimOp -> B.ByteString -> App ()
 doBalanceAssert_ fv mtok lhs op msg = do
@@ -2320,17 +2254,13 @@ doBalanceUpdate mtok op = \case
   rhs -> do
     at <- withAt id
     let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [(Public, rhs)]
-    -- Get the balance array
-    b <- lookupBalances
     -- Find the current balance of mtok
     bsv <- getBalanceOf mtok
     -- Apply op to value
     bv' <- evalApplyVals' up_rator [bsv]
     bva <- compileCheckType T_UInt $ snd bv'
     -- Set value/fluid ref with updated array
-    b' <- setBalance mtok bva
-    doFluidSet_ b b'
-
+    setBalance mtok bva
 
 doBalanceUpdate_ :: (Int -> FluidVar) -> Maybe DLArg -> PrimOp -> SLVal -> App ()
 doBalanceUpdate_ fv mtok op rhs = do
@@ -2520,7 +2450,7 @@ evalPrim p sargs =
           , st_tok_pos = M.insert (DLA_Var tokdv) (length existingToks + 1) (st_tok_pos st)
           }
       let mtok_a = Just $ DLA_Var tokdv
-      doBalanceInitBal mtok_a supplya
+      setBalance mtok_a supplya
       doBalanceInit_ FV_supply mtok_a supplya
       doBalanceInit_ FV_destroyed mtok_a (DLA_Literal $ DLL_Bool False)
       return $ public $ SLV_DLVar tokdv
@@ -2798,14 +2728,7 @@ evalPrim p sargs =
                       retV $ (lvl, arrv')
                     False ->
                       expect_ $ Err_Eval_RefOutOfBounds (length arrvs) idxi
-                SLV_DLVar arrdv@(DLVar _ _ arr_ty@(T_TokenBalances sz) _) ->
-                  goVar arrdv arr_ty balanceElemTy sz
                 SLV_DLVar arrdv@(DLVar _ _ arr_ty@(T_Array elem_ty sz) _) ->
-                  goVar arrdv arr_ty elem_ty sz
-                _ -> illegal_args
-              where
-                idxi' = fromIntegral idxi
-                goVar arrdv arr_ty elem_ty sz =
                   case idxi < sz of
                     True -> do
                       valda <- compileCheckType elem_ty valv
@@ -2814,6 +2737,9 @@ evalPrim p sargs =
                       retArrDV arr_ty $ DLE_ArraySet at (DLA_Var arrdv) idxda valda
                     False ->
                       expect_ $ Err_Eval_RefOutOfBounds (fromIntegral sz) idxi
+                _ -> illegal_args
+              where
+                idxi' = fromIntegral idxi
             (T_UInt, _) -> do
               (arr_ty, arrda) <- compileTypeOf arrv
               case arr_ty of
@@ -3474,13 +3400,11 @@ evalPrim p sargs =
         return da
       at <- withAt id
       let mdv = DLVar at Nothing T_UInt
-      fvBals <- lookupBalances
       fvBal <- getBalanceOf' mtok
       let trackedBal = DLA_Var fvBal
       untrackedFunds <- ctxt_lift_expr mdv $ DLE_GetUntrackedFunds at mtok trackedBal
       dv <- ctxt_lift_expr mdv $ DLE_PrimOp at ADD [DLA_Var untrackedFunds, trackedBal]
-      fvBals' <- setBalance mtok $ DLA_Var dv
-      doFluidSet_ fvBals fvBals'
+      setBalance mtok $ DLA_Var dv
       return (lvl, SLV_DLVar untrackedFunds)
     SLPrim_fromSome -> do
       (mv, dv) <- two_args
@@ -4160,17 +4084,14 @@ doArrRef_ arrv idxv = do
             Nothing ->
               expect_ $ Err_Eval_RefOutOfBounds (length ts) idxi
             Just t -> retTupleRef t (DLA_Var adv) idxi
-        SLV_DLVar adv@(DLVar _ _ (T_TokenBalances sz) _) -> goVarArr adv balanceElemTy sz
-        SLV_DLVar adv@(DLVar _ _ (T_Array t sz) _) -> goVarArr adv t sz
-        _ -> expect_t arrv $ Err_Eval_RefNotRefable
-        where
-          goVarArr adv t sz =
+        SLV_DLVar adv@(DLVar _ _ (T_Array t sz) _) ->
             case idxi < sz of
               False ->
                 expect_ $ Err_Eval_RefOutOfBounds (fromIntegral sz) idxi
               True -> do
                 idx_dla <- withAt $ \at -> DLA_Literal (DLL_Int at idxi)
                 retArrayRef t sz (DLA_Var adv) idx_dla
+        _ -> expect_t arrv $ Err_Eval_RefNotRefable
     SLV_DLVar idxdv@(DLVar _ _ T_UInt _) -> do
       (arr_ty, arr_dla) <- compileTypeOf arrv
       case arr_ty of
@@ -4661,7 +4582,7 @@ typeToExpr = \case
   T_Object m -> call "Object" [rm m]
   T_Data m -> call "Data" [rm m]
   T_Struct ts -> call "Struct" $ [arr $ map sg ts]
-  T_TokenBalances {} -> impossible "typeToExpr: T_TokenBalances"
+  T_Balances {} -> impossible "typeToExpr: T_Balances"
   where
     str x = JSStringLiteral a $ "'" <> x <> "'"
     arr = jsArrayLiteral a

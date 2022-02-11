@@ -113,7 +113,7 @@ dt2st = \case
   T_Object tyMap -> ST_Object $ M.map dt2st tyMap
   T_Data tyMap -> ST_Data $ M.map dt2st tyMap
   T_Struct tys -> ST_Struct $ map (\(k, t) -> (k, dt2st t)) tys
-  T_TokenBalances {} -> impossible "dt2st: T_TokenBalances"
+  T_Balances {} -> impossible "dt2st: T_Balances"
 
 st2it :: SLType -> Maybe IType
 st2it t = case t of
@@ -322,7 +322,10 @@ instance Equiv DLVar where
   equiv (DLVar _ _ _dl i1) (DLVar _ _ _dl2 i2) = equiv i1 i2
 
 instance Equiv DLConstant where
-  equiv DLC_UInt_max DLC_UInt_max = True
+  equiv a b = case (a, b) of
+    (DLC_UInt_max, DLC_UInt_max) -> True
+    (DLC_Zero_addr, DLC_Zero_addr) -> True
+    _ -> False
 
 instance Equiv SLVal where
   equiv a b = case (a, b) of
