@@ -407,7 +407,9 @@ interpPrim = \case
   (f, args) -> impossible $ "unhandled primop" <> show f <> " " <> show args
 
 conCons' :: DLConstant -> DLVal
-conCons' DLC_UInt_max = V_UInt $ 2 ^ (64 :: Integer) - 1
+conCons' = \case
+  DLC_UInt_max  -> V_UInt $ 2 ^ (64 :: Integer) - 1
+  DLC_Zero_addr -> V_Address 0
 
 instance Interp DLArg where
   interp = \case

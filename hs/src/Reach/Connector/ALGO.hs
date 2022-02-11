@@ -124,7 +124,9 @@ conName' :: T.Text
 conName' = "ALGO"
 
 conCons' :: DLConstant -> DLLiteral
-conCons' DLC_UInt_max = DLL_Int sb $ 2 ^ (64 :: Integer) - 1
+conCons' = \case
+  DLC_UInt_max  -> DLL_Int sb $ 2 ^ (64 :: Integer) - 1
+  DLC_Zero_addr -> DLL_Int sb $ 0
 
 algoMinTxnFee :: Integer
 algoMinTxnFee = 1000
@@ -214,7 +216,7 @@ typeSig x =
     T_Object m -> typeSig $ T_Tuple $ M.elems m
     T_Data m -> "(byte,byte" <> array (maxTypeSize m) <> ")"
     T_Struct ts -> typeSig $ T_Tuple $ map snd ts
-    T_TokenBalances {} -> impossible "typeSig: T_TokenBalances"
+    T_Balances {} -> impossible "typeSig: T_Balances"
   where
     array sz = "[" <> show sz <> "]"
 
@@ -233,7 +235,7 @@ typeSizeOf = \case
   T_Object m -> sum $ map typeSizeOf $ M.elems m
   T_Data m -> 1 + maxTypeSize m
   T_Struct ts -> sum $ map (typeSizeOf . snd) ts
-  T_TokenBalances {} -> impossible "typeSizeOf: T_TokenBalances"
+  T_Balances {} -> impossible "typeSizeOf: T_Balances"
   where
     word = 8
 
@@ -886,7 +888,7 @@ ctobs = \case
   T_Object {} -> nop
   T_Data {} -> nop
   T_Struct {} -> nop
-  T_TokenBalances {} -> impossible "ctobs: T_TokenBalances"
+  T_Balances {} -> impossible "ctobs: T_Balances"
 
 cfrombs :: DLType -> App ()
 cfrombs = \case
@@ -903,7 +905,7 @@ cfrombs = \case
   T_Object {} -> nop
   T_Data {} -> nop
   T_Struct {} -> nop
-  T_TokenBalances {} -> impossible "cfrombs: T_TokenBalances"
+  T_Balances {} -> impossible "cfrombs: T_Balances"
 
 ctzero :: DLType -> App ()
 ctzero = \case

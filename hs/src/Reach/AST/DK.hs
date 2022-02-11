@@ -24,6 +24,8 @@ data DKCommon
   | DKC_FluidSet SrcLoc FluidVar DLArg
   | DKC_FluidRef SrcLoc DLVar FluidVar
   | DKC_setApiDetails SrcLoc SLPart [DLType] (Maybe String)
+  | DKC_TokenMetaGet FluidVar SrcLoc DLVar DLArg (Maybe Int)
+  | DKC_TokenMetaSet FluidVar SrcLoc DLArg DLArg (Maybe Int)
   deriving (Eq, Generic)
 
 instance Pretty DKCommon where
@@ -41,6 +43,8 @@ instance Pretty DKCommon where
     DKC_FluidRef at dv fv -> pretty (DLS_FluidRef at dv fv)
     DKC_Only _at who t -> prettyOnly who t
     DKC_setApiDetails _ p tys mc -> "setApiDetails" <> parens (render_das [pretty p, pretty tys, pretty mc])
+    DKC_TokenMetaGet ty _ dv tok mp -> "tokenMetaGet" <> parens (comma_sep [viaShow ty, pretty dv, pretty tok, pretty mp])
+    DKC_TokenMetaSet ty _ tok val mp -> "tokenMetaSet" <> parens (comma_sep [viaShow ty, pretty tok, pretty val, pretty mp])
 
 data DKTail
   = DK_Com DKCommon DKTail

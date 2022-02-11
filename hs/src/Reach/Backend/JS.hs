@@ -153,7 +153,7 @@ jsContract_ = \case
           return $ jsArray [jsString k, t']
     as' <- mapM go as
     return $ jsApply ("stdlib.T_Struct") $ [jsArray as']
-  T_TokenBalances {} -> impossible "T_TokenBalances"
+  T_Balances {} -> impossible "T_Balances"
 
 jsContract :: DLType -> App Doc
 jsContract t = do
@@ -226,6 +226,8 @@ jsArg = \case
     case c of
       DLC_UInt_max ->
         return "stdlib.UInt_max"
+      DLC_Zero_addr ->
+        return "stdlib.Address_zero"
   DLA_Literal c -> jsCon c
   DLA_Interact who m t ->
     jsProtect (jsString $ "for " <> bunpack who <> "'s interact field " <> m) t $ "interact." <> pretty m
