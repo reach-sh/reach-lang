@@ -2185,11 +2185,19 @@ ensureCreatedToken lab a = do
         False -> expect_ $ Err_Token_NotCreated lab
     _ -> expect_ $ Err_Token_DynamicRef
 
-doBalanceInit_ :: (Int -> FluidVar) -> Maybe DLArg -> DLArg -> App ()
-doBalanceInit_ fv mtok amta = do
-  b <- lookupBalanceFV_ fv mtok
-  doFluidSet_ b amta
+tokenMetaSet :: TokenMeta -> DLArg -> DLArg -> App ()
+tokenMetaSet tm tok amta = do
+  at <- withAt id
+  mp <- M.lookup tok <$> getTokenPosEnv
+  saveLift $ DLS_TokenMetaSet tm at tok amta mp
 
+tokenMetaGet :: TokenMeta -> DLArg -> App DLVar
+tokenMetaGet tm tok = do
+  at <- withAt id
+  dv <- ctxt_mkvar $ DLVar at Nothing $ tmTypeOf tm
+  mi <- M.lookup tok <$> getTokenPosEnv
+  saveLift $ DLS_TokenMetaGet tm at dv tok mi
+  return dv
 
 getBalanceOf :: Maybe DLArg -> App SLSVal
 getBalanceOf mtok = do
@@ -2201,29 +2209,24 @@ getBalanceOf' = \case
   Nothing -> do
     v <- doFluidRef FV_netBalance
     compileToVar $ snd v
-  Just tok -> do
-    at <- withAt id
-    dv <- ctxt_mkvar (DLVar at Nothing T_UInt)
-    mi <- M.lookup tok <$> getBalsEnv
-    saveLift $ DLS_TokenMetaGet FV_balances at dv tok mi
-    return dv
+  Just tok -> tokenMetaGet TM_Balance tok
 
-getBalsEnv :: App (M.Map DLArg Int)
-getBalsEnv = readSt st_tok_pos
+getTokenPosEnv :: App (M.Map DLArg Int)
+getTokenPosEnv = readSt st_tok_pos
 
-setBalance :: Maybe DLArg -> DLArg -> App ()
-setBalance mtok amta =
+setBalance :: TokenMeta -> Maybe DLArg -> DLArg -> App ()
+setBalance tm mtok amta =
   case mtok of
     Nothing -> doFluidSet_ FV_netBalance amta
     Just tok -> do
       at <- withAt id
-      mi <- M.lookup tok <$> getBalsEnv
-      saveLift $ DLS_TokenMetaSet FV_balances at tok amta mi
+      mi <- M.lookup tok <$> getTokenPosEnv
+      saveLift $ DLS_TokenMetaSet tm at tok amta mi
 
-doBalanceInit :: Maybe DLArg -> App ()
-doBalanceInit mtok = do
+doBalanceInit :: TokenMeta -> Maybe DLArg -> App ()
+doBalanceInit tm mtok = do
   at <- withAt id
-  setBalance mtok $ DLA_Literal $ DLL_Int at 0
+  setBalance tm mtok $ DLA_Literal $ DLL_Int at 0
 
 doBalanceAssert :: Maybe DLArg -> SLVal -> PrimOp -> B.ByteString -> App ()
 doBalanceAssert mtok lhs op msg = do
@@ -2236,13 +2239,12 @@ doBalanceAssert mtok lhs op msg = do
     evalApplyVals' ass_rator $
       [cmp_v, public $ SLV_Bytes at msg]
 
-doBalanceAssert_ :: (Int -> FluidVar) -> Maybe DLArg -> SLVal -> PrimOp -> B.ByteString -> App ()
-doBalanceAssert_ fv mtok lhs op msg = do
+tokenMetaAssert :: TokenMeta -> DLArg -> SLVal -> PrimOp -> B.ByteString -> App ()
+tokenMetaAssert tm tok lhs op msg = do
   at <- withAt id
   let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [(Public, lhs)] []
-  b <- lookupBalanceFV_ fv mtok
-  balance_v <- doFluidRef b
-  cmp_v <- evalApplyVals' cmp_rator [balance_v]
+  v <- public . SLV_DLVar <$> tokenMetaGet tm tok
+  cmp_v <- evalApplyVals' cmp_rator [v]
   let ass_rator = SLV_Prim $ SLPrim_claim CT_Assert
   void $
     evalApplyVals' ass_rator $
@@ -2256,20 +2258,18 @@ doBalanceUpdate mtok op = \case
     let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [(Public, rhs)]
     -- Find the current balance of mtok
     bsv <- getBalanceOf mtok
-    -- Apply op to value
     bv' <- evalApplyVals' up_rator [bsv]
     bva <- compileCheckType T_UInt $ snd bv'
-    -- Set value/fluid ref with updated array
-    setBalance mtok bva
+    setBalance TM_Balance mtok bva
 
-doBalanceUpdate_ :: (Int -> FluidVar) -> Maybe DLArg -> PrimOp -> SLVal -> App ()
-doBalanceUpdate_ fv mtok op rhs = do
+tokenMetaUpdate :: TokenMeta -> DLArg -> PrimOp -> SLVal -> App ()
+tokenMetaUpdate tm tok op rhs = do
   at <- withAt id
   let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [(Public, rhs)]
-  b <- lookupBalanceFV_ fv mtok
-  balance_v <- doFluidRef b
-  balance_v' <- evalApplyVals' up_rator [balance_v]
-  doFluidSet b balance_v'
+  v <- tokenMetaGet tm tok
+  v' <- evalApplyVals' up_rator [public $ SLV_DLVar v]
+  dv <- compileCheckType (tmTypeOf tm) $ snd v'
+  tokenMetaSet tm tok dv
 
 doArrayBoundsCheck :: Integer -> SLVal -> App ()
 doArrayBoundsCheck sz idxv = do
@@ -2390,7 +2390,7 @@ evalPrim p sargs =
       amt_sv <- argToSV amta
       doBalanceAssert mtok_a amt_sv PLE (bpack lab)
       doBalanceUpdate mtok_a SUB amt_sv
-      doBalanceUpdate_ FV_supply mtok_a SUB amt_sv
+      tokenMetaUpdate TM_Supply toka SUB amt_sv
       ctxt_lift_eff $ DLE_TokenBurn at toka amta
       return $ public $ SLV_Null at lab
     SLPrim_Token_destroy -> do
@@ -2399,11 +2399,10 @@ evalPrim p sargs =
       let lab = "Token.destroy"
       ensureCreatedToken lab toka
       ensure_mode SLM_ConsensusStep lab
-      let mtoka = Just toka
-      doBalanceAssert_ FV_destroyed mtoka (SLV_Bool at False) PEQ $ bpack $ "token not yet destroyed at " <> lab
-      doBalanceAssert_ FV_supply mtoka (SLV_Int at 0) PEQ $ bpack $ "token supply zero at " <> lab
+      tokenMetaAssert TM_Destroyed toka (SLV_Bool at False) PEQ $ bpack $ "token not yet destroyed at " <> lab
+      tokenMetaAssert TM_Supply toka (SLV_Int at 0) PEQ $ bpack $ "token supply zero at " <> lab
       ctxt_lift_eff $ DLE_TokenDestroy at toka
-      doBalanceInit_ FV_destroyed mtoka $ DLA_Literal $ DLL_Bool True
+      tokenMetaSet TM_Destroyed toka $ DLA_Literal $ DLL_Bool True
       return $ public $ SLV_Null at lab
     SLPrim_Token_new -> do
       at <- withAt id
@@ -2449,10 +2448,11 @@ evalPrim p sargs =
           , st_toks_c = S.insert tokdv (st_toks_c st)
           , st_tok_pos = M.insert (DLA_Var tokdv) (length existingToks + 1) (st_tok_pos st)
           }
-      let mtok_a = Just $ DLA_Var tokdv
-      setBalance mtok_a supplya
-      doBalanceInit_ FV_supply mtok_a supplya
-      doBalanceInit_ FV_destroyed mtok_a (DLA_Literal $ DLL_Bool False)
+      let toka = DLA_Var tokdv
+      let mtok_a = Just $ toka
+      setBalance TM_Balance mtok_a supplya
+      tokenMetaSet TM_Supply toka supplya
+      tokenMetaSet TM_Destroyed toka (DLA_Literal $ DLL_Bool False)
       return $ public $ SLV_DLVar tokdv
     SLPrim_padTo len -> do
       v <- one_arg
@@ -3404,7 +3404,7 @@ evalPrim p sargs =
       let trackedBal = DLA_Var fvBal
       untrackedFunds <- ctxt_lift_expr mdv $ DLE_GetUntrackedFunds at mtok trackedBal
       dv <- ctxt_lift_expr mdv $ DLE_PrimOp at ADD [DLA_Var untrackedFunds, trackedBal]
-      setBalance mtok $ DLA_Var dv
+      setBalance TM_Balance mtok $ DLA_Var dv
       return (lvl, SLV_DLVar untrackedFunds)
     SLPrim_fromSome -> do
       (mv, dv) <- two_args
@@ -4464,7 +4464,7 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
         void $ locSt st_pure $ evalApplyVals' req_rator [public bv, public $ SLV_Bytes at $ "non-network tokens distinct"]
         void $ locSt st_pure $ evalExpr $ amt_req
         forM_ (map DLA_Var toks) $ \tok -> do
-          doBalanceInit $ Just tok
+          doBalanceInit TM_Balance $ Just tok
           ctxt_lift_eff $ DLE_TokenInit at tok
         -- Check payments
         DLPayAmt {..} <- compilePayAmt_ amt_e
@@ -5182,7 +5182,7 @@ findStmtTrampoline = \case
         , st_live = True
         , st_after_ctor = False
         }
-    doBalanceInit Nothing
+    doBalanceInit TM_Balance Nothing
     evalStmt ks
   _ -> Nothing
 
@@ -5196,7 +5196,7 @@ doExit = do
   let one mtok = doBalanceAssert mtok zero PEQ $ "balance zero at " <> lab
   one Nothing
   mapM_ (one . Just . DLA_Var) =<< readSt st_toks
-  let mintedEnsureDestroyed tokv = doBalanceAssert_ FV_destroyed (Just $ DLA_Var tokv) (SLV_Bool at True) PEQ $ "token destroyed at " <> lab
+  let mintedEnsureDestroyed tokv = tokenMetaAssert TM_Destroyed (DLA_Var tokv) (SLV_Bool at True) PEQ $ "token destroyed at " <> lab
   mapM_ mintedEnsureDestroyed =<< readSt st_toks_c
   saveLift $ DLS_Stop at
   st <- readSt id

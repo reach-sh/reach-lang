@@ -62,8 +62,12 @@ instance FromJSON DLType
 
 instance ToJSON DLType
 
-balanceElemTy :: DLType
-balanceElemTy = T_Tuple [T_Token, T_UInt]
+tokenInfoElemTy :: DLType
+tokenInfoElemTy = T_Tuple [T_Token, balance, supply, destroyed]
+  where
+    balance = T_UInt
+    supply = T_UInt
+    destroyed = T_Bool
 
 maybeT :: DLType -> DLType
 maybeT t = T_Data $ M.fromList $ [("None", T_Null), ("Some", t)]
@@ -639,7 +643,7 @@ data LogKind
 
 initBalanceToLArg :: Int -> DLVar -> DLLargeArg
 initBalanceToLArg i v =
-  DLLA_Array balanceElemTy $ (map DLA_Var $ take i $ repeat v)
+  DLLA_Array tokenInfoElemTy $ (map DLA_Var $ take i $ repeat v)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
 prettyClaim ct a m = do
@@ -1096,7 +1100,7 @@ instance Pretty a => Pretty (DLRecv a) where
       <> render_nest (pretty dr_k)
 
 data FluidVar
-  = FV_balances
+  = FV_tokens
   | FV_netBalance
   | FV_supply Int
   | FV_destroyed Int
@@ -1111,7 +1115,7 @@ data FluidVar
 
 instance Pretty FluidVar where
   pretty = \case
-    FV_balances -> "balances"
+    FV_tokens -> "balances"
     FV_netBalance -> "netBalance"
     FV_supply i -> "supply" <> parens (pretty i)
     FV_destroyed i -> "destroyed" <> parens (pretty i)
@@ -1125,7 +1129,7 @@ instance Pretty FluidVar where
 
 fluidVarType :: FluidVar -> DLType
 fluidVarType = \case
-  FV_balances -> T_Balances
+  FV_tokens -> T_Balances
   FV_netBalance -> T_UInt
   FV_supply _ -> T_UInt
   FV_destroyed _ -> T_Bool
@@ -1145,7 +1149,7 @@ allFluidVars bals =
   , FV_thisConsensusSecs
   , FV_lastConsensusSecs
   , FV_baseWaitSecs
-  , FV_balances
+  , FV_tokens
   , FV_netBalance
   -- This function is not really to get all of them, but just to
   -- get the ones that must be saved for a loop. didSend is only used locally,

@@ -115,9 +115,21 @@ data DLSStmt
   | DLS_Throw SrcLoc DLArg Bool
   | DLS_Try SrcLoc DLStmts DLVar DLStmts
   | DLS_ViewIs SrcLoc (Maybe SLPart) SLVar (Maybe DLSExportBlock)
-  | DLS_TokenMetaGet FluidVar SrcLoc DLVar DLArg (Maybe Int)
-  | DLS_TokenMetaSet FluidVar SrcLoc DLArg DLArg (Maybe Int)
+  | DLS_TokenMetaGet TokenMeta SrcLoc DLVar DLArg (Maybe Int)
+  | DLS_TokenMetaSet TokenMeta SrcLoc DLArg DLArg (Maybe Int)
   deriving (Eq, Generic)
+
+data TokenMeta
+  = TM_Balance
+  | TM_Supply
+  | TM_Destroyed
+  deriving (Eq, Enum, Ord, Show)
+
+tmTypeOf :: TokenMeta -> DLType
+tmTypeOf = \case
+  TM_Balance   -> T_UInt
+  TM_Supply    -> T_UInt
+  TM_Destroyed -> T_Bool
 
 instance Pretty DLSStmt where
   pretty d =
