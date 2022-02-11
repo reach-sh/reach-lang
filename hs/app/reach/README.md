@@ -2,7 +2,7 @@
 
 ## Subcommand notes
 
-### `version-compare` + `update-ide` for [the IDE extension](../../vsce)
+### `version-compare` + `update-ide` for [the IDE extension](../../../vsce)
 
 ```bash
 $ ./reach version-compare --json; echo $?
