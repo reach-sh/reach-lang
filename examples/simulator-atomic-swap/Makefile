@@ -5,7 +5,7 @@ NPM = npm
 .PHONY: build
 build:
 	$(NPM) install
-	cp ../map-multi/index.rsh .
+	cp ../atomic-swap/index.rsh .
 
 .PHONY: run
 run:
