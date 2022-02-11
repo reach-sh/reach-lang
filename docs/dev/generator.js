@@ -231,13 +231,13 @@ const writeFileMkdir = async (p, c) => {
 
 const sher =
   await shiki.getHighlighter({
-    theme: 'github-light',
+    theme: 'css-variables',
     langs: languages,
   });
 const shikiHighlight = async (code, lang) => {
   const fc = sher.codeToHtml(code, lang);
   return fc
-    .replace('<pre class="shiki" style="background-color: #ffffff"><code>', '')
+    .replace('<pre class="shiki" style="background-color: var(--shiki-color-background)"><code>', '')
     .replaceAll('<span class="line">', '')
     .replaceAll('</span></span>', '</span>')
     .replace('</code></pre>', '');
