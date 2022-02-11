@@ -1,0 +1,3 @@
+Reach's Docker images are up-to-date.
+
+There's a newer version of the `reach` script available.
