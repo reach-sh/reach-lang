@@ -24,8 +24,8 @@ data DKCommon
   | DKC_FluidSet SrcLoc FluidVar DLArg
   | DKC_FluidRef SrcLoc DLVar FluidVar
   | DKC_setApiDetails SrcLoc SLPart [DLType] (Maybe String)
-  | DKC_TokenMetaGet FluidVar SrcLoc DLVar DLArg (Maybe Int)
-  | DKC_TokenMetaSet FluidVar SrcLoc DLArg DLArg (Maybe Int)
+  | DKC_TokenMetaGet TokenMeta SrcLoc DLVar DLArg (Maybe Int)
+  | DKC_TokenMetaSet TokenMeta SrcLoc DLArg DLArg (Maybe Int)
   deriving (Eq, Generic)
 
 instance Pretty DKCommon where
