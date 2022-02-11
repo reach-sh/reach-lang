@@ -408,7 +408,7 @@ Reach's @{defn("type")}s are represented in programs by the following identifier
 + @{ref("rsh", "UInt")} `{!rsh} UInt`, which denotes an unsigned integer.
 `{!rsh} UInt.max` is the largest value that may be assigned to a `{!rsh} UInt`.
 + @{ref("rsh", "Bytes")} `{!rsh} Bytes(length)`, which denotes a string of bytes of length at most `{!rsh} length`.
-Bytes of different lengths are not compatible; however the shorter bytes may be padded.
+Bytes of different lengths are not compatible; however the shorter bytes may be [padded](##padding).
 + @{ref("rsh", "Digest")} `{!rsh} Digest`, which denotes a digest.
 + @{ref("rsh", "Address")} `{!rsh} Address`, which denotes an account address.
 + @{ref("rsh", "Contract")} `{!rsh} Contract`, which denotes the identifying information of a contract.
@@ -521,7 +521,7 @@ Reach provides syntactic sugar for defining signed `{!rsh} FixedPoint` numbers, 
 may be written between double or single quotes
 (with no distinction between the different styles)
 and use the same escaping rules as JavaScript.
-Since `{!rsh} Bytes` types are specialized in their length, literals typically need to be padded to be useful.
+Since `{!rsh} Bytes` types are specialized in their length, literals typically need to be [padded](##padding) to be useful.
 
 ### Operator expression
 
@@ -645,7 +645,7 @@ xor(true, true);   // false
 
 `{!rsh} xor(Bool, Bool)` returns `{!rsh} true` only when the inputs differ in value.
 
-### Padding
+### {#padding} Padding
 
 @{ref("rsh", "pad")}
 ```reach
@@ -660,7 +660,7 @@ Most of the time this is good, because it is a signal that you should use a `{!r
 
 But, sometimes it is necessary and useful to extend one byte string into a larger size.
 Each `{!rsh} Bytes` type has a `pad` field that is bound to a function that extends its argument to the needed size.
-A byte string extended in this way is called @{defn("padded")}, because it is extended with additional `NUL` bytes.
+A byte string extended in this way is called @{defn("padded")}, because it is extended with additional `NUL` bytes at the end of the string.
 
 ### Parenthesized expression
 
