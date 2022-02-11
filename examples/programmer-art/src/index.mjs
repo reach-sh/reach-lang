@@ -3,7 +3,7 @@ import cytoscape from 'cytoscape';
 import klay from 'cytoscape-klay';
 import "../scss/custom.scss";
 
-const jsonLog = [
+let jsonLog = [
   ["resetServer"],
   ["load"],
   ["init"]
@@ -199,6 +199,8 @@ const bindObjDetailsEvents = () => {
     const tgt = evt.target.closest("#newAccButton")
     const nodeId = tgt.dataset.nodeId
     let r = await c.newAccount(nodeId)
+    jsonLog.push(["newAccount",nodeId])
+
     let fr = JSON.stringify(r,null,2)
     let icon = evt.target.querySelector('.bi')
     if (!icon) {
@@ -221,6 +223,8 @@ const bindObjDetailsEvents = () => {
     const tgt = evt.target.closest("#newTokButton")
     const nodeId = tgt.dataset.nodeId
     let r = await c.newToken(nodeId)
+    jsonLog.push(["newToken",nodeId])
+
     let fr = JSON.stringify(r,null,2)
     let icon = evt.target.querySelector('.bi')
     if (!icon) {
@@ -307,7 +311,7 @@ const bindObjDetailsEvents = () => {
     let r = await c.initFor(nodeId,selectedActorId,JSON.stringify(liv))
     appendToLog(r)
     redraw()
-    jsonLog.push(["initFor",nodeId,selectedActorId])
+    jsonLog.push(["initFor",nodeId,selectedActorId,JSON.stringify(liv)])
   }
   initForBtn.addEventListener("click",initFor)
 
@@ -589,12 +593,17 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
     case 'A_None':
     default:
       const respondSpaDefault = async () => {
-        let v = parseInt(document.querySelector("#spa-response").value)
+        let v = document.querySelector("#spa-response").value
         let selectedActorId = document.querySelector("#actors-spa-select").value;
         let t = document.querySelector("#typing-spa-select").value;
         let aid = actorId
         if (selectedActorId) {
           aid = parseInt(selectedActorId)
+        }
+        if (t === "number") {
+          v = parseInt(v)
+        } else if (t === "tuple") {
+          v = JSON.stringify(JSON.parse(v))
         }
         let r = await c.respondWithVal(nodeId,actId,v,aid,t)
         appendToLog(r)
@@ -614,6 +623,8 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
                 <option value="string">String</option>
                 <option value="contract">Contract</option>
                 <option value="address">Address</option>
+                <option value="boolean">Boolean</option>
+                <option value="tuple">Tuple</option>
               </select>
             </div>
 
@@ -839,7 +850,6 @@ redraw();
 
 const clickNode = async (evt) => {
   const nodeId = evt.target.id()
-  debugger
   const r = await c.getStateLocals(nodeId)
   let actors = []
   for (const [k,v] of Object.entries(r.l_locals)) {
@@ -895,7 +905,9 @@ const loadScript = async (evt) => {
   icon.classList.add('bi-check2')
   await new Promise(resolve => setTimeout(resolve, 1000))
   let j = await navigator.clipboard.readText()
-  await c.interp(JSON.parse(j))
+  let script = JSON.parse(j)
+  await c.interp(script)
+  jsonLog = script
   redraw()
   icon.classList.remove('bi-check2')
   icon.classList.add('bi-play-circle')

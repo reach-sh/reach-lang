@@ -142,19 +142,30 @@ registerAction sid actorId act = do
     Just acts -> modify $ \ st -> st {e_actors_actions = M.insert actorId (M.insert sid actId acts) actacts }
   return ()
 
-newAccount :: StateId -> WebM (C.AccountId)
+newAccount :: StateId -> WebM (C.Account)
 newAccount sid = do
   graph <- gets e_graph
   case M.lookup sid graph of
     Nothing -> do
       possible "newAccount: state not found"
     Just (g, l) -> do
-      let aid = C.e_naccid g
+      let aid = fromIntegral $ C.e_naccid g
       let newAccId = aid + 1
-      let g' = g { C.e_naccid = newAccId }
+      let ledger = C.e_ledger g
+      let tokenIdMax = (C.e_ntok g) - 1
+      let newWallet = initWallets tokenIdMax
+      let ledger' = M.insert aid newWallet ledger
+      let g' = g { C.e_naccid = newAccId, C.e_ledger = ledger' }
       let graph' = M.insert sid (g',l) graph
       modify $ \ st -> st {e_graph = graph'}
       return newAccId
+
+initWallets :: Integer -> C.Wallet
+initWallets n = initWallets' n $ M.empty
+
+initWallets' :: Integer -> C.Wallet -> C.Wallet
+initWallets' 0 w = w
+initWallets' n w = initWallets' (n-1) $ M.insert n 0 w
 
 newTok :: StateId -> WebM (C.Token)
 newTok sid = do
@@ -165,7 +176,9 @@ newTok sid = do
     Just (g, l) -> do
       let tokId = C.e_ntok g
       let nTokId = tokId + 1
-      let g' = g { C.e_ntok = nTokId }
+      let ledger = C.e_ledger g
+      let ledger' = M.map (\wllt -> M.insert tokId 0 wllt) ledger
+      let g' = g { C.e_ntok = nTokId, C.e_ledger = ledger' }
       let graph' = M.insert sid (g',l) graph
       modify $ \ st -> st {e_graph = graph'}
       return tokId
@@ -512,6 +525,13 @@ app p srcTxt = do
       "address" -> do
         v :: C.Account <- param "data"
         webM $ unblockProg s a $ C.V_Address v
+      "boolean" -> do
+        v :: Bool <- param "data"
+        webM $ unblockProg s a $ C.V_Bool v
+      "tuple" -> do
+        v' :: LB.ByteString <- param "data"
+        let v = saferMaybe "decodeTuple" $ decode v'
+        webM $ unblockProg s a v
       _ -> possible "Unexpected value type"
     json ("OK" :: String)
 
