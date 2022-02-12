@@ -1814,30 +1814,43 @@ int(Neg, 4); // represents -4
  4;          // represents 4 : UInt
 ```
 
+@{ref("rsh", "iadd")}
  `{!rsh} iadd(x, y)` adds the `{!rsh} Int` `x` and the `{!rsh} Int` `y`.
 
+@{ref("rsh", "isub")}
  `{!rsh} isub(x, y)` subtracts the `{!rsh} Int` `y` from the `{!rsh} Int` `x`.
 
+@{ref("rsh", "imul")}
  `{!rsh} imul(x, y)` multiplies the `{!rsh} Int` `x` and the `{!rsh} Int` `y`.
 
+@{ref("rsh", "idiv")}
  `{!rsh} idiv(x, y)` divides the `{!rsh} Int` `x` by the `{!rsh} Int` `y`.
 
+@{ref("rsh", "imod")}
  `{!rsh} imod(x, y)` finds the remainder of dividing the `{!rsh} Int` `x` by the `{!rsh} Int` `y`.
 
+@{ref("rsh", "ilt")}
  `{!rsh} ilt(x, y)` determines whether `x` is less than `y`.
 
+@{ref("rsh", "ile")}
  `{!rsh} ile(x, y)` determines whether `x` is less than or equal to `y`.
 
+@{ref("rsh", "igt")}
  `{!rsh} igt(x, y)` determines whether `x` is greather than `y`.
 
+@{ref("rsh", "ige")}
  `{!rsh} ige(x, y)` determines whether `x` is greater than or equal to `y`.
 
+@{ref("rsh", "ieq")}
  `{!rsh} ieq(x, y)` determines whether `x` is equal to `y`.
 
+@{ref("rsh", "ieq")}
  `{!rsh} ine(x, y)` determines whether `x` is not equal to `y`.
 
+@{ref("rsh", "imax")}
  `{!rsh} imax(x, y)` returns the larger of two `{!rsh} Int`s.
 
+@{ref("rsh", "abs")}
  `{!rsh} abs(i)` returns the absolute value of an `{!rsh} Int`. The return value is of type `{!rsh} UInt`.
 
 ### Fixed-Point Numbers
@@ -1896,10 +1909,13 @@ fxunify(x, y);    // => [ 1000, 824.345, 45.670 ]
 to use the same scale. The larger scale of the two arguments will be chosen. The function will return a `3-tuple` consisting
 of the common scale and the newly scaled values.
 
+@{ref("rsh", "fxadd")}
  `{!rsh} fxadd(x, y)` adds two fixed point numbers.
 
+@{ref("rsh", "fxsub")}
  `{!rsh} fxsub(x, y)` subtracts two fixed point numbers.
 
+@{ref("rsh", "fxmul")}
  `{!rsh} fxmul(x, y)` multiplies two fixed point numbers.
 
 @{ref("rsh", "fxdiv")}
@@ -1911,10 +1927,13 @@ fxdiv(34.56, 1.234, 100000) // => 28.0064
  `{!rsh} fxdiv(x, y, scale_factor)` divides two fixed point numbers. The numerator, `x`,
 will be multiplied by the scale factor to provide a more precise answer. For example,
 
+@{ref("rsh", "fxmod")}
  `{!rsh} fxmod(x, y)` finds the remainder of dividing `x` by `y`.
 
+@{ref("rsh", "fxfloor")}
  `{!rsh} fxfloor(x)` returns the greatest integer not greater than `x`.
 
+@{ref("rsh", "fxsqrt")}
  `{!rsh} fxsqrt(x, k)` approximates the sqrt of the fixed number, `x`, using
 `k` iterations of the `{!rsh} sqrt` algorithm.
 
@@ -1931,6 +1950,7 @@ at compile time, which represents the number of iterations the algorithm should 
 The `scalePrecision` argument must be a `UInt` and represents the scale of the return value. Choosing a larger
 `scalePrecision` allows for more precision when approximating the power, as demonstrated in the example below:
 
+@{ref("rsh", "fxpowi")}
  `{!rsh} fxpowi(base, power, precision)` approximates the power of the fixed number, `base`,
 raised to the `{!rsh} Int`, `power`. The third argument must be a `{!rsh} UInt` whose value is known
 at compile time, which represents the number of iterations the algorithm should perform. For reference, `6` iterations
@@ -1943,21 +1963,28 @@ provides enough accuracy to calculate up to `2^64 - 1`, so the largest power it 
 the fixed number, `base`, raised to the `{!rsh} UInt`, `power`. The third
 argument must be a `{!rsh} UInt` whose value is known at compile time.
 
+@{ref("rsh", "fxcmp")}
  `{!rsh} fxcmp(op, x, y)` applies the comparison
 operator to the two fixed point numbers after unifying their scales.
 
 There are convenience methods defined for comparing fixed point numbers:
 
+@{ref("rsh", "fxlt")}
  `{!rsh} fxlt(x, y)` tests whether `x` is less than `y`.
 
+@{ref("rsh", "fxle")}
  `{!rsh} fxle(x, y)` tests whether `x` is less than or equal to `y`.
 
+@{ref("rsh", "fxgt")}
  `{!rsh} fxgt(x, y)` tests whether `x` is greater than `y`.
 
+@{ref("rsh", "fxge")}
  `{!rsh} fxge(x, y)` tests whether `x` is greater than or equal to `y`.
 
+@{ref("rsh", "fxeq")}
  `{!rsh} fxeq(x, y)` tests whether `x` is equal to `y`.
 
+@{ref("rsh", "fxne")}
  `{!rsh} fxne(x, y)` tests whether `x` is not equal to `y`.
 
 ### Anybody
