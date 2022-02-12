@@ -56,7 +56,5 @@ e  0 connector-avail:eth+cfx
 e  0 connector-avail-3rd-party:image-not-present
 e 60 script#new-images:devnet-algo+postgres
 e 60 script#fully-synchronized
-
-# CORE-1104
-# e  0 connector-avail-3rd-party:image-present-tag-not # ✗ New tags are available for
-# e  0 connector-avail-3rd-party:image-present-sha-not # ✗ New images are available for
+e  0 connector-avail-3rd-party:image-present-tag-not
+e  0 connector-avail-3rd-party:image-present-sha-not

@@ -2089,6 +2089,13 @@ versionCompare2 = command "version-compare2" $ info f mempty
               where
                 dm = ld == rd
                 rts' = filter (`notElem` lts) rts
+            (DAQLMissingTag li ld, DAQRMatch ri@(Left _) rd rts)
+              | li == ri && ri `elem` (pre <$> imagesForAllConnectors)
+              -> tp (DAQNewConnectorAvailable ri rd rts) nxa li ()
+              where
+                nxa = case ld == rd of
+                  True -> DAQNewTags ri rd rts
+                  False -> DAQNewDigestAvailable ri rd rts
             (DAQLMissingTag _ _, DAQRMatch i rd rts) ->
               maybe
                 (DAQNewDigestAvailable i rd rts)
@@ -2098,16 +2105,18 @@ versionCompare2 = command "version-compare2" $ info f mempty
             -- dependent third-party images, but e.g. if devnet-algo exists
             -- locally then postgres must also be synchronized
             (DAQLMissingImg li _, DAQRMatch ri rd rts)
-              | li == ri && ri `elem` (pre <$> imagesForAllConnectors) -> either tp (const nca) ri
+              | li == ri && ri `elem` (pre <$> imagesForAllConnectors)
+              -> either (tp nca nxa li) (const nca) ri
               where
-                pre = fmap ("reachsh/" <>)
                 nca = DAQNewConnectorAvailable ri rd rts
-                tp _ = maybe nca (const $ DAQNewDigestAvailable ri rd rts) $ do
-                  let cs =
-                        rights . concat . L.filter (li `elem`) $
-                          fmap pre . imagesFor <$> [minBound .. maxBound]
-                  guard . any isJust $ ((assocL !?) . Right) <$> cs
+                nxa = DAQNewDigestAvailable ri rd rts
             (_, DAQRMatch i d rts) -> DAQNewDigestAvailable i d rts
+            where
+              pre = fmap ("reachsh/" <>)
+              tp nca nxa li _ = maybe nca (const nxa) $ do
+                let cs = rights . concat . L.filter (li `elem`)
+                      $ fmap pre . imagesFor <$> [minBound .. maxBound]
+                guard . any isJust $ ((assocL !?) . Right) <$> cs
 
       -- Avoid "double update" problem when current CLI image doesn't yet know a
       -- new numeric branch has been released, e.g. 0.1.7 -> 0.1.8
