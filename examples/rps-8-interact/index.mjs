@@ -80,7 +80,7 @@ const HANDS = {
 interact.getHand = async () => {
   const hand = await ask.ask(`What hand will you play?`, (x) => {
     const hand = HANDS[x];
-    if ( hand == null ) {
+    if ( hand === undefined ) {
       throw Error(`Not a valid hand ${hand}`);
     }
     return hand;
