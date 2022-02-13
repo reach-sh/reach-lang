@@ -853,15 +853,16 @@ const redraw = async () => {
       }
       return 0;
     }
-    let focusEles = allNodes.sort(compareFn).slice(-2)
-    cy.animate({
+    let focusEles = allNodes.sort(compareFn).slice(-3)
+    setTimeout(() => { cy.animate({
       fit: {
         eles: focusEles,
-        padding: 125
+        padding: 120
       }
     }, {
-      duration: 1000
-    });
+      duration: 250
+    }); }, 1000);
+
   }; // animateGraph
   animateGraph(eles)
 }
