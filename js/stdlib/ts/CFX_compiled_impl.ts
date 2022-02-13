@@ -2,7 +2,7 @@ import * as eci from './ETH_compiled_impl';
 import type { ETH_Ty } from './ETH_like_interfaces';
 import buffer from 'buffer';
 import { address_cfxStandardize, decodeCfxAddress, encodeCfxAddress } from './CFX_util';
-import { debug } from './shared_impl';
+import { debug, j2s } from './shared_impl';
 
 const { Buffer } = buffer;
 
@@ -63,7 +63,7 @@ export const T_Address: ETH_Ty<string, string> = {
       }
       return address_cfxStandardize(uv);
     }
-    if (!uv) throw Error(`Expected address, got ${JSON.stringify(uv)}`);
+    if (!uv) throw Error(`Expected address, got ${j2s(uv)}`);
     // XXX what's a better way to show ts what's going on?
     const uobj = uv as {networkAccount?: unknown, address?: unknown};
     if (uobj.networkAccount) {

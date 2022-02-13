@@ -7,7 +7,7 @@ import { ParamType } from '@ethersproject/abi';
 const { BigNumber, utils } = ethers;
 export { BigNumber, utils };
 import { address_cfxStandardize, defaultEpochTag } from './CFX_util';
-import { debug } from './shared_impl';
+import { debug, j2s } from './shared_impl';
 import { T_Address } from './CFX_compiled_impl';
 
 type BigNumber = ethers.BigNumber;
@@ -624,7 +624,7 @@ export class Wallet implements IWallet {
           wait: () => p.waitForTransaction(th)
         }
       } catch (e:any) {
-        const es = JSON.stringify(e);
+        const es = j2s(e);
         debug(dhead, `err`, { txn, e, es });
         //if ( es.includes("stale nonce") || es.includes("same nonce") || es.includes('tx already exist') ) {
         //  debug(dhead, `nonce error`);

@@ -59,7 +59,7 @@ async function signTxn(networkAccount: NetworkAccount, txnOrig: Transaction): Pr
     debug(msgpack.decode(ret.tx));
     return ret;
   } else {
-    throw Error(`networkAccount has neither sk nor AlgoSigner: ${JSON.stringify(networkAccount)}`);
+    throw Error(`networkAccount has neither sk nor AlgoSigner: ${j2s(networkAccount)}`);
   }
 }
 

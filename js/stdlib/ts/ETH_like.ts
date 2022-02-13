@@ -23,6 +23,8 @@ import {
   makeEventStream,
   makeSigningMonitor,
   NotifySend,
+  j2s,
+  j2sf,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -659,7 +661,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             ok_r = await callC(dhead, funcName, arg, pay);
           } catch (e:any) {
             debug(dhead, `ERROR`, { stack: e.stack }, e);
-            const jes = JSON.stringify(e);
+            const jes = j2s(e);
             if ( ! soloSend ) {
               debug(dhead, `LOST`);
               return await doRecv(false, false, jes);
@@ -1003,8 +1005,8 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eq: Even
   eq.init({ ctcAddress, creationBlock });
 
   const chkeq = (a: any, e:any, msg:string) => {
-    const as = JSON.stringify(a);
-    const es = JSON.stringify(e);
+    const as = j2sf(a);
+    const es = j2sf(e);
     chk(as === es, `${msg}: expected ${es}, got ${as}`);
   };
 

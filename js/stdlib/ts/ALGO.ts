@@ -54,6 +54,8 @@ import {
   TokenMetadata,
   LaunchTokenOpts,
   makeSigningMonitor,
+  j2sf,
+  j2s,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -402,7 +404,7 @@ const waitForConfirmation = async (txId: TxId): Promise<RecvTxn> => {
       debug(dhead, 'still in pool, trying again');
       return await checkAlgod();
     } else {
-      throw Error(`waitForConfirmation: error confirming: ${JSON.stringify(info)}`);
+      throw Error(`waitForConfirmation: error confirming: ${j2s(info)}`);
     }
   };
 
@@ -518,9 +520,7 @@ const sign_and_send_sync = async (
     return await signSendAndConfirm(acc, [txn]);
   } catch (e) {
     console.log(e);
-    let es = JSON.stringify(e);
-    if ( es === '{}' ) { es = `${e}`; };
-    throw Error(`${label} txn failed:\n${JSON.stringify(txn)}\nwith:\n${es}`);
+    throw Error(`${label} txn failed:\n${j2s(txn)}\nwith:\n${j2s(e)}`);
   }
 };
 
@@ -561,17 +561,6 @@ const AppFlatOptInMinBalance = 100000
 const ui8h = (x:Uint8Array): string => Buffer.from(x).toString('hex');
 const base64ToUI8A = (x:string): Uint8Array => Uint8Array.from(Buffer.from(x, 'base64'));
 const base64ify = (x: WithImplicitCoercion<string>|Uint8Array): string => Buffer.from(x).toString('base64');
-
-const format_failed_request = (e:any) => {
-  const ep = JSON.parse(JSON.stringify(e));
-  const db64 =
-    ep.req ?
-    (ep.req.data ? base64ify(ep.req.data) :
-     `no data, but ${JSON.stringify(Object.keys(ep.req))}`) :
-     `no req, but ${JSON.stringify(Object.keys(ep))}`;
-  const msg = e.text ? JSON.parse(e.text) : e;
-  return `\n${db64}\n${JSON.stringify(msg)}`;
-};
 
 function looksLikeAccountingNotInitialized(e: any) {
   const responseText = e?.response?.text || null;
@@ -1024,7 +1013,7 @@ export const transfer = async (
   const txn = toWTxn(makeTransferTxn(sender.addr, receiver, valuebn, token, ps, undefined, tag));
 
   return await sign_and_send_sync(
-    `transfer ${JSON.stringify(from)} ${JSON.stringify(to)} ${valuebn}`,
+    `transfer ${j2s(from)} ${j2s(to)} ${valuebn}`,
     sender,
     txn);
 };
@@ -1375,7 +1364,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
           const ApplicationID = createRes['created-application-index'];
           if ( ! ApplicationID ) {
-            throw Error(`No created-application-index in ${JSON.stringify(createRes)}`);
+            throw Error(`No created-application-index in ${j2s(createRes)}`);
           }
           debug(label, `created`, {ApplicationID});
           const ctcInfo = ApplicationID;
@@ -1548,7 +1537,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             if (! ( x instanceof Uint8Array ) ) {
               // The types say this is impossible now,
               // but we'll leave it in for a while just in case...
-              throw Error(`expect safe program argument, got ${JSON.stringify(x)}`);
+              throw Error(`expect safe program argument, got ${j2s(x)}`);
             }
           });
           debug(dhead, '--- PREPARE:', safe_args.map(ui8h));
@@ -1573,10 +1562,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           try {
             res = await signSendAndConfirm( thisAcc, wtxns );
           } catch (e:any) {
-            const es = ( e.type === 'sendRawTransaction' ) ?
-              format_failed_request(e?.e) : e;
-            debug(dhead, '--- FAIL:', es);
-            const jes = JSON.stringify(es);
+            const jes = j2s(e);
+            debug(dhead, 'FAIL', e, jes);
 
             if ( ! soloSend ) {
               // If there is no soloSend, then someone else "won", so let's
@@ -2149,14 +2136,14 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
     }
   };
   const chkeq = (a: unknown, e:unknown, msg:string) => {
-    const as = JSON.stringify(a);
-    const es = JSON.stringify(e);
+    const as = j2sf(a);
+    const es = j2sf(e);
     chk(as === es, `${msg}: expected ${es}, got ${as}`);
   };
 
   const appInfoM = await getApplicationInfoM(ApplicationID);
   if ( 'exn' in appInfoM ) {
-    throw Error(`${dhead} failed: failed to lookup application (${ApplicationID}): ${JSON.stringify(appInfoM.exn)}`);
+    throw Error(`${dhead} failed: failed to lookup application (${ApplicationID}): ${j2s(appInfoM.exn)}`);
   }
   const appInfo = appInfoM.val;
   const appInfo_p = appInfo['params'];

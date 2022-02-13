@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import { checkedBigNumberify } from './shared_backend';
+import { j2s } from './shared_impl';
 // "CBR", canonical backend representation
 
 type BigNumber = ethers.BigNumber;
@@ -50,7 +51,7 @@ export const BT_Null: BackendTy<CBR_Null> = {
   canonicalize: (val: unknown): CBR_Null => {
     // Doesn't check with triple eq; we're being lenient here
     if (val != null) {
-      throw Error(`Expected null, but got ${JSON.stringify(val)}`);
+      throw Error(`Expected null, but got ${j2s(val)}`);
     }
     return BV_Null;
   },
@@ -60,7 +61,7 @@ export const BT_Bool: BackendTy<CBR_Bool> = {
   name: 'Bool',
   canonicalize: (val: unknown): CBR_Bool => {
     if (typeof(val) !== 'boolean') {
-      throw Error(`Expected boolean, but got ${JSON.stringify(val)}`);
+      throw Error(`Expected boolean, but got ${j2s(val)}`);
     }
     return val;
   },
@@ -84,7 +85,7 @@ export const BT_UInt = (max: BigNumber): BackendTy<CBR_UInt> => ({
       return checkedBigNumberify('stdlib:CBR:BT_UInt', max, uvs);
     } catch (e) {
       if (typeof(uv) === 'string') {
-        throw Error(`String does not represent a BigNumber. ${JSON.stringify(uv)}`);
+        throw Error(`String does not represent a BigNumber. ${j2s(uv)}`);
       }
       throw e;
     }
@@ -100,7 +101,7 @@ export const BT_Bytes = (len: number): BackendTy<CBR_Bytes> => ({
   canonicalize: (val: unknown): CBR_Bytes => {
     const lenn = bigNumberToNumber(len);
     if (typeof(val) !== 'string') {
-      throw Error(`Bytes expected string, but got ${JSON.stringify(val)}`);
+      throw Error(`Bytes expected string, but got ${j2s(val)}`);
     }
     const checkLen = (label:string, alen:number, fill:string): string => {
       if ( val.length > alen ) {
@@ -122,7 +123,7 @@ export const BT_Digest: BackendTy<CBR_Digest> = {
   name: 'Digest',
   canonicalize: (val: unknown): CBR_Digest => {
     if (typeof val !== 'string') {
-      throw Error(`${JSON.stringify(val)} is not a valid digest`);
+      throw Error(`${j2s(val)} is not a valid digest`);
     }
     return val;
   },
@@ -136,11 +137,11 @@ export const BT_Address: BackendTy<CBR_Address> = ({
   name: 'Address',
   canonicalize: (val: unknown): CBR_Address => {
     if (typeof val !== 'string') {
-      throw Error(`Address must be a string, but got: ${JSON.stringify(val)}`);
+      throw Error(`Address must be a string, but got: ${j2s(val)}`);
     } else if (val.slice(0, 2) !== '0x') {
-      throw Error(`Address must start with 0x, but got: ${JSON.stringify(val)}`);
+      throw Error(`Address must start with 0x, but got: ${j2s(val)}`);
     } else if (!ethers.utils.isHexString(val)) {
-      throw Error(`Address must be a valid hex string, but got: ${JSON.stringify(val)}`);
+      throw Error(`Address must be a valid hex string, but got: ${j2s(val)}`);
     }
     return val;
   },
@@ -156,7 +157,7 @@ export const BT_Array = (ctc: BackendTy<CBR_Val> , size: number): BackendTy<CBR_
     name: `Array(${ctc.name}, ${size})`,
     canonicalize: (args: any): CBR_Array => {
       if (!Array.isArray(args)) {
-        throw Error(`Expected an Array, but got ${JSON.stringify(args)}`);
+        throw Error(`Expected an Array, but got ${j2s(args)}`);
       }
       if (size != args.length) {
         throw Error(`Expected array of length ${size}, but got ${args.length}`);
@@ -181,7 +182,7 @@ export const BT_Tuple = (ctcs: Array<BackendTy<CBR_Val>>): BackendTy<CBR_Tuple> 
     name: `Tuple(${ctcs.map((ctc) => ` ${ctc.name} `)})`,
     canonicalize: (args: any): CBR_Tuple => {
       if (!Array.isArray(args)) {
-        throw Error(`Expected a Tuple, but got ${JSON.stringify(args)}`);
+        throw Error(`Expected a Tuple, but got ${j2s(args)}`);
       }
       if (ctcs.length != args.length) {
         throw Error(`Expected tuple of size ${ctcs.length}, but got ${args.length}`);
@@ -224,7 +225,7 @@ export const BT_Object = (co: {
     name: `Object(${Object.keys(co).map((k) => ` ${k}: ${co[k].name} `)})`,
     canonicalize: (vo: any): CBR_Object => {
       if (typeof(vo) !== 'object') {
-        throw Error(`Expected object, but got ${JSON.stringify(vo)}`);
+        throw Error(`Expected object, but got ${j2s(vo)}`);
       }
       const obj: {
         [key: string]: CBR_Val
@@ -257,7 +258,7 @@ export const BT_Data = (co: {
     name: `Data(${Object.keys(co).map((k) => ` ${k}: ${co[k].name} `)})`,
     canonicalize: (io: unknown): CBR_Data => {
       if (!(Array.isArray(io) && io.length == 2 && typeof io[0] == 'string')) {
-        throw Error(`Expected an array of length two to represent a data instance, but got ${JSON.stringify(io)}`);
+        throw Error(`Expected an array of length two to represent a data instance, but got ${j2s(io)}`);
       }
       const vn = io[0];
       if (!{}.hasOwnProperty.call(co, vn)) {

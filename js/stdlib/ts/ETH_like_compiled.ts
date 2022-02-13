@@ -38,6 +38,7 @@ import {
   hexToString,
   mkAddressEq,
   makeArith,
+  j2s,
 } from './shared_impl';
 export type { // =>
   ETH_Ty,
@@ -64,7 +65,7 @@ const digest = makeDigest('keccak256', (t:AnyETH_Ty, v:any) => {
     if (Array.isArray(v) && v.length === 0) {
       return v;
     } else {
-      throw Error(`impossible: digest tuple() with non-empty array: ${JSON.stringify(v)}`);
+      throw Error(`impossible: digest tuple() with non-empty array: ${j2s(v)}`);
     }
   }
   return ethers.utils.defaultAbiCoder.encode([t.paramType], [t.munge(v)])
