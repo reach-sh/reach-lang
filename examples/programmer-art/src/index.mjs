@@ -841,8 +841,28 @@ const redraw = async () => {
           delay += duration;
           })(cNode, i, nodesCopy[i], nNode);
       }
+    } // for
+    function compareFn(a, b) {
+      const aId = parseInt(a.data('id'));
+      const bId = parseInt(b.data('id'));
+      if (aId < bId) {
+        return -1;
+      }
+      if (aId > bId) {
+        return 1;
+      }
+      return 0;
     }
-  };
+    let focusEles = allNodes.sort(compareFn).slice(-2)
+    cy.animate({
+      fit: {
+        eles: focusEles,
+        padding: 125
+      }
+    }, {
+      duration: 1000
+    });
+  }; // animateGraph
   animateGraph(eles)
 }
 
