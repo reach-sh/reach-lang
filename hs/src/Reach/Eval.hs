@@ -125,7 +125,8 @@ makeEnv cns = do
   e_st <- newIORef e_stv
   let e_at = srcloc_top
   e_lifts <- newIORef mempty
-  e_unused_variables <- newIORef mempty
+  e_vars_tracked <- newIORef mempty
+  e_vars_used <- newIORef mempty
   -- XXX revise
   e_exn <- newIORef $ ExnEnv False Nothing Nothing SLM_Module
   e_mape <- makeMapEnv
@@ -133,16 +134,19 @@ makeEnv cns = do
   let e_appr = Left $ app_default_opts e_id e_droppedAsserts $ M.keys cns
   return (Env {..})
 
-withUnusedVars :: App a -> App a
-withUnusedVars m = do
-  uvr <- liftIO $ newIORef mempty
-  a <- local (\e -> e {e_unused_variables = uvr}) m
-  uvs <- liftIO $ readIORef uvr
-  let reportUnusedVars = \case
-        [] -> return ()
-        l@(h : _) ->
-          expect_throw Nothing (fst h) $ Err_Unused_Variables l
-  reportUnusedVars $ S.toList uvs
+checkUnusedVars :: App a -> App a
+checkUnusedVars m = do
+  vt <- liftIO $ newIORef mempty
+  vu <- liftIO $ newIORef mempty
+  a <- local (\e -> e { e_vars_tracked = vt, e_vars_used = vu }) m
+  tracked <- liftIO $ readIORef vt
+  used <- liftIO $ readIORef vu
+  let unused = S.difference tracked used
+  let l = S.toList unused
+  case l of
+    [] -> return ()
+    (at, _) : _ ->
+      expect_throw Nothing at $ Err_Unused_Variables l
   return a
 
 evalBundle :: Connectors -> JSBundle -> IO (S.Set SLVar, (SLVar -> IO DLProg))
@@ -162,11 +166,10 @@ evalBundle cns (JSBundle mods) = do
               case sss_val v of
                 SLV_Prim SLPrim_App_Delay {} -> True
                 _ -> False
-  let go getdapp = run $
-        withUnusedVars $ do
-          exports <- getExports exe_ex
-          topv <- ensure_public . sss_sls =<< getdapp
-          compileDApp shared_lifts exports topv
+  let go getdapp = run $ checkUnusedVars $ do
+        exports <- getExports exe_ex
+        topv <- ensure_public . sss_sls =<< getdapp
+        compileDApp shared_lifts exports topv
   case S.null tops of
     True -> do
       return (S.singleton "default", const $ go $ return defaultApp)

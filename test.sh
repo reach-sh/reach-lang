@@ -128,10 +128,12 @@ cdot () {
 
 #######
 
-export REACH_BUILD_NO_CACHE=Y
-jb
-r users/turbooo
+c users/algo-govt/index.rsh
 exit 0
+(cd users/algo-govt && ./test.sh)
+exit 0
+
+# export REACH_BUILD_NO_CACHE=Y
 
 c users/asolpshinning.rsh
 exit 0
@@ -142,8 +144,6 @@ exit 0
 cdot users/duoswap-core/index.rsh
 exit 0
 
-(cd users/algo-govt && ./test.sh)
-exit 0
 
 jb
 ci ALGO signingMonitor

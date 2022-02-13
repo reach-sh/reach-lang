@@ -86,7 +86,8 @@ data Env = Env
   , e_stack :: [SLCtxtFrame]
   , e_depth :: Int
   , e_mape :: MapEnv
-  , e_unused_variables :: IORef (S.Set (SrcLoc, SLVar))
+  , e_vars_tracked :: IORef (S.Set (SrcLoc, SLVar))
+  , e_vars_used :: IORef (S.Set (SrcLoc, SLVar))
   , e_while_invariant :: Bool
   , e_exn :: IORef ExnEnv
   , e_appr :: Either DLOpts (IORef AppInitSt)
@@ -481,21 +482,24 @@ whenUsingStrict :: App () -> App ()
 whenUsingStrict e = useStrict >>= flip when e
 
 shouldNotTrackVariable :: (SrcLoc, SLVar) -> Bool
-shouldNotTrackVariable (_, "main") = True
-shouldNotTrackVariable (_, "_") = True
-shouldNotTrackVariable _ = False
+shouldNotTrackVariable = \case
+  (_, "main") -> True
+  (_, "_") -> True
+  _ -> False
+
+envSetInsert :: (Ord a) => (Env -> IORef (S.Set a)) -> a -> App ()
+envSetInsert f v = do
+  sr <- asks f
+  liftIO $ modifyIORef sr $ S.insert v
 
 trackVariable :: (SrcLoc, SLVar) -> App ()
 trackVariable el =
-  whenUsingStrict $ do
-    unused_vars <- asks e_unused_variables
+  whenUsingStrict $
     unless (shouldNotTrackVariable el) $
-      liftIO $ modifyIORef unused_vars $ S.insert el
+      envSetInsert e_vars_tracked el
 
 markVarUsed :: (SrcLoc, SLVar) -> App ()
-markVarUsed v = do
-  unused_vars <- asks e_unused_variables
-  liftIO $ modifyIORef unused_vars $ S.filter (v /=)
+markVarUsed = envSetInsert e_vars_used
 
 -- | The "_" ident may never be looked up.
 env_lookup :: LookupCtx -> SLVar -> SLEnv -> App SLSSVal
