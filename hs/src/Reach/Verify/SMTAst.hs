@@ -266,7 +266,8 @@ data SMTVal
   | SMV_Data String [SMTVal]
   | SMV_Token String
   | SMV_Contract String
-  | SMV_Map
+  | SMV_Map_Const SMTVal
+  | SMV_Map_Set SMTVal SMTVal SMTVal
   deriving (Eq, Show)
 
 instance Pretty SMTVal where
@@ -284,7 +285,8 @@ instance Pretty SMTVal where
     SMV_Object ts -> braces $ hsep $ punctuate comma $ map (\(k, v) -> pretty k <> ":" <+> pretty v) (M.toAscList ts)
     SMV_Struct ts -> braces $ hsep $ punctuate comma $ map (\(k, v) -> pretty k <> ":" <+> pretty v) ts
     SMV_Data c xs -> pretty c <> parens (hsep $ punctuate comma $ map pretty xs)
-    SMV_Map -> "<map>"
+    SMV_Map_Const v -> "<map: " <> parens (pretty v) <> ">"
+    SMV_Map_Set m f ma -> pretty m <> brackets (pretty f <+> "<-" <+> pretty ma)
 
 instance Countable SynthExpr where
   counts = \case

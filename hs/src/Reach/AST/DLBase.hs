@@ -641,8 +641,8 @@ instance PrettySubst a => PrettySubst (Maybe a) where
   prettySubst = \case
     Just a -> do
       a' <- prettySubst a
-      return $ "Just" <+> a'
-    Nothing -> return "Nothing"
+      return $ "Some" <+> a'
+    Nothing -> return "None"
 
 instance PrettySubst DLExpr where
   prettySubst = \case
