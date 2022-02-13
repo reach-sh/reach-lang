@@ -16,8 +16,6 @@ clean: hs-clean
 
 .PHONY: build-haskell-build-artifacts
 build-haskell-build-artifacts:
-	mkdir -p .docker-root
-	cp -f $(ROOT)/VERSION $(ROOT)/DEPS .docker-root/
 	$(ROOT)/scripts/build-image.sh $(IMG_HASKELL_BUILD_ARTIFACTS) Dockerfile.haskell-build-artifacts
 	docker container rm -f repo
 
@@ -36,8 +34,6 @@ build: build-haskell-build-artifacts build-reach-cli build-reach
 
 .PHONY: build-m1
 build-m1:
-	mkdir -p .docker-root
-	cp -f $(ROOT)/VERSION $(ROOT)/DEPS .docker-root/
 	docker build \
 	  --platform linux/arm64 \
 	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \

@@ -5,9 +5,10 @@ FROM reachsh/runner:latest
 
 RUN apk add make curl bash
 COPY Makefile.docker ./Makefile
-COPY package.mo.json .
 COPY .docker-root ./.docker-root
-RUN make ROOT=.docker-root install-mo package.json
+RUN make ROOT=.docker-root install-mo
+COPY package.mo.json .
+RUN make ROOT=.docker-root package.json
 
 COPY index.mjs /app/
 ENTRYPOINT ["npm", "run", "--"]

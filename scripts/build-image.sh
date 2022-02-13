@@ -5,16 +5,21 @@ shift 2
 ARGS=( "$@" )
 
 HERE=$(dirname "$0")
+ROOT="${HERE}"/..
+mkdir -p .docker-root
 ARGS+=( "--build-arg" "REACH_GIT_HASH=$("${HERE}"/git-hash.sh)" )
 # shellcheck source=/dev/null
-. "${HERE}"/../VERSION
+. "${ROOT}"/VERSION
+cp -f "${ROOT}"/VERSION .docker-root/
 # shellcheck source=/dev/null
-. "${HERE}"/../DEPS
+. "${ROOT}"/DEPS
+cp -f "${ROOT}"/DEPS .docker-root/
 ARGS+=( "--build-arg" "SOLC_VERSION=${SOLC_VERSION}" )
 ARGS+=( "--build-arg" "ALPINE_VERSION=${ALPINE_VERSION}" )
 ARGS+=( "--build-arg" "NODE_VERSION=${NODE_VERSION}" )
 ARGS+=( "--build-arg" "REACH_VERSION=${VERSION}" )
 ARGS+=( "--build-arg" "Z3_VERSION=${Z3_VERSION}" )
+
 
 LAYERS=$(grep -E 'FROM .* as' "${FILE}" | grep -v ignore | awk -F' as ' '{print $2}')
 
@@ -24,8 +29,10 @@ fi
 
 CACHE_FROM=()
 dp () {
-  docker pull "$1" || true
-  CACHE_FROM+=("--cache-from=${1}")
+  if [ "${REACH_BUILD_NO_CACHE}" = "" ] ; then
+    docker pull "$1" || true
+    CACHE_FROM+=("--cache-from=${1}")
+  fi
 }
 IMAGEC="${IMAGE}:circleci"
 dpb () {

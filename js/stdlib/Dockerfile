@@ -13,11 +13,12 @@ FROM $NODE_IMAGE AS prepare
 
 WORKDIR /stdlib
 RUN apk update && apk add git make python3 libc-dev gcc g++ curl bash
-COPY --from=js-deps /js-deps/node_modules ./node_modules
-COPY Makefile.docker ./Makefile
-COPY package.mo.json .
 COPY .docker-root ./.docker-root
-RUN make ROOT=.docker-root install-mo package.json
+COPY Makefile.docker ./Makefile
+RUN make ROOT=.docker-root install-mo
+COPY package.mo.json .
+RUN make ROOT=.docker-root package.json
+COPY --from=js-deps /js-deps/node_modules ./node_modules
 
 # The above should cover all `npm install` needs
 # RUN npm install
