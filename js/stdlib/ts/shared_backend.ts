@@ -32,9 +32,41 @@ export interface AnyBackendTy {
   canonicalize: (x: any) => any,
 };
 
+const objectIsEmpty = (obj: any) =>
+  (obj
+  && Object.keys(obj).length === 0
+  && Object.getPrototypeOf(obj) === Object.prototype);
+
 export const assert = (d: any, ai: any = null) => {
   if (!d) {
-    throw Error(JSON.stringify(ai));
+    let msg = `Assertion failed`;
+    if ( typeof ai === 'string' ) {
+      msg = `: ${ai}`;
+    }
+    if ( ai.who ) {
+      msg += `: ${ai.who}`;
+      delete ai.who;
+    }
+    if ( ai.msg ) {
+      msg += `: ${ai.msg}`;
+      delete ai.msg;
+    }
+    if ( ai.at ) {
+      msg += `\n  at ${ai.at}`;
+      delete ai.at;
+    }
+    let rest = `:`;
+    if ( Array.isArray(ai.fs) ) {
+      for ( const f of ai.fs ) {
+        msg += `\n  ${f}`;
+      }
+      delete ai.fs;
+      rest = `\n`;
+    }
+    if ( ! objectIsEmpty(ai) ) {
+      msg += `${rest} ${JSON.stringify(ai)}`;
+    }
+    throw Error(msg);
   }
 };
 

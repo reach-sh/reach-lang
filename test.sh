@@ -130,6 +130,7 @@ cdot () {
 
 export REACH_BUILD_NO_CACHE=Y
 jb
+r users/turbooo
 exit 0
 
 c users/asolpshinning.rsh
