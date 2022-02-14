@@ -1,11 +1,20 @@
 module Reach.StateDiagram (stateDiagram) where
 
 import Data.List (intercalate)
+import qualified Data.Set as S
 import qualified Data.Map.Strict as M
 import Reach.Dotty
 import Reach.AST.DLBase
 import Reach.AST.PL
 import Reach.Texty
+
+ddd :: Int -> String -> String
+ddd l s =
+  case length s > l of
+    True ->
+      take (l - 3) s <> "..."
+    False ->
+      s
 
 loopl :: Int -> String
 loopl i = "loop" <> show i
@@ -63,14 +72,13 @@ instance HasEdges CHandlers where
         pre <> show i <> "(" <> intercalate ", " (map nicev vsl) <> ")"
 
 nicev :: DLVarLet -> String
-nicev v = mv <> ":" <> t
+nicev v =
+  case ml of
+    Just (_, s)-> s
+    _ -> "v" <> show i <> ":" <> t
   where
     DLVarLet _ (DLVar _ ml ty i) = v
-    t = show $ pretty $ ty
-    mv =
-      case ml of
-        Just (_, s)-> s
-        _ -> "v" <> show i
+    t = ddd 8 $ show $ pretty $ ty
 
 instance HasEdges CPProg where
   getEdges (CPProg _ _ _ _ hs) = getEdges hs
@@ -78,5 +86,8 @@ instance HasEdges CPProg where
 instance HasEdges PLProg where
   getEdges (PLProg _ _ _ _ _ cp) = getEdges cp
 
+setSanitize :: Ord a => [a] -> [a]
+setSanitize = S.toList . S.fromList
+
 stateDiagram :: PLProg -> DotGraph_
-stateDiagram = DotGraph_ . getEdges
+stateDiagram = DotGraph_ . setSanitize . getEdges

@@ -4358,13 +4358,16 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
   msg_ts <- mapM get_msg_t msg_dass_t
   let mrepeat_dvs = all_just $ M.elems $ M.map fst tc_send'
   -- Handle receiving / consensus
-  dr_from <- ctxt_mkvar $ DLVar at Nothing T_Address
+  dr_from_ <- ctxt_mkvar $ DLVar at Nothing T_Address
   let recv_imode = AllowShadowingRace whos (S.fromList msg)
   whosc <- mapM (\w -> (,) w <$> is_class w) $ S.toList whos
-  (who_env_mod, pdvs_recv) <-
+  let dv_reorigin (DLVar a _b c d) b = DLVar a b c d
+  (who_env_mod, dr_from_lab, pdvs_recv) <-
     case whosc of
       [(who, False)] -> do
-        let who_dv = fromMaybe dr_from (M.lookup who pdvs)
+        let who_dv_ = fromMaybe dr_from_ (M.lookup who pdvs)
+        let who_lab = Just (at, bunpack who)
+        let who_dv = dv_reorigin who_dv_ who_lab
         let pdvs' = M.insert who who_dv pdvs
         let add_who_env env =
               case vas of
@@ -4375,9 +4378,10 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
                       return $ M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just who_dv))) env
                     _ ->
                       impossible $ "participant is not participant"
-        return $ (add_who_env, pdvs')
+        return $ (add_who_env, who_lab, pdvs')
       _ -> do
-        return $ (return, pdvs)
+        return $ (return, Nothing, pdvs)
+  let dr_from = dv_reorigin dr_from_ dr_from_lab
   let mkmsg v t = ctxt_mkvar $ DLVar at (getBindingOrigin v) t
   dr_msg <- zipWithM mkmsg msg_dass_t msg_ts
   let toks = filter ((==) T_Token . varType) dr_msg
@@ -5073,7 +5077,7 @@ findStmtTrampoline = \case
           True -> evalStmt ks
           False -> expect_ $ Err_Eval_PartSet_Bound who
       Nothing -> do
-        whodv <- ctxt_lift_expr (DLVar at' Nothing T_Address) (DLE_PartSet at' who addr_da)
+        whodv <- ctxt_lift_expr (DLVar at' (Just (at', bunpack who)) T_Address) (DLE_PartSet at' who addr_da)
         let pdvs' = M.insert who whodv pdvs
         let st' = st {st_pdvs = pdvs'}
         setSt st'
