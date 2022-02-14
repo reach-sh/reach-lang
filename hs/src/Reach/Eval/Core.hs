@@ -2472,14 +2472,14 @@ evalPrim p sargs =
       v <- one_arg
       da <- compileCheckType T_Token v
       ensureCreatedToken "Token.supply" da
-      sr <- lookupBalanceFV FV_supply $ Just da
-      doFluidRef sr
+      sr <- tokenMetaGet TM_Supply da
+      return $ public $ SLV_DLVar sr
     SLPrim_Token_destroyed -> do
       v <- one_arg
       da <- compileCheckType T_Token v
       ensureCreatedToken "Token.destroyed" da
-      dr <- lookupBalanceFV FV_destroyed $ Just da
-      doFluidRef dr
+      dr <- tokenMetaGet TM_Destroyed da
+      return $ public $ SLV_DLVar dr
     SLPrim_fluid_read fv -> do
       zero_args
       doFluidRef fv
@@ -3603,6 +3603,7 @@ litToSV = \case
   DLL_Null -> withAt $ flip SLV_Null "litToSV"
   DLL_Bool b -> withAt $ flip SLV_Bool b
   DLL_Int a i -> return $ SLV_Int a i
+  DLL_TokenZero -> return $ SLV_DLC DLC_Token_zero
 
 argToSV :: DLArg -> App SLVal
 argToSV = \case
@@ -4582,7 +4583,6 @@ typeToExpr = \case
   T_Object m -> call "Object" [rm m]
   T_Data m -> call "Data" [rm m]
   T_Struct ts -> call "Struct" $ [arr $ map sg ts]
-  T_Balances {} -> impossible "typeToExpr: T_Balances"
   where
     str x = JSStringLiteral a $ "'" <> x <> "'"
     arr = jsArrayLiteral a

@@ -254,7 +254,6 @@ kgq_e ctxt mv = \case
   DLE_FromSome _ mo da -> do
     kgq_a_all ctxt mo
     kgq_a_all ctxt da
-  DLE_BalanceInit {} -> impossible "kgq_e: DLE_BalanceInit"
 
 kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case

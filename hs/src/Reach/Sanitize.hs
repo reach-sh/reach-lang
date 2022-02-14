@@ -27,6 +27,7 @@ instance Sanitize DLLiteral where
       DLL_Null -> l
       DLL_Bool {} -> l
       DLL_Int _ i -> DLL_Int sb i
+      DLL_TokenZero -> l
 
 instance Sanitize DLArg where
   sani a =
@@ -87,7 +88,6 @@ instance Sanitize DLExpr where
     DLE_setApiDetails _ w d c f -> DLE_setApiDetails sb w d c f
     DLE_GetUntrackedFunds _ mt tb -> DLE_GetUntrackedFunds sb (sani mt) (sani tb)
     DLE_FromSome _ mo da -> DLE_FromSome sb (sani mo) (sani da)
-    DLE_BalanceInit v -> DLE_BalanceInit (sani v)
 
 instance Sanitize DLAssignment where
   sani (DLAssignment m) = DLAssignment $ sani m

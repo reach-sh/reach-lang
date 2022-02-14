@@ -59,7 +59,7 @@ conName' = "ETH"
 conCons' :: DLConstant -> DLLiteral
 conCons' = \case
   DLC_UInt_max  -> DLL_Int sb $ 2 ^ (256 :: Integer) - 1
-  DLC_Zero_addr -> impossible "ETH conCons': zero_addr"
+  DLC_Token_zero -> DLL_TokenZero
 
 solString :: String -> Doc
 solString s = squotes $ pretty s
@@ -400,7 +400,6 @@ instance DepthOf DLExpr where
     DLE_setApiDetails {} -> return 0
     DLE_GetUntrackedFunds _ mt tb -> max <$> depthOf mt <*> depthOf tb
     DLE_FromSome _ mo da -> add1 $ depthOf [mo, da]
-    DLE_BalanceInit {} -> impossible "depthOf: DLE_BalanceInit"
     where
       add1 m = (+) 1 <$> m
       pairList = concatMap (\(a, b) -> [a, b])
@@ -447,7 +446,6 @@ mustBeMem = \case
   T_Object {} -> True
   T_Data {} -> True
   T_Struct {} -> True
-  T_Balances {} -> impossible "mustBeMem: T_Balances"
 
 mayMemSol :: Doc -> Doc
 mayMemSol x =
@@ -476,11 +474,11 @@ solLit = \case
   DLL_Bool True -> "true"
   DLL_Bool False -> "false"
   DLL_Int at i -> solNum $ checkIntLiteralC at conName' conCons' i
+  DLL_TokenZero -> "payable(address(0))"
 
 solArg :: AppT DLArg
 solArg = \case
   DLA_Var v -> solVar v
-  DLA_Constant DLC_Zero_addr -> return "payable(address(0))"
   DLA_Constant c -> return $ solLit $ conCons' c
   DLA_Literal c -> return $ solLit c
   DLA_Interact {} -> impossible "consensus interact"
@@ -676,7 +674,6 @@ solExpr sp = \case
     c <- solEq (mo' <> ".which") (solVariant t vn)
     return $ parens $ c <+> "?" <+> (mo' <> "._" <> pretty vn) <+> ":" <+> da'
   DLE_GetUntrackedFunds {} -> impossible "getUntrackedFunds"
-  DLE_BalanceInit {} -> impossible "solExpr: DLE_BalanceInit"
   where
     spa m = (<> sp) <$> m
 
@@ -1387,7 +1384,6 @@ solDefineType t = case t of
     let structp = fromMaybe (impossible "T_Data") $ solStruct name $ ("which", enumn) : map (\(k, kt) -> (pretty ("_" <> k), kt)) (M.toAscList tmn)
     addDef i $ vsep [enump, structp]
   T_Struct ats -> void $ doStruct ats
-  T_Balances {} -> impossible "solDefineType: T_Balances"
   where
     base = impossible "base"
     addMap d = modifyCtxtIO ctxt_typem $ M.insert t d
