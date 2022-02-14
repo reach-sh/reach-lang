@@ -130,7 +130,6 @@ instance FreeVars DLExpr where
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ a b -> freeVars a <> freeVars b
     DLE_FromSome _ a b -> freeVars [a, b]
-    DLE_BalanceInit a -> freeVars a
 
 instance FreeVars DLLetVar where
   freeVars = \case

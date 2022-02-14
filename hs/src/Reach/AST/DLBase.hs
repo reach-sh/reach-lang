@@ -55,7 +55,6 @@ data DLType
   | T_Object (M.Map SLVar DLType)
   | T_Data (M.Map SLVar DLType)
   | T_Struct [(SLVar, DLType)]
-  | T_Balances
   deriving (Eq, Generic, Ord)
 
 instance FromJSON DLType
@@ -132,7 +131,6 @@ instance Show DLType where
     (T_Object tyMap) -> "Object({" <> showTyMap tyMap <> "})"
     (T_Data tyMap) -> "Data({" <> showTyMap tyMap <> "})"
     (T_Struct tys) -> "Struct([" <> showTyList tys <> "])"
-    T_Balances -> "TokenBalances"
 
 instance Pretty DLType where
   pretty = viaShow
@@ -197,7 +195,7 @@ instance Pretty DLInit where
 
 data DLConstant
   = DLC_UInt_max
-  | DLC_Zero_addr
+  | DLC_Token_zero
   deriving (Bounded, Enum, Eq, Generic, Show, Ord)
 
 allConstants :: [DLConstant]
@@ -210,18 +208,18 @@ instance FromJSON DLConstant
 instance Pretty DLConstant where
   pretty = \case
     DLC_UInt_max  -> "UInt.max"
-    DLC_Zero_addr -> "Address.zero"
+    DLC_Token_zero -> "Token.zero"
 
 conTypeOf :: DLConstant -> DLType
 conTypeOf = \case
   DLC_UInt_max  -> T_UInt
-  -- XXX Maybe this should be Address and have a Token(Addr) cast
-  DLC_Zero_addr -> T_Token
+  DLC_Token_zero -> T_Token
 
 data DLLiteral
   = DLL_Null
   | DLL_Bool Bool
   | DLL_Int SrcLoc Integer
+  | DLL_TokenZero
   deriving (Eq, Generic, Show, Ord)
 
 instance ToJSON DLLiteral
@@ -233,12 +231,14 @@ instance Pretty DLLiteral where
     DLL_Null -> "null"
     DLL_Bool b -> if b then "true" else "false"
     DLL_Int _ i -> viaShow i
+    DLL_TokenZero -> "Token.zero"
 
 litTypeOf :: DLLiteral -> DLType
 litTypeOf = \case
   DLL_Null -> T_Null
   DLL_Bool _ -> T_Bool
   DLL_Int {} -> T_UInt
+  DLL_TokenZero -> T_Token
 
 data DLVar = DLVar SrcLoc (Maybe (SrcLoc, SLVar)) DLType Int
   deriving (Generic)
@@ -632,7 +632,6 @@ data DLExpr
   | DLE_GetUntrackedFunds SrcLoc (Maybe DLArg) DLArg
   | DLE_FromSome SrcLoc DLArg DLArg
   -- Maybe try to generalize FromSome into a Match
-  | DLE_BalanceInit DLVar
   deriving (Eq, Ord, Generic)
 
 data LogKind
@@ -640,10 +639,6 @@ data LogKind
   | L_Event (Maybe SLPart) String
   | L_Internal
   deriving (Eq, Ord, Show)
-
-initBalanceToLArg :: Int -> DLVar -> DLLargeArg
-initBalanceToLArg i v =
-  DLLA_Array tokenInfoElemTy $ (map DLA_Var $ take i $ repeat v)
 
 prettyClaim :: (PrettySubst a1, Show a2, Show a3) => a2 -> a1 -> a3 -> PrettySubstApp Doc
 prettyClaim ct a m = do
@@ -781,7 +776,6 @@ instance PrettySubst DLExpr where
       mo' <- prettySubst mo
       da' <- prettySubst da
       return $ "fromSome" <> parens (render_das [mo', da'])
-    DLE_BalanceInit v -> return $ "balanceInit" <> parens (pretty v)
 
 instance PrettySubst LogKind where
   prettySubst = \case
@@ -834,7 +828,6 @@ instance IsPure DLExpr where
     DLE_setApiDetails {} -> False
     DLE_GetUntrackedFunds {} -> False
     DLE_FromSome {} -> True
-    DLE_BalanceInit {} -> False
 
 instance IsLocal DLExpr where
   isLocal = \case
@@ -870,7 +863,6 @@ instance IsLocal DLExpr where
     DLE_setApiDetails {} -> False
     DLE_GetUntrackedFunds {} -> True
     DLE_FromSome {} -> True
-    DLE_BalanceInit {} -> False
 
 instance CanDupe DLExpr where
   canDupe e =
@@ -1102,8 +1094,6 @@ instance Pretty a => Pretty (DLRecv a) where
 data FluidVar
   = FV_tokens
   | FV_netBalance
-  | FV_supply Int
-  | FV_destroyed Int
   | FV_thisConsensusTime
   | FV_lastConsensusTime
   | FV_baseWaitTime
@@ -1117,8 +1107,6 @@ instance Pretty FluidVar where
   pretty = \case
     FV_tokens -> "balances"
     FV_netBalance -> "netBalance"
-    FV_supply i -> "supply" <> parens (pretty i)
-    FV_destroyed i -> "destroyed" <> parens (pretty i)
     FV_thisConsensusTime -> "thisConsensusTime"
     FV_lastConsensusTime -> "lastConsensusTime"
     FV_baseWaitTime -> "baseWaitTime"
@@ -1129,10 +1117,8 @@ instance Pretty FluidVar where
 
 fluidVarType :: FluidVar -> DLType
 fluidVarType = \case
-  FV_tokens -> T_Balances
+  FV_tokens -> impossible "fluidVarType: FV_tokens"
   FV_netBalance -> T_UInt
-  FV_supply _ -> T_UInt
-  FV_destroyed _ -> T_Bool
   FV_thisConsensusTime -> T_UInt
   FV_lastConsensusTime -> T_UInt
   FV_baseWaitTime -> T_UInt
@@ -1141,8 +1127,8 @@ fluidVarType = \case
   FV_baseWaitSecs -> T_UInt
   FV_didSend -> T_Bool
 
-allFluidVars :: Int -> [FluidVar]
-allFluidVars bals =
+allFluidVars :: [FluidVar]
+allFluidVars =
   [ FV_thisConsensusTime
   , FV_lastConsensusTime
   , FV_baseWaitTime
@@ -1156,10 +1142,6 @@ allFluidVars bals =
   -- so it doesn't need to be saved.
   --, FV_didSend
   ]
-    <> map FV_supply all_toks
-    <> map FV_destroyed all_toks
-  where
-    all_toks = [0 .. (bals + 1)]
 
 class HasCounter a where
   getCounter :: a -> Counter

@@ -113,7 +113,6 @@ dt2st = \case
   T_Object tyMap -> ST_Object $ M.map dt2st tyMap
   T_Data tyMap -> ST_Data $ M.map dt2st tyMap
   T_Struct tys -> ST_Struct $ map (\(k, t) -> (k, dt2st t)) tys
-  T_Balances {} -> impossible "dt2st: T_Balances"
 
 st2it :: SLType -> Maybe IType
 st2it t = case t of
@@ -241,6 +240,7 @@ instance Equiv DLLiteral where
     (DLL_Null, DLL_Null) -> True
     (DLL_Bool b1, DLL_Bool b2) -> equiv b1 b2
     (DLL_Int _ x, DLL_Int _ y) -> equiv x y
+    (DLL_TokenZero, DLL_TokenZero) -> True
     _ -> False
 
 instance Equiv SLTypeFun where
@@ -324,8 +324,9 @@ instance Equiv DLVar where
 instance Equiv DLConstant where
   equiv a b = case (a, b) of
     (DLC_UInt_max, DLC_UInt_max) -> True
-    (DLC_Zero_addr, DLC_Zero_addr) -> True
+    (DLC_Token_zero, DLC_Token_zero) -> True
     _ -> False
+
 
 instance Equiv SLVal where
   equiv a b = case (a, b) of

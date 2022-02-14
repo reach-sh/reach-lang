@@ -389,29 +389,21 @@ expandFromFVMap at (DLAssignment updatem) = do
   fvm <- readWhileFVMap
   let go (fv, dv) = do
         (_, da) <- fluidRef at fv
-        dv' <- fixFluidRefType_ dv
-        return $ (dv', da)
+        return $ (dv, da)
   fvm'l <- mapM go $ M.toList fvm
   let updatem' = M.union (M.fromList $ fvm'l) updatem
   return $ DLAssignment updatem'
 
-fixFluidRefType_ :: DLVar -> DFApp DLVar
-fixFluidRefType_ = \case
-  DLVar a b T_Balances i -> do
-    eBals <- asks eBals
-    return $ DLVar a b (T_Array tokenInfoElemTy eBals) i
-  ow -> return ow
-
-fixFluidRefType :: DLLetVar -> DFApp DLLetVar
-fixFluidRefType = \case
-  DLV_Let vc dv -> DLV_Let vc <$> fixFluidRefType_ dv
-  ow -> return ow
+tokenInfoType :: DFApp DLType
+tokenInfoType = do
+  eBals <- asks eBals
+  return $ T_Array tokenInfoElemTy eBals
 
 assign :: SrcLoc -> DLVar -> DLExpr -> DLStmt
 assign at dv de = DL_Let at (DLV_Let DVC_Many dv) de
 
 mkVar :: SrcLoc -> DLType -> DFApp DLVar
-mkVar at ty = fixFluidRefType_ =<< DLVar at Nothing ty <$> df_allocVar
+mkVar at ty = DLVar at Nothing ty <$> df_allocVar
 
 df_com :: HasCallStack => (DLStmt -> a -> a) -> (DKTail -> DFApp a) -> DKTail -> DFApp a
 df_com mkk back = \case
@@ -419,8 +411,7 @@ df_com mkk back = \case
     fluidSet fv (at, da) (back k)
   DK_Com (DKC_FluidRef at dv fv) k -> do
     (at', da) <- fluidRef at fv
-    dv' <- fixFluidRefType_ dv
-    mkk <$> (pure $ DL_Let at (DLV_Let DVC_Many dv') (DLE_Arg at' da)) <*> back k
+    mkk <$> (pure $ DL_Let at (DLV_Let DVC_Many dv) (DLE_Arg at' da)) <*> back k
   DK_Com (DKC_TokenMetaGet tm at res _ mpos) k -> do
     let asn = assign at
     (_, bals) <- fluidRef at FV_tokens
@@ -438,8 +429,9 @@ df_com mkk back = \case
     let idx = case mp of
               Just i -> DLA_Literal $ DLL_Int at $ fromIntegral i
               Nothing -> impossible "Dynamic token computation"
+    arrTy <- tokenInfoType
     tup   <- mkVar at tokenInfoElemTy
-    bals' <- mkVar at T_Balances
+    bals' <- mkVar at arrTy
     tup'  <- mkVar at tokenInfoElemTy
     tok   <- mkVar at T_Token
     bal   <- mkVar at $ T_UInt
@@ -464,13 +456,8 @@ df_com mkk back = \case
   DK_Com m k -> do
     m' <-
       case m of
-        DKC_Let a b (DLE_BalanceInit v) -> do
-          eBals <- asks eBals
-          b' <- fixFluidRefType b
-          return $ DL_Let a b' $ DLE_LArg a $ initBalanceToLArg (fromIntegral eBals) v
         DKC_Let a b c -> do
-          b' <- fixFluidRefType b
-          return $ DL_Let a b' c
+          return $ DL_Let a b c
         DKC_ArrayMap a b c d e x -> DL_ArrayMap a b c d e <$> df_bl x
         DKC_ArrayReduce a b c d e f g x -> DL_ArrayReduce a b c d e f g <$> df_bl x
         DKC_Var a b -> return $ DL_Var a b
@@ -514,7 +501,10 @@ df_con = \case
           case r of
             Nothing -> return $ Nothing
             Just _ -> do
-              dv <- DLVar at (Just (sb, show $ pretty fv)) (fluidVarType fv) <$> df_allocVar
+              ty <- case fv of
+                      FV_tokens -> tokenInfoType
+                      _ -> return $ fluidVarType fv
+              dv <- DLVar at (Just (sb, show $ pretty fv)) ty <$> df_allocVar
               return $ Just (fv, dv)
     fvm <- M.fromList <$> catMaybes <$> mapM go fvs
     let body_fvs' = df_con =<< unpackFVMap at body
@@ -576,15 +566,17 @@ df_eb (DLinExportBlock at vs b) =
 -- Initialize the fluid arrays
 df_init :: DKTail -> DFApp DKTail
 df_init k = do
-  dv <- fixFluidRefType_ =<< DLVar sb Nothing T_Balances <$> df_allocVar
-  nv <- DLVar sb Nothing tokenInfoElemTy <$> df_allocVar
-  let lv = DLV_Let DVC_Many dv
+  eBals <- asks eBals
+  ty <- tokenInfoType
+  dv <- mkVar sb ty
+  nv <- mkVar sb tokenInfoElemTy
   let false = DLA_Literal $ DLL_Bool False
   let zero = DLA_Literal $ DLL_Int sb 0
-  let c1 = DKC_Let sb (DLV_Let DVC_Many nv) $ DLE_LArg sb $ DLLA_Tuple [DLA_Constant DLC_Zero_addr, zero, zero, false]
-  let c2 = DKC_Let sb lv $ DLE_BalanceInit nv
+  let c1 = DKC_Let sb (DLV_Let DVC_Many nv) $ DLE_LArg sb $ DLLA_Tuple [DLA_Constant DLC_Token_zero, zero, zero, false]
+  let elems = map DLA_Var $ take (fromIntegral eBals) $ repeat nv
+  let c2 = DKC_Let sb (DLV_Let DVC_Many dv) $ DLE_LArg sb $ DLLA_Array tokenInfoElemTy elems
   let c3 = DKC_FluidSet sb FV_tokens $ DLA_Var dv
-  return $ DK_Com c1 (DK_Com c2 (DK_Com c3 k))
+  return $ DK_Com c1 $ DK_Com c2 $ DK_Com c3 k
 
 defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli dex dvs das devts k) = do
@@ -596,7 +588,7 @@ defluid (DKProg at (DLOpts {..}) sps dli dex dvs das devts k) = do
   let eCounter_df = getCounter opts'
   let eFVMm = mempty
   let eFVE = mempty
-  let eFVs = allFluidVars dlo_bals
+  let eFVs = allFluidVars
   let eBals = fromIntegral dlo_bals
   flip runReaderT (DFEnv {..}) $ do
     dex' <- mapM df_eb dex
