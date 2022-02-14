@@ -126,7 +126,7 @@ conName' = "ALGO"
 conCons' :: DLConstant -> DLLiteral
 conCons' = \case
   DLC_UInt_max  -> DLL_Int sb $ 2 ^ (64 :: Integer) - 1
-  DLC_Zero_addr -> DLL_Int sb $ 0
+  DLC_Token_zero -> DLL_Int sb $ 0
 
 algoMinTxnFee :: Integer
 algoMinTxnFee = 1000
@@ -216,7 +216,6 @@ typeSig x =
     T_Object m -> typeSig $ T_Tuple $ M.elems m
     T_Data m -> "(byte,byte" <> array (maxTypeSize m) <> ")"
     T_Struct ts -> typeSig $ T_Tuple $ map snd ts
-    T_Balances {} -> impossible "typeSig: T_Balances"
   where
     array sz = "[" <> show sz <> "]"
 
@@ -235,7 +234,6 @@ typeSizeOf = \case
   T_Object m -> sum $ map typeSizeOf $ M.elems m
   T_Data m -> 1 + maxTypeSize m
   T_Struct ts -> sum $ map (typeSizeOf . snd) ts
-  T_Balances {} -> impossible "typeSizeOf: T_Balances"
   where
     word = 8
 
@@ -888,7 +886,6 @@ ctobs = \case
   T_Object {} -> nop
   T_Data {} -> nop
   T_Struct {} -> nop
-  T_Balances {} -> impossible "ctobs: T_Balances"
 
 cfrombs :: DLType -> App ()
 cfrombs = \case
@@ -905,7 +902,6 @@ cfrombs = \case
   T_Object {} -> nop
   T_Data {} -> nop
   T_Struct {} -> nop
-  T_Balances {} -> impossible "cfrombs: T_Balances"
 
 ctzero :: DLType -> App ()
 ctzero = \case
@@ -928,6 +924,7 @@ cl = \case
   DLL_Null -> cbs ""
   DLL_Bool b -> cint $ if b then 1 else 0
   DLL_Int at i -> cint_ at i
+  DLL_TokenZero -> cint 0
 
 cbool :: Bool -> App ()
 cbool = cl . DLL_Bool
@@ -1699,7 +1696,6 @@ ce = \case
     -- [ Default, Object, Tag ]
     -- [ False, True, Cond ]
     op "select"
-  DLE_BalanceInit {} -> impossible "ce: DLE_BalanceInit"
   where
     show_stack :: String -> Maybe BS.ByteString -> SrcLoc -> [SLCtxtFrame] -> App ()
     show_stack what msg at fs = do

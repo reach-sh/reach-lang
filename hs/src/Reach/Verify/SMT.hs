@@ -244,7 +244,7 @@ smtAddress who = "address_" <> bunpack who
 smtConstant :: DLConstant -> String
 smtConstant = \case
   DLC_UInt_max  -> "dlc_UInt_max"
-  DLC_Zero_addr -> "dlc_Address_zero"
+  DLC_Token_zero -> "dlc_Token_zero"
 
 smt_c :: SrcLoc -> DLConstant -> App SExpr
 smt_c at c = smt_a at $ DLA_Constant c
@@ -990,6 +990,7 @@ smt_lt _at_de dc =
             , Atom (show i)
             ]
         False -> Atom $ show i
+    DLL_TokenZero -> Atom $ smtConstant DLC_Token_zero
 
 smt_v :: SrcLoc -> DLVar -> App SExpr
 smt_v _at_de dv = Atom <$> smtVar dv
@@ -1143,7 +1144,6 @@ smt_e at_dv mdv de = do
       let nonep = List [Atom noneCtor, nonev]
       let nonec = List [nonep, da']
       bound at $ smtApply "match" [mo', List [nonec, somec]]
-    DLE_BalanceInit {} -> impossible "smt_e: DLE_BalanceInit"
   where
     bound at se = pathAddBound at mdv (Just $ SMTProgram de) se Context
     unbound at = pathAddUnbound at mdv (Just $ SMTProgram de)
@@ -1548,7 +1548,6 @@ _smtDefineTypes smt ts = do
                   let invarg ((argn, _), arg_inv) = arg_inv $ smtApply argn [se]
                   smtAndAll $ map invarg args
             return inv
-          T_Balances {} -> impossible "_smtDefineTypes: T_Balances"
       type_name :: DLType -> IO (String, SMTTypeInv)
       type_name t = do
         tm <- readIORef tmr

@@ -409,7 +409,7 @@ interpPrim = \case
 conCons' :: DLConstant -> DLVal
 conCons' = \case
   DLC_UInt_max  -> V_UInt $ 2 ^ (64 :: Integer) - 1
-  DLC_Zero_addr -> V_Address 0
+  DLC_Token_zero -> V_Token 0
 
 instance Interp DLArg where
   interp = \case
@@ -443,6 +443,7 @@ instance Interp DLLiteral where
     DLL_Null -> return $ V_Null
     DLL_Bool bool -> return $ V_Bool bool
     DLL_Int _at int -> return $ V_UInt int
+    DLL_TokenZero -> return $ V_Token 0
 
 instance Interp DLLargeArg where
   interp = \case
@@ -601,7 +602,6 @@ instance Interp DLExpr where
       case k of
         "Some" -> return v
         _ -> interp da
-    DLE_BalanceInit {} -> impossible "interp: DLE_BalanceInit"
 
 instance Interp DLStmt where
   interp = \case

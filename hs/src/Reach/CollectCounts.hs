@@ -161,7 +161,6 @@ instance Countable DLExpr where
     DLE_setApiDetails {} -> mempty
     DLE_GetUntrackedFunds _ mt tb -> counts mt <> counts tb
     DLE_FromSome _ mo da -> counts mo <> counts da
-    DLE_BalanceInit a -> counts a
 
 instance Countable DLAssignment where
   counts (DLAssignment m) = counts m
