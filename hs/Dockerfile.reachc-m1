@@ -3,7 +3,8 @@ FROM ethereum/solc:${SOLC_VERSION}-alpine as solc
 RUN apk add make curl bash
 COPY Makefile.docker ./Makefile
 COPY sol/stdlib_reach.sol sol/stdlib_openzep.sol.sh ./sol/
-RUN make sol/stdlib.json
+COPY .docker-root ./.docker-root
+RUN make ROOT=.docker-root sol/stdlib.json
 
 FROM reachsh/devnet-algo:latest AS algo
 
