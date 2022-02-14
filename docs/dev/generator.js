@@ -98,6 +98,9 @@ const xrefPut = (s, t, v) => {
       fail(`Duplicated xref`, s, t, e, v);
     }
   }
+  if ( v.title == "" ){
+    fail(`Xref insertion with empty title`, s, t, v)
+  }
   const parts = t.split(".");
   for (let i = 1; i < parts.length; i++){
     const prefix = parts.slice(0,i).join(".");
@@ -202,7 +205,7 @@ const processXRefs = ({here}) => (tree) => {
       if ( c0v && c0v.startsWith("{#") ) {
         const cp = c0v.indexOf("} ", 2);
         t = c0v.slice(2, cp);
-        v = c0v.slice(cp+2);
+        v = c0v.slice(cp+2) + cs.slice(1).map((x) => x.value).join(' ');
         xrefPut('h', t, { title: v, path: `${h}#${t}` });
       }
       if ( t === 'on-this-page' ) {
@@ -337,6 +340,9 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
 
   const seclink = (t) => {
     const { path, title } = xrefGet('h', t);
+    if (title == "") {
+      fail("seclink with empty title linked to: ", path)
+    }
     return `[${title}](${path})`;
   };
 
