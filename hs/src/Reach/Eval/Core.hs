@@ -12,7 +12,7 @@ import Data.Either
 import Data.Foldable
 import Data.Functor ((<&>))
 import Data.IORef
-import Data.List (elemIndex, groupBy, intercalate, intersperse, transpose, unzip6, (\\))
+import Data.List (groupBy, intercalate, intersperse, transpose, unzip6, (\\))
 import qualified Data.List as L
 import Data.List.Extra (mconcatMap, splitOn)
 import qualified Data.Map.Strict as M
@@ -2157,23 +2157,6 @@ doBaseWaitUpdate :: DLTimeArg -> App ()
 doBaseWaitUpdate = \case
   Left x -> doFluidSet_ FV_baseWaitTime x
   Right x -> doFluidSet_ FV_baseWaitSecs x
-
-lookupBalanceFV :: HasCallStack => (Int -> FluidVar) -> Maybe DLArg -> App FluidVar
-lookupBalanceFV = lookupBalanceFV_
-
-lookupBalanceFV_ :: HasCallStack => (Int -> FluidVar) -> Maybe DLArg -> App FluidVar
-lookupBalanceFV_ fv mtok = do
-  let bad = expect_ $ Err_Token_DynamicRef
-  toks <- readSt st_toks
-  i <-
-    case mtok of
-      Nothing -> return $ 0
-      Just (DLA_Var v) ->
-        case elemIndex v toks of
-          Nothing -> bad
-          Just x -> return $ 1 + x
-      _ -> bad
-  return $ fv i
 
 ensureCreatedToken :: String -> DLArg -> App ()
 ensureCreatedToken lab a = do
@@ -4325,6 +4308,7 @@ getBindingOrigin _ = Nothing
 compilePayAmt :: TransferType -> SLVal -> App DLPayAmt
 compilePayAmt tt v = do
   at <- withAt id
+  let mtPay = DLPayAmt (DLA_Literal $ DLL_Int at 0) []
   let v_at = srclocOf_ at v
   (t, ae) <- typeOf v
   case t of
@@ -4354,7 +4338,28 @@ compilePayAmt tt v = do
                         return $ ((seenNet, sks'), (DLPayAmt nts $ tks <> [(amt_a, token_a)]))
                       _ -> locAt v_at $ expect_ $ Err_Token_DynamicRef
                   _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
-          snd <$> (foldlM go ((False, []), DLPayAmt (DLA_Literal $ DLL_Int at 0) []) $ zip ts aes)
+          snd <$> (foldlM go ((False, []), mtPay) $ zip ts aes)
+        -- XXX refactor with above?
+        DLAE_Arg (DLA_Var dv) -> do
+          let go sa (ty, idx) =
+                case ty of
+                  T_UInt -> do
+                    let ((seenNet, sks), DLPayAmt _ tks) = sa
+                    when seenNet $ do
+                      locAt v_at $ expect_ $ Err_Transfer_DoubleNetworkToken tt
+                    a <- DLA_Var <$> (ctxt_lift_expr (DLVar at Nothing T_UInt) $ DLE_TupleRef at (DLA_Var dv) idx)
+                    return $ ((True, sks), DLPayAmt a tks)
+                  tupTy@(T_Tuple [T_UInt, T_Token]) -> do
+                    let ((seenNet, sks), DLPayAmt nts tks) = sa
+                    tup <- DLA_Var <$> (ctxt_lift_expr (DLVar at Nothing tupTy) $ DLE_TupleRef at (DLA_Var dv) idx)
+                    amt_a <- DLA_Var <$> (ctxt_lift_expr (DLVar at Nothing T_UInt) $ DLE_TupleRef at tup 0)
+                    token_a <- DLA_Var <$> (ctxt_lift_expr (DLVar at Nothing T_UInt) $ DLE_TupleRef at tup 1)
+                    when (token_a `elem` sks) $ do
+                      locAt v_at $ expect_ $ Err_Transfer_DoubleToken tt
+                    let sks' = token_a : sks
+                    return $ ((seenNet, sks'), (DLPayAmt nts $ tks <> [(amt_a, token_a)]))
+                  _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
+          snd <$> (foldlM go ((False, []), mtPay) $ zip ts [0 ..])
         _ -> locAt v_at $ expect_ $ Err_Token_DynamicRef
     _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
 
