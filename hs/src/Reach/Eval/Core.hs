@@ -4447,7 +4447,7 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
       expect_ $ Err_Token_InWhile
   let old_toks = st_toks st
   let all_toks = old_toks <> toks
-  let all_toks_idx = (flip zip [1 ..]) $ map DLA_Var all_toks
+  let all_toks_idx = (flip zip [0 ..]) $ map DLA_Var all_toks
   let st_recv =
         st
           { st_mode = SLM_ConsensusStep
