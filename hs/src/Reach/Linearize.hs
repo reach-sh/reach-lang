@@ -412,8 +412,9 @@ lookupTokenIdx at tok bals = do
   init_acc_dv <- mkVar at $ accTy
   acc_dv <- mkVar at $ accTy
   reduce_res <- mkVar at $ accTy
+  succAcc <- mkVar at $ accTy
   bl_res <- mkVar at $ accTy
-  newAcc <- mkVar at $ accTy
+  failAcc <- mkVar at $ accTy
   elem_dv <- mkVar at tokenInfoElemTy
   result <- mkVar at T_UInt
   toks_eq <- mkVar at T_Bool
@@ -432,8 +433,9 @@ lookupTokenIdx at tok bals = do
         DT_Com (asn toks_eq $ DLE_PrimOp at PEQ [DLA_Var tok', tok]) $
         DT_Com (asn cnd $ DLE_PrimOp at IF_THEN_ELSE [DLA_Var is_found, DLA_Literal $ DLL_Bool True, DLA_Var toks_eq]) $
         DT_Com (asn new_idx $ DLE_PrimOp at ADD [DLA_Var idx, DLA_Literal $ DLL_Int at 1]) $
-        DT_Com (asn newAcc $ DLE_LArg at $ DLLA_Tuple [DLA_Var is_found, DLA_Var new_idx]) $
-        DT_Com (asn bl_res $ DLE_PrimOp at IF_THEN_ELSE [DLA_Var cnd, DLA_Var acc_dv, DLA_Var newAcc]) $
+        DT_Com (asn failAcc $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool False, DLA_Var new_idx]) $
+        DT_Com (asn succAcc $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool True, DLA_Var idx]) $
+        DT_Com (asn bl_res $ DLE_PrimOp at IF_THEN_ELSE [DLA_Var cnd, DLA_Var succAcc, DLA_Var failAcc]) $
         DT_Return at
   let bl = DLBlock at [] ss $ DLA_Var bl_res
   let s0 = asn init_acc_dv $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool False, DLA_Literal $ DLL_Int at 0]
@@ -626,7 +628,7 @@ defluid (DKProg at (DLOpts {..}) sps dli dex dvs das devts k) = do
   let eFVMm = mempty
   let eFVE = mempty
   let eFVs = allFluidVars
-  let eBals = fromIntegral dlo_bals
+  let eBals = fromIntegral dlo_bals - 1
   flip runReaderT (DFEnv {..}) $ do
     dex' <- mapM df_eb dex
     k' <- df_step =<< df_init k
