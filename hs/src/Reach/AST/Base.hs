@@ -164,17 +164,16 @@ getErrorMessage mCtx src isWarning ce = do
 
 makeErrorJson :: (ErrorSuggestions a, ErrorMessageForJson a, Show a, HasErrorCode a) => SrcLoc -> a -> [Char]
 makeErrorJson src err =
-  (map w2c $
-     LB.unpack $
-       encode $
-         CompilationError
-           { ce_suggestions = snd $ errorSuggestions err
-           , ce_offendingToken = fst $ errorSuggestions err
-           , ce_errorMessage = errorMessageForJson err
-           , ce_position = srcloc_line_col src
-           , ce_errorCode = makeErrCode (errPrefix err) (errIndex err)
-           })
-
+  map w2c $
+    LB.unpack $
+      encode $
+        CompilationError
+          { ce_suggestions = snd $ errorSuggestions err,
+            ce_offendingToken = fst $ errorSuggestions err,
+            ce_errorMessage = errorMessageForJson err,
+            ce_position = srcloc_line_col src,
+            ce_errorCode = makeErrCode (errPrefix err) (errIndex err)
+          }
 expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src ce =
   case unsafeIsErrorFormatJson of
