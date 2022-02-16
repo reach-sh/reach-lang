@@ -8,9 +8,10 @@ where
 import Data.Char (toLower, toUpper)
 import Data.List (intercalate)
 import Data.List.Extra (splitOn)
+import Data.Maybe (fromMaybe)
 import GHC.Generics
-import Reach.AST.Base (HasErrorCode (..), SrcLoc, getErrorMessage)
-import Reach.UnsafeUtil (unsafeTermSupportsColor)
+import Reach.AST.Base (ErrorSuggestions, ErrorMessageForJson, HasErrorCode (..), makeErrorJson, SrcLoc, getErrorMessage)
+import Reach.UnsafeUtil (unsafeIsErrorFormatJson, unsafeTermSupportsColor)
 import qualified System.Console.Pretty as TC
 import System.IO (hPutStrLn)
 import System.IO.Extra (stderr)
@@ -38,7 +39,7 @@ data Warning
   | W_ALGOConservative [String]
   | W_NoPublish
   | W_ExternalObject
-  deriving (Eq, Generic)
+  deriving (Eq, Generic, ErrorSuggestions, ErrorMessageForJson)
 
 instance HasErrorCode Warning where
   errPrefix = const "RW"
@@ -80,13 +81,18 @@ instance Show Warning where
     W_ExternalObject -> "The `Object` type is internal to Reach. Use `Struct` instead for external interfaces."
 
 emitWarning :: Maybe SrcLoc -> Warning -> IO ()
-emitWarning at d = do
-  let msg =
-        case at of
-          Just at' -> getErrorMessage [] at' True d
-          Nothing -> do
-            let hasColor = unsafeTermSupportsColor
-            let style s = if hasColor then TC.style s else id
-            let color s = if hasColor then TC.color s else id
-            style TC.Bold (color TC.Yellow "WARNING") <> ": " <> show d
-  hPutStrLn stderr msg
+emitWarning at d =
+  case unsafeIsErrorFormatJson of
+    True ->
+      hPutStrLn stderr $ "warning: " ++ makeErrorJson (fromMaybe mempty at) d
+    False ->
+      do
+        let msg =
+              case at of
+                Just at' -> getErrorMessage [] at' True d
+                Nothing -> do
+                  let hasColor = unsafeTermSupportsColor
+                  let style s = if hasColor then TC.style s else id
+                  let color s = if hasColor then TC.color s else id
+                  style TC.Bold (color TC.Yellow "WARNING") <> ": " <> show d
+        hPutStrLn stderr msg
