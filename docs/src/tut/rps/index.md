@@ -1593,7 +1593,7 @@ range: 39-41
 ```
 
 + On line 19, we initialize the component state to display @{seclink("tut-9-ConnectAccount")}.
-+ On lines 21 thru 31, we hook into React's `{!js} componentDidMount` lifecycle event, which is called when the component starts.
++ On lines 21 thru 31, we hook into [React's `{!js} componentDidMount` lifecycle event](https://reactjs.org/docs/react-component.html#componentdidmount), which is called when the component starts.
 + On line 22, we use `{!js} getDefaultAccount`, which accesses the default browser account.
 For example, when used with Ethereum, it can discover the currently-selected MetaMask account.
 + On line 26, we use `{!js} canFundFromFaucet` to see if we can access the Reach developer testing network faucet.
