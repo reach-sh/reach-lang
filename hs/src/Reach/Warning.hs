@@ -97,14 +97,13 @@ emitWarning at d =
   case unsafeIsErrorFormatJson of
     True ->
       hPutStrLn stderr $ "warning: " ++ makeErrorJson (fromMaybe mempty at) d
-    False ->
-      do
-        let msg =
-              case at of
-                Just at' -> getErrorMessage [] at' True d
-                Nothing -> do
-                  let hasColor = unsafeTermSupportsColor
-                  let style s = if hasColor then TC.style s else id
-                  let color s = if hasColor then TC.color s else id
-                  style TC.Bold (color TC.Yellow "WARNING") <> ": " <> show d
-        hPutStrLn stderr msg
+    False -> do
+      let msg =
+            case at of
+              Just at' -> getErrorMessage [] at' True d
+              Nothing -> do
+                let hasColor = unsafeTermSupportsColor
+                let style s = if hasColor then TC.style s else id
+                let color s = if hasColor then TC.color s else id
+                style TC.Bold (color TC.Yellow "WARNING") <> ": " <> show d
+      hPutStrLn stderr msg
