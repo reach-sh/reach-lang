@@ -291,22 +291,6 @@ For example, `{!rsh} Int`s
 and `{!rsh} Array`s are valid values to throw, but a function is not.
 A `{!rsh} throw` must have an empty tail.
 
-### Expression statements
-
-```reach
-4;
-f(2, true);
-```
-
-An expression, `{!rsh} E`, in a statement position is equivalent to the block statement `{!rsh} { return E; }`.
-
-## {#ref-programs-compute-exprs} Expressions
-
-This section describes the expressions which are allowed in any Reach context.
-There are a large variety of different @{defn("expressions")} in Reach programs.
-
-The remainder of this section enumerates each kind of expression.
-
 ### 'use strict'
 
 @{ref("rsh", "'use strict'")}
@@ -354,6 +338,22 @@ const foo = (mo) =>
 void foo(MObj.Some({ b : true }));
 void foo(MObj.None());
 ```
+
+### Expression statements
+
+```reach
+4;
+f(2, true);
+```
+
+An expression, `{!rsh} E`, in a statement position is equivalent to the block statement `{!rsh} { return E; }`.
+
+## {#ref-programs-compute-exprs} Expressions
+
+This section describes the expressions which are allowed in any Reach context.
+There are a large variety of different @{defn("expressions")} in Reach programs.
+
+The remainder of this section enumerates each kind of expression.
 
 ### `unstrict`
 
