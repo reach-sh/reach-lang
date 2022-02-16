@@ -205,8 +205,9 @@ const processXRefs = ({here}) => (tree) => {
       if ( c0v && c0v.startsWith("{#") ) {
         const cp = c0v.indexOf("} ", 2);
         t = c0v.slice(2, cp);
-        v = c0v.slice(cp+2) + cs.slice(1).map((x) => x.value).join(' ');
-        xrefPut('h', t, { title: v, path: `${h}#${t}` });
+        v = c0v.slice(cp+2);
+        const xrefTitle = v + cs.slice(1).map((x) => x.value).join(' ');
+        xrefPut('h', t, { title: xrefTitle, path: `${h}#${t}` });
       }
       if ( t === 'on-this-page' ) {
         fail(here, 'uses reserved id', t);
