@@ -6,6 +6,9 @@ This test suite pairs flat JSON stub inputs with the hidden [`version-compare2` 
 
 For a given `$TARGET` directory in this test suite (e.g. `unknown-tag:0.1.7`), the following conventions apply:
 
+##### **`$TARGET/exit`**
+This file contains the `$TARGET`'s expected exit code.
+
 ##### **`$TARGET/l.json`**
 This file is effectively the same as the temporary `$XDG_CONFIG_HOME/reach/_docker/ils-$ZULU.json` output produced by `version-compare` in the "first step" of checking for updates.
 The stubs you see here were just copied from `$XDG_CONFIG_HOME/reach/_docker` and lightly edited by hand to match the desired test parameters.
