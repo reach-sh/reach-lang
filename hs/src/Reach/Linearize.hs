@@ -606,16 +606,19 @@ df_eb (DLinExportBlock at vs b) =
 df_init :: DKTail -> DFApp DKTail
 df_init k = do
   eBals <- asks eBals
-  ty <- tokenInfoType
-  dv <- mkVar sb ty
-  nv <- mkVar sb tokenInfoElemTy
-  let false = DLA_Literal $ DLL_Bool False
-  let zero = DLA_Literal $ DLL_Int sb 0
-  let c1 = DKC_Let sb (DLV_Let DVC_Many nv) $ DLE_LArg sb $ DLLA_Tuple [DLA_Constant DLC_Token_zero, zero, zero, false]
-  let elems = map DLA_Var $ take (fromIntegral eBals) $ repeat nv
-  let c2 = DKC_Let sb (DLV_Let DVC_Many dv) $ DLE_LArg sb $ DLLA_Array tokenInfoElemTy elems
-  let c3 = DKC_FluidSet sb FV_tokens $ DLA_Var dv
-  return $ DK_Com c1 $ DK_Com c2 $ DK_Com c3 k
+  case eBals of
+    0 -> return k
+    _ -> do
+      ty <- tokenInfoType
+      dv <- mkVar sb ty
+      nv <- mkVar sb tokenInfoElemTy
+      let false = DLA_Literal $ DLL_Bool False
+      let zero = DLA_Literal $ DLL_Int sb 0
+      let c1 = DKC_Let sb (DLV_Let DVC_Many nv) $ DLE_LArg sb $ DLLA_Tuple [DLA_Constant DLC_Token_zero, zero, zero, false]
+      let elems = map DLA_Var $ take (fromIntegral eBals) $ repeat nv
+      let c2 = DKC_Let sb (DLV_Let DVC_Many dv) $ DLE_LArg sb $ DLLA_Array tokenInfoElemTy elems
+      let c3 = DKC_FluidSet sb FV_tokens $ DLA_Var dv
+      return $ DK_Com c1 $ DK_Com c2 $ DK_Com c3 k
 
 defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli dex dvs das devts k) = do
