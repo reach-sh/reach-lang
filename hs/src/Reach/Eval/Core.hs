@@ -2429,7 +2429,7 @@ evalPrim p sargs =
         st
           { st_toks = existingToks <> [tokdv]
           , st_toks_c = S.insert tokdv (st_toks_c st)
-          , st_tok_pos = M.insert (DLA_Var tokdv) (length existingToks + 1) (st_tok_pos st)
+          , st_tok_pos = M.insert (DLA_Var tokdv) (length existingToks) (st_tok_pos st)
           }
       let toka = DLA_Var tokdv
       let mtok_a = Just $ toka
