@@ -13,3 +13,14 @@ hasPageHeader: false
     <ol id="search-results-list"></ol>
   </div>
 </div>
+
+@{externalRef("js", "async", "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function")}
+@{externalRef("js", "await", "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await")}
+@{externalRef("js", "import", "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import")}
+@{externalRef("js", "export", "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export")}
+@{externalRef("js", "let", "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/let")}
+@{externalRef("js", "var", "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/var")}
+@{externalRef("js", "const", "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/const")}
+
+
+@{externalRef("js", "componentDidMount", "https://reactjs.org/docs/react-component.html#componentdidmount")}
