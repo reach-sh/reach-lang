@@ -4332,36 +4332,48 @@ compilePayAmt tt v = do
                         let ((seenNet, sks), DLPayAmt nts tks) = sa
                         amt_a <- compileArgExpr amt_ae
                         token_a <- compileArgExpr token_ae
-                        when (token_a `elem` sks) $ do
-                          locAt v_at $ expect_ $ Err_Transfer_DoubleToken tt
-                        let sks' = token_a : sks
-                        return $ ((seenNet, sks'), (DLPayAmt nts $ tks <> [(amt_a, token_a)]))
+                        verifyTokenUnique sks token_a
+                        return $ ((seenNet, token_a : sks), (DLPayAmt nts $ tks <> [(amt_a, token_a)]))
                       _ -> locAt v_at $ expect_ $ Err_Token_DynamicRef
                   _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
           snd <$> (foldlM go ((False, []), mtPay) $ zip ts aes)
-        -- XXX refactor with above?
         DLAE_Arg (DLA_Var dv) -> do
-          let go sa (ty, idx) =
+          let go sa (ty, idx) = do
+                let getPayAmt = DLE_TupleRef at $ DLA_Var dv
+                let mkVar vt e = DLA_Var <$> (ctxt_lift_expr (DLVar at Nothing vt) e)
                 case ty of
                   T_UInt -> do
                     let ((seenNet, sks), DLPayAmt _ tks) = sa
                     when seenNet $ do
                       locAt v_at $ expect_ $ Err_Transfer_DoubleNetworkToken tt
-                    a <- DLA_Var <$> (ctxt_lift_expr (DLVar at Nothing T_UInt) $ DLE_TupleRef at (DLA_Var dv) idx)
+                    a <- mkVar T_UInt $ getPayAmt idx
                     return $ ((True, sks), DLPayAmt a tks)
                   tupTy@(T_Tuple [T_UInt, T_Token]) -> do
                     let ((seenNet, sks), DLPayAmt nts tks) = sa
-                    tup <- DLA_Var <$> (ctxt_lift_expr (DLVar at Nothing tupTy) $ DLE_TupleRef at (DLA_Var dv) idx)
-                    amt_a <- DLA_Var <$> (ctxt_lift_expr (DLVar at Nothing T_UInt) $ DLE_TupleRef at tup 0)
-                    token_a <- DLA_Var <$> (ctxt_lift_expr (DLVar at Nothing T_UInt) $ DLE_TupleRef at tup 1)
-                    when (token_a `elem` sks) $ do
-                      locAt v_at $ expect_ $ Err_Transfer_DoubleToken tt
-                    let sks' = token_a : sks
-                    return $ ((seenNet, sks'), (DLPayAmt nts $ tks <> [(amt_a, token_a)]))
+                    tup   <- mkVar tupTy $ getPayAmt idx
+                    amt_a <- mkVar T_UInt  $ DLE_TupleRef at tup 0
+                    tok_a <- mkVar T_Token $ DLE_TupleRef at tup 1
+                    verifyTokenUnique sks tok_a
+                    return $ ((seenNet, tok_a : sks), (DLPayAmt nts $ tks <> [(amt_a, tok_a)]))
                   _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
           snd <$> (foldlM go ((False, []), mtPay) $ zip ts [0 ..])
         _ -> locAt v_at $ expect_ $ Err_Token_DynamicRef
     _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
+  where
+    verifyTokenUnique sks tok = do
+      at <- withAt id
+      unless (null sks) $ do
+        let arrTy = T_Array T_Token $ fromIntegral $ length sks
+        tokens <- ctxt_lift_expr (DLVar at Nothing $ arrTy) $ DLE_LArg at $ DLLA_Array T_Token sks
+        let arrayIncludes args = do
+              f <- lookStdlib "Foldable_includes"
+              evalApplyArgs' f args
+        let notF x = do
+              f <- lookStdlib "not"
+              evalApplyVals' f [x]
+        tokUniqSv <- notF =<< arrayIncludes [DLA_Var tokens, tok]
+        tokUniqDv <- compileCheckType T_Bool $ snd tokUniqSv
+        doClaim CT_Assert tokUniqDv $ Just "Token in pay amount is unique"
 
 doToConsensus :: [JSStatement] -> ToConsensusRec -> App SLStmtRes
 doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
