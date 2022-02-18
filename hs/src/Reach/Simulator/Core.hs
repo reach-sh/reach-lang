@@ -533,11 +533,9 @@ instance Interp DLExpr where
       tokId <- ledgerNewTokens accIdMax dltokennew
       return $ V_Token $ fromIntegral tokId
     DLE_TokenBurn _at dlarg1 dlarg2 -> do
-      (g, _) <- getState
       tok <- vTok <$> interp dlarg1
       burn_amt <- vUInt <$> interp dlarg2
-      let accIdMax = (e_naccid g) - 1
-      updateLedgers accIdMax tok (burn_amt -)
+      updateLedger simContract tok (burn_amt -)
       return V_Null
     DLE_TokenDestroy _at _dlarg -> return V_Null
     DLE_TimeOrder _at _assoc_maybe_arg_vars -> return V_Null
