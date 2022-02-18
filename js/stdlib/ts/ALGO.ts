@@ -166,7 +166,7 @@ type SetupEventArgs = ISetupEventArgs<ContractInfo, VerifyResult>;
 type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyALGO_Ty>;
 
 type AccountAssetInfo = {
-  'asset-id': number,
+  'asset-id': bigint,
   'amount': number,
 };
 type AppStateVal = {
@@ -178,17 +178,17 @@ type AppStateKV = {
 };
 type AppStateKVs = Array<AppStateKV>;
 type AppState = {
-  'id': number,
+  'id': bigint,
   'key-value': AppStateKVs,
 };
 type AppSchema = {
-  "num-byte-slice": number,
-  "num-uint": number
+  "num-byte-slice": bigint,
+  "num-uint": bigint
 }
 type AccountInfo = {
-  'amount': number,
+  'amount': bigint,
   'assets'?: Array<AccountAssetInfo>,
-  'apps-local-state'?: Array<AppState>
+  'apps-local-state'?: Array<AppState>,
   'apps-total-schema'?: AppSchema,
   'created-apps'?: Array<AppInfo>
 };
@@ -198,19 +198,19 @@ type IndexerAccountInfoRes = {
 };
 
 type AppStateSchema = {
-  'num-uint': number,
-  'num-byte-slice': number,
+  'num-uint': bigint,
+  'num-byte-slice': bigint,
 };
 type AppInfo = {
-  'id': number,
-  'created-at-round': number,
+  'id': bigint,
+  'created-at-round': bigint,
   'deleted': boolean,
   'params': {
     'creator': string,
     'approval-program': string,
     'clear-state-program': string,
     'global-state': AppStateKVs,
-    'extra-program-pages': number,
+    'extra-program-pages': bigint,
     'local-state-schema': AppStateSchema,
     'global-state-schema': AppStateSchema,
   },
@@ -1066,14 +1066,14 @@ const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
   try {
     await ensureNodeCanRead();
     const client = await getAlgodClient();
-    const res = (await client.accountInformation(a).do()) as AccountInfo;
+    const res = (await client.accountInformation(a).setIntDecoding(algosdk.IntDecoding.BIGINT).do()) as AccountInfo;
     debug(dhead, 'node', res);
     return res;
   } catch (e:any) {
     debug(dhead, 'node err', e);
   }
   const indexer = await getIndexer();
-  const q = indexer.lookupAccountByID(a) as unknown as ApiCall<IndexerAccountInfoRes>;
+  const q = indexer.lookupAccountByID(a).setIntDecoding(algosdk.IntDecoding.BIGINT) as unknown as ApiCall<IndexerAccountInfoRes>;
   const res = await doQuery_(dhead, q);
   debug(dhead, res);
   return res.account;
@@ -1187,7 +1187,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const ai = await getAccountInfo(a);
           debug(`getLocalState`, ai);
           const alss = ai['apps-local-state'] || [];
-          const als = alss.find((x) => (x.id === ApplicationID));
+          const fmtApplicationID = BigInt(ApplicationID)
+          const als = alss.find((x) => (x.id === fmtApplicationID));
           debug(`getLocalState`, als);
           return als ? als['key-value'] : undefined;
         };
@@ -1841,7 +1842,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
   const addr = extractAddr(acc);
   const ai = await getAccountInfo(addr);
-  if ( ai.amount === 0 ) { return bigNumberify(0); }
+  if ( ai.amount === BigInt(0) ) { return bigNumberify(0); }
   const createdAppCount = bigNumberify((ai['created-apps']??[]).length);
   const optinAppCount = bigNumberify((ai['apps-local-state']??[]).length);
   const numByteSlice = bigNumberify((ai['apps-total-schema']??{})['num-byte-slice']??0);
