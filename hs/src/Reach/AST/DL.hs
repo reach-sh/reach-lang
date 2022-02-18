@@ -116,7 +116,7 @@ data DLSStmt
   | DLS_Try SrcLoc DLStmts DLVar DLStmts
   | DLS_ViewIs SrcLoc (Maybe SLPart) SLVar (Maybe DLSExportBlock)
   | DLS_TokenMetaGet TokenMeta SrcLoc DLVar DLArg (Maybe Int)
-  | DLS_TokenMetaSet TokenMeta SrcLoc DLArg DLArg (Maybe Int)
+  | DLS_TokenMetaSet TokenMeta SrcLoc DLArg DLArg (Maybe Int) Bool
   deriving (Eq, Generic)
 
 data TokenMeta
@@ -170,7 +170,7 @@ instance Pretty DLSStmt where
       DLS_Try _ e hv hs -> "try" <+> ns e <+> "catch" <+> parens (pretty hv) <+> ns hs
       DLS_ViewIs _ v k a -> prettyViewIs v k a
       DLS_TokenMetaGet ty _ dv tok mp -> "tokenMetaGet" <> parens (comma_sep [viaShow ty, pretty dv, pretty tok, pretty mp])
-      DLS_TokenMetaSet ty _ tok val mp -> "tokenMetaSet" <> parens (comma_sep [viaShow ty, pretty tok, pretty val, pretty mp])
+      DLS_TokenMetaSet ty _ tok val mp i -> "tokenMetaSet" <> parens (comma_sep [viaShow ty, pretty tok, pretty val, pretty mp, pretty i])
     where
       ns x = render_nest $ render_dls x
 
@@ -200,7 +200,7 @@ instance SrcLocOf DLSStmt where
     DLS_Try a _ _ _ -> a
     DLS_ViewIs a _ _ _ -> a
     DLS_TokenMetaGet _ a _ _ _ -> a
-    DLS_TokenMetaSet _ a _ _ _ -> a
+    DLS_TokenMetaSet _ a _ _ _ _ -> a
 
 instance HasPurity DLSStmt where
   hasPurity = \case

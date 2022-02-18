@@ -2168,11 +2168,11 @@ ensureCreatedToken lab a = do
         False -> expect_ $ Err_Token_NotCreated lab
     _ -> expect_ $ Err_Token_DynamicRef
 
-tokenMetaSet :: TokenMeta -> DLArg -> DLArg -> App ()
-tokenMetaSet tm tok amta = do
+tokenMetaSet :: TokenMeta -> DLArg -> DLArg -> Bool -> App ()
+tokenMetaSet tm tok amta initTok = do
   at <- withAt id
   mp <- M.lookup tok <$> getTokenPosEnv
-  saveLift $ DLS_TokenMetaSet tm at tok amta mp
+  saveLift $ DLS_TokenMetaSet tm at tok amta mp initTok
 
 tokenMetaGet :: TokenMeta -> DLArg -> App DLVar
 tokenMetaGet tm tok = do
@@ -2198,18 +2198,26 @@ getTokenPosEnv :: App (M.Map DLArg Int)
 getTokenPosEnv = readSt st_tok_pos
 
 setBalance :: TokenMeta -> Maybe DLArg -> DLArg -> App ()
-setBalance tm mtok amta =
+setBalance tm mtok amta = setBalance' tm mtok amta False
+
+setBalance' :: TokenMeta -> Maybe DLArg -> DLArg -> Bool -> App ()
+setBalance' tm mtok amta initTok =
   case mtok of
     Nothing -> doFluidSet_ FV_netBalance amta
     Just tok -> do
       at <- withAt id
       mi <- M.lookup tok <$> getTokenPosEnv
-      saveLift $ DLS_TokenMetaSet tm at tok amta mi
+      saveLift $ DLS_TokenMetaSet tm at tok amta mi initTok
 
 doBalanceInit :: TokenMeta -> Maybe DLArg -> App ()
 doBalanceInit tm mtok = do
   at <- withAt id
-  setBalance tm mtok $ DLA_Literal $ DLL_Int at 0
+  let amt = DLA_Literal $ DLL_Int at 0
+  setBalance' tm mtok amt True
+
+doBalanceInit' :: TokenMeta -> Maybe DLArg -> DLArg -> App ()
+doBalanceInit' tm mtok amt = do
+  setBalance' tm mtok amt True
 
 doBalanceAssert :: Maybe DLArg -> SLVal -> PrimOp -> B.ByteString -> App ()
 doBalanceAssert mtok lhs op msg = do
@@ -2252,7 +2260,7 @@ tokenMetaUpdate tm tok op rhs = do
   v <- tokenMetaGet tm tok
   v' <- evalApplyVals' up_rator [public $ SLV_DLVar v]
   dv <- compileCheckType (tmTypeOf tm) $ snd v'
-  tokenMetaSet tm tok dv
+  tokenMetaSet tm tok dv False
 
 doArrayBoundsCheck :: Integer -> SLVal -> App ()
 doArrayBoundsCheck sz idxv = do
@@ -2385,7 +2393,7 @@ evalPrim p sargs =
       tokenMetaAssert TM_Destroyed toka (SLV_Bool at False) PEQ $ bpack $ "token not yet destroyed at " <> lab
       tokenMetaAssert TM_Supply toka (SLV_Int at 0) PEQ $ bpack $ "token supply zero at " <> lab
       ctxt_lift_eff $ DLE_TokenDestroy at toka
-      tokenMetaSet TM_Destroyed toka $ DLA_Literal $ DLL_Bool True
+      tokenMetaSet TM_Destroyed toka (DLA_Literal $ DLL_Bool True) False
       return $ public $ SLV_Null at lab
     SLPrim_Token_new -> do
       at <- withAt id
@@ -2425,6 +2433,8 @@ evalPrim p sargs =
       tokdv <- doInternalLog_ Nothing tokdv_
       st <- readSt id
       let existingToks = st_toks st
+      tokIsUniq <- tokIsUnique (map DLA_Var existingToks) $ DLA_Var tokdv
+      doClaim (CT_Assume True) tokIsUniq $ Just "New token is unique"
       setSt $
         st
           { st_toks = existingToks <> [tokdv]
@@ -2433,9 +2443,9 @@ evalPrim p sargs =
           }
       let toka = DLA_Var tokdv
       let mtok_a = Just $ toka
-      setBalance TM_Balance mtok_a supplya
-      tokenMetaSet TM_Supply toka supplya
-      tokenMetaSet TM_Destroyed toka (DLA_Literal $ DLL_Bool False)
+      doBalanceInit' TM_Balance mtok_a supplya
+      tokenMetaSet TM_Supply toka supplya False
+      tokenMetaSet TM_Destroyed toka (DLA_Literal $ DLL_Bool False) False
       return $ public $ SLV_DLVar tokdv
     SLPrim_padTo len -> do
       v <- one_arg
@@ -3387,7 +3397,7 @@ evalPrim p sargs =
       let trackedBal = DLA_Var fvBal
       untrackedFunds <- ctxt_lift_expr mdv $ DLE_GetUntrackedFunds at mtok trackedBal
       dv <- ctxt_lift_expr mdv $ DLE_PrimOp at ADD [DLA_Var untrackedFunds, trackedBal]
-      setBalance TM_Balance mtok $ DLA_Var dv
+      setBalance TM_Balance mtok (DLA_Var dv)
       return (lvl, SLV_DLVar untrackedFunds)
     SLPrim_fromSome -> do
       (mv, dv) <- two_args
@@ -4361,19 +4371,23 @@ compilePayAmt tt v = do
     _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
   where
     verifyTokenUnique sks tok = do
-      at <- withAt id
       unless (null sks) $ do
-        let arrTy = T_Array T_Token $ fromIntegral $ length sks
-        tokens <- ctxt_lift_expr (DLVar at Nothing $ arrTy) $ DLE_LArg at $ DLLA_Array T_Token sks
-        let arrayIncludes args = do
-              f <- lookStdlib "Foldable_includes"
-              evalApplyArgs' f args
-        let notF x = do
-              f <- lookStdlib "not"
-              evalApplyVals' f [x]
-        tokUniqSv <- notF =<< arrayIncludes [DLA_Var tokens, tok]
-        tokUniqDv <- compileCheckType T_Bool $ snd tokUniqSv
-        doClaim CT_Assert tokUniqDv $ Just "Token in pay amount is unique"
+        tokUniq <- tokIsUnique sks tok
+        doClaim CT_Assert tokUniq $ Just "Token in pay amount is unique"
+
+tokIsUnique :: [DLArg] -> DLArg -> App DLArg
+tokIsUnique sks tok = do
+  at <- withAt id
+  let arrTy = T_Array T_Token $ fromIntegral $ length sks
+  tokens <- ctxt_lift_expr (DLVar at Nothing $ arrTy) $ DLE_LArg at $ DLLA_Array T_Token sks
+  let arrayIncludes args = do
+        f <- lookStdlib "Foldable_includes"
+        evalApplyArgs' f args
+  let notF x = do
+        f <- lookStdlib "not"
+        evalApplyVals' f [x]
+  tokUniqSv <- notF =<< arrayIncludes [DLA_Var tokens, tok]
+  compileCheckType T_Bool $ snd tokUniqSv
 
 doToConsensus :: [JSStatement] -> ToConsensusRec -> App SLStmtRes
 doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
