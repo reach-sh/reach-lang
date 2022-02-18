@@ -585,7 +585,9 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
   const linkifySpans = (elem, language) => {
     const activePrefixes = [];
     const linkifySpan = (s, language) => {
-      const text = s.textContent;
+      const text = s.textContent.startsWith(".") ?
+            s.textContent.substring(1) :
+            s.textContent;
       const prefixedTexts = activePrefixes.map((p) => p + "." + text);
       prefixedTexts.push(text);
       const refs = prefixedTexts.map((t) => xrefGetMaybe(language, t));
