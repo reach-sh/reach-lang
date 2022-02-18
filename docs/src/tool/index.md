@@ -33,9 +33,9 @@ Reach has a few sub-commands, each with their own options.
 
 However, all commands support the following options:
 
-+ The environment variable `REACH_VERSION` signifies what version of Reach to use.
++ The environment variable `@{ref("cmd", "REACH_VERSION")}` signifies what version of Reach to use.
 
-Although normally expressed in a [semantic versioning](##guide-versions)-friendly format, e.g. `v0.1` or `v0.1.6`, `REACH_VERSION` also supports:
+Although normally expressed in a [semantic versioning](##guide-versions)-friendly format, e.g. `v0.1` or `v0.1.6`, `@{ref("cmd", "REACH_VERSION")}` also supports:
 + Hashes such as [639fa565](https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore).
 
 Valid hashes may be obtained by running:
@@ -60,7 +60,7 @@ Tip: try entering your desired year in the filter box to skip other tag types.
 
 Reach will interpret this to mean the most recent stable [major](##guide-versions) version.
 
-When using the semantic versioning form of `REACH_VERSION` the preceding `v` character is optional.
+When using the semantic versioning form of `@{ref("cmd", "REACH_VERSION")}` the preceding `v` character is optional.
 In other words, `v0.1.6` is equivalent to `0.1.6`.
 
 # {#ref-usage-compile} `reach compile`
@@ -80,7 +80,7 @@ If no `EXPORT` is provided, then all the exported `{!rsh} Reach.Apps` will be co
 If there are no `{!rsh} Reach.Apps` exported, then the program will be compiled as a library, where its exports are available to other Reach programs and frontends.
 The output name of a library is the same as if it exported a `{!rsh} Reach.App` named `default`.
 
-`reach compile` supports the following options:
+`@{ref("cmd", "compile")}reach compile` supports the following options:
 
 + `-o`/`--output` `OUTPUT` --- Writes compiler output files to `OUTPUT`, which defaults to a directory named `build` in the same directory as `SOURCE`.
 
