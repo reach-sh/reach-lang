@@ -176,7 +176,7 @@ dk1 k s =
       mva' <- maybe (return $ Nothing) (\eb -> Just <$> dk_eb eb) mva
       return $ DK_ViewIs at vn vk mva' k
     DLS_TokenMetaGet ty at dv a mp -> com $ DKC_TokenMetaGet ty at dv a mp
-    DLS_TokenMetaSet ty at a v mp-> com $ DKC_TokenMetaSet ty at a v mp
+    DLS_TokenMetaSet ty at a v mp i -> com $ DKC_TokenMetaSet ty at a v mp i
   where
     com :: DKCommon -> DKApp DKTail
     com = flip com'' k
@@ -371,7 +371,8 @@ readWhileFVMap = do
   DFEnv {..} <- ask
   case eFVMm of
     Nothing -> impossible "attempt to read fvm with no fvm"
-    Just x -> return x
+    -- Do not treat the `tokens` array as mutable in loops.
+    Just x -> return $ M.delete FV_tokens x
 
 unpackFVMap :: SrcLoc -> DKTail -> DFApp DKTail
 unpackFVMap at k = do
@@ -399,6 +400,11 @@ tokenInfoType = do
   eBals <- asks eBals
   return $ T_Array tokenInfoElemTy eBals
 
+tokenArrType :: DFApp DLType
+tokenArrType = do
+  eBals <- asks eBals
+  return $ T_Array T_Token eBals
+
 assign :: SrcLoc -> DLVar -> DLExpr -> DLStmt
 assign at dv de = DL_Let at (DLV_Let DVC_Many dv) de
 
@@ -406,43 +412,44 @@ mkVar :: SrcLoc -> DLType -> DFApp DLVar
 mkVar at ty = DLVar at Nothing ty <$> df_allocVar
 
 lookupTokenIdx :: SrcLoc -> DLArg -> DLArg -> DFApp ([DLStmt], DLArg)
-lookupTokenIdx at tok bals = do
+lookupTokenIdx at tok toks = do
   let asn = assign at
   let accTy = T_Tuple [T_Bool, T_UInt]
   init_acc_dv <- mkVar at $ accTy
   acc_dv <- mkVar at $ accTy
   reduce_res <- mkVar at $ accTy
-  succAcc <- mkVar at $ accTy
+  succ_acc <- mkVar at $ accTy
   bl_res <- mkVar at $ accTy
-  failAcc <- mkVar at $ accTy
-  elem_dv <- mkVar at tokenInfoElemTy
-  result <- mkVar at T_UInt
-  toks_eq <- mkVar at T_Bool
-  tok' <- mkVar at T_Token
-  new_idx <- mkVar at T_UInt
-  cnd <- mkVar at T_Bool
-  is_found <- mkVar at T_Bool
+  fail_acc <- mkVar at $ accTy
+  elem_dv <- mkVar at T_Token
+  tok_idx <- mkVar at T_UInt
+  idx' <- mkVar at T_UInt
   idx <- mkVar at T_UInt
-  -- ([is_found, idx], [tok', bal, supply, destroyed]) =>
+  toks_eq <- mkVar at T_Bool
+  cnd <- mkVar at T_Bool
+  found <- mkVar at T_Bool
+  found' <- mkVar at T_Bool
+  -- ([is_found, idx], tok') =>
   --    let acc' = (is_found || tok == tok') ? [ true, idx ] : [ false, idx + 1 ];
   --    return acc';
-  let ss =
-        DT_Com (asn is_found $ DLE_TupleRef at (DLA_Var acc_dv) 0) $
+  let block_tl =
+        DT_Com (asn found $ DLE_TupleRef at (DLA_Var acc_dv) 0) $
         DT_Com (asn idx $ DLE_TupleRef at (DLA_Var acc_dv) 1) $
-        DT_Com (asn tok' $ DLE_TupleRef at (DLA_Var elem_dv) 0) $
-        DT_Com (asn toks_eq $ DLE_PrimOp at PEQ [DLA_Var tok', tok]) $
-        DT_Com (asn cnd $ DLE_PrimOp at IF_THEN_ELSE [DLA_Var is_found, DLA_Literal $ DLL_Bool True, DLA_Var toks_eq]) $
-        DT_Com (asn new_idx $ DLE_PrimOp at ADD [DLA_Var idx, DLA_Literal $ DLL_Int at 1]) $
-        DT_Com (asn failAcc $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool False, DLA_Var new_idx]) $
-        DT_Com (asn succAcc $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool True, DLA_Var idx]) $
-        DT_Com (asn bl_res $ DLE_PrimOp at IF_THEN_ELSE [DLA_Var cnd, DLA_Var succAcc, DLA_Var failAcc]) $
+        DT_Com (asn toks_eq $ DLE_PrimOp at PEQ [DLA_Var elem_dv, tok]) $
+        DT_Com (asn cnd $ DLE_PrimOp at IF_THEN_ELSE [DLA_Var found, DLA_Literal $ DLL_Bool True, DLA_Var toks_eq]) $
+        DT_Com (asn idx' $ DLE_PrimOp at ADD [DLA_Var idx, DLA_Literal $ DLL_Int at 1]) $
+        DT_Com (asn fail_acc $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool False, DLA_Var idx']) $
+        DT_Com (asn succ_acc $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool True, DLA_Var idx]) $
+        DT_Com (asn bl_res $ DLE_PrimOp at IF_THEN_ELSE [DLA_Var cnd, DLA_Var succ_acc, DLA_Var fail_acc]) $
         DT_Return at
-  let bl = DLBlock at [] ss $ DLA_Var bl_res
-  let s0 = asn init_acc_dv $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool False, DLA_Literal $ DLL_Int at 0]
-  let s1 = DL_ArrayReduce at reduce_res bals (DLA_Var init_acc_dv) acc_dv elem_dv bl
-  -- XXX add check to die if `is_found` false?
-  let s2 = asn result $ DLE_TupleRef at (DLA_Var reduce_res) 1
-  return ([s0, s1, s2], DLA_Var result)
+  let bl = DLBlock at [] block_tl $ DLA_Var bl_res
+  let ss =
+        [ asn init_acc_dv $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool False, DLA_Literal $ DLL_Int at 0]
+        , DL_ArrayReduce at reduce_res toks (DLA_Var init_acc_dv) acc_dv elem_dv bl
+        , asn tok_idx $ DLE_TupleRef at (DLA_Var reduce_res) 1
+        , asn found' $ DLE_TupleRef at (DLA_Var reduce_res) 0
+        , DL_Let at DLV_Eff $ DLE_Claim at [] CT_Assert (DLA_Var found') $ Just "Token is tracked" ]
+  return (ss, DLA_Var tok_idx)
 
 df_com :: HasCallStack => (DLStmt -> a -> a) -> (DKTail -> DFApp a) -> DKTail -> DFApp a
 df_com mkk back = \case
@@ -451,47 +458,61 @@ df_com mkk back = \case
   DK_Com (DKC_FluidRef at dv fv) k -> do
     (at', da) <- fluidRef at fv
     mkk <$> (pure $ DL_Let at (DLV_Let DVC_Many dv) (DLE_Arg at' da)) <*> back k
-  DK_Com (DKC_TokenMetaGet tm at res tok mpos) k -> do
+  DK_Com (DKC_TokenMetaGet meta at res tok mpos) k -> do
     let asn = assign at
-    (_, bals) <- fluidRef at FV_tokens
-    (ms, idx) <- case mpos of
-              Just i -> return ([], DLA_Literal $ DLL_Int at $ fromIntegral i)
-              Nothing -> lookupTokenIdx at tok bals
-    let tmIdx = fromIntegral $ fromEnum tm + 1 -- idx 0 is token key
-    val  <- mkVar at tokenInfoElemTy
-    let c1 = asn val $ DLE_ArrayRef at bals idx
-    let c2 = asn res $ DLE_TupleRef at (DLA_Var val) tmIdx
-    t <- mkk c1 <$> mkk c2 <$> back k
-    return $ foldr mkk t ms
-  DK_Com (DKC_TokenMetaSet tm at tok newVal mp) k -> do
+    (_, tokA)  <- fluidRef at FV_tokens
+    (_, infos) <- fluidRef at FV_tokenInfos
+    (lookup_ss, idx) <- case mpos of
+              Just i  -> return ([], DLA_Literal $ DLL_Int at $ fromIntegral i)
+              Nothing -> lookupTokenIdx at tok tokA
+    let meta_idx = fromIntegral $ fromEnum meta
+    tokInfo <- mkVar at tokenInfoElemTy
+    let ss =
+          [ asn tokInfo $ DLE_ArrayRef at infos idx
+          , asn res $ DLE_TupleRef at (DLA_Var tokInfo) meta_idx ]
+    rst <- flip (foldr mkk) ss <$> back k
+    return $ foldr mkk rst lookup_ss
+  DK_Com (DKC_TokenMetaSet meta at tok newVal mpos init_tok) k -> do
     let asn = assign at
-    (_, bals) <- fluidRef at FV_tokens
-    (ms, idx) <- case mp of
-              Just i -> return ([], DLA_Literal $ DLL_Int at $ fromIntegral i)
-              Nothing -> lookupTokenIdx at tok bals
-    arrTy <- tokenInfoType
-    tup   <- mkVar at tokenInfoElemTy
-    bals' <- mkVar at arrTy
-    tup'  <- mkVar at tokenInfoElemTy
-    bal   <- mkVar at $ T_UInt
+    (_, tokA) <- fluidRef at FV_tokens
+    (_, infos) <- fluidRef at FV_tokenInfos
+    (lookup_ss, idx) <- case mpos of
+              Just i  -> return ([], DLA_Literal $ DLL_Int at $ fromIntegral i)
+              Nothing -> lookupTokenIdx at tok tokA
+    infoTy <- tokenInfoType
+    info   <- mkVar at tokenInfoElemTy
+    infos' <- mkVar at infoTy
+    info'  <- mkVar at tokenInfoElemTy
+    bal    <- mkVar at $ T_UInt
     supply <- mkVar at $ T_UInt
     destroyed <- mkVar at $ T_Bool
-    let c1 = asn tup $ DLE_ArrayRef at bals idx
-    -- XXX Make DLE_TupleSet? This is kind of gross
-    let get = DLE_TupleRef at (DLA_Var tup)
-    let get1 = asn bal $ get 1
-    let get2 = asn supply $ get 2
-    let get3 = asn destroyed $ get 3
-    let c2 = asn tup' $ DLE_LArg at $ DLLA_Tuple [
-          tok,
-          if tm == TM_Balance   then newVal else DLA_Var bal,
-          if tm == TM_Supply    then newVal else DLA_Var supply,
-          if tm == TM_Destroyed then newVal else DLA_Var destroyed
+    let infoAt = DLE_TupleRef at (DLA_Var info)
+    let bs =
+          [
+            asn info $ DLE_ArrayRef at infos idx
+          , asn bal $ infoAt 0
+          , asn supply $ infoAt 1
+          , asn destroyed $ infoAt 2
+          , asn info' $ DLE_LArg at $ DLLA_Tuple [
+            if meta == TM_Balance   then newVal else DLA_Var bal,
+            if meta == TM_Supply    then newVal else DLA_Var supply,
+            if meta == TM_Destroyed then newVal else DLA_Var destroyed
+            ]
+          , asn infos' $ DLE_ArraySet at infos idx (DLA_Var info')
           ]
-    let c3 = asn bals' $ DLE_ArraySet at bals idx (DLA_Var tup')
-    let c4 = DKC_FluidSet at FV_tokens $ DLA_Var bals'
-    t <- mkk c1 <$> mkk get1 <$> mkk get2 <$> mkk get3 <$> mkk c2 <$> mkk c3 <$> df_com mkk back (DK_Com c4 k)
-    return $ foldr mkk t ms
+    let fs = DKC_FluidSet at FV_tokenInfos $ DLA_Var infos'
+    -- If we're initializing a token's balance, set the appropriate
+    -- index in the `tokens` array to `tok`
+    as <-
+      case init_tok of
+        False -> return [fs]
+        True -> do
+          tokA' <- mkVar at =<< tokenArrType
+          return [ fs
+                  , DKC_Let at (DLV_Let DVC_Many tokA') $ DLE_ArraySet at tokA idx tok
+                  , DKC_FluidSet at FV_tokens $ DLA_Var tokA' ]
+    rst <- flip (foldr mkk) bs <$> rec (foldl (flip DK_Com) k as)
+    return $ foldr mkk rst lookup_ss
   DK_Com m k -> do
     m' <-
       case m of
@@ -515,6 +536,8 @@ df_com mkk back = \case
     -- to throw out
     back k
   t -> impossible $ show $ "df_com " <> pretty t
+  where
+    rec = df_com mkk back
 
 df_bl :: DKBlock -> DFApp DLBlock
 df_bl (DKBlock at fs t a) =
@@ -541,7 +564,8 @@ df_con = \case
             Nothing -> return $ Nothing
             Just _ -> do
               ty <- case fv of
-                      FV_tokens -> tokenInfoType
+                      FV_tokenInfos -> tokenInfoType
+                      FV_tokens -> tokenArrType
                       _ -> return $ fluidVarType fv
               dv <- DLVar at (Just (sb, show $ pretty fv)) ty <$> df_allocVar
               return $ Just (fv, dv)
@@ -609,16 +633,25 @@ df_init k = do
   case eBals of
     0 -> return k
     _ -> do
-      ty <- tokenInfoType
-      dv <- mkVar sb ty
-      nv <- mkVar sb tokenInfoElemTy
+      infoTy <- tokenInfoType
+      infoA <- mkVar sb infoTy
+      tokA  <- mkVar sb $ T_Array T_Token eBals
+      info  <- mkVar sb tokenInfoElemTy
       let false = DLA_Literal $ DLL_Bool False
-      let zero = DLA_Literal $ DLL_Int sb 0
-      let c1 = DKC_Let sb (DLV_Let DVC_Many nv) $ DLE_LArg sb $ DLLA_Tuple [DLA_Constant DLC_Token_zero, zero, zero, false]
-      let elems = map DLA_Var $ take (fromIntegral eBals) $ repeat nv
-      let c2 = DKC_Let sb (DLV_Let DVC_Many dv) $ DLE_LArg sb $ DLLA_Array tokenInfoElemTy elems
-      let c3 = DKC_FluidSet sb FV_tokens $ DLA_Var dv
-      return $ DK_Com c1 $ DK_Com c2 $ DK_Com c3 k
+      let zero  = DLA_Literal $ DLL_Int sb 0
+      let tokz  = DLA_Constant DLC_Token_zero
+      let infos = map DLA_Var $ take (fromIntegral eBals) $ repeat info
+      let asn v e = DKC_Let sb (DLV_Let DVC_Many v) e
+      let cs =
+            [ asn info $ DLE_LArg sb $ DLLA_Tuple [zero, zero, false]
+            , asn infoA $ DLE_LArg sb $ DLLA_Array tokenInfoElemTy infos
+            , DKC_FluidSet sb FV_tokenInfos $ DLA_Var infoA
+            -- We keep a separate array for the token references so we can treat the token positions
+            -- as if they are static once initialized.
+            , asn tokA $ DLE_LArg sb $ DLLA_Array T_Token $ take (fromIntegral eBals) $ repeat tokz
+            , DKC_FluidSet sb FV_tokens $ DLA_Var tokA
+            ]
+      return $ foldr DK_Com k cs
 
 defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli dex dvs das devts k) = do

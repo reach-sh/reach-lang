@@ -62,7 +62,7 @@ instance FromJSON DLType
 instance ToJSON DLType
 
 tokenInfoElemTy :: DLType
-tokenInfoElemTy = T_Tuple [T_Token, balance, supply, destroyed]
+tokenInfoElemTy = T_Tuple [balance, supply, destroyed]
   where
     balance = T_UInt
     supply = T_UInt
@@ -1092,7 +1092,8 @@ instance Pretty a => Pretty (DLRecv a) where
       <> render_nest (pretty dr_k)
 
 data FluidVar
-  = FV_tokens
+  = FV_tokenInfos
+  | FV_tokens
   | FV_netBalance
   | FV_thisConsensusTime
   | FV_lastConsensusTime
@@ -1105,7 +1106,8 @@ data FluidVar
 
 instance Pretty FluidVar where
   pretty = \case
-    FV_tokens -> "balances"
+    FV_tokenInfos -> "tokenInfos"
+    FV_tokens -> "tokens"
     FV_netBalance -> "netBalance"
     FV_thisConsensusTime -> "thisConsensusTime"
     FV_lastConsensusTime -> "lastConsensusTime"
@@ -1117,6 +1119,7 @@ instance Pretty FluidVar where
 
 fluidVarType :: FluidVar -> DLType
 fluidVarType = \case
+  FV_tokenInfos -> impossible "fluidVarType: FV_tokenInfos"
   FV_tokens -> impossible "fluidVarType: FV_tokens"
   FV_netBalance -> T_UInt
   FV_thisConsensusTime -> T_UInt
@@ -1135,6 +1138,7 @@ allFluidVars =
   , FV_thisConsensusSecs
   , FV_lastConsensusSecs
   , FV_baseWaitSecs
+  , FV_tokenInfos
   , FV_tokens
   , FV_netBalance
   -- This function is not really to get all of them, but just to
