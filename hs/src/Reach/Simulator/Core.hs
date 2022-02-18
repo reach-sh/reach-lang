@@ -318,6 +318,11 @@ incrPhaseId = do
   let locals' = M.insert actorId x' locals
   setLocal $ l {l_locals = locals'}
 
+updateLedgers :: Integer -> Token -> (Integer -> Integer) -> App ()
+updateLedgers n tok f = do
+  _ <- mapM (\x -> updateLedger x tok f) [-1..n]
+  return ()
+
 updateLedger :: Account -> Token -> (Integer -> Integer) -> App ()
 updateLedger acc tok f = do
   (e, _) <- getState
@@ -528,18 +533,13 @@ instance Interp DLExpr where
       tokId <- ledgerNewTokens accIdMax dltokennew
       return $ V_Token $ fromIntegral tokId
     DLE_TokenBurn _at dlarg1 dlarg2 -> do
+      (g, _) <- getState
       tok <- vTok <$> interp dlarg1
       burn_amt <- vUInt <$> interp dlarg2
-      updateLedger 0 tok (burn_amt -)
+      let accIdMax = (e_naccid g) - 1
+      updateLedgers accIdMax tok (burn_amt -)
       return V_Null
-    DLE_TokenDestroy _at dlarg -> do
-      ev <- vTok <$> interp dlarg
-      (e, _) <- getState
-      let map_ledger = e_ledger e
-      let m = saferMaybe "DLE_TokenDestroy" $ M.lookup 0 map_ledger
-      let new_nw_ledger = M.insert 0 (M.delete ev m) map_ledger
-      setGlobal $ e {e_ledger = new_nw_ledger}
-      return V_Null
+    DLE_TokenDestroy _at _dlarg -> return V_Null
     DLE_TimeOrder _at _assoc_maybe_arg_vars -> return V_Null
     DLE_GetContract _at -> V_Contract <$> l_acct <$> getMyLocalInfo
     DLE_GetAddress _at -> V_Address <$> l_acct <$> getMyLocalInfo
