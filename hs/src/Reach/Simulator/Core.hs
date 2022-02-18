@@ -219,14 +219,23 @@ initApp p st = runApp st $ interp p
 initAppFromStep :: LLStep -> State -> PartState
 initAppFromStep step st = runApp st $ interp step
 
-ledgerNewToken :: Account -> DLTokenNew -> App ()
-ledgerNewToken acc tk = do
+ledgerNewTokens :: Integer -> DLTokenNew -> App (Token)
+ledgerNewTokens n tk = do
+  (e, _) <- getState
+  let tokId = e_ntok e
+  _ <- mapM (\x -> ledgerNewToken x tk tokId) [-1..n]
+  (e', _) <- getState
+  setGlobal $ e' {e_ntok = tokId + 1}
+  return tokId
+
+ledgerNewToken :: Account -> DLTokenNew -> Token -> App ()
+ledgerNewToken acc tk tokId = do
   (e, _) <- getState
   let ledger = e_ledger e
-  let tokId = e_ntok e
   supply <- vUInt <$> interp (dtn_supply tk)
-  let new_nw_ledger = M.insert acc (M.singleton tokId supply) ledger
-  setGlobal $ e {e_ledger = new_nw_ledger, e_ntok = tokId + 1}
+  let m = saferMaybe "ledgerNewToken: account not found" $ M.lookup acc ledger
+  let new_nw_ledger = M.insert acc (M.insert tokId supply m) ledger
+  setGlobal $ e {e_ledger = new_nw_ledger}
 
 data Action
   = A_TieBreak PhaseId [String]
@@ -314,7 +323,7 @@ updateLedger acc tok f = do
   (e, _) <- getState
   let map_ledger = e_ledger e
   let m = saferMaybe "updateLedger: account not found" $ M.lookup acc map_ledger
-  let prev_amt = saferMaybe "updateLedger: token not found" $ M.lookup tok m
+  let prev_amt = saferMaybe ("updateLedger: token not found " ++ show tok ++ " " ++ show map_ledger) $ M.lookup tok m
   let new_amt = f prev_amt
   let new_nw_ledger = M.insert acc (M.insert tok new_amt m) map_ledger
   setGlobal $ e {e_ledger = new_nw_ledger}
@@ -409,7 +418,7 @@ instance Interp DLLargeArg where
     DLLA_Struct assoc_slvars_dlargs -> do
       evd_args <- mapM (\arg -> interp arg) $ M.fromList assoc_slvars_dlargs
       return $ V_Struct $ M.toAscList evd_args
-    DLLA_Bytes _ -> impossible "undefined"
+    DLLA_Bytes bs -> return $ V_Bytes $ bunpack bs
 
 instance Interp DLExpr where
   interp = \case
@@ -514,15 +523,17 @@ instance Interp DLExpr where
       consensusPayout acc dlPayAmnt
       return v
     DLE_TokenNew _at dltokennew -> do
-      ledgerNewToken simContract dltokennew
-      return V_Null
+      (g, _) <- getState
+      let accIdMax = (e_naccid g) - 1
+      tokId <- ledgerNewTokens accIdMax dltokennew
+      return $ V_Token $ fromIntegral tokId
     DLE_TokenBurn _at dlarg1 dlarg2 -> do
-      tok <- vUInt <$> interp dlarg1
+      tok <- vTok <$> interp dlarg1
       burn_amt <- vUInt <$> interp dlarg2
       updateLedger 0 tok (burn_amt -)
       return V_Null
     DLE_TokenDestroy _at dlarg -> do
-      ev <- vUInt <$> interp dlarg
+      ev <- vTok <$> interp dlarg
       (e, _) <- getState
       let map_ledger = e_ledger e
       let m = saferMaybe "DLE_TokenDestroy" $ M.lookup 0 map_ledger
@@ -532,8 +543,8 @@ instance Interp DLExpr where
     DLE_TimeOrder _at _assoc_maybe_arg_vars -> return V_Null
     DLE_GetContract _at -> V_Contract <$> l_acct <$> getMyLocalInfo
     DLE_GetAddress _at -> V_Address <$> l_acct <$> getMyLocalInfo
-    DLE_EmitLog at (L_Api _) [dlvar] -> interp $ DL_Var at dlvar
-    DLE_EmitLog at L_Internal [dlvar] -> interp $ DL_Var at dlvar
+    DLE_EmitLog _at (L_Api _) [dlvar] -> interp $ DLA_Var dlvar
+    DLE_EmitLog _at L_Internal [dlvar] -> interp $ DLA_Var dlvar
     -- events from Events are : [a] -> Null
     DLE_EmitLog _ (L_Event {}) _ -> return V_Null
     DLE_EmitLog {} -> impossible "DLE_EmitLog invariants not satisified"

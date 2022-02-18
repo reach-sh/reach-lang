@@ -530,7 +530,11 @@ app p srcTxt = do
         webM $ unblockProg s a $ C.V_Bool v
       "tuple" -> do
         v' :: LB.ByteString <- param "data"
-        let v = saferMaybe "decodeTuple" $ decode v'
+        let v = saferMaybe "decode Tuple" $ decode v'
+        webM $ unblockProg s a v
+      "object" -> do
+        v' :: LB.ByteString <- param "data"
+        let v = saferMaybe "decode Object" $ decode v'
         webM $ unblockProg s a v
       _ -> possible "Unexpected value type"
     json ("OK" :: String)
