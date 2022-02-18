@@ -60,7 +60,7 @@ Tip: try entering your desired year in the filter box to skip other tag types.
 
 Reach will interpret this to mean the most recent stable [major](##guide-versions) version.
 
-When using the semantic versioning form of `@{ref("cmd", "REACH_VERSION")}` the preceding `v` character is optional.
+When using the semantic versioning form of `{!cmd} REACH_VERSION` the preceding `v` character is optional.
 In other words, `v0.1.6` is equivalent to `0.1.6`.
 
 # {#ref-usage-compile} `reach compile`
@@ -76,8 +76,8 @@ and each `EXPORT` is an exported `{!rsh} Reach.App`.
 
 If no `SOURCE` is provided, then `index.rsh` is used.
 
-If no `EXPORT` is provided, then all the exported `{!rsh} Reach.Apps` will be compiled.
-If there are no `{!rsh} Reach.Apps` exported, then the program will be compiled as a library, where its exports are available to other Reach programs and frontends.
+If no `EXPORT` is provided, then all the exported `{!rsh} Reach.App`s will be compiled.
+If there are no `{!rsh} Reach.App`s exported, then the program will be compiled as a library, where its exports are available to other Reach programs and frontends.
 The output name of a library is the same as if it exported a `{!rsh} Reach.App` named `default`.
 
 `@{ref("cmd", "compile")}reach compile` supports the following options:
@@ -145,11 +145,11 @@ It then
 
 + Compiles your program with Reach.
 + Builds a Docker image named `reachsh/reach-app-APP:latest` that depends on the Reach JavaScript standard library.
-+ Executes a container based upon that image while connected to the network determined by `REACH_CONNECTOR_MODE`.
++ Executes a container based upon that image while connected to the network determined by `{!cmd} REACH_CONNECTOR_MODE`.
 
 `reach run` supports the following options:
 
-+ The mandatory environment variable `REACH_CONNECTOR_MODE` specifies which context to run in.
++ The mandatory environment variable `{!cmd} REACH_CONNECTOR_MODE` specifies which context to run in.
 The options are:
 
 + `ETH-live`, which uses a live Ethereum network node, specified by the environment variable `ETH_NODE_URI`.
@@ -200,12 +200,12 @@ This assumes
 It then
 
 + Compiles your program with Reach
-+ Runs the appropriate devnet based on `REACH_CONNECTOR_MODE`
++ Runs the appropriate devnet based on `{!cmd} REACH_CONNECTOR_MODE`
 + Mounts the current directory into `/app/src/` in the `reachsh/react-runner` Docker image and runs it.
 
 `reach react` supports the following options:
 
-+ The mandatory environment variable `REACH_CONNECTOR_MODE` specifies which context to run in.
++ The mandatory environment variable `{!cmd} REACH_CONNECTOR_MODE` specifies which context to run in.
 The options are:
 
 + `ETH`, which runs a Dockerized private Ethereum network which may be used. The app can use any Ethereum network.
@@ -238,8 +238,8 @@ $ reach devnet
 ```
 
 :::note
-If running `reach devnet`, it is recommended to permanently set `REACH_CONNECTOR_MODE` to the desired consensus network. 
-If you did not set this when you originally ran `reach config`, then you can run `reach devnet` with the argument `REACH_CONNECTOR_MODE=[OPTION]` as in the following command.
+If running `reach devnet`, it is recommended to permanently set `{!cmd} REACH_CONNECTOR_MODE` to the desired consensus network. 
+If you did not set this when you originally ran `reach config`, then you can run `reach devnet` with the argument `{!cmd} REACH_CONNECTOR_MODE=[OPTION]` as in the following command.
 :::
 
 ```cmd
@@ -250,7 +250,7 @@ $ REACH_CONNECTOR_MODE=ALGO ./reach devnet
 
 + `--await-background` --- Run in the background and await availability.
 
-The mandatory environment variable `REACH_CONNECTOR_MODE` specifies which devnet to run.
+The mandatory environment variable `{!cmd} REACH_CONNECTOR_MODE` specifies which devnet to run.
 The options are:
 
 + `ETH`, which runs an Ethereum devnet on `localhost:8545`
@@ -387,7 +387,7 @@ Reach recommends tuning your default workflow settings by executing
 $ reach config
 ```
 
-Using `reach config` is advisable when running Reach for the first time since it will set the `REACH_CONNECTOR_MODE` environment variable, which is required when executing some other sub-commands (e.g. `reach run`).
+Using `reach config` is advisable when running Reach for the first time since it will set the `{!cmd} REACH_CONNECTOR_MODE` environment variable, which is required when executing some other sub-commands (e.g. `reach run`).
 
 `reach config` presents users with a guided menu which automatically creates an `env` file and suggests subsequent steps to activate and make it permanent.
 This `env` file exports environment variable settings and is intended to be `source`d by users' shells.
