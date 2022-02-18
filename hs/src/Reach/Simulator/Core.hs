@@ -232,7 +232,9 @@ ledgerNewToken :: Account -> DLTokenNew -> Token -> App ()
 ledgerNewToken acc tk tokId = do
   (e, _) <- getState
   let ledger = e_ledger e
-  supply <- vUInt <$> interp (dtn_supply tk)
+  supply <- case (acc == simContract) of
+    True -> vUInt <$> interp (dtn_supply tk)
+    False -> return 0
   let m = saferMaybe "ledgerNewToken: account not found" $ M.lookup acc ledger
   let new_nw_ledger = M.insert acc (M.insert tokId supply m) ledger
   setGlobal $ e {e_ledger = new_nw_ledger}
