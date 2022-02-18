@@ -46,10 +46,10 @@ export const main = Reach.App(() => {
         (_) => { return [ false, currentTok, currentWinner, amt ]; }
       )
       .api(B.changeTok,
-        (newTok) => { check(tokens.includes(newTok)); },
+        (newTok) => { check(tokens.includes(newTok), "Tokens include newTok"); },
         (_) => [ 0, [ amt, currentTok ] ],
         (newTok, k) => {
-          check(tokens.includes(newTok));
+          check(tokens.includes(newTok), "Tokens include newTok");
           k(null);
           return [ true, newTok, this, amt ];
         }
