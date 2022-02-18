@@ -5,7 +5,7 @@ NPM = npm
 .PHONY: build
 build:
 	$(NPM) install
-	cp ../map-any/index.rsh .
+	cp ../mint-basic/index.rsh .
 
 .PHONY: run
 run:
