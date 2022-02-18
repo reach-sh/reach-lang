@@ -1,0 +1,439 @@
+#lang ll
+parts {
+  "Alice" = interact {
+    didTransfer = IT_Fun [Bool,UInt] Null,
+    getParams = IT_Fun [] Object({"amt": UInt, "metadata": Bytes(32), "name": Bytes(32), "supply": UInt, "symbol": Bytes(8), "url": Bytes(96)}),
+    showToken = IT_UDFun Null},
+  "Bob" = interact {
+    didTransfer = IT_Fun [Bool,UInt] Null,
+    showToken = IT_UDFun Null}};
+
+// maps
+{
+  }
+// initialization
+
+{
+  }
+{
+  }
+{
+  }
+{
+  }
+const v5* = {
+  i = 0,
+  sign = true};
+const v7* = {
+  i = 0,
+  sign = true};
+only(Left "Alice") {
+   };
+only(Left "Bob") {
+   };
+only(Left "Alice") {
+  const v20* = selfAddress("Alice", False, 19 )();
+  let v21;
+  const v22* = protect<Object({"amt": UInt, "metadata": Bytes(32), "name": Bytes(32), "supply": UInt, "symbol": Bytes(8), "url": Bytes(96)})>("Alice".interact.getParams());
+  const v23* = v22.name;
+  const v24* = v22.symbol;
+  const v25* = v22.url;
+  const v26* = v22.metadata;
+  const v27* = v22.supply;
+  const v28* = v22.amt;
+  const v29* = 4 * amt/28;
+  const v30* = v29 <= supply/27;
+  claim(CT_Assume False)(v30, Nothing);
+  const v31* = 4 * amt/28;
+  const v32* = v31 <= UInt.max;
+  claim(CT_Assume False)(v32, Nothing);
+  v21 = null;
+   };
+only(Left "Alice") {
+   };
+publish(@0)
+  .case("Alice").send({
+    isClass = False,
+    msg = [name/23, symbol/24, url/25, metadata/26, supply/27, amt/28],
+    pay = [0, ],
+    when = true})
+  .recv({
+    didSend = v43,
+    from = v33,
+    msg = [v34, v35, v36, v37, v38, v39],
+    secs = v42,
+    time = v41}){
+    timeOrder((Nothing, thisConsensusTime/41 ), (Nothing, thisConsensusSecs/42 ) );
+    const v40* = 0;
+    checkPay(0, Nothing);
+    const v44* = 4 * amt/39;
+    const v45* = v44 <= supply/38;
+    claim(CT_Require)(v45, Nothing);
+    const v46* = 4 * amt/39;
+    const v47* = v46 <= UInt.max;
+    claim(CT_Require)(v47, Nothing);
+    const v48* = new Token({
+      decimals = null,
+      metadata = metadata/37,
+      name = name/34,
+      supply = supply/38,
+      sym = symbol/35,
+      url = url/36});
+    const v49* = emitLog(internal)(v48 );
+    only(Left "Alice") {
+      const v52* = selfAddress("Alice", False, 51 )();
+      const v54* = {
+        metadata = metadata/37,
+        name = name/34,
+        supply = supply/38,
+        symbol = symbol/35,
+        url = url/36};
+      protect<Null>("Alice".interact.showToken(tok1/49, v54 ));
+       };
+    commit();
+    only(Left "Bob") {
+       };
+    publish(@thisConsensusTime/41)
+      .case("Bob").send({
+        isClass = False,
+        msg = [],
+        pay = [0, ],
+        when = true})
+      .recv({
+        didSend = v59,
+        from = v55,
+        msg = [],
+        secs = v58,
+        time = v57}){
+        timeOrder((Just thisConsensusTime/41, thisConsensusTime/57 ), (Just thisConsensusSecs/42, thisConsensusSecs/58 ) );
+        const v56* = balance(0)/40;
+        checkPay(0, Nothing);
+        only(Left "Bob") {
+          const v62* = selfAddress("Bob", False, 61 )();
+          const v64* = {
+            metadata = metadata/37,
+            name = name/34,
+            supply = supply/38,
+            symbol = symbol/35,
+            url = url/36};
+          protect<Null>("Bob".interact.showToken(tok1/49, v64 ));
+           };
+        commit();
+        only(Left "Bob") {
+           };
+        publish(@thisConsensusTime/57)
+          .case("Bob").send({
+            isClass = False,
+            msg = [],
+            pay = [0, ],
+            when = true})
+          .recv({
+            didSend = v70,
+            from = v65,
+            msg = [],
+            secs = v69,
+            time = v68}){
+            timeOrder((Just thisConsensusTime/57, thisConsensusTime/68 ), (Just thisConsensusSecs/58, thisConsensusSecs/69 ) );
+            const v66* = balance(0)/56;
+            checkPay(0, Nothing);
+            const v67* = v55 == v65;
+            claim(CT_Require)(v67, Just "sender correct");
+            const v72* = 2 * amt/39;
+            const v73* = supply/38;
+            const v74* = v72 <= balance(1)/73;
+            claim(CT_Assert)(v74, Just "balance sufficient for transfer");
+            const v75* = supply/38;
+            const v76* = balance(1)/75 - v72;
+            transfer.(v72, Just tokX/49).to(v55);
+            only(Left "Bob") {
+              const v79* = selfAddress("Bob", False, 78 )();
+              protect<Null>("Bob".interact.didTransfer(true, amt/39 ));
+               };
+            const v71* = null;
+            commit();
+            only(Left "Alice") {
+               };
+            publish(@thisConsensusTime/68)
+              .case("Alice").send({
+                isClass = False,
+                msg = [],
+                pay = [0, ],
+                when = true})
+              .recv({
+                didSend = v86,
+                from = v81,
+                msg = [],
+                secs = v85,
+                time = v84}){
+                timeOrder((Just thisConsensusTime/68, thisConsensusTime/84 ), (Just thisConsensusSecs/69, thisConsensusSecs/85 ) );
+                const v82* = balance(0)/66;
+                checkPay(0, Nothing);
+                const v83* = v33 == v81;
+                claim(CT_Require)(v83, Just "sender correct");
+                const v88* = 2 * amt/39;
+                const v89* = v76;
+                const v90* = v88 <= balance(1)/89;
+                claim(CT_Assert)(v90, Just "balance sufficient for transfer");
+                const v91* = v76;
+                const v92* = balance(1)/91 - v88;
+                transfer.(v88, Just tokX/49).to(v33);
+                only(Left "Alice") {
+                  const v95* = selfAddress("Alice", False, 94 )();
+                  protect<Null>("Alice".interact.didTransfer(true, amt/39 ));
+                   };
+                const v87* = null;
+                commit();
+                only(Left "Alice") {
+                  const v97* = 2 * amt/39;
+                   };
+                publish(@thisConsensusTime/84)
+                  .case("Alice").send({
+                    isClass = False,
+                    msg = [],
+                    pay = [0, (v97, tok1/49 ) ],
+                    when = true})
+                  .recv({
+                    didSend = v106,
+                    from = v98,
+                    msg = [],
+                    secs = v105,
+                    time = v104}){
+                    timeOrder((Just thisConsensusTime/84, thisConsensusTime/104 ), (Just thisConsensusSecs/85, thisConsensusSecs/105 ) );
+                    const v99* = 2 * amt/39;
+                    const v100* = balance(0)/82;
+                    checkPay(0, Nothing);
+                    const v101* = v92;
+                    const v102* = balance(1)/101 + v99;
+                    checkPay(v99, Just tok1/49);
+                    const v103* = v33 == v98;
+                    claim(CT_Require)(v103, Just "sender correct");
+                    commit();
+                    only(Left "Bob") {
+                      const v107* = 2 * amt/39;
+                       };
+                    publish(@thisConsensusTime/104)
+                      .case("Bob").send({
+                        isClass = False,
+                        msg = [],
+                        pay = [0, (v107, tok1/49 ) ],
+                        when = true})
+                      .recv({
+                        didSend = v116,
+                        from = v108,
+                        msg = [],
+                        secs = v115,
+                        time = v114}){
+                        timeOrder((Just thisConsensusTime/104, thisConsensusTime/114 ), (Just thisConsensusSecs/105, thisConsensusSecs/115 ) );
+                        const v109* = 2 * amt/39;
+                        const v110* = balance(0)/100;
+                        checkPay(0, Nothing);
+                        const v111* = v102;
+                        const v112* = balance(1)/111 + v109;
+                        checkPay(v109, Just tok1/49);
+                        const v113* = v55 == v108;
+                        claim(CT_Require)(v113, Just "sender correct");
+                        const v117* = v112;
+                        const v118* = supply/38 <= balance(1)/117;
+                        claim(CT_Assert)(v118, Just "Token.burn");
+                        const v119* = v112;
+                        const v120* = balance(1)/119 - supply/38;
+                        const v121* = supply/38;
+                        const v122* = supply(1)/121 - supply/38;
+                        Token(tok1/49).burn(supply/38);
+                        const v123* = false;
+                        const v124* = (destroyed(1)/123 ? false : true);
+                        claim(CT_Assert)(v124, Just "token not yet destroyed at Token.destroy");
+                        const v125* = v122;
+                        const v126* = 0 == supply(1)/125;
+                        claim(CT_Assert)(v126, Just "token supply zero at Token.destroy");
+                        Token(tok1/49).destroy();
+                        const v127* = "                                                                                                ";
+                        const v128* = "                                ";
+                        const v129* = new Token({
+                          decimals = null,
+                          metadata = v128,
+                          name = name/34,
+                          supply = UInt.max,
+                          sym = symbol/35,
+                          url = v127});
+                        const v130* = emitLog(internal)(v129 );
+                        only(Left "Alice") {
+                          const v133* = selfAddress("Alice", False, 132 )();
+                          const v135* = {
+                            name = name/34,
+                            symbol = symbol/35};
+                          protect<Null>("Alice".interact.showToken(tok2/130, v135 ));
+                           };
+                        only(Left "Bob") {
+                          const v138* = selfAddress("Bob", False, 137 )();
+                          const v140* = {
+                            name = name/34,
+                            symbol = symbol/35};
+                          protect<Null>("Bob".interact.showToken(tok2/130, v140 ));
+                           };
+                        commit();
+                        only(Left "Bob") {
+                           };
+                        publish(@thisConsensusTime/114)
+                          .case("Bob").send({
+                            isClass = False,
+                            msg = [],
+                            pay = [0, ],
+                            when = true})
+                          .recv({
+                            didSend = v146,
+                            from = v141,
+                            msg = [],
+                            secs = v145,
+                            time = v144}){
+                            timeOrder((Just thisConsensusTime/114, thisConsensusTime/144 ), (Just thisConsensusSecs/115, thisConsensusSecs/145 ) );
+                            const v142* = balance(0)/110;
+                            checkPay(0, Nothing);
+                            const v143* = v55 == v141;
+                            claim(CT_Require)(v143, Just "sender correct");
+                            const v148* = 2 * amt/39;
+                            const v149* = UInt.max;
+                            const v150* = v148 <= balance(2)/149;
+                            claim(CT_Assert)(v150, Just "balance sufficient for transfer");
+                            const v151* = UInt.max;
+                            const v152* = balance(2)/151 - v148;
+                            transfer.(v148, Just tokX/130).to(v55);
+                            only(Left "Bob") {
+                              const v155* = selfAddress("Bob", False, 154 )();
+                              protect<Null>("Bob".interact.didTransfer(true, amt/39 ));
+                               };
+                            const v147* = null;
+                            commit();
+                            only(Left "Alice") {
+                               };
+                            publish(@thisConsensusTime/144)
+                              .case("Alice").send({
+                                isClass = False,
+                                msg = [],
+                                pay = [0, ],
+                                when = true})
+                              .recv({
+                                didSend = v162,
+                                from = v157,
+                                msg = [],
+                                secs = v161,
+                                time = v160}){
+                                timeOrder((Just thisConsensusTime/144, thisConsensusTime/160 ), (Just thisConsensusSecs/145, thisConsensusSecs/161 ) );
+                                const v158* = balance(0)/142;
+                                checkPay(0, Nothing);
+                                const v159* = v33 == v157;
+                                claim(CT_Require)(v159, Just "sender correct");
+                                const v164* = 2 * amt/39;
+                                const v165* = v152;
+                                const v166* = v164 <= balance(2)/165;
+                                claim(CT_Assert)(v166, Just "balance sufficient for transfer");
+                                const v167* = v152;
+                                const v168* = balance(2)/167 - v164;
+                                transfer.(v164, Just tokX/130).to(v33);
+                                only(Left "Alice") {
+                                  const v171* = selfAddress("Alice", False, 170 )();
+                                  protect<Null>("Alice".interact.didTransfer(true, amt/39 ));
+                                   };
+                                const v163* = null;
+                                const v173* = v168;
+                                const v174* = v168;
+                                const v175* = balance(2)/173 <= balance(2)/174;
+                                claim(CT_Assert)(v175, Just "Token.burn");
+                                const v176* = v168;
+                                const v177* = balance(2)/176 - balance(2)/173;
+                                const v178* = UInt.max;
+                                const v179* = supply(2)/178 - balance(2)/173;
+                                Token(tok2/130).burn(balance(2)/173);
+                                commit();
+                                only(Left "Alice") {
+                                  const v180* = 2 * amt/39;
+                                   };
+                                publish(@thisConsensusTime/160)
+                                  .case("Alice").send({
+                                    isClass = False,
+                                    msg = [],
+                                    pay = [0, (v180, tok2/130 ) ],
+                                    when = true})
+                                  .recv({
+                                    didSend = v189,
+                                    from = v181,
+                                    msg = [],
+                                    secs = v188,
+                                    time = v187}){
+                                    timeOrder((Just thisConsensusTime/160, thisConsensusTime/187 ), (Just thisConsensusSecs/161, thisConsensusSecs/188 ) );
+                                    const v182* = 2 * amt/39;
+                                    const v183* = balance(0)/158;
+                                    checkPay(0, Nothing);
+                                    const v184* = v177;
+                                    const v185* = balance(2)/184 + v182;
+                                    checkPay(v182, Just tok2/130);
+                                    const v186* = v33 == v181;
+                                    claim(CT_Require)(v186, Just "sender correct");
+                                    commit();
+                                    only(Left "Bob") {
+                                      const v190* = 2 * amt/39;
+                                       };
+                                    publish(@thisConsensusTime/187)
+                                      .case("Bob").send({
+                                        isClass = False,
+                                        msg = [],
+                                        pay = [0, (v190, tok2/130 ) ],
+                                        when = true})
+                                      .recv({
+                                        didSend = v199,
+                                        from = v191,
+                                        msg = [],
+                                        secs = v198,
+                                        time = v197}){
+                                        timeOrder((Just thisConsensusTime/187, thisConsensusTime/197 ), (Just thisConsensusSecs/188, thisConsensusSecs/198 ) );
+                                        const v192* = 2 * amt/39;
+                                        const v193* = balance(0)/183;
+                                        checkPay(0, Nothing);
+                                        const v194* = v185;
+                                        const v195* = balance(2)/194 + v192;
+                                        checkPay(v192, Just tok2/130);
+                                        const v196* = v55 == v191;
+                                        claim(CT_Require)(v196, Just "sender correct");
+                                        const v200* = v195;
+                                        const v201* = v195;
+                                        const v202* = balance(2)/200 <= balance(2)/201;
+                                        claim(CT_Assert)(v202, Just "Token.burn");
+                                        const v203* = v195;
+                                        const v204* = balance(2)/203 - balance(2)/200;
+                                        const v205* = v179;
+                                        const v206* = supply(2)/205 - balance(2)/200;
+                                        Token(tok2/130).burn(balance(2)/200);
+                                        const v207* = false;
+                                        const v208* = (destroyed(2)/207 ? false : true);
+                                        claim(CT_Assert)(v208, Just "token not yet destroyed at Token.destroy");
+                                        const v209* = v206;
+                                        const v210* = 0 == supply(2)/209;
+                                        claim(CT_Assert)(v210, Just "token supply zero at Token.destroy");
+                                        Token(tok2/130).destroy();
+                                        const v211* = balance(0)/193;
+                                        const v212* = 0 == balance(0)/211;
+                                        claim(CT_Assert)(v212, Just "balance zero at application exit");
+                                        const v213* = v120;
+                                        const v214* = 0 == balance(1)/213;
+                                        claim(CT_Assert)(v214, Just "balance zero at application exit");
+                                        const v215* = v204;
+                                        const v216* = 0 == balance(2)/215;
+                                        claim(CT_Assert)(v216, Just "balance zero at application exit");
+                                        const v217* = true;
+                                        const v218* = (destroyed(1)/217 ? false : true);
+                                        claim(CT_Assert)(destroyed(1)/217, Just "token destroyed at application exit");
+                                        const v219* = true;
+                                        const v220* = (destroyed(2)/219 ? false : true);
+                                        claim(CT_Assert)(destroyed(2)/219, Just "token destroyed at application exit");
+                                        commit();
+                                        exit(); }
+                                       }
+                                   }
+                               }
+                           }
+                       }
+                   }
+               }
+           }
+       }
+  
