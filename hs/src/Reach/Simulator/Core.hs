@@ -219,8 +219,8 @@ initApp p st = runApp st $ interp p
 initAppFromStep :: LLStep -> State -> PartState
 initAppFromStep step st = runApp st $ interp step
 
-ledgerNewTokens :: Integer -> DLTokenNew -> App (Token)
-ledgerNewTokens n tk = do
+ledgerNewTokenRefs :: Integer -> DLTokenNew -> App (Token)
+ledgerNewTokenRefs n tk = do
   (e, _) <- getState
   let tokId = e_ntok e
   _ <- mapM (\x -> ledgerNewToken x tk tokId) [-1..n]
@@ -532,7 +532,7 @@ instance Interp DLExpr where
     DLE_TokenNew _at dltokennew -> do
       (g, _) <- getState
       let accIdMax = (e_naccid g) - 1
-      tokId <- ledgerNewTokens accIdMax dltokennew
+      tokId <- ledgerNewTokenRefs accIdMax dltokennew
       return $ V_Token $ fromIntegral tokId
     DLE_TokenBurn _at dlarg1 dlarg2 -> do
       tok <- vTok <$> interp dlarg1
