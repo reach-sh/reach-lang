@@ -4,7 +4,6 @@ import qualified Data.Aeson as A
 import qualified Data.Aeson.Encode.Pretty as A
 import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Data.Map.Strict as M
-import Data.Maybe
 import Generics.Deriving (Generic, conNameOf)
 import Reach.AST.Base
 import Reach.AST.SL
@@ -24,8 +23,7 @@ infoMap =
 
 completionTypeMap :: M.Map String CompletionItemKind
 completionTypeMap =
-  M.map fromJust
-  $ M.filter isJust
+  M.mapMaybe id
   $ M.map completionKind
   $ M.fromList C.base_env_slvals
 
