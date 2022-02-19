@@ -82,8 +82,8 @@ import { window, process, updateProcessEnv } from './shim';
 import { sha512_256 } from 'js-sha512';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = stdlib;
 export * from './shared_user';
-import { setQueryLowerBound, getQueryLowerBound } from './shared_impl';
-export { setQueryLowerBound, getQueryLowerBound, addressFromHex };
+import { setQueryLowerBound, getQueryLowerBound, handleFormat, formatWithDecimals } from './shared_impl';
+export { setQueryLowerBound, getQueryLowerBound, addressFromHex, formatWithDecimals };
 
 const [ setSigningMonitor, notifySend ] = makeSigningMonitor();
 export { setSigningMonitor };
@@ -1967,72 +1967,11 @@ const schemaUintMinBalance: BigNumber = bigNumberify(SchemaUintMinBalance)
 const appFlatParamsMinBalance: BigNumber = bigNumberify(AppFlatParamsMinBalance)
 const appFlatOptInMinBalance: BigNumber = bigNumberify(AppFlatOptInMinBalance)
 
-// lol I am not importing leftpad for this
-/** @example lpad('asdf', '0', 6); // => '00asdf' */
-function lpad(str: string, padChar: string, nChars: number) {
-  const padding = padChar.repeat(Math.max(nChars - str.length, 0));
-  return padding + str;
-}
-
-/** @example rdrop('asfdfff', 'f'); // => 'asfd' */
-function rdrop(str: string, char: string) {
-  while (str[str.length - 1] === char) {
-    str = str.slice(0, str.length - 1);
-  }
-  return str;
-}
-
-/** @example ldrop('007', '0'); // => '7' */
-function ldrop(str: string, char: string) {
-  while (str[0] === char) {
-    str = str.slice(1);
-  }
-  return str;
-}
-
-/**
- * @description  Format currency by network or token
- * @param amt  the amount in the {@link atomicUnit} of the network or token.
- * @param decimals  up to how many decimal places to display in the {@link standardUnit}.
- * @param splitValue  where to split the numeric value.
- *   Trailing zeros will be omitted. Excess decimal places will be truncated (not rounded).
- *   This argument defaults to maximum precision.
- * @returns  a string representation of that amount in the {@link standardUnit} for that network or token.
- * @example  formatCurrency(bigNumberify('100000000')); // => '100'
- * @example  formatCurrency(bigNumberify('9999998799987000')); // => '9999998799.987'
- */
-function handleFormat(amt: unknown, decimals: number, splitValue: number = 6): string {
-  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
-    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
-  }
-  if (!(Number.isInteger(splitValue) && 0 <= splitValue)) {
-    throw Error(`Expected split value to be a nonnegative integer, but got ${decimals}.`);
-  }
-  const amtStr = bigNumberify(amt).toString();
-  const splitAt = Math.max(amtStr.length - splitValue, 0);
-  const lPredropped = amtStr.slice(0, splitAt);
-  const l = ldrop(lPredropped, '0') || '0';
-  if (decimals === 0) { return l; }
-
-  const rPre = lpad(amtStr.slice(splitAt), '0', splitValue);
-  const rSliced = rPre.slice(0, decimals);
-  const r = rdrop(rSliced, '0');
-
-  return r ? `${l}.${r}` : l;
-}
-
 /**
  * @description  Format currency by network
  */
 export function formatCurrency(amt: unknown, decimals: number = 6): string {
   return handleFormat(amt, decimals, 6)
-}
-
-/**
- * @description  Format currency based on token decimals
- */
-export function formatWithDecimals(amt: unknown, decimals: number): string {
-  return handleFormat(amt, decimals, decimals)
 }
 
 export async function getDefaultAccount(): Promise<Account> {
