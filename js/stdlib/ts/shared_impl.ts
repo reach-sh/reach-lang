@@ -1011,3 +1011,54 @@ export const makeSigningMonitor = <A,B>(): [SetSigningMonitor, NotifySend<A,B>] 
   };
   return [ setSigningMonitor, notifySend ];
 };
+
+/** @example lpad('asdf', '0', 6); // => '00asdf' */
+const lpad = (str: string, padChar: string, nChars: number) => {
+  const padding = padChar.repeat(Math.max(nChars - str.length, 0));
+  return padding + str;
+}
+
+/** @example rdrop('asfdfff', 'f'); // => 'asfd' */
+const rdrop = (str: string, char: string) => {
+  while (str[str.length - 1] === char) {
+    str = str.slice(0, str.length - 1);
+  }
+  return str;
+}
+
+/** @example ldrop('007', '0'); // => '7' */
+const ldrop = (str: string, char: string) => {
+  while (str[0] === char) {
+    str = str.slice(1);
+  }
+  return str;
+}
+
+// Helper to<BigNumber> -> string formatting function used in a couple of places
+// amt = the number to format
+// decimals = number of digits from the right to put the decimal point
+// splitValue = number of digits to keep after the decimal point
+// Example: handleFormat(1234567, 4, 2) => "123.45"
+export const handleFormat = (amt: unknown, decimals: number, splitValue: number = 6): string => {
+  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
+    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
+  }
+  if (!(Number.isInteger(splitValue) && 0 <= splitValue)) {
+    throw Error(`Expected split value to be a nonnegative integer, but got ${decimals}.`);
+  }
+  const amtStr = bigNumberify(amt).toString();
+  const splitAt = Math.max(amtStr.length - splitValue, 0);
+  const lPredropped = amtStr.slice(0, splitAt);
+  const l = ldrop(lPredropped, '0') || '0';
+  if (decimals === 0) { return l; }
+
+  const rPre = lpad(amtStr.slice(splitAt), '0', splitValue);
+  const rSliced = rPre.slice(0, decimals);
+  const r = rdrop(rSliced, '0');
+
+  return r ? `${l}.${r}` : l;
+}
+
+export const formatWithDecimals = (amt: unknown, decimals: number): string => {
+  return handleFormat(amt, decimals, decimals)
+}

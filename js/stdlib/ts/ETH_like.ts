@@ -74,7 +74,7 @@ export type {
 import type { // =>
   Stdlib_Backend
 } from './interfaces';
-import { setQueryLowerBound, getQueryLowerBound } from './shared_impl';
+import { setQueryLowerBound, getQueryLowerBound, formatWithDecimals } from './shared_impl';
 export { setQueryLowerBound, getQueryLowerBound };
 
 // ****************************************************************************
@@ -1173,6 +1173,7 @@ const ethLike = {
   minimumBalance,
   formatCurrency,
   formatAddress,
+  formatWithDecimals,
   unsafeGetMnemonic,
   launchToken,
   reachStdlib,
