@@ -33,9 +33,9 @@ Reach has a few sub-commands, each with their own options.
 
 However, all commands support the following options:
 
-+ The environment variable `@{ref("cmd", "REACH_VERSION")}` signifies what version of Reach to use.
++ The environment variable `{!cmd} REACH_VERSION` signifies what version of Reach to use.
 
-Although normally expressed in a [semantic versioning](##guide-versions)-friendly format, e.g. `v0.1` or `v0.1.6`, `@{ref("cmd", "REACH_VERSION")}` also supports:
+Although normally expressed in a [semantic versioning](##guide-versions)-friendly format, e.g. `v0.1` or `v0.1.6`, `{!cmd} REACH_VERSION` also supports:
 + Hashes such as [639fa565](https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore).
 
 Valid hashes may be obtained by running:
@@ -250,23 +250,7 @@ $ REACH_CONNECTOR_MODE=ALGO ./reach devnet
 
 + `--await-background` --- Run in the background and await availability.
 
-The mandatory environment variable `{!cmd} REACH_CONNECTOR_MODE` specifies which devnet to run.
-The options are:
-
-+ `ETH`, which runs an Ethereum devnet on `localhost:8545`
-+ `ETH-browser`, which runs an Ethereum devnet on `localhost:8545`
-+ `ETH-devnet`, which runs an Ethereum devnet on `localhost:8545`
-+ `ETH-live`, which runs an Ethereum devnet on `localhost:8545`
-+ `ALGO`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
-+ `ALGO-browser`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
-+ `ALGO-devnet`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
-+ `ALGO-live`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
-+ `CFX`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
-+ `CFX-browser`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
-+ `CFX-devnet`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
-+ `CFX-live`, which runs an Algorand devnet on `localhost:4180` and an Algorand indexer on `localhost:8980`
-
-+ The environment variable `REACH_DEBUG` enables some additional debugging information for the Algorand devnet, which is accessible via http://localhost:9392
+For more information on envirionmental variables and `{!cmd} REACH_CONNECTOR_MODE`, refer to (##ref-usage-run). 
 
 For more information on devnet options, refer to [Networks](##ref-networks).
 
