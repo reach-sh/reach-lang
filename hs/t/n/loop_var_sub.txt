@@ -8,18 +8,20 @@ Verification failed:
 
   // Violation Witness
 
-  const x/71 = <loop variable>;
+  const UInt.max = 7721;
+
+  const x/54 = <loop variable>;
   //    ^ could = [7719, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const balances[1]/74 = <loop variable>;
-  //    ^ could = array(Tuple(Data({"None": Null, "Some": Token}), UInt), [] )
+  const netBalance/57 = <loop variable>;
+  //    ^ could = 7719
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization
 
-  const v119 = Array.set(balances[1]/74, 0, [<None null>, (balances[1]/74[0][1] + 1) ] )[0][1] == [(x/71[0] + 2), x/71[1] ][0];
+  const v90 = (netBalance/57 + 1) == [(x/54[0] + 2), x/54[1] ][0];
   //    ^ would be false
-  assert(v119);
+  assert(v90);
 
   Verifying when NO participants are honest
 Verification failed:
@@ -29,17 +31,19 @@ Verification failed:
 
   // Violation Witness
 
-  const x/71 = <loop variable>;
+  const UInt.max = 7721;
+
+  const x/54 = <loop variable>;
   //    ^ could = [7719, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const balances[1]/74 = <loop variable>;
-  //    ^ could = array(Tuple(Data({"None": Null, "Some": Token}), UInt), [] )
+  const netBalance/57 = <loop variable>;
+  //    ^ could = 7719
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization
 
-  const v139 = Array.set(balances[1]/74, 0, [<None null>, (balances[1]/74[0][1] + 1) ] )[0][1] == [(x/71[0] + 2), x/71[1] ][0];
+  const v108 = (netBalance/57 + 1) == [(x/54[0] + 2), x/54[1] ][0];
   //    ^ would be false
-  assert(v139);
+  assert(v108);
 
-Checked 16 theorems; 2 failures :'(
+Checked 12 theorems; 2 failures :'(

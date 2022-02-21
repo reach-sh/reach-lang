@@ -15,6 +15,7 @@ export const main = Reach.App(() => {
     assume(tok1 != tok2); assume(tok2 != tok3); assume(tok1 != tok3);
   });
   A.publish(tok1, tok2, tok3);
+  require(tok1 != tok2); require(tok2 != tok3); require(tok1 != tok3);
   commit();
 
   const pa = [1, [1, tok1], [1, tok2], [1, tok3]];

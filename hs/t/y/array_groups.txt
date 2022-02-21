@@ -2,7 +2,7 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 11 theorems; No failures!
+Checked 9 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
  * This program could use 34445 units of cost, but the limit is 700; longest path:
      TOP --> preamble --> api --> publish --> l0_publish_lt_1 --> publish0 --> l2_checkTxnK --> l3_forTop --> l4_forEnd --> l5_forTop --> l7_forTop --> l8_forEnd --> l6_forEnd --> l9_forTop --> l10_forEnd --> updateState --> apiReturn --> checkSize --> done --> BOT

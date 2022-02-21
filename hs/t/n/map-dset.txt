@@ -9,11 +9,13 @@ Verification failed:
 
   // Violation Witness
 
-  const v75 = protect<UInt>("Alice".interact.get());
-  //    ^ could = 38
-  //      from: ./map-dset.rsh:16:51:application
-  const v83 = protect<UInt>("Bob".interact.get());
+  const UInt.max = 1;
+
+  const v67 = protect<UInt>("Alice".interact.get());
   //    ^ could = 0
+  //      from: ./map-dset.rsh:16:51:application
+  const v75 = protect<UInt>("Bob".interact.get());
+  //    ^ could = 1
   //      from: ./map-dset.rsh:21:51:application
 
   // Theorem Formalization
@@ -24,7 +26,7 @@ Verification failed:
   //    ^ would be <map: (None(null ))>[<abstract address 0> <- Some(0 )]
   const v100 = digest(map0_2/122[<abstract address 0>] ) == digest(<Some v72> );
   //    ^ would be false
-  require(v100);
+  require(v92);
 
   Verifying when NO participants are honest
-Checked 16 theorems; 1 failures :'(
+Checked 14 theorems; 1 failures :'(
