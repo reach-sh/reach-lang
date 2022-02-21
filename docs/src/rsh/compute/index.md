@@ -395,6 +395,7 @@ declassify( _coinFlip )
 A @{defn("function application")}, written `{!rsh} EXPR_rator(EXPR_rand_0, ..., EXPR_rand_n)`, is an expression where `{!rsh} EXPR_rator` and `{!rsh} EXPR_rand_0` through `{!rsh} EXPR_rand_n` are expressions that evaluate to one value.
 `{!rsh} EXPR_rator` must evaluate to an abstraction over `{!rsh} n` values or a primitive of arity `{!rsh} n`.
 A spread expression (`{!rsh} ...expr`) may appear in the list of operands to a function application, in which case the elements of the expr are spliced in place.
+`{!rsh} EXPR_rator` and `{!rsh} EXPR_rand_n` are evaluated in left-to-right order, starting with `{!rsh} EXPR_rator`, then `{!rsh} EXPR_rand_0`, `{!rsh} EXPR_rand_1`, etc.
 
 @{ref("rsh", "new")}
 `{!rsh} new f(a)` is equivalent to `{!rsh} f.new(a)` and is a convenient short-hand for writing class-oriented programs.
