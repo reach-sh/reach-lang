@@ -1589,7 +1589,7 @@ evalForm f args = do
         doFM_Case we x my z = do
           at <- withAt id
           let a = srcloc2annot at
-          let def_pay =
+          def_pay <-
                 case slf_mnntpay of
                   Just (JSArrayLiteral aa ts ae) -> do
                     let tok_ids = map (jse_expect_id at) $ jsa_flatten ts
@@ -1605,8 +1605,9 @@ evalForm f args = do
                                  ]
                                  ae)
                             tok_ids
-                    JSArrayLiteral aa (intersperse (JSArrayComma aa) $ map JSArrayElement tok_pays) ae
-                  _ -> JSDecimal a "0"
+                    return $ JSArrayLiteral aa (intersperse (JSArrayComma aa) $ map JSArrayElement tok_pays) ae
+                  Nothing -> return $ JSDecimal a "0"
+                  Just _ -> expect_ $ Err_InvalidPaySpec
           let default_pay = jsArrowExpr a [JSIdentifier a "_"] def_pay
           let y = fromMaybe default_pay my
           w <- slvParticipant_part =<< (snd <$> evalExpr we)
@@ -4978,7 +4979,8 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let pay_ss = [JSConstant aa (JSLOne $ JSVarInitExpression (pay_var nnts_js) $ JSVarInit aa pay_e) sp] <> verifyPaySpec <> [JSReturn aa (Just (pay_var nnts_ret)) sp]
         let pay_call = jsCallThunk aa $ jsThunkStmts aa pay_ss
         return pay_call
-      _ -> return pay_e
+      Nothing -> return pay_e
+      Just _ -> expect_ $ Err_InvalidPaySpec
   let tc_pay_e = JSCallExpression (JSMemberDot tc_when_e a (jid "pay")) a (toJSCL [pay_expr, pay_req]) a
   -- END: Non-network token pay
   let tc_time_e =

@@ -64,6 +64,7 @@ spec_examples_cover_EvalError =
       , "Err_TypeMeets_dMismatch"
       , "Err_View_CannotExpose"
       , "Err_Module_Return" -- shadowed by Err_Eval_NoReturn
+      , "Err_Transfer_DoubleToken" -- no longer possible
       ]
 
 spec_examples_cover_ParserError :: Spec

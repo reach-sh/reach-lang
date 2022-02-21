@@ -284,6 +284,8 @@ A.pay([ amt, [ amt, tok ]]);
 
 ## {#RE0010} RE0010
 
+@{errver(false, "v0.1.8")}
+
 This error indicates that the pay amount provided states the amount of
 a specific non-network token more than once.
 
@@ -2188,6 +2190,40 @@ This error indicates that there is a `{!rsh} fork` or `{!rsh} parallelReduce` in
 At least one of these components must be specified.
 
 You can fix this error by adding a `{!rsh} .case` or `{!rsh} .api` component to your statement.
+
+## {#RE0127} RE0127
+
+This error indicates that the `.paySpec` component of a `parallelReduce`, or `fork` does not provide a syntactic tuple of identifiers.
+
+For example, the code below provides `.paySpec` with a variable that is equal to a tuple of `{!rsh} Token` identifiers:
+
+```reach
+  const tokens = [ tok1, tok2 ];
+
+  const alive =
+    parallelReduce([ true ])
+    .while(true)
+    .invariant(balance() == 0)
+    .paySpec(tokens)
+    .case(A,
+      () => ({ when: true }),
+      () => { return [ true ]; })
+    .timeout(false);
+```
+
+You can fix this error by inlining the tuple directly:
+
+```reach
+  const alive =
+    parallelReduce([ true ])
+    .while(true)
+    .invariant(balance() == 0)
+    .paySpec([ tok1, tok2 ])
+    .case(A,
+      () => ({ when: true }),
+      () => { return [ true ]; })
+    .timeout(false);
+```
 
 ## {#REP0000} REP0000
 
