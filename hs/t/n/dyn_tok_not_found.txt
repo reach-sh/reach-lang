@@ -1,0 +1,42 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "Token is tracked"
+  at ./dyn_tok_not_found.rsh:28:19:dot
+
+  // Violation Witness
+
+  const UInt.max = 2;
+
+  const v281 = "A".interact.tok1;
+  //    ^ could = Token!val!0
+  //      from: ./dyn_tok_not_found.rsh:5:9:property binding
+  const v282 = "A".interact.tok2;
+  //    ^ could = Token!val!1
+  //      from: ./dyn_tok_not_found.rsh:6:9:property binding
+  const v326 = protect<Tuple(Token)>("B_changeTok".interact.in());
+  //    ^ could = [Token!val!4 ]
+  //      from: ./dyn_tok_not_found.rsh:1:23:application
+  const data_id/421 = <switch case binding for B_changeTok0_46([Token!val!4 ] )>;
+  //    ^ could = [Token!val!4 ]
+  //      from: ./dyn_tok_not_found.rsh:28:19:switch
+
+  // Theorem Formalization
+
+  const tokens'/307 = Array.set(Array.set(array(Token, [Token.zero, Token.zero ]), 0, v281 ), 1, v282 );
+  //    ^ would be array(Token, [Token!val!0, Token!val!3, Token!val!3, Token!val!1 ] )
+  const v431 = data_id/421[0];
+  //    ^ would be Token!val!4
+  const searchIdx/578 = [false, 0 ][1];
+  //    ^ would be 0
+  const searchIdx/588 = (([false, 0 ][0] ? true : (tokens'/307[0] == v431)) ? [true, searchIdx/578 ] : [false, (searchIdx/578 + 1) ])[1];
+  //    ^ would be 1
+  const isFound'/457 = (((([false, 0 ][0] ? true : (tokens'/307[0] == v431)) ? [true, searchIdx/578 ] : [false, (searchIdx/578 + 1) ])[0] ? true : (tokens'/307[1] == v431)) ? [true, searchIdx/588 ] : [false, (searchIdx/588 + 1) ])[0];
+  //    ^ would be false
+  assert(isFound'/457);
+
+  Verifying when NO participants are honest
+Checked 51 theorems; 3 failures (and 2 omitted repeats) :'(

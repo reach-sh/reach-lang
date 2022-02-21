@@ -55,25 +55,25 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v197 = array(Tuple(UInt, UInt, Bool), [[0, 0, false ] ]);
+  const tokInfos/197 = array(Tuple(UInt, UInt, Bool), [[0, 0, false ] ]);
   //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
-  const v208 = v197[0];
+  const tokInfo/208 = tokInfos/197[0];
   //    ^ would be [0, 0, false ]
-  const v213 = Array.set(v197, 0, [0, v208[1], v208[2] ] );
+  const tokInfos'/213 = Array.set(tokInfos/197, 0, [0, tokInfo/208[1], tokInfo/208[2] ] );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
-  const v220 = v213[0];
+  const tokInfo/220 = tokInfos'/213[0];
   //    ^ would be [0, 0, false ]
-  const v228 = Array.set(v213, 0, [(v220[0] + 10), v220[1], v220[2] ] );
+  const tokInfos'/228 = Array.set(tokInfos'/213, 0, [(tokInfo/220[0] + 10), tokInfo/220[1], tokInfo/220[2] ] );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[10, 0, false ] ] )
-  const v340 = ((Array.set(array(Token, [Token.zero ]), 0, tok/205 )[0] == tok/205) ? [true, 0 ] : [false, 1 ])[1];
+  const tokIdx/340 = ((Array.set(array(Token, [Token.zero ]), 0, tok/205 )[0] == tok/205) ? [true, 0 ] : [false, 1 ])[1];
   //    ^ would be 0
-  const v342 = v228[v340];
+  const tokInfo/342 = tokInfos'/228[tokIdx/340];
   //    ^ would be [10, 0, false ]
-  const v364 = Array.set(v228, v340, [(v342[0] + 10), v342[1], v342[2] ] );
+  const tokInfos'/364 = Array.set(tokInfos'/228, tokIdx/340, [(tokInfo/342[0] + 10), tokInfo/342[1], tokInfo/342[2] ] );
   //    ^ would be array(Tuple(UInt, UInt, Bool), [[20, 0, false ] ] )
-  const v374 = v364[0];
+  const tokInfo/374 = tokInfos'/364[0];
   //    ^ would be [20, 0, false ]
-  const v390 = 0 == Array.set(v364, 0, [(v374[0] - 10), v374[1], v374[2] ] )[0][0];
+  const v390 = 0 == Array.set(tokInfos'/364, 0, [(tokInfo/374[0] - 10), tokInfo/374[1], tokInfo/374[2] ] )[0][0];
   //    ^ would be false
   assert(v390);
 
