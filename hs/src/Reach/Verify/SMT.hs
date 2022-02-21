@@ -636,6 +636,7 @@ dropConstants pm = \case
       (cs, Just v)
         -- Non-zero value indicates this constant is part of assertion failure
         | cs == smtConstant DLC_UInt_max && v == SMV_Int 0 -> dropConstants pm tl
+        | cs == smtConstant DLC_Token_zero -> dropConstants pm tl
       (_, ow) -> SMTCon s ow se : dropConstants pm tl
   ow : tl -> ow : dropConstants pm tl
 

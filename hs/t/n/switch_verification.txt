@@ -8,18 +8,18 @@ Verification failed:
 
   // Violation Witness
 
-  const v42 = "A".interact.amt;
+  const v37 = "A".interact.amt;
   //    ^ could = Some(0 )
   //      from: ./switch_verification.rsh:4:36:property binding
-  const x/54 = <switch case binding for Some(0 )>;
+  const x/46 = <switch case binding for Some(0 )>;
   //    ^ could = 0
   //      from: ./switch_verification.rsh:11:3:switch
 
   // Theorem Formalization
 
-  const v55 = x/54 == 5;
+  const v47 = x/46 == 5;
   //    ^ would be false
-  assert(v55);
+  assert(v47);
 
   Verifying when NO participants are honest
-Checked 8 theorems; 2 failures (and 1 omitted repeats) :'(
+Checked 6 theorems; 2 failures (and 1 omitted repeats) :'(
