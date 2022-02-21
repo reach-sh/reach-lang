@@ -408,27 +408,27 @@ tokenArrType = do
 assign :: SrcLoc -> DLVar -> DLExpr -> DLStmt
 assign at dv de = DL_Let at (DLV_Let DVC_Many dv) de
 
-mkVar :: SrcLoc -> DLType -> DFApp DLVar
-mkVar at ty = DLVar at Nothing ty <$> df_allocVar
+mkVar :: SrcLoc -> String -> DLType -> DFApp DLVar
+mkVar at lab ty = DLVar at (Just (at, lab)) ty <$> df_allocVar
 
 lookupTokenIdx :: SrcLoc -> DLArg -> DLArg -> DFApp ([DLStmt], DLArg)
 lookupTokenIdx at tok toks = do
   let asn = assign at
   let accTy = T_Tuple [T_Bool, T_UInt]
-  init_acc_dv <- mkVar at $ accTy
-  acc_dv <- mkVar at $ accTy
-  reduce_res <- mkVar at $ accTy
-  succ_acc <- mkVar at $ accTy
-  bl_res <- mkVar at $ accTy
-  fail_acc <- mkVar at $ accTy
-  elem_dv <- mkVar at T_Token
-  tok_idx <- mkVar at T_UInt
-  idx' <- mkVar at T_UInt
-  idx <- mkVar at T_UInt
-  toks_eq <- mkVar at T_Bool
-  cnd <- mkVar at T_Bool
-  found <- mkVar at T_Bool
-  found' <- mkVar at T_Bool
+  init_acc_dv <- mkVar at "initAcc" $ accTy
+  acc_dv <- mkVar at "acc" $ accTy
+  reduce_res <- mkVar at "res" $ accTy
+  succ_acc <- mkVar at "succAcc" $ accTy
+  bl_res <- mkVar at "bl" $ accTy
+  fail_acc <- mkVar at "failAcc" $ accTy
+  elem_dv <- mkVar at "elem" T_Token
+  tok_idx <- mkVar at "tokIdx" T_UInt
+  idx' <- mkVar at "searchIdx'" T_UInt
+  idx <- mkVar at "searchIdx" T_UInt
+  toks_eq <- mkVar at "toksEq" T_Bool
+  cnd <- mkVar at "cnd" T_Bool
+  found <- mkVar at "isFound" T_Bool
+  found' <- mkVar at "isFound'" T_Bool
   -- ([is_found, idx], tok') =>
   --    let acc' = (is_found || tok == tok') ? [ true, idx ] : [ false, idx + 1 ];
   --    return acc';
@@ -466,7 +466,7 @@ df_com mkk back = \case
               Just i  -> return ([], DLA_Literal $ DLL_Int at $ fromIntegral i)
               Nothing -> lookupTokenIdx at tok tokA
     let meta_idx = fromIntegral $ fromEnum meta
-    tokInfo <- mkVar at tokenInfoElemTy
+    tokInfo <- mkVar at "tokInfo" tokenInfoElemTy
     let ss =
           [ asn tokInfo $ DLE_ArrayRef at infos idx
           , asn res $ DLE_TupleRef at (DLA_Var tokInfo) meta_idx ]
@@ -480,12 +480,12 @@ df_com mkk back = \case
               Just i  -> return ([], DLA_Literal $ DLL_Int at $ fromIntegral i)
               Nothing -> lookupTokenIdx at tok tokA
     infoTy <- tokenInfoType
-    info   <- mkVar at tokenInfoElemTy
-    infos' <- mkVar at infoTy
-    info'  <- mkVar at tokenInfoElemTy
-    bal    <- mkVar at $ T_UInt
-    supply <- mkVar at $ T_UInt
-    destroyed <- mkVar at $ T_Bool
+    info   <- mkVar at "tokInfo" tokenInfoElemTy
+    infos' <- mkVar at "tokInfos'" infoTy
+    info'  <- mkVar at "tokInfo'" tokenInfoElemTy
+    bal    <- mkVar at "tokBal" $ T_UInt
+    supply <- mkVar at "tokSupply" $ T_UInt
+    destroyed <- mkVar at "destroyed" $ T_Bool
     let infoAt = DLE_TupleRef at (DLA_Var info)
     let bs =
           [
@@ -507,7 +507,7 @@ df_com mkk back = \case
       case init_tok of
         False -> return [fs]
         True -> do
-          tokA' <- mkVar at =<< tokenArrType
+          tokA' <- mkVar at "tokens'" =<< tokenArrType
           return [ fs
                   , DKC_Let at (DLV_Let DVC_Many tokA') $ DLE_ArraySet at tokA idx tok
                   , DKC_FluidSet at FV_tokens $ DLA_Var tokA' ]
@@ -634,9 +634,9 @@ df_init k = do
     0 -> return k
     _ -> do
       infoTy <- tokenInfoType
-      infoA <- mkVar sb infoTy
-      tokA  <- mkVar sb $ T_Array T_Token eBals
-      info  <- mkVar sb tokenInfoElemTy
+      infoA <- mkVar sb "tokInfos" infoTy
+      tokA  <- mkVar sb "tokens" $ T_Array T_Token eBals
+      info  <- mkVar sb "initialInfo" tokenInfoElemTy
       let false = DLA_Literal $ DLL_Bool False
       let zero  = DLA_Literal $ DLL_Int sb 0
       let tokz  = DLA_Constant DLC_Token_zero
