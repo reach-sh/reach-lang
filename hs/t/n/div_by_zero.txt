@@ -10,18 +10,18 @@ Verification failed:
 
   // Violation Witness
 
-  const v34 = "A".interact.x;
+  const v29 = "A".interact.x;
   //    ^ could = 0
   //      from: ./div_by_zero.rsh:6:26:property binding
 
   // Theorem Formalization
 
-  const v40 = v34 > 0;
+  const v32 = v29 > 0;
   //    ^ would be false
-  assert(v40);
+  assert(v32);
 
   Verifying when NO participants are honest
-Checked 4 theorems; 1 failures :'(
+Checked 2 theorems; 1 failures :'(
 warning[RW0004]: There are no publications in the application.
 
   ./div_by_zero.rsh:4:12:application

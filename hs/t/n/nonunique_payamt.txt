@@ -9,8 +9,6 @@ Verification failed:
 
   // Violation Witness
 
-  const Token.zero = Token!val!0;
-
   const v173 = "A".interact.condish;
   //    ^ could = false
   //      from: ./nonunique_payamt.rsh:6:12:property binding
@@ -32,8 +30,6 @@ Verification failed:
   at ./nonunique_payamt.rsh:23:5:dot
 
   // Violation Witness
-
-  const Token.zero = Token!val!3;
 
   const token1/182 = v177;
   //    ^ could = Token!val!1

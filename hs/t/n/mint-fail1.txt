@@ -9,15 +9,49 @@ Verification failed:
 
   // Violation Witness
 
-  const v257 = protect<Object({"amt": UInt, "doEarlyTransfer": Bool, "metadata": Bytes(32), "name": Bytes(32), "supply": UInt, "symbol": Bytes(8), "url": Bytes(96)})>("Alice".interact.getParams());
+  const UInt.max = 1;
+
+  const v314 = protect<Object({"amt": UInt, "doEarlyTransfer": Bool, "metadata": Bytes(32), "name": Bytes(32), "supply": UInt, "symbol": Bytes(8), "url": Bytes(96)})>("Alice".interact.getParams());
   //    ^ could = {amt: 0, doEarlyTransfer: false, metadata: "Bytes!val!0", name: "Bytes!val!1", supply: 1, symbol: "Bytes!val!2", url: "Bytes!val!3" }
   //      from: ./mint-fail1.rsh:24:104:application
 
   // Theorem Formalization
 
-  const v362 = 0 == v257.supply;
+  const v307 = [0, 0, false ];
+  //    ^ would be [0, 0, false ]
+  const v308 = array(Tuple(UInt, UInt, Bool), [v307, v307 ]);
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
+  const v350 = v308[0];
+  //    ^ would be [0, 0, false ]
+  const v355 = Array.set(v308, 0, [v314.supply, v350[1], v350[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[1, 0, false ] ] )
+  const v357 = v355[0];
+  //    ^ would be [1, 0, false ]
+  const v362 = Array.set(v355, 0, [v357[0], v314.supply, v357[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[1, 1, false ] ] )
+  const v363 = v362[0];
+  //    ^ would be [1, 1, false ]
+  const v368 = Array.set(v362, 0, [v363[0], v363[1], false ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[1, 1, false ] ] )
+  const v380 = 2 * v314.amt;
+  //    ^ would be 0
+  const v381 = v368[0];
+  //    ^ would be [1, 1, false ]
+  const v392 = Array.set(v368, 0, [(v381[0] - v380), v381[1], v381[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[1, 1, false ] ] )
+  const v396 = v392[0];
+  //    ^ would be [1, 1, false ]
+  const v407 = Array.set(v392, 0, [(v396[0] - v380), v396[1], v396[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[1, 1, false ] ] )
+  const v416 = v407[0];
+  //    ^ would be [1, 1, false ]
+  const v424 = Array.set(v407, 0, [(v416[0] + v380), v416[1], v416[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[1, 1, false ] ] )
+  const v431 = v424[0];
+  //    ^ would be [1, 1, false ]
+  const v446 = 0 == Array.set(v424, 0, [(v431[0] + v380), v431[1], v431[2] ] )[0][1];
   //    ^ would be false
-  assert(v362);
+  assert(v446);
 
 Verification failed:
   when ALL participants are honest
@@ -25,7 +59,83 @@ Verification failed:
   msg: "token destroyed at application exit"
   at ./mint-fail1.rsh:78:7:application
 
-  assert(false);
+  // Violation Witness
+
+  const v314 = protect<Object({"amt": UInt, "doEarlyTransfer": Bool, "metadata": Bytes(32), "name": Bytes(32), "supply": UInt, "symbol": Bytes(8), "url": Bytes(96)})>("Alice".interact.getParams());
+  //    ^ could = {amt: 0, doEarlyTransfer: false, metadata: "Bytes!val!0", name: "Bytes!val!1", supply: 0, symbol: "Bytes!val!2", url: "Bytes!val!3" }
+  //      from: ./mint-fail1.rsh:24:104:application
+
+  // Theorem Formalization
+
+  const v307 = [0, 0, false ];
+  //    ^ would be [0, 0, false ]
+  const v308 = array(Tuple(UInt, UInt, Bool), [v307, v307 ]);
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
+  const v350 = v308[0];
+  //    ^ would be [0, 0, false ]
+  const v355 = Array.set(v308, 0, [v314.supply, v350[1], v350[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
+  const v357 = v355[0];
+  //    ^ would be [0, 0, false ]
+  const v362 = Array.set(v355, 0, [v357[0], v314.supply, v357[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
+  const v363 = v362[0];
+  //    ^ would be [0, 0, false ]
+  const v368 = Array.set(v362, 0, [v363[0], v363[1], false ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
+  const v380 = 2 * v314.amt;
+  //    ^ would be 0
+  const v381 = v368[0];
+  //    ^ would be [0, 0, false ]
+  const v392 = Array.set(v368, 0, [(v381[0] - v380), v381[1], v381[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
+  const v396 = v392[0];
+  //    ^ would be [0, 0, false ]
+  const v407 = Array.set(v392, 0, [(v396[0] - v380), v396[1], v396[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
+  const v416 = v407[0];
+  //    ^ would be [0, 0, false ]
+  const v424 = Array.set(v407, 0, [(v416[0] + v380), v416[1], v416[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
+  const v431 = v424[0];
+  //    ^ would be [0, 0, false ]
+  const v439 = Array.set(v424, 0, [(v431[0] + v380), v431[1], v431[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
+  const v441 = v439[0];
+  //    ^ would be [0, 0, false ]
+  const v452 = Array.set(v439, 0, [v441[0], v441[1], true ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, true ] ] )
+  const v465 = v452[1];
+  //    ^ would be [0, 0, false ]
+  const v470 = Array.set(v452, 1, [UInt.max, v465[1], v465[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, true ], [0, 0, false ] ] )
+  const v472 = v470[1];
+  //    ^ would be [0, 0, false ]
+  const v477 = Array.set(v470, 1, [v472[0], UInt.max, v472[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, true ], [0, 0, false ] ] )
+  const v478 = v477[1];
+  //    ^ would be [0, 0, false ]
+  const v483 = Array.set(v477, 1, [v478[0], v478[1], false ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, true ], [0, 0, false ] ] )
+  const v493 = v483[1];
+  //    ^ would be [0, 0, false ]
+  const v504 = Array.set(v483, 1, [(v493[0] - v380), v493[1], v493[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, true ], [0, 0, false ] ] )
+  const v508 = v504[1];
+  //    ^ would be [0, 0, false ]
+  const v519 = Array.set(v504, 1, [(v508[0] - v380), v508[1], v508[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, true ], [0, 0, false ] ] )
+  const v523 = v519[1];
+  //    ^ would be [0, 0, false ]
+  const v524 = v523[0];
+  //    ^ would be 0
+  const v536 = Array.set(v519, 1, [(v524 - v524), v523[1], v523[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[0, 0, true ], [0, 0, false ] ] )
+  const v537 = v536[1];
+  //    ^ would be [0, 0, false ]
+  const v558 = Array.set(v536, 1, [v537[0], (v537[1] - v524), v537[2] ] )[1][2];
+  //    ^ would be false
+  assert(v558);
 
   Verifying when NO participants are honest
-Checked 69 theorems; 4 failures (and 2 omitted repeats) :'(
+Checked 46 theorems; 4 failures (and 2 omitted repeats) :'(

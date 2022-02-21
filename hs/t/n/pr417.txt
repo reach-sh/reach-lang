@@ -1,8 +1,80 @@
-reachc: error[RE0104]: Token reference based on dynamic computation, which Reach cannot track, yet.
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance zero at application exit"
+  at ./pr417.rsh:30:7:application
 
-  ./pr417.rsh:18:12:block app
+  // Violation Witness
 
-  18|     x.match({
+  const UInt.max = 20;
 
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0104
+  const data_id/316 = <switch case binding for T(10 )>;
+  //    ^ could = 10
+  //      from: ./pr417.rsh:18:12:switch
 
+  // Theorem Formalization
+
+  const v387 = 0 == ((10 + data_id/316) - 10);
+  //    ^ would be false
+  assert(v387);
+
+  Verifying when NO participants are honest
+Verification failed:
+  when NO participants are honest
+  of theorem: assert
+  msg: "balance zero at application exit"
+  at ./pr417.rsh:30:7:application
+
+  // Violation Witness
+
+  const UInt.max = 20;
+
+
+  // Theorem Formalization
+
+  const v312 = 0 == ((10 + 10) - 10);
+  //    ^ would be false
+  assert(v312);
+
+Verification failed:
+  when NO participants are honest
+  of theorem: assert
+  msg: "balance zero at application exit"
+  at ./pr417.rsh:30:7:application
+
+  // Violation Witness
+
+  const UInt.max = 20;
+
+  const tok/205 = v201;
+  //    ^ could = Token!val!2
+  //      from: ./pr417.rsh:10:5:dot
+
+  // Theorem Formalization
+
+  const v197 = array(Tuple(UInt, UInt, Bool), [[0, 0, false ] ]);
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
+  const v208 = v197[0];
+  //    ^ would be [0, 0, false ]
+  const v213 = Array.set(v197, 0, [0, v208[1], v208[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
+  const v220 = v213[0];
+  //    ^ would be [0, 0, false ]
+  const v228 = Array.set(v213, 0, [(v220[0] + 10), v220[1], v220[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[10, 0, false ] ] )
+  const v340 = ((Array.set(array(Token, [Token.zero ]), 0, tok/205 )[0] == tok/205) ? [true, 0 ] : [false, 1 ])[1];
+  //    ^ would be 0
+  const v342 = v228[v340];
+  //    ^ would be [10, 0, false ]
+  const v364 = Array.set(v228, v340, [(v342[0] + 10), v342[1], v342[2] ] );
+  //    ^ would be array(Tuple(UInt, UInt, Bool), [[20, 0, false ] ] )
+  const v374 = v364[0];
+  //    ^ would be [20, 0, false ]
+  const v390 = 0 == Array.set(v364, 0, [(v374[0] - 10), v374[1], v374[2] ] )[0][0];
+  //    ^ would be false
+  assert(v390);
+
+Checked 41 theorems; 4 failures (and 1 omitted repeats) :'(
