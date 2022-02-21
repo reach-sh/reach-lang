@@ -143,7 +143,7 @@ PART_EXPR.publish(ID_0, ..., ID_n)
 
 where `{!rsh} PART_EXPR` is an expression that evaluates to a participant or race expression,
 `{!rsh} ID_0` through `{!rsh} ID_n` are identifiers for `{!rsh} PART`'s public local state,
-`{!rsh} PAY_EXPR` is a public expression that either evaluates to a pay amount.
+`{!rsh} PAY_EXPR` is a public expression that evaluates to a pay amount.
 `{!rsh} PAY_REQUIRE_EXPR` is an optional nullary function that can be used to make `{!rsh} require` claims about the `PAY_EXPR`.
 `{!rsh} WHEN_EXPR` is a public expression evaluating to a boolean and determines if the consensus transfer takes place,
 `{!rsh} DELAY_EXPR` is a public expression that depends on only consensus state and evaluates to a time argument,
@@ -274,7 +274,7 @@ fork()
 .throwTimeout(DELAY_EXPR, THROW_EXPR)
 ```
 where:
-+ `{!rsh} TOKENS_EXPR` is an expression that evaluates to a tuple of `{!rsh} Token`s;
++ `{!rsh} TOKENS_EXPR` is a syntactic tuple of `{!rsh} Token` identifiers;
 + `{!rsh} PART_EXPR` is an expression that evaluates to a participant;
 + `{!rsh} PUBLISH_EXPR` is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a `msg` field, which may be of any type, and a `when` field, which must be a boolean;
 + (optional) `{!rsh} PAY_EXPR` is an expression that evaluates to a function parameterized over the `msg` value and returns a pay amount; if this component is left-out, it is synthesized to zero;
