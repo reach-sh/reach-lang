@@ -23,8 +23,7 @@ infoMap =
 
 completionTypeMap :: M.Map String CompletionItemKind
 completionTypeMap =
-  M.mapMaybe id
-  $ M.map completionKind
+  M.mapMaybe completionKind
   $ M.fromList C.base_env_slvals
 
 data CompletionItemKind
