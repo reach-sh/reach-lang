@@ -15,7 +15,7 @@ has_target() {
 
 mo_examples() {
   for i in ${1}; do
-    mo -s=../../DEPS ${i} > "${i}.mo" ; mv "${i}.mo" ${i};
+    mo -s=../../DEPS "${i}" > "${i}.mo" ; mv "${i}.mo" "${i}";
     echo "file ${i} executed against mo"
   done
 }
@@ -25,7 +25,7 @@ echo
 (
   cd "$e" || exit 1
   dockerfiles=$(find . -iname Dockerfile)
-  if [ ! -z "${dockerfiles}" ]; then
+  if [ -n "${dockerfiles}" ]; then
     mo_examples "${dockerfiles}"
   fi
   if [ -f Makefile ] && has_target ; then
