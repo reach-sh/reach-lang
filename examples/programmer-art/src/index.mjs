@@ -582,7 +582,7 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
         `,
         respondSpaTieBreak
       ]
-    case 'A_Remote':
+    // case 'A_Remote':
     case 'A_Receive':
       const respondSpaContest = async () => {
         let r = await c.respondWithVal(nodeId,actId,0,actorId)
@@ -684,8 +684,20 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
         <div> Phase Id: ${act.contents[0]}, Actors: ${act.contents[1].join(',')} </div>
         </button> `
     case 'A_Remote':
+      let domain2 = `Null`
+      let range = `Null`
+
+      if (act.contents[2][0] && (act.contents[2][0].contents.length !== 0)) {
+        domain2 = act.contents[2][0].contents.map(x => `${x[0]} : ${x[1].tag.slice(2)}` ).join(' , ')
+      }
+
+      if (act.contents[3][0] && (act.contents[3][0].contents.length !== 0)) {
+        range = act.contents[3][0].contents.map(x => `${x[0]} : ${x[1].tag.slice(2)}` ).join(' , ')
+      }
       return `
-        ${common}${act.tag.slice(2)}</div>
+        ${common}
+        ${act.tag.slice(2)}</div>
+        <div> ${act.contents[1]} : ${domain2} &#8594; ${range} </div>
         </button> `
     case 'A_Receive':
       return `
