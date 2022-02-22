@@ -5,7 +5,7 @@ NPM = npm
 .PHONY: build
 build:
 	$(NPM) install
-	cp ../own-addr/index.rsh .
+	cp ../nft-dumb/index.rsh .
 
 .PHONY: run
 run:
