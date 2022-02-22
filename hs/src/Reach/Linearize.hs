@@ -435,7 +435,7 @@ lookupTokenIdx at tok toks = do
   let block_tl =
         DT_Com (asn found $ DLE_TupleRef at (DLA_Var acc_dv) 0) $
         DT_Com (asn idx $ DLE_TupleRef at (DLA_Var acc_dv) 1) $
-        DT_Com (asn toks_eq $ DLE_PrimOp at PEQ [DLA_Var elem_dv, tok]) $
+        DT_Com (asn toks_eq $ DLE_PrimOp at TOKEN_EQ [DLA_Var elem_dv, tok]) $
         DT_Com (asn cnd $ DLE_PrimOp at IF_THEN_ELSE [DLA_Var found, DLA_Literal $ DLL_Bool True, DLA_Var toks_eq]) $
         DT_Com (asn idx' $ DLE_PrimOp at ADD [DLA_Var idx, DLA_Literal $ DLL_Int at 1]) $
         DT_Com (asn fail_acc $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool False, DLA_Var idx']) $
@@ -511,7 +511,7 @@ df_com mkk back = \case
           return [ fs
                   , DKC_Let at (DLV_Let DVC_Many tokA') $ DLE_ArraySet at tokA idx tok
                   , DKC_FluidSet at FV_tokens $ DLA_Var tokA' ]
-    rst <- flip (foldr mkk) bs <$> rec (foldl (flip DK_Com) k as)
+    rst <- flip (foldr mkk) bs <$> rec (foldl' (flip DK_Com) k as)
     return $ foldr mkk rst lookup_ss
   DK_Com m k -> do
     m' <-
