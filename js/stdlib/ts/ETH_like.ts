@@ -25,6 +25,7 @@ import {
   NotifySend,
   j2s,
   j2sf,
+  handleFormat,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -1064,22 +1065,7 @@ const minimumBalance: BigNumber = zeroBn;
  * @example  formatCurrency(bigNumberify('100000000000000000000')); // => '100'
  */
 function formatCurrency(amt: any, decimals: number = standardDigits): string {
-  // Recall that 1 WEI = 10e18 ETH
-  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
-    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
-  }
-  // Truncate
-  decimals = Math.min(decimals, standardDigits);
-  const decimalsToForget = standardDigits - decimals;
-  const divAmt = bigNumberify(amt)
-    .div(bigNumberify(10).pow(decimalsToForget));
-  const amtStr = real_ethers.utils.formatUnits(divAmt, decimals);
-  // If the str ends with .0, chop it off
-  if (amtStr.slice(amtStr.length - 2) == ".0") {
-    return amtStr.slice(0, amtStr.length - 2);
-  } else {
-    return amtStr;
-  }
+  return handleFormat(amt, decimals, 18);
 }
 
 /**
