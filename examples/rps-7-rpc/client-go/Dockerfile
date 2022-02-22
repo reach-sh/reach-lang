@@ -1,4 +1,5 @@
-FROM    {{GOLANG_IMAGE}}
+ARG GOLANG_IMAGE
+FROM $GOLANG_IMAGE
 WORKDIR /app
 COPY    index.go /app/
 
