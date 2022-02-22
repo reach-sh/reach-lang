@@ -126,6 +126,10 @@ cdot () {
   dot -Tpng -O "$(dirname "$1")/build/$(basename "$1" .rsh).main.state.dot"
 }
 
+# Disable this if you want to download a cache from CI (useful when js-deps
+# changes)
+export REACH_BUILD_NO_CACHE=Y
+
 #######
 
 jb
@@ -138,7 +142,6 @@ exit 0
 (cd users/algo-govt && ./test.sh)
 exit 0
 
-# export REACH_BUILD_NO_CACHE=Y
 
 c users/asolpshinning.rsh
 exit 0
