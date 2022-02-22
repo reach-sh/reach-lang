@@ -62,14 +62,14 @@ build-py: server/build/index.main.mjs client-lib-py
 .PHONY: build-go
 build-go: server/build/index.main.mjs client-lib-go
 	cd client-go && docker build \
-	 --GOLANG_IMAGE=$(GOLANG_IMAGE) \
+	 --build-arg GOLANG_IMAGE=$(GOLANG_IMAGE) \
 	 --tag=reachsh/reach-app-tut-7-rpc-client-go:latest .
 
 .PHONY: build-cs
 build-cs: server/build/index.main.mjs client-lib-cs
 	cd client-cs && docker build \
 	 --build-image DOTNET_RUNTIME_IMAGE=$(DOTNET_RUNTIME_IMAGE) \
-     --build-image ARG DOTNET_SDK_IMAGE=$(DOTNET_SDK_IMAGE) \
+     --build-image DOTNET_SDK_IMAGE=$(DOTNET_SDK_IMAGE) \
 	 --tag=reachsh/reach-app-tut-7-rpc-client-cs:latest .
 
 .PHONY: build
