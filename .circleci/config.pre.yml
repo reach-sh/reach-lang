@@ -72,11 +72,6 @@ commands:
               docker tag reachsh/$img:circleci-$CIRCLE_SHA1 reachsh/$img:$VERSION
             fi
           done
-  install_mo:
-    description: "Install mo"
-    steps:
-      - run: |
-          curl -sSL https://git.io/get-mo -o mo && chmod +x mo && sudo mv mo /usr/local/bin/
 jobs:
   "do-release":
     executor: fake
@@ -240,7 +235,6 @@ jobs:
     steps:
     - checkout
     - workattach
-    - install_mo
     - and_restore_docker:
         deps: <<parameters.deps>>
     - run: |
