@@ -219,13 +219,10 @@ export const simMapSet = async <A>(sim_r:any, mapi:number, f: string, nv: A): Pr
   return await mapSet(sim_r.maps[mapi], f, nv);
 };
 
-export const simTokenNew = (sim_r:any, n:any, s:any, u:any, m:any, p:any, d:any): any => {
+export const simTokenNew = (sim_r:any, n:any, s:any, u:any, m:any, p:any, d:any, ctr:any): any => {
   sim_r.txns.push({kind: 'tokenNew', n, s, u, m, p, d });
-  // XXX This 0 is a hack... on Algorand we can't know at simulation time what
-  // this is going to be... so this will cause a runtime exception from
-  // something if it gets looked at (i.e. if you try to create and immediately
-  // use it)
-  return 0;
+  // XXX This is a hack... it is assumed that `ctr` is unique across tokens in a simulation block
+  return ctr;
 };
 
 export const simTokenBurn = (sim_r:any, tok:any, amt:any): void => {

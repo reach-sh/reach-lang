@@ -434,7 +434,7 @@ jsExpr = \case
         m' <- jsArg dtn_metadata
         p' <- jsArg dtn_supply
         d' <- maybe (return "undefined") jsArg dtn_decimals
-        return $ jsApply "stdlib.simTokenNew" ["sim_r", n', s', u', m', p', d']
+        return $ jsApply "stdlib.simTokenNew" ["sim_r", n', s', u', m', p', d', "getSimTokCtr()"]
   DLE_TokenBurn _ ta aa ->
     (ctxt_mode <$> ask) >>= \case
       JM_Simulate -> do
@@ -733,9 +733,13 @@ jsETail = \case
                        ["sim_r", jsMapIdx mpv, jsMapVar mpv])
                       <> semi
             dupeMaps <- mapM dupeMap =<< ((M.toAscList . ctxt_maps) <$> ask)
+            let tokCtr = vsep
+                        [ "let sim_txn_ctr = stdlib.UInt_max;"
+                        , "const getSimTokCtr = () => { sim_txn_ctr = sim_txn_ctr.sub(1); return sim_txn_ctr; };" ]
             let sim_body =
                   vsep
                     [ "const sim_r = { txns: [], mapRefs: [], maps: [] };"
+                    , tokCtr
                     , vsep dupeMaps
                     , k_defp
                     , sim_body_core
