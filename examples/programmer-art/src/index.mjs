@@ -632,6 +632,8 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
                 <option value="boolean">Boolean</option>
                 <option value="tuple">Tuple</option>
                 <option value="object">Object</option>
+                <option value="data">Data</option>
+
 
               </select>
             </div>

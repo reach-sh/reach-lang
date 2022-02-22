@@ -536,6 +536,10 @@ app p srcTxt = do
         v' :: LB.ByteString <- param "data"
         let v = saferMaybe "decode Object" $ decode v'
         webM $ unblockProg s a v
+      "data" -> do
+        v' :: LB.ByteString <- param "data"
+        let v = saferMaybe "decode Data" $ decode v'
+        webM $ unblockProg s a v
       _ -> possible "Unexpected value type"
     json ("OK" :: String)
 
