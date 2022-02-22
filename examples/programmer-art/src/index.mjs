@@ -687,12 +687,16 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
       let domain2 = `Null`
       let range = `Null`
 
-      if (act.contents[2][0] && (act.contents[2][0].contents.length !== 0)) {
+      if (act.contents[2][0] && act.contents[2][0].contents.length && (act.contents[2][0].contents.length !== 0)) {
         domain2 = act.contents[2][0].contents.map(x => `${x[0]} : ${x[1].tag.slice(2)}` ).join(' , ')
+      } else if (act.contents[2][0]) {
+        domain2 = `${act.contents[2][0].tag.slice(2)} (${act.contents[2][0].contents})`
       }
 
-      if (act.contents[3][0] && (act.contents[3][0].contents.length !== 0)) {
+      if (act.contents[3][0] && act.contents[3][0].contents.length && (act.contents[3][0].contents.length !== 0)) {
         range = act.contents[3][0].contents.map(x => `${x[0]} : ${x[1].tag.slice(2)}` ).join(' , ')
+      } else if (act.contents[3][0]) {
+        range = `${act.contents[3][0].tag.slice(2)} (${act.contents[3][0].contents})`
       }
       return `
         ${common}

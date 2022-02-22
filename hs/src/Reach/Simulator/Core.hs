@@ -523,7 +523,7 @@ instance Interp DLExpr where
       setGlobal $ e {e_linstate = M.insert dlmvar m linst}
       return V_Null
     DLE_Remote at slcxtframes dlarg str dlPayAmnt dlargs _dlWithBill@DLWithBill {..} -> do
-      acc <- fromIntegral <$> vUInt <$> interp dlarg
+      acc <- fromIntegral <$> vContract <$> interp dlarg
       tok_billed <- mapM interp dwb_tok_billed
       args <- mapM interp dlargs
       v <- suspend $ PS_Suspend (Just at) (A_Remote slcxtframes str args tok_billed)
@@ -878,31 +878,35 @@ saferIndex n (_ : xs) = saferIndex (n -1) xs
 
 vUInt :: G.HasCallStack => DLVal -> Integer
 vUInt (V_UInt n) = n
-vUInt _ = impossible "unexpected error: expected integer"
+vUInt _ = impossible "unexpected error: expected integer value"
+
+vContract :: G.HasCallStack => DLVal -> Account
+vContract (V_Contract n) = n
+vContract _ = impossible "unexpected error: expected account value"
 
 vTok :: G.HasCallStack => DLVal -> Integer
 vTok (V_Token n) = fromIntegral n
-vTok _ = impossible "unexpected error: expected token integer"
+vTok _ = impossible "unexpected error: expected token integer value"
 
 vArray :: G.HasCallStack => DLVal -> [DLVal]
 vArray (V_Array a) = a
-vArray _ = impossible "unexpected error: expected array"
+vArray _ = impossible "unexpected error: expected array value"
 
 vTuple :: G.HasCallStack => DLVal -> [DLVal]
 vTuple (V_Tuple a) = a
-vTuple b = impossible ("unexpected error: expected tuple: received " ++ show b)
+vTuple b = impossible ("unexpected error: expected tuple value: received " ++ show b)
 
 vObject :: G.HasCallStack => DLVal -> (M.Map SLVar DLVal)
 vObject (V_Object a) = a
-vObject _ = impossible "unexpected error: expected object"
+vObject _ = impossible "unexpected error: expected object value"
 
 vData :: G.HasCallStack => DLVal -> (SLVar, DLVal)
 vData (V_Data a b) = (a, b)
-vData _ = impossible "unexpected error: expected data"
+vData _ = impossible "unexpected error: expected data value"
 
 vAddress :: G.HasCallStack => DLVal -> Account
 vAddress (V_Address a) = a
-vAddress _ = impossible "unexpected error: expected address"
+vAddress _ = impossible "unexpected error: expected address value"
 
 unfixedMsgs :: G.HasCallStack => MessageInfo -> M.Map ActorId Message
 unfixedMsgs (NotFixedYet m) = m
