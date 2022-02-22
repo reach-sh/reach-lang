@@ -69,7 +69,7 @@ build-go: server/build/index.main.mjs client-lib-go
 build-cs: server/build/index.main.mjs client-lib-cs
 	cd client-cs && docker build \
 	 --build-arg DOTNET_RUNTIME_IMAGE=$(DOTNET_RUNTIME_IMAGE) \
-     --build-arg DOTNET_SDK_IMAGE=$(DOTNET_SDK_IMAGE) \
+	 --build-arg DOTNET_SDK_IMAGE=$(DOTNET_SDK_IMAGE) \
 	 --tag=reachsh/reach-app-tut-7-rpc-client-cs:latest .
 
 .PHONY: build
