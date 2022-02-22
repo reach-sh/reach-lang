@@ -250,7 +250,7 @@ $ REACH_CONNECTOR_MODE=ALGO ./reach devnet
 
 + `--await-background` --- Run in the background and await availability.
 
-For more information on envirionmental variables and `{!cmd} REACH_CONNECTOR_MODE`, refer to (##ref-usage-run). 
+For more information on environmental variables and `{!cmd} REACH_CONNECTOR_MODE`, refer to [reach run](##ref-usage-run). 
 
 For more information on devnet options, refer to [Networks](##ref-networks).
 
