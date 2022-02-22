@@ -1,5 +1,6 @@
-ARG SOLC_VERSION
-FROM ethereum/solc:${SOLC_VERSION}-alpine AS solc
+ARG SOLC_IMAGE
+ARG ALPINE_IMAGE
+FROM $SOLC_IMAGE AS solc
 RUN apk add make curl bash
 COPY .docker-root ./.docker-root
 COPY Makefile.docker ./Makefile
@@ -8,7 +9,7 @@ RUN make ROOT=.docker-root sol/stdlib.json
 
 FROM reachsh/devnet-algo:latest AS algo
 
-FROM alpine as z3
+FROM $ALPINE_IMAGE as z3
 ARG Z3_VERSION
 ENV Z3_VERSION=${Z3_VERSION}
 RUN apk update && apk add git cmake python3 make gcc g++
@@ -27,7 +28,7 @@ RUN cmake -B build \
 		-DCMAKE_BUILD_TYPE=Release
 RUN	cmake --build build && cmake --install build
 
-FROM alpine
+FROM $ALPINE_IMAGE
 RUN apk update
 RUN apk add ncurses ncurses-dev libc6-compat zlib-dev gcc g++ git gmp-dev
 RUN ln -s /lib64/ld-linux-x86-64.so.2 /lib/ld-linux-x86-64.so.2

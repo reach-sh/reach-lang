@@ -1,6 +1,6 @@
-ARG NODE_VERSION
+ARG DOCS_IMAGE
+FROM $DOCS_IMAGE as dev
 
-FROM node:17-alpine3.13 as dev
 WORKDIR /proj
 
 RUN apk add make bash patch

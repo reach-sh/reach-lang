@@ -1,5 +1,7 @@
+ARG ALPINE_IMAGE
 FROM reachsh/haskell-build-artifacts:latest as build
-FROM alpine
+
+FROM $ALPINE_IMAGE
 
 RUN apk update && apk add libc6-compat gmp-dev
 RUN ln -s /lib64/ld-linux-x86-64.so.2 /lib/ld-linux-x86-64.so.2
