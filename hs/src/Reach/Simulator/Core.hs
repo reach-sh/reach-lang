@@ -869,7 +869,7 @@ while bl cons = do
     V_Bool True -> do
       _ <- interp cons
       while bl cons
-    _ -> impossible "unexpected error"
+    _ -> possible $ ("in (while) expected boolean, received " ++ show bool)
 
 saferIndex :: Int -> [a] -> a
 saferIndex 0 (x : _) = x

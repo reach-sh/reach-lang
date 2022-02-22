@@ -128,7 +128,12 @@ cdot () {
 
 #######
 
-cdot users/algo-govt/index.rsh
+jb
+ci ETH formatWithDecimals-demo
+ci ALGO formatWithDecimals-demo
+exit
+
+c users/algo-govt/index.rsh
 exit 0
 (cd users/algo-govt && ./test.sh)
 exit 0

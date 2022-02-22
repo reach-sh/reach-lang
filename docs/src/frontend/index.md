@@ -985,9 +985,9 @@ The following exports are for dealing with network tokens.
 standardUnit // string
 atomicUnit // string
 minimumBalance // atomicUnitAmount
-parseCurrency(standardUnitAmount, int) => atomicUnitAmount
-formatCurrency(atomicUnitAmount, int) => string  // display amount in standard unit
-formatWithDecimals(atomicUnitAmount, int, tokenDecimals: int) => string  // display amount in standard unit (decimal value) of a token
+parseCurrency(standardUnitAmount: int) => atomicUnitAmount
+formatCurrency(atomicUnitAmount: int) => string  // display amount in standard unit
+formatWithDecimals(atomicUnitAmount: int, tokenDecimals: int) => string  // display amount of atomic unit with custom decimal place
 ```
 
 These functions handle amounts in a network's standard unit and its atomic unit.
@@ -1005,7 +1005,7 @@ BigNumber is used to represet values in WEI.
 Quantities of a network token should always be passed into Reach
 in the token's atomic unit.
 
-`{!js} bigNumberify` is transparently applied to `{!js} formatCurrency`'s first argument.
+`{!js} bigNumberify` is transparently applied to `{!js} formatCurrency`'s and `{!js} formatWithDecimals`'s first arguments.
 
 ---
 @{ref("js", "formatAddress")}

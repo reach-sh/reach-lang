@@ -50,6 +50,7 @@ export const {
   minimumBalance,
   formatCurrency,
   formatAddress,
+  formatWithDecimals,
   unsafeGetMnemonic,
   launchToken,
   reachStdlib,
