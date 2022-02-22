@@ -429,6 +429,7 @@ lookupTokenIdx at tok toks = do
   cnd <- mkVar at "cnd" T_Bool
   found <- mkVar at "isFound" T_Bool
   found' <- mkVar at "isFound'" T_Bool
+  i_dv <- mkVar at "arrIdx" T_UInt
   -- ([is_found, idx], tok') =>
   --    let acc' = (is_found || tok == tok') ? [ true, idx ] : [ false, idx + 1 ];
   --    return acc';
@@ -445,7 +446,7 @@ lookupTokenIdx at tok toks = do
   let bl = DLBlock at [] block_tl $ DLA_Var bl_res
   let ss =
         [ asn init_acc_dv $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool False, DLA_Literal $ DLL_Int at 0]
-        , DL_ArrayReduce at reduce_res toks (DLA_Var init_acc_dv) acc_dv elem_dv bl
+        , DL_ArrayReduce at reduce_res toks (DLA_Var init_acc_dv) acc_dv elem_dv i_dv bl
         , asn tok_idx $ DLE_TupleRef at (DLA_Var reduce_res) 1
         , asn found' $ DLE_TupleRef at (DLA_Var reduce_res) 0
         , DL_Let at DLV_Eff $ DLE_Claim at [] CT_Assert (DLA_Var found') $ Just "Token is tracked" ]
