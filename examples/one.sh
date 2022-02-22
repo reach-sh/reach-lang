@@ -13,21 +13,10 @@ has_target() {
   [ $RESULT_T -eq 0 ]
 }
 
-mo_examples() {
-  for i in ${1}; do
-    mo -s=../../DEPS "${i}" > "${i}.mo" ; mv "${i}.mo" "${i}";
-    echo "file ${i} executed against mo"
-  done
-}
-
 echo "$MODE $e"
 echo
 (
   cd "$e" || exit 1
-  dockerfiles=$(find . -iname Dockerfile)
-  if [ -n "${dockerfiles}" ]; then
-    mo_examples "${dockerfiles}"
-  fi
   if [ -f Makefile ] && has_target ; then
     make REACH=../../reach "$MODE"
   else
