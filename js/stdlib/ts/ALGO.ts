@@ -1686,7 +1686,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const bal = await balanceOf({ addr: ctcAddr }, mtok);
         // XXX May be wrong sometimes. Accurate minimumBalance requires this change:
         //     https://github.com/algorand/go-algorand/pull/3287
-        const result = bal.eq(0) ? bal : bal.sub(minimumBalance);
+        const result = bal.lt(minimumBalance) ? bigNumberify(0) : bal.sub(minimumBalance);
         debug(`Balance of contract:`, result);
         return result;
       }
