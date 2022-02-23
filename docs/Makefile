@@ -28,7 +28,7 @@ serve-down:
 watch:
 	@command -v inotifywait >/dev/null \
 	  || (echo 'Unable to find `inotifywait`' && exit 1)
-	@while inotifywait -e modify -r ./dev; \
+	@while inotifywait -e modify -r ./dev ./src Dockerfile Makefile; \
 	  do clear \
 	   ; date \
 	   ; echo 'Re-rendering docs...' \
