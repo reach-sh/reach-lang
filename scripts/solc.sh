@@ -1,3 +1,5 @@
+#!/bin/sh
+
 . ../DEPS
 docker run --rm \
     -v "$PWD:/mnt" \
@@ -5,5 +7,5 @@ docker run --rm \
     -w /mnt \
     --entrypoint /usr/local/bin/solc \
     -ti \
-    $SOLC_IMAGE \
+    "${SOLC_IMAGE}" \
     "${@}"
