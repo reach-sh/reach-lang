@@ -733,11 +733,10 @@ export const make_waitUntilX = (label: string, getCurrent: () => Promise<BigNumb
   return current;
 };
 
-export const checkTimeout = async (runningIsolated:(() => boolean), getTimeSecs: ((now:BigNumber) => Promise<BigNumber>), timeoutAt: TimeArg | undefined, nowTimeN: number): Promise<boolean> => {
-  debug('checkTimeout', { timeoutAt, nowTimeN });
+export const checkTimeout = async (runningIsolated:(() => boolean), getTimeSecs: ((now:BigNumber) => Promise<BigNumber>), timeoutAt: TimeArg | undefined, nowTime: BigNumber): Promise<boolean> => {
+  debug('checkTimeout', { timeoutAt, nowTime });
   if ( ! timeoutAt ) { return false; }
   const [ mode, val ] = timeoutAt;
-  const nowTime = bigNumberify(nowTimeN);
   if ( mode === 'time' ) {
     return val.lte(nowTime);
   } else if ( mode === 'secs' ) {

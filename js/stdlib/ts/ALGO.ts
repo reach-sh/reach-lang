@@ -6,7 +6,11 @@ import { ethers } from 'ethers';
 import Timeout from 'await-timeout';
 import buffer from 'buffer';
 import type MyAlgoConnect from '@randlabs/myalgo-connect';
-import type { Transaction, EncodedTransaction } from 'algosdk'; // =>
+import type {
+  Transaction,
+  EncodedTransaction,
+  SuggestedParams,
+} from 'algosdk'; // =>
 import type {
   ARC11_Wallet,
   WalletTransaction,
@@ -105,19 +109,21 @@ export type Address = string
 // type RawAddress = Uint8Array;
 type SecretKey = Uint8Array; // length 64
 
-type TxnParams = {
+type TxnParamsRaw = {
   flatFee?: boolean,
-  fee: number,
-  firstRound: number,
-  lastRound: number,
+  fee: bigint,
+  firstRound: bigint,
+  lastRound: bigint,
   genesisID: string,
   genesisHash: string,
 }
+// XXX Remove once algosdk support bigints
+type TxnParams = SuggestedParams;
 type RecvTxn = {
-  'confirmed-round': number,
-  'created-asset-index'?: number,
-  'created-application-index'?: number,
-  'application-index'?: number,
+  'confirmed-round': bigint,
+  'created-asset-index'?: bigint,
+  'created-application-index'?: bigint,
+  'application-index'?: bigint,
   'application-args': Array<string>,
   'sender': Address,
   'logs': Array<string>,
@@ -153,7 +159,7 @@ export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
 type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
 
-export type ContractInfo = number;
+export type ContractInfo = BigNumber;
 type SendRecvArgs = ISendRecvArgs<Address, Token, AnyALGO_Ty>;
 type RecvArgs = IRecvArgs<AnyALGO_Ty>;
 type Recv = IRecv<Address>
@@ -167,7 +173,7 @@ type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyALGO_Ty>;
 
 type AccountAssetInfo = {
   'asset-id': bigint,
-  'amount': number,
+  'amount': bigint,
 };
 type AppStateVal = {
   'bytes'?: string,
@@ -193,7 +199,7 @@ type AccountInfo = {
   'created-apps'?: Array<AppInfo>
 };
 type IndexerAccountInfoRes = {
-  'current-round': number,
+  'current-round': bigint,
   'account': AccountInfo,
 };
 
@@ -216,16 +222,16 @@ type AppInfo = {
   },
 };
 type IndexerAppInfoRes = {
-  'current-round': number,
+  'current-round': bigint,
   'application': AppInfo,
 };
 
 type AssetInfo = {
-  'index': number,
+  'index': bigint,
   'params': {
     'clawback': string,
     'creator': string,
-    'decimals': number,
+    'decimals': bigint,
     'default-frozen': boolean,
     'freeze': string,
     'manager': string,
@@ -233,7 +239,7 @@ type AssetInfo = {
     'name': string,
     'name-b64': string,
     'reserve': string,
-    'total': number,
+    'total': bigint,
     'unit-name': string,
     'unit-name-b64': string,
     'url': string,
@@ -241,7 +247,7 @@ type AssetInfo = {
   },
 };
 type IndexerAssetInfoRes = {
-  'current-round': number,
+  'current-round': bigint,
   'asset': AssetInfo,
 };
 
@@ -249,31 +255,31 @@ type OrExn<X> = { val: X } | {exn:any};
 type IndexerAppTxn = {
   'approval-program'?: string,
   'clear-state-program'?: string,
-  'application-id'?: number,
+  'application-id'?: bigint,
   'application-args'?: Array<string>,
   'on-completion'?: string,
 };
 type IndexerTxn = {
-  'confirmed-round': number,
+  'confirmed-round': bigint,
   'sender': Address,
-  'created-asset-index'?: number,
-  'created-application-index'?: number,
+  'created-asset-index'?: bigint,
+  'created-application-index'?: bigint,
   'application-transaction'?: IndexerAppTxn,
   'logs'?: Array<string>,
   'tx-type': string,
 };
 type IndexerQuery1Res = {
-  'current-round': number,
+  'current-round': bigint,
   'transaction': IndexerTxn,
 };
 type IndexerQueryMRes = {
-  'current-round': number,
+  'current-round': bigint,
   'transactions': Array<IndexerTxn>,
 };
 type AlgodTxn = {
-  'asset-index'?: number,
-  'application-index'?: number,
-  'confirmed-round'?: number,
+  'asset-index'?: bigint,
+  'application-index'?: bigint,
+  'confirmed-round'?: bigint,
   'logs'?: Array<string>,
   'txn': {
     'sig': Uint8Array,
@@ -349,11 +355,10 @@ function uint8ArrayToStr(a: Uint8Array, enc: 'utf8' | 'base64' = 'utf8') {
 const rawDefaultToken = 'c87f5580d7a866317b4bfe9e8b8d1dda955636ccebfa88c12b414db208dd9705';
 const rawDefaultItoken = 'reach-devnet';
 
-
 const indexerTxn2RecvTxn = (txn:IndexerTxn): RecvTxn => {
   const ait: IndexerAppTxn = txn['application-transaction'] || {};
   const aargs = ait['application-args'] || [];
-  const aidx = ait['application-id'] || 0;
+  const aidx = ait['application-id'];
   return {
     'confirmed-round': txn['confirmed-round'],
     'sender': txn['sender'],
@@ -501,7 +506,15 @@ export const getTxnParams = async (label: string): Promise<TxnParams> => {
   debug(dhead, `getting params`);
   const client = await getAlgodClient();
   while (true) {
-    const params = await client.getTransactionParams().do();
+    const params_r = (await client.getTransactionParams().do()) as unknown as TxnParamsRaw;
+    debug(dhead ,'got params:', params_r);
+    const bi2n = (x:bigint): number => bigNumberToNumber(bigNumberify(x));
+    const params: TxnParams = {
+      ...params_r,
+      fee: bi2n(params_r.fee),
+      firstRound: bi2n(params_r.firstRound),
+      lastRound: bi2n(params_r.lastRound),
+    };
     debug(dhead ,'got params:', params);
     if (params.firstRound !== 0) {
       return params;
@@ -615,7 +628,7 @@ export function setValidQueryWindow(n: number|true): void {
 
 const isCreateTxn = (txn:IndexerTxn): boolean => {
   const at = txn['application-transaction'];
-  return at ? at['application-id'] === 0 : false;
+  return at ? bigNumberify(at['application-id']).eq(0) : false;
 };
 const emptyOptIn = (txn:IndexerTxn) => {
   const at = txn['application-transaction'];
@@ -625,18 +638,18 @@ const emptyOptIn = (txn:IndexerTxn) => {
     : false;
 };
 type EQInitArgs = {
-  ApplicationID: number,
+  ApplicationID: BigNumber,
 };
 type EventQueue = IEventQueue<EQInitArgs, IndexerTxn, RecvTxn>;
 const newEventQueue = (): EventQueue => {
   const getTxns = async (dhead:string, initArgs:EQInitArgs, ctime: BigNumber, howMany: number): Promise<EQGetTxnsR<IndexerTxn>> => {
     const { ApplicationID } = initArgs;
     const indexer = await getIndexer();
-    const mtime = bigNumberToNumber(ctime) + 1;
+    const mtime = bigNumberToNumber(ctime.add(1));
     debug(dhead, { ctime, mtime });
     const query =
       indexer.searchForTransactions()
-        .applicationID(ApplicationID)
+        .applicationID(bigNumberToNumber(ApplicationID))
         //.txType('appl')
         .minRound(mtime);
     const q = query as unknown as ApiCall<IndexerQueryMRes>
@@ -863,8 +876,16 @@ export const [getProvider, setProvider] = replaceableThunk(async () => {
     return await makeProviderByEnv(process.env);
   }
 });
-const getAlgodClient = async () => (await getProvider()).algodClient;
-const getIndexer = async () => (await getProvider()).indexer;
+const getAlgodClient = async () => {
+  const c = (await getProvider()).algodClient;
+  c.setIntEncoding(algosdk.IntDecoding.BIGINT);
+  return c;
+};
+const getIndexer = async () => {
+  const p = (await getProvider()).indexer;
+  p.setIntEncoding(algosdk.IntDecoding.BIGINT);
+  return p;
+};
 const nodeCanRead = async () => ((await getProvider()).nodeWriteOnly === false);
 const ensureNodeCanRead = async () =>
   assert(await nodeCanRead(), "node can read" );
@@ -1066,14 +1087,16 @@ const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
   try {
     await ensureNodeCanRead();
     const client = await getAlgodClient();
-    const res = (await client.accountInformation(a).setIntDecoding(algosdk.IntDecoding.BIGINT).do()) as AccountInfo;
+    const req = client.accountInformation(a);
+    debug(dhead, req);
+    const res = (await req.do()) as AccountInfo;
     debug(dhead, 'node', res);
     return res;
   } catch (e:any) {
     debug(dhead, 'node err', e);
   }
   const indexer = await getIndexer();
-  const q = indexer.lookupAccountByID(a).setIntDecoding(algosdk.IntDecoding.BIGINT) as unknown as ApiCall<IndexerAccountInfoRes>;
+  const q = indexer.lookupAccountByID(a) as unknown as ApiCall<IndexerAccountInfoRes>;
   const res = await doQuery_(dhead, q);
   debug(dhead, res);
   return res.account;
@@ -1088,7 +1111,8 @@ const getAssetInfo = async (a:number): Promise<AssetInfo> => {
   return res.asset;
 };
 
-const getApplicationInfoM = async (id:number): Promise<OrExn<AppInfo>> => {
+const getApplicationInfoM = async (idn:BigNumber): Promise<OrExn<AppInfo>> => {
+  const id = bigNumberToNumber(idn);
   const dhead = 'getApplicationInfo';
   try {
     await ensureNodeCanRead();
@@ -1146,7 +1170,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
     type GlobalState = [BigNumber, BigNumber, Address];
     type ContractHandler = {
-      ApplicationID: number,
+      ApplicationID: BigNumber,
       Deployer: Address,
       viewMapRef: (mapi:number, a:Address) => Promise<any>,
       ensureOptIn: (() => Promise<void>),
@@ -1179,7 +1203,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         }
         debug(label, 'getC', {ApplicationID} );
 
-        const ctcAddr = algosdk.getApplicationAddress(ApplicationID);
+        const ctcAddr = algosdk.getApplicationAddress(bigNumberToBigInt(ApplicationID));
         debug(label, 'getC', { ctcAddr });
 
         // Read map data
@@ -1187,7 +1211,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const ai = await getAccountInfo(a);
           debug(`getLocalState`, ai);
           const alss = ai['apps-local-state'] || [];
-          const fmtApplicationID = BigInt(ApplicationID)
+          const fmtApplicationID = bigNumberToBigInt(ApplicationID);
           const als = alss.find((x) => (x.id === fmtApplicationID));
           debug(`getLocalState`, als);
           return als ? als['key-value'] : undefined;
@@ -1204,7 +1228,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             thisAcc,
             toWTxn(algosdk.makeApplicationOptInTxn(
               thisAcc.addr, await getTxnParams(dhead),
-              ApplicationID,
+              bigNumberToNumber(ApplicationID),
               undefined, undefined, undefined, undefined,
               NOTE_Reach)));
           // We are commenting this out because the above ^ might not be
@@ -1363,10 +1387,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                 undefined, undefined, undefined, undefined,
                 NOTE_Reach, undefined, undefined, extraPages)));
 
-          const ApplicationID = createRes['created-application-index'];
-          if ( ! ApplicationID ) {
+          const ai = createRes['created-application-index'];
+          if ( ! ai ) {
             throw Error(`No created-application-index in ${j2s(createRes)}`);
           }
+          const ApplicationID = bigNumberify(ai);
           debug(label, `created`, {ApplicationID});
           const ctcInfo = ApplicationID;
           setTrustedVerifyResult({ ApplicationID, Deployer });
@@ -1418,7 +1443,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           // round, which we couldn't possibly be in, because it already
           // happened.
           debug(dhead, '--- TIMECHECK', { params, timeoutAt });
-          if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, params.firstRound + 1) ) {
+          if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, bigNumberify(params.firstRound).add(1) ) ) {
             return await doRecv(false, false, `timeout`);
           }
           if ( ! soloSend && ! await canIWin(lct) ) {
@@ -1550,7 +1575,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             algosdk.makeApplicationNoOpTxn;
           const txnAppl =
             whichAppl(
-              thisAcc.addr, params, ApplicationID, safe_args,
+              thisAcc.addr, params, bigNumberToNumber(ApplicationID), safe_args,
               mapAcctsVal, undefined, assetsVal, NOTE_Reach);
           txnAppl.fee += extraFees;
           const rtxns = [ ...txnExtraTxns, txnAppl ];
@@ -1603,7 +1628,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         // ^ The contract actually uses `global LatestTimestamp` which is the
         // time of the PREVIOUS round.
         // ^ Also, this field is only available from the indexer
-        const theSecs = await retryLoop([dhead, 'getTimeSecs'], () => getTimeSecs(bigNumberify(theRound - 0)));
+        const theSecs = await retryLoop([dhead, 'getTimeSecs'], () => getTimeSecs(bigNumberify(theRound)));
         // ^ XXX it would be nice if Reach could support variables bound to
         // promises and then we wouldn't need to wait here.
 
@@ -1653,13 +1678,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         debug(dhead, 'start');
         const { isIsolatedNetwork } = await getC();
         const didTimeout = async (cr_bn: BigNumber): Promise<boolean> => {
-          const cr = bigNumberToNumber(cr_bn);
-          debug(dhead, 'TIMECHECK', {timeoutAt, cr_bn, cr});
-          const crp = cr + 1;
+          const crp = cr_bn.add(1);
+          debug(dhead, 'TIMECHECK', {timeoutAt, cr_bn, crp});
           const r = await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, crp);
           debug(dhead, 'TIMECHECK', {r, waitIfNotPresent});
           if ( !r && waitIfNotPresent ) {
-            await waitUntilTime(bigNumberify(crp));
+            await waitUntilTime(crp);
           }
           return r;
         };
@@ -2052,7 +2076,7 @@ const appGlobalStateNumUInt = 0;
 const appGlobalStateNumBytes = 1;
 
 type VerifyResult = {
-  ApplicationID: number,
+  ApplicationID: BigNumber,
   Deployer: Address,
 };
 
@@ -2063,8 +2087,7 @@ export const verifyContract = async (info: ContractInfo, bin: Backend): Promise<
 const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, eq: EventQueue): Promise<VerifyResult> => {
   must_be_supported(bin);
   // @ts-ignore
-  const ai_bn: BigNumber = protect(T_Contract, info);
-  const ApplicationID: number = bigNumberToNumber(ai_bn);
+  const ApplicationID: BigNumber = protect(T_Contract, info);
   const { appApproval, appClear, mapDataKeys, stateKeys } =
     bin._Connectors.ALGO;
 
@@ -2177,7 +2200,8 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
       (params) =>
       algosdk.makeAssetTransferTxnWithSuggestedParams(
         addr(accFrom), addr(accTo), addr(accTo), undefined,
-        0, undefined, idn, params
+        // XXX this should be a bigint, but the SDK doesn't allow it
+        0, undefined, bigNumberToNumber(id), params
       ), accFrom);
   };
   return { name, sym, id, mint, optOut };
