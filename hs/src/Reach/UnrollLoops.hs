@@ -159,7 +159,7 @@ instance Unroll LLConsensus where
     LLC_Com m k -> ul_m LLC_Com m k
     LLC_If at c t f -> LLC_If at c <$> ul t <*> ul f
     LLC_Switch at ov csm -> LLC_Switch at ov <$> ul csm
-    LLC_FromConsensus at at' s -> LLC_FromConsensus at at' <$> ul s
+    LLC_FromConsensus at at' fs s -> LLC_FromConsensus at at' fs <$> ul s
     LLC_While at asn inv cond body k ->
       LLC_While at asn <$> ul inv <*> ul cond <*> ul body <*> ul k
     LLC_Continue at asn -> return $ LLC_Continue at asn
@@ -223,8 +223,8 @@ instance Unroll EPPs where
   ul (EPPs {..}) = EPPs <$> pure epps_apis <*> pure epps_m
 
 instance Unroll PLProg where
-  ul (PLProg at opts dli dex ep cp) =
-    PLProg at opts dli <$> ul dex <*> ul ep <*> ul cp
+  ul (PLProg at opts dli dex ssm ep cp) =
+    PLProg at opts dli <$> ul dex <*> pure ssm <*> ul ep <*> ul cp
 
 data UnrollWrapper a
   = UnrollWrapper Counter a

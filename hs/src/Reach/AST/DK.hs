@@ -53,7 +53,7 @@ data DKTail
       }
   | DK_If SrcLoc DLArg DKTail DKTail
   | DK_Switch SrcLoc DLVar (SwitchCases DKTail)
-  | DK_FromConsensus SrcLoc SrcLoc DKTail
+  | DK_FromConsensus SrcLoc SrcLoc [SLCtxtFrame] DKTail
   | DK_While
       { dk_w_at :: SrcLoc
       , dk_w_asn :: DLAssignment
@@ -76,7 +76,7 @@ instance Pretty DKTail where
       prettyToConsensus__ ("?" :: String) dk_tc_send dk_tc_recv dk_tc_mtime
     DK_If _at ca t f -> prettyIfp ca t f
     DK_Switch _at ov csm -> prettySwitch ov csm
-    DK_FromConsensus _at _ret_at k ->
+    DK_FromConsensus _at _ret_at _fs k ->
       prettyCommit <> hardline <> pretty k
     DK_While _at asn inv cond body k ->
       prettyWhile asn inv cond (pretty body) <> hardline <> pretty k

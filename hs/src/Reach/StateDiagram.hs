@@ -84,7 +84,7 @@ instance HasEdges CPProg where
   getEdges (CPProg _ _ _ _ hs) = getEdges hs
 
 instance HasEdges PLProg where
-  getEdges (PLProg _ _ _ _ _ cp) = getEdges cp
+  getEdges (PLProg _ _ _ _ _ _ cp) = getEdges cp
 
 setSanitize :: Ord a => [a] -> [a]
 setSanitize = S.toList . S.fromList

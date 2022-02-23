@@ -174,7 +174,7 @@ instance CollectsTypes LLConsensus where
   cts (LLC_Com m k) = cts m <> cts k
   cts (LLC_If _ c t f) = cts c <> cts t <> cts f
   cts (LLC_Switch _ v csm) = cts v <> cts csm
-  cts (LLC_FromConsensus _ _ k) = cts k
+  cts (LLC_FromConsensus _ _ _ k) = cts k
   cts (LLC_While _ asn inv cond body k) = cts asn <> cts inv <> cts cond <> cts body <> cts k
   cts (LLC_Continue _ asn) = cts asn
   cts (LLC_ViewIs _ _ _ a k) = cts a <> cts k

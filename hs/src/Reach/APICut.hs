@@ -346,8 +346,8 @@ apc hc eWho = \case
   p -> return p
 
 apicut :: PLProg -> IO PLProg
-apicut (PLProg at plo dli dex epps cp) = do
+apicut (PLProg at plo dli dex ssm epps cp) = do
   let EPPs apis em = epps
   em' <- mapWithKeyM (apc plo) em
   let epps' = EPPs apis em'
-  return $ PLProg at plo dli dex epps' cp
+  return $ PLProg at plo dli dex ssm epps' cp

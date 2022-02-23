@@ -2448,7 +2448,7 @@ analyzeViews (vs, vis) = vsit
 
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
-  let PLProg _at plo dli _ _ cpp = pl
+  let PLProg _at plo dli _ _ _ cpp = pl
   let CPProg at vsi ai _ (CHandlers hm) = cpp
   let ai_sm = M.fromList $ map capi $ M.toAscList ai
   let vsiTop = analyzeViews vsi
