@@ -7,6 +7,15 @@ LDIR="$(for d in $DIRS; do echo "$d" | wc -m; done | sort -h | tail -n 1)"
 ROOT="$( ([ "$REACH_DOCKER" = 0 ] && pwd) || echo /app/src)"
 
 e () {
+  if [ -f "./$1/SKIP" ]; then
+    if [ -n "$CI" ]; then
+      echo "$1/SKIP: Skipping is only allowed during development."
+      exit 1
+    fi
+    printf '\e[34;1mSkipping %s\e[0m\n\n' "$1"
+    return
+  fi
+
   printf '\e[34;1mRunning %s...\e[0m' "$1"
   if [ "$REACH_DOCKER" = 0 ]; then
     echo
@@ -14,6 +23,7 @@ e () {
 
   set +e
   o=$(REACH_VERSION="$( ([ -f "./$1/REACH_VERSION" ] && cat "./$1/REACH_VERSION") || echo)" \
+    REACH_CONNECTOR_MODE="$( ([ -f "./$1/REACH_CONNECTOR_MODE" ] && cat "./$1/REACH_CONNECTOR_MODE") || echo)" \
     ../../reach version-compare2 \
       --non-interactive \
       --ils="$ROOT/$1/l.json" \
