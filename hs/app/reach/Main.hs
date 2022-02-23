@@ -2274,13 +2274,17 @@ versionCompare2 = command "version-compare2" $ info f mempty
           case length (vc_synced <> vc_newConnector) >= length both of
             True -> case length vc_newConnector == 0 of
               True -> do
-                liftIO . putStrLn $ utd <> "."
+                liftIO $ do
+                  putStrLn $ utd <> "."
+                  say vc_synced
                 andTheScript "0"
 
               False -> do
                 liftIO $ do
                   putStrLn $ utd <> " but the following (optional) connectors are also available:"
                   say vc_newConnector
+                  putStrLn "\nThe following images are fully synchronized:"
+                  say vc_synced
                 case ni of
                   True -> andTheScript "0"
                   False -> prompt "0" "Would you like to add them?" $ do
