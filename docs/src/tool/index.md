@@ -319,16 +319,6 @@ $ reach docker-reset
 This can be a useful thing to try if your Docker containers stop responding to requests or otherwise misbehave, or if you have updated your Reach images (with `reach update`) but those changes are not taking effect.
 It will affect all Docker containers on your machine, not just those created by Reach.
 
-# {#ref-usage-upgrade} `reach upgrade`
-
-This command downloads the most recent `reach` tool.
-
-```cmd
-$ reach upgrade
-```
-
-This might change the default version used by `reach` commands.
-
 # {#ref-usage-update} `reach update`
 
 You can update the Docker images used by your Reach installation by executing
