@@ -471,13 +471,17 @@ jsExpr = \case
     tb' <- jsArg tb
     zero <- jsArg $ DLA_Literal $ DLL_Int at 0
     let bal = "await" <+> jsApply "ctc.getBalance" [tok]
-    return $
-      jsPrimApply
-        IF_THEN_ELSE
-        [ jsPrimApply PLE [bal, tb']
-        , zero
-        , jsPrimApply SUB [bal, tb']
-        ]
+    let res = jsPrimApply
+          IF_THEN_ELSE
+          [ jsPrimApply PLE [bal, tb']
+          , zero
+          , jsPrimApply SUB [bal, tb']
+          ]
+    infoSim <- asks ctxt_mode >>= \case
+      JM_Simulate -> return $ jsSimTxn "info" [("tok", tok)]
+      _ -> return ""
+    return $ "await (async () => { " <> vsep [infoSim <> ";", "return " <> res <> ";"] <> " })()"
+
   DLE_FromSome _at mo da -> do
     mo' <- jsArg mo
     da' <- jsArg da

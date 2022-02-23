@@ -456,6 +456,7 @@ export type TokenMetadata = {
 export type LaunchTokenOpts = {
   'decimals'?: number,
   'supply'?: unknown,
+  'clawback'?: any
 };
 
 export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
@@ -535,7 +536,10 @@ export type ISimTxn<Token> = {
 } | {
   kind: 'tokenDestroy',
   tok: Token,
-};
+} | {
+  kind: 'info',
+  tok: Token,
+} ;
 
 /**
  * @description Create a getter/setter, where the getter defaults to memoizing a thunk

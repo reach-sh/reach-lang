@@ -1633,7 +1633,7 @@ ce = \case
         clogEvent name vs
         --cl DLL_Null -- Event log values are never used
   DLE_setApiDetails {} -> return ()
-  DLE_GetUntrackedFunds _ mtok tb -> do
+  DLE_GetUntrackedFunds at mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
     case mtok of
       Nothing -> do
@@ -1652,10 +1652,8 @@ ce = \case
         -- [ extra ]
         return ()
       Just tok -> do
-        -- XXX We have to call checkTxnUsage to make sure we are opted in
-        -- XXX We have to leave residue in the simulator (with JS.hs) so that
-        -- we can add this asset to the Assets array (in case it is not also in
-        -- the pay list)
+        cb_lab <- freshLabel $ "getUntrackedFunds" <> "_z"
+        checkTxnUsage at mtok
         cContractAddr
         ca tok
         code "asset_holding_get" [ "AssetBalance" ]
@@ -1663,11 +1661,21 @@ ce = \case
         -- [ bal ]
         ca tb
         -- [ bal, rsh_bal ]
+        op "dup2"
+        -- [ bal, rsh_bal, bal, rsh_bal ]
+        op "<"
+        -- [ bal, rsh_bal, {0, 1} ]
+        code "bz" [ cb_lab ]
+        -- [ bal, rsh_bal ]
         op "-"
-        -- XXX WARNING, because of Clawback, this^ may fail
-        -- What to do? Return 0? Fail? Change the interface of this so that
-        -- instead it returns a new amount (that we know nothing about)? Add
-        -- untrustworthyTokens?
+        -- This happens because of clawback
+        label cb_lab
+        -- [ bal, rsh_bal ]
+        op "pop"
+        -- [ bal ]
+        op "pop"
+        -- [  ]
+        cint 0
         -- [ extra ]
         return ()
     label after_lab

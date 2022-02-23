@@ -1497,6 +1497,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                 from = thisAcc.addr;
                 to = ctcAddr;
                 amt = t.amt;
+              }  else if ( t.kind === 'info' ) {
+                const { tok } = t;
+                recordAsset(tok);
+                return;
               } else {
                 assert(false, 'sim txn kind');
               }
@@ -2155,11 +2159,12 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
   };
   const supply = opts.supply ? bigNumberify(opts.supply) : bigNumberify(2).pow(64).sub(1);
   const decimals = opts.decimals !== undefined ? opts.decimals : 6;
+  const clawback = opts.clawback !== undefined ? addr(opts.clawback) : zaddr;
   const ctxn_p = await dotxn(
     (params:TxnParams) =>
     algosdk.makeAssetCreateTxnWithSuggestedParams(
       caddr, undefined, bigNumberToBigInt(supply), decimals,
-      false, zaddr, zaddr, zaddr, zaddr,
+      false, zaddr, zaddr, zaddr, clawback,
       sym, name, '', '', params,
     ));
   const idn = ctxn_p['created-asset-index'];

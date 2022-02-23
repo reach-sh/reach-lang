@@ -844,7 +844,7 @@ instance IsLocal DLExpr where
     DLE_GetAddress {} -> True
     DLE_EmitLog {} -> False
     DLE_setApiDetails {} -> False
-    DLE_GetUntrackedFunds {} -> False
+    DLE_GetUntrackedFunds {} -> True
     DLE_FromSome {} -> True
 
 instance CanDupe DLExpr where
