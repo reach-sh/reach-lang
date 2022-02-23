@@ -12,6 +12,9 @@ export const main = Reach.App(() => {
 
   A.only(() => { const token = declassify(interact.token); })
   A.publish(token);
+  commit();
+
+  A.publish();
   const x1 = getUntrackedFunds(token);
 
   transfer(x1, token).to(A);
