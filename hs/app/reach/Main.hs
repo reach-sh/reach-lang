@@ -171,8 +171,8 @@ majMin = \case
   RVNumeric {rvEnvNumeric = RVEnvNumeric {..}, ..} ->
     T.intercalate "." $ map packs [rvEnvNumericMajor, rvMinor]
 
-maj :: RVWithMaj' -> Text
-maj = \case
+_maj :: RVWithMaj' -> Text
+_maj = \case
   RVDefault -> packs major
   RVStable -> packs major
   RVNumeric {rvEnvNumeric = RVEnvNumeric {..}} -> packs rvEnvNumericMajor
@@ -867,6 +867,10 @@ switchQuiet =
     long "quiet"
       <> help "Withhold progress messages"
 
+switchInteractiveAUs :: Parser Bool
+switchInteractiveAUs = switch $ long "interactive" <> help
+  "Report available updates and prompt to synchronize"
+
 switchNonInteractiveAUs :: Parser Bool
 switchNonInteractiveAUs = switch $ long "non-interactive" <> help
   "Report available updates and immediately exit"
@@ -1460,42 +1464,21 @@ upgrade :: Subcommand
 upgrade = command "upgrade" $ info f d
   where
     d = progDesc "Upgrade Reach"
-    f = pure . liftIO . exitWith $ ExitFailure 50
+    f = pure . liftIO $ putStrLn
+      "`reach upgrade` has been deprecated. Please use `reach info` and `reach update` instead."
+
+info' :: Subcommand
+info' = command "info" $ info f d
+  where
+    d = progDesc "List available updates"
+    f = g <$> switchInteractiveAUs
+    g i = versionCompare' (not i) False False
 
 update :: Subcommand
 update = command "update" $ info (pure f) d
   where
-    d = progDesc "Update Reach Docker images"
-    p i = T.toLower (packs i) <> ":" <> imageThirdPartyTagRaw i
-    f = do
-      ReachVersion {..} <- asks (version'' . e_var)
-      let ts = case rv of
-            RVWithMaj v -> ["latest", maj v, majMin v, majMinPat v]
-            RVHash v -> [v]
-            RVDate v -> [packs v]
-      let ps = either (\i -> ["docker pull " <> p i]) $
-            \i -> ["docker pull reachsh/" <> i <> ":" <> t | t <- ts]
-      let w = write . intercalate "\n" . ps
-      scriptWithConnectorModeOptional $ do
-        case rv of -- Always pull `reach-cli:latest` regardless of `REACH_VERSION`
-          RVWithMaj _ -> pure ()
-          _ -> write [N.text| docker pull reachsh/reach-cli:latest |]
-        mapM_ w imagesCommon
-        connectorMode <$> asks e_var >>= \case
-          Nothing -> mapM_ w imagesForAllConnectors
-          Just (ConnectorMode c _) -> do
-            let is = imagesFor c
-            let is' = filter ((==) Nothing . flip L.elemIndex is) imagesForAllConnectors
-            mapM_ w is
-            forM_ is' $ \i' -> do
-              let i = either p ("reachsh/" <>) i'
-              let ps' = intercalate "\n" $ ps i'
-              write
-                [N.text|
-              if [ ! "$(docker image ls -q "$i")" = '' ]; then
-                $ps'
-              fi
-            |]
+    d = progDesc "Perform available updates"
+    f = versionCompare' True False True
 
 dockerReset :: Subcommand
 dockerReset = command "docker-reset" $ info f d
@@ -1558,16 +1541,18 @@ hashes :: Subcommand
 hashes = command "hashes" $ info f d
   where
     d = progDesc "Display git hashes used to build each Docker image"
-    f = pure $ do
-      v <- versionBy majMinPat . version'' <$> asks e_var
-      let is = rights imagesAll
-      script . forM_ is $ \i ->
-        write
-          [N.text|
-      if [ ! "$(docker image ls -q "reachsh/$i:$v")" = '' ]; then
-        echo "$i:" "$(docker image inspect -f '{{json .Config.Env}}' reachsh/${i}:$v | sed -E 's/^.*REACH_GIT_HASH=([^"]+).*$/\1/')"
+    h t i = write [N.text|
+      if [ ! "$(docker image ls -q "reachsh/$i:$t")" = '' ]; then
+        echo "$i:" "$(docker image inspect -f '{{json .Config.Env}}' reachsh/${i}:$t \
+          | sed -E 's/^.*REACH_GIT_HASH=([^"]+).*$/\1/')"
       fi
     |]
+    f = pure $ do
+      v <- versionBy majMinPat . version'' <$> asks e_var
+      let is = filter (/= "reach-cli") $ rights imagesAll
+      script $ do
+        h "latest" "reach-cli"
+        forM_ is $ h v
 
 zulu :: AppT String
 zulu = formatShow iso8601Format <$> liftIO getCurrentTime
@@ -1969,37 +1954,42 @@ remoteUpdates imgs = do
 imgTxt :: Image' -> Text
 imgTxt (Image' x) = either (T.toLower . packs) id x
 
+versionCompare' :: Bool -> Bool -> Bool -> App
+versionCompare' i' j' u' = scriptWithConnectorModeOptional $ do
+  now <- zulu
+  Env {e_var = Var {..}, ..} <- ask
+  let i = if i' then " --non-interactive" else ""
+  let j = if j' then " --json" else ""
+  let u = if u' then " --update" else ""
+  let confE = "_docker" </> "ils-" <> now <> ".json"
+  let confC = pack $ e_dirConfigContainer </> confE
+  let confH = pack $ e_dirConfigHost </> confE
+  write [N.text|
+    f () {
+      $q
+    }
+
+    mkdir -p "$$(dirname $confH)"
+    echo '['  > $confH
+    f | paste -s -d ' ' - | sed 's/} {/},\n{/g' >> $confH
+    echo ']' >> $confH
+
+    $reachEx version-compare2$i$j$u --rm-ils --ils="$confC"
+  |]
+ where
+  t = mappend ("docker image ls --digests --format "
+    <> "'{ \"Digest\": \"{{.Digest}}\", \"Repository\": \"{{.Repository}}\", \"Tag\": \"{{.Tag}}\" }' ")
+
+  q = T.intercalate " && \\\n" $ (t <$> ("reachsh/" <>) <$> rights imagesAll)
+    <> (t <$> (T.toLower . packs) <$> [minBound .. maxBound :: ImageThirdParty])
+
 versionCompare :: Subcommand
 versionCompare = command "version-compare" $ info f mempty
   where
-    t = mappend ("docker image ls --digests --format "
-      <> "'{ \"Digest\": \"{{.Digest}}\", \"Repository\": \"{{.Repository}}\", \"Tag\": \"{{.Tag}}\" }' ")
-
-    q = T.intercalate " && \\\n" $ (t <$> ("reachsh/" <>) <$> rights imagesAll)
-      <> (t <$> (T.toLower . packs) <$> [minBound .. maxBound :: ImageThirdParty])
-
-    f = g <$> switchNonInteractiveAUs <*> switchJSONAUs
-
-    g i' j' = scriptWithConnectorModeOptional $ do
-      now <- zulu
-      Env {e_var = Var {..}, ..} <- ask
-      let i = if i' then " --non-interactive" else ""
-      let j = if j' then " --json" else ""
-      let confE = "_docker" </> "ils-" <> now <> ".json"
-      let confC = pack $ e_dirConfigContainer </> confE
-      let confH = pack $ e_dirConfigHost </> confE
-      write [N.text|
-        f () {
-          $q
-        }
-
-        mkdir -p "$$(dirname $confH)"
-        echo '['  > $confH
-        f | paste -s -d ' ' - | sed 's/} {/},\n{/g' >> $confH
-        echo ']' >> $confH
-
-        $reachEx version-compare2$i$j --rm-ils --ils="$confC"
-      |]
+    f = versionCompare'
+      <$> switchNonInteractiveAUs
+      <*> switchJSONAUs
+      <*> switch (long "update")
 
 versionCompare2 :: Subcommand
 versionCompare2 = command "version-compare2" $ info f mempty
@@ -2011,7 +2001,8 @@ versionCompare2 = command "version-compare2" $ info f mempty
       <*> switch (long "rm-ils")
       <*> strOption (long "stub-remote" <> value "")
       <*> strOption (long "stub-script" <> value "")
-    g ni j l rl mr ms = do
+      <*> switch (long "update")
+    g ni j l rl mr ms up = do
       Env {e_var = Var {..}, ..} <- ask
       assocL <- (liftIO $ A.eitherDecodeFileStrict' l) >>= \case
         Left e -> liftIO $ do
@@ -2089,18 +2080,11 @@ versionCompare2 = command "version-compare2" $ info f mempty
               where
                 dm = ld == rd
                 rts' = filter (`notElem` lts) rts
-            (DAQLMissingTag li ld, DAQRMatch ri@(Left _) rd rts)
+            (DAQLMissingTag li _, DAQRMatch ri@(Left _) rd rts)
               | li == ri && ri `elem` (pre <$> imagesForAllConnectors)
-              -> tp (DAQNewConnectorAvailable ri rd rts) nxa li ()
-              where
-                nxa = case ld == rd of
-                  True -> DAQNewTags ri rd rts
-                  False -> DAQNewDigestAvailable ri rd rts
-            (DAQLMissingTag _ _, DAQRMatch i rd rts) ->
-              maybe
-                (DAQNewDigestAvailable i rd rts)
-                (\lts -> DAQNewTags i rd $ filter (`notElem` lts) rts)
-                $ assocL !? i >>= (!? rd)
+              -> tp (mkNca nxa ri rd rts) nxa li ()
+              where nxa = mDorTs ri rd rts
+            (DAQLMissingTag _ _, DAQRMatch i rd rts) -> mDorTs i rd rts
             -- It's okay for a user to skip an unwanted connector + all its
             -- dependent third-party images, but e.g. if devnet-algo exists
             -- locally then postgres must also be synchronized
@@ -2108,7 +2092,7 @@ versionCompare2 = command "version-compare2" $ info f mempty
               | li == ri && ri `elem` (pre <$> imagesForAllConnectors)
               -> either (tp nca nxa li) (const nca) ri
               where
-                nca = DAQNewConnectorAvailable ri rd rts
+                nca = mkNca nxa ri rd rts
                 nxa = DAQNewDigestAvailable ri rd rts
             (_, DAQRMatch i d rts) -> DAQNewDigestAvailable i d rts
             where
@@ -2117,6 +2101,15 @@ versionCompare2 = command "version-compare2" $ info f mempty
                 let cs = rights . concat . L.filter (li `elem`)
                       $ fmap pre . imagesFor <$> [minBound .. maxBound]
                 guard . any isJust $ ((assocL !?) . Right) <$> cs
+              -- When `REACH_CONNECTOR_MODE` is set (except for `$conn-live`)
+              -- synchronizing `devnet-$conn` should be mandatory
+              mkNca x ri rd rts = case connectorMode of
+                Just (ConnectorMode c m) | m /= Live && ri `elem` (pre <$> imagesFor c) -> x
+                _ -> DAQNewConnectorAvailable ri rd rts
+              mDorTs i rd rts = maybe
+                (DAQNewDigestAvailable i rd rts)
+                (\lts -> DAQNewTags i rd $ filter (`notElem` lts) rts)
+                $ assocL !? i >>= (!? rd)
 
       -- Avoid "double update" problem when current CLI image doesn't yet know a
       -- new numeric branch has been released, e.g. 0.1.7 -> 0.1.8
@@ -2154,18 +2147,18 @@ versionCompare2 = command "version-compare2" $ info f mempty
             [VersionCompareIDTs (Image' x) y z | DAQNewTags x y z <- both]
             [VersionCompareIDTs (Image' x) y z | DAQNewConnectorAvailable x y z <- both]
 
-      case (length uImgs > 0, length uTags > 0, j) of
-        (True, _, _) -> liftIO $ do
+      case (length uImgs > 0, length uTags > 0, j, up) of
+        (True, _, _, _) -> liftIO $ do
           forM_ uImgs $ \a -> T.putStrLn $ "Unknown image: " <> imgTxt a <> "."
           T.putStrLn $ "Please open an issue at " <> uriIssues <> " including the failures listed above."
           exitWith $ ExitFailure 1
 
-        (_, True, _) -> liftIO $ do
+        (_, True, _, _) -> liftIO $ do
           forM_ uTags $ \(x, y) -> T.putStrLn $ "Unknown tag: " <> y <> " for image: " <> imgTxt x <> "."
           exitWith $ ExitFailure 1
 
         -- non-interactive JSON mode
-        (_, _, True) -> scriptWithConnectorModeOptional $ do
+        (_, _, True, _) -> scriptWithConnectorModeOptional $ do
           now <- zulu
           let confE = "_docker" </> "vc-" <> now <> ".json"
           let confF = e_dirConfigContainer </> confE
@@ -2187,6 +2180,19 @@ versionCompare2 = command "version-compare2" $ info f mempty
             else
               echo '{ "noDiff": false, "script": false, "dockerH": "$confH", "dockerC": "$confC"}'
               exit $ec
+            fi
+          |]
+
+        -- `reach update`
+        (_, _, _, True) -> scriptWithConnectorModeOptional $ do
+          update' False vc
+          us <- updateScript
+          write [N.text|
+            if ! command -v diff >/dev/null; then
+              # This is less polite but perhaps less trouble-prone
+              $us
+            elif [ -f $latestScript ] && ! diff $reachEx $latestScript >/dev/null; then
+              $us
             fi
           |]
 
@@ -2326,6 +2332,40 @@ versionCompare2 = command "version-compare2" $ info f mempty
 
                     andTheScript "0"
 
+updateScript :: AppT Text
+updateScript = do
+  Env {e_var = Var{..}, ..} <- ask
+  now <- pack <$> zulu
+  let dch = pack e_dirConfigHost
+  pure [N.text|
+    mkdir -p "$dch/_backup"
+    cp $reachEx "$dch/_backup/reach-$now"
+    echo
+    echo "Backed up $reachEx to $dch/_backup/reach-$now."
+    curl -sS -o $reachEx https://docs.reach.sh/reach \
+      && chmod +x $reachEx \
+      && echo "Replaced $reachEx with latest version." \
+      && rm -r "$$TMP" \
+      && exit 0
+  |]
+
+update' :: Bool -> VersionCompare -> App
+update' s VersionCompare {..} = do
+  forM_ vc_newDigest $ \(VersionCompareIDTs x' y zs) -> do
+    let x = imgTxt x'
+    write [N.text| docker pull $x@$y |]
+    forM_ zs $ \z' -> do
+      let z = tagFor z'
+      write [N.text| docker tag $x@$y $x:$z |]
+
+  forM_ vc_newTag $ \(VersionCompareIDTs x' y zs) -> do
+    let x = imgTxt x'
+    forM_ zs $ \z' -> do
+      let z = tagFor z'
+      write [N.text| docker tag $x@$y $x:$z |]
+
+  when s $ updateScript >>= write
+
 updateIDE :: Subcommand
 updateIDE = command "update-ide" $ info f mempty where
   f = g
@@ -2333,39 +2373,10 @@ updateIDE = command "update-ide" $ info f mempty where
     <*> switch (long "rm-json") -- Delete input JSON once it's served its purpose
     <*> strOption (long "json")
   g s r j = scriptWithConnectorModeOptional $ do
-    VersionCompare {..} <- liftIO $ A.eitherDecodeFileStrict' j
+    v <- liftIO $ A.eitherDecodeFileStrict' j
       >>= either (\e -> putStrLn e >> exitWith (ExitFailure 1)) pure
-
     when r . liftIO $ removeFile j
-
-    forM_ vc_newDigest $ \(VersionCompareIDTs x' y zs) -> do
-      let x = imgTxt x'
-      write [N.text| docker pull $x@$y |]
-      forM_ zs $ \z' -> do
-        let z = tagFor z'
-        write [N.text| docker tag $x@$y $x:$z |]
-
-    forM_ vc_newTag $ \(VersionCompareIDTs x' y zs) -> do
-      let x = imgTxt x'
-      forM_ zs $ \z' -> do
-        let z = tagFor z'
-        write [N.text| docker tag $x@$y $x:$z |]
-
-    when s $ do
-      Env {e_var = Var{..}, ..} <- ask
-      now <- pack <$> zulu
-      let dch = pack e_dirConfigHost
-      write [N.text|
-        mkdir -p "$dch/_backup"
-        cp $reachEx "$dch/_backup/reach-$now"
-        echo
-        echo "Backed up $reachEx to $dch/_backup/reach-$now."
-        curl -o $reachEx https://docs.reach.sh/reach \
-          && chmod +x $reachEx \
-          && echo "Replaced $reachEx with latest version." \
-          && rm -r "$$TMP" \
-          && exit 0
-      |]
+    update' s v
 
 whoami' :: Text
 whoami' = "docker info --format '{{.ID}}' 2>/dev/null"
@@ -2432,7 +2443,7 @@ main = do
           <> rpcServer
           <> rpcRun
           <> devnet
-          <> upgrade
+          <> info'
           <> update
           <> dockerReset
           <> version'
@@ -2448,8 +2459,7 @@ main = do
           <> unscaffold
           <> whoami
           <> log'
-
-          -- Don't expose these to users yet
+          <> upgrade
           <> versionCompare
           <> versionCompare2
           <> updateIDE
