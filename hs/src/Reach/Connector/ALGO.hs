@@ -1656,21 +1656,20 @@ ce = \case
         -- XXX We have to leave residue in the simulator (with JS.hs) so that
         -- we can add this asset to the Assets array (in case it is not also in
         -- the pay list)
-        when False $ do
-          cContractAddr
-          ca tok
-          code "asset_holding_get" [ "AssetBalance" ]
-          -- [ bal ]
-          ca tb
-          -- [ bal, rsh_bal ]
-          op "-"
-          -- XXX WARNING, because of Clawback, this^ may fail
-          -- What to do? Return 0? Fail? Change the interface of this so that
-          -- instead it returns a new amount (that we know nothing about)? Add
-          -- untrustworthyTokens?
-          -- [ extra ]
-          return ()
-        bad $ "GetUntrackedFunds on token"
+        cContractAddr
+        ca tok
+        code "asset_holding_get" [ "AssetBalance" ]
+        op "pop"
+        -- [ bal ]
+        ca tb
+        -- [ bal, rsh_bal ]
+        op "-"
+        -- XXX WARNING, because of Clawback, this^ may fail
+        -- What to do? Return 0? Fail? Change the interface of this so that
+        -- instead it returns a new amount (that we know nothing about)? Add
+        -- untrustworthyTokens?
+        -- [ extra ]
+        return ()
     label after_lab
   DLE_FromSome _ mo da -> do
     ca da
