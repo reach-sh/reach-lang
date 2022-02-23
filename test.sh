@@ -150,6 +150,7 @@ ci ALGO donation-balancesOf
 ci ALGO formatWithDecimals-demo
 ci ALGO nft-auction-api
 ci ALGO minBalance
+ci ALGO atomic-swap
 ci ALGO max-supply-precision
 exit 0
 
