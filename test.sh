@@ -133,6 +133,7 @@ export REACH_BUILD_NO_CACHE=Y
 #######
 
 jb
+ci ALGO atomic-swap
 ci ALGO max-supply-precision
 exit 0
 

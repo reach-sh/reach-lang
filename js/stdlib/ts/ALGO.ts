@@ -2098,11 +2098,16 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
       throw Error(`${dhead} failed: ${msg}`);
     }
   };
-  const chkeq = (a: unknown, e:unknown, msg:string) => {
+  const chkeq_x = <X>(cmp:((a:X, b:X) => boolean)) => (a: X, e:X, msg:string) => {
     const as = j2sf(a);
     const es = j2sf(e);
-    chk(as === es, `${msg}: expected ${es}, got ${as}`);
+    chk(cmp(a, e), `${msg}: expected ${es}, got ${as}`);
   };
+  const chkeq_b = chkeq_x<boolean>((a:boolean, b:boolean) => a === b);
+  const chkeq_bn_ = chkeq_x<BigNumber>((a:BigNumber, b:BigNumber) => a.eq(b));
+  const chkeq_bn = (a:unknown, b:unknown, msg:string) => chkeq_bn_(bigNumberify(a), bigNumberify(b), msg);
+  type Program = string|undefined;
+  const chkeq_bs = chkeq_x<Program>((a:Program, b:Program) => j2sf(a) === j2sf(b));
 
   const appInfoM = await getApplicationInfoM(ApplicationID);
   if ( 'exn' in appInfoM ) {
@@ -2112,33 +2117,33 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   const appInfo_p = appInfo['params'];
   debug(dhead, {appInfo_p});
   chk(appInfo_p !== undefined, `Cannot lookup ApplicationId`);
-  chkeq(appInfo_p['approval-program'], appApproval, `Approval program does not match Reach backend`);
-  chkeq(appInfo_p['clear-state-program'], appClear, `ClearState program does not match Reach backend`);
+  chkeq_bs(appInfo_p['approval-program'], appApproval, `Approval program does not match Reach backend`);
+  chkeq_bs(appInfo_p['clear-state-program'], appClear, `ClearState program does not match Reach backend`);
   const Deployer = appInfo_p['creator'];
 
   const appInfo_LocalState = appInfo_p['local-state-schema'];
-  chkeq(appInfo_LocalState['num-byte-slice'], appLocalStateNumBytes + mapDataKeys, `Num of byte-slices in local state schema does not match Reach backend`);
-  chkeq(appInfo_LocalState['num-uint'], appLocalStateNumUInt, `Num of uints in local state schema does not match Reach backend`);
+  chkeq_bn(appInfo_LocalState['num-byte-slice'], appLocalStateNumBytes + mapDataKeys, `Num of byte-slices in local state schema does not match Reach backend`);
+  chkeq_bn(appInfo_LocalState['num-uint'], appLocalStateNumUInt, `Num of uints in local state schema does not match Reach backend`);
 
   const appInfo_GlobalState = appInfo_p['global-state-schema'];
-  chkeq(appInfo_GlobalState['num-byte-slice'], appGlobalStateNumBytes + stateKeys, `Num of byte-slices in global state schema does not match Reach backend`);
-  chkeq(appInfo_GlobalState['num-uint'], appGlobalStateNumUInt, `Num of uints in global state schema does not match Reach backend`);
+  chkeq_bn(appInfo_GlobalState['num-byte-slice'], appGlobalStateNumBytes + stateKeys, `Num of byte-slices in global state schema does not match Reach backend`);
+  chkeq_bn(appInfo_GlobalState['num-uint'], appGlobalStateNumUInt, `Num of uints in global state schema does not match Reach backend`);
 
-  chkeq(appInfo['deleted'] === true, false, `Application must not be deleted`);
+  chkeq_b(appInfo['deleted'] === true, false, `Application must not be deleted`);
   eq.init({ ApplicationID });
 
   // Next, we check that it was created with this program and wasn't created
   // with a different program first (which could have modified the state)
   const iat = await eq.deq(dhead);
   debug({iat});
-  chkeq(iat['created-application-index'], ApplicationID, 'app created');
-  chkeq(iat['application-index'], 0, 'app created');
+  chkeq_bn(iat['created-application-index'], ApplicationID, 'app created');
+  chkeq_bn(iat['application-index'], 0, 'app created');
   const allocRound = appInfo['created-at-round'];
   if ( allocRound ) {
-    chkeq(iat['confirmed-round'], allocRound, 'created on correct round');
+    chkeq_bn(iat['confirmed-round'], allocRound, 'created on correct round');
   }
-  chkeq(iat['approval-program'], appInfo_p['approval-program'], `ApprovalProgram unchanged since creation`);
-  chkeq(iat['clear-state-program'], appInfo_p['clear-state-program'], `ClearStateProgram unchanged since creation`);
+  chkeq_bs(iat['approval-program'], appInfo_p['approval-program'], `ApprovalProgram unchanged since creation`);
+  chkeq_bs(iat['clear-state-program'], appInfo_p['clear-state-program'], `ClearStateProgram unchanged since creation`);
 
   return { ApplicationID, Deployer };
 };
