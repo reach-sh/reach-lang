@@ -13,7 +13,7 @@ We highly recommend using Visual Studio Code IDE, it is the most advanced `Reach
 # {#guide-install-VSCode} Install VSCode
 
 Visual Studio Code (VSCode) enables users to both write and compile `Reach` code.
-With the `Reach IDE` installed, VSCode compiles automatically in the background and alerts users of coding errors in seconds.
+With the `Reach IDE VSCode extension` installed, VSCode compiles automatically in the background and alerts users of coding errors in seconds when the necessary prerequisites, such as Docker, are installed and running.
 
 1. Download the [VSCode](https://code.visualstudio.com/download) IDE.
 2. Double-click the file to install VSCode.
