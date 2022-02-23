@@ -150,7 +150,8 @@ ci ALGO donation-balancesOf
 ci ALGO formatWithDecimals-demo
 ci ALGO nft-auction-api
 ci ALGO minBalance
-exit
+ci ALGO max-supply-precision
+exit 0
 
 cdot users/algo-govt/index.rsh
 exit 0

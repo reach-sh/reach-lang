@@ -2197,40 +2197,50 @@ const makeAssetCreateTxn = (
   });
 }
 
-export const launchToken = async (accCreator: Account, name: string, sym: string, opts: LaunchTokenOpts = {}) => {
-  const addrCreator = accCreator.networkAccount.addr;
+export async function launchToken (accCreator:Account, name:string, sym:string, opts:LaunchTokenOpts = {}) {
+  debug(`Launching token, ${name} (${sym})`);
+  const addr = (acc:Account) => acc.networkAccount.addr;
+  const caddr = addr(accCreator);
+  const zaddr = caddr;
+  // ^ XXX should be nothing; docs say can be "", but doesn't actually work
+  const client = await getAlgodClient();
+  const dotxn = async (mktxn:(params:TxnParams) => Transaction, acc:Account = accCreator) => {
+    const sk = acc.networkAccount.sk;
+    if ( ! sk ) {
+      throw new Error(`can only launchToken with account with secret key`);
+    }
+    const params = await getTxnParams('launchToken');
+    const t = mktxn(params);
+    const s = t.signTxn(sk);
+    const r = (await client.sendRawTransaction(s).do());
+    return await waitForConfirmation(r.txId);
+  };
   const supply = opts.supply ? bigNumberify(opts.supply) : bigNumberify(2).pow(64).sub(1);
-  const decimals = opts.decimals ?? 6;
-  const url = opts.url ?? '';
-  const metadataHash = opts.metadataHash ?? '';
-  const clawback = opts.clawback ? cbr2algo_addr(protect(T_Address, opts.clawback) as string) : undefined;
-  const params = await getTxnParams('launchToken');
-
-  const txnResult = await sign_and_send_sync(
-    `launchToken ${j2s(accCreator)} ${name} ${sym}`,
-    accCreator.networkAccount,
-    toWTxn(makeAssetCreateTxn(addrCreator, supply, decimals, sym,
-                              name, url, metadataHash, clawback, params))
-  );
-
-  const assetIndex = txnResult['created-asset-index'];
-  if (!assetIndex) throw Error(`${sym} no asset-index!`);
-  const id = bigNumberify(assetIndex);
-
-  const mint = (accTo: Account, amt: any) => transfer(accCreator, accTo, amt, id);
-  const optOut = async (accFrom: Account, accTo: Account = accCreator) => {
-    // Opting out = sending all of your current balance to accTo
-    const addrFrom = accFrom.networkAccount.addr;
-    const addrTo = accTo.networkAccount.addr;
-    const params = await getTxnParams('token.optOut');
-    const optOutTxn = makeTransferTxn(addrFrom, addrTo, bigNumberify(0), id, params, addrTo);
-    await sign_and_send_sync(
-      `token.optOut ${j2s(accFrom)} ${name}`,
-      accFrom.networkAccount,
-      toWTxn(optOutTxn),
-    );
-  }
-
+  const decimals = opts.decimals !== undefined ? opts.decimals : 6;
+  const ctxn_p = await dotxn(
+    (params:TxnParams) =>
+    algosdk.makeAssetCreateTxnWithSuggestedParams(
+      caddr, undefined, bigNumberToBigInt(supply), decimals,
+      false, zaddr, zaddr, zaddr, zaddr,
+      sym, name, '', '', params,
+    ));
+  const idn = ctxn_p['created-asset-index'];
+  if ( ! idn ) { throw Error(`${sym} no asset-index!`); }
+  const id = bigNumberify(idn);
+  debug(`${sym}: asset is ${id}`);
+  const mint = async (accTo:Account, amt:unknown) => {
+    debug(`${sym}: transferring ${amt} ${sym} for ${addr(accTo)}`);
+    await transfer(accCreator, accTo, amt, id);
+  };
+  const optOut = async (accFrom:Account, accTo:Account = accCreator) => {
+    await dotxn(
+      (params) =>
+      algosdk.makeAssetTransferTxnWithSuggestedParams(
+        addr(accFrom), addr(accTo), addr(accTo), undefined,
+        // XXX this should be a bigint, but the SDK doesn't allow it
+        0, undefined, bigNumberToNumber(id), params
+      ), accFrom);
+  };
   return { name, sym, id, mint, optOut };
 }
 
