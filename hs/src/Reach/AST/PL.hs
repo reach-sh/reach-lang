@@ -299,15 +299,17 @@ data PLOpts = PLOpts
 instance HasCounter PLOpts where
   getCounter (PLOpts {..}) = plo_counter
 
+type StateSrcMap = M.Map Int (SrcLoc, [SLCtxtFrame])
+
 data PLProg
-  = PLProg SrcLoc PLOpts DLInit DLExports EPPs CPProg
+  = PLProg SrcLoc PLOpts DLInit DLExports StateSrcMap EPPs CPProg
   deriving (Eq)
 
 instance HasCounter PLProg where
-  getCounter (PLProg _ plo _ _ _ _) = getCounter plo
+  getCounter (PLProg _ plo _ _ _ _ _) = getCounter plo
 
 instance Pretty PLProg where
-  pretty (PLProg _ _ dli dex ps cp) =
+  pretty (PLProg _ _ dli dex _ ps cp) =
     "#lang pl" <> hardline
       <> pretty dex
       <> hardline

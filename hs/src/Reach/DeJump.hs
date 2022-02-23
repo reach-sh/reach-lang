@@ -83,7 +83,7 @@ instance DeJump CHandler where
     return $ C_Handler ch_at ch_int ch_from ch_last ch_svs ch_msg ch_timev ch_secsv ch_body'
 
 dejump :: PLProg -> IO PLProg
-dejump (PLProg at plo dli dex epps cp) = do
+dejump (PLProg at plo dli dex ssm epps cp) = do
   let PLOpts {..} = plo
   let CPProg cat vi ai devts (CHandlers hs) = cp
   let go h@(C_Loop {}) =
@@ -97,4 +97,4 @@ dejump (PLProg at plo dli dex epps cp) = do
         flip runReaderT (Env {..}) $ dj h
   hs' <- mapM go hs
   let cp' = CPProg cat vi ai devts (CHandlers hs')
-  return $ PLProg at plo dli dex epps cp'
+  return $ PLProg at plo dli dex ssm epps cp'

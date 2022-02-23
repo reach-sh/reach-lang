@@ -1319,7 +1319,7 @@ smt_n = \case
     mapM_ (ctxtNewScope . go) [(True, t), (False, f)]
   LLC_Switch at ov csm ->
     smtSwitch SM_Consensus at ov csm smt_n
-  LLC_FromConsensus at _ s -> do
+  LLC_FromConsensus at _ _ s -> do
     um <- asks ctxt_untrustworthyMaps
     when um $ smtMapRefresh at
     smt_s s

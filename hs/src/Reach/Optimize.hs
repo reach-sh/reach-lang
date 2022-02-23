@@ -679,8 +679,8 @@ instance Optimize LLConsensus where
       optWhile (\asn' cond' body' k' -> LLC_While at asn' inv' cond' body' k') asn cond body k
     LLC_Continue at asn ->
       LLC_Continue at <$> opt asn
-    LLC_FromConsensus at1 at2 s ->
-      LLC_FromConsensus at1 at2 <$> (maybeClearMaps $ focus_all $ opt s)
+    LLC_FromConsensus at1 at2 fs s ->
+      LLC_FromConsensus at1 at2 fs <$> (maybeClearMaps $ focus_all $ opt s)
     LLC_ViewIs at vn vk a k ->
       LLC_ViewIs at vn vk <$> opt a <*> opt k
   gcs = \case
@@ -689,7 +689,7 @@ instance Optimize LLConsensus where
     LLC_Switch _ _ csm -> gcsSwitch csm
     LLC_While _ _ _ cond body k -> gcs cond >> gcs body >> gcs k
     LLC_Continue {} -> return ()
-    LLC_FromConsensus _ _ s -> gcs s
+    LLC_FromConsensus _ _ _ s -> gcs s
     LLC_ViewIs _ _ _ _ k -> gcs k
 
 _opt_dbg :: Show a => App a -> App a
@@ -850,10 +850,10 @@ instance Optimize EPPs where
   gcs (EPPs {..}) = gcs epps_m
 
 instance Optimize PLProg where
-  opt (PLProg at plo dli dex epps cp) = do
+  opt (PLProg at plo dli dex ssm epps cp) = do
     local (updateClearMaps $ plo_untrustworthyMaps plo) $
-      PLProg at plo dli <$> opt dex <*> opt epps <*> opt cp
-  gcs (PLProg _ _ _ _ epps cp) = gcs epps >> gcs cp
+      PLProg at plo dli <$> opt dex <*> pure ssm <*> opt epps <*> opt cp
+  gcs (PLProg _ _ _ _ _ epps cp) = gcs epps >> gcs cp
 
 optimize_ :: (Optimize a) => Counter -> a -> IO a
 optimize_ c t = do

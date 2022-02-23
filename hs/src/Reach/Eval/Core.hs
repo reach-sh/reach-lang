@@ -5099,6 +5099,7 @@ findStmtTrampoline = \case
   SLV_Prim SLPrim_committed -> Just $ \_ ks -> do
     ensure_mode SLM_ConsensusStep "commit"
     sco <- e_sco <$> ask
+    fs <- e_stack <$> ask
     at <- withAt id
     st <- readSt id
     setSt $
@@ -5110,7 +5111,7 @@ findStmtTrampoline = \case
     (steplifts, cr) <-
       captureLifts $
         locSco sco' $ evalStmt ks
-    saveLift $ DLS_FromConsensus at steplifts
+    saveLift $ DLS_FromConsensus at fs steplifts
     return $ cr
   SLV_Prim SLPrim_inited -> Just $ \_ ks -> do
     ensure_mode SLM_AppInit "init"

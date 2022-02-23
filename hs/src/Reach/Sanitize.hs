@@ -131,7 +131,7 @@ instance Sanitize LLConsensus where
     LLC_Switch _ ov csm -> LLC_Switch sb ov (sani csm)
     LLC_While _ asn inv cond body k -> LLC_While sb (sani asn) (sani inv) (sani cond) (sani body) (sani k)
     LLC_Continue _ asn -> LLC_Continue sb (sani asn)
-    LLC_FromConsensus _ _ s -> LLC_FromConsensus sb sb (sani s)
+    LLC_FromConsensus _ _ fs s -> LLC_FromConsensus sb sb fs (sani s)
     LLC_ViewIs _ vn vk a k -> LLC_ViewIs sb vn vk (sani a) (sani k)
 
 instance Sanitize DLPayAmt where

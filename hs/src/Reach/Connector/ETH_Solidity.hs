@@ -1430,7 +1430,7 @@ createAPIRng env =
       return $ fromMaybe (impossible "createAPIRng") $ solStruct "ApiRng" fields
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo dli _ _ (CPProg at (vs, vi) ai _ hs)) = do
+solPLProg (PLProg _ plo dli _ _ _ (CPProg at (vs, vi) ai _ hs)) = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   ctxt_varm <- newIORef mempty

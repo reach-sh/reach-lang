@@ -1008,7 +1008,7 @@ reachBackendVersion :: Int
 reachBackendVersion = 10
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
-jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ devts _)) = do
+jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = do
   let DLInit {..} = dli
   let preamble =
         vsep
@@ -1022,6 +1022,7 @@ jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ devts _)) = do
   partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList epps_m
   cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr
   let connMap = M.fromList [(name, "_" <> pretty name) | name <- HM.keys cr]
+  ssmDoc <- mapM (\x -> jsAssertInfo (fst x) (snd x) Nothing) ssm
   exportsp <- jsExports dexports
   viewsp <-
     local (\e -> e {ctxt_maps = dli_maps}) $
@@ -1038,7 +1039,7 @@ jsPIProg cr (PLProg _ _ dli dexports (EPPs {..}) (CPProg _ vi _ devts _)) = do
           mempty
           epps_apis
   eventsp <- jsEvents devts
-  return $ vsep $ [preamble, exportsp, eventsp, viewsp, mapsp] <> partsp <> cnpsp <> [jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
+  return $ vsep $ [preamble, exportsp, eventsp, viewsp, mapsp] <> partsp <> cnpsp <> [jsObjectDef "_stateSourceMap" ssmDoc, jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
 
 backend_js :: Backend
 backend_js outn crs pl = do

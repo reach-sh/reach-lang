@@ -25,6 +25,7 @@ import {
 } from './version';
 import {
   CurrencyAmount, OnProgress,
+  apiStateMismatchError,
   IViewLib, IBackend, IBackendViewInfo, IBackendViewsInfo,
   IRecvArgs, ISendRecvArgs,
   IAccount, IContract, IRecv,
@@ -77,6 +78,7 @@ import {
   bytestringyNet,
 } from './ALGO_compiled';
 export type { Token } from './ALGO_compiled';
+import {  } from './shared_backend';
 import type { MapRefT, MaybeRep } from './shared_backend'; // =>
 import { window, process, updateProcessEnv } from './shim';
 import { sha512_256 } from 'js-sha512';
@@ -1309,7 +1311,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         debug('getState');
         return await getState_(getC, (vibna:BigNumber) => {
           if ( vibne.eq(vibna) ) { return vtys; }
-          throw Error(`Expected state ${vibne}, got ${vibna}`);
+          throw apiStateMismatchError(bin, vibne, vibna);
         });
       };
 
