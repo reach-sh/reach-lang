@@ -100,7 +100,7 @@ data DLSStmt
       , dls_tc_recv :: DLRecv DLStmts
       , dls_tc_mtime :: Maybe (DLTimeArg, DLStmts)
       }
-  | DLS_FromConsensus SrcLoc DLStmts
+  | DLS_FromConsensus SrcLoc [SLCtxtFrame] DLStmts
   | DLS_While
       { dls_w_at :: SrcLoc
       , dls_w_asn :: DLAssignment
@@ -141,7 +141,7 @@ instance Pretty DLSStmt where
         prettyOnly who (ns onlys)
       DLS_ToConsensus {..} ->
         prettyToConsensus__ ("?" :: String) dls_tc_send dls_tc_recv dls_tc_mtime
-      DLS_FromConsensus _ more ->
+      DLS_FromConsensus _ _ more ->
         prettyCommit <> hardline <> render_dls more
       DLS_While _ asn inv cond body ->
         prettyWhile asn inv cond $ render_dls body
@@ -174,7 +174,7 @@ instance SrcLocOf DLSStmt where
     DLS_Unreachable a _ _ -> a
     DLS_Only a _ _ -> a
     DLS_ToConsensus {..} -> dls_tc_at
-    DLS_FromConsensus a _ -> a
+    DLS_FromConsensus a _ _ -> a
     DLS_While {..} -> dls_w_at
     DLS_Continue a _ -> a
     DLS_FluidSet a _ _ -> a

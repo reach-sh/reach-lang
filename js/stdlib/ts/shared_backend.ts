@@ -38,7 +38,7 @@ const objectIsEmpty = (obj: any) =>
   && Object.keys(obj).length === 0
   && Object.getPrototypeOf(obj) === Object.prototype);
 
-const formatAssertInfo = (ai:any = {}) => {
+export const formatAssertInfo = (ai:any = {}) => {
   let msg = '';
   if ( typeof ai === 'string' ) {
     msg = `: ${ai}`;

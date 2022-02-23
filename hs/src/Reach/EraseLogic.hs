@@ -138,8 +138,8 @@ instance Erase LLConsensus where
       csm' <- el csm
       v' <- el v
       return $ LLC_Switch at v' csm'
-    LLC_FromConsensus at1 at2 s ->
-      LLC_FromConsensus at1 at2 <$> el s
+    LLC_FromConsensus at1 at2 fs s ->
+      LLC_FromConsensus at1 at2 fs <$> el s
     LLC_While at asn inv cond body k -> do
       k' <- el k
       cond' <- el cond

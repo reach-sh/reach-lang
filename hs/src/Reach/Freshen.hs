@@ -219,7 +219,7 @@ instance Freshen LLConsensus where
     LLC_Com s k -> LLC_Com <$> fu s <*> fu k
     LLC_If at c t f -> LLC_If at <$> fu c <*> fu t <*> fu f
     LLC_Switch at v csm -> LLC_Switch at <$> fu v <*> fu csm
-    LLC_FromConsensus x y k -> LLC_FromConsensus x y <$> fu k
+    LLC_FromConsensus x y fs k -> LLC_FromConsensus x y fs <$> fu k
     LLC_While at asn inv cond body k ->
       LLC_While at <$> fu_v asn <*> fu inv <*> fu cond <*> fu body <*> fu k
     LLC_Continue at asn -> LLC_Continue at <$> fu asn

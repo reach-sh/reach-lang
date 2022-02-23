@@ -14,6 +14,7 @@ import {
   checkedBigNumberify,
   bytesEq,
   assert,
+  formatAssertInfo,
 } from './shared_backend';
 import type { MapRefT } from './shared_backend'; // =>
 import { process } from './shim';
@@ -113,6 +114,7 @@ export type IBackend<ConnectorTy extends AnyBackendTy> = {
   _getMaps: (stdlib:Object) => IBackendMaps<ConnectorTy>,
   _Participants: {[n: string]: any},
   _APIs: {[n: string]: any | {[n: string]: any}},
+  _stateSourceMap: {[key: number]: any},
   _getEvents: (stdlib:Object) => ({ [n:string]: [any] })
 };
 
@@ -1061,3 +1063,14 @@ export const handleFormat = (amt: unknown, decimals: number, splitValue: number 
 export const formatWithDecimals = (amt: unknown, decimals: number): string => {
   return handleFormat(amt, decimals, decimals)
 }
+
+export const apiStateMismatchError = (bin: IBackend<any>, es: BigNumber, as: BigNumber) : Error => {
+  const formatLoc = (s:BigNumber) =>
+    formatAssertInfo(bin._stateSourceMap[s.toNumber()]);
+  const el = formatLoc(es);
+  const al = formatLoc(as);
+  return Error(`Expected the DApp to be in state ${es}, but it was actually in state ${as}.\n`
+    + `\nState ${es} corresponds to the commit() at ${el}`
+    + `\nState ${as} corresponds to the commit() at ${al}`
+    + (el == al ? "\n(This means that the commit() is in the continuation of an effect.)" : ""));
+};

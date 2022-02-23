@@ -5,6 +5,7 @@ import {
 } from './shared_backend';
 import type { MaybeRep, MapRefT } from './shared_backend'; // =>
 import {
+  apiStateMismatchError,
   replaceableThunk,
   debug,
   stdContract, stdVerifyContract,
@@ -544,7 +545,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const [ vibna, vsbs ] = await ethersC["_reachCurrentState"]();
         debug(`getState`, { vibne, vibna, vsbs });
         if ( ! vibne.eq(vibna) ) {
-          throw Error(`expected state ${vibne}, got ${vibna}`);
+          throw apiStateMismatchError(bin, vibne, vibna);
         }
         const ty = T_Tuple(tys);
         const res = decodeEm(ty, vsbs);

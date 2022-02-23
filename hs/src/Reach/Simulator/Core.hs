@@ -699,7 +699,7 @@ instance Interp LLConsensus where
       let (switch_binding, _, cons) = saferMaybe "LLC_Switch" $ M.lookup k switch_cases
       addToStore switch_binding v
       interp cons
-    LLC_FromConsensus _at1 _at2 step -> do
+    LLC_FromConsensus _at1 _at2 _fs step -> do
       incrNWtime 1
       incrNWsecs 1
       interp step

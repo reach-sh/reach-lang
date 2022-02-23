@@ -14,7 +14,7 @@ data LLConsensus
   = LLC_Com DLStmt LLConsensus
   | LLC_If SrcLoc DLArg LLConsensus LLConsensus
   | LLC_Switch SrcLoc DLVar (SwitchCases LLConsensus)
-  | LLC_FromConsensus SrcLoc SrcLoc LLStep
+  | LLC_FromConsensus SrcLoc SrcLoc [SLCtxtFrame] LLStep
   | LLC_While
       { llc_w_at :: SrcLoc
       , llc_w_asn :: DLAssignment
@@ -32,7 +32,7 @@ instance SrcLocOf LLConsensus where
     LLC_Com s _ -> srclocOf s
     LLC_If a _ _ _ -> a
     LLC_Switch a _ _ -> a
-    LLC_FromConsensus a _ _ -> a
+    LLC_FromConsensus a _ _ _ -> a
     LLC_While {..} -> llc_w_at
     LLC_Continue a _ -> a
     LLC_ViewIs a _ _ _ _ -> a
@@ -42,7 +42,7 @@ instance Pretty LLConsensus where
     LLC_Com x k -> prettyCom x k
     LLC_If _at ca t f -> prettyIfp ca t f
     LLC_Switch _at ov csm -> prettySwitch ov csm
-    LLC_FromConsensus _at _ret_at k ->
+    LLC_FromConsensus _at _ret_at _fs k ->
       prettyCommit <> hardline <> pretty k
     LLC_While _at asn inv cond body k ->
       prettyWhile asn inv cond (pretty body) <> hardline <> pretty k

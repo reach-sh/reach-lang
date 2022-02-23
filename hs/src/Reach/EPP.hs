@@ -163,6 +163,7 @@ data BEnv = BEnv
   , be_handlers :: IORef (M.Map Int (CApp CHandler))
   , be_flowr :: IORef FlowInput
   , be_more :: IORef Bool
+  , be_stateToSrcMap :: IORef StateSrcMap
   , be_loop :: Maybe (Int, Int)
   , be_output_vs :: IORef [DLVar]
   , be_toks :: [DLArg]
@@ -527,7 +528,7 @@ be_c = \case
           return (wrap k'c, wrap k'l)
     csm' <- mapM go csm
     return $ (,) (CT_Switch at ov <$> mapM fst csm') (ET_Switch at ov <$> mapM snd csm')
-  LLC_FromConsensus at1 _at2 s -> do
+  LLC_FromConsensus at1 _at2 fs s -> do
     this <- newSavePoint "fromConsensus"
     views <- asks be_views
     (more, s'l) <-
@@ -559,6 +560,8 @@ be_c = \case
     fg_saves this
     let cm = CT_From at1 this <$> mkfrom_info ce_readSave
     let lm = ET_FromConsensus at1 this <$> mkfrom_info ee_readSave <*> s'l
+    stateToSrcMap <- asks be_stateToSrcMap
+    liftIO $ modifyIORef stateToSrcMap $ M.insert this (at1, fs)
     return $ (,) cm lm
   LLC_While at asn _inv cond body k -> do
     let DLBlock cond_at cond_fs cond_l cond_a = cond
@@ -700,6 +703,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das devts s) = do
   be_handlers <- newIORef mempty
   be_flowr <- newIORef mempty
   be_more <- newIORef False
+  be_stateToSrcMap <- newIORef mempty
   let be_loop = Nothing
   let be_prev = 0
   let be_which = 0
@@ -736,6 +740,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das devts s) = do
   vm <- flip mapWithKeyM mkvm $ \which mk ->
     mkh $ mk <$> ce_readSave which
   cp <- (CPProg at (dvs, vm) api_info devts . CHandlers) <$> mapM mkh hs
+  stateToSrcMap <- readIORef be_stateToSrcMap
   -- Step 4: Generate the end-points
   let SLParts {..} = ps
   let mkep ee_who ie = do
@@ -750,4 +755,4 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das devts s) = do
   let plo_verifyArithmetic = llo_verifyArithmetic
   let plo_untrustworthyMaps = llo_untrustworthyMaps
   let plo_counter = llo_counter
-  return $ PLProg at (PLOpts {..}) dli dex' pps cp
+  return $ PLProg at (PLOpts {..}) dli dex' stateToSrcMap pps cp

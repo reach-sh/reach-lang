@@ -150,7 +150,7 @@ dk1 k s =
       let recv' = recv {dr_k = cs'}
       let go (ta, time_ss) = (,) ta <$> dk_ k time_ss
       DK_ToConsensus at send recv' <$> mapM go mtime
-    DLS_FromConsensus at ss -> DK_FromConsensus at at <$> dk_ k ss
+    DLS_FromConsensus at fs ss -> DK_FromConsensus at at fs <$> dk_ k ss
     DLS_While at asn inv_b cond_b body -> do
       let body' = dk_top at body
       let block = dk_block at
@@ -308,8 +308,8 @@ instance LiftCon DKTail where
       DK_ToConsensus at send <$> (noLifts $ lc recv) <*> lc mtime
     DK_If at c t f -> DK_If at c <$> lc t <*> lc f
     DK_Switch at v csm -> DK_Switch at v <$> lc csm
-    DK_FromConsensus at1 at2 k ->
-      captureLifts at1 $ DK_FromConsensus at1 at2 <$> lc k
+    DK_FromConsensus at1 at2 fs k ->
+      captureLifts at1 $ DK_FromConsensus at1 at2 fs <$> lc k
     DK_While at asn inv cond body k ->
       DK_While at asn inv cond <$> lc body <*> lc k
     DK_Continue at asn -> return $ DK_Continue at asn
@@ -467,8 +467,8 @@ df_con = \case
         fluidSet FV_baseWaitTime tct $
           fluidSet FV_baseWaitSecs tcs $
             df_con t
-  DK_FromConsensus at1 at2 t -> do
-    LLC_FromConsensus at1 at2 <$> df_step t
+  DK_FromConsensus at1 at2 fs t -> do
+    LLC_FromConsensus at1 at2 fs <$> df_step t
   DK_ViewIs at vn vk mva k -> do
     mva' <- maybe (return $ Nothing) (\eb -> Just <$> df_eb eb) mva
     k' <- df_con k

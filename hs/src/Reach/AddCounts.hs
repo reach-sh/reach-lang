@@ -297,8 +297,8 @@ instance AC ViewInfo where
     ViewInfo vs <$> ac_vi vi
 
 instance AC PLProg where
-  ac (PLProg at plo dli dex epps cp) =
-    PLProg at plo dli <$> ac dex <*> ac epps <*> ac cp
+  ac (PLProg at plo dli dex ssm epps cp) =
+    PLProg at plo dli <$> ac dex <*> pure ssm <*> ac epps <*> ac cp
 
 instance AC DLSend where
   ac = viaVisit
@@ -354,8 +354,8 @@ instance AC LLConsensus where
       csm' <- ac csm
       ac_visit c
       return $ LLC_Switch at c csm'
-    LLC_FromConsensus at1 at2 s ->
-      LLC_FromConsensus at1 at2 <$> ac s
+    LLC_FromConsensus at1 at2 fs s ->
+      LLC_FromConsensus at1 at2 fs <$> ac s
     LLC_While {..} -> do
       k' <- ac llc_w_k
       body' <- ac llc_w_body

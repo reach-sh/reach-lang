@@ -320,7 +320,7 @@ kgq_n ctxt = \case
         ctxtNewScope ctxt' $
           kgq_a_only ctxt' ov' oa
             >> kgq_n ctxt' n
-  LLC_FromConsensus _ _ k ->
+  LLC_FromConsensus _ _ _ k ->
     kgq_s ctxt k
   LLC_While _ asn _ (DLBlock _ _ cond_l ca) body k ->
     kgq_asn_def ctxt asn
