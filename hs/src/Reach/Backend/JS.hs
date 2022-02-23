@@ -471,16 +471,13 @@ jsExpr = \case
     tb' <- jsArg tb
     zero <- jsArg $ DLA_Literal $ DLL_Int at 0
     let bal = "await" <+> jsApply "ctc.getBalance" [tok]
-    asks ctxt_mode >>= \case
-      JM_Simulate -> return $ jsPrimApply SUB [bal, tb']
-      _ ->
-        return $
-          jsPrimApply
-            IF_THEN_ELSE
-            [ jsPrimApply PEQ [bal, zero]
-            , zero
-            , jsPrimApply SUB [bal, tb']
-            ]
+    return $
+      jsPrimApply
+        IF_THEN_ELSE
+        [ jsPrimApply PLE [bal, tb']
+        , zero
+        , jsPrimApply SUB [bal, tb']
+        ]
   DLE_FromSome _at mo da -> do
     mo' <- jsArg mo
     da' <- jsArg da
