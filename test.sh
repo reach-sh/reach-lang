@@ -132,7 +132,7 @@ export REACH_BUILD_NO_CACHE=Y
 
 #######
 
-c users/algo-govt/index.rsh
+cdot users/algo-govt/index.rsh
 exit 0
 (cd users/algo-govt && ./test.sh)
 exit 0
