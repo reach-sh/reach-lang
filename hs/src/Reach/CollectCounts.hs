@@ -120,12 +120,8 @@ instance Countable DLLargeArg where
     DLLA_Bytes _ -> mempty
 
 instance Countable DLTokenNew where
-  counts (DLTokenNew {..}) =
-    counts dtn_name
-      <> counts dtn_sym
-      <> counts dtn_url
-      <> counts dtn_metadata
-      <> counts dtn_supply
+  counts (DLTokenNew a b c d e f) =
+    counts [a, b, c, d, e] <> counts f
 
 instance Countable DLWithBill where
   counts (DLWithBill y z) =
