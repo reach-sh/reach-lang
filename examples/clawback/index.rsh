@@ -4,7 +4,7 @@
 export const main = Reach.App(() => {
   const A = Participant('Alice', {
     token           : Token,
-    requestMoney    : Fun([Address], Null),
+    amt             : UInt,
     triggerClawback : Fun([Address, UInt], Null),
     checkBal        : Fun([Address, UInt], Null),
     ...hasConsoleLogger
@@ -13,28 +13,29 @@ export const main = Reach.App(() => {
 
   A.only(() => {
     const token = declassify(interact.token);
+    const amt   = declassify(interact.amt);
   });
-  A.publish(token);
+  A.publish(token, amt);
   commit();
 
+  A.pay([[amt, token]]);
   const addr = getAddress();
-  A.interact.requestMoney(addr);
   A.interact.checkBal(addr, 0);
-
-  A.publish();
+  // expBal == amt
   commit();
 
-  const funds = getUntrackedFunds(token);
-  A.interact.triggerClawback(addr, funds);
+  A.interact.triggerClawback(addr, amt);
+  // expBal == 0
+
+  void getUntrackedFunds(token);
+  // expBal == 0  (does not overflow)
+
   A.interact.checkBal(addr, 1);
+  // expBal == 0
 
   A.publish();
-  commit();
-
-  A.interact.checkBal(addr, 2);
-
-  A.publish();
-  transfer(funds, token).to(A);
+  // This fails cause we don't have a balance of `amt`
+  transfer(balance(token), token).to(A);
   commit();
 
 });
