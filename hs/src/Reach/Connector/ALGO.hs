@@ -1669,6 +1669,7 @@ ce = \case
         code "bnz" [ cb_lab ]
         -- [ bal, rsh_bal ]
         op "-"
+        code "b" [ after_lab ]
         -- This happens because of clawback
         label cb_lab
         -- [ bal, rsh_bal ]
