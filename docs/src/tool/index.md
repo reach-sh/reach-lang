@@ -153,10 +153,10 @@ It then
 + The mandatory environment variable `{!cmd} REACH_CONNECTOR_MODE` specifies which context to run in.
 The options are:
 
+  + `ETH-devnet` (or `ETH` for short), which uses a Dockerized private Ethereum network.
   + `ETH-live`, which uses a live Ethereum network node, specified by the environment variable `ETH_NODE_URI`.
-  + `ETH-devnet`, which uses a Dockerized private Ethereum network.
+  + `ALGO-devnet` (or `ALGO` for short), which uses a Dockerized private Algorand network.
   + `ALGO-live`, which uses a live Algorand network node, specified by the environment variables documented in [the Algorand connector section](##ref-network-algo).
-  + `ALGO-devnet`, which uses a Dockerized private Algorand network.
 
 + The environment variable `{!cmd} REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the console.
 
@@ -207,8 +207,8 @@ It then
 + The mandatory environment variable `{!cmd} REACH_CONNECTOR_MODE` specifies which context to run in.
 The options are:
 
-  + `ETH-browser`, which targets a Dockerized private Ethereum network via a browser extension, like MetaMask.
-  + `ALGO-browser`, which targets a Dockerized private Algorand network via an ARC-0011 browser wallet.
+  + `ETH-browser` (or `ETH` for short), which targets a Dockerized private Ethereum network via a browser extension, like MetaMask.
+  + `ALGO-browser` (or `ALGO` for short), which targets a Dockerized private Algorand network via an ARC-0011 browser wallet.
 
 + The environment variable `{!cmd} REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the browser console.
 
