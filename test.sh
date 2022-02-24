@@ -132,11 +132,6 @@ export REACH_BUILD_NO_CACHE=Y
 
 #######
 
-jb
-ci ETH formatWithDecimals-demo
-ci ALGO formatWithDecimals-demo
-exit
-
 c users/algo-govt/index.rsh
 exit 0
 (cd users/algo-govt && ./test.sh)
