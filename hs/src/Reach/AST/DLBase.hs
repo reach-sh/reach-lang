@@ -752,9 +752,10 @@ instance PrettySubst DLExpr where
       mc' <- prettySubst mc
       let f' = pretty f
       return $ "setApiDetails" <> parens (render_das [p', d', mc', f'])
-    DLE_GetUntrackedFunds _ mtok _ -> do
+    DLE_GetUntrackedFunds _ mtok tb -> do
       mtok' <- prettySubst mtok
-      return $ "getActualBalance" <> parens mtok'
+      tb' <- prettySubst tb
+      return $ "getActualBalance" <> parens (mtok' <> ", " <> tb')
     DLE_FromSome _ mo da -> do
       mo' <- prettySubst mo
       da' <- prettySubst da

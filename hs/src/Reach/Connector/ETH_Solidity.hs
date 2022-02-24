@@ -658,17 +658,6 @@ solExpr sp = \case
   DLE_TokenDestroy _ ta -> do
     ta' <- solArg ta
     return $ solApply "safeReachTokenDestroy" [ta'] <> sp
-  DLE_GetUntrackedFunds _ mtok tb -> do
-    tb' <- solArg tb
-    bal <- case mtok of
-      Nothing -> return "address(this).balance"
-      Just tok -> do
-        tok' <- solArg tok
-        return $ solApply "tokenBalanceOf" [tok', "address(this)"]
-    solPrimApply SUB [bal, tb']
-    -- XXX WARNING, because of evil tokens, this may fail. We could return 0
-    -- instead, but this would be a sign that we have less money than we really
-    -- do.
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract {} -> return $ "payable(address(this))"
   DLE_GetAddress {} -> return $ "payable(address(this))"
@@ -681,6 +670,7 @@ solExpr sp = \case
     let vn = "Some"
     c <- solEq (mo' <> ".which") (solVariant t vn)
     return $ parens $ c <+> "?" <+> (mo' <> "._" <> pretty vn) <+> ":" <+> da'
+  DLE_GetUntrackedFunds {} -> impossible "getUntrackedFunds"
   where
     spa m = (<> sp) <$> m
 
@@ -925,6 +915,23 @@ solCom = \case
   DL_Let _ (DLV_Let _ dv) (DLE_LArg _ la) -> do
     addMemVar dv
     solLargeArg dv la
+  DL_Let _ (DLV_Let _ dv) (DLE_GetUntrackedFunds at mtok tb) -> do
+    addMemVar dv
+    actBalV <- allocVar
+    tb' <- solArg tb
+    bal <- case mtok of
+      Nothing -> return "address(this).balance"
+      Just tok -> do
+        tok' <- solArg tok
+        return $ solApply "tokenBalanceOf" [tok', "address(this)"]
+    sub <- solPrimApply SUB [actBalV, tb']
+    zero <- solArg $ DLA_Literal $ DLL_Int at 0
+    cnd <- solPrimApply PLT [actBalV, tb']
+    ite <- solPrimApply IF_THEN_ELSE [cnd, zero, sub]
+    return $ vsep [
+        solSet ("uint256" <+> actBalV) bal,
+        solSet (solMemVar dv) ite
+      ]
   DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ (BYTES_ZPAD _) [x]) -> do
     addMemVar dv
     dv' <- solVar dv
