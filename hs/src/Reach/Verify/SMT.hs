@@ -393,41 +393,58 @@ mustBeSDT_D = \case
   _ -> impossible "mustBeSDT_D"
 
 parseType :: SExpr -> App SDT
-parseType ty = do
-  case ty of
-    Atom "Int" -> return $ SDT_D $ T_UInt
-    Atom "Bytes" -> return $ SDT_D $ T_Bytes 0
-    Atom t -> do
-      typem <- asks ctxt_smt_typem
-      case M.lookup t typem of
-        Just dt -> return $ SDT_D dt
-        Nothing -> impossible $ "parseType: Atom: " <> show ty
-    List [Atom "Array", Atom "Int", etse] -> do
-      et <- mustBeSDT_D <$> parseType etse
-      return $ SDT_D $ T_Array et 0
-    List [Atom "Array", domse, rngse] -> do
-      dom <- mustBeSDT_D <$> parseType domse
-      rng <- mustBeSDT_D <$> parseType rngse
-      return $ SDT_SMap dom rng
-    _ -> impossible $ "parseType: " <> show ty
+parseType = \case
+  Atom "Int" -> return $ SDT_D $ T_UInt
+  Atom "Bytes" -> return $ SDT_D $ T_Bytes 0
+  Atom t -> do
+    typem <- asks ctxt_smt_typem
+    case M.lookup t typem of
+      Just dt -> return $ SDT_D dt
+      Nothing -> impossible $ "parseType: Atom: " <> show t
+  List [Atom "Array", Atom "Int", etse] -> do
+    et <- mustBeSDT_D <$> parseType etse
+    return $ SDT_D $ T_Array et 0
+  List [Atom "Array", domse, rngse] -> do
+    dom <- mustBeSDT_D <$> parseType domse
+    rng <- mustBeSDT_D <$> parseType rngse
+    return $ SDT_SMap dom rng
+  ty -> impossible $ "parseType: " <> show ty
 
-parseVal :: M.Map SExpr SExpr -> SDT -> SExpr -> App SMTVal
+_parseValType :: M.Map String SExpr -> SExpr -> App SDT
+_parseValType env = \case
+  Atom ident
+    | M.member ident env -> do
+      let mv = M.lookup ident env
+      maybe (impossible "parseVal: lookup") (_parseValType env) mv
+  v -> impossible $ "parseValType: " <> show v
+
+parseVal :: M.Map String SExpr -> SDT -> SExpr -> App SMTVal
 parseVal env sdt v = do
   case v of
+    List [Atom "ite", ce, te, fe] -> do
+      c' <- parseVal env (SDT_D T_Bool) ce
+      t' <- parseVal env sdt te
+      f' <- parseVal env sdt fe
+      return $ SMV_ite c' t' f'
+    List [Atom "=", _le, _re] -> do
+      --ty <- parseValType env le
+      --l' <- parseVal env ty le
+      --r' <- parseVal env ty re
+      return $ SMV_unknown v
     -- Parse let bindings and add them to the subst env
     List [Atom "let", List envs, e] -> do
       let env' =
             M.fromList $
               map
                 (\case
-                   List [k, v'] -> (k, v')
+                   List [Atom k, v'] -> (k, v')
                    _ -> impossible "parseVal: encountered non-pair let binding")
                 envs
       parseVal (M.union env' env) sdt e
     -- Sub var if encountered
     Atom ident
-      | M.member (Atom ident) env -> do
-        let mv = M.lookup v env
+      | M.member ident env -> do
+        let mv = M.lookup ident env
         maybe (impossible "parseVal: lookup") (parseVal env sdt) mv
     _ ->
       case sdt of
@@ -491,6 +508,8 @@ parseVal env sdt v = do
                     (SMV_Array _ vs, SMV_Int idx) -> do
                       return $ SMV_Array ty $ arraySet (fromIntegral idx) vv vs
                     _ -> impossible $ "parseVal: Array.store: " <> show arrv <> " && " <> show idxv
+                List [Atom "_", Atom "as-array", _] ->
+                  return $ SMV_unknown v
                 _ -> impossible $ "parseVal: Array: " <> show v
             T_Tuple [] ->
               case v of

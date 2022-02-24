@@ -23,6 +23,7 @@ import Reach.CollectCounts
 import Reach.Texty
 import Reach.UnsafeUtil
 import Reach.Util (impossible)
+import SimpleSMT (SExpr)
 
 data BindingOrigin
   = O_Join SLPart Bool
@@ -268,6 +269,8 @@ data SMTVal
   | SMV_Contract String
   | SMV_Map_Const SMTVal
   | SMV_Map_Set SMTVal SMTVal SMTVal
+  | SMV_ite SMTVal SMTVal SMTVal
+  | SMV_unknown SExpr
   deriving (Eq, Show)
 
 instance Pretty SMTVal where
@@ -287,6 +290,9 @@ instance Pretty SMTVal where
     SMV_Data c xs -> pretty c <> parens (hsep $ punctuate comma $ map pretty xs)
     SMV_Map_Const v -> "<map: " <> parens (pretty v) <> ">"
     SMV_Map_Set m f ma -> pretty m <> brackets (pretty f <+> "<-" <+> pretty ma)
+    SMV_ite cv tv fv -> parens $ pretty cv <+> "?" <+> pretty tv <+> ":" <+> pretty fv
+    --SMV_eq lv rv -> parens $ pretty lv <+> "=" <+> pretty rv
+    SMV_unknown v -> "<smt:" <+> (pretty $ show v) <+> ">"
 
 instance Countable SynthExpr where
   counts = \case

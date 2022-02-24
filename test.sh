@@ -137,7 +137,7 @@ ci ALGO atomic-swap
 ci ALGO max-supply-precision
 exit 0
 
-c users/algo-govt/index.rsh
+cdot users/algo-govt/index.rsh
 exit 0
 (cd users/algo-govt && ./test.sh)
 exit 0
