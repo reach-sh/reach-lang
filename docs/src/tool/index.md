@@ -33,37 +33,38 @@ Reach has a few sub-commands, each with their own options.
 
 However, all commands support the following options:
 
-+ The environment variable `{!cmd} REACH_VERSION` signifies what version of Reach to use.
++ The environment variable @{ref("cmd", "REACH_VERSION")} `{!cmd} REACH_VERSION` signifies what version of Reach to use.
 
-Although normally expressed in a [semantic versioning](##guide-versions)-friendly format, e.g. `v0.1` or `v0.1.6`, `{!cmd} REACH_VERSION` also supports:
-+ Hashes such as [639fa565](https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore).
+  Although normally expressed in a [semantic versioning](##guide-versions)-friendly format, e.g. `v0.1` or `v0.1.6`, `{!cmd} REACH_VERSION` also supports:
+  + Hashes such as [639fa565](https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore).
 
-Valid hashes may be obtained by running:
-```cmd
-$ reach hashes
-reach: 8150e7e4
-reach-cli: 8150e7e4
-react-runner: fb449c94
-rpc-server: fb449c94
-runner: fb449c94
-devnet-algo: fb449c94
-devnet-cfx fb449c94
-devnet-eth: fb449c94
-```
+    Valid hashes may be obtained by running:
+    ```cmd
+    $ reach hashes
+    reach: 8150e7e4
+    reach-cli: 8150e7e4
+    react-runner: fb449c94
+    rpc-server: fb449c94
+    runner: fb449c94
+    devnet-algo: fb449c94
+    devnet-cfx fb449c94
+    devnet-eth: fb449c94
+    ```
 
-+ Date-stamps such as [2021-11-04](https://hub.docker.com/layers/reachsh/reach/2021-11-04/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore).
+  + Date-stamps such as [2021-11-04](https://hub.docker.com/layers/reachsh/reach/2021-11-04/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore).
 
-Valid date-stamps may be obtained by browsing Reach's public Docker image registry on [DockerHub](https://hub.docker.com/r/reachsh/reach/tags).
+    Valid date-stamps may be obtained by browsing Reach's public Docker image registry on [DockerHub](https://hub.docker.com/r/reachsh/reach/tags).
 
-Tip: try entering your desired year in the filter box to skip other tag types.
-+ The identifer "`stable`".
+    Tip: try entering your desired year in the filter box to skip other tag types.
 
-Reach will interpret this to mean the most recent stable [major](##guide-versions) version.
+  + The identifer "`stable`".
 
-When using the semantic versioning form of `{!cmd} REACH_VERSION` the preceding `v` character is optional.
-In other words, `v0.1.6` is equivalent to `0.1.6`.
+    Reach will interpret this to mean the most recent stable [major](##guide-versions) version.
 
-# {#ref-usage-compile} `reach compile`
+  When using the semantic versioning form of `{!cmd} REACH_VERSION` the preceding `v` character is optional.
+  In other words, `v0.1.6` is equivalent to `0.1.6`.
+
+# {#ref-usage-compile} @{ref("cmd", "reach compile")} `reach compile`
 
 Compile Reach code by executing
 
@@ -80,7 +81,7 @@ If no `EXPORT` is provided, then all the exported `{!rsh} Reach.App`s will be co
 If there are no `{!rsh} Reach.App`s exported, then the program will be compiled as a library, where its exports are available to other Reach programs and frontends.
 The output name of a library is the same as if it exported a `{!rsh} Reach.App` named `default`.
 
-`@{ref("cmd", "compile")}reach compile` supports the following options:
+`{!cmd} reach compile` supports the following options:
 
 + `-o`/`--output` `OUTPUT` --- Writes compiler output files to `OUTPUT`, which defaults to a directory named `build` in the same directory as `SOURCE`.
 
@@ -101,13 +102,13 @@ The output name of a library is the same as if it exported a `{!rsh} Reach.App` 
 + `--verify-timeout` `TIMEOUT-MS` --- Sets the timeout of individual verification theorems, in milliseconds.
   The default value is 2 minutes.
 
-+ The environment variable `REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach compiler, which will appear in the console.
++ The environment variable `{!cmd} REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach compiler, which will appear in the console.
   This debug information includes: the estimated cost of the contract on Algorand.
-  This variable automatically enabled `--intermediate-files`.
-  
-A `reach compile` usage example is available in [Overview](##over-compile).
+  This variable automatically enables `--intermediate-files`.
 
-# {#ref-usage-init} `reach init`
+A `{!cmd} reach compile` usage example is available in [Overview](##over-compile).
+
+# {#ref-usage-init} @{ref("cmd", "reach init")} `reach init`
 
 This creates the `index.rsh` and `index.mjs` template files required for a basic Reach DApp.
 It allows you to open the files and start writing code.
@@ -117,11 +118,11 @@ The `index.rsh` file is the DApp and is written in Reach, and the `index.mjs` fi
 $ reach init
 ```
 
-# {#ref-usage-run} `reach run`
+# {#ref-usage-run} @{ref("cmd", "reach run")} `reach run`
 
-The `reach run` command with no arguments starts the `index` application in the current directory by default, but you can set a different directory, application name, or both.
+The `{!cmd} reach run` command with no arguments starts the `index` application in the current directory by default, but you can set a different directory, application name, or both.
 
-The `reach run` command uses the following interface:
+The `{!cmd} reach run` command uses the following interface:
 
 ```cmd
 $ reach run [APP or DIR] [ARGS]
@@ -147,26 +148,24 @@ It then
 + Builds a Docker image named `reachsh/reach-app-APP:latest` that depends on the Reach JavaScript standard library.
 + Executes a container based upon that image while connected to the network determined by `{!cmd} REACH_CONNECTOR_MODE`.
 
-`reach run` supports the following options:
+`{!cmd} reach run` supports the following options:
 
 + The mandatory environment variable `{!cmd} REACH_CONNECTOR_MODE` specifies which context to run in.
 The options are:
 
-+ `ETH-live`, which uses a live Ethereum network node, specified by the environment variable `ETH_NODE_URI`.
-+ `ETH-browser`, which uses Ethereum via a browser extension, like MetaMask.
-+ `ETH-devnet`, which uses a Dockerized private Ethereum network.
-+ `ALGO-live`, which uses a live Algorand network node, specified by the environment variables documented in [the Algorand connector section](##ref-network-algo).
-+ `ALGO-browser`, which uses Algorand via an ARC-0011 browser wallet.
-+ `ALGO-devnet`, which uses a Dockerized private Algorand network.
+  + `ETH-live`, which uses a live Ethereum network node, specified by the environment variable `ETH_NODE_URI`.
+  + `ETH-devnet`, which uses a Dockerized private Ethereum network.
+  + `ALGO-live`, which uses a live Algorand network node, specified by the environment variables documented in [the Algorand connector section](##ref-network-algo).
+  + `ALGO-devnet`, which uses a Dockerized private Algorand network.
 
-+ The environment variable `REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the console.
++ The environment variable `{!cmd} REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the console.
 
-`reach run` can be further specialized via the presence of a `Dockerfile` and `package.json` file.
-If either are absent, `reach run` assumes a default behavior (which may be persisted with `reach scaffold`).
+`{!cmd} reach run` can be further specialized via the presence of a `Dockerfile` and `package.json` file.
+If either are absent, `{!cmd} reach run` assumes a default behavior (which may be persisted with `{!cmd} reach scaffold`).
 
 The `Dockerfile` can be modified to introduce new dependencies, services, or filesystem prerequisites into your app's containerized environment, and the `package.json` file may likewise be extended to include additional libraries or make configuration changes to the resultant Node.js package.
 
-# {#ref-usage-down} `reach down`
+# {#ref-usage-down} @{ref("cmd", "reach down")} `reach down`
 
 You can halt all Dockerized Reach apps and devnets by running
 
@@ -174,7 +173,7 @@ You can halt all Dockerized Reach apps and devnets by running
 $ reach down
 ```
 
-# {#ref-usage-scaffold} `reach scaffold`
+# {#ref-usage-scaffold} @{ref("cmd", "reach scaffold")} `reach scaffold`
 
 You can create templated `Dockerfile` and `package.json` files for a simple Reach app by running
 
@@ -182,9 +181,9 @@ You can create templated `Dockerfile` and `package.json` files for a simple Reac
 $ reach scaffold
 ```
 
-The files created are the same as those used temporarily by `reach run`.
+The files created are the same as those used temporarily by `{!cmd} reach run`.
 
-# {#ref-usage-react} `reach react`
+# {#ref-usage-react} @{ref("cmd", "reach react")} `reach react`
 
 You can run a simple React app by executing
 
@@ -203,33 +202,33 @@ It then
 + Runs the appropriate devnet based on `{!cmd} REACH_CONNECTOR_MODE`
 + Mounts the current directory into `/app/src/` in the `reachsh/react-runner` Docker image and runs it.
 
-`reach react` supports the following options:
+`{!cmd} reach react` supports the following options:
 
 + The mandatory environment variable `{!cmd} REACH_CONNECTOR_MODE` specifies which context to run in.
 The options are:
 
-+ `ETH`, which runs a Dockerized private Ethereum network which may be used. The app can use any Ethereum network.
-+ `ALGO`, which runs a Dockerized private Algorand network which may be used. (Support for using any Algorand network is forthcoming with TEAL 3.)
+  + `ETH-browser`, which targets a Dockerized private Ethereum network via a browser extension, like MetaMask.
+  + `ALGO-browser`, which targets a Dockerized private Algorand network via an ARC-0011 browser wallet.
 
-+ The environment variable `REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the browser console.
++ The environment variable `{!cmd} REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach standard library, which will appear in the browser console.
 
-When using `{!js} loadStdlib` in conjunction with `reach react`,
+When using `{!js} loadStdlib` in conjunction with `{!cmd} reach react`,
 be sure to pass in `{!js} process.env` as its argument.
 See `{!js} loadStdlib` for details.
 
-`reach react` does not respect the same scaffolded files as `reach run`.
+`{!cmd} reach react` does not respect the same scaffolded files as `{!cmd} reach run`.
 It is just a simplified tool to give you a taste of web programming with reach.
 If you would like access to more customizations on a browser-based project,
 such as custom environment variables,
 custom JavaScript dependencies,
 or using other JavaScript frameworks like Angular,
-we recommend that you simply use `reach compile`,
+we recommend that you simply use `{!cmd} reach compile`,
 and use your own preferred JavaScript setup for the project.
 The compiled `build/index.main.mjs` JavaScript file
 and the `'@reach-sh/stdlib'` JavaScript library
 may be used in any JavaScript project like any other JavaScript file and library, respectively.
 
-# {#ref-usage-devnet} `reach devnet`
+# {#ref-usage-devnet} @{ref("cmd", "reach devnet")} `reach devnet`
 
 You can run a private Reach devnet by executing the following command:
 
@@ -238,23 +237,23 @@ $ reach devnet
 ```
 
 :::note
-If running `reach devnet`, it is recommended to permanently set `{!cmd} REACH_CONNECTOR_MODE` to the desired consensus network. 
-If you did not set this when you originally ran `reach config`, then you can run `reach devnet` with the argument `{!cmd} REACH_CONNECTOR_MODE=[OPTION]` as in the following command.
+If running `{!cmd} reach devnet`, it is recommended to permanently set `{!cmd} REACH_CONNECTOR_MODE` to the desired consensus network.
+If you did not set this when you originally ran `{!cmd} reach config`, then you can run `{!cmd} reach devnet` with the argument `{!cmd} REACH_CONNECTOR_MODE=[OPTION]` as in the following command.
 :::
 
 ```cmd
 $ REACH_CONNECTOR_MODE=ALGO ./reach devnet
 ```
 
-`reach devnet` supports the following options:
+`{!cmd} reach devnet` supports the following options:
 
 + `--await-background` --- Run in the background and await availability.
 
-For more information on environmental variables and `{!cmd} REACH_CONNECTOR_MODE`, refer to [reach run](##ref-usage-run). 
+For more information on environment variables and `{!cmd} REACH_CONNECTOR_MODE`, refer to `{!cmd} reach run`.
 
 For more information on devnet options, refer to [Networks](##ref-networks).
 
-# {#ref-usage-rpc-server} `reach rpc-server`
+# {#ref-usage-rpc-server} @{ref("cmd", "reach rpc-server")} `reach rpc-server`
 
 The following command
 
@@ -262,31 +261,27 @@ The following command
 $ reach rpc-server
 ```
 
-starts an instance of the [Reach RPC Server](##ref-backends-rpc) using all of the same options and defaults as `reach run`.
+starts an instance of the [Reach RPC Server](##ref-backends-rpc), sharing all of the same options and defaults as `{!cmd} reach run`, but also including the following:
 
-`reach rpc-server` supports the following options:
++ The environment variable `{!cmd} REACH_RPC_KEY` is used to determine the RPC server key.
+  If not defined, it defaults to `opensesame`, and a warning will appear in the console stating that the development key is being used.
 
-+ The environment variable `REACH_RPC_KEY` is used to determine the RPC server key.
-If not defined, it defaults to `opensesame`, and a warning will
-appear in the console stating that the development key is being used.
+  In a production context this key must be kept secret, and it should be randomly generated with a suitably strong method, such as:
 
-In a production context this key must be kept secret, and it should be
-randomly generated with a suitably strong method, such as:
+  ```cmd
+  $ head -c 24 /dev/urandom | base64
+  ```
 
-```cmd
-$ head -c 24 /dev/urandom | base64
-```
-
-+ The environment variable `REACH_RPC_PORT` is used to determine which port to bind to.
++ The environment variable `{!cmd} REACH_RPC_PORT` is used to determine which port to bind to.
 It defaults to `3000`.
-+ The environment variable `REACH_RPC_TLS_KEY` is used to determine the path to the TLS `key` file, which must be in the `./tls` directory.
++ The environment variable `{!cmd} REACH_RPC_TLS_KEY` is used to determine the path to the TLS `key` file, which must be in the `./tls` directory.
 It defaults to `reach-server.key`.
-+ The environment variable `REACH_RPC_TLS_CRT` is used to determine the path to the TLS `crt` file, which must be in the `./tls` directory.
++ The environment variable `{!cmd} REACH_RPC_TLS_CRT` is used to determine the path to the TLS `crt` file, which must be in the `./tls` directory.
 It defaults to `reach-server.crt`.
-+ The environment variable `REACH_RPC_TLS_PASSPHRASE` is used to determine the TLS passphrase.
++ The environment variable `{!cmd} REACH_RPC_TLS_PASSPHRASE` is used to determine the TLS passphrase.
 It defaults to `rpc-demo`.
 
-# {#ref-usage-rpc-run} `reach rpc-run`
+# {#ref-usage-rpc-run} @{ref("cmd", "reach rpc-run")} `reach rpc-run`
 
 The following command
 
@@ -306,20 +301,20 @@ Consider this example from the @{seclink("tut-7-rpc")} tutorial:
 $ reach rpc-run python3 -u ./index.py
 ```
 
-# {#ref-usage-docker-reset} `reach docker-reset`
+# {#ref-usage-docker-reset} @{ref("cmd", "reach docker-reset")} `reach docker-reset`
 
-This command removes all containers and volumes from Docker.
-If you have any personal containers, those containers will also be removed.
-Containers can then be restarted in your Docker Images list. It does not uninstall any Docker images.
+You can easily kill and remove all Docker containers by executing
 
 ```cmd
 $ reach docker-reset
 ```
 
-This can be a useful thing to try if your Docker containers stop responding to requests or otherwise misbehave, or if you have updated your Reach images (with `reach update`) but those changes are not taking effect.
-It will affect all Docker containers on your machine, not just those created by Reach.
+This can be a useful thing to try if your Docker containers stop responding to requests or otherwise misbehave, or if you have updated your Reach images (with `{!cmd} reach update`) but those changes are not taking effect.
 
-# {#ref-usage-info} `reach info`
+It will affect all Docker containers on your machine, not just those created by Reach.
+For this reason it's recommended to prefer `{!cmd} reach down`.
+
+# {#ref-usage-info} @{ref("cmd", "reach info")} `reach info`
 
 To check whether new releases are available, run
 
@@ -327,15 +322,15 @@ To check whether new releases are available, run
 $ reach info
 ```
 
-`{!cmd} reach info` may be paired with the [`{!cmd} REACH_VERSION` environment variable](##ref-usage) in order to respect version-pinning (e.g. if you want the latest version on Reach's `0.1.6` branch but don't wish to upgrade to `0.1.7`).
+`{!cmd} reach info` may be paired with the `{!cmd} REACH_VERSION` environment variable in order to respect version-pinning (e.g. if you want the latest version on Reach's `0.1.6` branch but don't wish to upgrade to `0.1.7`).
 
-An interactive menu, allowing you to selectively perform suggested updates, is also available
+An interactive menu, allowing you to selectively perform suggested updates, is also available:
 
 ```cmd
 $ reach info --interactive
 ```
 
-# {#ref-usage-update} `reach update`
+# {#ref-usage-update} @{ref("cmd", "reach update")} `reach update`
 
 You can update Reach to a newer release by executing
 
@@ -343,9 +338,9 @@ You can update Reach to a newer release by executing
 $ reach update
 ```
 
-As with `{!cmd} reach info`, `{!cmd} reach update` respects the [`{!cmd} REACH_VERSION` environment variable](##ref-usage) for the purpose of version-pinning.
+As with `{!cmd} reach info`, `{!cmd} reach update` respects the `{!cmd} REACH_VERSION` environment variable for the purpose of version-pinning.
 
-# {#ref-usage-version} `reach version`
+# {#ref-usage-version} @{ref("cmd", "reach version")} `reach version`
 
 Check which version of the Reach command-line tool is currently installed by running
 
@@ -353,9 +348,9 @@ Check which version of the Reach command-line tool is currently installed by run
 $ reach version
 ```
 
-This is less precise than `reach hashes`, but gives you an idea of which features are, or are not, available in your build version.
+This is less precise than `{!cmd} reach hashes`, but gives you an idea of which features are, or are not, available in your build version.
 
-# {#ref-usage-hashes} `reach hashes`
+# {#ref-usage-hashes} @{ref("cmd", "reach hashes")} `reach hashes`
 
 Check which version of each Reach Docker image is installed.
 This command returns the hash version of each image in an 8 digit alpha-numeric code (such as [639fa565](https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore)).
@@ -364,10 +359,10 @@ This command returns the hash version of each image in an 8 digit alpha-numeric 
 $ reach hashes
 ```
 
-This is more precise, but less readable, than `reach version`,
+This is more precise, but less readable, than `{!cmd} reach version`,
 in that each hash refers to the git commit used to build the image.
 
-# {#ref-usage-config} `reach config`
+# {#ref-usage-config} @{ref("cmd", "reach config")} `reach config`
 
 Reach recommends tuning your default workflow settings by executing
 
@@ -375,9 +370,9 @@ Reach recommends tuning your default workflow settings by executing
 $ reach config
 ```
 
-Using `reach config` is advisable when running Reach for the first time since it will set the `{!cmd} REACH_CONNECTOR_MODE` environment variable, which is required when executing some other sub-commands (e.g. `reach run`).
+Using `{!cmd} reach config` is advisable when running Reach for the first time since it will set the `{!cmd} REACH_CONNECTOR_MODE` environment variable, which is required when executing some other sub-commands (e.g. `{!cmd} reach run`).
 
-`reach config` presents users with a guided menu which automatically creates an `env` file and suggests subsequent steps to activate and make it permanent.
+`{!cmd} reach config` presents users with a guided menu which automatically creates an `env` file and suggests subsequent steps to activate and make it permanent.
 This `env` file exports environment variable settings and is intended to be `source`d by users' shells.
 
-If an `env` file already exists, `reach config` offers to back it up before proceeding.
+If an `env` file already exists, `{!cmd} reach config` offers to back it up before proceeding.
