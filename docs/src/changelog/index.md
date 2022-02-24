@@ -7,6 +7,8 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.8 is the current Reach release candidate version.
 
++ 2022/02/24: Added [`{!cmd} reach info`](##ref-usage-info).
++ 2022/02/24: Removed `{!cmd} reach upgrade` (subsumed by [`{!cmd} reach update`](##ref-usage-update)).
 + 2022/02/08: Added `{!js} balancesOf`.
 + 2022/02/06: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/01/29: Added `{!cmd} ALGO_NODE_WRITE_ONLY`.
