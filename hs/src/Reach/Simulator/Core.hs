@@ -7,7 +7,6 @@ import Data.Aeson
 import Data.Bits
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe)
-import Data.List (find)
 import GHC.Generics
 import qualified GHC.Stack as G
 import Reach.AST.Base
@@ -328,7 +327,7 @@ updateLedger acc tok f = do
   (e, _) <- getState
   let map_ledger = e_ledger e
   let m = saferMaybe "updateLedger: account not found" $ M.lookup acc map_ledger
-  let prev_amt = saferMaybe ("updateLedger: token not found " ++ show tok ++ " " ++ show map_ledger) $ M.lookup tok m
+  let prev_amt = saferMaybe ("updateLedger: token not found " <> show tok <> " " <> show map_ledger) $ M.lookup tok m
   let new_amt = f prev_amt
   let new_nw_ledger = M.insert acc (M.insert tok new_amt m) map_ledger
   setGlobal $ e {e_ledger = new_nw_ledger}
@@ -361,6 +360,18 @@ consensusLookup dlvar = do
 
 class Interp a where
   interp :: a -> App DLVal
+
+interpAs :: (Interp a) => ActorId -> a -> App DLVal
+interpAs aid p = do
+  (g,l) <- getState
+  let fAid = l_curr_actor_id l
+  let l' = l {l_curr_actor_id = aid}
+  setState (g,l')
+  v <- interp p
+  (g',l'') <- getState
+  let l''' = l'' {l_curr_actor_id = fAid}
+  setState (g',l''')
+  return v
 
 interpPrim :: (PrimOp, [DLVal]) -> App DLVal
 interpPrim = \case
@@ -398,15 +409,6 @@ interpPrim = \case
 conCons' :: DLConstant -> DLVal
 conCons' DLC_UInt_max = V_UInt $ 2 ^ (64 :: Integer) - 1
 
-searchStores :: DLVar -> App DLVal
-searchStores var = do
-  (_, l) <- getState
-  let locals = M.elems $ l_locals l
-  let stores = map l_store locals
-  let vals = map (M.lookup var) stores
-  let r = find (\x -> x /= Nothing) vals
-  return $ saferMaybe "searchStores" $ join r
-
 instance Interp DLArg where
   interp = \case
     DLA_Var dlvar -> do
@@ -419,16 +421,13 @@ instance Interp DLArg where
           let st = l_store lst
           case M.lookup dlvar st of
             Nothing -> do
-              case aid == consensusId of
-                True -> searchStores dlvar
-                False -> do
-                  possible $
-                    "DLA_Var "
-                      <> show dlvar
-                      <> " "
-                      <> show st
-                      <> " "
-                      <> show (l_who lst)
+              possible $
+                "DLA_Var "
+                  <> show dlvar
+                  <> " "
+                  <> show st
+                  <> " "
+                  <> show (l_who lst)
             Just a -> return a
     DLA_Constant dlconst -> return $ conCons' dlconst
     DLA_Literal dllit -> interp dllit
@@ -565,7 +564,7 @@ instance Interp DLExpr where
           tok_billed <- mapM interp dwb_tok_billed
           args <- mapM interp dlargs
           v <- suspend $ PS_Suspend (Just at) (A_Remote slcxtframes str args tok_billed)
-          consensusPayout acc dlPayAmnt
+          consensusPayout acc consensusId dlPayAmnt
           return v
     DLE_TokenNew _at dltokennew -> do
       (g, _) <- getState
@@ -769,14 +768,14 @@ instance Interp LLStep where
               let winningMsg = saferMaybe ("Message not yet seen") $ M.lookup actId' msgs
               _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg) (m_pay winningMsg)
               winner dlr actId' phId
-              consensusPayout accId (ds_pay dls)
+              consensusPayout accId actId' (ds_pay dls)
               interp $ dr_k
 
 poll :: PhaseId -> App (ActorId, Store)
 poll phId = do
   (g, l) <- getState
   who <- show <$> whoIs (l_curr_actor_id l)
-  return $ fixedMsg $ saferMaybe ("early poll for " ++ who) $ M.lookup phId $ e_messages g
+  return $ fixedMsg $ saferMaybe ("early poll for " <> who) $ M.lookup phId $ e_messages g
 
 runWithWinner :: DLRecv LLConsensus -> ActorId -> PhaseId -> App DLVal
 runWithWinner dlr actId phId = do
@@ -814,16 +813,16 @@ getMyLocalInfo = do
   let locals = l_locals l
   return $ saferMaybe "getMyLocalInfo" $ M.lookup (fromIntegral actId) locals
 
-consensusPayout :: Account -> DLPayAmt -> App ()
-consensusPayout accId DLPayAmt {..} = do
+consensusPayout :: Account -> ActorId -> DLPayAmt -> App ()
+consensusPayout accId actId DLPayAmt {..} = do
   _ <-
     mapM
       (\(a, b) -> do
-         b' <- vTok <$> (interp b)
-         a' <- vUInt <$> (interp a)
+         b' <- vTok <$> (interpAs actId b)
+         a' <- vUInt <$> (interpAs actId a)
          transferLedger (fromIntegral accId) simContract b' a')
       pa_ks
-  net <- vUInt <$> interp pa_net
+  net <- vUInt <$> interpAs actId pa_net
   transferLedger (fromIntegral accId) simContract nwToken net
 
 bindConsensusMeta :: DLRecv LLConsensus -> ActorId -> Account -> App ()
@@ -907,7 +906,7 @@ while bl cons = do
     V_Bool True -> do
       _ <- interp cons
       while bl cons
-    _ -> possible $ ("in (while) expected boolean, received " ++ show bool)
+    _ -> possible $ ("in (while) expected boolean, received " <> show bool)
 
 saferIndex :: Int -> [a] -> a
 saferIndex 0 (x : _) = x
@@ -916,35 +915,35 @@ saferIndex n (_ : xs) = saferIndex (n -1) xs
 
 vUInt :: G.HasCallStack => DLVal -> Integer
 vUInt (V_UInt n) = n
-vUInt b = impossible ("unexpected error: expected integer value: received " ++ show b)
+vUInt b = impossible ("unexpected error: expected integer value: received " <> show b)
 
 vContract :: G.HasCallStack => DLVal -> Account
 vContract (V_Contract n) = n
-vContract b = impossible ("unexpected error: expected account value: received " ++ show b)
+vContract b = impossible ("unexpected error: expected account value: received " <> show b)
 
 vTok :: G.HasCallStack => DLVal -> Integer
 vTok (V_Token n) = fromIntegral n
-vTok b = impossible ("unexpected error: expected token integer value: received " ++ show b)
+vTok b = impossible ("unexpected error: expected token integer value: received " <> show b)
 
 vArray :: G.HasCallStack => DLVal -> [DLVal]
 vArray (V_Array a) = a
-vArray b = impossible ("unexpected error: expected array value: received " ++ show b)
+vArray b = impossible ("unexpected error: expected array value: received " <> show b)
 
 vTuple :: G.HasCallStack => DLVal -> [DLVal]
 vTuple (V_Tuple a) = a
-vTuple b = impossible ("unexpected error: expected tuple value: received " ++ show b)
+vTuple b = impossible ("unexpected error: expected tuple value: received " <> show b)
 
 vObject :: G.HasCallStack => DLVal -> (M.Map SLVar DLVal)
 vObject (V_Object a) = a
-vObject b = impossible ("unexpected error: expected object value: received " ++ show b)
+vObject b = impossible ("unexpected error: expected object value: received " <> show b)
 
 vData :: G.HasCallStack => DLVal -> (SLVar, DLVal)
 vData (V_Data a b) = (a, b)
-vData b = impossible ("unexpected error: expected data value: received " ++ show b)
+vData b = impossible ("unexpected error: expected data value: received " <> show b)
 
 vAddress :: G.HasCallStack => DLVal -> Account
 vAddress (V_Address a) = a
-vAddress b = impossible ("unexpected error: expected address value: received " ++ show b)
+vAddress b = impossible ("unexpected error: expected address value: received " <> show b)
 
 unfixedMsgs :: G.HasCallStack => MessageInfo -> M.Map ActorId Message
 unfixedMsgs (NotFixedYet m) = m
