@@ -2271,6 +2271,7 @@ versionCompare2 = command "version-compare2" $ info f mempty
           let prompt ec p' y = prompt' p' (andTheScript ec) y
 
           let utd = "Reach's Docker images are up-to-date"
+          let wyl = "Would you like to add the new connectors listed above?"
           case length (vc_synced <> vc_newConnector) >= length both of
             True -> case length vc_newConnector == 0 of
               True -> do
@@ -2287,7 +2288,7 @@ versionCompare2 = command "version-compare2" $ info f mempty
                   say vc_synced
                 case ni of
                   True -> andTheScript "0"
-                  False -> prompt "0" "Would you like to add them?" $ do
+                  False -> prompt "0" wyl $ do
                     write addNewCAs
                     andTheScript "0"
 
@@ -2317,7 +2318,7 @@ versionCompare2 = command "version-compare2" $ info f mempty
                 False -> do
                   prompt "60" "Would you like to perform an update?" $ do
                     when (length vc_newConnector > 0)
-                      . prompt' "Would you like to add the new connectors listed above?" (pure ())
+                      . prompt' wyl (pure ())
                         . write $ "echo\n" <> addNewCAs
 
                     when (length vc_newDigest > 0) $ write "echo"
