@@ -341,9 +341,7 @@ This might change the patch version used by `reach` commands.
 
 # {#ref-usage-version} `reach version`
 
-Check which version of the Reach command-line tool is currently installed.
-This returns both the semantic version (such as `0.1.7`) and the hashes version (such as [639fa565](https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore)).
-This is helpful when making sure an upgrade to a new version is complete.
+Check which version of the Reach command-line tool is currently installed by running
 
 ```cmd
 $ reach version
