@@ -86,15 +86,27 @@ const eth = async (accAlice, ctcA) => {
   const tokenId = contract.address;
   await contract["mint"](supply);
 
+  // CFX will use the same nonce on Contract.deploy if we don't wait
+  if (stdlib.connector == 'CFX') {
+    const sleepSecs = async (x) => {
+      await new Promise(res => setTimeout(res, x * 1000));
+    };
+    await sleepSecs(3);
+  }
+
   const triggerClawback = async (addr, funds) => {
     console.log(`Clawback was triggered`, funds.toString());
     await contract["closeOut"](addr);
   }
 
-  const checkBal = async (addr) => {
+  const checkBal = async (addr, idx) => {
     const bal = await contract["balanceOf"](addr);
-
     console.log(`Balance:`, bal.toString());
+    const expectedBal = {
+      0: amt,
+      1: pc(0),
+    }[idx];
+    stdlib.assert(bal.eq(expectedBal), `Expected correct balance: ${bal} == ${expectedBal}`);
   }
 
   try {
@@ -108,6 +120,7 @@ const eth = async (accAlice, ctcA) => {
       })
     ]);
   } catch (e) {
+    console.log(e);
     const expFailMethod = `_reach_m${failingMethod}`;
     stdlib.assert(e.toString().includes(expFailMethod));
     console.log(`Error was thrown in the expected method: ${expFailMethod}`);
