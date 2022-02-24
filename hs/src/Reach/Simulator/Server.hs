@@ -516,6 +516,9 @@ app p srcTxt = do
       "number" -> do
         v :: Integer <- param "data"
         webM $ unblockProg s a $ C.V_UInt v
+      "token" -> do
+        v :: Int <- param "data"
+        webM $ unblockProg s a $ C.V_Token v  
       "string" -> do
         v :: String <- param "data"
         webM $ unblockProg s a $ C.V_Bytes v
@@ -540,6 +543,11 @@ app p srcTxt = do
         v' :: LB.ByteString <- param "data"
         let v = saferMaybe "decode Data" $ decode v'
         webM $ unblockProg s a v
+      "struct" -> do
+        v' :: LB.ByteString <- param "struct"
+        let v = saferMaybe "decode Struct" $ decode v'
+        webM $ unblockProg s a v
+
       _ -> possible "Unexpected value type"
     json ("OK" :: String)
 

@@ -7,6 +7,7 @@ import Data.Aeson
 import Data.Bits
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe)
+import Data.List (find)
 import GHC.Generics
 import qualified GHC.Stack as G
 import Reach.AST.Base
@@ -281,15 +282,12 @@ addToStore x v = do
   (_, l) <- getState
   let locals = l_locals l
   let aid = l_curr_actor_id l
-  case (M.lookup aid locals, M.lookup consensusId locals) of
-    (Nothing, _) -> possible "addToStore: no local store"
-    (Just lst, Just cslst) -> do
+  case M.lookup aid locals of
+    Nothing -> possible "addToStore: no local store"
+    Just lst -> do
       let st = l_store lst
       let lst' = lst {l_store = M.insert x v st}
-      let csst = l_store cslst
-      let cslst' = cslst {l_store = M.insert x v csst}
-      setLocal $ l {l_locals = M.insert consensusId cslst' $ M.insert aid lst' locals}
-    _ -> impossible "consensus store must exist"
+      setLocal $ l {l_locals = M.insert aid lst' locals}
 
 fixMessageInRecord :: PhaseId -> ActorId -> Store -> DLPayAmt -> App ()
 fixMessageInRecord phId actId sto pay = do
@@ -340,6 +338,25 @@ transferLedger fromAcc toAcc tok n = do
   updateLedger fromAcc tok (\x -> x - n)
   updateLedger toAcc tok (+ n)
 
+consensusLookup :: DLVar -> App DLVal
+consensusLookup dlvar = do
+  (_, l) <- getState
+  let locals = l_locals l
+  case M.lookup consensusId locals of
+    Nothing -> possible "consensusLookup: no local store"
+    Just lst -> do
+      let st = l_store lst
+      case M.lookup dlvar st of
+        Nothing ->
+          possible $
+            "consensusLookup"
+              <> show dlvar
+              <> " "
+              <> show st
+              <> " "
+              <> show (l_who lst)
+        Just a -> return a
+
 -- ## INTERPRETER ## --
 
 class Interp a where
@@ -381,6 +398,15 @@ interpPrim = \case
 conCons' :: DLConstant -> DLVal
 conCons' DLC_UInt_max = V_UInt $ 2 ^ (64 :: Integer) - 1
 
+searchStores :: DLVar -> App DLVal
+searchStores var = do
+  (_, l) <- getState
+  let locals = M.elems $ l_locals l
+  let stores = map l_store locals
+  let vals = map (M.lookup var) stores
+  let r = find (\x -> x /= Nothing) vals
+  return $ saferMaybe "searchStores" $ join r
+
 instance Interp DLArg where
   interp = \case
     DLA_Var dlvar -> do
@@ -392,14 +418,17 @@ instance Interp DLArg where
         Just lst -> do
           let st = l_store lst
           case M.lookup dlvar st of
-            Nothing ->
-              possible $
-                "DLA_Var "
-                  <> show dlvar
-                  <> " "
-                  <> show st
-                  <> " "
-                  <> show (l_who lst)
+            Nothing -> do
+              case aid == consensusId of
+                True -> searchStores dlvar
+                False -> do
+                  possible $
+                    "DLA_Var "
+                      <> show dlvar
+                      <> " "
+                      <> show st
+                      <> " "
+                      <> show (l_who lst)
             Just a -> return a
     DLA_Constant dlconst -> return $ conCons' dlconst
     DLA_Literal dllit -> interp dllit
@@ -458,8 +487,13 @@ instance Interp DLExpr where
       arr <- vTuple <$> interp dlarg
       return $ saferIndex (fromIntegral n) arr
     DLE_ObjectRef _at dlarg str -> do
-      obj <- vObject <$> interp dlarg
-      return $ saferMaybe "DLE_ObjectRef" $ M.lookup str obj
+      v <- interp dlarg
+      case v of
+        V_Struct assocs -> do
+          return $ saferMaybe "DLE_ObjectRef: V_Struct" $ M.lookup str $ M.fromList assocs
+        V_Object vmap -> do
+          return $ saferMaybe "DLE_ObjectRef: V_Object" $ M.lookup str vmap
+        _ -> possible "DLE_ObjectRef: expected Object or Struct"
     DLE_Interact at slcxtframes slpart str dltype dlargs -> do
       args <- mapM interp dlargs
       suspend $ PS_Suspend (Just at) (A_Interact slcxtframes (bunpack slpart) str dltype args)
@@ -523,12 +557,16 @@ instance Interp DLExpr where
       setGlobal $ e {e_linstate = M.insert dlmvar m linst}
       return V_Null
     DLE_Remote at slcxtframes dlarg str dlPayAmnt dlargs _dlWithBill@DLWithBill {..} -> do
-      acc <- fromIntegral <$> vContract <$> interp dlarg
-      tok_billed <- mapM interp dwb_tok_billed
-      args <- mapM interp dlargs
-      v <- suspend $ PS_Suspend (Just at) (A_Remote slcxtframes str args tok_billed)
-      consensusPayout acc dlPayAmnt
-      return v
+      who <- whoAmI
+      case who of
+        Participant _ -> return V_Null
+        Consensus -> do
+          acc <- fromIntegral <$> vContract <$> interp dlarg
+          tok_billed <- mapM interp dwb_tok_billed
+          args <- mapM interp dlargs
+          v <- suspend $ PS_Suspend (Just at) (A_Remote slcxtframes str args tok_billed)
+          consensusPayout acc dlPayAmnt
+          return v
     DLE_TokenNew _at dltokennew -> do
       (g, _) <- getState
       let accIdMax = (e_naccid g) - 1
@@ -543,8 +581,8 @@ instance Interp DLExpr where
     DLE_TimeOrder _at _assoc_maybe_arg_vars -> return V_Null
     DLE_GetContract _at -> V_Contract <$> l_acct <$> getMyLocalInfo
     DLE_GetAddress _at -> V_Address <$> l_acct <$> getMyLocalInfo
-    DLE_EmitLog _at (L_Api _) [dlvar] -> interp $ DLA_Var dlvar
-    DLE_EmitLog _at L_Internal [dlvar] -> interp $ DLA_Var dlvar
+    DLE_EmitLog _at (L_Api _) [dlvar] -> consensusLookup dlvar
+    DLE_EmitLog _at L_Internal [dlvar] -> consensusLookup dlvar
     -- events from Events are : [a] -> Null
     DLE_EmitLog _ (L_Event {}) _ -> return V_Null
     DLE_EmitLog {} -> impossible "DLE_EmitLog invariants not satisified"
@@ -878,19 +916,19 @@ saferIndex n (_ : xs) = saferIndex (n -1) xs
 
 vUInt :: G.HasCallStack => DLVal -> Integer
 vUInt (V_UInt n) = n
-vUInt _ = impossible "unexpected error: expected integer value"
+vUInt b = impossible ("unexpected error: expected integer value: received " ++ show b)
 
 vContract :: G.HasCallStack => DLVal -> Account
 vContract (V_Contract n) = n
-vContract _ = impossible "unexpected error: expected account value"
+vContract b = impossible ("unexpected error: expected account value: received " ++ show b)
 
 vTok :: G.HasCallStack => DLVal -> Integer
 vTok (V_Token n) = fromIntegral n
-vTok _ = impossible "unexpected error: expected token integer value"
+vTok b = impossible ("unexpected error: expected token integer value: received " ++ show b)
 
 vArray :: G.HasCallStack => DLVal -> [DLVal]
 vArray (V_Array a) = a
-vArray _ = impossible "unexpected error: expected array value"
+vArray b = impossible ("unexpected error: expected array value: received " ++ show b)
 
 vTuple :: G.HasCallStack => DLVal -> [DLVal]
 vTuple (V_Tuple a) = a
@@ -898,15 +936,15 @@ vTuple b = impossible ("unexpected error: expected tuple value: received " ++ sh
 
 vObject :: G.HasCallStack => DLVal -> (M.Map SLVar DLVal)
 vObject (V_Object a) = a
-vObject _ = impossible "unexpected error: expected object value"
+vObject b = impossible ("unexpected error: expected object value: received " ++ show b)
 
 vData :: G.HasCallStack => DLVal -> (SLVar, DLVal)
 vData (V_Data a b) = (a, b)
-vData _ = impossible "unexpected error: expected data value"
+vData b = impossible ("unexpected error: expected data value: received " ++ show b)
 
 vAddress :: G.HasCallStack => DLVal -> Account
 vAddress (V_Address a) = a
-vAddress _ = impossible "unexpected error: expected address value"
+vAddress b = impossible ("unexpected error: expected address value: received " ++ show b)
 
 unfixedMsgs :: G.HasCallStack => MessageInfo -> M.Map ActorId Message
 unfixedMsgs (NotFixedYet m) = m

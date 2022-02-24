@@ -626,6 +626,7 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
               </select>
               <select name="typing" id="typing-spa-select">
                 <option value="number">Number</option>
+                <option value="token">Token</option>
                 <option value="string">String</option>
                 <option value="contract">Contract</option>
                 <option value="address">Address</option>
