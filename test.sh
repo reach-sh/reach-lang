@@ -123,13 +123,32 @@ cdot () {
   export REACH_DEBUG=Y
   c "$1"
   dot -Tpng -O "$(dirname "$1")/build/$(basename "$1" .rsh).main.appApproval.cost.dot"
+  dot -Tpng -O "$(dirname "$1")/build/$(basename "$1" .rsh).main.state.dot"
 }
 
 #######
 
 jb
-ci ALGO minBalance
-exit 
+ci ETH formatWithDecimals-demo
+ci ALGO formatWithDecimals-demo
+exit
+
+c users/algo-govt/index.rsh
+exit 0
+(cd users/algo-govt && ./test.sh)
+exit 0
+
+# export REACH_BUILD_NO_CACHE=Y
+
+c users/asolpshinning.rsh
+exit 0
+
+#c --install-pkgs users/xbacked-contracts/src/master_vault.rsh
+REACH_DEBUG=Y cdot users/xbacked-contracts/src/master_vault.rsh
+exit 0
+cdot users/duoswap-core/index.rsh
+exit 0
+
 
 jb
 ci ALGO signingMonitor
@@ -152,8 +171,5 @@ exit 0
 cdot users/xbacked-contracts/src/master_vault.rsh
 exit 0
 
-c --install-pkgs users/xbacked-contracts/src/master_vault.rsh
-REACH_DEBUG=Y c users/xbacked-contracts/src/master_vault.rsh
-exit 0
 
 # (cd hs && mk hs-test)

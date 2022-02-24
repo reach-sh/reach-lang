@@ -264,9 +264,10 @@ kgq_m ctxt = \case
       >> kgq_a_all ctxt (DLA_Var i)
       >> kgq_a_only ctxt ans r
       >> kgq_l ctxt f
-  DL_ArrayReduce _ ans x z b a (DLBlock _ _ f r) ->
+  DL_ArrayReduce _ ans x z b a i (DLBlock _ _ f r) ->
     kgq_a_only ctxt b z
       >> kgq_a_only ctxt a x
+      >> kgq_a_all ctxt (DLA_Var i)
       >> kgq_a_only ctxt ans r
       >> kgq_l ctxt f
   DL_Var {} -> mempty

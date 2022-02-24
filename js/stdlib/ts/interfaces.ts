@@ -42,7 +42,7 @@ export interface Stdlib_Backend_Shared<Ty> extends Stdlib_Backend_Shared_User<Ty
   checkedBigNumberify: (at: string, max: BigNumber, n: any) => BigNumber
   protect: (t: any, v: unknown, ai?: string) => unknown
   Array_asyncMap: <A, B>(a: A[], f:((x:A, i:number) => Promise<B>)) => Promise<B[]>
-  Array_asyncReduce: <A, B>(a: A[], b:B, f:((y:B, x:A) => Promise<B>)) => Promise<B>
+  Array_asyncReduce: <A, B>(a: A[], b:B, f:((y:B, x:A, i:number) => Promise<B>)) => Promise<B>
   Array_zip: <A, B>(a1: A[], a2: B[]) => [A, B][]
   newMap: <A>(opts: MapOpts<A>) => LinearMap<A>
   mapRef: <A>(m: LinearMap<A>, f: string) => Promise<MaybeRep<A>>
@@ -124,11 +124,12 @@ export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, Contrac
   setValidQueryWindow: (n: number|true) => void
   getQueryLowerBound: () => BigNumber
   setQueryLowerBound: (n: number|BigNumber) => void
-  connector: string
+  connector: 'ALGO' | 'CFX' | 'ETH'
   randomUInt: () => BigNumber
   hasRandom: { random: () => BigNumber }
   hasConsoleLogger: { log: (...a: any) => void }
   balanceOf: (acc: Account, token?: Token) => Promise<BigNumber>
+  balancesOf: (acc: Account, tokens: Array<Token | null>) => Promise<Array<BigNumber>>
   minimumBalanceOf: (acc:Account) => Promise<BigNumber>
   transfer: (from: Account, to: Account, val?: BigNumber, token?: Token) => Promise<unknown>
   connectAccount: (networkAccount: NetworkAccount) => Promise<Account>
@@ -155,6 +156,7 @@ export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, Contrac
   minimumBalance: BigNumber
   formatCurrency: (amt: BigNumber, decimals: number) => string
   formatAddress: (acc: Account|string) => string
+  formatWithDecimals: (amt: unknown, decimals: number) => string
   unsafeGetMnemonic: (acc: Account) => string
   launchToken: (acc: Account, name: string, sym: string, opts?:LaunchTokenOpts) => any
   reachStdlib: Stdlib_Backend<Ty>

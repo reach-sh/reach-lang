@@ -1,11 +1,13 @@
+NPM = npm
+
 .PHONY: build
 build:
-	echo "hi"
+	$(NPM) install
 
 .PHONY: run
 run:
-	echo "hi"
+	npx webpack
 
 .PHONY: clean
 clean:
-	echo "hi"
+	cd .

@@ -5,20 +5,21 @@ $font-family-code:  'Inconsolata', monospace;
 $btn-font-family: 'Source Serif Pro', serif;
 $input-font-family: 'Source Serif Pro', serif;
 
-$body-bg: #f6f6f6;
-$body-color: #555;
+$body-bg: #2e3440;
+$body-color: #f6f6f6;
 
 $input-border-radius: 0.2rem;
-$input-border-color: #212529;
-$input-bg: #dcdcdc;
+$input-border-color: #dcdcdc;
+$input-bg: #2e3440;
 
-$list-group-color: #555;
-$list-group-bg: #f6f6f6;
+$list-group-color: #f6f6f6;
+$list-group-bg: #2e3440;
 $list-group-border-color: #212529;
 $list-group-border-radius: 0.2rem;
-$list-group-hover-bg: #343a40;
-$list-group-action-hover-color: #FFFFFF;
+$list-group-hover-bg: #f6f6f6;
+$list-group-action-hover-color: #2e3440;
 
+$breadcrumb-active-color: #f6f6f6;
 $breadcrumb-divider: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E");
 
 @import "../node_modules/bootstrap/scss/bootstrap";
@@ -41,7 +42,7 @@ body :not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
   font-family: 'Source Sans Pro', sans-serif;
 }
 
-body, html, .container-fluid {
+body, html, .container-fluid, .top-level-row, .top-level-div {
   height: 100%;
 }
 
@@ -56,18 +57,6 @@ html {
 
 .col-3 {
   height: 100%;
-}
-
-#output {
-  display: block;
-  max-height: 100%;
-  height: 100%;
-  background-color: #f6f6f6;
-  color: #555;
-  font-family: 'Inconsolata', monospace;
-  overflow-y: scroll;
-  border-radius: 0.2rem;
-  border: 1px solid #212529;
 }
 
 #cy {
@@ -91,7 +80,7 @@ html {
 
 .bordered {
   border-radius: 0.2rem;
-  border: 1px solid #212529;
+  border: 1px solid #f6f6f6;
 }
 
 .half-row {
@@ -103,7 +92,7 @@ html {
 }
 
 .code-container {
-  height: 80%;
+  height: 100%;
   overflow-y: scroll !important;
   padding: 0%;
   scroll-behavior: smooth;
@@ -115,7 +104,8 @@ pre[class*="language-"] {
 }
 
 .btn:hover {
-  background-color: #495057 !important;
+  background-color: #f6f6f6 !important;
+  color: #2e3440 !important;
 }
 
 .hljs-ln-numbers {
@@ -127,11 +117,12 @@ pre[class*="language-"] {
 }
 
 a {
-  color: #343a40;
+  color: #87ceeb;
 }
 
 select {
-  background-color: #f6f6f6;
+  background-color: #2e3440;
+  color: #f6f6f6;
 }
 
 .pad-me {
@@ -144,4 +135,22 @@ select {
 
 .extra-margin {
   margin: 3%;
+}
+
+.extra-margin-bottom {
+  margin-bottom: 3%;
+}
+
+.quite-margin {
+  margin: 80%;
+}
+
+.omph {
+  font-size: calc(1.275rem + 0.3vw);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.top {
+  border-top-width: 1px !important;
 }

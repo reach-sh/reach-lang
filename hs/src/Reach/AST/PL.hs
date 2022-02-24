@@ -177,16 +177,16 @@ data CHandler
       , ch_int :: CInterval DLTimeArg
       , ch_from :: DLVar
       , ch_last :: Int
-      , ch_svs :: [DLVar]
-      , ch_msg :: [DLVar]
+      , ch_svs :: [DLVarLet]
+      , ch_msg :: [DLVarLet]
       , ch_timev :: DLVar
       , ch_secsv :: DLVar
       , ch_body :: CTail
       }
   | C_Loop
       { cl_at :: SrcLoc
-      , cl_svs :: [DLVar]
-      , cl_vars :: [DLVar]
+      , cl_svs :: [DLVarLet]
+      , cl_vars :: [DLVarLet]
       , cl_body :: CTail
       }
   deriving (Eq)
@@ -198,9 +198,9 @@ instance Pretty CHandler where
       , pretty int
       , "last = " <> pretty last_i
       , pretty svs
-      , pretty (map varType svs)
+      , pretty (map varLetType svs)
       , pretty msg
-      , pretty (map varType msg)
+      , pretty (map varLetType msg)
       , "timev = " <> pretty timev
       , "secsv = " <> pretty secsv
       , render_nest $ pretty body

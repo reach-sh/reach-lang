@@ -15,6 +15,8 @@ If you want to work on the Reach compiler, you'll need:
 - solidity v0.8.9
 - [mo](https://github.com/tests-always-included/mo) v2.2.0
 
+The versions of our dependencies are specified in `DEPS`.
+
 Installation on macOS:
 ```
 $ brew tap ethereum/ethereum

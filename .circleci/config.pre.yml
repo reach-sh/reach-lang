@@ -181,11 +181,11 @@ jobs:
     - and_restore_docker:
         deps: "haskell-build-artifacts"
     - run: |
-        docker run --rm -ti reachsh/haskell-build-artifacts make docker-check
+        docker run --rm -ti reachsh/haskell-build-artifacts make ROOT=.docker-root docker-check
     - run:
         command: |
           mkdir -p hs/test-reports
-          docker run --rm -v $(pwd)/examples:/examples/ -v $(pwd)/docs/src:/docs/src/ -v $(pwd)/hs/t:/build/t -v $(pwd)/hs/test-reports:/build/test-reports -ti reachsh/haskell-build-artifacts make docker-test-xml
+          docker run --rm -v $(pwd)/examples:/examples/ -v $(pwd)/docs/src:/docs/src/ -v $(pwd)/hs/t:/build/t -v $(pwd)/hs/test-reports:/build/test-reports -ti reachsh/haskell-build-artifacts make ROOT=.docker-root docker-test-xml
         no_output_timeout: 30m
     - store_test_results:
         path: "hs/test-reports"
@@ -286,6 +286,30 @@ jobs:
     steps:
     - run: |
         echo Go team!
+  "browser-tests":
+    executor: real
+    steps:
+    - checkout
+    - workattach
+    - and_restore_docker:
+        deps: "react-runner devnet-algo reach-cli reach"
+    - run: |
+        cd examples/rps-9-web/
+        patch index.js cypress.patch
+    - run: |
+        (cd examples/rps-9-web && REACH_CONNECTOR_MODE=ALGO ../../reach react) &
+        (cd js/browser-tests && make build)
+        sleep 60  # give the react server lots of time to start up
+
+        # XXX this is weird. Working around issue:
+        # "_XSERVTransMakeAllCOTSServerListeners: server already running"
+        # https://github.com/cypress-io/cypress/issues/5110#issuecomment-431683691
+        ps -ef | grep Xvfb | grep -v grep | awk '{print $2}' | sudo xargs kill -9
+
+        (cd js/browser-tests && make run)
+    - store_artifacts:
+        path: js/browser-tests/cypress/videos
+    - slack_fail
 
 workflows:
   docs:
@@ -312,7 +336,14 @@ workflows:
         type: approval
         requires:
           - "build-sink"
+          - "browser-tests"
         filters:
           branches:
             only: master
+    - "browser-tests":
+        requires:
+          - "build-react-runner"
+          - "build-devnet-algo"
+          - "build-reach-cli"
+          - "build-reach"
     # Sink and examples follow

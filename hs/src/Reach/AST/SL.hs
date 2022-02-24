@@ -253,10 +253,10 @@ instance Equiv DLMVar where
   equiv (DLMVar a) (DLMVar b) = equiv a b
 
 instance (Equiv a) => Equiv [a] where
-  equiv xs ys = all (\(x, y) -> equiv x y) $ zip xs ys
+  equiv xs ys = length xs == length ys && all (uncurry equiv) (zip xs ys)
 
 instance (Equiv b, Equiv a) => Equiv (M.Map a b) where
-  equiv m1 m2 = equiv (M.toList m1) (M.toList m2)
+  equiv m1 m2 = equiv (M.toAscList m1) (M.toAscList m2)
 
 instance (Equiv a, Equiv b) => Equiv (a, b) where
   equiv (a, b) (a2, b2) = equiv a a2 && equiv b b2
@@ -657,7 +657,7 @@ data SLPrimitive
   | SLPrim_array_set
   | SLPrim_array_concat
   | SLPrim_array_map Bool
-  | SLPrim_array_reduce
+  | SLPrim_array_reduce Bool
   | SLPrim_array_zip
   | SLPrim_Struct
   | SLPrim_Struct_fromTuple [(SLVar, SLType)]

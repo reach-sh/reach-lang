@@ -18,10 +18,10 @@ Verification failed:
 
   // Theorem Formalization
 
-  const map0_1/116 = new Map()[<abstract address 0> <- Just v72];
-  //    ^ would be <map>
-  const map0_2/122 = map0_1/116[<abstract address 0> <- Just v81];
-  //    ^ would be <map>
+  const map0_1/116 = new Map()[<abstract address 0> <- Some v72];
+  //    ^ would be <map: (None(null ))>[<abstract address 0> <- Some(38 )]
+  const map0_2/122 = map0_1/116[<abstract address 0> <- Some v81];
+  //    ^ would be <map: (None(null ))>[<abstract address 0> <- Some(0 )]
   const v100 = digest(map0_2/122[<abstract address 0>] ) == digest(<Some v72> );
   //    ^ would be false
   require(v100);

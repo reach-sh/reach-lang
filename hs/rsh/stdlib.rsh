@@ -145,31 +145,18 @@ export const Foldable_includes =
 export const Foldable_includes1 =
   (c) => (x) => Foldable_includes(c, x);
 
-export const Array_indexOfAux =
-  (arr, f) => {
-    const inita = [Maybe(UInt).None(), 0];
-    const [res, _] =
-      arr.reduce(inita, (acc, e) => {
-        const [foundIdx, idx] = acc;
-        return foundIdx.match({
-          Some: (_) => { return acc; },
-          None: () => {
-            return f(e)
-              ? [Maybe(UInt).Some(idx), idx]
-              : [foundIdx, idx + 1]; }
-        });
-      });
-    return res;
-  };
-export const Array_indexOf =
-  (arr, x) => Array_indexOfAux(arr, (el) => { return el == x; });
-export const Array_indexOf1 =
-  (arr) => (x) => Array_indexOf(arr, x);
-
 export const Array_findIndex =
-  (arr, f) => Array_indexOfAux(arr, f);
+  (arr, f) => arr.reduceWithIndex(Maybe(UInt).None(), (foundIdx, e, idx) =>
+    (isNone(foundIdx) && f(e)) ?
+      Maybe(UInt).Some(idx)
+      : foundIdx);
 export const Array_findIndex1 =
   (arr) => (f) => Array_findIndex(arr, f);
+
+export const Array_indexOf =
+  (arr, x) => Array_findIndex(arr, (el) => (x == el));
+export const Array_indexOf1 =
+  (arr) => (x) => Array_indexOf(arr, x);
 
 export const Foldable_count =
   (c, f) => c.reduce(0, (acc, x) =>
@@ -548,14 +535,8 @@ export const Array_withIndex = (a) =>
 export const Array_withIndex1 = (a) => () =>
   Array_withIndex(a);
 
-export const Array_reduceWithIndex = (a, inita, f) =>
-  a.reduce([inita, 0], ([acc, idx], e) => [f(acc, e, idx), idx+1])[0];
-
-export const Array_reduceWithIndex1 = (a) => (inita, f) =>
-  Array_reduceWithIndex(a, inita, f);
-
 export const Array_forEachWithIndex = (a, f) =>
-  Array_reduceWithIndex(a, null, (acc, e, idx) => {
+  a.reduceWithIndex(null, (acc, e, idx) => {
     f(e, idx);
     return acc;
   });

@@ -107,7 +107,7 @@ processNewState psid ps = do
             (s, Running)
   graph <- gets e_graph
   let locals = C.l_locals l
-  let lcl = saferMapRef "processNewState" $ M.lookup actorId locals
+  let lcl = saferMaybe "processNewState" $ M.lookup actorId locals
   let lcl' = lcl { C.l_ks = Just ps }
   let l' = l { C.l_locals = M.insert actorId lcl' locals }
   modify $ \ st -> st
@@ -142,19 +142,30 @@ registerAction sid actorId act = do
     Just acts -> modify $ \ st -> st {e_actors_actions = M.insert actorId (M.insert sid actId acts) actacts }
   return ()
 
-newAccount :: StateId -> WebM (C.AccountId)
+newAccount :: StateId -> WebM (C.Account)
 newAccount sid = do
   graph <- gets e_graph
   case M.lookup sid graph of
     Nothing -> do
       possible "newAccount: state not found"
     Just (g, l) -> do
-      let aid = C.e_naccid g
+      let aid = fromIntegral $ C.e_naccid g
       let newAccId = aid + 1
-      let g' = g { C.e_naccid = newAccId }
+      let ledger = C.e_ledger g
+      let tokenIdMax = (C.e_ntok g) - 1
+      let newWallet = initWallets tokenIdMax
+      let ledger' = M.insert aid newWallet ledger
+      let g' = g { C.e_naccid = newAccId, C.e_ledger = ledger' }
       let graph' = M.insert sid (g',l) graph
       modify $ \ st -> st {e_graph = graph'}
       return newAccId
+
+initWallets :: Integer -> C.Wallet
+initWallets n = initWallets' n $ M.empty
+
+initWallets' :: Integer -> C.Wallet -> C.Wallet
+initWallets' 0 w = w
+initWallets' n w = initWallets' (n-1) $ M.insert n 0 w
 
 newTok :: StateId -> WebM (C.Token)
 newTok sid = do
@@ -165,15 +176,17 @@ newTok sid = do
     Just (g, l) -> do
       let tokId = C.e_ntok g
       let nTokId = tokId + 1
-      let g' = g { C.e_ntok = nTokId }
+      let ledger = C.e_ledger g
+      let ledger' = M.map (\wllt -> M.insert tokId 0 wllt) ledger
+      let g' = g { C.e_ntok = nTokId, C.e_ledger = ledger' }
       let graph' = M.insert sid (g',l) graph
       modify $ \ st -> st {e_graph = graph'}
       return tokId
 
 updateLedger :: C.Ledger -> C.Account -> C.Token -> (Integer -> Integer) -> C.Ledger
 updateLedger map_ledger acc tok f = do
-  let m = saferMapRef "updateLedger" $ M.lookup acc map_ledger
-  let prev_amt = saferMapRef "updateLedger1" $ M.lookup tok m
+  let m = saferMaybe "updateLedger" $ M.lookup acc map_ledger
+  let prev_amt = saferMaybe "updateLedger1" $ M.lookup tok m
   let new_amt = f prev_amt
   M.insert acc (M.insert tok new_amt m) map_ledger
 
@@ -219,7 +232,7 @@ unblockProg sid aid v = do
             Just (C.A_Remote _slcxtframes _str _args1 _args2) -> do
               let ps = k (g,l) v
               processNewState (Just sid) ps
-            Just (C.A_Contest _phid) -> do
+            Just (C.A_Receive _phid) -> do
               let ps = k (g, l) v
               processNewState (Just sid) ps
             Just (C.A_TieBreak _poolid _parts) -> do
@@ -248,10 +261,24 @@ unblockProg sid aid v = do
         Just (Just (C.PS_Done _ _)) -> do
           possible "previous state already terminated"
 
-allStates :: WebM [StateId]
+
+stActHist :: StateId -> WebM (StateId, (C.ActorId, C.Action))
+stActHist sid = do
+  graph <- gets e_graph
+  case M.lookup sid graph of
+    Nothing -> possible "stActHist failed"
+    Just (_g,l) -> do
+      let actorId = C.l_curr_actor_id l
+      let locals = C.l_locals l
+      let k = saferMaybe "stActHist failed (2)" $ C.l_ks $ saferMaybe "stActHist failed (1)" $ M.lookup actorId locals
+      case k of
+        C.PS_Done _ _ -> return (sid, (actorId, C.A_None))
+        C.PS_Suspend _ act _ _ -> return (sid, (actorId, act))
+
+allStates :: WebM (M.Map StateId (C.ActorId, C.Action))
 allStates = do
   a <- gets e_nsid
-  return [0 .. (a -1)]
+  M.fromList <$> mapM stActHist [0 .. (a - 1)]
 
 getStatus :: WebM Status
 getStatus = do
@@ -325,7 +352,7 @@ computeActions sid actorId = do
             Just parent -> do
               computeActions parent actorId
         Just actId -> do
-          let act = saferMapRef "computeActions actId" $ M.lookup actId idacts
+          let act = saferMaybe "computeActions actId" $ M.lookup actId idacts
           return $ Just (actId,act)
 
 initProgSim :: LLProg -> WebM ()
@@ -338,9 +365,9 @@ initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> LLProg -> WebM (
 initProgSimFor actId sid liv (LLProg _ _ _ _ _ _ _ _ step) = do
   graph <- gets e_graph
   modify $ \st -> st {e_actor_id = actId}
-  let (g, l) = saferMapRef "initProgSimFor" $ M.lookup sid graph
+  let (g, l) = saferMaybe "initProgSimFor" $ M.lookup sid graph
   let locals = C.l_locals l
-  let lcl = saferMapRef "initProgSimFor1" $ M.lookup actId locals
+  let lcl = saferMaybe "initProgSimFor1" $ M.lookup actId locals
   let lcl' = lcl { C.l_livs = liv }
   let locals' = M.insert actId lcl' locals
   let l' = l {C.l_curr_actor_id = actId, C.l_locals = locals'}
@@ -439,12 +466,6 @@ app p srcTxt = do
     ss <- webM $ getStatus
     json ss
 
-  get "/states/:s" $ do
-    setHeaders
-    s <- param "s"
-    ss <- webM $ allStates
-    json (filter ((==) s) $ ss)
-
   get "/actions/:s/:a/" $ do
     setHeaders
     s <- param "s"
@@ -498,6 +519,27 @@ app p srcTxt = do
       "string" -> do
         v :: String <- param "data"
         webM $ unblockProg s a $ C.V_Bytes v
+      "contract" -> do
+        v :: C.Account <- param "data"
+        webM $ unblockProg s a $ C.V_Contract v
+      "address" -> do
+        v :: C.Account <- param "data"
+        webM $ unblockProg s a $ C.V_Address v
+      "boolean" -> do
+        v :: Bool <- param "data"
+        webM $ unblockProg s a $ C.V_Bool v
+      "tuple" -> do
+        v' :: LB.ByteString <- param "data"
+        let v = saferMaybe "decode Tuple" $ decode v'
+        webM $ unblockProg s a v
+      "object" -> do
+        v' :: LB.ByteString <- param "data"
+        let v = saferMaybe "decode Object" $ decode v'
+        webM $ unblockProg s a v
+      "data" -> do
+        v' :: LB.ByteString <- param "data"
+        let v = saferMaybe "decode Data" $ decode v'
+        webM $ unblockProg s a v
       _ -> possible "Unexpected value type"
     json ("OK" :: String)
 

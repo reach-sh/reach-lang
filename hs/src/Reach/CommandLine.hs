@@ -28,6 +28,7 @@ data CompilerOpts = CompilerOpts
   , co_mdirDotReach :: Maybe FilePath
   , co_installPkgs :: Bool
   , co_stopAfterEval :: Bool
+  , co_printKeywordInfo :: Bool
   , co_verifyTimeout :: Integer
   , co_sim :: Bool
   }
@@ -63,6 +64,9 @@ compiler =
            <*> (switch
                   (long "stop-after-eval"
                      <> help "Stop compilation process after evaluation"))
+           <*> (switch
+                  (long "print-keyword-info"
+                     <> help "Print keyword completion data for editor plugin"))
            <*> (option
                   auto
                   ((metavar "TIMEOUT-MS")

@@ -26,6 +26,7 @@ import qualified Data.Text.Lazy as LT
 import qualified Data.Vector as Vector
 import Data.Word
 import Generics.Deriving (Generic)
+import Reach.AddCounts
 import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.AST.PL
@@ -33,7 +34,9 @@ import Reach.BinaryLeafTree
 import Reach.CommandLine
 import Reach.Connector
 import Reach.Counter
+import Reach.Dotty
 import Reach.FixedPoint
+import qualified Reach.Texty as T
 import Reach.Texty (pretty)
 import Reach.UnsafeUtil
 import Reach.Util
@@ -66,38 +69,47 @@ instance Show AlgoError where
 
 -- General tools that could be elsewhere
 
-type LPGraph a = M.Map a (M.Map a Integer)
+type LPGraph1 a = M.Map a Integer
+type LPGraph a = M.Map a (LPGraph1 a)
 
-type LPPath a = (String, [(a, Integer)], Integer)
+type LPPath a = (DotGraph, [a], Integer)
 
-type LPInt a = M.Map a ([(a, Integer)], Integer)
-
-longestPathBetween :: forall a. (Ord a, Monoid a, Show a) => LPGraph a -> a -> a -> IO (LPPath a)
-longestPathBetween g f _d = do
-  let r x y = fromMaybe ([], 0) $ M.lookup x y
-  ps <- fixedPoint $ \_ (m :: LPInt a) -> do
-    flip mapWithKeyM g $ \n cs -> do
-      cs' <- flip mapM (M.toAscList cs) $ \(t, c) -> do
-        let (p, pc) = r t m
-        let p' = (t, c) : p
-        let c' = pc + c
-        case n `elem` map fst p' of
-          True -> return (p, -1)
-          False -> return (p', c')
-      return $ List.maximumBy (compare `on` snd) cs'
-  let (p, pc) = r f ps
+longestPathBetween :: LPGraph String -> String -> String -> IO (LPPath String)
+longestPathBetween g f d = do
+  a2d <- fixedPoint $ \_ (i :: LPGraph1 String) -> do
+    flip mapM g $ \tom -> do
+      let ext to c =
+            case to == d of
+              True -> c
+              False ->
+                case M.lookup to i of
+                  Nothing -> 0
+                  Just c' -> c + c'
+      let tom' = map (uncurry ext) $ M.toAscList tom
+      return $ foldl' max 0 tom'
+  let r2d x = fromMaybe 0 $ M.lookup x a2d
+  let pc = r2d f
+  let getMaxPath' x =
+        case x == d of
+          True -> []
+          False -> getMaxPath $ List.maximumBy (compare `on` r2d) $ M.keys $ fromMaybe mempty $ M.lookup x g
+      getMaxPath x = x : getMaxPath' x
+  let p = getMaxPath f
   let mkEdges s from = \case
         [] -> s
-        (to, _) : m -> mkEdges (S.insert (from, to) s) to m
-  let edges = mkEdges mempty f p
+        to : m -> mkEdges (S.insert (from, to) s) to m
+  let edges =
+        case p of
+          [] -> mempty
+          x : y -> mkEdges mempty x y
   let edge = flip S.member edges
-  let gs_body =
+  let gs :: DotGraph =
         flip concatMap (M.toAscList g) $ \(from, cs) ->
           flip concatMap (M.toAscList cs) $ \(to, c) ->
+            let tc = r2d to in
             case (from == mempty) of
-              True -> ""
-              False -> show from <> " -> " <> show to <> " [label=\"" <> show c <> "\"" <> (if edge (from, to) then ",color=red" else "") <> "];\n"
-  let gs = "digraph {\n" <> gs_body <> "}"
+              True -> []
+              False -> [(from, to, (M.fromList $ [("label", show c <> "+" <> show tc <> "=" <> show (c + tc))] <> (if edge (from, to) then [("color","red")] else [])))]
   return $ (gs, p, pc)
 
 aarray :: [Aeson.Value] -> Aeson.Value
@@ -250,6 +262,7 @@ data IndentDir
 
 data TEAL
   = TCode TealOp [TealArg]
+  | Titob Bool
   | TInt Integer
   | TConst LT.Text
   | TBytes B.ByteString
@@ -257,6 +270,7 @@ data TEAL
   | TSubstring Word8 Word8
   | TComment IndentDir LT.Text
   | TLabel Label
+  | TFor_top Integer
   | TFor_bnz Label Integer Label
   | TLog Integer
   | TStore ScratchSlot LT.Text
@@ -267,7 +281,7 @@ type TEALt = [LT.Text]
 type TEALs = DL.DList TEAL
 
 builtin :: S.Set TealOp
-builtin = S.fromList ["byte", "int", "substring", "extract", "log", "store", "load"]
+builtin = S.fromList ["byte", "int", "substring", "extract", "log", "store", "load", "itob"]
 
 render :: IORef Int -> TEAL -> IO TEALt
 render ilvlr = \case
@@ -276,6 +290,7 @@ render ilvlr = \case
   TBytes bs -> r ["byte", "base64(" <> encodeBase64 bs <> ")"]
   TExtract x y -> r ["extract", texty x, texty y]
   TSubstring x y -> r ["substring", texty x, texty y]
+  Titob _ -> r ["itob"]
   TCode f args ->
     case S.member f builtin of
       True -> impossible $ show $ "cannot use " <> f <> " directly"
@@ -289,6 +304,8 @@ render ilvlr = \case
       "" -> return []
       _ -> r ["//", t]
   TLabel lab -> r [lab <> ":"]
+  TFor_top maxi ->
+    r [("// for runs " <> texty maxi <> " times")]
   TFor_bnz top_lab maxi _ ->
     r ["bnz", top_lab, ("// for runs " <> texty maxi <> " times")]
   TLog sz ->
@@ -334,9 +351,12 @@ opt_b1 = \case
   (TBytes x) : (TBytes y) : (TCode "concat" []) : l ->
     opt_b1 $ (TBytes $ x <> y) : l
   (TCode "b" [x]) : b@(TLabel y) : l | x == y -> b : l
-  (TCode "btoi" []) : (TCode "itob" ["// bool"]) : (TSubstring 7 8) : l -> l
-  (TCode "btoi" []) : (TCode "itob" []) : l -> l
-  (TCode "itob" []) : (TCode "btoi" []) : l -> l
+  (TCode "btoi" []) : (Titob True) : (TSubstring 7 8) : l -> l
+  (TCode "btoi" []) : (Titob _) : l -> l
+  (Titob _) : (TCode "btoi" []) : l -> l
+  (TCode "==" []) : (TCode "!" []) : l -> (TCode "!=" []) : l
+  (TInt 0) : (TCode "!=" []) : (TCode "assert" []) : l ->
+    (TCode "assert" []) : l
   (TExtract x 8) : (TCode "btoi" []) : l ->
     (TInt $ fromIntegral x) : (TCode "extract_uint64" []) : l
   a@(TLoad x _) : (TLoad y _) : l
@@ -365,7 +385,7 @@ opt_b1 = \case
       s2n = s0n + (fromIntegral s1w)
       e2n :: Integer
       e2n = s0n + (fromIntegral e1w)
-  (TInt x) : (TCode "itob" []) : l ->
+  (TInt x) : (Titob _) : l ->
     opt_b1 $ (TBytes $ itob x) : l
   (TBytes xbs) : (TCode "btoi" []) : l ->
     opt_b1 $ (TInt $ btoi xbs) : l
@@ -402,18 +422,22 @@ checkCost warning disp alwaysShow ts = do
   let lTop = "TOP"
   let lBot = "BOT"
   (labr :: IORef String) <- newIORef $ lTop
+  (k_r :: IORef Integer) <- newIORef $ 1
   (cost_r :: IORef Integer) <- newIORef $ 0
   (logLen_r :: IORef Integer) <- newIORef $ 0
+  let modK = modifyIORef k_r
   let l2s = LT.unpack
-  let rec_ r c = modifyIORef r (c +)
+  let rec_ r c = do
+        k <- readIORef k_r
+        modifyIORef r ((k * c) +)
   let recCost = rec_ cost_r
   let recLogLen = rec_ logLen_r
-  let jump_ :: String -> Integer -> IO ()
-      jump_ t k = do
+  let jump_ :: String -> IO ()
+      jump_ t = do
         lab <- readIORef labr
         let updateGraph cr cgr = do
               c <- readIORef cr
-              let ff = max (c * k)
+              let ff = max c
               let fg = Just . ff . fromMaybe 0
               let f = M.alter fg t
               let g = Just . f . fromMaybe mempty
@@ -424,10 +448,14 @@ checkCost warning disp alwaysShow ts = do
         writeIORef labr t
         writeIORef cost_r 0
         writeIORef logLen_r 0
-  let jumpK k t = recCost 1 >> jump_ (l2s t) k
-  let jump = jumpK 1
+  let jump t = recCost 1 >> jump_ (l2s t)
   forM_ ts $ \case
-    TFor_bnz _ cnt lab' -> jumpK cnt lab'
+    TFor_top cnt -> do
+      modK (\x -> x * cnt)
+    TFor_bnz _ cnt lab' -> do
+      recCost 1
+      modK (\x -> x `div` cnt)
+      jump lab'
     TCode "bnz" [lab'] -> jump lab'
     TCode "bz" [lab'] -> jump lab'
     TCode "b" [lab'] -> do
@@ -445,7 +473,7 @@ checkCost warning disp alwaysShow ts = do
     TComment {} -> return ()
     TLabel lab' -> do
       let lab'' = l2s lab'
-      jump_ lab'' 1
+      jump_ lab''
       switch lab''
     TBytes _ -> recCost 1
     TConst _ -> recCost 1
@@ -454,6 +482,7 @@ checkCost warning disp alwaysShow ts = do
     TInt _ -> recCost 1
     TExtract {} -> recCost 1
     TSubstring {} -> recCost 1
+    Titob {} -> recCost 1
     TCode f _ ->
       case f of
         "sha256" -> recCost 35
@@ -476,11 +505,10 @@ checkCost warning disp alwaysShow ts = do
         "b^" -> recCost 6
         "b~" -> recCost 4
         _ -> recCost 1
-  let showNice x = lTop <> h x
-        where
-          h = \case
-            [] -> ""
-            (l, c) : r -> " --" <> show c <> "--> " <> l <> h r
+  let showNice = \case
+        [] -> ""
+        [l] -> l
+        l : r -> l <> " --> " <> showNice r
   let analyze lab cgr units algoMax = do
         cg <- readIORef cgr
         (gs, p, c) <- longestPathBetween cg lTop (l2s lBot)
@@ -488,7 +516,7 @@ checkCost warning disp alwaysShow ts = do
         let tooMuch = fromIntegral c > algoMax
         when tooMuch $
           warning $ LT.pack $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n"
-        void $ disp ("." <> lab <> ".dot") $ s2t $ "// This file is in the DOT file format. Upload or copy it into a Graphviz engine, such as https://dreampuf.github.io/GraphvizOnline\n" <> gs
+        void $ disp ("." <> lab <> ".dot") $ LT.toStrict $ T.render $ dotty gs
         return (msg, tooMuch)
   (showCost, exceedsCost) <- analyze "cost" cost_gr "units of cost" algoMaxAppProgramCost
   (showLogLen, exceedsLogLen) <- analyze "log" logLen_gr "bytes of logs" algoMaxLogLen
@@ -830,10 +858,21 @@ sallocLet dv cgen km = do
     cstore
     store_let dv True cload km
 
+sallocVarLet :: DLVarLet -> Bool -> App () -> App a -> App a
+sallocVarLet (DLVarLet mvc dv) sm cgen km = do
+  let once = store_let dv sm cgen km
+  case mvc of
+    Nothing -> km
+    Just DVC_Once -> once
+    Just DVC_Many ->
+      case sm of
+        True -> once
+        False -> sallocLet dv cgen km
+
 ctobs :: DLType -> App ()
 ctobs = \case
-  T_UInt -> op "itob"
-  T_Bool -> code "itob" ["// bool"] >> output (TSubstring 7 8)
+  T_UInt -> output (Titob False)
+  T_Bool -> output (Titob True) >> output (TSubstring 7 8)
   T_Null -> nop
   T_Bytes _ -> nop
   T_Digest -> nop
@@ -1156,6 +1195,7 @@ cfor maxi body = do
       cint 0
       store_idx
       label top_lab
+      output $ TFor_top maxi
       body load_idx
       load_idx
       cint 1
@@ -1364,24 +1404,21 @@ computeStateSizeAndKeys badx prefix size limit = do
 cSvsLoad :: Integer -> App ()
 cSvsLoad size = do
   (_, keysl) <- computeStateSizeAndKeys bad "svs" size algoMaxGlobalSchemaEntries_usable
-  case null keysl of
-    True -> do
-      padding 0
-    False -> do
-      -- [ SvsData_0? ]
-      forM_ (zip keysl $ False : repeat True) $ \(mi, doConcat) -> do
-        -- [ SvsData_N? ]
-        cbs $ keyVary mi
-        -- [ SvsData_N?, Key ]
-        op "app_global_get"
-        -- [ SvsData_N?, NewPiece ]
-        case doConcat of
-          True -> op "concat"
-          False -> nop
-        -- [ SvsData_N+1 ]
-        return ()
-      -- [ SvsData_k ]
+  unless (null keysl) $ do
+    -- [ SvsData_0? ]
+    forM_ (zip keysl $ False : repeat True) $ \(mi, doConcat) -> do
+      -- [ SvsData_N? ]
+      cbs $ keyVary mi
+      -- [ SvsData_N?, Key ]
+      op "app_global_get"
+      -- [ SvsData_N?, NewPiece ]
+      case doConcat of
+        True -> op "concat"
+        False -> nop
+      -- [ SvsData_N+1 ]
       return ()
+    -- [ SvsData_k ]
+    gvStore GV_svs
 
 cSvsSave :: SrcLoc -> [DLArg] -> App ()
 cSvsSave _at svs = do
@@ -1588,13 +1625,13 @@ ce = \case
       L_Internal -> void $ internal
       L_Api {} -> do
         v <- internal
-        op "dup"
+        --op "dup" -- API log values are never used
         ctobs $ varType v
         gvStore GV_apiRet
       L_Event ml en -> do
         let name = maybe en (\l -> bunpack l <> "_" <> en) ml
         clogEvent name vs
-        cl DLL_Null
+        --cl DLL_Null -- Event log values are never used
   DLE_setApiDetails {} -> return ()
   DLE_GetUntrackedFunds _ mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
@@ -1841,21 +1878,34 @@ cextractDataOf cd va = do
 
 doSwitch :: String -> (a -> App ()) -> SrcLoc -> DLVar -> SwitchCases a -> App ()
 doSwitch lab ck _at dv csm = do
-  salloc_ (textyv dv <> " for switch") $ \cstore cload -> do
-    ca $ DLA_Var dv
-    cstore
-    let cm1 _vi (vn, (vv, vu, k)) = do
-          l <- freshLabel $ lab <> "_" <> vn
-          block l $
-            case vu of
-              False -> ck k
-              True -> do
-                flip (sallocLet vv) (ck k) $ do
-                  cextractDataOf cload (DLA_Var vv)
-    cload
-    cint 0
-    op "getbyte"
-    cblt lab cm1 $ bltL $ zip [0 ..] (M.toAscList csm)
+  let go cload = do
+        let cm1 _vi (vn, (vv, vu, k)) = do
+              l <- freshLabel $ lab <> "_" <> vn
+              block l $
+                case vu of
+                  False -> ck k
+                  True -> do
+                    flip (sallocLet vv) (ck k) $ do
+                      cextractDataOf cload (DLA_Var vv)
+        cload
+        cint 0
+        op "getbyte"
+        let csml = zip [0 ..] (M.toAscList csm)
+        case csml of
+          [ (0, x), (1, y) ] -> do
+            y_lab <- freshLabel $ lab <> "_" <> "nz"
+            code "bnz" [ y_lab ]
+            cm1 x x
+            label y_lab
+            cm1 y y
+          _ -> cblt lab cm1 $ bltL csml
+  letSmall dv >>= \case
+    True -> go (ca $ DLA_Var dv)
+    False -> do
+      salloc_ (textyv dv <> " for switch") $ \cstore cload -> do
+        ca $ DLA_Var dv
+        cstore
+        go cload
 
 cm :: App () -> DLStmt -> App ()
 cm km = \case
@@ -1863,10 +1913,7 @@ cm km = \case
   DL_Let _ DLV_Eff de ->
     -- XXX this could leave something on the stack
     ce de >> km
-  DL_Let _ (DLV_Let DVC_Once dv) de -> do
-    sm <- exprSmall de
-    store_let dv sm (ce de) km
-  DL_Let _ (DLV_Let DVC_Many dv) de -> do
+  DL_Let _ (DLV_Let vc dv) de -> do
     sm <- exprSmall de
     recordNew <-
       case de of
@@ -1878,11 +1925,7 @@ cm km = \case
           return False
     when recordNew $
       addNewTok $ DLA_Var dv
-    case sm of
-      True ->
-        store_let dv True (ce de) km
-      False ->
-        sallocLet dv (ce de) km
+    sallocVarLet (DLVarLet (Just vc) dv) sm (ce de) km
   DL_ArrayMap at ansv aa lv iv (DLBlock _ _ body ra) -> do
     let anssz = typeSizeOf $ argTypeOf $ DLA_Var ansv
     let (_, xlen) = argArrTypeLen aa
@@ -1900,7 +1943,7 @@ cm km = \case
         op "concat"
         store_ans
       store_let ansv True load_ans km
-  DL_ArrayReduce at ansv aa za av lv (DLBlock _ _ body ra) -> do
+  DL_ArrayReduce at ansv aa za av lv iv (DLBlock _ _ body ra) -> do
     let (_, xlen) = argArrTypeLen aa
     salloc_ (textyv ansv) $ \store_ans load_ans -> do
       ca za
@@ -1909,7 +1952,8 @@ cm km = \case
         cfor xlen $ \load_idx -> do
           doArrayRef at aa True $ Right load_idx
           sallocLet lv (return ()) $ do
-            cp (ca ra) body
+            store_let iv True load_idx $ do
+              cp (ca ra) body
           store_ans
         store_let ansv True load_ans km
   DL_Var _ dv ->
@@ -2042,6 +2086,7 @@ data GlobalVar
   = GV_txnCounter
   | GV_currentStep
   | GV_currentTime
+  | GV_svs
   | GV_argTime
   | GV_argMsg
   | GV_wasMeth
@@ -2065,6 +2110,7 @@ gvType = \case
   GV_txnCounter -> T_UInt
   GV_currentStep -> T_UInt
   GV_currentTime -> T_UInt
+  GV_svs -> T_Null
   GV_argTime -> T_UInt
   GV_argMsg -> T_Null
   GV_wasMeth -> T_Bool
@@ -2098,25 +2144,31 @@ allocDLVar :: SrcLoc -> DLType -> App DLVar
 allocDLVar at t =
   DLVar at Nothing t <$> ((liftIO . incCounter) =<< ((sCounter . eShared) <$> ask))
 
-bindFromTuple :: SrcLoc -> [DLVar] -> App a -> App a
-bindFromTuple at vs m = do
-  let mkArgVar l = allocDLVar at $ T_Tuple $ map varType l
-  av <- mkArgVar vs
-  let go = \case
-        [] -> op "pop" >> m
-        (dv, i) : more -> sallocLet dv cgen $ go more
-          where
-            cgen = ce $ DLE_TupleRef at (DLA_Var av) i
-  store_let av True (op "dup") $
-    go $ zip vs [0 ..]
+bindFromGV :: GlobalVar -> App () -> SrcLoc -> [DLVarLet] -> App a -> App a
+bindFromGV gv ensure at vls m = do
+  let notNothing = \case
+        DLVarLet (Just _) _ -> True
+        _ -> False
+  case any notNothing vls of
+    False -> m
+    True -> do
+      av <- allocDLVar at $ T_Tuple $ map varLetType vls
+      ensure
+      let go = \case
+            [] -> m
+            (dv, i) : more -> sallocVarLet dv False cgen $ go more
+              where
+                cgen = ce $ DLE_TupleRef at (DLA_Var av) i
+      store_let av True (gvLoad gv) $
+        go $ zip vls [0 ..]
 
-bindFromStack :: SrcLoc -> [DLVar] -> App a -> App a
-bindFromStack _at vs m = do
+bindFromStack :: SrcLoc -> [DLVarLet] -> App a -> App a
+bindFromStack _at vsl m = do
   -- STACK: [ ...vs ] TOP on right
   let go m' v = sallocLet v (return ()) m'
   -- The 'l' is important here because it means we're nesting the computation
   -- from the left, so the bindings match the (reverse) push order
-  foldl' go m vs
+  foldl' go m $ map varLetVar vsl
 
 cloop :: Int -> CHandler -> App ()
 cloop _ (C_Handler {}) = return ()
@@ -2154,26 +2206,21 @@ cblt lab go t = do
 handlerLabel :: Int -> Label
 handlerLabel w = "publish" <> texty w
 
-bindFromSvs_ :: SrcLoc -> [DLVar] -> App a -> App a
+bindFromSvs_ :: SrcLoc -> [DLVarLet] -> App a -> App a
 bindFromSvs_ at svs m = do
-  cSvsLoad $ typeSizeOf $ T_Tuple $ map varType svs
-  bindFromTuple at svs m
+  let ensure = cSvsLoad $ typeSizeOf $ T_Tuple $ map varLetType svs
+  bindFromGV GV_svs ensure at svs m
 
 ch :: Int -> CHandler -> App ()
 ch _ (C_Loop {}) = return ()
-ch which (C_Handler at int from prev svs msg timev secsv body) = recordWhich which $ do
+ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich which $ do
+  let msg = map varLetVar msgl
   let isCtor = which == 0
   let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ msg)
   when (argSize > algoMaxAppTotalArgLen) $
     xxx $ texty $ "Step " <> show which <> "'s argument length is " <> show argSize <> ", but the maximum is " <> show algoMaxAppTotalArgLen
-  let bindFromMsg vs m = do
-        gvLoad GV_argMsg
-        op "dup"
-        op "len"
-        cint $ typeSizeOf $ (T_Tuple $ map varType vs)
-        asserteq
-        bindFromTuple at vs m
-  let bindFromSvs = bindFromSvs_ at svs
+  let bindFromMsg = bindFromGV GV_argMsg (return ()) at
+  let bindFromSvs = bindFromSvs_ at svsl
   block (handlerLabel which) $ do
     comment "check step"
     cint $ fromIntegral prev
@@ -2195,7 +2242,7 @@ ch which (C_Handler at int from prev svs msg timev secsv body) = recordWhich whi
             . (bindTime timev)
             . (bindSecs secsv)
             . bindFromSvs
-            . (bindFromMsg msg)
+            . (bindFromMsg $ map v2vl msg)
     bindVars $ do
       clogEvent ("_reach_e" <> show which) msg
       when isCtor $ do
@@ -2350,27 +2397,34 @@ cmeth sigi = \case
       comment $ LT.pack $ "  ui: " <> show sigi
       gvLoad GV_currentStep
       flip (cblt "viewStep") (bltM hs) $ \hi vbvs -> do
-        let VSIBlockVS svs deb = vbvs
+        vbvs' <- liftIO $ add_counts vbvs
+        let VSIBlockVS svsl deb = vbvs'
         let (DLinExportBlock _ mfargs (DLBlock at _ t r)) = deb
         let fargs = fromMaybe mempty mfargs
         block_ (LT.pack $ bunpack who <> "_" <> show hi) $
-          bindFromArgs fargs $ bindFromSvs_ at svs $
+          bindFromArgs fargs $ bindFromSvs_ at svsl $
             flip cp t $ do
               ca r
               ctobs $ argTypeOf r
               gvStore GV_apiRet
               code "b" [ "apiReturn" ]
 
-bindFromArgs :: [DLVar] -> App a -> App a
+bindFromArgs :: [DLVarLet] -> App a -> App a
 bindFromArgs vs m = do
   -- XXX deal with >15 args
-  let go (v, i) = sallocLet v (code "txna" ["ApplicationArgs", texty i] >> cfrombs (varType v))
+  let go (v, i) = sallocVarLet v False (code "txna" ["ApplicationArgs", texty i] >> cfrombs (varLetType v))
   foldl' (flip go) m (zip vs [(1::Integer) ..])
 
-data VSIBlockVS = VSIBlockVS [DLVar] DLExportBlock
+data VSIBlockVS = VSIBlockVS [DLVarLet] DLExportBlock
 type VSIHandler = M.Map Int VSIBlockVS
 data VSITopInfo = VSITopInfo [DLType] DLType VSIHandler
 type VSITop = M.Map SLPart VSITopInfo
+
+instance AC VSIBlockVS where
+  ac (VSIBlockVS svs eb) = do
+    eb' <- ac eb
+    svs' <- ac_vls svs
+    return $ VSIBlockVS svs' eb'
 
 selectFromM :: Ord b => (x -> c -> d) -> b -> M.Map a (x, M.Map b c) -> M.Map a d
 selectFromM f k m = M.mapMaybe go m
@@ -2390,7 +2444,7 @@ analyzeViews (vs, vis) = vsit
             IT_Fun d r -> (d, r)
             IT_UDFun _ -> impossible $ "udview " <> bunpack who
     vsih = M.map goh vis
-    goh (ViewInfo svs vi) = (svs, flattenInterfaceLikeMap vi)
+    goh (ViewInfo svs vi) = (map v2vl svs, flattenInterfaceLikeMap vi)
 
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do

@@ -22,7 +22,7 @@ We begin by comparing the necessary imports and program body:
 
 ```
 load: /examples/rps-7-loops/index.mjs
-range: 1-5
+range: 1-4
 ```
 
 ```
@@ -54,7 +54,7 @@ starting balance of `10`.
 
 ```
 load: /examples/rps-7-loops/index.mjs
-range: 6-9
+range: 5-8
 ```
 
 ```
@@ -74,7 +74,7 @@ beginning balances:
 
 ```
 load: /examples/rps-7-loops/index.mjs
-range: 10-14
+range: 9-13
 ```
 
 ```
@@ -88,7 +88,7 @@ Deploying and attaching to contracts works slightly differently over RPC:
 
 ```
 load: /examples/rps-7-loops/index.mjs
-range: 15-17
+range: 14-16
 ```
 
 ```
@@ -113,7 +113,7 @@ equivalents:
 
 ```
 load: /examples/rps-7-loops/index.mjs
-range: 18-19
+range: 17-18
 ```
 
 ```
@@ -127,7 +127,7 @@ Even participant interact interface definitions remain largely the same:
 
 ```
 load: /examples/rps-7-loops/index.mjs
-range: 20-32
+range: 19-31
 ```
 
 ```
@@ -160,7 +160,7 @@ accordingly easily to implement in either language:
 
 ```
 load: /examples/rps-7-loops/index.mjs
-range: 36-38
+range: 35-37
 ```
 
 ```
@@ -175,7 +175,7 @@ The same is true of `{!py} seeOutcome`:
 
 ```
 load: /examples/rps-7-loops/index.mjs
-range: 33-35
+range: 32-34
 ```
 
 ```
@@ -198,7 +198,7 @@ code we have built up thus far to actually play a game of _Rock, Paper, Scissors
 
 ```
 load: /examples/rps-7-loops/index.mjs
-range: 41-60
+range: 40-59
 ```
 
 ```

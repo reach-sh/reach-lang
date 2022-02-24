@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@reach-sh/simulator-client": "0.0.26",
+    "prettyjson": "^1.2.1"
+  }
+}

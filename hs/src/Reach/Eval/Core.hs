@@ -86,7 +86,8 @@ data Env = Env
   , e_stack :: [SLCtxtFrame]
   , e_depth :: Int
   , e_mape :: MapEnv
-  , e_unused_variables :: IORef (S.Set (SrcLoc, SLVar))
+  , e_vars_tracked :: IORef (S.Set (SrcLoc, SLVar))
+  , e_vars_used :: IORef (S.Set (SrcLoc, SLVar))
   , e_while_invariant :: Bool
   , e_exn :: IORef ExnEnv
   , e_appr :: Either DLOpts (IORef AppInitSt)
@@ -481,21 +482,24 @@ whenUsingStrict :: App () -> App ()
 whenUsingStrict e = useStrict >>= flip when e
 
 shouldNotTrackVariable :: (SrcLoc, SLVar) -> Bool
-shouldNotTrackVariable (_, "main") = True
-shouldNotTrackVariable (_, "_") = True
-shouldNotTrackVariable _ = False
+shouldNotTrackVariable = \case
+  (_, "main") -> True
+  (_, "_") -> True
+  _ -> False
+
+envSetInsert :: (Ord a) => (Env -> IORef (S.Set a)) -> a -> App ()
+envSetInsert f v = do
+  sr <- asks f
+  liftIO $ modifyIORef sr $ S.insert v
 
 trackVariable :: (SrcLoc, SLVar) -> App ()
 trackVariable el =
-  whenUsingStrict $ do
-    unused_vars <- asks e_unused_variables
+  whenUsingStrict $
     unless (shouldNotTrackVariable el) $
-      liftIO $ modifyIORef unused_vars $ S.insert el
+      envSetInsert e_vars_tracked el
 
 markVarUsed :: (SrcLoc, SLVar) -> App ()
-markVarUsed v = do
-  unused_vars <- asks e_unused_variables
-  liftIO $ modifyIORef unused_vars $ S.filter (v /=)
+markVarUsed = envSetInsert e_vars_used
 
 -- | The "_" ident may never be looked up.
 env_lookup :: LookupCtx -> SLVar -> SLEnv -> App SLSSVal
@@ -520,90 +524,92 @@ isKwd _ = False
 m_fromList_public_builtin :: [(SLVar, SLVal)] -> SLEnv
 m_fromList_public_builtin = m_fromList_public sb
 
+base_env_slvals :: [(String, SLVal)]
+base_env_slvals =
+  [ ("makeEnum", SLV_Prim SLPrim_makeEnum)
+  , ("declassify", SLV_Prim SLPrim_declassify)
+  , ("commit", SLV_Prim SLPrim_commit)
+  , ("digest", SLV_Prim SLPrim_digest)
+  , ("transfer", SLV_Prim SLPrim_transfer)
+  , ("assert", SLV_Prim $ SLPrim_claim CT_Assert)
+  , ("assume", SLV_Prim $ SLPrim_claim $ CT_Assume False)
+  , ("require", SLV_Prim $ SLPrim_claim CT_Require)
+  , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
+  , ("check", SLV_Prim $ SLPrim_check)
+  , ("unknowable", SLV_Form $ SLForm_unknowable)
+  , ("balance", SLV_Prim $ SLPrim_balance)
+  , ("lastConsensusTime", SLV_Prim $ SLPrim_fluid_read_canWait FV_lastConsensusTime)
+  , ("baseWaitTime", SLV_Prim $ SLPrim_fluid_read_canWait FV_baseWaitTime)
+  , ("lastConsensusSecs", SLV_Prim $ SLPrim_fluid_read_canWait FV_lastConsensusSecs)
+  , ("baseWaitSecs", SLV_Prim $ SLPrim_fluid_read_canWait FV_baseWaitSecs)
+  , ("didPublish", SLV_Prim $ SLPrim_didPublish)
+  , ("Digest", SLV_Type ST_Digest)
+  , ("Null", SLV_Type ST_Null)
+  , ("Bool", SLV_Type ST_Bool)
+  , ("UInt", SLV_Type ST_UInt)
+  , ("Bytes", SLV_Prim SLPrim_Bytes)
+  , ("Contract", SLV_Type ST_Contract)
+  , ("Address", SLV_Type ST_Address)
+  , ("Token", SLV_Type ST_Token)
+  , ("forall", SLV_Prim SLPrim_forall)
+  , ("Data", SLV_Prim SLPrim_Data)
+  , ("Array", SLV_Prim SLPrim_Array)
+  , ("array", SLV_Prim SLPrim_array)
+  , ("Tuple", SLV_Prim SLPrim_Tuple)
+  , ("Object", SLV_Prim SLPrim_Object)
+  , ("Struct", SLV_Prim SLPrim_Struct)
+  , ("Foldable", SLV_Prim SLPrim_Foldable)
+  , ("Fun", SLV_Prim SLPrim_Fun)
+  , ("Refine", SLV_Prim SLPrim_Refine)
+  , ("exit", SLV_Prim SLPrim_exit)
+  , ("each", SLV_Form SLForm_each)
+  , ("intEq", SLV_Prim $ SLPrim_op PEQ)
+  , ("polyEq", SLV_Prim $ SLPrim_op PEQ)
+  , ("polyNeq", SLV_Prim $ SLPrim_polyNeq)
+  , ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
+  , ("addressEq", SLV_Prim $ SLPrim_op ADDRESS_EQ)
+  , ("isType", SLV_Prim SLPrim_is_type)
+  , ("typeEq", SLV_Prim SLPrim_type_eq)
+  , ("typeOf", SLV_Prim SLPrim_typeOf)
+  , ("is", SLV_Prim SLPrim_is)
+  , ("wait", SLV_Form SLForm_wait)
+  , ("race", SLV_Prim SLPrim_race)
+  , ("fork", SLV_Form SLForm_fork)
+  , ("parallelReduce", SLV_Form SLForm_parallel_reduce)
+  , ("parallel_reduce", SLV_Deprecated (D_SnakeToCamelCase "parallel_reduce") $ SLV_Form SLForm_parallel_reduce)
+  , ("Map", SLV_Prim SLPrim_Map)
+  , ("Anybody", SLV_Anybody)
+  , ("remote", SLV_Prim SLPrim_remote)
+  , ("Participant", SLV_Prim SLPrim_Participant)
+  , ("ParticipantClass", SLV_Prim SLPrim_ParticipantClass)
+  , ("View", SLV_Prim SLPrim_View)
+  , ("API", SLV_Prim SLPrim_API)
+  , ("Events", SLV_Prim SLPrim_Event)
+  , ("init", SLV_Prim SLPrim_init)
+  , ("deploy", SLV_Deprecated (D_Replaced "deploy" "init") $ SLV_Prim SLPrim_init)
+  , ("setOptions", SLV_Prim SLPrim_setOptions)
+  , (".adaptReachAppTupleArgs", SLV_Prim SLPrim_adaptReachAppTupleArgs)
+  , ("muldiv", SLV_Prim $ SLPrim_op MUL_DIV)
+  , ("verifyMuldiv", SLV_Prim $ SLPrim_verifyMuldiv)
+  , ("unstrict", SLV_Prim $ SLPrim_unstrict)
+  , ("getContract", SLV_Prim $ SLPrim_getContract)
+  , ("getAddress", SLV_Prim $ SLPrim_getAddress)
+  , (".emitLog", SLV_Prim $ SLPrim_EmitLog)
+  , ("call", SLV_Form $ SLForm_apiCall)
+  , (".setApiDetails", SLV_Form $ SLForm_setApiDetails)
+  , ("getUntrackedFunds", SLV_Prim $ SLPrim_getUntrackedFunds)
+  , ("fromSome", SLV_Prim $ SLPrim_fromSome)
+  , ( "Reach"
+    , (SLV_Object sb (Just $ "Reach") $
+         m_fromList_public_builtin
+           [("App", SLV_Form SLForm_App)])
+    )
+  ]
+  -- Add language keywords to env to prevent variables from using names.
+  <> map (\t -> (show t, SLV_Kwd t)) allKeywords
+
 base_env :: SLEnv
-base_env =
-  m_fromList_public_builtin $
-    [ ("makeEnum", SLV_Prim SLPrim_makeEnum)
-    , ("declassify", SLV_Prim SLPrim_declassify)
-    , ("commit", SLV_Prim SLPrim_commit)
-    , ("digest", SLV_Prim SLPrim_digest)
-    , ("transfer", SLV_Prim SLPrim_transfer)
-    , ("assert", SLV_Prim $ SLPrim_claim CT_Assert)
-    , ("assume", SLV_Prim $ SLPrim_claim $ CT_Assume False)
-    , ("require", SLV_Prim $ SLPrim_claim CT_Require)
-    , ("possible", SLV_Prim $ SLPrim_claim CT_Possible)
-    , ("check", SLV_Prim $ SLPrim_check)
-    , ("unknowable", SLV_Form $ SLForm_unknowable)
-    , ("balance", SLV_Prim $ SLPrim_balance)
-    , ("lastConsensusTime", SLV_Prim $ SLPrim_fluid_read_canWait FV_lastConsensusTime)
-    , ("baseWaitTime", SLV_Prim $ SLPrim_fluid_read_canWait FV_baseWaitTime)
-    , ("lastConsensusSecs", SLV_Prim $ SLPrim_fluid_read_canWait FV_lastConsensusSecs)
-    , ("baseWaitSecs", SLV_Prim $ SLPrim_fluid_read_canWait FV_baseWaitSecs)
-    , ("didPublish", SLV_Prim $ SLPrim_didPublish)
-    , ("Digest", SLV_Type ST_Digest)
-    , ("Null", SLV_Type ST_Null)
-    , ("Bool", SLV_Type ST_Bool)
-    , ("UInt", SLV_Type ST_UInt)
-    , ("Bytes", SLV_Prim SLPrim_Bytes)
-    , ("Contract", SLV_Type ST_Contract)
-    , ("Address", SLV_Type ST_Address)
-    , ("Token", SLV_Type ST_Token)
-    , ("forall", SLV_Prim SLPrim_forall)
-    , ("Data", SLV_Prim SLPrim_Data)
-    , ("Array", SLV_Prim SLPrim_Array)
-    , ("array", SLV_Prim SLPrim_array)
-    , ("Tuple", SLV_Prim SLPrim_Tuple)
-    , ("Object", SLV_Prim SLPrim_Object)
-    , ("Struct", SLV_Prim SLPrim_Struct)
-    , ("Foldable", SLV_Prim SLPrim_Foldable)
-    , ("Fun", SLV_Prim SLPrim_Fun)
-    , ("Refine", SLV_Prim SLPrim_Refine)
-    , ("exit", SLV_Prim SLPrim_exit)
-    , ("each", SLV_Form SLForm_each)
-    , ("intEq", SLV_Prim $ SLPrim_op PEQ)
-    , ("polyEq", SLV_Prim $ SLPrim_op PEQ)
-    , ("polyNeq", SLV_Prim $ SLPrim_polyNeq)
-    , ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
-    , ("addressEq", SLV_Prim $ SLPrim_op ADDRESS_EQ)
-    , ("isType", SLV_Prim SLPrim_is_type)
-    , ("typeEq", SLV_Prim SLPrim_type_eq)
-    , ("typeOf", SLV_Prim SLPrim_typeOf)
-    , ("is", SLV_Prim SLPrim_is)
-    , ("wait", SLV_Form SLForm_wait)
-    , ("race", SLV_Prim SLPrim_race)
-    , ("fork", SLV_Form SLForm_fork)
-    , ("parallelReduce", SLV_Form SLForm_parallel_reduce)
-    , ("parallel_reduce", SLV_Deprecated (D_SnakeToCamelCase "parallel_reduce") $ SLV_Form SLForm_parallel_reduce)
-    , ("Map", SLV_Prim SLPrim_Map)
-    , ("Anybody", SLV_Anybody)
-    , ("remote", SLV_Prim SLPrim_remote)
-    , ("Participant", SLV_Prim SLPrim_Participant)
-    , ("ParticipantClass", SLV_Prim SLPrim_ParticipantClass)
-    , ("View", SLV_Prim SLPrim_View)
-    , ("API", SLV_Prim SLPrim_API)
-    , ("Events", SLV_Prim SLPrim_Event)
-    , ("init", SLV_Prim SLPrim_init)
-    , ("deploy", SLV_Deprecated (D_Replaced "deploy" "init") $ SLV_Prim SLPrim_init)
-    , ("setOptions", SLV_Prim SLPrim_setOptions)
-    , (".adaptReachAppTupleArgs", SLV_Prim SLPrim_adaptReachAppTupleArgs)
-    , ("muldiv", SLV_Prim $ SLPrim_op MUL_DIV)
-    , ("verifyMuldiv", SLV_Prim $ SLPrim_verifyMuldiv)
-    , ("unstrict", SLV_Prim $ SLPrim_unstrict)
-    , ("getContract", SLV_Prim $ SLPrim_getContract)
-    , ("getAddress", SLV_Prim $ SLPrim_getAddress)
-    , (".emitLog", SLV_Prim $ SLPrim_EmitLog)
-    , ("call", SLV_Form $ SLForm_apiCall)
-    , (".setApiDetails", SLV_Form $ SLForm_setApiDetails)
-    , ("getUntrackedFunds", SLV_Prim $ SLPrim_getUntrackedFunds)
-    , ("fromSome", SLV_Prim $ SLPrim_fromSome)
-    , ( "Reach"
-      , (SLV_Object sb (Just $ "Reach") $
-           m_fromList_public_builtin
-             [("App", SLV_Form SLForm_App)])
-      )
-    ]
-      -- Add language keywords to env to prevent variables from using names.
-      <> map (\t -> (show t, SLV_Kwd t)) allKeywords
+base_env = m_fromList_public_builtin base_env_slvals
 
 jsClo :: HasCallStack => SrcLoc -> String -> String -> (M.Map SLVar SLVal) -> SLVal
 jsClo at name js env_ = SLV_Clo at Nothing $ SLClo (Just name) args body cloenv
@@ -655,7 +661,7 @@ slToDLExportVal v = slToDLV v >>= maybe (return Nothing) (dlvToEV >=> (return . 
 dlvToEV :: DLValue -> App DLSExportBlock
 dlvToEV = \case
   DLV_Fun at vs b ->
-    return $ DLinExportBlock at (Just vs) b
+    return $ DLinExportBlock at (Just $ map v2vl vs) b
   ow ->
     case dlvToDL ow of
       Nothing -> impossible "dlvToEV"
@@ -1293,7 +1299,6 @@ evalAsEnv obj = case obj of
         , ("find", retStdLib "Array_find")
         , ("withIndex", retStdLib "Array_withIndex")
         , ("forEachWithIndex", retStdLib "Array_forEachWithIndex")
-        , ("reduceWithIndex", retStdLib "Array_reduceWithIndex")
         , ("indexOf", retStdLib "Array_indexOf")
         , ("replicate", retStdLib "Array_replicate")
         , ("slice", retStdLib "Array_slice")
@@ -1304,7 +1309,8 @@ evalAsEnv obj = case obj of
         , ("concat", retV $ public $ SLV_Prim $ SLPrim_array_concat)
         , ("map", retV $ public $ SLV_Prim $ SLPrim_array_map False)
         , ("mapWithIndex", retV $ public $ SLV_Prim $ SLPrim_array_map True)
-        , ("reduce", retV $ public $ SLV_Prim $ SLPrim_array_reduce)
+        , ("reduce", retV $ public $ SLV_Prim $ SLPrim_array_reduce False)
+        , ("reduceWithIndex", retV $ public $ SLV_Prim $ SLPrim_array_reduce True)
         , ("zip", retV $ public $ SLV_Prim $ SLPrim_array_zip)
         ]
           <> foldableValueEnv
@@ -1373,11 +1379,11 @@ evalAsEnv obj = case obj of
              , ("find", delayStdlib "Array_find1")
              , ("withIndex", delayStdlib "Array_withIndex1")
              , ("forEachWithIndex", delayStdlib "Array_forEachWithIndex1")
-             , ("reduceWithIndex", delayStdlib "Array_reduceWithIndex1")
              , ("slice", delayStdlib "Array_slice1")
              , ("map", delayCall $ SLPrim_array_map False)
              , ("mapWithIndex", delayCall $ SLPrim_array_map True)
-             , ("reduce", delayCall SLPrim_array_reduce)
+             , ("reduce", delayCall $ SLPrim_array_reduce False)
+             , ("reduceWithIndex", delayCall $ SLPrim_array_reduce True)
              , ("zip", delayCall SLPrim_array_zip)
              ]
     structValueEnv :: SLObjEnv
@@ -2601,7 +2607,7 @@ evalPrim p sargs =
           let clo_args = concatMap ((",c" <>) . show) [0 .. (length more - 1)]
           f' <- withAt $ \at -> jsClo at "zip" ("(ab" <> clo_args <> mindex <> ") => f(ab[0], ab[1]" <> clo_args <> mindex <> ")") (M.fromList [("f", f)])
           evalApplyVals' (SLV_Prim $ SLPrim_array_map withIndex) (xy_v : (map public $ more ++ [f']))
-    SLPrim_array_reduce ->
+    SLPrim_array_reduce withIndex ->
       case args of
         [] -> illegal_args
         [_] -> illegal_args
@@ -2610,15 +2616,16 @@ evalPrim p sargs =
           at <- withAt id
           (xt, x_da) <- compileTypeOf x
           (x_ty, _) <- mustBeArray xt
-          let f' b a = evalApplyVals' f [(lvl, b), (lvl, a)]
+          let f' b a i = evalApplyVals' f $ [(lvl, b), (lvl, a)] <> (if withIndex then [(lvl, i)] else [])
           (z_ty, z_da) <- compileTypeOf z
           (b_dv, b_dsv) <- make_dlvar at z_ty
           (a_dv, a_dsv) <- make_dlvar at x_ty
+          (i_dv, i_dsv) <- make_dlvar at T_UInt
           -- We ignore the state because if it is impure, then we will unroll
           -- anyways
           SLRes f_lifts _ f_da <-
             captureRes $ do
-              (f_lvl, f_v) <- f' b_dsv a_dsv
+              (f_lvl, f_v) <- f' b_dsv a_dsv i_dsv
               ensure_level lvl f_lvl
               (f_ty, f_da) <- compileTypeOf f_v
               typeEq z_ty f_ty
@@ -2627,29 +2634,33 @@ evalPrim p sargs =
           case shouldUnroll of
             True -> do
               x_vs <- explodeTupleLike "reduce" x
-              let evalem :: SLSVal -> SLVal -> App SLSVal
-                  evalem prev_z xv = do
-                    xv_v' <- f' (snd prev_z) xv
+              let evalem :: SLSVal -> (SLVal, Integer) -> App SLSVal
+                  evalem prev_z (xv, i) = do
+                    let iv = SLV_Int at i
+                    xv_v' <- f' (snd prev_z) xv iv
                     --- Note: We are artificially restricting reduce
                     --- to be parameteric in the state. We also ensure
                     --- that they type is the same as the anonymous
                     --- version.
                     _ <- typeCheck_d z_ty (snd xv_v')
                     return $ xv_v'
-              foldM evalem (lvl, z) x_vs
+              foldM evalem (lvl, z) $ zip x_vs [0..]
             False -> do
               (ans_dv, ans_dsv) <- make_dlvar at z_ty
               let f_bl = DLSBlock at [] f_lifts f_da
-              saveLift $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv f_bl
+              saveLift $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv i_dv f_bl
               return $ (lvl, ans_dsv)
         x : y : args' -> do
+          let mindex = case withIndex of
+                         True -> ",i"
+                         False -> ""
           let (f, z, more) = case reverse args' of
                 f_ : z_ : rmore -> (f_, z_, reverse rmore)
                 _ -> impossible "array_reduce"
           xy_v <- evalApplyVals' (SLV_Prim $ SLPrim_array_zip) $ map public [x, y]
           let clo_args = concatMap ((",c" <>) . show) [0 .. (length more - 1)]
-          f' <- withAt $ \at -> jsClo at "zip" ("(z,ab" <> clo_args <> ") => f(z, ab[0], ab[1]" <> clo_args <> ")") (M.fromList [("f", f)])
-          evalApplyVals' (SLV_Prim $ SLPrim_array_reduce) (xy_v : (map public $ more ++ [z, f']))
+          f' <- withAt $ \at -> jsClo at "zip" ("(z,ab" <> clo_args <> mindex <> ") => f(z, ab[0], ab[1]" <> clo_args <> mindex <> ")") (M.fromList [("f", f)])
+          evalApplyVals' (SLV_Prim $ SLPrim_array_reduce withIndex) (xy_v : (map public $ more ++ [z, f']))
     SLPrim_array_set ->
       case map snd sargs of
         [arrv, idxv, valv] -> do
@@ -3630,7 +3641,8 @@ evalApplyClosureVals clo_at (SLClo mname formals (JSBlock body_a body _) SLCloEn
       let all_same = all (equiv xv) mvs
       case not (containsVarNewerThan ret xv) && all_same of
         -- only remove the prompt if there was a single return
-        True -> promptAndStatic mt (lvl, xv)
+        True -> do
+          promptAndStatic mt (lvl, xv)
         False -> do
           let go (r_at, mrty, (_, v), _) =
                 case mrty of
@@ -4346,13 +4358,16 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
   msg_ts <- mapM get_msg_t msg_dass_t
   let mrepeat_dvs = all_just $ M.elems $ M.map fst tc_send'
   -- Handle receiving / consensus
-  dr_from <- ctxt_mkvar $ DLVar at Nothing T_Address
+  dr_from_ <- ctxt_mkvar $ DLVar at Nothing T_Address
   let recv_imode = AllowShadowingRace whos (S.fromList msg)
   whosc <- mapM (\w -> (,) w <$> is_class w) $ S.toList whos
-  (who_env_mod, pdvs_recv) <-
+  let dv_reorigin (DLVar a _b c d) b = DLVar a b c d
+  (who_env_mod, dr_from_lab, pdvs_recv) <-
     case whosc of
       [(who, False)] -> do
-        let who_dv = fromMaybe dr_from (M.lookup who pdvs)
+        let who_dv_ = fromMaybe dr_from_ (M.lookup who pdvs)
+        let who_lab = Just (at, bunpack who)
+        let who_dv = dv_reorigin who_dv_ who_lab
         let pdvs' = M.insert who who_dv pdvs
         let add_who_env env =
               case vas of
@@ -4363,9 +4378,10 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
                       return $ M.insert whov (SLSSVal idAt lvl_ (SLV_Participant at_ who_ as_ (Just who_dv))) env
                     _ ->
                       impossible $ "participant is not participant"
-        return $ (add_who_env, pdvs')
+        return $ (add_who_env, who_lab, pdvs')
       _ -> do
-        return $ (return, pdvs)
+        return $ (return, Nothing, pdvs)
+  let dr_from = dv_reorigin dr_from_ dr_from_lab
   let mkmsg v t = ctxt_mkvar $ DLVar at (getBindingOrigin v) t
   dr_msg <- zipWithM mkmsg msg_dass_t msg_ts
   let toks = filter ((==) T_Token . varType) dr_msg
@@ -4894,8 +4910,8 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   let tc_e = tc_fork_e
   let tc_ss = [JSExpressionStatement tc_e sp]
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
-  -- liftIO $ putStrLn $ "Fork Output"
-  -- liftIO $ putStrLn $ show $ pretty exp_ss
+  --liftIO $ putStrLn $ "Fork Output"
+  --liftIO $ putStrLn $ show $ pretty exp_ss
   evalStmt $ exp_ss <> ks
 
 modifyLastM :: Monad m => (a -> m a) -> [a] -> m [a]
@@ -5061,7 +5077,7 @@ findStmtTrampoline = \case
           True -> evalStmt ks
           False -> expect_ $ Err_Eval_PartSet_Bound who
       Nothing -> do
-        whodv <- ctxt_lift_expr (DLVar at' Nothing T_Address) (DLE_PartSet at' who addr_da)
+        whodv <- ctxt_lift_expr (DLVar at' (Just (at', bunpack who)) T_Address) (DLE_PartSet at' who addr_da)
         let pdvs' = M.insert who whodv pdvs
         let st' = st {st_pdvs = pdvs'}
         setSt st'

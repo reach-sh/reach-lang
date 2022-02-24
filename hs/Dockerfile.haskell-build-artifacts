@@ -1,21 +1,34 @@
-ARG SOLC_VERSION
-FROM ethereum/solc:${SOLC_VERSION}-alpine AS solc
+ARG SOLC_IMAGE
+ARG ALPINE_IMAGE
+FROM $SOLC_IMAGE AS solc
 RUN apk add make curl bash
+COPY .docker-root ./.docker-root
 COPY Makefile.docker ./Makefile
 COPY sol/stdlib_reach.sol sol/stdlib_openzep.sol.sh ./sol/
-RUN make sol/stdlib.json
+RUN make ROOT=.docker-root sol/stdlib.json
 
 FROM reachsh/devnet-algo:latest AS algo
 
+FROM $ALPINE_IMAGE as z3
 ARG Z3_VERSION
-FROM alpine as z3
 ENV Z3_VERSION=${Z3_VERSION}
-RUN echo 'http://host.docker.internal:30000/' >> /etc/apk/repositories
-RUN apk update --allow-untrusted && apk add libgmpxx ca-certificates git
-RUN apk add --allow-untrusted --repository="http://host.docker.internal:30000/" z3="4.8.13-r0" z3-dev="4.8.13-r0"
-RUN chmod +x /usr/bin/z3
+RUN apk update && apk add git cmake python3 make gcc g++
+RUN wget https://github.com/Z3Prover/z3/archive/refs/tags/z3-${Z3_VERSION}.tar.gz && \
+    tar -xzf z3-${Z3_VERSION}.tar.gz && \
+    cd z3-z3-${Z3_VERSION} && \
+    mkdir build
+WORKDIR z3-z3-${Z3_VERSION}
+RUN cmake -B build \
+		-DZ3_BUILD_PYTHON_BINDINGS=True \
+		-DZ3_INSTALL_PYTHON_BINDINGS=True \
+		-DPYTHON_EXECUTABLE=/usr/bin/python3 \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DBUILD_SHARED_LIBS=True \
+		-DCMAKE_BUILD_TYPE=Release
+RUN	cmake --build build && cmake --install build
 
-FROM alpine
+FROM $ALPINE_IMAGE
 RUN apk update
 RUN apk add ncurses ncurses-dev libc6-compat zlib-dev gcc g++ git gmp-dev
 RUN ln -s /lib64/ld-linux-x86-64.so.2 /lib/ld-linux-x86-64.so.2
@@ -28,8 +41,9 @@ WORKDIR /build
 RUN apk add make curl bash
 COPY .docker-root ./.docker-root
 COPY Makefile.docker ./Makefile
+RUN make ROOT=.docker-root install-mo
 COPY package.mo.yaml ./
-RUN make ROOT=.docker-root install-mo package.yaml
+RUN make ROOT=.docker-root package.yaml
 
 COPY stack.yaml stack.yaml.lock ./
 RUN stack build --dependencies-only

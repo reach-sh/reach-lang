@@ -23,6 +23,9 @@ import {
   makeEventStream,
   makeSigningMonitor,
   NotifySend,
+  j2s,
+  j2sf,
+  handleFormat,
 } from './shared_impl';
 import {
   bigNumberify,
@@ -72,7 +75,7 @@ export type {
 import type { // =>
   Stdlib_Backend
 } from './interfaces';
-import { setQueryLowerBound, getQueryLowerBound } from './shared_impl';
+import { setQueryLowerBound, getQueryLowerBound, formatWithDecimals } from './shared_impl';
 export { setQueryLowerBound, getQueryLowerBound };
 
 // ****************************************************************************
@@ -86,7 +89,7 @@ type Interface = real_ethers.utils.Interface;
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-const reachBackendVersion = 9;
+const reachBackendVersion = 10;
 const reachEthBackendVersion = 6;
 export type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
@@ -319,17 +322,21 @@ const makeHasLogFor = ( getCtcAddress: (() => Address), iface:Interface, i:numbe
 
 const { randomUInt, hasRandom } = makeRandom(32);
 
+const minimumBalanceOf = async (acc: Account | Address): Promise<BigNumber> => {
+  void acc;
+  return zeroBn;
+};
+
+const balancesOf = async (acc: Account | Address, tokens: Array<Token|null>): Promise<Array<BigNumber>> => {
+  return Promise.all(tokens.map(tok => balanceOf(acc, tok ?? false)));
+}
+
 const balanceOf = async (acc: Account | Address, token: Token|false = false): Promise<BigNumber> => {
   let addressable = (typeof acc == 'string') ? acc : acc.networkAccount;
   if (!addressable) {
     throw Error(`Cannot get the address of: ${acc}`);
   }
   return balanceOfNetworkAccount(addressable, token);
-};
-
-const minimumBalanceOf = async (acc: Account | Address): Promise<BigNumber> => {
-  void acc;
-  return zeroBn;
 };
 
 const balanceOfNetworkAccount = async (networkAccount: any, token: Token|false = false) => {
@@ -655,7 +662,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
             ok_r = await callC(dhead, funcName, arg, pay);
           } catch (e:any) {
             debug(dhead, `ERROR`, { stack: e.stack }, e);
-            const jes = JSON.stringify(e);
+            const jes = j2s(e);
             if ( ! soloSend ) {
               debug(dhead, `LOST`);
               return await doRecv(false, false, jes);
@@ -999,8 +1006,8 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eq: Even
   eq.init({ ctcAddress, creationBlock });
 
   const chkeq = (a: any, e:any, msg:string) => {
-    const as = JSON.stringify(a);
-    const es = JSON.stringify(e);
+    const as = j2sf(a);
+    const es = j2sf(e);
     chk(as === es, `${msg}: expected ${es}, got ${as}`);
   };
 
@@ -1058,22 +1065,7 @@ const minimumBalance: BigNumber = zeroBn;
  * @example  formatCurrency(bigNumberify('100000000000000000000')); // => '100'
  */
 function formatCurrency(amt: any, decimals: number = standardDigits): string {
-  // Recall that 1 WEI = 10e18 ETH
-  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
-    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
-  }
-  // Truncate
-  decimals = Math.min(decimals, standardDigits);
-  const decimalsToForget = standardDigits - decimals;
-  const divAmt = bigNumberify(amt)
-    .div(bigNumberify(10).pow(decimalsToForget));
-  const amtStr = real_ethers.utils.formatUnits(divAmt, decimals);
-  // If the str ends with .0, chop it off
-  if (amtStr.slice(amtStr.length - 2) == ".0") {
-    return amtStr.slice(0, amtStr.length - 2);
-  } else {
-    return amtStr;
-  }
+  return handleFormat(amt, decimals, 18);
 }
 
 /**
@@ -1143,6 +1135,7 @@ const ethLike = {
   randomUInt,
   hasRandom,
   balanceOf,
+  balancesOf,
   minimumBalanceOf,
   transfer,
   connectAccount,
@@ -1166,6 +1159,7 @@ const ethLike = {
   minimumBalance,
   formatCurrency,
   formatAddress,
+  formatWithDecimals,
   unsafeGetMnemonic,
   launchToken,
   reachStdlib,

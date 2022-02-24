@@ -81,6 +81,9 @@ instance CollectsTypes SLParts where
 instance CollectsTypes DLVar where
   cts (DLVar _ _ t _) = cts t
 
+instance CollectsTypes DLVarLet where
+  cts (DLVarLet _ v) = cts v
+
 instance CollectsTypes DLArg where
   cts a = cts (argTypeOf a)
 
@@ -151,7 +154,7 @@ instance CollectsTypes DLStmt where
   cts (DL_Nop _) = mempty
   cts (DL_Let _ v e) = cts v <> cts e
   cts (DL_ArrayMap _ ans x a i f) = cts ans <> cts x <> cts a <> cts i <> cts f
-  cts (DL_ArrayReduce _ ans x z b a f) = cts ans <> cts x <> cts z <> cts b <> cts a <> cts f
+  cts (DL_ArrayReduce _ ans x z b a i f) = cts ans <> cts x <> cts z <> cts b <> cts a <> cts i <> cts f
   cts (DL_Var _ v) = cts v
   cts (DL_Set _ v a) = cts v <> cts a
   cts (DL_LocalIf _ a t f) = cts a <> cts t <> cts f

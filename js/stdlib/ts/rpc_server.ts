@@ -5,8 +5,13 @@ import { resolve                  } from 'path';
 
 import express, { Request, Response, NextFunction } from 'express';
 
-import { loadStdlib } from './loader';
-import { debug      } from './shared_impl';
+import {
+  loadStdlib,
+} from './loader';
+import {
+  debug,
+  j2s,
+} from './shared_impl';
 
 const withApiKey = () => {
   const key = process.env.REACH_RPC_KEY;
@@ -215,7 +220,7 @@ export const serveRpc = async (backend: any) => {
     const { was } = kont;
 
     const client =
-      `client ${req.ip}: ${req.method} ${req.originalUrl} ${JSON.stringify(req.body)}`;
+      `client ${req.ip}: ${req.method} ${req.originalUrl} ${j2s(req.body)}`;
 
     try {
       debug(`Attempting to process request by ${client}`);
@@ -244,12 +249,12 @@ export const serveRpc = async (backend: any) => {
     for (const k in obj) {
       router.post(`/${k}`, safely(async (req: Request, res: Response) => {
         const args = req.body;
-        const lab  = `RPC /${olab}/${k} ${JSON.stringify(args)}`;
+        const lab  = `RPC /${olab}/${k} ${j2s(args)}`;
         debug(lab);
 
         const ans = await obj[k](...args);
         const ret = ans === undefined ? null : ans;
-        debug(`${lab} ==> ${JSON.stringify(ret)}`);
+        debug(`${lab} ==> ${j2s(ret)}`);
 
         res.json(ret);
       }));
@@ -268,7 +273,7 @@ export const serveRpc = async (backend: any) => {
         throw new Error(`Expected an array but received: ${req.body}`);
 
       const [ id, ...args ] = req.body;
-      const lab = `RPC ${olab}${req.path} ${JSON.stringify(req.body)}`;
+      const lab = `RPC ${olab}${req.path} ${j2s(req.body)}`;
       debug(lab);
 
       try {
@@ -276,14 +281,14 @@ export const serveRpc = async (backend: any) => {
           .filter(a => a !== '')
           .reduce(userDefinedField, k.id(id)[prop])(...args.map(reBigNumberify));
 
-        debug(`${lab} ==> ${JSON.stringify(a)}`);
+        debug(`${lab} ==> ${j2s(a)}`);
         return res.json(a);
       } catch (e: any) {
         if (unsafe) {
-          debug(`${lab} ==> ${JSON.stringify(e)}`);
+          debug(`${lab} ==> ${j2s(e)}`);
           return res.status(404).json({});
         } else {
-          debug(`${lab} ==> ${JSON.stringify(null)}`);
+          debug(`${lab} ==> ${j2s(null)}`);
           return res.json(null);
         }
       }
@@ -296,7 +301,7 @@ export const serveRpc = async (backend: any) => {
     if (!Array.isArray(args))
       throw new Error(`Expected an array but received: ${args}`);
 
-    const lab = `RPC /backend${req.path}${args.length > 0 ? ' ' + JSON.stringify(args) : ''}`;
+    const lab = `RPC /backend${req.path}${args.length > 0 ? ' ' + j2s(args) : ''}`;
     debug(lab);
 
     const b = await req.path.split('/')
@@ -308,7 +313,7 @@ export const serveRpc = async (backend: any) => {
       ? await b(...args)
       : b;
 
-    debug(`${lab} ==> ${JSON.stringify(a)}`);
+    debug(`${lab} ==> ${j2s(a)}`);
     res.json(a);
   }));
 
@@ -322,7 +327,7 @@ export const serveRpc = async (backend: any) => {
       const kid                  = await kont.track(res);
       lab                        = `${lab} ${cid} ${kid}`;
 
-      debug(`${lab} START ${JSON.stringify(req.body)}`);
+      debug(`${lab} START ${j2s(req.body)}`);
       let io = { ...vals };
 
       if (io['stdlib.hasRandom']) {
@@ -332,7 +337,7 @@ export const serveRpc = async (backend: any) => {
 
       for (const m in meths) {
         io[m] = (...args: any[]) => new Promise((resolve, reject) => {
-          debug(`${lab} IO ${m} ${JSON.stringify(args)}`);
+          debug(`${lab} IO ${m} ${j2s(args)}`);
           const old_res = kont.id(kid);
 
           kont.replace(kid, { resolve, reject });
@@ -341,7 +346,7 @@ export const serveRpc = async (backend: any) => {
       }
 
       const ans = await backend[b](ctc, io);
-      debug(`${lab} END ${JSON.stringify(ans)}`);
+      debug(`${lab} END ${j2s(ans)}`);
 
       const new_res = kont.id(kid);
       kont.forget(kid);
@@ -361,7 +366,7 @@ export const serveRpc = async (backend: any) => {
 
     const [ kid, ans ] = req.body;
     lab                = `${lab} ${kid}`;
-    debug(`${lab} ANS ${JSON.stringify(ans)}`);
+    debug(`${lab} ANS ${j2s(ans)}`);
 
     const { resolve, reject } = kont.id(kid);
     void (reject);

@@ -4,7 +4,8 @@ import {
   bigNumberify
 } from './CBR';
 import {
-  debug
+  debug,
+  j2s,
 } from './shared_impl';
 void(debug);
 
@@ -32,9 +33,48 @@ export interface AnyBackendTy {
   canonicalize: (x: any) => any,
 };
 
-export const assert = (d: any, ai: any = null) => {
+const objectIsEmpty = (obj: any) =>
+  (obj
+  && Object.keys(obj).length === 0
+  && Object.getPrototypeOf(obj) === Object.prototype);
+
+const formatAssertInfo = (ai:any = {}) => {
+  let msg = '';
+  if ( typeof ai === 'string' ) {
+    msg = `: ${ai}`;
+  } else {
+  if ( ai.who ) {
+    msg += `: ${ai.who}`;
+    delete ai.who;
+  }
+  if ( ai.msg !== undefined ) {
+    if ( ai.msg !== null ) {
+      msg += `: ${ai.msg}`;
+    }
+    delete ai.msg;
+  }
+  if ( ai.at ) {
+    msg += `\n  at ${ai.at}`;
+    delete ai.at;
+  }
+  let rest = `:`;
+  if ( Array.isArray(ai.fs) ) {
+    for ( const f of ai.fs ) {
+      msg += `\n  ${f}`;
+    }
+    delete ai.fs;
+    rest = `\n`;
+  }
+  if ( ! objectIsEmpty(ai) ) {
+    msg += `${rest} ${j2s(ai)}`;
+  }
+  }
+  return msg;
+};
+
+export const assert = (d: any, ai: any = {}) => {
   if (!d) {
-    throw Error(JSON.stringify(ai));
+    throw Error(`Assertion failed${formatAssertInfo(ai)}`);
   }
 };
 
@@ -46,17 +86,13 @@ export const checkedBigNumberify = ( at:string, m:BigNumber, x:any ): BigNumber 
   throw Error(`bigNumberify: ${x} out of range [0, ${m}] at ${at}`);
 };
 
-// .canonicalize turns stuff into the "canonical backend representation"
 export function protect (ctc: AnyBackendTy, v: unknown, ai: unknown = null) {
   debug(`protect`, ctc.name, v);
   try {
+    // .canonicalize turns stuff into the "canonical backend representation"
     return ctc.canonicalize(v);
   } catch (e) {
-    let vs = `${v}`;
-    if ( vs === '{}' || vs === '[object Object]' ) {
-      vs = JSON.stringify(v);
-    }
-    throw Error(`Protect failed: expected ${ctc.name} but got ${vs}; ${JSON.stringify(ai)}:\n${JSON.stringify(e)}`);
+    throw Error(`Protect failed: expected ${ctc.name} but got ${j2s(v)}${formatAssertInfo(ai)}\n${j2s(e)}`);
   }
 };
 
@@ -153,10 +189,11 @@ export const mapRef = async <A>(m: LinearMap<A>, f: string): Promise<MaybeRep<A>
 
 export const Array_asyncMap = <A, B>(a: A[], f:((x:A, i:number) => Promise<B>)): Promise<B[]> => Promise.all(a.map(f));
 
-export const Array_asyncReduce = async <A, B>(a: A[], b:B, f:((y:B, x:A) => Promise<B>)): Promise<B> => {
+export const Array_asyncReduce = async <A, B>(a: A[], b:B, f:((y:B, x:A, i:number) => Promise<B>)): Promise<B> => {
   let y = b;
+  let i = 0;
   for ( const x of a ) {
-    y = await f(y, x);
+    y = await f(y, x, i++);
   }
   return y;
 };

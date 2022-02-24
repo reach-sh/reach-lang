@@ -29,13 +29,36 @@ export type CurrencyAmount = string | number | BigNumber | bigint
 
 export type {Connector} from './ConnectorMode';
 
+export const j2sf = (x:any): string => {
+  // We're removing duplicated values, so we can remove cyclic references
+  const seen: any[] = [];
+  const rep = (key:any, val:any): any => {
+    void key;
+    if (val != null && typeof val === "object") {
+      const idx = seen.indexOf(val);
+      if ( idx >= 0) { return `@${idx}`; }
+      seen.push(val);
+    }
+    return val;
+  };
+  return JSON.stringify(x, rep, 2);
+};
+
+export const j2s = (x:any): string => {
+  let xs = `${x}`;
+  if ( ! (x && x._isBigNumber) && (xs === '{}' || xs.startsWith('[object')) ) {
+    return j2sf(x);
+  }
+  return xs;
+};
+
 let DEBUG: boolean = truthyEnv(process.env.REACH_DEBUG);
 
 export const setDEBUG = (b: boolean) => {
   if (b === false || b === true) {
     DEBUG = b;
   } else {
-    throw Error(`Expected bool, got ${JSON.stringify(b)}`);
+    throw Error(`Expected bool, got ${j2s(b)}`);
   }
 };
 
@@ -275,7 +298,7 @@ export const stdContract =
   type SomeSetupArgs = Pick<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo"|"getInfo")>;
   const { setInfo, getInfo }: SomeSetupArgs = (() => {
     let _setInfo = (info:ContractInfo) => {
-      throw Error(`Cannot set info(${JSON.stringify(info)}) (i.e. deploy) when acc.contract called with contract info`);
+      throw Error(`Cannot set info(${j2s(info)}) (i.e. deploy) when acc.contract called with contract info: You are trying to attach to a contract as the deployer, which is not possible.`);
       return;
     };
     if ( givenInfoP !== undefined ) {
@@ -288,7 +311,7 @@ export const stdContract =
       const _infoP: Promise<ContractInfo> = new Promise((resolve) => {
         _setInfo = (info:ContractInfo) => {
           if ( beenSet ) {
-            throw Error(`Cannot set info(${JSON.stringify(info)}), i.e. deploy, twice`);
+            throw Error(`Cannot set info(${j2s(info)}) (i.e. deploy) twice`);
           }
           resolve(info);
           beenSet = true;
@@ -381,7 +404,7 @@ export const stdContract =
               fail(new Error(`${bl} errored with ${err}`));
             }
           }).then((res:any) => {
-            fail(new Error(`${bl} returned with ${JSON.stringify(res)}`));
+            fail(new Error(`${bl} returned with ${j2s(res)}`));
           });
           return p;
         };
@@ -804,7 +827,7 @@ export const makeEventQueue = <EQInitArgs, RawTxn, ProcTxn>(ctorArgs:EQCtorArgs<
         const t = txns[0];
         txns.shift();
         if ( ! ci(t) ) {
-          throw Error(`${dhead} customIgnore present, ${ci}, but top txn did not match ${JSON.stringify(t)}`);
+          throw Error(`${dhead} customIgnore present, ${ci}, but top txn did not match ${j2s(t)}`);
         } else {
           debug(dhead, `ignored`, ci, t);
         }
@@ -988,3 +1011,54 @@ export const makeSigningMonitor = <A,B>(): [SetSigningMonitor, NotifySend<A,B>] 
   };
   return [ setSigningMonitor, notifySend ];
 };
+
+/** @example lpad('asdf', '0', 6); // => '00asdf' */
+const lpad = (str: string, padChar: string, nChars: number) => {
+  const padding = padChar.repeat(Math.max(nChars - str.length, 0));
+  return padding + str;
+}
+
+/** @example rdrop('asfdfff', 'f'); // => 'asfd' */
+const rdrop = (str: string, char: string) => {
+  while (str[str.length - 1] === char) {
+    str = str.slice(0, str.length - 1);
+  }
+  return str;
+}
+
+/** @example ldrop('007', '0'); // => '7' */
+const ldrop = (str: string, char: string) => {
+  while (str[0] === char) {
+    str = str.slice(1);
+  }
+  return str;
+}
+
+// Helper to<BigNumber> -> string formatting function used in a couple of places
+// amt = the number to format
+// decimals = number of digits from the right to put the decimal point
+// splitValue = number of digits to keep after the decimal point
+// Example: handleFormat(1234567, 4, 2) => "123.45"
+export const handleFormat = (amt: unknown, decimals: number, splitValue: number = 6): string => {
+  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
+    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
+  }
+  if (!(Number.isInteger(splitValue) && 0 <= splitValue)) {
+    throw Error(`Expected split value to be a nonnegative integer, but got ${decimals}.`);
+  }
+  const amtStr = bigNumberify(amt).toString();
+  const splitAt = Math.max(amtStr.length - splitValue, 0);
+  const lPredropped = amtStr.slice(0, splitAt);
+  const l = ldrop(lPredropped, '0') || '0';
+  if (decimals === 0) { return l; }
+
+  const rPre = lpad(amtStr.slice(splitAt), '0', splitValue);
+  const rSliced = rPre.slice(0, decimals);
+  const r = rdrop(rSliced, '0');
+
+  return r ? `${l}.${r}` : l;
+}
+
+export const formatWithDecimals = (amt: unknown, decimals: number): string => {
+  return handleFormat(amt, decimals, decimals)
+}

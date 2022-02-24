@@ -13,6 +13,7 @@ import type {
   EnableNetworkResult,
   EnableAccountsResult,
 } from './ALGO_ARC11'; // =>
+import type { BaseHTTPClient } from 'algosdk';
 import * as RHC from './ALGO_ReachHTTPClient';
 // @ts-ignore // XXX Dan FIXME pls
 import * as UTBC from './ALGO_UTBC';
@@ -53,6 +54,8 @@ import {
   TokenMetadata,
   LaunchTokenOpts,
   makeSigningMonitor,
+  j2sf,
+  j2s,
 } from './shared_impl';
 import {
   isBigNumber,
@@ -79,8 +82,8 @@ import { window, process, updateProcessEnv } from './shim';
 import { sha512_256 } from 'js-sha512';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = stdlib;
 export * from './shared_user';
-import { setQueryLowerBound, getQueryLowerBound } from './shared_impl';
-export { setQueryLowerBound, getQueryLowerBound, addressFromHex };
+import { setQueryLowerBound, getQueryLowerBound, handleFormat, formatWithDecimals } from './shared_impl';
+export { setQueryLowerBound, getQueryLowerBound, addressFromHex, formatWithDecimals };
 
 const [ setSigningMonitor, notifySend ] = makeSigningMonitor();
 export { setSigningMonitor };
@@ -132,7 +135,7 @@ export type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 9;
+const reachBackendVersion = 10;
 const reachAlgoBackendVersion = 9;
 export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
@@ -401,7 +404,7 @@ const waitForConfirmation = async (txId: TxId): Promise<RecvTxn> => {
       debug(dhead, 'still in pool, trying again');
       return await checkAlgod();
     } else {
-      throw Error(`waitForConfirmation: error confirming: ${JSON.stringify(info)}`);
+      throw Error(`waitForConfirmation: error confirming: ${j2s(info)}`);
     }
   };
 
@@ -517,9 +520,7 @@ const sign_and_send_sync = async (
     return await signSendAndConfirm(acc, [txn]);
   } catch (e) {
     console.log(e);
-    let es = JSON.stringify(e);
-    if ( es === '{}' ) { es = `${e}`; };
-    throw Error(`${label} txn failed:\n${JSON.stringify(txn)}\nwith:\n${es}`);
+    throw Error(`${label} txn failed:\n${j2s(txn)}\nwith:\n${j2s(e)}`);
   }
 };
 
@@ -560,17 +561,6 @@ const AppFlatOptInMinBalance = 100000
 const ui8h = (x:Uint8Array): string => Buffer.from(x).toString('hex');
 const base64ToUI8A = (x:string): Uint8Array => Uint8Array.from(Buffer.from(x, 'base64'));
 const base64ify = (x: WithImplicitCoercion<string>|Uint8Array): string => Buffer.from(x).toString('base64');
-
-const format_failed_request = (e:any) => {
-  const ep = JSON.parse(JSON.stringify(e));
-  const db64 =
-    ep.req ?
-    (ep.req.data ? base64ify(ep.req.data) :
-     `no data, but ${JSON.stringify(Object.keys(ep.req))}`) :
-     `no req, but ${JSON.stringify(Object.keys(ep))}`;
-  const msg = e.text ? JSON.parse(e.text) : e;
-  return `\n${db64}\n${JSON.stringify(msg)}`;
-};
 
 function looksLikeAccountingNotInitialized(e: any) {
   const responseText = e?.response?.text || null;
@@ -669,25 +659,27 @@ export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Contract, T_Object, T
 
 export const { randomUInt, hasRandom } = makeRandom(8);
 
-async function waitIndexerFromEnv(env: ProviderEnv): Promise<algosdk.Indexer> {
+async function waitIndexerFromEnv(env: ProviderEnv): Promise<[BaseHTTPClient, algosdk.Indexer]> {
   const { ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT, ALGO_INDEXER_TOKEN } = env;
   await waitPort(ALGO_INDEXER_SERVER, ALGO_INDEXER_PORT);
   const port = ALGO_INDEXER_PORT || undefined; // UTBC checks for undefined
   const utbc = new UTBC.URLTokenBaseHTTPClient({'X-Indexer-API-Token': ALGO_INDEXER_TOKEN}, ALGO_INDEXER_SERVER, port);
   const rhc = new RHC.ReachHTTPClient(utbc, 'indexer', httpEventHandler);
-  return new algosdk.Indexer(rhc);
+  return [rhc, new algosdk.Indexer(rhc)];
 }
 
-async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<algosdk.Algodv2> {
+async function waitAlgodClientFromEnv(env: ProviderEnv): Promise<[BaseHTTPClient, algosdk.Algodv2]> {
   const { ALGO_SERVER, ALGO_PORT, ALGO_TOKEN } = env;
   await waitPort(ALGO_SERVER, ALGO_PORT);
   const port = ALGO_PORT || undefined;  // UTBC checks for undefiend
   const utbc = new UTBC.URLTokenBaseHTTPClient({'X-Algo-API-Token': ALGO_TOKEN}, ALGO_SERVER, port);
   const rhc = new RHC.ReachHTTPClient(utbc, 'algodv2', httpEventHandler);
-  return new algosdk.Algodv2(rhc);
+  return [rhc, new algosdk.Algodv2(rhc)];
 }
 
 export interface Provider {
+  algod_bc: BaseHTTPClient,
+  indexer_bc: BaseHTTPClient,
   algodClient: algosdk.Algodv2,
   indexer: algosdk.Indexer,
   nodeWriteOnly: boolean,
@@ -711,8 +703,10 @@ const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
     enabledNetwork = await wallet.enableNetwork(walletOpts);
   }
   void enabledNetwork;
-  const algodClient = await wallet.getAlgodv2();
-  const indexer = await wallet.getIndexer();
+  const algod_bc = await wallet.getAlgodv2Client();
+  const indexer_bc = await wallet.getIndexerClient();
+  const algodClient = new algosdk.Algodv2(algod_bc);
+  const indexer = new algosdk.Indexer(indexer_bc);
   const getDefaultAddress = async (): Promise<Address> => {
     if ( enabledAccounts === undefined ) {
       if ( wallet.enableAccounts === undefined ) {
@@ -728,7 +722,7 @@ const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
   const signAndPostTxns = wallet.signAndPostTxns;
   const isIsolatedNetwork = truthyEnv(process.env['REACH_ISOLATED_NETWORK']);
   const nodeWriteOnly = truthyEnv(process.env.ALGO_NODE_WRITE_ONLY);
-  return { algodClient, indexer, nodeWriteOnly, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
+  return { algod_bc, indexer_bc, indexer, algodClient, nodeWriteOnly, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
 };
 
 export const setWalletFallback = (wf:() => unknown) => {
@@ -744,7 +738,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
       // ALGO_NODE_WRITE_ONLY from here to makeProviderByWallet
       if ( typeof base === 'string' ) {
         // @ts-ignore
-        updateProcessEnv(await providerEnvByName(base));
+        updateProcessEnv(providerEnvByName(base));
       } else {
         updateProcessEnv(base);
       }
@@ -761,14 +755,14 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     await enableNetwork(eopts);
     return await enableAccounts(eopts);
   };
-  const getAlgodv2 = async () => {
+  const getAlgodv2Client = async () => {
     if ( !p ) { throw new Error(`must call enable`) };
-    return p.algodClient;
-  };
-  const getIndexer = async () => {
+    return p.algod_bc;
+  }
+  const getIndexerClient = async () => {
     if ( !p ) { throw new Error(`must call enable`) };
-    return p.indexer;
-  };
+    return p.indexer_bc;
+  }
   const signAndPostTxns = async (txns:WalletTransaction[], sopts?:object) => {
     if ( !p ) { throw new Error(`must call enable`) };
     void(sopts);
@@ -793,7 +787,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     await p.algodClient.sendRawTransaction(bs).do();
     return {};
   };
-  return { enable, enableNetwork, enableAccounts, getAlgodv2, getIndexer, signAndPostTxns };
+  return { enable, enableNetwork, enableAccounts, getAlgodv2Client, getIndexerClient, signAndPostTxns };
 };
 const walletFallback_mnemonic = (opts:object) => (): ARC11_Wallet => {
   debug(`using mnemonic wallet fallback`);
@@ -912,8 +906,8 @@ async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<Provider> {
   debug(`makeProviderByEnv`, env);
   const fullEnv = envDefaultsALGO(env);
   debug(`makeProviderByEnv defaulted`, fullEnv);
-  const algodClient = await waitAlgodClientFromEnv(fullEnv);
-  const indexer = await waitIndexerFromEnv(fullEnv);
+  const [algod_bc, algodClient] = await waitAlgodClientFromEnv(fullEnv);
+  const [indexer_bc, indexer] = await waitIndexerFromEnv(fullEnv);
   const isIsolatedNetwork = truthyEnv(fullEnv.REACH_ISOLATED_NETWORK);
   const nodeWriteOnly = truthyEnv(fullEnv.ALGO_NODE_WRITE_ONLY);
   const lab = `Providers created by environment`;
@@ -930,7 +924,7 @@ async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<Provider> {
     debug(`signAndPostTxns`, bs);
     await algodClient.sendRawTransaction(bs).do();
   };
-  return { algodClient, indexer, nodeWriteOnly, isIsolatedNetwork, getDefaultAddress, signAndPostTxns };
+  return { algod_bc, indexer_bc, algodClient, indexer, nodeWriteOnly, isIsolatedNetwork, getDefaultAddress, signAndPostTxns };
 };
 export function setProviderByEnv(env: Partial<ProviderEnv>): void {
   setProvider(makeProviderByEnv(env));
@@ -943,7 +937,7 @@ function randlabsProviderEnv(net: string): ProviderEnv {
     ALGO_SERVER: `https://node.${RANDLABS_BASE}`,
     ALGO_PORT: '',
     ALGO_TOKEN: '',
-    ALGO_INDEXER_SERVER: `https://algoindexer.${RANDLABS_BASE}`,
+    ALGO_INDEXER_SERVER: `https://indexer.${RANDLABS_BASE}`,
     ALGO_INDEXER_PORT: '',
     ALGO_INDEXER_TOKEN: '',
     REACH_ISOLATED_NETWORK: 'no',
@@ -1019,7 +1013,7 @@ export const transfer = async (
   const txn = toWTxn(makeTransferTxn(sender.addr, receiver, valuebn, token, ps, undefined, tag));
 
   return await sign_and_send_sync(
-    `transfer ${JSON.stringify(from)} ${JSON.stringify(to)} ${valuebn}`,
+    `transfer ${j2s(from)} ${j2s(to)} ${valuebn}`,
     sender,
     txn);
 };
@@ -1370,7 +1364,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
           const ApplicationID = createRes['created-application-index'];
           if ( ! ApplicationID ) {
-            throw Error(`No created-application-index in ${JSON.stringify(createRes)}`);
+            throw Error(`No created-application-index in ${j2s(createRes)}`);
           }
           debug(label, `created`, {ApplicationID});
           const ctcInfo = ApplicationID;
@@ -1543,7 +1537,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             if (! ( x instanceof Uint8Array ) ) {
               // The types say this is impossible now,
               // but we'll leave it in for a while just in case...
-              throw Error(`expect safe program argument, got ${JSON.stringify(x)}`);
+              throw Error(`expect safe program argument, got ${j2s(x)}`);
             }
           });
           debug(dhead, '--- PREPARE:', safe_args.map(ui8h));
@@ -1568,10 +1562,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           try {
             res = await signSendAndConfirm( thisAcc, wtxns );
           } catch (e:any) {
-            const es = ( e.type === 'sendRawTransaction' ) ?
-              format_failed_request(e?.e) : e;
-            debug(dhead, '--- FAIL:', es);
-            const jes = JSON.stringify(es);
+            const jes = j2s(e);
+            debug(dhead, 'FAIL', e, jes);
 
             if ( ! soloSend ) {
               // If there is no soloSend, then someone else "won", so let's
@@ -1866,28 +1858,40 @@ export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
   return accMinBalance;
 };
 
-const balanceOfM = async (acc: Account, token: Token|false = false): Promise<BigNumber|false> => {
+const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber|false>> => {
   const addr = extractAddr(acc);
-  const info = await getAccountInfo(addr);
-  debug(`balanceOf`, info);
-  if ( ! token ) {
-    return bigNumberify(info.amount);
-  } else {
-    for ( const ai of (info.assets || []) ) {
-      if ( bigNumberify(token).eq(ai['asset-id']) ) {
-        return bigNumberify(ai['amount']);
-      }
+  const accountInfo = await getAccountInfo(addr);
+  const accountAssets = accountInfo.assets || [];
+
+  const balanceOfSingleToken = (token: Token | null) => {
+    if (token) {
+      const tokenId = bigNumberify(token);
+      const tokenAsset = accountAssets.find(asset => tokenId.eq(asset['asset-id']));
+      return tokenAsset ? bigNumberify(tokenAsset['amount']) : false;
+    } else {
+      return bigNumberify(accountInfo.amount);
     }
-    return false;
-  }
+  };
+
+  return tokens.map(balanceOfSingleToken);
 };
 
-export const balanceOf = async (acc: Account, token: Token|false = false): Promise<BigNumber> => {
-  const r = await balanceOfM(acc, token);
-  if ( r === false ) {
-    return bigNumberify(0);
-  }
-  return r;
+export const balancesOf = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber>> => {
+  return (await balancesOfM(acc, tokens)).map(bal => {
+    if (bal === false) {
+      return bigNumberify(0);
+    } else {
+      return bal;
+    }
+  });
+};
+
+const balanceOfM = async (acc: Account, token?: Token): Promise<BigNumber | false> => {
+  return (await balancesOfM(acc, [token || null]))[0];
+}
+
+export const balanceOf = async (acc: Account, token?: Token): Promise<BigNumber> => {
+  return (await balancesOf(acc, [token || null]))[0];
 };
 
 export const createAccount = async (): Promise<Account> => {
@@ -1963,72 +1967,11 @@ const schemaUintMinBalance: BigNumber = bigNumberify(SchemaUintMinBalance)
 const appFlatParamsMinBalance: BigNumber = bigNumberify(AppFlatParamsMinBalance)
 const appFlatOptInMinBalance: BigNumber = bigNumberify(AppFlatOptInMinBalance)
 
-// lol I am not importing leftpad for this
-/** @example lpad('asdf', '0', 6); // => '00asdf' */
-function lpad(str: string, padChar: string, nChars: number) {
-  const padding = padChar.repeat(Math.max(nChars - str.length, 0));
-  return padding + str;
-}
-
-/** @example rdrop('asfdfff', 'f'); // => 'asfd' */
-function rdrop(str: string, char: string) {
-  while (str[str.length - 1] === char) {
-    str = str.slice(0, str.length - 1);
-  }
-  return str;
-}
-
-/** @example ldrop('007', '0'); // => '7' */
-function ldrop(str: string, char: string) {
-  while (str[0] === char) {
-    str = str.slice(1);
-  }
-  return str;
-}
-
-/**
- * @description  Format currency by network or token
- * @param amt  the amount in the {@link atomicUnit} of the network or token.
- * @param decimals  up to how many decimal places to display in the {@link standardUnit}.
- * @param splitValue  where to split the numeric value.
- *   Trailing zeros will be omitted. Excess decimal places will be truncated (not rounded).
- *   This argument defaults to maximum precision.
- * @returns  a string representation of that amount in the {@link standardUnit} for that network or token.
- * @example  formatCurrency(bigNumberify('100000000')); // => '100'
- * @example  formatCurrency(bigNumberify('9999998799987000')); // => '9999998799.987'
- */
-function handleFormat(amt: unknown, decimals: number, splitValue: number = 6): string {
-  if (!(Number.isInteger(decimals) && 0 <= decimals)) {
-    throw Error(`Expected decimals to be a nonnegative integer, but got ${decimals}.`);
-  }
-  if (!(Number.isInteger(splitValue) && 0 <= splitValue)) {
-    throw Error(`Expected split value to be a nonnegative integer, but got ${decimals}.`);
-  }
-  const amtStr = bigNumberify(amt).toString();
-  const splitAt = Math.max(amtStr.length - splitValue, 0);
-  const lPredropped = amtStr.slice(0, splitAt);
-  const l = ldrop(lPredropped, '0') || '0';
-  if (decimals === 0) { return l; }
-
-  const rPre = lpad(amtStr.slice(splitAt), '0', splitValue);
-  const rSliced = rPre.slice(0, decimals);
-  const r = rdrop(rSliced, '0');
-
-  return r ? `${l}.${r}` : l;
-}
-
 /**
  * @description  Format currency by network
  */
 export function formatCurrency(amt: unknown, decimals: number = 6): string {
   return handleFormat(amt, decimals, 6)
-}
-
-/**
- * @description  Format currency based on token decimals
- */
-export function formatWithDecimals(amt: unknown, decimals: number): string {
-  return handleFormat(amt, decimals, decimals)
 }
 
 export async function getDefaultAccount(): Promise<Account> {
@@ -2132,14 +2075,14 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
     }
   };
   const chkeq = (a: unknown, e:unknown, msg:string) => {
-    const as = JSON.stringify(a);
-    const es = JSON.stringify(e);
+    const as = j2sf(a);
+    const es = j2sf(e);
     chk(as === es, `${msg}: expected ${es}, got ${as}`);
   };
 
   const appInfoM = await getApplicationInfoM(ApplicationID);
   if ( 'exn' in appInfoM ) {
-    throw Error(`${dhead} failed: failed to lookup application (${ApplicationID}): ${JSON.stringify(appInfoM.exn)}`);
+    throw Error(`${dhead} failed: failed to lookup application (${ApplicationID}): ${j2s(appInfoM.exn)}`);
   }
   const appInfo = appInfoM.val;
   const appInfo_p = appInfo['params'];

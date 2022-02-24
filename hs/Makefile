@@ -16,13 +16,7 @@ clean: hs-clean
 
 .PHONY: build-haskell-build-artifacts
 build-haskell-build-artifacts:
-	mkdir -p .docker-root
-	cp -f $(ROOT)/VERSION $(ROOT)/DEPS .docker-root/
-	docker container rm -f repo || true
-	docker image rm -f reachsh/repository:latest || true
-	docker run --rm --name repo -p 30000:80 -d reachsh/repository:latest
-	$(ROOT)/scripts/build-image.sh $(IMG_HASKELL_BUILD_ARTIFACTS) Dockerfile.haskell-build-artifacts \
-	  --add-host host.docker.internal:172.17.0.1
+	$(ROOT)/scripts/build-image.sh $(IMG_HASKELL_BUILD_ARTIFACTS) Dockerfile.haskell-build-artifacts
 	docker container rm -f repo
 
 .PHONY: build-reach-cli
@@ -45,7 +39,7 @@ build-m1:
 	docker build \
 	  --platform linux/arm64 \
 	  --build-arg REACH_GIT_HASH="$$(../scripts/git-hash.sh)" \
-	  --build-arg SOLC_VERSION="$(SOLC_VERSION)" \
+	  --build-arg SOLC_IMAGE="$(SOLC_IMAGE)" \
 	  --build-arg Z3_VERSION="$(Z3_VERSION)" \
 	  --tag=$(IMG_REACHC):latest \
 	  -f Dockerfile.reachc-m1 .

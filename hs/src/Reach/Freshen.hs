@@ -38,6 +38,9 @@ instance FreshenV DLVar where
     liftIO $ modifyIORef fRho (M.insert v v')
     return $ v'
 
+instance FreshenV DLVarLet where
+  fu_v (DLVarLet c v) = DLVarLet c <$> fu_v v
+
 instance FreshenV DLLetVar where
   fu_v = \case
     DLV_Eff -> return $ DLV_Eff
@@ -163,14 +166,15 @@ instance Freshen DLStmt where
       fb' <- fu fb
       ans' <- fu_v ans
       return $ DL_ArrayMap at ans' x' a' i' fb'
-    DL_ArrayReduce at ans x z b a fb -> do
+    DL_ArrayReduce at ans x z b a i fb -> do
       ans' <- fu_v ans
       x' <- fu x
       z' <- fu z
       b' <- fu_v b
       a' <- fu_v a
+      i' <- fu_v i
       fb' <- fu fb
-      return $ DL_ArrayReduce at ans' x' z' b' a' fb'
+      return $ DL_ArrayReduce at ans' x' z' b' a' i' fb'
     DL_MapReduce at mri ans x z b a fb -> do
       ans' <- fu_v ans
       z' <- fu z

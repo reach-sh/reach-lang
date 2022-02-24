@@ -12,8 +12,7 @@ export class Signal {
   notify() { this.r(true); }
 };
 
-(async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
   const amt_ = stdlib.parseCurrency(2);
   const bal = stdlib.parseCurrency(100);
   const accAdmin = await stdlib.newTestAccount(bal);
@@ -85,4 +84,3 @@ export class Signal {
     }),
   ]);
   await showAdminBal('end');
-})();

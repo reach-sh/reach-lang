@@ -7,7 +7,6 @@ export class Signal {
   notify()      { this.r(true);  }
 };
 
-(async () => {
   const { rpc, rpcCallbacks } = await mkRPC();
 
   const amt_ = await rpc('/stdlib/parseCurrency', 2);
@@ -109,4 +108,3 @@ export class Signal {
     ...accs.map(a => rpc('/forget/acc', a)),
     rpc('/forget/token', gil.kid),
   ]);
-})();

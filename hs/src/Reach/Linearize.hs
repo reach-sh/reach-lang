@@ -89,8 +89,8 @@ dk1 k s =
     DLS_Let at mdv de -> com $ DKC_Let at mdv de
     DLS_ArrayMap at ans x a i f ->
       com' $ DKC_ArrayMap at ans x a i <$> dk_block at f
-    DLS_ArrayReduce at ans x z b a f ->
-      com' $ DKC_ArrayReduce at ans x z b a <$> dk_block at f
+    DLS_ArrayReduce at ans x z b a i f ->
+      com' $ DKC_ArrayReduce at ans x z b a i <$> dk_block at f
     DLS_If at c _ t f -> do
       let con = DK_If at c
       let loc t' f' = DK_Com (DKC_LocalIf at c t' f') k
@@ -241,7 +241,7 @@ instance CanLift DKCommon where
   canLift = \case
     DKC_Let _ _ e -> canLift e
     DKC_ArrayMap _ _ _ _ _ f -> canLift f
-    DKC_ArrayReduce _ _ _ _ _ _ f -> canLift f
+    DKC_ArrayReduce _ _ _ _ _ _ _ f -> canLift f
     DKC_Var {} -> True
     DKC_Set {} -> True
     DKC_LocalDo _ t -> canLift t
@@ -401,7 +401,7 @@ df_com mkk back = \case
       case m of
         DKC_Let a b c -> return $ DL_Let a b c
         DKC_ArrayMap a b c d e x -> DL_ArrayMap a b c d e <$> df_bl x
-        DKC_ArrayReduce a b c d e f x -> DL_ArrayReduce a b c d e f <$> df_bl x
+        DKC_ArrayReduce a b c d e f g x -> DL_ArrayReduce a b c d e f g <$> df_bl x
         DKC_Var a b -> return $ DL_Var a b
         DKC_Set a b c -> return $ DL_Set a b c
         DKC_LocalDo a x -> DL_LocalDo a <$> df_t x

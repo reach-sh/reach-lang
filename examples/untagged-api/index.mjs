@@ -3,7 +3,6 @@ import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib(process.env);
 const thread = async (f) => await f();
 
-(async () => {
   const startingBalance = stdlib.parseCurrency(100);
 
   const [ accAlice ] =
@@ -33,4 +32,3 @@ const thread = async (f) => await f();
       await call(() => bob.add1(0), 1);
     },
   });
-})();

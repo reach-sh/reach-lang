@@ -10,7 +10,6 @@ const assertEq = (l, r) => {
   }
 }
 
-(async () => {
   const startingBalance = stdlib.parseCurrency(100);
 
   const [ accAlice ] =
@@ -36,4 +35,3 @@ const assertEq = (l, r) => {
       }
     }),
   ]);
-})();

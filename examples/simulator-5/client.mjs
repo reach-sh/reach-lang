@@ -1,5 +1,5 @@
-const c = await import('@reach-sh/simulator-client');
-const assert = await import('assert');
+import * as c from '@reach-sh/simulator-client';
+import * as  assert from 'assert';
 
 const getVar = async (v,n,aid) => {
   const x = await c.getStateLocals(n)

@@ -5,9 +5,10 @@ module Reach.Util
   , lbunpack
   , b2t
   , s2t
+  , s2lt
   , impossible
   , possible
-  , saferMapRef
+  , saferMaybe
   , trimQuotes
   , fromIntegerMay
   , maybeDie
@@ -39,6 +40,7 @@ import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as LT
 import qualified Data.Text.Encoding as TE
 import GHC.Stack
 import System.Directory.Extra
@@ -50,6 +52,9 @@ bpack = TE.encodeUtf8 . s2t
 
 s2t :: String -> T.Text
 s2t = T.pack
+
+s2lt :: String -> LT.Text
+s2lt = LT.pack
 
 bunpack :: ByteString -> String
 bunpack = T.unpack . b2t
@@ -87,8 +92,8 @@ possible msg =
   error $
     "The compiler has encountered an internal error:\n\n  " <> msg <> "\n\n"
 
-saferMapRef :: String -> Maybe b -> b
-saferMapRef s m = (fromMaybe (possible s) m)
+saferMaybe :: String -> Maybe b -> b
+saferMaybe s m = (fromMaybe (possible s) m)
 
 -- Note: drop 1 is safer than init/tail on empty strings
 trimQuotes :: String -> String

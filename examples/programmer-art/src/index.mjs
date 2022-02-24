@@ -3,7 +3,7 @@ import cytoscape from 'cytoscape';
 import klay from 'cytoscape-klay';
 import "../scss/custom.scss";
 
-const jsonLog = [
+let jsonLog = [
   ["resetServer"],
   ["load"],
   ["init"]
@@ -73,11 +73,17 @@ const renderObjects = async (nodeId) => {
     actorSet[k] = who
   }
   let actors = ``
+  let actorsNoCons = ``
   const actorEntries = Object.entries(actorSet)
   // NOTE: assumption: there is at least one non-consensus actor
   const firstActorId = actorEntries[0][0]
   for (const [k,v] of actorEntries) {
     actors = actors + `<option value="${k}">${v}</option>`
+  }
+  for (const [k,v] of actorEntries) {
+    if (parseInt(k) !== -1 ) {
+      actorsNoCons = actorsNoCons + `<option value="${k}">${v}</option>`
+    }
   }
   for (const [k,v] of Object.entries(r.l_locals)) {
     const who = v.l_who ? v.l_who : 'Consensus'
@@ -100,47 +106,69 @@ const renderObjects = async (nodeId) => {
       <span class="badge bg-secondary">${status}</span>
       </button> `
   }
-  // <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals <i class="bi bi-clipboard"></i></button>
-  // <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals <i class="bi bi-clipboard"></i></button>
+
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item active" aria-current="page">Objects (${nodeId})</li>
+      <li class="breadcrumb-item active" aria-current="page"><span class="omph">Objects (${nodeId})</span></li>
     </ol>
   </nav>
   <ul class="list-group list-group-flush">
     ${obs}
-    <button type="button" id="newAccButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Account <i class="bi bi-plus-lg"></i></button>
+
+    <div class="extra-margin-bottom">
+      <h4>Accounts/Tokens</h4>
+    </div>
+
+    <button type="button" id="newAccButton" data-node-id="${nodeId}" class="top list-group-item list-group-item-action">New Account <i class="bi bi-plus-lg"></i></button>
     <button type="button" id="newTokButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">New Token <i class="bi bi-plus-lg"></i></button>
 
-    <div class="pad-me d-flex justify-content-center shrink-text">
-      <select name="init-actors" id="init-actors-spa-select">
-        ${actors}
-      </select>
-      <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Init For</button>
-    </div>
-    <div id="initDetailsPanel" class="pad-me d-flex justify-content-center shrink-text">
+    <div>
+      <h4>Actor Initialization</h4>
+      <div class="pad-me d-flex justify-content-center">
+        <div>
+          <select name="init-actors" id="init-actors-spa-select">
+            ${actorsNoCons}
+          </select>
+        </div>
+        <div id="initDetailsPanel" class="pad-me d-flex justify-content-center">
 
+        </div>
+        <div>
+          <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-light btn-sm">Init Actor</button>
+        </div>
+      </div>
     </div>
 
     <hr>
-    <div class="pad-me d-flex justify-content-center shrink-text">
-      SND:
-      <select name="actors-transfer-from" id="actors-spa-select-transfer-from">
-        ${actors}
-      </select>
-      RCV:
-      <select name="actors-transfer-to" id="actors-spa-select-transfer-to">
-        ${actors}
-      </select>
-    </div>
-    <div class="pad-me d-flex justify-content-center">
-      <input type="text" id="token-id" class="form-control form-control-sm" placeholder="Token Id">
-      <input type="text" id="transfer-amount" class="form-control form-control-sm" placeholder="Amount">
+    <div>
+      <h4>Transfer Funds</h4>
 
-      <button type="button" id="transferButton" data-node-id="${nodeId}" class="btn btn-outline-secondary btn-sm">Transfer  <i class="bi bi-arrow-right-circle"></i></button>
+      <div class="pad-me d-flex justify-content-center shrink-text">
+        SND:
+        <select name="actors-transfer-from" id="actors-spa-select-transfer-from">
+          ${actors}
+        </select>
+        RCV:
+        <select name="actors-transfer-to" id="actors-spa-select-transfer-to">
+          ${actors}
+        </select>
+      </div>
+      <div class="pad-me d-flex justify-content-center">
+        <input type="text" id="token-id" class="form-control form-control-sm" placeholder="Token Id">
+        <input type="text" id="transfer-amount" class="form-control form-control-sm" placeholder="Amount">
 
+        <button type="button" id="transferButton" data-node-id="${nodeId}" class="btn btn-outline-light btn-sm">Transfer  <i class="bi bi-arrow-right-circle"></i></button>
+
+      </div>
     </div>
+    <hr>
+    <div>
+      <h4>Logging</h4>
+      <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals <i class="bi bi-clipboard"></i></button>
+      <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals <i class="bi bi-clipboard"></i></button>
+    </div>
+
 
   </ul>
   `
@@ -159,12 +187,11 @@ const initActorDetsHelper = async (a) => {
     }
     initHtml = initHtml + `
     <div class="pad-me d-flex justify-content-center shrink-text">
-      <div class="pad-me d-flex justify-content-center"> ${k} : ${vDisplay} </div>
+      <div class="pad-me"> ${k} <span class="badge bg-secondary"> ${vDisplay} </span> </div>
       <input type="text" data-init-val="${k}" data-init-type="${vDisplay}" class="form-control form-control-sm init-detail" placeholder="Value">
     </div>`
   }
   initPanel.innerHTML = initHtml
-  console.log(dets)
 }
 
 const bindObjDetailsEvents = () => {
@@ -178,6 +205,8 @@ const bindObjDetailsEvents = () => {
     const tgt = evt.target.closest("#newAccButton")
     const nodeId = tgt.dataset.nodeId
     let r = await c.newAccount(nodeId)
+    jsonLog.push(["newAccount",nodeId])
+
     let fr = JSON.stringify(r,null,2)
     let icon = evt.target.querySelector('.bi')
     if (!icon) {
@@ -187,6 +216,7 @@ const bindObjDetailsEvents = () => {
     icon.classList.add('bi-check2')
     await new Promise(resolve => setTimeout(resolve, 1000))
     await navigator.clipboard.writeText(fr)
+    alert(`New Account (ID: ${fr}) created `);
     icon.classList.remove('bi-check2')
     icon.classList.add('bi-plus-lg')
     console.log(`added new Account id: ${r}`)
@@ -199,6 +229,8 @@ const bindObjDetailsEvents = () => {
     const tgt = evt.target.closest("#newTokButton")
     const nodeId = tgt.dataset.nodeId
     let r = await c.newToken(nodeId)
+    jsonLog.push(["newToken",nodeId])
+
     let fr = JSON.stringify(r,null,2)
     let icon = evt.target.querySelector('.bi')
     if (!icon) {
@@ -208,6 +240,7 @@ const bindObjDetailsEvents = () => {
     icon.classList.add('bi-check2')
     await new Promise(resolve => setTimeout(resolve, 1000))
     await navigator.clipboard.writeText(fr)
+    alert(`New Token (ID: ${fr}) created `);
     icon.classList.remove('bi-check2')
     icon.classList.add('bi-plus-lg')
     console.log(`added new Token id: ${r}`)
@@ -215,47 +248,47 @@ const bindObjDetailsEvents = () => {
   }
   newTokBtn.addEventListener("click",newTokHandler)
 
-  // const localsBtn = document.querySelector("#localsButton")
-  // const locals = async (evt) => {
-  //   const tgt = evt.target.closest("#localsButton")
-  //   const nodeId = tgt.dataset.nodeId
-  //   let r = await c.getStateLocals(nodeId)
-  //   let fr = JSON.stringify(r,null,2)
-  //   let icon = evt.target.querySelector('.bi')
-  //   if (!icon) {
-  //     icon = evt.target
-  //   }
-  //   icon.classList.remove('bi-clipboard')
-  //   icon.classList.add('bi-check2')
-  //   await new Promise(resolve => setTimeout(resolve, 1000))
-  //   await navigator.clipboard.writeText(fr)
-  //   icon.classList.remove('bi-check2')
-  //   icon.classList.add('bi-clipboard')
-  //   console.log("logged local state")
-  //   appendToLog(fr)
-  // }
-  // localsBtn.addEventListener("click",locals)
-  //
-  // const globalsBtn = document.querySelector("#globalsButton")
-  // const globals = async (evt) => {
-  //   const tgt = evt.target.closest("#globalsButton")
-  //   const nodeId = tgt.dataset.nodeId
-  //   let r = await c.getStateGlobals(nodeId)
-  //   let fr = JSON.stringify(r,null,2)
-  //   let icon = evt.target.querySelector('.bi')
-  //   if (!icon) {
-  //     icon = evt.target
-  //   }
-  //   icon.classList.remove('bi-clipboard')
-  //   icon.classList.add('bi-check2')
-  //   await new Promise(resolve => setTimeout(resolve, 1000))
-  //   await navigator.clipboard.writeText(fr)
-  //   icon.classList.remove('bi-check2')
-  //   icon.classList.add('bi-clipboard')
-  //   console.log("logged global state")
-  //   appendToLog(fr)
-  // }
-  // globalsBtn.addEventListener("click",globals)
+  const localsBtn = document.querySelector("#localsButton")
+  const locals = async (evt) => {
+    const tgt = evt.target.closest("#localsButton")
+    const nodeId = tgt.dataset.nodeId
+    let r = await c.getStateLocals(nodeId)
+    let fr = JSON.stringify(r,null,2)
+    let icon = evt.target.querySelector('.bi')
+    if (!icon) {
+      icon = evt.target
+    }
+    icon.classList.remove('bi-clipboard')
+    icon.classList.add('bi-check2')
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    await navigator.clipboard.writeText(fr)
+    icon.classList.remove('bi-check2')
+    icon.classList.add('bi-clipboard')
+    console.log("logged local state")
+    appendToLog(fr)
+  }
+  localsBtn.addEventListener("click",locals)
+
+  const globalsBtn = document.querySelector("#globalsButton")
+  const globals = async (evt) => {
+    const tgt = evt.target.closest("#globalsButton")
+    const nodeId = tgt.dataset.nodeId
+    let r = await c.getStateGlobals(nodeId)
+    let fr = JSON.stringify(r,null,2)
+    let icon = evt.target.querySelector('.bi')
+    if (!icon) {
+      icon = evt.target
+    }
+    icon.classList.remove('bi-clipboard')
+    icon.classList.add('bi-check2')
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    await navigator.clipboard.writeText(fr)
+    icon.classList.remove('bi-check2')
+    icon.classList.add('bi-clipboard')
+    console.log("logged global state")
+    appendToLog(fr)
+  }
+  globalsBtn.addEventListener("click",globals)
 
   const initActorSlct = document.querySelector("#init-actors-spa-select")
   const initActorDets = async (evt) => {
@@ -274,7 +307,7 @@ const bindObjDetailsEvents = () => {
     for (const det of dets) {
       let type = `V_Bytes`
       let enter = det.value
-      if (det.dataset.initType == 'UInt') {
+      if (det.dataset.initType === 'UInt') {
         type = 'V_UInt'
         enter = parseInt(enter)
 
@@ -284,7 +317,7 @@ const bindObjDetailsEvents = () => {
     let r = await c.initFor(nodeId,selectedActorId,JSON.stringify(liv))
     appendToLog(r)
     redraw()
-    jsonLog.push(["initFor",nodeId,selectedActorId])
+    jsonLog.push(["initFor",nodeId,selectedActorId,JSON.stringify(liv)])
   }
   initForBtn.addEventListener("click",initFor)
 
@@ -386,8 +419,8 @@ const renderObjectDetails = async (evt) => {
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects</a></li>
-      <li class="breadcrumb-item active" aria-current="page">Details (${who})</li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-objects"><span class="omph">Objects (${nodeId})</span></a></li>
+      <li class="breadcrumb-item active" aria-current="page"><span class="omph">Details (${who})</span></li>
     </ol>
   </nav>
   <ul class="list-group list-group-flush">
@@ -452,9 +485,9 @@ const detailActions = async (evt) => {
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects</a></li>
-      <li class="breadcrumb-item"><a href="#" id="return-to-details">Details (${who})</a></li>
-      <li class="breadcrumb-item active" aria-current="page">Actions</li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-objects"><span class="omph">Objects (${nodeId})</span></a></li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-details"><span class="omph">Details (${who})</span></a></li>
+      <li class="breadcrumb-item active" aria-current="page"><span class="omph">Actions</span></li>
     </ol>
   </nav>
   <ul class="list-group list-group-flush">
@@ -491,15 +524,15 @@ const respondToActions = async (evt) => {
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="#" id="return-to-objects">Objects</a></li>
-      <li class="breadcrumb-item"><a href="#" id="return-to-details">Details (${who})</a></li>
-      <li class="breadcrumb-item"><a href="#" id="return-to-actions">Actions</a></li>
-      <li class="breadcrumb-item active" aria-current="page">Response</li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-objects"><span class="omph">Objects (${nodeId})</span></a></li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-details"><span class="omph">Details (${who})</span></a></li>
+      <li class="breadcrumb-item"><a href="#" id="return-to-actions"><span class="omph">Actions</span></a></li>
+      <li class="breadcrumb-item active" aria-current="page"><span class="omph">Response</span></li>
     </ol>
   </nav>
   ${respTempl[0]}
   <div>
-    <button type="button" id="spa-res-button" class="btn btn-outline-secondary btn-sm">Respond</button>
+    <button type="button" id="spa-res-button" class="btn btn-outline-light btn-sm">Respond</button>
   </div>
   `
   const spaRespondBtn = document.querySelector("#spa-res-button")
@@ -534,10 +567,10 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
       }
       const respondSpaTieBreak = async () => {
         let tiebreakerId = document.querySelector("#tiebreakers-spa-select").value;
-        let r = await c.respondWithVal(nodeId,actId,tiebreakerId,actorId)
+        let r = await c.respondWithVal(nodeId,actId,parseInt(tiebreakerId),actorId)
         appendToLog(r)
         redraw()
-        jsonLog.push(["respondWithVal",nodeId,actId,tiebreakerId,actorId])
+        jsonLog.push(["respondWithVal",nodeId,actId,parseInt(tiebreakerId),actorId])
       }
       return [
         `
@@ -549,8 +582,8 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
         `,
         respondSpaTieBreak
       ]
-    case 'A_Remote':
-    case 'A_Contest':
+    // case 'A_Remote':
+    case 'A_Receive':
       const respondSpaContest = async () => {
         let r = await c.respondWithVal(nodeId,actId,0,actorId)
         appendToLog(r)
@@ -566,12 +599,17 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
     case 'A_None':
     default:
       const respondSpaDefault = async () => {
-        let v = parseInt(document.querySelector("#spa-response").value)
+        let v = document.querySelector("#spa-response").value
         let selectedActorId = document.querySelector("#actors-spa-select").value;
         let t = document.querySelector("#typing-spa-select").value;
         let aid = actorId
         if (selectedActorId) {
           aid = parseInt(selectedActorId)
+        }
+        if (t === "number") {
+          v = parseInt(v)
+        } else if (t === "tuple") {
+          v = JSON.stringify(JSON.parse(v))
         }
         let r = await c.respondWithVal(nodeId,actId,v,aid,t)
         appendToLog(r)
@@ -589,6 +627,14 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
               <select name="typing" id="typing-spa-select">
                 <option value="number">Number</option>
                 <option value="string">String</option>
+                <option value="contract">Contract</option>
+                <option value="address">Address</option>
+                <option value="boolean">Boolean</option>
+                <option value="tuple">Tuple</option>
+                <option value="object">Object</option>
+                <option value="data">Data</option>
+
+
               </select>
             </div>
 
@@ -604,7 +650,7 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
   const actId = actObj[0]
   let tiebreakers = {}
   let tbList = act.contents[1]
-  if (act.tag == 'A_TieBreak') {
+  if (act.tag === 'A_TieBreak') {
     for (const [k,v] of Object.entries(JSON.parse(actorSet))) {
       if (tbList.includes(v)) {
         tiebreakers[k] = v
@@ -626,7 +672,7 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
   switch (act.tag) {
     case 'A_Interact':
       let domain = `Null`
-      if (act.contents[4].length != 0) {
+      if (act.contents[4].length !== 0) {
         domain = act.contents[4].map(x => x.tag.slice(2)).join(',')
       }
       return `
@@ -639,16 +685,27 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
         ${common}${act.tag.slice(2)}</div>
         <div> Phase Id: ${act.contents[0]}, Actors: ${act.contents[1].join(',')} </div>
         </button> `
-    case 'A_InteractV':
-      return `
-        ${common}${act.tag.slice(2)}</div>
-        <div> ${act.contents[0]}: <b>${act.contents[1]}</b</div>
-        </button> `
     case 'A_Remote':
+      let domain2 = `Null`
+      let range = `Null`
+
+      if (act.contents[2][0] && act.contents[2][0].contents.length && (act.contents[2][0].contents.length !== 0)) {
+        domain2 = act.contents[2][0].contents.map(x => `${x[0]} : ${x[1].tag.slice(2)}` ).join(' , ')
+      } else if (act.contents[2][0]) {
+        domain2 = `${act.contents[2][0].tag.slice(2)} (${act.contents[2][0].contents})`
+      }
+
+      if (act.contents[3][0] && act.contents[3][0].contents.length && (act.contents[3][0].contents.length !== 0)) {
+        range = act.contents[3][0].contents.map(x => `${x[0]} : ${x[1].tag.slice(2)}` ).join(' , ')
+      } else if (act.contents[3][0]) {
+        range = `${act.contents[3][0].tag.slice(2)} (${act.contents[3][0].contents})`
+      }
       return `
-        ${common}${act.tag.slice(2)}</div>
+        ${common}
+        ${act.tag.slice(2)}</div>
+        <div> ${act.contents[1]} : ${domain2} &#8594; ${range} </div>
         </button> `
-    case 'A_Contest':
+    case 'A_Receive':
       return `
         ${common}${act.tag.slice(2)}</div>
         <div> Phase Id: ${act.contents}</div>
@@ -677,8 +734,19 @@ const redraw = async () => {
   let edges = await c.getEdges()
   let states = await c.getStates()
   let elements = []
-  for (const s of states) {
-    elements.push({data: {id: s}})
+  for (const [s, dets] of Object.entries(states)) {
+    let displayLabel = dets[1].tag.slice(2)
+    if (displayLabel !== 'None') {
+      displayLabel = displayLabel + '?'
+    }
+    elements.push(
+      {
+        data:
+          { id: s,
+            label: displayLabel
+          }
+      }
+    )
   }
   for (const [index, value] of edges.entries()) {
     const from = value[0]
@@ -692,9 +760,21 @@ const redraw = async () => {
       {
         selector: 'node',
         style: {
-          'background-color': '#666',
+          'background-color': '#f6f6f6',
           'label': 'data(id)',
-          'visibility': 'hidden'
+          'visibility': 'hidden',
+          'shape': 'round-rectangle',
+          'content': 'data(label)',
+          'font-family': 'Inconsolata, monospace',
+          'background-color': '#f6f6f6',
+          'color': '#2e3440',
+          // 'font-size': 10,
+          'width': '80%',
+          // 'height': '5%',
+          'text-valign': 'center',
+          'text-halign': 'center',
+          'border-width': 1.5,
+          'border-color': '#555',
         }
       },
       {
@@ -714,31 +794,44 @@ const redraw = async () => {
     }
   });
   cy.bind('click', 'node', clickNode);
+  let allNodes = cy.filter(function(element, i){
+    return element.isNode();
+  });
+  cy.on('click', 'node', function(evt){
+    allNodes.style({
+      'background-color': '#f6f6f6',
+      'color': '#2e3440',
+    })
+    evt.target.style({
+      'background-color': '#2e3440',
+      'color': '#f6f6f6',
+    })
+  });
   const eles = cy.filter(function(element, i){
     return true;
   });
   // citation: animation adapted from https://gist.github.com/maxkfranz/aedff159b0df05ccfaa5
   // and https://stackoverflow.com/questions/40096407/animate-building-a-graph-in-cytoscape-js
   const animateGraph = (nodes) => {
-    var delay = 0;
-    var size = nodes.length;
-    var duration = (1000 / size);
-    var visitedMap = {};
+    let delay = 0;
+    let size = nodes.length;
+    let duration = (1000 / size);
+    const visitedMap = {};
 
-    if (size == 1) {
+    if (size === 1) {
       // single "frame", cancel animation
       nodes[0].style('visibility', 'visible')
       return;
     }
 
-    for(var index = 0; index < size; ++index){
+    for (let index = 0; index < size; ++index){
       visitedMap[nodes[index].data('id')] = 0;
     }
     var nodesCopy = nodes.clone();
 
-    for( var i = 0; i < nodes.length; ++i ){
-      var cNode = nodes[i];
-      var nextNodes = cNode.connectedEdges(
+    for (let i = 0; i < nodes.length; ++i ){
+      const cNode = nodes[i];
+      const nextNodes = cNode.connectedEdges(
         function(o){
           return o.source().same(cNode);
         }
@@ -760,22 +853,43 @@ const redraw = async () => {
           }
         );
       }
-      for (var index = 0; index < nextNodes.length; ++index){
-        var nNode = nextNodes[index];
+      for (let index = 0; index < nextNodes.length; ++index){
+        const nNode = nextNodes[index];
         (function(currentNode, x, copyNode, nextNode){
-          if(nextNode != null && x != 0 && visitedMap[nextNode.data('id')] < 1){
+          if(nextNode !== null && x !== 0 && visitedMap[nextNode.data('id')] < 1){
             ++visitedMap[nextNode.data('id')];
             console.log('currentNode: ' + currentNode.data('id')+ ', x: ' + x + ', nextNode: ' + nextNode.data('id') );
             move(nextNode,currentNode,copyNode,false)
-          } else if (nextNode != null && visitedMap[nextNode.data('id')] < 1){
+          } else if (nextNode !== null && visitedMap[nextNode.data('id')] < 1){
             ++visitedMap[nextNode.data('id')];
             move(nextNode,currentNode,copyNode,true)
           }
           delay += duration;
           })(cNode, i, nodesCopy[i], nNode);
       }
+    } // for
+    function compareFn(a, b) {
+      const aId = parseInt(a.data('id'));
+      const bId = parseInt(b.data('id'));
+      if (aId < bId) {
+        return -1;
+      }
+      if (aId > bId) {
+        return 1;
+      }
+      return 0;
     }
-  };
+    let focusEles = allNodes.sort(compareFn).slice(-3)
+    setTimeout(() => { cy.animate({
+      fit: {
+        eles: focusEles,
+        padding: 120
+      }
+    }, {
+      duration: 250
+    }); }, 1000);
+
+  }; // animateGraph
   animateGraph(eles)
 }
 
@@ -788,7 +902,6 @@ const clickNode = async (evt) => {
   for (const [k,v] of Object.entries(r.l_locals)) {
     actors.push(k)
   }
-  // actors = [-1]
   const atsList = await Promise.all(actors.map(async (actorId) => {
   	let x = await c.getLoc(nodeId,actorId)
     return x
@@ -796,16 +909,30 @@ const clickNode = async (evt) => {
   let ats = atsList
     .filter(at => at)
     .map(at => at.split(':')[1]);
-  if (sheet.cssRules.length > 0) {
-    [...Array(sheet.cssRules.length).keys()].forEach((item, i) => {
-      sheet.deleteRule(i);
-    });
+  while (sheet.cssRules.length > 0) {
+    sheet.deleteRule(sheet.cssRules.length - 1);
   }
+  const singleColors = ['#0f4539','#2f3b22','#052d0a','#001f24']
+  const multiColor = '#152d32'
+  const dupls = ats.filter((e, index, arr) => arr.indexOf(e) !== index)
+  const dups = [...new Set(dupls)]
   ats = [...new Set(ats)]
-  const cssClasses = ats.map(at => `.hljs-ln-line[data-line-number="${at}"]`).join(', ')
-  sheet.insertRule(`${cssClasses} {
-    background-color: silver;
-  }`);
+  const diff = ats.filter(x => !dups.includes(x));
+  const singles = diff.map(at => `.hljs-ln-line[data-line-number="${at}"]`)
+  const multiples = dups.map(at => `.hljs-ln-line[data-line-number="${at}"]`)
+
+  singles.forEach((clss, i) => {
+    sheet.insertRule(`${clss} {
+      background-color: ${singleColors[i % singleColors.length]};
+    }`);
+  });
+
+  multiples.forEach((clss, i) => {
+    sheet.insertRule(`${clss} {
+      background-color: ${multiColor};
+    }`);
+  });
+
   const at = ats.at(-1)
   if (at) {
     const poi = document.querySelector(`.hljs-ln-line[data-line-number="${at}"`);
@@ -825,7 +952,9 @@ const loadScript = async (evt) => {
   icon.classList.add('bi-check2')
   await new Promise(resolve => setTimeout(resolve, 1000))
   let j = await navigator.clipboard.readText()
-  await c.interp(JSON.parse(j))
+  let script = JSON.parse(j)
+  await c.interp(script)
+  jsonLog = script
   redraw()
   icon.classList.remove('bi-check2')
   icon.classList.add('bi-play-circle')

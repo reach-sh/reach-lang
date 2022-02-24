@@ -1,4 +1,4 @@
-FROM reachsh/runner:0.1
+FROM reachsh/runner:latest
 
 # If your project needs more node dependencies:
 COPY package.json /app/package.json

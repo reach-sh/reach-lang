@@ -3,7 +3,6 @@ import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib(process.env);
 
 // lightly modified from tut-3
-(async () => {
   const startingBalance = stdlib.parseCurrency(100);
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const accBob = await stdlib.newTestAccount(startingBalance);
@@ -47,4 +46,3 @@ const stdlib = loadStdlib(process.env);
     }),
   ]);
 
-})();

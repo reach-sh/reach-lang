@@ -1,8 +1,7 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-(async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
   const timeoutK = stdlib.connector === 'ALGO' ? 1 : 3;
   const startingBalance = stdlib.parseCurrency(100);
   const fmt = (x) => stdlib.formatCurrency(x, 4);
@@ -98,4 +97,3 @@ import * as backend from './build/index.main.mjs';
     makeOwner(accBob   , '   Bob'),
     makeOwner(accClaire, 'Claire'),
   ]);
-})();

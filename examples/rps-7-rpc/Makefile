@@ -49,22 +49,28 @@ client-lib-cs: clean-client-lib-cs
 .PHONY: build-js
 build-js: server/build/index.main.mjs client-lib-js
 	cd client-js && docker build --tag=reachsh/reach-app-tut-7-rpc-client-js:latest \
-	  --build-arg NODE_VERSION=$(NODE_VERSION) \
+	  --build-arg NODE_IMAGE=$(NODE_IMAGE) \
 	  .
 
 .PHONY: build-py
 build-py: server/build/index.main.mjs client-lib-py
 	cd client-py && docker build \
 	  --build-arg VERSION=$(shell cat $(ROOT)/rpc-client/py/VERSION) \
+	  --build-arg PYTHON_IMAGE=$(PYTHON_IMAGE) \
 	  --tag=reachsh/reach-app-tut-7-rpc-client-py:latest .
 
 .PHONY: build-go
 build-go: server/build/index.main.mjs client-lib-go
-	cd client-go && docker build --tag=reachsh/reach-app-tut-7-rpc-client-go:latest .
+	cd client-go && docker build \
+	 --build-arg GOLANG_IMAGE=$(GOLANG_IMAGE) \
+	 --tag=reachsh/reach-app-tut-7-rpc-client-go:latest .
 
 .PHONY: build-cs
 build-cs: server/build/index.main.mjs client-lib-cs
-	cd client-cs && docker build --tag=reachsh/reach-app-tut-7-rpc-client-cs:latest .
+	cd client-cs && docker build \
+	 --build-arg DOTNET_RUNTIME_IMAGE=$(DOTNET_RUNTIME_IMAGE) \
+	 --build-arg DOTNET_SDK_IMAGE=$(DOTNET_SDK_IMAGE) \
+	 --tag=reachsh/reach-app-tut-7-rpc-client-cs:latest .
 
 .PHONY: build
 build: server/build/index.main.mjs \

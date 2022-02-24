@@ -11,22 +11,24 @@ import qualified Filesystem.Path.CurrentOS as FP
 import Reach.APICut
 import Reach.AST.DL
 import Reach.Backend.JS
---import Reach.Optimize
 import Reach.BigOpt
 import Reach.CommandLine
 import Reach.Connector
 import Reach.Connector.ALGO
 import Reach.Connector.ETH_Solidity
+import Reach.EditorInfo
 import Reach.EPP
 import Reach.EraseLogic
 import Reach.Eval
 import Reach.Linearize
 import Reach.Parser (gatherDeps_top)
 import Reach.Simulator.Server
+import Reach.StateDiagram
 import Reach.Texty
 import Reach.Util
 import Reach.Verify
 import System.Directory
+import System.Exit
 import System.FilePath
 
 make_connectors :: CompilerToolEnv -> Connectors
@@ -40,6 +42,9 @@ make_connectors env =
 
 compile :: CompilerToolEnv -> CompilerOpts -> IO ()
 compile env (CompilerOpts {..}) = do
+  when co_printKeywordInfo $ do
+    printKeywordInfo
+    exitSuccess
   let outd = fromMaybe (takeDirectory co_source </> "build") co_moutputDir
   let co_dirDotReach = fromMaybe (takeDirectory co_source </> ".reach") co_mdirDotReach
   let co_output ext = FP.encodeString $ FP.append (FP.decodeString outd) $ (FP.filename $ FP.decodeString co_source) `FP.replaceExtension` ext
@@ -84,6 +89,7 @@ compile env (CompilerOpts {..}) = do
         eol <- bigopt (showp, "eol") el
         showp "eol" eol
         pil <- epp eol
+        showp "state.dot" $ stateDiagram pil
         showp "pil" pil
         apc <- apicut pil
         showp "apc" apc

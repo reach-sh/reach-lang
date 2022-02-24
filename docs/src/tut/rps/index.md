@@ -140,20 +140,18 @@ This JavaScript code is similarly schematic and will be consistent across all of
 + Line 1 imports the Reach standard library loader.
 + Line 2 imports your backend, which `./reach compile` will produce.
 + Line 3 loads the standard library dynamically based on the `REACH_CONNECTOR_MODE` environment variable.
-+ Line 5 defines an asynchronous function that will be the body of our frontend.
-+ Line 6 defines a quantity of network tokens as the starting balance for each test account.
-+ Lines 7 and 8 create test accounts with initial endowments for Alice and Bob.
++ Line 5 defines a quantity of network tokens as the starting balance for each test account.
++ Lines 6 and 7 create test accounts with initial endowments for Alice and Bob.
 This will only work on the Reach-provided developer testing network.
-+ Line 10 has Alice deploy the application.
++ Line 9 has Alice deploy the application.
 :::note
 The program defined in [`rps-1-setup/index.rsh`](@{REPO}/examples/rps-1-setup/index.rsh) will only begin to run after it has been deployed via [rps-1-setup/index.mjs](@{REPO}/examples/rps-1-setup/index.mjs).
 :::
 
-+ Line 11 has Bob attach to it.
-+ Lines 14 through 16 initialize a backend for Alice.
-+ Lines 17 through 19 initialize a backend for Bob.
-+ Line 13 waits for the backends to complete.
-+ Line 21 calls this asynchronous function that we've defined.
++ Line 10 has Bob attach to it.
++ Lines 13 through 15 initialize a backend for Alice.
++ Lines 16 through 18 initialize a backend for Bob.
++ Line 12 waits for the backends to complete.
 
 This is now enough for Reach to compile and run our program. Let's try by running
 
@@ -211,14 +209,14 @@ Before continuing with the Reach application, let's move over to the JavaScript 
 
 ```
 load: /examples/rps-2-rps/index.mjs
-range: 13-33
+range: 12-32
 ```
 
-+ Lines 13 and 14 define arrays to hold the meaning of the hands and outcomes.
-+ Line 15 defines a constructor for the `{!js} Player` implementation.
-+ Lines 16 through 20 implement the `{!js} getHand` method.
-+ Lines 21 through 23 implement the `{!js} seeOutcome` method.
-+ Finally, lines 28 and 31 instantiate the implementation once for Alice and once for Bob.
++ Lines 12 and 13 define arrays to hold the meaning of the hands and outcomes.
++ Line 14 defines a constructor for the `{!js} Player` implementation.
++ Lines 15 through 19 implement the `{!js} getHand` method.
++ Lines 20 through 22 implement the `{!js} seeOutcome` method.
++ Finally, lines 27 and 30 instantiate the implementation once for Alice and once for Bob.
 These are the actual objects that will be bound to `{!rsh} interact` in the Reach program.
 
 There should be nothing interesting or controversial about these implementations; that's the point of Reach: we get to just write normal business logic without worrying about the details of the consensus network and decentralized application.
@@ -360,38 +358,38 @@ We'll add this code in between account creation and contract deployment.
 
 ```
 load: /examples/rps-3-bets/index.mjs
-range: 6-13
+range: 5-12
 ```
 
-+ Line 10 shows a helpful function for displaying currency amounts with up to 4 decimal places.
-+ Line 11 shows a helpful function for getting the balance of a participant and displaying it with up to 4 decimal places.
-+ Lines 12 and 13 get the balance before the game starts for both Alice and Bob.
++ Line 9 shows a helpful function for displaying currency amounts with up to 4 decimal places.
++ Line 10 shows a helpful function for getting the balance of a participant and displaying it with up to 4 decimal places.
++ Lines 11 and 12 get the balance before the game starts for both Alice and Bob.
 
 Next, we'll update Alice's interface object to include her wager.
 
 ```
 load: /examples/rps-3-bets/index.mjs
-range: 32-35
+range: 31-34
 ```
 
-+ Line 33 splices the common `{!js} Player` interface into Alice's interface.
-+ Line 34 defines her wager as `5` units of the network token.
++ Line 32 splices the common `{!js} Player` interface into Alice's interface.
++ Line 33 defines her wager as `5` units of the network token.
 This is an example of using a concrete value, rather than a function, in a participant interact interface.
 
 For Bob, we'll modify his interface to show the wager and immediately accept it by returning.
 
 ```
 load: /examples/rps-3-bets/index.mjs
-range: 36-41
+range: 35-40
 ```
 
-+ Lines 38 through 40 define the `{!js} acceptWager` function.
++ Lines 37 through 39 define the `{!js} acceptWager` function.
 
 Finally, after the computation is over, we'll get the balance again and show a message summarizing the effect.
 
 ```
 load: /examples/rps-3-bets/index.mjs
-range: 44-48
+range: 43-47
 ```
 
 + Lines 44 and 45 get the balances afterwards.
@@ -768,15 +766,15 @@ We'll use this to generate a random number to protect Alice's hand.
 
 ```
 load: /examples/rps-5-trust/index.mjs
-range: 20-30
+range: 19-29
 ```
 
 Similarly, we only need to modify one line of our JavaScript frontend.
-Line 21 allows each participant's Reach code to generate random numbers as necessary.
+Line 20 allows each participant's Reach code to generate random numbers as necessary.
 
 These two changes might look identical, but they mean very different things.
 The first, line 21 in the Reach program, adds `{!rsh} hasRandom` to the interface that the backend expects the frontend to provide.
-The second, line 21 in the JavaScript, adds `{!rsh} hasRandom` to the implementation that the frontend provides to the backend.
+The second, line 20 in the JavaScript, adds `{!rsh} hasRandom` to the implementation that the frontend provides to the backend.
 
 Next, we'll create the Reach app and the participant interact interface for Alice and Bob. Nothing here is new.
 
@@ -961,7 +959,7 @@ We'll make a slight tweak to our JavaScript frontend to be able to receive this 
 
 ```
 load: /examples/rps-6-timeouts/index.mjs
-range: 20-33
+range: 19-32
 ```
 
 Back in the Reach program, we'll declare a value to use as a standard deadline throughout the program.
@@ -1035,11 +1033,11 @@ Let's modify the JavaScript frontend to deliberately cause a timeout sometimes w
 
 ```
 load: /examples/rps-6-timeouts/index.mjs
-range: 35-54
+range: 34-53
 ```
 
-+ Line 39 has Alice specify a `{!js} deadline` of ten blocks.
-+ Lines 43 through 52 redefine Bob's `{!js} acceptWager` method as an asynchronous function,
++ Line 38 has Alice specify a `{!js} deadline` of ten blocks.
++ Lines 42 through 51 redefine Bob's `{!js} acceptWager` method as an asynchronous function,
 where half of the time it will take at least ten blocks on the Ethereum network by waiting for ten units of time to pass.
 We know that ten is the value of `{!js} deadline`, so this will cause a timeout.
 
@@ -1127,10 +1125,10 @@ We'll modify the `{!js} Player` interact object so that it will have a different
 
 ```
 load: /examples/rps-7-loops/index.mjs
-range: 20-39
+range: 19-38
 ```
 
-+ Lines 25 through 30 moves the forced timeout code that we wrote for Bob's `{!js} acceptWager` function into this method.
++ Lines 24 through 29 moves the forced timeout code that we wrote for Bob's `{!js} acceptWager` function into this method.
 We also change the threshold so that timeouts only happen 1% of the time.
 This isn't a very interesting behavior, so we'll make it much less frequent.
 
@@ -1139,10 +1137,10 @@ It's just a matter of reverting to the simpler version from before.
 
 ```
 load: /examples/rps-7-loops/index.mjs
-range: 41-53
+range: 40-52
 ```
 
-+ Lines 49 through 51 have the simpler `{!js} acceptWager` method for Bob.
++ Lines 48 through 50 have the simpler `{!js} acceptWager` method for Bob.
 
 ---
 
@@ -1336,78 +1334,78 @@ You'll see a lot of similarity between this and the last version, but for comple
 
 ```
 load: /examples/rps-8-interact/index.mjs
-range: 1-6
+range: 1-4
 ```
 
-+ Lines 1, 2, and 4 are the same as before: importing the standard library and the backend.
-+ Line 3 is new and imports a helpful library for simple console applications called `ask.mjs` from the Reach standard library.
-We'll see how these three functions are used below.
-
-```
-load: /examples/rps-8-interact/index.mjs
-range: 7-12
-```
-
-+ Lines 7 through 10 ask the question whether they are playing as Alice and expect a "Yes" or "No" answer.
-`{!js} ask` presents a prompt and collects a line of input until its argument does not error.
-`{!js} yesno` errors if it is not given "y" or "n".
++ Line 1 has been updated to import the `ask` object of `@reach-sh/stdlib`, the Reach standard library.
+We'll see how `ask` is used below.
++ Lines 2, and 3 are the same as before: importing the standard library and the backend.
 
 ```
 load: /examples/rps-8-interact/index.mjs
-range: 13-29
+range: 5-10
 ```
 
-+ Lines 16 through 19 present the user with the choice of creating a test account if they can or inputting a secret to load an existing account.
-+ Line 21 creates the test account as before.
-+ Line 27 loads the existing account.
-
-```
-load: /examples/rps-8-interact/index.mjs
-range: 30-41
-```
-
-+ Line 31 branches based on whether the player is running as Alice, who must deploy the contract, or Bob, who must attach to it.
-+ Lines 32 through 34 deploy it and print out public information (`{!js} ctc.getInfo`) that can be given to the other player when it becomes available.
-+ Lines 36 through 41 request, parse, and process this information.
++ Lines 5 through 8 ask the question whether they are playing as Alice and expect a "Yes" or "No" answer.
+`{!js} ask.ask` presents a prompt and collects a line of input until its argument does not error.
+`{!js} ask.yesno` errors if it is not given "y" or "n".
 
 ```
 load: /examples/rps-8-interact/index.mjs
-range: 43-49
+range: 11-27
+```
+
++ Lines 14 through 17 present the user with the choice of creating a test account if they can or inputting a secret to load an existing account.
++ Line 19 creates the test account as before.
++ Line 25 loads the existing account.
+
+```
+load: /examples/rps-8-interact/index.mjs
+range: 28-39
+```
+
++ Line 29 branches based on whether the player is running as Alice, who must deploy the contract, or Bob, who must attach to it.
++ Lines 30 through 32 deploy it and print out public information (`{!js} ctc.getInfo`) that can be given to the other player when it becomes available.
++ Lines 34 through 39 request, parse, and process this information.
+
+```
+load: /examples/rps-8-interact/index.mjs
+range: 41-47
 ```
 
 Next we define a few helper functions and start the participant interaction interface.
 
 ```
 load: /examples/rps-8-interact/index.mjs
-range: 51-54
+range: 49-52
 ```
 
 Then we define a timeout handler.
 
 ```
 load: /examples/rps-8-interact/index.mjs
-range: 56-73
+range: 54-71
 ```
 
 Next, we request the wager amount or define the `{!js} acceptWager` method, depending on if we are Alice or not.
 
 ```
 load: /examples/rps-8-interact/index.mjs
-range: 75-92
+range: 73-90
 ```
 
 Next, we define the shared `{!js} getHand` method.
 
 ```
 load: /examples/rps-8-interact/index.mjs
-range: 94-97
+range: 92-95
 ```
 
 Finally, the `{!js} seeOutcome` method.
 
 ```
 load: /examples/rps-8-interact/index.mjs
-range: 99-106
+range: 97-103
 ```
 
 Lastly, we choose the appropriate backend function and await its completion.
@@ -1595,7 +1593,7 @@ range: 39-41
 ```
 
 + On line 19, we initialize the component state to display @{seclink("tut-9-ConnectAccount")}.
-+ On lines 21 thru 31, we hook into React's `{!js} componentDidMount` lifecycle event, which is called when the component starts.
++ On lines 21 thru 31, we hook into [React's `{!js} componentDidMount` lifecycle event](https://reactjs.org/docs/react-component.html#componentdidmount), which is called when the component starts.
 + On line 22, we use `{!js} getDefaultAccount`, which accesses the default browser account.
 For example, when used with Ethereum, it can discover the currently-selected MetaMask account.
 + On line 26, we use `{!js} canFundFromFaucet` to see if we can access the Reach developer testing network faucet.

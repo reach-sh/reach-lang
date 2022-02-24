@@ -23,9 +23,31 @@ type ActorId = Int
 
 type PhaseId = Integer
 
-type AccountId = Int
+type ConsensusEnv = M.Map DLVar DLVal
 
-type Ledger = M.Map Account (M.Map Token Balance)
+type LocalInteractEnv = M.Map String DLVal
+
+type Store = ConsensusEnv
+
+type Balance = Integer
+
+type Token = Integer
+
+consensusId :: ActorId
+consensusId = -1
+
+nwToken :: Token
+nwToken = -1
+
+simContract :: Account
+simContract = fromIntegral consensusId
+
+simContractAmt :: Balance
+simContractAmt = 0
+
+type Wallet = M.Map Token Balance
+
+type Ledger = M.Map Account Wallet
 
 data Message = Message
   { m_store :: Store
@@ -48,7 +70,7 @@ data Global = Global
   , e_nwtime :: Integer
   , e_nwsecs :: Integer
   , e_nactorid :: ActorId
-  , e_naccid :: AccountId
+  , e_naccid :: Account
   , e_partacts :: M.Map Participant ActorId
   , e_messages :: M.Map PhaseId MessageInfo
   }
@@ -197,36 +219,25 @@ initApp p st = runApp st $ interp p
 initAppFromStep :: LLStep -> State -> PartState
 initAppFromStep step st = runApp st $ interp step
 
-type ConsensusEnv = M.Map DLVar DLVal
+ledgerNewTokenRefs :: Integer -> DLTokenNew -> App (Token)
+ledgerNewTokenRefs n tk = do
+  (e, _) <- getState
+  let tokId = e_ntok e
+  _ <- mapM (\x -> ledgerNewToken x tk tokId) [-1..n]
+  (e', _) <- getState
+  setGlobal $ e' {e_ntok = tokId + 1}
+  return tokId
 
-type LocalInteractEnv = M.Map String DLVal
-
-type Store = ConsensusEnv
-
-type Balance = Integer
-
-type Token = Integer
-
-consensusId :: ActorId
-consensusId = -1
-
-nwToken :: Token
-nwToken = -1
-
-simContract :: Account
-simContract = fromIntegral consensusId
-
-simContractAmt :: Balance
-simContractAmt = 0
-
-ledgerNewToken :: Account -> DLTokenNew -> App ()
-ledgerNewToken acc tk = do
+ledgerNewToken :: Account -> DLTokenNew -> Token -> App ()
+ledgerNewToken acc tk tokId = do
   (e, _) <- getState
   let ledger = e_ledger e
-  let tokId = e_ntok e
-  supply <- vUInt <$> interp (dtn_supply tk)
-  let new_nw_ledger = M.insert acc (M.singleton tokId supply) ledger
-  setGlobal $ e {e_ledger = new_nw_ledger, e_ntok = tokId + 1}
+  supply <- case (acc == simContract) of
+    True -> vUInt <$> interp (dtn_supply tk)
+    False -> return 0
+  let m = saferMaybe "ledgerNewToken: account not found" $ M.lookup acc ledger
+  let new_nw_ledger = M.insert acc (M.insert tokId supply m) ledger
+  setGlobal $ e {e_ledger = new_nw_ledger}
 
 data Action
   = A_TieBreak PhaseId [String]
@@ -234,7 +245,7 @@ data Action
   | A_AdvanceTime Integer
   | A_AdvanceSeconds Integer
   | A_Interact [SLCtxtFrame] String String DLType [DLVal]
-  | A_Contest PhaseId
+  | A_Receive PhaseId
   | A_Remote [SLCtxtFrame] String [DLVal] [DLVal]
   deriving (Generic)
 
@@ -254,6 +265,7 @@ data DLVal
   | V_Bytes String
   | V_Digest DLVal
   | V_Address Account
+  | V_Contract Account
   | V_Array [DLVal]
   | V_Tuple [DLVal]
   | V_Object (M.Map SLVar DLVal)
@@ -262,7 +274,6 @@ data DLVal
   deriving (Eq, Ord, Show, Generic)
 
 instance ToJSON DLVal
-
 instance FromJSON DLVal
 
 addToStore :: DLVar -> DLVal -> App ()
@@ -304,17 +315,22 @@ incrPhaseId = do
   l <- getLocal
   let actorId = l_curr_actor_id l
   let locals = l_locals l
-  let x = saferMapRef "incrPhaseId" $ M.lookup actorId locals
+  let x = saferMaybe "incrPhaseId" $ M.lookup actorId locals
   let x' = x {l_phase = (l_phase x) + 1}
   let locals' = M.insert actorId x' locals
   setLocal $ l {l_locals = locals'}
+
+updateLedgers :: Integer -> Token -> (Integer -> Integer) -> App ()
+updateLedgers n tok f = do
+  _ <- mapM (\x -> updateLedger x tok f) [-1..n]
+  return ()
 
 updateLedger :: Account -> Token -> (Integer -> Integer) -> App ()
 updateLedger acc tok f = do
   (e, _) <- getState
   let map_ledger = e_ledger e
-  let m = saferMapRef "updateLedger" $ M.lookup acc map_ledger
-  let prev_amt = saferMapRef "updateLedger1" $ M.lookup tok m
+  let m = saferMaybe "updateLedger: account not found" $ M.lookup acc map_ledger
+  let prev_amt = saferMaybe ("updateLedger: token not found " ++ show tok ++ " " ++ show map_ledger) $ M.lookup tok m
   let new_amt = f prev_amt
   let new_nw_ledger = M.insert acc (M.insert tok new_amt m) map_ledger
   setGlobal $ e {e_ledger = new_nw_ledger}
@@ -352,7 +368,7 @@ interpPrim = \case
     case actorid == consensusId of
       False -> do
         let locals = l_locals l
-        return $ V_Address $ l_acct $ saferMapRef "SELF_ADDRESS" $ M.lookup actorid locals
+        return $ V_Address $ l_acct $ saferMaybe "SELF_ADDRESS" $ M.lookup actorid locals
       True -> do
         return $ V_Address $ simContract
   (LSH, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ shiftL lhs (fromIntegral rhs)
@@ -389,7 +405,7 @@ instance Interp DLArg where
     DLA_Literal dllit -> interp dllit
     DLA_Interact _slpart str _dltype -> do
       livs <- l_livs <$> getMyLocalInfo
-      let v = saferMapRef "DLA_Interact" $ M.lookup str livs
+      let v = saferMaybe "DLA_Interact" $ M.lookup str livs
       return v
 
 instance Interp DLLiteral where
@@ -409,7 +425,7 @@ instance Interp DLLargeArg where
     DLLA_Struct assoc_slvars_dlargs -> do
       evd_args <- mapM (\arg -> interp arg) $ M.fromList assoc_slvars_dlargs
       return $ V_Struct $ M.toAscList evd_args
-    DLLA_Bytes _ -> impossible "undefined"
+    DLLA_Bytes bs -> return $ V_Bytes $ bunpack bs
 
 instance Interp DLExpr where
   interp = \case
@@ -443,16 +459,14 @@ instance Interp DLExpr where
       return $ saferIndex (fromIntegral n) arr
     DLE_ObjectRef _at dlarg str -> do
       obj <- vObject <$> interp dlarg
-      return $ saferMapRef "DLE_ObjectRef" $ M.lookup str obj
+      return $ saferMaybe "DLE_ObjectRef" $ M.lookup str obj
     DLE_Interact at slcxtframes slpart str dltype dlargs -> do
       args <- mapM interp dlargs
       suspend $ PS_Suspend (Just at) (A_Interact slcxtframes (bunpack slpart) str dltype args)
     DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
       CT_Assert -> interp dlarg
-      CT_Assume bool -> case bool of
-        True -> interp dlarg
-        False -> error "CT_Assume error"
+      CT_Assume _bool -> interp dlarg
       CT_Require -> interp dlarg
       CT_Possible -> interp dlarg
       CT_Unknowable _slpart dlargs -> do
@@ -470,7 +484,7 @@ instance Interp DLExpr where
               transferLedger simContract acc nwToken n
               return V_Null
             Just tok -> do
-              ev <- vUInt <$> interp tok
+              ev <- vTok <$> interp tok
               transferLedger simContract acc ev n
               return V_Null
     DLE_TokenInit _at _dlarg -> return V_Null
@@ -487,8 +501,12 @@ instance Interp DLExpr where
       (g, _) <- getState
       let linstate = e_linstate g
       acc <- vAddress <$> interp dlarg
-      let m = saferMapRef "DLE_MapRef1" $ M.lookup dlmvar linstate
-      return $ saferMapRef "DLE_MapRef2" $ M.lookup acc m
+      case M.lookup dlmvar linstate of
+        Nothing -> return $ V_Data "None" V_Null
+        Just m -> do
+          case M.lookup acc m of
+            Nothing -> return $ V_Data "None" V_Null
+            Just m' -> return $ V_Data "Some" m'
     DLE_MapSet _at dlmvar dlarg maybe_dlarg -> do
       (e, _) <- getState
       let linst = e_linstate e
@@ -498,40 +516,35 @@ instance Interp DLExpr where
         Just a -> do
           v <- interp a
           return $ flip M.insert v
-      let m = f acc $ saferMapRef "DLE_MapSet" $ M.lookup dlmvar linst
+      let m'' = case M.lookup dlmvar linst of
+            Nothing -> M.empty
+            Just m' -> m'
+      let m = f acc m''
       setGlobal $ e {e_linstate = M.insert dlmvar m linst}
       return V_Null
     DLE_Remote at slcxtframes dlarg str dlPayAmnt dlargs _dlWithBill@DLWithBill {..} -> do
-      acc <- fromIntegral <$> vUInt <$> interp dlarg
+      acc <- fromIntegral <$> vContract <$> interp dlarg
       tok_billed <- mapM interp dwb_tok_billed
       args <- mapM interp dlargs
       v <- suspend $ PS_Suspend (Just at) (A_Remote slcxtframes str args tok_billed)
       consensusPayout acc dlPayAmnt
       return v
     DLE_TokenNew _at dltokennew -> do
-      ledgerNewToken simContract dltokennew
-      return V_Null
+      (g, _) <- getState
+      let accIdMax = (e_naccid g) - 1
+      tokId <- ledgerNewTokenRefs accIdMax dltokennew
+      return $ V_Token $ fromIntegral tokId
     DLE_TokenBurn _at dlarg1 dlarg2 -> do
-      tok <- vUInt <$> interp dlarg1
+      tok <- vTok <$> interp dlarg1
       burn_amt <- vUInt <$> interp dlarg2
-      updateLedger 0 tok (burn_amt -)
+      updateLedger simContract tok (burn_amt -)
       return V_Null
-    DLE_TokenDestroy _at dlarg -> do
-      ev <- vUInt <$> interp dlarg
-      (e, _) <- getState
-      let map_ledger = e_ledger e
-      let m = saferMapRef "DLE_TokenDestroy" $ M.lookup 0 map_ledger
-      let new_nw_ledger = M.insert 0 (M.delete ev m) map_ledger
-      setGlobal $ e {e_ledger = new_nw_ledger}
-      return V_Null
+    DLE_TokenDestroy _at _dlarg -> return V_Null
     DLE_TimeOrder _at _assoc_maybe_arg_vars -> return V_Null
-    -- NOTE: Contracts are not necessarily addresses and it
-    -- might be a good idea to introduce a new value, `V_Contract`,
-    -- for them in the future to ensure that they can't be mixed at run time
-    DLE_GetContract _at -> V_Address <$> l_acct <$> getMyLocalInfo
+    DLE_GetContract _at -> V_Contract <$> l_acct <$> getMyLocalInfo
     DLE_GetAddress _at -> V_Address <$> l_acct <$> getMyLocalInfo
-    DLE_EmitLog at (L_Api _) [dlvar] -> interp $ DL_Var at dlvar
-    DLE_EmitLog at L_Internal [dlvar] -> interp $ DL_Var at dlvar
+    DLE_EmitLog _at (L_Api _) [dlvar] -> interp $ DLA_Var dlvar
+    DLE_EmitLog _at L_Internal [dlvar] -> interp $ DLA_Var dlvar
     -- events from Events are : [a] -> Null
     DLE_EmitLog _ (L_Event {}) _ -> return V_Null
     DLE_EmitLog {} -> impossible "DLE_EmitLog invariants not satisified"
@@ -540,9 +553,9 @@ instance Interp DLExpr where
       (e, _) <- getState
       tok <- maybe (return nwToken) (fmap vUInt . interp) mtokA
       let bal =
-            saferMapRef "getActualBalance1" $
+            saferMaybe "getActualBalance1" $
               M.lookup tok $
-                saferMapRef "getActualBalance" $ M.lookup simContract $ e_ledger e
+                saferMaybe "getActualBalance" $ M.lookup simContract $ e_ledger e
       return $ V_UInt bal
     DLE_FromSome _ mo da -> do
       (k, v) <- vData <$> interp mo
@@ -570,16 +583,16 @@ instance Interp DLStmt where
       res <- V_Array <$> zipWithM f' arr' [0..]
       addToStore ans res
       return V_Null
-    DL_ArrayReduce _at var1 arg1 arg2 var2 var3 block -> do
-      acc <- interp arg1
-      arr' <- vArray <$> interp arg2
-      let f =
-            (\a x b y -> do
-               addToStore a x
-               addToStore b y
-               interp block)
-      res <- foldM (\x y -> f var2 x var3 y) acc arr'
-      addToStore var1 res
+    DL_ArrayReduce _at ans x z b a i f -> do
+      acc <- interp z
+      arr' <- vArray <$> interp x
+      let f' acc_v (elem_v, iv) = do
+             addToStore a elem_v
+             addToStore b acc_v
+             addToStore i $ V_UInt iv
+             interp f
+      res <- foldM f' acc $ zip arr' [0..]
+      addToStore ans res
       return V_Null
     DL_Var _at _var -> return V_Null
     DL_Set _at var arg -> do
@@ -595,7 +608,7 @@ instance Interp DLStmt where
         _ -> impossible "DL_LocalIf: statement interpreter"
     DL_LocalSwitch _at var cases -> do
       (k, v) <- vData <$> interp (DLA_Var var)
-      let (switch_binding, _, dltail) = saferMapRef "DL_LocalSwitch" $ M.lookup k cases
+      let (switch_binding, _, dltail) = saferMaybe "DL_LocalSwitch" $ M.lookup k cases
       addToStore switch_binding v
       interp dltail
     DL_Only _at either_part dltail -> do
@@ -615,7 +628,7 @@ instance Interp DLStmt where
                addToStore a x
                addToStore b y
                interp block)
-      let m = saferMapRef "DL_MapReduce" $ M.lookup dlmvar linst
+      let m = saferMaybe "DL_MapReduce" $ M.lookup dlmvar linst
       res <- foldM (\x y -> f var2 x var3 y) accu $ m
       addToStore var1 res
       return V_Null
@@ -646,7 +659,7 @@ instance Interp LLConsensus where
         _ -> impossible "consensus interpreter"
     LLC_Switch _at var switch_cases -> do
       (k, v) <- vData <$> interp (DLA_Var var)
-      let (switch_binding, _, cons) = saferMapRef "LLC_Switch" $ M.lookup k switch_cases
+      let (switch_binding, _, cons) = saferMaybe "LLC_Switch" $ M.lookup k switch_cases
       addToStore switch_binding v
       interp cons
     LLC_FromConsensus _at1 _at2 step -> do
@@ -689,7 +702,7 @@ instance Interp LLStep where
                 Nothing -> do
                   case msgs' of
                     NotFixedYet _msgs'' -> do
-                      _ <- suspend $ PS_Suspend (Just at) (A_Contest phId)
+                      _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
                       (actId',_) <- poll phId
                       runWithWinner dlr actId' phId
                     Fixed (actId', _msg) -> do
@@ -702,7 +715,7 @@ instance Interp LLStep where
                       let m = Message {m_store = sto, m_pay = ds_pay}
                       let m' = M.insert phId (NotFixedYet $ M.insert actId m msgs'') (e_messages g)
                       setGlobal g { e_messages = m' }
-                      _ <- suspend $ PS_Suspend (Just at) (A_Contest phId)
+                      _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
                       (actId',_) <- poll phId
                       runWithWinner dlr actId' phId
                     Fixed (actId', _msg) -> do
@@ -711,11 +724,11 @@ instance Interp LLStep where
               v <- suspend $ PS_Suspend (Just at) (A_TieBreak phId $ M.keys sends)
               let actId' = fromIntegral $ vUInt v
               part <- partName <$> whoIs actId'
-              let dls = saferMapRef "LLS_ToConsensus1" $ M.lookup part sends
+              let dls = saferMaybe "LLS_ToConsensus1" $ M.lookup part sends
               accId <- getAccId actId'
-              m' <- saferMapRef ("Phase not yet seen") <$> M.lookup phId <$> e_messages <$> getGlobal
+              m' <- saferMaybe ("Phase not yet seen") <$> M.lookup phId <$> e_messages <$> getGlobal
               let msgs = unfixedMsgs $ m'
-              let winningMsg = saferMapRef ("Message not yet seen") $ M.lookup actId' msgs
+              let winningMsg = saferMaybe ("Message not yet seen") $ M.lookup actId' msgs
               _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg) (m_pay winningMsg)
               winner dlr actId' phId
               consensusPayout accId (ds_pay dls)
@@ -725,7 +738,7 @@ poll :: PhaseId -> App (ActorId, Store)
 poll phId = do
   (g, l) <- getState
   who <- show <$> whoIs (l_curr_actor_id l)
-  return $ fixedMsg $ saferMapRef ("early poll for " ++ who) $ M.lookup phId $ e_messages g
+  return $ fixedMsg $ saferMaybe ("early poll for " ++ who) $ M.lookup phId $ e_messages g
 
 runWithWinner :: DLRecv LLConsensus -> ActorId -> PhaseId -> App DLVal
 runWithWinner dlr actId phId = do
@@ -735,25 +748,25 @@ runWithWinner dlr actId phId = do
 winner :: DLRecv LLConsensus -> ActorId -> PhaseId -> App ()
 winner dlr actId phId = do
   g <- getGlobal
-  let (_, winningMsg) = fixedMsg $ saferMapRef "winner" $ M.lookup phId $ e_messages g
+  let (_, winningMsg) = fixedMsg $ saferMaybe "winner" $ M.lookup phId $ e_messages g
   accId <- getAccId actId
   bindConsensusMeta dlr actId accId
   let (xs, vs) = unzip $ M.toAscList winningMsg
   _ <- zipWithM addToStore xs vs
   return ()
 
-getAccId :: ActorId -> App AccountId
+getAccId :: ActorId -> App Account
 getAccId actId = do
   l <- getLocal
   let locals = l_locals l
-  let lclsv = saferMapRef "getAccId" $ M.lookup (fromIntegral actId) locals
+  let lclsv = saferMaybe "getAccId" $ M.lookup (fromIntegral actId) locals
   return $ fromIntegral $ l_acct lclsv
 
 getPhaseId :: ActorId -> App PhaseId
 getPhaseId actId = do
   l <- getLocal
   let locals = l_locals l
-  let lclsv = saferMapRef "getPhaseId" $ M.lookup (fromIntegral actId) locals
+  let lclsv = saferMaybe "getPhaseId" $ M.lookup (fromIntegral actId) locals
   return $ l_phase lclsv
 
 getMyLocalInfo :: App LocalInfo
@@ -761,21 +774,21 @@ getMyLocalInfo = do
   l <- getLocal
   let actId = l_curr_actor_id l
   let locals = l_locals l
-  return $ saferMapRef "getMyLocalInfo" $ M.lookup (fromIntegral actId) locals
+  return $ saferMaybe "getMyLocalInfo" $ M.lookup (fromIntegral actId) locals
 
-consensusPayout :: AccountId -> DLPayAmt -> App ()
+consensusPayout :: Account -> DLPayAmt -> App ()
 consensusPayout accId DLPayAmt {..} = do
   _ <-
     mapM
       (\(a, b) -> do
-         b' <- vUInt <$> (interp b)
+         b' <- vTok <$> (interp b)
          a' <- vUInt <$> (interp a)
          transferLedger (fromIntegral accId) simContract b' a')
       pa_ks
   net <- vUInt <$> interp pa_net
   transferLedger (fromIntegral accId) simContract nwToken net
 
-bindConsensusMeta :: DLRecv LLConsensus -> ActorId -> AccountId -> App ()
+bindConsensusMeta :: DLRecv LLConsensus -> ActorId -> Account -> App ()
 bindConsensusMeta (DLRecv {..}) actorId accId = do
   (g, l) <- getState
   addToStore dr_time $ V_UInt (e_nwtime g)
@@ -856,7 +869,7 @@ while bl cons = do
     V_Bool True -> do
       _ <- interp cons
       while bl cons
-    _ -> impossible "unexpected error"
+    _ -> possible $ ("in (while) expected boolean, received " ++ show bool)
 
 saferIndex :: Int -> [a] -> a
 saferIndex 0 (x : _) = x
@@ -865,27 +878,35 @@ saferIndex n (_ : xs) = saferIndex (n -1) xs
 
 vUInt :: G.HasCallStack => DLVal -> Integer
 vUInt (V_UInt n) = n
-vUInt _ = impossible "unexpected error: expected integer"
+vUInt _ = impossible "unexpected error: expected integer value"
+
+vContract :: G.HasCallStack => DLVal -> Account
+vContract (V_Contract n) = n
+vContract _ = impossible "unexpected error: expected account value"
+
+vTok :: G.HasCallStack => DLVal -> Integer
+vTok (V_Token n) = fromIntegral n
+vTok _ = impossible "unexpected error: expected token integer value"
 
 vArray :: G.HasCallStack => DLVal -> [DLVal]
 vArray (V_Array a) = a
-vArray _ = impossible "unexpected error: expected array"
+vArray _ = impossible "unexpected error: expected array value"
 
 vTuple :: G.HasCallStack => DLVal -> [DLVal]
 vTuple (V_Tuple a) = a
-vTuple _ = impossible "unexpected error: expected tuple"
+vTuple b = impossible ("unexpected error: expected tuple value: received " ++ show b)
 
 vObject :: G.HasCallStack => DLVal -> (M.Map SLVar DLVal)
 vObject (V_Object a) = a
-vObject _ = impossible "unexpected error: expected object"
+vObject _ = impossible "unexpected error: expected object value"
 
 vData :: G.HasCallStack => DLVal -> (SLVar, DLVal)
 vData (V_Data a b) = (a, b)
-vData _ = impossible "unexpected error: expected data"
+vData _ = impossible "unexpected error: expected data value"
 
 vAddress :: G.HasCallStack => DLVal -> Account
 vAddress (V_Address a) = a
-vAddress _ = impossible "unexpected error: expected address"
+vAddress _ = impossible "unexpected error: expected address value"
 
 unfixedMsgs :: G.HasCallStack => MessageInfo -> M.Map ActorId Message
 unfixedMsgs (NotFixedYet m) = m
@@ -900,7 +921,7 @@ whoAmI = do
   l <- getLocal
   let actId = l_curr_actor_id l
   let locals = l_locals l
-  let local' = saferMapRef "whoAmI" $ M.lookup actId locals
+  let local' = saferMaybe "whoAmI" $ M.lookup actId locals
   let who = l_who local'
   case who of
     Nothing -> return Consensus
@@ -910,7 +931,7 @@ whoIs :: ActorId -> App SimIdentity
 whoIs actId = do
   l <- getLocal
   let locals = l_locals l
-  let local' = saferMapRef "whoIs" $ M.lookup actId locals
+  let local' = saferMaybe "whoIs" $ M.lookup actId locals
   let who = l_who local'
   case who of
     Nothing -> return Consensus

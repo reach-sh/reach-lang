@@ -13,8 +13,7 @@ const equals = (a, b) => {
   return keys.every(k => equals(a[k], b[k]));
 };
 
-(async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
 
   const alice = await stdlib.newTestAccount(startingBalance);
@@ -50,4 +49,3 @@ const equals = (a, b) => {
     }),
   ]);
 
-})();

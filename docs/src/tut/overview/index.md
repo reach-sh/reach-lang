@@ -122,12 +122,18 @@ The Ethereum bytecode is not readable, but if you understand Solidity, you may w
 Reach can leave files like these in place when run with `--intermediate-files`.
 :::
 
+:::note
+The command line snippets in this overview make no assumption about where Reach is installed on your machine. 
+If Reach is installed in the directory you're working in, point to it with `./reach`; if it is in a parent directory use `../reach`; if you installed it into your `{!cmd} PATH`, just type `reach`.
+Learn more about installing Reach in the [Tools documentation](##ref-install) or in our [Tutorial](##tut). 
+:::
+
 For this thirty line application, the Reach compiler generated hundreds of lines of JavaScript code in two functions, one for Alice and one for Bob.
 Separately, it generated hundreds more lines of Solidity code to implement the contract.
 If a programmer wasn't using Reach, they would have to write all this code in these three modules individually and keep them synchronized at every step of the development process.
 
-Moreover, Reach doesn't only work for Ethereum: it is blockchain agnostic and can be easily configured to use a different connector to target a different consensus network, like Algorand.
-Nor is Reach tied to JavaScript: it can be configured to target other backend languages, like Go.
+Moreover, Reach doesn't only work for Ethereum: it is blockchain agnostic and can be easily configured to use a different connector to target a different [consensus network](##ref-networks), like Algorand.
+Nor is Reach tied to JavaScript: it can be configured to target other [backend languages](##ref-backends-rpc), like Go, Python, and C#.
 
 ## {#over-verify} Verify
 
@@ -184,14 +190,14 @@ load: /examples/overview/index.mjs
 ```
 
 + Lines 1 and 2 import the Reach standard library loader and the compiled app backend.
-+ Line 5 dynamically loads the appropriate network-specific Reach standard library,
++ Line 4 dynamically loads the appropriate network-specific Reach standard library,
 based on the `REACH_CONNECTOR_MODE` environment variable.
 All of Reach's network-specific standard libraries adhere to a common interface allowing you to write programs that are network-agnostic.
-+ Lines 7 and 8 initialize new test accounts for Alice and Bob.
-+ Line 10 has Alice deploy the contract on the consensus network.
-+ Line 11 has Bob attach to the contract.
++ Lines 6 and 7 initialize new test accounts for Alice and Bob.
++ Line 9 has Alice deploy the contract on the consensus network.
++ Line 10 has Bob attach to the contract.
 The value `{!js} ctcAlice` contains no secret information and could easily be printed out and shared with Bob outside of the consensus network.
-+ Lines 13 through 22 launch the backends and wait for their completion. We'll look at the details in a moment.
++ Lines 12 through 21 launch the backends and wait for their completion. We'll look at the details in a moment.
 
 This code, similar for all test programs, demonstrates how straightforward it is to scaffold a Reach application for testing.
 
@@ -199,23 +205,23 @@ Let's look at initializing and interfacing each participant, starting with Alice
 
 ```
 load: /examples/overview/index.mjs
-range: 14-17
+range: 13-16
 ```
 
-+ Line 14 uses the contract handle associated with Alice's account to run the Alice participant backend, passing an object which holds the interact functions.
-+ Line 15 provides the `{!rsh} request` value.
-+ Line 16 provides the `{!rsh} info` value.
++ Line 13 uses the contract handle associated with Alice's account to run the Alice participant backend, passing an object which holds the interact functions.
++ Line 14 provides the `{!rsh} request` value.
++ Line 15 provides the `{!rsh} info` value.
 
 Let's look at Bob next.
 
 ```
 load: /examples/overview/index.mjs
-range: 18-21
+range: 17-20
 ```
 
-+ Line 18 initializes Bob just like Alice, although we use the `{!js} p` short-hand.
-+ Line 19 provides his `{!rsh} want` function, which produces a log message and always accepts.
-+ Line 20 provides his `{!rsh} got` function, which displays the secret on the console as well.
++ Line 17 initializes Bob just like Alice, although we use the `{!js} p` short-hand.
++ Line 18 provides his `{!rsh} want` function, which produces a log message and always accepts.
++ Line 19 provides his `{!rsh} got` function, which displays the secret on the console as well.
 
 ---
 
@@ -227,7 +233,14 @@ Reach allows programmers to focus on the business logic of their application at 
 It's now time to execute this test program and ensure that everything is working correctly.
 In this case, we've set up our application simply: there's one Reach file for the application and one JavaScript file for the interface.
 This is a common practice, so Reach comes with a simple wrapper script to build and execute such applications.
-We just run:
+
+First, we connect Reach to a consensus network. We can connect to Ethereum's test environment by running:
+
+```cmd
+$ export REACH_CONNECTOR_MODE=ETH
+```
+
+Then, we just run:
 
 ```cmd
 $ reach run
@@ -238,9 +251,9 @@ And then Reach
 + compiles [overview/index.rsh](@{REPO}/examples/overview/index.rsh);
 + creates a temporary Node.js package;
 + builds a Docker image based on Reach's standard image for the package; and,
-+ runs the application connected to Reach's standard private Ethereum devnet image.
++ runs the application connected to the specified consensus network's devnet image.
 
-On typical developer laptops, this entire process takes seconds and can be completely integrated into existing development IDEs, like VSCode, so Reach developers can compile, verify, build, launch, and test their Reach app with a single command.
+On typical developer laptops, this entire process takes seconds and can be completely integrated into existing development [IDEs](##guide-editor-support), like VSCode, so Reach developers can compile, verify, build, launch, and test their Reach app with a single command.
 
 ---
 

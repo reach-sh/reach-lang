@@ -1,8 +1,7 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-(async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
   const assertEq = (expected, actual) => {
     const exps = JSON.stringify(expected);
     const acts = JSON.stringify(actual);
@@ -24,4 +23,3 @@ import * as backend from './build/index.main.mjs';
 
   console.log(`It's over`);
   await checkView(['None', null]);
-})();

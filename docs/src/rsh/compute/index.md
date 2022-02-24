@@ -291,22 +291,6 @@ For example, `{!rsh} Int`s
 and `{!rsh} Array`s are valid values to throw, but a function is not.
 A `{!rsh} throw` must have an empty tail.
 
-### Expression statements
-
-```reach
-4;
-f(2, true);
-```
-
-An expression, `{!rsh} E`, in a statement position is equivalent to the block statement `{!rsh} { return E; }`.
-
-## {#ref-programs-compute-exprs} Expressions
-
-This section describes the expressions which are allowed in any Reach context.
-There are a large variety of different @{defn("expressions")} in Reach programs.
-
-The remainder of this section enumerates each kind of expression.
-
 ### 'use strict'
 
 @{ref("rsh", "'use strict'")}
@@ -355,6 +339,22 @@ void foo(MObj.Some({ b : true }));
 void foo(MObj.None());
 ```
 
+### Expression statements
+
+```reach
+4;
+f(2, true);
+```
+
+An expression, `{!rsh} E`, in a statement position is equivalent to the block statement `{!rsh} { return E; }`.
+
+## {#ref-programs-compute-exprs} Expressions
+
+This section describes the expressions which are allowed in any Reach context.
+There are a large variety of different @{defn("expressions")} in Reach programs.
+
+The remainder of this section enumerates each kind of expression.
+
 ### `unstrict`
 
 @{ref("rsh", "unstrict")}
@@ -395,6 +395,7 @@ declassify( _coinFlip )
 A @{defn("function application")}, written `{!rsh} EXPR_rator(EXPR_rand_0, ..., EXPR_rand_n)`, is an expression where `{!rsh} EXPR_rator` and `{!rsh} EXPR_rand_0` through `{!rsh} EXPR_rand_n` are expressions that evaluate to one value.
 `{!rsh} EXPR_rator` must evaluate to an abstraction over `{!rsh} n` values or a primitive of arity `{!rsh} n`.
 A spread expression (`{!rsh} ...expr`) may appear in the list of operands to a function application, in which case the elements of the expr are spliced in place.
+`{!rsh} EXPR_rator` and `{!rsh} EXPR_rand_n` are evaluated in left-to-right order, starting with `{!rsh} EXPR_rator`, then `{!rsh} EXPR_rand_0`, `{!rsh} EXPR_rand_1`, etc.
 
 @{ref("rsh", "new")}
 `{!rsh} new f(a)` is equivalent to `{!rsh} f.new(a)` and is a convenient short-hand for writing class-oriented programs.
@@ -408,7 +409,7 @@ Reach's @{defn("type")}s are represented in programs by the following identifier
 + @{ref("rsh", "UInt")} `{!rsh} UInt`, which denotes an unsigned integer.
 `{!rsh} UInt.max` is the largest value that may be assigned to a `{!rsh} UInt`.
 + @{ref("rsh", "Bytes")} `{!rsh} Bytes(length)`, which denotes a string of bytes of length at most `{!rsh} length`.
-Bytes of different lengths are not compatible; however the shorter bytes may be padded.
+Bytes of different lengths are not compatible; however the shorter bytes may be [padded](##padding).
 + @{ref("rsh", "Digest")} `{!rsh} Digest`, which denotes a digest.
 + @{ref("rsh", "Address")} `{!rsh} Address`, which denotes an account address.
 + @{ref("rsh", "Contract")} `{!rsh} Contract`, which denotes the identifying information of a contract.
@@ -521,7 +522,7 @@ Reach provides syntactic sugar for defining signed `{!rsh} FixedPoint` numbers, 
 may be written between double or single quotes
 (with no distinction between the different styles)
 and use the same escaping rules as JavaScript.
-Since `{!rsh} Bytes` types are specialized in their length, literals typically need to be padded to be useful.
+Since `{!rsh} Bytes` types are specialized in their length, literals typically need to be [padded](##padding) to be useful.
 
 ### Operator expression
 
@@ -645,9 +646,9 @@ xor(true, true);   // false
 
 `{!rsh} xor(Bool, Bool)` returns `{!rsh} true` only when the inputs differ in value.
 
-### Padding
+### {#padding} Padding
 
-@{ref("rsh", "pad")}
+@{ref("rsh", "Bytes.pad")}
 ```reach
 Bytes(16).pad('abc');
 ```
@@ -660,7 +661,7 @@ Most of the time this is good, because it is a signal that you should use a `{!r
 
 But, sometimes it is necessary and useful to extend one byte string into a larger size.
 Each `{!rsh} Bytes` type has a `pad` field that is bound to a function that extends its argument to the needed size.
-A byte string extended in this way is called @{defn("padded")}, because it is extended with additional `NUL` bytes.
+A byte string extended in this way is called @{defn("padded")}, because it is extended with additional `NUL` bytes at the end of the string.
 
 ### Parenthesized expression
 
@@ -681,7 +682,7 @@ A @{defn("tuple")} literal, written `{!rsh} [ EXPR_0, ..., EXPR_n ]`, is an expr
 
 `{!rsh} ...expr` may appear inside tuple expressions, in which case the spreaded expression must evaluate to a tuple or array, which is spliced in place.
 
-### {#ref-programs-arrays} `array`
+### {#ref-programs-arrays} Arrays
 
 @{ref("rsh", "array")}
 ```reach
@@ -708,6 +709,8 @@ If `{!rsh} REF_EXPR` is a mapping and `{!rsh} IDX_EXPR` evaluates to an address,
 
 ### Array & tuple length: `Tuple.length`, `Array.length`, and `.length`
 
+@{ref("rsh", "Tuple.length")}
+@{ref("rsh", "Array.length")}
 @{ref("rsh", "length")}
 ```reach
 Tuple.length(tup);
@@ -724,6 +727,8 @@ Both may be abbreviated as `{!rsh} expr.length` where `{!rsh} expr` evaluates to
 
 ### Array & tuple update: `Tuple.set`, `Array.set`, and `.set`
 
+@{ref("rsh", "Tuple.set")}
+@{ref("rsh", "Array.set")}
 @{ref("rsh", "set")}
 ```reach
 Tuple.set(tup, idx, val);
@@ -742,6 +747,7 @@ Both may be abbreviated as `{!rsh} expr.set(idx, val)` where `{!rsh} expr` evalu
 
 ### Array element type: `Array.elemType` and `.elemType`
 
+@{ref("rsh", "Array.elemType")}
 @{ref("rsh", "elemType")}
 ```reach
 Array.elemType(arr)
@@ -756,6 +762,7 @@ The following methods are available on any @{ref("rsh", "Foldable")}`{!rsh} Fold
 
 ####  `Foldable.forEach` && `.forEach`
 
+@{ref("rsh", "Foldable.forEach")}
 @{ref("rsh", "forEach")}
 ```reach
 c.forEach(f)
@@ -769,6 +776,7 @@ This may be abbreviated as `{!rsh} c.forEach(f)`.
 
 #### `Foldable.all` && `.all`
 
+@{ref("rsh", "Foldable.all")}
 @{ref("rsh", "all")}
 ```reach
 Foldable.all(c, f)
@@ -782,6 +790,7 @@ by every element of the container, `c`.
 
 #### `Foldable.any` && `.any`
 
+@{ref("rsh", "Foldable.any")}
 @{ref("rsh", "any")}
 ```reach
 Foldable.any(c, f)
@@ -795,6 +804,7 @@ by at least one element of the container, `c`.
 
 #### `Foldable.or` && `.or`
 
+@{ref("rsh", "Foldable.or")}
 @{ref("rsh", "or")}
 ```reach
 Foldable.or(c)
@@ -807,6 +817,7 @@ c.or()
 
 #### `Foldable.and` && `.and`
 
+@{ref("rsh", "Foldable.and")}
 @{ref("rsh", "and")}
 ```reach
 Foldable.and(c)
@@ -819,6 +830,7 @@ c.and()
 
 #### `Foldable.includes` && `.includes`
 
+@{ref("rsh", "Foldable.includes")}
 @{ref("rsh", "includes")}
 ```reach
 Foldable.includes(c, x)
@@ -832,6 +844,7 @@ the element, `x`.
 
 #### `Foldable.count` && `.count`
 
+@{ref("rsh", "Foldable.count")}
 @{ref("rsh", "count")}
 ```reach
 Foldable.count(c, f)
@@ -845,6 +858,7 @@ satisfy the predicate, `f`.
 
 #### `Foldable.size` && `.size`
 
+@{ref("rsh", "Foldable.size")}
 @{ref("rsh", "size")}
 ```reach
 Foldable.size(c)
@@ -857,6 +871,7 @@ c.size()
 
 #### `Foldable.min` && `.min`
 
+@{ref("rsh", "Foldable.min")}
 @{ref("rsh", "min")}
 ```reach
 Foldable.min(c)
@@ -869,6 +884,7 @@ c.min()
 
 #### `Foldable.max` && `.max`
 
+@{ref("rsh", "Foldable.max")}
 @{ref("rsh", "max")}
 ```reach
 Foldable.max(c)
@@ -881,6 +897,7 @@ c.max()
 
 #### `Foldable.sum` && `.sum`
 
+@{ref("rsh", "Foldable.sum")}
 @{ref("rsh", "sum")}
 ```reach
 Foldable.sum(c)
@@ -893,6 +910,7 @@ c.sum()
 
 #### `Foldable.product` && `.product`
 
+@{ref("rsh", "Foldable.product")}
 @{ref("rsh", "product")}
 ```reach
 Foldable.product(c)
@@ -905,6 +923,7 @@ c.product()
 
 #### `Foldable.average` && `.average`
 
+@{ref("rsh", "Foldable.average")}
 @{ref("rsh", "average")}
 ```reach
 Foldable.average(c)
@@ -922,7 +941,7 @@ following methods may be used with `{!rsh} Array`s.
 
 #### `Array.iota`
 
-@{ref("rsh", "iota")}
+@{ref("rsh", "Array.iota")}
 ```reach
 Array.iota(5)
 ```
@@ -931,9 +950,9 @@ Array.iota(5)
 For example, `{!rsh} Array.iota(4)` returns `{!rsh} [0, 1, 2, 3]`.
 The given `{!rsh} len` must evaluate to an integer at compile-time.
 
-#### `Array.replicate` && `.replicate`
+#### `Array.replicate`
 
-@{ref("rsh", "Array_replicate")}@{ref("rsh", "replicate")}
+@{ref("rsh", "Array_replicate")}@{ref("rsh", "Array.replicate")}
 ```reach
 Array.replicate(5, "five")
 Array_replicate(5, "five")
@@ -945,6 +964,7 @@ The given `{!rsh} len` must evaluate to an integer at compile-time.
 
 #### `Array.concat` && `.concat`
 
+@{ref("rsh", "Array.concat")}
 @{ref("rsh", "concat")}
 ```reach
 Array.concat(x, y)
@@ -956,7 +976,7 @@ This may be abbreviated as `{!rsh} x.concat(y)`.
 
 #### `Array.empty`
 
-@{ref("rsh", "Array_empty")}@{ref("rsh", "empty")}
+@{ref("rsh", "Array_empty")}@{ref("rsh", "Array.empty")}
 ```reach
 Array_empty
 Array.empty
@@ -968,6 +988,7 @@ It may also be written `{!rsh} Array_empty`.
 
 #### `Array.zip` && `.zip`
 
+@{ref("rsh", "Array.zip")}
 @{ref("rsh", "zip")}
 ```reach
 Array.zip(x, y)
@@ -979,6 +1000,7 @@ This may be abbreviated as `{!rsh} x.zip(y)`.
 
 #### `Array.map` && `.map`
 
+@{ref("rsh", "Array.map")}
 @{ref("rsh", "map")}
 ```reach
 Array.map(arr, f)
@@ -994,6 +1016,7 @@ For example, `{!rsh} Array.iota(4).map(Array.iota(4), add)` returns `{!rsh} [0, 
 
 #### `Array.mapWithIndex` && `.mapWithIndex`
 
+@{ref("rsh", "Array.mapWithIndex")}
 @{ref("rsh", "mapWithIndex")}
 ```reach
 Array.mapWithIndex(arr, f)
@@ -1006,6 +1029,7 @@ Unlike `{!rsh} Array.map`, this function is not generalized to an arbitrary numb
 
 #### `Array.forEachWithIndex` && `.forEachWithIndex`
 
+@{ref("rsh", "Array.forEachWithIndex")}
 @{ref("rsh", "forEachWithIndex")}
 ```reach
 Array.forEachWithIndex(arr, f)
@@ -1018,6 +1042,7 @@ Unlike `{!rsh} Array.forEach`, this function is not generalized to an arbitrary 
 
 #### `Array.reduce` && `.reduce`
 
+@{ref("rsh", "Array.reduce")}
 @{ref("rsh", "reduce")}
 ```reach
 Array.reduce(arr, z, f)
@@ -1033,6 +1058,7 @@ For example, `{!rsh} Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x 
 
 #### `Array.reduceWithIndex` && `.reduceWithIndex`
 
+@{ref("rsh", "Array.reduceWithIndex")}
 @{ref("rsh", "reduceWithIndex")}
 ```reach
 Array.reduceWithIndex(arr, z, f)
@@ -1045,6 +1071,7 @@ Unlike `{!rsh} Array.reduce`, this function is not generalized to an arbitrary n
 
 #### `Array.indexOf` && `.indexOf`
 
+@{ref("rsh", "Array.indexOf")}
 @{ref("rsh", "indexOf")}
 ```reach
 Array.indexOf(arr, x)
@@ -1057,6 +1084,7 @@ the value is not present in the array, `{!rsh} None` is returned.
 
 #### `Array.findIndex` && `.findIndex`
 
+@{ref("rsh", "Array.findIndex")}
 @{ref("rsh", "findIndex")}
 ```reach
 Array.findIndex(arr, f)
@@ -1069,6 +1097,7 @@ no value in the array satisfies the predicate, `{!rsh} None` is returned.
 
 #### `Array.find` && `.find`
 
+@{ref("rsh", "Array.find")}
 @{ref("rsh", "find")}
 ```reach
 Array.find(arr, f)
@@ -1081,6 +1110,7 @@ array satisfies the predicate, `{!rsh} None` is returned.
 
 #### `Array.withIndex` && `.withIndex`
 
+@{ref("rsh", "Array.withIndex")}
 @{ref("rsh", "withIndex")}
 ```reach
 Array.withIndex(arr)
@@ -1093,6 +1123,7 @@ is paired with its index. For example, `{!rsh} array(Bool, [false, true]).withIn
 
 #### `Array.slice` && `.slice`
 
+@{ref("rsh", "Array.slice")}
 @{ref("rsh", "slice")}
 ```reach
 Array.slice(arr, start, length)
@@ -1109,6 +1140,7 @@ operations and those of `{!rsh} Foldable` within the `{!rsh} invariant` of a `{!
 
 #### `Map.reduce` && `.reduce`
 
+@{ref("rsh", "Map.reduce")}
 ```reach
 Map.reduce(map, z, f)
 map.reduce(z, f)
@@ -1190,6 +1222,7 @@ accesses the `FIELD` @{defn("field")} of object OBJ.
 
 ### `Object.set`
 
+@{ref("rsh", "Object.set")}
 @{ref("rsh", "Object_set")}
 ```reach
 Object.set(obj, fld, val);
@@ -1202,6 +1235,7 @@ except that field `{!rsh} fld` is replaced with `{!rsh} val`.
 
 ### `Object.setIfUnset`
 
+@{ref("rsh", "Object.setIfUnset")}
 @{ref("rsh", "Object_setIfUnset")}
 ```reach
 Object.setIfUnset(obj, fld, val);
@@ -1213,6 +1247,7 @@ except that field `{!rsh} fld` is `{!rsh} val` if `{!rsh} fld` is not already pr
 
 ### `Object.has`
 
+@{ref("rsh", "Object.has")}
 ```reach
 Object.has(obj, fld);
 ```
@@ -1242,7 +1277,7 @@ Data instances are consumed by `{!rsh} switch` statements and `{!rsh} match` exp
 
 ### `Maybe`
 
-@{ref("rsh", "Maybe")}@{ref("rsh", "Some")}@{ref("rsh", "None")}@{ref("rsh", "fromMaybe")}
+@{ref("rsh", "Maybe")}@{ref("rsh", "Maybe.Some")}@{ref("rsh", "Maybe.None")}@{ref("rsh", "fromMaybe")}
 ```reach
 const MayInt = Maybe(UInt);
 const bidA = MayInt.Some(42);
@@ -1296,6 +1331,9 @@ either return the application of the function, `{!rsh} f`, to the `{!rsh} Some` 
 
 ### `Either`
 
+@{ref("rsh", "Either")}
+@{ref("rsh", "Either.Left")}
+@{ref("rsh", "Either.Right")}
 `{!rsh} Either` is defined by
 ```reach
 export const Either = (A, B) => Data({Left: A, Right: B});
@@ -1777,30 +1815,43 @@ int(Neg, 4); // represents -4
  4;          // represents 4 : UInt
 ```
 
+@{ref("rsh", "iadd")}
  `{!rsh} iadd(x, y)` adds the `{!rsh} Int` `x` and the `{!rsh} Int` `y`.
 
+@{ref("rsh", "isub")}
  `{!rsh} isub(x, y)` subtracts the `{!rsh} Int` `y` from the `{!rsh} Int` `x`.
 
+@{ref("rsh", "imul")}
  `{!rsh} imul(x, y)` multiplies the `{!rsh} Int` `x` and the `{!rsh} Int` `y`.
 
+@{ref("rsh", "idiv")}
  `{!rsh} idiv(x, y)` divides the `{!rsh} Int` `x` by the `{!rsh} Int` `y`.
 
+@{ref("rsh", "imod")}
  `{!rsh} imod(x, y)` finds the remainder of dividing the `{!rsh} Int` `x` by the `{!rsh} Int` `y`.
 
+@{ref("rsh", "ilt")}
  `{!rsh} ilt(x, y)` determines whether `x` is less than `y`.
 
+@{ref("rsh", "ile")}
  `{!rsh} ile(x, y)` determines whether `x` is less than or equal to `y`.
 
+@{ref("rsh", "igt")}
  `{!rsh} igt(x, y)` determines whether `x` is greather than `y`.
 
+@{ref("rsh", "ige")}
  `{!rsh} ige(x, y)` determines whether `x` is greater than or equal to `y`.
 
+@{ref("rsh", "ieq")}
  `{!rsh} ieq(x, y)` determines whether `x` is equal to `y`.
 
+@{ref("rsh", "ieq")}
  `{!rsh} ine(x, y)` determines whether `x` is not equal to `y`.
 
+@{ref("rsh", "imax")}
  `{!rsh} imax(x, y)` returns the larger of two `{!rsh} Int`s.
 
+@{ref("rsh", "abs")}
  `{!rsh} abs(i)` returns the absolute value of an `{!rsh} Int`. The return value is of type `{!rsh} UInt`.
 
 ### Fixed-Point Numbers
@@ -1859,10 +1910,13 @@ fxunify(x, y);    // => [ 1000, 824.345, 45.670 ]
 to use the same scale. The larger scale of the two arguments will be chosen. The function will return a `3-tuple` consisting
 of the common scale and the newly scaled values.
 
+@{ref("rsh", "fxadd")}
  `{!rsh} fxadd(x, y)` adds two fixed point numbers.
 
+@{ref("rsh", "fxsub")}
  `{!rsh} fxsub(x, y)` subtracts two fixed point numbers.
 
+@{ref("rsh", "fxmul")}
  `{!rsh} fxmul(x, y)` multiplies two fixed point numbers.
 
 @{ref("rsh", "fxdiv")}
@@ -1874,10 +1928,13 @@ fxdiv(34.56, 1.234, 100000) // => 28.0064
  `{!rsh} fxdiv(x, y, scale_factor)` divides two fixed point numbers. The numerator, `x`,
 will be multiplied by the scale factor to provide a more precise answer. For example,
 
+@{ref("rsh", "fxmod")}
  `{!rsh} fxmod(x, y)` finds the remainder of dividing `x` by `y`.
 
+@{ref("rsh", "fxfloor")}
  `{!rsh} fxfloor(x)` returns the greatest integer not greater than `x`.
 
+@{ref("rsh", "fxsqrt")}
  `{!rsh} fxsqrt(x, k)` approximates the sqrt of the fixed number, `x`, using
 `k` iterations of the `{!rsh} sqrt` algorithm.
 
@@ -1894,6 +1951,7 @@ at compile time, which represents the number of iterations the algorithm should 
 The `scalePrecision` argument must be a `UInt` and represents the scale of the return value. Choosing a larger
 `scalePrecision` allows for more precision when approximating the power, as demonstrated in the example below:
 
+@{ref("rsh", "fxpowi")}
  `{!rsh} fxpowi(base, power, precision)` approximates the power of the fixed number, `base`,
 raised to the `{!rsh} Int`, `power`. The third argument must be a `{!rsh} UInt` whose value is known
 at compile time, which represents the number of iterations the algorithm should perform. For reference, `6` iterations
@@ -1906,21 +1964,28 @@ provides enough accuracy to calculate up to `2^64 - 1`, so the largest power it 
 the fixed number, `base`, raised to the `{!rsh} UInt`, `power`. The third
 argument must be a `{!rsh} UInt` whose value is known at compile time.
 
+@{ref("rsh", "fxcmp")}
  `{!rsh} fxcmp(op, x, y)` applies the comparison
 operator to the two fixed point numbers after unifying their scales.
 
 There are convenience methods defined for comparing fixed point numbers:
 
+@{ref("rsh", "fxlt")}
  `{!rsh} fxlt(x, y)` tests whether `x` is less than `y`.
 
+@{ref("rsh", "fxle")}
  `{!rsh} fxle(x, y)` tests whether `x` is less than or equal to `y`.
 
+@{ref("rsh", "fxgt")}
  `{!rsh} fxgt(x, y)` tests whether `x` is greater than `y`.
 
+@{ref("rsh", "fxge")}
  `{!rsh} fxge(x, y)` tests whether `x` is greater than or equal to `y`.
 
+@{ref("rsh", "fxeq")}
  `{!rsh} fxeq(x, y)` tests whether `x` is equal to `y`.
 
+@{ref("rsh", "fxne")}
  `{!rsh} fxne(x, y)` tests whether `x` is not equal to `y`.
 
 ### Anybody
@@ -1944,6 +2009,9 @@ In an application without any participant classes, `{!rsh} Anybody` instead woul
 An `{!rsh} Interval` is defined by
 
 @{ref("rsh", "Interval")}
+@{ref("rsh", "isInterval")}
+@{ref("rsh", "Closed")}
+@{ref("rsh", "Open")}
 ```reach
 export const Interval = Tuple(IntervalType, Int, Int, IntervalType);
 ```
@@ -1969,6 +2037,11 @@ const i3 = intervalCO(-10, +10);
 
 For convenience, Reach provides a number of functions for constructing intervals:
 
+@{ref("rsh", "interval")}
+@{ref("rsh", "intervalCC")}
+@{ref("rsh", "intervalCO")}
+@{ref("rsh", "intervalOC")}
+@{ref("rsh", "intervalOO")}
  `{!rsh} interval(IntervalType, Int, Int, IntervalType)` constructs an interval where the first and second argument
 represent the left endpoint and whether it's open or closed; the third and fourth argument represent the right endpoint and whether it's open or closed.
 
@@ -1982,12 +2055,20 @@ represent the left endpoint and whether it's open or closed; the third and fourt
 
 #### Accessors
 
+@{ref("rsh", "leftEndpoint")}
+@{ref("rsh", "rightEndpoint")}
  `{!rsh} leftEndpoint(i)` will return the `{!rsh} Int` that represents the left endpoint of an interval.
 
  `{!rsh} rightEndpoint(i)` will return the `{!rsh} Int` that represents the right endpoint of an interval.
 
 #### Relational Operations
 
+@{ref("rsh", "intervalEq")}
+@{ref("rsh", "intervalNe")}
+@{ref("rsh", "intervalLt")}
+@{ref("rsh", "intervalLte")}
+@{ref("rsh", "intervalGt")}
+@{ref("rsh", "intervalGte")}
 Intervals may be compared with the following functions:
 
  `{!rsh} intervalEq(l, r)` tests whether the intervals are equal.
@@ -2004,6 +2085,10 @@ Intervals may be compared with the following functions:
 
 #### Arithmetic Operations
 
+@{ref("rsh", "intervalAdd")}
+@{ref("rsh", "intervalSub")}
+@{ref("rsh", "intervalMul")}
+@{ref("rsh", "intervalDiv")}
  `{!rsh} intervalAdd(l, r)` adds the two intervals.
 
  `{!rsh} intervalSub(l, r)` subtracts the two intervals.

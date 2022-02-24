@@ -86,10 +86,11 @@ const normalizeScope = (s) => {
 };
 
 const xrefs = {};
+const freshXrefScopeDict = () => ({"xrefs": {}, "prefixes": {}});
 const xrefPut = (s, t, v) => {
   const ns = normalizeScope(s);
-  if ( ! xrefs[ns] ) { xrefs[ns] = {}; }
-  const e = xrefs[ns][t];
+  if ( ! xrefs[ns] ) { xrefs[ns] = freshXrefScopeDict(); }
+  const e = xrefs[ns].xrefs[t];
   if ( e !== undefined ) {
     const es = JSON.stringify(e);
     const vs = JSON.stringify(v);
@@ -97,12 +98,22 @@ const xrefPut = (s, t, v) => {
       fail(`Duplicated xref`, s, t, e, v);
     }
   }
-  xrefs[ns][t] = v;
+  if ( v.title == "" ){
+    fail(`Xref insertion with empty title`, s, t, v)
+  }
+  const parts = t.split(".");
+  for (let i = 1; i < parts.length; i++){
+    const prefix = parts.slice(0,i).join(".");
+    xrefs[ns].prefixes[prefix] = true;
+  }
+  xrefs[ns]["xrefs"][t] = v;
 };
-const xrefGetMaybe = (s, t) => {
+const xrefGetInfo = (xrefsOrPrefixes, s, t) => {
   const ns = normalizeScope(s);
-  return (xrefs[ns] || {})[t];
+  return (xrefs[ns] || freshXrefScopeDict())[xrefsOrPrefixes][t];
 };
+const xrefGetIsPrefix = (s, t) => xrefGetInfo("prefixes", s, t);
+const xrefGetMaybe = (s, t) => xrefGetInfo("xrefs", s, t);
 const xrefGet = (s, t) => {
   const r = xrefGetMaybe(s, t);
   if ( r === undefined ) {
@@ -195,7 +206,8 @@ const processXRefs = ({here}) => (tree) => {
         const cp = c0v.indexOf("} ", 2);
         t = c0v.slice(2, cp);
         v = c0v.slice(cp+2);
-        xrefPut('h', t, { title: v, path: `${h}#${t}` });
+        const xrefTitle = v + cs.slice(1).map((x) => x.value).join(' ');
+        xrefPut('h', t, { title: xrefTitle, path: `${h}#${t}` });
       }
       if ( t === 'on-this-page' ) {
         fail(here, 'uses reserved id', t);
@@ -223,13 +235,13 @@ const writeFileMkdir = async (p, c) => {
 
 const sher =
   await shiki.getHighlighter({
-    theme: 'github-light',
+    theme: 'css-variables',
     langs: languages,
   });
 const shikiHighlight = async (code, lang) => {
   const fc = sher.codeToHtml(code, lang);
   return fc
-    .replace('<pre class="shiki" style="background-color: #ffffff"><code>', '')
+    .replace('<pre class="shiki" style="background-color: var(--shiki-color-background)"><code>', '')
     .replaceAll('<span class="line">', '')
     .replaceAll('</span></span>', '</span>')
     .replace('</code></pre>', '');
@@ -329,6 +341,9 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
 
   const seclink = (t) => {
     const { path, title } = xrefGet('h', t);
+    if (title == "") {
+      fail("seclink with empty title linked to: ", path)
+    }
     return `[${title}](${path})`;
   };
 
@@ -396,6 +411,14 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     return s.outerHTML;
   };
 
+  const externalRef = (scope, symbol, url) => {
+    xrefPut(scope, symbol, {
+      title: `${scope}: ${symbol}`,
+      path: url,
+    });
+    return "";
+  };
+
   const directive_note = (node) => {
     const data = node.data;
     data.hName = "div";
@@ -432,15 +455,15 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
   const generateIndex = () => {
     const r = [];
     for ( const s in xrefs ) {
-      for ( const t in xrefs[s] ) {
-        const { title, path } = xrefs[s][t];
+      for ( const t in xrefs[s].xrefs ) {
+        const { title, path } = xrefs[s].xrefs[t];
         r.push(`1. [${title}](${path})`);
       }
     }
     return r.join(`\n`);
   };
 
-  const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, ref, directive_note, directive_testQ, directive_testA, generateIndex };
+  const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, externalRef, ref, directive_note, directive_testQ, directive_testA, generateIndex };
 
   const expanderDirective = () => (tree) => {
     visit(tree, (node) => {
@@ -560,9 +583,15 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
 
   // Process code snippets.
   const linkifySpans = (elem, language) => {
+    const activePrefixes = [];
     const linkifySpan = (s, language) => {
-      const text = s.textContent
-      const ref = xrefGetMaybe(language, text);
+      const text = s.textContent.startsWith(".") ?
+            s.textContent.substring(1) :
+            s.textContent;
+      const prefixedTexts = activePrefixes.map((p) => p + "." + text);
+      prefixedTexts.push(text);
+      const refs = prefixedTexts.map((t) => xrefGetMaybe(language, t));
+      const ref = refs.find((r) => r)
       if (ref !== undefined) {
         const a = doc.createElement('a');
         a.href = ref.path;
@@ -570,6 +599,12 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
         a.innerHTML = s.outerHTML;
         s.outerHTML = a.outerHTML;
       }
+      for (const t of prefixedTexts) {
+        if (xrefGetIsPrefix(language, t) && ! activePrefixes.includes(t)) {
+          activePrefixes.push(t);
+        }
+      }
+
     }
     for (const s of elem.querySelectorAll('span')) {
       linkifySpan(s, language);

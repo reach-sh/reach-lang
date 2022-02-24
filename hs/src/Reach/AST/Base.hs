@@ -13,7 +13,7 @@ import qualified Data.List as List
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import GHC.Generics
-import GHC.Stack (HasCallStack)
+import GHC.Stack (callStack, HasCallStack, prettyCallStack)
 import Language.JavaScript.Parser
 import Reach.JSOrphans ()
 import Reach.Pretty
@@ -22,6 +22,7 @@ import Reach.UnsafeUtil
 import Reach.Util (makeErrCode)
 import Safe (atMay)
 import qualified System.Console.Pretty as TC
+import Control.Exception (Exception, throw)
 
 --- Source Information
 data ReachSource
@@ -95,15 +96,6 @@ instance Show ImpossibleError where
 instance Pretty ImpossibleError where
   pretty = viaShow
 
-data CompilationError = CompilationError
-  { ce_suggestions :: [String]
-  , ce_errorMessage :: String
-  , ce_position :: [Int]
-  , ce_offendingToken :: Maybe String
-  , ce_errorCode :: String
-  }
-  deriving (Show, Generic, ToJSON)
-
 class ErrorMessageForJson a where
   errorMessageForJson :: Show a => a -> String
   errorMessageForJson = show
@@ -162,23 +154,53 @@ getErrorMessage mCtx src isWarning ce = do
       <> hardline
       <> docsUrl
 
+
+data CompilationError = CompilationError
+  { ce_suggestions :: [String]
+  , ce_errorMessage :: String
+  , ce_position :: [Int]
+  , ce_offendingToken :: Maybe String
+  , ce_errorCode :: String
+  }
+  deriving (Show, Generic, ToJSON)
+
+makeCompilationError :: (ErrorSuggestions a, ErrorMessageForJson a, Show a, HasErrorCode a) => SrcLoc -> a -> CompilationError
+makeCompilationError src err =
+  CompilationError
+    { ce_suggestions = snd $ errorSuggestions err
+    , ce_offendingToken = fst $ errorSuggestions err
+    , ce_errorMessage = errorMessageForJson err
+    , ce_position = srcloc_line_col src
+    , ce_errorCode = makeErrCode (errPrefix err) (errIndex err)
+    }
+
+encodeJSONString :: ToJSON a => a -> String
+encodeJSONString = map w2c . LB.unpack . encode
+
+makeErrorJson :: (ErrorSuggestions a, ErrorMessageForJson a, Show a, HasErrorCode a) => SrcLoc -> a -> String
+makeErrorJson src err = encodeJSONString $ makeCompilationError src err
+
+data CompileErrorException = CompileErrorException
+  { cee_error :: CompilationError
+  , cee_pretty :: String
+  }
+
+instance Show CompileErrorException where
+  show =
+    case unsafeIsErrorFormatJson of
+      True -> ("error: " ++) . encodeJSONString
+      False -> cee_pretty
+
+instance Exception CompileErrorException
+
+instance ToJSON CompileErrorException where
+  toJSON = toJSON . cee_error
+
 expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
-expect_throw mCtx src ce =
-  case unsafeIsErrorFormatJson of
-    True ->
-      error $
-        "error: "
-          ++ (map w2c $
-                LB.unpack $
-                  encode $
-                    CompilationError
-                      { ce_suggestions = snd $ errorSuggestions ce
-                      , ce_offendingToken = fst $ errorSuggestions ce
-                      , ce_errorMessage = errorMessageForJson ce
-                      , ce_position = srcloc_line_col src
-                      , ce_errorCode = makeErrCode (errPrefix ce) (errIndex ce)
-                      })
-    False -> error $ getErrorMessage mCtx src False ce
+expect_throw mCtx src err = throw CompileErrorException {..}
+  where
+    cee_pretty = getErrorMessage mCtx src False err ++ "\n" ++ prettyCallStack callStack
+    cee_error = makeCompilationError src err
 
 expect_thrown :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => SrcLoc -> a -> b
 expect_thrown = expect_throw Nothing

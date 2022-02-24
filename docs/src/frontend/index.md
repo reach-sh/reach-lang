@@ -302,6 +302,17 @@ balanceOf(acc, token?) => Promise<BigNumber>
 Promises the balance of network tokens (or non-network tokens if `{!js} token` is provided) held by the account given by a Reach account abstraction provided by the `{!js} acc` argument.
 
 ---
+@{ref("js", "balancesOf")}
+```js
+balancesOf(acc: Account, tokens: Array<Token | null>) => Promise<Array<BigNumber>>
+```
+Promises an array of balances that corresponds with the provided array of tokens, `{!js} tokens`,
+for a given account `{!js} acc`.
+If `{!js} tokens` contains a `{!js} null`,
+the corresponding position in the output array will contain the account's balance of network tokens.
+This function is more efficient for getting multiple token balances than repeated calls to `{!js} balanceOf`.
+
+---
 @{ref("js", "minimumBalanceOf")}
 ```js
 minimumBalanceOf(acc) => Promise<BigNumber>
@@ -974,9 +985,9 @@ The following exports are for dealing with network tokens.
 standardUnit // string
 atomicUnit // string
 minimumBalance // atomicUnitAmount
-parseCurrency(standardUnitAmount, int) => atomicUnitAmount
-formatCurrency(atomicUnitAmount, int) => string  // display amount in standard unit
-formatWithDecimals(atomicUnitAmount, int, tokenDecimals: int) => string  // display amount in standard unit (decimal value) of a token
+parseCurrency(standardUnitAmount: int) => atomicUnitAmount
+formatCurrency(atomicUnitAmount: int) => string  // display amount in standard unit
+formatWithDecimals(atomicUnitAmount: int, tokenDecimals: int) => string  // display amount of atomic unit with custom decimal place
 ```
 
 These functions handle amounts in a network's standard unit and its atomic unit.
@@ -994,7 +1005,7 @@ BigNumber is used to represet values in WEI.
 Quantities of a network token should always be passed into Reach
 in the token's atomic unit.
 
-`{!js} bigNumberify` is transparently applied to `{!js} formatCurrency`'s first argument.
+`{!js} bigNumberify` is transparently applied to `{!js} formatCurrency`'s and `{!js} formatWithDecimals`'s first arguments.
 
 ---
 @{ref("js", "formatAddress")}
@@ -1009,26 +1020,43 @@ There is no corresponding `{!js} parseAddress` function because
 the user-friendly form is also accepted from the frontend
 in all places that Reach expects an address.
 
-### {#ref-frontends-js-ask} `ask.mjs`
+### {#ref-frontends-js-ask} `ask`
 
-The Reach JavaScript standard library also provides the helper module `@reach-sh/stdlib/ask.mjs` for constructing console interfaces to your frontends.
+The Reach JavaScript standard library provides the `ask` object for constructing console interfaces to your frontends.
 
 @{ref("js", "ask")}
 ```js
-import * as ask from '@reach-sh/stdlib/ask.mjs';
+import {ask} from '@reach-sh/stdlib';
 ```
 
 It provides the following exports:
 
-@{ref("js", "ask")}@{ref("js", "yesno")}@{ref("js", "done")}
 ```js
-ask(string, (string => result)) => Promise<result>
-yesno(string) => boolean
-done() => null
+ask.ask(string, (string => result)) => Promise<result>
+ask.yesno(string) => boolean
+ask.done() => null
 ```
 
-`{!js} ask` is an asynchronous function that asks a question on the console and returns a Promise for the first result that its second argument does not error on.
+@{ref("js", "ask.ask")}
+`{!js} ask.ask` is an asynchronous function that asks a question on the console and returns a Promise for the first result that its second argument does not error on.
 
-`{!js} yesno` is an argument appropriate to give as the second argument to `{!js} ask` that parses "Yes"/"No" answers.
+@{ref("js", "ask.yesno")}
+`{!js} ask.yesno` is an argument appropriate to give as the second argument to `{!js} ask.ask` that parses "Yes"/"No" answers.
 
-`{!js} done` indicates that no more questions will be asked.
+@{ref("js", "ask.done")}
+`{!js} ask.done` indicates that no more questions will be asked.
+
+```js
+(async () => {
+  const isAlice = await ask.ask(
+      `Are you Alice?`,
+      ask.yesno
+    );
+    
+    // Do something
+
+  ask.done();
+})();
+```
+
+Read the [Interaction and Independence](##tut-8) section the Rock, Paper, Scissors tutorial for a longer use case example of the `{!js} ask` object.

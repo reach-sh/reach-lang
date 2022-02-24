@@ -617,7 +617,6 @@ const mkKont = async () =>
   });
 
 
-(async () => {
   const l          = loadStdlib(process.env);
   const account    = RPC.mkKont();
   const token      = RPC.mkKont();
@@ -679,4 +678,3 @@ const mkKont = async () =>
       });
     }
   });
-})();

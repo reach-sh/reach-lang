@@ -8,9 +8,10 @@ where
 import Data.Char (toLower, toUpper)
 import Data.List (intercalate)
 import Data.List.Extra (splitOn)
+import Data.Maybe (fromMaybe)
 import GHC.Generics
-import Reach.AST.Base (HasErrorCode (..), SrcLoc, getErrorMessage)
-import Reach.UnsafeUtil (unsafeTermSupportsColor)
+import Reach.AST.Base (ErrorSuggestions (..), ErrorMessageForJson, HasErrorCode (..), makeErrorJson, SrcLoc, getErrorMessage)
+import Reach.UnsafeUtil (unsafeIsErrorFormatJson, unsafeTermSupportsColor)
 import qualified System.Console.Pretty as TC
 import System.IO (hPutStrLn)
 import System.IO.Extra (stderr)
@@ -19,9 +20,14 @@ capitalized :: String -> String
 capitalized [] = []
 capitalized (h : t) = toUpper h : map toLower t
 
-camlCase :: String -> [String] -> String
-camlCase _ [] = ""
-camlCase acc (h : t) = acc <> capitalized h <> camlCase acc t
+
+snakeToCamelCase :: [Char] -> [Char]
+snakeToCamelCase name = case splitOn "_" name of
+  [] -> name
+  h : t -> camlCase h t
+    where
+      camlCase _ [] = ""
+      camlCase acc (h' : t') = acc <> capitalized h' <> camlCase acc t'
 
 data Deprecation
   = D_ParticipantTuples
@@ -38,7 +44,7 @@ data Warning
   | W_ALGOConservative [String]
   | W_NoPublish
   | W_ExternalObject
-  deriving (Eq, Generic)
+  deriving (Eq, Generic, ErrorMessageForJson)
 
 instance HasErrorCode Warning where
   errPrefix = const "RW"
@@ -50,15 +56,22 @@ instance HasErrorCode Warning where
     W_NoPublish {} -> 4
     W_ExternalObject {} -> 5
 
+instance ErrorSuggestions Warning where
+  errorSuggestions w = case w of
+    W_Deprecated deprecation -> case deprecation of
+      D_Replaced old new -> (Just old, [new])
+      D_UntypedTimeArg -> (Nothing, ["relativeTime", "absoluteTime", "relativeSecs", "absoluteSecs"])
+      D_SnakeToCamelCase name -> (Just name, [snakeToCamelCase name])
+      _ -> (Nothing, [])
+    _ -> (Nothing, [])
+
 instance Show Deprecation where
   show = \case
     D_ParticipantTuples ->
       "Declaring Participants with a tuple is now deprecated. "
         <> "Please use `Participant(name, interface)` or `ParticipantClass(name, interface)`."
     D_SnakeToCamelCase name ->
-      let name' = case splitOn "_" name of
-            [] -> name
-            h : t -> camlCase h t
+      let name' = snakeToCamelCase name
        in "`" <> name <> "` is now deprecated. It has been renamed from snake case to camel case. Use `" <> name' <> "`."
     D_ReachAppArgs ->
       "Declaring a `Reach.App` with 3 arguments is now deprecated. Please specify one thunk."
@@ -80,13 +93,17 @@ instance Show Warning where
     W_ExternalObject -> "The `Object` type is internal to Reach. Use `Struct` instead for external interfaces."
 
 emitWarning :: Maybe SrcLoc -> Warning -> IO ()
-emitWarning at d = do
-  let msg =
-        case at of
-          Just at' -> getErrorMessage [] at' True d
-          Nothing -> do
-            let hasColor = unsafeTermSupportsColor
-            let style s = if hasColor then TC.style s else id
-            let color s = if hasColor then TC.color s else id
-            style TC.Bold (color TC.Yellow "WARNING") <> ": " <> show d
-  hPutStrLn stderr msg
+emitWarning at d =
+  case unsafeIsErrorFormatJson of
+    True ->
+      hPutStrLn stderr $ "warning: " ++ makeErrorJson (fromMaybe mempty at) d
+    False -> do
+      let msg =
+            case at of
+              Just at' -> getErrorMessage [] at' True d
+              Nothing -> do
+                let hasColor = unsafeTermSupportsColor
+                let style s = if hasColor then TC.style s else id
+                let color s = if hasColor then TC.color s else id
+                style TC.Bold (color TC.Yellow "WARNING") <> ": " <> show d
+      hPutStrLn stderr msg

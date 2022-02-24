@@ -1,4 +1,4 @@
-module Reach.AddCounts (add_counts, AC (..), ac_vdef, ac_visit) where
+module Reach.AddCounts (add_counts, AC (..), ac_vdef, ac_visit, ac_vls) where
 
 import Control.Monad.Reader
 import Data.IORef
@@ -48,6 +48,14 @@ ac_vdef okToDupe (DLV_Let _ v) = do
       let lc' = if okToDupe then lc else DVC_Many
       return $ DLV_Let lc' v
 
+ac_vl :: AppT DLVarLet
+ac_vl (DLVarLet _ v) = do
+  mvc <- ac_getCount v
+  return $ DLVarLet mvc v
+
+ac_vls :: AppT [DLVarLet]
+ac_vls = mapM ac_vl
+
 instance (AC a, Traversable t) => AC (t a) where
   ac = mapM ac
 
@@ -88,11 +96,11 @@ instance AC DLStmt where
       f' <- ac f
       ac_visit $ x
       return $ DL_ArrayMap at ans x a i f'
-    DL_ArrayReduce at ans x z b a f -> do
+    DL_ArrayReduce at ans x z b a i f -> do
       -- XXX remove if ans not used
       f' <- ac f
       ac_visit $ [x, z]
-      return $ DL_ArrayReduce at ans x z b a f'
+      return $ DL_ArrayReduce at ans x z b a i f'
     DL_Var at dv ->
       ac_getCount dv >>= \case
         Nothing -> skip at
@@ -249,14 +257,22 @@ instance AC CHandler where
   ac = \case
     C_Loop {..} -> fresh $ do
       body' <- ac cl_body
-      return $ C_Loop cl_at cl_svs cl_vars body'
+      svs' <- ac_vls cl_svs
+      vars' <- ac_vls cl_vars
+      return $ C_Loop cl_at svs' vars' body'
     C_Handler {..} -> fresh $ do
-      ch_body' <- ac ch_body
-      return $ C_Handler ch_at ch_int ch_from ch_last ch_svs ch_msg ch_timev ch_secsv ch_body'
+      body' <- ac ch_body
+      ac_visit ch_int
+      ac_visit ch_from
+      svs' <- ac_vls ch_svs
+      msg' <- ac_vls ch_msg
+      return $ C_Handler ch_at ch_int ch_from ch_last svs' msg' ch_timev ch_secsv body'
 
 instance {-# OVERLAPS #-} AC a => AC (DLinExportBlock a) where
-  ac (DLinExportBlock at vs a) =
-    DLinExportBlock at vs <$> ac a
+  ac (DLinExportBlock at vs a) = do
+    a' <- ac a
+    vs' <- mapM ac_vls vs
+    return $ DLinExportBlock at vs' a'
 
 instance AC EPProg where
   ac (EPProg at x ie et) =

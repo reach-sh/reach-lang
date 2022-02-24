@@ -9,7 +9,6 @@ mkdir -p "$MJS_DIR"
 for JS in dist/esm/*.js ; do
   cp "${JS}" "$MJS_DIR/$(basename "${JS}" .js).mjs"
 done
-cp ./*.mjs "$MJS_DIR/"
 
 # Remove the need for this and instead turn off ESLint or use typescript-eslint
 npm run beautify

@@ -20,7 +20,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe, maybeToList)
 import Data.Ord (comparing)
 import qualified Data.Set as S
-import Reach.AST.DLBase (DLType, DLVar, varType)
+import Reach.AST.DLBase
 import Reach.AST.PL
 import Reach.Util (impossible)
 import Safe.Foldable (maximumByMay)
@@ -65,7 +65,11 @@ buildInterference liveAfter = \case
   C_Loop {..} : rst -> process cl_svs cl_body rst
   [] -> return ()
   where
-    process readVars body rst = do
+    process readVarls body rst = do
+      let notNothing = \case
+            DLVarLet (Just _) _ -> True
+            _ -> False
+      let readVars = map varLetVar $ filter notNothing readVarls
       addEdges readVars
       let readVarsS = S.fromList readVars
       let writtenVars = S.fromList $ getWrittenVars body
@@ -92,8 +96,8 @@ buildInterference liveAfter = \case
 
 getTypes :: CHandler -> [DLType]
 getTypes = \case
-  C_Handler {..} -> map varType ch_svs
-  C_Loop {..} -> map varType cl_svs
+  C_Handler {..} -> map varLetType ch_svs
+  C_Loop {..} -> map varLetType cl_svs
 
 makeInterferenceGraph :: M.Map Int CHandler -> App ()
 makeInterferenceGraph hs = do

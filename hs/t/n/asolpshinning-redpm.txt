@@ -1,0 +1,13 @@
+reachc: error[RE0088]: These types are mismatched:
+  expected: Tuple(UInt)
+       got: Tuple(UInt, Tuple(UInt, Token))
+
+  ./asolpshinning-redpm.rsh:13:13:block app
+
+  13|     yy.match({
+
+Trace:
+  in [unknown function] from (./asolpshinning-redpm.rsh:12:26:function exp) at (./asolpshinning-redpm.rsh:21:4:application)
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0088
+

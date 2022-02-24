@@ -1,8 +1,7 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
-(async () => {
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
   const startingBalance = stdlib.parseCurrency(100);
 
   const accAlice = await stdlib.newTestAccount(startingBalance);
@@ -14,4 +13,3 @@ import * as backend from './build/index.main.mjs';
       { ...stdlib.hasConsoleLogger },
     ),
   ]);
-})();
