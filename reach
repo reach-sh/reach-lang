@@ -61,7 +61,7 @@ for DEP in make curl docker docker-compose; do
 done
 
 if [ ! "$CIRCLECI" = "true" ] && [ "$(docker image ls -q $IMG)" = '' ]; then
-  if ! (docker pull "$IMG" && run_d update; run_s); then exit 1; fi
+  if ! docker pull "$IMG"; then exit 1; fi
 fi
 
 run_d "$@"
