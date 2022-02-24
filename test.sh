@@ -135,6 +135,7 @@ export REACH_BUILD_NO_CACHE=Y
 jb
 ci ALGO atomic-swap
 ci ALGO max-supply-precision
+c users/hamza4.rsh
 exit 0
 
 cdot users/algo-govt/index.rsh
