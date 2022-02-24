@@ -33,5 +33,13 @@ This file is the `o`utput one expects to see when evaluating `reach version-comp
 ##### **`$TARGET/REACH_VERSION`** (optional)
 `$TARGET/REACH_VERSION` can be used to override the CLI's `REACH_VERSION` environment variable-defaulting behavior.
 
+##### **`$TARGET/REACH_CONNECTOR_MODE`** (optional)
+`$TARGET/REACH_CONNECTOR_MODE` can be used to mark a given `reachsh/devnet-$conn` image as mandatory instead of optional.
+This has no effect if `$conn-live` is specified.
+
+##### **`$TARGET/SKIP`** (optional)
+`$TARGET/SKIP` is useful during development if you want to temporarily skip the given `$TARGET`.
+Make sure to eliminate this file before checking-in your code because it'll deliberately trigger a failure in CI.
+
 ##### **`$TARGET/reach`** (optional)
 `$TARGET/reach` can be used to exercise the CLI's script-checking behavior.
