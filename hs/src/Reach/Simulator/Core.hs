@@ -396,7 +396,6 @@ interpPrim = \case
     case actorid == consensusId of
       False -> do
         let locals = l_locals l
-        _ <- possible $ show $ V_Address $ l_acct $ saferMaybe "SELF_ADDRESS" $ M.lookup actorid locals
         return $ V_Address $ l_acct $ saferMaybe "SELF_ADDRESS" $ M.lookup actorid locals
       True -> do
         return $ V_Address $ simContract
