@@ -81,12 +81,14 @@ instance Show APICutError where
 
 type App = ReaderT Env IO
 
+data EWhileT = EWhileT (Maybe (EWhileT, DLBlock, ETail, ETail))
+
 data Env = Env
   { eWho :: SLPart
   , eSeenOut :: Bool
   , eSeenOutR :: IORef Bool
   , eSeenInR :: IORef Bool
-  , eWhile :: Maybe (DLBlock, ETail, ETail)
+  , eWhile :: EWhileT
   , eCounter :: Counter
   , eBeforeFirstTC :: Bool
   , eConsts :: Seq.Seq DLStmt
@@ -201,7 +203,7 @@ seek = \case
     many_ <$> ((:) <$> noMore (seek et_tc_cons) <*> (mapM seek $ fmap snd (maybeToList et_tc_from_mtime)))
   ET_While {..} -> do
     b' <-
-      local (\e -> e {eWhile = Just (et_w_cond, et_w_body, et_w_k)}) $
+      local (\e -> e {eWhile = EWhileT (Just (eWhile e, et_w_cond, et_w_body, et_w_k))}) $
         seek et_w_body
     k' <- seek et_w_k
     return $ many_ [b', k']
@@ -279,11 +281,17 @@ slurp = \case
       _ -> return ()
     fmap (ET_ToConsensus et_tc_at et_tc_from et_tc_prev Nothing et_tc_which et_tc_from_me et_tc_from_msg et_tc_from_out et_tc_from_timev et_tc_from_secsv et_tc_from_didSendv Nothing) <$> slurp et_tc_cons
   ET_While at asn cb b k ->
+    -- Why not set eWhile here (or in doWhile)?
+    --
+    -- We know we're going to stop at a commit() and the only point of eWhile
+    -- is to handle a continue, which we know isn't between us and the commit.
     doWhile at asn cb b k
   ET_Continue at asn ->
     asks eWhile >>= \case
-      Nothing -> impossible "continue not in while"
-      Just (cb, b, k) -> doWhile at asn cb b k
+      EWhileT Nothing -> impossible "continue not in while"
+      EWhileT (Just (ow, cb, b, k)) ->
+        local (\e -> e { eWhile = ow }) $
+          doWhile at asn cb b k
   where
     ensureSeen m = do
       asks eSeenOut >>= \case
@@ -321,7 +329,7 @@ apc hc eWho = \case
     let eSeenOut = False
     eSeenInR <- newIORef False
     eSeenOutR <- newIORef False
-    let eWhile = Nothing
+    let eWhile = EWhileT Nothing
     let eCounter = getCounter hc
     let eBeforeFirstTC = True
     let eConsts = mempty
