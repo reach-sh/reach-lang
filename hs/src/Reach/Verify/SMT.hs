@@ -610,7 +610,12 @@ display_fail tat f tk mmsg mrd mdv timeout = do
       pm_str_val <- parseModel2 pm
       lets <- (liftIO . readIORef) =<< asks ctxt_smt_trace
       lets' <- reverse . nubOrd . dropConstants pm_str_val <$> mapM recoverBindingInfo lets
-      smtTrace <- liftIO $ add_counts $ SMTTrace lets' tk dv
+      let tr = SMTTrace lets' tk dv
+      let doAddCounts = True
+      smtTrace <-
+        case doAddCounts of
+          True -> liftIO $ add_counts tr
+          False -> return tr
       pm_dv_val <-
         M.fromList
           <$> foldM
