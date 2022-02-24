@@ -1665,7 +1665,8 @@ ce = \case
         -- [ bal, rsh_bal, bal, rsh_bal ]
         op "<"
         -- [ bal, rsh_bal, {0, 1} ]
-        code "bz" [ cb_lab ]
+        -- Branch IF the bal < rsh_bal
+        code "bnz" [ cb_lab ]
         -- [ bal, rsh_bal ]
         op "-"
         -- This happens because of clawback

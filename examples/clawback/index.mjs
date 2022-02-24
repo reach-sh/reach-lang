@@ -1,22 +1,21 @@
 import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
+import * as fs from 'fs';
+
+const failingMethod = 2;
 
 const stdlib = loadStdlib(process.env);
 const pc = stdlib.parseCurrency;
 const b = pc(100);
 const balOf = async (acc, tok) => stdlib.balanceOf(acc, tok);
+const amt = pc(20);
 
+const algo = async (accAlice, ctcA) => {
+  const token = await stdlib.launchToken(accAlice, "Zorkmid", "ZMD", { clawback: accAlice });
+  console.log(`Launched token:`, token.id.toString());
 
-const algo = async (accAlice, ctcA, token) => {
   const { algosdk } = stdlib;
   const tokenId = token.id.toNumber();
-  const amt = pc(20);
-
-  const requestMoney = async (addr) => {
-    console.log(`Sending ${amt.toString()} to ${addr}`)
-    const address = stdlib.formatAddress(addr);
-    await stdlib.transfer(accAlice, address, amt, tokenId);
-  }
 
   const triggerClawback = async (addr, funds) => {
     console.log(`Clawback has been TRIGGERED!`);
@@ -46,52 +45,75 @@ const algo = async (accAlice, ctcA, token) => {
     const expectedBal = {
         0: amt,
         1: pc(0),
-        2: pc(0),
       }[idx];
-    stdlib.assert(bal.eq(expectedBal), "Expected correct balance");
+    stdlib.assert(bal.eq(expectedBal), `Expected correct balance: ${bal} == ${expectedBal}`);
     console.log(`Balance:`, bal.toString());
   }
 
-  await Promise.all([
-    backend.Alice(ctcA, {
-      token: tokenId,
-      requestMoney,
-      triggerClawback,
-      checkBal,
-      ...stdlib.hasConsoleLogger,
-    })
-  ]);
+  try {
+    await Promise.all([
+      backend.Alice(ctcA, {
+        amt,
+        token: tokenId,
+        triggerClawback,
+        checkBal,
+        ...stdlib.hasConsoleLogger,
+      })
+    ]);
+  } catch (e) {
+    const expFailMethod = `m${failingMethod}`;
+    stdlib.assert(e.toString().includes(expFailMethod));
+    console.log(`Error was thrown in the expected method: ${expFailMethod}`);
+    return;
+  }
+  stdlib.assert(false, "Expected an error to be thrown when transferring funds that were clawbacked");
 }
 
-const eth = async (accAlice, ctcA, token) => {
-  const tokenId = token.id;
+const eth = async (accAlice, ctcA) => {
+  const { ethers } = stdlib;
 
-  const requestMoney = async (addr) => {
-    console.log(`Request money`);
-    const address = stdlib.formatAddress(addr);
-    await stdlib.transfer(accAlice, address, pc(20), tokenId);
-  }
+  const myGasLimit = 5000000;
+  accAlice.setGasLimit(myGasLimit);
+  const supply = pc(30);
+
+  const compiled = JSON.parse(await fs.readFileSync('./build/index.sol.json'));
+  const remoteCtc = compiled["contracts"]["index.sol:ERC20"];
+  const remoteABI = remoteCtc["abi"];
+  const remoteBytecode = remoteCtc["bin"];
+  const factory = new ethers.ContractFactory(remoteABI, remoteBytecode, accAlice.networkAccount);
+  const contract = await factory.deploy("Zorkmid", "ZMD", { gasLimit: myGasLimit });
+  await contract.deployTransaction.wait();
+  const tokenId = contract.address;
+  await contract["mint"](supply);
 
   const triggerClawback = async (addr, funds) => {
-    console.log(`Clawback`);
+    console.log(`Clawback was triggered`, funds.toString());
+    await contract["closeOut"](addr);
   }
 
   const checkBal = async (addr) => {
-    console.log(`checkBal`);
-    // const bal = await balOf(addr, tokenId);
-    const bal = pc(0);
+    const bal = await contract["balanceOf"](addr);
+
     console.log(`Balance:`, bal.toString());
   }
 
-  await Promise.all([
-    backend.Alice(ctcA, {
-      token: tokenId,
-      requestMoney,
-      triggerClawback,
-      checkBal,
-      ...stdlib.hasConsoleLogger,
-    })
-  ]);
+  try {
+    await Promise.all([
+      backend.Alice(ctcA, {
+        token: tokenId,
+        amt,
+        triggerClawback,
+        checkBal,
+        ...stdlib.hasConsoleLogger,
+      })
+    ]);
+  } catch (e) {
+    const expFailMethod = `_reach_m${failingMethod}`;
+    stdlib.assert(e.toString().includes(expFailMethod));
+    console.log(`Error was thrown in the expected method: ${expFailMethod}`);
+    return;
+  }
+  stdlib.assert(false, "Expected an error to be thrown when transferring funds that were clawbacked");
 }
 
 (async () => {
@@ -99,16 +121,9 @@ const eth = async (accAlice, ctcA, token) => {
   const accAlice = await stdlib.newTestAccount(b);
   const ctcA = accAlice.contract(backend);
 
-  const token = await stdlib.launchToken(accAlice, "Zorkmid", "ZMD", { clawback: accAlice });
-  console.log(`Launched token:`, token.id.toString());
-
   if (stdlib.connector == 'ALGO') {
-    // Fails with:
-    //    logic eval error: invalid Asset reference 18233"
-    // I believe token needs to be specified as an offset in the foreign assets array.
-    // See: https://forum.algorand.org/t/asset-holding-get-doesnt-recognize-asset-id/3790
-    await algo(accAlice, ctcA, token);
+    await algo(accAlice, ctcA);
   } else {
-    await eth(accAlice, ctcA, token);
+    await eth(accAlice, ctcA);
   }
 })();
