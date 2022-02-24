@@ -305,10 +305,9 @@ const bindObjDetailsEvents = () => {
     const dets = document.querySelectorAll(".init-detail")
     const liv = {}
     for (const det of dets) {
-      let type = `V_Bytes`
+      let type = `V_` + det.dataset.initType
       let enter = det.value
       if (det.dataset.initType === 'UInt') {
-        type = 'V_UInt'
         enter = parseInt(enter)
 
       }
@@ -634,8 +633,7 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
                 <option value="tuple">Tuple</option>
                 <option value="object">Object</option>
                 <option value="data">Data</option>
-
-
+                <option value="struct">Struct</option>
               </select>
             </div>
 
