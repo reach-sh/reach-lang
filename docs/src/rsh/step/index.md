@@ -489,7 +489,7 @@ where:
 + `DOMAIN` is the the domain of the API member function.
 + `RET_FUN` is a function that returns a value to the API call. This function must be called.
 + `API_EXPR` is an expression that evaluates to an API member function.
-+ `{!rsh} call.pay` is like in `{!rsh} fork.pay`, `{!rsh} call.assume` is like in `{!rsh} fork.assume`, and `{!rsh} call.throwTimeout` is like in `{!rsh} fork.throwTimeout`.
++ `API_PAY_EXPR` and `API_ASSUME_EXPR` are like the corresponding parts in a `{!rsh} fork` statement, and `{!rsh} call.throwTimeout` is like in `{!rsh} fork.throwTimeout`.
 They are optional.
 
  `{!rsh} call` will call the given API member function, returning a pair, `{!rsh} [DOMAIN, RET_FUN]`.
