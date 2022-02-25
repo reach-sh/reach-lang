@@ -189,6 +189,7 @@ The `{!rsh} timeout` component must be included if `{!rsh} when` is not statical
 This ensures that your clients will eventually complete the program.
 If a consensus transfer is a guaranteed race between non-class participants and a participant class that _may_ attempt to transfer (i.e. `{!rsh} when` is not statically `{!rsh} false`), then a `{!rsh} timeout` may be explicitly omitted by writing `{!rsh} .timeout(false)`.
 
+@{ref("rsh", "throwTimeout")}
 `{!rsh} .throwTimeout` may be used in place of `{!rsh} .timeout`. It accepts a `{!rsh} DELAY_EXPR` and an `{!rsh} EXPR`, which will be thrown if a timeout should occur.
 If an `{!rsh} EXPR` is not provided, then `{!rsh} null` will be thrown.
 If a consensus transfer uses `{!rsh} .throwTimeout`, it must be within a try statement.
@@ -488,7 +489,7 @@ where:
 + `DOMAIN` is the the domain of the API member function.
 + `RET_FUN` is a function that returns a value to the API call. This function must be called.
 + `API_EXPR` is an expression that evaluates to an API member function.
-+ `API_PAY_EXPR`, `API_ASSUME_EXPR`, and `{!rsh} throwTimeout` are like the corresponding parts in a `{!rsh} fork` statement.
++ `{!rsh} call.pay` is like in `{!rsh} fork.pay`, `{!rsh} call.assume` is like in `{!rsh} fork.assume`, and `{!rsh} call.throwTimeout` is like in `{!rsh} fork.throwTimeout`.
 They are optional.
 
  `{!rsh} call` will call the given API member function, returning a pair, `{!rsh} [DOMAIN, RET_FUN]`.
