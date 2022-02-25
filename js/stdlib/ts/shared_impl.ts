@@ -459,7 +459,7 @@ export type TokenMetadata = {
 export type LaunchTokenOpts = {
   'decimals'?: number,
   'supply'?: unknown,
-  'clawback'?: any
+  'clawback'?: any,
   'url'?: string,
   'metadataHash'?: string,
 };
