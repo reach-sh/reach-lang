@@ -455,10 +455,13 @@ export type TokenMetadata = {
   supply: BigNumber,
   decimals: BigNumber,
 };
+
 export type LaunchTokenOpts = {
   'decimals'?: number,
   'supply'?: unknown,
   'clawback'?: any
+  'url'?: string,
+  'metadataHash'?: string,
 };
 
 export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
