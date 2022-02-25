@@ -378,6 +378,8 @@ require( claim, [msg] )
 This may only appear in a consensus step.
 It accepts an optional bytes argument, which is included in any reported violation.
 
+If a publication would violate the requirement, the consensus network rejects the transaction.
+
 ### `checkCommitment`
 
 @{ref("rsh", "checkCommitment")}
