@@ -1079,5 +1079,7 @@ The default is the maximum possible on the network.
 The default is no url.
 + `{!js} metadataHash` Algorand only. A hash of some metadata that is relevant to your asset.
 The default is no metadata hash.
++ `{!js} clawback` Algorand only. Address that can claw back holdings of the token.
+The default is no clawback address.
 
 For more information on Algorand-only options, see https://developer.algorand.org/docs/get-details/transactions/transactions/#asset-parameters.
