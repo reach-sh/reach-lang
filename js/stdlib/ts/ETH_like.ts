@@ -340,21 +340,20 @@ const balanceOf = async (acc: Account | Address, token: Token|false = false): Pr
   return balanceOfNetworkAccount(addressable, token);
 };
 
-const balanceOfNetworkAccount = async (networkAccount: any, token: Token|false = false) => {
-  if ( ! token && networkAccount.getBalance ) {
-    return bigNumberify(await networkAccount.getBalance());
-  }
-  const addr = (typeof networkAccount == 'string')
-                  ? networkAccount
-                  : await getAddr({networkAccount});
-  if (! addr) {
-    throw Error(`address missing. Got: ${networkAccount}`);
+const balanceOfNetworkAccount = async (arg: NetworkAccount | Address, token: Token|false = false) => {
+  const argIsString = typeof arg === 'string';
+  const addr = argIsString ? arg : await getAddr({networkAccount: arg});
+  if (! addr) { throw Error(`balanceOfNetworkAccount: address missing on ${arg}`); }
+
+  if ( ! token && !argIsString && arg.getBalance ) {
+    return bigNumberify(await arg.getBalance());
   }
 
   if ( ! token ) {
     const provider = await getProvider();
     return bigNumberify(await provider.getBalance(addr));
   } else {
+    const networkAccount = !argIsString ? arg : await createNetworkAccount();
     return await balanceOf_token(networkAccount, addr, token);
   }
 };
@@ -897,10 +896,13 @@ const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
   return await connectAccount(await _getDefaultFaucetNetworkAccount());
 });
 
+const createNetworkAccount = async (): Promise<NetworkAccount> => {
+  const provider = await getProvider();
+  return ethers.Wallet.createRandom().connect(provider);
+}
 const createAccount = async () => {
   debug(`createAccount with 0 balance.`);
-  const provider = await getProvider();
-  const networkAccount = ethers.Wallet.createRandom().connect(provider);
+  const networkAccount = await createNetworkAccount();
   return await connectAccount(networkAccount);
 }
 
@@ -1126,6 +1128,7 @@ function setCustomHttpEventHandler() {
 const ethLike = {
   ...ethLikeCompiled,
   ...providerLib,
+  doCall,
   getQueryLowerBound,
   setQueryLowerBound,
   getValidQueryWindow,

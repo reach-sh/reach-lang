@@ -136,6 +136,8 @@ jb
 ci ALGO atomic-swap
 ci ALGO max-supply-precision
 c users/hamza4.rsh
+ci CFX clawback
+ci ETH clawback
 exit 0
 
 cdot users/algo-govt/index.rsh
