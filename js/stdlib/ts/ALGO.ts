@@ -2172,7 +2172,7 @@ export const launchToken = async (accCreator: Account, name: string, sym: string
   const decimals = opts.decimals ?? 6;
   const url = opts.url ?? '';
   const metadataHash = opts.metadataHash ?? '';
-  const clawback = opts.clawback ? opts.clawback.networkAccount.addr : '';
+  const clawback = opts.clawback ? protect(T_Address, opts.clawback) as string : '';
   const params = await getTxnParams('launchToken');
 
   const txnResult = await sign_and_send_sync(

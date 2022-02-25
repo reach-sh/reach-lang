@@ -1067,19 +1067,21 @@ Read the [Interaction and Independence](##tut-8) section the Rock, Paper, Scisso
 launchToken(accCreator: Account, name: string, sym: string, opts?: LaunchTokenOpts) => Promise<object>
 ```
 
-Launches a new token with the given `{!js} name` and unit symbol `{!js} sym`.
+Launches a non-network token with the given `{!js} name` and unit symbol `{!js} sym`.
 Launched on the network by `{!js} accCreator`.
 
 Possible options to provide in `{!js} opts` include:
-+ `{!js} decimals` The number of digits to use after the decimal point when displaying the asset.
++ `{!js} decimals` The number of digits to use after the decimal point when displaying the non-network token.
 The default is the same as the network token.
 + `{!js} supply` The total number of atomic token units to create.
 The default is the maximum possible on the network.
-+ `{!js} url` Algorand only. A URL where more information about the asset can be retrieved.
+
+Algorand-only options:
++ `{!js} url` A URL where more information about the non-network token can be retrieved.
 The default is no url.
-+ `{!js} metadataHash` Algorand only. A hash of some metadata that is relevant to your asset.
++ `{!js} metadataHash` A hash of some metadata that is relevant to your non-network token.
 The default is no metadata hash.
-+ `{!js} clawback` Algorand only. Address that can claw back holdings of the token.
++ `{!js} clawback` Address that can claw back holdings of the token.
 The default is no clawback address.
 
 For more information on Algorand-only options, see https://developer.algorand.org/docs/get-details/transactions/transactions/#asset-parameters.
