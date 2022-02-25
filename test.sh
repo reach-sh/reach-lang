@@ -132,7 +132,9 @@ export REACH_BUILD_NO_CACHE=Y
 
 #######
 
-c users/hamza4.rsh
+jb
+ci CFX clawback
+ci ETH clawback
 exit 0
 
 cdot users/algo-govt/index.rsh

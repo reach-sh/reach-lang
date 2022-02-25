@@ -10,7 +10,10 @@ const b = pc(100);
 const balOf = async (acc, tok) => stdlib.balanceOf(acc, tok);
 const amt = pc(20);
 
-const algo = async (accAlice, ctcA) => {
+const accAlice = await stdlib.newTestAccount(b);
+const ctcA = accAlice.contract(backend);
+
+const algo = async () => {
   const token = await stdlib.launchToken(accAlice, "Zorkmid", "ZMD", { clawback: accAlice });
   console.log(`Launched token:`, token.id.toString());
 
@@ -69,7 +72,7 @@ const algo = async (accAlice, ctcA) => {
   stdlib.assert(false, "Expected an error to be thrown when transferring funds that were clawbacked");
 }
 
-const eth = async (accAlice, ctcA) => {
+const eth = async () => {
   const { ethers } = stdlib;
 
   const myGasLimit = 5000000;
@@ -87,29 +90,19 @@ const eth = async (accAlice, ctcA) => {
   const t = await contract["mint"](supply);
   await t.wait();
 
-  // CFX will use the same nonce on Contract.deploy if we don't wait
-  if (stdlib.connector == 'CFX') {
-    const sleepSecs = async (x) => {
-      await new Promise(res => setTimeout(res, x * 1000));
-    };
-    await sleepSecs(3);
-  }
-
   const triggerClawback = async (addr, funds) => {
     console.log(`Clawback was triggered`, funds.toString());
-    await contract["closeOut"](addr);
+    await stdlib.doCall('clawback', contract, "closeOut", [addr], 0);
   }
 
   const checkBal = async (addr, idx) => {
-    if (stdlib.connector !== 'CFX') { // Not able to call contract.balanceOf nor stdlib.balanceOf
-      const bal = await contract['balanceOf'](addr);
-      console.log(`Balance:`, JSON.stringify(bal));
-      const expectedBal = {
-        0: amt,
-        1: pc(0),
-      }[idx];
-      stdlib.assert(bal.eq(expectedBal), `Expected correct balance: ${bal} == ${expectedBal}`);
-    }
+    const bal = await stdlib.balanceOf(addr, tokenId);
+    console.log(`Balance:`, JSON.stringify(bal));
+    const expectedBal = {
+      0: amt,
+      1: pc(0),
+    }[idx];
+    stdlib.assert(bal.eq(expectedBal), `checkBal: expected ${expectedBal}, got ${bal}`);
   }
 
   try {
@@ -125,21 +118,15 @@ const eth = async (accAlice, ctcA) => {
   } catch (e) {
     console.log(e);
     const expFailMethod = `_reach_m${failingMethod}`;
-    stdlib.assert(e.toString().includes(expFailMethod));
-    console.log(`Error was thrown in the expected method: ${expFailMethod}`);
+    stdlib.assert(e.toString().includes(expFailMethod),
+      `Error was thrown in the expected method: ${expFailMethod}`);
     return;
   }
   stdlib.assert(false, "Expected an error to be thrown when transferring funds that were clawbacked");
 }
 
-(async () => {
-
-  const accAlice = await stdlib.newTestAccount(b);
-  const ctcA = accAlice.contract(backend);
-
-  if (stdlib.connector == 'ALGO') {
-    await algo(accAlice, ctcA);
-  } else {
-    await eth(accAlice, ctcA);
-  }
-})();
+if (stdlib.connector == 'ALGO') {
+  await algo();
+} else {
+  await eth();
+}
