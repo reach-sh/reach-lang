@@ -2146,5 +2146,5 @@ For example, if funds were externally sent to the contract or rewards were earne
 Once this function is called, the amount returned is incorporated into Reach's expectation of the balance.
 So, the amount returned must eventually be transferred out of the contract to satisfy the token linearity property.
 
- If a contract were to have it's funds improperly removed, through clawback or other means, and the actual balance is less
+ If a contract were to have its funds improperly removed, through clawback or other means, and the actual balance is less
 than Reach's expectation, this function will return `{!rsh} 0`.
