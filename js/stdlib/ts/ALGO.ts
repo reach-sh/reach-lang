@@ -2141,7 +2141,66 @@ export function unsafeGetMnemonic(acc: NetworkAccount|Account): string {
   return algosdk.secretKeyToMnemonic(networkAccount.sk);
 }
 
-export async function launchToken (accCreator:Account, name:string, sym:string, opts:LaunchTokenOpts = {}) {
+const makeAssetCreateTxn = (
+  creator: Address,
+  supply: BigNumber,
+  decimals: number,
+  symbol: string,
+  name: string,
+  params: TxnParams,
+): Transaction => {
+  return algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
+    from: creator,
+    // note: undefined,
+    total: bigNumberToBigInt(supply),
+    decimals: decimals,
+    defaultFrozen: false,
+    // manager: creator,
+    // reserve: creator,
+    // freeze: creator,
+    // clawback: creator,
+    unitName: symbol,
+    assetName: name,
+    // assetURL: '',
+    // assetMetadataHash: '',
+    suggestedParams: params,
+  });
+}
+
+export const launchToken = async (accCreator: Account, name: string, sym: string, opts: LaunchTokenOpts = {}) => {
+  const addrCreator = accCreator.networkAccount.addr;
+  const supply = opts.supply ? bigNumberify(opts.supply) : bigNumberify(2).pow(64).sub(1);
+  const decimals = opts.decimals !== undefined ? opts.decimals : 6;
+  const params = await getTxnParams('launchToken');
+  const assetCreateTxn = makeAssetCreateTxn(addrCreator, supply, decimals, sym, name, params);
+  const txnResult = await sign_and_send_sync(
+    `launchToken ${j2s(accCreator)} ${name} ${sym}`,
+    accCreator.networkAccount,
+    toWTxn(assetCreateTxn)
+  );
+
+  const assetIndex = txnResult['created-asset-index'];
+  if (!assetIndex) throw Error(`${sym} no asset-index!`);
+  const id = bigNumberify(assetIndex);
+
+  const mint = (accTo: Account, amt: unknown) => transfer(accCreator, accTo, amt, id);
+  const optOut = async (accFrom: Account, accTo: Account = accCreator) => {
+    // Opting out = sending all of your current balance to accTo
+    const addrFrom = accFrom.networkAccount.addr;
+    const addrTo = accTo.networkAccount.addr;
+    const params = await getTxnParams('token.optOut');
+    const optOutTxn = makeTransferTxn(addrFrom, addrTo, bigNumberify(0), id, params, addrTo);
+    await sign_and_send_sync(
+      `token.optOut ${j2s(accFrom)} ${name}`,
+      accFrom.networkAccount,
+      toWTxn(optOutTxn),
+    );
+  }
+
+  return { name, sym, id, mint, optOut };
+}
+
+void async function OLD_launchToken (accCreator:Account, name:string, sym:string, opts:LaunchTokenOpts = {}) {
   debug(`Launching token, ${name} (${sym})`);
   const addr = (acc:Account) => acc.networkAccount.addr;
   const caddr = addr(accCreator);

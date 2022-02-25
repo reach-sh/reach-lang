@@ -135,6 +135,13 @@ export REACH_BUILD_NO_CACHE=Y
 c users/hamza4.rsh
 exit 0
 
+jb
+ci ALGO donation-balancesOf
+ci ALGO formatWithDecimals-demo
+ci ALGO nft-auction-api
+ci ALGO minBalance
+exit
+
 cdot users/algo-govt/index.rsh
 exit 0
 (cd users/algo-govt && ./test.sh)
