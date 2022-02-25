@@ -500,15 +500,18 @@ parseVal env sdt v = do
             T_Array ty sz ->
               case v of
                 List [List (Atom "as" : Atom "const" : _), e] ->
-                  SMV_Array ty . replicate (fromIntegral sz) <$> parseVal env (SDT_D ty) e
+                  SMV_Array_Const ty <$> parseVal env (SDT_D ty) e
                 List [Atom "store", arrse, idxse, vse] -> do
                   arrv <- parseVal env sdt arrse
                   idxv <- parseVal env (SDT_D T_UInt) idxse
                   vv <- parseVal env (SDT_D ty) vse
                   case (arrv, idxv) of
+                    (SMV_Array_Const _ vc, SMV_Int idx) -> do
+                      let idx' = fromIntegral idx
+                      return $ SMV_Array ty $ arraySet idx' vv (replicate idx' vc)
                     (SMV_Array _ vs, SMV_Int idx) -> do
                       return $ SMV_Array ty $ arraySet (fromIntegral idx) vv vs
-                    _ -> impossible $ "parseVal: Array.store: " <> show arrv <> " && " <> show idxv
+                    _ -> impossible $ "parseVal: Array(" <> show sz <> ").store " <> show arrv <> " " <> show idxv
                 List [Atom "_", Atom "as-array", _] ->
                   return $ SMV_unknown v
                 _ -> impossible $ "parseVal: Array: " <> show v

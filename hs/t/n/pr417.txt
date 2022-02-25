@@ -56,11 +56,11 @@ Verification failed:
   // Theorem Formalization
 
   const tokInfos/201 = array(Tuple(UInt, UInt, Bool), [[0, 0, false ] ]);
-  //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
+  //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
   const tokInfo/212 = tokInfos/201[0];
   //    ^ would be [0, 0, false ]
   const tokInfos'/217 = Array.set(tokInfos/201, 0, [0, tokInfo/212[1], tokInfo/212[2] ] );
-  //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
+  //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
   const tokInfo/224 = tokInfos'/217[0];
   //    ^ would be [0, 0, false ]
   const tokInfos'/232 = Array.set(tokInfos'/217, 0, [(tokInfo/224[0] + 10), tokInfo/224[1], tokInfo/224[2] ] );
