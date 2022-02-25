@@ -1073,5 +1073,5 @@ export const apiStateMismatchError = (bin: IBackend<any>, es: BigNumber, as: Big
   return Error(`Expected the DApp to be in state ${es}, but it was actually in state ${as}.\n`
     + `\nState ${es} corresponds to the commit() at ${el}`
     + `\nState ${as} corresponds to the commit() at ${al}`
-    + (el == al ? "\n(This means that the commit() is in the continuation of an effect.)" : ""));
+    + (el == al ? "\n(This means that the commit() is in the continuation of impure control-flow.)" : ""));
 };
