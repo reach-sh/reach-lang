@@ -132,8 +132,8 @@ const renderObjects = async (nodeId) => {
           </select>
         </div>
         <div id="initDetailsPanel" class="pad-me d-flex justify-content-center">
-
         </div>
+        <input type="text" id="init-account" class="form-control form-control-sm" placeholder="Account ID (optional)">
         <div>
           <button type="button" id="initForButton" data-node-id="${nodeId}" class="btn btn-outline-light btn-sm">Init Actor</button>
         </div>
@@ -309,14 +309,18 @@ const bindObjDetailsEvents = () => {
       let enter = det.value
       if (det.dataset.initType === 'UInt') {
         enter = parseInt(enter)
-
       }
       liv[det.dataset.initVal] = {"tag": type, "contents": enter}
     }
-    let r = await c.initFor(nodeId,selectedActorId,JSON.stringify(liv))
+    let accId = document.querySelector("#init-account").value
+    if (accId) {
+      accId = parseInt(accId)
+    }
+
+    let r = await c.initFor(nodeId,selectedActorId,JSON.stringify(liv),accId)
     appendToLog(r)
     redraw()
-    jsonLog.push(["initFor",nodeId,selectedActorId,JSON.stringify(liv)])
+    jsonLog.push(["initFor",nodeId,selectedActorId,JSON.stringify(liv),accId])
   }
   initForBtn.addEventListener("click",initFor)
 

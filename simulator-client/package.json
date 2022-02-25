@@ -1,7 +1,7 @@
 {
   "name": "@reach-sh/simulator-client",
   "description": "client for the Reach Simulator",
-  "version": "0.0.28",
+  "version": "0.0.29",
   "main": "./client.mjs",
   "repository": {
     "type": "git",

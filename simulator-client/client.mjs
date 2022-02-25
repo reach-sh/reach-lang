@@ -87,7 +87,8 @@ const respondWithVal = async (s,a,v,w=false,t='number') => {
   return r
 }
 
-const initFor = async (s,a,liv="{}") => {
+const initFor = async (s,a,liv="{}",acc=false) => {
+  const accParam = (acc || acc === 0) ? `&accountId=${acc}` : ``
   let livS = liv
   if (
     typeof liv === 'object' &&
@@ -96,7 +97,7 @@ const initFor = async (s,a,liv="{}") => {
   ) {
     livS = JSON.stringify(liv)
   }
-  const r = await interact('POST', `${address}/init/${a}/${s}/?liv=${livS}`)
+  const r = await interact('POST', `${address}/init/${a}/${s}/?liv=${livS}${accParam}`)
   console.log(r)
   return r
 }

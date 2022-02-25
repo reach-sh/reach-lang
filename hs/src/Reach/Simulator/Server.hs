@@ -361,14 +361,17 @@ initProgSim ll = do
   ps <- return $ C.initApp ll initSt
   processNewState Nothing ps
 
-initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> LLProg -> WebM ()
-initProgSimFor actId sid liv (LLProg _ _ _ _ _ _ _ _ step) = do
+initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> Maybe (C.Account) -> LLProg -> WebM ()
+initProgSimFor actId sid liv accId (LLProg _ _ _ _ _ _ _ _ step) = do
   graph <- gets e_graph
   modify $ \st -> st {e_actor_id = actId}
   let (g, l) = saferMaybe "initProgSimFor" $ M.lookup sid graph
   let locals = C.l_locals l
   let lcl = saferMaybe "initProgSimFor1" $ M.lookup actId locals
-  let lcl' = lcl { C.l_livs = liv }
+  let accId' = case accId of
+        Nothing -> C.l_acct lcl
+        Just accId'' -> accId''
+  let lcl' = lcl { C.l_livs = liv, C.l_acct = accId' }
   let locals' = M.insert actId lcl' locals
   let l' = l {C.l_curr_actor_id = actId, C.l_locals = locals'}
   ps <- return $ C.initAppFromStep step (g, l')
@@ -410,6 +413,13 @@ app p srcTxt = do
     setHeaders
     a <- param "a"
     s <- param "s"
+    ps <- M.fromList <$> params
+    acc <- case M.lookup "accountId" ps of
+      Nothing -> return Nothing
+      Just prm -> do
+        case (parseParam prm) :: Either Text C.Account of
+          Left e -> possible $ show e
+          Right w -> return $ Just w
     liv :: LB.ByteString <- param "liv"
     ll <- webM $ gets e_src
     let liv' :: Maybe C.LocalInteractEnv = decode liv
@@ -419,7 +429,7 @@ app p srcTxt = do
         case ll of
           Nothing -> json $ ("No Program" :: String)
           Just ll' -> do
-            webM $ initProgSimFor a s liv'' ll'
+            webM $ initProgSimFor a s liv'' acc ll'
             json $ ("OK" :: String)
 
   get "/init_details/:a" $ do
@@ -518,7 +528,7 @@ app p srcTxt = do
         webM $ unblockProg s a $ C.V_UInt v
       "token" -> do
         v :: Int <- param "data"
-        webM $ unblockProg s a $ C.V_Token v  
+        webM $ unblockProg s a $ C.V_Token v
       "string" -> do
         v :: String <- param "data"
         webM $ unblockProg s a $ C.V_Bytes v
