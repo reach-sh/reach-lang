@@ -84,7 +84,8 @@ const eth = async (accAlice, ctcA) => {
   const contract = await factory.deploy("Zorkmid", "ZMD", { gasLimit: myGasLimit });
   await contract.deployTransaction.wait();
   const tokenId = contract.address;
-  await contract["mint"](supply);
+  const t = await contract["mint"](supply);
+  await t.wait();
 
   // CFX will use the same nonce on Contract.deploy if we don't wait
   if (stdlib.connector == 'CFX') {
@@ -100,13 +101,15 @@ const eth = async (accAlice, ctcA) => {
   }
 
   const checkBal = async (addr, idx) => {
-    const bal = await contract["balanceOf"](addr);
-    console.log(`Balance:`, bal.toString());
-    const expectedBal = {
-      0: amt,
-      1: pc(0),
-    }[idx];
-    stdlib.assert(bal.eq(expectedBal), `Expected correct balance: ${bal} == ${expectedBal}`);
+    if (stdlib.connector !== 'CFX') { // Not able to call contract.balanceOf nor stdlib.balanceOf
+      const bal = await contract['balanceOf'](addr);
+      console.log(`Balance:`, JSON.stringify(bal));
+      const expectedBal = {
+        0: amt,
+        1: pc(0),
+      }[idx];
+      stdlib.assert(bal.eq(expectedBal), `Expected correct balance: ${bal} == ${expectedBal}`);
+    }
   }
 
   try {
