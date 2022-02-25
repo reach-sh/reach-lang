@@ -43,6 +43,8 @@ An assumption where `{!rsh} claim` evaluates to `{!rsh} true` with honest fronte
 This may only appear in a local step.
 It accepts an optional bytes argument, which is included in any reported violation.
 
+If the claim dynamically evaluates to `false`, the frontend will raise an exception.
+
 ### `fail`
 
 @{ref("rsh", "fail")}
