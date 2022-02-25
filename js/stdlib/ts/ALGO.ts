@@ -2187,7 +2187,7 @@ export const launchToken = async (accCreator: Account, name: string, sym: string
   if (!assetIndex) throw Error(`${sym} no asset-index!`);
   const id = bigNumberify(assetIndex);
 
-  const mint = (accTo: Account, amt: unknown) => transfer(accCreator, accTo, amt, id);
+  const mint = (accTo: Account, amt: any) => transfer(accCreator, accTo, amt, id);
   const optOut = async (accFrom: Account, accTo: Account = accCreator) => {
     // Opting out = sending all of your current balance to accTo
     const addrFrom = accFrom.networkAccount.addr;
