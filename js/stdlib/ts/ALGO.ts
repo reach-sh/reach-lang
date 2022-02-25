@@ -2148,9 +2148,10 @@ const makeAssetCreateTxn = (
   decimals: number,
   symbol: string,
   name: string,
-  params: TxnParams,
   url: string,
   metadataHash: string,
+  clawback: Address,
+  params: TxnParams,
 ): Transaction => {
   return algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
     from: creator,
@@ -2161,6 +2162,7 @@ const makeAssetCreateTxn = (
     assetName: name,
     assetURL: url,
     assetMetadataHash: metadataHash,
+    clawback: clawback,
     suggestedParams: params,
   });
 }
@@ -2171,12 +2173,14 @@ export const launchToken = async (accCreator: Account, name: string, sym: string
   const decimals = opts.decimals ?? 6;
   const url = opts.url ?? '';
   const metadataHash = opts.metadataHash ?? '';
+  const clawback = opts.clawback ? opts.clawback.networkAccount.addr : '';
   const params = await getTxnParams('launchToken');
 
   const txnResult = await sign_and_send_sync(
     `launchToken ${j2s(accCreator)} ${name} ${sym}`,
     accCreator.networkAccount,
-    toWTxn(makeAssetCreateTxn(addrCreator, supply, decimals, sym, name, params, url, metadataHash))
+    toWTxn(makeAssetCreateTxn(addrCreator, supply, decimals, sym,
+                              name, url, metadataHash, clawback, params))
   );
 
   const assetIndex = txnResult['created-asset-index'];
@@ -2199,53 +2203,5 @@ export const launchToken = async (accCreator: Account, name: string, sym: string
 
   return { name, sym, id, mint, optOut };
 }
-
-void async function OLD_launchToken (accCreator:Account, name:string, sym:string, opts:LaunchTokenOpts = {}) {
-  debug(`Launching token, ${name} (${sym})`);
-  const addr = (acc:Account) => acc.networkAccount.addr;
-  const caddr = addr(accCreator);
-  const zaddr = caddr;
-  // ^ XXX should be nothing; docs say can be "", but doesn't actually work
-  const client = await getAlgodClient();
-  const dotxn = async (mktxn:(params:TxnParams) => Transaction, acc:Account = accCreator) => {
-    const sk = acc.networkAccount.sk;
-    if ( ! sk ) {
-      throw new Error(`can only launchToken with account with secret key`);
-    }
-    const params = await getTxnParams('launchToken');
-    const t = mktxn(params);
-    const s = t.signTxn(sk);
-    const r = (await client.sendRawTransaction(s).do());
-    return await waitForConfirmation(r.txId);
-  };
-  const supply = opts.supply ? bigNumberify(opts.supply) : bigNumberify(2).pow(64).sub(1);
-  const decimals = opts.decimals !== undefined ? opts.decimals : 6;
-  const clawback = opts.clawback !== undefined ? addr(opts.clawback) : zaddr;
-  const ctxn_p = await dotxn(
-    (params:TxnParams) =>
-    algosdk.makeAssetCreateTxnWithSuggestedParams(
-      caddr, undefined, bigNumberToBigInt(supply), decimals,
-      false, zaddr, zaddr, zaddr, clawback,
-      sym, name, '', '', params,
-    ));
-  const idn = ctxn_p['created-asset-index'];
-  if ( ! idn ) { throw Error(`${sym} no asset-index!`); }
-  const id = bigNumberify(idn);
-  debug(`${sym}: asset is ${id}`);
-
-  const mint = async (accTo:Account, amt:unknown) => {
-    debug(`${sym}: transferring ${amt} ${sym} for ${addr(accTo)}`);
-    await transfer(accCreator, accTo, amt, id);
-  };
-  const optOut = async (accFrom:Account, accTo:Account = accCreator) => {
-    await dotxn(
-      (params) =>
-      algosdk.makeAssetTransferTxnWithSuggestedParams(
-        addr(accFrom), addr(accTo), addr(accTo), undefined,
-        0, undefined, idn, params
-      ), accFrom);
-  };
-  return { name, sym, id, mint, optOut };
-};
 
 export const reachStdlib = stdlib;
