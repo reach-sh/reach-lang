@@ -155,6 +155,7 @@ data EvalError
   | Err_Api_Publish (S.Set SLPart)
   | Err_ForkNoCases
   | Err_InvalidPaySpec
+  | Err_LoopVariableLength SrcLoc
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -292,6 +293,7 @@ instance HasErrorCode EvalError where
     Err_Api_Publish {} -> 125
     Err_ForkNoCases {} -> 126
     Err_InvalidPaySpec {} -> 127
+    Err_LoopVariableLength {} -> 128
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -731,5 +733,7 @@ instance Show EvalError where
       "A `fork`/`parallelReduce` statement must include a `.case` or `.api` component"
     Err_InvalidPaySpec ->
       "The `.paySpec` component must specify a syntactic tuple of Token identifiers"
+    Err_LoopVariableLength at ->
+      "Cannot assign the loop variable(s) to a `Tuple` of different length at: " <> show at
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

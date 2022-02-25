@@ -5254,7 +5254,8 @@ doWhileLikeInitEval lhs rhs = do
 doWhileLikeContinueEval :: JSExpression -> M.Map SLVar DLVar -> SLSVal -> App ()
 doWhileLikeContinueEval lhs whilem (rhs_lvl, rhs_v) = do
   at <- withAt id
-  decl_env <- evalDeclLHS False Nothing rhs_lvl mempty rhs_v lhs
+  let merr = Just $ Err_LoopVariableLength $ srclocOf rhs_v
+  decl_env <- evalDeclLHS False merr rhs_lvl mempty rhs_v lhs
   stEnsureMode SLM_ConsensusStep
   forM_
     (M.keys decl_env)

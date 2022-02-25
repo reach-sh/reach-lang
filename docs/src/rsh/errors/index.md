@@ -2224,6 +2224,52 @@ You can fix this error by inlining the tuple directly:
       () => { return [ true ]; })
     .timeout(false);
 ```
+## {#RE0128} RE0128
+
+This error indicates that you are attempting to update loop variables to a `{!rsh} Tuple` of different length.
+This error can occur in the assignments before a `{!rsh} while` loop's `{!rsh} continue`, or the `{!rsh} return` expression in a `{!rsh} parallelReduce` case.
+
+The code below erroneously attempts to update the loop variable to a 2-tuple in the timeout, although the loop variable is a 1-tuple:
+
+```reach
+const [ a ] =
+  parallelReduce([ true ])
+  .invariant(balance() == 0)
+  .while(a)
+  .case(A,
+    () => ({
+        when: declassify(interact.when()),
+    }),
+    (_) => {
+      return [ false ];
+    })
+    .timeout(relativeSecs(10), () => {
+      Anybody.publish();
+      return [ true, 43 ];
+    });
+```
+
+Depending on the intended behavior of the program, you can fix this error in different ways:
+* You can remove the unnecessary value `{!rsh} 43` from the `{!rsh} Tuple` since you are only tracking one loop variable, `{!rsh} a`.
+* You can update the loop variable `{!rsh} Tuple` to track more variables:
+
+  ```reach
+  const [ a, b ] =
+    parallelReduce([ true ])
+    .invariant(balance() == 0)
+    .while(a)
+    .case(A,
+      () => ({
+         when: declassify(interact.when()),
+      }),
+      (_) => {
+        return [ false, 0 ]; // Don't forget to adjust the other cases too!
+      })
+     .timeout(relativeSecs(10), () => {
+       Anybody.publish();
+       return [ true, 43 ];
+     });
+  ```
 
 ## {#REP0000} REP0000
 
