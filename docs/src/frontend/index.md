@@ -1075,13 +1075,14 @@ Possible options to provide in `{!js} opts` include:
 The default is the same as the network token.
 + `{!js} supply` The total number of atomic token units to create.
 The default is the maximum possible on the network.
-
-Algorand-only options:
 + `{!js} url` A URL where more information about the non-network token can be retrieved.
 The default is no url.
 + `{!js} metadataHash` A hash of some metadata that is relevant to your non-network token.
 The default is no metadata hash.
+
+Algorand-only options:
 + `{!js} clawback` Address that can claw back holdings of the token.
 The default is no clawback address.
 
-For more information on Algorand-only options, see https://developer.algorand.org/docs/get-details/transactions/transactions/#asset-parameters.
+For more information on Algorand-only options, see
+https://developer.algorand.org/docs/get-details/transactions/transactions/#asset-parameters.
