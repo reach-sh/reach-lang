@@ -2148,21 +2148,18 @@ const makeAssetCreateTxn = (
   symbol: string,
   name: string,
   params: TxnParams,
+  url: string,
+  metadataHash: string,
 ): Transaction => {
   return algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
     from: creator,
-    // note: undefined,
     total: bigNumberToBigInt(supply),
     decimals: decimals,
     defaultFrozen: false,
-    // manager: creator,
-    // reserve: creator,
-    // freeze: creator,
-    // clawback: creator,
     unitName: symbol,
     assetName: name,
-    // assetURL: '',
-    // assetMetadataHash: '',
+    assetURL: url,
+    assetMetadataHash: metadataHash,
     suggestedParams: params,
   });
 }
@@ -2170,13 +2167,15 @@ const makeAssetCreateTxn = (
 export const launchToken = async (accCreator: Account, name: string, sym: string, opts: LaunchTokenOpts = {}) => {
   const addrCreator = accCreator.networkAccount.addr;
   const supply = opts.supply ? bigNumberify(opts.supply) : bigNumberify(2).pow(64).sub(1);
-  const decimals = opts.decimals !== undefined ? opts.decimals : 6;
+  const decimals = opts.decimals ?? 6;
+  const url = opts.url ?? '';
+  const metadataHash = opts.metadataHash ?? '';
   const params = await getTxnParams('launchToken');
-  const assetCreateTxn = makeAssetCreateTxn(addrCreator, supply, decimals, sym, name, params);
+
   const txnResult = await sign_and_send_sync(
     `launchToken ${j2s(accCreator)} ${name} ${sym}`,
     accCreator.networkAccount,
-    toWTxn(assetCreateTxn)
+    toWTxn(makeAssetCreateTxn(addrCreator, supply, decimals, sym, name, params, url, metadataHash))
   );
 
   const assetIndex = txnResult['created-asset-index'];
