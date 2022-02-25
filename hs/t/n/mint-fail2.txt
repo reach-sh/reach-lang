@@ -20,7 +20,7 @@ Verification failed:
   const initialInfo/342 = [0, 0, false ];
   //    ^ would be [0, 0, false ]
   const tokInfos/343 = array(Tuple(UInt, UInt, Bool), [initialInfo/342, initialInfo/342 ]);
-  //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
+  //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
   const tokInfo/386 = tokInfos/343[0];
   //    ^ would be [0, 0, false ]
   const tokInfos'/391 = Array.set(tokInfos/343, 0, [v349.supply, tokInfo/386[1], tokInfo/386[2] ] );
@@ -58,7 +58,7 @@ Verification failed:
   const tokInfo/489 = tokInfos'/488[0];
   //    ^ would be [0, 35424, false ]
   const tokInfos'/497 = Array.set(tokInfos'/488, 0, [tokInfo/489[0], (tokInfo/489[1] - v349.supply), tokInfo/489[2] ] );
-  //    ^ would be array(Tuple(UInt, UInt, Bool), [] )
+  //    ^ would be Array.const(Tuple(UInt, UInt, Bool), [0, 0, false ] )
   const tokInfo/498 = tokInfos'/497[0];
   //    ^ would be [0, 0, false ]
   const tokInfos'/509 = Array.set(tokInfos'/497, 0, [tokInfo/498[0], tokInfo/498[1], true ] );
