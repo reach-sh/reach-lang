@@ -557,7 +557,7 @@ type Lets = M.Map DLVar (App ())
 
 data Env = Env
   { eShared :: Shared
-  , eWhich :: Int
+  , eWhich :: Maybe Int
   , eLabel :: Counter
   , eOutputR :: IORef TEALs
   , eHP :: ScratchSlot
@@ -572,8 +572,11 @@ data Env = Env
 
 type App = ReaderT Env IO
 
+separateResources :: App a -> App a
+separateResources = dupeResources . resetToks
+
 recordWhich :: Int -> App a -> App a
-recordWhich n = local (\e -> e {eWhich = n}) . dupeResources . resetToks
+recordWhich n = local (\e -> e {eWhich = Just n}) . separateResources
 
 type CostGraph a = M.Map a (CostRecord a)
 
@@ -660,7 +663,10 @@ updateResources f = do
   Env {..} <- ask
   let Shared {..} = eShared
   let g r = Just . (f r) . fromMaybe (CostRecord 0 mempty)
-  liftIO $ modifyIORef sResources $ M.mapWithKey (\r -> M.alter (g r) eWhich)
+  case eWhich of
+    Nothing -> return ()
+    Just which ->
+      liftIO $ modifyIORef sResources $ M.mapWithKey (\r -> M.alter (g r) which)
 
 addResourceEdge :: Int -> App ()
 addResourceEdge w' = do
@@ -2419,7 +2425,7 @@ cmeth sigi = \case
       comment $ LT.pack $ "View: " <> sig
       comment $ LT.pack $ "  ui: " <> show sigi
       gvLoad GV_currentStep
-      flip (cblt "viewStep") (bltM hs) $ \hi vbvs -> do
+      flip (cblt "viewStep") (bltM hs) $ \hi vbvs -> separateResources $ do
         vbvs' <- liftIO $ add_counts vbvs
         let VSIBlockVS svsl deb = vbvs'
         let (DLinExportBlock _ mfargs (DLBlock at _ t r)) = deb
@@ -2513,7 +2519,7 @@ compile_algo env disp pl = do
         let eVars = mempty
         let eLets = mempty
         let eLetSmalls = mempty
-        let eWhich = 0
+        let eWhich = Nothing
         eNewToks <- newIORef mempty
         eInitToks <- newIORef mempty
         eResources <- newResources

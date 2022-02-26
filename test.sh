@@ -132,7 +132,7 @@ export REACH_BUILD_NO_CACHE=Y
 
 #######
 
-fc hs/t/n/tooBig.rsh
+c asolpshinning-viewProblem.rsh
 exit 0
 
 cdot users/algo-govt/index.rsh
