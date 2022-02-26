@@ -132,7 +132,7 @@ export REACH_BUILD_NO_CACHE=Y
 
 #######
 
-c hs/t/y/hamza5.rsh
+fc hs/t/n/tooBig.rsh
 exit 0
 
 cdot users/algo-govt/index.rsh
