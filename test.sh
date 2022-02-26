@@ -140,6 +140,7 @@ ci CFX clawback
 ci ETH clawback
 c hs/t/y/hamza5.rsh
 fc hs/t/n/tooBig.rsh
+c asolpshinning-viewProblem.rsh
 exit 0
 
 cdot users/algo-govt/index.rsh
