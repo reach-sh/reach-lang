@@ -618,7 +618,7 @@ jsClo at name js env_ = SLV_Clo at Nothing $ SLClo (Just name) args body cloenv
     cloenv = SLCloEnv mempty env False
     env = M.map (SLSSVal at Public) env_
     (args, body) =
-      case rjsa (readJsExpr js) (srcloc2annot at) of
+      case rjsa (srcloc2annot at) (readJsExpr js) of
         JSArrowExpression aformals _ bodys -> (a_, b_)
           where
             b_ = jsArrowBodyToRetBlock bodys
