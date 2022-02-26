@@ -46,6 +46,7 @@ import System.Exit
 import System.FilePath
 import System.IO.Temp
 import System.Process.ByteString
+import Text.Read
 
 -- Errors for ALGO
 
@@ -672,8 +673,8 @@ addResourceCheck = do
   updateResources $ \r t ->
     t {cr_n = max (snd $ c M.! r) (cr_n t)}
 
-checkResources :: Bad' -> ResourceGraph -> IO ()
-checkResources bad' rg = do
+checkResources :: Bad' -> Bad' -> (Int -> SrcLoc) -> ResourceGraph -> IO ()
+checkResources bad' warn' findAt rg = do
   let one emit r = do
         let maxc = maxOf r
         let tcs = rg M.! r
@@ -685,12 +686,12 @@ checkResources bad' rg = do
                 CostRecord {..} = tcs M.! i
         forM_ (M.keys tcs) $ \which -> do
           let amt = chase which
+          let at = findAt which
           when (fromIntegral amt > maxc) $ do
-            emit $ "Step " <> texty which <> " could have too many " <> texty r <> ": could have " <> texty amt <> " but limit is " <> texty maxc
-  let warn x = emitWarning Nothing $ W_ALGOConservative [LT.unpack x]
+            emit $ "Step " <> texty which <> " (the one starting from the consensus transfer at " <> texty at <> ") could have too many " <> texty r <> ": could have " <> texty amt <> " but limit is " <> texty maxc
   one bad' R_Txn
-  one warn R_Asset
-  one warn R_Account
+  one warn' R_Asset
+  one warn' R_Account
   one bad' R_InnerTxn
 
 resetToks :: App a -> App a
@@ -2314,8 +2315,18 @@ compileTEAL :: String -> IO BS.ByteString
 compileTEAL tealf = do
   (ec, stdout, stderr) <- readProcessWithExitCode "goal" ["clerk", "compile", tealf, "-o", "-"] mempty
   case ec of
-    ExitFailure _ ->
-      impossible $ "The TEAL compiler failed with the message:\n" <> show stderr
+    ExitFailure _ -> do
+      let failed = impossible $ "The TEAL compiler failed with the message:\n" <> show stderr
+      let tooBig = bpack tealf <> ": app program size too large: "
+      case BS.isPrefixOf tooBig stderr of
+        True -> do
+          let notSpace = (32 /=)
+          let sz_bs = BS.takeWhile notSpace $ BS.drop (BS.length tooBig) stderr
+          let mlen :: Maybe Int = readMaybe $ bunpack sz_bs
+          case mlen of
+            Nothing -> failed
+            Just sz -> return $ BS.replicate sz 0
+        False -> failed
     ExitSuccess -> return stdout
 
 data CMeth
@@ -2629,12 +2640,13 @@ compile_algo env disp pl = do
   -- Clear state is never allowed
   addProg "appClear" False $ do
     return ()
-  checkResources bad' =<< readIORef sResources
+  let findAt which = fromMaybe sb $ fmap srclocOf $ M.lookup which hm
+  checkResources bad' warn' findAt =<< readIORef sResources
   stateSize <- readIORef sStateSizeR
   void $ recordSizeAndKeys "state" stateSize algoMaxGlobalSchemaEntries_usable
   totalLen <- readIORef totalLenR
   unless (totalLen <= algoMaxAppProgramLen_really) $ do
-    bad' $ texty $ "The program is too long; its length is " <> show totalLen <> ", but the maximum possible length is " <> show algoMaxAppProgramLen_really
+    bad' $ LT.pack $ "The program is too long; its length is " <> show totalLen <> ", but the maximum possible length is " <> show algoMaxAppProgramLen_really
   let extraPages :: Integer = ceiling ((fromIntegral totalLen :: Double) / fromIntegral algoMaxAppProgramLen) - 1
   modifyIORef resr $
     M.insert "extraPages" $
@@ -2646,8 +2658,8 @@ compile_algo env disp pl = do
           emitWarning Nothing $ w $ S.toList $ S.map LT.unpack ss
         modifyIORef resr $ M.insert lab $
           aarray $ S.toList $ S.map (Aeson.String . LT.toStrict) ss
-  wss W_ALGOUnsupported "unsupported" sFailures
   wss W_ALGOConservative "warnings" sWarnings
+  wss W_ALGOUnsupported "unsupported" sFailures
   let apiEntry lab f = (lab, aarray $ map (Aeson.String . s2t) $ M.keys $ M.filter f meth_sm)
   modifyIORef resr $
     M.insert "ABI" $
