@@ -82,6 +82,10 @@ jobs:
         at: /tmp/workspace
     - and_restore_docker:
         deps: "stdlib runner rpc-server reach reach-cli devnet-eth devnet-cfx devnet-algo"
+    # Create the release on GitHub
+    - run: |
+        source ./VERSION
+        curl -u $REACHCI_USERNAME:$REACHCI_TOKEN -H "Accept: application/vnd.github.v3+json"  -X POST https://api.github.com/repos/reach-sh/reach-lang/releases -d "{\"tag_name\": \"${VERSION}\"}"
     # Publish images
     - run: |
         docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
