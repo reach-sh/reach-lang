@@ -1971,7 +1971,8 @@ versionCompare' i' j' u' = scriptWithConnectorModeOptional $ do
 
     mkdir -p "$$(dirname $confH)"
     echo '['  > $confH
-    f | paste -s -d ' ' - | sed 's/} {/},\n{/g' >> $confH
+    f | paste -s -d ' ' - | sed 's/} {/},\
+    {/g' >> $confH
     echo ']' >> $confH
 
     $reachEx version-compare2$i$j$u --rm-ils --ils="$confC"
