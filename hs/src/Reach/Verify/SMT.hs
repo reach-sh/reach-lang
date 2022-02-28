@@ -243,7 +243,8 @@ smtAddress who = "address_" <> bunpack who
 
 smtConstant :: DLConstant -> String
 smtConstant = \case
-  DLC_UInt_max -> "dlc_UInt_max"
+  DLC_UInt_max  -> "dlc_UInt_max"
+  DLC_Token_zero -> "dlc_Token_zero"
 
 smt_c :: SrcLoc -> DLConstant -> App SExpr
 smt_c at c = smt_a at $ DLA_Constant c
@@ -499,15 +500,18 @@ parseVal env sdt v = do
             T_Array ty sz ->
               case v of
                 List [List (Atom "as" : Atom "const" : _), e] ->
-                  SMV_Array ty . replicate (fromIntegral sz) <$> parseVal env (SDT_D ty) e
+                  SMV_Array_Const ty <$> parseVal env (SDT_D ty) e
                 List [Atom "store", arrse, idxse, vse] -> do
                   arrv <- parseVal env sdt arrse
                   idxv <- parseVal env (SDT_D T_UInt) idxse
                   vv <- parseVal env (SDT_D ty) vse
                   case (arrv, idxv) of
+                    (SMV_Array_Const _ vc, SMV_Int idx) -> do
+                      let idx' = fromIntegral idx
+                      return $ SMV_Array ty $ arraySet idx' vv (replicate idx' vc)
                     (SMV_Array _ vs, SMV_Int idx) -> do
                       return $ SMV_Array ty $ arraySet (fromIntegral idx) vv vs
-                    _ -> impossible $ "parseVal: Array.store: " <> show arrv <> " && " <> show idxv
+                    _ -> impossible $ "parseVal: Array(" <> show sz <> ").store " <> show arrv <> " " <> show idxv
                 List [Atom "_", Atom "as-array", _] ->
                   return $ SMV_unknown v
                 _ -> impossible $ "parseVal: Array: " <> show v
@@ -635,6 +639,7 @@ dropConstants pm = \case
       (cs, Just v)
         -- Non-zero value indicates this constant is part of assertion failure
         | cs == smtConstant DLC_UInt_max && v == SMV_Int 0 -> dropConstants pm tl
+        | cs == smtConstant DLC_Token_zero -> dropConstants pm tl
       (_, ow) -> SMTCon s ow se : dropConstants pm tl
   ow : tl -> ow : dropConstants pm tl
 
@@ -743,6 +748,12 @@ pathAddUnbound at_dv (Just dv) msmte = do
   let smlet = Just . SMTLet at_dv dv (DLV_Let DVC_Once dv) Witness =<< msmte
   pathAddUnbound_v v t smlet
 
+assertInvariants :: SrcLoc -> DLType -> String -> App ()
+assertInvariants at_dv t v =
+  when (t == T_UInt) $ do
+        rhs <- smt_c at_dv DLC_UInt_max
+        smtAssert (smtApply "<=" [Atom v, rhs])
+
 pathAddBound :: SrcLoc -> Maybe DLVar -> Maybe SMTExpr -> SExpr -> SMTCat -> App ()
 pathAddBound _ Nothing _ _ _ = mempty
 pathAddBound at_dv (Just dv) de se sc = do
@@ -750,6 +761,7 @@ pathAddBound at_dv (Just dv) de se sc = do
   v <- smtVar dv
   let smlet = Just . SMTLet at_dv dv (DLV_Let DVC_Once dv) sc =<< de
   smtDeclare_v v t smlet
+  assertInvariants at_dv t v
   --- Note: We don't use smtAssertCtxt because variables are global, so
   --- this variable isn't affected by the path.
   smtAssert $ smtEq (Atom v) se
@@ -982,6 +994,7 @@ smt_lt _at_de dc =
             , Atom (show i)
             ]
         False -> Atom $ show i
+    DLL_TokenZero -> Atom $ smtConstant DLC_Token_zero
 
 smt_v :: SrcLoc -> DLVar -> App SExpr
 smt_v _at_de dv = Atom <$> smtVar dv
@@ -1278,9 +1291,7 @@ smt_asn_def at asn = mapM_ def1 $ M.keys asnm
     DLAssignment asnm = asn
     def1 dv = do
       pathAddUnbound at (Just dv) (Just $ SMTModel O_Assignment)
-      when (varType dv == T_UInt) $ do
-        rhs <- smt_c at DLC_UInt_max
-        smtAssert (smtApply "<=" [Atom $ getVarName dv, rhs])
+      assertInvariants at (varType dv) (getVarName dv)
 
 smt_alloc_id :: App Int
 smt_alloc_id = do
@@ -1619,9 +1630,10 @@ _verify_smt mc ctxt_vst smt lp = do
     case mc of
       Just _ -> mempty
       Nothing -> do
-        let con = smtConstant DLC_UInt_max
-        let smlet = Just $ SMTCon con Nothing $ SMTProgram $ DLE_Arg at $ DLA_Constant $ DLC_UInt_max
-        pathAddUnbound_v con T_UInt smlet
+        flip mapM_ allConstants $ \ c -> do
+              let con = smtConstant c
+              let smlet = Just $ SMTCon con Nothing $ SMTProgram $ DLE_Arg at $ DLA_Constant c
+              pathAddUnbound_v con (conTypeOf c) smlet
     -- FIXME it might make sense to assert that UInt_max is no less than
     -- something reasonable, like 64-bit?
     let defineIE who (v, it) =

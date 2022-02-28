@@ -12,7 +12,7 @@ import Data.Either
 import Data.Foldable
 import Data.Functor ((<&>))
 import Data.IORef
-import Data.List (elemIndex, groupBy, intercalate, intersperse, transpose, unzip6, (\\))
+import Data.List (groupBy, intercalate, intersperse, transpose, unzip6, (\\))
 import qualified Data.List as L
 import Data.List.Extra (mconcatMap, splitOn)
 import qualified Data.Map.Strict as M
@@ -1589,7 +1589,7 @@ evalForm f args = do
         doFM_Case we x my z = do
           at <- withAt id
           let a = srcloc2annot at
-          let def_pay =
+          def_pay <-
                 case slf_mnntpay of
                   Just (JSArrayLiteral aa ts ae) -> do
                     let tok_ids = map (jse_expect_id at) $ jsa_flatten ts
@@ -1605,8 +1605,9 @@ evalForm f args = do
                                  ]
                                  ae)
                             tok_ids
-                    JSArrayLiteral aa (intersperse (JSArrayComma aa) $ map JSArrayElement tok_pays) ae
-                  _ -> JSDecimal a "0"
+                    return $ JSArrayLiteral aa (intersperse (JSArrayComma aa) $ map JSArrayElement tok_pays) ae
+                  Nothing -> return $ JSDecimal a "0"
+                  Just _ -> expect_ $ Err_InvalidPaySpec
           let default_pay = jsArrowExpr a [JSIdentifier a "_"] def_pay
           let y = fromMaybe default_pay my
           w <- slvParticipant_part =<< (snd <$> evalExpr we)
@@ -2158,23 +2159,6 @@ doBaseWaitUpdate = \case
   Left x -> doFluidSet_ FV_baseWaitTime x
   Right x -> doFluidSet_ FV_baseWaitSecs x
 
-lookupBalanceFV :: HasCallStack => (Int -> FluidVar) -> Maybe DLArg -> App FluidVar
-lookupBalanceFV = lookupBalanceFV_
-
-lookupBalanceFV_ :: HasCallStack => (Int -> FluidVar) -> Maybe DLArg -> App FluidVar
-lookupBalanceFV_ fv mtok = do
-  toks <- readSt st_toks
-  let bad = expect_ $ Err_Token_DynamicRef
-  i <-
-    case mtok of
-      Nothing -> return $ 0
-      Just (DLA_Var v) ->
-        case elemIndex v toks of
-          Nothing -> bad
-          Just x -> return $ 1 + x
-      _ -> bad
-  return $ fv i
-
 ensureCreatedToken :: String -> DLArg -> App ()
 ensureCreatedToken lab a = do
   toks_c <- readSt st_toks_c
@@ -2185,42 +2169,99 @@ ensureCreatedToken lab a = do
         False -> expect_ $ Err_Token_NotCreated lab
     _ -> expect_ $ Err_Token_DynamicRef
 
-doBalanceInit_ :: (Int -> FluidVar) -> Maybe DLArg -> DLArg -> App ()
-doBalanceInit_ fv mtok amta = do
-  b <- lookupBalanceFV_ fv mtok
-  doFluidSet_ b amta
-
-doBalanceInit :: Maybe DLArg -> App ()
-doBalanceInit mtok = do
+tokenMetaSet :: TokenMeta -> DLArg -> DLArg -> Bool -> App ()
+tokenMetaSet tm tok amta initTok = do
   at <- withAt id
-  doBalanceInit_ FV_balance mtok (DLA_Literal $ DLL_Int at 0)
+  mp <- M.lookup tok <$> getTokenPosEnv
+  saveLift $ DLS_TokenMetaSet tm at tok amta mp initTok
+
+tokenMetaGet :: TokenMeta -> DLArg -> App DLVar
+tokenMetaGet tm tok = do
+  at <- withAt id
+  dv <- ctxt_mkvar $ DLVar at Nothing $ tmTypeOf tm
+  mi <- M.lookup tok <$> getTokenPosEnv
+  saveLift $ DLS_TokenMetaGet tm at dv tok mi
+  return dv
+
+getBalanceOf :: Maybe DLArg -> App SLSVal
+getBalanceOf mtok = do
+  bv <- getBalanceOf' mtok
+  return $ public $ SLV_DLVar bv
+
+getBalanceOf' :: Maybe DLArg -> App DLVar
+getBalanceOf' = \case
+  Nothing -> do
+    v <- doFluidRef FV_netBalance
+    compileToVar $ snd v
+  Just tok -> tokenMetaGet TM_Balance tok
+
+getTokenPosEnv :: App (M.Map DLArg Int)
+getTokenPosEnv = readSt st_tok_pos
+
+setBalance :: TokenMeta -> Maybe DLArg -> DLArg -> App ()
+setBalance tm mtok amta = setBalance' tm mtok amta False
+
+setBalance' :: TokenMeta -> Maybe DLArg -> DLArg -> Bool -> App ()
+setBalance' tm mtok amta initTok =
+  case mtok of
+    Nothing -> doFluidSet_ FV_netBalance amta
+    Just tok -> do
+      at <- withAt id
+      mi <- M.lookup tok <$> getTokenPosEnv
+      saveLift $ DLS_TokenMetaSet tm at tok amta mi initTok
+
+doBalanceInit :: TokenMeta -> Maybe DLArg -> App ()
+doBalanceInit tm mtok = do
+  at <- withAt id
+  let amt = DLA_Literal $ DLL_Int at 0
+  setBalance' tm mtok amt True
+
+doBalanceInit' :: TokenMeta -> Maybe DLArg -> DLArg -> App ()
+doBalanceInit' tm mtok amt = do
+  setBalance' tm mtok amt True
 
 doBalanceAssert :: Maybe DLArg -> SLVal -> PrimOp -> B.ByteString -> App ()
-doBalanceAssert = doBalanceAssert_ FV_balance
-
-doBalanceAssert_ :: (Int -> FluidVar) -> Maybe DLArg -> SLVal -> PrimOp -> B.ByteString -> App ()
-doBalanceAssert_ fv mtok lhs op msg = do
+doBalanceAssert mtok lhs op msg = do
   at <- withAt id
   let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [(Public, lhs)] []
-  b <- lookupBalanceFV_ fv mtok
-  balance_v <- doFluidRef b
+  balance_v <- getBalanceOf mtok
   cmp_v <- evalApplyVals' cmp_rator [balance_v]
   let ass_rator = SLV_Prim $ SLPrim_claim CT_Assert
   void $
     evalApplyVals' ass_rator $
       [cmp_v, public $ SLV_Bytes at msg]
 
-doBalanceUpdate :: Maybe DLArg -> PrimOp -> SLVal -> App ()
-doBalanceUpdate = doBalanceUpdate_ FV_balance
+tokenMetaAssert :: TokenMeta -> DLArg -> SLVal -> PrimOp -> B.ByteString -> App ()
+tokenMetaAssert tm tok lhs op msg = do
+  at <- withAt id
+  let cmp_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [(Public, lhs)] []
+  v <- public . SLV_DLVar <$> tokenMetaGet tm tok
+  cmp_v <- evalApplyVals' cmp_rator [v]
+  let ass_rator = SLV_Prim $ SLPrim_claim CT_Assert
+  void $
+    evalApplyVals' ass_rator $
+      [cmp_v, public $ SLV_Bytes at msg]
 
-doBalanceUpdate_ :: (Int -> FluidVar) -> Maybe DLArg -> PrimOp -> SLVal -> App ()
-doBalanceUpdate_ fv mtok op rhs = do
+doBalanceUpdate :: Maybe DLArg -> PrimOp -> SLVal -> App ()
+doBalanceUpdate mtok op = \case
+  SLV_Int _ 0 -> return ()
+  rhs -> do
+    at <- withAt id
+    let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [(Public, rhs)]
+    -- Find the current balance of mtok
+    bsv <- getBalanceOf mtok
+    bv' <- evalApplyVals' up_rator [bsv]
+    bva <- compileCheckType T_UInt $ snd bv'
+    setBalance TM_Balance mtok bva
+
+tokenMetaUpdate :: TokenMeta -> DLArg -> PrimOp -> SLVal -> App ()
+tokenMetaUpdate tm tok op rhs = do
   at <- withAt id
   let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [(Public, rhs)]
-  b <- lookupBalanceFV_ fv mtok
-  balance_v <- doFluidRef b
-  balance_v' <- evalApplyVals' up_rator [balance_v]
-  doFluidSet b balance_v'
+  v <- tokenMetaGet tm tok
+  v' <- evalApplyVals' up_rator [public $ SLV_DLVar v]
+  dv <- compileCheckType (tmTypeOf tm) $ snd v'
+  tokenMetaSet tm tok dv False
 
 doArrayBoundsCheck :: Integer -> SLVal -> App ()
 doArrayBoundsCheck sz idxv = do
@@ -2335,13 +2376,13 @@ evalPrim p sargs =
       amta <-
         case mamtv of
           Just v -> compileCheckType T_UInt v
-          Nothing -> doFluidRef_da =<< lookupBalanceFV FV_balance (Just toka)
+          Nothing -> DLA_Var <$> getBalanceOf' (Just toka)
       ensure_mode SLM_ConsensusStep lab
       let mtok_a = Just toka
       amt_sv <- argToSV amta
       doBalanceAssert mtok_a amt_sv PLE (bpack lab)
       doBalanceUpdate mtok_a SUB amt_sv
-      doBalanceUpdate_ FV_supply mtok_a SUB amt_sv
+      tokenMetaUpdate TM_Supply toka SUB amt_sv
       ctxt_lift_eff $ DLE_TokenBurn at toka amta
       return $ public $ SLV_Null at lab
     SLPrim_Token_destroy -> do
@@ -2350,11 +2391,10 @@ evalPrim p sargs =
       let lab = "Token.destroy"
       ensureCreatedToken lab toka
       ensure_mode SLM_ConsensusStep lab
-      let mtoka = Just toka
-      doBalanceAssert_ FV_destroyed mtoka (SLV_Bool at False) PEQ $ bpack $ "token not yet destroyed at " <> lab
-      doBalanceAssert_ FV_supply mtoka (SLV_Int at 0) PEQ $ bpack $ "token supply zero at " <> lab
+      tokenMetaAssert TM_Destroyed toka (SLV_Bool at False) PEQ $ bpack $ "token not yet destroyed at " <> lab
+      tokenMetaAssert TM_Supply toka (SLV_Int at 0) PEQ $ bpack $ "token supply zero at " <> lab
       ctxt_lift_eff $ DLE_TokenDestroy at toka
-      doBalanceInit_ FV_destroyed mtoka $ DLA_Literal $ DLL_Bool True
+      tokenMetaSet TM_Destroyed toka (DLA_Literal $ DLL_Bool True) False
       return $ public $ SLV_Null at lab
     SLPrim_Token_new -> do
       at <- withAt id
@@ -2393,15 +2433,20 @@ evalPrim p sargs =
           DLE_TokenNew at tns
       tokdv <- doInternalLog_ Nothing tokdv_
       st <- readSt id
+      let existingToks = st_toks st
+      tokIsUniq <- tokIsUnique (map DLA_Var existingToks) $ DLA_Var tokdv
+      doClaim (CT_Assume True) tokIsUniq $ Just "New token is unique"
       setSt $
         st
-          { st_toks = st_toks st <> [tokdv]
+          { st_toks = existingToks <> [tokdv]
           , st_toks_c = S.insert tokdv (st_toks_c st)
+          , st_tok_pos = M.insert (DLA_Var tokdv) (length existingToks) (st_tok_pos st)
           }
-      let mtok_a = Just $ DLA_Var tokdv
-      doBalanceInit_ FV_balance mtok_a supplya
-      doBalanceInit_ FV_supply mtok_a supplya
-      doBalanceInit_ FV_destroyed mtok_a (DLA_Literal $ DLL_Bool False)
+      let toka = DLA_Var tokdv
+      let mtok_a = Just $ toka
+      doBalanceInit' TM_Balance mtok_a supplya
+      tokenMetaSet TM_Supply toka supplya False
+      tokenMetaSet TM_Destroyed toka (DLA_Literal $ DLL_Bool False) False
       return $ public $ SLV_DLVar tokdv
     SLPrim_padTo len -> do
       v <- one_arg
@@ -2413,23 +2458,22 @@ evalPrim p sargs =
       ps <- mapM slvParticipant_part $ map snd sargs
       retV $ (lvl, SLV_RaceParticipant at (S.fromList ps))
     SLPrim_balance -> do
-      fv <- case args of
-        [] -> lookupBalanceFV FV_balance Nothing
-        [v] -> lookupBalanceFV FV_balance . Just =<< compileCheckType T_Token v
+      case args of
+        [] -> getBalanceOf Nothing
+        [v] -> getBalanceOf . Just =<< compileCheckType T_Token v
         _ -> illegal_args
-      doFluidRef fv
     SLPrim_Token_supply -> do
       v <- one_arg
       da <- compileCheckType T_Token v
       ensureCreatedToken "Token.supply" da
-      sr <- lookupBalanceFV FV_supply $ Just da
-      doFluidRef sr
+      sr <- tokenMetaGet TM_Supply da
+      return $ public $ SLV_DLVar sr
     SLPrim_Token_destroyed -> do
       v <- one_arg
       da <- compileCheckType T_Token v
       ensureCreatedToken "Token.destroyed" da
-      dr <- lookupBalanceFV FV_destroyed $ Just da
-      doFluidRef dr
+      dr <- tokenMetaGet TM_Destroyed da
+      return $ public $ SLV_DLVar dr
     SLPrim_fluid_read fv -> do
       zero_args
       doFluidRef fv
@@ -3350,11 +3394,11 @@ evalPrim p sargs =
         return da
       at <- withAt id
       let mdv = DLVar at Nothing T_UInt
-      fvBal <- lookupBalanceFV FV_balance mtok
-      trackedBal <- doFluidRef_da fvBal
+      fvBal <- getBalanceOf' mtok
+      let trackedBal = DLA_Var fvBal
       untrackedFunds <- ctxt_lift_expr mdv $ DLE_GetUntrackedFunds at mtok trackedBal
       dv <- ctxt_lift_expr mdv $ DLE_PrimOp at ADD [DLA_Var untrackedFunds, trackedBal]
-      doFluidSet fvBal $ public $ SLV_DLVar dv
+      setBalance TM_Balance mtok (DLA_Var dv)
       return (lvl, SLV_DLVar untrackedFunds)
     SLPrim_fromSome -> do
       (mv, dv) <- two_args
@@ -3553,6 +3597,7 @@ litToSV = \case
   DLL_Null -> withAt $ flip SLV_Null "litToSV"
   DLL_Bool b -> withAt $ flip SLV_Bool b
   DLL_Int a i -> return $ SLV_Int a i
+  DLL_TokenZero -> return $ SLV_DLC DLC_Token_zero
 
 argToSV :: DLArg -> App SLVal
 argToSV = \case
@@ -4035,12 +4080,12 @@ doArrRef_ arrv idxv = do
               expect_ $ Err_Eval_RefOutOfBounds (length ts) idxi
             Just t -> retTupleRef t (DLA_Var adv) idxi
         SLV_DLVar adv@(DLVar _ _ (T_Array t sz) _) ->
-          case idxi < sz of
-            False ->
-              expect_ $ Err_Eval_RefOutOfBounds (fromIntegral sz) idxi
-            True -> do
-              idx_dla <- withAt $ \at -> DLA_Literal (DLL_Int at idxi)
-              retArrayRef t sz (DLA_Var adv) idx_dla
+            case idxi < sz of
+              False ->
+                expect_ $ Err_Eval_RefOutOfBounds (fromIntegral sz) idxi
+              True -> do
+                idx_dla <- withAt $ \at -> DLA_Literal (DLL_Int at idxi)
+                retArrayRef t sz (DLA_Var adv) idx_dla
         _ -> expect_t arrv $ Err_Eval_RefNotRefable
     SLV_DLVar idxdv@(DLVar _ _ T_UInt _) -> do
       (arr_ty, arr_dla) <- compileTypeOf arrv
@@ -4274,6 +4319,7 @@ getBindingOrigin _ = Nothing
 compilePayAmt :: TransferType -> SLVal -> App DLPayAmt
 compilePayAmt tt v = do
   at <- withAt id
+  let mtPay = DLPayAmt (DLA_Literal $ DLL_Int at 0) []
   let v_at = srclocOf_ at v
   (t, ae) <- typeOf v
   case t of
@@ -4297,15 +4343,52 @@ compilePayAmt tt v = do
                         let ((seenNet, sks), DLPayAmt nts tks) = sa
                         amt_a <- compileArgExpr amt_ae
                         token_a <- compileArgExpr token_ae
-                        when (token_a `elem` sks) $ do
-                          locAt v_at $ expect_ $ Err_Transfer_DoubleToken tt
-                        let sks' = token_a : sks
-                        return $ ((seenNet, sks'), (DLPayAmt nts $ tks <> [(amt_a, token_a)]))
+                        verifyTokenUnique sks token_a
+                        return $ ((seenNet, token_a : sks), (DLPayAmt nts $ tks <> [(amt_a, token_a)]))
                       _ -> locAt v_at $ expect_ $ Err_Token_DynamicRef
                   _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
-          snd <$> (foldlM go ((False, []), DLPayAmt (DLA_Literal $ DLL_Int at 0) []) $ zip ts aes)
+          snd <$> (foldlM go ((False, []), mtPay) $ zip ts aes)
+        DLAE_Arg (DLA_Var dv) -> do
+          let go sa (ty, idx) = do
+                let getPayAmt = DLE_TupleRef at $ DLA_Var dv
+                let mkVar vt e = DLA_Var <$> (ctxt_lift_expr (DLVar at Nothing vt) e)
+                case ty of
+                  T_UInt -> do
+                    let ((seenNet, sks), DLPayAmt _ tks) = sa
+                    when seenNet $ do
+                      locAt v_at $ expect_ $ Err_Transfer_DoubleNetworkToken tt
+                    a <- mkVar T_UInt $ getPayAmt idx
+                    return $ ((True, sks), DLPayAmt a tks)
+                  tupTy@(T_Tuple [T_UInt, T_Token]) -> do
+                    let ((seenNet, sks), DLPayAmt nts tks) = sa
+                    tup   <- mkVar tupTy $ getPayAmt idx
+                    amt_a <- mkVar T_UInt  $ DLE_TupleRef at tup 0
+                    tok_a <- mkVar T_Token $ DLE_TupleRef at tup 1
+                    verifyTokenUnique sks tok_a
+                    return $ ((seenNet, tok_a : sks), (DLPayAmt nts $ tks <> [(amt_a, tok_a)]))
+                  _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
+          snd <$> (foldlM go ((False, []), mtPay) $ zip ts [0 ..])
         _ -> locAt v_at $ expect_ $ Err_Token_DynamicRef
     _ -> locAt v_at $ expect_t v $ Err_Transfer_Type tt
+  where
+    verifyTokenUnique sks tok = do
+      unless (null sks) $ do
+        tokUniq <- tokIsUnique sks tok
+        doClaim CT_Assert tokUniq $ Just "Token in pay amount is unique"
+
+tokIsUnique :: [DLArg] -> DLArg -> App DLArg
+tokIsUnique sks tok = do
+  at <- withAt id
+  let arrTy = T_Array T_Token $ fromIntegral $ length sks
+  tokens <- ctxt_lift_expr (DLVar at Nothing $ arrTy) $ DLE_LArg at $ DLLA_Array T_Token sks
+  let arrayIncludes args = do
+        f <- lookStdlib "Foldable_includes"
+        evalApplyArgs' f args
+  let notF x = do
+        f <- lookStdlib "not"
+        evalApplyVals' f [x]
+  tokUniqSv <- notF =<< arrayIncludes [DLA_Var tokens, tok]
+  compileCheckType T_Bool $ snd tokUniqSv
 
 doToConsensus :: [JSStatement] -> ToConsensusRec -> App SLStmtRes
 doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
@@ -4391,12 +4474,14 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
       expect_ $ Err_Token_InWhile
   let old_toks = st_toks st
   let all_toks = old_toks <> toks
+  let all_toks_idx = (flip zip [0 ..]) $ map DLA_Var all_toks
   let st_recv =
         st
           { st_mode = SLM_ConsensusStep
           , st_pdvs = pdvs_recv
           , st_toks = all_toks
           , st_after_first = True
+          , st_tok_pos = M.fromList all_toks_idx
           }
   msg_env <- foldlM env_insertp mempty $ zip msg $ map (sls_sss at . public . SLV_DLVar) $ dr_msg
   let recv_env_mod = who_env_mod . (M.insert "this" (SLSSVal at Public $ SLV_DLVar dr_from))
@@ -4412,7 +4497,7 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
         void $ locSt st_pure $ evalApplyVals' req_rator [public bv, public $ SLV_Bytes at $ "non-network tokens distinct"]
         void $ locSt st_pure $ evalExpr $ amt_req
         forM_ (map DLA_Var toks) $ \tok -> do
-          doBalanceInit $ Just tok
+          doBalanceInit TM_Balance $ Just tok
           ctxt_lift_eff $ DLE_TokenInit at tok
         -- Check payments
         DLPayAmt {..} <- compilePayAmt_ amt_e
@@ -4894,7 +4979,8 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let pay_ss = [JSConstant aa (JSLOne $ JSVarInitExpression (pay_var nnts_js) $ JSVarInit aa pay_e) sp] <> verifyPaySpec <> [JSReturn aa (Just (pay_var nnts_ret)) sp]
         let pay_call = jsCallThunk aa $ jsThunkStmts aa pay_ss
         return pay_call
-      _ -> return pay_e
+      Nothing -> return pay_e
+      Just _ -> expect_ $ Err_InvalidPaySpec
   let tc_pay_e = JSCallExpression (JSMemberDot tc_when_e a (jid "pay")) a (toJSCL [pay_expr, pay_req]) a
   -- END: Non-network token pay
   let tc_time_e =
@@ -4921,6 +5007,18 @@ modifyLastM f l =
     x : l' -> do
       x' <- f x
       return $ reverse (x' : l')
+
+getReturnAnnot :: JSExpression -> Maybe JSAnnot
+getReturnAnnot = \case
+  JSArrowExpression _ _ b -> cb b
+  _ -> Nothing
+  where
+    cb = \case
+      JSConciseExprBody e -> Just $ jsa e
+      JSConciseFunBody (JSBlock _ stmts _) ->
+        case reverse stmts of
+          JSReturn a _ _:_ -> Just a
+          _ -> Nothing
 
 doParallelReduce :: JSExpression -> ParallelReduceRec -> App [JSStatement]
 doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
@@ -4953,13 +5051,14 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let fork_e0 = jsCall a (jid "fork") []
   let injectContinueIntoBody addArgs e = do
         let ea = jsa e
+        let ra = fromMaybe ea $ getReturnAnnot e
         let esp = JSSemi ea
-        let def_e = JSIdentifier ea $ prid "res"
+        let def_e = JSIdentifier ra $ prid "res"
         let dotargs = JSSpreadExpression a (JSIdentifier ea $ prid "args")
         let argsl = if addArgs then [dotargs] else []
         let call_og = jsCall ea e argsl
         let def_s = JSConstant ea (JSLOne $ JSVarInitExpression def_e $ JSVarInit ea call_og) esp
-        let asn_s = JSAssignStatement lhs (JSAssign ea) def_e esp
+        let asn_s = JSAssignStatement lhs (JSAssign ra) def_e esp
         let continue_s = JSContinue ea JSIdentNone esp
         return $ jsArrowStmts ea argsl [def_s, asn_s, continue_s]
   fork_e1 <-
@@ -5129,7 +5228,7 @@ findStmtTrampoline = \case
         , st_live = True
         , st_after_ctor = False
         }
-    doBalanceInit Nothing
+    doBalanceInit TM_Balance Nothing
     evalStmt ks
   _ -> Nothing
 
@@ -5143,7 +5242,7 @@ doExit = do
   let one mtok = doBalanceAssert mtok zero PEQ $ "balance zero at " <> lab
   one Nothing
   mapM_ (one . Just . DLA_Var) =<< readSt st_toks
-  let mintedEnsureDestroyed tokv = doBalanceAssert_ FV_destroyed (Just $ DLA_Var tokv) (SLV_Bool at True) PEQ $ "token destroyed at " <> lab
+  let mintedEnsureDestroyed tokv = tokenMetaAssert TM_Destroyed (DLA_Var tokv) (SLV_Bool at True) PEQ $ "token destroyed at " <> lab
   mapM_ mintedEnsureDestroyed =<< readSt st_toks_c
   saveLift $ DLS_Stop at
   st <- readSt id
@@ -5168,7 +5267,8 @@ doWhileLikeInitEval lhs rhs = do
 doWhileLikeContinueEval :: JSExpression -> M.Map SLVar DLVar -> SLSVal -> App ()
 doWhileLikeContinueEval lhs whilem (rhs_lvl, rhs_v) = do
   at <- withAt id
-  decl_env <- evalDeclLHS False Nothing rhs_lvl mempty rhs_v lhs
+  let merr = Just $ Err_LoopVariableLength $ srclocOf rhs_v
+  decl_env <- evalDeclLHS False merr rhs_lvl mempty rhs_v lhs
   stEnsureMode SLM_ConsensusStep
   forM_
     (M.keys decl_env)
@@ -5480,9 +5580,9 @@ evalStmt = \case
       let select_one vn (at_c, shouldBind, body) = do
             let vt = varm M.! vn
             dv' <- ctxt_mkvar $ DLVar at_c (Just (at_c, de_v)) vt
-            let vv = case vt of
-                  T_Null -> SLV_Null at_c "case"
-                  _ -> SLV_DLVar dv'
+            vv <- case vt of
+                  T_Null -> return $ SLV_Null at_c "case"
+                  _ -> return $ SLV_DLVar dv'
             return $ (dv', at_c, select at_c shouldBind body vv)
       let select_all sv = do
             dv <- case sv of

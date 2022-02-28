@@ -240,6 +240,7 @@ instance Equiv DLLiteral where
     (DLL_Null, DLL_Null) -> True
     (DLL_Bool b1, DLL_Bool b2) -> equiv b1 b2
     (DLL_Int _ x, DLL_Int _ y) -> equiv x y
+    (DLL_TokenZero, DLL_TokenZero) -> True
     _ -> False
 
 instance Equiv SLTypeFun where
@@ -321,7 +322,11 @@ instance Equiv DLVar where
   equiv (DLVar _ _ _dl i1) (DLVar _ _ _dl2 i2) = equiv i1 i2
 
 instance Equiv DLConstant where
-  equiv DLC_UInt_max DLC_UInt_max = True
+  equiv a b = case (a, b) of
+    (DLC_UInt_max, DLC_UInt_max) -> True
+    (DLC_Token_zero, DLC_Token_zero) -> True
+    _ -> False
+
 
 instance Equiv SLVal where
   equiv a b = case (a, b) of

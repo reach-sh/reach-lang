@@ -407,7 +407,9 @@ interpPrim = \case
   (f, args) -> impossible $ "unhandled primop" <> show f <> " " <> show args
 
 conCons' :: DLConstant -> DLVal
-conCons' DLC_UInt_max = V_UInt $ 2 ^ (64 :: Integer) - 1
+conCons' = \case
+  DLC_UInt_max  -> V_UInt $ 2 ^ (64 :: Integer) - 1
+  DLC_Token_zero -> V_Token 0
 
 instance Interp DLArg where
   interp = \case
@@ -441,6 +443,7 @@ instance Interp DLLiteral where
     DLL_Null -> return $ V_Null
     DLL_Bool bool -> return $ V_Bool bool
     DLL_Int _at int -> return $ V_UInt int
+    DLL_TokenZero -> return $ V_Token 0
 
 instance Interp DLLargeArg where
   interp = \case

@@ -299,7 +299,8 @@ jobs:
     - run: |
         (cd examples/rps-9-web && REACH_CONNECTOR_MODE=ALGO ../../reach react) &
         (cd js/browser-tests && make build)
-        sleep 60  # give the react server lots of time to start up
+        # give the react server time to start up
+        timeout 60 bash -c 'until echo > /dev/tcp/localhost/3000; do sleep 1; done'
 
         # XXX this is weird. Working around issue:
         # "_XSERVTransMakeAllCOTSServerListeners: server already running"

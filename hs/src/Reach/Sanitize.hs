@@ -27,6 +27,7 @@ instance Sanitize DLLiteral where
       DLL_Null -> l
       DLL_Bool {} -> l
       DLL_Int _ i -> DLL_Int sb i
+      DLL_TokenZero -> l
 
 instance Sanitize DLArg where
   sani a =

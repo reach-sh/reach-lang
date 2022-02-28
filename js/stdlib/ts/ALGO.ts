@@ -939,7 +939,8 @@ function randlabsProviderEnv(net: string): ProviderEnv {
     ALGO_SERVER: `https://node.${RANDLABS_BASE}`,
     ALGO_PORT: '',
     ALGO_TOKEN: '',
-    ALGO_INDEXER_SERVER: `https://indexer.${RANDLABS_BASE}`,
+    // TODO: update to just indexer.
+    ALGO_INDEXER_SERVER: `https://algoindexer.${RANDLABS_BASE}`,
     ALGO_INDEXER_PORT: '',
     ALGO_INDEXER_TOKEN: '',
     REACH_ISOLATED_NETWORK: 'no',
@@ -1499,6 +1500,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                 from = thisAcc.addr;
                 to = ctcAddr;
                 amt = t.amt;
+              }  else if ( t.kind === 'info' ) {
+                const { tok } = t;
+                recordAsset(tok);
+                return;
               } else {
                 assert(false, 'sim txn kind');
               }
@@ -1686,7 +1691,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const bal = await balanceOf({ addr: ctcAddr }, mtok);
         // XXX May be wrong sometimes. Accurate minimumBalance requires this change:
         //     https://github.com/algorand/go-algorand/pull/3287
-        const result = bal.eq(0) ? bal : bal.sub(minimumBalance);
+        const result = bal.lt(minimumBalance) ? bigNumberify(0) : bal.sub(minimumBalance);
         debug(`Balance of contract:`, result);
         return result;
       }
@@ -2157,11 +2162,12 @@ export async function launchToken (accCreator:Account, name:string, sym:string, 
   };
   const supply = opts.supply ? bigNumberify(opts.supply) : bigNumberify(2).pow(64).sub(1);
   const decimals = opts.decimals !== undefined ? opts.decimals : 6;
+  const clawback = opts.clawback !== undefined ? addr(opts.clawback) : zaddr;
   const ctxn_p = await dotxn(
     (params:TxnParams) =>
     algosdk.makeAssetCreateTxnWithSuggestedParams(
       caddr, undefined, bigNumberToBigInt(supply), decimals,
-      false, zaddr, zaddr, zaddr, zaddr,
+      false, zaddr, zaddr, zaddr, clawback,
       sym, name, '', '', params,
     ));
   const idn = ctxn_p['created-asset-index'];

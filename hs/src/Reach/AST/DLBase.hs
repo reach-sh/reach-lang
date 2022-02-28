@@ -61,6 +61,13 @@ instance FromJSON DLType
 
 instance ToJSON DLType
 
+tokenInfoElemTy :: DLType
+tokenInfoElemTy = T_Tuple [balance, supply, destroyed]
+  where
+    balance = T_UInt
+    supply = T_UInt
+    destroyed = T_Bool
+
 maybeT :: DLType -> DLType
 maybeT t = T_Data $ M.fromList $ [("None", T_Null), ("Some", t)]
 
@@ -188,7 +195,11 @@ instance Pretty DLInit where
 
 data DLConstant
   = DLC_UInt_max
-  deriving (Eq, Generic, Show, Ord)
+  | DLC_Token_zero
+  deriving (Bounded, Enum, Eq, Generic, Show, Ord)
+
+allConstants :: [DLConstant]
+allConstants = enumFrom minBound
 
 instance ToJSON DLConstant
 
@@ -196,16 +207,19 @@ instance FromJSON DLConstant
 
 instance Pretty DLConstant where
   pretty = \case
-    DLC_UInt_max -> "UInt.max"
+    DLC_UInt_max  -> "UInt.max"
+    DLC_Token_zero -> "Token.zero"
 
 conTypeOf :: DLConstant -> DLType
 conTypeOf = \case
-  DLC_UInt_max -> T_UInt
+  DLC_UInt_max  -> T_UInt
+  DLC_Token_zero -> T_Token
 
 data DLLiteral
   = DLL_Null
   | DLL_Bool Bool
   | DLL_Int SrcLoc Integer
+  | DLL_TokenZero
   deriving (Eq, Generic, Show, Ord)
 
 instance ToJSON DLLiteral
@@ -217,12 +231,14 @@ instance Pretty DLLiteral where
     DLL_Null -> "null"
     DLL_Bool b -> if b then "true" else "false"
     DLL_Int _ i -> viaShow i
+    DLL_TokenZero -> "Token.zero"
 
 litTypeOf :: DLLiteral -> DLType
 litTypeOf = \case
   DLL_Null -> T_Null
   DLL_Bool _ -> T_Bool
   DLL_Int {} -> T_UInt
+  DLL_TokenZero -> T_Token
 
 data DLVar = DLVar SrcLoc (Maybe (SrcLoc, SLVar)) DLType Int
   deriving (Generic)
@@ -244,7 +260,7 @@ instance Ord DLVar where
   (DLVar _ _ _ x) <= (DLVar _ _ _ y) = x <= y
 
 instance Pretty DLVar where
-  pretty (DLVar _ _ _ i) = "v" <> viaShow i
+  pretty (DLVar _ _ t i) = ("v" <> viaShow i <> " : " <> viaShow t )
 
 instance Show DLVar where
   show (DLVar _ b _ i) =
@@ -752,9 +768,10 @@ instance PrettySubst DLExpr where
       mc' <- prettySubst mc
       let f' = pretty f
       return $ "setApiDetails" <> parens (render_das [p', d', mc', f'])
-    DLE_GetUntrackedFunds _ mtok _ -> do
+    DLE_GetUntrackedFunds _ mtok tb -> do
       mtok' <- prettySubst mtok
-      return $ "getActualBalance" <> parens mtok'
+      tb' <- prettySubst tb
+      return $ "getActualBalance" <> parens (mtok' <> ", " <> tb')
     DLE_FromSome _ mo da -> do
       mo' <- prettySubst mo
       da' <- prettySubst da
@@ -844,7 +861,7 @@ instance IsLocal DLExpr where
     DLE_GetAddress {} -> True
     DLE_EmitLog {} -> False
     DLE_setApiDetails {} -> False
-    DLE_GetUntrackedFunds {} -> False
+    DLE_GetUntrackedFunds {} -> True
     DLE_FromSome {} -> True
 
 instance CanDupe DLExpr where
@@ -1075,9 +1092,9 @@ instance Pretty a => Pretty (DLRecv a) where
       <> render_nest (pretty dr_k)
 
 data FluidVar
-  = FV_balance Int
-  | FV_supply Int
-  | FV_destroyed Int
+  = FV_tokenInfos
+  | FV_tokens
+  | FV_netBalance
   | FV_thisConsensusTime
   | FV_lastConsensusTime
   | FV_baseWaitTime
@@ -1089,9 +1106,9 @@ data FluidVar
 
 instance Pretty FluidVar where
   pretty = \case
-    FV_balance i -> "balance" <> parens (pretty i)
-    FV_supply i -> "supply" <> parens (pretty i)
-    FV_destroyed i -> "destroyed" <> parens (pretty i)
+    FV_tokenInfos -> "tokenInfos"
+    FV_tokens -> "tokens"
+    FV_netBalance -> "netBalance"
     FV_thisConsensusTime -> "thisConsensusTime"
     FV_lastConsensusTime -> "lastConsensusTime"
     FV_baseWaitTime -> "baseWaitTime"
@@ -1102,9 +1119,9 @@ instance Pretty FluidVar where
 
 fluidVarType :: FluidVar -> DLType
 fluidVarType = \case
-  FV_balance _ -> T_UInt
-  FV_supply _ -> T_UInt
-  FV_destroyed _ -> T_Bool
+  FV_tokenInfos -> impossible "fluidVarType: FV_tokenInfos"
+  FV_tokens -> impossible "fluidVarType: FV_tokens"
+  FV_netBalance -> T_UInt
   FV_thisConsensusTime -> T_UInt
   FV_lastConsensusTime -> T_UInt
   FV_baseWaitTime -> T_UInt
@@ -1113,24 +1130,22 @@ fluidVarType = \case
   FV_baseWaitSecs -> T_UInt
   FV_didSend -> T_Bool
 
-allFluidVars :: Int -> [FluidVar]
-allFluidVars bals =
+allFluidVars :: [FluidVar]
+allFluidVars =
   [ FV_thisConsensusTime
   , FV_lastConsensusTime
   , FV_baseWaitTime
   , FV_thisConsensusSecs
   , FV_lastConsensusSecs
   , FV_baseWaitSecs
+  , FV_tokenInfos
+  , FV_tokens
+  , FV_netBalance
   -- This function is not really to get all of them, but just to
   -- get the ones that must be saved for a loop. didSend is only used locally,
   -- so it doesn't need to be saved.
   --, FV_didSend
   ]
-    <> map FV_balance all_toks
-    <> map FV_supply all_toks
-    <> map FV_destroyed all_toks
-  where
-    all_toks = [0 .. (bals + 1)]
 
 class HasCounter a where
   getCounter :: a -> Counter

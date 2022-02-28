@@ -1,0 +1,8 @@
+reachc: error[RE0128]: Cannot assign the loop variable(s) to a `Tuple` of different length at: ./Err_LoopVariableLength.rsh:26:15:tuple
+
+  ./Err_LoopVariableLength.rsh:13:9:array
+
+  13|   const [ a ] =
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0128
+

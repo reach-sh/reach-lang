@@ -143,7 +143,7 @@ PART_EXPR.publish(ID_0, ..., ID_n)
 
 where `{!rsh} PART_EXPR` is an expression that evaluates to a participant or race expression,
 `{!rsh} ID_0` through `{!rsh} ID_n` are identifiers for `{!rsh} PART`'s public local state,
-`{!rsh} PAY_EXPR` is a public expression that either evaluates to a pay amount.
+`{!rsh} PAY_EXPR` is a public expression that evaluates to a pay amount.
 `{!rsh} PAY_REQUIRE_EXPR` is an optional nullary function that can be used to make `{!rsh} require` claims about the `PAY_EXPR`.
 `{!rsh} WHEN_EXPR` is a public expression evaluating to a boolean and determines if the consensus transfer takes place,
 `{!rsh} DELAY_EXPR` is a public expression that depends on only consensus state and evaluates to a time argument,
@@ -189,6 +189,7 @@ The `{!rsh} timeout` component must be included if `{!rsh} when` is not statical
 This ensures that your clients will eventually complete the program.
 If a consensus transfer is a guaranteed race between non-class participants and a participant class that _may_ attempt to transfer (i.e. `{!rsh} when` is not statically `{!rsh} false`), then a `{!rsh} timeout` may be explicitly omitted by writing `{!rsh} .timeout(false)`.
 
+@{ref("rsh", "throwTimeout")}
 `{!rsh} .throwTimeout` may be used in place of `{!rsh} .timeout`. It accepts a `{!rsh} DELAY_EXPR` and an `{!rsh} EXPR`, which will be thrown if a timeout should occur.
 If an `{!rsh} EXPR` is not provided, then `{!rsh} null` will be thrown.
 If a consensus transfer uses `{!rsh} .throwTimeout`, it must be within a try statement.
@@ -274,7 +275,7 @@ fork()
 .throwTimeout(DELAY_EXPR, THROW_EXPR)
 ```
 where:
-+ `{!rsh} TOKENS_EXPR` is an expression that evaluates to a tuple of `{!rsh} Token`s;
++ `{!rsh} TOKENS_EXPR` is a syntactic tuple of `{!rsh} Token` identifiers;
 + `{!rsh} PART_EXPR` is an expression that evaluates to a participant;
 + `{!rsh} PUBLISH_EXPR` is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a `msg` field, which may be of any type, and a `when` field, which must be a boolean;
 + (optional) `{!rsh} PAY_EXPR` is an expression that evaluates to a function parameterized over the `msg` value and returns a pay amount; if this component is left-out, it is synthesized to zero;
@@ -488,7 +489,7 @@ where:
 + `DOMAIN` is the the domain of the API member function.
 + `RET_FUN` is a function that returns a value to the API call. This function must be called.
 + `API_EXPR` is an expression that evaluates to an API member function.
-+ `API_PAY_EXPR`, `API_ASSUME_EXPR`, and `{!rsh} throwTimeout` are like the corresponding parts in a `{!rsh} fork` statement.
++ `API_PAY_EXPR` and `API_ASSUME_EXPR` are like the corresponding parts in a `{!rsh} fork` statement, and `{!rsh} call.throwTimeout` is like in `{!rsh} fork.throwTimeout`.
 They are optional.
 
  `{!rsh} call` will call the given API member function, returning a pair, `{!rsh} [DOMAIN, RET_FUN]`.

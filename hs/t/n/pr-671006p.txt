@@ -8,21 +8,23 @@ Verification failed:
 
   // Violation Witness
 
-  const sum/179 = <loop variable>;
-  //    ^ could = 0
-  //      from: ./pr-671006p.rsh:31:37:while
-  const balance(0)/182 = <loop variable>;
-  //    ^ could = 0
-  //      from: ./pr-671006p.rsh:31:37:while
-  const v231 = <map reduction>;
+  const UInt.max = 2;
+
+  const sum/175 = <loop variable>;
   //    ^ could = 1
+  //      from: ./pr-671006p.rsh:31:37:while
+  const netBalance/178 = <loop variable>;
+  //    ^ could = 1
+  //      from: ./pr-671006p.rsh:31:37:while
+  const v226 = <map reduction>;
+  //    ^ could = 0
   //      from: reach standard library:139:18:application
 
   // Theorem Formalization
 
-  const v239 = ((balance(0)/182 == sum/179) ? (sum/179 == v231) : false);
+  const v234 = ((netBalance/178 == sum/175) ? (sum/175 == v226) : false);
   //    ^ would be false
-  assert(v239);
+  assert(v234);
 
   Verifying when NO participants are honest
 Checked 34 theorems; 2 failures (and 1 omitted repeats) :'(

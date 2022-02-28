@@ -217,6 +217,8 @@ jsCon = \case
   DLL_Int at i -> do
     uim <- jsArg (DLA_Constant $ DLC_UInt_max)
     return $ jsApply "stdlib.checkedBigNumberify" [jsAt at, uim, pretty i]
+  DLL_TokenZero ->
+    return "stdlib.Token_zero"
 
 jsArg :: AppT DLArg
 jsArg = \case
@@ -225,6 +227,8 @@ jsArg = \case
     case c of
       DLC_UInt_max ->
         return "stdlib.UInt_max"
+      DLC_Token_zero ->
+        return "stdlib.Token_zero"
   DLA_Literal c -> jsCon c
   DLA_Interact who m t ->
     jsProtect (jsString $ "for " <> bunpack who <> "'s interact field " <> m) t $ "interact." <> pretty m
@@ -430,7 +434,7 @@ jsExpr = \case
         m' <- jsArg dtn_metadata
         p' <- jsArg dtn_supply
         d' <- maybe (return "undefined") jsArg dtn_decimals
-        return $ jsApply "stdlib.simTokenNew" ["sim_r", n', s', u', m', p', d']
+        return $ jsApply "stdlib.simTokenNew" ["sim_r", n', s', u', m', p', d', "getSimTokCtr()"]
   DLE_TokenBurn _ ta aa ->
     (ctxt_mode <$> ask) >>= \case
       JM_Simulate -> do
@@ -466,21 +470,7 @@ jsExpr = \case
       (L_Api p, [dv]) -> go (bunpack p) dv
       (_, _) -> return $ "null"
   DLE_setApiDetails {} -> return "undefined"
-  DLE_GetUntrackedFunds at mtok tb -> do
-    tok <- maybe (return "") jsArg mtok
-    tb' <- jsArg tb
-    zero <- jsArg $ DLA_Literal $ DLL_Int at 0
-    let bal = "await" <+> jsApply "ctc.getBalance" [tok]
-    asks ctxt_mode >>= \case
-      JM_Simulate -> return $ jsPrimApply SUB [bal, tb']
-      _ ->
-        return $
-          jsPrimApply
-            IF_THEN_ELSE
-            [ jsPrimApply PEQ [bal, zero]
-            , zero
-            , jsPrimApply SUB [bal, tb']
-            ]
+  DLE_GetUntrackedFunds {} -> impossible "getUntrackedFunds"
   DLE_FromSome _at mo da -> do
     mo' <- jsArg mo
     da' <- jsArg da
@@ -501,6 +491,25 @@ jsEmitSwitch iter _at ov csm = do
 jsCom :: AppT DLStmt
 jsCom = \case
   DL_Nop _ -> mempty
+  DL_Let _ (DLV_Let _ dv) (DLE_GetUntrackedFunds at mtok tb) -> do
+    dv' <- jsVar dv
+    tok <- maybe (return "") jsArg mtok
+    tb' <- jsArg tb
+    zero <- jsArg $ DLA_Literal $ DLL_Int at 0
+    let bal = "await" <+> jsApply "ctc.getBalance" [tok]
+    let rhs = jsPrimApply
+          IF_THEN_ELSE
+          [ jsPrimApply PLE [bal, tb']
+          , zero
+          , jsPrimApply SUB [bal, tb']
+          ]
+    ctm <- asks ctxt_mode
+    let infoSim = case ctm == JM_Simulate && isJust mtok of
+          True -> jsSimTxn "info" [("tok", tok)]
+          _ -> ""
+    return $ vsep
+      [ infoSim <> ";"
+      , "const" <+> dv' <+> "=" <+> rhs <> semi ]
   DL_Let _ (DLV_Let _ dv) de -> do
     dv' <- jsVar dv
     rhs <- jsExpr de
@@ -724,9 +733,13 @@ jsETail = \case
                        ["sim_r", jsMapIdx mpv, jsMapVar mpv])
                       <> semi
             dupeMaps <- mapM dupeMap =<< ((M.toAscList . ctxt_maps) <$> ask)
+            let tokCtr = vsep
+                        [ "let sim_txn_ctr = stdlib.UInt_max;"
+                        , "const getSimTokCtr = () => { sim_txn_ctr = sim_txn_ctr.sub(1); return sim_txn_ctr; };" ]
             let sim_body =
                   vsep
                     [ "const sim_r = { txns: [], mapRefs: [], maps: [] };"
+                    , tokCtr
                     , vsep dupeMaps
                     , k_defp
                     , sim_body_core

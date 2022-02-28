@@ -213,6 +213,11 @@ instance Pretty CHandler where
       , render_nest $ pretty body
       ]
 
+instance SrcLocOf CHandler where
+  srclocOf = \case
+    C_Handler {..} -> ch_at
+    C_Loop {..} -> cl_at
+
 newtype CHandlers = CHandlers (M.Map Int CHandler)
   deriving (Eq)
   deriving newtype (Monoid, Semigroup)

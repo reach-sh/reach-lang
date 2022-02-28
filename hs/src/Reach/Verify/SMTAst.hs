@@ -260,6 +260,7 @@ data SMTVal
   | SMV_Digest String
   | SMV_Null
   | SMV_Bytes B.ByteString
+  | SMV_Array_Const DLType SMTVal
   | SMV_Array DLType [SMTVal]
   | SMV_Tuple [SMTVal]
   | SMV_Object (M.Map String SMTVal)
@@ -284,6 +285,7 @@ instance Pretty SMTVal where
     SMV_Null -> "null"
     SMV_Bytes b -> pretty b
     SMV_Array t xs -> "array" <> parens (hsep $ punctuate comma [pretty t, brackets $ hsep $ punctuate comma $ map pretty xs])
+    SMV_Array_Const t x -> "Array.const" <> parens (hsep $ punctuate comma [pretty t, pretty x])
     SMV_Tuple xs -> brackets $ hsep $ punctuate comma $ map pretty xs
     SMV_Object ts -> braces $ hsep $ punctuate comma $ map (\(k, v) -> pretty k <> ":" <+> pretty v) (M.toAscList ts)
     SMV_Struct ts -> braces $ hsep $ punctuate comma $ map (\(k, v) -> pretty k <> ":" <+> pretty v) ts

@@ -9,14 +9,16 @@ Verification failed:
 
   // Violation Witness
 
+  const UInt.max = 2;
+
   const v75 = "Alice".interact.wager;
   //    ^ could = 1
   //      from: ./index-bad.rsh:11:10:property binding
   const v78 = protect<UInt>("Alice".interact.getHand());
-  //    ^ could = 8
+  //    ^ could = 0
   //      from: ./index-bad.rsh:21:50:application
   const v88 = protect<UInt>("Bob".interact.getHand());
-  //    ^ could = 4
+  //    ^ could = 2
   //      from: ./index-bad.rsh:29:48:application
 
   // Theorem Formalization

@@ -10,6 +10,7 @@ export * as ethers from 'ethers';
 const ethLike = makeEthLike(ethImpl);
 // The following should be identical to CFX.ts
 export const {
+  doCall,
   getQueryLowerBound,
   setQueryLowerBound,
   getValidQueryWindow,

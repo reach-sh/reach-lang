@@ -46,6 +46,7 @@ import System.Exit
 import System.FilePath
 import System.IO.Temp
 import System.Process.ByteString
+import Text.Read
 
 -- Errors for ALGO
 
@@ -124,7 +125,9 @@ conName' :: T.Text
 conName' = "ALGO"
 
 conCons' :: DLConstant -> DLLiteral
-conCons' DLC_UInt_max = DLL_Int sb $ 2 ^ (64 :: Integer) - 1
+conCons' = \case
+  DLC_UInt_max  -> DLL_Int sb $ 2 ^ (64 :: Integer) - 1
+  DLC_Token_zero -> DLL_Int sb $ 0
 
 algoMinTxnFee :: Integer
 algoMinTxnFee = 1000
@@ -554,7 +557,7 @@ type Lets = M.Map DLVar (App ())
 
 data Env = Env
   { eShared :: Shared
-  , eWhich :: Int
+  , eWhich :: Maybe Int
   , eLabel :: Counter
   , eOutputR :: IORef TEALs
   , eHP :: ScratchSlot
@@ -569,8 +572,11 @@ data Env = Env
 
 type App = ReaderT Env IO
 
+separateResources :: App a -> App a
+separateResources = dupeResources . resetToks
+
 recordWhich :: Int -> App a -> App a
-recordWhich n = local (\e -> e {eWhich = n}) . dupeResources . resetToks
+recordWhich n = local (\e -> e {eWhich = Just n}) . separateResources
 
 type CostGraph a = M.Map a (CostRecord a)
 
@@ -657,7 +663,10 @@ updateResources f = do
   Env {..} <- ask
   let Shared {..} = eShared
   let g r = Just . (f r) . fromMaybe (CostRecord 0 mempty)
-  liftIO $ modifyIORef sResources $ M.mapWithKey (\r -> M.alter (g r) eWhich)
+  case eWhich of
+    Nothing -> return ()
+    Just which ->
+      liftIO $ modifyIORef sResources $ M.mapWithKey (\r -> M.alter (g r) which)
 
 addResourceEdge :: Int -> App ()
 addResourceEdge w' = do
@@ -670,8 +679,8 @@ addResourceCheck = do
   updateResources $ \r t ->
     t {cr_n = max (snd $ c M.! r) (cr_n t)}
 
-checkResources :: Bad' -> ResourceGraph -> IO ()
-checkResources bad' rg = do
+checkResources :: Bad' -> Bad' -> (Int -> SrcLoc) -> ResourceGraph -> IO ()
+checkResources bad' warn' findAt rg = do
   let one emit r = do
         let maxc = maxOf r
         let tcs = rg M.! r
@@ -683,12 +692,12 @@ checkResources bad' rg = do
                 CostRecord {..} = tcs M.! i
         forM_ (M.keys tcs) $ \which -> do
           let amt = chase which
+          let at = findAt which
           when (fromIntegral amt > maxc) $ do
-            emit $ "Step " <> texty which <> " could have too many " <> texty r <> ": could have " <> texty amt <> " but limit is " <> texty maxc
-  let warn x = emitWarning Nothing $ W_ALGOConservative [LT.unpack x]
+            emit $ "Step " <> texty which <> " (the one starting from the consensus transfer at " <> texty at <> ") could have too many " <> texty r <> ": could have " <> texty amt <> " but limit is " <> texty maxc
   one bad' R_Txn
-  one warn R_Asset
-  one warn R_Account
+  one warn' R_Asset
+  one warn' R_Account
   one bad' R_InnerTxn
 
 resetToks :: App a -> App a
@@ -922,6 +931,7 @@ cl = \case
   DLL_Null -> cbs ""
   DLL_Bool b -> cint $ if b then 1 else 0
   DLL_Int at i -> cint_ at i
+  DLL_TokenZero -> cint 0
 
 cbool :: Bool -> App ()
 cbool = cl . DLL_Bool
@@ -1633,7 +1643,7 @@ ce = \case
         clogEvent name vs
         --cl DLL_Null -- Event log values are never used
   DLE_setApiDetails {} -> return ()
-  DLE_GetUntrackedFunds _ mtok tb -> do
+  DLE_GetUntrackedFunds at mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
     case mtok of
       Nothing -> do
@@ -1652,25 +1662,34 @@ ce = \case
         -- [ extra ]
         return ()
       Just tok -> do
-        -- XXX We have to call checkTxnUsage to make sure we are opted in
-        -- XXX We have to leave residue in the simulator (with JS.hs) so that
-        -- we can add this asset to the Assets array (in case it is not also in
-        -- the pay list)
-        when False $ do
-          cContractAddr
-          ca tok
-          code "asset_holding_get" [ "AssetBalance" ]
-          -- [ bal ]
-          ca tb
-          -- [ bal, rsh_bal ]
-          op "-"
-          -- XXX WARNING, because of Clawback, this^ may fail
-          -- What to do? Return 0? Fail? Change the interface of this so that
-          -- instead it returns a new amount (that we know nothing about)? Add
-          -- untrustworthyTokens?
-          -- [ extra ]
-          return ()
-        bad $ "GetUntrackedFunds on token"
+        cb_lab <- freshLabel $ "getUntrackedFunds" <> "_z"
+        checkTxnUsage at mtok
+        cContractAddr
+        ca tok
+        code "asset_holding_get" [ "AssetBalance" ]
+        op "pop"
+        -- [ bal ]
+        ca tb
+        -- [ bal, rsh_bal ]
+        op "dup2"
+        -- [ bal, rsh_bal, bal, rsh_bal ]
+        op "<"
+        -- [ bal, rsh_bal, {0, 1} ]
+        -- Branch IF the bal < rsh_bal
+        code "bnz" [ cb_lab ]
+        -- [ bal, rsh_bal ]
+        op "-"
+        code "b" [ after_lab ]
+        -- This happens because of clawback
+        label cb_lab
+        -- [ bal, rsh_bal ]
+        op "pop"
+        -- [ bal ]
+        op "pop"
+        -- [  ]
+        cint 0
+        -- [ extra ]
+        return ()
     label after_lab
   DLE_FromSome _ mo da -> do
     ca da
@@ -2302,8 +2321,18 @@ compileTEAL :: String -> IO BS.ByteString
 compileTEAL tealf = do
   (ec, stdout, stderr) <- readProcessWithExitCode "goal" ["clerk", "compile", tealf, "-o", "-"] mempty
   case ec of
-    ExitFailure _ ->
-      impossible $ "The TEAL compiler failed with the message:\n" <> show stderr
+    ExitFailure _ -> do
+      let failed = impossible $ "The TEAL compiler failed with the message:\n" <> show stderr
+      let tooBig = bpack tealf <> ": app program size too large: "
+      case BS.isPrefixOf tooBig stderr of
+        True -> do
+          let notSpace = (32 /=)
+          let sz_bs = BS.takeWhile notSpace $ BS.drop (BS.length tooBig) stderr
+          let mlen :: Maybe Int = readMaybe $ bunpack sz_bs
+          case mlen of
+            Nothing -> failed
+            Just sz -> return $ BS.replicate sz 0
+        False -> failed
     ExitSuccess -> return stdout
 
 data CMeth
@@ -2396,7 +2425,7 @@ cmeth sigi = \case
       comment $ LT.pack $ "View: " <> sig
       comment $ LT.pack $ "  ui: " <> show sigi
       gvLoad GV_currentStep
-      flip (cblt "viewStep") (bltM hs) $ \hi vbvs -> do
+      flip (cblt "viewStep") (bltM hs) $ \hi vbvs -> separateResources $ do
         vbvs' <- liftIO $ add_counts vbvs
         let VSIBlockVS svsl deb = vbvs'
         let (DLinExportBlock _ mfargs (DLBlock at _ t r)) = deb
@@ -2490,7 +2519,7 @@ compile_algo env disp pl = do
         let eVars = mempty
         let eLets = mempty
         let eLetSmalls = mempty
-        let eWhich = 0
+        let eWhich = Nothing
         eNewToks <- newIORef mempty
         eInitToks <- newIORef mempty
         eResources <- newResources
@@ -2617,12 +2646,13 @@ compile_algo env disp pl = do
   -- Clear state is never allowed
   addProg "appClear" False $ do
     return ()
-  checkResources bad' =<< readIORef sResources
+  let findAt which = fromMaybe sb $ fmap srclocOf $ M.lookup which hm
+  checkResources bad' warn' findAt =<< readIORef sResources
   stateSize <- readIORef sStateSizeR
   void $ recordSizeAndKeys "state" stateSize algoMaxGlobalSchemaEntries_usable
   totalLen <- readIORef totalLenR
   unless (totalLen <= algoMaxAppProgramLen_really) $ do
-    bad' $ texty $ "The program is too long; its length is " <> show totalLen <> ", but the maximum possible length is " <> show algoMaxAppProgramLen_really
+    bad' $ LT.pack $ "The program is too long; its length is " <> show totalLen <> ", but the maximum possible length is " <> show algoMaxAppProgramLen_really
   let extraPages :: Integer = ceiling ((fromIntegral totalLen :: Double) / fromIntegral algoMaxAppProgramLen) - 1
   modifyIORef resr $
     M.insert "extraPages" $
@@ -2634,8 +2664,8 @@ compile_algo env disp pl = do
           emitWarning Nothing $ w $ S.toList $ S.map LT.unpack ss
         modifyIORef resr $ M.insert lab $
           aarray $ S.toList $ S.map (Aeson.String . LT.toStrict) ss
-  wss W_ALGOUnsupported "unsupported" sFailures
   wss W_ALGOConservative "warnings" sWarnings
+  wss W_ALGOUnsupported "unsupported" sFailures
   let apiEntry lab f = (lab, aarray $ map (Aeson.String . s2t) $ M.keys $ M.filter f meth_sm)
   modifyIORef resr $
     M.insert "ABI" $

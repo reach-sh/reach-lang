@@ -7,6 +7,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.8 is the current Reach release candidate version.
 
++ 2022/02/25: Added support for tracking `{!rsh} Token` information—such as balance, supply, and whether its destroyed—dynamically.
 + 2022/02/25: Added `{!cmd} reach info`.
 + 2022/02/25: Removed `{!cmd} reach upgrade` (subsumed by `{!cmd} reach update`).
 + 2022/02/08: Added `{!js} balancesOf`.

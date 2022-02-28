@@ -1,0 +1,50 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "Token in pay amount is unique"
+  at ./nonunique_payamt.rsh:23:5:dot
+
+  // Violation Witness
+
+  const v177 = "A".interact.condish;
+  //    ^ could = false
+  //      from: ./nonunique_payamt.rsh:6:12:property binding
+  const v178 = "A".interact.tokens;
+  //    ^ could = array(Token, [Token!val!0 ] )
+  //      from: ./nonunique_payamt.rsh:5:11:property binding
+
+  // Theorem Formalization
+
+  const v218 = ((v178[1] == array(Token, [(v177 ? v178[0] : v178[1]) ])[0]) ? false : true);
+  //    ^ would be false
+  assert(v218);
+
+  Verifying when NO participants are honest
+Verification failed:
+  when NO participants are honest
+  of theorem: assert
+  msg: "Token in pay amount is unique"
+  at ./nonunique_payamt.rsh:23:5:dot
+
+  // Violation Witness
+
+  const token1/186 = v181;
+  //    ^ could = Token!val!1
+  //      from: ./nonunique_payamt.rsh:17:5:dot
+  const token2/187 = v182;
+  //    ^ could = Token!val!3
+  //      from: ./nonunique_payamt.rsh:17:5:dot
+  const condish/188 = v177;
+  //    ^ could = false
+  //      from: ./nonunique_payamt.rsh:17:5:dot
+
+  // Theorem Formalization
+
+  const v230 = ((token2/187 == array(Token, [(condish/188 ? token1/186 : token2/187) ])[0]) ? false : true);
+  //    ^ would be false
+  assert(v230);
+
+Checked 27 theorems; 2 failures :'(
