@@ -1,6 +1,6 @@
 reachc: error[RE0000]: Invalid function application. Expected 0 args, got 1 for function defined at ./pr_no_msg.rsh:17:10:function exp
 
-  ./pr_no_msg.rsh:17:10:application
+  ./pr_no_msg.rsh:17:15:application
 
   17|       () => { return [ false ]; })
 
