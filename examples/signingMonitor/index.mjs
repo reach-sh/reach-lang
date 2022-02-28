@@ -26,7 +26,7 @@ const stepsInProgram = 3;
 console.log(reqs);
 const actual = reqs.length;
 const expected = {
-  'ALGO': (stepsInProgram + 1 /*alloc*/ + 2 /*optin*/ + 3 /*newTestAccount*/),
+  'ALGO': (stepsInProgram + 1 /*alloc*/ + 2 /*optin*/ + 3 /*newTestAccount*/ + 1 /*launchToken*/),
   'CFX': stepsInProgram,
   'ETH': stepsInProgram + 3 /*newTestAccount?*/,
 }[stdlib.connector];
