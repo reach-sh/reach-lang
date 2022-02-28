@@ -62,7 +62,7 @@ ci () {
   ${REACH} compile --install-pkgs
   ${REACH} compile --intermediate-files
   make build
-  REACH_DEBUG=1 REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=N REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 
@@ -141,6 +141,8 @@ ci ETH clawback
 c hs/t/y/hamza5.rsh
 fc hs/t/n/tooBig.rsh
 c asolpshinning-viewProblem.rsh
+#(cd scripts/devnet-algo && make build) && "${REACH}" down
+ci ALGO algo-time
 exit 0
 
 cdot users/algo-govt/index.rsh
