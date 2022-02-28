@@ -2149,7 +2149,7 @@ const makeAssetCreateTxn = (
   name: string,
   url: string,
   metadataHash: string,
-  clawback: Address,
+  clawback: Address | undefined,
   params: TxnParams,
 ): Transaction => {
   return algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
@@ -2172,7 +2172,7 @@ export const launchToken = async (accCreator: Account, name: string, sym: string
   const decimals = opts.decimals ?? 6;
   const url = opts.url ?? '';
   const metadataHash = opts.metadataHash ?? '';
-  const clawback = opts.clawback ? protect(T_Address, opts.clawback) as string : '';
+  const clawback = opts.clawback ? protect(T_Address, opts.clawback) as string : undefined;
   const params = await getTxnParams('launchToken');
 
   const txnResult = await sign_and_send_sync(
