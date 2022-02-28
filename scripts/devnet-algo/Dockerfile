@@ -31,6 +31,9 @@ RUN make install
 COPY reach2.patch .
 RUN patch -p1 < reach2.patch
 RUN make install
+COPY reach3.patch .
+RUN patch -p1 < reach3.patch
+RUN make install
 
 ### INDEXER
 WORKDIR ${SRC_PARENT}

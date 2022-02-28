@@ -1,0 +1,31 @@
+diff --git a/data/bookkeeping/block.go b/data/bookkeeping/block.go
+index a60a9362..e2679bf0 100644
+--- a/data/bookkeeping/block.go
++++ b/data/bookkeeping/block.go
+@@ -448,7 +448,7 @@ func MakeBlock(prev BlockHeader) Block {
+ 		logging.Base().Panicf("MakeBlock: error processing upgrade: %v", err)
+ 	}
+ 
+-	params, ok := config.Consensus[upgradeState.CurrentProtocol]
++	_, ok := config.Consensus[upgradeState.CurrentProtocol]
+ 	if !ok {
+ 		logging.Base().Panicf("MakeBlock: next protocol %v not supported", upgradeState.CurrentProtocol)
+ 	}
+@@ -457,8 +457,6 @@ func MakeBlock(prev BlockHeader) Block {
+ 	if prev.TimeStamp > 0 {
+ 		if timestamp < prev.TimeStamp {
+ 			timestamp = prev.TimeStamp
+-		} else if timestamp > prev.TimeStamp+params.MaxTimestampIncrement {
+-			timestamp = prev.TimeStamp + params.MaxTimestampIncrement
+ 		}
+ 	}
+ 
+@@ -546,8 +544,6 @@ func (bh BlockHeader) PreCheck(prev BlockHeader) error {
+ 		// special case when the previous timestamp is zero -- allow a larger window
+ 		if bh.TimeStamp < prev.TimeStamp {
+ 			return fmt.Errorf("bad timestamp: current %v < previous %v", bh.TimeStamp, prev.TimeStamp)
+-		} else if bh.TimeStamp > prev.TimeStamp+params.MaxTimestampIncrement {
+-			return fmt.Errorf("bad timestamp: current %v > previous %v, max increment = %v ", bh.TimeStamp, prev.TimeStamp, params.MaxTimestampIncrement)
+ 		}
+ 	}
+ 
