@@ -1,0 +1,10 @@
+reachc: error[RE0088]: These types are mismatched:
+  expected: Bool
+       got: UInt
+
+  ./mismatch_return_type.rsh:28:9:continue
+
+  28|         return [ 1 ];
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0088
+

@@ -5008,6 +5008,18 @@ modifyLastM f l =
       x' <- f x
       return $ reverse (x' : l')
 
+getReturnAnnot :: JSExpression -> Maybe JSAnnot
+getReturnAnnot = \case
+  JSArrowExpression _ _ b -> cb b
+  _ -> Nothing
+  where
+    cb = \case
+      JSConciseExprBody e -> Just $ jsa e
+      JSConciseFunBody (JSBlock _ stmts _) ->
+        case reverse stmts of
+          JSReturn a _ _:_ -> Just a
+          _ -> Nothing
+
 doParallelReduce :: JSExpression -> ParallelReduceRec -> App [JSStatement]
 doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let pr_at = slpr_at
@@ -5038,7 +5050,7 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let inv_s = JSMethodCall (JSIdentifier a "invariant") a (JSLOne inv_e) a sp
   let fork_e0 = jsCall a (jid "fork") []
   let injectContinueIntoBody addArgs e = do
-        let ea = jsa e
+        let ea = fromMaybe (jsa e) $ getReturnAnnot e
         let esp = JSSemi ea
         let def_e = JSIdentifier ea $ prid "res"
         let dotargs = JSSpreadExpression a (JSIdentifier ea $ prid "args")
