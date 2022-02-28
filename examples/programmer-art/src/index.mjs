@@ -3,27 +3,27 @@ import cytoscape from 'cytoscape';
 import klay from 'cytoscape-klay';
 import "../scss/custom.scss";
 
+// initialize the JSON Log
 let jsonLog = [
   ["resetServer"],
   ["load"],
   ["init"]
 ]
 
-const appendToLog = (r) => {
-  console.log(r)
-}
-
-const noop = () => {
- appendToLog('No-Op');
-}
-
-const noOpHandler = (evt) => {
-  noop();
-}
-
+// reset server
 await c.resetServer()
+
+// load the Reach program
 const rsh = await c.load()
+
+// initialize the program for the Consensus
 await c.init()
+
+// load highlight.js to render Reach code
+// https://highlightjs.org/usage/
+
+// there is a plug-in for the line numbers
+// https://github.com/wcoder/highlightjs-line-numbers.js/
 
 const hlns1 = document.createElement('script');
 const hlns2 = document.createElement('script');
@@ -46,8 +46,12 @@ hlns3.onload = function() {
 };
 document.getElementsByTagName('head')[0].appendChild(hlns1);
 
+// we use cytoscape.js for the graph
+// currently we use the "klay" layout
 cytoscape.use( klay );
 
+// currently we use dynamic css stylesheets to help
+// with highlighting line numbers
 const sheet = (function() {
 	const style = document.createElement("style");
 	style.appendChild(document.createTextNode(""));
@@ -55,15 +59,32 @@ const sheet = (function() {
 	return style.sheet;
 })();
 
+// Reach code display tile
 const codeDiv = document.querySelector("#cx")
 codeDiv.innerHTML = rsh
 
+// the Single Page Application (state details) tile
 const spa = document.querySelector("#spa")
+
+// currently the SPA works by saving "views" to these variables
+// these represent the first 3 views in that order
+
+// The first view is the objects view which lists the Actors, lets you do
+// transfers, add new accounts/tokens etc.
+
+// Each object should have a details view.
+
+// Each detail should have an actions view.
+
+// Each action should have a response view, but since that is the
+// terminal view, it doesn't have to be saved for the breadcrumb UI.
 
 let objectsHTML = null;
 let detailsHTML = null;
 let actionsHTML = null;
 
+
+//#### event handler which loads the Objects View
 const renderObjects = async (nodeId) => {
   const r = await c.getStateLocals(nodeId)
   let obs = ``
@@ -176,6 +197,7 @@ const renderObjects = async (nodeId) => {
   bindObjDetailsEvents();
 }
 
+// helper for the Actor Initialization form (on the Objects View)
 const initActorDetsHelper = async (a) => {
   const initPanel = document.querySelector("#initDetailsPanel")
   const dets = await c.initDetails(a)
@@ -194,6 +216,7 @@ const initActorDetsHelper = async (a) => {
   initPanel.innerHTML = initHtml
 }
 
+// helper to bind events for the Objects View
 const bindObjDetailsEvents = () => {
   const objectBtns = document.querySelectorAll(".object-button")
   objectBtns.forEach((item, i) => {
@@ -220,7 +243,6 @@ const bindObjDetailsEvents = () => {
     icon.classList.remove('bi-check2')
     icon.classList.add('bi-plus-lg')
     console.log(`added new Account id: ${r}`)
-    appendToLog(fr)
   }
   newAccBtn.addEventListener("click",newAccHandler)
 
@@ -244,7 +266,6 @@ const bindObjDetailsEvents = () => {
     icon.classList.remove('bi-check2')
     icon.classList.add('bi-plus-lg')
     console.log(`added new Token id: ${r}`)
-    appendToLog(fr)
   }
   newTokBtn.addEventListener("click",newTokHandler)
 
@@ -265,7 +286,6 @@ const bindObjDetailsEvents = () => {
     icon.classList.remove('bi-check2')
     icon.classList.add('bi-clipboard')
     console.log("logged local state")
-    appendToLog(fr)
   }
   localsBtn.addEventListener("click",locals)
 
@@ -286,7 +306,6 @@ const bindObjDetailsEvents = () => {
     icon.classList.remove('bi-check2')
     icon.classList.add('bi-clipboard')
     console.log("logged global state")
-    appendToLog(fr)
   }
   globalsBtn.addEventListener("click",globals)
 
@@ -318,7 +337,6 @@ const bindObjDetailsEvents = () => {
     }
 
     let r = await c.initFor(nodeId,selectedActorId,JSON.stringify(liv),accId)
-    appendToLog(r)
     redraw()
     jsonLog.push(["initFor",nodeId,selectedActorId,JSON.stringify(liv),accId])
   }
@@ -351,13 +369,13 @@ const bindObjDetailsEvents = () => {
     await navigator.clipboard.writeText(fr)
     icon.classList.remove('bi-check2')
     icon.classList.add('bi-arrow-right-circle')
-    appendToLog(r)
     redraw()
     jsonLog.push(["transfer",nodeId,frActorId,toActorId,tokId,amount])
   }
   transferBtn.addEventListener("click",transfer)
 }
 
+//#### event handler which loads the Objects-Details View
 const renderObjectDetails = async (evt) => {
   objectsHTML = spa.innerHTML
   const tgt = evt.target.closest(".object-button")
@@ -434,17 +452,20 @@ const renderObjectDetails = async (evt) => {
   setupReturnToObjects()
 }
 
+// helper to bind events for the Objects-Details View
 const bindObjDetailsActionsEvents = () => {
+  // currently we only allow clicks on "Program Status"
   const statusPanel = document.querySelectorAll(".status-panel")
   statusPanel.forEach((item, i) => {
     item.addEventListener("click",detailActions)
   });
-  const noOps = document.querySelectorAll(".no-op")
-  noOps.forEach((item, i) => {
-    item.addEventListener("click",noOpHandler)
-  });
+  // const noOps = document.querySelectorAll(".no-op")
+  // noOps.forEach((item, i) => {
+  //   item.addEventListener("click",noOpHandler)
+  // });
 }
 
+// helper to backtrack to the Objects View from the Objects-Details View
 const setupReturnToObjects = () => {
   const objectsRetLink = document.querySelector("#return-to-objects")
   const backtrackToObjects = () => {
@@ -457,6 +478,7 @@ const setupReturnToObjects = () => {
   objectsRetLink.addEventListener("click",backtrackToObjects)
 }
 
+// helper to backtrack to the Details View from the Actions View
 const setupReturnToObjectsDetails = () => {
   const detsRetLink = document.querySelector("#return-to-details")
   const backtrackToDetails = () => {
@@ -470,6 +492,7 @@ const setupReturnToObjectsDetails = () => {
   detsRetLink.addEventListener("click",backtrackToDetails)
 }
 
+//#### event handler which loads the Details-Actions View
 const detailActions = async (evt) => {
   detailsHTML = spa.innerHTML
   const tgt = evt.target.closest(".status-panel")
@@ -480,7 +503,7 @@ const detailActions = async (evt) => {
   const act = await c.getActions(nodeId,actorId)
   console.log(act)
   if (!act) {
-    noop();
+    // noop();
     return false
   }
   let acts = ``
@@ -502,6 +525,7 @@ const detailActions = async (evt) => {
   setupReturnToObjectsDetails()
 }
 
+// bind events for Actions view
 const bindObjDetailsActionsResponseEvents = () => {
   const actionsPanel = document.querySelectorAll(".action-button")
   actionsPanel.forEach((item, i) => {
@@ -509,6 +533,7 @@ const bindObjDetailsActionsResponseEvents = () => {
   });
 }
 
+//#### event handler which loads the Actions-Response View
 const respondToActions = async (evt) => {
   actionsHTML = spa.innerHTML
   const tgt = evt.target.closest(".action-button")
@@ -546,6 +571,7 @@ const respondToActions = async (evt) => {
   setupReturnToActions()
 }
 
+// backtrack to Actions from Response view
 const setupReturnToActions = () => {
   const actionsRetLink = document.querySelector("#return-to-actions")
   const backtrackToActions = () => {
@@ -560,6 +586,10 @@ const setupReturnToActions = () => {
   actionsRetLink.addEventListener("click",backtrackToActions)
 }
 
+// this is a helper method for the Response View
+// based on the response type, this function returns an array of 2 elements
+// 1ˢᵗ: the html for the view
+// 2ⁿᵈ: the event handler for the view
 const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
   switch (act) {
     // case 'A_Interact':
@@ -571,7 +601,6 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
       const respondSpaTieBreak = async () => {
         let tiebreakerId = document.querySelector("#tiebreakers-spa-select").value;
         let r = await c.respondWithVal(nodeId,actId,parseInt(tiebreakerId),actorId)
-        appendToLog(r)
         redraw()
         jsonLog.push(["respondWithVal",nodeId,actId,parseInt(tiebreakerId),actorId])
       }
@@ -589,7 +618,6 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
     case 'A_Receive':
       const respondSpaContest = async () => {
         let r = await c.respondWithVal(nodeId,actId,0,actorId)
-        appendToLog(r)
         redraw()
         jsonLog.push(["respondWithVal",nodeId,actId,0,actorId])
       }
@@ -615,7 +643,6 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
           v = JSON.stringify(JSON.parse(v))
         }
         let r = await c.respondWithVal(nodeId,actId,v,aid,t)
-        appendToLog(r)
         redraw()
         jsonLog.push(["respondWithVal",nodeId,actId,v,aid,t])
       }
@@ -647,6 +674,19 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
 
   }
 }
+
+// helper to help render Actions
+// the actions come as JSON objects from Scotty Server
+// https://hackage.haskell.org/package/scotty-0.12/docs/Web-Scotty.html
+
+// the objects may not necessarily be organized in the most intuitive way
+// usually there is at least:
+// a "tag" field which describes the object
+// a "contents" field which contains the data for the object
+
+// it may help to look at the objects in an interactive dev environment
+// such as Google Chrome Dev Tools etc.
+// that's what i did when building this so far :) - CA
 
 const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
   const act = actObj[1]
@@ -733,6 +773,7 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
 
 }
 
+// redraw the Cytoscape visualization
 const redraw = async () => {
   let edges = await c.getEdges()
   let states = await c.getStates()
@@ -898,6 +939,7 @@ const redraw = async () => {
 
 redraw();
 
+// event handler for clicking a state node in the Cytoscape visualization
 const clickNode = async (evt) => {
   const nodeId = evt.target.id()
   const r = await c.getStateLocals(nodeId)
@@ -945,6 +987,7 @@ const clickNode = async (evt) => {
   renderObjects(nodeId)
 }
 
+// load a JSON simulation "script" (not to be confused with Reach script)
 const loadScriptBtn = document.querySelector("#load-script")
 const loadScript = async (evt) => {
   let icon = evt.target.querySelector('.bi')
@@ -964,6 +1007,7 @@ const loadScript = async (evt) => {
 }
 loadScriptBtn.addEventListener("click",loadScript)
 
+// save a JSON simulation "script"
 const saveScriptBtn = document.querySelector("#save-script")
 const saveScript = async (evt) => {
   let icon = evt.target.querySelector('.bi')
