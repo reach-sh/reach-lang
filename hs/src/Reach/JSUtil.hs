@@ -284,6 +284,18 @@ instance HasJSAnnot JSBinOp where
     JSBinOpTimes _ -> JSBinOpTimes a'
     JSBinOpUrsh _ -> JSBinOpUrsh a'
 
+instance HasJSAnnot JSArrayElement where
+  jsa = \case
+    JSArrayElement e -> jsa e
+    JSArrayComma a -> a
+  rjsa a' = \case
+    JSArrayElement e -> JSArrayElement $ rjsa a' e
+    JSArrayComma _ -> JSArrayComma a'
+
+instance HasJSAnnot JSObjectPropertyList where
+  jsa = undefined
+  rjsa a' x = (mkCommaTrailingList (map (rjsa a') $ jso_flatten x))
+
 instance HasJSAnnot JSExpression where
   jsa = \case
     JSIdentifier a _ -> a
@@ -328,7 +340,7 @@ instance HasJSAnnot JSExpression where
     JSOctal _ x -> JSOctal a' x
     JSStringLiteral _ x -> JSStringLiteral a' x
     JSRegEx _ x -> JSRegEx a' x
-    JSArrayLiteral _ x _ -> JSArrayLiteral a' x a'
+    JSArrayLiteral _ x _ -> JSArrayLiteral a' (map (rjsa a') x) a'
     JSAssignExpression a x y -> JSAssignExpression (rjsa a' a) (rjsa a' x) (rjsa a' y)
     JSAwaitExpression _ x -> JSAwaitExpression a' (rjsa a' x)
     JSCallExpression a _ y _ -> JSCallExpression (rjsa a' a) a' (rjsaJSL a' y) a'
@@ -340,7 +352,7 @@ instance HasJSAnnot JSExpression where
     JSExpressionParen _ x _ -> JSExpressionParen a' (rjsa a' x) a'
     JSExpressionPostfix a x -> JSExpressionPostfix (rjsa a' a) (rjsa a' x)
     JSExpressionTernary a _ y _ r -> JSExpressionTernary (rjsa a' a) a' (rjsa a' y) a' (rjsa a' r)
-    JSArrowExpression x _ y -> JSArrowExpression x a' y
+    JSArrowExpression x _ y -> JSArrowExpression x a' (rjsa a' $ jsArrowBodyToStmt y)
     JSFunctionExpression _ x _ z _ s -> JSFunctionExpression a' x a' (rjsaJSL a' z) a' s
     JSGeneratorExpression _ _ y _ r _ t -> JSGeneratorExpression a' a' y a' (rjsaJSL a' r) a' t
     JSMemberDot a _ y -> JSMemberDot (rjsa a' a) a' (rjsa a' y)
@@ -348,7 +360,7 @@ instance HasJSAnnot JSExpression where
     JSMemberNew _ x _ z _ -> JSMemberNew a' (rjsa a' x) a' (rjsaJSL a' z) a'
     JSMemberSquare a _ y _ -> JSMemberSquare (rjsa a' a) a'  (rjsa a' y) a'
     JSNewExpression _ x -> JSNewExpression a' (rjsa a' x)
-    JSObjectLiteral _ x _ -> JSObjectLiteral a' (mkCommaTrailingList (map (rjsa a') $ jso_flatten x)) a'
+    JSObjectLiteral _ x _ -> JSObjectLiteral a' (rjsa a' x) a'
     JSSpreadExpression _ x -> JSSpreadExpression a' (rjsa a' x)
     JSTemplateLiteral x _ y z -> JSTemplateLiteral (fmap (rjsa a') x) a' y z
     JSUnaryExpression a x -> JSUnaryExpression (rjsa a' a) (rjsa a' x)
