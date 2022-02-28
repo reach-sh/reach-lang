@@ -2173,7 +2173,7 @@ export const launchToken = async (accCreator: Account, name: string, sym: string
   const decimals = opts.decimals ?? 6;
   const url = opts.url ?? '';
   const metadataHash = opts.metadataHash ?? '';
-  const clawback = opts.clawback ? protect(T_Address, opts.clawback) as string : undefined;
+  const clawback = opts.clawback ? cbr2algo_addr(protect(T_Address, opts.clawback) as string) : undefined;
   const params = await getTxnParams('launchToken');
 
   const txnResult = await sign_and_send_sync(
