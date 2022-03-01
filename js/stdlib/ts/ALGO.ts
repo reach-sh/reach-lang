@@ -159,7 +159,7 @@ export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
 type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
 
-export type ContractInfo = number;
+export type ContractInfo = BigNumber;
 type SendRecvArgs = ISendRecvArgs<Address, Token, AnyALGO_Ty>;
 type RecvArgs = IRecvArgs<AnyALGO_Ty>;
 type Recv = IRecv<Address>
@@ -1327,7 +1327,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
       const getContractInfo = async () => {
         const { ApplicationID } = await getC();
-        return bigNumberToNumber(ApplicationID);
+        return ApplicationID;
       };
 
       const getState = async (vibne:BigNumber, vtys:AnyALGO_Ty[]): Promise<Array<any>> => {
@@ -1393,7 +1393,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
           const ApplicationID = bigNumberify(ai);
           debug(label, `created`, {ApplicationID});
-          const ctcInfo = Number(ai);
+          const ctcInfo = ApplicationID;
           setTrustedVerifyResult({ ApplicationID, Deployer });
           setInfo(ctcInfo);
         }
