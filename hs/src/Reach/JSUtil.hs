@@ -396,7 +396,7 @@ instance HasJSAnnot JSObjectProperty where
 
 instance RepJSAnnot JSObjectProperty where
   rjsa a' = \case
-    JSPropertyNameandValue x _ y -> JSPropertyNameandValue (rjsa a' x) a' (f y)
+    JSPropertyNameandValue x _ y -> JSPropertyNameandValue (f x) a' (f y)
     JSPropertyIdentRef _ x -> JSPropertyIdentRef a' x
     JSObjectMethod jmd -> JSObjectMethod $ f jmd
     JSObjectSpread _ x -> JSObjectSpread a' (f x)
@@ -412,9 +412,9 @@ instance HasJSAnnot JSMethodDefinition where
 
 instance RepJSAnnot JSMethodDefinition where
   rjsa a' = \case
-    JSMethodDefinition x _ y _ r -> JSMethodDefinition x a' (rjsa a' y) a' (f r)
-    JSGeneratorMethodDefinition _ x _ z _ s -> JSGeneratorMethodDefinition a' x a' (rjsa a' z) a' (f s)
-    JSPropertyAccessor x y _ z _ s -> JSPropertyAccessor x y a' (rjsa a' z) a' (f s)
+    JSMethodDefinition x _ y _ r -> JSMethodDefinition x a' (f y) a' (f r)
+    JSGeneratorMethodDefinition _ x _ z _ s -> JSGeneratorMethodDefinition a' x a' (f z) a' (f s)
+    JSPropertyAccessor x y _ z _ s -> JSPropertyAccessor x y a' (f z) a' (f s)
     where
       f :: (RepJSAnnot a) => a -> a
       f = rjsa a'
