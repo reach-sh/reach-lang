@@ -933,15 +933,16 @@ async function makeProviderByEnv(env: Partial<ProviderEnv>): Promise<Provider> {
   const [indexer_bc, indexer] = await waitIndexerFromEnv(fullEnv);
   const isIsolatedNetwork = truthyEnv(fullEnv.REACH_ISOLATED_NETWORK);
   const nodeWriteOnly = truthyEnv(fullEnv.ALGO_NODE_WRITE_ONLY);
-  const lab = `Providers created by environment`;
+  const errmsg = (s: string) =>
+    `Providers created by environment ${s}. Calling setProviderByEnv or setProviderByName removes this capability. Try removing calls to those functions.`
   const getDefaultAddress = async (): Promise<Address> => {
-    throw new Error(`${lab} do not have default addresses`);
+    throw new Error(errmsg(`do not have default addresses`));
   };
   const signAndPostTxns = async (txns:WalletTransaction[], opts?:object) => {
     void(opts);
     const stxns = txns.map((txn) => {
       if ( txn.stxn ) { return txn.stxn; }
-      throw new Error(`${lab} cannot interactively sign`);
+      throw new Error(errmsg(`cannot interactively sign`));
     });
     const bs = stxns.map((stxn) => Buffer.from(stxn, 'base64'));
     debug(`signAndPostTxns`, bs);
