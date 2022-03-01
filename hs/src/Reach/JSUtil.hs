@@ -181,11 +181,11 @@ class HasJSAnnot a where
 class RepJSAnnot a where
   rjsa :: JSAnnot -> a -> a
 
-rjsaJSL :: RepJSAnnot a => JSAnnot -> JSCommaList a -> JSCommaList a
-rjsaJSL a' = \case
-  JSLNil -> JSLNil
-  JSLOne a -> JSLOne $ rjsa a' a
-  JSLCons cl _ x -> JSLCons (rjsaJSL a' cl) a' $ rjsa a' x
+instance (RepJSAnnot a) => RepJSAnnot (JSCommaList a) where
+  rjsa a' = \case
+    JSLNil -> JSLNil
+    JSLOne a -> JSLOne $ rjsa a' a
+    JSLCons cl _ x -> JSLCons (rjsa a' cl) a' $ rjsa a' x
 
 instance HasJSAnnot JSAssignOp where
   jsa = \case
@@ -307,8 +307,8 @@ instance RepJSAnnot JSArrayElement where
 
 instance RepJSAnnot JSObjectPropertyList where
   rjsa a' = \case
-    JSCTLComma l _ -> JSCTLComma (rjsaJSL a' l) a'
-    JSCTLNone l  -> JSCTLNone $ rjsaJSL a' l
+    JSCTLComma l _ -> JSCTLComma (rjsa a' l) a'
+    JSCTLNone l  -> JSCTLNone $ rjsa a' l
 
 instance HasJSAnnot JSExpression where
   jsa = \case
@@ -356,33 +356,36 @@ instance RepJSAnnot JSExpression where
     JSOctal _ x -> JSOctal a' x
     JSStringLiteral _ x -> JSStringLiteral a' x
     JSRegEx _ x -> JSRegEx a' x
-    JSArrayLiteral _ x _ -> JSArrayLiteral a' (rjsa a' x) a'
-    JSAssignExpression a x y -> JSAssignExpression (rjsa a' a) (rjsa a' x) (rjsa a' y)
-    JSAwaitExpression _ x -> JSAwaitExpression a' (rjsa a' x)
-    JSCallExpression a _ y _ -> JSCallExpression (rjsa a' a) a' (rjsaJSL a' y) a'
-    JSCallExpressionDot a _ y -> JSCallExpressionDot (rjsa a' a) a' (rjsa a' y)
-    JSCallExpressionSquare a _ y _ -> JSCallExpressionSquare (rjsa a' a) a' (rjsa a' y) a'
-    JSClassExpression _ x y _ r _ -> JSClassExpression a' (rjsa a' x) y a' r a'
-    JSCommaExpression a _ y -> JSCommaExpression (rjsa a' a) a' (rjsa a' y)
-    JSExpressionBinary a x y -> JSExpressionBinary (rjsa a' a) (rjsa a' x) (rjsa a' y)
-    JSExpressionParen _ x _ -> JSExpressionParen a' (rjsa a' x) a'
-    JSExpressionPostfix a x -> JSExpressionPostfix (rjsa a' a) (rjsa a' x)
-    JSExpressionTernary a _ y _ r -> JSExpressionTernary (rjsa a' a) a' (rjsa a' y) a' (rjsa a' r)
-    JSArrowExpression x _ y -> JSArrowExpression (rjsa a' x) a' $ jsStmtToConciseBody (rjsa a' $ jsArrowBodyToStmt y)
-    JSFunctionExpression _ x _ z _ s -> JSFunctionExpression a' x a' (rjsaJSL a' z) a' (rjsa a' s)
-    JSGeneratorExpression _ _ y _ r _ t -> JSGeneratorExpression a' a' y a' (rjsaJSL a' r) a' (rjsa a' t)
-    JSMemberDot a _ y -> JSMemberDot (rjsa a' a) a' (rjsa a' y)
-    JSMemberExpression a _ y _ -> JSMemberExpression (rjsa a' a) a' (rjsaJSL a' y) a'
-    JSMemberNew _ x _ z _ -> JSMemberNew a' (rjsa a' x) a' (rjsaJSL a' z) a'
-    JSMemberSquare a _ y _ -> JSMemberSquare (rjsa a' a) a'  (rjsa a' y) a'
-    JSNewExpression _ x -> JSNewExpression a' (rjsa a' x)
-    JSObjectLiteral _ x _ -> JSObjectLiteral a' (rjsa a' x) a'
-    JSSpreadExpression _ x -> JSSpreadExpression a' (rjsa a' x)
-    JSTemplateLiteral x _ y z -> JSTemplateLiteral (fmap (rjsa a') x) a' y (rjsa a' z)
-    JSUnaryExpression a x -> JSUnaryExpression (rjsa a' a) (rjsa a' x)
-    JSVarInitExpression a x -> JSVarInitExpression (rjsa a' a) $ rjsa a' x
-    JSYieldExpression _ x -> JSYieldExpression a' (fmap (rjsa a') x)
-    JSYieldFromExpression _ _ y -> JSYieldFromExpression a' a' (rjsa a' y)
+    JSArrayLiteral _ x _ -> JSArrayLiteral a' (f x) a'
+    JSAssignExpression a x y -> JSAssignExpression (f a) (f x) (f y)
+    JSAwaitExpression _ x -> JSAwaitExpression a' (f x)
+    JSCallExpression a _ y _ -> JSCallExpression (f a) a' (f y) a'
+    JSCallExpressionDot a _ y -> JSCallExpressionDot (f a) a' (f y)
+    JSCallExpressionSquare a _ y _ -> JSCallExpressionSquare (f a) a' (f y) a'
+    JSClassExpression _ x y _ r _ -> JSClassExpression a' (f x) y a' r a'
+    JSCommaExpression a _ y -> JSCommaExpression (f a) a' (f y)
+    JSExpressionBinary a x y -> JSExpressionBinary (f a) (f x) (f y)
+    JSExpressionParen _ x _ -> JSExpressionParen a' (f x) a'
+    JSExpressionPostfix a x -> JSExpressionPostfix (f a) (f x)
+    JSExpressionTernary a _ y _ r -> JSExpressionTernary (f a) a' (f y) a' (f r)
+    JSArrowExpression x _ y -> JSArrowExpression (f x) a' $ f y
+    JSFunctionExpression _ x _ z _ s -> JSFunctionExpression a' x a' (f z) a' (f s)
+    JSGeneratorExpression _ _ y _ r _ t -> JSGeneratorExpression a' a' y a' (f r) a' (f t)
+    JSMemberDot a _ y -> JSMemberDot (f a) a' (f y)
+    JSMemberExpression a _ y _ -> JSMemberExpression (f a) a' (f y) a'
+    JSMemberNew _ x _ z _ -> JSMemberNew a' (f x) a' (f z) a'
+    JSMemberSquare a _ y _ -> JSMemberSquare (f a) a'  (f y) a'
+    JSNewExpression _ x -> JSNewExpression a' (f x)
+    JSObjectLiteral _ x _ -> JSObjectLiteral a' (f x) a'
+    JSSpreadExpression _ x -> JSSpreadExpression a' (f x)
+    JSTemplateLiteral x _ y z -> JSTemplateLiteral (f x) a' y (f z)
+    JSUnaryExpression a x -> JSUnaryExpression (f a) (f x)
+    JSVarInitExpression a x -> JSVarInitExpression (f a) $ f x
+    JSYieldExpression _ x -> JSYieldExpression a' (f x)
+    JSYieldFromExpression _ _ y -> JSYieldFromExpression a' a' (f y)
+    where
+      f :: (RepJSAnnot a) => a -> a
+      f = rjsa a'
 
 instance HasJSAnnot JSObjectProperty where
   jsa = \case
@@ -393,10 +396,13 @@ instance HasJSAnnot JSObjectProperty where
 
 instance RepJSAnnot JSObjectProperty where
   rjsa a' = \case
-    JSPropertyNameandValue x _ y -> JSPropertyNameandValue (rjsa a' x) a' (fmap (rjsa a') y)
+    JSPropertyNameandValue x _ y -> JSPropertyNameandValue (rjsa a' x) a' (f y)
     JSPropertyIdentRef _ x -> JSPropertyIdentRef a' x
-    JSObjectMethod jmd -> JSObjectMethod $ rjsa a' jmd
-    JSObjectSpread _ x -> JSObjectSpread a' (rjsa a' x)
+    JSObjectMethod jmd -> JSObjectMethod $ f jmd
+    JSObjectSpread _ x -> JSObjectSpread a' (f x)
+    where
+      f :: (RepJSAnnot a) => a -> a
+      f = rjsa a'
 
 instance HasJSAnnot JSMethodDefinition where
   jsa = \case
@@ -406,9 +412,12 @@ instance HasJSAnnot JSMethodDefinition where
 
 instance RepJSAnnot JSMethodDefinition where
   rjsa a' = \case
-    JSMethodDefinition x _ y _ r -> JSMethodDefinition x a' (rjsaJSL a' y) a' (rjsa a' r)
-    JSGeneratorMethodDefinition _ x _ z _ s -> JSGeneratorMethodDefinition a' x a' (rjsaJSL a' z) a' (rjsa a' s)
-    JSPropertyAccessor x y _ z _ s -> JSPropertyAccessor x y a' (rjsaJSL a' z) a' (rjsa a' s)
+    JSMethodDefinition x _ y _ r -> JSMethodDefinition x a' (rjsa a' y) a' (f r)
+    JSGeneratorMethodDefinition _ x _ z _ s -> JSGeneratorMethodDefinition a' x a' (rjsa a' z) a' (f s)
+    JSPropertyAccessor x y _ z _ s -> JSPropertyAccessor x y a' (rjsa a' z) a' (f s)
+    where
+      f :: (RepJSAnnot a) => a -> a
+      f = rjsa a'
 
 instance HasJSAnnot JSStatement where
   jsa = \case
@@ -451,47 +460,53 @@ instance HasJSAnnot JSStatement where
 
 instance RepJSAnnot JSStatement where
   rjsa a' = \case
-    JSStatementBlock _ x _ z -> JSStatementBlock a' (fmap (rjsa a') x) a' (rjsa a' z)
-    JSBreak _ x y -> JSBreak a' (rjsa a' x) (rjsa a' y)
-    JSLet _ x y -> JSLet a' (toJSCL (rjsa a' $ jscl_flatten x)) (rjsa a' y)
-    JSClass _ x y _z r _s t -> JSClass a' (rjsa a' x) y a' r a' (rjsa a' t)
-    JSConstant _ x y -> JSConstant a' (toJSCL (rjsa a' $ jscl_flatten x)) y
-    JSContinue _ x y -> JSContinue a' (rjsa a' x) (rjsa a' y)
-    JSDoWhile _ x _ _ r _ t -> JSDoWhile a' (rjsa a' x) a' a' (rjsa a' r) a' (rjsa a' t)
-    JSFor _ _ y _ r _ t _ v -> JSFor a' a' (rjsaJSL a' y) a' (rjsaJSL a' r) a' (rjsaJSL a' t) a' (rjsa a' v)
-    JSForIn _ _ y z r _s t -> JSForIn a' a' (rjsa a' y) (rjsa a' z) (rjsa a' r) a' (rjsa a' t)
-    JSForVar _ _ _ z _ s _ u _ w -> JSForVar a' a' a' (rjsaJSL a' z) a' (rjsaJSL a' s) a' (rjsaJSL a' u) a' (rjsa a' w)
-    JSForVarIn _ _ _ z r s _ u -> JSForVarIn a' a' a' (rjsa a' z) r (rjsa a' s) a' (rjsa a' u)
-    JSForLet _ _ _ z _ s _ u _ w -> JSForLet a' a' a' (rjsaJSL a' z) a' (rjsaJSL a' s) a' (rjsaJSL a' u) a' (rjsa a' w)
-    JSForLetIn _ _x _ z r s _ u -> JSForLetIn a' a' a' (rjsa a' z) (rjsa a' r) (rjsa a' s) a' (rjsa a' u)
-    JSForLetOf _ _x _ z r s _ u -> JSForLetOf a' a' a' (rjsa a' z) (rjsa a' r) (rjsa a' s) a' (rjsa a' u)
-    JSForConst _ _x _y z _r s _t u _v w -> JSForConst a' a' a' (rjsaJSL a' z) a' (rjsaJSL a' s) a' (rjsaJSL a' u) a' (rjsa a' w)
-    JSForConstIn _ _ _ z r s _ u -> JSForConstIn a' a' a' (rjsa a' z) r (rjsa a' s) a' (rjsa a' u)
-    JSForConstOf _ _ _ z r s _ u -> JSForConstOf a' a' a' (rjsa a' z) r (rjsa a' s) a' (rjsa a' u)
-    JSForOf _ _ y z r _ t -> JSForOf a' a' (rjsa a' y) (rjsa a' z) (rjsa a' r) a' (rjsa a' t)
-    JSForVarOf _ _ _ z r s _ u -> JSForVarOf a' a' a' (rjsa a' z) (rjsa a' r) (rjsa a' s) a' (rjsa a' u)
-    JSAsyncFunction _ _x y _ r _ t u -> JSAsyncFunction a' a' y a' (rjsaJSL a' r) a' (rjsa a' t) (rjsa a' u)
-    JSFunction _ x _ z _ s t -> JSFunction a' (rjsa a' x) a' (rjsaJSL a' z) a' (rjsa a' s) (rjsa a' t)
-    JSGenerator _ _ y _ r _ t u -> JSGenerator a' a' (rjsa a' y) a' (rjsaJSL a' r) a' (rjsa a' t) (rjsa a' u)
-    JSIf _ _x y _ r -> JSIf a' a' (rjsa a' y) a' (rjsa a' r)
-    JSIfElse _ _ y _ r _ t -> JSIfElse a' a' (rjsa a' y) a' (rjsa a' r) a' (rjsa a' t)
-    JSLabelled x _ y -> JSLabelled (rjsa a' x) a' (rjsa a' y)
+    JSStatementBlock _ x _ z -> JSStatementBlock a' (f x) a' (f z)
+    JSBreak _ x y -> JSBreak a' (f x) (f y)
+    JSLet _ x y -> JSLet a' (f x) (f y)
+    JSClass _ x y _z r _s t -> JSClass a' (f x) y a' r a' (f t)
+    JSConstant _ x y -> JSConstant a' (f x) y
+    JSContinue _ x y -> JSContinue a' (f x) (f y)
+    JSDoWhile _ x _ _ r _ t -> JSDoWhile a' (f x) a' a' (f r) a' (f t)
+    JSFor _ _ y _ r _ t _ v -> JSFor a' a' (f y) a' (f r) a' (f t) a' (f v)
+    JSForIn _ _ y z r _s t -> JSForIn a' a' (f y) (f z) (f r) a' (f t)
+    JSForVar _ _ _ z _ s _ u _ w -> JSForVar a' a' a' (f z) a' (f s) a' (f u) a' (f w)
+    JSForVarIn _ _ _ z r s _ u -> JSForVarIn a' a' a' (f z) r (f s) a' (f u)
+    JSForLet _ _ _ z _ s _ u _ w -> JSForLet a' a' a' (f z) a' (f s) a' (f u) a' (f w)
+    JSForLetIn _ _x _ z r s _ u -> JSForLetIn a' a' a' (f z) (f r) (f s) a' (f u)
+    JSForLetOf _ _x _ z r s _ u -> JSForLetOf a' a' a' (f z) (f r) (f s) a' (f u)
+    JSForConst _ _x _y z _r s _t u _v w -> JSForConst a' a' a' (f z) a' (f s) a' (f u) a' (f w)
+    JSForConstIn _ _ _ z r s _ u -> JSForConstIn a' a' a' (f z) r (f s) a' (f u)
+    JSForConstOf _ _ _ z r s _ u -> JSForConstOf a' a' a' (f z) r (f s) a' (f u)
+    JSForOf _ _ y z r _ t -> JSForOf a' a' (f y) (f z) (f r) a' (f t)
+    JSForVarOf _ _ _ z r s _ u -> JSForVarOf a' a' a' (f z) (f r) (f s) a' (f u)
+    JSAsyncFunction _ _x y _ r _ t u -> JSAsyncFunction a' a' y a' (f r) a' (f t) (f u)
+    JSFunction _ x _ z _ s t -> JSFunction a' (f x) a' (f z) a' (f s) (f t)
+    JSGenerator _ _ y _ r _ t u -> JSGenerator a' a' (f y) a' (f r) a' (f t) (f u)
+    JSIf _ _x y _ r -> JSIf a' a' (f y) a' (f r)
+    JSIfElse _ _ y _ r _ t -> JSIfElse a' a' (f y) a' (f r) a' (f t)
+    JSLabelled x _ y -> JSLabelled (f x) a' (f y)
     JSEmptyStatement _ -> JSEmptyStatement a'
-    JSExpressionStatement e x -> JSExpressionStatement (rjsa a' e) (rjsa a' x)
-    JSAssignStatement e x y z -> JSAssignStatement (rjsa a' e) (rjsa a' x) (rjsa a' y) (rjsa a' z)
-    JSMethodCall r _ x _ z -> JSMethodCall (rjsa a' r) a' (rjsaJSL a' x) a' (rjsa a' z)
-    JSReturn _ x y -> JSReturn a' (fmap (rjsa a') x) (rjsa a' y)
-    JSSwitch _ _ y _ _ s _ u -> JSSwitch a' a' (rjsa a' y) a' a' s a' (rjsa a' u)
-    JSThrow _ x y -> JSThrow a' (rjsa a' x) (rjsa a' y)
-    JSTry _ x y z -> JSTry a' (rjsa a' x) (rjsa a' y) (rjsa a' z)
-    JSVariable _ x y -> JSVariable a' (rjsaJSL a' x) (rjsa a' y)
-    JSWhile _ _ y _ r -> JSWhile a' a' (rjsa a' y) a' (rjsa a' r)
-    JSWith _ _ y _ r s -> JSWith a' a' (rjsa a' y) a' (rjsa a' r) (rjsa a' s)
+    JSExpressionStatement e x -> JSExpressionStatement (f e) (f x)
+    JSAssignStatement e x y z -> JSAssignStatement (f e) (f x) (f y) (f z)
+    JSMethodCall r _ x _ z -> JSMethodCall (f r) a' (f x) a' (f z)
+    JSReturn _ x y -> JSReturn a' (f x) (f y)
+    JSSwitch _ _ y _ _ s _ u -> JSSwitch a' a' (f y) a' a' s a' (f u)
+    JSThrow _ x y -> JSThrow a' (f x) (f y)
+    JSTry _ x y z -> JSTry a' (f x) (f y) (f z)
+    JSVariable _ x y -> JSVariable a' (f x) (f y)
+    JSWhile _ _ y _ r -> JSWhile a' a' (f y) a' (f r)
+    JSWith _ _ y _ r s -> JSWith a' a' (f y) a' (f r) (f s)
+    where
+      f :: (RepJSAnnot a) => a -> a
+      f = rjsa a'
 
 instance RepJSAnnot JSArrowParameterList where
   rjsa a' = \case
-    JSUnparenthesizedArrowParameter y -> JSUnparenthesizedArrowParameter (rjsa a' y)
-    JSParenthesizedArrowParameterList _ l _ -> JSParenthesizedArrowParameterList a' (rjsaJSL a' l) a'
+    JSUnparenthesizedArrowParameter y -> JSUnparenthesizedArrowParameter (f y)
+    JSParenthesizedArrowParameterList _ l _ -> JSParenthesizedArrowParameterList a' (f l) a'
+    where
+      f :: (RepJSAnnot a) => a -> a
+      f = rjsa a'
 
 instance RepJSAnnot JSIdent where
   rjsa a' = \case
@@ -525,16 +540,27 @@ instance RepJSAnnot JSSemi where
 
 instance RepJSAnnot JSTryCatch where
   rjsa a' = \case
-    JSCatch _ _ x _ y -> JSCatch a' a' (rjsa a' x) a' y
-    JSCatchIf _ _ x _ y _ z -> JSCatchIf a' a' (rjsa a' x) a' (rjsa a' y) a' (rjsa a' z)
+    JSCatch _ _ x _ y -> JSCatch a' a' (f x) a' y
+    JSCatchIf _ _ x _ y _ z -> JSCatchIf a' a' (f x) a' (f y) a' (f z)
+    where
+      f :: (RepJSAnnot a) => a -> a
+      f = rjsa a'
 
 instance RepJSAnnot JSTryFinally where
   rjsa a' = \case
     JSFinally _ x -> JSFinally a' $ rjsa a' x
     JSNoFinally -> JSNoFinally
 
+instance RepJSAnnot JSConciseBody where
+  rjsa a' = \case
+    JSConciseExprBody e -> JSConciseExprBody $ rjsa a' e
+    JSConciseFunBody b -> JSConciseFunBody $ rjsa a' b
+
 instance (RepJSAnnot a) => RepJSAnnot [a] where
   rjsa a' l = map (rjsa a') l
+
+instance RepJSAnnot a => RepJSAnnot (Maybe a) where
+  rjsa a' l = fmap (rjsa a') l
 
 jsaList :: HasJSAnnot a => JSAnnot -> [a] -> JSAnnot
 jsaList def = \case
