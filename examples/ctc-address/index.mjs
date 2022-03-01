@@ -14,7 +14,7 @@ const stdlib = loadStdlib(process.env);
 
   const common = (ctcMe) => ({
     showCtcInfo: async (ctc) => {
-      const info = await ctcMe.getInfo();
+      const info = stdlib.bigNumberToNumber(await ctcMe.getInfo());
       console.log(`Contract Info From Reach      : ${ctc}`);
       console.log(`Contract Info From ctc.getInfo: ${info}`);
       stdlib.assert(ctc == info);

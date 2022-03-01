@@ -53,7 +53,7 @@ const run = async ({fn, isRaw}) => {
       exp = [ x, ...args ];
       const fnM = `${isView ? 'V' : 'P'}_${fn}`;
 
-      const ctcInfo = await ctcA.getInfo();
+      const ctcInfo = stdlib.bigNumberToNumber(await ctcA.getInfo());
       const ctc = accB.contract(backend, ctcInfo);
       const ABI = ctc.getABI(true);
       console.log(ABI);
