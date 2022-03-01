@@ -132,6 +132,9 @@ export REACH_BUILD_NO_CACHE=Y
 
 #######
 
+cdot users/duoswap-core/index.rsh
+exit 0
+
 #(cd scripts/devnet-algo && make build) && "${REACH}" down
 ci ALGO algo-time
 exit 0
