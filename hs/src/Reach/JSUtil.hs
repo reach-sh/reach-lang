@@ -369,7 +369,7 @@ instance RepJSAnnot JSExpression where
     JSExpressionPostfix a x -> JSExpressionPostfix (f a) (f x)
     JSExpressionTernary a _ y _ r -> JSExpressionTernary (f a) a' (f y) a' (f r)
     JSArrowExpression x _ y -> JSArrowExpression (f x) a' $ f y
-    JSFunctionExpression _ x _ z _ s -> JSFunctionExpression a' x a' (f z) a' (f s)
+    JSFunctionExpression _ x _ z _ s -> JSFunctionExpression a' (f x) a' (f z) a' (f s)
     JSGeneratorExpression _ _ y _ r _ t -> JSGeneratorExpression a' a' y a' (f r) a' (f t)
     JSMemberDot a _ y -> JSMemberDot (f a) a' (f y)
     JSMemberExpression a _ y _ -> JSMemberExpression (f a) a' (f y) a'
