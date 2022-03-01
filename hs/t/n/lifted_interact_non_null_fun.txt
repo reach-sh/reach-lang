@@ -8,3 +8,4 @@ Trace:
   in "liftedInteract" from (./lifted_interact_non_null_fun.rsh:8:19:application) at (./lifted_interact_non_null_fun.rsh:8:19:application)
 
 For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0003
+
