@@ -177,6 +177,8 @@ a2sp = JSSemi
 
 class HasJSAnnot a where
   jsa :: a -> JSAnnot
+
+class RepJSAnnot a where
   rjsa :: JSAnnot -> a -> a
 
 rjsaJSL :: HasJSAnnot a => JSAnnot -> JSCommaList a -> JSCommaList a
@@ -196,6 +198,8 @@ instance HasJSAnnot JSAssignOp where
     JSBwAndAssign a -> a
     JSBwXorAssign a -> a
     JSBwOrAssign a -> a
+
+instance RepJSAnnot JSAssignOp where
   rjsa a' = \case
     JSAssign _ -> JSAssign a'
     JSTimesAssign _ -> JSTimesAssign a'
@@ -221,6 +225,8 @@ instance HasJSAnnot JSUnaryOp where
     JSUnaryOpTilde a -> a
     JSUnaryOpTypeof a -> a
     JSUnaryOpVoid a -> a
+
+instance RepJSAnnot JSUnaryOp where
   rjsa a' = \case
     JSUnaryOpDecr _ -> JSUnaryOpDecr a'
     JSUnaryOpDelete _ -> JSUnaryOpDelete a'
@@ -258,6 +264,8 @@ instance HasJSAnnot JSBinOp where
     JSBinOpStrictNeq a -> a
     JSBinOpTimes a -> a
     JSBinOpUrsh a -> a
+
+instance RepJSAnnot JSBinOp where
   rjsa a' = \case
     JSBinOpAnd _ -> JSBinOpAnd a'
     JSBinOpBitAnd _ -> JSBinOpBitAnd a'
@@ -288,12 +296,13 @@ instance HasJSAnnot JSArrayElement where
   jsa = \case
     JSArrayElement e -> jsa e
     JSArrayComma a -> a
+
+instance RepJSAnnot JSArrayElement where
   rjsa a' = \case
     JSArrayElement e -> JSArrayElement $ rjsa a' e
     JSArrayComma _ -> JSArrayComma a'
 
-instance HasJSAnnot JSObjectPropertyList where
-  jsa = undefined
+instance RepJSAnnot JSObjectPropertyList where
   rjsa a' x = (mkCommaTrailingList (map (rjsa a') $ jso_flatten x))
 
 instance HasJSAnnot JSExpression where
@@ -332,6 +341,8 @@ instance HasJSAnnot JSExpression where
     JSVarInitExpression a _ -> jsa a
     JSYieldExpression a _ -> a
     JSYieldFromExpression a _ _ -> a
+
+instance RepJSAnnot JSExpression where
   rjsa a' = \case
     JSIdentifier _ x -> JSIdentifier a' x
     JSDecimal _ x -> JSDecimal a' x
@@ -352,9 +363,9 @@ instance HasJSAnnot JSExpression where
     JSExpressionParen _ x _ -> JSExpressionParen a' (rjsa a' x) a'
     JSExpressionPostfix a x -> JSExpressionPostfix (rjsa a' a) (rjsa a' x)
     JSExpressionTernary a _ y _ r -> JSExpressionTernary (rjsa a' a) a' (rjsa a' y) a' (rjsa a' r)
-    JSArrowExpression x _ y -> JSArrowExpression x a' (rjsa a' $ jsArrowBodyToStmt y)
-    JSFunctionExpression _ x _ z _ s -> JSFunctionExpression a' x a' (rjsaJSL a' z) a' s
-    JSGeneratorExpression _ _ y _ r _ t -> JSGeneratorExpression a' a' y a' (rjsaJSL a' r) a' t
+    JSArrowExpression x _ y -> JSArrowExpression (rjsa a' x) a' $ jsStmtToConciseBody (rjsa a' $ jsArrowBodyToStmt y)
+    JSFunctionExpression _ x _ z _ s -> JSFunctionExpression a' x a' (rjsaJSL a' z) a' (rjsa a' s)
+    JSGeneratorExpression _ _ y _ r _ t -> JSGeneratorExpression a' a' y a' (rjsaJSL a' r) a' (rjsa a' t)
     JSMemberDot a _ y -> JSMemberDot (rjsa a' a) a' (rjsa a' y)
     JSMemberExpression a _ y _ -> JSMemberExpression (rjsa a' a) a' (rjsaJSL a' y) a'
     JSMemberNew _ x _ z _ -> JSMemberNew a' (rjsa a' x) a' (rjsaJSL a' z) a'
@@ -362,9 +373,9 @@ instance HasJSAnnot JSExpression where
     JSNewExpression _ x -> JSNewExpression a' (rjsa a' x)
     JSObjectLiteral _ x _ -> JSObjectLiteral a' (rjsa a' x) a'
     JSSpreadExpression _ x -> JSSpreadExpression a' (rjsa a' x)
-    JSTemplateLiteral x _ y z -> JSTemplateLiteral (fmap (rjsa a') x) a' y z
+    JSTemplateLiteral x _ y z -> JSTemplateLiteral (fmap (rjsa a') x) a' y (map (rjsa a') z)
     JSUnaryExpression a x -> JSUnaryExpression (rjsa a' a) (rjsa a' x)
-    JSVarInitExpression a x -> JSVarInitExpression (rjsa a' a) x
+    JSVarInitExpression a x -> JSVarInitExpression (rjsa a' a) $ rjsa a' x
     JSYieldExpression _ x -> JSYieldExpression a' (fmap (rjsa a') x)
     JSYieldFromExpression _ _ y -> JSYieldFromExpression a' a' (rjsa a' y)
 
@@ -374,8 +385,10 @@ instance HasJSAnnot JSObjectProperty where
     JSPropertyIdentRef ja _ -> ja
     JSObjectMethod jmd -> jsa jmd
     JSObjectSpread ja _ -> ja
+
+instance RepJSAnnot JSObjectProperty where
   rjsa a' = \case
-    JSPropertyNameandValue x _ y -> JSPropertyNameandValue x a' (fmap (rjsa a') y)
+    JSPropertyNameandValue x _ y -> JSPropertyNameandValue (rjsa a' x) a' (fmap (rjsa a') y)
     JSPropertyIdentRef _ x -> JSPropertyIdentRef a' x
     JSObjectMethod jmd -> JSObjectMethod $ rjsa a' jmd
     JSObjectSpread _ x -> JSObjectSpread a' (rjsa a' x)
@@ -385,10 +398,12 @@ instance HasJSAnnot JSMethodDefinition where
     JSMethodDefinition _ ja _ _ _ -> ja
     JSGeneratorMethodDefinition ja _ _ _ _ _ -> ja
     JSPropertyAccessor _ _ ja _ _ _ -> ja
+
+instance RepJSAnnot JSMethodDefinition where
   rjsa a' = \case
-    JSMethodDefinition x _ y _ r -> JSMethodDefinition x a' (rjsaJSL a' y) a' r
-    JSGeneratorMethodDefinition _ x _ z _ s -> JSGeneratorMethodDefinition a' x a' (rjsaJSL a' z) a' s
-    JSPropertyAccessor x y _ z _ s -> JSPropertyAccessor x y a' (rjsaJSL a' z) a' s
+    JSMethodDefinition x _ y _ r -> JSMethodDefinition x a' (rjsaJSL a' y) a' (rjsa a' r)
+    JSGeneratorMethodDefinition _ x _ z _ s -> JSGeneratorMethodDefinition a' x a' (rjsaJSL a' z) a' (rjsa a' s)
+    JSPropertyAccessor x y _ z _ s -> JSPropertyAccessor x y a' (rjsaJSL a' z) a' (rjsa a' s)
 
 instance HasJSAnnot JSStatement where
   jsa = \case
@@ -428,8 +443,10 @@ instance HasJSAnnot JSStatement where
     JSVariable ja _ _ -> ja
     JSWhile ja _ _ _ _ -> ja
     JSWith ja _ _ _ _ _ -> ja
+
+instance RepJSAnnot JSStatement where
   rjsa a' = \case
-    JSStatementBlock _ x _ z -> JSStatementBlock a' (fmap (rjsa a') x) a' z
+    JSStatementBlock _ x _ z -> JSStatementBlock a' (fmap (rjsa a') x) a' (rjsa a' z)
     JSBreak _ x y -> JSBreak a' x y
     JSLet _ x y -> JSLet a' (toJSCL (map (rjsa a') $ jscl_flatten x)) y
     JSClass _ x y _z r _s t -> JSClass a' x y a' r a' t
@@ -465,6 +482,41 @@ instance HasJSAnnot JSStatement where
     JSVariable _ x y -> JSVariable a' (rjsaJSL a' x) y
     JSWhile _ _ y _ r -> JSWhile a' a' (rjsa a' y) a' (rjsa a' r)
     JSWith _ _ y _ r s -> JSWith a' a' (rjsa a' y) a' (rjsa a' r) s
+
+instance RepJSAnnot JSArrowParameterList where
+  rjsa a' = \case
+    JSUnparenthesizedArrowParameter y -> JSUnparenthesizedArrowParameter (rjsa a' y)
+    JSParenthesizedArrowParameterList _ l _ -> JSParenthesizedArrowParameterList a' (rjsaJSL a' l) a'
+
+instance RepJSAnnot JSIdent where
+  rjsa a' = \case
+    JSIdentName _ s -> JSIdentName a' s
+    JSIdentNone -> JSIdentNone
+
+instance RepJSAnnot JSBlock where
+  rjsa a' = \case
+    JSBlock _ l _ -> JSBlock a' (map (rjsa a') l) a'
+
+instance RepJSAnnot JSTemplatePart where
+  rjsa a' = \case
+    JSTemplatePart x _ s -> JSTemplatePart (rjsa a' x) a' s
+
+instance RepJSAnnot JSVarInitializer where
+  rjsa a' = \case
+    JSVarInit _ x -> JSVarInit a' x
+    JSVarInitNone -> JSVarInitNone
+
+instance RepJSAnnot JSPropertyName where
+  rjsa a' = \case
+    JSPropertyIdent _ s  -> JSPropertyIdent a' s
+    JSPropertyString _ s -> JSPropertyString a' s
+    JSPropertyNumber _ s -> JSPropertyNumber a' s
+    JSPropertyComputed _ x _ -> JSPropertyComputed a' (rjsa a' x) a'
+
+instance RepJSAnnot JSSemi where
+  rjsa a' = \case
+    JSSemi _ -> JSSemi a'
+    JSSemiAuto -> JSSemiAuto
 
 jsaList :: HasJSAnnot a => JSAnnot -> [a] -> JSAnnot
 jsaList def = \case
