@@ -2592,41 +2592,27 @@ evalPrim p sargs =
         _ -> illegal_args
     SLPrim_array_zip -> do
       at <- withAt id
-      (x, y) <- two_args
-      (xt, x_da) <- compileTypeOf x
-      (x_ty, x_sz) <- mustBeArray xt
-      (yt, y_da) <- compileTypeOf y
-      (y_ty, y_sz) <- mustBeArray yt
-      let ty' = T_Tuple [x_ty, y_ty]
-      unless (x_sz == y_sz) $ do
-        expect_ $ Err_Zip_ArraysNotEqualLength x_sz y_sz
-      let sz' = x_sz
-      -- XXX this, and other uses of isSmallLiteralArray, should be revised to
-      -- do something like "try it out and see if the result is 'small'". For
-      -- example, if we have a literal array of 12 elements and we're going to
-      -- do Array.iota(12).map((_) => false), then we should unroll it (ttt
-      -- does this)
-      case isSmallLiteralArray x && isSmallLiteralArray y of
-        True -> do
-          x_vs <- explodeTupleLike "zip" x
-          y_vs <- explodeTupleLike "zip" y
-          let vs' = zipWith (\xe ye -> SLV_Tuple at [xe, ye]) x_vs y_vs
-          return $ (lvl, SLV_Array at ty' vs')
-        False -> do
-          let t = T_Array ty' sz'
-          let mkdv = (DLVar at Nothing t)
-          dv <- ctxt_lift_expr mkdv $ DLE_ArrayZip at x_da y_da
-          return $ (lvl, SLV_DLVar dv)
+      let mapArgs = intercalate ", " $ map (\n -> "a" <> (show n)) [0..(length sargs -1)]
+      let jsF = "(" <> mapArgs <> ") => [" <> mapArgs <> "]"
+      let f = jsClo at "zipFunc" jsF mempty
+      evalApplyVals' (SLV_Prim $ SLPrim_array_map False) $ sargs <> [public f]
     SLPrim_array_map withIndex ->
       case args of
         [] -> illegal_args
         [_] -> illegal_args
-        [x, f] -> do
+        _ -> do
+          let (f, xs) = case reverse args of
+                f_ : rmore -> (f_, reverse rmore)
+                _ -> impossible "array_map"
           at <- withAt id
-          (xt, x_da) <- compileTypeOf x
-          (x_ty, x_sz) <- mustBeArray xt
-          let f' a i = evalApplyVals' f $ [(lvl, a)] <> (if withIndex then [(lvl, i)] else [])
-          (a_dv, a_dsv) <- make_dlvar at x_ty
+          (xt, x_da) <- unzip <$> mapM compileTypeOf xs
+          (x_ty, x_sz) <- unzip <$> mapM mustBeArray xt
+          size <- case allEqual x_sz of
+            Right s -> return s
+            Left (Just (s1, s2)) -> expect_ $ Err_Zip_ArraysNotEqualLength s1 s2
+            Left _ -> impossible "array_map"
+          let f' as i = evalApplyVals' f $ (map (\a -> (lvl, a)) as) <> (if withIndex then [(lvl, i)] else [])
+          (a_dv, a_dsv) <- unzip <$> mapM (make_dlvar at) x_ty
           (i_dv, i_dsv) <- make_dlvar at T_UInt
           -- We ignore the state because if it is impure, then we will unroll
           -- anyways
@@ -2635,43 +2621,39 @@ evalPrim p sargs =
               (f_lvl, f_v) <- f' a_dsv i_dsv
               (f_ty, f_da) <- compileTypeOf f_v
               return (f_lvl, f_ty, f_da)
-          let shouldUnroll = not (isLocal f_lifts) || isSmallLiteralArray x
+          let shouldUnroll = not (isLocal f_lifts) || all isSmallLiteralArray xs
           case shouldUnroll of
             True -> do
-              x_vs <- explodeTupleLike "map" x
-              let evalem xv i = snd <$> f' xv (SLV_Int at i)
-              vs' <- zipWithM evalem x_vs [0..]
+              xs_vs <- transpose <$> mapM (explodeTupleLike "map") xs
+              let evalem xvs i = snd <$> f' xvs (SLV_Int at i)
+              vs' <- zipWithM evalem xs_vs [0..]
               return $ (f_lvl, SLV_Array at f_ty vs')
             False -> do
-              let t = T_Array f_ty x_sz
+              let t = T_Array f_ty size
               (ans_dv, ans_dsv) <- make_dlvar at t
               let f_bl = DLSBlock at [] f_lifts f_da
               saveLift $ DLS_ArrayMap at ans_dv x_da a_dv i_dv f_bl
               return $ (f_lvl, ans_dsv)
-        x : y : args' -> do
-          let mindex = case withIndex of
-                         True -> ",i"
-                         False -> ""
-          let (f, more) = case reverse args' of
-                f_ : rmore -> (f_, reverse rmore)
-                _ -> impossible "array_map"
-          xy_v <- evalApplyVals' (SLV_Prim $ SLPrim_array_zip) $ map public [x, y]
-          let clo_args = concatMap ((",c" <>) . show) [0 .. (length more - 1)]
-          f' <- withAt $ \at -> jsClo at "zip" ("(ab" <> clo_args <> mindex <> ") => f(ab[0], ab[1]" <> clo_args <> mindex <> ")") (M.fromList [("f", f)])
-          evalApplyVals' (SLV_Prim $ SLPrim_array_map withIndex) (xy_v : (map public $ more ++ [f']))
     SLPrim_array_reduce withIndex ->
       case args of
         [] -> illegal_args
         [_] -> illegal_args
         [_, _] -> illegal_args
-        [x, z, f] -> do
+        _ -> do
+          let (f, z, xs) = case reverse args of
+                f_ : z_ : rmore -> (f_, z_, reverse rmore)
+                _ -> impossible "array_reduce"
           at <- withAt id
-          (xt, x_da) <- compileTypeOf x
-          (x_ty, _) <- mustBeArray xt
-          let f' b a i = evalApplyVals' f $ [(lvl, b), (lvl, a)] <> (if withIndex then [(lvl, i)] else [])
+          (xt, x_da) <- unzip <$> mapM compileTypeOf xs
+          (x_ty, x_sz) <- unzip <$> mapM mustBeArray xt
+          _ <- case allEqual x_sz of
+            Right s -> return s
+            Left (Just (s1, s2)) -> expect_ $ Err_Zip_ArraysNotEqualLength s1 s2
+            Left _ -> impossible "array_reduce"
+          let f' b as i = evalApplyVals' f $ [(lvl, b)] <> (map (\a -> (lvl, a)) as) <> (if withIndex then [(lvl, i)] else [])
           (z_ty, z_da) <- compileTypeOf z
           (b_dv, b_dsv) <- make_dlvar at z_ty
-          (a_dv, a_dsv) <- make_dlvar at x_ty
+          (a_dv, a_dsv) <- unzip <$> mapM (make_dlvar at) x_ty
           (i_dv, i_dsv) <- make_dlvar at T_UInt
           -- We ignore the state because if it is impure, then we will unroll
           -- anyways
@@ -2682,37 +2664,26 @@ evalPrim p sargs =
               (f_ty, f_da) <- compileTypeOf f_v
               typeEq z_ty f_ty
               return $ f_da
-          let shouldUnroll = not (isLocal f_lifts) || isSmallLiteralArray x
+          let shouldUnroll = not (isLocal f_lifts) || all isSmallLiteralArray xs
           case shouldUnroll of
             True -> do
-              x_vs <- explodeTupleLike "reduce" x
-              let evalem :: SLSVal -> (SLVal, Integer) -> App SLSVal
-                  evalem prev_z (xv, i) = do
+              xs_vs <- transpose <$> mapM (explodeTupleLike "reduce") xs
+              let evalem :: SLSVal -> ([SLVal], Integer) -> App SLSVal
+                  evalem prev_z (xvs, i) = do
                     let iv = SLV_Int at i
-                    xv_v' <- f' (snd prev_z) xv iv
+                    xv_v' <- f' (snd prev_z) xvs iv
                     --- Note: We are artificially restricting reduce
                     --- to be parameteric in the state. We also ensure
                     --- that they type is the same as the anonymous
                     --- version.
                     _ <- typeCheck_d z_ty (snd xv_v')
                     return $ xv_v'
-              foldM evalem (lvl, z) $ zip x_vs [0..]
+              foldM evalem (lvl, z) $ zip xs_vs [0..]
             False -> do
               (ans_dv, ans_dsv) <- make_dlvar at z_ty
               let f_bl = DLSBlock at [] f_lifts f_da
               saveLift $ DLS_ArrayReduce at ans_dv x_da z_da b_dv a_dv i_dv f_bl
               return $ (lvl, ans_dsv)
-        x : y : args' -> do
-          let mindex = case withIndex of
-                         True -> ",i"
-                         False -> ""
-          let (f, z, more) = case reverse args' of
-                f_ : z_ : rmore -> (f_, z_, reverse rmore)
-                _ -> impossible "array_reduce"
-          xy_v <- evalApplyVals' (SLV_Prim $ SLPrim_array_zip) $ map public [x, y]
-          let clo_args = concatMap ((",c" <>) . show) [0 .. (length more - 1)]
-          f' <- withAt $ \at -> jsClo at "zip" ("(z,ab" <> clo_args <> mindex <> ") => f(z, ab[0], ab[1]" <> clo_args <> mindex <> ")") (M.fromList [("f", f)])
-          evalApplyVals' (SLV_Prim $ SLPrim_array_reduce withIndex) (xy_v : (map public $ more ++ [z, f']))
     SLPrim_array_set ->
       case map snd sargs of
         [arrv, idxv, valv] -> do

@@ -997,6 +997,7 @@ x.zip(y)
 
  `{!rsh} Array.zip(x, y)` returns a new array the same size as `{!rsh} x` and `{!rsh} y` (which must be the same size) whose elements are tuples of the elements of `{!rsh} x` and `{!rsh} y`.
 This may be abbreviated as `{!rsh} x.zip(y)`.
+This function is generalized to an arbitrary number of arrays of the same size.
 
 #### `Array.map` && `.map`
 
@@ -1025,7 +1026,7 @@ arr.mapWithIndex(f)
 
  `{!rsh} Array.mapWithIndex(arr, f)` is similar to `{!rsh} Array.map`, except it
 provides `{!rsh} f` with an additional argument, which is the index of the current element in `{!rsh} arr`.
-Unlike `{!rsh} Array.map`, this function is not generalized to an arbitrary number of arrays; it only accepts one array.
+The index argument is the last argument of the given function `{!rsh} f`.
 
 #### `Array.forEachWithIndex` && `.forEachWithIndex`
 
@@ -1056,6 +1057,9 @@ This may be abbreviated as `{!rsh} arr.reduce(z, f)`.
 This function is generalized to an arbitrary number of arrays of the same size, which are provided before the `{!rsh} z` argument.
 For example, `{!rsh} Array.iota(4).reduce(Array.iota(4), 0, (x, y, z) => (z + x + y))` returns `{!rsh} ((((0 + 0 + 0) + 1 + 1) + 2 + 2) + 3 + 3)`.
 
+The supplied function `{!rsh} f` is in the form `{!rsh} (ACCUM, A0_i, A1_i, ...) => BODY`.
+In the example `{!rsh} a1.reduce(a2, a3, 0, (accum, v1, v2, v3) => 0)`, the `{!rsh} vN` values are drawn from the corresponding `{!rsh} aN` arrays.
+
 #### `Array.reduceWithIndex` && `.reduceWithIndex`
 
 @{ref("rsh", "Array.reduceWithIndex")}
@@ -1067,7 +1071,7 @@ arr.reduceWithIndex(z, f)
 
  `{!rsh} Array.reduceWithIndex(arr, z, f)` is similar to `{!rsh} Array.reduce`, except it
 provides `{!rsh} f` with an additional argument, which is the index of the current element in `{!rsh} arr`.
-Unlike `{!rsh} Array.reduce`, this function is not generalized to an arbitrary number of arrays; it only accepts one array.
+The index argument is the last argument of the given function `{!rsh} f`.
 
 #### `Array.indexOf` && `.indexOf`
 

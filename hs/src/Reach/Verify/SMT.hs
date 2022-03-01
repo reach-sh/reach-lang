@@ -1043,9 +1043,6 @@ smt_e at_dv mdv de = do
     DLE_ArrayConcat {} ->
       --- FIXME: This might be possible to do by generating a function
       impossible "array_concat"
-    DLE_ArrayZip {} ->
-      --- FIXME: This might be possible to do by using `map`
-      impossible "array_zip"
     DLE_TupleRef at arr_da i -> do
       let t = argTypeOf arr_da
       s <- smtTypeSort t

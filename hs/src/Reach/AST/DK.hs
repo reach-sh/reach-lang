@@ -12,8 +12,8 @@ import Reach.Texty
 
 data DKCommon
   = DKC_Let SrcLoc DLLetVar DLExpr
-  | DKC_ArrayMap SrcLoc DLVar DLArg DLVar DLVar DKBlock
-  | DKC_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLVar DKBlock
+  | DKC_ArrayMap SrcLoc DLVar [DLArg] [DLVar] DLVar DKBlock
+  | DKC_ArrayReduce SrcLoc DLVar [DLArg] DLArg DLVar [DLVar] DLVar DKBlock
   | DKC_Var SrcLoc DLVar
   | DKC_Set SrcLoc DLVar DLArg
   | DKC_LocalDo SrcLoc DKTail

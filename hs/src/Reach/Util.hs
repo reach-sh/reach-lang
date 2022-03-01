@@ -27,6 +27,7 @@ module Reach.Util
   , leftPad
   , makeErrCode
   , arraySet
+  , allEqual
   )
 where
 
@@ -156,3 +157,10 @@ makeErrCode errType errIndex =
 
 arraySet :: Int -> a -> [a] -> [a]
 arraySet n a arr = take n arr <> [a] <> drop (n + 1) arr
+
+allEqual :: Eq a => [a] -> Either (Maybe (a,a)) a
+allEqual [] = Left Nothing
+allEqual [x] = Right x
+allEqual (x:xs) = case allEqual xs of
+  Right y -> if x == y then Right y else Left $ Just (x,y)
+  Left diff -> Left diff

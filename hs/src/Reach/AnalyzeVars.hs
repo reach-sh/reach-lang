@@ -106,7 +106,6 @@ instance FreeVars DLExpr where
     DLE_ArrayRef _ a b -> freeVars [a, b]
     DLE_ArraySet _ a b c -> freeVars [a, b, c]
     DLE_ArrayConcat _ a b -> freeVars [a, b]
-    DLE_ArrayZip _ a b -> freeVars [a, b]
     DLE_TupleRef _ a _ -> freeVars a
     DLE_ObjectRef _ a _ -> freeVars a
     DLE_Interact _ _ _ _ _ a -> freeVars a
@@ -172,8 +171,8 @@ instance FreeVars DLStmt where
   freeVars = readMMap fvMap $ \case
     DL_Nop {} -> mempty
     DL_Let _ _ e -> freeVars e
-    DL_ArrayMap _ _ x a i f -> freeVars [x] <> bindsFor [a, i] f
-    DL_ArrayReduce _ _ x z a b i f -> freeVars [x, z] <> bindsFor [a, b, i] f
+    DL_ArrayMap _ _ xs as i f -> freeVars xs <> bindsFor (as <> [i]) f
+    DL_ArrayReduce _ _ xs z b as i f -> freeVars (xs <> [z]) <> bindsFor (as <> [b, i]) f
     DL_Var {} -> mempty
     DL_Set _ v a -> freeVars v <> freeVars a
     DL_LocalIf _ c t f -> freeVars c <> freeVars [t, f]
@@ -186,8 +185,8 @@ instance BoundVars DLStmt where
   boundVars = readMMap bvMap $ \case
     DL_Nop {} -> mempty
     DL_Let _ lv _ -> boundVars lv
-    DL_ArrayMap _ ans _ a i f -> boundVars [ans, a, i] <> boundVars f
-    DL_ArrayReduce _ ans _ _ a b i f -> boundVars [ans, a, b, i] <> boundVars f
+    DL_ArrayMap _ ans _ as i f -> boundVars (as <> [ans, i]) <> boundVars f
+    DL_ArrayReduce _ ans _ _ b as i f -> boundVars (as <> [ans, b, i]) <> boundVars f
     DL_Var _ v -> boundVars v
     DL_Set {} -> mempty
     DL_LocalIf _ _ t f -> boundVars [t, f]

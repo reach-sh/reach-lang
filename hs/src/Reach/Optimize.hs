@@ -371,7 +371,6 @@ instance Optimize DLExpr where
     DLE_ArrayRef at a i -> DLE_ArrayRef at <$> opt a <*> opt i
     DLE_ArraySet at a i v -> DLE_ArraySet at <$> opt a <*> opt i <*> opt v
     DLE_ArrayConcat at x0 y0 -> DLE_ArrayConcat at <$> opt x0 <*> opt y0
-    DLE_ArrayZip at x0 y0 -> DLE_ArrayZip at <$> opt x0 <*> opt y0
     DLE_TupleRef at t i -> do
       t' <- opt t
       let meh = return $ DLE_TupleRef at t' i
@@ -447,14 +446,8 @@ class Extract a where
 instance Extract (Maybe DLVar) where
   extract = id
 
-allTheSame :: (Eq a, Sanitize a) => [a] -> Maybe a
-allTheSame xs =
-  case map sani xs of
-    [] -> Nothing
-    top : rest ->
-      case and $ map (== top) rest of
-        True -> Just top
-        False -> Nothing
+allTheSame :: (Eq a, Sanitize a) => [a] -> Either (Maybe (a, a)) a
+allTheSame = allEqual . map sani
 
 optIf :: (Eq k, Sanitize k, Optimize k) => (k -> r) -> (SrcLoc -> DLArg -> k -> k -> r) -> SrcLoc -> DLArg -> k -> k -> App r
 optIf mkDo mkIf at c t f =
@@ -471,8 +464,8 @@ optIf mkDo mkIf at c t f =
       t' <- newScope $ learnC True >> opt t
       f' <- newScope $ learnC False >> opt f
       case allTheSame [t', f'] of
-        Just s -> return $ mkDo s
-        Nothing ->
+        Right s -> return $ mkDo s
+        Left _ ->
           optNotHuh c' >>= \case
             Just c'' ->
               return $ mkIf at c'' f' t'
@@ -497,8 +490,8 @@ optSwitch mkDo mkLet mkSwitch at ov csm = do
       csm' <- mapWithKeyM cm1 csm
       let csm'kl = map (\(_k, (_v_v, _vnu, n)) -> n) $ M.toAscList csm'
       case allTheSame csm'kl of
-        Just s -> return $ mkDo s
-        Nothing -> return $ mkSwitch at ov' csm'
+        Right s -> return $ mkDo s
+        Left _ -> return $ mkSwitch at ov' csm'
 
 optWhile :: Optimize a => (DLAssignment -> DLBlock -> a -> a -> a) -> DLAssignment -> DLBlock -> a -> a -> App a
 optWhile mk asn cond body k = do
@@ -599,12 +592,12 @@ instance Optimize DLStmt where
       optIf (DL_LocalDo at) DL_LocalIf at c t f
     DL_LocalSwitch at ov csm ->
       optSwitch (DL_LocalDo at) DT_Com DL_LocalSwitch at ov csm
-    DL_ArrayMap at ans x a i f -> do
-      s' <- DL_ArrayMap at ans <$> opt x <*> pure a <*> pure i <*> newScope (opt f)
-      maybeUnroll s' x $ return s'
-    DL_ArrayReduce at ans x z b a i f -> do
-      s' <- DL_ArrayReduce at ans <$> opt x <*> opt z <*> (opt b) <*> (pure a) <*> pure i <*> newScope (opt f)
-      maybeUnroll s' x $ return s'
+    DL_ArrayMap at ans xs as i f -> do
+      s' <- DL_ArrayMap at ans <$> opt xs <*> pure as <*> pure i <*> newScope (opt f)
+      maybeUnroll s' xs $ return s'
+    DL_ArrayReduce at ans xs z b as i f -> do
+      s' <- DL_ArrayReduce at ans <$> opt xs <*> opt z <*> (opt b) <*> (pure as) <*> pure i <*> newScope (opt f)
+      maybeUnroll s' xs $ return s'
     DL_MapReduce at mri ans x z b a f -> do
       DL_MapReduce at mri ans x <$> opt z <*> (pure b) <*> (pure a) <*> newScope (opt f)
     DL_Only at ep l -> do
@@ -620,18 +613,16 @@ instance Optimize DLStmt where
         DT_Return _ -> return $ DL_Nop at
         t' -> return $ DL_LocalDo at t'
     where
-      maybeUnroll :: DLStmt -> DLArg -> App DLStmt -> App DLStmt
-      maybeUnroll s x def =
-        case argTypeOf x of
-          T_Array _ n ->
-            case n <= 1 of
-              True -> do
-                c <- asks eCounter
-                let at = srclocOf s
-                let t = DL_LocalDo at $ DT_Com s $ DT_Return at
-                UnrollWrapper _ t' <- liftIO $ unrollLoops $ UnrollWrapper c t
-                return t'
-              _ -> def
+      maybeUnroll :: DLStmt -> [DLArg] -> App DLStmt -> App DLStmt
+      maybeUnroll s xs def = do
+        let len = arraysLength xs
+        case len <= 1 of
+          True -> do
+            c <- asks eCounter
+            let at = srclocOf s
+            let t = DL_LocalDo at $ DT_Com s $ DT_Return at
+            UnrollWrapper _ t' <- liftIO $ unrollLoops $ UnrollWrapper c t
+            return t'
           _ -> def
   gcs = \case
     DL_Nop {} -> return ()

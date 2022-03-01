@@ -87,10 +87,10 @@ dk1 :: DKTail -> DLSStmt -> DKApp DKTail
 dk1 k s =
   case s of
     DLS_Let at mdv de -> com $ DKC_Let at mdv de
-    DLS_ArrayMap at ans x a i f ->
-      com' $ DKC_ArrayMap at ans x a i <$> dk_block at f
-    DLS_ArrayReduce at ans x z b a i f ->
-      com' $ DKC_ArrayReduce at ans x z b a i <$> dk_block at f
+    DLS_ArrayMap at ans xs as i f ->
+      com' $ DKC_ArrayMap at ans xs as i <$> dk_block at f
+    DLS_ArrayReduce at ans xs z b as i f ->
+      com' $ DKC_ArrayReduce at ans xs z b as i <$> dk_block at f
     DLS_If at c _ t f -> do
       let con = DK_If at c
       let loc t' f' = DK_Com (DKC_LocalIf at c t' f') k
@@ -446,7 +446,7 @@ lookupTokenIdx at tok toks = do
   let bl = DLBlock at [] block_tl $ DLA_Var bl_res
   let ss =
         [ asn init_acc_dv $ DLE_LArg at $ DLLA_Tuple [DLA_Literal $ DLL_Bool False, DLA_Literal $ DLL_Int at 0]
-        , DL_ArrayReduce at reduce_res toks (DLA_Var init_acc_dv) acc_dv elem_dv i_dv bl
+        , DL_ArrayReduce at reduce_res [toks] (DLA_Var init_acc_dv) acc_dv [elem_dv] i_dv bl
         , asn tok_idx $ DLE_TupleRef at (DLA_Var reduce_res) 1
         , asn found' $ DLE_TupleRef at (DLA_Var reduce_res) 0
         , DL_Let at DLV_Eff $ DLE_Claim at [] CT_Assert (DLA_Var found') $ Just "Token is tracked" ]

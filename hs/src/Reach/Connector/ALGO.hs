@@ -1520,22 +1520,6 @@ ce = \case
     ca y
     check_concat_len $ (xlen + ylen) * typeSizeOf xt
     op "concat"
-  DLE_ArrayZip at x y -> do
-    let xsz = typeSizeOf $ argTypeOf x
-    let ysz = typeSizeOf $ argTypeOf y
-    let (_, xlen) = argArrTypeLen x
-    check_concat_len $ xsz + ysz
-    salloc_ "arrayZip" $ \store_ans load_ans -> do
-      cbs ""
-      store_ans
-      cfor xlen $ \load_idx -> do
-        load_ans
-        doArrayRef at x False $ Right load_idx
-        doArrayRef at y False $ Right load_idx
-        op "concat"
-        op "concat"
-        store_ans
-      load_ans
   DLE_TupleRef at ta idx -> do
     ca ta
     cTupleRef at (argTypeOf ta) idx
@@ -2045,9 +2029,9 @@ cm km = \case
     when recordNew $
       addNewTok $ DLA_Var dv
     sallocVarLet (DLVarLet (Just vc) dv) sm (ce de) km
-  DL_ArrayMap at ansv aa lv iv (DLBlock _ _ body ra) -> do
+  DL_ArrayMap at ansv as xs iv (DLBlock _ _ body ra) -> do
     let anssz = typeSizeOf $ argTypeOf $ DLA_Var ansv
-    let (_, xlen) = argArrTypeLen aa
+    let xlen = arraysLength as
     let rt = argTypeOf ra
     check_concat_len anssz
     salloc_ (textyv ansv) $ \store_ans load_ans -> do
@@ -2055,24 +2039,30 @@ cm km = \case
       store_ans
       cfor xlen $ \load_idx -> do
         load_ans
-        doArrayRef at aa True $ Right load_idx
-        sallocLet lv (return ()) $
-          store_let iv True load_idx $ do
-            cp (ca ra >> ctobs rt) body
+        let finalK = cp (ca ra >> ctobs rt) body
+        let bodyF (x, a) k = do
+             doArrayRef at a True $ Right load_idx
+             sallocLet x (return ()) $
+               store_let iv True load_idx $
+               k
+        foldr bodyF finalK $ zip xs as
         op "concat"
         store_ans
       store_let ansv True load_ans km
-  DL_ArrayReduce at ansv aa za av lv iv (DLBlock _ _ body ra) -> do
-    let (_, xlen) = argArrTypeLen aa
+  DL_ArrayReduce at ansv as za av xs iv (DLBlock _ _ body ra) -> do
+    let xlen = arraysLength as
     salloc_ (textyv ansv) $ \store_ans load_ans -> do
       ca za
       store_ans
       store_let av True load_ans $ do
         cfor xlen $ \load_idx -> do
-          doArrayRef at aa True $ Right load_idx
-          sallocLet lv (return ()) $ do
-            store_let iv True load_idx $ do
-              cp (ca ra) body
+          let finalK = cp (ca ra) body
+          let bodyF (x, a) k = do
+               doArrayRef at a True $ Right load_idx
+               sallocLet x (return ()) $
+                 store_let iv True load_idx $
+                 k
+          foldr bodyF finalK $ zip xs as
           store_ans
         store_let ansv True load_ans km
   DL_Var _ dv ->

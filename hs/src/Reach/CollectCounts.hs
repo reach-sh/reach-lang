@@ -137,7 +137,6 @@ instance Countable DLExpr where
     DLE_ArrayRef _ aa ea -> counts [aa, ea]
     DLE_ArraySet _ aa ia va -> counts [aa, ia, va]
     DLE_ArrayConcat _ x y -> counts x <> counts y
-    DLE_ArrayZip _ x y -> counts x <> counts y
     DLE_TupleRef _ t _ -> counts t
     DLE_ObjectRef _ aa _ -> counts aa
     DLE_Interact _ _ _ _ _ as -> counts as
@@ -213,10 +212,10 @@ instance CountableK DLStmt where
   countsk kcs = \case
     DL_Nop {} -> kcs
     DL_Let _ lv e -> countsk (counts e <> kcs) lv
-    DL_ArrayMap _ ans x a i f ->
-      count_rms [ans, a, i] (counts f <> kcs) <> counts x
-    DL_ArrayReduce _ ans x z b a i f ->
-      count_rms [ans, b, a, i] (counts f <> kcs) <> counts [x, z]
+    DL_ArrayMap _ ans xs as i f ->
+      count_rms (as <> [ans, i]) (counts f <> kcs) <> counts xs
+    DL_ArrayReduce _ ans xs z b as i f ->
+      count_rms (as <> [ans, b, i]) (counts f <> kcs) <> counts (xs <> [z])
     DL_Var _ v -> count_rms [v] kcs
     DL_Set _ v a -> counts v <> counts a <> kcs
     DL_LocalIf _ c t f -> counts c <> counts [t, f] <> kcs

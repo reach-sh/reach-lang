@@ -317,9 +317,6 @@ jsExpr = \case
     x' <- jsArg x
     y' <- jsArg y
     return $ x' <> "." <> jsApply "concat" [y']
-  DLE_ArrayZip _ x y -> do
-    as' <- mapM jsArg [x, y]
-    return $ jsApply "stdlib.Array_zip" as'
   DLE_TupleRef at aa i -> do
     aa' <- jsArg aa
     i' <- jsCon $ DLL_Int at i
@@ -551,24 +548,24 @@ jsCom = \case
     return $ jsIf c' t' f'
   DL_LocalSwitch at ov csm ->
     jsEmitSwitch jsPLTail at ov csm
-  DL_ArrayMap _ ans x a i (DLBlock _ _ f r) -> do
+  DL_ArrayMap _ ans xs as i (DLBlock _ _ f r) -> do
     ans' <- jsVar ans
-    x' <- jsArg x
-    a' <- jsArg $ DLA_Var a
+    xs' <- mapM jsArg xs
+    as' <- mapM jsArg $ map DLA_Var as
     i' <- jsArg $ DLA_Var i
     f' <- jsPLTail f
     r' <- jsArg r
-    return $ "const" <+> ans' <+> "=" <+> "await" <+> jsApply "stdlib.Array_asyncMap" [ x', (jsApply "async" [a', i'] <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r')) ]
-  DL_ArrayReduce _ ans x z b a i (DLBlock _ _ f r) -> do
+    return $ "const" <+> ans' <+> "=" <+> "await" <+> jsApply "stdlib.Array_asyncMap" [jsArray xs', (jsApply "async" ([jsArray as', i']) <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r'))]
+  DL_ArrayReduce _ ans xs z b as i (DLBlock _ _ f r) -> do
     ans' <- jsVar ans
-    x' <- jsArg x
+    xs' <- mapM jsArg xs
     z' <- jsArg z
-    a' <- jsArg $ DLA_Var a
+    as' <- mapM jsArg $ map DLA_Var as
     b' <- jsArg $ DLA_Var b
     i' <- jsArg $ DLA_Var i
     f' <- jsPLTail f
     r' <- jsArg r
-    return $ "const" <+> ans' <+> "=" <+> "await" <+> jsApply "stdlib.Array_asyncReduce" [ x', z', (jsApply "async" [b', a', i']) <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r') ]
+    return $ "const" <+> ans' <+> "=" <+> "await" <+> jsApply "stdlib.Array_asyncReduce" ([jsArray xs', z', (jsApply "async" $ [jsArray as', b', i']) <+> "=>" <+> jsBraces (f' <> hardline <> jsReturn r')])
   DL_MapReduce {} ->
     impossible $ "cannot inspect maps at runtime"
   DL_Only _at (Right c) l -> do

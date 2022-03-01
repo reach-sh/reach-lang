@@ -608,7 +608,6 @@ data DLExpr
   | DLE_ArrayRef SrcLoc DLArg DLArg
   | DLE_ArraySet SrcLoc DLArg DLArg DLArg
   | DLE_ArrayConcat SrcLoc DLArg DLArg
-  | DLE_ArrayZip SrcLoc DLArg DLArg
   | DLE_TupleRef SrcLoc DLArg Integer
   | DLE_ObjectRef SrcLoc DLArg String
   | DLE_Interact SrcLoc [SLCtxtFrame] SLPart String DLType [DLArg]
@@ -703,9 +702,6 @@ instance PrettySubst DLExpr where
     DLE_ArrayConcat _ x y -> do
       as' <- render_dasM [x, y]
       return $ "Array.concat" <> parens as'
-    DLE_ArrayZip _ x y -> do
-      as' <- render_dasM [x, y]
-      return $ "Array.zip" <> parens as'
     DLE_TupleRef _ a i -> do
       a' <- prettySubst a
       return $ a' <> brackets (pretty i)
@@ -810,7 +806,6 @@ instance IsPure DLExpr where
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True
     DLE_ArrayConcat {} -> True
-    DLE_ArrayZip {} -> True
     DLE_TupleRef {} -> True
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> False
@@ -849,7 +844,6 @@ instance IsLocal DLExpr where
     DLE_ArrayRef {} -> True
     DLE_ArraySet {} -> True
     DLE_ArrayConcat {} -> True
-    DLE_ArrayZip {} -> True
     DLE_TupleRef {} -> True
     DLE_ObjectRef {} -> True
     DLE_Interact {} -> True
@@ -952,8 +946,8 @@ instance IsPure a => IsPure (SwitchCases a) where
 data DLStmt
   = DL_Nop SrcLoc
   | DL_Let SrcLoc DLLetVar DLExpr
-  | DL_ArrayMap SrcLoc DLVar DLArg DLVar DLVar DLBlock
-  | DL_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLVar DLBlock
+  | DL_ArrayMap SrcLoc DLVar [DLArg] [DLVar] DLVar DLBlock
+  | DL_ArrayReduce SrcLoc DLVar [DLArg] DLArg DLVar [DLVar] DLVar DLBlock
   | DL_Var SrcLoc DLVar
   | DL_Set SrcLoc DLVar DLArg
   | DL_LocalDo SrcLoc DLTail
@@ -982,8 +976,8 @@ instance Pretty DLStmt where
     DL_Nop _ -> mempty
     DL_Let _ DLV_Eff de -> pretty de <> semi
     DL_Let _ x de -> "const" <+> pretty x <+> "=" <+> pretty de <> semi
-    DL_ArrayMap _ ans x a i f -> prettyMap ans x a i f
-    DL_ArrayReduce _ ans x z b a i f -> prettyReduce ans x z b a i f
+    DL_ArrayMap _ ans xs as i f -> prettyMap ans xs as i f
+    DL_ArrayReduce _ ans xs z b as i f -> prettyReduce ans xs z b as i f
     DL_Var _at dv -> "let" <+> pretty dv <> semi
     DL_Set _at dv da -> pretty dv <+> "=" <+> pretty da <> semi
     DL_LocalDo _at k -> "do" <+> braces (pretty k) <> semi
@@ -1200,3 +1194,10 @@ type DLViews = InterfaceLikeMap IType
 type DLAPIs = InterfaceLikeMap (SLPart, IType)
 
 type DLEvents = InterfaceLikeMap [DLType]
+
+arraysLength :: [DLArg] -> Integer
+arraysLength arrays = do
+  let sizes = map (snd . argArrTypeLen) arrays
+  case allEqual sizes of
+    Right s -> s
+    _ -> impossible "Inconsistent array sizes."

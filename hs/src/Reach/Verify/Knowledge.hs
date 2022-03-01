@@ -199,8 +199,6 @@ kgq_e ctxt mv = \case
   DLE_ArraySet _ a e n -> kgq_la ctxt mv (DLLA_Tuple [a, e, n])
   DLE_ArrayConcat _ x_da y_da ->
     kgq_a_onlym ctxt mv x_da >> kgq_a_onlym ctxt mv y_da
-  DLE_ArrayZip _ x_da y_da ->
-    kgq_a_onlym ctxt mv x_da >> kgq_a_onlym ctxt mv y_da
   DLE_TupleRef _ a _ -> kgq_a_onlym ctxt mv a
   DLE_ObjectRef _ a _ -> kgq_a_onlym ctxt mv a
   DLE_Interact _ _ who what t as ->
@@ -259,14 +257,14 @@ kgq_m :: KCtxt -> DLStmt -> IO ()
 kgq_m ctxt = \case
   DL_Nop _ -> mempty
   DL_Let _ lv de -> kgq_e ctxt (lv2mdv lv) de
-  DL_ArrayMap _ ans x a i (DLBlock _ _ f r) ->
-    kgq_a_only ctxt a x
+  DL_ArrayMap _ ans xs as i (DLBlock _ _ f r) ->
+    zipWithM (kgq_a_only ctxt) as xs
       >> kgq_a_all ctxt (DLA_Var i)
       >> kgq_a_only ctxt ans r
       >> kgq_l ctxt f
-  DL_ArrayReduce _ ans x z b a i (DLBlock _ _ f r) ->
+  DL_ArrayReduce _ ans xs z b as i (DLBlock _ _ f r) ->
     kgq_a_only ctxt b z
-      >> kgq_a_only ctxt a x
+      >> zipWithM (kgq_a_only ctxt) as xs
       >> kgq_a_all ctxt (DLA_Var i)
       >> kgq_a_only ctxt ans r
       >> kgq_l ctxt f

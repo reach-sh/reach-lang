@@ -64,7 +64,6 @@ instance Sanitize DLExpr where
     DLE_ArrayRef _ a i -> DLE_ArrayRef sb (sani a) (sani i)
     DLE_ArraySet _ a i v -> DLE_ArraySet sb (sani a) (sani i) (sani v)
     DLE_ArrayConcat _ x y -> DLE_ArrayConcat sb (sani x) (sani y)
-    DLE_ArrayZip _ x y -> DLE_ArrayZip sb (sani x) (sani y)
     DLE_TupleRef _ a i -> DLE_TupleRef sb (sani a) i
     DLE_ObjectRef _ a f -> DLE_ObjectRef sb (sani a) f
     DLE_Interact _ fs p m t as -> DLE_Interact sb fs p m t (sani as)
