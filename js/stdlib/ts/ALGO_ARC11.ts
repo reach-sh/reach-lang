@@ -71,4 +71,6 @@ export interface WindowAlgorand {
   getIndexerClient: GetIndexerClientFunction;
 };
 
-export type ARC11_Wallet = WindowAlgorand;
+export type ARC11_Wallet = WindowAlgorand & {
+  _env?: any;
+};
