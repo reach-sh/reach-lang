@@ -7,6 +7,8 @@ import Data.Aeson
 import Data.Bits
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe)
+import Data.Set (member)
+import Data.List (partition)
 import GHC.Generics
 import qualified GHC.Stack as G
 import Reach.AST.Base
@@ -32,6 +34,8 @@ type Store = ConsensusEnv
 type Balance = Integer
 
 type Token = Integer
+
+type APID = Integer
 
 consensusId :: ActorId
 consensusId = -1
@@ -63,6 +67,14 @@ data MessageInfo = NotFixedYet (M.Map ActorId Message) | Fixed (ActorId, Message
 
 instance ToJSON MessageInfo
 
+data ReachAPI = ReachAPI
+  { a_name :: String
+  , a_liv :: InteractEnv
+  }
+  deriving (Show, Generic)
+
+instance ToJSON ReachAPI
+
 data Global = Global
   { e_ledger :: Ledger
   , e_ntok :: Token
@@ -71,6 +83,8 @@ data Global = Global
   , e_nwsecs :: Integer
   , e_nactorid :: ActorId
   , e_naccid :: Account
+  , e_napid :: Integer
+  , e_apis :: M.Map APID ReachAPI
   , e_partacts :: M.Map Participant ActorId
   , e_messages :: M.Map PhaseId MessageInfo
   }
@@ -116,6 +130,8 @@ initGlobal =
     , e_nwsecs = 0
     , e_nactorid = 0
     , e_naccid = 0
+    , e_napid = 0
+    , e_apis = mempty
     , e_partacts = mempty
     , e_messages = mempty
     }
@@ -841,7 +857,10 @@ bindConsensusMeta (DLRecv {..}) actorId accId = do
 
 instance Interp LLProg where
   interp (LLProg _at _llo slparts _dli _dex _dvs _apis _evts step) = do
-    registerParts $ M.toAscList $ sps_ies slparts
+    let apiNames = sps_apis slparts
+    let (apiParts,regParts) = partition (\(a,_b) -> member a apiNames) $ M.toAscList $ sps_ies slparts
+    registerParts regParts
+    registerAPIs apiParts
     interp step
 
 isTheTimePast :: Maybe (DLTimeArg, LLStep) -> App (Maybe LLStep)
@@ -867,7 +886,7 @@ registerParts :: [(SLPart, InteractEnv)] -> App ()
 registerParts [] = return ()
 registerParts ((p, iv) : ps) = do
   s <- getState
-  let (g, l) = registerPart s (bunpack p) iv
+  let (g,l) = registerPart s (bunpack p) iv
   setGlobal g
   setLocal l
   registerParts ps
@@ -900,6 +919,27 @@ registerPart (g, l) s iv = do
           }
   let l' = l {l_locals = locals'}
   (g', l')
+
+registerAPIs :: [(SLPart, InteractEnv)] -> App ()
+registerAPIs [] = return ()
+registerAPIs ((p, iv) : ps) = do
+  s <- getState
+  let (g,l) = registerAPI s (bunpack p) iv
+  setGlobal g
+  setLocal l
+  registerAPIs ps
+
+registerAPI :: State -> String -> InteractEnv -> State
+registerAPI (g, l) s iv = do
+  let apid = e_napid g
+  let apis = e_apis g
+  let a = ReachAPI { a_name = s, a_liv = iv }
+  let g' =
+        g
+          { e_apis = M.insert apid a apis
+          , e_napid = apid + 1
+          }
+  (g', l)
 
 while :: DLBlock -> LLConsensus -> App DLVal
 while bl cons = do
