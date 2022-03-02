@@ -16,6 +16,9 @@ import type {
   WalletTransaction,
   EnableNetworkResult,
   EnableAccountsResult,
+  EnableOpts,
+  EnableResult,
+  EnableAccountsOpts,
 } from './ALGO_ARC11'; // =>
 import type { BaseHTTPClient } from 'algosdk';
 import * as RHC from './ALGO_ReachHTTPClient';
@@ -705,7 +708,14 @@ export interface Provider {
 
 const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
   debug(`making provider with wallet`);
-  const walletOpts = {'network': process.env['ALGO_NETWORK']};
+  const { ALGO_GENESIS_ID, ALGO_GENESIS_HASH, ALGO_ACCOUNT, REACH_ISOLATED_NETWORK, ALGO_NODE_WRITE_ONLY } = process.env;
+  const walletOpts: EnableOpts = {
+    genesisID: ALGO_GENESIS_ID || undefined,
+    genesisHash: ALGO_GENESIS_HASH || undefined,
+    accounts: ALGO_ACCOUNT ? [ ALGO_ACCOUNT ] : undefined,
+  };
+  const isIsolatedNetwork = truthyEnv(REACH_ISOLATED_NETWORK);
+  const nodeWriteOnly = truthyEnv(ALGO_NODE_WRITE_ONLY);
   let enabledNetwork: EnableNetworkResult|undefined;
   let enabledAccounts: EnableAccountsResult|undefined;
   if ( wallet.enableNetwork === undefined && wallet.enableAccounts === undefined ) {
@@ -735,18 +745,38 @@ const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
     return enabledAccounts.accounts[0];
   };
   const signAndPostTxns = wallet.signAndPostTxns;
-  const isIsolatedNetwork = truthyEnv(process.env['REACH_ISOLATED_NETWORK']);
-  const nodeWriteOnly = truthyEnv(process.env.ALGO_NODE_WRITE_ONLY);
   return { algod_bc, indexer_bc, indexer, algodClient, nodeWriteOnly, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
 };
 
 export const setWalletFallback = (wf:() => unknown) => {
   if ( ! window.algorand ) { window.algorand = wf(); }
 };
+
+const checkNetwork = (ret: EnableNetworkResult, eopts?: EnableOpts): void => {
+  const { genesisID:  id, genesisHash:  h } = ret;
+  const { genesisID: eid, genesisHash: eh } = eopts || {};
+  if ( ( eid && eid !== id) || ( eh && eh !== h ) ) {
+    throw Error(
+      `Requested genesis ID or hash not supported by this wallet.\n`
+      + `Expected: '${id}' '${h}'\n`
+      + `Got: '${eid}' '${eh}'`
+    );
+  }
+}
+
+const checkAccounts = (addr: string, got?: string[]): void => {
+  if ( got && ( got[0] !== addr || got.length > 1 ) ) {
+    throw Error(
+      `One or more requested accounts not supported by this wallet.\n`
+      + `Expected: ${JSON.stringify([addr])}\n`
+      + `Got: ${JSON.stringify(got)}`
+    );
+  }
+}
+
 const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
   let p: Provider|undefined = undefined;
-  const enableNetwork = async (eopts?:object) => {
-    void(eopts);
+  const enableNetwork = async (eopts?: EnableOpts): Promise<EnableNetworkResult> => {
     const base = opts['providerEnv'];
     if ( base ) {
       // XXX Is it a bad idea to update the process.env? This is to get
@@ -759,16 +789,20 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
       }
     }
     p = await makeProviderByEnv(process.env);
-    return {};
+    const { genesisID, genesisHash } = await p.algodClient.getTransactionParams().do();
+    const ret = { genesisID, genesisHash };
+    checkNetwork(ret, eopts);
+    return ret;
   };
-  const enableAccounts = async (eopts?:object) => {
-    void(eopts);
+  const enableAccounts = async (eopts?: EnableAccountsOpts): Promise<EnableAccountsResult> => {
     const addr = await getAddr();
+    checkAccounts(addr, eopts?.accounts);
     return { accounts: [ addr ] };
   };
-  const enable = async (eopts?:object) => {
-    await enableNetwork(eopts);
-    return await enableAccounts(eopts);
+  const enable = async (eopts?:object): Promise<EnableResult> => {
+    const nres = await enableNetwork(eopts);
+    const ares = await enableAccounts(eopts);
+    return { ...nres, ...ares };
   };
   const getAlgodv2Client = async () => {
     if ( !p ) { throw new Error(`must call enable`) };
