@@ -5,6 +5,11 @@ WORKDIR /app
 
 COPY package.json /app/package.json
 COPY ./lib /lib
+
+WORKDIR /lib
+RUN npm install --loglevel=verbose
+
+WORKDIR /app
 RUN npm install --loglevel=verbose /lib
 RUN npm install --loglevel=verbose
 
