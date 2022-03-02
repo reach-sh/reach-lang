@@ -1,9 +1,10 @@
 #!/bin/sh
+tmp="${TMPDIR:-/tmp}"
 exec docker run \
   --rm \
   -u "$(id -ru):$(id -rg)" \
-  --volume "$PWD:/app" \
-  --volume "/tmp:/tmp" \
+  --volume "${PWD}:/app" \
+  --volume "${tmp}:${tmp}" \
   --workdir /app \
   --entrypoint /bin/goal \
   reachsh/devnet-algo \
