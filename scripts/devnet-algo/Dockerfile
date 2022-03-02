@@ -86,7 +86,7 @@ COPY --from=generate /algorand_network /
 
 FROM $ALPINE_IMAGE
 
-RUN apk add bash
+RUN apk add --no-cache bash libstdc++
 
 ENV ALGORAND_NETWORK=/var/lib/algorand_network
 ENV ALGORAND_DATA=${ALGORAND_NETWORK}/Primary

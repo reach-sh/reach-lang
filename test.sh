@@ -134,6 +134,7 @@ export REACH_BUILD_NO_CACHE=Y
 
 jb
 ci ALGO muldiv
+ci ALGO rps-7-loops
 exit 0
 
 #(cd scripts/devnet-algo && make build) && "${REACH}" down
