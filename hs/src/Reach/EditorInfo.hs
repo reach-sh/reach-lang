@@ -9,10 +9,19 @@ import Reach.AST.Base
 import Reach.AST.SL
 import qualified Reach.Eval.Core as C
 
+customConfig :: A.Config
+customConfig = A.Config {
+  confIndent = A.Spaces 4,
+  confCompare = compare,
+  confNumFormat = A.Generic,
+  confTrailingNewline = False
+}
+
 printKeywordInfo :: IO ()
 printKeywordInfo =
   B.putStrLn $
-    A.encodePretty $ infoMap
+    A.encodePretty'
+      customConfig $ infoMap
 
 infoMap :: A.Value
 infoMap =
