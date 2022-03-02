@@ -49,7 +49,7 @@ Verification failed:
 
   const UInt.max = 20;
 
-  const tok/209 = v205;
+  const tok/209 = <a publication>;
   //    ^ could = Token!val!2
   //      from: ./pr417.rsh:10:5:dot
 

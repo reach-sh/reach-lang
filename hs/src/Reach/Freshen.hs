@@ -73,7 +73,16 @@ instance Freshen DLVar where
   fu v = do
     Env {..} <- ask
     rho <- liftIO $ readIORef fRho
-    return $ fromMaybe v $ M.lookup v rho
+    let mv' = M.lookup v rho
+    -- Often, an expression will be assigned to a DLVar with no label, and
+    -- only subsequent uses of the DLVar will have a label associated with it.
+    -- If we use the DLVar from the assignment everywhere, we will lose labels, which is needed for nice SMT errors.
+    -- If we can ever recover the label information, replace the key.
+    case (mv', v) of
+      (Just (DLVar at Nothing t i), DLVar _ lab@(Just {}) _ _) ->
+        liftIO $ modifyIORef fRho $ M.insert v $ DLVar at lab t i
+      _ -> return ()
+    return $ fromMaybe v mv'
 
 instance Freshen DLArg where
   fu = \case

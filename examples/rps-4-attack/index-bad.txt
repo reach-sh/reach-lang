@@ -11,7 +11,7 @@ Verification failed:
 
   const UInt.max = 2;
 
-  const v75 = "Alice".interact.wager;
+  const wager/75 = "Alice".interact.wager;
   //    ^ could = 1
   //      from: ./index-bad.rsh:11:10:property binding
   const v78 = protect<UInt>("Alice".interact.getHand());
@@ -23,9 +23,9 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v97 = (v78 + (4 - v88)) % 3;
+  const outcome/97 = (v78 + (4 - v88)) % 3;
   //    ^ would be 2
-  const v104 = ((v97 == 2) ? [1, 0 ] : ((v97 == 0) ? [0, 2 ] : [1, 1 ]));
+  const v104 = ((v97 == 2) ? [1, 0 ] : ((outcome/97 == 0) ? [0, 2 ] : [1, 1 ]));
   //    ^ would be [1, 0 ]
   const v118 = 0 == (((v75 + v75) - (v104[0] * v75)) - (v104[1] * v75));
   //    ^ would be false
