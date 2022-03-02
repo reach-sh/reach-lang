@@ -10,7 +10,7 @@ RUN /rustup.sh -y
 RUN /root/.cargo/bin/rustup install 1.47.0
 
 RUN apt-get install wget
-ARG CFX_VERSION="1.1.7"
+ARG CFX_VERSION="2.0.0-fix"
 RUN wget --quiet https://github.com/Conflux-Chain/conflux-rust/archive/refs/tags/v${CFX_VERSION}.tar.gz && tar -xvf v${CFX_VERSION}.tar.gz
 RUN mv conflux-rust-${CFX_VERSION} conflux-rust
 WORKDIR conflux-rust

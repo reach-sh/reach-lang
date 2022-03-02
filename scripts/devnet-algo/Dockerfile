@@ -21,10 +21,11 @@ ENV SRC_PARENT ${GOPATH}/src/github.com/algorand
 ### ALGOD
 WORKDIR ${SRC_PARENT}
 # algod release
-ARG ALGO_VERSION=3.0.1-stable
+ARG ALGO_VERSION=3.4.2-stable
 RUN wget --quiet https://github.com/algorand/go-algorand/archive/refs/tags/v${ALGO_VERSION}.tar.gz && tar -xvf v${ALGO_VERSION}.tar.gz
 WORKDIR ${SRC_PARENT}/go-algorand-${ALGO_VERSION}
 RUN ./scripts/configure_dev-deps.sh
+RUN make install
 COPY reach.patch .
 RUN patch -p1 < reach.patch
 RUN make install
@@ -38,12 +39,14 @@ RUN make install
 ### INDEXER
 WORKDIR ${SRC_PARENT}
 # indexer release
-ARG INDEXER_VERSION=2.6.5
-RUN wget --quiet https://github.com/algorand/indexer/archive/refs/tags/${INDEXER_VERSION}.tar.gz && tar -xvf ${INDEXER_VERSION}.tar.gz
-WORKDIR ${SRC_PARENT}/indexer-${INDEXER_VERSION}
-# indexer develop branch as of 2021-03-19
-# RUN git clone https://github.com/algorand/indexer && cd indexer && git checkout e54c4d97df60e2a6768abb3d97919f3412e58597
-# WORKDIR $SRC_PARENT/indexer
+ARG INDEXER_VERSION=2.9.0
+
+#RUN wget --quiet https://github.com/algorand/indexer/archive/refs/tags/${INDEXER_VERSION}.tar.gz && tar -xvf ${INDEXER_VERSION}.tar.gz
+#WORKDIR ${SRC_PARENT}/indexer-${INDEXER_VERSION}
+
+RUN git clone https://github.com/algorand/indexer && cd indexer && git checkout release/${INDEXER_VERSION}
+WORKDIR ${SRC_PARENT}/indexer
+
 RUN make
 #COPY indexer1.patch .
 #RUN patch -p1 < indexer1.patch

@@ -3,6 +3,17 @@
 Below is a list of changes to Reach.
 Versions and changes-within-versions are listed in reverse-chronological order: newest things first.
 
+## 0.1.9: 2022/03 - present
+
+Version 0.1.9 is the current Reach release candidate version.
+
++ 2022/03/02: Conflux upgraded to `2.0.0-fix`.
++ 2022/03/02: Ethers upgraded to `5.5.4`.
++ 2022/03/02: Ethereum ERC-20 implementation upgraded to OpenZeppelin `4.5.0`.
++ 2022/03/02: Ethereum (`geth`) upgraded to `1.10.16`.
++ 2022/03/02: Solidity upgraded to `0.8.12`.
++ 2022/03/02: Z3 upgraded to `4.8.14`.
+
 ## 0.1.8: 2022/01 - present
 
 Version 0.1.8 is the current Reach release candidate version.
