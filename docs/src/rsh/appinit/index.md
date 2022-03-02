@@ -121,8 +121,7 @@ Each function must occur exactly once in the entire program.
 
 ### {#ref-programs-appinit-view} View Definition
 
-Views generate a funtion that anyone can call to learn the state without being tied to the implementation.
-On Ethereum and Conflux, `view` can call contract-to-contract and API functions that are guaranteed to be read-only.
+Views are read-only and can call contract-to-contract and API functions.
 
 :::note
 This section is about defining views during application initialization. Views are [set in consensus steps](##ref-programs-consensus-view), in your Reach program. But, they are [accessed by frontends](##ref-frontends-js-ctc) by using the Reach standard library of the frontend language, such as JavaScript.
