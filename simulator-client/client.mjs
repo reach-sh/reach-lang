@@ -437,6 +437,13 @@ const resetServer = async () => {
   return r
 }
 
+// get the APIs for the current program
+const getAPIs = async () => {
+  const r = await interact('GET', `${address}/apis`)
+  console.log(r)
+  return r
+}
+
 // ping the server for a friendly greeting ^_^
 const ping = async () => {
   const r = await interact(`GET`, `${address}/ping`)
@@ -501,5 +508,6 @@ export {
   newAccount,
   transfer,
   newToken,
-  initDetails
+  initDetails,
+  getAPIs
 };

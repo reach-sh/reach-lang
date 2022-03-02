@@ -87,7 +87,9 @@ let actionsHTML = null;
 //#### event handler which loads the Objects View
 const renderObjects = async (nodeId) => {
   const r = await c.getStateLocals(nodeId)
+  const apis = await c.getAPIs()
   let obs = ``
+  let apiBs = ``
   let actorSet = {}
   for (const [k,v] of Object.entries(r.l_locals)) {
     const who = v.l_who ? v.l_who : 'Consensus'
@@ -128,6 +130,17 @@ const renderObjects = async (nodeId) => {
       </button> `
   }
 
+  for (const [k,v] of Object.entries(apis)) {
+    let status = 'Initial'
+    apiBs = apiBs + `
+      <button type="button"
+      class="list-group-item list-group-item-action object-button"
+      data-api-id="${k}">
+      ${v.a_name}
+      <span class="badge bg-secondary">${status}</span>
+      </button> `
+  }
+
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -136,6 +149,7 @@ const renderObjects = async (nodeId) => {
   </nav>
   <ul class="list-group list-group-flush">
     ${obs}
+
 
     <div class="extra-margin-bottom">
       <h4>Accounts/Tokens</h4>
@@ -183,13 +197,21 @@ const renderObjects = async (nodeId) => {
 
       </div>
     </div>
+
+    <hr>
+    <div>
+      <h4>APIs</h4>
+      <ul class="list-group list-group-flush">
+        ${apiBs}
+      </ul>
+    </div>
+
     <hr>
     <div>
       <h4>Logging</h4>
       <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals <i class="bi bi-clipboard"></i></button>
       <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals <i class="bi bi-clipboard"></i></button>
     </div>
-
 
   </ul>
   `
