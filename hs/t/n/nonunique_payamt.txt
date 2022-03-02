@@ -9,16 +9,16 @@ Verification failed:
 
   // Violation Witness
 
-  const v177 = "A".interact.condish;
+  const condish/177 = "A".interact.condish;
   //    ^ could = false
   //      from: ./nonunique_payamt.rsh:6:12:property binding
-  const v178 = "A".interact.tokens;
+  const tokens/178 = "A".interact.tokens;
   //    ^ could = array(Token, [Token!val!0 ] )
   //      from: ./nonunique_payamt.rsh:5:11:property binding
 
   // Theorem Formalization
 
-  const v218 = ((v178[1] == array(Token, [(v177 ? v178[0] : v178[1]) ])[0]) ? false : true);
+  const v218 = ((tokens/178[1] == array(Token, [(condish/177 ? tokens/178[0] : tokens/178[1]) ])[0]) ? false : true);
   //    ^ would be false
   assert(v218);
 
@@ -31,13 +31,13 @@ Verification failed:
 
   // Violation Witness
 
-  const token1/186 = v181;
+  const token1/186 = <a publication>;
   //    ^ could = Token!val!1
   //      from: ./nonunique_payamt.rsh:17:5:dot
-  const token2/187 = v182;
+  const token2/187 = <a publication>;
   //    ^ could = Token!val!3
   //      from: ./nonunique_payamt.rsh:17:5:dot
-  const condish/188 = v177;
+  const condish/188 = <a publication>;
   //    ^ could = false
   //      from: ./nonunique_payamt.rsh:17:5:dot
 

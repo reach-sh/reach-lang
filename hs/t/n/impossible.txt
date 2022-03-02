@@ -9,11 +9,11 @@ Verification failed:
 
   // Violation Witness
 
-  const v30 = protect<UInt>("A".interact.getX());
+  const _x/30 = protect<UInt>("A".interact.getX());
 
   // Theorem Formalization
 
-  const v31 = v30 < 0;
+  const v31 = _x/30 < 0;
   possible(v31);
 
   Verifying when NO participants are honest
