@@ -83,7 +83,7 @@ import {
 export type { Token } from './ALGO_compiled';
 import {  } from './shared_backend';
 import type { MapRefT, MaybeRep } from './shared_backend'; // =>
-import { window, process, updateProcessEnv } from './shim';
+import { window, process } from './shim';
 import { sha512_256 } from 'js-sha512';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = stdlib;
 export * from './shared_user';
@@ -693,9 +693,12 @@ export interface Provider {
   signAndPostTxns: (txns:WalletTransaction[], opts?: object) => Promise<unknown>,
 };
 
-const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
+const makeProviderByWallet = async (wallet:ARC11_Wallet, env: any): Promise<Provider> => {
   debug(`making provider with wallet`);
-  const { ALGO_GENESIS_ID, ALGO_GENESIS_HASH, ALGO_ACCOUNT, REACH_ISOLATED_NETWORK, ALGO_NODE_WRITE_ONLY } = process.env;
+  const defaults = { REACH_ISOLATED_NETWORK: 'no', ALGO_NODE_WRITE_ONLY: 'yes' }; // pessimistic
+  const allEnv = { ...defaults, ...env, ...(wallet._env || {}) }; // rightmost is preferred
+  const { ALGO_GENESIS_ID, ALGO_GENESIS_HASH, ALGO_ACCOUNT } = env;
+  const { REACH_ISOLATED_NETWORK, ALGO_NODE_WRITE_ONLY } = allEnv;
   const walletOpts: EnableOpts = {
     genesisID: ALGO_GENESIS_ID || undefined,
     genesisHash: ALGO_GENESIS_HASH || undefined,
@@ -763,19 +766,10 @@ const checkAccounts = (addr: string, got?: string[]): void => {
 
 const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
   let p: Provider|undefined = undefined;
+  const base = opts['providerEnv'];
+  const _env = typeof base === 'string' ? providerEnvByName(base) : base;
   const enableNetwork = async (eopts?: EnableOpts): Promise<EnableNetworkResult> => {
-    const base = opts['providerEnv'];
-    if ( base ) {
-      // XXX Is it a bad idea to update the process.env? This is to get
-      // ALGO_NODE_WRITE_ONLY from here to makeProviderByWallet
-      if ( typeof base === 'string' ) {
-        // @ts-ignore
-        updateProcessEnv(providerEnvByName(base));
-      } else {
-        updateProcessEnv(base);
-      }
-    }
-    p = await makeProviderByEnv(process.env);
+    p = await makeProviderByEnv(_env);
     const { genesisID, genesisHash } = await p.algodClient.getTransactionParams().do();
     const ret = { genesisID, genesisHash };
     checkNetwork(ret, eopts);
@@ -823,7 +817,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     await p.algodClient.sendRawTransaction(bs).do();
     return {};
   };
-  return { enable, enableNetwork, enableAccounts, getAlgodv2Client, getIndexerClient, signAndPostTxns };
+  return { _env, enable, enableNetwork, enableAccounts, getAlgodv2Client, getIndexerClient, signAndPostTxns };
 };
 const walletFallback_mnemonic = (opts:object) => (): ARC11_Wallet => {
   debug(`using mnemonic wallet fallback`);
@@ -893,7 +887,7 @@ export const walletFallback = (opts:any) => {
 export const [getProvider, setProvider] = replaceableThunk(async () => {
   if ( window.algorand ) {
     // @ts-ignore
-    return await makeProviderByWallet(window.algorand);
+    return await makeProviderByWallet(window.algorand, process.env);
   } else {
     debug(`making default provider based on process.env`);
     return await makeProviderByEnv(process.env);
