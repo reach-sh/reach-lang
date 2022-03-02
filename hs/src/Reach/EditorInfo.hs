@@ -11,7 +11,7 @@ import qualified Reach.Eval.Core as C
 
 customConfig :: A.Config
 customConfig = A.Config {
-  confIndent = A.Spaces 4,
+  confIndent = A.Spaces 2,
   confCompare = compare,
   confNumFormat = A.Generic,
   confTrailingNewline = False
