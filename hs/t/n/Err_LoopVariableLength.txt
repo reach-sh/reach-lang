@@ -1,3 +1,11 @@
+warning[RW0006]: This program uses network seconds, which are unreliable on most consensus networks. You should read the article about this warning to ensure that you understand the risks of building on them.
+
+  reach standard library:570:12:application
+
+  
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0006
+
 reachc: error[RE0128]: Cannot assign the loop variable(s) to a `Tuple` of different length at: ./Err_LoopVariableLength.rsh:26:15:tuple
 
   ./Err_LoopVariableLength.rsh:13:9:array

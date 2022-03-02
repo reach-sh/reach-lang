@@ -1510,8 +1510,9 @@ compileTimeArg = \case
   SLV_Data _ dm "Left" v
     | correctData dm ->
       Left <$> compileCheckType T_UInt v
-  SLV_Data _ dm "Right" v
-    | correctData dm ->
+  SLV_Data at dm "Right" v
+    | correctData dm -> do
+      liftIO $ emitWarning (Just at) $ W_NetworkSeconds
       Right <$> compileCheckType T_UInt v
   SLV_DLVar (DLVar _ _ (T_Data dm) _)
     | correctData dm ->

@@ -43,17 +43,8 @@ However, on Algorand, running this program requires that Bob "opt-in" to storing
 We hope that future versions of Algorand will allow other parties to pay the fees to "opt-in" to applications to prevent these kinds of deadlock attacks.
 
 In Algorand, network time corresponds to round numbers.
-
-Network seconds are completely unrelated to reality.
-Each round is assigned a Unix timestamp and when you look at the timestamp in round N+1, you read the timestamp assigned to round N.
-The only invariant about these timestamps are that they never go down and they never increase by more than 25 seconds at each increment.
-(The number 25 is configurable as part of the consensus, but has never been changed.)
-For example, round 20 could actually occur on Monday at 17:45:00, but be assigned the timestamp over Sunday at 05:08:32, because that's when round 19 was and there was network downtime.
-Furthermore, if round 21 was "on time" and actually occurred on Monday at 17:45:05, it would be assigned to Sunday at 05:08:57 (25 seconds after round 20's assignment).
-This process would slowly "resychronize", gaining 20 seconds on the "actual time" every 5 second round.
-This means it would take roughly 5 hours to resychronize after a day of downtime.
-However, this is not guaranteed to occur at any particular time, because block proposers are free to leave the timestamp unchanged from the last block (i.e. there is no minimum increment), so it is possible that time would never be synchronized with reality at all.
-Thus, it is unsafe to rely on network seconds for most purposes (such as interest on loans, time limits on auctions, and so forth.)
+Each round is assigned a Unix timestamp, but when you look at the timestamp in code executing in round N+1, you read the timestamp assigned to round N.
+Ensure that you read @{seclink("RW0006")} if you use network seconds.
 
 The connector provides a binding named `{!rsh} ALGO` to
 backends.
@@ -201,6 +192,7 @@ A view named `X` will be named `X`.
 Views expand the on-chain state to include the free variables of all values bound to a view.
 
 In Ethereum, network time corresponds to block numbers and network seconds correspond to the Unix timestamp of the block.
+Ensure that you read @{seclink("RW0006")} if you use network seconds.
 
 The connector provides a binding named `{!rsh} ETH` to
 backends.

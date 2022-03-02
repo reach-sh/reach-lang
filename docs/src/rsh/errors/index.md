@@ -2665,6 +2665,26 @@ You can fix this issue by making sure at least one `{!rsh} Participant` performs
 
 This warning indicates that a `{!rsh} View` or `{!rsh} API` produces or consumes an `{!rsh} Object`,
 which is a type internal to Reach.
-It has an opaque and unspecified representation that can only be consumed by other Reach programs, so it is probably a bad choice for general purpose interfaces.
+It has an opaque and unspecified representation that can only be automatically consumed by other Reach programs, so it is probably a bad choice for general purpose interfaces.
 
-You can fix this issue by using a `{!rsh} Struct` instead of the `{!rsh} Object`.
+You can remove this warning by using a `{!rsh} Struct` instead of the `{!rsh} Object`.
+
+## {#RW0006} RW0006
+
+This warning indicates that you referenced network seconds in your program.
+
+On most consensus networks, network seconds are completely unrelated to reality.
+The only invariant about these timestamps are that they never go down and they never increase by more than a fixed amont of seconds at each increment.
+(For example, on Ethereum, the fixed amount is 15, and on Algorand the amount
+is 25.
+Typically these are configurable parameters of the consensus, but have never
+actually been changed.)
+
+For example, time 20 could actually occur on Monday at 17:45:00, but be assigned the timestamp of Sunday at 05:08:32, because that's when time 19 was and there was network downtime.
+Furthermore, if time 21 was "on time" and actually occurred on Monday at 17:45:05, it would be assigned to Sunday at 05:08:57 (25 seconds after time 20's assignment).
+
+This process would slowly "resychronize"; on Algorand, it would gain 20 seconds on the "actual time" every 5 second round.
+This means it would take roughly 5 hours to resychronize after a day of downtime.
+However, this is not guaranteed to occur at any particular time, because block proposers (on Algorand, at least) are free to leave the timestamp unchanged from the last block (i.e. there is no minimum increment), so it is possible that time would never be synchronized with reality at all.
+
+Thus, it is unsafe to rely on network seconds for most purposes (such as interest on loans, time limits on auctions, and so forth), because network downtime (even intermitten) and adversarial block proposers (acting alone) can delay and influence the block time.
