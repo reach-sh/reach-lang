@@ -2,7 +2,7 @@
   "name": "@reach-sh/{{CNAME}}",
   "type": "module",
   "dependencies": {
-    "@reach-sh/rpc-client": "0.0.1",
+    "@reach-sh/rpc-client": "0.0.2-rc.0",
     "chalk": "5.0.0",
     "await-timeout": "^0.6.0"
   },
