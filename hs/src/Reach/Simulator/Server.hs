@@ -167,6 +167,16 @@ initWallets' :: Integer -> C.Wallet -> C.Wallet
 initWallets' 0 w = w
 initWallets' n w = initWallets' (n-1) $ M.insert n 0 w
 
+getAPIs :: WebM (M.Map C.APID C.ReachAPI)
+getAPIs = do
+  graph <- gets e_graph
+  case M.lookup 0 graph of
+    Nothing -> do
+      possible "getAPIs: no initial state found"
+    Just (g, _) -> do
+      let apis = C.e_apis g
+      return apis
+
 newTok :: StateId -> WebM (C.Token)
 newTok sid = do
   graph <- gets e_graph
@@ -475,6 +485,11 @@ app p srcTxt = do
     setHeaders
     ss <- webM $ getStatus
     json ss
+
+  get "/apis" $ do
+    setHeaders
+    a <- webM $ getAPIs
+    json a
 
   get "/actions/:s/:a/" $ do
     setHeaders
