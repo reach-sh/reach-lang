@@ -9,7 +9,7 @@ Verification failed:
 
   // Violation Witness
 
-  const v177 = "A".interact.condish;
+  const condish/177 = "A".interact.condish;
   //    ^ could = false
   //      from: ./nonunique_payamt.rsh:6:12:property binding
   const tokens/178 = "A".interact.tokens;
@@ -18,7 +18,7 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v218 = ((tokens/178[1] == array(Token, [(v177 ? v178[0] : tokens/178[1]) ])[0]) ? false : true);
+  const v218 = ((tokens/178[1] == array(Token, [(condish/177 ? tokens/178[0] : tokens/178[1]) ])[0]) ? false : true);
   //    ^ would be false
   assert(v218);
 
