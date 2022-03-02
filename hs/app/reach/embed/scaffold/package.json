@@ -2,7 +2,7 @@
   "name": "@reach-sh/${PROJ}",
   "type": "module",
   "dependencies": {
-    "wait-port"
+    "wait-port": "^0.2.9"
   },
   "author": "reach.sh",
   "license": "Apache-2.0",
