@@ -779,7 +779,7 @@ const checkAccounts = (addr: string, got?: string[]): void => {
 
 const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
   let p: Provider|undefined = undefined;
-  const base = opts['providerEnv'];
+  const base = opts['providerEnv'] || 'LocalHost';
   const _env = typeof base === 'string' ? providerEnvByName(base) : base;
   const enableNetwork = async (eopts?: EnableOpts): Promise<EnableNetworkResult> => {
     p = await makeProviderByEnv(_env);
