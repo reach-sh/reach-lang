@@ -15,3 +15,5 @@ while [ "$DONE" = "N" ] ; do
 done
 
 kill "$PID_ALGO" || kill -9 "$PID_ALGO"
+
+algorand-indexer daemon

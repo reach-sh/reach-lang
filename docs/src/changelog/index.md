@@ -7,6 +7,13 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.9 is the current Reach release candidate version.
 
++ 2022/03/02: Algorand-only: Drastically reduced the cost of `{!rsh} muldiv`.
++ 2022/03/02: Algorand-only: Contract bytecode upgraded to version `6`.
+  (This enables `{!rsh} API` and `{!rsh} View` functions to be called on-chain.)
++ 2022/03/02: Algorand-only: Updated the default faucet.
+  If you upgrade the standard library, but do not restart your devnet, tests will fail.
++ 2022/03/02: Algorand indexer upgraded to `2.9.0`.
++ 2022/03/02: Algorand node upgraded to `3.4.2`.
 + 2022/03/02: Conflux upgraded to `2.0.0-fix`.
 + 2022/03/02: Ethers upgraded to `5.5.4`.
 + 2022/03/02: Ethereum ERC-20 implementation upgraded to OpenZeppelin `4.5.0`.

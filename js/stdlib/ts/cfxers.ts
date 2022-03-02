@@ -616,6 +616,7 @@ export class Wallet implements IWallet {
           }
           debug(dhead, 'get', howMany, th);
           await Timeout.set(500);
+          // @ts-ignore
           got = await p.conflux.getTransactionByHash(th);
         }
         return {

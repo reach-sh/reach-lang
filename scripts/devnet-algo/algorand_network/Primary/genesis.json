@@ -17,13 +17,14 @@
       }
     },
     {
-      "addr": "OXWAW7Y5KXNBYXIO6PUJI5GUBPHYGMZKQPASH6ABT2WC5WQFKKRTLX5NYA",
+      "addr": "LGMPWNMXPSKTEA3NF4WJAPIBG4QCDE7NME3MMKBKN7VNSQENXIRIHBBTGE",
       "comment": "FAUCET",
       "state": {
         "algo": 10000000000000000,
         "onl": 1,
-        "sel": "Xy+Djum8wtjQewbZ8Qf8x1YkKgM7VJ6z9+ka/kwYueU=",
-        "vote": "UMF7fOGsriN6Q1qJ8pYAF1YXWOB0gk8h9Vto/1sBiso=",
+        "sel": "IGRHJfBSoQhDORqnegAYWYMxRm8RmDhgshiX8I0nBaA=",
+        "stprf": "x45GCAQZfZvlynlX59Pj5EszruGZQB0OvCG2U3ySrubhhIfGfIqs2Utfb5nhhLAgAWFrj+kAOoaobmBLZaC3OA==",
+        "vote": "JB4XlTmM4fL1bbdtUpmox3iQhR6mzT1KXjDSsDNDomo=",
         "voteKD": 10000,
         "voteLst": 3000000
       }
@@ -33,6 +34,6 @@
   "fees": "A7NMWS3NT3IUDMLVO26ULGXGIIOUQ3ND2TXSER6EBGRZNOBOUIQXHIBGDE",
   "id": "v1",
   "network": "devnet",
-  "proto": "https://github.com/algorandfoundation/specs/tree/bc36005dbd776e6d1eaf0c560619bb183215645c",
+  "proto": "https://github.com/algorandfoundation/specs/tree/85e6db1fdbdef00aa232c75199e10dc5fe9498f6",
   "rwd": "7777777777777777777777777777777777777777777777777774MSJUVU"
 }

@@ -165,7 +165,7 @@ algoMaxTxGroupSize :: Integer
 algoMaxTxGroupSize = 16
 
 algoMaxInnerTransactions :: Integer
-algoMaxInnerTransactions = 16
+algoMaxInnerTransactions = 16 -- see (maxOf R_InnerTxn)
 
 algoMaxAppTxnAccounts :: Integer
 algoMaxAppTxnAccounts = 4
@@ -507,6 +507,7 @@ checkCost warning disp alwaysShow ts = do
         "b&" -> recCost 6
         "b^" -> recCost 6
         "b~" -> recCost 4
+        "bsqrt" -> recCost 40
         _ -> recCost 1
   let showNice = \case
         [] -> ""
@@ -610,10 +611,11 @@ instance Show Resource where
 
 maxOf :: Resource -> Integer
 maxOf = \case
-  R_Txn -> algoMaxTxGroupSize
   R_Asset -> algoMaxAppTxnForeignAssets
   R_Account -> algoMaxAppTxnAccounts + 1 -- XXX could detect the sender as a free account
-  R_InnerTxn -> algoMaxInnerTransactions
+  -- XXX move to cost analysis, rather than graph analysis
+  R_Txn -> algoMaxTxGroupSize
+  R_InnerTxn -> algoMaxInnerTransactions * algoMaxTxGroupSize
 
 newResources :: IO ResourceCounters
 newResources = do
@@ -982,14 +984,8 @@ cprim = \case
       ca x
       ca y
       op "mulw"
-      cint 0
       ca z
-      op "divmodw"
-      op "pop"
-      op "pop"
-      op "swap"
-      cint 0
-      asserteq
+      op "divw"
     _ -> impossible "cprim: MUL_DIV args"
   MOD -> call "%"
   PLT -> call "<"

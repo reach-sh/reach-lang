@@ -1017,7 +1017,7 @@ export function setProviderByName(pn: ProviderName): void {
 }
 
 // eslint-disable-next-line max-len
-const rawFaucetDefaultMnemonic = 'frown slush talent visual weather bounce evil teach tower view fossil trip sauce express moment sea garbage pave monkey exercise soap lawn army above dynamic';
+const rawFaucetDefaultMnemonic = 'crisp casino index crack nose present cry chair brief shuffle humble marine loop fall unable task solar bright crack heavy blast south twist absorb similar';
 export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
   const FAUCET = algosdk.mnemonicToSecretKey(
     envDefault(process.env.ALGO_FAUCET_PASSPHRASE, rawFaucetDefaultMnemonic),

@@ -62,7 +62,7 @@ ci () {
   ${REACH} compile --install-pkgs
   ${REACH} compile --intermediate-files
   make build
-  REACH_DEBUG=N REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=Y REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 
@@ -132,7 +132,8 @@ export REACH_BUILD_NO_CACHE=Y
 
 #######
 
-c examples/realtime/index.rsh
+jb
+ci ALGO muldiv
 exit 0
 
 #(cd scripts/devnet-algo && make build) && "${REACH}" down
