@@ -2566,6 +2566,12 @@ const x = forall(UInt);
 assert(x >= 0);
 ```
 
+## {#RX0001} RX0001
+
+This error should never be encountered.
+If you receive this error, please report it to the Reach team along with the program that produced it.
+
+
 ## {#RAPI0000} RAPI0000
 
 This error means that you defined an API but did not actually use it in your prorgam.

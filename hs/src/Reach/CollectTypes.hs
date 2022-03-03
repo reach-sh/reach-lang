@@ -17,6 +17,9 @@ instance CollectsTypes Bool where
 instance CollectsTypes B.ByteString where
   cts _ = mempty
 
+instance CollectsTypes SecurityLevel where
+  cts _ = mempty
+
 instance CollectsTypes a => CollectsTypes [a] where
   cts l = foldMap cts l
 

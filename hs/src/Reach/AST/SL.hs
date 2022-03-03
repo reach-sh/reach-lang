@@ -90,7 +90,7 @@ st2dt = \case
   ST_Token -> pure T_Token
   ST_Array ty i -> T_Array <$> st2dt ty <*> pure i
   ST_Tuple tys -> T_Tuple <$> traverse st2dt tys
-  ST_Object tyMap -> T_Object <$> traverse st2dt tyMap
+  ST_Object tyMap -> T_Object <$> traverse (fmap public <$> st2dt) tyMap
   ST_Data tyMap -> T_Data <$> traverse st2dt tyMap
   ST_Struct tys -> T_Struct <$> traverse (\(k, t) -> (,) k <$> st2dt t) tys
   ST_Fun {} -> Nothing
@@ -110,7 +110,7 @@ dt2st = \case
   T_Token -> ST_Token
   T_Array ty i -> ST_Array (dt2st ty) i
   T_Tuple tys -> ST_Tuple $ map dt2st tys
-  T_Object tyMap -> ST_Object $ M.map dt2st tyMap
+  T_Object tyMap -> ST_Object $ M.map (dt2st . snd) tyMap
   T_Data tyMap -> ST_Data $ M.map dt2st tyMap
   T_Struct tys -> ST_Struct $ map (\(k, t) -> (k, dt2st t)) tys
 

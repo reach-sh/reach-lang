@@ -12,7 +12,7 @@ import Data.Either
 import Data.Foldable
 import Data.Functor ((<&>))
 import Data.IORef
-import Data.List (groupBy, intercalate, intersperse, transpose, unzip6, (\\))
+import Data.List (groupBy, intercalate, intersperse, transpose, unzip6, (\\), zip4)
 import qualified Data.List as L
 import Data.List.Extra (mconcatMap, splitOn)
 import qualified Data.Map.Strict as M
@@ -39,6 +39,7 @@ import Reach.Warning
 import Safe (atMay)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 import Text.RE.TDFA (RE, compileRegex, matched, (?=~))
+import Data.Bifunctor (second)
 
 --- New Types
 
@@ -669,7 +670,7 @@ dlvToEV = \case
       Nothing -> impossible "dlvToEV"
       Just i -> do
         let at = srclocOf ow
-        (stmts, da) <- captureLifts $ compileArgExpr i
+        (stmts, da) <- captureLifts $ compileArgExpr_ i
         return $ DLinExportBlock at Nothing (DLSBlock at [] stmts da)
 
 expectDLVar :: SLVal -> DLVar
@@ -731,10 +732,16 @@ slToDLV = \case
     yes = return . Just
     no = return Nothing
 
+getSecurityEnv :: SLVal -> M.Map SLVar SecurityLevel
+getSecurityEnv = \case
+  SLV_Object _ _ env -> M.map sss_level env
+  _ -> mempty
+
 typeOfM :: SLVal -> App (Maybe (DLType, DLArgExpr))
 typeOfM v = do
   mdae <- slToDL v
-  return $ fmap (\x -> (argExprTypeOf x, x)) mdae
+  let m_senv = getSecurityEnv v
+  return $ fmap (\x -> (argExprTypeOf m_senv x, x)) mdae
 
 typeOf :: SLVal -> App (DLType, DLArgExpr)
 typeOf v =
@@ -791,8 +798,8 @@ ctxt_lift_eff e = do
   at <- withAt id
   saveLift $ DLS_Let at DLV_Eff e
 
-compileArgExpr :: DLArgExpr -> App DLArg
-compileArgExpr = \case
+compileArgExpr :: Maybe DLType -> DLArgExpr -> App DLArg
+compileArgExpr mt = \case
   DLAE_Arg a -> return a
   DLAE_Array t aes -> do
     as <- compileArgExprs aes
@@ -804,10 +811,10 @@ compileArgExpr = \case
     m <- compileArgExprMap me
     mk $ DLLA_Obj m
   DLAE_Data t v ae -> do
-    a <- compileArgExpr ae
+    a <- compileArgExpr empty ae
     mk $ DLLA_Data t v a
   DLAE_Struct kvs -> do
-    let go (k, v) = (,) k <$> compileArgExpr v
+    let go (k, v) = (,) k <$> (compileArgExpr mt) v
     kvs' <- mapM go kvs
     mk $ DLLA_Struct kvs'
   DLAE_Bytes b -> do
@@ -815,15 +822,18 @@ compileArgExpr = \case
   where
     mk la = do
       at <- withAt id
-      let t = largeArgTypeOf la
+      let t = fromMaybe (largeArgTypeOf la) mt
       let mkvar = DLVar at Nothing t
       DLA_Var <$> ctxt_lift_expr mkvar (DLE_LArg at la)
 
+compileArgExpr_ :: DLArgExpr -> App DLArg
+compileArgExpr_ = compileArgExpr Nothing
+
 compileArgExprs :: [DLArgExpr] -> App [DLArg]
-compileArgExprs = mapM compileArgExpr
+compileArgExprs = mapM compileArgExpr_
 
 compileArgExprMap :: M.Map a DLArgExpr -> App (M.Map a DLArg)
-compileArgExprMap = mapM compileArgExpr
+compileArgExprMap = mapM compileArgExpr_
 
 slvParticipant_part :: SLVal -> App SLPart
 slvParticipant_part = \case
@@ -833,14 +843,14 @@ slvParticipant_part = \case
 compileTypeOf :: SLVal -> App (DLType, DLArg)
 compileTypeOf v = do
   (t, dae) <- typeOf v
-  da <- compileArgExpr dae
+  da <- compileArgExpr (Just t) dae
   return (t, da)
 
 compileTypeOfs :: [SLVal] -> App ([DLType], [DLArg])
 compileTypeOfs vs = unzip <$> mapM compileTypeOf vs
 
 compileCheckType :: DLType -> SLVal -> App DLArg
-compileCheckType et v = compileArgExpr =<< typeCheck_d et v
+compileCheckType et v = compileArgExpr_ =<< typeCheck_d et v
 
 compileToVar :: SLVal -> App DLVar
 compileToVar v = do
@@ -1118,12 +1128,12 @@ evalObjEnv = mapM go
       at <- withAt id
       sls_sss at <$> getv
 
-evalAsEnv :: SLVal -> App SLObjEnv
-evalAsEnv obj = case obj of
+evalAsEnv :: SLSVal -> App SLObjEnv
+evalAsEnv obj = case snd obj of
   SLV_Object _ _ env ->
     return $ M.map (retV . sss_sls) env
   SLV_DLVar obj_dv@(DLVar _ _ (T_Object tm) _) ->
-    return $ retDLVar tm (DLA_Var obj_dv) Public
+    return $ retDLVar tm (DLA_Var obj_dv)
   SLV_Participant _ who vas _ -> do
     -- `<part>.interact.<field>(...)` is a shorthand for `<part>.only(() => interact.<field>(...))`
     -- Wrap each field of the participant's interface in a form, which will expand as described.
@@ -1155,8 +1165,8 @@ evalAsEnv obj = case obj of
     let ps = S.difference whos apis
     case S.toList ps of
       [] -> expect_ $ Err_No_Participants
-      [h] -> evalAsEnv $ SLV_Participant at h Nothing Nothing
-      _ -> evalAsEnv $ SLV_RaceParticipant sb ps
+      [h] -> evalAsEnv $ (lvl, SLV_Participant at h Nothing Nothing)
+      _ -> evalAsEnv $ (lvl, SLV_RaceParticipant sb ps)
   SLV_RaceParticipant _ whos ->
     return $
       M.fromList
@@ -1266,7 +1276,7 @@ evalAsEnv obj = case obj of
   SLV_Struct _ kvs ->
     return $ M.map (retV . public) $ M.fromList kvs
   SLV_DLVar obj_dv@(DLVar _ _ (T_Struct tml) _) ->
-    return $ retDLVarl tml (DLA_Var obj_dv) Public
+    return $ retDLVarl (map (second public) tml) (DLA_Var obj_dv)
   SLV_Prim SLPrim_Tuple ->
     return $
       M.fromList
@@ -1358,8 +1368,9 @@ evalAsEnv obj = case obj of
           Just _ -> []
       go key mode =
         [(key, retV $ public $ SLV_Prim $ SLPrim_remotef rat aa m stf mpay mbill $ Just mode)]
-  _ -> expect_t obj $ Err_Eval_NotObject
+  _ -> expect_t (snd obj) $ Err_Eval_NotObject
   where
+    lvl = fst obj
     foldableMethods = ["forEach", "min", "max", "imin", "imax", "all", "any", "or", "and", "sum", "average", "product", "includes", "size", "count"]
     foldableObjectEnv :: [(SLVar, App SLSVal)]
     foldableObjectEnv = map (\m -> (m, delayStdlib $ "Foldable_" <> m <> "1")) foldableMethods
@@ -1400,15 +1411,15 @@ evalAsEnv obj = case obj of
     delayCall :: SLPrimitive -> App SLSVal
     delayCall p = do
       at <- withAt id
-      retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [(public obj)] []
+      retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [obj] []
     delayStdlib :: SLVar -> App SLSVal
     delayStdlib = doApply <=< lookStdlib
     doCall :: SLPrimitive -> App SLSVal
     doCall p = doApply $ SLV_Prim p
     doApply :: SLVal -> App SLSVal
-    doApply f = evalApplyVals' f [(public obj)]
-    retDLVarl tml obj_dla slvl = do
-      let retk (field, t) = (,) field $ do
+    doApply f = evalApplyVals' f [obj]
+    retDLVarl tml obj_dla = do
+      let retk (field, (slvl, t)) = (,) field $ do
             at <- withAt id
             let mkv = DLVar at Nothing t
             let e = DLE_ObjectRef at obj_dla field
@@ -1430,8 +1441,8 @@ evalDot_ obj env field =
     Just gv -> gv
     Nothing -> expect_t obj $ \o -> Err_Dot_InvalidField o (M.keys env) field
 
-evalDot :: SLVal -> String -> App SLSVal
-evalDot obj s = flip (evalDot_ obj) s =<< evalAsEnv obj
+evalDot :: SLSVal -> String -> App SLSVal
+evalDot obj s = flip (evalDot_ $ snd obj) s =<< evalAsEnv obj
 
 st2dte :: HasCallStack => SLType -> App DLType
 st2dte t =
@@ -2305,7 +2316,7 @@ mustBeDataTy err = \case
   T_Data x -> return $ x
   t -> expect_ $ err t
 
-mustBeObjectTy :: (DLType -> EvalError) -> DLType -> App (M.Map SLVar DLType)
+mustBeObjectTy :: (DLType -> EvalError) -> DLType -> App (M.Map SLVar (SecurityLevel, DLType))
 mustBeObjectTy err = \case
   T_Object x -> return $ x
   t -> expect_ $ err t
@@ -2330,7 +2341,7 @@ getBillTokens mbill billAmt = do
       case (ty, ae) of
         (T_Tuple ts, DLAE_Tuple tas)
           | all (== T_Token) ts -> do
-            tas' <- mapM compileArgExpr tas
+            tas' <- mapM compileArgExpr_ tas
             return (True, tas')
         _ -> expect_ $ Err_WithBill_Type ty
     Just (Right _) -> do
@@ -2413,7 +2424,7 @@ evalPrim p sargs =
       let metal f k = k (M.lookup f metam')
       let bytes f len = metal f $ \case
             Just v -> compileCheckType (T_Bytes len) v
-            Nothing -> compileArgExpr $ largeArgToArgExpr $ bytesZeroLit len
+            Nothing -> compileArgExpr_ $ largeArgToArgExpr $ bytesZeroLit len
       dtn_name <- bytes "name" tokenNameLen
       dtn_sym <- bytes "symbol" tokenSymLen
       dtn_url <- bytes "url" tokenURLLen
@@ -2765,7 +2776,7 @@ evalPrim p sargs =
     SLPrim_Struct_fromObject ts -> do
       ov <- one_arg
       at <- withAt id
-      let go k = (,) k <$> (snd <$> evalDot ov k)
+      let go k = (,) k <$> (snd <$> evalDot (lvl, ov) k)
       kvs <- mapM go $ map fst ts
       return $ (lvl, SLV_Struct at kvs)
     SLPrim_Struct_toTuple -> do
@@ -2774,7 +2785,7 @@ evalPrim p sargs =
     SLPrim_Struct_toObject -> do
       sv <- one_arg
       at <- withAt id
-      (,) lvl <$> (SLV_Object at Nothing <$> (evalObjEnv =<< evalAsEnv sv))
+      (,) lvl <$> (SLV_Object at Nothing <$> (evalObjEnv =<< evalAsEnv (lvl, sv)))
     SLPrim_Tuple -> do
       vs <- mapM (expect_ty "Tuple argument") $ map snd sargs
       retV $ (lvl, SLV_Type $ ST_Tuple vs)
@@ -2803,7 +2814,7 @@ evalPrim p sargs =
       at <- withAt id
       (obj, bsv) <- two_args
       bs <- mustBeBytes bsv
-      vm <- evalAsEnv obj
+      vm <- evalAsEnv (lvl, obj)
       retV $ (lvl, SLV_Bool at $ M.member (bunpack bs) vm)
     SLPrim_makeEnum -> do
       at' <- withAt $ srcloc_at "makeEnum" Nothing
@@ -2884,7 +2895,7 @@ evalPrim p sargs =
       part <- one_arg
       who_a <-
         typeOfM part >>= \case
-          Just (ty, res) -> typeEq T_Address ty >> compileArgExpr res
+          Just (ty, res) -> typeEq T_Address ty >> compileArgExpr_ res
           Nothing ->
             case part of
               SLV_Participant _ who _ _ ->
@@ -2993,7 +3004,7 @@ evalPrim p sargs =
         jsArrow ann [data_param, case_param] body
       -- Apply the object and cases to the newly created function
       let fn = snd fnv
-      evalApplyVals' fn [public obj, public cases]
+      evalApplyVals' fn [(lvl, obj), (lvl, cases)]
     SLPrim_Participant -> makeParticipant False False
     SLPrim_ParticipantClass -> makeParticipant False True
     SLPrim_API -> do
@@ -3723,6 +3734,7 @@ evalApply rator rands =
 
 evalPropertyName :: JSPropertyName -> App (SecurityLevel, String)
 evalPropertyName = \case
+  -- JSPropertyIdent _ ('_':s') -> return $ secret $ "_" <> s'
   JSPropertyIdent _ s -> return $ public s
   JSPropertyString _ s -> return $ public $ trimQuotes s
   pn@(JSPropertyNumber an _) ->
@@ -3760,12 +3772,12 @@ evalPropertyPair fenv = \case
     case sv of
       SLV_Object _ _ senv -> mkRes senv
       SLV_DLVar dlv@(DLVar _at _s (T_Object tenv) _i) -> do
-        let mkOneEnv k t = do
+        let mkOneEnv k (lvl, t) = do
               at' <- withAt id
               let de = DLE_ObjectRef at' (DLA_Var dlv) k
               let mdv = DLVar at' Nothing t
               dv <- ctxt_lift_expr mdv de
-              return $ M.singleton k $ SLSSVal at' slvl $ SLV_DLVar dv
+              return $ M.singleton k $ SLSSVal at' lvl $ SLV_DLVar dv
         -- mconcat over SLEnvs is safe here b/c each is a singleton w/ unique key
         mkRes =<< (mconcatMapM (uncurry mkOneEnv) $ M.toList tenv)
       _ -> expect_ $ Err_Obj_SpreadNotObj sv
@@ -3833,6 +3845,8 @@ evalExpr e = case e of
     at' <- withAt id
     case l of
       "null" -> return $ public $ SLV_Null at' "null"
+      -- Used by`parallelReduce`/`fork` when a case has no `local`
+      ".null" -> return $ secret $ SLV_Null at' ".null"
       "true" -> return $ public $ SLV_Bool at' True
       "false" -> return $ public $ SLV_Bool at' False
       "this" -> evalExpr $ JSIdentifier a l
@@ -4016,7 +4030,7 @@ doDot obj a field = do
     case field of
       JSIdentifier iat _ -> withAt $ srcloc_jsa "dot" iat
       _ -> return $ at'
-  lvlMeet obj_lvl <$> (locAt fieldAt $ evalDot objv fields)
+  lvlMeet obj_lvl <$> (locAt fieldAt $ evalDot (obj_lvl, objv) fields)
 
 doDelete :: SLLValue -> App ()
 doDelete = \case
@@ -4081,7 +4095,7 @@ doArrRef_ arrv idxv = do
           retArrayRef elem_ty sz arr_dla $ DLA_Var idxdv
         _ -> expect_t arrv $ Err_Eval_IndirectRefNotArray
     SLV_Bytes _ bs ->
-      snd <$> (evalDot arrv $ bunpack bs)
+      snd <$> (evalDot (public arrv) $ bunpack bs)
     _ -> expect_t idxv $ Err_Eval_RefNotInt
 
 doArrRef :: SLSVal -> JSAnnot -> JSExpression -> App SLSVal
@@ -4168,7 +4182,7 @@ evalDeclLHS trackVars merr rhs_lvl lhs_env v = \case
       evalDeclLHSArray trackVars merr rhs_lvl lhs_env vs (jsa_flatten xs)
   JSObjectLiteral a props _ -> do
     locAtf (srcloc_jsa "object" a) $ do
-      vm <- evalAsEnv v
+      vm <- evalAsEnv (rhs_lvl, v)
       evalDeclLHSObject trackVars merr rhs_lvl lhs_env v vm (jso_flatten props)
   -- Ignore default argument since assigned a value
   JSAssignExpression lhs (JSAssign a) _ -> do
@@ -4311,7 +4325,7 @@ compilePayAmt tt v = do
   (t, ae) <- typeOf v
   case t of
     T_UInt -> do
-      a <- compileArgExpr ae
+      a <- compileArgExpr_ ae
       return $ DLPayAmt a []
     T_Tuple ts -> do
       case ae of
@@ -4322,14 +4336,14 @@ compilePayAmt tt v = do
                     let ((seenNet, sks), DLPayAmt _ tks) = sa
                     when seenNet $
                       locAt v_at $ expect_ $ Err_Transfer_DoubleNetworkToken tt
-                    a <- compileArgExpr gae
+                    a <- compileArgExpr_ gae
                     return $ ((True, sks), DLPayAmt a tks)
                   T_Tuple [T_UInt, T_Token] ->
                     case gae of
                       DLAE_Tuple [amt_ae, token_ae] -> do
                         let ((seenNet, sks), DLPayAmt nts tks) = sa
-                        amt_a <- compileArgExpr amt_ae
-                        token_a <- compileArgExpr token_ae
+                        amt_a <- compileArgExpr_ amt_ae
+                        token_a <- compileArgExpr_ token_ae
                         verifyTokenUnique sks token_a
                         return $ ((seenNet, token_a : sks), (DLPayAmt nts $ tks <> [(amt_a, token_a)]))
                       _ -> locAt v_at $ expect_ $ Err_Token_DynamicRef
@@ -4600,7 +4614,7 @@ typeToExpr = \case
   T_Token -> var "Token"
   T_Array t i -> call "Array" [r t, ie i]
   T_Tuple ts -> call "Tuple" $ map r ts
-  T_Object m -> call "Object" [rm m]
+  T_Object m -> call "Object" [rm $ M.map snd m]
   T_Data m -> call "Data" [rm m]
   T_Struct ts -> call "Struct" $ [arr $ map sg ts]
   where
@@ -4621,6 +4635,8 @@ data CompiledForkCase = CompiledForkCase
   , cfc_pay_req_prop :: [JSObjectProperty]
   , cfc_switch_case :: [JSSwitchParts]
   , cfc_only :: JSStatement
+  , cfc_local_data_def :: [JSObjectProperty]
+  , cfc_local_penvs :: SLPartEnvs
   }
 
 forkCaseSameParticipant :: ForkCase -> ForkCase -> Bool
@@ -4753,15 +4769,19 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
     expect_ $ Err_ForkNoCases
   let mtime = slf_mtime
   idx <- ctxt_alloc
+  idx2 <- ctxt_alloc
   let fid x = ".fork" <> (show idx) <> "." <> x
   at <- withAt id
   let a = srcloc2annot at
   let jid = JSIdentifier a
   let sp = JSSemi a
   let fd_e = jid (fid "data")
+  let fld_e = jid (fid "localData")
   let res_e = jid (fid "res")
   let msg_e = jid (fid "msg")
   let when_e = jid (fid "when")
+  let loc_id = "_" <> fid "local"
+  let local_e = jid loc_id
   let tid = ".t" <> show idx
   let tv = jid tid
   let mkobj l =
@@ -4772,7 +4792,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
          in JSMethodCall (JSMemberDot who_e oa (jid "only")) oa (JSLOne $ jsThunkStmts oa only_body) oa sp
   let defcon e = jsConst (jsa e) e
   let indexed = zip [0 ..] :: [a] -> [(Int, a)]
-  let forkOnlyHelp who_e e_at before_e msg_id when_id = locAt e_at $ do
+  let forkOnlyHelp who_e e_at before_e msg_id when_id local_label = locAt e_at $ do
         let ba = jsa before_e
         let only_before_call_e = JSCallExpression (JSMemberDot who_e ba (jid "only")) ba (JSLOne before_e) ba
         (_, (_, res_sv)) <- captureLifts $ evalExpr only_before_call_e
@@ -4788,23 +4808,47 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
               bool def (JSMemberDot tv (jsa tv) $ jid field) $ resHas field
         let defWhen = defcon when_id $ tDot "when" $ JSLiteral (jsa when_id) "true"
         let defMsg = defcon msg_id $ tDot "msg" $ JSLiteral (jsa msg_id) "null"
+        let defLocal = bool [] [defcon (jid $ local_label) $ tDot "_local" $ JSLiteral ba ".null"] $ resHas "_local"
         return $
           (,) res_ty_m $
             [ defcon (JSIdentifier ba tid) $ jsCallThunk (jsa before_e) before_e
             , defWhen
             , defMsg
-            ]
+            ] <> defLocal
   let lookupMsgTy t = fromMaybe T_Null $ M.lookup "msg" t
+  let lookupLocalTy t = fromMaybe T_Null $ M.lookup "_local" t
   let mkPartCase who n = who <> show n <> "_" <> show idx
-  let getAfter who_e isApi who usesData (a_at, after_e, case_n) = locAt a_at $
+  let mkLocalCase who n = who <> show n <> "_" <> show idx2
+  let getAfter who_e isApi who usesData (a_at, after_e, case_n, case_ty) = locAt a_at $
         case after_e of
           JSArrowExpression args _ s -> do
             let JSBlock _ ss _ = jsArrowBodyToRetBlock s
             let awrap x = jsArrayLiteral (jsa x) [x]
-            mdefmsg <-
+            let def_only lhs rhs = case usesData of
+                  False -> do
+                    let only_body = [jsConst a lhs rhs]
+                    return $ (mempty, JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne $ jsThunkStmts a only_body) a sp)
+                  True -> do
+                    -- Deconstruct cases and assign local variables
+                    let arg = jid $ "_deconstr"
+                    let case_id = mkLocalCase who case_n
+                    var_idx <- ctxt_alloc
+                    dv <- ctxt_lift_expr (DLVar at Nothing case_ty) $ DLE_Impossible at var_idx $ Err_Impossible_Case ("fork/local/" <> who <> "/" <> show case_n)
+                    let varId = "_.v" <> show var_idx
+                    let sco' = M.singleton varId $ SLSSVal at Secret $ SLV_DLVar dv
+                    let props = mkCommaTrailingList [
+                          JSPropertyNameandValue (JSPropertyIdent a case_id) a [jsArrowExpr a [arg] arg],
+                          JSPropertyNameandValue (JSPropertyIdent a "default") a [jsArrowExpr a [arg] $ jid varId]
+                          ]
+                    let only_body = [jsConst a lhs $ JSCallExpression (JSMemberDot rhs a (jid "match")) a (JSLOne $ JSObjectLiteral a props a) a ]
+                    return $ (sco', JSMethodCall (JSMemberDot who_e a (jid "only")) a (JSLOne $ jsThunkStmts a only_body) a sp)
+            (sco', mdefmsg) <-
               case parseJSArrowFormals a_at args of
-                [] -> return []
-                [ae] -> return [defcon (awrap ae) (awrap msg_e)]
+                [] -> return (mempty, [])
+                [ae] -> return (mempty, [defcon (awrap ae) (awrap msg_e)])
+                [ae, le] -> do
+                  (sco', only) <- def_only le local_e
+                  return (sco', [ defcon (awrap ae) (awrap msg_e), only ])
                 _ -> expect_ $ Err_Fork_ConsensusBadArrow after_e
             let sps = case isApi of
                   False -> []
@@ -4813,8 +4857,8 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
                     let mce = if usesData then [jid $ mkPartCase who case_n] else []
                     let e = jsCall a (jid ".setApiDetails") $ [who_e, msg] <> mce
                     [JSExpressionStatement e sp]
-            return $ sps <> mdefmsg <> ss
-          JSExpressionParen _ e _ -> getAfter who_e isApi who usesData (a_at, e, case_n)
+            return $ (sco', sps <> mdefmsg <> ss)
+          JSExpressionParen _ e _ -> getAfter who_e isApi who usesData (a_at, e, case_n, case_ty)
           _ -> expect_ $ Err_Fork_ConsensusBadArrow after_e
   let go pcases = do
         let (ats, whos, who_es, before_es, paytup_es, after_es) =
@@ -4825,6 +4869,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let c_at = hdDie ats
         let cfc_part_e = who_e
         let partCase = mkPartCase who
+        let localCase = mkLocalCase who
         -- Generate:
         -- const runAlice<N> = () => {
         --   const res = before<N>();
@@ -4836,15 +4881,23 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
               let ea = at2a e_at
               let msg_id = JSIdentifier ea "msg"
               let when_id = JSIdentifier ea "when"
+              let local_id = "_local"
               (res_ty_m, only_body) <-
-                forkOnlyHelp who_e e_at before_e msg_id when_id
+                forkOnlyHelp who_e e_at before_e msg_id when_id local_id
               let msgExpr = JSCallExpression (JSMemberDot fd_e ea (jid $ partCase n)) ea (JSLOne msg_id) ea
-              let returnExpr = JSObjectLiteral ea (mkCommaTrailingList $ [JSObjectSpread ea tv, JSPropertyIdentRef ea "when", JSPropertyNameandValue (JSPropertyIdent ea "msg") ea [msgExpr]]) ea
+              let loc_e = if M.member "_local" res_ty_m then jid local_id else JSLiteral ea ".null"
+              let loc_de = JSCallExpression (JSMemberDot fld_e ea (jid $ localCase n)) ea (JSLOne $ loc_e) ea
+              let returnExpr = JSObjectLiteral ea (mkCommaTrailingList $ [
+                    JSObjectSpread ea tv,
+                    JSPropertyIdentRef ea "when",
+                    JSPropertyNameandValue (JSPropertyIdent ea "_local") ea [loc_de],
+                    JSPropertyNameandValue (JSPropertyIdent ea "msg") ea [msgExpr]
+                    ]) ea
               let stmts =
                     only_body
                       <> [JSReturn ea (Just returnExpr) sp]
               let cloName = "run" <> partCase n
-              return (res_ty_m, cloName, jsThunkStmts ea stmts)
+              return (M.map snd res_ty_m, cloName, jsThunkStmts ea stmts)
         (res_ty_ms, beforeNames, beforeClosures) <- unzip3 <$> mapM makeRuns (indexed $ zip ats before_es)
         -- Generate:
         --    const case_res0 = runAlice0(); ...
@@ -4881,12 +4934,20 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let cfc_pay_prop = map pay_go $ indexed pay_es
         let cfc_pay_req_prop = map pay_go $ indexed pay_reqs
         let data_go (i, m) = mkobjp (partCase i) (typeToExpr $ lookupMsgTy m)
+        let local_data_go (i, m) = mkobjp (localCase i) (typeToExpr $ lookupLocalTy m)
         let cfc_data_def = map data_go $ indexed res_ty_ms
+        let cfc_local_data_def = map local_data_go $ indexed res_ty_ms
+        let local_data_tys = map lookupLocalTy res_ty_ms
         let ra = jsa res_e
         let res_msg = JSMemberDot res_e ra (jid "msg")
         let res_when = JSMemberDot res_e ra (jid "when")
+        let res_local = JSMemberDot res_e ra (jid "_local")
         let run_ss = zipWith (defcon . jid) beforeNames beforeClosures
-        let only_body = run_ss <> cr_ss <> [defcon msg_e res_msg, defcon when_e res_when]
+        let def_local = if all (== T_Null) local_data_tys then
+                          [] -- No cases use `local`, don't create variable
+                        else
+                          [defcon local_e res_local]
+        let only_body = run_ss <> cr_ss <> [defcon msg_e res_msg, defcon when_e res_when] <> def_local
         isClass <- is_class who_s
         let who_is_this_ss =
               case (isBound, isClass) of
@@ -4896,7 +4957,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
                   [JSMethodCall (JSMemberDot who_e a (jid "set")) a (JSLOne (jid "this")) a sp]
                 (False, True) -> []
         isApi <- is_api $ bpack who
-        all_afters <- mapM (getAfter who_e isApi who True) $ zip3 ats after_es ([0 ..] :: [Int])
+        (penvs, all_afters) <- fmap unzip $ mapM (getAfter who_e isApi who True) $ zip4 ats after_es ([0 ..] :: [Int]) local_data_tys
         let cfc_switch_case =
               map
                 (\(i, as) ->
@@ -4904,11 +4965,12 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
                     in JSCase a (jid $ partCase i) ca $ who_is_this_ss <> as)
                 $ indexed all_afters
         let cfc_only = makeOnly who_e only_body
+        let cfc_local_penvs = M.singleton (bpack who) $ M.unions penvs
         locAt c_at $ return CompiledForkCase {..}
-  (isFork, before_tc_ss, pay_e, pay_req, tc_head_e, after_tc_ss) <-
+  (isFork, before_tc_ss, pay_e, pay_req, tc_head_e, after_tc_ss, local_penvs) <-
     case cases of
       [ForkCase {..}] -> do
-        (_, only_body) <- forkOnlyHelp fc_who_e fc_at fc_before msg_e when_e
+        (_, only_body) <- forkOnlyHelp fc_who_e fc_at fc_before msg_e when_e loc_id
         let tc_head_e = fc_who_e
         let before_tc_ss = [makeOnly fc_who_e only_body]
         let pa = jsa fc_pay
@@ -4916,25 +4978,29 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let pay_e = JSCallExpression fc_pay_e pa (JSLOne msg_e) pa
         let pay_req = jsArrowExpr pa [] $ jsCall pa fc_pay_req [msg_e]
         isApi <- is_api $ bpack fc_who
-        after_tc_ss <- getAfter fc_who_e isApi fc_who False (fc_at, fc_after, 0 :: Int)
-        return $ (False, before_tc_ss, pay_e, pay_req, tc_head_e, after_tc_ss)
+        (_, after_tc_ss) <- getAfter fc_who_e isApi fc_who False (fc_at, fc_after, 0 :: Int, T_Null)
+        return $ (False, before_tc_ss, pay_e, pay_req, tc_head_e, after_tc_ss, mempty)
       _ -> do
         casel <- mapM go $ groupBy forkCaseSameParticipant cases
         let cases_data_def = concatMap cfc_data_def casel
+        let cases_local_data_def = concatMap cfc_local_data_def casel
         let cases_part_es = map cfc_part_e casel
         let cases_pay_props = concatMap cfc_pay_prop casel
         let cases_pay_req_props = concatMap cfc_pay_req_prop casel
         let cases_switch_cases = concatMap cfc_switch_case casel
         let cases_onlys = map cfc_only casel
+        let cases_local_penvs = map cfc_local_penvs casel
         let fd_def = JSCallExpression (jid "Data") a (JSLOne $ mkobj cases_data_def) a
+        let fld_def = JSCallExpression (jid "Data") a (JSLOne $ mkobj cases_local_data_def) a
         let data_decls = JSLOne $ JSVarInitExpression fd_e $ JSVarInit a fd_def
-        let data_ss = [JSConstant a data_decls sp]
+        let local_data_decls = JSLOne $ JSVarInitExpression fld_e $ JSVarInit a fld_def
+        let data_ss = [JSConstant a data_decls sp, JSConstant a local_data_decls sp]
         let tc_head_e = JSCallExpression (jid "race") a (toJSCL cases_part_es) a
         let pay_e = JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_pay_props) a
         let pay_req = jsArrowExpr a [] $ JSCallExpression (JSMemberDot msg_e a (jid "match")) a (JSLOne $ mkobj cases_pay_req_props) a
         let switch_ss = [JSSwitch a a msg_e a a cases_switch_cases a sp]
         let before_tc_ss = data_ss <> cases_onlys
-        return $ (True, before_tc_ss, pay_e, pay_req, tc_head_e, switch_ss)
+        return $ (True, before_tc_ss, pay_e, pay_req, tc_head_e, switch_ss, cases_local_penvs)
   let tc_pub_e = JSCallExpression (JSMemberDot tc_head_e a (jid "publish")) a (JSLOne msg_e) a
   let tc_api_e = JSCallExpression (JSMemberDot tc_pub_e a (jid ".api")) a JSLNil a
   let tc_when_e = JSCallExpression (JSMemberDot tc_api_e a (jid "when")) a (JSLOne when_e) a
@@ -4984,9 +5050,12 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   let tc_e = tc_fork_e
   let tc_ss = [JSExpressionStatement tc_e sp]
   let exp_ss = before_tc_ss <> tc_ss <> after_tc_ss
-  --liftIO $ putStrLn $ "Fork Output"
-  --liftIO $ putStrLn $ show $ pretty exp_ss
-  evalStmt $ exp_ss <> ks
+  -- liftIO $ putStrLn $ "Fork Output"
+  -- liftIO $ putStrLn $ show $ pretty exp_ss
+  sco <- asks e_sco
+  let sco_penvs' = M.unionWith M.union (sco_penvs sco) $ M.unions local_penvs
+  let sco' = sco { sco_penvs = sco_penvs' }
+  locSco sco' $ evalStmt $ exp_ss <> ks
 
 modifyLastM :: Monad m => (a -> m a) -> [a] -> m [a]
 modifyLastM f l =
@@ -5007,6 +5076,15 @@ getReturnAnnot = \case
         case reverse stmts of
           JSReturn a _ _:_ -> Just a
           _ -> Nothing
+
+deconstructFun :: JSExpression -> App ([JSExpression], JSBlock)
+deconstructFun = \case
+  a@(JSArrowExpression _ _ cb) -> return $ (getFormals a, jsArrowBodyToRetBlock cb)
+  e -> do
+    e' <- evalExpr e
+    case snd e' of
+      SLV_Clo _ _ (SLClo _ args bl _) -> return $ (args, bl)
+      ow -> expect_ . Err_Eval_NotApplicableVals =<< mkValType ow
 
 doParallelReduce :: JSExpression -> ParallelReduceRec -> App [JSStatement]
 doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
@@ -5037,18 +5115,22 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let var_s = JSVariable a var_decls sp
   let inv_s = JSMethodCall (JSIdentifier a "invariant") a (JSLOne inv_e) a sp
   let fork_e0 = jsCall a (jid "fork") []
-  let injectContinueIntoBody addArgs e = do
+  let injectContinueIntoBody addArgs isTimeout e = do
         let ea = jsa e
         let ra = fromMaybe ea $ getReturnAnnot e
         let esp = JSSemi ea
         let def_e = JSIdentifier ra $ prid "res"
         let dotargs = JSSpreadExpression a (JSIdentifier ea $ prid "args")
         let argsl = if addArgs then [dotargs] else []
-        let call_og = jsCall ea e argsl
+        (params, body) <- deconstructFun e
+        let (e', loc_args) = case (isTimeout, params) of
+              (False, msg:loc:_) -> (jsArrowBlock ea [msg] body, [loc])
+              _ -> (e, [])
+        let call_og = jsCall ea e' argsl
         let def_s = JSConstant ea (JSLOne $ JSVarInitExpression def_e $ JSVarInit ea call_og) esp
         let asn_s = JSAssignStatement lhs (JSAssign ra) def_e esp
         let continue_s = JSContinue ea JSIdentNone esp
-        return $ jsArrowStmts ea argsl [def_s, asn_s, continue_s]
+        return $ jsArrowStmts ea (argsl <> loc_args) [def_s, asn_s, continue_s]
   fork_e1 <-
     case pr_mtime of
       Nothing -> return fork_e0
@@ -5077,7 +5159,7 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
           semi = JSSemiAuto
           timeOutId = jid "timeout"
           doTimeout t_e t_fn = do
-            t_fn' <- injectContinueIntoBody False t_fn
+            t_fn' <- injectContinueIntoBody False True t_fn
             callTimeout [t_e, t_fn']
           callTimeout = return . jsCall ta (JSMemberDot fork_e0 ta timeOutId)
           ta = ao t_at
@@ -5092,7 +5174,7 @@ doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
   let forkcase fork_eN (case_at, case_es) = do
         let ca = ao case_at
         jsCall ca (JSMemberDot fork_eN ca (jid "case"))
-          <$> modifyLastM (injectContinueIntoBody True) case_es
+          <$> modifyLastM (injectContinueIntoBody True False) case_es
   fork_e3 <- foldM forkcase fork_e2 pr_cases'
   let fork_e = fork_e3
   let fork_s = JSExpressionStatement fork_e sp
@@ -5118,6 +5200,9 @@ jsArrowExpr a args e = jsArrow a args $ JSExpressionStatement e (a2sp a)
 
 jsArrowStmts :: JSAnnot -> [JSExpression] -> [JSStatement] -> JSExpression
 jsArrowStmts a args s = jsArrow a args $ JSStatementBlock a s a (a2sp a)
+
+jsArrowBlock :: JSAnnot -> [JSExpression] -> JSBlock -> JSExpression
+jsArrowBlock a args (JSBlock _ s _) = jsArrow a args $ JSStatementBlock a s a (a2sp a)
 
 jsThunkStmts :: JSAnnot -> [JSStatement] -> JSExpression
 jsThunkStmts a = jsArrowStmts a []
@@ -5507,7 +5592,7 @@ evalStmt = \case
             Nothing -> expect_ $ Err_Eval_NoReturn
           (mt, da) <-
             typeOfM (snd sev) >>= \case
-              Just (t, dae) -> (,) (Just t) <$> compileArgExpr dae
+              Just (t, dae) -> (,) (Just t) <$> compileArgExpr (Just t) dae
               Nothing -> return $ (Nothing, DLA_Literal $ DLL_Null)
           saveLift $ DLS_Return at' ret da
           expect_empty_tail lab a sp ks
