@@ -53,7 +53,7 @@ const run = async ({fn, isRaw}) => {
       exp = [ x, ...args ];
       const fnM = `${isView ? 'V' : 'P'}_${fn}`;
 
-      const ctcInfo = stdlib.bigNumberToNumber(await ctcA.getInfo());
+      const ctcInfo = await ctcA.getInfo();
       const ctc = accB.contract(backend, ctcInfo);
       const ABI = ctc.getABI(true);
       console.log(ABI);
@@ -80,7 +80,8 @@ const run = async ({fn, isRaw}) => {
       } else if ( conn === 'ALGO' ) {
         const ALGO = stdlib;
         const { algosdk } = ALGO;
-        const ctcAddr = algosdk.getApplicationAddress(ctcInfo);
+        const ci = stdlib.bigNumberToNumber(ctcInfo)
+        const ctcAddr = algosdk.getApplicationAddress(ci);
         const thisAcc = accB.networkAccount;
         const from = thisAcc.addr;
         const params = await ALGO.getTxnParams('raw');
@@ -108,7 +109,7 @@ const run = async ({fn, isRaw}) => {
         const sel = meth.getSelector();
         const aargs = [ sel, ...eargs ];
         stuff = { ...stuff, eargs, sel, aargs };
-        const txnApp = algosdk.makeApplicationNoOpTxn(from, params, ctcInfo, aargs);
+        const txnApp = algosdk.makeApplicationNoOpTxn(from, params, ci, aargs);
         txnApp.fee = ALGO.MinTxnFee * 2;
         const txnPays = isView ? [] : [txnPay];
         const rtxns = [ ...txnPays, txnApp ];
