@@ -132,10 +132,12 @@ const renderObjects = async (nodeId) => {
 
   for (const [k,v] of Object.entries(apis)) {
     let status = 'Initial'
+    let f = v.a_liv.out.contents[0][1].contents
     apiBs = apiBs + `
       <button type="button"
-      class="list-group-item list-group-item-action object-button"
-      data-api-id="${k}">
+      class="list-group-item list-group-item-action api-button"
+      data-api-id="${k}"
+      data-fn="${JSON.stringify(f)}">
       ${v.a_name}
       <span class="badge bg-secondary">${status}</span>
       </button> `
@@ -243,6 +245,11 @@ const bindObjDetailsEvents = () => {
   const objectBtns = document.querySelectorAll(".object-button")
   objectBtns.forEach((item, i) => {
     item.addEventListener("click",renderObjectDetails)
+  });
+
+  const objectBtns = document.querySelectorAll(".api-button")
+  objectBtns.forEach((item, i) => {
+    item.addEventListener("click",clickAPIButton)
   });
 
   const newAccBtn = document.querySelector("#newAccButton")
@@ -395,6 +402,19 @@ const bindObjDetailsEvents = () => {
     jsonLog.push(["transfer",nodeId,frActorId,toActorId,tokId,amount])
   }
   transferBtn.addEventListener("click",transfer)
+}
+
+const clickAPIButton = async (evt) => {
+  objectsHTML = spa.innerHTML
+  const tgt = evt.target.closest(".api-button")
+  const apiId = tgt.dataset.apiId
+  const fnName = tgt.dataset.fn
+  let val = prompt(`Enter Value for: ${fnName}`,"");
+  if (val === null || val === "") {
+    console.log("User cancelled the prompt.");
+  } else {
+    c.apiChoice(apiId,val)
+  }
 }
 
 //#### event handler which loads the Objects-Details View
