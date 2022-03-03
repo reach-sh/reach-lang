@@ -132,6 +132,9 @@ export REACH_BUILD_NO_CACHE=Y
 
 #######
 
+c hs/t/y/many_txns.rsh
+exit 0
+
 jb
 ci ALGO muldiv
 ci ALGO rps-7-loops
