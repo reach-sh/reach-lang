@@ -42,9 +42,9 @@ On some networks, Alice can perform these two steps completely on her own and sh
 However, on Algorand, running this program requires that Bob "opt-in" to storing values for the application.
 We hope that future versions of Algorand will allow other parties to pay the fees to "opt-in" to applications to prevent these kinds of deadlock attacks.
 
-In Algorand, network time corresponds to round numbers and network seconds correspond to the Unix timestamp of the previous round.
-(This is because the current round's timestamp is not determined until after it is finalized.
-This means that a network second-based deadline could be exceeded by the round time of the network, which is typically five seconds.)
+In Algorand, network time corresponds to round numbers.
+Each round is assigned a Unix timestamp, but when you look at the timestamp in code executing in round N+1, you read the timestamp assigned to round N.
+Ensure that you read @{seclink("RW0006")} if you use network seconds.
 
 The connector provides a binding named `{!rsh} ALGO` to
 backends.
@@ -192,6 +192,7 @@ A view named `X` will be named `X`.
 Views expand the on-chain state to include the free variables of all values bound to a view.
 
 In Ethereum, network time corresponds to block numbers and network seconds correspond to the Unix timestamp of the block.
+Ensure that you read @{seclink("RW0006")} if you use network seconds.
 
 The connector provides a binding named `{!rsh} ETH` to
 backends.

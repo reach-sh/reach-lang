@@ -648,7 +648,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
         while ( true ) {
           debug(dhead, 'TIMECHECK', { timeoutAt });
-          if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, await getNetworkTimeNumber() + 1) ) {
+          if ( await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, (bigNumberify(await getNetworkTimeNumber())).add(1) ) ) {
             debug(dhead, 'FAIL/TIMEOUT');
             return await doRecv(false, false, `timeout`);
           }
@@ -733,13 +733,12 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         debug(dhead, 'start');
         const ethersC = await getC();
         const didTimeout = async (cr_bn: BigNumber): Promise<boolean> => {
-          const cr = bigNumberToNumber(cr_bn);
-          debug(dhead, 'TIMECHECK', {timeoutAt, cr_bn, cr});
-          const crp = cr + 1;
+          const crp = cr_bn.add(1);
+          debug(dhead, 'TIMECHECK', {timeoutAt, cr_bn, crp});
           const r = await checkTimeout( isIsolatedNetwork, getTimeSecs, timeoutAt, crp);
           debug(dhead, 'TIMECHECK', {r, waitIfNotPresent});
           if ( !r && waitIfNotPresent ) {
-            await waitUntilTime(bigNumberify(crp));
+            await waitUntilTime(crp);
           }
           return r;
         };

@@ -1375,7 +1375,7 @@ smt_s = \case
           should <- shouldSimulate from
           let maybe_pathAdd v mde se = do
                 case should of
-                  False -> pathAddUnbound at (Just v) mde
+                  False -> pathAddUnbound at (Just v) (Just $ SMTModel O_Publish)
                   True -> pathAddBound at (Just v) mde se Context
           let bind_from =
                 case isClass of

@@ -11,13 +11,13 @@ Verification failed:
 
   const UInt.max = 1;
 
-  const v60 = "Alice".interact.request;
+  const request/60 = "Alice".interact.request;
   //    ^ could = 1
   //      from: ./index-error.rsh:6:12:property binding
 
   // Theorem Formalization
 
-  const v87 = 0 == (v60 - (v60 - 1));
+  const v87 = 0 == (request/60 - (request/60 - 1));
   //    ^ would be false
   assert(v87);
 

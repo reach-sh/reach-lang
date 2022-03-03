@@ -17,7 +17,7 @@ try {
         case 2:
           if ( stdlib.connector === 'ALGO' ) {
             console.log(`Trying to clear state...`);
-            const ctcInfo = await ctcA.getInfo();
+            const ctcInfo = stdlib.bigNumberToNumber(await ctcA.getInfo());
             const ALGO = stdlib;
             const { algosdk } = ALGO;
             const thisAcc = accA.networkAccount;

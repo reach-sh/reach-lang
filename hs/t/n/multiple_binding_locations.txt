@@ -14,9 +14,9 @@ Verification failed:
 
   // Theorem Formalization
 
-  const v39 = v36 - 4;
+  const x/39 = v36 - 4;
   //    ^ would be 0
-  const v46 = (v39 + v39) == 4;
+  const v46 = (x/39 + x/39) == 4;
   //    ^ would be false
   assert(v46);
 

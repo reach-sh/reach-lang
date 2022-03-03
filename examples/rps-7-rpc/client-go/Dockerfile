@@ -7,6 +7,6 @@ COPY    index.go /app/
 # filesystem in order to remain in-sync with the repository's client code, but
 # frontend authors will normally skip this step and import from GitHub as
 # explained in the `index.go` module
-COPY    ./lib/ /go/src/reachrpc/
+COPY    ./lib/ /usr/local/go/src/reachrpc/
 
 CMD     ["go", "run", "index.go"]

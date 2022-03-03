@@ -68,6 +68,8 @@ instance Show AlgoError where
     Err_PayNewToken ->
       "Token cannot be paid within the same consensus step it was shared with the contract on Algorand"
 
+type Notify = LT.Text -> IO ()
+
 -- General tools that could be elsewhere
 
 type LPGraph1 a = M.Map a Integer
@@ -414,9 +416,7 @@ itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
 btoi :: BS.ByteString -> Integer
 btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
 
-type Warn = LT.Text -> IO ()
-
-checkCost :: Warn -> Disp -> Bool -> [TEAL] -> IO ()
+checkCost :: Notify -> Disp -> Bool -> [TEAL] -> IO ()
 checkCost warning disp alwaysShow ts = do
   let mkg :: IO (IORef (LPGraph String))
       mkg = newIORef mempty
@@ -529,7 +529,7 @@ checkCost warning disp alwaysShow ts = do
     putStrLn $ " * " <> showCost <> "."
     putStrLn $ " * " <> showLogLen <> "."
 
-optimizeAndRender :: Warn -> Disp -> Bool -> TEALs -> IO T.Text
+optimizeAndRender :: Notify -> Disp -> Bool -> TEALs -> IO T.Text
 optimizeAndRender warning disp showCost ts = do
   let tscl = DL.toList ts
   let tscl' = optimize tscl
@@ -679,7 +679,7 @@ addResourceCheck = do
   updateResources $ \r t ->
     t {cr_n = max (snd $ c M.! r) (cr_n t)}
 
-checkResources :: Bad' -> Bad' -> (Int -> SrcLoc) -> ResourceGraph -> IO ()
+checkResources :: Notify -> Notify -> (Int -> SrcLoc) -> ResourceGraph -> IO ()
 checkResources bad' warn' findAt rg = do
   let one emit r = do
         let maxc = maxOf r
@@ -786,9 +786,7 @@ checkLease = do
   czaddr
   asserteq
 
-type Bad' = LT.Text -> IO ()
-
-bad_io :: IORef (S.Set LT.Text) -> Bad'
+bad_io :: IORef (S.Set LT.Text) -> Notify
 bad_io x = modifyIORef x . S.insert
 
 bad :: LT.Text -> App ()

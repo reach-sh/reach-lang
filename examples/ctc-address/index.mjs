@@ -17,7 +17,7 @@ const stdlib = loadStdlib(process.env);
       const info = await ctcMe.getInfo();
       console.log(`Contract Info From Reach      : ${ctc}`);
       console.log(`Contract Info From ctc.getInfo: ${info}`);
-      stdlib.assert(ctc == info);
+      stdlib.assert(JSON.stringify(ctc) === JSON.stringify(info));
     },
     showAddress: async (addr) => {
       const ctcAddress = await ctcMe.getContractAddress();

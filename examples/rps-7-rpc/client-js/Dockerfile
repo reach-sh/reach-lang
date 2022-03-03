@@ -8,8 +8,11 @@ COPY package.json /app/package.json
 # The following COPY and RUN are unnecessary for most frontend authors but are
 # included here for Reach core development purposes
 COPY ./lib /lib
-RUN npm install --loglevel=verbose /lib
+WORKDIR /lib
+RUN npm install --loglevel=verbose 
 
+WORKDIR /app
+RUN npm install --loglevel=verbose /lib
 RUN npm install --loglevel=verbose
 
 COPY . /app
