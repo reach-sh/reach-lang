@@ -76,6 +76,7 @@ instance Pretty SrcLoc where
 
 data ImpossibleError
   = Err_Impossible_Inspect String
+  | Err_Impossible_Case String
   deriving (Eq, Ord, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode ImpossibleError where
@@ -87,11 +88,14 @@ instance HasErrorCode ImpossibleError where
   -- Add new error codes at the end.
   errIndex = \case
     Err_Impossible_Inspect {} -> 0
+    Err_Impossible_Case {} -> 1
 
 instance Show ImpossibleError where
   show = \case
     Err_Impossible_Inspect f ->
       "Cannot inspect value from `" <> f <> "`"
+    Err_Impossible_Case f ->
+      "Unreachable switch case from `" <> f <> "`"
 
 instance Pretty ImpossibleError where
   pretty = viaShow
@@ -262,7 +266,11 @@ srclocOf_ def v = a'
 data SecurityLevel
   = Secret
   | Public
-  deriving (Eq, Generic, NFData, Show)
+  deriving (Eq, Generic, NFData, Ord, Show)
+
+instance FromJSON SecurityLevel
+
+instance ToJSON SecurityLevel
 
 public :: a -> (SecurityLevel, a)
 public x = (Public, x)

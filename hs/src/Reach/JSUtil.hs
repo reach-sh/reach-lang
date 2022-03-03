@@ -26,6 +26,7 @@ module Reach.JSUtil
   , jsFlattenLHS
   , jsString
   , jsaList
+  , getFormals
   )
 where
 
@@ -172,6 +173,15 @@ mkCommaTrailingList xs = JSCTLComma (toJSCL xs) JSNoAnnot
 
 a2sp :: JSAnnot -> JSSemi
 a2sp = JSSemi
+
+getFormals :: JSExpression -> [JSExpression]
+getFormals = \case
+  JSArrowExpression x _ _ ->
+    case x of
+      JSUnparenthesizedArrowParameter (JSIdentName at s) -> [JSIdentifier at s]
+      JSParenthesizedArrowParameterList _ jcl _ -> jscl_flatten jcl
+      _ -> []
+  _ -> []
 
 --
 

@@ -235,10 +235,13 @@ fork()
     exit();
   })
 .case(Bob, (() => ({
-  when: declassify(interact.keepGoing()) })),
+  when: declassify(interact.keepGoing())
+  _local: interact.secretVal })),
   ((_) => wager),
-  (_) => {
+  (_, _secV) => {
     commit();
+
+    Bob.only(() => interact.showSecret(_secV))
 
     Alice.only(() => interact.showOpponent(Bob));
 
@@ -279,11 +282,11 @@ fork()
 where:
 + `{!rsh} TOKENS_EXPR` is a syntactic tuple of `{!rsh} Token` identifiers;
 + `{!rsh} PART_EXPR` is an expression that evaluates to a participant;
-+ `{!rsh} PUBLISH_EXPR` is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a `msg` field, which may be of any type, and a `when` field, which must be a boolean;
++ `{!rsh} PUBLISH_EXPR` is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a `msg` field, which may be of any type, a `when` field, which must be a boolean, a `_local` field, which may be of any type;
 + (optional) `{!rsh} PAY_EXPR` is an expression that evaluates to a function parameterized over the `msg` value and returns a pay amount; if this component is left-out, it is synthesized to zero;
 + (optional) `{!rsh} PAY_REQUIRE_EXPR` is a function parameterized over the `msg` value which is evaluated for effect in a consensus step; thus it may be used to add `{!rsh} require` constraints on the value used for payment.
 If this is absent, then it is synthesized to an empty function.
-+ `{!rsh} CONSENSUS_EXPR` is a syntactic arrow expression parameterized over the `msg` value which is evaluated in a consensus step;
++ `{!rsh} CONSENSUS_EXPR` is a syntactic arrow expression parameterized over the `msg` and `_local` values which is evaluated in a consensus step;
 + `{!rsh} API_EXPR` is an expression that evaluates to an API member function;
 + (optional) `{!rsh} API_ASSUME_EXPR` is a function parameterized over the input to the API member function which is evaluated for effect in a local step; thus it may be used to add `{!rsh} assume` constraints on the values given by the API; if this is absent, then it is synthesized to an empty function; if it is present, then `{!rsh} API_PAY_EXPR` must be included;
 + (optional) `{!rsh} API_PAY_EXPR` is a function parameterized over the input to the API member function which is evaluated to determine the pay amount, like `{!rsh} PAY_EXPR`;
@@ -297,6 +300,8 @@ All API functions must rely only on consensus state and the function domain.
 If the `msg` field is absent from the object returned from `{!rsh} PUBLISH_EXPR`, then it is treated as if it were `{!rsh} null`.
 
 If the `when` field is absent from the object returned from `{!rsh} PUBLISH_EXPR`, then it is treated as if it were `{!rsh} true`.
+
+If the `_local` field is absent from the object returned from `{!rsh} PUBLISH_EXPR`, then it is treated as if it were `{!rsh} null`.
 
 If the `{!rsh} PAY_EXPR` is absent, then it is treated as if it were `{!rsh} (_) => 0`.
 
@@ -328,7 +333,8 @@ Alice.only(() => {
  const fork_when = declassify(interact.keepGoing()); });
 Bob.only(() => {
  const fork_msg = ForkData.Bob(null);
- const fork_when = declassify(interact.keepGoing()); });
+ const fork_when = declassify(interact.keepGoing());
+ const _fork_local = interact.secretVal; });
 // They race
 race(Alice, Bob)
  .publish(fork_msg)
@@ -362,7 +368,11 @@ race(Alice, Bob)
    case Bob: {
      Bob.set(this);
      commit();
+     Bob.only(() => {
+       _secV = _fork_local;
+     });
 
+     Bob.only(() => interact.showSecret(_secV))
      Alice.only(() => interact.showOpponent(Bob));
 
      race(Alice, Bob).publish();

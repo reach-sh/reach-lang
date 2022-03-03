@@ -142,7 +142,7 @@ jsContract_ = \case
     as' <- mapM jsContract as
     return $ jsApply ("stdlib.T_Tuple") $ [jsArray as']
   T_Object m -> do
-    m' <- mapM jsContract m
+    m' <- mapM (jsContract . snd) m
     return $ jsApply ("stdlib.T_Object") [jsObject m']
   T_Data m -> do
     m' <- mapM jsContract m
@@ -300,6 +300,9 @@ jsExpr = \case
     jsArg a
   DLE_LArg _ la ->
     jsLargeArg la
+  DLE_Impossible at _ (Err_Impossible_Case f)-> do
+    ai <- jsAssertInfo at [] (Just $ bpack f)
+    return $ "Error(" <> ai <> ")"
   DLE_Impossible at _ err ->
     expect_thrown at err
   DLE_VerifyMuldiv at _ _ _ err ->

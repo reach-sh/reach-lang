@@ -8,6 +8,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 Version 0.1.9 is the current Reach release candidate version.
 
 + 2022/03/12: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
++ 2022/03/09: Added `{!rsh} _local` to `{!rsh} parallelReduce` and `{!rsh} fork`.
 + 2022/03/08: Added `{!rsh} distinct`.
 + 2022/03/07: `{!rsh} remote` objects supported on Algorand.
 + 2022/03/02: Algorand-only: Drastically reduced the cost of `{!rsh} muldiv`.

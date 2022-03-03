@@ -23,6 +23,7 @@ import Reach.Counter
 import Reach.Pretty
 import Reach.Texty
 import Reach.Util
+import Data.Bifunctor
 
 type PrettySubstEnv = M.Map DLVar Doc
 
@@ -53,7 +54,7 @@ data DLType
   | T_Token
   | T_Array DLType Integer
   | T_Tuple [DLType]
-  | T_Object (M.Map SLVar DLType)
+  | T_Object (M.Map SLVar (SecurityLevel, DLType))
   | T_Data (M.Map SLVar DLType)
   | T_Struct [(SLVar, DLType)]
   deriving (Eq, Generic, Ord)
@@ -100,7 +101,7 @@ bytesTypeLen = \case
 
 objstrTypes :: DLType -> [(SLVar, DLType)]
 objstrTypes = \case
-  T_Object m -> M.toAscList m
+  T_Object m -> M.toAscList $ M.map snd m
   T_Struct ts -> ts
   _ -> impossible $ "should be obj"
 
@@ -129,7 +130,7 @@ instance Show DLType where
     T_Token -> "Token"
     (T_Array ty i) -> "Array(" <> show ty <> ", " <> show i <> ")"
     (T_Tuple tys) -> "Tuple(" <> showTys tys <> ")"
-    (T_Object tyMap) -> "Object({" <> showTyMap tyMap <> "})"
+    (T_Object tyMap) -> "Object({" <> showTyMap (M.map snd tyMap) <> "})"
     (T_Data tyMap) -> "Data({" <> showTyMap tyMap <> "})"
     (T_Struct tys) -> "Struct([" <> showTyList tys <> "])"
 
@@ -465,17 +466,22 @@ largeArgToArgExpr = \case
   DLLA_Bytes b -> DLAE_Bytes b
 
 largeArgTypeOf :: DLLargeArg -> DLType
-largeArgTypeOf = argExprTypeOf . largeArgToArgExpr
+largeArgTypeOf = argExprTypeOf mempty . largeArgToArgExpr
 
-argExprTypeOf :: DLArgExpr -> DLType
-argExprTypeOf = \case
+argExprTypeOf :: M.Map SLVar SecurityLevel -> DLArgExpr -> DLType
+argExprTypeOf menv = \case
   DLAE_Arg a -> argTypeOf a
   DLAE_Array t as -> T_Array t $ fromIntegral (length as)
-  DLAE_Tuple as -> T_Tuple $ map argExprTypeOf as
-  DLAE_Obj senv -> T_Object $ M.map argExprTypeOf senv
+  DLAE_Tuple as -> T_Tuple $ map rec as
+  DLAE_Obj senv -> T_Object $ M.mapWithKey (curry $ bimap key_sl rec) senv
   DLAE_Data t _ _ -> T_Data t
-  DLAE_Struct kvs -> T_Struct $ map (\(k, v) -> (,) k $ argExprTypeOf v) kvs
+  DLAE_Struct kvs -> T_Struct $ map (second rec) kvs
   DLAE_Bytes bs -> T_Bytes $ fromIntegral $ B.length bs
+  where
+    rec = argExprTypeOf menv
+    key_sl = \case
+      '_':_ -> Secret
+      k -> fromMaybe Public $ M.lookup k menv
 
 data ClaimType
   = --- Verified on all paths

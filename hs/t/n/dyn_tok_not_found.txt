@@ -11,32 +11,32 @@ Verification failed:
 
   const UInt.max = 2;
 
-  const tok1/285 = "A".interact.tok1;
+  const tok1/288 = "A".interact.tok1;
   //    ^ could = Token!val!0
   //      from: ./dyn_tok_not_found.rsh:5:9:property binding
-  const tok2/286 = "A".interact.tok2;
+  const tok2/289 = "A".interact.tok2;
   //    ^ could = Token!val!1
   //      from: ./dyn_tok_not_found.rsh:6:9:property binding
-  const .api39.dom/330 = protect<Tuple(Token)>("B_changeTok".interact.in());
+  const .api39.dom/334 = protect<Tuple(Token)>("B_changeTok".interact.in());
   //    ^ could = [Token!val!4 ]
   //      from: ./dyn_tok_not_found.rsh:1:23:application
-  const data_id/427 = <switch case binding for B_changeTok0_46([Token!val!4 ] )>;
+  const data_id/432 = <switch case binding for B_changeTok0_46([Token!val!4 ] )>;
   //    ^ could = [Token!val!4 ]
   //      from: ./dyn_tok_not_found.rsh:28:19:switch
 
   // Theorem Formalization
 
-  const tokens'/311 = Array.set(Array.set(array(Token, [Token.zero, Token.zero ]), 0, tok1/285 ), 1, tok2/286 );
+  const tokens'/314 = Array.set(Array.set(array(Token, [Token.zero, Token.zero ]), 0, tok1/288 ), 1, tok2/289 );
   //    ^ would be array(Token, [Token!val!0, Token!val!1 ] )
-  const payTok/437 = data_id/427[0];
+  const payTok/442 = data_id/432[0];
   //    ^ would be Token!val!4
-  const searchIdx/591 = [false, 0 ][1];
+  const searchIdx/596 = [false, 0 ][1];
   //    ^ would be 0
-  const searchIdx/602 = (([false, 0 ][0] ? true : (tokens'/311[0] == payTok/437)) ? [true, searchIdx/591 ] : [false, (searchIdx/591 + 1) ])[1];
+  const searchIdx/607 = (([false, 0 ][0] ? true : (tokens'/314[0] == payTok/442)) ? [true, searchIdx/596 ] : [false, (searchIdx/596 + 1) ])[1];
   //    ^ would be 1
-  const isFound'/464 = (((([false, 0 ][0] ? true : (tokens'/311[0] == payTok/437)) ? [true, searchIdx/591 ] : [false, (searchIdx/591 + 1) ])[0] ? true : (tokens'/311[1] == payTok/437)) ? [true, searchIdx/602 ] : [false, (searchIdx/602 + 1) ])[0];
+  const isFound'/469 = (((([false, 0 ][0] ? true : (tokens'/314[0] == payTok/442)) ? [true, searchIdx/596 ] : [false, (searchIdx/596 + 1) ])[0] ? true : (tokens'/314[1] == payTok/442)) ? [true, searchIdx/607 ] : [false, (searchIdx/607 + 1) ])[0];
   //    ^ would be false
-  assert(isFound'/464);
+  assert(isFound'/469);
 
   Verifying when NO participants are honest
 Checked 51 theorems; 3 failures (and 2 omitted repeats) :'(
