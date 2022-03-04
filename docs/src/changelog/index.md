@@ -14,7 +14,6 @@ Version 0.1.9 is the current Reach release candidate version.
   If you upgrade the standard library, but do not restart your devnet, tests will fail.
 + 2022/03/02: Algorand indexer upgraded to `2.9.0`.
 + 2022/03/02: Algorand node upgraded to `3.4.2`.
-+ 2022/03/02: Conflux upgraded to `2.0.0-fix`.
 + 2022/03/02: Ethers upgraded to `5.5.4`.
 + 2022/03/02: Ethereum ERC-20 implementation upgraded to OpenZeppelin `4.5.0`.
 + 2022/03/02: Ethereum (`geth`) upgraded to `1.10.16`.
