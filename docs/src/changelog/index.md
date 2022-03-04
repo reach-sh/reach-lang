@@ -20,9 +20,9 @@ Version 0.1.9 is the current Reach release candidate version.
 + 2022/03/02: Solidity upgraded to `0.8.12`.
 + 2022/03/02: Z3 upgraded to `4.8.14`.
 
-## 0.1.8: 2022/01 - present
+## 0.1.8: 2022/01 - 2022/03
 
-Version 0.1.8 is the current Reach release candidate version.
+Version 0.1.8 is the current Reach release version.
 
 + 2022/02/28: Added `{!js} launchToken` for token minting in frontends.
 + 2022/02/25: Added support for tracking `{!rsh} Token` information—such as balance, supply, and whether its destroyed—dynamically.
@@ -55,7 +55,7 @@ Version 0.1.8 is the current Reach release candidate version.
 
 ## 0.1.7: 2021/11 - 2021/12
 
-Version 0.1.7 is the current Reach release version.
+Version 0.1.7 is an old Reach release version.
 
 + 2022/01/06: Added `{!rsh} getUntrackedFunds`.
 + 2021/12/31: `{!js} setQueryLowerBound` is deprecated.
