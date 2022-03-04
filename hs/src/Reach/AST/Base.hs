@@ -162,7 +162,7 @@ data CompilationError = CompilationError
   , ce_offendingToken :: Maybe String
   , ce_errorCode :: String
   }
-  deriving (Show, Generic, ToJSON)
+  deriving (Show, Generic, ToJSON, FromJSON)
 
 makeCompilationError :: (ErrorSuggestions a, ErrorMessageForJson a, Show a, HasErrorCode a) => SrcLoc -> a -> CompilationError
 makeCompilationError src err =
@@ -195,6 +195,11 @@ instance Exception CompileErrorException
 
 instance ToJSON CompileErrorException where
   toJSON = toJSON . cee_error
+
+instance FromJSON CompileErrorException where
+  parseJSON = withObject "CompileErrorException" $ \v -> CompileErrorException
+    <$> parseJSON (Object v)
+    <*> pure ""
 
 expect_throw :: (HasErrorCode a, Show a, ErrorMessageForJson a, ErrorSuggestions a) => HasCallStack => Maybe ([SLCtxtFrame]) -> SrcLoc -> a -> b
 expect_throw mCtx src err = throw CompileErrorException {..}
