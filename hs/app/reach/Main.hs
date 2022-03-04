@@ -1058,17 +1058,29 @@ compile = command "compile" $ info f d
             $reachc_dev
           fi
         else
-          docker run \
-            --rm \
-            --volume "$$PWD:/app" \
+          cid="$(docker ps -q \
+            -f "ancestor=reachsh/reach:$v" \
+            -f "label=sh.reach.dir-project=$$PWD" \
+            | head -n1)"
+
+          if [ -z "$$cid" ]; then
+            cid="$(docker run -d --rm \
+              --volume "$$PWD:/app" \
+              -l "sh.reach.dir-project=$$PWD" \
+              -u "$(id -ru):$(id -rg)" \
+              --name "reachc_$$$$" \
+              --entrypoint tail \
+              reachsh/reach:$v -f /dev/null)"
+          fi
+
+          docker exec \
             -u "$(id -ru):$(id -rg)" \
             -e REACH_CONNECTOR_MODE \
             -e REACH_IDE \
             -e "REACHC_ID=$${ID}" \
             -e "CI=$ci'" \
             $ports \
-            reachsh/reach:$v \
-            $args
+            "$$cid" reachc $args
         fi
       |]
 
@@ -1229,6 +1241,18 @@ down' = script $ do
 
     # Remove app stragglers (containers w/ status != running)
     docker ps -aqf label=sh.reach.dir-tmp | while IFS= read -r d; do
+      printf 'Removing %s%s... ' "$$d" "$(name "$$d")"
+      docker rm -fv "$$d" >/dev/null && printf 'Done.\n'
+    done
+
+    # Stop `reachc` containers w/ status == running
+    docker ps -qf 'ancestor=reachsh/reach' | while IFS= read -r d; do
+      printf 'Stopping %s%s... ' "$$d" "$(name "$$d")"
+      docker stop "$$d" >/dev/null && printf 'Done.\n'
+    done
+
+    # Remove `reachc` stragglers (containers w/ status != running)
+    docker ps -aqf 'ancestor=reachsh/reach' | while IFS= read -r d; do
       printf 'Removing %s%s... ' "$$d" "$(name "$$d")"
       docker rm -fv "$$d" >/dev/null && printf 'Done.\n'
     done

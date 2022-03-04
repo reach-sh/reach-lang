@@ -2,12 +2,19 @@ module Main (main) where
 
 import Control.Exception
 import Control.Monad
+import Data.Aeson
+import Data.ByteString.Lazy.Char8 (pack, unpack)
+import Data.Either.Extra
+import Data.Typeable (cast)
+import Reach.AST.Base
 import Reach.CommandLine
 import Reach.Compiler
 import Reach.Report
 import Reach.Version
+import Safe
 import System.Environment
 import System.Exit
+import System.Process
 
 shouldReport :: CompilerToolArgs -> CompilerToolEnv -> Bool
 shouldReport CompilerToolArgs {..} CompilerToolEnv {..} =
@@ -16,6 +23,9 @@ shouldReport CompilerToolArgs {..} CompilerToolEnv {..} =
   where
     emptyish Nothing = True
     emptyish (Just x) = x == ""
+
+apMA :: Monad m => m (a -> m b) -> a -> m b
+apMA f = join . ap f . pure
 
 main :: IO ()
 main = do
@@ -34,14 +44,34 @@ main = do
   when ("--hash" `elem` rawArgs) $ do
     maybe exitFailure putStrLn $ cte_REACHC_HASH env
     exitSuccess
+  when ("--report" `elem` rawArgs) $ do
+    rid <- lookupEnv "REACHC_ID"
+    (startReport rid "compile" `apMA`) =<< case atMay rawArgs 2 of
+      Nothing -> do
+        putStrLn "Missing reportable compilation result."
+        exitWith $ ExitFailure 1
+      Just e' -> (pure . eitherDecode' $ pack e') >>= \case
+        Right (e'' :: Either CompileErrorException ()) ->
+          pure $ mapLeft SomeException e''
+        Left x -> do
+          print x
+          exitWith $ ExitFailure 1
+    exitSuccess
   args <- getCompilerArgs versionCliDisp
-  report <-
-    case shouldReport args env of
-      False -> return $ const $ return ()
-      True -> startReport (cte_REACHC_ID env) "compile"
   (e :: Either SomeException ()) <-
     try $ compile env $ cta_co args
-  report e
+  case shouldReport args env of
+    False -> pure ()
+    True -> case e of
+      Right _ -> report $ Right ()
+      Left (SomeException i) -> case (cast i :: Maybe CompileErrorException) of
+        Just i' -> report $ Left i'
+        Nothing -> startReport (cte_REACHC_ID env) "compile" `apMA` e
   case e of
     Left exn -> throwIO exn
     Right () -> return ()
+ where
+  report :: Either CompileErrorException () -> IO ()
+  report a = do
+    x <- getExecutablePath
+    void . spawnCommand $ x <> " --error-format-json --report '" <> (unpack $ encode a) <> "'"
