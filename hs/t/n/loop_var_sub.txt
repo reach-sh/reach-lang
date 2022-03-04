@@ -10,18 +10,18 @@ Verification failed:
 
   const UInt.max = 7721;
 
-  const x/54 = <loop variable>;
+  const x/62 = <loop variable>;
   //    ^ could = [7719, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const netBalance/57 = <loop variable>;
+  const netBalance/66 = <loop variable>;
   //    ^ could = 7719
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization
 
-  const v90 = (netBalance/57 + 1) == [(x/54[0] + 2), x/54[1] ][0];
+  const v100 = (netBalance/66 + 1) == [(x/62[0] + 2), x/62[1] ][0];
   //    ^ would be false
-  assert(v90);
+  assert(v100);
 
   Verifying when NO participants are honest
 Verification failed:
@@ -33,17 +33,17 @@ Verification failed:
 
   const UInt.max = 7721;
 
-  const x/54 = <loop variable>;
+  const x/62 = <loop variable>;
   //    ^ could = [7719, false ]
   //      from: ./loop_var_sub.rsh:14:7:while
-  const netBalance/57 = <loop variable>;
+  const netBalance/66 = <loop variable>;
   //    ^ could = 7719
   //      from: ./loop_var_sub.rsh:14:7:while
 
   // Theorem Formalization
 
-  const v108 = (netBalance/57 + 1) == [(x/54[0] + 2), x/54[1] ][0];
+  const v119 = (netBalance/66 + 1) == [(x/62[0] + 2), x/62[1] ][0];
   //    ^ would be false
-  assert(v108);
+  assert(v119);
 
 Checked 12 theorems; 2 failures :'(

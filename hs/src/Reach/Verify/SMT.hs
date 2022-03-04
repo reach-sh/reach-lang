@@ -514,6 +514,11 @@ parseVal env sdt v = do
                     _ -> impossible $ "parseVal: Array(" <> show sz <> ").store " <> show arrv <> " " <> show idxv
                 List [Atom "_", Atom "as-array", _] ->
                   return $ SMV_unknown v
+                Atom ('z' : '_' : t0) -> do
+                  typem <- asks ctxt_smt_typem
+                  case M.lookup t0 typem of
+                    Just dt -> return $ SMV_Array dt $ []
+                    Nothing -> impossible $ "parseVal: Array: Atom: z_" <> show t0 <> " is Nothing"
                 _ -> impossible $ "parseVal: Array: " <> show v
             T_Tuple [] ->
               case v of

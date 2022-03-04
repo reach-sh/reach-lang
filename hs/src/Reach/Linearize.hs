@@ -631,28 +631,25 @@ df_eb (DLinExportBlock at vs b) =
 df_init :: DKTail -> DFApp DKTail
 df_init k = do
   eBals <- asks eBals
-  case eBals of
-    0 -> return k
-    _ -> do
-      infoTy <- tokenInfoType
-      infoA <- mkVar sb "tokInfos" infoTy
-      tokA  <- mkVar sb "tokens" $ T_Array T_Token eBals
-      info  <- mkVar sb "initialInfo" tokenInfoElemTy
-      let false = DLA_Literal $ DLL_Bool False
-      let zero  = DLA_Literal $ DLL_Int sb 0
-      let tokz  = DLA_Constant DLC_Token_zero
-      let infos = map DLA_Var $ take (fromIntegral eBals) $ repeat info
-      let asn v e = DKC_Let sb (DLV_Let DVC_Many v) e
-      let cs =
-            [ asn info $ DLE_LArg sb $ DLLA_Tuple [zero, zero, false]
-            , asn infoA $ DLE_LArg sb $ DLLA_Array tokenInfoElemTy infos
-            , DKC_FluidSet sb FV_tokenInfos $ DLA_Var infoA
-            -- We keep a separate array for the token references so we can treat the token positions
-            -- as if they are static once initialized.
-            , asn tokA $ DLE_LArg sb $ DLLA_Array T_Token $ take (fromIntegral eBals) $ repeat tokz
-            , DKC_FluidSet sb FV_tokens $ DLA_Var tokA
-            ]
-      return $ foldr DK_Com k cs
+  infoTy <- tokenInfoType
+  infoA <- mkVar sb "tokInfos" infoTy
+  tokA  <- mkVar sb "tokens" $ T_Array T_Token eBals
+  info  <- mkVar sb "initialInfo" tokenInfoElemTy
+  let false = DLA_Literal $ DLL_Bool False
+  let zero  = DLA_Literal $ DLL_Int sb 0
+  let tokz  = DLA_Constant DLC_Token_zero
+  let infos = map DLA_Var $ take (fromIntegral eBals) $ repeat info
+  let asn v e = DKC_Let sb (DLV_Let DVC_Many v) e
+  let cs =
+        [ asn info $ DLE_LArg sb $ DLLA_Tuple [zero, zero, false]
+        , asn infoA $ DLE_LArg sb $ DLLA_Array tokenInfoElemTy infos
+        , DKC_FluidSet sb FV_tokenInfos $ DLA_Var infoA
+        -- We keep a separate array for the token references so we can treat the token positions
+        -- as if they are static once initialized.
+        , asn tokA $ DLE_LArg sb $ DLLA_Array T_Token $ take (fromIntegral eBals) $ repeat tokz
+        , DKC_FluidSet sb FV_tokens $ DLA_Var tokA
+        ]
+  return $ foldr DK_Com k cs
 
 defluid :: DKProg -> IO LLProg
 defluid (DKProg at (DLOpts {..}) sps dli dex dvs das devts k) = do

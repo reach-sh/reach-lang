@@ -792,6 +792,7 @@ solCom = \case
             T_Tuple [_, _, x] -> x
             T_Tuple [_, x] -> x
             _ -> impossible $ "remote not tuple"
+    rng_ty'_ <- solType_ rng_ty
     rng_ty' <- solType rng_ty
     let rng_ty'mem = rng_ty' <> withArgLoc rng_ty
     f' <- addInterface (pretty f) dom'mem rng_ty'mem
@@ -864,7 +865,7 @@ solCom = \case
             _ -> do
               [solSet (solMemVar dv <> ".elem" <> billOffset 1) de'] -- not always 2
               where
-                de' = solApply "abi.decode" [v_return, parens rng_ty']
+                de' = solApply "abi.decode" [v_return, parens rng_ty'_]
     let e_data = solApply "abi.encodeWithSelector" eargs
     e_before <- solPrimApply SUB [meBalance, netTokPaid]
     err_msg <- solRequireMsg $ show (at, fs, ("remote " <> f <> " failed"))

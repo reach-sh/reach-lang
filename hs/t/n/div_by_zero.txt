@@ -10,15 +10,15 @@ Verification failed:
 
   // Violation Witness
 
-  const v29 = "A".interact.x;
+  const v35 = "A".interact.x;
   //    ^ could = 0
   //      from: ./div_by_zero.rsh:6:26:property binding
 
   // Theorem Formalization
 
-  const v32 = v29 > 0;
+  const v38 = v35 > 0;
   //    ^ would be false
-  assert(v32);
+  assert(v38);
 
   Verifying when NO participants are honest
 Checked 2 theorems; 1 failures :'(
