@@ -242,7 +242,7 @@ jobs:
     - run:
         command: |
           cd .circleci && ./example.sh <<parameters.connector>> "${CIRCLE_NODE_TOTAL}" "${CIRCLE_NODE_INDEX}"
-        no_output_timeout: 20m
+        no_output_timeout: 30m
     - store_artifacts:
         path: /tmp/artifacts
     - store_artifacts:
