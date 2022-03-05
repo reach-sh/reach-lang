@@ -4,4 +4,12 @@ Verifying for generic connector
   Verifying when NO participants are honest
 Checked 80 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
- * This program uses remote objects
+ * This program uses a remote object at ./index.rsh:47:13:application
+ * This program uses a remote object at ./index.rsh:48:22:application
+ * This program uses a remote object at ./index.rsh:52:24:application
+ * This program uses a remote object at ./index.rsh:53:38:application
+ * This program uses a remote object at ./index.rsh:54:45:application
+ * This program uses a remote object at ./index.rsh:73:34:application
+ * This program uses a remote object at ./index.rsh:77:35:application
+ * This program uses a remote object at ./index.rsh:82:34:application
+ * This program uses a remote object at ./index.rsh:86:68:application
