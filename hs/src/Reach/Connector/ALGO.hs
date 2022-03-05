@@ -358,6 +358,8 @@ opt_b1 = \case
   (TCode "b" [x]) : b@(TLabel y) : l | x == y -> b : l
   (TCode "btoi" []) : (Titob True) : (TSubstring 7 8) : l -> l
   (TCode "btoi" []) : (Titob _) : l -> l
+  (TInt 0) : (TCode "-" []) : l -> l
+  (TInt 0) : (TCode "+" []) : l -> l
   (Titob _) : (TCode "btoi" []) : l -> l
   (TCode "==" []) : (TCode "!" []) : l -> (TCode "!=" []) : l
   (TInt 0) : (TCode "!=" []) : (TCode "assert" []) : l ->
@@ -744,15 +746,16 @@ label = output . TLabel
 comment :: LT.Text -> App ()
 comment = output . TComment INo
 
-block_ :: LT.Text -> App () -> App ()
+block_ :: LT.Text -> App a -> App a
 block_ lab m = do
   output $ TComment IUp $ ""
   output $ TComment INo $ "{ " <> lab
-  m
+  x <- m
   output $ TComment INo $ lab <> " }"
   output $ TComment IDo $ ""
+  return x
 
-block :: Label -> App () -> App ()
+block :: Label -> App a -> App a
 block lab m = block_ lab $ label lab >> m
 
 assert :: App ()
@@ -797,9 +800,6 @@ bad lab = do
   let Shared {..} = eShared
   liftIO $ bad_io sFailuresR lab
   mapM_ comment $ LT.lines $ "BAD " <> lab
-
-xxx :: String -> App ()
-xxx = bad . LT.pack
 
 freshLabel :: String -> App LT.Text
 freshLabel d = do
@@ -1451,6 +1451,23 @@ cSvsSave _at svs = do
   -- [ ]
   return ()
 
+cGetBalance :: SrcLoc -> Maybe DLArg -> App ()
+cGetBalance _at = \case
+  Nothing -> do
+    -- []
+    cContractAddr
+    op "balance"
+    -- [ bal ]
+    cContractAddr
+    op "min_balance"
+    -- [ bal, min_bal ]
+    op "-"
+  Just tok -> do
+    cContractAddr
+    ca tok
+    code "asset_holding_get" [ "AssetBalance" ]
+    op "pop"
+
 ce :: DLExpr -> App ()
 ce = \case
   DLE_Arg _ a -> ca a
@@ -1521,22 +1538,26 @@ ce = \case
       go a = (argTypeOf a, ca a)
   DLE_Transfer mt_at who mt_amt mt_mtok -> do
     let mt_always = False
-    let mt_mrecv = Just who
+    let mt_mrecv = Just $ Left who
     let mt_mcclose = Nothing
-    makeTxn $ MakeTxn {..}
+    let mt_next = False
+    let mt_submit = True
+    void $ makeTxn $ MakeTxn {..}
   DLE_TokenInit mt_at tok -> do
     block_ "TokenInit" $ do
       let mt_always = True
       let mt_mtok = Just tok
       let mt_amt = DLA_Literal $ DLL_Int sb 0
       let mt_mrecv = Nothing
+      let mt_next = False
+      let mt_submit = True
       let mt_mcclose = Nothing
       let ct_at = mt_at
       let ct_mtok = Nothing
       let ct_amt = DLA_Literal $ minimumBalance_l
       addInitTok tok
       checkTxn $ CheckTxn {..}
-      makeTxn $ MakeTxn {..}
+      void $ makeTxn $ MakeTxn {..}
   DLE_CheckPay ct_at fs ct_amt ct_mtok -> do
     checkTxn $ CheckTxn {..}
     show_stack "CheckPay" Nothing ct_at fs
@@ -1575,15 +1596,84 @@ ce = \case
         cla $ mdaToMaybeLA mt mva
         cTupleSet at mdt $ fromIntegral i
         cMapStore at
-  DLE_Remote at _ _ _ _ _ _ ->
-    xxx $ "This program uses a remote object at " <> show at
+  DLE_Remote at fs ro rng_ty rm (DLPayAmt pay_net pay_ks) as (DLWithBill nnRecv nnZero) -> do
+    bad $ LT.pack $ "This program uses a remote object at " <> show at
+    let ts = map argTypeOf as
+    let sig = signatureStr rm ts (Just rng_ty)
+    remoteTxns <- liftIO $ newCounter 0
+    -- Figure out what we're calling
+    salloc_ "remote address" $ \storeAddr loadAddr -> do
+      salloc_ "pre balances" $ \storeBals loadBals -> do
+        cbs "appID"
+        ca ro
+        ctobs T_UInt
+        op "concat"
+        op "sha512_256"
+        storeAddr
+        let mtoksBill = Nothing : map Just nnRecv
+        let mtoksZero = map Just nnZero
+        let mtoksiAll = zip [0..] $ mtoksBill <> mtoksZero
+        let (mtoksiBill, mtoksiZero) = splitAt (length mtoksBill) mtoksiAll
+        let paid = M.fromList $ (Nothing, pay_net) : (map (\(x, y) -> (Just x, y)) pay_ks)
+        let balsT = T_Tuple $ map (const T_UInt) mtoksiAll
+        let gb_pre _ mtok = do
+              cGetBalance at mtok
+              case M.lookup mtok paid of
+                Nothing -> return ()
+                Just amt -> do
+                  ca amt
+                  op "-"
+        cconcatbs $ map (\(i, mtok) -> (T_UInt, gb_pre i mtok)) mtoksiAll
+        storeBals
+        -- Start the call
+        let mt_at = at
+        let mt_mcclose = Nothing
+        let mt_mrecv = Just $ Right loadAddr
+        let mt_always = False
+        hadNet <- (do
+          let mt_amt = pay_net
+          let mt_mtok = Nothing
+          let mt_next = False
+          let mt_submit = False
+          makeTxn $ MakeTxn {..})
+        let foldMy a l f = foldM f a l
+        hadSome <- foldMy hadNet pay_ks $ \mt_next (mt_amt, tok) -> do
+          let mt_mtok = Just tok
+          let mt_submit = False
+          makeTxn $ MakeTxn {..}
+        itxnNextOrBegin hadSome
+        ca ro
+        code "itxn_field" [ "ApplicationID" ]
+        cint_ at $ fromIntegral $ sigStrToInt sig
+        code "itxn_field" [ "ApplicationArgs" ]
+        forM_ as $ \a -> do
+          ca a
+          ctobs $ argTypeOf a
+          code "itxn_field" [ "ApplicationArgs" ]
+        op "itxn_submit"
+        show_stack ("Remote: " <> sig) Nothing at fs
+        appl_idx <- liftIO $ readCounter remoteTxns
+        let gb_post idx mtok = do
+              cGetBalance at mtok
+              loadBals
+              cTupleRef at balsT idx
+              op "-"
+        cconcatbs $ map (\(i, mtok) -> (T_UInt, gb_post i mtok)) mtoksiBill
+        forM_ mtoksiZero $ \(idx, mtok) -> do
+          cGetBalance at mtok
+          loadBals
+          cTupleRef at balsT idx
+          asserteq
+        code "gitxn" [ texty appl_idx, "LastLog" ]
+        output $ TExtract 4 0 -- (0 = to the end)
+        op "concat"
   DLE_TokenNew at (DLTokenNew {..}) -> do
     block_ "TokenNew" $ do
       let ct_at = at
       let ct_mtok = Nothing
       let ct_amt = DLA_Literal $ minimumBalance_l
       checkTxn $ CheckTxn {..}
-      op "itxn_begin"
+      itxnNextOrBegin False
       let vTypeEnum = "acfg"
       output $ TConst vTypeEnum
       makeTxn1 "TypeEnum"
@@ -1594,7 +1684,6 @@ ce = \case
       ca dtn_url >> makeTxn1 "ConfigAssetURL"
       ca dtn_metadata >> makeTxn1 "ConfigAssetMetadataHash"
       cContractAddr >> makeTxn1 "ConfigAssetManager"
-      incResource R_InnerTxn
       op "itxn_submit"
       code "itxn" ["CreatedAssetID"]
   DLE_TokenBurn {} ->
@@ -1602,7 +1691,7 @@ ce = \case
     -- the creator, and that's the rule for being able to destroy
     return ()
   DLE_TokenDestroy _at aida -> do
-    op "itxn_begin"
+    itxnNextOrBegin False
     let vTypeEnum = "acfg"
     output $ TConst vTypeEnum
     makeTxn1 "TypeEnum"
@@ -1610,8 +1699,8 @@ ce = \case
     ca aida
     makeTxn1 "ConfigAsset"
     op "itxn_submit"
-    incResource R_InnerTxn
-  -- XXX We could give the minimum balance back to the creator
+    -- XXX We could give the minimum balance back to the creator
+    return ()
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract _ -> code "txn" ["ApplicationID"]
   DLE_GetAddress _ -> cContractAddr
@@ -1640,31 +1729,18 @@ ce = \case
   DLE_setApiDetails {} -> return ()
   DLE_GetUntrackedFunds at mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
+    cGetBalance at mtok
+    -- [ bal ]
+    ca tb
+    -- [ bal, rsh_bal ]
     case mtok of
       Nothing -> do
-        -- []
-        cContractAddr
-        op "balance"
-        -- [ bal ]
-        cContractAddr
-        op "min_balance"
-        -- [ bal, min_bal ]
-        op "-"
-        -- [ eff_bal ]
-        ca tb
-        -- [ eff_bal, rsh_bal ]
+        -- [ bal, rsh_bal ]
         op "-"
         -- [ extra ]
         return ()
-      Just tok -> do
+      Just _ -> do
         cb_lab <- freshLabel $ "getUntrackedFunds" <> "_z"
-        checkTxnUsage at mtok
-        cContractAddr
-        ca tok
-        code "asset_holding_get" [ "AssetBalance" ]
-        op "pop"
-        -- [ bal ]
-        ca tb
         -- [ bal, rsh_bal ]
         op "dup2"
         -- [ bal, rsh_bal, bal, rsh_bal ]
@@ -1742,11 +1818,6 @@ clog as = do
   cla la
   clog_ $ typeSizeOf $ largeArgTypeOf la
 
-staticZero :: DLArg -> Bool
-staticZero = \case
-  DLA_Literal (DLL_Int _ 0) -> True
-  _ -> False
-
 data CheckTxn = CheckTxn
   { ct_at :: SrcLoc
   , ct_amt :: DLArg
@@ -1755,11 +1826,13 @@ data CheckTxn = CheckTxn
 
 data MakeTxn = MakeTxn
   { mt_at :: SrcLoc
-  , mt_mrecv :: Maybe DLArg
+  , mt_mrecv :: Maybe (Either DLArg (App ()))
   , mt_mcclose :: Maybe (App ())
   , mt_amt :: DLArg
   , mt_always :: Bool
   , mt_mtok :: Maybe DLArg
+  , mt_next :: Bool
+  , mt_submit :: Bool
   }
 
 checkTxn1 :: LT.Text -> App ()
@@ -1837,47 +1910,48 @@ checkTxn (CheckTxn {..}) = when (not (staticZero ct_amt)) $ do
     label after_lab
     op "pop" -- if !always & zero then pop amt ; else pop id
 
-makeTxn :: MakeTxn -> App ()
-makeTxn (MakeTxn {..}) = when (mt_always || not (staticZero mt_amt)) $ do
-  after_lab <- freshLabel "makeTxnK"
-  block_ after_lab $ do
-    let ((vTypeEnum, fReceiver, fAmount, fCloseTo), extra) =
-          case mt_mtok of
-            Nothing ->
-              (ntokFields, return ())
-            Just tok ->
-              (tokFields, textra)
-              where
-                textra = do
-                  incResourceL tok R_Asset
-                  ca tok
-                  makeTxn1 "XferAsset"
-    makeTxnUsage mt_at mt_mtok
-    ca mt_amt
-    unless mt_always $ do
-      op "dup"
-      code "bz" [after_lab]
-    op "itxn_begin"
-    makeTxn1 fAmount
-    output $ TConst vTypeEnum
-    makeTxn1 "TypeEnum"
-    whenJust mt_mcclose $ \cclose -> do
-      cclose
+itxnNextOrBegin :: Bool -> App ()
+itxnNextOrBegin isNext = do
+  op (if isNext then "itxn_next" else "itxn_begin")
+  incResource R_InnerTxn
+
+makeTxn :: MakeTxn -> App Bool
+makeTxn (MakeTxn {..}) =
+  case (mt_always || not (staticZero mt_amt)) of
+    False -> return False
+    True -> block_ "makeTxn" $ do
+      let ((vTypeEnum, fReceiver, fAmount, fCloseTo), extra) =
+            case mt_mtok of
+              Nothing ->
+                (ntokFields, return ())
+              Just tok ->
+                (tokFields, textra)
+                where
+                  textra = do
+                    incResourceL tok R_Asset
+                    ca tok
+                    makeTxn1 "XferAsset"
+      makeTxnUsage mt_at mt_mtok
+      itxnNextOrBegin mt_next
+      ca mt_amt
+      makeTxn1 fAmount
+      output $ TConst vTypeEnum
+      makeTxn1 "TypeEnum"
+      whenJust mt_mcclose $ \cclose -> do
+        cclose
+        cfrombs T_Address
+        makeTxn1 fCloseTo
+      case mt_mrecv of
+        Nothing -> cContractAddr
+        Just (Left a) -> do
+          incResourceL a R_Account
+          ca a
+        Just (Right cr) -> cr
       cfrombs T_Address
-      makeTxn1 fCloseTo
-    case mt_mrecv of
-      Nothing -> cContractAddr
-      Just a -> do
-        incResourceL a R_Account
-        ca a
-    cfrombs T_Address
-    makeTxn1 fReceiver
-    extra
-    op "itxn_submit"
-    incResource R_InnerTxn
-    cint 0
-    label after_lab
-    op "pop" -- if !always & zero then pop amt ; else pop 0
+      makeTxn1 fReceiver
+      extra
+      when mt_submit $ op "itxn_submit"
+      return True
 
 cextractDataOf :: App () -> DLArg -> App ()
 cextractDataOf cd va = do
@@ -2039,10 +2113,12 @@ ct = \case
             mt_mrecv = Nothing
             mt_amt = DLA_Literal $ DLL_Int sb 0
             mt_mcclose = Just $ cDeployer
-            close_asset tok = makeTxn $ MakeTxn {..}
+            mt_submit = True
+            mt_next = False
+            close_asset tok = void $ makeTxn $ MakeTxn {..}
               where
                 mt_mtok = Just tok
-            close_escrow = makeTxn $ MakeTxn {..}
+            close_escrow = void $ makeTxn $ MakeTxn {..}
               where
                 mt_mtok = Nothing
         FI_Continue svs -> do
@@ -2232,9 +2308,10 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
   let isCtor = which == 0
   let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ msg)
   when (argSize > algoMaxAppTotalArgLen) $
-    xxx $ "Step " <> show which <> "'s argument length is " <> show argSize
-                  <> ", but the maximum is " <> show algoMaxAppTotalArgLen 
-                  <> ". Step " <> show which <> " begins at " <> show at
+    bad $ LT.pack $
+      "Step " <> show which <> "'s argument length is " <> show argSize
+      <> ", but the maximum is " <> show algoMaxAppTotalArgLen
+      <> ". Step " <> show which <> " begins at " <> show at
   let bindFromMsg = bindFromGV GV_argMsg (return ()) at
   let bindFromSvs = bindFromSvs_ at svsl
   block (handlerLabel which) $ do

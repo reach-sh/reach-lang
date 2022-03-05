@@ -3218,6 +3218,7 @@ evalPrim p sargs =
             _ -> False
       let SLTypeFun dom rng pre post pre_msg post_msg = stf
       let rng' = ST_Tuple $ if shouldRetNNToks then [ST_UInt, nnToksBilledType, rng] else [ST_UInt, rng]
+      rt <- st2dte rng
       let postArg = if shouldRetNNToks then "(dom, [_, _, rng])" else "(dom, [_, rng])"
       let post' = flip fmap post $ \postv ->
             jsClo at "post" (postArg <> " => post(dom, rng)") $
@@ -3234,7 +3235,7 @@ evalPrim p sargs =
           SLM_ConsensusStep
           "remote"
           (CT_Assume True)
-          (\_ fs _ dargs -> DLE_Remote at fs aa m payAmt dargs withBill)
+          (\_ fs _ dargs -> DLE_Remote at fs aa rt m payAmt dargs withBill)
       res' <- doInternalLog Nothing res''
       let getRemoteResults = do
             apdvv <- doArrRef_ res' zero
