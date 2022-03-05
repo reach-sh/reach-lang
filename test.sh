@@ -132,11 +132,12 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-#jb
-c hs/t/n/loop_var_sub.rsh
-c hs/t/n/pr-671006p.rsh
-c hs/t/n/smtSortEq.rsh
-ci ETH remote-rsh
+one ETH timeoutception
+ci ETH log-attack1
+ci ETH log-attack2
+exit 0
+
+jb
 ci ALGO remote-rsh
 exit 0
 
