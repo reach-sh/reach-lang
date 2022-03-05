@@ -1556,10 +1556,10 @@ ce = \case
       let ct_mtok = Nothing
       let ct_amt = DLA_Literal $ minimumBalance_l
       addInitTok tok
-      checkTxn $ CheckTxn {..}
+      void $ checkTxn $ CheckTxn {..}
       void $ makeTxn $ MakeTxn {..}
   DLE_CheckPay ct_at fs ct_amt ct_mtok -> do
-    checkTxn $ CheckTxn {..}
+    void $ checkTxn $ CheckTxn {..}
     show_stack "CheckPay" Nothing ct_at fs
   DLE_Claim at fs t a mmsg -> do
     let check = ca a >> assert
@@ -1672,7 +1672,7 @@ ce = \case
       let ct_at = at
       let ct_mtok = Nothing
       let ct_amt = DLA_Literal $ minimumBalance_l
-      checkTxn $ CheckTxn {..}
+      void $ checkTxn $ CheckTxn {..}
       itxnNextOrBegin False
       let vTypeEnum = "acfg"
       output $ TConst vTypeEnum
@@ -1865,50 +1865,46 @@ ntokFields = ("pay", "Receiver", "Amount", "CloseRemainderTo")
 tokFields :: (LT.Text, LT.Text, LT.Text, LT.Text)
 tokFields = ("axfer", "AssetReceiver", "AssetAmount", "AssetCloseTo")
 
-checkTxn :: CheckTxn -> App ()
-checkTxn (CheckTxn {..}) = when (not (staticZero ct_amt)) $ do
-  after_lab <- freshLabel "checkTxnK"
-  block_ after_lab $ do
-    let check1 = checkTxn1
-    let ((vTypeEnum, fReceiver, fAmount, _fCloseTo), extra) =
-          case ct_mtok of
-            Nothing ->
-              (ntokFields, return ())
-            Just tok ->
-              (tokFields, textra)
-              where
-                textra = ca tok >> check1 "XferAsset"
-    checkTxnUsage ct_at ct_mtok
-    ca ct_amt
-    op "dup"
-    code "bz" [after_lab]
-    incResource R_Txn
-    gvLoad GV_txnCounter
-    op "dup"
-    cint 1
-    op "+"
-    gvStore GV_txnCounter
-    -- [ amt, id ]
-    op "swap"
-    -- [ id, amt ]
-    check1 fAmount
-    extra
-    output $ TConst vTypeEnum
-    checkTxn1 "TypeEnum"
-    when False $ do
-      -- NOTE: We don't actually care about these... it's not our problem if the
-      -- user does these things.
-      cint 0
-      checkTxn1 "Fee"
-      czaddr
-      checkTxn1 "Lease"
-      czaddr
-      checkTxn1 "RekeyTo"
-    cContractAddr
-    cfrombs T_Address
-    check1 fReceiver
-    label after_lab
-    op "pop" -- if !always & zero then pop amt ; else pop id
+checkTxn :: CheckTxn -> App Bool
+checkTxn (CheckTxn {..}) =
+  case staticZero ct_amt of
+    True -> return False
+    False -> block_ "checkTxn" $ do
+      let check1 = checkTxn1
+      let ((vTypeEnum, fReceiver, fAmount, _fCloseTo), extra) =
+            case ct_mtok of
+              Nothing ->
+                (ntokFields, return ())
+              Just tok ->
+                (tokFields, textra)
+                where
+                  textra = ca tok >> check1 "XferAsset"
+      checkTxnUsage ct_at ct_mtok
+      incResource R_Txn
+      gvLoad GV_txnCounter
+      op "dup"
+      cint 1
+      op "+"
+      gvStore GV_txnCounter
+      ca ct_amt
+      check1 fAmount
+      extra
+      output $ TConst vTypeEnum
+      checkTxn1 "TypeEnum"
+      when False $ do
+        -- NOTE: We don't actually care about these... it's not our problem if the
+        -- user does these things.
+        cint 0
+        checkTxn1 "Fee"
+        czaddr
+        checkTxn1 "Lease"
+        czaddr
+        checkTxn1 "RekeyTo"
+      cContractAddr
+      cfrombs T_Address
+      check1 fReceiver
+      op "pop" -- pop id
+      return True
 
 itxnNextOrBegin :: Bool -> App ()
 itxnNextOrBegin isNext = do

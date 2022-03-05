@@ -349,16 +349,19 @@ jsExpr = \case
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> mempty
       JM_View -> impossible "view transfer"
-      JM_Simulate -> do
-        who' <- jsArg who
-        amt' <- jsArg amt
-        mtok' <- jsArg_m mtok
-        return $
-          jsSimTxn "from" $
-            [ ("to", who')
-            , ("amt", amt')
-            , ("tok", mtok')
-            ]
+      JM_Simulate ->
+        case staticZero amt of
+          True -> mempty
+          False -> do
+            who' <- jsArg who
+            amt' <- jsArg amt
+            mtok' <- jsArg_m mtok
+            return $
+              jsSimTxn "from" $
+                [ ("to", who')
+                , ("amt", amt')
+                , ("tok", mtok')
+                ]
   DLE_TokenInit _ tok -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> mempty
@@ -375,14 +378,17 @@ jsExpr = \case
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> mempty
       JM_View -> impossible "view checkpay"
-      JM_Simulate -> do
-        amt' <- jsArg amt
-        mtok' <- jsArg_m mtok
-        return $
-          jsSimTxn "to" $
-            [ ("amt", amt')
-            , ("tok", mtok')
-            ]
+      JM_Simulate ->
+        case staticZero amt of
+          True -> mempty
+          False -> do
+            amt' <- jsArg amt
+            mtok' <- jsArg_m mtok
+            return $
+              jsSimTxn "to" $
+                [ ("amt", amt')
+                , ("tok", mtok')
+                ]
   DLE_Wait _ amtt -> do
     let (which, amt) = case amtt of
           Left t -> ("waitUntilTime", t)

@@ -1563,7 +1563,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               } else {
                 assert(false, 'sim txn kind');
               }
-              if ( amt.eq(0) ) { return; }
               txn = makeTransferTxn(from, to, amt, tok, params, closeTo, sim_i++);
             }
             extraFees += txn.fee;

@@ -132,13 +132,9 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-one ETH timeoutception
-ci ETH log-attack1
-ci ETH log-attack2
-exit 0
-
 jb
-ci ALGO remote-rsh
+#ci ALGO remote-rsh
+ci ALGO rps-7-loops
 exit 0
 
 #c --install-pkgs users/xbacked-contracts/src/master_vault.rsh
