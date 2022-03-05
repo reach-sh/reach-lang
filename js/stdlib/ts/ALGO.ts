@@ -42,6 +42,7 @@ import {
   stdContract, stdVerifyContract,
   stdABIFilter,
   stdAccount,
+  stdAccount_unsupported,
   debug, envDefault,
   argsSplit,
   makeRandom,
@@ -1895,8 +1896,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const decimals = bigNumberify(tokenInfo['decimals']);
     return { name, symbol, url, metadata, supply, decimals };
   };
+  const unsupportedAcc = stdAccount_unsupported(connector);
 
-  return stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract });
+  return stdAccount({ ...unsupportedAcc, networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract });
 };
 
 export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {

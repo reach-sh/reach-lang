@@ -117,12 +117,6 @@ type RecvArgs = IRecvArgs<AnyETH_Ty>;
 type Recv = IRecv<Address>
 export type Contract = IContract<ContractInfo, Address, Token, AnyETH_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
-  & {
-    setGasLimit?: (ngl:any) => void
-    getGasLimit?: any,
-    setStorageLimit?: any,
-    getStorageLimit?: any,
-  }
 type VerifyResult = { creationBlock: BigNumber };
 type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
 type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
@@ -131,8 +125,8 @@ type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyETH_Ty>;
 
 type AccountTransferable = Account | {
   networkAccount: NetworkAccount,
-  getGasLimit?: any,
-  getStorageLimit?: any,
+  getGasLimit?: () => BigNumber,
+  getStorageLimit?: () => BigNumber,
 };
 
 const reachPublish = (m: string | number) => `_reach_m${m}`
@@ -866,7 +860,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return md;
   };
 
-  return { ...stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract }), setGasLimit, getGasLimit, setStorageLimit, getStorageLimit };
+  return stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract, setGasLimit, getGasLimit, setStorageLimit, getStorageLimit });
 };
 
 const newAccountFromSecret = async (secret: string): Promise<Account> => {

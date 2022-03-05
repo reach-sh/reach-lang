@@ -485,6 +485,33 @@ export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   tokenAccept: (token: Token) => Promise<void>,
   tokenAccepted: (token: Token) => Promise<boolean>,
   tokenMetadata: (token: Token) => Promise<TokenMetadata>,
+  setGasLimit: (ngl:unknown) => void,
+  getGasLimit: () => BigNumber,
+  setStorageLimit: (nsl:unknown) => void,
+  getStorageLimit: () => BigNumber,
+};
+
+export const stdAccount_unsupported =
+  <NetworkAccount, Backend, Contract, ContractInfo, Token>(
+    conn:string):
+  Pick<IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>, ("setGasLimit"|"getGasLimit"|"setStorageLimit"|"getStorageLimit")> => {
+  const setGasLimit = (ngl:unknown): void => {
+    void(ngl);
+    console.warn(`setGasLimit not supported on ${conn}`);
+  };
+  const getGasLimit = (): BigNumber => {
+    console.warn(`getGasLimit not supported on ${conn}`);
+    return bigNumberify(0);
+  };
+  const setStorageLimit = (ngl:unknown): void => {
+    void(ngl);
+    console.warn(`setStorageLimit not supported on ${conn}`);
+  };
+  const getStorageLimit = (): BigNumber => {
+    console.warn(`getStorageLimit not supported on ${conn}`);
+    return bigNumberify(0);
+  };
+  return { setGasLimit, getGasLimit, setStorageLimit, getStorageLimit };
 };
 
 export const stdAccount =
