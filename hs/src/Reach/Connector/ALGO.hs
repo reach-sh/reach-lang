@@ -798,8 +798,8 @@ bad lab = do
   liftIO $ bad_io sFailuresR lab
   mapM_ comment $ LT.lines $ "BAD " <> lab
 
-xxx :: LT.Text -> App ()
-xxx lab = bad $ "This program uses " <> lab
+xxx :: String -> App ()
+xxx = bad . LT.pack
 
 freshLabel :: String -> App LT.Text
 freshLabel d = do
@@ -1575,7 +1575,8 @@ ce = \case
         cla $ mdaToMaybeLA mt mva
         cTupleSet at mdt $ fromIntegral i
         cMapStore at
-  DLE_Remote {} -> xxx "remote objects"
+  DLE_Remote at _ _ _ _ _ _ ->
+    xxx $ "This program uses a remote object at " <> show at
   DLE_TokenNew at (DLTokenNew {..}) -> do
     block_ "TokenNew" $ do
       let ct_at = at
@@ -2231,7 +2232,9 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
   let isCtor = which == 0
   let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ msg)
   when (argSize > algoMaxAppTotalArgLen) $
-    xxx $ texty $ "Step " <> show which <> "'s argument length is " <> show argSize <> ", but the maximum is " <> show algoMaxAppTotalArgLen
+    xxx $ "Step " <> show which <> "'s argument length is " <> show argSize
+                  <> ", but the maximum is " <> show algoMaxAppTotalArgLen 
+                  <> ". Step " <> show which <> " begins at " <> show at
   let bindFromMsg = bindFromGV GV_argMsg (return ()) at
   let bindFromSvs = bindFromSvs_ at svsl
   block (handlerLabel which) $ do
