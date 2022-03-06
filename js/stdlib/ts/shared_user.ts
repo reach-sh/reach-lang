@@ -24,6 +24,8 @@ const BigNumber = ethers.BigNumber;
 
 export const { isBigNumber } = BigNumber;
 
+export const bigNumberToBigInt = (x:BigNumber): bigint => BigInt(bigNumberify(x).toHexString());
+
 export const uintToBytes = (i: BigNumber): string => bigNumberToHex(i);
 
 export const bigNumberToHex = (u: num, size: number = 32) => {

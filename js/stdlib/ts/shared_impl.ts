@@ -22,8 +22,6 @@ export {
   hexlify
 } from './shared_backend';
 
-export const bigNumberToBigInt = (x:BigNumber): bigint => BigInt(x.toHexString());
-
 type BigNumber = ethers.BigNumber;
 
 export type CurrencyAmount = string | number | BigNumber | bigint

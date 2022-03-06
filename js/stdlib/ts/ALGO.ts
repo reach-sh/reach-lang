@@ -48,7 +48,6 @@ import {
   makeRandom,
   replaceableThunk,
   ensureConnectorAvailable,
-  bigNumberToBigInt,
   make_newTestAccounts,
   make_waitUntilX,
   checkTimeout,
@@ -70,6 +69,7 @@ import {
   isBigNumber,
   bigNumberify,
   bigNumberToNumber,
+  bigNumberToBigInt,
 } from './shared_user';
 import {
   CBR_Address, CBR_Val,
@@ -86,7 +86,8 @@ import {
   bytestringyNet,
 } from './ALGO_compiled';
 export type { Token } from './ALGO_compiled';
-import {  } from './shared_backend';
+import {
+} from './shared_backend';
 import type { MapRefT, MaybeRep } from './shared_backend'; // =>
 import { window, process } from './shim';
 import { sha512_256 } from 'js-sha512';
