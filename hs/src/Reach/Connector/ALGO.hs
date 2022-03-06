@@ -1945,6 +1945,14 @@ makeTxn (MakeTxn {..}) =
         Just (Right cr) -> cr
       cfrombs T_Address
       makeTxn1 fReceiver
+      -- We do this because by default it will inspect the remaining fee and
+      -- only set it to zero if there is a surplus, which means that sometimes
+      -- it means 0 and sometimes it means "take money from the escrow", which
+      -- is dangerous, so we force it to be 0 here. The alternative would be to
+      -- check that other fees were set correctly, but I believe that would be
+      -- more annoying to track, so I don't.
+      cint 0
+      makeTxn1 "Fee"
       extra
       when mt_submit $ op "itxn_submit"
       return True
