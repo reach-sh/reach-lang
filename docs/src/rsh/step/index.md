@@ -1,6 +1,6 @@
 # {#ref-programs-step} Steps
 
-A Reach step occurs in the continuation of a init statement or commit statement.
+A Reach step occurs in the continuation of an init statement or commit statement.
 It represents the actions taken by each of the participants in an application.
 
 ## {#ref-programs-step-stmts} Statements
