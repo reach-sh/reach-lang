@@ -4,6 +4,8 @@ import * as backendS from './build/index.mainS.mjs';
 
 const stdlib = loadStdlib();
 
+if ( stdlib.connector === 'ALGO' ) { process.exit(0); }
+
 const sBal = stdlib.parseCurrency(100);
 const [ accA, accB ] =
   await stdlib.newTestAccounts(2, sBal);
