@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 /**
  * asynchronously checks whether a user can do
  * `version-compare --json -h >/dev/null 2>&1`.
- * @returns {Promise<number>} a `Promise` that `resolve`s
+ * @returns {Promise<boolean>} a `Promise` that `resolve`s
  * to `true` if `version compare --json` **doesn't** work
  * for whatever reason.
  */

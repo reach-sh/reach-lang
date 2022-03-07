@@ -1,16 +1,39 @@
-import { window, workspace } from 'vscode';
+import { spawnSync } from 'child_process';
+import {
+	ConfigurationTarget,
+	window,
+	workspace,
+	WorkspaceConfiguration
+} from 'vscode';
 
 import CHECK_VERSION_COMPARE_JSON_USING
 	from './checkVersionCompareJson';
-import DOCKER_IS_NOT_RUNNING
-	from './checkDocker';
-import HANDLE_HIDE_REQUEST
-	from './handleHideRequests';
-import HIDE_NOTIFICATION_TEXT
-	from '../constants/hideNotificationText';
 import UPDATE_USING from './update';
 import VERSION_COMPARE_JSON_USING
 	from './spawnVersionCompareJson';
+
+const HIDE_NOTIFICATION_TEXT = 'Hide Reach update messages';
+
+/**
+ * @returns {number} `1` if Docker is **not** running.
+ */
+ const DOCKER_IS_NOT_RUNNING = (): number => spawnSync(
+	'docker', [ '--version' ]
+).status;
+
+const HANDLE_HIDE_REQUEST = (
+	response: string,
+	thisExtensionsSettings: WorkspaceConfiguration
+): string => {
+	if (response === HIDE_NOTIFICATION_TEXT)
+		thisExtensionsSettings.update(
+			'showUpdateNotifications',
+			false,
+			ConfigurationTarget.Global
+		);
+
+	return response;
+};
 
 export default async (
 	pathToScript: string
