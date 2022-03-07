@@ -3816,8 +3816,9 @@ evalId_ lab x = do
         SLM_ConsensusStep -> c
         SLM_ConsensusPure -> c
   let _lab' = lab <> " in " <> elab
-  r <- infectWithId_sss x <$> (env_lookup (LC_RefFrom lab) x =<< env)
-  r
+  r <- env_lookup (LC_RefFrom lab) x =<< env
+  infectWithId_sss x r
+
 
 evalId :: String -> SLVar -> App SLSVal
 evalId lab x = sss_sls <$> evalId_ lab x
