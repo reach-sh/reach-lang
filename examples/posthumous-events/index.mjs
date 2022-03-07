@@ -3,15 +3,16 @@ import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib(process.env);
 
 const startingBalance = stdlib.parseCurrency(100);
-const [ accAlice ] = await stdlib.newTestAccounts(1, startingBalance);
-const ctc = accAlice.contract(backend);
+const [ accAlice, accObserver ] = await stdlib.newTestAccounts(2, startingBalance);
+const ctcAlice = accAlice.contract(backend);
 
 // After this Promise finishes, the contract has exited
-await backend.Alice(ctc, {});
+await backend.Alice(ctcAlice, {});
 
 // 'Posthumous' code, looking at events emitted while the contract was alive
-const numMonPromise = 
-  ctc.events.Numbers.number.monitor(ev => console.log(`Number event #${ev.what}`));
+const ctcObserver = accObserver.contract(backend, ctcAlice.getInfo());
 
-await Promise.race([numMonPromise, new Promise(r => setTimeout(r, 2000))]);
-process.exit(0);
+for (var n = 0; n < 10; n++) {
+  const ev = await ctcObserver.events.Numbers.number.next();
+  console.log(`Number event #${ev.what}`);
+}
