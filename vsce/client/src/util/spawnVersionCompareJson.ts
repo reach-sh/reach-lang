@@ -25,7 +25,7 @@ export default (
 			const { stdout } = process;
 
 			console.info(
-				'version-compare --json exited ',
+				'version-compare --json exited',
 				'with status code',
 				code
 			);
@@ -40,8 +40,10 @@ export default (
 				return resolve(json);
 			}
 
-			if (code)
+			if (code) {
 				console.error('Unexpected exit code:', code);
+				reject(null);
+			}
 
 			resolve(null);
 		});
