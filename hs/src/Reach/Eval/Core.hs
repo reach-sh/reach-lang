@@ -92,6 +92,7 @@ data Env = Env
   , e_exn :: IORef ExnEnv
   , e_appr :: Either DLOpts (IORef AppInitSt)
   , e_droppedAsserts :: Counter
+  , e_infections :: IORef (M.Map Integer String)
   }
 
 instance Semigroup a => Semigroup (App a) where
@@ -1098,12 +1099,15 @@ infectWithId_sv at v = \case
     SLV_DLVar $ DLVar a (Just (at, v)) t i
   x -> x
 
-infectWithId_sss :: SLVar -> SLSSVal -> SLSSVal
-infectWithId_sss v (SLSSVal at lvl sv) =
-  SLSSVal at lvl $ infectWithId_sv at v sv
+infectWithId_sss :: SLVar -> SLSSVal -> App SLSSVal
+infectWithId_sss v (SLSSVal at lvl sv) = do
+  storeInfection v sv
+  return $ SLSSVal at lvl $ infectWithId_sv at v sv
 
-infectWithId_sls :: SrcLoc -> SLVar -> SLSVal -> SLSVal
-infectWithId_sls at v (lvl, sv) = (lvl, infectWithId_sv at v sv)
+infectWithId_sls :: SrcLoc -> SLVar -> SLSVal -> App SLSVal
+infectWithId_sls at v (lvl, sv) = do
+  storeInfection v sv
+  return $ (lvl, infectWithId_sv at v sv)
 
 evalObjEnv :: SLObjEnv -> App SLEnv
 evalObjEnv = mapM go
@@ -3812,7 +3816,8 @@ evalId_ lab x = do
         SLM_ConsensusStep -> c
         SLM_ConsensusPure -> c
   let _lab' = lab <> " in " <> elab
-  infectWithId_sss x <$> (env_lookup (LC_RefFrom lab) x =<< env)
+  r <- infectWithId_sss x <$> (env_lookup (LC_RefFrom lab) x =<< env)
+  r
 
 evalId :: String -> SLVar -> App SLSVal
 evalId lab x = sss_sls <$> evalId_ lab x
@@ -4169,11 +4174,19 @@ evalDeclLHSObject trackVars merr rhs_lvl lhs_env orig_v vm = \case
       _ ->
         expect_ $ Err_Parse_ExpectIdentifierProp o
 
+storeInfection :: String -> SLVal -> App ()
+storeInfection x = \case
+  SLV_DLVar (DLVar _a _ _t i) -> do
+    infections <- asks e_infections
+    liftIO $ modifyIORef infections $ M.insert (fromIntegral i) x
+  _ -> return ()
+
 evalDeclLHS :: Bool -> Maybe EvalError -> SecurityLevel -> SLEnv -> SLVal -> JSExpression -> App SLEnv
 evalDeclLHS trackVars merr rhs_lvl lhs_env v = \case
   JSIdentifier a x -> do
     locAtf (srcloc_jsa "id" a) $ do
       at_ <- withAt id
+      storeInfection x v
       let v' = infectWithId_sv at_ x v
       when trackVars $ trackVariable (at_, x)
       env_insert x (SLSSVal at_ rhs_lvl v') lhs_env
