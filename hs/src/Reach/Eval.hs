@@ -94,38 +94,38 @@ pandemicLV = \case
 
 pandemicE :: DLExpr -> App DLExpr
 pandemicE = \case
-  DLE_Arg at arg -> DLE_Arg at arg
-  DLE_LArg at larg  -> DLE_LArg at larg
-  DLE_Impossible at i err -> DLE_Impossible at i err
-  DLE_VerifyMuldiv at cxt ct argl err -> DLE_VerifyMuldiv at cxt ct argl err
-  DLE_PrimOp at primop argl -> DLE_PrimOp at primop argl
-  DLE_ArrayRef at arg1 arg2 -> DLE_ArrayRef at arg1 arg2
-  DLE_ArraySet at arg1 arg2 arg3 -> DLE_ArraySet at arg1 arg2 arg3
-  DLE_ArrayConcat at arg1 arg2 -> DLE_ArrayConcat at arg1 arg2
-  DLE_ArrayZip at arg1 arg2 -> DLE_ArrayZip at arg1 arg2
-  DLE_TupleRef at arg1 i -> DLE_TupleRef at arg1 i
-  DLE_ObjectRef at arg s -> DLE_ObjectRef at arg s
-  DLE_Interact at cxt slp s ty argl -> DLE_Interact at cxt slp s ty argl
-  DLE_Digest at argl -> DLE_Digest at argl
-  DLE_Claim at cxt ct arg mbbs -> DLE_Claim at cxt ct arg mbbs
-  DLE_Transfer at arg1 arg2 marg -> DLE_Transfer at arg1 arg2 marg
-  DLE_TokenInit at arg -> DLE_TokenInit at arg
-  DLE_CheckPay at cxt arg marg -> DLE_CheckPay at cxt arg marg
-  DLE_Wait at targ -> DLE_Wait at targ
-  DLE_PartSet at slp arg -> DLE_PartSet at slp arg
-  DLE_MapRef at dlm arg -> DLE_MapRef at dlm arg
-  DLE_MapSet at dlm arg marg -> DLE_MapSet at dlm arg marg
-  DLE_Remote at cxt arg ty s amt argl bill -> DLE_Remote at cxt arg ty s amt argl bill
-  DLE_TokenNew at tknew -> DLE_TokenNew at tknew
-  DLE_TokenBurn at arg1 arg2 -> DLE_TokenBurn at arg1 arg2
-  DLE_TokenDestroy at arg -> DLE_TokenDestroy at arg
-  DLE_TimeOrder at margs_vars -> DLE_TimeOrder at margs_vars
-  DLE_GetContract at -> DLE_GetContract at
-  DLE_GetAddress at -> DLE_GetAddress at
-  DLE_EmitLog at lk vars -> DLE_EmitLog at lk vars
-  DLE_setApiDetails at who dom mc info -> DLE_setApiDetails at who dom mc info
-  DLE_GetUntrackedFunds at marg arg -> DLE_GetUntrackedFunds at marg arg
-  DLE_FromSome at arg1 arg2 -> DLE_FromSome at arg1 arg2
+  DLE_Arg at arg -> return $ DLE_Arg at arg
+  DLE_LArg at larg  -> return $ DLE_LArg at larg
+  DLE_Impossible at i err -> return $ DLE_Impossible at i err
+  DLE_VerifyMuldiv at cxt ct argl err -> return $ DLE_VerifyMuldiv at cxt ct argl err
+  DLE_PrimOp at primop argl -> return $ DLE_PrimOp at primop argl
+  DLE_ArrayRef at arg1 arg2 -> return $ DLE_ArrayRef at arg1 arg2
+  DLE_ArraySet at arg1 arg2 arg3 -> return $ DLE_ArraySet at arg1 arg2 arg3
+  DLE_ArrayConcat at arg1 arg2 -> return $ DLE_ArrayConcat at arg1 arg2
+  DLE_ArrayZip at arg1 arg2 -> return $ DLE_ArrayZip at arg1 arg2
+  DLE_TupleRef at arg1 i -> return $ DLE_TupleRef at arg1 i
+  DLE_ObjectRef at arg s -> return $ DLE_ObjectRef at arg s
+  DLE_Interact at cxt slp s ty argl -> return $ DLE_Interact at cxt slp s ty argl
+  DLE_Digest at argl -> return $ DLE_Digest at argl
+  DLE_Claim at cxt ct arg mbbs -> return $ DLE_Claim at cxt ct arg mbbs
+  DLE_Transfer at arg1 arg2 marg -> return $ DLE_Transfer at arg1 arg2 marg
+  DLE_TokenInit at arg -> return $ DLE_TokenInit at arg
+  DLE_CheckPay at cxt arg marg -> return $ DLE_CheckPay at cxt arg marg
+  DLE_Wait at targ -> return $ DLE_Wait at targ
+  DLE_PartSet at slp arg -> return $ DLE_PartSet at slp arg
+  DLE_MapRef at dlm arg -> return $ DLE_MapRef at dlm arg
+  DLE_MapSet at dlm arg marg -> return $ DLE_MapSet at dlm arg marg
+  DLE_Remote at cxt arg ty s amt argl bill -> return $ DLE_Remote at cxt arg ty s amt argl bill
+  DLE_TokenNew at tknew -> return $ DLE_TokenNew at tknew
+  DLE_TokenBurn at arg1 arg2 -> return $ DLE_TokenBurn at arg1 arg2
+  DLE_TokenDestroy at arg -> return $ DLE_TokenDestroy at arg
+  DLE_TimeOrder at margs_vars -> return $ DLE_TimeOrder at margs_vars
+  DLE_GetContract at -> return $ DLE_GetContract at
+  DLE_GetAddress at -> return $ DLE_GetAddress at
+  DLE_EmitLog at lk vars -> return $ DLE_EmitLog at lk vars
+  DLE_setApiDetails at who dom mc info -> return $ DLE_setApiDetails at who dom mc info
+  DLE_GetUntrackedFunds at marg arg -> return $ DLE_GetUntrackedFunds at marg arg
+  DLE_FromSome at arg1 arg2 -> return $ DLE_FromSome at arg1 arg2
 
 pandemicArg :: DLArg -> App DLArg
 pandemicArg = undefined
