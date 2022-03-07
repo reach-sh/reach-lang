@@ -53,7 +53,7 @@ An @{defn("interactive RPC continuation")} is a JSON object that matches either:
 + `{!js} {t: "Done", ans}`, where `{!js} ans` is the final result of the original interactive RPC method.
 + `{!js} {t: "Kont", kid, m, args}`, where `{!js} kid` is an RPC handle, `{!js} m` is a string naming one of the interactive RPC callback methods, and `{!js} args` is an array of the arguments to that method.
 
-When a `{!js} `Kont`` value is produced, then the interactive RPC method is suspended until the `/kont` RPC method is invoked with the continuation RPC handle and the return value of the interactive RPC callback.
+When a `{!js} Kont` value is produced, then the interactive RPC method is suspended until the `/kont` RPC method is invoked with the continuation RPC handle and the return value of the interactive RPC callback.
 The result of the `/kont` RPC method is another interactive RPC continuation.
 
 Clients may perform any RPC methods while an interactive RPC method is suspended.
