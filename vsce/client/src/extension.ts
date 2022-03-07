@@ -29,6 +29,7 @@ import {
 	ServerOptions,
 	TransportKind,
 } from 'vscode-languageclient/node';
+import CHECK_FOR_UPDATES_USING from './util/checkForUpdates';
 import { CommandsTreeDataProvider, DocumentationTreeDataProvider, HelpTreeDataProvider } from './CommandsTreeDataProvider';
 import { terminalOptions } from "./terminalOptions";
 
@@ -99,6 +100,12 @@ export function activate(context: ExtensionContext) {
 	client.start();
 
 	initButtons(context);
+
+	// Checking for updates should be
+	// asynchronous and non-blocking.
+	client.onReady().then(() => CHECK_FOR_UPDATES_USING(
+		reachPath
+	));
 
 	// Inject association for .rsh file type
 	if (workspace.workspaceFolders !== undefined) {

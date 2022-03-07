@@ -78,6 +78,13 @@
                     "default": 100,
                     "description": "Controls the maximum number of problems produced by the server."
                 },
+                "reachide.showUpdateNotifications": {
+                    "default": true,
+                    "description":
+                        "Allow this extension to show notifications related to Reach updates.",
+                    "scope": "window",
+                    "type": "boolean"
+                },
                 "reachide.trace.server": {
                     "scope": "window",
                     "type": "string",
@@ -303,7 +310,8 @@
     "scripts": {
         "clean": "rimraf client/out && rimraf server/out",
         "compile": "tsc -b",
-        "watch": "tsc -b -w",
+        "cc": "npm run clean && npm run compile",
+        "watch": "npm run cc && tsc -b -w",
         "postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
         "reinstall": "rm -rf ./node_modules && rm -rf ./server/node_modules && rm -rf ./client/node_modules && npm install",
         "test": "sh ./scripts/e2e.sh",
