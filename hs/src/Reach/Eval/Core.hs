@@ -1089,25 +1089,24 @@ infectWithId_clo :: SLVar -> SLClo -> SLClo
 infectWithId_clo v (SLClo _ e b c) =
   SLClo (Just v) e b c
 
-infectWithId_sv :: SrcLoc -> SLVar -> SLVal -> SLVal
-infectWithId_sv at v = \case
-  SLV_Participant a who _ mdv ->
-    SLV_Participant a who (Just v) mdv
-  SLV_Clo a mt c ->
-    SLV_Clo a mt $ infectWithId_clo v c
-  SLV_DLVar (DLVar a _ t i) ->
-    SLV_DLVar $ DLVar a (Just (at, v)) t i
-  x -> x
+infectWithId_sv :: SrcLoc -> SLVar -> SLVal -> App SLVal
+infectWithId_sv at v val = do
+  storeInfection v val
+  case val of
+    SLV_Participant a who _ mdv -> return $ SLV_Participant a who (Just v) mdv
+    SLV_Clo a mt c -> return $ SLV_Clo a mt $ infectWithId_clo v c
+    SLV_DLVar (DLVar a _ t i) -> do
+      return $ SLV_DLVar $ DLVar a (Just (at, v)) t i
+    x -> return $ x
 
 infectWithId_sss :: SLVar -> SLSSVal -> App SLSSVal
 infectWithId_sss v (SLSSVal at lvl sv) = do
-  storeInfection v sv
-  return $ SLSSVal at lvl $ infectWithId_sv at v sv
+  SLSSVal at lvl <$> infectWithId_sv at v sv
 
 infectWithId_sls :: SrcLoc -> SLVar -> SLSVal -> App SLSVal
 infectWithId_sls at v (lvl, sv) = do
-  storeInfection v sv
-  return $ (lvl, infectWithId_sv at v sv)
+  r <- infectWithId_sv at v sv
+  return $ (lvl, r)
 
 evalObjEnv :: SLObjEnv -> App SLEnv
 evalObjEnv = mapM go
@@ -4186,8 +4185,7 @@ evalDeclLHS trackVars merr rhs_lvl lhs_env v = \case
   JSIdentifier a x -> do
     locAtf (srcloc_jsa "id" a) $ do
       at_ <- withAt id
-      storeInfection x v
-      let v' = infectWithId_sv at_ x v
+      v' <- infectWithId_sv at_ x v
       when trackVars $ trackVariable (at_, x)
       env_insert x (SLSSVal at_ rhs_lvl v') lhs_env
   JSArrayLiteral a xs _ -> do
