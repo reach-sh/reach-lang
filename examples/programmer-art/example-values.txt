@@ -1,0 +1,99 @@
+the "number"  type, for example =>  4
+
+
+the "token"  type, for example => 4
+
+
+the "string"  type, for example =>  "four"
+
+
+the "contract" type, for example => 4
+
+
+the "address" type, for example => 4
+
+
+the "boolean" type, for example => "true"
+
+the "tuple" type, for example =>
+
+{
+  "tag":"V_Tuple",
+  "contents":[
+    {
+      "tag":"V_Bool",
+      "contents":false
+    },
+    {
+      "tag":"V_UInt",
+      "contents":1
+    }
+  ]
+}
+
+the "object" type, for example =>
+
+{
+  "tag":"V_Object",
+  "contents":{
+    "supply":{
+      "tag":"V_UInt",
+      "contents":5
+    },
+    "amt":{
+      "tag":"V_UInt",
+      "contents":5
+    },
+    "name":{
+      "tag":"V_Bytes",
+      "contents":"hello world"
+    },
+    "symbol":{
+      "tag":"V_Bytes",
+      "contents":"hello world"
+    },
+    "url":{
+      "tag":"V_Bytes",
+      "contents":"hello world"
+    },
+    "metadata":{
+      "tag":"V_Bytes",
+      "contents":"hello world"
+    }
+  }
+}
+
+"data" type, for example =>
+
+{
+  "tag":"V_Data",
+  "contents":[
+    "Some",
+    {
+      "tag":"V_UInt",
+      "contents":1
+    }
+  ]
+}
+
+"struct" type, for example =>
+
+{
+  "tag":"V_Struct",
+  "contents":[
+    [
+      "x",
+      {
+        "tag":"V_UInt",
+        "contents":1
+      }
+    ],
+    [
+      "y",
+      {
+        "tag":"V_UInt",
+        "contents":2
+      }
+    ]
+  ]
+}
