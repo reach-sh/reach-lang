@@ -79,9 +79,9 @@ export default async (
 	CHECK_VERSION_COMPARE_JSON_USING(pathToScript).then(
 		async versionCompareJsonDoesntWork => {
 			console.info(
-				'Finished checking whether ' +
-				'version-compare --json -h >/dev/null ' +
-				'2>&1 works' +
+				'Finished checking whether',
+				'version-compare --json -h >/dev/null',
+				'2>&1 works',
 				`\nIt does${
 					versionCompareJsonDoesntWork ?
 						'n\'t' : ''
@@ -94,11 +94,20 @@ export default async (
 			const versionCompareJsonWorks =
 				!versionCompareJsonDoesntWork;
 
-			if (versionCompareJsonWorks)
-				jsonFromVersCompJson =
-					await VERSION_COMPARE_JSON_USING(
-						pathToScript
+			if (versionCompareJsonWorks) {
+				try {
+					jsonFromVersCompJson =
+						await VERSION_COMPARE_JSON_USING(
+							pathToScript
+						);
+				} catch (error) {
+					console.error(
+						'Checking for updates failed;',
+						'version-compare --json exited',
+						'with an unexpected status code.'
 					);
+				}
+			}
 
 			let response: string = null;
 
