@@ -1,14 +1,49 @@
+import { execSync, spawn } from 'child_process';
 import {
 	ProgressLocation,
 	ProgressOptions,
 	window
 } from 'vscode';
 
-import ASYNC_UPDATE_USING from './spawnUpdateIde';
-import UPDATE_SCRIPT_AND_CLI_IMAGE_USING
-	from './updateScriptAndCliImage';
 import VERSION_COMPARE_JSON_USING
 	from './spawnVersionCompareJson';
+
+const ASYNC_UPDATE_USING = (
+	pathToScript: string,
+	versionCompareJson: VersionCompareJson
+): Promise<number> => {
+	const { dockerC, dockerH, script } = versionCompareJson;
+	console.info('dockerC', dockerC);
+	console.info('dockerH', dockerH);
+	console.info('script', script);
+
+	const argsArray: string[] = [
+		'update-ide',
+		`--json=${dockerC}`,
+		'--rm-json'
+	];
+
+	// --script should only be used when "script": true
+	if (script) argsArray.push('--script');
+
+	return new Promise((resolve, reject) => {
+		const process = spawn(
+			pathToScript, argsArray
+		);
+
+		process.on('error', reject);
+		process.on('exit', resolve);
+	});
+};
+
+const UPDATE_SCRIPT_AND_CLI_IMAGE_USING = (
+	pathToScript: string
+): Buffer => execSync(
+	'docker pull "reachsh/reach-cli:latest" ' +
+	`&& curl https://docs.reach.sh/reach -o "${
+		pathToScript
+	}" && chmod +x "${pathToScript}"`
+);
 
 export default async (
 	pathToScript: string,
