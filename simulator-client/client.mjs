@@ -28,9 +28,15 @@ async function interact(method = 'GET', url = '', data = {}) {
   return response.json();
 }
 
-
-// returns a list of the states that have happened
-// currently just a list of ascending numbers
+// returns: a mapping from state id to state info
+// state info is an association list that contains who created that state
+// and what action they ran
+  // 0: Array(2)
+  //   0: -1
+  //   1: {tag: 'A_TieBreak', contents: Array(2)}
+  // 1: Array(2)
+  //   0: 0
+  //   1: {tag: 'A_Interact', contents: Array(5)}
 const getStates = async () => {
   const r = await interact(`GET`, `${address}/states`)
   console.log(r)
@@ -39,6 +45,7 @@ const getStates = async () => {
 
 // edges of the DAG state graph, represented as a list of pairs
 // of numbers
+// returns: '[[6,7],[5,6],[4,5],[3,4],[2,3],[1,2],[0,1]]'
 const getEdges = async () => {
   const r = await interact(`GET`, `${address}/edges`)
   console.log(r)
@@ -47,6 +54,7 @@ const getEdges = async () => {
 
 // returns the status of the "active" actor
 // "active" means took an action most recently
+// returns: "Initial" or "Running" or "Done"
 const getStatus = async () => {
   const r = await interact(`GET`, `${address}/status`)
   console.log(r)
@@ -56,6 +64,10 @@ const getStatus = async () => {
 // get the list of available actions
 // at state s (integer)
 // for actor a (integer)
+// returns: '[5,{"tag":"A_Receive","contents":1}]'
+// here 5 is the state id
+// 1 is the phase id
+// the structure of each action is different
 async function getActions(s,a) {
   const r = await interact(`GET`, `${address}/actions/${s}/${a}`)
   console.log(r)
@@ -64,6 +76,39 @@ async function getActions(s,a) {
 
 // JSON dump of global Simulator info
 // at state s (integer)
+// returns:
+// {
+//   "e_ledger": {
+//     "0": {
+//       "-1": 0
+//     },
+//     "1": {
+//       "-1": 0
+//     },
+//     "-1": {
+//       "-1": 0
+//     }
+//   },
+//   "e_messages": {
+//     "0": {
+//       "tag": "Fixed",
+//       "contents": [
+//         0,
+//         "Message"
+//       ]
+//     }
+//   },
+//   "e_nwsecs": 3,
+//   "e_naccid": 2,
+//   "e_linstate": [],
+//   "e_ntok": 0,
+//   "e_nactorid": 2,
+//   "e_partacts": {
+//     "Bob": 1,
+//     "Alice": 0
+//   },
+//   "e_nwtime": 3
+// }
 async function getStateGlobals(s) {
   const r = await interact(`GET`, `${address}/global/${s}`)
   console.log(r)
@@ -72,6 +117,200 @@ async function getStateGlobals(s) {
 
 // JSON dump of local Simulator info
 // at state s (integer)
+// returns:
+// {
+//   "l_locals": {
+//     "0": {
+//       "l_phase": 2,
+//       "l_ivd": {
+//         "getHand": {
+//           "tag": "IT_Fun",
+//           "contents": [
+//             [],
+//             {
+//               "tag": "T_UInt"
+//             }
+//           ]
+//         },
+//         "seeOutcome": {
+//           "tag": "IT_Fun",
+//           "contents": [
+//             [
+//               {
+//                 "tag": "T_UInt"
+//               }
+//             ],
+//             {
+//               "tag": "T_Null"
+//             }
+//           ]
+//         }
+//       },
+//       "l_who": "Alice",
+//       "l_store": [
+//         [
+//           "didPublish/27",
+//           {
+//             "tag": "V_Bool",
+//             "contents": true
+//           }
+//         ],
+//         [
+//           "v58",
+//           {
+//             "tag": "V_UInt",
+//             "contents": 2
+//           }
+//         ],
+//         [
+//           "Alice/59",
+//           {
+//             "tag": "V_Address",
+//             "contents": 0
+//           }
+//         ],
+//         [
+//           "handAlice/60",
+//           {
+//             "tag": "V_UInt",
+//             "contents": 2
+//           }
+//         ],
+//         [
+//           "thisConsensusTime/61",
+//           {
+//             "tag": "V_UInt",
+//             "contents": 1
+//           }
+//         ],
+//         [
+//           "thisConsensusSecs/62",
+//           {
+//             "tag": "V_UInt",
+//             "contents": 1
+//           }
+//         ]
+//       ],
+//       "l_livs": {},
+//       "l_ks": "PS_Suspend",
+//       "l_acct": 0
+//     },
+//     "1": {
+//       "l_phase": 1,
+//       "l_ivd": {
+//         "getHand": {
+//           "tag": "IT_Fun",
+//           "contents": [
+//             [],
+//             {
+//               "tag": "T_UInt"
+//             }
+//           ]
+//         },
+//         "seeOutcome": {
+//           "tag": "IT_Fun",
+//           "contents": [
+//             [
+//               {
+//                 "tag": "T_UInt"
+//               }
+//             ],
+//             {
+//               "tag": "T_Null"
+//             }
+//           ]
+//         }
+//       },
+//       "l_who": "Bob",
+//       "l_store": [
+//         [
+//           "didPublish/27",
+//           {
+//             "tag": "V_Bool",
+//             "contents": false
+//           }
+//         ],
+//         [
+//           "Alice/59",
+//           {
+//             "tag": "V_Address",
+//             "contents": 0
+//           }
+//         ],
+//         [
+//           "handAlice/60",
+//           {
+//             "tag": "V_UInt",
+//             "contents": 2
+//           }
+//         ],
+//         [
+//           "thisConsensusTime/61",
+//           {
+//             "tag": "V_UInt",
+//             "contents": 2
+//           }
+//         ],
+//         [
+//           "thisConsensusSecs/62",
+//           {
+//             "tag": "V_UInt",
+//             "contents": 2
+//           }
+//         ]
+//       ],
+//       "l_livs": {},
+//       "l_ks": "PS_Suspend",
+//       "l_acct": 1
+//     },
+//     "-1": {
+//       "l_phase": 2,
+//       "l_ivd": {},
+//       "l_who": null,
+//       "l_store": [
+//         [
+//           "didPublish/27",
+//           {
+//             "tag": "V_Bool",
+//             "contents": false
+//           }
+//         ],
+//         [
+//           "Alice/59",
+//           {
+//             "tag": "V_Address",
+//             "contents": 0
+//           }
+//         ],
+//         [
+//           "handAlice/60",
+//           {
+//             "tag": "V_UInt",
+//             "contents": 2
+//           }
+//         ],
+//         [
+//           "thisConsensusTime/61",
+//           {
+//             "tag": "V_UInt",
+//             "contents": 0
+//           }
+//         ],
+//         [
+//           "thisConsensusSecs/62",
+//           {
+//             "tag": "V_UInt",
+//             "contents": 0
+//           }
+//         ]
+//       ],
+//       "l_livs": {},
+//       "l_ks": "PS_Suspend",
+//       "l_acct": -1
+//     }
+//   },
+//   "l_curr_actor_id": 1
+// }
 async function getStateLocals(s) {
   const r = await interact(`GET`, `${address}/local/${s}`)
   console.log(r)
@@ -79,7 +318,7 @@ async function getStateLocals(s) {
 }
 
 // returns a ":" delimited string
-// for example: /Users/chike/reach-lang/examples/api-full/index.rsh:27:5:dot
+// returns: for example: /Users/chike/reach-lang/examples/api-full/index.rsh:27:5:dot
 // where 27 is the line number
 // 5 is the column number
 // for actor a (integer)
