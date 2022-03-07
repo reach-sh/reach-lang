@@ -1091,11 +1091,12 @@ infectWithId_clo v (SLClo _ e b c) =
 
 infectWithId_sv :: SrcLoc -> SLVar -> SLVal -> App SLVal
 infectWithId_sv at v val = do
-  storeInfection v val
   case val of
     SLV_Participant a who _ mdv -> return $ SLV_Participant a who (Just v) mdv
     SLV_Clo a mt c -> return $ SLV_Clo a mt $ infectWithId_clo v c
     SLV_DLVar (DLVar a _ t i) -> do
+      infections <- asks e_infections
+      liftIO $ modifyIORef infections $ M.insert (fromIntegral i) v
       return $ SLV_DLVar $ DLVar a (Just (at, v)) t i
     x -> return $ x
 
@@ -4172,13 +4173,6 @@ evalDeclLHSObject trackVars merr rhs_lvl lhs_env orig_v vm = \case
         flip go e =<< (snd <$> evalPropertyName pn)
       _ ->
         expect_ $ Err_Parse_ExpectIdentifierProp o
-
-storeInfection :: String -> SLVal -> App ()
-storeInfection x = \case
-  SLV_DLVar (DLVar _a _ _t i) -> do
-    infections <- asks e_infections
-    liftIO $ modifyIORef infections $ M.insert (fromIntegral i) x
-  _ -> return ()
 
 evalDeclLHS :: Bool -> Maybe EvalError -> SecurityLevel -> SLEnv -> SLVal -> JSExpression -> App SLEnv
 evalDeclLHS trackVars merr rhs_lvl lhs_env v = \case
