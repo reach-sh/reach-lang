@@ -3,6 +3,3 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 12 theorems; No failures!
-WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
- * This program uses a remote object at ./index.rsh:19:8:application
- * This program uses a remote object at ./index.rsh:23:8:application
