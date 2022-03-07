@@ -12,9 +12,12 @@ const ASYNC_UPDATE_USING = (
 	pathToScript: string,
 	versionCompareJson: VersionCompareJson
 ): Promise<number> => {
-	const { dockerC, dockerH, script } = versionCompareJson;
+	const {
+		dockerC, dockerH, noDiff, script
+	} = versionCompareJson;
 	console.info('dockerC', dockerC);
 	console.info('dockerH', dockerH);
+	console.info('noDiff', noDiff);
 	console.info('script', script);
 
 	const argsArray: string[] = [
@@ -24,7 +27,7 @@ const ASYNC_UPDATE_USING = (
 	];
 
 	// --script should only be used when "script": true
-	if (script) argsArray.push('--script');
+	if (noDiff || script) argsArray.push('--script');
 
 	return new Promise((resolve, reject) => {
 		const process = spawn(
