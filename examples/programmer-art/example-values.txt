@@ -1,21 +1,36 @@
-the "number"  type, for example =>  4
+
+# note that the tags are only necessary for the atomic values such as
+# numbers and strings, only in the context of compound values
+
+# i.e. if you want to send a number to the server, one can just say:
+# HOSTNAME/respond/?v=4&type="number"
+
+# however if you want to send the server a compound data structure such
+# as list of numbers, then one must explicitly say the number TAG when
+# listing the number which is "V_UInt".
+
+# examples below:
+
+#########################################################################
+
+the "number" type, with the tag "V_UInt", for example =>  4
 
 
-the "token"  type, for example => 4
+the "token" type, with the tag "V_Token", for example => 4
 
 
-the "string"  type, for example =>  "four"
+the "string" type, with the tag "V_Bytes", for example =>  "four"
 
 
-the "contract" type, for example => 4
+the "contract" type, with the tag "V_Contract", for example => 4
 
 
-the "address" type, for example => 4
+the "address" type, with the tag "V_Address", for example => 4
 
 
-the "boolean" type, for example => "true"
+the "boolean" type, with the tag "V_Bool", for example => "true"
 
-the "tuple" type, for example =>
+the "tuple" type, with the tag "V_Tuple", for example =>
 
 {
   "tag":"V_Tuple",
@@ -31,7 +46,7 @@ the "tuple" type, for example =>
   ]
 }
 
-the "object" type, for example =>
+the "object" type, with the tag "V_Object", for example =>
 
 {
   "tag":"V_Object",
@@ -63,7 +78,7 @@ the "object" type, for example =>
   }
 }
 
-"data" type, for example =>
+"data" type, with the tag "V_Data", for example =>
 
 {
   "tag":"V_Data",
@@ -76,7 +91,7 @@ the "object" type, for example =>
   ]
 }
 
-"struct" type, for example =>
+the "struct" type, with the tag "V_Struct", for example =>
 
 {
   "tag":"V_Struct",
