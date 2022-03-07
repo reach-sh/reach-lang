@@ -1597,10 +1597,14 @@ ce = \case
         cTupleSet at mdt $ fromIntegral i
         cMapStore at
   DLE_Remote at fs ro rng_ty rm (DLPayAmt pay_net pay_ks) as (DLWithBill nnRecv nnZero) -> do
-    bad $ LT.pack $ "This program uses a remote object at " <> show at
     let ts = map argTypeOf as
     let sig = signatureStr rm ts (Just rng_ty)
     remoteTxns <- liftIO $ newCounter 0
+    let mayIncTxn m = do
+          b <- m
+          when b $
+            void $ liftIO $ incCounter remoteTxns
+          return b
     -- Figure out what we're calling
     salloc_ "remote address" $ \storeAddr loadAddr -> do
       salloc_ "pre balances" $ \storeBals loadBals -> do
@@ -1614,7 +1618,7 @@ ce = \case
         let mtoksZero = map Just nnZero
         let mtoksiAll = zip [0..] $ mtoksBill <> mtoksZero
         let (mtoksiBill, mtoksiZero) = splitAt (length mtoksBill) mtoksiAll
-        let paid = M.fromList $ (Nothing, pay_net) : (map (\(x, y) -> (Just x, y)) pay_ks)
+        let paid = M.fromList $ (Nothing, pay_net) : (map (\(x, y) -> (Just y, x)) pay_ks)
         let balsT = T_Tuple $ map (const T_UInt) mtoksiAll
         let gb_pre _ mtok = do
               cGetBalance at mtok
@@ -1635,21 +1639,25 @@ ce = \case
           let mt_mtok = Nothing
           let mt_next = False
           let mt_submit = False
-          makeTxn $ MakeTxn {..})
+          mayIncTxn $ makeTxn $ MakeTxn {..})
         let foldMy a l f = foldM f a l
         hadSome <- foldMy hadNet pay_ks $ \mt_next (mt_amt, tok) -> do
           let mt_mtok = Just tok
           let mt_submit = False
-          makeTxn $ MakeTxn {..}
+          x <- mayIncTxn $ makeTxn $ MakeTxn {..}
+          return $ hadNet || x
         itxnNextOrBegin hadSome
+        output $ TConst "appl"
+        makeTxn1 "TypeEnum"
         ca ro
-        code "itxn_field" [ "ApplicationID" ]
-        cint_ at $ fromIntegral $ sigStrToInt sig
-        code "itxn_field" [ "ApplicationArgs" ]
-        forM_ as $ \a -> do
+        -- XXX remove this when JJ changes stuff for us
+        incResourceL ro R_Account
+        makeTxn1 "ApplicationID"
+        let as' = (DLA_Literal $ DLL_Int at $ fromIntegral $ sigStrToInt sig) : as
+        forM_ as' $ \a -> do
           ca a
           ctobs $ argTypeOf a
-          code "itxn_field" [ "ApplicationArgs" ]
+          makeTxn1 "ApplicationArgs"
         op "itxn_submit"
         show_stack ("Remote: " <> sig) Nothing at fs
         appl_idx <- liftIO $ readCounter remoteTxns
@@ -1910,6 +1918,14 @@ itxnNextOrBegin :: Bool -> App ()
 itxnNextOrBegin isNext = do
   op (if isNext then "itxn_next" else "itxn_begin")
   incResource R_InnerTxn
+  -- We do this because by default it will inspect the remaining fee and only
+  -- set it to zero if there is a surplus, which means that sometimes it means
+  -- 0 and sometimes it means "take money from the escrow", which is dangerous,
+  -- so we force it to be 0 here. The alternative would be to check that other
+  -- fees were set correctly, but I believe that would be more annoying to
+  -- track, so I don't.
+  cint 0
+  makeTxn1 "Fee"
 
 makeTxn :: MakeTxn -> App Bool
 makeTxn (MakeTxn {..}) =
@@ -1945,14 +1961,6 @@ makeTxn (MakeTxn {..}) =
         Just (Right cr) -> cr
       cfrombs T_Address
       makeTxn1 fReceiver
-      -- We do this because by default it will inspect the remaining fee and
-      -- only set it to zero if there is a surplus, which means that sometimes
-      -- it means 0 and sometimes it means "take money from the escrow", which
-      -- is dangerous, so we force it to be 0 here. The alternative would be to
-      -- check that other fees were set correctly, but I believe that would be
-      -- more annoying to track, so I don't.
-      cint 0
-      makeTxn1 "Fee"
       extra
       when mt_submit $ op "itxn_submit"
       return True

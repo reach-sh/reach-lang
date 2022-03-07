@@ -167,12 +167,12 @@ type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
 
 export type ContractInfo = BigNumber;
-type SendRecvArgs = ISendRecvArgs<Address, Token, AnyALGO_Ty>;
+type SendRecvArgs = ISendRecvArgs<Address, Token, AnyALGO_Ty, ContractInfo>;
 type RecvArgs = IRecvArgs<AnyALGO_Ty>;
 type Recv = IRecv<Address>
 export type Contract = IContract<ContractInfo, Address, Token, AnyALGO_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
-type SimTxn = ISimTxn<Token>
+type SimTxn = ISimTxn<Token, ContractInfo>
 type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
 type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
 type SetupEventArgs = ISetupEventArgs<ContractInfo, VerifyResult>;
@@ -273,6 +273,7 @@ type IndexerTxn = {
   'created-application-index'?: bigint,
   'application-transaction'?: IndexerAppTxn,
   'logs'?: Array<string>,
+  'inner-txns'?: Array<IndexerTxn>,
   'tx-type': string,
 };
 type IndexerQuery1Res = {
@@ -644,6 +645,22 @@ const emptyOptIn = (txn:IndexerTxn) => {
     (at['on-completion'] === 'optin' && ataa.length == 0)
     : false;
 };
+const apiOnly = (txn:IndexerTxn) => {
+  const ls = txn['logs'];
+  if ( ls && ls.length === 1 ) {
+    const l0 = ls[0];
+    const l0ui = base64ToUI8A(l0);
+    if ( l0ui.length >= 4 ) {
+      const l0h = ui8h(l0ui.subarray(0, 4));
+      debug('apiOnly', { l0h });
+      return (l0h === '151f7c75');
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+};
 type EQInitArgs = {
   ApplicationID: BigNumber,
 };
@@ -654,21 +671,36 @@ const newEventQueue = (): EventQueue => {
     const indexer = await getIndexer();
     const mtime = bigNumberToNumber(ctime.add(1));
     debug(dhead, { ctime, mtime });
+    const appn = bigNumberToNumber(ApplicationID);
     const query =
       indexer.searchForTransactions()
-        .applicationID(bigNumberToNumber(ApplicationID))
+        .applicationID(appn)
         //.txType('appl')
         .minRound(mtime);
     const q = query as unknown as ApiCall<IndexerQueryMRes>
     const res = await doQuery_(dhead, q, howMany);
-    const txns = res.transactions.filter((x:IndexerTxn) => x['tx-type'] === 'appl');
+    const txns: Array<IndexerTxn> = [];
+    const walkTxns = (ints:Array<IndexerTxn>) => {
+      ints.filter((x:IndexerTxn) => x['tx-type'] === 'appl').forEach((x:IndexerTxn) => {
+        const at = (x['application-transaction']||{});
+        const ai = bigNumberify(at['application-id']||0);
+        const cai = bigNumberify(x['created-application-index']||0);
+        const its = x['inner-txns'];
+        if (ai.eq(ApplicationID) || cai.eq(ApplicationID)) {
+          txns.push(x);
+        } else if (its) {
+          walkTxns(its);
+        }
+      });
+    };
+    walkTxns(res.transactions);
     const gtime = bigNumberify(res['current-round']);
     return { txns, gtime };
   };
   const getTxnTime = (x:IndexerTxn): BigNumber => bigNumberify(x['confirmed-round']);
   return makeEventQueue<EQInitArgs, IndexerTxn, RecvTxn>({
     raw2proc: indexerTxn2RecvTxn,
-    alwaysIgnored: emptyOptIn,
+    alwaysIgnored: (x) => (emptyOptIn(x) || apiOnly(x)),
     getTxns, getTxnTime,
   });
 };
@@ -1503,6 +1535,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           };
           mapRefs.forEach(recordAccount);
 
+          const foreignArr: Array<number> = [ ];
+          const recordApp = (app:ContractInfo) => {
+            const appn = bigNumberToNumber(app);
+            if ( ! foreignArr.includes(appn) ) {
+              foreignArr.push(appn);
+              const addr = algosdk.getApplicationAddress(bigNumberToBigInt(app));
+              recordAccount_(addr);
+            }
+          };
           const assetsArr: number[] = [];
           const recordAsset = (tok:BigNumber|undefined) => {
             if ( tok ) {
@@ -1531,6 +1572,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             } else if ( t.kind === 'tokenDestroy' ) {
               recordAsset(t.tok);
               howManyMoreFees++; return;
+            } else if ( t.kind === 'remote' ) {
+              recordApp(t.obj);
+              howManyMoreFees += 1 + bigNumberToNumber(t.pays); return;
             } else {
               const { tok } = t;
               let amt: BigNumber = bigNumberify(0);
@@ -1587,6 +1631,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             (assetsArr.length === 0) ? undefined : assetsArr;
           debug(dhead, {assetsArr, assetsVal});
 
+          const foreignVal: number[]|undefined =
+            (foreignArr.length === 0) ? undefined : foreignArr;
+          debug(dhead, {foreignArr, foreignVal});
+
           const actual_args = [ lct, msg ];
           const actual_tys = [ T_UInt, T_Tuple(msg_tys) ];
           debug(dhead, '--- ARGS =', actual_args);
@@ -1613,7 +1661,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const txnAppl =
             whichAppl(
               thisAcc.addr, params, bigNumberToNumber(ApplicationID), safe_args,
-              mapAcctsVal, undefined, assetsVal, NOTE_Reach);
+              mapAcctsVal, foreignVal, assetsVal, NOTE_Reach);
           txnAppl.fee += extraFees;
           const rtxns = [ ...txnExtraTxns, txnAppl ];
           debug(dhead, `assigning`, { rtxns });

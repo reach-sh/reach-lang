@@ -133,8 +133,7 @@ export REACH_BUILD_NO_CACHE=Y
 ############################
 
 jb
-ci ETH mint-basic
-#ci ALGO remote-rsh
+ci ALGO remote-rsh
 #ci ALGO rps-7-loops
 exit 0
 

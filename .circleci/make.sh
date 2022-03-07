@@ -90,7 +90,7 @@ per () {
   echo $(((TOTAL + (PER - 1)) / PER))
 }
 
-conn fake ETH "$(per 32)"
+conn fake ETH "$(per 16)"
 conn fake ALGO "$(per 16)"
 conn fake CFX "$(per 16)"
 

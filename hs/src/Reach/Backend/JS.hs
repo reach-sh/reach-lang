@@ -333,7 +333,10 @@ jsExpr = \case
     jsProtect ai' t $ "await" <+> (jsApply ("interact." <> pretty m) as')
   DLE_Digest _ as -> jsDigest as
   DLE_Claim at fs ct a mmsg ->
-    check
+    (ctxt_mode <$> ask) >>= \case
+      JM_Backend -> check
+      JM_View -> check
+      JM_Simulate -> mempty
     where
       check = case ct of
         CT_Assert -> impossible "assert"
@@ -424,12 +427,25 @@ jsExpr = \case
       JM_Backend ->
         return $ jsApply "await stdlib.mapSet" [jsMapVar mpv, fa', na']
       JM_View -> impossible "view mapset"
-  DLE_Remote {} -> do
-    return "undefined /* Remote */"
+  DLE_Remote at _fs ro _rng_ty _rm (DLPayAmt pay_net pay_ks) _as (DLWithBill nnRecv _nnZero) -> do
+    (ctxt_mode <$> ask) >>= \case
+      JM_Backend -> return "undefined /* Remote */"
+      JM_View -> impossible "view Remote"
+      JM_Simulate -> do
+        -- These are totally made up and could be totally busted
+        obj' <- jsArg ro
+        pays' <- jsCon $ DLL_Int at $ fromIntegral $ length $ filter (not . staticZero) $ pay_net : map snd pay_ks
+        let res' = parens $ jsSimTxn "remote" $
+              [ ("obj", obj')
+              , ("pays", pays')
+              ]
+        net' <- jsCon $ DLL_Int at 0
+        let toks' = jsArray $ map (const net') nnRecv
+        return $ jsArray [ net', toks', res' <> ", undefined" ]
   DLE_TokenNew _ tns -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> return "undefined /* TokenNew */"
-      JM_View -> impossible "view output"
+      JM_View -> impossible "view TokenNew"
       JM_Simulate -> do
         let DLTokenNew {..} = tns
         n' <- jsArg dtn_name

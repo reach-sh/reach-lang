@@ -112,7 +112,7 @@ export type NetworkAccount = {
 } | EthersLikeWallet | EthersLikeSigner; // required to deploy/attach
 
 export type ContractInfo = Address;
-type SendRecvArgs = ISendRecvArgs<Address, Token, AnyETH_Ty>;
+type SendRecvArgs = ISendRecvArgs<Address, Token, AnyETH_Ty, ContractInfo>;
 type RecvArgs = IRecvArgs<AnyETH_Ty>;
 type Recv = IRecv<Address>
 export type Contract = IContract<ContractInfo, Address, Token, AnyETH_Ty>;
