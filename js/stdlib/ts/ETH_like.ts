@@ -507,12 +507,16 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const maybePayTok = async (i:number): Promise<TransactionReceipt> => {
           if ( i < toks.length ) {
             const [amt, tok] = toks[i];
-            await callTok(tok, amt);
-            try {
+            if ( amt.gt(0) ) {
+              await callTok(tok, amt);
+              try {
+                return await maybePayTok(i+1);
+              } catch (e) {
+                await callTok(tok, zeroBn);
+                throw e;
+              }
+            } else {
               return await maybePayTok(i+1);
-            } catch (e) {
-              await callTok(tok, zeroBn);
-              throw e;
             }
           } else {
             return await actualCall();
