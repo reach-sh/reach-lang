@@ -12,6 +12,10 @@ import UPDATE_USING from './update';
 import VERSION_COMPARE_JSON_USING
 	from './spawnVersionCompareJson';
 
+const OUTPUT_CHANNEL = window.createOutputChannel(
+	'Reach update status'
+);
+
 const HIDE_NOTIFICATION_TEXT = 'Hide Reach update messages';
 
 /**
@@ -56,7 +60,10 @@ export default async (
 	// Respect the user's preferences.
 	if (showUpdateNotifications === false) return;
 
-	console.info('Starting update check');
+	OUTPUT_CHANNEL.appendLine(
+		'Starting update check at ' +
+		new Date().toLocaleTimeString()
+	);
 
 	if (DOCKER_IS_NOT_RUNNING())
 		return await window.showInformationMessage(
@@ -70,23 +77,19 @@ export default async (
 			thisExtensionsSettings
 		));
 
-	console.info(
-		'About to check whether ' +
-		'version-compare --json -h >/dev/null 2>&1 works',
-		new Date().toLocaleTimeString()
+	OUTPUT_CHANNEL.appendLine(
+		'Checking version-compare --json -h >/dev/null 2>&1 '
+		+ new Date().toLocaleTimeString()
 	);
 
 	CHECK_VERSION_COMPARE_JSON_USING(pathToScript).then(
 		async versionCompareJsonDoesntWork => {
-			console.info(
-				'Finished checking whether',
-				'version-compare --json -h >/dev/null',
-				'2>&1 works',
-				`\nIt does${
-					versionCompareJsonDoesntWork ?
-						'n\'t' : ''
-				}!`,
-				new Date().toLocaleTimeString()
+			const str = versionCompareJsonDoesntWork ?
+				' doesn\'t work. ' : ' works. ';
+
+			OUTPUT_CHANNEL.appendLine(
+				'version-compare --json -h >/dev/null 2>&1'
+				+ str + new Date().toLocaleTimeString()
 			);
 
 			let jsonFromVersCompJson: VersionCompareJson = null;
@@ -101,6 +104,12 @@ export default async (
 							pathToScript
 						);
 				} catch (error) {
+					OUTPUT_CHANNEL.appendLine(
+						'Checking for updates failed;' +
+						'version-compare --json exited' +
+						'with an unexpected status code.' +
+						new Date().toLocaleTimeString()
+					);
 					console.error(
 						'Checking for updates failed;',
 						'version-compare --json exited',
