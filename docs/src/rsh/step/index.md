@@ -16,7 +16,7 @@ Alice.only(() => {
   const pretzel = interact.random(); });
 ```
 
-A local step statement is written `{!rsh} PART.only(() => BLOCK)`, where `{!rsh} PART` is a participant identifier and `{!rsh} BLOCK` is a block.
+A local step statement is written `{!rsh} PART.only(() => BLOCK)`, where `{!rsh} PART` is a participant identifier and `{!rsh} BLOCK` is a <a class="ui-tooltip" title="a block is a grouping of zero or more statements inside a single statement"><span style="cursor: help;">block</span></a>.
 Within `{!rsh} BLOCK`, `{!rsh} PART` is bound to the address of the participant.
 Any bindings defined within the block of a local step are available in the statement's tail as new local state.
 For example,
@@ -28,7 +28,9 @@ Alice.only(() => {
   const y = x + 1; });
 ```
 
-is a valid program where `{!rsh} Alice`'s local state includes the private values `{!rsh} x` (bound to `{!rsh} 3`) and `{!rsh} y` (bound to `{!rsh} 4`). However, such bindings are _not_ consensus state, so they are purely local state. For example,
+is a valid program where `{!rsh} Alice`'s local state includes the private values `{!rsh} x` (bound to `{!rsh} 3`) and `{!rsh} y` (bound to `{!rsh} 4`). 
+However, such bindings are _not_ consensus state, so they are purely local state.
+For example,
 
 ```reach
 Alice.only(() => {
@@ -39,10 +41,9 @@ Bob.only(() => {
 
 is an invalid program, because `{!rsh} Bob` does not know `{!rsh} x`.
 
-The @{defn("interact shorthand")}, written `{!rsh} PART.interact.METHOD(EXPR_0, ..., EXPR_n)`, is available for calling an `{!rsh} interact` function
-from outside of an `{!rsh} only` block. Such functions must return `{!rsh} Null`; therefore, they are only useful
-if they produce side-effects, such as logging on the frontend. For example, the
-function `{!rsh} log` in the participant interact interface of `{!rsh} Alice` may be called via:
+The @{defn("interact shorthand")}, written `{!rsh} PART.interact.METHOD(EXPR_0, ..., EXPR_n)`, is available for calling an `{!rsh} interact` function from outside of an `{!rsh} only` block.
+Such functions must return `{!rsh} Null`; therefore, they are only useful if they produce side-effects, such as logging on the frontend.
+For example, the function `{!rsh} log` in the participant interact interface of `{!rsh} Alice` may be called via:
 
 ```reach
 Alice.interact.log(x);
@@ -56,7 +57,7 @@ each([Alice, Bob], () => {
   const pretzel = interact.random(); });
 ```
 
-An @{defn("each")} local step statement can be written as `{!rsh} each(PART_TUPLE () => BLOCK)`, where `{!rsh} PART_TUPLE` is a tuple of participants and `{!rsh} BLOCK` is a block.
+An @{defn("each")} local step statement can be written as `{!rsh} each(PART_TUPLE () => BLOCK)`, where `{!rsh} PART_TUPLE` is a <a class="ui-tooltip" title="variables that are used to store multiple items"><span style="cursor: help;">tuple</span></a> of participants and `{!rsh} BLOCK` is a block.
 It is an abbreviation of many local step statements that could have been written with `{!rsh} only`.
 
 ### {#payAmt} Pay Amounts
@@ -87,7 +88,9 @@ For example, these are invalid pay amounts:
 ```
 
 The ordering of a pay amount is only significant when used within a fork statement or parallel reduce statement that specifies a `{!rsh} paySpec`.
-In this case, payments are expected to be a tuple where the first element is an integer pay amount, and the rest of the elements are token amount tuples. The ordering of the token amount elements should match the ordering in `{!rsh} paySpec`. For example,
+In this case, payments are expected to be a tuple where the first element is an integer pay amount, and the rest of the elements are token amount tuples.
+The ordering of the token amount elements should match the ordering in `{!rsh} paySpec`.
+For example,
 ```reach
 .paySpec([tokA, tokB])
 ```
@@ -149,8 +152,7 @@ where `{!rsh} PART_EXPR` is an expression that evaluates to a participant or rac
 `{!rsh} DELAY_EXPR` is a public expression that depends on only consensus state and evaluates to a time argument,
 `{!rsh} TIMEOUT_BLOCK` is a timeout block, which will be executed after the `{!rsh} DELAY_EXPR` time argument passes without `{!rsh} PART` executing this consensus transfer.
 
-All of the expressions within a consensus transfer are evaluated in a @{defn("pure")} context, which may not alter the state of the
-application.
+All of the expressions within a consensus transfer are evaluated in a @{defn("pure")} context, which may not alter the state of the application.
 The `{!rsh} PAY_EXPR`, `{!rsh} WHEN_EXPR`, and `{!rsh} DELAY_EXPR` expressions must refer only to the consensus state, including the new data published via the `{!rsh} .publish` component.
 
 The continuation of a consensus transfer statement is a consensus step, which is finalized with a commit statement.
@@ -451,7 +453,7 @@ after();
 exit();
 ```
 
-By comparing this example to `{!rsh} closeTo`, you can see that using this Reach standard library function helps save thinking, as well as, additional lines of code, reducing the chances of introducing new errors.
+By comparing this example to `{!rsh} closeTo`, you can see that using this Reach standard library function helps save thinking, as well as additional lines of code, reducing the chances of introducing new errors.
 
 The `{!rsh} nonNetPayAmt` parameter should be a pay amount. For example, when closing a program that uses a `{!rsh} Token` `{!rsh} token`, the argument would be `{!rsh} [ [balance(tok), tok] ]`.
 The `{!rsh} after` and `{!rsh} nonNetPayAmt` arguments are optional.
