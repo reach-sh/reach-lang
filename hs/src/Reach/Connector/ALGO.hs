@@ -420,8 +420,8 @@ itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
 btoi :: BS.ByteString -> Integer
 btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
 
-checkCost :: Notify -> Disp -> Bool -> [TEAL] -> IO ()
-checkCost warning disp alwaysShow ts = do
+checkCost :: Notify -> Notify -> Disp -> Bool -> [TEAL] -> IO ()
+checkCost bad' _warn' disp alwaysShow ts = do
   let mkg :: IO (IORef (LPGraph String))
       mkg = newIORef mempty
   cost_gr <- mkg
@@ -534,7 +534,7 @@ checkCost warning disp alwaysShow ts = do
         let msg = "This program could use " <> show c <> " " <> units
         let tooMuch = fromIntegral c > algoMax
         when tooMuch $
-          warning $ LT.pack $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n"
+          bad' $ LT.pack $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n"
         void $ disp ("." <> lab <> ".dot") $ LT.toStrict $ T.render $ dotty gs
         return (msg, tooMuch)
   (showCost, exceedsCost) <- analyze "cost" cost_gr "units of cost" algoMaxAppProgramCost
@@ -547,11 +547,11 @@ checkCost warning disp alwaysShow ts = do
     putStrLn $ " * " <> showLogLen <> "."
     putStrLn $ " * " <> showInnerTxns <> "."
 
-optimizeAndRender :: Notify -> Disp -> Bool -> TEALs -> IO T.Text
-optimizeAndRender warning disp showCost ts = do
+optimizeAndRender :: Notify -> Notify -> Disp -> Bool -> TEALs -> IO T.Text
+optimizeAndRender bad' warn' disp showCost ts = do
   let tscl = DL.toList ts
   let tscl' = optimize tscl
-  checkCost warning disp showCost tscl'
+  checkCost bad' warn' disp showCost tscl'
   ilvlr <- newIORef $ 0
   tsl' <- mapM (render ilvlr) tscl'
   let lts = tealVersionPragma : (map LT.unwords tsl')
@@ -2628,7 +2628,7 @@ compile_algo env disp pl = do
   let addProg lab showCost m = do
         ts <- run m
         let disp' = disp . (lab <>)
-        t <- optimizeAndRender warn' disp' showCost ts
+        t <- optimizeAndRender bad' warn' disp' showCost ts
         tf <- disp (lab <> ".teal") t
         tbs <- compileTEAL tf
         modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
