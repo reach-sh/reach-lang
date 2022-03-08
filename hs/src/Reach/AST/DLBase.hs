@@ -261,10 +261,7 @@ instance Ord DLVar where
   (DLVar _ _ _ x) <= (DLVar _ _ _ y) = x <= y
 
 instance Pretty DLVar where
-  pretty (DLVar _ b t i) =
-    case b of
-      Nothing -> ("v" <> viaShow i <> " : " <> viaShow t )
-      Just (_, v) -> (viaShow v <> "/" <> viaShow i <> " : " <> viaShow t)
+  pretty v = viaShow v <+> ":" <+> viaShow (varType v)
 
 instance Show DLVar where
   show (DLVar _ b _ i) =
