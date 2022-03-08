@@ -11,22 +11,22 @@ Verification failed:
 
   const UInt.max = 1;
 
-  const a/67 = protect<UInt>("Alice".interact.get());
+  const a/73 = protect<UInt>("Alice".interact.get());
   //    ^ could = 0
   //      from: ./map-dset.rsh:16:51:application
-  const b/75 = protect<UInt>("Bob".interact.get());
+  const b/81 = protect<UInt>("Bob".interact.get());
   //    ^ could = 1
   //      from: ./map-dset.rsh:21:51:application
 
   // Theorem Formalization
 
-  const map0_1/108 = new Map()[<abstract address 0> <- Some a/67];
+  const map0_1/114 = new Map()[<abstract address 0> <- Some a/73];
   //    ^ would be <map: (None(null ))>[<abstract address 0> <- Some(0 )]
-  const map0_2/114 = map0_1/108[<abstract address 0> <- Some b/75];
+  const map0_2/120 = map0_1/114[<abstract address 0> <- Some b/81];
   //    ^ would be <map: (None(null ))>[<abstract address 0> <- Some(1 )]
-  const v92 = digest(map0_2/114[<abstract address 0>] ) == digest(<Some a/67> );
+  const v98 = digest(map0_2/120[<abstract address 0>] ) == digest(<Some a/73> );
   //    ^ would be false
-  require(v92);
+  require(v98);
 
   Verifying when NO participants are honest
 Checked 14 theorems; 1 failures :'(

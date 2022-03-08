@@ -1,6 +1,8 @@
 IMAGE=reachsh/devnet-algo
 ROOT=../..
 
+include $(ROOT)/DEPS
+
 .PHONY: build
 build:
 	if ! [ -d algorand_network ] ; then \
@@ -43,7 +45,10 @@ index-status:
 
 .PHONY: generate-network
 generate-network:
-	DOCKER_BUILDKIT=1 docker build --target ignore-generate-out -o out .
+	DOCKER_BUILDKIT=1 docker build --target ignore-generate-out -o out \
+		--build-arg ALPINE_IMAGE=${ALPINE_IMAGE} \
+		--build-arg GOLANG_IMAGE=${GOLANG_IMAGE} \
+		.
 	rsync -a --progress out/ algorand_network/
 
 .PHONY: clean-network

@@ -92,6 +92,7 @@ data Env = Env
   , e_exn :: IORef ExnEnv
   , e_appr :: Either DLOpts (IORef AppInitSt)
   , e_droppedAsserts :: Counter
+  , e_infections :: IORef (M.Map Int (SrcLoc, SLVar))
   }
 
 instance Semigroup a => Semigroup (App a) where
@@ -1088,22 +1089,25 @@ infectWithId_clo :: SLVar -> SLClo -> SLClo
 infectWithId_clo v (SLClo _ e b c) =
   SLClo (Just v) e b c
 
-infectWithId_sv :: SrcLoc -> SLVar -> SLVal -> SLVal
-infectWithId_sv at v = \case
-  SLV_Participant a who _ mdv ->
-    SLV_Participant a who (Just v) mdv
-  SLV_Clo a mt c ->
-    SLV_Clo a mt $ infectWithId_clo v c
-  SLV_DLVar (DLVar a _ t i) ->
-    SLV_DLVar $ DLVar a (Just (at, v)) t i
-  x -> x
+infectWithId_sv :: SrcLoc -> SLVar -> SLVal -> App SLVal
+infectWithId_sv at v val = do
+  case val of
+    SLV_Participant a who _ mdv -> return $ SLV_Participant a who (Just v) mdv
+    SLV_Clo a mt c -> return $ SLV_Clo a mt $ infectWithId_clo v c
+    SLV_DLVar (DLVar a _ t i) -> do
+      infections <- asks e_infections
+      liftIO $ modifyIORef infections $ M.insert i (at, v)
+      return $ SLV_DLVar $ DLVar a (Just (at, v)) t i
+    x -> return $ x
 
-infectWithId_sss :: SLVar -> SLSSVal -> SLSSVal
-infectWithId_sss v (SLSSVal at lvl sv) =
-  SLSSVal at lvl $ infectWithId_sv at v sv
+infectWithId_sss :: SLVar -> SLSSVal -> App SLSSVal
+infectWithId_sss v (SLSSVal at lvl sv) = do
+  SLSSVal at lvl <$> infectWithId_sv at v sv
 
-infectWithId_sls :: SrcLoc -> SLVar -> SLSVal -> SLSVal
-infectWithId_sls at v (lvl, sv) = (lvl, infectWithId_sv at v sv)
+infectWithId_sls :: SrcLoc -> SLVar -> SLSVal -> App SLSVal
+infectWithId_sls at v (lvl, sv) = do
+  r <- infectWithId_sv at v sv
+  return $ (lvl, r)
 
 evalObjEnv :: SLObjEnv -> App SLEnv
 evalObjEnv = mapM go
@@ -3218,6 +3222,7 @@ evalPrim p sargs =
             _ -> False
       let SLTypeFun dom rng pre post pre_msg post_msg = stf
       let rng' = ST_Tuple $ if shouldRetNNToks then [ST_UInt, nnToksBilledType, rng] else [ST_UInt, rng]
+      rt <- st2dte rng
       let postArg = if shouldRetNNToks then "(dom, [_, _, rng])" else "(dom, [_, rng])"
       let post' = flip fmap post $ \postv ->
             jsClo at "post" (postArg <> " => post(dom, rng)") $
@@ -3234,7 +3239,7 @@ evalPrim p sargs =
           SLM_ConsensusStep
           "remote"
           (CT_Assume True)
-          (\_ fs _ dargs -> DLE_Remote at fs aa m payAmt dargs withBill)
+          (\_ fs _ dargs -> DLE_Remote at fs aa rt m payAmt dargs withBill)
       res' <- doInternalLog Nothing res''
       let getRemoteResults = do
             apdvv <- doArrRef_ res' zero
@@ -3811,7 +3816,8 @@ evalId_ lab x = do
         SLM_ConsensusStep -> c
         SLM_ConsensusPure -> c
   let _lab' = lab <> " in " <> elab
-  infectWithId_sss x <$> (env_lookup (LC_RefFrom lab) x =<< env)
+  infectWithId_sss x =<< env_lookup (LC_RefFrom lab) x =<< env
+
 
 evalId :: String -> SLVar -> App SLSVal
 evalId lab x = sss_sls <$> evalId_ lab x
@@ -4173,7 +4179,7 @@ evalDeclLHS trackVars merr rhs_lvl lhs_env v = \case
   JSIdentifier a x -> do
     locAtf (srcloc_jsa "id" a) $ do
       at_ <- withAt id
-      let v' = infectWithId_sv at_ x v
+      v' <- infectWithId_sv at_ x v
       when trackVars $ trackVariable (at_, x)
       env_insert x (SLSSVal at_ rhs_lvl v') lhs_env
   JSArrayLiteral a xs _ -> do

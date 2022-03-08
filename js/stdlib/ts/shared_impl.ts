@@ -22,8 +22,6 @@ export {
   hexlify
 } from './shared_backend';
 
-export const bigNumberToBigInt = (x:BigNumber): bigint => BigInt(x.toHexString());
-
 type BigNumber = ethers.BigNumber;
 
 export type CurrencyAmount = string | number | BigNumber | bigint
@@ -146,7 +144,7 @@ export type IRecv<RawAddress> = IRecvNoTimeout<RawAddress> | {
 
 export type TimeArg = [ ('time' | 'secs'), BigNumber ];
 
-export type ISendRecvArgs<RawAddress, Token, ConnectorTy extends AnyBackendTy> = {
+export type ISendRecvArgs<RawAddress, Token, ConnectorTy extends AnyBackendTy, ContractInfo> = {
   funcNum: number,
   evt_cnt: number,
   tys: Array<ConnectorTy>,
@@ -157,7 +155,7 @@ export type ISendRecvArgs<RawAddress, Token, ConnectorTy extends AnyBackendTy> =
   soloSend: boolean,
   timeoutAt: TimeArg | undefined,
   lct: BigNumber,
-  sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Token>>,
+  sim_p: (fake: IRecv<RawAddress>) => Promise<ISimRes<Token, ContractInfo>>,
 };
 
 export type IRecvArgs<ConnectorTy extends AnyBackendTy> = {
@@ -186,7 +184,7 @@ export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy exten
   selfAddress: () => CBR_Address, // Not RawAddress!
   iam: (some_addr: RawAddress) => RawAddress,
   stdlib: Object,
-  sendrecv: (args:ISendRecvArgs<RawAddress, Token, ConnectorTy>) => Promise<IRecv<RawAddress>>,
+  sendrecv: (args:ISendRecvArgs<RawAddress, Token, ConnectorTy, ContractInfo>) => Promise<IRecv<RawAddress>>,
   recv: (args:IRecvArgs<ConnectorTy>) => Promise<IRecv<RawAddress>>,
   getState: (v:BigNumber, ctcs:Array<ConnectorTy>) => Promise<Array<any>>,
   apiMapRef: (i:number, ty:ConnectorTy) => MapRefT<any>,
@@ -485,6 +483,33 @@ export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
   tokenAccept: (token: Token) => Promise<void>,
   tokenAccepted: (token: Token) => Promise<boolean>,
   tokenMetadata: (token: Token) => Promise<TokenMetadata>,
+  setGasLimit: (ngl:unknown) => void,
+  getGasLimit: () => BigNumber,
+  setStorageLimit: (nsl:unknown) => void,
+  getStorageLimit: () => BigNumber,
+};
+
+export const stdAccount_unsupported =
+  <NetworkAccount, Backend, Contract, ContractInfo, Token>(
+    conn:string):
+  Pick<IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>, ("setGasLimit"|"getGasLimit"|"setStorageLimit"|"getStorageLimit")> => {
+  const setGasLimit = (ngl:unknown): void => {
+    void(ngl);
+    console.warn(`setGasLimit not supported on ${conn}`);
+  };
+  const getGasLimit = (): BigNumber => {
+    console.warn(`getGasLimit not supported on ${conn}`);
+    return bigNumberify(0);
+  };
+  const setStorageLimit = (ngl:unknown): void => {
+    void(ngl);
+    console.warn(`setStorageLimit not supported on ${conn}`);
+  };
+  const getStorageLimit = (): BigNumber => {
+    console.warn(`getStorageLimit not supported on ${conn}`);
+    return bigNumberify(0);
+  };
+  return { setGasLimit, getGasLimit, setStorageLimit, getStorageLimit };
 };
 
 export const stdAccount =
@@ -508,13 +533,13 @@ export type IAccountTransferable<NetworkAccount> = IAccount<NetworkAccount, any,
   networkAccount: NetworkAccount,
 }
 
-export type ISimRes<Token> = {
-  txns: Array<ISimTxn<Token>>,
+export type ISimRes<Token, ContractInfo> = {
+  txns: Array<ISimTxn<Token, ContractInfo>>,
   mapRefs: Array<string>,
   isHalt : boolean,
 };
 
-export type ISimTxn<Token> = {
+export type ISimTxn<Token, ContractInfo> = {
   kind: 'to'|'init',
   amt: BigNumber,
   tok: Token|undefined,
@@ -541,6 +566,10 @@ export type ISimTxn<Token> = {
 } | {
   kind: 'tokenDestroy',
   tok: Token,
+} | {
+  kind: 'remote',
+  obj: ContractInfo,
+  pays: BigNumber,
 } | {
   kind: 'info',
   tok: Token,

@@ -16,6 +16,9 @@ import type {
   WalletTransaction,
   EnableNetworkResult,
   EnableAccountsResult,
+  EnableOpts,
+  EnableResult,
+  EnableAccountsOpts,
 } from './ALGO_ARC11'; // =>
 import type { BaseHTTPClient } from 'algosdk';
 import * as RHC from './ALGO_ReachHTTPClient';
@@ -39,12 +42,12 @@ import {
   stdContract, stdVerifyContract,
   stdABIFilter,
   stdAccount,
+  stdAccount_unsupported,
   debug, envDefault,
   argsSplit,
   makeRandom,
   replaceableThunk,
   ensureConnectorAvailable,
-  bigNumberToBigInt,
   make_newTestAccounts,
   make_waitUntilX,
   checkTimeout,
@@ -66,6 +69,7 @@ import {
   isBigNumber,
   bigNumberify,
   bigNumberToNumber,
+  bigNumberToBigInt,
 } from './shared_user';
 import {
   CBR_Address, CBR_Val,
@@ -82,9 +86,10 @@ import {
   bytestringyNet,
 } from './ALGO_compiled';
 export type { Token } from './ALGO_compiled';
-import {  } from './shared_backend';
+import {
+} from './shared_backend';
 import type { MapRefT, MaybeRep } from './shared_backend'; // =>
-import { window, process, updateProcessEnv } from './shim';
+import { window, process } from './shim';
 import { sha512_256 } from 'js-sha512';
 export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq } = stdlib;
 export * from './shared_user';
@@ -162,12 +167,12 @@ type BackendViewsInfo = IBackendViewsInfo<AnyALGO_Ty>;
 type BackendViewInfo = IBackendViewInfo<AnyALGO_Ty>;
 
 export type ContractInfo = BigNumber;
-type SendRecvArgs = ISendRecvArgs<Address, Token, AnyALGO_Ty>;
+type SendRecvArgs = ISendRecvArgs<Address, Token, AnyALGO_Ty, ContractInfo>;
 type RecvArgs = IRecvArgs<AnyALGO_Ty>;
 type Recv = IRecv<Address>
 export type Contract = IContract<ContractInfo, Address, Token, AnyALGO_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
-type SimTxn = ISimTxn<Token>
+type SimTxn = ISimTxn<Token, ContractInfo>
 type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
 type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
 type SetupEventArgs = ISetupEventArgs<ContractInfo, VerifyResult>;
@@ -268,6 +273,7 @@ type IndexerTxn = {
   'created-application-index'?: bigint,
   'application-transaction'?: IndexerAppTxn,
   'logs'?: Array<string>,
+  'inner-txns'?: Array<IndexerTxn>,
   'tx-type': string,
 };
 type IndexerQuery1Res = {
@@ -639,6 +645,22 @@ const emptyOptIn = (txn:IndexerTxn) => {
     (at['on-completion'] === 'optin' && ataa.length == 0)
     : false;
 };
+const apiOnly = (txn:IndexerTxn) => {
+  const ls = txn['logs'];
+  if ( ls && ls.length === 1 ) {
+    const l0 = ls[0];
+    const l0ui = base64ToUI8A(l0);
+    if ( l0ui.length >= 4 ) {
+      const l0h = ui8h(l0ui.subarray(0, 4));
+      debug('apiOnly', { l0h });
+      return (l0h === '151f7c75');
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+};
 type EQInitArgs = {
   ApplicationID: BigNumber,
 };
@@ -649,21 +671,36 @@ const newEventQueue = (): EventQueue => {
     const indexer = await getIndexer();
     const mtime = bigNumberToNumber(ctime.add(1));
     debug(dhead, { ctime, mtime });
+    const appn = bigNumberToNumber(ApplicationID);
     const query =
       indexer.searchForTransactions()
-        .applicationID(bigNumberToNumber(ApplicationID))
+        .applicationID(appn)
         //.txType('appl')
         .minRound(mtime);
     const q = query as unknown as ApiCall<IndexerQueryMRes>
     const res = await doQuery_(dhead, q, howMany);
-    const txns = res.transactions.filter((x:IndexerTxn) => x['tx-type'] === 'appl');
+    const txns: Array<IndexerTxn> = [];
+    const walkTxns = (ints:Array<IndexerTxn>) => {
+      ints.filter((x:IndexerTxn) => x['tx-type'] === 'appl').forEach((x:IndexerTxn) => {
+        const at = (x['application-transaction']||{});
+        const ai = bigNumberify(at['application-id']||0);
+        const cai = bigNumberify(x['created-application-index']||0);
+        const its = x['inner-txns'];
+        if (ai.eq(ApplicationID) || cai.eq(ApplicationID)) {
+          txns.push(x);
+        } else if (its) {
+          walkTxns(its);
+        }
+      });
+    };
+    walkTxns(res.transactions);
     const gtime = bigNumberify(res['current-round']);
     return { txns, gtime };
   };
   const getTxnTime = (x:IndexerTxn): BigNumber => bigNumberify(x['confirmed-round']);
   return makeEventQueue<EQInitArgs, IndexerTxn, RecvTxn>({
     raw2proc: indexerTxn2RecvTxn,
-    alwaysIgnored: emptyOptIn,
+    alwaysIgnored: (x) => (emptyOptIn(x) || apiOnly(x)),
     getTxns, getTxnTime,
   });
 };
@@ -703,9 +740,19 @@ export interface Provider {
   signAndPostTxns: (txns:WalletTransaction[], opts?: object) => Promise<unknown>,
 };
 
-const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
+const makeProviderByWallet = async (wallet:ARC11_Wallet, env: any): Promise<Provider> => {
   debug(`making provider with wallet`);
-  const walletOpts = {'network': process.env['ALGO_NETWORK']};
+  const defaults = { REACH_ISOLATED_NETWORK: 'no', ALGO_NODE_WRITE_ONLY: 'yes' }; // pessimistic
+  const allEnv = { ...defaults, ...env, ...(wallet._env || {}) }; // rightmost is preferred
+  const { ALGO_GENESIS_ID, ALGO_GENESIS_HASH, ALGO_ACCOUNT } = env;
+  const { REACH_ISOLATED_NETWORK, ALGO_NODE_WRITE_ONLY } = allEnv;
+  const walletOpts: EnableOpts = {
+    genesisID: ALGO_GENESIS_ID || undefined,
+    genesisHash: ALGO_GENESIS_HASH || undefined,
+    accounts: ALGO_ACCOUNT ? [ ALGO_ACCOUNT ] : undefined,
+  };
+  const isIsolatedNetwork = truthyEnv(REACH_ISOLATED_NETWORK);
+  const nodeWriteOnly = truthyEnv(ALGO_NODE_WRITE_ONLY);
   let enabledNetwork: EnableNetworkResult|undefined;
   let enabledAccounts: EnableAccountsResult|undefined;
   if ( wallet.enableNetwork === undefined && wallet.enableAccounts === undefined ) {
@@ -735,40 +782,55 @@ const makeProviderByWallet = async (wallet:ARC11_Wallet): Promise<Provider> => {
     return enabledAccounts.accounts[0];
   };
   const signAndPostTxns = wallet.signAndPostTxns;
-  const isIsolatedNetwork = truthyEnv(process.env['REACH_ISOLATED_NETWORK']);
-  const nodeWriteOnly = truthyEnv(process.env.ALGO_NODE_WRITE_ONLY);
   return { algod_bc, indexer_bc, indexer, algodClient, nodeWriteOnly, getDefaultAddress, isIsolatedNetwork, signAndPostTxns };
 };
 
 export const setWalletFallback = (wf:() => unknown) => {
   if ( ! window.algorand ) { window.algorand = wf(); }
 };
+
+const checkNetwork = (ret: EnableNetworkResult, eopts?: EnableOpts): void => {
+  const { genesisID:  id, genesisHash:  h } = ret;
+  const { genesisID: eid, genesisHash: eh } = eopts || {};
+  if ( ( eid && eid !== id) || ( eh && eh !== h ) ) {
+    throw Error(
+      `Requested genesis ID or hash not supported by this wallet.\n`
+      + `Expected: '${id}' '${h}'\n`
+      + `Got: '${eid}' '${eh}'`
+    );
+  }
+}
+
+const checkAccounts = (addr: string, got?: string[]): void => {
+  if ( got && ( got[0] !== addr || got.length > 1 ) ) {
+    throw Error(
+      `One or more requested accounts not supported by this wallet.\n`
+      + `Expected: ${JSON.stringify([addr])}\n`
+      + `Got: ${JSON.stringify(got)}`
+    );
+  }
+}
+
 const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
   let p: Provider|undefined = undefined;
-  const enableNetwork = async (eopts?:object) => {
-    void(eopts);
-    const base = opts['providerEnv'];
-    if ( base ) {
-      // XXX Is it a bad idea to update the process.env? This is to get
-      // ALGO_NODE_WRITE_ONLY from here to makeProviderByWallet
-      if ( typeof base === 'string' ) {
-        // @ts-ignore
-        updateProcessEnv(providerEnvByName(base));
-      } else {
-        updateProcessEnv(base);
-      }
-    }
-    p = await makeProviderByEnv(process.env);
-    return {};
+  const base = opts['providerEnv'] || 'LocalHost';
+  const _env = typeof base === 'string' ? providerEnvByName(base) : base;
+  const enableNetwork = async (eopts?: EnableOpts): Promise<EnableNetworkResult> => {
+    p = await makeProviderByEnv(_env);
+    const { genesisID, genesisHash } = await p.algodClient.getTransactionParams().do();
+    const ret = { genesisID, genesisHash };
+    checkNetwork(ret, eopts);
+    return ret;
   };
-  const enableAccounts = async (eopts?:object) => {
-    void(eopts);
+  const enableAccounts = async (eopts?: EnableAccountsOpts): Promise<EnableAccountsResult> => {
     const addr = await getAddr();
+    checkAccounts(addr, eopts?.accounts);
     return { accounts: [ addr ] };
   };
-  const enable = async (eopts?:object) => {
-    await enableNetwork(eopts);
-    return await enableAccounts(eopts);
+  const enable = async (eopts?:object): Promise<EnableResult> => {
+    const nres = await enableNetwork(eopts);
+    const ares = await enableAccounts(eopts);
+    return { ...nres, ...ares };
   };
   const getAlgodv2Client = async () => {
     if ( !p ) { throw new Error(`must call enable`) };
@@ -802,7 +864,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     await p.algodClient.sendRawTransaction(bs).do();
     return {};
   };
-  return { enable, enableNetwork, enableAccounts, getAlgodv2Client, getIndexerClient, signAndPostTxns };
+  return { _env, enable, enableNetwork, enableAccounts, getAlgodv2Client, getIndexerClient, signAndPostTxns };
 };
 const walletFallback_mnemonic = (opts:object) => (): ARC11_Wallet => {
   debug(`using mnemonic wallet fallback`);
@@ -872,7 +934,7 @@ export const walletFallback = (opts:any) => {
 export const [getProvider, setProvider] = replaceableThunk(async () => {
   if ( window.algorand ) {
     // @ts-ignore
-    return await makeProviderByWallet(window.algorand);
+    return await makeProviderByWallet(window.algorand, process.env);
   } else {
     debug(`making default provider based on process.env`);
     return await makeProviderByEnv(process.env);
@@ -989,7 +1051,7 @@ export function setProviderByName(pn: ProviderName): void {
 }
 
 // eslint-disable-next-line max-len
-const rawFaucetDefaultMnemonic = 'frown slush talent visual weather bounce evil teach tower view fossil trip sauce express moment sea garbage pave monkey exercise soap lawn army above dynamic';
+const rawFaucetDefaultMnemonic = 'crisp casino index crack nose present cry chair brief shuffle humble marine loop fall unable task solar bright crack heavy blast south twist absorb similar';
 export const [getFaucet, setFaucet] = replaceableThunk(async (): Promise<Account> => {
   const FAUCET = algosdk.mnemonicToSecretKey(
     envDefault(process.env.ALGO_FAUCET_PASSPHRASE, rawFaucetDefaultMnemonic),
@@ -1473,6 +1535,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           };
           mapRefs.forEach(recordAccount);
 
+          const foreignArr: Array<number> = [ ];
+          const recordApp = (app:ContractInfo) => {
+            const appn = bigNumberToNumber(app);
+            if ( ! foreignArr.includes(appn) ) {
+              foreignArr.push(appn);
+              const addr = algosdk.getApplicationAddress(bigNumberToBigInt(app));
+              recordAccount_(addr);
+            }
+          };
           const assetsArr: number[] = [];
           const recordAsset = (tok:BigNumber|undefined) => {
             if ( tok ) {
@@ -1501,6 +1572,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             } else if ( t.kind === 'tokenDestroy' ) {
               recordAsset(t.tok);
               howManyMoreFees++; return;
+            } else if ( t.kind === 'remote' ) {
+              recordApp(t.obj);
+              howManyMoreFees += 1 + bigNumberToNumber(t.pays); return;
             } else {
               const { tok } = t;
               let amt: BigNumber = bigNumberify(0);
@@ -1534,7 +1608,6 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               } else {
                 assert(false, 'sim txn kind');
               }
-              if ( amt.eq(0) ) { return; }
               txn = makeTransferTxn(from, to, amt, tok, params, closeTo, sim_i++);
             }
             extraFees += txn.fee;
@@ -1557,6 +1630,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const assetsVal: number[]|undefined =
             (assetsArr.length === 0) ? undefined : assetsArr;
           debug(dhead, {assetsArr, assetsVal});
+
+          const foreignVal: number[]|undefined =
+            (foreignArr.length === 0) ? undefined : foreignArr;
+          debug(dhead, {foreignArr, foreignVal});
 
           const actual_args = [ lct, msg ];
           const actual_tys = [ T_UInt, T_Tuple(msg_tys) ];
@@ -1584,7 +1661,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const txnAppl =
             whichAppl(
               thisAcc.addr, params, bigNumberToNumber(ApplicationID), safe_args,
-              mapAcctsVal, undefined, assetsVal, NOTE_Reach);
+              mapAcctsVal, foreignVal, assetsVal, NOTE_Reach);
           txnAppl.fee += extraFees;
           const rtxns = [ ...txnExtraTxns, txnAppl ];
           debug(dhead, `assigning`, { rtxns });
@@ -1867,8 +1944,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     const decimals = bigNumberify(tokenInfo['decimals']);
     return { name, symbol, url, metadata, supply, decimals };
   };
+  const unsupportedAcc = stdAccount_unsupported(connector);
 
-  return stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract });
+  return stdAccount({ ...unsupportedAcc, networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract });
 };
 
 export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {

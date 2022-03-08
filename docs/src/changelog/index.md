@@ -3,9 +3,27 @@
 Below is a list of changes to Reach.
 Versions and changes-within-versions are listed in reverse-chronological order: newest things first.
 
-## 0.1.8: 2022/01 - present
+## 0.1.9: 2022/03 - present
 
-Version 0.1.8 is the current Reach release candidate version.
+Version 0.1.9 is the current Reach release candidate version.
+
++ 2022/03/07: `{!rsh} remote` objects supported on Algorand.
++ 2022/03/02: Algorand-only: Drastically reduced the cost of `{!rsh} muldiv`.
++ 2022/03/02: Algorand-only: Contract bytecode upgraded to version `6`.
+  (This enables `{!rsh} API` and `{!rsh} View` functions to be called on-chain.)
++ 2022/03/02: Algorand-only: Updated the default faucet.
+  If you upgrade the standard library, but do not restart your devnet, tests will fail.
++ 2022/03/02: Algorand indexer upgraded to `2.9.0`.
++ 2022/03/02: Algorand node upgraded to `3.4.2`.
++ 2022/03/02: Ethers upgraded to `5.5.4`.
++ 2022/03/02: Ethereum ERC-20 implementation upgraded to OpenZeppelin `4.5.0`.
++ 2022/03/02: Ethereum (`geth`) upgraded to `1.10.16`.
++ 2022/03/02: Solidity upgraded to `0.8.12`.
++ 2022/03/02: Z3 upgraded to `4.8.14`.
+
+## 0.1.8: 2022/01 - 2022/03
+
+Version 0.1.8 is the current Reach release version.
 
 + 2022/02/28: Added `{!js} launchToken` for token minting in frontends.
 + 2022/02/25: Added support for tracking `{!rsh} Token` information—such as balance, supply, and whether its destroyed—dynamically.
@@ -38,7 +56,7 @@ Version 0.1.8 is the current Reach release candidate version.
 
 ## 0.1.7: 2021/11 - 2021/12
 
-Version 0.1.7 is the current Reach release version.
+Version 0.1.7 is an old Reach release version.
 
 + 2022/01/06: Added `{!rsh} getUntrackedFunds`.
 + 2021/12/31: `{!js} setQueryLowerBound` is deprecated.

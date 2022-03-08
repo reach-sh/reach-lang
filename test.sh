@@ -62,7 +62,7 @@ ci () {
   ${REACH} compile --install-pkgs
   ${REACH} compile --intermediate-files
   make build
-  REACH_DEBUG=N REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=Y REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 
@@ -130,58 +130,18 @@ cdot () {
 # changes)
 export REACH_BUILD_NO_CACHE=Y
 
-#######
-
-c examples/realtime/index.rsh
-exit 0
-
-#(cd scripts/devnet-algo && make build) && "${REACH}" down
-ci ALGO algo-time
-exit 0
+############################
 
 jb
-ci ALGO donation-balancesOf
-ci ALGO formatWithDecimals-demo
-ci ALGO nft-auction-api
-ci ALGO minBalance
-exit
-
-cdot users/algo-govt/index.rsh
-exit 0
-(cd users/algo-govt && ./test.sh)
-exit 0
-
-
-c users/asolpshinning.rsh
+ci ALGO remote-rsh
+#ci ALGO rps-7-loops
 exit 0
 
 #c --install-pkgs users/xbacked-contracts/src/master_vault.rsh
 REACH_DEBUG=Y cdot users/xbacked-contracts/src/master_vault.rsh
 exit 0
 cdot users/duoswap-core/index.rsh
+cdot users/algo-govt/index.rsh
 exit 0
-
-
-jb
-ci ALGO signingMonitor
-exit 0
-
-#jb
-cdot examples/api-raw/index.rsh
-ci ALGO api-raw
-ci ETH api-raw
-cdot users/duoswap-core/index.rsh
-exit 0
-
-#jb
-c users/duoswap-core/index.rsh
-c users/algo-govt/index.rsh
-cdot examples/overview/index.rsh
-cdot examples/rps-8-interact/index.rsh
-cdot users/duoswap-core/index.rsh
-exit 0
-cdot users/xbacked-contracts/src/master_vault.rsh
-exit 0
-
 
 # (cd hs && mk hs-test)

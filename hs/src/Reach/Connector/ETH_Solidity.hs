@@ -384,7 +384,7 @@ instance DepthOf DLExpr where
     DLE_PartSet _ _ x -> depthOf x
     DLE_MapRef _ _ x -> add1 $ depthOf x
     DLE_MapSet _ _ x y -> max <$> depthOf x <*> depthOf y
-    DLE_Remote _ _ av _ (DLPayAmt net ks) as _ ->
+    DLE_Remote _ _ av _ _ (DLPayAmt net ks) as _ ->
       add1 $
         depthOf $
           av :
@@ -778,7 +778,7 @@ doConcat dv x y = do
 solCom :: AppT DLStmt
 solCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ pv (DLE_Remote at fs av f (DLPayAmt net ks) as (DLWithBill nonNetTokRecv nnTokRecvZero)) -> do
+  DL_Let _ pv (DLE_Remote at fs av rng_ty f (DLPayAmt net ks) as (DLWithBill nonNetTokRecv nnTokRecvZero)) -> do
     -- XXX make this not rely on pv
     av' <- solArg av
     as' <- mapM solArg as
@@ -787,11 +787,7 @@ solCom = \case
           case pv of
             DLV_Eff -> impossible "remote result unbound"
             DLV_Let _ x -> x
-    let rng_ty =
-          case varType dv of
-            T_Tuple [_, _, x] -> x
-            T_Tuple [_, x] -> x
-            _ -> impossible $ "remote not tuple"
+    rng_ty'_ <- solType_ rng_ty
     rng_ty' <- solType rng_ty
     let rng_ty'mem = rng_ty' <> withArgLoc rng_ty
     f' <- addInterface (pretty f) dom'mem rng_ty'mem
@@ -864,7 +860,7 @@ solCom = \case
             _ -> do
               [solSet (solMemVar dv <> ".elem" <> billOffset 1) de'] -- not always 2
               where
-                de' = solApply "abi.decode" [v_return, parens rng_ty']
+                de' = solApply "abi.decode" [v_return, parens rng_ty'_]
     let e_data = solApply "abi.encodeWithSelector" eargs
     e_before <- solPrimApply SUB [meBalance, netTokPaid]
     err_msg <- solRequireMsg $ show (at, fs, ("remote " <> f <> " failed"))

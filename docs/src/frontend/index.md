@@ -128,7 +128,13 @@ const reach = await loadStdlib(process.env);
 
 Or construct a custom object that has all of the environment keys and fields you need.
 
-As a special case, you may instead pass in the string `'ETH'` or the string `'ALGO'`
+On Algorand, this object may include the keys `ALGO_GENESIS_ID` or `ALGO_GENESIS_HASH` (or both),
+which allows you to request that the user's [ARC-6 compliant wallet](https://github.com/algorandfoundation/ARCs/blob/main/ARCs/arc-0006.md) connect to a specific network.
+When left unspecified, it allows the user to select one of their wallet's supported networks.
+This object may also include the key `ALGO_ACCOUNT`,
+which allows you to request the use of a specific account from the user's ARC-6 compliant wallet by address. This should usually be left unspecified, which allows the user to instead select their preferred account.
+
+As a special case, you may instead pass in the string `'ETH'`, `'ALGO'`, or `'CFX'`,
 to select the desired connector directly.
 
 ---
@@ -861,6 +867,7 @@ Returns a new array identical to `{!js} arr`, except that index `{!js} idx` is `
 bigNumberify(x) => UInt
 isBigNumber(x) => bool
 bigNumberToNumber(x) => number
+bigNumberToBigInt(x) => bigint
 ```
 
 @{defn("bigNumberify")} converts a JavaScript number to a BigNumber,
@@ -870,6 +877,9 @@ the JavaScript representation of Reach's `{!rsh} UInt`.
 
 @{defn("bigNumberToNumber")} transparently applies `{!js} bigNumberify` to its
 argument and returns a JavaScript number.
+
+@{defn("bigNumberToBigInt")} transparently applies `{!js} bigNumberify` to its
+argument and returns a JavaScript `bigint`.
 
 ---
 @{ref("js", "isHex")}@{ref("js", "hexToBigNumber")}@{ref("js", "stringToHex")}@{ref("js", "bigNumberToHex")}@{ref("js", "uintToBytes")}@{ref("js", "bytesEq")}@{ref("js", "digestEq")}@{ref("js", "addressEq")}

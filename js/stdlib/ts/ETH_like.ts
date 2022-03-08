@@ -112,17 +112,11 @@ export type NetworkAccount = {
 } | EthersLikeWallet | EthersLikeSigner; // required to deploy/attach
 
 export type ContractInfo = Address;
-type SendRecvArgs = ISendRecvArgs<Address, Token, AnyETH_Ty>;
+type SendRecvArgs = ISendRecvArgs<Address, Token, AnyETH_Ty, ContractInfo>;
 type RecvArgs = IRecvArgs<AnyETH_Ty>;
 type Recv = IRecv<Address>
 export type Contract = IContract<ContractInfo, Address, Token, AnyETH_Ty>;
 export type Account = IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token>
-  & {
-    setGasLimit?: (ngl:any) => void
-    getGasLimit?: any,
-    setStorageLimit?: any,
-    getStorageLimit?: any,
-  }
 type VerifyResult = { creationBlock: BigNumber };
 type SetupArgs = ISetupArgs<ContractInfo, VerifyResult>;
 type SetupViewArgs = ISetupViewArgs<ContractInfo, VerifyResult>;
@@ -131,8 +125,8 @@ type SetupRes = ISetupRes<ContractInfo, Address, Token, AnyETH_Ty>;
 
 type AccountTransferable = Account | {
   networkAccount: NetworkAccount,
-  getGasLimit?: any,
-  getStorageLimit?: any,
+  getGasLimit?: () => BigNumber,
+  getStorageLimit?: () => BigNumber,
 };
 
 const reachPublish = (m: string | number) => `_reach_m${m}`
@@ -513,12 +507,16 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         const maybePayTok = async (i:number): Promise<TransactionReceipt> => {
           if ( i < toks.length ) {
             const [amt, tok] = toks[i];
-            await callTok(tok, amt);
-            try {
+            if ( amt.gt(0) ) {
+              await callTok(tok, amt);
+              try {
+                return await maybePayTok(i+1);
+              } catch (e) {
+                await callTok(tok, zeroBn);
+                throw e;
+              }
+            } else {
               return await maybePayTok(i+1);
-            } catch (e) {
-              await callTok(tok, zeroBn);
-              throw e;
             }
           } else {
             return await actualCall();
@@ -866,7 +864,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     return md;
   };
 
-  return { ...stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract }), setGasLimit, getGasLimit, setStorageLimit, getStorageLimit };
+  return stdAccount({ networkAccount, getAddress: selfAddress, stdlib, setDebugLabel, tokenAccepted, tokenAccept, tokenMetadata, contract, setGasLimit, getGasLimit, setStorageLimit, getStorageLimit });
 };
 
 const newAccountFromSecret = async (secret: string): Promise<Account> => {

@@ -9,17 +9,18 @@ import Reach.AST.Base
 import Reach.AST.SL
 import qualified Reach.Eval.Core as C
 
+-- https://hackage.haskell.org/package/aeson-pretty-0.8.9/docs/
 customConfig :: A.Config
 customConfig = A.Config {
   confIndent = A.Spaces 2,
   confCompare = compare,
   confNumFormat = A.Generic,
-  confTrailingNewline = False
+  confTrailingNewline = True
 }
 
 printKeywordInfo :: IO ()
 printKeywordInfo =
-  B.putStrLn $
+  B.putStr $
     A.encodePretty'
       customConfig $ infoMap
 

@@ -5,11 +5,13 @@ export type EnableNetworkFunction = (
 ) => Promise<EnableNetworkResult>;
 
 export interface EnableNetworkOpts {
-  network?: string,    // NetworkIdentifier
+  genesisID?: string,   // ascii string
+  genesisHash?: string, // base64 string representing a 32-byte genesis hash.
 };
 
 export interface EnableNetworkResult {
-  network?: string,   // NetworkIdentifier
+  genesisID: string,   // ascii string
+  genesisHash: string, // base64 string representing a 32-byte genesis hash.
 };
 
 export type EnableAccountsFunction = (
@@ -69,4 +71,6 @@ export interface WindowAlgorand {
   getIndexerClient: GetIndexerClientFunction;
 };
 
-export type ARC11_Wallet = WindowAlgorand;
+export type ARC11_Wallet = WindowAlgorand & {
+  _env?: any;
+};

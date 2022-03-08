@@ -16,6 +16,7 @@ import Data.Maybe
 import Data.Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
+import GHC.Stack (HasCallStack)
 import GHC.Generics
 import Reach.AST.Base
 import Reach.Counter
@@ -87,7 +88,7 @@ arrTypeLen = \case
 arrType :: DLType -> DLType
 arrType = fst . arrTypeLen
 
-tupleTypes :: DLType -> [DLType]
+tupleTypes :: HasCallStack => DLType -> [DLType]
 tupleTypes = \case
   T_Tuple ts -> ts
   _ -> impossible $ "should be tuple"
@@ -260,7 +261,7 @@ instance Ord DLVar where
   (DLVar _ _ _ x) <= (DLVar _ _ _ y) = x <= y
 
 instance Pretty DLVar where
-  pretty (DLVar _ _ t i) = ("v" <> viaShow i <> " : " <> viaShow t )
+  pretty v = viaShow v <+> ":" <+> viaShow (varType v)
 
 instance Show DLVar where
   show (DLVar _ b _ i) =
@@ -327,6 +328,11 @@ instance PrettySubst DLArg where
       return $ pretty who <> ".interact." <> pretty m
     DLA_Constant x -> return $ pretty x
     DLA_Literal x -> return $ pretty x
+
+staticZero :: DLArg -> Bool
+staticZero = \case
+  DLA_Literal (DLL_Int _ 0) -> True
+  _ -> False
 
 asnLike :: [DLVar] -> [(DLVar, DLArg)]
 asnLike = map (\x -> (x, DLA_Var x))
@@ -611,7 +617,7 @@ data DLExpr
   | DLE_PartSet SrcLoc SLPart DLArg
   | DLE_MapRef SrcLoc DLMVar DLArg
   | DLE_MapSet SrcLoc DLMVar DLArg (Maybe DLArg)
-  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg String DLPayAmt [DLArg] DLWithBill
+  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg DLType String DLPayAmt [DLArg] DLWithBill
   | DLE_TokenNew SrcLoc DLTokenNew
   | DLE_TokenBurn SrcLoc DLArg DLArg
   | DLE_TokenDestroy SrcLoc DLArg
@@ -733,7 +739,7 @@ instance PrettySubst DLExpr where
     DLE_MapSet _ mv i Nothing -> do
       i' <- prettySubst i
       return $ "delete" <+> pretty mv <> brackets i'
-    DLE_Remote _ _ av m amta as wb -> do
+    DLE_Remote _ _ av _ m amta as wb -> do
       av' <- prettySubst av
       amta' <- prettySubst amta
       as' <- render_dasM as

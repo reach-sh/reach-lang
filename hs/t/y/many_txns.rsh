@@ -1,6 +1,6 @@
 'reach 0.1';
 
-const N = 16;
+const N = 16*16;
 
 export const main = Reach.App(() => {
   const A = Participant('Alice', {

@@ -291,7 +291,7 @@ jsPrimApply = \case
 
 jsArg_m :: AppT (Maybe DLArg)
 jsArg_m = \case
-  Nothing -> return $ "undefined"
+  Nothing -> return $ "undefined /* Nothing */"
   Just a -> jsArg a
 
 jsExpr :: AppT DLExpr
@@ -333,7 +333,10 @@ jsExpr = \case
     jsProtect ai' t $ "await" <+> (jsApply ("interact." <> pretty m) as')
   DLE_Digest _ as -> jsDigest as
   DLE_Claim at fs ct a mmsg ->
-    check
+    (ctxt_mode <$> ask) >>= \case
+      JM_Backend -> check
+      JM_View -> check
+      JM_Simulate -> mempty
     where
       check = case ct of
         CT_Assert -> impossible "assert"
@@ -349,16 +352,19 @@ jsExpr = \case
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> mempty
       JM_View -> impossible "view transfer"
-      JM_Simulate -> do
-        who' <- jsArg who
-        amt' <- jsArg amt
-        mtok' <- jsArg_m mtok
-        return $
-          jsSimTxn "from" $
-            [ ("to", who')
-            , ("amt", amt')
-            , ("tok", mtok')
-            ]
+      JM_Simulate ->
+        case staticZero amt of
+          True -> mempty
+          False -> do
+            who' <- jsArg who
+            amt' <- jsArg amt
+            mtok' <- jsArg_m mtok
+            return $
+              jsSimTxn "from" $
+                [ ("to", who')
+                , ("amt", amt')
+                , ("tok", mtok')
+                ]
   DLE_TokenInit _ tok -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> mempty
@@ -375,14 +381,17 @@ jsExpr = \case
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> mempty
       JM_View -> impossible "view checkpay"
-      JM_Simulate -> do
-        amt' <- jsArg amt
-        mtok' <- jsArg_m mtok
-        return $
-          jsSimTxn "to" $
-            [ ("amt", amt')
-            , ("tok", mtok')
-            ]
+      JM_Simulate ->
+        case staticZero amt of
+          True -> mempty
+          False -> do
+            amt' <- jsArg amt
+            mtok' <- jsArg_m mtok
+            return $
+              jsSimTxn "to" $
+                [ ("amt", amt')
+                , ("tok", mtok')
+                ]
   DLE_Wait _ amtt -> do
     let (which, amt) = case amtt of
           Left t -> ("waitUntilTime", t)
@@ -411,21 +420,32 @@ jsExpr = \case
     return $ jsProtect_ "null" ctc $ jsApply f $ args <> [fa']
   DLE_MapSet _ mpv fa mna -> do
     fa' <- jsArg fa
-    na' <- case mna of
-      Just na -> jsArg na
-      Nothing -> return "undefined"
+    na' <- jsArg_m mna
     (ctxt_mode <$> ask) >>= \case
       JM_Simulate ->
         return $ jsApply "await stdlib.simMapSet" ["sim_r", jsMapIdx mpv, fa', na']
       JM_Backend ->
         return $ jsApply "await stdlib.mapSet" [jsMapVar mpv, fa', na']
       JM_View -> impossible "view mapset"
-  DLE_Remote {} -> do
-    return "undefined"
+  DLE_Remote at _fs ro _rng_ty _rm (DLPayAmt pay_net pay_ks) _as (DLWithBill nnRecv _nnZero) -> do
+    (ctxt_mode <$> ask) >>= \case
+      JM_Backend -> return "undefined /* Remote */"
+      JM_View -> impossible "view Remote"
+      JM_Simulate -> do
+        -- These are totally made up and could be totally busted
+        obj' <- jsArg ro
+        pays' <- jsCon $ DLL_Int at $ fromIntegral $ length $ filter (not . staticZero) $ pay_net : map snd pay_ks
+        let res' = parens $ jsSimTxn "remote" $
+              [ ("obj", obj')
+              , ("pays", pays')
+              ]
+        net' <- jsCon $ DLL_Int at 0
+        let toks' = jsArray $ map (const net') nnRecv
+        return $ jsArray [ net', toks', res' <> ", undefined" ]
   DLE_TokenNew _ tns -> do
     (ctxt_mode <$> ask) >>= \case
-      JM_Backend -> return "undefined"
-      JM_View -> impossible "view output"
+      JM_Backend -> return "undefined /* TokenNew */"
+      JM_View -> impossible "view TokenNew"
       JM_Simulate -> do
         let DLTokenNew {..} = tns
         n' <- jsArg dtn_name
@@ -433,7 +453,7 @@ jsExpr = \case
         u' <- jsArg dtn_url
         m' <- jsArg dtn_metadata
         p' <- jsArg dtn_supply
-        d' <- maybe (return "undefined") jsArg dtn_decimals
+        d' <- jsArg_m dtn_decimals
         return $ jsApply "stdlib.simTokenNew" ["sim_r", n', s', u', m', p', d', "getSimTokCtr()"]
   DLE_TokenBurn _ ta aa ->
     (ctxt_mode <$> ask) >>= \case
@@ -441,14 +461,14 @@ jsExpr = \case
         ta' <- jsArg ta
         aa' <- jsArg aa
         return $ jsApply "stdlib.simTokenBurn" ["sim_r", ta', aa']
-      JM_Backend -> return "undefined"
+      JM_Backend -> return "undefined /* TokenBurn */"
       JM_View -> impossible "token.burn"
   DLE_TokenDestroy _ ta ->
     (ctxt_mode <$> ask) >>= \case
       JM_Simulate -> do
         ta' <- jsArg ta
         return $ jsApply "stdlib.simTokenDestroy" ["sim_r", ta']
-      JM_Backend -> return "undefined"
+      JM_Backend -> return "undefined /* TokenDestroy */"
       JM_View -> impossible "token.burn"
   DLE_TimeOrder {} -> impossible "timeorder"
   DLE_GetContract {} -> do
@@ -469,7 +489,7 @@ jsExpr = \case
       (L_Internal, [dv]) -> go "internal" dv
       (L_Api p, [dv]) -> go (bunpack p) dv
       (_, _) -> return $ "null"
-  DLE_setApiDetails {} -> return "undefined"
+  DLE_setApiDetails {} -> return "undefined /* setApiDetails */"
   DLE_GetUntrackedFunds {} -> impossible "getUntrackedFunds"
   DLE_FromSome _at mo da -> do
     mo' <- jsArg mo
@@ -697,11 +717,11 @@ jsETail = \case
     let k_okp = k_defp <> k_ok'
     (delayp, k_p) <-
       case mto of
-        Nothing -> return ("undefined", k_okp)
+        Nothing -> return ("undefined /* mto */", k_okp)
         Just (delays, k_to) -> do
           k_top <- withCtxt $ jsETail k_to
           delays' <- case delays of
-            Nothing -> return "undefined"
+            Nothing -> return "undefined /* delays */"
             Just x -> jsTimeArg x
           timef <- withCtxt $ (<> ".didTimeout") <$> jsTxn
           return (delays', jsIf timef k_top k_okp)

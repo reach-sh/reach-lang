@@ -574,21 +574,21 @@ instance Interp DLExpr where
       let m = f acc m''
       setGlobal $ e {e_linstate = M.insert dlmvar m linst}
       return V_Null
-    DLE_Remote at slcxtframes dlarg str dlPayAmnt dlargs _dlWithBill@DLWithBill {..} -> do
+    DLE_Remote at fs ra _rt f pa as (DLWithBill {..}) -> do
       who <- whoAmI
       case who of
         Participant _ -> return V_Null
         Consensus -> do
-          acc <- fromIntegral <$> vContract <$> interp dlarg
+          acc <- fromIntegral <$> vContract <$> interp ra
           tok_billed <- mapM interp dwb_tok_billed
-          args <- mapM interp dlargs
-          v <- suspend $ PS_Suspend (Just at) (A_Remote slcxtframes str args tok_billed)
-          consensusPayout acc consensusId dlPayAmnt
+          vs <- mapM interp as
+          v <- suspend $ PS_Suspend (Just at) (A_Remote fs f vs tok_billed)
+          consensusPayout acc consensusId pa
           return v
-    DLE_TokenNew _at dltokennew -> do
+    DLE_TokenNew _at dln -> do
       (g, _) <- getState
       let accIdMax = (e_naccid g) - 1
-      tokId <- ledgerNewTokenRefs accIdMax dltokennew
+      tokId <- ledgerNewTokenRefs accIdMax dln
       return $ V_Token $ fromIntegral tokId
     DLE_TokenBurn _at dlarg1 dlarg2 -> do
       tok <- vTok <$> interp dlarg1

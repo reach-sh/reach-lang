@@ -6,7 +6,7 @@ install-mo:
 	chmod +x mo
 	mv mo /usr/local/bin
 
-OPENZEP=4.1.0
+OPENZEP=4.5.0
 OPENZEP_URL=https://github.com/OpenZeppelin/openzeppelin-contracts/archive/refs/tags/v$(OPENZEP).tar.gz
 sol/v$(OPENZEP).tar.gz:
 	(cd sol && wget $(OPENZEP_URL))

@@ -514,6 +514,11 @@ parseVal env sdt v = do
                     _ -> impossible $ "parseVal: Array(" <> show sz <> ").store " <> show arrv <> " " <> show idxv
                 List [Atom "_", Atom "as-array", _] ->
                   return $ SMV_unknown v
+                Atom ('z' : '_' : t0) -> do
+                  typem <- asks ctxt_smt_typem
+                  case M.lookup t0 typem of
+                    Just dt -> return $ SMV_Array dt $ []
+                    Nothing -> impossible $ "parseVal: Array: Atom: z_" <> show t0 <> " is Nothing"
                 _ -> impossible $ "parseVal: Array: " <> show v
             T_Tuple [] ->
               case v of
@@ -1114,7 +1119,7 @@ smt_e at_dv mdv de = do
       forM_ mdv $ smtMapReviewRecordRef at mpv fa'
     DLE_MapSet at mpv fa mna ->
       smtMapUpdate at mpv fa mna
-    DLE_Remote at _ _ _ _ _ _ -> unbound at
+    DLE_Remote at _ _ _ _ _ _ _ -> unbound at
     DLE_TokenNew at _ -> unbound at
     DLE_TokenBurn at _ _ -> unbound at
     DLE_TokenDestroy at _ -> unbound at

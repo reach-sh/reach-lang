@@ -98,9 +98,14 @@ type FixedPoint = { sign: boolean, i: { i: BigNumber, scale: BigNumber } }
 // XXX
 // The shared code
 export interface Stdlib_User_Shared {
+  bigNumberToNumber: (bn: BigNumber) => number
+  bigNumberToBigInt: (bn: BigNumber) => bigint
   isBigNumber: (bn: unknown) => bn is BigNumber
   hexToBigNumber: (hex: string) => BigNumber
   bigNumberToHex: (bn: BigNumber) => string
+  isHex: (x: unknown) => boolean
+  bigNumberify: (n: num|string) => BigNumber
+  stringToHex: (s: string) => string
   uintToBytes: (bn: BigNumber) => string
   parseFixedPoint: (fp: FixedPoint) => number
   numberToFixedPoint: (n: number) => FixedPoint
@@ -108,12 +113,8 @@ export interface Stdlib_User_Shared {
   numberToInt: (n: number) => {sign: boolean, i: num}
 };
 
-// XXX
 // The thing as composed by each connector
 export interface Stdlib_User_Base<Ty> extends Stdlib_Backend_Shared_User<Ty>, Stdlib_User_Shared, Arith, TypeDefs<Ty> {
-  isHex: (x: unknown) => boolean
-  bigNumberify: (n: num|string) => BigNumber
-  stringToHex: (s: string) => string
   addressEq: (addr1: string, addr2: string) => boolean
   digest: (t: any, a: unknown) => string
 };

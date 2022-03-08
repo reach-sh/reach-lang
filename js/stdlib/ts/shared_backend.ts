@@ -1,16 +1,21 @@
 // This has no dependencies on other shared things
 import { ethers } from 'ethers';
 import {
-  bigNumberify
+  bigNumberify,
+  bigNumberToNumber,
 } from './CBR';
 import {
   debug,
   j2s,
 } from './shared_impl';
+export {
+  bigNumberToNumber,
+};
 void(debug);
 
 type BigNumber = ethers.BigNumber;
 export type num = BigNumber | number
+
 export type MaybeRep<A> = ['Some', A] | [ 'None', null ]
 export const asMaybe = <A>(v:A|undefined): MaybeRep<A> => {
   if ( v === undefined ) {
