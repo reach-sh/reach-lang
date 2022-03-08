@@ -28,7 +28,6 @@ const ASYNC_UPDATE_USING = (
 		'--rm-json'
 	];
 
-	// --script should only be used when "script": true
 	if (noDiff || script) argsArray.push('--script');
 
 	return new Promise(resolve => {
