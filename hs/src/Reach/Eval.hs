@@ -104,27 +104,17 @@ instance Pandemic DLExpr where
     DLE_Arg at arg -> DLE_Arg at <$> pan arg
     DLE_LArg at larg  -> DLE_LArg at <$> pan larg
     DLE_Impossible at i err -> return $ DLE_Impossible at i err
-    DLE_VerifyMuldiv at cxt ct argl err -> do
-      r <- pan argl
-      return $ DLE_VerifyMuldiv at cxt ct r err
+    DLE_VerifyMuldiv at cxt ct argl err -> DLE_VerifyMuldiv at cxt ct <$> pan argl <*> pure err
     DLE_PrimOp at primop argl -> DLE_PrimOp at primop <$> pan argl
     DLE_ArrayRef at arg1 arg2 -> DLE_ArrayRef at <$> pan arg1 <*> pan arg2
     DLE_ArraySet at arg1 arg2 arg3 -> DLE_ArraySet at <$> pan arg1 <*> pan arg2 <*> pan arg3
     DLE_ArrayConcat at arg1 arg2 -> DLE_ArrayConcat at <$> pan arg1 <*> pan arg2
     DLE_ArrayZip at arg1 arg2 -> DLE_ArrayZip at <$> pan arg1 <*> pan arg2
-    DLE_TupleRef at arg1 i -> do
-      r <- pan arg1
-      return $ DLE_TupleRef at r i
-    DLE_ObjectRef at arg s -> do
-      r <- pan arg
-      return $ DLE_ObjectRef at r s
-    DLE_Interact at cxt slp s ty argl -> do
-      r <- pan argl
-      return $ DLE_Interact at cxt slp s ty r
+    DLE_TupleRef at arg1 i -> DLE_TupleRef at <$> pan arg1 <*> pure i
+    DLE_ObjectRef at arg s -> DLE_ObjectRef at <$> pan arg <*> pure s
+    DLE_Interact at cxt slp s ty argl -> DLE_Interact at cxt slp s ty <$> pan argl
     DLE_Digest at argl -> DLE_Digest at <$> pan argl
-    DLE_Claim at cxt ct arg mbbs -> do
-      r <- pan arg
-      return $ DLE_Claim at cxt ct r mbbs
+    DLE_Claim at cxt ct arg mbbs -> DLE_Claim at cxt ct <$> pan arg <*> pure mbbs
     DLE_Transfer at arg1 arg2 marg -> DLE_Transfer at <$> pan arg1 <*> pan arg2 <*> pan marg
     DLE_TokenInit at arg -> DLE_TokenInit at <$> pan arg
     DLE_CheckPay at cxt arg marg -> DLE_CheckPay at cxt <$> pan arg <*> pan marg
@@ -170,10 +160,7 @@ instance Pandemic DLWithBill where
 instance Pandemic DLPayAmt where
   pan (DLPayAmt net ks) = do
     let
-      f (a,b) = do
-        r1 <- pan a
-        r2 <- pan b
-        return (r1,r2)
+      f (a,b) = (,) <$> pan a <*> pan b
     DLPayAmt <$> pan net <*> mapM f ks
 
 instance Pandemic DLTokenNew where
@@ -188,17 +175,15 @@ instance Pandemic DLArg where
     DLA_Interact sl s t -> return $ DLA_Interact sl s t
 
 instance Pandemic b => Pandemic (a, b) where
-  pan (s,a) = do
-    r <- pan a
-    return (s,r)
+  pan (s,a) = (,) s <$> pan a
 
 instance Pandemic DLLargeArg where
   pan = \case
-    DLLA_Array t argl -> DLLA_Array t <$> mapM pan argl
-    DLLA_Tuple argl -> DLLA_Tuple <$> mapM pan argl
-    DLLA_Obj strs_args -> DLLA_Obj <$> mapM pan strs_args
+    DLLA_Array t argl -> DLLA_Array t <$> pan argl
+    DLLA_Tuple argl -> DLLA_Tuple <$> pan argl
+    DLLA_Obj strs_args -> DLLA_Obj <$> pan strs_args
     DLLA_Data m s arg -> DLLA_Data m s <$> pan arg
-    DLLA_Struct vars_args -> DLLA_Struct <$> mapM pan vars_args
+    DLLA_Struct vars_args -> DLLA_Struct <$> pan vars_args
     DLLA_Bytes s -> return $ DLLA_Bytes s
 
 instance Pandemic DLSend where
@@ -273,14 +258,8 @@ instance Pandemic DLSStmt where
     DLS_Try at sts1 v sts2 -> do
       DLS_Try at <$> pan sts1 <*> pan v <*> pan sts2
     DLS_ViewIs at sl1 sl2 expo -> return $ DLS_ViewIs at sl1 sl2 expo
-    DLS_TokenMetaGet tm at v a i -> do
-      r1 <- pan v
-      r2 <- pan a
-      return $ DLS_TokenMetaGet tm at r1 r2 i
-    DLS_TokenMetaSet tm at a1 a2 i b -> do
-      r1 <- pan a1
-      r2 <- pan a2
-      return $ DLS_TokenMetaSet tm at r1 r2 i b
+    DLS_TokenMetaGet tm at v a i -> DLS_TokenMetaGet tm at <$> pan v <*> pan a <*> pure i
+    DLS_TokenMetaSet tm at a1 a2 i b -> DLS_TokenMetaSet tm at <$> pan a1 <*> pan a2 <*> pure i <*> pure b
 
 mmapMaybeM :: Monad m => (a -> m (Maybe b)) -> M.Map k a -> m (M.Map k b)
 mmapMaybeM f m = M.mapMaybe id <$> mapM f m
