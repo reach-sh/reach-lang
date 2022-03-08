@@ -164,8 +164,10 @@ algoMinimumBalance = 100000
 algoMaxTxGroupSize :: Integer
 algoMaxTxGroupSize = 16
 
+-- not actually the limit, but this is the name of the variable in the
+-- consensus configuration
 algoMaxInnerTransactions :: Integer
-algoMaxInnerTransactions = 16 -- see (maxOf R_InnerTxn)
+algoMaxInnerTransactions = 16
 
 algoMaxAppTxnAccounts :: Integer
 algoMaxAppTxnAccounts = 4
@@ -424,12 +426,14 @@ checkCost warning disp alwaysShow ts = do
       mkg = newIORef mempty
   cost_gr <- mkg
   logLen_gr <- mkg
+  itxn_gr <- mkg
   let lTop = "TOP"
   let lBot = "BOT"
   (labr :: IORef String) <- newIORef $ lTop
   (k_r :: IORef Integer) <- newIORef $ 1
   (cost_r :: IORef Integer) <- newIORef $ 0
   (logLen_r :: IORef Integer) <- newIORef $ 0
+  (itxn_r :: IORef Integer) <- newIORef $ 0
   let modK = modifyIORef k_r
   let l2s = LT.unpack
   let rec_ r c = do
@@ -437,6 +441,7 @@ checkCost warning disp alwaysShow ts = do
         modifyIORef r ((k * c) +)
   let recCost = rec_ cost_r
   let recLogLen = rec_ logLen_r
+  let recITxn = rec_ itxn_r
   let jump_ :: String -> IO ()
       jump_ t = do
         lab <- readIORef labr
@@ -449,10 +454,12 @@ checkCost warning disp alwaysShow ts = do
               modifyIORef cgr $ M.alter g lab
         updateGraph cost_r cost_gr
         updateGraph logLen_r logLen_gr
+        updateGraph itxn_r itxn_gr
   let switch t = do
         writeIORef labr t
         writeIORef cost_r 0
         writeIORef logLen_r 0
+        writeIORef itxn_r 0
   let jump t = recCost 1 >> jump_ (l2s t)
   forM_ ts $ \case
     TFor_top cnt -> do
@@ -510,6 +517,12 @@ checkCost warning disp alwaysShow ts = do
         "b^" -> recCost 6
         "b~" -> recCost 4
         "bsqrt" -> recCost 40
+        "itxn_begin" -> do
+          recITxn 1
+          recCost 1
+        "itxn_next" -> do
+          recITxn 1
+          recCost 1
         _ -> recCost 1
   let showNice = \case
         [] -> ""
@@ -526,11 +539,13 @@ checkCost warning disp alwaysShow ts = do
         return (msg, tooMuch)
   (showCost, exceedsCost) <- analyze "cost" cost_gr "units of cost" algoMaxAppProgramCost
   (showLogLen, exceedsLogLen) <- analyze "log" logLen_gr "bytes of logs" algoMaxLogLen
-  let exceeds = exceedsCost || exceedsLogLen
+  (showInnerTxns, exceedsInnerTxns) <- analyze "itxn" itxn_gr "inner transactions" $ algoMaxInnerTransactions * algoMaxTxGroupSize
+  let exceeds = exceedsCost || exceedsLogLen || exceedsInnerTxns
   when (alwaysShow && not exceeds) $ do
     putStrLn $ "Conservative analysis on Algorand found:"
     putStrLn $ " * " <> showCost <> "."
     putStrLn $ " * " <> showLogLen <> "."
+    putStrLn $ " * " <> showInnerTxns <> "."
 
 optimizeAndRender :: Notify -> Disp -> Bool -> TEALs -> IO T.Text
 optimizeAndRender warning disp showCost ts = do
@@ -595,7 +610,6 @@ data Resource
   = R_Txn
   | R_Asset
   | R_Account
-  | R_InnerTxn
   deriving (Eq, Ord)
 
 type ResourceGraph = M.Map Resource (CostGraph Int)
@@ -609,7 +623,6 @@ instance Show Resource where
     R_Txn -> "transactions"
     R_Asset -> "assets"
     R_Account -> "accounts"
-    R_InnerTxn -> "inner transactions"
 
 maxOf :: Resource -> Integer
 maxOf = \case
@@ -617,7 +630,6 @@ maxOf = \case
   R_Account -> algoMaxAppTxnAccounts + 1 -- XXX could detect the sender as a free account
   -- XXX move to cost analysis, rather than graph analysis
   R_Txn -> algoMaxTxGroupSize
-  R_InnerTxn -> algoMaxInnerTransactions * algoMaxTxGroupSize
 
 newResources :: IO ResourceCounters
 newResources = do
@@ -626,7 +638,6 @@ newResources = do
       [ (R_Txn, (mempty, 1))
       , (R_Asset, (mempty, 0))
       , (R_Account, (mempty, 0))
-      , (R_InnerTxn, (mempty, 0))
       ]
 
 newResourceGraph :: IO (IORef ResourceGraph)
@@ -636,7 +647,6 @@ newResourceGraph = do
       [ (R_Txn, mempty)
       , (R_Asset, mempty)
       , (R_Account, mempty)
-      , (R_InnerTxn, mempty)
       ]
 
 dupeResources :: App a -> App a
@@ -702,7 +712,6 @@ checkResources bad' warn' findAt rg = do
   one bad' R_Txn
   one warn' R_Asset
   one warn' R_Account
-  one bad' R_InnerTxn
 
 resetToks :: App a -> App a
 resetToks m = do
@@ -1917,7 +1926,6 @@ checkTxn (CheckTxn {..}) =
 itxnNextOrBegin :: Bool -> App ()
 itxnNextOrBegin isNext = do
   op (if isNext then "itxn_next" else "itxn_begin")
-  incResource R_InnerTxn
   -- We do this because by default it will inspect the remaining fee and only
   -- set it to zero if there is a surplus, which means that sometimes it means
   -- 0 and sometimes it means "take money from the escrow", which is dangerous,

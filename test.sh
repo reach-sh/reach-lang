@@ -132,9 +132,9 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-jb
-ci ALGO remote-rsh
-#ci ALGO rps-7-loops
+#jb
+REACH_DEBUG=Y c hs/t/y/many_txns.rsh
+#REACH_DEBUG=Y c examples/rps-7-loops/index.rsh
 exit 0
 
 #c --install-pkgs users/xbacked-contracts/src/master_vault.rsh
