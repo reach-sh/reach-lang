@@ -1,11 +1,12 @@
+import { OutputChannel } from 'vscode';
 import { spawn } from 'child_process';
 
 export default (
-	pathToScript: string
+	pathToScript: string,
+	outputChannel: OutputChannel
 ): Promise<VersionCompareJson> => {
-	// Track times to find performance bottlenecks.
-	console.info(
-		'Spawned version-compare --json at',
+	outputChannel.appendLine(
+		'Spawned version-compare --json at ' +
 		new Date().toLocaleTimeString()
 	);
 
@@ -16,18 +17,20 @@ export default (
 		);
 
 		process.on('exit', code => {
-			console.info(
-				'version-compare --json finished...',
-				process,
-				new Date().toLocaleTimeString()
+			outputChannel.appendLine(
+				'version-compare --json finished' + ' at '
+				+ new Date().toLocaleTimeString()
 			);
 
 			const { stdout } = process;
 
 			console.info(
-				'version-compare --json exited',
-				'with status code',
-				code
+				'version-compare --json\'s process', process
+			);
+
+			outputChannel.appendLine(
+				'version-compare --json exited with ' +
+				`status code ${code}.`
 			);
 
 			// "exit code 60 means either the script or
@@ -36,12 +39,39 @@ export default (
 				const json = JSON.parse(
 					stdout.read(stdout.readableLength)
 				);
-				console.info('json!', json);
+				outputChannel.appendLine(
+					'version-compare --json output:'
+				);
+				outputChannel.appendLine(
+					JSON.stringify(json)
+				);
 				return resolve(json);
-			}
-
-			if (code) {
-				console.error('Unexpected exit code:', code);
+			} else if (code === 0) {
+				outputChannel.appendLine(
+					'You should be up to date. ' +
+					new Date().toLocaleTimeString()
+				);
+			} else {
+				outputChannel.appendLine(
+					'Error: version-compare --json gave ' +
+					`an unexpected exit code: ${code}`
+				);
+				outputChannel.appendLine(
+					'version-compare --json stdout:'
+				);
+				outputChannel.appendLine(
+					process.stdout.read(
+						process.stdout.readableLength
+					)
+				);
+				outputChannel.appendLine(
+					'version-compare --json stderr:'
+				);
+				outputChannel.appendLine(
+					process.stderr.read(
+						process.stderr.readableLength
+					)
+				);
 				reject(null);
 			}
 

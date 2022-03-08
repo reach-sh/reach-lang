@@ -78,8 +78,8 @@ export default async (
 		));
 
 	OUTPUT_CHANNEL.appendLine(
-		'Checking version-compare --json -h >/dev/null 2>&1 '
-		+ new Date().toLocaleTimeString()
+		'Checking version-compare --json -h >/dev/null 2>&1'
+		+ ' at ' + new Date().toLocaleTimeString()
 	);
 
 	CHECK_VERSION_COMPARE_JSON_USING(pathToScript).then(
@@ -91,6 +91,13 @@ export default async (
 				'version-compare --json -h >/dev/null 2>&1'
 				+ str + new Date().toLocaleTimeString()
 			);
+			if (versionCompareJsonDoesntWork) {
+				OUTPUT_CHANNEL.appendLine(
+					'This likely means your reach' +
+					' script is very old. ' +
+					new Date().toLocaleTimeString()
+				);
+			}
 
 			let jsonFromVersCompJson: VersionCompareJson = null;
 
@@ -101,19 +108,12 @@ export default async (
 				try {
 					jsonFromVersCompJson =
 						await VERSION_COMPARE_JSON_USING(
-							pathToScript
+							pathToScript,
+							OUTPUT_CHANNEL
 						);
 				} catch (error) {
 					OUTPUT_CHANNEL.appendLine(
-						'Checking for updates failed.'
-					);
-					OUTPUT_CHANNEL.append(
-						'version-compare --json exited '
-					);
-					OUTPUT_CHANNEL.append(
-						'with an unexpected status code. '
-					);
-					OUTPUT_CHANNEL.appendLine(
+						'Checking for updates failed. ' +
 						new Date().toLocaleTimeString()
 					);
 				}
@@ -144,7 +144,8 @@ export default async (
 				UPDATE_USING(
 					pathToScript,
 					jsonFromVersCompJson,
-					versionCompareJsonDoesntWork
+					versionCompareJsonDoesntWork,
+					OUTPUT_CHANNEL
 				);
 		});
 };

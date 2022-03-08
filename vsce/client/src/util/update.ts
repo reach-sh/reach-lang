@@ -1,5 +1,6 @@
 import { execSync, spawn } from 'child_process';
 import {
+	OutputChannel,
 	ProgressLocation,
 	ProgressOptions,
 	window
@@ -10,15 +11,16 @@ import VERSION_COMPARE_JSON_USING
 
 const ASYNC_UPDATE_USING = (
 	pathToScript: string,
-	versionCompareJson: VersionCompareJson
-): Promise<number> => {
+	versionCompareJson: VersionCompareJson,
+	outputChannel: OutputChannel
+): Promise<boolean> => {
 	const {
 		dockerC, dockerH, noDiff, script
 	} = versionCompareJson;
-	console.info('dockerC', dockerC);
-	console.info('dockerH', dockerH);
-	console.info('noDiff', noDiff);
-	console.info('script', script);
+	outputChannel.appendLine('dockerC ' + dockerC);
+	outputChannel.appendLine('dockerH ' + dockerH);
+	outputChannel.appendLine('noDiff ' + noDiff);
+	outputChannel.appendLine('script ' + script);
 
 	const argsArray: string[] = [
 		'update-ide',
@@ -29,13 +31,69 @@ const ASYNC_UPDATE_USING = (
 	// --script should only be used when "script": true
 	if (noDiff || script) argsArray.push('--script');
 
-	return new Promise((resolve, reject) => {
+	return new Promise(resolve => {
 		const process = spawn(
 			pathToScript, argsArray
 		);
 
-		process.on('error', reject);
-		process.on('exit', resolve);
+		process.on('error', error => {
+			console.info('update-ide\'s process', process);
+			console.info('update-ide\'s error', error);
+
+			outputChannel.appendLine('error message:');
+			outputChannel.appendLine(error.message)
+			outputChannel.appendLine('error name:');
+			outputChannel.appendLine(error.name)
+			outputChannel.appendLine('error stack:');
+			outputChannel.appendLine(error.stack);
+			outputChannel.appendLine('stdout:');
+			outputChannel.appendLine(
+				process.stdout.read(
+					process.stdout.readableLength
+				)
+			);
+			outputChannel.appendLine('stderr:');
+			outputChannel.appendLine(
+				process.stderr.read(
+					process.stderr.readableLength
+				)
+			);
+
+			resolve(false);
+		});
+
+		process.on('exit', (code, signal) => {
+			console.info('update-ide\'s process', process);
+			outputChannel.appendLine(
+				`\nupdate-ide exited with code ${
+					code
+				} and signal ${signal}. ` +
+				new Date().toLocaleTimeString()
+			);
+
+			if (code === 0) {
+				return resolve(true);
+			}
+
+			outputChannel.appendLine(
+				'Updating was unsuccessful. ' +
+				new Date().toLocaleTimeString()
+			);
+			outputChannel.appendLine('stdout:');
+			outputChannel.appendLine(
+				process.stdout.read(
+					process.stdout.readableLength
+				)
+			);
+			outputChannel.appendLine('stderr:');
+			outputChannel.appendLine(
+				process.stderr.read(
+					process.stderr.readableLength
+				)
+			);
+
+			resolve(false);
+		});
 	});
 };
 
@@ -51,7 +109,8 @@ const UPDATE_SCRIPT_AND_CLI_IMAGE_USING = (
 export default async (
 	pathToScript: string,
 	jsonFromVersionCompareJson: VersionCompareJson,
-	versionCompareJsonDoesntWork: boolean
+	versionCompareJsonDoesntWork: boolean,
+	outputChannel: OutputChannel
 ) => {
 	const cancellable: boolean = false;
 
@@ -66,49 +125,59 @@ export default async (
 
 	// The actual update logic is here!
 	window.withProgress(progressOptions, () =>
-		new Promise<void>(resolve => setTimeout(
+		new Promise<boolean>(resolve => setTimeout(
 			async () => {
 				if (versionCompareJsonDoesntWork) {
 					UPDATE_SCRIPT_AND_CLI_IMAGE_USING(
 						pathToScript
 					);
 
-					console.info(
-						'version compare --json ' +
-						'should now work.'
+					outputChannel.appendLine(
+						'version-compare --json ' +
+						'originally didn\'t work, ' +
+						'but it should, now.'
 					);
+					outputChannel.appendLine(
+						new Date().toLocaleTimeString()
+					);
+
 					jsonFromVersionCompareJson =
 						await VERSION_COMPARE_JSON_USING(
-							pathToScript
+							pathToScript,
+							outputChannel
 						);
 				}
 
 				if (jsonFromVersionCompareJson) {
-					console.info(
-						'Update started:',
+					outputChannel.appendLine(
+						'\nStarting update... ' +
 						new Date().toLocaleTimeString()
 					);
 
-					await ASYNC_UPDATE_USING(
+					const success = await ASYNC_UPDATE_USING(
 						pathToScript,
-						jsonFromVersionCompareJson
+						jsonFromVersionCompareJson,
+						outputChannel
 					);
 
-					console.info(
-						'Update finished:',
+					if (success === false) {
+						return resolve(false);
+					}
+
+					outputChannel.appendLine(
+						'Updating was successful. ' +
 						new Date().toLocaleTimeString()
 					);
+
+					return resolve(true);
 				}
 
-				console.info(
-					'Done checking for updates',
-					new Date().toLocaleTimeString()
-				);
-				resolve();
+				resolve(false);
 			}, 0
 		))
-	).then(() => window.showInformationMessage(
-		'Reach is now up to date.',
-		'Close (Esc)'
-	));
+	).then(success => success &&
+		window.showInformationMessage(
+			'Reach is now up to date.', 'Close (Esc)'
+		)
+	);
 };
