@@ -2,11 +2,13 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 517 theorems; No failures!
+Checked 164 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
- * This program could use 257 inner transactions, but the limit is 256; longest path:
-     TOP --> preamble --> publish --> publish0 --> updateState --> checkSize --> done --> BOT
+ * Step 0 (the one starting from the consensus transfer at ./many_txns.rsh:62:5:dot) could have too many assets: could have 16 but limit is 8
+ * Step 1 (the one starting from the consensus transfer at ./many_txns.rsh:99:5:dot) could have too many assets: could have 16 but limit is 8
+ * This program could use 1292 units of cost, but the limit is 700; longest path:
+     TOP --> preamble --> api --> publish --> l0_publish_lt_1 --> publish0 --> updateState --> apiReturn --> checkSize --> done --> BOT
 
- * This program could use 2699 units of cost, but the limit is 700; longest path:
-     TOP --> preamble --> api --> publish --> publish0 --> updateState --> apiReturn --> checkSize --> done --> BOT
-
+WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
+ * Step 0 (the one starting from the consensus transfer at ./many_txns.rsh:62:5:dot) could have too many transactions: could have 18 but limit is 16
+ * Step 1 (the one starting from the consensus transfer at ./many_txns.rsh:99:5:dot) could have too many transactions: could have 18 but limit is 16

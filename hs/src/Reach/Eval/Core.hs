@@ -600,6 +600,7 @@ base_env_slvals =
   , (".setApiDetails", SLV_Form $ SLForm_setApiDetails)
   , ("getUntrackedFunds", SLV_Prim $ SLPrim_getUntrackedFunds)
   , ("fromSome", SLV_Prim $ SLPrim_fromSome)
+  , ("distinct", SLV_Prim $ SLPrim_distinct)
   , ( "Reach"
     , (SLV_Object sb (Just $ "Reach") $
          m_fromList_public_builtin
@@ -1944,8 +1945,10 @@ evalAndMap f = \case
 evalDistinctTokens :: [SLVal] -> [SLVal] -> App SLVal
 evalDistinctTokens old = \case
   [] -> withAt $ flip SLV_Bool True
-  (v : vs) ->
-    evalAndMap (\v' -> snd <$> (evalNeg =<< (snd <$> evalPolyEq Public v v'))) $ old <> vs
+  (v : vs) -> do
+    v_d <- evalAndMap (\v' -> snd <$> (evalNeg =<< (snd <$> evalPolyEq Public v v'))) $ old <> vs
+    vs_d <- evalDistinctTokens old vs
+    evalAnd v_d vs_d
 
 evalITE :: SecurityLevel -> SLVal -> SLVal -> SLVal -> App SLSVal
 evalITE lvl c t f = do
@@ -3432,6 +3435,9 @@ evalPrim p sargs =
                     S.delete "Some" $
                       S.delete "None" $
                         S.fromList $ map fst cs
+    SLPrim_distinct -> do
+      (,) lvl <$> evalDistinctTokens [] args
+    -- END OF evalPrim case
   where
     lvl = mconcatMap fst sargs
     args = map snd sargs
@@ -4383,6 +4389,7 @@ compilePayAmt tt v = do
         tokUniq <- tokIsUnique sks tok
         doClaim CT_Assert tokUniq $ Just "Token in pay amount is unique"
 
+-- XXX This should be converted to take DLVars and use evalDistinctTokens
 tokIsUnique :: [DLArg] -> DLArg -> App DLArg
 tokIsUnique sks tok = do
   at <- withAt id

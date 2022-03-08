@@ -1,0 +1,12 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 517 theorems; No failures!
+WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
+ * This program could use 257 inner transactions, but the limit is 256; longest path:
+     TOP --> preamble --> publish --> publish0 --> updateState --> checkSize --> done --> BOT
+
+ * This program could use 2699 units of cost, but the limit is 700; longest path:
+     TOP --> preamble --> api --> publish --> publish0 --> updateState --> apiReturn --> checkSize --> done --> BOT
+

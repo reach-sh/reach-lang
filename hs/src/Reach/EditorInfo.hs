@@ -162,6 +162,7 @@ completionKind v =
         SLPrim_getUntrackedFunds -> Just CK_Function
         SLPrim_fromSome -> Just CK_Function
         SLPrim_check -> Just CK_Function
+        SLPrim_distinct -> Just CK_Function
     SLV_Form slf ->
       case slf of
         SLForm_App -> Just CK_Constructor

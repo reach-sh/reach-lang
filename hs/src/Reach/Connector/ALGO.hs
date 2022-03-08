@@ -627,7 +627,8 @@ instance Show Resource where
 maxOf :: Resource -> Integer
 maxOf = \case
   R_Asset -> algoMaxAppTxnForeignAssets
-  R_Account -> algoMaxAppTxnAccounts + 1 -- XXX could detect the sender as a free account
+  -- XXX could detect the sender as a free account
+  R_Account -> algoMaxAppTxnAccounts + 1
   -- XXX move to cost analysis, rather than graph analysis
   R_Txn -> algoMaxTxGroupSize
 

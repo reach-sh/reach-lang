@@ -2148,3 +2148,13 @@ So, the amount returned must eventually be transferred out of the contract to sa
 
  If a contract were to have its funds improperly removed, through clawback or other means, and the actual balance is less
 than Reach's expectation, this function will return `{!rsh} 0`.
+
+### `distinct`
+
+@{ref("rsh", "distinct")}
+```reach
+distinct(1, 2, 3);
+```
+
+`{!rsh} distinct(...args)` evaluates to `{!rsh} true` when all its arguments
+are distinct from each other.

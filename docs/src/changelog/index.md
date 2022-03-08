@@ -7,6 +7,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.9 is the current Reach release candidate version.
 
++ 2022/03/08: Added `{!rsh} distinct`.
 + 2022/03/07: `{!rsh} remote` objects supported on Algorand.
 + 2022/03/02: Algorand-only: Drastically reduced the cost of `{!rsh} muldiv`.
 + 2022/03/02: Algorand-only: Contract bytecode upgraded to version `6`.
