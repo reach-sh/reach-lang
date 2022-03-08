@@ -3,7 +3,7 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 9 theorems; No failures!
-WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
+WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
  * This program could use 34442 units of cost, but the limit is 700; longest path:
      TOP --> preamble --> api --> publish --> l0_publish_lt_1 --> publish0 --> l1_forTop --> l2_forEnd --> l3_forTop --> l5_forTop --> l6_forEnd --> l4_forEnd --> l7_forTop --> l8_forEnd --> updateState --> apiReturn --> checkSize --> done --> BOT
 

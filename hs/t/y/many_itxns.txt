@@ -3,7 +3,7 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 517 theorems; No failures!
-WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
+WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
  * This program could use 257 inner transactions, but the limit is 256; longest path:
      TOP --> preamble --> publish --> publish0 --> updateState --> checkSize --> done --> BOT
 
