@@ -1012,7 +1012,7 @@ compile = command "compile" $ info f d
       let CompilerOpts {..} = cta_co
       let v = versionBy majMinPat version''
       let ci' = if ci then "true" else ""
-      let ports = if (elem "--sim" rawArgs || co_sim) then "-p 3001:3001" else ""
+      let ports = if co_sim then "-p 3001:3001" else ""
       liftIO $ do
         diePathContainsParentDir co_source
         maybe (pure ()) diePathContainsParentDir co_mdirDotReach
@@ -1070,6 +1070,7 @@ compile = command "compile" $ info f d
               -u "$(id -ru):$(id -rg)" \
               --name "reachc_$$$$" \
               --entrypoint tail \
+              $ports \
               reachsh/reach:$v -f /dev/null)"
           fi
 
@@ -1079,7 +1080,6 @@ compile = command "compile" $ info f d
             -e REACH_IDE \
             -e "REACHC_ID=$${ID}" \
             -e "CI=$ci'" \
-            $ports \
             "$$cid" reachc $args
         fi
       |]
