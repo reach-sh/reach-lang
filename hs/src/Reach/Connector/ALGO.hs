@@ -427,44 +427,32 @@ checkCost :: Notify -> Notify -> Disp -> Bool -> [TEAL] -> IO ()
 checkCost bad' warn' disp alwaysShow ts = do
   let mkg :: IO (IORef (LPGraph String))
       mkg = newIORef mempty
-  cost_gr <- mkg
-  logLen_gr <- mkg
   res_grs <- forM allResourcesM $ const mkg
   let lTop = "TOP"
   let lBot = "BOT"
   (labr :: IORef String) <- newIORef $ lTop
   (k_r :: IORef Integer) <- newIORef $ 1
-  (cost_r :: IORef Integer) <- newIORef $ 0
-  (logLen_r :: IORef Integer) <- newIORef $ 0
   res_rs <- forM allResourcesM $ const $ newIORef $ (0 :: Integer)
   let modK = modifyIORef k_r
   let l2s = LT.unpack
-  let rec_ r c = do
+  let recResource rs c = do
+        let r = res_rs M.! rs
         k <- readIORef k_r
         modifyIORef r ((k * c) +)
-  let recCost = rec_ cost_r
-  let recLogLen = rec_ logLen_r
-  let recResource rs = rec_ $ res_rs M.! rs
+  let recCost = recResource R_Cost
   let jump_ :: String -> IO ()
-      jump_ t = do
+      jump_ t = forM_ allResources $ \rs -> do
         lab <- readIORef labr
-        let updateGraph cr cgr = do
-              c <- readIORef cr
-              let ff = max c
-              let fg = Just . ff . fromMaybe 0
-              let f = M.alter fg t
-              let g = Just . f . fromMaybe mempty
-              modifyIORef cgr $ M.alter g lab
-        updateGraph cost_r cost_gr
-        updateGraph logLen_r logLen_gr
-        forM_ allResources $ \rs -> do
-          let r = res_rs M.! rs
-          let gr = res_grs M.! rs
-          updateGraph r gr
+        let cr = res_rs M.! rs
+        let cgr = res_grs M.! rs
+        c <- readIORef cr
+        let ff = max c
+        let fg = Just . ff . fromMaybe 0
+        let f = M.alter fg t
+        let g = Just . f . fromMaybe mempty
+        modifyIORef cgr $ M.alter g lab
   let switch t = do
         writeIORef labr t
-        writeIORef cost_r 0
-        writeIORef logLen_r 0
         forM_ res_rs $ \r ->
           writeIORef r 0
   let jump t = recCost 1 >> jump_ (l2s t)
@@ -487,7 +475,8 @@ checkCost bad' warn' disp alwaysShow ts = do
       impossible "callsub"
     TLog len -> do
       -- Note: We don't check MaxLogCalls, because it is not actually checked
-      recLogLen len
+      -- by the implementation
+      recResource R_Log len
       recCost 1
     TComment {} -> return ()
     TLabel lab' -> do
@@ -536,7 +525,12 @@ checkCost bad' warn' disp alwaysShow ts = do
         [] -> ""
         [l] -> l
         l : r -> l <> " --> " <> showNice r
-  let analyze notify lab cgr units algoMax = do
+  let analyze_rs = flip foldM ("", False) $ \(msg1, exceeds1) rs -> do
+        let notify = if rPrecise rs then bad' else warn'
+        let lab = rShort rs
+        let cgr = res_grs M.! rs
+        let units = show rs
+        let algoMax = maxOf rs
         cg <- readIORef cgr
         (gs, p, c) <- longestPathBetween cg lTop (l2s lBot)
         let msg = "This program could use " <> show c <> " " <> units
@@ -544,22 +538,11 @@ checkCost bad' warn' disp alwaysShow ts = do
         when tooMuch $
           notify $ LT.pack $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n"
         void $ disp ("." <> lab <> ".dot") $ LT.toStrict $ T.render $ dotty gs
-        return (" * " <> msg <> ".\n", tooMuch)
-  (showCost, exceedsCost) <- analyze bad' "cost" cost_gr "units of cost" algoMaxAppProgramCost
-  (showLogLen, exceedsLogLen) <- analyze bad' "log" logLen_gr "bytes of logs" algoMaxLogLen
-  let analyze_r rs = do
-        let gr = res_grs M.! rs
-        let notify = if rPrecise rs then bad' else warn'
-        analyze notify (rShort rs) gr (show rs) (maxOf rs)
-  let analyze_rs = flip foldM ("", False) $ \(msg1, exceeds1) rs -> do
-        (msg2, exceeds2) <- analyze_r rs
-        return $ (msg1 <> msg2, exceeds1 || exceeds2)
-  (showRs, exceedsRs) <- analyze_rs [ R_ITxn, R_Txn, R_Asset, R_Account ]
-  let exceeds = exceedsCost || exceedsLogLen || exceedsRs
+        let msg2 = " * " <> msg <> ".\n"
+        return $ (msg1 <> msg2, exceeds1 || tooMuch)
+  (showRs, exceeds) <- analyze_rs allResources
   when (alwaysShow && not exceeds) $ do
     putStrLn $ "Conservative analysis on Algorand found:"
-    putStr $ showCost
-    putStr $ showLogLen
     putStr $ showRs
 
 optimizeAndRender :: Notify -> Notify -> Disp -> Bool -> TEALs -> IO T.Text
@@ -611,10 +594,12 @@ recordWhich :: Int -> App a -> App a
 recordWhich n = local (\e -> e {eWhich = Just n}) . separateResources
 
 data Resource
-  = R_Txn
-  | R_ITxn
-  | R_Asset
+  = R_Asset
   | R_Account
+  | R_Log
+  | R_Cost
+  | R_ITxn
+  | R_Txn
   deriving (Eq, Ord, Enum, Bounded)
 
 allResources :: [Resource]
@@ -636,6 +621,8 @@ instance Show Resource where
     R_ITxn -> "inner transactions"
     R_Asset -> "assets"
     R_Account -> "accounts"
+    R_Cost -> "units of cost"
+    R_Log -> "bytes of logs"
 
 rShort :: Resource -> String
 rShort = \case
@@ -643,6 +630,8 @@ rShort = \case
   R_ITxn -> "itxn"
   R_Asset -> "asset"
   R_Account -> "acc"
+  R_Cost -> "cost"
+  R_Log -> "log"
 
 rPrecise :: Resource -> Bool
 rPrecise = \case
@@ -650,6 +639,8 @@ rPrecise = \case
   R_ITxn -> True
   R_Asset -> False
   R_Account -> False
+  R_Cost -> True
+  R_Log -> True
 
 maxOf :: Resource -> Integer
 maxOf = \case
@@ -657,6 +648,8 @@ maxOf = \case
   R_Account -> algoMaxAppTxnAccounts
   R_Txn -> algoMaxTxGroupSize
   R_ITxn -> algoMaxInnerTransactions * algoMaxTxGroupSize
+  R_Cost -> algoMaxAppProgramCost
+  R_Log -> algoMaxLogLen
 
 newResources :: IO ResourceSets
 newResources = newIORef $ M.map (const mempty) allResourcesM
