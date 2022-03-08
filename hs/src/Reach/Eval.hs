@@ -141,15 +141,13 @@ instance Pandemic DLVar where
       Nothing -> do
         infections <- asks e_infections
         r <- liftIO $ readIORef infections
-        case M.lookup (fromIntegral i) r of
-          Nothing -> return $ DLVar at m_locvar t i
-          Just s -> return $ DLVar at (Just (at,s)) t i
+        return $ DLVar at (M.lookup (fromIntegral i) r) t i
       Just _ -> return $ DLVar at m_locvar t i
 
 instance Pandemic DLLetVar where
   pan = \case
     DLV_Eff -> return DLV_Eff
-    DLV_Let vc v -> return $ DLV_Let vc v
+    DLV_Let vc v -> DLV_Let vc <$> pan v
 
 instance Pandemic DLSBlock where
   pan (DLSBlock at cxt sts arg) = DLSBlock at cxt <$> pan sts <*> pan arg
@@ -215,48 +213,30 @@ instance Pandemic a => Pandemic (DLRecv a) where
 
 instance Pandemic DLSStmt where
   pan = \case
-    DLS_Let at v e -> DLS_Let at <$> pan v <*> pan e
+    DLS_Let at v e -> do
+      DLS_Let at <$> pan v <*> pan e
     DLS_ArrayMap at v1 a1 v2 v3 bl -> do
       DLS_ArrayMap at <$> pan v1 <*> pan a1 <*> pan v2 <*> pan v3 <*> pan bl
     DLS_ArrayReduce at v1 a1 a2 v2 v3 v4 bl -> do
       DLS_ArrayReduce at <$> pan v1 <*> pan a1 <*> pan a2 <*> pan v2 <*> pan v3 <*> pan v4 <*> pan bl
-    DLS_If at arg ann sts1 sts2 -> do
-      r1 <- pan arg
-      r2 <- pan sts1
-      r3 <- pan sts2
-      return $ DLS_If at r1 ann r2 r3
-    DLS_Switch at v sa sw -> do
-      r1 <- pan v
-      DLS_Switch at r1 sa <$> pan sw
-    DLS_Return at i arg -> do
-      DLS_Return at i <$> pan arg
-    DLS_Prompt at v ann sts -> do
-      DLS_Prompt at v ann <$> pan sts
+    DLS_If at arg ann sts1 sts2 -> DLS_If at <$> pan arg <*> pure ann <*> pan sts1 <*> pan sts2
+    DLS_Switch at v sa sw -> DLS_Switch at <$> pan v <*> pure sa <*> pan sw
+    DLS_Return at i arg -> DLS_Return at i <$> pan arg
+    DLS_Prompt at v ann sts -> DLS_Prompt at <$> pan v <*> pure ann <*> pan sts
     DLS_Stop at -> return $ DLS_Stop at
     DLS_Unreachable at ctx s -> return $ DLS_Unreachable at ctx s
     DLS_Only at sl sts -> DLS_Only at sl <$> pan sts
-    DLS_ToConsensus at s r m -> do
-      DLS_ToConsensus at <$> pan s <*> pan r <*> pan m
+    DLS_ToConsensus at s r m -> DLS_ToConsensus at <$> pan s <*> pan r <*> pan m
     DLS_FromConsensus at cxt sts -> DLS_FromConsensus at cxt <$> pan sts
     DLS_While at agn bl1 bl2 sts -> do
       DLS_While at <$> pan agn <*> pan bl1 <*> pan bl2 <*> pan sts
     DLS_Continue at agn -> DLS_Continue at <$> pan agn
     DLS_FluidSet at flv arg -> DLS_FluidSet at flv <$> pan arg
-    DLS_FluidRef at v flv -> do
-      r1 <- pan v
-      return $ DLS_FluidRef at r1 flv
+    DLS_FluidRef at v flv -> DLS_FluidRef at <$> pan v <*> pure flv
     DLS_MapReduce at i v1 dlmv arg v2 v3 bl -> do
-      r1 <- pan v1
-      r2 <- pan arg
-      r3 <- pan v2
-      r4 <- pan v3
-      r5 <- pan bl
-      return $ DLS_MapReduce at i r1 dlmv r2 r3 r4 r5
-    DLS_Throw at arg b -> do
-      r1 <- pan arg
-      return $ DLS_Throw at r1 b
-    DLS_Try at sts1 v sts2 -> do
-      DLS_Try at <$> pan sts1 <*> pan v <*> pan sts2
+      DLS_MapReduce at i <$> pan v1 <*> pure dlmv <*> pan arg <*> pan v2 <*> pan v3 <*> pan bl
+    DLS_Throw at arg b -> DLS_Throw at <$> pan arg <*> pure b
+    DLS_Try at sts1 v sts2 -> DLS_Try at <$> pan sts1 <*> pan v <*> pan sts2
     DLS_ViewIs at sl1 sl2 expo -> return $ DLS_ViewIs at sl1 sl2 expo
     DLS_TokenMetaGet tm at v a i -> DLS_TokenMetaGet tm at <$> pan v <*> pan a <*> pure i
     DLS_TokenMetaSet tm at a1 a2 i b -> DLS_TokenMetaSet tm at <$> pan a1 <*> pan a2 <*> pure i <*> pure b

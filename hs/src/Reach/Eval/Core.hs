@@ -92,7 +92,7 @@ data Env = Env
   , e_exn :: IORef ExnEnv
   , e_appr :: Either DLOpts (IORef AppInitSt)
   , e_droppedAsserts :: Counter
-  , e_infections :: IORef (M.Map Integer String)
+  , e_infections :: IORef (M.Map Integer (SrcLoc, SLVar))
   }
 
 instance Semigroup a => Semigroup (App a) where
@@ -1096,7 +1096,7 @@ infectWithId_sv at v val = do
     SLV_Clo a mt c -> return $ SLV_Clo a mt $ infectWithId_clo v c
     SLV_DLVar (DLVar a _ t i) -> do
       infections <- asks e_infections
-      liftIO $ modifyIORef infections $ M.insert (fromIntegral i) v
+      liftIO $ modifyIORef infections $ M.insert (fromIntegral i) (at, v)
       return $ SLV_DLVar $ DLVar a (Just (at, v)) t i
     x -> return $ x
 
