@@ -310,6 +310,8 @@ jobs:
         (cd js/browser-tests && make run)
     - store_artifacts:
         path: js/browser-tests/cypress/videos
+    - store_artifacts:
+        path: js/browser-tests/cypress/screenshots
     - slack_fail
 
 workflows:
