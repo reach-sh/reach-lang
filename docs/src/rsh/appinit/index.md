@@ -98,6 +98,13 @@ Each `{!rsh} participantName` must be unique.
 
 `{!rsh} participantInteractInterface` is a @{defn("participant interact interface")}, an object where each field indicates the type of a function or value which must be provided to the backend by the frontend for interacting with the participant.
 
+In the [Rock, Paper, and Scissors](##tut-3) tutorial, Alice and Bob receive the `getHand` and `seeOutcome` interact interfaces from the construct `Player` in the following sample code: 
+
+```
+load: /examples/rps-2-rps/index.rsh
+range: 1-14
+```
+
 ### {#ref-programs-appinit-api} API Definition
 
 @{ref("rsh", "API")}
@@ -113,6 +120,8 @@ These are called @{defn("API member function")}s.
 Each function must occur exactly once in the entire program.
 
 ### {#ref-programs-appinit-view} View Definition
+
+Views are read-only and can call contract-to-contract and API functions.
 
 :::note
 This section is about defining views during application initialization. Views are [set in consensus steps](##ref-programs-consensus-view), in your Reach program. But, they are [accessed by frontends](##ref-frontends-js-ctc) by using the Reach standard library of the frontend language, such as JavaScript.
