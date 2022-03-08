@@ -114,7 +114,7 @@ export default async (
 				} catch (error) {
 					OUTPUT_CHANNEL.appendLine(
 						'Checking for updates failed. ' +
-						new Date().toLocaleTimeString()
+						`${new Date().toLocaleTimeString()}: ${error}`
 					);
 				}
 			}
