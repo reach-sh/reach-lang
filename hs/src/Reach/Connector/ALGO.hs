@@ -654,8 +654,7 @@ rPrecise = \case
 maxOf :: Resource -> Integer
 maxOf = \case
   R_Asset -> algoMaxAppTxnForeignAssets
-  -- XXX could detect the sender as a free account
-  R_Account -> algoMaxAppTxnAccounts + 1
+  R_Account -> algoMaxAppTxnAccounts
   R_Txn -> algoMaxTxGroupSize
   R_ITxn -> algoMaxInnerTransactions * algoMaxTxGroupSize
 
@@ -667,17 +666,27 @@ dupeResources m = do
   c' <- (liftIO . dupeIORef) =<< asks eResources
   local (\e -> e {eResources = c'}) m
 
-incResourceL :: DLArg -> Resource -> App ()
-incResourceL a r = do
+readResource :: Resource -> App ResourceSet
+readResource r = do
   rsr <- asks eResources
   m <- liftIO $ readIORef rsr
-  let vs = fromMaybe mempty $ M.lookup r m
+  return $ fromMaybe mempty $ M.lookup r m
+
+freeResource :: Resource -> DLArg -> App ()
+freeResource r a = do
+  vs <- readResource r
+  let vs' = S.insert a vs
+  rsr <- asks eResources
+  liftIO $ modifyIORef rsr $ M.insert r vs'
+
+incResource :: Resource -> DLArg -> App ()
+incResource r a = do
+  vs <- readResource r
   case S.member a vs of
     True -> return ()
     False -> do
-      let vs' = S.insert a vs
-      liftIO $ modifyIORef rsr $ M.insert r vs'
       useResource r
+      freeResource r a
 
 resetToks :: App a -> App a
 resetToks m = do
@@ -1548,13 +1557,13 @@ ce = \case
   DLE_Wait {} -> nop
   DLE_PartSet _ _ a -> ca a
   DLE_MapRef _ (DLMVar i) fa -> do
-    incResourceL fa R_Account
+    incResource R_Account fa
     ca fa
     cMapLoad
     mdt <- getMapDataTy
     cTupleRef sb mdt $ fromIntegral i
   DLE_MapSet at mpv@(DLMVar i) fa mva -> do
-    incResourceL fa R_Account
+    incResource R_Account fa
     Shared {..} <- eShared <$> ask
     mdt <- getMapDataTy
     mt <- getMapTy mpv
@@ -1626,7 +1635,7 @@ ce = \case
         makeTxn1 "TypeEnum"
         ca ro
         -- XXX remove this when JJ changes stuff for us
-        incResourceL ro R_Account
+        incResource R_Account ro
         makeTxn1 "ApplicationID"
         let as' = (DLA_Literal $ DLL_Int at $ fromIntegral $ sigStrToInt sig) : as
         forM_ as' $ \a -> do
@@ -1678,7 +1687,7 @@ ce = \case
     let vTypeEnum = "acfg"
     output $ TConst vTypeEnum
     makeTxn1 "TypeEnum"
-    incResourceL aida R_Asset
+    incResource R_Asset aida
     ca aida
     makeTxn1 "ConfigAsset"
     op "itxn_submit"
@@ -1914,7 +1923,7 @@ makeTxn (MakeTxn {..}) =
                 (tokFields, textra)
                 where
                   textra = do
-                    incResourceL tok R_Asset
+                    incResource R_Asset tok
                     ca tok
                     makeTxn1 "XferAsset"
       makeTxnUsage mt_at mt_mtok
@@ -1930,7 +1939,7 @@ makeTxn (MakeTxn {..}) =
       case mt_mrecv of
         Nothing -> cContractAddr
         Just (Left a) -> do
-          incResourceL a R_Account
+          incResource R_Account a
           ca a
         Just (Right cr) -> cr
       cfrombs T_Address
@@ -2288,6 +2297,7 @@ bindFromSvs_ at svs m = do
 ch :: Int -> CHandler -> App ()
 ch _ (C_Loop {}) = return ()
 ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich which $ do
+  freeResource R_Account $ DLA_Var from
   let msg = map varLetVar msgl
   let isCtor = which == 0
   let argSize = 1 + (typeSizeOf $ T_Tuple $ map varType $ msg)
