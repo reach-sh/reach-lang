@@ -8,7 +8,7 @@ Verification failed:
 
   // Violation Witness
 
-  const x/43 = "A".interact.amt;
+  const u/43 = "A".interact.amt;
   //    ^ could = Some(0 )
   //      from: ./switch_verification.rsh:4:36:property binding
   const x/52 = <switch case binding for Some(0 )>;
