@@ -105,15 +105,16 @@ export default async (
 						);
 				} catch (error) {
 					OUTPUT_CHANNEL.appendLine(
-						'Checking for updates failed;' +
-						'version-compare --json exited' +
-						'with an unexpected status code.' +
-						new Date().toLocaleTimeString()
+						'Checking for updates failed.'
 					);
-					console.error(
-						'Checking for updates failed;',
-						'version-compare --json exited',
-						'with an unexpected status code.'
+					OUTPUT_CHANNEL.append(
+						'version-compare --json exited '
+					);
+					OUTPUT_CHANNEL.append(
+						'with an unexpected status code. '
+					);
+					OUTPUT_CHANNEL.appendLine(
+						new Date().toLocaleTimeString()
 					);
 				}
 			}
