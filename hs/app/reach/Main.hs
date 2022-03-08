@@ -296,7 +296,7 @@ dieConnectorModeNotSpecified =
         "Missing `REACH_CONNECTOR_MODE` environment variable - must be one of:" :
         L.sort s
           <> [ "Reach recommends adding this variable to your shell's profile settings by running `reach config`. See:"
-             , " - https://docs.reach.sh/tool/usage/#ref-usage-config"
+             , " - https://docs.reach.sh/tool/#ref-usage-config"
              ]
   where
     s =
