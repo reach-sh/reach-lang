@@ -101,39 +101,39 @@ instance Pandemic DLStmts where
 
 instance Pandemic DLExpr where
   pan = \case
-    DLE_Arg at arg -> DLE_Arg at <$> pan arg
-    DLE_LArg at larg  -> DLE_LArg at <$> pan larg
+    DLE_Arg at a -> DLE_Arg at <$> pan a
+    DLE_LArg at a  -> DLE_LArg at <$> pan a
     DLE_Impossible at i err -> return $ DLE_Impossible at i err
-    DLE_VerifyMuldiv at cxt ct argl err -> DLE_VerifyMuldiv at cxt ct <$> pan argl <*> pure err
-    DLE_PrimOp at primop argl -> DLE_PrimOp at primop <$> pan argl
-    DLE_ArrayRef at arg1 arg2 -> DLE_ArrayRef at <$> pan arg1 <*> pan arg2
-    DLE_ArraySet at arg1 arg2 arg3 -> DLE_ArraySet at <$> pan arg1 <*> pan arg2 <*> pan arg3
-    DLE_ArrayConcat at arg1 arg2 -> DLE_ArrayConcat at <$> pan arg1 <*> pan arg2
-    DLE_ArrayZip at arg1 arg2 -> DLE_ArrayZip at <$> pan arg1 <*> pan arg2
-    DLE_TupleRef at arg1 i -> DLE_TupleRef at <$> pan arg1 <*> pure i
-    DLE_ObjectRef at arg s -> DLE_ObjectRef at <$> pan arg <*> pure s
-    DLE_Interact at cxt slp s ty argl -> DLE_Interact at cxt slp s ty <$> pan argl
-    DLE_Digest at argl -> DLE_Digest at <$> pan argl
-    DLE_Claim at cxt ct arg mbbs -> DLE_Claim at cxt ct <$> pan arg <*> pure mbbs
-    DLE_Transfer at arg1 arg2 marg -> DLE_Transfer at <$> pan arg1 <*> pan arg2 <*> pan marg
-    DLE_TokenInit at arg -> DLE_TokenInit at <$> pan arg
-    DLE_CheckPay at cxt arg marg -> DLE_CheckPay at cxt <$> pan arg <*> pan marg
-    DLE_Wait at targ -> DLE_Wait at <$> pan targ
-    DLE_PartSet at slp arg -> DLE_PartSet at slp <$> pan arg
-    DLE_MapRef at dlm arg -> DLE_MapRef at dlm <$> pan arg
-    DLE_MapSet at dlm arg marg -> DLE_MapSet at dlm <$> pan arg <*> pan marg
-    DLE_Remote at cxt arg ty s amt argl bill -> do
-      DLE_Remote at cxt arg ty s <$> pan amt <*> pan argl <*> pan bill
-    DLE_TokenNew at tknew -> DLE_TokenNew at <$> pan tknew
-    DLE_TokenBurn at arg1 arg2 -> DLE_TokenBurn at <$> pan arg1 <*> pan arg2
-    DLE_TokenDestroy at arg -> DLE_TokenDestroy at <$> pan arg
+    DLE_VerifyMuldiv at cxt ct as err -> DLE_VerifyMuldiv at cxt ct <$> pan as <*> pure err
+    DLE_PrimOp at primop as -> DLE_PrimOp at primop <$> pan as
+    DLE_ArrayRef at a i -> DLE_ArrayRef at <$> pan a <*> pan i
+    DLE_ArraySet at a i v -> DLE_ArraySet at <$> pan a <*> pan i <*> pan v
+    DLE_ArrayConcat at x y -> DLE_ArrayConcat at <$> pan x <*> pan y
+    DLE_ArrayZip at x y -> DLE_ArrayZip at <$> pan x <*> pan y
+    DLE_TupleRef at a i -> DLE_TupleRef at <$> pan a <*> pure i
+    DLE_ObjectRef at a f -> DLE_ObjectRef at <$> pan a <*> pure f
+    DLE_Interact at cxt slp s ty as -> DLE_Interact at cxt slp s ty <$> pan as
+    DLE_Digest at as -> DLE_Digest at <$> pan as
+    DLE_Claim at cxt ct a mbbs -> DLE_Claim at cxt ct <$> pan a <*> pure mbbs
+    DLE_Transfer at who da mtok -> DLE_Transfer at <$> pan who <*> pan da <*> pan mtok
+    DLE_TokenInit at a -> DLE_TokenInit at <$> pan a
+    DLE_CheckPay at cxt a mtok -> DLE_CheckPay at cxt <$> pan a <*> pan mtok
+    DLE_Wait at a -> DLE_Wait at <$> pan a
+    DLE_PartSet at slp a -> DLE_PartSet at slp <$> pan a
+    DLE_MapRef at mv a -> DLE_MapRef at mv <$> pan a
+    DLE_MapSet at mv a marg -> DLE_MapSet at mv <$> pan a <*> pan marg
+    DLE_Remote at cxt a ty s amt as bill -> do
+      DLE_Remote at cxt a ty s <$> pan amt <*> pan as <*> pan bill
+    DLE_TokenNew at tns -> DLE_TokenNew at <$> pan tns
+    DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> pan tok <*> pan amt
+    DLE_TokenDestroy at a -> DLE_TokenDestroy at <$> pan a
     DLE_TimeOrder at margs_vars -> DLE_TimeOrder at <$> pan margs_vars
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at lk vars -> DLE_EmitLog at lk <$> pan vars
     DLE_setApiDetails at who dom mc info -> return $ DLE_setApiDetails at who dom mc info
-    DLE_GetUntrackedFunds at marg arg -> DLE_GetUntrackedFunds at <$> pan marg <*> pan arg
-    DLE_FromSome at arg1 arg2 -> DLE_FromSome at <$> pan arg1 <*> pan arg2
+    DLE_GetUntrackedFunds at marg a -> DLE_GetUntrackedFunds at <$> pan marg <*> pan a
+    DLE_FromSome at mo da -> DLE_FromSome at <$> pan mo <*> pan da
 
 instance Pandemic DLVar where
   pan (DLVar at m_locvar t i) = do
@@ -150,7 +150,7 @@ instance Pandemic DLLetVar where
     DLV_Let vc v -> DLV_Let vc <$> pan v
 
 instance Pandemic DLSBlock where
-  pan (DLSBlock at cxt sts arg) = DLSBlock at cxt <$> pan sts <*> pan arg
+  pan (DLSBlock at cxt sts a) = DLSBlock at cxt <$> pan sts <*> pan a
 
 instance Pandemic DLWithBill where
   pan (DLWithBill b nb) = DLWithBill <$> pan b <*> pan nb
@@ -177,10 +177,10 @@ instance Pandemic b => Pandemic (a, b) where
 
 instance Pandemic DLLargeArg where
   pan = \case
-    DLLA_Array t argl -> DLLA_Array t <$> pan argl
-    DLLA_Tuple argl -> DLLA_Tuple <$> pan argl
+    DLLA_Array t as -> DLLA_Array t <$> pan as
+    DLLA_Tuple as -> DLLA_Tuple <$> pan as
     DLLA_Obj strs_args -> DLLA_Obj <$> pan strs_args
-    DLLA_Data m s arg -> DLLA_Data m s <$> pan arg
+    DLLA_Data m s a -> DLLA_Data m s <$> pan a
     DLLA_Struct vars_args -> DLLA_Struct <$> pan vars_args
     DLLA_Bytes s -> return $ DLLA_Bytes s
 
@@ -219,9 +219,9 @@ instance Pandemic DLSStmt where
       DLS_ArrayMap at <$> pan v1 <*> pan a1 <*> pan v2 <*> pan v3 <*> pan bl
     DLS_ArrayReduce at v1 a1 a2 v2 v3 v4 bl -> do
       DLS_ArrayReduce at <$> pan v1 <*> pan a1 <*> pan a2 <*> pan v2 <*> pan v3 <*> pan v4 <*> pan bl
-    DLS_If at arg ann sts1 sts2 -> DLS_If at <$> pan arg <*> pure ann <*> pan sts1 <*> pan sts2
+    DLS_If at a ann sts1 sts2 -> DLS_If at <$> pan a <*> pure ann <*> pan sts1 <*> pan sts2
     DLS_Switch at v sa sw -> DLS_Switch at <$> pan v <*> pure sa <*> pan sw
-    DLS_Return at i arg -> DLS_Return at i <$> pan arg
+    DLS_Return at i a -> DLS_Return at i <$> pan a
     DLS_Prompt at v ann sts -> DLS_Prompt at <$> pan v <*> pure ann <*> pan sts
     DLS_Stop at -> return $ DLS_Stop at
     DLS_Unreachable at ctx s -> return $ DLS_Unreachable at ctx s
@@ -231,11 +231,11 @@ instance Pandemic DLSStmt where
     DLS_While at agn bl1 bl2 sts -> do
       DLS_While at <$> pan agn <*> pan bl1 <*> pan bl2 <*> pan sts
     DLS_Continue at agn -> DLS_Continue at <$> pan agn
-    DLS_FluidSet at flv arg -> DLS_FluidSet at flv <$> pan arg
+    DLS_FluidSet at flv a -> DLS_FluidSet at flv <$> pan a
     DLS_FluidRef at v flv -> DLS_FluidRef at <$> pan v <*> pure flv
-    DLS_MapReduce at i v1 dlmv arg v2 v3 bl -> do
-      DLS_MapReduce at i <$> pan v1 <*> pure dlmv <*> pan arg <*> pan v2 <*> pan v3 <*> pan bl
-    DLS_Throw at arg b -> DLS_Throw at <$> pan arg <*> pure b
+    DLS_MapReduce at i v1 mv a v2 v3 bl -> do
+      DLS_MapReduce at i <$> pan v1 <*> pure mv <*> pan a <*> pan v2 <*> pan v3 <*> pan bl
+    DLS_Throw at a b -> DLS_Throw at <$> pan a <*> pure b
     DLS_Try at sts1 v sts2 -> DLS_Try at <$> pan sts1 <*> pan v <*> pan sts2
     DLS_ViewIs at sl1 sl2 expo -> return $ DLS_ViewIs at sl1 sl2 expo
     DLS_TokenMetaGet tm at v a i -> DLS_TokenMetaGet tm at <$> pan v <*> pan a <*> pure i
