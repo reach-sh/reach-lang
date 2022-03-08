@@ -18,6 +18,7 @@ import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import Data.List (intercalate, foldl')
 import qualified Data.List as List
+import Data.List.Extra (enumerate)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Set as S
@@ -282,6 +283,7 @@ data TEAL
   | TLog Integer
   | TStore ScratchSlot LT.Text
   | TLoad ScratchSlot LT.Text
+  | TResource Resource
 
 type TEALt = [LT.Text]
 
@@ -319,6 +321,7 @@ render ilvlr = \case
     r ["log", ("// up to " <> texty sz <> " bytes")]
   TStore sl lab -> r ["store", texty sl, ("// " <> lab)]
   TLoad sl lab -> r ["load", texty sl, ("// " <> lab)]
+  TResource rs -> r [("// resource: " <> texty rs)]
   where
     r l = do
       i <- readIORef ilvlr
@@ -426,14 +429,14 @@ checkCost bad' _warn' disp alwaysShow ts = do
       mkg = newIORef mempty
   cost_gr <- mkg
   logLen_gr <- mkg
-  itxn_gr <- mkg
+  res_grs <- forM allResourcesM $ const mkg
   let lTop = "TOP"
   let lBot = "BOT"
   (labr :: IORef String) <- newIORef $ lTop
   (k_r :: IORef Integer) <- newIORef $ 1
   (cost_r :: IORef Integer) <- newIORef $ 0
   (logLen_r :: IORef Integer) <- newIORef $ 0
-  (itxn_r :: IORef Integer) <- newIORef $ 0
+  res_rs <- forM allResourcesM $ const $ newIORef $ (0 :: Integer)
   let modK = modifyIORef k_r
   let l2s = LT.unpack
   let rec_ r c = do
@@ -441,7 +444,7 @@ checkCost bad' _warn' disp alwaysShow ts = do
         modifyIORef r ((k * c) +)
   let recCost = rec_ cost_r
   let recLogLen = rec_ logLen_r
-  let recITxn = rec_ itxn_r
+  let recResource rs = rec_ $ res_rs M.! rs
   let jump_ :: String -> IO ()
       jump_ t = do
         lab <- readIORef labr
@@ -454,12 +457,16 @@ checkCost bad' _warn' disp alwaysShow ts = do
               modifyIORef cgr $ M.alter g lab
         updateGraph cost_r cost_gr
         updateGraph logLen_r logLen_gr
-        updateGraph itxn_r itxn_gr
+        forM_ allResources $ \rs -> do
+          let r = res_rs M.! rs
+          let gr = res_grs M.! rs
+          updateGraph r gr
   let switch t = do
         writeIORef labr t
         writeIORef cost_r 0
         writeIORef logLen_r 0
-        writeIORef itxn_r 0
+        forM_ res_rs $ \r ->
+          writeIORef r 0
   let jump t = recCost 1 >> jump_ (l2s t)
   forM_ ts $ \case
     TFor_top cnt -> do
@@ -495,6 +502,7 @@ checkCost bad' _warn' disp alwaysShow ts = do
     TExtract {} -> recCost 1
     TSubstring {} -> recCost 1
     Titob {} -> recCost 1
+    TResource r -> recResource r 1
     TCode f _ ->
       case f of
         "sha256" -> recCost 35
@@ -518,10 +526,10 @@ checkCost bad' _warn' disp alwaysShow ts = do
         "b~" -> recCost 4
         "bsqrt" -> recCost 40
         "itxn_begin" -> do
-          recITxn 1
+          recResource R_ITxn 1
           recCost 1
         "itxn_next" -> do
-          recITxn 1
+          recResource R_ITxn 1
           recCost 1
         _ -> recCost 1
   let showNice = \case
@@ -536,16 +544,22 @@ checkCost bad' _warn' disp alwaysShow ts = do
         when tooMuch $
           bad' $ LT.pack $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n"
         void $ disp ("." <> lab <> ".dot") $ LT.toStrict $ T.render $ dotty gs
-        return (msg, tooMuch)
+        return (" * " <> msg <> ".\n", tooMuch)
   (showCost, exceedsCost) <- analyze "cost" cost_gr "units of cost" algoMaxAppProgramCost
   (showLogLen, exceedsLogLen) <- analyze "log" logLen_gr "bytes of logs" algoMaxLogLen
-  (showInnerTxns, exceedsInnerTxns) <- analyze "itxn" itxn_gr "inner transactions" $ algoMaxInnerTransactions * algoMaxTxGroupSize
-  let exceeds = exceedsCost || exceedsLogLen || exceedsInnerTxns
+  let analyze_r rs = do
+        let gr = res_grs M.! rs
+        analyze (rShort rs) gr (show rs) (maxOf rs)
+  let analyze_rs = flip foldM ("", False) $ \(msg1, exceeds1) rs -> do
+        (msg2, exceeds2) <- analyze_r rs
+        return $ (msg1 <> msg2, exceeds1 || exceeds2)
+  (showRs, exceedsRs) <- analyze_rs [ R_ITxn, R_Txn ]
+  let exceeds = exceedsCost || exceedsLogLen || exceedsRs
   when (alwaysShow && not exceeds) $ do
     putStrLn $ "Conservative analysis on Algorand found:"
-    putStrLn $ " * " <> showCost <> "."
-    putStrLn $ " * " <> showLogLen <> "."
-    putStrLn $ " * " <> showInnerTxns <> "."
+    putStr $ showCost
+    putStr $ showLogLen
+    putStr $ showRs
 
 optimizeAndRender :: Notify -> Notify -> Disp -> Bool -> TEALs -> IO T.Text
 optimizeAndRender bad' warn' disp showCost ts = do
@@ -608,9 +622,19 @@ type ResourceRec = CostRecord Int
 
 data Resource
   = R_Txn
+  | R_ITxn
   | R_Asset
   | R_Account
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Enum, Bounded)
+
+allResources :: [Resource]
+allResources = enumerate
+
+allResourcesM :: M.Map Resource ()
+allResourcesM = M.fromList $ map (flip (,) ()) allResources
+
+useResource :: Resource -> App ()
+useResource = output . TResource
 
 type ResourceGraph = M.Map Resource (CostGraph Int)
 
@@ -621,23 +645,30 @@ type ResourceCounters = IORef (M.Map Resource ResourceCounter)
 instance Show Resource where
   show = \case
     R_Txn -> "transactions"
+    R_ITxn -> "inner transactions"
     R_Asset -> "assets"
     R_Account -> "accounts"
+
+rShort :: Resource -> String
+rShort = \case
+  R_Txn -> "txn"
+  R_ITxn -> "itxn"
+  R_Asset -> "asset"
+  R_Account -> "acc"
 
 maxOf :: Resource -> Integer
 maxOf = \case
   R_Asset -> algoMaxAppTxnForeignAssets
   -- XXX could detect the sender as a free account
   R_Account -> algoMaxAppTxnAccounts + 1
-  -- XXX move to cost analysis, rather than graph analysis
   R_Txn -> algoMaxTxGroupSize
+  R_ITxn -> algoMaxInnerTransactions * algoMaxTxGroupSize
 
 newResources :: IO ResourceCounters
 newResources = do
   newIORef $
     M.fromList $
-      [ (R_Txn, (mempty, 1))
-      , (R_Asset, (mempty, 0))
+      [ (R_Asset, (mempty, 0))
       , (R_Account, (mempty, 0))
       ]
 
@@ -645,8 +676,7 @@ newResourceGraph :: IO (IORef ResourceGraph)
 newResourceGraph = do
   newIORef $
     M.fromList $
-      [ (R_Txn, mempty)
-      , (R_Asset, mempty)
+      [ (R_Asset, mempty)
       , (R_Account, mempty)
       ]
 
@@ -655,23 +685,14 @@ dupeResources m = do
   c' <- (liftIO . dupeIORef) =<< asks eResources
   local (\e -> e {eResources = c'}) m
 
-incResourceM :: Maybe DLArg -> Resource -> App ()
-incResourceM ma r = do
+incResourceL :: DLArg -> Resource -> App ()
+incResourceL a r = do
   rsr <- asks eResources
   let f (vs, i) =
-        case ma of
-          Nothing -> (vs, i + 1)
-          Just a ->
-            case S.member a vs of
-              True -> (vs, i)
-              False -> (S.insert a vs, i + 1)
+        case S.member a vs of
+          True -> (vs, i)
+          False -> (S.insert a vs, i + 1)
   liftIO $ modifyIORef rsr $ M.adjust f r
-
-incResource :: Resource -> App ()
-incResource = incResourceM Nothing
-
-incResourceL :: DLArg -> Resource -> App ()
-incResourceL = incResourceM . Just
 
 updateResources :: (Resource -> ResourceRec -> ResourceRec) -> App ()
 updateResources f = do
@@ -695,7 +716,7 @@ addResourceCheck = do
     t {cr_n = max (snd $ c M.! r) (cr_n t)}
 
 checkResources :: Notify -> Notify -> (Int -> SrcLoc) -> ResourceGraph -> IO ()
-checkResources bad' warn' findAt rg = do
+checkResources _bad' warn' findAt rg = do
   let one emit r = do
         let maxc = maxOf r
         let tcs = rg M.! r
@@ -710,7 +731,6 @@ checkResources bad' warn' findAt rg = do
           let at = findAt which
           when (fromIntegral amt > maxc) $ do
             emit $ "Step " <> texty which <> " (the one starting from the consensus transfer at " <> texty at <> ") could have too many " <> texty r <> ": could have " <> texty amt <> " but limit is " <> texty maxc
-  one bad' R_Txn
   one warn' R_Asset
   one warn' R_Account
 
@@ -1898,7 +1918,7 @@ checkTxn (CheckTxn {..}) =
                 where
                   textra = ca tok >> check1 "XferAsset"
       checkTxnUsage ct_at ct_mtok
-      incResource R_Txn
+      useResource R_Txn
       gvLoad GV_txnCounter
       op "dup"
       cint 1
@@ -2635,6 +2655,7 @@ compile_algo env disp pl = do
         let tc = LT.toStrict $ encodeBase64 tbs
         modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String tc
   addProg "appApproval" (cte_REACH_DEBUG env) $ do
+    useResource R_Txn
     when False $ do
       -- We don't check these, because they don't interfere with how we work.
       checkRekeyTo
@@ -2740,6 +2761,7 @@ compile_algo env disp pl = do
     code "b" ["updateState"]
   -- Clear state is never allowed
   addProg "appClear" False $ do
+    useResource R_Txn
     return ()
   let findAt which = fromMaybe sb $ fmap srclocOf $ M.lookup which hm
   checkResources bad' warn' findAt =<< readIORef sResources
