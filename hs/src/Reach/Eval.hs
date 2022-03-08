@@ -123,7 +123,7 @@ instance Pandemic DLExpr where
     DLE_MapRef at mv a -> DLE_MapRef at mv <$> pan a
     DLE_MapSet at mv a marg -> DLE_MapSet at mv <$> pan a <*> pan marg
     DLE_Remote at cxt a ty s amt as bill -> do
-      DLE_Remote at cxt a ty s <$> pan amt <*> pan as <*> pan bill
+      DLE_Remote at cxt <$> pan a <*> pure ty <*> pure s <*> pan amt <*> pan as <*> pan bill
     DLE_TokenNew at tns -> DLE_TokenNew at <$> pan tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> pan tok <*> pan amt
     DLE_TokenDestroy at a -> DLE_TokenDestroy at <$> pan a
@@ -141,7 +141,7 @@ instance Pandemic DLVar where
       Nothing -> do
         infections <- asks e_infections
         r <- liftIO $ readIORef infections
-        return $ DLVar at (M.lookup (fromIntegral i) r) t i
+        return $ DLVar at (M.lookup i r) t i
       Just _ -> return $ DLVar at m_locvar t i
 
 instance Pandemic DLLetVar where
@@ -157,8 +157,7 @@ instance Pandemic DLWithBill where
 
 instance Pandemic DLPayAmt where
   pan (DLPayAmt net ks) = do
-    let
-      f (a,b) = (,) <$> pan a <*> pan b
+    let f (a,b) = (,) <$> pan a <*> pan b
     DLPayAmt <$> pan net <*> mapM f ks
 
 instance Pandemic DLTokenNew where
@@ -189,18 +188,11 @@ instance Pandemic DLSend where
     DLSend b <$> pan r <*> pan s <*> pan t
 
 instance Pandemic (DLVar, Bool, DLStmts) where
-  pan (v,b,sts) = do
-    r1 <- pan v
-    r3 <- pan sts
-    return (r1,b,r3)
+  pan (v,b,sts) = (,,) <$> pan v <*> pure b <*> pan sts
 
 instance Pandemic DLAssignment where
   pan (DLAssignment mvargs) = do
-    let
-      f (a,b) = do
-        r1 <- pan a
-        r2 <- pan b
-        return (r1,r2)
+    let f (a,b) = (,) <$> pan a <*> pan b
     r <- mapM f $ M.toList mvargs
     return $ DLAssignment $ M.fromList r
 
