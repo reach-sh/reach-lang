@@ -1225,6 +1225,34 @@ const getApplicationInfoM = async (idn:BigNumber): Promise<OrExn<AppInfo>> => {
   return 'exn' in res ? res : { val: res.val.application };
 };
 
+const getDeletedApplicationInfoM = async (idn: BigNumber): Promise<OrExn<AppInfo>> => {
+  const dhead = 'getDeletedApplicationInfoM'
+  const indexer = await getIndexer();
+  const query = indexer.searchForTransactions()
+                       .txType('appl')
+                       .applicationID(bigNumberToNumber(idn))
+                       .limit(1);
+  const queryRes = await doQueryM_(dhead, query);
+
+  if ('val' in queryRes) {
+    const txn = queryRes.val.transactions[0];
+    const appTxn = txn['application-transaction'];
+    debug(dhead, {txn});
+    return { val: {
+      'id': bigNumberToBigInt(idn),
+      'created-at-round': txn['confirmed-round'],
+      'deleted': true,
+      'params': {
+        'creator': txn['sender'],
+        'global-state': [],
+        ...appTxn
+      },
+    }}
+  } else {
+    return queryRes;
+  }
+}
+
 export const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> => {
   const thisAcc = networkAccount;
   let label = thisAcc.addr.substring(2, 6);
@@ -2265,18 +2293,21 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
     const es = j2sf(e);
     chk(cmp(a, e), `${msg}: expected ${es}, got ${as}`);
   };
-  const chkeq_b = chkeq_x<boolean>((a:boolean, b:boolean) => a === b);
   const chkeq_bn_ = chkeq_x<BigNumber>((a:BigNumber, b:BigNumber) => a.eq(b));
   const chkeq_bn = (a:unknown, b:unknown, msg:string) => chkeq_bn_(bigNumberify(a), bigNumberify(b), msg);
   type Program = string|undefined;
   const chkeq_bs = chkeq_x<Program>((a:Program, b:Program) => j2sf(a) === j2sf(b));
 
-  const appInfoM = await getApplicationInfoM(ApplicationID);
-  if ( 'exn' in appInfoM ) {
+  const appInfoM_live = await getApplicationInfoM(ApplicationID);
+  const appInfoM = 'val' in appInfoM_live ? appInfoM_live
+                                          : await getDeletedApplicationInfoM(ApplicationID);
+
+  if ('exn' in appInfoM)
     throw Error(`${dhead} failed: failed to lookup application (${ApplicationID}): ${j2s(appInfoM.exn)}`);
-  }
+
   const appInfo = appInfoM.val;
   const appInfo_p = appInfo['params'];
+  debug(dhead, {appInfo_wanted: bin._Connectors.ALGO});
   debug(dhead, {appInfo_p});
   chk(appInfo_p !== undefined, `Cannot lookup ApplicationId`);
   chkeq_bs(appInfo_p['approval-program'], appApproval, `Approval program does not match Reach backend`);
@@ -2291,7 +2322,6 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   chkeq_bn(appInfo_GlobalState['num-byte-slice'], appGlobalStateNumBytes + stateKeys, `Num of byte-slices in global state schema does not match Reach backend`);
   chkeq_bn(appInfo_GlobalState['num-uint'], appGlobalStateNumUInt, `Num of uints in global state schema does not match Reach backend`);
 
-  chkeq_b(appInfo['deleted'] === true, false, `Application must not be deleted`);
   eq.init({ ApplicationID });
 
   // Next, we check that it was created with this program and wasn't created
