@@ -424,7 +424,7 @@ btoi :: BS.ByteString -> Integer
 btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
 
 checkCost :: Notify -> Notify -> Disp -> Bool -> [TEAL] -> IO ()
-checkCost bad' _warn' disp alwaysShow ts = do
+checkCost bad' warn' disp alwaysShow ts = do
   let mkg :: IO (IORef (LPGraph String))
       mkg = newIORef mempty
   cost_gr <- mkg
@@ -536,24 +536,25 @@ checkCost bad' _warn' disp alwaysShow ts = do
         [] -> ""
         [l] -> l
         l : r -> l <> " --> " <> showNice r
-  let analyze lab cgr units algoMax = do
+  let analyze notify lab cgr units algoMax = do
         cg <- readIORef cgr
         (gs, p, c) <- longestPathBetween cg lTop (l2s lBot)
         let msg = "This program could use " <> show c <> " " <> units
         let tooMuch = fromIntegral c > algoMax
         when tooMuch $
-          bad' $ LT.pack $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n"
+          notify $ LT.pack $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n"
         void $ disp ("." <> lab <> ".dot") $ LT.toStrict $ T.render $ dotty gs
         return (" * " <> msg <> ".\n", tooMuch)
-  (showCost, exceedsCost) <- analyze "cost" cost_gr "units of cost" algoMaxAppProgramCost
-  (showLogLen, exceedsLogLen) <- analyze "log" logLen_gr "bytes of logs" algoMaxLogLen
+  (showCost, exceedsCost) <- analyze bad' "cost" cost_gr "units of cost" algoMaxAppProgramCost
+  (showLogLen, exceedsLogLen) <- analyze bad' "log" logLen_gr "bytes of logs" algoMaxLogLen
   let analyze_r rs = do
         let gr = res_grs M.! rs
-        analyze (rShort rs) gr (show rs) (maxOf rs)
+        let notify = if rPrecise rs then bad' else warn'
+        analyze notify (rShort rs) gr (show rs) (maxOf rs)
   let analyze_rs = flip foldM ("", False) $ \(msg1, exceeds1) rs -> do
         (msg2, exceeds2) <- analyze_r rs
         return $ (msg1 <> msg2, exceeds1 || exceeds2)
-  (showRs, exceedsRs) <- analyze_rs [ R_ITxn, R_Txn ]
+  (showRs, exceedsRs) <- analyze_rs [ R_ITxn, R_Txn, R_Asset, R_Account ]
   let exceeds = exceedsCost || exceedsLogLen || exceedsRs
   when (alwaysShow && not exceeds) $ do
     putStrLn $ "Conservative analysis on Algorand found:"
@@ -582,7 +583,6 @@ data Shared = Shared
   , sMapDataTy :: DLType
   , sMapDataSize :: Integer
   , sMapKeysl :: [Word8]
-  , sResources :: IORef ResourceGraph
   }
 
 type Lets = M.Map DLVar (App ())
@@ -597,7 +597,7 @@ data Env = Env
   , eVars :: M.Map DLVar ScratchSlot
   , eLets :: Lets
   , eLetSmalls :: M.Map DLVar Bool
-  , eResources :: ResourceCounters
+  , eResources :: ResourceSets
   , eNewToks :: IORef (S.Set DLArg)
   , eInitToks :: IORef (S.Set DLArg)
   }
@@ -609,16 +609,6 @@ separateResources = dupeResources . resetToks
 
 recordWhich :: Int -> App a -> App a
 recordWhich n = local (\e -> e {eWhich = Just n}) . separateResources
-
-type CostGraph a = M.Map a (CostRecord a)
-
-data CostRecord a = CostRecord
-  { cr_n :: Int
-  , cr_max :: S.Set a
-  }
-  deriving (Show)
-
-type ResourceRec = CostRecord Int
 
 data Resource
   = R_Txn
@@ -636,11 +626,9 @@ allResourcesM = M.fromList $ map (flip (,) ()) allResources
 useResource :: Resource -> App ()
 useResource = output . TResource
 
-type ResourceGraph = M.Map Resource (CostGraph Int)
+type ResourceSet = S.Set DLArg
 
-type ResourceCounter = ((S.Set DLArg), Int)
-
-type ResourceCounters = IORef (M.Map Resource ResourceCounter)
+type ResourceSets = IORef (M.Map Resource ResourceSet)
 
 instance Show Resource where
   show = \case
@@ -656,6 +644,13 @@ rShort = \case
   R_Asset -> "asset"
   R_Account -> "acc"
 
+rPrecise :: Resource -> Bool
+rPrecise = \case
+  R_Txn -> True
+  R_ITxn -> True
+  R_Asset -> False
+  R_Account -> False
+
 maxOf :: Resource -> Integer
 maxOf = \case
   R_Asset -> algoMaxAppTxnForeignAssets
@@ -664,21 +659,8 @@ maxOf = \case
   R_Txn -> algoMaxTxGroupSize
   R_ITxn -> algoMaxInnerTransactions * algoMaxTxGroupSize
 
-newResources :: IO ResourceCounters
-newResources = do
-  newIORef $
-    M.fromList $
-      [ (R_Asset, (mempty, 0))
-      , (R_Account, (mempty, 0))
-      ]
-
-newResourceGraph :: IO (IORef ResourceGraph)
-newResourceGraph = do
-  newIORef $
-    M.fromList $
-      [ (R_Asset, mempty)
-      , (R_Account, mempty)
-      ]
+newResources :: IO ResourceSets
+newResources = newIORef $ M.map (const mempty) allResourcesM
 
 dupeResources :: App a -> App a
 dupeResources m = do
@@ -688,51 +670,14 @@ dupeResources m = do
 incResourceL :: DLArg -> Resource -> App ()
 incResourceL a r = do
   rsr <- asks eResources
-  let f (vs, i) =
-        case S.member a vs of
-          True -> (vs, i)
-          False -> (S.insert a vs, i + 1)
-  liftIO $ modifyIORef rsr $ M.adjust f r
-
-updateResources :: (Resource -> ResourceRec -> ResourceRec) -> App ()
-updateResources f = do
-  Env {..} <- ask
-  let Shared {..} = eShared
-  let g r = Just . (f r) . fromMaybe (CostRecord 0 mempty)
-  case eWhich of
-    Nothing -> return ()
-    Just which ->
-      liftIO $ modifyIORef sResources $ M.mapWithKey (\r -> M.alter (g r) which)
-
-addResourceEdge :: Int -> App ()
-addResourceEdge w' = do
-  addResourceCheck
-  updateResources (\_ t -> t {cr_max = S.insert w' (cr_max t)})
-
-addResourceCheck :: App ()
-addResourceCheck = do
-  c <- (liftIO . readIORef) =<< asks eResources
-  updateResources $ \r t ->
-    t {cr_n = max (snd $ c M.! r) (cr_n t)}
-
-checkResources :: Notify -> Notify -> (Int -> SrcLoc) -> ResourceGraph -> IO ()
-checkResources _bad' warn' findAt rg = do
-  let one emit r = do
-        let maxc = maxOf r
-        let tcs = rg M.! r
-        -- XXX Do this not dumb
-        let maximum' :: [Int] -> Int
-            maximum' l = maximum $ 0 : l
-        let chase i = cr_n + (maximum' $ map chase $ S.toAscList cr_max)
-              where
-                CostRecord {..} = tcs M.! i
-        forM_ (M.keys tcs) $ \which -> do
-          let amt = chase which
-          let at = findAt which
-          when (fromIntegral amt > maxc) $ do
-            emit $ "Step " <> texty which <> " (the one starting from the consensus transfer at " <> texty at <> ") could have too many " <> texty r <> ": could have " <> texty amt <> " but limit is " <> texty maxc
-  one warn' R_Asset
-  one warn' R_Account
+  m <- liftIO $ readIORef rsr
+  let vs = fromMaybe mempty $ M.lookup r m
+  case S.member a vs of
+    True -> return ()
+    False -> do
+      let vs' = S.insert a vs
+      liftIO $ modifyIORef rsr $ M.insert r vs'
+      useResource r
 
 resetToks :: App a -> App a
 resetToks m = do
@@ -2139,7 +2084,6 @@ ct = \case
     -- limiting the total memory available (we can't assign them to where they
     -- will end up, because this tail might be using the same things)
     mapM_ ca $ (map DLA_Var svs) <> map snd (M.toAscList msgm)
-    addResourceEdge which
     code "b" [loopLabel which]
   CT_From at which msvs -> do
     isHalt <- do
@@ -2173,7 +2117,6 @@ ct = \case
     output $ TConst $ if isHalt then "DeleteApplication" else "NoOp"
     asserteq
     code "b" ["updateState"]
-    addResourceCheck
   where
     nct = dupeResources . ct
 
@@ -2604,7 +2547,6 @@ compile_algo env disp pl = do
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty
   sWarningsR <- newIORef mempty
-  sResources <- newResourceGraph
   let sMapDataTy = mapDataTy sMaps
   let sMapDataSize = typeSizeOf sMapDataTy
   let PLOpts {..} = plo
@@ -2645,6 +2587,7 @@ compile_algo env disp pl = do
   unless (plo_untrustworthyMaps || null sMapKeysl) $ do
     warn' $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
   totalLenR <- newIORef (0 :: Integer)
+  -- let findAt which = fromMaybe sb $ fmap srclocOf $ M.lookup which hm
   let addProg lab showCost m = do
         ts <- run m
         let disp' = disp . (lab <>)
@@ -2763,8 +2706,6 @@ compile_algo env disp pl = do
   addProg "appClear" False $ do
     useResource R_Txn
     return ()
-  let findAt which = fromMaybe sb $ fmap srclocOf $ M.lookup which hm
-  checkResources bad' warn' findAt =<< readIORef sResources
   stateSize <- readIORef sStateSizeR
   void $ recordSizeAndKeys "state" stateSize algoMaxGlobalSchemaEntries_usable
   totalLen <- readIORef totalLenR
