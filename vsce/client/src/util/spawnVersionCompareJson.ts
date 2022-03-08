@@ -72,7 +72,7 @@ export default (
 						process.stderr.readableLength
 					)
 				);
-				reject(null);
+				return reject(null);
 			}
 
 			resolve(null);
