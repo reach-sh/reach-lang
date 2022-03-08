@@ -63,19 +63,23 @@ const rps = (choice, outcome) => {
   cy.then(() => setupAliceP).log('Alice acc is set up');
   cy.then(() => setupBobP).log('Bob acc is set up');
 
+  // screenshot opts helper fn for conciseness
+  let n = 1;
+  const s = (label) => [`${choice}_${n++}_${label}`, {overwrite: true}];
+
   cy.contains('button', 'Go').click();
-  cy.contains('button', 'Fund Account').click();
+  cy.contains('button', 'Fund Account').screenshot(...s('fund')).click();
   cy.contains('button', 'Deployer').click();
   cy.contains('button', 'Set wager').click();
-  cy.contains('button', 'Deploy').click();
+  cy.contains('button', 'Deploy').screenshot(...s('deploy')).click();
 
-  cy.get('.ContractInfo').then(async (el) => {
+  cy.get('.ContractInfo').screenshot(...s('info')).then(async (el) => {
     const ctcInfoStr = el.text();
     const ctcInfo = JSON.parse(ctcInfoStr);
     launchBob(ctcInfo);
   });
-  cy.contains('button', choice).click();
-  cy.contains(outcome);
+  cy.contains('button', choice).screenshot(...s('choose')).click();
+  cy.contains(outcome).screenshot(...s('outcome'));
 }
 
 describe('rps-9-web', () => {
