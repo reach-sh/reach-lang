@@ -410,7 +410,7 @@ getIllegalModeSuggestion mode (m : _) = get (mode, m)
   where
     get = \case
       (SLM_Module, _) -> Just "create a `Reach.App`"
-      (SLM_AppInit, _) -> Just "`deploy`"
+      (SLM_AppInit, _) -> Just "`init`"
       (_, SLM_AppInit) -> Nothing
       (s, SLM_Step)
         | isConsensusStep s -> Just "`commit`"
