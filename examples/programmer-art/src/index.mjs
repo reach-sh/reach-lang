@@ -656,10 +656,26 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
         tbOpts = tbOpts + `<option value="${k}">${v}</option>`
       }
       const respondSpaTieBreak = async () => {
-        let tiebreakerId = document.querySelector("#tiebreakers-spa-select").value;
-        let r = await c.respondWithVal(nodeId,actId,parseInt(tiebreakerId),actorId)
+        let tiebreaker = document.querySelector("#tiebreakers-spa-select").value;
+        tiebreaker = tiebreaker.split(":")
+        let tiebreakerId = null
+        if (tiebreaker[1] === "actor") {
+          tiebreakerId = parseInt(tiebreaker[0])
+        } else {
+          tiebreakerId = {
+            "tag":"V_Object",
+            "contents":{
+              "api":{
+                "tag":"V_UInt",
+                "contents": tiebreaker[0]
+              }
+            }
+          }
+
+        }
+        let r = await c.respondWithVal(nodeId,actId,tiebreakerId,actorId)
         redraw()
-        jsonLog.push(["respondWithVal",nodeId,actId,parseInt(tiebreakerId),actorId])
+        jsonLog.push(["respondWithVal",nodeId,actId,tiebreakerId,actorId])
       }
       return [
         `
@@ -753,12 +769,12 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet,apiSet) => {
   if (act.tag === 'A_TieBreak') {
     for (const [k,v] of Object.entries(JSON.parse(actorSet))) {
       if (tbList.includes(v)) {
-        tiebreakers[k] = v
+        tiebreakers[`${k}:actor`] = v
       }
     }
     for (const [k,v] of Object.entries(JSON.parse(apiSet))) {
       if (tbList.includes(v)) {
-        tiebreakers[k] = v
+        tiebreakers[`${k}:api`] = v
       }
     }
   }
