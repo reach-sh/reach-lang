@@ -74,14 +74,14 @@ type Notify = Bool -> NotifyF
 
 -- General tools that could be elsewhere
 
-type LPGraph1 a = M.Map a Integer
-type LPGraph a = M.Map a (LPGraph1 a)
+type LPGraph1 a b = M.Map a b
+type LPGraph a b = M.Map a (LPGraph1 a b)
 
 type LPPath a = ([a], Integer)
 
-longestPathBetween :: LPGraph String -> String -> String -> IO (LPPath String)
-longestPathBetween g f d = do
-  a2d <- fixedPoint $ \_ (i :: LPGraph1 String) -> do
+longestPathBetween :: forall b . LPGraph String b -> String -> String -> (b -> Integer) -> IO (LPPath String)
+longestPathBetween g f d getc = do
+  a2d <- fixedPoint $ \_ (i :: LPGraph1 String Integer) -> do
     flip mapM g $ \tom -> do
       let ext to c =
             case to == d of
@@ -90,7 +90,7 @@ longestPathBetween g f d = do
                 case M.lookup to i of
                   Nothing -> 0
                   Just c' -> c + c'
-      let tom' = map (uncurry ext) $ M.toAscList tom
+      let tom' = map (uncurry ext) $ M.toAscList $ M.map getc tom
       return $ foldl' max 0 tom'
   let r2d x = fromMaybe 0 $ M.lookup x a2d
   let pc = r2d f
@@ -411,39 +411,35 @@ btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
 
 type RestrictCFG = Label -> IO AnalyzeCFG
 type AnalyzeCFG = Resource -> IO (LPPath String)
+type ResourceCost = M.Map Resource Integer
 
 buildCFG :: [TEAL] -> IO (DotGraph, RestrictCFG)
 buildCFG ts = do
-  let mkg :: IO (IORef (LPGraph String))
-      mkg = newIORef mempty
-  res_grs <- forM allResourcesM $ const mkg
+  res_gr :: IORef (LPGraph String ResourceCost) <- newIORef mempty
   let lTop = "TOP"
   let lBot = "BOT"
   (labr :: IORef String) <- newIORef $ lTop
   (k_r :: IORef Integer) <- newIORef $ 1
-  res_rs <- forM allResourcesM $ const $ newIORef $ (0 :: Integer)
+  (res_r :: IORef ResourceCost) <- newIORef $ mempty
   let modK = modifyIORef k_r
   let l2s = LT.unpack
   let recResource rs c = do
-        let r = res_rs M.! rs
         k <- readIORef k_r
-        modifyIORef r ((k * c) +)
+        let f old = Just $ (k * c) + fromMaybe 0 old
+        modifyIORef res_r $ M.alter f rs
   let recCost = recResource R_Cost
   let jump_ :: String -> IO ()
-      jump_ t = forM_ allResources $ \rs -> do
+      jump_ t = do
         lab <- readIORef labr
-        let cr = res_rs M.! rs
-        let cgr = res_grs M.! rs
-        c <- readIORef cr
-        let ff = max c
-        let fg = Just . ff . fromMaybe 0
+        c <- readIORef res_r
+        let ff = M.unionWith max c
+        let fg = Just . ff . fromMaybe mempty
         let f = M.alter fg t
         let g = Just . f . fromMaybe mempty
-        modifyIORef cgr $ M.alter g lab
+        modifyIORef res_gr $ M.alter g lab
   let switch t = do
         writeIORef labr t
-        forM_ res_rs $ \r ->
-          writeIORef r 0
+        writeIORef res_r mempty
   let jump t = recCost 1 >> jump_ (l2s t)
   forM_ ts $ \case
     TFor_top cnt -> do
@@ -510,19 +506,18 @@ buildCFG ts = do
           recResource R_ITxn 1
           recCost 1
         _ -> recCost 1
-  let getGraph = readIORef . (res_grs M.!)
-  g <- getGraph R_Cost
+  g <- readIORef res_gr
+  let renderRc m = intercalate "/" $ map f allResources
+        where f r = show $ fromMaybe 0 $ M.lookup r m
   let gs :: DotGraph =
         flip concatMap (M.toAscList g) $ \(from, cs) ->
           flip concatMap (M.toAscList cs) $ \(to, c) ->
             case (from == mempty) of
               True -> []
-              False -> [(from, to, (M.fromList $ [("label", show c)]))]
+              False -> [(from, to, (M.fromList $ [("label", renderRc c)]))]
+  let getc rs c = fromMaybe 0 $ M.lookup rs c
   let restrict _mustLab = do
-        let analyze rs = do
-              cg <- getGraph rs
-              longestPathBetween cg lTop (l2s lBot)
-        return analyze
+        return $ longestPathBetween g lTop (l2s lBot) . getc
   return (gs, restrict)
 
 data LabelRec = LabelRec
@@ -543,9 +538,9 @@ checkCost notify disp alwaysShow ts ls = do
       putStrLn $ " * " <> which
     analyzeCFG <- restrictCFG lr_lab
     forM_ allResources $ \rs -> do
-      let units = show rs
       let algoMax = maxOf rs
       (_p, c) <- analyzeCFG rs
+      let units = rLabel (c > 1) rs
       let pre = "uses " <> show c <> " " <> units
       let tooMuch = fromIntegral c > algoMax
       let post = if tooMuch then ", but the limit is " <> show algoMax else ""
@@ -610,7 +605,7 @@ data Resource
   | R_Cost
   | R_ITxn
   | R_Txn
-  deriving (Eq, Ord, Enum, Bounded)
+  deriving (Eq, Ord, Enum, Bounded, Show)
 
 allResources :: [Resource]
 allResources = enumerate
@@ -625,14 +620,16 @@ type ResourceSet = S.Set DLArg
 
 type ResourceSets = IORef (M.Map Resource ResourceSet)
 
-instance Show Resource where
-  show = \case
-    R_Txn -> "transactions"
-    R_ITxn -> "inner transactions"
-    R_Asset -> "assets"
-    R_Account -> "accounts"
-    R_Cost -> "units of cost"
-    R_Log -> "bytes of logs"
+rLabel :: Bool -> Resource -> String
+rLabel ph = \case
+  R_Txn -> p "transaction"
+  R_ITxn -> "inner " <> p "transaction"
+  R_Asset -> p "asset"
+  R_Account -> p "account"
+  R_Cost -> p "unit" <> " of cost"
+  R_Log -> p "byte" <> " of logs"
+  where
+    p x = x <> if ph then "s" else ""
 
 rPrecise :: Resource -> Bool
 rPrecise = \case
