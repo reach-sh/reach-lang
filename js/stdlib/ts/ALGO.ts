@@ -2302,8 +2302,9 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   const appInfoM = 'val' in appInfoM_live ? appInfoM_live
                                           : await getDeletedApplicationInfoM(ApplicationID);
 
-  if ('exn' in appInfoM)
+  if ('exn' in appInfoM) {
     throw Error(`${dhead} failed: failed to lookup application (${ApplicationID}): ${j2s(appInfoM.exn)}`);
+  }
 
   const appInfo = appInfoM.val;
   const appInfo_p = appInfo['params'];

@@ -15,8 +15,9 @@ await backend.Alice(ctc, {
 });
 
 // 'Posthumous' code, looking at view set while the contract was alive
-
 const maybeN = await ctc.views.Number.number();
-if (maybeN[0] !== 'None') 
+if (maybeN[0] !== 'None') {
   throw Error("view set after ctc exited");
+}
+
 console.log("After the ctc exited, the current number is None")
