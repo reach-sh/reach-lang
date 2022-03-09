@@ -69,7 +69,8 @@ instance Show AlgoError where
     Err_PayNewToken ->
       "Token cannot be paid within the same consensus step it was shared with the contract on Algorand"
 
-type Notify = LT.Text -> IO ()
+type NotifyF = LT.Text -> IO ()
+type Notify = Bool -> NotifyF
 
 -- General tools that could be elsewhere
 
@@ -423,8 +424,8 @@ itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
 btoi :: BS.ByteString -> Integer
 btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
 
-checkCost :: Notify -> Notify -> Disp -> Bool -> [TEAL] -> IO ()
-checkCost bad' warn' disp alwaysShow ts = do
+checkCost :: Notify -> Disp -> Bool -> [TEAL] -> IO ()
+checkCost notify disp alwaysShow ts = do
   let mkg :: IO (IORef (LPGraph String))
       mkg = newIORef mempty
   res_grs <- forM allResourcesM $ const mkg
@@ -526,7 +527,6 @@ checkCost bad' warn' disp alwaysShow ts = do
         [l] -> l
         l : r -> l <> " --> " <> showNice r
   let analyze_rs = flip foldM ("", False) $ \(msg1, exceeds1) rs -> do
-        let notify = if rPrecise rs then bad' else warn'
         let lab = rShort rs
         let cgr = res_grs M.! rs
         let units = show rs
@@ -536,7 +536,7 @@ checkCost bad' warn' disp alwaysShow ts = do
         let msg = "This program could use " <> show c <> " " <> units
         let tooMuch = fromIntegral c > algoMax
         when tooMuch $
-          notify $ LT.pack $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n"
+          notify (rPrecise rs) $ LT.pack $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n"
         void $ disp ("." <> lab <> ".dot") $ LT.toStrict $ T.render $ dotty gs
         let msg2 = " * " <> msg <> ".\n"
         return $ (msg1 <> msg2, exceeds1 || tooMuch)
@@ -545,11 +545,11 @@ checkCost bad' warn' disp alwaysShow ts = do
     putStrLn $ "Conservative analysis on Algorand found:"
     putStr $ showRs
 
-optimizeAndRender :: Notify -> Notify -> Disp -> Bool -> TEALs -> IO T.Text
-optimizeAndRender bad' warn' disp showCost ts = do
+optimizeAndRender :: Notify -> Disp -> Bool -> TEALs -> IO T.Text
+optimizeAndRender notify disp showCost ts = do
   let tscl = DL.toList ts
   let tscl' = optimize tscl
-  checkCost bad' warn' disp showCost tscl'
+  checkCost notify disp showCost tscl'
   ilvlr <- newIORef $ 0
   tsl' <- mapM (render ilvlr) tscl'
   let lts = tealVersionPragma : (map LT.unwords tsl')
@@ -768,7 +768,7 @@ checkLease = do
   czaddr
   asserteq
 
-bad_io :: IORef (S.Set LT.Text) -> Notify
+bad_io :: IORef (S.Set LT.Text) -> NotifyF
 bad_io x = modifyIORef x . S.insert
 
 bad :: LT.Text -> App ()
@@ -2550,6 +2550,8 @@ compile_algo env disp pl = do
   resr <- newIORef mempty
   sFailuresR <- newIORef mempty
   sWarningsR <- newIORef mempty
+  let bad' = bad_io sFailuresR
+  let warn' = bad_io sWarningsR
   let sMapDataTy = mapDataTy sMaps
   let sMapDataSize = typeSizeOf sMapDataTy
   let PLOpts {..} = plo
@@ -2560,8 +2562,7 @@ compile_algo env disp pl = do
             Aeson.Number $ fromIntegral size
   let recordSizeAndKeys :: T.Text -> Integer -> Integer -> IO [Word8]
       recordSizeAndKeys prefix size limit = do
-        let badx = bad_io sFailuresR
-        (keys, keysl) <- computeStateSizeAndKeys badx (LT.fromStrict prefix) size limit
+        (keys, keysl) <- computeStateSizeAndKeys bad' (LT.fromStrict prefix) size limit
         recordSize prefix size
         modifyIORef resr $
           M.insert (prefix <> "Keys") $
@@ -2585,8 +2586,6 @@ compile_algo env disp pl = do
         eResources <- newResources
         flip runReaderT (Env {..}) m
         readIORef eOutputR
-  let bad' = bad_io sFailuresR
-  let warn' = bad_io sWarningsR
   unless (plo_untrustworthyMaps || null sMapKeysl) $ do
     warn' $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
   totalLenR <- newIORef (0 :: Integer)
@@ -2594,7 +2593,8 @@ compile_algo env disp pl = do
   let addProg lab showCost m = do
         ts <- run m
         let disp' = disp . (lab <>)
-        t <- optimizeAndRender bad' warn' disp' showCost ts
+        let notify b = if b then bad' else warn'
+        t <- optimizeAndRender notify disp' showCost ts
         tf <- disp (lab <> ".teal") t
         tbs <- compileTEAL tf
         modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
