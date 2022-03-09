@@ -10,9 +10,9 @@ Read the [documentation](https://docs.reach.sh).
 # Development
 
 If you want to work on the Reach compiler, you'll need:
-- stack v2.7.1
-- z3 v4.8.13
-- solidity v0.8.9
+- stack v2.7.5
+- z3 v4.8.14
+- solidity v0.8.12
 - [mo](https://github.com/tests-always-included/mo) v2.2.0
 
 The versions of our dependencies are specified in `DEPS`.
