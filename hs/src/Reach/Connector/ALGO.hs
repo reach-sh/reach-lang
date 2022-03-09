@@ -1742,7 +1742,8 @@ ce = \case
         let name = maybe en (\l -> bunpack l <> "_" <> en) ml
         clogEvent name vs
         --cl DLL_Null -- Event log values are never used
-  DLE_setApiDetails {} -> return ()
+  DLE_setApiDetails _at p _ _ _ -> do
+    label $ apiLabel p
   DLE_GetUntrackedFunds at mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
     cGetBalance at mtok
@@ -2313,6 +2314,9 @@ cblt lab go t = do
 handlerLabel :: Int -> Label
 handlerLabel w = "publish" <> texty w
 
+apiLabel :: SLPart -> Label
+apiLabel w = "api_" <> (LT.pack $ bunpack w)
+
 bindFromSvs_ :: SrcLoc -> [DLVarLet] -> App a -> App a
 bindFromSvs_ at svs m = do
   let ensure = cSvsLoad $ typeSizeOf $ T_Tuple $ map varLetType svs
@@ -2638,7 +2642,12 @@ compile_algo env disp pl = do
             lr_at = ch_at
             lr_what = "Step " <> show i
         (_, C_Loop {}) -> Nothing
-  let progLs = mapMaybe h2lr $ M.toAscList hm
+  let a2lr (p, ApiInfo {..}) = LabelRec {..}
+        where
+          lr_lab = apiLabel p
+          lr_at = ai_at
+          lr_what = "API " <> bunpack p
+  let progLs = (mapMaybe h2lr $ M.toAscList hm) <> (map a2lr $ M.toAscList ai)
   addProg "appApproval" (cte_REACH_DEBUG env) progLs $ do
     useResource R_Txn
     cint 0

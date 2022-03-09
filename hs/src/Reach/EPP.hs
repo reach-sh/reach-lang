@@ -349,13 +349,13 @@ be_m = \case
                     M.insert p ty
               _ -> impossible "api"
           _ -> return ()
-      DLE_setApiDetails _ p tys mc isf -> do
+      DLE_setApiDetails apiAt p tys mc isf -> do
         BEnv {..} <- ask
         rets <- liftIO $ readIORef be_api_rets
         let ret = fromMaybe T_Null $ M.lookup p rets
         liftIO $
           modifyIORef be_api_info $
-            M.insert p $ ApiInfo tys mc be_which isf ret
+            M.insert p $ ApiInfo apiAt tys mc be_which isf ret
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de

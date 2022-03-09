@@ -576,7 +576,8 @@ instance Pretty ApiInfoCompilation where
   pretty = viaShow
 
 data ApiInfo = ApiInfo
-  { ai_msg_tys :: [DLType]
+  { ai_at :: SrcLoc
+  , ai_msg_tys :: [DLType]
   , ai_mcase_id :: Maybe String
   , ai_which :: Int
   , ai_compile :: ApiInfoCompilation
