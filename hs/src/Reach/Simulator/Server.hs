@@ -509,7 +509,7 @@ app p srcTxt = do
     a <- webM $ getAPIs
     json a
 
-  get "/api_call/:a/:s" $ do
+  post "/api_call/:a/:s" $ do
     setHeaders
     a <- param "a"
     s <- param "s"
