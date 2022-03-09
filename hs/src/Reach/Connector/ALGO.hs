@@ -424,8 +424,8 @@ itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
 btoi :: BS.ByteString -> Integer
 btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
 
-checkCost :: Notify -> Disp -> Bool -> [TEAL] -> IO ()
-checkCost notify disp alwaysShow ts = do
+buildCFG :: [TEAL] -> IO (Resource -> IO (LPPath String))
+buildCFG ts = do
   let mkg :: IO (IORef (LPGraph String))
       mkg = newIORef mempty
   res_grs <- forM allResourcesM $ const mkg
@@ -522,17 +522,23 @@ checkCost notify disp alwaysShow ts = do
           recResource R_ITxn 1
           recCost 1
         _ -> recCost 1
+  return $ \rs -> do
+    let cgr = res_grs M.! rs
+    cg <- readIORef cgr
+    longestPathBetween cg lTop (l2s lBot)
+
+checkCost :: Notify -> Disp -> Bool -> [TEAL] -> IO ()
+checkCost notify disp alwaysShow ts = do
+  cfg <- buildCFG ts
   let showNice = \case
         [] -> ""
         [l] -> l
         l : r -> l <> " --> " <> showNice r
   let analyze_rs = flip foldM ("", False) $ \(msg1, exceeds1) rs -> do
         let lab = rShort rs
-        let cgr = res_grs M.! rs
         let units = show rs
         let algoMax = maxOf rs
-        cg <- readIORef cgr
-        (gs, p, c) <- longestPathBetween cg lTop (l2s lBot)
+        (gs, p, c) <- cfg rs
         let msg = "This program could use " <> show c <> " " <> units
         let tooMuch = fromIntegral c > algoMax
         when tooMuch $
@@ -755,18 +761,6 @@ padding = cla . bytesZeroLit
 
 czaddr :: App ()
 czaddr = padding $ typeSizeOf T_Address
-
-checkRekeyTo :: App ()
-checkRekeyTo = do
-  code "txn" ["RekeyTo"]
-  czaddr
-  asserteq
-
-checkLease :: App ()
-checkLease = do
-  code "txn" ["Lease"]
-  czaddr
-  asserteq
 
 bad_io :: IORef (S.Set LT.Text) -> NotifyF
 bad_io x = modifyIORef x . S.insert
@@ -2602,10 +2596,6 @@ compile_algo env disp pl = do
         modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String tc
   addProg "appApproval" (cte_REACH_DEBUG env) $ do
     useResource R_Txn
-    when False $ do
-      -- We don't check these, because they don't interfere with how we work.
-      checkRekeyTo
-      checkLease
     cint 0
     gvStore GV_txnCounter
     code "txn" ["ApplicationID"]
