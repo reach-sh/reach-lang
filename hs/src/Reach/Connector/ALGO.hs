@@ -102,6 +102,13 @@ longestPathBetween g f d getc = do
   let p = getMaxPath f
   return $ (p, pc)
 
+restrictGraph :: forall a b . () => LPGraph a b -> a -> IO (LPGraph a b)
+restrictGraph g _n = do
+  let isConnected _x = True
+  let onlyConnected x _ = isConnected x
+  let removeDisconnected = M.filterWithKey onlyConnected
+  return $ M.map removeDisconnected $ removeDisconnected g
+
 aarray :: [Aeson.Value] -> Aeson.Value
 aarray = Aeson.Array . Vector.fromList
 
@@ -409,7 +416,7 @@ itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
 btoi :: BS.ByteString -> Integer
 btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
 
-type RestrictCFG = Label -> IO AnalyzeCFG
+type RestrictCFG = Label -> IO (DotGraph, AnalyzeCFG)
 type AnalyzeCFG = Resource -> IO (LPPath String)
 type ResourceCost = M.Map Resource Integer
 
@@ -506,19 +513,21 @@ buildCFG ts = do
           recResource R_ITxn 1
           recCost 1
         _ -> recCost 1
-  g <- readIORef res_gr
   let renderRc m = intercalate "/" $ map f allResources
         where f r = show $ fromMaybe 0 $ M.lookup r m
-  let gs :: DotGraph =
+  let gs :: LPGraph String ResourceCost -> DotGraph
+      gs g =
         flip concatMap (M.toAscList g) $ \(from, cs) ->
           flip concatMap (M.toAscList cs) $ \(to, c) ->
             case (from == mempty) of
               True -> []
               False -> [(from, to, (M.fromList $ [("label", renderRc c)]))]
+  g <- readIORef res_gr
   let getc rs c = fromMaybe 0 $ M.lookup rs c
-  let restrict _mustLab = do
-        return $ longestPathBetween g lTop (l2s lBot) . getc
-  return (gs, restrict)
+  let restrict mustLab = do
+        g' <- restrictGraph g $ l2s mustLab
+        return $ (gs g', longestPathBetween g' lTop (l2s lBot) . getc)
+  return (gs g, restrict)
 
 data LabelRec = LabelRec
   { lr_lab :: Label
@@ -528,15 +537,17 @@ data LabelRec = LabelRec
 
 checkCost :: Notify -> Disp -> Bool -> [TEAL] -> [LabelRec] -> IO ()
 checkCost notify disp alwaysShow ts ls = do
+  let rgs lab gs = void $ disp ("." <> lab <> "dot") $ LT.toStrict $ T.render $ dotty gs
   (gs, restrictCFG) <- buildCFG ts
-  void $ disp ".dot" $ LT.toStrict $ T.render $ dotty gs
+  rgs "" gs
   when alwaysShow $ do
     putStrLn $ "Conservative analysis on Algorand found:"
   forM_ ls $ \LabelRec {..} -> do
     let which = lr_what <> ", which starts at " <> show lr_at
     when alwaysShow $ do
       putStrLn $ " * " <> which
-    analyzeCFG <- restrictCFG lr_lab
+    (gs', analyzeCFG) <- restrictCFG lr_lab
+    rgs (LT.unpack lr_lab <> ".") gs'
     forM_ allResources $ \rs -> do
       let algoMax = maxOf rs
       (_p, c) <- analyzeCFG rs

@@ -135,6 +135,7 @@ export REACH_BUILD_NO_CACHE=Y
 #jb
 REACH_DEBUG=Y c examples/remote-rsh/index.rsh
 dot -Tpng -O examples/remote-rsh/build/index.mainS.appApproval.dot
+dot -Tpng -O examples/remote-rsh/build/index.mainS.appApproval.publish3.dot
 #REACH_DEBUG=Y cdot hs/t/y/array_groups.rsh
 #REACH_DEBUG=Y c hs/t/y/many_txns.rsh
 #REACH_DEBUG=Y c examples/rps-7-loops/index.rsh
