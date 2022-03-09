@@ -136,7 +136,9 @@ const renderObjects = async (nodeId) => {
     apiBs = apiBs + `
       <button type="button"
       class="list-group-item list-group-item-action api-button"
+      data-node-id="${nodeId}"
       data-api-id="${k}"
+      data-api-name="${v.a_name}"
       data-fn="${JSON.stringify(f)}">
       ${v.a_name}
       <span class="badge bg-secondary">${status}</span>
@@ -247,8 +249,8 @@ const bindObjDetailsEvents = () => {
     item.addEventListener("click",renderObjectDetails)
   });
 
-  const objectBtns = document.querySelectorAll(".api-button")
-  objectBtns.forEach((item, i) => {
+  const apiBtns = document.querySelectorAll(".api-button")
+  apiBtns.forEach((item, i) => {
     item.addEventListener("click",clickAPIButton)
   });
 
@@ -409,11 +411,16 @@ const clickAPIButton = async (evt) => {
   const tgt = evt.target.closest(".api-button")
   const apiId = tgt.dataset.apiId
   const fnName = tgt.dataset.fn
-  let val = prompt(`Enter Value for: ${fnName}`,"");
+  const nodeId = tgt.dataset.nodeId
+  const apiName = tgt.dataset.apiName
+  const t = "tuple"
+  let val = prompt(`Enter Value for: ${apiName}`,"");
   if (val === null || val === "") {
     console.log("User cancelled the prompt.");
   } else {
-    c.apiChoice(apiId,val)
+    let v = JSON.stringify(JSON.parse(val))
+    c.apiCall(apiId,nodeId,v,t)
+    jsonLog.push(["apiCall",apiId,nodeId,v,t])
   }
 }
 
