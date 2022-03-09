@@ -3734,7 +3734,6 @@ evalApply rator rands =
 
 evalPropertyName :: JSPropertyName -> App (SecurityLevel, String)
 evalPropertyName = \case
-  JSPropertyIdent _ ('_':s') -> return $ secret $ "_" <> s'
   JSPropertyIdent _ s -> return $ public s
   JSPropertyString _ s -> return $ public $ trimQuotes s
   pn@(JSPropertyNumber an _) ->
