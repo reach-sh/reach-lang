@@ -70,6 +70,7 @@ instance ToJSON MessageInfo
 data ReachAPI = ReachAPI
   { a_name :: String
   , a_liv :: InteractEnv
+  , a_val :: Maybe DLVal
   }
   deriving (Show, Generic)
 
@@ -514,7 +515,18 @@ instance Interp DLExpr where
         _ -> possible "DLE_ObjectRef: expected Object or Struct"
     DLE_Interact at slcxtframes slpart str dltype dlargs -> do
       args <- mapM interp dlargs
-      suspend $ PS_Suspend (Just at) (A_Interact slcxtframes (bunpack slpart) str dltype args)
+      g <- getGlobal
+      let apiObs = e_apis g
+      let apis = M.fromList $ map (\(a,b) -> (a_name b, a)) $ M.toList apiObs
+      let partName' = bunpack slpart
+      case M.lookup partName' apis of
+        Just apid -> do
+          let a = a_val =<< M.lookup apid apiObs
+          case a of
+            Just v -> return v
+            Nothing -> possible "DLE_Interact: late api call"
+        Nothing -> do
+          suspend $ PS_Suspend (Just at) (A_Interact slcxtframes partName' str dltype args)
     DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
       CT_Assert -> interp dlarg
@@ -933,7 +945,7 @@ registerAPI :: State -> String -> InteractEnv -> State
 registerAPI (g, l) s iv = do
   let apid = e_napid g
   let apis = e_apis g
-  let a = ReachAPI { a_name = s, a_liv = iv }
+  let a = ReachAPI { a_name = s, a_liv = iv, a_val = Nothing }
   let g' =
         g
           { e_apis = M.insert apid a apis

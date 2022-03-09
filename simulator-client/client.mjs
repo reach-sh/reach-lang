@@ -444,6 +444,12 @@ const getAPIs = async () => {
   return r
 }
 
+const apiCall = async (a,s,v,t='number') => {
+  const r = await interact('POST', `${address}/api_call/${a}/${s}/?data=${v}&type=${t}`)
+  console.log(r)
+  return r
+}
+
 // ping the server for a friendly greeting ^_^
 const ping = async () => {
   const r = await interact(`GET`, `${address}/ping`)
@@ -468,7 +474,8 @@ const clientMethods = {
   "getEdges" : getEdges,
   "resetServer" : resetServer,
   "newAccount" : newAccount,
-  "newToken" : newToken
+  "newToken" : newToken,
+  "apiCall" : apiCall
 }
 
 // run a single Simulation "script" command
@@ -509,5 +516,6 @@ export {
   transfer,
   newToken,
   initDetails,
-  getAPIs
+  getAPIs,
+  apiCall
 };
