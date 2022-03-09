@@ -811,10 +811,10 @@ compileArgExpr mt = \case
     m <- compileArgExprMap me
     mk $ DLLA_Obj m
   DLAE_Data t v ae -> do
-    a <- compileArgExpr empty ae
+    a <- compileArgExpr_ ae
     mk $ DLLA_Data t v a
   DLAE_Struct kvs -> do
-    let go (k, v) = (,) k <$> (compileArgExpr mt) v
+    let go (k, v) = (,) k <$> compileArgExpr_ v
     kvs' <- mapM go kvs
     mk $ DLLA_Struct kvs'
   DLAE_Bytes b -> do
@@ -3734,7 +3734,7 @@ evalApply rator rands =
 
 evalPropertyName :: JSPropertyName -> App (SecurityLevel, String)
 evalPropertyName = \case
-  -- JSPropertyIdent _ ('_':s') -> return $ secret $ "_" <> s'
+  JSPropertyIdent _ ('_':s') -> return $ secret $ "_" <> s'
   JSPropertyIdent _ s -> return $ public s
   JSPropertyString _ s -> return $ public $ trimQuotes s
   pn@(JSPropertyNumber an _) ->

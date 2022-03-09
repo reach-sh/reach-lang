@@ -282,7 +282,7 @@ fork()
 where:
 + `{!rsh} TOKENS_EXPR` is a syntactic tuple of `{!rsh} Token` identifiers;
 + `{!rsh} PART_EXPR` is an expression that evaluates to a participant;
-+ `{!rsh} PUBLISH_EXPR` is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a `msg` field, which may be of any type, a `when` field, which must be a boolean, a `_local` field, which may be of any type;
++ `{!rsh} PUBLISH_EXPR` is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a `msg` field, which may be of any type, a `when` field, which must be a boolean, and a `_local` field, which may be of any type;
 + (optional) `{!rsh} PAY_EXPR` is an expression that evaluates to a function parameterized over the `msg` value and returns a pay amount; if this component is left-out, it is synthesized to zero;
 + (optional) `{!rsh} PAY_REQUIRE_EXPR` is a function parameterized over the `msg` value which is evaluated for effect in a consensus step; thus it may be used to add `{!rsh} require` constraints on the value used for payment.
 If this is absent, then it is synthesized to an empty function.
