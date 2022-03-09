@@ -134,7 +134,7 @@ export REACH_BUILD_NO_CACHE=Y
 
 #jb
 REACH_DEBUG=Y c examples/remote-rsh/index.rsh
-#REACH_DEBUG=Y c hs/t/y/array_groups.rsh
+REACH_DEBUG=Y c hs/t/y/array_groups.rsh
 #REACH_DEBUG=Y c hs/t/y/many_txns.rsh
 #REACH_DEBUG=Y c examples/rps-7-loops/index.rsh
 exit 0

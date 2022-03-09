@@ -77,9 +77,9 @@ type Notify = Bool -> NotifyF
 type LPGraph1 a = M.Map a Integer
 type LPGraph a = M.Map a (LPGraph1 a)
 
-type LPPath a = (DotGraph, [a], Integer)
+type LPPath = (DotGraph, Integer)
 
-longestPathBetween :: LPGraph String -> String -> String -> IO (LPPath String)
+longestPathBetween :: LPGraph String -> String -> String -> IO LPPath
 longestPathBetween g f d = do
   a2d <- fixedPoint $ \_ (i :: LPGraph1 String) -> do
     flip mapM g $ \tom -> do
@@ -115,7 +115,7 @@ longestPathBetween g f d = do
             case (from == mempty) of
               True -> []
               False -> [(from, to, (M.fromList $ [("label", show c <> "+" <> show tc <> "=" <> show (c + tc))] <> (if edge (from, to) then [("color","red")] else [])))]
-  return $ (gs, p, pc)
+  return $ (gs, pc)
 
 aarray :: [Aeson.Value] -> Aeson.Value
 aarray = Aeson.Array . Vector.fromList
@@ -424,7 +424,7 @@ itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
 btoi :: BS.ByteString -> Integer
 btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
 
-buildCFG :: [TEAL] -> IO (Resource -> IO (LPPath String))
+buildCFG :: [TEAL] -> IO (Resource -> IO LPPath)
 buildCFG ts = do
   let mkg :: IO (IORef (LPGraph String))
       mkg = newIORef mempty
@@ -530,19 +530,15 @@ buildCFG ts = do
 checkCost :: Notify -> Disp -> Bool -> [TEAL] -> IO ()
 checkCost notify disp alwaysShow ts = do
   cfg <- buildCFG ts
-  let showNice = \case
-        [] -> ""
-        [l] -> l
-        l : r -> l <> " --> " <> showNice r
   let analyze_rs = flip foldM ("", False) $ \(msg1, exceeds1) rs -> do
         let lab = rShort rs
         let units = show rs
         let algoMax = maxOf rs
-        (gs, p, c) <- cfg rs
+        (gs, c) <- cfg rs
         let msg = "This program could use " <> show c <> " " <> units
         let tooMuch = fromIntegral c > algoMax
         when tooMuch $
-          notify (rPrecise rs) $ LT.pack $ msg <> ", but the limit is " <> show algoMax <> "; longest path:\n     " <> showNice p <> "\n"
+          notify (rPrecise rs) $ LT.pack $ msg <> ", but the limit is " <> show algoMax
         void $ disp ("." <> lab <> ".dot") $ LT.toStrict $ T.render $ dotty gs
         let msg2 = " * " <> msg <> ".\n"
         return $ (msg1 <> msg2, exceeds1 || tooMuch)
