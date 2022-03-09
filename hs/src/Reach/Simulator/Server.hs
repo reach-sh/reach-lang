@@ -264,8 +264,14 @@ unblockProg sid aid v = do
               let ps = k (g, l) v
               processNewState (Just sid) ps
             Just (C.A_TieBreak _poolid _parts) -> do
-              let ps = k (g, l) v
-              processNewState (Just sid) ps
+              case v of
+                C.V_Data _ _ -> do
+                  let ps = k (g, l) v
+                  processNewState (Just sid) ps
+                C.V_UInt i -> do
+                  let ps = k (g, l) $ C.V_Data "actor" $ C.V_UInt i
+                  processNewState (Just sid) ps
+                _ -> possible "unblockProg (Tiebreak): unexpected value"
             Just C.A_None -> do
               let ps = k (g, l) v
               processNewState (Just sid) ps

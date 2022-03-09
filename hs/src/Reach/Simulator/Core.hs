@@ -790,17 +790,24 @@ instance Interp LLStep where
                       runWithWinner dlr actId' phId
             Consensus -> do
               v <- suspend $ PS_Suspend (Just at) (A_TieBreak phId $ M.keys sends)
-              let actId' = fromIntegral $ vUInt v
-              part <- partName <$> whoIs actId'
-              let dls = saferMaybe "LLS_ToConsensus1" $ M.lookup part sends
-              accId <- getAccId actId'
-              m' <- saferMaybe ("Phase not yet seen") <$> M.lookup phId <$> e_messages <$> getGlobal
-              let msgs = unfixedMsgs $ m'
-              let winningMsg = saferMaybe ("Message not yet seen") $ M.lookup actId' msgs
-              _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg) (m_pay winningMsg)
-              winner dlr actId' phId
-              consensusPayout accId actId' (ds_pay dls)
-              interp $ dr_k
+              case v of
+                V_Data s v' -> do
+                  let actId' = vUInt v'
+                  case s == "api" of
+                    True -> return ()
+                    False -> do
+                      accId <- getAccId $ fromIntegral actId'
+                      part <- partName <$> whoIs (fromIntegral actId')
+                      let dls = saferMaybe "LLS_ToConsensus1" $ M.lookup part sends
+                      consensusPayout accId (fromIntegral actId') (ds_pay dls)
+                  m' <- saferMaybe ("Phase not yet seen") <$> M.lookup phId <$> e_messages <$> getGlobal
+                  let msgs = unfixedMsgs $ m'
+                  let winningMsg = saferMaybe ("Message not yet seen") $ M.lookup (fromIntegral actId') msgs
+                  _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg) (m_pay winningMsg)
+                  winner dlr (fromIntegral actId') phId
+                  interp $ dr_k
+                _ -> possible "expected V_Data value"
+
 
 poll :: PhaseId -> App (ActorId, Store)
 poll phId = do

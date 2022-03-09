@@ -662,16 +662,16 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
         if (tiebreaker[1] === "actor") {
           tiebreakerId = parseInt(tiebreaker[0])
         } else {
-          tiebreakerId = {
-            "tag":"V_Object",
-            "contents":{
-              "api":{
+          tiebreakerId = JSON.stringify({
+            "tag":"V_Data",
+            "contents":[
+              "api",
+              {
                 "tag":"V_UInt",
-                "contents": tiebreaker[0]
+                "contents":tiebreaker[0]
               }
-            }
-          }
-
+            ]
+          })
         }
         let r = await c.respondWithVal(nodeId,actId,tiebreakerId,actorId)
         redraw()
