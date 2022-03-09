@@ -61,8 +61,12 @@ export default async (
 	if (showUpdateNotifications === false) return;
 
 	OUTPUT_CHANNEL.appendLine(
-		'Starting update check at ' +
-		new Date().toLocaleTimeString()
+		'Starting update check using'
+	);
+	OUTPUT_CHANNEL.appendLine(pathToScript);
+	OUTPUT_CHANNEL.appendLine(`at ${
+			new Date().toLocaleTimeString()
+		}.\n`
 	);
 
 	if (DOCKER_IS_NOT_RUNNING())
@@ -79,23 +83,37 @@ export default async (
 
 	OUTPUT_CHANNEL.appendLine(
 		'Checking version-compare --json -h >/dev/null 2>&1'
-		+ ' at ' + new Date().toLocaleTimeString()
+		+ ' using'
+	);
+	OUTPUT_CHANNEL.appendLine(pathToScript);
+	OUTPUT_CHANNEL.appendLine(`at ${
+			new Date().toLocaleTimeString()
+		}.\n`
 	);
 
 	CHECK_VERSION_COMPARE_JSON_USING(pathToScript).then(
 		async versionCompareJsonDoesntWork => {
 			const str = versionCompareJsonDoesntWork ?
-				' doesn\'t work. ' : ' works. ';
+				'didn\'t work.' : 'worked.';
 
 			OUTPUT_CHANNEL.appendLine(
 				'version-compare --json -h >/dev/null 2>&1'
-				+ str + new Date().toLocaleTimeString()
+				+ ' using'
+			);
+			OUTPUT_CHANNEL.appendLine(pathToScript);
+			OUTPUT_CHANNEL.appendLine(`${str} ${
+					new Date().toLocaleTimeString()
+				}.\n`
 			);
 			if (versionCompareJsonDoesntWork) {
 				OUTPUT_CHANNEL.appendLine(
-					'This likely means your reach' +
-					' script is very old. ' +
-					new Date().toLocaleTimeString()
+					'This likely means your reach script,'
+				);
+				OUTPUT_CHANNEL.appendLine(pathToScript);
+				OUTPUT_CHANNEL.appendLine(
+					`is very old. ${
+						new Date().toLocaleTimeString()
+					}.`
 				);
 			}
 
