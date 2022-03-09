@@ -1231,30 +1231,36 @@ down' :: App
 down' = script $ do
   write
     [N.text|
-    name () { docker inspect --format="{{ index .Name }}" "$$1"; }
+    name () { docker inspect --format="{{ index .Name }}" "$$1";  }
+    pds  () { printf 'Stopping %s%s... ' "$$1" "$(name "$$1")";   }
+    pdr  () { printf 'Removing %s%s... ' "$$1" "$(name "$$1")";   }
+    dds  () { docker stop   "$$1" >/dev/null && printf 'Done.\n'; }
+    ddr  () { docker rm -fv "$$1" >/dev/null && printf 'Done.\n'; }
 
     # Stop app containers w/ status == running
     docker ps -qf label=sh.reach.dir-tmp | while IFS= read -r d; do
-      printf 'Stopping %s%s... ' "$$d" "$(name "$$d")"
-      docker stop "$$d" >/dev/null && printf 'Done.\n'
+      pds "$$d"; dds "$$d"
     done
 
     # Remove app stragglers (containers w/ status != running)
     docker ps -aqf label=sh.reach.dir-tmp | while IFS= read -r d; do
-      printf 'Removing %s%s... ' "$$d" "$(name "$$d")"
-      docker rm -fv "$$d" >/dev/null && printf 'Done.\n'
+      pdr "$$d"; ddr "$$d"
     done
 
     # Stop `reachc` containers w/ status == running
     docker ps -qf 'ancestor=reachsh/reach' | while IFS= read -r d; do
-      printf 'Stopping %s%s... ' "$$d" "$(name "$$d")"
-      docker stop "$$d" >/dev/null && printf 'Done.\n'
+      pds "$$d"; dds "$$d"
     done
 
     # Remove `reachc` stragglers (containers w/ status != running)
     docker ps -aqf 'ancestor=reachsh/reach' | while IFS= read -r d; do
-      printf 'Removing %s%s... ' "$$d" "$(name "$$d")"
-      docker rm -fv "$$d" >/dev/null && printf 'Done.\n'
+      pdr "$$d"; ddr "$$d"
+    done
+
+    # Remove `dir-project` stragglers (e.g. `reachc` w/out ancestor, which can
+    # happen if `reachc` is rebuilt while containers are still running)
+    docker ps -aqf 'label=sh.reach.dir-project' | while IFS= read -r d; do
+      pdr "$$d"; ddr "$$d"
     done
   |]
   forM_ (packs <$> [ALGO, CFX, ETH]) $ \c ->
@@ -1262,14 +1268,12 @@ down' = script $ do
       [N.text|
     # Stop devnet containers w/ status == running
     docker ps -qf label=sh.reach.devnet-for=$c | while IFS= read -r d; do
-      printf 'Stopping %s%s... ' "$$d" "$(name "$$d")"
-      docker stop "$$d" >/dev/null && printf 'Done.\n'
+      pds "$$d"; dds "$$d"
     done
 
     # Remove devnet stragglers (containers w/ status != running)
     docker ps -aqf label=sh.reach.devnet-for=$c | while IFS= read -r d; do
-      printf 'Removing %s%s... ' "$$d" "$(name "$$d")"
-      docker rm -fv "$$d" >/dev/null && printf 'Done.\n'
+      pdr "$$d"; ddr "$$d"
     done
   |]
   write
