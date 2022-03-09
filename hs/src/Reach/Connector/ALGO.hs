@@ -409,7 +409,10 @@ itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
 btoi :: BS.ByteString -> Integer
 btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
 
-buildCFG :: [TEAL] -> IO (DotGraph, (Resource -> IO (LPPath String)))
+type RestrictCFG = Label -> IO AnalyzeCFG
+type AnalyzeCFG = Resource -> IO (LPPath String)
+
+buildCFG :: [TEAL] -> IO (DotGraph, RestrictCFG)
 buildCFG ts = do
   let mkg :: IO (IORef (LPGraph String))
       mkg = newIORef mempty
@@ -515,35 +518,48 @@ buildCFG ts = do
             case (from == mempty) of
               True -> []
               False -> [(from, to, (M.fromList $ [("label", show c)]))]
-  let longest rs = do
-        cg <- getGraph rs
-        longestPathBetween cg lTop (l2s lBot)
-  return (gs, longest)
+  let restrict _mustLab = do
+        let analyze rs = do
+              cg <- getGraph rs
+              longestPathBetween cg lTop (l2s lBot)
+        return analyze
+  return (gs, restrict)
 
-checkCost :: Notify -> Disp -> Bool -> [TEAL] -> IO ()
-checkCost notify disp alwaysShow ts = do
-  (gs, cfg) <- buildCFG ts
+data LabelRec = LabelRec
+  { lr_lab :: Label
+  , lr_at :: SrcLoc
+  , lr_what :: String
+  }
+
+checkCost :: Notify -> Disp -> Bool -> [TEAL] -> [LabelRec] -> IO ()
+checkCost notify disp alwaysShow ts ls = do
+  (gs, restrictCFG) <- buildCFG ts
   void $ disp ".dot" $ LT.toStrict $ T.render $ dotty gs
-  let analyze_rs = flip foldM ("", False) $ \(msg1, exceeds1) rs -> do
-        let units = show rs
-        let algoMax = maxOf rs
-        (_p, c) <- cfg rs
-        let msg = "This program could use " <> show c <> " " <> units
-        let tooMuch = fromIntegral c > algoMax
-        when tooMuch $
-          notify (rPrecise rs) $ LT.pack $ msg <> ", but the limit is " <> show algoMax <> "."
-        let msg2 = " * " <> msg <> ".\n"
-        return $ (msg1 <> msg2, exceeds1 || tooMuch)
-  (showRs, exceeds) <- analyze_rs allResources
-  when (alwaysShow && not exceeds) $ do
+  when alwaysShow $ do
     putStrLn $ "Conservative analysis on Algorand found:"
-    putStr $ showRs
+  forM_ ls $ \LabelRec {..} -> do
+    let which = lr_what <> ", which starts at " <> show lr_at
+    when alwaysShow $ do
+      putStrLn $ " * " <> which
+    analyzeCFG <- restrictCFG lr_lab
+    forM_ allResources $ \rs -> do
+      let units = show rs
+      let algoMax = maxOf rs
+      (_p, c) <- analyzeCFG rs
+      let pre = "uses " <> show c <> " " <> units
+      let tooMuch = fromIntegral c > algoMax
+      let post = if tooMuch then ", but the limit is " <> show algoMax else ""
+      let msg = pre <> post <> "."
+      when tooMuch $ do
+        notify (rPrecise rs) $ LT.pack $ which <> " " <> msg
+      when alwaysShow $ do
+        putStrLn $ "   + " <> msg
 
-optimizeAndRender :: Notify -> Disp -> Bool -> TEALs -> IO T.Text
-optimizeAndRender notify disp showCost ts = do
+optimizeAndRender :: Notify -> Disp -> Bool -> TEALs -> [LabelRec] -> IO T.Text
+optimizeAndRender notify disp showCost ts ls = do
   let tscl = DL.toList ts
   let tscl' = optimize tscl
-  checkCost notify disp showCost tscl'
+  checkCost notify disp showCost tscl' ls
   ilvlr <- newIORef $ 0
   tsl' <- mapM (render ilvlr) tscl'
   let lts = tealVersionPragma : (map LT.unwords tsl')
@@ -2563,17 +2579,25 @@ compile_algo env disp pl = do
     warn' $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
   totalLenR <- newIORef (0 :: Integer)
   -- let findAt which = fromMaybe sb $ fmap srclocOf $ M.lookup which hm
-  let addProg lab showCost m = do
+  let addProg lab showCost ls m = do
         ts <- run m
         let disp' = disp . (lab <>)
         let notify b = if b then bad' else warn'
-        t <- optimizeAndRender notify disp' showCost ts
+        t <- optimizeAndRender notify disp' showCost ts ls
         tf <- disp (lab <> ".teal") t
         tbs <- compileTEAL tf
         modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
         let tc = LT.toStrict $ encodeBase64 tbs
         modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String tc
-  addProg "appApproval" (cte_REACH_DEBUG env) $ do
+  let h2lr = \case
+        (i, C_Handler {..}) -> Just $ LabelRec {..}
+          where
+            lr_lab = handlerLabel i
+            lr_at = ch_at
+            lr_what = "Step " <> show i
+        (_, C_Loop {}) -> Nothing
+  let progLs = mapMaybe h2lr $ M.toAscList hm
+  addProg "appApproval" (cte_REACH_DEBUG env) progLs $ do
     useResource R_Txn
     cint 0
     gvStore GV_txnCounter
@@ -2675,7 +2699,7 @@ compile_algo env disp pl = do
       gvStore gv
     code "b" ["updateState"]
   -- Clear state is never allowed
-  addProg "appClear" False $ do
+  addProg "appClear" False [] $ do
     useResource R_Txn
     return ()
   stateSize <- readIORef sStateSizeR
