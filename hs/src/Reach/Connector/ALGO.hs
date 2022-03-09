@@ -18,7 +18,7 @@ import qualified Data.HashMap.Strict as HM
 import Data.IORef
 import Data.List (intercalate, foldl')
 import qualified Data.List as List
-import Data.List.Extra (enumerate)
+import Data.List.Extra (enumerate, mconcatMap)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import qualified Data.Set as S
@@ -102,9 +102,24 @@ longestPathBetween g f d getc = do
   let p = getMaxPath f
   return $ (p, pc)
 
-restrictGraph :: forall a b . () => LPGraph a b -> a -> IO (LPGraph a b)
-restrictGraph g _n = do
-  let isConnected _x = True
+restrictGraph :: forall a b . (Ord a) => LPGraph a b -> a -> IO (LPGraph a b)
+restrictGraph g n = do
+  (from, to) <- fixedPoint $ \_ ((from :: S.Set a), (to_ :: S.Set a)) -> do
+    let to = S.insert n to_
+    let incl1 x cs = x == n || S.member x cs
+    let inclFrom (x, es) =
+          case incl1 x from of
+            True -> S.insert x $ M.keysSet es
+            False -> mempty
+    let inclTo (x, es) =
+          case S.null $ S.intersection (M.keysSet es) to of
+            False -> S.singleton x
+            True -> mempty
+    let from' = mconcatMap inclFrom $ M.toAscList g
+    let to' = mconcatMap inclTo $ M.toAscList g
+    return (from', to')
+  let cs = S.union from to
+  let isConnected = flip S.member cs
   let onlyConnected x _ = isConnected x
   let removeDisconnected = M.filterWithKey onlyConnected
   return $ M.map removeDisconnected $ removeDisconnected g
@@ -547,11 +562,15 @@ checkCost notify disp alwaysShow ts ls = do
     when alwaysShow $ do
       putStrLn $ " * " <> which
     (gs', analyzeCFG) <- restrictCFG lr_lab
-    rgs (LT.unpack lr_lab <> ".") gs'
+    when False $
+      rgs (LT.unpack lr_lab <> ".") gs'
+    feesR <- newIORef 0
     forM_ allResources $ \rs -> do
       let algoMax = maxOf rs
       (_p, c) <- analyzeCFG rs
-      let units = rLabel (c > 1) rs
+      when (rHasFee rs) $ do
+        modifyIORef feesR $ (+) c
+      let units = rLabel (c /= 1) rs
       let pre = "uses " <> show c <> " " <> units
       let tooMuch = fromIntegral c > algoMax
       let post = if tooMuch then ", but the limit is " <> show algoMax else ""
@@ -560,6 +579,9 @@ checkCost notify disp alwaysShow ts ls = do
         notify (rPrecise rs) $ LT.pack $ which <> " " <> msg
       when alwaysShow $ do
         putStrLn $ "   + " <> msg
+    when alwaysShow $ do
+      fees <- readIORef feesR
+      putStrLn $ "   + costs " <> show fees <> " " <> plural (fees /= 1) "fee" <> "."
 
 optimizeAndRender :: Notify -> Disp -> Bool -> TEALs -> [LabelRec] -> IO T.Text
 optimizeAndRender notify disp showCost ts ls = do
@@ -631,6 +653,9 @@ type ResourceSet = S.Set DLArg
 
 type ResourceSets = IORef (M.Map Resource ResourceSet)
 
+plural :: Bool -> String -> String
+plural ph x = x <> if ph then "s" else ""
+
 rLabel :: Bool -> Resource -> String
 rLabel ph = \case
   R_Txn -> p "transaction"
@@ -640,7 +665,16 @@ rLabel ph = \case
   R_Cost -> p "unit" <> " of cost"
   R_Log -> p "byte" <> " of logs"
   where
-    p x = x <> if ph then "s" else ""
+    p = plural ph
+
+rHasFee :: Resource -> Bool
+rHasFee = \case
+  R_Txn -> True
+  R_ITxn -> True
+  R_Asset -> False
+  R_Account -> False
+  R_Cost -> False
+  R_Log -> False
 
 rPrecise :: Resource -> Bool
 rPrecise = \case
