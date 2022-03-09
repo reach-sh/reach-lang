@@ -658,24 +658,26 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
       const respondSpaTieBreak = async () => {
         let tiebreaker = document.querySelector("#tiebreakers-spa-select").value;
         tiebreaker = tiebreaker.split(":")
+        let type = "number"
         let tiebreakerId = null
         if (tiebreaker[1] === "actor") {
           tiebreakerId = parseInt(tiebreaker[0])
         } else {
+          type = "data"
           tiebreakerId = JSON.stringify({
             "tag":"V_Data",
             "contents":[
               "api",
               {
                 "tag":"V_UInt",
-                "contents":tiebreaker[0]
+                "contents": parseInt(tiebreaker[0])
               }
             ]
           })
         }
-        let r = await c.respondWithVal(nodeId,actId,tiebreakerId,actorId)
+        let r = await c.respondWithVal(nodeId,actId,tiebreakerId,actorId,type)
         redraw()
-        jsonLog.push(["respondWithVal",nodeId,actId,tiebreakerId,actorId])
+        jsonLog.push(["respondWithVal",nodeId,actId,tiebreakerId,actorId,type])
       }
       return [
         `

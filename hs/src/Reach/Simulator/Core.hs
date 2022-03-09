@@ -793,19 +793,22 @@ instance Interp LLStep where
               case v of
                 V_Data s v' -> do
                   let actId' = vUInt v'
-                  case s == "api" of
-                    True -> return ()
+                  actorFlag <- case s == "api" of
+                    True -> return True
                     False -> do
                       accId <- getAccId $ fromIntegral actId'
                       part <- partName <$> whoIs (fromIntegral actId')
                       let dls = saferMaybe "LLS_ToConsensus1" $ M.lookup part sends
                       consensusPayout accId (fromIntegral actId') (ds_pay dls)
+                      return False
                   m' <- saferMaybe ("Phase not yet seen") <$> M.lookup phId <$> e_messages <$> getGlobal
                   let msgs = unfixedMsgs $ m'
                   let winningMsg = saferMaybe ("Message not yet seen") $ M.lookup (fromIntegral actId') msgs
                   _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg) (m_pay winningMsg)
-                  winner dlr (fromIntegral actId') phId
-                  interp $ dr_k
+                  winner dlr (fromIntegral actId') phId actorFlag
+                  vvv <- interp $ dr_k
+                  _ <- possible "help"
+                  return vvv
                 _ -> possible "expected V_Data value"
 
 
@@ -817,18 +820,20 @@ poll phId = do
 
 runWithWinner :: DLRecv LLConsensus -> ActorId -> PhaseId -> App DLVal
 runWithWinner dlr actId phId = do
-  winner dlr actId phId
+  winner dlr actId phId True
   interp $ (dr_k dlr)
 
-winner :: DLRecv LLConsensus -> ActorId -> PhaseId -> App ()
-winner dlr actId phId = do
+winner :: DLRecv LLConsensus -> ActorId -> PhaseId -> Bool -> App ()
+winner dlr actId phId b = do
   g <- getGlobal
   let (_, winningMsg) = fixedMsg $ saferMaybe "winner" $ M.lookup phId $ e_messages g
-  accId <- getAccId actId
-  bindConsensusMeta dlr actId accId
   let (xs, vs) = unzip $ M.toAscList winningMsg
   _ <- zipWithM addToStore xs vs
-  return ()
+  case b of
+    True -> do
+      accId <- getAccId actId
+      bindConsensusMeta dlr actId accId
+    False -> return ()
 
 getAccId :: ActorId -> App Account
 getAccId actId = do
@@ -873,6 +878,7 @@ bindConsensusMeta (DLRecv {..}) actorId accId = do
   case actorId == myActorId of
     True -> addToStore dr_didSend $ V_Bool True
     False -> addToStore dr_didSend $ V_Bool False
+
 
 instance Interp LLProg where
   interp (LLProg _at _llo slparts _dli _dex _dvs _apis _evts step) = do
