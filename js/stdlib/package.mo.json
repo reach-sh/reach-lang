@@ -46,6 +46,7 @@
     "js-conflux-sdk": "git+https://github.com/reach-sh/js-conflux-sdk#v1_6_0_blockNumber",
     "jsbi": "^3.1.6",
     "node-fetch": "^2.6.1",
+    "tslib": "^2.3.1",
     "wait-port": "^0.2.9"
   },
   "repository": {
