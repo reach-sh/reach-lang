@@ -419,6 +419,10 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     return "";
   };
 
+  const tooltip = (text, hoverText) => {
+    return `<a class="ui-tooltip" title="${hoverText}"><span style="cursor">${text}</span></a>`;
+  };
+
   const directive_note = (node) => {
     const data = node.data;
     data.hName = "div";
@@ -463,7 +467,7 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     return r.join(`\n`);
   };
 
-  const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, externalRef, ref, directive_note, directive_testQ, directive_testA, generateIndex };
+  const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, externalRef, ref, tooltip, directive_note, directive_testQ, directive_testA, generateIndex };
 
   const expanderDirective = () => (tree) => {
     visit(tree, (node) => {
