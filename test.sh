@@ -122,7 +122,7 @@ checkteal () {
 cdot () {
   export REACH_DEBUG=Y
   c "$1"
-  dot -Tpng -O "$(dirname "$1")/build/$(basename "$1" .rsh).main.appApproval.cost.dot"
+  dot -Tpng -O "$(dirname "$1")/build/$(basename "$1" .rsh).main.appApproval.dot"
   dot -Tpng -O "$(dirname "$1")/build/$(basename "$1" .rsh).main.state.dot"
 }
 
@@ -134,7 +134,7 @@ export REACH_BUILD_NO_CACHE=Y
 
 #jb
 REACH_DEBUG=Y c examples/remote-rsh/index.rsh
-REACH_DEBUG=Y c hs/t/y/array_groups.rsh
+REACH_DEBUG=Y cdot hs/t/y/array_groups.rsh
 #REACH_DEBUG=Y c hs/t/y/many_txns.rsh
 #REACH_DEBUG=Y c examples/rps-7-loops/index.rsh
 exit 0

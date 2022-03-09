@@ -77,9 +77,9 @@ type Notify = Bool -> NotifyF
 type LPGraph1 a = M.Map a Integer
 type LPGraph a = M.Map a (LPGraph1 a)
 
-type LPPath = (DotGraph, Integer)
+type LPPath a = ([a], Integer)
 
-longestPathBetween :: LPGraph String -> String -> String -> IO LPPath
+longestPathBetween :: LPGraph String -> String -> String -> IO (LPPath String)
 longestPathBetween g f d = do
   a2d <- fixedPoint $ \_ (i :: LPGraph1 String) -> do
     flip mapM g $ \tom -> do
@@ -100,22 +100,7 @@ longestPathBetween g f d = do
           False -> getMaxPath $ List.maximumBy (compare `on` r2d) $ M.keys $ fromMaybe mempty $ M.lookup x g
       getMaxPath x = x : getMaxPath' x
   let p = getMaxPath f
-  let mkEdges s from = \case
-        [] -> s
-        to : m -> mkEdges (S.insert (from, to) s) to m
-  let edges =
-        case p of
-          [] -> mempty
-          x : y -> mkEdges mempty x y
-  let edge = flip S.member edges
-  let gs :: DotGraph =
-        flip concatMap (M.toAscList g) $ \(from, cs) ->
-          flip concatMap (M.toAscList cs) $ \(to, c) ->
-            let tc = r2d to in
-            case (from == mempty) of
-              True -> []
-              False -> [(from, to, (M.fromList $ [("label", show c <> "+" <> show tc <> "=" <> show (c + tc))] <> (if edge (from, to) then [("color","red")] else [])))]
-  return $ (gs, pc)
+  return $ (p, pc)
 
 aarray :: [Aeson.Value] -> Aeson.Value
 aarray = Aeson.Array . Vector.fromList
@@ -424,7 +409,7 @@ itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
 btoi :: BS.ByteString -> Integer
 btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
 
-buildCFG :: [TEAL] -> IO (Resource -> IO LPPath)
+buildCFG :: [TEAL] -> IO (DotGraph, (Resource -> IO (LPPath String)))
 buildCFG ts = do
   let mkg :: IO (IORef (LPGraph String))
       mkg = newIORef mempty
@@ -522,24 +507,31 @@ buildCFG ts = do
           recResource R_ITxn 1
           recCost 1
         _ -> recCost 1
-  return $ \rs -> do
-    let cgr = res_grs M.! rs
-    cg <- readIORef cgr
-    longestPathBetween cg lTop (l2s lBot)
+  let getGraph = readIORef . (res_grs M.!)
+  g <- getGraph R_Cost
+  let gs :: DotGraph =
+        flip concatMap (M.toAscList g) $ \(from, cs) ->
+          flip concatMap (M.toAscList cs) $ \(to, c) ->
+            case (from == mempty) of
+              True -> []
+              False -> [(from, to, (M.fromList $ [("label", show c)]))]
+  let longest rs = do
+        cg <- getGraph rs
+        longestPathBetween cg lTop (l2s lBot)
+  return (gs, longest)
 
 checkCost :: Notify -> Disp -> Bool -> [TEAL] -> IO ()
 checkCost notify disp alwaysShow ts = do
-  cfg <- buildCFG ts
+  (gs, cfg) <- buildCFG ts
+  void $ disp ".dot" $ LT.toStrict $ T.render $ dotty gs
   let analyze_rs = flip foldM ("", False) $ \(msg1, exceeds1) rs -> do
-        let lab = rShort rs
         let units = show rs
         let algoMax = maxOf rs
-        (gs, c) <- cfg rs
+        (_p, c) <- cfg rs
         let msg = "This program could use " <> show c <> " " <> units
         let tooMuch = fromIntegral c > algoMax
         when tooMuch $
-          notify (rPrecise rs) $ LT.pack $ msg <> ", but the limit is " <> show algoMax
-        void $ disp ("." <> lab <> ".dot") $ LT.toStrict $ T.render $ dotty gs
+          notify (rPrecise rs) $ LT.pack $ msg <> ", but the limit is " <> show algoMax <> "."
         let msg2 = " * " <> msg <> ".\n"
         return $ (msg1 <> msg2, exceeds1 || tooMuch)
   (showRs, exceeds) <- analyze_rs allResources
@@ -625,15 +617,6 @@ instance Show Resource where
     R_Account -> "accounts"
     R_Cost -> "units of cost"
     R_Log -> "bytes of logs"
-
-rShort :: Resource -> String
-rShort = \case
-  R_Txn -> "txn"
-  R_ITxn -> "itxn"
-  R_Asset -> "asset"
-  R_Account -> "acc"
-  R_Cost -> "cost"
-  R_Log -> "log"
 
 rPrecise :: Resource -> Bool
 rPrecise = \case
