@@ -1011,6 +1011,7 @@ compile = command "compile" $ info f d
       let args = argsl <> recursiveDisableReporting e_disableReporting
       let CompilerOpts {..} = cta_co
       let v = versionBy majMinPat version''
+      let cn = flip T.map v $ \c -> if (isAlphaNum c && isAscii c) || c == '_' then c else '_'
       let ci' = if ci then "true" else ""
       let ports = if co_sim then "-p 3001:3001" else ""
       liftIO $ do
@@ -1068,7 +1069,7 @@ compile = command "compile" $ info f d
               --volume "$$PWD:/app" \
               -l "sh.reach.dir-project=$$PWD" \
               -u "$(id -ru):$(id -rg)" \
-              --name "reachc_$$$$" \
+              --name "reachc_${cn}_$$$$" \
               --entrypoint tail \
               $ports \
               reachsh/reach:$v -f /dev/null)"
