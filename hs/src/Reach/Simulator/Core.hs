@@ -793,7 +793,7 @@ instance Interp LLStep where
               case v of
                 V_Data s v' -> do
                   let actId' = vUInt v'
-                  actorFlag <- case s == "api" of
+                  apiFlag <- case s == "api" of
                     True -> return True
                     False -> do
                       accId <- getAccId $ fromIntegral actId'
@@ -801,16 +801,27 @@ instance Interp LLStep where
                       let dls = saferMaybe "LLS_ToConsensus1" $ M.lookup part sends
                       consensusPayout accId (fromIntegral actId') (ds_pay dls)
                       return False
-                  m' <- saferMaybe ("Phase not yet seen") <$> M.lookup phId <$> e_messages <$> getGlobal
+                  m' <- case apiFlag of
+                    True -> do
+                      let apiObs = e_apis g
+                      case (\(who) -> M.lookup who sends) =<< a_name <$> (M.lookup actId' apiObs) of
+                        Nothing -> possible "API DLSend not found"
+                        Just (DLSend {..}) -> do
+                          ds_msg' <- mapM interp ds_msg
+                          let sto = M.fromList $ zip dr_msg ds_msg'
+                          let m = Message {m_store = sto, m_pay = ds_pay}
+                          let m' = NotFixedYet $ M.insert actId m mempty
+                          let m'' = M.insert phId m' (e_messages g)
+                          g' <- getGlobal
+                          setGlobal g' { e_messages = m'' }
+                          return m'
+                    False -> saferMaybe ("Phase not yet seen") <$> M.lookup phId <$> e_messages <$> getGlobal
                   let msgs = unfixedMsgs $ m'
                   let winningMsg = saferMaybe ("Message not yet seen") $ M.lookup (fromIntegral actId') msgs
                   _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg) (m_pay winningMsg)
-                  winner dlr (fromIntegral actId') phId actorFlag
-                  vvv <- interp $ dr_k
-                  _ <- possible "help"
-                  return vvv
+                  winner dlr (fromIntegral actId') phId apiFlag
+                  interp $ dr_k
                 _ -> possible "expected V_Data value"
-
 
 poll :: PhaseId -> App (ActorId, Store)
 poll phId = do
@@ -820,7 +831,7 @@ poll phId = do
 
 runWithWinner :: DLRecv LLConsensus -> ActorId -> PhaseId -> App DLVal
 runWithWinner dlr actId phId = do
-  winner dlr actId phId True
+  winner dlr actId phId False
   interp $ (dr_k dlr)
 
 winner :: DLRecv LLConsensus -> ActorId -> PhaseId -> Bool -> App ()
@@ -830,10 +841,10 @@ winner dlr actId phId b = do
   let (xs, vs) = unzip $ M.toAscList winningMsg
   _ <- zipWithM addToStore xs vs
   case b of
-    True -> do
+    False -> do
       accId <- getAccId actId
       bindConsensusMeta dlr actId accId
-    False -> return ()
+    True -> return ()
 
 getAccId :: ActorId -> App Account
 getAccId actId = do
