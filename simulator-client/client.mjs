@@ -401,6 +401,29 @@ const initDetails = async (a) => {
   return r
 }
 
+// returns the state category graph for the program
+// for example:
+// {
+//   "0":"Consensus",
+//   "1":"Local",
+//   "2":"Local",
+//   "3":"Local",
+//   "4":"Consensus",
+//   "5":"Local",
+//   "6":"Local",
+//   "7":"Local",
+//   "8":"Consensus",
+//   "9":"Local",
+//   "10":"Local",
+//   "11":"Local",
+//   "12":"Local"
+// }
+const catGraph = async () => {
+  const r = await interact('GET', `${address}/catgraph`)
+  console.log(r)
+  return r
+}
+
 // create a new account
 // at state s (integer)
 const newAccount = async (s) => {
@@ -516,6 +539,7 @@ export {
   transfer,
   newToken,
   initDetails,
+  catGraph,
   getAPIs,
   apiCall
 };
