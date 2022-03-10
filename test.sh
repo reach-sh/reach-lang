@@ -132,8 +132,13 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-#jb
-REACH_DEBUG=Y c examples/remote-rsh/index.rsh
+jb
+ci ALGO minBalance
+exit 0
+
+c examples/remote-rsh/index.rsh
+exit 0
+REACH_DEBUG=N c examples/remote-rsh/index.rsh
 dot -Tpng -O examples/remote-rsh/build/index.mainS.appApproval.dot
 dot -Tpng -O examples/remote-rsh/build/index.mainS.appApproval.publish3.dot
 #REACH_DEBUG=Y cdot hs/t/y/array_groups.rsh

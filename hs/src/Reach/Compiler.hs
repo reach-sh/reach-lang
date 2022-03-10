@@ -60,7 +60,10 @@ compile env (CompilerOpts {..}) = do
     let all_connectors = make_connectors env
     (avail, compileDApp) <- evalBundle all_connectors djp
     let chosen = S.toAscList $ fromMaybe avail co_tops
+    let onlyOne = length chosen == 1
     forM_ chosen $ \which -> do
+      unless onlyOne $ do
+        putStrLn $ "Compiling " <> show which <> "..."
       let woutn = co_output . ((T.pack which <> ".") <>)
       let woutnMay = outnMay woutn
       let showp :: Pretty a => T.Text -> a -> IO ()

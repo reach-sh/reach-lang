@@ -1,13 +1,16 @@
+Compiling "fair"...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 66 theorems; No failures!
+Compiling "lFirst"...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 64 theorems; No failures!
+Compiling "tFirst"...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest

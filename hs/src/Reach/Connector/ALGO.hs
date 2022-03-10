@@ -802,12 +802,18 @@ czaddr = padding $ typeSizeOf T_Address
 bad_io :: IORef (S.Set LT.Text) -> NotifyF
 bad_io x = modifyIORef x . S.insert
 
+badlike :: (Shared -> IORef (S.Set LT.Text)) -> LT.Text -> App ()
+badlike sGet lab = do
+  Env {..} <- ask
+  liftIO $ bad_io (sGet eShared) lab
+
 bad :: LT.Text -> App ()
 bad lab = do
-  Env {..} <- ask
-  let Shared {..} = eShared
-  liftIO $ bad_io sFailuresR lab
+  badlike sFailuresR lab
   mapM_ comment $ LT.lines $ "BAD " <> lab
+
+warn :: LT.Text -> App ()
+warn = badlike sWarningsR
 
 freshLabel :: String -> App LT.Text
 freshLabel d = do
@@ -1605,6 +1611,11 @@ ce = \case
         cTupleSet at mdt $ fromIntegral i
         cMapStore at
   DLE_Remote at fs ro rng_ty rm (DLPayAmt pay_net pay_ks) as (DLWithBill nnRecv nnZero) -> do
+    warn_lab <- asks eWhich >>= \case
+      Just which -> return $ "Step " <> show which
+      Nothing -> return $ "This program"
+    warn $ LT.pack $
+      warn_lab <> " calls a remote object at " <> show at <> ". This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object."
     let ts = map argTypeOf as
     let sig = signatureStr rm ts (Just rng_ty)
     remoteTxns <- liftIO $ newCounter 0
@@ -2332,8 +2343,8 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
   when (argSize > algoMaxAppTotalArgLen) $
     bad $ LT.pack $
       "Step " <> show which <> "'s argument length is " <> show argSize
-      <> ", but the maximum is " <> show algoMaxAppTotalArgLen
-      <> ". Step " <> show which <> " begins at " <> show at
+      <> ", but the limit is " <> show algoMaxAppTotalArgLen
+      <> ". Step " <> show which <> " starts at " <> show at
   let bindFromMsg = bindFromGV GV_argMsg (return ()) at
   let bindFromSvs = bindFromSvs_ at svsl
   block (handlerLabel which) $ do
