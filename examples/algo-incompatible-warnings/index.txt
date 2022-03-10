@@ -4,8 +4,7 @@ Verifying for generic connector
   Verifying when NO participants are honest
 Checked 18 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
+ * Step 1 uses 2056 bytes of logs, but the limit is 1024. Step 1 starts at ./index.rsh:27:5:dot.
  * Step 1's argument length is 2049, but the maximum is 2048. Step 1 begins at ./index.rsh:27:5:dot
+ * Step 2 uses 2056 bytes of logs, but the limit is 1024. Step 2 starts at ./index.rsh:38:5:dot.
  * Step 2's argument length is 2049, but the maximum is 2048. Step 2 begins at ./index.rsh:38:5:dot
- * This program could use 2056 bytes of logs, but the limit is 1024; longest path:
-     TOP --> preamble --> publish --> l1_publish_lt_3 --> publish2 --> updateState --> apiReturn --> checkSize --> done --> BOT
-

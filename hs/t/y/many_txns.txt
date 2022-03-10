@@ -4,13 +4,10 @@ Verifying for generic connector
   Verifying when NO participants are honest
 Checked 164 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
- * This program could use 16 assets, but the limit is 8; longest path:
-     TOP --> preamble --> publish --> publish1 --> updateState --> checkSize --> done --> BOT
-
+ * Step 0 uses 16 assets, but the limit is 8. Step 0 starts at ./many_txns.rsh:62:5:dot.
+ * Step 1 uses 16 assets, but the limit is 8. Step 1 starts at ./many_txns.rsh:99:5:dot.
 WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
- * This program could use 1292 units of cost, but the limit is 700; longest path:
-     TOP --> preamble --> api --> publish --> l0_publish_lt_1 --> publish0 --> updateState --> apiReturn --> checkSize --> done --> BOT
-
- * This program could use 18 transactions, but the limit is 16; longest path:
-     TOP --> preamble --> publish --> publish1 --> updateState --> checkSize --> done --> BOT
-
+ * Step 0 uses 1292 units of cost, but the limit is 700. Step 0 starts at ./many_txns.rsh:62:5:dot.
+ * Step 0 uses 18 transactions, but the limit is 16. Step 0 starts at ./many_txns.rsh:62:5:dot.
+ * Step 1 uses 1037 units of cost, but the limit is 700. Step 1 starts at ./many_txns.rsh:99:5:dot.
+ * Step 1 uses 18 transactions, but the limit is 16. Step 1 starts at ./many_txns.rsh:99:5:dot.

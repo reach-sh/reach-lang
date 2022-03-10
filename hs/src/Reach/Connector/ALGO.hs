@@ -558,9 +558,9 @@ checkCost notify disp alwaysShow ts ls = do
   when alwaysShow $ do
     putStrLn $ "Conservative analysis on Algorand found:"
   forM_ ls $ \LabelRec {..} -> do
-    let which = lr_what <> ", which starts at " <> show lr_at
+    let starts_at = " starts at " <> show lr_at <> "."
     when alwaysShow $ do
-      putStrLn $ " * " <> which
+      putStrLn $ " * " <> lr_what <> ", which" <> starts_at
     (gs', analyzeCFG) <- restrictCFG lr_lab
     when False $
       rgs (LT.unpack lr_lab <> ".") gs'
@@ -576,7 +576,7 @@ checkCost notify disp alwaysShow ts ls = do
       let post = if tooMuch then ", but the limit is " <> show algoMax else ""
       let msg = pre <> post <> "."
       when tooMuch $ do
-        notify (rPrecise rs) $ LT.pack $ which <> " " <> msg
+        notify (rPrecise rs) $ LT.pack $ lr_what <> " " <> msg <> " " <> lr_what <> starts_at
       when alwaysShow $ do
         putStrLn $ "   + " <> msg
     when alwaysShow $ do
