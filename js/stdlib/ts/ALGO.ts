@@ -270,6 +270,7 @@ type IndexerAppTxn = {
   'on-completion'?: string,
   'local-state-schema'?: AppStateSchema,
   'global-state-schema'?: AppStateSchema,
+  'extra-program-pages'?: bigint,
 };
 type IndexerTxn = {
   'confirmed-round': bigint,
@@ -1227,9 +1228,9 @@ const getApplicationInfoM = async (idn:BigNumber): Promise<OrExn<AppInfo>> => {
   const queryRes = await doQueryM_(dhead, query);
 
   if ('val' in queryRes) {
+    debug(dhead, {application: queryRes.val.application});
     // If application was deleted, synthesize AppInfo from transaction data
-    return queryRes.val.application.deleted ? getDeletedApplicationInfoM(id)
-                                            : { val: queryRes.val.application };
+    return queryRes.val.application.deleted ? getDeletedApplicationInfoM(id) : { val: queryRes.val.application };
   } else {
     return queryRes;
   }
@@ -1251,17 +1252,17 @@ const getDeletedApplicationInfoM = async (id: number): Promise<OrExn<AppInfo>> =
 
     const txn = queryRes.val.transactions[0];
     const appTxn = txn['application-transaction'];
-    debug(dhead, {txn});
+    debug(dhead, {appTxn});
 
     if (appTxn === undefined
-        || txn['created-application-index'] === undefined
+        || txn['created-application-index'] !== BigInt(id)
         || appTxn['application-id'] !== BigInt(0)
         || appTxn['approval-program'] === undefined
         || appTxn['clear-state-program'] === undefined
         || appTxn['local-state-schema'] === undefined
         || appTxn['global-state-schema'] === undefined)
     {
-      return { exn: 'sanity check failed' };
+      return { exn: 'tried to synthesize AppInfo from deployment transaction, but the deployment transaction was wrong' };
     }
 
     return { val: {
@@ -1275,7 +1276,7 @@ const getDeletedApplicationInfoM = async (id: number): Promise<OrExn<AppInfo>> =
         'local-state-schema': appTxn['local-state-schema'],
         'global-state-schema': appTxn['global-state-schema'],
         'global-state': [],
-        'extra-program-pages': BigInt(0),
+        'extra-program-pages': appTxn['extra-program-pages'] ?? BigInt(0),
       },
     }}
   } else {
