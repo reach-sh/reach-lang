@@ -583,11 +583,15 @@ checkCost notify disp alwaysShow ts ls = do
       fees <- readIORef feesR
       putStrLn $ "   + costs " <> show fees <> " " <> plural (fees /= 1) "fee" <> "."
 
-optimizeAndRender :: Notify -> Disp -> Bool -> TEALs -> [LabelRec] -> IO T.Text
-optimizeAndRender notify disp showCost ts ls = do
+optimizeAndCheck :: Notify -> Disp -> Bool -> TEALs -> [LabelRec] -> IO [TEAL]
+optimizeAndCheck notify disp showCost ts ls = do
   let tscl = DL.toList ts
   let tscl' = optimize tscl
   checkCost notify disp showCost tscl' ls
+  return tscl'
+
+renderOut :: [TEAL] -> IO T.Text
+renderOut tscl' = do
   ilvlr <- newIORef $ 0
   tsl' <- mapM (render ilvlr) tscl'
   let lts = tealVersionPragma : (map LT.unwords tsl')
@@ -2640,7 +2644,8 @@ compile_algo env disp pl = do
         ts <- run m
         let disp' = disp . (lab <>)
         let notify b = if b then bad' else warn'
-        t <- optimizeAndRender notify disp' showCost ts ls
+        ts' <- optimizeAndCheck notify disp' showCost ts ls
+        t <- renderOut ts'
         tf <- disp (lab <> ".teal") t
         tbs <- compileTEAL tf
         modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)

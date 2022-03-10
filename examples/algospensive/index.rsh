@@ -8,7 +8,7 @@ export const main = Reach.App(() => {
   const B = Participant('B', {
     ...hasConsoleLogger,
   });
-  const N = 10;
+  const N = 32;
   init();
 
   A.only(() => {
