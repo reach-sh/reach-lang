@@ -1,5 +1,14 @@
 #!/bin/sh
 
+if [ ! "$REACH_ALLOW_SU" = '1' ] && [ "$(id -u)" -eq 0 ]; then
+  echo "Reach isn't intended to be run with superuser privileges."
+  echo
+  echo "Please try again while logged into a normal, non-root account, and without using \
+\`sudo\`, \`su\`, or \`doas\` to grant elevated permissions."
+  echo
+  exit 1
+fi
+
 IMG='reachsh/reach-cli:latest'
 TMP=$(mktemp -d "/tmp/reach.$(date -u '+%Y-%m-%dT%H-%M-%SZ')-XXXX")
 CNF="${XDG_CONFIG_HOME:-$HOME/.config}/reach"; CNF="$(mkdir -p "$CNF" && cd "$CNF" && pwd)"
