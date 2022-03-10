@@ -177,6 +177,16 @@ initWallets' :: Integer -> C.Wallet -> C.Wallet
 initWallets' 0 w = w
 initWallets' n w = initWallets' (n-1) $ M.insert n 0 w
 
+getAPIs :: WebM (M.Map C.APID C.ReachAPI)
+getAPIs = do
+  graph <- gets e_graph
+  case M.lookup 0 graph of
+    Nothing -> do
+      possible "getAPIs: no initial state found"
+    Just (g, _) -> do
+      let apis = C.e_apis g
+      return apis
+
 newTok :: StateId -> WebM (C.Token)
 newTok sid = do
   graph <- gets e_graph
@@ -215,8 +225,28 @@ transfer sid fromAcc toAcc tok amt = do
       modify $ \ st -> st {e_graph = graph'}
       return ()
 
-unblockProg :: StateId -> ActionId -> C.DLVal -> WebM ()
-unblockProg sid aid v = do
+apiCall :: Integer -> C.APID -> C.DLVal -> WebM ()
+apiCall sid apid v = do
+  graph <- gets e_graph
+  case M.lookup (fromIntegral sid) graph of
+    Nothing -> do
+      possible "apiCall: previous state not found"
+    Just (g, l) -> do
+      let apis = C.e_apis g
+      case M.lookup apid apis of
+        Nothing -> possible "apiCall: API not found"
+        Just api -> do
+          let api' = api { C.a_val = Just v }
+          let apis' = M.insert apid api' apis
+          let g' = g { C.e_apis = apis' }
+          let graph' = M.insert (fromIntegral sid) (g',l) graph
+          modify $ \ st -> st {e_graph = graph'}
+          return ()
+
+unblockProg :: Integer -> Integer -> C.DLVal -> WebM ()
+unblockProg sid' aid' v = do
+  let sid = fromIntegral sid'
+  let aid = fromIntegral aid'
   graph <- gets e_graph
   actorId <- gets e_actor_id
   avActions <- gets e_ids_actions
@@ -246,8 +276,14 @@ unblockProg sid aid v = do
               let ps = k (g, l) v
               processNewState (Just sid) ps Local
             Just (C.A_TieBreak _poolid _parts) -> do
-              let ps = k (g, l) v
-              processNewState (Just sid) ps Consensus
+              case v of
+                C.V_Data _ _ -> do
+                  let ps = k (g, l) v
+                  processNewState (Just sid) ps Consensus
+                C.V_UInt i -> do
+                  let ps = k (g, l) $ C.V_Data "actor" $ C.V_UInt i
+                  processNewState (Just sid) ps Consensus
+                _ -> possible "unblockProg (Tiebreak): unexpected value"
             Just C.A_None -> do
               let ps = k (g, l) v
               processNewState (Just sid) ps Consensus
@@ -405,6 +441,44 @@ setHeaders = do
   setHeader "Access-Control-Allow-Methods" "GET, POST, PUT"
   setHeader "Access-Control-Allow-Headers" "Content-Type"
 
+caseTypes :: (Integer -> Integer -> C.DLVal -> WebM ()) -> Integer -> Integer -> String -> ActionT Text WebM ()
+caseTypes f s a = \case
+  "number" -> do
+    v :: Integer <- param "data"
+    webM $ f s a $ C.V_UInt v
+  "token" -> do
+    v :: Int <- param "data"
+    webM $ f s a $ C.V_Token v
+  "string" -> do
+    v :: String <- param "data"
+    webM $ f s a $ C.V_Bytes v
+  "contract" -> do
+    v :: C.Account <- param "data"
+    webM $ f s a $ C.V_Contract v
+  "address" -> do
+    v :: C.Account <- param "data"
+    webM $ f s a $ C.V_Address v
+  "boolean" -> do
+    v :: Bool <- param "data"
+    webM $ f s a $ C.V_Bool v
+  "tuple" -> do
+    v' :: LB.ByteString <- param "data"
+    let v = saferMaybe "decode Tuple" $ decode v'
+    webM $ f s a v
+  "object" -> do
+    v' :: LB.ByteString <- param "data"
+    let v = saferMaybe "decode Object" $ decode v'
+    webM $ f s a v
+  "data" -> do
+    v' :: LB.ByteString <- param "data"
+    let v = saferMaybe "decode Data" $ decode v'
+    webM $ f s a v
+  "struct" -> do
+    v' :: LB.ByteString <- param "struct"
+    let v = saferMaybe "decode Struct" $ decode v'
+    webM $ f s a v
+  _ -> possible "Unexpected value type"
+
 app :: LLProg -> String -> ScottyT Text WebM ()
 app p srcTxt = do
   middleware logStdoutDev
@@ -495,6 +569,19 @@ app p srcTxt = do
     cat <- webM $ catGraph
     json cat
 
+  get "/apis" $ do
+    setHeaders
+    a <- webM $ getAPIs
+    json a
+
+  post "/api_call/:a/:s" $ do
+    setHeaders
+    a <- param "a"
+    s <- param "s"
+    t :: String <- param "type"
+    caseTypes apiCall s a t
+    json ("OK" :: String)
+
   get "/actions/:s/:a/" $ do
     setHeaders
     s <- param "s"
@@ -541,43 +628,7 @@ app p srcTxt = do
         case (parseParam prm) :: Either Text C.ActorId of
           Left e -> possible $ show e
           Right w -> webM $ changeActor $ fromIntegral w
-    case t of
-      "number" -> do
-        v :: Integer <- param "data"
-        webM $ unblockProg s a $ C.V_UInt v
-      "token" -> do
-        v :: Int <- param "data"
-        webM $ unblockProg s a $ C.V_Token v
-      "string" -> do
-        v :: String <- param "data"
-        webM $ unblockProg s a $ C.V_Bytes v
-      "contract" -> do
-        v :: C.Account <- param "data"
-        webM $ unblockProg s a $ C.V_Contract v
-      "address" -> do
-        v :: C.Account <- param "data"
-        webM $ unblockProg s a $ C.V_Address v
-      "boolean" -> do
-        v :: Bool <- param "data"
-        webM $ unblockProg s a $ C.V_Bool v
-      "tuple" -> do
-        v' :: LB.ByteString <- param "data"
-        let v = saferMaybe "decode Tuple" $ decode v'
-        webM $ unblockProg s a v
-      "object" -> do
-        v' :: LB.ByteString <- param "data"
-        let v = saferMaybe "decode Object" $ decode v'
-        webM $ unblockProg s a v
-      "data" -> do
-        v' :: LB.ByteString <- param "data"
-        let v = saferMaybe "decode Data" $ decode v'
-        webM $ unblockProg s a v
-      "struct" -> do
-        v' :: LB.ByteString <- param "struct"
-        let v = saferMaybe "decode Struct" $ decode v'
-        webM $ unblockProg s a v
-
-      _ -> possible "Unexpected value type"
+    caseTypes unblockProg s a t
     json ("OK" :: String)
 
   get "/ping" $ do

@@ -87,11 +87,18 @@ let actionsHTML = null;
 //#### event handler which loads the Objects View
 const renderObjects = async (nodeId) => {
   const r = await c.getStateLocals(nodeId)
+  const apis = await c.getAPIs()
   let obs = ``
+  let apiBs = ``
   let actorSet = {}
+  let apiSet = {}
   for (const [k,v] of Object.entries(r.l_locals)) {
     const who = v.l_who ? v.l_who : 'Consensus'
     actorSet[k] = who
+  }
+  for (const [k,v] of Object.entries(apis)) {
+    const who = v.a_name
+    apiSet[k] = who
   }
   let actors = ``
   let actorsNoCons = ``
@@ -122,9 +129,24 @@ const renderObjects = async (nodeId) => {
       class="list-group-item list-group-item-action object-button"
       data-actor-id="${k}"
       data-node-id="${nodeId}"
-      data-actor-set='${JSON.stringify(actorSet)}'>
+      data-actor-set='${JSON.stringify(actorSet)}'
+      data-api-set='${JSON.stringify(apiSet)}'>
       ${who}
       <span class="badge bg-secondary">${status}</span>
+      </button> `
+  }
+
+  for (const [k,v] of Object.entries(apis)) {
+    let status = 'Initial'
+    let f = v.a_liv.out.contents[0][1].contents
+    apiBs = apiBs + `
+      <button type="button"
+      class="list-group-item list-group-item-action api-button"
+      data-node-id="${nodeId}"
+      data-api-id="${k}"
+      data-api-name="${v.a_name}"
+      data-fn="${JSON.stringify(f)}">
+      ${v.a_name}
       </button> `
   }
 
@@ -136,6 +158,7 @@ const renderObjects = async (nodeId) => {
   </nav>
   <ul class="list-group list-group-flush">
     ${obs}
+
 
     <div class="extra-margin-bottom">
       <h4>Accounts/Tokens</h4>
@@ -183,13 +206,21 @@ const renderObjects = async (nodeId) => {
 
       </div>
     </div>
+
+    <hr>
+    <div>
+      <h4>APIs</h4>
+      <ul class="list-group list-group-flush">
+        ${apiBs}
+      </ul>
+    </div>
+
     <hr>
     <div>
       <h4>Logging</h4>
       <button type="button" id="localsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Locals <i class="bi bi-clipboard"></i></button>
       <button type="button" id="globalsButton" data-node-id="${nodeId}" class="list-group-item list-group-item-action">Get State Globals <i class="bi bi-clipboard"></i></button>
     </div>
-
 
   </ul>
   `
@@ -221,6 +252,11 @@ const bindObjDetailsEvents = () => {
   const objectBtns = document.querySelectorAll(".object-button")
   objectBtns.forEach((item, i) => {
     item.addEventListener("click",renderObjectDetails)
+  });
+
+  const apiBtns = document.querySelectorAll(".api-button")
+  apiBtns.forEach((item, i) => {
+    item.addEventListener("click",clickAPIButton)
   });
 
   const newAccBtn = document.querySelector("#newAccButton")
@@ -326,7 +362,7 @@ const bindObjDetailsEvents = () => {
     for (const det of dets) {
       let type = `V_` + det.dataset.initType
       let enter = det.value
-      if (det.dataset.initType === 'UInt') {
+      if (['UInt','Token','Address','Contract'].includes(det.dataset.initType)) {
         enter = parseInt(enter)
       }
       liv[det.dataset.initVal] = {"tag": type, "contents": enter}
@@ -375,6 +411,24 @@ const bindObjDetailsEvents = () => {
   transferBtn.addEventListener("click",transfer)
 }
 
+const clickAPIButton = async (evt) => {
+  objectsHTML = spa.innerHTML
+  const tgt = evt.target.closest(".api-button")
+  const apiId = tgt.dataset.apiId
+  const fnName = tgt.dataset.fn
+  const nodeId = tgt.dataset.nodeId
+  const apiName = tgt.dataset.apiName
+  const t = "tuple"
+  let val = prompt(`Enter Value for: ${apiName}`,"");
+  if (val === null || val === "") {
+    console.log("User cancelled the prompt.");
+  } else {
+    let v = JSON.stringify(JSON.parse(val))
+    c.apiCall(apiId,nodeId,v,t)
+    jsonLog.push(["apiCall",apiId,nodeId,v,t])
+  }
+}
+
 //#### event handler which loads the Objects-Details View
 const renderObjectDetails = async (evt) => {
   objectsHTML = spa.innerHTML
@@ -382,6 +436,7 @@ const renderObjectDetails = async (evt) => {
   const nodeId = tgt.dataset.nodeId
   const actorId = parseInt(tgt.dataset.actorId)
   const actorSet = tgt.dataset.actorSet
+  const apiSet = tgt.dataset.apiSet
   const r = await c.getStateLocals(nodeId)
   const g = await c.getStateGlobals(nodeId)
   const detsj = r.l_locals[actorId]
@@ -411,6 +466,7 @@ const renderObjectDetails = async (evt) => {
     data-actor-id="${actorId}"
     data-node-id="${nodeId}"
     data-actor-set='${actorSet}'
+    data-api-set='${apiSet}'
     data-who="${who}">
     <div class="badge bg-secondary">Status</div>
     <div> ${status} </div>
@@ -499,6 +555,7 @@ const detailActions = async (evt) => {
   const nodeId = tgt.dataset.nodeId
   const actorId = parseInt(tgt.dataset.actorId)
   const actorSet = tgt.dataset.actorSet
+  const apiSet = tgt.dataset.apiSet
   const who = tgt.dataset.who
   const act = await c.getActions(nodeId,actorId)
   console.log(act)
@@ -507,7 +564,7 @@ const detailActions = async (evt) => {
     return false
   }
   let acts = ``
-  acts = acts + renderAction(act,nodeId,actorId,who,actorSet)
+  acts = acts + renderAction(act,nodeId,actorId,who,actorSet,apiSet)
   spa.innerHTML = `
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -599,10 +656,28 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
         tbOpts = tbOpts + `<option value="${k}">${v}</option>`
       }
       const respondSpaTieBreak = async () => {
-        let tiebreakerId = document.querySelector("#tiebreakers-spa-select").value;
-        let r = await c.respondWithVal(nodeId,actId,parseInt(tiebreakerId),actorId)
+        let tiebreaker = document.querySelector("#tiebreakers-spa-select").value;
+        tiebreaker = tiebreaker.split(":")
+        let type = "number"
+        let tiebreakerId = null
+        if (tiebreaker[1] === "actor") {
+          tiebreakerId = parseInt(tiebreaker[0])
+        } else {
+          type = "data"
+          tiebreakerId = JSON.stringify({
+            "tag":"V_Data",
+            "contents":[
+              "api",
+              {
+                "tag":"V_UInt",
+                "contents": parseInt(tiebreaker[0])
+              }
+            ]
+          })
+        }
+        let r = await c.respondWithVal(nodeId,actId,tiebreakerId,actorId,type)
         redraw()
-        jsonLog.push(["respondWithVal",nodeId,actId,parseInt(tiebreakerId),actorId])
+        jsonLog.push(["respondWithVal",nodeId,actId,tiebreakerId,actorId,type])
       }
       return [
         `
@@ -688,7 +763,7 @@ const renderResponsePanel = (nodeId,act,actors,actorId,actId,tiebreakers) => {
 // such as Google Chrome Dev Tools etc.
 // that's what i did when building this so far :) - CA
 
-const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
+const renderAction = (actObj,nodeId,actorId,who,actorSet,apiSet) => {
   const act = actObj[1]
   const actId = actObj[0]
   let tiebreakers = {}
@@ -696,7 +771,12 @@ const renderAction = (actObj,nodeId,actorId,who,actorSet) => {
   if (act.tag === 'A_TieBreak') {
     for (const [k,v] of Object.entries(JSON.parse(actorSet))) {
       if (tbList.includes(v)) {
-        tiebreakers[k] = v
+        tiebreakers[`${k}:actor`] = v
+      }
+    }
+    for (const [k,v] of Object.entries(JSON.parse(apiSet))) {
+      if (tbList.includes(v)) {
+        tiebreakers[`${k}:api`] = v
       }
     }
   }

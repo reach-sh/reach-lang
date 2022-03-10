@@ -7,6 +7,8 @@ import Data.Aeson
 import Data.Bits
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe)
+import Data.Set (member)
+import Data.List (partition)
 import GHC.Generics
 import qualified GHC.Stack as G
 import Reach.AST.Base
@@ -32,6 +34,8 @@ type Store = ConsensusEnv
 type Balance = Integer
 
 type Token = Integer
+
+type APID = Integer
 
 consensusId :: ActorId
 consensusId = -1
@@ -63,6 +67,15 @@ data MessageInfo = NotFixedYet (M.Map ActorId Message) | Fixed (ActorId, Message
 
 instance ToJSON MessageInfo
 
+data ReachAPI = ReachAPI
+  { a_name :: String
+  , a_liv :: InteractEnv
+  , a_val :: Maybe DLVal
+  }
+  deriving (Show, Generic)
+
+instance ToJSON ReachAPI
+
 data Global = Global
   { e_ledger :: Ledger
   , e_ntok :: Token
@@ -71,6 +84,8 @@ data Global = Global
   , e_nwsecs :: Integer
   , e_nactorid :: ActorId
   , e_naccid :: Account
+  , e_napid :: Integer
+  , e_apis :: M.Map APID ReachAPI
   , e_partacts :: M.Map Participant ActorId
   , e_messages :: M.Map PhaseId MessageInfo
   }
@@ -116,6 +131,8 @@ initGlobal =
     , e_nwsecs = 0
     , e_nactorid = 0
     , e_naccid = 0
+    , e_napid = 0
+    , e_apis = mempty
     , e_partacts = mempty
     , e_messages = mempty
     }
@@ -498,7 +515,17 @@ instance Interp DLExpr where
         _ -> possible "DLE_ObjectRef: expected Object or Struct"
     DLE_Interact at slcxtframes slpart str dltype dlargs -> do
       args <- mapM interp dlargs
-      suspend $ PS_Suspend (Just at) (A_Interact slcxtframes (bunpack slpart) str dltype args)
+      g <- getGlobal
+      let apiObs = e_apis g
+      let apis = M.fromList $ map (\(a,b) -> (a_name b, a)) $ M.toList apiObs
+      let partName' = bunpack slpart
+      case M.lookup partName' apis of
+        Just apid -> do
+          case a_val =<< M.lookup apid apiObs of
+            Just v -> return v
+            Nothing -> possible $ "DLE_Interact: late api call for " ++ partName'
+        Nothing -> do
+          suspend $ PS_Suspend (Just at) (A_Interact slcxtframes partName' str dltype args)
     DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
       CT_Assert -> interp dlarg
@@ -655,8 +682,18 @@ instance Interp DLStmt where
       case either_part of
         Left slpart -> do
           who <- whoAmI
-          case who == Participant (bunpack slpart) of
-            False -> return V_Null
+          let slname = bunpack slpart
+          case who == Participant slname of
+            False -> do
+              g <- getGlobal
+              let apiObs = e_apis g
+              let apis = M.fromList $ map (\(a,b) -> (a_name b, a)) $ M.toList apiObs
+              case M.lookup slname apis of
+                Nothing -> return V_Null
+                Just i -> do
+                  case a_val =<< (M.lookup i apiObs) of
+                    Nothing -> return V_Null
+                    Just _ -> interp dltail
             True -> interp dltail
         _ -> impossible "DL_Only: unexpected error (Right)"
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
@@ -747,14 +784,10 @@ instance Interp LLStep where
                       runWithWinner dlr actId' phId
                     Fixed (actId', _msg) -> do
                       runWithWinner dlr actId' phId
-                Just (DLSend {..}) -> do
+                Just dls -> do
                   case msgs' of
                     NotFixedYet msgs'' -> do
-                      ds_msg' <- mapM interp ds_msg
-                      let sto = M.fromList $ zip dr_msg ds_msg'
-                      let m = Message {m_store = sto, m_pay = ds_pay}
-                      let m' = M.insert phId (NotFixedYet $ M.insert actId m msgs'') (e_messages g)
-                      setGlobal g { e_messages = m' }
+                      _ <- placeMsg dls dlr phId (fromIntegral actId) msgs''
                       _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
                       (actId',_) <- poll phId
                       runWithWinner dlr actId' phId
@@ -762,17 +795,43 @@ instance Interp LLStep where
                       runWithWinner dlr actId' phId
             Consensus -> do
               v <- suspend $ PS_Suspend (Just at) (A_TieBreak phId $ M.keys sends)
-              let actId' = fromIntegral $ vUInt v
-              part <- partName <$> whoIs actId'
-              let dls = saferMaybe "LLS_ToConsensus1" $ M.lookup part sends
-              accId <- getAccId actId'
-              m' <- saferMaybe ("Phase not yet seen") <$> M.lookup phId <$> e_messages <$> getGlobal
-              let msgs = unfixedMsgs $ m'
-              let winningMsg = saferMaybe ("Message not yet seen") $ M.lookup actId' msgs
-              _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg) (m_pay winningMsg)
-              winner dlr actId' phId
-              consensusPayout accId actId' (ds_pay dls)
-              interp $ dr_k
+              case v of
+                V_Data s v' -> do
+                  let actId' = vUInt v'
+                  apiFlag <- case s == "api" of
+                    True -> return True
+                    False -> do
+                      accId <- getAccId $ fromIntegral actId'
+                      part <- partName <$> whoIs (fromIntegral actId')
+                      let dls = saferMaybe "LLS_ToConsensus1" $ M.lookup part sends
+                      consensusPayout accId (fromIntegral actId') (ds_pay dls)
+                      return False
+                  m' <- case apiFlag of
+                    True -> do
+                      let apiObs = e_apis g
+                      case (\(who) -> M.lookup who sends) =<< a_name <$> (M.lookup actId' apiObs) of
+                        Nothing -> possible "API DLSend not found"
+                        Just dls -> do
+                          placeMsg dls dlr phId (fromIntegral actId') mempty
+                    False -> saferMaybe ("Phase not yet seen") <$> M.lookup phId <$> e_messages <$> getGlobal
+                  let msgs = unfixedMsgs $ m'
+                  let winningMsg = saferMaybe ("Message not yet seen") $ M.lookup (fromIntegral actId') msgs
+                  _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg) (m_pay winningMsg)
+                  winner dlr (fromIntegral actId') phId apiFlag
+                  interp $ dr_k
+                _ -> possible "expected V_Data value"
+
+placeMsg :: DLSend -> DLRecv a -> PhaseId -> ActorId -> (M.Map ActorId Message) -> App MessageInfo
+placeMsg (DLSend {..}) (DLRecv {..}) phId actId priors = do
+  g <- getGlobal
+  ds_msg' <- mapM interp ds_msg
+  let sto = M.fromList $ zip dr_msg ds_msg'
+  let m = Message {m_store = sto, m_pay = ds_pay}
+  let m' = NotFixedYet $ M.insert actId m priors
+  let m'' = M.insert phId m' (e_messages g)
+  g' <- getGlobal
+  setGlobal g' { e_messages = m'' }
+  return m'
 
 poll :: PhaseId -> App (ActorId, Store)
 poll phId = do
@@ -782,18 +841,19 @@ poll phId = do
 
 runWithWinner :: DLRecv LLConsensus -> ActorId -> PhaseId -> App DLVal
 runWithWinner dlr actId phId = do
-  winner dlr actId phId
+  winner dlr actId phId False
   interp $ (dr_k dlr)
 
-winner :: DLRecv LLConsensus -> ActorId -> PhaseId -> App ()
-winner dlr actId phId = do
+winner :: DLRecv LLConsensus -> ActorId -> PhaseId -> Bool -> App ()
+winner dlr actId phId b = do
   g <- getGlobal
   let (_, winningMsg) = fixedMsg $ saferMaybe "winner" $ M.lookup phId $ e_messages g
-  accId <- getAccId actId
-  bindConsensusMeta dlr actId accId
   let (xs, vs) = unzip $ M.toAscList winningMsg
   _ <- zipWithM addToStore xs vs
-  return ()
+  accId <- case b of
+    False -> getAccId actId
+    True -> return $ simContract
+  bindConsensusMeta dlr actId accId
 
 getAccId :: ActorId -> App Account
 getAccId actId = do
@@ -839,9 +899,13 @@ bindConsensusMeta (DLRecv {..}) actorId accId = do
     True -> addToStore dr_didSend $ V_Bool True
     False -> addToStore dr_didSend $ V_Bool False
 
+
 instance Interp LLProg where
   interp (LLProg _at _llo slparts _dli _dex _dvs _apis _evts step) = do
-    registerParts $ M.toAscList $ sps_ies slparts
+    let apiNames = sps_apis slparts
+    let (apiParts,regParts) = partition (\(a,_b) -> member a apiNames) $ M.toAscList $ sps_ies slparts
+    registerParts regParts
+    registerAPIs apiParts
     interp step
 
 isTheTimePast :: Maybe (DLTimeArg, LLStep) -> App (Maybe LLStep)
@@ -867,7 +931,7 @@ registerParts :: [(SLPart, InteractEnv)] -> App ()
 registerParts [] = return ()
 registerParts ((p, iv) : ps) = do
   s <- getState
-  let (g, l) = registerPart s (bunpack p) iv
+  let (g,l) = registerPart s (bunpack p) iv
   setGlobal g
   setLocal l
   registerParts ps
@@ -900,6 +964,27 @@ registerPart (g, l) s iv = do
           }
   let l' = l {l_locals = locals'}
   (g', l')
+
+registerAPIs :: [(SLPart, InteractEnv)] -> App ()
+registerAPIs [] = return ()
+registerAPIs ((p, iv) : ps) = do
+  s <- getState
+  let (g,l) = registerAPI s (bunpack p) iv
+  setGlobal g
+  setLocal l
+  registerAPIs ps
+
+registerAPI :: State -> String -> InteractEnv -> State
+registerAPI (g, l) s iv = do
+  let apid = e_napid g
+  let apis = e_apis g
+  let a = ReachAPI { a_name = s, a_liv = iv, a_val = Nothing }
+  let g' =
+        g
+          { e_apis = M.insert apid a apis
+          , e_napid = apid + 1
+          }
+  (g', l)
 
 while :: DLBlock -> LLConsensus -> App DLVal
 while bl cons = do

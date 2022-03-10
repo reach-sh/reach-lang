@@ -401,8 +401,25 @@ const initDetails = async (a) => {
   return r
 }
 
+// returns the state category graph for the program
+// for example:
+// {
+//   "0":"Consensus",
+//   "1":"Local",
+//   "2":"Local",
+//   "3":"Local",
+//   "4":"Consensus",
+//   "5":"Local",
+//   "6":"Local",
+//   "7":"Local",
+//   "8":"Consensus",
+//   "9":"Local",
+//   "10":"Local",
+//   "11":"Local",
+//   "12":"Local"
+// }
 const catGraph = async () => {
-  const r = await interact('GET', `${address}/catgraph/`)
+  const r = await interact('GET', `${address}/catgraph`)
   console.log(r)
   return r
 }
@@ -443,6 +460,19 @@ const resetServer = async () => {
   return r
 }
 
+// get the APIs for the current program
+const getAPIs = async () => {
+  const r = await interact('GET', `${address}/apis`)
+  console.log(r)
+  return r
+}
+
+const apiCall = async (a,s,v,t='number') => {
+  const r = await interact('POST', `${address}/api_call/${a}/${s}/?data=${v}&type=${t}`)
+  console.log(r)
+  return r
+}
+
 // ping the server for a friendly greeting ^_^
 const ping = async () => {
   const r = await interact(`GET`, `${address}/ping`)
@@ -467,7 +497,8 @@ const clientMethods = {
   "getEdges" : getEdges,
   "resetServer" : resetServer,
   "newAccount" : newAccount,
-  "newToken" : newToken
+  "newToken" : newToken,
+  "apiCall" : apiCall
 }
 
 // run a single Simulation "script" command
@@ -508,5 +539,7 @@ export {
   transfer,
   newToken,
   initDetails,
-  catGraph
+  catGraph,
+  getAPIs,
+  apiCall
 };
