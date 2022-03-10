@@ -1620,7 +1620,7 @@ config = command "config" $ info f d
       dch <- asks e_dirConfigHost
       now <- pack <$> zulu
 
-      envExists <-
+      _envExists <-
         (liftIO $ doesFileExist efc) >>= \case
           True -> liftIO $ do
             putStrLn $ "Reach detected an existing configuration file at " <> efh <> "."
@@ -1646,7 +1646,7 @@ config = command "config" $ info f d
             [N.text|
       # Automatically generated with `reach config` at $now
       export REACH_CONNECTOR_MODE=$dnet
-    |]
+    |] <> "\n"
 
       liftIO $ do
         createDirectoryIfMissing True dcc
@@ -1663,20 +1663,35 @@ config = command "config" $ info f d
       let efh' = pack efh
       let sourceMe = do
             let shell' = packs shell
-            let s = case envExists of
-                  True ->
-                    [N.text|
-                  echo "Run the following command to activate your new configuration:"
-                  echo
-                  echo " $ . $$P"
-                  echo
-                |]
-                  False ->
-                    [N.text|
-                  echo "Run the following command to activate your new configuration and make it permanent:"
-                  echo
-                  printf ' $ printf '\''\\nif [ -f $efh' ]; then . $efh'; fi\\n'\'' >> %s && . %s\n\n' "$$P" "$$P"
-                |]
+            let s' = [N.text|
+              echo "Run the following command to activate your new configuration:"
+              echo
+              echo " $ . $$P"
+              echo
+            |]
+            let s = [N.text|
+              if grep -E '^if \[ -f $efh' \]; then . $efh'; fi$$' "$$P" >/dev/null; then
+                $s'
+              else
+                printf "Enter 'y' to update %s and make your configuration permanent: " "$$P"
+                read -r r
+                echo
+                case $$r in
+                  [Yy]*)
+                    printf '\nif [ -f $efh' ]; then . $efh'; fi\n' >> "$$P"
+                    $s'
+                    ;;
+                  *)
+                    echo "$efh' has been updated but its contents won't become active until you re-run \`reach config\` and select 'y' to source it from $$P."
+                    echo
+                    echo "If you'd prefer to do this manually, append the following line to $$P:"
+                    echo
+                    echo " if [ -f $efh' ]; then . $efh'; fi"
+                    echo
+                    ;;
+                esac
+              fi
+            |]
             write
               [N.text|
             if [ -f "$$P" ]; then
