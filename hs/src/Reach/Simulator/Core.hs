@@ -683,8 +683,18 @@ instance Interp DLStmt where
       case either_part of
         Left slpart -> do
           who <- whoAmI
-          case who == Participant (bunpack slpart) of
-            False -> return V_Null
+          let slname = bunpack slpart
+          case who == Participant slname of
+            False -> do
+              g <- getGlobal
+              let apiObs = e_apis g
+              let apis = M.fromList $ map (\(a,b) -> (a_name b, a)) $ M.toList apiObs
+              case M.lookup slname apis of
+                Nothing -> return V_Null
+                Just i -> do
+                  case a_name <$> (M.lookup i apiObs) of
+                    Nothing -> return V_Null
+                    Just _ -> interp dltail
             True -> interp dltail
         _ -> impossible "DL_Only: unexpected error (Right)"
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
