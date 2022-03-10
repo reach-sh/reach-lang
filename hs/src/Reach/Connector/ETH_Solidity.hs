@@ -585,6 +585,8 @@ solExpr sp = \case
   DLE_Arg _ a -> spa $ solArg a
   DLE_LArg {} ->
     impossible "large arg"
+  DLE_Impossible at _ (Err_Impossible_Case s) ->
+    impossible $ "solExpr: impossible case `" <> s <> "` encountered at: " <> show at
   DLE_Impossible at _ err ->
     expect_thrown at err
   DLE_VerifyMuldiv at _ _ _ err ->

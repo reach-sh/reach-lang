@@ -4942,10 +4942,9 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
         let res_when = JSMemberDot res_e ra (jid "when")
         let res_local = JSMemberDot res_e ra (jid "_local")
         let run_ss = zipWith (defcon . jid) beforeNames beforeClosures
-        let def_local = if all (== T_Null) local_data_tys then
-                          [] -- No cases use `local`, don't create variable
-                        else
-                          [defcon local_e res_local]
+        let def_local = case all (== T_Null) local_data_tys of
+                        True  -> [] -- No cases use `local`, don't create variable
+                        False -> [defcon local_e res_local]
         let only_body = run_ss <> cr_ss <> [defcon msg_e res_msg, defcon when_e res_when] <> def_local
         isClass <- is_class who_s
         let who_is_this_ss =
@@ -5079,6 +5078,7 @@ getReturnAnnot = \case
 deconstructFun :: JSExpression -> App ([JSExpression], JSBlock)
 deconstructFun = \case
   a@(JSArrowExpression _ _ cb) -> return $ (getFormals a, jsArrowBodyToRetBlock cb)
+  JSExpressionParen _ e _ -> deconstructFun e
   e -> do
     e' <- evalExpr e
     case snd e' of

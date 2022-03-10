@@ -66,7 +66,6 @@ instance Pretty JSBinOp where
     JSBinOpTimes _ -> "*"
     JSBinOpUrsh _ -> ">>>"
 
-
 instance Pretty JSUnaryOp where
   pretty = \case
     JSUnaryOpDecr _ -> "--"
