@@ -132,14 +132,9 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-c examples/remote-rsh/index.rsh
-exit 0
-REACH_DEBUG=N c examples/remote-rsh/index.rsh
-dot -Tpng -O examples/remote-rsh/build/index.mainS.appApproval.dot
-dot -Tpng -O examples/remote-rsh/build/index.mainS.appApproval.publish3.dot
-#REACH_DEBUG=Y cdot hs/t/y/array_groups.rsh
-#REACH_DEBUG=Y c hs/t/y/many_txns.rsh
-#REACH_DEBUG=Y c examples/rps-7-loops/index.rsh
+REACH_DEBUG=Y fc examples/algospensive/index.rsh
+jb
+ci ALGO algospensive
 exit 0
 
 #c --install-pkgs users/xbacked-contracts/src/master_vault.rsh

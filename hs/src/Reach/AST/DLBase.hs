@@ -506,6 +506,9 @@ instance Pretty ClaimType where
 class IsPure a where
   isPure :: a -> Bool
 
+instance IsPure a => IsPure [a] where
+  isPure = all isPure
+
 class IsLocal a where
   isLocal :: a -> Bool
 
@@ -943,6 +946,9 @@ v2vl = DLVarLet (Just DVC_Many)
 
 type SwitchCases a = M.Map SLVar (DLVar, Bool, a)
 
+instance IsPure a => IsPure (SwitchCases a) where
+  isPure = isPure . map (\(_,_,z)->z) . M.elems
+
 data DLStmt
   = DL_Nop SrcLoc
   | DL_Let SrcLoc DLLetVar DLExpr
@@ -986,6 +992,20 @@ instance Pretty DLStmt where
     DL_Only _at who b -> prettyOnly who b
     DL_MapReduce _ _mri ans x z b a f -> prettyReduce ans x z b a () f
 
+instance IsPure DLStmt where
+  isPure = \case
+    DL_Nop _ -> True
+    DL_Let _ _ de -> isPure de
+    DL_ArrayMap _ _ _ _ _ f -> isPure f
+    DL_ArrayReduce _ _ _ _ _ _ _ f -> isPure f
+    DL_Var {} -> True
+    DL_Set {} -> True -- XXX This might be bad
+    DL_LocalDo _ k -> isPure k
+    DL_LocalIf _ _ t f -> isPure t && isPure f
+    DL_LocalSwitch _ _ csm -> isPure csm
+    DL_Only _ _ b -> isPure b
+    DL_MapReduce _ _ _ _ _ _ _ f -> isPure f
+
 mkCom :: (DLStmt -> k -> k) -> DLStmt -> k -> k
 mkCom mk m k =
   case m of
@@ -1004,6 +1024,11 @@ instance Pretty DLTail where
     DT_Return _at -> mempty
     DT_Com x k -> prettyCom x k
 
+instance IsPure DLTail where
+  isPure = \case
+    DT_Return {} -> True
+    DT_Com s t -> isPure s && isPure t
+
 dtReplace :: (DLStmt -> b -> b) -> b -> DLTail -> b
 dtReplace mkk nk = \case
   DT_Return _ -> nk
@@ -1020,6 +1045,9 @@ data DLBlock
 
 instance Pretty DLBlock where
   pretty (DLBlock _ _ ts ta) = prettyBlockP ts ta
+
+instance IsPure DLBlock where
+  isPure (DLBlock _ _ t _) = isPure t
 
 data DLinExportBlock a
   = DLinExportBlock SrcLoc (Maybe [DLVarLet]) a

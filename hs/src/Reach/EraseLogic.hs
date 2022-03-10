@@ -76,14 +76,16 @@ instance Erase DLStmt where
               isUsed mdv >>= \case
                 False -> skip at
                 True -> keep
-    DL_ArrayMap at ans x a i f ->
+    DL_ArrayMap at ans x a i f -> do
+      f' <- el f
       isUsedv ans >>= \case
-        False -> skip at
-        True -> DL_ArrayMap at ans <$> el x <*> pure a <*> pure i <*> el f
-    DL_ArrayReduce at ans x z b a i f ->
+        False | isPure f' -> skip at
+        _ -> DL_ArrayMap at ans <$> el x <*> pure a <*> pure i <*> pure f'
+    DL_ArrayReduce at ans x z b a i f -> do
+      f' <- el f
       isUsedv ans >>= \case
-        False -> skip at
-        True -> DL_ArrayReduce at ans <$> el x <*> el z <*> pure b <*> pure a <*> pure i <*> el f
+        False | isPure f' -> skip at
+        _ -> DL_ArrayReduce at ans <$> el x <*> el z <*> pure b <*> pure a <*> pure i <*> pure f'
     DL_Var at dv ->
       isUsedv dv >>= \case
         False -> skip at
@@ -95,10 +97,11 @@ instance Erase DLStmt where
     DL_LocalIf at c t f -> DL_LocalIf at <$> el c <*> el t <*> el f
     DL_LocalSwitch at ov csm -> DL_LocalSwitch at <$> el ov <*> el csm
     DL_Only at who b -> DL_Only at who <$> el b
-    DL_MapReduce at mri ans x z b a f ->
+    DL_MapReduce at mri ans x z b a f -> do
+      f' <- el f
       isUsedv ans >>= \case
-        False -> skip at
-        True -> DL_MapReduce at mri ans x <$> el z <*> pure b <*> pure a <*> el f
+        False | isPure f' -> skip at
+        _ -> DL_MapReduce at mri ans x <$> el z <*> pure b <*> pure a <*> pure f'
     DL_LocalDo at t -> DL_LocalDo at <$> el t
     where
       skip at = return $ DL_Nop at
