@@ -401,6 +401,12 @@ const initDetails = async (a) => {
   return r
 }
 
+const catGraph = async () => {
+  const r = await interact('GET', `${address}/catgraph/`)
+  console.log(r)
+  return r
+}
+
 // create a new account
 // at state s (integer)
 const newAccount = async (s) => {
@@ -501,5 +507,6 @@ export {
   newAccount,
   transfer,
   newToken,
-  initDetails
+  initDetails,
+  catGraph
 };

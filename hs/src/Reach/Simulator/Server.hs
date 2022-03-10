@@ -46,12 +46,18 @@ portNumber = 3001
 
 type Graph = M.Map StateId C.State
 
+type CategoryGraph = M.Map StateId StateCategory
+
 data Status = Initial | Running | Done
   deriving (Show, Generic)
 
 instance ToJSON Status
-
 instance FromJSON Status
+
+data StateCategory = Local | Consensus
+  deriving (Show, Generic)
+
+instance ToJSON StateCategory
 
 data Session = Session
   { e_actors_actions :: M.Map C.ActorId (M.Map StateId ActionId)
@@ -60,6 +66,7 @@ data Session = Session
   , e_ids_actions :: M.Map ActionId C.Action
   , e_actor_id :: C.ActorId
   , e_graph :: Graph
+  , e_cgraph :: CategoryGraph
   , e_src :: Maybe LLProg
   , e_status :: Status
   , e_edges :: [(StateId,StateId)]
@@ -76,6 +83,7 @@ initSession = Session
   , e_ids_actions = mempty
   , e_actor_id = C.consensusId
   , e_graph = mempty
+  , e_cgraph = mempty
   , e_src = Nothing
   , e_status = Initial
   , e_edges = mempty
@@ -84,8 +92,8 @@ initSession = Session
   , e_src_txt = mempty
   }
 
-processNewState :: Maybe (StateId) -> C.PartState -> WebM ()
-processNewState psid ps = do
+processNewState :: Maybe (StateId) -> C.PartState -> StateCategory -> WebM ()
+processNewState psid ps sc = do
   sid <- gets e_nsid
   actorId <- gets e_actor_id
   edges <- gets e_edges
@@ -106,6 +114,7 @@ processNewState psid ps = do
           C.PS_Suspend _ _ s _ -> do
             (s, Running)
   graph <- gets e_graph
+  cgraph <- gets e_cgraph
   let locals = C.l_locals l
   let lcl = saferMaybe "processNewState" $ M.lookup actorId locals
   let lcl' = lcl { C.l_ks = Just ps }
@@ -114,6 +123,7 @@ processNewState psid ps = do
     {e_nsid = sid + 1}
     {e_status = stat}
     {e_graph = M.insert sid (g,l') graph}
+    {e_cgraph = M.insert sid sc cgraph}
   case psid of
     Nothing -> return ()
     Just psid' -> modify $ \st ->
@@ -228,35 +238,35 @@ unblockProg sid aid v = do
           case M.lookup aid avActions of
             Just (C.A_Interact _slcxtframes _part _str _dltype _args) -> do
               let ps = k (g,l) v
-              processNewState (Just sid) ps
+              processNewState (Just sid) ps Local
             Just (C.A_Remote _slcxtframes _str _args1 _args2) -> do
               let ps = k (g,l) v
-              processNewState (Just sid) ps
+              processNewState (Just sid) ps Consensus
             Just (C.A_Receive _phid) -> do
               let ps = k (g, l) v
-              processNewState (Just sid) ps
+              processNewState (Just sid) ps Local
             Just (C.A_TieBreak _poolid _parts) -> do
               let ps = k (g, l) v
-              processNewState (Just sid) ps
+              processNewState (Just sid) ps Consensus
             Just C.A_None -> do
               let ps = k (g, l) v
-              processNewState (Just sid) ps
+              processNewState (Just sid) ps Consensus
             Just (C.A_AdvanceTime n) -> do
               case ((C.e_nwtime g) < n) of
                 True -> do
                   let ps = k (g {C.e_nwtime = n}, l) v
-                  processNewState (Just sid) ps
+                  processNewState (Just sid) ps Consensus
                 False -> do
                   let ps = k (g, l) v
-                  processNewState (Just sid) ps
+                  processNewState (Just sid) ps Consensus
             Just (C.A_AdvanceSeconds n) -> do
               case ((C.e_nwsecs g) < n) of
                 True -> do
                   let ps = k (g {C.e_nwsecs = n}, l) v
-                  processNewState (Just sid) ps
+                  processNewState (Just sid) ps Consensus
                 False -> do
                   let ps = k (g, l) v
-                  processNewState (Just sid) ps
+                  processNewState (Just sid) ps Consensus
             Nothing -> possible "action not found"
         Just (Just (C.PS_Done _ _)) -> do
           possible "previous state already terminated"
@@ -300,6 +310,10 @@ getProgState sid = do
   case M.lookup sid s of
     Nothing -> return Nothing
     Just st -> return $ Just st
+
+catGraph :: WebM CategoryGraph
+catGraph = do
+  gets e_cgraph
 
 checkIfValIType :: IType -> Bool
 checkIfValIType = \case
@@ -359,7 +373,7 @@ initProgSim :: LLProg -> WebM ()
 initProgSim ll = do
   let initSt = C.initState
   ps <- return $ C.initApp ll initSt
-  processNewState Nothing ps
+  processNewState Nothing ps Consensus
 
 initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> Maybe (C.Account) -> LLProg -> WebM ()
 initProgSimFor actId sid liv accId (LLProg _ _ _ _ _ _ _ _ step) = do
@@ -375,7 +389,7 @@ initProgSimFor actId sid liv accId (LLProg _ _ _ _ _ _ _ _ step) = do
   let locals' = M.insert actId lcl' locals
   let l' = l {C.l_curr_actor_id = actId, C.l_locals = locals'}
   ps <- return $ C.initAppFromStep step (g, l')
-  processNewState (Just sid) ps
+  processNewState (Just sid) ps Local
 
 startServer :: LLProg -> String -> IO ()
 startServer p srcTxt = do
@@ -475,6 +489,11 @@ app p srcTxt = do
     setHeaders
     ss <- webM $ getStatus
     json ss
+
+  get "/catgraph" $ do
+    setHeaders
+    cat <- webM $ catGraph
+    json cat
 
   get "/actions/:s/:a/" $ do
     setHeaders
