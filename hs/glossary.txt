@@ -90,6 +90,7 @@ sls: Static Language (w/ Security level)
 slv: static language value
 src: source
 stdlib: standard library
+svs: saved variables (variables from older steps that are still needed, sent in a publication)
 t: tail (when used as suffix)
 t: transformed (when used as suffix) (type ~= z3 SExp)
 tbc: teal byte code
