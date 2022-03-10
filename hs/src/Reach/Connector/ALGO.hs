@@ -1491,6 +1491,8 @@ ce :: DLExpr -> App ()
 ce = \case
   DLE_Arg _ a -> ca a
   DLE_LArg _ a -> cla a
+  DLE_Impossible at _ (Err_Impossible_Case s) ->
+    impossible $ "ce: impossible case `" <> s <> "` encountered at: " <> show at
   DLE_Impossible at _ err -> expect_thrown at err
   DLE_VerifyMuldiv at _ _ _ err ->
     expect_thrown at err

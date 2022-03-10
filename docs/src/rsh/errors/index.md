@@ -2566,11 +2566,8 @@ const x = forall(UInt);
 assert(x >= 0);
 ```
 
-## {#RX0001} RX0001
-
-This error should never be encountered.
-If you receive this error, please report it to the Reach team along with the program that produced it.
-
+<!-- Not a user facing error, will be thrown as `impossible` -->
+<!-- ## {#RX0001} RX0001 -->
 
 ## {#RAPI0000} RAPI0000
 

@@ -181,6 +181,7 @@ getFormals = \case
       JSUnparenthesizedArrowParameter (JSIdentName at s) -> [JSIdentifier at s]
       JSParenthesizedArrowParameterList _ jcl _ -> jscl_flatten jcl
       _ -> []
+  JSExpressionParen _ e _ -> getFormals e
   _ -> []
 
 --
