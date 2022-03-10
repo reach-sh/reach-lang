@@ -215,10 +215,10 @@ transfer sid fromAcc toAcc tok amt = do
       modify $ \ st -> st {e_graph = graph'}
       return ()
 
-apiCall :: StateId -> C.APID -> C.DLVal -> WebM ()
+apiCall :: Integer -> C.APID -> C.DLVal -> WebM ()
 apiCall sid apid v = do
   graph <- gets e_graph
-  case M.lookup sid graph of
+  case M.lookup (fromIntegral sid) graph of
     Nothing -> do
       possible "apiCall: previous state not found"
     Just (g, l) -> do
@@ -229,12 +229,14 @@ apiCall sid apid v = do
           let api' = api { C.a_val = Just v }
           let apis' = M.insert apid api' apis
           let g' = g { C.e_apis = apis' }
-          let graph' = M.insert sid (g',l) graph
+          let graph' = M.insert (fromIntegral sid) (g',l) graph
           modify $ \ st -> st {e_graph = graph'}
           return ()
 
-unblockProg :: StateId -> ActionId -> C.DLVal -> WebM ()
-unblockProg sid aid v = do
+unblockProg :: Integer -> Integer -> C.DLVal -> WebM ()
+unblockProg sid' aid' v = do
+  let sid = fromIntegral sid'
+  let aid = fromIntegral aid'
   graph <- gets e_graph
   actorId <- gets e_actor_id
   avActions <- gets e_ids_actions
@@ -425,6 +427,44 @@ setHeaders = do
   setHeader "Access-Control-Allow-Methods" "GET, POST, PUT"
   setHeader "Access-Control-Allow-Headers" "Content-Type"
 
+caseTypes :: (Integer -> Integer -> C.DLVal -> WebM ()) -> Integer -> Integer -> String -> ActionT Text WebM ()
+caseTypes f s a = \case
+  "number" -> do
+    v :: Integer <- param "data"
+    webM $ f s a $ C.V_UInt v
+  "token" -> do
+    v :: Int <- param "data"
+    webM $ f s a $ C.V_Token v
+  "string" -> do
+    v :: String <- param "data"
+    webM $ f s a $ C.V_Bytes v
+  "contract" -> do
+    v :: C.Account <- param "data"
+    webM $ f s a $ C.V_Contract v
+  "address" -> do
+    v :: C.Account <- param "data"
+    webM $ f s a $ C.V_Address v
+  "boolean" -> do
+    v :: Bool <- param "data"
+    webM $ f s a $ C.V_Bool v
+  "tuple" -> do
+    v' :: LB.ByteString <- param "data"
+    let v = saferMaybe "decode Tuple" $ decode v'
+    webM $ f s a v
+  "object" -> do
+    v' :: LB.ByteString <- param "data"
+    let v = saferMaybe "decode Object" $ decode v'
+    webM $ f s a v
+  "data" -> do
+    v' :: LB.ByteString <- param "data"
+    let v = saferMaybe "decode Data" $ decode v'
+    webM $ f s a v
+  "struct" -> do
+    v' :: LB.ByteString <- param "struct"
+    let v = saferMaybe "decode Struct" $ decode v'
+    webM $ f s a v
+  _ -> possible "Unexpected value type"
+
 app :: LLProg -> String -> ScottyT Text WebM ()
 app p srcTxt = do
   middleware logStdoutDev
@@ -520,42 +560,7 @@ app p srcTxt = do
     a <- param "a"
     s <- param "s"
     t :: String <- param "type"
-    case t of
-      "number" -> do
-        v :: Integer <- param "data"
-        webM $ apiCall s a $ C.V_UInt v
-      "token" -> do
-        v :: Int <- param "data"
-        webM $ apiCall s a $ C.V_Token v
-      "string" -> do
-        v :: String <- param "data"
-        webM $ apiCall s a $ C.V_Bytes v
-      "contract" -> do
-        v :: C.Account <- param "data"
-        webM $ apiCall s a $ C.V_Contract v
-      "address" -> do
-        v :: C.Account <- param "data"
-        webM $ apiCall s a $ C.V_Address v
-      "boolean" -> do
-        v :: Bool <- param "data"
-        webM $ apiCall s a $ C.V_Bool v
-      "tuple" -> do
-        v' :: LB.ByteString <- param "data"
-        let v = saferMaybe "decode Tuple" $ decode v'
-        webM $ apiCall s a v
-      "object" -> do
-        v' :: LB.ByteString <- param "data"
-        let v = saferMaybe "decode Object" $ decode v'
-        webM $ apiCall s a v
-      "data" -> do
-        v' :: LB.ByteString <- param "data"
-        let v = saferMaybe "decode Data" $ decode v'
-        webM $ apiCall s a v
-      "struct" -> do
-        v' :: LB.ByteString <- param "struct"
-        let v = saferMaybe "decode Struct" $ decode v'
-        webM $ apiCall s a v
-      _ -> possible "Unexpected value type"
+    caseTypes apiCall s a t
     json ("OK" :: String)
 
   get "/actions/:s/:a/" $ do
@@ -604,43 +609,7 @@ app p srcTxt = do
         case (parseParam prm) :: Either Text C.ActorId of
           Left e -> possible $ show e
           Right w -> webM $ changeActor $ fromIntegral w
-    case t of
-      "number" -> do
-        v :: Integer <- param "data"
-        webM $ unblockProg s a $ C.V_UInt v
-      "token" -> do
-        v :: Int <- param "data"
-        webM $ unblockProg s a $ C.V_Token v
-      "string" -> do
-        v :: String <- param "data"
-        webM $ unblockProg s a $ C.V_Bytes v
-      "contract" -> do
-        v :: C.Account <- param "data"
-        webM $ unblockProg s a $ C.V_Contract v
-      "address" -> do
-        v :: C.Account <- param "data"
-        webM $ unblockProg s a $ C.V_Address v
-      "boolean" -> do
-        v :: Bool <- param "data"
-        webM $ unblockProg s a $ C.V_Bool v
-      "tuple" -> do
-        v' :: LB.ByteString <- param "data"
-        let v = saferMaybe "decode Tuple" $ decode v'
-        webM $ unblockProg s a v
-      "object" -> do
-        v' :: LB.ByteString <- param "data"
-        let v = saferMaybe "decode Object" $ decode v'
-        webM $ unblockProg s a v
-      "data" -> do
-        v' :: LB.ByteString <- param "data"
-        let v = saferMaybe "decode Data" $ decode v'
-        webM $ unblockProg s a v
-      "struct" -> do
-        v' :: LB.ByteString <- param "struct"
-        let v = saferMaybe "decode Struct" $ decode v'
-        webM $ unblockProg s a v
-
-      _ -> possible "Unexpected value type"
+    caseTypes unblockProg s a t
     json ("OK" :: String)
 
   get "/ping" $ do

@@ -788,12 +788,6 @@ instance Interp LLStep where
                   case msgs' of
                     NotFixedYet msgs'' -> do
                       _ <- placeMsg dls dlr phId (fromIntegral actId) msgs''
-
-                      -- ds_msg' <- mapM interp ds_msg
-                      -- let sto = M.fromList $ zip dr_msg ds_msg'
-                      -- let m = Message {m_store = sto, m_pay = ds_pay}
-                      -- let m' = M.insert phId (NotFixedYet $ M.insert actId m msgs'') (e_messages g)
-                      -- setGlobal g { e_messages = m' }
                       _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
                       (actId',_) <- poll phId
                       runWithWinner dlr actId' phId
@@ -819,14 +813,6 @@ instance Interp LLStep where
                         Nothing -> possible "API DLSend not found"
                         Just dls -> do
                           placeMsg dls dlr phId (fromIntegral actId') mempty
-                          -- ds_msg' <- mapM interp ds_msg
-                          -- let sto = M.fromList $ zip dr_msg ds_msg'
-                          -- let m = Message {m_store = sto, m_pay = ds_pay}
-                          -- let m' = NotFixedYet $ M.insert (fromIntegral actId') m mempty
-                          -- let m'' = M.insert phId m' (e_messages g)
-                          -- g' <- getGlobal
-                          -- setGlobal g' { e_messages = m'' }
-                          -- return m'
                     False -> saferMaybe ("Phase not yet seen") <$> M.lookup phId <$> e_messages <$> getGlobal
                   let msgs = unfixedMsgs $ m'
                   let winningMsg = saferMaybe ("Message not yet seen") $ M.lookup (fromIntegral actId') msgs
