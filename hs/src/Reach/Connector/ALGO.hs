@@ -227,7 +227,7 @@ typeSig x =
     T_Token -> typeSig T_UInt
     T_Array t sz -> typeSig t <> array sz
     T_Tuple ts -> "(" <> intercalate "," (map typeSig ts) <> ")"
-    T_Object m -> typeSig $ T_Tuple $ map snd $ M.elems m
+    T_Object m -> typeSig $ T_Tuple $ M.elems m
     T_Data m -> "(byte,byte" <> array (maxTypeSize m) <> ")"
     T_Struct ts -> typeSig $ T_Tuple $ map snd ts
   where
@@ -245,7 +245,7 @@ typeSizeOf = \case
   T_Token -> typeSizeOf $ T_UInt
   T_Array t sz -> sz * typeSizeOf t
   T_Tuple ts -> sum $ map typeSizeOf ts
-  T_Object m -> sum $ map (typeSizeOf . snd) $ M.elems m
+  T_Object m -> sum $ map typeSizeOf $ M.elems m
   T_Data m -> 1 + maxTypeSize m
   T_Struct ts -> sum $ map (typeSizeOf . snd) ts
   where
