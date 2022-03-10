@@ -3,5 +3,3 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 52 theorems; No failures!
-WARNING: Compiler instructed to emit for Algorand, but we can statically determine that this program will not work on Algorand, because:
- * Step 0 uses 844 units of cost, but the limit is 700. Step 0 starts at ./overflows.rsh:12:7:dot.
