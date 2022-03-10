@@ -132,10 +132,6 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-jb
-ci ALGO minBalance
-exit 0
-
 c examples/remote-rsh/index.rsh
 exit 0
 REACH_DEBUG=N c examples/remote-rsh/index.rsh

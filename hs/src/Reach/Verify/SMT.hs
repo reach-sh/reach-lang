@@ -17,7 +17,7 @@ import Data.Functor
 import Data.IORef
 import qualified Data.List as List
 import qualified Data.Map.Strict as M
-import Data.Maybe (fromMaybe, isJust)
+import Data.Maybe (fromMaybe)
 import qualified Data.Sequence as Seq
 import qualified Data.Set as S
 import qualified Data.Text as T
@@ -181,7 +181,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_displayed :: IORef (S.Set SExpr)
   , ctxt_maps :: M.Map DLMVar SMTMapInfo
   , ctxt_addrs :: M.Map SLPart DLVar
-  , ctxt_v_to_dv :: IORef (M.Map String [DLVar])
+  , ctxt_v_to_dv :: IORef (M.Map String DLVar)
   , ctxt_inv_mode :: BlockMode
   , ctxt_pay_amt :: Maybe (SExpr, SExpr)
   , ctxt_smt_trace :: IORef [SMTLet]
@@ -256,7 +256,7 @@ smtVar :: DLVar -> App String
 smtVar dv = do
   let name = getVarName dv
   v2dv <- ctxt_v_to_dv <$> ask
-  liftIO $ modifyIORef v2dv $ M.insertWith (<>) name [dv]
+  liftIO $ modifyIORef v2dv $ M.insert name dv
   return $ name
 
 smtTypeSort :: DLType -> App String
@@ -372,17 +372,10 @@ data ResultDesc
 
 type SResult = (SMT.Result, Maybe ResultDesc)
 
--- A computation is first stored into an unamed var, then `const`
--- assigned to a variable. So, choose the second variable inserted
--- into list, if it exists (This will be the user named variable).
--- If no user assigned var, display the name of the tmp var.
--- If the list is empty, it is an "unbound" var like an interact field.
 sv2dv :: String -> App (Maybe DLVar)
 sv2dv v = do
   v2dv <- (liftIO . readIORef) =<< asks ctxt_v_to_dv
-  case reverse . nubOrd <$> M.lookup v v2dv of
-    Just (dv : _) -> return $ Just dv
-    _ -> return Nothing
+  return $ M.lookup v v2dv
 
 data SDT
   = SDT_D DLType
@@ -572,18 +565,6 @@ showTrace pm st = do
   let pm' = M.map pretty pm
   pretty_subst pm' st
 
--- Attempt to retrieve binding info for any DLVar's that do not have it
-recoverBindingInfo :: SMTLet -> App SMTLet
-recoverBindingInfo = \case
-  ow@(SMTLet at (DLVar _ Nothing _ i) lv c e) -> do
-    v2dv <- (liftIO . readIORef) =<< asks ctxt_v_to_dv
-    let hasBindingInfo (DLVar _ mb _ _) = isJust mb
-    let dvs = maybe [] (reverse . filter hasBindingInfo) $ M.lookup ("v" <> show i) v2dv
-    case dvs of
-      (dv : _) -> return $ SMTLet at dv lv c e
-      _ -> return ow
-  ow -> return ow
-
 display_fail :: SrcLoc -> [SLCtxtFrame] -> TheoremKind -> Maybe B.ByteString -> Maybe ResultDesc -> Maybe DLVar -> Bool -> App ()
 display_fail tat f tk mmsg mrd mdv timeout = do
   let iputStrLn = liftIO . putStrLn
@@ -618,7 +599,7 @@ display_fail tat f tk mmsg mrd mdv timeout = do
             Just (RD_Model m) -> parseModel m
       pm_str_val <- parseModel2 pm
       lets <- (liftIO . readIORef) =<< asks ctxt_smt_trace
-      lets' <- reverse . nubOrd . dropConstants pm_str_val <$> mapM recoverBindingInfo lets
+      let lets' = reverse $ nubOrd $ dropConstants pm_str_val lets
       let tr = SMTTrace lets' tk dv
       let doAddCounts = True
       smtTrace <-
@@ -809,7 +790,7 @@ smtMapDeclare at mpv mi se = do
     newId <- smt_alloc_id
     let dv = DLVar at (Just (at, mv)) T_Null newId
     v2dv <- asks ctxt_v_to_dv
-    liftIO $ modifyIORef v2dv (M.insertWith (<>) mv [dv])
+    liftIO $ modifyIORef v2dv (M.insert mv dv)
     return dv
   let cat = case se of
         SMTMapFresh _ -> Witness
