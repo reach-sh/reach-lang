@@ -336,6 +336,15 @@ render ilvlr = \case
       let i' = replicate i " "
       return $ i' <> l
 
+renderOut :: [TEAL] -> IO T.Text
+renderOut tscl' = do
+  ilvlr <- newIORef $ 0
+  tsl' <- mapM (render ilvlr) tscl'
+  let lts = tealVersionPragma : (map LT.unwords tsl')
+  let lt = LT.unlines lts
+  let t = LT.toStrict lt
+  return t
+
 optimize :: [TEAL] -> [TEAL]
 optimize ts0 = tsN
   where
@@ -550,8 +559,9 @@ data LabelRec = LabelRec
   , lr_what :: String
   }
 
-checkCost :: Notify -> Disp -> Bool -> [TEAL] -> [LabelRec] -> IO ()
+checkCost :: Notify -> Disp -> Bool -> [TEAL] -> [LabelRec] -> IO (M.Map Label Integer)
 checkCost notify disp alwaysShow ts ls = do
+  xtraR <- newIORef mempty
   let rgs lab gs = void $ disp ("." <> lab <> "dot") $ LT.toStrict $ T.render $ dotty gs
   (gs, restrictCFG) <- buildCFG ts
   rgs "" gs
@@ -582,22 +592,7 @@ checkCost notify disp alwaysShow ts ls = do
     when alwaysShow $ do
       fees <- readIORef feesR
       putStrLn $ "   + costs " <> show fees <> " " <> plural (fees /= 1) "fee" <> "."
-
-optimizeAndCheck :: Notify -> Disp -> Bool -> TEALs -> [LabelRec] -> IO [TEAL]
-optimizeAndCheck notify disp showCost ts ls = do
-  let tscl = DL.toList ts
-  let tscl' = optimize tscl
-  checkCost notify disp showCost tscl' ls
-  return tscl'
-
-renderOut :: [TEAL] -> IO T.Text
-renderOut tscl' = do
-  ilvlr <- newIORef $ 0
-  tsl' <- mapM (render ilvlr) tscl'
-  let lts = tealVersionPragma : (map LT.unwords tsl')
-  let lt = LT.unlines lts
-  let t = LT.toStrict lt
-  return t
+  readIORef xtraR
 
 data Shared = Shared
   { sFailuresR :: IORef (S.Set LT.Text)
@@ -2639,12 +2634,12 @@ compile_algo env disp pl = do
   unless (plo_untrustworthyMaps || null sMapKeysl) $ do
     warn' $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
   totalLenR <- newIORef (0 :: Integer)
-  -- let findAt which = fromMaybe sb $ fmap srclocOf $ M.lookup which hm
   let addProg lab showCost ls m = do
         ts <- run m
         let disp' = disp . (lab <>)
         let notify b = if b then bad' else warn'
-        ts' <- optimizeAndCheck notify disp' showCost ts ls
+        let ts' = optimize $ DL.toList ts
+        _ <- checkCost notify disp' showCost ts' ls
         t <- renderOut ts'
         tf <- disp (lab <> ".teal") t
         tbs <- compileTEAL tf
