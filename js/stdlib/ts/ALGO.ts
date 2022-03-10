@@ -268,6 +268,8 @@ type IndexerAppTxn = {
   'application-id'?: bigint,
   'application-args'?: Array<string>,
   'on-completion'?: string,
+  'local-state-schema'?: AppStateSchema,
+  'global-state-schema'?: AppStateSchema,
 };
 type IndexerTxn = {
   'confirmed-round': bigint,
@@ -1206,6 +1208,8 @@ const getAssetInfo = async (a:number): Promise<AssetInfo> => {
 const getApplicationInfoM = async (idn:BigNumber): Promise<OrExn<AppInfo>> => {
   const id = bigNumberToNumber(idn);
   const dhead = 'getApplicationInfo';
+
+  // First, lookup application in algod
   try {
     await ensureNodeCanRead();
     const client = await getAlgodClient();
@@ -1214,38 +1218,64 @@ const getApplicationInfoM = async (idn:BigNumber): Promise<OrExn<AppInfo>> => {
     return { val: res };
   } catch (e:any) {
     debug(dhead, 'node err', e);
-    if ( e?.response?.body?.message === 'application does not exist' ) {
-      return { exn: e };
-    }
   }
+
+  // If algod couldn't find it, lookup application in indexer
   const indexer = await getIndexer();
-  const q = indexer.lookupApplications(id) as unknown as ApiCall<IndexerAppInfoRes>;
-  const res = await doQueryM_(dhead, q);
-  debug(dhead, 'indexer', res);
-  return 'exn' in res ? res : { val: res.val.application };
+  const query = indexer.lookupApplications(id)
+                       .includeAll(true) as unknown as ApiCall<IndexerAppInfoRes>;
+  const queryRes = await doQueryM_(dhead, query);
+
+  if ('val' in queryRes) {
+    // If application was deleted, synthesize AppInfo from transaction data
+    return queryRes.val.application.deleted ? getDeletedApplicationInfoM(id)
+                                            : { val: queryRes.val.application };
+  } else {
+    return queryRes;
+  }
 };
 
-const getDeletedApplicationInfoM = async (idn: BigNumber): Promise<OrExn<AppInfo>> => {
+const getDeletedApplicationInfoM = async (id: number): Promise<OrExn<AppInfo>> => {
   const dhead = 'getDeletedApplicationInfoM'
   const indexer = await getIndexer();
   const query = indexer.searchForTransactions()
                        .txType('appl')
-                       .applicationID(bigNumberToNumber(idn))
-                       .limit(1);
+                       .applicationID(id)
+                       .limit(1) as unknown as ApiCall<IndexerQueryMRes>;
   const queryRes = await doQueryM_(dhead, query);
 
   if ('val' in queryRes) {
+    if (queryRes.val.transactions.length === 0) {
+      return { exn: 'application does not exist' };
+    }
+
     const txn = queryRes.val.transactions[0];
     const appTxn = txn['application-transaction'];
     debug(dhead, {txn});
+
+    if (appTxn === undefined
+        || txn['created-application-index'] === undefined
+        || appTxn['application-id'] !== BigInt(0)
+        || appTxn['approval-program'] === undefined
+        || appTxn['clear-state-program'] === undefined
+        || appTxn['local-state-schema'] === undefined
+        || appTxn['global-state-schema'] === undefined)
+    {
+      return { exn: 'sanity check failed' };
+    }
+
     return { val: {
-      'id': bigNumberToBigInt(idn),
+      'id': txn['created-application-index'],
       'created-at-round': txn['confirmed-round'],
       'deleted': true,
       'params': {
         'creator': txn['sender'],
+        'approval-program': appTxn['approval-program'],
+        'clear-state-program': appTxn['clear-state-program'],
+        'local-state-schema': appTxn['local-state-schema'],
+        'global-state-schema': appTxn['global-state-schema'],
         'global-state': [],
-        ...appTxn
+        'extra-program-pages': BigInt(0),
       },
     }}
   } else {
@@ -1369,8 +1399,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const getAppState = async (): Promise<AppStateKVs|undefined> => {
           const lab = `getAppState`;
           const appInfoM = await getApplicationInfoM(ApplicationID);
-          if ( 'exn' in appInfoM ) {
-            debug(lab, {e: appInfoM.exn});
+          if ( 'exn' in appInfoM || appInfoM.val.deleted ) {
             return undefined;
           }
           const appInfo = appInfoM.val;
@@ -2298,10 +2327,7 @@ const verifyContract_ = async (label:string, info: ContractInfo, bin: Backend, e
   type Program = string|undefined;
   const chkeq_bs = chkeq_x<Program>((a:Program, b:Program) => j2sf(a) === j2sf(b));
 
-  const appInfoM_live = await getApplicationInfoM(ApplicationID);
-  const appInfoM = 'val' in appInfoM_live ? appInfoM_live
-                                          : await getDeletedApplicationInfoM(ApplicationID);
-
+  const appInfoM = await getApplicationInfoM(ApplicationID);
   if ('exn' in appInfoM) {
     throw Error(`${dhead} failed: failed to lookup application (${ApplicationID}): ${j2s(appInfoM.exn)}`);
   }
