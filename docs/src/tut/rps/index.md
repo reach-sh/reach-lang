@@ -1835,8 +1835,7 @@ stdlib.setWalletFallback(stdlib.walletFallback({
 
 Or, you could have your users use [WalletConnect](https://walletconnect.com/) to connect to the [Algorand Wallet](https://algorandwallet.com/), by adding the following:
 ```js
-import * as reachsdk from '@reach-sh/stdlib';
-const WalletConnect = reachsdk.ALGO_WalletConnect;
+import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
 stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', WalletConnect }));
 ```
