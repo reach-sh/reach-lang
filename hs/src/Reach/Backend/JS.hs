@@ -142,7 +142,7 @@ jsContract_ = \case
     as' <- mapM jsContract as
     return $ jsApply ("stdlib.T_Tuple") $ [jsArray as']
   T_Object m -> do
-    m' <- mapM (jsContract . snd) m
+    m' <- mapM jsContract m
     return $ jsApply ("stdlib.T_Object") [jsObject m']
   T_Data m -> do
     m' <- mapM jsContract m

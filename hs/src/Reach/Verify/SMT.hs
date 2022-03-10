@@ -525,7 +525,7 @@ parseVal env sdt v = do
             T_Object ts ->
               case v of
                 List (_ : vs) -> do
-                  fields <- mapM (\((s, (_, vt)), mv) -> parseVal env (SDT_D vt) mv <&> (s,)) $ zip (M.toAscList ts) vs
+                  fields <- mapM (\((s, vt), mv) -> parseVal env (SDT_D vt) mv <&> (s,)) $ zip (M.toAscList ts) vs
                   return $ SMV_Object $ M.fromList fields
                 Atom _ ->
                   return $ SMV_Object $ mempty
@@ -1518,7 +1518,7 @@ _smtDefineTypes smt ts = do
             let inv se = smtApply inv_f [se]
             return inv
           T_Object tm ->
-            bind_type (T_Struct $ M.toAscList $ M.map snd tm) n
+            bind_type (T_Struct $ M.toAscList tm) n
           T_Struct tml -> do
             ts_nis <-
               mapM

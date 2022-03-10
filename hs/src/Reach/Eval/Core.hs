@@ -39,7 +39,7 @@ import Reach.Warning
 import Safe (atMay)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 import Text.RE.TDFA (RE, compileRegex, matched, (?=~))
-import Data.Bifunctor (second)
+import Data.Bifunctor
 
 --- New Types
 
@@ -1276,7 +1276,7 @@ evalAsEnv obj = case snd obj of
   SLV_Struct _ kvs ->
     return $ M.map (retV . public) $ M.fromList kvs
   SLV_DLVar obj_dv@(DLVar _ _ (T_Struct tml) _) ->
-    return $ retDLVarl (map (second public) tml) (DLA_Var obj_dv)
+    return $ retDLVarl tml (DLA_Var obj_dv)
   SLV_Prim SLPrim_Tuple ->
     return $
       M.fromList
@@ -1419,18 +1419,24 @@ evalAsEnv obj = case snd obj of
     doApply :: SLVal -> App SLSVal
     doApply f = evalApplyVals' f [obj]
     retDLVarl tml obj_dla = do
-      let retk (field, (slvl, t)) = (,) field $ do
+      let retk (field, t) = (,) field $ do
             at <- withAt id
             let mkv = DLVar at Nothing t
             let e = DLE_ObjectRef at obj_dla field
             dv <- ctxt_lift_expr mkv e
             let ansv = SLV_DLVar dv
-            return $ (slvl, ansv)
+            let lvl' = lvl <> idLevel field
+            return $ (lvl', ansv)
       M.fromList $ map retk tml
     retDLVar tm = retDLVarl $ M.toAscList tm
     retV = return
     retStdLib :: SLVar -> App SLSVal
     retStdLib n = (retV . public) =<< lookStdlib n
+
+idLevel :: String -> SecurityLevel
+idLevel = \case
+  '_':_ -> Secret
+  _ -> Public
 
 lookStdlib :: SLVar -> App SLVal
 lookStdlib n = sss_val <$> ((env_lookup (LC_RefFrom "stdlib") n) =<< (sco_cenv . e_sco) <$> ask)
@@ -2318,7 +2324,7 @@ mustBeDataTy err = \case
 
 mustBeObjectTy :: (DLType -> EvalError) -> DLType -> App (M.Map SLVar (SecurityLevel, DLType))
 mustBeObjectTy err = \case
-  T_Object x -> return $ x
+  T_Object x -> return $ M.mapWithKey (curry $ bimap idLevel id) x
   t -> expect_ $ err t
 
 structKeyRegex :: App RE
@@ -3771,8 +3777,9 @@ evalPropertyPair fenv = \case
     case sv of
       SLV_Object _ _ senv -> mkRes senv
       SLV_DLVar dlv@(DLVar _at _s (T_Object tenv) _i) -> do
-        let mkOneEnv k (lvl, t) = do
+        let mkOneEnv k t = do
               at' <- withAt id
+              let lvl = idLevel k
               let de = DLE_ObjectRef at' (DLA_Var dlv) k
               let mdv = DLVar at' Nothing t
               dv <- ctxt_lift_expr mdv de
@@ -4613,7 +4620,7 @@ typeToExpr = \case
   T_Token -> var "Token"
   T_Array t i -> call "Array" [r t, ie i]
   T_Tuple ts -> call "Tuple" $ map r ts
-  T_Object m -> call "Object" [rm $ M.map snd m]
+  T_Object m -> call "Object" [rm m]
   T_Data m -> call "Data" [rm m]
   T_Struct ts -> call "Struct" $ [arr $ map sg ts]
   where

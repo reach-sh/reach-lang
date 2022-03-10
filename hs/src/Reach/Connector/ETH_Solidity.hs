@@ -1372,8 +1372,7 @@ solDefineType t = case t of
     let ats' = (flip zip) ats $ map (("elem" ++) . show) ([0 ..] :: [Int])
     addMap =<< doStruct ats'
   T_Object tm -> do
-    let tm' = M.map snd tm
-    addMap =<< (doStruct $ map (first objPrefix) $ M.toAscList tm')
+    addMap =<< (doStruct $ map (first objPrefix) $ M.toAscList tm)
   T_Data tm -> do
     tmn <- mapM solType tm
     --- XXX Try to use bytes and abi.decode; Why not right away? The
