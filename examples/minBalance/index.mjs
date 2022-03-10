@@ -4,12 +4,12 @@ import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib();
 const startingBalance = stdlib.parseCurrency(100);
 
-let code = 0;
+let failed = false;
 const check = async (who, acc, expected) => {
   if ( stdlib.connector !== 'ALGO' ) { expected = '0'; }
   const actual = stdlib.formatCurrency(await stdlib.minimumBalanceOf(acc));
   console.log({who, expected, actual});
-  if ( actual !== expected ) { code = 1; }
+  if ( actual !== expected ) { failed = true; }
 };
 
 const [ accA, accB, accC ] = await stdlib.newTestAccounts(3, startingBalance);
@@ -37,4 +37,7 @@ await check('A', accA, '0.35');
 await check('B', accB, '0.25');
 await check('C', accC, '0.1');
 await check('D', accD, '0');
-process.exit(code);
+
+if ( failed ) {
+  throw Error('Test failed');
+}

@@ -204,6 +204,7 @@ type AccountInfo = {
   'apps-local-state'?: Array<AppState>,
   'apps-total-schema'?: AppSchema,
   'created-apps'?: Array<AppInfo>
+  'min-balance': bigint,
 };
 type IndexerAccountInfoRes = {
   'current-round': bigint,
@@ -573,12 +574,6 @@ export const MinTxnFee = 1000;
 const MaxAppTxnAccounts = 4;
 const MinBalance = 100000;
 
-const SchemaMinBalancePerEntry = 25000
-const SchemaBytesMinBalance = 25000
-const SchemaUintMinBalance = 3500
-const AppFlatParamsMinBalance = 100000
-const AppFlatOptInMinBalance = 100000
-
 const ui8h = (x:Uint8Array): string => Buffer.from(x).toString('hex');
 const base64ToUI8A = (x:string): Uint8Array => Uint8Array.from(Buffer.from(x, 'base64'));
 const base64ify = (x: WithImplicitCoercion<string>|Uint8Array): string => Buffer.from(x).toString('base64');
@@ -602,7 +597,7 @@ const doQueryM_ = async <T>(dhead:string, query: ApiCall<T>): Promise<OrExn<T>> 
   }
 };
 
-const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0): Promise<T> => {
+const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0, handleFail: ((x:any) => T|false) = ((x:any) => (void(x), false))): Promise<T> => {
   debug(dhead, query.query);
   while ( true ) {
     if ( howMany > 0 ) {
@@ -617,7 +612,9 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0)
         debug(dhead, 'ACCOUNTING NOT INITIALIZED');
       }
       if ( e?.response?.text ) { e = e.response.text; }
-      debug(dhead, 'RETRYING', {e});
+      const hf = handleFail(e);
+      if ( hf ) { return hf; }
+      debug(dhead, 'RETRYING', {e, hf});
       howMany++;
     } else {
       return res.val;
@@ -1151,6 +1148,8 @@ const reNetify = (x: string): NV => {
 const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
   const dhead = 'getAccountInfo';
   try {
+    // Force testing the indexer with this...
+    // throw Error('XXX');
     await ensureNodeCanRead();
     const client = await getAlgodClient();
     const req = client.accountInformation(a);
@@ -1163,7 +1162,20 @@ const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
   }
   const indexer = await getIndexer();
   const q = indexer.lookupAccountByID(a) as unknown as ApiCall<IndexerAccountInfoRes>;
-  const res = await doQuery_(dhead, q);
+  const res = await doQuery_(dhead, q, 0, (x:any): IndexerAccountInfoRes|false => {
+    debug('AccountInfo', 'handleFail', x);
+    if (typeof x === 'string' && x.includes("no accounts found for")) {
+      return {
+        'current-round': BigInt(0),
+        'account': {
+          'amount': BigInt(0),
+          'min-balance': BigInt(0),
+        },
+      };
+    } else {
+      return false;
+    }
+  });
   debug(dhead, res);
   return res.account;
 };
@@ -1952,21 +1964,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 export const minimumBalanceOf = async (acc: Account): Promise<BigNumber> => {
   const addr = extractAddr(acc);
   const ai = await getAccountInfo(addr);
-  if ( ai.amount === BigInt(0) ) { return bigNumberify(0); }
-  const createdAppCount = bigNumberify((ai['created-apps']??[]).length);
-  const optinAppCount = bigNumberify((ai['apps-local-state']??[]).length);
-  const numByteSlice = bigNumberify((ai['apps-total-schema']??{})['num-byte-slice']??0);
-  const numUInt = bigNumberify((ai['apps-total-schema']??{})['num-uint']??0);
-  const assetCount = bigNumberify((ai.assets??[]).length)
-  const accMinBalance = bigNumberify(0)
-    .add(assetCount.mul(appFlatOptInMinBalance))
-    .add(schemaMinBalancePerEntry.add(schemaUintMinBalance).mul(numUInt))
-    .add(schemaMinBalancePerEntry.add(schemaBytesMinBalance).mul(numByteSlice))
-    .add(appFlatParamsMinBalance.mul(createdAppCount))
-    .add(appFlatOptInMinBalance.mul(optinAppCount))
-    .add(minimumBalance);
-  debug(`minBalance`, accMinBalance);
-  return accMinBalance;
+  return bigNumberify(ai['min-balance'] || 0);
 };
 
 const balancesOfM = async (acc: Account, tokens: Array<Token|null>): Promise<Array<BigNumber|false>> => {
@@ -2071,12 +2069,6 @@ export function parseCurrency(amt: CurrencyAmount, decimals: number = 6): BigNum
 
 export const minimumBalance: BigNumber =
   bigNumberify(MinBalance);
-
-const schemaMinBalancePerEntry: BigNumber = bigNumberify(SchemaMinBalancePerEntry)
-const schemaBytesMinBalance: BigNumber = bigNumberify(SchemaBytesMinBalance)
-const schemaUintMinBalance: BigNumber = bigNumberify(SchemaUintMinBalance)
-const appFlatParamsMinBalance: BigNumber = bigNumberify(AppFlatParamsMinBalance)
-const appFlatOptInMinBalance: BigNumber = bigNumberify(AppFlatOptInMinBalance)
 
 /**
  * @description  Format currency by network
