@@ -1,5 +1,40 @@
 #!/bin/sh
 
+if [ ! "$REACH_ALLOW_SU" = '1' ] && [ "$(id -u)" -eq 0 ]; then
+  echo "Reach isn't intended to be run with superuser privileges."
+  echo
+  echo "Please try again while logged into a normal, non-root account, and without using \
+\`sudo\`, \`su\`, or \`doas\` to grant elevated permissions."
+  echo
+  case "$(uname -s)" in
+    Linux)
+      if ! (groups "$(logname)" 2>&1 | grep -q docker 2>/dev/null); then
+        echo "Adding your account to the \`docker\` group should make this possible:"
+        echo "https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user"
+        echo
+        echo "Once you've done this, make sure to log out and back in before retrying."
+        echo
+      else
+        echo "Try logging out and back in if you've recently made yourself a member of the \`docker\` group but are unable to run Reach without \`sudo\`."
+        echo
+      fi
+      ;;
+    *) : ;; # Docker Desktop for macOS doesn't use the `docker` group
+  esac
+  exit 1
+fi
+
+if [ -n "$DOCKER_HOST" ] && ! (echo "$DOCKER_HOST" | grep -q '^unix:'); then
+  echo "Reach only supports connecting to Docker via a local UNIX socket."
+  echo
+  echo "Please follow the directions from the link below to \`unset DOCKER_HOST\` or explicitly override it, e.g.:"
+  echo " $ DOCKER_HOST= $0 $*"
+  echo
+  echo "https://docs.docker.com/engine/install/linux-postinstall/#cannot-connect-to-the-docker-daemon"
+  echo
+  exit 1
+fi
+
 IMG='reachsh/reach-cli:latest'
 TMP=$(mktemp -d "/tmp/reach.$(date -u '+%Y-%m-%dT%H-%M-%SZ')-XXXX")
 CNF="${XDG_CONFIG_HOME:-$HOME/.config}/reach"; CNF="$(mkdir -p "$CNF" && cd "$CNF" && pwd)"
