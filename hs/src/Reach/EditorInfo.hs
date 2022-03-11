@@ -7,7 +7,7 @@ import qualified Data.Map.Strict as M
 import Generics.Deriving (Generic, conNameOf)
 import Reach.AST.Base
 import Reach.AST.SL
-import qualified Reach.Eval.Core as C
+import Reach.Eval.Core
 
 -- https://hackage.haskell.org/package/aeson-pretty-0.8.9/docs/
 customConfig :: A.Config
@@ -19,13 +19,14 @@ customConfig = A.Config {
 }
 
 printBaseKeywordInfo :: (M.Map String SLVal) -> IO ()
-printBaseKeywordInfo stdlibExports =
+printBaseKeywordInfo stdlibExports = do
+  let base = M.union (M.fromList base_env_slvals) stdlibExports
+  let baseKinds = M.mapMaybe completionKind base
   B.putStr $
     A.encodePretty' customConfig $ A.toJSON $
        M.map
          (\v -> M.singleton ("CompletionItemKind" :: String) $ show v)
-         $ M.mapMaybe completionKind
-         $ M.union (M.fromList C.base_env_slvals) stdlibExports
+         baseKinds
 
 
 data CompletionItemKind
