@@ -359,20 +359,20 @@ be_m = \case
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
-  DL_ArrayMap at ans x a i f -> do
-    fg_defn $ [ans, a, i]
-    fg_use $ x
+  DL_ArrayMap at ans xs as i f -> do
+    fg_defn $ [ans] <> as <> [i]
+    fg_use xs
     be_bl f
       >>= retb
         (\f' ->
-           return $ DL_ArrayMap at ans x a i f')
-  DL_ArrayReduce at ans x z b a i f -> do
-    fg_defn $ [ans, b, a, i]
-    fg_use $ [x, z]
+           return $ DL_ArrayMap at ans xs as i f')
+  DL_ArrayReduce at ans xs z b as i f -> do
+    fg_defn $ [ans] <> as <> [b, i]
+    fg_use $ xs <> [z]
     be_bl f
       >>= retb
         (\f' ->
-           return $ DL_ArrayReduce at ans x z b a i f')
+           return $ DL_ArrayReduce at ans xs z b as i f')
   DL_Var at v -> do
     fg_defn $ v
     let mkt _ = return $ DL_Var at v

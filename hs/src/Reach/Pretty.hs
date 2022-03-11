@@ -2,6 +2,7 @@
 
 module Reach.Pretty where
 
+import qualified Data.List as L
 import qualified Data.Map.Strict as M
 import Reach.Texty
 
@@ -53,10 +54,11 @@ prettyContinue cont_da =
 prettyStop :: Doc
 prettyStop = "exit" <> parens (emptyDoc) <> semi
 
-prettyMap :: (Pretty a, Pretty b, Pretty c, Pretty d) => a -> b -> a -> c -> d -> Doc
-prettyMap ans x a i f =
-  "map" <+> pretty ans <+> "=" <+> "for" <+> parens (pretty a <> "," <> pretty i <+> "in" <+> pretty x)
-    <+> braces (nest $ hardline <> pretty f)
+prettyMap :: (Pretty a, Pretty b, Pretty c, Pretty d) => a -> [b] -> [a] -> c -> d -> Doc
+prettyMap ans xs as i f =
+  "map" <+> pretty ans <+> "=" <+> "for" <+>
+  parens (withCommas as <> pretty i <+> "in" <+> withCommas xs) <+> braces (nest $ hardline <> pretty f)
+    where withCommas vs = L.foldl' (\accum v -> accum <> pretty v <> ",") "" vs
 
 prettyReduce :: (Pretty a, Pretty b, Pretty c, Pretty d, Pretty e, Pretty f, Pretty g) => a -> b -> c -> d -> e -> f -> g -> Doc
 prettyReduce ans x z b a i f =

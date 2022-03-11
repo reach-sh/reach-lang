@@ -82,7 +82,6 @@ instance Subst DLExpr where
     DLE_ArrayRef at a b -> DLE_ArrayRef at <$> subst a <*> subst b
     DLE_ArraySet at a b c -> DLE_ArraySet at <$> subst a <*> subst b <*> subst c
     DLE_ArrayConcat at a b -> DLE_ArrayConcat at <$> subst a <*> subst b
-    DLE_ArrayZip at a b -> DLE_ArrayZip at <$> subst a <*> subst b
     DLE_TupleRef at x y -> DLE_TupleRef at <$> subst x <*> pure y
     DLE_ObjectRef at x y -> DLE_ObjectRef at <$> subst x <*> pure y
     DLE_Interact a b c d e f -> DLE_Interact a b c d e <$> subst f

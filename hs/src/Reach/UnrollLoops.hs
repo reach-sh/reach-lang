@@ -3,6 +3,7 @@ module Reach.UnrollLoops (UnrollWrapper (..), unrollLoops) where
 import Control.Monad.Reader
 import Data.Foldable
 import Data.IORef
+import Data.List (transpose)
 import qualified Data.Map.Strict as M
 import qualified Data.Sequence as Seq
 import GHC.Stack (HasCallStack)
@@ -102,13 +103,6 @@ instance Unroll DLExpr where
       (x_ty, x') <- ul_explode at x
       (_, y') <- ul_explode at y
       liftArray at x_ty $ x' <> y'
-    DLE_ArrayZip at x y -> do
-      (x_ty, x') <- ul_explode at x
-      (y_ty, y') <- ul_explode at y
-      let ty = T_Tuple [x_ty, y_ty]
-      let go xa ya = liftExpr at ty $ DLE_LArg at $ DLLA_Tuple [xa, ya]
-      as <- zipWithM go x' y'
-      liftArray at ty as
     e -> return $ e
 
 instance Unroll DLStmt where
@@ -119,15 +113,15 @@ instance Unroll DLStmt where
     DL_Set at v a -> return $ DL_Set at v a
     DL_LocalIf at c t f -> DL_LocalIf at c <$> ul t <*> ul f
     DL_LocalSwitch at ov csm -> DL_LocalSwitch at ov <$> ul csm
-    DL_ArrayMap at ans x a i fb -> do
-      (_, x') <- ul_explode at x
-      r' <- zipWithM (\xa iv -> fu_ fb [(a, xa), (i, (DLA_Literal $ DLL_Int at iv))]) x' [0..]
+    DL_ArrayMap at ans xs as i fb -> do
+      (_, xs') <- unzip <$> mapM (ul_explode at) xs
+      r' <- zipWithM (\xa iv -> fu_ fb $ (zip as xa) <> [(i, (DLA_Literal $ DLL_Int at iv))]) (transpose xs') [0..]
       let r_ty = arrType $ varType ans
       return $ DL_Let at (DLV_Let DVC_Many ans) (DLE_LArg at $ DLLA_Array r_ty r')
-    DL_ArrayReduce at ans x z b a i fb -> do
-      (_, x') <- ul_explode at x
-      let x'i = zip x' $ map (DLA_Literal . DLL_Int at) [0..]
-      r' <- foldlM (\za (xa, ia) -> fu_ fb [(b, za), (a, xa), (i, ia)]) z x'i
+    DL_ArrayReduce at ans xs z b as i fb -> do
+      (_, xs') <- unzip <$> mapM (ul_explode at) xs
+      let xs'i = zip (transpose xs') $ map (DLA_Literal . DLL_Int at) [0..]
+      r' <- foldlM (\za (xa, ia) -> fu_ fb ([(b, za)] <> (zip as xa) <> [(i, ia)])) z xs'i
       return $ DL_Let at (DLV_Let DVC_Many ans) (DLE_Arg at r')
     DL_MapReduce at mri ans x z b a fb ->
       DL_MapReduce at mri ans x z b a <$> ul fb

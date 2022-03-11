@@ -371,7 +371,6 @@ instance DepthOf DLExpr where
     DLE_ArrayRef _ x y -> add1 $ depthOf [x, y]
     DLE_ArraySet _ x y z -> depthOf [x, y, z]
     DLE_ArrayConcat _ x y -> add1 $ depthOf [x, y]
-    DLE_ArrayZip _ x y -> add1 $ depthOf [x, y]
     DLE_TupleRef _ x _ -> add1 $ depthOf x
     DLE_ObjectRef _ x _ -> add1 $ depthOf x
     DLE_Interact _ _ _ _ _ as -> depthOf as
@@ -588,8 +587,6 @@ solExpr sp = \case
     spa $ return $ solApply (solArraySet ti) args'
   DLE_ArrayConcat {} ->
     impossible "array concat"
-  DLE_ArrayZip {} ->
-    impossible "array zip"
   DLE_TupleRef _ ae i -> do
     ae' <- solArg ae
     return $ ae' <> ".elem" <> pretty i <> sp
@@ -942,17 +939,6 @@ solCom = \case
     return $ vsep $ solBytesSplit x_sz go
   DL_Let _ (DLV_Let _ dv) (DLE_ArrayConcat _ x y) -> do
     doConcat dv x y
-  DL_Let _ (DLV_Let _ dv@(DLVar _ _ t _)) (DLE_ArrayZip _ x y) -> do
-    addMemVar dv
-    let (xy_ty, xy_sz) = case t of
-          T_Array a b -> (a, b)
-          _ -> impossible "array_zip"
-    tcon <- solType xy_ty
-    dv' <- solVar dv
-    let ith which = solArrayRef <$> solArg which <*> pure "i"
-    x' <- ith x
-    y' <- ith y
-    return $ "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty $ xy_sz) <> semi <+> "i++") <> solBraces (solArrayRef dv' "i" <+> "=" <+> solApply tcon [x', y'] <> semi)
   DL_Let _ (DLV_Let pu dv) de ->
     case simple de of
       True -> no_def
@@ -990,12 +976,12 @@ solCom = \case
     solIf <$> solArg ca <*> solPLTail t <*> solPLTail f
   DL_LocalSwitch at ov csm -> solSwitch solPLTail at ov csm
   DL_Only {} -> impossible $ "only in CT"
-  DL_ArrayMap _ ans x a i (DLBlock _ _ f r) -> do
-    addMemVars $ [ans, a]
-    let sz = arraySize x
+  DL_ArrayMap _ ans xs as i (DLBlock _ _ f r) -> do
+    addMemVars $ [ans] <> as
+    let sz = arraysLength xs
     ans' <- solVar ans
-    x' <- solArg x
-    a' <- solVar a
+    xs' <- mapM solArg xs
+    as' <- mapM solVar as
     let i' = solRawVar i
     extendVarMap $ M.singleton i i'
     f' <- solPLTail f
@@ -1004,19 +990,20 @@ solCom = \case
       vsep
         [ "for" <+> parens ("uint256 " <> i' <> " = 0" <> semi <+> i' <> " <" <+> (pretty sz) <> semi <+> i' <> "++")
             <> solBraces
-              (vsep
-                 [ a' <+> "=" <+> (solArrayRef x' i') <> semi
-                 , f'
+              (vsep $
+                 zipWith (\a x -> a <+> "=" <+> (solArrayRef x i') <> semi) as' xs'
+                 <>
+                 [ f'
                  , (solArrayRef ans' i') <+> "=" <+> r' <> semi
                  ])
         ]
-  DL_ArrayReduce _ ans x z b a i (DLBlock _ _ f r) -> do
-    addMemVars $ [ans, b, a]
-    let sz = arraySize x
+  DL_ArrayReduce _ ans xs z b as i (DLBlock _ _ f r) -> do
+    addMemVars $ [ans, b] <> as
+    let sz = arraysLength xs
     ans' <- solVar ans
-    x' <- solArg x
+    xs' <- mapM solArg xs
     z' <- solArg z
-    a' <- solVar a
+    as' <- mapM solVar as
     b' <- solVar b
     let i' = solRawVar i
     extendVarMap $ M.singleton i i'
@@ -1027,9 +1014,10 @@ solCom = \case
         [ b' <+> "=" <+> z' <> semi
         , "for" <+> parens ("uint256 " <> i' <> " = 0" <> semi <+> i' <> " <" <+> (pretty sz) <> semi <+> i' <> "++")
             <> solBraces
-              (vsep
-                 [ a' <+> "=" <+> (solArrayRef x' i') <> semi
-                 , f'
+              (vsep $
+                 zipWith (\a x -> a <+> "=" <+> (solArrayRef x i') <> semi) as' xs'
+                 <>
+                 [ f'
                  , b' <+> "=" <+> r' <> semi
                  ])
         , ans' <+> "=" <+> b' <> semi

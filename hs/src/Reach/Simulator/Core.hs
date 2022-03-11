@@ -498,10 +498,6 @@ instance Interp DLExpr where
       arr1 <- vArray <$> interp dlarg1
       arr2 <- vArray <$> interp dlarg2
       return $ V_Array $ arr1 <> arr2
-    DLE_ArrayZip _at dlarg1 dlarg2 -> do
-      arr1 <- vArray <$> interp dlarg1
-      arr2 <- vArray <$> interp dlarg2
-      return $ V_Array $ zipWith (\l r -> V_Tuple $ [l, r]) arr1 arr2
     DLE_TupleRef _at dlarg n -> do
       arr <- vTuple <$> interp dlarg
       return $ saferIndex (fromIntegral n) arr
@@ -641,24 +637,24 @@ instance Interp DLStmt where
         ev <- interp expr
         addToStore var ev
         return V_Null
-    DL_ArrayMap _at ans x a i f -> do
-      arr' <- vArray <$> interp x
-      let f' av iv = do
-            addToStore a av
+    DL_ArrayMap _at ans xs as i f -> do
+      arrs' <- mapM vArray <$> mapM interp xs
+      let f' avs iv = do
+            zipWithM_ (\a v -> addToStore a v) as avs
             addToStore i $ V_UInt iv
             interp f
-      res <- V_Array <$> zipWithM f' arr' [0..]
+      res <- V_Array <$> zipWithM f' arrs' [0..]
       addToStore ans res
       return V_Null
-    DL_ArrayReduce _at ans x z b a i f -> do
+    DL_ArrayReduce _at ans xs z b as i f -> do
       acc <- interp z
-      arr' <- vArray <$> interp x
-      let f' acc_v (elem_v, iv) = do
-             addToStore a elem_v
+      arrs' <- mapM vArray <$> mapM interp xs
+      let f' acc_v (elem_vs, iv) = do
+             zipWithM_ (\a v -> addToStore a v) as elem_vs
              addToStore b acc_v
              addToStore i $ V_UInt iv
              interp f
-      res <- foldM f' acc $ zip arr' [0..]
+      res <- foldM f' acc $ zip arrs' [0..]
       addToStore ans res
       return V_Null
     DL_Var _at _var -> return V_Null

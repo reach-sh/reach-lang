@@ -192,19 +192,20 @@ export const mapRef = async <A>(m: LinearMap<A>, f: string): Promise<MaybeRep<A>
   return await m.ref(f);
 };
 
-export const Array_asyncMap = <A, B>(a: A[], f:((x:A, i:number) => Promise<B>)): Promise<B[]> => Promise.all(a.map(f));
-
-export const Array_asyncReduce = async <A, B>(a: A[], b:B, f:((y:B, x:A, i:number) => Promise<B>)): Promise<B> => {
-  let y = b;
-  let i = 0;
-  for ( const x of a ) {
-    y = await f(y, x, i++);
-  }
-  return y;
+export const Array_asyncMap = async <B>(as:any[][], f:(x:any[], i:number) => Promise<B>): Promise<B[]> => {
+  const fWrap = (_a:any, i:number) => f(as.map((a) => a[i]), i);
+  return Promise.all(as[0].map(fWrap));
 };
 
-export const Array_zip = <X,Y>(x: Array<X>, y: Array<Y>): Array<[X, Y]> =>
-  x.map((e, i): [X, Y] => [e, y[i]]);
+export const Array_asyncReduce = async <B>(as:any[][], b: B, f:((xs:any[], y:B, i:number) => Promise<B>)): Promise<B> => {
+  let accum = b;
+  let i = 0;
+  for ( i = 0; i < as[0].length; i++) {
+    const as_i = as.map((a) => a[i]);
+    accum = await f(as_i, accum, i);
+  }
+  return accum;
+};
 
 export const simMapDupe = <A>(sim_r:any, mapi:number, mapo:LinearMap<A>): void => {
   sim_r.maps[mapi] = copyMap(mapo.ref);

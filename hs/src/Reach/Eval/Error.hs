@@ -434,7 +434,7 @@ instance ErrorSuggestions EvalError where
 instance Show EvalError where
   show = \case
     Err_Zip_ArraysNotEqualLength x y ->
-      "Zip requires arrays of equal length, but got " <> show x <> " and " <> show y
+      "Method requires arrays of equal length, but got " <> show x <> " and " <> show y
     Err_Apply_ArgCount cloAt nFormals nArgs ->
       "Invalid function application. Expected " <> show nFormals <> " args, got " <> show nArgs <> " for function defined at " <> show cloAt
     Err_Block_Assign _jsop _stmts ->

@@ -1,4 +1,4 @@
-reachc: error[RE0071]: Zip requires arrays of equal length, but got 5 and 3
+reachc: error[RE0071]: Method requires arrays of equal length, but got 5 and 3
 
   ./Err_Zip_ArraysNotEqualLength.rsh:6:32:application
 

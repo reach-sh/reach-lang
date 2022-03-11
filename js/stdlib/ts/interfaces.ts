@@ -41,9 +41,8 @@ export interface Stdlib_Backend_Shared_User<Ty> {
 export interface Stdlib_Backend_Shared<Ty> extends Stdlib_Backend_Shared_User<Ty> {
   checkedBigNumberify: (at: string, max: BigNumber, n: any) => BigNumber
   protect: (t: any, v: unknown, ai?: string) => unknown
-  Array_asyncMap: <A, B>(a: A[], f:((x:A, i:number) => Promise<B>)) => Promise<B[]>
-  Array_asyncReduce: <A, B>(a: A[], b:B, f:((y:B, x:A, i:number) => Promise<B>)) => Promise<B>
-  Array_zip: <A, B>(a1: A[], a2: B[]) => [A, B][]
+  Array_asyncMap: <B>(as:any[][], f:(x:any[], i:number) => Promise<B>) => Promise<B[]>
+  Array_asyncReduce: <B>(as:any[][], b: B, f:((xs:any[], y:B, i:number) => Promise<B>)) => Promise<B>
   newMap: <A>(opts: MapOpts<A>) => LinearMap<A>
   mapRef: <A>(m: LinearMap<A>, f: string) => Promise<MaybeRep<A>>
   mapSet: <A>(m: LinearMap<A>, f: string, v: A) => Promise<void>

@@ -85,8 +85,8 @@ mkAnnot a = StmtAnnot {..}
 
 data DLSStmt
   = DLS_Let SrcLoc DLLetVar DLExpr
-  | DLS_ArrayMap SrcLoc DLVar DLArg DLVar DLVar DLSBlock
-  | DLS_ArrayReduce SrcLoc DLVar DLArg DLArg DLVar DLVar DLVar DLSBlock
+  | DLS_ArrayMap SrcLoc DLVar [DLArg] [DLVar] DLVar DLSBlock
+  | DLS_ArrayReduce SrcLoc DLVar [DLArg] DLArg DLVar [DLVar] DLVar DLSBlock
   | DLS_If SrcLoc DLArg StmtAnnot DLStmts DLStmts
   | DLS_Switch SrcLoc DLVar StmtAnnot (SwitchCases DLStmts)
   | DLS_Return SrcLoc Int DLArg

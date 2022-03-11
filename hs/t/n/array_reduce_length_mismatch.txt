@@ -1,0 +1,11 @@
+reachc: error[RE0071]: Method requires arrays of equal length, but got 5 and 3
+
+  ./array_reduce_length_mismatch.rsh:11:27:application
+
+  11|     const z = Array.reduce(xs, ys, 0, (ac, x, y) => ac - x + y);
+
+Trace:
+  in [unknown function] from (./array_reduce_length_mismatch.rsh:8:13:function exp) at (./array_reduce_length_mismatch.rsh:8:9:application)
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0071
+
