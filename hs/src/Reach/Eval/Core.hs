@@ -3033,12 +3033,13 @@ evalPrim p sargs =
       SLInterface im <- mustBeInterface intv
       let mns = bunpack <$> n
       nAt <- withAt id
-      mapM_ (verifyName nAt "API" []) mns
       let ns = fromMaybe "Untagged" mns
+      forM_ mns $ verifyName nAt "API" []
       ix <- flip mapWithKeyM im $ \k -> \(at, ty) ->
         case ty of
           ST_Fun (SLTypeFun {..}) -> do
             let nk = maybe k (<> "_" <> k) mns
+            verifyNotReserved nAt nk
             let nkb = bpack nk
             mapM_ warnInteractType $ stf_rng : stf_dom
             let nv' = SLV_Bytes at nkb

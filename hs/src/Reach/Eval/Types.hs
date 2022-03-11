@@ -123,6 +123,7 @@ data SolReservedName
   | SOL_copyof
   | SOL_default
   | SOL_define
+  | SOL_delete
   | SOL_external
   | SOL_final
   | SOL_immutable
