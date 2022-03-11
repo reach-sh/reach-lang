@@ -2,6 +2,7 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
 const stdlib = loadStdlib();
+if ( stdlib.connector === 'ALGO' ) { process.exit(0); }
 
 const [ accA, accB ] =
   await stdlib.newTestAccounts(2, stdlib.parseCurrency(100));
