@@ -73,7 +73,7 @@ completionKind v =
     SLV_Clo _ _ _ -> Just CK_Function
     SLV_Data _ _ _ _ -> Just CK_Constant
     SLV_DLC _ -> Just CK_Constant
-    SLV_Connector _ -> Nothing
+    SLV_Connector _ -> Just CK_Constant
     SLV_RaceParticipant _ _ -> Just CK_Constant
     SLV_Participant _ _ _ _ -> Just CK_Constant
     SLV_Map _ -> Just CK_Variable
