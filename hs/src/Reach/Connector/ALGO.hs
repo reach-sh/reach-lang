@@ -578,11 +578,13 @@ checkCost notify disp alwaysShow ts ls = do
     forM_ allResources $ \rs -> do
       let algoMax = maxOf rs
       (_p, c) <- analyzeCFG rs
+      let tooMuch = c > algoMax
+      when (rs == R_Cost && tooMuch) $ do
+        modifyIORef xtraR $ M.insertWith (+) lr_lab 1
       when (rHasFee rs) $ do
         modifyIORef feesR $ (+) c
       let units = rLabel (c /= 1) rs
       let pre = "uses " <> show c <> " " <> units
-      let tooMuch = fromIntegral c > algoMax
       let post = if tooMuch then ", but the limit is " <> show algoMax else ""
       let msg = pre <> post <> "."
       when tooMuch $ do
