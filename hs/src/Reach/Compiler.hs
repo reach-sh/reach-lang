@@ -9,7 +9,9 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as LTIO
 import qualified Filesystem.Path.CurrentOS as FP
 import Reach.APICut
+import Reach.AST.Base
 import Reach.AST.DL
+import Reach.AST.SL
 import Reach.Backend.JS
 import Reach.BigOpt
 import Reach.CommandLine
@@ -42,9 +44,7 @@ make_connectors env =
 
 compile :: CompilerToolEnv -> CompilerOpts -> IO ()
 compile env (CompilerOpts {..}) = do
-  when co_printKeywordInfo $ do
-    printKeywordInfo
-    exitSuccess
+  let source = if co_printKeywordInfo then ReachStdLib else ReachSourceFile co_source
   let outd = fromMaybe (takeDirectory co_source </> "build") co_moutputDir
   let co_dirDotReach = fromMaybe (takeDirectory co_source </> ".reach") co_mdirDotReach
   let co_output ext = FP.encodeString $ FP.append (FP.decodeString outd) $ (FP.filename $ FP.decodeString co_source) `FP.replaceExtension` ext
@@ -55,10 +55,14 @@ compile env (CompilerOpts {..}) = do
         Just f -> LTIO.writeFile . f
         Nothing -> \_ _ -> return ()
   dirDotReach' <- makeAbsolute co_dirDotReach
-  djp <- gatherDeps_top co_source co_installPkgs dirDotReach'
+  djp <- gatherDeps_top source co_installPkgs dirDotReach'
   unless co_installPkgs $ do
     let all_connectors = make_connectors env
-    (avail, compileDApp) <- evalBundle all_connectors djp
+    (fullExports, avail, compileDApp) <- evalBundle all_connectors djp
+    when co_printKeywordInfo $ do
+      let exportMap = M.map sss_val fullExports
+      printBaseKeywordInfo exportMap
+      exitSuccess
     let chosen = S.toAscList $ fromMaybe avail co_tops
     let onlyOne = length chosen == 1
     forM_ chosen $ \which -> do
