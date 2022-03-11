@@ -59,11 +59,12 @@ compile env (CompilerOpts {..}) = do
   djp <- gatherDeps_top source co_installPkgs dirDotReach'
   unless co_installPkgs $ do
     let all_connectors = make_connectors env
-    (fullExports, avail, compileDApp) <- evalBundle all_connectors djp
+    (run, shared_lifts, exe_ex) <- evalBundle all_connectors djp co_printKeywordInfo
     when co_printKeywordInfo $ do
-      let exportMap = M.map sss_val fullExports
+      let exportMap = M.map sss_val exe_ex
       printBaseKeywordInfo exportMap
       exitSuccess
+    (avail, compileDApp) <- prepareDAppCompiles run shared_lifts exe_ex
     let chosen = S.toAscList $ fromMaybe avail co_tops
     let onlyOne = length chosen == 1
     forM_ chosen $ \which -> do

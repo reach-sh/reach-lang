@@ -1,4 +1,4 @@
-module Reach.Eval (evalBundle) where
+module Reach.Eval (evalBundle, prepareDAppCompiles) where
 
 import Control.Monad.Extra
 import Control.Monad.Reader
@@ -301,16 +301,32 @@ checkUnusedVars m = do
       expect_throw Nothing at $ Err_Unused_Variables l
   return a
 
-evalBundle :: Connectors -> JSBundle -> IO (SLEnv, S.Set SLVar, (SLVar -> IO DLProg))
-evalBundle cns (JSBundle mods) = do
+evalBundle :: Connectors -> JSBundle -> Bool -> IO (ReaderT Env m a -> m a, DLStmts, M.Map SLVar SLSSVal)
+evalBundle cns (JSBundle mods) addToEnvForEditorInfo = do
   evalEnv <- makeEnv cns
   let run = flip runReaderT evalEnv
   let exe = fst $ hdDie mods
-  (shared_lifts, libm) <-
-    run $
-      captureLifts $
-        evalLibs cns mods
-  let exe_ex = libm M.! exe
+  let evalPlus = do
+        (shared_lifts, libm) <- captureLifts $ evalLibs cns mods
+        let exe_ex = libm M.! exe
+        retEnv <- if addToEnvForEditorInfo then do
+            let innerEnv !n v = do
+                 objEnv <- evalAsEnvM v
+                 case objEnv of
+                   Nothing -> mempty
+                   Just oe -> do
+                     env <- evalObjEnv oe
+                     return $ M.mapKeys (\k -> n <> "." <> k) $ env
+            innerEnvs <- mapM (\k -> innerEnv k (snd . sss_sls $ exe_ex M.! k)) $ M.keys exe_ex
+            return $ M.union exe_ex $ M.unions innerEnvs
+          else do
+            return exe_ex
+        return (shared_lifts, libm, retEnv)
+  (shared_lifts, _, exe_ex) <- run $ evalPlus
+  return (run, shared_lifts, exe_ex)
+
+prepareDAppCompiles :: Monad m => (App DLProg -> a) -> DLStmts -> M.Map SLVar SLSSVal -> m (S.Set SLVar, SLVar -> a)
+prepareDAppCompiles run shared_lifts exe_ex = do
   let tops =
         M.keysSet $
           flip M.filter exe_ex $
@@ -324,7 +340,7 @@ evalBundle cns (JSBundle mods) = do
         compileDApp shared_lifts exports topv
   case S.null tops of
     True -> do
-      return (exe_ex, S.singleton "default", const $ go $ return defaultApp)
+      return (S.singleton "default", const $ go $ return defaultApp)
     False -> do
       let go' which = go $ env_lookup LC_CompilerRequired which exe_ex
-      return (exe_ex, tops, go')
+      return (tops, go')

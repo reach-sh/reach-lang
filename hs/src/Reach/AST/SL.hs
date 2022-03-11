@@ -741,7 +741,7 @@ data SLSSVal = SLSSVal
   , sss_level :: SecurityLevel
   , sss_val :: SLVal
   }
-  deriving (Eq, Generic)
+  deriving (Eq, Generic, Show)
 
 instance Pretty SLSSVal where
   pretty (SLSSVal _ level val) = pretty (level, val) -- <> "@" <> pretty at
