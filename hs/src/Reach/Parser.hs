@@ -347,11 +347,9 @@ gatherDeps_top src_p e_install e_dreachp = do
   let e_at = srcloc_top
   e_bm <- liftIO $ newIORef (mempty, mempty)
   flip runReaderT (Env {..}) $ do
-    unless (src_p == ReachStdLib) $ do
-      _src_abs_p <- case src_p of
-        ReachSourceFile f -> gatherDeps_file GatherTop f
-        ReachStdLib -> impossible "gatherDeps"
-      return ()
+    case src_p of
+      ReachSourceFile f -> void $ gatherDeps_file GatherTop f
+      ReachStdLib -> return ()
     gatherDeps_stdlib
     (dm, fm) <- liftIO $ readIORef e_bm
     return $ JSBundle $ map (\k -> (k, ensureJust (fm M.! k))) $ map_order dm
