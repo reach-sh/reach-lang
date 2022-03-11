@@ -79,7 +79,7 @@ conn () {
         connector: "${CONN}"
         size: ${SIZE}
 END
-  deps "reach" "reach-cli" "runner" "rpc-server" "${IMAGE}"
+  deps "reach" "reach-cli" "runner" "react-runner" "rpc-server" "${IMAGE}"
   cat >>"${END}" <<END
           - "${NAME}"
 END

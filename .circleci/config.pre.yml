@@ -81,11 +81,11 @@ jobs:
     - attach_workspace:
         at: /tmp/workspace
     - and_restore_docker:
-        deps: "stdlib runner rpc-server reach reach-cli devnet-eth devnet-cfx devnet-algo"
+        deps: "stdlib runner react-runner rpc-server reach reach-cli devnet-eth devnet-cfx devnet-algo"
     # Publish images
     - run: |
         docker login -u $DOCKER_LOGIN -p $DOCKER_PASSWORD
-        for IMG in stdlib runner rpc-server reach reach-cli devnet-algo devnet-eth devnet-cfx; do
+        for IMG in stdlib runner react-runner rpc-server reach reach-cli devnet-algo devnet-eth devnet-cfx; do
           ./scripts/docker-push.sh reachsh/${IMG}
         done
     # Publish stdlib
