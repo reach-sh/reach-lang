@@ -53,7 +53,7 @@ export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
   debug(`_getDefaultAccount`);
   const provider = await getProvider();
   // @ts-ignore
-  const signer = provider.getSigner();
+  const signer = provider._rwfb ? provider._rwfb() : provider.getSigner();
   return signer;
 }
 
@@ -78,6 +78,28 @@ export async function canFundFromFaucet(): Promise<boolean> {
   return provider._network && provider._network.chainId === 1337;
 }
 
+const POLLING_INTERVAL = 500; // ms
+
+// TODO: reduce duplication with waitProviderFromEnv
+// Needed a non-async version for creating wallet fallback
+function _providerFromEnv(env: ProviderEnv): Provider {
+  let p: ethers.providers.BaseProvider;
+  if ('ETH_NODE_URI' in env && env.ETH_NODE_URI) {
+    p = new ethers.providers.JsonRpcProvider(env.ETH_NODE_URI);
+  } else if ('ETH_NET' in env && env.ETH_NET) {
+    const ETH_NET = env.ETH_NET;
+    if (ETH_NET === 'homestead' || ETH_NET === 'ropsten') {
+      p = ethers.getDefaultProvider(ETH_NET);
+    } else {
+      throw Error(`ETH_NET not recognized: '${ETH_NET}'`);
+    }
+  } else {
+    throw Error(`_providerFromEnv: invalid env`);
+  }
+  p.pollingInterval = POLLING_INTERVAL;
+  return p;
+}
+
 // Not an async fn because it throws some errors synchronously, rather than in the Promise thread
 function waitProviderFromEnv(env: ProviderEnv): Promise<Provider> {
   if ('ETH_NODE_URI' in env && env.ETH_NODE_URI) {
@@ -87,7 +109,7 @@ function waitProviderFromEnv(env: ProviderEnv): Promise<Provider> {
       await doHealthcheck(ETH_NODE_URI);
       const provider = new ethers.providers.JsonRpcProvider(ETH_NODE_URI);
       // TODO: make polling interval configurable?
-      provider.pollingInterval = 500; // ms
+      provider.pollingInterval = POLLING_INTERVAL;
       return provider;
     })();
   } else if ('ETH_NET' in env && env.ETH_NET) {
@@ -95,12 +117,17 @@ function waitProviderFromEnv(env: ProviderEnv): Promise<Provider> {
     // TODO: support more
     if (ETH_NET === 'homestead' || ETH_NET === 'ropsten') {
       // No waitPort for these, just go
-      return Promise.resolve(ethers.getDefaultProvider(ETH_NET));
+      const p = ethers.getDefaultProvider(ETH_NET);
+      p.pollingInterval = POLLING_INTERVAL;
+      return Promise.resolve(p);
     } else if (ETH_NET === 'window') {
       const {ethereum} = window;
       if (ethereum) {
         return (async () => {
-          const provider = new ethers.providers.Web3Provider(ethereum);
+          const provider =
+            ethereum._rwfb ? ethereum :
+              new ethers.providers.Web3Provider(ethereum);
+          provider.pollingInterval = POLLING_INTERVAL;
           // The proper way to ask MetaMask to enable itself is eth_requestAccounts
           // https://eips.ethereum.org/EIPS/eip-1102
           await provider.send('eth_requestAccounts', []);
@@ -247,10 +274,10 @@ const [getProvider, _setProvider] = replaceableThunk<Promise<Provider>>(async ()
   return await waitProviderFromEnv(fullEnv);
 });
 export {getProvider};
-export function setProvider(provider: Promise<Provider>): void {
+export function setProvider(provider: Promise<Provider>|Provider): void {
   // TODO: define ETHProvider to be {provider: Provider, isolated: boolean} ?
   // Maybe also {window: boolean}
-  _setProvider(provider);
+  _setProvider(Promise.resolve(provider));
   if (!_providerEnv) {
     // this circumstance is weird and maybe we should handle it better
     // process.env isn't available in browser so we try to avoid relying on it here.
@@ -265,9 +292,26 @@ export function setProvider(provider: Promise<Provider>): void {
 const setWalletFallback = (wf:() => any) => {
   if ( ! window.ethereum ) { window.ethereum = wf(); }
 };
-const walletFallback = (opts:any) => () => {
-  void(opts);
-  throw new Error(`There is no wallet fallback for Ethereum`);
+const walletFallback = (opts:any) => (): ethers.providers.Provider => {
+  const pe: ProviderName|ProviderEnv = opts?.providerEnv;
+  const env: ProviderEnv =
+      typeof pe === 'string' ? providerEnvByName(pe)
+    : pe                     ? pe
+    :                          providerEnvByName('LocalHost');
+  const p = _providerFromEnv(env);
+  _setProvider(Promise.resolve(p));
+  setProviderEnv({
+    ETH_NET: 'window',
+    REACH_CONNECTOR_MODE: env.REACH_CONNECTOR_MODE || 'ETH-browser',
+    REACH_ISOLATED_NETWORK: env.REACH_ISOLATED_NETWORK || 'no',
+  });
+  // @ts-ignore
+  p._rwfb = () => {
+    const mnem = window.prompt(`Please paste the mnemonic for your account, or enable MetaMask and refresh the page.`);
+    const w = mnem ? ethers.Wallet.fromMnemonic(mnem) : ethers.Wallet.createRandom();
+    return w.connect(p);
+  }
+  return p;
 };
 
 // XXX: doesn't even retry, just returns the first attempt

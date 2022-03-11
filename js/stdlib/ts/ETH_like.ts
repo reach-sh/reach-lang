@@ -1107,7 +1107,7 @@ async function launchToken (accCreator:Account, name:string, sym:string, opts:an
 
 function unsafeGetMnemonic(acc: Account|NetworkAccount): string {
   // @ts-ignore
-  const networkAccount: NetworkAccount = acc.networkAccount | acc;
+  const networkAccount: NetworkAccount = acc.networkAccount || acc;
   if (networkAccount._mnemonic) {
     return networkAccount._mnemonic().phrase;
   } else {
