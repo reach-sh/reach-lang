@@ -1501,7 +1501,7 @@ solPLProg (PLProg _ plo dli _ _ _ (CPProg at (vs, vi) ai _ hs)) = do
           let mkargvm arg = (arg, solRawVar arg)
           extendVarMap $ M.fromList $ map mkargvm args
           let solType_p am ty = do
-                ty' <- solType_ ty
+                ty' <- solType ty
                 let loc = solArgLoc $ if mustBeMem ty then am else AM_Event
                 return $ ty' <> loc
           let mkdom arg argt = do

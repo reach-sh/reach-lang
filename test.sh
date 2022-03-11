@@ -132,17 +132,14 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
+c users/algo-govt/index.rsh
+exit 0
+
 REACH_DEBUG=Y c examples/algospensive/index.rsh
 exit 0
 jb
 ci ALGO algospensive
 exit 0
 
-#c --install-pkgs users/xbacked-contracts/src/master_vault.rsh
-REACH_DEBUG=Y cdot users/xbacked-contracts/src/master_vault.rsh
-exit 0
-cdot users/duoswap-core/index.rsh
-cdot users/algo-govt/index.rsh
-exit 0
 
 # (cd hs && mk hs-test)
