@@ -73,7 +73,7 @@ RUN set -o pipefail ; stack build 2>&1 | tee build-log.txt
 RUN stack build --copy-bins
 # RUN mv "$(stack path --local-install-root)/bin" /build/bin/
 
-RUN apt-get install -y \
+RUN apt-get update && apt-get install -y \
   python3-distutils \
   clang
 
