@@ -16,7 +16,7 @@ Alice.only(() => {
   const pretzel = interact.random(); });
 ```
 
-A local step statement is written `{!rsh} PART.only(() => BLOCK)`, where `{!rsh} PART` is a participant identifier and `{!rsh} BLOCK` is a @{tooltip(block, a block is a grouping of zero or more statements inside a single statement)}.
+A local step statement is written `{!rsh} PART.only(() => BLOCK)`, where `{!rsh} PART` is a participant identifier and `{!rsh} BLOCK` is a @{tooltip("block", "a block is a grouping of zero or more statements inside a single statement")}.
 Within `{!rsh} BLOCK`, `{!rsh} PART` is bound to the address of the participant.
 Any bindings defined within the block of a local step are available in the statement's tail as new local state.
 For example,
@@ -57,7 +57,7 @@ each([Alice, Bob], () => {
   const pretzel = interact.random(); });
 ```
 
-An @{defn("each")} local step statement can be written as `{!rsh} each(PART_TUPLE () => BLOCK)`, where `{!rsh} PART_TUPLE` is a @{tooltip(tuple, a tuple is a value that is used to store multiple other values)} of participants and `{!rsh} BLOCK` is a block.
+An @{defn("each")} local step statement can be written as `{!rsh} each(PART_TUPLE () => BLOCK)`, where `{!rsh} PART_TUPLE` is a @{tooltip("tuple", "a tuple is a value that is used to store multiple other values")} of participants and `{!rsh} BLOCK` is a block.
 It is an abbreviation of many local step statements that could have been written with `{!rsh} only`.
 
 ### {#payAmt} Pay Amounts

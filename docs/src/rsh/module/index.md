@@ -1,6 +1,6 @@
 # {#ref-programs-module} Modules
 
-A Reach @{defn("source file")} is a textual file which specifies a Reach @{tooltip(module, a component of a software program containing one or more routines, it can be a separate file from the main program)}.
+A Reach @{defn("source file")} is a textual file which specifies a Reach @{tooltip("module", "a component of a software program containing one or more routines, it can be a separate file from the main program")}.
 It is traditionally given the file extension `rsh`, e.g. `dao.rsh`.
 
 A @{defn("module")} starts with `{!rsh} 'reach @{MAJOR}.@{MINOR}';` followed by a sequence of imports and identifier definitions.
@@ -25,7 +25,7 @@ export const [a, b, ...more] = [ 0, 1, 2, 3, 4 ];
 export function add1(x) { return x + 1; };
 ```
 
-are valid @{tooltip(exports, exporting allows identifiers to be visible to other modules)}.
+are valid @{tooltip("exports", "exporting allows identifiers to be visible to other modules")}.
 
 Module-level identifiers may also be exported after the fact,
 and may be renamed during export.
