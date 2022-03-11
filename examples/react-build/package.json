@@ -21,11 +21,6 @@
     "eject": "react-scripts eject",
     "serve": "serve -s build"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app"
-    ]
-  },
   "browserslist": {
     "production": [
       ">0.2%",
