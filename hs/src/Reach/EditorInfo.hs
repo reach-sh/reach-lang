@@ -71,13 +71,13 @@ completionKind v =
     SLV_Object _ _ _ -> Just CK_Constant
     SLV_Struct _ _ -> Just CK_Constant
     SLV_Clo _ _ _ -> Just CK_Function
-    SLV_Data _ _ _ _ -> Just CK_Constructor -- ?
+    SLV_Data _ _ _ _ -> Just CK_Constant
     SLV_DLC _ -> Just CK_Constant
     SLV_Connector _ -> Nothing
-    SLV_RaceParticipant _ _ -> Just CK_Constant -- ?
-    SLV_Participant _ _ _ _ -> Just CK_Constant -- ?
-    SLV_Map _ -> Just CK_Variable -- ?
-    SLV_Deprecated _ _ -> Nothing -- ?
+    SLV_RaceParticipant _ _ -> Just CK_Constant
+    SLV_Participant _ _ _ _ -> Just CK_Constant
+    SLV_Map _ -> Just CK_Variable
+    SLV_Deprecated _ _ -> Nothing
     SLV_Type _ -> Just CK_TypeParameter
     SLV_Kwd _ -> Just CK_Keyword
     SLV_DLVar _ -> Just CK_Variable
@@ -188,4 +188,3 @@ completionKind v =
         SLForm_apiCall_partial _ -> Nothing
         SLForm_wait -> Just CK_Function
         SLForm_setApiDetails -> Nothing
-    --_ -> Nothing
