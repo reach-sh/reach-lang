@@ -576,10 +576,14 @@ data LabelRec = LabelRec
 
 type CompanionCalls = M.Map Label Integer
 type CompanionInfo = Maybe CompanionCalls
+data CompanionAdds
+  = CA_AddCompanion
+  | CA_IncrementCalls Label
+  deriving (Eq, Ord)
 
-checkCost :: Notify -> Disp -> Bool -> [TEAL] -> [LabelRec] -> IO CompanionCalls
-checkCost notify disp alwaysShow ts ls = do
-  xtraR <- newIORef mempty
+checkCost :: Notify -> Disp -> Bool -> [LabelRec] -> CompanionInfo -> [TEAL] -> IO (Bool, CompanionInfo)
+checkCost notify disp alwaysShow ls ci ts = do
+  caR <- newIORef (mempty :: S.Set CompanionAdds)
   let rgs lab gs = void $ disp ("." <> lab <> "dot") $ LT.toStrict $ T.render $ dotty gs
   (gs, restrictCFG) <- buildCFG ts
   rgs "" gs
@@ -598,7 +602,10 @@ checkCost notify disp alwaysShow ts ls = do
       (_p, c) <- analyzeCFG rs
       let tooMuch = c > algoMax
       when (rs == R_Cost && tooMuch) $ do
-        modifyIORef xtraR $ M.insertWith (+) lr_lab 1
+        modifyIORef caR $ S.insert $
+          case ci of
+            Nothing -> CA_AddCompanion
+            Just _ -> CA_IncrementCalls lr_lab
       when (rHasFee rs) $ do
         modifyIORef feesR $ (+) c
       let units = rLabel (c /= 1) rs
@@ -612,7 +619,20 @@ checkCost notify disp alwaysShow ts ls = do
     when alwaysShow $ do
       fees <- readIORef feesR
       putStrLn $ "   + costs " <> show fees <> " " <> plural (fees /= 1) "fee" <> "."
-  readIORef xtraR
+  (S.toList <$> readIORef caR) >>= \case
+    [] ->
+      return (True, ci)
+    [ CA_AddCompanion ] ->
+      return (False, Just mempty)
+    as ->
+      case ci of
+        Nothing -> impossible "inc nothing"
+        Just cim -> do
+          let f = \case
+                CA_AddCompanion -> impossible "add just"
+                CA_IncrementCalls lab -> M.insertWith (+) lab 1
+          let cim' = foldr f cim as
+          return (False, Just cim')
 
 type Lets = M.Map DLVar (App ())
 
@@ -636,6 +656,7 @@ data Env = Env
   , eResources :: ResourceSets
   , eNewToks :: IORef (S.Set DLArg)
   , eInitToks :: IORef (S.Set DLArg)
+  , eCompanion :: CompanionInfo
   }
 
 type App = ReaderT Env IO
@@ -2655,8 +2676,8 @@ compile_algo env disp pl = do
           lr_at = ai_at
           lr_what = "API " <> bunpack p
   let progLs = (mapMaybe h2lr $ M.toAscList hm) <> (map a2lr $ M.toAscList ai)
-  let run :: App () -> IO (TEALs, Notify, IO ())
-      run m = do
+  let run :: CompanionInfo -> App () -> IO (TEALs, Notify, IO ())
+      run eCompanion m = do
         eCounter <- dupeCounter plo_counter
         eStateSizeR <- newIORef 0
         eLabel <- newCounter 0
@@ -2678,10 +2699,11 @@ compile_algo env disp pl = do
   let showCost = cte_REACH_DEBUG env
   let runProg m = do
         let lab = "appApproval"
-        (ts, notify, finalize) <- run m
         let disp' = disp . (lab <>)
+        let ci = Nothing
+        (ts, notify, finalize) <- run ci m
         let ts' = optimize $ DL.toList ts
-        _ <- checkCost notify disp' showCost ts' progLs
+        (_done, _ci') <- checkCost notify disp' showCost progLs ci ts'
         finalize
         addProg lab ts'
   runProg $ do
