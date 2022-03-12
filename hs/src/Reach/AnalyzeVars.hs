@@ -91,7 +91,7 @@ instance FreeVars DLPayAmt where
   freeVars (DLPayAmt a b) = freeVars a <> freeVars b
 
 instance FreeVars DLWithBill where
-  freeVars (DLWithBill a b) = freeVars [a, b]
+  freeVars (DLWithBill _ a b) = freeVars [a, b]
 
 instance FreeVars DLTokenNew where
   freeVars (DLTokenNew a b c d e f) = freeVars [a, b, c, d, e] <> freeVars f

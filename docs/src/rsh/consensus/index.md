@@ -489,16 +489,16 @@ If the remote contract is not expected to return non-network tokens then a pair 
 
 If the remote contract is expected to return non-network tokens then a triple is returned, where the amount of network tokens received
 is the first element, a tuple of the non-network tokens received is the second element, and the original result is the third element.
-If the caller expects to receive non-network tokens, they must provide a tuple of tokens as an argument to `{!rsh} withBill`. The ordering of
-tokens in the argument is reserved when returning the amounts received.
+If the caller expects to receive non-network tokens, they must provide a tuple of tokens as an argument to `{!rsh} withBill`.
+The ordering of tokens in the argument is preserved when returning the amounts received.
 For example,
 
 ```reach
-const [ returned, [gilRecv, zmdRecv], randomValue ] =
+const [ netRecv, [gilRecv, zmdRecv], randomValue ] =
   randomOracle.getRandom.pay(stipend).withBill([gil, zmd])();
 ```
 
-might be the way to communicate with a random oracle that receives a conservative approximation of its actual cost and returns what it does not use, along with some amount of `GIL` and `ZMD`.
+might be the way to communicate with a random oracle that receives a conservative approximation of its actual cost and returns what it does not use, along with some amount of network tokens, `GIL`, and `ZMD`.
 This operation may not be used with `{!rsh} REMOTE_FUN.bill`.
 
 ### Mappings: creation and modification

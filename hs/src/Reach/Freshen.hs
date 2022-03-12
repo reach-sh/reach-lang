@@ -118,7 +118,7 @@ instance Freshen ClaimType where
     x -> return x
 
 instance Freshen DLWithBill where
-  fu (DLWithBill y z) = DLWithBill <$> fu y <*> fu z
+  fu (DLWithBill x y z) = DLWithBill x <$> fu y <*> fu z
 
 instance Freshen DLExpr where
   fu = \case

@@ -8,6 +8,8 @@ const sBal = stdlib.parseCurrency(100);
 const [ accA, accB ] =
   await stdlib.newTestAccounts(2, sBal);
 
+const tokZ = await stdlib.launchToken(accA, 'zorkmid', 'ZMD');
+const ztok = tokZ.id;
 const tokR = await stdlib.launchToken(accA, 'gil', 'GIL');
 const tok = tokR.id;
 
@@ -36,7 +38,7 @@ await ctcA.p.D({ x, tok,
     console.log('A ready with', serverInfo);
     const ctcB = accB.contract(backendC);
     console.log('B starting with', serverInfo);
-    await ctcB.p.D({ serverInfo,
+    await ctcB.p.D({ serverInfo, ztok,
       inform: async (...args) => {
         console.log('B saw', ...args);
       }

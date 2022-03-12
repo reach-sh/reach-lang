@@ -99,7 +99,7 @@ instance CollectsTypes DLTokenNew where
       <> cts dtn_supply
 
 instance CollectsTypes DLWithBill where
-  cts (DLWithBill y z) = cts y <> cts z
+  cts (DLWithBill _ y z) = cts y <> cts z
 
 instance CollectsTypes PrimOp where
   cts = \case

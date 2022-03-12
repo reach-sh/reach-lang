@@ -152,7 +152,7 @@ instance Pandemic DLSBlock where
   pan (DLSBlock at cxt sts a) = DLSBlock at cxt <$> pan sts <*> pan a
 
 instance Pandemic DLWithBill where
-  pan (DLWithBill b nb) = DLWithBill <$> pan b <*> pan nb
+  pan (DLWithBill nr b nb) = DLWithBill nr <$> pan b <*> pan nb
 
 instance Pandemic DLPayAmt where
   pan (DLPayAmt net ks) = do

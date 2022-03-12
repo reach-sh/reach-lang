@@ -424,21 +424,29 @@ jsExpr = \case
       JM_Backend ->
         return $ jsApply "await stdlib.mapSet" [jsMapVar mpv, fa', na']
       JM_View -> impossible "view mapset"
-  DLE_Remote at _fs ro _rng_ty _rm (DLPayAmt pay_net pay_ks) _as (DLWithBill nnRecv _nnZero) -> do
+  DLE_Remote at _fs ro _rng_ty _rm (DLPayAmt pay_net pay_ks) _as (DLWithBill nRecv nnRecv _nnZero) -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> return "undefined /* Remote */"
       JM_View -> impossible "view Remote"
       JM_Simulate -> do
         -- These are totally made up and could be totally busted
         obj' <- jsArg ro
-        pays' <- jsCon $ DLL_Int at $ fromIntegral $ length $ filter (not . staticZero) $ pay_net : map snd pay_ks
+        let notStaticZero = not . staticZero
+        let pay_ks_nz = filter (notStaticZero . fst) pay_ks
+        let l2n x = jsCon $ DLL_Int at $ fromIntegral $ length $ x
+        pays' <- l2n $ filter notStaticZero $ pay_net : map fst pay_ks_nz
+        let nRecvCount = if nRecv then [ro] else []
+        bills' <- l2n $ nRecvCount <> nnRecv
+        toks' <- mapM jsArg $ nnRecv <> map snd pay_ks_nz
         let res' = parens $ jsSimTxn "remote" $
               [ ("obj", obj')
               , ("pays", pays')
+              , ("bills", bills')
+              , ("toks", jsArray toks')
               ]
         net' <- jsCon $ DLL_Int at 0
-        let toks' = jsArray $ map (const net') nnRecv
-        return $ jsArray [ net', toks', res' <> ", undefined" ]
+        let bill' = jsArray $ map (const net') nnRecv
+        return $ jsArray [ net', bill', res' <> ", undefined" ]
   DLE_TokenNew _ tns -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> return "undefined /* TokenNew */"
@@ -1035,7 +1043,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 10
+reachBackendVersion = 11
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = do

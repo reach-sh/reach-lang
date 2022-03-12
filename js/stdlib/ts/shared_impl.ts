@@ -570,6 +570,8 @@ export type ISimTxn<Token, ContractInfo> = {
   kind: 'remote',
   obj: ContractInfo,
   pays: BigNumber,
+  bills: BigNumber,
+  toks: Array<Token>,
 } | {
   kind: 'info',
   tok: Token,

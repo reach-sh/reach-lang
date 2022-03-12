@@ -516,19 +516,21 @@ instance IsLocal a => IsLocal (Seq.Seq a) where
   isLocal = all isLocal
 
 data DLWithBill = DLWithBill
-  { dwb_tok_billed :: [DLArg]
+  { dwb_net_billed :: Bool
+  , dwb_tok_billed :: [DLArg]
   , dwb_tok_not_billed :: [DLArg]
   }
   deriving (Eq, Ord, Show)
 
 instance PrettySubst DLWithBill where
-  prettySubst (DLWithBill y z) = do
+  prettySubst (DLWithBill x y z) = do
     y' <- render_dasM y
     z' <- render_dasM z
     return $
       render_obj $
         M.fromList $
-          [ ("billed" :: String, parens y')
+          [ ("net", pretty x)
+          , ("billed" :: String, parens y')
           , ("notBilled", parens z')
           ]
 

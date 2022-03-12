@@ -132,13 +132,22 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-c users/algo-govt/index.rsh
+#jb
+c examples/remote/index.rsh
+c examples/remote-rsh/index.rsh
+exit 0
+ci ETH remote
+exit 0
+ci ALGO remote-rsh
 exit 0
 
 REACH_DEBUG=Y c examples/algospensive/index.rsh
 exit 0
 jb
 ci ALGO algospensive
+exit 0
+
+c users/algo-govt/index.rsh
 exit 0
 
 

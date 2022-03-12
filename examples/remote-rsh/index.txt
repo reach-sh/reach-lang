@@ -3,16 +3,17 @@ Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 27 theorems; No failures!
+Checked 39 theorems; No failures!
 Compiling "mainS"...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 27 theorems; No failures!
+Checked 30 theorems; No failures!
 WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
- * Step 0 calls a remote object at ./index.rsh:77:21:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.
- * Step 0 calls a remote object at ./index.rsh:78:31:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.
- * Step 0 calls a remote object at ./index.rsh:79:22:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.
- * Step 1 calls a remote object at ./index.rsh:86:30:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.
- * Step 2 calls a remote object at ./index.rsh:90:34:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.
+ * Step 0 calls a remote object at ./index.rsh:85:21:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.
+ * Step 0 calls a remote object at ./index.rsh:86:31:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.
+ * Step 0 calls a remote object at ./index.rsh:87:22:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.
+ * Step 1 calls a remote object at ./index.rsh:96:30:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.
+ * Step 2 calls a remote object at ./index.rsh:100:34:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.
+ * Step 3 calls a remote object at ./index.rsh:103:28:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.

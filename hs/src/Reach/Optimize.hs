@@ -295,8 +295,8 @@ instance Optimize DLTokenNew where
   gcs _ = return ()
 
 instance Optimize DLWithBill where
-  opt (DLWithBill y z) =
-    DLWithBill <$> opt y <*> opt z
+  opt (DLWithBill x y z) =
+    DLWithBill x <$> opt y <*> opt z
   gcs _ = return ()
 
 unsafeAt :: [a] -> Int -> a

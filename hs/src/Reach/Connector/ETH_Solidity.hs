@@ -313,6 +313,15 @@ addMemVar v = do
   mvars <- ctxt_mvars <$> ask
   liftIO $ modifyIORef mvars $ S.insert v
 
+allocDLVar :: SrcLoc -> DLType -> App DLVar
+allocDLVar at t = DLVar at Nothing t <$> allocVarIdx
+
+allocMemVar :: SrcLoc -> DLType -> App Doc
+allocMemVar at t = do
+  dv <- allocDLVar at t
+  addMemVar dv
+  return $ solMemVar dv
+
 addMemVars :: [DLVar] -> App ()
 addMemVars = mapM_ addMemVar
 
@@ -383,12 +392,15 @@ instance DepthOf DLExpr where
     DLE_PartSet _ _ x -> depthOf x
     DLE_MapRef _ _ x -> add1 $ depthOf x
     DLE_MapSet _ _ x y -> max <$> depthOf x <*> depthOf y
-    DLE_Remote _ _ av _ _ (DLPayAmt net ks) as _ ->
+    DLE_Remote _ _ av _ _ (DLPayAmt net ks) as (DLWithBill _ nr nz) ->
       add1 $
         depthOf $
-          av :
-          net :
-          pairList ks <> as
+          av
+          : net
+          : pairList ks
+          <> as
+          <> nr
+          <> nz
     DLE_TokenNew _ tns -> add1 $ depthOf tns
     DLE_TokenBurn _ t a -> add1 $ depthOf [t, a]
     DLE_TokenDestroy _ t -> add1 $ depthOf t
@@ -400,7 +412,8 @@ instance DepthOf DLExpr where
     DLE_GetUntrackedFunds _ mt tb -> max <$> depthOf mt <*> depthOf tb
     DLE_FromSome _ mo da -> add1 $ depthOf [mo, da]
     where
-      add1 m = (+) 1 <$> m
+      add1 = addN 1
+      addN n m = (+) n <$> m
       pairList = concatMap (\(a, b) -> [a, b])
 
 solVar :: AppT DLVar
@@ -772,10 +785,13 @@ doConcat dv x y = do
   y' <- copy y (arraySize x)
   return $ vsep [x', y']
 
+getBalance :: Doc -> Doc
+getBalance tok = solApply "tokenBalanceOf" [tok, "address(this)"]
+
 solCom :: AppT DLStmt
 solCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ pv (DLE_Remote at fs av rng_ty f (DLPayAmt net ks) as (DLWithBill nonNetTokRecv nnTokRecvZero)) -> do
+  DL_Let _ pv (DLE_Remote at fs av rng_ty f (DLPayAmt net ks) as (DLWithBill _nRecv nonNetTokRecv nnTokRecvZero)) -> do
     -- XXX make this not rely on pv
     av' <- solArg av
     as' <- mapM solArg as
@@ -791,12 +807,11 @@ solCom = \case
     let eargs = f' : as'
     v_succ <- allocVar
     v_return <- allocVar
-    v_before <- allocVar
+    v_before <- allocMemVar at T_UInt
     -- Note: Not checking that the address is really a contract and not doing
     -- exactly what OpenZeppelin does
     netTokPaid <- solArg net
     ks' <- mapM (\(amt, ty) -> (,) <$> solArg amt <*> solArg ty) ks
-    let getBalance tok = solApply "tokenBalanceOf" [tok, "address(this)"]
     nonNetTokApprovals <-
       mapM
         (\(amt, ty) -> do
@@ -818,10 +833,10 @@ solCom = \case
       unzip
         <$> mapM
           (\(tok, i :: Int) -> do
-             tv_before <- allocVar
+             tv_before <- allocMemVar at T_UInt
              tokArg <- solArg tok
              -- Get balances of non-network tokens before call
-             let s1 = solSet ("uint256" <+> tv_before) $ getBalance tokArg
+             let s1 = solSet tv_before $ getBalance tokArg
              -- Get balances of non-network tokens after call
              tokRecv <- solPrimApply SUB [getBalance tokArg, tv_before]
              let s2 = solSet ((solMemVar dv <> ".elem1") <> ".elem" <> pretty i) tokRecv
@@ -834,31 +849,31 @@ solCom = \case
       unzip
         <$> mapM
           (\tok -> do
-             tv_before <- allocVar
+             tv_before <- allocMemVar at T_UInt
              tokArg <- solArg tok
              paid <- maybe (return "0") solArg $ M.lookup tok nonNetToksPayAmt
              sub <- solPrimApply SUB [getBalance tokArg, paid]
-             let s1 = solSet ("uint256" <+> tv_before) sub
+             let s1 = solSet tv_before sub
+             tv_after <- allocMemVar at T_UInt
              tokRecv <- solPrimApply SUB [getBalance tokArg, tv_before]
-             s2 <- solRequire "remote did not transfer unexpected non-network tokens" =<< solEq tokRecv "0"
-             return (s1, s2 <> semi))
+             let s2 = solSet tv_after tokRecv
+             s3 <- solRequire "remote did not transfer unexpected non-network tokens" =<< solEq tv_after "0"
+             return (s1, s2 <> s3 <> semi))
           nnTokRecvZero
     let call' = ".call{value:" <+> netTokPaid <> "}"
     let meBalance = "address(this).balance"
-    let billOffset :: Int -> Doc
-        billOffset i = viaShow $ if null nonNetTokRecv then i else i + 1
     addMemVar dv
     sub' <- solPrimApply SUB [meBalance, v_before]
     let sub'l = [solSet (solMemVar dv <> ".elem0") sub']
     -- Non-network tokens received from remote call
+    let billOffset :: Int -> Doc
+        billOffset i = viaShow $ if null nonNetTokRecv then i else i + 1
     let pv' =
           case rng_ty of
             T_Null -> []
-            _ -> do
-              [solSet (solMemVar dv <> ".elem" <> billOffset 1) de'] -- not always 2
-              where
-                de' = solApply "abi.decode" [v_return, parens rng_ty'_]
-    let e_data = solApply "abi.encodeWithSelector" eargs
+            _ -> [ solSet (solMemVar dv <> ".elem" <> billOffset 1) $ solApply "abi.decode" [v_return, parens rng_ty'_] ]
+    let e_data_e = solApply "abi.encodeWithSelector" eargs
+    e_data <- allocVar
     e_before <- solPrimApply SUB [meBalance, netTokPaid]
     err_msg <- solRequireMsg $ show (at, fs, ("remote " <> f <> " failed"))
     -- XXX we could assert that the balances of all our tokens is the same as
@@ -868,7 +883,8 @@ solCom = \case
         nonNetTokApprovals
           <> getDynamicNonNetTokBals
           <> getUnexpectedNonNetTokBals
-          <> [ solSet ("uint256" <+> v_before) e_before
+          <> [ solSet v_before e_before
+             , solSet ("bytes memory" <+> e_data) e_data_e
              , "(bool " <> v_succ <> ", bytes memory " <> v_return <> ")" <+> "=" <+> av' <> solApply call' [e_data] <> semi
              , solApply "checkFunReturn" [v_succ, v_return, err_msg] <> semi
              ]
@@ -917,9 +933,7 @@ solCom = \case
     tb' <- solArg tb
     bal <- case mtok of
       Nothing -> return "address(this).balance"
-      Just tok -> do
-        tok' <- solArg tok
-        return $ solApply "tokenBalanceOf" [tok', "address(this)"]
+      Just tok -> getBalance <$> solArg tok
     sub <- solPrimApply SUB [actBalV, tb']
     zero <- solArg $ DLA_Literal $ DLL_Int at 0
     cnd <- solPrimApply PLT [actBalV, tb']
@@ -1484,8 +1498,7 @@ solPLProg (PLProg _ plo dli _ _ _ (CPProg at (vs, vi) ai _ hs)) = do
           let vk_ = maybe k (\v' -> bunpack v' <> "_" <> k) v
           let vk = pretty $ vk_
           let (dom, rng) = itype2arr t
-          let mkarg domt = DLVar at Nothing domt <$> allocVarIdx
-          args <- mapM mkarg dom
+          args <- mapM (allocDLVar at) dom
           let mkargvm arg = (arg, solRawVar arg)
           extendVarMap $ M.fromList $ map mkargvm args
           let solType_p am ty = do
