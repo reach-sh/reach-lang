@@ -114,14 +114,14 @@ API('Voter', { vote: Fun([Address], UInt) })
 API({ vote: Fun([Address], UInt) })
 ```
 
+APIs are functions that can be called by other contracts, as well as off-chain.
+
 An API is defined with `{!rsh} API(apiName, apiInterface)` or `{!rsh} API(apiInterface)`, where `{!rsh} apiName` is a string that labels the API and `{!rsh} apiInterface` is an object where each field indicates the type of a function provided by the contract as an API.
 These APIs are available in frontends via the `{!js} ctc.apis` object, wherein fields are the members of `{!rsh} apiInterface` and may be used in `{!rsh} .api` components of `{!rsh} fork` and `{!rsh} parallelReduce` to specify the behavior of the corresponding call.
 These are called @{defn("API member function")}s.
 Each function must occur exactly once in the entire program.
 
 ### {#ref-programs-appinit-view} View Definition
-
-Views are read-only and can call contract-to-contract and API functions.
 
 :::note
 This section is about defining views during application initialization. Views are [set in consensus steps](##ref-programs-consensus-view), in your Reach program. But, they are [accessed by frontends](##ref-frontends-js-ctc) by using the Reach standard library of the frontend language, such as JavaScript.
@@ -133,6 +133,8 @@ View('NFT', { owner: Address })
 // or
 View({ owner: Address })
 ```
+
+Views are read-only functions that can be called by other contracts, as well as off-chain.
 
 A view is defined with `{!rsh} View(viewName, viewInterface)` or `{!rsh} View(viewInterface)`, where `{!rsh} viewName` is a string that labels the view and `{!rsh} viewInterface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp.
 These views are available in frontends via the `{!js} ctc.views` object.
