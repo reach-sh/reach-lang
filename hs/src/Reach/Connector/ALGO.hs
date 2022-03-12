@@ -2634,18 +2634,20 @@ compile_algo env disp pl = do
   unless (plo_untrustworthyMaps || null eMapKeysl) $ do
     warn' $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
   totalLenR <- newIORef (0 :: Integer)
-  let addProg lab showCost ls m = do
-        ts <- run m
-        let disp' = disp . (lab <>)
-        let notify b = if b then bad' else warn'
-        let ts' = optimize $ DL.toList ts
-        _ <- checkCost notify disp' showCost ts' ls
+  let addProg lab ts' = do
         t <- renderOut ts'
         tf <- disp (lab <> ".teal") t
         tbs <- compileTEAL tf
         modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
         let tc = LT.toStrict $ encodeBase64 tbs
         modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String tc
+  let runProg lab showCost ls m = do
+        ts <- run m
+        let disp' = disp . (lab <>)
+        let notify b = if b then bad' else warn'
+        let ts' = optimize $ DL.toList ts
+        _ <- checkCost notify disp' showCost ts' ls
+        addProg lab ts'
   let h2lr = \case
         (i, C_Handler {..}) -> Just $ LabelRec {..}
           where
@@ -2659,7 +2661,7 @@ compile_algo env disp pl = do
           lr_at = ai_at
           lr_what = "API " <> bunpack p
   let progLs = (mapMaybe h2lr $ M.toAscList hm) <> (map a2lr $ M.toAscList ai)
-  addProg "appApproval" (cte_REACH_DEBUG env) progLs $ do
+  runProg "appApproval" (cte_REACH_DEBUG env) progLs $ do
     useResource R_Txn
     cint 0
     gvStore GV_txnCounter
@@ -2761,9 +2763,7 @@ compile_algo env disp pl = do
       gvStore gv
     code "b" ["updateState"]
   -- Clear state is never allowed
-  addProg "appClear" False [] $ do
-    useResource R_Txn
-    return ()
+  addProg "appClear" []
   stateSize <- readIORef eStateSizeR
   void $ recordSizeAndKeys "state" stateSize algoMaxGlobalSchemaEntries_usable
   totalLen <- readIORef totalLenR
