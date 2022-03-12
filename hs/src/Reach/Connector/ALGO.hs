@@ -69,6 +69,7 @@ instance Show AlgoError where
     Err_PayNewToken ->
       "Token cannot be paid within the same consensus step it was shared with the contract on Algorand"
 
+type NotifyFm m = LT.Text -> m ()
 type NotifyF = LT.Text -> IO ()
 type Notify = Bool -> NotifyF
 
@@ -129,6 +130,20 @@ aarray = Aeson.Array . Vector.fromList
 
 aobject :: M.Map T.Text Aeson.Value -> Aeson.Value
 aobject = Aeson.Object . HM.fromList . M.toList
+
+mergeIORef :: IORef a -> (a -> a -> a) -> IORef a -> IO ()
+mergeIORef dst f src = do
+  srca <- readIORef src
+  modifyIORef dst $ f srca
+
+type ErrorSet = S.Set LT.Text
+type ErrorSetRef = IORef ErrorSet
+bad_io :: ErrorSetRef -> NotifyF
+bad_io x = modifyIORef x . S.insert
+newErrorSetRef :: IO (ErrorSetRef, NotifyF)
+newErrorSetRef = do
+  r <- newIORef mempty
+  return (r, bad_io r)
 
 -- Algorand constants
 
@@ -602,8 +617,8 @@ checkCost notify disp alwaysShow ts ls = do
 type Lets = M.Map DLVar (App ())
 
 data Env = Env
-  { eFailuresR :: IORef (S.Set LT.Text)
-  , eWarningsR :: IORef (S.Set LT.Text)
+  { eFailuresR :: ErrorSetRef
+  , eWarningsR :: ErrorSetRef
   , eCounter :: Counter
   , eStateSizeR :: IORef Integer
   , eMaps :: DLMapInfos
@@ -799,10 +814,7 @@ padding = cla . bytesZeroLit
 czaddr :: App ()
 czaddr = padding $ typeSizeOf T_Address
 
-bad_io :: IORef (S.Set LT.Text) -> NotifyF
-bad_io x = modifyIORef x . S.insert
-
-badlike :: (Env -> IORef (S.Set LT.Text)) -> LT.Text -> App ()
+badlike :: (Env -> ErrorSetRef) -> LT.Text -> App ()
 badlike eGet lab = do
   r <- asks eGet
   liftIO $ bad_io r lab
@@ -1413,7 +1425,7 @@ cMapStore _at = do
 divup :: Integer -> Integer -> Integer
 divup x y = ceiling $ (fromIntegral x :: Double) / (fromIntegral y)
 
-computeStateSizeAndKeys :: Monad m => (LT.Text -> m ()) -> LT.Text -> Integer -> Integer -> m (Integer, [Word8])
+computeStateSizeAndKeys :: Monad m => NotifyFm m -> LT.Text -> Integer -> Integer -> m (Integer, [Word8])
 computeStateSizeAndKeys badx prefix size limit = do
   let keys = size `divup` algoMaxAppBytesValueLen_usable
   when (keys > limit) $ do
@@ -2584,6 +2596,17 @@ analyzeViews (vs, vis) = vsit
 
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
+  -- This is the final result
+  resr <- newIORef mempty
+  totalLenR <- newIORef (0 :: Integer)
+  let addProg lab ts' = do
+        t <- renderOut ts'
+        tf <- disp (lab <> ".teal") t
+        tbs <- compileTEAL tf
+        modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
+        let tc = LT.toStrict $ encodeBase64 tbs
+        modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String tc
+  -- We start doing real work
   let PLProg _at plo dli _ _ _ cpp = pl
   let CPProg at vsi ai _ (CHandlers hm) = cpp
   let ai_sm = M.fromList $ map capi $ M.toAscList ai
@@ -2593,61 +2616,32 @@ compile_algo env disp pl = do
   let maxApiRetSize = maxTypeSize $ M.map cmethRetTy meth_sm
   let meth_im = M.mapKeys sigStrToInt meth_sm
   let eMaps = dli_maps dli
-  resr <- newIORef mempty
-  eFailuresR <- newIORef mempty
-  eWarningsR <- newIORef mempty
-  let bad' = bad_io eFailuresR
-  let warn' = bad_io eWarningsR
   let eMapDataTy = mapDataTy eMaps
   let eMapDataSize = typeSizeOf eMapDataTy
   let PLOpts {..} = plo
-  let eCounter = plo_counter
+  let eHP = fromIntegral $ fromEnum (maxBound :: GlobalVar)
+  let eSP = 255
+  let eVars = mempty
+  let eLets = mempty
+  let eLetSmalls = mempty
+  let eWhich = Nothing
+  (gFailuresR, gbad) <- newErrorSetRef
+  (gWarningsR, gwarn) <- newErrorSetRef
   let recordSize prefix size = do
         modifyIORef resr $
           M.insert (prefix <> "Size") $
             Aeson.Number $ fromIntegral size
-  let recordSizeAndKeys :: T.Text -> Integer -> Integer -> IO [Word8]
-      recordSizeAndKeys prefix size limit = do
-        (keys, keysl) <- computeStateSizeAndKeys bad' (LT.fromStrict prefix) size limit
+  let recordSizeAndKeys :: NotifyF -> T.Text -> Integer -> Integer -> IO [Word8]
+      recordSizeAndKeys badx prefix size limit = do
+        (keys, keysl) <- computeStateSizeAndKeys badx (LT.fromStrict prefix) size limit
         recordSize prefix size
         modifyIORef resr $
           M.insert (prefix <> "Keys") $
             Aeson.Number $ fromIntegral keys
         return $ keysl
-  eMapKeysl <- recordSizeAndKeys "mapData" eMapDataSize algoMaxLocalSchemaEntries_usable
-  eStateSizeR <- newIORef 0
-  let run :: App () -> IO TEALs
-      run m = do
-        eLabel <- newCounter 0
-        eOutputR <- newIORef mempty
-        let eHP = fromIntegral $ fromEnum (maxBound :: GlobalVar)
-        let eSP = 255
-        let eVars = mempty
-        let eLets = mempty
-        let eLetSmalls = mempty
-        let eWhich = Nothing
-        eNewToks <- newIORef mempty
-        eInitToks <- newIORef mempty
-        eResources <- newResources
-        flip runReaderT (Env {..}) m
-        readIORef eOutputR
+  eMapKeysl <- recordSizeAndKeys gbad "mapData" eMapDataSize algoMaxLocalSchemaEntries_usable
   unless (plo_untrustworthyMaps || null eMapKeysl) $ do
-    warn' $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
-  totalLenR <- newIORef (0 :: Integer)
-  let addProg lab ts' = do
-        t <- renderOut ts'
-        tf <- disp (lab <> ".teal") t
-        tbs <- compileTEAL tf
-        modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
-        let tc = LT.toStrict $ encodeBase64 tbs
-        modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String tc
-  let runProg lab showCost ls m = do
-        ts <- run m
-        let disp' = disp . (lab <>)
-        let notify b = if b then bad' else warn'
-        let ts' = optimize $ DL.toList ts
-        _ <- checkCost notify disp' showCost ts' ls
-        addProg lab ts'
+    gwarn $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
   let h2lr = \case
         (i, C_Handler {..}) -> Just $ LabelRec {..}
           where
@@ -2661,7 +2655,36 @@ compile_algo env disp pl = do
           lr_at = ai_at
           lr_what = "API " <> bunpack p
   let progLs = (mapMaybe h2lr $ M.toAscList hm) <> (map a2lr $ M.toAscList ai)
-  runProg "appApproval" (cte_REACH_DEBUG env) progLs $ do
+  let run :: App () -> IO (TEALs, Notify, IO ())
+      run m = do
+        eCounter <- dupeCounter plo_counter
+        eStateSizeR <- newIORef 0
+        eLabel <- newCounter 0
+        eOutputR <- newIORef mempty
+        eNewToks <- newIORef mempty
+        eInitToks <- newIORef mempty
+        eResources <- newResources
+        (eFailuresR, lbad) <- newErrorSetRef
+        (eWarningsR, lwarn) <- newErrorSetRef
+        let finalize = do
+              mergeIORef gFailuresR S.union eFailuresR
+              mergeIORef gWarningsR S.union eWarningsR
+        flip runReaderT (Env {..}) m
+        stateSize <- readIORef eStateSizeR
+        void $ recordSizeAndKeys lbad "state" stateSize algoMaxGlobalSchemaEntries_usable
+        ts <- readIORef eOutputR
+        let notify b = if b then lbad else lwarn
+        return (ts, notify, finalize)
+  let showCost = cte_REACH_DEBUG env
+  let runProg m = do
+        let lab = "appApproval"
+        (ts, notify, finalize) <- run m
+        let disp' = disp . (lab <>)
+        let ts' = optimize $ DL.toList ts
+        _ <- checkCost notify disp' showCost ts' progLs
+        finalize
+        addProg lab ts'
+  runProg $ do
     useResource R_Txn
     cint 0
     gvStore GV_txnCounter
@@ -2764,24 +2787,22 @@ compile_algo env disp pl = do
     code "b" ["updateState"]
   -- Clear state is never allowed
   addProg "appClear" []
-  stateSize <- readIORef eStateSizeR
-  void $ recordSizeAndKeys "state" stateSize algoMaxGlobalSchemaEntries_usable
   totalLen <- readIORef totalLenR
   unless (totalLen <= algoMaxAppProgramLen_really) $ do
-    bad' $ LT.pack $ "The program is too long; its length is " <> show totalLen <> ", but the maximum possible length is " <> show algoMaxAppProgramLen_really
+    gbad $ LT.pack $ "The program is too long; its length is " <> show totalLen <> ", but the maximum possible length is " <> show algoMaxAppProgramLen_really
   let extraPages :: Integer = ceiling ((fromIntegral totalLen :: Double) / fromIntegral algoMaxAppProgramLen) - 1
   modifyIORef resr $
     M.insert "extraPages" $
       Aeson.Number $ fromIntegral $ extraPages
-  sFailures <- readIORef eFailuresR
-  sWarnings <- readIORef eWarningsR
+  gFailures <- readIORef gFailuresR
+  gWarnings <- readIORef gWarningsR
   let wss w lab ss = do
         unless (null ss) $
           emitWarning Nothing $ w $ S.toList $ S.map LT.unpack ss
         modifyIORef resr $ M.insert lab $
           aarray $ S.toList $ S.map (Aeson.String . LT.toStrict) ss
-  wss W_ALGOConservative "warnings" sWarnings
-  wss W_ALGOUnsupported "unsupported" sFailures
+  wss W_ALGOConservative "warnings" gWarnings
+  wss W_ALGOUnsupported "unsupported" gFailures
   let apiEntry lab f = (lab, aarray $ map (Aeson.String . s2t) $ M.keys $ M.filter f meth_sm)
   modifyIORef resr $
     M.insert "ABI" $
