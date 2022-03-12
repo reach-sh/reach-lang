@@ -599,21 +599,17 @@ checkCost notify disp alwaysShow ts ls = do
       putStrLn $ "   + costs " <> show fees <> " " <> plural (fees /= 1) "fee" <> "."
   readIORef xtraR
 
-data Shared = Shared
-  { sFailuresR :: IORef (S.Set LT.Text)
-  , sWarningsR :: IORef (S.Set LT.Text)
-  , sCounter :: Counter
-  , sStateSizeR :: IORef Integer
-  , sMaps :: DLMapInfos
-  , sMapDataTy :: DLType
-  , sMapDataSize :: Integer
-  , sMapKeysl :: [Word8]
-  }
-
 type Lets = M.Map DLVar (App ())
 
 data Env = Env
-  { eShared :: Shared
+  { eFailuresR :: IORef (S.Set LT.Text)
+  , eWarningsR :: IORef (S.Set LT.Text)
+  , eCounter :: Counter
+  , eStateSizeR :: IORef Integer
+  , eMaps :: DLMapInfos
+  , eMapDataTy :: DLType
+  , eMapDataSize :: Integer
+  , eMapKeysl :: [Word8]
   , eWhich :: Maybe Int
   , eLabel :: Counter
   , eOutputR :: IORef TEALs
@@ -806,18 +802,18 @@ czaddr = padding $ typeSizeOf T_Address
 bad_io :: IORef (S.Set LT.Text) -> NotifyF
 bad_io x = modifyIORef x . S.insert
 
-badlike :: (Shared -> IORef (S.Set LT.Text)) -> LT.Text -> App ()
-badlike sGet lab = do
-  Env {..} <- ask
-  liftIO $ bad_io (sGet eShared) lab
+badlike :: (Env -> IORef (S.Set LT.Text)) -> LT.Text -> App ()
+badlike eGet lab = do
+  r <- asks eGet
+  liftIO $ bad_io r lab
 
 bad :: LT.Text -> App ()
 bad lab = do
-  badlike sFailuresR lab
+  badlike eFailuresR lab
   mapM_ comment $ LT.lines $ "BAD " <> lab
 
 warn :: LT.Text -> App ()
-warn = badlike sWarningsR
+warn = badlike eWarningsR
 
 freshLabel :: String -> App LT.Text
 freshLabel d = do
@@ -1335,7 +1331,7 @@ cTupleSet at tt idx = do
 
 cMapLoad :: App ()
 cMapLoad = do
-  Shared {..} <- eShared <$> ask
+  Env {..} <- ask
   labK <- freshLabel "mapLoadK"
   labReal <- freshLabel "mapLoadDo"
   labDef <- freshLabel "mapLoadDef"
@@ -1345,7 +1341,7 @@ cMapLoad = do
   code "bnz" [labReal]
   label labDef
   op "pop"
-  padding sMapDataSize
+  padding eMapDataSize
   code "b" [labK]
   label labReal
   let getOne mi = do
@@ -1355,13 +1351,13 @@ cMapLoad = do
         op "app_local_get"
         -- [ MapData ]
         return ()
-  case sMapKeysl of
+  case eMapKeysl of
     -- Special case one key:
     [0] -> getOne 0
     _ -> do
       -- [ Address ]
       -- [ Address, MapData_0? ]
-      forM_ (zip sMapKeysl $ False : repeat True) $ \(mi, doConcat) -> do
+      forM_ (zip eMapKeysl $ False : repeat True) $ \(mi, doConcat) -> do
         -- [ Address, MapData_N? ]
         case doConcat of
           True -> code "dig" ["1"]
@@ -1383,9 +1379,9 @@ cMapLoad = do
 
 cMapStore :: SrcLoc -> App ()
 cMapStore _at = do
-  Shared {..} <- eShared <$> ask
+  Env {..} <- ask
   -- [ Address, MapData' ]
-  case sMapKeysl of
+  case eMapKeysl of
     -- Special case one key:
     [0] -> do
       -- [ Address, MapData' ]
@@ -1395,7 +1391,7 @@ cMapStore _at = do
       -- [ Address, Key, Value ]
       op "app_local_put"
     _ -> do
-      forM_ sMapKeysl $ \mi -> do
+      forM_ eMapKeysl $ \mi -> do
         -- [ Address, MapData' ]
         code "dig" ["1"]
         -- [ Address, MapData', Address ]
@@ -1403,7 +1399,7 @@ cMapStore _at = do
         -- [ Address, MapData', Address, Key ]
         code "dig" ["2"]
         -- [ Address, MapData', Address, Key, MapData' ]
-        cStateSlice sMapDataSize mi
+        cStateSlice eMapDataSize mi
         -- [ Address, MapData', Address, Key, Value ]
         op "app_local_put"
         -- [ Address, MapData' ]
@@ -1452,7 +1448,7 @@ cSvsSave _at svs = do
   cla la
   ctobs lat
   (_, keysl) <- computeStateSizeAndKeys bad "svs" size algoMaxGlobalSchemaEntries_usable
-  ssr <- asks $ sStateSizeR . eShared
+  ssr <- asks eStateSizeR
   liftIO $ modifyIORef ssr $ max size
   -- [ SvsData ]
   forM_ keysl $ \vi -> do
@@ -1587,10 +1583,10 @@ ce = \case
     cTupleRef sb mdt $ fromIntegral i
   DLE_MapSet at mpv@(DLMVar i) fa mva -> do
     incResource R_Account fa
-    Shared {..} <- eShared <$> ask
+    Env {..} <- ask
     mdt <- getMapDataTy
     mt <- getMapTy mpv
-    case (length sMapKeysl) == 1 && (M.size sMaps) == 1 of
+    case (length eMapKeysl) == 1 && (M.size eMaps) == 1 of
       -- Special case one key and one map
       True -> do
         ca fa
@@ -2265,7 +2261,7 @@ bindSecs dv = store_let dv True (code "global" ["LatestTimestamp"])
 
 allocDLVar :: SrcLoc -> DLType -> App DLVar
 allocDLVar at t =
-  DLVar at Nothing t <$> ((liftIO . incCounter) =<< ((sCounter . eShared) <$> ask))
+  DLVar at Nothing t <$> ((liftIO . incCounter) =<< (eCounter <$> ask))
 
 bindFromGV :: GlobalVar -> App () -> SrcLoc -> [DLVarLet] -> App a -> App a
 bindFromGV gv ensure at vls m = do
@@ -2408,7 +2404,7 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
 
 getMapTy :: DLMVar -> App DLType
 getMapTy mpv = do
-  ms <- ((sMaps . eShared) <$> ask)
+  ms <- asks eMaps
   return $
     case M.lookup mpv ms of
       Nothing -> impossible "getMapTy"
@@ -2418,7 +2414,7 @@ mapDataTy :: DLMapInfos -> DLType
 mapDataTy m = T_Tuple $ map (dlmi_tym . snd) $ M.toAscList m
 
 getMapDataTy :: App DLType
-getMapDataTy = (sMapDataTy . eShared) <$> ask
+getMapDataTy = asks eMapDataTy
 
 type Disp = String -> T.Text -> IO String
 
@@ -2596,16 +2592,16 @@ compile_algo env disp pl = do
   let meth_sm = M.union ai_sm vsi_sm
   let maxApiRetSize = maxTypeSize $ M.map cmethRetTy meth_sm
   let meth_im = M.mapKeys sigStrToInt meth_sm
-  let sMaps = dli_maps dli
+  let eMaps = dli_maps dli
   resr <- newIORef mempty
-  sFailuresR <- newIORef mempty
-  sWarningsR <- newIORef mempty
-  let bad' = bad_io sFailuresR
-  let warn' = bad_io sWarningsR
-  let sMapDataTy = mapDataTy sMaps
-  let sMapDataSize = typeSizeOf sMapDataTy
+  eFailuresR <- newIORef mempty
+  eWarningsR <- newIORef mempty
+  let bad' = bad_io eFailuresR
+  let warn' = bad_io eWarningsR
+  let eMapDataTy = mapDataTy eMaps
+  let eMapDataSize = typeSizeOf eMapDataTy
   let PLOpts {..} = plo
-  let sCounter = plo_counter
+  let eCounter = plo_counter
   let recordSize prefix size = do
         modifyIORef resr $
           M.insert (prefix <> "Size") $
@@ -2618,9 +2614,8 @@ compile_algo env disp pl = do
           M.insert (prefix <> "Keys") $
             Aeson.Number $ fromIntegral keys
         return $ keysl
-  sMapKeysl <- recordSizeAndKeys "mapData" sMapDataSize algoMaxLocalSchemaEntries_usable
-  sStateSizeR <- newIORef 0
-  let eShared = Shared {..}
+  eMapKeysl <- recordSizeAndKeys "mapData" eMapDataSize algoMaxLocalSchemaEntries_usable
+  eStateSizeR <- newIORef 0
   let run :: App () -> IO TEALs
       run m = do
         eLabel <- newCounter 0
@@ -2636,7 +2631,7 @@ compile_algo env disp pl = do
         eResources <- newResources
         flip runReaderT (Env {..}) m
         readIORef eOutputR
-  unless (plo_untrustworthyMaps || null sMapKeysl) $ do
+  unless (plo_untrustworthyMaps || null eMapKeysl) $ do
     warn' $ "This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system."
   totalLenR <- newIORef (0 :: Integer)
   let addProg lab showCost ls m = do
@@ -2678,14 +2673,14 @@ compile_algo env disp pl = do
       when shouldDup $ op "dup"
       cTupleRef at keyState_ty i
       gvStore gv
-    unless (null sMapKeysl) $ do
+    unless (null eMapKeysl) $ do
       -- NOTE We could allow an OptIn if we are not going to halt
       code "txn" ["OnCompletion"]
       output $ TConst "OptIn"
       op "=="
       code "bz" ["normal"]
       code "txn" ["Sender"]
-      padding sMapDataSize
+      padding eMapDataSize
       cMapStore at
       code "b" ["checkSize"]
       -- The NON-OptIn case:
@@ -2769,7 +2764,7 @@ compile_algo env disp pl = do
   addProg "appClear" False [] $ do
     useResource R_Txn
     return ()
-  stateSize <- readIORef sStateSizeR
+  stateSize <- readIORef eStateSizeR
   void $ recordSizeAndKeys "state" stateSize algoMaxGlobalSchemaEntries_usable
   totalLen <- readIORef totalLenR
   unless (totalLen <= algoMaxAppProgramLen_really) $ do
@@ -2778,8 +2773,8 @@ compile_algo env disp pl = do
   modifyIORef resr $
     M.insert "extraPages" $
       Aeson.Number $ fromIntegral $ extraPages
-  sFailures <- readIORef sFailuresR
-  sWarnings <- readIORef sWarningsR
+  sFailures <- readIORef eFailuresR
+  sWarnings <- readIORef eWarningsR
   let wss w lab ss = do
         unless (null ss) $
           emitWarning Nothing $ w $ S.toList $ S.map LT.unpack ss
