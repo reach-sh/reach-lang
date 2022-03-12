@@ -36,6 +36,8 @@ import {
 import { env } from "process";
 env.REACH_IDE = "1";
 
+import { exec, ExecException } from "child_process";
+
 // Do this import from vscode-languageserver/node instead of
 // vscode-languageserver to avoid
 // "Expected 2-3 arguments, but got 1.ts(2554)
@@ -85,8 +87,6 @@ const DID_YOU_MEAN_PREFIX = 'Did you mean: ';
 
 let reachTempIndexFile: string;
 const REACH_TEMP_FILE_NAME = "index.rsh";
-
-const { exec } = require("child_process");
 
 const { indexOfRegex, lastIndexOfRegex } = require('index-of-regex')
 
@@ -263,30 +263,59 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 			connection.console.log("Reach shell script exists");
 		} else {
 			connection.console.log("Reach shell script not found, downloading now...");
-			await exec("curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach", (error: { message: any; }, stdout: any, stderr: any) => {
-				if (error) {
-					connection.console.error(`Reach download error: ${error.message}`);
-					return;
+			exec(
+				"curl https://raw.githubusercontent.com/" +
+				"reach-sh/reach-lang/master/reach " +
+				"-o reach ; chmod +x reach", (
+					error: ExecException | null,
+					stdout: string,
+					stderr: string
+				) => {
+					if (error) {
+						connection.console.error(
+							`Reach download error: ${
+								error.message
+							}`
+						);
+						return;
+					}
+					if (stderr) {
+						connection.console.error(
+							`Reach download stderr: ${stderr}`
+						);
+						return;
+					}
+					connection.console.log(
+						`Reach download stdout: ${stdout}`
+					);
 				}
-				if (stderr) {
-					connection.console.error(`Reach download stderr: ${stderr}`);
-					return;
-				}
-				connection.console.log(`Reach download stdout: ${stdout}`);
-			});
+			);
 		}
 	} catch (err) {
 		connection.console.log("Failed to check if Reach shell scripts exists, downloading anyways...");
-		await exec("curl https://raw.githubusercontent.com/reach-sh/reach-lang/master/reach -o reach ; chmod +x reach", (error: { message: any; }, stdout: any, stderr: any) => {
+		exec(
+			"curl https://raw.githubusercontent.com/" +
+			"reach-sh/reach-lang/master/reach " +
+			"-o reach ; chmod +x reach", (
+				error: ExecException | null,
+				stdout: string,
+				stderr: string
+			) => {
 			if (error) {
-				connection.console.error(`Reach download error: ${error.message}`);
+				connection.console.error(
+					`Reach download error: ${error.message}`
+				);
 				return;
 			}
 			if (stderr) {
-				connection.console.error(`Reach download stderr: ${stderr}`);
+				connection.console.error(
+					`Reach download stderr: ${stderr}`
+				);
 				return;
 			}
-			connection.console.log(`Reach download stdout: ${stdout}`);
+			connection.console.log(`Reach download stdout: ${
+				stdout
+			}`);
 		});
 	}
 
@@ -320,55 +349,67 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		"Starting compilation at",
 		new Date().toLocaleTimeString()
 	);
-	await exec("cd " + tempFolder + " && " + reachPath + " compile " + REACH_TEMP_FILE_NAME + " --error-format-json --stop-after-eval", (error: { message: any; }, stdout: any, stderr: any) => {
-		// This callback function should execute exactly
-		// when this compilation command has finished.
-		// "child_process.exec(): spawns a shell...
-		// passing the stdout and stderr to a callback
-		// function when complete". See
-		// https://nodejs.org/api/child_process.html#child-process
-		console.debug(
-			"Compilation should now have finished.",
-			new Date().toLocaleTimeString()
-		);
-		theCompilerIsCompiling = false;
-		if (weNeedToCompileAgain) {
-			weNeedToCompileAgain = false;
-			validateTextDocument(textDocument);
-			return;
-		}
+	exec(
+		"cd " + tempFolder + " && " + reachPath +
+		" compile " + REACH_TEMP_FILE_NAME +
+		" --error-format-json --stop-after-eval", (
+			error: ExecException | null,
+			stdout: string,
+			stderr: string
+		) => {
+			// This callback function should execute exactly
+			// when this compilation command has finished.
+			// "child_process.exec(): spawns a shell...
+			// passing the stdout and stderr to a callback
+			// function when complete". See
+			// https://nodejs.org/api/child_process.html
+			console.debug(
+				"Compilation should now have finished.",
+				new Date().toLocaleTimeString()
+			);
+			theCompilerIsCompiling = false;
+			if (weNeedToCompileAgain) {
+				weNeedToCompileAgain = false;
+				validateTextDocument(textDocument);
+				return;
+			}
 
-		if (error) {
-			connection.console.log(`Found compile error: ${error.message}`);
-			const errorLocations: ErrorLocation[] = findErrorLocations(error.message);
-			let problems = 0;
-			errorLocations.forEach(err => {
-				connection.console.log(`Displaying error message: ` + err.errorMessage);
-				let maxProblems = settings?.maxNumberOfProblems || DEFAULT_MAX_PROBLEMS;
-				if (problems < maxProblems) {
-					problems++;
-					addDiagnostic(
-						err,
-						`${err.errorMessage}`,
-						'Reach compilation encountered an error.',
-						DiagnosticSeverity.Error,
-						err.code,
-						err.suggestions,
-						DIAGNOSTIC_SOURCE
+			if (error) {
+				connection.console.log(
+					`Found compile error: ${error.message}`
+				);
+				const errorLocations: ErrorLocation[]
+					= findErrorLocations(error.message);
+				let problems = 0;
+				errorLocations.forEach(err => {
+					connection.console.log(
+						`Displaying error message: ` +
+						err.errorMessage
 					);
-				}
-			});
+					let maxProblems =
+						settings?.maxNumberOfProblems ||
+						DEFAULT_MAX_PROBLEMS;
+					if (problems < maxProblems) {
+						problems++;
+						addDiagnostic(
+							err,
+							`${err.errorMessage}`,
+							'Reach compilation encountered an error.',
+							DiagnosticSeverity.Error,
+							err.code,
+							err.suggestions,
+							DIAGNOSTIC_SOURCE
+						);
+					}
+				});
 
-			return;
+				return;
+			}
+			connection.console.log(`Reach compiler output: ${
+				stdout
+			}`);
 		}
-		/** This doesn't seem to show anything useful at the moment
-		if (stderr) {
-			connection.console.error(`Reach compiler: ${stderr}`);
-			return;
-		}
-		*/
-		connection.console.log(`Reach compiler output: ${stdout}`);
-	});
+	);
 
 	// Send the computed diagnostics to VSCode (before the above promise finishes, just to clear stuff).
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
