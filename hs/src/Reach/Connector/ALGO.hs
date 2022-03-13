@@ -642,6 +642,14 @@ checkCost notify disp ls ci ts = do
     let sums = foldr (+) 0 . M.elems . M.restrictKeys costM . S.fromList
     let refs = sums [R_App, R_Asset, R_Account]
     void $ reportCost True False (flip plural "transaction reference") algoMaxAppTotalTxnReferences refs
+    -- The way I do the cost calculation right now is wrong, because I sum the
+    -- entire path and then see if it is less than the 700. But, what I
+    -- actually need to do is ensure that at no point on the path does the
+    -- budget ever get spent.
+    --
+    -- I currently calculate from the bottom, but I should instead calculate
+    -- from the top and the return the value where the different between the
+    -- cost and the budget is the highest
     do
       let rs = R_Cost
       let pe = rPrecise rs
@@ -651,6 +659,7 @@ checkCost notify disp ls ci ts = do
       let c = sums [R_Cost]
       let crds = sums [R_CostCredits]
       let c' = c + algoMaxAppProgramCost * crds
+      putStrLn $ show (c, crds, c')
       void $ reportCost True pe ler am' c'
     let fees = sums [R_Txn, R_ITxn]
     addMsg $ "   + costs " <> show fees <> " " <> plural (fees /= 1) "fee" <> "."
@@ -2233,6 +2242,8 @@ ct = \case
           cRound
           gvStore GV_currentTime
           return False
+    when isHalt $
+      callCompanion at $ CompanionDeletePre
     code "b" ["updateState" <> if isHalt then "Halt" else "NoOp"]
   where
     nct = dupeResources . ct
@@ -2410,12 +2421,13 @@ data CompanionCall
   = CompanionCreate
   | CompanionLabel Label
   | CompanionDelete
+  | CompanionDeletePre
 callCompanion :: SrcLoc -> CompanionCall -> App ()
 callCompanion at cc = do
   mcr <- asks eCompanion
   CompanionRec {..} <- asks eCompanionRec
   let credit = output . TCostCredit
-  let startCall ctor = do
+  let startCall ctor del = do
         itxnNextOrBegin False
         output $ TConst "appl"
         makeTxn1 "TypeEnum"
@@ -2424,7 +2436,8 @@ callCompanion at cc = do
             cint_ at 0
           False -> do
             ca cr_ro
-            incResource R_App cr_ro
+            unless del $
+              incResource R_App cr_ro
         makeTxn1 "ApplicationID"
   case cc of
     CompanionCreate -> do
@@ -2434,7 +2447,7 @@ callCompanion at cc = do
           mpay 1
         Just _ -> do
           mpay 2
-          startCall True
+          startCall True False
           cbs cr_approval
           makeTxn1 "ApprovalProgram"
           op "itxn_submit"
@@ -2448,18 +2461,21 @@ callCompanion at cc = do
         let howManyCalls = fromMaybe 0 $ M.lookup l cim
         -- XXX bunch into groups of 16, slightly less cost
         cfor howManyCalls $ const $ do
-          startCall False
+          startCall False False
           op "itxn_submit"
           credit cr_call
         return ()
     CompanionDelete ->
       whenJust mcr $ \_ -> do
-        startCall False
+        startCall False True
         output $ TConst $ "DeleteApplication"
         makeTxn1 "OnCompletion"
         op "itxn_submit"
         credit cr_del
         return ()
+    CompanionDeletePre ->
+      whenJust mcr $ \_ -> do
+        incResource R_App cr_ro
 
 ch :: Int -> CHandler -> App ()
 ch _ (C_Loop {}) = return ()
