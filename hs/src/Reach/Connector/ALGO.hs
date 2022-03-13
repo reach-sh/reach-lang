@@ -198,6 +198,10 @@ algoMaxAppTxnAccounts = 4
 
 algoMaxAppTxnForeignAssets :: Integer
 algoMaxAppTxnForeignAssets = 8
+algoMaxAppTxnForeignApps :: Integer
+algoMaxAppTxnForeignApps = 8
+algoMaxAppTotalTxnReferences :: Integer
+algoMaxAppTotalTxnReferences = 8
 
 algoMaxAppProgramCost :: Integer
 algoMaxAppProgramCost = 700
@@ -307,6 +311,7 @@ data TEAL
   | TStore ScratchSlot LT.Text
   | TLoad ScratchSlot LT.Text
   | TResource Resource
+  | TCostCredit Integer
 
 type TEALt = [LT.Text]
 
@@ -345,6 +350,7 @@ render ilvlr = \case
   TStore sl lab -> r ["store", texty sl, ("// " <> lab)]
   TLoad sl lab -> r ["load", texty sl, ("// " <> lab)]
   TResource rs -> r [("// resource: " <> texty rs)]
+  TCostCredit i -> r [("// cost credit: " <> texty i)]
   where
     r l = do
       i <- readIORef ilvlr
@@ -523,6 +529,10 @@ buildCFG ts = do
     TSubstring {} -> recCost 1
     Titob {} -> recCost 1
     TResource r -> recResource r 1
+    TCostCredit i -> do
+      recCost (-1 * algoMaxAppProgramCost)
+      recCost i
+      recResource R_CostCredits 1
     TCode f _ ->
       case f of
         "sha256" -> recCost 35
@@ -580,50 +590,80 @@ data CompanionAdds
   = CA_AddCompanion
   | CA_IncrementCalls Label
   deriving (Eq, Ord)
+data CompanionRec = CompanionRec
+  { cr_ro :: DLArg
+  , cr_approval :: B.ByteString
+  , cr_ctor :: Integer
+  , cr_call :: Integer
+  , cr_del :: Integer
+  }
 
-checkCost :: Notify -> Disp -> Bool -> [LabelRec] -> CompanionInfo -> [TEAL] -> IO (Bool, CompanionInfo)
-checkCost notify disp alwaysShow ls ci ts = do
+checkCost :: Notify -> Disp -> [LabelRec] -> CompanionInfo -> [TEAL] -> IO (M.Map Label Integer, Either String CompanionInfo)
+checkCost notify disp ls ci ts = do
+  msgR <- newIORef mempty
+  let addMsg x = modifyIORef msgR $ flip (<>) $ x <> "\n"
   caR <- newIORef (mempty :: S.Set CompanionAdds)
   let rgs lab gs = void $ disp ("." <> lab <> "dot") $ LT.toStrict $ T.render $ dotty gs
   (gs, restrictCFG) <- buildCFG ts
   rgs "" gs
-  when alwaysShow $ do
-    putStrLn $ "Conservative analysis on Algorand found:"
-  forM_ ls $ \LabelRec {..} -> do
+  addMsg $ "Conservative analysis on Algorand found:"
+  cml <- forM ls $ \LabelRec {..} -> do
     let starts_at = " starts at " <> show lr_at <> "."
-    when alwaysShow $ do
-      putStrLn $ " * " <> lr_what <> ", which" <> starts_at
+    addMsg $ " * " <> lr_what <> ", which" <> starts_at
     (gs', analyzeCFG) <- restrictCFG lr_lab
-    when False $
+    when True $
       rgs (LT.unpack lr_lab <> ".") gs'
-    feesR <- newIORef 0
-    forM_ allResources $ \rs -> do
-      let algoMax = maxOf rs
+    let reportCost loud precise ler algoMax c = do
+          let units = ler $ c /= 1
+          let pre = "uses " <> show c <> " " <> units
+          let tooMuch = c > algoMax
+          let post = if tooMuch then ", but the limit is " <> show algoMax else ""
+          let msg = pre <> post <> "."
+          when loud $ do
+            when tooMuch $ do
+              notify precise $ LT.pack $ lr_what <> " " <> msg <> " " <> lr_what <> starts_at
+            addMsg $ "   + " <> msg
+          return tooMuch
+    costM <- flip mapWithKeyM allResourcesM $ \rs _ -> do
+      let am = maxOf rs
       (_p, c) <- analyzeCFG rs
-      let tooMuch = c > algoMax
-      when (rs == R_Cost && tooMuch) $ do
-        modifyIORef caR $ S.insert $
-          case ci of
-            Nothing -> CA_AddCompanion
-            Just _ -> CA_IncrementCalls lr_lab
-      when (rHasFee rs) $ do
-        modifyIORef feesR $ (+) c
-      let units = rLabel (c /= 1) rs
-      let pre = "uses " <> show c <> " " <> units
-      let post = if tooMuch then ", but the limit is " <> show algoMax else ""
-      let msg = pre <> post <> "."
-      when tooMuch $ do
-        notify (rPrecise rs) $ LT.pack $ lr_what <> " " <> msg <> " " <> lr_what <> starts_at
-      when alwaysShow $ do
-        putStrLn $ "   + " <> msg
-    when alwaysShow $ do
-      fees <- readIORef feesR
-      putStrLn $ "   + costs " <> show fees <> " " <> plural (fees /= 1) "fee" <> "."
-  (S.toList <$> readIORef caR) >>= \case
+      let pe = rPrecise rs
+      let ler = flip rLabel rs
+      case rs of
+        R_Cost -> do
+          tooMuch <- reportCost False pe ler am c
+          when tooMuch $ do
+            modifyIORef caR $ S.insert $
+              case ci of
+                Nothing -> CA_AddCompanion
+                Just _ -> CA_IncrementCalls lr_lab
+        _ -> void $ reportCost True pe ler am c
+      return c
+    let sums = foldr (+) 0 . M.elems . M.restrictKeys costM . S.fromList
+    let refs = sums [R_App, R_Asset, R_Account]
+    void $ reportCost True False (flip plural "transaction reference") algoMaxAppTotalTxnReferences refs
+    do
+      let rs = R_Cost
+      let pe = rPrecise rs
+      let ler = flip rLabel rs
+      let am = maxOf rs
+      let am' = am * maxOf R_CostCredits
+      let c = sums [R_Cost]
+      let crds = sums [R_CostCredits]
+      let c' = c + algoMaxAppProgramCost * crds
+      void $ reportCost True pe ler am' c'
+    let fees = sums [R_Txn, R_ITxn]
+    addMsg $ "   + costs " <> show fees <> " " <> plural (fees /= 1) "fee" <> "."
+    return $ M.singleton lr_lab (sums [R_Cost])
+  let labcm = M.unions cml
+  msg <- readIORef msgR
+  cas <- S.toList <$> readIORef caR
+  --let cr = Left msg
+  cr <- case cas of
     [] ->
-      return (True, ci)
+      return $ Left msg
     [ CA_AddCompanion ] ->
-      return (False, Just mempty)
+      return $ Right $ Just mempty
     as ->
       case ci of
         Nothing -> impossible "inc nothing"
@@ -632,7 +672,8 @@ checkCost notify disp alwaysShow ls ci ts = do
                 CA_AddCompanion -> impossible "add just"
                 CA_IncrementCalls lab -> M.insertWith (+) lab 1
           let cim' = foldr f cim as
-          return (False, Just cim')
+          return $ Right $ Just cim'
+  return $ (,) labcm cr
 
 type Lets = M.Map DLVar (App ())
 
@@ -657,6 +698,7 @@ data Env = Env
   , eNewToks :: IORef (S.Set DLArg)
   , eInitToks :: IORef (S.Set DLArg)
   , eCompanion :: CompanionInfo
+  , eCompanionRec :: CompanionRec
   }
 
 type App = ReaderT Env IO
@@ -669,9 +711,11 @@ recordWhich n = local (\e -> e {eWhich = Just n}) . separateResources
 
 data Resource
   = R_Asset
+  | R_App
   | R_Account
   | R_Log
   | R_Cost
+  | R_CostCredits
   | R_ITxn
   | R_Txn
   deriving (Eq, Ord, Enum, Bounded, Show)
@@ -697,37 +741,34 @@ rLabel ph = \case
   R_Txn -> p "transaction"
   R_ITxn -> "inner " <> p "transaction"
   R_Asset -> p "asset"
+  R_App -> p "app"
   R_Account -> p "account"
   R_Cost -> p "unit" <> " of cost"
+  R_CostCredits -> "cost " <> p "credit"
   R_Log -> p "byte" <> " of logs"
   where
     p = plural ph
-
-rHasFee :: Resource -> Bool
-rHasFee = \case
-  R_Txn -> True
-  R_ITxn -> True
-  R_Asset -> False
-  R_Account -> False
-  R_Cost -> False
-  R_Log -> False
 
 rPrecise :: Resource -> Bool
 rPrecise = \case
   R_Txn -> True
   R_ITxn -> True
+  R_App -> False
   R_Asset -> False
   R_Account -> False
   R_Cost -> True
+  R_CostCredits -> True
   R_Log -> True
 
 maxOf :: Resource -> Integer
 maxOf = \case
+  R_App -> algoMaxAppTxnForeignApps
   R_Asset -> algoMaxAppTxnForeignAssets
   R_Account -> algoMaxAppTxnAccounts
   R_Txn -> algoMaxTxGroupSize
   R_ITxn -> algoMaxInnerTransactions * algoMaxTxGroupSize
   R_Cost -> algoMaxAppProgramCost
+  R_CostCredits -> maxOf R_ITxn
   R_Log -> algoMaxLogLen
 
 newResources :: IO ResourceSets
@@ -1655,6 +1696,8 @@ ce = \case
         op "concat"
         op "sha512_256"
         storeAddr
+        -- XXX remove this when JJ changes stuff for us
+        incResource R_Account ro
         let mtoksBill = Nothing : map Just nnRecv
         let mtoksiAll = zip [0..] mtoksBill
         let (mtoksiBill, mtoksiZero) = splitAt (length mtoksBill) mtoksiAll
@@ -1690,8 +1733,7 @@ ce = \case
         output $ TConst "appl"
         makeTxn1 "TypeEnum"
         ca ro
-        -- XXX remove this when JJ changes stuff for us
-        incResource R_Account ro
+        incResource R_App ro
         makeTxn1 "ApplicationID"
         let as' = (DLA_Literal $ DLL_Int at $ fromIntegral $ sigStrToInt sig) : as
         forM_ as' $ \a -> do
@@ -1780,8 +1822,8 @@ ce = \case
         let name = maybe en (\l -> bunpack l <> "_" <> en) ml
         clogEvent name vs
         --cl DLL_Null -- Event log values are never used
-  DLE_setApiDetails _at p _ _ _ -> do
-    label $ apiLabel p
+  DLE_setApiDetails at p _ _ _ -> do
+    callCompanion at $ CompanionLabel $ apiLabel p
   DLE_GetUntrackedFunds at mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
     cGetBalance at mtok
@@ -2191,16 +2233,13 @@ ct = \case
           cRound
           gvStore GV_currentTime
           return False
-    code "txn" ["OnCompletion"]
-    output $ TConst $ if isHalt then "DeleteApplication" else "NoOp"
-    asserteq
-    code "b" ["updateState"]
+    code "b" ["updateState" <> if isHalt then "Halt" else "NoOp"]
   where
     nct = dupeResources . ct
 
 -- Reach Constants
 reachAlgoBackendVersion :: Int
-reachAlgoBackendVersion = 9
+reachAlgoBackendVersion = 10
 
 -- State:
 keyState :: B.ByteString
@@ -2243,6 +2282,7 @@ data GlobalVar
   | GV_argMsg
   | GV_wasMeth
   | GV_apiRet
+  | GV_companion
   deriving (Eq, Ord, Show, Enum, Bounded)
 
 gvSlot :: GlobalVar -> ScratchSlot
@@ -2262,17 +2302,12 @@ gvType = \case
   GV_txnCounter -> T_UInt
   GV_currentStep -> T_UInt
   GV_currentTime -> T_UInt
+  GV_companion -> T_Contract
   GV_svs -> T_Null
   GV_argTime -> T_UInt
   GV_argMsg -> T_Null
   GV_wasMeth -> T_Bool
   GV_apiRet -> T_Null
-
-keyState_gvs :: [GlobalVar]
-keyState_gvs = [GV_currentStep, GV_currentTime]
-
-keyState_ty :: DLType
-keyState_ty = T_Tuple $ map gvType keyState_gvs
 
 defn_fixed :: Label -> Bool -> App ()
 defn_fixed l b = do
@@ -2292,9 +2327,14 @@ bindTime dv = store_let dv True cRound
 bindSecs :: DLVar -> App a -> App a
 bindSecs dv = store_let dv True (code "global" ["LatestTimestamp"])
 
+allocDLVar_ :: Counter -> SrcLoc -> DLType -> IO DLVar
+allocDLVar_ c at t =
+  DLVar at Nothing t <$> incCounter c
+
 allocDLVar :: SrcLoc -> DLType -> App DLVar
-allocDLVar at t =
-  DLVar at Nothing t <$> ((liftIO . incCounter) =<< (eCounter <$> ask))
+allocDLVar at t = do
+  c <- eCounter <$> ask
+  liftIO $ allocDLVar_ c at t
 
 bindFromGV :: GlobalVar -> App () -> SrcLoc -> [DLVarLet] -> App a -> App a
 bindFromGV gv ensure at vls m = do
@@ -2366,6 +2406,61 @@ bindFromSvs_ at svs m = do
   let ensure = cSvsLoad $ typeSizeOf $ T_Tuple $ map varLetType svs
   bindFromGV GV_svs ensure at svs m
 
+data CompanionCall
+  = CompanionCreate
+  | CompanionLabel Label
+  | CompanionDelete
+callCompanion :: SrcLoc -> CompanionCall -> App ()
+callCompanion at cc = do
+  mcr <- asks eCompanion
+  CompanionRec {..} <- asks eCompanionRec
+  let credit = output . TCostCredit
+  let startCall ctor = do
+        itxnNextOrBegin False
+        output $ TConst "appl"
+        makeTxn1 "TypeEnum"
+        case ctor of
+          True -> do
+            cint_ at 0
+          False -> do
+            ca cr_ro
+            incResource R_App cr_ro
+        makeTxn1 "ApplicationID"
+  case cc of
+    CompanionCreate -> do
+      let mpay pc = ce $ DLE_CheckPay at [] (DLA_Literal $ DLL_Int at $ pc * algoMinimumBalance) Nothing
+      case mcr of
+        Nothing -> do
+          mpay 1
+        Just _ -> do
+          mpay 2
+          startCall True
+          cbs cr_approval
+          makeTxn1 "ApprovalProgram"
+          op "itxn_submit"
+          credit cr_ctor
+          code "itxn" ["CreatedApplicationID"]
+          gvStore GV_companion
+          return ()
+    CompanionLabel l -> do
+      label l
+      whenJust mcr $ \cim -> do
+        let howManyCalls = fromMaybe 0 $ M.lookup l cim
+        -- XXX bunch into groups of 16, slightly less cost
+        cfor howManyCalls $ const $ do
+          startCall False
+          op "itxn_submit"
+          credit cr_call
+        return ()
+    CompanionDelete ->
+      whenJust mcr $ \_ -> do
+        startCall False
+        output $ TConst $ "DeleteApplication"
+        makeTxn1 "OnCompletion"
+        op "itxn_submit"
+        credit cr_del
+        return ()
+
 ch :: Int -> CHandler -> App ()
 ch _ (C_Loop {}) = return ()
 ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich which $ do
@@ -2380,7 +2475,9 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
       <> ". Step " <> show which <> " starts at " <> show at
   let bindFromMsg = bindFromGV GV_argMsg (return ()) at
   let bindFromSvs = bindFromSvs_ at svsl
-  block (handlerLabel which) $ do
+  let lab = handlerLabel which
+  block_ lab $ do
+    callCompanion at $ CompanionLabel lab
     comment "check step"
     cint $ fromIntegral prev
     gvLoad GV_currentStep
@@ -2405,7 +2502,7 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
     bindVars $ do
       clogEvent ("_reach_e" <> show which) msg
       when isCtor $ do
-        ce $ DLE_CheckPay at [] (DLA_Literal $ minimumBalance_l) Nothing
+        callCompanion at $ CompanionCreate
       let checkTime1 :: LT.Text -> App () -> DLArg -> App ()
           checkTime1 cmp clhs rhsa = do
             clhs
@@ -2617,19 +2714,44 @@ analyzeViews (vs, vis) = vsit
 
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
+  let PLProg _at plo dli _ _ _ cpp = pl
+  let CPProg at vsi ai _ (CHandlers hm) = cpp
   -- This is the final result
   resr <- newIORef mempty
   totalLenR <- newIORef (0 :: Integer)
-  let addProg lab ts' = do
+  let compileProg lab ts' = do
         t <- renderOut ts'
         tf <- disp (lab <> ".teal") t
-        tbs <- compileTEAL tf
+        compileTEAL tf
+  let addProg lab ts' = do
+        tbs <- compileProg lab ts'
         modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
         let tc = LT.toStrict $ encodeBase64 tbs
         modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String tc
+  -- Companion
+  let makeCompanionMaker = do
+        let ts =
+              [ TCode "txn" [ "Sender" ]
+              , TCode "global" [ "CreatorAddress" ]
+              , TCode "==" []
+              ]
+        let cr_ctor = fromIntegral $ length ts
+        let cr_call = cr_ctor
+        let cr_del = cr_call
+        cr_approval <- compileProg "appCompanion" ts
+        return $ \cr_rv -> do
+          let cr_ro = DLA_Var cr_rv
+          return $ CompanionRec {..}
+  companionCache <- newIORef $ Nothing
+  let readCompanionCache = do
+        c <- readIORef companionCache
+        case c of
+          Just x -> return x
+          Nothing -> do
+            x <- makeCompanionMaker
+            writeIORef companionCache $ Just x
+            return x
   -- We start doing real work
-  let PLProg _at plo dli _ _ _ cpp = pl
-  let CPProg at vsi ai _ (CHandlers hm) = cpp
   let ai_sm = M.fromList $ map capi $ M.toAscList ai
   let vsiTop = analyzeViews vsi
   let vsi_sm = M.fromList $ map cview $ M.toAscList vsiTop
@@ -2640,7 +2762,6 @@ compile_algo env disp pl = do
   let eMapDataTy = mapDataTy eMaps
   let eMapDataSize = typeSizeOf eMapDataTy
   let PLOpts {..} = plo
-  let eHP = fromIntegral $ fromEnum (maxBound :: GlobalVar)
   let eSP = 255
   let eVars = mempty
   let eLets = mempty
@@ -2678,6 +2799,11 @@ compile_algo env disp pl = do
   let progLs = (mapMaybe h2lr $ M.toAscList hm) <> (map a2lr $ M.toAscList ai)
   let run :: CompanionInfo -> App () -> IO (TEALs, Notify, IO ())
       run eCompanion m = do
+        let eHP_ = fromIntegral $ fromEnum (maxBound :: GlobalVar)
+        let eHP =
+              case eCompanion of
+                Nothing -> eHP_ - 1
+                Just _ -> eHP_
         eCounter <- dupeCounter plo_counter
         eStateSizeR <- newIORef 0
         eLabel <- newCounter 0
@@ -2690,7 +2816,12 @@ compile_algo env disp pl = do
         let finalize = do
               mergeIORef gFailuresR S.union eFailuresR
               mergeIORef gWarningsR S.union eWarningsR
-        flip runReaderT (Env {..}) m
+        companionMaker <- readCompanionCache
+        cr_rv <- allocDLVar_ eCounter at T_Contract
+        eCompanionRec <- companionMaker cr_rv
+        flip runReaderT (Env {..}) $
+          store_let cr_rv True (gvLoad GV_companion) $
+            m
         stateSize <- readIORef eStateSizeR
         void $ recordSizeAndKeys lbad "state" stateSize algoMaxGlobalSchemaEntries_usable
         ts <- readIORef eOutputR
@@ -2700,13 +2831,27 @@ compile_algo env disp pl = do
   let runProg m = do
         let lab = "appApproval"
         let disp' = disp . (lab <>)
-        let ci = Nothing
-        (ts, notify, finalize) <- run ci m
-        let ts' = optimize $ DL.toList ts
-        (_done, _ci') <- checkCost notify disp' showCost progLs ci ts'
-        finalize
+        let rec ci = do
+              (ts, notify, finalize) <- run ci m
+              let ts' = optimize $ DL.toList ts
+              (_, cr) <- checkCost notify disp' progLs ci ts'
+              case cr of
+                Right ci' -> rec ci'
+                Left msg -> do
+                  finalize
+                  when showCost $ putStr msg
+                  modifyIORef resr $ M.insert "companionInfo" (Aeson.toJSON ci)
+                  return ts'
+        ts' <- rec Nothing
         addProg lab ts'
   runProg $ do
+    mGV_companion <- asks eCompanion >>= \case
+      Nothing -> return []
+      Just _ -> return [GV_companion]
+    let keyState_gvs :: [GlobalVar]
+        keyState_gvs = [GV_currentStep, GV_currentTime] <> mGV_companion
+    let keyState_ty :: DLType
+        keyState_ty = T_Tuple $ map gvType keyState_gvs
     useResource R_Txn
     cint 0
     gvStore GV_txnCounter
@@ -2761,6 +2906,17 @@ compile_algo env disp pl = do
     cblt "publish" ch $ bltM hm
     forM_ (M.toAscList hm) $ \(hi, hh) ->
       cloop hi hh
+    label "updateStateHalt"
+    code "txn" ["OnCompletion"]
+    output $ TConst $ "DeleteApplication"
+    asserteq
+    callCompanion at $ CompanionDelete
+    code "b" ["updateState"]
+    label "updateStateNoOp"
+    code "txn" ["OnCompletion"]
+    output $ TConst $ "NoOp"
+    asserteq
+    code "b" ["updateState"]
     label "updateState"
     cbs keyState
     forM_ keyState_gvs $ \gv -> do
