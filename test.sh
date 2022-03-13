@@ -132,7 +132,7 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-REACH_DEBUG=Y c examples/algospensive/index.rsh
+REACH_DEBUG=Y cdot examples/algospensive/index.rsh
 exit 0
 jb
 ci ALGO algospensive
