@@ -78,9 +78,7 @@ type Notify = Bool -> NotifyF
 type LPGraph1 a b = M.Map a b
 type LPGraph a b = M.Map a (LPGraph1 a b)
 
-type LPPath a = ([a], Integer)
-
-longestPathBetween :: forall b . LPGraph String b -> String -> String -> (b -> Integer) -> IO (LPPath String)
+longestPathBetween :: forall b . LPGraph String b -> String -> String -> (b -> Integer) -> IO Integer
 longestPathBetween g f d getc = do
   a2d <- fixedPoint $ \_ (i :: LPGraph1 String Integer) -> do
     flip mapM g $ \tom -> do
@@ -100,8 +98,40 @@ longestPathBetween g f d getc = do
           True -> []
           False -> getMaxPath $ List.maximumBy (compare `on` r2d) $ M.keys $ fromMaybe mempty $ M.lookup x g
       getMaxPath x = x : getMaxPath' x
-  let p = getMaxPath f
-  return $ (p, pc)
+  let _p = getMaxPath f
+  return $ pc
+
+budgetAnalyze :: LPGraph String ResourceCost -> String -> String -> (ResourceCost -> Resource -> Integer) -> IO (Bool, Integer, Integer)
+budgetAnalyze g s e getc = do
+  let from c b l = do
+        putStrLn $ "from " <> show l
+        case l == e of
+          True -> return $ (False, c, b)
+          False -> froms l c b $ M.toAscList $ fromMaybe mempty $ M.lookup l g
+      froms l c b = \case
+        [] -> impossible $ "ba null: " <> show l
+        [x] -> from1 c b x
+        x : xs -> do
+          from1 c b x >>= \case
+            r@(True, _, _) -> return r
+            r1@(False, c1, b1) ->
+              froms l c b xs >>= \case
+                r@(True, _, _) -> return r
+                r2@(False, c2, b2) -> do
+                  case b1 > b2 of
+                    True -> return r1
+                    False ->
+                      case c1 > c2 of
+                        True -> return r1
+                        False -> return r2
+      from1 c b (l, r) = do
+        let gr = getc r
+        let c' = c + gr R_Cost
+        let b' = b + gr R_Budget
+        case c' > b' of
+          True -> return (True, c', b')
+          False -> from c' b' l
+  from 0 0 s
 
 restrictGraph :: forall a b . (Ord a) => LPGraph a b -> a -> IO (LPGraph a b)
 restrictGraph g n = do
@@ -461,8 +491,9 @@ itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
 btoi :: BS.ByteString -> Integer
 btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
 
-type RestrictCFG = Label -> IO (DotGraph, AnalyzeCFG)
-type AnalyzeCFG = Resource -> IO (LPPath String)
+type RestrictCFG = Label -> IO (DotGraph, AnalyzeCFG, BudgetCFG)
+type BudgetCFG = IO (Bool, Integer, Integer)
+type AnalyzeCFG = Resource -> IO Integer
 type ResourceCost = M.Map Resource Integer
 
 buildCFG :: [TEAL] -> IO (DotGraph, RestrictCFG)
@@ -480,6 +511,7 @@ buildCFG ts = do
         let f old = Just $ (k * c) + fromMaybe 0 old
         modifyIORef res_r $ M.alter f rs
   let recCost = recResource R_Cost
+  let incBudget = recResource R_Budget algoMaxAppProgramCost
   let jump_ :: String -> IO ()
       jump_ t = do
         lab <- readIORef labr
@@ -493,6 +525,7 @@ buildCFG ts = do
         writeIORef labr t
         writeIORef res_r mempty
   let jump t = recCost 1 >> jump_ (l2s t)
+  incBudget -- initial budget
   forM_ ts $ \case
     TFor_top cnt -> do
       modK (\x -> x * cnt)
@@ -530,9 +563,8 @@ buildCFG ts = do
     Titob {} -> recCost 1
     TResource r -> recResource r 1
     TCostCredit i -> do
-      recCost (-1 * algoMaxAppProgramCost)
+      incBudget
       recCost i
-      recResource R_CostCredits 1
     TCode f _ ->
       case f of
         "sha256" -> recCost 35
@@ -575,7 +607,10 @@ buildCFG ts = do
   let getc rs c = fromMaybe 0 $ M.lookup rs c
   let restrict mustLab = do
         g' <- restrictGraph g $ l2s mustLab
-        return $ (gs g', longestPathBetween g' lTop (l2s lBot) . getc)
+        let lBots = l2s lBot
+        let analyzeCFG = longestPathBetween g' lTop lBots . getc
+        let budgetCFG = budgetAnalyze g' lTop lBots (flip getc)
+        return $ (gs g', analyzeCFG, budgetCFG)
   return (gs g, restrict)
 
 data LabelRec = LabelRec
@@ -598,7 +633,7 @@ data CompanionRec = CompanionRec
   , cr_del :: Integer
   }
 
-checkCost :: Notify -> Disp -> [LabelRec] -> CompanionInfo -> [TEAL] -> IO (M.Map Label Integer, Either String CompanionInfo)
+checkCost :: Notify -> Disp -> [LabelRec] -> CompanionInfo -> [TEAL] -> IO (Either String CompanionInfo)
 checkCost notify disp ls ci ts = do
   msgR <- newIORef mempty
   let addMsg x = modifyIORef msgR $ flip (<>) $ x <> "\n"
@@ -607,64 +642,49 @@ checkCost notify disp ls ci ts = do
   (gs, restrictCFG) <- buildCFG ts
   rgs "" gs
   addMsg $ "Conservative analysis on Algorand found:"
-  cml <- forM ls $ \LabelRec {..} -> do
+  forM_ ls $ \LabelRec {..} -> do
     let starts_at = " starts at " <> show lr_at <> "."
     addMsg $ " * " <> lr_what <> ", which" <> starts_at
-    (gs', analyzeCFG) <- restrictCFG lr_lab
+    (gs', analyzeCFG, budgetCFG) <- restrictCFG lr_lab
     when True $
       rgs (LT.unpack lr_lab <> ".") gs'
-    let reportCost loud precise ler algoMax c = do
+    let doReport precise tooMuch msg_ = do
+          let msg = msg_ <> "."
+          when tooMuch $ do
+            notify precise $ LT.pack $ lr_what <> " " <> msg <> " " <> lr_what <> starts_at
+          addMsg $ "   + " <> msg
+    let reportCost precise ler algoMax c = do
           let units = ler $ c /= 1
           let pre = "uses " <> show c <> " " <> units
           let tooMuch = c > algoMax
           let post = if tooMuch then ", but the limit is " <> show algoMax else ""
-          let msg = pre <> post <> "."
-          when loud $ do
-            when tooMuch $ do
-              notify precise $ LT.pack $ lr_what <> " " <> msg <> " " <> lr_what <> starts_at
-            addMsg $ "   + " <> msg
-          return tooMuch
-    costM <- flip mapWithKeyM allResourcesM $ \rs _ -> do
+          doReport precise tooMuch $ pre <> post
+    let allResourcesM' = M.withoutKeys allResourcesM $ S.fromList [ R_Cost, R_Budget ]
+    costM <- flip mapWithKeyM allResourcesM' $ \rs _ -> do
       let am = maxOf rs
-      (_p, c) <- analyzeCFG rs
+      c <- analyzeCFG rs
       let pe = rPrecise rs
       let ler = flip rLabel rs
-      case rs of
-        R_Cost -> do
-          tooMuch <- reportCost False pe ler am c
-          when tooMuch $ do
-            modifyIORef caR $ S.insert $
-              case ci of
-                Nothing -> CA_AddCompanion
-                Just _ -> CA_IncrementCalls lr_lab
-        _ -> void $ reportCost True pe ler am c
+      reportCost pe ler am c
       return c
     let sums = foldr (+) 0 . M.elems . M.restrictKeys costM . S.fromList
     let refs = sums [R_App, R_Asset, R_Account]
-    void $ reportCost True False (flip plural "transaction reference") algoMaxAppTotalTxnReferences refs
-    -- The way I do the cost calculation right now is wrong, because I sum the
-    -- entire path and then see if it is less than the 700. But, what I
-    -- actually need to do is ensure that at no point on the path does the
-    -- budget ever get spent.
-    --
-    -- I currently calculate from the bottom, but I should instead calculate
-    -- from the top and the return the value where the different between the
-    -- cost and the budget is the highest
+    void $ reportCost False (flip plural "transaction reference") algoMaxAppTotalTxnReferences refs
     do
-      let rs = R_Cost
-      let pe = rPrecise rs
-      let ler = flip rLabel rs
-      let am = maxOf rs
-      let am' = am * maxOf R_CostCredits
-      let c = sums [R_Cost]
-      let crds = sums [R_CostCredits]
-      let c' = c + algoMaxAppProgramCost * crds
-      putStrLn $ show (c, crds, c')
-      void $ reportCost True pe ler am' c'
+      (over, cost, budget) <- budgetCFG
+      let doReport' = doReport True
+      case over of
+        False -> doReport' False $
+          "uses " <> show cost <> " of its budget of " <> show budget
+        True -> do
+          modifyIORef caR $ S.insert $
+            case ci of
+              Nothing -> CA_AddCompanion
+              Just _ -> CA_IncrementCalls lr_lab
+          doReport' True $
+            "uses " <> show cost <> ", but its budget is " <> show budget
     let fees = sums [R_Txn, R_ITxn]
     addMsg $ "   + costs " <> show fees <> " " <> plural (fees /= 1) "fee" <> "."
-    return $ M.singleton lr_lab (sums [R_Cost])
-  let labcm = M.unions cml
   msg <- readIORef msgR
   cas <- S.toList <$> readIORef caR
   --let cr = Left msg
@@ -682,7 +702,7 @@ checkCost notify disp ls ci ts = do
                 CA_IncrementCalls lab -> M.insertWith (+) lab 1
           let cim' = foldr f cim as
           return $ Right $ Just cim'
-  return $ (,) labcm cr
+  return $ cr
 
 type Lets = M.Map DLVar (App ())
 
@@ -723,8 +743,8 @@ data Resource
   | R_App
   | R_Account
   | R_Log
+  | R_Budget
   | R_Cost
-  | R_CostCredits
   | R_ITxn
   | R_Txn
   deriving (Eq, Ord, Enum, Bounded, Show)
@@ -752,8 +772,8 @@ rLabel ph = \case
   R_Asset -> p "asset"
   R_App -> p "app"
   R_Account -> p "account"
+  R_Budget -> p "unit" <> " of budget"
   R_Cost -> p "unit" <> " of cost"
-  R_CostCredits -> "cost " <> p "credit"
   R_Log -> p "byte" <> " of logs"
   where
     p = plural ph
@@ -765,8 +785,8 @@ rPrecise = \case
   R_App -> False
   R_Asset -> False
   R_Account -> False
+  R_Budget -> True
   R_Cost -> True
-  R_CostCredits -> True
   R_Log -> True
 
 maxOf :: Resource -> Integer
@@ -776,12 +796,12 @@ maxOf = \case
   R_Account -> algoMaxAppTxnAccounts
   R_Txn -> algoMaxTxGroupSize
   R_ITxn -> algoMaxInnerTransactions * algoMaxTxGroupSize
-  R_Cost -> algoMaxAppProgramCost
-  R_CostCredits -> maxOf R_ITxn
+  R_Budget -> impossible "budget"
+  R_Cost -> impossible "cost"
   R_Log -> algoMaxLogLen
 
 newResources :: IO ResourceSets
-newResources = newIORef $ M.map (const mempty) allResourcesM
+newResources = newIORef $ mempty
 
 dupeResources :: App a -> App a
 dupeResources m = do
@@ -2850,8 +2870,7 @@ compile_algo env disp pl = do
         let rec ci = do
               (ts, notify, finalize) <- run ci m
               let ts' = optimize $ DL.toList ts
-              (_, cr) <- checkCost notify disp' progLs ci ts'
-              case cr of
+              checkCost notify disp' progLs ci ts' >>= \case
                 Right ci' -> rec ci'
                 Left msg -> do
                   finalize
