@@ -104,7 +104,6 @@ longestPathBetween g f d getc = do
 budgetAnalyze :: LPGraph String ResourceCost -> String -> String -> (ResourceCost -> Resource -> Integer) -> IO (Bool, Integer, Integer)
 budgetAnalyze g s e getc = do
   let from c b l = do
-        putStrLn $ "from " <> show l
         case l == e of
           True -> return $ (False, c, b)
           False -> froms l c b $ M.toAscList $ fromMaybe mempty $ M.lookup l g
