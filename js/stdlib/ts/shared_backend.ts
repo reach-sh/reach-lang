@@ -113,6 +113,8 @@ export const isHex = isHexString;
 export const stringToHex = (x:string): string =>
   hexlify(toUtf8Bytes(x));
 
+const hexToInt = (x: string): number => parseInt(x, 16);
+
 const forceHex = (x: string): string =>
   isHex(x) ? x : stringToHex(x);
 
@@ -129,6 +131,25 @@ export const ge = (a: num, b: num): boolean => bigNumberify(a).gte(bigNumberify(
 export const gt = (a: num, b: num): boolean => bigNumberify(a).gt(bigNumberify(b));
 export const le = (a: num, b: num): boolean => bigNumberify(a).lte(bigNumberify(b));
 export const lt = (a: num, b: num): boolean => bigNumberify(a).lt(bigNumberify(b));
+export const digest_xor = (xd: string, yd: string): string => {
+  const clean = (s: string) => s.slice(0, 2) === '0x' ? s.slice(2) : s;
+  const xc = clean(xd);
+  const yc = clean(yd);
+
+  const parseHex = (xs: string) => {
+    const ret = [];
+    for (let i = 0; i < xs.length; i += 2) {
+      ret.push(hexToInt(xs.substr(i, 2)));
+    }
+    return ret;
+  }
+
+  const xs = parseHex(xc);
+  const ys = parseHex(yc);
+
+  const result = '0x' + xs.map((x: number, i: number) => (x ^ ys[i]).toString(16)).join('');
+  return result;
+}
 
 export function Array_set <T>(arr: Array<T>, idx: number, elem: T): Array<T> {
   const arrp = arr.slice();

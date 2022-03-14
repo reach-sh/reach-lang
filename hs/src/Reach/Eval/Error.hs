@@ -156,6 +156,7 @@ data EvalError
   | Err_ForkNoCases
   | Err_InvalidPaySpec
   | Err_LoopVariableLength SrcLoc
+  | Err_xor_Types DLType DLType
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -294,6 +295,7 @@ instance HasErrorCode EvalError where
     Err_ForkNoCases {} -> 126
     Err_InvalidPaySpec {} -> 127
     Err_LoopVariableLength {} -> 128
+    Err_xor_Types {} -> 129
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -735,5 +737,7 @@ instance Show EvalError where
       "The `.paySpec` component must specify a syntactic tuple of Token identifiers"
     Err_LoopVariableLength at ->
       "Cannot assign the loop variable(s) to a `Tuple` of different length at: " <> show at
+    Err_xor_Types l r ->
+      "^ expects arguments of either UInt, Bool, or Digest, but received: " <> show l <> " and " <> show r
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

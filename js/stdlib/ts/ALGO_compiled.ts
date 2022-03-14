@@ -311,6 +311,7 @@ export const T_Data = (
 
 export const addressEq = mkAddressEq(T_Address);
 export const digestEq = shared_backend.bytesEq;
+export const digest_xor = shared_backend.digest_xor;
 
 const T_Token = T_UInt;
 

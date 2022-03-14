@@ -36,6 +36,7 @@ export interface Stdlib_Backend_Shared_User<Ty> {
   le: (n1: num, n2: num) => boolean
   lt: (n1: num, n2: num) => boolean
   bytesEq: (s1: string, s2: string) => boolean
+  digest_xor: (x: string, y:string) => string
 }
 
 export interface Stdlib_Backend_Shared<Ty> extends Stdlib_Backend_Shared_User<Ty> {
@@ -68,6 +69,7 @@ export interface Stdlib_Backend_Base<Ty> extends Stdlib_Backend_Shared<Ty>, Arit
   UInt_max: BigNumber
   addressEq: (addr1: unknown, addr2: unknown) => boolean
   digestEq: (x: unknown, y: unknown) => boolean
+  digest_xor: (x: string, y: string) => string
   tokenEq: (x: unknown, y: unknown) => boolean
   digest: (t: Ty, a: unknown) => string // TODO typing
   emptyContractInfo: (number | string),
