@@ -518,6 +518,7 @@ solPrimApply = \case
   BAND -> binOp "&"
   BIOR -> binOp "|"
   BXOR -> binOp "^"
+  DIGEST_XOR -> binOp "^"
   IF_THEN_ELSE -> \case
     -- XXX Copy the simplifications from ALGO.hs
     [c, t, f] -> return $ c <+> "?" <+> t <+> ":" <+> f

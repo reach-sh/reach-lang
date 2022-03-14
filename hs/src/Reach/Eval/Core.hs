@@ -568,6 +568,7 @@ base_env_slvals =
   , ("intEq", SLV_Prim $ SLPrim_op PEQ)
   , ("polyEq", SLV_Prim $ SLPrim_op PEQ)
   , ("polyNeq", SLV_Prim $ SLPrim_polyNeq)
+  , ("^", SLV_Prim $ SLPrim_xor)
   , ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
   , ("addressEq", SLV_Prim $ SLPrim_op ADDRESS_EQ)
   , ("isType", SLV_Prim SLPrim_is_type)
@@ -1076,7 +1077,7 @@ binaryToPrim = \case
   JSBinOpRsh a -> prim a RSH
   JSBinOpBitAnd a -> prim a BAND
   JSBinOpBitOr a -> prim a BIOR
-  JSBinOpBitXor a -> prim a BXOR
+  JSBinOpBitXor a -> fun a "^" "^"
   j -> expect_ $ Err_Parse_IllegalBinOp j
   where
     fun a s ctxt = snd <$> (locAtf (srcloc_jsa "binop" a) $ evalId ctxt s)
@@ -2040,6 +2041,7 @@ evalPrimOp p sargs = do
         [b, t, f] -> evalITE lvl b t f
         _ -> expect_ $ Err_Apply_ArgCount at 3 (length args)
     DIGEST_EQ -> make_var args
+    DIGEST_XOR -> make_var args
     ADDRESS_EQ -> make_var args
     TOKEN_EQ -> make_var args
     -- FIXME fromIntegral may overflow the Int
@@ -3428,6 +3430,19 @@ evalPrim p sargs =
                         S.fromList $ map fst cs
     SLPrim_distinct -> do
       (,) lvl <$> evalDistinctTokens [] args
+    SLPrim_xor -> do
+      (x, y) <- two_args
+      (x_ty, _) <- compileTypeOf x
+      (y_ty, _) <- compileTypeOf y
+      case (x_ty, y_ty) of
+        (T_UInt, T_UInt) -> prim BXOR
+        (T_Digest, T_Digest) -> prim DIGEST_XOR
+        (T_Bool, T_Bool) -> do
+          f <- lookStdlib "xor"
+          evalApplyVals' f sargs
+        (l, r) -> expect_ $ Err_xor_Types l r
+      where
+        prim = flip evalPrimOp sargs
     -- END OF evalPrim case
   where
     lvl = mconcatMap fst sargs

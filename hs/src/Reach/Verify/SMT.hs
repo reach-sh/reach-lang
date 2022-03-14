@@ -309,6 +309,7 @@ smtPrimOp at p dargs =
     BAND -> bvapp "bvand" cant
     BIOR -> bvapp "bvor" cant
     BXOR -> bvapp "bvxor" cant
+    DIGEST_XOR -> app "Digest_xor"
     IF_THEN_ELSE -> app "ite"
     DIGEST_EQ -> app "="
     ADDRESS_EQ -> app "="

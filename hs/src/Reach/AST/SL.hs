@@ -629,6 +629,7 @@ primOpType RSH = ([T_UInt, T_UInt], T_UInt)
 primOpType BAND = ([T_UInt, T_UInt], T_UInt)
 primOpType BIOR = ([T_UInt, T_UInt], T_UInt)
 primOpType BXOR = ([T_UInt, T_UInt], T_UInt)
+primOpType DIGEST_XOR = ([T_Digest, T_Digest], T_Digest)
 primOpType MUL_DIV = ([T_UInt, T_UInt, T_UInt], T_UInt)
 
 data RemoteFunMode
@@ -723,6 +724,7 @@ data SLPrimitive
   | SLPrim_fromSome
   | SLPrim_check
   | SLPrim_distinct
+  | SLPrim_xor
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where
