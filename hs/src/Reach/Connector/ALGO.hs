@@ -239,6 +239,9 @@ algoMaxAppProgramCost = 700
 algoMaxLogLen :: Integer
 algoMaxLogLen = 1024
 
+algoMaxLogCalls :: Integer
+algoMaxLogCalls = 32
+
 algoMaxAppProgramLen :: Integer
 algoMaxAppProgramLen = 2048
 
@@ -543,9 +546,8 @@ buildCFG ts = do
     TCode "callsub" [_lab'] ->
       impossible "callsub"
     TLog len -> do
-      -- Note: We don't check MaxLogCalls, because it is not actually checked
-      -- by the implementation
       recResource R_Log len
+      recResource R_LogCalls 1
       recCost 1
     TComment {} -> return ()
     TLabel lab' -> do
@@ -627,6 +629,7 @@ data CompanionAdds
 data CompanionRec = CompanionRec
   { cr_ro :: DLArg
   , cr_approval :: B.ByteString
+  , cr_clearstate :: B.ByteString
   , cr_ctor :: Integer
   , cr_call :: Integer
   , cr_del :: Integer
@@ -658,7 +661,8 @@ checkCost notify disp ls ci ts = do
           let pre = uses <> " " <> show c <> " " <> units
           let tooMuch = c > algoMax
           let post = if tooMuch then ", but the limit is " <> show algoMax else ""
-          doReport precise tooMuch $ pre <> post
+          unless (c == 0) $
+            doReport precise tooMuch $ pre <> post
     let allResourcesM' = M.withoutKeys allResourcesM $ S.fromList [ R_Cost, R_Budget ]
     costM <- flip mapWithKeyM allResourcesM' $ \rs _ -> do
       let am = maxOf rs
@@ -672,17 +676,20 @@ checkCost notify disp ls ci ts = do
     void $ reportCost False (flip plural "transaction reference") algoMaxAppTotalTxnReferences refs
     do
       (over, cost, budget) <- budgetCFG
+      let residue = budget - cost
       let doReport' = doReport True
+      let uses = "uses " <> show cost
+      let budget' x = "its budget " <> x <> " " <> show budget
       case over of
         False -> doReport' False $
-          "uses " <> show cost <> " of its budget of " <> show budget
+          uses <> " of " <> budget' "of" <> " (" <> show residue <> " is left over)"
         True -> do
           modifyIORef caR $ S.insert $
             case ci of
               Nothing -> CA_AddCompanion
               Just _ -> CA_IncrementCalls lr_lab
           doReport' True $
-            "uses " <> show cost <> ", but its budget is " <> show budget
+            uses <> ", but " <> budget' "is"
     let fees = sums [R_Txn, R_ITxn]
     addMsg $ "   + costs " <> show fees <> " " <> plural (fees /= 1) "fee" <> "."
   msg <- readIORef msgR
@@ -743,6 +750,7 @@ data Resource
   | R_App
   | R_Account
   | R_Log
+  | R_LogCalls
   | R_Budget
   | R_Cost
   | R_ITxn
@@ -767,14 +775,15 @@ plural ph x = x <> if ph then "s" else ""
 
 rLabel :: Bool -> Resource -> String
 rLabel ph = \case
-  R_Txn -> p "transaction"
+  R_Txn -> "input " <> p "transaction"
   R_ITxn -> "inner " <> p "transaction"
   R_Asset -> p "asset"
-  R_App -> p "app"
+  R_App -> "foreign " <> p "application"
   R_Account -> p "account"
   R_Budget -> p "unit" <> " of budget"
   R_Cost -> p "unit" <> " of cost"
   R_Log -> p "byte" <> " of logs"
+  R_LogCalls -> "log " <> p "call"
   where
     p = plural ph
 
@@ -788,6 +797,7 @@ rPrecise = \case
   R_Budget -> True
   R_Cost -> True
   R_Log -> True
+  R_LogCalls -> True
 
 maxOf :: Resource -> Integer
 maxOf = \case
@@ -799,6 +809,7 @@ maxOf = \case
   R_Budget -> impossible "budget"
   R_Cost -> impossible "cost"
   R_Log -> algoMaxLogLen
+  R_LogCalls -> algoMaxLogCalls
 
 newResources :: IO ResourceSets
 newResources = newIORef $ mempty
@@ -2238,23 +2249,17 @@ ct = \case
     isHalt <- do
       case msvs of
         FI_Halt toks -> do
-          forM_ toks close_asset
-          close_escrow
+          let mt_at = at
+          let mt_always = True
+          let mt_mrecv = Nothing
+          let mt_submit = True
+          let mt_next = False
+          let mt_mcclose = Just $ cDeployer
+          let mt_amt = DLA_Literal $ DLL_Int at 0
+          forM_ toks $ \tok -> do
+            let mt_mtok = Just tok
+            void $ makeTxn $ MakeTxn {..}
           return True
-          where
-            mt_at = at
-            mt_always = True
-            mt_mrecv = Nothing
-            mt_amt = DLA_Literal $ DLL_Int sb 0
-            mt_mcclose = Just $ cDeployer
-            mt_submit = True
-            mt_next = False
-            close_asset tok = void $ makeTxn $ MakeTxn {..}
-              where
-                mt_mtok = Just tok
-            close_escrow = void $ makeTxn $ MakeTxn {..}
-              where
-                mt_mtok = Nothing
         FI_Continue svs -> do
           cSvsSave at $ map snd svs
           cint $ fromIntegral which
@@ -2454,9 +2459,10 @@ callCompanion at cc = do
         case ctor of
           True -> do
             cint_ at 0
+            incResource R_App $ DLA_Literal $ DLL_Int at 0
           False -> do
             ca cr_ro
-            unless del $
+            unless del $ do
               incResource R_App cr_ro
         makeTxn1 "ApplicationID"
   case cc of
@@ -2470,6 +2476,8 @@ callCompanion at cc = do
           startCall True False
           cbs cr_approval
           makeTxn1 "ApprovalProgram"
+          cbs cr_clearstate
+          makeTxn1 "ClearStateProgram"
           op "itxn_submit"
           credit cr_ctor
           code "itxn" ["CreatedApplicationID"]
@@ -2764,6 +2772,9 @@ compile_algo env disp pl = do
         modifyIORef totalLenR $ (+) (fromIntegral $ BS.length tbs)
         let tc = LT.toStrict $ encodeBase64 tbs
         modifyIORef resr $ M.insert (T.pack lab) $ Aeson.String tc
+        return tbs
+  -- Clear state is never allowed
+  cr_clearstate <- addProg "appClear" []
   -- Companion
   let makeCompanionMaker = do
         let ts =
@@ -2878,7 +2889,7 @@ compile_algo env disp pl = do
                   modifyIORef resr $ M.insert "companionInfo" (Aeson.toJSON ci)
                   return ts'
         ts' <- rec Nothing
-        addProg lab ts'
+        void $ addProg lab ts'
   runProg $ do
     mGV_companion <- asks eCompanion >>= \case
       Nothing -> return []
@@ -2946,6 +2957,16 @@ compile_algo env disp pl = do
     output $ TConst $ "DeleteApplication"
     asserteq
     callCompanion at $ CompanionDelete
+    do
+      let mt_at = at
+      let mt_always = True
+      let mt_mrecv = Nothing
+      let mt_mtok = Nothing
+      let mt_submit = True
+      let mt_next = False
+      let mt_mcclose = Just $ cDeployer
+      let mt_amt = DLA_Literal $ DLL_Int at 0
+      void $ makeTxn $ MakeTxn {..}
     code "b" ["updateState"]
     label "updateStateNoOp"
     code "txn" ["OnCompletion"]
@@ -2998,8 +3019,6 @@ compile_algo env disp pl = do
       ctzero $ gvType gv
       gvStore gv
     code "b" ["updateState"]
-  -- Clear state is never allowed
-  addProg "appClear" []
   totalLen <- readIORef totalLenR
   unless (totalLen <= algoMaxAppProgramLen_really) $ do
     gbad $ LT.pack $ "The program is too long; its length is " <> show totalLen <> ", but the maximum possible length is " <> show algoMaxAppProgramLen_really

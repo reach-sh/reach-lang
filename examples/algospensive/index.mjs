@@ -2,10 +2,11 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
 const stdlib = loadStdlib();
-if ( stdlib.connector === 'ALGO' ) { process.exit(0); }
 
 const [ accA, accB ] =
   await stdlib.newTestAccounts(2, stdlib.parseCurrency(100));
+accA.setDebugLabel('Alice');
+accB.setDebugLabel('Bob');
 
 const ctcA = accA.contract(backend);
 const ctcB = accB.contract(backend, ctcA.getInfo());

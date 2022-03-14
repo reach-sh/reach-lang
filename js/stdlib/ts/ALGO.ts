@@ -61,6 +61,7 @@ import {
   makeEventStream,
   TokenMetadata,
   LaunchTokenOpts,
+  NotifyComplete,
   makeSigningMonitor,
   j2sf,
   j2s,
@@ -96,7 +97,7 @@ export * from './shared_user';
 import { setQueryLowerBound, getQueryLowerBound, handleFormat, formatWithDecimals } from './shared_impl';
 export { setQueryLowerBound, getQueryLowerBound, addressFromHex, formatWithDecimals };
 
-const [ setSigningMonitor, notifySend ] = makeSigningMonitor();
+const [ setSigningMonitor, notifySend ] = makeSigningMonitor<unknown, RecvTxn>();
 export { setSigningMonitor };
 
 // Type Definitions
@@ -130,6 +131,7 @@ type RecvTxn = {
   'confirmed-round': bigint,
   'created-asset-index'?: bigint,
   'created-application-index'?: bigint,
+  'created-companion-application-index'?: bigint,
   'application-index'?: bigint,
   'application-args': Array<string>,
   'sender': Address,
@@ -149,12 +151,13 @@ export type NetworkAccount = {
 };
 
 const reachBackendVersion = 11;
-const reachAlgoBackendVersion = 9;
+const reachAlgoBackendVersion = 10;
 export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
   ABI: any,
   appApproval: string,
   appClear: string,
+  companionInfo: {[key: string]: number}|null,
   extraPages: number,
   stateSize: number,
   stateKeys: number,
@@ -288,6 +291,7 @@ type AlgodTxn = {
   'asset-index'?: bigint,
   'application-index'?: bigint,
   'confirmed-round'?: bigint,
+  'inner-txns'?: Array<AlgodTxn>,
   'logs'?: Array<string>,
   'txn': {
     'sig': Uint8Array,
@@ -367,6 +371,16 @@ const indexerTxn2RecvTxn = (txn:IndexerTxn): RecvTxn => {
   const ait: IndexerAppTxn = txn['application-transaction'] || {};
   const aargs = ait['application-args'] || [];
   const aidx = ait['application-id'];
+  // We're returning the first we find, but actually we just want the first one
+  // period.
+  const ccai = (() => {
+    const its = txn['inner-txns']||[];
+    for ( const itx of its ) {
+      debug('ccai itx', itx);
+      return itx['created-application-index'];
+    }
+    return undefined;
+  })();
   return {
     'confirmed-round': txn['confirmed-round'],
     'sender': txn['sender'],
@@ -377,6 +391,7 @@ const indexerTxn2RecvTxn = (txn:IndexerTxn): RecvTxn => {
     'application-index': aidx,
     'created-application-index': txn['created-application-index'],
     'created-asset-index': txn['created-asset-index'],
+    'created-companion-application-index': ccai,
   };
 };
 
@@ -404,12 +419,23 @@ const waitForConfirmation = async (txId: TxId): Promise<RecvTxn> => {
       const dtxn = algosdk.Transaction.from_obj_for_encoding(info['txn']['txn']);
       debug(dhead, 'confirmed', dtxn);
       const uToS = (a: Uint8Array[]|undefined) => (a || []).map((x: Uint8Array)=> uint8ArrayToStr(x, 'base64'));
+      // We're returning the first we find, but actually we just want the first
+      // one period.
+      const ccai = (() => {
+        const its = info['inner-txns']||[];
+        for ( const itx of its ) {
+          debug('ccai itx', itx);
+          return itx['application-index'];
+        }
+        return undefined;
+      })();
       return {
         'confirmed-round': cr,
         'created-asset-index': info['asset-index'],
         // @ts-ignore
         'logs': uToS(l),
         'created-application-index': info['application-index'],
+        'created-companion-application-index': ccai,
         'sender': txnFromAddress(dtxn),
         'application-args': uToS(dtxn.appArgs),
       };
@@ -465,8 +491,8 @@ export const signSendAndConfirm = async (
     });
   }
   const p = await getProvider();
-  let sapt_res: any;
-  let notifyComplete: any;
+  let sapt_res: unknown;
+  let notifyComplete: NotifyComplete<RecvTxn>;
   try {
     [ sapt_res, notifyComplete ] = await notifySend(txns, p.signAndPostTxns(txns));
   } catch (e:any) {
@@ -1224,7 +1250,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
     ensureConnectorAvailable(bin, 'ALGO', reachBackendVersion, reachAlgoBackendVersion);
     must_be_supported(bin);
 
-    const { stateSize, stateKeys, mapDataKeys, mapDataSize, ABI } = bin._Connectors.ALGO;
+    const { stateSize, stateKeys, mapDataKeys, mapDataSize, ABI, companionInfo } = bin._Connectors.ALGO;
+    const hasCompanion = companionInfo !== null;
     const hasMaps = mapDataKeys > 0;
     const { mapDataTy } = bin._getMaps({reachStdlib: stdlib});
     const emptyMapDataTy = T_Bytes(mapDataTy.netSize);
@@ -1234,6 +1261,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         emptyMapDataTy.toNet(emptyMapDataTy.canonicalize('')));
     debug({ emptyMapData });
 
+    // XXX hasCompanion means this include ContractInfo
     type GlobalState = [BigNumber, BigNumber, Address];
     type ContractHandler = {
       ApplicationID: BigNumber,
@@ -1385,6 +1413,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
       const eq = newEventQueue();
       const getC = makeGetC(setupArgs, eq);
+      let companionApp: ContractInfo|undefined = undefined;
 
       // Returns address of a Reach contract
       const getContractAddress = async () => {
@@ -1491,9 +1520,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const sim_r = await sim_p( fake_res );
         debug(dhead , '--- SIMULATE', sim_r);
         if ( isCtor ) {
+          const amt =
+            hasCompanion ?
+              minimumBalance.mul(2) :
+              minimumBalance;
           sim_r.txns.unshift({
             kind: 'to',
-            amt: minimumBalance,
+            amt: amt,
             tok: undefined,
           });
         }
@@ -1615,6 +1648,27 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             txn.fee = 0;
             txnExtraTxns.push(txn);
           };
+          if ( hasCompanion ) {
+            if ( isCtor ) {
+              // XXX Algorand says I won't need this eventually
+              recordApp(bigNumberify(0));
+              howManyMoreFees++;
+            }
+            const lab = `publish${funcNum}`;
+            const companionCalls = companionInfo[lab]||0;
+            if ( companionCalls > 0 ) {
+              howManyMoreFees += companionCalls;
+              if ( ! isCtor ) {
+                if ( companionApp === undefined ) {
+                  throw Error('impossible: no companion yet');
+                }
+                recordApp(companionApp);
+              }
+            }
+            if ( isHalt ) {
+              howManyMoreFees++;
+            }
+          }
           sim_r.txns.forEach(processSimTxn);
           debug(dhead, 'txnExtraTxns', txnExtraTxns);
           debug(dhead, {howManyMoreFees, extraFees});
@@ -1709,6 +1763,16 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const recvFrom = async (rfargs:RecvFromArgs): Promise<Recv> => {
         const { dhead, funcNum, out_tys, didSend, txn } = rfargs;
         debug(dhead, 'txn', txn);
+        if ( hasCompanion ) {
+          const isCtor = funcNum === 0;
+          if ( isCtor ) {
+            const ccai = txn['created-companion-application-index'];
+            if ( ccai == undefined ) {
+              throw Error('impossible: no companion index');
+            }
+            companionApp = bigNumberify(ccai);
+          }
+        }
         const theRound = txn['confirmed-round'];
         // const theSecs = txn['round-time'];
         // ^ The contract actually uses `global LatestTimestamp` which is the
