@@ -45,34 +45,6 @@ Make sure that all components are installed or created without using super-user 
 Snap installation in Ubuntu creates permissions issues.
 Uninstall Docker and then re-install using the `apt` command in the terminal.
 
-## {#ref-ts-config} Reach configuration and REACH_CONNECTOR_MODE
-
-`Missing REACH_CONNECTOR_MODE`
-
-* Reach expects to be told to connect to a specific consensus network.
-Running ONE of the following commands should fix this error:
-
-`export REACH_CONNECTOR_MODE=ALGO`
-
-`export REACH_CONNECTOR_MODE=ETH`
-
-`export REACH_CONNECTOR_MODE=CFX`
-
-When executing `./reach config`, the compiler prints the following message:
-
-```
-Reach detected an existing configuration file at...
-
-You appear to be using the `bash` shell, with environment configuration stored in /home/USER/.profile.
-Run the following command to activate your new configuration:
-
-$ . /home/USER/.profile
-```
-
-* The compiler is asking you to execute the following command in your terminal. Note that `USER` designates your terminal's user name.
-
-`. /home/USER/.profile`
-
 ## {#ref-ts-vscode} Troubleshooting Reach VSCode Extension
 
 "I don't see syntax highlighting in VSCode despite having the Reach extension installed and activated."
