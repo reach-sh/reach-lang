@@ -7,6 +7,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.9 is the current Reach release candidate version.
 
++ 2022/03/14: Added `{!rsh} polyXor` and update `{!rsh} ^` to use it.
 + 2022/03/12: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/03/09: Added `{!rsh} _local` to `{!rsh} parallelReduce` and `{!rsh} fork`.
 + 2022/03/08: Added `{!rsh} distinct`.
