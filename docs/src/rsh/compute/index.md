@@ -585,9 +585,10 @@ A @{defn("binary expression")} is written `{!rsh} EXPR_lhs BINOP EXPR_rhs`, wher
 Numeric operations, like `{!rsh} +` and `{!rsh} >`, only operate on numbers.
 Since all numbers in Reach are integers, operations like `{!rsh} /` truncate their result.
 Boolean operations, like `{!rsh} &&`, only operate on booleans.
+`{!rsh} polyXor` operates on `{!rsh} UInt`s, `{!rsh} Bool`s, and `{!rsh} Digest`s.
 It is invalid to use binary operations on the wrong types of values.
 
-@{ref("rsh", "and")}@{ref("rsh", "or")}@{ref("rsh", "add")}@{ref("rsh", "sub")}@{ref("rsh", "mul")}@{ref("rsh", "div")}@{ref("rsh", "mod")}@{ref("rsh", "lt")}@{ref("rsh", "le")}@{ref("rsh", "ge")}@{ref("rsh", "gt")}@{ref("rsh", "lsh")}@{ref("rsh", "rsh")}@{ref("rsh", "band")}@{ref("rsh", "bior")}@{ref("rsh", "band")}@{ref("rsh", "bxor")}@{ref("rsh", "polyEq")}@{ref("rsh", "polyNeq")}
+@{ref("rsh", "and")}@{ref("rsh", "or")}@{ref("rsh", "add")}@{ref("rsh", "sub")}@{ref("rsh", "mul")}@{ref("rsh", "div")}@{ref("rsh", "mod")}@{ref("rsh", "lt")}@{ref("rsh", "le")}@{ref("rsh", "ge")}@{ref("rsh", "gt")}@{ref("rsh", "lsh")}@{ref("rsh", "rsh")}@{ref("rsh", "band")}@{ref("rsh", "bior")}@{ref("rsh", "band")}@{ref("rsh", "polyXor")}@{ref("rsh", "polyEq")}@{ref("rsh", "polyNeq")}
 ```reach
 and(a, b)     // &&
 or(a, b)      // ||
@@ -604,7 +605,7 @@ lsh(a, b)     // <<
 rsh(a, b)     // >>
 band(a, b)    // &
 bior(a, b)    // |
-bxor(a, b)    // ^
+polyXor(a, b) // ^
 polyEq(a, b)  // ==, ===
 polyNeq(a, b) // !=, !==
 ```

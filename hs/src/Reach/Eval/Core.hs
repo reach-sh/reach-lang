@@ -569,6 +569,7 @@ base_env_slvals =
   , ("polyEq", SLV_Prim $ SLPrim_op PEQ)
   , ("polyNeq", SLV_Prim $ SLPrim_polyNeq)
   , ("^", SLV_Prim $ SLPrim_xor)
+  , ("polyXor", SLV_Prim $ SLPrim_xor)
   , ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
   , ("addressEq", SLV_Prim $ SLPrim_op ADDRESS_EQ)
   , ("isType", SLV_Prim SLPrim_is_type)
