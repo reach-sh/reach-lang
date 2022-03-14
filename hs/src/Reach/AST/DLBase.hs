@@ -1064,6 +1064,9 @@ dlebEnsureFun (DLinExportBlock at mvs a) =
 
 type DLExportBlock = DLinExportBlock DLBlock
 
+instance ToJSON DLExportBlock where
+  toJSON _ = "DLinExportBlock DLBlock"
+
 type DLExports = M.Map SLVar DLExportBlock
 
 data DLPayAmt = DLPayAmt

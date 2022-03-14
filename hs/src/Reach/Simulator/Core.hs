@@ -37,6 +37,8 @@ type Token = Integer
 
 type APID = Integer
 
+type VID = Integer
+
 consensusId :: ActorId
 consensusId = -1
 
@@ -76,6 +78,15 @@ data ReachAPI = ReachAPI
 
 instance ToJSON ReachAPI
 
+data ReachView = ReachView
+  { v_name :: Maybe String
+  , v_env :: M.Map SLVar IType
+  , v_bl :: Maybe (Maybe DLExportBlock)
+  }
+  deriving (Generic)
+
+instance ToJSON ReachView
+
 data Global = Global
   { e_ledger :: Ledger
   , e_ntok :: Token
@@ -85,7 +96,9 @@ data Global = Global
   , e_nactorid :: ActorId
   , e_naccid :: Account
   , e_napid :: Integer
+  , e_nvid :: Integer
   , e_apis :: M.Map APID ReachAPI
+  , e_views :: M.Map VID ReachView
   , e_partacts :: M.Map Participant ActorId
   , e_messages :: M.Map PhaseId MessageInfo
   }
@@ -132,7 +145,9 @@ initGlobal =
     , e_nactorid = 0
     , e_naccid = 0
     , e_napid = 0
+    , e_nvid = 0
     , e_apis = mempty
+    , e_views = mempty
     , e_partacts = mempty
     , e_messages = mempty
     }
@@ -897,11 +912,12 @@ bindConsensusMeta (DLRecv {..}) actorId accId = do
 
 
 instance Interp LLProg where
-  interp (LLProg _at _llo slparts _dli _dex _dvs _apis _evts step) = do
+  interp (LLProg _at _llo slparts _dli _dex dvs _apis _evts step) = do
     let apiNames = sps_apis slparts
     let (apiParts,regParts) = partition (\(a,_b) -> member a apiNames) $ M.toAscList $ sps_ies slparts
     registerParts regParts
     registerAPIs apiParts
+    registerViews $ M.toAscList dvs
     interp step
 
 isTheTimePast :: Maybe (DLTimeArg, LLStep) -> App (Maybe LLStep)
@@ -922,6 +938,27 @@ isTheTimePast tc_mtime = do
           True -> return Nothing
           False -> return $ Just step
     Nothing -> return $ Nothing
+
+registerViews :: [(Maybe SLPart, M.Map SLVar IType)] -> App ()
+registerViews [] = return ()
+registerViews ((sl, m) : vs) = do
+  s <- getState
+  let (g,l) = registerView s (fmap bunpack sl) m
+  setGlobal g
+  setLocal l
+  registerViews vs
+
+registerView :: State -> Maybe String -> M.Map SLVar IType -> State
+registerView (g, l) s env = do
+  let vid = e_nvid g
+  let views = e_views g
+  let v = ReachView { v_name = s, v_env = env, v_bl = Nothing }
+  let g' =
+        g
+          { e_views = M.insert vid v views
+          , e_nvid = vid + 1
+          }
+  (g', l)
 
 registerParts :: [(SLPart, InteractEnv)] -> App ()
 registerParts [] = return ()
