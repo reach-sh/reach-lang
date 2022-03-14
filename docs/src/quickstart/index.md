@@ -3,38 +3,48 @@
 This quickstart guide outlines the step-by-step instructions for getting started with programming in Reach.
 You can install on the following OS systems:
 
-[Windows](##ref-qs-win)
-[Linux](##ref-qs-linux)
-[MacOS](##ref-qs-mac)
+* [Windows](##ref-qs-win)
+* [Linux](##ref-qs-linux)
+* [MacOS](##ref-qs-mac)
 
 # {#ref-qs-win} Windows
 
-Reach requires [make](https://en.wikipedia.org/wiki/Make_(software)), [Docker](https://www.docker.com/get-started), and [Docker Compose](https://docs.docker.com/compose/install/).
+Reach requires WSL and [Docker Desktop](https://www.docker.com/get-started) installed.
 
 ## {#ref-qs-win-prereqs} Prerequisites
 
-* Windows 10 installed with version 2004 or higher
+* Windows 10 installed with version 2004 or higher,
+
+  or
+
+* Windows 11
 
 ## {#ref-qs-win-install} Installation
 
 Click the Windows icon, type `CMD`, and then click `Run as Administrator`.
 There are a number of commands that need to be run to get Windows ready for Reach.
 
-In the Command Prompt window, run:
+To install WSL on Windows, run:
+
+``` cmd
+$ wsl --install
+```
+
+:::note
+Some Windows 10 users need to run `dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart` to install WSL.
+:::
+
+To then install Ubuntu, run:
 
 ``` cmd
 $ wsl --install -d ubuntu
 ```
 
-This installs Ubuntu WSL, which is used via command line later.
-
-In the Command Prompt window, run:
+In the Command Prompt window, run the following command to set the WSL version to 2:
 
 ``` cmd
 $ wsl --set-version ubuntu 2
 ``` 
-
-This sets the WSL to version 2, which is required by Docker and Reach.
 
 Next, download and install [Docker Desktop](https://www.docker.com/products/docker-desktop).
 
@@ -43,7 +53,7 @@ Make sure to follow Docker's instructions for installation and configuration.
 Those instructions are subject to change and are outside of our control.
 :::
 
-Click the `Settings` (gear) icon along the top of the Docker app.
+Click the `Settings`(gear) icon along the top of the Docker app.
 
 ![Settings icon in Docker`](/quickstart/settings-icon.png)
 
@@ -56,7 +66,7 @@ Click `Resources` in the left-hand menu, and make sure that that `Enable integra
 
 ![WSL integration in Docker`](/quickstart/wsl-integrate.png)
 
-Click the Ubuntu icon in the Windows Start-up menu to open the Ubuntu terminal.
+Double-click the Ubuntu icon in the Windows Start-up menu to open the Ubuntu terminal.
 You will need to provide a `username` and `password` for Ubuntu.
 
 In the terminal, run the following to install `make`:
@@ -99,7 +109,8 @@ Reach requires [make](https://en.wikipedia.org/wiki/Make_(software)), [Docker En
 ## {#ref-qs-linux-prereqs} Prerequisites
 
 * A compatible version of Linux.
-Check the [Docker Engine](https://docs.docker.com/engine/install/) page for supported distros. 
+
+  Check the [Docker Engine](https://docs.docker.com/engine/install/) page for supported distros. 
 
 ## {#ref-qs-linux-install} Installation
 
@@ -152,7 +163,7 @@ Check out our [Rock Paper Scissors!](##tut) tutorial to get started.
 
 # {#ref-qs-mac} MacOS
 
-Reach is compatible with legacy Mac architecture and the new M1 architecture. 
+Reach is compatible with current M1 chips and previous Intel chips running macOS 10.15 or newer. 
 Installation instructions should not differ regardless of the MacOS architecture. 
 Reach requires [make](https://en.wikipedia.org/wiki/Make_(software)), [Docker](https://www.docker.com/get-started), and [Docker Compose](https://docs.docker.com/compose/install/).
 
