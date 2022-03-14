@@ -654,7 +654,8 @@ checkCost notify disp ls ci ts = do
           addMsg $ "   + " <> msg
     let reportCost precise ler algoMax c = do
           let units = ler $ c /= 1
-          let pre = "uses " <> show c <> " " <> units
+          let uses = if precise then "uses" else "may use up to"
+          let pre = uses <> " " <> show c <> " " <> units
           let tooMuch = c > algoMax
           let post = if tooMuch then ", but the limit is " <> show algoMax else ""
           doReport precise tooMuch $ pre <> post
