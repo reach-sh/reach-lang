@@ -467,6 +467,14 @@ const getAPIs = async () => {
   return r
 }
 
+// get the Views for the current program
+// at state s (integer)
+const getViews = async (s) => {
+  const r = await interact('GET', `${address}/views/${s}`)
+  console.log(r)
+  return r
+}
+
 const apiCall = async (a,s,v,t='number') => {
   const r = await interact('POST', `${address}/api_call/${a}/${s}/?data=${v}&type=${t}`)
   console.log(r)
@@ -541,5 +549,6 @@ export {
   initDetails,
   catGraph,
   getAPIs,
-  apiCall
+  apiCall,
+  getViews
 };
