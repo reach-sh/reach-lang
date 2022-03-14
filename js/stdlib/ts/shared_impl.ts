@@ -1026,7 +1026,7 @@ export const retryLoop = async <T>(lab: any, f: (() => Promise<T>)) => {
 
 type SigningMonitor = (e:any, pre:Promise<any>, post:Promise<any>) => void;
 export type SetSigningMonitor = (h: SigningMonitor) => void;
-type NotifyComplete<A> = (post:Promise<A>) => Promise<A>;
+export type NotifyComplete<A> = (post:Promise<A>) => Promise<A>;
 export type NotifySend<A, B> = (e: any, pre:Promise<A>) => Promise<[A, NotifyComplete<B>]>;
 
 export const makeSigningMonitor = <A,B>(): [SetSigningMonitor, NotifySend<A,B>] => {
