@@ -36,6 +36,15 @@ Executing `./reach version` on Linux outputs `./reach: Is a directory`
 Compare where Reach is installed with the current working directory. 
 * Check the current working directory with the terminal command `pwd`.
 
+If running `./reach run` requires `sudo`, then it is likely that:
+
+* A component used by `reach` was installed/created using `sudo`, such as Docker or the folder directory.
+Make sure that all components are installed or created without using super-user permissions. 
+
+* Docker might have been installed using Snap.
+Snap installation in Ubuntu creates permissions issues.
+Uninstall Docker and then re-install using the `apt` command in the terminal.
+
 ## {#ref-ts-config} Reach configuration and REACH_CONNECTOR_MODE
 
 `Missing REACH_CONNECTOR_MODE`
@@ -71,16 +80,8 @@ $ . /home/USER/.profile
 * Usually this is because VSCode needs to be restarted after installing the extension. 
 
 * The extension is actively being updated.
-Sometimes after an update VSCode will need to be restarted in order for syntax highlighting to begin working again. 
 
-## {#ref-ts-permissions} Troubleshooting permissions
-
-If running `./reach run` requires `sudo`, then it is likely that:
-
-1. A component used by `reach` was installed using `sudo`, such as Docker. 
-
-2. Docker might have been installed using Snap.
-Snap installation in Ubuntu creates permissions issues.
+  Sometimes after an update VSCode will need to be restarted in order for syntax highlighting to begin working again. 
 
 ## {#ref-qs-mac-troubleshooting} MacOS troubleshooting
 
@@ -90,10 +91,11 @@ Receiving the following error on **M1 Macs**:
 The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested`
 ```
 
-* Ensure Docker and Docker-compose are installed.
 * Check which mode the terminal is in by executing `$ arch` in the terminal.
-On M1 machines, the output should be `arm64`.
-* Re-download the reach script in the desired directory:
+
+  On M1 machines, the output should be `arm64`.
+
+* Re-download the `reach` script in the desired directory:
 `$ curl https://docs.reach.sh/reach -o reach ; chmod +x reach`
 * Make sure the latest `reach-cli` image is installed: `$ docker pull reachsh/reach-cli:latest`
 * Use `reach-cli` to update the other Reach docker images by running `$ ./reach update` in the terminal.
