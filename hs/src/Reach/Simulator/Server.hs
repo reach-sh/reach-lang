@@ -187,6 +187,16 @@ getAPIs = do
       let apis = C.e_apis g
       return apis
 
+getViews :: StateId -> WebM (M.Map (Maybe String) C.ReachView)
+getViews sid = do
+  graph <- gets e_graph
+  case M.lookup sid graph of
+    Nothing -> do
+      possible "getViews: state not found"
+    Just (g, _) -> do
+      let views = C.e_views g
+      return views
+
 newTok :: StateId -> WebM (C.Token)
 newTok sid = do
   graph <- gets e_graph
@@ -573,6 +583,12 @@ app p srcTxt = do
     setHeaders
     a <- webM $ getAPIs
     json a
+
+  get "/views/:s" $ do
+    setHeaders
+    s <- param "s"
+    v <- webM $ getViews s
+    json v
 
   post "/api_call/:a/:s" $ do
     setHeaders
