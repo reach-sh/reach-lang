@@ -37,8 +37,6 @@ type Token = Integer
 
 type APID = Integer
 
-type VID = Integer
-
 consensusId :: ActorId
 consensusId = -1
 
@@ -81,7 +79,7 @@ instance ToJSON ReachAPI
 data ReachView = ReachView
   { v_name :: Maybe String
   , v_env :: M.Map SLVar IType
-  , v_bl :: Maybe (Maybe DLExportBlock)
+  , v_bl :: Maybe DLExportBlock
   }
   deriving (Generic)
 
@@ -96,9 +94,8 @@ data Global = Global
   , e_nactorid :: ActorId
   , e_naccid :: Account
   , e_napid :: Integer
-  , e_nvid :: Integer
   , e_apis :: M.Map APID ReachAPI
-  , e_views :: M.Map VID ReachView
+  , e_views :: M.Map (Maybe String) ReachView
   , e_partacts :: M.Map Participant ActorId
   , e_messages :: M.Map PhaseId MessageInfo
   }
@@ -145,7 +142,6 @@ initGlobal =
     , e_nactorid = 0
     , e_naccid = 0
     , e_napid = 0
-    , e_nvid = 0
     , e_apis = mempty
     , e_views = mempty
     , e_partacts = mempty
@@ -765,7 +761,18 @@ instance Interp LLConsensus where
         DLAssignment asn' -> do
           _ <- mapM (\(k, v) -> interp $ DL_Set at k v) $ M.toAscList asn'
           return V_Null
-    LLC_ViewIs _at _part _var _export cons -> interp cons
+    LLC_ViewIs _at part' _var export cons -> do
+      g <- getGlobal
+      let views = e_views g
+      let part = fmap bunpack part'
+      case M.lookup part views of
+        Nothing -> possible "LLC_ViewIs: view not found"
+        Just view -> do
+          let view' = view { v_bl = export }
+          let views' = M.insert part view' views
+          let g' = g { e_views = views' }
+          setGlobal g'
+      interp cons
 
 instance Interp LLStep where
   interp = \case
@@ -950,13 +957,11 @@ registerViews ((sl, m) : vs) = do
 
 registerView :: State -> Maybe String -> M.Map SLVar IType -> State
 registerView (g, l) s env = do
-  let vid = e_nvid g
   let views = e_views g
   let v = ReachView { v_name = s, v_env = env, v_bl = Nothing }
   let g' =
         g
-          { e_views = M.insert vid v views
-          , e_nvid = vid + 1
+          { e_views = M.insert s v views
           }
   (g', l)
 

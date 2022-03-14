@@ -6,6 +6,7 @@ module Reach.AST.Base where
 import Control.Applicative ((<|>))
 import Control.DeepSeq (NFData)
 import Data.Aeson as Aeson
+import Data.Aeson.Encoding (text)
 import qualified Data.ByteString.Char8 as B
 import Data.ByteString.Internal (w2c)
 import qualified Data.ByteString.Lazy as LB
@@ -48,6 +49,11 @@ instance ToJSON ReachSource
 instance ToJSON SrcLoc where
   toJSON v = toJSON $ show v
 instance FromJSON SrcLoc
+
+instance ToJSONKey (Maybe String) where
+  toJSONKey = ToJSONKeyText f g
+    where f = T.pack . show
+          g = text . T.pack . show
 
 -- This is a "defaulting" instance where the left info is preferred,
 -- but can fall back on the right if info is absent from the left.
