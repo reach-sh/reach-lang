@@ -1,0 +1,11 @@
+reachc: error[RE0129]: ^ expects arguments of either UInt, Bool, or Digest, but received: Address and Address
+
+  ./Err_xor_Types.rsh:9:17:application
+
+  9|     const c = a ^ b;
+
+Trace:
+  in [unknown function] from (./Err_xor_Types.rsh:6:13:function exp) at (./Err_xor_Types.rsh:6:9:application)
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0129
+
