@@ -147,7 +147,7 @@ export const digest_xor = (xd: string, yd: string): string => {
   const xs = parseHex(xc);
   const ys = parseHex(yc);
 
-  const result = '0x' + xs.map((x: number, i: number) => (x ^ ys[i]).toString(16)).join('');
+  const result = '0x' + xs.map((x: number, i: number) => (x ^ ys[i]).toString(16).padStart(2, '0')).join('');
   return result;
 }
 

@@ -1016,7 +1016,7 @@ cprim = \case
   BAND -> call "&"
   BIOR -> call "|"
   BXOR -> call "^"
-  DIGEST_XOR -> call "^"
+  DIGEST_XOR -> call "b^"
   DIGEST_EQ -> call "=="
   ADDRESS_EQ -> call "=="
   TOKEN_EQ -> call "=="
