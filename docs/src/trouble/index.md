@@ -81,7 +81,7 @@ $ . /home/USER/.profile
 
 * The extension is actively being updated.
 
-  Sometimes after an update VSCode will need to be restarted in order for syntax highlighting to begin working again. 
+  Sometimes after an update, VSCode needs to be restarted in order for syntax highlighting to begin working again. 
 
 ## {#ref-qs-mac-troubleshooting} MacOS troubleshooting
 
