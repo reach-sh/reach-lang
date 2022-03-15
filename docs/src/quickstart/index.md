@@ -116,7 +116,7 @@ Reach requires [make](https://en.wikipedia.org/wiki/Make_(software)), [Docker En
 ## {#ref-qs-linux-install} Installation
 
 Follow the [Docker Engine](https://docs.docker.com/engine/install/) instructions for installing on your version of Linux.
-The following instructions assumes that Ubuntu is the installed distro.
+The following instructions assume that Ubuntu is the installed distro.
 Check the commands required for completing the tasks below for your distro.
 
 In the terminal, run the following to install `make`:
