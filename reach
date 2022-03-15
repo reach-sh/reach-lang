@@ -40,6 +40,14 @@ TMP=$(mktemp -d "/tmp/reach.$(date -u '+%Y-%m-%dT%H-%M-%SZ')-XXXX")
 CNF="${XDG_CONFIG_HOME:-$HOME/.config}/reach"; CNF="$(mkdir -p "$CNF" && cd "$CNF" && pwd)"
 export TMP
 
+if [ -z "$REACH_ENV_PRS" ] && [ -f "$CNF/env" ]; then
+  e="$(env |grep REACH)"
+  # shellcheck disable=SC1091
+  . "$CNF/env"
+  for l in $e; do export "${l?}"; done
+  export REACH_ENV_PRS=1 # Prevent recursive sourcing
+fi
+
 run_d () {
   REACH_HS="$(cd "$(dirname "$0")" && pwd)/hs"
   export REACH_DIR_EMBED="${REACH_DIR_EMBED:-"$(cd "$(dirname "$0")" && pwd)/hs/app/reach/embed"}"

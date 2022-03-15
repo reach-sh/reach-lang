@@ -1661,68 +1661,31 @@ config = command "config" $ info f d
         putStrLn $ "Configuration has been saved in " <> efh <> ".\n"
 
       let efh' = pack efh
-      let sourceMe = do
-            let shell' = packs shell
-            let s' = [N.text|
-              echo "Run the following command to activate your new configuration:"
-              echo
-              echo " $ . $$P"
-              echo
-            |]
-            let s = [N.text|
-              if grep -E '^if \[ -f $efh' \]; then . $efh'; fi$$' "$$P" >/dev/null; then
-                $s'
-              else
-                printf "Enter 'y' to update %s and make your configuration permanent: " "$$P"
-                read -r r
-                echo
-                case $$r in
-                  [Yy]*)
-                    printf '\nif [ -f $efh' ]; then . $efh'; fi\n' >> "$$P"
-                    $s'
-                    ;;
-                  *)
-                    echo "$efh' has been updated but its contents won't become active until you re-run \`reach config\` and select 'y' to source it from $$P."
-                    echo
-                    echo "If you'd prefer to do this manually, append the following line to $$P:"
-                    echo
-                    echo " if [ -f $efh' ]; then . $efh'; fi"
-                    echo
-                    ;;
-                esac
-              fi
-            |]
-            write
-              [N.text|
-            if [ -f "$$P" ]; then
-              echo "You appear to be using the \`$shell'\` shell, with environment configuration stored in $$P."
-              $s
-            else
-              echo "Reach didn't detect a suitable $$P"
-              cat << 'EOF'
-            and cannot recommend steps to make this configuration permanent.
-            Please consult the `$shell'` documentation for tips on how to set
-            up your environment correctly or file an issue at:
+      let shell' = packs shell
+      let sourceMe = write [N.text|
+        if [ -f "$$P" ]; then
+          echo "You appear to be using the \`$shell'\` shell, with environment configuration stored in $$P."
+        fi
 
-            $uriIssues
-            EOF
-            fi
-          |]
+        if ! (grep -E '^if \[ -f $efh' \]; then . $efh'; fi$$' "$$P" >/dev/null); then
+          echo
+          printf "Enter 'y' to update %s if you'd like to automatically source $efh' at login: " "$$P"
+          read -r r
+          echo
+          case $$r in
+            [Yy]) printf '\nif [ -f $efh' ]; then . $efh'; fi\n' >> "$$P" ;;
+               *) : ;;
+          esac
+        fi
+
+        echo "Paste the following command into your terminal to activate your new configuration:"
+        echo
+        echo " $ . $$P"
+        echo
+      |]
 
       case shell of
-        ShellUnknown ->
-          liftIO $
-            T.putStrLn
-              [N.text|
-        Reach didn't recognize shell "$shellRaw" and cannot recommend steps
-        to make this configuration permanent. Please consult your shell's
-        documentation in order to complete configuration manually.
-
-        If you believe this is a mistake or would like to request support for
-        a new shell, please file an issue at:
-
-        $uriIssues
-      |]
+        ShellUnknown -> pure ()
         Bash -> script $ do
           write
             [N.text|
@@ -1779,7 +1742,7 @@ config = command "config" $ info f d
                 "\n"
                 [ "\nDeclining to set a default connector means you'll need to explicitly supply"
                 , "`REACH_CONNECTOR_MODE` at the command-line or in your scripts. See:"
-                , "\nhttps://docs.reach.sh/ref-usage.html#%28env._.R.E.A.C.H_.C.O.N.N.E.C.T.O.R_.M.O.D.E%29"
+                , "\nhttps://docs.reach.sh/tool/#ref-usage-envvar-connector-mode"
                 , "\nIf this isn't what you want you may re-run `reach config` at any time to select one."
                 ]
             mkGetY (promptNetSet cm >> netSet cm) (pure n) " (Type 'y'): " "Continue anyway?"
