@@ -19,7 +19,7 @@ export const main = Reach.App(
   ],
   (A, B, vMain) => {
     A.publish(); commit();
-    B.publish(); commit();
+    // B.publish(); commit();
     B.interact.checkView([MA.None(), MBS.None()]);
 
     A.only(() => { const meta = declassify(interact.meta); });
@@ -27,23 +27,23 @@ export const main = Reach.App(
     vMain.who.set(A);
     vMain.meta.set(meta);
     commit();
-    B.publish(); commit();
+    // B.publish(); commit();
     B.interact.checkView([MA.Some(A), MBS.Some(meta)]);
 
     A.publish();
     vMain.who.set();
     commit();
-    B.publish(); commit();
+    // B.publish(); commit();
     B.interact.checkView([MA.None(), MBS.Some(meta)]);
 
     A.publish();
     vMain.who.set(A);
     vMain.meta.set();
     commit();
-    B.publish(); commit();
+    // B.publish(); commit();
     B.interact.checkView([MA.Some(A), MBS.None()]);
 
-    B.publish(); commit();
+    // B.publish(); commit();
     A.publish(); commit();
     B.interact.checkView([MA.None(), MBS.None()]);
 
