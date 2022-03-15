@@ -98,6 +98,13 @@ Each `{!rsh} participantName` must be unique.
 
 `{!rsh} participantInteractInterface` is a @{defn("participant interact interface")}, an object where each field indicates the type of a function or value which must be provided to the backend by the frontend for interacting with the participant.
 
+In the [Rock, Paper, and Scissors](##tut-3) tutorial, Alice and Bob receive the `getHand` and `seeOutcome` interact interfaces from the construct `Player` in the following sample code: 
+
+```
+load: /examples/rps-2-rps/index.rsh
+range: 1-14
+```
+
 ### {#ref-programs-appinit-api} API Definition
 
 @{ref("rsh", "API")}
@@ -106,6 +113,8 @@ API('Voter', { vote: Fun([Address], UInt) })
 // or
 API({ vote: Fun([Address], UInt) })
 ```
+
+APIs are functions that can be called by other contracts, as well as off-chain.
 
 An API is defined with `{!rsh} API(apiName, apiInterface)` or `{!rsh} API(apiInterface)`, where `{!rsh} apiName` is a string that labels the API and `{!rsh} apiInterface` is an object where each field indicates the type of a function provided by the contract as an API.
 These APIs are available in frontends via the `{!js} ctc.apis` object, wherein fields are the members of `{!rsh} apiInterface` and may be used in `{!rsh} .api` components of `{!rsh} fork` and `{!rsh} parallelReduce` to specify the behavior of the corresponding call.
@@ -124,6 +133,8 @@ View('NFT', { owner: Address })
 // or
 View({ owner: Address })
 ```
+
+Views are read-only functions that can be called by other contracts, as well as off-chain.
 
 A view is defined with `{!rsh} View(viewName, viewInterface)` or `{!rsh} View(viewInterface)`, where `{!rsh} viewName` is a string that labels the view and `{!rsh} viewInterface` is an object where each field indicates the type of a function or value provided by the contract associated with the specified DApp.
 These views are available in frontends via the `{!js} ctc.views` object.

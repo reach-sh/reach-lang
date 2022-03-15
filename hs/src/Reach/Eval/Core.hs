@@ -2322,7 +2322,7 @@ tokenPay mtok_a amt_a msg = do
   doBalanceAssert mtok_a amt_sv PLE msg
   doBalanceUpdate mtok_a SUB amt_sv
 
-getBillTokens :: Maybe (Either SLVal SLVal) -> DLPayAmt -> App (SLType, [DLArg])
+getBillTokens :: Maybe (Either SLVal SLVal) -> DLPayAmt -> App (Bool, [DLArg])
 getBillTokens mbill billAmt = do
   case mbill of
     Just (Left arg) -> do
@@ -2331,12 +2331,14 @@ getBillTokens mbill billAmt = do
         (T_Tuple ts, DLAE_Tuple tas)
           | all (== T_Token) ts -> do
             tas' <- mapM compileArgExpr tas
-            return (ST_Tuple $ map (const ST_UInt) ts, tas')
+            return (True, tas')
         _ -> expect_ $ Err_WithBill_Type ty
     Just (Right _) -> do
+      let nRecv = not $ staticZero $ pa_net billAmt
       let nnBilled = pa_ks billAmt
-      return (ST_Tuple $ map (const ST_UInt) nnBilled, map snd nnBilled)
-    _ -> return (ST_Null, [])
+      return (nRecv, map snd nnBilled)
+    Nothing ->
+      return (False, [])
 
 typeOfBytes :: SLVal -> App (Integer, DLArgExpr)
 typeOfBytes v = do
@@ -3191,21 +3193,22 @@ evalPrim p sargs =
       billAmt <- case fromMaybe (Left zero) mbill of
         Left _ -> return $ DLPayAmt (DLA_Literal $ DLL_Int at 0) []
         Right v -> compilePayAmt TT_Bill v
-      (nnToksBilledType, nnToksBilledRecv) <- getBillTokens mbill billAmt
-      let shouldRetNNToks = case fromMaybe (Right zero) mbill of
-            Left (SLV_Tuple _ ts) -> not $ null ts
-            _ -> False
+      (nBilled, nntbRecv) <- getBillTokens mbill billAmt
+      let nntbC = length nntbRecv
+      let nntbT = ST_Tuple $ replicate nntbC ST_UInt
+      let nntbNo = nntbC == 0
+      let nntbTL = if nntbNo then [] else [nntbT]
       let SLTypeFun dom rng pre post pre_msg post_msg = stf
-      let rng' = ST_Tuple $ if shouldRetNNToks then [ST_UInt, nnToksBilledType, rng] else [ST_UInt, rng]
+      let rng' = ST_Tuple $ [ST_UInt] <> nntbTL <> [rng]
       rt <- st2dte rng
-      let postArg = if shouldRetNNToks then "(dom, [_, _, rng])" else "(dom, [_, rng])"
+      let postArg = "(dom, [_," <> (if nntbNo then "" else " _,") <> " rng])"
       let post' = flip fmap post $ \postv ->
             jsClo at "post" (postArg <> " => post(dom, rng)") $
               M.fromList [("post", postv)]
       let stf' = SLTypeFun dom rng' pre post' pre_msg post_msg
       allTokens <- fmap DLA_Var <$> readSt st_toks
-      let nnToksNotBilled = allTokens \\ nnToksBilledRecv
-      let withBill = DLWithBill (if shouldRetNNToks then nnToksBilledRecv else []) nnToksNotBilled
+      let nnToksNotBilled = allTokens \\ nntbRecv
+      let withBill = DLWithBill nBilled nntbRecv nnToksNotBilled
       res'' <-
         doInteractiveCall
           sargs
@@ -3216,27 +3219,26 @@ evalPrim p sargs =
           (CT_Assume True)
           (\_ fs _ dargs -> DLE_Remote at fs aa rt m payAmt dargs withBill)
       res' <- doInternalLog Nothing res''
+      apdvv <- doArrRef_ res' zero
       let getRemoteResults = do
-            apdvv <- doArrRef_ res' zero
-            case shouldRetNNToks of
-              True -> do
-                nnTokAmts <- doArrRef_ res' $ SLV_Int at 1
-                res <- doArrRef_ res' $ SLV_Int at 2
-                return (apdvv, res, Just nnTokAmts)
+            case nntbNo of
+              True -> return (1, Nothing)
               False -> do
-                res <- doArrRef_ res' $ SLV_Int at 1
-                return (apdvv, res, Nothing)
-      (apdvv, res, mNonNetToksRecv) <- getRemoteResults
-      let withNonNetRecv f = case mNonNetToksRecv of Nothing -> return (); Just t -> f t
+                nnTokAmts <- doArrRef_ res' $ SLV_Int at 1
+                return (2, Just nnTokAmts)
+      (resi, mNonNetToksRecv) <- getRemoteResults
+      res <- doArrRef_ res' $ SLV_Int at resi
       doBalanceUpdate Nothing ADD apdvv
       case fromMaybe (Right zero) mbill of
         Left _ -> do
-          forM_ (zip nnToksBilledRecv [0 .. length nnToksBilledRecv - 1]) $ \(t, i) ->
-            withNonNetRecv $ \nnTokAmts -> do
-              doBalanceUpdate (Just t) ADD
-                =<< doArrRef_ nnTokAmts (SLV_Int at $ fromIntegral i)
+          forM_ (zip nntbRecv [0 .. length nntbRecv - 1]) $ \(t, i) ->
+            case mNonNetToksRecv of
+              Nothing -> return ()
+              Just nnTokAmts -> do
+                doBalanceUpdate (Just t) ADD
+                  =<< doArrRef_ nnTokAmts (SLV_Int at $ fromIntegral i)
           return $ public res'
-        _ -> do
+        Right _ -> do
           sv <- argToSV $ pa_net billAmt
           forM_ (pa_ks billAmt) $ \(a, t) -> do
             a' <- argToSV a

@@ -69,8 +69,8 @@ instance Subst DLTokenNew where
       <*> subst dtn_decimals
 
 instance Subst DLWithBill where
-  subst (DLWithBill y z) =
-    DLWithBill <$> subst y <*> subst z
+  subst (DLWithBill x y z) =
+    DLWithBill x <$> subst y <*> subst z
 
 instance Subst DLExpr where
   subst = \case

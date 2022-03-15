@@ -559,7 +559,10 @@ data LabelRec = LabelRec
   , lr_what :: String
   }
 
-checkCost :: Notify -> Disp -> Bool -> [TEAL] -> [LabelRec] -> IO (M.Map Label Integer)
+type CompanionCalls = M.Map Label Integer
+type CompanionInfo = Maybe CompanionCalls
+
+checkCost :: Notify -> Disp -> Bool -> [TEAL] -> [LabelRec] -> IO CompanionCalls
 checkCost notify disp alwaysShow ts ls = do
   xtraR <- newIORef mempty
   let rgs lab gs = void $ disp ("." <> lab <> "dot") $ LT.toStrict $ T.render $ dotty gs
@@ -1479,6 +1482,7 @@ cGetBalance _at = \case
     op "-"
   Just tok -> do
     cContractAddr
+    incResource R_Asset tok
     ca tok
     code "asset_holding_get" [ "AssetBalance" ]
     op "pop"
@@ -1595,7 +1599,7 @@ ce = \case
         cla $ mdaToMaybeLA mt mva
         cTupleSet at mdt $ fromIntegral i
         cMapStore at
-  DLE_Remote at fs ro rng_ty rm (DLPayAmt pay_net pay_ks) as (DLWithBill nnRecv nnZero) -> do
+  DLE_Remote at fs ro rng_ty rm (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) -> do
     warn_lab <- asks eWhich >>= \case
       Just which -> return $ "Step " <> show which
       Nothing -> return $ "This program"
@@ -1619,8 +1623,7 @@ ce = \case
         op "sha512_256"
         storeAddr
         let mtoksBill = Nothing : map Just nnRecv
-        let mtoksZero = map Just nnZero
-        let mtoksiAll = zip [0..] $ mtoksBill <> mtoksZero
+        let mtoksiAll = zip [0..] mtoksBill
         let (mtoksiBill, mtoksiZero) = splitAt (length mtoksBill) mtoksiAll
         let paid = M.fromList $ (Nothing, pay_net) : (map (\(x, y) -> (Just y, x)) pay_ks)
         let balsT = T_Tuple $ map (const T_UInt) mtoksiAll
@@ -1662,6 +1665,12 @@ ce = \case
           ca a
           ctobs $ argTypeOf a
           makeTxn1 "ApplicationArgs"
+        -- XXX If we can "inherit" resources, then this needs to be removed and
+        -- we need to check that nnZeros actually stay 0
+        forM_ nnRecv $ \a -> do
+          incResource R_Asset a
+          ca a
+          makeTxn1 "Assets"
         op "itxn_submit"
         show_stack ("Remote: " <> sig) Nothing at fs
         appl_idx <- liftIO $ readCounter remoteTxns

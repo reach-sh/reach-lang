@@ -124,7 +124,7 @@ instance Countable DLTokenNew where
     counts [a, b, c, d, e] <> counts f
 
 instance Countable DLWithBill where
-  counts (DLWithBill y z) =
+  counts (DLWithBill _ y z) =
     counts y <> counts z
 
 instance Countable DLExpr where

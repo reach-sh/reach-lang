@@ -152,7 +152,7 @@ instance Pandemic DLSBlock where
   pan (DLSBlock at cxt sts a) = DLSBlock at cxt <$> pan sts <*> pan a
 
 instance Pandemic DLWithBill where
-  pan (DLWithBill b nb) = DLWithBill <$> pan b <*> pan nb
+  pan (DLWithBill nr b nb) = DLWithBill nr <$> pan b <*> pan nb
 
 instance Pandemic DLPayAmt where
   pan (DLPayAmt net ks) = do
@@ -301,7 +301,7 @@ checkUnusedVars m = do
       expect_throw Nothing at $ Err_Unused_Variables l
   return a
 
-evalBundle :: Connectors -> JSBundle -> IO (S.Set SLVar, (SLVar -> IO DLProg))
+evalBundle :: Connectors -> JSBundle -> IO (SLEnv, S.Set SLVar, (SLVar -> IO DLProg))
 evalBundle cns (JSBundle mods) = do
   evalEnv <- makeEnv cns
   let run = flip runReaderT evalEnv
@@ -324,7 +324,7 @@ evalBundle cns (JSBundle mods) = do
         compileDApp shared_lifts exports topv
   case S.null tops of
     True -> do
-      return (S.singleton "default", const $ go $ return defaultApp)
+      return (exe_ex, S.singleton "default", const $ go $ return defaultApp)
     False -> do
       let go' which = go $ env_lookup LC_CompilerRequired which exe_ex
-      return (tops, go')
+      return (exe_ex, tops, go')

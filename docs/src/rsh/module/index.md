@@ -1,11 +1,9 @@
 # {#ref-programs-module} Modules
 
-A Reach @{defn("source file")} is a textual file which specifies a Reach module.
-It is traditionally given the file extension `rsh`,
-e.g. `dao.rsh`.
+A Reach @{defn("source file")} is a textual file which specifies a Reach @{tooltip("module", "a component of a software program containing one or more routines, it can be a separate file from the main program")}.
+It is traditionally given the file extension `rsh`, e.g. `dao.rsh`.
 
-A @{defn("module")} starts with `{!rsh} 'reach @{MAJOR}.@{MINOR}';`
-followed by a sequence of imports and identifier definitions.
+A @{defn("module")} starts with `{!rsh} 'reach @{MAJOR}.@{MINOR}';` followed by a sequence of imports and identifier definitions.
 
 :::note
 See [the guide section on versions](##guide-versions) to understand how Reach uses version numbers like this.
@@ -27,10 +25,11 @@ export const [a, b, ...more] = [ 0, 1, 2, 3, 4 ];
 export function add1(x) { return x + 1; };
 ```
 
-are valid exports.
+are valid @{tooltip("exports", "exporting allows identifiers to be visible to other modules")}.
 
 Module-level identifiers may also be exported after the fact,
-and may be renamed during export. For example:
+and may be renamed during export.
+For example:
 
 ```reach
 const w = 2;
@@ -46,10 +45,16 @@ For example:
 export {u, x as other_x} from './other-module.rsh';
 ```
 
+In this case, there is a module with a name of `other-module.rsh` which contains `u` and `x`.
+Identifier `u` is exported as `u`, and `x` is exported and renamed to be `other_x`.
 An exported identifier in a given module may be imported by other modules.
+Both `u` and `other_x` can be imported from the current module instead of importing them from `other-module.rsh`.
 
-Exports are also exposed to the frontend via `{!js} getExports`. Functions are only exposed
-if they are typed, that is, if they are constructed with `{!rsh} is`.
+Exports are also exposed to the frontend via `{!js} getExports`. 
+For more information on `{!js} getExports` and exposing exports to the frontend, refer to [JavaScript](##ref-backends-js).
+
+Functions are only exposed if they are typed, that is, if they are constructed with `{!rsh} is`.
+Refer to [Types](##ref-programs-types) for more information.
 
 ### {#ref-programs-import} `import`
 
@@ -175,7 +180,6 @@ The following forms are all syntactically valid package import
 expressions:
 
 ```
-
 @account/repo
 @account/repo:
 @account/repo:a/b/file.rsh
@@ -206,7 +210,6 @@ expressions:
 @server:account/repo#ref:a/b/file.rsh
 @server:account/repo#ref:a/b/
 @server:account/repo#ref:file.rsh
-
 ```
 
 ---

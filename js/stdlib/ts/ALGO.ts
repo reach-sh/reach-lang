@@ -148,7 +148,7 @@ export type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 10;
+const reachBackendVersion = 11;
 const reachAlgoBackendVersion = 9;
 export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
@@ -1574,7 +1574,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               howManyMoreFees++; return;
             } else if ( t.kind === 'remote' ) {
               recordApp(t.obj);
-              howManyMoreFees += 1 + bigNumberToNumber(t.pays); return;
+              t.toks.map(recordAsset);
+              howManyMoreFees += 1 + bigNumberToNumber(t.pays) + bigNumberToNumber(t.bills); return;
             } else {
               const { tok } = t;
               let amt: BigNumber = bigNumberify(0);

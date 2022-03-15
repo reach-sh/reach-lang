@@ -4,6 +4,7 @@ const P_int = {
   f: Fun([UInt], UInt),
   g: Fun([UInt], UInt),
   h: Fun([UInt], UInt),
+  i: Fun([], Null),
 };
 
 export const mainS = Reach.App(() => {
@@ -51,8 +52,13 @@ export const mainS = Reach.App(() => {
   hk(x + 3);
   commit();
 
+  const [ [], ik ] =
+    call(P.i);
+  ik(null);
+  transfer([gd, [ hd, tok ]]).to(this);
+  commit();
+
   D.publish();
-  transfer([ gd, [ hd, tok ]]).to(D);
   commit();
   exit();
 });
@@ -66,13 +72,15 @@ const V_int = {
 export const mainC = Reach.App(() => {
   const D = Participant('D', {
     serverInfo: Contract,
+    ztok: Token,
     inform: Fun([UInt, UInt, UInt, UInt], Null),
   });
   init();
   D.only(() => {
     const serverInfo = declassify(interact.serverInfo);
+    const ztok = declassify(interact.ztok);
   });
-  D.publish(serverInfo);
+  D.publish(serverInfo, ztok);
   const server = remote(serverInfo, V_int);
   const x = server.x();
   const serverTok = server.tok();
@@ -80,14 +88,20 @@ export const mainC = Reach.App(() => {
   commit();
   D.only(() => {
     const tok = serverTok;
+    check(ztok != tok);
   });
   D.publish(tok).pay(fr);
+  check(ztok != tok);
   check(tok == serverTok);
   const gr = server.g.pay(fr)(fr);
   const gamt = [gr, tok];
   commit();
   D.pay([gamt]);
   const hr = server.h.pay([gamt])(gr);
+  commit();
+  D.publish();
+  server.i.bill([fr, gamt])();
+  transfer([fr, gamt]).to(D);
   commit();
   D.interact.inform(x, fr, gr, hr);
   exit();

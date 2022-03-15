@@ -1,4 +1,4 @@
-module Reach.EditorInfo (printKeywordInfo) where
+module Reach.EditorInfo (printBaseKeywordInfo) where
 
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Encode.Pretty as A
@@ -18,23 +18,15 @@ customConfig = A.Config {
   confTrailingNewline = True
 }
 
-printKeywordInfo :: IO ()
-printKeywordInfo =
+printBaseKeywordInfo :: (M.Map String SLVal) -> IO ()
+printBaseKeywordInfo stdlibExports =
   B.putStr $
-    A.encodePretty'
-      customConfig $ infoMap
+    A.encodePretty' customConfig $ A.toJSON $
+       M.map
+         (\v -> M.singleton ("CompletionItemKind" :: String) $ show v)
+         $ M.mapMaybe completionKind
+         $ M.union (M.fromList C.base_env_slvals) stdlibExports
 
-infoMap :: A.Value
-infoMap =
-  A.toJSON $
-    M.map
-      (\v -> M.singleton ("CompletionItemKind" :: String) $ show v)
-      completionTypeMap
-
-completionTypeMap :: M.Map String CompletionItemKind
-completionTypeMap =
-  M.mapMaybe completionKind
-  $ M.fromList C.base_env_slvals
 
 data CompletionItemKind
   = CK_Text
@@ -70,6 +62,22 @@ instance Show CompletionItemKind where
 completionKind :: SLVal -> Maybe CompletionItemKind
 completionKind v =
   case v of
+    SLV_Null _ _ -> Just CK_Constant
+    SLV_Bool _ _ -> Just CK_Constant
+    SLV_Int _ _ -> Just CK_Constant
+    SLV_Bytes _ _ -> Just CK_Constant
+    SLV_Array _ _ _ -> Just CK_Constant
+    SLV_Tuple _ _ -> Just CK_Constant
+    SLV_Object _ _ _ -> Just CK_Constant
+    SLV_Struct _ _ -> Just CK_Constant
+    SLV_Clo _ _ _ -> Just CK_Function
+    SLV_Data _ _ _ _ -> Just CK_Constant
+    SLV_DLC _ -> Just CK_Constant
+    SLV_Connector _ -> Just CK_Constant
+    SLV_RaceParticipant _ _ -> Just CK_Constant
+    SLV_Participant _ _ _ _ -> Just CK_Constant
+    SLV_Map _ -> Just CK_Variable
+    SLV_Deprecated _ _ -> Nothing
     SLV_Type _ -> Just CK_TypeParameter
     SLV_Kwd _ -> Just CK_Keyword
     SLV_DLVar _ -> Just CK_Variable
@@ -180,4 +188,3 @@ completionKind v =
         SLForm_apiCall_partial _ -> Nothing
         SLForm_wait -> Just CK_Function
         SLForm_setApiDetails -> Nothing
-    _ -> Nothing
