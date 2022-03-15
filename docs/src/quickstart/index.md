@@ -66,7 +66,7 @@ Click `Resources` in the left-hand menu, and make sure that that `Enable integra
 
 ![WSL integration in Docker`](/quickstart/wsl-integrate.png)
 
-Double-click the Ubuntu icon in the Windows Start-up menu to open the Ubuntu terminal.
+Click the Ubuntu icon in the Windows Start-up menu to open the Ubuntu terminal.
 You will need to provide a `username` and `password` for Ubuntu.
 
 In the terminal, run the following to install `make`:
