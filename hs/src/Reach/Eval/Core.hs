@@ -568,7 +568,6 @@ base_env_slvals =
   , ("intEq", SLV_Prim $ SLPrim_op PEQ)
   , ("polyEq", SLV_Prim $ SLPrim_op PEQ)
   , ("polyNeq", SLV_Prim $ SLPrim_polyNeq)
-  , ("^", SLV_Prim $ SLPrim_xor)
   , ("polyXor", SLV_Prim $ SLPrim_xor)
   , ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
   , ("addressEq", SLV_Prim $ SLPrim_op ADDRESS_EQ)
@@ -1078,7 +1077,7 @@ binaryToPrim = \case
   JSBinOpRsh a -> prim a RSH
   JSBinOpBitAnd a -> prim a BAND
   JSBinOpBitOr a -> prim a BIOR
-  JSBinOpBitXor a -> fun a "^" "^"
+  JSBinOpBitXor a -> fun a "polyXor" "^"
   j -> expect_ $ Err_Parse_IllegalBinOp j
   where
     fun a s ctxt = snd <$> (locAtf (srcloc_jsa "binop" a) $ evalId ctxt s)
