@@ -2050,15 +2050,13 @@ checkTxn (CheckTxn {..}) =
   case staticZero ct_amt of
     True -> return False
     False -> block_ "checkTxn" $ do
-      let check1 f = do
-            code "gtxns" [f]
-            asserteq
+      let get1 f = code "gtxns" [f]
       let ((vTypeEnum, fReceiver, fAmount, _fCloseTo), extras) =
             case ct_mtok of
               Nothing ->
                 (ntokFields, [])
               Just tok ->
-                (tokFields, [ ca tok >> check1 "XferAsset" ])
+                (tokFields, [ get1 "XferAsset" >> ca tok >> asserteq ])
       checkTxnUsage ct_at ct_mtok
       useResource R_Txn
       gvLoad GV_txnCounter
@@ -2066,14 +2064,17 @@ checkTxn (CheckTxn {..}) =
       cint 1
       op "+"
       gvStore GV_txnCounter
+      get1 fAmount
       ca ct_amt
-      check1 fAmount
+      asserteq
       forM_ extras $ id
+      get1 "TypeEnum"
       output $ TConst vTypeEnum
-      check1 "TypeEnum"
+      asserteq
+      get1 fReceiver
       cContractAddr
       cfrombs T_Address
-      check1 fReceiver
+      asserteq
       return True
 
 itxnNextOrBegin :: Bool -> App ()
