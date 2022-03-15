@@ -519,6 +519,7 @@ solPrimApply = \case
   BIOR -> binOp "|"
   BXOR -> binOp "^"
   DIGEST_XOR -> binOp "^"
+  BYTES_XOR -> binOp "^"
   IF_THEN_ELSE -> \case
     -- XXX Copy the simplifications from ALGO.hs
     [c, t, f] -> return $ c <+> "?" <+> t <+> ":" <+> f
@@ -954,6 +955,16 @@ solCom = \case
           where
             ei = ".elem" <> pretty i
     return $ vsep $ solBytesSplit x_sz go
+  DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ BYTES_XOR [x, y]) -> do
+    addMemVar dv
+    dv' <- solVar dv
+    let bl = bytesTypeLen $ argTypeOf x
+    x' <- solArg x
+    y' <- solArg y
+    let go i _ = dv' <> ei <+> "=" <+> x' <> ei <+> "^" <+> y' <+> ei <> semi
+          where
+            ei = ".elem" <> pretty i
+    return $ vsep $ solBytesSplit bl go
   DL_Let _ (DLV_Let _ dv) (DLE_ArrayConcat _ x y) -> do
     doConcat dv x y
   DL_Let _ (DLV_Let pu dv) de ->

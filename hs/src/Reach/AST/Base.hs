@@ -326,6 +326,7 @@ data PrimOp
   | BYTES_ZPAD Integer
   | MUL_DIV
   | DIGEST_XOR
+  | BYTES_XOR
   deriving (Eq, Generic, NFData, Ord, Show)
 
 instance Pretty PrimOp where
@@ -353,6 +354,7 @@ instance Pretty PrimOp where
     BYTES_ZPAD x -> "zpad" <> parens (pretty x)
     MUL_DIV -> "muldiv"
     DIGEST_XOR -> "digest_xor"
+    BYTES_XOR -> "bytes_xor"
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)

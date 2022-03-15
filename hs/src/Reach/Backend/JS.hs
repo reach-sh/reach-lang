@@ -281,6 +281,7 @@ jsPrimApply = \case
   BIOR -> jsApply "stdlib.bior"
   BXOR -> jsApply "stdlib.bxor"
   DIGEST_XOR -> jsApply "stdlib.digest_xor"
+  BYTES_XOR -> jsApply "stdlib.bytes_xor"
   IF_THEN_ELSE -> \args -> case args of
     [c, t, f] -> c <+> "?" <+> t <+> ":" <+> f
     _ -> impossible $ "emitJS: ITE called with wrong number of arguments"

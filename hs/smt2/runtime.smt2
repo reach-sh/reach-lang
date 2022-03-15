@@ -20,6 +20,7 @@
 
 (define-fun Bytes_toBytes ((b Bytes)) Bytes
   b)
+(declare-fun Bytes_xor (Bytes Bytes) Bytes)
 
 (declare-fun bytesAppend (Bytes Bytes) Bytes)
 ;; (assert

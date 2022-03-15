@@ -37,6 +37,7 @@ export interface Stdlib_Backend_Shared_User<Ty> {
   lt: (n1: num, n2: num) => boolean
   bytesEq: (s1: string, s2: string) => boolean
   digest_xor: (x: string, y:string) => string
+  bytes_xor: (x: string, y:string) => string
 }
 
 export interface Stdlib_Backend_Shared<Ty> extends Stdlib_Backend_Shared_User<Ty> {

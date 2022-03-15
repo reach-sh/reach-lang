@@ -2042,6 +2042,13 @@ evalPrimOp p sargs = do
         _ -> expect_ $ Err_Apply_ArgCount at 3 (length args)
     DIGEST_EQ -> make_var args
     DIGEST_XOR -> make_var args
+    BYTES_XOR ->
+      case args of
+        [lhs, rhs] -> do
+          (lhs_l, lhs_ae) <- typeOfBytes lhs
+          (_, rhs_ae) <- typeOfBytes rhs
+          make_var_ (T_Bytes lhs_l) [lhs_ae, rhs_ae]
+        _ -> expect_ $ Err_Apply_ArgCount at 2 (length args)
     ADDRESS_EQ -> make_var args
     TOKEN_EQ -> make_var args
     -- FIXME fromIntegral may overflow the Int
@@ -3437,6 +3444,8 @@ evalPrim p sargs =
       case (x_ty, y_ty) of
         (T_UInt, T_UInt) -> prim BXOR
         (T_Digest, T_Digest) -> prim DIGEST_XOR
+        (T_Bytes l, T_Bytes r)
+          | l == r -> prim BYTES_XOR
         (T_Bool, T_Bool) -> do
           f <- lookStdlib "xor"
           evalApplyVals' f sargs

@@ -630,6 +630,7 @@ primOpType BAND = ([T_UInt, T_UInt], T_UInt)
 primOpType BIOR = ([T_UInt, T_UInt], T_UInt)
 primOpType BXOR = ([T_UInt, T_UInt], T_UInt)
 primOpType DIGEST_XOR = ([T_Digest, T_Digest], T_Digest)
+primOpType BYTES_XOR = impossible "bytes_xor type"
 primOpType MUL_DIV = ([T_UInt, T_UInt, T_UInt], T_UInt)
 
 data RemoteFunMode
