@@ -22,6 +22,7 @@ import Reach.EditorInfo
 import Reach.EPP
 import Reach.EraseLogic
 import Reach.Eval
+import Reach.FloatAPI
 import Reach.Linearize
 import Reach.Parser (gatherDeps_top)
 import Reach.Simulator.Server
@@ -95,7 +96,9 @@ compile env (CompilerOpts {..}) = do
           startServer el src
         eol <- bigopt (showp, "eol") el
         showp "eol" eol
-        pil <- epp eol
+        flap <- floatAPI eol
+        showp "flap" flap
+        pil <- epp flap
         showp "state.dot" $ stateDiagram pil
         showp "pil" pil
         apc <- apicut pil

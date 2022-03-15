@@ -98,7 +98,7 @@ longestPathBetween g f d getc = do
                   Nothing -> 0
                   Just c' -> c'
       let ext' :: String -> S.Set (LPEdge String b) -> Integer
-          ext' to es = foldl' max 0 $ map (ext to) $ S.toList es
+          ext' to es = foldl' max 0 $ map (ext to) $ S.toAscList es
       let tom' :: [Integer]
           tom' = map (uncurry ext') $ M.toAscList tom
       return $ foldl' max 0 tom'
@@ -135,7 +135,7 @@ budgetAnalyze g s e getc = do
                       case c1 > c2 of
                         True -> return r1
                         False -> return r2
-      from1 c b (l, es) = from1l c b l $ S.toList es
+      from1 c b (l, es) = from1l c b l $ S.toAscList es
       from1l c b l = \case
         [] -> impossible "ba lnull"
         [x] -> from1e c b l x
@@ -156,19 +156,19 @@ budgetAnalyze g s e getc = do
               fromcs c' b' k xs
   from 0 0 s
 
-restrictGraph :: forall a b . (Show a, Ord a, Ord b) => LPGraph a b -> a -> IO (LPGraph a b)
+restrictGraph :: forall a b . (Ord a, Ord b) => LPGraph a b -> a -> IO (LPGraph a b)
 restrictGraph g n = do
-  putStrLn $ "restrict " <> show n
+  -- putStrLn $ "restrict " <> show n
   (from, to) <- fixedPoint $ \_ ((from :: S.Set a), (to_ :: S.Set a)) -> do
     let to = S.insert n to_
-    putStrLn $ "  FROM " <> show from
-    putStrLn $ "    TO " <> show to
-    putStrLn $ ""
+    -- putStrLn $ "  FROM " <> show from
+    -- putStrLn $ "    TO " <> show to
+    -- putStrLn $ ""
     let incl1 x cs = x == n || S.member x cs
     let esls :: LPEdge a b -> S.Set a
         esls = S.fromList . fst
     let csls :: LPChildren a b -> S.Set a
-        csls cs = M.keysSet cs <> mconcatMap esls (S.toList $ mconcat $ M.elems cs)
+        csls cs = M.keysSet cs <> mconcatMap esls (S.toAscList $ mconcat $ M.elems cs)
     let inclFrom (x, cs) =
           case incl1 x from of
             True -> S.insert x $ csls cs
@@ -657,7 +657,7 @@ buildCFG ts = do
             True -> []
             False ->
               flip concatMap (M.toAscList cs) $ \(to, es) ->
-                flip concatMap (S.toList es) $ \(cls, c) ->
+                flip concatMap (S.toAscList es) $ \(cls, c) ->
                   [(from, to, (M.fromList $ [("label", renderCalls cls <> renderRc c)]))]
   g <- readIORef res_gr
   let getc rs c = fromMaybe 0 $ M.lookup rs c
@@ -748,7 +748,7 @@ checkCost notify disp ls ci ts = do
     let fees = sums [R_Txn, R_ITxn]
     addMsg $ "   + costs " <> show fees <> " " <> plural (fees /= 1) "fee" <> "."
   msg <- readIORef msgR
-  cas <- S.toList <$> readIORef caR
+  cas <- S.toAscList <$> readIORef caR
   --let cr = Left msg
   cr <- case cas of
     [] ->
@@ -3134,9 +3134,9 @@ compile_algo env disp pl = do
   gWarnings <- readIORef gWarningsR
   let wss w lab ss = do
         unless (null ss) $
-          emitWarning Nothing $ w $ S.toList $ S.map LT.unpack ss
+          emitWarning Nothing $ w $ S.toAscList $ S.map LT.unpack ss
         modifyIORef resr $ M.insert lab $
-          aarray $ S.toList $ S.map (Aeson.String . LT.toStrict) ss
+          aarray $ S.toAscList $ S.map (Aeson.String . LT.toStrict) ss
   wss W_ALGOConservative "warnings" gWarnings
   wss W_ALGOUnsupported "unsupported" gFailures
   let apiEntry lab f = (lab, aarray $ map (Aeson.String . s2t) $ M.keys $ M.filter f meth_sm)
