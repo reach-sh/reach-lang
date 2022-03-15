@@ -48,7 +48,7 @@ If running `./reach run` seems to require `sudo` it's possible one or more of th
 * Docker might have been installed using Snap.
 
   Snap installation in Ubuntu creates permissions issues.
-Uninstall Docker and then re-install using the `apt` command in the terminal.
+  Uninstall Docker and then re-install using the `apt` command in the terminal.
 
 ## {#ref-ts-vscode} Troubleshooting Reach VSCode Extension
 
