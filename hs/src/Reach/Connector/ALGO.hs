@@ -79,20 +79,28 @@ count :: (a -> Bool) -> [a] -> Int
 count f l = length $ filter f l
 
 type LPGraph1 a b = M.Map a b
-type LPGraph a b = M.Map a (LPGraph1 a b)
+type LPEdge a b = ([a], b)
+type LPChildren a b = LPGraph1 a (S.Set (LPEdge a b))
+type LPGraph a b = M.Map a (LPChildren a b)
 
 longestPathBetween :: forall b . LPGraph String b -> String -> String -> (b -> Integer) -> IO Integer
 longestPathBetween g f d getc = do
   a2d <- fixedPoint $ \_ (i :: LPGraph1 String Integer) -> do
-    flip mapM g $ \tom -> do
-      let ext to c =
+    flip mapM g $ \(tom :: (LPChildren String b)) -> do
+      let ext :: String -> LPEdge String b -> Integer
+          ext to (cs, r) = getc r + chase to + sum (map chase cs)
+          chase :: String -> Integer
+          chase to =
             case to == d of
-              True -> c
+              True -> 0
               False ->
                 case M.lookup to i of
                   Nothing -> 0
-                  Just c' -> c + c'
-      let tom' = map (uncurry ext) $ M.toAscList $ M.map getc tom
+                  Just c' -> c'
+      let ext' :: String -> S.Set (LPEdge String b) -> Integer
+          ext' to es = foldl' max 0 $ map (ext to) $ S.toList es
+      let tom' :: [Integer]
+          tom' = map (uncurry ext') $ M.toAscList tom
       return $ foldl' max 0 tom'
   let r2d x = fromMaybe 0 $ M.lookup x a2d
   let pc = r2d f
@@ -113,11 +121,12 @@ budgetAnalyze g s e getc = do
       froms l c b = \case
         [] -> impossible $ "ba null: " <> show l
         [x] -> from1 c b x
-        x : xs -> do
-          from1 c b x >>= \case
+        x : xs -> cbas (from1 c b x) (froms l c b xs)
+      cbas m1 m2 = do
+          m1 >>= \case
             r@(True, _, _) -> return r
             r1@(False, c1, b1) ->
-              froms l c b xs >>= \case
+              m2 >>= \case
                 r@(True, _, _) -> return r
                 r2@(False, c2, b2) -> do
                   case b1 > b2 of
@@ -126,26 +135,46 @@ budgetAnalyze g s e getc = do
                       case c1 > c2 of
                         True -> return r1
                         False -> return r2
-      from1 c b (l, r) = do
+      from1 c b (l, es) = from1l c b l $ S.toList es
+      from1l c b l = \case
+        [] -> impossible "ba lnull"
+        [x] -> from1e c b l x
+        x : xs -> cbas (from1e c b l x) (from1l c b l xs)
+      from1e c b l (cs, r) = do
         let gr = getc r
         let c' = c + gr R_Cost
         let b' = b + gr R_Budget
         case c' > b' of
           True -> return (True, c', b')
-          False -> from c' b' l
+          False -> fromcs c' b' l cs
+      fromcs c b k = \case
+        [] -> from c b k
+        x : xs ->
+          from c b x >>= \case
+            r@(True, _, _) -> return r
+            (False, c', b') ->
+              fromcs c' b' k xs
   from 0 0 s
 
-restrictGraph :: forall a b . (Ord a) => LPGraph a b -> a -> IO (LPGraph a b)
+restrictGraph :: forall a b . (Show a, Ord a, Ord b) => LPGraph a b -> a -> IO (LPGraph a b)
 restrictGraph g n = do
+  putStrLn $ "restrict " <> show n
   (from, to) <- fixedPoint $ \_ ((from :: S.Set a), (to_ :: S.Set a)) -> do
     let to = S.insert n to_
+    putStrLn $ "  FROM " <> show from
+    putStrLn $ "    TO " <> show to
+    putStrLn $ ""
     let incl1 x cs = x == n || S.member x cs
-    let inclFrom (x, es) =
+    let esls :: LPEdge a b -> S.Set a
+        esls = S.fromList . fst
+    let csls :: LPChildren a b -> S.Set a
+        csls cs = M.keysSet cs <> mconcatMap esls (S.toList $ mconcat $ M.elems cs)
+    let inclFrom (x, cs) =
           case incl1 x from of
-            True -> S.insert x $ M.keysSet es
+            True -> S.insert x $ csls cs
             False -> mempty
-    let inclTo (x, es) =
-          case S.null $ S.intersection (M.keysSet es) to of
+    let inclTo (x, cs) =
+          case S.null $ S.intersection (csls cs) to of
             False -> S.singleton x
             True -> mempty
     let from' = mconcatMap inclFrom $ M.toAscList g
@@ -518,6 +547,7 @@ buildCFG ts = do
   (labr :: IORef String) <- newIORef $ lTop
   (k_r :: IORef Integer) <- newIORef $ 1
   (res_r :: IORef ResourceCost) <- newIORef $ mempty
+  (calls_r :: IORef [String]) <- newIORef $ mempty
   let modK = modifyIORef k_r
   let l2s = LT.unpack
   let recResource rs c = do
@@ -529,8 +559,9 @@ buildCFG ts = do
   let jump_ :: String -> IO ()
       jump_ t = do
         lab <- readIORef labr
+        calls <- readIORef calls_r
         c <- readIORef res_r
-        let ff = M.unionWith max c
+        let ff = S.insert (calls, c)
         let fg = Just . ff . fromMaybe mempty
         let f = M.alter fg t
         let g = Just . f . fromMaybe mempty
@@ -538,6 +569,8 @@ buildCFG ts = do
   let switch t = do
         writeIORef labr t
         writeIORef res_r mempty
+        writeIORef calls_r mempty
+  let call t = modifyIORef calls_r $ (:) (l2s t)
   let jump t = recCost 1 >> jump_ (l2s t)
   incBudget -- initial budget
   forM_ ts $ \case
@@ -555,8 +588,13 @@ buildCFG ts = do
     TCode "return" [] -> do
       jump lBot
       switch ""
-    TCode "callsub" [_lab'] ->
-      impossible "callsub"
+    TCode "callsub" [lab'] -> do
+      call lab'
+      recCost 1
+    TCode "retsub" [] -> do
+      recCost 1
+      jump lBot
+      switch ""
     TLog len -> do
       recResource R_Log len
       recResource R_LogCalls 1
@@ -609,13 +647,18 @@ buildCFG ts = do
         _ -> recCost 1
   let renderRc m = intercalate "/" $ map f allResources
         where f r = show $ fromMaybe 0 $ M.lookup r m
+  let renderCalls = \case
+        [] -> ""
+        cls -> show cls <> "/"
   let gs :: LPGraph String ResourceCost -> DotGraph
       gs g =
         flip concatMap (M.toAscList g) $ \(from, cs) ->
-          flip concatMap (M.toAscList cs) $ \(to, c) ->
-            case (from == mempty) of
-              True -> []
-              False -> [(from, to, (M.fromList $ [("label", renderRc c)]))]
+          case (from == mempty) of
+            True -> []
+            False ->
+              flip concatMap (M.toAscList cs) $ \(to, es) ->
+                flip concatMap (S.toList es) $ \(cls, c) ->
+                  [(from, to, (M.fromList $ [("label", renderCalls cls <> renderRc c)]))]
   g <- readIORef res_gr
   let getc rs c = fromMaybe 0 $ M.lookup rs c
   let restrict mustLab = do
@@ -906,6 +949,11 @@ block_ lab m = do
 
 block :: Label -> App a -> App a
 block lab m = block_ lab $ label lab >> m
+
+block_' :: String -> App a -> App a
+block_' str m = do
+  lab <- freshLabel str
+  block lab m
 
 dupn :: Int -> App ()
 dupn k = do
@@ -1491,10 +1539,14 @@ cTupleSet at tt idx = do
   -- [ Tuple' ]
   return ()
 
-cMapLoad :: App ()
-cMapLoad = do
+cMapLoad_call :: App ()
+cMapLoad_call = do
+  code "callsub" [ "cMapLoad" ]
+
+cMapLoad_def :: App ()
+cMapLoad_def = do
+  label "cMapLoad"
   Env {..} <- ask
-  labK <- freshLabel "mapLoadK"
   labReal <- freshLabel "mapLoadDo"
   labDef <- freshLabel "mapLoadDef"
   op "dup"
@@ -1504,7 +1556,7 @@ cMapLoad = do
   label labDef
   op "pop"
   padding eMapDataSize
-  code "b" [labK]
+  op "retsub"
   label labReal
   let getOne mi = do
         -- [ Address ]
@@ -1537,7 +1589,7 @@ cMapLoad = do
       op "pop"
       -- [ MapData ]
       return ()
-  label labK
+  op "retsub"
 
 cMapStore :: SrcLoc -> App () -> App ()
 cMapStore _at cnew = do
@@ -1741,7 +1793,7 @@ ce = \case
   DLE_MapRef _ (DLMVar i) fa -> do
     incResource R_Account fa
     ca fa
-    cMapLoad
+    cMapLoad_call
     mdt <- getMapDataTy
     cTupleRef sb mdt $ fromIntegral i
   DLE_MapSet at mpv@(DLMVar i) fa mva -> do
@@ -1759,7 +1811,7 @@ ce = \case
         ca fa
         cMapStore at $ do
           ca fa
-          cMapLoad
+          cMapLoad_call
           cla $ mdaToMaybeLA mt mva
           cTupleSet at mdt $ fromIntegral i
   DLE_Remote at fs ro rng_ty rm (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) -> do
@@ -2741,7 +2793,7 @@ doWrapData tys mk = do
 cmeth :: Int -> CMeth -> App ()
 cmeth sigi = \case
   CApi who sig _ which tys doWrap -> do
-    block_ (LT.pack $ bunpack who) $ do
+    block_' (bunpack who) $ do
       comment $ LT.pack $ "API: " <> sig
       comment $ LT.pack $ " ui: " <> show sigi
       let f :: DLType -> Integer -> (DLType, App ())
@@ -2750,7 +2802,7 @@ cmeth sigi = \case
       doWrap
       code "b" [handlerLabel which]
   CView who sig _ hs -> do
-    block_ (LT.pack $ bunpack who) $ do
+    block_' (bunpack who) $ do
       comment $ LT.pack $ "View: " <> sig
       comment $ LT.pack $ "  ui: " <> show sigi
       gvLoad GV_currentStep
@@ -3069,6 +3121,8 @@ compile_algo env disp pl = do
       ctzero $ gvType gv
       gvStore gv
     code "b" ["updateState"]
+    -- Library functions
+    cMapLoad_def
   totalLen <- readIORef totalLenR
   unless (totalLen <= algoMaxAppProgramLen_really) $ do
     gbad $ LT.pack $ "The program is too long; its length is " <> show totalLen <> ", but the maximum possible length is " <> show algoMaxAppProgramLen_really
