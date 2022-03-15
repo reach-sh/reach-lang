@@ -310,15 +310,22 @@ evalBundle cns (JSBundle mods) addToEnvForEditorInfo = do
         (shared_lifts, libm) <- captureLifts $ evalLibs cns mods
         let exe_ex = libm M.! exe
         retEnv <- if addToEnvForEditorInfo then do
-            let innerEnv !n v = do
+            let envWithBase = M.union exe_ex base_env
+            let innerEnv n v = do
                  objEnv <- evalAsEnvM v
-                 case objEnv of
-                   Nothing -> mempty
-                   Just oe -> do
+                 case (n, objEnv) of
+                   (_, Nothing) -> mempty
+                   ("Array_empty", _) -> mempty
+                   ("Array", _) -> mempty
+                   ("Foldable", _) -> mempty
+                   ("Map", _) -> mempty
+                   ("Object", _) -> mempty
+                   (_, Just oe) -> do
                      env <- evalObjEnv oe
-                     return $ M.mapKeys (\k -> n <> "." <> k) $ env
-            innerEnvs <- mapM (\k -> innerEnv k (snd . sss_sls $ exe_ex M.! k)) $ M.keys exe_ex
-            return $ M.union exe_ex $ M.unions innerEnvs
+                     let ret = M.mapKeys (\k -> n <> "." <> k) $ env
+                     return ret
+            innerEnvs <- mapM (\k -> innerEnv k (snd . sss_sls $ envWithBase M.! k)) $ M.keys envWithBase
+            return $ M.union envWithBase $ M.unions innerEnvs
           else do
             return exe_ex
         return (shared_lifts, libm, retEnv)
