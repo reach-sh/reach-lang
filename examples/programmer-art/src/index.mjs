@@ -88,10 +88,13 @@ let actionsHTML = null;
 const renderObjects = async (nodeId) => {
   const r = await c.getStateLocals(nodeId)
   const apis = await c.getAPIs()
+  const views = await c.getViews(nodeId)
   let obs = ``
   let apiBs = ``
+  let viewBs = ``
   let actorSet = {}
   let apiSet = {}
+  let viewSet = {}
   for (const [k,v] of Object.entries(r.l_locals)) {
     const who = v.l_who ? v.l_who : 'Consensus'
     actorSet[k] = who
@@ -99,6 +102,9 @@ const renderObjects = async (nodeId) => {
   for (const [k,v] of Object.entries(apis)) {
     const who = v.a_name
     apiSet[k] = who
+  }
+  for (const [k,v] of Object.entries(views)) {
+    viewSet[k] = k
   }
   let actors = ``
   let actorsNoCons = ``
@@ -146,6 +152,18 @@ const renderObjects = async (nodeId) => {
       data-api-id="${k}"
       data-api-name="${v.a_name}"
       data-fn="${JSON.stringify(f)}">
+      ${v.a_name}
+      </button> `
+  }
+
+  for (const [k,v] of Object.entries(views)) {
+    debugger
+    viewBs = viewBs + `
+      <button type="button"
+      class="list-group-item list-group-item-action api-button"
+      data-node-id="${nodeId}"
+      data-view-id="${k}"
+      data-api-name="${v.a_name}">
       ${v.a_name}
       </button> `
   }
@@ -212,6 +230,14 @@ const renderObjects = async (nodeId) => {
       <h4>APIs</h4>
       <ul class="list-group list-group-flush">
         ${apiBs}
+      </ul>
+    </div>
+
+    <hr>
+    <div>
+      <h4>Views</h4>
+      <ul class="list-group list-group-flush">
+        ${viewBs}
       </ul>
     </div>
 
