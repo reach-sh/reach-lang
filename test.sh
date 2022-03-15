@@ -132,7 +132,11 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-REACH_DEBUG=Y c users/xbacked-contracts/src/master_vault_asa.rsh
+#REACH_DEBUG=Y cdot examples/map-multi/index.rsh
+#exit 0
+
+# 8679
+REACH_DEBUG=Y cdot users/xbacked-contracts/src/master_vault_asa.rsh
 exit 0
 REACH_DEBUG=Y c users/xbacked-contracts/src/master_vault.rsh
 XB=users/xbacked-contracts/src
