@@ -157,15 +157,19 @@ const renderObjects = async (nodeId) => {
   }
 
   for (const [k,v] of Object.entries(views)) {
-    debugger
-    viewBs = viewBs + `
-      <button type="button"
-      class="list-group-item list-group-item-action api-button"
-      data-node-id="${nodeId}"
-      data-view-id="${k}"
-      data-api-name="${v.a_name}">
-      ${v.a_name}
-      </button> `
+    for (const [k1,v1] of Object.entries(v.v_env)) {
+      viewBs = viewBs + `
+        <button type="button"
+        class="list-group-item list-group-item-action view-button"
+        data-node-id="${nodeId}"
+        data-view-id="${k}"
+        data-view-var="${k1}"
+        data-view-tag="${v1.tag}"
+        data-view-contents="${v1.contents}"
+        data-api-name="${v.v_name}">
+        ${v.v_name}:${k1}
+        </button> `
+    }
   }
 
   spa.innerHTML = `
@@ -283,6 +287,11 @@ const bindObjDetailsEvents = () => {
   const apiBtns = document.querySelectorAll(".api-button")
   apiBtns.forEach((item, i) => {
     item.addEventListener("click",clickAPIButton)
+  });
+
+  const viewBtns = document.querySelectorAll(".view-button")
+  viewBtns.forEach((item, i) => {
+    item.addEventListener("click",clickViewButton)
   });
 
   const newAccBtn = document.querySelector("#newAccButton")
@@ -452,6 +461,22 @@ const clickAPIButton = async (evt) => {
     let v = JSON.stringify(JSON.parse(val))
     c.apiCall(apiId,nodeId,v,t)
     jsonLog.push(["apiCall",apiId,nodeId,v,t])
+  }
+}
+
+const clickViewButton = async (evt) => {
+  objectsHTML = spa.innerHTML
+  const tgt = evt.target.closest(".view-button")
+  const apiId = tgt.dataset.apiId
+  const nodeId = tgt.dataset.nodeId
+  const viewName = tgt.dataset.viewName
+  let val = prompt(`Enter Value for: ${viewName}`,"");
+  if (val === null || val === "") {
+    console.log("User cancelled the prompt.");
+  } else {
+    let v = JSON.stringify(JSON.parse(val))
+    // c.getViewVal(viewId,nodeId,v)
+    jsonLog.push(["getViewVal",viewId,nodeId,v])
   }
 }
 
