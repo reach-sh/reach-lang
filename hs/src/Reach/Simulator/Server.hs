@@ -187,7 +187,7 @@ getAPIs = do
       let apis = C.e_apis g
       return apis
 
-getViews :: StateId -> WebM (M.Map (Maybe String) C.ReachView)
+getViews :: StateId -> WebM (M.Map C.VID C.ReachView)
 getViews sid = do
   graph <- gets e_graph
   case M.lookup sid graph of
@@ -252,6 +252,25 @@ apiCall sid apid v = do
           let graph' = M.insert (fromIntegral sid) (g',l) graph
           modify $ \ st -> st {e_graph = graph'}
           return ()
+
+-- viewCall :: Integer -> C.VID -> C.DLVal -> WebM (DLVal)
+-- viewCall sid vid v = do
+--   graph <- gets e_graph
+--   case M.lookup (fromIntegral sid) graph of
+--     Nothing -> do
+--       possible "viewCall: previous state not found"
+--     Just (g, l) -> do
+--       let views = C.e_views g
+--       case M.lookup vid views of
+--         Nothing -> possible "viewCall: View not found"
+--         Just view -> do
+--
+--           let view' = view { C.a_val = Just v }
+--           let apis' = M.insert apid api' apis
+--           let g' = g { C.e_apis = apis' }
+--           let graph' = M.insert (fromIntegral sid) (g',l) graph
+--           modify $ \ st -> st {e_graph = graph'}
+--           return ()
 
 unblockProg :: Integer -> Integer -> C.DLVal -> WebM ()
 unblockProg sid' aid' v = do
@@ -597,6 +616,13 @@ app p srcTxt = do
     t :: String <- param "type"
     caseTypes apiCall s a t
     json ("OK" :: String)
+
+  -- post "/view_call/:a/:s" $ do
+  --   setHeaders
+  --   a <- param "a"
+  --   s <- param "s"
+  --   caseTypes viewCall s a
+  --   json ("OK" :: String)
 
   get "/actions/:s/:a/" $ do
     setHeaders
