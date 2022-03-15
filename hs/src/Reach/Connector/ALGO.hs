@@ -413,11 +413,14 @@ opt_bs = \case
   [] -> []
   x@(TBytes bs) : l | B.all (== '\0') bs ->
     case B.length bs of
-      0 -> (TBytes mempty) : opt_bs l
+      len | len < 3 -> x : opt_bs l
       32 -> opt_bs $ (TCode "global" ["ZeroAddress"]) : l
-      -- Cost is more important than space
-      -- len -> opt_bs $ (TInt $ fromIntegral len) : (TCode "bzero" []) : l
-      _ -> x : opt_bs l
+      -- Space is more important than cost?
+      len ->
+        let spaceMoreThanCost = True in
+        case spaceMoreThanCost of
+          True -> opt_bs $ (TInt $ fromIntegral len) : (TCode "bzero" []) : l
+          False -> x : opt_bs l
   x : l -> x : opt_bs l
 
 opt_b :: [TEAL] -> [TEAL]
@@ -444,6 +447,8 @@ opt_b1 = \case
   (TCode "==" []) : (TCode "!" []) : l -> (TCode "!=" []) : l
   (TInt 0) : (TCode "!=" []) : (TCode "assert" []) : l ->
     (TCode "assert" []) : l
+  (TCode "*" []) : (TInt x) : (TCode "/" []) : (TInt y) : l | x == y ->
+    l
   (TExtract x 8) : (TCode "btoi" []) : l ->
     (TInt $ fromIntegral x) : (TCode "extract_uint64" []) : l
   x@(TInt _) : (TInt 8) : (TCode "extract3" []) : (TCode "btoi" []) : l ->
