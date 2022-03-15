@@ -257,23 +257,49 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	let diagnostics: Diagnostic[] = [];
 
+	const { executableLocation } = settings;
+	const reachPath = path.join(
+		workspaceFolder, executableLocation
+	);
+
 	// Download the Reach shell script if it does not exist
 	try {
-		if (fs.existsSync('./reach')) {
-			connection.console.log("Reach shell script exists");
+		if (fs.existsSync(reachPath)) {
+			connection.console.info(
+				'Reach shell script exists at'
+			);
+			connection.console.info(reachPath);
 		} else {
-			connection.console.log("Reach shell script not found, downloading now...");
+			connection.console.log('');
+			connection.console.error(
+				'Failed to find reach shell script at'
+			);
+			connection.console.error(
+				reachPath
+			);
+			connection.console.error(
+				'Attempting to download ' +
+				'reach shell script to'
+			);
+			connection.console.error(
+				reachPath
+			);
+			connection.console.error(
+				'now...\n'
+			);
 			exec(
-				"curl https://raw.githubusercontent.com/" +
-				"reach-sh/reach-lang/master/reach " +
-				"-o reach ; chmod +x reach", (
+				'curl https://raw.githubusercontent.com/' +
+				'reach-sh/reach-lang/master/reach -o ' +
+				reachPath +
+				' ; chmod +x ' +
+				reachPath, (
 					error: ExecException | null,
 					stdout: string,
 					stderr: string
 				) => {
 					if (error) {
 						connection.console.error(
-							`Reach download error: ${
+							`Reach download error in try: ${
 								error.message
 							}`
 						);
@@ -281,42 +307,74 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 					}
 					if (stderr) {
 						connection.console.error(
-							`Reach download stderr: ${stderr}`
+							`Reach download stderr in try: ${
+								stderr
+							}`
 						);
 						return;
 					}
 					connection.console.log(
-						`Reach download stdout: ${stdout}`
+						`Reach download stdout in try: ${
+							stdout
+						}`
 					);
 				}
 			);
 		}
 	} catch (err) {
-		connection.console.log("Failed to check if Reach shell scripts exists, downloading anyways...");
+		connection.console.log('');
+		connection.console.error(
+			'Failed to check if reach ' +
+			'shell script exists at'
+		);
+		connection.console.error(
+			reachPath
+		);
+		connection.console.error(
+			`due to error: ${err}`
+		);
+		connection.console.error(
+			'Attempting to download reach shell script to'
+		);
+		connection.console.error(
+			reachPath
+		);
+		connection.console.error(
+			'now...\n'
+		);
 		exec(
-			"curl https://raw.githubusercontent.com/" +
-			"reach-sh/reach-lang/master/reach " +
-			"-o reach ; chmod +x reach", (
+			'curl https://raw.githubusercontent.com/' +
+			'reach-sh/reach-lang/master/reach -o ' +
+			reachPath +
+			' ; chmod +x ' +
+			reachPath, (
 				error: ExecException | null,
 				stdout: string,
 				stderr: string
 			) => {
-			if (error) {
-				connection.console.error(
-					`Reach download error: ${error.message}`
+				if (error) {
+					connection.console.error(
+						`Reach download error in catch: ${
+							error.message
+						}`
+					);
+					return;
+				}
+				if (stderr) {
+					connection.console.error(
+						`Reach download stderr in catch: ${
+							stderr
+						}`
+					);
+					return;
+				}
+				connection.console.log(
+					`Reach download stdout in catch: ${
+						stdout
+					}`
 				);
-				return;
 			}
-			if (stderr) {
-				connection.console.error(
-					`Reach download stderr: ${stderr}`
-				);
-				return;
-			}
-			connection.console.log(`Reach download stdout: ${
-				stdout
-			}`);
-		});
+		);
 	}
 
 	// Compile temp file instead of this current file
@@ -329,11 +387,6 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		connection.console.log(`Temp source file ${reachTempIndexFile} saved!`);
 	});
 
-	const exeLoc = settings?.executableLocation?.trim() || '';
-	const reachPath = (exeLoc == '' || exeLoc == './reach')
-		? path.join(workspaceFolder, "reach")
-		: exeLoc;
-
 	if (theCompilerIsCompiling) {
 		weNeedToCompileAgain = true;
 		console.debug(
@@ -345,10 +398,8 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
 	theCompilerIsCompiling = true;
 
-	console.debug(
-		"Starting compilation at",
-		new Date().toLocaleTimeString()
-	);
+	connection.console.info('Starting compilation using');
+	connection.console.info(reachPath);
 	exec(
 		"cd " + tempFolder + " && " + reachPath +
 		" compile " + REACH_TEMP_FILE_NAME +
