@@ -39,7 +39,7 @@ Executing `./reach version` on Linux outputs `./reach: Is a directory`
 
 * Check the current working directory with the terminal command `pwd`.
 
-If running `./reach run` seems to require `sudo`, then it is likely that:
+If running `./reach run` seems to require `sudo` it's possible one or more of the following is at issue:
 
 * A directory used by `reach` was created with `sudo` or by another account.
 
