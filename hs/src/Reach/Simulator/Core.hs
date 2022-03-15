@@ -37,6 +37,8 @@ type Token = Integer
 
 type APID = Integer
 
+type VID = Integer
+
 consensusId :: ActorId
 consensusId = -1
 
@@ -78,7 +80,8 @@ instance ToJSON ReachAPI
 
 data ReachView = ReachView
   { v_name :: Maybe String
-  , v_env :: M.Map SLVar IType
+  , v_var :: SLVar
+  , v_ty :: IType
   , v_bl :: Maybe DLExportBlock
   }
   deriving (Generic)
@@ -94,8 +97,10 @@ data Global = Global
   , e_nactorid :: ActorId
   , e_naccid :: Account
   , e_napid :: Integer
+  , e_nvid :: Integer
   , e_apis :: M.Map APID ReachAPI
-  , e_views :: M.Map (Maybe String) ReachView
+  , e_views :: M.Map VID ReachView
+  , e_viewids :: M.Map String VID
   , e_partacts :: M.Map Participant ActorId
   , e_messages :: M.Map PhaseId MessageInfo
   }
@@ -142,8 +147,10 @@ initGlobal =
     , e_nactorid = 0
     , e_naccid = 0
     , e_napid = 0
+    , e_nvid = 0
     , e_apis = mempty
     , e_views = mempty
+    , e_viewids = mempty
     , e_partacts = mempty
     , e_messages = mempty
     }
@@ -761,17 +768,24 @@ instance Interp LLConsensus where
         DLAssignment asn' -> do
           _ <- mapM (\(k, v) -> interp $ DL_Set at k v) $ M.toAscList asn'
           return V_Null
-    LLC_ViewIs _at part' _var export cons -> do
+    LLC_ViewIs _at part' var export cons -> do
       g <- getGlobal
       let views = e_views g
+      let viewids = e_viewids g
       let part = fmap bunpack part'
-      case M.lookup part views of
-        Nothing -> possible "LLC_ViewIs: view not found"
-        Just view -> do
-          let view' = view { v_bl = export }
-          let views' = M.insert part view' views
-          let g' = g { e_views = views' }
-          setGlobal g'
+      let pName = case part of
+            Nothing -> ""
+            Just p -> p
+      case M.lookup (pName <> var) viewids of
+        Nothing -> possible "LLC_ViewIs1 : view not found"
+        Just i -> do
+          case M.lookup i views of
+            Nothing -> possible "LLC_ViewIs2 : view not found"
+            Just view -> do
+              let view' = view { v_bl = export }
+              let views' = M.insert i view' views
+              let g' = g { e_views = views' }
+              setGlobal g'
       interp cons
 
 instance Interp LLStep where
@@ -924,7 +938,7 @@ instance Interp LLProg where
     let (apiParts,regParts) = partition (\(a,_b) -> member a apiNames) $ M.toAscList $ sps_ies slparts
     registerParts regParts
     registerAPIs apiParts
-    registerViews $ M.toAscList dvs
+    registerViews $ M.toAscList $ M.map M.toAscList dvs
     interp step
 
 isTheTimePast :: Maybe (DLTimeArg, LLStep) -> App (Maybe LLStep)
@@ -946,22 +960,31 @@ isTheTimePast tc_mtime = do
           False -> return $ Just step
     Nothing -> return $ Nothing
 
-registerViews :: [(Maybe SLPart, M.Map SLVar IType)] -> App ()
+registerViews :: [(Maybe SLPart, [(SLVar, IType)])] -> App ()
 registerViews [] = return ()
-registerViews ((sl, m) : vs) = do
+registerViews ((_, []) : vs) = registerViews vs
+registerViews ((sl, ((slv,ty) : vars)) : vs) = do
   s <- getState
-  let (g,l) = registerView s (fmap bunpack sl) m
+  let (g,l) = registerView s (fmap bunpack sl) slv ty
   setGlobal g
   setLocal l
+  registerViews [(sl,vars)]
   registerViews vs
 
-registerView :: State -> Maybe String -> M.Map SLVar IType -> State
-registerView (g, l) s env = do
+registerView :: State -> Maybe String -> SLVar -> IType -> State
+registerView (g, l) s slv ty = do
   let views = e_views g
-  let v = ReachView { v_name = s, v_env = env, v_bl = Nothing }
+  let viewids = e_viewids g
+  let vid = e_nvid g
+  let v = ReachView { v_name = s, v_var = slv, v_bl = Nothing, v_ty = ty }
+  let pName = case s of
+        Nothing -> ""
+        Just p -> p
   let g' =
         g
-          { e_views = M.insert s v views
+          { e_views = M.insert vid v views
+          , e_viewids = M.insert (pName <> slv) vid viewids
+          , e_nvid = vid + 1
           }
   (g', l)
 
