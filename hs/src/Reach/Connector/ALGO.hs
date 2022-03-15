@@ -75,6 +75,9 @@ type Notify = Bool -> NotifyF
 
 -- General tools that could be elsewhere
 
+count :: (a -> Bool) -> [a] -> Int
+count f l = length $ filter f l
+
 type LPGraph1 a b = M.Map a b
 type LPGraph a b = M.Map a (LPGraph1 a b)
 
@@ -426,6 +429,8 @@ opt_b1 = \case
   [(TCode "return" [])] -> []
   -- This relies on knowing what "done" is
   (TCode "assert" []) : (TCode "b" ["done"]) : x -> (TCode "return" []) : x
+  x@(TBytes _) : y@(TBytes _) : (TCode "swap" []) : l ->
+    opt_b1 $ y : x : l
   (TBytes "") : (TCode "concat" []) : l -> l
   (TBytes "") : b@(TLoad {}) : (TCode "concat" []) : l -> opt_b1 $ b : l
   (TBytes x) : (TBytes y) : (TCode "concat" []) : l ->
@@ -441,6 +446,8 @@ opt_b1 = \case
     (TCode "assert" []) : l
   (TExtract x 8) : (TCode "btoi" []) : l ->
     (TInt $ fromIntegral x) : (TCode "extract_uint64" []) : l
+  x@(TInt _) : (TInt 8) : (TCode "extract3" []) : (TCode "btoi" []) : l ->
+    x : (TCode "extract_uint64" []) : l
   a@(TLoad x _) : (TLoad y _) : l
     | x == y ->
       -- This misses if there is ANOTHER load of the same thing
@@ -895,6 +902,16 @@ block_ lab m = do
 block :: Label -> App a -> App a
 block lab m = block_ lab $ label lab >> m
 
+dupn :: Int -> App ()
+dupn k = do
+  when (k > 0) $ do
+    op "dup"
+    let f = \case
+          0 -> return ()
+          1 -> op "dup"
+          n -> op "dup2" >> f (n - 2)
+    f (k - 1)
+
 assert :: App ()
 assert = op "assert"
 
@@ -912,9 +929,6 @@ dont_concat_first = nop : repeat (op "concat")
 
 padding :: Integer -> App ()
 padding = cla . bytesZeroLit
-
-czaddr :: App ()
-czaddr = padding $ typeSizeOf T_Address
 
 badlike :: (Env -> ErrorSetRef) -> LT.Text -> App ()
 badlike eGet lab = do
@@ -1096,6 +1110,7 @@ exprSmall = \case
   _ -> return False
 
 czpad :: Integer -> App ()
+czpad 0 = return ()
 czpad xtra = do
   padding xtra
   op "concat"
@@ -1219,13 +1234,22 @@ cextract s l =
 csubstring :: Integer -> Integer -> App ()
 csubstring s e = cextract s (e - s)
 
-computeSplice :: Integer -> Integer -> Integer -> (App (), App ())
-computeSplice start end tot = (before, after)
+data SpliceRange
+  = SR_Both (App ()) (App ())
+  | SR_After (App ())
+  | SR_Before (App ())
+  | SR_None
+computeSplice :: Integer -> Integer -> Integer -> SpliceRange
+computeSplice start end tot =
+  case (start == 0, afterLen == 0) of
+    (True, True) -> SR_None
+    (True, False) -> SR_After after
+    (False, True) -> SR_Before before
+    (False, False) -> SR_Both before after
   where
-    -- XXX If start == 0, then we could remove before and have another version
-    -- of the callers of computeSplice
     before = cextract 0 start
-    after = cextract end (tot - end)
+    afterLen = tot - end
+    after = cextract end afterLen
 
 csplice :: SrcLoc -> Integer -> Integer -> Integer -> App ()
 csplice _at b c e = do
@@ -1240,46 +1264,65 @@ csplice _at b c e = do
       -- [ Bytes, Offset, NewByte ]
       op "setbyte"
     False -> salloc_ "spliceNew" $ \store_new load_new -> do
-      let (cbefore, cafter) = computeSplice b c e
       -- [ Big, New ]
       store_new
       -- [ Big ]
-      csplice3 Nothing cbefore cafter load_new
+      csplice3 load_new Nothing (computeSplice b c e)
   -- [ Big' ]
   -- [ Bytes' = X b Y'c Z e]
   return ()
 
-csplice3 :: Maybe (App ()) -> App () -> App () -> App () -> App ()
-csplice3 Nothing cbefore cafter cnew = do
-  -- [ Big ]
-  op "dup"
-  -- [ Big, Big ]
-  cbefore
-  -- [ Big, Before ]
-  cnew
-  -- [ Big, Before, New ]
-  op "concat"
-  -- [ Big, Mid' ]
-  op "swap"
-  -- [ Mid', Big ]
-  cafter
-  -- [ Mid', After ]
-  op "concat"
-  -- [ Big' ]
-  return ()
-csplice3 (Just cbig) cbefore cafter cnew = do
-  cbig
-  cbefore
-  cnew
-  op "concat"
-  cbig
-  cafter
-  op "concat"
+csplice3 :: App () -> Maybe (App ()) -> SpliceRange -> App ()
+csplice3 cnew mcbig = \case
+  SR_None -> mc cnew
+  SR_Before cbefore -> do
+    simpl (mc cbefore) (return ())
+  SR_After cafter -> do
+    simpl (return ()) (mc cafter)
+  SR_Both cbefore cafter ->
+    case mcbig of
+      Nothing -> do
+        -- [ Big ]
+        op "dup"
+        -- [ Big, Big ]
+        cbefore
+        -- [ Big, Before ]
+        cnew
+        -- [ Big, Before, New ]
+        op "concat"
+        -- [ Big, Mid' ]
+        op "swap"
+        -- [ Mid', Big ]
+        cafter
+        -- [ Mid', After ]
+        op "concat"
+        -- [ Big' ]
+        return ()
+      Just cbig -> do
+        cbig
+        cbefore
+        cnew
+        op "concat"
+        cbig
+        cafter
+        op "concat"
+  where
+    mc :: App () -> App ()
+    mc m =
+      case mcbig of
+        Nothing -> m
+        Just cbig -> cbig >> m
+    simpl :: App () -> App () -> App ()
+    simpl cbefore cafter = do
+      cbefore
+      cnew
+      cafter
+      op "concat"
 
 cArraySet :: SrcLoc -> (DLType, Integer) -> Maybe (App ()) -> Either Integer (App ()) -> App () -> App ()
 cArraySet _at (t, alen) mcbig eidx cnew = do
   let tsz = typeSizeOf t
-  let (cbefore, cafter) =
+  let spr =
         case eidx of
           Left ii ->
             computeSplice start end tot
@@ -1287,7 +1330,7 @@ cArraySet _at (t, alen) mcbig eidx cnew = do
               start = ii * tsz
               end = start + tsz
               tot = alen * tsz
-          Right cidx -> (b, a)
+          Right cidx -> SR_Both b a
             where
               b = do
                 cint 0
@@ -1303,7 +1346,7 @@ cArraySet _at (t, alen) mcbig eidx cnew = do
                 op "+"
                 cint $ alen * tsz
                 op "substring3"
-  csplice3 mcbig cbefore cafter cnew
+  csplice3 cnew mcbig spr
 
 computeExtract :: [DLType] -> Integer -> (DLType, Integer, Integer)
 computeExtract ts idx = (t, start, sz)
@@ -1491,20 +1534,21 @@ cMapLoad = do
       return ()
   label labK
 
-cMapStore :: SrcLoc -> App ()
-cMapStore _at = do
+cMapStore :: SrcLoc -> App () -> App ()
+cMapStore _at cnew = do
   Env {..} <- ask
-  -- [ Address, MapData' ]
+  -- [ Address ]
   case eMapKeysl of
     -- Special case one key:
     [0] -> do
-      -- [ Address, MapData' ]
+      -- [ Address ]
       cbs $ keyVary 0
-      -- [ Address, MapData', Key ]
-      op "swap"
+      -- [ Address, Key ]
+      cnew
       -- [ Address, Key, Value ]
       op "app_local_put"
     _ -> do
+      cnew
       forM_ eMapKeysl $ \mi -> do
         -- [ Address, MapData' ]
         code "dig" ["1"]
@@ -1704,15 +1748,15 @@ ce = \case
       -- Special case one key and one map
       True -> do
         ca fa
-        cla $ mdaToMaybeLA mt mva
-        cMapStore at
+        cMapStore at $ do
+          cla $ mdaToMaybeLA mt mva
       _ -> do
         ca fa
-        op "dup"
-        cMapLoad
-        cla $ mdaToMaybeLA mt mva
-        cTupleSet at mdt $ fromIntegral i
-        cMapStore at
+        cMapStore at $ do
+          ca fa
+          cMapLoad
+          cla $ mdaToMaybeLA mt mva
+          cTupleSet at mdt $ fromIntegral i
   DLE_Remote at fs ro rng_ty rm (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) -> do
     warn_lab <- asks eWhich >>= \case
       Just which -> return $ "Step " <> show which
@@ -1972,12 +2016,6 @@ data MakeTxn = MakeTxn
   , mt_submit :: Bool
   }
 
-checkTxn1 :: LT.Text -> App ()
-checkTxn1 f = do
-  code "dig" ["1"]
-  code "gtxns" [f]
-  asserteq
-
 makeTxn1 :: LT.Text -> App ()
 makeTxn1 f = code "itxn_field" [f]
 
@@ -2007,40 +2045,30 @@ checkTxn (CheckTxn {..}) =
   case staticZero ct_amt of
     True -> return False
     False -> block_ "checkTxn" $ do
-      let check1 = checkTxn1
-      let ((vTypeEnum, fReceiver, fAmount, _fCloseTo), extra) =
+      let check1 f = do
+            code "gtxns" [f]
+            asserteq
+      let ((vTypeEnum, fReceiver, fAmount, _fCloseTo), extras) =
             case ct_mtok of
               Nothing ->
-                (ntokFields, return ())
+                (ntokFields, [])
               Just tok ->
-                (tokFields, textra)
-                where
-                  textra = ca tok >> check1 "XferAsset"
+                (tokFields, [ ca tok >> check1 "XferAsset" ])
       checkTxnUsage ct_at ct_mtok
       useResource R_Txn
       gvLoad GV_txnCounter
-      op "dup"
+      dupn $ 3 + length extras
       cint 1
       op "+"
       gvStore GV_txnCounter
       ca ct_amt
       check1 fAmount
-      extra
+      forM_ extras $ id
       output $ TConst vTypeEnum
-      checkTxn1 "TypeEnum"
-      when False $ do
-        -- NOTE: We don't actually care about these... it's not our problem if the
-        -- user does these things.
-        cint 0
-        checkTxn1 "Fee"
-        czaddr
-        checkTxn1 "Lease"
-        czaddr
-        checkTxn1 "RekeyTo"
+      check1 "TypeEnum"
       cContractAddr
       cfrombs T_Address
       check1 fReceiver
-      op "pop" -- pop id
       return True
 
 itxnNextOrBegin :: Bool -> App ()
@@ -2381,14 +2409,28 @@ bindFromGV gv ensure at vls m = do
     False -> m
     True -> do
       av <- allocDLVar at $ T_Tuple $ map varLetType vls
+      av_dup <- allocDLVar at $ T_Tuple $ map varLetType vls
       ensure
+      -- This relies on knowing what sallocVarLet will do
+      let shouldDup (DLVarLet mvc _) =
+            case mvc of
+              Nothing -> False
+              Just DVC_Once -> False
+              Just DVC_Many -> True
+      let howManyDups = count shouldDup vls
+      when (howManyDups > 0) $ do
+        gvLoad gv
+        -- we just did the load, that's one
+        dupn $ howManyDups - 1
       let go = \case
             [] -> m
             (dv, i) : more -> sallocVarLet dv False cgen $ go more
               where
-                cgen = ce $ DLE_TupleRef at (DLA_Var av) i
+                which_av = if shouldDup dv then av_dup else av
+                cgen = ce $ DLE_TupleRef at (DLA_Var which_av) i
       store_let av True (gvLoad gv) $
-        go $ zip vls [0 ..]
+        store_let av_dup True (return ()) $
+          go $ zip vls [0 ..]
 
 bindFromStack :: SrcLoc -> [DLVarLet] -> App a -> App a
 bindFromStack _at vsl m = do
@@ -2918,8 +2960,8 @@ compile_algo env disp pl = do
       op "=="
       code "bz" ["normal"]
       code "txn" ["Sender"]
-      padding eMapDataSize
-      cMapStore at
+      cMapStore at $ do
+        padding eMapDataSize
       code "b" ["checkSize"]
       -- The NON-OptIn case:
       label "normal"

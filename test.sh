@@ -132,6 +132,17 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
+REACH_DEBUG=Y c users/xbacked-contracts/src/master_vault_asa.rsh
+exit 0
+REACH_DEBUG=Y c users/xbacked-contracts/src/master_vault.rsh
+XB=users/xbacked-contracts/src
+diff -u "${XB}"/build/master_vault.main.appApproval.teal "${XB}"/build/master_vault_asa.main.appApproval.teal > xc.diff
+exit 0
+diff -u "${XB}"/master_vault.rsh "${XB}"/master_vault_asa.rsh
+exit 0
+
+exit 0
+
 REACH_DEBUG=Y cdot examples/algospensive/index.rsh
 jb
 ci ALGO algospensive
