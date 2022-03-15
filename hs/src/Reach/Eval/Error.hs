@@ -87,6 +87,7 @@ data EvalError
   | Err_Prim_InvalidArgs SLPrimitive [SLValTy]
   | Err_Shadowed SLVar SLSSVal SLSSVal -- var, alreadyBound, new (invalid)
   | Err_TailNotEmpty [JSStatement]
+  | Err_ToConsensus_Double
   | Err_TopFun_NoName
   | Err_While_IllegalInvariant [JSExpression]
   | Err_Only_NotOneClosure SLValTy
@@ -125,6 +126,7 @@ data EvalError
   | Err_Unused_Variables [(SrcLoc, SLVar)]
   | Err_Remote_NotFun SLVar SLType
   | Err_API_NotFun SLVar SLType
+  | Err_ApiCallAssign
   | Err_Struct_Key_Invalid String
   | Err_Struct_Key_Not_Unique [String] String
   | Err_InvalidNameExport String String
@@ -164,7 +166,7 @@ instance HasErrorCode EvalError where
 
   -- These indices are part of an external interface; they
   -- are used in the documentation of Error Codes.
-  -- If you delete a constructor, do NOT re-allocate the number.
+  -- If a constructor is obsolete, do NOT delete it nor re-allocate its number.
   -- Add new error codes at the end.
   errIndex = \case
     Err_Apply_ArgCount {} -> 0
@@ -225,7 +227,7 @@ instance HasErrorCode EvalError where
     Err_Prim_InvalidArgs {} -> 55
     Err_Shadowed {} -> 56
     Err_TailNotEmpty {} -> 57
-    -- Err_ToConsensus_Double {} -> 58
+    Err_ToConsensus_Double {} -> 58
     Err_TopFun_NoName {} -> 59
     Err_While_IllegalInvariant {} -> 60
     Err_Only_NotOneClosure {} -> 61
@@ -289,6 +291,7 @@ instance HasErrorCode EvalError where
     Err_NotAfterFirst -> 119
     Err_UniqueFirstPublish -> 120
     Err_API_NotFun {} -> 121
+    Err_ApiCallAssign -> 122
     Err_DuplicateName {} -> 123
     Err_No_Participants {} -> 124
     Err_Api_Publish {} -> 125
@@ -594,6 +597,8 @@ instance Show EvalError where
       "Invalid statement block. Expected empty tail, but found " <> found
       where
         found = show (length stmts) <> " more statements"
+    Err_ToConsensus_Double ->
+      "Invalid double publish."
     Err_TopFun_NoName ->
       "Invalid function declaration. Top-level functions must be named."
     Err_While_IllegalInvariant exprs ->
@@ -739,5 +744,7 @@ instance Show EvalError where
       "Cannot assign the loop variable(s) to a `Tuple` of different length at: " <> show at
     Err_xor_Types l r ->
       "^ expects arguments of either UInt, Bool, or Digest, but received: " <> show l <> " and " <> show r
+    Err_ApiCallAssign ->
+      "The left hand side of an API call must be a pair consisting of the domain and return function."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

@@ -2271,6 +2271,12 @@ Depending on the intended behavior of the program, you can fix this error in dif
      });
   ```
 
+## {#RE0129} RE0129
+
+This error indicates that you are attempting to perform an `{!rsh} xor` operation on an unsupported type.
+
+Refer to the `{!rsh} polyXor` documentation to see what types are supported.
+
 ## {#REP0000} REP0000
 
 This error indicates that the body of a `{!rsh} while` loop does not make a publication before the `{!rsh} continue`

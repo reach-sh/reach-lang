@@ -29,7 +29,7 @@ instance HasErrorCode Error where
 
   -- These indices are part of an external interface; they
   -- are used in the documentation of Error Codes.
-  -- If you delete a constructor, do NOT re-allocate the number.
+  -- If a constructor is obsolete, do NOT delete it nor re-allocate its number.
   -- Add new error codes at the end.
   errIndex = \case
     Err_Unreachable {} -> 0
