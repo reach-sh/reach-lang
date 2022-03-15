@@ -53,7 +53,7 @@ Make sure to follow Docker's instructions for installation and configuration.
 Those instructions are subject to change and are outside of our control.
 :::
 
-Click the `Settings`(gear) icon along the top of the Docker app.
+Click the `Settings` (gear) icon along the top of the Docker app.
 
 ![Settings icon in Docker`](/quickstart/settings-icon.png)
 
