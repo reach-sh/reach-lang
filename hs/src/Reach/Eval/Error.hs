@@ -743,7 +743,7 @@ instance Show EvalError where
     Err_LoopVariableLength at ->
       "Cannot assign the loop variable(s) to a `Tuple` of different length at: " <> show at
     Err_xor_Types l r ->
-      "^ expects arguments of either UInt, Bool, or Digest, but received: " <> show l <> " and " <> show r
+      "^ expects arguments of either UInt, Bool, Digest, or Bytes of the same length, but received: " <> show l <> " and " <> show r
     Err_ApiCallAssign ->
       "The left hand side of an API call must be a pair consisting of the domain and return function."
     where

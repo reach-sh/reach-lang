@@ -150,6 +150,13 @@ export const digest_xor = (xd: string, yd: string): string => {
   const result = '0x' + xs.map((x: number, i: number) => (x ^ ys[i]).toString(16).padStart(2, '0')).join('');
   return result;
 }
+export const bytes_xor = (x: string, y: string): string => {
+  const xs = Buffer.from(x);
+  const ys = Buffer.from(y);
+
+  const xors = xs.map((x, i) => x ^ ys[i]);
+  return String.fromCharCode(...xors);
+}
 
 export function Array_set <T>(arr: Array<T>, idx: number, elem: T): Array<T> {
   const arrp = arr.slice();

@@ -310,6 +310,7 @@ smtPrimOp at p dargs =
     BIOR -> bvapp "bvor" cant
     BXOR -> bvapp "bvxor" cant
     DIGEST_XOR -> app "Digest_xor"
+    BYTES_XOR -> app "Bytes_xor"
     IF_THEN_ELSE -> app "ite"
     DIGEST_EQ -> app "="
     ADDRESS_EQ -> app "="
