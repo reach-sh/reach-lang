@@ -8,6 +8,8 @@ export const main = Reach.App(
   {},
   [ Participant('Alice', {
       meta: BS,
+    }),
+    Participant('Bob', {
       checkView: Fun([Tuple(MA, MBS)], Null),
     }),
     View('Main', {
@@ -15,33 +17,35 @@ export const main = Reach.App(
       meta: BS,
     }),
   ],
-  (A, vMain) => {
+  (A, B, vMain) => {
     A.publish(); commit();
-    A.only(() => interact.checkView([MA.None(), MBS.None()]));
+    B.publish(); commit();
+    B.interact.checkView([MA.None(), MBS.None()]);
 
-    A.only(() => {
-      const meta = declassify(interact.meta); });
+    A.only(() => { const meta = declassify(interact.meta); });
     A.publish(meta);
     vMain.who.set(A);
     vMain.meta.set(meta);
     commit();
-    A.only(() => interact.checkView([MA.Some(A), MBS.Some(meta)]));
+    B.publish(); commit();
+    B.interact.checkView([MA.Some(A), MBS.Some(meta)]);
 
     A.publish();
     vMain.who.set();
     commit();
-    A.only(() => interact.checkView([MA.None(), MBS.Some(meta)]));
+    B.publish(); commit();
+    B.interact.checkView([MA.None(), MBS.Some(meta)]);
 
     A.publish();
     vMain.who.set(A);
     vMain.meta.set();
     commit();
-    A.only(() => interact.checkView([MA.Some(A), MBS.None()]));
+    B.publish(); commit();
+    B.interact.checkView([MA.Some(A), MBS.None()]);
 
-    A.publish();
-    commit();
-
-    A.only(() => interact.checkView([MA.None(), MBS.None()]));
+    B.publish(); commit();
+    A.publish(); commit();
+    B.interact.checkView([MA.None(), MBS.None()]);
 
     exit();
   }
