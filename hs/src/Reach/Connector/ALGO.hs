@@ -2507,6 +2507,7 @@ callCompanion at cc = do
           True -> do
             cint_ at 0
             incResource R_App $ DLA_Literal $ DLL_Int at 0
+            freeResource R_App $ cr_ro
           False -> do
             ca cr_ro
             unless del $ do
@@ -2564,7 +2565,7 @@ ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich w
       "Step " <> show which <> "'s argument length is " <> show argSize
       <> ", but the limit is " <> show algoMaxAppTotalArgLen
       <> ". Step " <> show which <> " starts at " <> show at
-  let bindFromMsg = bindFromGV GV_argMsg (return ()) at
+  let bindFromMsg = bindFromGV GV_argMsg (gvStore GV_argMsg) at
   let bindFromSvs = bindFromSvs_ at svsl
   let lab = handlerLabel which
   block_ lab $ do
@@ -2746,7 +2747,6 @@ cmeth sigi = \case
           f t i = (t, code "txna" ["ApplicationArgs", texty i])
       cconcatbs_ (const $ return ()) $ zipWith f tys [1 ..]
       doWrap
-      gvStore GV_argMsg
       code "b" [handlerLabel which]
   CView who sig _ hs -> do
     block_ (LT.pack $ bunpack who) $ do
@@ -2989,13 +2989,15 @@ compile_algo env disp pl = do
     gvStore GV_wasMeth
     cblt "method" cmeth $ bltM meth_im
     label "publish"
-    argLoad ArgPublish
-    cfrombs T_UInt
+    -- Load and store the time
     argLoad ArgTime
     cfrombs T_UInt
     gvStore GV_argTime
+    -- Push the message on the stack for later
     argLoad ArgMsg
-    gvStore GV_argMsg
+    -- Load the publish number
+    argLoad ArgPublish
+    cfrombs T_UInt
     cblt "publish" ch $ bltM hm
     forM_ (M.toAscList hm) $ \(hi, hh) ->
       cloop hi hh
