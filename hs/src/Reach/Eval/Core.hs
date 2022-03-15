@@ -4727,7 +4727,7 @@ doApiCall lhs (ApiCallRec {..}) = do
           [jsConst a returnLVal doLog, callOnly [jsThunkStmts a [es interactOut]]]
   let assignLhs = jsConst a lhs $ jsArrayLiteral a [dom, apiReturn]
   let setDetails = jsCall a (jid ".setApiDetails") [slac_who, dom]
-  let ss = [es setDetails, callOnly [onlyThunk], es pub4, assignLhs]
+  let ss = [callOnly [onlyThunk], es pub4, assignLhs, es setDetails]
   return ss
 
 doForkAPI2Case :: [JSExpression] -> App [JSExpression]
