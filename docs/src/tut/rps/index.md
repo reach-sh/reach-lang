@@ -62,7 +62,7 @@ $ ./reach config
 
 This will make subsequent uses of the `reach` script more convenient by tuning its runtime behavior to your specific needs and only downloading the dependencies you'll actually use.
 
-`reach config` sets overridable defaults for _all_ Reach projects on your development machine and not just the current one, so feel free to skip this step if you'd prefer not to make your choices global.
+`{!cmd} reach config` sets overridable defaults for _all_ Reach projects on your development machine and not just the current one, so feel free to skip this step if you'd prefer not to make your choices global.
 
 Since Reach is Dockerized, when you first use it, you'll need to download the images it uses.
 Fetch them by running
