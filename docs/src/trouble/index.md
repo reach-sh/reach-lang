@@ -41,7 +41,7 @@ Executing `./reach version` on Linux outputs `./reach: Is a directory`
 
 If running `./reach run` seems to require `sudo`, then it is likely that:
 
-* A component used by `reach` was installed/created using `sudo`, such as the directory.
+* A directory used by `reach` was created with `sudo` or by another account.
 
   Make sure that the current user has read/write permissions in the directory. 
 
