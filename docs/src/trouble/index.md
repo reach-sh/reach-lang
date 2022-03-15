@@ -6,7 +6,7 @@ If you receive one of the following errors:
 reach: /app/tmp/out.sh: openFile: permission denied (Permission denied)
 ```
 
-OR
+or
 
 ```
 chmod: cannot access '/tmp/reach.../out.sh': No such file or directory
@@ -22,27 +22,32 @@ chmod: cannot access '/tmp/reach.../out.sh': No such file or directory
 "I'm running Windows 8 and cannot install Docker."
 
 Unfortunately, Docker Desktop does not support Windows 8.
-Also, Reach is not able to run on Windows 8. 
+Thus, Reach is not able to run on Windows 8. 
 
 Possible solutions are:
 * Upgrade to Windows 10 or Windows 11.
-* Partition the drive (or use a second drive) and install of a copy of a supported Linux distro.
+* Partition the drive (or use a second drive) and install a copy of a supported Linux distro.
 * Run a VM with a supported OS.
-It is likely that this option has the worst experience due to the splitting of system resources.
+
+  It is likely that running a VM has the worst experience due to the splitting of system resources.
 
 Executing `./reach version` on Linux outputs `./reach: Is a directory`
 
 * This error usually occurs when `reach` is being called from a directory where it is not installed.
-Compare where Reach is installed with the current working directory. 
+
+  Compare where Reach is installed with the current working directory. 
+
 * Check the current working directory with the terminal command `pwd`.
 
-If running `./reach run` requires `sudo`, then it is likely that:
+If running `./reach run` seems to require `sudo`, then it is likely that:
 
-* A component used by `reach` was installed/created using `sudo`, such as Docker or the folder directory.
-Make sure that all components are installed or created without using super-user permissions. 
+* A component used by `reach` was installed/created using `sudo`, such as the directory.
+
+  Make sure that the current user has read/write permissions in the directory. 
 
 * Docker might have been installed using Snap.
-Snap installation in Ubuntu creates permissions issues.
+
+  Snap installation in Ubuntu creates permissions issues.
 Uninstall Docker and then re-install using the `apt` command in the terminal.
 
 ## {#ref-ts-vscode} Troubleshooting Reach VSCode Extension
@@ -68,9 +73,13 @@ The requested image's platform (linux/amd64) does not match the detected host pl
   On M1 machines, the output should be `arm64`.
 
 * Re-download the `reach` script in the desired directory:
-`$ curl https://docs.reach.sh/reach -o reach ; chmod +x reach`
+
+```cmd
+$ curl https://docs.reach.sh/reach -o reach ; chmod +x reach
+```
+
 * Make sure the latest `reach-cli` image is installed: `$ docker pull reachsh/reach-cli:latest`
 * Use `reach-cli` to update the other Reach docker images by running `$ ./reach update` in the terminal.
 
-If the information in this troubleshooting guide does fix your issue, please report any errors you encounter in the [Discord #help](https://discord.com/channels/628402598663290882/749639931399241792) channel.
+If the information in this troubleshooting guide does not fix your issue, please report any errors you encounter in the [Discord #help](https://discord.com/channels/628402598663290882/749639931399241792) channel.
 This page will be updated based on issues and solutions discovered in that channel.

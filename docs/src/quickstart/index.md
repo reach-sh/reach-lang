@@ -1,7 +1,7 @@
 # {#ref-qs} Installation and Setup
 
 This quickstart guide outlines the step-by-step instructions for getting started with programming in Reach.
-You can install on the following OS systems:
+You can install on the following operating systems:
 
 * [Windows](##ref-qs-win)
 * [Linux](##ref-qs-linux)
@@ -9,7 +9,7 @@ You can install on the following OS systems:
 
 # {#ref-qs-win} Windows
 
-Reach requires WSL and [Docker Desktop](https://www.docker.com/get-started) installed.
+Reach requires WSL 2 and [Docker Desktop](https://www.docker.com/get-started) to be installed.
 
 ## {#ref-qs-win-prereqs} Prerequisites
 
@@ -78,7 +78,7 @@ $ sudo apt install make
 Next, run the following to allow `apt` to use repositories containing https:
 
 ```cmd
-$ sudo apt-get install ca-certificates curl gnupg lsb-release
+$ sudo apt install ca-certificates curl gnupg lsb-release
 ```
 
 Create and navigate to the reach directory with the following command:
@@ -110,11 +110,14 @@ Reach requires [make](https://en.wikipedia.org/wiki/Make_(software)), [Docker En
 
 * A compatible version of Linux.
 
+  We suggest using the most recent version of Ubuntu and all instructions are written for that system.
   Check the [Docker Engine](https://docs.docker.com/engine/install/) page for supported distros. 
 
 ## {#ref-qs-linux-install} Installation
 
 Follow the [Docker Engine](https://docs.docker.com/engine/install/) instructions for installing on your version of Linux.
+The following instructions assumes that Ubuntu is the installed distro.
+Check the commands required for completing the tasks below for your distro.
 
 In the terminal, run the following to install `make`:
 
@@ -125,7 +128,7 @@ $ sudo apt install make
 Next, run the following to allow `apt` to use repositories containing https:
 
 ```cmd
-$ sudo apt-get install ca-certificates curl gnupg lsb-release
+$ sudo apt install ca-certificates curl gnupg lsb-release
 ```
 
 After that, run:
@@ -165,7 +168,7 @@ Check out our [Rock Paper Scissors!](##tut) tutorial to get started.
 
 Reach is compatible with current M1 chips and previous Intel chips running macOS 10.15 or newer. 
 Installation instructions should not differ regardless of the MacOS architecture. 
-Reach requires [make](https://en.wikipedia.org/wiki/Make_(software)), [Docker](https://www.docker.com/get-started), and [Docker Compose](https://docs.docker.com/compose/install/).
+Reach requires installing [Docker](https://www.docker.com/get-started).
 
 ## {#ref-qs-mac-install} Installation
 
@@ -176,13 +179,7 @@ Test this by opening `terminal` and running the following command:
 $ make --version
 ```
 
-Check if Docker is installed with the following command:
-
-``` cmd
-$ docker --version
-```
-
-If it is not installed, download [Docker Desktop](https://www.docker.com/get-started) and follow the prompts to complete application setup.
+Download [Docker Desktop](https://www.docker.com/get-started) and follow the prompts to complete application setup.
 
 According to the [Docker Docs](https://docs.docker.com/compose/install/), "Docker Desktop for Mac includes Compose along with other Docker apps, so Mac users do not need to install Compose separately."
 
@@ -192,8 +189,8 @@ To verify that Docker Compose is operating on your Mac, execute the command:
 $ docker-compose --version
 ```
 
-When all three commands return version numbers, Reach is ready to be installed. 
-We recommend creating a parent directory `reach` that will contain the `reach` programming language and all of your Reach projects as subdirectories. i.e.
+When it returns a version number, Reach is ready to be installed. 
+We recommend creating a parent directory named `reach` that will contain all of your Reach projects as subdirectories. i.e.
 
 ```
 reach
@@ -210,7 +207,7 @@ reach
 └───project3
 ```
 
-Create and navigate to the reach directory with the following command:
+Create and navigate to the `reach` directory with the following command:
 
 ``` cmd
 $ mkdir -p ~/reach && cd ~/reach
