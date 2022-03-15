@@ -478,26 +478,25 @@ df_com mkk back = \case
     (_, tokA) <- fluidRef at FV_tokens
     (_, infos) <- fluidRef at FV_tokenInfos
     (lookup_ss, idx) <- case mpos of
-              Just i  -> return ([], DLA_Literal $ DLL_Int at $ fromIntegral i)
-              Nothing -> lookupTokenIdx at tok tokA
+      Just i -> return ([], DLA_Literal $ DLL_Int at $ fromIntegral i)
+      Nothing -> lookupTokenIdx at tok tokA
     infoTy <- tokenInfoType
-    info   <- mkVar at "tokInfo" tokenInfoElemTy
+    info <- mkVar at "tokInfo" tokenInfoElemTy
     infos' <- mkVar at "tokInfos'" infoTy
-    info'  <- mkVar at "tokInfo'" tokenInfoElemTy
-    bal    <- mkVar at "tokBal" $ T_UInt
+    info' <- mkVar at "tokInfo'" tokenInfoElemTy
+    bal <- mkVar at "tokBal" $ T_UInt
     supply <- mkVar at "tokSupply" $ T_UInt
     destroyed <- mkVar at "destroyed" $ T_Bool
     let infoAt = DLE_TupleRef at (DLA_Var info)
     let bs =
-          [
-            asn info $ DLE_ArrayRef at infos idx
+          [ asn info $ DLE_ArrayRef at infos idx
           , asn bal $ infoAt 0
           , asn supply $ infoAt 1
           , asn destroyed $ infoAt 2
-          , asn info' $ DLE_LArg at $ DLLA_Tuple [
-            if meta == TM_Balance   then newVal else DLA_Var bal,
-            if meta == TM_Supply    then newVal else DLA_Var supply,
-            if meta == TM_Destroyed then newVal else DLA_Var destroyed
+          , asn info' $ DLE_LArg at $ DLLA_Tuple
+            [ if meta == TM_Balance   then newVal else DLA_Var bal
+            , if meta == TM_Supply    then newVal else DLA_Var supply
+            , if meta == TM_Destroyed then newVal else DLA_Var destroyed
             ]
           , asn infos' $ DLE_ArraySet at infos idx (DLA_Var info')
           ]
@@ -510,8 +509,8 @@ df_com mkk back = \case
         True -> do
           tokA' <- mkVar at "tokens'" =<< tokenArrType
           return [ fs
-                  , DKC_Let at (DLV_Let DVC_Many tokA') $ DLE_ArraySet at tokA idx tok
-                  , DKC_FluidSet at FV_tokens $ DLA_Var tokA' ]
+                 , DKC_Let at (DLV_Let DVC_Many tokA') $ DLE_ArraySet at tokA idx tok
+                 , DKC_FluidSet at FV_tokens $ DLA_Var tokA' ]
     rst <- flip (foldr mkk) bs <$> rec (foldl' (flip DK_Com) k as)
     return $ foldr mkk rst lookup_ss
   DK_Com m k -> do
