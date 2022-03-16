@@ -254,6 +254,9 @@ initApp p st = runApp st $ interp p
 initAppFromStep :: LLStep -> State -> PartState
 initAppFromStep step st = runApp st $ interp step
 
+runWithState :: (Interp a) => a -> State -> PartState
+runWithState k st = runApp st $ interp k
+
 ledgerNewTokenRefs :: Integer -> DLTokenNew -> App (Token)
 ledgerNewTokenRefs n tk = do
   (e, _) <- getState

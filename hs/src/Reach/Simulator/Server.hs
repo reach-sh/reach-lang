@@ -253,24 +253,46 @@ apiCall sid apid v = do
           modify $ \ st -> st {e_graph = graph'}
           return ()
 
--- viewCall :: Integer -> C.VID -> C.DLVal -> WebM (DLVal)
--- viewCall sid vid v = do
---   graph <- gets e_graph
---   case M.lookup (fromIntegral sid) graph of
---     Nothing -> do
---       possible "viewCall: previous state not found"
---     Just (g, l) -> do
---       let views = C.e_views g
---       case M.lookup vid views of
---         Nothing -> possible "viewCall: View not found"
---         Just view -> do
---
---           let view' = view { C.a_val = Just v }
---           let apis' = M.insert apid api' apis
---           let g' = g { C.e_apis = apis' }
---           let graph' = M.insert (fromIntegral sid) (g',l) graph
---           modify $ \ st -> st {e_graph = graph'}
---           return ()
+viewCall :: Integer -> C.VID -> C.DLVal -> WebM (C.DLVal)
+viewCall sid vid v = do
+  graph <- gets e_graph
+  case M.lookup (fromIntegral sid) graph of
+    Nothing -> do
+      possible "viewCall: previous state not found"
+    Just (g, l) -> do
+      let views = C.e_views g
+      case M.lookup vid views of
+        Nothing -> possible "viewCall: View not found"
+        Just view -> do
+          let vbl = C.v_bl view
+          case vbl of
+            Nothing -> return C.V_Null
+            Just (DLinExportBlock _ mbvars a) -> do
+              case mbvars of
+                Nothing -> do
+                  let ps = C.runWithState a (g,l)
+                  case ps of
+                    C.PS_Done _ val -> return val
+                    _ -> possible "expected PS_Done"
+                Just vars -> do
+                  case v of
+                    C.V_Tuple tup -> do
+                      l' <- bindToConsensusStore tup (map varLetVar vars) l
+                      let ps = C.runWithState a (g,l')
+                      case ps of
+                        C.PS_Done _ val -> return val
+                        _ -> possible "expected PS_Done"
+                    _ -> possible "expected Tuple"
+
+bindToConsensusStore :: [C.DLVal] -> [DLVar] -> C.Local -> WebM C.Local
+bindToConsensusStore vals lets l = do
+  let locals = C.l_locals l
+  case M.lookup C.consensusId locals of
+    Nothing -> possible "bindToConsensusStore: no local store"
+    Just lst -> do
+      let st = C.l_store lst
+      let lst' = lst {C.l_store = M.union (M.fromList (zip lets vals)) st}
+      return $ l {C.l_locals = M.insert C.consensusId lst' locals}
 
 unblockProg :: Integer -> Integer -> C.DLVal -> WebM ()
 unblockProg sid' aid' v = do
@@ -470,7 +492,7 @@ setHeaders = do
   setHeader "Access-Control-Allow-Methods" "GET, POST, PUT"
   setHeader "Access-Control-Allow-Headers" "Content-Type"
 
-caseTypes :: (Integer -> Integer -> C.DLVal -> WebM ()) -> Integer -> Integer -> String -> ActionT Text WebM ()
+caseTypes :: (Integer -> Integer -> C.DLVal -> WebM a) -> Integer -> Integer -> String -> ActionT Text WebM a
 caseTypes f s a = \case
   "number" -> do
     v :: Integer <- param "data"
@@ -617,12 +639,13 @@ app p srcTxt = do
     caseTypes apiCall s a t
     json ("OK" :: String)
 
-  -- post "/view_call/:a/:s" $ do
-  --   setHeaders
-  --   a <- param "a"
-  --   s <- param "s"
-  --   caseTypes viewCall s a
-  --   json ("OK" :: String)
+  post "/view_call/:a/:s" $ do
+    setHeaders
+    a <- param "a"
+    s <- param "s"
+    t :: String <- param "type"
+    r <- caseTypes viewCall s a t
+    json $ show r
 
   get "/actions/:s/:a/" $ do
     setHeaders
