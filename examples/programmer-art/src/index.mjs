@@ -472,15 +472,19 @@ const clickViewButton = async (evt) => {
   const viewTag = tgt.dataset.viewTag
   const viewContents = tgt.dataset.viewContents
   let val = prompt(`Enter Value for: ${viewName}`,"");
+  let v = -1
+  let t = "number"
   if (val === null || val === "") {
     console.log("User cancelled the prompt.");
   } else {
-    let v = JSON.stringify(JSON.parse(val))
-    r = await c.viewCall(viewId,nodeId,v,t)
-    rr = JSON.stringify(r)
-    alert(rr)
-    jsonLog.push(["viewCall",viewId,nodeId,v,t])
+    v = JSON.stringify(JSON.parse(val))
+    type = "tuple"
   }
+  let r = await c.viewCall(viewId,nodeId,v,t)
+  let rr = JSON.stringify(r)
+  alert(rr)
+  jsonLog.push(["viewCall",viewId,nodeId,v,t])
+
 }
 
 //#### event handler which loads the Objects-Details View
