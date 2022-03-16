@@ -1,0 +1,23 @@
+body {
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+:root {
+  --reach-1: #F45747;
+  --reach-2: #6AC6E7;
+  --step-1: #204EC5;
+  --step-2: #53BC90;
+  --off-white: #F2F2F2;
+  --white: #FFFFFF;
+  --dark-bg: #101010;
+  --grey: #3e3e3e;
+  --light-grey: #373737;
+}
