@@ -132,7 +132,9 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-c hs/t/y/many_txns.rsh
+ci ALGO getUntrackedFunds1
+ci ALGO getUntrackedFunds2
+ci ALGO getUntrackedFunds3
 exit 0
 #ci ALGO rps-7-loops
 #exit 0
