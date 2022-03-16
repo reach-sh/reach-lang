@@ -1261,8 +1261,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         emptyMapDataTy.toNet(emptyMapDataTy.canonicalize('')));
     debug({ emptyMapData });
 
-    // XXX hasCompanion means this include ContractInfo
-    type GlobalState = [BigNumber, BigNumber, Address];
+    type GlobalState = [BigNumber, BigNumber, ContractInfo];
     type ContractHandler = {
       ApplicationID: BigNumber,
       Deployer: Address,
@@ -1357,7 +1356,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const gsbs = readStateBytes('', [], appSt);
           if ( !gsbs ) { return undefined; }
           // `map gvType keyState_gvs` in Haskell
-          const gty = T_Tuple([T_UInt, T_UInt, T_Address]);
+          const mCompanion = hasCompanion ? [ T_Contract ] : [];
+          const gty = T_Tuple([T_UInt, T_UInt, ...mCompanion]);
           // @ts-ignore
           return gty.fromNet(gsbs);
         };
@@ -1392,12 +1392,13 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
     };
 
-    const getState_ = async (getC:GetC, lookup:((vibna:BigNumber) => AnyALGO_Ty[])): Promise<Array<any>> => {
+    const getState_ = async (getC:GetC, lookup:((vibna:BigNumber) => AnyALGO_Ty[])): Promise<[ContractInfo|undefined, Array<any>]> => {
       const { getAppState, getGlobalState } = await getC();
       const appSt = await getAppState();
       if ( !appSt ) { throw Error(`getState: no appSt`); }
       const gs = await getGlobalState(appSt);
       if ( !gs ) { throw Error(`getState: no gs`); }
+      debug('getState_', {gs});
       const vvn = recoverSplitBytes('v', stateSize, stateKeys, appSt);
       if ( vvn === undefined ) { throw Error(`getState: no vvn`); }
       const vi = gs[0];
@@ -1405,7 +1406,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       const vty = T_Tuple(vtys);
       const vvs = vty.fromNet(vvn);
       debug(`getState_`, { vvn, vvs });
-      return vvs;
+      return [ gs[2], vvs ];
     };
 
     const _setup = (setupArgs: SetupArgs): SetupRes => {
@@ -1427,10 +1428,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
       const getState = async (vibne:BigNumber, vtys:AnyALGO_Ty[]): Promise<Array<any>> => {
         debug('getState');
-        return await getState_(getC, (vibna:BigNumber) => {
+        const [ ci, ans ] = await getState_(getC, (vibna:BigNumber) => {
           if ( vibne.eq(vibna) ) { return vtys; }
           throw apiStateMismatchError(bin, vibne, vibna);
         });
+        companionApp = ci;
+        return ans;
       };
 
       const apiMapRef = (i:number, ty:AnyALGO_Ty): MapRefT<any> => async (f:string): Promise<MaybeRep<any>> => {
@@ -1590,6 +1593,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           let howManyMoreFees: number = 0;
           const txnExtraTxns: Array<Transaction> = [];
           let sim_i = 0;
+          let whichApi : string|undefined;
           const processSimTxn = (t: SimTxn) => {
             let txn;
             if ( t.kind === 'tokenNew' ) {
@@ -1609,6 +1613,9 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               recordApp(t.obj);
               t.toks.map(recordAsset);
               howManyMoreFees += 1 + bigNumberToNumber(t.pays) + bigNumberToNumber(t.bills); return;
+            }  else if ( t.kind === 'api' ) {
+              whichApi = t.who;
+              return;
             } else {
               const { tok } = t;
               let amt: BigNumber = bigNumberify(0);
@@ -1628,15 +1635,14 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
                 recordAsset(tok);
                 howManyMoreFees++; return;
               } else if ( t.kind === 'halt' ) {
-                if ( t.tok ) { recordAsset(t.tok); }
+                if ( tok ) { recordAsset(tok); }
                 recordAccount_(Deployer);
                 howManyMoreFees++; return;
               } else if ( t.kind === 'to' ) {
                 from = thisAcc.addr;
                 to = ctcAddr;
                 amt = t.amt;
-              }  else if ( t.kind === 'info' ) {
-                const { tok } = t;
+              } else if ( t.kind === 'info' ) {
                 recordAsset(tok);
                 return;
               } else {
@@ -1648,28 +1654,33 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             txn.fee = 0;
             txnExtraTxns.push(txn);
           };
+          sim_r.txns.forEach(processSimTxn);
           if ( hasCompanion ) {
             if ( isCtor ) {
               // XXX Algorand says I won't need this eventually
               recordApp(bigNumberify(0));
               howManyMoreFees++;
             }
-            const lab = `publish${funcNum}`;
-            const companionCalls = companionInfo[lab]||0;
-            if ( companionCalls > 0 ) {
-              howManyMoreFees += companionCalls;
+            const addCompanion = () => {
               if ( ! isCtor ) {
                 if ( companionApp === undefined ) {
                   throw Error('impossible: no companion yet');
                 }
                 recordApp(companionApp);
               }
+            };
+            const readCI = (lab:string) => companionInfo[lab]||0;
+            const companionCalls = readCI(`publish${funcNum}`) + (whichApi ? readCI(`api_${whichApi}`) : 0);
+            debug('companion', { whichApi, companionCalls, companionInfo });
+            if ( companionCalls > 0 ) {
+              howManyMoreFees += companionCalls;
+              addCompanion();
             }
             if ( isHalt ) {
+              addCompanion();
               howManyMoreFees++;
             }
           }
-          sim_r.txns.forEach(processSimTxn);
           debug(dhead, 'txnExtraTxns', txnExtraTxns);
           debug(dhead, {howManyMoreFees, extraFees});
           extraFees += MinTxnFee * howManyMoreFees;
@@ -1913,7 +1924,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           const { decode } = vim;
           try {
             let vi = 0;
-            const vvs = await getState_(getC, (vibna:BigNumber) => {
+            const [ _, vvs ] = await getState_(getC, (vibna:BigNumber) => {
               vi = bigNumberToNumber(vibna);
               const vtys = vs[vi];
               if ( ! vtys ) { throw Error(`no views for state ${vibna}`); }

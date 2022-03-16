@@ -499,7 +499,11 @@ jsExpr = \case
       (L_Internal, [dv]) -> go "internal" dv
       (L_Api p, [dv]) -> go (bunpack p) dv
       (_, _) -> return $ "null"
-  DLE_setApiDetails {} -> return "undefined /* setApiDetails */"
+  DLE_setApiDetails _ who _ _ _ -> do
+    let who' = viaShow who
+    asks ctxt_mode >>= \case
+      JM_Simulate -> return $ jsSimTxn "api" [("who", who')]
+      _ -> return "undefined /* setApiDetails */"
   DLE_GetUntrackedFunds at mtok tb -> do
     tok <- maybe (return "") jsArg mtok
     tb' <- jsArg tb
