@@ -307,9 +307,7 @@ const walletFallback = (opts:any) => (): ethers.providers.Provider => {
   });
   // @ts-ignore
   providerFromEnv._rwfb = () => {
-    const mnem = window.prompt(
-      `Please paste the mnemonic for your account, or enable MetaMask and refresh the page.`
-    );
+    const mnem = window.prompt(`Please paste the mnemonic for your account, or enable MetaMask and refresh the page.`);
     const wallet = mnem ?
       ethers.Wallet.fromMnemonic(mnem) :
       ethers.Wallet.createRandom();
