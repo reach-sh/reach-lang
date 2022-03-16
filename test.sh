@@ -132,10 +132,8 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-ci ALGO dyn-tok-1
-exit 0
-
 REACH_DEBUG=Y cdot examples/algospensive/index.rsh
+exit 0
 jb
 ci ALGO algospensive
 exit 0

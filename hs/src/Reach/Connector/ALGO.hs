@@ -518,7 +518,7 @@ opt_b1 = \case
     opt_b1 $ (TBytes $ sha512_256bs xbs) : l
   (TBytes xbs) : (TSubstring s e) : l ->
     opt_b1 $ (TBytes $ bsSubstring xbs (fromIntegral s) (fromIntegral e)) : l
-  (TBytes xbs) : (TExtract s len) : l ->
+  (TBytes xbs) : (TExtract s len) : l | len /= 0 ->
     opt_b1 $ (TBytes $ bsSubstring xbs (fromIntegral s) (fromIntegral $ s + len)) : l
   x : l -> x : l
 
