@@ -1144,12 +1144,6 @@ evalAsEnvM sv@(lvl, obj) = case obj of
     return $ Just $ retDLVar tm (DLA_Var obj_dv)
   SLV_Participant _ who vas _ -> do
     aisdM <- aisd_
-    let mostResults =
-          [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
-          , ("publish", go TCM_Publish)
-          , ("pay", go TCM_Pay)
-          , ("set", delayCall SLPrim_part_set)
-          ]
     -- `<part>.interact.<field>(...)` is a shorthand for `<part>.only(() => interact.<field>(...))`
     -- Wrap each field of the participant's interface in a form, which will expand as described.
     let makeInteractField = do
@@ -1164,16 +1158,19 @@ evalAsEnvM sv@(lvl, obj) = case obj of
               _ -> impossible "participant has no interact interface"
     return $ Just $
       M.fromList $
-        mostResults <> case aisdM of
-                         Just _ -> [("interact", makeInteractField)]
-                         Nothing -> []
+        [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
+        , ("publish", go TCM_Publish)
+        , ("pay", go TCM_Pay)
+        , ("set", delayCall SLPrim_part_set)
+        ] <> case aisdM of
+         Just _ -> [("interact", makeInteractField)]
+         Nothing -> []
     where
       go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos vas (Just m) Nothing Nothing Nothing Nothing Nothing False False)
       whos = S.singleton who
   SLV_Anybody -> do
     at <- withAt id
-    aisdM <- aisd_
-    case aisdM of
+    aisd_ >>= \case
       Nothing -> return Nothing
       Just a -> do
         let apis = ae_apis a
