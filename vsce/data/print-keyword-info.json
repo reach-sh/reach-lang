@@ -1,0 +1,1148 @@
+{
+  "API": {
+    "CompletionItemKind": "Constructor"
+  },
+  "Address": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Anybody": {
+    "CompletionItemKind": "Keyword"
+  },
+  "Array": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Array.all": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.and": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.any": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.average": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.concat": {
+    "CompletionItemKind": "Method"
+  },
+  "Array.count": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.elemType": {
+    "CompletionItemKind": "Method"
+  },
+  "Array.empty": {
+    "CompletionItemKind": "Constant"
+  },
+  "Array.find": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.findIndex": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.forEach": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.forEachWithIndex": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.imax": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.imin": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.includes": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.indexOf": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.iota": {
+    "CompletionItemKind": "Method"
+  },
+  "Array.length": {
+    "CompletionItemKind": "Method"
+  },
+  "Array.map": {
+    "CompletionItemKind": "Method"
+  },
+  "Array.mapWithIndex": {
+    "CompletionItemKind": "Method"
+  },
+  "Array.max": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.min": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.or": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.product": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.reduce": {
+    "CompletionItemKind": "Method"
+  },
+  "Array.reduceWithIndex": {
+    "CompletionItemKind": "Method"
+  },
+  "Array.replicate": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.set": {
+    "CompletionItemKind": "Method"
+  },
+  "Array.size": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.slice": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.sum": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.withIndex": {
+    "CompletionItemKind": "Function"
+  },
+  "Array.zip": {
+    "CompletionItemKind": "Method"
+  },
+  "Array_empty": {
+    "CompletionItemKind": "Constant"
+  },
+  "Array_empty.all": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.and": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.any": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.average": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.count": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.elemType": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Array_empty.find": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.findIndex": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.forEach": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.forEachWithIndex": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.imax": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.imin": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.includes": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.indexOf": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.length": {
+    "CompletionItemKind": "Constant"
+  },
+  "Array_empty.max": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.min": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.or": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.product": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.size": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.slice": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.sum": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_empty.withIndex": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_find": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_find1": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_findIndex": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_findIndex1": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_forEachWithIndex": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_forEachWithIndex1": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_indexOf": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_indexOf1": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_replicate": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_slice": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_slice1": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_withIndex": {
+    "CompletionItemKind": "Function"
+  },
+  "Array_withIndex1": {
+    "CompletionItemKind": "Function"
+  },
+  "Bool": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Bytes": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Closed": {
+    "CompletionItemKind": "Constant"
+  },
+  "Contract": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Data": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Digest": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Either": {
+    "CompletionItemKind": "Function"
+  },
+  "Events": {
+    "CompletionItemKind": "Constructor"
+  },
+  "FixedPoint": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Foldable": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Foldable.all": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable.and": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable.any": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable.average": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable.count": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable.forEach": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable.imax": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable.imin": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable.includes": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable.max": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable.min": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable.or": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable.product": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable.size": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable.sum": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_all": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_all1": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_and": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_and1": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_any": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_any1": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_average": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_average1": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_count": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_count1": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_forEach": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_forEach1": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_imax": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_imax1": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_imin": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_imin1": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_includes": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_includes1": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_max": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_max1": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_min": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_min1": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_or": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_or1": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_product": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_product1": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_size": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_size1": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_sum": {
+    "CompletionItemKind": "Function"
+  },
+  "Foldable_sum1": {
+    "CompletionItemKind": "Function"
+  },
+  "Fun": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Int": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Interval": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "IntervalType": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Map": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Map.all": {
+    "CompletionItemKind": "Function"
+  },
+  "Map.and": {
+    "CompletionItemKind": "Function"
+  },
+  "Map.any": {
+    "CompletionItemKind": "Function"
+  },
+  "Map.average": {
+    "CompletionItemKind": "Function"
+  },
+  "Map.count": {
+    "CompletionItemKind": "Function"
+  },
+  "Map.forEach": {
+    "CompletionItemKind": "Function"
+  },
+  "Map.imax": {
+    "CompletionItemKind": "Function"
+  },
+  "Map.imin": {
+    "CompletionItemKind": "Function"
+  },
+  "Map.includes": {
+    "CompletionItemKind": "Function"
+  },
+  "Map.max": {
+    "CompletionItemKind": "Function"
+  },
+  "Map.min": {
+    "CompletionItemKind": "Function"
+  },
+  "Map.new": {
+    "CompletionItemKind": "Method"
+  },
+  "Map.or": {
+    "CompletionItemKind": "Function"
+  },
+  "Map.product": {
+    "CompletionItemKind": "Function"
+  },
+  "Map.reduce": {
+    "CompletionItemKind": "Function"
+  },
+  "Map.size": {
+    "CompletionItemKind": "Function"
+  },
+  "Map.sum": {
+    "CompletionItemKind": "Function"
+  },
+  "Maybe": {
+    "CompletionItemKind": "Function"
+  },
+  "Neg": {
+    "CompletionItemKind": "Constant"
+  },
+  "Null": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Object": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Object.has": {
+    "CompletionItemKind": "Method"
+  },
+  "Object.set": {
+    "CompletionItemKind": "Function"
+  },
+  "Object.setIfUnset": {
+    "CompletionItemKind": "Function"
+  },
+  "Object_set": {
+    "CompletionItemKind": "Function"
+  },
+  "Object_setIfUnset": {
+    "CompletionItemKind": "Function"
+  },
+  "Open": {
+    "CompletionItemKind": "Constant"
+  },
+  "Participant": {
+    "CompletionItemKind": "Constructor"
+  },
+  "Participant.set": {
+    "CompletionItemKind": "Method"
+  },
+  "ParticipantClass": {
+    "CompletionItemKind": "Constructor"
+  },
+  "Pos": {
+    "CompletionItemKind": "Constant"
+  },
+  "Reach": {
+    "CompletionItemKind": "Constant"
+  },
+  "Reach.App": {
+    "CompletionItemKind": "Constructor"
+  },
+  "Refine": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Set": {
+    "CompletionItemKind": "Constant"
+  },
+  "Set.new": {
+    "CompletionItemKind": "Function"
+  },
+  "Struct": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Struct.toObject": {
+    "CompletionItemKind": "Method"
+  },
+  "Struct.toTuple": {
+    "CompletionItemKind": "Method"
+  },
+  "Token": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Token.burn": {
+    "CompletionItemKind": "Method"
+  },
+  "Token.destroy": {
+    "CompletionItemKind": "Method"
+  },
+  "Token.destroyed": {
+    "CompletionItemKind": "Method"
+  },
+  "Token.new": {
+    "CompletionItemKind": "Method"
+  },
+  "Token.supply": {
+    "CompletionItemKind": "Method"
+  },
+  "Tuple": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "Tuple.length": {
+    "CompletionItemKind": "Method"
+  },
+  "Tuple.set": {
+    "CompletionItemKind": "Method"
+  },
+  "UInt": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "UInt.max": {
+    "CompletionItemKind": "Constant"
+  },
+  "View": {
+    "CompletionItemKind": "Constructor"
+  },
+  "abs": {
+    "CompletionItemKind": "Function"
+  },
+  "absoluteSecs": {
+    "CompletionItemKind": "Function"
+  },
+  "absoluteTime": {
+    "CompletionItemKind": "Function"
+  },
+  "add": {
+    "CompletionItemKind": "Function"
+  },
+  "addressEq": {
+    "CompletionItemKind": "Operator"
+  },
+  "and": {
+    "CompletionItemKind": "Function"
+  },
+  "array": {
+    "CompletionItemKind": "Function"
+  },
+  "assert": {
+    "CompletionItemKind": "Function"
+  },
+  "assume": {
+    "CompletionItemKind": "Function"
+  },
+  "async": {
+    "CompletionItemKind": "Keyword"
+  },
+  "await": {
+    "CompletionItemKind": "Keyword"
+  },
+  "balance": {
+    "CompletionItemKind": "Function"
+  },
+  "band": {
+    "CompletionItemKind": "Function"
+  },
+  "baseWaitSecs": {
+    "CompletionItemKind": "Function"
+  },
+  "baseWaitTime": {
+    "CompletionItemKind": "Function"
+  },
+  "bior": {
+    "CompletionItemKind": "Function"
+  },
+  "boolEq": {
+    "CompletionItemKind": "Function"
+  },
+  "break": {
+    "CompletionItemKind": "Keyword"
+  },
+  "bxor": {
+    "CompletionItemKind": "Function"
+  },
+  "call": {
+    "CompletionItemKind": "Function"
+  },
+  "case": {
+    "CompletionItemKind": "Keyword"
+  },
+  "catch": {
+    "CompletionItemKind": "Keyword"
+  },
+  "check": {
+    "CompletionItemKind": "Function"
+  },
+  "checkCommitment": {
+    "CompletionItemKind": "Function"
+  },
+  "class": {
+    "CompletionItemKind": "Keyword"
+  },
+  "closeTo": {
+    "CompletionItemKind": "Function"
+  },
+  "commit": {
+    "CompletionItemKind": "Function"
+  },
+  "compose": {
+    "CompletionItemKind": "Function"
+  },
+  "const": {
+    "CompletionItemKind": "Keyword"
+  },
+  "continue": {
+    "CompletionItemKind": "Keyword"
+  },
+  "debugger": {
+    "CompletionItemKind": "Keyword"
+  },
+  "declassify": {
+    "CompletionItemKind": "Function"
+  },
+  "default": {
+    "CompletionItemKind": "Keyword"
+  },
+  "delete": {
+    "CompletionItemKind": "Keyword"
+  },
+  "didPublish": {
+    "CompletionItemKind": "Function"
+  },
+  "digest": {
+    "CompletionItemKind": "Function"
+  },
+  "digestEq": {
+    "CompletionItemKind": "Operator"
+  },
+  "distinct": {
+    "CompletionItemKind": "Function"
+  },
+  "div": {
+    "CompletionItemKind": "Function"
+  },
+  "do": {
+    "CompletionItemKind": "Keyword"
+  },
+  "each": {
+    "CompletionItemKind": "Method"
+  },
+  "either": {
+    "CompletionItemKind": "Function"
+  },
+  "else": {
+    "CompletionItemKind": "Keyword"
+  },
+  "ensure": {
+    "CompletionItemKind": "Function"
+  },
+  "enum": {
+    "CompletionItemKind": "Keyword"
+  },
+  "eq": {
+    "CompletionItemKind": "Function"
+  },
+  "exit": {
+    "CompletionItemKind": "Function"
+  },
+  "export": {
+    "CompletionItemKind": "Keyword"
+  },
+  "extends": {
+    "CompletionItemKind": "Keyword"
+  },
+  "fail": {
+    "CompletionItemKind": "Function"
+  },
+  "for": {
+    "CompletionItemKind": "Keyword"
+  },
+  "forall": {
+    "CompletionItemKind": "Function"
+  },
+  "fork": {
+    "CompletionItemKind": "Function"
+  },
+  "from": {
+    "CompletionItemKind": "Keyword"
+  },
+  "fromLeft": {
+    "CompletionItemKind": "Function"
+  },
+  "fromMaybe": {
+    "CompletionItemKind": "Function"
+  },
+  "fromRight": {
+    "CompletionItemKind": "Function"
+  },
+  "fromSome": {
+    "CompletionItemKind": "Function"
+  },
+  "function": {
+    "CompletionItemKind": "Keyword"
+  },
+  "fx": {
+    "CompletionItemKind": "Function"
+  },
+  "fxadd": {
+    "CompletionItemKind": "Function"
+  },
+  "fxcmp": {
+    "CompletionItemKind": "Function"
+  },
+  "fxdiv": {
+    "CompletionItemKind": "Function"
+  },
+  "fxeq": {
+    "CompletionItemKind": "Function"
+  },
+  "fxfloor": {
+    "CompletionItemKind": "Function"
+  },
+  "fxge": {
+    "CompletionItemKind": "Function"
+  },
+  "fxgt": {
+    "CompletionItemKind": "Function"
+  },
+  "fxint": {
+    "CompletionItemKind": "Function"
+  },
+  "fxle": {
+    "CompletionItemKind": "Function"
+  },
+  "fxlt": {
+    "CompletionItemKind": "Function"
+  },
+  "fxmod": {
+    "CompletionItemKind": "Function"
+  },
+  "fxmul": {
+    "CompletionItemKind": "Function"
+  },
+  "fxne": {
+    "CompletionItemKind": "Function"
+  },
+  "fxpow": {
+    "CompletionItemKind": "Function"
+  },
+  "fxpowi": {
+    "CompletionItemKind": "Function"
+  },
+  "fxpowui": {
+    "CompletionItemKind": "Function"
+  },
+  "fxrescale": {
+    "CompletionItemKind": "Function"
+  },
+  "fxsqrt": {
+    "CompletionItemKind": "Function"
+  },
+  "fxsub": {
+    "CompletionItemKind": "Function"
+  },
+  "fxunify": {
+    "CompletionItemKind": "Function"
+  },
+  "ge": {
+    "CompletionItemKind": "Function"
+  },
+  "getAddress": {
+    "CompletionItemKind": "Function"
+  },
+  "getContract": {
+    "CompletionItemKind": "Function"
+  },
+  "getUntrackedFunds": {
+    "CompletionItemKind": "Function"
+  },
+  "gt": {
+    "CompletionItemKind": "Function"
+  },
+  "hasConsoleLogger": {
+    "CompletionItemKind": "Constant"
+  },
+  "hasConsoleLogger.log": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "hasRandom": {
+    "CompletionItemKind": "Constant"
+  },
+  "hasRandom.random": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "iadd": {
+    "CompletionItemKind": "Function"
+  },
+  "idiv": {
+    "CompletionItemKind": "Function"
+  },
+  "ieq": {
+    "CompletionItemKind": "Function"
+  },
+  "if": {
+    "CompletionItemKind": "Keyword"
+  },
+  "ige": {
+    "CompletionItemKind": "Function"
+  },
+  "igt": {
+    "CompletionItemKind": "Function"
+  },
+  "ile": {
+    "CompletionItemKind": "Function"
+  },
+  "ilt": {
+    "CompletionItemKind": "Function"
+  },
+  "imax": {
+    "CompletionItemKind": "Function"
+  },
+  "imod": {
+    "CompletionItemKind": "Function"
+  },
+  "implies": {
+    "CompletionItemKind": "Function"
+  },
+  "import": {
+    "CompletionItemKind": "Keyword"
+  },
+  "imul": {
+    "CompletionItemKind": "Function"
+  },
+  "in": {
+    "CompletionItemKind": "Keyword"
+  },
+  "ine": {
+    "CompletionItemKind": "Function"
+  },
+  "init": {
+    "CompletionItemKind": "Function"
+  },
+  "instanceOf": {
+    "CompletionItemKind": "Keyword"
+  },
+  "int": {
+    "CompletionItemKind": "Function"
+  },
+  "intEq": {
+    "CompletionItemKind": "Operator"
+  },
+  "interval": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalAbs": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalAdd": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalCC": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalCO": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalDiv": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalEmpty": {
+    "CompletionItemKind": "Constant"
+  },
+  "intervalEmpty.length": {
+    "CompletionItemKind": "Constant"
+  },
+  "intervalEq": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalGt": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalGte": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalIntersection": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalLt": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalLte": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalMul": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalNeq": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalOC": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalOO": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalSub": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalUnion": {
+    "CompletionItemKind": "Function"
+  },
+  "intervalWidth": {
+    "CompletionItemKind": "Function"
+  },
+  "is": {
+    "CompletionItemKind": "Function"
+  },
+  "isIntervalType": {
+    "CompletionItemKind": "Function"
+  },
+  "isLeft": {
+    "CompletionItemKind": "Function"
+  },
+  "isNone": {
+    "CompletionItemKind": "Function"
+  },
+  "isRight": {
+    "CompletionItemKind": "Function"
+  },
+  "isSome": {
+    "CompletionItemKind": "Function"
+  },
+  "isType": {
+    "CompletionItemKind": "Function"
+  },
+  "isub": {
+    "CompletionItemKind": "Function"
+  },
+  "ite": {
+    "CompletionItemKind": "Function"
+  },
+  "lastConsensusSecs": {
+    "CompletionItemKind": "Function"
+  },
+  "lastConsensusTime": {
+    "CompletionItemKind": "Function"
+  },
+  "le": {
+    "CompletionItemKind": "Function"
+  },
+  "leftEndpoint": {
+    "CompletionItemKind": "Function"
+  },
+  "let": {
+    "CompletionItemKind": "Keyword"
+  },
+  "lsh": {
+    "CompletionItemKind": "Function"
+  },
+  "lt": {
+    "CompletionItemKind": "Function"
+  },
+  "makeCommitment": {
+    "CompletionItemKind": "Function"
+  },
+  "makeDeadline": {
+    "CompletionItemKind": "Function"
+  },
+  "makeEnum": {
+    "CompletionItemKind": "Function"
+  },
+  "maybe": {
+    "CompletionItemKind": "Function"
+  },
+  "minus": {
+    "CompletionItemKind": "Function"
+  },
+  "mod": {
+    "CompletionItemKind": "Function"
+  },
+  "mul": {
+    "CompletionItemKind": "Function"
+  },
+  "muldiv": {
+    "CompletionItemKind": "Function"
+  },
+  "new": {
+    "CompletionItemKind": "Keyword"
+  },
+  "not": {
+    "CompletionItemKind": "Function"
+  },
+  "of": {
+    "CompletionItemKind": "Keyword"
+  },
+  "or": {
+    "CompletionItemKind": "Function"
+  },
+  "parallelReduce": {
+    "CompletionItemKind": "Function"
+  },
+  "plus": {
+    "CompletionItemKind": "Function"
+  },
+  "polyEq": {
+    "CompletionItemKind": "Operator"
+  },
+  "polyNeq": {
+    "CompletionItemKind": "Function"
+  },
+  "polyXor": {
+    "CompletionItemKind": "Function"
+  },
+  "possible": {
+    "CompletionItemKind": "Function"
+  },
+  "pow": {
+    "CompletionItemKind": "Function"
+  },
+  "race": {
+    "CompletionItemKind": "Function"
+  },
+  "relativeSecs": {
+    "CompletionItemKind": "Function"
+  },
+  "relativeTime": {
+    "CompletionItemKind": "Function"
+  },
+  "remote": {
+    "CompletionItemKind": "Function"
+  },
+  "require": {
+    "CompletionItemKind": "Function"
+  },
+  "return": {
+    "CompletionItemKind": "Keyword"
+  },
+  "rightEndpoint": {
+    "CompletionItemKind": "Function"
+  },
+  "rsh": {
+    "CompletionItemKind": "Function"
+  },
+  "setOptions": {
+    "CompletionItemKind": "Function"
+  },
+  "sqrt": {
+    "CompletionItemKind": "Function"
+  },
+  "static": {
+    "CompletionItemKind": "Keyword"
+  },
+  "sub": {
+    "CompletionItemKind": "Function"
+  },
+  "switch": {
+    "CompletionItemKind": "Keyword"
+  },
+  "this": {
+    "CompletionItemKind": "Keyword"
+  },
+  "throw": {
+    "CompletionItemKind": "Keyword"
+  },
+  "transfer": {
+    "CompletionItemKind": "Function"
+  },
+  "try": {
+    "CompletionItemKind": "Keyword"
+  },
+  "typeEq": {
+    "CompletionItemKind": "Function"
+  },
+  "typeOf": {
+    "CompletionItemKind": "Function"
+  },
+  "typeof": {
+    "CompletionItemKind": "Keyword"
+  },
+  "unknowable": {
+    "CompletionItemKind": "Function"
+  },
+  "unstrict": {
+    "CompletionItemKind": "Function"
+  },
+  "var": {
+    "CompletionItemKind": "Keyword"
+  },
+  "verifyAbsoluteSecs": {
+    "CompletionItemKind": "Function"
+  },
+  "verifyAbsoluteTime": {
+    "CompletionItemKind": "Function"
+  },
+  "verifyMuldiv": {
+    "CompletionItemKind": "Function"
+  },
+  "verifyRelativeSecs": {
+    "CompletionItemKind": "Function"
+  },
+  "verifyRelativeTime": {
+    "CompletionItemKind": "Function"
+  },
+  "wait": {
+    "CompletionItemKind": "Function"
+  },
+  "while": {
+    "CompletionItemKind": "Keyword"
+  },
+  "with": {
+    "CompletionItemKind": "Keyword"
+  },
+  "xor": {
+    "CompletionItemKind": "Function"
+  },
+  "yield": {
+    "CompletionItemKind": "Keyword"
+  }
+}
