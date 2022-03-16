@@ -2128,6 +2128,7 @@ checkTxn_lib tok = do
           if tok then tokFields else ntokFields
     -- init: False: [ amt ]
     -- init:  True: [ amt, tok ]
+    useResource R_Txn
     gvLoad GV_txnCounter
     dupn $ 3 + (if tok then 1 else 0)
     cint 1

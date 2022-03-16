@@ -132,6 +132,8 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
+c hs/t/y/many_txns.rsh
+exit 0
 #ci ALGO rps-7-loops
 #exit 0
 
