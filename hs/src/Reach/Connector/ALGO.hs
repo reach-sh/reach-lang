@@ -790,9 +790,34 @@ data Env = Env
   , eInitToks :: IORef (S.Set DLArg)
   , eCompanion :: CompanionInfo
   , eCompanionRec :: CompanionRec
+  , eLibrary :: IORef (M.Map LibFun (Label, App ()))
   }
 
 type App = ReaderT Env IO
+
+data LibFun
+  = LF_cMapLoad
+  deriving (Eq, Ord, Show)
+
+libDefns :: App ()
+libDefns = do
+  libr <- asks eLibrary
+  lib <- liftIO $ readIORef libr
+  forM_ lib $ \(_, impl) -> impl
+
+libCall :: LibFun -> App () -> App ()
+libCall lf impl = do
+  libr <- asks eLibrary
+  lib <- liftIO $ readIORef libr
+  lab <-
+    case M.lookup lf lib of
+      Nothing -> do
+        lab <- freshLabel $ show lf
+        let impl' = label lab >> impl
+        liftIO $ modifyIORef libr $ M.insert lf (lab, impl')
+        return $ lab
+      Just (lab, _) -> return lab
+  code "callsub" [ lab ]
 
 separateResources :: App a -> App a
 separateResources = dupeResources . resetToks
@@ -1539,13 +1564,8 @@ cTupleSet at tt idx = do
   -- [ Tuple' ]
   return ()
 
-cMapLoad_call :: App ()
-cMapLoad_call = do
-  code "callsub" [ "cMapLoad" ]
-
-cMapLoad_def :: App ()
-cMapLoad_def = do
-  label "cMapLoad"
+cMapLoad :: App ()
+cMapLoad = libCall LF_cMapLoad $ do
   Env {..} <- ask
   labReal <- freshLabel "mapLoadDo"
   labDef <- freshLabel "mapLoadDef"
@@ -1793,7 +1813,7 @@ ce = \case
   DLE_MapRef _ (DLMVar i) fa -> do
     incResource R_Account fa
     ca fa
-    cMapLoad_call
+    cMapLoad
     mdt <- getMapDataTy
     cTupleRef sb mdt $ fromIntegral i
   DLE_MapSet at mpv@(DLMVar i) fa mva -> do
@@ -1811,7 +1831,7 @@ ce = \case
         ca fa
         cMapStore at $ do
           ca fa
-          cMapLoad_call
+          cMapLoad
           cla $ mdaToMaybeLA mt mva
           cTupleSet at mdt $ fromIntegral i
   DLE_Remote at fs ro rng_ty rm (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) -> do
@@ -2966,6 +2986,7 @@ compile_algo env disp pl = do
         companionMaker <- readCompanionCache
         cr_rv <- allocDLVar_ eCounter at T_Contract
         eCompanionRec <- companionMaker cr_rv
+        eLibrary <- newIORef mempty
         flip runReaderT (Env {..}) $
           store_let cr_rv True (gvLoad GV_companion) $
             m
@@ -3122,7 +3143,7 @@ compile_algo env disp pl = do
       gvStore gv
     code "b" ["updateState"]
     -- Library functions
-    cMapLoad_def
+    libDefns
   totalLen <- readIORef totalLenR
   unless (totalLen <= algoMaxAppProgramLen_really) $ do
     gbad $ LT.pack $ "The program is too long; its length is " <> show totalLen <> ", but the maximum possible length is " <> show algoMaxAppProgramLen_really
