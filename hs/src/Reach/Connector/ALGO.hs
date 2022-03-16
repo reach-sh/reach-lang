@@ -518,6 +518,8 @@ opt_b1 = \case
     opt_b1 $ (TBytes $ sha512_256bs xbs) : l
   (TBytes xbs) : (TSubstring s e) : l ->
     opt_b1 $ (TBytes $ bsSubstring xbs (fromIntegral s) (fromIntegral e)) : l
+  (TBytes xbs) : (TExtract s len) : l ->
+    opt_b1 $ (TBytes $ bsSubstring xbs (fromIntegral s) (fromIntegral $ s + len)) : l
   x : l -> x : l
 
 sha256bs :: BS.ByteString -> BS.ByteString
@@ -1356,9 +1358,14 @@ csplice3 :: App () -> Maybe (App ()) -> SpliceRange -> App ()
 csplice3 cnew mcbig = \case
   SR_None -> mc cnew
   SR_Before cbefore -> do
-    simpl (mc cbefore) (return ())
+    mc cbefore
+    cnew
+    op "concat"
   SR_After cafter -> do
-    simpl (return ()) (mc cafter)
+    mc cafter
+    cnew
+    op "swap"
+    op "concat"
   SR_Both cbefore cafter ->
     case mcbig of
       Nothing -> do
@@ -1392,12 +1399,6 @@ csplice3 cnew mcbig = \case
       case mcbig of
         Nothing -> m
         Just cbig -> cbig >> m
-    simpl :: App () -> App () -> App ()
-    simpl cbefore cafter = do
-      cbefore
-      cnew
-      cafter
-      op "concat"
 
 cArraySet :: SrcLoc -> (DLType, Integer) -> Maybe (App ()) -> Either Integer (App ()) -> App () -> App ()
 cArraySet _at (t, alen) mcbig eidx cnew = do
