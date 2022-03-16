@@ -1131,14 +1131,14 @@ evalObjEnv = mapM go
       sls_sss at <$> getv
 
 evalAsEnv :: SLSVal -> App SLObjEnv
-evalAsEnv obj = case snd obj of
-  r <- evalAsEnvM obj
+evalAsEnv sv = do
+  r <- evalAsEnvM sv
   case r of
     Just x -> return x
-    Nothing -> expect_t obj $ Err_Eval_NotObject
+    Nothing -> expect_t (snd sv) $ Err_Eval_NotObject
 
-evalAsEnvM :: SLVal -> App (Maybe SLObjEnv)
-evalAsEnvM obj = case obj of
+evalAsEnvM :: SLSVal -> App (Maybe SLObjEnv)
+evalAsEnvM sv@(lvl, obj) = case obj of
   SLV_Object _ _ env ->
     return $ Just $ M.map (retV . sss_sls) env
   SLV_DLVar obj_dv@(DLVar _ _ (T_Object tm) _) ->
@@ -1157,11 +1157,11 @@ evalAsEnvM obj = case obj of
           ios <- ae_ios <$> aisd
           return $
             case M.lookup who ios of
-              Just sv@(SLSSVal _ _ (SLV_Object oa ol env)) ->
+              Just isv@(SLSSVal _ _ (SLV_Object oa ol env)) ->
                 secret $
                   SLV_Object oa ol $
                     flip M.mapWithKey env $ \k _ ->
-                      sv {sss_val = SLV_Form $ SLForm_liftInteract who vas k}
+                      isv {sss_val = SLV_Form $ SLForm_liftInteract who vas k}
               _ -> impossible "participant has no interact interface"
     return $ Just $
       M.fromList $
@@ -1387,7 +1387,6 @@ evalAsEnvM obj = case obj of
         [(key, retV $ public $ SLV_Prim $ SLPrim_remotef rat aa m stf mpay mbill $ Just mode)]
   _ -> return Nothing
   where
-    lvl = fst obj
     foldableMethods = ["forEach", "min", "max", "imin", "imax", "all", "any", "or", "and", "sum", "average", "product", "includes", "size", "count"]
     foldableObjectEnv :: [(SLVar, App SLSVal)]
     foldableObjectEnv = map (\m -> (m, delayStdlib $ "Foldable_" <> m <> "1")) foldableMethods
@@ -1428,13 +1427,13 @@ evalAsEnvM obj = case obj of
     delayCall :: SLPrimitive -> App SLSVal
     delayCall p = do
       at <- withAt id
-      retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [obj] []
+      retV $ public $ SLV_Prim $ SLPrim_PrimDelay at p [sv] []
     delayStdlib :: SLVar -> App SLSVal
     delayStdlib = doApply <=< lookStdlib
     doCall :: SLPrimitive -> App SLSVal
     doCall p = doApply $ SLV_Prim p
     doApply :: SLVal -> App SLSVal
-    doApply f = evalApplyVals' f [obj]
+    doApply f = evalApplyVals' f [sv]
     retDLVarl tml obj_dla = do
       let retk (field, t) = (,) field $ do
             at <- withAt id

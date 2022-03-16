@@ -132,6 +132,10 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
+c examples/algospensive/index.rsh
+${REACH} compile --print-keyword-info
+exit 0
+
 REACH_DEBUG=Y cdot examples/algospensive/index.rsh
 exit 0
 jb

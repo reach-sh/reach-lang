@@ -324,7 +324,7 @@ evalBundle cns (JSBundle mods) addToEnvForEditorInfo = do
                      env <- evalObjEnv oe
                      let ret = M.mapKeys (\k -> n <> "." <> k) $ env
                      return ret
-            innerEnvs <- mapM (\k -> innerEnv k (snd . sss_sls $ envWithBase M.! k)) $ M.keys envWithBase
+            innerEnvs <- mapM (\k -> innerEnv k (sss_sls $ envWithBase M.! k)) $ M.keys envWithBase
             return $ M.union envWithBase $ M.unions innerEnvs
           else do
             return exe_ex
