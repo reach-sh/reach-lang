@@ -132,10 +132,12 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-#REACH_DEBUG=Y cdot examples/map-multi/index.rsh
+#ci ALGO rps-7-loops
 #exit 0
 
 # 8679
+# 8531
+# 8306
 REACH_DEBUG=Y cdot users/xbacked-contracts/src/master_vault_asa.rsh
 exit 0
 REACH_DEBUG=Y c users/xbacked-contracts/src/master_vault.rsh

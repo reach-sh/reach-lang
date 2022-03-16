@@ -797,6 +797,8 @@ type App = ReaderT Env IO
 
 data LibFun
   = LF_cMapLoad
+  | LF_checkTxn_net
+  | LF_checkTxn_tok
   deriving (Eq, Ord, Show)
 
 libDefns :: App ()
@@ -2117,36 +2119,50 @@ ntokFields = ("pay", "Receiver", "Amount", "CloseRemainderTo")
 tokFields :: (LT.Text, LT.Text, LT.Text, LT.Text)
 tokFields = ("axfer", "AssetReceiver", "AssetAmount", "AssetCloseTo")
 
+checkTxn_lib :: Bool -> App ()
+checkTxn_lib tok = do
+  let lf = if tok then LF_checkTxn_tok else LF_checkTxn_net
+  libCall lf $ do
+    let get1 f = code "gtxns" [f]
+    let (vTypeEnum, fReceiver, fAmount, _fCloseTo) =
+          if tok then tokFields else ntokFields
+    -- init: False: [ amt ]
+    -- init:  True: [ amt, tok ]
+    gvLoad GV_txnCounter
+    dupn $ 3 + (if tok then 1 else 0)
+    cint 1
+    op "+"
+    gvStore GV_txnCounter
+    -- init <> [ id, id, id, id? ]
+    get1 fReceiver
+    cContractAddr
+    cfrombs T_Address
+    asserteq
+    get1 "TypeEnum"
+    output $ TConst vTypeEnum
+    asserteq
+    -- init <> [ id, id? ]
+    when tok $ do
+      get1 "XferAsset"
+      code "uncover" [ "2" ]
+      asserteq
+    get1 fAmount
+    asserteq
+    op "retsub"
+
 checkTxn :: CheckTxn -> App Bool
 checkTxn (CheckTxn {..}) =
   case staticZero ct_amt of
     True -> return False
     False -> block_ "checkTxn" $ do
-      let get1 f = code "gtxns" [f]
-      let ((vTypeEnum, fReceiver, fAmount, _fCloseTo), extras) =
-            case ct_mtok of
-              Nothing ->
-                (ntokFields, [])
-              Just tok ->
-                (tokFields, [ get1 "XferAsset" >> ca tok >> asserteq ])
       checkTxnUsage ct_at ct_mtok
-      useResource R_Txn
-      gvLoad GV_txnCounter
-      dupn $ 3 + length extras
-      cint 1
-      op "+"
-      gvStore GV_txnCounter
-      get1 fAmount
       ca ct_amt
-      asserteq
-      forM_ extras $ id
-      get1 "TypeEnum"
-      output $ TConst vTypeEnum
-      asserteq
-      get1 fReceiver
-      cContractAddr
-      cfrombs T_Address
-      asserteq
+      case ct_mtok of
+        Nothing -> do
+          checkTxn_lib False
+        Just tok -> do
+          ca tok
+          checkTxn_lib True
       return True
 
 itxnNextOrBegin :: Bool -> App ()
@@ -2349,6 +2365,9 @@ ct = \case
     -- NOTE: I considered statically assigning these to heap pointers and
     -- limiting the total memory available (we can't assign them to where they
     -- will end up, because this tail might be using the same things)
+    --
+    -- XXX I could determine when the jump target has the same svs as us and
+    -- then save space by letting it load itself
     mapM_ ca $ (map DLA_Var svs) <> map snd (M.toAscList msgm)
     code "b" [loopLabel which]
   CT_From at which msvs -> do
@@ -2522,9 +2541,9 @@ cloop :: Int -> CHandler -> App ()
 cloop _ (C_Handler {}) = return ()
 cloop which (C_Loop at svs vars body) = recordWhich which $ do
   block (loopLabel which) $ do
-    -- STACK: [ ...svs, ...vars ] TOP on right
-    let bindVars = bindFromStack at $ svs <> vars
-    bindVars $ ct body
+    -- STACK: [ ...svs ...vars ] TOP on right
+    bindFromStack at (svs <> vars) $
+      ct body
 
 -- NOTE This could be compiled to a jump table if that were possible with TEAL
 cblt :: String -> (Int -> a -> App ()) -> BLT Int a -> App ()
@@ -3145,6 +3164,8 @@ compile_algo env disp pl = do
     -- Library functions
     libDefns
   totalLen <- readIORef totalLenR
+  when showCost $
+    putStrLn $ "The program is " <> show totalLen <> " bytes."
   unless (totalLen <= algoMaxAppProgramLen_really) $ do
     gbad $ LT.pack $ "The program is too long; its length is " <> show totalLen <> ", but the maximum possible length is " <> show algoMaxAppProgramLen_really
   let extraPages :: Integer = ceiling ((fromIntegral totalLen :: Double) / fromIntegral algoMaxAppProgramLen) - 1
