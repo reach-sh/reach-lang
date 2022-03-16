@@ -476,7 +476,9 @@ const clickViewButton = async (evt) => {
     console.log("User cancelled the prompt.");
   } else {
     let v = JSON.stringify(JSON.parse(val))
-    c.viewCall(viewId,nodeId,v,t)
+    r = await c.viewCall(viewId,nodeId,v,t)
+    rr = JSON.stringify(r)
+    alert(rr)
     jsonLog.push(["viewCall",viewId,nodeId,v,t])
   }
 }
