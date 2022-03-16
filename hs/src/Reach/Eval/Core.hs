@@ -517,7 +517,6 @@ env_lookup ctx x env =
           return $ sv {sss_val = v}
         v -> return $ v
     Nothing -> do
-      liftIO $ putStrLn $ "Current env: " ++ (show $ M.keys env)
       expect_ $ Err_Eval_UnboundId ctx x $ M.keys $ M.filter (not . isKwd) env
 
 isKwd :: SLSSVal -> Bool

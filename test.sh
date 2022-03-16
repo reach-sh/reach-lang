@@ -132,7 +132,6 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-c examples/algospensive/index.rsh
 ${REACH} compile --print-keyword-info
 exit 0
 
