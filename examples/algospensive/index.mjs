@@ -8,14 +8,25 @@ const [ accA, accB ] =
 accA.setDebugLabel('Alice');
 accB.setDebugLabel('Bob');
 
-const ctcA = accA.contract(backend);
-const ctcB = accB.contract(backend, ctcA.getInfo());
+const runOnce = async (dir) => {
+  const ctcA = accA.contract(backend);
+  const ctcB = accB.contract(backend, ctcA.getInfo());
 
-await Promise.all([
-  ctcA.participants.A({
-    x: 5,
-  }),
-  ctcB.p.B({
-    ...stdlib.hasConsoleLogger,
-  }),
-]);
+  await Promise.all([
+    ctcA.participants.A({
+      x: 5,
+      fork: async (xs) => {
+        if ( dir ) {
+          await ctcB.a.f(xs);
+        } else {
+          await ctcB.a.g();
+        }
+      },
+    }),
+    ctcB.p.B({
+      ...stdlib.hasConsoleLogger,
+    }),
+  ]);
+};
+await runOnce(true);
+await runOnce(false);

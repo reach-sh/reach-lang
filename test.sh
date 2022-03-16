@@ -132,16 +132,14 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-ci ALGO getUntrackedFunds1
-ci ALGO getUntrackedFunds2
-ci ALGO getUntrackedFunds3
+ci ALGO dyn-tok-1
 exit 0
-#ci ALGO rps-7-loops
-#exit 0
 
-# 8679
-# 8531
-# 8306
+REACH_DEBUG=Y cdot examples/algospensive/index.rsh
+jb
+ci ALGO algospensive
+exit 0
+
 REACH_DEBUG=Y cdot users/xbacked-contracts/src/master_vault_asa.rsh
 exit 0
 REACH_DEBUG=Y c users/xbacked-contracts/src/master_vault.rsh
@@ -151,15 +149,7 @@ exit 0
 diff -u "${XB}"/master_vault.rsh "${XB}"/master_vault_asa.rsh
 exit 0
 
-exit 0
-
-REACH_DEBUG=Y cdot examples/algospensive/index.rsh
-jb
-ci ALGO algospensive
-exit 0
-
 c users/algo-govt/index.rsh
 exit 0
-
 
 # (cd hs && mk hs-test)

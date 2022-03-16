@@ -575,6 +575,9 @@ export type ISimTxn<Token, ContractInfo> = {
 } | {
   kind: 'info',
   tok: Token,
+} | {
+  kind: 'api',
+  who: string,
 } ;
 
 /**
