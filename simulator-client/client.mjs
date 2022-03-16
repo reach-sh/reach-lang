@@ -481,6 +481,12 @@ const apiCall = async (a,s,v,t='number') => {
   return r
 }
 
+const viewCall = async (a,s,v,t='number') => {
+  const r = await interact('POST', `${address}/view_call/${a}/${s}/?data=${v}&type=${t}`)
+  console.log(r)
+  return r
+}
+
 // ping the server for a friendly greeting ^_^
 const ping = async () => {
   const r = await interact(`GET`, `${address}/ping`)
@@ -550,5 +556,6 @@ export {
   catGraph,
   getAPIs,
   apiCall,
-  getViews
+  getViews,
+  viewCall
 };

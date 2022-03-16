@@ -157,19 +157,17 @@ const renderObjects = async (nodeId) => {
   }
 
   for (const [k,v] of Object.entries(views)) {
-    for (const [k1,v1] of Object.entries(v.v_env)) {
-      viewBs = viewBs + `
-        <button type="button"
-        class="list-group-item list-group-item-action view-button"
-        data-node-id="${nodeId}"
-        data-view-id="${k}"
-        data-view-var="${k1}"
-        data-view-tag="${v1.tag}"
-        data-view-contents="${v1.contents}"
-        data-api-name="${v.v_name}">
-        ${v.v_name}:${k1}
-        </button> `
-    }
+    viewBs = viewBs + `
+      <button type="button"
+      class="list-group-item list-group-item-action view-button"
+      data-node-id="${nodeId}"
+      data-view-id="${k}"
+      data-view-var="${v.v_var}"
+      data-view-tag="${v.v_ty.tag}"
+      data-view-contents="${v.v_ty.contents}"
+      data-view-name="${v.v_name}">
+      ${v.v_name}:${v.v_var}
+      </button> `
   }
 
   spa.innerHTML = `
@@ -467,16 +465,19 @@ const clickAPIButton = async (evt) => {
 const clickViewButton = async (evt) => {
   objectsHTML = spa.innerHTML
   const tgt = evt.target.closest(".view-button")
-  const apiId = tgt.dataset.apiId
   const nodeId = tgt.dataset.nodeId
   const viewName = tgt.dataset.viewName
+  const viewId = tgt.dataset.viewId
+  const viewVar = tgt.dataset.viewVar
+  const viewTag = tgt.dataset.viewTag
+  const viewContents = tgt.dataset.viewContents
   let val = prompt(`Enter Value for: ${viewName}`,"");
   if (val === null || val === "") {
     console.log("User cancelled the prompt.");
   } else {
     let v = JSON.stringify(JSON.parse(val))
-    // c.getViewVal(viewId,nodeId,v)
-    jsonLog.push(["getViewVal",viewId,nodeId,v])
+    c.viewCall(viewId,nodeId,v,t)
+    jsonLog.push(["viewCall",viewId,nodeId,v,t])
   }
 }
 
