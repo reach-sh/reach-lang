@@ -2982,7 +2982,9 @@ compile_algo env disp pl = do
           lr_lab = apiLabel p
           lr_at = ai_at
           lr_what = "API " <> bunpack p
-  let progLs = (mapMaybe h2lr $ M.toAscList hm) <> (map a2lr $ M.toAscList ai)
+  let pubLs = mapMaybe h2lr $ M.toAscList hm
+  let apiLs = map a2lr $ M.toAscList ai
+  let progLs = pubLs <> apiLs
   let run :: CompanionInfo -> App () -> IO (TEALs, Notify, IO ())
       run eCompanion m = do
         let eHP_ = fromIntegral $ fromEnum (maxBound :: GlobalVar)
@@ -3018,17 +3020,21 @@ compile_algo env disp pl = do
   let runProg m = do
         let lab = "appApproval"
         let disp' = disp . (lab <>)
-        let rec ci = do
+        let rec inclAll ci = do
               (ts, notify, finalize) <- run ci m
               let ts' = optimize $ DL.toList ts
-              checkCost notify disp' progLs ci ts' >>= \case
-                Right ci' -> rec ci'
-                Left msg -> do
-                  finalize
-                  when showCost $ putStr msg
-                  modifyIORef resr $ M.insert "companionInfo" (Aeson.toJSON ci)
-                  return ts'
-        ts' <- rec Nothing
+              let ls = if inclAll then progLs else apiLs
+              checkCost notify disp' ls ci ts' >>= \case
+                Right ci' -> rec inclAll ci'
+                Left msg ->
+                  case inclAll of
+                    False -> rec True ci
+                    True -> do
+                      finalize
+                      when showCost $ putStr msg
+                      modifyIORef resr $ M.insert "companionInfo" (Aeson.toJSON ci)
+                      return ts'
+        ts' <- rec False Nothing
         void $ addProg lab ts'
   runProg $ do
     mGV_companion <- asks eCompanion >>= \case
