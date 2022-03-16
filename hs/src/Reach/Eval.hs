@@ -309,26 +309,18 @@ evalBundle cns (JSBundle mods) addToEnvForEditorInfo = do
   let evalPlus = do
         (shared_lifts, libm) <- captureLifts $ evalLibs cns mods
         let exe_ex = libm M.! exe
-        retEnv <- if addToEnvForEditorInfo then do
-            let envWithBase = M.union exe_ex base_env
-            let innerEnv n v = do
-                 objEnv <- evalAsEnvM v
-                 case (n, objEnv) of
-                   (_, Nothing) -> mempty
-                   ("Array_empty", _) -> mempty
-                   ("Array", _) -> mempty
-                   ("Foldable", _) -> mempty
-                   ("Map", _) -> mempty
-                   ("Object", _) -> mempty
-                   (_, Just oe) -> do
-                     env <- evalObjEnv oe
-                     let ret = M.mapKeys (\k -> n <> "." <> k) $ env
-                     return ret
-            innerEnvs <- mapM (\k -> innerEnv k (sss_sls $ envWithBase M.! k)) $ M.keys envWithBase
-            return $ M.union envWithBase $ M.unions innerEnvs
-          else do
-            return exe_ex
-        return (shared_lifts, libm, retEnv)
+        (,,) shared_lifts libm <$>
+          case addToEnvForEditorInfo of
+            False -> return exe_ex
+            True -> do
+              let stdlibEnv = libm M.! ReachStdLib
+              local (\e -> e { e_sco = ((e_sco e) { sco_cenv = stdlibEnv }) }) $ do
+                let envWithBase = M.union exe_ex base_env
+                let innerEnv n v = evalAsEnvM v >>= \case
+                      Nothing -> mempty
+                      Just e -> M.mapKeys (\k -> n <> "." <> k) <$> evalObjEnv e
+                innerEnvs <- mapWithKeyM innerEnv $ M.map sss_sls envWithBase
+                return $ M.union envWithBase $ M.unions innerEnvs
   (shared_lifts, _, exe_ex) <- run $ evalPlus
   return (run, shared_lifts, exe_ex)
 
