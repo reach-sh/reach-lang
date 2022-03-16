@@ -500,7 +500,22 @@ jsExpr = \case
       (L_Api p, [dv]) -> go (bunpack p) dv
       (_, _) -> return $ "null"
   DLE_setApiDetails {} -> return "undefined /* setApiDetails */"
-  DLE_GetUntrackedFunds {} -> impossible "getUntrackedFunds"
+  DLE_GetUntrackedFunds at mtok tb -> do
+    tok <- maybe (return "") jsArg mtok
+    tb' <- jsArg tb
+    zero <- jsArg $ DLA_Literal $ DLL_Int at 0
+    let bal = "await" <+> jsApply "ctc.getBalance" [tok]
+    let rhs = jsPrimApply
+          IF_THEN_ELSE
+          [ jsPrimApply PLE [bal, tb']
+          , zero
+          , jsPrimApply SUB [bal, tb']
+          ]
+    ctm <- asks ctxt_mode
+    let infoSim = case ctm == JM_Simulate && isJust mtok of
+          True -> jsSimTxn "info" [("tok", tok)] <> ","
+          _ -> ""
+    return $ parens $ infoSim <> rhs
   DLE_FromSome _at mo da -> do
     mo' <- jsArg mo
     da' <- jsArg da
@@ -521,25 +536,6 @@ jsEmitSwitch iter _at ov csm = do
 jsCom :: AppT DLStmt
 jsCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ (DLV_Let _ dv) (DLE_GetUntrackedFunds at mtok tb) -> do
-    dv' <- jsVar dv
-    tok <- maybe (return "") jsArg mtok
-    tb' <- jsArg tb
-    zero <- jsArg $ DLA_Literal $ DLL_Int at 0
-    let bal = "await" <+> jsApply "ctc.getBalance" [tok]
-    let rhs = jsPrimApply
-          IF_THEN_ELSE
-          [ jsPrimApply PLE [bal, tb']
-          , zero
-          , jsPrimApply SUB [bal, tb']
-          ]
-    ctm <- asks ctxt_mode
-    let infoSim = case ctm == JM_Simulate && isJust mtok of
-          True -> jsSimTxn "info" [("tok", tok)]
-          _ -> ""
-    return $ vsep
-      [ infoSim <> ";"
-      , "const" <+> dv' <+> "=" <+> rhs <> semi ]
   DL_Let _ (DLV_Let _ dv) de -> do
     dv' <- jsVar dv
     rhs <- jsExpr de
