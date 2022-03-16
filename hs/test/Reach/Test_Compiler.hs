@@ -2,6 +2,7 @@ module Reach.Test_Compiler
   ( test_examples
   , test_yes
   , test_no
+  , test_printKeywordInfo
   )
 where
 
@@ -99,3 +100,11 @@ test_examples = goldenTests "../examples" f
       case S.member fp fails of
         True -> testFail
         False -> testSucc
+
+test_printKeywordInfo :: IO TestTree
+test_printKeywordInfo = do
+  cwd <- getCurrentDirectory
+  return $ goldenVsStringDiff "print-keyword-info"
+    (\ref new -> ["diff", "-u", ref, new])
+    (cwd </> "../vsce/data/print-keyword-info.json")
+    $ (readProcess "reachc" ["--print-keyword-info"] "") >>= (return . lbpack)
