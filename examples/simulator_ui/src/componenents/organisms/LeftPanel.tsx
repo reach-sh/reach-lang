@@ -3,6 +3,7 @@ import Button from '../atoms/Button'
 import SectionHeaderComponent from '../molecules/SectionHeader'
 import { useState } from 'react'
 import DropdownInput from '../atoms/DropdownInput'
+import ObsPanel from '../molecules/ObsPanel'
 
 const  PanelContainer = styled.div`
     position: static;
@@ -10,6 +11,7 @@ const  PanelContainer = styled.div`
     height: 562px;
     border: 1px solid var(--off-white);
     box-sizing: border-box;
+    background: var(--dark-bg);
 `
 const StyledPlus = styled(Button)`
     background-color: var(--reach-2);
@@ -49,6 +51,8 @@ const SectionTitle = styled.p`
 const ObjectSection = styled.div`
     margin: 0 7.5%;
     align-self: center;
+    align-items: left;
+    
 `
 const ObjectContent = styled.div`
     height: 110px;
@@ -96,10 +100,12 @@ const InitParticipantsButton = styled(Button)`
     width: 156px;
     height: 28px;
 `
+const ParticipantName = styled.p``
 
 
 
-function LeftPanel ({initParticipant}: {initParticipant: Function}) {
+
+function LeftPanel ({initParticipant, objectViewData}: {initParticipant: Function, objectViewData: any}) {
     const [openObjectSection, setOpenObjectSection] = useState(true);
     const [openAccountsSection, setOpenAccountsSection] = useState(true);
     const [openInitSection, setOpenInitSection] = useState(true);
@@ -111,7 +117,9 @@ function LeftPanel ({initParticipant}: {initParticipant: Function}) {
     <PanelContainer>
         <ObjectSection>
             <SectionHeaderComponent sectionOpen={openObjectSection} setSectionOpen={setOpenObjectSection} title='Object'/>
-            {openObjectSection?<ObjectContent/>:<></>}
+            {openObjectSection && Object.entries(objectViewData).length > 0 ?<ObjectContent>
+                <ObsPanel objectViewData={objectViewData}/>
+            </ObjectContent>:<></>}
         </ObjectSection>
         <SectionDivider/>
         <AccountsSection>

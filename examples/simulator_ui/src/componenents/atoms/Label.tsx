@@ -1,10 +1,20 @@
-import styled from 'styled-components'
+import styled from "styled-components";
+const StyledP = styled.p`
+  color: var(--off-white);
+  padding: 4px;
 
+`;
+const StyledBox = styled.div`
+  background: var(--light-grey);
+  height: fit-content;
+  width: fit-content;
+  border-radius: 2px;
 
-function Label () {
-    return (<div></div>)
+`;
+export default function Label({ text }: { text: string }) {
+  return (
+    <StyledBox>
+      <StyledP>{text}</StyledP>
+    </StyledBox>
+  );
 }
-
-export default styled(Label)`
-
-`

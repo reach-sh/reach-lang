@@ -1,4 +1,4 @@
-export interface LocalStep {
+export interface Actor {
         l_acct: number
         l_ivd: any
         l_ks: string
@@ -11,7 +11,7 @@ export interface LocalStep {
     
 export type Locals = {
         l_curr_actor_id: number
-        l_locals: Array<localStep>
+        l_locals: Array<Actor>
     }
 
 export type SimulatorObject = {
@@ -45,7 +45,3 @@ export type store = {
     0 : string
     1 : storePayload
 }
-
-
-
-export default {Locals, LocalStep, store, storePayload, nodeId, apiSet, actorSet, apiB, SimulatorObject}

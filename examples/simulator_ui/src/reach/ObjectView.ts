@@ -1,10 +1,10 @@
-import {LocalStep, Locals, store, storePayload, apiB, apiSet} from '../types'
-export default async function renderObjects  ({nodeId, c }:{nodeId: string, c: any }){
+import {Actor, Locals, store, storePayload, apiB, apiSet} from '../types'
+export default async function   ({nodeId, c }:{nodeId: string, c: any }){
   const r = await c.getStateLocals(nodeId)
   const apis = await c.getAPIs()
   
   type ActorSet = {
-    [index: string]: any
+    [index: string]: Actor
   }
 
   function hasKey<O>(obj: O, key: PropertyKey): key is keyof O {
@@ -12,40 +12,50 @@ export default async function renderObjects  ({nodeId, c }:{nodeId: string, c: a
     }
 
   let actorSet = {}
-  for (const [key, value] of Object.entries(r.l_locals)) {
-      const value2 = value as LocalStep
+  if(Object.entries(r.l_locals) !== undefined){
+    for (const [key, value] of Object.entries(r.l_locals)) {
+      const value2 = value as Actor
       const who = value2.l_who ? value2.l_who : 'Consensus';
       if(hasKey(actorSet, key)){
         actorSet[key] = who as never
         }
     }
+  }
+  
     
   let apiSet = {}
-  for (const [key,value] of Object.entries(apis)) {
+  if(Object.entries(apis)){
+    for (const [key,value] of Object.entries(apis)) {
     const value2 = value as apiB
     const who = value2.a_name
     if(hasKey(apiSet, key)){
         apiSet[key] = who as never
         }
+    }
   }
+  
     
     let actors = []
     let actorsNoCons = []
-    const actorEntries = Object.entries(actorSet)
-    // NOTE: assumption: there is at least one non-consensus actor
-    const firstActorId = actorEntries[0][0]
-    for (const [key,value] of actorEntries) {
-        actors.push(`<option value="${key}">${value}</option>`) 
-    }
-    for (const [key,value] of actorEntries) {
-        if (parseInt(key) !== -1 ) {
-            actorsNoCons.push(`<option value="${key}">${value}</option>`)
+    if(Object.entries(actorSet).length > 0){
+        const actorEntries = Object.entries(actorSet)
+
+        // NOTE: assumption: there is at least one non-consensus actor
+        const firstActorId = actorEntries[0][0]
+        for (const [key,value] of actorEntries) {
+            actors.push(`<option value="${key}">${value}</option>`) 
+        }
+        for (const [key,value] of actorEntries) {
+            if (parseInt(key) !== -1 ) {
+                actorsNoCons.push(`<option value="${key}">${value}</option>`)
+            }
         }
     }
     
+    
     let obs = []
     for (const [key,value] of Object.entries(r.l_locals)) {
-        const value2 = value as LocalStep
+        const value2 = value as Actor
         const who = value2.l_who ? value2.l_who : 'Consensus'
         let status = 'Initial'
         switch (value2.l_ks) {
@@ -78,7 +88,10 @@ export default async function renderObjects  ({nodeId, c }:{nodeId: string, c: a
                     name: `${value2.a_name}`
                 })
   }
-
+  console.log("obs: " + JSON.stringify(obs))
+  console.log("actorsNoCons: " + actorsNoCons)
+  console.log("actors: " + actors)
+  console.log("apiBs: " + apiBs)
   return { obs, actorsNoCons, actors, apiBs }
   
 }

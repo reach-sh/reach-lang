@@ -10,14 +10,16 @@ const NavbarContainer = styled.div`
     display: grid;
     background-color: #101010;
     grid-template-columns: 20% 60% 20%;
-    padding: 25px;
     width: 100vw;
     border: 1px solid #F2F2F2;
+    height: 78px;
+    align-items: center;
 `
 
 const Left = styled.div`
     display: flex;
     flex-direction: row;
+    align-items: center;
 `
 
 const Right = styled.div`
