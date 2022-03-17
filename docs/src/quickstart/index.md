@@ -9,7 +9,7 @@ You can install on the following operating systems:
 
 # {#ref-qs-win} Windows
 
-Reach requires WSL 2 and [Docker Desktop](https://www.docker.com/get-started) to be installed.
+Reach requires [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/install) and [Docker Desktop](https://www.docker.com/get-started) to be installed.
 
 ## {#ref-qs-win-prereqs} Prerequisites
 
@@ -75,13 +75,13 @@ In the terminal, run the following to install `make`:
 $ sudo apt install make
 ```
 
-Next, run the following to allow `apt` to use repositories containing https:
+Next, run the following to allow `apt` to use repositories containing HTTPS:
 
 ```cmd
 $ sudo apt install ca-certificates curl gnupg lsb-release
 ```
 
-Create and navigate to the reach directory with the following command:
+Create and navigate to the `reach` directory with the following command:
 
 ``` cmd
 $ mkdir -p ~/reach && cd ~/reach
@@ -100,7 +100,7 @@ $ ./reach version
 ```
 
 You are now ready to start programming in Reach.
-Check out our [Rock Paper Scissors!](##tut) tutorial to get started.
+Check out our [tutorials](##tuts) to get started.
 
 # {#ref-qs-linux} Linux
 
@@ -125,13 +125,13 @@ In the terminal, run the following to install `make`:
 $ sudo apt install make
 ```
 
-Next, run the following to allow `apt` to use repositories containing https:
+Next, run the following to allow `apt` to use repositories containing HTTPS:
 
 ```cmd
 $ sudo apt install ca-certificates curl gnupg lsb-release
 ```
 
-After that, run:
+Docker will be installed by adding a package repository from Docker, this requires updating your `apt` configuration:
 
 ```cmd
 $ sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
@@ -143,7 +143,7 @@ And then, run:
 $ sudo echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \ $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 ```
 
-Create and navigate to the reach directory with the following command:
+Create and navigate to the `reach` directory with the following command:
 
 ``` cmd
 $ mkdir -p ~/reach && cd ~/reach
@@ -162,7 +162,7 @@ $ ./reach version
 ```
 
 You are now ready to start programming in Reach.
-Check out our [Rock Paper Scissors!](##tut) tutorial to get started.
+Check out our [tutorials](##tuts) to get started.
 
 # {#ref-qs-mac} MacOS
 
@@ -226,6 +226,6 @@ $ ./reach version
 ```
 
 You are now ready to start programming in Reach.
-Check out our [Rock Paper Scissors!](##tut) tutorial to get started.
+Check out our [tutorials](##tuts) to get started.
 
 If you have any issues running `reach`, please check the [Troubleshooting](##ref-ts) page for solutions.

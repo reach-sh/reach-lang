@@ -1,5 +1,7 @@
 # {#ref-ts} Troubleshooting
 
+## {#ref-ts-perm} Permissions
+
 If you receive one of the following errors: 
 
 ```cmd
@@ -19,6 +21,8 @@ chmod: cannot access '/tmp/reach.../out.sh': No such file or directory
 
 * If use of `sudo` during installation is not the cause then try [updating Docker](https://techdirectarchive.com/2021/10/17/how-to-manually-update-docker-desktop/) and Docker-compose.
 
+## {#ref-ts-win8} Windows 8 Docker installation issues
+
 "I'm running Windows 8 and cannot install Docker."
 
 Unfortunately, Docker Desktop does not support Windows 8.
@@ -31,6 +35,8 @@ Possible solutions are:
 
   It is likely that running a VM has the worst experience due to the splitting of system resources.
 
+## {#ref-ts-reachdir} Reach: is a directory
+
 Executing `./reach version` on Linux outputs `./reach: Is a directory`
 
 * This error usually occurs when `reach` is being called from a directory where it is not installed.
@@ -39,9 +45,11 @@ Executing `./reach version` on Linux outputs `./reach: Is a directory`
 
 * Check the current working directory with the terminal command `pwd`.
 
-If running `./reach run` seems to require `sudo` it's possible one or more of the following is at issue:
+## {#ref-ts-reachsudo} `reach run` seems to require sudo
 
-* A directory used by `reach` was created with `sudo` or by another account.
+If running `./reach run` seems to require `sudo`, then it is likely that:
+
+* A component used by `reach` was installed/created using `sudo`, such as the directory.
 
   Make sure that the current user has read/write permissions in the directory. 
 
@@ -60,7 +68,7 @@ If running `./reach run` seems to require `sudo` it's possible one or more of th
 
   Sometimes after an update, VSCode needs to be restarted in order for syntax highlighting to begin working again. 
 
-## {#ref-qs-mac-troubleshooting} MacOS troubleshooting
+## {#ref-ts-mac-platform} MacOS platform mismatch
 
 Receiving the following error on **M1 Macs**:
 
