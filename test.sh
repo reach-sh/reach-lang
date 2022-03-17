@@ -132,6 +132,14 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
+export REACH_CONNECTOR_MODE=ALGO
+export REACH_DEBUG=Y
+#${REACH} devnet --await-background
+cd users/xbacked-contracts/src
+#${REACH} compile master_vault.rsh
+${REACH} run
+exit 0
+
 REACH_DEBUG=Y c users/xbacked-contracts/src/master_vault.rsh
 exit 0
 

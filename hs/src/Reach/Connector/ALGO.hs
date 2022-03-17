@@ -1354,17 +1354,49 @@ csplice _at b c e = do
   -- [ Bytes' = X b Y'c Z e]
   return ()
 
+-- csplice3... what does it mean?
+--
+-- csplice3 cnew (Just cbig) (SR_Both cbefore cafter)
+--
+-- is the simplest use to understand. We are supposed to turn
+--
+-- BIG
+--
+-- into
+--
+-- BIG[before] new BIG[after]
+--
+-- + cnew computes the NEW piece
+-- + cbefore extracts the before piece from the big
+-- + cafter extracts the after piece from the big
+-- + The Just means that we can compute the big when we need it (because it is
+--   small)
+--
+-- If the Just were a Nothing, then the big would be on the stack
 csplice3 :: App () -> Maybe (App ()) -> SpliceRange -> App ()
 csplice3 cnew mcbig = \case
-  SR_None -> mc cnew
+  SR_None -> do
+    case mcbig of
+      Nothing -> op "pop"
+      Just _ -> return ()
+    cnew
   SR_Before cbefore -> do
-    mc cbefore
+    case mcbig of
+      Nothing -> return ()
+      Just cbig -> cbig
+    cbefore
     cnew
     op "concat"
   SR_After cafter -> do
-    mc cafter
-    cnew
-    op "swap"
+    case mcbig of
+      Nothing -> do
+        cafter
+        cnew
+        op "swap"
+      Just cbig -> do
+        cnew
+        cbig
+        cafter
     op "concat"
   SR_Both cbefore cafter ->
     case mcbig of
@@ -1393,12 +1425,6 @@ csplice3 cnew mcbig = \case
         cbig
         cafter
         op "concat"
-  where
-    mc :: App () -> App ()
-    mc m =
-      case mcbig of
-        Nothing -> m
-        Just cbig -> cbig >> m
 
 cArraySet :: SrcLoc -> (DLType, Integer) -> Maybe (App ()) -> Either Integer (App ()) -> App () -> App ()
 cArraySet _at (t, alen) mcbig eidx cnew = do
