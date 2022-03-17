@@ -642,6 +642,7 @@ If it is `{!rsh} false`, then the connector will ensure this dynamically.
 
 ### boolXor
 
+@{ref("rsh", "boolXor")}
 ```reach
 boolXor(false, false); // false
 boolXor(false, true);  // true
