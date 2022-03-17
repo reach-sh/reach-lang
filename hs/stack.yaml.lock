@@ -104,6 +104,17 @@ packages:
     git: https://github.com/reach-sh/stan.git
     commit: ca66b8dcfe22d1c1afbe81c83274dbc27115bf68
 - completed:
+    name: language-javascript
+    version: 0.7.1.1
+    git: https://github.com/reach-sh/language-javascript.git
+    pantry-tree:
+      size: 3233
+      sha256: 009bac12f48b261aabdbfc9559a8f00fa556e2065df1f379080dfa31470a3075
+    commit: c1c9899708859e969c73343cf2691231a1ca7b03
+  original:
+    git: https://github.com/reach-sh/language-javascript.git
+    commit: c1c9899708859e969c73343cf2691231a1ca7b03
+- completed:
     name: ormolu
     version: 0.1.4.1
     git: https://github.com/google/ormolu.git
