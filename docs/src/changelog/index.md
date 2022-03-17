@@ -7,6 +7,9 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.9 is the current Reach release candidate version.
 
++ 2022/03/16: On Algorand, Reach will use a companion application and inner transaction calls to it to provide up to 179,200 units of computation budget.
+  Each 700 costs an extra transaction fee.
+  The compiler will produce a fee and resource allocation report when run with debugging enabled.
 + 2022/03/14: Algorand-only: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/03/14: Added `{!rsh} polyXor` and update `{!rsh} ^` to use it.
 + 2022/03/12: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
