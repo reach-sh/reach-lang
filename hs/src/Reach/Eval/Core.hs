@@ -3893,7 +3893,7 @@ evalExpr e = case e of
       "this" -> evalExpr $ JSIdentifier a l
       _ -> expect_ $ Err_Parse_IllegalLiteral l
   JSHexInteger a ns -> locAtf (srcloc_jsa "hex" a) $
-    withAt $ \at -> public $ SLV_Int at $ numberValue 16 ns
+    withAt $ \at -> public $ SLV_Int at $ numberValue 16 (drop 2 ns {- trim '0x' prefix -})
   JSOctal a ns -> locAtf (srcloc_jsa "octal" a) $
     withAt $ \at -> public $ SLV_Int at $ numberValue 8 ns
   JSStringLiteral a s -> locAtf (srcloc_jsa "string" a) $
