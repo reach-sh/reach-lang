@@ -650,7 +650,7 @@ boolXor(true, true);   // false
 ```
 
 `{!rsh} boolXor(Bool, Bool)` returns `{!rsh} true` only when the inputs differ in value.
-This function is specialized to `{!rsh} Bool`s, `{!rsh} xor` supports more types.
+This function is specialized to `{!rsh} Bool`s; `{!rsh} xor` supports more types.
 
 ### {#padding} Padding
 
