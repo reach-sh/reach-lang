@@ -781,9 +781,9 @@ instance Optimize ETail where
     ET_Switch at ov csm ->
       optSwitch id ET_Com ET_Switch at ov csm
     ET_FromConsensus at vi fi k ->
-      ET_FromConsensus at vi fi <$> (maybeClearMaps $ opt k)
+      ET_FromConsensus at vi fi <$> (focus_one "" $ maybeClearMaps $ opt k)
     ET_ToConsensus {..} -> do
-      ET_ToConsensus et_tc_at et_tc_from et_tc_prev <$> opt et_tc_lct <*> pure et_tc_which <*> opt et_tc_from_me <*> pure et_tc_from_msg <*> pure et_tc_from_out <*> pure et_tc_from_timev <*> pure et_tc_from_secsv <*> pure et_tc_from_didSendv <*> opt_mtime et_tc_from_mtime <*> opt et_tc_cons
+      ET_ToConsensus et_tc_at et_tc_from et_tc_prev <$> opt et_tc_lct <*> pure et_tc_which <*> opt et_tc_from_me <*> pure et_tc_from_msg <*> pure et_tc_from_out <*> pure et_tc_from_timev <*> pure et_tc_from_secsv <*> pure et_tc_from_didSendv <*> opt_mtime et_tc_from_mtime <*> (focus_con $ opt et_tc_cons)
     ET_While at asn cond body k -> optWhile (ET_While at) asn cond body k
     ET_Continue at asn -> ET_Continue at <$> opt asn
   gcs = \case
@@ -834,7 +834,7 @@ instance Optimize CPProg where
   gcs (CPProg _ _ _ _ (CHandlers hs)) = gcs hs
 
 instance Optimize EPProg where
-  opt (EPProg at x ie et) = newScope $ EPProg at x ie <$> opt et
+  opt (EPProg at x ie et) = newScope $ EPProg at x ie <$> (focus_one "" $ opt et)
   gcs (EPProg _ _ _ et) = gcs et
 
 instance Optimize EPPs where
