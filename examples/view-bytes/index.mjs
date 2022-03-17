@@ -9,6 +9,8 @@ const assertEq = (expected, actual) => {
   stdlib.assert(exps === acts) };
 const startingBalance = stdlib.parseCurrency(100);
 const [accAlice, accBob] = await stdlib.newTestAccounts(2, startingBalance);
+accAlice.setDebugLabel('Alice');
+accBob.setDebugLabel('Bob');
 const ctcAlice = accAlice.contract(backend);
 const ctcBob = accBob.contract(backend, ctcAlice.getInfo());
 
@@ -21,7 +23,7 @@ const checkView = async (expected) => {
 
 const meta = `This is a test string`;
 await Promise.all([
-  backend.Alice(ctcAlice, { meta }),
+  backend.Alice(ctcAlice, { meta, checkView }),
   backend.Bob(ctcBob, { checkView }),
 ]);
 
