@@ -2296,7 +2296,7 @@ Depending on the intended behavior of the program, you can fix this error in dif
 
 This error indicates that you are attempting to perform an `{!rsh} xor` operation on an unsupported type.
 
-Refer to the `{!rsh} polyXor` documentation to see what types are supported.
+Refer to the `{!rsh} xor` documentation to see what types are supported.
 
 ## {#REP0000} REP0000
 

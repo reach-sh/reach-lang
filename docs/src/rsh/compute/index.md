@@ -588,14 +588,14 @@ A @{defn("binary expression")} is written `{!rsh} EXPR_lhs BINOP EXPR_rhs`, wher
 Numeric operations, like `{!rsh} +` and `{!rsh} >`, only operate on numbers.
 Since all numbers in Reach are integers, operations like `{!rsh} /` truncate their result.
 Boolean operations, like `{!rsh} &&`, only operate on booleans.
-`{!rsh} polyXor` operates on `{!rsh} UInt`s, `{!rsh} Bool`s, `{!rsh} Digest`s, and `{!rsh} Bytes` of the same length.
+`{!rsh} xor` operates on `{!rsh} UInt`s, `{!rsh} Bool`s, `{!rsh} Digest`s, and `{!rsh} Bytes` of the same length.
 It is invalid to use binary operations on the wrong types of values.
 
-@{ref("rsh", "and")}@{ref("rsh", "or")}@{ref("rsh", "xor")}@{ref("rsh", "add")}@{ref("rsh", "sub")}@{ref("rsh", "mul")}@{ref("rsh", "div")}@{ref("rsh", "mod")}@{ref("rsh", "eq")}@{ref("rsh", "lt")}@{ref("rsh", "le")}@{ref("rsh", "ge")}@{ref("rsh", "gt")}@{ref("rsh", "lsh")}@{ref("rsh", "rsh")}@{ref("rsh", "band")}@{ref("rsh", "bior")}@{ref("rsh", "bxor")}@{ref("rsh", "polyXor")}@{ref("rsh", "polyEq")}@{ref("rsh", "polyNeq")}
+@{ref("rsh", "and")}@{ref("rsh", "or")}@{ref("rsh", "xor")}@{ref("rsh", "add")}@{ref("rsh", "sub")}@{ref("rsh", "mul")}@{ref("rsh", "div")}@{ref("rsh", "mod")}@{ref("rsh", "eq")}@{ref("rsh", "lt")}@{ref("rsh", "le")}@{ref("rsh", "ge")}@{ref("rsh", "gt")}@{ref("rsh", "lsh")}@{ref("rsh", "rsh")}@{ref("rsh", "band")}@{ref("rsh", "bior")}@{ref("rsh", "bxor")}@{ref("rsh", "polyEq")}@{ref("rsh", "polyNeq")}
 ```reach
 and(a, b)     // &&
 or(a, b)      // ||
-xor(a, b)     // No equivalent infix operator.
+xor(a, b)     // ^
 add(a, b)     // +
 sub(a, b)     // -
 mul(a, b)     // *
@@ -610,7 +610,6 @@ lsh(a, b)     // <<
 rsh(a, b)     // >>
 band(a, b)    // &
 bior(a, b)    // |
-polyXor(a, b) // ^
 polyEq(a, b)  // ==, ===
 polyNeq(a, b) // !=, !==
 ```
@@ -641,16 +640,17 @@ Specialized functions exist for equality checking on each supported type.
 If `{!rsh} verifyArithmetic` is `{!rsh} true`, then arithmetic operations automatically make a static assertion that their arguments would not overflow the bit width of the enabled consensus networks.
 If it is `{!rsh} false`, then the connector will ensure this dynamically.
 
-### xor
+### boolXor
 
 ```reach
-xor(false, false); // false
-xor(false, true);  // true
-xor(true, false);  // true
-xor(true, true);   // false
+boolXor(false, false); // false
+boolXor(false, true);  // true
+boolXor(true, false);  // true
+boolXor(true, true);   // false
 ```
 
-`{!rsh} xor(Bool, Bool)` returns `{!rsh} true` only when the inputs differ in value.
+`{!rsh} boolXor(Bool, Bool)` returns `{!rsh} true` only when the inputs differ in value.
+This function is specialized to `{!rsh} Bool`s, `{!rsh} xor` supports more types.
 
 ### {#padding} Padding
 
