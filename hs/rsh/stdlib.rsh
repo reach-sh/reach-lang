@@ -444,7 +444,7 @@ export const intervalCC = (x, y) => interval(Closed, x, y, Closed);
 export const leftEndpoint  = ([_, a, _, _]) => a;
 export const rightEndpoint = ([_, _, b, _]) => b;
 
-export const intervalEmpty = [Open, +0, +0, Open];
+export const interval_empty = [Open, +0, +0, Open];
 
 export const intervalEq  = (x, y) => x == y;
 export const intervalLt  = (x, y) => ilt(rightEndpoint(x), leftEndpoint(y));
@@ -471,7 +471,7 @@ export const intervalIntersection = (x, y) => {
   const [ ab, a, b, bb ] = x;
   const [ cb, c, d, db ] = y;
   if (igt(a, d) || igt(c, b)) {
-    return intervalEmpty
+    return interval_empty
   } else {
     const [ lb, ml ] = maxEndpoint( [ab, a], [cb, c] );
     const [ rb, mr ] = maxEndpoint( [bb, b], [db, d] );
