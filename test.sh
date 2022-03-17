@@ -132,6 +132,9 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
+ci ALGO splice-all
+exit 0
+
 export REACH_CONNECTOR_MODE=ALGO
 export REACH_DEBUG=Y
 #${REACH} devnet --await-background

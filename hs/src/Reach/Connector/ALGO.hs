@@ -455,6 +455,54 @@ opt_bs = \case
 opt_b :: [TEAL] -> [TEAL]
 opt_b = foldr (\a b -> opt_b1 $ a : b) mempty
 
+data TType
+  = TT_UInt
+  | TT_Bytes
+  | TT_Unknown
+
+opType :: TEAL -> Maybe ([TType], [TType])
+opType = \case
+  Titob {} -> u2b
+  TInt {} -> _2u
+  TConst {} -> _2u
+  TBytes {} -> _2b
+  TExtract {} -> b2b
+  TSubstring {} -> b2b
+  TComment {} -> Nothing
+  TLabel {} -> Nothing
+  TFor_top {} -> Nothing
+  TFor_bnz {} -> Nothing
+  TLog {} -> eff
+  TStore {} -> eff
+  TLoad {} -> j [] [k]
+  TResource {} -> eff
+  TCostCredit {} -> eff
+  TCode o _ ->
+    -- XXX Fill in this table
+    case o of
+      "err" -> eff
+      "sha256" -> b2b
+      "keccak256" -> b2b
+      -- ....
+      "global" -> j [] [k]
+      -- ....
+      _ -> Nothing
+  where
+    _2b = j [] [b]
+    _2u = j [] [u]
+    u2b = j [u] [b]
+    b2b = j [b] [b]
+    eff = Nothing
+    k = TT_Unknown
+    u = TT_UInt
+    b = TT_Bytes
+    j x y = Just (x, y)
+
+opArity :: TEAL -> Maybe (Int, Int)
+opArity = fmap f . opType
+  where
+    f (x, y) = (length x, length y)
+
 opt_b1 :: [TEAL] -> [TEAL]
 opt_b1 = \case
   [] -> []
@@ -467,6 +515,14 @@ opt_b1 = \case
   (TBytes "") : b@(TLoad {}) : (TCode "concat" []) : l -> opt_b1 $ b : l
   (TBytes x) : (TBytes y) : (TCode "concat" []) : l ->
     opt_b1 $ (TBytes $ x <> y) : l
+  -- XXX generalize this optimization and make it so we don't do it to things
+  -- with effects
+  -- If x doesn't consume anything and we pop it, just pop it
+  x : (TCode "pop" []) : l | opArity x == Just (0, 1) -> l
+  -- If x consumes something and we pop it, then pop the argument too
+  x : y@(TCode "pop" []) : l | opArity x == Just (1, 1) -> y : l
+  -- If x consumes 2 things and we pop it, then pop the arguments too
+  x : y@(TCode "pop" []) : l | opArity x == Just (2, 1) -> y : y : l
   (TCode "b" [x]) : b@(TLabel y) : l | x == y -> b : l
   (TCode "btoi" []) : (Titob True) : (TSubstring 7 8) : l -> l
   (TCode "btoi" []) : (Titob _) : l -> l
