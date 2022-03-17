@@ -10,7 +10,7 @@ export default {
   },
 } as ComponentMeta<typeof ReachLogo>;
 
-const Template: ComponentStory<typeof ReachLogo> = (args) => <ReachLogo {...args} />;
+const Template: ComponentStory<typeof ReachLogo> = (args) => <ReachLogo/>;
 
 export const Primary = Template.bind({});
 Primary.parameters = {

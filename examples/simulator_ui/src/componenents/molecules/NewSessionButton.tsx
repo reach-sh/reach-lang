@@ -10,6 +10,7 @@ const NewSessionBtn = styled(Button)`
     padding: 8px 24px;
     background: var(--white);
     margin-left: 6em;
+    height: 30px;
     & p {
         color: var(--dark-bg);
         white-space: nowrap;

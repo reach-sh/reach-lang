@@ -11,7 +11,7 @@ declare module '@reach-sh/simulator-client' {
             export function getStatus(): any
             export function init(): any
             export function initDetails(): any
-            export function initFor(s, a, liv?, acc?: {s: number, a: number, liv: any = "{}", acc: boolean = false}): any
+            export function initFor(s, a, liv?, acc?: {s: number, a: number, liv: any, acc: boolean}): any
             export function interp(): any
             export function interpCommand(): any
             export function load(): any
