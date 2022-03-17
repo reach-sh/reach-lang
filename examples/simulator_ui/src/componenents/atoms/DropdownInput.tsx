@@ -21,7 +21,7 @@ function DropdownInput ({value, onChange}: {value: string, onChange: Function}) 
     return (
       <div style={{whiteSpace: 'nowrap'}}>
         <span style={{display: 'inline-block'}}>
-        <Input placeholder='Session name' value={value} onChange={(e) => {console.log('target value @dropdownInputs onChange ' + e.target.value); return onChange(e.target.value)}}>
+        <Input placeholder='Session name' value={value} onChange={(e) => onChange(e.target.value)}>
             <option value='0'>Alice</option>
             <option value='1'>Bob</option>
             </Input>
