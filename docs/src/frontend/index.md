@@ -757,12 +757,16 @@ On Algorand, it can provide a wallet that directly connects to the Algorand netw
 The network connection is specified via the `providerEnv` key, which may be a string (which is used as an argument to `{!js} providerEnvByName`) or an environment (which is used as an argument to `{!js} setProviderByEnv`).
 By default, signing is via an interactive browser window prompt, where the user repeatedly provides their mnemonic.
 
-If the key `MyAlgoConnect` is provided, and bound to the export of `@reach-sh/stdlib/ALGO_MyAlgoConnect`, then [My Algo](https://wallet.myalgo.com/home) will be used for signing.
+If the key `MyAlgoConnect` is provided, and bound to an export of `@reach-sh/stdlib`, then [My Algo](https://wallet.myalgo.com/home) will be used for signing.
 For example, this sets the wallet fallback to be My Algo used with Algorand TestNet:
 ```js
-import MyAlgoConnect from '@reach-sh/stdlib/ALGO_MyAlgoConnect';
-stdlib.setWalletFallback(stdlib.walletFallback({
-  providerEnv: 'TestNet', MyAlgoConnect }));
+import { loadStdlib, wallets } from '@reach-sh/stdlib';
+const reach = loadStdlib('ALGO');
+const { MyAlgoConnect } = wallets.ALGO;
+reach.setWalletFallback(reach.walletFallback({
+  MyAlgoConnect,
+  providerEnv: 'TestNet',
+}));
 ```
 
 If the key `WalletConnect` is provided, and bound to the `wallets.ALGO` export of `@reach-sh/stdlib`, then [WalletConnect](https://walletconnect.com/) is used to connect to the [Algorand Wallet](https://algorandwallet.com/) for signing.
@@ -773,7 +777,7 @@ const reach = loadStdlib('ALGO');
 const { WalletConnect } = wallets.ALGO;
 reach.setWalletFallback(reach.walletFallback({
   providerEnv: 'TestNet',
-  WalletConnect
+  WalletConnect,
 }));
 ```
 
