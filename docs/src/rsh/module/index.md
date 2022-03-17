@@ -225,7 +225,7 @@ However, some additional expressions are allowed.
 
 ### {#ref-programs-reach.app} `Reach.App`
 
-@{ref("rsh", "Reach")}@{ref("rsh", "App")}
+@{ref("rsh", "Reach")}@{ref("rsh", "App")}@{ref("rsh", "Reach.App")}
 ```reach
 export const main = Reach.App(() => {
  const A = Participant("A", {

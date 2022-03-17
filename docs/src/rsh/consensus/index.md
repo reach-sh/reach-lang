@@ -392,7 +392,14 @@ This is used in a consensus step after `{!rsh} makeCommitment` was used in a loc
 
 ### Token minting
 
-@{ref("rsh", "burn")}@{ref("rsh", "destroy")}@{ref("rsh", "supply")}@{ref("rsh", "destroyed")}
+@{ref("rsh", "burn")}
+@{ref("rsh", "Token.burn")}
+@{ref("rsh", "destroy")}
+@{ref("rsh", "Token.destroy")}
+@{ref("rsh", "supply")}
+@{ref("rsh", "Token.supply")}
+@{ref("rsh", "destroyed")}
+@{ref("rsh", "Token.destroyed")}
 ```reach
 require(supply >= 2 * amt);
 const tok = new Token({ name, symbol, url, metadata, supply, decimals });
