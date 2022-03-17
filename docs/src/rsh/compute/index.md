@@ -595,7 +595,7 @@ It is invalid to use binary operations on the wrong types of values.
 ```reach
 and(a, b)     // &&
 or(a, b)      // ||
-xor(a, b)
+xor(a, b)     // No equivalent infix operator.
 add(a, b)     // +
 sub(a, b)     // -
 mul(a, b)     // *
@@ -617,7 +617,7 @@ polyNeq(a, b) // !=, !==
 
 All binary expression operators have a corresponding named function in the standard library.
 While `{!rsh} &&` and `{!rsh} ||` may not evaluate their second argument,
-their corresponding named functions `{!rsh} and` and `{!rsh} or`, always do.
+their corresponding named functions `{!rsh} and`, `{!rsh} or`, and `{!rsh} xor`, always do.
 
 @{ref("rsh", "boolEq")}@{ref("rsh", "typeEq")}@{ref("rsh", "intEq")}@{ref("rsh", "digestEq")}@{ref("rsh", "addressEq")}@{ref("rsh", "fxeq")}@{ref("rsh", "ieq")}
 ```reach
