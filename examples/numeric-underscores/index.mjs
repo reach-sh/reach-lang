@@ -8,8 +8,8 @@ const ctcAlice = accAlice.contract(backend);
 
 await Promise.all([
   backend.Alice(ctcAlice, {
-    verifyNumbers: (nDec) => {
-      if (nDec != 123_456_789) {
+    verifyNumber: (n) => {
+      if (n != 123_456_789) {
         throw Error("didn't get the right number");
       }
     }
