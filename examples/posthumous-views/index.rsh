@@ -19,6 +19,6 @@ export const main = Reach.App(() => {
 
   A.publish();
   commit();
-  
+
   exit();
 });

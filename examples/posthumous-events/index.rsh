@@ -3,6 +3,8 @@
 
 export const main = Reach.App(() => {
   const A = Participant('Alice', {});
+  const O = Participant('Observer', {});
+  void O;
   const NumEv = Events('Numbers', {
     number: [UInt],
   });
