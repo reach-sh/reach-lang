@@ -1,13 +1,19 @@
---- examples/tut-9/index.js	2021-08-31 12:43:24.801893800 -0400
-+++ examples/tut-9/index.js	2021-08-31 12:43:40.471893800 -0400
-@@ -6,7 +6,10 @@
+diff --git a/examples/rps-9-web/index.js b/examples/rps-9-web/index.js
+index ddf076a94..cb7c9dcdc 100644
+--- a/examples/rps-9-web/index.js
++++ b/examples/rps-9-web/index.js
+@@ -5,8 +5,13 @@ import AttacherViews from './views/AttacherViews';
+ import {renderDOM, renderView} from './views/render';
  import './index.css';
  import * as backend from './build/index.main.mjs';
- import {loadStdlib} from '@reach-sh/stdlib';
-+import MyAlgoConnect from '@reach-sh/stdlib/ALGO_MyAlgoConnect';
+-import {loadStdlib} from '@reach-sh/stdlib';
++import {loadStdlib, wallets} from '@reach-sh/stdlib';
++const { MyAlgoConnect } = wallets.ALGO;
  const reach = loadStdlib(process.env);
 +reach.setWalletFallback(reach.walletFallback({
-+  providerEnv: 'TestNet', MyAlgoConnect }));
++  MyAlgoConnect,
++  providerEnv: 'TestNet'
++}));
  
  const handToInt = {'ROCK': 0, 'PAPER': 1, 'SCISSORS': 2};
  const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];
