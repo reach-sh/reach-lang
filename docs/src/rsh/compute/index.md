@@ -411,6 +411,8 @@ Reach's @{defn("type")}s are represented in programs by the following identifier
 + @{ref("rsh", "Bool")} `{!rsh} Bool`, which denotes a boolean.
 + @{ref("rsh", "UInt")} `{!rsh} UInt`, which denotes an unsigned integer.
 @{ref("rsh", "UInt.max")} `{!rsh} UInt.max` is the largest value that may be assigned to a `{!rsh} UInt`.
++ `{!rsh} Int`, which denotes a signed integer.
++ `{!rsh} FixedPoint`, which denotes a fractional number.
 + @{ref("rsh", "Bytes")} `{!rsh} Bytes(length)`, which denotes a string of bytes of length at most `{!rsh} length`.
 Bytes of different lengths are not compatible; however the shorter bytes may be [padded](##padding).
 + @{ref("rsh", "Digest")} `{!rsh} Digest`, which denotes a digest.
