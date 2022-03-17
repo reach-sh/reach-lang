@@ -965,15 +965,10 @@ c.average()
 ```
 
  `{!rsh} Foldable.average(c)` returns the mean of a container of `UInt`s.
+ Note that because this uses integer division, the result is effectively truncated.
 
-#### `Foldable.average` && `.average`
+#### `Foldable.imin` && `Foldable.imax`
 
-@{ref("rsh", "Foldable.imin")}
-@{ref("rsh", "Map.imin")}
-@{ref("rsh", "Array.imin")}
-@{ref("rsh", "Foldable.imax")}
-@{ref("rsh", "Map.imax")}
-@{ref("rsh", "Array.imax")}
 ```reach
 Foldable.imin(c)
 Foldable.imax(c)
@@ -985,7 +980,7 @@ c.imin()
 c.imax()
 ```
 
-`{!rsh} Foldable.imin(c)` and `{!rsh} Foldable.imax(c)` return the minimum and maximum of a container of `UInt`s, respectively.
+`{!rsh} Foldable.imin(c)` and `{!rsh} Foldable.imax(c)` return the minimum and maximum of a container of `Int`s, respectively.
 
 ### Array group operations
 
