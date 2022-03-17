@@ -10,7 +10,7 @@ await Promise.all([
   backend.Alice(ctcAlice, {
     verifyNumber: (n) => {
       if (n != 123_456_789) {
-        throw Error("didn't get the right number");
+        throw Error(`didn't get the right number: ${n}`);
       }
     }
   }),
