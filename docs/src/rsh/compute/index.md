@@ -398,6 +398,9 @@ A spread expression (`{!rsh} ...expr`) may appear in the list of operands to a f
 `{!rsh} EXPR_rator` and `{!rsh} EXPR_rand_n` are evaluated in left-to-right order, starting with `{!rsh} EXPR_rator`, then `{!rsh} EXPR_rand_0`, `{!rsh} EXPR_rand_1`, etc.
 
 @{ref("rsh", "new")}
+@{ref("rsh", "Map.new")}
+@{ref("rsh", "Set.new")}
+@{ref("rsh", "Token.new")}
 `{!rsh} new f(a)` is equivalent to `{!rsh} f.new(a)` and is a convenient short-hand for writing class-oriented programs.
 
 ### {#ref-programs-types} Types
@@ -407,7 +410,7 @@ Reach's @{defn("type")}s are represented in programs by the following identifier
 + @{ref("rsh", "Null")} `{!rsh} Null`.
 + @{ref("rsh", "Bool")} `{!rsh} Bool`, which denotes a boolean.
 + @{ref("rsh", "UInt")} `{!rsh} UInt`, which denotes an unsigned integer.
-`{!rsh} UInt.max` is the largest value that may be assigned to a `{!rsh} UInt`.
+@{ref("rsh", "UInt.max")} `{!rsh} UInt.max` is the largest value that may be assigned to a `{!rsh} UInt`.
 + @{ref("rsh", "Bytes")} `{!rsh} Bytes(length)`, which denotes a string of bytes of length at most `{!rsh} length`.
 Bytes of different lengths are not compatible; however the shorter bytes may be [padded](##padding).
 + @{ref("rsh", "Digest")} `{!rsh} Digest`, which denotes a digest.
@@ -588,15 +591,17 @@ Boolean operations, like `{!rsh} &&`, only operate on booleans.
 `{!rsh} polyXor` operates on `{!rsh} UInt`s, `{!rsh} Bool`s, `{!rsh} Digest`s, and `{!rsh} Bytes` of the same length.
 It is invalid to use binary operations on the wrong types of values.
 
-@{ref("rsh", "and")}@{ref("rsh", "or")}@{ref("rsh", "add")}@{ref("rsh", "sub")}@{ref("rsh", "mul")}@{ref("rsh", "div")}@{ref("rsh", "mod")}@{ref("rsh", "lt")}@{ref("rsh", "le")}@{ref("rsh", "ge")}@{ref("rsh", "gt")}@{ref("rsh", "lsh")}@{ref("rsh", "rsh")}@{ref("rsh", "band")}@{ref("rsh", "bior")}@{ref("rsh", "band")}@{ref("rsh", "polyXor")}@{ref("rsh", "polyEq")}@{ref("rsh", "polyNeq")}
+@{ref("rsh", "and")}@{ref("rsh", "or")}@{ref("rsh", "xor")}@{ref("rsh", "add")}@{ref("rsh", "sub")}@{ref("rsh", "mul")}@{ref("rsh", "div")}@{ref("rsh", "mod")}@{ref("rsh", "eq")}@{ref("rsh", "lt")}@{ref("rsh", "le")}@{ref("rsh", "ge")}@{ref("rsh", "gt")}@{ref("rsh", "lsh")}@{ref("rsh", "rsh")}@{ref("rsh", "band")}@{ref("rsh", "bior")}@{ref("rsh", "bxor")}@{ref("rsh", "polyXor")}@{ref("rsh", "polyEq")}@{ref("rsh", "polyNeq")}
 ```reach
 and(a, b)     // &&
 or(a, b)      // ||
+xor(a, b)
 add(a, b)     // +
 sub(a, b)     // -
 mul(a, b)     // *
 div(a, b)     // /
 mod(a, b)     // %
+eq(a, b)      // ==
 lt(a, b)      // <
 le(a, b)      // <=
 ge(a, b)      // >=
@@ -764,6 +769,8 @@ The following methods are available on any @{ref("rsh", "Foldable")}`{!rsh} Fold
 ####  `Foldable.forEach` && `.forEach`
 
 @{ref("rsh", "Foldable.forEach")}
+@{ref("rsh", "Map.forEach")}
+@{ref("rsh", "Array.forEach")}
 @{ref("rsh", "forEach")}
 ```reach
 c.forEach(f)
@@ -778,6 +785,8 @@ This may be abbreviated as `{!rsh} c.forEach(f)`.
 #### `Foldable.all` && `.all`
 
 @{ref("rsh", "Foldable.all")}
+@{ref("rsh", "Map.all")}
+@{ref("rsh", "Array.all")}
 @{ref("rsh", "all")}
 ```reach
 Foldable.all(c, f)
@@ -792,6 +801,8 @@ by every element of the container, `c`.
 #### `Foldable.any` && `.any`
 
 @{ref("rsh", "Foldable.any")}
+@{ref("rsh", "Map.any")}
+@{ref("rsh", "Array.any")}
 @{ref("rsh", "any")}
 ```reach
 Foldable.any(c, f)
@@ -806,6 +817,8 @@ by at least one element of the container, `c`.
 #### `Foldable.or` && `.or`
 
 @{ref("rsh", "Foldable.or")}
+@{ref("rsh", "Map.or")}
+@{ref("rsh", "Array.or")}
 @{ref("rsh", "or")}
 ```reach
 Foldable.or(c)
@@ -818,7 +831,9 @@ c.or()
 
 #### `Foldable.and` && `.and`
 
+@{ref("rsh", "Array.and")}
 @{ref("rsh", "Foldable.and")}
+@{ref("rsh", "Map.and")}
 @{ref("rsh", "and")}
 ```reach
 Foldable.and(c)
@@ -832,6 +847,8 @@ c.and()
 #### `Foldable.includes` && `.includes`
 
 @{ref("rsh", "Foldable.includes")}
+@{ref("rsh", "Map.includes")}
+@{ref("rsh", "Array.includes")}
 @{ref("rsh", "includes")}
 ```reach
 Foldable.includes(c, x)
@@ -846,6 +863,8 @@ the element, `x`.
 #### `Foldable.count` && `.count`
 
 @{ref("rsh", "Foldable.count")}
+@{ref("rsh", "Map.count")}
+@{ref("rsh", "Array.count")}
 @{ref("rsh", "count")}
 ```reach
 Foldable.count(c, f)
@@ -860,6 +879,8 @@ satisfy the predicate, `f`.
 #### `Foldable.size` && `.size`
 
 @{ref("rsh", "Foldable.size")}
+@{ref("rsh", "Map.size")}
+@{ref("rsh", "Array.size")}
 @{ref("rsh", "size")}
 ```reach
 Foldable.size(c)
@@ -873,6 +894,8 @@ c.size()
 #### `Foldable.min` && `.min`
 
 @{ref("rsh", "Foldable.min")}
+@{ref("rsh", "Map.min")}
+@{ref("rsh", "Array.min")}
 @{ref("rsh", "min")}
 ```reach
 Foldable.min(c)
@@ -886,6 +909,8 @@ c.min()
 #### `Foldable.max` && `.max`
 
 @{ref("rsh", "Foldable.max")}
+@{ref("rsh", "Map.max")}
+@{ref("rsh", "Array.max")}
 @{ref("rsh", "max")}
 ```reach
 Foldable.max(c)
@@ -899,6 +924,8 @@ c.max()
 #### `Foldable.sum` && `.sum`
 
 @{ref("rsh", "Foldable.sum")}
+@{ref("rsh", "Map.sum")}
+@{ref("rsh", "Array.sum")}
 @{ref("rsh", "sum")}
 ```reach
 Foldable.sum(c)
@@ -912,6 +939,8 @@ c.sum()
 #### `Foldable.product` && `.product`
 
 @{ref("rsh", "Foldable.product")}
+@{ref("rsh", "Map.product")}
+@{ref("rsh", "Array.product")}
 @{ref("rsh", "product")}
 ```reach
 Foldable.product(c)
@@ -925,6 +954,8 @@ c.product()
 #### `Foldable.average` && `.average`
 
 @{ref("rsh", "Foldable.average")}
+@{ref("rsh", "Map.average")}
+@{ref("rsh", "Array.average")}
 @{ref("rsh", "average")}
 ```reach
 Foldable.average(c)
@@ -934,6 +965,27 @@ c.average()
 ```
 
  `{!rsh} Foldable.average(c)` returns the mean of a container of `UInt`s.
+
+#### `Foldable.average` && `.average`
+
+@{ref("rsh", "Foldable.imin")}
+@{ref("rsh", "Map.imin")}
+@{ref("rsh", "Array.imin")}
+@{ref("rsh", "Foldable.imax")}
+@{ref("rsh", "Map.imax")}
+@{ref("rsh", "Array.imax")}
+```reach
+Foldable.imin(c)
+Foldable.imax(c)
+Array.imin(c)
+Array.imax(c)
+Map.imin(c)
+Map.imax(c)
+c.imin()
+c.imax()
+```
+
+`{!rsh} Foldable.imin(c)` and `{!rsh} Foldable.imax(c)` return the minimum and maximum of a container of `UInt`s, respectively.
 
 ### Array group operations
 
@@ -1190,6 +1242,8 @@ Shorthand for `{!rsh} { x: x, z: 5}`, where `{!rsh} x` is any bound identifier.
 
 ### {#ref-programs-structs} Structs
 
+@{ref("rsh", "Struct.toObject")}
+@{ref("rsh", "Struct.toTuple")}
 ```reach
 const Posn = Struct([["x", UInt], ["y", UInt]]);
 const p1 = Posn.fromObject({x: 1, y: 2});
@@ -1699,6 +1753,7 @@ ensure( pred, x )
 ### `hasRandom`
 
 @{ref("rsh", "hasRandom")}
+@{ref("rsh", "hasRandom.random")}
 ```reach
 hasRandom
 ```
@@ -1708,6 +1763,7 @@ hasRandom
 ### `hasConsoleLogger`
 
 @{ref("rsh", "hasConsoleLogger")}
+@{ref("rsh", "hasConsoleLogger.log")}
 ```reach
 hasConsoleLogger
 ```
@@ -1850,7 +1906,7 @@ int(Neg, 4); // represents -4
 @{ref("rsh", "ieq")}
  `{!rsh} ieq(x, y)` determines whether `x` is equal to `y`.
 
-@{ref("rsh", "ieq")}
+@{ref("rsh", "ine")}
  `{!rsh} ine(x, y)` determines whether `x` is not equal to `y`.
 
 @{ref("rsh", "imax")}
@@ -2015,8 +2071,6 @@ An `{!rsh} Interval` is defined by
 
 @{ref("rsh", "Interval")}
 @{ref("rsh", "isInterval")}
-@{ref("rsh", "Closed")}
-@{ref("rsh", "Open")}
 ```reach
 export const Interval = Tuple(IntervalType, Int, Int, IntervalType);
 ```
@@ -2024,6 +2078,9 @@ export const Interval = Tuple(IntervalType, Int, Int, IntervalType);
 where `{!rsh} IntervalType` is defined by
 
 @{ref("rsh", "IntervalType")}
+@{ref("rsh", "isIntervalType")}
+@{ref("rsh", "Closed")}
+@{ref("rsh", "Open")}
 ```reach
 export const [ isIntervalType, Closed, Open ] = mkEnum(2);
 export const IntervalType = Refine(UInt, isIntervalType);
@@ -2069,7 +2126,7 @@ represent the left endpoint and whether it's open or closed; the third and fourt
 #### Relational Operations
 
 @{ref("rsh", "intervalEq")}
-@{ref("rsh", "intervalNe")}
+@{ref("rsh", "intervalNeq")}
 @{ref("rsh", "intervalLt")}
 @{ref("rsh", "intervalLte")}
 @{ref("rsh", "intervalGt")}
