@@ -568,7 +568,7 @@ base_env_slvals =
   , ("intEq", SLV_Prim $ SLPrim_op PEQ)
   , ("polyEq", SLV_Prim $ SLPrim_op PEQ)
   , ("polyNeq", SLV_Prim $ SLPrim_polyNeq)
-  , ("polyXor", SLV_Prim $ SLPrim_xor)
+  , ("xor", SLV_Prim $ SLPrim_xor)
   , ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
   , ("addressEq", SLV_Prim $ SLPrim_op ADDRESS_EQ)
   , ("isType", SLV_Prim SLPrim_is_type)
@@ -1077,7 +1077,7 @@ binaryToPrim = \case
   JSBinOpRsh a -> prim a RSH
   JSBinOpBitAnd a -> prim a BAND
   JSBinOpBitOr a -> prim a BIOR
-  JSBinOpBitXor a -> fun a "polyXor" "^"
+  JSBinOpBitXor a -> fun a "xor" "^"
   j -> expect_ $ Err_Parse_IllegalBinOp j
   where
     fun a s ctxt = snd <$> (locAtf (srcloc_jsa "binop" a) $ evalId ctxt s)
@@ -3458,7 +3458,7 @@ evalPrim p sargs =
         (T_Bytes l, T_Bytes r)
           | l == r -> prim BYTES_XOR
         (T_Bool, T_Bool) -> do
-          f <- lookStdlib "xor"
+          f <- lookStdlib "boolXor"
           evalApplyVals' f sargs
         (l, r) -> expect_ $ Err_xor_Types l r
       where

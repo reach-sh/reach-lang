@@ -605,6 +605,9 @@
   "boolEq": {
     "CompletionItemKind": "Function"
   },
+  "boolXor": {
+    "CompletionItemKind": "Function"
+  },
   "break": {
     "CompletionItemKind": "Keyword"
   },
@@ -896,12 +899,6 @@
   "intervalDiv": {
     "CompletionItemKind": "Function"
   },
-  "intervalEmpty": {
-    "CompletionItemKind": "Constant"
-  },
-  "intervalEmpty.length": {
-    "CompletionItemKind": "Constant"
-  },
   "intervalEq": {
     "CompletionItemKind": "Function"
   },
@@ -940,6 +937,12 @@
   },
   "intervalWidth": {
     "CompletionItemKind": "Function"
+  },
+  "interval_empty": {
+    "CompletionItemKind": "Constant"
+  },
+  "interval_empty.length": {
+    "CompletionItemKind": "Constant"
   },
   "is": {
     "CompletionItemKind": "Function"
@@ -1035,9 +1038,6 @@
     "CompletionItemKind": "Operator"
   },
   "polyNeq": {
-    "CompletionItemKind": "Function"
-  },
-  "polyXor": {
     "CompletionItemKind": "Function"
   },
   "possible": {
