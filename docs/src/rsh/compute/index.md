@@ -502,6 +502,8 @@ These applications are considered negative positions for `{!rsh} Refine`.
 007
 -10
 34.5432
+123_456_789
+0x12_34_56
 true
 false
 null
@@ -520,6 +522,7 @@ Numeric literals must obey the @{defn("bit width")} of `{!rsh} UInt` if they are
 Reach provides abstractions for working with `{!rsh} Int`s and signed `{!rsh} FixedPoint` numbers.
 `{!rsh} Int`s may be defined by applying the unary `{!rsh} +` and `{!rsh} -` operators to values of type `{!rsh} UInt`.
 Reach provides syntactic sugar for defining signed `{!rsh} FixedPoint` numbers, in base 10, with decimal syntax.
+Numeric literals may contain underscore separators as a visual aid (e.g. `{!rsh} 123_456` is the same as `{!rsh} 123456`).
 
 @{defn("Boolean literal")}s may be written as `{!rsh} true` or `{!rsh} false`.
 
