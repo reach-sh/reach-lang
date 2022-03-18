@@ -722,7 +722,7 @@ export const ensureConnectorAvailable = (bin:any, conn: string, jsVer: number, c
 export const checkVersion = (actual:number, expected:number, label:string): void => {
   if ( actual !== expected ) {
     const older = (actual === undefined) || (actual < expected);
-    const more = older ? `update your compiler and recompile!` : `updated your standard library and rerun!`;
+    const more = older ? `update your compiler and recompile!` : `update your standard library and rerun!`;
     throw Error(`This Reach compiled ${label} does not match the expectations of this Reach standard library: expected ${expected}, but got ${actual}; ${more}`);
   }
 };
