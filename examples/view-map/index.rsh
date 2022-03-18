@@ -2,13 +2,12 @@
 
 const MUInt = Maybe(UInt);
 const MMUInt = Maybe(MUInt);
+const Common = { checkView: Fun([UInt, Address, MMUInt, MUInt], Null) };
 
 export const main = Reach.App(() => {
   setOptions({ untrustworthyMaps: true });
-  const A = Participant('Alice', {
-    checkView: Fun([UInt, Address, MMUInt, MUInt], Null),
-  });
-  const B = Participant('Bob', {});
+  const A = Participant('Alice', Common);
+  const B = Participant('Bob', Common);
   const vMain = View('Main', {
     f: Fun([Address], MUInt),
     g: Fun([Address], UInt),
@@ -27,7 +26,7 @@ export const main = Reach.App(() => {
     A.interact.checkView(x, who, MMUInt.Some(z), MUInt.Some(fromSome(z, 0)));
   };
   const failCheck = (x, who) =>
-    A.interact.checkView(x, who, MMUInt.None(), MUInt.None());
+    B.interact.checkView(x, who, MMUInt.None(), MUInt.None());
   doCheck(1, A);
   commit();
 
