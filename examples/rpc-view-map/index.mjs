@@ -26,7 +26,7 @@ import { mkAssertEq } from './common.mjs';
     rpc('/ctc/getInfo', ctcAlice)
       .then(async i => {
         ctcBob = await rpc('/acc/contract', accBob, i);
-        await rpcCallbacks('/backend/Bob', ctcBob, {});
+        await rpcCallbacks('/backend/Bob', ctcBob, { checkView });
       }),
   ]);
 
