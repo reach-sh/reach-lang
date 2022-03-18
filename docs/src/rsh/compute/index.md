@@ -972,6 +972,12 @@ c.average()
 
 #### `Foldable.imin` && `Foldable.imax`
 
+@{ref("rsh", "Foldable.imin")}
+@{ref("rsh", "Foldable.imax")}
+@{ref("rsh", "Array.imin")}
+@{ref("rsh", "Array.imax")}
+@{ref("rsh", "Map.imin")}
+@{ref("rsh", "Map.imax")}
 ```reach
 Foldable.imin(c)
 Foldable.imax(c)
