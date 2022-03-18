@@ -2670,6 +2670,44 @@ by the Reach compiler, but future versions of Reach may stop supporting it.
 
 You can fix this warning by using the new syntax or function the message suggests.
 
+### Problematic code:
+
+```reach
+'reach 0.1';
+
+export const MAIN = Reach.App(() => {
+	const aisha = Participant('Aisha', {
+		deadline: UInt,
+		wager: UInt,
+	});
+
+	deploy();
+
+	aisha.publish();
+
+	commit();
+});
+```
+
+### Correct code:
+
+```reach
+'reach 0.1';
+
+export const MAIN = Reach.App(() => {
+	const aisha = Participant('Aisha', {
+		deadline: UInt,
+		wager: UInt,
+	});
+
+	init();
+
+	aisha.publish();
+
+	commit();
+});
+```
+
 ## {#RW0001} RW0001
 
 This warning indicates there is an issue with the Solidity compiler. The message provided can
@@ -2691,6 +2729,38 @@ This warning indicates that your program does not contain any publications.
 
 You can fix this issue by making sure at least one `{!rsh} Participant` performs a `{!rsh} publish`.
 
+### Problematic code:
+
+```reach
+'reach 0.1';
+
+export const MAIN = Reach.App(() => {
+	const aisha = Participant('Aisha', {
+		deadline: UInt,
+		wager: UInt,
+	});
+});
+```
+
+### Correct code:
+
+```reach
+'reach 0.1';
+
+export const MAIN = Reach.App(() => {
+	const aisha = Participant('Aisha', {
+		deadline: UInt,
+		wager: UInt,
+	});
+
+	init();
+
+	aisha.publish();
+
+	commit();
+});
+```
+
 ## {#RW0005} RW0005
 
 This warning indicates that a `{!rsh} View` or `{!rsh} API` produces or consumes an `{!rsh} Object`,
@@ -2699,6 +2769,22 @@ It has an opaque and unspecified representation that can only be automatically c
 
 You can remove this warning by using a `{!rsh} Struct` instead of the `{!rsh} Object`.
 
+### Problematic code:
+
+```reach
+'reach 0.1';
+
+export const main = Reach.App(() => {
+	const P = Participant('P', {});
+	const V = View({ o1: Object({ a1: UInt }) });
+
+	init();
+
+	P.publish();
+
+	commit();
+});
+```
 ## {#RW0006} RW0006
 
 This warning indicates that you referenced network seconds in your program.
@@ -2718,3 +2804,48 @@ This means it would take roughly 5 hours to resychronize after a day of downtime
 However, this is not guaranteed to occur at any particular time, because block proposers (on Algorand, at least) are free to leave the timestamp unchanged from the last block (i.e. there is no minimum increment), so it is possible that time would never be synchronized with reality at all.
 
 Thus, it is unsafe to rely on network seconds for most purposes (such as interest on loans, time limits on auctions, and so forth), because network downtime (even intermitten) and adversarial block proposers (acting alone) can delay and influence the block time.
+
+### Problematic code:
+
+```reach
+'reach 0.1';
+
+export const main = Reach.App(() => {
+  const a = Participant('Alice', {
+    ...hasConsoleLogger,
+    t: UInt,
+  });
+  init();
+
+  a.only(() => {
+    const t = declassify(interact.t);
+  });
+  a.publish(t);
+  commit();
+
+  const aStep = (lab, tN) => {
+    const entry = (step) => [
+      lab,
+      ...step,
+      lastConsensusTime(),
+      lastConsensusSecs()
+    ];
+    const wt = tN();
+    a.interact.log(entry(['before wait', wt]));
+    wait(wt);
+    const tt = tN();
+    a.interact.log(entry(['after wait', wt, tt]));
+    a.publish()
+    commit();
+    a.interact.log(entry(['after commit', wt, tt]));
+  };
+
+  aStep('default (relativeBlocks)', () => t);
+  aStep('relativeBlocks', () => relativeTime(t));
+  aStep('absoluteBlocks', () => absoluteTime(lastConsensusTime() + t));
+  aStep('relativeSecs', () => relativeSecs(t));
+  aStep('absoluteSecs', () => absoluteSecs(lastConsensusSecs() + t));
+
+  exit();
+});
+```
