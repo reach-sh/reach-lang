@@ -2725,7 +2725,13 @@ You can remove this warning by using a `{!rsh} Struct` instead of the `{!rsh} Ob
 ### Problematic code:
 
 ```reach
-const V = View({ o1: Object({ a1: UInt }) }); // View produces an Object
+const V = View({ o1: Object({ a1: UInt }) }); // View is an Object
+```
+
+### Correct code:
+
+```reach
+const V = View({ o1: Struct( [ ["a1", UInt] ] ) }); // View produces a Struct
 ```
 ## {#RW0006} RW0006
 
@@ -2750,40 +2756,7 @@ Thus, it is unsafe to rely on network seconds for most purposes (such as interes
 ### Problematic code:
 
 ```reach
-'reach 0.1';
-
-export const main = Reach.App(() => {
-  const a = Participant('Alice', {
-    ...hasConsoleLogger,
-    t: UInt,
-  });
-  init();
-  a.only(() => {
-    const t = declassify(interact.t);
-  });
-  a.publish(t);
-  commit();
-  const aStep = (lab, tN) => {
-    const entry = (step) => [
-      lab,
-      ...step,
-      lastConsensusTime(),
-      lastConsensusSecs()
-    ];
-    const wt = tN();
-    a.interact.log(entry(['before wait', wt]));
-    wait(wt);
-    const tt = tN();
-    a.interact.log(entry(['after wait', wt, tt]));
-    a.publish()
-    commit();
-    a.interact.log(entry(['after commit', wt, tt]));
-  };
-  aStep('default (relativeBlocks)', () => t);
-  aStep('relativeBlocks', () => relativeTime(t));
-  aStep('absoluteBlocks', () => absoluteTime(lastConsensusTime() + t));
-  aStep('relativeSecs', () => relativeSecs(t));
-  aStep('absoluteSecs', () => absoluteSecs(lastConsensusSecs() + t));
-  exit();
-});
+relativeSecs(t) // references network seconds
+absoluteSecs(t) // references network seconds
+lastConsensusSecs() // references network seconds
 ```
