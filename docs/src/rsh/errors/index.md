@@ -2670,44 +2670,6 @@ by the Reach compiler, but future versions of Reach may stop supporting it.
 
 You can fix this warning by using the new syntax or function the message suggests.
 
-### Problematic code:
-
-```reach
-'reach 0.1';
-
-export const MAIN = Reach.App(() => {
-	const aisha = Participant('Aisha', {
-		deadline: UInt,
-		wager: UInt,
-	});
-
-	deploy();
-
-	aisha.publish();
-
-	commit();
-});
-```
-
-### Correct code:
-
-```reach
-'reach 0.1';
-
-export const MAIN = Reach.App(() => {
-	const aisha = Participant('Aisha', {
-		deadline: UInt,
-		wager: UInt,
-	});
-
-	init();
-
-	aisha.publish();
-
-	commit();
-});
-```
-
 ## {#RW0001} RW0001
 
 This warning indicates there is an issue with the Solidity compiler. The message provided can
