@@ -2691,6 +2691,29 @@ This warning indicates that your program does not contain any publications.
 
 You can fix this issue by making sure at least one `{!rsh} Participant` performs a `{!rsh} publish`.
 
+### Problematic code:
+
+```reach
+'reach 0.1';
+
+export const main = Reach.App(() => {
+  const aisha = Participant('Aisha', {});
+});
+```
+
+### Correct code:
+
+```reach
+'reach 0.1';
+
+export const main = Reach.App(() => {
+  const aisha = Participant('Aisha', {});
+  init();
+  aisha.publish(); // Missing publish is now present
+  commit();
+});
+```
+
 ## {#RW0005} RW0005
 
 This warning indicates that a `{!rsh} View` or `{!rsh} API` produces or consumes an `{!rsh} Object`,
@@ -2699,6 +2722,17 @@ It has an opaque and unspecified representation that can only be automatically c
 
 You can remove this warning by using a `{!rsh} Struct` instead of the `{!rsh} Object`.
 
+### Problematic code:
+
+```reach
+const V = View({ o1: Object({ a1: UInt }) }); // View is an Object
+```
+
+### Correct code:
+
+```reach
+const V = View({ o1: Struct( [ ["a1", UInt] ] ) }); // View produces a Struct
+```
 ## {#RW0006} RW0006
 
 This warning indicates that you referenced network seconds in your program.
@@ -2718,3 +2752,11 @@ This means it would take roughly 5 hours to resychronize after a day of downtime
 However, this is not guaranteed to occur at any particular time, because block proposers (on Algorand, at least) are free to leave the timestamp unchanged from the last block (i.e. there is no minimum increment), so it is possible that time would never be synchronized with reality at all.
 
 Thus, it is unsafe to rely on network seconds for most purposes (such as interest on loans, time limits on auctions, and so forth), because network downtime (even intermitten) and adversarial block proposers (acting alone) can delay and influence the block time.
+
+### Problematic code:
+
+```reach
+relativeSecs(t) // references network seconds
+absoluteSecs(t) // references network seconds
+lastConsensusSecs() // references network seconds
+```
