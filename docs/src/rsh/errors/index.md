@@ -2697,10 +2697,7 @@ You can fix this issue by making sure at least one `{!rsh} Participant` performs
 'reach 0.1';
 
 export const main = Reach.App(() => {
-	const aisha = Participant('Aisha', {
-		deadline: UInt,
-		wager: UInt,
-	});
+	const aisha = Participant('Aisha', {});
 });
 ```
 
@@ -2710,10 +2707,7 @@ export const main = Reach.App(() => {
 'reach 0.1';
 
 export const main = Reach.App(() => {
-	const aisha = Participant('Aisha', {
-		deadline: UInt,
-		wager: UInt,
-	});
+	const aisha = Participant('Aisha', {});
 
 	init();
 
