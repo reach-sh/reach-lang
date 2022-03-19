@@ -2725,18 +2725,7 @@ You can remove this warning by using a `{!rsh} Struct` instead of the `{!rsh} Ob
 ### Problematic code:
 
 ```reach
-'reach 0.1';
-
-export const main = Reach.App(() => {
-	const P = Participant('P', {});
-	const V = View({ o1: Object({ a1: UInt }) });
-
-	init();
-
-	P.publish();
-
-	commit();
-});
+const V = View({ o1: Object({ a1: UInt }) }); // View produces an Object
 ```
 ## {#RW0006} RW0006
 
