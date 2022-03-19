@@ -132,7 +132,10 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-ci ALGO splice-all
+c users/simple-staker/src/index.rsh
+exit 0
+
+c users/algo-govt/index.rsh
 exit 0
 
 export REACH_CONNECTOR_MODE=ALGO
@@ -160,9 +163,6 @@ XB=users/xbacked-contracts/src
 diff -u "${XB}"/build/master_vault.main.appApproval.teal "${XB}"/build/master_vault_asa.main.appApproval.teal > xc.diff
 exit 0
 diff -u "${XB}"/master_vault.rsh "${XB}"/master_vault_asa.rsh
-exit 0
-
-c users/algo-govt/index.rsh
 exit 0
 
 # (cd hs && mk hs-test)

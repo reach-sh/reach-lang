@@ -2940,7 +2940,7 @@ cmeth sigi = \case
               ca r
               ctobs $ argTypeOf r
               gvStore GV_apiRet
-              code "b" [ "apiReturn" ]
+              code "b" [ "apiReturn_check" ]
 
 bindFromArgs :: [DLVarLet] -> App a -> App a
 bindFromArgs vs m = do
@@ -3214,7 +3214,7 @@ compile_algo env disp pl = do
     op "app_global_put"
     gvLoad GV_wasMeth
     code "bz" ["checkSize"]
-    label "apiReturn"
+    label "apiReturn_noCheck"
     -- SHA-512/256("return")[0..4] = 0x151f7c75
     cbs $ BS.pack [0x15, 0x1f, 0x7c, 0x75]
     gvLoad GV_apiRet
@@ -3243,6 +3243,11 @@ compile_algo env disp pl = do
       assert
     code "b" ["done"]
     defn_done
+    label "apiReturn_check"
+    code "txn" ["OnCompletion"]
+    output $ TConst "NoOp"
+    asserteq
+    code "b" [ "apiReturn_noCheck" ]
     label "alloc"
     code "txn" ["OnCompletion"]
     output $ TConst "NoOp"
