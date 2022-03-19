@@ -2758,13 +2758,11 @@ export const main = Reach.App(() => {
     t: UInt,
   });
   init();
-
   a.only(() => {
     const t = declassify(interact.t);
   });
   a.publish(t);
   commit();
-
   const aStep = (lab, tN) => {
     const entry = (step) => [
       lab,
@@ -2781,13 +2779,11 @@ export const main = Reach.App(() => {
     commit();
     a.interact.log(entry(['after commit', wt, tt]));
   };
-
   aStep('default (relativeBlocks)', () => t);
   aStep('relativeBlocks', () => relativeTime(t));
   aStep('absoluteBlocks', () => absoluteTime(lastConsensusTime() + t));
   aStep('relativeSecs', () => relativeSecs(t));
   aStep('absoluteSecs', () => absoluteSecs(lastConsensusSecs() + t));
-
   exit();
 });
 ```
