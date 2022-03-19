@@ -2709,7 +2709,7 @@ export const main = Reach.App(() => {
 export const main = Reach.App(() => {
   const aisha = Participant('Aisha', {});
   init();
-  aisha.publish();
+  aisha.publish(); // Missing publish is now present
   commit();
 });
 ```
