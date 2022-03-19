@@ -2697,7 +2697,7 @@ You can fix this issue by making sure at least one `{!rsh} Participant` performs
 'reach 0.1';
 
 export const main = Reach.App(() => {
-	const aisha = Participant('Aisha', {});
+  const aisha = Participant('Aisha', {});
 });
 ```
 
@@ -2707,10 +2707,10 @@ export const main = Reach.App(() => {
 'reach 0.1';
 
 export const main = Reach.App(() => {
-	const aisha = Participant('Aisha', {});
-	init();
-	aisha.publish();
-	commit();
+  const aisha = Participant('Aisha', {});
+  init();
+  aisha.publish();
+  commit();
 });
 ```
 
