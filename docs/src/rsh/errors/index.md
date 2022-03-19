@@ -2696,7 +2696,7 @@ You can fix this issue by making sure at least one `{!rsh} Participant` performs
 ```reach
 'reach 0.1';
 
-export const MAIN = Reach.App(() => {
+export const main = Reach.App(() => {
 	const aisha = Participant('Aisha', {
 		deadline: UInt,
 		wager: UInt,
@@ -2709,7 +2709,7 @@ export const MAIN = Reach.App(() => {
 ```reach
 'reach 0.1';
 
-export const MAIN = Reach.App(() => {
+export const main = Reach.App(() => {
 	const aisha = Participant('Aisha', {
 		deadline: UInt,
 		wager: UInt,
