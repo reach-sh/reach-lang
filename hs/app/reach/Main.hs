@@ -16,6 +16,7 @@ import qualified Data.ByteString.Lazy.Char8 as BSLC8
 import Data.Char
 import Data.Either
 import Data.Functor
+import qualified Data.HashMap.Strict as H
 import Data.IORef
 import qualified Data.List.Extra as L
 import Data.Map.Strict ((!?))
@@ -24,12 +25,14 @@ import Data.Maybe
 import Data.String
 import Data.Text (Text, intercalate, pack, stripEnd, unpack)
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import qualified Data.Text.IO as T
 import Data.Text.Lazy (toStrict)
 import Data.Text.Lazy.Encoding
 import Data.Time
 import Data.Time.Format.ISO8601
 import Data.Tuple.Extra (first)
+import qualified Data.Yaml as Y
 import GHC.Float
 import GHC.Generics
 import qualified NeatInterpolation as N
@@ -536,7 +539,7 @@ imagesForAllConnectors = L.foldl' (<>) [] $ imagesFor <$> [minBound .. maxBound]
 imagesAll :: [Image]
 imagesAll = imagesCommon <> imagesForAllConnectors
 
-serviceConnector :: Env -> ConnectorMode -> [Text] -> Text -> Text -> IO Text
+serviceConnector :: Env -> ConnectorMode -> [Text] -> Text -> Text -> IO (Text, [Text])
 serviceConnector Env {..} (ConnectorMode c m) ports appService' v = do
   let ports' = case ports of
         [] -> "[]"
@@ -544,14 +547,20 @@ serviceConnector Env {..} (ConnectorMode c m) ports appService' v = do
   let n = show m <> "-" <> (toLower <$> show c)
   let d = packs c
   fmt <- T.readFile $ e_dirEmbed </> "docker" </> "service-" <> n <> ".yml"
+  cns <- do
+    let f a = \case A.String x -> [x] <> a; _ -> a
+    cs <- (\(vs :: H.HashMap Text A.Value) -> [x | A.Object x <- H.elems vs])
+      <$> Y.decodeThrow (T.encodeUtf8 fmt)
+    pure $ L.foldl' (\a -> maybe a (f a) . H.lookup "container_name") [] cs
+
   let labels = [N.text| - "sh.reach.devnet-for=$d" |]
-  pure
-    . swap "REACH_VERSION" v
-    . swap "PORTS" ports'
-    . swap "NETWORK" "reach-devnet"
-    . swap "APP_SERVICE" (if appService' == "" then "" else "-" <> appService')
-    . swap "LABELS" labels
-    $ fmt
+  let y = swap "REACH_VERSION" v
+        . swap "PORTS" ports'
+        . swap "NETWORK" "reach-devnet"
+        . swap "APP_SERVICE" (if appService' == "" then "" else "-" <> appService')
+        . swap "LABELS" labels
+        $ fmt
+  pure (y, cns)
 
 connectorEnv :: Env -> ConnectorMode -> IO Text
 connectorEnv Env {..} (ConnectorMode c m) = do
@@ -784,8 +793,8 @@ withCompose DockerMeta {..} wrapped = do
       $deps
     |]
   let stdConnSvs = liftIO . serviceConnector env cm connPorts appService $ versionBy majMinPat version''
-  connSvs <- case (m, compose) of
-    (Live, _) -> pure ""
+  (connSvs, devnetCs) <- case (m, compose) of
+    (Live, _) -> pure ("", [])
     (_, StandaloneDevnet) -> stdConnSvs
     (_, WithProject Console _) -> stdConnSvs
     (_, WithProject React _) -> stdConnSvs
@@ -828,7 +837,16 @@ withCompose DockerMeta {..} wrapped = do
        $appService'
     |]
   liftIO $ scaff True (e_dirTmpContainer </> "docker-compose.yml") (notw f)
-  wrapped
+  scriptWithConnectorMode $ do
+    -- https://docs.docker.com/engine/reference/commandline/ps/#filtering
+    forM_ devnetCs $ \dc -> write [N.text|
+      docker ps -aqf 'name=^$dc$$' \
+        -f 'status=removing' \
+        -f 'status=paused'   \
+        -f 'status=exited'   \
+        -f 'status=dead' | while IFS= read -r d; do docker rm -fv "$$d" >/dev/null 2>&1; done
+    |]
+    wrapped
   where
     notw = intercalate "\n" . fmap stripEnd . T.lines
 
@@ -1208,7 +1226,7 @@ run' = command "run" . info f $ d <> noIntersperse
       let dockerfile' = pack hostDockerfile
       let projDirHost' = pack projDirHost
       let args'' = intercalate " " . map (<> "'") . map ("'" <>) $ projName : args'
-      withCompose dm . scriptWithConnectorMode $ do
+      withCompose dm $ do
         write dd
         maybe (pure ()) write recompile
         unless e_disableReporting $ log'' "run" >>= write
@@ -1320,7 +1338,7 @@ react = command "react" $ info f d
         dm@DockerMeta {..} <- mkDockerMetaProj <$> ask <*> projectPwdIndex <*> pure React
         dd <- devnetDeps e_disableReporting
         cargs <- forwardedCli "react"
-        withCompose dm . scriptWithConnectorMode $ do
+        withCompose dm $ do
           unless e_disableReporting $ log'' "react" >>= write
           write
             [N.text|
@@ -1356,7 +1374,7 @@ rpcServer = command "rpc-server" $ info f d
       warnDefRPCKey
       warnScaffoldDefRPCTLSPair prj
       warnDeprecatedFlagUseExistingDevnet ued
-      withCompose dm . scriptWithConnectorMode $ do
+      withCompose dm $ do
         unless e_disableReporting $ log'' "rpc_server" >>= write
         rpcServer' appService e_disableReporting >>= write
 
@@ -1426,7 +1444,7 @@ rpcRun = command "rpc-run" $ info f $ fullDesc <> desc <> fdoc <> noIntersperse
       warnScaffoldDefRPCTLSPair prj
       -- TODO detect if process is already listening on $REACH_RPC_PORT
       -- `lsof -i` cannot necessarily be used without `sudo`
-      withCompose dm . scriptWithConnectorMode $ do
+      withCompose dm $ do
         unless e_disableReporting $ log'' "rpc_run" >>= write
         write
           [N.text|
@@ -1468,7 +1486,7 @@ devnet = command "devnet" $ info f d
       let max_wait_s = "120"
       unless (m == Devnet) . liftIO $
         die "`reach devnet` may only be used when `REACH_CONNECTOR_MODE` ends with \"-devnet\"."
-      withCompose mkDockerMetaStandaloneDevnet . scriptWithConnectorMode $ do
+      withCompose mkDockerMetaStandaloneDevnet $ do
         write
           [N.text|
         $dd
