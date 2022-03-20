@@ -67,9 +67,7 @@ export function activate(context: ExtensionContext) {
 	terminal = window.createTerminal(terminalOptions);
 	const reachExecutablePath = workspace.getConfiguration().get('reachide.executableLocation') as string;
 	const wf = workspace.workspaceFolders[0].uri.path || '.';
-	const reachPath = (reachExecutablePath === './reach')
-		? path.join(wf, 'reach')
-		: reachExecutablePath;
+	const reachPath = path.join(wf, reachExecutablePath);;
 	registerCommands(context, reachPath);
 
 
@@ -124,7 +122,14 @@ const commandHelper = (
 ) => (label: string) => {
 	const disposable = commands.registerCommand(`reach.${label}`, () => {
 		terminal.show();
-		terminal.sendText(`${reachPath} ${label}`);
+		if (label === 'download Reach shell script') {
+			terminal.sendText(
+				'curl https://docs.reach.sh/reach -o ' +
+				reachPath + ' ; chmod +x ' + reachPath
+			);
+		} else {
+			terminal.sendText(`${reachPath} ${label}`);
+		}
 	});
 	context.subscriptions.push(disposable);
 };
