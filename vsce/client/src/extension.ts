@@ -67,7 +67,7 @@ export function activate(context: ExtensionContext) {
 	terminal = window.createTerminal(terminalOptions);
 	const reachExecutablePath = workspace.getConfiguration().get('reachide.executableLocation') as string;
 	const wf = workspace.workspaceFolders[0].uri.path || '.';
-	const reachPath = path.join(wf, reachExecutablePath);;
+	const reachPath = path.join(wf, reachExecutablePath);
 	registerCommands(context, reachPath);
 
 
