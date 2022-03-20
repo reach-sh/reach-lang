@@ -80,8 +80,7 @@
                 },
                 "reachide.showUpdateNotifications": {
                     "default": true,
-                    "description":
-                        "Allow this extension to show notifications related to Reach updates.",
+                    "description": "Allow this extension to show notifications related to Reach updates.",
                     "scope": "window",
                     "type": "boolean"
                 },
@@ -122,6 +121,9 @@
                 },
                 {
                     "command": "reach.down"
+                },
+                {
+                    "command": "reach.download Reach shell script"
                 },
                 {
                     "command": "reach.hashes"
@@ -235,6 +237,11 @@
                 "command": "reach.down",
                 "category": "Reach IDE",
                 "title": "Reach down"
+            },
+            {
+                "command": "reach.download Reach shell script",
+                "category": "Reach IDE",
+                "title": "Download Reach shell script!"
             },
             {
                 "command": "reach.hashes",

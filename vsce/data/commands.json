@@ -46,6 +46,13 @@
 		"commandsTreeDataProvider": true
 	},
 	{
+		"command": "reach.download Reach shell script",
+		"category": "Reach IDE",
+		"title": "Download Reach shell script!",
+		"label": "download Reach shell script",
+		"commandsTreeDataProvider": true
+	},
+	{
 		"command": "reach.hashes",
 		"category": "Reach IDE",
 		"title": "Reach Hashes",
