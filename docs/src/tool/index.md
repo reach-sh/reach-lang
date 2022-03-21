@@ -28,9 +28,8 @@ If you're using Windows, consult [the guide to using Reach on Windows](##guide-w
 :::
 
 # {#ref-usage} Usage
-## {#ref-usage-envvar} Environment variables
 
-### {#ref-usage-envvar-connector-mode} @{ref("cmd", "REACH_CONNECTOR_MODE")} REACH_CONNECTOR_MODE
+# {#ref-usage-envvar-connector-mode} @{ref("cmd", "REACH_CONNECTOR_MODE")} REACH_CONNECTOR_MODE
 `{!cmd} REACH_CONNECTOR_MODE` is how one targets their desired [network](##ref-networks).
 
 The following are all valid options:
@@ -59,7 +58,7 @@ $ REACH_CONNECTOR_MODE=ALGO reach run
 
 Explicitly selecting a network in this way is how Reach developers can target multiple networks since it takes precedence over one's `{!cmd} reach config` settings.
 
-### {#ref-usage-envvar-version} @{ref("cmd", "REACH_VERSION")} REACH_VERSION
+# {#ref-usage-envvar-version} @{ref("cmd", "REACH_VERSION")} REACH_VERSION
 `{!cmd} REACH_VERSION` may be used to override Reach's default-to-latest behavior and instead select a specific, pinned release.
 
 Although normally expressed in a [semantic versioning](##guide-versions)-friendly format, e.g. `v0.1` or `v0.1.6`, `{!cmd} REACH_VERSION` also supports:
@@ -91,13 +90,12 @@ Although normally expressed in a [semantic versioning](##guide-versions)-friendl
 When using the semantic versioning form of `{!cmd} REACH_VERSION` the preceding `v` character is optional.
 In other words, `v0.1.6` is equivalent to `0.1.6`.
 
-### {#ref-usage-envvar-debug} @{ref("cmd", "REACH_DEBUG")} REACH_DEBUG
+# {#ref-usage-envvar-debug} @{ref("cmd", "REACH_DEBUG")} REACH_DEBUG
 For commands that support it, setting `{!cmd} REACH_DEBUG` to any non-empty value produces verbose output which may be helpful during development or debugging.
 
 See `{!cmd} reach compile`, `{!cmd} reach run`, or `{!cmd} reach react` for examples.
 
-## {#ref-usage-commands} Commands
-### {#ref-usage-compile} @{ref("cmd", "reach compile")} reach compile
+# {#ref-usage-compile} @{ref("cmd", "reach compile")} reach compile
 
 Compile Reach code by executing
 
@@ -141,7 +139,7 @@ The output name of a library is the same as if it exported a `{!rsh} Reach.App` 
 
 A `{!cmd} reach compile` usage example is available in [Overview](##over-compile).
 
-### {#ref-usage-init} @{ref("cmd", "reach init")} reach init
+# {#ref-usage-init} @{ref("cmd", "reach init")} reach init
 
 This creates the `index.rsh` and `index.mjs` template files required for a basic Reach DApp.
 It allows you to open the files and start writing code.
@@ -151,7 +149,7 @@ The `index.rsh` file is the DApp and is written in Reach, and the `index.mjs` fi
 $ reach init
 ```
 
-### {#ref-usage-run} @{ref("cmd", "reach run")} reach run
+# {#ref-usage-run} @{ref("cmd", "reach run")} reach run
 
 The `{!cmd} reach run` command with no arguments starts the `index` application in the current directory by default, but you can set a different directory, application name, or both.
 
@@ -200,7 +198,7 @@ If either are absent, `{!cmd} reach run` assumes a default behavior (which may b
 
 The `Dockerfile` can be modified to introduce new dependencies, services, or filesystem prerequisites into your app's containerized environment, and the `package.json` file may likewise be extended to include additional libraries or make configuration changes to the resultant Node.js package.
 
-### {#ref-usage-down} @{ref("cmd", "reach down")} reach down
+# {#ref-usage-down} @{ref("cmd", "reach down")} reach down
 
 You can halt all Dockerized Reach apps and devnets by running
 
@@ -208,7 +206,7 @@ You can halt all Dockerized Reach apps and devnets by running
 $ reach down
 ```
 
-### {#ref-usage-scaffold} @{ref("cmd", "reach scaffold")} reach scaffold
+# {#ref-usage-scaffold} @{ref("cmd", "reach scaffold")} reach scaffold
 
 You can create templated `Dockerfile` and `package.json` files for a simple Reach app by running
 
@@ -218,7 +216,7 @@ $ reach scaffold
 
 The files created are the same as those used temporarily by `{!cmd} reach run`.
 
-### {#ref-usage-react} @{ref("cmd", "reach react")} reach react
+# {#ref-usage-react} @{ref("cmd", "reach react")} reach react
 
 You can run a simple React app by executing
 
@@ -264,7 +262,7 @@ The compiled `build/index.main.mjs` JavaScript file
 and the `'@reach-sh/stdlib'` JavaScript library
 may be used in any JavaScript project like any other JavaScript file and library, respectively.
 
-### {#ref-usage-devnet} @{ref("cmd", "reach devnet")} reach devnet
+# {#ref-usage-devnet} @{ref("cmd", "reach devnet")} reach devnet
 
 You can run a private Reach devnet by executing the following command:
 
@@ -287,7 +285,7 @@ $ REACH_CONNECTOR_MODE=ALGO ./reach devnet
 
 For more information on devnet options, refer to [Networks](##ref-networks).
 
-### {#ref-usage-rpc-server} @{ref("cmd", "reach rpc-server")} reach rpc-server
+# {#ref-usage-rpc-server} @{ref("cmd", "reach rpc-server")} reach rpc-server
 
 The following command
 
@@ -315,7 +313,7 @@ It defaults to `reach-server.crt`.
 + The environment variable `{!cmd} REACH_RPC_TLS_PASSPHRASE` is used to determine the TLS passphrase.
 It defaults to `rpc-demo`.
 
-### {#ref-usage-rpc-run} @{ref("cmd", "reach rpc-run")} reach rpc-run
+# {#ref-usage-rpc-run} @{ref("cmd", "reach rpc-run")} reach rpc-run
 
 The following command
 
@@ -335,7 +333,7 @@ Consider this example from the @{seclink("tut-7-rpc")} tutorial:
 $ reach rpc-run python3 -u ./index.py
 ```
 
-### {#ref-usage-docker-reset} @{ref("cmd", "reach docker-reset")} reach docker-reset
+# {#ref-usage-docker-reset} @{ref("cmd", "reach docker-reset")} reach docker-reset
 
 You can easily kill and remove all Docker containers by executing
 
@@ -348,7 +346,7 @@ This can be a useful thing to try if your Docker containers stop responding to r
 It will affect all Docker containers on your machine, not just those created by Reach.
 For this reason it's recommended to prefer `{!cmd} reach down`.
 
-### {#ref-usage-info} @{ref("cmd", "reach info")} reach info
+# {#ref-usage-info} @{ref("cmd", "reach info")} reach info
 
 To check whether new releases are available, run
 
@@ -364,7 +362,7 @@ An interactive menu, allowing you to selectively perform suggested updates, is a
 $ reach info --interactive
 ```
 
-### {#ref-usage-update} @{ref("cmd", "reach update")} reach update
+# {#ref-usage-update} @{ref("cmd", "reach update")} reach update
 
 You can update Reach to a newer release by executing
 
@@ -374,7 +372,7 @@ $ reach update
 
 As with `{!cmd} reach info`, `{!cmd} reach update` respects the `{!cmd} REACH_VERSION` environment variable for the purpose of version-pinning.
 
-### {#ref-usage-version} @{ref("cmd", "reach version")} reach version
+# {#ref-usage-version} @{ref("cmd", "reach version")} reach version
 
 Check which version of the Reach command-line tool is currently installed by running
 
@@ -384,7 +382,7 @@ $ reach version
 
 This is less precise than `{!cmd} reach hashes`, but gives you an idea of which features are, or are not, available in your build version.
 
-### {#ref-usage-hashes} @{ref("cmd", "reach hashes")} reach hashes
+# {#ref-usage-hashes} @{ref("cmd", "reach hashes")} reach hashes
 
 Check which version of each Reach Docker image is installed.
 This command returns the hash version of each image in an 8 digit alpha-numeric code (such as [639fa565](https://hub.docker.com/layers/reachsh/reach/639fa565/images/sha256-e72fbb183e559a6f531302843c1d4debb499c9286e0ca4839ae66023c7ba2296?context=explore)).
@@ -396,7 +394,7 @@ $ reach hashes
 This is more precise, but less readable, than `{!cmd} reach version`,
 in that each hash refers to the git commit used to build the image.
 
-### {#ref-usage-config} @{ref("cmd", "reach config")} reach config
+# {#ref-usage-config} @{ref("cmd", "reach config")} reach config
 
 Reach recommends tuning your default workflow settings by executing
 
