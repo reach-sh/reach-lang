@@ -539,6 +539,7 @@ export type ISimRes<Token, ContractInfo> = {
   isHalt : boolean,
 };
 
+// XXX Add Address
 export type ISimTxn<Token, ContractInfo> = {
   kind: 'to'|'init',
   amt: BigNumber,
@@ -572,6 +573,7 @@ export type ISimTxn<Token, ContractInfo> = {
   pays: BigNumber,
   bills: BigNumber,
   toks: Array<Token>,
+  accs: Array<string>,
 } | {
   kind: 'info',
   tok: Token,

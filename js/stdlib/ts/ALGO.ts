@@ -1670,6 +1670,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
             } else if ( t.kind === 'remote' ) {
               recordApp(t.obj);
               t.toks.map(recordAsset);
+              t.accs.map(recordAccount);
               howManyMoreFees += 1 + bigNumberToNumber(t.pays) + bigNumberToNumber(t.bills); return;
             }  else if ( t.kind === 'api' ) {
               whichApi = t.who;

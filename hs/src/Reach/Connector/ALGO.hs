@@ -1992,6 +1992,13 @@ ce = \case
           incResource R_Asset a
           ca a
           makeTxn1 "Assets"
+        -- XXX This is bad and will not work in most cases
+        let isAddress = (==) T_Address . argTypeOf
+        forM_ (filter isAddress as) $ \a -> do
+          incResource R_Account a
+          ca a
+          ctobs $ argTypeOf a
+          makeTxn1 "Accounts"
         op "itxn_submit"
         show_stack ("Remote: " <> sig) Nothing at fs
         appl_idx <- liftIO $ readCounter remoteTxns
@@ -3249,13 +3256,10 @@ compile_algo env disp pl = do
     asserteq
     code "b" [ "apiReturn_noCheck" ]
     label "alloc"
-    code "txn" ["OnCompletion"]
-    output $ TConst "NoOp"
-    asserteq
     forM_ keyState_gvs $ \gv -> do
       ctzero $ gvType gv
       gvStore gv
-    code "b" ["updateState"]
+    code "b" ["updateStateNoOp"]
     -- Library functions
     libDefns
   totalLen <- readIORef totalLenR

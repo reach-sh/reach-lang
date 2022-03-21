@@ -132,18 +132,23 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-c users/simple-staker/src/index.rsh
-exit 0
-
-c users/algo-govt/index.rsh
-exit 0
-
+jb
 export REACH_CONNECTOR_MODE=ALGO
 export REACH_DEBUG=Y
 #${REACH} devnet --await-background
 cd users/xbacked-contracts/src
 #${REACH} compile master_vault.rsh
+${REACH} compile liquidate_and_stake_algo.rsh
+rm -fr c2c/build
+cp -fr build c2c/build
+cd c2c
 ${REACH} run
+exit 0
+
+c users/simple-staker/src/index.rsh
+exit 0
+
+c users/algo-govt/index.rsh
 exit 0
 
 REACH_DEBUG=Y c users/xbacked-contracts/src/master_vault.rsh

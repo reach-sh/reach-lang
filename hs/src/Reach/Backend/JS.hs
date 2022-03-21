@@ -429,7 +429,7 @@ jsExpr = \case
       JM_Backend ->
         return $ jsApply "await stdlib.mapSet" [jsMapVar mpv, fa', na']
       JM_View -> impossible "view mapset"
-  DLE_Remote at _fs ro _rng_ty _rm (DLPayAmt pay_net pay_ks) _as (DLWithBill nRecv nnRecv _nnZero) -> do
+  DLE_Remote at _fs ro _rng_ty _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv _nnZero) -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> return "undefined /* Remote */"
       JM_View -> impossible "view Remote"
@@ -443,11 +443,14 @@ jsExpr = \case
         let nRecvCount = if nRecv then [ro] else []
         bills' <- l2n $ nRecvCount <> nnRecv
         toks' <- mapM jsArg $ nnRecv <> map snd pay_ks_nz
+        let isAddress = (==) T_Address . argTypeOf
+        accs' <- mapM jsArg $ filter isAddress as
         let res' = parens $ jsSimTxn "remote" $
               [ ("obj", obj')
               , ("pays", pays')
               , ("bills", bills')
               , ("toks", jsArray toks')
+              , ("accs", jsArray accs')
               ]
         net' <- jsCon $ DLL_Int at 0
         let bill' = jsArray $ map (const net') nnRecv
