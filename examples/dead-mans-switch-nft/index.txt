@@ -1,0 +1,21 @@
+warning[RW0006]: This program uses network seconds, which are unreliable on most consensus networks. You should read the article about this warning to ensure that you understand the risks of building on them.
+
+  reach standard library:570:12:application
+
+  
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0006
+
+warning[RW0006]: This program uses network seconds, which are unreliable on most consensus networks. You should read the article about this warning to ensure that you understand the risks of building on them.
+
+  reach standard library:570:12:application
+
+  
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0006
+
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 25 theorems; No failures!
