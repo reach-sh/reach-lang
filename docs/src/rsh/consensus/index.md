@@ -527,12 +527,18 @@ Such modifications may only occur in a consensus step.
 
 ### Sets: creation and modification
 
-@{ref("rsh", "Set")}@{ref("rsh", "insert")}@{ref("rsh", "remove")}@{ref("rsh", "member")}
+@{ref("rsh", "Set")}
+@{ref("rsh", "Set.insert")}
+@{ref("rsh", "Set.remove")}
+@{ref("rsh", "Set.member")}
+@{ref("rsh", "Set.Map")}
 ```reach
 const bidders = new Set();
 bidders.insert(Alice);
+bidders.Map.size(); // 1
 bidders.remove(Alice);
 bidders.member(Alice); // false
+bidders.Map.size(); // 0
 ```
 
 A `{!rsh} Set` is another container for linear state. It is simply a type alias of `{!rsh} Map(Null)`;
@@ -544,3 +550,6 @@ set, `{!rsh} s`, or `{!rsh} s.remove(ADDRESS)` to remove the `{!rsh} ADDRESS` fr
 Such modifications may only occur in a consensus step.
 
 `{!rsh} s.member(ADDRESS)` will return a `{!rsh} Bool` representing whether the address is in the set.
+
+`{!rsh} s.Map` will return the underlying `{!rsh} Map`, so you can use foldable
+instance methods.
