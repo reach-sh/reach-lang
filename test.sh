@@ -132,6 +132,9 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
+ci ALGO rsvp
+exit 0
+
 jb
 export REACH_CONNECTOR_MODE=ALGO
 export REACH_DEBUG=Y
