@@ -22,6 +22,6 @@ export default (
 		]
 	);
 
-	process.on('error', reject);
+	process.on('error', code => resolve(!!code));
 	process.on('exit', code => resolve(!!code));
 });
