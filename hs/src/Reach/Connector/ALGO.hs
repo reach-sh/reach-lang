@@ -2629,7 +2629,7 @@ bindFromStack _at vsl m = do
   foldl' go m $ map varLetVar vsl
 
 cloop :: Int -> CHandler -> App ()
-cloop _ (C_Handler {}) = return ()
+cloop _ (C_Handler {}) = impossible $ "cloop h"
 cloop which (C_Loop at svs vars body) = recordWhich which $ do
   block (loopLabel which) $ do
     -- STACK: [ ...svs ...vars ] TOP on right
@@ -2737,7 +2737,7 @@ callCompanion at cc = do
         incResource R_App cr_ro
 
 ch :: Int -> CHandler -> App ()
-ch _ (C_Loop {}) = return ()
+ch _ (C_Loop {}) = impossible $ "ch loop"
 ch which (C_Handler at int from prev svsl msgl timev secsv body) = recordWhich which $ do
   freeResource R_Account $ DLA_Var from
   let msg = map varLetVar msgl
@@ -3188,8 +3188,12 @@ compile_algo env disp pl = do
     -- Load the publish number
     argLoad ArgPublish
     cfrombs T_UInt
-    cblt "publish" ch $ bltM hm
-    forM_ (M.toAscList hm) $ \(hi, hh) ->
+    let isLoop = \case
+          C_Loop {} -> True
+          C_Handler {} -> False
+    let (hm_l, hm_h) = M.partition isLoop hm
+    cblt "publish" ch $ bltM hm_h
+    forM_ (M.toAscList hm_l) $ \(hi, hh) ->
       cloop hi hh
     label "updateStateHalt"
     code "txn" ["OnCompletion"]

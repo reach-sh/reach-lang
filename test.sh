@@ -132,8 +132,10 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-jb
-ci ALGO rsvp
+c users/simple-staker/src/index.rsh
+exit 0
+
+ci ALGO rps-7-loops
 exit 0
 
 jb
@@ -147,9 +149,6 @@ rm -fr c2c/build
 cp -fr build c2c/build
 cd c2c
 ${REACH} run
-exit 0
-
-c users/simple-staker/src/index.rsh
 exit 0
 
 c users/algo-govt/index.rsh
