@@ -5,7 +5,7 @@ const stdlib = loadStdlib();
 const sbal = stdlib.parseCurrency(100);
 const accD = await stdlib.newTestAccount(sbal);
 
-const deadline = stdlib.connector === 'CFX' ? 500 : 50;
+const deadline = stdlib.connector === 'CFX' ? 500 : 250;
 
 const ctcD = accD.contract(backend);
 
