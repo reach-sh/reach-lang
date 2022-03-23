@@ -61,7 +61,7 @@ exports.Deploying = class extends React.Component {
 }
 
 exports.WaitingForAttacher = class extends React.Component {
-  async copyToClipborad(button) {
+  async copyToClipboard(button) {
     const {ctcInfoStr} = this.props;
     navigator.clipboard.writeText(ctcInfoStr);
     const origInnerHTML = button.innerHTML;
@@ -82,7 +82,7 @@ exports.WaitingForAttacher = class extends React.Component {
           {ctcInfoStr}
         </pre>
         <button
-          onClick={(e) => this.copyToClipborad(e.currentTarget)}
+          onClick={(e) => this.copyToClipboard(e.currentTarget)}
         >Copy to clipboard</button>
       </div>
     )
