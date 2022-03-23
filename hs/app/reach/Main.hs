@@ -612,6 +612,13 @@ data WP
   = Console
   | React
   | RPC
+  deriving (Bounded, Enum)
+
+instance Show WP where
+  show = \case
+    Console -> "console"
+    React -> "react"
+    RPC -> "rpc"
 
 data Compose
   = WithProject WP Project
@@ -807,6 +814,7 @@ withCompose DockerMeta {..} wrapped = do
         |]
         _ -> ""
   let e_dirTmpHost' = pack e_dirTmpHost
+  let a = pack $ (\case WithProject a' _ -> show a'; _ -> "") compose
   let appService' = case compose of
         StandaloneDevnet -> ""
         _ ->
@@ -820,6 +828,7 @@ withCompose DockerMeta {..} wrapped = do
                  labels:
                    - "sh.reach.dir-tmp=$e_dirTmpHost'"
                    - "sh.reach.dir-project=$projDirHost'"
+                   - "sh.reach.app-type=$a"
                  $build
                  $connEnv
              |]
@@ -908,7 +917,7 @@ mkEnv eff mv = do
       <$> strOption (long "dir-embed" <> internal <> value "/app/embed")
       <*> strOption (long "dir-project-container" <> internal <> value "/app/src")
       <*> strOption (long "dir-project-host" <> internal)
-      <*> strOption (long "dir-tmp-container" <> internal <> value "/app/tmp")
+      <*> strOption (long "dir-tmp-container" <> internal)
       <*> strOption (long "dir-tmp-host" <> internal)
       <*> strOption (long "dir-config-container" <> internal <> value "/app/config")
       <*> strOption (long "dir-config-host" <> internal)
@@ -1029,7 +1038,7 @@ compile = command "compile" $ info f d
       let args = argsl <> recursiveDisableReporting e_disableReporting
       let CompilerOpts {..} = cta_co
       let v = versionBy majMinPat version''
-      let cn = flip T.map v $ \c -> if (isAlphaNum c && isAscii c) || c == '_' then c else '_'
+      let cn = flip T.map v $ \c -> if isAlphaNum c && isAscii c then c else '-'
       let ci' = if ci then "true" else ""
       let ports = if co_sim then "-p 3001:3001" else ""
       liftIO $ do
@@ -1087,7 +1096,7 @@ compile = command "compile" $ info f d
               --volume "$$PWD:/app" \
               -l "sh.reach.dir-project=$$PWD" \
               -u "$(id -ru):$(id -rg)" \
-              --name "reachc_${cn}_$$$$" \
+              --name "reachc-${cn}-$$$$" \
               --entrypoint tail \
               $ports \
               reachsh/reach:$v -f /dev/null)"
@@ -1248,32 +1257,24 @@ run' = command "run" . info f $ d <> noIntersperse
 
 down' :: App
 down' = script $ do
+  let apps = T.intercalate " " $ packs <$> [minBound .. maxBound :: WP]
   write
     [N.text|
     name () { docker inspect --format="{{ index .Name }}" "$$1";  }
     pds  () { printf 'Stopping %s%s... ' "$$1" "$(name "$$1")";   }
     pdr  () { printf 'Removing %s%s... ' "$$1" "$(name "$$1")";   }
     dds  () { docker stop   "$$1" >/dev/null && printf 'Done.\n'; }
+    ddk  () { docker kill   "$$1" >/dev/null && printf 'Done.\n'; }
     ddr  () { docker rm -fv "$$1" >/dev/null && printf 'Done.\n'; }
 
-    # Stop app containers w/ status == running
-    docker ps -qf label=sh.reach.dir-tmp | while IFS= read -r d; do
-      pds "$$d"; dds "$$d"
+    for a in $apps; do
+      docker ps  -qf "label=sh.reach.app-type=$$a" | while IFS= read -r d; do pds "$$d"; dds "$$d"; done
+      docker ps -aqf "label=sh.reach.app-type=$$a" | while IFS= read -r d; do pdr "$$d"; ddr "$$d"; done
     done
 
-    # Remove app stragglers (containers w/ status != running)
-    docker ps -aqf label=sh.reach.dir-tmp | while IFS= read -r d; do
-      pdr "$$d"; ddr "$$d"
-    done
-
-    # Stop `reachc` containers w/ status == running
-    docker ps -qf 'ancestor=reachsh/reach' | while IFS= read -r d; do
-      pds "$$d"; dds "$$d"
-    done
-
-    # Remove `reachc` stragglers (containers w/ status != running)
-    docker ps -aqf 'ancestor=reachsh/reach' | while IFS= read -r d; do
-      pdr "$$d"; ddr "$$d"
+    for a in reach reach-cli; do
+      docker ps  -qf "ancestor=reachsh/$$a" | while IFS= read -r d; do pds "$$d"; ddk "$$d"; done
+      docker ps -aqf "ancestor=reachsh/$$a" | while IFS= read -r d; do pdr "$$d"; ddr "$$d"; done
     done
 
     # Remove `dir-project` stragglers (e.g. `reachc` w/out ancestor, which can
