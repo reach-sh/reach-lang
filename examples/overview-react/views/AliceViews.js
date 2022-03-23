@@ -86,7 +86,7 @@ export class RunBackend extends React.Component {
 }
 
 export class BackendRunning extends React.Component {
-  async copyToClipborad(button) {
+  async copyToClipboard(button) {
     const {ctcInfoStr} = this.props;
     navigator.clipboard.writeText(ctcInfoStr);
     const origInnerHTML = button.innerHTML;
@@ -118,7 +118,7 @@ export class BackendRunning extends React.Component {
           </pre>
           <br />
           <button
-            onClick={async (e) => this.copyToClipborad(e.currentTarget)}
+            onClick={async (e) => this.copyToClipboard(e.currentTarget)}
           >Copy to clipboard</button>
           <br />
 
