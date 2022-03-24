@@ -648,15 +648,18 @@ mkScaffold Project {..} =
     c = (projDirContainer </>)
     h = (projDirHost </>)
 
-appProj' :: FilePath -> Text
-appProj' = T.toLower . pack . takeBaseName . dropTrailingPathSeparator
-
 mkDockerMetaProj :: Env -> Project -> WP -> DockerMeta
 mkDockerMetaProj (Env {..}) (p@Project {..}) wp = DockerMeta {..}
   where
+    f c = if isAlphaNum c && isAscii c then c else '-'
+    g = L.foldl' (\x y -> maybe [y] (\z -> if z == '-' && y == '-' then x else x <> [y]) $ lastMay x) []
+    s = T.dropWhile (== '-')
+    e = T.dropWhileEnd (== '-')
     appProj = case wp of
       React -> ""
-      _ -> appProj' projDirHost
+      _ -> case T.toLower . s . e . pack . g . map f . takeBaseName . dropTrailingPathSeparator $ projDirHost of
+        "" -> "x"
+        a -> a
     appService = case wp of
       React -> "react-runner"
       _ -> "reach-app-" <> appProj
@@ -810,7 +813,7 @@ withCompose DockerMeta {..} wrapped = do
         WithProject Console _ ->
           [N.text|
            build:
-             context: $projDirHost'
+             context: "$projDirHost'"
         |]
         _ -> ""
   let e_dirTmpHost' = pack e_dirTmpHost
@@ -1030,7 +1033,7 @@ compile = command "compile" $ info f d
     f = go <$> compiler
     go (CompilerToolArgs {..}) = do
       Env {e_var = Var {..}, ..} <- ask
-      rawArgs <- liftIO $ getArgs
+      rawArgs <- fmap (\a -> if ".rsh" `L.isSuffixOf` a then "\"" <> a <> "\"" else a ) <$> liftIO getArgs
       let rawArgs' = dropWhile (/= "compile") rawArgs
       let argsl = intercalate " " . map pack . filter (/= "--disable-reporting") $ case rawArgs' of
             "compile" : x -> x
@@ -1191,7 +1194,7 @@ run' = command "run" . info f $ d <> noIntersperse
           , (containerGitIgnore, hostGitIgnore)
           , (containerDockerIgnore, hostDockerIgnore)
           ]
-      cleanup <- intercalate "\n" <$> forM toClean (pure . pack . ("rm " <>) . snd)
+      cleanup <- intercalate "\n" <$> forM toClean (pure . (\a -> [N.text| rm "$a" |]) . pack . snd)
       let rsh = projDirContainer </> unpack projName <> ".rsh"
       let mjs = projDirContainer </> unpack projName <> ".mjs"
       let bjs = projDirContainer </> "build" </> unpack projName <> ".main.mjs"
@@ -1237,11 +1240,11 @@ run' = command "run" . info f $ d <> noIntersperse
         unless e_disableReporting $ log'' "run" >>= write
         write
           [N.text|
-        cd $projDirHost'
+        cd "$projDirHost'"
         CNAME="$appService-$$$$"
 
         set +e
-        docker build -f $dockerfile' --tag=$appImageTag . \
+        docker build -f "$dockerfile'" --tag=$appImageTag . \
           && docker-compose -f "$$TMP/docker-compose.yml" run \
             -e REACHC_ID="$whoami'" \
             --name "$$CNAME"$$NO_DEPS --rm $appService $args''
