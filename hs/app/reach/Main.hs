@@ -1260,12 +1260,12 @@ down' = script $ do
   let apps = T.intercalate " " $ packs <$> [minBound .. maxBound :: WP]
   write
     [N.text|
-    name () { docker inspect --format="{{ index .Name }}" "$$1";  }
-    pds  () { printf 'Stopping %s%s... ' "$$1" "$(name "$$1")";   }
-    pdr  () { printf 'Removing %s%s... ' "$$1" "$(name "$$1")";   }
-    dds  () { docker stop   "$$1" >/dev/null && printf 'Done.\n'; }
-    ddk  () { docker kill   "$$1" >/dev/null && printf 'Done.\n'; }
-    ddr  () { docker rm -fv "$$1" >/dev/null && printf 'Done.\n'; }
+    name () { docker inspect --format="{{ index .Name }}" "$$1";     }
+    pds  () { printf 'Stopping %s%s... ' "$$1" "$(name "$$1")";      }
+    pdr  () { printf 'Removing %s%s... ' "$$1" "$(name "$$1")";      }
+    dds  () { docker stop   "$$1" >/dev/null 2>&1; printf 'Done.\n'; }
+    ddk  () { docker kill   "$$1" >/dev/null 2>&1; printf 'Done.\n'; }
+    ddr  () { docker rm -fv "$$1" >/dev/null    && printf 'Done.\n'; }
 
     for a in $apps; do
       docker ps  -qf "label=sh.reach.app-type=$$a" | while IFS= read -r d; do pds "$$d"; dds "$$d"; done
