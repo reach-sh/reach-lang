@@ -1,19 +1,91 @@
+diff --git a/examples/rps-9-web/algoMAW.patch b/examples/rps-9-web/algoMAW.patch
+index c5e68594d..a0af93c3f 100644
+--- a/examples/rps-9-web/algoMAW.patch
++++ b/examples/rps-9-web/algoMAW.patch
+@@ -1,19 +1,39 @@
++diff --git a/examples/rps-9-web/algoMAW.patch b/examples/rps-9-web/algoMAW.patch
++index c5e68594d..e69de29bb 100644
++--- a/examples/rps-9-web/algoMAW.patch
+++++ b/examples/rps-9-web/algoMAW.patch
++@@ -1,19 +0,0 @@
++-diff --git a/examples/rps-9-web/index.js b/examples/rps-9-web/index.js
++-index ddf076a94..2e66f8da8 100644
++---- a/examples/rps-9-web/index.js
++-+++ b/examples/rps-9-web/index.js
++-@@ -5,8 +5,13 @@ import AttacherViews from './views/AttacherViews';
++- import {renderDOM, renderView} from './views/render';
++- import './index.css';
++- import * as backend from './build/index.main.mjs';
++--import {loadStdlib} from '@reach-sh/stdlib';
++-+import { loadStdlib } from '@reach-sh/stdlib';
++-+import { ALGO_MyAlgoConnect as MyAlgoConnect } from '@reach-sh/stdlib';
++- const reach = loadStdlib(process.env);
++-+reach.setWalletFallback(reach.walletFallback({
++-+  MyAlgoConnect,
++-+  providerEnv: 'TestNet'
++-+}));
++- 
++- const handToInt = {'ROCK': 0, 'PAPER': 1, 'SCISSORS': 2};
++- const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];
+ diff --git a/examples/rps-9-web/index.js b/examples/rps-9-web/index.js
+-index ddf076a94..2e66f8da8 100644
++index 0d03c6139..dca6f454f 100644
+ --- a/examples/rps-9-web/index.js
+ +++ b/examples/rps-9-web/index.js
+-@@ -5,8 +5,13 @@ import AttacherViews from './views/AttacherViews';
+- import {renderDOM, renderView} from './views/render';
++@@ -6,7 +6,10 @@ import {renderDOM, renderView} from './views/render';
+  import './index.css';
+  import * as backend from './build/index.main.mjs';
+--import {loadStdlib} from '@reach-sh/stdlib';
+-+import { loadStdlib } from '@reach-sh/stdlib';
++ import { loadStdlib } from '@reach-sh/stdlib';
+ +import { ALGO_MyAlgoConnect as MyAlgoConnect } from '@reach-sh/stdlib';
+  const reach = loadStdlib(process.env);
+ +reach.setWalletFallback(reach.walletFallback({
+-+  MyAlgoConnect,
+-+  providerEnv: 'TestNet'
+-+}));
+++  providerEnv: 'TestNet', MyAlgoConnect }));
+  
+  const handToInt = {'ROCK': 0, 'PAPER': 1, 'SCISSORS': 2};
+  const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];
+diff --git a/examples/rps-9-web/algoWC.patch b/examples/rps-9-web/algoWC.patch
+index 1d65b5b3c..e69de29bb 100644
+--- a/examples/rps-9-web/algoWC.patch
++++ b/examples/rps-9-web/algoWC.patch
+@@ -1,19 +0,0 @@
+-diff --git a/examples/rps-9-web/index.js b/examples/rps-9-web/index.js
+-index ddf076a94..691211172 100644
+---- a/examples/rps-9-web/index.js
+-+++ b/examples/rps-9-web/index.js
+-@@ -5,8 +5,13 @@ import AttacherViews from './views/AttacherViews';
+- import {renderDOM, renderView} from './views/render';
+- import './index.css';
+- import * as backend from './build/index.main.mjs';
+--import {loadStdlib} from '@reach-sh/stdlib';
+-+import { loadStdlib } from '@reach-sh/stdlib';
+-+import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
+- const reach = loadStdlib(process.env);
+-+reach.setWalletFallback(reach.walletFallback({
+-+  WalletConnect,
+-+  providerEnv: 'TestNet'
+-+}));
+- 
+- const handToInt = {'ROCK': 0, 'PAPER': 1, 'SCISSORS': 2};
+- const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];
 diff --git a/examples/rps-9-web/index.js b/examples/rps-9-web/index.js
-index ddf076a94..691211172 100644
+index 0d03c6139..ad27819dc 100644
 --- a/examples/rps-9-web/index.js
 +++ b/examples/rps-9-web/index.js
-@@ -5,8 +5,13 @@ import AttacherViews from './views/AttacherViews';
- import {renderDOM, renderView} from './views/render';
+@@ -6,7 +6,10 @@ import {renderDOM, renderView} from './views/render';
  import './index.css';
  import * as backend from './build/index.main.mjs';
--import {loadStdlib} from '@reach-sh/stdlib';
-+import { loadStdlib } from '@reach-sh/stdlib';
+ import { loadStdlib } from '@reach-sh/stdlib';
 +import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
  const reach = loadStdlib(process.env);
 +reach.setWalletFallback(reach.walletFallback({
-+  WalletConnect,
-+  providerEnv: 'TestNet'
-+}));
++  providerEnv: 'TestNet', WalletConnect }));
  
  const handToInt = {'ROCK': 0, 'PAPER': 1, 'SCISSORS': 2};
  const intToOutcome = ['Bob wins!', 'Draw!', 'Alice wins!'];
