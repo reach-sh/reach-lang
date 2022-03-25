@@ -36,7 +36,7 @@ if [ -n "$DOCKER_HOST" ] && ! (echo "$DOCKER_HOST" | grep -q '^unix:'); then
 fi
 
 IMG='reachsh/reach-cli:latest'
-TMP=$(mktemp -d "/tmp/reach.$(date -u '+%Y-%m-%dT%H-%M-%SZ')-XXXX")
+TMP=$(mkdir -p /tmp/reach/cli; mktemp -d "/tmp/reach/cli/$(date -u '+%Y-%m-%dT%H-%M-%SZ')-XXXX")
 CNF="${XDG_CONFIG_HOME:-$HOME/.config}/reach"; CNF="$(mkdir -p "$CNF" && cd "$CNF" && pwd)"
 export TMP
 
@@ -68,7 +68,24 @@ run_d () {
       --dir-config-host="$CNF" \
       "$@"
   else
-    docker run -i --rm \
+    cid="$(docker ps -q \
+      -f "ancestor=$IMG" \
+      -f "label=sh.reach.dir-project=$(pwd)" \
+      | head -n1)"
+
+    if [ -z "$cid" ]; then
+      cid="$(docker run -d --rm \
+        -v "$(pwd):/app/src" \
+        -v "$(dirname "$(dirname "$TMP")"):/app/tmp" \
+        -v "$CNF:/app/config" \
+        -l "sh.reach.dir-project=$(pwd)" \
+        -u "$(id -ru):$(id -rg)" \
+        --name "reach-cli-$$" \
+        --entrypoint tail \
+        $IMG -f /dev/null)"
+    fi
+
+    docker exec -i \
       -e "REACH_EX=$0" \
       -e "REACH_CONNECTOR_MODE" \
       -e "REACH_DEBUG" \
@@ -84,10 +101,12 @@ run_d () {
       -e "CI" \
       -e "SHELL" \
       -u "$(id -ru):$(id -rg)" \
-      -v "$(pwd):/app/src" \
-      -v "$TMP:/app/tmp" \
-      -v "$CNF:/app/config" \
-      "$IMG" --dir-project-host="$(pwd)" --dir-tmp-host="$TMP" --dir-config-host="$CNF" "$@"
+      "$cid" reach \
+        --dir-project-host="$(pwd)" \
+        --dir-tmp-container="/app/tmp$(echo "$TMP" | sed "s|$(dirname "$(dirname "$TMP")")||")" \
+        --dir-tmp-host="$TMP" \
+        --dir-config-host="$CNF" \
+        "$@"
   fi
 }
 
