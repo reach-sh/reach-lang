@@ -14,6 +14,10 @@ const main = async () => {
   await c.interp(script)
   const r = await c.getStatus()
   assert.equal(r,"Done");
+  const l = await c.getStateGlobals(12)
+  const amt = l.e_ledger["0"]["-1"]
+  // Alice
+  assert.equal(amt,22);
   console.log("Testing Complete!")
 }
 
