@@ -423,6 +423,7 @@ export const Set = {
       insert: (v) => { s[v] = null; },
       remove: (v) => { delete s[v]; },
       member: ((v) => isSome(s[v])),
+      Map: s,
     };
   },
 };

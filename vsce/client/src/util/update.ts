@@ -127,6 +127,17 @@ export default async (
 		new Promise<boolean>(resolve => setTimeout(
 			async () => {
 				if (versionCompareJsonDoesntWork) {
+					outputChannel.appendLine(
+						'\nAbout to update your reach ' +
+						'script,'
+					);
+					outputChannel.appendLine(pathToScript);
+					outputChannel.append(
+						'and reach-cli Docker image... '
+					);
+					outputChannel.appendLine(
+						new Date().toLocaleTimeString()
+					);
 					UPDATE_SCRIPT_AND_CLI_IMAGE_USING(
 						pathToScript
 					);

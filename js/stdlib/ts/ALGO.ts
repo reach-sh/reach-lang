@@ -1240,7 +1240,7 @@ const getDeletedApplicationInfoM = async (id: number): Promise<OrExn<AppInfo>> =
   const dhead = 'getDeletedApplicationInfoM'
   const indexer = await getIndexer();
   const query = indexer.searchForTransactions()
-                       .txType('appl')
+                       // .txType('appl')
                        .applicationID(id)
                        .limit(1) as unknown as ApiCall<IndexerQueryMRes>;
   const queryRes = await doQueryM_(dhead, query);
@@ -1254,7 +1254,8 @@ const getDeletedApplicationInfoM = async (id: number): Promise<OrExn<AppInfo>> =
     const appTxn = txn['application-transaction'];
     debug(dhead, {appTxn});
 
-    if (appTxn === undefined
+    if (txn['tx-type'] !== 'appl'
+        || appTxn === undefined
         || txn['created-application-index'] !== BigInt(id)
         || appTxn['application-id'] !== BigInt(0)
         || appTxn['approval-program'] === undefined

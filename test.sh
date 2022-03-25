@@ -62,7 +62,7 @@ ci () {
   ${REACH} compile --install-pkgs
   ${REACH} compile --intermediate-files
   make build
-  REACH_DEBUG=Y REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=N REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 
@@ -132,6 +132,12 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
+c users/simple-staker/src/index.rsh
+exit 0
+
+ci ALGO rps-7-loops
+exit 0
+
 jb
 export REACH_CONNECTOR_MODE=ALGO
 export REACH_DEBUG=Y
@@ -143,9 +149,6 @@ rm -fr c2c/build
 cp -fr build c2c/build
 cd c2c
 ${REACH} run
-exit 0
-
-c users/simple-staker/src/index.rsh
 exit 0
 
 c users/algo-govt/index.rsh

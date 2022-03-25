@@ -109,11 +109,11 @@ packages:
     git: https://github.com/reach-sh/language-javascript.git
     pantry-tree:
       size: 3233
-      sha256: b54361ae29e0f32abb0286cbf3efbd5b97a0a3ff264713b8affa9e389aa45041
-    commit: bb807bd75fd45a8cce355f4be4bc413f9541e276
+      sha256: 90e2a4e8f79e764418c6735d02ff1239c71060ac682d646e676f7c54ed650efa
+    commit: f1b4cd7d4a6502c385c64a5d0c80ce325202a48d
   original:
     git: https://github.com/reach-sh/language-javascript.git
-    commit: bb807bd75fd45a8cce355f4be4bc413f9541e276
+    commit: f1b4cd7d4a6502c385c64a5d0c80ce325202a48d
 - completed:
     name: ormolu
     version: 0.1.4.1
