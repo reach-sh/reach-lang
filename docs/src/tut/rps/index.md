@@ -1832,9 +1832,7 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import { ALGO_MyAlgoConnect as MyAlgoConnect } from '@reach-sh/stdlib';
 const stdlib = loadStdlib();
 stdlib.setWalletFallback(stdlib.walletFallback({
-  MyAlgoConnect,
-  providerEnv: 'TestNet',
-}));
+  providerEnv: 'TestNet', MyAlgoConnect }));
 ```
 
 Or, you could have your users use [WalletConnect](https://walletconnect.com/) to connect to the [Algorand Wallet](https://algorandwallet.com/), by adding the following:
@@ -1843,8 +1841,7 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
 const stdlib = loadStdlib();
 stdlib.setWalletFallback(stdlib.walletFallback({
-  WalletConnect,
-  providerEnv: 'TestNet',
+  providerEnv: 'TestNet', WalletConnect }));
 }));
 ```
 
