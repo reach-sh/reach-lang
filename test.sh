@@ -37,7 +37,7 @@ jb () {
   jbi /js/stdlib
   jbi /js/runner
   #jbi /js/rpc-server
-  #jbi /js/react-runner
+  jbi /js/react-runner
   #jbi /js
 }
 
@@ -132,10 +132,7 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-c users/simple-staker/src/index.rsh
-exit 0
-
-ci ALGO rps-7-loops
+jb
 exit 0
 
 jb

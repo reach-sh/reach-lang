@@ -3,12 +3,8 @@ export {loadStdlib, unsafeAllowMultipleStdlibs} from './loader';
 export {getConnector, getConnectorMode} from './ConnectorMode';
 export * as rpc_server from './rpc_server';
 
-import MyAlgoConnect from './ALGO_MyAlgoConnect';
-import WalletConnect from './ALGO_WalletConnect';
+import ALGO_MyAlgoConnect from './ALGO_MyAlgoConnect';
+export { ALGO_MyAlgoConnect };
 
-export const wallets = {
-  ALGO: {
-    MyAlgoConnect,
-    WalletConnect,
-  },
-};
+import ALGO_WalletConnect from './ALGO_WalletConnect';
+export { ALGO_WalletConnect };
