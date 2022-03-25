@@ -760,9 +760,7 @@ By default, signing is via an interactive browser window prompt, where the user 
 If the key `MyAlgoConnect` is provided, and bound to the `ALGO_MyAlgoConnect` export of `@reach-sh/stdlib`, then [MyAlgo](https://wallet.myalgo.com/home) will be used for signing.
 For example, this sets the wallet fallback to be MyAlgo used with Algorand TestNet:
 ```js
-import { loadStdlib } from '@reach-sh/stdlib';
 import { ALGO_MyAlgoConnect as MyAlgoConnect } from '@reach-sh/stdlib';
-const stdlib = loadStdlib();
 stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', MyAlgoConnect }));
 ```
@@ -770,9 +768,7 @@ stdlib.setWalletFallback(stdlib.walletFallback({
 If the key `WalletConnect` is provided, and bound to the `ALGO_WalletConnect` export of `@reach-sh/stdlib`, then [WalletConnect](https://walletconnect.com/) is used to connect to the [Algorand Wallet](https://algorandwallet.com/) for signing.
 For example, this sets the wallet fallback to be WalletConnect and the Algorand TestNet:
 ```js
-import { loadStdlib } from '@reach-sh/stdlib';
 import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
-const stdlib = loadStdlib();
 stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', WalletConnect }));
 ```
