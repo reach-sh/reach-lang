@@ -11,10 +11,7 @@ or via the [the RPC server](##ref-backends-rpc) and one of the languages with an
 
 ## {#ref-frontends-js} JavaScript
 
-The Reach JavaScript standard library, @{ref("js", "stdlib")} `{!js} stdlib`, is provided by either
-+ the module `@reach-sh/stdlib/ETH.mjs`;
-+ the module `@reach-sh/stdlib/ALGO.mjs`;
-+ the `{!js} async` function `{!js} loadStdlib` from `@reach-sh/stdlib/loader.mjs`.
+The Reach JavaScript standard library, @{ref("js", "stdlib")} `{!js} stdlib`, is provided the `{!js} async` function `{!js} loadStdlib` from the `@reach-sh/stdlib` package.
 
 These modules are available in the [`@reach-sh/stdlib`](https://www.npmjs.com/package/@reach-sh/stdlib) [`npm`](https://www.npmjs.com/) package, which you can install via:
 
