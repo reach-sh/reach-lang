@@ -1,25 +1,27 @@
-# {#ref-qs} Installation and Setup
+# {#quickstart} Quickstart
 
 This quickstart guide outlines the step-by-step instructions for getting started with programming in Reach.
 You can install on the following operating systems:
 
-* [Windows](##ref-qs-win)
-* [Linux](##ref-qs-linux)
-* [MacOS](##ref-qs-mac)
+* [Windows](##qs-win)
+* [Linux](##qs-linux)
+* [MacOS](##qs-mac)
 
-# {#ref-qs-win} Windows
+If you have any issues running `reach`, please check the [Troubleshooting](##trouble) page for solutions.
+
+# {#qs-win} Windows
 
 Reach requires [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/install) and [Docker Desktop](https://www.docker.com/get-started) to be installed.
 
-## {#ref-qs-win-prereqs} Prerequisites
+## {#qs-win-prereqs} Prerequisites
 
 * Windows 10 installed with version 2004 or higher,
 
-  or
+or
 
 * Windows 11
 
-## {#ref-qs-win-install} Installation
+## {#qs-win-install} Installation
 
 Click the Windows icon, type `CMD`, and then click `Run as Administrator`.
 There are a number of commands that need to be run to get Windows ready for Reach.
@@ -69,16 +71,10 @@ Click `Resources` in the left-hand menu, and make sure that that `Enable integra
 Click the Ubuntu icon in the Windows Start-up menu to open the Ubuntu terminal.
 You will need to provide a `username` and `password` for Ubuntu.
 
-In the terminal, run the following to install `make`:
+In the terminal, run the following to install `make` and `curl`:
 
 ```cmd
-$ sudo apt install make
-```
-
-Next, run the following to allow `apt` to use repositories containing HTTPS:
-
-```cmd
-$ sudo apt install ca-certificates curl gnupg lsb-release
+$ sudo apt install make curl
 ```
 
 Create and navigate to the `reach` directory with the following command:
@@ -102,36 +98,37 @@ $ ./reach version
 You are now ready to start programming in Reach.
 Check out our [tutorials](##tuts) to get started.
 
-# {#ref-qs-linux} Linux
+# {#qs-linux} Linux
 
 Reach requires [make](https://en.wikipedia.org/wiki/Make_(software)), [Docker Engine](https://docs.docker.com/get-docker/), and [Docker Compose](https://docs.docker.com/compose/install/).
 
-## {#ref-qs-linux-prereqs} Prerequisites
+## {#qs-linux-prereqs} Prerequisites
 
-* A compatible version of Linux.
+* A version of Linux compatible with Docker.
 
-  We suggest using the most recent version of Ubuntu and all instructions are written for that system.
-  Check the [Docker Engine](https://docs.docker.com/engine/install/) page for supported distros. 
+Our instructions are written assuming you're using the most recent version of Ubuntu.
+Check the [Docker Engine](https://docs.docker.com/engine/install/) page for supported distros. 
 
-## {#ref-qs-linux-install} Installation
+## {#qs-linux-install} Installation for Ubuntu
 
 Follow the [Docker Engine](https://docs.docker.com/engine/install/) instructions for installing on your version of Linux.
-The following instructions assume that Ubuntu is the installed distro.
 Check the commands required for completing the tasks below for your distro.
+The following instructions, from
+[Docker](https://docs.docker.com/engine/install/ubuntu/) assume that Ubuntu is the installed distro.
 
 In the terminal, run the following to install `make`:
 
 ```cmd
-$ sudo apt install make
+$ sudo apt install make curl
 ```
 
 Next, run the following to allow `apt` to use repositories containing HTTPS:
 
 ```cmd
-$ sudo apt install ca-certificates curl gnupg lsb-release
+$ sudo apt install ca-certificates gnupg lsb-release
 ```
 
-Docker will be installed by adding a package repository from Docker, this requires updating your `apt` configuration:
+Docker will be installed by adding a package repository from Docker; this requires updating your `apt` configuration:
 
 ```cmd
 $ sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
@@ -143,6 +140,15 @@ And then, run:
 $ sudo echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \ $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 ```
 
+After this, run:
+
+```cmd
+$ sudo apt-get update
+$ sudo apt-get install docker-ce docker-ce-cli containerd.io
+```
+
+You may want to run the [post-installation steps for Linux](https://docs.docker.com/engine/install/linux-postinstall/) that Docker recommends.
+
 Create and navigate to the `reach` directory with the following command:
 
 ``` cmd
@@ -164,13 +170,13 @@ $ ./reach version
 You are now ready to start programming in Reach.
 Check out our [tutorials](##tuts) to get started.
 
-# {#ref-qs-mac} MacOS
+# {#qs-mac} MacOS
 
-Reach is compatible with current M1 chips and previous Intel chips running macOS 10.15 or newer. 
-Installation instructions should not differ regardless of the MacOS architecture. 
+Reach is compatible with M1 chips and Intel chips running macOS 10.15 or newer.
+Installation instructions should not differ regardless of the MacOS architecture.
 Reach requires installing [Docker](https://www.docker.com/get-started).
 
-## {#ref-qs-mac-install} Installation
+## {#qs-mac-install} Installation
 
 `make` should be preinstalled.
 Test this by opening `terminal` and running the following command:
@@ -190,22 +196,6 @@ $ docker-compose --version
 ```
 
 When it returns a version number, Reach is ready to be installed. 
-We recommend creating a parent directory named `reach` that will contain all of your Reach projects as subdirectories. i.e.
-
-```
-reach
-|   reach
-|
-└───tut
-|   |   index.rsh
-|   |   index.mjs
-|   
-└───project2
-|   |   index.rsh
-|   |   index.mjs
-│
-└───project3
-```
 
 Create and navigate to the `reach` directory with the following command:
 
@@ -228,4 +218,3 @@ $ ./reach version
 You are now ready to start programming in Reach.
 Check out our [tutorials](##tuts) to get started.
 
-If you have any issues running `reach`, please check the [Troubleshooting](##ref-ts) page for solutions.
