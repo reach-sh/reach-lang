@@ -610,6 +610,45 @@ async function getCodeActions(diagnostics: Diagnostic[], textDocument: TextDocum
 			suggestions.forEach(suggestion => {
 				codeActions.push(getQuickFix(diagnostic, labelPrefix + suggestion, range, suggestion, textDocument));
 			});
+		} else if (diagnostic.code === 'RE0002') {
+			// Grab the general starting area of
+			// the diagnostic.
+			const { start } = range;
+
+			// Then, start analyzing text from
+			// the *beginning* of the line
+			// containing the Diagnostic, since
+			// the Diagnostic may start in the
+			// middle of a declaration, i.e., it
+			// may not contain "let", especially
+			// if indented, like "	let ...".
+			start.character = 0;
+
+			const text = textDocument.getText(range);
+
+			// This edit does not handle all possible
+			// causes of RE0002! It only handles what
+			// I imagine could be a common error where
+			// developers assume "let" is a keyword.
+			const newText = text.replace('let', 'var');
+
+			if (newText !== text) {
+				const textEdit: TextEdit = {
+					newText, range,
+				};
+				const changes = {
+					[ textDocument.uri ]: [ textEdit ]
+				};
+				const edit: WorkspaceEdit = { changes };
+				const title = "Change 'let' to 'var'.";
+				const codeAction: CodeAction = {
+					diagnostics: [ diagnostic ],
+					edit,
+					kind: CodeActionKind.QuickFix,
+					title
+				};
+				codeActions.push(codeAction);
+			}
 		} else if (diagnostic.code === "RE0048") {
 			const title = "Add Reach program header.";
 
@@ -654,46 +693,6 @@ async function getCodeActions(diagnostics: Diagnostic[], textDocument: TextDocum
 				title
 			};
 			codeActions.push(codeAction);
-		} else if (diagnostic.code === "RE0002") {
-			// Grab the general starting area of
-			// the diagnostic.
-			const { start } = range;
-
-			// Then, start analyzing text from
-			// the *beginning* of the line
-			// containing the Diagnostic, since
-			// the Diagnostic may start in the
-			// middle of a declaration, i.e., it
-			// may not contain "let", especially
-			// if indented, like "	let ...".
-			start.character = 0;
-
-			const text = textDocument.getText(range);
-
-			// This edit does not handle all possible
-			// causes of RE0002! It only handles what
-			// I imagine could be a common error where
-			// developers assume "let" is a keyword.
-			const newText = text.replace("let", "var");
-			
-			if (newText !== text) {
-				const textEdit: TextEdit = {
-					newText,
-					range
-				};
-				const changes = {
-					[ textDocument.uri ]: [ textEdit ]
-				};
-				const edit: WorkspaceEdit = { changes };
-				const title = "Change 'let' to 'var'.";
-				const codeAction: CodeAction = {
-					edit,
-					diagnostics: [ diagnostic ],
-					kind: CodeActionKind.QuickFix,
-					title
-				};
-				codeActions.push(codeAction);
-			}
 		}
 	});
 
