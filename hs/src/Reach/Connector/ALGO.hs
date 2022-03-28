@@ -186,6 +186,29 @@ restrictGraph g n = do
   let removeDisconnected = M.filterWithKey onlyConnected
   return $ M.map removeDisconnected $ removeDisconnected g
 
+ensureAllPaths :: Ord a => LPGraph a b -> a -> a -> (b -> Integer) -> IO (Maybe [a])
+ensureAllPaths g s e getc = return $ checkFrom 0 mempty s
+  where
+    checkFrom t p l =
+      case l == e of
+        True ->
+          case t == 1 of
+            True -> Nothing
+            False -> Just p
+        False ->
+          checkChildren t (l : p) $ M.toAscList $ fromMaybe mempty $ M.lookup l g
+    checkChildren t p = \case
+      [] -> Nothing
+      (d, x) : xs -> checkEdges t p d (S.toAscList x) `cmb` checkChildren t p xs
+    checkEdges t p d = \case
+      [] -> Nothing
+      x : xs -> checkEdge t p d x `cmb` checkEdges t p d xs
+    checkEdge t p d (_cs, r) =
+      checkFrom (t + getc r) p d
+    cmb = \case
+      Just x -> const $ Just x
+      Nothing -> \x -> x
+
 aarray :: [Aeson.Value] -> Aeson.Value
 aarray = Aeson.Array . Vector.fromList
 
@@ -376,6 +399,7 @@ data TEAL
   | TLoad ScratchSlot LT.Text
   | TResource Resource
   | TCostCredit Integer
+  | TCheckOnCompletion
 
 type TEALt = [LT.Text]
 
@@ -415,6 +439,7 @@ render ilvlr = \case
   TLoad sl lab -> r ["load", texty sl, ("// " <> lab)]
   TResource rs -> r [("// resource: " <> texty rs)]
   TCostCredit i -> r [("// cost credit: " <> texty i)]
+  TCheckOnCompletion -> r [("// checked on completion")]
   where
     r l = do
       i <- readIORef ilvlr
@@ -477,6 +502,7 @@ opType = \case
   TLoad {} -> j [] [k]
   TResource {} -> eff
   TCostCredit {} -> eff
+  TCheckOnCompletion -> Nothing
   TCode o _ ->
     -- XXX Fill in this table
     case o of
@@ -674,6 +700,9 @@ buildCFG ts = do
     TCostCredit i -> do
       incBudget
       recCost i
+    TCheckOnCompletion -> do
+      recResource R_CheckedCompletion 1
+      recCost 0
     TCode f _ ->
       case f of
         "sha256" -> recCost 35
@@ -719,12 +748,16 @@ buildCFG ts = do
                   [(from, to, (M.fromList $ [("label", renderCalls cls <> renderRc c)]))]
   g <- readIORef res_gr
   let getc rs c = fromMaybe 0 $ M.lookup rs c
+  let lBots = l2s lBot
   let restrict mustLab = do
         g' <- restrictGraph g $ l2s mustLab
-        let lBots = l2s lBot
         let analyzeCFG = longestPathBetween g' lTop lBots . getc
         let budgetCFG = budgetAnalyze g' lTop lBots (flip getc)
         return $ (gs g', analyzeCFG, budgetCFG)
+  ensureAllPaths g lTop lBots (getc R_CheckedCompletion) >>= \case
+    Nothing -> return ()
+    Just p ->
+      impossible $ "found a path where OnCompletion was not checked: " <> show p
   return (gs g, restrict)
 
 data LabelRec = LabelRec
@@ -895,10 +928,11 @@ data Resource
   | R_Cost
   | R_ITxn
   | R_Txn
+  | R_CheckedCompletion
   deriving (Eq, Ord, Enum, Bounded, Show)
 
 allResources :: [Resource]
-allResources = enumerate
+allResources = enumerate List.\\ [ R_CheckedCompletion ]
 
 allResourcesM :: M.Map Resource ()
 allResourcesM = M.fromList $ map (flip (,) ()) allResources
@@ -924,6 +958,7 @@ rLabel ph = \case
   R_Cost -> p "unit" <> " of cost"
   R_Log -> p "byte" <> " of logs"
   R_LogCalls -> "log " <> p "call"
+  R_CheckedCompletion -> p "completion" <> " checked"
   where
     p = plural ph
 
@@ -938,6 +973,7 @@ rPrecise = \case
   R_Cost -> True
   R_Log -> True
   R_LogCalls -> True
+  R_CheckedCompletion -> True
 
 maxOf :: Resource -> Integer
 maxOf = \case
@@ -950,6 +986,7 @@ maxOf = \case
   R_Cost -> impossible "cost"
   R_Log -> algoMaxLogLen
   R_LogCalls -> algoMaxLogCalls
+  R_CheckedCompletion -> 1
 
 newResources :: IO ResourceSets
 newResources = newIORef $ mempty
@@ -3154,6 +3191,7 @@ compile_algo env disp pl = do
       output $ TConst "OptIn"
       op "=="
       code "bz" ["normal"]
+      output $ TCheckOnCompletion
       code "txn" ["Sender"]
       cMapStore at $ do
         padding eMapDataSize
@@ -3199,6 +3237,7 @@ compile_algo env disp pl = do
     code "txn" ["OnCompletion"]
     output $ TConst $ "DeleteApplication"
     asserteq
+    output $ TCheckOnCompletion
     callCompanion at $ CompanionDelete
     do
       let mt_at = at
@@ -3215,6 +3254,7 @@ compile_algo env disp pl = do
     code "txn" ["OnCompletion"]
     output $ TConst $ "NoOp"
     asserteq
+    output $ TCheckOnCompletion
     code "b" ["updateState"]
     label "updateState"
     cbs keyState
@@ -3258,6 +3298,7 @@ compile_algo env disp pl = do
     code "txn" ["OnCompletion"]
     output $ TConst "NoOp"
     asserteq
+    output $ TCheckOnCompletion
     code "b" [ "apiReturn_noCheck" ]
     label "alloc"
     forM_ keyState_gvs $ \gv -> do
