@@ -180,25 +180,66 @@ function associateRshFiles() {
 }
 
 function injectRshFileAssocation() {
-	const settingsFile:string = `${rootFolder}${path.sep}.vscode/settings.json`;
+	const pathToSettingsFile: string = `${
+		rootFolder
+	}${path.sep}.vscode/settings.json`;
 
-	fs.readFile(settingsFile, function (err: any, content: string) {
-		let parseJson: { [x: string]: { [x: string]: string; }; };
+	console.info('The path to the settings file is');
+	console.info(pathToSettingsFile);
+
+	fs.readFile(pathToSettingsFile, function (
+		err: any, content: string
+	) {
+		let parseJson: {
+			[x: string]: boolean | {
+				[x: string]: string;
+			};
+		};
+
 		try {
 			parseJson = JSON.parse(content);
 		} catch {
 			parseJson = {};
 		}
+		console.info('parseJson', parseJson);
+
 		let fileAssoc = parseJson['files.associations'];
 		if (fileAssoc === undefined) {
-			parseJson['files.associations'] = { '*.rsh': 'javascript' };
+			parseJson['files.associations'] = {
+				'*.rsh': 'javascript'
+			};
 		} else {
-			parseJson['files.associations']['*.rsh'] = 'javascript';
+			parseJson['files.associations']['*.rsh'] =
+				'javascript';
 		}
-		fs.writeFile(settingsFile, JSON.stringify(parseJson), function (err: any) {
+
+		let completeFunctionCalls = parseJson[
+			'javascript.suggest.completeFunctionCalls'
+		];
+		if (completeFunctionCalls !== undefined) {
+			// Respect users' preferences.
+			// If they already have this setting,
+			// don't modify it.
+		} else {
+			parseJson[
+				'javascript.suggest.completeFunctionCalls'
+			] = true;
+		}
+
+		fs.writeFile(pathToSettingsFile, JSON.stringify(
+			parseJson, null, 4
+		), function (err: any) {
 			if (err) {
-				console.error(`Could not create .vscode/settings.json: ${err}`);
+				console.error(
+					'Could not create ' +
+					'.vscode/settings.json' +
+					`: ${err}`
+				);
 				return;
+			} else {
+				console.info('Wrote to');
+				console.info(pathToSettingsFile);
+				console.info('successfully!');
 			}
 		});
 	});
