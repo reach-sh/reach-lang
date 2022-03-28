@@ -380,6 +380,7 @@ const addressEq = mkAddressEq(T_Address);
 const digestEq = shared_backend.eq;
 const digest_xor = shared_backend.digest_xor;
 const bytes_xor = shared_backend.bytes_xor;
+const btoiLast8 = shared_backend.btoiLast8;
 
 const T_Token = T_Address;
 const tokenEq = addressEq;
@@ -413,6 +414,7 @@ const stdlib: Stdlib_Backend_Base<AnyETH_Ty> = {
   digestEq,
   digest_xor,
   bytes_xor,
+  btoiLast8,
   tokenEq,
   digest,
   UInt_max,

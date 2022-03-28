@@ -594,9 +594,10 @@ Numeric operations, like `{!rsh} +` and `{!rsh} >`, only operate on numbers.
 Since all numbers in Reach are integers, operations like `{!rsh} /` truncate their result.
 Boolean operations, like `{!rsh} &&`, only operate on booleans.
 `{!rsh} xor` operates on `{!rsh} UInt`s, `{!rsh} Bool`s, `{!rsh} Digest`s, and `{!rsh} Bytes` of the same length.
+`{!rsh} polyMod` operates on `{!rsh} UInt`s. The first argument may be a `{!rsh} Digest` or `{!rsh} Bytes` of at least 8 length.
 It is invalid to use binary operations on the wrong types of values.
 
-@{ref("rsh", "and")}@{ref("rsh", "or")}@{ref("rsh", "xor")}@{ref("rsh", "add")}@{ref("rsh", "sub")}@{ref("rsh", "mul")}@{ref("rsh", "div")}@{ref("rsh", "mod")}@{ref("rsh", "eq")}@{ref("rsh", "lt")}@{ref("rsh", "le")}@{ref("rsh", "ge")}@{ref("rsh", "gt")}@{ref("rsh", "lsh")}@{ref("rsh", "rsh")}@{ref("rsh", "band")}@{ref("rsh", "bior")}@{ref("rsh", "bxor")}@{ref("rsh", "polyEq")}@{ref("rsh", "polyNeq")}
+@{ref("rsh", "and")}@{ref("rsh", "or")}@{ref("rsh", "xor")}@{ref("rsh", "add")}@{ref("rsh", "sub")}@{ref("rsh", "mul")}@{ref("rsh", "div")}@{ref("rsh", "mod")}@{ref("rsh", "polyMod")}@{ref("rsh", "eq")}@{ref("rsh", "lt")}@{ref("rsh", "le")}@{ref("rsh", "ge")}@{ref("rsh", "gt")}@{ref("rsh", "lsh")}@{ref("rsh", "rsh")}@{ref("rsh", "band")}@{ref("rsh", "bior")}@{ref("rsh", "bxor")}@{ref("rsh", "polyEq")}@{ref("rsh", "polyNeq")}
 ```reach
 and(a, b)     // &&
 or(a, b)      // ||
@@ -605,7 +606,7 @@ add(a, b)     // +
 sub(a, b)     // -
 mul(a, b)     // *
 div(a, b)     // /
-mod(a, b)     // %
+polyMod(a, b) // %
 eq(a, b)      // ==
 lt(a, b)      // <
 le(a, b)      // <=

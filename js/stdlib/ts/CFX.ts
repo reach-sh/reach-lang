@@ -59,5 +59,5 @@ export const {
   setCustomHttpEventHandler,
   setSigningMonitor,
 } = ethLike;
-export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq, digest_xor, bytes_xor } = reachStdlib;
+export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq, digest_xor, bytes_xor, btoiLast8 } = reachStdlib;
 export * from './shared_user';

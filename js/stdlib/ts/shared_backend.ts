@@ -158,6 +158,18 @@ export const bytes_xor = (x: string, y: string): string => {
   return String.fromCharCode(...xors);
 }
 
+export const btoiLast8 = (b: string): BigNumber => {
+  if (b.length < 8) {
+    throw Error('btoiLast8: Bytes too short!');
+  }
+  const bb = Buffer.from(b);
+  let res = bigNumberify(0);
+  for (let i = b.length - 8; i < b.length; i++) {
+    res = res.mul(256).add(bb[i]);
+  }
+  return res;
+}
+
 export function Array_set <T>(arr: Array<T>, idx: number, elem: T): Array<T> {
   const arrp = arr.slice();
   arrp[idx] = elem;

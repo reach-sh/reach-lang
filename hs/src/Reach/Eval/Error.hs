@@ -159,6 +159,7 @@ data EvalError
   | Err_InvalidPaySpec
   | Err_LoopVariableLength SrcLoc
   | Err_xor_Types DLType DLType
+  | Err_mod_Types DLType DLType
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -299,6 +300,7 @@ instance HasErrorCode EvalError where
     Err_InvalidPaySpec {} -> 127
     Err_LoopVariableLength {} -> 128
     Err_xor_Types {} -> 129
+    Err_mod_Types {} -> 129
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -744,6 +746,8 @@ instance Show EvalError where
       "Cannot assign the loop variable(s) to a `Tuple` of different length at: " <> show at
     Err_xor_Types l r ->
       "^ expects arguments of either UInt, Bool, Digest, or Bytes of the same length, but received: " <> show l <> " and " <> show r
+    Err_mod_Types l r ->
+      "% expects a first argument of type UInt, Digest, or Bytes(>8) and a second argument of UInt, but received: " <> show l <> " and " <> show r
     Err_ApiCallAssign ->
       "The left hand side of an API call must be a pair consisting of the domain and return function."
     where

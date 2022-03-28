@@ -569,6 +569,7 @@ base_env_slvals =
   , ("polyEq", SLV_Prim $ SLPrim_op PEQ)
   , ("polyNeq", SLV_Prim $ SLPrim_polyNeq)
   , ("xor", SLV_Prim $ SLPrim_xor)
+  , ("polyMod", SLV_Prim $ SLPrim_mod)
   , ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
   , ("addressEq", SLV_Prim $ SLPrim_op ADDRESS_EQ)
   , ("isType", SLV_Prim SLPrim_is_type)
@@ -1066,7 +1067,7 @@ binaryToPrim = \case
   JSBinOpLe a -> prim a PLE
   JSBinOpLt a -> prim a PLT
   JSBinOpMinus a -> prim a SUB
-  JSBinOpMod a -> prim a MOD
+  JSBinOpMod a -> fun a "polyMod" "%"
   JSBinOpNeq a -> fun a "polyNeq" "!="
   JSBinOpOr _ -> impossible "or"
   JSBinOpPlus a -> prim a ADD
@@ -2007,6 +2008,12 @@ evalPrimOp p sargs = do
           (lhs_l, lhs_ae) <- typeOfBytes lhs
           let rng = T_Bytes $ lhs_l + xtra
           make_var_ rng [lhs_ae]
+        _ -> expect_ $ Err_Apply_ArgCount at 1 (length args)
+    BTOI_LAST8 ->
+      case args of
+        [b] -> do
+          (_, bae) <- typeOfBytes b
+          make_var_ T_UInt [bae]
         _ -> expect_ $ Err_Apply_ArgCount at 1 (length args)
     ADD ->
       case args of
@@ -3463,6 +3470,17 @@ evalPrim p sargs =
         (l, r) -> expect_ $ Err_xor_Types l r
       where
         prim = flip evalPrimOp sargs
+    SLPrim_mod -> do
+      (x, y) <- two_args
+      (x_ty, _) <- compileTypeOf x
+      (y_ty, _) <- compileTypeOf y
+      case (x_ty, y_ty) of
+        (T_UInt, T_UInt) -> evalPrimOp MOD sargs
+        (T_Bytes sz, T_UInt)
+          | sz >= 8 -> do
+            bi <- evalPrimOp BTOI_LAST8 [public x]
+            evalPrimOp MOD [bi, public y]
+        (l, r) -> expect_ $ Err_mod_Types l r
     -- END OF evalPrim case
   where
     lvl = mconcatMap fst sargs

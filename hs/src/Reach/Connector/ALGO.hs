@@ -1321,6 +1321,13 @@ cprim = \case
   DIGEST_EQ -> call "=="
   ADDRESS_EQ -> call "=="
   TOKEN_EQ -> call "=="
+  BTOI_LAST8 -> \case
+    [x] -> do
+      let len = fromIntegral $ bytesTypeLen $ argTypeOf x
+      ca x
+      output $ TExtract (len - 8) 8
+      op "btoi"
+    _ -> impossible "btoiLast8"
   BYTES_ZPAD xtra -> \case
     [x] -> do
       ca x

@@ -333,6 +333,7 @@ data PrimOp
   | MUL_DIV
   | DIGEST_XOR
   | BYTES_XOR
+  | BTOI_LAST8
   deriving (Eq, Generic, NFData, Ord, Show)
 
 instance Pretty PrimOp where
@@ -361,6 +362,7 @@ instance Pretty PrimOp where
     MUL_DIV -> "muldiv"
     DIGEST_XOR -> "digest_xor"
     BYTES_XOR -> "bytes_xor"
+    BTOI_LAST8 -> "btoiLast8"
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)

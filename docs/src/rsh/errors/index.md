@@ -2298,6 +2298,12 @@ This error indicates that you are attempting to perform an `{!rsh} xor` operatio
 
 Refer to the `{!rsh} xor` documentation to see what types are supported.
 
+## {#RE0130} RE0130
+
+This error indicates that you are attempting to perform a `{!rsh} mod` operation on an unsupported type.
+
+Refer to the `{!rsh} polyMod` documentation to see what types are supported.
+
 ## {#REP0000} REP0000
 
 This error indicates that the body of a `{!rsh} while` loop does not make a publication before the `{!rsh} continue`
