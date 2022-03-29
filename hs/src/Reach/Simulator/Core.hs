@@ -39,6 +39,8 @@ type APID = Integer
 
 type VID = Integer
 
+type APIFlag = Bool
+
 consensusId :: ActorId
 consensusId = -1
 
@@ -58,11 +60,12 @@ type Ledger = M.Map Account Wallet
 data Message = Message
   { m_store :: Store
   , m_pay :: DLPayAmt
+  , m_api :: Bool
   }
   deriving (Show, Generic)
 
 instance ToJSON Message where
-  toJSON (Message _ _) = "Message"
+  toJSON (Message _ _ _) = "Message"
 
 data MessageInfo = NotFixedYet (M.Map ActorId Message) | Fixed (ActorId, Message)
   deriving (Show, Generic)
@@ -73,6 +76,7 @@ data ReachAPI = ReachAPI
   { a_name :: String
   , a_liv :: InteractEnv
   , a_val :: Maybe DLVal
+  , a_acc :: Account
   }
   deriving (Show, Generic)
 
@@ -326,11 +330,11 @@ addToStore x v = do
       let lst' = lst {l_store = M.insert x v st}
       setLocal $ l {l_locals = M.insert aid lst' locals}
 
-fixMessageInRecord :: PhaseId -> ActorId -> Store -> DLPayAmt -> App ()
-fixMessageInRecord phId actId sto pay = do
+fixMessageInRecord :: PhaseId -> ActorId -> Store -> DLPayAmt -> Bool -> App ()
+fixMessageInRecord phId actId sto pay apiFlag = do
   (g, _) <- getState
   let msgs = e_messages g
-  let msgs' = M.insert phId (Fixed (actId, Message {m_store = sto, m_pay = pay})) msgs
+  let msgs' = M.insert phId (Fixed (actId, Message {m_store = sto, m_pay = pay, m_api = apiFlag})) msgs
   setGlobal $ g {e_messages = msgs'}
 
 incrNWtime :: Integer -> App ()
@@ -702,15 +706,18 @@ instance Interp DLStmt where
           let slname = bunpack slpart
           case who == Participant slname of
             False -> do
-              g <- getGlobal
-              let apiObs = e_apis g
-              let apis = M.fromList $ map (\(a,b) -> (a_name b, a)) $ M.toList apiObs
-              case M.lookup slname apis of
-                Nothing -> return V_Null
-                Just i -> do
-                  case a_val =<< (M.lookup i apiObs) of
+              case who == Consensus of
+                False -> return V_Null
+                True -> do
+                  g <- getGlobal
+                  let apiObs = e_apis g
+                  let apis = M.fromList $ map (\(a,b) -> (a_name b, a)) $ M.toList apiObs
+                  case M.lookup slname apis of
                     Nothing -> return V_Null
-                    Just _ -> interp dltail
+                    Just i -> do
+                      case a_val =<< (M.lookup i apiObs) of
+                        Nothing -> return V_Null
+                        Just _ -> interp dltail
             True -> interp dltail
         _ -> impossible "DL_Only: unexpected error (Right)"
     DL_MapReduce _at _int var1 dlmvar arg var2 var3 block -> do
@@ -815,19 +822,17 @@ instance Interp LLStep where
                   case msgs' of
                     NotFixedYet _msgs'' -> do
                       _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
-                      (actId',_) <- poll phId
-                      runWithWinner dlr actId' phId
-                    Fixed (actId', _msg) -> do
-                      runWithWinner dlr actId' phId
+                      runWithWinner dlr phId
+                    Fixed _ -> do
+                      runWithWinner dlr phId
                 Just dls -> do
                   case msgs' of
                     NotFixedYet msgs'' -> do
-                      _ <- placeMsg dls dlr phId (fromIntegral actId) msgs''
+                      _ <- placeMsg dls dlr phId (fromIntegral actId) msgs'' False
                       _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
-                      (actId',_) <- poll phId
-                      runWithWinner dlr actId' phId
-                    Fixed (actId', _msg) -> do
-                      runWithWinner dlr actId' phId
+                      runWithWinner dlr phId
+                    Fixed _ -> do
+                      runWithWinner dlr phId
             Consensus -> do
               v <- suspend $ PS_Suspend (Just at) (A_TieBreak phId $ M.keys sends)
               case v of
@@ -847,54 +852,57 @@ instance Interp LLStep where
                       case (\(who) -> M.lookup who sends) =<< a_name <$> (M.lookup actId' apiObs) of
                         Nothing -> possible "API DLSend not found"
                         Just dls -> do
-                          placeMsg dls dlr phId (fromIntegral actId') mempty
+                          placeMsg dls dlr phId (fromIntegral actId') mempty True
                     False -> saferMaybe ("Phase not yet seen") <$> M.lookup phId <$> e_messages <$> getGlobal
                   let msgs = unfixedMsgs $ m'
                   let winningMsg = saferMaybe ("Message not yet seen") $ M.lookup (fromIntegral actId') msgs
-                  _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg) (m_pay winningMsg)
-                  winner dlr (fromIntegral actId') phId apiFlag
+                  _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg) (m_pay winningMsg) apiFlag
+                  winner dlr phId
                   interp $ dr_k
                 _ -> possible "expected V_Data value"
 
-placeMsg :: DLSend -> DLRecv a -> PhaseId -> ActorId -> (M.Map ActorId Message) -> App MessageInfo
-placeMsg (DLSend {..}) (DLRecv {..}) phId actId priors = do
+placeMsg :: DLSend -> DLRecv a -> PhaseId -> ActorId -> (M.Map ActorId Message) -> Bool -> App MessageInfo
+placeMsg (DLSend {..}) (DLRecv {..}) phId actId priors apiFlag = do
   g <- getGlobal
   ds_msg' <- mapM interp ds_msg
   let sto = M.fromList $ zip dr_msg ds_msg'
-  let m = Message {m_store = sto, m_pay = ds_pay}
+  let m = Message {m_store = sto, m_pay = ds_pay, m_api = apiFlag}
   let m' = NotFixedYet $ M.insert actId m priors
   let m'' = M.insert phId m' (e_messages g)
   g' <- getGlobal
   setGlobal g' { e_messages = m'' }
   return m'
 
-poll :: PhaseId -> App (ActorId, Store)
+poll :: PhaseId -> App (ActorId, APIFlag, Store)
 poll phId = do
   (g, l) <- getState
   who <- show <$> whoIs (l_curr_actor_id l)
   return $ fixedMsg $ saferMaybe ("early poll for " <> who) $ M.lookup phId $ e_messages g
 
-runWithWinner :: DLRecv LLConsensus -> ActorId -> PhaseId -> App DLVal
-runWithWinner dlr actId phId = do
-  winner dlr actId phId False
+runWithWinner :: DLRecv LLConsensus -> PhaseId -> App DLVal
+runWithWinner dlr phId = do
+  winner dlr phId
   interp $ (dr_k dlr)
 
-winner :: DLRecv LLConsensus -> ActorId -> PhaseId -> Bool -> App ()
-winner dlr actId phId b = do
+winner :: DLRecv LLConsensus -> PhaseId -> App ()
+winner dlr phId = do
   g <- getGlobal
-  let (_, winningMsg) = fixedMsg $ saferMaybe "winner" $ M.lookup phId $ e_messages g
+  let (actId, apiFlag, winningMsg) = fixedMsg $ saferMaybe "winner" $ M.lookup phId $ e_messages g
   let (xs, vs) = unzip $ M.toAscList winningMsg
   _ <- zipWithM addToStore xs vs
-  accId <- case b of
+  accId <- case apiFlag of
     False -> getAccId actId
-    True -> return $ simContract
+    True -> do
+      let apis = e_apis g
+      return $ a_acc $ saferMaybe "api winner" $ M.lookup (fromIntegral actId) apis
   bindConsensusMeta dlr actId accId
 
 getAccId :: ActorId -> App Account
 getAccId actId = do
   l <- getLocal
   let locals = l_locals l
-  let lclsv = saferMaybe "getAccId" $ M.lookup (fromIntegral actId) locals
+  let caid = l_curr_actor_id l
+  let lclsv = saferMaybe ("getAccId: couldn't find actorId: " <> show actId <> ", caid: " <> show caid) $ M.lookup (fromIntegral actId) locals
   return $ fromIntegral $ l_acct lclsv
 
 getPhaseId :: ActorId -> App PhaseId
@@ -1042,11 +1050,16 @@ registerAPI :: State -> String -> InteractEnv -> State
 registerAPI (g, l) s iv = do
   let apid = e_napid g
   let apis = e_apis g
-  let a = ReachAPI { a_name = s, a_liv = iv, a_val = Nothing }
+  let aid = e_naccid g
+  let ledger = e_ledger g
+  let ledger' = M.insert (fromIntegral aid) (M.singleton nwToken simContractAmt) ledger
+  let a = ReachAPI { a_name = s, a_liv = iv, a_val = Nothing, a_acc = aid }
   let g' =
         g
           { e_apis = M.insert apid a apis
           , e_napid = apid + 1
+          , e_naccid = aid + 1
+          , e_ledger = ledger'
           }
   (g', l)
 
@@ -1101,8 +1114,8 @@ unfixedMsgs :: G.HasCallStack => MessageInfo -> M.Map ActorId Message
 unfixedMsgs (NotFixedYet m) = m
 unfixedMsgs _ = possible "unexpected error: expected unfixed message"
 
-fixedMsg :: G.HasCallStack => MessageInfo -> (ActorId, Store)
-fixedMsg (Fixed (a, m)) = (a, m_store m)
+fixedMsg :: G.HasCallStack => MessageInfo -> (ActorId, APIFlag, Store)
+fixedMsg (Fixed (a, m)) = (a, m_api m, m_store m)
 fixedMsg _ = possible "unexpected error: expected fixed message"
 
 whoAmI :: App SimIdentity
