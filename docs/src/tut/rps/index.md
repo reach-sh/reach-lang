@@ -1826,12 +1826,12 @@ If you add the following to your program, then you can provide a simple wallet w
 reach.setWalletFallback(reach.walletFallback({}));
 ```
 
-Instead, if you would like to allow your users to use [MyAlgo](https://wallet.myalgo.com/home), then you can add the following:
+Instead, if you would like to allow your users to use [My Algo](https://wallet.myalgo.com/home), then you can add the following:
 ```js
-import { loadStdlib } from '@reach-sh/stdlib';
-import { ALGO_MyAlgoConnect as MyAlgoConnect } from '@reach-sh/stdlib';
-const stdlib = loadStdlib();
-stdlib.setWalletFallback(stdlib.walletFallback({
+import { loadStdlib, wallets } from '@reach-sh/stdlib';
+const reach = loadStdlib('ALGO');
+const { MyAlgoConnect } = wallets.ALGO;
+reach.setWalletFallback(reach.walletFallback({
   MyAlgoConnect,
   providerEnv: 'TestNet',
 }));
@@ -1839,12 +1839,12 @@ stdlib.setWalletFallback(stdlib.walletFallback({
 
 Or, you could have your users use [WalletConnect](https://walletconnect.com/) to connect to the [Algorand Wallet](https://algorandwallet.com/), by adding the following:
 ```js
-import { loadStdlib } from '@reach-sh/stdlib';
-import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
-const stdlib = loadStdlib();
-stdlib.setWalletFallback(stdlib.walletFallback({
-  WalletConnect,
+import { loadStdlib, wallets } from '@reach-sh/stdlib';
+const reach = loadStdlib('ALGO');
+const { WalletConnect } = wallets.ALGO;
+reach.setWalletFallback(reach.walletFallback({
   providerEnv: 'TestNet',
+  WalletConnect,
 }));
 ```
 

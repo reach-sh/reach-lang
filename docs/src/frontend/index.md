@@ -757,27 +757,27 @@ On Algorand, it can provide a wallet that directly connects to the Algorand netw
 The network connection is specified via the `providerEnv` key, which may be a string (which is used as an argument to `{!js} providerEnvByName`) or an environment (which is used as an argument to `{!js} setProviderByEnv`).
 By default, signing is via an interactive browser window prompt, where the user repeatedly provides their mnemonic.
 
-If the key `MyAlgoConnect` is provided, and bound to the `ALGO_MyAlgoConnect` export of `@reach-sh/stdlib`, then [MyAlgo](https://wallet.myalgo.com/home) will be used for signing.
-For example, this sets the wallet fallback to be MyAlgo used with Algorand TestNet:
+If the key `MyAlgoConnect` is provided, and bound to the `wallets.ALGO.MyAlgoConnect` export of `@reach-sh/stdlib`, then [My Algo](https://wallet.myalgo.com/home) will be used for signing.
+For example, this sets the wallet fallback to be My Algo used with Algorand TestNet:
 ```js
-import { loadStdlib } from '@reach-sh/stdlib';
-import { ALGO_MyAlgoConnect as MyAlgoConnect } from '@reach-sh/stdlib';
-const stdlib = loadStdlib();
-stdlib.setWalletFallback(stdlib.walletFallback({
+import { loadStdlib, wallets } from '@reach-sh/stdlib';
+const reach = loadStdlib('ALGO');
+const { MyAlgoConnect } = wallets.ALGO;
+reach.setWalletFallback(reach.walletFallback({
   MyAlgoConnect,
   providerEnv: 'TestNet',
 }));
 ```
 
-If the key `WalletConnect` is provided, and bound to the `ALGO_WalletConnect` export of `@reach-sh/stdlib`, then [WalletConnect](https://walletconnect.com/) is used to connect to the [Algorand Wallet](https://algorandwallet.com/) for signing.
+If the key `WalletConnect` is provided, and bound to the `wallets.ALGO.WalletConnect` export of `@reach-sh/stdlib`, then [WalletConnect](https://walletconnect.com/) is used to connect to the [Algorand Wallet](https://algorandwallet.com/) for signing.
 For example, this sets the wallet fallback to be WalletConnect and the Algorand TestNet:
 ```js
-import { loadStdlib } from '@reach-sh/stdlib';
-import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
-const stdlib = loadStdlib();
-stdlib.setWalletFallback(stdlib.walletFallback({
-  WalletConnect,
+import { loadStdlib, wallets } from '@reach-sh/stdlib';
+const reach = loadStdlib('ALGO');
+const { WalletConnect } = wallets.ALGO;
+reach.setWalletFallback(reach.walletFallback({
   providerEnv: 'TestNet',
+  WalletConnect,
 }));
 ```
 
