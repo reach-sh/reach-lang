@@ -331,10 +331,10 @@ addToStore x v = do
       setLocal $ l {l_locals = M.insert aid lst' locals}
 
 fixMessageInRecord :: PhaseId -> ActorId -> Store -> DLPayAmt -> Bool -> App ()
-fixMessageInRecord phId actId sto pay apiFlag = do
+fixMessageInRecord phId actId m_store m_pay m_api = do
   (g, _) <- getState
   let msgs = e_messages g
-  let msgs' = M.insert phId (Fixed (actId, Message {m_store = sto, m_pay = pay, m_api = apiFlag})) msgs
+  let msgs' = M.insert phId (Fixed (actId, Message {..})) msgs
   setGlobal $ g {e_messages = msgs'}
 
 incrNWtime :: Integer -> App ()
@@ -862,11 +862,12 @@ instance Interp LLStep where
                 _ -> possible "expected V_Data value"
 
 placeMsg :: DLSend -> DLRecv a -> PhaseId -> ActorId -> (M.Map ActorId Message) -> Bool -> App MessageInfo
-placeMsg (DLSend {..}) (DLRecv {..}) phId actId priors apiFlag = do
+placeMsg (DLSend {..}) (DLRecv {..}) phId actId priors m_api = do
   g <- getGlobal
   ds_msg' <- mapM interp ds_msg
-  let sto = M.fromList $ zip dr_msg ds_msg'
-  let m = Message {m_store = sto, m_pay = ds_pay, m_api = apiFlag}
+  let m_store = M.fromList $ zip dr_msg ds_msg'
+  let m_pay = ds_pay
+  let m = Message {..}
   let m' = NotFixedYet $ M.insert actId m priors
   let m'' = M.insert phId m' (e_messages g)
   g' <- getGlobal
@@ -983,18 +984,19 @@ registerViews ((sl, ((slv,ty) : vars)) : vs) = do
   registerViews vs
 
 registerView :: State -> Maybe String -> SLVar -> IType -> State
-registerView (g, l) s slv ty = do
+registerView (g, l) v_name v_var v_ty = do
   let views = e_views g
   let viewids = e_viewids g
   let vid = e_nvid g
-  let v = ReachView { v_name = s, v_var = slv, v_bl = Nothing, v_ty = ty }
-  let pName = case s of
+  let v_bl = Nothing
+  let v = ReachView {..}
+  let pName = case v_name of
         Nothing -> ""
         Just p -> p
   let g' =
         g
           { e_views = M.insert vid v views
-          , e_viewids = M.insert (pName <> slv) vid viewids
+          , e_viewids = M.insert (pName <> v_var) vid viewids
           , e_nvid = vid + 1
           }
   (g', l)
@@ -1047,18 +1049,19 @@ registerAPIs ((p, iv) : ps) = do
   registerAPIs ps
 
 registerAPI :: State -> String -> InteractEnv -> State
-registerAPI (g, l) s iv = do
+registerAPI (g, l) a_name a_liv = do
   let apid = e_napid g
   let apis = e_apis g
-  let aid = e_naccid g
+  let a_acc = e_naccid g
+  let a_val = Nothing
   let ledger = e_ledger g
-  let ledger' = M.insert (fromIntegral aid) (M.singleton nwToken simContractAmt) ledger
-  let a = ReachAPI { a_name = s, a_liv = iv, a_val = Nothing, a_acc = aid }
+  let ledger' = M.insert (fromIntegral a_acc) (M.singleton nwToken simContractAmt) ledger
+  let a = ReachAPI {..}
   let g' =
         g
           { e_apis = M.insert apid a apis
           , e_napid = apid + 1
-          , e_naccid = aid + 1
+          , e_naccid = a_acc + 1
           , e_ledger = ledger'
           }
   (g', l)
