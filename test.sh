@@ -132,7 +132,7 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-c examples/view-map/index.rsh
+c examples/rps-7-loops/index.rsh
 exit 0
 
 jb
