@@ -2,72 +2,46 @@
 'use strict';
 
 export const main = Reach.App(() => {
-  const Creator = Participant('Creator', {
-    transferTo: Fun([], Address),
+  const C = Participant('Creator', {
+    firstHeir: Address,
+    ready: Fun([], Null),
   });
-  const Owner = ParticipantClass('Owner', {
-    notifyReceive: Fun([], Null),
-    notifyRenewNeeded: Fun([], Null),
-    notifyRenewSuccess: Fun([], Null),
-    notifyRenewFail: Fun([], Null),
+  const O = API('Owner', {
+    ping: Fun([], Null),
+    setNextHeir: Fun([Address], Null)
   });
-  const vNFT = View('NFT', { owner: Address });
-
   init();
 
-  Creator.publish();
+  C.only(() => {
+    const firstHeir = declassify(interact.firstHeir);
+    assume(this != firstHeir);
+  });
+  C.publish(firstHeir);
+  check(this != firstHeir);
 
-  // const ownerOnly = (currentOwner, fn) =>
-  //   Owner.only(() => { if (this == currentOwner) { fn(interact); } });
+  C.interact.ready();
 
-  var owner = Creator;
-  invariant(true);
-  while (true) {
-    vNFT.owner.set(owner);
-
-    if (owner == Creator) {
-      // Creator has the NFT
-      // Either the contract is brand new or the dead man's switch has triggered
-      commit();
-
-      // Creator gives the NFT to someone else to arm the switch
-      Creator.only(() => {
-        const recipient = declassify(interact.transferTo());
-      });
-      Creator.publish(recipient);
-
-      Owner.only(() => { if (this == recipient) { interact.notifyReceive(); } })
-
-      owner = recipient;
-      continue;
-    } else {
-      // Someone other than the owner has the NFT
-      commit();
-
-      // The owner is 'safe' for 3 seconds
-      wait(relativeSecs(3));
-      
-      // The owner must renew their ownership
-      Owner.only(() => {
-        const amOwner = this == owner;
-        if (amOwner) { interact.notifyRenewNeeded(); }
-      });
-      Owner.publish()
-        .when(amOwner)
-        .timeout(relativeSecs(3), () => {
-          // The owner failed to appear, ownership goes back to Creator
-          Owner.only(() => { if (amOwner) { interact.notifyRenewFail(); } });
-          Creator.publish();
-          owner = Creator;
-          continue;
-        });
-
-      require(this == owner);
-      Owner.only(() => { if (amOwner) { interact.notifyRenewSuccess(); } });
-
-      continue;
-    }
-  }
+  const [owner, heir] =
+    parallelReduce([C, firstHeir])
+    .invariant(balance() == 0)
+    .while(true)
+    .api(O.ping,
+      () => check(this == owner),
+      () => 0,
+      (k) => {
+        check(this == owner);
+        k(null);
+        return [owner, heir];
+      }
+    )
+    .timeout(relativeTime(3), () => {
+      const [[nextHeir], k] =
+        call(O.setNextHeir)
+        .assume((nextHeir) => check(this != nextHeir));
+      check(this != nextHeir);
+      k(null);
+      return [heir, nextHeir];
+    });
 
   commit();
   assert(false);
