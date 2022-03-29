@@ -4,7 +4,7 @@ index 4b2705cea..72918d340 100644
 +++ b/examples/rps-9-web/index.js
 @@ -7,6 +7,7 @@ import './index.css';
  import * as backend from './build/index.main.mjs';
- import { loadStdlib } from '@reach-sh/stdlib';
+ import {loadStdlib} from '@reach-sh/stdlib';
  const reach = loadStdlib(process.env);
 +reach.setWalletFallback(reach.walletFallback({ }));
  
