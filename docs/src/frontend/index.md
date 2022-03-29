@@ -764,7 +764,9 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import { ALGO_MyAlgoConnect as MyAlgoConnect } from '@reach-sh/stdlib';
 const stdlib = loadStdlib();
 stdlib.setWalletFallback(stdlib.walletFallback({
-  providerEnv: 'TestNet', MyAlgoConnect }));
+  MyAlgoConnect,
+  providerEnv: 'TestNet',
+}));
 ```
 
 If the key `WalletConnect` is provided, and bound to the `ALGO_WalletConnect` export of `@reach-sh/stdlib`, then [WalletConnect](https://walletconnect.com/) is used to connect to the [Algorand Wallet](https://algorandwallet.com/) for signing.
@@ -774,7 +776,9 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
 const stdlib = loadStdlib();
 stdlib.setWalletFallback(stdlib.walletFallback({
-  providerEnv: 'TestNet', WalletConnect }));
+  WalletConnect,
+  providerEnv: 'TestNet',
+}));
 ```
 
 Because these are fallbacks, you need to decide for your users which wallet they'll use, or make a user interface element to let them select which wallet fallback to use.
