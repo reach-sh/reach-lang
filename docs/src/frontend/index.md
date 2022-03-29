@@ -768,7 +768,8 @@ stdlib.setWalletFallback(stdlib.walletFallback({
 If the key `WalletConnect` is provided, and bound to the `ALGO_WalletConnect` export of `@reach-sh/stdlib`, then [WalletConnect](https://walletconnect.com/) is used to connect to the [Algorand Wallet](https://algorandwallet.com/) for signing.
 For example, this sets the wallet fallback to be WalletConnect and the Algorand TestNet:
 ```js
-import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
+import * as reachsdk from '@reach-sh/stdlib';
+const WalletConnect = reachsdk.ALGO_WalletConnect;
 stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', WalletConnect }));
 ```
