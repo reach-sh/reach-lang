@@ -156,7 +156,7 @@ These functions create and interact with account representations.
 ---
 @{ref("js", "getDefaultAccount")}
 ```js
-getDefaultAccount() => Promise<acc> 
+getDefaultAccount() => Promise<acc>
 ```
 
 Returns a Promise for a Reach account abstraction for a "default" account on the consensus network.
@@ -169,7 +169,7 @@ This promise will be rejected with an exception if no sensible default account c
 ---
 @{ref("js", "newAccountFromSecret")}
 ```js
-newAccountFromSecret(secret: string) => Promise<acc> 
+newAccountFromSecret(secret: string) => Promise<acc>
 ```
 
 Returns a Promise for a Reach account abstraction for an account on the consensus network specified by the given secret.
@@ -178,7 +178,7 @@ The details of the secret encoding are specified uniquely to the consensus netwo
 ---
 @{ref("js", "newAccountFromMnemonic")}
 ```js
-newAccountFromMnemonic(phrase: string) => Promise<acc> 
+newAccountFromMnemonic(phrase: string) => Promise<acc>
 ```
 
 Returns a Promise for a Reach account abstraction for an account on the consensus network specified by the given mnemonic phrase.
@@ -187,7 +187,7 @@ The details of the mnemonic phrase encoding are specified uniquely to the consen
 ---
 @{ref("js", "newTestAccount")}
 ```js
-newTestAccount(balance) => Promise<acc> 
+newTestAccount(balance) => Promise<acc>
 ```
 
 Returns a Promise for a Reach account abstraction for a new account on the consensus network with a given balance of network tokens. This can only be used in private testing scenarios, as it uses a private faucet to issue network tokens.
@@ -197,7 +197,7 @@ Returns a Promise for a Reach account abstraction for a new account on the conse
 ---
 @{ref("js", "newTestAccounts")}
 ```js
-newTestAccounts(howMany, balance) => Promise<Array<acc>> 
+newTestAccounts(howMany, balance) => Promise<Array<acc>>
 ```
 
 Returns a Promise for an array of `{!js} howMany` test accounts, using `{!js} newTestAccount`.
@@ -205,7 +205,7 @@ Returns a Promise for an array of `{!js} howMany` test accounts, using `{!js} ne
 ---
 @{ref("js", "createAccount")}
 ```js
-createAccount() => Promise<acc> 
+createAccount() => Promise<acc>
 ```
 
 Returns a Promise for a Reach account abstraction for a new account on the consensus network. The account will have an empty balance of network tokens.
@@ -235,7 +235,7 @@ A Promise that resolves to `{!js} true` if `{!js} fundFromFaucet` can be used, `
 ---
 @{ref("js", "connectAccount")}
 ```js
-connectAccount(networkAccount) => Promise<acc> 
+connectAccount(networkAccount) => Promise<acc>
 ```
 
 Returns a Promise for a Reach account abstraction for an existing account for the consensus network based on the connector-specific account specification provided by the `{!js} networkAccount` argument.
@@ -249,7 +249,7 @@ ALGO       => {addr: string, sk: UInt8Array(64)}
 ---
 @{ref("js", "networkAccount")}
 ```js
-acc.networkAccount => networkAccount 
+acc.networkAccount => networkAccount
 ```
 
 Returns the connector-specific account specification of a Reach account abstraction.
@@ -265,7 +265,7 @@ Returns the account's address as a string. The format of this string varies acro
 ---
 @{ref("js", "setDebugLabel")}
 ```js
-acc.setDebugLabel(string) => acc 
+acc.setDebugLabel(string) => acc
 ```
 
 An account may set a distinguishing label to use in debug logs. If no label is provided, then the first four digits of the account address will be used.
@@ -329,7 +329,7 @@ On networks that do not, this will always return zero.
 ---
 @{ref("js", "transfer")}
 ```js
-transfer(from:acc, to:acc, amount, token?) => Promise<void> 
+transfer(from:acc, to:acc, amount, token?) => Promise<void>
 ```
 
 Performs a transfer of `{!js} amount` from `{!js} from` to `{!js} to`,
@@ -347,7 +347,7 @@ When connected to an EVM-based consensus network, the standard library provides 
 ---
 @{ref("js", "setGasLimit")}
 ```js
-acc.setGasLimit(n) => void 
+acc.setGasLimit(n) => void
 ```
 
 Modifies the gas limit for each transaction originating from the given account for the rest of the program.
@@ -366,7 +366,7 @@ When connected to the Conflux consensus network, the standard library provides a
 ---
 @{ref("js", "setStorageLimit")}
 ```js
-acc.setStorageLimit(n) => void 
+acc.setStorageLimit(n) => void
 ```
 
 Modifies the storage limit for each transaction originating from the given account for the rest of the program.
@@ -383,7 +383,7 @@ In order to interact with a deployed contract, you must construct a contract han
 ---
 @{ref("js", "contract")}
 ```js
-acc.contract(bin, ?info) => ctc 
+acc.contract(bin, ?info) => ctc
 ```
 
 Returns a Reach contract handle based on the `{!js} bin` argument provided with access to the account `{!js} acc`.
@@ -410,7 +410,7 @@ This deprecated function is an abbreviation of `{!js} acc.contract(bin)`.
 
 @{ref("js", "attach")}
 ```js
-acc.attach(bin, info) => ctc 
+acc.attach(bin, info) => ctc
 ```
 
 This deprecated function is an abbreviation of `{!js} acc.contract(bin, info)`.
@@ -418,7 +418,7 @@ This deprecated function is an abbreviation of `{!js} acc.contract(bin, info)`.
 ---
 @{ref("js", "getInfo")}
 ```js
-ctc.getInfo() => Promise<ctcInfo> 
+ctc.getInfo() => Promise<ctcInfo>
 ```
 
 Returns a Promise for a `{!rsh} Contract` value that may be given to `{!js} contract` to construct a Reach contract handle for this contract.
@@ -567,7 +567,7 @@ called whenever the `{!rsh} Event` occurs.
 
 @{ref("js", "getViews")}
 ```js
-ctc.getViews() => Object 
+ctc.getViews() => Object
 ```
 
 This deprecated function is an abbreviation of `{!js} ctc.views`.
@@ -641,7 +641,7 @@ As with `{!js} waitUntilTime`, the `{!js} onProgress` callback is optional.
 ---
 @{ref("js", "connector")}
 ```js
-connector : Connector 
+connector : Connector
 ```
 
 Represents the `{!js} Connector` the `{!js} stdlib` uses.
@@ -665,7 +665,7 @@ These functions allow you to choose which particular consensus network API provi
 ---
 @{ref("js", "setProviderByName")}
 ```js
-setProviderByName(string) => void 
+setProviderByName(string) => void
 ```
 
 Supported provider names are: `{!js} 'MainNet'`, `{!js} 'TestNet'`, and `{!js} 'LocalHost'`.
@@ -679,7 +679,7 @@ The free RandLabs API provider is used ([https://algoexplorerapi.io](https://alg
 ---
 @{ref("js", "providerEnvByName")}
 ```js
-providerEnvByName(string) => env 
+providerEnvByName(string) => env
 ```
 
 Retrieve configuration information about providers by name.
@@ -687,7 +687,7 @@ Retrieve configuration information about providers by name.
 ---
 @{ref("js", "setProviderByEnv")}
 ```js
-setProviderByEnv(env) => void 
+setProviderByEnv(env) => void
 ```
 
 Select an API provider by supplying information about it.
@@ -705,7 +705,7 @@ On Algorand, `{!js} env` may include keys:
 ---
 @{ref("js", "setProvider")}
 ```js
-setProvider(provider): void 
+setProvider(provider): void
 ```
 
 Select an API provider by providing an object satisfying its interface.
@@ -820,7 +820,7 @@ These functions operate on JavaScript representations of Reach values.
 ---
 @{ref("js", "protect")}
 ```js
-protect(t, x) => x 
+protect(t, x) => x
 ```
 
 Asserts that value `{!js} x` has Reach type `{!js} t`. An exception is thrown if this is not the case.
@@ -845,7 +845,7 @@ Each of these represent the corresponding Reach type.
 ---
 @{ref("js", "assert")}
 ```js
-assert(p) 
+assert(p)
 ```
 
 Throws an exception if not given `{!js} true`.
@@ -853,7 +853,7 @@ Throws an exception if not given `{!js} true`.
 ---
 @{ref("js", "Array_set")}
 ```js
-Array_set(arr, idx, val) 
+Array_set(arr, idx, val)
 ```
 
 Returns a new array identical to `{!js} arr`, except that index `{!js} idx` is `{!js} val`.
@@ -967,7 +967,7 @@ add(UInt, UInt) => UInt
 sub(UInt, UInt) => UInt
 mod(UInt, UInt) => UInt
 mul(UInt, UInt) => UInt
-div(UInt, UInt) => UInt 
+div(UInt, UInt) => UInt
 ```
 
 Integer arithmetic on `{!rsh} UInt`.
@@ -983,6 +983,15 @@ lt(UInt, UInt) => bool
 ```
 
 Integer comparisons on `{!rsh} UInt`.
+
+---
+@{ref("js", "btoiLast8")}
+```js
+btoiLast8(Bytes) => UInt
+```
+
+Converts the last 8 bytes of a string to an `{!rsh} UInt`.
+If the string is less than 8 bytes long, this function will convert the entire string to an `{!rsh} UInt`.
 
 ---
 The following exports are for dealing with network tokens.
@@ -1059,7 +1068,7 @@ ask.done() => null
       `Are you Alice?`,
       ask.yesno
     );
-    
+
     // Do something
 
   ask.done();

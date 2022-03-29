@@ -747,7 +747,7 @@ instance Show EvalError where
     Err_xor_Types l r ->
       "^ expects arguments of either UInt, Bool, Digest, or Bytes of the same length, but received: " <> show l <> " and " <> show r
     Err_mod_Types l r ->
-      "% expects a first argument of type UInt, Digest, or Bytes(>8) and a second argument of UInt, but received: " <> show l <> " and " <> show r
+      "% expects a first argument of type UInt, Digest, or Bytes and a second argument of UInt, but received: " <> show l <> " and " <> show r
     Err_ApiCallAssign ->
       "The left hand side of an API call must be a pair consisting of the domain and return function."
     where

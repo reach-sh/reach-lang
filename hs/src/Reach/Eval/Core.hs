@@ -3476,8 +3476,7 @@ evalPrim p sargs =
       (y_ty, _) <- compileTypeOf y
       case (x_ty, y_ty) of
         (T_UInt, T_UInt) -> evalPrimOp MOD sargs
-        (T_Bytes sz, T_UInt)
-          | sz >= 8 -> do
+        (T_Bytes {}, T_UInt) -> do
             bi <- evalPrimOp BTOI_LAST8 [public x]
             evalPrimOp MOD [bi, public y]
         (l, r) -> expect_ $ Err_mod_Types l r

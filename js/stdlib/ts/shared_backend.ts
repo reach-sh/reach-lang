@@ -159,12 +159,10 @@ export const bytes_xor = (x: string, y: string): string => {
 }
 
 export const btoiLast8 = (b: string): BigNumber => {
-  if (b.length < 8) {
-    throw Error('btoiLast8: Bytes too short!');
-  }
+  const min = (b.length < 8) ? 0 : b.length - 8;
   const bb = Buffer.from(b);
   let res = bigNumberify(0);
-  for (let i = b.length - 8; i < b.length; i++) {
+  for (let i = min; i < b.length; i++) {
     res = res.mul(256).add(bb[i]);
   }
   return res;

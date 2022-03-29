@@ -971,15 +971,21 @@ solCom = \case
     dv' <- solVar dv
     x' <- solArg x
     let (howMany, lastLen) = solBytesInfo $ bytesTypeLen $ argTypeOf x
-    let go elemIdx i = dv' <+> "=" <+> parens (dv' <+> "* 256") <+> "+" <+> "uint8" <> parens ("bytes1" <> parens (x' <> ei <> brackets (pretty i))) <> semi
+    let go :: Integer -> Integer -> Integer -> Doc
+        go elemIdx from to =  "for(uint i = " <> pretty from <> "; i < " <> pretty to <> "; i++) {" <>
+                                  dv' <+> "=" <+> parens (dv' <+> "* 256") <+> "+" <+> "uint8" <> parens ("bytes1" <> parens (x' <> ei <> brackets "i")) <> semi <>
+                                  "}"
           where
             ei = ".elem" <> pretty elemIdx
-    let (res :: [Doc]) = case lastLen < 8 of
-              -- Access all elements from last elem idx
-              False -> map (go $ howMany - 1) $ [lastLen - 8 .. lastLen - 1 :: Integer]
-              -- Access `lastLen` elements from `howMany` elem idx and `8 - lastLen` from `howMany - 1` elem idx
-              True -> map (go $ howMany - 2) [maxStringLen - lastLen .. maxStringLen - 1] <>
-                        map (go $ howMany - 1) [0 .. lastLen - 1]
+    let (res:: [Doc]) = case (lastLen < 8, howMany == 1) of
+              -- The last chunk is >= 8 bytes: take 8 bytes
+              (False, _) -> [go lastChunk (lastLen - 8) lastLen]
+              -- One byte chunk that's < 8 Bytes: take as many as you can
+              (True, True)  -> [go lastChunk 0 lastLen]
+              -- Multiple byte chunks with last chunk < 8 Bytes: take all from last chunk and rest from previous
+              (True, False) -> [go (howMany - 2) (byteChunkSize - lastLen) byteChunkSize, go lastChunk 0 lastLen]
+              where
+                lastChunk = howMany - 1
     return $ vsep res
   DL_Let _ (DLV_Let _ dv) (DLE_ArrayConcat _ x y) -> do
     doConcat dv x y
@@ -1246,17 +1252,17 @@ solHandlers (CHandlers hs) =
 divup :: Integer -> Integer -> Integer
 divup x y = ceiling $ (fromIntegral x :: Double) / (fromIntegral y)
 
-maxStringLen :: Integer
-maxStringLen = 32
+byteChunkSize :: Integer
+byteChunkSize = 32
 
 solBytesInfo :: Integer -> (Integer, Integer)
 solBytesInfo sz = (howMany, lastLen)
   where
-    howMany = divup sz maxStringLen
-    szRem = sz `rem` maxStringLen
+    howMany = divup sz byteChunkSize
+    szRem = sz `rem` byteChunkSize
     lastLen =
       case szRem == 0 of
-        True -> maxStringLen
+        True -> byteChunkSize
         False -> szRem
 
 solBytesSplit :: Integer -> (Integer -> Integer -> a) -> [a]
@@ -1268,7 +1274,7 @@ solBytesSplit sz f = map go [0 .. lastOne]
       where
         len = case i == lastOne of
           True -> lastLen
-          False -> maxStringLen
+          False -> byteChunkSize
 
 apiDef :: SLPart -> ApiInfo -> App Doc
 apiDef who ApiInfo {..} = do
