@@ -1828,16 +1828,21 @@ reach.setWalletFallback(reach.walletFallback({}));
 
 Instead, if you would like to allow your users to use [MyAlgo](https://wallet.myalgo.com/home), then you can add the following:
 ```js
+import { loadStdlib } from '@reach-sh/stdlib';
 import { ALGO_MyAlgoConnect as MyAlgoConnect } from '@reach-sh/stdlib';
-reach.setWalletFallback(reach.walletFallback({
+const stdlib = loadStdlib();
+stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', MyAlgoConnect }));
 ```
 
 Or, you could have your users use [WalletConnect](https://walletconnect.com/) to connect to the [Algorand Wallet](https://algorandwallet.com/), by adding the following:
 ```js
+import { loadStdlib } from '@reach-sh/stdlib';
 import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
-reach.setWalletFallback(reach.walletFallback({
+const stdlib = loadStdlib();
+stdlib.setWalletFallback(stdlib.walletFallback({
   providerEnv: 'TestNet', WalletConnect }));
+}));
 ```
 
 (Of course, you may want to replace `'TestNet'` in either of these samples with a different network name, like `'MainNet'`.)
