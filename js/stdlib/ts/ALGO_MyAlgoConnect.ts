@@ -1,2 +1,2 @@
-import MyAlgoConnect from '@randlabs/myalgo-connect';
+import MyAlgoConnect from './Stub_MAC';
 export default MyAlgoConnect;
