@@ -1321,11 +1321,9 @@ cprim = \case
   DIGEST_EQ -> call "=="
   ADDRESS_EQ -> call "=="
   TOKEN_EQ -> call "=="
-  BTOI_LAST8 isDigest -> \case
+  BTOI_LAST8 {} -> \case
     [x] -> do
-      let bl = fromIntegral $ case isDigest of
-                False -> bytesTypeLen $ argTypeOf x
-                True  -> typeSizeOf T_Digest
+      let bl = fromIntegral $ typeSizeOf $ argTypeOf x
       let (start, len) = if bl > 8 then (bl - 8, 8) else (0, 0)
       ca x
       output $ TExtract start len
