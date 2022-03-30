@@ -58,6 +58,7 @@ export default async function   ({nodeId, c }:{nodeId: string, c: any }){
         const value2 = value as Actor
         const who = value2.l_who ? value2.l_who : 'Consensus'
         let status = 'Initial'
+        console.log(value2.l_phase)
         switch (value2.l_ks) {
             case 'PS_Suspend':
                 status = 'Program Running'
@@ -71,7 +72,8 @@ export default async function   ({nodeId, c }:{nodeId: string, c: any }){
                     nodeId:`${nodeId}`,
                     actorSet:`${JSON.stringify(actorSet)}`,
                     apiSet:`${JSON.stringify(apiSet)}`,
-                    who: `${who}`
+                    who: `${who}`,
+                    phase: `${value2.l_phase}`
                 })
             }
 
