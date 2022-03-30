@@ -41,11 +41,13 @@ const CodeBlockTheme = {
 };
 
 const PanelContainer = styled.div`
+  grid-column-start: 1;
+  grid-row-start: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  width: 428px;
-  height: 100vh - 78px;
+  overflow-y: scroll;
+  width: auto;
+  height:                           91vh;
   background: var(--dark-bg);
   border: 1px solid var(--off-white);
   padding: 10px;
@@ -53,9 +55,12 @@ const PanelContainer = styled.div`
 `;
 
 const CodeContainer = styled.div`
+  /* height: inherit; */
   overflow-y: scroll;
   text-align: left;
   width: inherit;
+  height: 100vh - 78px;
+
   ::-webkit-scrollbar {
     width: 4px;
     background: var(--off-white);

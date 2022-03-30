@@ -1,7 +1,6 @@
 import * as c from "@reach-sh/simulator-client";
 import { useEffect, useState } from "react";
-// import cytoscape from 'cytoscape';
-// import klay from 'cytoscape-klay';
+import { redraw } from './reach/Visualizer';
 import { createGlobalStyle } from "styled-components";
 import getObjectView from "./reach/ObjectView";
 import LeftPanel from "./componenents/organisms/LeftPanel";
@@ -10,6 +9,7 @@ import Navbar from "./componenents/molecules/Navbar";
 import CodePanel from "./componenents/organisms/CodePanel";
 import "./App.css";
 import styled from "styled-components";
+import VisualizerPanel from "./componenents/organisms/Visualizer";
 
 export const GlobalStyles = createGlobalStyle`
   html {
@@ -55,16 +55,22 @@ async function initApp(mountProgram: Function) {
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-`;
-
-const AppContainer = styled.div`
-  display: flex;
-  flex-direction: row;
+  width: 100vw;
+  overflow-x: hidden;
 `;
 
 const InfoContainer = styled.div`
+  display: grid;
+  grid-template-columns: 30% 30% 40%;
+  grid-template-rows: 33% 33% 33%;
+`;
+
+const Info = styled.div`
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  grid-column-start: 2;
+  width: 70vw;
+  height: 62.5vh;
 `;
 
 function App() {
@@ -72,11 +78,25 @@ function App() {
   const [nodeId, setNodeId] = useState(0);
   const [objectViewData, setObjectViewData] = useState({});
   const [code, mountProgram] = useState("");
+  const [graphElements, setGraphElements] = useState([])
   const [jsonLog, updateJsonLog] = useState([
     ["resetServer"],
     ["load"],
     ["init"],
   ]);
+
+   useEffect(() => {
+    const getVisualizerData = async () => {
+      console.log('preeffect')
+      if (Object.entries(graphElements).length < 1 ) {
+        const e = await redraw(c);
+        console.log('in use effect')
+        console.log(e);
+        setGraphElements(e);
+      }
+    };
+    getVisualizerData();
+  });
 
   useEffect(() => {
     const fetchObjectViewData = async () => {
@@ -96,22 +116,23 @@ function App() {
     }
   });
 
-  useEffect(() => {}, []);
 
   return (
     <div className="App">
       <GlobalStyles />
       <Container>
         <Navbar />
-        <AppContainer>
+        <InfoContainer>
           <CodePanel code={code} />
-          <InfoContainer>
+          <Info>
             <LeftPanel
               initParticipant={initParticipant}
               objectViewData={objectViewData}
             />
-          </InfoContainer>
-        </AppContainer>
+            <RightPanel selection={null}/>
+          </Info>
+          <VisualizerPanel elements={graphElements ? graphElements : []}/>
+        </InfoContainer>
       </Container>
     </div>
   );

@@ -45,3 +45,7 @@ export type store = {
     0 : string
     1 : storePayload
 }
+
+export type Node = {
+    
+}

@@ -26,3 +26,4 @@ declare module '@reach-sh/simulator-client' {
             export function load(): any
 }
     
+declare module 'cytoscape-klay'
