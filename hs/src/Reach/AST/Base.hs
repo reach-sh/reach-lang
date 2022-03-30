@@ -24,6 +24,7 @@ import Reach.Util (makeErrCode)
 import Safe (atMay)
 import qualified System.Console.Pretty as TC
 import Control.Exception (Exception, throw)
+import Data.Bool (bool)
 
 --- Source Information
 data ReachSource
@@ -333,6 +334,7 @@ data PrimOp
   | MUL_DIV
   | DIGEST_XOR
   | BYTES_XOR
+  | BTOI_LAST8 Bool
   deriving (Eq, Generic, NFData, Ord, Show)
 
 instance Pretty PrimOp where
@@ -361,6 +363,7 @@ instance Pretty PrimOp where
     MUL_DIV -> "muldiv"
     DIGEST_XOR -> "digest_xor"
     BYTES_XOR -> "bytes_xor"
+    BTOI_LAST8 isDigest -> "btoiLast8(" <> bool "Bytes" "Digest" isDigest <> ")"
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)

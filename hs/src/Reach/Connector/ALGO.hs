@@ -1321,6 +1321,14 @@ cprim = \case
   DIGEST_EQ -> call "=="
   ADDRESS_EQ -> call "=="
   TOKEN_EQ -> call "=="
+  BTOI_LAST8 {} -> \case
+    [x] -> do
+      let bl = fromIntegral $ typeSizeOf $ argTypeOf x
+      let (start, len) = if bl > 8 then (bl - 8, 8) else (0, 0)
+      ca x
+      output $ TExtract start len
+      op "btoi"
+    _ -> impossible "btoiLast8"
   BYTES_ZPAD xtra -> \case
     [x] -> do
       ca x

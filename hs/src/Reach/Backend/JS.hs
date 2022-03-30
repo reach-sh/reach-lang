@@ -290,6 +290,7 @@ jsPrimApply = \case
   ADDRESS_EQ -> jsApply "stdlib.addressEq"
   TOKEN_EQ -> jsApply "stdlib.tokenEq"
   BYTES_ZPAD xtra -> \args -> jsApply "stdlib.bytesConcat" (args <> [jsBytes $ bytesZero xtra])
+  BTOI_LAST8 _ -> jsApply "stdlib.btoiLast8"
 
 jsArg_m :: AppT (Maybe DLArg)
 jsArg_m = \case

@@ -92,7 +92,7 @@ import {
 import type { MapRefT, MaybeRep } from './shared_backend'; // =>
 import { window, process } from './shim';
 import { sha512_256 } from 'js-sha512';
-export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq, digest_xor, bytes_xor } = stdlib;
+export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq, digest_xor, bytes_xor, btoiLast8 } = stdlib;
 export * from './shared_user';
 import { setQueryLowerBound, getQueryLowerBound, handleFormat, formatWithDecimals } from './shared_impl';
 export { setQueryLowerBound, getQueryLowerBound, addressFromHex, formatWithDecimals };

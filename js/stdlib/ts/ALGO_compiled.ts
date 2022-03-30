@@ -313,6 +313,7 @@ export const addressEq = mkAddressEq(T_Address);
 export const digestEq = shared_backend.bytesEq;
 export const digest_xor = shared_backend.digest_xor;
 export const bytes_xor = shared_backend.bytes_xor;
+export const btoiLast8 = shared_backend.btoiLast8;
 
 const T_Token = T_UInt;
 

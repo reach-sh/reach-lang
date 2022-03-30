@@ -21,6 +21,7 @@
 (define-fun Bytes_toBytes ((b Bytes)) Bytes
   b)
 (declare-fun Bytes_xor (Bytes Bytes) Bytes)
+(declare-fun btoiLast8 (Bytes) UInt)
 
 (declare-fun bytesAppend (Bytes Bytes) Bytes)
 ;; (assert
@@ -38,6 +39,7 @@
 (declare-fun digest (Bytes) Digest)
 (declare-fun Digest_toBytes (Digest) Bytes)
 (declare-fun Digest_xor (Digest Digest) Digest)
+(declare-fun dtoiLast8 (Digest) UInt)
 
 (declare-sort Null 0)
 (declare-fun null () Null)

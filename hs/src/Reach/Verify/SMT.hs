@@ -311,6 +311,8 @@ smtPrimOp at p dargs =
     BXOR -> bvapp "bvxor" cant
     DIGEST_XOR -> app "Digest_xor"
     BYTES_XOR -> app "Bytes_xor"
+    BTOI_LAST8 False -> app "btoiLast8"
+    BTOI_LAST8 True  -> app "dtoiLast8"
     IF_THEN_ELSE -> app "ite"
     DIGEST_EQ -> app "="
     ADDRESS_EQ -> app "="

@@ -632,6 +632,7 @@ primOpType BXOR = ([T_UInt, T_UInt], T_UInt)
 primOpType DIGEST_XOR = ([T_Digest, T_Digest], T_Digest)
 primOpType BYTES_XOR = impossible "bytes_xor type"
 primOpType MUL_DIV = ([T_UInt, T_UInt, T_UInt], T_UInt)
+primOpType BTOI_LAST8 {} = impossible "BTOI_LAST8 type"
 
 data RemoteFunMode
   = RFM_Pay
@@ -726,6 +727,7 @@ data SLPrimitive
   | SLPrim_check
   | SLPrim_distinct
   | SLPrim_xor
+  | SLPrim_mod
   deriving (Eq, Generic)
 
 instance Equiv SLPrimitive where

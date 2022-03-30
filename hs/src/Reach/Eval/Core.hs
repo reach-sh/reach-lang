@@ -569,6 +569,7 @@ base_env_slvals =
   , ("polyEq", SLV_Prim $ SLPrim_op PEQ)
   , ("polyNeq", SLV_Prim $ SLPrim_polyNeq)
   , ("xor", SLV_Prim $ SLPrim_xor)
+  , ("polyMod", SLV_Prim $ SLPrim_mod)
   , ("digestEq", SLV_Prim $ SLPrim_op DIGEST_EQ)
   , ("addressEq", SLV_Prim $ SLPrim_op ADDRESS_EQ)
   , ("isType", SLV_Prim SLPrim_is_type)
@@ -1066,7 +1067,7 @@ binaryToPrim = \case
   JSBinOpLe a -> prim a PLE
   JSBinOpLt a -> prim a PLT
   JSBinOpMinus a -> prim a SUB
-  JSBinOpMod a -> prim a MOD
+  JSBinOpMod a -> fun a "polyMod" "%"
   JSBinOpNeq a -> fun a "polyNeq" "!="
   JSBinOpOr _ -> impossible "or"
   JSBinOpPlus a -> prim a ADD
@@ -2008,6 +2009,14 @@ evalPrimOp p sargs = do
           let rng = T_Bytes $ lhs_l + xtra
           make_var_ rng [lhs_ae]
         _ -> expect_ $ Err_Apply_ArgCount at 1 (length args)
+    BTOI_LAST8 isDigest ->
+      case args of
+        [b] -> do
+          ae <- case isDigest of
+                  True  -> typeOfDigest b
+                  False -> snd <$> typeOfBytes b
+          make_var_ T_UInt [ae]
+        _ -> expect_ $ Err_Apply_ArgCount at 1 (length args)
     ADD ->
       case args of
         [SLV_Int _ 0, rhs] -> static rhs
@@ -2383,6 +2392,13 @@ typeOfBytes v = do
   case t of
     T_Bytes l -> return (l, ae)
     _ -> expect_t v $ Err_Expected "bytes"
+
+typeOfDigest :: SLVal -> App DLArgExpr
+typeOfDigest v = do
+  (t, ae) <- typeOf v
+  case t of
+    T_Digest -> return ae
+    _ -> expect_t v $ Err_Expected "Digest"
 
 verifyNotReserved :: SrcLoc -> String -> App ()
 verifyNotReserved at s = do
@@ -3463,6 +3479,18 @@ evalPrim p sargs =
         (l, r) -> expect_ $ Err_xor_Types l r
       where
         prim = flip evalPrimOp sargs
+    SLPrim_mod -> do
+      (x, y) <- two_args
+      (x_ty, _) <- compileTypeOf x
+      (y_ty, _) <- compileTypeOf y
+      let go isDigest = do
+            bi <- evalPrimOp (BTOI_LAST8 isDigest) [public x]
+            evalPrimOp MOD [bi, public y]
+      case (x_ty, y_ty) of
+        (T_UInt, T_UInt) -> evalPrimOp MOD sargs
+        (T_Bytes {}, T_UInt) -> go False
+        (T_Digest, T_UInt) -> go True
+        (l, r) -> expect_ $ Err_mod_Types l r
     -- END OF evalPrim case
   where
     lvl = mconcatMap fst sargs
