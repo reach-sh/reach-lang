@@ -1,0 +1,11 @@
+reachc: error[RE0035]: Invalid function application. Cannot apply: <SLV_Type>
+
+  ./not_applicable_inside_only.rsh:8:19:application
+
+  8|     const y = UInt(x);
+
+Trace:
+  in [unknown function] from (./not_applicable_inside_only.rsh:6:13:function exp) at (./not_applicable_inside_only.rsh:6:9:application)
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0035
+
