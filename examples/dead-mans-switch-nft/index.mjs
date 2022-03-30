@@ -8,7 +8,7 @@ const ctcAlice   = accAlice.contract(backend);
 const ctcBob     = accBob.contract(backend, ctcAlice.getInfo());
 const ctcCharlie = accCharlie.contract(backend, ctcAlice.getInfo());
 
-const switchTime = 10;
+const switchTime = stdlib.connector == 'ALGO' ? 25 : 200;
 
 // Launch the ctc
 try {
