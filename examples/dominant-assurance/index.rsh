@@ -1,5 +1,5 @@
 'reach 0.1';
-// 'use strict';
+'use strict';
 
 /* Based off of https://en.wikipedia.org/wiki/Assurance_contract#Dominant_assurance_contracts
    Please read that short Wikipedia article to understand the meaning behind participant names
