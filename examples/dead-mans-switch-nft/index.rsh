@@ -4,6 +4,7 @@
 export const main = Reach.App(() => {
   const C = Participant('Creator', {
     firstHeir: Address,
+    switchTime: UInt,
     ready: Fun([], Null),
   });
   const O = API('Owner', {
@@ -14,9 +15,10 @@ export const main = Reach.App(() => {
 
   C.only(() => {
     const firstHeir = declassify(interact.firstHeir);
+    const switchTime = declassify(interact.switchTime);
     assume(this != firstHeir);
   });
-  C.publish(firstHeir);
+  C.publish(firstHeir, switchTime);
   check(this != firstHeir);
 
   C.interact.ready();
@@ -34,11 +36,11 @@ export const main = Reach.App(() => {
         return [owner, heir];
       }
     )
-    .timeout(relativeTime(3), () => {
+    .timeout(relativeTime(switchTime), () => {
       const [[nextHeir], k] =
         call(O.setNextHeir)
-        .assume((nextHeir) => check(this != nextHeir));
-      check(this != nextHeir);
+        .assume((nextHeir) => check(this == heir && this != nextHeir));
+      check(this == heir && this != nextHeir);
       k(null);
       return [heir, nextHeir];
     });

@@ -8,10 +8,13 @@ const ctcAlice   = accAlice.contract(backend);
 const ctcBob     = accBob.contract(backend, ctcAlice.getInfo());
 const ctcCharlie = accCharlie.contract(backend, ctcAlice.getInfo());
 
+const switchTime = 10;
+
 // Launch the ctc
 try {
   await backend.Creator(ctcAlice, {
     firstHeir: accBob,
+    switchTime,
     ready: () => { throw 'ready' }
   });
 } catch (e) {
@@ -21,11 +24,12 @@ try {
 }
 
 const runOwner = async (ctc, name, nextHeir) => {
-  console.log(`${name} is now the owner`);
-
   if (nextHeir) {
+    await stdlib.wait(switchTime * 2);
     await ctc.apis.Owner.setNextHeir(nextHeir);
   }
+
+  console.log(`${name} is now the owner`);
 
   for (let n = 0; n < 5; n++) {
     console.log(`${name} ping #${n}`);
@@ -33,7 +37,6 @@ const runOwner = async (ctc, name, nextHeir) => {
   }
 
   console.log(`${name} goes silent`);
-  await stdlib.wait(5);
 };
 
 await runOwner(ctcAlice, 'Alice');
