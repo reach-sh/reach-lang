@@ -1,7 +1,8 @@
 # {#wfs} Wisdom for Sale
 
-This module shows you how to build Wisdom for Sale, a command-line and web-based application that enables two participants (a seller and a buyer) to trade wisdom for tokens via a smart contract running on a private Algorand, Ethereum, or Conflux consensus network residing in a Docker container on your computer.
-Your DApp creates and funds two accounts (one for each participant), enables the seller and buyer to make a transaction, and exits.
+This module shows you how to build Wisdom for Sale, a command-line and web-based application that enables two participants (a seller and a buyer) to trade wisdom for tokens via a smart contract running on a consensus network, using Reach. Reach programs are built using a Docker container on your computer. If you need help installing Reach and its prerequisites then get started at our [Quick Installation Guide](#quickstart).
+
+Wisdom for Sale creates and funds two accounts (one for each participant), enables the seller and buyer to make a transaction, and then exits.
 
 # {#wfs-1} Learning Objectives
 
@@ -20,7 +21,7 @@ The following diagram represents the wisdom-for-sale transaction:
 This particular transaction took place on an Algorand devnet. The Algorand cryptocurrency standard token unit is the `ALGO`.
 As indicated by the final balances in the diagram, the seller received 0.006 ALGO less than the agreed upon price, and the buyer paid 0.003 ALGO more.
 These expenses represent `gas`, the cost of doing business on a consensus network.
-The seller paid a little more gas than the buyer because the seller deployed the contract.
+The seller paid a little more gas than the buyer because the seller paid a small fee to deploy the contract.
 
 # {#wfs-3} Create the files
 
@@ -107,7 +108,7 @@ export const main - Reach.App()) => {
 ]);
 ```
 
-Below is a line-by-line description of this Reach code:
+Below is a line-by-line description of this `reach` code:
 
 * Line 1: Instruction to the compiler.
 * Lines 3-5: Define empty (for now) objects.
@@ -119,45 +120,44 @@ Below is a line-by-line description of this Reach code:
 
 # {#wfs-6} Run the DApp
 
-This section shows you how to run your DApp.
-Reach can compile your DApp to run on any of the following consensus network types:
+Reach can currently compile the DApp to run on any of the following consensus network types:
 
-* `ALGO-devnet`
-* `CFX-devnet`
-* `ETH-devnet`
+* `ALGO`
+* `CFX`
+* `ETH`
 
-You tell the Reach compiler which type by setting the `REACH_CONNECTOR_MODE` environment variable.
+Instruct the Reach compiler to connect to a network by setting the `REACH_CONNECTOR_MODE` environment variable.
 One way is to set the variable and execute `reach run` on the same line:
 
 ``` nonum
-$ REACH_CONNECTOR_MODE=ALGO-devnet reach run
+$ REACH_CONNECTOR_MODE=ALGO reach run
 ```
 
 Another is to export the variable and then execute `reach run`:
 
 ``` nonum
-$ export REACH_CONNECTOR_MODE=ALGO-devnet
-$ reach run
+$ export REACH_CONNECTOR_MODE=ALGO
+$ ./reach run
 ```
 
 Follow these steps to run the DApp:
 
-1. In the VSCode terminal, set `REACH_CONNECTOR_MODE=ALGO-devnet` and run the app on the same line:
+1. In the VSCode terminal, set `REACH_CONNECTOR_MODE=ALGO` and run the app on the same line:
 
    ![Run VSCode](/tut/wfs/vscode-run.png)
 
-1. This time, first `export REACH_CONNECTOR_MODE=ALGO-devnet`, and then run the app:
+1. This time, first `export REACH_CONNECTOR_MODE=ALGO`, and then run the app:
 
     ``` nonum
     $ export REACH_CONNECTOR_MODE=ALGO-devnet
-    $ reach run
+    $ ./reach run
     ```
 
 1. Repeat the first two steps for `CFX` and `ETH`.
 
-> For consistency, output in this module reflects `REACH_CONNECTOR_MODE=ALGO-devnet`.
+> For consistency, output in this module reflects `REACH_CONNECTOR_MODE=ALGO`.
 
-Where does your DApp run? In your current environment, the Reach Compiler, the consensus network devnets, your application, and the smart contract run on your computer in Docker containers instantiated from Reach Docker images.
+Where does the DApp run? In a local "devnet" environment, the Reach Compiler, the consensus network devnets, your application, and the smart contract run on your computer in Docker containers instantiated from Reach Docker images. A devnet refers to Reach's Dockerized developer network that allows developers to rapidly test their DApp.
 
 <button class="btn btn-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#ebp" aria-expanded="false">
   <i class="fas fa-info-circle me-2"></i><span>Explore Build Output</span>
@@ -168,7 +168,7 @@ Where does your DApp run? In your current environment, the Reach Compiler, the c
 Here is sample output:
 
 ```
-current % REACH_CONNECTOR_MODE=ALGO-devnet reach run
+current % REACH_CONNECTOR_MODE=ALGO ./reach run
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
@@ -282,16 +282,16 @@ Follow these directions to pass `role` as a command-line argument:
 1. Run the following command in both terminals:
 
     ``` nonum
-    $ export REACH_CONNECTOR_MODE=ALGO-devnet
+    $ export REACH_CONNECTOR_MODE=ALGO
     ```
 
 1. In the Seller Terminal, run your DApp as the seller:
 
     ``` nonum
-    $ reach run index seller
+    $ ./reach run index seller
     ```
 
-    When you pass arguments to `reach run`, the first one must be the name of the `index.rsh` file without the extension (i.e. `index`) as seen above. 
+    When you pass arguments to `./reach run`, the first one must be the name of the `index.rsh` file without the extension (i.e. `index`) as seen above. 
     
     Application output should resemble the following:
 
@@ -303,7 +303,7 @@ Follow these directions to pass `role` as a command-line argument:
 1. In the Buyer Terminal, run your DApp as the buyer:
 
     ``` nonum
-    $ reach run index buyer
+    $ ./reach run index buyer
     ```
 
     Output should resemble the following:
@@ -321,15 +321,15 @@ This section is **optional**.
 If you do **not** want to add a Node.js package to your DApp at this time, you can skip to the next section, continuing to use the following commands throughout the remainder of this module:
 
 ``` nonum
-$ reach run index seller
-$ reach run index buyer
+$ ./reach run index seller
+$ ./reach run index buyer
 ```
 
 If you **do** complete this section, you will need to use the following commands instead:
 
 ``` nonum
-$ reach run index -r seller
-$ reach run index -r buyer
+$ ./reach run index -r seller
+$ ./reach run index -r buyer
 ```
 
 Adding a Node.js package to your Reach DApp is easy:
@@ -343,7 +343,7 @@ Adding a Node.js package to your Reach DApp is easy:
 1. Create non-temporary Reach scaffolding files:
 
     ``` nonum
-    $ reach scaffold
+    $ ./reach scaffold
     ```
 
 1. Install the Node.js package:
@@ -402,7 +402,7 @@ Adding a Node.js package to your Reach DApp is easy:
 1. Tell your DApp to display help information:
 
     ``` nonum
-    $ reach run index -h
+    $ ./reach run index -h
     ```
 
     Output should resemble the following:
@@ -417,7 +417,7 @@ Adding a Node.js package to your Reach DApp is easy:
 1. In the Seller Terminal, run your DApp as the seller:
 
     ``` nonum
-    $ reach run index -r seller
+    $ ./reach run index -r seller
     ```
     
     Output should resemble the following:
@@ -430,7 +430,7 @@ Adding a Node.js package to your Reach DApp is easy:
 1. In the Buyer Terminal, run your DApp as the buyer:
 
     ``` nonum
-    $ reach run index -r buyer
+    $ ./reach run index -r buyer
     ```
 
     Output should resemble the following:
@@ -1201,7 +1201,7 @@ You need node.js and npm installed on your computer because you will need the [h
 1. Stop and remove all your Reach containers:
 
     ``` nonum
-    $ reach down
+    $ ./reach down
     ```
 
 1. Open four terminals (i.e. shells):
@@ -1217,22 +1217,22 @@ You need node.js and npm installed on your computer because you will need the [h
 1. In the ALGO Terminal, run the following:
 
     ``` nonum
-    $ export REACH_CONNECTOR_MODE=ALGO-devnet
-    $ reach devnet
+    $ export REACH_CONNECTOR_MODE=ALGO
+    $ ./reach devnet
     ```
 
 1. In the CFX Terminal, run the following:
 
     ``` nonum
-    $ export REACH_CONNECTOR_MODE=CFX-devnet
-    $ reach devnet
+    $ export REACH_CONNECTOR_MODE=CFX
+    $ ./reach devnet
     ```
 
 1. In the ETH Terminal, run the following:
 
     ``` nonum
-    $ export REACH_CONNECTOR_MODE=ETH-devnet
-    $ reach devnet
+    $ export REACH_CONNECTOR_MODE=ETH
+    $ ./reach devnet
     ```
 
 1. In the Webapp Terminal, run the following:
@@ -1330,13 +1330,13 @@ Click on the question to view the answer.
       <div class="card card-body">REACH_CONNECTOR_MODE</div>
     </div>
 
-1. <p class="q-and-a" data-bs-toggle="collapse" href="#reach-down" aria-expanded="false">Name the reach command that stops and removes all Reach Docker containers.</p>
+1. <p class="q-and-a" data-bs-toggle="collapse" href="#reach-down" aria-expanded="false">Name the `reach` command that stops and removes all Reach Docker containers.</p>
 
     <div class="collapse mb-3" id="reach-down">
-      <div class="card card-body">reach down</div>
+      <div class="card card-body">./reach down</div>
     </div>
 
-1. <p class="q-and-a" data-bs-toggle="collapse" href="#view" aria-expanded="false">Name the reach object that allows frontends to peak into a contract without attaching.</p>
+1. <p class="q-and-a" data-bs-toggle="collapse" href="#view" aria-expanded="false">Name the Reach object that allows frontends to peak into a contract without attaching.</p>
 
     <div class="collapse mb-3" id="view">
       <div class="card card-body">View</div>
