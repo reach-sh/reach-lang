@@ -126,7 +126,7 @@ instance Pandemic DLExpr where
     DLE_TokenNew at tns -> DLE_TokenNew at <$> pan tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> pan tok <*> pan amt
     DLE_TokenDestroy at a -> DLE_TokenDestroy at <$> pan a
-    DLE_TimeOrder at margs_vars -> DLE_TimeOrder at <$> pan margs_vars
+    DLE_TimeOrder at op margs_vars -> DLE_TimeOrder at op <$> pan margs_vars
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at lk vars -> DLE_EmitLog at lk <$> pan vars

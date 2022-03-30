@@ -153,7 +153,7 @@ instance Countable DLExpr where
     DLE_TokenNew _ tns -> counts tns
     DLE_TokenBurn _ tok amt -> counts [tok, amt]
     DLE_TokenDestroy _ tok -> counts tok
-    DLE_TimeOrder _ tos -> counts tos
+    DLE_TimeOrder _ _ tos -> counts tos
     DLE_GetContract _ -> mempty
     DLE_GetAddress _ -> mempty
     DLE_EmitLog _ _ a -> counts a
