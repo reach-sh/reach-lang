@@ -3792,12 +3792,7 @@ evalApply rator rands =
     SLV_Prim _ -> vals
     SLV_Clo {} -> vals
     SLV_Form f -> evalForm f rands
-    v -> do
-      fs <- e_stack <$> ask
-      let modAt = case fs of
-            [] -> id
-            h : _ -> locAt (srclocOf h)
-      modAt $ expect_t v $ Err_Eval_NotApplicable
+    v -> expect_t v $ Err_Eval_NotApplicable
   where
     vals = evalApplyVals' rator =<< evalExprs rands
 
