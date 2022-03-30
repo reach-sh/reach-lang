@@ -1,7 +1,7 @@
 import { TerminalOptions } from 'vscode';
 
 const env: { [key: string]: string } = {
-	REACH_IDE: "1"
+  REACH_IDE: "1"
 };
 
 const name = 'Reach IDE';
@@ -12,7 +12,7 @@ const name = 'Reach IDE';
  * variables.
  */
 export const terminalOptions: TerminalOptions = {
-	env,
-	name
+  env,
+  name
 };
 
