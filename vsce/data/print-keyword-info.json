@@ -1037,6 +1037,9 @@
   "polyEq": {
     "CompletionItemKind": "Operator"
   },
+  "polyMod": {
+    "CompletionItemKind": "Function"
+  },
   "polyNeq": {
     "CompletionItemKind": "Function"
   },
@@ -1087,6 +1090,12 @@
   },
   "this": {
     "CompletionItemKind": "Keyword"
+  },
+  "thisConsensusSecs": {
+    "CompletionItemKind": "Function"
+  },
+  "thisConsensusTime": {
+    "CompletionItemKind": "Function"
   },
   "throw": {
     "CompletionItemKind": "Keyword"

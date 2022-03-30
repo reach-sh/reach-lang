@@ -1641,12 +1641,6 @@ lastConsensusTime()
 The @{defn("lastConsensusTime")} primitive returns the network time of the last publication of the DApp.
 This may not be available if there was no such previous publication, such as at the beginning of an application before the first publication.
 
-:::note
-Why is there no `thisConsensusTime`?
-Some networks do not support observing the time of a consensus operation until after it has finalized.
-This aides scalability, because it increases the number of times when an operation could be finalized.
-:::
-
 ---
 
 @{ref("rsh", "lastConsensusSecs")}
@@ -1654,7 +1648,25 @@ This aides scalability, because it increases the number of times when an operati
 lastConsensusSecs()
 ```
 
-@{defn("lastConsensusSecs")} is like lastConsensusTime, except it returns the network seconds.
+@{defn("lastConsensusSecs")} is like `{!rsh} lastConsensusTime`, except it returns the network seconds.
+
+### `thisConsensusTime` and `thisConsensusSecs`
+
+@{ref("rsh", "thisConsensusTime")}
+```reach
+thisConsensusTime()
+```
+
+The @{defn("thisConsensusTime")} primitive returns the network time of the current publication of the DApp.
+
+---
+
+@{ref("rsh", "thisConsensusSecs")}
+```reach
+thisConsensusSecs()
+```
+
+@{defn("thisConsensusSecs")} is like `{!rsh} thisConsensusTime`, except it returns the network seconds.
 
 ### `baseWaitTime` and `baseWaitSecs`
 

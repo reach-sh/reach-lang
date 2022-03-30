@@ -603,14 +603,15 @@ df_step :: DKTail -> DFApp LLStep
 df_step = \case
   DK_Stop at -> return $ LLS_Stop at
   DK_ToConsensus at send recv mtime -> do
-    lt <- fmap snd <$> fluidRefm FV_thisConsensusTime
+    lt <- fmap snd <$> fluidRefm FV_lastConsensusTime
     let tt = dr_time recv
-    ls <- fmap snd <$> fluidRefm FV_thisConsensusSecs
+    ls <- fmap snd <$> fluidRefm FV_lastConsensusSecs
     let ts = dr_secs recv
     k' <-
       df_con $
-        DK_Com (DKC_Let at DLV_Eff (DLE_TimeOrder at [(lt, tt), (ls, ts)])) $
-          dr_k recv
+        DK_Com (DKC_Let at DLV_Eff (DLE_TimeOrder at PGT [(lt, tt)])) $
+          DK_Com (DKC_Let at DLV_Eff (DLE_TimeOrder at PGE [(ls, ts)])) $
+            dr_k recv
     let recv' = recv {dr_k = k'}
     mtime' <-
       case mtime of

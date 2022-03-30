@@ -629,7 +629,7 @@ data DLExpr
   | DLE_TokenNew SrcLoc DLTokenNew
   | DLE_TokenBurn SrcLoc DLArg DLArg
   | DLE_TokenDestroy SrcLoc DLArg
-  | DLE_TimeOrder SrcLoc [(Maybe DLArg, DLVar)]
+  | DLE_TimeOrder SrcLoc PrimOp [(Maybe DLArg, DLVar)]
   | DLE_GetContract SrcLoc
   | DLE_GetAddress SrcLoc
   | -- | DLE_EmitLog SrcLoc LogKind [DLVar]
@@ -764,9 +764,9 @@ instance PrettySubst DLExpr where
     DLE_TokenDestroy _ tok -> do
       tok' <- prettySubst tok
       return $ "Token(" <> tok' <> ").destroy()"
-    DLE_TimeOrder _ tos -> do
+    DLE_TimeOrder _ op tos -> do
       tos' <- render_dasM $ map (\(x, y) -> (x, DLA_Var y)) tos
-      return $ "timeOrder" <> parens tos'
+      return $ "timeOrder" <> parens (pretty op <> ", " <> tos')
     DLE_GetContract {} -> return $ "getContract()"
     DLE_GetAddress {} -> return $ "getAddress()"
     DLE_EmitLog _ lk vs -> do

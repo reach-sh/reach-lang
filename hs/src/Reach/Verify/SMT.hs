@@ -94,6 +94,9 @@ smtOrAll = \case
 smtEq :: SExpr -> SExpr -> SExpr
 smtEq x y = smtApply "=" [x, y]
 
+smtGe :: SExpr -> SExpr -> SExpr
+smtGe x y = smtApply ">=" [x, y]
+
 smtNot :: SExpr -> SExpr
 smtNot se = smtApply "not" [se]
 
@@ -1105,17 +1108,20 @@ smt_e at_dv mdv de = do
     DLE_TokenNew at _ -> unbound at
     DLE_TokenBurn at _ _ -> unbound at
     DLE_TokenDestroy at _ -> unbound at
-    DLE_TimeOrder at ps -> do
-      let go n se = do
+    DLE_TimeOrder at op ps -> do
+      let go f n se = do
             n' <- smt_v at n
-            smtAssert $ smtEq n' se
+            smtAssert $ f n' se
       forM_ ps $ \case
-        (Nothing, n) -> go n $ smt_lt at $ DLL_Int at 0
+        (Nothing, n) -> go smtEq n $ smt_lt at $ DLL_Int at 0
         (Just o, n) -> do
           o' <- smt_a at o
           let w = DLA_Literal $ DLL_Int at 1
           w' <- smt_a at w
-          go n =<< smtPrimOp at ADD [o, w] [o', w']
+          case op of
+            PGT -> go smtEq n =<< smtPrimOp at ADD [o, w] [o', w']
+            PGE -> go smtGe n o'
+            _ -> impossible $ "timeOrder: bad op: " <> show op
     DLE_GetContract at -> unbound at
     DLE_GetAddress at -> unbound at
     DLE_EmitLog at _ lv ->
