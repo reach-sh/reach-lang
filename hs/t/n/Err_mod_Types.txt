@@ -8,3 +8,4 @@ Trace:
   in [unknown function] from (./Err_mod_Types.rsh:6:13:function exp) at (./Err_mod_Types.rsh:6:9:application)
 
 For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0129
+

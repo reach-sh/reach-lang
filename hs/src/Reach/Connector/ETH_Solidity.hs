@@ -528,7 +528,7 @@ solPrimApply = \case
   ADDRESS_EQ -> binOp "=="
   TOKEN_EQ -> binOp "=="
   BYTES_ZPAD {} -> impossible "bytes concat"
-  BTOI_LAST8 -> impossible "btoiLast8"
+  BTOI_LAST8 {} -> impossible "btoiLast8"
   where
     safeOp fun op args = do
       PLOpts {..} <- ctxt_plo <$> ask
@@ -966,15 +966,20 @@ solCom = \case
           where
             ei = ".elem" <> pretty i
     return $ vsep $ solBytesSplit bl go
+  DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ (BTOI_LAST8 True) [x]) -> do
+    addMemVar dv
+    dv' <- solVar dv
+    x' <- solArg x
+    return $ dv' <+> "=" <+> "uint64" <> parens x' <> semi
   DL_Let _ (DLV_Let _ dv) (DLE_PrimOp _ (BTOI_LAST8 {}) [x]) -> do
     addMemVar dv
     dv' <- solVar dv
     x' <- solArg x
     let (howMany, lastLen) = solBytesInfo $ bytesTypeLen $ argTypeOf x
     let go :: Integer -> Integer -> Integer -> Doc
-        go elemIdx from to =  "for(uint i = " <> pretty from <> "; i < " <> pretty to <> "; i++) {" <>
+        go elemIdx from to =  "for(uint i = " <> pretty from <> "; i < " <> pretty to <> "; i++) {" <> hardline <>
                                   dv' <+> "=" <+> parens (dv' <+> "* 256") <+> "+" <+> "uint8" <> parens ("bytes1" <> parens (x' <> ei <> brackets "i")) <> semi <>
-                                  "}"
+                                  hardline <> "}"
           where
             ei = ".elem" <> pretty elemIdx
     let (res:: [Doc]) = case (lastLen < 8, howMany == 1) of

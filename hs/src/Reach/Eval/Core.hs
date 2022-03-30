@@ -2009,11 +2009,13 @@ evalPrimOp p sargs = do
           let rng = T_Bytes $ lhs_l + xtra
           make_var_ rng [lhs_ae]
         _ -> expect_ $ Err_Apply_ArgCount at 1 (length args)
-    BTOI_LAST8 ->
+    BTOI_LAST8 isDigest ->
       case args of
         [b] -> do
-          (_, bae) <- typeOfBytes b
-          make_var_ T_UInt [bae]
+          ae <- case isDigest of
+                  True  -> typeOfDigest b
+                  False -> snd <$> typeOfBytes b
+          make_var_ T_UInt [ae]
         _ -> expect_ $ Err_Apply_ArgCount at 1 (length args)
     ADD ->
       case args of
@@ -2390,6 +2392,13 @@ typeOfBytes v = do
   case t of
     T_Bytes l -> return (l, ae)
     _ -> expect_t v $ Err_Expected "bytes"
+
+typeOfDigest :: SLVal -> App DLArgExpr
+typeOfDigest v = do
+  (t, ae) <- typeOf v
+  case t of
+    T_Digest -> return ae
+    _ -> expect_t v $ Err_Expected "Digest"
 
 verifyNotReserved :: SrcLoc -> String -> App ()
 verifyNotReserved at s = do
@@ -3474,11 +3483,13 @@ evalPrim p sargs =
       (x, y) <- two_args
       (x_ty, _) <- compileTypeOf x
       (y_ty, _) <- compileTypeOf y
+      let go isDigest = do
+            bi <- evalPrimOp (BTOI_LAST8 isDigest) [public x]
+            evalPrimOp MOD [bi, public y]
       case (x_ty, y_ty) of
         (T_UInt, T_UInt) -> evalPrimOp MOD sargs
-        (T_Bytes {}, T_UInt) -> do
-            bi <- evalPrimOp BTOI_LAST8 [public x]
-            evalPrimOp MOD [bi, public y]
+        (T_Bytes {}, T_UInt) -> go False
+        (T_Digest, T_UInt) -> go True
         (l, r) -> expect_ $ Err_mod_Types l r
     -- END OF evalPrim case
   where

@@ -39,6 +39,7 @@
 (declare-fun digest (Bytes) Digest)
 (declare-fun Digest_toBytes (Digest) Bytes)
 (declare-fun Digest_xor (Digest Digest) Digest)
+(declare-fun dtoiLast8 (Digest) UInt)
 
 (declare-sort Null 0)
 (declare-fun null () Null)
