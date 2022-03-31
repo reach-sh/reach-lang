@@ -1108,11 +1108,11 @@ smt_e at_dv mdv de = do
     DLE_TokenNew at _ -> unbound at
     DLE_TokenBurn at _ _ -> unbound at
     DLE_TokenDestroy at _ -> unbound at
-    DLE_TimeOrder at op ps -> do
+    DLE_TimeOrder at op p -> do
       let go f n se = do
             n' <- smt_v at n
             smtAssert $ f n' se
-      forM_ ps $ \case
+      case p of
         (Nothing, n) -> go smtEq n $ smt_lt at $ DLL_Int at 0
         (Just o, n) -> do
           o' <- smt_a at o
