@@ -1058,7 +1058,6 @@ compile = command "compile" $ info f d
           [N.text|
         REACH="$$(realpath "$reachEx")"
         HS="$$(dirname "$$REACH")/hs"
-        ID=$$($whoami')
 
         export REACH
 
@@ -1069,12 +1068,9 @@ compile = command "compile" $ info f d
           && [ -d "$${HS}/.stack-work"  ] \
           && which stack >/dev/null 2>&1; then
 
-          export STACK_YAML="$${REACH_STACK_YAML:-"$${HS}/stack.yaml"}"
-          export REACHC_ID=$${ID}
-
-          # https://github.com/koalaman/shellcheck/wiki/SC2155
+          STACK_YAML="$${REACH_STACK_YAML:-"$${HS}/stack.yaml"}"
           REACHC_HASH="$$("$${HS}/../scripts/git-hash.sh")"
-          export REACHC_HASH
+          export STACK_YAML REACHC_HASH
 
           (cd "$$HS" && make expand)
 
@@ -1106,7 +1102,7 @@ compile = command "compile" $ info f d
             -u "$(id -ru):$(id -rg)" \
             -e REACH_CONNECTOR_MODE \
             -e REACH_IDE \
-            -e "REACHC_ID=$${ID}" \
+            -e "REACHC_ID=$whoami'" \
             -e "CI=$ci'" \
             "$$cid" reachc $args
         fi
@@ -1610,10 +1606,19 @@ config = command "config" $ info f d
   where
     d = progDesc "Configure default Reach settings"
     f = go <$> switch (short 'v' <> long "verbose" <> help "Print additional config info to `stdout`")
+    go v' = do
+      Var {..} <- asks e_var
+      let v = if v' then " -v" else ""
+      scriptWithConnectorModeOptional $ write [N.text| $reachEx config2$v $whoami' |]
+
+config2 :: Subcommand
+config2 = command "config2" $ info f mempty
+  where
+    f = go <$> switch (short 'v') <*> strArgument (metavar "REACHC_ID")
     nets = zip [0 ..] $ Nothing : (Just <$> [ALGO, CFX, ETH])
     maxNet = length . show . maybe 0 id . maximumMay . fmap fst $ nets
     lpad (i :: Int) = replicate (maxNet - (length $ show i)) ' ' <> show i
-    go v' = do
+    go v' rcid = do
       Var {..} <- asks e_var
       efc <- envFileContainer
       efh <- envFileHost
@@ -1646,6 +1651,7 @@ config = command "config" $ info f d
       let e =
             [N.text|
       # Automatically generated with `reach config` at $now
+      export REACHC_ID=$rcid
       export REACH_CONNECTOR_MODE=$dnet
     |] <> "\n"
 
@@ -1685,27 +1691,26 @@ config = command "config" $ info f d
         echo
       |]
 
-      case shell of
-        ShellUnknown -> pure ()
-        Bash -> script $ do
-          write
-            [N.text|
-          if [ -f ~/.bash_profile ]; then
-            P=~/.bash_profile
-          elif [ -f ~/.bash_login ]; then
-            P=~/.bash_login
-          else
-            P=~/.profile
-          fi
-        |]
-          sourceMe
-        Zsh -> script $ do
-          write
-            [N.text|
-          P=${ZDOTDIR:-$${HOME}}/.zshenv
-          touch "$$P"
-        |]
-          sourceMe
+      scriptWithConnectorModeOptional $ do
+        case shell of
+          ShellUnknown -> pure ()
+          Bash -> do
+            write [N.text|
+              if [ -f ~/.bash_profile ]; then
+                P=~/.bash_profile
+              elif [ -f ~/.bash_login ]; then
+                P=~/.bash_login
+              else
+                P=~/.profile
+              fi
+            |]
+            sourceMe
+          Zsh -> do
+            write [N.text|
+              P=${ZDOTDIR:-$${HOME}}/.zshenv
+              touch "$$P"
+            |]
+            sourceMe
       where
         nope i = putStrLn $ show i <> " is not a valid selection."
         snet c = \case
@@ -2411,12 +2416,12 @@ updateIDE = command "update-ide" $ info f mempty where
     update' s v
 
 whoami' :: Text
-whoami' = "docker info --format '{{.ID}}' 2>/dev/null"
+whoami' = [N.text| ${REACHC_ID:-$(docker info --format '{{.ID}}' 2>/dev/null)} |]
 
 whoami :: Subcommand
 whoami = command "whoami" $ info f fullDesc
   where
-    f = pure . script $ write whoami'
+    f = pure . script $ write [N.text| echo "$whoami'" |]
 
 log' :: Subcommand
 log' = command "log" $ info f fullDesc
@@ -2434,7 +2439,7 @@ log'' i = do
     False ->
       pure
         [N.text|
-      log_$i () { $reachEx log --user-id=$$($whoami') --initiator=$i >/dev/null 2>&1; }
+      log_$i () { $reachEx log --user-id=$whoami' --initiator=$i >/dev/null 2>&1; }
       log_$i &
     |]
 
@@ -2495,6 +2500,7 @@ main = do
           <> versionCompare
           <> versionCompare2
           <> updateIDE
+          <> config2
   let cli =
         Cli
           <$> env
