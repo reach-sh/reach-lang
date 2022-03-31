@@ -218,7 +218,7 @@ jsCon = \case
   DLL_Int at uit i -> do
     uim <- case uit of
              False -> jsArg (DLA_Constant $ DLC_UInt_max)
-             True -> impossible "XXX jsCon uit"
+             True -> impossible "XXX jsCon UInt256"
     return $ jsApply "stdlib.checkedBigNumberify" [jsAt at, uim, pretty i]
   DLL_TokenZero ->
     return "stdlib.Token_zero"

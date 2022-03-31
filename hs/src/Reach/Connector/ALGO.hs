@@ -1252,7 +1252,7 @@ cl = \case
   DLL_Null -> cbs ""
   DLL_Bool b -> cint $ if b then 1 else 0
   DLL_Int at False i -> cint_ at i
-  DLL_Int _ True _ -> impossible "xxx cl"
+  DLL_Int _ True _ -> impossible "XXX UInt256"
   DLL_TokenZero -> cint 0
 
 cbool :: Bool -> App ()
@@ -1308,7 +1308,7 @@ cprim = \case
   PEQ t -> bcall t "=="
   PGT t -> bcall t ">"
   PGE t -> bcall t ">="
-  UCAST {} -> impossible "ucast"
+  UCAST {} -> impossible "XXX UInt256"
   MUL_DIV -> \case
     [x, y, z] -> do
       ca x
