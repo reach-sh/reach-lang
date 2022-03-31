@@ -628,7 +628,7 @@ instance Interp DLExpr where
       updateLedger simContract tok (burn_amt -)
       return V_Null
     DLE_TokenDestroy _at _dlarg -> return V_Null
-    DLE_TimeOrder _at _ _assoc_maybe_arg_vars -> return V_Null
+    DLE_TimeOrder {} -> return V_Null
     DLE_GetContract _at -> V_Contract <$> l_acct <$> getMyLocalInfo
     DLE_GetAddress _at -> V_Address <$> l_acct <$> getMyLocalInfo
     DLE_EmitLog _at (L_Api _) [dlvar] -> consensusLookup dlvar

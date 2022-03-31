@@ -80,7 +80,7 @@ instance Sanitize DLExpr where
     DLE_TokenNew _ tns -> DLE_TokenNew sb (sani tns)
     DLE_TokenBurn _ tok amt -> DLE_TokenBurn sb (sani tok) (sani amt)
     DLE_TokenDestroy _ tok -> DLE_TokenDestroy sb (sani tok)
-    DLE_TimeOrder _ op tos -> DLE_TimeOrder sb op (sani tos)
+    DLE_TimeOrder _ op a b -> DLE_TimeOrder sb op (sani a) (sani b)
     DLE_GetContract _ -> DLE_GetContract sb
     DLE_GetAddress _ -> DLE_GetAddress sb
     DLE_EmitLog _ k a -> DLE_EmitLog sb k (sani a)
