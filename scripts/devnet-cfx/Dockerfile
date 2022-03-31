@@ -30,6 +30,7 @@ COPY faucet/index.mjs /faucet
 
 COPY --from=build /conflux-rust/target/release/conflux /
 COPY log.yaml default.toml genesis_secret.txt run.sh /
+COPY daily-ping.sh /
 
 ENTRYPOINT ["/run.sh"]
 
