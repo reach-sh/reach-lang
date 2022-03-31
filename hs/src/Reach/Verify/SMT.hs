@@ -768,7 +768,7 @@ assertInvariants at_dv t v =
     T_UInt ut -> do
       rhs <- case ut of
                False -> smt_c at_dv DLC_UInt_max
-               True -> impossible "XXX assertInvariants"
+               True -> impossible "XXX assertInvariants UInt256"
       smtAssert (smtApply "<=" [Atom v, rhs])
     _ -> return ()
 
