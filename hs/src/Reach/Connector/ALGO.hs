@@ -4,14 +4,12 @@ import Control.Monad.Extra
 import Control.Monad.Reader
 import Crypto.Hash
 import qualified Data.Aeson as Aeson
-import Data.Bits (shiftL, (.|.))
+import Data.Bits (shiftL, shiftR, (.|.))
 import qualified Data.ByteArray as BA
 import qualified Data.ByteString as BS
 import Data.ByteString.Base64 (encodeBase64')
-import Data.ByteString.Builder
 import qualified Data.ByteString.Char8 as B
 import qualified Data.ByteString.Internal as BI
-import qualified Data.ByteString.Lazy as LB
 import qualified Data.DList as DL
 import Data.Function
 import qualified Data.HashMap.Strict as HM
@@ -593,7 +591,7 @@ opt_b1 = \case
       e2n :: Integer
       e2n = s0n + (fromIntegral e1w)
   (TInt x) : (Titob _) : l ->
-    opt_b1 $ (TBytes $ itob x) : l
+    opt_b1 $ (TBytes $ itob 4 x) : l
   (TBytes xbs) : (TCode "btoi" []) : l ->
     opt_b1 $ (TInt $ btoi xbs) : l
   (TBytes xbs) : (TCode "sha256" []) : l ->
@@ -614,11 +612,25 @@ sha512_256bs = BA.convert . hashWith SHA512t_256
 bsSubstring :: BS.ByteString -> Int -> Int -> BS.ByteString
 bsSubstring bs s e = BS.take e $ BS.drop s bs
 
-itob :: Integral a => a -> BS.ByteString
-itob x = LB.toStrict $ toLazyByteString $ word64BE $ fromIntegral x
+padTo :: Int -> a -> [a] -> [a]
+padTo p d l = replicate (p - length l) d <> l
+
+itob :: Int -> Integer -> BS.ByteString
+itob howMany = BS.pack . padTo howMany 0 . unroll
 
 btoi :: BS.ByteString -> Integer
-btoi bs = BS.foldl' (\i b -> (i `shiftL` 8) .|. fromIntegral b) 0 $ bs
+btoi = roll . BS.unpack
+
+unroll :: Integer -> [Word8]
+unroll = List.unfoldr go
+  where
+    go 0 = Nothing
+    go i = Just (fromIntegral i, i `shiftR` 8)
+
+roll :: [Word8] -> Integer
+roll = foldr unstep 0
+  where
+    unstep b a = a `shiftL` 8 .|. fromIntegral b
 
 type RestrictCFG = Label -> IO (DotGraph, AnalyzeCFG, BudgetCFG)
 type BudgetCFG = IO (Bool, Integer, Integer)
@@ -1239,7 +1251,7 @@ ctzero = \case
     cfrombs t
 
 chkint :: SrcLoc -> Integer -> Integer
-chkint at i = checkIntLiteralC at conName' conCons' i
+chkint at = checkIntLiteralC at conName' conCons'
 
 cint_ :: SrcLoc -> Integer -> App ()
 cint_ at i = output $ TInt $ chkint at i
@@ -1252,7 +1264,8 @@ cl = \case
   DLL_Null -> cbs ""
   DLL_Bool b -> cint $ if b then 1 else 0
   DLL_Int at False i -> cint_ at i
-  DLL_Int _ True _ -> impossible "XXX UInt256"
+  DLL_Int at True i ->
+    cbs $ itob 32 $ checkIntLiteral at conName' 0 uint256_Max i
   DLL_TokenZero -> cint 0
 
 cbool :: Bool -> App ()
@@ -1308,7 +1321,28 @@ cprim = \case
   PEQ t -> bcall t "=="
   PGT t -> bcall t ">"
   PGE t -> bcall t ">="
-  UCAST {} -> impossible "XXX UInt256"
+  UCAST from to -> \case
+    [v] -> do
+      case (from, to) of
+        (False, True) -> do
+          --- UInt64 to UInt256
+          padding 3
+          ca v
+          op "itob"
+        (True, False) -> do
+          --- UInt256 to UInt64
+          ca v
+          -- [ v ]
+          dupn 3
+          -- [ v, v, v, v ]
+          let ext i = cint i >> op "extract_uint64"
+          let go i = ext i >> cint 0 >> asserteq
+          go 0
+          go 1
+          go 2
+          ext 3
+        x -> impossible $ "ucast " <> show x
+    _ -> impossible "cprim: UCAST args"
   MUL_DIV -> \case
     [x, y, z] -> do
       ca x

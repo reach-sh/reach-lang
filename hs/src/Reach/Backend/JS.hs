@@ -211,6 +211,9 @@ jsBool = \case
   True -> "true"
   False -> "false"
 
+jsNum :: Integer -> Doc
+jsNum = jsString . show
+
 jsCon :: AppT DLLiteral
 jsCon = \case
   DLL_Null -> return "null"
@@ -218,8 +221,8 @@ jsCon = \case
   DLL_Int at uit i -> do
     uim <- case uit of
              False -> jsArg (DLA_Constant $ DLC_UInt_max)
-             True -> impossible "XXX jsCon UInt256"
-    return $ jsApply "stdlib.checkedBigNumberify" [jsAt at, uim, pretty i]
+             True -> return $ jsNum $ uint256_Max
+    return $ jsApply "stdlib.checkedBigNumberify" [jsAt at, uim, jsNum i]
   DLL_TokenZero ->
     return "stdlib.Token_zero"
 

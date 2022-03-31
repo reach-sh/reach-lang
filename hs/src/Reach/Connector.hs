@@ -4,6 +4,7 @@ module Reach.Connector
   , ConnectorResult
   , Connector (..)
   , Connectors
+  , checkIntLiteral
   , checkIntLiteralC
   , conWrite
   , conShowP
@@ -74,11 +75,15 @@ conShowP :: Pretty a => Maybe (T.Text -> String) -> T.Text -> a -> IO ()
 conShowP moutn which v =
   conWriteH LTIO.writeFile moutn which (render $ pretty v)
 
-checkIntLiteralC :: SrcLoc -> ConnectorName -> (DLConstant -> DLLiteral) -> Integer -> Integer
-checkIntLiteralC at conName conCons x =
+checkIntLiteral :: SrcLoc -> ConnectorName -> Integer -> Integer -> Integer -> Integer
+checkIntLiteral at conName rmin rmax x =
   case rmin <= x && x <= rmax of
     True -> x
     False -> expect_thrown at $ Err_IntLiteralRange conName rmin x rmax
+
+checkIntLiteralC :: SrcLoc -> ConnectorName -> (DLConstant -> DLLiteral) -> Integer -> Integer
+checkIntLiteralC at conName conCons =
+  checkIntLiteral at conName rmin rmax
   where
     rmin = 0
     rmax = case conCons DLC_UInt_max of
