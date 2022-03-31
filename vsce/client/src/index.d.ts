@@ -1,6 +1,6 @@
 type VersionCompareJson = {
-	dockerC: string,
-	dockerH: string,
-	noDiff: boolean,
-	script: boolean,
+  dockerC: string,
+  dockerH: string,
+  noDiff: boolean,
+  script: boolean,
 };

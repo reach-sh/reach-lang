@@ -9,19 +9,19 @@ import { spawn } from 'child_process';
  */
 
 export default (
-	pathToScript: string
+  pathToScript: string
 ): Promise<boolean> => new Promise((resolve, reject) => {
-	// https://stackoverflow.com/a/53204227
-	const process = spawn(
-		pathToScript, [
-			'version-compare',
-			'--json',
-			'-h',
-			'>/dev/null',
-			'2>&1'
-		]
-	);
+  // https://stackoverflow.com/a/53204227
+  const process = spawn(
+    pathToScript, [
+      'version-compare',
+      '--json',
+      '-h',
+      '>/dev/null',
+      '2>&1'
+    ]
+  );
 
-	process.on('error', code => resolve(!!code));
-	process.on('exit', code => resolve(!!code));
+  process.on('error', code => resolve(!!code));
+  process.on('exit', code => resolve(!!code));
 });
