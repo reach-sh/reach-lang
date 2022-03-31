@@ -16,7 +16,7 @@ export const main = Reach.App(() => {
   while (i < 5) {
     commit();
     A.publish();
-    check(thisConsensusTime() > lastTime);
+    assert(thisConsensusTime() > lastTime);
     [ lastTime, lastSecs, i ] = [ thisConsensusTime(), thisConsensusSecs(), i + 1 ];
     continue;
   }

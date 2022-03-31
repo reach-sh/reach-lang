@@ -609,8 +609,8 @@ df_step = \case
     let ts = dr_secs recv
     k' <-
       df_con $
-        DK_Com (DKC_Let at DLV_Eff (DLE_TimeOrder at PGT (lt, tt))) $
-          DK_Com (DKC_Let at DLV_Eff (DLE_TimeOrder at PGE (ls, ts))) $
+        DK_Com (DKC_Let at DLV_Eff (DLE_TimeOrder at PGT lt tt)) $
+          DK_Com (DKC_Let at DLV_Eff (DLE_TimeOrder at PGE ls ts)) $
             dr_k recv
     let recv' = recv {dr_k = k'}
     mtime' <-

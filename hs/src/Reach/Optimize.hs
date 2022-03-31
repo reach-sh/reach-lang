@@ -413,7 +413,7 @@ instance Optimize DLExpr where
     DLE_TokenNew at tns -> DLE_TokenNew at <$> opt tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> opt tok <*> opt amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> opt tok
-    DLE_TimeOrder at op tos -> DLE_TimeOrder at op <$> opt tos
+    DLE_TimeOrder at op a b -> DLE_TimeOrder at op <$> opt a <*> opt b
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at k a -> DLE_EmitLog at k <$> opt a

@@ -98,7 +98,7 @@ instance Subst DLExpr where
     DLE_TokenNew at tns -> DLE_TokenNew at <$> subst tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> subst tok <*> subst amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> subst tok
-    DLE_TimeOrder at op tos -> DLE_TimeOrder at op <$> subst tos
+    DLE_TimeOrder at op a b -> DLE_TimeOrder at op <$> subst a <*> subst b
     DLE_GetContract at -> return $ DLE_GetContract at
     DLE_GetAddress at -> return $ DLE_GetAddress at
     DLE_EmitLog at lk x -> DLE_EmitLog at lk <$> subst x

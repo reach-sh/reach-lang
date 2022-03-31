@@ -122,7 +122,7 @@ instance FreeVars DLExpr where
     DLE_TokenNew _ a -> freeVars a
     DLE_TokenBurn _ a b -> freeVars [a, b]
     DLE_TokenDestroy _ a -> freeVars a
-    DLE_TimeOrder _ _ a -> freeVars a
+    DLE_TimeOrder _ _ ma b -> freeVars ma <> freeVars b
     DLE_GetContract {} -> mempty
     DLE_GetAddress {} -> mempty
     DLE_EmitLog _ _ a -> freeVars a

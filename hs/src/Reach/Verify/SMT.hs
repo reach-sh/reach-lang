@@ -1108,19 +1108,19 @@ smt_e at_dv mdv de = do
     DLE_TokenNew at _ -> unbound at
     DLE_TokenBurn at _ _ -> unbound at
     DLE_TokenDestroy at _ -> unbound at
-    DLE_TimeOrder at op p -> do
-      let go f n se = do
-            n' <- smt_v at n
-            smtAssert $ f n' se
-      case p of
-        (Nothing, n) -> go smtEq n $ smt_lt at $ DLL_Int at 0
-        (Just o, n) -> do
+    DLE_TimeOrder at op mo n -> do
+      n' <- smt_v at n
+      let go f = smtAssert . f n'
+      case mo of
+        Nothing -> go smtEq $ smt_lt at $ DLL_Int at 0
+        Just o -> do
           o' <- smt_a at o
-          let w = DLA_Literal $ DLL_Int at 1
-          w' <- smt_a at w
           case op of
-            PGT -> go smtEq n =<< smtPrimOp at ADD [o, w] [o', w']
-            PGE -> go smtGe n o'
+            PGT -> do
+              let w = DLA_Literal $ DLL_Int at 1
+              w' <- smt_a at w
+              go smtEq =<< smtPrimOp at ADD [o, w] [o', w']
+            PGE -> go smtGe o'
             _ -> impossible $ "timeOrder: bad op: " <> show op
     DLE_GetContract at -> unbound at
     DLE_GetAddress at -> unbound at
