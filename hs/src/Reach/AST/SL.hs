@@ -2,6 +2,7 @@
 
 module Reach.AST.SL where
 
+import Control.DeepSeq (NFData)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
@@ -14,7 +15,6 @@ import Reach.AST.Base
 import Reach.AST.DLBase
 import Reach.JSOrphans ()
 import Reach.Texty
-import Reach.Util
 import Reach.Warning (Deprecation (..))
 
 -- SL types are a superset of DL types.
@@ -24,7 +24,7 @@ import Reach.Warning (Deprecation (..))
 data SLType
   = ST_Null
   | ST_Bool
-  | ST_UInt
+  | ST_UInt UIntTy
   | ST_Bytes Integer
   | ST_Digest
   | ST_Address
@@ -55,7 +55,8 @@ instance Show SLType where
   show = \case
     ST_Null -> "Null"
     ST_Bool -> "Bool"
-    ST_UInt -> "UInt"
+    ST_UInt False -> "UInt"
+    ST_UInt True -> "UInt256"
     ST_Bytes sz -> "Bytes(" <> show sz <> ")"
     ST_Digest -> "Digest"
     ST_Address -> "Address"
@@ -82,7 +83,7 @@ st2dt :: HasCallStack => SLType -> Maybe DLType
 st2dt = \case
   ST_Null -> pure T_Null
   ST_Bool -> pure T_Bool
-  ST_UInt -> pure T_UInt
+  ST_UInt t -> pure $ T_UInt t
   ST_Bytes i -> pure $ T_Bytes i
   ST_Digest -> pure T_Digest
   ST_Address -> pure T_Address
@@ -102,7 +103,7 @@ dt2st :: DLType -> SLType
 dt2st = \case
   T_Null -> ST_Null
   T_Bool -> ST_Bool
-  T_UInt -> ST_UInt
+  T_UInt t -> ST_UInt t
   T_Bytes i -> ST_Bytes i
   T_Digest -> ST_Digest
   T_Address -> ST_Address
@@ -218,6 +219,9 @@ instance (Equiv a, Equiv b) => Equiv (Either a b) where
     (Right a, Right b) -> equiv a b
     _ -> False
 
+instance Equiv SPrimOp where
+  equiv = (==)
+
 instance Equiv PrimOp where
   equiv = (==)
 
@@ -239,7 +243,7 @@ instance Equiv DLLiteral where
   equiv a b = case (a, b) of
     (DLL_Null, DLL_Null) -> True
     (DLL_Bool b1, DLL_Bool b2) -> equiv b1 b2
-    (DLL_Int _ x, DLL_Int _ y) -> equiv x y
+    (DLL_Int _ a1 b1, DLL_Int _ a2 b2) -> equiv a1 a2 && equiv b1 b2
     (DLL_TokenZero, DLL_TokenZero) -> True
     _ -> False
 
@@ -301,7 +305,7 @@ instance Equiv SLType where
   equiv a b = case (a, b) of
     (ST_Null, ST_Null) -> True
     (ST_Bool, ST_Bool) -> True
-    (ST_UInt, ST_UInt) -> True
+    (ST_UInt t1, ST_UInt t2) -> equiv t1 t2
     (ST_Digest, ST_Digest) -> True
     (ST_Address, ST_Address) -> True
     (ST_Contract, ST_Contract) -> True
@@ -607,32 +611,61 @@ instance Pretty SLKwd where
 allKeywords :: [SLKwd]
 allKeywords = enumFrom minBound
 
-primOpType :: PrimOp -> ([DLType], DLType)
-primOpType (SELF_ADDRESS {}) = impossible "self address"
-primOpType ADD = ([T_UInt, T_UInt], T_UInt)
-primOpType SUB = ([T_UInt, T_UInt], T_UInt)
-primOpType MUL = ([T_UInt, T_UInt], T_UInt)
-primOpType DIV = ([T_UInt, T_UInt], T_UInt)
-primOpType MOD = ([T_UInt, T_UInt], T_UInt)
-primOpType PLT = ([T_UInt, T_UInt], T_Bool)
-primOpType PLE = ([T_UInt, T_UInt], T_Bool)
-primOpType PEQ = impossible "peq type"
-primOpType PGE = ([T_UInt, T_UInt], T_Bool)
-primOpType PGT = ([T_UInt, T_UInt], T_Bool)
-primOpType (BYTES_ZPAD _) = impossible "pad type"
-primOpType IF_THEN_ELSE = impossible "ite type"
-primOpType DIGEST_EQ = ([T_Digest, T_Digest], T_Bool)
-primOpType ADDRESS_EQ = ([T_Address, T_Address], T_Bool)
-primOpType TOKEN_EQ = ([T_Token, T_Token], T_Bool)
-primOpType LSH = ([T_UInt, T_UInt], T_UInt)
-primOpType RSH = ([T_UInt, T_UInt], T_UInt)
-primOpType BAND = ([T_UInt, T_UInt], T_UInt)
-primOpType BIOR = ([T_UInt, T_UInt], T_UInt)
-primOpType BXOR = ([T_UInt, T_UInt], T_UInt)
-primOpType DIGEST_XOR = ([T_Digest, T_Digest], T_Digest)
-primOpType BYTES_XOR = impossible "bytes_xor type"
-primOpType MUL_DIV = ([T_UInt, T_UInt, T_UInt], T_UInt)
-primOpType BTOI_LAST8 {} = impossible "BTOI_LAST8 type"
+data SPrimOp
+  = S_ADD
+  | S_SUB
+  | S_MUL
+  | S_DIV
+  | S_MOD
+  | S_PLT
+  | S_PLE
+  | S_PEQ
+  | S_PGE
+  | S_PGT
+  | S_UCAST UIntTy
+  | S_IF_THEN_ELSE
+  | S_DIGEST_EQ
+  | S_ADDRESS_EQ
+  | S_TOKEN_EQ
+  | S_LSH
+  | S_RSH
+  | S_BAND
+  | S_BIOR
+  | S_BXOR
+  | S_BYTES_ZPAD Integer
+  | S_MUL_DIV
+  | S_DIGEST_XOR
+  | S_BYTES_XOR
+  | S_BTOI_LAST8 Bool
+  deriving (Eq, Generic, NFData, Ord, Show)
+
+sprimToPrim :: UIntTy -> SPrimOp -> PrimOp
+sprimToPrim t = \case
+  S_ADD -> ADD t
+  S_SUB -> SUB t
+  S_MUL -> MUL t
+  S_DIV -> DIV t
+  S_MOD -> MOD t
+  S_PLT -> PLT t
+  S_PLE -> PLE t
+  S_PEQ -> PEQ t
+  S_PGE -> PGE t
+  S_PGT -> PGT t
+  S_UCAST t2 -> UCAST t t2
+  S_IF_THEN_ELSE -> IF_THEN_ELSE
+  S_DIGEST_EQ -> DIGEST_EQ
+  S_ADDRESS_EQ -> ADDRESS_EQ
+  S_TOKEN_EQ -> TOKEN_EQ
+  S_LSH -> LSH
+  S_RSH -> RSH
+  S_BAND -> BAND
+  S_BIOR -> BIOR
+  S_BXOR -> BXOR
+  S_BYTES_ZPAD n -> BYTES_ZPAD n
+  S_MUL_DIV -> MUL_DIV
+  S_DIGEST_XOR -> DIGEST_XOR
+  S_BYTES_XOR -> BYTES_XOR
+  S_BTOI_LAST8 b -> BTOI_LAST8 b
 
 data RemoteFunMode
   = RFM_Pay
@@ -678,7 +711,7 @@ data SLPrimitive
   | SLPrim_Object
   | SLPrim_Object_has
   | SLPrim_App_Delay SrcLoc JSStatement (SLEnv, Bool)
-  | SLPrim_op PrimOp
+  | SLPrim_op SPrimOp
   | SLPrim_transfer
   | SLPrim_transfer_amt_to SLVal
   | SLPrim_exit

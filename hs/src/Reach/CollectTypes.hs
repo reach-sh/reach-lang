@@ -60,7 +60,7 @@ instance CollectsTypes DLType where
       <> case t of
         T_Null -> mempty
         T_Bool -> mempty
-        T_UInt -> mempty
+        T_UInt _ -> mempty
         T_Bytes _ -> mempty
         T_Digest -> mempty
         T_Address -> mempty

@@ -236,8 +236,8 @@ conName' = "ALGO"
 
 conCons' :: DLConstant -> DLLiteral
 conCons' = \case
-  DLC_UInt_max  -> DLL_Int sb $ 2 ^ (64 :: Integer) - 1
-  DLC_Token_zero -> DLL_Int sb $ 0
+  DLC_UInt_max  -> DLL_Int sb uintWord $ 2 ^ (64 :: Integer) - 1
+  DLC_Token_zero -> DLL_Int sb uintWord $ 0
 
 algoMinTxnFee :: Integer
 algoMinTxnFee = 1000
@@ -307,7 +307,7 @@ algoMaxAppProgramLen_really :: Integer
 algoMaxAppProgramLen_really = (1 + algoMaxExtraAppProgramPages) * algoMaxAppProgramLen
 
 minimumBalance_l :: DLLiteral
-minimumBalance_l = DLL_Int sb algoMinimumBalance
+minimumBalance_l = DLL_Int sb uintWord algoMinimumBalance
 
 tealVersionPragma :: LT.Text
 tealVersionPragma = "#pragma version 6"
@@ -325,12 +325,13 @@ typeSig x =
   case x of
     T_Null -> "byte[0]"
     T_Bool -> "byte" -- "bool"
-    T_UInt -> "uint64"
+    T_UInt False -> "uint64"
+    T_UInt True -> "byte[32]"
     T_Bytes sz -> "byte" <> array sz
     T_Digest -> "digest"
     T_Address -> "address"
-    T_Contract -> typeSig T_UInt
-    T_Token -> typeSig T_UInt
+    T_Contract -> typeSig $ T_UInt uintWord
+    T_Token -> typeSig $ T_UInt uintWord
     T_Array t sz -> typeSig t <> array sz
     T_Tuple ts -> "(" <> intercalate "," (map typeSig ts) <> ")"
     T_Object m -> typeSig $ T_Tuple $ M.elems m
@@ -343,12 +344,13 @@ typeSizeOf :: DLType -> Integer
 typeSizeOf = \case
   T_Null -> 0
   T_Bool -> 1
-  T_UInt -> word
+  T_UInt False -> word
+  T_UInt True -> 32
   T_Bytes sz -> sz
   T_Digest -> 32
   T_Address -> 32
-  T_Contract -> typeSizeOf $ T_UInt
-  T_Token -> typeSizeOf $ T_UInt
+  T_Contract -> typeSizeOf $ T_UInt uintWord
+  T_Token -> typeSizeOf $ T_UInt uintWord
   T_Array t sz -> sz * typeSizeOf t
   T_Tuple ts -> sum $ map typeSizeOf ts
   T_Object m -> sum $ map typeSizeOf $ M.elems m
@@ -1197,14 +1199,15 @@ sallocVarLet (DLVarLet mvc dv) sm cgen km = do
 
 ctobs :: DLType -> App ()
 ctobs = \case
-  T_UInt -> output (Titob False)
+  T_UInt False -> output (Titob False)
+  T_UInt True -> nop
   T_Bool -> output (Titob True) >> output (TSubstring 7 8)
   T_Null -> nop
   T_Bytes _ -> nop
   T_Digest -> nop
   T_Address -> nop
-  T_Contract -> ctobs T_UInt
-  T_Token -> ctobs T_UInt
+  T_Contract -> ctobs $ T_UInt uintWord
+  T_Token -> ctobs $ T_UInt uintWord
   T_Array {} -> nop
   T_Tuple {} -> nop
   T_Object {} -> nop
@@ -1213,14 +1216,15 @@ ctobs = \case
 
 cfrombs :: DLType -> App ()
 cfrombs = \case
-  T_UInt -> op "btoi"
+  T_UInt False -> op "btoi"
+  T_UInt True -> nop
   T_Bool -> op "btoi"
   T_Null -> nop
   T_Bytes _ -> nop
   T_Digest -> nop
   T_Address -> nop
-  T_Contract -> cfrombs T_UInt
-  T_Token -> cfrombs T_UInt
+  T_Contract -> cfrombs $ T_UInt uintWord
+  T_Token -> cfrombs $ T_UInt uintWord
   T_Array {} -> nop
   T_Tuple {} -> nop
   T_Object {} -> nop
@@ -1229,7 +1233,7 @@ cfrombs = \case
 
 ctzero :: DLType -> App ()
 ctzero = \case
-  T_UInt -> cint 0
+  T_UInt False -> cint 0
   t -> do
     padding $ typeSizeOf t
     cfrombs t
@@ -1247,7 +1251,8 @@ cl :: DLLiteral -> App ()
 cl = \case
   DLL_Null -> cbs ""
   DLL_Bool b -> cint $ if b then 1 else 0
-  DLL_Int at i -> cint_ at i
+  DLL_Int at False i -> cint_ at i
+  DLL_Int _ True _ -> impossible "xxx cl"
   DLL_TokenZero -> cint 0
 
 cbool :: Bool -> App ()
@@ -1293,10 +1298,17 @@ czpad xtra = do
 cprim :: PrimOp -> [DLArg] -> App ()
 cprim = \case
   SELF_ADDRESS {} -> impossible "self address"
-  ADD -> call "+"
-  SUB -> call "-"
-  MUL -> call "*"
-  DIV -> call "/"
+  ADD t -> bcall t "+"
+  SUB t -> bcall t "-"
+  MUL t -> bcall t "*"
+  DIV t -> bcall t "/"
+  MOD t -> bcall t "%"
+  PLT t -> bcall t "<"
+  PLE t -> bcall t "<="
+  PEQ t -> bcall t "=="
+  PGT t -> bcall t ">"
+  PGE t -> bcall t ">="
+  UCAST {} -> impossible "ucast"
   MUL_DIV -> \case
     [x, y, z] -> do
       ca x
@@ -1305,12 +1317,6 @@ cprim = \case
       ca z
       op "divw"
     _ -> impossible "cprim: MUL_DIV args"
-  MOD -> call "%"
-  PLT -> call "<"
-  PLE -> call "<="
-  PEQ -> call "=="
-  PGT -> call ">"
-  PGE -> call ">="
   LSH -> call "<<"
   RSH -> call ">>"
   BAND -> call "&"
@@ -1374,6 +1380,7 @@ cprim = \case
     call o = \args -> do
       forM_ args ca
       op o
+    bcall t o = call $ (if t then "b" else "") <> o
 
 cconcatbs_ :: (DLType -> App ()) -> [(DLType, App ())] -> App ()
 cconcatbs_ f l = do
@@ -1615,7 +1622,7 @@ cArrayRef _at t frombs ie = do
         False -> ctobs T_Bool
     _ -> do
       case ie of
-        Left (DLA_Literal (DLL_Int _ ii)) -> do
+        Left (DLA_Literal (DLL_Int _ False ii)) -> do
           let start = ii * tsz
           cextract start tsz
         _ -> do
@@ -1880,7 +1887,7 @@ ce = \case
               return $ Just $ ca aa
         let eidx =
               case ia of
-                DLA_Literal (DLL_Int _ ii) -> Left ii
+                DLA_Literal (DLL_Int _ False ii) -> Left ii
                 _ -> Right $ ca ia
         cArraySet at (t, alen) mcbig eidx cnew
   DLE_ArrayConcat _ x y -> do
@@ -1915,7 +1922,7 @@ ce = \case
     block_ "TokenInit" $ do
       let mt_always = True
       let mt_mtok = Just tok
-      let mt_amt = DLA_Literal $ DLL_Int sb 0
+      let mt_amt = DLA_Literal $ DLL_Int sb uintWord 0
       let mt_mrecv = Nothing
       let mt_next = False
       let mt_submit = True
@@ -1984,7 +1991,7 @@ ce = \case
       salloc_ "pre balances" $ \storeBals loadBals -> do
         cbs "appID"
         ca ro
-        ctobs T_UInt
+        ctobs $ T_UInt uintWord
         op "concat"
         op "sha512_256"
         storeAddr
@@ -1994,7 +2001,7 @@ ce = \case
         let mtoksiAll = zip [0..] mtoksBill
         let (mtoksiBill, mtoksiZero) = splitAt (length mtoksBill) mtoksiAll
         let paid = M.fromList $ (Nothing, pay_net) : (map (\(x, y) -> (Just y, x)) pay_ks)
-        let balsT = T_Tuple $ map (const T_UInt) mtoksiAll
+        let balsT = T_Tuple $ map (const $ T_UInt uintWord) mtoksiAll
         let gb_pre _ mtok = do
               cGetBalance at mtok
               case M.lookup mtok paid of
@@ -2002,7 +2009,7 @@ ce = \case
                 Just amt -> do
                   ca amt
                   op "-"
-        cconcatbs $ map (\(i, mtok) -> (T_UInt, gb_pre i mtok)) mtoksiAll
+        cconcatbs $ map (\(i, mtok) -> (T_UInt uintWord, gb_pre i mtok)) mtoksiAll
         storeBals
         -- Start the call
         let mt_at = at
@@ -2027,7 +2034,7 @@ ce = \case
         ca ro
         incResource R_App ro
         makeTxn1 "ApplicationID"
-        let as' = (DLA_Literal $ DLL_Int at $ fromIntegral $ sigStrToInt sig) : as
+        let as' = (DLA_Literal $ DLL_Int at uintWord $ fromIntegral $ sigStrToInt sig) : as
         forM_ as' $ \a -> do
           ca a
           ctobs $ argTypeOf a
@@ -2053,7 +2060,7 @@ ce = \case
               loadBals
               cTupleRef at balsT idx
               op "-"
-        cconcatbs $ map (\(i, mtok) -> (T_UInt, gb_post i mtok)) mtoksiBill
+        cconcatbs $ map (\(i, mtok) -> (T_UInt uintWord, gb_post i mtok)) mtoksiBill
         forM_ mtoksiZero $ \(idx, mtok) -> do
           cGetBalance at mtok
           loadBals
@@ -2105,7 +2112,7 @@ ce = \case
             [v'@(DLVar _ _ _ n')] -> return (v', n')
             _ -> impossible "algo ce: Expected one value"
           clog $
-            [ DLA_Literal (DLL_Int at $ fromIntegral n)
+            [ DLA_Literal (DLL_Int at uintWord $ fromIntegral n)
             , DLA_Var v
             ]
           cv v
@@ -2517,7 +2524,7 @@ ct = \case
           let mt_submit = True
           let mt_next = False
           let mt_mcclose = Just $ cDeployer
-          let mt_amt = DLA_Literal $ DLL_Int at 0
+          let mt_amt = DLA_Literal $ DLL_Int at uintWord 0
           forM_ toks $ \tok -> do
             let mt_mtok = Just tok
             void $ makeTxn $ MakeTxn {..}
@@ -2597,12 +2604,12 @@ gvLoad = gvOutput TLoad
 
 gvType :: GlobalVar -> DLType
 gvType = \case
-  GV_txnCounter -> T_UInt
-  GV_currentStep -> T_UInt
-  GV_currentTime -> T_UInt
+  GV_txnCounter -> T_UInt uintWord
+  GV_currentStep -> T_UInt uintWord
+  GV_currentTime -> T_UInt uintWord
   GV_companion -> T_Contract
   GV_svs -> T_Null
-  GV_argTime -> T_UInt
+  GV_argTime -> T_UInt uintWord
   GV_argMsg -> T_Null
   GV_wasMeth -> T_Bool
   GV_apiRet -> T_Null
@@ -2735,7 +2742,7 @@ callCompanion at cc = do
         case ctor of
           True -> do
             cint_ at 0
-            incResource R_App $ DLA_Literal $ DLL_Int at 0
+            incResource R_App $ DLA_Literal $ DLL_Int at uintWord 0
             freeResource R_App $ cr_ro
           False -> do
             ca cr_ro
@@ -2744,7 +2751,7 @@ callCompanion at cc = do
         makeTxn1 "ApplicationID"
   case cc of
     CompanionCreate -> do
-      let mpay pc = ce $ DLE_CheckPay at [] (DLA_Literal $ DLL_Int at $ pc * algoMinimumBalance) Nothing
+      let mpay pc = ce $ DLE_CheckPay at [] (DLA_Literal $ DLL_Int at uintWord $ pc * algoMinimumBalance) Nothing
       case mcr of
         Nothing -> do
           mpay 1
@@ -3235,7 +3242,7 @@ compile_algo env disp pl = do
       cint argCount
       asserteq
     argLoad ArgMethod
-    cfrombs T_UInt
+    cfrombs $ T_UInt uintWord
     label "preamble"
     op "dup"
     code "bz" ["publish"]
@@ -3248,13 +3255,13 @@ compile_algo env disp pl = do
     label "publish"
     -- Load and store the time
     argLoad ArgTime
-    cfrombs T_UInt
+    cfrombs $ T_UInt uintWord
     gvStore GV_argTime
     -- Push the message on the stack for later
     argLoad ArgMsg
     -- Load the publish number
     argLoad ArgPublish
-    cfrombs T_UInt
+    cfrombs $ T_UInt uintWord
     let isLoop = \case
           C_Loop {} -> True
           C_Handler {} -> False
@@ -3276,7 +3283,7 @@ compile_algo env disp pl = do
       let mt_submit = True
       let mt_next = False
       let mt_mcclose = Just $ cDeployer
-      let mt_amt = DLA_Literal $ DLL_Int at 0
+      let mt_amt = DLA_Literal $ DLL_Int at uintWord 0
       void $ makeTxn $ MakeTxn {..}
     code "b" ["updateState"]
     label "updateStateNoOp"

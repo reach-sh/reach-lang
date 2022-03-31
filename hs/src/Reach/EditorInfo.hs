@@ -5,7 +5,6 @@ import qualified Data.Aeson.Encode.Pretty as A
 import qualified Data.ByteString.Lazy.Char8 as B
 import qualified Data.Map.Strict as M
 import Generics.Deriving (Generic, conNameOf)
-import Reach.AST.Base
 import Reach.AST.SL
 
 -- https://hackage.haskell.org/package/aeson-pretty-0.8.9/docs/
@@ -25,7 +24,6 @@ printBaseKeywordInfo env = do
        M.map
          (\v -> M.singleton ("CompletionItemKind" :: String) $ show v)
          baseKinds
-
 
 data CompletionItemKind
   = CK_Text
@@ -121,7 +119,7 @@ completionKind v =
         SLPrim_Object_has -> Just CK_Method
         SLPrim_App_Delay _ _ _ -> Nothing
         SLPrim_op op -> case op of
-          MUL_DIV -> Just CK_Function
+          S_MUL_DIV -> Just CK_Function
           _ -> Just CK_Operator
         SLPrim_transfer -> Just CK_Function
         SLPrim_transfer_amt_to _ -> Nothing

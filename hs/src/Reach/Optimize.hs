@@ -307,7 +307,7 @@ unsafeAt l i =
 
 isAnEqual :: PrimOp -> Bool
 isAnEqual = \case
-  PEQ -> True
+  PEQ _ -> True
   DIGEST_EQ -> True
   ADDRESS_EQ -> True
   TOKEN_EQ -> True
@@ -324,37 +324,37 @@ instance Optimize DLExpr where
     DLE_PrimOp at p as -> do
       as' <- opt as
       let meh = return $ DLE_PrimOp at p as'
-      let zero = DLA_Literal $ DLL_Int at 0
+      let zero t = DLA_Literal $ DLL_Int at t 0
       case (p, as') of
-        (ADD, [(DLA_Literal (DLL_Int _ 0)), rhs]) ->
+        (ADD _, [(DLA_Literal (DLL_Int _ _ 0)), rhs]) ->
           return $ DLE_Arg at rhs
-        (ADD, [lhs, (DLA_Literal (DLL_Int _ 0))]) ->
+        (ADD _, [lhs, (DLA_Literal (DLL_Int _ _ 0))]) ->
           return $ DLE_Arg at lhs
-        (SUB, [lhs, (DLA_Literal (DLL_Int _ 0))]) ->
+        (SUB _, [lhs, (DLA_Literal (DLL_Int _ _ 0))]) ->
           return $ DLE_Arg at lhs
-        (MUL, [(DLA_Literal (DLL_Int _ 1)), rhs]) ->
+        (MUL _, [(DLA_Literal (DLL_Int _ _ 1)), rhs]) ->
           return $ DLE_Arg at rhs
-        (MUL, [lhs, (DLA_Literal (DLL_Int _ 1))]) ->
+        (MUL _, [lhs, (DLA_Literal (DLL_Int _ _ 1))]) ->
           return $ DLE_Arg at lhs
-        (MUL, [(DLA_Literal (DLL_Int _ 0)), _]) ->
-          return $ DLE_Arg at zero
-        (MUL, [_, (DLA_Literal (DLL_Int _ 0))]) ->
-          return $ DLE_Arg at zero
-        (DIV, [lhs, (DLA_Literal (DLL_Int _ 1))]) ->
+        (MUL t, [(DLA_Literal (DLL_Int _ _ 0)), _]) ->
+          return $ DLE_Arg at $ zero t
+        (MUL t, [_, (DLA_Literal (DLL_Int _ _ 0))]) ->
+          return $ DLE_Arg at $ zero t
+        (DIV _, [lhs, (DLA_Literal (DLL_Int _ _ 1))]) ->
           return $ DLE_Arg at lhs
         (MUL_DIV, [l, r, d])
           | l == d -> return $ DLE_Arg at r
           | r == d -> return $ DLE_Arg at l
-        (MUL_DIV, [l, r, DLA_Literal (DLL_Int _ 1)]) ->
-          opt $ DLE_PrimOp at MUL [l, r]
-        (MUL_DIV, [DLA_Literal (DLL_Int _ 1), r, d]) ->
-          opt $ DLE_PrimOp at DIV [r, d]
-        (MUL_DIV, [l, DLA_Literal (DLL_Int _ 1), d]) ->
-          opt $ DLE_PrimOp at DIV [l, d]
-        (MUL_DIV, [DLA_Literal (DLL_Int _ 0), _, _]) ->
-          return $ DLE_Arg at zero
-        (MUL_DIV, [_, DLA_Literal (DLL_Int _ 0), _, _]) ->
-          return $ DLE_Arg at zero
+        (MUL_DIV, [l, r, DLA_Literal (DLL_Int _ _ 1)]) ->
+          opt $ DLE_PrimOp at (MUL uintWord) [l, r]
+        (MUL_DIV, [DLA_Literal (DLL_Int _ _ 1), r, d]) ->
+          opt $ DLE_PrimOp at (DIV uintWord) [r, d]
+        (MUL_DIV, [l, DLA_Literal (DLL_Int _ _ 1), d]) ->
+          opt $ DLE_PrimOp at (DIV uintWord) [l, d]
+        (MUL_DIV, [DLA_Literal (DLL_Int _ _ 0), _, _]) ->
+          return $ DLE_Arg at $ zero uintWord
+        (MUL_DIV, [_, DLA_Literal (DLL_Int _ _ 0), _, _]) ->
+          return $ DLE_Arg at $ zero uintWord
         (IF_THEN_ELSE, [c, (DLA_Literal (DLL_Bool True)), (DLA_Literal (DLL_Bool False))]) ->
           return $ DLE_Arg at $ c
         (IF_THEN_ELSE, [(DLA_Literal (DLL_Bool c)), t, f]) ->
@@ -400,7 +400,7 @@ instance Optimize DLExpr where
     DLE_Transfer at t a m -> do
       a' <- opt a
       case a' of
-        DLA_Literal (DLL_Int _ 0) -> nop at
+        DLA_Literal (DLL_Int _ _ 0) -> nop at
         _ ->
           DLE_Transfer at <$> opt t <*> pure a' <*> opt m
     DLE_TokenInit at t -> DLE_TokenInit at <$> opt t

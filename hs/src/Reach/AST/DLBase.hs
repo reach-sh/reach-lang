@@ -46,7 +46,7 @@ instance (PrettySubst a, PrettySubst b) => PrettySubst (Either a b) where
 data DLType
   = T_Null
   | T_Bool
-  | T_UInt
+  | T_UInt UIntTy
   | T_Bytes Integer
   | T_Digest
   | T_Address
@@ -66,8 +66,8 @@ instance ToJSON DLType
 tokenInfoElemTy :: DLType
 tokenInfoElemTy = T_Tuple [balance, supply, destroyed]
   where
-    balance = T_UInt
-    supply = T_UInt
+    balance = T_UInt False
+    supply = T_UInt False
     destroyed = T_Bool
 
 maybeT :: DLType -> DLType
@@ -122,7 +122,8 @@ instance Show DLType where
   show = \case
     T_Null -> "Null"
     T_Bool -> "Bool"
-    T_UInt -> "UInt"
+    T_UInt False -> "UInt"
+    T_UInt True -> "UInt256"
     (T_Bytes sz) -> "Bytes(" <> show sz <> ")"
     T_Digest -> "Digest"
     T_Address -> "Address"
@@ -214,13 +215,13 @@ instance Pretty DLConstant where
 
 conTypeOf :: DLConstant -> DLType
 conTypeOf = \case
-  DLC_UInt_max  -> T_UInt
+  DLC_UInt_max  -> T_UInt False
   DLC_Token_zero -> T_Token
 
 data DLLiteral
   = DLL_Null
   | DLL_Bool Bool
-  | DLL_Int SrcLoc Integer
+  | DLL_Int SrcLoc UIntTy Integer
   | DLL_TokenZero
   deriving (Eq, Generic, Show, Ord)
 
@@ -232,14 +233,14 @@ instance Pretty DLLiteral where
   pretty = \case
     DLL_Null -> "null"
     DLL_Bool b -> if b then "true" else "false"
-    DLL_Int _ i -> viaShow i
+    DLL_Int _ _ i -> viaShow i
     DLL_TokenZero -> "Token.zero"
 
 litTypeOf :: DLLiteral -> DLType
 litTypeOf = \case
   DLL_Null -> T_Null
   DLL_Bool _ -> T_Bool
-  DLL_Int {} -> T_UInt
+  DLL_Int _ t _ -> T_UInt t
   DLL_TokenZero -> T_Token
 
 data DLVar = DLVar SrcLoc (Maybe (SrcLoc, SLVar)) DLType Int
@@ -333,7 +334,7 @@ instance PrettySubst DLArg where
 
 staticZero :: DLArg -> Bool
 staticZero = \case
-  DLA_Literal (DLL_Int _ 0) -> True
+  DLA_Literal (DLL_Int _ _ 0) -> True
   _ -> False
 
 asnLike :: [DLVar] -> [(DLVar, DLArg)]
@@ -1159,13 +1160,13 @@ fluidVarType :: FluidVar -> DLType
 fluidVarType = \case
   FV_tokenInfos -> impossible "fluidVarType: FV_tokenInfos"
   FV_tokens -> impossible "fluidVarType: FV_tokens"
-  FV_netBalance -> T_UInt
-  FV_thisConsensusTime -> T_UInt
-  FV_lastConsensusTime -> T_UInt
-  FV_baseWaitTime -> T_UInt
-  FV_thisConsensusSecs -> T_UInt
-  FV_lastConsensusSecs -> T_UInt
-  FV_baseWaitSecs -> T_UInt
+  FV_netBalance -> T_UInt False
+  FV_thisConsensusTime -> T_UInt False
+  FV_lastConsensusTime -> T_UInt False
+  FV_baseWaitTime -> T_UInt False
+  FV_thisConsensusSecs -> T_UInt False
+  FV_lastConsensusSecs -> T_UInt False
+  FV_baseWaitSecs -> T_UInt False
   FV_didSend -> T_Bool
 
 allFluidVars :: [FluidVar]
