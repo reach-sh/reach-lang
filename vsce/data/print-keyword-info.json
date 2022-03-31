@@ -551,6 +551,12 @@
   "UInt.max": {
     "CompletionItemKind": "Constant"
   },
+  "UInt256": {
+    "CompletionItemKind": "TypeParameter"
+  },
+  "UInt256.max": {
+    "CompletionItemKind": "Constant"
+  },
   "View": {
     "CompletionItemKind": "Constructor"
   },
