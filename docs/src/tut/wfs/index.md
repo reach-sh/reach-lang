@@ -1,8 +1,8 @@
-# {#wfs} Wisdom for Sale
+# {#wfs} Wisdom For Sale
 
-This module shows you how to build Wisdom for Sale, a command-line and web-based application that enables two participants (a seller and a buyer) to trade wisdom for tokens via a smart contract running on a consensus network, using Reach. Reach programs are built using a Docker container on your computer. If you need help installing Reach and its prerequisites then get started at our [Quick Installation Guide](#quickstart).
+This module shows you how to build Wisdom For Sale, a command-line and web-based application that enables two participants (a seller and a buyer) to trade wisdom for tokens via a smart contract running on a consensus network, using Reach. Reach programs are built using a Docker container on your computer. If you need help installing Reach and its prerequisites then get started at our [Quick Installation Guide](#quickstart).
 
-Wisdom for Sale creates and funds two accounts (one for each participant), enables the seller and buyer to make a transaction, and then exits.
+Wisdom For Sale creates and funds two accounts (one for each participant), enables the seller and buyer to make a transaction, and then exits.
 
 # {#wfs-1} Learning Objectives
 
@@ -230,7 +230,7 @@ Below is a line-by-line description:
     package.json
     ```
 
-    For some of your Reach projects, you may find it useful to retain and edit these files, especially `package.json`.
+    For some of your Reach projects, you might find it useful to retain and edit these files, especially `package.json`.
 	To create and retain these files, run `reach scaffold` before running `reach run`.
 
 * Line 24: The process checks the new image for vulnerabilities.
@@ -1194,7 +1194,7 @@ The [wisdom-for-sale](https://github.com/hagenhaus/wisdom-for-sale) repository i
   </iframe>
 </p>
 
-You need node.js and npm installed on your computer because you will need the [http-server](https://www.npmjs.com/package/http-server) package (or similar) to run the webapp. Below are directions for running and inspecting the DApp:
+You need `node.js` and `npm` installed on your computer because you will need the [http-server](https://www.npmjs.com/package/http-server) package (or similar) to run the webapp. Below are directions for running and inspecting the DApp:
 
 1. Copy [index.html](https://github.com/hagenhaus/wisdom-for-sale/blob/master/solution/index.html) and [webapp.mjs](https://github.com/hagenhaus/wisdom-for-sale/blob/master/solution/webapp.mjs) from the solution directory to your current directory.
 
@@ -1330,7 +1330,7 @@ Click on the question to view the answer.
       <div class="card card-body">REACH_CONNECTOR_MODE</div>
     </div>
 
-1. <p class="q-and-a" data-bs-toggle="collapse" href="#reach-down" aria-expanded="false">Name the `reach` command that stops and removes all Reach Docker containers.</p>
+1. <p class="q-and-a" data-bs-toggle="collapse" href="#reach-down" aria-expanded="false">Name the reach command that stops and removes all Reach Docker containers.</p>
 
     <div class="collapse mb-3" id="reach-down">
       <div class="card card-body">./reach down</div>
