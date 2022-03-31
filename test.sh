@@ -132,6 +132,7 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
+c examples/rps-8-interact/index.rsh
 c examples/rps-7-loops/index.rsh
 exit 0
 
