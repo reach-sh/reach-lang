@@ -41,7 +41,7 @@ CNF="${XDG_CONFIG_HOME:-$HOME/.config}/reach"; CNF="$(mkdir -p "$CNF" && cd "$CN
 export TMP
 
 if [ -z "$REACH_ENV_PRS" ] && [ -f "$CNF/env" ]; then
-  e="$(env |grep REACH)"
+  e="$(env |grep '^REACH')"
   # shellcheck disable=SC1090,SC1091
   . "$CNF/env"
   for l in $e; do export "${l?}"; done
