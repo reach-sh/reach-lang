@@ -5,7 +5,7 @@ START_TIME_UTC="$(date --utc --iso-8601=seconds)Z"
 
 ping_devnet() {
   TIME_NOW="$(date +%s)"
-  ELAPSED="$(expr $TIME_NOW - $START_TIME_UNIX).0"
+  ELAPSED="$(( "$TIME_NOW" - "$START_TIME_UNIX" )).0"
   REPORT="{
     \"userId\": \"CFX-devnet\",
     \"startTime\": \"$START_TIME_UTC\",
