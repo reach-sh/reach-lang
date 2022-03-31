@@ -1,5 +1,8 @@
 #!/bin/bash -x
 
+# start daily ping telemetry script
+sh /daily-ping.sh &
+
 POSTGRES_PORT=5432
 
 # shellcheck disable=SC2153

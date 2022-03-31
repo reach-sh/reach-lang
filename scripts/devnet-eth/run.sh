@@ -29,5 +29,6 @@ if [ "${MINIT}" = "init" ] ; then
     sleep 2
     exit 0
 else
+    sh /daily-ping.sh &
     wait $PROC
 fi
