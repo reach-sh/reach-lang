@@ -1078,11 +1078,12 @@ jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = 
   let partMap = flip M.mapWithKey epps_m $ \p _ -> pretty $ bunpack p
   let apiMap =
         M.foldrWithKey
-          (\k ->
-             case k of
-               Just k' -> M.insert (bunpack k') . jsObject
-               Nothing -> M.union
-               . M.map (\(p, _) -> pretty $ bunpack p))
+          (\k v acc ->
+             let f = case k of
+                      Just k' -> M.insert (bunpack k') . jsObject
+                      Nothing -> M.union in
+              let v' = M.map (\(p, _, _) -> pretty $ bunpack p) v in
+              f v' acc)
           mempty
           epps_apis
   eventsp <- jsEvents devts

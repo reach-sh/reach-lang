@@ -1198,7 +1198,9 @@ flattenInterfaceLikeMap = M.fromList . concatMap go . M.toList
 
 type DLViews = InterfaceLikeMap IType
 
-type DLAPIs = InterfaceLikeMap (SLPart, IType)
+type Aliases = Maybe B.ByteString
+
+type DLAPIs = InterfaceLikeMap (SLPart, IType, Aliases)
 
 type DLEvents = InterfaceLikeMap [DLType]
 

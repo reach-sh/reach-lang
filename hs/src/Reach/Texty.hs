@@ -118,6 +118,9 @@ instance Pretty a => Pretty (S.Set a) where
 instance (Pretty a, Pretty b) => Pretty (a, b) where
   pretty (x, y) = "(" <> pretty x <> ", " <> pretty y <> ")"
 
+instance (Pretty a, Pretty b, Pretty c) => Pretty (a, b, c) where
+  pretty (x, y, z) = "(" <> pretty x <> ", " <> pretty y <> ", " <> pretty z <> ")"
+
 instance Pretty Bool where
   pretty = viaShow
 

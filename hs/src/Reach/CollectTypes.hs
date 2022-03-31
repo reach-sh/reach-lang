@@ -14,6 +14,9 @@ class CollectsTypes a where
 instance CollectsTypes Bool where
   cts _ = mempty
 
+instance CollectsTypes Char where
+  cts _ = mempty
+
 instance CollectsTypes B.ByteString where
   cts _ = mempty
 

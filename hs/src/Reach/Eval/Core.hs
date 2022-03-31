@@ -3053,12 +3053,19 @@ evalPrim p sargs =
     SLPrim_ParticipantClass -> makeParticipant False True
     SLPrim_API -> do
       ensure_mode SLM_AppInit "API"
-      (nv, intv) <- case args of
-        [x] -> return (Nothing, x)
-        [x, y] -> return (Just x, y)
+      (nv, intv, alias) <- case args of
+        [x] -> return (Nothing, x, Nothing)
+        [x, y] ->
+          typeOfM x >>= \case
+            -- name and interact object
+            Just (T_Bytes {}, _) -> return (Just x, y, Nothing)
+            -- interact object and alias
+            _ -> return (Nothing, x, Just y)
+        [x, y, z] -> return (Just x, y, Just z)
         _ -> illegal_args
       n <- mapM mustBeBytes nv
       SLInterface im <- mustBeInterface intv
+      aliasEnv <- mapM mustBeObject alias >>= return . fromMaybe mempty
       let mns = bunpack <$> n
       nAt <- withAt id
       let ns = fromMaybe "Untagged" mns
@@ -3082,7 +3089,8 @@ evalPrim p sargs =
             let nkm = M.fromList $ [("in", fake in_t), ("out", fake out_t)]
             let intv' = SLV_Object at (Just $ nk <> " interact") nkm
             it <- IT_Fun <$> mapM st2dte stf_dom <*> st2dte stf_rng
-            (,) (nkb, it) <$> (sls_sss at <$> makeParticipant_ True True nv' intv')
+            m_alias <- mapM (mustBeBytes . sss_val) $ M.lookup k aliasEnv
+            (,) (nkb, it, m_alias) <$> (sls_sss at <$> makeParticipant_ True True nv' intv')
           t -> expect_ $ Err_API_NotFun k t
       let i' = M.map fst ix
       let io = M.map snd ix
