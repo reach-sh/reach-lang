@@ -61,9 +61,7 @@ COMMANDS.forEach(commandObject => {
     COMMANDS_TREE_DATA.push(
       makeTreeItem(label, command)
     );
-  }
-
-  else if (helpTreeDataProvider) {
+  } else if (helpTreeDataProvider) {
     let icon = `Error: Icon needed for ${label}`;
 
     switch (label) {
@@ -83,9 +81,7 @@ COMMANDS.forEach(commandObject => {
         label, title, command, icon
       )
     );
-  }
-
-  else if (documentationTreeDataProvider) {
+  } else if (documentationTreeDataProvider) {
     // All documentation tree items will have the
     // same icon.
     DOCUMENTATION_TREE_DATA.push(
