@@ -8,12 +8,14 @@ cytoscape.use(require('cytoscape-dom-node'));
 
 
 const VisualizerContainer = styled.div`
-  grid-row-start: 3;
+  grid-row-start: 2;
+  margin-top: 16.5vh;
   grid-column-start: 2;
   width: 70vw;
   height: 30vh;
   background: var(--dark-bg);
   color: var(--off-white);
+  border: 1px solid ;
 `;
 
 const styles = [
@@ -57,7 +59,7 @@ export default function VisualizerPanel({
               "background-color":(ele) => ele.data("color"),
               "text-valign":"center",
               "text-halign":"center",
-              "hover": (ele) => ele.data('label'),
+              // "hover": (ele) => ele.data('label'),
               content: (ele) => ele.data("id"),
             },
           },
