@@ -58,7 +58,7 @@ conName' = "ETH"
 
 conCons' :: DLConstant -> DLLiteral
 conCons' = \case
-  DLC_UInt_max  -> DLL_Int sb $ 2 ^ (256 :: Integer) - 1
+  DLC_UInt_max  -> DLL_Int sb uintWord $ 2 ^ (256 :: Integer) - 1
   DLC_Token_zero -> DLL_TokenZero
 
 solString :: String -> Doc
@@ -123,7 +123,7 @@ solBinOp :: String -> Doc -> Doc -> Doc
 solBinOp o l r = l <+> pretty o <+> r
 
 solEq :: Doc -> Doc -> App Doc
-solEq x y = solPrimApply PEQ [x, y]
+solEq x y = solPrimApply (PEQ uintWord) [x, y]
 
 solSet :: Doc -> Doc -> Doc
 solSet x y = solBinOp "=" x y <> semi
@@ -447,7 +447,7 @@ mustBeMem :: DLType -> Bool
 mustBeMem = \case
   T_Null -> False
   T_Bool -> False
-  T_UInt -> False
+  T_UInt _ -> False
   T_Bytes _ -> True
   T_Digest -> False
   T_Address -> False
@@ -485,7 +485,7 @@ solLit = \case
   DLL_Null -> "false"
   DLL_Bool True -> "true"
   DLL_Bool False -> "false"
-  DLL_Int at i -> solNum $ checkIntLiteralC at conName' conCons' i
+  DLL_Int at _ i -> solNum $ checkIntLiteralC at conName' conCons' i
   DLL_TokenZero -> "payable(address(0))"
 
 solArg :: AppT DLArg
@@ -498,21 +498,24 @@ solArg = \case
 solPrimApply :: PrimOp -> [Doc] -> App Doc
 solPrimApply = \case
   SELF_ADDRESS {} -> impossible "self address"
-  ADD -> safeOp "unsafeAdd" "+"
-  SUB -> safeOp "unsafeSub" "-"
-  MUL -> safeOp "unsafeMul" "*"
-  DIV -> binOp "/"
+  ADD _ -> safeOp "unsafeAdd" "+"
+  SUB _ -> safeOp "unsafeSub" "-"
+  MUL _ -> safeOp "unsafeMul" "*"
+  DIV _ -> binOp "/"
+  MOD _ -> binOp "%"
+  PLT _ -> binOp "<"
+  PLE _ -> binOp "<="
+  PEQ _ -> binOp "=="
+  PGE _ -> binOp ">="
+  PGT _ -> binOp ">"
+  UCAST _ _ -> \case
+    [x] -> return x
+    _ -> impossible "ucast"
   MUL_DIV -> \case
     [x, y, den] -> do
       mul <- safeOp "unsafeMul" "*" [x, y]
       binOp "/" [mul, den]
     _ -> impossible "solPrimApply: MUL_DIV args"
-  MOD -> binOp "%"
-  PLT -> binOp "<"
-  PLE -> binOp "<="
-  PEQ -> binOp "=="
-  PGE -> binOp ">="
-  PGT -> binOp ">"
   LSH -> binOp "<<"
   RSH -> binOp ">>"
   BAND -> binOp "&"
@@ -675,7 +678,7 @@ solExpr sp = \case
     u' <- go dtn_url
     m' <- go dtn_metadata
     p' <- solArg dtn_supply
-    d' <- maybe (return $ solLit $ DLL_Int sb 18) solArg dtn_decimals
+    d' <- maybe (return $ solLit $ DLL_Int sb uintWord 18) solArg dtn_decimals
     return $ solApply "payable" [solApply "address" ["new" <+> solApply "ReachToken" [n', s', u', m', p', d']]]
   DLE_TokenBurn _ ta aa -> do
     ta' <- solArg ta
@@ -791,7 +794,7 @@ doConcat dv x y = do
   let copy src (off :: Integer) = do
         let sz = arraySize src
         src' <- solArg src
-        add <- solPrimApply ADD ["i", solNum off]
+        add <- solPrimApply (ADD uintWord) ["i", solNum off]
         let ref = solArrayRef src' "i"
         return $ "for" <+> parens ("uint256 i = 0" <> semi <+> "i <" <+> (pretty sz) <> semi <+> "i++") <> solBraces (solArrayRef dv' add <+> "=" <+> ref <> semi)
   x' <- copy x 0
@@ -821,7 +824,7 @@ solCom = \case
     let eargs = f' : as'
     v_succ <- allocVar
     v_return <- allocVar
-    v_before <- allocMemVar at T_UInt
+    v_before <- allocMemVar at $ T_UInt uintWord
     -- Note: Not checking that the address is really a contract and not doing
     -- exactly what OpenZeppelin does
     netTokPaid <- solArg net
@@ -847,12 +850,12 @@ solCom = \case
       unzip
         <$> mapM
           (\(tok, i :: Int) -> do
-             tv_before <- allocMemVar at T_UInt
+             tv_before <- allocMemVar at $ T_UInt uintWord
              tokArg <- solArg tok
              -- Get balances of non-network tokens before call
              let s1 = solSet tv_before $ getBalance tokArg
              -- Get balances of non-network tokens after call
-             tokRecv <- solPrimApply SUB [getBalance tokArg, tv_before]
+             tokRecv <- solPrimApply (SUB uintWord) [getBalance tokArg, tv_before]
              let s2 = solSet ((solMemVar dv <> ".elem1") <> ".elem" <> pretty i) tokRecv
              return (s1, s2))
           (zip nonNetTokRecv [0 ..])
@@ -863,13 +866,13 @@ solCom = \case
       unzip
         <$> mapM
           (\tok -> do
-             tv_before <- allocMemVar at T_UInt
+             tv_before <- allocMemVar at $ T_UInt uintWord
              tokArg <- solArg tok
              paid <- maybe (return "0") solArg $ M.lookup tok nonNetToksPayAmt
-             sub <- solPrimApply SUB [getBalance tokArg, paid]
+             sub <- solPrimApply (SUB uintWord) [getBalance tokArg, paid]
              let s1 = solSet tv_before sub
-             tv_after <- allocMemVar at T_UInt
-             tokRecv <- solPrimApply SUB [getBalance tokArg, tv_before]
+             tv_after <- allocMemVar at $ T_UInt uintWord
+             tokRecv <- solPrimApply (SUB uintWord) [getBalance tokArg, tv_before]
              let s2 = solSet tv_after tokRecv
              s3 <- solRequire "remote did not transfer unexpected non-network tokens" =<< solEq tv_after "0"
              return (s1, s2 <> s3 <> semi))
@@ -877,7 +880,7 @@ solCom = \case
     let call' = ".call{value:" <+> netTokPaid <> "}"
     let meBalance = "address(this).balance"
     addMemVar dv
-    sub' <- solPrimApply SUB [meBalance, v_before]
+    sub' <- solPrimApply (SUB uintWord) [meBalance, v_before]
     let sub'l = [solSet (solMemVar dv <> ".elem0") sub']
     -- Non-network tokens received from remote call
     let billOffset :: Int -> Doc
@@ -888,7 +891,7 @@ solCom = \case
             _ -> [ solSet (solMemVar dv <> ".elem" <> billOffset 1) $ solApply "abi.decode" [v_return, parens rng_ty'_] ]
     let e_data_e = solApply "abi.encodeWithSelector" eargs
     e_data <- allocVar
-    e_before <- solPrimApply SUB [meBalance, netTokPaid]
+    e_before <- solPrimApply (SUB uintWord) [meBalance, netTokPaid]
     err_msg <- solRequireMsg $ show (at, fs, ("remote " <> f <> " failed"))
     -- XXX we could assert that the balances of all our tokens is the same as
     -- it was before
@@ -948,9 +951,9 @@ solCom = \case
     bal <- case mtok of
       Nothing -> return "address(this).balance"
       Just tok -> getBalance <$> solArg tok
-    sub <- solPrimApply SUB [actBalV, tb']
-    zero <- solArg $ DLA_Literal $ DLL_Int at 0
-    cnd <- solPrimApply PLT [actBalV, tb']
+    sub <- solPrimApply (SUB uintWord) [actBalV, tb']
+    zero <- solArg $ DLA_Literal $ DLL_Int at uintWord 0
+    cnd <- solPrimApply (PLT uintWord) [actBalV, tb']
     ite <- solPrimApply IF_THEN_ELSE [cnd, zero, sub]
     return $ vsep [
         solSet ("uint256" <+> actBalV) bal,
@@ -1171,7 +1174,7 @@ solArgType :: Maybe [DLVar] -> [DLVar] -> App Doc
 solArgType msvs msg = do
   let fst_part =
         case msvs of
-          Nothing -> ("time", T_UInt)
+          Nothing -> ("time", T_UInt uintWord)
           Just svs -> ("svs", vsToType svs)
   let msg_ty = vsToType msg
   let arg_ty = T_Struct $ [fst_part, ("msg", msg_ty)]
@@ -1230,7 +1233,7 @@ solHandler which h = freshVarMap $
             Nothing -> return []
             Just x -> (\y -> [y]) <$> checkTime1 op x
       let CBetween ifrom ito = interval
-      timeoutCheck <- vsep <$> ((<>) <$> checkTime PGE ifrom <*> checkTime PLT ito)
+      timeoutCheck <- vsep <$> ((<>) <$> checkTime (PGE uintWord) ifrom <*> checkTime (PLT uintWord) ito)
       let body = vsep $ hashCheck <> lock <> svs_init <> [frameDecl, timeoutCheck, ctp]
       let mkFun args b = solFunctionLike sfl args ret b
       uses_apis <- asks ctxt_uses_apis
@@ -1392,7 +1395,7 @@ solDefineType :: DLType -> App ()
 solDefineType t = case t of
   T_Null -> base
   T_Bool -> base
-  T_UInt -> base
+  T_UInt _ -> base
   T_Bytes sz -> do
     -- NOTE: Get rid of this stupidity when
     -- https://github.com/ethereum/solidity/issues/8772
@@ -1505,7 +1508,8 @@ baseTypes =
   M.fromList
     [ (T_Null, "bool")
     , (T_Bool, "bool")
-    , (T_UInt, "uint256")
+    , (T_UInt uintWord, "uint256")
+    , (T_UInt uint256, "uint256")
     , (T_Digest, "uint256")
     , (T_Address, "address")
     , (T_Contract, "address")

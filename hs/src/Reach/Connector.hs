@@ -82,7 +82,7 @@ checkIntLiteralC at conName conCons x =
   where
     rmin = 0
     rmax = case conCons DLC_UInt_max of
-      DLL_Int _ uim -> uim
+      DLL_Int _ _ uim -> uim
       _ -> impossible "uint_max not int"
 
 type Connectors =

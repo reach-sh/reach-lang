@@ -309,17 +309,27 @@ type SLPart = B.ByteString
 render_sp :: SLPart -> Doc
 render_sp = viaShow
 
+type UIntTy = Bool
+uintWord :: UIntTy
+uintWord = False
+uint256 :: UIntTy
+uint256 = True
+
+uint256_Max :: Integer
+uint256_Max = 2 ^ (256 :: Integer) - 1
+
 data PrimOp
-  = ADD
-  | SUB
-  | MUL
-  | DIV
-  | MOD
-  | PLT
-  | PLE
-  | PEQ
-  | PGE
-  | PGT
+  = ADD UIntTy
+  | SUB UIntTy
+  | MUL UIntTy
+  | DIV UIntTy
+  | MOD UIntTy
+  | PLT UIntTy
+  | PLE UIntTy
+  | PEQ UIntTy
+  | PGE UIntTy
+  | PGT UIntTy
+  | UCAST UIntTy UIntTy
   | IF_THEN_ELSE
   | DIGEST_EQ
   | ADDRESS_EQ
@@ -339,16 +349,17 @@ data PrimOp
 
 instance Pretty PrimOp where
   pretty = \case
-    ADD -> "+"
-    SUB -> "-"
-    MUL -> "*"
-    DIV -> "/"
-    MOD -> "%"
-    PLT -> "<"
-    PLE -> "<="
-    PEQ -> "=="
-    PGE -> ">="
-    PGT -> ">"
+    ADD _ -> "+"
+    SUB _ -> "-"
+    MUL _ -> "*"
+    DIV _ -> "/"
+    MOD _ -> "%"
+    PLT _ -> "<"
+    PLE _ -> "<="
+    PEQ _ -> "=="
+    PGE _ -> ">="
+    PGT _ -> ">"
+    UCAST x y -> "cast" <> parens (pretty x <> "," <> pretty y)
     IF_THEN_ELSE -> "ite"
     DIGEST_EQ -> "=="
     ADDRESS_EQ -> "=="

@@ -417,16 +417,16 @@ interpAs aid p = do
 
 interpPrim :: (PrimOp, [DLVal]) -> App DLVal
 interpPrim = \case
-  (ADD, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (+) lhs rhs
-  (SUB, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (-) lhs rhs
-  (MUL, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (*) lhs rhs
-  (DIV, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ div lhs rhs
-  (MOD, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ mod lhs rhs
-  (PLT, [V_UInt lhs, V_UInt rhs]) -> return $ V_Bool $ (<) lhs rhs
-  (PLE, [V_UInt lhs, V_UInt rhs]) -> return $ V_Bool $ (<=) lhs rhs
-  (PEQ, [V_UInt lhs, V_UInt rhs]) -> return $ V_Bool $ (==) lhs rhs
-  (PGE, [V_UInt lhs, V_UInt rhs]) -> return $ V_Bool $ (>=) lhs rhs
-  (PGT, [V_UInt lhs, V_UInt rhs]) -> return $ V_Bool $ (>) lhs rhs
+  (ADD _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (+) lhs rhs
+  (SUB _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (-) lhs rhs
+  (MUL _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (*) lhs rhs
+  (DIV _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ div lhs rhs
+  (MOD _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ mod lhs rhs
+  (PLT _, [V_UInt lhs, V_UInt rhs]) -> return $ V_Bool $ (<) lhs rhs
+  (PLE _, [V_UInt lhs, V_UInt rhs]) -> return $ V_Bool $ (<=) lhs rhs
+  (PEQ _, [V_UInt lhs, V_UInt rhs]) -> return $ V_Bool $ (==) lhs rhs
+  (PGE _, [V_UInt lhs, V_UInt rhs]) -> return $ V_Bool $ (>=) lhs rhs
+  (PGT _, [V_UInt lhs, V_UInt rhs]) -> return $ V_Bool $ (>) lhs rhs
   (IF_THEN_ELSE, [V_Bool cond, cond_val, alt]) -> do
     return $ if cond then cond_val else alt
   (DIGEST_EQ, [V_Digest lhs, V_Digest rhs]) -> return $ V_Bool $ (==) lhs rhs
@@ -484,7 +484,7 @@ instance Interp DLLiteral where
   interp = \case
     DLL_Null -> return $ V_Null
     DLL_Bool bool -> return $ V_Bool bool
-    DLL_Int _at int -> return $ V_UInt int
+    DLL_Int _at _ int -> return $ V_UInt int
     DLL_TokenZero -> return $ V_Token 0
 
 instance Interp DLLargeArg where
