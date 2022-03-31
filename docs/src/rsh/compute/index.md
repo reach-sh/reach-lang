@@ -1659,6 +1659,10 @@ thisConsensusTime()
 
 The @{defn("thisConsensusTime")} primitive returns the network time of the current publication of the DApp.
 
+:::note
+Some networks do not support observing the time of a consensus operation until after it has finalized.
+:::
+
 ---
 
 @{ref("rsh", "thisConsensusSecs")}
