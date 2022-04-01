@@ -23,14 +23,14 @@ or
 
 ## {#qs-win-install} Installation
 
-Click the Windows icon, type `Poershell`, and then click `Run as Administrator`.
+Click the Windows icon, type `Powershell`, and then click `Run as Administrator`.
 There are a number of commands that need to be run to get Windows ready for Reach.
 
 We want to download a tool from Microsoft's github called winget.
 Winget is the official Windows package manager:
 
 To install Winget run:
-```
+``` cmd
 cd c:\; mkdir winget_download; cd winget_download; 
 wget -uri https://github.com/microsoft/winget-cli/releases/download/v1.3.431/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle -outfile .\winget.msixbundle; .\winget.msixbundle;
 .\winget.msixbundle
@@ -53,14 +53,14 @@ In the Command Prompt window, run the following command to set the WSL version t
 $ wsl --set-version ubuntu 2
 ``` 
 
-Next we will install Docker using winget:
+Next we are going to install Docker using winget:
 
-```
+``` cmd
 winget install docker.dockerdesktop
 ```
 
 After installing docker you should reboot:
-```
+``` cmd
 shutdown -d -t 0
 ```
 
@@ -68,7 +68,6 @@ After rebooting a WSL2 terminal will openup informing it is finishing the instal
 When the installation is finished it will request you to setup a user and password, make sure you don't skip this step
 
 Configuring docker:
-
 
 Open Docker and wait until it is fully started
 Click the `Settings` (gear) icon along the top of the Docker app.
