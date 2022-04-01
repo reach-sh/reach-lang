@@ -179,7 +179,7 @@ const DEFAULT_MAX_PROBLEMS = 100;
 
 interface ReachIdeSettings {
   maxNumberOfProblems: number;
-  executableLocation: string;
+  pathToShellScript: string;
 }
 
 let defaultSettings: ReachIdeSettings;
@@ -227,7 +227,10 @@ documents.onDidOpen((event) => {
   // The global settings, used when the `workspace/configuration` request is not supported by the client.
   // Please note that this is not the case when using this server with the client provided in this example
   // but could happen with other clients.
-  defaultSettings = { maxNumberOfProblems: DEFAULT_MAX_PROBLEMS, executableLocation: path.join(workspaceFolder, "reach") };
+  defaultSettings = {
+    maxNumberOfProblems: DEFAULT_MAX_PROBLEMS,
+    pathToShellScript: './reach'
+  };
 
   globalSettings = defaultSettings;
 });
@@ -256,42 +259,31 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
   let diagnostics: Diagnostic[] = [];
 
-  const { executableLocation } = settings;
-  const reachPath = path.join(
-    workspaceFolder, executableLocation
-  );
+  const { pathToShellScript } = settings;
 
   // Download the Reach shell script if it does not exist
   try {
-    if (fs.existsSync(reachPath)) {
+    if (fs.existsSync(pathToShellScript)) {
       connection.console.info(
         'Reach shell script exists at'
       );
-      connection.console.info(reachPath);
+      connection.console.info(pathToShellScript);
     } else {
       connection.console.log('');
       connection.console.error(
         'Failed to find reach shell script at'
       );
+      connection.console.error(pathToShellScript);
       connection.console.error(
-        reachPath
+        'Attempting to download Reach shell script to'
       );
-      connection.console.error(
-        'Attempting to download ' +
-        'reach shell script to'
-      );
-      connection.console.error(
-        reachPath
-      );
-      connection.console.error(
-        'now...\n'
-      );
+      connection.console.error(pathToShellScript);
+      connection.console.error('now...\n');
       exec(
         'curl https://raw.githubusercontent.com/' +
         'reach-sh/reach-lang/master/reach -o ' +
-        reachPath +
-        ' ; chmod +x ' +
-        reachPath, (
+        pathToShellScript + ' ; chmod +x ' +
+        pathToShellScript, (
           error: ExecException | null,
           stdout: string,
           stderr: string
@@ -323,30 +315,20 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
   } catch (err) {
     connection.console.log('');
     connection.console.error(
-      'Failed to check if reach ' +
-      'shell script exists at'
+      'Failed to check if reach shell script exists at'
     );
-    connection.console.error(
-      reachPath
-    );
-    connection.console.error(
-      `due to error: ${err}`
-    );
+    connection.console.error(pathToShellScript);
+    connection.console.error(`due to error: ${err}`);
     connection.console.error(
       'Attempting to download reach shell script to'
     );
-    connection.console.error(
-      reachPath
-    );
-    connection.console.error(
-      'now...\n'
-    );
+    connection.console.error(pathToShellScript);
+    connection.console.error('now...\n');
     exec(
       'curl https://raw.githubusercontent.com/' +
       'reach-sh/reach-lang/master/reach -o ' +
-      reachPath +
-      ' ; chmod +x ' +
-      reachPath, (
+      pathToShellScript + ' ; chmod +x ' +
+      pathToShellScript, (
         error: ExecException | null,
         stdout: string,
         stderr: string
@@ -398,11 +380,10 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
   theCompilerIsCompiling = true;
 
   connection.console.info('Starting compilation using');
-  connection.console.info(reachPath);
+  connection.console.info(pathToShellScript);
   exec(
-    "cd " + tempFolder + " && " + reachPath +
-    " compile " + REACH_TEMP_FILE_NAME +
-    " --error-format-json --stop-after-eval", (
+    pathToShellScript + " compile " + REACH_TEMP_FILE_NAME
+    + " --error-format-json --stop-after-eval", (
       error: ExecException | null,
       stdout: string,
       stderr: string
