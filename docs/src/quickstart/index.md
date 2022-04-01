@@ -23,23 +23,28 @@ or
 
 ## {#qs-win-install} Installation
 
-Click the Windows icon, type `CMD`, and then click `Run as Administrator`.
+Click the Windows icon, type `Poershell`, and then click `Run as Administrator`.
 There are a number of commands that need to be run to get Windows ready for Reach.
 
-To install WSL on Windows, run:
+We want to download a tool from Microsoft's github called winget.
+Winget is the official Windows package manager:
 
-``` cmd
-$ wsl --install
+To install Winget run:
 ```
+cd c:\; mkdir winget_download; cd winget_download; 
+wget -uri https://github.com/microsoft/winget-cli/releases/download/v1.3.431/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle -outfile .\winget.msixbundle; .\winget.msixbundle;
+.\winget.msixbundle
+```
+A window should popup, click on Update.
+
+To install WSL on Windows, run:
 
 :::note
 Some Windows 10 users need to run `dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart` to install WSL.
 :::
 
-To then install Ubuntu, run:
-
 ``` cmd
-$ wsl --install -d ubuntu
+$ wsl --install -d Ubuntu
 ```
 
 In the Command Prompt window, run the following command to set the WSL version to 2:
@@ -48,13 +53,24 @@ In the Command Prompt window, run the following command to set the WSL version t
 $ wsl --set-version ubuntu 2
 ``` 
 
-Next, download and install [Docker Desktop](https://www.docker.com/products/docker-desktop).
+Next we will install Docker using winget:
 
-:::note
-Make sure to follow Docker's instructions for installation and configuration.
-Those instructions are subject to change and are outside of our control.
-:::
+```
+winget install docker.dockerdesktop
+```
 
+After installing docker you should reboot:
+```
+shutdown -d -t 0
+```
+
+After rebooting a WSL2 terminal will openup informing it is finishing the installation.
+When the installation is finished it will request you to setup a user and password, make sure you don't skip this step
+
+Configuring docker:
+
+
+Open Docker and wait until it is fully started
 Click the `Settings` (gear) icon along the top of the Docker app.
 
 ![Settings icon in Docker`](/quickstart/settings-icon.png)
