@@ -205,8 +205,8 @@ instance CollectsTypes Int where
   cts _ = mempty
 
 instance CollectsTypes LLProg where
-  cts (LLProg _ _ ps dli dex dvs das devts s) =
-    cts ps <> cts dli <> cts dex <> cts dvs <> cts das <> cts devts <> cts s
+  cts (LLProg _ _ ps dli dex dvs das alias devts s) =
+    cts ps <> cts dli <> cts dex <> cts dvs <> cts das <> cts alias <> cts devts <> cts s
 
 instance CollectsTypes DLLetVar where
   cts (DLV_Eff) = mempty

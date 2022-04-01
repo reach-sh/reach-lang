@@ -1367,7 +1367,8 @@ apiDef who ApiInfo {..} = do
   ret_ty' <- solType_ ai_ret_ty
   let ret_ty'' = ret_ty' <+> withArgLoc ai_ret_ty
   let ret = "external payable returns" <+> parens ret_ty''
-  return $ solFunction (pretty who_s) argDefns ret body
+  let mk w = solFunction (pretty w) argDefns ret body
+  return $ vsep $ mk who_s : maybe [] ((: []) . mk . bunpack) ai_alias
 
 apiDefs :: ApiInfos -> App Doc
 apiDefs defs =

@@ -40,6 +40,7 @@ import Safe (atMay)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 import Text.RE.TDFA (RE, compileRegex, matched, (?=~))
 import Data.Bifunctor
+import Data.Tuple.Extra (fst3, snd3, thd3)
 
 --- New Types
 
@@ -67,6 +68,7 @@ data AppRes = AppRes
   , ar_events :: DLEvents
   , -- All the bound Participants, Views, APIs
     ar_entities :: M.Map String SrcLoc
+  , ar_api_alias :: M.Map SLVar (Maybe B.ByteString, [SLType])
   }
 
 data AppInitSt
@@ -3090,12 +3092,14 @@ evalPrim p sargs =
             let intv' = SLV_Object at (Just $ nk <> " interact") nkm
             it <- IT_Fun <$> mapM st2dte stf_dom <*> st2dte stf_rng
             m_alias <- mapM (mustBeBytes . sss_val) $ M.lookup k aliasEnv
-            (,) (nkb, it, m_alias) <$> (sls_sss at <$> makeParticipant_ True True nv' intv')
+            (M.singleton nk (m_alias, stf_dom),,) (nkb, it) <$> (sls_sss at <$> makeParticipant_ True True nv' intv')
           t -> expect_ $ Err_API_NotFun k t
-      let i' = M.map fst ix
-      let io = M.map snd ix
+      let aliases = M.unions $ M.elems $ M.map fst3 ix
+      let i' = M.map snd3 ix
+      let io = M.map thd3 ix
       aisiPut aisi_res $ \ar ->
-        ar {ar_apis = M.insertWith M.union n i' $ ar_apis ar}
+        ar { ar_apis = M.insertWith M.union n i' $ ar_apis ar
+           , ar_api_alias = M.union aliases $ ar_api_alias ar }
       retV $ (lvl, SLV_Object nAt (Just $ ns <> " API") io)
     SLPrim_View -> do
       ensure_mode SLM_AppInit "View"

@@ -590,6 +590,7 @@ data ApiInfo = ApiInfo
   , ai_which :: Int
   , ai_compile :: ApiInfoCompilation
   , ai_ret_ty :: DLType
+  , ai_alias :: Maybe B.ByteString
   }
   deriving (Eq)
 
@@ -1198,9 +1199,9 @@ flattenInterfaceLikeMap = M.fromList . concatMap go . M.toList
 
 type DLViews = InterfaceLikeMap IType
 
-type Aliases = Maybe B.ByteString
+type Aliases = M.Map SLVar (Maybe B.ByteString)
 
-type DLAPIs = InterfaceLikeMap (SLPart, IType, Aliases)
+type DLAPIs = InterfaceLikeMap (SLPart, IType)
 
 type DLEvents = InterfaceLikeMap [DLType]
 

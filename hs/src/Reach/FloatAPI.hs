@@ -73,7 +73,7 @@ instance FloatAPI LLStep where
       LLS_ToConsensus at lct send <$> fa recv <*> fa_mtime mtime
 
 floatAPI :: LLProg -> IO LLProg
-floatAPI (LLProg at opts sps dli dex dvs dapis devts db) = do
+floatAPI (LLProg at opts sps dli dex dvs dapis alias devts db) = do
   let eAPI = Nothing
   db' <- flip runReaderT (Env {..}) $ fa db
-  return $ LLProg at opts sps dli dex dvs dapis devts db'
+  return $ LLProg at opts sps dli dex dvs dapis alias devts db'

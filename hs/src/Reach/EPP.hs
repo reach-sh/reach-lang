@@ -175,6 +175,7 @@ data BEnv = BEnv
   , be_counter :: Counter
   , be_which :: Int
   , be_api_info :: IORef (M.Map SLPart ApiInfo)
+  , be_alias :: Aliases
   , be_api_rets :: IORef (M.Map SLPart DLType)
   , be_ms :: Seq.Seq DLStmt
   }
@@ -353,9 +354,10 @@ be_m = \case
         BEnv {..} <- ask
         rets <- liftIO $ readIORef be_api_rets
         let ret = fromMaybe T_Null $ M.lookup p rets
+        let alias = join $ M.lookup (bunpack p) be_alias
         liftIO $
           modifyIORef be_api_info $
-            M.insert p $ ApiInfo apiAt tys mc be_which isf ret
+            M.insert p $ ApiInfo apiAt tys mc be_which isf ret alias
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
@@ -695,7 +697,7 @@ mk_eb (DLinExportBlock at vs (DLBlock bat sf ll a)) = do
   return $ DLinExportBlock at vs (DLBlock bat sf body' a)
 
 epp :: LLProg -> IO PLProg
-epp (LLProg at (LLOpts {..}) ps dli dex dvs das devts s) = do
+epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
   -- Step 1: Analyze the program to compute basic blocks
   let be_counter = llo_counter
   be_savec <- newCounter 1
@@ -719,6 +721,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das devts s) = do
   let be_view_sets = mempty
   let be_inConsensus = False
   let be_ms = mempty
+  let be_alias = alias
   mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
   check_view_sets =<< readIORef be_view_setsr
   api_info <- liftIO $ readIORef be_api_info

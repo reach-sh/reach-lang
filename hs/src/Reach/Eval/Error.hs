@@ -160,6 +160,7 @@ data EvalError
   | Err_LoopVariableLength SrcLoc
   | Err_xor_Types DLType DLType
   | Err_mod_Types DLType DLType
+  | Err_Alias_Type_Clash SLVar
   deriving (Eq, Generic)
 
 instance HasErrorCode EvalError where
@@ -301,6 +302,7 @@ instance HasErrorCode EvalError where
     Err_LoopVariableLength {} -> 128
     Err_xor_Types {} -> 129
     Err_mod_Types {} -> 129
+    Err_Alias_Type_Clash {} -> 130
 
 --- FIXME I think most of these things should be in Pretty
 
@@ -750,5 +752,7 @@ instance Show EvalError where
       "% expects a first argument of type UInt, Digest, or Bytes and a second argument of UInt, but received: " <> show l <> " and " <> show r
     Err_ApiCallAssign ->
       "The left hand side of an API call must be a pair consisting of the domain and return function."
+    Err_Alias_Type_Clash alias ->
+      "The alias `" <> alias <> "` is overloaded multiple types for the same parameter types."
     where
       displayPrim = drop (length ("SLPrim_" :: String)) . conNameOf

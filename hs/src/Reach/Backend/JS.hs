@@ -1082,7 +1082,7 @@ jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = 
              let f = case k of
                       Just k' -> M.insert (bunpack k') . jsObject
                       Nothing -> M.union in
-              let v' = M.map (\(p, _, _) -> pretty $ bunpack p) v in
+              let v' = M.map (pretty . bunpack . fst) v in
               f v' acc)
           mempty
           epps_apis

@@ -20,6 +20,8 @@ import Reach.JSUtil
 import Reach.Parser
 import Reach.Util
 import Reach.Warning
+import qualified Data.ByteString as B
+import Data.List.Extra (groupSort, nub)
 
 compileDApp :: DLStmts -> DLSExports -> SLVal -> App DLProg
 compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_strict))) = locAt (srcloc_lab "compileDApp" at) $ do
@@ -47,7 +49,7 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
           }
   init_dlo <- readDlo id
   envr <- liftIO $ newIORef $ AppEnv mempty init_dlo mempty mempty
-  resr <- liftIO $ newIORef $ AppRes mempty mempty mempty mempty mempty mempty
+  resr <- liftIO $ newIORef $ AppRes mempty mempty mempty mempty mempty mempty mempty
   appr <- liftIO $ newIORef $ AIS_Init envr resr
   mape <- liftIO $ makeMapEnv
   e_droppedAsserts' <- (liftIO . dupeCounter) =<< (e_droppedAsserts <$> ask)
@@ -75,14 +77,24 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
           , dlo_droppedAsserts = e_droppedAsserts'
           }
   AppRes {..} <- liftIO $ readIORef resr
+  aliases <- verifyAliases ar_api_alias
   dli_maps <- liftIO $ readIORef $ me_ms mape
   let dli = DLInit {..}
   let sps_ies = ar_pie
   let sps_apis = ar_isAPI
   let sps = SLParts {..}
   final' <- pan final
-  return $ DLProg at final_dlo' sps dli exports ar_views ar_apis ar_events final'
+  return $ DLProg at final_dlo' sps dli exports ar_views ar_apis aliases ar_events final'
 compileDApp _ _ _ = impossible "compileDApp called without a Reach.App"
+
+verifyAliases :: M.Map SLVar (Maybe B.ByteString, [SLType]) -> App Aliases
+verifyAliases m = do
+  forM_ (groupSort $ M.elems m) $ \case
+    (Just k, doms) -> do
+      unless (length doms == length (nub doms)) $ do
+        expect_ $ Err_Alias_Type_Clash $ bunpack k
+    (Nothing, _) -> return ()
+  return $ M.map fst m
 
 class Pandemic a where
   pan :: a -> App a
