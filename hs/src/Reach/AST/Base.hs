@@ -239,6 +239,9 @@ srcloc_builtin = SrcLoc (Just "<builtin>") Nothing Nothing
 sb :: SrcLoc
 sb = srcloc_builtin
 
+nn :: Maybe a
+nn = Nothing
+
 srcloc_top :: SrcLoc
 srcloc_top = SrcLoc (Just "<top level>") Nothing Nothing
 

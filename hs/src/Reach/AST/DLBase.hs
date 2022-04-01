@@ -63,6 +63,11 @@ instance FromJSON DLType
 
 instance ToJSON DLType
 
+uintTyOf :: DLType -> UIntTy
+uintTyOf = \case
+  T_UInt t -> t
+  _ -> uintWord
+
 tokenInfoElemTy :: DLType
 tokenInfoElemTy = T_Tuple [balance, supply, destroyed]
   where

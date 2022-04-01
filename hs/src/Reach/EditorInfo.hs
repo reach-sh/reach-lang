@@ -61,7 +61,7 @@ completionKind v =
   case v of
     SLV_Null _ _ -> Just CK_Constant
     SLV_Bool _ _ -> Just CK_Constant
-    SLV_Int _ _ -> Just CK_Constant
+    SLV_Int _ _ _ -> Just CK_Constant
     SLV_Bytes _ _ -> Just CK_Constant
     SLV_Array _ _ _ -> Just CK_Constant
     SLV_Tuple _ _ -> Just CK_Constant

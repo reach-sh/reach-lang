@@ -689,7 +689,7 @@ slToDLV :: SLVal -> App (Maybe DLValue)
 slToDLV = \case
   SLV_Null at _ -> lit at DLL_Null
   SLV_Bool at b -> lit at $ DLL_Bool b
-  SLV_Int at i -> lit at $ DLL_Int at uintWord i
+  SLV_Int at mt i -> lit at $ DLL_Int at (fromMaybe uintWord mt) i
   SLV_Bytes at bs -> return $ Just $ DLV_Bytes at bs
   SLV_DLC c -> arg sb $ DLA_Constant c
   SLV_DLVar dv -> arg (srclocOf dv) $ DLA_Var dv
@@ -1362,7 +1362,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
   SLV_Type (ST_UInt True) ->
     return $ Just $
       M.fromList
-        [("max", retV $ public $ SLV_Int sb uint256_Max)]
+        [("max", retV $ public $ SLV_Int sb (Just uint256) uint256_Max)]
   SLV_Type (ST_Data varm) ->
     return $ Just $
       flip M.mapWithKey varm $ \k t ->
@@ -1898,7 +1898,7 @@ evalPolyEq :: SecurityLevel -> SLVal -> SLVal -> App SLSVal
 evalPolyEq lvl x y =
   case (x, y) of
     -- Both args static
-    (SLV_Int _ l, SLV_Int _ r) -> retBool $ l == r
+    (SLV_Int _ t1 l, SLV_Int _ t2 r) | t1 == t2 -> retBool $ l == r
     (SLV_Bool _ l, SLV_Bool _ r) -> retBool $ l == r
     (SLV_Bytes _ l, SLV_Bytes _ r) -> retBool $ l == r
     (SLV_Type l, SLV_Type r) -> retBool $ l == r
@@ -2005,16 +2005,17 @@ evalNeg v = evalITE Public v (b False) (b True)
     b = SLV_Bool sb
 
 evalPrimOp :: SPrimOp -> [SLSVal] -> App SLSVal
-evalPrimOp sp sargs = do
+evalPrimOp sp_ sargs = do
   at <- withAt id
-  let zero = SLV_Int at 0
-  case sp of
+  let zero mt = SLV_Int at mt 0
+  case sp_ of
     S_UCAST to ->
       case args of
-        [lhs@(SLV_Int {})] -> static lhs
-        _ ->  do
-          dom <- arg1ty 1
-          make_var [dom] (T_UInt to) args
+        [SLV_Int lhs_at _ lhs_i] -> static $ SLV_Int lhs_at (Just to) lhs_i
+        _ -> do
+          let from = not to
+          let dom = T_UInt from
+          make_var' (S_UCAST from) [dom] (T_UInt to) args
     S_BYTES_ZPAD xtra ->
       case args of
         [SLV_Bytes _ lhs] -> do
@@ -2035,23 +2036,23 @@ evalPrimOp sp sargs = do
         _ -> expect_ $ Err_Apply_ArgCount at 1 (length args)
     S_ADD ->
       case args of
-        [SLV_Int _ 0, rhs] -> static rhs
-        [lhs, SLV_Int _ 0] -> static lhs
+        [SLV_Int _ mt 0, rhs] | mtOkay mt rhs -> static rhs
+        [lhs, SLV_Int _ mt 0] | mtOkay mt lhs -> static lhs
         _ -> nn2n (+)
     S_SUB ->
       case args of
-        [lhs, SLV_Int _ 0] -> static lhs
+        [lhs, SLV_Int _ mt 0] | mtOkay mt lhs -> static lhs
         _ -> nn2n (-)
     S_MUL ->
       case args of
-        [SLV_Int _ 1, rhs] -> static rhs
-        [lhs, SLV_Int _ 1] -> static lhs
-        [SLV_Int _ 0, _] -> static zero
-        [_, SLV_Int _ 0] -> static zero
+        [SLV_Int _ mt 1, rhs] | mtOkay mt rhs -> static rhs
+        [lhs, SLV_Int _ mt 1] | mtOkay mt lhs -> static lhs
+        [SLV_Int _ mt 0, rhs] | mtOkay mt rhs -> static $ zero $ uintTyM rhs
+        [lhs, SLV_Int _ mt 0] | mtOkay mt lhs -> static $ zero $ uintTyM lhs
         _ -> nn2n (*)
     S_DIV ->
       case args of
-        [lhs, SLV_Int _ 1] -> static lhs
+        [lhs, SLV_Int _ mt 1] | mtOkay mt lhs -> static lhs
         _ -> nn2n (div)
     S_MOD -> nn2n (mod)
     S_PLT -> nn2b (<)
@@ -2094,17 +2095,27 @@ evalPrimOp sp sargs = do
     S_BIOR -> nn2n (.|.)
     S_BXOR -> nn2n (xor)
     S_MUL_DIV -> case args of
-      [SLV_Int _ 1, rhs, den] -> evalPrimOp S_DIV $ map (lvl,) [rhs, den]
-      [lhs, SLV_Int _ 1, den] -> evalPrimOp S_DIV $ map (lvl,) [lhs, den]
-      [SLV_Int _ 0, _, _] -> static zero
-      [_, SLV_Int _ 0, _] -> static zero
+      [SLV_Int _ mt 1, rhs, den] | mtOkay2 mt rhs den ->
+        evalPrimOp S_DIV $ map (lvl,) [rhs, den]
+      [lhs, SLV_Int _ mt 1, den] | mtOkay2 mt lhs den ->
+        evalPrimOp S_DIV $ map (lvl,) [lhs, den]
+      [SLV_Int _ mt 0, rhs, den] | mtOkay2 mt rhs den -> static $ zero $ uintTyM rhs
+      [lhs, SLV_Int _ mt 0, den] | mtOkay2 mt lhs den -> static $ zero $ uintTyM den
       [x, y, z]
         | x == z -> static y
         | y == z -> static x
       _ -> nnn2n (\a b c -> (a * b) `div` c)
+      where
+        mtOkay2 x y z = mtOkay x y && mtOkay x z && mtOkay (uintTyM y) z
   where
     args = map snd sargs
     lvl = mconcat $ map fst sargs
+    mtOkay' mt my =
+      case mt of
+        Nothing -> True
+        Just t -> Just t == my
+    mtOkay'3 m1 m2 m3 = mtOkay' m1 (mtJoin m2 m3) && mtOkay' m2 m3
+    mtOkay mt = mtOkay' mt . uintTyM
     arg1ty n =
       case args of
         x : _ -> fst <$> typeOf x
@@ -2113,7 +2124,7 @@ evalPrimOp sp sargs = do
           expect_ $ Err_Apply_ArgCount at n (length args)
     nn2b op =
       case args of
-        [SLV_Int _ lhs, SLV_Int _ rhs] -> do
+        [SLV_Int _ mt1 lhs, SLV_Int _ mt2 rhs] | mtOkay' mt1 mt2 -> do
           at <- withAt id
           static $ SLV_Bool at $ op lhs rhs
         _ -> do
@@ -2121,41 +2132,40 @@ evalPrimOp sp sargs = do
           make_var [dom, dom] T_Bool args
     nn2n op =
       case args of
-        [SLV_Int _ lhs, SLV_Int _ rhs] -> do
+        [SLV_Int _ mt1 lhs, SLV_Int _ mt2 rhs] | mtOkay' mt1 mt2 -> do
           at <- withAt id
-          static $ SLV_Int at $ op lhs rhs
+          static $ SLV_Int at (mtJoin mt1 mt2) $ op lhs rhs
         _ -> do
           dom <- arg1ty 2
           make_var [dom, dom] dom args
     nnn2n op =
       case args of
-        [SLV_Int _ x, SLV_Int _ y, SLV_Int _ z] -> do
+        [SLV_Int _ mt1 x, SLV_Int _ mt2 y, SLV_Int _ mt3 z] | mtOkay'3 mt1 mt2 mt3 -> do
           at <- withAt id
-          static $ SLV_Int at $ op x y z
+          static $ SLV_Int at (mtJoin mt1 $ mtJoin mt2 mt3) $ op x y z
         _ -> do
           dom <- arg1ty 3
           make_var [dom, dom, dom] dom args
     static v = return $ (lvl, v)
-    make_var dom rng args' = do
+    make_var = make_var' sp_
+    make_var' sp dom rng args' = do
       at <- withAt id
       args'e <-
         mapM (uncurry typeCheck_d)
           =<< zipEq (Err_Apply_ArgCount at) dom args'
-      make_var_ rng args'e
-    make_var_ rng args'e = do
+      make_var_' sp rng args'e
+    make_var_ = make_var_' sp_
+    make_var_' sp rng args'e = do
       at <- withAt id
       dargs <- compileArgExprs args'e
       let dopClaim ca msg = doClaim CT_Assert ca $ Just msg
       let mkvar t = DLVar at Nothing t
       let doOp t cp cargs = DLA_Var <$> (ctxt_lift_expr (mkvar t) $ DLE_PrimOp at cp cargs)
       let doCmp = doOp T_Bool
-      let uit =
-            case rng of
-              T_UInt t -> t
-              _ -> uintWord
-      let p = sprimToPrim uit sp
+      let uit_rng = uintTyOf rng
+      let p = sprimToPrim uit_rng sp
       let lim_maxUInt_a =
-            case uit of
+            case uit_rng of
               True -> DLA_Literal $ DLL_Int sb True $ uint256_Max
               _ -> DLA_Constant DLC_UInt_max
       let chkDiv t denom = do
@@ -2338,7 +2348,7 @@ tokenMetaAssert tm tok lhs op msg = do
 
 doBalanceUpdate :: Maybe DLArg -> SPrimOp -> SLVal -> App ()
 doBalanceUpdate mtok op = \case
-  SLV_Int _ 0 -> return ()
+  SLV_Int _ _ 0 -> return ()
   rhs -> do
     at <- withAt id
     let up_rator = SLV_Prim $ SLPrim_PrimDelay at (SLPrim_op op) [] [(Public, rhs)]
@@ -2360,7 +2370,7 @@ tokenMetaUpdate tm tok op rhs = do
 doArrayBoundsCheck :: Integer -> SLVal -> App ()
 doArrayBoundsCheck sz idxv = do
   at <- withAt id
-  cmp_v <- evalApplyVals' (SLV_Prim $ SLPrim_op S_PLT) [public idxv, public $ SLV_Int at sz]
+  cmp_v <- evalApplyVals' (SLV_Prim $ SLPrim_op S_PLT) [public idxv, public $ SLV_Int at nn sz]
   void $
     evalApplyVals' (SLV_Prim $ SLPrim_claim CT_Assert) $
       [cmp_v, public $ SLV_Bytes at "array bounds check"]
@@ -2495,7 +2505,7 @@ evalPrim p sargs =
       ensureCreatedToken lab toka
       ensure_mode SLM_ConsensusStep lab
       tokenMetaAssert TM_Destroyed toka (SLV_Bool at False) S_PEQ $ bpack $ "token not yet destroyed at " <> lab
-      tokenMetaAssert TM_Supply toka (SLV_Int at 0) S_PEQ $ bpack $ "token supply zero at " <> lab
+      tokenMetaAssert TM_Supply toka (SLV_Int at nn 0) S_PEQ $ bpack $ "token supply zero at " <> lab
       ctxt_lift_eff $ DLE_TokenDestroy at toka
       tokenMetaSet TM_Destroyed toka (DLA_Literal $ DLL_Bool True) False
       return $ public $ SLV_Null at lab
@@ -2616,11 +2626,11 @@ evalPrim p sargs =
         _ -> illegal_args
     SLPrim_Bytes ->
       case map snd sargs of
-        [(SLV_Int _ sz)] -> retV $ (lvl, SLV_Type $ ST_Bytes sz)
+        [(SLV_Int _ _ sz)] -> retV $ (lvl, SLV_Type $ ST_Bytes sz)
         _ -> illegal_args
     SLPrim_Array ->
       case map snd sargs of
-        [(SLV_Type ty), (SLV_Int _ sz)] ->
+        [(SLV_Type ty), (SLV_Int _ _ sz)] ->
           retV $ (lvl, SLV_Type $ ST_Array ty sz)
         _ -> illegal_args
     SLPrim_Foldable -> expect_ Err_Prim_Foldable
@@ -2628,17 +2638,17 @@ evalPrim p sargs =
       at <- withAt id
       one_arg >>= \case
         SLV_Tuple _ vs ->
-          retV $ public $ SLV_Int at $ fromIntegral $ length vs
+          retV $ public $ SLV_Int at nn $ fromIntegral $ length vs
         SLV_DLVar (DLVar _ _ (T_Tuple ts) _) ->
-          retV $ public $ SLV_Int at $ fromIntegral $ length ts
+          retV $ public $ SLV_Int at nn $ fromIntegral $ length ts
         _ -> illegal_args
     SLPrim_array_length -> do
       at <- withAt id
       one_arg >>= \case
         SLV_Array _ _ vs ->
-          retV $ public $ SLV_Int at $ fromIntegral $ length vs
+          retV $ public $ SLV_Int at nn $ fromIntegral $ length vs
         SLV_DLVar (DLVar _ _ (T_Array _ sz) _) ->
-          retV $ public $ SLV_Int at $ fromIntegral $ sz
+          retV $ public $ SLV_Int at nn $ fromIntegral $ sz
         _ -> illegal_args
     SLPrim_array_elemType ->
       one_arg >>= getType <&> public . SLV_Type . dt2st
@@ -2650,8 +2660,9 @@ evalPrim p sargs =
     SLPrim_Array_iota -> do
       at <- withAt id
       case map snd sargs of
-        [SLV_Int _ sz] ->
-          retV $ (lvl, SLV_Array at (T_UInt uintWord) $ map (SLV_Int at) [0 .. (sz -1)])
+        [SLV_Int _ mt sz] -> do
+          let t = fromMaybe uintWord mt
+          retV $ (lvl, SLV_Array at (T_UInt t) $ map (SLV_Int at (Just t)) [0 .. (sz -1)])
         [_] -> expect_ $ Err_Prim_InvalidArg_Dynamic p
         _ -> illegal_args
     SLPrim_array ->
@@ -2720,7 +2731,7 @@ evalPrim p sargs =
           case shouldUnroll of
             True -> do
               xs_vs <- transpose <$> mapM (explodeTupleLike "map") xs
-              let evalem xvs i = snd <$> f' xvs (SLV_Int at i)
+              let evalem xvs i = snd <$> f' xvs (SLV_Int at nn i)
               vs' <- zipWithM evalem xs_vs [0..]
               return $ (f_lvl, SLV_Array at f_ty vs')
             False -> do
@@ -2765,7 +2776,7 @@ evalPrim p sargs =
               xs_vs <- transpose <$> mapM (explodeTupleLike "reduce") xs
               let evalem :: SLSVal -> ([SLVal], Integer) -> App SLSVal
                   evalem prev_z (xvs, i) = do
-                    let iv = SLV_Int at i
+                    let iv = SLV_Int at nn i
                     xv_v' <- f' (snd prev_z) xvs iv
                     --- Note: We are artificially restricting reduce
                     --- to be parameteric in the state. We also ensure
@@ -2852,7 +2863,7 @@ evalPrim p sargs =
     SLPrim_Struct_fromTuple ts -> do
       tv <- one_arg
       at <- withAt id
-      let go (i, k) = (,) k <$> doArrRef_ tv (SLV_Int at i)
+      let go (i, k) = (,) k <$> doArrRef_ tv (SLV_Int at nn i)
       kvs <- mapM go $ zip [0 ..] $ map fst ts
       return $ (lvl, SLV_Struct at kvs)
     SLPrim_Struct_fromObject ts -> do
@@ -2874,7 +2885,7 @@ evalPrim p sargs =
     SLPrim_tuple_set -> do
       at <- withAt id
       case map snd sargs of
-        [tup, (SLV_Int _ idxi), val] -> do
+        [tup, (SLV_Int _ _ idxi), val] -> do
           tupvs <- explodeTupleLike "tuple_set" tup
           let go i v = if idxi == i then val else v
           let tupvs' = zipWith go [0 ..] tupvs
@@ -2901,8 +2912,8 @@ evalPrim p sargs =
     SLPrim_makeEnum -> do
       at' <- withAt $ srcloc_at "makeEnum" Nothing
       case map snd sargs of
-        [iv@(SLV_Int _ i)] ->
-          retV $ (lvl, SLV_Tuple at' (enum_pred : map (SLV_Int at') [0 .. (i -1)]))
+        [iv@(SLV_Int _ mt i)] ->
+          retV $ (lvl, SLV_Tuple at' (enum_pred : map (SLV_Int at' mt) [0 .. (i -1)]))
           where
             enum_pred = jsClo at' "makeEnum" "(x) => ((0 <= x) && (x < M))" (M.fromList [("M", iv)])
         _ -> illegal_args
@@ -3293,7 +3304,7 @@ evalPrim p sargs =
     SLPrim_remotef rat aa m stf mpay mbill Nothing ma -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
       at <- withAt id
-      let zero = SLV_Int at 0
+      let zero = SLV_Int at nn 0
       let amtv = fromMaybe zero mpay
       payAmt <- compilePayAmt TT_Pay amtv
       tokenPay Nothing (pa_net payAmt) "balance sufficient for payment to remote object"
@@ -3336,10 +3347,10 @@ evalPrim p sargs =
             case nntbNo of
               True -> return (1, Nothing)
               False -> do
-                nnTokAmts <- doArrRef_ res' $ SLV_Int at 1
+                nnTokAmts <- doArrRef_ res' $ SLV_Int at nn 1
                 return (2, Just nnTokAmts)
       (resi, mNonNetToksRecv) <- getRemoteResults
-      res <- doArrRef_ res' $ SLV_Int at resi
+      res <- doArrRef_ res' $ SLV_Int at nn resi
       doBalanceUpdate Nothing S_ADD apdvv
       case fromMaybe (Right zero) mbill of
         Left _ -> do
@@ -3348,7 +3359,7 @@ evalPrim p sargs =
               Nothing -> return ()
               Just nnTokAmts -> do
                 doBalanceUpdate (Just t) S_ADD
-                  =<< doArrRef_ nnTokAmts (SLV_Int at $ fromIntegral i)
+                  =<< doArrRef_ nnTokAmts (SLV_Int at nn $ fromIntegral i)
           return $ public res'
         Right _ -> do
           sv <- argToSV $ pa_net billAmt
@@ -3721,7 +3732,7 @@ litToSV :: DLLiteral -> App SLVal
 litToSV = \case
   DLL_Null -> withAt $ flip SLV_Null "litToSV"
   DLL_Bool b -> withAt $ flip SLV_Bool b
-  DLL_Int a _ i -> return $ SLV_Int a i
+  DLL_Int a t i -> return $ SLV_Int a (Just t) i
   DLL_TokenZero -> return $ SLV_DLC DLC_Token_zero
 
 argToSV :: DLArg -> App SLVal
@@ -3830,6 +3841,8 @@ evalApplyVals = evalApplyValsAux False
 evalApplyValsAux :: Bool -> SLVal -> [SLSVal] -> App SLAppRes
 evalApplyValsAux assumePrecondition rator randvs =
   case rator of
+    SLV_Type (ST_UInt t) ->
+      evalApplyValsAux assumePrecondition (SLV_Prim $ SLPrim_op $ S_UCAST t) randvs
     SLV_Prim p -> do
       sco <- e_sco <$> ask
       SLAppRes sco <$> evalPrim p randvs
@@ -3843,17 +3856,13 @@ evalApplyValsAux assumePrecondition rator randvs =
       forM_ (stf_post tf) $ \rngp ->
         applyRefinement CT_Assert rngp [dom_tupv, ret_v] (stf_post_msg tf)
       return res
-    v -> expect_t v $ Err_Eval_NotApplicableVals
+    v -> expect_t v $ Err_Eval_NotApplicable
 
 evalApply :: SLVal -> [JSExpression] -> App SLSVal
 evalApply rator rands =
   case rator of
-    SLV_Prim _ -> vals
-    SLV_Clo {} -> vals
     SLV_Form f -> evalForm f rands
-    v -> expect_t v $ Err_Eval_NotApplicable
-  where
-    vals = evalApplyVals' rator =<< evalExprs rands
+    _ -> evalApplyVals' rator =<< evalExprs rands
 
 evalPropertyName :: JSPropertyName -> App (SecurityLevel, String)
 evalPropertyName = \case
@@ -3952,8 +3961,8 @@ evalExpr e = case e of
                  in let signedInt = \at ->
                           SLV_Object at Nothing $
                             M.fromList
-                              [ ("scale", SLSSVal at Public $ SLV_Int at $ numberValue 10 scale)
-                              , ("i", SLSSVal at Public $ SLV_Int at $ numberValue 10 i)
+                              [ ("scale", SLSSVal at Public $ SLV_Int at nn $ numberValue 10 scale)
+                              , ("i", SLSSVal at Public $ SLV_Int at nn $ numberValue 10 i)
                               ]
                      in let iV = \at -> SLSSVal at Public $ signedInt at
                          in locAtf (srcloc_jsa "decimal" a) $
@@ -3962,7 +3971,7 @@ evalExpr e = case e of
                                   SLV_Object at Nothing $
                                     M.fromList [("sign", signV at), ("i", iV at)]
       [_] -> locAtf (srcloc_jsa "decimal" a) $
-        withAt $ \at -> public $ SLV_Int at $ numberValue 10 ns
+        withAt $ \at -> public $ SLV_Int at nn $ numberValue 10 ns
       _ -> impossible "Number must have 0 or 1 decimal points."
   JSLiteral a l -> locAtf (srcloc_jsa "literal" a) $ do
     at' <- withAt id
@@ -3975,9 +3984,9 @@ evalExpr e = case e of
       "this" -> evalExpr $ JSIdentifier a l
       _ -> expect_ $ Err_Parse_IllegalLiteral l
   JSHexInteger a ns -> locAtf (srcloc_jsa "hex" a) $
-    withAt $ \at -> public $ SLV_Int at $ numberValue 16 (drop 2 ns {- trim '0x' prefix -})
+    withAt $ \at -> public $ SLV_Int at nn $ numberValue 16 (drop 2 ns {- trim '0x' prefix -})
   JSOctal a ns -> locAtf (srcloc_jsa "octal" a) $
-    withAt $ \at -> public $ SLV_Int at $ numberValue 8 ns
+    withAt $ \at -> public $ SLV_Int at nn $ numberValue 8 ns
   JSStringLiteral a s -> locAtf (srcloc_jsa "string" a) $
     withAt $ \at -> public $ SLV_Bytes at (bpack (trimQuotes s))
   JSRegEx _ _ -> illegal
@@ -4188,7 +4197,7 @@ doArrRef_ arrv idxv = do
             expect_ $ Err_Eval_RefOutOfBounds (length arrvs) idxi
           Just ansv -> return ansv
   case idxv of
-    SLV_Int _ idxi ->
+    SLV_Int _ _ idxi ->
       case arrv of
         SLV_Array _ _ arrvs -> retVal idxi arrvs
         SLV_Tuple _ tupvs -> retVal idxi tupvs
@@ -5208,7 +5217,7 @@ deconstructFun = \case
     e' <- evalExpr e
     case snd e' of
       SLV_Clo _ _ (SLClo _ args bl _) -> return $ (args, bl)
-      ow -> expect_ . Err_Eval_NotApplicableVals =<< mkValType ow
+      ow -> expect_ . Err_Eval_NotApplicable =<< mkValType ow
 
 doParallelReduce :: JSExpression -> ParallelReduceRec -> App [JSStatement]
 doParallelReduce lhs (ParallelReduceRec {..}) = locAt slpr_at $ do
@@ -5434,7 +5443,7 @@ doExit = do
   ensure_modes [SLM_Step, SLM_AppInit] "exit"
   ensure_live "exit"
   at <- withAt id
-  let zero = SLV_Int at 0
+  let zero = SLV_Int at nn 0
   let lab = "application exit"
   let one mtok = doBalanceAssert mtok zero S_PEQ $ "balance zero at " <> lab
   one Nothing

@@ -136,7 +136,7 @@ data SLClo = SLClo (Maybe SLVar) [JSExpression] JSBlock SLCloEnv
 data SLVal
   = SLV_Null SrcLoc String
   | SLV_Bool SrcLoc Bool
-  | SLV_Int SrcLoc Integer
+  | SLV_Int SrcLoc (Maybe UIntTy) Integer
   | SLV_Bytes SrcLoc B.ByteString
   | SLV_Array SrcLoc DLType [SLVal]
   | SLV_Tuple SrcLoc [SLVal]
@@ -164,6 +164,18 @@ data SLVal
   | SLV_Map DLMVar
   | SLV_Deprecated Deprecation SLVal
   deriving (Eq, Generic)
+
+uintTyM :: SLVal -> Maybe UIntTy
+uintTyM = \case
+  SLV_Int _ mt _ -> mt
+  SLV_DLVar (DLVar _ _ (T_UInt t) _) -> Just t
+  SLV_DLC (DLC_UInt_max) -> Just uintWord
+  _ -> Nothing
+
+mtJoin :: Maybe UIntTy -> Maybe UIntTy -> Maybe UIntTy
+mtJoin = \case
+  Nothing -> id
+  x@(Just _) -> const x
 
 class NewerVar a where
   containsVarNewerThan :: Int -> a -> Bool
@@ -336,7 +348,7 @@ instance Equiv SLVal where
   equiv a b = case (a, b) of
     ((SLV_Null _ _), (SLV_Null _ _)) -> True
     ((SLV_Bool _ b1), (SLV_Bool _ b2)) -> equiv b1 b2
-    ((SLV_Int _ i1), (SLV_Int _ i2)) -> equiv i1 i2
+    ((SLV_Int _ t1 i1), (SLV_Int _ t2 i2)) -> equiv t1 t2 && equiv i1 i2
     ((SLV_Bytes _ v1), (SLV_Bytes _ v2)) -> equiv v1 v2
     ((SLV_Array _ _ xs), (SLV_Array _ _ ys)) -> equiv xs ys
     ((SLV_Tuple _ v1), (SLV_Tuple _ v2)) -> equiv v1 v2
@@ -366,7 +378,7 @@ instance Pretty SLVal where
   pretty = \case
     SLV_Null {} -> "null"
     SLV_Bool _ b -> pretty b
-    SLV_Int _ i -> pretty i
+    SLV_Int _ _ i -> pretty i
     SLV_Bytes _ b -> pretty b
     SLV_Array at t as ->
       "array" <> parens (pretty t <> comma <+> pretty (SLV_Tuple at as))
@@ -399,7 +411,7 @@ instance SrcLocOf SLVal where
   srclocOf = \case
     SLV_Null a _ -> a
     SLV_Bool a _ -> a
-    SLV_Int a _ -> a
+    SLV_Int a _ _ -> a
     SLV_Bytes a _ -> a
     SLV_Array a _ _ -> a
     SLV_Tuple a _ -> a
@@ -640,18 +652,18 @@ data SPrimOp
   deriving (Eq, Generic, NFData, Ord, Show)
 
 sprimToPrim :: UIntTy -> SPrimOp -> PrimOp
-sprimToPrim t = \case
-  S_ADD -> ADD t
-  S_SUB -> SUB t
-  S_MUL -> MUL t
-  S_DIV -> DIV t
-  S_MOD -> MOD t
-  S_PLT -> PLT t
-  S_PLE -> PLE t
-  S_PEQ -> PEQ t
-  S_PGE -> PGE t
-  S_PGT -> PGT t
-  S_UCAST t2 -> UCAST t t2
+sprimToPrim rng = \case
+  S_ADD -> ADD rng
+  S_SUB -> SUB rng
+  S_MUL -> MUL rng
+  S_DIV -> DIV rng
+  S_MOD -> MOD rng
+  S_PLT -> PLT rng
+  S_PLE -> PLE rng
+  S_PEQ -> PEQ rng
+  S_PGE -> PGE rng
+  S_PGT -> PGT rng
+  S_UCAST dom -> UCAST dom rng
   S_IF_THEN_ELSE -> IF_THEN_ELSE
   S_DIGEST_EQ -> DIGEST_EQ
   S_ADDRESS_EQ -> ADDRESS_EQ

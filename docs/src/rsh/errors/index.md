@@ -778,9 +778,8 @@ const f = () => {
 
 ## {#RE0035} RE0035
 
-This error indicates that a value, which is not a function, is being
-applied as if it were a function. Ensure you are writing the correct name
-of the function you intend to use.
+This error indicates that a value, which is not a function, is being applied as if it were a function.
+Ensure you are writing the correct name of the function you intend to use.
 
 For example, the code below has two variables: `{!rsh} f` and `{!rsh} g`:
 
@@ -790,8 +789,8 @@ const g = 2;
 const h = g();
 ```
 
-`{!rsh} g` is being applied as if it were a function, although we really intended
-on calling `{!rsh} f`. This can be fixed by ensuring we call a function:
+`{!rsh} g` is being applied as if it were a function, although we really intended on calling `{!rsh} f`.
+This can be fixed by ensuring we call a function:
 
 ```reach
 const f = () => 2;
@@ -801,21 +800,9 @@ const h = f();
 
 ## {#RE0036} RE0036
 
-This error indicates that a value, which is not a function, is being
-applied as if it were a function.
+@{errver(false, "v0.1.9")}
 
-For example, the code erroneously tries to create an `{!rsh} array` the same
-size as `{!rsh} arr`, but filled with `{!rsh} 1`:
-
-```reach
-const a = arr.map(1);
-```
-
-You can fix this code by providing a function to `{!rsh} Array.map`:
-
-```reach
-const a = arr.map((_) => 1);
-```
+It means the same thing as @{seclink('RE0035')}.
 
 ## {#RE0037} RE0037
 
