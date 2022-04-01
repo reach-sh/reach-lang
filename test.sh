@@ -132,6 +132,8 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
+ci ALGO bigpow
+exit 0
 fc hs/t/n/intrange_64.rsh
 fc hs/t/n/intrange_256.rsh
 exit 0
