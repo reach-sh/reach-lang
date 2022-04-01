@@ -21,6 +21,8 @@ or
 
 * Windows 11
 
+* Virtualization Technology (VT-x) enabled on the BIOS 
+
 ## {#qs-win-install} Installation
 
 Click the Windows icon, type `Powershell`, and then click `Run as Administrator`.
