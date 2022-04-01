@@ -28,8 +28,8 @@ or
 Click the Windows icon, type `Powershell`, and then click `Run as Administrator`.
 There are a number of commands that need to be run to get Windows ready for Reach.
 
-We want to download a tool from Microsoft's github called winget.
-Winget is the official Windows package manager:
+We want to download a tool from Microsoft's GitHub called `winget`.
+`winget` is the official Windows package manager:
 
 To install Winget run:
 ``` cmd
@@ -66,10 +66,12 @@ After installing docker you should reboot:
 shutdown -d -t 0
 ```
 
-After rebooting a WSL2 terminal will openup informing it is finishing the installation.
+::: note
+After rebooting a WSL2 terminal will open up informing it is finishing the installation.
 When the installation is finished it will request you to setup a user and password, make sure you don't skip this step
+:::
 
-Configuring docker:
+## {#qs-win-conf-docker} Configuring docker:
 
 Open Docker and wait until it is fully started
 Click the `Settings` (gear) icon along the top of the Docker app.
