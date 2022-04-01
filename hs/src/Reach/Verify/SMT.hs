@@ -313,7 +313,9 @@ smtPrimOp at p dargs =
     PEQ _ -> app "="
     PGE _ -> bvapp "bvuge" ">="
     PGT _ -> bvapp "bvugt" ">"
-    UCAST _ _ -> app "id"
+    UCAST _ _ -> \case
+      [x] -> return x
+      _ -> impossible "ucast"
     LSH -> bvapp "bvshl" cant
     RSH -> bvapp "bvlshr" cant
     BAND -> bvapp "bvand" cant

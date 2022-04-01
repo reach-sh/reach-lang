@@ -132,8 +132,11 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-c examples/rps-8-interact/index.rsh
-c examples/rps-7-loops/index.rsh
+fc hs/t/n/intrange_64.rsh
+fc hs/t/n/intrange_256.rsh
+exit 0
+ci ETH uint256
+ci ALGO uint256
 exit 0
 
 jb

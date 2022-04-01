@@ -65,7 +65,7 @@ data EvalError
   | Err_Eval_IllegalJS JSExpression
   | Err_Eval_NoReturn
   | Err_Eval_NotApplicable SLValTy
-  | Err_Eval_NotApplicableVals SLValTy
+  | Err_Eval_NotApplicableVals
   | Err_Eval_NotObject SLValTy
   | Err_Eval_RefNotRefable SLValTy
   | Err_Eval_RefNotInt SLValTy
@@ -534,8 +534,7 @@ instance Show EvalError where
       "Nowhere to return to"
     Err_Eval_NotApplicable slval ->
       "Invalid function application. Cannot apply: " <> show_sv slval
-    Err_Eval_NotApplicableVals slval ->
-      "Invalid function. Cannot apply: " <> show_sv slval
+    Err_Eval_NotApplicableVals -> impossible "removed"
     Err_Eval_NotObject slval ->
       "Invalid field access. Expected object, got: " <> show_sv slval
     Err_Eval_RefNotRefable slval ->

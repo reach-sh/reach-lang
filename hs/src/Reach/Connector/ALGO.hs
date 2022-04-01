@@ -1265,7 +1265,7 @@ cl = \case
   DLL_Bool b -> cint $ if b then 1 else 0
   DLL_Int at False i -> cint_ at i
   DLL_Int at True i ->
-    cbs $ itob 32 $ checkIntLiteral at conName' 0 uint256_Max i
+    cbs $ itob 32 $ checkIntLiteral at "UInt256" 0 uint256_Max i
   DLL_TokenZero -> cint 0
 
 cbool :: Bool -> App ()
