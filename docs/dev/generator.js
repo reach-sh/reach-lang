@@ -423,11 +423,44 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     return `<a class="ui-tooltip" title="${hoverText}"><span style="cursor">${text}</span></a>`;
   };
 
-  const directive_note = (node) => {
-    const data = node.data;
-    data.hName = "div";
-    data.hProperties = { class: "note" };
+  const makeDirectiveWithClass = (classString) => {
+    return (node) => {
+      const data = node.data;
+      data.hName = "div";
+      const attrs = node.attributes || {};
+      attrs.class = (attrs.class || "") + " " + classString;
+      data.hProperties = attrs;
+    };
   };
+
+  const directive_note = makeDirectiveWithClass("note");
+  const directive_alongside = makeDirectiveWithClass("row gx-3");
+  const directive_alongsideColumn = makeDirectiveWithClass("col-12 col-lg-auto");
+
+  let c_hiddenNote = 0;
+  const directive_hiddenNote = (node) => {
+    const data = node.data;
+    const toggleTarget = `hiddenNote_${c_hiddenNote++}`
+    const children = node.children;
+    const hasLabel = children[0].data.directiveLabel;
+    const label = hasLabel ? children[0].children[0].value : "";
+    const newChildren = [
+      {
+        type: "html",
+        value: `<button class="btn btn-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#${toggleTarget}" aria-expanded="false"> <i class="fas fa-info-circle me-2"></i><span>${label}</span></button>`,
+      },
+      {
+        type: "containerDirective",
+        name: "note",
+        children: hasLabel ? children.slice(1) : children,
+        attributes: {class: "collapse", id: toggleTarget,},
+      },
+    ]
+    node.children = newChildren;
+    data.hName = "div";
+    data.hProperties = node.attributes || {};
+  };
+
   let c_qna = 0;
   const directive_testQ = (node) => {
     const data = node.data;
@@ -467,7 +500,7 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
     return r.join(`\n`);
   };
 
-  const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, externalRef, ref, tooltip, directive_note, directive_testQ, directive_testA, generateIndex };
+  const expanderEnv = { seclink, defn, workshopDeps, workshopInit, workshopWIP, errver, externalRef, ref, tooltip, directive_note, directive_hiddenNote, directive_alongside, directive_alongsideColumn, directive_testQ, directive_testA, generateIndex };
 
   const expanderDirective = () => (tree) => {
     visit(tree, (node) => {
