@@ -25,7 +25,6 @@ export const main = Reach.App(() => {
     invest: Fun([], Null),
     collectFailPay: Fun([], Null),
   });
-  setOptions({ untrustworthyMaps: true });
   init();
 
   const checkInvestmentStructure = (iso) => {
@@ -64,6 +63,8 @@ export const main = Reach.App(() => {
   E.pay(starterInvestment);
   P.interact.ready();
 
+  // In a real-world application, this would probably be absolute
+  // Using relativeTime is easier for testing
   const investmentTimeout = relativeTime(investmentDuration);
   const investors = new Set();
 
@@ -72,7 +73,7 @@ export const main = Reach.App(() => {
     parallelReduce([false, 0])
     .invariant(
       balance() == starterInvestment + numInvestors * investorInvestment
-      // && investors.Map.size() == numInvestors
+      && investors.Map.size() == numInvestors
       && numInvestors <= investorQuorum
     )
     .while(!timedOut && numInvestors < investorQuorum)
@@ -105,8 +106,11 @@ export const main = Reach.App(() => {
                                  - investorFailProfit * numInvestors;
     transfer(returnedToEntrepreneur).to(E);
 
-    const investorFailPay = investorInvestment + investorFailProfit
+    // In a real-world application, this would probably be absolute
+    // Using relativeTime is easier for testing
     const failPayTimeout = relativeTime(failPayDuration);
+    const investorFailPay = investorInvestment + investorFailProfit
+
     const [timedOut_, unpaidInvestors] =
       parallelReduce([false, numInvestors])
       .while(!timedOut_ && unpaidInvestors > 0)
