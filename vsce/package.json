@@ -95,10 +95,10 @@
                     "default": "off",
                     "description": "Traces the communication between VS Code and the Reach IDE language server."
                 },
-                "reachide.executableLocation": {
+                "reachide.relativePathToShellScript": {
                     "default": "./reach",
-                    "type": "string",
-                    "description": "Specifies the filepath to the reach executable."
+                    "description": "is the relative path to Reach's shell script.",
+                    "type": "string"
                 }
             }
         },
