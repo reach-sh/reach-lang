@@ -46,6 +46,8 @@ const run = async (numInvestors, numInvestorsFailPaid) => {
     }
   }
 
+  await ctcProduct.apis.ProductAPI.startInvestment();
+
   const investorCtcs = investors.map((i) => i.contract(backend, ctcProduct.getInfo()));
   for (let i = 0; i < numInvestors; i++) {
     console.log(`Investor #${i+1} invests`);
@@ -55,12 +57,19 @@ const run = async (numInvestors, numInvestorsFailPaid) => {
 
   // If funding failed, investors collect their fail pay
   if (numInvestors < investmentStructure.investorQuorum) {
+    await ctcProduct.apis.ProductAPI.investmentTimeout();
+
     for (let i = 0; i < numInvestorsFailPaid; i++) {
       console.log(`Investor #${i+1} collects their fail pay`);
       await investorCtcs[i].apis.Investor.collectFailPay();
     }
     await stdlib.wait(investmentStructure.failPayDuration);
+
+    if (numInvestorsFailPaid < numInvestors) {
+      await ctcProduct.apis.ProductAPI.finishFailPay();
+    }
   }
+
 
   console.log("Finishing balances:");
   await printBals();
