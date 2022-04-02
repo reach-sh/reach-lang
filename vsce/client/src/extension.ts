@@ -60,7 +60,7 @@ export function activate(context: ExtensionContext) {
 
   terminal = window.createTerminal(terminalOptions);
   const reachExecutablePath = workspace.getConfiguration().get(
-    'reachide.pathToShellScript'
+    'reachide.relativePathToShellScript'
   ) as string;
   const wf = workspace.workspaceFolders[0].uri.path || '.';
   const reachPath = path.join(wf, reachExecutablePath);

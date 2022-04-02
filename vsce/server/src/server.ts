@@ -37,6 +37,8 @@ import { env } from "process";
 env.REACH_IDE = "1";
 
 import { exec, ExecException } from "child_process";
+import { tmpdir } from 'os';
+import { join, resolve } from 'path';
 
 // Do this import from vscode-languageserver/node instead of
 // vscode-languageserver to avoid
@@ -82,38 +84,34 @@ let hasWorkspaceFolderCapability: boolean = false;
 let hasDiagnosticRelatedInformationCapability: boolean = false;
 
 const DIAGNOSTIC_SOURCE: string = 'Reach';
-
 const DID_YOU_MEAN_PREFIX = 'Did you mean: ';
+const INDEX_RSH = "index.rsh";
 
-let reachTempIndexFile: string;
-const REACH_TEMP_FILE_NAME = "index.rsh";
 
 const { indexOfRegex, lastIndexOfRegex } = require('index-of-regex')
 
 const fs = require('fs')
-const os = require('os')
-const path = require('path')
 
+let reachTempIndexFile: string;
 let tempFolder: string;
-
 let workspaceFolder: string;
 
 connection.onInitialize((params: InitializeParams) => {
 
-  fs.mkdtemp(path.join(os.tmpdir(), 'reach-ide-'), (err: string, folder: string) => {
+  fs.mkdtemp(join(tmpdir(), 'reach-ide-'), (err: string, folder: string) => {
     if (err) {
       connection.console.error(err);
       throw err;
     }
     // Use a format like 'reach-ide-SUFFIX/reach-ide'
-    tempFolder = path.join(folder, 'reach-ide');
+    tempFolder = join(folder, 'reach-ide');
     fs.mkdir(tempFolder, (err2:string) => {
       if (err2) {
         connection.console.error(err2);
         throw err2;
       }
-      reachTempIndexFile = path.join(tempFolder, REACH_TEMP_FILE_NAME);
       connection.console.log("Temp folder: " + tempFolder);
+      reachTempIndexFile = join(tempFolder, INDEX_RSH);
     });
   });
 
@@ -179,7 +177,7 @@ const DEFAULT_MAX_PROBLEMS = 100;
 
 interface ReachIdeSettings {
   maxNumberOfProblems: number;
-  pathToShellScript: string;
+  relativePathToShellScript: string;
 }
 
 let defaultSettings: ReachIdeSettings;
@@ -229,7 +227,7 @@ documents.onDidOpen((event) => {
   // but could happen with other clients.
   defaultSettings = {
     maxNumberOfProblems: DEFAULT_MAX_PROBLEMS,
-    pathToShellScript: './reach'
+    relativePathToShellScript: './reach',
   };
 
   globalSettings = defaultSettings;
@@ -259,31 +257,35 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
   let diagnostics: Diagnostic[] = [];
 
-  const { pathToShellScript } = settings;
+  const { relativePathToShellScript } = settings;
+
+  const absolutePathToShellScript = resolve(
+    relativePathToShellScript
+  );
 
   // Download the Reach shell script if it does not exist
   try {
-    if (fs.existsSync(pathToShellScript)) {
+    if (fs.existsSync(absolutePathToShellScript)) {
       connection.console.info(
         'Reach shell script exists at'
       );
-      connection.console.info(pathToShellScript);
+      connection.console.info(absolutePathToShellScript);
     } else {
       connection.console.log('');
       connection.console.error(
         'Failed to find reach shell script at'
       );
-      connection.console.error(pathToShellScript);
+      connection.console.error(absolutePathToShellScript);
       connection.console.error(
         'Attempting to download Reach shell script to'
       );
-      connection.console.error(pathToShellScript);
+      connection.console.error(absolutePathToShellScript);
       connection.console.error('now...\n');
       exec(
         'curl https://raw.githubusercontent.com/' +
         'reach-sh/reach-lang/master/reach -o ' +
-        pathToShellScript + ' ; chmod +x ' +
-        pathToShellScript, (
+        absolutePathToShellScript + ' ; chmod +x ' +
+        absolutePathToShellScript, (
           error: ExecException | null,
           stdout: string,
           stderr: string
@@ -317,18 +319,18 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
     connection.console.error(
       'Failed to check if reach shell script exists at'
     );
-    connection.console.error(pathToShellScript);
+    connection.console.error(absolutePathToShellScript);
     connection.console.error(`due to error: ${err}`);
     connection.console.error(
       'Attempting to download reach shell script to'
     );
-    connection.console.error(pathToShellScript);
+    connection.console.error(absolutePathToShellScript);
     connection.console.error('now...\n');
     exec(
       'curl https://raw.githubusercontent.com/' +
       'reach-sh/reach-lang/master/reach -o ' +
-      pathToShellScript + ' ; chmod +x ' +
-      pathToShellScript, (
+      absolutePathToShellScript + ' ; chmod +x ' +
+      absolutePathToShellScript, (
         error: ExecException | null,
         stdout: string,
         stderr: string
@@ -379,11 +381,18 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
   theCompilerIsCompiling = true;
 
-  connection.console.info('Starting compilation using');
-  connection.console.info(pathToShellScript);
+  // Add blank lines for readability.
+  connection.console.log('');
+  connection.console.info(`Compiling ${INDEX_RSH} in`);
+  connection.console.info(tempFolder);
+  connection.console.info('using');
+  connection.console.info(absolutePathToShellScript);
+  connection.console.log('');
+
   exec(
-    pathToShellScript + " compile " + REACH_TEMP_FILE_NAME
-    + " --error-format-json --stop-after-eval", (
+    "cd " + tempFolder + " && " + absolutePathToShellScript
+    + " compile " + INDEX_RSH +
+    " --error-format-json --stop-after-eval", (
       error: ExecException | null,
       stdout: string,
       stderr: string
@@ -394,10 +403,11 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
       // passing the stdout and stderr to a callback
       // function when complete". See
       // https://nodejs.org/api/child_process.html
-      console.debug(
-        "Compilation should now have finished.",
-        new Date().toLocaleTimeString()
-      );
+      // Add blank lines for readability.
+      connection.console.log('');
+      connection.console.info('Compilation completed!');
+      connection.console.log('');
+
       theCompilerIsCompiling = false;
       if (weNeedToCompileAgain) {
         weNeedToCompileAgain = false;
