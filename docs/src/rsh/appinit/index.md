@@ -30,7 +30,7 @@ It represents the body of the DApp to be compiled.
 @{ref("rsh", "setOptions")}
 ```reach
 setOptions({ verifyArithmetic: true });
-setOptions({}); 
+setOptions({});
 ```
 
 The @{defn("compilation options")} for the DApp may be set by calling `{!rsh} setOptions(OBJ_EXPR);` where `{!rsh} OBJ_EXPR` is an object with the following keys and values:
@@ -98,7 +98,7 @@ Each `{!rsh} participantName` must be unique.
 
 `{!rsh} participantInteractInterface` is a @{defn("participant interact interface")}, an object where each field indicates the type of a function or value which must be provided to the backend by the frontend for interacting with the participant.
 
-In the [Rock, Paper, and Scissors](##tut-3) tutorial, Alice and Bob receive the `getHand` and `seeOutcome` interact interfaces from the construct `Player` in the following sample code: 
+In the [Rock, Paper, and Scissors](##tut-3) tutorial, Alice and Bob receive the `getHand` and `seeOutcome` interact interfaces from the construct `Player` in the following sample code:
 
 ```
 load: /examples/rps-2-rps/index.rsh
@@ -112,11 +112,16 @@ range: 1-14
 API('Voter', { vote: Fun([Address], UInt) })
 // or
 API({ vote: Fun([Address], UInt) })
+// or
+API('Voter', { vote: Fun([Address], UInt)}, { vote: "castVote" })
+// or
+API({ add2: Fun([UInt, UInt], UInt), add1: Fun([UInt], UInt) }, { add1: "add", add2: "add })
 ```
 
 APIs are functions that can be called by other contracts, as well as off-chain.
 
-An API is defined with `{!rsh} API(apiName, apiInterface)` or `{!rsh} API(apiInterface)`, where `{!rsh} apiName` is a string that labels the API and `{!rsh} apiInterface` is an object where each field indicates the type of a function provided by the contract as an API.
+An API is defined with `{!rsh} API(apiName, apiInterface, apiAlias)` or `{!rsh} API(apiInterface, apiAlias)`, where `{!rsh} apiName` is a string that labels the API, `{!rsh} apiInterface` is an object where each field indicates the type of a function provided by the contract as an API, and `{!rsh} apiAlias` is an object that maps function names from the `{!rsh} apiInterface` to an alias.
+This @{defn("function alias")} allows overloaded methods to be created. Many functions may map to the same alias as long as each function domain is unique.
 These APIs are available in frontends via the `{!js} ctc.apis` object, wherein fields are the members of `{!rsh} apiInterface` and may be used in `{!rsh} .api` components of `{!rsh} fork` and `{!rsh} parallelReduce` to specify the behavior of the corresponding call.
 These are called @{defn("API member function")}s.
 Each function must occur exactly once in the entire program.

@@ -2900,6 +2900,7 @@ data CMeth
     , capi_which :: Int
     , capi_arg_tys :: [DLType]
     , capi_doWrap :: App ()
+    , capi_label :: LT.Text
     }
   | CView
     { cview_who :: SLPart
@@ -2907,49 +2908,58 @@ data CMeth
     , cview_ret_ty :: DLType
     , cview_hs :: VSIHandler
     }
+  | CAlias
+    { calias_who :: SLPart
+    , calias_meth :: CMeth }
 
 cmethRetTy :: CMeth -> DLType
 cmethRetTy = \case
   CApi {..} -> capi_ret_ty
   CView {..} -> cview_ret_ty
+  CAlias {..} -> cmethRetTy calias_meth
 
 cmethIsApi :: CMeth -> Bool
 cmethIsApi = \case
   CApi {} -> True
   CView {} -> False
+  CAlias {..} -> cmethIsApi calias_meth
 
 cmethIsView :: CMeth -> Bool
 cmethIsView = \case
   CApi {} -> False
   CView {} -> True
+  CAlias {..} -> cmethIsView calias_meth
 
-capi :: (SLPart, ApiInfo) -> [(String, CMeth)]
-capi (who, (ApiInfo {..})) = go who <> maybe [] go ai_alias
+capi :: (SLPart, ApiInfo) -> App [(String, CMeth)]
+capi (who, (ApiInfo {..})) = do
+  capi_label <- freshLabel $ bunpack who
+  let c = CApi {..}
+  let apis = [(capi_sig, c)]
+  let mk_alias alias = apis <> [(mk_sig $ bunpack alias, CAlias alias c)]
+  return $ maybe apis mk_alias ai_alias
   where
-    go w = [(capi_sig, c)]
-      where
-        c = CApi {..}
-        capi_who = w
-        capi_which = ai_which
-        capi_sig = signatureStr f capi_arg_tys mret
-        f = bunpack w
-        imp = impossible "apiSig"
-        (capi_arg_tys, capi_doWrap) =
-          case ai_compile of
-            AIC_SpreadArg ->
-              case ai_msg_tys of
-                [T_Tuple ts] -> (ts, return ())
+    capi_who = who
+    capi_which = ai_which
+    mk_sig n = signatureStr n capi_arg_tys mret
+    capi_sig = mk_sig f
+    f = bunpack who
+    imp = impossible "apiSig"
+    (capi_arg_tys, capi_doWrap) =
+      case ai_compile of
+        AIC_SpreadArg ->
+          case ai_msg_tys of
+            [T_Tuple ts] -> (ts, return ())
+            _ -> imp
+        AIC_Case ->
+          case ai_msg_tys of
+            [T_Data tm] ->
+              case M.lookup cid tm of
+                Just (T_Tuple ts) -> (ts, doWrapData ts $ cla . DLLA_Data tm cid)
                 _ -> imp
-            AIC_Case ->
-              case ai_msg_tys of
-                [T_Data tm] ->
-                  case M.lookup cid tm of
-                    Just (T_Tuple ts) -> (ts, doWrapData ts $ cla . DLLA_Data tm cid)
-                    _ -> imp
-                _ -> imp
-        cid = fromMaybe imp ai_mcase_id
-        capi_ret_ty = ai_ret_ty
-        mret = Just $ capi_ret_ty
+            _ -> imp
+    cid = fromMaybe imp ai_mcase_id
+    capi_ret_ty = ai_ret_ty
+    mret = Just $ capi_ret_ty
 
 cview :: (SLPart, VSITopInfo) -> (String, CMeth)
 cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs) = (cview_sig, c)
@@ -2969,8 +2979,13 @@ doWrapData tys mk = do
 
 cmeth :: Int -> CMeth -> App ()
 cmeth sigi = \case
-  CApi who sig _ which tys doWrap -> do
-    block_' (bunpack who) $ do
+  CAlias alias (CApi {..}) -> do
+    comment $ LT.pack $ "API: " <> capi_sig
+    comment $ LT.pack $ " ui: " <> show sigi
+    block_' (bunpack alias) $ do
+      code "b" [capi_label]
+  CApi _ sig _ which tys doWrap lab -> do
+    block lab $ do
       comment $ LT.pack $ "API: " <> sig
       comment $ LT.pack $ " ui: " <> show sigi
       let f :: DLType -> Integer -> (DLType, App ())
@@ -2995,6 +3010,7 @@ cmeth sigi = \case
               ctobs $ argTypeOf r
               gvStore GV_apiRet
               code "b" [ "apiReturn_check" ]
+  CAlias {} -> impossible "cmeth: unsupported alias"
 
 bindFromArgs :: [DLVarLet] -> App a -> App a
 bindFromArgs vs m = do
@@ -3076,12 +3092,6 @@ compile_algo env disp pl = do
             writeIORef companionCache $ Just x
             return x
   -- We start doing real work
-  let ai_sm = M.fromList $ concatMap capi (M.toAscList ai)
-  let vsiTop = analyzeViews vsi
-  let vsi_sm = M.fromList $ map cview $ M.toAscList vsiTop
-  let meth_sm = M.union ai_sm vsi_sm
-  let maxApiRetSize = maxTypeSize $ M.map cmethRetTy meth_sm
-  let meth_im = M.mapKeys sigStrToInt meth_sm
   let eMaps = dli_maps dli
   let eMapDataTy = mapDataTy eMaps
   let eMapDataSize = typeSizeOf eMapDataTy
@@ -3123,6 +3133,7 @@ compile_algo env disp pl = do
   let pubLs = mapMaybe h2lr $ M.toAscList hm
   let apiLs = map a2lr $ M.toAscList ai
   let progLs = pubLs <> apiLs
+  meth_sm_r <- newIORef mempty
   let run :: CompanionInfo -> App () -> IO (TEALs, Notify, IO ())
       run eCompanion m = do
         let eHP_ = fromIntegral $ fromEnum (maxBound :: GlobalVar)
@@ -3175,6 +3186,13 @@ compile_algo env disp pl = do
         ts' <- rec False Nothing
         void $ addProg lab ts'
   runProg $ do
+    ai_sm <- M.fromList <$> concatMapM capi (M.toAscList ai)
+    let vsiTop = analyzeViews vsi
+    let vsi_sm = M.fromList $ map cview $ M.toAscList vsiTop
+    let meth_sm = M.union ai_sm vsi_sm
+    liftIO $ writeIORef meth_sm_r meth_sm
+    let maxApiRetSize = maxTypeSize $ M.map cmethRetTy meth_sm
+    let meth_im = M.mapKeys sigStrToInt meth_sm
     mGV_companion <- asks eCompanion >>= \case
       Nothing -> return []
       Just _ -> return [GV_companion]
@@ -3335,6 +3353,7 @@ compile_algo env disp pl = do
           aarray $ S.toAscList $ S.map (Aeson.String . LT.toStrict) ss
   wss W_ALGOConservative "warnings" gWarnings
   wss W_ALGOUnsupported "unsupported" gFailures
+  meth_sm <- readIORef meth_sm_r
   let apiEntry lab f = (lab, aarray $ map (Aeson.String . s2t) $ M.keys $ M.filter f meth_sm)
   modifyIORef resr $
     M.insert "ABI" $

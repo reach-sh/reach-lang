@@ -2304,6 +2304,14 @@ This error indicates that you are attempting to perform a `{!rsh} mod` operation
 
 Refer to the `{!rsh} polyMod` documentation to see what types are supported.
 
+## {#RE0131} RE0131
+
+This error indicates that you are attempting to overload a method with multiple functions that have the same domain.
+
+You can fix this issue by either removing one of the overloads or changing one of the domains.
+You can change the domain of a function by altering the type of its parameters or adding/removing parameters.
+
+
 ## {#REP0000} REP0000
 
 This error indicates that the body of a `{!rsh} while` loop does not make a publication before the `{!rsh} continue`
