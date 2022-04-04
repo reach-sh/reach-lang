@@ -2469,23 +2469,23 @@ main = do
     _ -> pure []
   let header' = "reach " <> versionHashStr <> " - Reach command-line tool"
   let cs =
-        config
+        clean
           <> compile
-          <> clean
-          <> init' its
-          <> run'
-          <> down
-          <> scaffold
-          <> react
-          <> rpcServer
-          <> rpcRun
+          <> config
           <> devnet
-          <> info'
-          <> update
           <> dockerReset
-          <> version'
+          <> down
           <> hashes
           <> help'
+          <> info'
+          <> init' its
+          <> react
+          <> rpcRun
+          <> rpcServer
+          <> run'
+          <> scaffold
+          <> update
+          <> version'
   let hs =
         internal
           <> commandGroup "hidden subcommands"
