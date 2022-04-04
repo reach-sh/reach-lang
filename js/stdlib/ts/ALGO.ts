@@ -321,6 +321,7 @@ const reqLock = new Lock();
 let currentReqNum: number | undefined = undefined;
 let currentReqLabel: string | undefined = undefined;
 let lastReqSentAt: number | undefined = undefined; // ms
+const appStateMinRefreshMillis = 1000;
 
 async function httpEventHandler(e: RHC.Event): Promise<void> {
   const en = e.eventName;
@@ -1398,7 +1399,19 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           }
         };
 
-        const getAppState = async (): Promise<AppStateKVs|undefined> => {
+        let lastAppState : AppStateKVs|undefined = undefined;
+        let lastAppStateTime : number = 0;
+        const getAppState = async () => {
+          const now = Date.now();
+          const minMillis = isIsolatedNetwork() ? 0 : appStateMinRefreshMillis;
+          if ( lastAppState && now - lastAppStateTime < minMillis){
+            return lastAppState;
+          }
+          lastAppState = await getAppStateFresh();
+          lastAppStateTime = now;
+          return lastAppState;
+        };
+        const getAppStateFresh = async (): Promise<AppStateKVs|undefined> => {
           const lab = `getAppState`;
           const appInfoM = await getApplicationInfoM(ApplicationID);
           if ( 'exn' in appInfoM || appInfoM.val.deleted ) {
