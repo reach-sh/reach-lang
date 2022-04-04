@@ -118,19 +118,24 @@ data SolReservedName
   | SOL_anonymous
   | SOL_apply
   | SOL_auto
+  | SOL_callStatic
   | SOL_case
   | SOL_constant
   | SOL_copyof
   | SOL_default
   | SOL_define
   | SOL_delete
+  | SOL_estimateGas
   | SOL_external
+  | SOL_filters
   | SOL_final
+  | SOL_functions
   | SOL_immutable
   | SOL_implements
   | SOL_in
   | SOL_indexed
   | SOL_inline
+  | SOL_interface
   | SOL_internal
   | SOL_let
   | SOL_macro
@@ -141,14 +146,18 @@ data SolReservedName
   | SOL_override
   | SOL_partial
   | SOL_payable
+  | SOL_populateTransaction
   | SOL_private
   | SOL_promise
+  | SOL_provider
   | SOL_public
   | SOL_pure
   | SOL_reference
   | SOL_relocatable
+  | SOL_resolvedAddress
   | SOL_sealed
   | SOL_sizeof
+  | SOL_signer
   | SOL_static
   | SOL_super
   | SOL_supports
