@@ -28,8 +28,10 @@ export const main = Reach.App(() => {
   const PA = API('ProductAPI', {
     startInvestment: Fun([], Null),
     investmentTimeout: Fun([], Null),
-    finishFailPay: Fun([], Null),
+    failPayTimeout: Fun([], Null),
   });
+  const Phase = Data({ Investment: Null, FailPay: Null, Finished: Null });
+  const CP = Events('ContractPhase', { phase: [Phase] });
   init();
 
   const checkInvestmentStructure = (iso) => {
@@ -77,6 +79,7 @@ export const main = Reach.App(() => {
   }
 
   awaitProductApi(PA.startInvestment);
+  CP.phase(Phase.Investment());
 
   // In a real-world application, this would probably be absolute
   // Using relativeTime is easier for testing
@@ -121,6 +124,8 @@ export const main = Reach.App(() => {
                                  - investorFailProfit * numInvestors;
     transfer(returnedToEntrepreneur).to(E);
 
+    CP.phase(Phase.FailPay());
+
     // In a real-world application, this would probably be absolute
     // Using relativeTime is easier for testing
     const failPayTimeout = relativeTime(failPayDuration);
@@ -142,12 +147,13 @@ export const main = Reach.App(() => {
         }
       )
       .timeout(failPayTimeout, () => {
-        awaitProductApi(PA.finishFailPay);
+        awaitProductApi(PA.failPayTimeout);
         return [true, unpaidInvestors];
       });
   }
 
   transfer(balance()).to(P);
+  CP.phase(Phase.Finished());
   commit();
   exit();
 });
