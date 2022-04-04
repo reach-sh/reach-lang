@@ -1,12 +1,15 @@
 'reach 0.1';
 
 export const main = Reach.App(() => {
+  const T = Tuple(UInt, UInt);
   const A = Participant('A', {
-    id: Fun([UInt], UInt),
+    id: Fun([T], T),
   });
   init();
   A.publish();
-  const x = pow(2, 64, 6);
+  const x1 = pow(2, 64, 6);
+  const x2 = pow(2, 64, 7);
+  const x = [x1, x2];
   commit();
   A.only(() => {
     const y = declassify(interact.id(x));
