@@ -8,7 +8,6 @@ export const main = Reach.App(() => {
     mul1: Fun([UInt], UInt),
     mul2: Fun([UInt, UInt], UInt),
   }, {
-    // <key> overloads <value>
     mul1: "mul",
     mul2: "mul",
   });

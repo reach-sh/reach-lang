@@ -2923,31 +2923,33 @@ cmethIsView = \case
   CApi {} -> False
   CView {} -> True
 
-capi :: (SLPart, ApiInfo) -> (String, CMeth)
-capi (who, (ApiInfo {..})) = (capi_sig, c)
+capi :: (SLPart, ApiInfo) -> [(String, CMeth)]
+capi (who, (ApiInfo {..})) = go who <> maybe [] go ai_alias
   where
-    c = CApi {..}
-    capi_who = who
-    capi_which = ai_which
-    capi_sig = signatureStr f capi_arg_tys mret
-    f = bunpack who
-    imp = impossible "apiSig"
-    (capi_arg_tys, capi_doWrap) =
-      case ai_compile of
-        AIC_SpreadArg ->
-          case ai_msg_tys of
-            [T_Tuple ts] -> (ts, return ())
-            _ -> imp
-        AIC_Case ->
-          case ai_msg_tys of
-            [T_Data tm] ->
-              case M.lookup cid tm of
-                Just (T_Tuple ts) -> (ts, doWrapData ts $ cla . DLLA_Data tm cid)
+    go w = [(capi_sig, c)]
+      where
+        c = CApi {..}
+        capi_who = w
+        capi_which = ai_which
+        capi_sig = signatureStr f capi_arg_tys mret
+        f = bunpack w
+        imp = impossible "apiSig"
+        (capi_arg_tys, capi_doWrap) =
+          case ai_compile of
+            AIC_SpreadArg ->
+              case ai_msg_tys of
+                [T_Tuple ts] -> (ts, return ())
                 _ -> imp
-            _ -> imp
-    cid = fromMaybe imp ai_mcase_id
-    capi_ret_ty = ai_ret_ty
-    mret = Just $ capi_ret_ty
+            AIC_Case ->
+              case ai_msg_tys of
+                [T_Data tm] ->
+                  case M.lookup cid tm of
+                    Just (T_Tuple ts) -> (ts, doWrapData ts $ cla . DLLA_Data tm cid)
+                    _ -> imp
+                _ -> imp
+        cid = fromMaybe imp ai_mcase_id
+        capi_ret_ty = ai_ret_ty
+        mret = Just $ capi_ret_ty
 
 cview :: (SLPart, VSITopInfo) -> (String, CMeth)
 cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs) = (cview_sig, c)
@@ -3074,7 +3076,7 @@ compile_algo env disp pl = do
             writeIORef companionCache $ Just x
             return x
   -- We start doing real work
-  let ai_sm = M.fromList $ map capi $ M.toAscList ai
+  let ai_sm = M.fromList $ concatMap capi (M.toAscList ai)
   let vsiTop = analyzeViews vsi
   let vsi_sm = M.fromList $ map cview $ M.toAscList vsiTop
   let meth_sm = M.union ai_sm vsi_sm
