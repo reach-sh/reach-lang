@@ -132,10 +132,9 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-ci ALGO bigpow
-exit 0
 fc hs/t/n/intrange_64.rsh
 fc hs/t/n/intrange_256.rsh
+fc hs/t/n/bigpow.rsh
 exit 0
 ci ETH uint256
 ci ALGO uint256
