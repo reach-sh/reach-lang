@@ -118,7 +118,7 @@ instance FreeVars DLExpr where
     DLE_PartSet _ _ a -> freeVars a
     DLE_MapRef _ _ a -> freeVars a
     DLE_MapSet _ _ a b -> freeVars a <> freeVars b
-    DLE_Remote _ _ a _ _ b c d -> freeVars a <> freeVars b <> freeVars c <> freeVars d
+    DLE_Remote _ _ a _ _ b c d _ -> freeVars a <> freeVars b <> freeVars c <> freeVars d
     DLE_TokenNew _ a -> freeVars a
     DLE_TokenBurn _ a b -> freeVars [a, b]
     DLE_TokenDestroy _ a -> freeVars a

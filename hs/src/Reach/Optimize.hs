@@ -409,7 +409,7 @@ instance Optimize DLExpr where
     DLE_PartSet at who a -> DLE_PartSet at who <$> opt a
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> opt fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> opt fa <*> opt na
-    DLE_Remote at fs av rt m amta as wbill -> DLE_Remote at fs <$> opt av <*> pure rt <*> pure m <*> opt amta <*> opt as <*> opt wbill
+    DLE_Remote at fs av rt m amta as wbill ma -> DLE_Remote at fs <$> opt av <*> pure rt <*> pure m <*> opt amta <*> opt as <*> opt wbill <*> pure ma
     DLE_TokenNew at tns -> DLE_TokenNew at <$> opt tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> opt tok <*> opt amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> opt tok

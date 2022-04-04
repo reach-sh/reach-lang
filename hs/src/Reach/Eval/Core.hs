@@ -1373,7 +1373,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
     return $ Just $
       M.fromList $
         [("reduce", delayCall SLPrim_Map_reduce)] <> foldableObjectEnv
-  SLV_Prim (SLPrim_remotef rat aa m stf mpay mbill Nothing) ->
+  SLV_Prim (SLPrim_remotef rat aa m stf mpay mbill Nothing ma) ->
     return $ Just $
       M.fromList $
         gom "pay" RFM_Pay mpay
@@ -1385,7 +1385,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
           Nothing -> go key mode
           Just _ -> []
       go key mode =
-        [(key, retV $ public $ SLV_Prim $ SLPrim_remotef rat aa m stf mpay mbill $ Just mode)]
+        [(key, retV $ public $ SLV_Prim $ SLPrim_remotef rat aa m stf mpay mbill (Just mode) ma)]
   _ -> return Nothing
   where
     foldableMethods = ["forEach", "min", "max", "imin", "imax", "all", "any", "or", "and", "sum", "average", "product", "includes", "size", "count"]
@@ -3216,9 +3216,10 @@ evalPrim p sargs =
           return $ (lvl, x)
     SLPrim_remote -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
-      (av, ri) <- two_args
+      (av, ri, ma) <- two_mthree_args
       aa <- compileCheckType T_Contract av
       rm_ <- mustBeObject ri
+      ae <- fromMaybe mempty <$> mapM mustBeObject ma
       rm <-
         mapWithKeyM
           (\k v -> do
@@ -3227,28 +3228,29 @@ evalPrim p sargs =
           rm_
       at <- withAt id
       let go k = \case
-            ST_Fun stf ->
+            ST_Fun stf -> do
+              m_alias <- mapM (return . bunpack <=< mustBeBytes . sss_val) $ M.lookup k ae
               return $
                 SLSSVal at Public $
                   SLV_Prim $
-                    SLPrim_remotef at aa k stf Nothing Nothing Nothing
+                    SLPrim_remotef at aa k stf Nothing Nothing Nothing m_alias
             t -> expect_ $ Err_Remote_NotFun k t
       om <- mapWithKeyM go rm
       return $ (lvl, SLV_Object at Nothing om)
-    SLPrim_remotef rat aa m stf _ mbill (Just RFM_Pay) -> do
+    SLPrim_remotef rat aa m stf _ mbill (Just RFM_Pay) ma -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote pay"
       payv <- one_arg
-      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf (Just payv) mbill Nothing)
-    SLPrim_remotef rat aa m stf mpay _ (Just RFM_Bill) -> do
+      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf (Just payv) mbill Nothing ma)
+    SLPrim_remotef rat aa m stf mpay _ (Just RFM_Bill) ma -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote bill"
       billv <- one_arg
-      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Right billv) Nothing)
-    SLPrim_remotef rat aa m stf mpay _ (Just RFM_WithBill) -> do
+      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Right billv) Nothing ma)
+    SLPrim_remotef rat aa m stf mpay _ (Just RFM_WithBill) ma -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote withBill"
       at <- withAt id
       nonNetToks <- zero_mone_arg $ SLV_Tuple at []
-      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Left nonNetToks) Nothing)
-    SLPrim_remotef rat aa m stf mpay mbill Nothing -> do
+      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Left nonNetToks) Nothing ma)
+    SLPrim_remotef rat aa m stf mpay mbill Nothing ma -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
       at <- withAt id
       let zero = SLV_Int at 0
@@ -3284,7 +3286,7 @@ evalPrim p sargs =
           SLM_ConsensusStep
           "remote"
           (CT_Assume True)
-          (\_ fs _ dargs -> DLE_Remote at fs aa rt m payAmt dargs withBill)
+          (\_ fs _ dargs -> DLE_Remote at fs aa rt m payAmt dargs withBill ma)
       res' <- doInternalLog Nothing res''
       apdvv <- doArrRef_ res' zero
       let getRemoteResults = do

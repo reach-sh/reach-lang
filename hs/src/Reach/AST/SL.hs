@@ -700,7 +700,7 @@ data SLPrimitive
   | SLPrim_Foldable
   | SLPrim_is
   | SLPrim_remote
-  | SLPrim_remotef SrcLoc DLArg String SLTypeFun (Maybe SLVal) (Maybe (Either SLVal SLVal)) (Maybe RemoteFunMode)
+  | SLPrim_remotef SrcLoc DLArg String SLTypeFun (Maybe SLVal) (Maybe (Either SLVal SLVal)) (Maybe RemoteFunMode) (Maybe String)
   | SLPrim_balance
   | SLPrim_Token_supply
   | SLPrim_viewis SrcLoc (Maybe SLPart) SLVar SLType

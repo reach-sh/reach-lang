@@ -392,7 +392,7 @@ instance DepthOf DLExpr where
     DLE_PartSet _ _ x -> depthOf x
     DLE_MapRef _ _ x -> add1 $ depthOf x
     DLE_MapSet _ _ x y -> max <$> depthOf x <*> depthOf y
-    DLE_Remote _ _ av _ _ (DLPayAmt net ks) as (DLWithBill _ nr nz) ->
+    DLE_Remote _ _ av _ _ (DLPayAmt net ks) as (DLWithBill _ nr nz) _ ->
       add1 $
         depthOf $
           av
@@ -796,7 +796,8 @@ getBalance tok = solApply "tokenBalanceOf" [tok, "address(this)"]
 solCom :: AppT DLStmt
 solCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ pv (DLE_Remote at fs av rng_ty f (DLPayAmt net ks) as (DLWithBill _nRecv nonNetTokRecv nnTokRecvZero)) -> do
+  DL_Let _ pv (DLE_Remote at fs av rng_ty f_ (DLPayAmt net ks) as (DLWithBill _nRecv nonNetTokRecv nnTokRecvZero) ma) -> do
+    let f = fromMaybe f_ ma
     -- XXX make this not rely on pv
     av' <- solArg av
     as' <- mapM solArg as

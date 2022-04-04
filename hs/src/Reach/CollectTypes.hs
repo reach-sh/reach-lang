@@ -134,7 +134,7 @@ instance CollectsTypes DLExpr where
     DLE_PartSet _ _ a -> cts a
     DLE_MapRef _ _ fa -> cts fa
     DLE_MapSet _ _ fa na -> cts fa <> cts na
-    DLE_Remote _ _ av rt _ pamt as y -> cts (av : as) <> cts pamt <> cts y <> cts rt
+    DLE_Remote _ _ av rt _ pamt as y _ -> cts (av : as) <> cts pamt <> cts y <> cts rt
     DLE_TokenNew _ tns -> cts tns
     DLE_TokenBurn _ a b -> cts [a, b]
     DLE_TokenDestroy _ a -> cts a

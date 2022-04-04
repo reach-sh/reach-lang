@@ -430,7 +430,7 @@ jsExpr = \case
       JM_Backend ->
         return $ jsApply "await stdlib.mapSet" [jsMapVar mpv, fa', na']
       JM_View -> impossible "view mapset"
-  DLE_Remote at _fs ro _rng_ty _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv _nnZero) -> do
+  DLE_Remote at _fs ro _rng_ty _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv _nnZero) _ma -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> return "undefined /* Remote */"
       JM_View -> impossible "view Remote"

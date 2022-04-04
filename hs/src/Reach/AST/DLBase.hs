@@ -626,7 +626,7 @@ data DLExpr
   | DLE_PartSet SrcLoc SLPart DLArg
   | DLE_MapRef SrcLoc DLMVar DLArg
   | DLE_MapSet SrcLoc DLMVar DLArg (Maybe DLArg)
-  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg DLType String DLPayAmt [DLArg] DLWithBill
+  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg DLType String DLPayAmt [DLArg] DLWithBill (Maybe String)
   | DLE_TokenNew SrcLoc DLTokenNew
   | DLE_TokenBurn SrcLoc DLArg DLArg
   | DLE_TokenDestroy SrcLoc DLArg
@@ -745,13 +745,13 @@ instance PrettySubst DLExpr where
     DLE_MapSet _ mv i Nothing -> do
       i' <- prettySubst i
       return $ "delete" <+> pretty mv <> brackets i'
-    DLE_Remote _ _ av _ m amta as wb -> do
+    DLE_Remote _ _ av _ m amta as wb ma -> do
       av' <- prettySubst av
       amta' <- prettySubst amta
       as' <- render_dasM as
       wb' <- prettySubst wb
       return $
-        "remote(" <> av' <> ")." <> viaShow m <> ".pay" <> parens amta'
+        "remote(" <> av' <> ")." <> viaShow m  <> "/" <> viaShow ma <> ".pay" <> parens amta'
           <> parens as'
           <> ".withBill"
           <> parens wb'

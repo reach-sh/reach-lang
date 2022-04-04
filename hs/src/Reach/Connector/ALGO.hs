@@ -1964,13 +1964,14 @@ ce = \case
           cMapLoad
           cla $ mdaToMaybeLA mt mva
           cTupleSet at mdt $ fromIntegral i
-  DLE_Remote at fs ro rng_ty rm (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) -> do
+  DLE_Remote at fs ro rng_ty rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) ma -> do
     warn_lab <- asks eWhich >>= \case
       Just which -> return $ "Step " <> show which
       Nothing -> return $ "This program"
     warn $ LT.pack $
       warn_lab <> " calls a remote object at " <> show at <> ". This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object."
     let ts = map argTypeOf as
+    let rm = fromMaybe rm' ma
     let sig = signatureStr rm ts (Just rng_ty)
     remoteTxns <- liftIO $ newCounter 0
     let mayIncTxn m = do
