@@ -98,7 +98,15 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
   const { account, token } = ks;
 
   return {
-    ...lib,
+    // Trade boilerplate for confidence we're not reexporting bits that shouldn't be
+    ...Object.assign({}, // Serializable properties
+     ...[ 'connector'
+        ].map(p => ({ [p]: () => lib[p] }) )),
+
+    ...Object.assign({}, // Synchronous functions with serializable output
+     ...[ 'parseCurrency'
+        , 'assert'
+        ].map(f => ({ [f]: lib[f] }) )),
 
     newTestAccount: async (bal: any) =>
       account.track(await lib.newTestAccount(bal)),
@@ -137,9 +145,6 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
 
     transfer: async (from: string, to: string, bal: any, token?: any) =>
       lib.transfer(account.id(from), account.id(to), bal, token),
-
-    assert: (x: any) =>
-      lib.assert(x),
 
     // As of 2021-12-08 `launchToken` isn't officially documented
     // These are unlike `Token` values but we'll track them together, with the
