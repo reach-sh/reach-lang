@@ -939,9 +939,10 @@ const walletFallback_MyAlgoWallet = (MyAlgoConnect: unknown, opts: object) => ()
   };
   return doWalletFallback_signOnly(opts, getAddr, signTxns);
 };
-const walletFallback_WalletConnect = (WalletConnect:any, opts:object) => (): ARC11_Wallet => {
+const walletFallback_WalletConnect = (WalletConnect:any, opts:any) => (): ARC11_Wallet => {
   debug(`using WalletConnect wallet fallback`);
   const wc = new WalletConnect();
+  if (opts.connector) wc.wc = opts.connector;
   return doWalletFallback_signOnly(opts, (() => wc.getAddr()), ((ts) => wc.signTxns(ts)));
 };
 export const walletFallback = (opts:any) => {
