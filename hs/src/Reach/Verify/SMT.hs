@@ -38,6 +38,7 @@ import Reach.Util
 import Reach.Verify.SMTAst
 import Reach.Verify.SMTParser
 import Reach.Verify.Shared
+import Reach.Warning
 import SimpleSMT (Logger (Logger), Result (..), SExpr (..), Solver (..))
 import qualified SimpleSMT as SMT
 import qualified System.Console.Pretty as TC
@@ -188,6 +189,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_inv_mode :: BlockMode
   , ctxt_pay_amt :: Maybe (SExpr, SExpr)
   , ctxt_smt_trace :: IORef [SMTLet]
+  , ctxt_constrained_maps :: IORef (S.Set DLMVar)
   }
 
 ctxt_mode :: App VerifyMode
@@ -1327,7 +1329,10 @@ smt_n = \case
     um <- asks ctxt_untrustworthyMaps
     when um $ smtMapRefresh at
     smt_s s
-  LLC_While at asn inv cond body k ->
+  LLC_While at asn inv cond body k -> do
+    constrainedMapsRef <- asks ctxt_constrained_maps
+    liftIO $ modifyIORef' constrainedMapsRef insertConstrainedMaps
+
     mapM_ ctxtNewScope [before_m, loop_m, after_m]
     where
       with_inv = local (\e -> e {ctxt_while_invariant = Just inv})
@@ -1344,6 +1349,20 @@ smt_n = \case
         smt_invblock (B_Assume True) inv
         smt_invblock (B_Assume False) cond
         smt_n k
+
+      insertConstrainedMaps :: S.Set DLMVar -> S.Set DLMVar
+      insertConstrainedMaps = insertConstrainedMaps' invTail
+      DLBlock _ _ invTail _ = inv
+
+      insertConstrainedMaps' :: DLTail -> S.Set DLMVar -> S.Set DLMVar
+      insertConstrainedMaps' dltail maps = case dltail of
+        DT_Return _ -> maps
+        DT_Com stmt dltail' ->
+          let tailMaps = insertConstrainedMaps' dltail' maps in
+            case stmt of
+              DL_MapReduce _ _ _ dlmv _ _ _ _ -> S.insert dlmv tailMaps
+              _ -> tailMaps
+
   LLC_Continue _at asn -> smt_while_jump True asn
   LLC_ViewIs _ _ _ ma k -> do
     maybe mempty smt_eb ma
@@ -1610,6 +1629,7 @@ _verify_smt mc ctxt_vst smt lp = do
   let ctxt_untrustworthyMaps = llo_untrustworthyMaps
   let ctxt_pay_amt = Nothing
   ctxt_smt_trace <- newIORef mempty
+  ctxt_constrained_maps <- newIORef mempty
   flip runReaderT (SMTCtxt {..}) $ do
     let defineMap (mpv, SMTMapInfo {..}) = do
           mi <- liftIO $ incCounter sm_c
@@ -1646,6 +1666,13 @@ _verify_smt mc ctxt_vst smt lp = do
             ctxtNewScope $ freshAddrs $ smt_s s
     let ms = [VM_Honest, VM_Dishonest RoleContract] -- <> (map (VM_Dishonest . RolePart) $ M.keys pies_m)
     mapM_ smt_s_top ms
+
+    let allMaps = S.fromList $ M.keys dli_maps
+    constrainedMaps <- liftIO $ readIORef ctxt_constrained_maps
+    let unconstrainedMaps = S.difference allMaps constrainedMaps
+    liftIO $ flip mapM_ unconstrainedMaps $ \m -> do
+      let DLMapInfo { dlmi_at } = dli_maps M.! m
+      emitWarning (Just dlmi_at) W_UnconstrainedMap
 
 hPutStrLn' :: Handle -> String -> IO ()
 hPutStrLn' h s = do

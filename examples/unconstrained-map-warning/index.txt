@@ -1,0 +1,23 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 11 theorems; No failures!
+warning[RW0007]: Map defined but never used in a loop invariant. This map is unconstrained.
+
+  ./index.rsh:10:36:application
+
+  10|   const unconstrainedMap1 = new Map(Null);
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0007
+
+warning[RW0007]: Map defined but never used in a loop invariant. This map is unconstrained.
+
+  ./index.rsh:11:36:application
+
+  11|   const unconstrainedMap2 = new Map(Null);
+
+For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#RW0007
+
+WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
+ * This program was compiled with trustworthy maps, but maps are not trustworthy on Algorand, because they are represented with local state. A user can delete their local state at any time, by sending a ClearState transaction. The only way to use local state properly on Algorand is to ensure that a user doing this can only 'hurt' themselves and not the entire system.

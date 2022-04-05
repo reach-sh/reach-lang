@@ -45,6 +45,7 @@ data Warning
   | W_NoPublish
   | W_ExternalObject
   | W_NetworkSeconds
+  | W_UnconstrainedMap
   deriving (Eq, Generic, ErrorMessageForJson)
 
 instance HasErrorCode Warning where
@@ -57,6 +58,7 @@ instance HasErrorCode Warning where
     W_NoPublish {} -> 4
     W_ExternalObject {} -> 5
     W_NetworkSeconds {} -> 6
+    W_UnconstrainedMap {} -> 7
 
 instance ErrorSuggestions Warning where
   errorSuggestions w = case w of
@@ -94,6 +96,7 @@ instance Show Warning where
     W_NoPublish -> "There are no publications in the application."
     W_ExternalObject -> "The `Object` type's format is controlled by Reach; you may want to use `Struct` instead for external interfaces, so you can mandate and document the format."
     W_NetworkSeconds -> "This program uses network seconds, which are unreliable on most consensus networks. You should read the article about this warning to ensure that you understand the risks of building on them."
+    W_UnconstrainedMap -> "Map defined but never used in a loop invariant. This map is unconstrained."
 
 emitWarning :: Maybe SrcLoc -> Warning -> IO ()
 emitWarning at d =
