@@ -5,6 +5,8 @@ import * as clientBackend from './build/client.main.mjs';
 const stdlib = loadStdlib(process.env);
 const startingBalance = stdlib.parseCurrency(100);
 
+const log = (lvl, s) => console.log(`${' '.repeat(lvl * 2)}${s}`);
+
 const thread = async (f) => await f();
 
 export class Signal {
@@ -18,6 +20,7 @@ export class Signal {
 
 const doFrontend = async () => {
 
+  log(0, 'Frontend');
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const ctcAlice = accAlice.contract(backend);
 
@@ -38,7 +41,9 @@ const doFrontend = async () => {
         console.log(id, res.toString());
       }
 
+      log(1, 'Calling `mul1`');
       await call('mul1', () => mul1(10));
+      log(1, 'Calling `mul2`');
       await call('mul2', () => mul2(10, 23));
     }
   }
@@ -46,24 +51,26 @@ const doFrontend = async () => {
   await Promise.all([
     backend.Alice(ctcAlice, {
       deployed: () => {
+        log(1, 'Alice deployed contract.');
         ready.notify();
-      }
+      },
+      done: () => log(1, 'Contract finished'),
     }),
     thread(await user()),
   ]);
 };
 
 export const doC2C = async () => {
-  console.log(`doC2C`);
+  log(0, `Contract 2 Contract`);
   const accAlice = await stdlib.newTestAccount(startingBalance);
   const ctcAlice = accAlice.contract(backend);
   const ready = new Signal();
 
   const bob = async () => {
-    console.log(`Waiting for deployment`)
+    log(1, `Bob waits for deployment`)
     await ready.wait();
-    console.log(`Starting Bob`)
-    const accBob = accAlice; // await stdlib.newTestAccount(startingBalance);
+    log(1, `Bob is starting`)
+    const accBob = await stdlib.newTestAccount(startingBalance);
     const ctcBob = accBob.contract(clientBackend);
 
     await Promise.all([
@@ -76,16 +83,17 @@ export const doC2C = async () => {
   await Promise.all([
     backend.Alice(ctcAlice, {
       deployed: () => {
-        console.log(`Alice: Deployed. Notifying`);
+        log(1, 'Alice deployed contract.');
         ready.notify();
-      }
+      },
+      done: () => log(1, 'Contract finished'),
     }),
     bob()
   ]);
 }
 
 export const main = async () => {
-  // await doFrontend();
+  await doFrontend();
   await doC2C();
 };
 main();

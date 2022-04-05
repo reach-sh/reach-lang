@@ -3,6 +3,7 @@
 export const main = Reach.App(() => {
   const A = Participant('Alice', {
     deployed: Fun([], Null),
+    done: Fun([], Null),
   });
   const C = API({
     mul1: Fun([UInt], UInt),
@@ -23,6 +24,10 @@ export const main = Reach.App(() => {
 
   const [ [ x, y ], k2 ] = call(C.mul2);
   k2(x * y);
+  commit();
+
+  A.publish();
+  A.interact.done();
   commit();
 
 });

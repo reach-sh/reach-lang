@@ -3325,6 +3325,7 @@ compile_algo env disp pl = do
     defn_done
     label "apiReturn_check"
     code "txn" ["OnCompletion"]
+    -- XXX A remote Reach API could have an `OnCompletion` of `DeleteApplication` due to `updateStateHalt`.
     output $ TConst "NoOp"
     asserteq
     output $ TCheckOnCompletion
