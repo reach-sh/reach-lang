@@ -233,7 +233,7 @@ kgq_e ctxt mv = \case
     kgq_v_onlym ctxt mv $ S.singleton $ P_Map mpv
   DLE_MapSet _ mpv _ mva ->
     knows ctxt (P_Map mpv) $ maybe mempty all_points mva
-  DLE_Remote _ _ av _ _ pamt as _ -> do
+  DLE_Remote _ _ av _ _ pamt as _ _ -> do
     kgq_pa ctxt pamt
     kgq_la ctxt mv $ DLLA_Tuple $ av : as
   DLE_TokenNew _ tns ->
@@ -374,7 +374,7 @@ kgq_pie ctxt who (InteractEnv m) =
     >> (mapM_ (kgq_pie1 ctxt who) $ M.keys m)
 
 kgq_lp :: Maybe Handle -> VerifySt -> LLProg -> IO ()
-kgq_lp mh vst (LLProg _ (LLOpts {}) (SLParts {..}) _dli _ _ _ _ s) = do
+kgq_lp mh vst (LLProg _ (LLOpts {}) (SLParts {..}) _dli _ _ _ _ _ s) = do
   putStrLn $ "Verifying knowledge assertions"
   let ps = M.keys sps_ies
   llr <- newIORefRef 0

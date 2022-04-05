@@ -144,7 +144,7 @@ completionKind v =
         SLPrim_Foldable -> Just CK_TypeParameter
         SLPrim_is -> Just CK_Function
         SLPrim_remote -> Just CK_Function
-        SLPrim_remotef _ _ _ _ _ _ _ -> Nothing
+        SLPrim_remotef {} -> Nothing
         SLPrim_balance -> Just CK_Function
         SLPrim_Token_supply -> Just CK_Method
         SLPrim_viewis _ _ _ _ -> Nothing

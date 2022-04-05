@@ -14,6 +14,9 @@ class CollectsTypes a where
 instance CollectsTypes Bool where
   cts _ = mempty
 
+instance CollectsTypes Char where
+  cts _ = mempty
+
 instance CollectsTypes B.ByteString where
   cts _ = mempty
 
@@ -131,7 +134,7 @@ instance CollectsTypes DLExpr where
     DLE_PartSet _ _ a -> cts a
     DLE_MapRef _ _ fa -> cts fa
     DLE_MapSet _ _ fa na -> cts fa <> cts na
-    DLE_Remote _ _ av rt _ pamt as y -> cts (av : as) <> cts pamt <> cts y <> cts rt
+    DLE_Remote _ _ av rt _ pamt as y _ -> cts (av : as) <> cts pamt <> cts y <> cts rt
     DLE_TokenNew _ tns -> cts tns
     DLE_TokenBurn _ a b -> cts [a, b]
     DLE_TokenDestroy _ a -> cts a
@@ -202,8 +205,8 @@ instance CollectsTypes Int where
   cts _ = mempty
 
 instance CollectsTypes LLProg where
-  cts (LLProg _ _ ps dli dex dvs das devts s) =
-    cts ps <> cts dli <> cts dex <> cts dvs <> cts das <> cts devts <> cts s
+  cts (LLProg _ _ ps dli dex dvs das alias devts s) =
+    cts ps <> cts dli <> cts dex <> cts dvs <> cts das <> cts alias <> cts devts <> cts s
 
 instance CollectsTypes DLLetVar where
   cts (DLV_Eff) = mempty

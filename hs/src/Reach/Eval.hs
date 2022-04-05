@@ -20,6 +20,9 @@ import Reach.JSUtil
 import Reach.Parser
 import Reach.Util
 import Reach.Warning
+import qualified Data.ByteString as B
+import Data.List.Extra (groupSort)
+import Reach.UnsafeUtil (unsafeNub)
 
 compileDApp :: DLStmts -> DLSExports -> SLVal -> App DLProg
 compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_strict))) = locAt (srcloc_lab "compileDApp" at) $ do
@@ -47,7 +50,7 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
           }
   init_dlo <- readDlo id
   envr <- liftIO $ newIORef $ AppEnv mempty init_dlo mempty mempty
-  resr <- liftIO $ newIORef $ AppRes mempty mempty mempty mempty mempty mempty
+  resr <- liftIO $ newIORef $ AppRes mempty mempty mempty mempty mempty mempty mempty
   appr <- liftIO $ newIORef $ AIS_Init envr resr
   mape <- liftIO $ makeMapEnv
   e_droppedAsserts' <- (liftIO . dupeCounter) =<< (e_droppedAsserts <$> ask)
@@ -75,14 +78,24 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
           , dlo_droppedAsserts = e_droppedAsserts'
           }
   AppRes {..} <- liftIO $ readIORef resr
+  aliases <- verifyAliases ar_api_alias
   dli_maps <- liftIO $ readIORef $ me_ms mape
   let dli = DLInit {..}
   let sps_ies = ar_pie
   let sps_apis = ar_isAPI
   let sps = SLParts {..}
   final' <- pan final
-  return $ DLProg at final_dlo' sps dli exports ar_views ar_apis ar_events final'
+  return $ DLProg at final_dlo' sps dli exports ar_views ar_apis aliases ar_events final'
 compileDApp _ _ _ = impossible "compileDApp called without a Reach.App"
+
+verifyAliases :: M.Map SLVar (Maybe B.ByteString, [SLType]) -> App Aliases
+verifyAliases m = do
+  forM_ (groupSort $ M.elems m) $ \case
+    (Just k, doms) -> do
+      unless (length doms == length (unsafeNub doms)) $ do
+        expect_ $ Err_Alias_Type_Clash $ bunpack k
+    (Nothing, _) -> return ()
+  return $ M.map fst m
 
 class Pandemic a where
   pan :: a -> App a
@@ -121,8 +134,8 @@ instance Pandemic DLExpr where
     DLE_PartSet at slp a -> DLE_PartSet at slp <$> pan a
     DLE_MapRef at mv a -> DLE_MapRef at mv <$> pan a
     DLE_MapSet at mv a marg -> DLE_MapSet at mv <$> pan a <*> pan marg
-    DLE_Remote at cxt a ty s amt as bill -> do
-      DLE_Remote at cxt <$> pan a <*> pure ty <*> pure s <*> pan amt <*> pan as <*> pan bill
+    DLE_Remote at cxt a ty s amt as bill ma -> do
+      DLE_Remote at cxt <$> pan a <*> pure ty <*> pure s <*> pan amt <*> pan as <*> pan bill <*> pure ma
     DLE_TokenNew at tns -> DLE_TokenNew at <$> pan tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> pan tok <*> pan amt
     DLE_TokenDestroy at a -> DLE_TokenDestroy at <$> pan a

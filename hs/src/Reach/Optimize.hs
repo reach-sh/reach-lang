@@ -409,7 +409,7 @@ instance Optimize DLExpr where
     DLE_PartSet at who a -> DLE_PartSet at who <$> opt a
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> opt fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> opt fa <*> opt na
-    DLE_Remote at fs av rt m amta as wbill -> DLE_Remote at fs <$> opt av <*> pure rt <*> pure m <*> opt amta <*> opt as <*> opt wbill
+    DLE_Remote at fs av rt m amta as wbill ma -> DLE_Remote at fs <$> opt av <*> pure rt <*> pure m <*> opt amta <*> opt as <*> opt wbill <*> pure ma
     DLE_TokenNew at tns -> DLE_TokenNew at <$> opt tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> opt tok <*> opt amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> opt tok
@@ -741,7 +741,7 @@ instance Optimize DLInit where
   gcs _ = return ()
 
 instance Optimize LLProg where
-  opt (LLProg at opts ps dli dex dvs das devts s) = do
+  opt (LLProg at opts ps dli dex dvs das alias devts s) = do
     let SLParts {..} = ps
     let psl = M.keys sps_ies
     cs <- asks eConst
@@ -749,8 +749,8 @@ instance Optimize LLProg where
     env0 <- liftIO $ mkEnv0 (getCounter opts) (llo_droppedAsserts opts) cs psl mis
     local (const env0) $ local (updateClearMaps $ llo_untrustworthyMaps opts) $
       focus_ctor $
-        LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> pure das <*> pure devts <*> opt s
-  gcs (LLProg _ _ _ _ _ _ _ _ s) = gcs s
+        LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> pure das <*> pure alias <*> pure devts <*> opt s
+  gcs (LLProg _ _ _ _ _ _ _ _ _ s) = gcs s
 
 -- This is a bit of a hack...
 

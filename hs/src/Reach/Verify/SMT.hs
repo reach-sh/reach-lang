@@ -1104,7 +1104,7 @@ smt_e at_dv mdv de = do
       forM_ mdv $ smtMapReviewRecordRef at mpv fa'
     DLE_MapSet at mpv fa mna ->
       smtMapUpdate at mpv fa mna
-    DLE_Remote at _ _ _ _ _ _ _ -> unbound at
+    DLE_Remote at _ _ _ _ _ _ _ _ -> unbound at
     DLE_TokenNew at _ -> unbound at
     DLE_TokenBurn at _ _ -> unbound at
     DLE_TokenDestroy at _ -> unbound at
@@ -1591,7 +1591,7 @@ _verify_smt mc ctxt_vst smt lp = do
         case mc of
           Just c -> smt_lt at_de $ conCons c cn
           Nothing -> Atom $ smtConstant cn
-  let LLProg at (LLOpts {..}) (SLParts {..}) (DLInit {..}) dex _dvs _das _devts s = lp
+  let LLProg at (LLOpts {..}) (SLParts {..}) (DLInit {..}) dex _dvs _das _alias _devts s = lp
   let pies_m = sps_ies
   let initMapInfo mi = do
         sm_c <- liftIO $ newCounter 0

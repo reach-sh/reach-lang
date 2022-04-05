@@ -40,6 +40,7 @@ import Safe (atMay)
 import Text.ParserCombinators.Parsec.Number (numberValue)
 import Text.RE.TDFA (RE, compileRegex, matched, (?=~))
 import Data.Bifunctor
+import Data.Tuple.Extra (fst3, snd3, thd3)
 
 --- New Types
 
@@ -67,6 +68,7 @@ data AppRes = AppRes
   , ar_events :: DLEvents
   , -- All the bound Participants, Views, APIs
     ar_entities :: M.Map String SrcLoc
+  , ar_api_alias :: M.Map SLVar (Maybe B.ByteString, [SLType])
   }
 
 data AppInitSt
@@ -1371,7 +1373,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
     return $ Just $
       M.fromList $
         [("reduce", delayCall SLPrim_Map_reduce)] <> foldableObjectEnv
-  SLV_Prim (SLPrim_remotef rat aa m stf mpay mbill Nothing) ->
+  SLV_Prim (SLPrim_remotef rat aa m stf mpay mbill Nothing ma) ->
     return $ Just $
       M.fromList $
         gom "pay" RFM_Pay mpay
@@ -1383,7 +1385,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
           Nothing -> go key mode
           Just _ -> []
       go key mode =
-        [(key, retV $ public $ SLV_Prim $ SLPrim_remotef rat aa m stf mpay mbill $ Just mode)]
+        [(key, retV $ public $ SLV_Prim $ SLPrim_remotef rat aa m stf mpay mbill (Just mode) ma)]
   _ -> return Nothing
   where
     foldableMethods = ["forEach", "min", "max", "imin", "imax", "all", "any", "or", "and", "sum", "average", "product", "includes", "size", "count"]
@@ -1471,18 +1473,18 @@ st2dte t =
     Just x -> return $ x
     Nothing -> expect_ $ Err_Type_NotDT t
 
-compileInteractResult :: ClaimType -> String -> SLType -> (DLType -> DLExpr) -> App SLVal
+compileInteractResult :: ClaimType -> String -> SLType -> (DLType -> App DLExpr) -> App SLVal
 compileInteractResult ct lab st de = do
   at <- withAt id
   dt <- st2dte st
-  let de' = de dt
+  de' <- de dt
   isv <-
     case dt of
       T_Null -> do
         ctxt_lift_eff de'
         return $ SLV_Null at lab
       _ ->
-        SLV_DLVar <$> ctxt_lift_expr (DLVar at Nothing dt) (de dt)
+        SLV_DLVar <$> ctxt_lift_expr (DLVar at Nothing dt) de'
   applyType ct isv st
   return isv
 
@@ -1508,7 +1510,7 @@ makeInteract who (SLInterface spec) = do
               )
           t -> do
             t' <- st2dte t
-            isv <- secret <$> compileInteractResult (CT_Assume False) "interact" t (\dt -> DLE_Arg i_at $ DLA_Interact who k dt)
+            isv <- secret <$> compileInteractResult (CT_Assume False) "interact" t (\dt -> return $ DLE_Arg i_at $ DLA_Interact who k dt)
             return $ (sls_sss i_at isv, IT_Val t')
   (lifts, spec') <- captureLifts $ mapWithKeyM wrap_ty spec
   let io = SLSSVal at Secret $ SLV_Object at lab $ M.map fst spec'
@@ -2870,7 +2872,7 @@ evalPrim p sargs =
         _ -> illegal_args
     SLPrim_App_Delay {} -> expect_t rator $ Err_Eval_NotApplicable
     SLPrim_localf iat who m stf ->
-      secret <$> doInteractiveCall sargs iat stf SLM_LocalStep "interact" (CT_Assume False) (\at fs drng dargs -> DLE_Interact at fs who m drng dargs)
+      secret <$> doInteractiveCall sargs iat stf SLM_LocalStep "interact" (CT_Assume False) (\at fs drng dargs -> return $ DLE_Interact at fs who m drng dargs)
     SLPrim_declassify -> do
       val <- one_arg
       ensure_level Secret lvl
@@ -3053,12 +3055,19 @@ evalPrim p sargs =
     SLPrim_ParticipantClass -> makeParticipant False True
     SLPrim_API -> do
       ensure_mode SLM_AppInit "API"
-      (nv, intv) <- case args of
-        [x] -> return (Nothing, x)
-        [x, y] -> return (Just x, y)
+      (nv, intv, alias) <- case args of
+        [x] -> return (Nothing, x, Nothing)
+        [x, y] ->
+          typeOfM x >>= \case
+            -- name and interact object
+            Just (T_Bytes {}, _) -> return (Just x, y, Nothing)
+            -- interact object and alias
+            _ -> return (Nothing, x, Just y)
+        [x, y, z] -> return (Just x, y, Just z)
         _ -> illegal_args
       n <- mapM mustBeBytes nv
       SLInterface im <- mustBeInterface intv
+      aliasEnv <- mapM mustBeObject alias >>= return . fromMaybe mempty
       let mns = bunpack <$> n
       nAt <- withAt id
       let ns = fromMaybe "Untagged" mns
@@ -3082,12 +3091,15 @@ evalPrim p sargs =
             let nkm = M.fromList $ [("in", fake in_t), ("out", fake out_t)]
             let intv' = SLV_Object at (Just $ nk <> " interact") nkm
             it <- IT_Fun <$> mapM st2dte stf_dom <*> st2dte stf_rng
-            (,) (nkb, it) <$> (sls_sss at <$> makeParticipant_ True True nv' intv')
+            m_alias <- mapM (mustBeBytes . sss_val) $ M.lookup k aliasEnv
+            (M.singleton nk (m_alias, stf_dom),,) (nkb, it) <$> (sls_sss at <$> makeParticipant_ True True nv' intv')
           t -> expect_ $ Err_API_NotFun k t
-      let i' = M.map fst ix
-      let io = M.map snd ix
+      let aliases = M.unions $ M.elems $ M.map fst3 ix
+      let i' = M.map snd3 ix
+      let io = M.map thd3 ix
       aisiPut aisi_res $ \ar ->
-        ar {ar_apis = M.insertWith M.union n i' $ ar_apis ar}
+        ar { ar_apis = M.insertWith M.union n i' $ ar_apis ar
+           , ar_api_alias = M.union aliases $ ar_api_alias ar }
       retV $ (lvl, SLV_Object nAt (Just $ ns <> " API") io)
     SLPrim_View -> do
       ensure_mode SLM_AppInit "View"
@@ -3204,9 +3216,10 @@ evalPrim p sargs =
           return $ (lvl, x)
     SLPrim_remote -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
-      (av, ri) <- two_args
+      (av, ri, ma) <- two_mthree_args
       aa <- compileCheckType T_Contract av
       rm_ <- mustBeObject ri
+      ae <- fromMaybe mempty <$> mapM mustBeObject ma
       rm <-
         mapWithKeyM
           (\k v -> do
@@ -3215,28 +3228,29 @@ evalPrim p sargs =
           rm_
       at <- withAt id
       let go k = \case
-            ST_Fun stf ->
+            ST_Fun stf -> do
+              m_alias <- mapM (return . bunpack <=< mustBeBytes . sss_val) $ M.lookup k ae
               return $
                 SLSSVal at Public $
                   SLV_Prim $
-                    SLPrim_remotef at aa k stf Nothing Nothing Nothing
+                    SLPrim_remotef at aa k stf Nothing Nothing Nothing m_alias
             t -> expect_ $ Err_Remote_NotFun k t
       om <- mapWithKeyM go rm
       return $ (lvl, SLV_Object at Nothing om)
-    SLPrim_remotef rat aa m stf _ mbill (Just RFM_Pay) -> do
+    SLPrim_remotef rat aa m stf _ mbill (Just RFM_Pay) ma -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote pay"
       payv <- one_arg
-      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf (Just payv) mbill Nothing)
-    SLPrim_remotef rat aa m stf mpay _ (Just RFM_Bill) -> do
+      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf (Just payv) mbill Nothing ma)
+    SLPrim_remotef rat aa m stf mpay _ (Just RFM_Bill) ma -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote bill"
       billv <- one_arg
-      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Right billv) Nothing)
-    SLPrim_remotef rat aa m stf mpay _ (Just RFM_WithBill) -> do
+      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Right billv) Nothing ma)
+    SLPrim_remotef rat aa m stf mpay _ (Just RFM_WithBill) ma -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote withBill"
       at <- withAt id
       nonNetToks <- zero_mone_arg $ SLV_Tuple at []
-      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Left nonNetToks) Nothing)
-    SLPrim_remotef rat aa m stf mpay mbill Nothing -> do
+      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Left nonNetToks) Nothing ma)
+    SLPrim_remotef rat aa m stf mpay mbill Nothing ma -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
       at <- withAt id
       let zero = SLV_Int at 0
@@ -3255,6 +3269,7 @@ evalPrim p sargs =
       let nntbTL = if nntbNo then [] else [nntbT]
       let SLTypeFun dom rng pre post pre_msg post_msg = stf
       let rng' = ST_Tuple $ [ST_UInt] <> nntbTL <> [rng]
+      drng <- st2dte rng'
       rt <- st2dte rng
       let postArg = "(dom, [_," <> (if nntbNo then "" else " _,") <> " rng])"
       let post' = flip fmap post $ \postv ->
@@ -3264,7 +3279,7 @@ evalPrim p sargs =
       allTokens <- fmap DLA_Var <$> readSt st_toks
       let nnToksNotBilled = allTokens \\ nntbRecv
       let withBill = DLWithBill nBilled nntbRecv nnToksNotBilled
-      res'' <-
+      res' <-
         doInteractiveCall
           sargs
           rat
@@ -3272,8 +3287,10 @@ evalPrim p sargs =
           SLM_ConsensusStep
           "remote"
           (CT_Assume True)
-          (\_ fs _ dargs -> DLE_Remote at fs aa rt m payAmt dargs withBill)
-      res' <- doInternalLog Nothing res''
+          (\_ fs _ dargs -> do
+            rr <- ctxt_lift_expr (DLVar at Nothing drng) $ DLE_Remote at fs aa rt m payAmt dargs withBill ma
+            el <- compileToVar =<< doInternalLog Nothing (SLV_DLVar rr)
+            return $ DLE_Arg at $ DLA_Var el)
       apdvv <- doArrRef_ res' zero
       let getRemoteResults = do
             case nntbNo of
@@ -3594,7 +3611,7 @@ evalPrim p sargs =
       dv <- ctxt_lift_expr mdv de
       return $ (lvl, SLV_DLVar dv)
 
-doInteractiveCall :: [SLSVal] -> SrcLoc -> Either SLTypeFun SLType -> SLMode -> String -> ClaimType -> (SrcLoc -> [SLCtxtFrame] -> DLType -> [DLArg] -> DLExpr) -> App SLVal
+doInteractiveCall :: [SLSVal] -> SrcLoc -> Either SLTypeFun SLType -> SLMode -> String -> ClaimType -> (SrcLoc -> [SLCtxtFrame] -> DLType -> [DLArg] -> App DLExpr) -> App SLVal
 doInteractiveCall sargs iat estf mode lab ct mkexpr = do
   ensure_mode mode lab
   at <- withAt id
