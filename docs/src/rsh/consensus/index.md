@@ -12,7 +12,7 @@ However, some additional statements are allowed.
 
 @{ref("rsh", "commit")}
 ```reach
-commit(); 
+commit();
 ```
 
 A @{defn("commit statement")}, written `{!rsh} commit();`, commits to statement's continuation as the next step of the DApp computation. In other words, it ends the current consensus step and allows more local steps.
@@ -107,7 +107,7 @@ A frontend may observe the values of these events with `{!js} await ctc.e.Announ
 @{ref("rsh", "Participant.set")}
 ```reach
 Participant.set(PART, ADDR);
-PART.set(ADDR); 
+PART.set(ADDR);
 ```
 
  After execution, the given participant is fixed to the given address.
@@ -129,7 +129,7 @@ invariant(balance() == 2 * wagerAmount);
 while ( sum() > 0 ) {
   ....
   [ heap1, heap2 ] = [ heap1 - 1, heap2 ];
-  continue; } 
+  continue; }
 ```
 
 A @{defn("while statement")} may occur within a consensus step and is written:
@@ -138,7 +138,7 @@ A @{defn("while statement")} may occur within a consensus step and is written:
 var LHS = INIT_EXPR;
 DEFINE_BLOCK; // optional
 invariant(INVARIANT_EXPR);
-while( COND_EXPR ) BLOCK 
+while( COND_EXPR ) BLOCK
 ```
 
 where `{!rsh} LHS` is a valid left-hand side of an identifier definition where the expression `{!rsh} INIT_EXPR` is the right-hand side, and
@@ -157,14 +157,14 @@ Read about finding [loop invariants](##guide-loop-invs) in the Reach guide.
 @{ref("rsh", "continue")}
 ```reach
 [ heap1, heap2 ] = [ heap1 - 1, heap2 ];
-continue; 
+continue;
 ```
 
 A @{defn("continue statement")} may occur within a while statement's block and is written:
 
 ```reach
 LHS = UPDATE_EXPR;
-continue; 
+continue;
 ```
 
 where the identifiers bound by `{!rsh} LHS` are a subset of the variables bound by the nearest enclosing while statement and `{!rsh} UPDATE_EXPR` is an expression which may be bound by `{!rsh} LHS`.
@@ -175,7 +175,7 @@ A continue statement may be written without the preceding identifier update, whi
 
 ```reach
 [] = [];
-continue; 
+continue;
 ```
 
 A continue statement must be dominated by a consensus transfer, which means that the body of a while statement must always `{!rsh} commit();` before calling `{!rsh} continue;`.
@@ -281,7 +281,7 @@ const [ x, y, z ] =
   parallelReduce([ 1, 2, 3 ])
     .while(keepGoing())
     ...
-    .timeRemaining(timeRemaining()) 
+    .timeRemaining(timeRemaining())
 ```
 
 which will expand to:
@@ -289,7 +289,7 @@ which will expand to:
 ```reach
 .timeout(timeRemaining(), () => {
   race(...Participants).publish();
-  return [ x, y, z ]; }) 
+  return [ x, y, z ]; })
 ```
 
 #### `.throwTimeout`
@@ -304,14 +304,14 @@ try {
     parallelReduce([ 1, 2, 3 ])
     ...
     .throwTimeout(deadline)
-} catch (e) { ... } 
+} catch (e) { ... }
 ```
 
  will expand `{!rsh} throwTimeout` to:
 
 ```reach
 .timeout(deadline, () => {
-  throw [ x, y, z ]; }) 
+  throw [ x, y, z ]; })
 ```
 
 #### `parallelReduce` intuition
@@ -371,7 +371,7 @@ A transfer expression may only occur within a consensus step.
 
 @{ref("rsh", "require")}
 ```reach
-require( claim, [msg] ) 
+require( claim, [msg] )
 ```
 
  A requirement where `{!rsh} claim` evaluates to `{!rsh} true` with honest participants.
@@ -384,7 +384,7 @@ If a publication would violate the requirement, the consensus network rejects th
 
 @{ref("rsh", "checkCommitment")}
 ```reach
-checkCommitment( commitment, salt, x ) 
+checkCommitment( commitment, salt, x )
 ```
 
  Makes a requirement that `{!rsh} commitment` is the digest of `{!rsh} salt` and `{!rsh} x`.
@@ -468,11 +468,18 @@ const randomVal = randomOracle.getRandom.pay(randomFee)();
 A @{defn("remote object")} represents a foreign contract in a Reach application.
 During a consensus step, a Reach computation may consensually communicate with such an object via a prescribed interface.
 
-A remote object is constructed by calling the `{!rsh} remote` function with a `{!rsh} Contract` and an interface---an object where each key is bound to a function type. For example:
+A remote object is constructed by calling the `{!rsh} remote` function with a `{!rsh} Contract`, an interface---an object where each key is bound to a function type, and an optional object of aliases.
+The alias object maps function names from the interface to function names on the remote contract.
+It allows users to bind specific instances of an overloaded remote function.
+For example:
 ```reach
 const randomOracle =
   remote( randomOracleCtcInfo, {
     getRandom: Fun([], UInt),
+    getRandom1: Fun([UInt], UInt),
+  }, {
+    getRandom: "random",
+    getRandom1: "random",
   });
 const token =
   remote( tokenCtcInfo, {
@@ -480,6 +487,9 @@ const token =
     transferTo: Fun([UInt, Address], Null),
   });
 ```
+
+In this example, the random oracle contract has an overloaded method, `random`. This `random` method accepts 0 or 1 parameters.
+We explicitly specify that `getRandom` refers to calling the `random` function with no arguments, and `getRandom1` refers to calling the `random` function with 1 argument.
 
 Once constructed, the fields of a remote object represent those remote contract interactions, referred to as @{defn("remote functions")}.
 For example, `{!rsh} randomOracle.getRandom`, `{!rsh} token.balanceOf`, and `{!rsh} token.transferTo` are remote functions in the example.
