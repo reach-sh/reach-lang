@@ -556,6 +556,7 @@ opt_b1 = \case
   (TInt 0) : (TCode "+" []) : l -> l
   (Titob _) : (TCode "btoi" []) : l -> l
   (TCode "==" []) : (TCode "!" []) : l -> (TCode "!=" []) : l
+  (TCode "b==" []) : (TCode "!" []) : l -> (TCode "b!=" []) : l
   (TInt 0) : (TCode "!=" []) : (TCode "assert" []) : l ->
     (TCode "assert" []) : l
   (TCode "*" []) : (TInt x) : (TCode "/" []) : (TInt y) : l | x == y ->

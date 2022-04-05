@@ -39,6 +39,7 @@ import {
   mkAddressEq,
   makeArith,
   j2s,
+  UInt256_max,
 } from './shared_impl';
 export type { // =>
   ETH_Ty,
@@ -56,8 +57,7 @@ const {
   T_Address,
 } = ethLikeCompiledArgs;
 
-const UInt_max: BigNumber =
-  ethers.BigNumber.from(2).pow(256).sub(1);
+const UInt_max: BigNumber = UInt256_max;
 
 const digest = makeDigest('keccak256', (t:AnyETH_Ty, v:any) => {
   // Note: abiCoder.encode doesn't correctly handle an empty tuple type
@@ -101,6 +101,8 @@ const T_UInt: ETH_Ty<CBR_UInt, BigNumber> = {
   unmunge: (nv: BigNumber): CBR_UInt => V_UInt(nv),
   paramType: 'uint256',
 };
+
+const T_UInt256 = T_UInt;
 
 const V_UInt = (n: BigNumber): CBR_UInt => {
   return T_UInt.canonicalize(n);
@@ -389,6 +391,7 @@ const typeDefs: TypeDefs<AnyETH_Ty> = {
   T_Null,
   T_Bool,
   T_UInt,
+  T_UInt256,
   T_Bytes,
   T_Address,
   T_Contract,

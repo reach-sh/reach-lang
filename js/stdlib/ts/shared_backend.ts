@@ -131,6 +131,11 @@ export const ge = (a: num, b: num): boolean => bigNumberify(a).gte(bigNumberify(
 export const gt = (a: num, b: num): boolean => bigNumberify(a).gt(bigNumberify(b));
 export const le = (a: num, b: num): boolean => bigNumberify(a).lte(bigNumberify(b));
 export const lt = (a: num, b: num): boolean => bigNumberify(a).lt(bigNumberify(b));
+export const eq256 = eq;
+export const ge256 = ge;
+export const gt256 = gt;
+export const le256 = le;
+export const lt256 = lt;
 export const digest_xor = (xd: string, yd: string): string => {
   const clean = (s: string) => s.slice(0, 2) === '0x' ? s.slice(2) : s;
   const xc = clean(xd);

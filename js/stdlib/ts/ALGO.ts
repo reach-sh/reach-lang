@@ -92,7 +92,13 @@ import {
 import type { MapRefT, MaybeRep } from './shared_backend'; // =>
 import { window, process } from './shim';
 import { sha512_256 } from 'js-sha512';
-export const { add, sub, mod, mul, div, protect, assert, Array_set, eq, ge, gt, le, lt, bytesEq, digestEq, digest_xor, bytes_xor, btoiLast8 } = stdlib;
+export const {
+  add, sub, mod, mul, div, band, bior, bxor, eq, ge, gt, le, lt,
+  add256, sub256, mod256, mul256, div256, band256, bior256, bxor256, eq256, ge256, gt256, le256, lt256,
+  cast, muldiv,
+  protect, assert, Array_set,
+  bytesEq, digestEq, digest_xor, bytes_xor, btoiLast8
+} = stdlib;
 export * from './shared_user';
 import { setQueryLowerBound, getQueryLowerBound, handleFormat, formatWithDecimals } from './shared_impl';
 export { setQueryLowerBound, getQueryLowerBound, addressFromHex, formatWithDecimals };
@@ -737,7 +743,7 @@ const newEventQueue = (): EventQueue => {
 
 export const { addressEq, tokenEq, digest } = stdlib;
 
-export const { T_Null, T_Bool, T_UInt, T_Tuple, T_Array, T_Contract, T_Object, T_Data, T_Bytes, T_Address, T_Digest, T_Struct, T_Token } = typeDefs;
+export const { T_Null, T_Bool, T_UInt, T_UInt256, T_Tuple, T_Array, T_Contract, T_Object, T_Data, T_Bytes, T_Address, T_Digest, T_Struct, T_Token } = typeDefs;
 
 export const { randomUInt, hasRandom } = makeRandom(8);
 

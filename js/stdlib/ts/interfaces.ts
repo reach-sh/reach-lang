@@ -1,5 +1,5 @@
 import type {
-  num, MaybeRep, MapOpts, LinearMap, AnyBackendTy
+  num, MaybeRep, MapOpts, LinearMap, AnyBackendTy,
 } from './shared_backend'; // =>
 import type { BigNumber } from 'ethers'; // =>
 import {
@@ -8,12 +8,14 @@ import {
   IContract,
   IBackend,
   SetSigningMonitor,
+  UIntTy,
 } from './shared_impl';
 
 export interface TypeDefs<Ty> {
   T_Null: Ty
   T_Bool: Ty
   T_UInt: Ty
+  T_UInt256: Ty
   T_Bytes: (len:number) => Ty
   T_Address: Ty
   T_Contract: Ty
@@ -35,6 +37,11 @@ export interface Stdlib_Backend_Shared_User<Ty> {
   gt: (n1: num, n2: num) => boolean
   le: (n1: num, n2: num) => boolean
   lt: (n1: num, n2: num) => boolean
+  eq256: (n1: num, n2: num) => boolean
+  ge256: (n1: num, n2: num) => boolean
+  gt256: (n1: num, n2: num) => boolean
+  le256: (n1: num, n2: num) => boolean
+  lt256: (n1: num, n2: num) => boolean
   bytesEq: (s1: string, s2: string) => boolean
   digest_xor: (x: string, y:string) => string
   bytes_xor: (x: string, y:string) => string
@@ -65,6 +72,19 @@ export interface Arith {
   mod: (x: num, y: num) => BigNumber
   mul: (x: num, y: num) => BigNumber
   div: (x: num, y: num) => BigNumber
+  band: (x: num, y: num) => BigNumber
+  bior: (x: num, y: num) => BigNumber
+  bxor: (x: num, y: num) => BigNumber
+  add256: (x: num, y: num) => BigNumber
+  sub256: (x: num, y: num) => BigNumber
+  mod256: (x: num, y: num) => BigNumber
+  mul256: (x: num, y: num) => BigNumber
+  div256: (x: num, y: num) => BigNumber
+  band256: (x: num, y: num) => BigNumber
+  bior256: (x: num, y: num) => BigNumber
+  bxor256: (x: num, y: num) => BigNumber
+  muldiv: (x: num, y: num, z:num) => BigNumber
+  cast: (from: UIntTy, to: UIntTy, x: num) => BigNumber
 };
 
 export interface Stdlib_Backend_Base<Ty> extends Stdlib_Backend_Shared<Ty>, Arith, TypeDefs<Ty> {

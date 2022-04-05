@@ -7,6 +7,7 @@ import {
   mkAddressEq,
   MkPayAmt,
   makeArith,
+  UInt256_max,
 } from './shared_impl';
 import {
   bigNumberToNumber,
@@ -86,6 +87,24 @@ export const T_UInt: ALGO_Ty<CBR_UInt> = {
     return ethers.BigNumber.from(nv.slice(0, 8));
   },
   netName: 'uint64',
+}
+
+export const T_UInt256: ALGO_Ty<CBR_UInt> = {
+  ...CBR.BT_UInt(UInt256_max),
+  netSize: 32, // UInt
+  toNet: (bv: CBR_UInt): NV => {
+    try {
+      return ethers.utils.zeroPad(ethers.utils.arrayify(bv), 32)
+    } catch (e) {
+      throw new Error(`toNet: ${bv} is out of range [0, ${UInt256_max}]`);
+    }
+  },
+  fromNet: (nv: NV): CBR_UInt => {
+    // debug(`fromNet: UInt`, nv);
+    // if (getDEBUG()) console.log(nv);
+    return ethers.BigNumber.from(nv.slice(0, 32));
+  },
+  netName: 'byte[32]',
 }
 
 /** @description For arbitrary utf8 strings */
@@ -329,6 +348,7 @@ export const typeDefs = {
   T_Null,
   T_Bool,
   T_UInt,
+  T_UInt256,
   T_Bytes,
   T_Address,
   T_Contract,
