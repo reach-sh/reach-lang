@@ -38,7 +38,7 @@ export const main = Reach.App(() => {
   const h = f(true);
   commit();
 
-  const F = (mk) => {
+  const F = (i, mk) => {
     A.publish();
     const x1 = mk();
     commit();
@@ -48,20 +48,20 @@ export const main = Reach.App(() => {
     A.publish(x2);
     check(x2 == x1);
     commit();
-    A.interact.check(x1);
+    A.interact.check(i, x1);
   };
 
-  F(() => [
+  F(0, () => [
     h((u, v) => u + v),
     h((u, v) => u - v),
     h((u, v) => u * v),
   ]);
-  F(() => [
+  F(1, () => [
     h((u, v) => u / v),
     h((u, v) => u % v),
     h((u, v) => u ^ v),
   ]);
-  F(() => [
+  F(2, () => [
     g((u, v) => u < v),
     g((u, v) => u <= v),
     g((u, v) => u == v),

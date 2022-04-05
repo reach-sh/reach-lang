@@ -21,6 +21,7 @@ import { process } from './shim';
 export {
   hexlify
 } from './shared_backend';
+import type { Arith } from './interfaces';
 
 type BigNumber = ethers.BigNumber;
 
@@ -680,19 +681,51 @@ export const makeRandom = (width:number) => {
   return { randomUInt, hasRandom };
 };
 
-export const makeArith = (m:BigNumber) => {
-  const check = (x: BigNumber) =>
+export type UIntTy = boolean;
+export const UInt256_max =
+  ethers.BigNumber.from(2).pow(256).sub(1);
+export const makeArith = (m:BigNumber): Arith => {
+  const checkB = (x: BigNumber) =>
+    checkedBigNumberify(`internal`, UInt256_max, x);
+  const checkM = (x: BigNumber) =>
     checkedBigNumberify(`internal`, m, x);
-  const add = (a: num, b: num): BigNumber => check(bigNumberify(a).add(bigNumberify(b)));
-  const sub = (a: num, b: num): BigNumber => check(bigNumberify(a).sub(bigNumberify(b)));
-  const mod = (a: num, b: num): BigNumber => check(bigNumberify(a).mod(bigNumberify(b)));
-  const mul = (a: num, b: num): BigNumber => check(bigNumberify(a).mul(bigNumberify(b)));
-  const div = (a: num, b: num): BigNumber => check(bigNumberify(a).div(bigNumberify(b)));
+
+  type BNOp = 'add'|'sub'|'mod'|'mul'|'div'|'and'|'or'|'xor';
+  const doBN = (f:BNOp, a:BigNumber, b:BigNumber) => a[f](b);
+  const getCheck = (w:UIntTy) => w ? checkB : checkM;
+  const cast = (from:UIntTy, to:UIntTy, x:num): BigNumber => {
+    const checkF = getCheck(from);
+    const checkT = getCheck(to);
+    return checkT(checkF(bigNumberify(x)));
+  };
+
+  const liftX = (check:(x:BigNumber) => BigNumber) => (f:BNOp) => (a:num, b:num): BigNumber => check(doBN(f, bigNumberify(a), bigNumberify(b)));
+  const liftB = liftX(checkB);
+  const liftM = liftX(checkM);
+  const add = liftM('add');
+  const sub = liftM('sub');
+  const mod = liftM('mod');
+  const mul = liftM('mul');
+  const div = liftM('div');
+  const band = liftM('and');
+  const bior = liftM('or');
+  const bxor = liftM('xor');
+  const add256 = liftB('add');
+  const sub256 = liftB('sub');
+  const mod256 = liftB('mod');
+  const mul256 = liftB('mul');
+  const div256 = liftB('div');
+  const band256 = liftB('and');
+  const bior256 = liftB('or');
+  const bxor256 = liftB('xor');
   const muldiv = (a: num, b: num, c: num): BigNumber => {
     const prod = bigNumberify(a).mul(bigNumberify(b));
-    return check( prod.div(bigNumberify(c)) );
+    return checkM( prod.div(bigNumberify(c)) );
   };
-  return { add, sub, mod, mul, div, muldiv };
+  return {
+    add, sub, mod, mul, div, band, bior, bxor,
+    add256, sub256, mod256, mul256, div256, band256, bior256, bxor256,
+    cast, muldiv };
 };
 
 export const argsSlice = <T>(args: Array<T>, cnt: number): Array<T> =>
