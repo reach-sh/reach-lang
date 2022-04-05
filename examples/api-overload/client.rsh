@@ -26,6 +26,10 @@ export const main = Reach.App(() => {
   const x = calc.mul1(2);
   check(x == 2);
 
+  commit();
+
+  A.publish();
+
   const y = calc.mul2(4, 6);
   check(y == 24);
 

@@ -14,7 +14,7 @@ export const main = Reach.App(() => {
   init();
 
   A.publish();
-  A.interact.deployed(getContract());
+  A.interact.deployed();
   commit();
 
   const [ [ z ], k1 ] = call(C.mul1);

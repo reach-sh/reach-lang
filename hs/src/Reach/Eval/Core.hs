@@ -1473,18 +1473,18 @@ st2dte t =
     Just x -> return $ x
     Nothing -> expect_ $ Err_Type_NotDT t
 
-compileInteractResult :: ClaimType -> String -> SLType -> (DLType -> DLExpr) -> App SLVal
+compileInteractResult :: ClaimType -> String -> SLType -> (DLType -> App DLExpr) -> App SLVal
 compileInteractResult ct lab st de = do
   at <- withAt id
   dt <- st2dte st
-  let de' = de dt
+  de' <- de dt
   isv <-
     case dt of
       T_Null -> do
         ctxt_lift_eff de'
         return $ SLV_Null at lab
       _ ->
-        SLV_DLVar <$> ctxt_lift_expr (DLVar at Nothing dt) (de dt)
+        SLV_DLVar <$> ctxt_lift_expr (DLVar at Nothing dt) de'
   applyType ct isv st
   return isv
 
@@ -1510,7 +1510,7 @@ makeInteract who (SLInterface spec) = do
               )
           t -> do
             t' <- st2dte t
-            isv <- secret <$> compileInteractResult (CT_Assume False) "interact" t (\dt -> DLE_Arg i_at $ DLA_Interact who k dt)
+            isv <- secret <$> compileInteractResult (CT_Assume False) "interact" t (\dt -> return $ DLE_Arg i_at $ DLA_Interact who k dt)
             return $ (sls_sss i_at isv, IT_Val t')
   (lifts, spec') <- captureLifts $ mapWithKeyM wrap_ty spec
   let io = SLSSVal at Secret $ SLV_Object at lab $ M.map fst spec'
@@ -2872,7 +2872,7 @@ evalPrim p sargs =
         _ -> illegal_args
     SLPrim_App_Delay {} -> expect_t rator $ Err_Eval_NotApplicable
     SLPrim_localf iat who m stf ->
-      secret <$> doInteractiveCall sargs iat stf SLM_LocalStep "interact" (CT_Assume False) (\at fs drng dargs -> DLE_Interact at fs who m drng dargs)
+      secret <$> doInteractiveCall sargs iat stf SLM_LocalStep "interact" (CT_Assume False) (\at fs drng dargs -> return $ DLE_Interact at fs who m drng dargs)
     SLPrim_declassify -> do
       val <- one_arg
       ensure_level Secret lvl
@@ -3269,6 +3269,7 @@ evalPrim p sargs =
       let nntbTL = if nntbNo then [] else [nntbT]
       let SLTypeFun dom rng pre post pre_msg post_msg = stf
       let rng' = ST_Tuple $ [ST_UInt] <> nntbTL <> [rng]
+      drng <- st2dte rng'
       rt <- st2dte rng
       let postArg = "(dom, [_," <> (if nntbNo then "" else " _,") <> " rng])"
       let post' = flip fmap post $ \postv ->
@@ -3278,7 +3279,7 @@ evalPrim p sargs =
       allTokens <- fmap DLA_Var <$> readSt st_toks
       let nnToksNotBilled = allTokens \\ nntbRecv
       let withBill = DLWithBill nBilled nntbRecv nnToksNotBilled
-      res'' <-
+      res' <-
         doInteractiveCall
           sargs
           rat
@@ -3286,8 +3287,10 @@ evalPrim p sargs =
           SLM_ConsensusStep
           "remote"
           (CT_Assume True)
-          (\_ fs _ dargs -> DLE_Remote at fs aa rt m payAmt dargs withBill ma)
-      res' <- doInternalLog Nothing res''
+          (\_ fs _ dargs -> do
+            rr <- ctxt_lift_expr (DLVar at Nothing drng) $ DLE_Remote at fs aa rt m payAmt dargs withBill ma
+            el <- compileToVar =<< doInternalLog Nothing (SLV_DLVar rr)
+            return $ DLE_Arg at $ DLA_Var el)
       apdvv <- doArrRef_ res' zero
       let getRemoteResults = do
             case nntbNo of
@@ -3608,7 +3611,7 @@ evalPrim p sargs =
       dv <- ctxt_lift_expr mdv de
       return $ (lvl, SLV_DLVar dv)
 
-doInteractiveCall :: [SLSVal] -> SrcLoc -> Either SLTypeFun SLType -> SLMode -> String -> ClaimType -> (SrcLoc -> [SLCtxtFrame] -> DLType -> [DLArg] -> DLExpr) -> App SLVal
+doInteractiveCall :: [SLSVal] -> SrcLoc -> Either SLTypeFun SLType -> SLMode -> String -> ClaimType -> (SrcLoc -> [SLCtxtFrame] -> DLType -> [DLArg] -> App DLExpr) -> App SLVal
 doInteractiveCall sargs iat estf mode lab ct mkexpr = do
   ensure_mode mode lab
   at <- withAt id
