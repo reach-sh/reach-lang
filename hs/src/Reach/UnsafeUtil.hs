@@ -10,6 +10,7 @@ module Reach.UnsafeUtil
   , unsafeTermSupportsColor
   , unsafeReadFile
   , unsafeHashStr
+  , unsafeNub
   )
 where
 
@@ -21,6 +22,7 @@ import System.Console.Pretty (supportsPretty)
 import System.Directory
 import System.Environment
 import System.IO.Unsafe
+import Data.List (nub)
 
 -- | s/${pwd}/./g
 unsafeRedactAbs :: Text -> Text
@@ -54,3 +56,6 @@ unsafeHashStr = unsafePerformIO $ do
           Nothing -> fk
   try "REACHC_HASH" (try "REACH_GIT_HASH" $ return "")
 {-# NOINLINE unsafeHashStr #-}
+
+unsafeNub :: Eq a => [a] -> [a]
+unsafeNub = nub

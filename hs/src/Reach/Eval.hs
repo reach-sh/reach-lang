@@ -21,7 +21,8 @@ import Reach.Parser
 import Reach.Util
 import Reach.Warning
 import qualified Data.ByteString as B
-import Data.List.Extra (groupSort, nub)
+import Data.List.Extra (groupSort)
+import Reach.UnsafeUtil (unsafeNub)
 
 compileDApp :: DLStmts -> DLSExports -> SLVal -> App DLProg
 compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, top_use_strict))) = locAt (srcloc_lab "compileDApp" at) $ do
@@ -91,7 +92,7 @@ verifyAliases :: M.Map SLVar (Maybe B.ByteString, [SLType]) -> App Aliases
 verifyAliases m = do
   forM_ (groupSort $ M.elems m) $ \case
     (Just k, doms) -> do
-      unless (length doms == length (nub doms)) $ do
+      unless (length doms == length (unsafeNub doms)) $ do
         expect_ $ Err_Alias_Type_Clash $ bunpack k
     (Nothing, _) -> return ()
   return $ M.map fst m
