@@ -105,6 +105,7 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
 
     ...Object.assign({}, // Un-tweaked functions with serializable output
      ...[ 'assert'
+        , 'formatCurrency'
         , 'parseCurrency'
         ].map(f => ({ [f]: lib[f] }) )),
 
