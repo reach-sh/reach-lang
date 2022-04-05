@@ -287,9 +287,9 @@ jsPrimApply = \case
   LSH -> jsApply "stdlib.lsh"
   RSH -> jsApply "stdlib.rsh"
   MUL_DIV -> jsApply "stdlib.muldiv"
-  BAND -> jsApply "stdlib.band"
-  BIOR -> jsApply "stdlib.bior"
-  BXOR -> jsApply "stdlib.bxor"
+  BAND t -> jsApply_ui t "stdlib.band"
+  BIOR t -> jsApply_ui t "stdlib.bior"
+  BXOR t -> jsApply_ui t "stdlib.bxor"
   DIGEST_XOR -> jsApply "stdlib.digest_xor"
   BYTES_XOR -> jsApply "stdlib.bytes_xor"
   IF_THEN_ELSE -> \args -> case args of

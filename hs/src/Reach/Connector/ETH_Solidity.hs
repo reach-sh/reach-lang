@@ -518,9 +518,9 @@ solPrimApply = \case
     _ -> impossible "solPrimApply: MUL_DIV args"
   LSH -> binOp "<<"
   RSH -> binOp ">>"
-  BAND -> binOp "&"
-  BIOR -> binOp "|"
-  BXOR -> binOp "^"
+  BAND _ -> binOp "&"
+  BIOR _ -> binOp "|"
+  BXOR _ -> binOp "^"
   DIGEST_XOR -> binOp "^"
   BYTES_XOR -> binOp "^"
   IF_THEN_ELSE -> \case

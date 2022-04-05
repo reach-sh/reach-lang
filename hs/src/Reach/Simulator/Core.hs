@@ -443,9 +443,9 @@ interpPrim = \case
         return $ V_Address $ simContract
   (LSH, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ shiftL lhs (fromIntegral rhs)
   (RSH, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ shiftR lhs (fromIntegral rhs)
-  (BAND, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (.&.) lhs rhs
-  (BIOR, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (.|.) lhs rhs
-  (BXOR, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ xor lhs rhs
+  (BAND _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (.&.) lhs rhs
+  (BIOR _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (.|.) lhs rhs
+  (BXOR _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ xor lhs rhs
   (f, args) -> impossible $ "unhandled primop" <> show f <> " " <> show args
 
 conCons' :: DLConstant -> DLVal

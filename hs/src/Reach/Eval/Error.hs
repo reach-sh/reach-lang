@@ -746,9 +746,9 @@ instance Show EvalError where
     Err_LoopVariableLength at ->
       "Cannot assign the loop variable(s) to a `Tuple` of different length at: " <> show at
     Err_xor_Types l r ->
-      "^ expects arguments of either UInt, Bool, Digest, or Bytes of the same length, but received: " <> show l <> " and " <> show r
+      "^ expects arguments of either UInt, UInt256, Bool, Digest, or Bytes of the same length, but received: " <> show l <> " and " <> show r
     Err_mod_Types l r ->
-      "% expects a first argument of type UInt, Digest, or Bytes and a second argument of UInt, but received: " <> show l <> " and " <> show r
+      "% expects a first argument of type UInt, UInt256, Digest, or Bytes and a second argument of UInt or UInt256, but received: " <> show l <> " and " <> show r
     Err_ApiCallAssign ->
       "The left hand side of an API call must be a pair consisting of the domain and return function."
     Err_Alias_Type_Clash alias ->

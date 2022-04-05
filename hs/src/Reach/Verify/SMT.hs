@@ -316,11 +316,11 @@ smtPrimOp at p dargs =
     UCAST _ _ -> \case
       [x] -> return x
       _ -> impossible "ucast"
-    LSH -> bvapp "bvshl" cant
-    RSH -> bvapp "bvlshr" cant
-    BAND -> bvapp "bvand" cant
-    BIOR -> bvapp "bvor" cant
-    BXOR -> bvapp "bvxor" cant
+    LSH -> bvapp "bvshl" "UInt_lsh"
+    RSH -> bvapp "bvlshr" "UInt_rsh"
+    BAND _ -> bvapp "bvand" "UInt_band"
+    BIOR _ -> bvapp "bvor" "UInt_bior"
+    BXOR _ -> bvapp "bvxor" "UInt_bxor"
     DIGEST_XOR -> app "Digest_xor"
     BYTES_XOR -> app "Bytes_xor"
     BTOI_LAST8 False -> app "btoiLast8"
@@ -352,7 +352,6 @@ smtPrimOp at p dargs =
                   return $ Atom av
         se -> impossible $ "self address " <> show se
   where
-    cant = impossible $ "Int doesn't support " ++ show p
     app n = return . smtApply n
     bvapp n_bv n_i = app $ if use_bitvectors then n_bv else n_i
 

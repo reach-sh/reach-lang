@@ -1,4 +1,4 @@
-reachc: error[RE0129]: % expects a first argument of type UInt, Digest, or Bytes and a second argument of UInt, but received: Address and Address
+reachc: error[RE0129]: % expects a first argument of type UInt, UInt256, Digest, or Bytes and a second argument of UInt or UInt256, but received: Address and Address
 
   ./Err_mod_Types.rsh:9:17:application
 

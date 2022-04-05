@@ -2005,17 +2005,17 @@ evalNeg v = evalITE Public v (b False) (b True)
     b = SLV_Bool sb
 
 evalPrimOp :: SPrimOp -> [SLSVal] -> App SLSVal
-evalPrimOp sp_ sargs = do
+evalPrimOp sp sargs = do
   at <- withAt id
   let zero mt = SLV_Int at mt 0
-  case sp_ of
+  case sp of
     S_UCAST to ->
       case args of
         [SLV_Int lhs_at _ lhs_i] -> static $ SLV_Int lhs_at (Just to) lhs_i
         _ -> do
           let from = not to
           let dom = T_UInt from
-          make_var' (S_UCAST from) [dom] (T_UInt to) args
+          make_var [dom] (T_UInt to) args
     S_BYTES_ZPAD xtra ->
       case args of
         [SLV_Bytes _ lhs] -> do
@@ -2147,15 +2147,17 @@ evalPrimOp sp_ sargs = do
           dom <- arg1ty 3
           make_var [dom, dom, dom] dom args
     static v = return $ (lvl, v)
-    make_var = make_var' sp_
-    make_var' sp dom rng args' = do
+    make_var dom rng args' = do
       at <- withAt id
       args'e <-
         mapM (uncurry typeCheck_d)
           =<< zipEq (Err_Apply_ArgCount at) dom args'
-      make_var_' sp rng args'e
-    make_var_ = make_var_' sp_
-    make_var_' sp rng args'e = do
+      let uit_dom = case dom of
+                      x:_ -> uintTyOf x
+                      _ -> uintWord
+      make_var_' uit_dom rng args'e
+    make_var_ = make_var_' uintWord
+    make_var_' uit_dom rng args'e = do
       at <- withAt id
       dargs <- compileArgExprs args'e
       let dopClaim ca msg = doClaim CT_Assert ca $ Just msg
@@ -2163,7 +2165,7 @@ evalPrimOp sp_ sargs = do
       let doOp t cp cargs = DLA_Var <$> (ctxt_lift_expr (mkvar t) $ DLE_PrimOp at cp cargs)
       let doCmp = doOp T_Bool
       let uit_rng = uintTyOf rng
-      let p = sprimToPrim uit_rng sp
+      let p = sprimToPrim uit_dom uit_rng sp
       let lim_maxUInt_a =
             case uit_rng of
               True -> DLA_Literal $ DLL_Int sb True $ uint256_Max
@@ -3539,10 +3541,9 @@ evalPrim p sargs =
       (x_ty, _) <- compileTypeOf x
       (y_ty, _) <- compileTypeOf y
       case (x_ty, y_ty) of
-        (T_UInt _, T_UInt _) -> prim S_BXOR
+        (T_UInt x_ui, T_UInt y_ui) | x_ui == y_ui -> prim S_BXOR
         (T_Digest, T_Digest) -> prim S_DIGEST_XOR
-        (T_Bytes l, T_Bytes r)
-          | l == r -> prim S_BYTES_XOR
+        (T_Bytes l, T_Bytes r) | l == r -> prim S_BYTES_XOR
         (T_Bool, T_Bool) -> do
           f <- lookStdlib "boolXor"
           evalApplyVals' f sargs
@@ -3557,7 +3558,7 @@ evalPrim p sargs =
             bi <- evalPrimOp (S_BTOI_LAST8 isDigest) [public x]
             evalPrimOp S_MOD [bi, public y]
       case (x_ty, y_ty) of
-        (T_UInt _, T_UInt _) -> evalPrimOp S_MOD sargs
+        (T_UInt x_ui, T_UInt y_ui) | x_ui == y_ui -> evalPrimOp S_MOD sargs
         (T_Bytes {}, T_UInt False) -> go False
         (T_Digest, T_UInt False) -> go True
         (l, r) -> expect_ $ Err_mod_Types l r
