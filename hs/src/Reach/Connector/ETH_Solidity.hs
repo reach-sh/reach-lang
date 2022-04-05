@@ -1326,16 +1326,16 @@ apiDef who ApiInfo {..} = do
           let c_id_s = fromMaybe (impossible "Expected case id") ai_mcase_id
           let c_id = pretty c_id_s
           -- Construct product of data variant
-          (data_t, con_t, argDefns) <-
+          (data_t, con_t, argDefns, args) <-
             case ai_msg_tys of
               [dt@(T_Data env)] ->
                 case M.lookup c_id_s env of
-                  Just (T_Tuple []) -> return (dt, "false", [])
+                  Just (T_Tuple []) -> return (dt, "false", [], [])
                   Just (T_Tuple ts) -> do
                     (args, argDefns) <- mkArgDefns ts
                     t <- solType_ $ T_Tuple ts
                     let ct = solApply t args
-                    return $ (dt, ct, argDefns)
+                    return $ (dt, ct, argDefns, args)
                   _ -> impossible "apiDef: Constructor not in Data"
               _ -> impossible "apiDef: Expected one `Data` arg"
           dt <- solType_ data_t
@@ -1346,15 +1346,15 @@ apiDef who ApiInfo {..} = do
                 ]
           tc <- solType_ $ vsToType ai_msg_vs
           let ty = solApply tc ["_vt"]
-          return $ (ty, argDefns, lifts)
+          return $ (ty, argDefns, lifts, args)
         AIC_SpreadArg -> do
           (args, argDefns) <-
             case ai_msg_tys of
               [T_Tuple ts] -> mkArgDefns ts
               _ -> impossible "apiDef: Expected one tuple arg"
           ty <- makeConsensusArg args
-          return $ (ty, argDefns, [])
-  (ty, argDefns, tyLifts) <- go ai_compile
+          return $ (ty, argDefns, [], args)
+  (ty, argDefns, tyLifts, args) <- go ai_compile
   let body =
         vsep $
           [ "ApiRng memory _r;"
@@ -1368,8 +1368,13 @@ apiDef who ApiInfo {..} = do
   ret_ty' <- solType_ ai_ret_ty
   let ret_ty'' = ret_ty' <+> withArgLoc ai_ret_ty
   let ret = "external payable returns" <+> parens ret_ty''
-  let mk w = solFunction (pretty w) argDefns ret body
-  return $ vsep $ mk who_s : maybe [] ((: []) . mk . bunpack) ai_alias
+  let mk w = solFunction (pretty w) argDefns ret
+  let alias = case bunpack <$> ai_alias of
+              Just ai -> do
+                let body' = "return " <> solApply ("this." <> pretty who_s) args <> semi
+                [mk ai body']
+              Nothing -> []
+  return $ vsep $ mk who_s body : alias
 
 apiDefs :: ApiInfos -> App Doc
 apiDefs defs =
