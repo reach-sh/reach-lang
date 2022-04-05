@@ -43,6 +43,7 @@ dependencies:
 - loop
 - main-tester
 - memory
+- monad-coroutine
 - mtl
 - optparse-applicative
 - parsec

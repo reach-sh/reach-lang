@@ -3,6 +3,8 @@
 module Reach.Simulator.Core where
 
 import Control.Monad.Reader
+import Control.Monad.Coroutine
+import Control.Monad.Coroutine.SuspensionFunctors
 import Data.Aeson
 import Data.Bits
 import qualified Data.Map.Strict as M
@@ -117,9 +119,11 @@ data LocalInfo = LocalInfo
   , l_who :: Maybe Participant
   , l_store :: Store
   , l_phase :: PhaseId
-  , l_ks :: Maybe PartState
+  , l_ks :: Maybe (CoApp DLVal)
   , l_livs :: LocalInteractEnv
   , l_ivd :: InteractEnv
+  , l_suspensionpt :: Maybe SrcLoc
+  , l_action :: Maybe Action
   }
   deriving (Generic)
 
@@ -173,95 +177,79 @@ initLocal =
             , l_ks = Nothing
             , l_livs = mempty
             , l_ivd = mempty
+            , l_suspensionpt = Nothing
+            , l_action = Nothing
             }
     , l_curr_actor_id = consensusId
     }
 
-type PartCont = State -> DLVal -> PartState
+-- type PartCont = State -> DLVal -> PartState
+--
+-- data PartState
+--   = PS_Done State DLVal
+--   | PS_Suspend (Maybe SrcLoc) Action State PartCont
+--   deriving (Generic)
+--
+-- instance ToJSON PartState where
+--   toJSON (PS_Done _ _) = "PS_Done"
+--   toJSON (PS_Suspend _ _ _ _) = "PS_Suspend"
 
-data PartState
-  = PS_Done State DLVal
-  | PS_Suspend (Maybe SrcLoc) Action State PartCont
-  deriving (Generic)
+instance ToJSON (Coroutine (Await DLVal) App DLVal) where
+  toJSON _ = "CoApp"
 
-instance ToJSON PartState where
-  toJSON (PS_Done _ _) = "PS_Done"
-  toJSON (PS_Suspend _ _ _ _) = "PS_Suspend"
+--
+-- initPartState :: PartState
+-- initPartState = PS_Done initState V_Null
+--
+-- newtype App a
+--   = App (State -> (State -> a -> PartState) -> PartState)
 
-initPartState :: PartState
-initPartState = PS_Done initState V_Null
+-- suspend :: (State -> PartCont -> PartState) -> App DLVal
+-- suspend = App
 
-newtype App a
-  = App (State -> (State -> a -> PartState) -> PartState)
+type App = ReaderT State IO
 
-instance Functor App where
-  fmap t (App f) = App (\gv k -> f gv (\gv' v -> k gv' (t v)))
+type CoApp = Coroutine (Await DLVal) App
 
-instance Applicative App where
-  pure v = App (\gv k -> k gv v)
-  (App fun) <*> (App val) =
-    App
-      (\gvTop kAns ->
-         fun
-           gvTop
-           (\gvFun vFun ->
-              val
-                gvFun
-                (\gvVal vVal ->
-                   kAns gvVal (vFun vVal))))
+getState :: CoApp State
+getState = undefined
 
-instance Monad App where
-  (App val) >>= conF =
-    App
-      (\gvTop kAns ->
-         val
-           gvTop
-           (\gvVal vVal ->
-              let App con = conF vVal
-               in con gvVal kAns))
-
-suspend :: (State -> PartCont -> PartState) -> App DLVal
-suspend = App
-
-getState :: App State
-getState = App (\gvTop kAns -> kAns gvTop gvTop)
-
-getGlobal :: App Global
+getGlobal :: CoApp Global
 getGlobal = do
   (g, _) <- getState
   return g
 
-getLocal :: App Local
+getLocal :: CoApp Local
 getLocal = do
   (_, l) <- getState
   return l
 
-setState :: State -> App ()
-setState ngv = App (\_ kAns -> kAns ngv ())
+setState :: State -> CoApp ()
+setState s = undefined
 
-setGlobal :: Global -> App ()
+setGlobal :: Global -> CoApp ()
 setGlobal g = do
   l <- getLocal
   setState (g, l)
 
-setLocal :: Local -> App ()
+setLocal :: Local -> CoApp ()
 setLocal l = do
   g <- getGlobal
   setState (g, l)
 
-runApp :: State -> App DLVal -> PartState
-runApp st (App f) = f st PS_Done
+-- runApp :: State -> App DLVal -> PartState
+-- runApp st (App f) = f st PS_Done
+--
+-- initApp :: LLProg -> State -> PartState
+-- initApp p st = runApp st $ interp p
+--
+-- initAppFromStep :: LLStep -> State -> PartState
+-- initAppFromStep step st = runApp st $ interp step
+--
+-- runWithState :: (Interp a) => a -> State -> PartState
+-- runWithState k st = runApp st $ interp k
 
-initApp :: LLProg -> State -> PartState
-initApp p st = runApp st $ interp p
-
-initAppFromStep :: LLStep -> State -> PartState
-initAppFromStep step st = runApp st $ interp step
-
-runWithState :: (Interp a) => a -> State -> PartState
-runWithState k st = runApp st $ interp k
-
-ledgerNewTokenRefs :: Integer -> DLTokenNew -> App (Token)
+ledgerNewTokenRefs :: Integer -> DLTokenNew -> CoApp (Token)
 ledgerNewTokenRefs n tk = do
   (e, _) <- getState
   let tokId = e_ntok e
@@ -270,7 +258,7 @@ ledgerNewTokenRefs n tk = do
   setGlobal $ e' {e_ntok = tokId + 1}
   return tokId
 
-ledgerNewToken :: Account -> DLTokenNew -> Token -> App ()
+ledgerNewToken :: Account -> DLTokenNew -> Token -> CoApp ()
 ledgerNewToken acc tk tokId = do
   (e, _) <- getState
   let ledger = e_ledger e
@@ -313,12 +301,13 @@ data DLVal
   | V_Object (M.Map SLVar DLVal)
   | V_Data SLVar DLVal
   | V_Struct [(SLVar, DLVal)]
+  | V_Done
   deriving (Eq, Ord, Show, Generic)
 
 instance ToJSON DLVal
 instance FromJSON DLVal
 
-addToStore :: DLVar -> DLVal -> App ()
+addToStore :: DLVar -> DLVal -> CoApp ()
 addToStore x v = do
   (_, l) <- getState
   let locals = l_locals l
@@ -330,26 +319,26 @@ addToStore x v = do
       let lst' = lst {l_store = M.insert x v st}
       setLocal $ l {l_locals = M.insert aid lst' locals}
 
-fixMessageInRecord :: PhaseId -> ActorId -> Store -> DLPayAmt -> Bool -> App ()
+fixMessageInRecord :: PhaseId -> ActorId -> Store -> DLPayAmt -> Bool -> CoApp ()
 fixMessageInRecord phId actId m_store m_pay m_api = do
   (g, _) <- getState
   let msgs = e_messages g
   let msgs' = M.insert phId (Fixed (actId, Message {..})) msgs
   setGlobal $ g {e_messages = msgs'}
 
-incrNWtime :: Integer -> App ()
+incrNWtime :: Integer -> CoApp ()
 incrNWtime n = do
   (e, _) <- getState
   let t = e_nwtime e
   setGlobal $ e {e_nwtime = t + n}
 
-incrNWsecs :: Integer -> App ()
+incrNWsecs :: Integer -> CoApp ()
 incrNWsecs n = do
   (e, _) <- getState
   let t = e_nwsecs e
   setGlobal $ e {e_nwsecs = t + n}
 
-incrPhaseId :: App ()
+incrPhaseId :: CoApp ()
 incrPhaseId = do
   l <- getLocal
   let actorId = l_curr_actor_id l
@@ -359,12 +348,12 @@ incrPhaseId = do
   let locals' = M.insert actorId x' locals
   setLocal $ l {l_locals = locals'}
 
-updateLedgers :: Integer -> Token -> (Integer -> Integer) -> App ()
+updateLedgers :: Integer -> Token -> (Integer -> Integer) -> CoApp ()
 updateLedgers n tok f = do
   _ <- mapM (\x -> updateLedger x tok f) [-1..n]
   return ()
 
-updateLedger :: Account -> Token -> (Integer -> Integer) -> App ()
+updateLedger :: Account -> Token -> (Integer -> Integer) -> CoApp ()
 updateLedger acc tok f = do
   (e, _) <- getState
   let map_ledger = e_ledger e
@@ -374,12 +363,12 @@ updateLedger acc tok f = do
   let new_nw_ledger = M.insert acc (M.insert tok new_amt m) map_ledger
   setGlobal $ e {e_ledger = new_nw_ledger}
 
-transferLedger :: Account -> Account -> Token -> Integer -> App ()
+transferLedger :: Account -> Account -> Token -> Integer -> CoApp ()
 transferLedger fromAcc toAcc tok n = do
   updateLedger fromAcc tok (\x -> x - n)
   updateLedger toAcc tok (+ n)
 
-consensusLookup :: DLVar -> App DLVal
+consensusLookup :: DLVar -> CoApp DLVal
 consensusLookup dlvar = do
   (_, l) <- getState
   let locals = l_locals l
@@ -401,9 +390,9 @@ consensusLookup dlvar = do
 -- ## INTERPRETER ## --
 
 class Interp a where
-  interp :: a -> App DLVal
+  interp :: a -> CoApp DLVal
 
-interpAs :: (Interp a) => ActorId -> a -> App DLVal
+interpAs :: (Interp a) => ActorId -> a -> CoApp DLVal
 interpAs aid p = do
   (g,l) <- getState
   let fAid = l_curr_actor_id l
@@ -415,7 +404,7 @@ interpAs aid p = do
   setState (g',l''')
   return v
 
-interpPrim :: (PrimOp, [DLVal]) -> App DLVal
+interpPrim :: (PrimOp, [DLVal]) -> CoApp DLVal
 interpPrim = \case
   (ADD, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (+) lhs rhs
   (SUB, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (-) lhs rhs
@@ -546,7 +535,9 @@ instance Interp DLExpr where
             Just v -> return v
             Nothing -> possible $ "DLE_Interact: late api call for " ++ partName'
         Nothing -> do
-          suspend $ PS_Suspend (Just at) (A_Interact slcxtframes partName' str dltype args)
+          -- TODO: set local suspension info
+          await
+          -- suspend $ PS_Suspend (Just at) (A_Interact slcxtframes partName' str dltype args)
     DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
       CT_Assert -> interp dlarg
@@ -576,10 +567,14 @@ instance Interp DLExpr where
     DLE_Wait at dltimearg -> case dltimearg of
       Left dlarg -> do
         ev <- vUInt <$> interp dlarg
-        suspend $ PS_Suspend (Just at) (A_AdvanceTime ev)
+        -- TODO: set local suspension info
+        await
+        -- suspend $ PS_Suspend (Just at) (A_AdvanceTime ev)
       Right dlarg -> do
         ev <- vUInt <$> interp dlarg
-        suspend $ PS_Suspend (Just at) (A_AdvanceSeconds ev)
+        -- TODO: set local suspension info
+        await
+        -- suspend $ PS_Suspend (Just at) (A_AdvanceSeconds ev)
     DLE_PartSet _at _slpart dlarg -> interp dlarg
     DLE_MapRef _at dlmvar dlarg -> do
       (g, _) <- getState
@@ -614,7 +609,9 @@ instance Interp DLExpr where
           acc <- fromIntegral <$> vContract <$> interp ra
           tok_billed <- mapM interp dwb_tok_billed
           vs <- mapM interp as
-          v <- suspend $ PS_Suspend (Just at) (A_Remote fs f vs tok_billed)
+          -- v <- suspend $ PS_Suspend (Just at) (A_Remote fs f vs tok_billed)
+          -- TODO: set local suspension info
+          v <- await
           consensusPayout acc consensusId pa
           return v
     DLE_TokenNew _at dln -> do
@@ -821,7 +818,9 @@ instance Interp LLStep where
                 Nothing -> do
                   case msgs' of
                     NotFixedYet _msgs'' -> do
-                      _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
+                      -- _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
+                      -- TODO: set local suspension info
+                      await
                       runWithWinner dlr phId
                     Fixed _ -> do
                       runWithWinner dlr phId
@@ -829,12 +828,16 @@ instance Interp LLStep where
                   case msgs' of
                     NotFixedYet msgs'' -> do
                       _ <- placeMsg dls dlr phId (fromIntegral actId) msgs'' False
-                      _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
+                      -- _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
+                      -- TODO: set local suspension info
+                      await
                       runWithWinner dlr phId
                     Fixed _ -> do
                       runWithWinner dlr phId
             Consensus -> do
-              v <- suspend $ PS_Suspend (Just at) (A_TieBreak phId $ M.keys sends)
+              -- v <- suspend $ PS_Suspend (Just at) (A_TieBreak phId $ M.keys sends)
+              -- TODO: set local suspension info
+              v <- await
               case v of
                 V_Data s v' -> do
                   let actId' = vUInt v'
@@ -861,7 +864,7 @@ instance Interp LLStep where
                   interp $ dr_k
                 _ -> possible "expected V_Data value"
 
-placeMsg :: DLSend -> DLRecv a -> PhaseId -> ActorId -> (M.Map ActorId Message) -> Bool -> App MessageInfo
+placeMsg :: DLSend -> DLRecv a -> PhaseId -> ActorId -> (M.Map ActorId Message) -> Bool -> CoApp MessageInfo
 placeMsg (DLSend {..}) (DLRecv {..}) phId actId priors m_api = do
   g <- getGlobal
   ds_msg' <- mapM interp ds_msg
@@ -874,18 +877,18 @@ placeMsg (DLSend {..}) (DLRecv {..}) phId actId priors m_api = do
   setGlobal g' { e_messages = m'' }
   return m'
 
-poll :: PhaseId -> App (ActorId, APIFlag, Store)
+poll :: PhaseId -> CoApp (ActorId, APIFlag, Store)
 poll phId = do
   (g, l) <- getState
   who <- show <$> whoIs (l_curr_actor_id l)
   return $ fixedMsg $ saferMaybe ("early poll for " <> who) $ M.lookup phId $ e_messages g
 
-runWithWinner :: DLRecv LLConsensus -> PhaseId -> App DLVal
+runWithWinner :: DLRecv LLConsensus -> PhaseId -> CoApp DLVal
 runWithWinner dlr phId = do
   winner dlr phId
   interp $ (dr_k dlr)
 
-winner :: DLRecv LLConsensus -> PhaseId -> App ()
+winner :: DLRecv LLConsensus -> PhaseId -> CoApp ()
 winner dlr phId = do
   g <- getGlobal
   let (actId, apiFlag, winningMsg) = fixedMsg $ saferMaybe "winner" $ M.lookup phId $ e_messages g
@@ -898,7 +901,7 @@ winner dlr phId = do
       return $ a_acc $ saferMaybe "api winner" $ M.lookup (fromIntegral actId) apis
   bindConsensusMeta dlr actId accId
 
-getAccId :: ActorId -> App Account
+getAccId :: ActorId -> CoApp Account
 getAccId actId = do
   l <- getLocal
   let locals = l_locals l
@@ -906,21 +909,21 @@ getAccId actId = do
   let lclsv = saferMaybe ("getAccId: couldn't find actorId: " <> show actId <> ", caid: " <> show caid) $ M.lookup (fromIntegral actId) locals
   return $ fromIntegral $ l_acct lclsv
 
-getPhaseId :: ActorId -> App PhaseId
+getPhaseId :: ActorId -> CoApp PhaseId
 getPhaseId actId = do
   l <- getLocal
   let locals = l_locals l
   let lclsv = saferMaybe "getPhaseId" $ M.lookup (fromIntegral actId) locals
   return $ l_phase lclsv
 
-getMyLocalInfo :: App LocalInfo
+getMyLocalInfo :: CoApp LocalInfo
 getMyLocalInfo = do
   l <- getLocal
   let actId = l_curr_actor_id l
   let locals = l_locals l
   return $ saferMaybe "getMyLocalInfo" $ M.lookup (fromIntegral actId) locals
 
-consensusPayout :: Account -> ActorId -> DLPayAmt -> App ()
+consensusPayout :: Account -> ActorId -> DLPayAmt -> CoApp ()
 consensusPayout accId actId DLPayAmt {..} = do
   _ <-
     mapM
@@ -932,7 +935,7 @@ consensusPayout accId actId DLPayAmt {..} = do
   net <- vUInt <$> interpAs actId pa_net
   transferLedger (fromIntegral accId) simContract nwToken net
 
-bindConsensusMeta :: DLRecv LLConsensus -> ActorId -> Account -> App ()
+bindConsensusMeta :: DLRecv LLConsensus -> ActorId -> Account -> CoApp ()
 bindConsensusMeta (DLRecv {..}) actorId accId = do
   (g, l) <- getState
   addToStore dr_time $ V_UInt (e_nwtime g)
@@ -952,8 +955,9 @@ instance Interp LLProg where
     registerAPIs apiParts
     registerViews $ M.toAscList $ M.map M.toAscList dvs
     interp step
+    return V_Done
 
-isTheTimePast :: Maybe (DLTimeArg, LLStep) -> App (Maybe LLStep)
+isTheTimePast :: Maybe (DLTimeArg, LLStep) -> CoApp (Maybe LLStep)
 isTheTimePast tc_mtime = do
   (g, _) <- getState
   case tc_mtime of
@@ -972,7 +976,7 @@ isTheTimePast tc_mtime = do
           False -> return $ Just step
     Nothing -> return $ Nothing
 
-registerViews :: [(Maybe SLPart, [(SLVar, IType)])] -> App ()
+registerViews :: [(Maybe SLPart, [(SLVar, IType)])] -> CoApp ()
 registerViews [] = return ()
 registerViews ((_, []) : vs) = registerViews vs
 registerViews ((sl, ((slv,ty) : vars)) : vs) = do
@@ -1001,7 +1005,7 @@ registerView (g, l) v_name v_var v_ty = do
           }
   (g', l)
 
-registerParts :: [(SLPart, InteractEnv)] -> App ()
+registerParts :: [(SLPart, InteractEnv)] -> CoApp ()
 registerParts [] = return ()
 registerParts ((p, iv) : ps) = do
   s <- getState
@@ -1025,6 +1029,8 @@ registerPart (g, l) s iv = do
           , l_ks = Nothing
           , l_livs = mempty
           , l_ivd = iv
+          , l_suspensionpt = Nothing
+          , l_action = Nothing
           }
   let locals' = M.insert actorId lcl locals
   let ledger = e_ledger g
@@ -1039,7 +1045,7 @@ registerPart (g, l) s iv = do
   let l' = l {l_locals = locals'}
   (g', l')
 
-registerAPIs :: [(SLPart, InteractEnv)] -> App ()
+registerAPIs :: [(SLPart, InteractEnv)] -> CoApp ()
 registerAPIs [] = return ()
 registerAPIs ((p, iv) : ps) = do
   s <- getState
@@ -1066,7 +1072,7 @@ registerAPI (g, l) a_name a_liv = do
           }
   (g', l)
 
-while :: DLBlock -> LLConsensus -> App DLVal
+while :: DLBlock -> LLConsensus -> CoApp DLVal
 while bl cons = do
   bool <- interp bl
   case bool of
@@ -1121,7 +1127,7 @@ fixedMsg :: G.HasCallStack => MessageInfo -> (ActorId, APIFlag, Store)
 fixedMsg (Fixed (a, m)) = (a, m_api m, m_store m)
 fixedMsg _ = possible "unexpected error: expected fixed message"
 
-whoAmI :: App SimIdentity
+whoAmI :: CoApp SimIdentity
 whoAmI = do
   l <- getLocal
   let actId = l_curr_actor_id l
@@ -1132,7 +1138,7 @@ whoAmI = do
     Nothing -> return Consensus
     Just p -> return $ Participant p
 
-whoIs :: ActorId -> App SimIdentity
+whoIs :: ActorId -> CoApp SimIdentity
 whoIs actId = do
   l <- getLocal
   let locals = l_locals l
