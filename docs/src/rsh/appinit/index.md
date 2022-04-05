@@ -120,8 +120,9 @@ API({ add2: Fun([UInt, UInt], UInt), add1: Fun([UInt], UInt) }, { add1: "add", a
 
 APIs are functions that can be called by other contracts, as well as off-chain.
 
-An API is defined with `{!rsh} API(apiName, apiInterface, apiAlias)` or `{!rsh} API(apiInterface, apiAlias)`, where `{!rsh} apiName` is a string that labels the API, `{!rsh} apiInterface` is an object where each field indicates the type of a function provided by the contract as an API, and `{!rsh} apiAlias` is an object that maps function names from the `{!rsh} apiInterface` to an alias.
-This @{defn("function alias")} allows overloaded methods to be created. Many functions may map to the same alias as long as each function domain is unique.
+An API is defined with `{!rsh} API(apiName, apiInterface, ?apiAlias)` or `{!rsh} API(apiInterface, apiAlias)`, where `{!rsh} apiName` is a string that labels the API, `{!rsh} apiInterface` is an object where each field indicates the type of a function provided by the contract as an API, and `{!rsh} apiAlias` is an optional object that maps function names from the `{!rsh} apiInterface` to an alias.
+This @{defn("function alias")} allows overloaded methods to be created.
+Many functions may map to the same alias as long as each function domain is unique.
 These APIs are available in frontends via the `{!js} ctc.apis` object, wherein fields are the members of `{!rsh} apiInterface` and may be used in `{!rsh} .api` components of `{!rsh} fork` and `{!rsh} parallelReduce` to specify the behavior of the corresponding call.
 These are called @{defn("API member function")}s.
 Each function must occur exactly once in the entire program.

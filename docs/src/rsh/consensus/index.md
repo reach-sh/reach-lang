@@ -488,7 +488,8 @@ const token =
   });
 ```
 
-In this example, the random oracle contract has an overloaded method, `random`. This `random` method accepts 0 or 1 parameters.
+In this example, the random oracle contract has an overloaded method, `random`.
+This `random` method accepts 0 or 1 parameters.
 We explicitly specify that `getRandom` refers to calling the `random` function with no arguments, and `getRandom1` refers to calling the `random` function with 1 argument.
 
 Once constructed, the fields of a remote object represent those remote contract interactions, referred to as @{defn("remote functions")}.
