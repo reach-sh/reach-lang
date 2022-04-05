@@ -1,4 +1,4 @@
-reachc: error[RE0129]: ^ expects arguments of either UInt, Bool, Digest, or Bytes of the same length, but received: Address and Address
+reachc: error[RE0129]: ^ expects arguments of either UInt, UInt256, Bool, Digest, or Bytes of the same length, but received: Address and Address
 
   ./Err_xor_Types.rsh:9:17:application
 

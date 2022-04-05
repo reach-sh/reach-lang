@@ -651,28 +651,28 @@ data SPrimOp
   | S_BTOI_LAST8 Bool
   deriving (Eq, Generic, NFData, Ord, Show)
 
-sprimToPrim :: UIntTy -> SPrimOp -> PrimOp
-sprimToPrim rng = \case
+sprimToPrim :: UIntTy -> UIntTy -> SPrimOp -> PrimOp
+sprimToPrim dom rng = \case
   S_ADD -> ADD rng
   S_SUB -> SUB rng
   S_MUL -> MUL rng
   S_DIV -> DIV rng
   S_MOD -> MOD rng
-  S_PLT -> PLT rng
-  S_PLE -> PLE rng
-  S_PEQ -> PEQ rng
-  S_PGE -> PGE rng
-  S_PGT -> PGT rng
-  S_UCAST dom -> UCAST dom rng
+  S_PLT -> PLT dom
+  S_PLE -> PLE dom
+  S_PEQ -> PEQ dom
+  S_PGE -> PGE dom
+  S_PGT -> PGT dom
+  S_UCAST _ -> UCAST dom rng
   S_IF_THEN_ELSE -> IF_THEN_ELSE
   S_DIGEST_EQ -> DIGEST_EQ
   S_ADDRESS_EQ -> ADDRESS_EQ
   S_TOKEN_EQ -> TOKEN_EQ
   S_LSH -> LSH
   S_RSH -> RSH
-  S_BAND -> BAND
-  S_BIOR -> BIOR
-  S_BXOR -> BXOR
+  S_BAND -> BAND rng
+  S_BIOR -> BIOR rng
+  S_BXOR -> BXOR rng
   S_BYTES_ZPAD n -> BYTES_ZPAD n
   S_MUL_DIV -> MUL_DIV
   S_DIGEST_XOR -> DIGEST_XOR

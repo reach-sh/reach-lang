@@ -8,6 +8,12 @@
 (set-logic ALL)
 
 (define-sort UInt () Int)
+;; These basically say "anything can happen" which is better than an error
+(declare-fun UInt_lsh (UInt UInt) UInt)
+(declare-fun UInt_rsh (UInt UInt) UInt)
+(declare-fun UInt_band (UInt UInt) UInt)
+(declare-fun UInt_bior (UInt UInt) UInt)
+(declare-fun UInt_bxor (UInt UInt) UInt)
 
 (declare-sort Bytes 0)
 (declare-fun bytes0 () Bytes)

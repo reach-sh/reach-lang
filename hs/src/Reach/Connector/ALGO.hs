@@ -1328,7 +1328,7 @@ cprim = \case
           --- UInt64 to UInt256
           padding 3
           ca v
-          op "itob"
+          output $ Titob False
         (True, False) -> do
           --- UInt256 to UInt64
           ca v
@@ -1353,9 +1353,9 @@ cprim = \case
     _ -> impossible "cprim: MUL_DIV args"
   LSH -> call "<<"
   RSH -> call ">>"
-  BAND -> call "&"
-  BIOR -> call "|"
-  BXOR -> call "^"
+  BAND t -> bcall t "&"
+  BIOR t -> bcall t "|"
+  BXOR t -> bcall t "^"
   DIGEST_XOR -> call "b^"
   BYTES_XOR -> call "b^"
   DIGEST_EQ -> call "=="

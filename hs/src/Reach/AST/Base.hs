@@ -340,9 +340,9 @@ data PrimOp
   | SELF_ADDRESS SLPart Bool Int
   | LSH
   | RSH
-  | BAND
-  | BIOR
-  | BXOR
+  | BAND UIntTy
+  | BIOR UIntTy
+  | BXOR UIntTy
   | BYTES_ZPAD Integer
   | MUL_DIV
   | DIGEST_XOR
@@ -352,17 +352,17 @@ data PrimOp
 
 instance Pretty PrimOp where
   pretty = \case
-    ADD _ -> "+"
-    SUB _ -> "-"
-    MUL _ -> "*"
-    DIV _ -> "/"
-    MOD _ -> "%"
-    PLT _ -> "<"
-    PLE _ -> "<="
-    PEQ _ -> "=="
-    PGE _ -> ">="
-    PGT _ -> ">"
-    UCAST x y -> "cast" <> parens (pretty x <> "," <> pretty y)
+    ADD t -> uitp t <> "+"
+    SUB t -> uitp t <> "-"
+    MUL t -> uitp t <> "*"
+    DIV t -> uitp t <> "/"
+    MOD t -> uitp t <> "%"
+    PLT t -> uitp t <> "<"
+    PLE t -> uitp t <> "<="
+    PEQ t -> uitp t <> "=="
+    PGE t -> uitp t <> ">="
+    PGT t -> uitp t <> ">"
+    UCAST x y -> "cast" <> parens (uitp x <> "," <> uitp y)
     IF_THEN_ELSE -> "ite"
     DIGEST_EQ -> "=="
     ADDRESS_EQ -> "=="
@@ -370,14 +370,18 @@ instance Pretty PrimOp where
     SELF_ADDRESS x y z -> "selfAddress" <> parens (render_das [pretty x, pretty y, pretty z])
     LSH -> "<<"
     RSH -> ">>"
-    BAND -> "&"
-    BIOR -> "|"
-    BXOR -> "^"
+    BAND t -> uitp t <> "&"
+    BIOR t -> uitp t <> "|"
+    BXOR t -> uitp t <> "^"
     BYTES_ZPAD x -> "zpad" <> parens (pretty x)
     MUL_DIV -> "muldiv"
     DIGEST_XOR -> "digest_xor"
     BYTES_XOR -> "bytes_xor"
     BTOI_LAST8 isDigest -> "btoiLast8(" <> bool "Bytes" "Digest" isDigest <> ")"
+    where
+      uitp = \case
+        True -> "b"
+        False -> ""
 
 data SLCtxtFrame
   = SLC_CloApp SrcLoc SrcLoc (Maybe SLVar)

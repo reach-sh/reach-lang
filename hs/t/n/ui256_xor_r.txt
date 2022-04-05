@@ -1,0 +1,8 @@
+reachc: error[RE0129]: ^ expects arguments of either UInt, UInt256, Bool, Digest, or Bytes of the same length, but received: UInt and UInt256
+
+  ./ui256_xor_r.rsh:12:15:application
+
+  12|   const y = 5 ^ x;
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0129
+
