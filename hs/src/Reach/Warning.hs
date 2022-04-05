@@ -96,7 +96,7 @@ instance Show Warning where
     W_NoPublish -> "There are no publications in the application."
     W_ExternalObject -> "The `Object` type's format is controlled by Reach; you may want to use `Struct` instead for external interfaces, so you can mandate and document the format."
     W_NetworkSeconds -> "This program uses network seconds, which are unreliable on most consensus networks. You should read the article about this warning to ensure that you understand the risks of building on them."
-    W_UnconstrainedMap -> "Map defined but never used in a loop invariant. This map is unconstrained."
+    W_UnconstrainedMap -> "Map not constrained in all loop invariants."
 
 emitWarning :: Maybe SrcLoc -> Warning -> IO ()
 emitWarning at d =
