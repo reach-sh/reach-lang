@@ -1867,8 +1867,10 @@ pow (2, 40, 10) // => 1,099,511,627,776
 
  `{!rsh} pow(base, power, precision)` calculates the approximate value of raising base to power.
 The third argument must be a `{!rsh} UInt` whose value is known at compile time, which represents the number
-of iterations the algorithm should perform. For reference, `6` iterations provides enough accuracy to calculate
-up to `2^64 - 1`, so the largest power it can compute is `63`.
+of iterations the algorithm should perform.
+For reference, `6` iterations provides enough accuracy to calculate up to `2^64 - 1`, so the largest power it can compute is `2^63`.
+If the number of iterations is not large enough to compute the power, then the result is completely inaccurate.
+It is recommended to create `{!rsh} assert` tests to ensure the possible values your program can compute are accurate.
 
 ### Signed Integers
 
