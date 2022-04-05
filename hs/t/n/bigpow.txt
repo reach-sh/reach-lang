@@ -1,0 +1,13 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 8 theorems; No failures!
+reachc: error[RC0000]: integer literal out of range for ALGO: 18446744073709551616 not in [0,18446744073709551615]
+
+  <builtin>
+
+  
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RC0000
+
