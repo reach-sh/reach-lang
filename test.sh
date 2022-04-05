@@ -132,8 +132,7 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-fc hs/t/n/ui256_cast_l.rsh
-fc hs/t/n/ui256_cast_r.rsh
+fc hs/t/n/ui256_add_l.rsh
 exit 0
 ci ETH uint256
 ci ALGO uint256
