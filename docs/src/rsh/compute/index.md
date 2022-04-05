@@ -648,6 +648,19 @@ Specialized functions exist for equality checking on each supported type.
 If `{!rsh} verifyArithmetic` is `{!rsh} true`, then arithmetic operations automatically make a static assertion that their arguments would not overflow the bit width of the enabled consensus networks.
 If it is `{!rsh} false`, then the connector will ensure this dynamically.
 
+### Numeric Casting
+
+Reach has different unsigned integer types, `{!rsh} UInt` and `{!rsh} UInt256`.
+These values can be casted from one to the other by calling the type as a function with a value.
+
+For example, if `x` is a `{!rsh} UInt`, then `{!rsh} UInt256(x)` is `x` zero-extended to 256 bits.
+Similarly, if `y` is a `{!rsh} UInt256`, then `{!rsh} UInt(y)` is `y` with as many bits as `{!rsh} UInt` has.
+In the second case, if `y` has any non-zero bits that would be lost by the truncation, then the cast will fail at runtime.
+This is guaranteed to not happen when you compile with `{!rsh} verifyArithmetic`.
+
+Numeric literals in your program are considered `{!rsh} UInt`.
+If they are cast to `{!rsh} UInt256`, then your program can contain constant `{!rsh} UInt256` values.
+
 ### boolXor
 
 @{ref("rsh", "boolXor")}
