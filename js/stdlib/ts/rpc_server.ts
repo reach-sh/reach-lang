@@ -103,9 +103,9 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
      ...[ 'connector'
         ].map(p => ({ [p]: () => lib[p] }) )),
 
-    ...Object.assign({}, // Synchronous functions with serializable output
-     ...[ 'parseCurrency'
-        , 'assert'
+    ...Object.assign({}, // Un-tweaked functions with serializable output
+     ...[ 'assert'
+        , 'parseCurrency'
         ].map(f => ({ [f]: lib[f] }) )),
 
     newTestAccount: async (bal: any) =>
@@ -210,7 +210,7 @@ export const serveRpc = async (backend: any) => {
 
   const rpc_ctc = {
     getInfo: async (id: string) =>
-      contract.id(id).getInfo(),
+      await contract.id(id).getInfo(),
   };
 
   const rpc_launchToken = {
