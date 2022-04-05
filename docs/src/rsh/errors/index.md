@@ -2766,3 +2766,37 @@ relativeSecs(t) // references network seconds
 absoluteSecs(t) // references network seconds
 lastConsensusSecs() // references network seconds
 ```
+
+## {#RW0007} RW0007
+
+This warning indicates that you have defined a `{!rsh} Map` or `{!rsh} Set` but have not mentioned it in every loop invariant.
+An unconstrained map is dangerous.
+Expectations about map behavior should be made explicit through invariants.
+
+### Problematic code:
+
+```reach
+const bids = new Map(UInt);
+var numBidders = 0;
+invariant(true);
+while (true) {
+  // ... some logic ...
+  bids[b] = newBid;
+  numBidders = numBidders + 1;
+  continue;
+}
+```
+
+### Correct code:
+
+```reach
+const bids = new Map(UInt);
+var numBidders = 0;
+invariant(bids.size() == numBidders);
+while (true) {
+  // ... some logic ...
+  bids[b] = newBid;
+  numBidders = numBidders + 1;
+  continue;
+}
+```
