@@ -1,6 +1,6 @@
 import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
-import * as clientBackend from './build/client.main.mjs';
+import * as clientBackend from './build/index.client.mjs';
 
 const stdlib = loadStdlib(process.env);
 const startingBalance = stdlib.parseCurrency(100);
