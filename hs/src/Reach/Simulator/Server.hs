@@ -86,26 +86,21 @@ initSession = Session
   , e_src_txt = mempty
   }
 
-processNewState :: Maybe (StateId) -> StateCategory -> WebM ()
-processNewState psid sc = do
+processNewState :: Maybe (StateId) -> C.State -> StateCategory -> C.CoApp C.DLVal -> WebM (C.CoApp C.DLVal)
+processNewState psid (g,l) sc ps = do
   sid <- gets e_nsid
   actorId <- gets e_actor_id
   edges <- gets e_edges
   parents <- gets e_parents
-  -- get a at' stat
-  registerAction sid actorId a
-  registerLoc sid actorId at'
-  -- get state s
-  let ((g,l), stat) =
-        case ps of
-          C.PS_Done s _ -> do
-            (s, Done)
-          C.PS_Suspend _ _ s _ -> do
-            (s, Running)
   graph <- gets e_graph
   cgraph <- gets e_cgraph
   let locals = C.l_locals l
   let lcl = saferMaybe "processNewState" $ M.lookup actorId locals
+  let a = C.l_action lcl
+  let at' = C.l_suspensionpt lcl
+  registerAction sid actorId a
+  registerLoc sid actorId at'
+  let stat = C.l_status lcl
   let lcl' = lcl { C.l_ks = Just ps }
   let l' = l { C.l_locals = M.insert actorId lcl' locals }
   modify $ \ st -> st
@@ -120,6 +115,7 @@ processNewState psid sc = do
         { e_edges = (psid', sid) : edges
         , e_parents = (sid, psid') : parents
         }
+  return ps
 
 registerLoc :: StateId -> C.ActorId -> SrcLoc -> WebM ()
 registerLoc sid actorId at = do
@@ -307,8 +303,9 @@ unblockProg sid' aid' v = do
           let l = l' {C.l_curr_actor_id = actorId}
           case M.lookup aid avActions of
             Just (C.A_Interact _slcxtframes _part _str _dltype _args) -> do
-              let ps = k (g,l) v
-              processNewState (Just sid) ps Local
+              -- let ps = k (g,l) v
+              bounce (\(Request s f) -> lift $ processNewState (Just sid) s Local $ f ((g,l),v)) k
+              -- processNewState (Just sid) k' Local
             Just (C.A_Remote _slcxtframes _str _args1 _args2) -> do
               let ps = k (g,l) v
               processNewState (Just sid) ps Consensus
