@@ -1243,6 +1243,7 @@ run' = command "run" . info f $ d <> noIntersperse
         set +e
         docker build -f $dockerfile' --tag=$appImageTag . \
           && docker-compose -f "$$TMP/docker-compose.yml" run \
+            -e REACHC_ID="$whoami'" \
             --name "$$CNAME"$$NO_DEPS --rm $appService $args''
         RES="$?"
         set -e
@@ -1342,6 +1343,7 @@ react = command "react" $ info f d
           $dd
           $reachEx$dr compile $cargs
           docker-compose -f "$$TMP/docker-compose.yml" run \
+            -e REACHC_ID="$whoami'" \
             --name $appService$$NO_DEPS --service-ports --rm $appService
         |]
 
@@ -1355,6 +1357,7 @@ rpcServer' appService nolog = do
     $dd
     $reachEx$dr compile
     docker-compose -f "$$TMP/docker-compose.yml" run \
+      -e REACHC_ID="$whoami'" \
       --name $appService$$NO_DEPS --service-ports --rm $appService
   |]
 
@@ -1487,7 +1490,8 @@ devnet = command "devnet" $ info f d
         write
           [N.text|
         $dd
-        docker-compose -f "$$TMP/docker-compose.yml" run --name $n$$NO_DEPS --service-ports --rm $s$a
+        docker-compose -f "$$TMP/docker-compose.yml" run \
+          -e REACHC_ID="$whoami'" --name $n$$NO_DEPS --service-ports --rm $s$a
       |]
         when abg $
           write
