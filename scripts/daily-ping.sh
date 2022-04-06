@@ -13,7 +13,9 @@ ping_devnet() {
     \"version\": \"$REACH_VERSION\",
     \"elapsed\": \"$ELAPSED\",
     \"result\": \"devnet 24h ping\",
-    \"connectorMode\": \"$REACH_CONNECTOR_MODE\"
+    \"connectorMode\": \"$REACH_CONNECTOR_MODE\",
+    \"initiator\": \"devnet_24h_ping\",
+    \"usingVisualStudioExtension\": false
   }"
 
   curl \
