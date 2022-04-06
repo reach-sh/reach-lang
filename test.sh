@@ -62,7 +62,7 @@ ci () {
   ${REACH} compile --install-pkgs
   ${REACH} compile --intermediate-files
   make build
-  REACH_DEBUG=N REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=Y REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 
@@ -132,9 +132,12 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-jb
-ci ETH uint256
+#jb
+ci ALGO clawback
+exit 0
 ci ALGO uint256
+exit 0
+ci ETH uint256
 exit 0
 
 jb
