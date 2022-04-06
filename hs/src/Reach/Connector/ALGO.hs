@@ -592,7 +592,7 @@ opt_b1 = \case
       e2n :: Integer
       e2n = s0n + (fromIntegral e1w)
   (TInt x) : (Titob _) : l ->
-    opt_b1 $ (TBytes $ itob 4 x) : l
+    opt_b1 $ (TBytes $ itob 8 x) : l
   (TBytes xbs) : (TCode "btoi" []) : l ->
     opt_b1 $ (TInt $ btoi xbs) : l
   (TBytes xbs) : (TCode "sha256" []) : l ->
