@@ -259,6 +259,16 @@ jobs:
         paths:
           - artifacts
           - record
+    # This should only notify if something goes fatally wrong.
+    # Regular test failures go through to the sink.
+    - slack/notify:
+        event: fail
+        custom: |
+          { "blocks": [
+              { "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "**examples.<<parameters.connector>>**: <${CIRCLE_BUILD_URL}|catastrophic failure>" }}]}
   "examples-sink":
     executor: fake
     steps:
