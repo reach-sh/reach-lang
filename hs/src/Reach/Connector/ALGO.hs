@@ -905,6 +905,7 @@ data LibFun
   = LF_cMapLoad
   | LF_checkTxn_net
   | LF_checkTxn_tok
+  | LF_checkUInt256ResultLen
   deriving (Eq, Ord, Show)
 
 libDefns :: App ()
@@ -1312,11 +1313,11 @@ czpad xtra = do
 cprim :: PrimOp -> [DLArg] -> App ()
 cprim = \case
   SELF_ADDRESS {} -> impossible "self address"
-  ADD t -> bcall t "+"
-  SUB t -> bcall t "-"
-  MUL t -> bcall t "*"
-  DIV t -> bcall t "/"
-  MOD t -> bcall t "%"
+  ADD t -> bcallz t "+"
+  SUB t -> bcallz t "-"
+  MUL t -> bcallz t "*"
+  DIV t -> bcallz t "/"
+  MOD t -> bcallz t "%"
   PLT t -> bcall t "<"
   PLE t -> bcall t "<="
   PEQ t -> bcall t "=="
@@ -1327,20 +1328,21 @@ cprim = \case
       case (from, to) of
         (False, True) -> do
           --- UInt64 to UInt256
-          padding 3
+          padding $ 3 * 8
           ca v
           output $ Titob False
+          op "concat"
         (True, False) -> do
           --- UInt256 to UInt64
           ca v
           -- [ v ]
           dupn 3
           -- [ v, v, v, v ]
-          let ext i = cint i >> op "extract_uint64"
+          let ext i = cint (8 * i) >> op "extract_uint64"
           let go i = ext i >> cint 0 >> asserteq
-          go 0
-          go 1
           go 2
+          go 1
+          go 0
           ext 3
         x -> impossible $ "ucast " <> show x
     _ -> impossible "cprim: UCAST args"
@@ -1354,9 +1356,9 @@ cprim = \case
     _ -> impossible "cprim: MUL_DIV args"
   LSH -> call "<<"
   RSH -> call ">>"
-  BAND t -> bcall t "&"
-  BIOR t -> bcall t "|"
-  BXOR t -> bcall t "^"
+  BAND t -> bcallz t "&"
+  BIOR t -> bcallz t "|"
+  BXOR t -> bcallz t "^"
   DIGEST_XOR -> call "b^"
   BYTES_XOR -> call "b^"
   DIGEST_EQ -> call "=="
@@ -1416,6 +1418,20 @@ cprim = \case
       forM_ args ca
       op o
     bcall t o = call $ (if t then "b" else "") <> o
+    bcallz t o args = do
+      bcall t o args
+      when t $ do
+        libCall LF_checkUInt256ResultLen $ do
+          op "dup"
+          op "len"
+          cint $ typeSizeOf $ T_UInt uint256
+          op "swap"
+          op "-"
+          -- This traps on purpose when the result is longer than 256
+          op "bzero"
+          op "swap"
+          op "concat"
+          op "retsub"
 
 cconcatbs_ :: (DLType -> App ()) -> [(DLType, App ())] -> App ()
 cconcatbs_ f l = do

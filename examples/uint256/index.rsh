@@ -19,7 +19,7 @@ export const main = Reach.App(() => {
   const s2b = UInt256(s2);
   const b2s = UInt(b2);
 
-  const f = (isN) => (g) => [
+  const f = (isN, g) => [
     g(b1, b2),
     g(b1, b3),
     g(b2, b3),
@@ -34,13 +34,11 @@ export const main = Reach.App(() => {
       UInt(g(s1b, b3)),
     ] : []),
   ];
-  const g = f(false);
-  const h = f(true);
   commit();
 
-  const F = (i, mk) => {
+  const F = (isN) => (i, g) => {
     A.publish();
-    const x1 = mk();
+    const x1 = f(isN, g);
     commit();
     A.only(() => {
       const x2 = x1;
@@ -50,24 +48,22 @@ export const main = Reach.App(() => {
     commit();
     A.interact.check(i, x1);
   };
+  const G = F(false);
+  const H = F(true);
 
-  F(0, () => [
-    h((u, v) => u + v),
-    h((u, v) => u - v),
-    h((u, v) => u * v),
-  ]);
-  F(1, () => [
-    h((u, v) => u / v),
-    h((u, v) => u % v),
-    h((u, v) => u ^ v),
-  ]);
-  F(2, () => [
-    g((u, v) => u < v),
-    g((u, v) => u <= v),
-    g((u, v) => u == v),
-    g((u, v) => u >= v),
-    g((u, v) => u > v),
-  ]);
+  H( 0, (u, v) => u + v);
+  H( 1, (u, v) => u - v);
+  H( 2, (u, v) => u * v);
+  H( 3, (u, v) => u / v);
+  H( 4, (u, v) => u % v);
+  H( 5, (u, v) => u ^ v);
+  H( 6, (u, v) => u | v);
+  H( 7, (u, v) => u & v);
+  G( 8, (u, v) => u < v);
+  G( 9, (u, v) => u <= v);
+  G(10, (u, v) => u == v);
+  G(11, (u, v) => u >= v);
+  G(12, (u, v) => u > v);
 
   exit();
 });
