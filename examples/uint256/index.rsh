@@ -1,5 +1,31 @@
 'reach 0.1';
 
+export const trap = Reach.App(() => {
+  const A = Participant('A', { go: Fun([], Null) });
+  const P = API({
+    add: Fun([UInt256, UInt256], UInt256),
+    sub: Fun([UInt256, UInt256], UInt256),
+    mul: Fun([UInt256, UInt256], UInt256),
+    div: Fun([UInt256, UInt256], UInt256),
+    mod: Fun([UInt256, UInt256], UInt256),
+    cast: Fun([UInt256], UInt),
+  });
+  init();
+  A.publish();
+  A.interact.go();
+  commit();
+  fork()
+    .api(P.add, (x, y, k) => { k(x+y); })
+    .api(P.sub, (x, y, k) => { k(x-y); })
+    .api(P.mul, (x, y, k) => { k(x*y); })
+    .api(P.div, (x, y, k) => { k(x/y); })
+    .api(P.mod, (x, y, k) => { k(x%y); })
+    .api(P.cast, (x, k) => { k(UInt(x)); })
+  ;
+  commit();
+  exit();
+});
+
 export const main = Reach.App(() => {
   const A = Participant('A', {
     vs1: Tuple(UInt256, UInt256, UInt, UInt),

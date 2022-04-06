@@ -1,4 +1,5 @@
 import { loadStdlib } from '@reach-sh/stdlib';
+import * as backendTrap from './build/index.trap.mjs';
 import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib();
 const bn = stdlib.bigNumberify;
@@ -9,6 +10,43 @@ const assertEq = (i, j, expected, actual) => {
   stdlib.assert(exps === acts); };
 const accA = await stdlib.newTestAccount(stdlib.parseCurrency(100));
 accA.setGasLimit(5000000);
+
+// Test trap
+const trapGo = async (f, ...args) => {
+  console.log(`Calling ${f}(${args})`);
+  const ctcA = accA.contract(backendTrap);
+  await ctcA.p.A({
+    go: async () => {
+      await ctcA.a[f](...args);
+    }
+  });
+};
+const trapNo = async (f, ...args) => {
+  try {
+    await trapGo(f, ...args);
+    throw 42;
+  } catch (e) {
+    if ( e === 42 ) {
+      throw Error(`${f}(${args}) succeeded, but shouldn't`);
+    }
+    console.log(`Got error`, e);
+  }
+};
+
+await trapGo('add', bn(1), bn(2));
+await trapNo('add', bn(2).pow(256).sub(1), bn(2));
+await trapGo('sub', bn(2), bn(1));
+await trapNo('sub', bn(1), bn(2));
+await trapGo('mul', bn(2), bn(4));
+await trapNo('mul', bn(2).pow(129), bn(2).pow(129));
+await trapGo('div', bn(4), bn(2));
+await trapNo('div', bn(4), bn(0));
+await trapGo('mod', bn(4), bn(2));
+await trapNo('mod', bn(4), bn(0));
+await trapGo('cast', bn(4));
+await (( stdlib.connector === 'ALGO' ) ? trapNo : trapGo)('cast', bn(2).pow(80));
+
+// Test main
 const ctcA = accA.contract(backend);
 const b1 = bn(2).pow(128);
 const b2 = bn(2).pow(24);

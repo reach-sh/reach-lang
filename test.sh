@@ -133,9 +133,9 @@ export REACH_BUILD_NO_CACHE=Y
 ############################
 
 #jb
-ci ETH uint256
-exit 0
 ci ALGO uint256
+exit 0
+ci ETH uint256
 exit 0
 
 jb

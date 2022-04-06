@@ -617,7 +617,7 @@ padTo :: Int -> a -> [a] -> [a]
 padTo p d l = replicate (p - length l) d <> l
 
 itob :: Int -> Integer -> BS.ByteString
-itob howMany = BS.pack . padTo howMany 0 . unroll
+itob howMany = BS.pack . padTo howMany 0 . reverse . unroll
 
 btoi :: BS.ByteString -> Integer
 btoi = roll . BS.unpack
