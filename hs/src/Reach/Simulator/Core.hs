@@ -114,6 +114,12 @@ data Global = Global
 
 instance ToJSON Global
 
+data Status = Initial | Running | Done
+  deriving (Show, Generic)
+
+instance ToJSON Status
+instance FromJSON Status
+
 data LocalInfo = LocalInfo
   { l_acct :: Account
   , l_who :: Maybe Participant
@@ -124,6 +130,7 @@ data LocalInfo = LocalInfo
   , l_ivd :: InteractEnv
   , l_suspensionpt :: Maybe SrcLoc
   , l_action :: Maybe Action
+  , l_status :: Status
   }
   deriving (Generic)
 
@@ -179,6 +186,7 @@ initLocal =
             , l_ivd = mempty
             , l_suspensionpt = Nothing
             , l_action = Nothing
+            , l_status = Initial
             }
     , l_curr_actor_id = consensusId
     }
@@ -194,7 +202,7 @@ initLocal =
 --   toJSON (PS_Done _ _) = "PS_Done"
 --   toJSON (PS_Suspend _ _ _ _) = "PS_Suspend"
 
-instance ToJSON (Coroutine (Await DLVal) App DLVal) where
+instance ToJSON (Coroutine (Request State (State, DLVal)) App DLVal) where
   toJSON _ = "CoApp"
 
 --
@@ -209,7 +217,7 @@ instance ToJSON (Coroutine (Await DLVal) App DLVal) where
 
 type App = ReaderT State IO
 
-type CoApp = Coroutine (Await DLVal) App
+type CoApp = Coroutine (Request State (State,DLVal)) App
 
 getState :: CoApp State
 getState = undefined
@@ -301,7 +309,6 @@ data DLVal
   | V_Object (M.Map SLVar DLVal)
   | V_Data SLVar DLVal
   | V_Struct [(SLVar, DLVal)]
-  | V_Done
   deriving (Eq, Ord, Show, Generic)
 
 instance ToJSON DLVal
@@ -403,6 +410,12 @@ interpAs aid p = do
   let l''' = l'' {l_curr_actor_id = fAid}
   setState (g',l''')
   return v
+
+sus :: CoApp DLVal
+sus = do
+  s <- lift ask
+  (s',v) <- request s
+  lift $ local (\_ -> s') $ return v
 
 interpPrim :: (PrimOp, [DLVal]) -> CoApp DLVal
 interpPrim = \case
@@ -536,7 +549,7 @@ instance Interp DLExpr where
             Nothing -> possible $ "DLE_Interact: late api call for " ++ partName'
         Nothing -> do
           -- TODO: set local suspension info
-          await
+          sus
           -- suspend $ PS_Suspend (Just at) (A_Interact slcxtframes partName' str dltype args)
     DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
@@ -568,12 +581,12 @@ instance Interp DLExpr where
       Left dlarg -> do
         ev <- vUInt <$> interp dlarg
         -- TODO: set local suspension info
-        await
+        sus
         -- suspend $ PS_Suspend (Just at) (A_AdvanceTime ev)
       Right dlarg -> do
         ev <- vUInt <$> interp dlarg
         -- TODO: set local suspension info
-        await
+        sus
         -- suspend $ PS_Suspend (Just at) (A_AdvanceSeconds ev)
     DLE_PartSet _at _slpart dlarg -> interp dlarg
     DLE_MapRef _at dlmvar dlarg -> do
@@ -611,7 +624,7 @@ instance Interp DLExpr where
           vs <- mapM interp as
           -- v <- suspend $ PS_Suspend (Just at) (A_Remote fs f vs tok_billed)
           -- TODO: set local suspension info
-          v <- await
+          v <- sus
           consensusPayout acc consensusId pa
           return v
     DLE_TokenNew _at dln -> do
@@ -820,7 +833,7 @@ instance Interp LLStep where
                     NotFixedYet _msgs'' -> do
                       -- _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
                       -- TODO: set local suspension info
-                      await
+                      sus
                       runWithWinner dlr phId
                     Fixed _ -> do
                       runWithWinner dlr phId
@@ -830,14 +843,14 @@ instance Interp LLStep where
                       _ <- placeMsg dls dlr phId (fromIntegral actId) msgs'' False
                       -- _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
                       -- TODO: set local suspension info
-                      await
+                      sus
                       runWithWinner dlr phId
                     Fixed _ -> do
                       runWithWinner dlr phId
             Consensus -> do
               -- v <- suspend $ PS_Suspend (Just at) (A_TieBreak phId $ M.keys sends)
               -- TODO: set local suspension info
-              v <- await
+              v <- sus
               case v of
                 V_Data s v' -> do
                   let actId' = vUInt v'
@@ -954,8 +967,9 @@ instance Interp LLProg where
     registerParts regParts
     registerAPIs apiParts
     registerViews $ M.toAscList $ M.map M.toAscList dvs
-    interp step
-    return V_Done
+    v <- interp step
+    -- TODO: set local state status to "Done"
+    return v
 
 isTheTimePast :: Maybe (DLTimeArg, LLStep) -> CoApp (Maybe LLStep)
 isTheTimePast tc_mtime = do
@@ -1031,6 +1045,7 @@ registerPart (g, l) s iv = do
           , l_ivd = iv
           , l_suspensionpt = Nothing
           , l_action = Nothing
+          , l_status = Initial
           }
   let locals' = M.insert actorId lcl locals
   let ledger = e_ledger g

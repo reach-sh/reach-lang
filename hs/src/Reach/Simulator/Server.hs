@@ -48,12 +48,6 @@ type Graph = M.Map StateId C.State
 
 type CategoryGraph = M.Map StateId StateCategory
 
-data Status = Initial | Running | Done
-  deriving (Show, Generic)
-
-instance ToJSON Status
-instance FromJSON Status
-
 data StateCategory = Local | Consensus
   deriving (Show, Generic)
 
@@ -68,7 +62,7 @@ data Session = Session
   , e_graph :: Graph
   , e_cgraph :: CategoryGraph
   , e_src :: Maybe LLProg
-  , e_status :: Status
+  , e_status :: C.Status
   , e_edges :: [(StateId,StateId)]
   , e_parents :: [(StateId,StateId)]
   , e_locs :: M.Map C.ActorId (M.Map StateId SrcLoc)
@@ -92,21 +86,16 @@ initSession = Session
   , e_src_txt = mempty
   }
 
-processNewState :: Maybe (StateId) -> C.PartState -> StateCategory -> WebM ()
-processNewState psid ps sc = do
+processNewState :: Maybe (StateId) -> StateCategory -> WebM ()
+processNewState psid sc = do
   sid <- gets e_nsid
   actorId <- gets e_actor_id
   edges <- gets e_edges
   parents <- gets e_parents
-  _ <- case ps of
-    C.PS_Done _ _ -> do
-      registerAction sid actorId C.A_None
-    C.PS_Suspend at a _ _ -> do
-      registerAction sid actorId a
-      case at of
-        Nothing -> return ()
-        Just at' -> do
-          registerLoc sid actorId at'
+  -- get a at' stat
+  registerAction sid actorId a
+  registerLoc sid actorId at'
+  -- get state s
   let ((g,l), stat) =
         case ps of
           C.PS_Done s _ -> do
