@@ -133,7 +133,7 @@ export REACH_BUILD_NO_CACHE=Y
 ############################
 
 #jb
-ci ALGO clawback
+ci ALGO abstract-tok
 exit 0
 ci ALGO uint256
 exit 0
