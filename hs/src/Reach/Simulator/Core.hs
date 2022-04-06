@@ -245,17 +245,17 @@ setLocal l = do
   g <- getGlobal
   setState (g, l)
 
--- runApp :: State -> App DLVal -> PartState
--- runApp st (App f) = f st PS_Done
---
--- initApp :: LLProg -> State -> PartState
--- initApp p st = runApp st $ interp p
---
--- initAppFromStep :: LLStep -> State -> PartState
--- initAppFromStep step st = runApp st $ interp step
---
--- runWithState :: (Interp a) => a -> State -> PartState
--- runWithState k st = runApp st $ interp k
+runApp :: State -> CoApp DLVal -> CoApp DLVal
+runApp st co = undefined
+
+initApp :: LLProg -> State -> CoApp DLVal
+initApp p st = runApp st $ interp p
+
+initAppFromStep :: LLStep -> State -> CoApp DLVal
+initAppFromStep step st = runApp st $ interp step
+
+runWithState :: (Interp a) => a -> State -> CoApp DLVal
+runWithState k st = runApp st $ interp k
 
 ledgerNewTokenRefs :: Integer -> DLTokenNew -> CoApp (Token)
 ledgerNewTokenRefs n tk = do

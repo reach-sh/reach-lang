@@ -21,6 +21,8 @@ import Data.Maybe (fromMaybe)
 import GHC.Generics
 import Network.Wai.Middleware.RequestLogger
 import Web.Scotty.Trans
+import Control.Monad.Coroutine
+import Control.Monad.Coroutine.SuspensionFunctors
 
 instance Default Session where
   def = initSession
@@ -244,7 +246,7 @@ viewCall sid vid v = do
   case M.lookup (fromIntegral sid) graph of
     Nothing -> do
       possible "viewCall: previous state not found"
-    Just (g, l) -> do
+    Just (g,l) -> do
       let views = C.e_views g
       case M.lookup vid views of
         Nothing -> possible "viewCall: View not found"
