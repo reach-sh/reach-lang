@@ -13,7 +13,7 @@ export const main = Reach.App(() => {
   A.only(() => {
     const a = declassify(interact.get()); });
   A.publish(a);
-  const m = new Map(UInt);
+  const m = new Map(Address, UInt);
   assert(m[A] == MUInt.None());
 
   const read = () => maybe(m[A], 0, (x) => x);

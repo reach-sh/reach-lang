@@ -140,6 +140,7 @@ instance Monoid a => Monoid (App a) where
 data SMTMapInfo = SMTMapInfo
   { sm_c :: Counter
   , sm_t :: DLType
+  , sm_kt :: DLType
   , sm_rs :: IORef [SMTMapRecordReduce]
   , sm_us :: IORef SMTMapRecordUpdate
   }
@@ -215,6 +216,7 @@ ctxtNewScope m = do
         return $
           SMTMapInfo
             { sm_t = sm_t
+            , sm_kt = sm_kt
             , sm_c = sm_c'
             , sm_rs = sm_rs'
             , sm_us = sm_us'
@@ -784,7 +786,7 @@ smtMapLookupC mpv = do
 smtMapSort :: DLMVar -> App SExpr
 smtMapSort mpv = do
   SMTMapInfo {..} <- smtMapLookupC mpv
-  t_addr' <- smtTypeSort $ T_Address
+  t_addr' <- smtTypeSort $ sm_kt
   sm_t' <- smtTypeSort sm_t
   return $ smtApply "Array" [Atom t_addr', Atom sm_t']
 
@@ -1596,6 +1598,7 @@ _verify_smt mc ctxt_vst smt lp = do
   let initMapInfo mi = do
         sm_c <- liftIO $ newCounter 0
         let sm_t = dlmi_tym mi
+        let sm_kt = dlmi_kt mi
         sm_rs <- liftIO $ newIORef mempty
         sm_us <- liftIO $ newIORef SMR_New
         return $ SMTMapInfo {..}

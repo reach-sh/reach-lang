@@ -10,7 +10,7 @@ export const main = Reach.App(() => {
   init();
 
   A.publish();
-  const m = new Map(UInt);
+  const m = new Map(Address, UInt);
   commit();
 
   A.only(() => { const a = declassify(interact.get()); });

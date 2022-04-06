@@ -5,6 +5,6 @@ export const main =
     [ Participant('A', {}) ],
     (A) => {
       A.publish();
-      const m = new Map(UInt);
+      const m = new Map(Address, UInt);
       m.reduce(0, (acc, x) => acc + x);
     });

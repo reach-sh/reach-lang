@@ -27,7 +27,7 @@ export const main = Reach.App(() => {
 
   F.publish(p);
 
-  const ctMap = new Map(UInt);
+  const ctMap = new Map(Address, UInt);
   const [sum, stop] = parallelReduce([0, false])
     .invariant(balance() == sum && balance() == ctMap.sum())
     .while(! stop && balance() < p.goal)

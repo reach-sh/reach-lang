@@ -5,7 +5,7 @@ export const main = Reach.App(() => {
   const P = API('P', { f: Fun([Address], Bool) });
   init();
   D.publish();
-  const m = new Map(Struct([["p", Bool]]));
+  const m = new Map(Address, Struct([["p", Bool]]));
   const kg =
     parallelReduce(true)
     .invariant(balance() == 0)

@@ -44,7 +44,7 @@ export const main = Reach.App(() => {
       Player.only(() => {
         const _ticket = interact.random(); });
 
-      const randomsM = new Map(Digest);
+      const randomsM = new Map(Address, Digest);
       const [ howMany ] =
         parallelReduce([ 0 ])
         .invariant(balance() == ticketPrice * howMany)
@@ -80,7 +80,7 @@ export const main = Reach.App(() => {
         exit();
       }
 
-      const ticketsM = new Map(UInt);
+      const ticketsM = new Map(Address, UInt);
       const [ hwinner, howManyReturned ] =
         parallelReduce([ 0, 0 ])
         .invariant(balance() == howMany * ticketPrice)

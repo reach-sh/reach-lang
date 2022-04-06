@@ -14,7 +14,7 @@ export const main = Reach.App(() => {
   init();
 
   D.publish();
-  const M = new Map(UInt);
+  const M = new Map(Address, UInt);
   D.interact.ready();
 
   const [done, amt] = parallelReduce([false, 0])

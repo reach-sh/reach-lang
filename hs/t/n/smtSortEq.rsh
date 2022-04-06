@@ -5,7 +5,7 @@ export const main = Reach.App(() => {
   const B = ParticipantClass('B', { });
   init();
   A.publish();
-  const xM = new Map(UInt);
+  const xM = new Map(Address, UInt);
   const x = parallelReduce(0)
     .invariant(
       balance() == 0

@@ -15,7 +15,7 @@ export const main = Reach.App(() => {
   });
   A.publish(i, who1, who2);
   require(A != who2);
-  const M = new Map(UInt);
+  const M = new Map(Address, UInt);
   M[A] = 0;
   commit();
   A.publish();

@@ -11,7 +11,7 @@ export const main = Reach.App(() => {
   init();
 
   A.publish();
-  const m = new Map(UInt);
+  const m = new Map(Address, UInt);
   A.interact.check(m[A], MUInt.None());
   commit();
 

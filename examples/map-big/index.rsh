@@ -13,7 +13,7 @@ export const main = Reach.App(() => {
   init();
 
   A.publish();
-  const m = new Map(T);
+  const m = new Map(Address, T);
   A.interact.check(m[A], MT.None());
   commit();
 
