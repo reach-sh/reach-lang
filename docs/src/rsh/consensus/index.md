@@ -536,10 +536,6 @@ Such dereferences return a value of type `{!rsh} Maybe(VAL_TYPE_EXPR)`, because 
 A mapping may be modified by writing `{!rsh} map[EXPR] = VALUE_EXPR` to install `{!rsh} VALUE_EXPR` (of type `{!rsh} VAL_TYPE_EXPR`) at `{!rsh} EXPR`, or by writing `{!rsh} delete map[EXPR]` to remove the mapping entry.
 Such modifications may only occur in a consensus step.
 
-:::note
-Algorand only supports `{!rsh} KEY_TYPE_EXPR`s of type `{!rsh} Address`.
-:::
-
 ### Sets: creation and modification
 
 @{ref("rsh", "Set")}
