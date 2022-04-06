@@ -7,7 +7,7 @@ export const main = Reach.App(() => {
   init();
 
   A.publish();
-  const m = new Map(Address, UInt);
+  const m = new Map(UInt);
   assert(m[A] == MUInt.None(), "m initially empty");
   commit();
 

@@ -418,7 +418,7 @@ export const pow = (base, power, precision) =>
 
 export const Set = {
   new: () => {
-    const s = new Map(Address, Null);
+    const s = new Map(Null);
     return {
       insert: (v) => { s[v] = null; },
       remove: (v) => { delete s[v]; },

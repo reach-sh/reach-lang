@@ -13,8 +13,8 @@ export const main = Reach.App(() => {
   init();
 
   A.publish();
-  const m = new Map(Address, UInt);
-  const n = new Map(Address, Bool);
+  const m = new Map(UInt);
+  const n = new Map(Bool);
   A.interact.check(m[A], MUInt.None());
   A.interact.check(n[A], MBool.None());
   commit();

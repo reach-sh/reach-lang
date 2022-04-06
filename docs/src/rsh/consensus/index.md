@@ -524,11 +524,13 @@ This operation may not be used with `{!rsh} REMOTE_FUN.bill`.
 @{ref("rsh", "Map")}
 ```reach
 const bidsM = new Map(Address, UInt);
+       // or `new Map(UInt);`
 bidsM[this] = 17;
 delete bidsM[this];
 ```
 
-A new mapping of linear state may be constructed in a consensus step by writing `{!rsh} new Map(KEY_TYPE_EXPR, VAL_TYPE_EXPR)`, where `{!rsh} KEY_TYPE_EXPR` and `{!rsh} VAL_TYPE_EXPR` are types.
+A new mapping of linear state may be constructed in a consensus step by writing `{!rsh} new Map(VAL_TYPE_EXPR)` or `{!rsh} new Map(KEY_TYPE_EXPR, VAL_TYPE_EXPR)`, where `{!rsh} KEY_TYPE_EXPR` and `{!rsh} VAL_TYPE_EXPR` are types.
+If `{!rsh} KEY_TYPE_EXPR` is not specified, it will default to `{!rsh} Address`.
 
 This returns a value which may be used to dereference particular mappings via `{!rsh} map[EXPR]`.
 Such dereferences return a value of type `{!rsh} Maybe(VAL_TYPE_EXPR)`, because the mapping may not contain a value for `{!rsh} EXPR`.

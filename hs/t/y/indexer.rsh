@@ -19,7 +19,7 @@ export const main = Reach.App(() => {
       const fee = declassify(interact.fee); });
     Manager.publish(fee);
 
-    const RecordM = new Map(Address, Msg);
+    const RecordM = new Map(Msg);
     var [] = [];
     invariant( balance() == 0 );
     while ( true ) {

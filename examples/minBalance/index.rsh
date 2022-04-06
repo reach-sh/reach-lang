@@ -8,7 +8,7 @@ export const main = Reach.App(() => {
   setOptions({untrustworthyMaps: true});
   init();
   A.publish();
-  const m = new Map(Address, UInt);
+  const m = new Map(UInt);
   m[A] = 1;
   commit();
   B.publish();

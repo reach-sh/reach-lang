@@ -30,7 +30,7 @@ export const main =
     const [ bidTimeout, keepBidding ] =
       makeDeadline(deadline);
 
-    const bidsM = new Map(Address, UInt);
+    const bidsM = new Map(UInt);
     const getBid = (who) =>
       fromMaybe(bidsM[who], (() => 0), (x => x));
 

@@ -14,7 +14,7 @@ export const main = Reach.App(() => {
       const benefactor = declassify(interact.benefactor); });
     Creator.publish(benefactor);
 
-    const boons = new Map(Address, UInt);
+    const boons = new Map(UInt);
     const getBoon = (who) =>
       boons[who].match({
         None: () => 0,

@@ -18,7 +18,7 @@ export const main = Reach.App(() => {
   A.only(() => interact.checkView(0, this, MMUInt.None(), MUInt.None()));
 
   A.publish();
-  const intM = new Map(Address, UInt);
+  const intM = new Map(UInt);
   vMain.f.set((a) => intM[a]);
   vMain.g.set((a) => fromSome(intM[a], 0));
   const doCheck = (x, who) => {

@@ -3139,7 +3139,10 @@ evalPrim p sargs =
       retV $ (lvl, SLV_Object nAt (Just $ ns <> " View") io)
     SLPrim_Map -> illegal_args
     SLPrim_Map_new -> do
-      (ktv, tv) <- two_args
+      (ktv, tv) <- case args of
+        [x] -> return $ (SLV_Type ST_Address, x)
+        [x, y] -> return $ (x, y)
+        _ -> illegal_args
       kt <- expect_ty "Map.new" ktv
       t <- expect_ty "Map.new" tv
       ensure_mode SLM_ConsensusStep "Map.new"
