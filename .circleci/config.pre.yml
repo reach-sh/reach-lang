@@ -346,7 +346,8 @@ workflows:
         type: approval
         requires:
           - "build-sink"
-          - "browser-tests"
+          - "browser-tests.eth"
+          - "browser-tests.algo"
         filters:
           branches:
             only: master
