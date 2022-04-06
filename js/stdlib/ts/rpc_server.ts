@@ -145,12 +145,9 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
       return await lib.miniumBalanceOf(account.id(id));
     },
 
-    transfer: async (from: string, to: string, bal: any, token?: any) =>
-      lib.transfer(account.id(from), account.id(to), bal, token),
+    transfer: async (from: string, to: string, bal: any, tok?: any) =>
+      lib.transfer(account.id(from), account.id(to), bal, tok),
 
-    // As of 2021-12-08 `launchToken` isn't officially documented
-    // These are unlike `Token` values but we'll track them together, with the
-    // intention that functions like `tokenAccept` should accept either
     launchToken: async (id: string, name: string, sym: string, opts: any = {}) => {
       const t = await lib.launchToken(account.id(id), name, sym, opts);
       return { kid: await token.track(t), token: t };
