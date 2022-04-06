@@ -2120,26 +2120,39 @@ ce = \case
         cbs $ sigStrToBytes sig
         makeTxn1 "ApplicationArgs"
         accountsR <- liftIO $ newCounter 1
-        forM_ as $ \a -> do
-          ca a
-          let t = argTypeOf a
-          ctobs t
-          case t of
-            -- XXX This is bad and will not work in most cases
-            T_Address -> do
-              incResource R_Account a
-              let m = makeTxn1 "Accounts"
-              case r_addr2acc of
-                False -> do
-                  op "dup"
-                  m
-                True -> do
-                  i <- liftIO $ incCounter accountsR
-                  m
-                  cint $ fromIntegral i
-                  ctobs $ T_UInt UI_Word
-            _ -> return ()
-          makeTxn1 "ApplicationArgs"
+        let processArg a = do
+              ca a
+              let t = argTypeOf a
+              ctobs t
+              case t of
+                -- XXX This is bad and will not work in most cases
+                T_Address -> do
+                  incResource R_Account a
+                  let m = makeTxn1 "Accounts"
+                  case r_addr2acc of
+                    False -> do
+                      op "dup"
+                      m
+                    True -> do
+                      i <- liftIO $ incCounter accountsR
+                      m
+                      cint $ fromIntegral i
+                      ctobs $ T_UInt UI_Word
+                _ -> return ()
+        let processArg' a = do
+              processArg a
+              makeTxn1 "ApplicationArgs"
+        let processArgTuple tas = do
+              --cconcatbs_ processArg $ map (\a -> (argTypeOf a, ca a)) tas
+              cconcatbs_ (const $ return ()) $
+                map (\a -> (argTypeOf a, processArg a)) tas
+              makeTxn1 "ApplicationArgs"
+        case splitArgs as of
+          (_, Nothing) -> do
+            forM_ as processArg'
+          (as14, Just asMore) -> do
+            forM_ as14 processArg'
+            processArgTuple asMore
         -- XXX If we can "inherit" resources, then this needs to be removed and
         -- we need to check that nnZeros actually stay 0
         forM_ (r_assets <> nnRecv) $ \a -> do
@@ -2294,6 +2307,15 @@ multipleApiCalls w = do
   case M.lookup w apiCalls of
     Just n  -> return $ n > 1
     Nothing -> return False
+
+splitArgs :: [a] -> ([a], Maybe [a])
+splitArgs l =
+  -- If there are more than 15 args to an API on ALGO,
+  -- args 15+ are packed as a tuple in arg 15.
+  case 15 < (length l) of
+    False -> (l, Nothing)
+    True -> (before, Just after) where (before, after) = splitAt 14 l
+
 
 signatureStr :: Bool -> String -> [DLType] -> Maybe DLType -> String
 signatureStr addr2acc f args mret = sig
@@ -3166,7 +3188,15 @@ cmeth sigi = \case
       comment $ LT.pack $ sigDump sigi
       let f :: DLType -> Integer -> (DLType, App ())
           f t i = (t, code "txna" ["ApplicationArgs", texty i])
-      cconcatbs_ (const $ return ()) $ zipWith f tys [1 ..]
+      let effectiveTys = case splitArgs tys of
+           (_, Nothing) -> tys
+           -- It would be more type correct to read and unpack arg 15 multiple
+           -- times.  But because the tuple encoding is just concatenated bytes,
+           -- the result of concatenating a tuple is the same as repeated
+           -- concatenation of the tuple member types.  So it is simpler to
+           -- just concatenate the arg 15 tuple.
+           (tys14, Just tysMore) -> tys14 <> [T_Tuple tysMore]
+      cconcatbs_ (const $ return ()) $ zipWith f effectiveTys [1 ..]
       doWrap
       code "b" [handlerLabel which]
   -- This API occurs in multiple places throughout the program.
@@ -3199,9 +3229,18 @@ cmeth sigi = \case
 
 bindFromArgs :: [DLVarLet] -> App a -> App a
 bindFromArgs vs m = do
-  -- XXX deal with >15 args
-  let go (v, i) = sallocVarLet v False (code "txna" ["ApplicationArgs", texty i] >> cfrombs (varLetType v))
-  foldl' (flip go) m (zip vs [(1::Integer) ..])
+  let goSingle (v, i) = sallocVarLet v False (code "txna" ["ApplicationArgs", texty i] >> cfrombs (varLetType v))
+  let goSingles singles k =
+        foldl' (flip goSingle) k (zip singles [(1 :: Integer) ..])
+  case splitArgs vs of
+    (vs', Nothing) -> do
+      goSingles vs' m
+    (vs14, Just vsMore) -> do
+      let tupleTy = T_Tuple $ map varLetType vsMore
+      let goTuple (v, i) = sallocVarLet v False
+            (code "txna" ["ApplicationArgs", texty (15 :: Integer)]
+             >> cTupleRef (SrcLoc Nothing Nothing Nothing) tupleTy i)
+      goSingles vs14 (foldl' (flip goTuple) m (zip vsMore [(0 :: Integer) ..]))
 
 data VSIBlockVS = VSIBlockVS [DLVarLet] DLExportBlock
 type VSIHandler = M.Map Int VSIBlockVS
