@@ -8,3 +8,7 @@ devnet-cfx:
     ${PORTS}
   labels:
     ${LABELS}
+  environment:
+    - REACH_VERSION=${REACH_VERSION}
+    - REACHC_ID=${REACHC_ID}
+    - REACH_CONNECTOR_MODE=CFX-devnet

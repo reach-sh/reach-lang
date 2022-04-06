@@ -9,6 +9,7 @@ build:
 		echo 'Please run `make generate-network` first' ; \
 		exit 1 ; \
 	fi
+	cp ../daily-ping.sh .
 	$(ROOT)/scripts/build-image.sh $(IMAGE) Dockerfile
 	TAG_ONLY=1 $(ROOT)/scripts/docker-push.sh $(IMAGE)
 
