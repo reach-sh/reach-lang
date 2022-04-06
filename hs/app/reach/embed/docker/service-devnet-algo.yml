@@ -30,5 +30,5 @@ devnet-algo:
     - POSTGRES_PASSWORD=indexer
     - POSTGRES_DB=pgdb
     - REACH_VERSION=${REACH_VERSION}
-    - REACHC_ID=${REACHC_ID}
+    - REACHC_ID
     - REACH_CONNECTOR_MODE=ALGO-devnet
