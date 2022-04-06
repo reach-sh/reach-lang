@@ -54,6 +54,7 @@ export const mkKont = () => {
   };
 
   const track = async (a: any) => {
+    // Remember to update `tkor` if modifying bytes length
     const rb = await randomBytes(24);
     const id = `${i}_${rb.toString('hex')}`;
     k[id]    = a;
@@ -133,10 +134,10 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
     connectAccount: async (id: string) =>
       account.track(await lib.connectAccount(account.id(id).networkAccount)),
 
-    balanceOf: async (id: string, token?: any) => {
-      const t = token === undefined ? undefined
-              : token.id            ? token.id // From `launchToken`
-              : token;
+    balanceOf: async (id: string, tok?: any) => {
+      const t = tok === undefined ? undefined
+              : tok.id            ? tok.id // From `launchToken`
+              : tok;
       return await lib.balanceOf(account.id(id), t);
     },
 
@@ -178,6 +179,11 @@ export const serveRpc = async (backend: any) => {
       ? (() => { try { return real_stdlib.bigNumberify(n); } catch (e) { return n; }})()
       : n;
 
+  const tkor = (i: any) =>
+    /^[0-9]+_[0-9a-f]{48}$/.test(i)
+      ? token.id(i)
+      : reBigNumberify(i);
+
   const rpc_acc = {
     contract: async (id: string, ...args: any[]) =>
       contract.track(await account.id(id).contract(backend, ...args)),
@@ -198,14 +204,19 @@ export const serveRpc = async (backend: any) => {
       account.id(id).setDebugLabel(l) && id,
 
     tokenAccept: async (acc: string, tok: string) => {
-      const t = token.id(tok);
+      const t = tkor(tok);
       await account.id(acc).tokenAccept(t.id ? t.id : t);
       return null;
     },
 
     tokenAccepted: async (acc: string, tok: string) => {
-      const t = token.id(tok);
+      const t = tkor(tok);
       return await account.id(acc).tokenAccepted(t.id ? t.id : t);
+    },
+
+    tokenMetadata: async (acc: string, tok: string) => {
+      const t = tkor(tok);
+      return await account.id(acc).tokenMetadata(t.id ? t.id : t);
     },
   };
 
