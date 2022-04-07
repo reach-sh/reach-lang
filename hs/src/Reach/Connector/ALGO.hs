@@ -875,7 +875,8 @@ checkCost notify disp ls ci ts = do
 type Lets = M.Map DLVar (App ())
 
 data Env = Env
-  { eFailuresR :: ErrorSetRef
+  { ePLO :: PLOpts
+  , eFailuresR :: ErrorSetRef
   , eWarningsR :: ErrorSetRef
   , eCounter :: Counter
   , eStateSizeR :: IORef Integer
@@ -1336,13 +1337,15 @@ cprim = \case
           --- UInt256 to UInt64
           ca v
           -- [ v ]
-          dupn 3
-          -- [ v, v, v, v ]
           let ext i = cint (8 * i) >> op "extract_uint64"
-          let go i = ext i >> cint 0 >> asserteq
-          go 2
-          go 1
-          go 0
+          PLOpts {..} <- asks ePLO
+          unless plo_verifyArithmetic $ do
+            dupn 3
+            -- [ v, v, v, v ]
+            let go i = ext i >> cint 0 >> asserteq
+            go 2
+            go 1
+            go 0
           ext 3
         x -> impossible $ "ucast " <> show x
     _ -> impossible "cprim: UCAST args"
@@ -3110,7 +3113,7 @@ analyzeViews (vs, vis) = vsit
 
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
-  let PLProg _at plo dli _ _ _ cpp = pl
+  let PLProg _at ePLO dli _ _ _ cpp = pl
   let CPProg at vsi ai _ (CHandlers hm) = cpp
   -- This is the final result
   resr <- newIORef mempty
@@ -3156,7 +3159,7 @@ compile_algo env disp pl = do
   eMaps <- verifyMapTypes gbad $ dli_maps dli
   let eMapDataTy = mapDataTy eMaps
   let eMapDataSize = typeSizeOf eMapDataTy
-  let PLOpts {..} = plo
+  let PLOpts {..} = ePLO
   let eSP = 255
   let eVars = mempty
   let eLets = mempty
