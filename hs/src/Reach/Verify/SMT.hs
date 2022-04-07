@@ -140,6 +140,7 @@ instance Monoid a => Monoid (App a) where
 data SMTMapInfo = SMTMapInfo
   { sm_c :: Counter
   , sm_t :: DLType
+  , sm_kt :: DLType
   , sm_rs :: IORef [SMTMapRecordReduce]
   , sm_us :: IORef SMTMapRecordUpdate
   }
@@ -188,6 +189,7 @@ data SMTCtxt = SMTCtxt
   , ctxt_inv_mode :: BlockMode
   , ctxt_pay_amt :: Maybe (SExpr, SExpr)
   , ctxt_smt_trace :: IORef [SMTLet]
+  , ctxt_map_vars :: IORef (S.Set String)
   }
 
 ctxt_mode :: App VerifyMode
@@ -215,6 +217,7 @@ ctxtNewScope m = do
         return $
           SMTMapInfo
             { sm_t = sm_t
+            , sm_kt = sm_kt
             , sm_c = sm_c'
             , sm_rs = sm_rs'
             , sm_us = sm_us'
@@ -405,11 +408,14 @@ parseType = \case
   List [Atom "Array", Atom "Int", etse] -> do
     et <- mustBeSDT_D <$> parseType etse
     return $ SDT_D $ T_Array et 0
-  List [Atom "Array", domse, rngse] -> do
-    dom <- mustBeSDT_D <$> parseType domse
-    rng <- mustBeSDT_D <$> parseType rngse
-    return $ SDT_SMap dom rng
+  List [Atom "Map", List [Atom "Array", domse, rngse]] -> goMap domse rngse
+  List [Atom "Array", domse, rngse] -> goMap domse rngse
   ty -> impossible $ "parseType: " <> show ty
+  where
+    goMap domse rngse = do
+      dom <- mustBeSDT_D <$> parseType domse
+      rng <- mustBeSDT_D <$> parseType rngse
+      return $ SDT_SMap dom rng
 
 _parseValType :: M.Map String SExpr -> SExpr -> App SDT
 _parseValType env = \case
@@ -548,12 +554,20 @@ parseVal env sdt v = do
                 List [Atom con, vv] -> do
                   let c = case dropWhile (/= '_') con of
                         _ : c' -> c'
-                        _ -> impossible "parseType: Data: Constructor name"
+                        _ -> impossible "parseVal: Data: Constructor name"
                   v' <- case M.lookup c ts of
                     Just vt -> parseVal env (SDT_D vt) vv
-                    Nothing -> impossible $ "parseType: Data: Constructor type"
+                    Nothing -> impossible $ "parseVal: Data: Constructor type"
                   return $ SMV_Data c [v']
                 _ -> impossible $ "parseVal: Data " <> show v
+
+isVarAMap :: String -> SExpr -> App Bool
+isVarAMap v = \case
+  List [Atom "Array", k, _]
+    | k /= uint256_sort -> return True
+  _ -> do
+    map_vs <- (liftIO . readIORef) =<< asks ctxt_map_vars
+    return $ S.member v map_vs
 
 parseModel2 :: SMTModel -> App (M.Map String SMTVal)
 parseModel2 pm = M.fromList <$> aux (M.toList pm)
@@ -561,8 +575,11 @@ parseModel2 pm = M.fromList <$> aux (M.toList pm)
     aux = \case
       [] -> return []
       (v, (tyse, vse)) : tl -> do
-        --liftIO $ putStrLn $ show (v, tyse, vse)
-        ty <- parseType tyse
+        -- liftIO $ putStrLn $ show (v, tyse, vse)
+        ty' <- isVarAMap v tyse >>= \case
+                True  -> return $ List [Atom "Map", tyse]
+                False -> return $ tyse
+        ty <- parseType ty'
         ve <- parseVal mempty ty vse
         rst <- aux tl
         return $ (v, ve) : rst
@@ -784,9 +801,9 @@ smtMapLookupC mpv = do
 smtMapSort :: DLMVar -> App SExpr
 smtMapSort mpv = do
   SMTMapInfo {..} <- smtMapLookupC mpv
-  t_addr' <- smtTypeSort $ T_Address
+  kt' <- smtTypeSort $ sm_kt
   sm_t' <- smtTypeSort sm_t
-  return $ smtApply "Array" [Atom t_addr', Atom sm_t']
+  return $ smtApply "Array" [Atom kt', Atom sm_t']
 
 smtMapDeclare :: SrcLoc -> DLMVar -> Int -> SynthExpr -> App ()
 smtMapDeclare at mpv mi se = do
@@ -797,7 +814,9 @@ smtMapDeclare at mpv mi se = do
     newId <- smt_alloc_id
     let dv = DLVar at (Just (at, mv)) T_Null newId
     v2dv <- asks ctxt_v_to_dv
+    map_vs <- asks ctxt_map_vars
     liftIO $ modifyIORef v2dv (M.insert mv dv)
+    liftIO $ modifyIORef map_vs $ S.insert mv
     return dv
   let cat = case se of
         SMTMapFresh _ -> Witness
@@ -1596,6 +1615,7 @@ _verify_smt mc ctxt_vst smt lp = do
   let initMapInfo mi = do
         sm_c <- liftIO $ newCounter 0
         let sm_t = dlmi_tym mi
+        let sm_kt = dlmi_kt mi
         sm_rs <- liftIO $ newIORef mempty
         sm_us <- liftIO $ newIORef SMR_New
         return $ SMTMapInfo {..}
@@ -1610,6 +1630,7 @@ _verify_smt mc ctxt_vst smt lp = do
   let ctxt_untrustworthyMaps = llo_untrustworthyMaps
   let ctxt_pay_amt = Nothing
   ctxt_smt_trace <- newIORef mempty
+  ctxt_map_vars <- newIORef mempty
   flip runReaderT (SMTCtxt {..}) $ do
     let defineMap (mpv, SMTMapInfo {..}) = do
           mi <- liftIO $ incCounter sm_c

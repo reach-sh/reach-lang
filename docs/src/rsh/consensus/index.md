@@ -523,18 +523,23 @@ This operation may not be used with `{!rsh} REMOTE_FUN.bill`.
 
 @{ref("rsh", "Map")}
 ```reach
-const bidsM = new Map(UInt);
+const bidsM = new Map(Address, UInt);
+       // or `new Map(UInt);`
 bidsM[this] = 17;
 delete bidsM[this];
 ```
 
-A new mapping of linear state may be constructed in a consensus step by writing `{!rsh} new Map(TYPE_EXPR)`, where `{!rsh} TYPE_EXPR` is some type.
+A new mapping of linear state may be constructed in a consensus step by writing `{!rsh} new Map(VAL_TYPE_EXPR)` or `{!rsh} new Map(KEY_TYPE_EXPR, VAL_TYPE_EXPR)`, where `{!rsh} KEY_TYPE_EXPR` and `{!rsh} VAL_TYPE_EXPR` are types.
+If `{!rsh} KEY_TYPE_EXPR` is not specified, it will default to `{!rsh} Address`.
 
-This returns a value which may be used to dereference particular mappings via `{!rsh} map[ADDR_EXPR]`, where `{!rsh} ADDR_EXPR` is an address.
-Such dereferences return a value of type `{!rsh} Maybe(TYPE_EXPR)`, because the mapping may not contain a value for `{!rsh} ADDR_EXPR`.
+This returns a value which may be used to dereference particular mappings via `{!rsh} map[EXPR]`.
+Such dereferences return a value of type `{!rsh} Maybe(VAL_TYPE_EXPR)`, because the mapping may not contain a value for `{!rsh} EXPR`.
 
-A mapping may be modified by writing `{!rsh} map[ADDR_EXPR] = VALUE_EXPR` to install `{!rsh} VALUE_EXPR` (of type `{!rsh} TYPE_EXPR`) at `{!rsh} ADDR_EXPR`, or by writing `{!rsh} delete map[ADDR_EXPR]` to remove the mapping entry.
+A mapping may be modified by writing `{!rsh} map[EXPR] = VALUE_EXPR` to install `{!rsh} VALUE_EXPR` (of type `{!rsh} VAL_TYPE_EXPR`) at `{!rsh} EXPR`, or by writing `{!rsh} delete map[EXPR]` to remove the mapping entry.
 Such modifications may only occur in a consensus step.
+
+N+2 relations can be created by using a `{!rsh} Tuple` as the Map key.
+For example, a nested mapping: `{!rsh} Map(Address, Map(Address, UInt))`, can be simulated by coalescing the Map keys into a `{!rsh} Tuple`: `{!rsh} Map(Tuple(Address, Address), UInt)`.
 
 ### Sets: creation and modification
 

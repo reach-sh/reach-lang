@@ -302,7 +302,8 @@ instance Pretty DLMVar where
   pretty (DLMVar i) = "map" <> pretty i
 
 data DLMapInfo = DLMapInfo
-  { dlmi_ty :: DLType
+  { dlmi_kt :: DLType
+  , dlmi_ty :: DLType
   , dlmi_at :: SrcLoc
   }
   deriving (Eq, Generic)

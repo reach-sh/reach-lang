@@ -583,6 +583,14 @@ solLargeArg' dv la =
 solLargeArg :: DLVar -> DLLargeArg -> App Doc
 solLargeArg dv la = flip solLargeArg' la =<< solVar dv
 
+mapRefArg :: DLArg -> App Doc
+mapRefArg a = do
+  let kt = argTypeOf a
+  a' <- solArg a
+  case M.lookup kt baseTypes of
+    Just _ -> return $ a'
+    Nothing -> return $ solHash [a']
+
 solExpr :: Doc -> DLExpr -> App Doc
 solExpr sp = \case
   DLE_Arg _ a -> spa $ solArg a
@@ -646,16 +654,16 @@ solExpr sp = \case
   DLE_Wait {} -> return emptyDoc
   DLE_PartSet _ _ a -> spa $ solArg a
   DLE_MapRef _ mpv fa -> do
-    fa' <- solArg fa
+    fa' <- mapRefArg fa
     return $ solApply (solMapRefInt mpv) [fa'] <> sp
   DLE_MapSet _ mpv fa (Just na) -> do
-    fa' <- solArg fa
+    fa' <- mapRefArg fa
     solLargeArg' (solArrayRef (solMapVar mpv) fa') nla
     where
       nla = mdaToMaybeLA na_t (Just na)
       na_t = argTypeOf na
   DLE_MapSet _ mpv fa Nothing -> do
-    fa' <- solArg fa
+    fa' <- mapRefArg fa
     return $ "delete" <+> solArrayRef (solMapVar mpv) fa' <> sp
   DLE_Remote {} -> impossible "remote"
   DLE_TokenNew _ (DLTokenNew {..}) -> do
@@ -1492,6 +1500,18 @@ createAPIRng env =
       fields <- mapM (\(k, v) -> (pretty (bunpack k),) <$> solType_ v) $ M.toAscList env
       return $ fromMaybe (impossible "createAPIRng") $ solStruct "ApiRng" fields
 
+baseTypes :: M.Map DLType Doc
+baseTypes =
+  M.fromList
+    [ (T_Null, "bool")
+    , (T_Bool, "bool")
+    , (T_UInt, "uint256")
+    , (T_Digest, "uint256")
+    , (T_Address, "address")
+    , (T_Contract, "address")
+    , (T_Token, "address")
+    ]
+
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
 solPLProg (PLProg _ plo dli _ _ _ (CPProg at (vs, vi) ai _ hs)) = do
   let DLInit {..} = dli
@@ -1500,17 +1520,7 @@ solPLProg (PLProg _ plo dli _ _ _ (CPProg at (vs, vi) ai _ hs)) = do
   ctxt_mvars <- newIORef mempty
   ctxt_depths <- newIORef mempty
   ctxt_typei <- newIORef mempty
-  let base_typem =
-        M.fromList
-          [ (T_Null, "bool")
-          , (T_Bool, "bool")
-          , (T_UInt, "uint256")
-          , (T_Digest, "uint256")
-          , (T_Address, "address")
-          , (T_Contract, "address")
-          , (T_Token, "address")
-          ]
-  ctxt_typem <- newIORef base_typem
+  ctxt_typem <- newIORef baseTypes
   ctxt_typef <- newIORef mempty
   ctxt_typed <- newIORef mempty
   ctxt_typeidx <- newCounter 0
@@ -1524,7 +1534,9 @@ solPLProg (PLProg _ plo dli _ _ _ (CPProg at (vs, vi) ai _ hs)) = do
   let ctxt_uses_apis = not $ M.null ai
   flip runReaderT (SolCtxt {..}) $ do
     let map_defn (mpv, mi) = do
-          keyTy <- solType_ T_Address
+          let mk = dlmi_kt mi
+          let kt = maybe T_UInt (const mk) $ M.lookup mk baseTypes
+          keyTy <- solType_ kt
           let mt = dlmi_tym mi
           valTy <- solType mt
           let args = [solDecl "addr" keyTy]

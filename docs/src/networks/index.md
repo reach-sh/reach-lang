@@ -46,8 +46,7 @@ In Algorand, network time corresponds to round numbers.
 Each round is assigned a Unix timestamp, but when you look at the timestamp in code executing in round N+1, you read the timestamp assigned to round N.
 Ensure that you read @{seclink("RW0006")} if you use network seconds.
 
-The connector provides a binding named `{!rsh} ALGO` to
-backends.
+The connector provides a binding named `{!rsh} ALGO` to backends.
 
 Backends must respect the following environment variables:
 
@@ -61,6 +60,8 @@ Backends must respect the following environment variables:
   or just writes.
 + `ALGO_FAUCET_PASSPHRASE` is used as the mnemonic for the faucet of your network.
   This is useful if you are running your own testing network.
+
+`{!rsh} Map`s on Algorand only support keys that are of type `{!rsh} Address`.
 
 ## {#ref-network-cfx} Conflux
 
