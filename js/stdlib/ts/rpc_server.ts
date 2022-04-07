@@ -97,6 +97,7 @@ export const mkKont = () => {
 
 export const mkStdlibProxy = async (lib: any, ks: any) => {
   const { account, token } = ks;
+  const reBigNumberify     = mkReBigNumberify(lib);
 
   return {
     // Trade boilerplate for confidence we're not reexporting bits that shouldn't be
@@ -106,9 +107,15 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
 
     ...Object.assign({}, // Un-tweaked functions with serializable output
      ...[ 'assert'
+        , 'bigNumberToBigInt'
+        , 'bigNumberToNumber'
+        , 'bigNumberify'
         , 'formatCurrency'
         , 'parseCurrency'
         ].map(f => ({ [f]: lib[f] }) )),
+
+    isBigNumber: (n: any) =>
+      lib.isBigNumber(reBigNumberify(n)),
 
     newTestAccount: async (bal: any) =>
       account.track(await lib.newTestAccount(bal)),
@@ -159,22 +166,23 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
 };
 
 
-export const serveRpc = async (backend: any) => {
-  const account       = mkKont();
-  const contract      = mkKont();
-  const token         = mkKont();
-  const kont          = mkKont();
-  const real_stdlib   = await loadStdlib();
-  const rpc_stdlib    = await mkStdlibProxy(real_stdlib, { account, token });
-  const app           = express();
-  const route_backend = express.Router();
+// `isBigNumber` in stdlib uses type reflection which doesn't work here due
+// to `n` having been serialized into JSON
+export const mkReBigNumberify = (l: any) => (n: any) =>
+  n && n.hex && n.type && n.type === 'BigNumber'
+    ? (() => { try { return l.bigNumberify(n); } catch (e) { return n; }})()
+    : n;
 
-  // `isBigNumber` in stdlib uses type reflection which doesn't work here due
-  // to `n` having been serialized into JSON
-  const reBigNumberify = (n: any) =>
-    n && n.hex && n.type && n.type === 'BigNumber'
-      ? (() => { try { return real_stdlib.bigNumberify(n); } catch (e) { return n; }})()
-      : n;
+export const serveRpc = async (backend: any) => {
+  const account        = mkKont();
+  const contract       = mkKont();
+  const token          = mkKont();
+  const kont           = mkKont();
+  const real_stdlib    = await loadStdlib();
+  const reBigNumberify = mkReBigNumberify(real_stdlib);
+  const rpc_stdlib     = await mkStdlibProxy(real_stdlib, { account, token });
+  const app            = express();
+  const route_backend  = express.Router();
 
   const tkor = (i: any) =>
     /^[0-9]+_[0-9a-f]{48}$/.test(i)
