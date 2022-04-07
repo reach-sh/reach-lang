@@ -1539,7 +1539,7 @@ solPLProg (PLProg _ plo dli _ _ _ (CPProg at (vs, vi) ai _ hs)) = do
   flip runReaderT (SolCtxt {..}) $ do
     let map_defn (mpv, mi) = do
           let mk = dlmi_kt mi
-          let kt = maybe T_UInt (const mk) $ M.lookup mk baseTypes
+          let kt = maybe (T_UInt uintWord) (const mk) $ M.lookup mk baseTypes
           keyTy <- solType_ kt
           let mt = dlmi_tym mi
           valTy <- solType mt

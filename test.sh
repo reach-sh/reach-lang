@@ -132,11 +132,9 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-#jb
-c hs/t/y/uint256-verify1.rsh
-c hs/t/y/uint256-verify2.rsh
-fc hs/t/n/uint256-verify1.rsh
+c examples/map-arbitrary-key/index.rsh
 exit 0
+#jb
 ci ALGO uint256
 exit 0
 ci ETH uint256
