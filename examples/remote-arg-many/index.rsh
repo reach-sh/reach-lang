@@ -14,7 +14,7 @@ export const mainServer = Reach.App(() => {
   const Deployer = Participant('Deployer', {
     ready: Fun([], Null),
   })
-  const A = API('A', {
+  const A = API({
     sumMany: manyArgFunSig,
   })
   setOptions({
@@ -52,7 +52,7 @@ export const mainClient = Reach.App(() => {
     serverCtcInfo: Contract,
     ready: Fun([], Null),
   })
-  const A = API('A', {
+  const A = API({
     poke: manyArgFunSig,
   })
   setOptions({
@@ -79,6 +79,8 @@ export const mainClient = Reach.App(() => {
 
   const [args, pokeRet] = call(A.poke)
 
+  // TODO - if I replace the remote call with a constant, the poke API works fine.
+  //const sum = 5
   const sum = sumServer.sumMany(...args)
 
   pokeRet(sum)

@@ -8,8 +8,6 @@ const accDeployer = await stdlib.newTestAccount(startingBalance);
 const ctcServer = accDeployer.contract(backendServer);
 const ctcClient = accDeployer.contract(backendClient);
 
-const clientApi = ctcClient.apis.A;
-
 const startMeUp = async (ctcDeployer, extraFields) => {
   try {
     await ctcDeployer({
@@ -38,7 +36,9 @@ const argLength = 8
 
 const args = Array.from(new Array(argLength), (_, i) => i);
 
-const res = await clientApi.poke(...args)
+const res = await ctcClient.apis.poke(...args)
+//const res = await ctcServer.apis.sumMany(...args)
+console.log("res: ", res)
 const expected = args.reduce((accum, x) => accum + x, 0)
 if (stdlib.bigNumberToNumber(res) != expected) {
   throw "bad return, expected: " + expected + " got: " + stdlib.bigNumberToNumber(res)
