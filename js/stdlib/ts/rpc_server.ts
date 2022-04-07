@@ -54,7 +54,7 @@ export const mkKont = () => {
   };
 
   const track = async (a: any) => {
-    // Remember to update `tkor` if modifying bytes length
+    // Remember to update `mkKor` if modifying bytes length
     const rb = await randomBytes(24);
     const id = `${i}_${rb.toString('hex')}`;
     k[id]    = a;
@@ -162,6 +162,9 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
 
     setQueryLowerBound: (nt: any) =>
       lib.setQueryLowerBound(lib.bigNumberify(nt)),
+
+    formatAddress: (id: string) =>
+      lib.formatAddress(mkKor(lib, account)(id)),
   };
 };
 
@@ -173,6 +176,11 @@ export const mkReBigNumberify = (l: any) => (n: any) =>
     ? (() => { try { return l.bigNumberify(n); } catch (e) { return n; }})()
     : n;
 
+const mkKor = (l: any, k: any) => (i: any) =>
+  /^[0-9]+_[0-9a-f]{48}$/.test(i)
+    ? k.id(i)
+    : mkReBigNumberify(l)(i);
+
 export const serveRpc = async (backend: any) => {
   const account        = mkKont();
   const contract       = mkKont();
@@ -183,11 +191,7 @@ export const serveRpc = async (backend: any) => {
   const rpc_stdlib     = await mkStdlibProxy(real_stdlib, { account, token });
   const app            = express();
   const route_backend  = express.Router();
-
-  const tkor = (i: any) =>
-    /^[0-9]+_[0-9a-f]{48}$/.test(i)
-      ? token.id(i)
-      : reBigNumberify(i);
+  const tkor           = mkKor(real_stdlib, token);
 
   const rpc_acc = {
     contract: async (id: string, ...args: any[]) =>
