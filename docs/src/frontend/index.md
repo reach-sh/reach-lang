@@ -549,7 +549,7 @@ Event<T> : { when: Time, what: T }
 
 An `{!js} Event` is instantiated with it's corresponding type declared in Reach.
 
- `{!js} next` will wait for the next `{!rsh} Event` to occur, returning the time the event occured
+ `{!js} next` will wait for the next `{!rsh} Event` to occur, returning the time the event occurred
 and the arguments to the event.
 
  `{!js} seek` will set the internal time of the EventStream to the given argument.
@@ -637,6 +637,23 @@ Returns a Promise that will only be resolved after the specified time delta has 
 The expression `{!js} await wait(delta, onProgress)` is the same as
 `{!js} await waitUntilTime(add(await getNetworkTime(), delta), onProgress)`.
 As with `{!js} waitUntilTime`, the `{!js} onProgress` callback is optional.
+
+One use case example of `{!js} wait` is to emit an event and then call `stdlib.wait(delta, onProgress)` to ensure the event has time to complete. 
+(In the example below, "wt" is shorthand for "wait time.")
+
+```js
+waitToPay: async (price) => {
+  const fmtPrice = stdlib.formatCurrency(price, 4);
+  const wt = Math.floor(Math.random() * 60);
+  console.log(`Alice waits ${wt} seconds.`);
+  await stdlib.wait(wt);
+  console.log(`Alice is ready to pay ${fmtPrice}.`);
+  return true;
+},
+```
+
+Although it is possible to use `{!js} wait` to give an event time to execute, 
+it is a better practice to create an explicit synchronization with an [event](##ref-programs-appinit-events) or instruct the deployer to communicate with [API](##ref-programs-appinit-api) callers off-chain.
 
 ---
 @{ref("js", "connector")}
