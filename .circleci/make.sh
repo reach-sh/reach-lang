@@ -6,9 +6,9 @@ PRE=config.pre.yml
 MID=config.mid.yml
 END=config.end.yml
 IEND=config.iend.yml
-cat >"${MID}" </dev/null
-cat >"${END}" </dev/null
-cat >"${IEND}" </dev/null
+touch "$MID"
+touch "$END"
+touch "$IEND"
 
 cat >>"${IEND}" <<END
     - "build-sink":
