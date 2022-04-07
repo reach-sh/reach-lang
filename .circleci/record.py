@@ -118,7 +118,24 @@ else:
     POST += "MERGE"
 POST += f"*: `{env('CIRCLE_SHA1')[:8]}`"
 
-# XXX make branch a link
-print(f"export RECORD_MESSAGE='*{SYM}* {env('CIRCLE_USERNAME')}/{env('CIRCLE_BRANCH')} > examples: {PRE} <{env('CIRCLE_BUILD_URL')}|more...>{POST}'")
+def truncate_message(msg):
+    # 3000 character limit for text field in block api
+    # https://api.slack.com/reference/block-kit/blocks#section_fields
+    trunc_msg = "... message truncated"
+    if len(msg) <= 3000
+        return msg
+    else:
+        new_len = 3000 - len(trunc_msg)
+        return msg[:new_len] + trunc_msg
+
+username = env('CIRCLE_USERNAME')
+branch = env('CIRCLE_BRANCH')
+branch_url = f"https://github.com/reach-sh/reach-lang/tree/{branch}"
+pr = env('CIRCLE_PULL_REQUEST')
+build = env('CIRCLE_BUILD_URL')
+
+circle_message = f"*{SYM}* {username}/<{branch_url}|{branch}>/<{pr}|PR> > examples: {PRE} <{build}|more...>{POST}"
+circle_message = truncate_message(circle_message)
+print(f'export RECORD_MESSAGE={circle_message}')
 
 exit(EXIT)
