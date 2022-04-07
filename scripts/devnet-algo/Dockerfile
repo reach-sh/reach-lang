@@ -21,7 +21,7 @@ ENV SRC_PARENT ${GOPATH}/src/github.com/algorand
 ### ALGOD
 WORKDIR ${SRC_PARENT}
 # algod release
-ARG ALGO_VERSION=3.4.2-stable
+ARG ALGO_VERSION=3.5.1-stable
 RUN wget --quiet https://github.com/algorand/go-algorand/archive/refs/tags/v${ALGO_VERSION}.tar.gz && tar -xvf v${ALGO_VERSION}.tar.gz
 WORKDIR ${SRC_PARENT}/go-algorand-${ALGO_VERSION}
 RUN ./scripts/configure_dev-deps.sh
@@ -39,12 +39,12 @@ RUN make install
 ### INDEXER
 WORKDIR ${SRC_PARENT}
 # indexer release
-ARG INDEXER_VERSION=2.9.0
+ARG INDEXER_VERSION=2.10.0
 
 #RUN wget --quiet https://github.com/algorand/indexer/archive/refs/tags/${INDEXER_VERSION}.tar.gz && tar -xvf ${INDEXER_VERSION}.tar.gz
 #WORKDIR ${SRC_PARENT}/indexer-${INDEXER_VERSION}
 
-RUN git clone https://github.com/algorand/indexer && cd indexer && git checkout release/${INDEXER_VERSION}
+RUN git clone https://github.com/algorand/indexer && cd indexer && git checkout ${INDEXER_VERSION}
 WORKDIR ${SRC_PARENT}/indexer
 
 RUN make
