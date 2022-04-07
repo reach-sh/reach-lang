@@ -106,7 +106,18 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
         , 'connector'
         , 'standardUnit'
         , 'minimumBalance'
-        ].map(p => ({ [p]: () => lib[p] }) )),
+
+        // TODO these deserve special handling
+        , 'T_Address'
+        , 'T_Array'
+        , 'T_Bool'
+        , 'T_Bytes'
+        , 'T_Data'
+        , 'T_Null'
+        , 'T_Object'
+        , 'T_Tuple'
+        , 'T_UInt'
+        ].map(p => ({ [p]: lib[p] }) )),
 
     ...Object.assign({}, // Un-tweaked functions with serializable output
      ...[ 'addressEq'
@@ -157,17 +168,6 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
         , 'le'
         , 'lt'
         ].map(f => ({ [f]: lib[f] }) )),
-
-    // TODO these deserve special handling
-    T_Address: lib.T_Address,
-    T_Array:   lib.T_Array,
-    T_Bool:    lib.T_Bool,
-    T_Bytes:   lib.T_Bytes,
-    T_Data:    lib.T_Data,
-    T_Null:    lib.T_Null,
-    T_Object:  lib.T_Object,
-    T_Tuple:   lib.T_Tuple,
-    T_UInt:    lib.T_UInt,
 
     isBigNumber: (n: any) =>
       lib.isBigNumber(reBigNumberify(n)),
@@ -328,7 +328,10 @@ export const serveRpc = async (backend: any) => {
         const lab  = `RPC /${olab}/${k} ${j2s(args)}`;
         debug(lab);
 
-        const ans = await obj[k](...args);
+        const ans = typeof obj[k] === 'function'
+          ? await obj[k](...args)
+          : obj[k];
+
         const ret = ans === undefined ? null : ans;
         debug(`${lab} ==> ${j2s(ret)}`);
 
