@@ -1,36 +1,37 @@
 import { mkRPC }      from '@reach-sh/rpc-client';
 import { mkAssertEq } from './common.mjs';
 
-  const { rpc, rpcCallbacks } = await mkRPC();
+const { rpc, rpcCallbacks } = await mkRPC();
 
-  const sbal     = await rpc('/stdlib/parseCurrency', 100);
-  const accAlice = await rpc('/stdlib/newTestAccount', sbal);
-  const ctcAlice = await rpc('/acc/contract', accAlice);
-  const accs     = [ accAlice ];
-  const ctcs     = [ ctcAlice ];
+const sbal     = await rpc('/stdlib/parseCurrency', 100);
+const accAlice = await rpc('/stdlib/newTestAccount', sbal);
+const ctcAlice = await rpc('/acc/contract', accAlice);
+const accs     = [ accAlice ];
+const ctcs     = [ ctcAlice ];
 
-  const user = async (uid, exp) => {
-    const a = await rpc('/stdlib/newTestAccount', sbal);
-    accs.push(a);
-    await rpc('/acc/setDebugLabel', a, uid);
+const user = async (uid, exp) => {
+  const a = await rpc('/stdlib/newTestAccount', sbal);
+  accs.push(a);
+  await rpc('/acc/setDebugLabel', a, uid);
 
-    const i = await rpc('/ctc/getInfo', ctcAlice);
-    const c = await rpc('/acc/contract', a, i);
-    ctcs.push(c);
+  const i = await rpc('/ctc/getInfo', ctcAlice);
+  const c = await rpc('/acc/contract', a, i);
+  ctcs.push(c);
 
-    const res = await rpc('/ctc/safeApis/go', c);
-    await mkAssertEq(rpc)(`With ${uid}:`, exp, res);
-  };
+  const res = await rpc('/ctc/safeApis/go', c);
+  await mkAssertEq(rpc)(`With ${uid}:`, exp, res);
+};
 
-  await Promise.all([
-    rpcCallbacks('/backend/Alice', ctcAlice, {
-      launchBob: async (i, exp) => {
-        await user(`Bob${i}`, exp);
-      },
-    }),
-  ]);
+await Promise.all([
+  rpcCallbacks('/backend/Alice', ctcAlice, {
+    launchBob: async (i, exp) => {
+      const n = await rpc('/stdlib/bigNumberToNumber', i);
+      await user(`Bob ${n}`, exp);
+    },
+  }),
+]);
 
-  await Promise.all([
-    ...ctcs.map(c => rpc('/forget/ctc', c)),
-    ...accs.map(a => rpc('/forget/acc', a)),
-  ]);
+await Promise.all([
+  ...ctcs.map(c => rpc('/forget/ctc', c)),
+  ...accs.map(a => rpc('/forget/acc', a)),
+]);
