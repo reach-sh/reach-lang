@@ -8,8 +8,8 @@ const investmentStructure = {
   investorInvestment: stdlib.parseCurrency(10),
   investorFailProfit: stdlib.parseCurrency(3),
   investorQuorum: 5,
-  investmentDuration: 30,
-  failPayDuration: 30,
+  investmentDuration: 300,
+  failPayDuration: 300,
 };
 
 const run = async (numInvestors, numInvestorsFailPaid) => {
