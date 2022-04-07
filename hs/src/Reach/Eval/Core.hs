@@ -2166,10 +2166,7 @@ evalPrimOp sp sargs = do
       let doCmp = doOp T_Bool
       let uit_rng = uintTyOf rng
       let p = sprimToPrim uit_dom uit_rng sp
-      let lim_maxUInt_a =
-            case uit_rng of
-              True -> DLA_Literal $ DLL_Int sb True $ uint256_Max
-              _ -> DLA_Constant DLC_UInt_max
+      let lim_maxUInt_a = uintTyMax uit_rng
       let chkDiv t denom = do
             ca <- doCmp (PGT t) [denom, DLA_Literal $ DLL_Int sb t 0]
             dopClaim ca "div by zero"
@@ -2197,6 +2194,14 @@ evalPrimOp sp sargs = do
             chkDiv uintWord $ case dargs of
               [_, _, b] -> b
               _ -> impossible "muldiv args"
+          UCAST True False -> do
+            -- We add an assertion when casting from UInt256 to UInt
+            let a = case dargs of
+                  [a_] -> a_
+                  _ -> impossible "cast args"
+            wordLimitAs256 <- doOp (T_UInt uint256) (UCAST uintWord uint256) [ uintTyMax uintWord ]
+            ca <- doCmp (PLE uint256) [a, wordLimitAs256]
+            dopClaim ca "cast overflow"
           _ -> return $ mempty
       dv <- ctxt_lift_expr (DLVar at Nothing rng) (DLE_PrimOp at p dargs)
       let da = DLA_Var dv

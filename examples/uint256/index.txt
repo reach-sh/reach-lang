@@ -1,5 +1,25 @@
+Compiling "main"...
 Verifying knowledge assertions
 Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
-Checked 25 theorems; No failures!
+Checked 95 theorems; No failures!
+Compiling "trapC"...
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 118 theorems; No failures!
+Compiling "trapS"...
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+  Verifying when NO participants are honest
+Checked 119 theorems; No failures!
+WARNING: Compiler instructed to emit for Algorand, but the conservative analysis found these potential problems:
+ * Step 1 calls a remote object at ./index.rsh:45:39:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.
+ * Step 1 calls a remote object at ./index.rsh:46:39:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.
+ * Step 1 calls a remote object at ./index.rsh:47:39:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.
+ * Step 1 calls a remote object at ./index.rsh:48:39:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.
+ * Step 1 calls a remote object at ./index.rsh:49:39:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.
+ * Step 1 calls a remote object at ./index.rsh:50:38:application. This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object.

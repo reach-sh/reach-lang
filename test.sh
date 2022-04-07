@@ -132,7 +132,11 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-jb
+#jb
+c hs/t/y/uint256-verify1.rsh
+c hs/t/y/uint256-verify2.rsh
+fc hs/t/n/uint256-verify1.rsh
+exit 0
 ci ALGO uint256
 exit 0
 ci ETH uint256
