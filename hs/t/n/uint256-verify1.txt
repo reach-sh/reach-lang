@@ -1,0 +1,24 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "cast overflow"
+  at ./uint256-verify1.rsh:11:19:application
+  at ./uint256-verify1.rsh:9:9:application call to [unknown function] (defined at: ./uint256-verify1.rsh:9:13:function exp)
+
+  // Violation Witness
+
+  const x/41 = "A".interact.x;
+  //    ^ could = 1
+  //      from: ./uint256-verify1.rsh:6:6:property binding
+
+  // Theorem Formalization
+
+  const v45 = x/41 b<= (cast(,b)UInt.max);
+  //    ^ would be false
+  assert(v45);
+
+  Verifying when NO participants are honest
+Checked 5 theorems; 1 failures :'(

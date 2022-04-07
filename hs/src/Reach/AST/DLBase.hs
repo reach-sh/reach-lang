@@ -342,6 +342,11 @@ staticZero = \case
   DLA_Literal (DLL_Int _ _ 0) -> True
   _ -> False
 
+uintTyMax :: UIntTy -> DLArg
+uintTyMax = \case
+  True -> DLA_Literal $ DLL_Int sb True $ uint256_Max
+  False -> DLA_Constant DLC_UInt_max
+
 asnLike :: [DLVar] -> [(DLVar, DLArg)]
 asnLike = map (\x -> (x, DLA_Var x))
 
