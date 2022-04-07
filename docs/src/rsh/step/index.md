@@ -396,7 +396,12 @@ wait(TIME);
 A @{defn("wait statement")}, written `{!rsh} wait(TIME);`, delays the computation until the `{!rsh} TIME` time argument passes.
 `{!rsh} TIME` must be pure and may only reference values known by the consensus state.
 
-In this example, `{!rsh} wait` is used so Bob doesn't have an advantage over Alice by making two separate `{!rsh} publish` statements at the same time. `{!rsh} wait` ensures that Alice has enough time to verify that Bob accepted the `{!rsh} wager` before beginning a [`{!rsh} race`](##guide-race).
+In this example, `{!rsh} wait` is used so Bob doesn't have an advantage over Alice by making two separate `{!rsh} publish` statements at the same time. 
+`{!rsh} wait` ensures that Alice has enough time to verify that Bob accepted the `{!rsh} wager` before beginning a [`{!rsh} race`](##guide-race). 
+
+:::note
+Learn more about the `{!rsh} race` expression in our guide, "@{seclink("guide-race")}."
+:::
 
 ```reach
 Bob.only(() => {
@@ -408,8 +413,9 @@ commit();
 wait(relativeTime(deadline));
 ```
 
-`{!rsh} wait` does not execute on chain; 
-it may only occur in a step.
+`{!rsh} wait` does not execute on chain, 
+instead, it constrains the next action that may occur on chain. 
+Thus, `{!rsh} wait` may only occur in a step.
 
 ### `exit`
 
