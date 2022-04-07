@@ -394,8 +394,22 @@ wait(TIME);
 ```
 
 A @{defn("wait statement")}, written `{!rsh} wait(TIME);`, delays the computation until the `{!rsh} TIME` time argument passes.
-`{!rsh} TIME` must be pure and only reference values known by the consensus state.
-It may only occur in a step.
+`{!rsh} TIME` must be pure and may only reference values known by the consensus state.
+
+In this example, `{!rsh} wait` is used so Bob doesn't have an advantage over Alice by making two separate `{!rsh} publish` statements at the same time. `{!rsh} wait` ensures that Alice has enough time to verify that Bob accepted the `{!rsh} wager` before beginning a [`{!rsh} race`](##guide-race).
+
+```reach
+Bob.only(() => {
+  interact.confirmWager(wager); });
+Bob.pay(wager)
+  .timeout(relativeTime(deadline), () => closeTo(Alice, showOutcome(TIMEOUT)));
+commit();
+
+wait(relativeTime(deadline));
+```
+
+`{!rsh} wait` does not execute on chain; 
+it may only occur in a step.
 
 ### `exit`
 
