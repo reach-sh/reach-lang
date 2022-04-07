@@ -1,5 +1,26 @@
 'reach 0.1';
 
+export const veriC = Reach.App(() => {
+  setOptions({ verifyArithmetic: true });
+  const A = Participant('A', { x: UInt256 });
+  init();
+  A.only(() => {
+    const x = declassify(interact.x);
+    check(x < UInt256(UInt.max));
+  });
+  A.publish(x);
+  check(x < UInt256(UInt.max));
+  const y = UInt(x);
+  commit();
+  A.only(() => {
+    const z = y;
+  });
+  A.publish(z);
+  check(z == y);
+  commit();
+  exit();
+});
+
 const I = {
   add: Fun([UInt256, UInt256], UInt256),
   sub: Fun([UInt256, UInt256], UInt256),

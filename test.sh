@@ -132,8 +132,6 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-c examples/map-arbitrary-key/index.rsh
-exit 0
 #jb
 ci ALGO uint256
 exit 0

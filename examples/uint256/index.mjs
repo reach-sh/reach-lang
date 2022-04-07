@@ -1,4 +1,5 @@
 import { loadStdlib } from '@reach-sh/stdlib';
+import * as backendVeriC from './build/index.veriC.mjs';
 import * as backendTrapS from './build/index.trapS.mjs';
 import * as backendTrapC from './build/index.trapC.mjs';
 import * as backend from './build/index.main.mjs';
@@ -11,6 +12,26 @@ const assertEq = (i, j, expected, actual) => {
   stdlib.assert(exps === acts); };
 const accA = await stdlib.newTestAccount(stdlib.parseCurrency(100));
 accA.setGasLimit(5000000);
+
+const expectFail = async (name, f) => {
+  try {
+    await f();
+    throw 42;
+  } catch (e) {
+    if ( e === 42 ) {
+      throw Error(`${name} succeeded, but shouldn't`);
+    }
+    console.log(`Got error`, e);
+  }
+};
+
+// VeriC
+const veriC = async (x) => {
+  const ctcA = accA.contract(backendVeriC);
+  await ctcA.p.A({ x });
+}
+await veriC(bn('777'));
+await expectFail(`veriC(big)`, () => veriC(bn(2).pow(128)));
 
 // Test trap
 const trapGo = async (f, ...args) => {
@@ -28,17 +49,8 @@ const trapGo = async (f, ...args) => {
     },
   });
 };
-const trapNo = async (f, ...args) => {
-  try {
-    await trapGo(f, ...args);
-    throw 42;
-  } catch (e) {
-    if ( e === 42 ) {
-      throw Error(`${f}(${args}) succeeded, but shouldn't`);
-    }
-    console.log(`Got error`, e);
-  }
-};
+const trapNo = (f, ...args) =>
+  expectFail(`${f}(${args})`, () => trapGo(f, ...args));
 
 await trapGo('add', bn(1), bn(2));
 await trapNo('add', bn(2).pow(256).sub(1), bn(2));
