@@ -1,2 +1,2 @@
-time="2022-03-02T18:30:36.506351 +0000" level=info msg="failed to mlockall: cannot allocate memory" file=mlock_linux.go function=main.tryMlockall line=30
-time="2022-03-02T18:30:36.507835 +0000" level=info msg="started kmd on sock: 127.0.0.1:7833" file=main.go function=main.runKmd line=118
+time="2022-04-07T00:47:41.982193 +0000" level=info msg="failed to mlockall: cannot allocate memory" file=mlock_linux.go function=main.tryMlockall line=30
+time="2022-04-07T00:47:41.983697 +0000" level=info msg="started kmd on sock: 127.0.0.1:7833" file=main.go function=main.runKmd line=118

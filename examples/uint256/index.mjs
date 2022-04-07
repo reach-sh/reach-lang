@@ -1,5 +1,6 @@
 import { loadStdlib } from '@reach-sh/stdlib';
-import * as backendTrap from './build/index.trap.mjs';
+import * as backendTrapS from './build/index.trapS.mjs';
+import * as backendTrapC from './build/index.trapC.mjs';
 import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib();
 const bn = stdlib.bigNumberify;
@@ -14,11 +15,17 @@ accA.setGasLimit(5000000);
 // Test trap
 const trapGo = async (f, ...args) => {
   console.log(`Calling ${f}(${args})`);
-  const ctcA = accA.contract(backendTrap);
-  await ctcA.p.A({
-    go: async () => {
-      await ctcA.a[f](...args);
-    }
+  const ctcA_S = accA.contract(backendTrapS);
+  const ctcA_C = accA.contract(backendTrapC);
+  await ctcA_S.p.A({
+    go: async (server) => {
+      await ctcA_C.p.A({
+        server,
+        go: async () => {
+          await ctcA_C.a[f](...args);
+        }
+      });
+    },
   });
 };
 const trapNo = async (f, ...args) => {

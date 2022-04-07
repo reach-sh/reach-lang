@@ -1,18 +1,20 @@
 'reach 0.1';
 
-export const trap = Reach.App(() => {
-  const A = Participant('A', { go: Fun([], Null) });
-  const P = API({
-    add: Fun([UInt256, UInt256], UInt256),
-    sub: Fun([UInt256, UInt256], UInt256),
-    mul: Fun([UInt256, UInt256], UInt256),
-    div: Fun([UInt256, UInt256], UInt256),
-    mod: Fun([UInt256, UInt256], UInt256),
-    cast: Fun([UInt256], UInt),
-  });
+const I = {
+  add: Fun([UInt256, UInt256], UInt256),
+  sub: Fun([UInt256, UInt256], UInt256),
+  mul: Fun([UInt256, UInt256], UInt256),
+  div: Fun([UInt256, UInt256], UInt256),
+  mod: Fun([UInt256, UInt256], UInt256),
+  cast: Fun([UInt256], UInt),
+};
+
+export const trapS = Reach.App(() => {
+  const A = Participant('A', { go: Fun([Contract], Null) });
+  const P = API(I);
   init();
   A.publish();
-  A.interact.go();
+  A.interact.go(getContract());
   commit();
   fork()
     .api(P.add, (x, y, k) => { k(x+y); })
@@ -21,6 +23,31 @@ export const trap = Reach.App(() => {
     .api(P.div, (x, y, k) => { k(x/y); })
     .api(P.mod, (x, y, k) => { k(x%y); })
     .api(P.cast, (x, k) => { k(UInt(x)); })
+  ;
+  commit();
+  A.publish();
+  commit();
+  exit();
+});
+
+export const trapC = Reach.App(() => {
+  const A = Participant('A', { server: Contract, go: Fun([], Null) });
+  const P = API(I);
+  init();
+  A.only(() => {
+    const server = declassify(interact.server);
+  });
+  A.publish(server);
+  const r = remote(server, I);
+  A.interact.go();
+  commit();
+  fork()
+    .api(P.add, (x, y, k) => { k(r.add(x,y)); })
+    .api(P.sub, (x, y, k) => { k(r.sub(x,y)); })
+    .api(P.mul, (x, y, k) => { k(r.mul(x,y)); })
+    .api(P.div, (x, y, k) => { k(r.div(x,y)); })
+    .api(P.mod, (x, y, k) => { k(r.mod(x,y)); })
+    .api(P.cast, (x, k) => { k(r.cast(x)); })
   ;
   commit();
   exit();
