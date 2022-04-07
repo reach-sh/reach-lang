@@ -639,7 +639,7 @@ The expression `{!js} await wait(delta, onProgress)` is the same as
 As with `{!js} waitUntilTime`, the `{!js} onProgress` callback is optional.
 
 One use case example of `{!js} wait` is to emit an event and then call `stdlib.wait(delta, onProgress)` to ensure the event has time to complete. 
-(In the example below, "wt" is shorthand for "wait time.")
+(In the example below, `wt` is shorthand for "wait time.")
 
 ```js
 waitToPay: async (price) => {
@@ -652,7 +652,7 @@ waitToPay: async (price) => {
 },
 ```
 
-Although it is possible to use `{!js} wait` to give an event time to execute, 
+Although, it is possible to use `{!js} wait` to give an event time to execute, 
 it is a better practice to create an explicit synchronization with an [event](##ref-programs-appinit-events) or instruct the deployer to communicate with [API](##ref-programs-appinit-api) callers off-chain.
 
 ---
