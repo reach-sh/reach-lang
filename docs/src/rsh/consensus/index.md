@@ -538,6 +538,9 @@ Such dereferences return a value of type `{!rsh} Maybe(VAL_TYPE_EXPR)`, because 
 A mapping may be modified by writing `{!rsh} map[EXPR] = VALUE_EXPR` to install `{!rsh} VALUE_EXPR` (of type `{!rsh} VAL_TYPE_EXPR`) at `{!rsh} EXPR`, or by writing `{!rsh} delete map[EXPR]` to remove the mapping entry.
 Such modifications may only occur in a consensus step.
 
+N+2 relations can be created by using a `{!rsh} Tuple` as the Map key.
+For example, a nested mapping: `{!rsh} Map(Address, Map(Address, UInt))`, can be simulated by coalescing the Map keys into a `{!rsh} Tuple`: `{!rsh} Map(Tuple(Address, Address), UInt)`.
+
 ### Sets: creation and modification
 
 @{ref("rsh", "Set")}
