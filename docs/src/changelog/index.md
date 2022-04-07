@@ -3,9 +3,18 @@
 Below is a list of changes to Reach.
 Versions and changes-within-versions are listed in reverse-chronological order: newest things first.
 
-## 0.1.9: 2022/03 - present
+## 0.1.10: 2022/04 - present
 
-Version 0.1.9 is the current Reach release candidate version.
+Version 0.1.10 is the current Reach release candidate version.
+
++ 2022/04/07: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
++ 2022/04/07: Added `{!rsh} UInt256` type and associated operations.
++ 2022/04/07: Algorand indexer upgraded to `2.10.0`.
++ 2022/04/07: Algorand node upgraded to `3.5.1`.
+
+## 0.1.9: 2022/03 - 2022/04
+
+Version 0.1.9 is the current Reach release version.
 
 + 2022/04/06: Added support for arbitrary `{!rsh} Map` keys on Ethereum/Conflux.
 + 2022/04/05: Added support for creating overloaded `{!rsh} API` functions and calling overloaded `{!rsh} remote` functions.
@@ -39,7 +48,7 @@ Version 0.1.9 is the current Reach release candidate version.
 
 ## 0.1.8: 2022/01 - 2022/03
 
-Version 0.1.8 is the current Reach release version.
+Version 0.1.8 is an old Reach release version.
 
 + 2022/02/28: Added `{!js} launchToken` for token minting in frontends.
 + 2022/02/25: Added support for tracking `{!rsh} Token` information—such as balance, supply, and whether its destroyed—dynamically.
