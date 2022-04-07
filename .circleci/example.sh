@@ -72,14 +72,7 @@ END
 EXS="$(find . -maxdepth 1 -type d | sed 'sX./XX' | sort | tail -n +2 | circleci tests split --split-by=timings --timings-type=testname)"
 
 for WHICH in $EXS; do
-  KIDS=$((KIDS + 1))
   go "${WHICH}" 'Forking' &
-done
-
-while true; do
-  wait -n || true
-  KIDS=$((KIDS - 1))
-  if [ $KIDS -eq 0 ]; then break; fi
 done
 
 # ../reach down
