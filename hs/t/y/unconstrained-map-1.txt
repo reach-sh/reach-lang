@@ -5,7 +5,7 @@ Verifying for generic connector
 Checked 11 theorems; No failures!
 warning[RW0007]: Map not constrained in all loop invariants.
 
-  ./unconstrained-map.rsh:10:36:application
+  ./unconstrained-map-1.rsh:10:36:application
 
   10|   const unconstrainedMap1 = new Map(Null);
 
@@ -13,7 +13,7 @@ For further explanation of this warning, see: https://docs.reach.sh/rsh/errors/#
 
 warning[RW0007]: Map not constrained in all loop invariants.
 
-  ./unconstrained-map.rsh:11:36:application
+  ./unconstrained-map-1.rsh:11:36:application
 
   11|   const unconstrainedMap2 = new Map(Null);
 
