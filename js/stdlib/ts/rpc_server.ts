@@ -102,16 +102,59 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
   return {
     // Trade boilerplate for confidence we're not reexporting bits that shouldn't be
     ...Object.assign({}, // Serializable properties
-     ...[ 'connector'
+     ...[ 'atomicUnit'
+        , 'connector'
+        , 'standardUnit'
+        , 'minimumBalance'
         ].map(p => ({ [p]: () => lib[p] }) )),
 
     ...Object.assign({}, // Un-tweaked functions with serializable output
-     ...[ 'assert'
+     ...[ 'addressEq'
+        , 'Array_set'
+        , 'assert'
         , 'bigNumberToBigInt'
         , 'bigNumberToNumber'
         , 'bigNumberify'
+        , 'btoiLast8'
+        , 'bytesEq'
+        , 'canFundFromFaucet'
+        , 'canonicalizeConnectorMode'
+        , 'digest'
+        , 'digestEq'
         , 'formatCurrency'
+        , 'formatWithDecimals'
+        , 'getConnector'
+        , 'getConnectorMode'
+        , 'getNetworkSecs'
+        , 'getNetworkTime'
+        , 'hexToBigNumber'
+        , 'isHex'
+        , 'numberToFixedPoint'
+        , 'numberToInt'
         , 'parseCurrency'
+        , 'parseFixedPoint'
+        , 'parseInt'
+        , 'providerEnvByName'
+        , 'randomUInt'
+        , 'setMinMillisBetweenRequests'
+        , 'setProvider'
+        , 'setProviderByEnv'
+        , 'setProviderByName'
+        , 'setValidQueryWindow'
+        , 'stringToHex'
+        , 'unsafeAllowMultipleStdlibs'
+
+        , 'add'
+        , 'div'
+        , 'mod'
+        , 'mul'
+        , 'sub'
+
+        , 'eq'
+        , 'ge'
+        , 'gt'
+        , 'le'
+        , 'lt'
         ].map(f => ({ [f]: lib[f] }) )),
 
     isBigNumber: (n: any) =>
@@ -165,6 +208,12 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
 
     formatAddress: (id: string) =>
       lib.formatAddress(mkKor(lib, account)(id)),
+
+    bigNumberToHex: (n: any) =>
+      lib.bigNumberToHex(reBigNumberify(n)),
+
+    uintToBytes: (n: any) =>
+      lib.uintToBytes(reBigNumberify(n)),
   };
 };
 
