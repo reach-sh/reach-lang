@@ -184,16 +184,11 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
     connectAccount: async (id: string) =>
       account.track(await lib.connectAccount(account.id(id).networkAccount)),
 
-    balanceOf: async (id: string, tok?: any) => {
-      const t = tok === undefined ? undefined
-              : tok.id            ? tok.id // From `launchToken`
-              : tok;
-      return await lib.balanceOf(account.id(id), t);
-    },
+    balanceOf: async (id: string, tok?: any) =>
+      await lib.balanceOf(account.id(id), tok),
 
-    minimumBalanceOf: async (id: string) => {
-      return await lib.miniumBalanceOf(account.id(id));
-    },
+    minimumBalanceOf: async (id: string) =>
+      await lib.minimumBalanceOf(account.id(id)),
 
     transfer: async (from: string, to: string, bal: any, tok?: any) =>
       lib.transfer(account.id(from), account.id(to), bal, tok),
@@ -240,7 +235,6 @@ export const serveRpc = async (backend: any) => {
   const rpc_stdlib     = await mkStdlibProxy(real_stdlib, { account, token });
   const app            = express();
   const route_backend  = express.Router();
-  const tkor           = mkKor(real_stdlib, token);
 
   const rpc_acc = {
     contract: async (id: string, ...args: any[]) =>
@@ -262,20 +256,15 @@ export const serveRpc = async (backend: any) => {
       account.id(id).setDebugLabel(l) && id,
 
     tokenAccept: async (acc: string, tok: string) => {
-      const t = tkor(tok);
-      await account.id(acc).tokenAccept(t.id ? t.id : t);
+      await account.id(acc).tokenAccept(tok);
       return null;
     },
 
-    tokenAccepted: async (acc: string, tok: string) => {
-      const t = tkor(tok);
-      return await account.id(acc).tokenAccepted(t.id ? t.id : t);
-    },
+    tokenAccepted: async (acc: string, tok: string) =>
+      await account.id(acc).tokenAccepted(tok),
 
-    tokenMetadata: async (acc: string, tok: string) => {
-      const t = tkor(tok);
-      return await account.id(acc).tokenMetadata(t.id ? t.id : t);
-    },
+    tokenMetadata: async (acc: string, tok: string) =>
+      await account.id(acc).tokenMetadata(tok),
   };
 
   const rpc_ctc = {
