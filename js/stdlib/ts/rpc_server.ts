@@ -134,6 +134,7 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
         , 'parseCurrency'
         , 'parseFixedPoint'
         , 'parseInt'
+        , 'protect'
         , 'providerEnvByName'
         , 'randomUInt'
         , 'setMinMillisBetweenRequests'
@@ -156,6 +157,17 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
         , 'le'
         , 'lt'
         ].map(f => ({ [f]: lib[f] }) )),
+
+    // TODO these deserve special handling
+    T_Address: lib.T_Address,
+    T_Array:   lib.T_Array,
+    T_Bool:    lib.T_Bool,
+    T_Bytes:   lib.T_Bytes,
+    T_Data:    lib.T_Data,
+    T_Null:    lib.T_Null,
+    T_Object:  lib.T_Object,
+    T_Tuple:   lib.T_Tuple,
+    T_UInt:    lib.T_UInt,
 
     isBigNumber: (n: any) =>
       lib.isBigNumber(reBigNumberify(n)),
