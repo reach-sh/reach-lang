@@ -435,7 +435,7 @@ const processMd = async ({baseConfig, relDir, in_folder, iPath, oPath}) => {
 
   const directive_note = makeDirectiveWithClass("note");
   const directive_alongside = makeDirectiveWithClass("row gx-3");
-  const directive_alongsideColumn = makeDirectiveWithClass("col-12 col-lg-auto");
+  const directive_alongsideColumn = makeDirectiveWithClass("col-xl-4 col-md-6 col-sm-12");
 
   let c_hiddenNote = 0;
   const directive_hiddenNote = (node) => {
