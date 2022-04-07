@@ -7,6 +7,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.9 is the current Reach release candidate version.
 
++ 2022/04/06: Added support for arbitrary `{!rsh} Map` keys on Ethereum/Conflux.
 + 2022/04/05: Added support for creating overloaded `{!rsh} API` functions and calling overloaded `{!rsh} remote` functions.
 + 2022/03/30: Added `{!rsh} thisConsensusTime` and `{!rsh} thisConsensusSecs`.
 + 2022/03/30: Added `{!rsh} polyMod`, which supports `{!rsh} Bytes` and `{!rsh} Digest`s.

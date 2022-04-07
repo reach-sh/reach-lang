@@ -3093,7 +3093,9 @@ compile_algo env disp pl = do
             writeIORef companionCache $ Just x
             return x
   -- We start doing real work
-  let eMaps = dli_maps dli
+  (gFailuresR, gbad) <- newErrorSetRef
+  (gWarningsR, gwarn) <- newErrorSetRef
+  eMaps <- verifyMapTypes gbad $ dli_maps dli
   let eMapDataTy = mapDataTy eMaps
   let eMapDataSize = typeSizeOf eMapDataTy
   let PLOpts {..} = plo
@@ -3102,8 +3104,6 @@ compile_algo env disp pl = do
   let eLets = mempty
   let eLetSmalls = mempty
   let eWhich = Nothing
-  (gFailuresR, gbad) <- newErrorSetRef
-  (gWarningsR, gwarn) <- newErrorSetRef
   let recordSize prefix size = do
         modifyIORef resr $
           M.insert (prefix <> "Size") $
@@ -3370,6 +3370,12 @@ compile_algo env disp pl = do
       Aeson.Number $ fromIntegral $ reachAlgoBackendVersion
   res <- readIORef resr
   return $ aobject res
+
+verifyMapTypes :: (Traversable t, Monad m) => (LT.Text -> m ()) -> t DLMapInfo -> m (t DLMapInfo)
+verifyMapTypes badx = mapM $ \ DLMapInfo {..} -> do
+    unless (dlmi_kt == T_Address) $ do
+      badx $ LT.pack $ "Cannot use '" <> show dlmi_kt <> "' as Map key. Only 'Address' keys are allowed."
+    return $ DLMapInfo {..}
 
 connect_algo :: CompilerToolEnv -> Connector
 connect_algo env = Connector {..}

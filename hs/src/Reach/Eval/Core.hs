@@ -3139,9 +3139,16 @@ evalPrim p sargs =
       retV $ (lvl, SLV_Object nAt (Just $ ns <> " View") io)
     SLPrim_Map -> illegal_args
     SLPrim_Map_new -> do
-      t <- expect_ty "Map.new" =<< one_arg
+      (ktv, tv) <- case args of
+        [x] -> return $ (SLV_Type ST_Address, x)
+        [x, y] -> return $ (x, y)
+        _ -> illegal_args
+      kt <- expect_ty "Map.new" ktv
+      t <- expect_ty "Map.new" tv
       ensure_mode SLM_ConsensusStep "Map.new"
-      mv <- mapNew =<< st2dte t
+      kt' <- st2dte kt
+      t' <- st2dte t
+      mv <- mapNew kt' t'
       retV $ public $ SLV_Map mv
     SLPrim_Map_reduce -> do
       at <- withAt id
@@ -5477,7 +5484,8 @@ evalLValue = \case
     fv <- snd <$> evalExpr fe
     case cv of
       SLV_Map mv -> do
-        fa <- compileCheckType T_Address fv
+        kt <- dlmi_kt <$> mapLookup mv
+        fa <- compileCheckType kt fv
         return $ SLLV_MapRef at mv fa
       _ ->
         expect_t cv $ Err_Eval_RefNotRefable
@@ -5978,8 +5986,8 @@ mapLookup mv = do
     Just x -> return x
     Nothing -> impossible $ "mapLookup on unknown map"
 
-mapNew :: DLType -> App DLMVar
-mapNew dlmi_ty = do
+mapNew :: DLType -> DLType -> App DLMVar
+mapNew dlmi_kt dlmi_ty = do
   dlmi_at <- withAt id
   MapEnv {..} <- e_mape <$> ask
   mc <- DLMVar <$> (liftIO $ incCounter me_id)
@@ -6003,7 +6011,7 @@ mapRef :: DLMVar -> SLVal -> App DLVar
 mapRef mv mcv = do
   at <- withAt id
   mi <- mapLookup mv
-  mc <- compileCheckType T_Address mcv
+  mc <- compileCheckType (dlmi_kt mi) mcv
   let mt = dlmi_tym mi
   let mkvar = DLVar at Nothing mt
   ctxt_lift_expr mkvar $ DLE_MapRef at mv mc
