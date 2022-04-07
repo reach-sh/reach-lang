@@ -2,7 +2,6 @@
 CONN="$1"
 # SIZE="$2"
 RANK="$3"
-KIDS=0
 
 echo Running w/ "${CONN}:"
 
