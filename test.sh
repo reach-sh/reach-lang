@@ -33,11 +33,11 @@ jbi() {
 }
 
 jb () {
-  #jbi /js/js-deps
+  jbi /js/js-deps
   jbi /js/stdlib
   jbi /js/runner
   #jbi /js/rpc-server
-  jbi /js/react-runner
+  #jbi /js/react-runner
   #jbi /js
 }
 
@@ -62,7 +62,7 @@ ci () {
   ${REACH} compile --install-pkgs
   ${REACH} compile --intermediate-files
   make build
-  REACH_DEBUG=Y REACH_CONNECTOR_MODE="$MODE" ${REACH} run
+  REACH_DEBUG=N REACH_CONNECTOR_MODE="$MODE" ${REACH} run
 )
 }
 
@@ -132,10 +132,8 @@ export REACH_BUILD_NO_CACHE=Y
 
 ############################
 
-#jb
-ci ALGO uint256
-exit 0
-ci ETH uint256
+jb
+ci ALGO api-raw
 exit 0
 
 jb
