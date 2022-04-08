@@ -2089,9 +2089,9 @@ ce = \case
         ca ro
         incResource R_App ro
         makeTxn1 "ApplicationID"
-        -- XXX JAY this should be the 4bytes, not the 8bytes
-        let as' = (DLA_Literal $ DLL_Int at uintWord $ fromIntegral $ sigStrToInt sig) : as
-        forM_ as' $ \a -> do
+        cbs $ sigStrToBytes sig
+        makeTxn1 "ApplicationArgs"
+        forM_ as $ \a -> do
           ca a
           ctobs $ argTypeOf a
           makeTxn1 "ApplicationArgs"
