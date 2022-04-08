@@ -133,7 +133,7 @@ export REACH_BUILD_NO_CACHE=Y
 ############################
 
 jb
-ci ALGO api-raw
+ci ALGO remote-rsh
 exit 0
 
 jb
