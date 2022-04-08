@@ -730,6 +730,14 @@ The `{!js} algodClient` and `{!js} indexer` values are as specified by the [Algo
 The `{!js} signAndPostTxns` function obeys [ARC-0008](https://github.com/reach-sh/ARCs/blob/reach-wallet/ARCs/arc-0008.md).
 
 ---
+@{ref("js", "getProvider")}
+```js
+getProvider(): Promise<provider>
+```
+
+Promises a provider, matching the interface specified above.
+
+---
 @{ref("js", "setWalletFallback")}
 ```js
 setWalletFallback(make: () => wallet): void
