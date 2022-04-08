@@ -45,6 +45,10 @@ export const mainServer = Reach.App(() => {
 
   commit()
 
+  // Needs a last call to delete the program.
+  Deployer.publish()
+  commit()
+
 })
 
 export const mainClient = Reach.App(() => {
@@ -79,8 +83,6 @@ export const mainClient = Reach.App(() => {
 
   const [args, pokeRet] = call(A.poke)
 
-  // TODO - if I replace the remote call with a constant, the poke API works fine.
-  //const sum = 5
   const sum = sumServer.sumMany(...args)
 
   pokeRet(sum)

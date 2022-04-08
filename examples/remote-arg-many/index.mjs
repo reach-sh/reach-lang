@@ -26,10 +26,8 @@ const startMeUp = async (ctcDeployer, extraFields) => {
 
 await startMeUp(ctcServer.p.Deployer, {})
 const serverInfo = await ctcServer.getInfo()
-console.log("Server contract info: ", serverInfo)
 await startMeUp(ctcClient.p.Deployer, {serverCtcInfo: serverInfo})
 const clientInfo = await ctcClient.getInfo()
-console.log("Client contract info: ", clientInfo)
 
 //const argLength = 20
 const argLength = 8
@@ -37,8 +35,6 @@ const argLength = 8
 const args = Array.from(new Array(argLength), (_, i) => i);
 
 const res = await ctcClient.apis.poke(...args)
-//const res = await ctcServer.apis.sumMany(...args)
-console.log("res: ", res)
 const expected = args.reduce((accum, x) => accum + x, 0)
 if (stdlib.bigNumberToNumber(res) != expected) {
   throw "bad return, expected: " + expected + " got: " + stdlib.bigNumberToNumber(res)
