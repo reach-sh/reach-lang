@@ -94,4 +94,8 @@ conn fake ETH "$(per 16)"
 conn fake ALGO "$(per 16)"
 conn fake CFX "$(per 16)"
 
+cat >>"${END}" <<END
+          - "hs-test"
+END
+
 cat "${PRE}" "${MID}" "${END}" "${IEND}" > config.gen.yml
