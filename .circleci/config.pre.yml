@@ -67,7 +67,11 @@ commands:
           source ./VERSION
           for img in << parameters.deps >>; do
             if [ $img != "" ]; then
-              docker pull reachsh/$img:circleci-$CIRCLE_SHA1
+              TRIES=0
+              while ! docker pull reachsh/$img:circleci-$CIRCLE_SHA1 && ((TRIES < 5)); do
+                sleep 3
+                TRIES=$((TRIES + 1))
+              done
               docker tag reachsh/$img:circleci-$CIRCLE_SHA1 reachsh/$img:latest
               docker tag reachsh/$img:circleci-$CIRCLE_SHA1 reachsh/$img:$VERSION
             fi
