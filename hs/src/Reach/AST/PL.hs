@@ -259,7 +259,7 @@ type ViewInfos = M.Map Int ViewInfo
 
 type CPViews = DLViews
 
-type ApiInfos = M.Map SLPart ApiInfo
+type ApiInfos = M.Map SLPart (M.Map Int ApiInfo)
 
 data CPProg
   = CPProg SrcLoc (CPViews, ViewInfos) ApiInfos DLEvents CHandlers

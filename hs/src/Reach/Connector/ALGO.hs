@@ -47,6 +47,7 @@ import System.FilePath
 import System.IO.Temp
 import System.Process.ByteString
 import Text.Read
+import Data.Bool (bool)
 
 -- Errors for ALGO
 
@@ -3038,6 +3039,9 @@ capi (who, (ApiInfo {..})) = do
     capi_ret_ty = ai_ret_ty
     mret = Just $ capi_ret_ty
 
+capis :: (SLPart, M.Map a ApiInfo) -> App [(String, CMeth)]
+capis (p, ms) = concatMapM (capi . (p,) . snd) $ M.toAscList ms
+
 cview :: (SLPart, VSITopInfo) -> (String, CMeth)
 cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs) = (cview_sig, c)
   where
@@ -3210,13 +3214,17 @@ compile_algo env disp pl = do
             lr_at = ch_at
             lr_what = "Step " <> show i
         (_, C_Loop {}) -> Nothing
-  let a2lr (p, ApiInfo {..}) = LabelRec {..}
+  let a2lr qualify (p, ApiInfo {..}) = LabelRec {..}
         where
-          lr_lab = apiLabel p
+          suffix =bool "" (show ai_which) qualify
+          lr_lab = apiLabel p <> LT.pack suffix
           lr_at = ai_at
-          lr_what = "API " <> bunpack p
+          lr_what = "API " <> bunpack p <> suffix
+  let as2lrs (p, ms) =
+        map (a2lr qualify . (p,) . snd) $ M.toAscList ms
+        where qualify = M.size ms > 1
   let pubLs = mapMaybe h2lr $ M.toAscList hm
-  let apiLs = map a2lr $ M.toAscList ai
+  let apiLs = concatMap as2lrs $ M.toAscList ai
   let progLs = pubLs <> apiLs
   meth_sm_r <- newIORef mempty
   let run :: CompanionInfo -> App () -> IO (TEALs, Notify, IO ())
@@ -3271,7 +3279,7 @@ compile_algo env disp pl = do
         ts' <- rec False Nothing
         void $ addProg lab ts'
   runProg $ do
-    ai_sm <- M.fromList <$> concatMapM capi (M.toAscList ai)
+    ai_sm <- M.fromList <$> concatMapM capis (M.toAscList ai)
     let vsiTop = analyzeViews vsi
     let vsi_sm = M.fromList $ map cview $ M.toAscList vsiTop
     let meth_sm = M.union ai_sm vsi_sm

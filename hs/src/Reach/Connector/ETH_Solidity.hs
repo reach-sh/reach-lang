@@ -38,6 +38,7 @@ import System.FilePath
 import System.IO.Temp
 import System.Process
 import Text.Printf
+import Data.Bool (bool)
 
 --- Debugging tools
 
@@ -1389,8 +1390,12 @@ apiDef who ApiInfo {..} = do
   return $ vsep $ mk who_s body : alias
 
 apiDefs :: ApiInfos -> App Doc
-apiDefs defs =
-  vsep <$> (mapM (uncurry apiDef) $ M.toList defs)
+apiDefs defs = do
+  let defL = M.toList defs
+  defs' <- concat <$> mapM (\ (p, ms) ->
+                              mapM (\ (_, a) -> apiDef p a) $
+                              M.toAscList ms) defL
+  return $ vsep defs'
 
 solDefineType :: DLType -> App ()
 solDefineType t = case t of
@@ -1496,12 +1501,20 @@ solEB args (DLinExportBlock _ mfargls (DLBlock _ _ t r)) = do
   r' <- solArg r
   return $ vsep [t', "return" <+> r' <> semi]
 
-createAPIRng :: M.Map SLPart DLType -> App Doc
+createAPIRng :: ApiInfos -> App Doc
 createAPIRng env =
   case M.null env of
     True -> return ""
     False -> do
-      fields <- mapM (\(k, v) -> (pretty (bunpack k),) <$> solType_ v) $ M.toAscList env
+      fields <- concat <$> mapM (\(k, ms) -> do
+          let qualify = M.size ms > 1
+          mapM (\ (w, ai) -> do
+              let suffix = bool "" (show w) qualify
+              let n = pretty $ bunpack k <> suffix
+              t <- solType_ $ ai_ret_ty ai
+              return (n, t)
+            ) $ M.toAscList ms
+          ) (M.toAscList env)
       return $ fromMaybe (impossible "createAPIRng") $ solStruct "ApiRng" fields
 
 baseTypes :: M.Map DLType Doc
@@ -1635,7 +1648,7 @@ solPLProg (PLProg _ plo dli _ _ _ (CPProg at (vs, vi) ai _ hs)) = do
     intsp <- getm ctxt_ints
     outputsp <- getm ctxt_outputs
     tlfunsp <- getm ctxt_tlfuns
-    api_rng <- createAPIRng $ M.map ai_ret_ty ai
+    api_rng <- createAPIRng ai
     let defp =
           vsep $
             [ "receive () external payable {}"

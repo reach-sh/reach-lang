@@ -174,7 +174,7 @@ data BEnv = BEnv
   , be_inConsensus :: Bool
   , be_counter :: Counter
   , be_which :: Int
-  , be_api_info :: IORef (M.Map SLPart ApiInfo)
+  , be_api_info :: IORef (M.Map SLPart (M.Map Int ApiInfo))
   , be_alias :: Aliases
   , be_api_rets :: IORef (M.Map SLPart DLType)
   , be_ms :: Seq.Seq DLStmt
@@ -356,8 +356,10 @@ be_m = \case
         let ret = fromMaybe T_Null $ M.lookup p rets
         let alias = join $ M.lookup (bunpack p) be_alias
         liftIO $
-          modifyIORef be_api_info $
-            M.insert p $ ApiInfo apiAt tys mc be_which isf ret alias
+          modifyIORef be_api_info $ \ m ->
+              M.insert p (M.insert be_which (ApiInfo apiAt tys mc be_which isf ret alias) $ ai m) m
+            where
+              ai = fromMaybe mempty . M.lookup p
       _ -> return ()
     fg_edge mdv de
     retb0 $ const $ return $ DL_Let at mdv de
