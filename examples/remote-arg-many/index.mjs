@@ -29,8 +29,7 @@ const serverInfo = await ctcServer.getInfo()
 await startMeUp(ctcClient.p.Deployer, {serverCtcInfo: serverInfo})
 const clientInfo = await ctcClient.getInfo()
 
-//const argLength = 20
-const argLength = 8
+const argLength = 20
 
 const args = Array.from(new Array(argLength), (_, i) => i);
 
