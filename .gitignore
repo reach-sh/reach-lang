@@ -12,3 +12,4 @@ build
 /exp
 .reach
 .docker-root
+/test.sh
