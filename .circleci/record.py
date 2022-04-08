@@ -136,10 +136,9 @@ def truncate_message(msg):
 username = env('CIRCLE_USERNAME')
 branch = env('CIRCLE_BRANCH')
 branch_url = f"https://github.com/reach-sh/reach-lang/tree/{branch}"
-pr = env('CIRCLE_PULL_REQUEST')
 build = env('CIRCLE_BUILD_URL')
 
-circle_message = f"*{SYM}* {username}/<{branch_url}|{branch}>/<{pr}|PR> > examples: {PRE} <{build}|more...>{POST}"
+circle_message = f"*{SYM}* {username}/<{branch_url}|{branch}> > examples: {PRE} <{build}|more...>{POST}"
 circle_message = truncate_message(circle_message)
 print(f'export RECORD_MESSAGE="{circle_message}"')
 
