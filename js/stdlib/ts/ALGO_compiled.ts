@@ -104,7 +104,7 @@ export const T_UInt256: ALGO_Ty<CBR_UInt> = {
     // if (getDEBUG()) console.log(nv);
     return ethers.BigNumber.from(nv.slice(0, 32));
   },
-  netName: 'byte[32]',
+  netName: 'uint256',
 }
 
 /** @description For arbitrary utf8 strings */
