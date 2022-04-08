@@ -122,7 +122,7 @@ def truncate_message(msg):
     # 3000 character limit for text field in block api
     # https://api.slack.com/reference/block-kit/blocks#section_fields
     trunc_msg = "... message truncated"
-    if len(msg) <= 3000
+    if len(msg) <= 3000:
         return msg
     else:
         new_len = 3000 - len(trunc_msg)
