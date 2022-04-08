@@ -24,6 +24,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Lazy as LT
 import qualified Data.Vector as Vector
 import Data.Word
+import Numeric (showHex)
 import Generics.Deriving (Generic)
 import Reach.AddCounts
 import Reach.AST.Base
@@ -324,7 +325,7 @@ typeSig x =
     T_Null -> "byte[0]"
     T_Bool -> "byte" -- "bool"
     T_UInt False -> "uint64"
-    T_UInt True -> "byte[32]"
+    T_UInt True -> "uint256"
     T_Bytes sz -> "byte" <> array sz
     T_Digest -> "digest"
     T_Address -> "address"
@@ -620,7 +621,7 @@ itob :: Int -> Integer -> BS.ByteString
 itob howMany = BS.pack . padTo howMany 0 . reverse . unroll
 
 btoi :: BS.ByteString -> Integer
-btoi = roll . BS.unpack
+btoi = roll . reverse . BS.unpack
 
 unroll :: Integer -> [Word8]
 unroll = List.unfoldr go
@@ -2030,7 +2031,7 @@ ce = \case
       Just which -> return $ "Step " <> show which
       Nothing -> return $ "This program"
     warn $ LT.pack $
-      warn_lab <> " calls a remote object at " <> show at <> ". This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object."
+      warn_lab <> " calls a remote object at " <> show at <> ". This means that Reach's conservative analysis of resource utilization and fees is incorrect, because we cannot take into account the needs of the remote object. Furthermore, the remote object may require special transaction parameters which are not expressed in the Reach API or the Algorand ABI standards."
     let ts = map argTypeOf as
     let rm = fromMaybe rm' ma
     let sig = signatureStr rm ts (Just rng_ty)
@@ -2088,6 +2089,7 @@ ce = \case
         ca ro
         incResource R_App ro
         makeTxn1 "ApplicationID"
+        -- XXX JAY this should be the 4bytes, not the 8bytes
         let as' = (DLA_Literal $ DLL_Int at uintWord $ fromIntegral $ sigStrToInt sig) : as
         forM_ as' $ \a -> do
           ca a
@@ -3039,17 +3041,25 @@ doWrapData tys mk = do
   -- Data of tys is on stack
   return ()
 
+sigDump :: Int -> String
+sigDump sigi =
+   i "i" (show sigi)
+   <> i "h" (showHex sigi "")
+   <> i "b64" (B.unpack $ encodeBase64' $ itob 4 $ fromIntegral sigi)
+  where
+    i l s = " " <> l <> "(" <> s <> ")"
+
 cmeth :: Int -> CMeth -> App ()
 cmeth sigi = \case
   CAlias alias (CApi {..}) -> do
     comment $ LT.pack $ "API: " <> capi_sig
-    comment $ LT.pack $ " ui: " <> show sigi
+    comment $ LT.pack $ sigDump sigi
     block_' (bunpack alias) $ do
       code "b" [capi_label]
   CApi _ sig _ which tys doWrap lab -> do
     block lab $ do
       comment $ LT.pack $ "API: " <> sig
-      comment $ LT.pack $ " ui: " <> show sigi
+      comment $ LT.pack $ sigDump sigi
       let f :: DLType -> Integer -> (DLType, App ())
           f t i = (t, code "txna" ["ApplicationArgs", texty i])
       cconcatbs_ (const $ return ()) $ zipWith f tys [1 ..]
@@ -3058,7 +3068,7 @@ cmeth sigi = \case
   CView who sig _ hs -> do
     block_' (bunpack who) $ do
       comment $ LT.pack $ "View: " <> sig
-      comment $ LT.pack $ "  ui: " <> show sigi
+      comment $ LT.pack $ sigDump sigi
       gvLoad GV_currentStep
       flip (cblt "viewStep") (bltM hs) $ \hi vbvs -> separateResources $ do
         vbvs' <- liftIO $ add_counts vbvs
