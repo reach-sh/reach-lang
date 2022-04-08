@@ -136,6 +136,6 @@ build = env('CIRCLE_BUILD_URL')
 
 circle_message = f"*{SYM}* {username}/<{branch_url}|{branch}>/<{pr}|PR> > examples: {PRE} <{build}|more...>{POST}"
 circle_message = truncate_message(circle_message)
-print(f'export RECORD_MESSAGE={circle_message}')
+print(f'export RECORD_MESSAGE="{circle_message}"')
 
 exit(EXIT)
