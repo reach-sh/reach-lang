@@ -259,6 +259,16 @@ jobs:
         paths:
           - artifacts
           - record
+    # This should only notify if something goes fatally wrong.
+    # Regular test failures go through to the sink.
+    - slack/notify:
+        event: fail
+        custom: |
+          { "blocks": [
+              { "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "**examples.<<parameters.connector>>**: <${CIRCLE_BUILD_URL}|catastrophic failure>" }}]}
   "examples-sink":
     executor: fake
     steps:
@@ -288,16 +298,23 @@ jobs:
         echo Go team!
   "browser-tests":
     executor: real
+    parameters:
+      connector:
+        description: "which connector"
+        type: string
+      devnet:
+        description: "which devnet"
+        type: string
     steps:
     - checkout
     - workattach
     - and_restore_docker:
-        deps: "react-runner devnet-algo reach-cli reach"
+        deps: "<<parameters.devnet>> react-runner reach-cli reach"
     - run: |
         cd examples/rps-9-web/
         patch index.js cypress.patch
     - run: |
-        (cd examples/rps-9-web && REACH_CONNECTOR_MODE=ALGO ../../reach react) &
+        (cd examples/rps-9-web && REACH_CONNECTOR_MODE=<<parameters.connector>> ../../reach react) &
         (cd js/browser-tests && make build)
         # give the react server time to start up
         timeout 60 bash -c 'until echo > /dev/tcp/localhost/3000; do sleep 1; done'
@@ -339,14 +356,27 @@ workflows:
         type: approval
         requires:
           - "build-sink"
-          - "browser-tests"
+          - "browser-tests.eth"
+          - "browser-tests.algo"
         filters:
           branches:
             only: master
     - "browser-tests":
+        name: "browser-tests.eth"
+        connector: "ETH"
+        devnet: "devnet-eth"
         requires:
+          - "build-devnet-eth"
           - "build-react-runner"
+          - "build-reach-cli"
+          - "build-reach"
+    - "browser-tests":
+        name: "browser-tests.algo"
+        connector: "ALGO"
+        devnet: "devnet-algo"
+        requires:
           - "build-devnet-algo"
+          - "build-react-runner"
           - "build-reach-cli"
           - "build-reach"
     # Sink and examples follow

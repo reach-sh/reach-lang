@@ -54,6 +54,7 @@ export const mkKont = () => {
   };
 
   const track = async (a: any) => {
+    // Remember to update `mkKor` if modifying bytes length
     const rb = await randomBytes(24);
     const id = `${i}_${rb.toString('hex')}`;
     k[id]    = a;
@@ -96,9 +97,80 @@ export const mkKont = () => {
 
 export const mkStdlibProxy = async (lib: any, ks: any) => {
   const { account, token } = ks;
+  const reBigNumberify     = mkReBigNumberify(lib);
 
   return {
-    ...lib,
+    // Trade boilerplate for confidence we're not reexporting bits that shouldn't be
+    ...Object.assign({}, // Serializable properties
+     ...[ 'atomicUnit'
+        , 'connector'
+        , 'standardUnit'
+        , 'minimumBalance'
+
+        // TODO these deserve special handling
+        , 'T_Address'
+        , 'T_Array'
+        , 'T_Bool'
+        , 'T_Bytes'
+        , 'T_Data'
+        , 'T_Null'
+        , 'T_Object'
+        , 'T_Tuple'
+        , 'T_UInt'
+        ].map(p => ({ [p]: lib[p] }) )),
+
+    ...Object.assign({}, // Un-tweaked functions with serializable output
+     ...[ 'addressEq'
+        , 'Array_set'
+        , 'assert'
+        , 'bigNumberToBigInt'
+        , 'bigNumberToNumber'
+        , 'bigNumberify'
+        , 'btoiLast8'
+        , 'bytesEq'
+        , 'canFundFromFaucet'
+        , 'canonicalizeConnectorMode'
+        , 'digest'
+        , 'digestEq'
+        , 'formatCurrency'
+        , 'formatWithDecimals'
+        , 'getConnector'
+        , 'getConnectorMode'
+        , 'getNetworkSecs'
+        , 'getNetworkTime'
+        , 'hexToBigNumber'
+        , 'isHex'
+        , 'numberToFixedPoint'
+        , 'numberToInt'
+        , 'parseCurrency'
+        , 'parseFixedPoint'
+        , 'parseInt'
+        , 'protect'
+        , 'providerEnvByName'
+        , 'randomUInt'
+        , 'setMinMillisBetweenRequests'
+        , 'setProvider'
+        , 'setProviderByEnv'
+        , 'setProviderByName'
+        , 'setValidQueryWindow'
+        , 'stringToHex'
+        , 'unsafeAllowMultipleStdlibs'
+
+        , 'add'
+        , 'div'
+        , 'mod'
+        , 'mul'
+        , 'sub'
+
+        , 'eq'
+        , 'ge'
+        , 'gt'
+        , 'le'
+        , 'lt'
+        ].map(f => ({ [f]: lib[f] }) )),
+
+    isBigNumber: (n: any) =>
+      lib.isBigNumber(reBigNumberify(n)),
 
     newTestAccount: async (bal: any) =>
       account.track(await lib.newTestAccount(bal)),
@@ -124,26 +196,15 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
     connectAccount: async (id: string) =>
       account.track(await lib.connectAccount(account.id(id).networkAccount)),
 
-    balanceOf: async (id: string, token?: any) => {
-      const t = token === undefined ? undefined
-              : token.id            ? token.id // From `launchToken`
-              : token;
-      return await lib.balanceOf(account.id(id), t);
-    },
+    balanceOf: async (id: string, tok?: any) =>
+      await lib.balanceOf(account.id(id), tok),
 
-    minimumBalanceOf: async (id: string) => {
-      return await lib.miniumBalanceOf(account.id(id));
-    },
+    minimumBalanceOf: async (id: string) =>
+      await lib.minimumBalanceOf(account.id(id)),
 
-    transfer: async (from: string, to: string, bal: any, token?: any) =>
-      lib.transfer(account.id(from), account.id(to), bal, token),
+    transfer: async (from: string, to: string, bal: any, tok?: any) =>
+      lib.transfer(account.id(from), account.id(to), bal, tok),
 
-    assert: (x: any) =>
-      lib.assert(x),
-
-    // As of 2021-12-08 `launchToken` isn't officially documented
-    // These are unlike `Token` values but we'll track them together, with the
-    // intention that functions like `tokenAccept` should accept either
     launchToken: async (id: string, name: string, sym: string, opts: any = {}) => {
       const t = await lib.launchToken(account.id(id), name, sym, opts);
       return { kid: await token.track(t), token: t };
@@ -151,26 +212,41 @@ export const mkStdlibProxy = async (lib: any, ks: any) => {
 
     setQueryLowerBound: (nt: any) =>
       lib.setQueryLowerBound(lib.bigNumberify(nt)),
+
+    formatAddress: (id: string) =>
+      lib.formatAddress(mkKor(lib, account)(id)),
+
+    bigNumberToHex: (n: any) =>
+      lib.bigNumberToHex(reBigNumberify(n)),
+
+    uintToBytes: (n: any) =>
+      lib.uintToBytes(reBigNumberify(n)),
   };
 };
 
 
-export const serveRpc = async (backend: any) => {
-  const account       = mkKont();
-  const contract      = mkKont();
-  const token         = mkKont();
-  const kont          = mkKont();
-  const real_stdlib   = await loadStdlib();
-  const rpc_stdlib    = await mkStdlibProxy(real_stdlib, { account, token });
-  const app           = express();
-  const route_backend = express.Router();
+// `isBigNumber` in stdlib uses type reflection which doesn't work here due
+// to `n` having been serialized into JSON
+export const mkReBigNumberify = (l: any) => (n: any) =>
+  n && n.hex && n.type && n.type === 'BigNumber'
+    ? (() => { try { return l.bigNumberify(n); } catch (e) { return n; }})()
+    : n;
 
-  // `isBigNumber` in stdlib uses type reflection which doesn't work here due
-  // to `n` having been serialized into JSON
-  const reBigNumberify = (n: any) =>
-    n && n.hex && n.type && n.type === 'BigNumber'
-      ? (() => { try { return real_stdlib.bigNumberify(n); } catch (e) { return n; }})()
-      : n;
+const mkKor = (l: any, k: any) => (i: any) =>
+  /^[0-9]+_[0-9a-f]{48}$/.test(i)
+    ? k.id(i)
+    : mkReBigNumberify(l)(i);
+
+export const serveRpc = async (backend: any) => {
+  const account        = mkKont();
+  const contract       = mkKont();
+  const token          = mkKont();
+  const kont           = mkKont();
+  const real_stdlib    = await loadStdlib();
+  const reBigNumberify = mkReBigNumberify(real_stdlib);
+  const rpc_stdlib     = await mkStdlibProxy(real_stdlib, { account, token });
+  const app            = express();
+  const route_backend  = express.Router();
 
   const rpc_acc = {
     contract: async (id: string, ...args: any[]) =>
@@ -192,20 +268,20 @@ export const serveRpc = async (backend: any) => {
       account.id(id).setDebugLabel(l) && id,
 
     tokenAccept: async (acc: string, tok: string) => {
-      const t = token.id(tok);
-      await account.id(acc).tokenAccept(t.id ? t.id : t);
+      await account.id(acc).tokenAccept(tok);
       return null;
     },
 
-    tokenAccepted: async (acc: string, tok: string) => {
-      const t = token.id(tok);
-      return await account.id(acc).tokenAccepted(t.id ? t.id : t);
-    },
+    tokenAccepted: async (acc: string, tok: string) =>
+      await account.id(acc).tokenAccepted(tok),
+
+    tokenMetadata: async (acc: string, tok: string) =>
+      await account.id(acc).tokenMetadata(tok),
   };
 
   const rpc_ctc = {
     getInfo: async (id: string) =>
-      contract.id(id).getInfo(),
+      await contract.id(id).getInfo(),
   };
 
   const rpc_launchToken = {
@@ -252,7 +328,10 @@ export const serveRpc = async (backend: any) => {
         const lab  = `RPC /${olab}/${k} ${j2s(args)}`;
         debug(lab);
 
-        const ans = await obj[k](...args);
+        const ans = typeof obj[k] === 'function'
+          ? await obj[k](...args)
+          : obj[k];
+
         const ret = ans === undefined ? null : ans;
         debug(`${lab} ==> ${j2s(ret)}`);
 
