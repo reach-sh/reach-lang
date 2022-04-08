@@ -91,7 +91,7 @@ data Env = Env
   , eWhile :: EWhileT
   , eCounter :: Counter
   , eBeforeFirstTC :: Bool
-  , eConsts :: Seq.Seq DLStmt
+  , eConstsR :: IORef (Seq.Seq DLStmt)
   }
 
 class Contains a where
@@ -152,21 +152,16 @@ seek = \case
     Env {..} <- ask
     case has interactIn c of
       False -> do
-        let m = seek k
-        case eBeforeFirstTC of
-          True -> local (\e -> e { eConsts = eConsts Seq.|> c }) m
-          False -> m
+        when eBeforeFirstTC $ do
+          liftIO $ modifyIORef eConstsR $ flip (Seq.|>) c
+        seek k
       True -> do
         (liftIO $ readIORef eSeenInR) >>= \case
           False -> liftIO $ writeIORef eSeenInR True
           True -> err at API_Twice
         slurp k >>= \case
           Nothing -> err at API_NoOut
-          Just k' -> do
-            let ms = eConsts
-            let mst = dtList at (toList $ ms Seq.|> c)
-            let c' = DL_LocalDo at mst
-            return $ Just $ mkCom ET_Com c' k'
+          Just k' -> return $ Just $ mkCom ET_Com c k'
   ET_Stop _ -> return Nothing
   ET_If at c t f -> do
     t' <- seek t
@@ -332,15 +327,19 @@ apc hc eWho = \case
     let eWhile = EWhileT Nothing
     let eCounter = getCounter hc
     let eBeforeFirstTC = True
-    let eConsts = mempty
+    eConstsR <- newIORef mempty
     let env0 = Env {..}
     et' <- flip runReaderT env0 $ do
       seek et >>= \case
-        Just x -> do
-          let badVars = countsl x
+        Just k' -> do
+          ms <- liftIO $ readIORef eConstsR
+          let mst = dtList at $ toList ms
+          let c' = DL_LocalDo at mst
+          let k'' = mkCom ET_Com c' k'
+          let badVars = countsl k''
           unless (null badVars) $
             err at (API_NonCS badVars)
-          return x
+          return k''
         Nothing -> err at API_NoIn
     return $ EPProg at True ie et'
   p -> return p
