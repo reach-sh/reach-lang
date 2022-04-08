@@ -3,6 +3,7 @@ import os
 import json
 from pathlib import Path
 from itertools import filterfalse
+import xml.etree.ElementTree as xml
 
 def env(k):
     return os.environ[k]
@@ -81,9 +82,18 @@ SYM = ":jayparfait: OKAY"
 PRE = f"{total} passed!"
 POST = ""
 
-if ftc > 0:
+want_to_count = ['t/y', 't/n']
+hs_test_xml = xml.parse("/tmp/workspace/hs-test.xml").getroot()
+hs_test_fails = 0
+def count(itr): return sum(1 for _ in itr)
+def want(ts): return ts.attrib['name'] in want_to_count
+for ts in filter(want, hs_test_xml.iter('testsuite')):
+    hs_test_fails += count(ts.iter('failure'))
+
+n_fails = ftc + hs_test_fails
+if n_fails > 0:
     SYM = ":warning: FAIL"
-    PRE = f"{ftc} of {total} failed!"
+    PRE = f"{ftx} examples & {hs_test_fails} tests of {total} failed!"
     if xftc > 0:
         PRE += f" ({xftc} expected)"
 
@@ -138,7 +148,7 @@ branch = env('CIRCLE_BRANCH')
 branch_url = f"https://github.com/reach-sh/reach-lang/tree/{branch}"
 build = env('CIRCLE_BUILD_URL')
 
-circle_message = f"*{SYM}* {username}/<{branch_url}|{branch}> > examples: {PRE} <{build}|more...>{POST}"
+circle_message = f"*{SYM}* {username}/<{branch_url}|{branch}> {PRE} <{build}|more...>{POST}"
 circle_message = truncate_message(circle_message)
 print(f"export RECORD_MESSAGE='{circle_message}'")
 
