@@ -121,12 +121,17 @@ POST += f"*: `{env('CIRCLE_SHA1')[:8]}`"
 def truncate_message(msg):
     # 3000 character limit for text field in block api
     # https://api.slack.com/reference/block-kit/blocks#section_fields
-    trunc_msg = "... message truncated"
+    trunc_msg = "... message truncated\\n:warning:"
     if len(msg) <= 3000:
         return msg
     else:
         new_len = 3000 - len(trunc_msg)
-        return msg[:new_len] + trunc_msg
+        new_msg = msg[:new_len]
+        artifact_link_end = new_msg.rfind(">*")
+        artifact_link_start = new_msg.rfind("*<")
+        if artifact_link_end < artifact_link_start:
+            new_msg = new_msg[:artifact_link_start]
+        return new_msg + trunc_msg
 
 username = env('CIRCLE_USERNAME')
 branch = env('CIRCLE_BRANCH')
