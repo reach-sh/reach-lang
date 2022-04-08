@@ -10,8 +10,11 @@ const assertEq = (i, j, expected, actual) => {
   const acts = JSON.stringify(actual);
   console.log('assertEq', {i,j,expected, actual}, {exps, acts});
   stdlib.assert(exps === acts); };
-const accA = await stdlib.newTestAccount(stdlib.parseCurrency(100));
-accA.setGasLimit(5000000);
+const mkA = async () => {
+  const accA = await stdlib.newTestAccount(stdlib.parseCurrency(300));
+  accA.setGasLimit(5000000);
+  return accA;
+};
 
 const expectFail = async (name, f) => {
   try {
@@ -27,14 +30,18 @@ const expectFail = async (name, f) => {
 
 // VeriC
 const veriC = async (x) => {
+  const accA = await mkA();
   const ctcA = accA.contract(backendVeriC);
   await ctcA.p.A({ x });
 }
 await veriC(bn('777'));
-await expectFail(`veriC(big)`, () => veriC(bn(2).pow(128)));
+if ( stdlib.connector === 'ALGO' ) {
+  await expectFail(`veriC(big)`, () => veriC(bn(2).pow(128)));
+}
 
 // Test trap
 const trapGo = async (f, ...args) => {
+  const accA = await mkA();
   console.log(`Calling ${f}(${args})`);
   const ctcA_S = accA.contract(backendTrapS);
   const ctcA_C = accA.contract(backendTrapC);
@@ -66,6 +73,8 @@ await trapGo('cast', bn(4));
 await (( stdlib.connector === 'ALGO' ) ? trapNo : trapGo)('cast', bn(2).pow(80));
 
 // Test main
+{
+const accA = await mkA();
 const ctcA = accA.contract(backend);
 const b1 = bn(2).pow(128);
 const b2 = bn(2).pow(24);
@@ -337,3 +346,4 @@ await ctcA.p.A({
       assertEq(i, j, (answers[i]||[])[j], v))
   },
 });
+}
