@@ -546,7 +546,11 @@ instance Interp DLExpr where
             Just v -> return v
             Nothing -> possible $ "DLE_Interact: late api call for " ++ partName'
         Nothing -> do
-          suspend $ PS_Suspend (Just at) (A_Interact slcxtframes partName' str dltype args)
+          case dltype of
+            T_Null -> do
+              return V_Null
+            _ -> do
+              suspend $ PS_Suspend (Just at) (A_Interact slcxtframes partName' str dltype args)
     DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
       CT_Assert -> interp dlarg
