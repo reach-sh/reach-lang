@@ -92,7 +92,7 @@ POST = ""
 
 if fails > 0:
     SYM = ":warning: FAIL"
-    PRE = f"{fails} tests of {total} failed!"
+    PRE = f"{fails} of {total} failed!"
     if xftc > 0:
         PRE += f" ({xftc} expected)"
 
@@ -147,7 +147,7 @@ branch = env('CIRCLE_BRANCH')
 branch_url = f"https://github.com/reach-sh/reach-lang/tree/{branch}"
 build = env('CIRCLE_BUILD_URL')
 
-circle_message = f"*{SYM}* {username}/<{branch_url}|{branch}> {PRE} <{build}|more...>{POST}"
+circle_message = f"*{SYM}* {username}/<{branch_url}|{branch}> tests > {PRE} <{build}|more...>{POST}"
 circle_message = truncate_message(circle_message)
 print(f"export RECORD_MESSAGE='{circle_message}'")
 
