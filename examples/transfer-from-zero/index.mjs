@@ -1,6 +1,21 @@
 import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
-const stdlib = loadStdlib(process.env);
+const stdlib = loadStdlib({ ALGO_NODE_WRITE_ONLY: 'yes' });
+const expectFail = async (name, f) => {
+  try {
+    await f();
+    throw 42;
+  } catch (e) {
+    if ( e === 42 ) {
+      throw Error(`${name} succeeded, but shouldn't`);
+    }
+    console.log(`Got error`, e);
+  }
+};
+
+const accMt = await stdlib.createAccount();
+console.log(await stdlib.balanceOf(accMt));
+await expectFail('tokenMetadata(42)', () => accMt.tokenMetadata(42));
 
 const startingBalance = stdlib.parseCurrency(0);
 const [ accAlice, accBob ] =
