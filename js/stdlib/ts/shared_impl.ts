@@ -447,12 +447,12 @@ export const stdContract =
 };
 
 export type TokenMetadata = {
-  name: string,
-  symbol: string,
-  url: string,
-  metadata: string,
+  name?: string,
+  symbol?: string,
+  url?: string,
+  metadata?: string,
   supply: BigNumber,
-  decimals: BigNumber,
+  decimals?: BigNumber,
 };
 
 export type LaunchTokenOpts = {
