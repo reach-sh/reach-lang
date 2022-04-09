@@ -638,7 +638,7 @@ const doQueryM_ = async <T>(dhead:string, query: ApiCall<T>): Promise<OrExn<T>> 
   }
 };
 
-const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0, failOk:((e:any) => OrExn<T>) = ((exn:any) => ({ exn }))): Promise<T> => {
+const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0, failOk:((e:any, howMany:number) => OrExn<T>) = ((exn:any, howMany:number) => { void howMany; return { exn }; })): Promise<T> => {
   debug(dhead, query.query);
   while ( true ) {
     if ( howMany > 0 ) {
@@ -653,7 +653,7 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0,
         debug(dhead, 'ACCOUNTING NOT INITIALIZED');
       }
       if ( e?.response?.text ) { e = e.response.text; }
-      const fr = failOk(e);
+      const fr = failOk(e, howMany);
       if ( 'exn' in fr ) {
         debug(dhead, 'RETRYING', {e});
         howMany++;
@@ -1205,7 +1205,8 @@ const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
   }
   const indexer = await getIndexer();
   const q = indexer.lookupAccountByID(a) as unknown as ApiCall<IndexerAccountInfoRes>;
-  const failOk = (x:any): OrExn<IndexerAccountInfoRes> => {
+  const failOk = (x:any, howMany:number): OrExn<IndexerAccountInfoRes> => {
+    void howMany;
     if ( typeof x === 'string' && x.includes('no accounts found for address') ) {
       return { val: {
         'current-round': BigInt(0),
@@ -1226,8 +1227,10 @@ const getAssetInfo = async (a:number): Promise<AssetInfo> => {
   const dhead = 'getAssetInfo';
   const indexer = await getIndexer();
   const q = indexer.lookupAssetByID(a) as unknown as ApiCall<IndexerAssetInfoRes>;
-  const failOk = (x:any): OrExn<IndexerAssetInfoRes> => {
-    if ( typeof x === 'string' && x.includes('no assets found for asset-id') ) {
+  const failOk = (x:any, howMany:number): OrExn<IndexerAssetInfoRes> => {
+    // This howMany > 10 is for tests. Maybe it would be better to synchronize
+    // in the test with the indexer observing an event or use a network wait.
+    if ( howMany > 10 && typeof x === 'string' && x.includes('no assets found for asset-id') ) {
       throw Error(`Asset ${a} does not exist`);
     } else {
       return { exn: x };
