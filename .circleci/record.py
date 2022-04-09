@@ -149,7 +149,7 @@ build = env('CIRCLE_BUILD_URL')
 pr = env('CIRCLE_PULL_REQUEST')
 pr = f"<{pr}|PR>" if pr else ""
 
-circle_message = f"*{SYM}* {username}/<{branch_url}|{branch}> tests > {PRE} <{build}|more...>{POST}"
+circle_message = f"*{SYM}* {username}/<{branch_url}|{branch}>{pr} tests > {PRE} <{build}|more...>{POST}"
 circle_message = truncate_message(circle_message)
 print(f"export RECORD_MESSAGE='{circle_message}'")
 
