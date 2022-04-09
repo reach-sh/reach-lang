@@ -2513,11 +2513,35 @@ support = command "support" $ info f d
                 --data "$$json" \
                 https://github.com/login/oauth/access_token
             )"
+            # @TODO: Save the auth token; git-credential-store
             # @TODO: Convert these to regular expressions!
             # cut may be too brittle
             ACCESS_TOKEN=$$(echo $$OUT_2 | cut -d \& -f 1)
             ACCESS_TOKEN=$$(echo $$ACCESS_TOKEN | cut -d = -f 2)
             # echo "$$ACCESS_TOKEN"
+
+            # Escape all newlines and quotation marks!
+            # This is to avoid "message": "Problems parsing JSON"
+            rsh=$(perl -p -e 's/\n/\\n/' index.rsh | perl -p -e 's/"/\\"/g')
+            mjs=$(perl -p -e 's/\n/\\n/' index.mjs | perl -p -e 's/"/\\"/g')
+            # echo "$$rsh"
+
+            json2=$$(
+              printf '{
+                "files": {
+                  "index.mjs": {
+                    "content": "%s",
+                    "language": "JavaScript",
+                    "type": "application/javascript"
+                  },
+                  "index.rsh": {
+                    "content": "%s",
+                    "language": "JavaScript",
+                    "type": "application/javascript"
+                  }
+                }
+              }' "$$mjs" "$$rsh"
+            )
 
             # Step 3: Upload gist!
             OUT_3="$$(
@@ -2525,19 +2549,7 @@ support = command "support" $ info f d
                 -H "Accept: application/vnd.github.v3+json" \
                 -H "Authorization: token $$ACCESS_TOKEN" \
                 https://api.github.com/gists \
-                --data '{
-                  "files": {
-                    "index.mjs": {
-                      "content": "This is index.mjs!",
-                      "language": "JavaScript",
-                      "type": "application/javascript"
-                    },
-                    "index.rsh": {
-                      "content": "This is index.rsh!",
-                      "language": "Reach"
-                    }
-                  }
-                }'
+                --data "$$json2" \
             )"
             # echo "$$OUT_3"
 
