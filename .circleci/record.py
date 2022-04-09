@@ -93,7 +93,7 @@ for ts in filter(want, hs_test_xml.iter('testsuite')):
 n_fails = ftc + hs_test_fails
 if n_fails > 0:
     SYM = ":warning: FAIL"
-    PRE = f"{ftx} examples & {hs_test_fails} tests of {total} failed!"
+    PRE = f"{ftc} examples & {hs_test_fails} tests of {total} failed!"
     if xftc > 0:
         PRE += f" ({xftc} expected)"
 
