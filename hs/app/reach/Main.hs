@@ -2522,6 +2522,9 @@ support = command "support" $ info f d
 
             # Escape all newlines and quotation marks!
             # This is to avoid "message": "Problems parsing JSON"
+            # @TODO: error handling!
+            # What if index.mjs or index.rsh don't exist?!
+            # We should tell the user that something went wrong.
             rsh=$(perl -p -e 's/\n/\\n/' index.rsh | perl -p -e 's/"/\\"/g')
             mjs=$(perl -p -e 's/\n/\\n/' index.mjs | perl -p -e 's/"/\\"/g')
             # echo "$$rsh"
