@@ -726,7 +726,7 @@ arr[3]
 ```
 
 A @{defn("reference")}, written `{!rsh} REF_EXPR[IDX_EXPR]`,
-where `{!rsh} REF_EXPR` is an expression that evaluates to an array, a tuple, or a struct
+where `{!rsh} REF_EXPR` is an expression that evaluates to an array, a tuple, an object, or a struct
 and `{!rsh} IDX_EXPR` is an expression that evaluates to a natural number which is less than the size of the array,
 selects the element at the given index of the array.
 Indices start at zero.
