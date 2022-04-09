@@ -78,22 +78,21 @@ nxftc = len(nxft)
 ftc = len(fail.union(time))
 xftc = ftc - nxftc
 
+# tally data from hs-test job
+def count(itr): return sum(1 for _ in itr)
+hs_test_xml = xml.parse("/tmp/workspace/hs-test.xml").getroot()
+hs_test_total = count(hs_test_xml.iter('testcase'))
+hs_test_fails = count(hs_test_xml.iter('failure'))
+total += hs_test_total
+fails = ftc + hs_test_fails
+
 SYM = ":jayparfait: OKAY"
 PRE = f"{total} passed!"
 POST = ""
 
-want_to_count = ['t/y', 't/n']
-hs_test_xml = xml.parse("/tmp/workspace/hs-test.xml").getroot()
-hs_test_fails = 0
-def count(itr): return sum(1 for _ in itr)
-def want(ts): return ts.attrib['name'] in want_to_count
-for ts in filter(want, hs_test_xml.iter('testsuite')):
-    hs_test_fails += count(ts.iter('failure'))
-
-n_fails = ftc + hs_test_fails
-if n_fails > 0:
+if fails > 0:
     SYM = ":warning: FAIL"
-    PRE = f"{ftc} examples & {hs_test_fails} tests of {total} failed!"
+    PRE = f"{fails} tests of {total} failed!"
     if xftc > 0:
         PRE += f" ({xftc} expected)"
 
