@@ -638,8 +638,8 @@ The expression `{!js} await wait(delta, onProgress)` is the same as
 `{!js} await waitUntilTime(add(await getNetworkTime(), delta), onProgress)`.
 As with `{!js} waitUntilTime`, the `{!js} onProgress` callback is optional.
 
-One use case example of `{!js} wait` is to emit an event and then call `stdlib.wait(delta, onProgress)` to ensure the event has time to complete. 
-(In the example below, `wt` is shorthand for "wait time.")
+One use case example of `{!js} wait` is to emit an event and then call `stdlib.wait(delta, onProgress)` to ensure the event has time to complete.
+(In the example below, `wt` is shorthand for "wait time".)
 
 ```js
 waitToPay: async (price) => {
