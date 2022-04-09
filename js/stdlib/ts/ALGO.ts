@@ -638,7 +638,7 @@ const doQueryM_ = async <T>(dhead:string, query: ApiCall<T>): Promise<OrExn<T>> 
   }
 };
 
-const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0): Promise<T> => {
+const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0, failOk:((e:any) => OrExn<T>) = ((exn:any) => ({ exn }))): Promise<T> => {
   debug(dhead, query.query);
   while ( true ) {
     if ( howMany > 0 ) {
@@ -653,8 +653,14 @@ const doQuery_ = async <T>(dhead:string, query: ApiCall<T>, howMany: number = 0)
         debug(dhead, 'ACCOUNTING NOT INITIALIZED');
       }
       if ( e?.response?.text ) { e = e.response.text; }
-      debug(dhead, 'RETRYING', {e});
-      howMany++;
+      const fr = failOk(e);
+      if ( 'exn' in fr ) {
+        debug(dhead, 'RETRYING', {e});
+        howMany++;
+      } else {
+        debug(dhead, 'FAIL OK', {e, fr});
+        return fr.val;
+      }
     } else {
       return res.val;
     }
@@ -1199,7 +1205,19 @@ const getAccountInfo = async (a:Address): Promise<AccountInfo> => {
   }
   const indexer = await getIndexer();
   const q = indexer.lookupAccountByID(a) as unknown as ApiCall<IndexerAccountInfoRes>;
-  const res = await doQuery_(dhead, q);
+  const failOk = (x:any): OrExn<IndexerAccountInfoRes> => {
+    if ( typeof x === 'string' && x.includes('no accounts found for address') ) {
+      return { val: {
+        'current-round': BigInt(0),
+        'account': {
+          'amount': BigInt(0),
+        }
+      } };
+    } else {
+      return { exn: x };
+    }
+  };
+  const res = await doQuery_(dhead, q, 0, failOk);
   debug(dhead, res);
   return res.account;
 };
@@ -1208,7 +1226,14 @@ const getAssetInfo = async (a:number): Promise<AssetInfo> => {
   const dhead = 'getAssetInfo';
   const indexer = await getIndexer();
   const q = indexer.lookupAssetByID(a) as unknown as ApiCall<IndexerAssetInfoRes>;
-  const res = await doQuery_(dhead, q);
+  const failOk = (x:any): OrExn<IndexerAssetInfoRes> => {
+    if ( typeof x === 'string' && x.includes('no assets found for asset-id') ) {
+      throw Error(`Asset ${a} does not exist`);
+    } else {
+      return { exn: x };
+    }
+  };
+  const res = await doQuery_<IndexerAssetInfoRes>(dhead, q, 0, failOk);
   debug(dhead, res);
   return res.asset;
 };
