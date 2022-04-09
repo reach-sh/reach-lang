@@ -1107,6 +1107,7 @@ The default is no metadata hash.
 Algorand-only options:
 + `{!js} clawback` Address that can claw back holdings of the token.
 The default is no clawback address.
++ `{!js} note` A `{!js} Uint8Array` for the `Note` field of the asset creation transaction.
 
 For more information on Algorand-only options, see
 https://developer.algorand.org/docs/get-details/transactions/transactions/#asset-parameters.

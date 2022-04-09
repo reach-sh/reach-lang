@@ -2414,10 +2414,12 @@ const makeAssetCreateTxn = (
   url: string,
   metadataHash: string,
   clawback: Address | undefined,
+  note: Uint8Array | undefined,
   params: TxnParams,
 ): Transaction => {
   return algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
     from: creator,
+    note: note,
     total: bigNumberToBigInt(supply),
     decimals: decimals,
     defaultFrozen: false,
@@ -2437,13 +2439,16 @@ export const launchToken = async (accCreator: Account, name: string, sym: string
   const url = opts.url ?? '';
   const metadataHash = opts.metadataHash ?? '';
   const clawback = opts.clawback ? cbr2algo_addr(protect(T_Address, opts.clawback) as string) : undefined;
+  const note = opts.note || undefined;
   const params = await getTxnParams('launchToken');
 
   const txnResult = await sign_and_send_sync(
     `launchToken ${j2s(accCreator)} ${name} ${sym}`,
     accCreator.networkAccount,
-    toWTxn(makeAssetCreateTxn(addrCreator, supply, decimals, sym,
-                              name, url, metadataHash, clawback, params))
+    toWTxn(makeAssetCreateTxn(
+      addrCreator, supply, decimals, sym,
+      name, url, metadataHash, clawback, note,
+      params))
   );
 
   const assetIndex = txnResult['created-asset-index'];
