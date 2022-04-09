@@ -2451,6 +2451,115 @@ whoami = command "whoami" $ info f fullDesc
   where
     f = pure . script $ write [N.text| echo "$whoami'" |]
 
+support :: Subcommand
+support = command "support" $ info f d
+  where
+    d = progDesc "Upload index.rsh and index.mjs to help us troubleshoot!"
+    f = pure . script $ write [N.text|
+      OUT="$$(
+        # @TODO: use Reach App instead of Hamir's -
+        # update "client_id"!
+
+        # Step 1: Get a device code to give to the user.
+        curl --silent -X POST \
+          -H 'Content-Type: application/json' \
+          --data '{
+            "client_id": "b0e24d4cc8251c6cd14c",
+            "scope": "gist"
+          }' \
+          https://github.com/login/device/code
+      )"
+      # @TODO: Convert these to regular expressions!
+      # cut may be too brittle
+      DEVICE_CODE=$$(echo $$OUT | cut -d \& -f 1)
+      DEVICE_CODE=$$(echo $$DEVICE_CODE | cut -d = -f 2)
+      # echo "$$DEVICE_CODE"
+
+      # Do we want this information?
+      # EXPIRES_IN=$$(echo $$OUT | cut -d \& -f 2)
+      # EXPIRES_IN=$$(echo $$EXPIRES_IN | cut -d = -f 2)
+      # echo "$$EXPIRES_IN"
+
+      # Do we want this information?
+      # INTERVAL=$$(echo $$OUT | cut -d \& -f 3)
+      # INTERVAL=$$(echo $$INTERVAL | cut -d = -f 2)
+      # echo $$INTERVAL
+
+      # @TODO: Convert these to regular expressions!
+      # cut may be too brittle
+      USER_CODE=$$(echo $$OUT | cut -d \& -f 4)
+      USER_CODE=$$(echo $$USER_CODE | cut -d = -f 2)
+      echo "Your verification code is $$USER_CODE"
+      echo "Please enter it at https://github.com/login/device"
+      echo
+      printf "Type 'y' after successful authorization at https://github.com/login/device; anything else aborts: "; read -r x
+        case "$$x" in
+          y|Y) json=$$(
+              printf '{
+                "client_id": "b0e24d4cc8251c6cd14c",
+                "device_code": "%s",
+                "grant_type": "urn:ietf:params:oauth:grant-type:device_code"
+              }' $$DEVICE_CODE
+            )
+            # echo
+            # echo "$$DEVICE_CODE"
+            # echo "$$json"
+            # echo
+
+            # Step 2: User the user's device code to get a token.
+            OUT_2="$$(
+              curl --silent -X POST \
+                -H 'Content-Type: application/json' \
+                --data "$$json" \
+                https://github.com/login/oauth/access_token
+            )"
+            # @TODO: Convert these to regular expressions!
+            # cut may be too brittle
+            ACCESS_TOKEN=$$(echo $$OUT_2 | cut -d \& -f 1)
+            ACCESS_TOKEN=$$(echo $$ACCESS_TOKEN | cut -d = -f 2)
+            # echo "$$ACCESS_TOKEN"
+
+            # Step 3: Upload gist!
+            OUT_3="$$(
+              curl --silent -X POST \
+                -H "Accept: application/vnd.github.v3+json" \
+                -H "Authorization: token $$ACCESS_TOKEN" \
+                https://api.github.com/gists \
+                --data '{
+                  "files": {
+                    "index.mjs": {
+                      "content": "This is index.mjs!",
+                      "language": "JavaScript",
+                      "type": "application/javascript"
+                    },
+                    "index.rsh": {
+                      "content": "This is index.rsh!",
+                      "language": "Reach"
+                    }
+                  }
+                }'
+            )"
+            # echo "$$OUT_3"
+
+            # WARNING!
+            # This just tries to check for the correct "html_url"
+            # with two leading spaces!
+            # We get three results otherwise, since there are three
+            # "html_url"s in the response, and can't do $${URL[1]}
+            # because "SC2039: In POSIX sh, array references are undefined."
+            URL=$(echo "$$OUT_3" | gawk 'match($$0, /^  "html_url": "(.+)",$$/, a) {print a[1]}')
+            echo
+            echo "You can see the files you just uploaded at $$URL"
+            ;;
+          *) echo
+            echo "No files uploaded"
+            echo "Run reach support again if would like to make another try."
+            # What exit code do we want here?
+            exit 123
+            ;;
+        esac
+    |]
+
 log' :: Subcommand
 log' = command "log" $ info f fullDesc
   where
@@ -2512,6 +2621,7 @@ main = do
           <> rpcServer
           <> run'
           <> scaffold
+          <> support
           <> update
           <> version'
   let hs =
