@@ -50,6 +50,8 @@ import type { // =>
   IRecvArgs, ISendRecvArgs,
   IRecv,
   OnProgress,
+  LaunchTokenOpts,
+  TokenMetadata,
 } from './shared_impl';
 import type { // =>
   AnyETH_Ty,
@@ -838,29 +840,34 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
     debug(`tokenAccept: Unnecessary on ETHlike`, token);
     return;
   };
-  const tokenMetadata = async (token: Token): Promise<any> => {
-    debug(`tokenMetadata`, token);
+  const tokenMetadata = async (token: Token): Promise<TokenMetadata> => {
+    const lab = `tokenMetadata`;
+    debug(lab, token);
     const tokCtc = new ethers.Contract(token, ReachToken_ABI, networkAccount);
-    const md: any = {};
-    const go = async (t:any, f:string, m:string = f): Promise<void> => {
-      debug('tokenMetadata', {f, m});
+    const get = async <T>(t:Ty|false, m:string): Promise<T> => {
+      debug(lab, {m});
+      const rv = await tokCtc[m]();
+      debug(lab, {m, rv});
+      const v = t ? t.unmunge(rv) : rv;
+      debug(lab, {m, v});
+      return v;
+    };
+    const md: TokenMetadata = {
+      supply: await get(T_UInt, 'totalSupply'),
+    };
+    const go = async (t:Ty|false, f:keyof TokenMetadata, m:string = f): Promise<void> => {
       try {
-        const rv = await tokCtc[m]();
-        debug('tokenMetadata', {f, m, rv});
-        const v = t ? t.unmunge(rv) : rv;
-        debug('tokenMetadata', {f, m, v});
-        md[f] = v;
+        md[f] = await get(t, m);
       } catch (e) {
-        debug('tokenMetadata', {f, m, e});
+        debug(lab, {f, m, e});
       }
     };
     await go(false, 'name');
     await go(false, 'symbol');
     await go(false, 'url');
     await go(false, 'metadata');
-    await go(T_UInt, 'supply', 'totalSupply');
     await go(T_UInt, 'decimals');
-    debug(`tokenMetadata`, token, md);
+    debug(lab, token, md);
     return md;
   };
 
@@ -1077,7 +1084,7 @@ function formatAddress(acc: string|NetworkAccount|Account): string {
   return T_Address.canonicalize(acc) as string; // TODO: typing
 }
 
-async function launchToken (accCreator:Account, name:string, sym:string, opts:any = {}) {
+async function launchToken (accCreator:Account, name:string, sym:string, opts:LaunchTokenOpts = {}) {
   debug(`Launching token, ${name} (${sym})`);
   const addr = (acc:Account) => acc.networkAccount.address;
   const remoteCtc = ETHstdlib["contracts"]["sol/stdlib.sol:ReachToken"];
