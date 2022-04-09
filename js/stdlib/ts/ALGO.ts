@@ -1228,8 +1228,9 @@ const getAssetInfo = async (a:number): Promise<AssetInfo> => {
   const indexer = await getIndexer();
   const q = indexer.lookupAssetByID(a) as unknown as ApiCall<IndexerAssetInfoRes>;
   const failOk = (x:any, howMany:number): OrExn<IndexerAssetInfoRes> => {
-    // This howMany > 10 is for tests. Maybe it would be better to synchronize
-    // in the test with the indexer observing an event or use a network wait.
+    // XXX This howMany > 10 is for tests. Maybe it would be better to
+    // synchronize in the test with the indexer observing an event or use a
+    // network wait.
     if ( howMany > 10 && typeof x === 'string' && x.includes('no assets found for asset-id') ) {
       throw Error(`Asset ${a} does not exist`);
     } else {
