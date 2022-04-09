@@ -20,7 +20,9 @@ await check('B', accB, '0.1');
 await check('C', accC, '0.1');
 await check('D', accD, '0');
 
-const zorkmid = await stdlib.launchToken(accA, "zorkmid", "ZMD");
+const zorkmid = await stdlib.launchToken(accA, "zorkmid", "ZMD", {
+  'note': Uint8Array.from(`I drink your milkshake`),
+});
 
 await check('A', accA, '0.2'); 
 

@@ -461,6 +461,7 @@ export type LaunchTokenOpts = {
   'clawback'?: any,
   'url'?: string,
   'metadataHash'?: string,
+  'note'?: Uint8Array,
 };
 
 export type IAccount<NetworkAccount, Backend, Contract, ContractInfo, Token> = {
