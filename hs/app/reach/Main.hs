@@ -2492,7 +2492,7 @@ support = command "support" $ info f d
       echo "Your verification code is $$USER_CODE"
       echo "Please enter it at https://github.com/login/device"
       echo
-      printf "Type 'y' after successful authorization at https://github.com/login/device; anything else aborts: "; read -r x
+      printf "Type 'y' AFTER SUCCESSFUL AUTHORIZATION; anything else aborts: "; read -r x
         case "$$x" in
           y|Y) json=$$(
               printf '{
