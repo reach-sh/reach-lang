@@ -1,7 +1,5 @@
 'reach 0.1';
 
-asdf
-
 export const main =
   Reach.App(
     {  },
