@@ -2499,7 +2499,7 @@ support = command "support" $ info f d
                 "client_id": "b0e24d4cc8251c6cd14c",
                 "device_code": "%s",
                 "grant_type": "urn:ietf:params:oauth:grant-type:device_code"
-              }' $$DEVICE_CODE
+              }' "$$DEVICE_CODE"
             )
             # echo
             # echo "$$DEVICE_CODE"
