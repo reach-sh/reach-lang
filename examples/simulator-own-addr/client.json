@@ -11,14 +11,17 @@
   [
     "initFor",
     0,
-    0
+    0,
+    "{}",
+    ""
   ],
   [
     "respondWithVal",
     1,
     0,
-    "0",
-    -1
+    0,
+    -1,
+    "number"
   ],
   [
     "respondWithVal",
@@ -31,8 +34,9 @@
     "respondWithVal",
     3,
     2,
-    "0",
-    -1
+    0,
+    -1,
+    "number"
   ],
   [
     "respondWithVal",
@@ -40,13 +44,5 @@
     3,
     0,
     0
-  ],
-  [
-    "respondWithVal",
-    5,
-    5,
-    2,
-    0,
-    "number"
   ]
 ]
