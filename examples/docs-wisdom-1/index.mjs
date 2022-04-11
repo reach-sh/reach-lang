@@ -12,11 +12,12 @@ const commonInteract = {};
 // Seller
 if (role === 'seller') {
   const sellerInteract = { 
-    ...commonInteract };
+    ...commonInteract 
+  };
 		
   const acc = await stdlib.newTestAccount(stdlib.parseCurrency(1000));
   const ctc = acc.contract(backend);
-  await backend.Seller(ctc, sellerInteract);
+  await ctc.participants.Seller(sellerInteract)
 }
 	
 // Buyer
