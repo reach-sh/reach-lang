@@ -11,12 +11,16 @@
   [
     "initFor",
     0,
-    0
+    0,
+    "{}",
+    ""
   ],
   [
     "initFor",
     1,
-    1
+    1,
+    "{}",
+    ""
   ],
   [
     "respondWithVal",
@@ -30,8 +34,9 @@
     "respondWithVal",
     3,
     0,
-    "0",
-    -1
+    0,
+    -1,
+    "number"
   ],
   [
     "respondWithVal",
@@ -51,7 +56,7 @@
     "respondWithVal",
     6,
     6,
-    2,
+    3,
     1,
     "number"
   ],
@@ -59,104 +64,66 @@
     "respondWithVal",
     7,
     4,
-    "1",
-    -1
+    1,
+    -1,
+    "number"
   ],
   [
     "respondWithVal",
     8,
     5,
-    2,
     0,
-    "number"
+    0
   ],
   [
     "respondWithVal",
     9,
-    9,
-    2,
-    0,
-    "number"
-  ],
-  [
-    "respondWithVal",
-    10,
     7,
     0,
     1
   ],
   [
     "respondWithVal",
-    11,
     10,
-    2,
-    0,
-    "number"
-  ],
-  [
-    "respondWithVal",
-    12,
     8,
-    "0",
-    -1
+    0,
+    -1,
+    "number"
+  ],
+  [
+    "respondWithVal",
+    11,
+    9,
+    0,
+    0
+  ],
+  [
+    "respondWithVal",
+    12,
+    10,
+    0,
+    1
   ],
   [
     "respondWithVal",
     13,
+    11,
+    1,
+    -1,
+    "number"
+  ],
+  [
+    "respondWithVal",
+    14,
     12,
     0,
     0
   ],
   [
     "respondWithVal",
-    14,
-    14,
-    2,
-    0,
-    "number"
-  ],
-  [
-    "respondWithVal",
     15,
-    15,
-    2,
-    0,
-    "number"
-  ],
-  [
-    "respondWithVal",
-    16,
-    11,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    17,
     13,
-    "1",
-    -1
-  ],
-  [
-    "respondWithVal",
-    18,
-    17,
     0,
     1
-  ],
-  [
-    "respondWithVal",
-    19,
-    16,
-    0,
-    0
-  ],
-  [
-    "respondWithVal",
-    20,
-    20,
-    2,
-    0,
-    "number"
   ]
 ]
