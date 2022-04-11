@@ -32,7 +32,7 @@ export const main = Reach.App(() => {
   B.interact.loanMade();
   B.pay(loanAmt + interest)
    .timeout(relativeTime(deadline), () => {
-      Anybody.publish();
+      L.publish();
       transfer(collateral).to(L);
       commit();
       exit();
