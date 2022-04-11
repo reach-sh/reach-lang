@@ -55,416 +55,199 @@
     "respondWithVal",
     6,
     6,
-    2,
-    1,
-    "number"
-  ],
-  [
-    "respondWithVal",
-    7,
-    7,
     "{   \"tag\":\"V_Object\",   \"contents\":{     \"startingBid\":{       \"tag\":\"V_UInt\",       \"contents\":5     },     \"timeout\":{       \"tag\":\"V_UInt\",       \"contents\":999     }   } }",
     1,
     "object"
   ],
   [
     "respondWithVal",
-    8,
+    7,
     4,
     1,
-    -1
+    -1,
+    "number"
   ],
   [
     "respondWithVal",
-    9,
+    8,
     5,
     0,
     0
   ],
   [
     "respondWithVal",
-    10,
-    8,
+    9,
+    7,
     0,
     1
+  ],
+  [
+    "respondWithVal",
+    10,
+    8,
+    1,
+    -1,
+    "number"
   ],
   [
     "respondWithVal",
     11,
     9,
-    1,
-    -1
+    0,
+    0
   ],
   [
     "respondWithVal",
     12,
     10,
     0,
-    0
+    1
   ],
   [
     "respondWithVal",
     13,
     11,
-    0,
-    1
+    1,
+    -1,
+    "number"
   ],
   [
     "respondWithVal",
     14,
     12,
-    1,
-    -1
+    0,
+    0
   ],
   [
     "respondWithVal",
     15,
     13,
     0,
-    0
+    1
   ],
   [
     "respondWithVal",
-    7,
-    7,
-    "{   \"tag\":\"V_Object\",   \"contents\":{     \"startingBid\":{       \"tag\":\"V_UInt\",       \"contents\":5     },     \"timeout\":{       \"tag\":\"V_UInt\",       \"contents\":1     }   } }",
+    16,
+    14,
     1,
-    "object"
+    -1,
+    "number"
   ],
   [
     "respondWithVal",
     17,
-    4,
-    1,
-    -1
+    15,
+    0,
+    0
   ],
   [
     "respondWithVal",
     18,
-    5,
+    16,
     0,
-    0
+    1
   ],
   [
     "respondWithVal",
     19,
     17,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    20,
-    18,
     1,
-    -1
-  ],
-  [
-    "respondWithVal",
-    21,
-    20,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    18,
-    5,
-    0,
-    0
-  ],
-  [
-    "respondWithVal",
-    23,
-    18,
-    0,
-    -1
-  ],
-  [
-    "respondWithVal",
-    24,
-    23,
-    0,
-    0
-  ],
-  [
-    "respondWithVal",
-    25,
-    17,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    26,
-    26,
-    2,
-    1,
+    -1,
     "number"
   ],
   [
     "respondWithVal",
-    27,
-    27,
+    20,
+    19,
+    0,
+    1
+  ],
+  [
+    "respondWithVal",
+    21,
+    18,
+    0,
+    0
+  ],
+  [
+    "respondWithVal",
+    6,
+    6,
     "{   \"tag\":\"V_Object\",   \"contents\":{     \"startingBid\":{       \"tag\":\"V_UInt\",       \"contents\":5     },     \"timeout\":{       \"tag\":\"V_UInt\",       \"contents\":0     }   } }",
     1,
     "object"
   ],
   [
     "respondWithVal",
-    28,
-    24,
+    23,
+    4,
     1,
-    -1
+    -1,
+    "number"
   ],
   [
     "respondWithVal",
-    29,
-    28,
+    24,
+    5,
+    0,
+    0
+  ],
+  [
+    "respondWithVal",
+    25,
+    23,
     0,
     1
   ],
   [
     "respondWithVal",
-    30,
+    26,
+    26,
+    "{   \"tag\":\"V_Object\",   \"contents\":{     \"startingBid\":{       \"tag\":\"V_UInt\",       \"contents\":5     },     \"timeout\":{       \"tag\":\"V_UInt\",       \"contents\":1    }   } }",
+    1,
+    "object"
+  ],
+  [
+    "respondWithVal",
+    27,
+    24,
+    1,
+    -1,
+    "number"
+  ],
+  [
+    "respondWithVal",
+    28,
     25,
     0,
     0
   ],
   [
     "respondWithVal",
-    31,
-    30,
-    2,
-    1,
-    "number"
-  ],
-  [
-    "respondWithVal",
-    32,
-    32,
-    "{   \"tag\":\"V_Object\",   \"contents\":{     \"startingBid\":{       \"tag\":\"V_UInt\",       \"contents\":5     },     \"timeout\":{       \"tag\":\"V_UInt\",       \"contents\":1     }   } }",
-    1,
-    "object"
-  ],
-  [
-    "respondWithVal",
-    33,
     29,
-    1,
-    -1
+    27,
+    0,
+    1
   ],
   [
     "respondWithVal",
-    34,
+    30,
+    28,
+    0,
+    -1,
+    "number"
+  ],
+  [
+    "respondWithVal",
     31,
+    29,
     0,
     0
   ],
   [
     "respondWithVal",
-    35,
-    33,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    36,
-    34,
-    1,
-    -1
-  ],
-  [
-    "respondWithVal",
-    36,
-    34,
-    0,
-    -1
-  ],
-  [
-    "respondWithVal",
-    37,
-    36,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    39,
-    39,
-    2,
-    1,
-    "number"
-  ],
-  [
-    "respondWithVal",
-    40,
-    40,
-    "{   \"tag\":\"V_Object\",   \"contents\":{     \"startingBid\":{       \"tag\":\"V_UInt\",       \"contents\":5     },     \"timeout\":{       \"tag\":\"V_UInt\",       \"contents\":1     }   } }",
-    1,
-    "object"
-  ],
-  [
-    "respondWithVal",
-    41,
-    37,
-    1,
-    -1
-  ],
-  [
-    "respondWithVal",
-    42,
-    41,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    43,
-    42,
-    1,
-    -1
-  ],
-  [
-    "respondWithVal",
-    44,
-    43,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    45,
-    35,
-    0,
-    0
-  ],
-  [
-    "respondWithVal",
-    46,
-    45,
-    2,
-    1,
-    "number"
-  ],
-  [
-    "respondWithVal",
-    47,
-    47,
-    "{   \"tag\":\"V_Object\",   \"contents\":{     \"startingBid\":{       \"tag\":\"V_UInt\",       \"contents\":5     },     \"timeout\":{       \"tag\":\"V_UInt\",       \"contents\":999     }   } }",
-    1,
-    "object"
-  ],
-  [
-    "respondWithVal",
-    48,
-    44,
-    1,
-    -1
-  ],
-  [
-    "respondWithVal",
-    49,
-    48,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    50,
-    49,
-    1,
-    -1
-  ],
-  [
-    "respondWithVal",
-    51,
-    50,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    52,
-    51,
-    1,
-    -1
-  ],
-  [
-    "respondWithVal",
-    53,
-    52,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    54,
-    46,
-    0,
-    0
-  ],
-  [
-    "respondWithVal",
-    55,
-    53,
-    1,
-    -1
-  ],
-  [
-    "respondWithVal",
-    56,
-    54,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    56,
-    54,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    57,
-    56,
-    1,
-    -1
-  ],
-  [
-    "respondWithVal",
-    59,
-    57,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    60,
-    59,
-    1,
-    -1
-  ],
-  [
-    "respondWithVal",
-    61,
-    60,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    62,
-    61,
-    1,
-    -1
-  ],
-  [
-    "respondWithVal",
-    63,
-    62,
+    32,
+    30,
     0,
     1
   ]
