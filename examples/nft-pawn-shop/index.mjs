@@ -2,27 +2,24 @@ import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib(process.env);
 
-const startingBalance = stdlib.parseCurrency(100);
-const [accLender, accBorrower] = await stdlib.newTestAccounts(2, startingBalance);
-
-const nft = await stdlib.launchToken(accBorrower, "suspicious watch", "SW", { supply: 1 });
-await accBorrower.tokenAccept(nft.id);
-await accLender.tokenAccept(nft.id);
-nft.mint(accBorrower, 1);
-
 const fmt = (amt) => stdlib.formatCurrency(amt, 2);
-const printBalances = async () => {
-  const [nwtBor, nftBor] = await stdlib.balancesOf(accBorrower, [null, nft.id]);
-  const [nwtLen, nftLen] = await stdlib.balancesOf(accLender,   [null, nft.id]);
-  console.log(`* Borrower has ${fmt(nwtBor)} ${stdlib.standardUnit} and ${nftBor} ${nft.name}`);
-  console.log(`*   Lender has ${fmt(nwtLen)} ${stdlib.standardUnit} and ${nftLen} ${nft.name}`);
-};
-
 const loanAmt = stdlib.parseCurrency(40);
 const interest = stdlib.parseCurrency(10);
 const deadline = 200;
 
 const run = async (loanMade) => {
+  const startingBalance = stdlib.parseCurrency(100);
+  const [accLender, accBorrower] = await stdlib.newTestAccounts(2, startingBalance);
+  const nft = await stdlib.launchToken(accBorrower, "suspicious watch", "SW", { supply: 1 });
+  await accLender.tokenAccept(nft.id);
+  
+  const printBalances = async () => {
+    const [nwtBor, nftBor] = await stdlib.balancesOf(accBorrower, [null, nft.id]);
+    const [nwtLen, nftLen] = await stdlib.balancesOf(accLender,   [null, nft.id]);
+    console.log(`* Borrower has ${fmt(nwtBor)} ${stdlib.standardUnit} and ${nftBor} ${nft.name}`);
+    console.log(`*   Lender has ${fmt(nwtLen)} ${stdlib.standardUnit} and ${nftLen} ${nft.name}`);
+  };
+
   console.log("Starting balances:");
   await printBalances();
   const ctcBorrower = accBorrower.contract(backend);
