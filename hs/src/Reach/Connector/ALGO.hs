@@ -2028,10 +2028,24 @@ ce = \case
         incResource R_App ro
         makeTxn1 "ApplicationID"
         let as' = (DLA_Literal $ DLL_Int at $ fromIntegral $ sigStrToInt sig) : as
-        forM_ as' $ \a -> do
-          ca a
-          ctobs $ argTypeOf a
-          makeTxn1 "ApplicationArgs"
+        let processArg a = do
+              ca a
+              ctobs $ argTypeOf a
+              makeTxn1 "ApplicationArgs"
+        let processArgTuple tas = do
+              cconcatbs $ map (\a -> (argTypeOf a, ca a)) tas
+              makeTxn1 "ApplicationArgs"
+        -- If there are more than 15 arguments, args 15+ must be packed as a tuple
+        -- into argument at index 15.  Note that the API id is arg 0, so we have
+        -- a total of up to 16 arguments.
+        case 16 < (length as') of
+          False -> do
+            forM_ as' processArg
+          True -> do
+            let as'15 = take 15 as'
+            let as'More = drop 15 as'
+            forM_ as'15 processArg
+            processArgTuple as'More
         -- XXX If we can "inherit" resources, then this needs to be removed and
         -- we need to check that nnZeros actually stay 0
         forM_ nnRecv $ \a -> do
@@ -2991,7 +3005,11 @@ cmeth sigi = \case
       comment $ LT.pack $ " ui: " <> show sigi
       let f :: DLType -> Integer -> (DLType, App ())
           f t i = (t, code "txna" ["ApplicationArgs", texty i])
-      cconcatbs_ (const $ return ()) $ zipWith f tys [1 ..]
+      -- If there are more than 15 args, args 15+ are packed as a tuple in arg 15.
+      let effectiveTys = case 15 < (length tys) of
+            False -> tys
+            True -> (take 14 tys) <> [T_Tuple $ drop 14 tys]
+      cconcatbs_ (const $ return ()) $ zipWith f effectiveTys [1 ..]
       doWrap
       code "b" [handlerLabel which]
   CView who sig _ hs -> do
