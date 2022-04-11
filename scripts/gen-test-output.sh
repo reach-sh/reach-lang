@@ -6,7 +6,7 @@ case "$1" in
 esac
 
 # build reachc if not already
-REPO="$(dirname "$0")"/..
+REPO="$(realpath "$(dirname "$0")"/..)"
 make -s -C "$REPO"/hs/ hs-build
 
 DIRNAME="$(dirname "$(realpath "$1")")"
