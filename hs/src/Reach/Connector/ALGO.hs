@@ -3033,9 +3033,30 @@ cmeth sigi = \case
 
 bindFromArgs :: [DLVarLet] -> App a -> App a
 bindFromArgs vs m = do
-  -- XXX deal with >15 args
-  let go (v, i) = sallocVarLet v False (code "txna" ["ApplicationArgs", texty i] >> cfrombs (varLetType v))
-  foldl' (flip go) m (zip vs [(1::Integer) ..])
+  let goSingle (v, i) = sallocVarLet v False (code "txna" ["ApplicationArgs", texty i] >> cfrombs (varLetType v))
+  let goSingles singles k =
+        foldl' (flip goSingle) k (zip singles [(1 :: Integer) ..])
+  -- When there are more than 15 args, the 15th arg is a tuple of args 15+
+  case 15 < (length vs) of
+    False -> do
+      goSingles vs m
+    True -> do
+      -- TODO - I wrote this thinking it was the code path I needed to edit, but it's not exercised by my test.  I should write a test that exercises it and be sure it works.
+      let vs14 = take 14 vs
+      let vsMore = drop 14 vs
+      let tupleTy = T_Tuple $ map varLetType vsMore
+      let tupleDupExtract i = do
+            op "dup"
+            cTupleRef (SrcLoc Nothing Nothing Nothing) tupleTy i
+      let goTuple (v, i) = sallocVarLet v False (tupleDupExtract i)
+      let m2 = do
+            -- TODO - instead of this dup/pop dance, I think I can just access arg 15 many times
+            op "pop"
+            m
+      let m3 = do
+            code "txna" ["ApplicationArgs", texty (15 :: Integer)]
+            foldl' (flip goTuple) m2 (zip vsMore [(0 :: Integer) ..])
+      goSingles vs14 m3
 
 data VSIBlockVS = VSIBlockVS [DLVarLet] DLExportBlock
 type VSIHandler = M.Map Int VSIBlockVS
