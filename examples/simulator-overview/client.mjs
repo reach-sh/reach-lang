@@ -1,6 +1,15 @@
 import * as c from '@reach-sh/simulator-client';
 import * as  assert from 'assert';
 import * as pj from 'prettyjson';
+import { readFile } from 'fs/promises';
+
+const script = JSON.parse(
+  await readFile(
+    //
+    // produced by the simulator ui 0.3.2
+    new URL('./client.json', import.meta.url)
+  )
+);
 
 const logGlobal = async (n) => {
   const r = await c.getStateGlobals(n)
@@ -29,47 +38,9 @@ const assertVar = (y,t,v) => {
 const main = async () => {
   console.log("Init Testing!")
   await c.waitForPort()
-  await c.resetServer()
-  await c.ping()
-  await c.load()
-  // init consensus
-  await c.init()
-  // init Alice
-  await c.initFor(0,0,JSON.stringify(
-    {'info':{'tag':'V_Bytes','contents':'10'},
-    'request':{'tag':'V_UInt','contents':1}}
-  ))
-  // init Bob
-  await c.initFor(1,1)
-  // A interact
-  // await c.respondWithVal(2,2,0,0,'string')
-  // await c.respondWithVal(3,3,0,0)
-  // A publish
-  await c.respondWithVal(2,2,0,-1)
-  // A observes publish
-  await c.respondWithVal(3,3,-99,0)
-  let y = await getVar('request',4,0)
-  // await logLocal(6)
-  assertVar(y,'V_UInt',1)
-  // B observes publish
-  await c.respondWithVal(4,4,-99,1)
-  y = await getVar('request',5,1)
-  assertVar(y,'V_UInt',1)
-  // B interact
-  await c.respondWithVal(5,5,1)
-  // B publish (pay)
-  await c.respondWithVal(6,6,1,-1)
-  // A
-  await c.respondWithVal(7,7,0,0)
-  // B
-  await c.respondWithVal(8,8,-99,1)
-  // C
-  await c.respondWithVal(9,9,0,-1)
-  // B
-  await c.respondWithVal(10,10,-99,1)
-  await c.respondWithVal(11,11,-99,1)
+  await c.interp(script)
   const r = await c.getStatus()
-  assert.equal(r,"Done");
+  assert.equal(r,"Running");
   console.log("Testing Complete!")
 }
 
