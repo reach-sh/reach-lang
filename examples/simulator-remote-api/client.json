@@ -9,218 +9,123 @@
     "init"
   ],
   [
-    "initFor",
-    0,
-    0,
-    "{}"
-  ],
-  [
-    "initFor",
-    1,
-    1,
-    "{}"
-  ],
-  [
-    "respondWithVal",
-    2,
-    0,
-    0,
-    -1
-  ],
-  [
-    "respondWithVal",
-    3,
-    1,
-    0,
-    0
-  ],
-  [
-    "respondWithVal",
-    4,
-    4,
-    2,
-    0,
-    "number"
-  ],
-  [
-    "respondWithVal",
-    5,
-    2,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    6,
-    6,
-    "{\"tag\":\"V_Tuple\",\"contents\":[{\"tag\":\"V_UInt\",\"contents\":1},{\"tag\":\"V_UInt\",\"contents\":1}]}",
-    1,
+    "apiCall",
+    "0",
+    "0",
+    "{\"tag\":\"V_Tuple\",\"contents\":[{\"tag\":\"V_UInt\",\"contents\":0},{\"tag\":\"V_UInt\",\"contents\":0}]}",
     "tuple"
   ],
   [
+    "initFor",
+    0,
+    0,
+    "{}",
+    ""
+  ],
+  [
     "respondWithVal",
-    7,
-    3,
     1,
-    -1
-  ],
-  [
-    "respondWithVal",
-    8,
-    5,
     0,
-    0
-  ],
-  [
-    "respondWithVal",
-    8,
-    5,
     0,
-    0
-  ],
-  [
-    "respondWithVal",
-    9,
-    7,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    11,
-    11,
-    2,
-    1,
+    -1,
     "number"
   ],
   [
     "respondWithVal",
-    12,
-    12,
+    2,
+    1,
+    0,
+    0
+  ],
+  [
+    "respondWithVal",
+    3,
+    2,
+    "{\"tag\":\"V_Data\",\"contents\":[\"api\",{\"tag\":\"V_UInt\",\"contents\":0}]}",
+    -1,
+    "data"
+  ],
+  [
+    "respondWithVal",
+    4,
+    3,
+    0,
+    0
+  ],
+  [
+    "apiCall",
+    "0",
+    "5",
     "{\"tag\":\"V_Tuple\",\"contents\":[{\"tag\":\"V_UInt\",\"contents\":5},{\"tag\":\"V_UInt\",\"contents\":5}]}",
-    1,
     "tuple"
   ],
   [
     "respondWithVal",
-    13,
-    9,
-    2,
-    0,
-    "number"
+    5,
+    4,
+    "{\"tag\":\"V_Data\",\"contents\":[\"api\",{\"tag\":\"V_UInt\",\"contents\":0}]}",
+    -1,
+    "data"
   ],
   [
     "respondWithVal",
-    14,
-    14,
-    2,
-    0,
-    "number"
-  ],
-  [
-    "respondWithVal",
-    15,
-    8,
-    1,
-    -1
-  ],
-  [
-    "respondWithVal",
-    16,
-    15,
+    6,
+    5,
     0,
     0
   ],
   [
     "respondWithVal",
-    17,
-    17,
-    2,
-    0,
-    "number"
+    7,
+    6,
+    "{\"tag\":\"V_Data\",\"contents\":[\"api\",{\"tag\":\"V_UInt\",\"contents\":0}]}",
+    -1,
+    "data"
   ],
   [
     "respondWithVal",
-    18,
-    18,
+    8,
+    7,
+    0,
+    0
+  ],
+  [
+    "respondWithVal",
+    9,
+    9,
     "0",
     0,
     "contract"
   ],
   [
     "respondWithVal",
-    19,
-    19,
-    0,
-    0,
-    "number"
-  ],
-  [
-    "respondWithVal",
-    20,
-    13,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    21,
-    21,
+    10,
+    10,
     2,
-    1,
+    0,
     "number"
   ],
   [
     "respondWithVal",
-    22,
-    16,
+    11,
+    8,
     0,
-    -1
+    -1,
+    "number"
   ],
   [
     "respondWithVal",
-    23,
-    20,
-    0,
-    0
-  ],
-  [
-    "respondWithVal",
-    24,
-    22,
-    0,
-    1
-  ],
-  [
-    "respondWithVal",
-    25,
-    23,
+    12,
+    12,
     "{\"tag\":\"V_Tuple\",\"contents\":[{\"tag\":\"V_UInt\",\"contents\":5},{\"tag\":\"V_UInt\",\"contents\":5}]}",
     -1,
     "tuple"
   ],
   [
     "respondWithVal",
-    26,
-    24,
-    "{\"tag\":\"V_Tuple\",\"contents\":[{\"tag\":\"V_UInt\",\"contents\":5},{\"tag\":\"V_UInt\",\"contents\":5}]}",
+    13,
+    11,
     0,
-    "tuple"
-  ],
-  [
-    "respondWithVal",
-    27,
-    27,
-    2,
-    0,
-    "number"
-  ],
-  [
-    "respondWithVal",
-    28,
-    25,
-    "{\"tag\":\"V_Tuple\",\"contents\":[{\"tag\":\"V_UInt\",\"contents\":5},{\"tag\":\"V_UInt\",\"contents\":5}]}",
-    1,
-    "tuple"
+    0
   ]
 ]
