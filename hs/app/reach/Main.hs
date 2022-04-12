@@ -64,6 +64,13 @@ uriIssues = "https://github.com/reach-sh/reach-lang/issues"
 uriReachScript :: IsString a => a
 uriReachScript = "https://docs.reach.sh/reach"
 
+esc :: FilePath -> FilePath
+esc x = "'" <> e <> "'" where
+  e = L.foldl (\a c -> a <> (if c == '\'' then "\'" else [c])) "" x
+
+esc' :: FilePath -> Text
+esc' = pack . esc
+
 data Effect
   = Script Text
   | InProcess
@@ -730,6 +737,7 @@ withCompose DockerMeta {..} wrapped = do
   let projDirHost' = case compose of
         StandaloneDevnet -> ""
         WithProject _ Project {..} -> pack projDirHost
+  let projDirHost'' = T.replace "\"" "\\\"" projDirHost'
   let devnetALGO =
         [N.text|
         - ALGO_SERVER=http://reach-devnet-algo
@@ -813,7 +821,7 @@ withCompose DockerMeta {..} wrapped = do
         WithProject Console _ ->
           [N.text|
            build:
-             context: "$projDirHost'"
+             context: $projDirHost'
         |]
         _ -> ""
   let e_dirTmpHost' = pack e_dirTmpHost
@@ -830,7 +838,7 @@ withCompose DockerMeta {..} wrapped = do
                    - "host.docker.internal:host-gateway"
                  labels:
                    - "sh.reach.dir-tmp=$e_dirTmpHost'"
-                   - "sh.reach.dir-project=$projDirHost'"
+                   - "sh.reach.dir-project=$projDirHost''"
                    - "sh.reach.app-type=$a"
                  $build
                  $connEnv
@@ -1037,7 +1045,7 @@ compile = command "compile" $ info f d
         maybe (pure ()) diePathContainsParentDir co_mdirDotReach
         maybe (pure ()) diePathContainsParentDir co_moutputDir
       Env {e_var = Var {..}, ..} <- ask
-      rawArgs <- fmap (\a -> if ".rsh" `L.isSuffixOf` a then "\"" <> a <> "\"" else a ) <$> liftIO getArgs
+      rawArgs <- fmap (\a -> if ".rsh" `L.isSuffixOf` a then esc a else a) <$> liftIO getArgs
       let rawArgs' = dropWhile (/= "compile") rawArgs
       let argsl = intercalate " "
             . map pack
@@ -1055,7 +1063,7 @@ compile = command "compile" $ info f d
               $ "-o|--output must be a relative subdirectory of " <> e_dirPwdHost <> "."
             pure $ Just od
         pure $ argsl
-          <> maybe "" (\o -> " -o '" <> o <> "'") (pack <$> md)
+          <> maybe "" (\o -> " -o " <> esc' o) md
           <> recursiveDisableReporting e_disableReporting
 
       let v = versionBy majMinPat version''
@@ -1208,7 +1216,7 @@ run' = command "run" . info f $ d <> noIntersperse
           , (containerGitIgnore, hostGitIgnore)
           , (containerDockerIgnore, hostDockerIgnore)
           ]
-      cleanup <- intercalate "\n" <$> forM toClean (pure . (\a -> [N.text| rm "$a" |]) . pack . snd)
+      cleanup <- intercalate "\n" <$> forM toClean (pure . (\a -> "rm " <> esc' a) . snd)
       let rsh = projDirContainer </> unpack projName <> ".rsh"
       let mjs = projDirContainer </> unpack projName <> ".mjs"
       let bjs = projDirContainer </> "build" </> unpack projName <> ".main.mjs"
@@ -1245,8 +1253,8 @@ run' = command "run" . info f $ d <> noIntersperse
             pure $ if r > b then Just recompile' else Nothing
 
       let dm@DockerMeta {..} = mkDockerMetaProj e proj Console
-      let dockerfile' = pack hostDockerfile
-      let projDirHost' = pack projDirHost
+      let dockerfile' = esc' hostDockerfile
+      let projDirHost' = esc' projDirHost
       let args'' = intercalate " " . map (<> "'") . map ("'" <>) $ projName : args'
       withCompose dm $ do
         write dd
@@ -1254,11 +1262,11 @@ run' = command "run" . info f $ d <> noIntersperse
         unless e_disableReporting $ log'' "run" >>= write
         write
           [N.text|
-        cd "$projDirHost'"
+        cd $projDirHost'
         CNAME="$appService-$$$$"
 
         set +e
-        docker build -f "$dockerfile'" --tag=$appImageTag . \
+        docker build -f $dockerfile' --tag=$appImageTag . \
           && docker-compose -f "$$TMP/docker-compose.yml" run \
             -e REACHC_ID="$whoami'" \
             --name "$$CNAME"$$NO_DEPS --rm $appService $args''
