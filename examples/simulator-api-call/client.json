@@ -54,14 +54,6 @@
   [
     "respondWithVal",
     3,
-    3,
-    2,
-    0,
-    "number"
-  ],
-  [
-    "respondWithVal",
-    4,
     2,
     "{\"tag\":\"V_Data\",\"contents\":[\"api\",{\"tag\":\"V_UInt\",\"contents\":0}]}",
     -1,
@@ -69,38 +61,38 @@
   ],
   [
     "respondWithVal",
-    5,
     4,
+    3,
     0,
     0
   ],
   [
     "respondWithVal",
-    6,
     5,
+    4,
     "{\"tag\":\"V_Data\",\"contents\":[\"api\",{\"tag\":\"V_UInt\",\"contents\":2}]}",
     -1,
     "data"
   ],
   [
     "respondWithVal",
-    7,
     6,
+    5,
     0,
     0
   ],
   [
     "respondWithVal",
-    8,
     7,
+    6,
     "{\"tag\":\"V_Data\",\"contents\":[\"api\",{\"tag\":\"V_UInt\",\"contents\":1}]}",
     -1,
     "data"
   ],
   [
     "respondWithVal",
-    9,
     8,
+    7,
     0,
     0
   ]
