@@ -368,7 +368,7 @@ updateLedger :: Account -> Token -> (Integer -> Integer) -> App ()
 updateLedger acc tok f = do
   (e, _) <- getState
   let map_ledger = e_ledger e
-  let m = saferMaybe "updateLedger: account not found" $ M.lookup acc map_ledger
+  let m = saferMaybe ("updateLedger: account not found" <> show acc <> " " <> show map_ledger) $ M.lookup acc map_ledger
   let prev_amt = saferMaybe ("updateLedger: token not found " <> show tok <> " " <> show map_ledger) $ M.lookup tok m
   let new_amt = f prev_amt
   let new_nw_ledger = M.insert acc (M.insert tok new_amt m) map_ledger
