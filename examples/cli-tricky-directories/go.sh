@@ -21,6 +21,7 @@ g compile --intermediate-files "$r" main
 g clean   "$x" main
 g compile --install-pkgs "$r" main --intermediate-files --verify-timeout=2222
 g compile "$r" main
+g run     "$x"
 
 (cd "$x" || exit 1
  g scaffold
