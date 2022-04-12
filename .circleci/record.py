@@ -89,8 +89,10 @@ fails = ftc + hs_test_fails
 SYM = ":jayparfait: OKAY"
 PRE = f"{total} passed!"
 POST = ""
+EXIT = 0
 
 if fails > 0:
+    EXIT = 1
     SYM = ":warning: FAIL"
     PRE = f"{fails} of {total} failed!"
     if xftc > 0:
@@ -114,7 +116,6 @@ for c in conns:
             msg += ' (+ ' + str(tfailc - upto) + ' more not shown)'
         POST += f"\\n- *{c}* {tfailc}: {msg}"
 
-EXIT = 0
 POST += "\\n*"
 if nxftc > 0:
     POST += f":warning: DANGER "
