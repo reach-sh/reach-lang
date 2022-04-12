@@ -2,7 +2,7 @@
 set -e
 
 ROOT="$1"
-# TODO TOUT="$2"
+TOUT="$2"
 
 g () {
   printf '\e[0;31m$ \e[1;31mreach %s\e[0m:\n' "$*"
@@ -35,7 +35,21 @@ g compile "$r" main
  fi
  g unscaffold)
 
-# TODO: robust `-o|--output[=]`-quoting
-# b="$TOUT/$x"
-# mkdir -p "$b"
-# c compile --intermediate-files "$r" main --output="$b"
+b="$TOUT/$x"
+mkdir -p "$b"
+
+# shellcheck disable=2010
+if [ "$REACH_DOCKER" = 0 ] && ls -l "$(command -v goal)" | grep -qe "-> $ROOT/scripts/goal-devnet"; then
+  echo "Skipping robust -o|--output[=]-handling since <repo>/scripts/goal-devnet's volume-mapping won't work here."
+  echo "Make sure to re-test with \`REACH_DOCKER\` != 0."
+else
+  printf '\e[1;31mEnsure robust -o|--output[=]-handling... \e[0m'
+  set +e
+  o="$("$ROOT"/reach compile --intermediate-files "$r" main --output="/foo/bar/$b" 2>&1)"
+  set -e
+  [ "$o" = "-o|--output must be a relative subdirectory of $(pwd)." ] || (printf '\n%s' "$o"; exit 1)
+  printf 'Done.'
+
+  g compile --intermediate-files "$(printf ''%s'' "$r")" main --output="$(printf ''%s'' "${b#"$(pwd)"/}")"
+fi
+echo
