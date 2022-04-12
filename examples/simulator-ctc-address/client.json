@@ -9,18 +9,26 @@
     "init"
   ],
   [
+    "newAccount",
+    "0"
+  ],
+  [
     "initFor",
     0,
     0,
     "{}",
-    ""
+    2
+  ],
+  [
+    "newAccount",
+    "1"
   ],
   [
     "initFor",
     1,
     1,
     "{}",
-    ""
+    3
   ],
   [
     "respondWithVal",
@@ -48,7 +56,7 @@
     "respondWithVal",
     5,
     5,
-    "0",
+    "4",
     1,
     "contract"
   ],
@@ -56,7 +64,7 @@
     "respondWithVal",
     6,
     6,
-    "0",
+    "4",
     1,
     "address"
   ],
@@ -71,15 +79,15 @@
   [
     "respondWithVal",
     8,
-    4,
+    7,
     0,
-    0
+    1
   ],
   [
     "respondWithVal",
     9,
-    7,
+    4,
     0,
-    1
+    0
   ]
 ]
