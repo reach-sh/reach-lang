@@ -2042,8 +2042,7 @@ ce = \case
           False -> do
             forM_ as' processArg
           True -> do
-            let as'15 = take 15 as'
-            let as'More = drop 15 as'
+            let (as'15, as'More) = splitAt 15 as'
             forM_ as'15 processArg
             processArgTuple as'More
         -- XXX If we can "inherit" resources, then this needs to be removed and
@@ -3008,7 +3007,13 @@ cmeth sigi = \case
       -- If there are more than 15 args, args 15+ are packed as a tuple in arg 15.
       let effectiveTys = case 15 < (length tys) of
             False -> tys
-            True -> (take 14 tys) <> [T_Tuple $ drop 14 tys]
+            -- It would be more type correct to read and unpack arg 15 multiple
+            -- times.  But because the tuple encoding is just concatenated bytes,
+            -- the result of concatenating a tuple is the same as repeated
+            -- concatenation of the tuple member types.  So it is simpler to
+            -- just concatenate the arg 15 tuple.
+            True -> tys14 <> [T_Tuple tysMore] where
+              (tys14, tysMore) = splitAt 14 tys
       cconcatbs_ (const $ return ()) $ zipWith f effectiveTys [1 ..]
       doWrap
       code "b" [handlerLabel which]
@@ -3042,8 +3047,7 @@ bindFromArgs vs m = do
       goSingles vs m
     True -> do
       -- TODO - I wrote this thinking it was the code path I needed to edit, but it's not exercised by my test.  I should write a test that exercises it and be sure it works.
-      let vs14 = take 14 vs
-      let vsMore = drop 14 vs
+      let (vs14, vsMore) = splitAt 14 vs
       let tupleTy = T_Tuple $ map varLetType vsMore
       let tupleDupExtract i = do
             op "dup"
