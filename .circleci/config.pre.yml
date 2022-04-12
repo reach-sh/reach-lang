@@ -189,7 +189,7 @@ jobs:
         command: |
           mkdir -p hs/test-reports
           docker run --rm -v $(pwd)/examples:/examples/ -v $(pwd)/docs/src:/docs/src/ \
-                          -v $(pwd)/hs/t:/build/t -v $(pwd)/hs/test-reports:/build/test-reports
+                          -v $(pwd)/hs/t:/build/t -v $(pwd)/hs/test-reports:/build/test-reports \
                           -v $(pwd)/vsce/data:/vsce/data -ti reachsh/haskell-build-artifacts \
                           make ROOT=.docker-root docker-test-xml || true
           echo "${CIRCLE_BUILD_URL}" > /tmp/workspace/hs-test-url
