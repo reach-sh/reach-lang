@@ -174,7 +174,7 @@ initWallets :: Integer -> C.Wallet
 initWallets n = initWallets' n $ M.empty
 
 initWallets' :: Integer -> C.Wallet -> C.Wallet
-initWallets' 0 w = w
+initWallets' (-2) w = w
 initWallets' n w = initWallets' (n-1) $ M.insert n 0 w
 
 getAPIs :: WebM (M.Map C.APID C.ReachAPI)
@@ -225,7 +225,7 @@ transfer sid fromAcc toAcc tok amt = do
   graph <- gets e_graph
   case M.lookup sid graph of
     Nothing -> do
-      possible "newAccount: state not found"
+      possible "transfer: state not found"
     Just (g, l) -> do
       let ledger = C.e_ledger g
       let ledger' = updateLedger ledger fromAcc tok (\x -> x - amt)
