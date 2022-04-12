@@ -198,6 +198,7 @@ jobs:
         root: /tmp/workspace
         paths:
           - hs-test.xml
+          - hs-test-url
     - slack_fail
   "build-image":
     parameters:
