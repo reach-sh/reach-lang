@@ -45,6 +45,13 @@ It accepts an optional bytes argument, which is included in any reported violati
 
 If the claim dynamically evaluates to `false`, the frontend will raise an exception.
 
+``` reach
+load: /examples/atomic-swap/index.rsh
+range: 20-22
+```
+
+In this example, the claim is that the two tokens, tokenA and tokenB, are not the same, and there is no message that displays.
+
 ### `fail`
 
 @{ref("rsh", "fail")}
@@ -62,6 +69,13 @@ declassify( arg )
 ```
 
 The @{defn("declassify")} primitive performs a declassification of the given argument.
+
+``` reach
+load: /examples/rps-7-array/index.rsh
+range: 67-71
+```
+
+In this statement, Alice declassifies the wager and then publishes it so that Bob can know the wager.
 
 ### `makeCommitment`
 
