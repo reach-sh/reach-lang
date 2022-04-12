@@ -99,7 +99,7 @@ if fails > 0:
         PRE += f" ({xftc} expected)"
 
 if hs_test_fails > 0:
-    hs_test_url = open('/tmp/workspace/hs-test-url', r).read().strip()
+    hs_test_url = open('/tmp/workspace/hs-test-url', 'r').read().strip()
     POST += f"\\n- *hs-test* {hs_test_fails}: <{hs_test_url}|more...>"
 
 for c in conns:
