@@ -180,51 +180,36 @@
   [
     "respondWithVal",
     24,
-    23,
-    0,
-    0
-  ],
-  [
-    "respondWithVal",
-    25,
-    25,
-    2,
-    0,
-    "number"
-  ],
-  [
-    "respondWithVal",
-    26,
     22,
     0,
     1
   ],
   [
     "respondWithVal",
-    27,
-    27,
-    2,
-    1,
+    25,
+    23,
+    0,
+    0
+  ],
+  [
+    "respondWithVal",
+    26,
+    24,
+    0,
+    -1,
     "number"
   ],
   [
     "respondWithVal",
-    28,
-    24,
-    0,
-    -1
-  ],
-  [
-    "respondWithVal",
-    29,
+    27,
     26,
     0,
     0
   ],
   [
     "respondWithVal",
-    30,
     28,
+    25,
     0,
     1
   ]
