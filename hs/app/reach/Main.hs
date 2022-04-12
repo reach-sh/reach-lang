@@ -1031,23 +1031,37 @@ compile = command "compile" $ info f d
   where
     d = progDesc "Compile an app"
     f = go <$> compiler
-    go (CompilerToolArgs {..}) = do
-      Env {e_var = Var {..}, ..} <- ask
-      rawArgs <- fmap (\a -> if ".rsh" `L.isSuffixOf` a then "\"" <> a <> "\"" else a ) <$> liftIO getArgs
-      let rawArgs' = dropWhile (/= "compile") rawArgs
-      let argsl = intercalate " " . map pack . filter (/= "--disable-reporting") $ case rawArgs' of
-            "compile" : x -> x
-            _ -> impossible $ "compile args do not start with 'compile': " <> show rawArgs
-      let args = argsl <> recursiveDisableReporting e_disableReporting
-      let CompilerOpts {..} = cta_co
-      let v = versionBy majMinPat version''
-      let cn = flip T.map v $ \c -> if isAlphaNum c && isAscii c then c else '-'
-      let ci' = if ci then "true" else ""
-      let ports = if co_sim then "-p 3001:3001" else ""
+    go CompilerToolArgs {cta_co = CompilerOpts {..}} = do
       liftIO $ do
         diePathContainsParentDir co_source
         maybe (pure ()) diePathContainsParentDir co_mdirDotReach
         maybe (pure ()) diePathContainsParentDir co_moutputDir
+      Env {e_var = Var {..}, ..} <- ask
+      rawArgs <- fmap (\a -> if ".rsh" `L.isSuffixOf` a then "\"" <> a <> "\"" else a ) <$> liftIO getArgs
+      let rawArgs' = dropWhile (/= "compile") rawArgs
+      let argsl = intercalate " "
+            . map pack
+            . filter (not . L.isPrefixOf "-o")
+            . filter (not . L.isPrefixOf "--output")
+            . filter (/= "--disable-reporting")
+            $ case rawArgs' of
+              "compile" : x -> x
+              _ -> impossible $ "compile args do not start with 'compile': " <> show rawArgs
+      args <- do
+        md <- liftIO $ case co_moutputDir of
+          Nothing -> pure Nothing
+          Just od -> do
+            when (isAbsolute od) . die
+              $ "-o|--output must be a relative subdirectory of " <> e_dirPwdHost <> "."
+            pure $ Just od
+        pure $ argsl
+          <> maybe "" (\o -> " -o '" <> o <> "'") (pack <$> md)
+          <> recursiveDisableReporting e_disableReporting
+
+      let v = versionBy majMinPat version''
+      let cn = flip T.map v $ \c -> if isAlphaNum c && isAscii c then c else '-'
+      let ci' = if ci then "true" else ""
+      let ports = if co_sim then "-p 3001:3001" else ""
       let reachc_release = [N.text| stack build && stack exec -- reachc $args |]
       let reachc_dev = [N.text| stack build --fast && stack exec -- reachc $args |]
       let reachc_prof =
