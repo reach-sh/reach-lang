@@ -160,15 +160,14 @@ newAccount sid = do
       possible "newAccount: state not found"
     Just (g, l) -> do
       let aid = fromIntegral $ C.e_naccid g
-      let newAccId = aid + 1
       let ledger = C.e_ledger g
       let tokenIdMax = (C.e_ntok g) - 1
       let newWallet = initWallets tokenIdMax
       let ledger' = M.insert aid newWallet ledger
-      let g' = g { C.e_naccid = newAccId, C.e_ledger = ledger' }
+      let g' = g { C.e_naccid = aid + 1, C.e_ledger = ledger' }
       let graph' = M.insert sid (g',l) graph
       modify $ \ st -> st {e_graph = graph'}
-      return newAccId
+      return aid
 
 initWallets :: Integer -> C.Wallet
 initWallets n = initWallets' n $ M.empty
