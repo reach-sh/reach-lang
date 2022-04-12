@@ -41,7 +41,7 @@ import Reach.Texty (pretty)
 import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Warning
-import Safe (atMay)
+import Safe (atMay, headMay)
 import System.Exit
 import System.FilePath
 import System.IO.Temp
@@ -2199,7 +2199,8 @@ ce = \case
         clogEvent name vs
         --cl DLL_Null -- Event log values are never used
   DLE_setApiDetails at p _ _ _ -> do
-    callCompanion at $ CompanionLabel $ apiLabel p
+    which <- fromMaybe (impossible "setApiDetails no which") <$> asks eWhich
+    callCompanion at $ CompanionLabel $ apiLabel p <> LT.pack (show which)
   DLE_GetUntrackedFunds at mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
     cGetBalance at mtok
@@ -2979,6 +2980,7 @@ data CMeth
     , capi_arg_tys :: [DLType]
     , capi_doWrap :: App ()
     , capi_label :: LT.Text
+    , capi_jumps :: [(Int, LT.Text)]
     }
   | CView
     { cview_who :: SLPart
@@ -3008,19 +3010,20 @@ cmethIsView = \case
   CView {} -> True
   CAlias {..} -> cmethIsView calias_meth
 
-capi :: (SLPart, ApiInfo) -> App [(String, CMeth)]
-capi (who, (ApiInfo {..})) = do
-  capi_label <- freshLabel $ bunpack who
+capi :: Bool -> (SLPart, ApiInfo) -> App [(String, CMeth)]
+capi qualify (who, (ApiInfo {..})) = do
+  capi_label <- freshLabel $ bunpack who <> suffix
   let c = CApi {..}
   let apis = [(capi_sig, c)]
   let mk_alias alias = apis <> [(mk_sig $ bunpack alias, CAlias alias c)]
   return $ maybe apis mk_alias ai_alias
   where
+    suffix = bool "" (show ai_which) qualify
     capi_who = who
     capi_which = ai_which
     mk_sig n = signatureStr n capi_arg_tys mret
     capi_sig = mk_sig f
-    f = bunpack who
+    f = bunpack who <> suffix
     imp = impossible "apiSig"
     (capi_arg_tys, capi_doWrap) =
       case ai_compile of
@@ -3038,9 +3041,46 @@ capi (who, (ApiInfo {..})) = do
     cid = fromMaybe imp ai_mcase_id
     capi_ret_ty = ai_ret_ty
     mret = Just $ capi_ret_ty
+    capi_jumps = []
+
+apiArgsAndRet :: CMeth -> ([DLType], DLType)
+apiArgsAndRet = \case
+  CApi {..}   -> (capi_arg_tys, capi_ret_ty)
+  CAlias {..} -> apiArgsAndRet $ calias_meth
+  _ -> impossible $ "apiArgsAndRet: Expected API"
+
+genApiJump :: SLPart -> [(String, CMeth)] -> App (String, CMeth)
+genApiJump who ms = do
+  let ms' = map snd ms
+  -- Grab any one of the methods to store argument/return type information.
+  -- All methods have same signature.
+  let m = fromMaybe (impossible "genApiJump") $ headMay ms'
+  let whichs = map capi_which ms'
+  let labels = map capi_label ms'
+  let (arg_tys, mret) = apiArgsAndRet m
+  let sig = signatureStr (bunpack who) arg_tys $ Just mret
+  return $ (sig, CApi {
+      capi_who = who
+    , capi_label = capi_label m
+    , capi_jumps = zip whichs labels
+    -- These fields don't really matter
+    , capi_sig = sig
+    , capi_ret_ty = capi_ret_ty m
+    , capi_which = capi_which m
+    , capi_arg_tys = capi_arg_tys m
+    , capi_doWrap = capi_doWrap m
+    })
 
 capis :: (SLPart, M.Map a ApiInfo) -> App [(String, CMeth)]
-capis (p, ms) = concatMapM (capi . (p,) . snd) $ M.toAscList ms
+capis (p, ms) = do
+  ms' <- concatMapM (capi qualify . (p,) . snd) $ M.toAscList ms
+  case qualify of
+    True  -> do
+      m <- genApiJump p ms'
+      return $ m : ms'
+    False -> return ms'
+  where
+    qualify = M.size ms > 1
 
 cview :: (SLPart, VSITopInfo) -> (String, CMeth)
 cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs) = (cview_sig, c)
@@ -3073,7 +3113,7 @@ cmeth sigi = \case
     comment $ LT.pack $ sigDump sigi
     block_' (bunpack alias) $ do
       code "b" [capi_label]
-  CApi _ sig _ which tys doWrap lab -> do
+  CApi _ sig _ which tys doWrap lab [] -> do
     block lab $ do
       comment $ LT.pack $ "API: " <> sig
       comment $ LT.pack $ sigDump sigi
@@ -3082,6 +3122,18 @@ cmeth sigi = \case
       cconcatbs_ (const $ return ()) $ zipWith f tys [1 ..]
       doWrap
       code "b" [handlerLabel which]
+  -- This API occurs in multiple places throughout the program.
+  -- Jump to the correct handler
+  CApi who sig _ _ _ _ _ wls -> do
+    block_' (bunpack who) $ do
+      comment $ LT.pack $ "API: " <> sig
+      comment $ LT.pack $ " ui: " <> show sigi
+      forM_ wls $ \ (w, l) -> do
+        gvLoad GV_currentStep
+        cint $ fromIntegral w
+        op "=="
+        code "bnz" [l]
+      op "err"
   CView who sig _ hs -> do
     block_' (bunpack who) $ do
       comment $ LT.pack $ "View: " <> sig
@@ -3216,7 +3268,7 @@ compile_algo env disp pl = do
         (_, C_Loop {}) -> Nothing
   let a2lr qualify (p, ApiInfo {..}) = LabelRec {..}
         where
-          suffix =bool "" (show ai_which) qualify
+          suffix = bool "" (show ai_which) qualify
           lr_lab = apiLabel p <> LT.pack suffix
           lr_at = ai_at
           lr_what = "API " <> bunpack p <> suffix
