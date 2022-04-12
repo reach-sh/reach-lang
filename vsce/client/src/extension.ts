@@ -12,9 +12,13 @@
 
 import * as path from 'path';
 import {
+  AccessibilityInformation,
   commands,
   env,
   ExtensionContext,
+  languages,
+  LanguageStatusItem,
+  LanguageStatusSeverity,
   Terminal,
   Uri,
   window,
@@ -33,6 +37,7 @@ import { CommandsTreeDataProvider, DocumentationTreeDataProvider, HelpTreeDataPr
 import { terminalOptions } from "./terminalOptions";
 import * as fs from 'fs';
 import * as url from 'url';
+import { For } from './constants';
 
 const COMMANDS = require('../../data/commands.json');
 
@@ -67,7 +72,7 @@ export function activate(context: ExtensionContext) {
   registerCommands(context, reachPath);
 
   // Options to control the language client
-  let clientOptions: LanguageClientOptions = {
+  const clientOptions: LanguageClientOptions = {
     // Register the server for Reach .rsh documents
     documentSelector: [
       {
@@ -80,6 +85,17 @@ export function activate(context: ExtensionContext) {
       fileEvents: workspace.createFileSystemWatcher('**/*.rsh')
     }
   };
+
+  const { documentSelector } = clientOptions;
+  const id = 'reach.automaticBackgroundCompilationStatus';
+  const langStatItem: LanguageStatusItem =
+    languages.createLanguageStatusItem(id, documentSelector);
+
+  const label =
+    'Automatic, background compilation status for Reach files';
+  langStatItem.accessibilityInformation = { label };
+  langStatItem.detail = label;
+  langStatItem.text = 'Reach ABC';
 
   // Create the language client and start the client.
   client = new LanguageClient(
@@ -94,9 +110,58 @@ export function activate(context: ExtensionContext) {
 
   initButtons(context);
 
-  // Checking for updates should be
-  // asynchronous and non-blocking.
-  client.onReady().then(() => CHECK_FOR_UPDATES_USING(reachPath));
+  const reset = (lsi: LanguageStatusItem) => {
+    lsi.busy = false;
+    lsi.detail = label;
+    lsi.severity = LanguageStatusSeverity.Information;
+    lsi.text = 'Reach ABC';
+  };
+
+  const commencedHandler = () => {
+    reset(langStatItem);
+    langStatItem.busy = true;
+    langStatItem.detail +=
+      '\n\nCompilation currently in progress...';
+  };
+
+  const completedHandler = () => {
+    reset(langStatItem);
+    langStatItem.detail +=
+      '\n\nCompilation completed successfully!';
+    langStatItem.text += ` $(check)`;
+  };
+
+  const errorDuringCompHandler = (reason: string) => {
+    reset(langStatItem);
+    langStatItem.detail += `\n\n${reason}`;
+    langStatItem.severity = LanguageStatusSeverity.Error;
+    langStatItem.text += ` $(error)`;
+  };
+
+  const cccHandler = (reason: string) => {
+    reset(langStatItem);
+    langStatItem.detail += "\n\nCompilation couldn't commence!";
+    langStatItem.detail += ` ${reason}`;
+    langStatItem.severity = LanguageStatusSeverity.Error;
+    langStatItem.text += ` $(circle-slash)`;
+  };
+
+  client.onReady().then(() => {
+    CHECK_FOR_UPDATES_USING(reachPath);
+
+    client.onNotification(
+      For.commencedCompilation, commencedHandler
+    );
+    client.onNotification(
+      For.completedCompilation, completedHandler
+    );
+    client.onNotification(
+      For.errorDuringCompilation, errorDuringCompHandler
+    );
+    client.onNotification(
+      For.compilationCouldntCommence, cccHandler
+    );
+  });
 
   // Inject association for .rsh file type
   if (workspace.workspaceFolders !== undefined) {

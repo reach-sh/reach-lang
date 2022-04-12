@@ -36,7 +36,11 @@ import {
 import { env } from "process";
 env.REACH_IDE = "1";
 
-import { exec, ExecException } from "child_process";
+import {
+  exec,
+  ExecException,
+  spawnSync
+} from "child_process";
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 
@@ -70,6 +74,7 @@ import {
   KEYWORD_WITH_PERIOD_TO_KEYWORDS_LIST,
   KEYWORD_TO_ITEM_KIND_IMPORT
 } from "./mapKeywordsWithAPeriodToAKeywordList";
+import { For } from './constants';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -244,6 +249,14 @@ documents.onDidChangeContent(change => {
   validateTextDocument(change.document);
 });
 
+const DOCKER_IS_NOT_RUNNING = (): boolean => {
+  const dockerIsRunning: boolean = spawnSync(
+    'docker', [ '--version' ]
+  ).status === 0;
+
+  return dockerIsRunning === false;
+};
+
 let theCompilerIsCompiling  = false;
 let weNeedToCompileAgain    = false;
 
@@ -296,20 +309,31 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
                 error.message
               }`
             );
+            connection.sendNotification(
+              For.compilationCouldntCommence, error.message
+            );
             return;
           }
+
           if (stderr) {
             connection.console.error(
               `Reach download stderr in try: ${
                 stderr
               }`
             );
+            connection.sendNotification(
+              For.compilationCouldntCommence, stderr
+            );
             return;
           }
+
           connection.console.log(
             `Reach download stdout in try: ${
               stdout
             }`
+          );
+          connection.sendNotification(
+            For.compilationCouldntCommence, stdout
           );
         }
       );
@@ -389,6 +413,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
   connection.console.info(absolutePathToShellScript);
   connection.console.log('');
 
+  connection.sendNotification(For.commencedCompilation);
   exec(
     "cd " + tempFolder + " && " + absolutePathToShellScript
     + " compile " + INDEX_RSH +
@@ -416,13 +441,26 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
       }
 
       if (error) {
-        connection.console.log(
-          `Found compile error: ${error.message}`
-        );
+        connection.console.error(`Found compile error: ${
+          error.message
+        }`);
+
+        if (DOCKER_IS_NOT_RUNNING()) {
+          const s =  "Docker doesn't seem to be running.";
+          connection.sendNotification(
+            For.compilationCouldntCommence, s
+          );
+          connection.console.error(s);
+          return;
+        }
+
         const errorLocations: ErrorLocation[]
           = findErrorLocations(error.message);
         let problems = 0;
         errorLocations.forEach(err => {
+          connection.sendNotification(
+            For.errorDuringCompilation, err.errorMessage
+          );
           connection.console.log(
             `Displaying error message: ` +
             err.errorMessage
@@ -449,6 +487,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
       connection.console.log(`Reach compiler output: ${
         stdout
       }`);
+      connection.sendNotification(For.completedCompilation);
     }
   );
 
