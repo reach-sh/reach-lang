@@ -1016,19 +1016,18 @@ clean = command "clean" . info f $ fullDesc <> desc <> fdoc
           <$$> text "If:"
           <$$> text " * MODULE is a directory then `cd $MODULE && rm -f \"build/index.$IDENT.mjs\";"
           <$$> text " * MODULE is <something-else> then `rm -f \"build/$MODULE.$IDENT.mjs\""
-    go m i =
-      script $
-        write
-          [N.text|
-      MODULE="$m"
+    go m' i = do
+      let m = esc' m'
+      script $ write [N.text|
+        MODULE=$m
 
-      if [ ! "$m" = "index" ] && [ -d "$m" ]; then
-        cd "$m" || exit 1
-        MODULE="index"
-      fi
+        if [ ! $m = "index" ] && [ -d $m ]; then
+          cd $m || exit 1
+          MODULE="index"
+        fi
 
-      rm -f "build/$$MODULE.$i.mjs"
-    |]
+        rm -f "build/$$MODULE.$i.mjs"
+      |]
     f =
       go
         <$> strArgument (metavar "MODULE" <> value "index" <> showDefault)
