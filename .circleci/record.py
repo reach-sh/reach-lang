@@ -84,7 +84,9 @@ hs_test_xml = xml.parse("/tmp/workspace/hs-test.xml").getroot()
 hs_test_total = count(hs_test_xml.iter('testcase'))
 hs_test_fails = count(hs_test_xml.iter('failure'))
 total += hs_test_total
+
 fails = ftc + hs_test_fails
+nxfails = nxftc + hs_test_fails
 
 SYM = ":jayparfait: OKAY"
 PRE = f"{total} passed!"
@@ -121,7 +123,7 @@ for c in conns:
         POST += f"\\n- *{c}* {tfailc}: {msg}"
 
 POST += "\\n*"
-if nxftc > 0:
+if nxfails > 0:
     POST += f":warning: DANGER "
     EXIT = 1
 else:
