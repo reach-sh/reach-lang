@@ -43,6 +43,7 @@ export const {
   waitUntilTime,
   wait,
   getNetworkSecs,
+  getTimeSecs,
   waitUntilSecs,
   verifyContract,
   standardUnit,
