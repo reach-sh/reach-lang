@@ -170,6 +170,7 @@ export interface Stdlib_User<Provider, ProviderEnv, ProviderName, Token, Contrac
   waitUntilTime: (time: BigNumber) => Promise<BigNumber>
   wait: (delta: BigNumber) => Promise<BigNumber>
   getNetworkSecs: () => Promise<BigNumber>
+  getTimeSecs: (time: BigNumber) => Promise<BigNumber>
   waitUntilSecs: (secs: BigNumber) => Promise<BigNumber>
   verifyContract: (ctcInfo: ContractInfo, backend: Backend) => Promise<any>
   /** @description the display name of the standard unit of currency for the network */

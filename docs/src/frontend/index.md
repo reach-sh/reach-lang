@@ -612,6 +612,14 @@ which may be called many times up until the specified network time.
 It will receive an object with keys `{!js} current` and `{!js} target`,
 
 ---
+@{ref("js", "getTimeSecs")}
+```js
+getNetworkTime(time) => Promise<secs>
+```
+
+Returns a Promise for the network seconds, `{!js} secs`, that the network recorded at network time `{!js} time`.
+
+---
 @{ref("js", "getNetworkSecs")}
 ```js
 getNetworkSecs() => Promise<secs>
