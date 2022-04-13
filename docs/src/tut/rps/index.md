@@ -1529,7 +1529,9 @@ Furthermore, MetaMask does not support multiple active accounts, so if you want 
 To complete this section we'll use the `index.rsh` you've already written and create an `index.js` file from scratch which replaces `index.mjs`.
 
 :::note
-`index.mjs` needs to be moved or deleted from the folder in order for `index.js` to work as expected.
+If you do not replace `index.mjs`, then you will get an error when you run `reach react`.
+You can avoid this error by renaming the file to `index.mjs.bak`, or by creating a totally new directory with a copy of the old `index.rsh.`
+We do the second option. 
 :::
 
 This code is also supplemented with [index.css](@{REPO}/examples/rps-9-web/index.css)
@@ -1812,6 +1814,11 @@ you can call:
 ```cmd
 $ ./reach react
 ```
+
+:::note
+If you get an error or it does not seem to be working correctly, make sure that the folder does not have an `index.mjs` file.
+If you do, you can rename it to `index.mjs.bak` or move it to a new directory with a copy of the old `index.rsh`.
+:::
 
 ---
 
