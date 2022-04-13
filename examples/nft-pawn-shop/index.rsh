@@ -10,6 +10,10 @@ export const main = Reach.App(() => {
     loanMade: Fun([], Null),
   });
   const L = Participant('Lender', {});
+  const LA = API('LoanAPI', {
+    payBack: Fun([], Null),
+    takeCollateral: Fun([], Null),
+  });
   init();
   
   B.only(() => {
@@ -30,15 +34,24 @@ export const main = Reach.App(() => {
   commit();
   
   B.interact.loanMade();
-  B.pay(loanAmt + interest)
-   .timeout(relativeTime(deadline), () => {
-      L.publish();
-      transfer(collateral).to(L);
-      commit();
-      exit();
-    });
-  transfer(collateral).to(B);
-  transfer(loanAmt + interest).to(L);
+
+  try {
+    const [[], k] = call(LA.payBack)
+      .pay(() => loanAmt + interest)
+      .assume(() => check(this == B))
+      .throwTimeout(relativeTime(deadline), null);
+    check(this == B);
+    k(null);
+    transfer(collateral).to(B);
+    transfer(loanAmt + interest).to(L);
+  } catch (_) {
+    // B timed out on paying back the loan
+    const [[], k] = call(LA.takeCollateral)
+      .assume(() => check(this == L));
+    k(null);
+    transfer(collateral).to(L);
+  }
+
   commit();
   exit();
 });
