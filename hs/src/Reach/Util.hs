@@ -28,6 +28,7 @@ module Reach.Util
   , makeErrCode
   , arraySet
   , allEqual
+  , maybeAt
   )
 where
 
@@ -164,3 +165,8 @@ allEqual [x] = Right x
 allEqual (x:xs) = case allEqual xs of
   Right y -> if x == y then Right y else Left $ Just (x,y)
   Left diff -> Left diff
+
+maybeAt :: Int -> [a] -> Maybe a
+maybeAt 0 (x:_) = Just x
+maybeAt _ [] = Nothing
+maybeAt n (_:xs) = maybeAt (n-1) xs
