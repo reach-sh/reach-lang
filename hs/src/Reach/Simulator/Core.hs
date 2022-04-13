@@ -535,6 +535,13 @@ instance Interp DLExpr where
           return $ saferMaybe "DLE_ObjectRef: V_Object" $ M.lookup str vmap
         _ -> possible "DLE_ObjectRef: expected Object or Struct"
     DLE_Interact at slcxtframes slpart str dltype dlargs -> do
+      let frame = maybeAt 0 slcxtframes
+      let at' = case frame of
+            Nothing -> at
+            Just (SLC_CloApp call_at@(SrcLoc _ _ fp1) (SrcLoc _ _ fp2) _) -> do
+              case fp1 == fp2 of
+                True -> at
+                False -> call_at
       args <- mapM interp dlargs
       g <- getGlobal
       let apiObs = e_apis g
@@ -550,7 +557,7 @@ instance Interp DLExpr where
             T_Null -> do
               return V_Null
             _ -> do
-              suspend $ PS_Suspend (Just at) (A_Interact slcxtframes partName' str dltype args)
+              suspend $ PS_Suspend (Just at') (A_Interact slcxtframes partName' str dltype args)
     DLE_Digest _at dlargs -> V_Digest <$> V_Tuple <$> mapM interp dlargs
     DLE_Claim _at _slcxtframes claimtype dlarg _maybe_bytestring -> case claimtype of
       CT_Assert -> interp dlarg
