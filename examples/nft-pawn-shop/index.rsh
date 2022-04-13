@@ -38,16 +38,13 @@ export const main = Reach.App(() => {
   try {
     const [[], k] = call(LA.payBack)
       .pay(() => loanAmt + interest)
-      .assume(() => check(this == B))
       .throwTimeout(relativeTime(deadline), null);
-    check(this == B);
     k(null);
     transfer(collateral).to(B);
     transfer(loanAmt + interest).to(L);
   } catch (_) {
     // B timed out on paying back the loan
-    const [[], k] = call(LA.takeCollateral)
-      .assume(() => check(this == L));
+    const [[], k] = call(LA.takeCollateral);
     k(null);
     transfer(collateral).to(L);
   }

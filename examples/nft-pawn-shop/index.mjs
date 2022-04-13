@@ -42,7 +42,7 @@ const run = async (borrowerPaysBack) => {
       backend.Lender(ctcLender, {}),
     ]);
   } catch (e) {
-    if (e != 'loanMade') {
+    if (e !== 'loanMade') {
       throw e;
     }
   }
