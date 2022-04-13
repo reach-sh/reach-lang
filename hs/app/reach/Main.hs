@@ -734,9 +734,9 @@ withCompose DockerMeta {..} wrapped = do
         (_, ETH, _) -> ["8545:8545"]
   let reachConnectorMode = packs cm
   let debug' = if debug then "1" else ""
-  let projDirHost' = case compose of
-        StandaloneDevnet -> ""
-        WithProject _ Project {..} -> pack projDirHost
+  let (projDirHost', projDirHost''') = case compose of
+        StandaloneDevnet -> ("", "")
+        WithProject _ Project {..} -> (pack projDirHost, esc' projDirHost)
   let projDirHost'' = T.replace "\"" "\\\"" projDirHost'
   let devnetALGO =
         [N.text|
@@ -821,7 +821,7 @@ withCompose DockerMeta {..} wrapped = do
         WithProject Console _ ->
           [N.text|
            build:
-             context: $projDirHost'
+             context: $projDirHost'''
         |]
         _ -> ""
   let e_dirTmpHost' = pack e_dirTmpHost
