@@ -2295,7 +2295,7 @@ export const getNetworkTime = async (): Promise<BigNumber> => {
   const hc = await indexer.makeHealthCheck().do();
   return bigNumberify(hc['round']);
 };
-const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
+export const getTimeSecs = async (now_bn: BigNumber): Promise<BigNumber> => {
   const now = bigNumberToNumber(now_bn);
   try {
     await ensureNodeCanRead();

@@ -1176,6 +1176,7 @@ const ethLike = {
   setMinMillisBetweenRequests,
   setCustomHttpEventHandler,
   setSigningMonitor,
+  getTimeSecs,
 };
 return ethLike;
 }
