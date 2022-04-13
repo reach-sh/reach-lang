@@ -66,7 +66,7 @@ uriReachScript = "https://docs.reach.sh/reach"
 
 esc :: FilePath -> FilePath
 esc x = "'" <> e <> "'" where
-  e = L.foldl (\a c -> a <> (if c == '\'' then "\'" else [c])) "" x
+  e = L.foldl (\a c -> a <> (if c == '\'' then "'\\''" else [c])) "" x
 
 esc' :: FilePath -> Text
 esc' = pack . esc
@@ -734,9 +734,9 @@ withCompose DockerMeta {..} wrapped = do
         (_, ETH, _) -> ["8545:8545"]
   let reachConnectorMode = packs cm
   let debug' = if debug then "1" else ""
-  let (projDirHost', projDirHost''') = case compose of
-        StandaloneDevnet -> ("", "")
-        WithProject _ Project {..} -> (pack projDirHost, esc' projDirHost)
+  let projDirHost' = case compose of
+        StandaloneDevnet -> ""
+        WithProject _ Project {..} -> pack projDirHost
   let projDirHost'' = T.replace "\"" "\\\"" projDirHost'
   let devnetALGO =
         [N.text|
@@ -821,7 +821,7 @@ withCompose DockerMeta {..} wrapped = do
         WithProject Console _ ->
           [N.text|
            build:
-             context: $projDirHost'''
+             context: "$projDirHost''"
         |]
         _ -> ""
   let e_dirTmpHost' = pack e_dirTmpHost
@@ -1046,8 +1046,10 @@ compile = command "compile" $ info f d
       Env {e_var = Var {..}, ..} <- ask
       rawArgs <- fmap (\a -> if ".rsh" `L.isSuffixOf` a then esc a else a) <$> liftIO getArgs
       let rawArgs' = dropWhile (/= "compile") rawArgs
+      let resc = esc . L.dropPrefix "'" . L.dropSuffix "'"
       let argsl = intercalate " "
             . map pack
+            . map (\a -> if a == "'" <> co_source <> "'" then resc a else a)
             . filter (not . L.isPrefixOf "-o")
             . filter (not . L.isPrefixOf "--output")
             . filter (/= "--disable-reporting")
