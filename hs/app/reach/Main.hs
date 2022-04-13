@@ -1044,12 +1044,10 @@ compile = command "compile" $ info f d
         maybe (pure ()) diePathContainsParentDir co_mdirDotReach
         maybe (pure ()) diePathContainsParentDir co_moutputDir
       Env {e_var = Var {..}, ..} <- ask
-      rawArgs <- fmap (\a -> if ".rsh" `L.isSuffixOf` a then esc a else a) <$> liftIO getArgs
+      rawArgs <- fmap (\a -> if a == co_source then esc a else a) <$> liftIO getArgs
       let rawArgs' = dropWhile (/= "compile") rawArgs
-      let resc = esc . L.dropPrefix "'" . L.dropSuffix "'"
       let argsl = intercalate " "
             . map pack
-            . map (\a -> if a == "'" <> co_source <> "'" then resc a else a)
             . filter (not . L.isPrefixOf "-o")
             . filter (not . L.isPrefixOf "--output")
             . filter (/= "--disable-reporting")
