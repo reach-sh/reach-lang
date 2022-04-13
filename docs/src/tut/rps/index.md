@@ -1528,6 +1528,10 @@ Furthermore, MetaMask does not support multiple active accounts, so if you want 
 
 To complete this section we'll use the `index.rsh` you've already written and create an `index.js` file from scratch which replaces `index.mjs`.
 
+:::note
+`index.mjs` needs to be moved or deleted from the folder in order for `index.js` to work as expected.
+:::
+
 This code is also supplemented with [index.css](@{REPO}/examples/rps-9-web/index.css)
 and some [views](@{REPO}/examples/rps-9-web/views).
 These details are not specific to Reach, and are fairly trivial,
