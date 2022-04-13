@@ -40,6 +40,7 @@ export const {
   newTestAccount,
   newTestAccounts,
   getNetworkTime,
+  getTimeSecs,
   waitUntilTime,
   wait,
   getNetworkSecs,
