@@ -13,7 +13,3 @@ await ctcAlice.p.Alice({
 });
 console.log(`The program started at network time ${startTime}`);
 console.log(`which is network seconds: ${await stdlib.getTimeSecs(startTime)}`);
-await stdlib.wait(100);
-const endTime = await stdlib.getNetworkTime();
-console.log(`The program ended at ${endTime}`);
-console.log(`which is network seconds: ${await stdlib.getTimeSecs(endTime)}`);
