@@ -1,4 +1,4 @@
-reachc: error[RE0127]: The `.paySpec` component must specify a syntactic tuple of Token identifiers
+reachc: error[RE0127]: The `.paySpec` component must specify a syntactic tuple of Token identifiers, or a static ternary expression of the same
 
   ./Err_InvalidPaySpec.rsh:25:10:application
 
