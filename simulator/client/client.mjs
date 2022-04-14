@@ -475,6 +475,13 @@ const getViews = async (s) => {
   return r
 }
 
+// get the State Graph for the current program
+const getStateGraph = async () => {
+  const r = await interact('GET', `${address}/graph`)
+  console.log(r)
+  return r
+}
+
 const apiCall = async (a,s,v,t='number') => {
   const r = await interact('POST', `${address}/api_call/${a}/${s}/?data=${v}&type=${t}`)
   console.log(r)
@@ -557,5 +564,6 @@ export {
   getAPIs,
   apiCall,
   getViews,
-  viewCall
+  viewCall,
+  getStateGraph
 };

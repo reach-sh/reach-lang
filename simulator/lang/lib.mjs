@@ -4,6 +4,10 @@ var c = await import('@reach-sh/simulator-client');
 const consensusID = -1
 const nwToken = -1
 
+Object.filter = (obj, predicate) =>
+  Object.fromEntries(Object.entries(obj).filter(predicate));
+
+
 class Scenario {
   constructor() {
     this.stateID = 0
@@ -90,7 +94,11 @@ class Participant {
   }
 
   async history() {
-    return this.id;
+    const sg = await c.getStateGraph();
+    const filtered = Object.filter(sg, ([id, state]) =>
+      state[1].contents.l_curr_actor_id === this.id
+    );
+    return filtered;
   }
 
   async getNextInteract() {
@@ -98,11 +106,14 @@ class Participant {
   }
 
   async getStore() {
-    return this.id;
+    const l = await c.getStateLocals(this.stateID)
+    return l.locals[this.id].l_store
   }
 
   async getPhase() {
-    return this.id;
+    const l = await c.getStateLocals(this.stateID)
+    return l.locals[this.id].l_phase
+
   }
 }
 
