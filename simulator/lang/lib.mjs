@@ -1,11 +1,14 @@
 // import * as c from '@reach-sh/simulator-client';
 var c = await import('@reach-sh/simulator-client');
 
+const consensusID = -1
+const nwToken = -1
+
 class Scenario {
   constructor() {
     this.stateID = 0
-    this.parts = [];
-    this.cons = new Consensus(new Account(-1));
+    this.participants = [];
+    this.consensus = new Consensus(new Account(-1));
     this.apis = [];
     this.views = [];
   }
@@ -27,7 +30,7 @@ class Scenario {
       const acc = new Account(v.l_acct)
       if (who) {
         const p = new Participant(k,acc,who)
-        this.parts.push(p)
+        this.participants.push(p)
       }
     }
 
@@ -47,31 +50,35 @@ class Scenario {
       const v = new View(k,who,vari,tag,contents)
       this.views.push(v)
     }
-
   }
 
   async pingServer() {
-    return c.ping();
+    return await c.ping();
   }
 
   async reset() {
-    await c.resetServer()
+    return await c.resetServer();
   }
 
   async programHistory() {
-    return this.id;
+    return await c.getStates();
   }
 
   async getCurrentActor() {
-    return this.id;
+    const l = await c.getStateLocals(this.stateID)
+    if (l.l_curr_actor_id === consensusID) {
+      return this.consensus
+    } else {
+      return this.participants[l.l_curr_actor_id]
+    }
   }
 
   async newAccount() {
-    return this.id;
+    return await c.newAccount(this.stateID);
   }
 
   async newToken() {
-    return this.id;
+    return await c.newToken(this.stateID);
   }
 }
 
