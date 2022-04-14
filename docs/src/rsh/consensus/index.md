@@ -153,7 +153,7 @@ Read about finding [loop invariants](##guide-loop-invs) in the Reach guide.
 :::
 
 ```reach
-load: /examples/chickenrace/index.rsh
+load: /examples/chicken-race/index.rsh
 range: 43-64
 ```
 
