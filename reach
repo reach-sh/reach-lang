@@ -57,17 +57,16 @@ run_d () {
    && [ -d "$REACH_DIR_EMBED"  ] \
    && [ -f "$REACH_STACK_YAML" ] \
    && which stack >/dev/null 2>&1; then
-    make --silent --directory "$REACH_HS" hs-build 1>&2
-    REACH_BINARY="$(stack --stack-yaml "$REACH_STACK_YAML" exec -- which reach 2>/dev/null)"
-    REACH_EX="$0" "$REACH_BINARY" \
-      --dir-embed="$REACH_DIR_EMBED" \
-      --dir-project-container="$(pwd)" \
-      --dir-project-host="$(pwd)" \
-      --dir-tmp-container="$TMP" \
-      --dir-tmp-host="$TMP" \
-      --dir-config-container="$CNF" \
-      --dir-config-host="$CNF" \
-      "$@"
+    (cd "$REACH_HS" && make -s hs-build 1>&2) \
+      && REACH_EX="$0" "$(stack --stack-yaml "$REACH_STACK_YAML" exec -- which reach 2>/dev/null)" \
+        --dir-embed="$REACH_DIR_EMBED" \
+        --dir-project-container="$(pwd)" \
+        --dir-project-host="$(pwd)" \
+        --dir-tmp-container="$TMP" \
+        --dir-tmp-host="$TMP" \
+        --dir-config-container="$CNF" \
+        --dir-config-host="$CNF" \
+        "$@"
   else
     cid="$(docker ps -q \
       -f "ancestor=$IMG" \
