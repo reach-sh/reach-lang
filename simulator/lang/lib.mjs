@@ -5,7 +5,7 @@ class Scenario {
   constructor() {
     this.stateID = 0
     this.parts = [];
-    this.cons = [];
+    this.cons = new Consensus(new Account(-1));
     this.apis = [];
     this.views = [];
   }
@@ -17,6 +17,36 @@ class Scenario {
     const rsh = await c.load()
     // initialize the program for the Consensus
     await c.init()
+    const apis = await c.getAPIs()
+    const views = await c.getViews(this.stateID)
+    const l = await c.getStateLocals(this.stateID)
+
+    // setup parts
+    for (const [k,v] of Object.entries(r.l_locals)) {
+      const who = v.l_who ? v.l_who : 'Consensus'
+      const acc = new Account(v.l_acct)
+      if (who) {
+        const p = new Participant(k,acc,who)
+        this.parts.push(p)
+      }
+    }
+
+    // setup apis
+    for (const [k,v] of Object.entries(apis)) {
+      const who = v.a_name
+      const a = new API(k,who)
+      this.apis.push(a)
+    }
+
+    // setup views
+    for (const [k,v] of Object.entries(views)) {
+      const who = v.a_name
+      const vari = v.v_var
+      const tag = v.v_ty.tag
+      const contents = v.v_ty.contents
+      const v = new View(k,who,vari,tag,contents)
+      this.views.push(v)
+    }
 
   }
 
@@ -28,42 +58,43 @@ class Scenario {
     await c.resetServer()
   }
 
-  programHistory() {
+  async programHistory() {
     return this.id;
   }
 
-  getCurrentActor() {
+  async getCurrentActor() {
     return this.id;
   }
 
-  newAccount() {
+  async newAccount() {
     return this.id;
   }
 
-  newToken() {
+  async newToken() {
     return this.id;
   }
 }
 
 class Participant {
-  constructor(id,account) {
+  constructor(id,account,name) {
     this.id = id;
     this.account = account;
+    this.name = name
   }
 
-  history() {
+  async history() {
     return this.id;
   }
 
-  getNextInteract() {
+  async getNextInteract() {
     return this.id;
   }
 
-  getStore() {
+  async getStore() {
     return this.id;
   }
 
-  getPhase() {
+  async getPhase() {
     return this.id;
   }
 }
@@ -73,43 +104,43 @@ class Consensus {
     this.account = account;
   }
 
-  transfer() {
+  async transfer() {
     return this.id;
   }
 
-  history() {
+  async history() {
     return this.id;
   }
 
-  getNextTiebreak() {
+  async getNextTiebreak() {
     return this.id;
   }
 
-  getNextRemote() {
+  async getNextRemote() {
     return this.id;
   }
 
-  getLedger() {
+  async getLedger() {
     return this.id;
   }
 
-  getLinearState() {
+  async getLinearState() {
     return this.id;
   }
 
-  getNetworkTime() {
+  async getNetworkTime() {
     return this.id;
   }
 
-  getNetworkSeconds() {
+  async getNetworkSeconds() {
     return this.id;
   }
 
-  getLog() {
+  async getLog() {
     return this.id;
   }
 
-  getPhase() {
+  async getPhase() {
     return this.id;
   }
 
@@ -122,7 +153,7 @@ class Action {
     this.owner = owner;
   }
 
-  resolve() {
+  async resolve() {
     return this.id;
   }
 
@@ -133,7 +164,7 @@ class Account {
     this.id = id;
   }
 
-  getWallet() {
+  async getWallet() {
     return this.id;
   }
 }
@@ -145,21 +176,26 @@ class Token {
 }
 
 class View {
-  constructor(id) {
+  constructor(id,name,vari,tag,contents) {
     this.id = id;
+    this.name = name;
+    this.vari = vari;
+    this.tag = tag;
+    this.contents = contents;
   }
 
-  call() {
+  async call() {
     return this.id;
   }
 }
 
 class API {
-  constructor(id) {
+  constructor(id,name) {
     this.id = id;
+    this.name = name;
   }
 
-  call() {
+  async call() {
     return this.id;
   }
 }
