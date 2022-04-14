@@ -29,7 +29,7 @@ const run = async (borrowerPaysBack) => {
   console.log(`Borrower puts up the ${nft.name} nft as collateral`);
   try {
     await Promise.all([
-      backend.Borrower(ctcBorrower, {
+      ctcBorrower.p.Borrower({
         loanMade: async () => {
           console.log(`Borrower receives a loan of ${fmt(loanAmt)} ${stdlib.standardUnit}`);
           await printBalances();
@@ -40,7 +40,7 @@ const run = async (borrowerPaysBack) => {
         deadline,
         nft: nft.id,
       }),
-      backend.Lender(ctcLender, {}),
+      ctcLender.p.Lender({}),
     ]);
   } catch (e) {
     if (e !== 'loanMade') {
@@ -51,12 +51,12 @@ const run = async (borrowerPaysBack) => {
   if (borrowerPaysBack) {
     console.log(`Borrower pays off the loan plus ${fmt(interest)} ${stdlib.standardUnit} interest`);
     // Borrower reattaches as the Repayer, though theoretically someone else could pay back the loan
-    await backend.Repayer(ctcBorrower, {});
+    await ctcBorrower.p.Repayer({});
   } else {
     console.log("Borrower is delinquent and does not pay off the loan");
     await stdlib.wait(deadline);
     // Lender reattaches as the Claimant, though theoretically anybody could do this as well
-    await backend.Claimant(ctcLender, {});
+    await ctcLender.p.Claimant({});
   }
 
   console.log("Finishing balances:");
