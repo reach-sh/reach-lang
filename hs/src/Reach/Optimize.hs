@@ -746,7 +746,7 @@ instance Optimize DLInit where
   gcs _ = return ()
 
 instance Optimize LLProg where
-  opt (LLProg at opts ps dli dex dvs das alias devts s) = do
+  opt (LLProg at opts ps dli dex dvs dac das alias devts s) = do
     let SLParts {..} = ps
     let psl = M.keys sps_ies
     cs <- asks eConst
@@ -754,8 +754,8 @@ instance Optimize LLProg where
     env0 <- liftIO $ mkEnv0 (getCounter opts) (llo_droppedAsserts opts) cs psl mis
     local (const env0) $ local (updateClearMaps $ llo_untrustworthyMaps opts) $
       focus_ctor $
-        LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> pure das <*> pure alias <*> pure devts <*> opt s
-  gcs (LLProg _ _ _ _ _ _ _ _ _ s) = gcs s
+        LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> pure dac <*> pure das <*> pure alias <*> pure devts <*> opt s
+  gcs (LLProg _ _ _ _ _ _ _ _ _ _ s) = gcs s
 
 -- This is a bit of a hack...
 

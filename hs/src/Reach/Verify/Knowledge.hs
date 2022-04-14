@@ -374,7 +374,7 @@ kgq_pie ctxt who (InteractEnv m) =
     >> (mapM_ (kgq_pie1 ctxt who) $ M.keys m)
 
 kgq_lp :: Maybe Handle -> VerifySt -> LLProg -> IO ()
-kgq_lp mh vst (LLProg _ (LLOpts {}) (SLParts {..}) _dli _ _ _ _ _ s) = do
+kgq_lp mh vst (LLProg _ (LLOpts {}) (SLParts {..}) _dli _ _ _ _ _ _ s) = do
   putStrLn $ "Verifying knowledge assertions"
   let ps = M.keys sps_ies
   llr <- newIORefRef 0

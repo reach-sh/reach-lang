@@ -76,7 +76,7 @@ compile env (CompilerOpts {..}) = do
           showp l = interOut woutn l . render . pretty
       -- showp "bundle.js" $ render $ pretty djp
       dl <- compileDApp which
-      let DLProg _ (DLOpts {..}) _ _ _ _ _ _ _ _ = dl
+      let DLProg _ (DLOpts {..}) _ _ _ _ _ _ _ _ _ = dl
       let connectors = map (all_connectors M.!) dlo_connectors
       showp "dl" dl
       unless co_stopAfterEval $ do

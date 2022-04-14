@@ -85,7 +85,8 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
   let sps_apis = ar_isAPI
   let sps = SLParts {..}
   final' <- pan final
-  return $ DLProg at final_dlo' sps dli exports ar_views ar_apis aliases ar_events final'
+  api_calls <- (liftIO . readIORef) =<< asks e_apiCalls
+  return $ DLProg at final_dlo' sps dli exports ar_views api_calls ar_apis aliases ar_events final'
 compileDApp _ _ _ = impossible "compileDApp called without a Reach.App"
 
 verifyAliases :: M.Map SLVar (Maybe B.ByteString, [SLType]) -> App Aliases
@@ -300,6 +301,7 @@ makeEnv cns = do
   e_mape <- makeMapEnv
   e_droppedAsserts <- newCounter 0
   let e_appr = Left $ app_default_opts e_id e_droppedAsserts $ M.keys cns
+  e_apiCalls <- newIORef mempty
   return (Env {..})
 
 checkUnusedVars :: App a -> App a

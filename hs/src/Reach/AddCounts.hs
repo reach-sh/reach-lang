@@ -392,8 +392,8 @@ instance AC LLStep where
       return $ LLS_ToConsensus lls_tc_at lct' send' recv' mtime'
 
 instance AC LLProg where
-  ac (LLProg at llo ps dli dex vs das alias devts s) =
-    LLProg at llo ps dli <$> ac dex <*> pure vs <*> pure das <*> pure alias <*> pure devts <*> ac s
+  ac (LLProg at llo ps dli dex vs dac das alias devts s) =
+    LLProg at llo ps dli <$> ac dex <*> pure vs <*> pure dac <*> pure das <*> pure alias <*> pure devts <*> ac s
 
 add_counts :: AC a => a -> IO a
 add_counts x = do

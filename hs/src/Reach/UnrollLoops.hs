@@ -185,8 +185,8 @@ instance Unroll LLStep where
       LLS_ToConsensus at lct send <$> ul recv <*> ul mtime
 
 instance Unroll LLProg where
-  ul (LLProg at opts ps dli dex dvs das alias devts s) =
-    LLProg at opts ps dli <$> ul dex <*> pure dvs <*> pure das <*> pure alias <*> pure devts <*> ul s
+  ul (LLProg at opts ps dli dex dvs dac das alias devts s) =
+    LLProg at opts ps dli <$> ul dex <*> pure dvs <*> pure dac <*> pure das <*> pure alias <*> pure devts <*> ul s
 
 instance Unroll CTail where
   ul = \case

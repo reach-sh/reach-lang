@@ -174,6 +174,7 @@ data BEnv = BEnv
   , be_inConsensus :: Bool
   , be_counter :: Counter
   , be_which :: Int
+  , be_api_calls :: M.Map SLPart Int
   , be_api_info :: IORef (M.Map SLPart (M.Map Int ApiInfo))
   , be_alias :: Aliases
   , be_api_rets :: IORef (M.Map SLPart DLType)
@@ -268,7 +269,7 @@ type CApp = ReaderT CEnv IO
 
 data EEnv = EEnv
   { ee_flow :: FlowOutput
-  , ee_who :: SLPart
+  , ee_who :: (SLPart, Maybe Int)
   }
 
 type EApp = ReaderT EEnv IO
@@ -316,8 +317,10 @@ addVars at k = do
 
 -- End-point Construction
 
-itsame :: SLPart -> EApp Bool
-itsame who = ((who ==) . ee_who) <$> ask
+itsame :: SLPart -> Maybe Int -> EApp Bool
+itsame who mApiWhich = do
+  (e_who, e_api_which) <- asks ee_who
+  return $ mApiWhich == e_api_which && e_who == who
 
 eeIze :: (a -> BApp (b, c)) -> a -> BApp c
 eeIze f x = do
@@ -415,10 +418,18 @@ be_m = \case
            return $ DL_MapReduce at mri ans x z b a f')
   DL_Only at (Left who) l -> do
     ic <- be_inConsensus <$> ask
+    w <- asks be_which
     l'l <- ee_t l
+    which <- multipleApiCalls who >>= \case
+      -- Not an API or API only called in one place
+      False -> return $ Nothing
+      -- Take the `only(() => interact.in())` from preceding step
+      -- and the `only(() => interact.out())` from the correct step
+      True  -> return $ Just $ f $ w
+        where f = if ic then id else succ
     let t'c = return $ DL_Nop at
     let t'l = do
-          itsame who >>= \case
+          itsame who which >>= \case
             False -> return $ DL_Nop at
             True -> DL_Only at (Right ic) <$> l'l
     return $ (,) t'c t'l
@@ -429,6 +440,13 @@ be_m = \case
     return $ (,) (mk <$> t'c) (mk <$> t'l)
   where
     nop at = retb0 $ const $ return $ DL_Nop at
+
+multipleApiCalls :: SLPart -> BApp Bool
+multipleApiCalls who = do
+  apis <- asks be_api_calls
+  case M.lookup who apis of
+    Just n  -> return $ n > 1
+    Nothing -> return $ False
 
 be_t :: BAppT2 DLTail
 be_t = \case
@@ -681,12 +699,13 @@ be_s_ = \case
     let soloSend = soloSend0 && soloSend1
     let ok_l''m = do
           ok_l' <- ok_l'm
-          who <- ee_who <$> ask
-          mfrom <- case M.lookup who send of
-            Nothing -> return $ Nothing
-            Just (DLSend {..}) -> do
+          (who, m_api_which) <- ee_who <$> ask
+          let same_which = maybe True (== this_h) m_api_which
+          mfrom <- case (M.lookup who send, same_which) of
+            (Just (DLSend {..}), True) -> do
               svs <- ee_readSave prev
               return $ Just (ds_msg, ds_pay, ds_when, svs, soloSend)
+            (_, _) -> return $ Nothing
           mtime' <- mtime'm
           return $ ET_ToConsensus at from_v prev (Just lct_v) this_h mfrom msg_vs out_vs time_v secs_v didSend_v mtime' ok_l'
     return $ ok_l''m
@@ -699,7 +718,7 @@ mk_eb (DLinExportBlock at vs (DLBlock bat sf ll a)) = do
   return $ DLinExportBlock at vs (DLBlock bat sf body' a)
 
 epp :: LLProg -> IO PLProg
-epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
+epp (LLProg at (LLOpts {..}) ps dli dex dvs dac das alias devts s) = do
   -- Step 1: Analyze the program to compute basic blocks
   let be_counter = llo_counter
   be_savec <- newCounter 1
@@ -712,6 +731,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
   let be_prev = 0
   let be_which = 0
   let be_prevs = mempty
+  let be_api_calls = dac
   be_api_info <- newIORef mempty
   be_api_rets <- newIORef mempty
   let be_interval = default_interval
@@ -748,14 +768,22 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
   stateToSrcMap <- readIORef be_stateToSrcMap
   -- Step 4: Generate the end-points
   let SLParts {..} = ps
-  let mkep ee_who ie = do
-        let isAPI = S.member ee_who sps_apis
+  -- When the same API call occurs in multiple steps,
+  -- make a seperate `EPProg` for each one.
+  let sps_ies' = M.foldrWithKey (\ k v acc ->
+          case M.lookup k dac of
+            Just n
+              | n > 1 -> foldr (\ x acc' -> M.insert (k, Just x) v acc') acc $ [1 .. n]
+            _ -> M.insert (k, Nothing) v acc
+        ) mempty sps_ies
+  let mkep ee_who@(who, _) ie = do
+        let isAPI = S.member who sps_apis
         let ee_flow = flow
         et <-
           flip runReaderT (EEnv {..}) $
             mkep_
         return $ EPProg at isAPI ie et
-  pps <- EPPs das <$> mapWithKeyM mkep sps_ies
+  pps <- EPPs das <$> mapWithKeyM mkep sps_ies'
   -- Step 4: Generate the final PLProg
   let plo_verifyArithmetic = llo_verifyArithmetic
   let plo_untrustworthyMaps = llo_untrustworthyMaps

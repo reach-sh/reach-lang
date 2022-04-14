@@ -885,8 +885,8 @@ jsMapDefns varsHuh = do
 jsError :: Doc -> Doc
 jsError err = "new Error(" <> err <> ")"
 
-jsPart :: DLInit -> SLPart -> EPProg -> App Doc
-jsPart dli p (EPProg _ ctxt_isAPI _ et) = do
+jsPart :: DLInit -> (SLPart, Maybe Int) -> EPProg -> App Doc
+jsPart dli (p, _) (EPProg _ ctxt_isAPI _ et) = do
   jsc@(JSContracts {..}) <- newJsContract
   let ctxt_ctcs = Just jsc
   let ctxt_who = p
@@ -1093,7 +1093,7 @@ jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = 
     local (\e -> e {ctxt_maps = dli_maps}) $
       jsViews vi
   mapsp <- jsMaps dli_maps
-  let partMap = flip M.mapWithKey epps_m $ \p _ -> pretty $ bunpack p
+  let partMap = flip M.mapWithKey epps_m $ \(p,_) _ -> pretty $ bunpack p
   let apiMap =
         M.foldrWithKey
           (\k v acc ->

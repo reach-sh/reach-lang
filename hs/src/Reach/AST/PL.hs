@@ -276,7 +276,7 @@ instance Pretty CPProg where
 
 data EPPs = EPPs
   { epps_apis :: DLAPIs
-  , epps_m :: M.Map SLPart EPProg
+  , epps_m :: M.Map (SLPart, Maybe Int) EPProg
   }
   deriving (Eq)
 

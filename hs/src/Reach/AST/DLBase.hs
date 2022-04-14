@@ -1229,6 +1229,8 @@ type DLAPIs = InterfaceLikeMap (SLPart, IType)
 
 type DLEvents = InterfaceLikeMap [DLType]
 
+type ApiCalls = M.Map SLPart Int
+
 arraysLength :: [DLArg] -> Integer
 arraysLength arrays = do
   let sizes = map (snd . argArrTypeLen) arrays

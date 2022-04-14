@@ -317,8 +317,8 @@ many_ = getFirst . mconcat . map First
 _many :: (a -> App (Maybe a)) -> [a] -> App (Maybe a)
 _many f l = many_ <$> mapM f l
 
-apc :: HasCounter a => a -> SLPart -> EPProg -> IO EPProg
-apc hc eWho = \case
+apc :: HasCounter a => a -> (SLPart, Maybe Int) -> EPProg -> IO EPProg
+apc hc (eWho, _) = \case
   EPProg at True ie et -> do
     let eSeenOut = False
     eSeenInR <- newIORef False

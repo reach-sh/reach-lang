@@ -17,7 +17,7 @@ data VerifierName = Boolector | CVC4 | Yices | Z3
   deriving (Read, Show, Eq)
 
 verify :: VerifyOpts -> LLProg -> IO ExitCode
-verify vst_vo lp@(LLProg _ llo _ _ _ _ _ _ _ _) = do
+verify vst_vo lp@(LLProg _ llo _ _ _ _ _ _ _ _ _) = do
   vst_res_succ <- newCounter 0
   vst_res_fail <- newCounter 0
   vst_res_time <- newCounter 0
