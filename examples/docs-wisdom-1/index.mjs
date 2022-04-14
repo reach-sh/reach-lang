@@ -18,12 +18,11 @@ if (role === 'seller') {
   const acc = await stdlib.newTestAccount(stdlib.parseCurrency(1000));
   const ctc = acc.contract(backend);
   await ctc.participants.Seller(sellerInteract)
-}
 	
 // Buyer
-else {
+} else {
   const buyerInteract = {
-	...commonInteract 
+    ...commonInteract 
   };
 
 };
