@@ -376,15 +376,17 @@ allStates = do
   a <- gets e_nsid
   M.fromList <$> mapM stActHist [0 .. (a - 1)]
 
+getStateGraph :: WebM Graph
+getStateGraph = do
+  gets e_graph
+
 getStatus :: WebM Status
 getStatus = do
-  s <- gets e_status
-  return s
+  gets e_status
 
 getEdges :: WebM [(StateId, StateId)]
 getEdges = do
-  es <- gets e_edges
-  return es
+  gets e_edges
 
 resetServer :: WebM ()
 resetServer = do
@@ -580,6 +582,11 @@ app p srcTxt = do
     setHeaders
     ss <- webM $ allStates
     json ss
+
+  get "/graph" $ do
+    setHeaders
+    sg <- webM $ getStateGraph
+    json sg
 
   get "/edges" $ do
     setHeaders
