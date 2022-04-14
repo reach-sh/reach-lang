@@ -886,7 +886,7 @@ jsError :: Doc -> Doc
 jsError err = "new Error(" <> err <> ")"
 
 jsPart :: DLInit -> (SLPart, Maybe Int) -> EPProg -> App Doc
-jsPart dli (p, _) (EPProg _ ctxt_isAPI _ et) = do
+jsPart dli (p, m_api_which) (EPProg _ ctxt_isAPI _ et) = do
   jsc@(JSContracts {..}) <- newJsContract
   let ctxt_ctcs = Just jsc
   let ctxt_who = p
@@ -899,7 +899,8 @@ jsPart dli (p, _) (EPProg _ ctxt_isAPI _ et) = do
     et' <- jsETail et
     i2t' <- liftIO $ readIORef jsc_i2t
     let ctcs = vsep $ map snd $ M.toAscList i2t'
-    let who = pretty $ bunpack p
+    let suffix = maybe "" show m_api_which
+    let who = pretty $ bunpack p <> suffix
     let iExpect this nth = "`The backend for" <+> who <+> "expects to receive" <+> this <+> "as its" <+> nth <+> "argument.`"
     let rejectIf cond err = jsWhen cond $ jsReturn $ jsApply "Promise.reject" [jsError err]
     let ctcTopChk = rejectIf "typeof(ctcTop) !== 'object' || ctcTop._initialize === undefined" $ iExpect "a contract" "first"
@@ -1093,7 +1094,16 @@ jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = 
     local (\e -> e {ctxt_maps = dli_maps}) $
       jsViews vi
   mapsp <- jsMaps dli_maps
-  let partMap = flip M.mapWithKey epps_m $ \(p,_) _ -> pretty $ bunpack p
+  let api_wrappers = M.foldrWithKey (\ (p, w) _ acc ->
+                      case w of
+                        Just _  -> M.insert p (pretty $ bunpack p) acc
+                        Nothing -> acc
+                      ) mempty epps_m
+  let partMap = M.foldrWithKey (\ (p, mw) _ acc -> do
+                    let suffix = maybe "" show mw
+                    let p' = p <> bpack suffix
+                    M.insert p' (pretty $ bunpack p') acc
+                  ) api_wrappers epps_m
   let apiMap =
         M.foldrWithKey
           (\k v acc ->

@@ -9,11 +9,11 @@ export const main = Reach.App(() => {
   A.publish();
   commit();
 
-  const [ _, k1 ] = call(B.go);
+  const [ [], k1 ] = call(B.go);
   k1(null);
   commit();
 
-  const [ _, k2 ] = call(B.go);
+  const [ [], k2 ] = call(B.go);
   k2(null);
   commit();
 });
