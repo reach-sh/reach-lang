@@ -20,7 +20,7 @@ Running "世界您好"...                              ✔ Succeeded
 
 For a given `$TARGET` directory in this test suite the following conventions apply:
 
-##### **`$TARGET/.../CNAME`**
+##### **`$TARGET/.../NAME`**
 This file contains the `$TARGET`'s expected package.json `name` field (if auto-generated) and Docker container base-name (e.g. `reachsh/reach-app-the-target-name-1234`).
 The test suite understands deeply-nested directories (hence `...`).
 
