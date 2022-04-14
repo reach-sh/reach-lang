@@ -2199,7 +2199,9 @@ signatureStr :: String -> [DLType] -> Maybe DLType -> String
 signatureStr f args mret = sig
   where
     rets = fromMaybe "" $ fmap typeSig mret
-    sig = f <> "(" <> intercalate "," (map typeSig args) <> ")" <> rets
+    (args14, argsMore) = splitAt 14 args
+    tupledArgs = args14 <> if null argsMore then [] else [T_Tuple argsMore]
+    sig = f <> "(" <> intercalate "," (map typeSig tupledArgs) <> ")" <> rets
 
 sigStrToBytes :: String -> BS.ByteString
 sigStrToBytes sig = shabs

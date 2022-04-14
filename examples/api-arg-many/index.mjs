@@ -10,8 +10,7 @@ const {
 const startingBalance = stdlib.parseCurrency(100);
 const accDeployer = await stdlib.newTestAccount(startingBalance);
 
-//const argLength = 20
-const argLength = 12
+const argLength = 20
 
 const run = async (isRaw) => {
 
@@ -87,7 +86,8 @@ const run = async (isRaw) => {
       }
     };
 
-    const margs = t2a(args);
+    const argsTupled = args.slice(0,14).concat([args.slice(14)])
+    const margs = t2a(argsTupled);
     const eargs = meth.args.map((a, i) => a.type.encode(margs[i]));
     const sel = meth.getSelector();
     const aargs = [ sel, ...eargs ];

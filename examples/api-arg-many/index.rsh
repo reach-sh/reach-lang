@@ -8,10 +8,10 @@ export const main = Reach.App(() => {
     sumMany: Fun([UInt, UInt, UInt, UInt,
                   UInt, UInt, UInt, UInt,
                   UInt, UInt, UInt, UInt,
-                  //UInt, UInt, UInt, UInt,
+                  UInt, UInt, UInt, UInt,
                   //// I wanted to test more than 15, but when 16 worked I
                   //// decided to keep going higher.
-                  //UInt, UInt, UInt, UInt,
+                  UInt, UInt, UInt, UInt,
                  ],
                  UInt)
   })
@@ -35,8 +35,8 @@ export const main = Reach.App(() => {
   const asArray = array(UInt, [args[0], args[1], args[2], args[3],
                                args[4], args[5], args[6], args[7],
                                args[8], args[9], args[10], args[11],
-                               //args[12], args[13], args[14], args[15],
-                               //args[16], args[17], args[18], args[19],
+                               args[12], args[13], args[14], args[15],
+                               args[16], args[17], args[18], args[19],
                               ])
   const sum = asArray.reduce(0, (accum, x) => accum + x)
   sumManyRet(sum)
