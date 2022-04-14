@@ -147,37 +147,15 @@ where `{!rsh} LHS` is a valid left-hand side of an identifier definition where t
 if `{!rsh} COND_EXPR` is true, then the block executes,
 and if not, then the loop terminates and control transfers to the continuation of the while statement.
 The identifiers bound by `{!rsh} LHS` are bound within `{!rsh} DEFINE_BLOCK`, `{!rsh} INVARIANT_EXPR`, `{!rsh} COND_EXPR`, `{!rsh} BLOCK`, and the tail of the while statement.
-
-```reach
-      var [ keepGoing, as, bs ] = [ true, 0, 0 ];
-      invariant(balance() == 2 * wager);
-      while ( keepGoing ) {
-        commit();
-
-        each([Alice, Bob], () => {
-          const go = declassify(interact.keepGoing()); });
-        Alice.only(() => {
-          const isAlice = true; });
-        Bob.only(() => {
-          const isAlice = false; });
-
-        race(Alice, Bob).publish(isAlice).when(go)
-          .timeout(relativeTime(deadline), () => {
-            showOutcome(TIMEOUT)();
-            race(Alice, Bob).publish();
-            keepGoing = false;
-            continue; });
-        const [ da, db ] = isAlice ? [ 1, 0 ] : [ 0, 1 ];
-        each([Alice, Bob], () => {
-          interact.roundWinnerWas(isAlice); });
-        [ keepGoing, as, bs ] = [ true, as + da, bs + db ];
-        continue;
-      }
-```
-
+ 
 :::note
 Read about finding [loop invariants](##guide-loop-invs) in the Reach guide.
 :::
+
+```reach
+load: /examples/chickenrace/index.rsh
+range: 43-64
+```
 
 ### `continue`
 
