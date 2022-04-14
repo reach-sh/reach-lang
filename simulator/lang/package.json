@@ -1,0 +1,21 @@
+{
+  "name": "@reach-sh/simulator-lang",
+  "description": "language/library for the Reach Simulator",
+  "version": "0.0.1",
+  "main": "./lang/lib.mjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reach-sh/reach-lang.git",
+    "directory": "simulator"
+  },
+  "type": "module",
+  "dependencies": {
+    "@reach-sh/simulator-client": "0.0.33"
+  },
+  "author": "reach.sh",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/reach-sh/reach-lang/issues"
+  },
+  "homepage": "https://github.com/reach-sh/reach-lang#readme"
+}

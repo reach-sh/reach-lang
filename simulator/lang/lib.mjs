@@ -1,17 +1,18 @@
-import * as c from '@reach-sh/simulator-client';
+// import * as c from '@reach-sh/simulator-client';
+var c = await import('@reach-sh/simulator-client');
 
 class Scenario {
-  constructor(parts,cons,views,apis) {
-    this.parts = parts;
-    this.cons = cons;
-    this.apis = apis;
-    this.views = views;
-  }
-  pingServer() {
-    return this.id;
+  constructor() {
+    this.parts = [];
+    this.cons = [];
+    this.apis = [];
+    this.views = [];
   }
   init() {
     return this.id;
+  }
+  pingServer() {
+    return c.ping();
   }
   reset() {
     return this.id;
@@ -34,9 +35,6 @@ class Participant {
   constructor(id,account) {
     this.id = id;
     this.account = account;
-  }
-  init() {
-    return this.id;
   }
   history() {
     return this.id;
