@@ -84,7 +84,7 @@ getCompilerArgs versionCliDisp = do
         info
           (compiler <**> helper)
           (fullDesc
-             <> progDesc "verify and compile an Reach program"
+             <> progDesc "verify and compile a Reach program"
              <> header versionCliDisp)
   execParser opts
 
