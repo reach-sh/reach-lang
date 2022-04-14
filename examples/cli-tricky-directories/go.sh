@@ -10,12 +10,20 @@ g () {
   echo
 }
 
-r="$(find "$3" -name index.rsh | head -n1)"
-if [ ! -f "$r" ]; then
-  echo "Couldn't find index.rsh file under \"$3\" directory."
+c="$(find "$3" -name CNAME | head -n1)"
+if [ ! -f "$c" ]; then
+  echo "Couldn't find CNAME file under \"$3\" directory."
   exit 1
 fi
-x="$(dirname "$r")"
+
+x="$(dirname "$c")"
+r="$x/index.rsh"
+
+(cd "$x"
+ for a in index.mjs index.rsh .gitignore .dockerignore; do
+   ([ -f "$a" ] && rm "$a") || :
+ done
+ g init)
 
 g compile --intermediate-files "$r" main
 g clean   "$x" main
@@ -23,7 +31,7 @@ g compile --install-pkgs "$r" main --intermediate-files --verify-timeout=2222
 g compile "$r" main
 g run     "$x"
 
-(cd "$x" || exit 1
+(cd "$x"
  g scaffold
  if [ -f ./CNAME ]; then
    n="$(grep '"name":[[:space:]]"@reach-sh/' < package.json \

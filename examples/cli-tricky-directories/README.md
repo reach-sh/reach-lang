@@ -4,11 +4,7 @@ This test suite exists to stress the CLI's path-handling and project-name-defaul
 
 It'll look something like this:
 ```sh
-$ make clean run
-([ -d ./.tmp ] && rm -r ./.tmp) || :
-find . -type d -name build -prune -exec rm -r "{}" \;
-find . -type f -name Dockerfile   -exec rm    "{}" \;
-find . -type f -name package.json -exec rm    "{}" \;
+$ make run
 Running "A directory name with spaces "...         ✔ Succeeded
 Running "Doesn't break"...                         ✔ Succeeded
 Running "foo"...                                   ✔ Succeeded
@@ -28,8 +24,8 @@ For a given `$TARGET` directory in this test suite the following conventions app
 This file contains the `$TARGET`'s expected package.json `name` field (if auto-generated) and Docker container base-name (e.g. `reachsh/reach-app-the-target-name-1234`).
 The test suite understands deeply-nested directories (hence `...`).
 
-##### **`$TARGET/.../index.{mjs|rsh|txt}`**
-These are mostly boilerplate and uninteresting, but necessary for testing-purposes.
+##### **`$TARGET/.../index.{mjs|rsh}`**
+These will be generated automatically by the test suite and shouldn't be committed to source control.
 
 ##### **`.tmp/$TARGET.log`**
 Captures output from running `go.sh $TARGET`.
