@@ -1,4 +1,12 @@
+build/
+
+.reach/
 .tmp/
 
 Dockerfile
 package.json
+index.mjs
+index.rsh
+
+.gitignore
+.dockerignore
