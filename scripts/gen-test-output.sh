@@ -1,27 +1,37 @@
 #!/bin/sh -e
 # this script replicates the behavior of testCompileOut in /hs/test/Reach/Test_Compiler.hs
 case "$1" in
-  *.rsh) ;;
-  *) echo "pass a .rsh file as the first arg"; exit 1
+  *.rsh) RSH="$1" ;;
+  *) if [ -f "index.rsh" ]; then 
+       RSH="index.rsh"
+     else
+       echo "pass a .rsh file as the first arg"
+       exit 1
+     fi
+     ;;
 esac
 
-# build reachc if not already
 REPO="$(realpath "$(dirname "$0")"/..)"
-make -s -C "$REPO"/hs/ hs-build
-
-DIRNAME="$(dirname "$(realpath "$1")")"
-BASENAME="$(basename "$1" ".rsh")"
+DIRNAME="$(dirname "$(realpath "$RSH")")"
+BASENAME="$(basename "$RSH" ".rsh")"
 OUTPUT_F="$DIRNAME"/"$BASENAME".txt
 STDERR_F="$(mktemp)"
 trap 'rm $STDERR_F' EXIT
 
 cd "$DIRNAME"
-stack --stack-yaml "$REPO"/hs/stack.yaml exec -- reachc --disable-reporting "$BASENAME".rsh \
-  >"$OUTPUT_F" 2>"$STDERR_F" || true
+if [ "$REACH_DOCKER" = "0" ]; then
+  # don't use reach script directly here because we do not want to include
+  # make's output in the golden file
+  make --silent --directory "$REPO"/hs/ hs-build 
+  stack --stack-yaml "$REPO"/hs/stack.yaml exec -- \
+    reachc --disable-reporting "$RSH" >"$OUTPUT_F" 2>"$STDERR_F" || true
+else
+  "$REPO"/reach compile --disable-reporting "$RSH" >"$OUTPUT_F" 2>"$STDERR_F" || true
+fi
 
 # stderr comes after stdout
 # callstack is removed
-sed --quiet "/CallStack (from HasCallStack):/q;p" "$STDERR_F" >> "$OUTPUT_F"
+sed --quiet "/CallStack (from HasCallStack):/q;p " "$STDERR_F" >> "$OUTPUT_F"
 
 # full directory paths are replaced with "."
 ESCAPED="$(echo "$DIRNAME" | sed 's/\./\\\./g')"
