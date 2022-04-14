@@ -1571,6 +1571,17 @@ compileTimeArg = \case
     correctData = (==) (dataTypeMap $ eitherT t t)
     t = T_UInt uintWord
 
+decodePay :: (JSExpression -> App JSExpression) -> JSExpression -> App JSExpression
+decodePay cont = \case
+  JSExpressionParen _ i _ -> rec i
+  JSExpressionTernary c _ tt _ ff -> do
+    (snd <$> evalExpr c) >>= \case
+      SLV_Bool _ b -> rec (if b then tt else ff)
+      _ -> expect_ $ Err_InvalidPaySpec
+  x -> cont x
+  where
+    rec = decodePay cont
+
 evalForm :: SLForm -> [JSExpression] -> App SLSVal
 evalForm f args = do
   case f of
@@ -1635,25 +1646,27 @@ evalForm f args = do
         doFM_Case we x my z = do
           at <- withAt id
           let a = srcloc2annot at
+          let decodePay' = \case
+                JSArrayLiteral aa ts ae -> do
+                  let tok_ids = map (jse_expect_id at) $ jsa_flatten ts
+                  let tok_pays =
+                        JSDecimal a "0" :
+                        map
+                          (\i ->
+                             JSArrayLiteral
+                               aa
+                               [ JSArrayElement (JSDecimal aa "0")
+                               , JSArrayComma aa
+                               , JSArrayElement (JSIdentifier aa i)
+                               ]
+                               ae)
+                          tok_ids
+                  return $ JSArrayLiteral aa (intersperse (JSArrayComma aa) $ map JSArrayElement tok_pays) ae
+                _ -> expect_ $ Err_InvalidPaySpec
           def_pay <-
                 case slf_mnntpay of
-                  Just (JSArrayLiteral aa ts ae) -> do
-                    let tok_ids = map (jse_expect_id at) $ jsa_flatten ts
-                    let tok_pays =
-                          JSDecimal a "0" :
-                          map
-                            (\i ->
-                               JSArrayLiteral
-                                 aa
-                                 [ JSArrayElement (JSDecimal aa "0")
-                                 , JSArrayComma aa
-                                 , JSArrayElement (JSIdentifier aa i)
-                                 ]
-                                 ae)
-                            tok_ids
-                    return $ JSArrayLiteral aa (intersperse (JSArrayComma aa) $ map JSArrayElement tok_pays) ae
+                  Just pp -> decodePay decodePay' pp
                   Nothing -> return $ JSDecimal a "0"
-                  Just _ -> expect_ $ Err_InvalidPaySpec
           let default_pay = jsArrowExpr a [JSIdentifier a "_"] def_pay
           let y = fromMaybe default_pay my
           w <- slvParticipant_part =<< (snd <$> evalExpr we)
@@ -5143,36 +5156,38 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   let tc_api_e = JSCallExpression (JSMemberDot tc_pub_e a (jid ".api")) a JSLNil a
   let tc_when_e = JSCallExpression (JSMemberDot tc_api_e a (jid "when")) a (JSLOne when_e) a
   -- START: Non-network token pay
+  let decodePay' = \case
+        JSArrayLiteral aa ts _ -> do
+          let network_pay_var = jid "networkTokenPay"
+          let nnts = map (jse_expect_id at) $ jsa_flatten ts
+          let mkint :: SLVar -> Integer -> (JSExpression, JSExpression, JSStatement)
+              mkint nnt i = (js, ret, vps)
+                where
+                  amt = jid $ "amt" <> show i
+                  nntok = jid $ "nntok" <> show i
+                  nnt' = jid nnt
+                  js = jsArrayLiteral aa [amt, nntok]
+                  ret = jsArrayLiteral aa [amt, nnt']
+                  vps =
+                    JSExpressionStatement
+                      (jsCall
+                         aa
+                         (jid "assert")
+                         [ JSExpressionBinary nntok (JSBinOpEq aa) (jid nnt)
+                         , JSStringLiteral aa ("'Expected the non-network token at position " <> show (i + 1) <> " in `case` payment to be equal to " <> show (pretty nnt) <> " as specified in `.paySpec`'")
+                         ])
+                      sp
+          let nnts_int = zipWith mkint nnts [0 ..]
+          let (nnts_js, nnts_ret, verifyPaySpec) = unzip3 nnts_int
+          let pay_var tl = JSArrayLiteral aa (intercalate [JSArrayComma aa] $ map ((: []) . JSArrayElement) $ network_pay_var : tl) aa
+          let pay_ss = [JSConstant aa (JSLOne $ JSVarInitExpression (pay_var nnts_js) $ JSVarInit aa pay_e) sp] <> verifyPaySpec <> [JSReturn aa (Just (pay_var nnts_ret)) sp]
+          let pay_call = jsCallThunk aa $ jsThunkStmts aa pay_ss
+          return pay_call
+        _ -> expect_ $ Err_InvalidPaySpec
   pay_expr <-
     case slf_mnntpay of
-      Just (JSArrayLiteral aa ts _) -> do
-        let network_pay_var = jid "networkTokenPay"
-        let nnts = map (jse_expect_id at) $ jsa_flatten ts
-        let mkint :: SLVar -> Integer -> (JSExpression, JSExpression, JSStatement)
-            mkint nnt i = (js, ret, vps)
-              where
-                amt = jid $ "amt" <> show i
-                nntok = jid $ "nntok" <> show i
-                nnt' = jid nnt
-                js = jsArrayLiteral aa [amt, nntok]
-                ret = jsArrayLiteral aa [amt, nnt']
-                vps =
-                  JSExpressionStatement
-                    (jsCall
-                       aa
-                       (jid "assert")
-                       [ JSExpressionBinary nntok (JSBinOpEq aa) (jid nnt)
-                       , JSStringLiteral aa ("'Expected the non-network token at position " <> show (i + 1) <> " in `case` payment to be equal to " <> show (pretty nnt) <> " as specified in `.paySpec`'")
-                       ])
-                    sp
-        let nnts_int = zipWith mkint nnts [0 ..]
-        let (nnts_js, nnts_ret, verifyPaySpec) = unzip3 nnts_int
-        let pay_var tl = JSArrayLiteral aa (intercalate [JSArrayComma aa] $ map ((: []) . JSArrayElement) $ network_pay_var : tl) aa
-        let pay_ss = [JSConstant aa (JSLOne $ JSVarInitExpression (pay_var nnts_js) $ JSVarInit aa pay_e) sp] <> verifyPaySpec <> [JSReturn aa (Just (pay_var nnts_ret)) sp]
-        let pay_call = jsCallThunk aa $ jsThunkStmts aa pay_ss
-        return pay_call
+      Just pp -> decodePay decodePay' pp
       Nothing -> return pay_e
-      Just _ -> expect_ $ Err_InvalidPaySpec
   let tc_pay_e = JSCallExpression (JSMemberDot tc_when_e a (jid "pay")) a (toJSCL [pay_expr, pay_req]) a
   -- END: Non-network token pay
   let tc_time_e =

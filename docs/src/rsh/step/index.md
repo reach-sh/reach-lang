@@ -280,7 +280,8 @@ fork()
 .throwTimeout(DELAY_EXPR, THROW_EXPR)
 ```
 where:
-+ `{!rsh} TOKENS_EXPR` is a syntactic tuple of `{!rsh} Token` identifiers;
++ `{!rsh} TOKENS_EXPR` is a syntactic tuple of `{!rsh} Token` identifiers,
+  or a static ternary expression that evaluates to one;
 + `{!rsh} PART_EXPR` is an expression that evaluates to a participant;
 + `{!rsh} PUBLISH_EXPR` is a syntactic arrow expression that is evaluated in a local step for the specified participant and must evaluate to an object that may contain a `msg` field, which may be of any type, a `when` field, which must be a boolean, and a `_local` field, which may be of any type;
 + (optional) `{!rsh} PAY_EXPR` is an expression that evaluates to a function parameterized over the `msg` value and returns a pay amount; if this component is left-out, it is synthesized to zero;

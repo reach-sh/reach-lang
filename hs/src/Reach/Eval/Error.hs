@@ -742,7 +742,7 @@ instance Show EvalError where
     Err_ForkNoCases ->
       "A `fork`/`parallelReduce` statement must include a `.case` or `.api` component"
     Err_InvalidPaySpec ->
-      "The `.paySpec` component must specify a syntactic tuple of Token identifiers"
+      "The `.paySpec` component must specify a syntactic tuple of Token identifiers, or a static ternary expression of the same"
     Err_LoopVariableLength at ->
       "Cannot assign the loop variable(s) to a `Tuple` of different length at: " <> show at
     Err_xor_Types l r ->
