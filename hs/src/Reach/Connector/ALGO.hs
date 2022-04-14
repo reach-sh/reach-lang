@@ -3012,18 +3012,18 @@ cmethIsView = \case
 
 capi :: Bool -> (SLPart, ApiInfo) -> App [(String, CMeth)]
 capi qualify (who, (ApiInfo {..})) = do
-  capi_label <- freshLabel $ bunpack who <> suffix
+  capi_label <- freshLabel f
   let c = CApi {..}
   let apis = [(capi_sig, c)]
   let mk_alias alias = apis <> [(mk_sig $ bunpack alias, CAlias alias c)]
   return $ maybe apis mk_alias ai_alias
   where
-    suffix = bool "" (show ai_which) qualify
+    (prefix, suffix) = bool ("", "") ("_", show ai_which) qualify
     capi_who = who
     capi_which = ai_which
     mk_sig n = signatureStr n capi_arg_tys mret
     capi_sig = mk_sig f
-    f = bunpack who <> suffix
+    f = prefix <> bunpack who <> suffix
     imp = impossible "apiSig"
     (capi_arg_tys, capi_doWrap) =
       case ai_compile of

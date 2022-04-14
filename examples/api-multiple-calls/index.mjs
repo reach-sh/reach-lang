@@ -26,6 +26,7 @@ const goGo = async () => {
   return async () => {
     const ctc = acc.contract(backend, ctcAlice.getInfo());
     const go = ctc.a.go;
+    const go2 = ctc.a.go2;
     await ready.wait();
 
     const call = async (id, f, exp) => {
@@ -38,6 +39,7 @@ const goGo = async () => {
 
     await call('go 1:', () => go(1), 1);
     await call('go 2:', () => go(2), 2);
+    await call('go 3:', () => go2(3), 3);
   }
 }
 

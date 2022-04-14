@@ -899,7 +899,8 @@ jsApiWrapper p whichs = do
   let chk_st = concatWith (\ l r -> l <> " || " <> r) $ map chk_which whichs
   let assertStep = "stdlib.assert" <> parens (chk_st <> ", 'API called in the wrong state.'") <> semi
   let jmps = map (\ which -> do
-          "if" <+> parens ("step" <+> "==" <+> pretty which) <+> braces ("return " <> who <> pretty which <> parens "ctcTop, interact" <> semi)
+          let inst = "_" <> who <> pretty which
+          "if" <+> parens ("step" <+> "==" <+> pretty which) <+> braces ("return " <> inst <> parens "ctcTop, interact" <> semi)
         ) whichs
   let body = vsep $
         setupPart who
@@ -934,8 +935,8 @@ jsPart dli (p, m_api_which) (EPProg _ ctxt_isAPI _ et) = do
     et' <- jsETail et
     i2t' <- liftIO $ readIORef jsc_i2t
     let ctcs = vsep $ map snd $ M.toAscList i2t'
-    let suffix = maybe "" show m_api_which
-    let who = pretty $ bunpack p <> suffix
+    let (prefix, suffix) = maybe ("", "") (("_",) . show) m_api_which
+    let who = pretty $ prefix <> bunpack p <> suffix
     let bodyp' =
           vsep $
             setupPart who

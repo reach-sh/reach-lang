@@ -1374,8 +1374,8 @@ apiArgs ApiInfo {..} = do
 
 apiDef :: SLPart -> Bool -> ApiInfo -> App Doc
 apiDef who qualify ApiInfo {..} = do
-  let suffix = bool "" (show ai_which) qualify
-  let who_s = bunpack who <> suffix
+  let (prefix, suffix) = bool ("", "") ("_", show ai_which) qualify
+  let who_s = prefix <> bunpack who <> suffix
   let mf = solMsg_fun ai_which
   (ty, argDefns, tyLifts, args, m_arg_ty) <- apiArgs $ ApiInfo {..}
   let body =
@@ -1409,7 +1409,7 @@ genApiJump p ms = do
   let mk w = solWhen (chk_which w) thn
         where
           thn = "return " <> solApply ("this." <> inst) args <> semi <> hardline
-          inst = who <> pretty w
+          inst = "_" <> who <> pretty w
   let go = vsep $ map (mk . fst) $ M.toAscList ms
   ret <- funRetSig $ ai_ret_ty ai
   let body = vsep $ require : [go]
@@ -1542,8 +1542,8 @@ createAPIRng env =
           let qualify = M.size ms > 1
           let k' = bunpack k
           fs <- mapM (\ (w, ai) -> do
-                  let suffix = bool "" (show w) qualify
-                  let n = pretty $ k' <> suffix
+                  let (prefix, suffix) = bool ("", "") ("_", show w) qualify
+                  let n = pretty $ prefix <> k' <> suffix
                   t <- solType_ $ ai_ret_ty ai
                   return (n, t)
                 ) $ M.toAscList ms
