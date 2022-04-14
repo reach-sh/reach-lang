@@ -1495,6 +1495,15 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
       };
     };
 
+    const getCurrentStep_ = async (getC:GetC): Promise<BigNumber> => {
+      const { getAppState, getGlobalState } = await getC();
+      const appSt = await getAppState();
+      if ( !appSt ) { throw Error(`getCurrentStep_: no appSt`); }
+      const gs = await getGlobalState(appSt);
+      if ( !gs ) { throw Error(`getCurrentStep_: no gs`); }
+      return gs[0];
+    }
+
     const getState_ = async (getC:GetC, lookup:((vibna:BigNumber) => AnyALGO_Ty[])): Promise<[ContractInfo|undefined, Array<any>]> => {
       const { getAppState, getGlobalState } = await getC();
       const appSt = await getAppState();
@@ -1528,6 +1537,10 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         const { ApplicationID } = await getC();
         return ApplicationID;
       };
+
+      const getCurrentStep = async () => {
+        return await getCurrentStep_(getC);
+      }
 
       const getState = async (vibne:BigNumber, vtys:AnyALGO_Ty[]): Promise<Array<any>> => {
         debug('getState');
@@ -1984,7 +1997,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
         return result;
       }
 
-      return { getContractInfo, getContractAddress, getBalance, getState, sendrecv, recv, apiMapRef };
+      return { getContractInfo, getContractAddress, getBalance, getState, getCurrentStep, sendrecv, recv, apiMapRef };
     };
 
     const readStateBytes = (prefix:string, key:number[], src:AppStateKVs): (Uint8Array|undefined) => {

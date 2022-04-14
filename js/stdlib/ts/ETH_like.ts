@@ -769,7 +769,13 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         return balanceOfNetworkAccount(networkAccount, mtok);
       }
 
-      return { getContractInfo, getContractAddress, getBalance, sendrecv, recv, getState, apiMapRef };
+      const getCurrentStep = async () => {
+        const ethersC = await getC();
+        const [ cs, _ ] = await ethersC["_reachCurrentState"]();
+        return cs;
+      }
+
+      return { getContractInfo, getContractAddress, getBalance, getCurrentStep, sendrecv, recv, getState, apiMapRef };
     };
 
     const setupView = (setupViewArgs: SetupViewArgs) => {

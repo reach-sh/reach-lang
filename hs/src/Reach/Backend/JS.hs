@@ -885,6 +885,41 @@ jsMapDefns varsHuh = do
 jsError :: Doc -> Doc
 jsError err = "new Error(" <> err <> ")"
 
+setupPart :: Doc -> [Doc]
+setupPart who = [
+  ctcTopChk who
+  , interactChk who
+  , "const ctc = ctcTop._initialize();"
+  , "const stdlib = ctc.stdlib;" ]
+
+jsApiWrapper :: B.ByteString -> [Int] -> App Doc
+jsApiWrapper p whichs = do
+  let who = pretty $ bunpack p
+  let chk_which w = "step == " <> pretty w
+  let chk_st = concatWith (\ l r -> l <> " || " <> r) $ map chk_which whichs
+  let assertStep = "stdlib.assert" <> parens (chk_st <> ", 'API called in the wrong state.'") <> semi
+  let jmps = map (\ which -> do
+          "if" <+> parens ("step" <+> "==" <+> pretty which) <+> braces ("return " <> who <> pretty which <> parens "ctcTop, interact" <> semi)
+        ) whichs
+  let body = vsep $
+        setupPart who
+        <> [ "const step = await ctc.getCurrentStep()"
+            , assertStep ]
+        <> jmps
+  return $ "export" <+> jsFunction who ["ctcTop", "interact"] body
+
+iExpect :: Doc -> Doc -> Doc -> Doc
+iExpect who this nth = "`The backend for" <+> who <+> "expects to receive" <+> this <+> "as its" <+> nth <+> "argument.`"
+
+rejectIf :: Doc -> Doc -> Doc
+rejectIf cond err = jsWhen cond $ jsReturn $ jsApply "Promise.reject" [jsError err]
+
+ctcTopChk :: Doc -> Doc
+ctcTopChk who = rejectIf "typeof(ctcTop) !== 'object' || ctcTop._initialize === undefined" $ iExpect who "a contract" "first"
+
+interactChk :: Doc -> Doc
+interactChk who = rejectIf "typeof(interact) !== 'object'" $ iExpect who "an interact object" "second"
+
 jsPart :: DLInit -> (SLPart, Maybe Int) -> EPProg -> App Doc
 jsPart dli (p, m_api_which) (EPProg _ ctxt_isAPI _ et) = do
   jsc@(JSContracts {..}) <- newJsContract
@@ -901,17 +936,10 @@ jsPart dli (p, m_api_which) (EPProg _ ctxt_isAPI _ et) = do
     let ctcs = vsep $ map snd $ M.toAscList i2t'
     let suffix = maybe "" show m_api_which
     let who = pretty $ bunpack p <> suffix
-    let iExpect this nth = "`The backend for" <+> who <+> "expects to receive" <+> this <+> "as its" <+> nth <+> "argument.`"
-    let rejectIf cond err = jsWhen cond $ jsReturn $ jsApply "Promise.reject" [jsError err]
-    let ctcTopChk = rejectIf "typeof(ctcTop) !== 'object' || ctcTop._initialize === undefined" $ iExpect "a contract" "first"
-    let interactChk = rejectIf "typeof(interact) !== 'object'" $ iExpect "an interact object" "second"
     let bodyp' =
-          vsep
-            [ ctcTopChk
-            , interactChk
-            , "const ctc = ctcTop._initialize();"
-            , "const stdlib = ctc.stdlib;"
-            , ctcs
+          vsep $
+            setupPart who
+            <> [ ctcs
             , maps_defn
             , et'
             ]
@@ -1085,6 +1113,12 @@ jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = 
           , "export const _versionHash =" <+> jsString versionHashStr <> semi
           , "export const _backendVersion =" <+> pretty reachBackendVersion <> semi
           ]
+  let api_whichs = M.foldrWithKey (\ (p, mw) _ acc ->
+                        case mw of
+                          Just w  -> M.insertWith (<>) p [w] acc
+                          Nothing -> acc
+                      ) mempty epps_m
+  api_wrappers <- mapM (uncurry jsApiWrapper) $ M.toAscList api_whichs
   partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList epps_m
   cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr
   let connMap = M.fromList [(name, "_" <> pretty name) | name <- HM.keys cr]
@@ -1094,16 +1128,7 @@ jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = 
     local (\e -> e {ctxt_maps = dli_maps}) $
       jsViews vi
   mapsp <- jsMaps dli_maps
-  let api_wrappers = M.foldrWithKey (\ (p, w) _ acc ->
-                      case w of
-                        Just _  -> M.insert p (pretty $ bunpack p) acc
-                        Nothing -> acc
-                      ) mempty epps_m
-  let partMap = M.foldrWithKey (\ (p, mw) _ acc -> do
-                    let suffix = maybe "" show mw
-                    let p' = p <> bpack suffix
-                    M.insert p' (pretty $ bunpack p') acc
-                  ) api_wrappers epps_m
+  let partMap = M.foldrWithKey (\ (p, _) _ acc -> M.insert p (pretty $ bunpack p) acc) mempty epps_m
   let apiMap =
         M.foldrWithKey
           (\k v acc ->
@@ -1115,7 +1140,7 @@ jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = 
           mempty
           epps_apis
   eventsp <- jsEvents devts
-  return $ vsep $ [preamble, exportsp, eventsp, viewsp, mapsp] <> partsp <> cnpsp <> [jsObjectDef "_stateSourceMap" ssmDoc, jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
+  return $ vsep $ [preamble, exportsp, eventsp, viewsp, mapsp] <> partsp <> api_wrappers <> cnpsp <> [jsObjectDef "_stateSourceMap" ssmDoc, jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
 
 backend_js :: Backend
 backend_js outn crs pl = do
