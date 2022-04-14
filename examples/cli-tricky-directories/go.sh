@@ -10,9 +10,9 @@ g () {
   echo
 }
 
-c="$(find "$3" -name CNAME | head -n1)"
+c="$(find "$3" -name NAME | head -n1)"
 if [ ! -f "$c" ]; then
-  echo "Couldn't find CNAME file under \"$3\" directory."
+  echo "Couldn't find NAME file under \"$3\" directory."
   exit 1
 fi
 
@@ -33,12 +33,12 @@ g run     "$x"
 
 (cd "$x"
  g scaffold
- if [ -f ./CNAME ]; then
+ if [ -f ./NAME ]; then
    n="$(grep '"name":[[:space:]]"@reach-sh/' < package.json \
      | sed 's/^[[:space:]]*"name":[[:space:]]*"@reach-sh\///' \
      | sed 's/".*$//')"
-   if [ ! "$(cat ./CNAME)" = "$n" ]; then
-     printf 'Failed package.json name expectation: \e[0;31m%s\e[0m instead of %s.' "$n" "$(cat ./CNAME)"
+   if [ ! "$(cat ./NAME)" = "$n" ]; then
+     printf 'Failed package.json name expectation: \e[0;31m%s\e[0m instead of %s.' "$n" "$(cat ./NAME)"
      exit 1
    fi
  fi
