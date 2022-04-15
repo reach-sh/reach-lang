@@ -1,5 +1,7 @@
 // import * as c from '@reach-sh/simulator-client';
-var c = await import('@reach-sh/simulator-client');
+
+// nodejs compatible import
+const c = await import('@reach-sh/simulator-client');
 
 // TODO: typescript
 
@@ -123,6 +125,11 @@ class Participant {
     return l.locals[this.id].l_ks
   }
 
+  async getWallet() {
+    const g = await c.getStateGlobals(this.stateID)
+    return g.e_ledger[this.account.id]
+  }
+
 }
 
 // TODO: polymorphism, Actor interface
@@ -196,17 +203,23 @@ class Consensus {
     return l.locals[this.id].l_ks
   }
 
+  async getWallet() {
+    const g = await c.getStateGlobals(this.stateID)
+    return g.e_ledger[this.account.id]
+  }
+
 }
 
 class Action {
-  constructor(id,name,owner) {
+  constructor(id,name,owner,scene) {
     this.id = id;
     this.name = name;
     this.owner = owner;
+    this.scene = scene;
   }
 
-  async resolve() {
-    return this.id;
+  async resolve(resp,ty) {
+    return await c.respondWithVal(scene.stateId,this.id,resp,this.owner.id,ty)
   }
 
 }
@@ -217,7 +230,8 @@ class Account {
   }
 
   async getWallet() {
-    return this.id;
+    const g = await c.getStateGlobals(this.stateID)
+    return g.e_ledger[this.id]
   }
 }
 
@@ -228,26 +242,28 @@ class Token {
 }
 
 class View {
-  constructor(id,name,vari,tag,contents) {
+  constructor(id,name,vari,tag,contents,scene) {
     this.id = id;
     this.name = name;
     this.vari = vari;
     this.tag = tag;
     this.contents = contents;
+    this.scene = scene;
   }
 
-  async call() {
-    return this.id;
+  async call(v,t) {
+    return await c.viewCall(this.id,scene.stateID,v,t)
   }
 }
 
 class API {
-  constructor(id,name) {
+  constructor(id,name,scene) {
     this.id = id;
     this.name = name;
+    this.scene = scene;
   }
 
-  async call() {
-    return this.id;
+  async call(v,t) {
+    return await c.apiCall(this.id,scene.stateID,v,t);
   }
 }
