@@ -545,13 +545,28 @@ export class BrowserWallet implements IWallet {
   }
 }
 
+// Because Conflux doesn't like it when you add the same thing twice
+const accsByPk: Record<string, cfxsdk.Account> = {};
+function addAcc(conflux: Conflux, privateKey: string) {
+  let acc = accsByPk[privateKey];
+  if (!acc) {
+    acc = conflux.wallet.addPrivateKey(privateKey);
+    accsByPk[privateKey] = acc;
+  }
+  return acc;
+}
+
 export class Wallet implements IWallet {
   privateKey?: string;
   account?: cfxsdk.Account;
   provider?: providers.Provider;
+  _mnemonic?: () => {phrase: string};
 
-  constructor(privateKey?: string, provider?: providers.Provider) {
+  constructor(privateKey: string, provider?: providers.Provider, mnem?: any) {
     this.privateKey = privateKey;
+    if (mnem) {
+      this._mnemonic = () => ({phrase: mnem});
+    }
     if (provider) {
       this.connect(provider);
     }
@@ -563,9 +578,9 @@ export class Wallet implements IWallet {
     }
     this.provider = provider;
     if (this.privateKey) {
-      this.account = this.provider.conflux.wallet.addPrivateKey(this.privateKey);
+      this.account = addAcc(this.provider.conflux, this.privateKey);
     } else {
-      this.account = this.provider.conflux.wallet.addRandom();
+      throw Error(`no privateKey given`);
     }
     return this;
   }
@@ -637,12 +652,14 @@ export class Wallet implements IWallet {
       }
     }
   }
+
   static createRandom(): Wallet {
-    return new Wallet();
+    const mnem = ethers.Wallet.createRandom()._mnemonic().phrase;
+    return Wallet.fromMnemonic(mnem);
   }
 
   static fromMnemonic(mnemonic: string, provider?: providers.Provider): Wallet {
     const sk = ethers.Wallet.fromMnemonic(mnemonic)._signingKey().privateKey;
-    return new Wallet(sk, provider);
+    return new Wallet(sk, provider, mnemonic);
   }
 };
