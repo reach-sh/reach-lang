@@ -90,27 +90,7 @@ class Scenario {
   }
 }
 
-class Participant {
-  constructor(id,account,name,scene) {
-    this.id = id;
-    this.account = account;
-    this.name = name;
-    this.scene = scene;
-  }
-
-  async init(liv={},accID="") {
-    const r = await c.initFor(this.scene.stateID,this.id,JSON.stringify(liv),accID)
-    ++this.scene.stateID;
-    return r;
-  }
-
-  async history() {
-    const sg = await c.getStateGraph();
-    const filtered = Object.filter(sg, ([id, state]) =>
-      state[1].contents.l_curr_actor_id === this.id
-    );
-    return filtered;
-  }
+class Actor {
 
   async getNextAction() {
     const act = await c.getActions(this.scene.stateID,this.id)
@@ -121,6 +101,12 @@ class Participant {
     const l = await c.getStateLocals(this.scene.stateID)
     return l.l_locals[this.id].l_store
   }
+
+  async getWallet() {
+    const g = await c.getStateGlobals(this.scene.stateID)
+    return g.e_ledger[this.account.id]
+  }
+
 
   async getPhase() {
     const l = await c.getStateLocals(this.scene.stateID)
@@ -137,16 +123,36 @@ class Participant {
     }
   }
 
-  async getWallet() {
-    const g = await c.getStateGlobals(this.scene.stateID)
-    return g.e_ledger[this.account.id]
+  async history() {
+    const sg = await c.getStateGraph();
+    const filtered = Object.filter(sg, ([id, state]) =>
+      state[1].contents.l_curr_actor_id === this.id
+    );
+    return filtered;
   }
 
 }
 
-// TODO: polymorphism, Actor interface
-class Consensus {
+class Participant extends Actor {
+  constructor(id,account,name,scene) {
+    super();
+    this.id = id;
+    this.account = account;
+    this.name = name;
+    this.scene = scene;
+  }
+
+  async init(liv={},accID="") {
+    const r = await c.initFor(this.scene.stateID,this.id,JSON.stringify(liv),accID)
+    ++this.scene.stateID;
+    return r;
+  }
+
+}
+
+class Consensus extends Actor {
   constructor(account,scene) {
+    super();
     this.account = account;
     this.id = consensusID
     this.scene = scene;
@@ -157,19 +163,6 @@ class Consensus {
     const toID = to.id
     const tokID = tok.id
     return await c.tranfer(s,frID,toID,tokID,amt);
-  }
-
-  async history() {
-    const sg = await c.getStateGraph();
-    const filtered = Object.filter(sg, ([id, state]) =>
-      state[1].contents.l_curr_actor_id === this.id
-    );
-    return filtered;
-  }
-
-  async getNextAction() {
-    const act = await c.getActions(this.scene.stateID,this.id)
-    return new Action(act[0],act[1].tag,this,this.scene);
   }
 
   async getLedger() {
@@ -195,31 +188,6 @@ class Consensus {
   async getLog() {
     const g = await c.getStateGlobals(this.scene.stateID)
     return g.e_messages
-  }
-
-  async getStore() {
-    const l = await c.getStateLocals(this.scene.stateID)
-    return l.l_locals[this.id].l_store
-  }
-
-  async getPhase() {
-    const l = await c.getStateLocals(this.scene.stateID)
-    return l.l_locals[this.id].l_phase
-  }
-
-  async getStatus() {
-    const l = await c.getStateLocals(this.scene.stateID)
-    switch (l.l_locals[this.id].l_ks) {
-      case 'PS_Suspend':
-        return 'Running';
-      case 'PS_Done':
-        return 'Done';
-    }
-  }
-
-  async getWallet() {
-    const g = await c.getStateGlobals(this.scene.stateID)
-    return g.e_ledger[this.account.id]
   }
 
 }
