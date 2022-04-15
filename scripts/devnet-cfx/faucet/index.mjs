@@ -2,6 +2,7 @@ import Timeout from 'await-timeout';
 import cfxsdk from 'js-conflux-sdk';
 import { createServer } from 'http';
 import express from 'express';
+import cors from 'cors';
 import * as fs from 'fs';
 import toml from 'toml';
 import { Channel } from 'async-csp';
@@ -69,6 +70,7 @@ fund.consume(async ({to, value, res}) => {
 });
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.get('*', (req, res, next) => {
   const { address: to, amount: value } = req.query;
