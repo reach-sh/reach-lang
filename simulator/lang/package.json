@@ -1,7 +1,7 @@
 {
   "name": "@reach-sh/simulator-lang",
   "description": "language/library for the Reach Simulator",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "./lang/lib.mjs",
   "repository": {
     "type": "git",
@@ -17,5 +17,9 @@
   "bugs": {
     "url": "https://github.com/reach-sh/reach-lang/issues"
   },
-  "homepage": "https://github.com/reach-sh/reach-lang#readme"
+  "homepage": "https://github.com/reach-sh/reach-lang#readme",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
 }
