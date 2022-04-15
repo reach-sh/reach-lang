@@ -1,6 +1,8 @@
 // import * as c from '@reach-sh/simulator-client';
 var c = await import('@reach-sh/simulator-client');
 
+// TODO: typescript
+
 const consensusID = -1
 const nwToken = -1
 
@@ -90,7 +92,8 @@ class Participant {
   constructor(id,account,name) {
     this.id = id;
     this.account = account;
-    this.name = name
+    this.name = name;
+    this.stateID = 0;
   }
 
   async history() {
@@ -113,53 +116,84 @@ class Participant {
   async getPhase() {
     const l = await c.getStateLocals(this.stateID)
     return l.locals[this.id].l_phase
-
   }
+
+  async getStatus() {
+    const l = await c.getStateLocals(this.stateID)
+    return l.locals[this.id].l_ks
+  }
+
 }
 
+// TODO: polymorphism, Actor interface
 class Consensus {
   constructor(account) {
     this.account = account;
+    this.id = consensusID
+    this.stateID = 0;
   }
 
-  async transfer() {
-    return this.id;
+  async transfer(s,fr,to,tok,amt) {
+    const frID = fr.id
+    const toID = to.id
+    const tokID = tok.id
+    return await c.tranfer(s,frID,toID,tokID,amt);
   }
 
   async history() {
-    return this.id;
+    const sg = await c.getStateGraph();
+    const filtered = Object.filter(sg, ([id, state]) =>
+      state[1].contents.l_curr_actor_id === this.id
+    );
+    return filtered;
   }
 
   async getNextTiebreak() {
-    return this.id;
+    return null;
   }
 
   async getNextRemote() {
-    return this.id;
+    return null;
   }
 
   async getLedger() {
-    return this.id;
+    const g = await c.getStateGlobals(this.stateID)
+    return g.e_ledger
   }
 
   async getLinearState() {
-    return this.id;
+    const g = await c.getStateGlobals(this.stateID)
+    return g.e_linstate
   }
 
   async getNetworkTime() {
-    return this.id;
+    const g = await c.getStateGlobals(this.stateID)
+    return g.e_nwtime
   }
 
   async getNetworkSeconds() {
-    return this.id;
+    const g = await c.getStateGlobals(this.stateID)
+    return g.e_nwsecs
   }
 
   async getLog() {
-    return this.id;
+    const g = await c.getStateGlobals(this.stateID)
+    return g.e_messages
+  }
+
+  async getStore() {
+    const l = await c.getStateLocals(this.stateID)
+    return l.locals[this.id].l_store
   }
 
   async getPhase() {
-    return this.id;
+    const l = await c.getStateLocals(this.stateID)
+    return l.locals[this.id].l_phase
+  }
+
+  async getStatus() {
+    const l = await c.getStateLocals(this.stateID)
+    return l.locals[this.id].l_ks
   }
 
 }
