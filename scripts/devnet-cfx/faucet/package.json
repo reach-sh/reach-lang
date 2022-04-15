@@ -7,6 +7,7 @@
     "await-timeout": "^0.6.0",
     "toml": "^3.0.0",
     "express": "^4.17.1",
+    "cors": "^2.8.5",
     "async-csp": "^0.5.0",
     "js-conflux-sdk": "^1.7.3"
   },
