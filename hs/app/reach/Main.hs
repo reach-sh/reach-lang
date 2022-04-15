@@ -730,7 +730,7 @@ withCompose DockerMeta {..} wrapped = do
         (_, _, Live) -> []
         (WithProject Console _, ALGO, Devnet) -> ["9392"]
         (_, ALGO, _) -> ["4180:4180", "8980:8980", "9392:9392"]
-        (_, CFX, _) -> ["12537:12537"]
+        (_, CFX, _) -> ["12537:12537", "1337:1337"]
         (_, ETH, _) -> ["8545:8545"]
   let reachConnectorMode = packs cm
   let debug' = if debug then "1" else ""
