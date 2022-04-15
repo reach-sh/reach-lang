@@ -49,8 +49,9 @@ export function canGetDefaultAccount(): boolean {
 
 export async function _getDefaultNetworkAccount(): Promise<NetworkAccount> {
   const cp = await getConfluxPortal();
-  const addr = (await cp.enable())[0];
-  const w = new cfxers.BrowserWallet(cp, addr);
+  // @ts-ignore
+  const w = cp._rwfb ? cp._rwfb()
+    : new cfxers.BrowserWallet(cp, (await cp.enable())[0]);
   if (w.provider) {
     return w;
   } else {
@@ -329,8 +330,18 @@ const setWalletFallback = (wf:() => any) => {
   if ( ! window.conflux ) { window.conflux = wf(); }
 };
 const walletFallback = (opts:any) => () => {
-  void(opts);
-  throw new Error(`There is no wallet fallback for Conflux`);
+  // XXX do cfx provider from opts
+  const p = {};
+  if (opts?.providerEnv) {
+    throw Error(`providerEnv not supported in this context`); // yet
+  }
+  // TODO: reduce duplication with ETH_impl
+  // @ts-ignore
+  p._rwfb = () => {
+    const mnem = window.prompt(`Please paste the mnemonic for your account, or enable ConfluxPortal and refresh the page.`);
+    return mnem ? cfxers.Wallet.fromMnemonic(mnem) : cfxers.Wallet.createRandom();
+  };
+  return p;
 };
 
 export { ethLikeCompiled };
