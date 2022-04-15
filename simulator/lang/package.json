@@ -1,8 +1,8 @@
 {
   "name": "@reach-sh/simulator-lang",
   "description": "language/library for the Reach Simulator",
-  "version": "0.0.2",
-  "main": "./lang/lib.mjs",
+  "version": "0.0.4",
+  "main": "./lib.mjs",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/reach-sh/reach-lang.git",

@@ -1,7 +1,7 @@
-// import * as c from '@reach-sh/simulator-client';
+import * as c from '@reach-sh/simulator-client';
 
 // nodejs compatible import
-const c = await import('@reach-sh/simulator-client');
+// const c = await import('@reach-sh/simulator-client');
 
 // TODO: typescript
 
@@ -95,12 +95,13 @@ class Participant {
     this.id = id;
     this.account = account;
     this.name = name;
-    this.stateID = 0;
     this.scene = scene;
   }
 
-  async init(liv="{}",accID="") {
-    return await c.initFor(this.scene.stateID,this.id,JSON.stringify(liv),accId)
+  async init(liv={},accID="") {
+    const r = await c.initFor(this.scene.stateID,this.id,JSON.stringify(liv),accID)
+    ++this.scene.stateID;
+    return r;
   }
 
   async history() {
@@ -117,22 +118,27 @@ class Participant {
   }
 
   async getStore() {
-    const l = await c.getStateLocals(this.stateID)
+    const l = await c.getStateLocals(this.scene.stateID)
     return l.l_locals[this.id].l_store
   }
 
   async getPhase() {
-    const l = await c.getStateLocals(this.stateID)
+    const l = await c.getStateLocals(this.scene.stateID)
     return l.l_locals[this.id].l_phase
   }
 
   async getStatus() {
-    const l = await c.getStateLocals(this.stateID)
-    return l.l_locals[this.id].l_ks
+    const l = await c.getStateLocals(this.scene.stateID)
+    switch (l.l_locals[this.id].l_ks) {
+      case 'PS_Suspend':
+        return 'Running';
+      case 'PS_Done':
+        return 'Done';
+    }
   }
 
   async getWallet() {
-    const g = await c.getStateGlobals(this.stateID)
+    const g = await c.getStateGlobals(this.scene.stateID)
     return g.e_ledger[this.account.id]
   }
 
@@ -143,7 +149,6 @@ class Consensus {
   constructor(account,scene) {
     this.account = account;
     this.id = consensusID
-    this.stateID = 0;
     this.scene = scene;
   }
 
@@ -168,47 +173,52 @@ class Consensus {
   }
 
   async getLedger() {
-    const g = await c.getStateGlobals(this.stateID)
+    const g = await c.getStateGlobals(this.scene.stateID)
     return g.e_ledger
   }
 
   async getLinearState() {
-    const g = await c.getStateGlobals(this.stateID)
+    const g = await c.getStateGlobals(this.scene.stateID)
     return g.e_linstate
   }
 
   async getNetworkTime() {
-    const g = await c.getStateGlobals(this.stateID)
+    const g = await c.getStateGlobals(this.scene.stateID)
     return g.e_nwtime
   }
 
   async getNetworkSeconds() {
-    const g = await c.getStateGlobals(this.stateID)
+    const g = await c.getStateGlobals(this.scene.stateID)
     return g.e_nwsecs
   }
 
   async getLog() {
-    const g = await c.getStateGlobals(this.stateID)
+    const g = await c.getStateGlobals(this.scene.stateID)
     return g.e_messages
   }
 
   async getStore() {
-    const l = await c.getStateLocals(this.stateID)
+    const l = await c.getStateLocals(this.scene.stateID)
     return l.l_locals[this.id].l_store
   }
 
   async getPhase() {
-    const l = await c.getStateLocals(this.stateID)
+    const l = await c.getStateLocals(this.scene.stateID)
     return l.l_locals[this.id].l_phase
   }
 
   async getStatus() {
-    const l = await c.getStateLocals(this.stateID)
-    return l.l_locals[this.id].l_ks
+    const l = await c.getStateLocals(this.scene.stateID)
+    switch (l.l_locals[this.id].l_ks) {
+      case 'PS_Suspend':
+        return 'Running';
+      case 'PS_Done':
+        return 'Done';
+    }
   }
 
   async getWallet() {
-    const g = await c.getStateGlobals(this.stateID)
+    const g = await c.getStateGlobals(this.scene.stateID)
     return g.e_ledger[this.account.id]
   }
 
@@ -223,9 +233,9 @@ class Action {
   }
 
   async resolve(resp,ty="number") {
-    const r = await c.respondWithVal(scene.stateId,this.id,resp,this.owner.id,ty)
-    this.scene.stateID = this.scene.stateID + 1
-    return r
+    const r = await c.respondWithVal(this.scene.stateID,this.id,resp,this.owner.id,ty)
+    ++this.scene.stateID;
+    return r;
   }
 
 }
@@ -274,13 +284,13 @@ class API {
   }
 }
 
-// export {
-//   Scenario,
-//   Participant,
-//   Consensus,
-//   Action,
-//   Account,
-//   Token,
-//   View,
-//   API
-// };
+export {
+  Scenario,
+  Participant,
+  Consensus,
+  Action,
+  Account,
+  Token,
+  View,
+  API
+};
