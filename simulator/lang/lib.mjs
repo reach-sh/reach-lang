@@ -106,8 +106,9 @@ class Participant {
     return filtered;
   }
 
-  async getNextInteract() {
-    return this.id;
+  async getNextAction() {
+    const act = await c.getActions(this.scene.stateID,this.id)
+    return new Action(act[0],act[1].tag,this,this.scene);
   }
 
   async getStore() {
@@ -155,12 +156,9 @@ class Consensus {
     return filtered;
   }
 
-  async getNextTiebreak() {
-    return null;
-  }
-
-  async getNextRemote() {
-    return null;
+  async getNextAction() {
+    const act = await c.getActions(this.scene.stateID,this.id)
+    return new Action(act[0],act[1].tag,this,this.scene);
   }
 
   async getLedger() {
@@ -267,3 +265,14 @@ class API {
     return await c.apiCall(this.id,scene.stateID,v,t);
   }
 }
+
+export {
+  Scenario,
+  Participant,
+  Consensus,
+  Action,
+  Account,
+  Token,
+  View,
+  API
+};
