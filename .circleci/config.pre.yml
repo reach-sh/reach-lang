@@ -371,6 +371,7 @@ workflows:
           - "build-sink"
           - "browser-tests.eth"
           - "browser-tests.algo"
+          - "browser-tests.cfx"
         filters:
           branches:
             only: master
@@ -389,6 +390,15 @@ workflows:
         devnet: "devnet-algo"
         requires:
           - "build-devnet-algo"
+          - "build-react-runner"
+          - "build-reach-cli"
+          - "build-reach"
+    - "browser-tests":
+        name: "browser-tests.cfx"
+        connector: "CFX"
+        devnet: "devnet-cfx"
+        requires:
+          - "build-devnet-cfx"
           - "build-react-runner"
           - "build-reach-cli"
           - "build-reach"
