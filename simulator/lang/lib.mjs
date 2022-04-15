@@ -16,7 +16,7 @@ class Scenario {
   constructor() {
     this.stateID = 0
     this.participants = [];
-    this.consensus = new Consensus(new Account(-1));
+    this.consensus = new Consensus(new Account(-1),this);
     this.apis = [];
     this.views = [];
   }
@@ -33,11 +33,11 @@ class Scenario {
     const l = await c.getStateLocals(this.stateID)
 
     // setup parts
-    for (const [k,v] of Object.entries(r.l_locals)) {
+    for (const [k,v] of Object.entries(l.l_locals)) {
       const who = v.l_who ? v.l_who : 'Consensus'
       const acc = new Account(v.l_acct)
       if (who) {
-        const p = new Participant(k,acc,who)
+        const p = new Participant(k,acc,who,this)
         this.participants.push(p)
       }
     }
@@ -45,7 +45,7 @@ class Scenario {
     // setup apis
     for (const [k,v] of Object.entries(apis)) {
       const who = v.a_name
-      const a = new API(k,who)
+      const a = new API(k,who,this)
       this.apis.push(a)
     }
 
@@ -55,7 +55,7 @@ class Scenario {
       const vari = v.v_var
       const tag = v.v_ty.tag
       const contents = v.v_ty.contents
-      const v = new View(k,who,vari,tag,contents)
+      const v = new View(k,who,vari,tag,contents,this)
       this.views.push(v)
     }
   }
@@ -91,11 +91,16 @@ class Scenario {
 }
 
 class Participant {
-  constructor(id,account,name) {
+  constructor(id,account,name,scene) {
     this.id = id;
     this.account = account;
     this.name = name;
     this.stateID = 0;
+    this.scene = scene;
+  }
+
+  async init(liv="{}",accID="") {
+    return await c.initFor(this.scene.stateID,this.id,JSON.stringify(liv),accId)
   }
 
   async history() {
@@ -113,17 +118,17 @@ class Participant {
 
   async getStore() {
     const l = await c.getStateLocals(this.stateID)
-    return l.locals[this.id].l_store
+    return l.l_locals[this.id].l_store
   }
 
   async getPhase() {
     const l = await c.getStateLocals(this.stateID)
-    return l.locals[this.id].l_phase
+    return l.l_locals[this.id].l_phase
   }
 
   async getStatus() {
     const l = await c.getStateLocals(this.stateID)
-    return l.locals[this.id].l_ks
+    return l.l_locals[this.id].l_ks
   }
 
   async getWallet() {
@@ -135,10 +140,11 @@ class Participant {
 
 // TODO: polymorphism, Actor interface
 class Consensus {
-  constructor(account) {
+  constructor(account,scene) {
     this.account = account;
     this.id = consensusID
     this.stateID = 0;
+    this.scene = scene;
   }
 
   async transfer(s,fr,to,tok,amt) {
@@ -188,17 +194,17 @@ class Consensus {
 
   async getStore() {
     const l = await c.getStateLocals(this.stateID)
-    return l.locals[this.id].l_store
+    return l.l_locals[this.id].l_store
   }
 
   async getPhase() {
     const l = await c.getStateLocals(this.stateID)
-    return l.locals[this.id].l_phase
+    return l.l_locals[this.id].l_phase
   }
 
   async getStatus() {
     const l = await c.getStateLocals(this.stateID)
-    return l.locals[this.id].l_ks
+    return l.l_locals[this.id].l_ks
   }
 
   async getWallet() {
@@ -216,8 +222,10 @@ class Action {
     this.scene = scene;
   }
 
-  async resolve(resp,ty) {
-    return await c.respondWithVal(scene.stateId,this.id,resp,this.owner.id,ty)
+  async resolve(resp,ty="number") {
+    const r = await c.respondWithVal(scene.stateId,this.id,resp,this.owner.id,ty)
+    this.scene.stateID = this.scene.stateID + 1
+    return r
   }
 
 }
@@ -266,13 +274,13 @@ class API {
   }
 }
 
-export {
-  Scenario,
-  Participant,
-  Consensus,
-  Action,
-  Account,
-  Token,
-  View,
-  API
-};
+// export {
+//   Scenario,
+//   Participant,
+//   Consensus,
+//   Action,
+//   Account,
+//   Token,
+//   View,
+//   API
+// };

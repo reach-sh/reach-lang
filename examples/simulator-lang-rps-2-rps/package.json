@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@reach-sh/simulator-lang": "0.0.2",
+    "prettyjson": "^1.2.1",
+    "minimist": "1.2.6"
+  }
+}
