@@ -1,7 +1,7 @@
 FROM reachsh/runner:${REACH_VERSION}
 
-# If your project needs more node dependencies, uncomment these next three
-# lines by remove the leading `#` character:
+# If your project needs more Node dependencies, uncomment these next three
+# lines by removing the leading `#` character:
 
 # COPY package.json /app/package.json
 # RUN npm install
