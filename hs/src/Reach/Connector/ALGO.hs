@@ -1502,6 +1502,8 @@ csplice _at b c e = do
   let len = c - b
   case len == 1 of
     True -> do
+      -- [ Bytes, NewByteBS ]
+      op "btoi"
       -- [ Bytes, NewByte ]
       cint b
       -- [ Bytes, NewByte, Offset ]
