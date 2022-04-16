@@ -17,6 +17,7 @@ module Reach.Util
   , safeInit
   , dupeIORef
   , mapWithKeyM
+  , forWithKeyM_
   , hdDie
   , justValues
   , Top (..)
@@ -126,6 +127,9 @@ dupeIORef r = newIORef =<< readIORef r
 
 mapWithKeyM :: (Ord k, Monad m) => (k -> a -> m b) -> M.Map k a -> m (M.Map k b)
 mapWithKeyM f m = M.fromList <$> (mapM (\(k, x) -> (,) k <$> f k x) $ M.toAscList m)
+
+forWithKeyM_ :: (Monad m) => M.Map k a -> (k -> a -> m ()) -> m ()
+forWithKeyM_ m f = mapM_ (uncurry f) $ M.toAscList m
 
 justValues :: [(a, Maybe b)] -> [(a, b)]
 justValues = foldr' (\(k, mv) acc -> maybe acc ((: acc) . (k,)) mv) []

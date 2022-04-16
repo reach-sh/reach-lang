@@ -10,19 +10,19 @@ Verification failed:
 
   const UInt.max = 2;
 
-  const v50 = "A".interact.t;
+  const v58 = "A".interact.t;
   //    ^ could = [2, 1 ]
   //      from: ./uint_map_array.rsh:8:6:property binding
 
   // Theorem Formalization
 
-  const map0_1/76 = new Map()[0 <- Some v50[0]];
+  const map0_1/92 = new Map()[0 <- Some v58[0]];
   //    ^ would be <map: (None(null ))>[0 <- Some(2 )]
-  const map0_2/77 = map0_1/76[1 <- Some v50[1]];
+  const map0_2/93 = map0_1/92[1 <- Some v58[1]];
   //    ^ would be <map: (None(null ))>[0 <- Some(2 )][1 <- Some(1 )]
-  const v67 = digest(map0_2/77[v50[0]] ) == digest(<Some v50[1]> );
+  const v83 = digest(map0_2/93[v58[0]] ) == digest(<Some v58[1]> );
   //    ^ would be false
-  require(v67);
+  require(v83);
 
   Verifying when NO participants are honest
 Checked 5 theorems; 1 failures :'(
