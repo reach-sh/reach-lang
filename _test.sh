@@ -82,9 +82,8 @@ r () {
 
   # jb
 
-  export REACH_DEBUG=1
   #REACH_CONNECTOR_MODE=ETH ${REACH} run
-  REACH_CONNECTOR_MODE=ALGO ${REACH} run
+  REACH_DEBUG=1 REACH_CONNECTOR_MODE=ALGO ${REACH} run
   #REACH_CONNECTOR_MODE=CFX ${REACH} run
 
   # Ganache
@@ -120,8 +119,7 @@ checkteal () {
 # tealcount
 
 cdot () {
-  export REACH_DEBUG=Y
-  c "$1"
+  REACH_DEBUG=Y c "$1"
   dot -Tpng -O "$(dirname "$1")/build/$(basename "$1" .rsh).main.appApproval.dot"
   dot -Tpng -O "$(dirname "$1")/build/$(basename "$1" .rsh).main.state.dot"
 }
