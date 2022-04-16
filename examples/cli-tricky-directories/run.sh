@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
-# shellcheck disable=SC2000
+# shellcheck disable=SC2000,SC2001
 set -e
 
 # TODO: portable replacement for `wc -L`
 l () { echo -n "$1" | wc -L 2>/dev/null || echo -n "$1" | wc -m; }
+
+while read -r d; do
+  n="$(echo "$d" | sed 's/[[:space:]].*//')"
+  p="$(echo "$d" | sed "s/^${n}[[:space:]]*://")"
+  mkdir -p "$p"
+  echo "$n" > "$p/NAME"
+done < ./DS
 
 TEMP="$(mkdir -p ./.tmp && cd ./.tmp && pwd)"
 TOUT="$(mkdir -p "$TEMP"/build && cd "$TEMP/build" && pwd)"
@@ -43,6 +50,8 @@ for d in $DIRS; do
     printf '%s\n\n' "$(cat "$t")"
     echo 1 >"$TEMP/EXIT"
   fi
+
+  rm -r "$d"
 done
 
 echo

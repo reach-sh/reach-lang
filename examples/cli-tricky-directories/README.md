@@ -20,12 +20,17 @@ Running "世界您好"...                              ✔ Succeeded
 
 For a given `$TARGET` directory in this test suite the following conventions apply:
 
-##### **`$TARGET/.../NAME`**
-This file contains the `$TARGET`'s expected package.json `name` field (if auto-generated) and Docker container base-name (e.g. `reachsh/reach-app-the-target-name-1234`).
-The test suite understands deeply-nested directories (hence `...`).
+##### **`DS`**
+This file lists \<expected normalized name\>:\<space-sensitive subdirectory\>.
+
+The normalized name in the first column should match how we automatically label the project's `package.json` file and containers spawned by `reach run`.
+
+The `$TARGET` (and any subdirectories) in the second column will be `mkdir -p`-ed on the fly.
+Any character after the first `:` is used verbatim (including leading-spaces).
 
 ##### **`$TARGET/.../index.{mjs|rsh}`**
 These will be generated automatically by the test suite and shouldn't be committed to source control.
+`run.sh` deletes the test directory after `go.sh` has been applied to `$TARGET`.
 
 ##### **`.tmp/$TARGET.log`**
 Captures output from running `go.sh $TARGET`.
