@@ -769,14 +769,56 @@ applyRefinement ct p args mmsg = do
 
 applyType :: ClaimType -> SLVal -> SLType -> App ()
 applyType ct v = \case
+  ST_Null -> meh
+  ST_Bool -> meh
+  ST_UInt {} -> meh
+  ST_Bytes {} -> meh
+  ST_Digest -> meh
+  ST_Address -> meh
+  ST_Contract -> meh
+  ST_Token -> meh
+  ST_Array st _ -> mapM_ (rec st) =<< tups
+  ST_Tuple sts -> zipWithM_ rec sts =<< tups
+  ST_Object stm -> do
+    -- This is like explodeObjectLike
+    oe <- evalAsEnv (public v)
+    se <- evalObjEnv oe
+    forWithKeyM_ se $ \k kv -> do
+      rec (stm M.! k) (sss_val kv)
+  ST_Data stm ->
+    -- This is like explodeDataLike
+    case v of
+      SLV_Data _ _ vn vv -> do
+        rec (stm M.! vn) vv
+      SLV_DLVar dv -> do
+        -- XXX This code could be merged with select_all in JSSwitch case
+        at <- withAt id
+        let cmb (sa', casem') (vn, vt) = do
+              vt' <- st2dte vt
+              dv' <- ctxt_mkvar $ DLVar at Nothing vt'
+              let vv = SLV_DLVar dv'
+              SLRes case_lifts _ _ <- captureRes $ rec vt vv
+              let sa'' = sa' <> mkAnnot case_lifts
+              let casem'' = M.insert vn (dv', True, case_lifts) casem'
+              return (sa'', casem'')
+        (sa', casem') <- foldM cmb (mempty, mempty) $ M.toList stm
+        saveLift $ DLS_Switch at dv sa' casem'
+      _ -> meh
+  ST_Struct stfs -> zipWithM_ rec (map snd stfs) =<< tups
+  ST_Fun {} -> meh
+  ST_UDFun {} -> meh
+  ST_Type {} -> meh
   ST_Refine _ p msg -> applyRefinement ct p [v] msg
-  _ -> return ()
+  where
+    meh = return ()
+    rec = flip (applyType ct)
+    tups = explodeTupleLike "applyType" v
 
-typeCheck_s :: SLType -> SLVal -> App DLArgExpr
-typeCheck_s st val = do
+typeCheck_s :: ClaimType -> SLType -> SLVal -> App DLArgExpr
+typeCheck_s ct st val = do
   dt <- st2dte st
   res <- typeCheck_d dt val
-  applyType CT_Assert val st
+  applyType ct val st
   return $ res
 
 is_class :: SLPart -> App Bool
@@ -3064,7 +3106,7 @@ evalPrim p sargs =
       vv <- case (vt, args) of
         (ST_Null, []) -> return $ SLV_Null at "variant"
         _ -> one_arg
-      void $ typeCheck_s vt vv
+      void $ typeCheck_s CT_Assert vt vv
       retV $ (lvl, SLV_Data at dt vn vv)
     SLPrim_data_match -> do
       -- Expect two arguments to function
@@ -3283,7 +3325,7 @@ evalPrim p sargs =
             -- XXX better error for SLV_Clo w/ type already
             _ -> expect_ $ Err_Decl_NotType "Fun" (x, Nothing)
         _ -> do
-          void $ typeCheck_s t x
+          void $ typeCheck_s CT_Assert t x
           return $ (lvl, x)
     SLPrim_remote -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
@@ -3734,7 +3776,7 @@ assertRefinedArgs :: ClaimType -> [SLSVal] -> SrcLoc -> SLTypeFun -> App (SLVal,
 assertRefinedArgs ct sargs iat (SLTypeFun {..}) = do
   let argvs = map snd sargs
   arges <-
-    mapM (uncurry typeCheck_s)
+    mapM (uncurry $ typeCheck_s ct)
       =<< zipEq (Err_Apply_ArgCount iat) stf_dom argvs
   at <- withAt id
   let dom_tupv = SLV_Tuple at argvs
