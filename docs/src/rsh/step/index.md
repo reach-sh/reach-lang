@@ -453,6 +453,15 @@ Reach provides a shorthand, `{!rsh} Anybody`, which serves as a `{!rsh} race` be
 See [the guide section on races](##guide-race) to understand the benefits and dangers of using `{!rsh} race`.
 :::
 
+```reach
+load: /examples/race/index.rsh
+range: 51-55
+```
+
+In this example, Bob and Alice are doing a race and whoever publishes first is the winner.
+Once the first publish is completed, the outcome is decided by checking if `ALICE_WINS` is true or false.
+If `ALICE_WINS` evaluates to true, Alice is declared the winner and the balance of the wager is then transferred to her.
+
 ### `unknowable`
 
 @{ref("rsh", "unknowable")}
@@ -462,6 +471,13 @@ unknowable( Notter, Knower(var_0, ..., var_N), [msg] )
 
 A knowledge assertion that the participant `{!rsh} Notter` _does not_ know the results of the variables `{!rsh} var_0` through `{!rsh} var_N`, but that the participant `{!rsh} Knower` _does_ know those values.
 It accepts an optional bytes argument, which is included in any reported violation.
+
+```reach
+load: /examples/rps-7-loops/index.rsh
+range: 73-73
+```
+
+This example from the [Rock, Paper, Scissors!](##tut) sets both Alice's hand and salt as unknowable, which prevents Bob from cheating.
 
 ### `closeTo`
 
