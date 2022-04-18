@@ -65,3 +65,17 @@ export const numberToInt = (n: number) => {
   const i = bigNumberify(sign ? n : (- n));
   return { sign, i };
 };
+
+const disconnectSymbol = Symbol("Reach disconnect");
+
+export const withDisconnect = async (prom: Promise<any>) => {
+  try {
+    await prom;
+  } catch (e) {
+    if (e !== disconnectSymbol) {
+      throw e;
+    }
+  }
+};
+
+export const disconnect = () => { throw disconnectSymbol };
