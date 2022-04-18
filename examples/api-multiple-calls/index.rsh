@@ -13,9 +13,18 @@ export const main = Reach.App(() => {
   A.interact.deployed();
   commit();
 
+  A.publish();
+  commit();
+
   const [ [x1], k1 ] = call(B.go).assume((x) => { check(x == 1); });
   check(x1 == 1);
   k1(1);
+  commit();
+
+
+  const [ [x3], k3 ] = call(B.go2).assume((x) => { check(x == 3); });
+  check(x3 == 3);
+  k3(3);
   commit();
 
   const [ [x2], k2 ] = call(B.go).assume((x) => { check(x == 2); });
@@ -23,9 +32,5 @@ export const main = Reach.App(() => {
   k2(2);
   commit();
 
-  const [ [x3], k3 ] = call(B.go2).assume((x) => { check(x == 3); });
-  check(x3 == 3);
-  k3(3);
-  commit();
 
 });

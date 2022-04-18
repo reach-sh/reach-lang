@@ -3,7 +3,7 @@ module Reach.EPP (epp, EPPError (..)) where
 import Control.Monad.Reader
 import Data.Foldable
 import Data.IORef
-import Data.List.Extra (mconcatMap)
+import Data.List.Extra (mconcatMap, groupOn)
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Monoid
@@ -21,6 +21,7 @@ import Reach.FixedPoint
 import Reach.Optimize
 import Reach.Texty
 import Reach.Util
+import Safe (headMay)
 
 shouldTrace :: Bool
 shouldTrace = False
@@ -131,6 +132,7 @@ solve fi = do
 data EPPError
   = Err_ContinueDomination
   | Err_ViewSetDomination (Maybe SLPart) SLVar
+  | Err_API_Twice SLPart
   deriving (Eq, Generic, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode EPPError where
@@ -143,6 +145,7 @@ instance HasErrorCode EPPError where
   errIndex = \case
     Err_ContinueDomination {} -> 0
     Err_ViewSetDomination {} -> 1
+    Err_API_Twice {} -> 2
 
 instance Show EPPError where
   show = \case
@@ -151,6 +154,8 @@ instance Show EPPError where
     Err_ViewSetDomination v f ->
       let mvn = maybe "" (\v' -> bunpack v' <> ".") v
        in "The value that the view `" <> mvn <> show (pretty f) <> "` is set to will never be observable"
+    Err_API_Twice who ->
+      "The API `" <> bunpack who <> "` is called many times in the same consensus step."
 
 type ViewSet = M.Map (SrcLoc, Maybe SLPart, SLVar) (IORef Bool)
 
@@ -179,6 +184,7 @@ data BEnv = BEnv
   , be_alias :: Aliases
   , be_api_rets :: IORef (M.Map SLPart DLType)
   , be_ms :: Seq.Seq DLStmt
+  , be_api_steps :: IORef (M.Map SLPart [(Int, SrcLoc)])
   }
 
 type BApp = ReaderT BEnv IO
@@ -358,6 +364,9 @@ be_m = \case
         rets <- liftIO $ readIORef be_api_rets
         let ret = fromMaybe T_Null $ M.lookup p rets
         let alias = join $ M.lookup (bunpack p) be_alias
+        let w = be_which
+        let as = be_api_steps
+        liftIO $ modifyIORef as $ M.insertWith (<>) p [(w, apiAt)]
         liftIO $
           modifyIORef be_api_info $ \ m ->
               M.insert p (M.insert be_which (ApiInfo apiAt tys mc be_which isf ret alias) $ ai m) m
@@ -744,6 +753,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs dac das alias devts s) = do
   let be_inConsensus = False
   let be_ms = mempty
   let be_alias = alias
+  be_api_steps <- newIORef mempty
   mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
   check_view_sets =<< readIORef be_view_setsr
   api_info <- liftIO $ readIORef be_api_info
@@ -768,12 +778,19 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs dac das alias devts s) = do
   stateToSrcMap <- readIORef be_stateToSrcMap
   -- Step 4: Generate the end-points
   let SLParts {..} = ps
+  as <- readIORef be_api_steps
+  -- Ensure an API is called at most once in a given consensus step
+  forM_ (M.toAscList as) $ \ (k, v) -> do
+      forM_ (groupOn fst v) $ \ vs -> do
+        when (length vs /= 1) $ do
+          let apiAt = snd $ fromMaybe (impossible "api empty") $ headMay vs
+          expect_thrown apiAt $ Err_API_Twice k
   -- When the same API call occurs in multiple steps,
   -- make a seperate `EPProg` for each one.
   let sps_ies' = M.foldrWithKey (\ k v acc ->
-          case M.lookup k dac of
-            Just n
-              | n > 1 -> foldr (\ x acc' -> M.insert (k, Just x) v acc') acc $ [1 .. n]
+          case M.lookup k as of
+            Just ns
+              | length ns > 1 -> foldr (\ (x,_) acc' -> M.insert (k, Just x) v acc') acc ns
             _ -> M.insert (k, Nothing) v acc
         ) mempty sps_ies
   let mkep ee_who@(who, _) ie = do

@@ -38,8 +38,8 @@ const goGo = async () => {
     }
 
     await call('go 1:', () => go(1), 1);
+    await call('go2 :', () => go2(3), 3);
     await call('go 2:', () => go(2), 2);
-    await call('go 3:', () => go2(3), 3);
   }
 }
 

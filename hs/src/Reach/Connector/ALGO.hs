@@ -782,6 +782,7 @@ data LabelRec = LabelRec
   , lr_at :: SrcLoc
   , lr_what :: String
   }
+  deriving (Show)
 
 type CompanionCalls = M.Map Label Integer
 type CompanionInfo = Maybe CompanionCalls
@@ -900,6 +901,7 @@ data Env = Env
   , eCompanion :: CompanionInfo
   , eCompanionRec :: CompanionRec
   , eLibrary :: IORef (M.Map LibFun (Label, App ()))
+  , eApiCalls :: M.Map SLPart Int
   }
 
 type App = ReaderT Env IO
@@ -2200,7 +2202,9 @@ ce = \case
         --cl DLL_Null -- Event log values are never used
   DLE_setApiDetails at p _ _ _ -> do
     which <- fromMaybe (impossible "setApiDetails no which") <$> asks eWhich
-    callCompanion at $ CompanionLabel $ apiLabel p <> LT.pack (show which)
+    mac <- multipleApiCalls p
+    let (prefix, suffix) = bool ("", "") ("_", show which) mac
+    callCompanion at $ CompanionLabel $ prefix <> apiLabel p <> LT.pack suffix
   DLE_GetUntrackedFunds at mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
     cGetBalance at mtok
@@ -2259,6 +2263,13 @@ ce = \case
       comment $ LT.pack $ "at " <> (unsafeRedactAbsStr $ show at)
       forM_ fs $ \f ->
         comment $ LT.pack $ unsafeRedactAbsStr $ show f
+
+multipleApiCalls :: SLPart -> App Bool
+multipleApiCalls w = do
+  apiCalls <- asks eApiCalls
+  case M.lookup w apiCalls of
+    Just n  -> return $ n > 1
+    Nothing -> return False
 
 signatureStr :: String -> [DLType] -> Maybe DLType -> String
 signatureStr f args mret = sig
@@ -3244,6 +3255,7 @@ compile_algo env disp pl = do
   let eLets = mempty
   let eLetSmalls = mempty
   let eWhich = Nothing
+  let eApiCalls = M.foldrWithKey (\ k v acc -> M.insert k (M.size v) acc) mempty ai
   let recordSize prefix size = do
         modifyIORef resr $
           M.insert (prefix <> "Size") $
@@ -3268,8 +3280,8 @@ compile_algo env disp pl = do
         (_, C_Loop {}) -> Nothing
   let a2lr qualify (p, ApiInfo {..}) = LabelRec {..}
         where
-          suffix = bool "" (show ai_which) qualify
-          lr_lab = apiLabel p <> LT.pack suffix
+          (prefix, suffix) = bool ("", "") ("_", show ai_which) qualify
+          lr_lab = prefix <> apiLabel p <> LT.pack suffix
           lr_at = ai_at
           lr_what = "API " <> bunpack p <> suffix
   let as2lrs (p, ms) =

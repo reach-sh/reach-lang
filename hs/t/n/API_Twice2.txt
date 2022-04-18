@@ -3,11 +3,11 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 19 theorems; No failures!
-reachc: error[RAPI0002]: API "Writer_f" occurs multiple times in program
+reachc: error[RAPI0001]: API "Writer_f" calls interact.out() before interact.in()
 
-  ./API_Twice2.rsh:25:9:application
+  ./API_Twice2.rsh:25:10:application
 
   25|     .api(U.f, (k) => {
 
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RAPI0002
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RAPI0001
 
