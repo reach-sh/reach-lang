@@ -21,7 +21,7 @@ const ctcAlice = accAlice.contract(backend);
 
 const ready = new Signal();
 
-const conWait = stdlib.connector == 'ALGO' ? 2000 : 5000;
+const conWait = 5000;
 
 const goGo = async () => {
   const acc = await stdlib.newTestAccount(startingBalance);
