@@ -15,7 +15,7 @@ const assertEq = (a, e) => {
   }
 };
 
-{ // sync indexer latest blocks token launch
+{ // sync indexer with latest blocks, so it can observe token metadata
   const ctc = acc.contract(backend);
   await ctc.p.Alice({});
   await ctc.e.sync.next();
