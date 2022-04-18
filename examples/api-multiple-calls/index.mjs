@@ -21,6 +21,8 @@ const ctcAlice = accAlice.contract(backend);
 
 const ready = new Signal();
 
+const conWait = stdlib.connector == 'ALGO' ? 2000 : 5000;
+
 const goGo = async () => {
   const acc = await stdlib.newTestAccount(startingBalance);
   return async () => {
@@ -31,6 +33,7 @@ const goGo = async () => {
 
     const call = async (id, f, exp) => {
       let res = undefined;
+      await new Promise(resolve => setTimeout(resolve, conWait))
       try { res = await f(); }
       catch (e) { res = [`err`, e]; }
       console.log(id, res.toString());

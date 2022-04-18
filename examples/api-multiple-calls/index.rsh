@@ -21,7 +21,6 @@ export const main = Reach.App(() => {
   k1(1);
   commit();
 
-
   const [ [x3], k3 ] = call(B.go2).assume((x) => { check(x == 3); });
   check(x3 == 3);
   k3(3);

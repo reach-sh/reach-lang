@@ -897,7 +897,7 @@ jsApiWrapper p whichs = do
   let who = pretty $ bunpack p
   let chk_which w = "step == " <> pretty w
   let chk_st = concatWith (\ l r -> l <> " || " <> r) $ map chk_which whichs
-  let assertStep = "stdlib.assert" <> parens (chk_st <> ", 'API called in the wrong state.'") <> semi
+  let assertStep = "stdlib.assert" <> parens (chk_st <> ", 'API called in the wrong state. Currently in state: ' + step ") <> semi
   let jmps = map (\ which -> do
           let inst = "_" <> who <> pretty which
           "if" <+> parens ("step" <+> "==" <+> pretty which) <+> braces ("return " <> inst <> parens "ctcTop, interact" <> semi)
