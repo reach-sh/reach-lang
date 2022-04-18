@@ -2407,6 +2407,30 @@ This change will ensure the `{!rsh} View` `{!rsh} I.i` is set to `{!rsh} i` on e
 loop. Additionally, the continuation of the loop will have `{!rsh} I.i` set to the last value of
 the loop variable `{!rsh} i`.
 
+## {#REP0002} REP0002
+
+This error indicates that you called an API multiple times within the same consensus step.
+
+For example, the erroneous code below calls the API, `{!rsh} U.f`, many times in the same `{!rsh} parallelReduce`.
+
+```reach
+const x =
+  parallelReduce(0)
+  .invariant(balance() == 0)
+  .while( x < 10 )
+  .api(U.f, (k) => {
+      k(null);
+      return x + 1;
+  })
+  .api(U.f, (k) => {
+      k(null);
+      return x + 2;
+  });
+```
+
+You can fix this error by removing the duplicate `{!rsh} .api` case.
+Alternatively, you can create a new API method and replace one of the offending cases.
+
 ## {#RI0000} RI0000
 
 This error indicates that `git clone` has failed when trying to download the dependencies
@@ -2607,6 +2631,8 @@ This error means that you returned the result to an API without calling it.
 This is generally not possible unless you directly use the internal representation of APIs.
 
 ## {#RAPI0002} RAPI0002
+
+@{errver(false, "v0.1.10")}
 
 The error means that you use an API in two places in your program, which is not allowed.
 
