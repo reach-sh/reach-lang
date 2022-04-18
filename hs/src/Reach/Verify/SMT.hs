@@ -646,6 +646,8 @@ display_fail tat f tk mmsg mrd mdv timeout = do
             []
             (M.toList pm_str_val)
       iputStrLn $ show $ showTrace pm_dv_val smtTrace
+  when vo_first_fail_quit $
+    liftIO $ exitWith $ ExitFailure 1
 
 dropConstants :: M.Map String SMTVal -> [SMTLet] -> [SMTLet]
 dropConstants pm = \case
