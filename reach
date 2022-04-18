@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+
+
 
 if [ ! "$REACH_ALLOW_SU" = '1' ] && [ "$(id -u)" -eq 0 ]; then
   echo "Reach isn't intended to be run with superuser privileges."
@@ -116,10 +118,25 @@ run_s () {
   sh -ac "$TMP/out.sh" "$0"
 }
 
+install_docker () {
+  if (which wsl.exe > /dev/null 2>&1); then
+    WINGET_BUNDLE_URL="https://github.com/microsoft/winget-cli/releases/download/v1.3.431/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle -outfile .\winget.msixbundle"
+    (mkdir /mnt/c/tmp && cd /mnt/c/tmp && sudo wget $WINGET_BUNDLE_URL && powershell.exe .\winget.msixbundle;)
+    (cd /mnt/c/tmp && winget.exe install docker.dockerdesktop)
+  fi
+}
+
 for DEP in make curl docker docker-compose; do
   if ! (which "${DEP}" >/dev/null 2>&1); then
-    echo "Reach relies on an installation of ${DEP}"
-    exit 1
+    echo "Reach relies on an installation of ${DEP} do you want to install it [Y,n] ?"
+    read RESPONSE
+    if [ ${RESPONSE} == "Y" ] && [ ! ${DEP} = "docker" ]; then
+      sudo apt update -y && sudo apt install ${DEP} -y 
+    elif [ ${DEP} == "docker" ]; then
+      install_docker
+    else
+      exit 1
+    fi
   fi
 done
 
