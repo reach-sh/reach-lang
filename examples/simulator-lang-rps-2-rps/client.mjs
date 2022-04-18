@@ -3,7 +3,7 @@ import * as assert from 'assert';
 
 const main = async () => {
   console.log("Init Testing!")
-  const s = new lang.Scenario();
+  const s = new lang.ImperativeScenario();
   await s.init();
   const pi = await s.pingServer();
   console.log(s);

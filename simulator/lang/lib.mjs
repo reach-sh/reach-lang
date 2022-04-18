@@ -1,4 +1,5 @@
 import * as c from '@reach-sh/simulator-client';
+import * as v8 from 'v8';
 
 // nodejs compatible import
 // const c = await import('@reach-sh/simulator-client');
@@ -8,6 +9,11 @@ import * as c from '@reach-sh/simulator-client';
 const consensusID = -1
 const nwToken = -1
 
+
+const structuredClone = obj => {
+  return v8.deserialize(v8.serialize(obj));
+};
+
 Object.filter = (obj, predicate) =>
   Object.fromEntries(Object.entries(obj).filter(predicate));
 
@@ -15,6 +21,10 @@ Object.filter = (obj, predicate) =>
 class State {
   constructor() {
     this.id = 0
+  }
+
+  next() {
+    return ++this.id;
   }
 }
 
@@ -96,6 +106,29 @@ class Scenario {
   }
 }
 
+class FunctionalScenario extends Scenario {
+  constructor() {
+    super();
+  }
+
+  next() {
+    const next = structuredClone(this);
+    next.state.next();
+    return next;
+  }
+}
+
+class ImperativeScenario extends Scenario {
+  constructor() {
+    super();
+  }
+
+  next() {
+    this.state.next();
+    return this;
+  }
+}
+
 class Actor {
 
   async getNextAction() {
@@ -150,8 +183,8 @@ class Participant extends Actor {
 
   async init(liv={},accID="") {
     const r = await c.initFor(this.scene.state.id,this.id,JSON.stringify(liv),accID)
-    ++this.scene.state.id;
-    return r;
+    console.log(r);
+    return this.scene.next();
   }
 
 }
@@ -208,8 +241,8 @@ class Action {
 
   async resolve(resp,ty="number") {
     const r = await c.respondWithVal(this.scene.state.id,this.id,resp,this.owner.id,ty)
-    ++this.scene.state.id;
-    return r;
+    console.log(r);
+    return this.scene.next();
   }
 
 }
@@ -260,6 +293,8 @@ class API {
 
 export {
   Scenario,
+  ImperativeScenario,
+  FunctionalScenario,
   Participant,
   Consensus,
   Action,
