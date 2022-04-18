@@ -13,6 +13,7 @@ data VerifyOpts = VerifyOpts
   , vo_mvcs :: Maybe [Connector]
   , vo_timeout :: Integer
   , vo_dir :: FilePath
+  , vo_first_fail_quit :: Bool
   }
 
 data VerifySt = VerifySt

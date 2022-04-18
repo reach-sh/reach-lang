@@ -31,6 +31,7 @@ data CompilerOpts = CompilerOpts
   , co_printKeywordInfo :: Bool
   , co_verifyTimeout :: Integer
   , co_sim :: Bool
+  , co_verifyFirstFailQuit :: Bool
   }
 
 compiler :: Parser CompilerToolArgs
@@ -76,7 +77,10 @@ compiler =
                      <> showDefault))
            <*> (switch
                   (long "sim"
-                     <> help "Run Simulator")))
+                     <> help "Run Simulator"))
+           <*> (switch
+                  (long "first-fail-quit"
+                     <> help "Quit after printing the first verification failure")))
 
 getCompilerArgs :: String -> IO CompilerToolArgs
 getCompilerArgs versionCliDisp = do
