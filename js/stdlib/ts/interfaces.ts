@@ -135,6 +135,8 @@ export interface Stdlib_User_Shared {
   numberToFixedPoint: (n: number) => FixedPoint
   parseInt: (n: {sign: boolean, i: num}) => number
   numberToInt: (n: number) => {sign: boolean, i: num}
+  withDisconnect: (p: Promise<any>) => Promise<void>
+  disconnect: () => undefined
 };
 
 // The thing as composed by each connector
