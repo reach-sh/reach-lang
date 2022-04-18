@@ -661,6 +661,18 @@ This is guaranteed to not happen when you compile with `{!rsh} verifyArithmetic`
 Numeric literals in your program are considered `{!rsh} UInt`.
 If they are cast to `{!rsh} UInt256`, then your program can contain constant `{!rsh} UInt256` values.
 
+### Contract and Address Comparisons
+
+@{ref("rsh", "Contract.addressEq")}
+```reach
+Contract.addressEq(getContract(), getAddress())
+```
+
+Although `{!rsh} Contract` and `{!rsh} Address` are not necessarily the same
+type, they often have a connection.
+`{!rsh} Contract.addressEq(ctc, addr)` returns a boolean that is `{!rsh} true`
+if `{!rsh} ctc` refers to the same contract as `{!rsh} addr`.
+
 ### boolXor
 
 @{ref("rsh", "boolXor")}

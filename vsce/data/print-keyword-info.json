@@ -233,6 +233,9 @@
   "Contract": {
     "CompletionItemKind": "TypeParameter"
   },
+  "Contract.addressEq": {
+    "CompletionItemKind": "Operator"
+  },
   "Data": {
     "CompletionItemKind": "TypeParameter"
   },
