@@ -1499,6 +1499,10 @@ choosesFirst ? [ heap1 - amount, heap2 ] : [ heap1, heap2 - amount ]
 ```
 
 A @{defn("conditional expression")}, written `{!rsh} COND_E ? NOT_FALSE_E : FALSE_E`, where `{!rsh} COND_E`, `{!rsh} NOT_FALSE_E`, and `{!rsh} FALSE_E` are expressions, selects between the values which `{!rsh} NOT_FALSE_E` and `{!rsh} FALSE_E` evaluate to based on whether `{!rsh} COND_E` evaluates to `{!rsh} false`.
+This expression will evaluate both the false and not-false sides of the
+computation is they are considered pure.
+Arithmetic is considered pure if you do not enable `{!rsh} verifyArithmetic}`,
+but it is actually not because of arithmetic faults.
 
 @{ref("rsh", "ite")}
 ```reach
@@ -1506,8 +1510,7 @@ ite(choosesFirst, [heap1 - amount, heap2], [heap1, heap2 - amount])
 ```
 
 Conditional expressions may also be written with the `{!rsh} ite` function,
-however, note that this function always evaluates both of its branches,
-while the regular conditional expression only evaluates one branch.
+however, note that this function always evaluates both of its branches.
 
 ### Arrow expression
 
