@@ -1,4 +1,5 @@
 import { loadStdlib } from "@reach-sh/stdlib";
+import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib();
 
 const sbal = stdlib.parseCurrency(100);
@@ -13,6 +14,12 @@ const assertEq = (a, e) => {
     throw Error(`Expected ${e}, got ${a}`);
   }
 };
+
+{ // sync indexer latest blocks token launch
+  const ctc = acc.contract(backend);
+  await ctc.p.Alice({});
+  await ctc.e.sync.next();
+}
 
 const mdA = await acc.tokenMetadata(tokA.id);
 

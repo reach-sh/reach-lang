@@ -5,6 +5,7 @@ export const main = Reach.App(() => {
     checkDecimals: Fun(true, Null),
     decimals: UInt,
   });
+  const TLE = Events({ tokenLaunch: [] });
   init();
 
   A.only(() => {
@@ -14,6 +15,7 @@ export const main = Reach.App(() => {
 
   const supply = UInt.max;
   const t = new Token({ supply, decimals });
+  TLE.tokenLaunch();
 
   commit();
   A.interact.checkDecimals(t);

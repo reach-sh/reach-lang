@@ -30,6 +30,7 @@ import * as backend from './build/index.main.mjs';
       console.log(`${me}: ${tok} balance: ${fmt(await stdlib.balanceOf(acc, tok))}`);
     };
     const showToken = async (_tok, cmd) => {
+      await ctc.e.tokenLaunch.next();
       tok = _tok;
       console.log(`${me}: The token is: ${tok}`);
       await showBalance();

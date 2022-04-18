@@ -17,6 +17,7 @@ export const main = Reach.App(() => {
   const B = Participant('Bob', {
     ...shared,
   });
+  const TLE = Events({ tokenLaunch: [] });
   init();
 
   A.only(() => {
@@ -30,6 +31,7 @@ export const main = Reach.App(() => {
 
   const md1 = {name, symbol, url, metadata, supply};
   const tok1 = new Token(md1);
+  TLE.tokenLaunch();
   A.interact.showToken(tok1, md1);
   commit();
 
@@ -56,6 +58,7 @@ export const main = Reach.App(() => {
 
   const md2 = {name, symbol};
   const tok2 = new Token(md2);
+  TLE.tokenLaunch();
   A.interact.showToken(tok2, md2);
   B.interact.showToken(tok2, md2);
   commit();
