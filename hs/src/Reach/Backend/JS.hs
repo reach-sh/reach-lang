@@ -301,6 +301,7 @@ jsPrimApply = \case
   TOKEN_EQ -> jsApply "stdlib.tokenEq"
   BYTES_ZPAD xtra -> \args -> jsApply "stdlib.bytesConcat" (args <> [jsBytes $ bytesZero xtra])
   BTOI_LAST8 _ -> jsApply "stdlib.btoiLast8"
+  CTC_ADDR_EQ -> jsApply "stdlib.ctcAddrEq"
   where
     jsApply_ui t f = jsApply $ f <> (if t then "256" else "")
 
@@ -442,13 +443,15 @@ jsExpr = \case
       JM_Backend ->
         return $ jsApply "await stdlib.mapSet" [jsMapVar mpv, fa', na']
       JM_View -> impossible "view mapset"
-  DLE_Remote at _fs ro _rng_ty _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv _nnZero) _ma -> do
+  DLE_Remote at _fs ro _rng_ty _rm (DLPayAmt pay_net pay_ks) as (DLWithBill nRecv nnRecv _nnZero) malgo _ma -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> return "undefined /* Remote */"
       JM_View -> impossible "view Remote"
       JM_Simulate -> do
+        let DLRemoteALGO {..} = malgo
         -- These are totally made up and could be totally busted
         obj' <- jsArg ro
+        fees' <- jsArg ralgo_fees
         let notStaticZero = not . staticZero
         let pay_ks_nz = filter (notStaticZero . fst) pay_ks
         let l2n x = jsCon $ DLL_Int at uintWord $ fromIntegral $ length $ x
@@ -464,6 +467,7 @@ jsExpr = \case
               , ("bills", bills')
               , ("toks", jsArray toks')
               , ("accs", jsArray accs')
+              , ("fees", fees')
               ]
         net' <- jsCon $ DLL_Int at uintWord 0
         let bill' = map (const net') nnRecv
@@ -1064,7 +1068,7 @@ jsMaps ms = do
             [("mapDataTy" :: String, mapDataTy')]
 
 reachBackendVersion :: Int
-reachBackendVersion = 12
+reachBackendVersion = 13
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
 jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = do

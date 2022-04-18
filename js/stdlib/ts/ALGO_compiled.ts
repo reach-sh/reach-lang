@@ -12,6 +12,7 @@ import {
 import {
   bigNumberToNumber,
   bigNumberify,
+  bigNumberToBigInt,
 } from './shared_user';
 import algosdk from 'algosdk';
 import buffer from 'buffer';
@@ -339,6 +340,14 @@ const T_Token = T_UInt;
 export type Token = CBR_UInt;
 
 export type Contract = CBR_UInt;
+export const ctcAddrEq = (x:unknown, y:unknown): boolean => {
+  debug('ctcAddrEq', {x, y});
+  const ctc_x = T_Contract.canonicalize(x);
+  const addr_y = T_Address.canonicalize(y);
+  const addr_x = algosdk.getApplicationAddress(bigNumberToBigInt(ctc_x));
+  debug('ctcAddrEq', {addr_x, addr_y});
+  return addressEq(addr_x, addr_y);
+};
 
 export const tokenEq = (x: unknown, y: unknown): boolean =>
   T_Token.canonicalize(x).eq(T_Token.canonicalize(y));
@@ -370,6 +379,7 @@ export const stdlib: Stdlib_Backend_Base<ALGO_Ty<any>> = {
   ...arith,
   ...typeDefs,
   addressEq,
+  ctcAddrEq,
   digestEq,
   tokenEq,
   digest,

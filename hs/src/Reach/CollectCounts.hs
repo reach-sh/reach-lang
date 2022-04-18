@@ -127,6 +127,9 @@ instance Countable DLWithBill where
   counts (DLWithBill _ y z) =
     counts y <> counts z
 
+instance Countable DLRemoteALGO where
+  counts (DLRemoteALGO x) = counts x
+
 instance Countable DLExpr where
   counts = \case
     DLE_Arg _ a -> counts a
@@ -149,7 +152,7 @@ instance Countable DLExpr where
     DLE_PartSet _ _ a -> counts a
     DLE_MapRef _ _ fa -> counts fa
     DLE_MapSet _ _ fa na -> counts fa <> counts na
-    DLE_Remote _ _ av _ _ pamt as y _ -> counts (av : as) <> counts pamt <> counts y
+    DLE_Remote _ _ av _ _ pamt as x y _ -> counts (av : as) <> counts pamt <> counts x <> counts y
     DLE_TokenNew _ tns -> counts tns
     DLE_TokenBurn _ tok amt -> counts [tok, amt]
     DLE_TokenDestroy _ tok -> counts tok

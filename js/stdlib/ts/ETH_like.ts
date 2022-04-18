@@ -92,8 +92,8 @@ type Interface = real_ethers.utils.Interface;
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-const reachBackendVersion = 12;
-const reachEthBackendVersion = 6;
+const reachBackendVersion = 13;
+const reachEthBackendVersion = 7;
 export type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
   ABI: string,
@@ -310,6 +310,7 @@ const makeLogRep = ( getCtcAddress: (() => Address), iface:Interface, evt:string
 const makeLogRepFor = ( getCtcAddress: (() => Address), iface:Interface, i:number, tys:AnyETH_Ty[]) => {
   debug(`hasLogFor`, i, tys);
   return makeLogRep( getCtcAddress, iface, reachEvent(i), [
+    T_Address,
     T_Tuple([T_UInt, T_Tuple(tys)])
   ]);
 };
@@ -692,18 +693,21 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       };
       const recvFrom = async (rfargs:RecvFromArgs): Promise<Recv> => {
         const { dhead, out_tys, didSend, funcNum, ok_r } = rfargs;
+        debug(dhead, 'OKR', ok_r);
+        debug(dhead, 'OKR.L', ok_r.logs);
         const theBlock = ok_r.blockNumber;
         debug(dhead, `AT`, theBlock);
         const ethersC = await getC();
         const getCtcAddress = () => ethersC.address;
         const ep = makeLogRepFor(getCtcAddress, iface, funcNum, out_tys).parseA(ok_r);
         if ( ! ep ) { throw Error(`no event log`); }
-        const data = ep[0][1];
+        debug(dhead, 'Event', ep);
+        const from = ep[0];
+        const data = ep[1][1];
 
         debug(dhead, `OKAY`, data);
         const theBlockBN = bigNumberify(theBlock);
-        const { from: rawFrom } = ok_r;
-        const from = T_Address.canonicalize(rawFrom);
+        debug(dhead, 'from', { from });
         const theSecsBN = await getTimeSecs(theBlockBN);
         const getOutput = async (o_mode:string, o_lab:string, l_ctc:any, o_val:any): Promise<any> => {
           void(o_mode);
@@ -828,6 +832,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
 
   function setDebugLabel(newLabel: string): Account {
     label = newLabel;
+    debug('setDebugLabel', { newLabel, address });
     // @ts-ignore
     return this;
   };

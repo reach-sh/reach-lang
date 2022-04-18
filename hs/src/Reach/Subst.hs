@@ -72,6 +72,9 @@ instance Subst DLWithBill where
   subst (DLWithBill x y z) =
     DLWithBill x <$> subst y <*> subst z
 
+instance Subst DLRemoteALGO where
+  subst (DLRemoteALGO x) = DLRemoteALGO <$> subst x
+
 instance Subst DLExpr where
   subst = \case
     DLE_Arg at a -> DLE_Arg at <$> subst a
@@ -94,7 +97,7 @@ instance Subst DLExpr where
     DLE_PartSet at x y -> DLE_PartSet at x <$> subst y
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> subst fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> subst fa <*> subst na
-    DLE_Remote at fs av rt m pamt as wbill ma -> DLE_Remote at fs <$> subst av <*> pure rt <*> pure m <*> subst pamt <*> subst as <*> subst wbill <*> pure ma
+    DLE_Remote at fs av rt m pamt as wbill malgo ma -> DLE_Remote at fs <$> subst av <*> pure rt <*> pure m <*> subst pamt <*> subst as <*> subst wbill <*> subst malgo <*> pure ma
     DLE_TokenNew at tns -> DLE_TokenNew at <$> subst tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> subst tok <*> subst amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> subst tok

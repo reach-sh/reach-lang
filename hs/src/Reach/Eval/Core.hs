@@ -1397,6 +1397,10 @@ evalAsEnvM sv@(lvl, obj) = case obj of
         , ("setIfUnset", retStdLib "Object_setIfUnset")
         , ("has", retV $ public $ SLV_Prim $ SLPrim_Object_has)
         ]
+  SLV_Type ST_Contract ->
+    return $ Just $
+      M.fromList
+        [("addressEq", retV $ public $ SLV_Prim $ SLPrim_op S_CTC_ADDR_EQ)]
   SLV_Type (ST_UInt False) ->
     return $ Just $
       M.fromList
@@ -1420,19 +1424,20 @@ evalAsEnvM sv@(lvl, obj) = case obj of
     return $ Just $
       M.fromList $
         [("reduce", delayCall SLPrim_Map_reduce)] <> foldableObjectEnv
-  SLV_Prim (SLPrim_remotef rat aa m stf mpay mbill Nothing ma) ->
+  SLV_Prim (SLPrim_remotef rat aa m stf mpay mbill malgo Nothing ma) ->
     return $ Just $
       M.fromList $
         gom "pay" RFM_Pay mpay
           <> gom "bill" RFM_Bill mbill
           <> gom "withBill" RFM_WithBill mbill
+          <> gom "ALGO" RFM_ALGO malgo
     where
       gom key mode me =
         case me of
           Nothing -> go key mode
           Just _ -> []
       go key mode =
-        [(key, retV $ public $ SLV_Prim $ SLPrim_remotef rat aa m stf mpay mbill (Just mode) ma)]
+        [(key, retV $ public $ SLV_Prim $ SLPrim_remotef rat aa m stf mpay mbill malgo (Just mode) ma)]
   _ -> return Nothing
   where
     foldableMethods = ["forEach", "min", "max", "imin", "imax", "all", "any", "or", "and", "sum", "average", "product", "includes", "size", "count"]
@@ -2162,6 +2167,7 @@ evalPrimOp sp sargs = do
       _ -> nnn2n (\a b c -> (a * b) `div` c)
       where
         mtOkay2 x y z = mtOkay x y && mtOkay x z && mtOkay (uintTyM y) z
+    S_CTC_ADDR_EQ -> make_var [T_Contract, T_Address] T_Bool args
   where
     args = map snd sargs
     lvl = mconcat $ map fst sargs
@@ -3346,24 +3352,35 @@ evalPrim p sargs =
               return $
                 SLSSVal at Public $
                   SLV_Prim $
-                    SLPrim_remotef at aa k stf Nothing Nothing Nothing m_alias
+                    SLPrim_remotef at aa k stf Nothing Nothing Nothing Nothing m_alias
             t -> expect_ $ Err_Remote_NotFun k t
       om <- mapWithKeyM go rm
       return $ (lvl, SLV_Object at Nothing om)
-    SLPrim_remotef rat aa m stf _ mbill (Just RFM_Pay) ma -> do
+    SLPrim_remotef rat aa m stf _ mbill malgo (Just RFM_Pay) ma -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote pay"
       payv <- one_arg
-      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf (Just payv) mbill Nothing ma)
-    SLPrim_remotef rat aa m stf mpay _ (Just RFM_Bill) ma -> do
+      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf (Just payv) mbill malgo Nothing ma)
+    SLPrim_remotef rat aa m stf mpay _ malgo (Just RFM_Bill) ma -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote bill"
       billv <- one_arg
-      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Right billv) Nothing ma)
-    SLPrim_remotef rat aa m stf mpay _ (Just RFM_WithBill) ma -> do
+      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Right billv) malgo Nothing ma)
+    SLPrim_remotef rat aa m stf mpay _ malgo (Just RFM_WithBill) ma -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote withBill"
       at <- withAt id
       nonNetToks <- zero_mone_arg $ SLV_Tuple at []
-      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Left nonNetToks) Nothing ma)
-    SLPrim_remotef rat aa m stf mpay mbill Nothing ma -> do
+      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay (Just $ Left nonNetToks) malgo Nothing ma)
+    SLPrim_remotef rat aa m stf mpay mbill _ (Just RFM_ALGO) ma -> do
+      ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote ALGO"
+      metam <- mustBeObject =<< one_arg
+      metam' <- mapM (ensure_public . sss_sls) metam
+      let metal f k = k (M.lookup f metam')
+      at <- withAt id
+      ralgo_fees <- metal "fees" $ \case
+        Nothing -> return $ DLA_Literal $ DLL_Int at uintWord 0
+        Just v -> compileCheckType (T_UInt uintWord) v
+      let malgo = Just $ DLRemoteALGO {..}
+      return $ (lvl, SLV_Prim $ SLPrim_remotef rat aa m stf mpay mbill malgo Nothing ma)
+    SLPrim_remotef rat aa m stf mpay mbill malgo Nothing ma -> do
       ensure_modes [SLM_ConsensusStep, SLM_ConsensusPure] "remote"
       at <- withAt id
       let zero = SLV_Int at nn 0
@@ -3372,8 +3389,9 @@ evalPrim p sargs =
       tokenPay Nothing (pa_net payAmt) "balance sufficient for payment to remote object"
       forM_ (pa_ks payAmt) $ \(a, t) -> do
         tokenPay (Just t) a "balance sufficient for payment to remote object"
+      let dzero = DLA_Literal $ DLL_Int at uintWord 0
       billAmt <- case fromMaybe (Left zero) mbill of
-        Left _ -> return $ DLPayAmt (DLA_Literal $ DLL_Int at uintWord 0) []
+        Left _ -> return $ DLPayAmt dzero []
         Right v -> compilePayAmt TT_Bill v
       (nBilled, nntbRecv) <- getBillTokens mbill billAmt
       let nntbC = length nntbRecv
@@ -3392,6 +3410,8 @@ evalPrim p sargs =
       allTokens <- fmap DLA_Var <$> readSt st_toks
       let nnToksNotBilled = allTokens \\ nntbRecv
       let withBill = DLWithBill nBilled nntbRecv nnToksNotBilled
+      let ralgo0 = DLRemoteALGO dzero
+      let ralgo = fromMaybe ralgo0 malgo
       res' <-
         doInteractiveCall
           sargs
@@ -3401,7 +3421,7 @@ evalPrim p sargs =
           "remote"
           (CT_Assume True)
           (\_ fs _ dargs -> do
-            rr <- ctxt_lift_expr (DLVar at Nothing drng) $ DLE_Remote at fs aa rt m payAmt dargs withBill ma
+            rr <- ctxt_lift_expr (DLVar at Nothing drng) $ DLE_Remote at fs aa rt m payAmt dargs withBill ralgo ma
             el <- compileToVar =<< doInternalLog Nothing (SLV_DLVar rr)
             return $ DLE_Arg at $ DLA_Var el)
       apdvv <- doArrRef_ res' zero

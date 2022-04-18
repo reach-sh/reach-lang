@@ -93,6 +93,9 @@ instance FreeVars DLPayAmt where
 instance FreeVars DLWithBill where
   freeVars (DLWithBill _ a b) = freeVars [a, b]
 
+instance FreeVars DLRemoteALGO where
+  freeVars (DLRemoteALGO a) = freeVars [a]
+
 instance FreeVars DLTokenNew where
   freeVars (DLTokenNew a b c d e f) = freeVars [a, b, c, d, e] <> freeVars f
 
@@ -118,7 +121,7 @@ instance FreeVars DLExpr where
     DLE_PartSet _ _ a -> freeVars a
     DLE_MapRef _ _ a -> freeVars a
     DLE_MapSet _ _ a b -> freeVars a <> freeVars b
-    DLE_Remote _ _ a _ _ b c d _ -> freeVars a <> freeVars b <> freeVars c <> freeVars d
+    DLE_Remote _ _ a _ _ b c d e _ -> freeVars a <> freeVars b <> freeVars c <> freeVars d <> freeVars e
     DLE_TokenNew _ a -> freeVars a
     DLE_TokenBurn _ a b -> freeVars [a, b]
     DLE_TokenDestroy _ a -> freeVars a

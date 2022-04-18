@@ -351,6 +351,7 @@ smtPrimOp at p dargs =
                   smtDeclare_v av T_Address $ Just smlet
                   return $ Atom av
         se -> impossible $ "self address " <> show se
+    CTC_ADDR_EQ -> app "Contract_addressEq"
   where
     app n = return . smtApply n
     bvapp n_bv n_i = app $ if use_bitvectors then n_bv else n_i
@@ -1132,7 +1133,7 @@ smt_e at_dv mdv de = do
       forM_ mdv $ smtMapReviewRecordRef at mpv fa'
     DLE_MapSet at mpv fa mna ->
       smtMapUpdate at mpv fa mna
-    DLE_Remote at _ _ _ _ _ _ _ _ -> unbound at
+    DLE_Remote at _ _ _ _ _ _ _ _ _ -> unbound at
     DLE_TokenNew at _ -> unbound at
     DLE_TokenBurn at _ _ -> unbound at
     DLE_TokenDestroy at _ -> unbound at

@@ -7,6 +7,10 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.10 is the current Reach release candidate version.
 
++ 2022/04/18: Added `{!rsh} Contract.addressEq`.
++ 2022/04/18: Added `{!rsh} remote.ALGO`.
++ 2022/04/18: Ethereum-like-only: The backend interface to deployed contracts was updated, so old contracts will not work with this version.
++ 2022/04/18: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
 + 2022/04/12: Added `{!js} getTimeSecs` for converting network time to network seconds.
 + 2022/04/09: Added the `note` field to `{!js} launchToken`.
 + 2022/04/07: The backend interface to the compiled objects was updated, so you'll need to recompile for this release.
