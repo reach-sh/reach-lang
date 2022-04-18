@@ -12,9 +12,15 @@ Object.filter = (obj, predicate) =>
   Object.fromEntries(Object.entries(obj).filter(predicate));
 
 
+class State {
+  constructor() {
+    this.id = 0
+  }
+}
+
 class Scenario {
   constructor() {
-    this.stateID = 0
+    this.state = new State();
     this.participants = {};
     this.consensus = new Consensus(new Account(-1),this);
     this.apis = {};
@@ -29,8 +35,8 @@ class Scenario {
     // initialize the program for the Consensus
     await c.init()
     const apis = await c.getAPIs()
-    const views = await c.getViews(this.stateID)
-    const l = await c.getStateLocals(this.stateID)
+    const views = await c.getViews(this.state.id)
+    const l = await c.getStateLocals(this.state.id)
 
     // setup parts
     for (const [k,v] of Object.entries(l.l_locals)) {
@@ -73,7 +79,7 @@ class Scenario {
   }
 
   async getCurrentActor() {
-    const l = await c.getStateLocals(this.stateID)
+    const l = await c.getStateLocals(this.state.id)
     if (l.l_curr_actor_id === consensusID) {
       return this.consensus
     } else {
@@ -82,39 +88,39 @@ class Scenario {
   }
 
   async newTestAccount() {
-    return await c.newAccount(this.stateID);
+    return await c.newAccount(this.state.id);
   }
 
   async launchToken() {
-    return await c.newToken(this.stateID);
+    return await c.newToken(this.state.id);
   }
 }
 
 class Actor {
 
   async getNextAction() {
-    const act = await c.getActions(this.scene.stateID,this.id)
+    const act = await c.getActions(this.scene.state.id,this.id)
     return new Action(act[0],act[1].tag,this,this.scene);
   }
 
   async getStore() {
-    const l = await c.getStateLocals(this.scene.stateID)
+    const l = await c.getStateLocals(this.scene.state.id)
     return l.l_locals[this.id].l_store
   }
 
   async getWallet() {
-    const g = await c.getStateGlobals(this.scene.stateID)
+    const g = await c.getStateGlobals(this.scene.state.id)
     return g.e_ledger[this.account.id]
   }
 
 
   async getPhase() {
-    const l = await c.getStateLocals(this.scene.stateID)
+    const l = await c.getStateLocals(this.scene.state.id)
     return l.l_locals[this.id].l_phase
   }
 
   async getStatus() {
-    const l = await c.getStateLocals(this.scene.stateID)
+    const l = await c.getStateLocals(this.scene.state.id)
     switch (l.l_locals[this.id].l_ks) {
       case 'PS_Suspend':
         return 'Running';
@@ -143,8 +149,8 @@ class Participant extends Actor {
   }
 
   async init(liv={},accID="") {
-    const r = await c.initFor(this.scene.stateID,this.id,JSON.stringify(liv),accID)
-    ++this.scene.stateID;
+    const r = await c.initFor(this.scene.state.id,this.id,JSON.stringify(liv),accID)
+    ++this.scene.state.id;
     return r;
   }
 
@@ -166,27 +172,27 @@ class Consensus extends Actor {
   }
 
   async getLedger() {
-    const g = await c.getStateGlobals(this.scene.stateID)
+    const g = await c.getStateGlobals(this.scene.state.id)
     return g.e_ledger
   }
 
   async getMapState() {
-    const g = await c.getStateGlobals(this.scene.stateID)
+    const g = await c.getStateGlobals(this.scene.state.id)
     return g.e_linstate
   }
 
   async getNetworkTime() {
-    const g = await c.getStateGlobals(this.scene.stateID)
+    const g = await c.getStateGlobals(this.scene.state.id)
     return g.e_nwtime
   }
 
   async getNetworkSeconds() {
-    const g = await c.getStateGlobals(this.scene.stateID)
+    const g = await c.getStateGlobals(this.scene.state.id)
     return g.e_nwsecs
   }
 
   async getLog() {
-    const g = await c.getStateGlobals(this.scene.stateID)
+    const g = await c.getStateGlobals(this.scene.state.id)
     return g.e_messages
   }
 
@@ -201,8 +207,8 @@ class Action {
   }
 
   async resolve(resp,ty="number") {
-    const r = await c.respondWithVal(this.scene.stateID,this.id,resp,this.owner.id,ty)
-    ++this.scene.stateID;
+    const r = await c.respondWithVal(this.scene.state.id,this.id,resp,this.owner.id,ty)
+    ++this.scene.state.id;
     return r;
   }
 
@@ -214,7 +220,7 @@ class Account {
   }
 
   async getWallet() {
-    const g = await c.getStateGlobals(this.stateID)
+    const g = await c.getStateGlobals(this.state.id)
     return g.e_ledger[this.id]
   }
 }
@@ -236,7 +242,7 @@ class View {
   }
 
   async call(v,t) {
-    return await c.viewCall(this.id,scene.stateID,v,t)
+    return await c.viewCall(this.id,scene.state.id,v,t)
   }
 }
 
@@ -248,7 +254,7 @@ class API {
   }
 
   async call(v,t) {
-    return await c.apiCall(this.id,scene.stateID,v,t);
+    return await c.apiCall(this.id,scene.state.id,v,t);
   }
 }
 
