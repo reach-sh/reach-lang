@@ -1,5 +1,7 @@
 #!/bin/sh
 
+if [ -n "$REACH_DISABLE_REPORTING" ]; then exit 0; fi
+
 START_TIME_UNIX="$(date +%s)"
 START_TIME_UTC="$(date -u -Iseconds)Z"
 
