@@ -112,6 +112,9 @@ instance CollectsTypes PrimOp where
     BYTES_ZPAD l -> S.singleton $ T_Bytes l
     _ -> mempty
 
+instance CollectsTypes DLRemoteALGO where
+  cts (DLRemoteALGO x) = cts x
+
 instance CollectsTypes DLExpr where
   cts = \case
     DLE_Arg _ a -> cts a
@@ -134,7 +137,8 @@ instance CollectsTypes DLExpr where
     DLE_PartSet _ _ a -> cts a
     DLE_MapRef _ _ fa -> cts fa
     DLE_MapSet _ _ fa na -> cts fa <> cts na
-    DLE_Remote _ _ av rt _ pamt as y _ -> cts (av : as) <> cts pamt <> cts y <> cts rt
+    DLE_Remote _ _ av rt _ pamt as y z _ ->
+      cts (av : as) <> cts pamt <> cts y <> cts z <> cts rt
     DLE_TokenNew _ tns -> cts tns
     DLE_TokenBurn _ a b -> cts [a, b]
     DLE_TokenDestroy _ a -> cts a

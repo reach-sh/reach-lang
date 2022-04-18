@@ -1417,6 +1417,12 @@ cprim = \case
       ca be
       op "select"
     _ -> impossible "ite args"
+  CTC_ADDR_EQ -> \case
+    [ ctca, aa ] -> do
+      cContractToAddr ctca
+      ca aa
+      op "=="
+    _ -> impossible "ctcAddrEq args"
   where
     call o = \args -> do
       forM_ args ca
@@ -1436,6 +1442,14 @@ cprim = \case
           op "swap"
           op "concat"
           op "retsub"
+
+cContractToAddr :: DLArg -> App ()
+cContractToAddr ctca = do
+  cbs "appID"
+  ca ctca
+  ctobs $ T_UInt uintWord
+  op "concat"
+  op "sha512_256"
 
 cconcatbs_ :: (DLType -> App ()) -> [(DLType, App ())] -> App ()
 cconcatbs_ f l = do
@@ -2028,7 +2042,8 @@ ce = \case
           cMapLoad
           cla $ mdaToMaybeLA mt mva
           cTupleSet at mdt $ fromIntegral i
-  DLE_Remote at fs ro rng_ty rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) ma -> do
+  DLE_Remote at fs ro rng_ty rm' (DLPayAmt pay_net pay_ks) as (DLWithBill _nRecv nnRecv _nnZero) _malgo ma -> do
+    --let DLRemoteALGO {..} = malgo
     warn_lab <- asks eWhich >>= \case
       Just which -> return $ "Step " <> show which
       Nothing -> return $ "This program"
@@ -2046,11 +2061,7 @@ ce = \case
     -- Figure out what we're calling
     salloc_ "remote address" $ \storeAddr loadAddr -> do
       salloc_ "pre balances" $ \storeBals loadBals -> do
-        cbs "appID"
-        ca ro
-        ctobs $ T_UInt uintWord
-        op "concat"
-        op "sha512_256"
+        cContractToAddr ro
         storeAddr
         -- XXX remove this when JJ changes stuff for us
         incResource R_Account ro

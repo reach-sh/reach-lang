@@ -503,10 +503,16 @@ For example, `{!rsh} randomOracle.getRandom`, `{!rsh} token.balanceOf`, and `{!r
 A remote function may be invoked by calling it with the appropriate arguments, whereupon it returns the specified output.
 In addition, a remote function may be augmented with one of the following operations:
 
-+ `{!rsh} REMOTE_FUN.pay(AMT)` --- Returns a remote function that receives a pay amount, `{!rsh} AMT`, _from_ the caller when it is called.
-+ @{ref("rsh", "bill")} `{!rsh} REMOTE_FUN.bill(AMT)` --- Returns a remote function that provides a pay amount, `{!rsh} AMT`, _to_ the caller when it returns.
-+ @{ref("rsh", "withBill")} `{!rsh} REMOTE_FUN.withBill()` --- Returns a remote function that provides some number of network tokens and, possibly, non-network tokens _to_ the caller when it returns.
-The exact amount is returned from the invocation by wrapping the original result in a tuple.
++ `{!rsh} REMOTE_FUN.pay(AMT)` ---
+  Returns a remote function that receives a pay amount, `{!rsh} AMT`, _from_ the caller when it is called.
++ @{ref("rsh", "bill")} `{!rsh} REMOTE_FUN.bill(AMT)` ---
+  Returns a remote function that provides a pay amount, `{!rsh} AMT`, _to_ the caller when it returns.
++ @{ref("rsh", "withBill")} `{!rsh} REMOTE_FUN.withBill()` ---
+  Returns a remote function that provides some number of network tokens and, possibly, non-network tokens _to_ the caller when it returns.
+  The exact amount is returned from the invocation by wrapping the original result in a tuple.
++ @{ref("rsh", "remote.ALGO")} `{!rsh} REMOTE_FUN.ALGO({fees: FEE_EXPR})` ---
+  Returns a remote function that records the need for an additional `{!rsh} FEE_EXPR` fees on Algorand.
+  If this is needed, and not included, then the consensus transfer to the current consensus step will fail with an insufficient fee error.
 
 If the remote contract is not expected to return non-network tokens then a pair is returned, where the amount of network tokens received is the first element, and the original result is the second element.
 

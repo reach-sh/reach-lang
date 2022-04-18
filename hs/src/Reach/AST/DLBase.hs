@@ -617,6 +617,15 @@ instance Pretty ApiInfo where
         , ("ret", pretty ai_ret_ty)
         ]
 
+data DLRemoteALGO = DLRemoteALGO
+  { ralgo_fees :: DLArg
+  }
+  deriving (Eq, Ord)
+
+instance PrettySubst DLRemoteALGO where
+  prettySubst (DLRemoteALGO {..}) = do
+    prettySubst ralgo_fees
+
 data DLExpr
   = DLE_Arg SrcLoc DLArg
   | DLE_LArg SrcLoc DLLargeArg
@@ -638,7 +647,7 @@ data DLExpr
   | DLE_PartSet SrcLoc SLPart DLArg
   | DLE_MapRef SrcLoc DLMVar DLArg
   | DLE_MapSet SrcLoc DLMVar DLArg (Maybe DLArg)
-  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg DLType String DLPayAmt [DLArg] DLWithBill (Maybe String)
+  | DLE_Remote SrcLoc [SLCtxtFrame] DLArg DLType String DLPayAmt [DLArg] DLWithBill DLRemoteALGO (Maybe String)
   | DLE_TokenNew SrcLoc DLTokenNew
   | DLE_TokenBurn SrcLoc DLArg DLArg
   | DLE_TokenDestroy SrcLoc DLArg
@@ -757,16 +766,19 @@ instance PrettySubst DLExpr where
     DLE_MapSet _ mv i Nothing -> do
       i' <- prettySubst i
       return $ "delete" <+> pretty mv <> brackets i'
-    DLE_Remote _ _ av _ m amta as wb ma -> do
+    DLE_Remote _ _ av _ m amta as wb ra ma -> do
       av' <- prettySubst av
       amta' <- prettySubst amta
       as' <- render_dasM as
       wb' <- prettySubst wb
+      ra' <- prettySubst ra
       return $
         "remote(" <> av' <> ")." <> viaShow m  <> "/" <> viaShow ma <> ".pay" <> parens amta'
           <> parens as'
           <> ".withBill"
           <> parens wb'
+          <> ".ALGO"
+          <> parens ra'
     DLE_TokenNew _ tns -> do
       tns' <- prettySubst tns
       return $ "new Token" <> parens tns'

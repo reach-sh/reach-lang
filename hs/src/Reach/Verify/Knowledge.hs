@@ -233,7 +233,7 @@ kgq_e ctxt mv = \case
     kgq_v_onlym ctxt mv $ S.singleton $ P_Map mpv
   DLE_MapSet _ mpv _ mva ->
     knows ctxt (P_Map mpv) $ maybe mempty all_points mva
-  DLE_Remote _ _ av _ _ pamt as _ _ -> do
+  DLE_Remote _ _ av _ _ pamt as _ _ _ -> do
     kgq_pa ctxt pamt
     kgq_la ctxt mv $ DLLA_Tuple $ av : as
   DLE_TokenNew _ tns ->

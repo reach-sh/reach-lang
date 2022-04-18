@@ -156,7 +156,7 @@ export type NetworkAccount = {
   sk?: SecretKey
 };
 
-const reachBackendVersion = 12;
+const reachBackendVersion = 13;
 const reachAlgoBackendVersion = 10;
 export type Backend = IBackend<AnyALGO_Ty> & {_Connectors: {ALGO: {
   version: number,
@@ -1716,7 +1716,12 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
               recordApp(t.obj);
               t.toks.map(recordAsset);
               t.accs.map(recordAccount);
-              howManyMoreFees += 1 + bigNumberToNumber(t.pays) + bigNumberToNumber(t.bills); return;
+              howManyMoreFees +=
+                1
+                + bigNumberToNumber(t.pays)
+                + bigNumberToNumber(t.bills)
+                + bigNumberToNumber(t.fees);
+              return;
             }  else if ( t.kind === 'api' ) {
               whichApi = t.who;
               return;
@@ -2078,6 +2083,7 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
 
   function setDebugLabel(newLabel: string): Account {
     label = newLabel;
+    debug(`setDebugLabel`, { newLabel, pks });
     // @ts-ignore
     return this;
   }

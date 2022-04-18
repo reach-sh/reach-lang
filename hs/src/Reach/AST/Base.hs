@@ -348,6 +348,7 @@ data PrimOp
   | DIGEST_XOR
   | BYTES_XOR
   | BTOI_LAST8 Bool
+  | CTC_ADDR_EQ
   deriving (Eq, Generic, NFData, Ord, Show)
 
 instance Pretty PrimOp where
@@ -378,6 +379,7 @@ instance Pretty PrimOp where
     DIGEST_XOR -> "digest_xor"
     BYTES_XOR -> "bytes_xor"
     BTOI_LAST8 isDigest -> "btoiLast8(" <> bool "Bytes" "Digest" isDigest <> ")"
+    CTC_ADDR_EQ -> "Contract.addressEq"
     where
       uitp = \case
         True -> "b"

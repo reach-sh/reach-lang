@@ -392,7 +392,7 @@ instance DepthOf DLExpr where
     DLE_PartSet _ _ x -> depthOf x
     DLE_MapRef _ _ x -> add1 $ depthOf x
     DLE_MapSet _ _ x y -> max <$> depthOf x <*> depthOf y
-    DLE_Remote _ _ av _ _ (DLPayAmt net ks) as (DLWithBill _ nr nz) _ ->
+    DLE_Remote _ _ av _ _ (DLPayAmt net ks) as (DLWithBill _ nr nz) _ _ ->
       add1 $
         depthOf $
           av
@@ -532,6 +532,7 @@ solPrimApply = \case
   TOKEN_EQ -> binOp "=="
   BYTES_ZPAD {} -> impossible "bytes concat"
   BTOI_LAST8 {} -> impossible "btoiLast8"
+  CTC_ADDR_EQ -> binOp "=="
   where
     safeOp fun op args = do
       PLOpts {..} <- ctxt_plo <$> ask
@@ -717,11 +718,11 @@ solTransfer who amt mtok = do
 solEvent :: Int -> [DLVar] -> App Doc
 solEvent which msg = do
   arg_ty' <- solArgType Nothing msg
-  return $ "event" <+> solApply (solMsg_evt which) [arg_ty' <+> "_a"] <> semi
+  return $ "event" <+> solApply (solMsg_evt which) ["address _who", arg_ty' <+> "_a"] <> semi
 
 solEventEmit :: Int -> Doc
 solEventEmit which =
-  "emit" <+> solApply (solMsg_evt which) ["_a"] <> semi
+  "emit" <+> solApply (solMsg_evt which) ["msg.sender", "_a"] <> semi
 
 solAsnType :: [DLVar] -> App Doc
 solAsnType = solType . vsToType
@@ -807,7 +808,7 @@ getBalance tok = solApply "tokenBalanceOf" [tok, "address(this)"]
 solCom :: AppT DLStmt
 solCom = \case
   DL_Nop _ -> mempty
-  DL_Let _ pv (DLE_Remote at fs av rng_ty f_ (DLPayAmt net ks) as (DLWithBill _nRecv nonNetTokRecv nnTokRecvZero) ma) -> do
+  DL_Let _ pv (DLE_Remote at fs av rng_ty f_ (DLPayAmt net ks) as (DLWithBill _nRecv nonNetTokRecv nnTokRecvZero) _ ma) -> do
     let f = fromMaybe f_ ma
     -- XXX make this not rely on pv
     av' <- solArg av
@@ -1705,7 +1706,7 @@ try_compile_sol solf opt = do
         Right x -> return $ Right (me, x)
 
 reachEthBackendVersion :: Int
-reachEthBackendVersion = 6
+reachEthBackendVersion = 7
 
 compile_sol :: ConnectorInfoMap -> FilePath -> IO ConnectorInfo
 compile_sol cinfo solf = do

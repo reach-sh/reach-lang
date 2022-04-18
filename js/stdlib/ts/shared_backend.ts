@@ -48,22 +48,22 @@ export const formatAssertInfo = (ai:any = {}) => {
   if ( typeof ai === 'string' ) {
     msg = `: ${ai}`;
   } else {
-  if ( ai.who ) {
+  if ( 'who' in ai ) {
     msg += `: ${ai.who}`;
     delete ai.who;
   }
-  if ( ai.msg !== undefined ) {
+  if ( 'msg' in ai ) {
     if ( ai.msg !== null ) {
       msg += `: ${ai.msg}`;
     }
     delete ai.msg;
   }
-  if ( ai.at ) {
+  if ( 'at' in ai ) {
     msg += `\n  at ${ai.at}`;
     delete ai.at;
   }
   let rest = `:`;
-  if ( Array.isArray(ai.fs) ) {
+  if ( 'fs' in ai && Array.isArray(ai.fs) ) {
     for ( const f of ai.fs ) {
       msg += `\n  ${f}`;
     }

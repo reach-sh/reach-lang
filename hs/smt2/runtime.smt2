@@ -82,3 +82,4 @@
 
 (declare-sort Contract 0)
 (declare-fun Contract_toBytes (Contract) Bytes)
+(declare-fun Contract_addressEq (Contract Address) Bool)

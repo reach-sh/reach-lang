@@ -32,6 +32,7 @@ import {
   Stdlib_Backend_Base
 } from './interfaces';
 import {
+  debug,
   labelMaps,
   MkPayAmt,
   makeDigest,
@@ -379,6 +380,10 @@ const T_Contract = {
 };
 
 const addressEq = mkAddressEq(T_Address);
+const ctcAddrEq = (x:unknown, y:unknown) => {
+  debug('ctcAddrEq', {x, y});
+  return addressEq(x, y);
+};
 const digestEq = shared_backend.eq;
 const digest_xor = shared_backend.digest_xor;
 const bytes_xor = shared_backend.bytes_xor;
@@ -413,6 +418,7 @@ const stdlib: Stdlib_Backend_Base<AnyETH_Ty> = {
   ...arith,
   ...typeDefs,
   addressEq,
+  ctcAddrEq,
   // @ts-ignore
   digestEq,
   digest_xor,

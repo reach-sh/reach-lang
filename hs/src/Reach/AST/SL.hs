@@ -649,6 +649,7 @@ data SPrimOp
   | S_DIGEST_XOR
   | S_BYTES_XOR
   | S_BTOI_LAST8 Bool
+  | S_CTC_ADDR_EQ
   deriving (Eq, Generic, NFData, Ord, Show)
 
 sprimToPrim :: UIntTy -> UIntTy -> SPrimOp -> PrimOp
@@ -678,11 +679,13 @@ sprimToPrim dom rng = \case
   S_DIGEST_XOR -> DIGEST_XOR
   S_BYTES_XOR -> BYTES_XOR
   S_BTOI_LAST8 b -> BTOI_LAST8 b
+  S_CTC_ADDR_EQ -> CTC_ADDR_EQ
 
 data RemoteFunMode
   = RFM_Pay
   | RFM_Bill
   | RFM_WithBill
+  | RFM_ALGO
   deriving (Eq, Generic, Show)
 
 data SLPrimitive
@@ -745,7 +748,7 @@ data SLPrimitive
   | SLPrim_Foldable
   | SLPrim_is
   | SLPrim_remote
-  | SLPrim_remotef SrcLoc DLArg String SLTypeFun (Maybe SLVal) (Maybe (Either SLVal SLVal)) (Maybe RemoteFunMode) (Maybe String)
+  | SLPrim_remotef SrcLoc DLArg String SLTypeFun (Maybe SLVal) (Maybe (Either SLVal SLVal)) (Maybe DLRemoteALGO) (Maybe RemoteFunMode) (Maybe String)
   | SLPrim_balance
   | SLPrim_Token_supply
   | SLPrim_viewis SrcLoc (Maybe SLPart) SLVar SLType

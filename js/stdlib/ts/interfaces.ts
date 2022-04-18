@@ -89,6 +89,7 @@ export interface Arith {
 
 export interface Stdlib_Backend_Base<Ty> extends Stdlib_Backend_Shared<Ty>, Arith, TypeDefs<Ty> {
   UInt_max: BigNumber
+  ctcAddrEq: (ctc_x: unknown, addr_y: unknown) => boolean
   addressEq: (addr1: unknown, addr2: unknown) => boolean
   digestEq: (x: unknown, y: unknown) => boolean
   digest_xor: (x: string, y: string) => string

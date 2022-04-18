@@ -120,6 +120,9 @@ instance Freshen ClaimType where
 instance Freshen DLWithBill where
   fu (DLWithBill x y z) = DLWithBill x <$> fu y <*> fu z
 
+instance Freshen DLRemoteALGO where
+  fu (DLRemoteALGO x) = DLRemoteALGO <$> fu x
+
 instance Freshen DLExpr where
   fu = \case
     DLE_Arg at a -> DLE_Arg at <$> fu a
@@ -142,7 +145,7 @@ instance Freshen DLExpr where
     DLE_PartSet at x y -> DLE_PartSet at x <$> fu y
     DLE_MapRef at mv fa -> DLE_MapRef at mv <$> fu fa
     DLE_MapSet at mv fa na -> DLE_MapSet at mv <$> fu fa <*> fu na
-    DLE_Remote at fs av rt m pamt as wbill ma -> DLE_Remote at fs <$> fu av <*> pure rt <*> pure m <*> fu pamt <*> fu as <*> fu wbill <*> pure ma
+    DLE_Remote at fs av rt m pamt as wbill malgo ma -> DLE_Remote at fs <$> fu av <*> pure rt <*> pure m <*> fu pamt <*> fu as <*> fu wbill <*> fu malgo <*> pure ma
     DLE_TokenNew at tns -> DLE_TokenNew at <$> fu tns
     DLE_TokenBurn at tok amt -> DLE_TokenBurn at <$> fu tok <*> fu amt
     DLE_TokenDestroy at tok -> DLE_TokenDestroy at <$> fu tok
