@@ -1172,12 +1172,10 @@ devnetDeps :: Bool -> AppT Text
 devnetDeps nolog = do
   ConnectorMode c' _ <- dieConnectorModeNotSpecified
   let c = packs c'
-  l <- if nolog then pure "" else log'' "devnet_create"
-  pure
-    [N.text|
+  l <- if nolog then pure "export REACH_DISABLE_REPORTING=1" else log'' "devnet_create"
+  pure [N.text|
     NO_DEPS=''
     if [ "$(docker ps -qf label=sh.reach.devnet-for=$c)x" = 'x' ]; then
-      :
       $l
     else
       NO_DEPS=' --no-deps'
