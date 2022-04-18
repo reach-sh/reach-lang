@@ -27,26 +27,20 @@ const run = async (borrowerPaysBack) => {
   const ctcLender = accLender.contract(backend, ctcBorrower.getInfo());
 
   console.log(`Borrower puts up the ${nft.name} nft as collateral`);
-  try {
-    await Promise.all([
-      ctcBorrower.p.Borrower({
-        loanMade: async () => {
-          console.log(`Borrower receives a loan of ${fmt(loanAmt)} ${stdlib.standardUnit}`);
-          await printBalances();
-          throw 'loanMade';
-        },
-        loanAmt,
-        interest,
-        deadline,
-        nft: nft.id,
-      }),
-      ctcLender.p.Lender({}),
-    ]);
-  } catch (e) {
-    if (e !== 'loanMade') {
-      throw e;
-    }
-  }
+  await stdlib.withDisconnect(Promise.all([
+    ctcBorrower.p.Borrower({
+      loanMade: async () => {
+        console.log(`Borrower receives a loan of ${fmt(loanAmt)} ${stdlib.standardUnit}`);
+        await printBalances();
+        stdlib.disconnect();
+      },
+      loanAmt,
+      interest,
+      deadline,
+      nft: nft.id,
+    }),
+    ctcLender.p.Lender({}),
+  ]));
 
   if (borrowerPaysBack) {
     console.log(`Borrower pays off the loan plus ${fmt(interest)} ${stdlib.standardUnit} interest`);
