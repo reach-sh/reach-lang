@@ -3048,21 +3048,12 @@ bindFromArgs vs m = do
     False -> do
       goSingles vs m
     True -> do
-      -- TODO - I wrote this thinking it was the code path I needed to edit, but it's not exercised by my test.  I should write a test that exercises it and be sure it works.
       let (vs14, vsMore) = splitAt 14 vs
       let tupleTy = T_Tuple $ map varLetType vsMore
-      let tupleDupExtract i = do
-            op "dup"
-            cTupleRef (SrcLoc Nothing Nothing Nothing) tupleTy i
-      let goTuple (v, i) = sallocVarLet v False (tupleDupExtract i)
-      let m2 = do
-            -- TODO - instead of this dup/pop dance, I think I can just access arg 15 many times
-            op "pop"
-            m
-      let m3 = do
-            code "txna" ["ApplicationArgs", texty (15 :: Integer)]
-            foldl' (flip goTuple) m2 (zip vsMore [(0 :: Integer) ..])
-      goSingles vs14 m3
+      let goTuple (v, i) = sallocVarLet v False
+            (code "txna" ["ApplicationArgs", texty (15 :: Integer)]
+             >> cTupleRef (SrcLoc Nothing Nothing Nothing) tupleTy i)
+      goSingles vs14 (foldl' (flip goTuple) m (zip vsMore [(0 :: Integer) ..]))
 
 data VSIBlockVS = VSIBlockVS [DLVarLet] DLExportBlock
 type VSIHandler = M.Map Int VSIBlockVS
