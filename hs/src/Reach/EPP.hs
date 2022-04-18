@@ -435,7 +435,7 @@ be_m = \case
       -- Take the `only(() => interact.in())` from preceding step
       -- and the `only(() => interact.out())` from the correct step
       True  -> return $ Just $ f $ w
-        where f = if ic then id else succ
+        where f = if ic then id else (+ 1)
     let t'c = return $ DL_Nop at
     let t'l = do
           itsame who which >>= \case
