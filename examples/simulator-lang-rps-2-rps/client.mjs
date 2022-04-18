@@ -6,8 +6,9 @@ const main = async () => {
   const s = new lang.Scenario();
   await s.init();
   const pi = await s.pingServer();
-  const alice = s.participants[0];
-  const bob = s.participants[1];
+  console.log(s);
+  const alice = s.participants.Alice;
+  const bob = s.participants.Bob;
   const consensus = s.consensus;
   // init Alice
   await alice.init();

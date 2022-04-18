@@ -15,10 +15,10 @@ Object.filter = (obj, predicate) =>
 class Scenario {
   constructor() {
     this.stateID = 0
-    this.participants = [];
+    this.participants = {};
     this.consensus = new Consensus(new Account(-1),this);
-    this.apis = [];
-    this.views = [];
+    this.apis = {};
+    this.views = {};
   }
 
   async init() {
@@ -34,11 +34,11 @@ class Scenario {
 
     // setup parts
     for (const [k,v] of Object.entries(l.l_locals)) {
-      const who = v.l_who ? v.l_who : 'Consensus'
+      const who = v.l_who
       const acc = new Account(v.l_acct)
       if (who) {
         const p = new Participant(k,acc,who,this)
-        this.participants.push(p)
+        this.participants[who] = p
       }
     }
 
@@ -46,7 +46,7 @@ class Scenario {
     for (const [k,v] of Object.entries(apis)) {
       const who = v.a_name
       const a = new API(k,who,this)
-      this.apis.push(a)
+      this.apis[who] = a
     }
 
     // setup views
@@ -56,7 +56,7 @@ class Scenario {
       const tag = v.v_ty.tag
       const contents = v.v_ty.contents
       const v = new View(k,who,vari,tag,contents,this)
-      this.views.push(v)
+      this.views[who] = v
     }
   }
 
@@ -81,11 +81,11 @@ class Scenario {
     }
   }
 
-  async newAccount() {
+  async newTestAccount() {
     return await c.newAccount(this.stateID);
   }
 
-  async newToken() {
+  async launchToken() {
     return await c.newToken(this.stateID);
   }
 }
@@ -162,7 +162,7 @@ class Consensus extends Actor {
     const frID = fr.id
     const toID = to.id
     const tokID = tok.id
-    return await c.tranfer(s,frID,toID,tokID,amt);
+    return await c.transfer(s,frID,toID,tokID,amt);
   }
 
   async getLedger() {
@@ -170,7 +170,7 @@ class Consensus extends Actor {
     return g.e_ledger
   }
 
-  async getLinearState() {
+  async getMapState() {
     const g = await c.getStateGlobals(this.scene.stateID)
     return g.e_linstate
   }
