@@ -11,6 +11,7 @@ const decimals              = 5;
 await rpcCallbacks('/backend/Alice', ctcAlice, {
   decimals,
   checkDecimals: async (tokId) => {
+    await rpc('/ctc/e/tokenLaunch/next', ctcAlice);
     const m = await rpc('/acc/tokenMetadata', accAlice, tokId);
     const d = a => rpc('/stdlib/bigNumberToNumber', a);
     assertEq('Metadata decimals should match', await d(m.decimals), await d(decimals));

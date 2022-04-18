@@ -32,6 +32,7 @@ const go = async ({ role, ctc, acc }) => {
   };
 
   const showToken = async (_tok, cmd) => {
+    await rpc('/ctc/events/tokenLaunch/next', ctc);
     tok = _tok;
     console.log(`${r}: The token is: ${JSON.stringify(tok)}.`);
     await showBalance();
