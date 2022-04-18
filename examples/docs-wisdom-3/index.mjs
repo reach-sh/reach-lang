@@ -10,6 +10,8 @@ console.log(`Your role is ${role}`);
 
 const stdlib = loadStdlib(process.env);
 console.log(`The consensus network is ${stdlib.connector}.`);
+console.log(`The standard unit is ${stdlib.standardUnit}`);
+console.log(`The atomic unit is ${stdlib.atomicUnit}`);
 
 const commonInteract = {};
 
