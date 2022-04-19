@@ -1619,8 +1619,8 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           getOutput: (async <X extends CBR_Val>(o_mode:string, o_lab:string, o_ctc:ALGO_Ty<X>, o_val:X): Promise<X> => {
             void(o_mode);
             void(o_lab);
-            void(o_ctc);
-            return o_val;
+            void(o_val);
+            return o_ctc.defaultValue;
           }),
         };
         const sim_r = await sim_p( fake_res );

@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { checkedBigNumberify } from './shared_backend';
-import { j2s } from './shared_impl';
+import { j2s, labelMaps } from './shared_impl';
 // "CBR", canonical backend representation
 
 type BigNumber = ethers.BigNumber;
@@ -40,14 +40,16 @@ export type CBR_Val =
 
 // UV = UserVal
 // BV = BackendVal
-export type BackendTy<T extends CBR_Val> = {
+export interface BackendTy<T extends CBR_Val> {
   name: string,
   canonicalize: (uv: unknown) => T,
-}
+  defaultValue: T,
+};
 
 export const BV_Null: CBR_Null = null;
 export const BT_Null: BackendTy<CBR_Null> = {
   name: 'Null',
+  defaultValue: BV_Null,
   canonicalize: (val: unknown): CBR_Null => {
     // Doesn't check with triple eq; we're being lenient here
     if (val != null) {
@@ -59,6 +61,7 @@ export const BT_Null: BackendTy<CBR_Null> = {
 
 export const BT_Bool: BackendTy<CBR_Bool> = {
   name: 'Bool',
+  defaultValue: false,
   canonicalize: (val: unknown): CBR_Bool => {
     if (typeof(val) !== 'boolean') {
       throw Error(`Expected boolean, but got ${j2s(val)}`);
@@ -72,6 +75,7 @@ export const BV_Bool = (val: boolean): CBR_Bool => {
 
 export const BT_UInt = (max: BigNumber): BackendTy<CBR_UInt> => ({
   name: 'UInt',
+  defaultValue: ethers.BigNumber.from(0),
   canonicalize: (uv: unknown): CBR_UInt => {
     try {
       // Note: going through toString handles a lot of numeric representations
@@ -98,6 +102,7 @@ export const BV_UInt = (val: BigNumber, max: BigNumber): CBR_UInt => {
 
 export const BT_Bytes = (len: number): BackendTy<CBR_Bytes> => ({
   name: `Bytes(${len})`,
+  defaultValue: ''.padEnd(len, '\0'),
   canonicalize: (val: unknown): CBR_Bytes => {
     const lenn = bigNumberToNumber(len);
     if (typeof(val) !== 'string') {
@@ -121,6 +126,7 @@ export const BT_Bytes = (len: number): BackendTy<CBR_Bytes> => ({
 // That's probably best left to connector-specific code.
 export const BT_Digest: BackendTy<CBR_Digest> = {
   name: 'Digest',
+  defaultValue: ''.padEnd(32, '\0'), // XXX hack
   canonicalize: (val: unknown): CBR_Digest => {
     if (typeof val !== 'string') {
       throw Error(`${j2s(val)} is not a valid digest`);
@@ -135,6 +141,7 @@ export const BV_Digest = (val: string): CBR_Digest => {
 
 export const BT_Address: BackendTy<CBR_Address> = ({
   name: 'Address',
+  defaultValue: ''.padEnd(32, '\0'), // XXX hack
   canonicalize: (val: unknown): CBR_Address => {
     if (typeof val !== 'string') {
       throw Error(`Address must be a string, but got: ${j2s(val)}`);
@@ -155,6 +162,7 @@ export const BT_Array = (ctc: BackendTy<CBR_Val> , size: number): BackendTy<CBR_
   // TODO: check ctc, sz for sanity
   return {
     name: `Array(${ctc.name}, ${size})`,
+    defaultValue: Array(size).fill(ctc.defaultValue),
     canonicalize: (args: any): CBR_Array => {
       if (!Array.isArray(args)) {
         throw Error(`Expected an Array, but got ${j2s(args)}`);
@@ -180,6 +188,7 @@ export const BT_Tuple = (ctcs: Array<BackendTy<CBR_Val>>): BackendTy<CBR_Tuple> 
   // TODO: check ctcs for sanity
   return {
     name: `Tuple(${ctcs.map((ctc) => ` ${ctc.name} `)})`,
+    defaultValue: ctcs.map(ctc => ctc.defaultValue),
     canonicalize: (args: any): CBR_Tuple => {
       if (!Array.isArray(args)) {
         throw Error(`Expected a Tuple, but got ${j2s(args)}`);
@@ -201,6 +210,13 @@ export const BV_Tuple = (ctcs: Array<BackendTy<CBR_Val>>) => (val: unknown[]) =>
 export const BT_Struct = (ctcs: Array<[string, BackendTy<CBR_Val>]>): BackendTy<CBR_Struct> => {
   return {
     name: `Struct([${ctcs.map(([k, ctc]) => ` [${k}, ${ctc.name}] `)}])`,
+    defaultValue: (() => {
+      const obj: {[key: string]: CBR_Val} = {};
+      ctcs.forEach(([prop, co]) => {
+        obj[prop] = co.defaultValue;
+      });
+      return obj;
+    })(),
     canonicalize: (arg: any): CBR_Struct => {
       const obj: {
         [key: string]: CBR_Val
@@ -223,6 +239,13 @@ export const BT_Object = (co: {
   // TODO: check co for sanity
   return {
     name: `Object(${Object.keys(co).map((k) => ` ${k}: ${co[k].name} `)})`,
+    defaultValue: (() => {
+      const obj: {[key: string]: CBR_Val} = {};
+      for (const prop in co) {
+        obj[prop] = co[prop].defaultValue;
+      }
+      return obj;
+    })(),
     canonicalize: (vo: any): CBR_Object => {
       if (typeof(vo) !== 'object') {
         throw Error(`Expected object, but got ${j2s(vo)}`);
@@ -254,8 +277,14 @@ export const BT_Data = (co: {
   [key: string]: BackendTy<CBR_Val>,
 }): BackendTy<CBR_Data> => {
   // TODO: check co for sanity
+  const {ascLabels} = labelMaps(co);
   return {
     name: `Data(${Object.keys(co).map((k) => ` ${k}: ${co[k].name} `)})`,
+    defaultValue: ((): CBR_Data => {
+      const label = ascLabels[0];
+      return [label, co[label].defaultValue];
+      // return {ty, val: [label, co[label].defaultValue]};
+    })(),
     canonicalize: (io: unknown): CBR_Data => {
       if (!(Array.isArray(io) && io.length == 2 && typeof io[0] == 'string')) {
         throw Error(`Expected an array of length two to represent a data instance, but got ${j2s(io)}`);
