@@ -239,7 +239,7 @@ class Action {
     this.scene = scene;
   }
 
-  async resolve(resp,ty="number") {
+  async resolve(resp=-999,ty="number") {
     const r = await c.respondWithVal(this.scene.state.id,this.id,resp,this.owner.id,ty)
     console.log(r);
     return this.scene.next();
