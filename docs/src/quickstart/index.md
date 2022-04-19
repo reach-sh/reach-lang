@@ -57,7 +57,7 @@ In the Command Prompt window, run the following command to set the WSL version t
 $ wsl --set-default-version 2
 ``` 
 
-After Setting up the default version we will finally install our wsl distribution:
+After setting up the default version, we will finally install our WSL distribution:
 
 ``` cmd
 $ wsl --install -d Ubuntu
