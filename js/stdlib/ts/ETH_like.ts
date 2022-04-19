@@ -1031,11 +1031,14 @@ const verifyContract_ = async (ctcInfo: ContractInfo, backend: Backend, eq: Even
   }
   const e0rec = r0.txn;
   const lr = makeLogRep(() => ctcAddress, iface, reachEvent(0));
-  const ctorArg = lr.parseA(e0rec);
-  debug(dhead, {e0rec, ctorArg});
-  if ( ! ctorArg ) {
+  const ctorArg_r = lr.parseA(e0rec);
+  debug(dhead, {e0rec, ctorArg_r});
+  if ( ! ctorArg_r ) {
     chk(false, `Contract deployment doesn't have first event`);
+    throw Error(`impossible`);
   }
+  const ctorArg = ctorArg_r.slice(1);
+  debug(dhead, {ctorArg});
 
   // We don't actually check the live contract code, but instead compare what
   // we would have done to deploy it with how it was actually deployed.
