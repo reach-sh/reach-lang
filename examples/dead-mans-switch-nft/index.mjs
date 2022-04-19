@@ -11,17 +11,11 @@ const ctcCharlie = accCharlie.contract(backend, ctcAlice.getInfo());
 const switchTime = stdlib.connector == 'ALGO' ? 25 : 200;
 
 // Launch the ctc
-try {
-  await backend.Creator(ctcAlice, {
-    firstHeir: accBob,
-    switchTime,
-    ready: () => { throw 'ready' }
-  });
-} catch (e) {
-  if (e != 'ready') {
-    throw e;
-  }
-}
+await stdlib.withDisconnect(() => ctcAlice.p.Creator({
+  firstHeir: accBob,
+  switchTime,
+  ready: stdlib.disconnect
+}));
 
 const runOwner = async (ctc, name, nextHeir) => {
   if (nextHeir) {
