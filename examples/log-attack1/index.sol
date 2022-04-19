@@ -1,9 +1,10 @@
+// log-attack1
 pragma abicoder v2;
 pragma solidity ^0.8.0;
 
 struct T4 {
-  address payable v69;
-  uint256 v70;
+  address payable v75;
+  uint256 v76;
   }
 struct T5 {
   uint256 time;
@@ -11,17 +12,15 @@ struct T5 {
   }
 
 contract LogAttack1 {
-
-  event _reach_e1(T5 _a);
-
   constructor () payable {
-    }
+  }
 
+  event _reach_e1(address _who, T5 _a);
   function m1(address payable acct, uint256 amt) external payable {
     T5 memory a;
     a.time = 0;
-    a.msg.v69 = acct;
-    a.msg.v70 = amt + 1;
-    emit _reach_e1(a);
+    a.msg.v75 = acct;
+    a.msg.v76 = amt + 1;
+    emit _reach_e1(msg.sender, a);
   }
 }
