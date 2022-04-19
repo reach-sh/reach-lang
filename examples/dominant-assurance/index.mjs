@@ -37,12 +37,12 @@ const run = async (numInvestors, numInvestorsFailPaid) => {
   await printBals();
 
   // Launch the contract
-  await stdlib.withDisconnect(Promise.all([
-      ctcProduct.p.Product({
-        investmentStructure,
-        ready: stdlib.disconnect,
-      }),
-      ctcEntrepreneur.p.Entrepreneur({})
+  await stdlib.withDisconnect(() => Promise.all([
+    ctcProduct.p.Product({
+      investmentStructure,
+      ready: stdlib.disconnect,
+    }),
+    ctcEntrepreneur.p.Entrepreneur({})
   ]));
 
   await ctcProduct.apis.ProductAPI.startInvestment();
