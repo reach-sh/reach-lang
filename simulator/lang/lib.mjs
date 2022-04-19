@@ -293,7 +293,6 @@ class API {
 }
 
 export {
-  Scenario,
   ImperativeScenario,
   FunctionalScenario,
   Participant,
