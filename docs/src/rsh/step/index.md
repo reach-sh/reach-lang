@@ -477,7 +477,7 @@ load: /examples/rps-7-loops/index.rsh
 range: 73-73
 ```
 
-This example from the [Rock, Paper, Scissors!](##tut) tutorial checks that both Alice's hand and salt are unknowable to prevent Bob from cheating.
+This example from the [Rock, Paper, Scissors!](##tut) tutorial checks that both Alice's hand and salt are unknowable to ensure Bob cannot cheat.
 
 ### `closeTo`
 
