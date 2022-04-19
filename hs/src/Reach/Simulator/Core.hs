@@ -182,11 +182,13 @@ type PartCont = State -> DLVal -> PartState
 data PartState
   = PS_Done State DLVal
   | PS_Suspend (Maybe SrcLoc) Action State PartCont
+  | PS_Error (Maybe SrcLoc) State String
   deriving (Generic)
 
 instance ToJSON PartState where
   toJSON (PS_Done _ _) = "PS_Done"
   toJSON (PS_Suspend _ _ _ _) = "PS_Suspend"
+  toJSON (PS_Error _ _ _) = "PS_Error"
 
 initPartState :: PartState
 initPartState = PS_Done initState V_Null
