@@ -79,7 +79,7 @@ To install Winget run:
 cd c:\downloads; 
 wget -uri https://github.com/microsoft/winget-cli/releases/download/v1.3.431/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle -outfile .\winget.msixbundle; .\winget.msixbundle
 ```
-A window should popup, click on Update.
+A window should pop up. Click on Update.
 
 Next we are going to install Docker using winget:
 
