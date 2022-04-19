@@ -2144,10 +2144,7 @@ const A = API('api', {
 
 @{errver(false, '0.1.7')}
 
-This error indicates that the left-hand side of a ```reach
-call
-```
- assignment is not a pair of the domain and a function to return a result to the function.
+This error indicates that the left-hand side of a `{!rsh} call` assignment is not a pair of the domain and a function to return a result to the function.
 For example:
 
 ```reach
