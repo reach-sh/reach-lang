@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "@reach-sh/simulator-lang": "0.0.13"
+    "@reach-sh/simulator-lang": "0.0.15"
   }
 }

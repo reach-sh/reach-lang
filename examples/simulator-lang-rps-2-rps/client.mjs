@@ -5,13 +5,13 @@ const main = async () => {
   console.log("Init Testing!")
 
   // test imperatively
-  const s = new lang.ImperativeScenario();
-  await s.init();
-  const pi = await s.pingServer();
-  console.log(s);
-  const alice = s.participants.Alice;
-  const bob = s.participants.Bob;
-  const consensus = s.consensus;
+  const is = new lang.ImperativeScenario();
+  await is.init();
+  let pi = await is.pingServer();
+  console.log(is);
+  let alice = is.participants.Alice;
+  let bob = is.participants.Bob;
+  let consensus = is.consensus;
   // init Alice
   await alice.init();
   // init Bob
@@ -32,12 +32,44 @@ const main = async () => {
   await (await alice.getNextAction()).resolve();
   // Bob observes that his hand is published
   await (await bob.getNextAction()).resolve();
-  const r = await alice.getStatus();
+  // Alice's program has run to completion
+  let r = await alice.getStatus();
   console.log(r);
   assert.equal(r,"Done");
+  console.log("Imperative Scenario Done");
 
   // test functionally
-
+  const fs = new lang.FunctionalScenario();
+  await fs.init();
+  pi = await fs.pingServer();
+  console.log(fs);
+  alice = fs.participants.Alice;
+  bob = fs.participants.Bob;
+  consensus = fs.consensus;
+  // init Alice
+  await alice.init();
+  // init Bob
+  await bob.init();
+  // Alice interactively gets her hand (0)
+  let s = await (await alice.getNextAction()).resolve(0);
+  // Alice's hand (0) is published
+  s = await (await s.who(consensus).getNextAction()).resolve(0);
+  // Alice observes that her hand is published
+  s = await (await s.who(alice).getNextAction()).resolve();
+  // Bob observes that Alice's hand is published
+  s = await (await s.who(bob).getNextAction()).resolve();
+  // Bob interactively gets his hand (1)
+  s = await (await s.who(bob).getNextAction()).resolve(1);
+  // Bob's hand (1) is published
+  s = await (await s.who(consensus).getNextAction()).resolve(1);
+  // Alice observes that Bob's hand is published
+  s = await (await s.who(alice).getNextAction()).resolve();
+  // Bob observes that his hand is published
+  s = await (await s.who(bob).getNextAction()).resolve();
+  r = await s.who(alice).getStatus();
+  console.log(r);
+  assert.equal(r,"Done");
+  console.log("Functional Scenario Done");
 
   console.log("Testing Complete")
 }

@@ -1,5 +1,4 @@
 import * as c from '@reach-sh/simulator-client';
-import * as v8 from 'v8';
 
 // nodejs compatible import
 // const c = await import('@reach-sh/simulator-client');
@@ -9,10 +8,6 @@ import * as v8 from 'v8';
 const consensusID = -1
 const nwToken = -1
 
-
-const structuredClone = obj => {
-  return v8.deserialize(v8.serialize(obj));
-};
 
 Object.filter = (obj, predicate) =>
   Object.fromEntries(Object.entries(obj).filter(predicate));
@@ -104,6 +99,12 @@ class Scenario {
   async launchToken() {
     return await c.newToken(this.state.id);
   }
+
+  who(part) {
+    part.scene = this;
+    return part;
+  }
+
 }
 
 class FunctionalScenario extends Scenario {
@@ -112,7 +113,7 @@ class FunctionalScenario extends Scenario {
   }
 
   next() {
-    const next = structuredClone(this);
+    const next = Object.assign(new FunctionalScenario(), this);
     next.state.next();
     return next;
   }

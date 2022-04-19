@@ -1,7 +1,7 @@
 {
   "name": "@reach-sh/simulator-lang",
   "description": "language/library for the Reach Simulator",
-  "version": "0.0.13",
+  "version": "0.0.15",
   "main": "./lib.mjs",
   "repository": {
     "type": "git",
@@ -10,7 +10,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@reach-sh/simulator-client": "0.0.37"
+    "@reach-sh/simulator-client": "0.0.38"
   },
   "author": "reach.sh",
   "license": "Apache-2.0",
