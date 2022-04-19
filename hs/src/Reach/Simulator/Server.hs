@@ -72,6 +72,7 @@ data Session = Session
   , e_edges :: [(StateId,StateId)]
   , e_parents :: [(StateId,StateId)]
   , e_locs :: M.Map C.ActorId (M.Map StateId SrcLoc)
+  , e_errors :: [(Maybe StateId, Maybe SrcLoc, String)]
   , e_src_txt :: String
   }
 
@@ -89,10 +90,11 @@ initSession = Session
   , e_edges = mempty
   , e_parents = mempty
   , e_locs = mempty
+  , e_errors = mempty
   , e_src_txt = mempty
   }
 
-processNewState :: Maybe (StateId) -> C.PartState -> StateCategory -> WebM ()
+processNewState :: Maybe (StateId) -> C.PartState -> StateCategory -> WebM (Bool)
 processNewState psid ps sc = do
   sid <- gets e_nsid
   actorId <- gets e_actor_id
@@ -101,36 +103,45 @@ processNewState psid ps sc = do
   _ <- case ps of
     C.PS_Done _ _ -> do
       registerAction sid actorId C.A_None
+    C.PS_Error at _ e -> do
+      registerError psid at e
     C.PS_Suspend at a _ _ -> do
       registerAction sid actorId a
       case at of
         Nothing -> return ()
         Just at' -> do
           registerLoc sid actorId at'
-  let ((g,l), stat) =
+  let ((g,l), stat, process) =
         case ps of
           C.PS_Done s _ -> do
-            (s, Done)
+            (s, Done, True)
           C.PS_Suspend _ _ s _ -> do
-            (s, Running)
-  graph <- gets e_graph
-  cgraph <- gets e_cgraph
-  let locals = C.l_locals l
-  let lcl = saferMaybe "processNewState" $ M.lookup actorId locals
-  let lcl' = lcl { C.l_ks = Just ps }
-  let l' = l { C.l_locals = M.insert actorId lcl' locals }
-  modify $ \ st -> st
-    {e_nsid = sid + 1}
-    {e_status = stat}
-    {e_graph = M.insert sid (g,l') graph}
-    {e_cgraph = M.insert sid sc cgraph}
-  case psid of
-    Nothing -> return ()
-    Just psid' -> modify $ \st ->
-      st
-        { e_edges = (psid', sid) : edges
-        , e_parents = (sid, psid') : parents
-        }
+            (s, Running, True)
+          C.PS_Error _ s _ -> do
+            (s, Done, False)
+  case process of
+    True -> do
+      graph <- gets e_graph
+      cgraph <- gets e_cgraph
+      let locals = C.l_locals l
+      let lcl = saferMaybe "processNewState" $ M.lookup actorId locals
+      let lcl' = lcl { C.l_ks = Just ps }
+      let l' = l { C.l_locals = M.insert actorId lcl' locals }
+      modify $ \ st -> st
+        {e_nsid = sid + 1}
+        {e_status = stat}
+        {e_graph = M.insert sid (g,l') graph}
+        {e_cgraph = M.insert sid sc cgraph}
+      case psid of
+        Nothing -> return ()
+        Just psid' -> modify $ \st ->
+          st
+            { e_edges = (psid', sid) : edges
+            , e_parents = (sid, psid') : parents
+            }
+      return True
+    False -> return False
+
 
 registerLoc :: StateId -> C.ActorId -> SrcLoc -> WebM ()
 registerLoc sid actorId at = do
@@ -138,6 +149,12 @@ registerLoc sid actorId at = do
   case M.lookup actorId locs of
     Nothing -> modify $ \ st -> st {e_locs = M.insert actorId (M.singleton sid at) locs }
     Just locs' -> modify $ \ st -> st {e_locs = M.insert actorId (M.insert sid at locs') locs }
+  return ()
+
+registerError :: Maybe StateId -> Maybe SrcLoc -> String -> WebM ()
+registerError sid at err = do
+  errs <- gets e_errors
+  modify $ \ st -> st {e_errors = (sid,at,err):errs }
   return ()
 
 registerAction :: StateId -> C.ActorId -> C.Action -> WebM ()
@@ -293,7 +310,7 @@ bindToConsensusStore vals lets l = do
       let lst' = lst {C.l_store = M.union (M.fromList (zip lets vals)) st}
       return $ l {C.l_locals = M.insert C.consensusId lst' locals}
 
-unblockProg :: Integer -> Integer -> C.DLVal -> WebM ()
+unblockProg :: Integer -> Integer -> C.DLVal -> WebM (Bool)
 unblockProg sid' aid' v = do
   let sid = fromIntegral sid'
   let aid = fromIntegral aid'
@@ -354,7 +371,7 @@ unblockProg sid' aid' v = do
                   let ps = k (g, l) v
                   processNewState (Just sid) ps Consensus
             Nothing -> possible "action not found"
-        Just (Just (C.PS_Done _ _)) -> do
+        Just (Just _) -> do
           possible "previous state already terminated"
 
 
@@ -368,8 +385,8 @@ stActHist sid = do
       let locals = C.l_locals l
       let k = saferMaybe "stActHist failed (2)" $ C.l_ks $ saferMaybe "stActHist failed (1)" $ M.lookup actorId locals
       case k of
-        C.PS_Done _ _ -> return (sid, (actorId, C.A_None))
         C.PS_Suspend _ act _ _ -> return (sid, (actorId, act))
+        _ -> return (sid, (actorId, C.A_None))
 
 allStates :: WebM (M.Map StateId (C.ActorId, C.Action))
 allStates = do
@@ -457,13 +474,13 @@ computeActions sid actorId = do
           let act = saferMaybe "computeActions actId" $ M.lookup actId idacts
           return $ Just (actId,act)
 
-initProgSim :: LLProg -> WebM ()
+initProgSim :: LLProg -> WebM (Bool)
 initProgSim ll = do
   let initSt = C.initState
   ps <- return $ C.initApp ll initSt
   processNewState Nothing ps Consensus
 
-initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> Maybe (C.Account) -> LLProg -> WebM ()
+initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> Maybe (C.Account) -> LLProg -> WebM (Bool)
 initProgSimFor actId sid liv accId (LLProg _ _ _ _ _ _ _ _ _ step) = do
   graph <- gets e_graph
   modify $ \st -> st {e_actor_id = actId}
@@ -531,6 +548,15 @@ caseTypes f s a = \case
     webM $ f s a v
   _ -> possible "Unexpected value type"
 
+raiseError :: Bool -> ActionT Text WebM ()
+raiseError = \case
+  True -> json ("OK" :: String)
+  False -> do
+    errs <- webM $ gets e_errors
+    case errs of
+      (e : _) -> raise $ s2lt $ show e
+      [] -> raise "An impossible error has occurred."
+
 app :: LLProg -> String -> ScottyT Text WebM ()
 app p srcTxt = do
   middleware logStdoutDev
@@ -546,8 +572,8 @@ app p srcTxt = do
     case ll of
       Nothing -> json $ ("No Program" :: String)
       Just ll' -> do
-        webM $ initProgSim ll'
-        json $ ("OK" :: String)
+        outcome <- webM $ initProgSim ll'
+        raiseError outcome
 
   post "/init/:a/:s" $ do
     setHeaders
@@ -569,8 +595,8 @@ app p srcTxt = do
         case ll of
           Nothing -> json $ ("No Program" :: String)
           Just ll' -> do
-            webM $ initProgSimFor a s liv'' acc ll'
-            json $ ("OK" :: String)
+            outcome <- webM $ initProgSimFor a s liv'' acc ll'
+            raiseError outcome
 
   get "/init_details/:a" $ do
     setHeaders
@@ -699,8 +725,14 @@ app p srcTxt = do
         case (parseParam prm) :: Either Text C.ActorId of
           Left e -> possible $ show e
           Right w -> webM $ changeActor $ fromIntegral w
-    caseTypes unblockProg s a t
-    json ("OK" :: String)
+    outcome <- caseTypes unblockProg s a t
+    case outcome of
+      True -> json ("OK" :: String)
+      False -> do
+        errs <- webM $ gets e_errors
+        case errs of
+          (e : _) -> raise $ s2lt $ show e
+          [] -> raise "An impossible error has occurred."
 
   get "/ping" $ do
     setHeaders
