@@ -1176,6 +1176,7 @@ devnetDeps nolog = do
   pure [N.text|
     NO_DEPS=''
     if [ "$(docker ps -qf label=sh.reach.devnet-for=$c)x" = 'x' ]; then
+      :
       $l
     else
       NO_DEPS=' --no-deps'
