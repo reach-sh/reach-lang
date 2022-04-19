@@ -471,7 +471,9 @@ jsExpr = \case
               ]
         net' <- jsCon $ DLL_Int at uintWord 0
         let bill' = jsArray $ map (const net') nnRecv
-        return $ jsArray $ [ net', bill', res', "undefined" ]
+        let bill'' = if null nnRecv then [] else [bill']
+        let res'' = parens $ res' <> ", undefined"
+        return $ jsArray $ [ net' ] <> bill'' <> [ res'' ]
   DLE_TokenNew _ tns -> do
     (ctxt_mode <$> ask) >>= \case
       JM_Backend -> return "undefined /* TokenNew */"

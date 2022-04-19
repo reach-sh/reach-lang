@@ -30,6 +30,7 @@ import {
   CBR_Tuple,
   CBR_Struct,
   CBR_Val,
+  BackendTy,
 } from './CBR';
 import * as CBR from './CBR';
 
@@ -44,14 +45,12 @@ export const UInt_max: BigNumber =
 // NV = Net Value
 export type NV = Uint8Array;
 
-export type ALGO_Ty<BV extends CBR_Val> = {
-  name: string,
-  canonicalize: (uv: unknown) => BV,
+export interface ALGO_Ty<BV extends CBR_Val> extends BackendTy<BV> {
   netSize: number
   toNet(bv: BV): NV,
   fromNet(nv: NV): BV,
   netName: string,
-}
+};
 
 export const digest =
   makeDigest('sha256', <X extends CBR_Val>(t:ALGO_Ty<X>, v:X) => t.toNet(v));

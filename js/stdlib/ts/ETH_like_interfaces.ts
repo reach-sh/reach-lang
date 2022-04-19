@@ -10,7 +10,8 @@ import type { // =>
   BigNumber,
 } from 'ethers';
 import type { // =>
-  CBR_Val
+  CBR_Val,
+  BackendTy,
 } from './CBR';
 
 export type Address = string;
@@ -22,19 +23,12 @@ export type TransactionResponse = ethers.providers.TransactionResponse;
 
 // BV = backend value
 // NV = net value
-export type ETH_Ty<BV extends CBR_Val, NV> =  {
-  name: string,
-  // ty: CBR.ReachTy,
-  defaultValue: BV,
-  // TODO: rename.
-  // * canonicalize -> user2cbr
-  // * munge/unmunge -> cbr2net/net2cbr
-  canonicalize: (uv: unknown) => BV,
+export interface ETH_Ty<BV extends CBR_Val, NV> extends BackendTy<BV> {
   munge: (bv: BV) => NV,
   unmunge: (nv: NV) => BV,
   /** @description describes the shape of the munged value */
   paramType: string,
-}
+};
 
 export type AnyETH_Ty = ETH_Ty<any, any>;
 

@@ -77,7 +77,6 @@ const V_Null: CBR_Null = null;
 // null is represented in solidity as false
 const T_Null: ETH_Ty<CBR_Null, false> = {
   ...CBR.BT_Null,
-  defaultValue: V_Null,
   munge: (bv: CBR_Null): false => (void(bv), false),
   unmunge: (nv: false): CBR_Null => (void(nv), V_Null),
   paramType: 'bool',
@@ -85,7 +84,6 @@ const T_Null: ETH_Ty<CBR_Null, false> = {
 
 const T_Bool: ETH_Ty<CBR_Bool, boolean> = {
   ...CBR.BT_Bool,
-  defaultValue: false,
   munge: (bv: CBR_Bool): boolean => bv,
   unmunge: (nv: boolean): CBR_Bool => V_Bool(nv),
   paramType: 'bool',
@@ -97,7 +95,6 @@ const V_Bool = (b: boolean): CBR_Bool => {
 
 const T_UInt: ETH_Ty<CBR_UInt, BigNumber> = {
   ...CBR.BT_UInt(UInt_max),
-  defaultValue: ethers.BigNumber.from(0),
   munge: (bv: CBR_UInt): BigNumber => bigNumberify(bv),
   unmunge: (nv: BigNumber): CBR_UInt => V_UInt(nv),
   paramType: 'uint256',
@@ -138,7 +135,6 @@ type ETH_Bytes = Array<Array<number>>;
 const T_Bytes = (len:number): ETH_Ty<CBR_Bytes, ETH_Bytes> => {
   const me = {
     ...CBR.BT_Bytes(len),
-    defaultValue: ''.padEnd(len, '\0'),
     munge: ((bv: CBR_Bytes): ETH_Bytes => {
       return splitToChunks(Array.from(ethers.utils.toUtf8Bytes(bv)), 32);
     }),
@@ -181,7 +177,6 @@ const T_Array = <T>(
   const size = bigNumberToNumber(bigNumberify(size_i));
   return {
     ...CBR.BT_Array(ctc, size),
-    defaultValue: Array(size).fill(ctc.defaultValue),
     munge: (bv: CBR_Array): any => {
       if ( size == 0 ) {
         return false;
@@ -212,7 +207,6 @@ const T_Tuple = <T>(
   ctcs: Array<ETH_Ty<CBR_Val, T>>,
 ): ETH_Ty<CBR_Tuple, Array<T>> => ({
   ...CBR.BT_Tuple(ctcs),
-  defaultValue: ctcs.map(ctc => ctc.defaultValue),
   munge: (bv: CBR_Tuple): any => {
     if (ctcs.length == 0 ) {
       return false;
@@ -236,13 +230,6 @@ const T_Struct = <T>(
   ctcs: Array<[string, ETH_Ty<CBR_Val, T>]>,
 ): ETH_Ty<CBR_Struct, Array<T>> => ({
   ...CBR.BT_Struct(ctcs),
-  defaultValue: (() => {
-    const obj: {[key: string]: CBR_Val} = {};
-    ctcs.forEach(([prop, co]) => {
-      obj[prop] = co.defaultValue;
-    });
-    return obj;
-  })(),
   munge: (bv: CBR_Struct): any => {
     if (ctcs.length == 0 ) {
       return false;
@@ -266,13 +253,6 @@ const T_Object = <T>(
   co: {[key: string]: ETH_Ty<CBR_Val, T>}
 ): ETH_Ty<CBR_Object, {[key: string]: T}> => ({
   ...CBR.BT_Object(co),
-  defaultValue: (() => {
-    const obj: {[key: string]: CBR_Val} = {};
-    for (const prop in co) {
-      obj[prop] = co[prop].defaultValue;
-    }
-    return obj;
-  })(),
   // CBR -> Net . ETH object fields are prefaced with "_"
   munge: (bv: CBR_Object): any => {
     const obj: {
@@ -318,11 +298,6 @@ const T_Data = <T>(
   const {ascLabels, labelMap} = labelMaps(co);
   return {
     ...CBR.BT_Data(co),
-    defaultValue: ((): CBR_Data => {
-      const label = ascLabels[0];
-      return [label, co[label].defaultValue];
-      // return {ty, val: [label, co[label].defaultValue]};
-    })(),
     // Data representation in js is a 2-tuple:
     // [label, val]
     // where label : string
