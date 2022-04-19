@@ -45,7 +45,7 @@ After enabling these two features you must reboot:
 shutdown -r -t 0
 ```
 
-After rebooting you will need to reopen `Powershell` as Administrator and execute the following commands:
+After rebooting you will need to reopen `Powershell` as an administrator, and execute the following commands:
 
 ```cmd
 cd c:\; mkdir downloads; cd c:\downloads; wget  -uri https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -outfile .\wsl_update_x64.msi; .\wsl_update_x64.msi
