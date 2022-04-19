@@ -1989,7 +1989,7 @@ const A = Participant('A', {
 ## {#RE0111} RE0111
 
 This error indicates that an unexpected key was provided to the `{!rsh} Token` constructor.
-You may find the acceptable parameters in the following section: token minting.
+You may find the acceptable parameters in the following section: [token minting](##ref-programs-consensus-token-minting).
 
 ## {#RE0112} RE0112
 
