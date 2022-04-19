@@ -1,4 +1,5 @@
 import * as lang from '@reach-sh/simulator-lang';
+// import * as lang from '../../simulator/lang/lib.mjs';
 import * as assert from 'assert';
 
 const main = async () => {
@@ -36,7 +37,15 @@ const main = async () => {
   let r = await alice.getStatus();
   console.log(r);
   assert.equal(r,"Done");
-  console.log("Imperative Scenario Done");
+  let store = await alice.getStore();
+  // Alice observes that her hand is published
+  store.getVar('handAlice').assertVar('V_UInt',0);
+  // Alice observes Bob's hand
+  store.getVar('handBob').assertVar('V_UInt',1);
+  // B wins
+  store.getVar('outcome').assertVar('V_UInt',0);
+
+  console.log("Imperative Scenario Done ########################");
 
   // test functionally
   const fs = new lang.FunctionalScenario();
@@ -69,7 +78,7 @@ const main = async () => {
   r = await s.who(alice).getStatus();
   console.log(r);
   assert.equal(r,"Done");
-  console.log("Functional Scenario Done");
+  console.log("Functional Scenario Done ########################");
 
   console.log("Testing Complete")
 }
