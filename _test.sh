@@ -75,12 +75,7 @@ r () {
   ${REACH} compile --install-pkgs
   ${REACH} compile --intermediate-files
 
-  # tealcount1 .
-
   make build
-  # make down
-
-  # jb
 
   #REACH_CONNECTOR_MODE=ETH ${REACH} run
   REACH_DEBUG=1 REACH_CONNECTOR_MODE=ALGO ${REACH} run

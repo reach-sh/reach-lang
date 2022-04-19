@@ -13,12 +13,12 @@ contract WeirdContract {
     _x = 0;
   }
 
-  event _reach_e1(T5 _a);
+  event _reach_e1(address _who, T5 _a);
   function f(uint256 x) external payable {
     T5 memory a;
     a.time = 0;
     a.msg = true;
-    emit _reach_e1(a);
+    emit _reach_e1(msg.sender, a);
     _x = x;
   }
 }
