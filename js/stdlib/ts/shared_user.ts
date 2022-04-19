@@ -68,14 +68,16 @@ export const numberToInt = (n: number) => {
 
 const disconnectSymbol = Symbol("Reach disconnect");
 
-export const withDisconnect = async (prom: Promise<any>) => {
+export const withDisconnect = async <T>(f: () => Promise<T>): Promise<T> => {
   try {
-    await prom;
-  } catch (e) {
-    if (e !== disconnectSymbol) {
+    return await f();
+  } catch (e: any) {
+    if (e[0] === disconnectSymbol) {
+      return e[1];
+    } else {
       throw e;
     }
   }
 };
 
-export const disconnect = () => { throw disconnectSymbol };
+export const disconnect = <T>(t: T) => { throw [disconnectSymbol, t] };
