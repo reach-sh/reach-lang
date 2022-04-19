@@ -26,12 +26,12 @@ const run = async (borrowerPaysBack) => {
   const ctcLender = accLender.contract(backend, ctcBorrower.getInfo());
 
   console.log(`Borrower puts up the ${nft.name} nft as collateral`);
-  await stdlib.withDisconnect(Promise.all([
+  await stdlib.withDisconnect(() => Promise.all([
     ctcBorrower.p.Borrower({
       loanMade: async () => {
         console.log(`Borrower receives a loan of ${fmt(loanAmt)} ${stdlib.standardUnit}`);
         await printBalances();
-        stdlib.disconnect();
+        stdlib.disconnect(null);
       },
       loanAmt,
       interest,
