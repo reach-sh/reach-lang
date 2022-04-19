@@ -2114,7 +2114,7 @@ This is impossible, so the expression must be moved after the first publication.
 
 ## {#RE0120} RE0120
 
-This error indicates that an actor who is not a `{!rsh} Participant`, e.g. a `{!rsh} API`, is
+This error indicates that an actor who is not a `{!rsh} Participant`, e.g. an `{!rsh} API`, is
 attempting to make the first publication of a Reach program.
 
 You can fix this error by assigning the first publication to one of your `{!rsh} Participant`s.
