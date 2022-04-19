@@ -1136,3 +1136,27 @@ The default is no clawback address.
 
 For more information on Algorand-only options, see
 https://developer.algorand.org/docs/get-details/transactions/transactions/#asset-parameters.
+
+---
+@{ref("js", "withDisconnect")}@{ref("js", "disconnect")}
+```js
+withDisconnect<T>(f: () => Promise<T>) => Promise<T>
+disconnect(t: any) => void
+```
+`withDisconnect` calls the given function `f` such that any calls to `disconnect` within `f` will cause `withDisconnect` to return immediately.
+`withDisconnect` returns the value passed to `disconnect`.
+
+`disconnect` causes the surrounding call to `withDisconnect` to immediately return `t`.
+`disconnect` must be called from within a function passed to `withDisconnect`,
+otherwise an exception will be thrown.
+
+`withDisconnect` and `disconnect` are intended as a utility to exit participant frontends early, like such:
+```js
+await stdlib.withDisconnect(() => ctcAlice.participants.Alice({
+  ready: () => {
+    console.log("Ready!");
+    stdlib.disconnect(null); // causes withDisconnect to immediately return null
+  }
+}));
+```
+Note that once a participant disconnects from the contract, they cannot rejoin as the same participant.
