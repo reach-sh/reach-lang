@@ -1,4 +1,5 @@
 import * as c from '@reach-sh/simulator-client';
+import * as assert from 'assert';
 
 // nodejs compatible import
 // const c = await import('@reach-sh/simulator-client');
@@ -130,6 +131,30 @@ class ImperativeScenario extends Scenario {
   }
 }
 
+class Store {
+
+  constructor(store) {
+    this.db = store
+  }
+
+  getVar = (v) => {
+    return new Variable(this.db.find(el => (el[0] === v || el[0].split('/')[0] === v )));
+  }
+
+}
+
+class Variable {
+  constructor(v) {
+    this.v = v
+  }
+
+  assertVar = (t,v) => {
+    assert.equal(this.v[1].tag,t);
+    assert.equal(this.v[1].contents,v);
+  }
+
+}
+
 class Actor {
 
   async getNextAction() {
@@ -139,7 +164,7 @@ class Actor {
 
   async getStore() {
     const l = await c.getStateLocals(this.scene.state.id)
-    return l.l_locals[this.id].l_store
+    return new Store(l.l_locals[this.id].l_store);
   }
 
   async getWallet() {
