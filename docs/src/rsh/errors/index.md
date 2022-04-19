@@ -1739,7 +1739,7 @@ const s = Struct([["x", UInt], ["y", UInt], ["x2", UInt]]);
 
 This error indicates that you are attempting to export a name that the
 Reach backend already produces. For example, the names provided in `{!rsh} Participant`,
-`{!rsh} ParticipantClass`, and `{!rsh} View` will be exported by the Reach backend.
+`{!rsh} API`, and `{!rsh} View` will be exported by the Reach backend.
 
 Reach exports a few names from the backend automatically, such as `{!rsh} getExports`.
 Therefore, you cannot export a `{!rsh} Participant` named `{!rsh} getExports` as such:
