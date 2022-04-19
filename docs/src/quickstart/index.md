@@ -40,10 +40,12 @@ Enable the Virtual Machine feature:
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 ```
 
-After enabling the virtual machine you must reboot:
+After enabling these two features you must reboot:
 ```cmd
 shutdown -r -t 0
 ```
+
+After rebooting you will need to reopen `Powershell` as Administrator and execute the following commands:
 
 ```cmd
 cd c:\; mkdir downloads; cd c:\downloads; wget  -uri https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -outfile .\wsl_update_x64.msi; .\wsl_update_x64.msi
@@ -55,16 +57,22 @@ In the Command Prompt window, run the following command to set the WSL version t
 $ wsl --set-default-version 2
 ``` 
 
-After rebooting you will need to reopen `Powershell` as Administrator and execute the following commands:
+After Setting up the default version we will finally install our wsl distribution:
 
 ``` cmd
 $ wsl --install -d Ubuntu
 ```
 
-A terminal called `Ubuntu` should open on your screen asking for a new username and password.
+::: note
 
-We want to download a tool from Microsoft's GitHub called `winget`.
-`winget` is the official Windows package manager:
+When the installation is finished a terminal called `Ubuntu` should open on your screen. It will request you to setup a user and password, make sure you don't skip this step
+:::
+
+
+Installing Docker:
+
+To install docker we want to use `winget`. It is the official package manager for Windows.
+We will download the package from Microsoft's official GitHub account.
 
 To install Winget run:
 ``` cmd
@@ -84,10 +92,6 @@ After installing docker you should reboot:
 shutdown -r -t 0
 ```
 
-::: note
-After rebooting a WSL2 terminal will open up informing it is finishing the installation.
-When the installation is finished it will request you to setup a user and password, make sure you don't skip this step
-:::
 
 ## {#qs-win-conf-docker} Configuring docker:
 
