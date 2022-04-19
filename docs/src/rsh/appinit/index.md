@@ -127,6 +127,14 @@ These APIs are available in frontends via the `{!js} ctc.apis` object, wherein f
 These are called @{defn("API member function")}s.
 Each function must occur exactly once in the entire program.
 
+```
+load: /examples/dominant-assurance/index.rsh
+range: 24-27
+```
+
+This example creates an API that has a name of `Investor`, and it has two functions.
+The first function is to invest in the contract, and the second function is to collect the payment if the `Entrepreneur` fails to form a quorum.  
+
 ### {#ref-programs-appinit-view} View Definition
 
 :::note
