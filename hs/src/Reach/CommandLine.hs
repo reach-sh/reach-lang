@@ -79,8 +79,8 @@ compiler =
                   (long "sim"
                      <> help "Run Simulator"))
            <*> (switch
-                  (long "first-fail-quit"
-                     <> help "Quit after printing the first verification failure")))
+                  (long "verify-fail-once"
+                     <> help "Quit after a single verification failure")))
 
 getCompilerArgs :: String -> IO CompilerToolArgs
 getCompilerArgs versionCliDisp = do
