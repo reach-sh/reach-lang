@@ -28,32 +28,50 @@ or
 Click the Windows icon, type `Powershell`, and then click `Run as Administrator`.
 There are a number of commands that need to be run to get Windows ready for Reach.
 
-We want to download a tool from Microsoft's GitHub called `winget`.
-`winget` is the official Windows package manager:
+To install WSL on Windows we need to enable two features:
 
-To install Winget run:
-``` cmd
-cd c:\; mkdir winget_download; cd winget_download; 
-wget -uri https://github.com/microsoft/winget-cli/releases/download/v1.3.431/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle -outfile .\winget.msixbundle; .\winget.msixbundle;
-.\winget.msixbundle
+Enable WSL:
+```cmd
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 ```
-A window should popup, click on Update.
 
-To install WSL on Windows, run:
+Enable the Virtual Machine feature:
+```cmd
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+```
 
-:::note
-Some Windows 10 users need to run `dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart` to install WSL.
-:::
+After enabling the virtual machine you must reboot:
+```cmd
+shutdown -r -t 0
+```
 
-``` cmd
-$ wsl --install -d Ubuntu
+```cmd
+cd c:\; mkdir downloads; cd c:\downloads; wget  -uri https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi -outfile .\wsl_update_x64.msi; .\wsl_update_x64.msi
 ```
 
 In the Command Prompt window, run the following command to set the WSL version to 2:
 
 ``` cmd
-$ wsl --set-version ubuntu 2
+$ wsl --set-default-version 2
 ``` 
+
+After rebooting you will need to reopen `Powershell` as Administrator and execute the following commands:
+
+``` cmd
+$ wsl --install -d Ubuntu
+```
+
+A terminal called `Ubuntu` should open on your screen asking for a new username and password.
+
+We want to download a tool from Microsoft's GitHub called `winget`.
+`winget` is the official Windows package manager:
+
+To install Winget run:
+``` cmd
+cd c:\downloads; 
+wget -uri https://github.com/microsoft/winget-cli/releases/download/v1.3.431/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle -outfile .\winget.msixbundle; .\winget.msixbundle
+```
+A window should popup, click on Update.
 
 Next we are going to install Docker using winget:
 
@@ -63,7 +81,7 @@ winget install docker.dockerdesktop
 
 After installing docker you should reboot:
 ``` cmd
-shutdown -d -t 0
+shutdown -r -t 0
 ```
 
 ::: note
