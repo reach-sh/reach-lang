@@ -38,7 +38,7 @@ range: 45-48
 ```
 
 In this example from the [Rock, Paper Scissors](##tut) tutorial, the program is in the local step of Alice.
-It has Alice declassify the `interact` object for both `wager` and the `deadline` for Bob, so that Bob can accept them.
+It has Alice `declassify` the `interact` object for both `wager` and the `deadline` for Bob, so that Bob can accept them.
 
 ### `assume`
 
