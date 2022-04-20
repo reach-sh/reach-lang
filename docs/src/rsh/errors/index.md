@@ -1373,6 +1373,10 @@ In `{!rsh} parallelReduce` or `{!rsh} fork`, a `{!rsh} timeout` is required unle
 always races, the `{!rsh} when` field in their `PUBLISH_EXPR` is statically `{!rsh} true`, or if one
 `{!rsh} ParticipantClass` will attempt to race.
 
+:::note
+Since `ParticipantClass` is being deprecated, it will be preferable to use `API` in place of `ParticipantClass`.
+:::
+
 For example, the code below erroneously attempts to publish a value if a certain condition holds:
 
 ```reach
