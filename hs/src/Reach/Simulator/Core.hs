@@ -857,9 +857,15 @@ instance Interp LLStep where
                     False -> do
                       accId <- getAccId $ fromIntegral actId'
                       part <- partName <$> whoIs (fromIntegral actId')
-                      let dls = saferMaybe "LLS_ToConsensus1" $ M.lookup part sends
-                      consensusPayout accId (fromIntegral actId') (ds_pay dls)
-                      return False
+                      let errMsg = ("Participant " <> show part <> " is not in the race/publish." )
+                      dls <- maybeError (M.lookup part sends) errMsg
+                      case dls of
+                        Left err -> do
+                          _ <- suspend $ PS_Error (Just at) err
+                          return False
+                        Right dls' -> do
+                          consensusPayout accId (fromIntegral actId') (ds_pay dls')
+                          return False
                   m' <- case apiFlag of
                     True -> do
                       let apiObs = e_apis g
@@ -869,19 +875,31 @@ instance Interp LLStep where
                           Right <$> placeMsg dls dlr phId (fromIntegral actId') mempty True
                     False -> do
                       r <- M.lookup phId <$> e_messages <$> getGlobal
-                      case r of
-                        Just r' -> Right <$> return r'
-                        Nothing -> Left <$> return
-                          ("Phase " <> (show phId) <> " hasn't been reached by any Participants.")
+                      maybeError r ("Phase " <> (show phId) <> " hasn't been reached by any Participants.")
                   case m' of
                     Left err -> suspend $ PS_Error (Just at) err
                     Right m'' -> do
                       let msgs = unfixedMsgs $ m''
-                      let winningMsg = saferMaybe ("Message not yet seen") $ M.lookup (fromIntegral actId') msgs
-                      _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg) (m_pay winningMsg) apiFlag
-                      winner dlr phId
-                      interp $ dr_k
+                      let errMsg = ("Message not yet seen from actor ID: "
+                            <> (show actId')
+                            <> ", for Phase "
+                            <> (show phId)
+                            <> ".")
+                      winningMsg <- maybeError (M.lookup (fromIntegral actId') msgs) errMsg
+                      case winningMsg of
+                        Left err -> suspend $ PS_Error (Just at) err
+                        Right winningMsg' -> do
+                          _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg') (m_pay winningMsg') apiFlag
+                          winner dlr phId
+                          interp $ dr_k
                 _ -> possible "expected V_Data value"
+
+maybeError :: Maybe b -> a -> App (Either a b)
+maybeError r s = do
+  case r of
+    Just r' -> Right <$> return r'
+    Nothing -> Left <$> return s
+
 
 placeMsg :: DLSend -> DLRecv a -> PhaseId -> ActorId -> (M.Map ActorId Message) -> Bool -> App MessageInfo
 placeMsg (DLSend {..}) (DLRecv {..}) phId actId priors m_api = do
