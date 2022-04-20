@@ -14,6 +14,22 @@ const waitForPort = async () => {
   console.log(r)
 }
 
+class HTTPResponseError extends Error {
+	constructor(response, ...args) {
+		super(`HTTP Error Response: ${response.status} ${response.statusText}`, ...args);
+		this.response = response;
+	}
+}
+
+const checkStatus = response => {
+	if (response.ok) {
+		// response.status >= 200 && response.status < 300
+		return response.json();
+	} else {
+		throw new HTTPResponseError(response);
+	}
+}
+
 // helper to make http requests
 async function interact(method = 'GET', url = '', data = {}) {
   const response = await fetch(url, {
@@ -25,7 +41,13 @@ async function interact(method = 'GET', url = '', data = {}) {
     redirect: 'follow',
     referrerPolicy: 'no-referrer'
   });
-  return response.json();
+  try {
+  	return checkStatus(response);
+  } catch (error) {
+  	// console.error(error);
+  	const errorBody = await error.response.text();
+  	console.error(`${errorBody}`);
+  }
 }
 
 // returns: a mapping from state id to state info

@@ -10,7 +10,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@reach-sh/simulator-client": "0.0.38"
+    "@reach-sh/simulator-client": "0.0.43"
   },
   "author": "reach.sh",
   "license": "Apache-2.0",
