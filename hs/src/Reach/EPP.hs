@@ -434,7 +434,7 @@ be_m = \case
       False -> return $ Nothing
       -- Take the `only(() => interact.in())` from preceding step
       -- and the `only(() => interact.out())` from the correct step
-      True  -> return $ Just $ f $ w
+      True  -> return $ Just $ f w
         where f = if ic then id else (+ 1)
     let t'c = return $ DL_Nop at
     let t'l = do
@@ -786,13 +786,13 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs dac das alias devts s) = do
           let apiAt = snd $ fromMaybe (impossible "api empty") $ headMay vs
           expect_thrown apiAt $ Err_API_Twice k
   -- When the same API call occurs in multiple steps,
-  -- make a seperate `EPProg` for each one.
-  let sps_ies' = M.foldrWithKey (\ k v acc ->
-          case M.lookup k as of
-            Just ns
-              | length ns > 1 -> foldr (\ (x,_) acc' -> M.insert (k, Just x) v acc') acc ns
-            _ -> M.insert (k, Nothing) v acc
-        ) mempty sps_ies
+  -- make a separate `EPProg` for each one.
+  let genSepApis k v acc =
+        case M.lookup k as of
+          Just ns
+            | length ns > 1 -> foldr (\ (x,_) acc' -> M.insert (k, Just x) v acc') acc ns
+          _ -> M.insert (k, Nothing) v acc
+  let sps_ies' = M.foldrWithKey genSepApis mempty sps_ies
   let mkep ee_who@(who, _) ie = do
         let isAPI = S.member who sps_apis
         let ee_flow = flow

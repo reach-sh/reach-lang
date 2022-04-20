@@ -158,7 +158,7 @@ seek = \case
       True -> do
         (liftIO $ readIORef eSeenInR) >>= \case
           False -> liftIO $ writeIORef eSeenInR True
-          True -> return ()
+          True -> impossible "API called `interact.in` multiple times"
         slurp k >>= \case
           Nothing -> err at API_NoOut
           Just k' -> return $ Just $ mkCom ET_Com c k'
@@ -235,6 +235,7 @@ slurp = \case
         Env {..} <- ask
         (liftIO $ readIORef eSeenOutR) >>= \case
           False -> liftIO $ writeIORef eSeenOutR True
+          -- OK because there could be different paths that call `interact.out`
           True -> return ()
         local (\e -> e {eSeenOut = True}) $
           -- We only keep reading the program because we need to grab the tail

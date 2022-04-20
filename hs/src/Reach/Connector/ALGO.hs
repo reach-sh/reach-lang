@@ -47,7 +47,6 @@ import System.FilePath
 import System.IO.Temp
 import System.Process.ByteString
 import Text.Read
-import Data.Bool (bool)
 
 -- Errors for ALGO
 
@@ -2203,8 +2202,8 @@ ce = \case
   DLE_setApiDetails at p _ _ _ -> do
     which <- fromMaybe (impossible "setApiDetails no which") <$> asks eWhich
     mac <- multipleApiCalls p
-    let (prefix, suffix) = bool ("", "") ("_", show which) mac
-    callCompanion at $ CompanionLabel $ prefix <> apiLabel p <> LT.pack suffix
+    let p' = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) which mac
+    callCompanion at $ CompanionLabel p'
   DLE_GetUntrackedFunds at mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
     cGetBalance at mtok
@@ -3029,12 +3028,11 @@ capi qualify (who, (ApiInfo {..})) = do
   let mk_alias alias = apis <> [(mk_sig $ bunpack alias, CAlias alias c)]
   return $ maybe apis mk_alias ai_alias
   where
-    (prefix, suffix) = bool ("", "") ("_", show ai_which) qualify
     capi_who = who
     capi_which = ai_which
     mk_sig n = signatureStr n capi_arg_tys mret
     capi_sig = mk_sig f
-    f = prefix <> bunpack who <> suffix
+    f = adjustApiName (bunpack who) ai_which qualify
     imp = impossible "apiSig"
     (capi_arg_tys, capi_doWrap) =
       case ai_compile of
@@ -3138,13 +3136,9 @@ cmeth sigi = \case
   CApi who sig _ _ _ _ _ wls -> do
     block_' (bunpack who) $ do
       comment $ LT.pack $ "API: " <> sig
-      comment $ LT.pack $ " ui: " <> show sigi
-      forM_ wls $ \ (w, l) -> do
-        gvLoad GV_currentStep
-        cint $ fromIntegral w
-        op "=="
-        code "bnz" [l]
-      op "err"
+      comment $ LT.pack $ sigDump sigi
+      let go _ _ = gvLoad GV_currentStep
+      cblt "api" go $ bltM $ M.fromList wls
   CView who sig _ hs -> do
     block_' (bunpack who) $ do
       comment $ LT.pack $ "View: " <> sig
@@ -3280,10 +3274,9 @@ compile_algo env disp pl = do
         (_, C_Loop {}) -> Nothing
   let a2lr qualify (p, ApiInfo {..}) = LabelRec {..}
         where
-          (prefix, suffix) = bool ("", "") ("_", show ai_which) qualify
-          lr_lab = prefix <> apiLabel p <> LT.pack suffix
+          lr_lab = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) ai_which qualify
           lr_at = ai_at
-          lr_what = "API " <> bunpack p <> suffix
+          lr_what = "API " <> LT.unpack lr_lab
   let as2lrs (p, ms) =
         map (a2lr qualify . (p,) . snd) $ M.toAscList ms
         where qualify = M.size ms > 1

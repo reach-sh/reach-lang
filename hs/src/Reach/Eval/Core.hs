@@ -1948,10 +1948,8 @@ evalForm f args = do
 recordApiCall :: SLPart -> App ()
 recordApiCall who = do
   apiCalls <- asks e_apiCalls
-  liftIO $ modifyIORef apiCalls $ \ env -> do
-    case M.lookup who env of
-      Just n  -> M.insert who (n + 1) env
-      Nothing -> M.insert who 1 env
+  liftIO $ modifyIORef apiCalls $
+    M.alter (maybe (return 1) (return . (+) 1)) who
 
 expectParticipant :: JSExpression -> App SLPart
 expectParticipant who_e =

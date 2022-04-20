@@ -897,7 +897,8 @@ jsApiWrapper p whichs = do
   let who = pretty $ bunpack p
   let chk_which w = "step == " <> pretty w
   let chk_st = concatWith (\ l r -> l <> " || " <> r) $ map chk_which whichs
-  let assertStep = "stdlib.assert" <> parens (chk_st <> ", 'API called in the wrong state. Currently in state: ' + step ") <> semi
+  let allowed = pretty whichs
+  let assertStep = "stdlib.assert" <> parens (chk_st <> ", 'API called in the wrong state. Currently in state: ' + step + ', expected:  " <> allowed <> "'") <> semi
   let jmps = map (\ which -> do
           let inst = "_" <> who <> pretty which
           "if" <+> parens ("step" <+> "==" <+> pretty which) <+> braces ("return " <> inst <> parens "ctcTop, interact" <> semi)
@@ -935,16 +936,15 @@ jsPart dli (p, m_api_which) (EPProg _ ctxt_isAPI _ et) = do
     et' <- jsETail et
     i2t' <- liftIO $ readIORef jsc_i2t
     let ctcs = vsep $ map snd $ M.toAscList i2t'
-    let (prefix, suffix) = maybe ("", "") (("_",) . show) m_api_which
-    let who = pretty $ prefix <> bunpack p <> suffix
+    let who = adjustApiName (bunpack p) (fromMaybe 0 m_api_which) (isJust m_api_which)
     let bodyp' =
           vsep $
-            setupPart who
+            setupPart (pretty who)
             <> [ ctcs
             , maps_defn
             , et'
             ]
-    return $ "export" <+> jsFunction who ["ctcTop", "interact"] bodyp'
+    return $ "export" <+> jsFunction (pretty who) ["ctcTop", "interact"] bodyp'
 
 jsConnInfo :: ConnectorInfo -> App Doc
 jsConnInfo = \case

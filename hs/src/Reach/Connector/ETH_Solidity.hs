@@ -38,7 +38,6 @@ import System.FilePath
 import System.IO.Temp
 import System.Process
 import Text.Printf
-import Data.Bool (bool)
 import Safe (headMay)
 
 --- Debugging tools
@@ -1374,8 +1373,8 @@ apiArgs ApiInfo {..} = do
 
 apiDef :: SLPart -> Bool -> ApiInfo -> App Doc
 apiDef who qualify ApiInfo {..} = do
-  let (prefix, suffix) = bool ("", "") ("_", show ai_which) qualify
-  let who_s = prefix <> bunpack who <> suffix
+  let who_s = adjustApiName (bunpack who) ai_which qualify -- ("", "") ("_", show ai_which) qualify
+  -- let who_s = prefix <> bunpack who <> suffix
   let mf = solMsg_fun ai_which
   (ty, argDefns, tyLifts, args, m_arg_ty) <- apiArgs $ ApiInfo {..}
   let body =
@@ -1418,16 +1417,15 @@ genApiJump p ms = do
 apiDefs :: ApiInfos -> App Doc
 apiDefs defs = do
   let defL = M.toList defs
-  defs' <- concat <$> mapM (\ (p, ms) -> do
-                              let qualify = M.size ms > 1
-                              ds <- mapM (\ (_, a) -> apiDef p qualify a) $ M.toAscList ms
-                              case qualify of
-                                True  -> do
-                                  d <- genApiJump p ms
-                                  return $ d : ds
-                                False -> return ds
-                            ) defL
-  return $ vsep defs'
+  defs' <- forM defL $ \ (p, ms) -> do
+            let qualify = M.size ms > 1
+            ds <- mapM (apiDef p qualify . snd) $ M.toAscList ms
+            case qualify of
+              True  -> do
+                d <- genApiJump p ms
+                return $ d : ds
+              False -> return ds
+  return $ vsep $ concat defs'
 
 solDefineType :: DLType -> App ()
 solDefineType t = case t of
@@ -1538,12 +1536,12 @@ createAPIRng env =
   case M.null env of
     True -> return ""
     False -> do
-      fields <- concat <$> mapM (\(k, ms) -> do
+      fields <- fmap concat $ forM (M.toAscList env) $ \(k, ms) -> do
           let qualify = M.size ms > 1
           let k' = bunpack k
           fs <- mapM (\ (w, ai) -> do
-                  let (prefix, suffix) = bool ("", "") ("_", show w) qualify
-                  let n = pretty $ prefix <> k' <> suffix
+                  let n = pretty $ adjustApiName k' w qualify
+                  -- let n = pretty $ prefix <> k' <> suffix
                   t <- solType_ $ ai_ret_ty ai
                   return (n, t)
                 ) $ M.toAscList ms
@@ -1552,7 +1550,7 @@ createAPIRng env =
               let (_, st) = fromMaybe (impossible "createApiRng: empty list") $ headMay fs
               return $ (pretty $ k', st) : fs
             False -> return fs
-        ) (M.toAscList env)
+
       return $ fromMaybe (impossible "createAPIRng") $ solStruct "ApiRng" fields
 
 baseTypes :: M.Map DLType Doc
