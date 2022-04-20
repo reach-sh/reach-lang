@@ -871,7 +871,8 @@ instance Interp LLStep where
                       r <- M.lookup phId <$> e_messages <$> getGlobal
                       case r of
                         Just r' -> Right <$> return r'
-                        Nothing -> Left <$> return "Phase not yet reached" 
+                        Nothing -> Left <$> return
+                          ("Phase " <> (show phId) <> " hasn't been reached by any Participants.")
                   case m' of
                     Left err -> suspend $ PS_Error (Just at) err
                     Right m'' -> do
