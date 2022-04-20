@@ -32,6 +32,14 @@ An interaction expression may also be written `{!rsh} interact.KEY`, where `{!rs
 
 An interaction expression may only occur in a local step.
 
+``` reach
+load: /examples/rps-7-loops/index.rsh
+range: 45-48
+```
+
+In this example from the [Rock, Paper Scissors](##tut) tutorial, the program is in the local step of Alice.
+It has Alice declassify the `interact` object for both `wager` and the `deadline` for Bob, so that Bob can accept them.
+
 ### `assume`
 
 @{ref("rsh", "assume")}
