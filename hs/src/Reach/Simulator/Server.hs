@@ -103,7 +103,7 @@ processNewState psid ps sc = do
   _ <- case ps of
     C.PS_Done _ _ -> do
       registerAction sid actorId C.A_None
-    C.PS_Error at _ e -> do
+    C.PS_Error at e _ _ -> do
       registerError psid at e
     C.PS_Suspend at a _ _ -> do
       registerAction sid actorId a
@@ -117,7 +117,7 @@ processNewState psid ps sc = do
             (s, Done, True)
           C.PS_Suspend _ _ s _ -> do
             (s, Running, True)
-          C.PS_Error _ s _ -> do
+          C.PS_Error _ _ s _ -> do
             (s, Done, False)
   case process of
     True -> do
