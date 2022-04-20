@@ -182,13 +182,13 @@ type PartCont = State -> DLVal -> PartState
 data PartState
   = PS_Done State DLVal
   | PS_Suspend (Maybe SrcLoc) Action State PartCont
-  | PS_Error (Maybe SrcLoc) State String
+  | PS_Error (Maybe SrcLoc) String State PartCont
   deriving (Generic)
 
 instance ToJSON PartState where
   toJSON (PS_Done _ _) = "PS_Done"
   toJSON (PS_Suspend _ _ _ _) = "PS_Suspend"
-  toJSON (PS_Error _ _ _) = "PS_Error"
+  toJSON (PS_Error _ _ _ _) = "PS_Error"
 
 initPartState :: PartState
 initPartState = PS_Done initState V_Null
@@ -866,13 +866,20 @@ instance Interp LLStep where
                       case (\(who) -> M.lookup who sends) =<< a_name <$> (M.lookup actId' apiObs) of
                         Nothing -> possible "API DLSend not found"
                         Just dls -> do
-                          placeMsg dls dlr phId (fromIntegral actId') mempty True
-                    False -> saferMaybe ("Phase not yet seen") <$> M.lookup phId <$> e_messages <$> getGlobal
-                  let msgs = unfixedMsgs $ m'
-                  let winningMsg = saferMaybe ("Message not yet seen") $ M.lookup (fromIntegral actId') msgs
-                  _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg) (m_pay winningMsg) apiFlag
-                  winner dlr phId
-                  interp $ dr_k
+                          Right <$> placeMsg dls dlr phId (fromIntegral actId') mempty True
+                    False -> do
+                      r <- M.lookup phId <$> e_messages <$> getGlobal
+                      case r of
+                        Just r' -> Right <$> return r'
+                        Nothing -> Left <$> return "Phase not yet reached" 
+                  case m' of
+                    Left err -> suspend $ PS_Error (Just at) err
+                    Right m'' -> do
+                      let msgs = unfixedMsgs $ m''
+                      let winningMsg = saferMaybe ("Message not yet seen") $ M.lookup (fromIntegral actId') msgs
+                      _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg) (m_pay winningMsg) apiFlag
+                      winner dlr phId
+                      interp $ dr_k
                 _ -> possible "expected V_Data value"
 
 placeMsg :: DLSend -> DLRecv a -> PhaseId -> ActorId -> (M.Map ActorId Message) -> Bool -> App MessageInfo
