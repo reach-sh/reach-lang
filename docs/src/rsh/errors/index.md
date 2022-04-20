@@ -2163,7 +2163,7 @@ For example, the code below erroneously uses the same name multiple times:
 
 ```reach
 const A = Participant('Flower_girl', {});
-const B = API('Flower', { girl: Fun([UInt], Null) });
+const B = API('Flower_girl', { girl: Fun([UInt], Null) });
 ```
 
 `{!rsh} 'Flower_girl'` is used multiple times because every method of an `{!rsh} API` will
