@@ -510,6 +510,14 @@ setHeaders = do
   setHeader "Access-Control-Allow-Methods" "GET, POST, PUT"
   setHeader "Access-Control-Allow-Headers" "Content-Type"
 
+formatError :: (Maybe StateId, Maybe SrcLoc, String) -> String
+formatError (msid, mloc, e) = do
+  "\n"
+    <>
+    "Error in state: " <> (show msid) <>
+    "\nOn line: " <> (show mloc) <>
+    "\nMessage: " <> show e
+
 caseTypes :: (Integer -> Integer -> C.DLVal -> WebM a) -> Integer -> Integer -> String -> ActionT Text WebM a
 caseTypes f s a = \case
   "number" -> do
@@ -554,7 +562,7 @@ raiseError = \case
   False -> do
     errs <- webM $ gets e_errors
     case errs of
-      (e : _) -> raise $ s2lt $ show e
+      (e : _) -> raise $ s2lt $ formatError e
       [] -> raise "An impossible error has occurred."
 
 app :: LLProg -> String -> ScottyT Text WebM ()
@@ -726,13 +734,7 @@ app p srcTxt = do
           Left e -> possible $ show e
           Right w -> webM $ changeActor $ fromIntegral w
     outcome <- caseTypes unblockProg s a t
-    case outcome of
-      True -> json ("OK" :: String)
-      False -> do
-        errs <- webM $ gets e_errors
-        case errs of
-          (e : _) -> raise $ s2lt $ show e
-          [] -> raise "An impossible error has occurred."
+    raiseError outcome
 
   get "/ping" $ do
     setHeaders
