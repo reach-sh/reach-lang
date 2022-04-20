@@ -18,9 +18,9 @@ const main = async () => {
   // init Bob
   await bob.init();
   // Alice interactively gets her hand (0)
-  await (await consensus.getNextAction()).resolve(0);
   await (await alice.getNextAction()).resolve(0);
   // Alice's hand (0) is published
+  await (await consensus.getNextAction()).resolve(0);
   // Alice observes that her hand is published
   await (await alice.getNextAction()).resolve();
   // Bob observes that Alice's hand is published
