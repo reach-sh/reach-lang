@@ -93,6 +93,10 @@ ParticipantClass(participantName, participantInteractInterface)
 
 respectively.
 
+:::note 
+Since `ParticipantClass` is being deprecated, it is preferable to use `API`.
+:::
+
 `{!rsh} participantName` is a string which indicates the name of the participant function in the generated backend code.
 Each `{!rsh} participantName` must be unique.
 
