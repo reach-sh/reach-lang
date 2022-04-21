@@ -105,21 +105,15 @@ const UPDATE_SCRIPT_AND_CLI_IMAGE_USING = (
 ) => {
   try {
     execSync('docker pull "reachsh/reach-cli:latest"');
-  } catch (error) {
-    return error;
-  }
 
-  try {
     execSync(`curl https://docs.reach.sh/reach -o "${
       pathToScript
     }"`);
-  } catch (error) {
-    return error;
-  }
 
-  try {
     execSync(`chmod +x "${pathToScript}"`);
+
   } catch (error) {
+
     return error;
   }
 
