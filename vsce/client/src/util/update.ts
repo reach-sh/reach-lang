@@ -96,14 +96,35 @@ const ASYNC_UPDATE_USING = (
   });
 };
 
+/**
+ * @param pathToScript the path to download the script to
+ * @returns an error if something went wrong
+ */
 const UPDATE_SCRIPT_AND_CLI_IMAGE_USING = (
   pathToScript: string
-): Buffer => execSync(
-  'docker pull "reachsh/reach-cli:latest" ' +
-  `&& curl https://docs.reach.sh/reach -o "${
-    pathToScript
-  }" && chmod +x "${pathToScript}"`
-);
+) => {
+  try {
+    execSync('docker pull "reachsh/reach-cli:latest"');
+  } catch (error) {
+    return error;
+  }
+
+  try {
+    execSync(`curl https://docs.reach.sh/reach -o "${
+      pathToScript
+    }"`);
+  } catch (error) {
+    return error;
+  }
+
+  try {
+    execSync(`chmod +x "${pathToScript}"`);
+  } catch (error) {
+    return error;
+  }
+
+  return null;
+};
 
 export default async (
   pathToScript: string,
@@ -124,7 +145,7 @@ export default async (
 
   // The actual update logic is here!
   window.withProgress(progressOptions, () =>
-    new Promise<boolean>(resolve => setTimeout(
+    new Promise<boolean>((resolve, reject) => setTimeout(
       async () => {
         if (versionCompareJsonDoesntWork) {
           outputChannel.appendLine(
@@ -138,9 +159,14 @@ export default async (
           outputChannel.appendLine(
             new Date().toLocaleTimeString()
           );
-          UPDATE_SCRIPT_AND_CLI_IMAGE_USING(
+
+          const error = UPDATE_SCRIPT_AND_CLI_IMAGE_USING(
             pathToScript
           );
+
+          if (error) {
+            return reject(error);
+          }
 
           outputChannel.appendLine(
             'version-compare --json ' +
@@ -188,6 +214,15 @@ export default async (
   ).then(success => success &&
     window.showInformationMessage(
       'Reach is now up to date.', 'Close (Esc)'
-    )
+    ),
+    (reason) => {
+      outputChannel.appendLine(
+        '\n\n\n\n\n\nUpdating was unsuccessful due to\n'
+      );
+      outputChannel.appendLine(reason);
+      window.showErrorMessage(
+        'Updating was unsuccessful due to\n' + reason
+      );
+    }
   );
 };
