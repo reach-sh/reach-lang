@@ -326,7 +326,9 @@ addToStore x v = do
   let locals = l_locals l
   let aid = l_curr_actor_id l
   case M.lookup aid locals of
-    Nothing -> possible "addToStore: no local store"
+    Nothing -> do
+      _ <- suspend $ PS_Error Nothing "addToStore: no local store"
+      return ()
     Just lst -> do
       let st = l_store lst
       let lst' = lst {l_store = M.insert x v st}
@@ -370,11 +372,21 @@ updateLedger :: Account -> Token -> (Integer -> Integer) -> App ()
 updateLedger acc tok f = do
   (e, _) <- getState
   let map_ledger = e_ledger e
-  let m = saferMaybe ("updateLedger: account not found" <> show acc <> " " <> show map_ledger) $ M.lookup acc map_ledger
-  let prev_amt = saferMaybe ("updateLedger: token not found " <> show tok <> " " <> show map_ledger) $ M.lookup tok m
-  let new_amt = f prev_amt
-  let new_nw_ledger = M.insert acc (M.insert tok new_amt m) map_ledger
-  setGlobal $ e {e_ledger = new_nw_ledger}
+  m' <- maybeError (M.lookup acc map_ledger) $ ("Ledger Update Error: account " <> show acc <> " not found in: \n" <> show map_ledger)
+  case m' of
+    Left err -> do
+      _ <- suspend $ PS_Error Nothing err
+      return ()
+    Right m -> do
+      prev_amt' <- maybeError (M.lookup tok m) $ ("Ledger Update Error: token " <> show tok <> " not found in: \n" <> show map_ledger)
+      case prev_amt' of
+        Left err -> do
+          _ <- suspend $ PS_Error Nothing err
+          return ()
+        Right prev_amt -> do
+          let new_amt = f prev_amt
+          let new_nw_ledger = M.insert acc (M.insert tok new_amt m) map_ledger
+          setGlobal $ e {e_ledger = new_nw_ledger}
 
 transferLedger :: Account -> Account -> Token -> Integer -> App ()
 transferLedger fromAcc toAcc tok n = do
@@ -386,12 +398,12 @@ consensusLookup dlvar = do
   (_, l) <- getState
   let locals = l_locals l
   case M.lookup consensusId locals of
-    Nothing -> possible "consensusLookup: no local store"
+    Nothing -> suspend $ PS_Error Nothing "consensusLookup: no local store"
     Just lst -> do
       let st = l_store lst
       case M.lookup dlvar st of
         Nothing ->
-          possible $
+          suspend $ PS_Error Nothing $
             "consensusLookup"
               <> show dlvar
               <> " "
@@ -417,8 +429,8 @@ interpAs aid p = do
   setState (g',l''')
   return v
 
-interpPrim :: (PrimOp, [DLVal]) -> App DLVal
-interpPrim = \case
+interpPrim :: SrcLoc -> (PrimOp, [DLVal]) -> App DLVal
+interpPrim at = \case
   (ADD _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (+) lhs rhs
   (SUB _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (-) lhs rhs
   (MUL _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (*) lhs rhs
@@ -448,7 +460,7 @@ interpPrim = \case
   (BAND _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (.&.) lhs rhs
   (BIOR _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ (.|.) lhs rhs
   (BXOR _, [V_UInt lhs, V_UInt rhs]) -> return $ V_UInt $ xor lhs rhs
-  (f, args) -> impossible $ "unhandled primop" <> show f <> " " <> show args
+  (f, args) -> suspend $ PS_Error (Just at) $ "Unhandled Primop: " <> show f <> " " <> show args
 
 conCons' :: DLConstant -> DLVal
 conCons' = \case
@@ -462,17 +474,17 @@ instance Interp DLArg where
       let locals = l_locals l
       let aid = l_curr_actor_id l
       case M.lookup aid locals of
-        Nothing -> possible "DLA_Var: no local store"
+        Nothing -> suspend $ PS_Error Nothing $ "No local store found for actor ID: " <> show aid
         Just lst -> do
           let st = l_store lst
           case M.lookup dlvar st of
             Nothing -> do
-              possible $
-                "DLA_Var "
+              suspend $ PS_Error Nothing $
+                "Missing local variable definition for: "
                   <> show dlvar
-                  <> " "
+                  <> "\n in store: "
                   <> show st
-                  <> " "
+                  <> "\n for actor: "
                   <> show (l_who lst)
             Just a -> return a
     DLA_Constant dlconst -> return $ conCons' dlconst
@@ -508,9 +520,9 @@ instance Interp DLExpr where
     DLE_LArg _at dllargearg -> interp dllargearg
     DLE_Impossible at _int err -> expect_thrown at err
     DLE_VerifyMuldiv at _ _ _ err -> expect_thrown at err
-    DLE_PrimOp _at primop dlargs -> do
+    DLE_PrimOp at primop dlargs -> do
       evd_args <- mapM interp dlargs
-      interpPrim (primop, evd_args)
+      interpPrim at (primop, evd_args)
     DLE_ArrayRef _at dlarg1 dlarg2 -> do
       arr <- vArray <$> interp dlarg1
       n <- vUInt <$> interp dlarg2
@@ -899,7 +911,6 @@ maybeError r s = do
   case r of
     Just r' -> Right <$> return r'
     Nothing -> Left <$> return s
-
 
 placeMsg :: DLSend -> DLRecv a -> PhaseId -> ActorId -> (M.Map ActorId Message) -> Bool -> App MessageInfo
 placeMsg (DLSend {..}) (DLRecv {..}) phId actId priors m_api = do
