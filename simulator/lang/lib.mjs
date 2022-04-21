@@ -106,6 +106,11 @@ class Scenario {
     return part;
   }
 
+  async wait(n) {
+    await c.passTime(n);
+    return this.next();
+  }
+
 }
 
 class FunctionalScenario extends Scenario {
@@ -118,6 +123,7 @@ class FunctionalScenario extends Scenario {
     next.state.next();
     return next;
   }
+
 }
 
 class ImperativeScenario extends Scenario {
