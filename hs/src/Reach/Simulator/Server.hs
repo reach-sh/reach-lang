@@ -94,6 +94,22 @@ initSession = Session
   , e_src_txt = mempty
   }
 
+processNewMetaState :: StateId -> C.State -> WebM ()
+processNewMetaState psid s = do
+  sid <- gets e_nsid
+  stat <- gets e_status
+  edges <- gets e_edges
+  parents <- gets e_parents
+  graph <- gets e_graph
+  cgraph <- gets e_cgraph
+  modify $ \ st -> st
+    {e_nsid = sid + 1}
+    {e_status = stat}
+    {e_graph = M.insert sid s graph}
+    {e_cgraph = M.insert sid Consensus cgraph}
+    {e_edges = (psid, sid) : edges}
+    {e_parents = (sid, psid) : parents}
+
 processNewState :: Maybe (StateId) -> C.PartState -> StateCategory -> WebM (Bool)
 processNewState psid ps sc = do
   sid <- gets e_nsid
@@ -309,6 +325,19 @@ bindToConsensusStore vals lets l = do
       let st = C.l_store lst
       let lst' = lst {C.l_store = M.union (M.fromList (zip lets vals)) st}
       return $ l {C.l_locals = M.insert C.consensusId lst' locals}
+
+passTime :: StateId -> Integer -> WebM ()
+passTime sid' n = do
+  graph <- gets e_graph
+  let sid = fromIntegral sid'
+  case M.lookup sid graph of
+    Nothing -> do
+      possible "passTime: previous state not found"
+    Just (g,l) -> do
+      let nwsecs = n + C.e_nwsecs g
+      let nwtime = n + C.e_nwtime g
+      let g' = g {C.e_nwsecs = nwsecs, C.e_nwtime = nwtime}
+      processNewMetaState sid' (g',l)
 
 unblockProg :: Integer -> Integer -> C.DLVal -> WebM (Bool)
 unblockProg sid' aid' v = do
@@ -685,6 +714,13 @@ app p srcTxt = do
     s <- param "s"
     t :: String <- param "type"
     r <- caseTypes viewCall s a t
+    json $ show r
+
+  post "/pass_time/:s/:n" $ do
+    setHeaders
+    s <- param "s"
+    n <- param "n"
+    r <- webM $ passTime s n
     json $ show r
 
   get "/actions/:s/:a/" $ do
