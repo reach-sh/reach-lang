@@ -370,15 +370,15 @@ where `{!rsh} PAY_AMOUNT_EXPR` is an expression that evaluates to a [pay amount]
 performs a transfer of network tokens or non-network tokens from the contract to the named participant.
 The amount transfered must evaluate to less than or equal to the balance of the network and non-network tokens in the contract account.
 
-A transfer expression may only occur within a consensus step.
+A `{!rsh} transfer` expression may only occur within a consensus step.
 
 ```reach
 load: /examples/simple-nft-auction/index.rsh
 range: 59-60
 ```
 
-The first `{!rsh}transfer` example from the Simple NFT Auction pays the `lastPrice` to the NFT `Creator`.
-The second `{!rsh}transfer` example gives the sale quantity of the NFT to the `{!rsh}Participant` that bid the highest price.
+The first `{!rsh} transfer` example from the Simple NFT Auction pays the `lastPrice` to the NFT `Creator`.
+The second `{!rsh} transfer` example gives the sale quantity of the NFT to the `{!rsh} Participant` that bid the highest price.
 
 ### `require`
 
