@@ -370,7 +370,7 @@ where `{!rsh} PAY_AMOUNT_EXPR` is an expression that evaluates to a [pay amount]
 performs a transfer of network tokens or non-network tokens from the contract to the named participant.
 The amount transfered must evaluate to less than or equal to the balance of the network and non-network tokens in the contract account.
 
-A `{!rsh} transfer` expression may only occur within a consensus step.
+A transfer expression may only occur within a consensus step.
 
 ```reach
 load: /examples/simple-nft-auction/index.rsh
