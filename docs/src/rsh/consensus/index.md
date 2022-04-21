@@ -372,6 +372,14 @@ The amount transfered must evaluate to less than or equal to the balance of the 
 
 A transfer expression may only occur within a consensus step.
 
+```reach
+load: /examples/simple-nft-auction/index.rsh
+range: 59-60
+```
+
+The first `transfer` example from the Simple NFT Auction pays the `lastPrice` to the NFT `Creator`.
+The second `transfer` example gives the sale quantity of the NFT to the `Participant` that bid the highest price.
+
 ### `require`
 
 @{ref("rsh", "require")}
