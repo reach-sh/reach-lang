@@ -516,6 +516,12 @@ const viewCall = async (a,s,v,t='number') => {
   return r
 }
 
+const passTime = async (s,n) => {
+  const r = await interact('POST', `${address}/pass_time/${s}/${n}`)
+  console.log(r)
+  return r
+}
+
 // ping the server for a friendly greeting ^_^
 const ping = async () => {
   const r = await interact(`GET`, `${address}/ping`)
@@ -587,5 +593,6 @@ export {
   apiCall,
   getViews,
   viewCall,
-  getStateGraph
+  getStateGraph,
+  passTime
 };
