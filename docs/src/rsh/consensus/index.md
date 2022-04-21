@@ -377,8 +377,8 @@ load: /examples/simple-nft-auction/index.rsh
 range: 59-60
 ```
 
-The first `transfer` example from the Simple NFT Auction pays the `lastPrice` to the NFT `Creator`.
-The second `transfer` example gives the sale quantity of the NFT to the `Participant` that bid the highest price.
+The first `{!rsh}transfer` example from the Simple NFT Auction pays the `lastPrice` to the NFT `Creator`.
+The second `{!rsh}transfer` example gives the sale quantity of the NFT to the `{!rsh}Participant` that bid the highest price.
 
 ### `require`
 
