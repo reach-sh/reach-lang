@@ -43,10 +43,22 @@ const objectIsEmpty = (obj: any) =>
   && Object.keys(obj).length === 0
   && Object.getPrototypeOf(obj) === Object.prototype);
 
-export const formatAssertInfo = (ai:any = {}) => {
+type AssertInfo =
+  undefined |
+  null |
+  string |
+  {
+    who?: string,
+    msg?: string|null,
+    at?: string,
+    fs?: [string],
+  };
+
+export const formatAssertInfo = (ai:AssertInfo = {}) => {
   let msg = '';
   if ( typeof ai === 'string' ) {
     msg = `: ${ai}`;
+  } else if ( ai === null || ai === undefined ) {
   } else {
   if ( 'who' in ai ) {
     msg += `: ${ai.who}`;
