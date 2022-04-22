@@ -9,6 +9,12 @@ import Reach.AST.DLBase
 import Reach.AST.Base
 import Reach.AST.LL
 import Reach.Util
+import Reach.Dotty
+import Reach.StateDiagram
+import Reach.BigOpt
+import Reach.EPP
+import Reach.FloatAPI
+import qualified Data.Text as T
 import qualified Reach.Simulator.Core as C
 import qualified Data.ByteString.Lazy as LB
 import Control.Concurrent.STM
@@ -74,6 +80,7 @@ data Session = Session
   , e_locs :: M.Map C.ActorId (M.Map StateId SrcLoc)
   , e_errors :: [(Maybe StateId, Maybe SrcLoc, String)]
   , e_src_txt :: String
+  , e_state_diagram :: DotGraph
   }
 
 initSession :: Session
@@ -92,6 +99,7 @@ initSession = Session
   , e_locs = mempty
   , e_errors = mempty
   , e_src_txt = mempty
+  , e_state_diagram = mempty
   }
 
 processNewMetaState :: StateId -> C.State -> WebM ()
@@ -529,8 +537,14 @@ startServer :: LLProg -> String -> IO ()
 startServer p srcTxt = do
   sync <- newTVarIO def
   let runActionToIO m = runReaderT (runWebM m) sync
+  let showp :: T.Text -> a -> IO ()
+      showp _ _ = return ()
+  eol <- bigopt (showp, "eol") p
+  flap <- floatAPI eol
+  pil <- epp flap
+  let (DotGraph_ sg) = stateDiagram pil
   putStrLn "Starting Sim Server..."
-  scottyT portNumber runActionToIO (app p srcTxt)
+  scottyT portNumber runActionToIO (app p srcTxt sg)
 
 setHeaders :: ActionT Text WebM ()
 setHeaders = do
@@ -594,13 +608,17 @@ raiseError = \case
       (e : _) -> raise $ s2lt $ formatError e
       [] -> raise "An impossible error has occurred."
 
-app :: LLProg -> String -> ScottyT Text WebM ()
-app p srcTxt = do
+app :: LLProg -> String -> DotGraph -> ScottyT Text WebM ()
+app p srcTxt dg = do
   middleware logStdoutDev
 
   post "/load" $ do
     setHeaders
-    webM $ modify $ \st -> st {e_src = Just p, e_src_txt = srcTxt}
+    webM $ modify $ \st -> st
+      { e_src = Just p,
+        e_src_txt = srcTxt,
+        e_state_diagram = dg
+      }
     json srcTxt
 
   post "/init" $ do
