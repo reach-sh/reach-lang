@@ -133,6 +133,9 @@ The output name of a library is the same as if it exported a `{!rsh} Reach.App` 
 + `--verify-timeout` `TIMEOUT-MS` --- Sets the timeout of individual verification theorems, in milliseconds.
   The default value is 2 minutes.
 
++ `--verify-fail-once` --- Stops the compilation process after printing a single verification failure.
+  This may help keep you organized while fixing verification failures in your program.
+
 + The environment variable `{!cmd} REACH_DEBUG`, if set to any non-empty value, enables debug messages from the Reach compiler, which will appear in the console.
   This debug information includes: the estimated cost of the contract on Algorand.
   This variable automatically enables `--intermediate-files`.
