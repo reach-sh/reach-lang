@@ -25,5 +25,3 @@ dotty es = vsep $ [preamble, "digraph {"] <> map go es <> ["}"]
                True -> ""
                False -> viaShow f <> "->"
         a' = hcat $ punctuate "," $ map (\(k, v) -> pretty k <> "=" <> viaShow v) $ M.toAscList am
-
-
