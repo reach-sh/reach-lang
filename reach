@@ -187,7 +187,7 @@ install_docker () {
 
 for DEP in make curl docker docker-compose; do
   if ! (which "${DEP}" >/dev/null 2>&1); then
-    printf "Reach relies on an installation of ${DEP} do you want to install it [Y,n]: "
+    printf "Reach relies on an installation of ${DEP}; do you want to install it? [Y,n]: "
     read RESPONSE
     if [ ${RESPONSE} == "Y" ]; then
       eval install_$DEP
