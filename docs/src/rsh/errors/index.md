@@ -1374,7 +1374,7 @@ always races, the `{!rsh} when` field in their `PUBLISH_EXPR` is statically `{!r
 `{!rsh} ParticipantClass` or `{!rsh} API` will attempt to race.
 
 :::note
-Since `ParticipantClass` is being deprecated, it is preferable to use `API`.
+Since `{!rsh} ParticipantClass` is being deprecated, it is preferable to use `{!rsh} API`.
 :::
 
 For example, the code below erroneously attempts to publish a value if a certain condition holds:
