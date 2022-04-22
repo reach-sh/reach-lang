@@ -2116,9 +2116,19 @@ Maybe(UInt).Some(5).match({
 This error indicates that you have inspected the details about a publication, such as via `{!rsh} didPublish()`, before there has been a publication.
 This is impossible, so the expression must be moved after the first publication.
 
+For example, the code below erroneously puts `{!rsh} didPublish()` before `{!rsh} publish`:
+
 ```reach
-  didPublish(handAlice)
+  Alice.didPublish(handAlice);
   Alice.publish(handAlice);
+  commit();
+```
+
+This error can be corrected by placing `{!rsh} publish` before `{!rsh} didPublish()`:
+
+```reach
+  Alice.publish(handAlice);
+  Alice.didPublish(handAlice);
   commit();
 ```
 
