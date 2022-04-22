@@ -167,7 +167,7 @@ install_docker () {
     while [ ! -f "${DOCKER_BIN}" ]; do
       sleep 120;
     done
-    printf "\nThis installation requires a restart for completion, do you want to restart now [Y,n]: "
+    printf "\nThis installation requires a restart for completion; do you want to restart now? [Y,n]: "
     read RESPONSE
     if [ ${RESPONSE} == "Y" ]; then
       powershell.exe 'shutdown -r -t 0'
