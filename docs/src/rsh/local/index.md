@@ -103,4 +103,5 @@ This is used in a local step before `{!rsh} checkCommitment` is used in a consen
 didPublish() 
 ```
 
- Returns a boolean that indicates whether the last publication was made by this principal.
+Returns a boolean that indicates whether the last publication was made by this principal.
+A `{!rsh} didPublish` call must be inside an `{!rsh} only` block of code and be after a `{!rsh} publish` call.
