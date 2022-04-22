@@ -7,6 +7,7 @@ Versions and changes-within-versions are listed in reverse-chronological order: 
 
 Version 0.1.10 is the current Reach release candidate version.
 
++ 2022/04/22: Added `--verify-fail-once` flag to @{seclink("ref-usage-compile")} to only print the first verification failure produced by a program.
 + 2022/04/19: Added `{!js} withDisconnect` and `{!js} disconnect` to help participant frontends disconnect early from a contract.
 + 2022/04/18: Added `{!rsh} Contract.addressEq`.
 + 2022/04/18: Added `{!rsh} remote.ALGO`.
