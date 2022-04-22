@@ -80,7 +80,7 @@ data Session = Session
   , e_locs :: M.Map C.ActorId (M.Map StateId SrcLoc)
   , e_errors :: [(Maybe StateId, Maybe SrcLoc, String)]
   , e_src_txt :: String
-  , e_state_diagram :: DotGraph
+  , e_dotgraph :: DotGraph
   }
 
 initSession :: Session
@@ -99,7 +99,7 @@ initSession = Session
   , e_locs = mempty
   , e_errors = mempty
   , e_src_txt = mempty
-  , e_state_diagram = mempty
+  , e_dotgraph = mempty
   }
 
 processNewMetaState :: StateId -> C.State -> WebM ()
@@ -457,6 +457,10 @@ catGraph :: WebM CategoryGraph
 catGraph = do
   gets e_cgraph
 
+dotGraph :: WebM DotGraph
+dotGraph = do
+  gets e_dotgraph
+
 checkIfValIType :: IType -> Bool
 checkIfValIType = \case
   IT_Val _ -> True
@@ -617,7 +621,7 @@ app p srcTxt dg = do
     webM $ modify $ \st -> st
       { e_src = Just p,
         e_src_txt = srcTxt,
-        e_state_diagram = dg
+        e_dotgraph = dg
       }
     json srcTxt
 
@@ -706,6 +710,11 @@ app p srcTxt dg = do
     setHeaders
     cat <- webM $ catGraph
     json cat
+
+  get "/dotgraph" $ do
+    setHeaders
+    dot <- webM $ dotGraph
+    json dot
 
   get "/apis" $ do
     setHeaders

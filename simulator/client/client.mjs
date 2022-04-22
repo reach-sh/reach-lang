@@ -446,6 +446,12 @@ const catGraph = async () => {
   return r
 }
 
+const dotGraph = async () => {
+  const r = await interact('GET', `${address}/dotgraph`)
+  console.log(r)
+  return r
+}
+
 // create a new account
 // at state s (integer)
 const newAccount = async (s) => {
@@ -594,5 +600,6 @@ export {
   getViews,
   viewCall,
   getStateGraph,
-  passTime
+  passTime,
+  dotGraph
 };
