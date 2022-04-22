@@ -429,6 +429,11 @@ An @{defn("exit statement")}, written `{!rsh} exit();`, halts the computation.
 It is a terminator statement, so it must have an empty tail.
 It may only occur in a step.
 
+``` reach
+load: /examples/simple-nft-auction/index.rsh
+range: 59-65
+```
+
 ## {#ref-programs-step-exprs} Expressions
 
 Any expressions valid for a [computation](##ref-programs-compute-exprs) are valid for a step.
