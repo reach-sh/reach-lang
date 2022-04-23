@@ -186,9 +186,10 @@ data PartState
   deriving (Generic)
 
 instance ToJSON PartState where
-  toJSON (PS_Done _ _) = "PS_Done"
-  toJSON (PS_Suspend _ _ _ _) = "PS_Suspend"
-  toJSON (PS_Error _ _ _ _) = "PS_Error"
+  toJSON = \case
+    PS_Done _ _ -> "PS_Done"
+    PS_Suspend _ _ _ _ -> "PS_Suspend"
+    PS_Error _ _ _ _ -> "PS_Error"
 
 initPartState :: PartState
 initPartState = PS_Done initState V_Null
@@ -267,7 +268,7 @@ ledgerNewTokenRefs :: Integer -> DLTokenNew -> App (Token)
 ledgerNewTokenRefs n tk = do
   (e, _) <- getState
   let tokId = e_ntok e
-  _ <- mapM (\x -> ledgerNewToken x tk tokId) [-1..n]
+  void $ mapM (\x -> ledgerNewToken x tk tokId) [-1..n]
   (e', _) <- getState
   setGlobal $ e' {e_ntok = tokId + 1}
   return tokId
@@ -327,7 +328,7 @@ addToStore x v = do
   let aid = l_curr_actor_id l
   case M.lookup aid locals of
     Nothing -> do
-      _ <- suspend $ PS_Error Nothing "addToStore: no local store"
+      void $ suspend $ PS_Error Nothing "addToStore: no local store"
       return ()
     Just lst -> do
       let st = l_store lst
@@ -365,7 +366,7 @@ incrPhaseId = do
 
 updateLedgers :: Integer -> Token -> (Integer -> Integer) -> App ()
 updateLedgers n tok f = do
-  _ <- mapM (\x -> updateLedger x tok f) [-1..n]
+  void $ mapM (\x -> updateLedger x tok f) [-1..n]
   return ()
 
 updateLedger :: Account -> Token -> (Integer -> Integer) -> App ()
@@ -375,13 +376,13 @@ updateLedger acc tok f = do
   m' <- maybeError (M.lookup acc map_ledger) $ ("Ledger Update Error: account " <> show acc <> " not found in: \n" <> show map_ledger)
   case m' of
     Left err -> do
-      _ <- suspend $ PS_Error Nothing err
+      void $ suspend $ PS_Error Nothing err
       return ()
     Right m -> do
       prev_amt' <- maybeError (M.lookup tok m) $ ("Ledger Update Error: token " <> show tok <> " not found in: \n" <> show map_ledger)
       case prev_amt' of
         Left err -> do
-          _ <- suspend $ PS_Error Nothing err
+          void $ suspend $ PS_Error Nothing err
           return ()
         Right prev_amt -> do
           let new_amt = f prev_amt
@@ -579,7 +580,7 @@ instance Interp DLExpr where
       CT_Require -> interp dlarg
       CT_Possible -> interp dlarg
       CT_Unknowable _slpart dlargs -> do
-        _ <- mapM interp dlargs
+        void $ mapM interp dlargs
         interp dlarg
     DLE_Transfer _at dlarg1 dlarg2 maybe_dlarg -> do
       who <- whoAmI
@@ -682,7 +683,7 @@ instance Interp DLStmt where
     DL_Nop _at -> return V_Null
     DL_Let _at let_var expr -> case let_var of
       DLV_Eff -> do
-        _ <- interp expr
+        void $ interp expr
         return V_Null
       DLV_Let _ var -> do
         ev <- interp expr
@@ -764,19 +765,19 @@ instance Interp DLTail where
   interp = \case
     DT_Return _at -> return V_Null
     DT_Com stmt dltail -> do
-      _ <- interp stmt
+      void $ interp stmt
       interp dltail
 
 instance Interp DLBlock where
   interp = \case
     DLBlock _at _frame dltail dlarg -> do
-      _ <- interp dltail
+      void $ interp dltail
       interp dlarg
 
 instance Interp LLConsensus where
   interp = \case
     LLC_Com stmt cons -> do
-      _ <- interp stmt
+      void $ interp stmt
       interp cons
     LLC_If _at arg cons1 cons2 -> do
       ev <- interp arg
@@ -796,13 +797,13 @@ instance Interp LLConsensus where
     LLC_While at asn _inv cond body k -> do
       case asn of
         DLAssignment asn' -> do
-          _ <- mapM (\(var, val) -> interp $ DL_Set at var val) $ M.toAscList asn'
-          _ <- while cond body
+          void $ mapM (\(var, val) -> interp $ DL_Set at var val) $ M.toAscList asn'
+          void $ while cond body
           interp k
     LLC_Continue at asn -> do
       case asn of
         DLAssignment asn' -> do
-          _ <- mapM (\(k, v) -> interp $ DL_Set at k v) $ M.toAscList asn'
+          void $ mapM (\(k, v) -> interp $ DL_Set at k v) $ M.toAscList asn'
           return V_Null
     LLC_ViewIs _at part' var export cons -> do
       g <- getGlobal
@@ -827,7 +828,7 @@ instance Interp LLConsensus where
 instance Interp LLStep where
   interp = \case
     LLS_Com stmt step -> do
-      _ <- interp stmt
+      void $ interp stmt
       interp step
     LLS_Stop _at -> return V_Null
     LLS_ToConsensus at _lct tc_send dlr@(DLRecv {..}) tc_mtime -> do
@@ -847,15 +848,15 @@ instance Interp LLStep where
                 Nothing -> do
                   case msgs' of
                     NotFixedYet _msgs'' -> do
-                      _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
+                      void $ suspend $ PS_Suspend (Just at) (A_Receive phId)
                       runWithWinner dlr phId
                     Fixed _ -> do
                       runWithWinner dlr phId
                 Just dls -> do
                   case msgs' of
                     NotFixedYet msgs'' -> do
-                      _ <- placeMsg dls dlr phId (fromIntegral actId) msgs'' False
-                      _ <- suspend $ PS_Suspend (Just at) (A_Receive phId)
+                      void $ placeMsg dls dlr phId (fromIntegral actId) msgs'' False
+                      void $ suspend $ PS_Suspend (Just at) (A_Receive phId)
                       runWithWinner dlr phId
                     Fixed _ -> do
                       runWithWinner dlr phId
@@ -873,7 +874,7 @@ instance Interp LLStep where
                       dls <- maybeError (M.lookup part sends) errMsg
                       case dls of
                         Left err -> do
-                          _ <- suspend $ PS_Error (Just at) err
+                          void $ suspend $ PS_Error (Just at) err
                           return False
                         Right dls' -> do
                           consensusPayout accId (fromIntegral actId') (ds_pay dls')
@@ -901,7 +902,7 @@ instance Interp LLStep where
                       case winningMsg of
                         Left err -> suspend $ PS_Error (Just at) err
                         Right winningMsg' -> do
-                          _ <- fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg') (m_pay winningMsg') apiFlag
+                          void $ fixMessageInRecord phId (fromIntegral actId') (m_store winningMsg') (m_pay winningMsg') apiFlag
                           winner dlr phId
                           interp $ dr_k
                 _ -> possible "expected V_Data value"
@@ -941,7 +942,7 @@ winner dlr phId = do
   g <- getGlobal
   let (actId, apiFlag, winningMsg) = fixedMsg $ saferMaybe "winner" $ M.lookup phId $ e_messages g
   let (xs, vs) = unzip $ M.toAscList winningMsg
-  _ <- zipWithM addToStore xs vs
+  void $ zipWithM addToStore xs vs
   accId <- case apiFlag of
     False -> getAccId actId
     True -> do
@@ -1123,7 +1124,7 @@ while bl cons = do
   case bool of
     V_Bool False -> return V_Null
     V_Bool True -> do
-      _ <- interp cons
+      void $ interp cons
       while bl cons
     _ -> possible $ ("in (while) expected boolean, received " <> show bool)
 
