@@ -44,8 +44,8 @@ const objectIsEmpty = (obj: any) =>
   && Object.getPrototypeOf(obj) === Object.prototype);
 
 type AssertInfo =
+  unknown |
   undefined |
-  null |
   string |
   {
     who?: string,
@@ -54,28 +54,31 @@ type AssertInfo =
     fs?: [string],
   };
 
-export const formatAssertInfo = (ai:AssertInfo = {}) => {
+function hasProp<K extends PropertyKey>(data: object, prop: K): data is Record<K, unknown> {
+    return prop in data;
+}
+export const formatAssertInfo = (ai:AssertInfo) => {
   let msg = '';
   if ( typeof ai === 'string' ) {
     msg = `: ${ai}`;
   } else if ( ai === null || ai === undefined ) {
-  } else {
-  if ( 'who' in ai ) {
+  } else if ( typeof ai === 'object' ) {
+  if ( hasProp(ai, 'who') ) {
     msg += `: ${ai.who}`;
     delete ai.who;
   }
-  if ( 'msg' in ai ) {
+  if ( hasProp(ai, 'msg') ) {
     if ( ai.msg !== null ) {
       msg += `: ${ai.msg}`;
     }
     delete ai.msg;
   }
-  if ( 'at' in ai ) {
+  if ( hasProp(ai, 'at') ) {
     msg += `\n  at ${ai.at}`;
     delete ai.at;
   }
   let rest = `:`;
-  if ( 'fs' in ai && Array.isArray(ai.fs) ) {
+  if ( hasProp(ai, 'fs') && Array.isArray(ai.fs) ) {
     for ( const f of ai.fs ) {
       msg += `\n  ${f}`;
     }
