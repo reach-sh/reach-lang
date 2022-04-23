@@ -47,7 +47,7 @@ $ curl https://docs.reach.sh/reach -o reach ; chmod +x reach
 ```
 
 Then you might be running `./reach` in your home directory (`~`), rather than
-the Reach direcotry (`~/reach`).
+the Reach directory (`~/reach`).
 
 You can check what directory you're in by running `pwd` (print working
 directory).
