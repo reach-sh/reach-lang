@@ -15,9 +15,9 @@ const waitForPort = async () => {
 }
 
 class HTTPResponseError extends Error {
-	constructor(response, ...args) {
-		super(`HTTP Error Response: ${response.status} ${response.statusText}`, ...args);
-		this.response = response;
+  constructor(response, ...args) {
+    super(`HTTP Error Response: ${response.status} ${response.statusText}`, ...args);
+    this.response = response;
 	}
 }
 
@@ -44,9 +44,7 @@ async function interact(method = 'GET', url = '', data = {}) {
   try {
   	return checkStatus(response);
   } catch (error) {
-  	// console.error(error);
-  	const errorBody = await error.response.text();
-  	console.error(`${errorBody}`);
+  	console.error(await error.response.text());
   }
 }
 
@@ -447,7 +445,7 @@ const catGraph = async () => {
 }
 
 const dotGraph = async () => {
-  const r = await interact('GET', `${address}/dotgraph`)
+  const r = await interact('GET', `${address}/dotstategraph`)
   console.log(r)
   return r
 }
@@ -523,7 +521,7 @@ const viewCall = async (a,s,v,t='number') => {
 }
 
 const passTime = async (s,n) => {
-  const r = await interact('POST', `${address}/pass_time/${s}/${n}`)
+  const r = await interact('POST', `${address}/wait/${s}/${n}`)
   console.log(r)
   return r
 }
