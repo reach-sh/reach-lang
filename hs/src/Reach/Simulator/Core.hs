@@ -375,15 +375,11 @@ updateLedger acc tok f = do
   let map_ledger = e_ledger e
   m' <- maybeError (M.lookup acc map_ledger) $ ("Ledger Update Error: account " <> show acc <> " not found in: \n" <> show map_ledger)
   case m' of
-    Left err -> do
-      void $ suspend $ PS_Error Nothing err
-      return ()
+    Left err -> void $ suspend $ PS_Error Nothing err
     Right m -> do
       prev_amt' <- maybeError (M.lookup tok m) $ ("Ledger Update Error: token " <> show tok <> " not found in: \n" <> show map_ledger)
       case prev_amt' of
-        Left err -> do
-          void $ suspend $ PS_Error Nothing err
-          return ()
+        Left err -> void $ suspend $ PS_Error Nothing err
         Right prev_amt -> do
           let new_amt = f prev_amt
           let new_nw_ledger = M.insert acc (M.insert tok new_amt m) map_ledger
