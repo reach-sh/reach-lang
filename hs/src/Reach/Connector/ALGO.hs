@@ -2095,7 +2095,7 @@ ce = \case
           let mt_mtok = Just tok
           let mt_submit = False
           x <- mayIncTxn $ makeTxn $ MakeTxn {..}
-          return $ hadNet || x
+          return $ mt_next || x
         itxnNextOrBegin hadSome
         output $ TConst "appl"
         makeTxn1 "TypeEnum"
