@@ -124,7 +124,7 @@ processNewState psid ps sc = do
   actorId <- gets e_actor_id
   edges <- gets e_edges
   parents <- gets e_parents
-  _ <- case ps of
+  void $ case ps of
     C.PS_Done _ _ -> do
       registerAction sid actorId C.A_None
     C.PS_Error at e _ _ -> do
@@ -515,13 +515,13 @@ computeActions sid actorId = do
           let act = saferMaybe "computeActions actId" $ M.lookup actId idacts
           return $ Just (actId,act)
 
-initProgSim :: LLProg -> WebM (Bool)
+initProgSim :: LLProg -> WebM Bool
 initProgSim ll = do
   let initSt = C.initState
   ps <- return $ C.initApp ll initSt
   processNewState Nothing ps Consensus
 
-initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> Maybe (C.Account) -> LLProg -> WebM (Bool)
+initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> Maybe C.Account -> LLProg -> WebM Bool
 initProgSimFor actId sid liv accId (LLProg _ _ _ _ _ _ _ _ _ step) = do
   graph <- gets e_graph
   modify $ \st -> st {e_actor_id = actId}
@@ -711,7 +711,7 @@ app p srcTxt dg = do
     cat <- webM $ catGraph
     json cat
 
-  get "/dotgraph" $ do
+  get "/dotstategraph" $ do
     setHeaders
     dot <- webM $ dotGraph
     json dot
@@ -743,7 +743,7 @@ app p srcTxt dg = do
     r <- caseTypes viewCall s a t
     json $ show r
 
-  post "/pass_time/:s/:n" $ do
+  post "/wait/:s/:n" $ do
     setHeaders
     s <- param "s"
     n <- param "n"
@@ -759,7 +759,7 @@ app p srcTxt dg = do
 
   post "/reset" $ do
     setHeaders
-    _ <- webM $ resetServer
+    void $ webM $ resetServer
     json ("OK" :: String)
 
   post "/accounts/new/:s" $ do
