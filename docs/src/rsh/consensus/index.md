@@ -398,7 +398,7 @@ load: /examples/abstract-tok/index.rsh
 range: 20-22
 ```
 
-The example above has Alice publish two tokens named `token1` and `token2` and the `{$rsh} require` statement checks if they are different tokens.
+The example above has Alice publish two tokens named `token1` and `token2` and the `{!rsh} require` statement checks if they are different tokens.
 If they are not different tokens, then the transaction is rejected.
 
 ### `checkCommitment`
