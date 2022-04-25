@@ -299,8 +299,18 @@ type DLSExportBlock = DLinExportBlock DLSBlock
 
 type DLSExports = M.Map SLVar DLSExportBlock
 
-data DLProg
-  = DLProg SrcLoc DLOpts SLParts DLInit DLSExports DLViews DLAPIs Aliases DLEvents DLStmts
+data DLProg = DLProg
+  { dlp_at :: SrcLoc
+  , dlp_opts :: DLOpts
+  , dlp_parts :: SLParts
+  , dlp_init :: DLInit
+  , dlp_exports :: DLSExports
+  , dlp_views :: DLViews
+  , dlp_apis :: DLAPIs
+  , dlp_aliases :: Aliases
+  , dlp_events :: DLEvents
+  , dlp_stmts :: DLStmts
+  }
   deriving (Generic)
 
 instance HasCounter DLProg where

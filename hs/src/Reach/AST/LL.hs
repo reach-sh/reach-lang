@@ -80,8 +80,18 @@ data LLOpts = LLOpts
 instance HasCounter LLOpts where
   getCounter (LLOpts {..}) = llo_counter
 
-data LLProg
-  = LLProg SrcLoc LLOpts SLParts DLInit DLExports DLViews DLAPIs Aliases DLEvents LLStep
+data LLProg = LLProg
+  { llp_at :: SrcLoc
+  , llp_opts :: LLOpts
+  , llp_parts :: SLParts
+  , llp_init :: DLInit
+  , llp_exports :: DLExports
+  , llp_views :: DLViews
+  , llp_apis :: DLAPIs
+  , llp_aliases :: Aliases
+  , llp_events :: DLEvents
+  , llp_step :: LLStep
+  }
   deriving (Eq)
 
 instance HasCounter LLProg where
