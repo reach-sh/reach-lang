@@ -71,8 +71,8 @@ const disconnectSymbol = Symbol("Reach disconnect");
 export const withDisconnect = async <T>(f: () => Promise<T>): Promise<T> => {
   try {
     return (await f());
-  } catch (e: any) {
-    if (e[0] === disconnectSymbol) {
+  } catch (e: unknown) {
+    if ( Array.isArray(e) && e[0] === disconnectSymbol ) {
       return e[1];
     } else {
       throw e;
