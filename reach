@@ -173,7 +173,7 @@ install_docker () {
       powershell.exe 'shutdown -r -t 0'
     fi
   else
-    printf "Make sure you have docker installed following these steps:\n"
+    printf "Make sure you have Docker installed following these steps:\n"
     printf "Ubuntu: https://docs.docker.com/engine/install/ubuntu/\n"
     printf "Debian: https://docs.docker.com/engine/install/debian/\n"
     printf "CentOS: https://docs.docker.com/engine/install/centos/\n"
