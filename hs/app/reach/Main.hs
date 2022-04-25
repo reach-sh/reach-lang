@@ -1187,11 +1187,12 @@ run' :: Subcommand
 run' = command "run" . info f $ d <> noIntersperse
   where
     d = progDesc "Run a simple app"
-    f =
-      go <$> switchIsolate
+    f = go
+        <$> switchIsolate
+        <*> strOption (long "entrypoint" <> value "main" <> help "Override default \"main\" entrypoint")
         <*> argAppOrDir
         <*> manyArgs "APP"
-    go i appOrDir args = do
+    go i main' appOrDir args = do
       (appOrDir', args') <- liftIO $ do
         "run" : as <- dropWhile (/= "run") <$> getArgs
         pure $ case L.split (== "--") as of
@@ -1217,7 +1218,7 @@ run' = command "run" . info f $ d <> noIntersperse
       cleanup <- intercalate "\n" <$> forM toClean (pure . (\a -> "rm " <> esc' a) . snd)
       let rsh = projDirContainer </> unpack projName <> ".rsh"
       let mjs = projDirContainer </> unpack projName <> ".mjs"
-      let bjs = projDirContainer </> "build" </> unpack projName <> ".main.mjs"
+      let bjs = projDirContainer </> "build" </> unpack projName <> "." <> main' <> ".mjs"
       let abortIfAbsent p =
             liftIO . whenM (not <$> doesFileExist p)
               . die
