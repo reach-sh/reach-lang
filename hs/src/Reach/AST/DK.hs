@@ -103,8 +103,18 @@ type DKExports = M.Map SLVar DKExportBlock
 
 type DKViews = DLViews
 
-data DKProg
-  = DKProg SrcLoc DLOpts SLParts DLInit DKExports DKViews DLAPIs Aliases DLEvents DKTail
+data DKProg = DKProg
+  { dkp_at :: SrcLoc
+  , dkp_opts :: DLOpts
+  , dkp_parts :: SLParts
+  , dkp_init :: DLInit
+  , dkp_exports :: DKExports
+  , dkp_views :: DKViews
+  , dkp_apis :: DLAPIs
+  , dkp_aliases :: Aliases
+  , dkp_events :: DLEvents
+  , dkp_tail:: DKTail
+  }
 
 instance Pretty DKProg where
   pretty (DKProg _at _ sps dli dex dvs das alias devt t) =
