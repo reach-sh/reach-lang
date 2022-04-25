@@ -2117,18 +2117,14 @@ This is impossible, so the expression must be moved after the first publication.
 
 For example, the code below erroneously puts `{!rsh} didPublish()` before `{!rsh} publish`:
 
-```reach
-  Alice.didPublish(handAlice);
-  Alice.publish(handAlice);
-  commit();
+``` reach
+load: /hs/t/n/Err_NotAfterFirst.rsh
 ```
 
 This error can be corrected by placing `{!rsh} publish` before `{!rsh} didPublish()`:
 
 ```reach
-  Alice.publish(handAlice);
-  Alice.didPublish(handAlice);
-  commit();
+load: /hs/t/n/j610.rsh
 ```
 
 ## {#RE0120} RE0120
