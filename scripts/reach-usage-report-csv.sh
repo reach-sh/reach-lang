@@ -39,6 +39,7 @@ echo "$UsageReport" | jq -r '.CompileLog.unique_users
         }))
   | flatten
   | map(join(",")) | join("\n")' >> $LOCATION_FILE
+echo "Wrote geographic usage data to $LOCATION_FILE"
 
 gnuplot -e "filename='$HISTOGRAM_FILE'" -e "datafile='$USERS_FILE'" "gnuplot.txt"
 echo "Generated $HISTOGRAM_FILE"
