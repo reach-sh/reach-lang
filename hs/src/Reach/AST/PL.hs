@@ -306,8 +306,15 @@ instance HasCounter PLOpts where
 
 type StateSrcMap = M.Map Int (SrcLoc, [SLCtxtFrame])
 
-data PLProg
-  = PLProg SrcLoc PLOpts DLInit DLExports StateSrcMap EPPs CPProg
+data PLProg = PLProg
+  { plp_at :: SrcLoc
+  , plp_opts :: PLOpts
+  , plp_init :: DLInit
+  , plp_exports :: DLExports
+  , plp_stateSrcMap :: StateSrcMap
+  , plp_epps :: EPPs
+  , plp_cpprog :: CPProg
+  }
   deriving (Eq)
 
 instance HasCounter PLProg where
