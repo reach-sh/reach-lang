@@ -1,6 +1,4 @@
-#!/bin/bash
-
-
+#!/bin/sh
 
 if [ ! "$REACH_ALLOW_SU" = '1' ] && [ "$(id -u)" -eq 0 ]; then
   echo "Reach isn't intended to be run with superuser privileges."
@@ -134,18 +132,12 @@ install_make () {
 }
 
 install_curl () {
-  PACKAGE_MANAGER=package_manager
+  package_manager
 
-  sudo $PACKAGE_MANAGER install curl 
+  sudo ${PACKAGE_MANAGER} install curl 
 }
 
 install_docker () {
-  WINGET_VERSION="v1.3.431"
-  WINGET_ARTIFACT_NAME="Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
-  WINGET_BUNDLE_URL="https://github.com/microsoft/winget-cli/releases/download/${WINGET_VERSION}/${WINGET_ARTIFACT_NAME}"
-  TEMP_DIR="/mnt/c/tmp"
-  WIN_TEMP_DIR="c:\\tmp"
-  DOCKER_BIN="/mnt/c/Program Files/Docker/Docker/resources/bin/docker"
   PWD=$(pwd)
 
   cd / #Depending on the directory the user is, windows has a hard time with the path.
@@ -153,6 +145,12 @@ install_docker () {
   if (which wsl.exe > /dev/null 2>&1); then
     printf "Installing Winget Windows Package Manager..."
     if (! which winget.exe > /dev/null 2>&1); then
+      WINGET_VERSION="v1.3.431"
+      WINGET_ARTIFACT_NAME="Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+      WINGET_BUNDLE_URL="https://github.com/microsoft/winget-cli/releases/download/${WINGET_VERSION}/${WINGET_ARTIFACT_NAME}"
+      TEMP_DIR="/mnt/c/tmp"
+      WIN_TEMP_DIR="c:\\tmp"
+      DOCKER_BIN="/mnt/c/Program Files/Docker/Docker/resources/bin/docker"
       if [ ! -e $TEMP_DIR ]; then
         mkdir $TEMP_DIR
       fi
@@ -169,7 +167,7 @@ install_docker () {
     done
     printf "\nThis installation requires a restart for completion; do you want to restart now? [Y,n]: "
     read RESPONSE
-    if [ ${RESPONSE} == "Y" ]; then
+    if [ "${RESPONSE}" = "Y" ]; then
       powershell.exe 'shutdown -r -t 0'
     fi
   else
@@ -181,15 +179,15 @@ install_docker () {
     printf "RedHat: https://docs.docker.com/engine/install/rhel/\n"
     printf "SLES: https://docs.docker.com/engine/install/SLES/\n"
   fi
-  cd $PWD
+  cd ... || exit
 }
 
 
 for DEP in make curl docker docker-compose; do
   if ! (which "${DEP}" >/dev/null 2>&1); then
-    printf "Reach relies on an installation of ${DEP}; do you want to install it? [Y,n]: "
-    read RESPONSE
-    if [ ${RESPONSE} == "Y" ]; then
+    printf "Reach relies on an installation of %s do you want to install it? [Y,n]: " "$DEP"
+    read -r RESPONSE
+    if [ "${RESPONSE}" = "Y" ]; then
       eval install_$DEP
     fi
   fi
