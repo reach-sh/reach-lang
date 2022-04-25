@@ -1,8 +1,8 @@
-import * as c from '@reach-sh/simulator-client';
-import * as assert from 'assert';
-
 // nodejs compatible import
-// const c = await import('@reach-sh/simulator-client');
+const c = await import('@reach-sh/simulator-client');
+// import * as c from '@reach-sh/simulator-client';
+const assert = await import('assert');
+
 
 // TODO: typescript
 
@@ -10,11 +10,13 @@ const consensusID = -1
 const nwToken = -1
 
 
-Object.filter = (obj, predicate) =>
+const filter = (obj: any, predicate: any) =>
   Object.fromEntries(Object.entries(obj).filter(predicate));
 
 
 class State {
+  id: number;
+
   constructor() {
     this.id = 0
   }
@@ -25,10 +27,17 @@ class State {
 }
 
 class Scenario {
+  state: State;
+  participants: any;
+  consensus: any;
+  apis: any;
+  views: any;
+  next() {};
+
   constructor() {
     this.state = new State();
     this.participants = {};
-    this.consensus = new Consensus(new Account(-1),this);
+    this.consensus = new Consensus(new Account(-1,this),this);
     this.apis = {};
     this.views = {};
   }
@@ -40,35 +49,41 @@ class Scenario {
     const rsh = await c.load()
     // initialize the program for the Consensus
     await c.init()
-    const apis = await c.getAPIs()
-    const views = await c.getViews(this.state.id)
+    const apis: any = await c.getAPIs()
+    const views: any = await c.getViews(this.state.id)
     const l = await c.getStateLocals(this.state.id)
 
     // setup parts
-    for (const [k,v] of Object.entries(l.l_locals)) {
+    for (const a of Object.entries(l.l_locals)) {
+      const k = a[0]
+      const v: any = a[1]
       const who = v.l_who
-      const acc = new Account(v.l_acct)
+      const acc = new Account(v.l_acct,this)
       if (who) {
-        const p = new Participant(k,acc,who,this)
+        const p = new Participant(parseInt(k),acc,who,this)
         this.participants[who] = p
       }
     }
 
     // setup apis
-    for (const [k,v] of Object.entries(apis)) {
+    for (const a of Object.entries(apis)) {
+      const k = a[0]
+      const v: any = a[1]
       const who = v.a_name
-      const a = new API(k,who,this)
-      this.apis[who] = a
+      const api = new API(parseInt(k),who,this)
+      this.apis[who] = api
     }
 
     // setup views
-    for (const [k,v] of Object.entries(views)) {
+    for (const a of Object.entries(views)) {
+      const k = a[0]
+      const v: any = a[1]
       const who = v.a_name
       const vari = v.v_var
       const tag = v.v_ty.tag
       const contents = v.v_ty.contents
-      const v = new View(k,who,vari,tag,contents,this)
-      this.views[who] = v
+      const nv: View = new View(parseInt(k),who,vari,tag,contents,this)
+      this.views[who] = nv
     }
   }
 
@@ -101,13 +116,13 @@ class Scenario {
     return await c.newToken(this.state.id);
   }
 
-  who(part) {
+  who(part: Participant) {
     part.scene = this;
     return part;
   }
 
-  async wait(n) {
-    await c.passTime(n);
+  async wait(n: number) {
+    await c.passTime(this.state.id, n);
     return this.next();
   }
 
@@ -138,23 +153,26 @@ class ImperativeScenario extends Scenario {
 }
 
 class Store {
+  db: any;
 
-  constructor(store) {
+  constructor(store: any) {
     this.db = store
   }
 
-  getVar = (v) => {
-    return new Variable(this.db.find(el => (el[0] === v || el[0].split('/')[0] === v )));
+  getVar = (v: any) => {
+    return new Variable(this.db.find((el: any) => (el[0] === v || el[0].split('/')[0] === v )));
   }
 
 }
 
 class Variable {
-  constructor(v) {
+  v: any;
+
+  constructor(v: any) {
     this.v = v
   }
 
-  assertVar = (t,v) => {
+  assertVar = (t: string,v: any) => {
     assert.equal(this.v[1].tag,t);
     assert.equal(this.v[1].contents,v);
   }
@@ -162,6 +180,17 @@ class Variable {
 }
 
 class Actor {
+  id: number;
+  account: Account;
+  name: string;
+  scene: Scenario;
+
+  constructor(id: number,account: Account,name: string,scene: Scenario) {
+    this.id = id;
+    this.account = account;
+    this.name = name;
+    this.scene = scene;
+  }
 
   async getNextAction() {
     const act = await c.getActions(this.scene.state.id,this.id)
@@ -177,7 +206,6 @@ class Actor {
     const g = await c.getStateGlobals(this.scene.state.id)
     return g.e_ledger[this.account.id]
   }
-
 
   async getPhase() {
     const l = await c.getStateLocals(this.scene.state.id)
@@ -196,7 +224,7 @@ class Actor {
 
   async history() {
     const sg = await c.getStateGraph();
-    const filtered = Object.filter(sg, ([id, state]) =>
+    const filtered = filter(sg, ([id, state]: any) =>
       state[1].contents.l_curr_actor_id === this.id
     );
     return filtered;
@@ -205,12 +233,13 @@ class Actor {
 }
 
 class Participant extends Actor {
-  constructor(id,account,name,scene) {
-    super();
-    this.id = id;
-    this.account = account;
-    this.name = name;
-    this.scene = scene;
+  id!: number;
+  account!: Account;
+  name!: string;
+  scene!: Scenario;
+
+  constructor(id: number,account: Account,name: string,scene: Scenario) {
+    super(id, account, name, scene);
   }
 
   async init(liv={},accID="") {
@@ -222,14 +251,15 @@ class Participant extends Actor {
 }
 
 class Consensus extends Actor {
-  constructor(account,scene) {
-    super();
-    this.account = account;
-    this.id = consensusID
-    this.scene = scene;
+  id!: number;
+  account!: Account;
+  scene!: Scenario;
+
+  constructor(account: Account,scene: Scenario) {
+    super(consensusID, account, 'Consensus', scene);
   }
 
-  async transfer(s,fr,to,tok,amt) {
+  async transfer(s: number,fr: Actor,to: Actor,tok: Token,amt: number) {
     const frID = fr.id
     const toID = to.id
     const tokID = tok.id
@@ -264,14 +294,19 @@ class Consensus extends Actor {
 }
 
 class Action {
-  constructor(id,name,owner,scene) {
+  id: number;
+  name: string;
+  owner: Actor;
+  scene: Scenario;
+
+  constructor(id: number,name: string,owner: Actor,scene: Scenario) {
     this.id = id;
     this.name = name;
     this.owner = owner;
     this.scene = scene;
   }
 
-  async resolve(resp=-999,ty="number") {
+  async resolve(resp: number = -999,ty: string = "number") {
     const r = await c.respondWithVal(this.scene.state.id,this.id,resp,this.owner.id,ty)
     console.log(r);
     return this.scene.next();
@@ -280,24 +315,37 @@ class Action {
 }
 
 class Account {
-  constructor(id) {
+  id: number;
+  scene: Scenario;
+
+  constructor(id: number, scene: Scenario) {
     this.id = id;
+    this.scene = scene;
   }
 
   async getWallet() {
-    const g = await c.getStateGlobals(this.state.id)
+    const g = await c.getStateGlobals(this.scene.state.id)
     return g.e_ledger[this.id]
   }
 }
 
 class Token {
-  constructor(id) {
+  id: number;
+
+  constructor(id: number) {
     this.id = id;
   }
 }
 
 class View {
-  constructor(id,name,vari,tag,contents,scene) {
+  id: number;
+  name: string;
+  vari: string;
+  tag: string;
+  contents: string;
+  scene: Scenario;
+
+  constructor(id: number, name: string, vari: string, tag: string, contents: string, scene: Scenario) {
     this.id = id;
     this.name = name;
     this.vari = vari;
@@ -306,20 +354,24 @@ class View {
     this.scene = scene;
   }
 
-  async call(v,t) {
-    return await c.viewCall(this.id,scene.state.id,v,t)
+  async call(v: any,t: string) {
+    return await c.viewCall(this.id,this.scene.state.id,v,t)
   }
 }
 
 class API {
-  constructor(id,name,scene) {
+  id: number;
+  name: string;
+  scene: Scenario;
+
+  constructor(id: number, name: string, scene: Scenario) {
     this.id = id;
     this.name = name;
     this.scene = scene;
   }
 
-  async call(v,t) {
-    return await c.apiCall(this.id,scene.state.id,v,t);
+  async call(v: any,t: string) {
+    return await c.apiCall(this.id,this.scene.state.id,v,t);
   }
 }
 
