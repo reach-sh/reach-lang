@@ -3137,7 +3137,8 @@ cmeth sigi = \case
     block_' (bunpack who) $ do
       comment $ LT.pack $ "API: " <> sig
       comment $ LT.pack $ sigDump sigi
-      let go _ _ = gvLoad GV_currentStep
+      gvLoad GV_currentStep
+      let go _ l = code "b" [l]
       cblt "api" go $ bltM $ M.fromList wls
   CView who sig _ hs -> do
     block_' (bunpack who) $ do

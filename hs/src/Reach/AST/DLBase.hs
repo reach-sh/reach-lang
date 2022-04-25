@@ -1239,7 +1239,6 @@ arraysLength arrays = do
     Right s -> s
     _ -> impossible "Inconsistent array sizes."
 
-
 adjustApiName :: Show a => String -> a -> Bool -> String
 adjustApiName who which qualify = prefix <> who <> suffix
   where (prefix, suffix) = bool ("", "") ("_", show which) qualify

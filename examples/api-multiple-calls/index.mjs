@@ -1,5 +1,6 @@
 import {loadStdlib} from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
+import * as clientBackend from './build/index.client.mjs';
 const stdlib = loadStdlib();
 const thread = async (f) => await f();
 
@@ -20,6 +21,7 @@ const [ accAlice ] =
 const ctcAlice = accAlice.contract(backend);
 
 const ready = new Signal();
+const client = new Signal();
 
 const conWait = 5000;
 
@@ -46,12 +48,28 @@ const goGo = async () => {
   }
 }
 
+const goClient = async () => {
+  const acc = await stdlib.newTestAccount(startingBalance);
+  return async () => {
+    const ctc = acc.contract(clientBackend);
+    await client.wait();
+
+    await Promise.all([
+      clientBackend.A(ctc, {
+        ctc: () => ctcAlice.getInfo(),
+      })
+    ])
+  }
+}
+
 await Promise.all([
   thread(await goGo()),
+  thread(await goClient()),
   ctcAlice.p.Alice({
-    deployed: async () => {
+    deployed: async (_ctcInfo) => {
       console.log(`Deployed`);
       ready.notify();
+      client.notify();
     }
   }),
 ]);
