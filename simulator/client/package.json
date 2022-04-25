@@ -1,8 +1,9 @@
 {
   "name": "@reach-sh/simulator-client",
   "description": "client for the Reach Simulator",
-  "version": "0.0.45",
-  "main": "./client.mjs",
+  "version": "0.0.46",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/reach-sh/reach-lang.git",
@@ -19,5 +20,9 @@
   "bugs": {
     "url": "https://github.com/reach-sh/reach-lang/issues"
   },
-  "homepage": "https://github.com/reach-sh/reach-lang#readme"
+  "homepage": "https://github.com/reach-sh/reach-lang#readme",
+  "scripts": {
+    "prepublish": "npm run build",
+    "build": "tsc"
+  }
 }
