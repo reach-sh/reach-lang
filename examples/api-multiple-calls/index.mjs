@@ -18,6 +18,8 @@ const startingBalance = stdlib.parseCurrency(100);
 const [ accAlice ] =
   await stdlib.newTestAccounts(1, startingBalance);
 
+accAlice.setGasLimit(5000000);
+
 const ctcAlice = accAlice.contract(backend);
 
 const ready = new Signal();
@@ -26,7 +28,7 @@ const client = new Signal();
 const conWait = 5000;
 
 const goGo = async () => {
-  const acc = await stdlib.newTestAccount(startingBalance);
+  const acc = (await stdlib.newTestAccount(startingBalance)).setDebugLabel('FE_API');
   return async () => {
     const ctc = acc.contract(backend, ctcAlice.getInfo());
     const go = ctc.a.go;
@@ -49,7 +51,8 @@ const goGo = async () => {
 }
 
 const goClient = async () => {
-  const acc = await stdlib.newTestAccount(startingBalance);
+  const acc = (await stdlib.newTestAccount(startingBalance)).setDebugLabel('CLI');
+  acc.setGasLimit(5000000);
   return async () => {
     const ctc = acc.contract(clientBackend);
     await client.wait();
@@ -57,19 +60,23 @@ const goClient = async () => {
     await Promise.all([
       clientBackend.A(ctc, {
         ctc: () => ctcAlice.getInfo(),
+        done: () => console.log('done'),
       })
     ])
   }
 }
 
 await Promise.all([
-  thread(await goGo()),
+  // thread(await goGo()),
   thread(await goClient()),
   ctcAlice.p.Alice({
     deployed: async (_ctcInfo) => {
       console.log(`Deployed`);
       ready.notify();
       client.notify();
+    },
+    done: () => {
+      console.log('done')
     }
   }),
 ]);
