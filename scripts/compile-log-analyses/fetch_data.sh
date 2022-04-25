@@ -6,4 +6,6 @@ time aws dynamodb scan \
   --select SPECIFIC_ATTRIBUTES \
   --projection-expression userId,startTime,ip \
   > data.json
-echo 'data dumped to: data.json'
+echo
+echo 'Done! Data dumped to'
+echo 'data.json'
