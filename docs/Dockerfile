@@ -9,6 +9,7 @@ RUN (cd docs/dev && make installed)
 
 COPY VERSION .
 ADD examples ./examples
+ADD /hs/t ./hs/t
 ADD rpc-client/py ./rpc-client/py
 ADD docs/src ./docs/src
 RUN (cd docs/dev && make)
