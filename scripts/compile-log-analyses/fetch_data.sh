@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo 'fetching... this may take a few mins...'
+echo 'Fetching; this may take a few minutes...'
 time aws dynamodb scan \
   --table-name CompileLog \
   --select SPECIFIC_ATTRIBUTES \
