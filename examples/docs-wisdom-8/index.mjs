@@ -21,7 +21,11 @@ const commonInteract = {};
 // Seller
 if (role === 'seller') {
   const sellerInteract = { 
-    ...commonInteract 
+    ...commonInteract,
+	price: toAU(5),
+    reportReady: async (price) => {
+      console.log(`Your wisdom is for sale at ${toSU(price)} ${suStr}.`);
+      console.log(`Contract info: ${JSON.stringify(await ctc.getInfo())}`);
   };
 		
   const acc = await stdlib.newTestAccount(stdlib.parseCurrency(iBalance));
