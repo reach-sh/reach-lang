@@ -1,1 +1,8 @@
-reachc: Unexpected token, WhileToken at ./while.rsh:8:13
+reachc: error[RP0012]: Unexpected token: WhileToken
+
+  ./while.rsh:8:13
+
+  8|       const while = 5;
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RP0012
+

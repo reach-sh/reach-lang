@@ -2573,6 +2573,23 @@ This error indicates that Reach expected to parse an identifier, but none was gi
 
 You can fix this error by adding an identifier name to the erroneous location.
 
+## {#RP0012} RP0012
+
+This error indicates that there is a syntax error in your program.
+This error will provide the specific token that is erroneous.
+
+For example, the code below erroneously provides an extra comma after the last argument of a function call:
+
+```reach
+const x = f(1, 2, 3,);
+```
+
+You can fix this error by removing the unnecessary trailing comma:
+
+```reach
+const x = f(1, 2, 3);
+```
+
 ## {#RX0000} RX0000
 
 This error indicates that you are trying to inspect or use the value produced from `{!rsh} forall`

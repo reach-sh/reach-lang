@@ -1,1 +1,8 @@
-reachc: Unexpected token, HookToken at ./logical_nullish_assignment.rsh:13:14
+reachc: error[RP0012]: Unexpected token: HookToken
+
+  ./logical_nullish_assignment.rsh:13:14
+
+  13|       obj.a ??= 100;
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RP0012
+
