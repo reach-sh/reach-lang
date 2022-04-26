@@ -1,7 +1,7 @@
 {
   "name": "@reach-sh/simulator-client",
   "description": "client for the Reach Simulator",
-  "version": "0.0.46",
+  "version": "0.0.47",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": {
