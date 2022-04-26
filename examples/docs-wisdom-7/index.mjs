@@ -24,9 +24,11 @@ if (role === 'seller') {
     ...commonInteract 
   };
 		
-  const acc = await stdlib.newTestAccount(stdlib.parseCurrency(1000));
+  const acc = await stdlib.newTestAccount(stdlib.parseCurrency(iBalance));
+  await showBalance(acc);
   const ctc = acc.contract(backend);
   await ctc.participants.Seller(sellerInteract)
+  await showBalance(acc);
 	
 // Buyer
 } else {
