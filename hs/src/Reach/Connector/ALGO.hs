@@ -3250,7 +3250,7 @@ compile_algo env disp pl = do
   let eLets = mempty
   let eLetSmalls = mempty
   let eWhich = Nothing
-  let eApiCalls = M.foldrWithKey (\ k v acc -> M.insert k (M.size v) acc) mempty ai
+  let eApiCalls = M.map M.size ai
   let recordSize prefix size = do
         modifyIORef resr $
           M.insert (prefix <> "Size") $

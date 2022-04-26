@@ -1374,7 +1374,6 @@ apiArgs ApiInfo {..} = do
 apiDef :: SLPart -> Bool -> ApiInfo -> App Doc
 apiDef who qualify ApiInfo {..} = do
   let who_s = adjustApiName (bunpack who) ai_which qualify -- ("", "") ("_", show ai_which) qualify
-  -- let who_s = prefix <> bunpack who <> suffix
   let mf = solMsg_fun ai_which
   (ty, argDefns, tyLifts, args, m_arg_ty) <- apiArgs $ ApiInfo {..}
   let body =

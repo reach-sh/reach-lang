@@ -1114,11 +1114,11 @@ jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = 
           , "export const _versionHash =" <+> jsString versionHashStr <> semi
           , "export const _backendVersion =" <+> pretty reachBackendVersion <> semi
           ]
-  let api_whichs = M.foldrWithKey (\ (p, mw) _ acc ->
-                        case mw of
-                          Just w  -> M.insertWith (<>) p [w] acc
-                          Nothing -> acc
-                      ) mempty epps_m
+  let go_api (p, mw) _ acc =
+        case mw of
+          Just w  -> M.insertWith (<>) p [w] acc
+          Nothing -> acc
+  let api_whichs = M.foldrWithKey go_api mempty epps_m
   api_wrappers <- mapM (uncurry jsApiWrapper) $ M.toAscList api_whichs
   partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList epps_m
   cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr
@@ -1130,16 +1130,13 @@ jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = 
       jsViews vi
   mapsp <- jsMaps dli_maps
   let partMap = M.foldrWithKey (\ (p, _) _ acc -> M.insert p (pretty $ bunpack p) acc) mempty epps_m
-  let apiMap =
-        M.foldrWithKey
-          (\k v acc ->
-             let f = case k of
-                      Just k' -> M.insert (bunpack k') . jsObject
-                      Nothing -> M.union in
-              let v' = M.map (pretty . bunpack . fst) v in
-              f v' acc)
-          mempty
-          epps_apis
+  let go_api_map k v acc =
+        let f = case k of
+                Just k' -> M.insert (bunpack k') . jsObject
+                Nothing -> M.union in
+        let v' = M.map (pretty . bunpack . fst) v in
+        f v' acc
+  let apiMap = M.foldrWithKey go_api_map mempty epps_apis
   eventsp <- jsEvents devts
   return $ vsep $ [preamble, exportsp, eventsp, viewsp, mapsp] <> partsp <> api_wrappers <> cnpsp <> [jsObjectDef "_stateSourceMap" ssmDoc, jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
 
