@@ -2045,13 +2045,11 @@ export const connectAccount = async (networkAccount: NetworkAccount): Promise<Ac
           debug('getView1', v, k, args);
           const { decode } = vim;
           try {
-            let vi = 0;
-            const [ _, vvs ] = await getState_(getC, (vibna:BigNumber) => {
-              vi = bigNumberToNumber(vibna);
-              const vtys = vs[vi];
-              if ( ! vtys ) { throw Error(`no views for state ${vibna}`); }
-              return vtys;
-            });
+            const step = await getCurrentStep_(getC);
+            const vi = bigNumberToNumber(step);
+            const vtys = vs[vi];
+            if ( ! vtys ) { throw Error(`no views for state ${step}`); }
+            const [ _, vvs ] = await getState_(getC, _ => vtys);
             const vres = await decode(vi, vvs, args);
             debug({vres});
             return isSafe ? ['Some', vres] : vres;
