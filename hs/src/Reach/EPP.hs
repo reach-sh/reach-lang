@@ -162,6 +162,7 @@ type ViewSet = M.Map (SrcLoc, Maybe SLPart, SLVar) (IORef Bool)
 data BEnv = BEnv
   { be_prev :: Int
   , be_prevs :: S.Set Int
+  , be_which_prev :: M.Map Int Int
   , be_savec :: Counter
   , be_handlerc :: Counter
   , be_interval :: CInterval DLTimeArg
@@ -275,7 +276,8 @@ type CApp = ReaderT CEnv IO
 
 data EEnv = EEnv
   { ee_flow :: FlowOutput
-  , ee_who :: (SLPart, Maybe Int)
+  , ee_who :: SLPart
+  , ee_m_api_step :: Maybe Int
   }
 
 type EApp = ReaderT EEnv IO
@@ -324,9 +326,10 @@ addVars at k = do
 -- End-point Construction
 
 itsame :: SLPart -> Maybe Int -> EApp Bool
-itsame who mApiWhich = do
-  (e_who, e_api_which) <- asks ee_who
-  return $ mApiWhich == e_api_which && e_who == who
+itsame who mApiStep = do
+  e_who <- asks ee_who
+  e_m_api_step <- asks ee_m_api_step
+  return $ mApiStep == e_m_api_step && e_who == who
 
 eeIze :: (a -> BApp (b, c)) -> a -> BApp c
 eeIze f x = do
@@ -364,9 +367,9 @@ be_m = \case
         rets <- liftIO $ readIORef be_api_rets
         let ret = fromMaybe T_Null $ M.lookup p rets
         let alias = join $ M.lookup (bunpack p) be_alias
-        let w = be_which
+        let prev = be_prev
         let as = be_api_steps
-        liftIO $ modifyIORef as $ M.insertWith (<>) p [(w, apiAt)]
+        liftIO $ modifyIORef as $ M.insertWith (<>) p [(prev, apiAt)]
         liftIO $
           modifyIORef be_api_info $ \ m ->
               M.insert p (M.insert be_which (ApiInfo apiAt tys mc be_which isf ret alias) $ ai m) m
@@ -427,17 +430,21 @@ be_m = \case
            return $ DL_MapReduce at mri ans x z b a f')
   DL_Only at (Left who) l -> do
     ic <- be_inConsensus <$> ask
-    w <- asks be_which
     l'l <- ee_t l
-    which <- isApi who >>= \case
+    mprev <- isApi who >>= \case
       False -> return $ Nothing
-      -- Take the `only(() => interact.in())` from preceding step
-      -- and the `only(() => interact.out())` from the correct step
-      True  -> return $ Just $ f w
-        where f = if ic then id else (+ 1)
+      True  -> do
+          case ic of
+            True -> do
+              which <- asks be_which
+              wps <- asks be_which_prev
+              case M.lookup which wps of
+                Just p' -> return $ Just p'
+                _ -> impossible "which has no prev"
+            False -> Just <$> asks be_prev
     let t'c = return $ DL_Nop at
     let t'l = do
-          itsame who which >>= \case
+          itsame who mprev >>= \case
             False -> return $ DL_Nop at
             True -> DL_Only at (Right ic) <$> l'l
     return $ (,) t'c t'l
@@ -557,6 +564,7 @@ be_c = \case
   LLC_FromConsensus at1 _at2 fs s -> do
     this <- newSavePoint "fromConsensus"
     views <- asks be_views
+    which <- asks be_which
     (more, s'l) <-
       captureMore $
         local
@@ -565,6 +573,7 @@ be_c = \case
                { be_interval = default_interval
                , be_prev = this
                , be_prevs = S.singleton this
+               , be_which_prev = M.insert which this (be_which_prev e)
                , be_view_sets = mempty
                })
           $ do
@@ -631,7 +640,6 @@ be_c = \case
     (this_loopj, this_loopsp) <-
       fromMaybe (impossible "no loop") . be_loop <$> ask
     prevs <- be_prevs <$> ask
-    -- liftIO $ putStrLn $ "continue at " <> show at <> ": " <> show (this_loopsp, prevs)
     when (S.member this_loopsp prevs) $
       expect_thrown at Err_ContinueDomination
     fg_saves $ this_loopsp
@@ -684,6 +692,7 @@ be_s_ = \case
              e
                { be_interval = int_ok
                , be_which = this_h
+               , be_which_prev = M.insert this_h prev (be_which_prev e)
                })
           $ do
             ms <- asks be_ms
@@ -703,8 +712,9 @@ be_s_ = \case
     let soloSend = soloSend0 && soloSend1
     let ok_l''m = do
           ok_l' <- ok_l'm
-          (who, m_api_which) <- ee_who <$> ask
-          let same_which = maybe True (== this_h) m_api_which
+          who <- ee_who <$> ask
+          m_api_step <- ee_m_api_step <$> ask
+          let same_which = maybe True (== prev) m_api_step
           mfrom <- case (M.lookup who send, same_which) of
             (Just (DLSend {..}), True) -> do
               svs <- ee_readSave prev
@@ -750,6 +760,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
   let be_ms = mempty
   let be_alias = alias
   be_api_steps <- newIORef mempty
+  let be_which_prev = mempty
   mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
   check_view_sets =<< readIORef be_view_setsr
   api_info <- liftIO $ readIORef be_api_info
@@ -780,14 +791,17 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
         when (length vs /= 1) $ do
           let apiAt = snd $ fromMaybe (impossible "api empty") $ headMay vs
           expect_thrown apiAt $ Err_API_Twice k
-  -- Make a separate `EPProg` for each `API x Consensus Step`.
+  -- Make a separate `EPProg` for each `API x Step`,
+  -- where step is the one in which `interact.in` gets called.
   let genSepApis k v acc =
         case M.lookup k as of
           Just ns -> foldr (\ (x,_) acc' -> M.insert (k, Just x) v acc') acc ns
           _ -> M.insert (k, Nothing) v acc
   let sps_ies' = M.foldrWithKey genSepApis mempty sps_ies
-  let mkep ee_who@(who, _) ie = do
+  let mkep (who, step) ie = do
         let isAPI = S.member who sps_apis
+        let ee_who = who
+        let ee_m_api_step = step
         let ee_flow = flow
         et <- flip runReaderT (EEnv {..}) $ mkep_
         return $ EPProg at isAPI ie et
