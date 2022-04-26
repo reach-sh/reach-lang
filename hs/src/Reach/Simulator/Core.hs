@@ -993,7 +993,7 @@ bindConsensusMeta (DLRecv {..}) actorId accId = do
 
 
 instance Interp LLProg where
-  interp (LLProg _at _llo slparts _dli _dex dvs _ac _apis _alias _evts step) = do
+  interp (LLProg _at _llo slparts _dli _dex dvs _apis _alias _evts step) = do
     let apiNames = sps_apis slparts
     let (apiParts,regParts) = partition (\(a,_b) -> member a apiNames) $ M.toAscList $ sps_ies slparts
     registerParts regParts

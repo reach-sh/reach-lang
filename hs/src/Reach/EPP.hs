@@ -179,7 +179,7 @@ data BEnv = BEnv
   , be_inConsensus :: Bool
   , be_counter :: Counter
   , be_which :: Int
-  , be_api_calls :: M.Map SLPart Int
+  , be_apis :: S.Set SLPart
   , be_api_info :: IORef (M.Map SLPart (M.Map Int ApiInfo))
   , be_alias :: Aliases
   , be_api_rets :: IORef (M.Map SLPart DLType)
@@ -429,7 +429,7 @@ be_m = \case
     ic <- be_inConsensus <$> ask
     w <- asks be_which
     l'l <- ee_t l
-    which <- multipleApiCalls who >>= \case
+    which <- isApi who >>= \case
       -- Not an API or API only called in one place
       False -> return $ Nothing
       -- Take the `only(() => interact.in())` from preceding step
@@ -450,12 +450,8 @@ be_m = \case
   where
     nop at = retb0 $ const $ return $ DL_Nop at
 
-multipleApiCalls :: SLPart -> BApp Bool
-multipleApiCalls who = do
-  apis <- asks be_api_calls
-  case M.lookup who apis of
-    Just n  -> return $ n > 1
-    Nothing -> return $ False
+isApi :: SLPart -> BApp Bool
+isApi who = S.member who <$> asks be_apis
 
 be_t :: BAppT2 DLTail
 be_t = \case
@@ -727,7 +723,7 @@ mk_eb (DLinExportBlock at vs (DLBlock bat sf ll a)) = do
   return $ DLinExportBlock at vs (DLBlock bat sf body' a)
 
 epp :: LLProg -> IO PLProg
-epp (LLProg at (LLOpts {..}) ps dli dex dvs dac das alias devts s) = do
+epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
   -- Step 1: Analyze the program to compute basic blocks
   let be_counter = llo_counter
   be_savec <- newCounter 1
@@ -740,7 +736,8 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs dac das alias devts s) = do
   let be_prev = 0
   let be_which = 0
   let be_prevs = mempty
-  let be_api_calls = dac
+  let SLParts {..} = ps
+  let be_apis = sps_apis
   be_api_info <- newIORef mempty
   be_api_rets <- newIORef mempty
   let be_interval = default_interval
@@ -777,7 +774,6 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs dac das alias devts s) = do
   cp <- (CPProg at (dvs, vm) api_info devts . CHandlers) <$> mapM mkh hs
   stateToSrcMap <- readIORef be_stateToSrcMap
   -- Step 4: Generate the end-points
-  let SLParts {..} = ps
   as <- readIORef be_api_steps
   -- Ensure an API is called at most once in a given consensus step
   forM_ (M.toAscList as) $ \ (k, v) -> do
@@ -785,20 +781,16 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs dac das alias devts s) = do
         when (length vs /= 1) $ do
           let apiAt = snd $ fromMaybe (impossible "api empty") $ headMay vs
           expect_thrown apiAt $ Err_API_Twice k
-  -- When the same API call occurs in multiple steps,
-  -- make a separate `EPProg` for each one.
+  -- Make a separate `EPProg` for each `API x Consensus Step`.
   let genSepApis k v acc =
         case M.lookup k as of
-          Just ns
-            | length ns > 1 -> foldr (\ (x,_) acc' -> M.insert (k, Just x) v acc') acc ns
+          Just ns -> foldr (\ (x,_) acc' -> M.insert (k, Just x) v acc') acc ns
           _ -> M.insert (k, Nothing) v acc
   let sps_ies' = M.foldrWithKey genSepApis mempty sps_ies
   let mkep ee_who@(who, _) ie = do
         let isAPI = S.member who sps_apis
         let ee_flow = flow
-        et <-
-          flip runReaderT (EEnv {..}) $
-            mkep_
+        et <- flip runReaderT (EEnv {..}) $ mkep_
         return $ EPProg at isAPI ie et
   pps <- EPPs das <$> mapWithKeyM mkep sps_ies'
   -- Step 4: Generate the final PLProg

@@ -53,7 +53,6 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
   resr <- liftIO $ newIORef $ AppRes mempty mempty mempty mempty mempty mempty mempty
   appr <- liftIO $ newIORef $ AIS_Init envr resr
   mape <- liftIO $ makeMapEnv
-  e_apiCalls <- liftIO $ newIORef mempty
   e_droppedAsserts' <- (liftIO . dupeCounter) =<< (e_droppedAsserts <$> ask)
   (these_lifts, final_dlo) <- captureLifts $
     locSco sco $
@@ -63,7 +62,6 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
              { e_appr = Right appr
              , e_mape = mape
              , e_droppedAsserts = e_droppedAsserts'
-             , e_apiCalls = e_apiCalls
              })
         $ do
           void $ evalStmt top_ss
@@ -87,8 +85,7 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
   let sps_apis = ar_isAPI
   let sps = SLParts {..}
   final' <- pan final
-  api_calls <- liftIO . readIORef $ e_apiCalls
-  return $ DLProg at final_dlo' sps dli exports ar_views api_calls ar_apis aliases ar_events final'
+  return $ DLProg at final_dlo' sps dli exports ar_views ar_apis aliases ar_events final'
 compileDApp _ _ _ = impossible "compileDApp called without a Reach.App"
 
 verifyAliases :: M.Map SLVar (Maybe B.ByteString, [SLType]) -> App Aliases
@@ -303,7 +300,6 @@ makeEnv cns = do
   e_mape <- makeMapEnv
   e_droppedAsserts <- newCounter 0
   let e_appr = Left $ app_default_opts e_id e_droppedAsserts $ M.keys cns
-  e_apiCalls <- newIORef mempty
   return (Env {..})
 
 checkUnusedVars :: App a -> App a

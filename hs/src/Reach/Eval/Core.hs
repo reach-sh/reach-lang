@@ -96,7 +96,6 @@ data Env = Env
   , e_appr :: Either DLOpts (IORef AppInitSt)
   , e_droppedAsserts :: Counter
   , e_infections :: IORef (M.Map Int (SrcLoc, SLVar))
-  , e_apiCalls :: IORef (M.Map SLPart Int)
   }
 
 instance Semigroup a => Semigroup (App a) where
@@ -1899,7 +1898,6 @@ evalForm f args = do
       at <- withAt id
       (who_e, msg, mc_id) <- two_mthree_args
       who <- expectParticipant who_e
-      recordApiCall who
       let mCaseId = maybe Nothing (Just . jse_expect_id at) mc_id
       (ct, tys) <- case mCaseId of
         -- API Fork With Multiple Cases (msg is Data instance)
@@ -1944,12 +1942,6 @@ evalForm f args = do
       [de] -> return (de, JSLiteral ta "null")
       [de, e] -> return (de, e)
       _ -> illegal_args 2
-
-recordApiCall :: SLPart -> App ()
-recordApiCall who = do
-  apiCalls <- asks e_apiCalls
-  liftIO $ modifyIORef apiCalls $
-    M.alter (maybe (return 1) (return . (+) 1)) who
 
 expectParticipant :: JSExpression -> App SLPart
 expectParticipant who_e =

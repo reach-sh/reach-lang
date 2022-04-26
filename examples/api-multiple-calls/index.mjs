@@ -15,25 +15,15 @@ export class Signal {
 
 const startingBalance = stdlib.parseCurrency(100);
 
-const [ accAlice ] =
-  await stdlib.newTestAccounts(1, startingBalance);
-
-accAlice.setGasLimit(5000000);
-
-const ctcAlice = accAlice.contract(backend);
-
-const ready = new Signal();
-const client = new Signal();
-
 const conWait = 5000;
 
-const goGo = async () => {
+const goGo = async (ctcAlice, sig) => {
   const acc = (await stdlib.newTestAccount(startingBalance)).setDebugLabel('FE_API');
   return async () => {
     const ctc = acc.contract(backend, ctcAlice.getInfo());
     const go = ctc.a.go;
     const go2 = ctc.a.go2;
-    await ready.wait();
+    await sig.wait();
 
     const call = async (id, f, exp) => {
       let res = undefined;
@@ -50,12 +40,12 @@ const goGo = async () => {
   }
 }
 
-const goClient = async () => {
+const goClient = async (ctcAlice, sig) => {
   const acc = (await stdlib.newTestAccount(startingBalance)).setDebugLabel('CLI');
   acc.setGasLimit(5000000);
   return async () => {
     const ctc = acc.contract(clientBackend);
-    await client.wait();
+    await sig.wait();
 
     await Promise.all([
       clientBackend.A(ctc, {
@@ -66,18 +56,31 @@ const goClient = async () => {
   }
 }
 
-await Promise.all([
-  // thread(await goGo()),
-  thread(await goClient()),
-  ctcAlice.p.Alice({
-    deployed: async (_ctcInfo) => {
-      console.log(`Deployed`);
-      ready.notify();
-      client.notify();
-    },
-    done: () => {
-      console.log('done')
-    }
-  }),
-]);
 
+const go = async (f) => {
+
+  const [ accAlice ] =
+    await stdlib.newTestAccounts(1, startingBalance);
+
+  accAlice.setGasLimit(5000000);
+
+  const ctcAlice = accAlice.contract(backend);
+
+  const ready = new Signal();
+
+  await Promise.all([
+    thread(await f(ctcAlice, ready)),
+    ctcAlice.p.Alice({
+      deployed: async (_ctcInfo) => {
+        console.log(`Deployed`);
+        ready.notify();
+      },
+      done: () => {
+        console.log('done')
+      }
+    }),
+  ]);
+}
+
+await go(goGo);
+await go(goClient);
