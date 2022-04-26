@@ -8,6 +8,7 @@ const sellerInteract = {
 };
 const buyerInteract = {
   ...commonInteract,
+  confirmPurchase: Fun([UInt], Bool)
 };
 
 export const main = Reach.App(() => {
@@ -19,6 +20,14 @@ export const main = Reach.App(() => {
   S.publish(price);
   S.interact.reportReady(price);
   commit();
+
+  B.only(() => { const willBuy = declassify(interact.confirmPurchase(price)); });
+  B.publish(willBuy);
+  if (!willBuy) {
+    commit();
+  } else {
+    commit();
+  }
 
   exit();
 });
