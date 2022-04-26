@@ -30,7 +30,6 @@ import Reach.EmbeddedFiles
 import Reach.JSUtil
 import Reach.PackageImport
 import Reach.Texty
-import Reach.UnsafeUtil
 import Reach.Util
 import System.Directory
 import System.FilePath
@@ -65,6 +64,7 @@ data ParserError
   | Err_Parse_NotModule JSAST
   | Err_Parse_NotCallLike JSExpression
   | Err_Parse_JSIdentNone
+  | Err_Parse_Syntax String
   deriving (Generic, Eq, ErrorMessageForJson, ErrorSuggestions)
 
 instance HasErrorCode ParserError where
@@ -87,6 +87,7 @@ instance HasErrorCode ParserError where
     Err_Parse_NotModule {} -> 9
     Err_Parse_NotCallLike {} -> 10
     Err_Parse_JSIdentNone {} -> 11
+    Err_Parse_Syntax {} -> 12
 
 --- FIXME implement a custom show that is useful
 instance Show ParserError where
@@ -114,6 +115,7 @@ instance Show ParserError where
     "Invalid import: dotdot path imports are not supported: " <> fp
   show (Err_Parse_NotModule ast) =
     "Not a module: " <> (take 256 $ show ast)
+  show (Err_Parse_Syntax s) = "Unexpected token: " <> s
 
 --- Helpers
 parseIdent :: SrcLoc -> JSIdent -> (SrcLoc, String)
@@ -253,28 +255,24 @@ updatePartialAvoidCycles mfrom def_a get_key ret_key err_key proc_key = do
 gatherDeps_from :: SrcLoc -> Maybe ReachSource
 gatherDeps_from (SrcLoc _ _ mrs) = mrs
 
-tryPrettifyError :: SrcLoc -> String -> String
+tryPrettifyError :: SrcLoc -> String -> (SrcLoc, String)
 tryPrettifyError at' e = case readMaybe e of
-  Just (t :: Token) ->
-    "Unexpected token, " <> ty <> " at " <> atStr <> tokLit
+  Just (t :: Token) -> (at, ty)
     where
       ty = conNameOf t
       ts = tokenSpan t
       SrcLoc sl0 _ sl2 = at'
       at = SrcLoc sl0 (Just ts) sl2
-      atStr = unsafeRedactAbsStr $ show at
-      unsafeTlit = " \"" <> tokenLiteral t <> "\""
-      -- Don't want to enumerate them all because it's a lot
-      tokLit = case t of
-        IdentifierToken {} -> unsafeTlit
-        _ -> ""
-  _ -> e
+  _ -> (at', e)
 
 gatherDeps_ast_rewriteErr :: String -> App [JSModuleItem]
 gatherDeps_ast_rewriteErr s = do
   at' <- asks e_at
   case parseModule s (show $ get_srcloc_src at') of
-    Left e -> error $ tryPrettifyError at' e -- TODO: prettify
+    Left e ->
+      expect_thrown at_e $ Err_Parse_Syntax $ ts
+      where
+        (at_e, ts) = tryPrettifyError at' e
     Right r -> gatherDeps_ast r
 
 data GatherContext = GatherTop | GatherNotTop

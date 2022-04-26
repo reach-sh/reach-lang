@@ -1,1 +1,8 @@
-reachc: Unexpected token, IdentifierToken at ./js_parse_err.rsh:7:8 "B"
+reachc: error[RP0012]: Unexpected token: IdentifierToken
+
+  ./js_parse_err.rsh:7:8
+
+  7|   (A   B) => {
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RP0012
+

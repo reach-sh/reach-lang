@@ -1,1 +1,8 @@
-reachc: Unexpected token, ElseToken at ./else.rsh:8:13
+reachc: error[RP0012]: Unexpected token: ElseToken
+
+  ./else.rsh:8:13
+
+  8|       const else = 5;
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RP0012
+

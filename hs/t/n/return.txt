@@ -1,1 +1,8 @@
-reachc: Unexpected token, ReturnToken at ./return.rsh:8:13
+reachc: error[RP0012]: Unexpected token: ReturnToken
+
+  ./return.rsh:8:13
+
+  8|       const return = 5;
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RP0012
+
