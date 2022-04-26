@@ -128,8 +128,12 @@ instance Pretty ETail where
       ns = render_nest
       cm l = parens (hsep $ punctuate comma $ l)
 
-data EPProg
-  = EPProg SrcLoc Bool InteractEnv ETail
+data EPProg = EPProg
+  { epp_at :: SrcLoc
+  , epp_isApi :: Bool
+  , epp_interactEnv :: InteractEnv
+  , epp_tail :: ETail
+  }
   deriving (Eq)
 
 instance Pretty EPProg where
