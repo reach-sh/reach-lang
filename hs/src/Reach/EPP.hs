@@ -430,7 +430,6 @@ be_m = \case
     w <- asks be_which
     l'l <- ee_t l
     which <- isApi who >>= \case
-      -- Not an API or API only called in one place
       False -> return $ Nothing
       -- Take the `only(() => interact.in())` from preceding step
       -- and the `only(() => interact.out())` from the correct step
