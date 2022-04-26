@@ -13,19 +13,18 @@ import Network.HTTP.Conduit
 import Network.HTTP.Simple (setRequestBodyJSON, setRequestMethod)
 import Reach.CommandLine
 import Reach.Version
-import Reach.AST.Base (CompileErrorException(..), encodeJSONString)
+import Reach.AST.Base (CompileErrorException(..), CompilationError(..))
 import System.Environment
 
---- TODO maybe have each part collect some information and report it back through a (Map String String)
 type Report = Either SomeException ()
 
 reportResult :: Report -> String
 reportResult = \case
   Right () -> "Right ()"
-  report@(Left (SomeException inner)) ->
+  Left (SomeException inner) ->
     case (cast inner :: Maybe CompileErrorException) of
-      Just cee -> encodeJSONString cee
-      Nothing -> show report
+      Just CompileErrorException {..} -> ce_errorCode cee_error
+      Nothing -> "Non-compiler exception"
 
 startReport :: Maybe String -> String -> IO (Report -> IO ())
 startReport mwho i = do
