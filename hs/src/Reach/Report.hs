@@ -39,13 +39,11 @@ startReport mwho i = do
   _ignored <- send (setRequestMethod "OPTIONS" req)
 
   return $ \report -> do
-    endTime <- getCurrentTime
     let reportJson =
           object
             [ "userId" .= maybe "Numerius Negidius" id mwho
             , "startTime" .= startTime
             , "version" .= version
-            , "elapsed" .= diffUTCTime endTime startTime
             , "result" .= reportResult report
             , "connectorMode" .= cm
             , "usingVisualStudioExtension" .= vse
