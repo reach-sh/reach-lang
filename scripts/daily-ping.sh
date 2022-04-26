@@ -2,18 +2,12 @@
 
 if [ -n "$REACH_DISABLE_REPORTING" ]; then exit 0; fi
 
-START_TIME_UNIX="$(date +%s)"
-START_TIME_UTC="$(date -u -Iseconds)Z"
-
 ping_devnet() {
   # REACH_CONNECTOR_MODE, REACH_VERSION, and REACHC_ID are defined in hs/app/reach/embed/docker/service-devnet-*.yml
-  TIME_NOW="$(date +%s)"
-  ELAPSED="$(( TIME_NOW - START_TIME_UNIX )).0"
   REPORT="{
     \"userId\": \"$REACHC_ID\",
-    \"startTime\": \"$START_TIME_UTC\",
+    \"startTime\": \"$(date -u +%Y-%m-%d)\",
     \"version\": \"$REACH_VERSION\",
-    \"elapsed\": \"$ELAPSED\",
     \"result\": \"devnet 24h ping\",
     \"connectorMode\": \"$REACH_CONNECTOR_MODE\",
     \"initiator\": \"devnet_24h_ping\",
