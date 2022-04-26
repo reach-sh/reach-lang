@@ -1210,12 +1210,13 @@ evalAsEnvM sv@(lvl, obj) = case obj of
         [ ("only", retV $ public $ SLV_Form (SLForm_Part_Only who vas))
         , ("publish", go TCM_Publish)
         , ("pay", go TCM_Pay)
+        , ("check", go TCM_Check)
         , ("set", delayCall SLPrim_part_set)
         ] <> case aisdM of
          Just _ -> [("interact", makeInteractField)]
          Nothing -> []
     where
-      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos vas (Just m) Nothing Nothing Nothing Nothing Nothing False False)
+      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos vas (Just m) Nothing Nothing Nothing Nothing Nothing False False Nothing)
       whos = S.singleton who
   SLV_Anybody -> do
     at <- withAt id
@@ -1234,9 +1235,10 @@ evalAsEnvM sv@(lvl, obj) = case obj of
       M.fromList
         [ ("publish", go TCM_Publish)
         , ("pay", go TCM_Pay)
+        , ("check", go TCM_Check)
         ]
     where
-      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos Nothing (Just m) Nothing Nothing Nothing Nothing Nothing False False)
+      go m = withAt $ \at -> public $ SLV_Form (SLForm_Part_ToConsensus $ ToConsensusRec at whos Nothing (Just m) Nothing Nothing Nothing Nothing Nothing False False Nothing)
   SLV_Form (SLForm_Part_ToConsensus p@(ToConsensusRec {..}))
     | slptc_mode == Nothing ->
       return $ Just $
@@ -1248,6 +1250,7 @@ evalAsEnvM sv@(lvl, obj) = case obj of
             <> gom "throwTimeout" TCM_ThrowTimeout slptc_timeout
             <> gob ".fork" TCM_Fork slptc_fork
             <> gob ".api" TCM_Api slptc_api
+            <> gom "check" TCM_Check slptc_check
     where
       gob key mode = \case
         False -> go key mode
@@ -1760,7 +1763,12 @@ evalForm f args = do
         go p' = retV $ public $ SLV_Form $ SLForm_parallel_reduce_partial $ p' {slpr_mode = Nothing}
         makeTimeoutArgs mode aa = Just (mode, fst aa, snd aa)
         retTimeout prm aa = go $ p {slpr_mtime = makeTimeoutArgs prm aa}
-    SLForm_Part_ToConsensus p@(ToConsensusRec {..}) ->
+    SLForm_Part_ToConsensus p@(ToConsensusRec {..}) -> do
+      let proc = \case
+            JSExpressionParen _ e _ -> proc e
+            JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s ->
+              return $ jsArrowBodyToBlock dt_s
+            _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
       case slptc_mode of
         Just TCM_Publish -> do
           at <- withAt id
@@ -1778,13 +1786,11 @@ evalForm f args = do
         Just TCM_Api -> do
           zero_args
           go $ p {slptc_api = True}
+        Just TCM_Check -> do
+          x <- one_arg >>= proc
+          go $ p { slptc_check = Just x }
         Just TCM_Timeout -> do
           at <- withAt id
-          let proc = \case
-                JSExpressionParen _ e _ -> proc e
-                JSArrowExpression (JSParenthesizedArrowParameterList _ JSLNil _) _ dt_s ->
-                  return $ jsArrowBodyToBlock dt_s
-                _ -> expect_ $ Err_ToConsensus_TimeoutArgs args
           x <-
             case args of
               [de] -> return $ (at, de, Nothing)
@@ -4646,6 +4652,7 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
   let amt_req = maybe (JSDecimal ann "0") (\f -> jsCall ann f []) slptc_amt_req
   let when_e = fromMaybe (JSLiteral ann "true") slptc_whene
   let mtime = slptc_timeout
+  let check_ss = maybe [] jsBlockToStmts slptc_check
   at <- withAt id
   st <- readSt id
   ensure_mode SLM_Step "to consensus"
@@ -4667,13 +4674,14 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
           locWho who $
             locSt st_lpure $
               captureLifts $ do
+                _ <- evalStmt check_ss
                 let repeat_dv = M.lookup who pdvs
                 ds_isClass <- is_class who
                 ds_msg <- mapM (\v -> snd <$> (compileTypeOf =<< ensure_public =<< evalId "publish msg" v)) msg
                 ds_pay <- compilePayAmt_ amt_e
                 ds_when <- ctepee T_Bool when_e
                 return (repeat_dv, DLSend {..})
-        saveLift $ DLS_Only at who only_lifts
+        saveLift $ DLS_Only at who (only_lifts)
         return $ res
   tc_send'0 <- sequence $ M.fromSet tc_send1 whos
   let tc_send' = tc_send'0
@@ -4734,6 +4742,7 @@ doToConsensus ks (ToConsensusRec {..}) = locAt slptc_at $ do
       setSt st_recv
       sco_recv <- sco_update_and_mod recv_imode recv_env recv_env_mod
       locSco sco_recv $ do
+        _ <- evalStmt check_ss
         let req_rator = SLV_Prim $ SLPrim_claim CT_Require
         -- Initialize and distinctize tokens
         bv <- let f = map SLV_DLVar in evalDistinctTokens (f old_toks) (f toks)
