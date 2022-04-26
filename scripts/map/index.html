@@ -16,127 +16,133 @@
 
 <!-- Chart code -->
 <script>
+let chart;
+let imageSeries;
+let polygonSeries;
+let colorSet;
 
-  let chart;
-  let imageSeries;
-  let colorSet;
+am4core.ready(function () {
 
-  am4core.ready(function () {
+  // Themes begin
+  am4core.useTheme(am4themes_spiritedaway);
+  am4core.useTheme(am4themes_animated);
+  // Themes end
 
-    // Themes begin
-    am4core.useTheme(am4themes_spiritedaway);
-    am4core.useTheme(am4themes_animated);
-    // Themes end
+  // Create map instance
+  chart = am4core.create("chartdiv", am4maps.MapChart);
 
-    // Create map instance
-    chart = am4core.create("chartdiv", am4maps.MapChart);
+  // Set map definition
+  chart.geodata = am4geodata_worldLow;
 
-    // Set map definition
-    chart.geodata = am4geodata_worldLow;
+  // Set projection
+  chart.projection = new am4maps.projections.Miller();
 
-    // Set projection
-    chart.projection = new am4maps.projections.Miller();
+  // Create map polygon series
+  polygonSeries = chart.series.push(new am4maps.MapPolygonSeries());
 
-    // Create map polygon series
-    let polygonSeries = chart.series.push(new am4maps.MapPolygonSeries());
+  // Exclude Antartica
+  polygonSeries.exclude = ["AQ"];
 
-    // Exclude Antartica
-    polygonSeries.exclude = ["AQ"];
+  // Make map load polygon (like country names) data from GeoJSON
+  polygonSeries.useGeodata = true;
 
-    // Make map load polygon (like country names) data from GeoJSON
-    polygonSeries.useGeodata = true;
-
-    // Configure series
-    let polygonTemplate = polygonSeries.mapPolygons.template;
-    polygonTemplate.tooltipText = "{name}";
-    polygonTemplate.polygon.fillOpacity = 0.6;
-    polygonTemplate.applyOnClones = true;
-    polygonTemplate.togglable = true;
-    polygonTemplate.nonScalingStroke = true;
-    polygonTemplate.strokeOpacity = 0.5;
-    polygonTemplate.fill = chart.colors.getIndex(0);
-    let lastSelected;
-    polygonTemplate.events.on("hit", function (ev) {
-      if (lastSelected) {
-        // This line serves multiple purposes:
-        // 1. Clicking a country twice actually de-activates, the line below
-        //    de-activates it in advance, so the toggle then re-activates, making it
-        //    appear as if it was never de-activated to begin with.
-        // 2. Previously activated countries should be de-activated.
-        lastSelected.isActive = false;
-      }
-      ev.target.series.chart.zoomToMapObject(ev.target);
-      if (lastSelected !== ev.target) {
-        lastSelected = ev.target;
-      }
-    })
-
-    // Small map
-    chart.smallMap = new am4maps.SmallMap();
-    // Re-position to top right (it defaults to bottom left)
-    chart.smallMap.align = "right";
-    chart.smallMap.valign = "top";
-    chart.smallMap.series.push(polygonSeries);
-
-    // Zoom control
-    chart.zoomControl = new am4maps.ZoomControl();
-
-    let homeButton = new am4core.Button();
-    homeButton.events.on("hit", function () {
-      chart.goHome();
-    });
-
-    homeButton.icon = new am4core.Sprite();
-    homeButton.padding(7, 5, 7, 5);
-    homeButton.width = 30;
-    homeButton.icon.path = "M16,8 L14,8 L14,16 L10,16 L10,10 L6,10 L6,16 L2,16 L2,8 L0,8 L8,0 L16,8 Z M16,8";
-    homeButton.marginBottom = 10;
-    homeButton.parent = chart.zoomControl;
-    homeButton.insertBefore(chart.zoomControl.plusButton);
-
-
-    let ss = polygonTemplate.states.create("active");
-    ss.properties.fill = chart.colors.getIndex(2);
-
-    // Create hover state and set alternative fill color
-    var hs = polygonTemplate.states.create("hover");
-    hs.properties.fill = chart.colors.getIndex(0);
-
-    // Add image series
-    imageSeries = chart.series.push(new am4maps.MapImageSeries());
-    imageSeries.mapImages.template.propertyFields.longitude = "longitude";
-    imageSeries.mapImages.template.propertyFields.latitude = "latitude";
-    imageSeries.mapImages.template.tooltipText = "{title}";
-    imageSeries.mapImages.template.propertyFields.url = "url";
-
-    let circle = imageSeries.mapImages.template.createChild(am4core.Circle);
-    circle.radius = 3;
-    circle.propertyFields.fill = "color";
-
-    let circle2 = imageSeries.mapImages.template.createChild(am4core.Circle);
-    circle2.radius = 3;
-    circle2.propertyFields.fill = "color";
-
-
-    circle2.events.on("inited", function (event) {
-      animateBullet(event.target);
-    })
-
-
-    function animateBullet(circle) {
-      var animation = circle.animate([{ property: "scale", from: 1, to: 4 }, { property: "opacity", from: 1, to: 0 }], 2000, am4core.ease.circleOut);
-      animation.events.on("animationended", function (event) {
-        animateBullet(event.target.object);
-      })
+  // Configure series
+  let polygonTemplate = polygonSeries.mapPolygons.template;
+  polygonTemplate.tooltipText = "{name}";
+  polygonTemplate.polygon.fillOpacity = 0.6;
+  polygonTemplate.applyOnClones = true;
+  polygonTemplate.togglable = true;
+  polygonTemplate.nonScalingStroke = true;
+  polygonTemplate.strokeOpacity = 0.5;
+  polygonTemplate.fill = chart.colors.getIndex(0);
+  let lastSelected;
+  polygonTemplate.events.on("hit", function (ev) {
+    if (lastSelected) {
+      // This line serves multiple purposes:
+      // 1. Clicking a country twice actually de-activates, the line below
+      //    de-activates it in advance, so the toggle then re-activates, making it
+      //    appear as if it was never de-activated to begin with.
+      // 2. Previously activated countries should be de-activated.
+      lastSelected.isActive = false;
     }
+    ev.target.series.chart.zoomToMapObject(ev.target);
+    if (lastSelected !== ev.target) {
+      lastSelected = ev.target;
+    }
+  })
 
-    colorSet = new am4core.ColorSet();
-
-    imageSeries.data = [];
-
+  polygonSeries.heatRules.push({
+    property: "fill",
+    target: polygonSeries.mapPolygons.template,
+    min: am4core.color("#95b8d7"),
+    max: am4core.color("#1a4164")
   });
+
+  // Small map
+  chart.smallMap = new am4maps.SmallMap();
+  // Re-position to top right (it defaults to bottom left)
+  chart.smallMap.align = "right";
+  chart.smallMap.valign = "top";
+  chart.smallMap.series.push(polygonSeries);
+
+  // Zoom control
+  chart.zoomControl = new am4maps.ZoomControl();
+
+  let homeButton = new am4core.Button();
+  homeButton.events.on("hit", function () {
+    chart.goHome();
+  });
+
+  homeButton.icon = new am4core.Sprite();
+  homeButton.padding(7, 5, 7, 5);
+  homeButton.width = 30;
+  homeButton.icon.path = "M16,8 L14,8 L14,16 L10,16 L10,10 L6,10 L6,16 L2,16 L2,8 L0,8 L8,0 L16,8 Z M16,8";
+  homeButton.marginBottom = 10;
+  homeButton.parent = chart.zoomControl;
+  homeButton.insertBefore(chart.zoomControl.plusButton);
+
+  let ss = polygonTemplate.states.create("active");
+  ss.properties.fill = chart.colors.getIndex(2);
+
+  // Create hover state and set alternative fill color
+  var hs = polygonTemplate.states.create("hover");
+  hs.properties.fill = chart.colors.getIndex(0);
+
+  // Add image series
+  imageSeries = chart.series.push(new am4maps.MapImageSeries());
+  imageSeries.mapImages.template.tooltipText = "{title}";
+  imageSeries.mapImages.template.propertyFields.url = "url";
+
+  let circle = imageSeries.mapImages.template.createChild(am4core.Circle);
+  circle.radius = 3;
+  circle.propertyFields.fill = "color";
+
+  let circle2 = imageSeries.mapImages.template.createChild(am4core.Circle);
+  circle2.radius = 3;
+  circle2.propertyFields.fill = "color";
+
+
+  circle2.events.on("inited", function (event) {
+    animateBullet(event.target);
+  })
+
+
+  function animateBullet(circle) {
+    var animation = circle.animate([{ property: "scale", from: 1, to: 4 }, { property: "opacity", from: 1, to: 0 }], 2000, am4core.ease.circleOut);
+    animation.events.on("animationended", function (event) {
+      animateBullet(event.target.object);
+    })
+  }
+
+  colorSet = new am4core.ColorSet();
+
+  imageSeries.data = [];
+  polygonSeries.data = [];
+
+});
 // end am4core.ready()
 </script>
+
 <link href="//db.onlinewebfonts.com/c/e8c6a63541de0a4211a9358cbe74690f?family=Futura" rel="stylesheet"
   type="text/css" />
 <style>
@@ -216,8 +222,6 @@
 <div id="chartdiv"></div>
 
 <script>
-
-
 let csvData;
 
 function selectDateRange() {
@@ -235,13 +239,12 @@ function updateSelectOptions() {
 }
 
 function changeData(src) {
-  plotData = src.map(j => ({
-      'longitude': parseFloat(j.longitude),
-      'latitude': parseFloat(j.latitude),
-      'title': `${j.region}, ${j.country}`,
-      'color': colorSet.next()
-    }));
-  imageSeries.data = plotData;
+  const f = (a, e) => a[e.country]
+    ? (() => { a[e.country] = a[e.country] + Number.parseInt(e.count); return a; })()
+    : (() => { a[e.country] =                Number.parseInt(e.count); return a; })();
+  const d = src.filter(e => !!e.country && !Number.isNaN(e.count)).reduce(f, {});
+  console.log('Cumulative count by country', d);
+  polygonSeries.data = Object.keys(d).map(c => ({ id: c, value: d[c] }));
 }
 
 function loadData() {
@@ -272,5 +275,4 @@ function csvJSON(csv) {
 
   return result;
 }
-
 </script>
