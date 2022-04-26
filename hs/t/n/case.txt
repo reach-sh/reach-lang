@@ -1,1 +1,8 @@
-reachc: Unexpected token, CaseToken at ./case.rsh:8:13
+reachc: error[RP0012]: Unexpected token: CaseToken
+
+  ./case.rsh:8:13
+
+  8|       const case = 5;
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RP0012
+

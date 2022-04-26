@@ -1,0 +1,8 @@
+reachc: error[RP0012]: Unexpected token: RightParenToken
+
+  ./Err_Parse_Syntax.rsh:4:28
+
+  4|   const x = muldiv(1, 2, 3,);
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RP0012
+

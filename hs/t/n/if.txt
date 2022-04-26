@@ -1,1 +1,8 @@
-reachc: Unexpected token, IfToken at ./if.rsh:8:13
+reachc: error[RP0012]: Unexpected token: IfToken
+
+  ./if.rsh:8:13
+
+  8|       const if = 5;
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RP0012
+

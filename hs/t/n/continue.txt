@@ -1,1 +1,8 @@
-reachc: Unexpected token, ContinueToken at ./continue.rsh:8:13
+reachc: error[RP0012]: Unexpected token: ContinueToken
+
+  ./continue.rsh:8:13
+
+  8|       const continue = 5;
+
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RP0012
+
