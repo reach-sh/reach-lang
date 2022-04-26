@@ -1,0 +1,11 @@
+It is finalized with `{!rsh} init()` and then the application begins in a step.
+
+## {#ref-programs-appinit-stmts} Statements
+
+Any statements valid for a [computation](##ref-programs-compute-stmts) are valid for application initialization.
+However, some additional statements are allowed.
+
+### `init`
+
+```reach
+init();
