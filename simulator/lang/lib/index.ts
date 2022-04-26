@@ -1,18 +1,11 @@
-// nodejs compatible import
-const c = await import('@reach-sh/simulator-client');
-// import * as c from '@reach-sh/simulator-client';
-const assert = await import('assert');
-
-
-// TODO: typescript
+import c from '@reach-sh/simulator-client';
+import assert from 'assert';
 
 const consensusID = -1
 const nwToken = -1
 
-
 const filter = (obj: any, predicate: any) =>
   Object.fromEntries(Object.entries(obj).filter(predicate));
-
 
 class State {
   id: number;
@@ -28,10 +21,10 @@ class State {
 
 class Scenario {
   state: State;
-  participants: any;
-  consensus: any;
-  apis: any;
-  views: any;
+  participants: Record<string, Participant>;
+  consensus: Consensus;
+  apis: Record<string, API>;
+  views: Record<string, View>;
   next() {};
 
   constructor() {

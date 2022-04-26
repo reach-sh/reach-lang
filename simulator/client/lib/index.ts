@@ -537,7 +537,7 @@ const ping = async () => {
 
 // we expose certain methods to be available in a user provided
 // Simulation "script" sequence of commands
-const clientMethods: any = {
+const clientMethods: Record<string, (...args: any[]) => Promise<any>> = {
   "getStates" : getStates,
   "getStatus" : getStatus,
   "getActions" : getActions,
