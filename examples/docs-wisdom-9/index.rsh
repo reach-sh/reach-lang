@@ -3,8 +3,8 @@
 const commonInteract = {};
 const sellerInteract = {
   ...commonInteract,
-    price: UInt,
-    reportReady: Fun([UInt], Null),
+  price: UInt,
+  reportReady: Fun([UInt], Null),
 };
 const buyerInteract = {
   ...commonInteract,
