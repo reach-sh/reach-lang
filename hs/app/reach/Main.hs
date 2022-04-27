@@ -7,10 +7,11 @@ import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Monad.Extra
 import Control.Monad.Reader
-import Data.Aeson (ToJSON, FromJSON, Value(..), toJSON, encode, parseJSON, withText)
+import Data.Aeson (ToJSON, FromJSON, Value(..), toJSON, decodeStrict, encode, object, parseJSON, withObject, withText, (.=), (.:))
 import qualified Data.Aeson as A
 import qualified Data.Aeson.Types as A
 import Data.Bits
+import qualified Data.ByteString.Internal as BSI
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as BSLC8
 import Data.Char
@@ -2451,130 +2452,148 @@ whoami = command "whoami" $ info f fullDesc
   where
     f = pure . script $ write [N.text| echo "$whoami'" |]
 
+type DeviceCode = Text
+
+-- https://stackoverflow.com/a/60790430
+newtype SomeValue = SomeValue String
+instance FromJSON SomeValue where
+  parseJSON = withObject "SomeValue" $ \o -> SomeValue <$> o .: "html_url"
+
 support :: Subcommand
-support = command "support" $ info f d
+support = command "support" $ info (pure step1) d
   where
     d = progDesc "Upload index.rsh and index.mjs to help us troubleshoot!"
-    f = pure . script $ write [N.text|
-      OUT="$$(
-        # @TODO: use Reach App instead of Hamir's -
-        # update "client_id"!
 
-        # Step 1: Get a device code to give to the user.
-        curl --silent -X POST \
-          -H 'Content-Type: application/json' \
-          --data '{
-            "client_id": "b0e24d4cc8251c6cd14c",
-            "scope": "gist"
-          }' \
-          https://github.com/login/device/code
-      )"
-      # @TODO: Convert these to regular expressions!
-      # cut may be too brittle
-      DEVICE_CODE=$$(echo $$OUT | cut -d \& -f 1)
-      DEVICE_CODE=$$(echo $$DEVICE_CODE | cut -d = -f 2)
-      # echo "$$DEVICE_CODE"
+    splitByAmpersands :: BSLC8.ByteString -> [Text]
+    splitByAmpersands s = T.splitOn "&" (pack $ BSLC8.unpack s)
 
-      # Do we want this information?
-      # EXPIRES_IN=$$(echo $$OUT | cut -d \& -f 2)
-      # EXPIRES_IN=$$(echo $$EXPIRES_IN | cut -d = -f 2)
-      # echo "$$EXPIRES_IN"
+    splitByEqualsSigns :: Text -> [Text]
+    splitByEqualsSigns s = T.splitOn (pack "=") s
 
-      # Do we want this information?
-      # INTERVAL=$$(echo $$OUT | cut -d \& -f 3)
-      # INTERVAL=$$(echo $$INTERVAL | cut -d = -f 2)
-      # echo $$INTERVAL
+    process :: BSLC8.ByteString -> [[Text]]
+    process gitHubResponseString = do
+      let stringArray = splitByAmpersands gitHubResponseString
+      map splitByEqualsSigns stringArray
 
-      # @TODO: Convert these to regular expressions!
-      # cut may be too brittle
-      USER_CODE=$$(echo $$OUT | cut -d \& -f 4)
-      USER_CODE=$$(echo $$USER_CODE | cut -d = -f 2)
-      echo "Your verification code is $$USER_CODE"
-      echo "Please enter it at https://github.com/login/device"
-      echo
-      echo "Type 'y' AFTER SUCCESSFUL AUTHORIZATION to upload index.mjs and index.rsh."
-      printf "Anything else aborts: "; read -r x
-        case "$$x" in
-          y|Y) json=$$(
-              printf '{
-                "client_id": "b0e24d4cc8251c6cd14c",
-                "device_code": "%s",
-                "grant_type": "urn:ietf:params:oauth:grant-type:device_code"
-              }' "$$DEVICE_CODE"
-            )
-            # echo
-            # echo "$$DEVICE_CODE"
-            # echo "$$json"
-            # echo
+    isDeviceCodePair :: [Text] -> Bool
+    isDeviceCodePair pair = head pair == pack "device_code"
 
-            # Step 2: User the user's device code to get a token.
-            OUT_2="$$(
-              curl --silent -X POST \
-                -H 'Content-Type: application/json' \
-                --data "$$json" \
-                https://github.com/login/oauth/access_token
-            )"
-            # @TODO: Save the auth token; git-credential-store
-            # @TODO: Convert these to regular expressions!
-            # cut may be too brittle
-            ACCESS_TOKEN=$$(echo $$OUT_2 | cut -d \& -f 1)
-            ACCESS_TOKEN=$$(echo $$ACCESS_TOKEN | cut -d = -f 2)
-            # echo "$$ACCESS_TOKEN"
+    isUserCodePair :: [Text] -> Bool
+    isUserCodePair pair = head pair == pack "user_code"
 
-            # Escape all newlines and quotation marks!
-            # This is to avoid "message": "Problems parsing JSON"
-            # @TODO: error handling!
-            # What if index.mjs or index.rsh don't exist?!
-            # We should tell the user that something went wrong.
-            rsh=$(perl -p -e 's/\n/\\n/' index.rsh | perl -p -e 's/"/\\"/g')
-            mjs=$(perl -p -e 's/\n/\\n/' index.mjs | perl -p -e 's/"/\\"/g')
-            # echo "$$rsh"
+    isAccessTokenPair :: [Text] -> Bool
+    isAccessTokenPair pair = head pair == pack "access_token"
 
-            json2=$$(
-              printf '{
-                "files": {
-                  "index.mjs": {
-                    "content": "%s",
-                    "language": "JavaScript",
-                    "type": "application/javascript"
-                  },
-                  "index.rsh": {
-                    "content": "%s",
-                    "language": "JavaScript",
-                    "type": "application/javascript"
-                  }
-                }
-              }' "$$mjs" "$$rsh"
-            )
+    clientId :: String
+    clientId = "b0e24d4cc8251c6cd14c"
 
-            # Step 3: Upload gist!
-            OUT_3="$$(
-              curl --silent -X POST \
-                -H "Accept: application/vnd.github.v3+json" \
-                -H "Authorization: token $$ACCESS_TOKEN" \
-                https://api.github.com/gists \
-                --data "$$json2" \
-            )"
-            # echo "$$OUT_3"
+    scope :: String
+    scope = "gist"
 
-            # WARNING!
-            # This just tries to check for the correct "html_url"
-            # with two leading spaces!
-            # We get three results otherwise, since there are three
-            # "html_url"s in the response, and can't do $${URL[1]}
-            # because "SC2039: In POSIX sh, array references are undefined."
-            URL=$(echo "$$OUT_3" | gawk 'match($$0, /^  "html_url": "(.+)",$$/, a) {print a[1]}')
-            echo
-            echo "You can see the files you just uploaded at $$URL"
-            ;;
-          *) echo
-            echo "No files uploaded"
-            echo "Run reach support again if would like to make another try."
-            # What exit code do we want here?
-            exit 123
-            ;;
-        esac
-    |]
+    language :: String
+    language = "JavaScript"
+
+    typeForUploadJson :: String
+    typeForUploadJson = "application/javascript"
+
+    acceptHeader = "Accept"
+    authorizationHeader = "Authorization"
+
+    step1 :: App
+    step1 = do
+      let dataJson =
+            object
+              [ "client_id" .= clientId
+              , "scope" .= scope
+              ]
+      parsedRequest <- parseRequest "POST https://github.com/login/device/code"
+      let request = setRequestBodyJSON dataJson parsedRequest
+      response <- httpLBS request
+      let githubResponseString = getResponseBody response
+      let arrayOfArrayOfText = process githubResponseString
+      let deviceCodePair = head $ filter isDeviceCodePair arrayOfArrayOfText
+      let deviceCode = deviceCodePair !! 1
+      let userCodePair = head $ filter isUserCodePair arrayOfArrayOfText
+      let userCode = userCodePair !! 1
+      liftIO . T.putStrLn $ pack $ "Your user code is " ++ unpack userCode
+      liftIO . T.putStrLn $ pack "Please enter it at https://github.com/login/device"
+      liftIO . T.putStrLn $ pack ""
+      liftIO . T.putStrLn $ pack
+        "Type 'y' AFTER SUCCESSFUL AUTHORIZATION to upload index.mjs and index.rsh."
+      userEnteredCharacter <- liftIO getChar
+      if toUpper userEnteredCharacter == 'Y'
+        then do step2WithThe deviceCode
+        else do
+          liftIO . T.putStrLn $ pack ""
+          liftIO . T.putStrLn $
+            "No files uploaded; run reach support again to make another try."
+
+    grantType :: String
+    grantType = "urn:ietf:params:oauth:grant-type:device_code"
+    userAgentHeader = "user-agent"
+
+    step2WithThe :: DeviceCode -> ReaderT Env IO ()
+    step2WithThe deviceCode = do
+      let dataJson =
+            object
+              [ "client_id" .= clientId
+              , "device_code" .= deviceCode
+              , "grant_type" .= grantType
+              ]
+      parsedRequest <- parseRequest "POST https://github.com/login/oauth/access_token"
+      let request = setRequestBodyJSON dataJson parsedRequest
+      response <- httpLBS request
+      let githubResponseString = getResponseBody response
+      let arrayOfArrayOfText = process githubResponseString
+      -- @TODO: Error handling! reach: Prelude.head: empty list
+      -- What if the user ignores instructions and hits 'y'
+      -- without actually authenticating, first?
+      let accessTokenPair = head $ filter isAccessTokenPair arrayOfArrayOfText
+      -- @TODO: Save accessToken; git-credential-store
+      -- Warning: Permission errors when doing this^
+      let accessToken = accessTokenPair !! 1
+      liftIO . T.putStrLn $ pack ""
+      -- @TODO: error handling!
+      -- What if index.mjs or index.rsh don't exist?
+      indexRsh <- liftIO $ readFile "index.rsh"
+      indexMjs <- liftIO $ readFile "index.mjs"
+      let indexRshValue =
+            object
+              [ "content" .= indexRsh
+              , "language" .= language
+              , "type" .= typeForUploadJson
+              ]
+      let indexMjsValue =
+            object
+              [ "content" .= indexMjs
+              , "language" .= language
+              , "type" .= typeForUploadJson
+              ]
+      let indexRshJson :: A.Pair
+          indexRshJson = ("index.rsh" .= indexRshValue)
+      let indexMjsJson :: A.Pair
+          indexMjsJson = ("index.mjs" .= indexMjsValue)
+      -- @TODO: Also add output of reach hashes!
+      let mainJson =
+            object
+              [ "files" .= object [ indexRshJson, indexMjsJson ]
+              ]
+      parsedRequest2 <- parseRequest "POST https://api.github.com/gists"
+      let req1 = setRequestBodyJSON mainJson parsedRequest2
+      let req2 = setRequestHeader acceptHeader [BSI.packChars "application/vnd.github.v3+json"] req1
+      let req3 = setRequestHeader authorizationHeader [BSI.packChars ("token " ++ unpack accessToken)] req2
+      -- @HACK "node.js" is arbitrary; I just picked an arbitrary header
+      -- to bypass a "Request forbidden by administrative rules.
+      -- Please make sure your request has a User-Agent header"
+      -- error message
+      let req4 = setRequestHeader userAgentHeader [BSI.packChars "node.js"] req3
+      response2 <- httpBS req4
+      let response2Body = getResponseBody response2
+      case decodeStrict response2Body of
+        Just (SomeValue urlToViewGist) -> do
+          liftIO . T.putStrLn $ pack "Your gist is viewable at"
+          liftIO . T.putStrLn $ pack urlToViewGist
+        _ -> error "Couldn't decode JSON from GitHub API!"
 
 log' :: Subcommand
 log' = command "log" $ info f fullDesc
