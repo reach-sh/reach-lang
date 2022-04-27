@@ -3,11 +3,11 @@ Verifying for generic connector
   Verifying when ALL participants are honest
   Verifying when NO participants are honest
 Checked 4 theorems; No failures!
-reachc: error[RAPI0001]: API "Writer_f" calls interact.out() before interact.in()
+reachc: error[RAPI0000]: API "Writer_f" does not occur in program
 
-  ./API_OutBeforeIn.rsh:12:19:application
+  ./API_OutBeforeIn.rsh:3:30:application
 
-  12|   U.f.interact.out([], null);
+  3| export const main = Reach.App(() => {
 
-For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RAPI0001
+For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RAPI0000
 
