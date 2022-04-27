@@ -521,7 +521,7 @@ initProgSim ll = do
   ps <- return $ C.initApp ll initSt
   processNewState Nothing ps Consensus
 
-initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> Maybe C.Account -> LLProg -> WebM Bool
+initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> Maybe (C.Account) -> LLProg -> WebM Bool
 initProgSimFor actId sid liv accId (LLProg _ _ _ _ _ _ _ _ _ step) = do
   graph <- gets e_graph
   modify $ \st -> st {e_actor_id = actId}

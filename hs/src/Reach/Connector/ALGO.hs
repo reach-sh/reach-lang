@@ -41,7 +41,7 @@ import Reach.Texty (pretty)
 import Reach.UnsafeUtil
 import Reach.Util
 import Reach.Warning
-import Safe (atMay)
+import Safe (atMay, headMay)
 import System.Exit
 import System.FilePath
 import System.IO.Temp
@@ -781,6 +781,7 @@ data LabelRec = LabelRec
   , lr_at :: SrcLoc
   , lr_what :: String
   }
+  deriving (Show)
 
 type CompanionCalls = M.Map Label Integer
 type CompanionInfo = Maybe CompanionCalls
@@ -899,6 +900,7 @@ data Env = Env
   , eCompanion :: CompanionInfo
   , eCompanionRec :: CompanionRec
   , eLibrary :: IORef (M.Map LibFun (Label, App ()))
+  , eApiCalls :: M.Map SLPart Int
   }
 
 type App = ReaderT Env IO
@@ -2198,7 +2200,10 @@ ce = \case
         clogEvent name vs
         --cl DLL_Null -- Event log values are never used
   DLE_setApiDetails at p _ _ _ -> do
-    callCompanion at $ CompanionLabel $ apiLabel p
+    which <- fromMaybe (impossible "setApiDetails no which") <$> asks eWhich
+    mac <- multipleApiCalls p
+    let p' = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) which mac
+    callCompanion at $ CompanionLabel p'
   DLE_GetUntrackedFunds at mtok tb -> do
     after_lab <- freshLabel "getActualBalance"
     cGetBalance at mtok
@@ -2257,6 +2262,13 @@ ce = \case
       comment $ LT.pack $ "at " <> (unsafeRedactAbsStr $ show at)
       forM_ fs $ \f ->
         comment $ LT.pack $ unsafeRedactAbsStr $ show f
+
+multipleApiCalls :: SLPart -> App Bool
+multipleApiCalls w = do
+  apiCalls <- asks eApiCalls
+  case M.lookup w apiCalls of
+    Just n  -> return $ n > 1
+    Nothing -> return False
 
 signatureStr :: String -> [DLType] -> Maybe DLType -> String
 signatureStr f args mret = sig
@@ -2978,6 +2990,7 @@ data CMeth
     , capi_arg_tys :: [DLType]
     , capi_doWrap :: App ()
     , capi_label :: LT.Text
+    , capi_jumps :: [(Int, LT.Text)]
     }
   | CView
     { cview_who :: SLPart
@@ -3007,9 +3020,9 @@ cmethIsView = \case
   CView {} -> True
   CAlias {..} -> cmethIsView calias_meth
 
-capi :: (SLPart, ApiInfo) -> App [(String, CMeth)]
-capi (who, (ApiInfo {..})) = do
-  capi_label <- freshLabel $ bunpack who
+capi :: Bool -> (SLPart, ApiInfo) -> App [(String, CMeth)]
+capi qualify (who, (ApiInfo {..})) = do
+  capi_label <- freshLabel f
   let c = CApi {..}
   let apis = [(capi_sig, c)]
   let mk_alias alias = apis <> [(mk_sig $ bunpack alias, CAlias alias c)]
@@ -3019,7 +3032,7 @@ capi (who, (ApiInfo {..})) = do
     capi_which = ai_which
     mk_sig n = signatureStr n capi_arg_tys mret
     capi_sig = mk_sig f
-    f = bunpack who
+    f = adjustApiName (bunpack who) ai_which qualify
     imp = impossible "apiSig"
     (capi_arg_tys, capi_doWrap) =
       case ai_compile of
@@ -3037,6 +3050,46 @@ capi (who, (ApiInfo {..})) = do
     cid = fromMaybe imp ai_mcase_id
     capi_ret_ty = ai_ret_ty
     mret = Just $ capi_ret_ty
+    capi_jumps = []
+
+apiArgsAndRet :: CMeth -> ([DLType], DLType)
+apiArgsAndRet = \case
+  CApi {..}   -> (capi_arg_tys, capi_ret_ty)
+  CAlias {..} -> apiArgsAndRet $ calias_meth
+  _ -> impossible $ "apiArgsAndRet: Expected API"
+
+genApiJump :: SLPart -> [(String, CMeth)] -> App (String, CMeth)
+genApiJump who ms = do
+  let ms' = map snd ms
+  -- Grab any one of the methods to store argument/return type information.
+  -- All methods have same signature.
+  let m = fromMaybe (impossible "genApiJump") $ headMay ms'
+  let whichs = map capi_which ms'
+  let labels = map capi_label ms'
+  let (arg_tys, mret) = apiArgsAndRet m
+  let sig = signatureStr (bunpack who) arg_tys $ Just mret
+  return $ (sig, CApi {
+      capi_who = who
+    , capi_label = capi_label m
+    , capi_jumps = zip whichs labels
+    -- These fields don't really matter
+    , capi_sig = sig
+    , capi_ret_ty = capi_ret_ty m
+    , capi_which = capi_which m
+    , capi_arg_tys = capi_arg_tys m
+    , capi_doWrap = capi_doWrap m
+    })
+
+capis :: (SLPart, M.Map a ApiInfo) -> App [(String, CMeth)]
+capis (p, ms) = do
+  ms' <- concatMapM (capi qualify . (p,) . snd) $ M.toAscList ms
+  case qualify of
+    True  -> do
+      m <- genApiJump p ms'
+      return $ m : ms'
+    False -> return ms'
+  where
+    qualify = M.size ms > 1
 
 cview :: (SLPart, VSITopInfo) -> (String, CMeth)
 cview (who, VSITopInfo cview_arg_tys cview_ret_ty cview_hs) = (cview_sig, c)
@@ -3069,7 +3122,7 @@ cmeth sigi = \case
     comment $ LT.pack $ sigDump sigi
     block_' (bunpack alias) $ do
       code "b" [capi_label]
-  CApi _ sig _ which tys doWrap lab -> do
+  CApi _ sig _ which tys doWrap lab [] -> do
     block lab $ do
       comment $ LT.pack $ "API: " <> sig
       comment $ LT.pack $ sigDump sigi
@@ -3078,6 +3131,15 @@ cmeth sigi = \case
       cconcatbs_ (const $ return ()) $ zipWith f tys [1 ..]
       doWrap
       code "b" [handlerLabel which]
+  -- This API occurs in multiple places throughout the program.
+  -- Jump to the correct handler
+  CApi who sig _ _ _ _ _ wls -> do
+    block_' (bunpack who) $ do
+      comment $ LT.pack $ "API: " <> sig
+      comment $ LT.pack $ sigDump sigi
+      gvLoad GV_currentStep
+      let go _ l = code "b" [l]
+      cblt "api" go $ bltM $ M.fromList wls
   CView who sig _ hs -> do
     block_' (bunpack who) $ do
       comment $ LT.pack $ "View: " <> sig
@@ -3188,6 +3250,7 @@ compile_algo env disp pl = do
   let eLets = mempty
   let eLetSmalls = mempty
   let eWhich = Nothing
+  let eApiCalls = M.map M.size ai
   let recordSize prefix size = do
         modifyIORef resr $
           M.insert (prefix <> "Size") $
@@ -3210,13 +3273,16 @@ compile_algo env disp pl = do
             lr_at = ch_at
             lr_what = "Step " <> show i
         (_, C_Loop {}) -> Nothing
-  let a2lr (p, ApiInfo {..}) = LabelRec {..}
+  let a2lr qualify (p, ApiInfo {..}) = LabelRec {..}
         where
-          lr_lab = apiLabel p
+          lr_lab = LT.pack $ adjustApiName (LT.unpack $ apiLabel p) ai_which qualify
           lr_at = ai_at
-          lr_what = "API " <> bunpack p
+          lr_what = "API " <> LT.unpack lr_lab
+  let as2lrs (p, ms) =
+        map (a2lr qualify . (p,) . snd) $ M.toAscList ms
+        where qualify = M.size ms > 1
   let pubLs = mapMaybe h2lr $ M.toAscList hm
-  let apiLs = map a2lr $ M.toAscList ai
+  let apiLs = concatMap as2lrs $ M.toAscList ai
   let progLs = pubLs <> apiLs
   meth_sm_r <- newIORef mempty
   let run :: CompanionInfo -> App () -> IO (TEALs, Notify, IO ())
@@ -3271,7 +3337,7 @@ compile_algo env disp pl = do
         ts' <- rec False Nothing
         void $ addProg lab ts'
   runProg $ do
-    ai_sm <- M.fromList <$> concatMapM capi (M.toAscList ai)
+    ai_sm <- M.fromList <$> concatMapM capis (M.toAscList ai)
     let vsiTop = analyzeViews vsi
     let vsi_sm = M.fromList $ map cview $ M.toAscList vsiTop
     let meth_sm = M.union ai_sm vsi_sm

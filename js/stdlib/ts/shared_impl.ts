@@ -188,6 +188,7 @@ export type IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy exten
   sendrecv: (args:ISendRecvArgs<RawAddress, Token, ConnectorTy, ContractInfo>) => Promise<IRecv<RawAddress>>,
   recv: (args:IRecvArgs<ConnectorTy>) => Promise<IRecv<RawAddress>>,
   getState: (v:BigNumber, ctcs:Array<ConnectorTy>) => Promise<Array<any>>,
+  getCurrentStep: () => Promise<BigNumber>,
   apiMapRef: (i:number, ty:ConnectorTy) => MapRefT<any>,
 };
 
@@ -203,7 +204,7 @@ export type ISetupViewArgs<ContractInfo, VerifyResult> =
 export type ISetupEventArgs<ContractInfo, VerifyResult> =
   Omit<ISetupArgs<ContractInfo, VerifyResult>, ("setInfo")>;
 
-type SpecificKeys = ("getContractInfo"|"getContractAddress"|"getBalance"|"sendrecv"|"recv"|"getState"|"apiMapRef");
+type SpecificKeys = ("getContractInfo"|"getContractAddress"|"getBalance"|"sendrecv"|"recv"|"getState"|"getCurrentStep"|"apiMapRef");
 
 export type ISetupRes<ContractInfo, RawAddress, Token, ConnectorTy extends AnyBackendTy> = Pick<IContractCompiled<ContractInfo, RawAddress, Token, ConnectorTy>, (SpecificKeys)>;
 
@@ -334,13 +335,13 @@ export const stdContract =
 
   const _initialize = () => {
     const { getContractInfo, getContractAddress, getBalance,
-            sendrecv, recv, getState, apiMapRef } =
+            sendrecv, recv, getCurrentStep, getState, apiMapRef } =
       _setup(setupArgs);
     return {
       selfAddress, iam, stdlib, waitUntilTime, waitUntilSecs,
       getContractInfo, getContractAddress, getBalance,
       sendrecv, recv,
-      getState, apiMapRef,
+      getCurrentStep, getState, apiMapRef,
     };
   };
   const ctcC = { _initialize };
