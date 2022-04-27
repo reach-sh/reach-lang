@@ -2125,7 +2125,8 @@ load: /hs/t/n/Err_NotAfterFirst.rsh
 This error can be corrected by placing `{!rsh} publish` before `{!rsh} didPublish()`:
 
 ```reach
-load: /hs/t/n/j610.rsh
+load: /examples/raffle/index.rsh
+range: 35 - 65
 ```
 
 ## {#RE0120} RE0120
