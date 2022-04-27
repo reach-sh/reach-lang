@@ -142,8 +142,8 @@ timeout_validate () {
   STOPPER=$2
   MESSAGE=$3
 
-  if [ $STOPPER -eq $TIMEOUT ]; then
-    printf $MESSAGE
+  if [ "$STOPPER" -eq "$TIMEOUT" ]; then
+    printf "%s" "$MESSAGE"
     exit 1;
   fi
 }
@@ -203,7 +203,7 @@ install_docker () {
 
 for DEP in make curl docker docker-compose; do
   if ! (which "${DEP}" >/dev/null 2>&1); then
-    printf "Reach relies on an installation of ${DEP}; do you want to install it? [Y,n]: "
+    printf "Reach relies on an installation of %s; do you want to install it? [Y,n]: " "${DEP}"
     read -r RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
       case $DEP in
