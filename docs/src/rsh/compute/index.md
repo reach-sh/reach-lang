@@ -1568,7 +1568,15 @@ and the next N values are distinct `{!rsh} UInt`s.
 assert( claim, [msg] )
 ```
 
- A static assertion which is only valid if `{!rsh} claim` always evaluates to `{!rsh} true`.
+ A static assertion which is only valid if `{!rsh} claim` always evaluates to `{!rsh} true`. 
+
+ For example, the following assertions were made in the [Rock, Paper, Scissors tutorial](##tut-5):
+
+ ```reach
+ load: /examples/rps-8-interact/index.rsh
+ range: 6 - 11
+ ```
+
 :::note
 The Reach compiler will produce a counter-example (i.e. an assignment of the identifiers in the program to falsify the `{!rsh} claim`) when an invalid `{!rsh} claim` is provided.
 It is possible to write a `{!rsh} claim` that actually always evaluates to `{!rsh} true`, but for which our current approach cannot prove always evaluates to `{!rsh} true`; if this is the case, Reach will fail to compile the program, reporting that its analysis is incomplete.
