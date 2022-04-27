@@ -521,8 +521,8 @@ initProgSim ll = do
   ps <- return $ C.initApp ll initSt
   processNewState Nothing ps Consensus
 
-initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> Maybe (C.Account) -> LLProg -> WebM Bool
-initProgSimFor actId sid liv accId (LLProg _ _ _ _ _ _ _ _ _ step) = do
+initProgSimFor :: C.ActorId -> StateId -> C.LocalInteractEnv -> Maybe C.Account -> LLProg -> WebM Bool
+initProgSimFor actId sid liv accId (LLProg {..}) = do
   graph <- gets e_graph
   modify $ \st -> st {e_actor_id = actId}
   let (g, l) = saferMaybe "initProgSimFor" $ M.lookup sid graph
@@ -534,7 +534,7 @@ initProgSimFor actId sid liv accId (LLProg _ _ _ _ _ _ _ _ _ step) = do
   let lcl' = lcl { C.l_livs = liv, C.l_acct = accId' }
   let locals' = M.insert actId lcl' locals
   let l' = l {C.l_curr_actor_id = actId, C.l_locals = locals'}
-  ps <- return $ C.initAppFromStep step (g, l')
+  ps <- return $ C.initAppFromStep llp_step (g, l')
   processNewState (Just sid) ps Local
 
 startServer :: LLProg -> String -> IO ()
