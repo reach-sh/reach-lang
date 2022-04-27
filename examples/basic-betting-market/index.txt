@@ -1,0 +1,82 @@
+Verifying knowledge assertions
+Verifying for generic connector
+  Verifying when ALL participants are honest
+Verification failed:
+  when ALL participants are honest
+  of theorem: while invariant before loop
+  at ./index.rsh:112:19:invariant
+
+  // Violation Witness
+
+  const UInt.max = 268;
+
+  const falsePool/1454 = <loop variable>;
+  //    ^ could = 0
+  //      from: ./index.rsh:66:19:while
+  const trueBetters/1456 = <loop variable>;
+  //    ^ could = 0
+  //      from: ./index.rsh:66:19:while
+  const netBalance/1465 = <loop variable>;
+  //    ^ could = 1
+  //      from: ./index.rsh:66:19:while
+  const v1630 = <function return>;
+  //    ^ could = {i: {i: 0, scale: 1 }, sign: true }
+  //      from: reach standard library:273:40:block app
+  const v1678 = <map reduction>;
+  //    ^ could = 0
+  //      from: reach standard library:162:21:application
+  const v1687 = <map reduction>;
+  //    ^ could = 0
+  //      from: reach standard library:139:18:application
+
+  // Theorem Formalization
+
+  const organizerCut/1650 = v1630.i.i;
+  //    ^ would be 0
+  const v1697 = ((v1678 == trueBetters/1456) ? (netBalance/1465 == ((v1687 + (falsePool/1454 - organizerCut/1650)) + organizerCut/1650)) : false);
+  //    ^ would be false
+  assert(v1697);
+
+Verification failed:
+  when ALL participants are honest
+  of theorem: assert
+  msg: "balance sufficient for transfer"
+  at ./index.rsh:126:36:application
+  at ./index.rsh:119:11:application call to [unknown function] (defined at: ./index.rsh:119:11:function exp)
+
+  // Violation Witness
+
+  const UInt.max = 795896;
+
+  const map0_1/2129 = <fresh Map>;
+  //    ^ could = <map: (None(null ))>
+  //      from: ./index.rsh:66:19:while
+  const falsePool/1454 = <loop variable>;
+  //    ^ could = 50001
+  //      from: ./index.rsh:66:19:while
+  const truePool/1457 = <loop variable>;
+  //    ^ could = 0
+  //      from: ./index.rsh:66:19:while
+  const v1630 = <function return>;
+  //    ^ could = {i: {i: 1, scale: 1 }, sign: true }
+  //      from: reach standard library:273:40:block app
+  const map0_2/2191 = <fresh Map>;
+  //    ^ could = <map: (Some(1 ))>
+  //      from: ./index.rsh:112:19:while
+  const netBalance/1677 = <loop variable>;
+  //    ^ could = 2
+  //      from: ./index.rsh:112:19:while
+  const this/1716 = <an honest join from "Better_collect">;
+  //    ^ could = <abstract address 0>
+  //      from: ./index.rsh:112:19:dot
+
+  // Theorem Formalization
+
+  const bet/1732 = fromSome(map0_2/2191[this/1716], 0 );
+  //    ^ would be 1
+  const v1786 = (bet/1732 + ((((bet/1732 * 100000) / truePool/1457) * (falsePool/1454 - v1630.i.i)) / 100000)) <= netBalance/1677;
+  //    ^ would be false
+  assert(v1786);
+
+  Verifying when NO participants are honest
+Checked 50 theorems; 4 failures (and 2 omitted repeats) :'(
