@@ -43,26 +43,22 @@ const go = async (ctcAdmin, sig) => {
   }
 }
 
+const [ accAdmin ] =
+  await stdlib.newTestAccounts(1, startingBalance);
 
-(async () => {
+accAdmin.setGasLimit(5000000);
 
-  const [ accAdmin ] =
-    await stdlib.newTestAccounts(1, startingBalance);
+const ctcAdmin = accAdmin.contract(backend);
 
-  accAdmin.setGasLimit(5000000);
+const ready = new Signal();
 
-  const ctcAdmin = accAdmin.contract(backend);
-
-  const ready = new Signal();
-
-  await Promise.all([
-    thread(await go(ctcAdmin, ready)),
-    ctcAdmin.p.Admin({
-      deployed: async () => {
-        console.log(`Deployed`);
-        ready.notify();
-      },
-      n: stdlib.bigNumberify(n),
-    }),
-  ]);
-})()
+await Promise.all([
+  thread(await go(ctcAdmin, ready)),
+  ctcAdmin.p.Admin({
+    deployed: async () => {
+      console.log(`Deployed`);
+      ready.notify();
+    },
+    n: stdlib.bigNumberify(n),
+  }),
+]);
