@@ -258,6 +258,9 @@ srcloc_at lab mp (SrcLoc _ _ rs) = SrcLoc (Just lab) mp rs
 srcloc_lab :: String -> SrcLoc -> SrcLoc
 srcloc_lab lab (SrcLoc _ tp rs) = SrcLoc (Just lab) tp rs
 
+srcloc_mtake_lab :: SrcLoc -> SrcLoc -> SrcLoc
+srcloc_mtake_lab (SrcLoc a' _ _) (SrcLoc a b c) = SrcLoc (maybe a Just a') b c
+
 srcloc_file :: SrcLoc -> Maybe FilePath
 srcloc_file = \case
   SrcLoc _ _ (Just (ReachSourceFile f)) -> Just f

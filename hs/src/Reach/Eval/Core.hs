@@ -4959,7 +4959,8 @@ doForkAPI2Case args = do
   let mkz w z = do
         log' <- doLog w
         let za = jsa z
-        z' <- jsInlineCall z [dotdom, jsArrowStmts za [jidg "rng"] [jsConst za (jidg "rngl") log', e2s $ mkzOnly w]]
+        z' <- locAtf (srcloc_jsa "consensus block" za) $
+                jsInlineCall z [dotdom, jsArrowStmts za [jidg "rng"] [jsConst za (jidg "rngl") log', e2s $ mkzOnly w]]
         return $ jsArrowStmts za [dom] z'
   let mkz' w l z = do
         z' <- mkz w z
@@ -5448,7 +5449,8 @@ evalStmtTrampoline sp ks ev =
     Nothing ->
       typeOf ev >>= \case
         (T_Null, _) -> evalStmt ks
-        (ty, _) -> locAt (srclocOf ev) $ expect_ $ Err_Block_NotNull ty
+        (ty, _) -> locAtf (srcloc_mtake_lab $ srclocOf ev) $
+                    expect_ $ Err_Block_NotNull ty
 
 findStmtTrampoline :: SLVal -> Maybe (JSSemi -> [JSStatement] -> App SLStmtRes)
 findStmtTrampoline = \case
