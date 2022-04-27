@@ -143,7 +143,7 @@ timeout_validate () {
   MESSAGE=$3
 
   if [ $STOPPER -eq $TIMEOUT ]; then
-    printf "Winget wasn't installed successfully and timmed out!\n"
+    printf "Winget wasn't installed successfully and timed out!\n"
     exit 1;
   fi
 }
