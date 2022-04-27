@@ -853,7 +853,7 @@ const checkAccounts = (addr: string, got?: string[]): void => {
   }
 }
 
-const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
+const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, signTxns_:(txns:string[]) => Promise<string[]>): ARC11_Wallet => {
   let p: Provider|undefined = undefined;
   const base = opts['providerEnv'] || 'LocalHost';
   const _env = typeof base === 'string' ? providerEnvByName(base) : base;
@@ -882,7 +882,8 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
     if ( !p ) { throw new Error(`must call enable`) };
     return p.indexer_bc;
   }
-  const signAndPostTxns = async (txns:WalletTransaction[], sopts?:object) => {
+  const signTxns = async (txns:WalletTransaction[], sopts?:object) => {
+    // XXX arguably p isn't needed here
     if ( !p ) { throw new Error(`must call enable`) };
     void(sopts);
     debug(`fallBack: signAndPostTxns`, {txns});
@@ -893,7 +894,7 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
       }
     });
     debug(`fallBack: signAndPostTxns`, {to_sign});
-    const signed: string[] = to_sign.length == 0 ? [] : await signTxns(to_sign);
+    const signed: string[] = to_sign.length == 0 ? [] : await signTxns_(to_sign);
     debug(`fallBack: signAndPostTxns`, {signed});
     const stxns: string[] = txns.map((txn) => {
       if ( txn.stxn ) { return txn.stxn; }
@@ -901,12 +902,21 @@ const doWalletFallback_signOnly = (opts:any, getAddr:() => Promise<string>, sign
       if ( ! s ) { throw new Error(`txn not signed`); }
       return s;
     });
+    return stxns;
+  };
+  const postTxns = async (stxns: string[], popts?:object) => {
+    if ( !p ) { throw new Error(`must call enable`) };
+    void(popts);
     const bs = stxns.map((stxn) => Buffer.from(stxn, 'base64'));
     debug(`fallBack: signAndPostTxns`, bs);
     await p.algodClient.sendRawTransaction(bs).do();
-    return {};
+    return {}; // TODO
+  }
+  const signAndPostTxns = async (txns:WalletTransaction[], spopts?:object) => {
+    const stxns = await signTxns(txns, spopts);
+    return await postTxns(stxns, spopts);
   };
-  return { _env, enable, enableNetwork, enableAccounts, getAlgodv2Client, getIndexerClient, signAndPostTxns };
+  return { _env, enable, enableNetwork, enableAccounts, getAlgodv2Client, getIndexerClient, signTxns, postTxns, signAndPostTxns };
 };
 const walletFallback_mnemonic = (opts:object) => (): ARC11_Wallet => {
   debug(`using mnemonic wallet fallback`);
