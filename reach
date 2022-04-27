@@ -151,7 +151,7 @@ timeout_validate () {
 install_docker () {
   PWD=$(pwd)
 
-  cd / #Depending on the directory the user is, windows has a hard time with the path.
+  cd / # Depending on `$PWD`, Windows sometimes struggles with paths
 
   if (which wsl.exe > /dev/null 2>&1); then
     if (! which winget.exe > /dev/null 2>&1); then
