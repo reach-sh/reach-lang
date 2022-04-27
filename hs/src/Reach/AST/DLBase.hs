@@ -24,6 +24,7 @@ import Reach.Pretty
 import Reach.Texty
 import Reach.Util
 import Data.Bifunctor
+import Data.Bool (bool)
 
 type PrettySubstEnv = M.Map DLVar Doc
 
@@ -1229,9 +1230,15 @@ type DLAPIs = InterfaceLikeMap (SLPart, IType)
 
 type DLEvents = InterfaceLikeMap [DLType]
 
+type ApiCalls = M.Map SLPart Int
+
 arraysLength :: [DLArg] -> Integer
 arraysLength arrays = do
   let sizes = map (snd . argArrTypeLen) arrays
   case allEqual sizes of
     Right s -> s
     _ -> impossible "Inconsistent array sizes."
+
+adjustApiName :: Show a => String -> a -> Bool -> String
+adjustApiName who which qualify = prefix <> who <> suffix
+  where (prefix, suffix) = bool ("", "") ("_", show which) qualify

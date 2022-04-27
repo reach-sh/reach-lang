@@ -3,27 +3,33 @@
 
 export const main = Reach.App(() => {
   const A = Participant('Admin', {
+    deployed: Fun(true, Null),
+    n: UInt,
   });
   const U = API('Writer', {
-    f: Fun([], Null),
+    f: Fun([], UInt),
   });
   init();
-  A.publish();
+  A.only(() => {
+    const n = declassify(interact.n);
+  });
+  A.publish(n);
+  A.interact.deployed();
 
   const x =
     parallelReduce(0)
     .invariant(balance() == 0)
-    .while( x < 10 )
+    .while( x < n )
     .api(U.f, (k) => {
-        k(null);
+        k(1);
         return x + 1;
     });
   const y =
     parallelReduce(0)
     .invariant(balance() == 0)
-    .while( y < 10 )
+    .while( y < n )
     .api(U.f, (k) => {
-        k(null);
+        k(2);
         return y + 1;
     });
 

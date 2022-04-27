@@ -158,7 +158,7 @@ seek = \case
       True -> do
         (liftIO $ readIORef eSeenInR) >>= \case
           False -> liftIO $ writeIORef eSeenInR True
-          True -> err at API_Twice
+          True -> impossible "API called `interact.in` multiple times"
         slurp k >>= \case
           Nothing -> err at API_NoOut
           Just k' -> return $ Just $ mkCom ET_Com c k'
@@ -228,7 +228,6 @@ clipAtFrom = \case
 slurp :: ETail -> App (Maybe ETail)
 slurp = \case
   ET_Com c k -> do
-    let at = srclocOf c
     let m = fmap (ET_Com c) <$> slurp k
     case has interactOut c of
       False -> m
@@ -236,7 +235,8 @@ slurp = \case
         Env {..} <- ask
         (liftIO $ readIORef eSeenOutR) >>= \case
           False -> liftIO $ writeIORef eSeenOutR True
-          True -> err at API_Twice
+          -- OK because there could be different paths that call `interact.out`
+          True -> return ()
         local (\e -> e {eSeenOut = True}) $
           -- We only keep reading the program because we need to grab the tail
           -- for simulation. It would be better if (a) Algorand didn't need
@@ -318,8 +318,8 @@ many_ = getFirst . mconcat . map First
 _many :: (a -> App (Maybe a)) -> [a] -> App (Maybe a)
 _many f l = many_ <$> mapM f l
 
-apc :: HasCounter a => a -> SLPart -> EPProg -> IO EPProg
-apc hc eWho = \case
+apc :: HasCounter a => a -> (SLPart, Maybe Int) -> EPProg -> IO EPProg
+apc hc (eWho, _) = \case
   EPProg at True ie et -> do
     let eSeenOut = False
     eSeenInR <- newIORef False

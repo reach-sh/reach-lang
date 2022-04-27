@@ -92,7 +92,7 @@ type Interface = real_ethers.utils.Interface;
 // on unhandled promise rejection, use:
 // node --unhandled-rejections=strict
 
-const reachBackendVersion = 13;
+const reachBackendVersion = 14;
 const reachEthBackendVersion = 7;
 export type Backend = IBackend<AnyETH_Ty> & {_Connectors: {ETH: {
   version: number,
@@ -541,8 +541,7 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
       let isAPI = false;
       const getState = async (vibne:BigNumber, tys:Array<AnyETH_Ty>): Promise<Array<any>> => {
         isAPI = true;
-        const ethersC = await getC();
-        const [ vibna, vsbs ] = await ethersC["_reachCurrentState"]();
+        const [ vibna, vsbs ] = await getGlobalState();
         debug(`getState`, { vibne, vibna, vsbs });
         if ( ! vibne.eq(vibna) ) {
           throw apiStateMismatchError(bin, vibne, vibna);
@@ -581,6 +580,11 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         debug(label, `canIWin`, {ret});
         return ret;
       };
+
+      const getGlobalState = async () => {
+        const ethersC = await getC();
+        return await ethersC["_reachCurrentState"]();
+      }
 
       const sendrecv = async (srargs:SendRecvArgs): Promise<Recv> => {
         const { funcNum, evt_cnt, lct, tys, args, pay, out_tys, onlyIf, soloSend, timeoutAt } = srargs;
@@ -769,7 +773,12 @@ const connectAccount = async (networkAccount: NetworkAccount): Promise<Account> 
         return balanceOfNetworkAccount(networkAccount, mtok);
       }
 
-      return { getContractInfo, getContractAddress, getBalance, sendrecv, recv, getState, apiMapRef };
+      const getCurrentStep = async () => {
+        const [ cs, _ ] = await getGlobalState();
+        return cs;
+      }
+
+      return { getContractInfo, getContractAddress, getBalance, getCurrentStep, sendrecv, recv, getState, apiMapRef };
     };
 
     const setupView = (setupViewArgs: SetupViewArgs) => {
