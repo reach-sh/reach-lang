@@ -732,7 +732,7 @@ mk_eb (DLinExportBlock at vs (DLBlock bat sf ll a)) = do
   return $ DLinExportBlock at vs (DLBlock bat sf body' a)
 
 epp :: LLProg -> IO PLProg
-epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
+epp (LLProg llp_at (LLOpts {..}) llp_parts llp_init llp_exports llp_views llp_apis llp_aliases llp_events llp_step) = do
   -- Step 1: Analyze the program to compute basic blocks
   let be_counter = llo_counter
   be_savec <- newCounter 1
@@ -745,7 +745,7 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
   let be_prev = 0
   let be_which = 0
   let be_prevs = mempty
-  let SLParts {..} = ps
+  let SLParts {..} = llp_parts
   let be_apis = sps_apis
   be_api_info <- newIORef mempty
   be_api_rets <- newIORef mempty
@@ -758,10 +758,10 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
   let be_view_sets = mempty
   let be_inConsensus = False
   let be_ms = mempty
-  let be_alias = alias
+  let be_alias = llp_aliases
   be_api_steps <- newIORef mempty
   let be_which_prev = mempty
-  mkep_ <- flip runReaderT (BEnv {..}) $ be_s s
+  mkep_ <- flip runReaderT (BEnv {..}) $ be_s llp_step
   check_view_sets =<< readIORef be_view_setsr
   api_info <- liftIO $ readIORef be_api_info
   hs <- readIORef be_handlers
@@ -778,10 +778,15 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
         flip runReaderT (CEnv {..}) m
   dex' <-
     flip runReaderT (BEnv {..}) $
-      mapM mk_eb dex
+      mapM mk_eb llp_exports
   vm <- flip mapWithKeyM mkvm $ \which mk ->
     mkh $ mk <$> ce_readSave which
-  cp <- (CPProg at (dvs, vm) api_info devts . CHandlers) <$> mapM mkh hs
+  let cpp_at = llp_at
+  let cpp_views = (llp_views, vm)
+  let cpp_apis = api_info
+  let cpp_events = llp_events
+  cpp_handlers <- CHandlers <$> mapM mkh hs
+  let cp = CPProg {..}
   stateToSrcMap <- readIORef be_stateToSrcMap
   -- Step 4: Generate the end-points
   as <- readIORef be_api_steps
@@ -804,10 +809,10 @@ epp (LLProg at (LLOpts {..}) ps dli dex dvs das alias devts s) = do
         let ee_m_api_step = step
         let ee_flow = flow
         et <- flip runReaderT (EEnv {..}) $ mkep_
-        return $ EPProg at isAPI ie et
-  pps <- EPPs das <$> mapWithKeyM mkep sps_ies'
+        return $ EPProg llp_at isAPI ie et
+  pps <- EPPs llp_apis <$> mapWithKeyM mkep sps_ies'
   -- Step 4: Generate the final PLProg
   let plo_verifyArithmetic = llo_verifyArithmetic
   let plo_untrustworthyMaps = llo_untrustworthyMaps
   let plo_counter = llo_counter
-  return $ PLProg at (PLOpts {..}) dli dex' stateToSrcMap pps cp
+  return $ PLProg llp_at (PLOpts {..}) llp_init dex' stateToSrcMap pps cp

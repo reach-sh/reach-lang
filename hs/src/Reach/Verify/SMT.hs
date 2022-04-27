@@ -1623,7 +1623,8 @@ _verify_smt mc ctxt_vst smt lp = do
         case mc of
           Just c -> smt_lt at_de $ conCons c cn
           Nothing -> Atom $ smtConstant cn
-  let LLProg at (LLOpts {..}) (SLParts {..}) (DLInit {..}) dex _dvs _das _alias _devts s = lp
+  let LLProg { llp_at = at, llp_opts = (LLOpts {..}), llp_parts = (SLParts {..}),
+               llp_init = (DLInit {..}), llp_exports = dex, llp_step = s} = lp
   let pies_m = sps_ies
   let initMapInfo mi = do
         sm_c <- liftIO $ newCounter 0

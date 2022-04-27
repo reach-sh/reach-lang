@@ -320,7 +320,7 @@ _many f l = many_ <$> mapM f l
 
 apc :: HasCounter a => a -> (SLPart, Maybe Int) -> EPProg -> IO EPProg
 apc hc (eWho, _) = \case
-  EPProg at True ie et -> do
+  EPProg epp_at True epp_interactEnv epp_tail -> do
     let eSeenOut = False
     eSeenInR <- newIORef False
     eSeenOutR <- newIORef False
@@ -330,23 +330,23 @@ apc hc (eWho, _) = \case
     eConstsR <- newIORef mempty
     let env0 = Env {..}
     et' <- flip runReaderT env0 $ do
-      seek et >>= \case
+      seek epp_tail >>= \case
         Just k' -> do
           ms <- liftIO $ readIORef eConstsR
-          let mst = dtList at $ toList ms
-          let c' = DL_LocalDo at mst
+          let mst = dtList epp_at $ toList ms
+          let c' = DL_LocalDo epp_at mst
           let k'' = mkCom ET_Com c' k'
           let badVars = countsl k''
           unless (null badVars) $
-            err at (API_NonCS badVars)
+            err epp_at (API_NonCS badVars)
           return k''
-        Nothing -> err at API_NoIn
-    return $ EPProg at True ie et'
+        Nothing -> err epp_at API_NoIn
+    return $ EPProg epp_at True epp_interactEnv et'
   p -> return p
 
 apicut :: PLProg -> IO PLProg
-apicut (PLProg at plo dli dex ssm epps cp) = do
-  let EPPs apis em = epps
-  em' <- mapWithKeyM (apc plo) em
+apicut (PLProg {..}) = do
+  let EPPs apis em = plp_epps
+  em' <- mapWithKeyM (apc plp_opts) em
   let epps' = EPPs apis em'
-  return $ PLProg at plo dli dex ssm epps' cp
+  return PLProg { plp_epps = epps', ..}

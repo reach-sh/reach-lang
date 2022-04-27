@@ -185,8 +185,9 @@ instance Unroll LLStep where
       LLS_ToConsensus at lct send <$> ul recv <*> ul mtime
 
 instance Unroll LLProg where
-  ul (LLProg at opts ps dli dex dvs das alias devts s) =
-    LLProg at opts ps dli <$> ul dex <*> pure dvs <*> pure das <*> pure alias <*> pure devts <*> ul s
+  ul (LLProg llp_at llp_opts llp_parts llp_init llp_exports llp_views llp_apis llp_aliases llp_events llp_step) =
+    LLProg llp_at llp_opts llp_parts llp_init <$> ul llp_exports <*> pure llp_views
+           <*> pure llp_apis <*> pure llp_aliases <*> pure llp_events <*> ul llp_step
 
 instance Unroll CTail where
   ul = \case
@@ -207,18 +208,19 @@ instance Unroll CHandlers where
   ul (CHandlers m) = CHandlers <$> ul m
 
 instance Unroll CPProg where
-  ul (CPProg at vi ai devts hs) =
+  ul (CPProg cpp_at cpp_views cpp_apis cpp_events cpp_handlers) =
     -- Note: When views contain functions, if we had a network where we
     -- compiled the views to VM code, and had to unroll, then we'd need to
-    -- unroll vi here.
-    CPProg at vi ai devts <$> ul hs
+    -- unroll cpp_views here.
+    CPProg cpp_at cpp_views cpp_apis cpp_events <$> ul cpp_handlers
 
 instance Unroll EPPs where
   ul (EPPs {..}) = EPPs <$> pure epps_apis <*> pure epps_m
 
 instance Unroll PLProg where
-  ul (PLProg at opts dli dex ssm ep cp) =
-    PLProg at opts dli <$> ul dex <*> pure ssm <*> ul ep <*> ul cp
+  ul (PLProg plp_at plp_opts plp_init plp_exports plp_stateSrcMap plp_epps plp_cpprog) =
+    PLProg plp_at plp_opts plp_init <$> ul plp_exports <*> pure plp_stateSrcMap
+           <*> ul plp_epps <*> ul plp_cpprog
 
 data UnrollWrapper a
   = UnrollWrapper Counter a

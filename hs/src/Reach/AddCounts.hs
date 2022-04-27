@@ -281,9 +281,8 @@ instance {-# OVERLAPS #-} AC a => AC (DLinExportBlock a) where
     return $ DLinExportBlock at vs' a'
 
 instance AC EPProg where
-  ac (EPProg at x ie et) =
-    fresh $
-      EPProg at x ie <$> ac et
+  ac (EPProg epp_at epp_isApi epp_interactEnv epp_tail) =
+    fresh $ EPProg epp_at epp_isApi epp_interactEnv <$> ac epp_tail
 
 instance AC EPPs where
   ac (EPPs {..}) = EPPs epps_apis <$> ac epps_m
@@ -292,8 +291,8 @@ instance AC CHandlers where
   ac (CHandlers m) = CHandlers <$> ac m
 
 instance AC CPProg where
-  ac (CPProg at vs ai devts chs) =
-    CPProg at <$> ac vs <*> pure ai <*> pure devts <*> ac chs
+  ac (CPProg cpp_at cpp_views cpp_apis cpp_events cpp_handlers) =
+    CPProg cpp_at <$> ac cpp_views <*> pure cpp_apis <*> pure cpp_events <*> ac cpp_handlers
 
 ac_vi :: AppT ViewsInfo
 ac_vi = mapM (mapM (fresh . ac))
@@ -303,8 +302,9 @@ instance AC ViewInfo where
     ViewInfo vs <$> ac_vi vi
 
 instance AC PLProg where
-  ac (PLProg at plo dli dex ssm epps cp) =
-    PLProg at plo dli <$> ac dex <*> pure ssm <*> ac epps <*> ac cp
+  ac (PLProg plp_at plp_opts plp_init plp_exports plp_stateSrcMap plp_epps plp_cpprog) =
+    PLProg plp_at plp_opts plp_init <$> ac plp_exports <*> pure plp_stateSrcMap
+           <*> ac plp_epps <*> ac plp_cpprog
 
 instance AC DLSend where
   ac = viaVisit
@@ -392,8 +392,9 @@ instance AC LLStep where
       return $ LLS_ToConsensus lls_tc_at lct' send' recv' mtime'
 
 instance AC LLProg where
-  ac (LLProg at llo ps dli dex vs das alias devts s) =
-    LLProg at llo ps dli <$> ac dex <*> pure vs <*> pure das <*> pure alias <*> pure devts <*> ac s
+  ac (LLProg llp_at llp_opts llp_parts llp_init llp_exports llp_views llp_apis llp_aliases llp_events llp_step) =
+    LLProg llp_at llp_opts llp_parts llp_init <$>
+      ac llp_exports <*> pure llp_views <*> pure llp_apis <*> pure llp_aliases <*> pure llp_events <*> ac llp_step
 
 add_counts :: AC a => a -> IO a
 add_counts x = do
