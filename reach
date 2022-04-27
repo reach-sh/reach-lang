@@ -143,7 +143,7 @@ timeout_validate () {
   MESSAGE=$3
 
   if [ $STOPPER -eq $TIMEOUT ]; then
-    printf "Winget wasn't installed successfully and timed out!\n"
+    printf $MESSAGE
     exit 1;
   fi
 }
@@ -171,7 +171,7 @@ install_docker () {
       while ( ! which winget.exe > /dev/null 2>&1 ); do
         sleep 1;
         STOPPER=$(($STOPPER+1))
-        timeout_validate 180 $STOPPER "Winget wasn't installed successfully and timmed out!\n"
+        timeout_validate 180 $STOPPER "Winget wasn't installed successfully and timed out!\n"
       done
       rm -rf "${TEMP_DIR}/${WINGET_ARTIFACT_NAME}"
     fi
@@ -207,15 +207,9 @@ for DEP in make curl docker docker-compose; do
     read -r RESPONSE
     if [ "${RESPONSE}" = "Y" ]; then
       case $DEP in
-        "make")
-          install_make
-         ;;
-        "curl")
-          install_curl
-          ;;
-        "docker")
-          install_docker
-          ;;
+        "make") install_make;;
+        "curl") install_curl;;
+        "docker") install_docker;;
       esac
     fi
   fi
