@@ -5034,7 +5034,7 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
   let lookupLocalTy t = fromMaybe T_Null $ M.lookup "_local" t
   let mkPartCase who n = who <> show n <> "_" <> show idx
   let mkLocalCase who n = who <> show n <> "_" <> show idx2
-  let getAfter who_e isApi who usesData (a_at, after_e, case_n, case_ty) = locAt a_at $
+  let getAfter who_e isApi who usesData (a_at, after_e, case_n, case_ty) = locAtf afterAt $
         case after_e of
           JSArrowExpression args _ s -> do
             let JSBlock _ ss _ = jsArrowBodyToRetBlock s
@@ -5075,6 +5075,8 @@ doFork ks (ForkRec {..}) = locAt slf_at $ do
             return $ (sco', sps <> mdefmsg <> ss)
           JSExpressionParen _ e _ -> getAfter who_e isApi who usesData (a_at, e, case_n, case_ty)
           _ -> expect_ $ Err_Fork_ConsensusBadArrow after_e
+          where
+            afterAt = srcloc_jsa "consensus block" (jsa after_e)
   let go pcases = do
         let (ats, whos, who_es, before_es, paytup_es, after_es) =
               unzip6 $ map (\ForkCase {..} -> (fc_at, fc_who, fc_who_e, fc_before, fc_pay, fc_after)) pcases
