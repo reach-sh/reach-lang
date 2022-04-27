@@ -1,8 +1,8 @@
 reachc: error[RE0082]: Fork consensus block should be arrow with zero or one parameters, but got something else
 
-  ./Err_Fork_ConsensusBadArrow.rsh:9:12:application
+  ./Err_Fork_ConsensusBadArrow.rsh:11:19:consensus block
 
-  9|       .case(A, () => ({
+  11|         (a, b, c) => {
 
 For further explanation of this error, see: https://docs.reach.sh/rsh/errors/#RE0082
 
