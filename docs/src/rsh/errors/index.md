@@ -2120,14 +2120,24 @@ For example, the code below erroneously puts `{!rsh} didPublish()` before `{!rsh
 
 ``` reach
 load: /hs/t/n/Err_NotAfterFirst.rsh
+range: 6 - 10
 ```
 
 This error can be corrected by placing `{!rsh} publish` before `{!rsh} didPublish()`:
 
 ```reach
 load: /examples/raffle/index.rsh
-range: 35 - 65
+range: 35 - 35
 ```
+
+```reach
+load: /examples/raffle/index.rsh
+range: 59 - 65
+```
+
+:::note
+Notice that the `Sponsor` `{!rsh} publish`ed on line 35. On Line 62, `{!rsh} didPublish()` is used to make a check.
+:::
 
 ## {#RE0120} RE0120
 
