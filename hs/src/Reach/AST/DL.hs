@@ -314,24 +314,24 @@ data DLProg = DLProg
   deriving (Generic)
 
 instance HasCounter DLProg where
-  getCounter (DLProg _ dlo _ _ _ _ _ _ _ _) = getCounter dlo
+  getCounter (DLProg {dlp_opts}) = getCounter dlp_opts
 
 instance Pretty DLProg where
-  pretty (DLProg _at _ sps dli dex dvs dapis alias devts ds) =
+  pretty (DLProg _dlp_at _dlp_opts dlp_parts dlp_init dlp_exports dlp_views dlp_apis dlp_aliases dlp_events dlp_stmts) =
     "#lang dl" <> hardline
-      <> pretty sps
+      <> pretty dlp_parts
       <> hardline
       <> hardline
-      <> pretty dli
+      <> pretty dlp_init
       <> hardline
-      <> pretty dex
+      <> pretty dlp_exports
       <> hardline
-      <> pretty dvs
+      <> pretty dlp_views
       <> hardline
-      <> pretty dapis
+      <> pretty dlp_apis
       <> hardline
-      <> pretty alias
+      <> pretty dlp_aliases
       <> hardline
-      <> pretty devts
+      <> pretty dlp_events
       <> hardline
-      <> render_dls ds
+      <> render_dls dlp_stmts

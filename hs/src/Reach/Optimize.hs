@@ -746,16 +746,16 @@ instance Optimize DLInit where
   gcs _ = return ()
 
 instance Optimize LLProg where
-  opt (LLProg at opts ps dli dex dvs das alias devts s) = do
-    let SLParts {..} = ps
+  opt (LLProg llp_at llp_opts llp_parts@SLParts{..} llp_init llp_exports llp_views llp_apis llp_aliases llp_events llp_step) = do
     let psl = M.keys sps_ies
     cs <- asks eConst
-    let mis = dli_maps dli
-    env0 <- liftIO $ mkEnv0 (getCounter opts) (llo_droppedAsserts opts) cs psl mis
-    local (const env0) $ local (updateClearMaps $ llo_untrustworthyMaps opts) $
+    let mis = dli_maps llp_init
+    env0 <- liftIO $ mkEnv0 (getCounter llp_opts) (llo_droppedAsserts llp_opts) cs psl mis
+    local (const env0) $ local (updateClearMaps $ llo_untrustworthyMaps llp_opts) $
       focus_ctor $
-        LLProg at opts ps <$> opt dli <*> opt dex <*> pure dvs <*> pure das <*> pure alias <*> pure devts <*> opt s
-  gcs (LLProg _ _ _ _ _ _ _ _ _ s) = gcs s
+        LLProg llp_at llp_opts llp_parts <$> opt llp_init <*> opt llp_exports <*> pure llp_views
+               <*> pure llp_apis <*> pure llp_aliases <*> pure llp_events <*> opt llp_step
+  gcs (LLProg { llp_step }) = gcs llp_step
 
 -- This is a bit of a hack...
 
@@ -834,23 +834,26 @@ instance Optimize ViewInfo where
   gcs _ = return ()
 
 instance Optimize CPProg where
-  opt (CPProg at vi ai devts (CHandlers hs)) =
-    CPProg at <$> (newScope $ opt vi) <*> pure ai <*> pure devts <*> (CHandlers <$> mapM (newScope . opt) hs)
-  gcs (CPProg _ _ _ _ (CHandlers hs)) = gcs hs
+  opt (CPProg cpp_at cpp_views cpp_apis cpp_events (CHandlers hs)) =
+    CPProg cpp_at <$> (newScope $ opt cpp_views) <*> pure cpp_apis <*> pure cpp_events
+           <*> (CHandlers <$> mapM (newScope . opt) hs)
+  gcs CPProg { cpp_handlers = CHandlers hs } = gcs hs
 
 instance Optimize EPProg where
-  opt (EPProg at x ie et) = newScope $ EPProg at x ie <$> (focus_one "" $ opt et)
-  gcs (EPProg _ _ _ et) = gcs et
+  opt (EPProg epp_at epp_isApi epp_interactEnv epp_tail) =
+    newScope $ EPProg epp_at epp_isApi epp_interactEnv <$> (focus_one "" $ opt epp_tail)
+  gcs = gcs . epp_tail
 
 instance Optimize EPPs where
   opt (EPPs {..}) = EPPs epps_apis <$> opt epps_m
   gcs (EPPs {..}) = gcs epps_m
 
 instance Optimize PLProg where
-  opt (PLProg at plo dli dex ssm epps cp) = do
-    local (updateClearMaps $ plo_untrustworthyMaps plo) $
-      PLProg at plo dli <$> opt dex <*> pure ssm <*> opt epps <*> opt cp
-  gcs (PLProg _ _ _ _ _ epps cp) = gcs epps >> gcs cp
+  opt (PLProg plp_at plp_opts plp_init plp_exports plp_stateSrcMap plp_epps plp_cpprog) = do
+    local (updateClearMaps $ plo_untrustworthyMaps plp_opts) $
+      PLProg plp_at plp_opts plp_init <$> opt plp_exports <*> pure plp_stateSrcMap
+             <*> opt plp_epps <*> opt plp_cpprog
+  gcs PLProg {..} = gcs plp_epps >> gcs plp_cpprog
 
 optimize_ :: (Optimize a) => Counter -> a -> IO a
 optimize_ c t = do

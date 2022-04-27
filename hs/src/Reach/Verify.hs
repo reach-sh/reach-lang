@@ -17,7 +17,7 @@ data VerifierName = Boolector | CVC4 | Yices | Z3
   deriving (Read, Show, Eq)
 
 verify :: VerifyOpts -> LLProg -> IO ExitCode
-verify vst_vo lp@(LLProg _ llo _ _ _ _ _ _ _ _) = do
+verify vst_vo lp@(LLProg { llp_opts }) = do
   vst_res_succ <- newCounter 0
   vst_res_fail <- newCounter 0
   vst_res_time <- newCounter 0
@@ -46,7 +46,7 @@ verify vst_vo lp@(LLProg _ llo _ _ _ _ _ _ _ _) = do
   --   -- - doesn't support declare-datatypes
   --   smt "boolector" ["--smt2"]
   ss0 <- readCounter vst_res_succ
-  das <- readCounter $ llo_droppedAsserts llo
+  das <- readCounter $ llo_droppedAsserts llp_opts
   let ss = ss0 + das
   fs <- readCounter vst_res_fail
   ts <- readCounter vst_res_time
