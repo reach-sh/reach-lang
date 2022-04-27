@@ -117,21 +117,21 @@ data DKProg = DKProg
   }
 
 instance Pretty DKProg where
-  pretty (DKProg _at _ sps dli dex dvs das alias devt t) =
+  pretty (DKProg _dkp_at _dkp_opts dkp_parts dkp_init dkp_exports dkp_views dkp_apis dkp_aliases dkp_events dkp_tail) =
     "#lang dk" <> hardline
-      <> pretty sps
+      <> pretty dkp_parts
       <> hardline
       <> hardline
-      <> pretty dli
+      <> pretty dkp_init
       <> hardline
-      <> pretty dex
+      <> pretty dkp_exports
       <> hardline
-      <> pretty dvs
+      <> pretty dkp_views
       <> hardline
-      <> pretty das
+      <> pretty dkp_apis
       <> hardline
-      <> pretty alias
+      <> pretty dkp_aliases
       <> hardline
-      <> pretty devt
+      <> pretty dkp_events
       <> hardline
-      <> pretty t
+      <> pretty dkp_tail

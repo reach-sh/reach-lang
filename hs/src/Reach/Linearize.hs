@@ -201,12 +201,12 @@ resetDK :: DKApp a -> DKApp a
 resetDK = local (\e -> e {eRet = Nothing, eExnHandler = Nothing})
 
 dekont :: DLProg -> IO DKProg
-dekont (DLProg at opts sps dli dex dvs das dals devts ss) = do
+dekont (DLProg dlp_at dlp_opts dlp_parts dlp_init dlp_exports dlp_views dlp_apis dlp_aliases dlp_events dlp_stmts) = do
   let eRet = Nothing
   let eExnHandler = Nothing
   flip runReaderT (DKEnv {..}) $ do
-    dex' <- mapM dk_eb dex
-    DKProg at opts sps dli dex' dvs das dals devts <$> dk_top at ss
+    dex' <- mapM dk_eb dlp_exports
+    DKProg dlp_at dlp_opts dlp_parts dlp_init dex' dlp_views dlp_apis dlp_aliases dlp_events <$> dk_top dlp_at dlp_stmts
 
 -- Lift common things to the previous consensus
 type LCApp = ReaderT LCEnv IO
@@ -325,10 +325,11 @@ instance LiftCon DKTail where
       impossible "lift boundary before liftcon"
 
 liftcon :: DKProg -> IO DKProg
-liftcon (DKProg at opts sps dli dex dvs das alias devts k) = do
+liftcon (DKProg dkp_at dkp_opts dkp_parts dkp_init dkp_exports dkp_views dkp_apis dkp_aliases dkp_events dkp_tail) = do
   let eLifts = Nothing
   flip runReaderT (LCEnv {..}) $
-    DKProg at opts sps dli <$> lc dex <*> pure dvs <*> pure das <*> pure alias <*> pure devts <*> lc k
+    DKProg dkp_at dkp_opts dkp_parts dkp_init <$>
+      lc dkp_exports <*> pure dkp_views <*> pure dkp_apis <*> pure dkp_aliases <*> pure dkp_events <*> lc dkp_tail
 
 -- Remove fluid variables and convert to proper linear shape
 type FluidEnv = M.Map FluidVar (SrcLoc, DLArg)
@@ -654,7 +655,7 @@ df_init k = do
   return $ foldr DK_Com k cs
 
 defluid :: DKProg -> IO LLProg
-defluid (DKProg at (DLOpts {..}) sps dli dex dvs das alias devts k) = do
+defluid (DKProg dkp_at (DLOpts {..}) dkp_parts dkp_init dkp_exports dkp_views dkp_apis dkp_aliases dkp_events dkp_tail) = do
   let llo_verifyArithmetic = dlo_verifyArithmetic
   let llo_untrustworthyMaps = dlo_untrustworthyMaps
   let llo_counter = dlo_counter
@@ -666,9 +667,9 @@ defluid (DKProg at (DLOpts {..}) sps dli dex dvs das alias devts k) = do
   let eFVs = allFluidVars
   let eBals = fromIntegral dlo_bals - 1
   flip runReaderT (DFEnv {..}) $ do
-    dex' <- mapM df_eb dex
-    k' <- df_step =<< df_init k
-    return $ LLProg at opts' sps dli dex' dvs das alias devts k'
+    dex' <- mapM df_eb dkp_exports
+    k' <- df_step =<< df_init dkp_tail
+    return $ LLProg dkp_at opts' dkp_parts dkp_init dex' dkp_views dkp_apis dkp_aliases dkp_events k'
 
 -- Stich it all together
 linearize :: (forall a. Pretty a => T.Text -> a -> IO ()) -> DLProg -> IO LLProg

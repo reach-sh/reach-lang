@@ -81,10 +81,10 @@ nicev v =
     t = ddd 8 $ show $ pretty $ ty
 
 instance HasEdges CPProg where
-  getEdges (CPProg _ _ _ _ hs) = getEdges hs
+  getEdges = getEdges . cpp_handlers
 
 instance HasEdges PLProg where
-  getEdges (PLProg _ _ _ _ _ _ cp) = getEdges cp
+  getEdges = getEdges . plp_cpprog
 
 setSanitize :: Ord a => [a] -> [a]
 setSanitize = S.toList . S.fromList

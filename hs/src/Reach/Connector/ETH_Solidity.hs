@@ -1566,7 +1566,7 @@ baseTypes =
     ]
 
 solPLProg :: PLProg -> IO (ConnectorInfoMap, Doc)
-solPLProg (PLProg _ plo dli _ _ _ (CPProg at (vs, vi) ai _ hs)) = do
+solPLProg PLProg {plp_opts = plo, plp_init = dli, plp_cpprog = CPProg { cpp_at = at, cpp_views = (vs, vi), cpp_apis = ai, cpp_handlers = hs} } = do
   let DLInit {..} = dli
   let ctxt_handler_num = 0
   ctxt_varm <- newIORef mempty

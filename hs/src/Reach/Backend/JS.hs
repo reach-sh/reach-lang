@@ -923,7 +923,7 @@ interactChk :: Doc -> Doc
 interactChk who = rejectIf "typeof(interact) !== 'object'" $ iExpect who "an interact object" "second"
 
 jsPart :: DLInit -> (SLPart, Maybe Int) -> EPProg -> App Doc
-jsPart dli (p, m_api_which) (EPProg _ ctxt_isAPI _ et) = do
+jsPart dli (p, m_api_which) (EPProg { epp_isApi=ctxt_isAPI, epp_tail }) = do
   jsc@(JSContracts {..}) <- newJsContract
   let ctxt_ctcs = Just jsc
   let ctxt_who = p
@@ -933,7 +933,7 @@ jsPart dli (p, m_api_which) (EPProg _ ctxt_isAPI _ et) = do
   let ctxt_maps = dli_maps dli
   local (const JSCtxt {..}) $ do
     maps_defn <- jsMapDefns True
-    et' <- jsETail et
+    et' <- jsETail epp_tail
     i2t' <- liftIO $ readIORef jsc_i2t
     let ctcs = vsep $ map snd $ M.toAscList i2t'
     let who = adjustApiName (bunpack p) (fromMaybe 0 m_api_which) (isJust m_api_which)
@@ -1103,8 +1103,8 @@ reachBackendVersion :: Int
 reachBackendVersion = 14
 
 jsPIProg :: ConnectorResult -> PLProg -> App Doc
-jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = do
-  let DLInit {..} = dli
+jsPIProg cr PLProg { plp_epps = EPPs {..}, plp_cpprog = CPProg {..}, .. }  = do
+  let DLInit {..} = plp_init
   let preamble =
         vsep
           [ pretty $ "// Automatically generated with Reach " ++ versionHashStr
@@ -1120,14 +1120,14 @@ jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = 
           Nothing -> acc
   let api_whichs = M.foldrWithKey go_api mempty epps_m
   api_wrappers <- mapM (uncurry jsApiWrapper) $ M.toAscList api_whichs
-  partsp <- mapM (uncurry (jsPart dli)) $ M.toAscList epps_m
+  partsp <- mapM (uncurry (jsPart plp_init)) $ M.toAscList epps_m
   cnpsp <- mapM (uncurry jsCnp) $ HM.toList cr
   let connMap = M.fromList [(name, "_" <> pretty name) | name <- HM.keys cr]
-  ssmDoc <- mapM (\x -> jsAssertInfo (fst x) (snd x) Nothing) ssm
-  exportsp <- jsExports dexports
+  ssmDoc <- mapM (\x -> jsAssertInfo (fst x) (snd x) Nothing) plp_stateSrcMap
+  exportsp <- jsExports plp_exports
   viewsp <-
     local (\e -> e {ctxt_maps = dli_maps}) $
-      jsViews vi
+      jsViews cpp_views
   mapsp <- jsMaps dli_maps
   let partMap = M.foldrWithKey (\ (p, _) _ acc -> M.insert p (pretty $ bunpack p) acc) mempty epps_m
   let go_api_map k v acc =
@@ -1137,8 +1137,9 @@ jsPIProg cr (PLProg _ _ dli dexports ssm (EPPs {..}) (CPProg _ vi _ devts _)) = 
         let v' = M.map (pretty . bunpack . fst) v in
         f v' acc
   let apiMap = M.foldrWithKey go_api_map mempty epps_apis
-  eventsp <- jsEvents devts
+  eventsp <- jsEvents cpp_events
   return $ vsep $ [preamble, exportsp, eventsp, viewsp, mapsp] <> partsp <> api_wrappers <> cnpsp <> [jsObjectDef "_stateSourceMap" ssmDoc, jsObjectDef "_Connectors" connMap, jsObjectDef "_Participants" partMap, jsObjectDef "_APIs" apiMap]
+
 
 backend_js :: Backend
 backend_js outn crs pl = do

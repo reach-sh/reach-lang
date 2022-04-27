@@ -993,13 +993,13 @@ bindConsensusMeta (DLRecv {..}) actorId accId = do
 
 
 instance Interp LLProg where
-  interp (LLProg _at _llo slparts _dli _dex dvs _apis _alias _evts step) = do
-    let apiNames = sps_apis slparts
-    let (apiParts,regParts) = partition (\(a,_b) -> member a apiNames) $ M.toAscList $ sps_ies slparts
+  interp LLProg {..} = do
+    let apiNames = sps_apis llp_parts
+    let (apiParts,regParts) = partition (\(a,_b) -> member a apiNames) $ M.toAscList $ sps_ies llp_parts
     registerParts regParts
     registerAPIs apiParts
-    registerViews $ M.toAscList $ M.map M.toAscList dvs
-    interp step
+    registerViews $ M.toAscList $ M.map M.toAscList llp_views
+    interp llp_step
 
 isTheTimePast :: Maybe (DLTimeArg, LLStep) -> App (Maybe LLStep)
 isTheTimePast tc_mtime = do

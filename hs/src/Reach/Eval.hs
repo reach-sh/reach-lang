@@ -85,7 +85,17 @@ compileDApp shared_lifts exports (SLV_Prim (SLPrim_App_Delay at top_s (top_env, 
   let sps_apis = ar_isAPI
   let sps = SLParts {..}
   final' <- pan final
-  return $ DLProg at final_dlo' sps dli exports ar_views ar_apis aliases ar_events final'
+  let dlp_at = at
+  let dlp_opts = final_dlo'
+  let dlp_parts = sps
+  let dlp_init = dli
+  let dlp_exports = exports
+  let dlp_views = ar_views
+  let dlp_apis = ar_apis
+  let dlp_aliases = aliases
+  let dlp_events = ar_events
+  let dlp_stmts = final'
+  return DLProg {..}
 compileDApp _ _ _ = impossible "compileDApp called without a Reach.App"
 
 verifyAliases :: M.Map SLVar (Maybe B.ByteString, [SLType]) -> App Aliases

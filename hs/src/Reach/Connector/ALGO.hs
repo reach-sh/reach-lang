@@ -3198,8 +3198,8 @@ analyzeViews (vs, vis) = vsit
 
 compile_algo :: CompilerToolEnv -> Disp -> PLProg -> IO ConnectorInfo
 compile_algo env disp pl = do
-  let PLProg _at ePLO dli _ _ _ cpp = pl
-  let CPProg at vsi ai _ (CHandlers hm) = cpp
+  let PLProg { plp_opts = ePLO, plp_init = dli, plp_cpprog = cpp } = pl
+  let CPProg { cpp_at = at, cpp_views = vsi, cpp_apis = ai, cpp_handlers = (CHandlers hm) } = cpp
   -- This is the final result
   resr <- newIORef mempty
   totalLenR <- newIORef (0 :: Integer)
