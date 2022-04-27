@@ -41,7 +41,7 @@ export interface WalletTransaction {
    stxn?: string;
 };
 
-export type SignTxnFunction = (
+export type SignTxnsFunction = (
    txns: WalletTransaction[],
    opts?: any,
 ) => Promise<(string | null)[]>;
@@ -66,6 +66,8 @@ export interface WindowAlgorand {
   enable: EnableFunction;
   enableNetwork?: EnableNetworkFunction;
   enableAccounts?: EnableAccountsFunction;
+  signTxns?: SignTxnsFunction;
+  postTxns?: PostTxnsFunction;
   signAndPostTxns: SignAndPostTxnsFunction;
   getAlgodv2Client: GetAlgodv2ClientFunction;
   getIndexerClient: GetIndexerClientFunction;
