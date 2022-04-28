@@ -1,3 +1,4 @@
+import { process } from './shim';
 import * as util from 'util';
 
 // Use argument to just run one
