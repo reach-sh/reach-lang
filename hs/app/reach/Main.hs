@@ -2517,9 +2517,9 @@ support = command "support" $ info (pure step1) d
       liftIO . T.putStrLn $ pack
         "Type 'y' AFTER SUCCESSFUL AUTHORIZATION to upload index.mjs and index.rsh."
       userEnteredCharacter <- liftIO getChar
-      if toUpper userEnteredCharacter == 'Y'
-        then do step2WithThe deviceCode
-        else do
+      case toUpper userEnteredCharacter of
+        'Y' -> do step2WithThe deviceCode
+        _ -> do
           liftIO . T.putStrLn $ pack ""
           liftIO . T.putStrLn $
             "No files uploaded; run reach support again to make another try."
