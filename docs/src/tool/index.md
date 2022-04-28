@@ -113,7 +113,7 @@ Only the following are tracked:
 - Resultant [error code](##ref-error-codes) or indication of success associated with the event;
 - `{!cmd} REACH_VERSION`;
 - `{!cmd} REACH_CONNECTOR_MODE`;
-- Whether the event was triggered by the [Reach VS Code extension](##guide-install-VSCode);
+- Whether the event was triggered by the [Reach VSCode extension](##guide-install-VSCode);
 - The user's country;
 - The user's state or region.
 
