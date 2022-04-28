@@ -8,6 +8,8 @@ import node_fetch from 'node-fetch';
 type Process = {
   env: Env,
   stdout: Stdout,
+  argv: string[],
+  exit: (ec:number) => void,
 }
 export type Env = {[key: string]: string|undefined};
 type Stdout = {
@@ -30,6 +32,10 @@ const processShim: Process = (() => {
       },
       stdout: {
         write: () => {},
+      },
+      argv: [],
+      exit: (ec:number) => {
+        console.warn(`Ignoring attempt to exit with code`, ec);
       },
     };
   }
