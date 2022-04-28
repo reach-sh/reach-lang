@@ -2517,8 +2517,8 @@ support = command "support" $ info (pure step1) d
       liftIO . T.putStrLn $ pack $ "Your user code is " ++ unpack userCode
       liftIO . T.putStrLn $ pack "Please enter it at https://github.com/login/device"
       liftIO . T.putStrLn $ pack ""
-      liftIO . T.putStrLn $ pack
-        "Type 'y' AFTER SUCCESSFUL AUTHORIZATION to upload index.mjs and index.rsh."
+      liftIO . T.putStrLn $ pack "Type 'y' AFTER SUCCESSFUL AUTHORIZATION"
+      liftIO . T.putStrLn $ pack "to upload index.mjs, index.rsh, or both:"
       userEnteredCharacter <- liftIO getChar
       case toUpper userEnteredCharacter of
         'Y' -> do step2WithThe deviceCode
@@ -2561,32 +2561,87 @@ support = command "support" $ info (pure step1) d
 
     completeStep3WithThe :: Text -> ReaderT Env IO ()
     completeStep3WithThe accessToken = do
-      liftIO . T.putStrLn $ pack ""
-      -- @TODO: error handling!
-      -- What if index.mjs or index.rsh don't exist?
-      indexRsh <- liftIO $ readFile "index.rsh"
-      indexMjs <- liftIO $ readFile "index.mjs"
-      let indexRshValue =
-            object
-              [ "content" .= indexRsh
-              , "language" .= language
-              , "type" .= typeForUploadJson
-              ]
-      let indexMjsValue =
-            object
-              [ "content" .= indexMjs
-              , "language" .= language
-              , "type" .= typeForUploadJson
-              ]
-      let indexRshJson :: A.Pair
-          indexRshJson = ("index.rsh" .= indexRshValue)
-      let indexMjsJson :: A.Pair
-          indexMjsJson = ("index.mjs" .= indexMjsValue)
-      -- @TODO: Also add output of reach hashes!
-      let mainJson =
-            object
-              [ "files" .= object [ indexRshJson, indexMjsJson ]
-              ]
+      indexRshExists <- liftIO $ doesFileExist "index.rsh"
+      case indexRshExists of
+        True -> do
+          indexRsh <- liftIO $ readFile "index.rsh"
+          let indexRshValue =
+                object
+                  [ "content" .= indexRsh
+                  , "language" .= language
+                  , "type" .= typeForUploadJson
+                  ]
+          let indexRshJson :: A.Pair
+              indexRshJson = ("index.rsh" .= indexRshValue)
+          checkIndexMjs indexRshJson True accessToken
+        False -> do
+          liftIO . T.putStrLn $ pack ""
+          liftIO . T.putStrLn $ pack
+            "Didn't find index.rsh in the current directory; skipping..."
+          -- @HACK Trying to pass an "empty" A.Pair...
+          let nullString :: String
+              nullString = ""
+          let null' :: A.Pair
+              null' = ("empty" .= nullString)
+          checkIndexMjs null' False accessToken
+
+
+    checkIndexMjs :: A.Pair -> Bool -> Text -> ReaderT Env IO ()
+    checkIndexMjs indexRshJson indexRshExists accessToken = do
+      indexMjsExists <- liftIO $ doesFileExist "index.mjs"
+      case indexRshExists of
+        True -> do
+          case indexMjsExists of
+            True -> do
+              indexMjs <- liftIO $ readFile "index.mjs"
+              let indexMjsValue =
+                    object
+                      [ "content" .= indexMjs
+                      , "language" .= language
+                      , "type" .= typeForUploadJson
+                      ]
+              let indexMjsJson :: A.Pair
+                  indexMjsJson = ("index.mjs" .= indexMjsValue)
+              let mainJson =
+                    object
+                      [ "files" .= object [ indexRshJson, indexMjsJson ]
+                      ]
+              uploadGistUsing mainJson accessToken
+            False -> do
+              liftIO . T.putStrLn $ pack ""
+              liftIO . T.putStrLn $ pack
+                "Didn't find index.mjs in the current directory; skipping..."
+              let mainJson =
+                    object
+                      [ "files" .= object [ indexRshJson ]
+                      ]
+              uploadGistUsing mainJson accessToken
+        False -> do
+          case indexMjsExists of
+            True -> do
+              indexMjs <- liftIO $ readFile "index.mjs"
+              let indexMjsValue =
+                    object
+                      [ "content" .= indexMjs
+                      , "language" .= language
+                      , "type" .= typeForUploadJson
+                      ]
+              let indexMjsJson :: A.Pair
+                  indexMjsJson = ("index.mjs" .= indexMjsValue)
+              let mainJson =
+                    object
+                      [ "files" .= object [ indexMjsJson ]
+                      ]
+              uploadGistUsing mainJson accessToken
+            False -> do
+              liftIO . T.putStrLn $ pack
+                "Did not find index.mjs in the current directory; skipping..."
+              liftIO . T.putStrLn $ pack ""
+              liftIO . T.putStrLn $ pack "Nothing uploaded"
+
+    -- @TODO: Also add output of reach hashes!
+    uploadGistUsing :: Value -> Text -> ReaderT Env IO ()
+    uploadGistUsing mainJson accessToken = do
       parsedRequest2 <- parseRequest "POST https://api.github.com/gists"
       let req1 = setRequestBodyJSON mainJson parsedRequest2
       let req2 = setRequestHeader acceptHeader [BSI.packChars "application/vnd.github.v3+json"] req1
@@ -2600,6 +2655,7 @@ support = command "support" $ info (pure step1) d
       let response2Body = getResponseBody response2
       case decodeStrict response2Body of
         Just (GitHubGistResponse urlToViewGist) -> do
+          liftIO . T.putStrLn $ pack ""
           liftIO . T.putStrLn $ pack "Your gist is viewable at"
           liftIO . T.putStrLn $ pack urlToViewGist
         _ -> error "Couldn't decode JSON from GitHub API!"
