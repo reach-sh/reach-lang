@@ -6,7 +6,7 @@ while ( args.length > 0 && args[0] !== '---' ) {
   args.shift();
 }
 args.shift();
-export const shouldRunAny = (x:string): boolean =>
+const shouldRunAny = (x:string): boolean =>
   args.some((a:string) => x.includes(a));
 export const shouldRun = (x:string): boolean =>
   ((args.length === 0) || shouldRunAny(x));
@@ -89,11 +89,11 @@ export interface RunOpts {
   howManyAtOnce?: number,
   exitOnFail?: boolean,
 };
-export const run = async (opts:RunOpts): Promise<void> => {
-  const exitOnFail = opts.exitOnFail === undefined ? true : opts.exitOnFail;
+export const run = async (opts?:RunOpts): Promise<void> => {
+  const exitOnFail = opts?.exitOnFail === undefined ? true : opts.exitOnFail;
   const stop = (): boolean => (exitOnFail && fails > 0);
 
-  const howManyAtOnce = opts.howManyAtOnce || 1;
+  const howManyAtOnce = opts?.howManyAtOnce || 1;
 
   console.log(`${jobs.length} jobs scheduled, running...`);
   while ( !stop() && jobs.length > 0 ) {

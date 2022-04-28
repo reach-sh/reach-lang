@@ -2,7 +2,7 @@ import { loadStdlib } from '@reach-sh/stdlib';
 import * as backend from './build/index.main.mjs';
 
 const runDemo = async (delayReceiver, delayFunder) => {
-  const stdlib = await loadStdlib();
+  const stdlib = loadStdlib();
   const getBalance = async (who) => stdlib.formatCurrency(
     await stdlib.balanceOf(who), 4,
   );
