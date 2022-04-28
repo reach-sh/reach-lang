@@ -2474,6 +2474,9 @@ support = command "support" $ info (pure step1) d
     isDeviceCodePair :: [Text] -> Bool
     isDeviceCodePair pair = head pair == pack "device_code"
 
+    isErrorPair :: [Text] -> Bool
+    isErrorPair pair = head pair == pack "error"
+
     isUserCodePair :: [Text] -> Bool
     isUserCodePair pair = head pair == pack "user_code"
 
@@ -2541,13 +2544,23 @@ support = command "support" $ info (pure step1) d
       response <- httpLBS request
       let githubResponseString = getResponseBody response
       let arrayOfArrayOfText = process githubResponseString
-      -- @TODO: Error handling! reach: Prelude.head: empty list
-      -- What if the user ignores instructions and hits 'y'
-      -- without actually authenticating, first?
-      let accessTokenPair = head $ filter isAccessTokenPair arrayOfArrayOfText
       -- @TODO: Save accessToken; git-credential-store
       -- Warning: Permission errors when doing this^
-      let accessToken = accessTokenPair !! 1
+      case headMay $ filter isAccessTokenPair arrayOfArrayOfText of
+        Nothing -> do
+          case headMay $ filter isErrorPair arrayOfArrayOfText of
+            Nothing -> liftIO . T.putStrLn $ pack
+                "Upload unsuccessful; couldn't find an authorization code, or an error!"
+            Just errorPair -> do
+              let reason = errorPair !! 1
+              liftIO . T.putStr $ pack "\nError while acquiring access token: "
+              liftIO . T.putStrLn $ reason
+        Just accessTokenPair -> do
+          let accessToken = accessTokenPair !! 1
+          completeStep3WithThe accessToken
+
+    completeStep3WithThe :: Text -> ReaderT Env IO ()
+    completeStep3WithThe accessToken = do
       liftIO . T.putStrLn $ pack ""
       -- @TODO: error handling!
       -- What if index.mjs or index.rsh don't exist?
