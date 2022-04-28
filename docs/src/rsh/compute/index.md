@@ -1683,6 +1683,14 @@ getContract()
 The @{defn("getContract")} primitive returns the `{!rsh} Contract` value for the deployed contract.
 This function may not be called until after the first publication (which creates the contract).
 
+    ``` reach
+    load: /examples/remote-rsh/index.rsh
+    range: 26-29
+    ```
+	
+In this example, on line 26, `D` publishes the values for `x` and `tok`, which creates the contract.
+After the `publish`, now `getContract` is called and it gives the value `x` in token `tok` of the contract created in the publication.
+
 ### `getAddress`
 
 @{ref("rsh", "getAddress")}
